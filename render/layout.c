@@ -1066,7 +1066,6 @@ void calculate_widths(struct box *box)
 	assert(box->type == BOX_TABLE_CELL ||
 	       box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 	       box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT);
-	assert(style);
 
 	/* check if the widths have already been calculated */
 	if (box->max_width != UNKNOWN_MAX_WIDTH)
@@ -1103,22 +1102,24 @@ void calculate_widths(struct box *box)
 	}
 
 	/* add margins, border, padding to min, max widths */
-	for (side = 1; side != 5; side += 2) {  /* RIGHT, LEFT */
-		if (style->padding[side].padding == CSS_PADDING_LENGTH)
-			extra_fixed += len(&style->padding[side].value.length,
-					style);
-		else if (style->padding[side].padding == CSS_PADDING_PERCENT)
-			extra_frac += style->padding[side].value.percent * 0.01;
+	if (style) {
+		for (side = 1; side != 5; side += 2) {  /* RIGHT, LEFT */
+			if (style->padding[side].padding == CSS_PADDING_LENGTH)
+				extra_fixed += len(&style->padding[side].value.length,
+						style);
+			else if (style->padding[side].padding == CSS_PADDING_PERCENT)
+				extra_frac += style->padding[side].value.percent * 0.01;
 
-		if (style->border[side].style != CSS_BORDER_STYLE_NONE)
-			extra_fixed += len(&style->border[side].width.value,
-					style);
+			if (style->border[side].style != CSS_BORDER_STYLE_NONE)
+				extra_fixed += len(&style->border[side].width.value,
+						style);
 
-		if (style->margin[side].margin == CSS_MARGIN_LENGTH)
-			extra_fixed += len(&style->margin[side].value.length,
-					style);
-		else if (style->margin[side].margin == CSS_MARGIN_PERCENT)
-			extra_frac += style->margin[side].value.percent * 0.01;
+			if (style->margin[side].margin == CSS_MARGIN_LENGTH)
+				extra_fixed += len(&style->margin[side].value.length,
+						style);
+			else if (style->margin[side].margin == CSS_MARGIN_PERCENT)
+				extra_frac += style->margin[side].value.percent * 0.01;
+		}
 	}
 
 	if (1.0 <= extra_frac)
