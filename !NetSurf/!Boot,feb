@@ -1,6 +1,12 @@
 Set NetSurf$Dir <Obey$Dir>
 
+Set File$Type_695 GIF
+Set File$Type_B60 PNG
+Set File$Type_C85 JPEG
+Set File$Type_F78 JNG
 Set File$Type_F79 CSS
+Set File$Type_F83 MNG
+Set File$Type_FAF HTML
 
 | Application system variables
 Set NetSurf$Help <NetSurf$Dir>.Docs.docs_en

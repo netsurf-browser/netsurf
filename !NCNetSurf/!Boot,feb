@@ -1,11 +1,17 @@
 Set NetSurf$Dir <Obey$Dir>
 
+Set File$Type_695 GIF
+Set File$Type_B60 PNG
+Set File$Type_C85 JPEG
+Set File$Type_F78 JNG
 Set File$Type_F79 CSS
+Set File$Type_F83 MNG
+Set File$Type_FAF HTML
 
 | Application System Variables
-Set NetSurf$Help <NetSurf$Dir>.Docs.Intro
+Set NetSurf$Help <NetSurf$Dir>.Docs.docs_en
 Set NetSurf$Version "NC Development Build"
-Set NetSurf$Web "http://netsurf.sf.net/"
+Set NetSurf$Web "http://netsurf.sourceforge.net/"
 Set NetSurf$Title "NCNetSurf"
 Set NetSurf$Publisher "The NetSurf Developers"
 Set NetSurf$Description "Web Browser"
