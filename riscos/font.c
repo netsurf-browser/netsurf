@@ -456,7 +456,7 @@ unsigned long nsfont_width(struct font_data *font, const char *text,
 					NULL,
 					NULL, 0,
 					NULL, &width, NULL, NULL);
-			free(loc_text);
+			free((void *)loc_text);
 			break;
 		}
 		default:
@@ -491,7 +491,7 @@ void nsfont_position_in_string(struct font_data *font, const char *text,
 {
 	os_error *error;
 	font_scan_block block;
-	char *split;
+	const char *split;
 	int x_out;
 
 	assert(font != NULL && text != NULL);
@@ -537,7 +537,7 @@ void nsfont_position_in_string(struct font_data *font, const char *text,
 					&block, NULL, 0,
 					&split, &x_out, NULL, NULL);
 			split = &text[back_mapP[split - loc_text]];
-			free(loc_text); free(back_mapP);
+			free((void *)loc_text); free((void *)back_mapP);
 			break;
 		}
 		default:
@@ -572,7 +572,7 @@ char *nsfont_split(struct font_data *font, const char *text,
 {
 	os_error *error;
 	font_scan_block block;
-	char *split;
+	const char *split;
 
 	assert(font != NULL && text != NULL);
 
@@ -623,7 +623,7 @@ char *nsfont_split(struct font_data *font, const char *text,
 					&split,
 					used_width, NULL, NULL);
 			split = &text[back_mapP[split - loc_text]];
-			free(loc_text); free(back_mapP);
+			free((void *)loc_text); free((void *)back_mapP);
 			break;
 		}
 		default:
@@ -687,7 +687,7 @@ void nsfont_paint(struct font_data *data, const char *text,
 			error = xfont_paint((font_f)data->handle, loc_text,
 					flags, xpos, ypos, NULL,
 					trfm, 0);
-			free(loc_text);
+			free((void *)loc_text);
 			break;
 		}
 		default:
@@ -770,7 +770,7 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 			*rolength = length;
 			*rofontname = fontname;
 			*consumed = length;
-			*width = rowidth / 800;
+			*width = (unsigned int)rowidth / 800;
 			break;
 		}
 		case FONTTYPE_STANDARD_LATIN1: {
@@ -787,15 +787,15 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 					0x7fffffff, 0x7fffffff,
 					NULL,
 					NULL, 0,
-					NULL, &width, NULL, NULL);
+					NULL, &rowidth, NULL, NULL);
 			if (error != NULL) {
-				free(*rotext); *rotext = NULL;
+				free((void *)*rotext); *rotext = NULL;
 				return;
 			}
 			*rolength = strlen(*rotext);
 			*rofontname = font_table[font->id];
 			*consumed = length;
-			*width = rowidth / 800;
+			*width = (unsigned int)rowidth / 800;
 			break;
 		}
 		default:

@@ -95,7 +95,7 @@ bool save_as_draw(struct content *c, const char *path)
 	box = c->data.html.layout->children;
 	current_width = c->available_width;
 
-	if ((diagram = drawbuf_claim(sizeof(drawfile_diagram_base), DrawBuf_eHeader)) == NULL)
+	if ((diagram = (drawfile_diagram_base *)drawbuf_claim(sizeof(drawfile_diagram_base), DrawBuf_eHeader)) == NULL)
 		goto draw_save_error;
 
 	/* write the Draw diagram */
@@ -273,7 +273,7 @@ static bool drawbuf_save_file(const char *drawfilename)
 	if (oDrawBuf.numFonts > 0) {
 		drawfile_object *dro;
 
-		if ((dro = drawbuf_claim(8, DrawBuf_eFontTable)) == NULL)
+		if ((dro = (drawfile_object *)drawbuf_claim(8, DrawBuf_eFontTable)) == NULL)
 			goto file_save_error;
 
 		dro->type = drawfile_TYPE_FONT_TABLE;
@@ -347,7 +347,7 @@ bool add_options(void)
 	drawfile_object *dro;
 	drawfile_options *dfo;
 
-	if ((dro = drawbuf_claim(8 + sizeof(drawfile_options), DrawBuf_eBody)) == NULL)
+	if ((dro = (drawfile_object *)drawbuf_claim(8 + sizeof(drawfile_options), DrawBuf_eBody)) == NULL)
 		return false;
 
 	dro->type = drawfile_TYPE_OPTIONS;
@@ -825,7 +825,6 @@ static bool add_text(struct box *box, unsigned long cbc, long x, long y)
 				&rotext,
 				&rolength,
 				&consumed);
-		LOG(("txtenum <%.*s> (%d bytes), returned width %d, font name <%s>, RISC OS text <%.*s>, consumed %d\n", txt_len, txt, txt_len, width, rofontname, rolength, rotext, consumed));
 		/* Error happened ? */
 		if (rotext == NULL)
 			return false;
@@ -859,7 +858,7 @@ static bool add_text(struct box *box, unsigned long cbc, long x, long y)
 			dt->text[rolength++] = 0;
 		} while (rolength % 4);
 
-		free(rotext);
+		free((void *)rotext);
 
 		/* Go to next chunk : */
 		x += width * 512;
