@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.6 2002/12/23 20:06:21 bursa Exp $
+ * $Id: browser.c,v 1.7 2002/12/23 20:19:53 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -238,8 +238,10 @@ void browser_window_reformat(struct browser_window* bw)
 struct history* history_create(char* desc, char* url)
 {
   struct history* h = xcalloc(1, sizeof(struct history));
+  LOG(("desc = %s, url = %s", desc, url));
   h->description = xstrdup(desc);
   h->url = xstrdup(url);
+  LOG(("return h = %p", h));
   return h;
 }
 
@@ -272,6 +274,7 @@ void browser_window_forward(struct browser_window* bw)
 void history_remember(struct history* current, char* desc, char* url)
 {
   struct history* h;
+  LOG(("current = %p, desc = %s, url = %s", current, desc, url));
   assert(current != NULL);
 
   /* forget later history items */
@@ -292,7 +295,8 @@ void history_remember(struct history* current, char* desc, char* url)
 
   current->later = history_create(desc, url);
   current->later->earlier = current;
-  return;
+
+  LOG(("end"));
 }
 
 
