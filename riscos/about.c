@@ -21,6 +21,7 @@
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
+#include "oslib/fileswitch.h"
 #include "oslib/osargs.h"
 #include "oslib/osfile.h"
 #include "oslib/osfind.h"
@@ -110,6 +111,7 @@ void about_create(void) {
   FILE *fp;
   char *buf, *val, var[20], *ptype, *pdetails, *fname, *furl, *p, *leafname;
   int i, nofiles, j, w, h, size, pneeded;
+  fileswitch_object_type fot;
   os_error *e;
 
   abt = (struct about_page*)xcalloc(1, sizeof(*abt));
@@ -152,24 +154,26 @@ void about_create(void) {
       /* count files which match <Plugin$About_i>.About* */
       sprintf(buf, "%s.About*", val);
       xosfscontrol_count(buf,0,0,0,0,0,0,&nofiles);
+      xfree(buf);
 
       for (j=0; j!=nofiles; j++) {
         /* get plugin details */
+        buf = xcalloc(strlen(val) + 20, sizeof(char));
         if (j == 0) {
           sprintf(buf, "%s.About", val);
         }
         else {
           sprintf(buf, "%s.About%2.2d", val, j);
         }
-        e = xosfile_read_stamped_no_path(buf,0,0,0,&size,0,0);
+        e = xosfile_read_stamped_no_path(buf,&fot,0,0,&size,0,0);
 
         /* If only one file, name can be "About" or "About00" */
-        if((e && j == 0) || size < 0) {
+        if(e || (j == 0 && (int)fot != 1)) {
           sprintf(buf, "%s.About%2.2d", val, j);
-          e = xosfile_read_stamped_no_path(buf,0,0,0,&size,0,0);
+          e = xosfile_read_stamped_no_path(buf,&fot,0,0,&size,0,0);
         }
         /* ok, no file found. try again */
-        if(e || size < 0) {
+        if(e || (int)fot != 1) {
           continue;
         }
 
@@ -182,20 +186,21 @@ void about_create(void) {
         /* now see if there's an image to display */
         sprintf(buf, "%s.%2.2d", val, j);
         LOG(("buf: %s", buf));
-        e = xosfile_read_stamped_no_path(buf,0,0,0,&size,0,0);
+        e = xosfile_read_stamped_no_path(buf,&fot,0,0,0,0,0);
 
-        if(e || size < 0) {
+        if(e || (int)fot != 1) {
           sprintf(buf, "%s.%2.2d*", val, j);
           LOG(("buf: %s", buf));
-          e = xosfile_read_stamped_no_path(buf,0,0,0,&size,0,0);
+          e = xosfile_read_stamped_no_path(buf,&fot,0,0,0,0,0);
 
-          if(e || size < 0) {
+          if(e || (int)fot != 1) {
             /* Type 1: no image file */
             furl = xcalloc(strlen(paboutpl1) + strlen(ptype) + strlen(pdetails) + 10, sizeof(char));
             sprintf(furl, paboutpl1, ptype, pdetails);
             LOG(("furl: %s", furl));
             abt->plugd = new_plugin(abt->plugd, furl);
             xfree(pdetails);
+            xfree(buf);
             continue;
           }
           else {
@@ -206,7 +211,7 @@ void about_create(void) {
             sprintf(buf, "%s.", val);
             LOG(("buf: %s", buf));
             xosfscontrol_canonicalise_path(var, 0, 0, buf, 0, &pneeded);
-            fname = xcalloc((10-pneeded), sizeof(char));
+            fname = xcalloc((unsigned int)(10-pneeded), sizeof(char));
             xosfscontrol_canonicalise_path(var, fname, 0, buf,
                                                           (10-pneeded), 0);
             LOG(("fname: %s", fname));
@@ -229,6 +234,7 @@ void about_create(void) {
             abt->plugd = new_plugin(abt->plugd, furl);
             xfree(fname);
             xfree(pdetails);
+            xfree(buf);
             continue;
           }
         }
@@ -246,6 +252,7 @@ void about_create(void) {
           abt->plugd = new_plugin(abt->plugd, furl);
           xfree(fname);
           xfree(pdetails);
+          xfree(buf);
         }
       }
       if (buf != 0) {
