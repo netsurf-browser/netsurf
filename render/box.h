@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.15 2002/12/30 22:56:30 monkeyson Exp $
+ * $Id: box.h,v 1.16 2003/01/02 13:26:43 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -93,6 +93,7 @@ struct box {
 	unsigned int length;
 	unsigned int columns;
 	struct box * next;
+	struct box * prev;
 	struct box * children;
 	struct box * last;
 	struct box * parent;

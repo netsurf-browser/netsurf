@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.25 2002/12/30 22:56:30 monkeyson Exp $
+ * $Id: box.c,v 1.26 2003/01/02 13:26:43 bursa Exp $
  */
 
 #include <assert.h>
@@ -48,10 +48,13 @@ void box_normalise_inline_container(struct box *cont);
 
 void box_add_child(struct box * parent, struct box * child)
 {
-	if (parent->children != 0)	/* has children already */
+	if (parent->children != 0) {	/* has children already */
 		parent->last->next = child;
-	else			/* this is the first child */
+		child->prev = parent->last;
+	} else {			/* this is the first child */
 		parent->children = child;
+		child->prev = 0;
+	}
 
 	parent->last = child;
 	child->parent = parent;
@@ -75,6 +78,7 @@ struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
 	box->length = 0;
 	box->columns = 1;
 	box->next = 0;
+	box->prev = 0;
 	box->children = 0;
 	box->last = 0;
 	box->parent = 0;
@@ -208,13 +212,23 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			(n->type == XML_ELEMENT_NODE && (strcmp((const char *) n->name, "img") == 0)) ||
 			(n->type == XML_ELEMENT_NODE && (style->float_ == CSS_FLOAT_LEFT ||
 							 style->float_ == CSS_FLOAT_RIGHT))) {
+		char * text = 0;
+		int ignore;
+
+		if (n->type == XML_TEXT_NODE)
+			text = squash_whitespace(tolat1(n->content));
+		ignore = n->type == XML_TEXT_NODE && text[0] == ' ' && text[1] == 0;
+
 		/* text nodes are converted to inline boxes, wrapped in an inline container block */
-		if (inline_container == 0) {  /* this is the first inline node: make a container */
+		if (inline_container == 0 && !ignore) {
+			/* this is the first inline node: make a container */
 			inline_container = xcalloc(1, sizeof(struct box));
 			inline_container->type = BOX_INLINE_CONTAINER;
 			box_add_child(parent, inline_container);
 		}
-		if (n->type == XML_TEXT_NODE) {
+		if (ignore) {
+			xfree(text);
+		} else if (n->type == XML_TEXT_NODE) {
 			LOG2("TEXT NODE");
 			if (current_textarea != 0)
 			{
@@ -233,7 +247,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			{
 			LOG2(("text node"));
 			box = box_create(n, BOX_INLINE, parent_style, href);
-			box->text = squash_whitespace(tolat1(n->content));
+			box->text = text;
 			box->length = strlen(box->text);
 			if (box->text[box->length - 1] == ' ') {
 				box->space = 1;
@@ -486,20 +500,32 @@ void box_dump(struct box * box, unsigned int depth)
 
 /**
  * ensure the box tree is correctly nested
+ *
+ * parent		permitted child nodes
+ * BLOCK		BLOCK, INLINE_CONTAINER, TABLE
+ * INLINE_CONTAINER	INLINE, FLOAT_LEFT, FLOAT_RIGHT
+ * INLINE		none
+ * TABLE		at least 1 TABLE_ROW_GROUP
+ * TABLE_ROW_GROUP	at least 1 TABLE_ROW
+ * TABLE_ROW		at least 1 TABLE_CELL
+ * TABLE_CELL		BLOCK, INLINE_CONTAINER, TABLE (same as BLOCK)
+ * FLOAT_(LEFT|RIGHT)	exactly 1 BLOCK or TABLE
  */
 
 void box_normalise_block(struct box *block)
 {
 	struct box *child;
-	struct box *prev_child = 0;
+	struct box *next_child;
 	struct box *table;
 	struct css_style *style;
 
-	LOG(("block %p", block));
+	assert(block != 0);
 	assert(block->type == BOX_BLOCK || block->type == BOX_TABLE_CELL);
+	LOG(("block %p, block->type", block, block->type));
 
-	for (child = block->children; child != 0; prev_child = child, child = child->next) {
-		fprintf(stderr, "child->type = %d\n", child->type);
+	for (child = block->children; child != 0; child = next_child) {
+		LOG(("child %p, child->type = %d", child, child->type));
+		next_child = child->next;	/* child may be destroyed */
 		switch (child->type) {
 			case BOX_BLOCK:
 				/* ok */
@@ -526,42 +552,44 @@ void box_normalise_block(struct box *block)
 				memcpy(style, block->style, sizeof(struct css_style));
 				css_cascade(style, &css_blank_style);
 				table = box_create(0, BOX_TABLE, style, block->href);
-				if (prev_child == 0)
+				if (child->prev == 0)
 					block->children = table;
 				else
-					prev_child->next = table;
+					child->prev->next = table;
+				table->prev = child->prev;
 				while (child != 0 && (
 						child->type == BOX_TABLE_ROW_GROUP ||
 						child->type == BOX_TABLE_ROW ||
 						child->type == BOX_TABLE_CELL)) {
 					box_add_child(table, child);
-					prev_child = child;
 					child = child->next;
 				}
-				prev_child->next = 0;
-				table->next = child;
+				table->last->next = 0;
+				table->next = next_child = child;
 				table->parent = block;
 				box_normalise_table(table);
-				child = table;
 				break;
 			default:
 				assert(0);
 		}
 	}
+	LOG(("block %p done", block));
 }
 
 
 void box_normalise_table(struct box *table)
 {
 	struct box *child;
-	struct box *prev_child = 0;
+	struct box *next_child;
 	struct box *row_group;
 	struct css_style *style;
 
-	LOG(("table %p", table));
+	assert(table != 0);
 	assert(table->type == BOX_TABLE);
+	LOG(("table %p", table));
 
-	for (child = table->children; child != 0; prev_child = child, child = child->next) {
+	for (child = table->children; child != 0; child = next_child) {
+		next_child = child->next;
 		switch (child->type) {
 			case BOX_TABLE_ROW_GROUP:
 				/* ok */
@@ -578,10 +606,11 @@ void box_normalise_table(struct box *table)
 				memcpy(style, table->style, sizeof(struct css_style));
 				css_cascade(style, &css_blank_style);
 				row_group = box_create(0, BOX_TABLE_ROW_GROUP, style, table->href);
-				if (prev_child == 0)
+				if (child->prev == 0)
 					table->children = row_group;
 				else
-					prev_child->next = row_group;
+					child->prev->next = row_group;
+				row_group->prev = child->prev;
 				while (child != 0 && (
 						child->type == BOX_BLOCK ||
 						child->type == BOX_INLINE_CONTAINER ||
@@ -589,14 +618,12 @@ void box_normalise_table(struct box *table)
 						child->type == BOX_TABLE_ROW ||
 						child->type == BOX_TABLE_CELL)) {
 					box_add_child(row_group, child);
-					prev_child = child;
 					child = child->next;
 				}
-				prev_child->next = 0;
-				row_group->next = child;
+				row_group->last->next = 0;
+				row_group->next = next_child = child;
 				row_group->parent = table;
 				box_normalise_table_row_group(row_group);
-				child = row_group;
 				break;
 			case BOX_INLINE:
 			case BOX_FLOAT_LEFT:
@@ -610,20 +637,35 @@ void box_normalise_table(struct box *table)
 				assert(0);
 		}
 	}
+
+	if (table->children == 0) {
+		LOG(("table->children == 0, removing"));
+		if (table->prev == 0)
+			table->parent->children = table->next;
+		else
+			table->prev->next = table->next;
+		if (table->next != 0)
+			table->next->prev = table->prev;
+		box_free_box(table);
+	}
+
+	LOG(("table %p done", table));
 }
 
 
 void box_normalise_table_row_group(struct box *row_group)
 {
 	struct box *child;
-	struct box *prev_child = 0;
+	struct box *next_child;
 	struct box *row;
 	struct css_style *style;
 
-	LOG(("row_group %p", row_group));
+	assert(row_group != 0);
 	assert(row_group->type == BOX_TABLE_ROW_GROUP);
+	LOG(("row_group %p", row_group));
 
-	for (child = row_group->children; child != 0; prev_child = child, child = child->next) {
+	for (child = row_group->children; child != 0; child = next_child) {
+		next_child = child->next;
 		switch (child->type) {
 			case BOX_TABLE_ROW:
 				/* ok */
@@ -639,10 +681,11 @@ void box_normalise_table_row_group(struct box *row_group)
 				memcpy(style, row_group->style, sizeof(struct css_style));
 				css_cascade(style, &css_blank_style);
 				row = box_create(0, BOX_TABLE_ROW, style, row_group->href);
-				if (prev_child == 0)
+				if (child->prev == 0)
 					row_group->children = row;
 				else
-					prev_child->next = row;
+					child->prev->next = row;
+				row->prev = child->prev;
 				while (child != 0 && (
 						child->type == BOX_BLOCK ||
 						child->type == BOX_INLINE_CONTAINER ||
@@ -650,14 +693,12 @@ void box_normalise_table_row_group(struct box *row_group)
 						child->type == BOX_TABLE_ROW_GROUP ||
 						child->type == BOX_TABLE_CELL)) {
 					box_add_child(row, child);
-					prev_child = child;
 					child = child->next;
 				}
-				prev_child->next = 0;
-				row->next = child;
+				row->last->next = 0;
+				row->next = next_child = child;
 				row->parent = row_group;
 				box_normalise_table_row(row);
-				child = row;
 				break;
 			case BOX_INLINE:
 			case BOX_FLOAT_LEFT:
@@ -670,21 +711,36 @@ void box_normalise_table_row_group(struct box *row_group)
 				assert(0);
 		}
 	}
+
+	if (row_group->children == 0) {
+		LOG(("row_group->children == 0, removing"));
+		if (row_group->prev == 0)
+			row_group->parent->children = row_group->next;
+		else
+			row_group->prev->next = row_group->next;
+		if (row_group->next != 0)
+			row_group->next->prev = row_group->prev;
+		box_free_box(row_group);
+	}
+
+	LOG(("row_group %p done", row_group));
 }
 
 
 void box_normalise_table_row(struct box *row)
 {
 	struct box *child;
-	struct box *prev_child = 0;
+	struct box *next_child;
 	struct box *cell;
 	struct css_style *style;
 	unsigned int columns = 0;
 
-	LOG(("row %p", row));
+	assert(row != 0);
 	assert(row->type == BOX_TABLE_ROW);
+	LOG(("row %p", row));
 
-	for (child = row->children; child != 0; prev_child = child, child = child->next) {
+	for (child = row->children; child != 0; child = next_child) {
+		next_child = child->next;
 		switch (child->type) {
 			case BOX_TABLE_CELL:
 				/* ok */
@@ -701,10 +757,11 @@ void box_normalise_table_row(struct box *row)
 				memcpy(style, row->style, sizeof(struct css_style));
 				css_cascade(style, &css_blank_style);
 				cell = box_create(0, BOX_TABLE_CELL, style, row->href);
-				if (prev_child == 0)
+				if (child->prev == 0)
 					row->children = cell;
 				else
-					prev_child->next = cell;
+					child->prev->next = cell;
+				cell->prev = child->prev;
 				while (child != 0 && (
 						child->type == BOX_BLOCK ||
 						child->type == BOX_INLINE_CONTAINER ||
@@ -712,14 +769,12 @@ void box_normalise_table_row(struct box *row)
 						child->type == BOX_TABLE_ROW_GROUP ||
 						child->type == BOX_TABLE_ROW)) {
 					box_add_child(cell, child);
-					prev_child = child;
 					child = child->next;
 				}
-				prev_child->next = 0;
-				cell->next = child;
+				cell->last->next = 0;
+				cell->next = next_child = child;
 				cell->parent = row;
 				box_normalise_block(cell);
-				child = cell;
 				columns++;
 				break;
 			case BOX_INLINE:
@@ -735,18 +790,33 @@ void box_normalise_table_row(struct box *row)
 	}
 	if (row->parent->parent->columns < columns)
 		row->parent->parent->columns = columns;
+
+	if (row->children == 0) {
+		LOG(("row->children == 0, removing"));
+		if (row->prev == 0)
+			row->parent->children = row->next;
+		else
+			row->prev->next = row->next;
+		if (row->next != 0)
+			row->next->prev = row->prev;
+		box_free_box(row);
+	}
+
+	LOG(("row %p done", row));
 }
 
 
 void box_normalise_inline_container(struct box *cont)
 {
 	struct box *child;
-	struct box *prev_child = 0;
+	struct box *next_child;
 
-	LOG(("cont %p", cont));
+	assert(cont != 0);
 	assert(cont->type == BOX_INLINE_CONTAINER);
+	LOG(("cont %p", cont));
 
-	for (child = cont->children; child != 0; prev_child = child, child = child->next) {
+	for (child = cont->children; child != 0; child = next_child) {
+		next_child = child->next;
 		switch (child->type) {
 			case BOX_INLINE:
 				/* ok */
@@ -776,6 +846,7 @@ void box_normalise_inline_container(struct box *cont)
 				assert(0);
 		}
 	}
+	LOG(("cont %p done", cont));
 }
 
 
@@ -785,7 +856,7 @@ void gadget_free(struct gui_gadget* g)
 
 	if (g->name != 0)
 		xfree(g->name);
-	
+
 	switch (g->type)
 	{
 		case GADGET_HIDDEN:
@@ -843,6 +914,11 @@ void box_free(struct box *box)
 		box_free(box->next);
 
 	/* last this box */
+	box_free_box(box);
+}
+
+void box_free_box(struct box *box)
+{
 //	if (box->style != 0)
 //		free(box->style);
 	if (box->gadget != 0)
@@ -855,7 +931,7 @@ void box_free(struct box *box)
 	{
 		free((void*)box->img);
 	}
-	
+
 	if (box->text != 0)
 		free((void*)box->text);
 	/* only free href if we're the top most user */
@@ -887,7 +963,7 @@ struct box* box_image(xmlNode * n, struct css_style* style, char* href)
 	}
 	else
 		box->img->width = 24;
-	
+
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "height")))
 	{
 		box->img->height = atoi(s);
@@ -935,7 +1011,7 @@ struct box* box_textarea(xmlNode* n, struct css_style* style, struct form* curre
 	}
 	else
 		box->gadget->data.textarea.rows = 16;
-	
+
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "name")))
 	{
 		box->gadget->name = s;
@@ -1098,7 +1174,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 					box->gadget->data.radio.selected = -1;
 				free(s);
 			}
-			
+
 			if ((s = (char *) xmlGetProp(n, (xmlChar *) "value"))) {
 				if (type[0] == 'c')
 					box->gadget->data.checkbox.value = s;
@@ -1126,7 +1202,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			if ((s = (char *) xmlGetProp(n, (xmlChar *) "value"))) {
 				box->gadget->data.actionbutt.label = s;
 			}
-			else 
+			else
 			{
 				box->gadget->data.actionbutt.label = strdup(type);
 				box->gadget->data.actionbutt.label[0] = toupper(type[0]);
@@ -1164,7 +1240,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			box->gadget->data.textbox.text = xcalloc(box->gadget->data.textbox.maxlength + 1, sizeof(char));
 
 			if ((s = (char *) xmlGetProp(n, (xmlChar *) "value"))) {
-				strncpy(box->gadget->data.textbox.text, s, 
+				strncpy(box->gadget->data.textbox.text, s,
 					box->gadget->data.textbox.maxlength);
 				free(s);
 			}
@@ -1184,7 +1260,7 @@ struct form* box_form(xmlNode* n)
 	char* s;
 
 	form = xcalloc(1, sizeof(struct form*));
-	
+
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "action"))) {
 		form->action = s;
 	}
