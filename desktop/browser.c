@@ -1435,7 +1435,6 @@ void browser_window_form_select(struct browser_window *bw,
 	struct form_option *o;
 	int count;
 	struct box *inline_box = control->box->children->children;
-	int x, y;
 
 	for (count = 0, o = control->data.select.items;
 			o != NULL;
@@ -1474,9 +1473,7 @@ void browser_window_form_select(struct browser_window *bw,
 		inline_box->length = strlen(inline_box->text);
 	inline_box->width = control->box->width;
 
-	box_coords(control->box, &x, &y);
-	gui_window_redraw(bw->window, x, y,
-			x + control->box->width, y + control->box->height);
+	browser_redraw_box(bw->current_content, control->box);
 }
 
 
