@@ -1268,7 +1268,7 @@ void box_normalise_inline_container(struct box *cont)
 
 void gadget_free(struct gui_gadget* g)
 {
-	struct formoption* o;
+	struct formoption *o, *o1;
 
 	if (g->name != 0)
 		xmlFree(g->name);
@@ -1308,8 +1308,9 @@ void gadget_free(struct gui_gadget* g)
 					xmlFree(o->text);
 				if (o->value != 0)
 					xmlFree(o->value);
+				o1 = o->next;
 				xfree(o);
-				o = o->next;
+				o = o1;
 			}
 			break;
 	}
