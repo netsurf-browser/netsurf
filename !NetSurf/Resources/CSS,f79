@@ -135,23 +135,23 @@ input { background-color: #fff; color: #000; width: 10em;
 	border-color: #000; border-style: solid; overflow: hidden;
 	padding: 0 2px; }
 input[type=button], input[type=reset], input[type=submit], button {
-	background-color: #ddd; color: #000; width: auto;
-	border-width: medium; border-color: #ccc;
+	background-color: #d9d9d9; color: #000; width: auto;
+	border-width: medium; border-color: #d9d9d9;
 	border-style: outset; height: auto; text-align: center;}
 input[type=image] { background-color: #ddd; color: #000; width: auto;
 	height: auto; }
 input[type=checkbox], input[type=radio] { background-color: transparent;
 	padding: 0 0.1em; border: 0; width: 1em; height: 1em; }
-input[type=file] { background-color: #ddd; color: #000;
-	border-width: medium; border-color: #ccc;
+input[type=file] { background-color: #d9d9d9; color: #000;
+	border-width: medium; border-color: #d9d9d9;
 	border-style: inset; width: 10em; height: 1.5em;
 	font-style: italic; }
 input[align=left] { float: left; }
 input[align=right] { float: right; }
 
-select { background-color: #ddd; color: #000; width: 10em;
+select { background-color: #d9d9d9; color: #000; width: 10em;
 	height: 1.5em; text-align: left; border-width: medium;
-	border-color: #ccc; border-style: inset;
+	border-color: #d9d9d9; border-style: inset;
 	overflow: hidden; padding: 0 2px; }
 
 textarea { background-color: #fff; color: #000; text-align: left;
