@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.28 2003/01/06 23:53:39 bursa Exp $
+ * $Id: box.c,v 1.29 2003/01/07 18:21:58 bursa Exp $
  */
 
 #include <assert.h>
@@ -212,17 +212,16 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			box = box_select(n, style, current_form);
 			current_select = box->gadget;
 			add_gadget_element(elements, box->gadget);
-
-		} else if (strcmp((const char *) n->name, "option") == 0) {
-			char * content = xmlNodeGetContent(n);
-			char * thistext = tolat1(content);
-			LOG(("option"));
-			current_option = box_option(n, style, current_select);
-			LOG(("adding to option"));
-			option_addtext(current_option, thistext);
-			LOG(("freeing thistext"));
-			LOG(("arse"));
-			free(content);
+			for (c = n->children; c != 0; c = c->next) {
+				if (strcmp((const char *) c->name, "option") == 0) {
+					char * content = xmlNodeGetContent(c);
+					char * thistext = tolat1(content);
+					LOG(("option"));
+					current_option = box_option(c, style, current_select);
+					option_addtext(current_option, thistext);
+					free(content);
+				}
+			}
 
 		} else if (strcmp((const char *) n->name, "input") == 0) {
 			LOG(("input"));
