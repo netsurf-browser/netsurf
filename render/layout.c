@@ -1451,7 +1451,7 @@ bool layout_table(struct box *table, int available_width,
 					free(xs);
 					return false;
 				}
-				/* warning: c->descendant_y0 and c->descendant_y1 used as temporary 
+				/* warning: c->descendant_y0 and c->descendant_y1 used as temporary
 				 * storage until after vertical alignment is complete */
 				c->descendant_y0 = c->height;
 				c->descendant_y1 = c->padding[BOTTOM];
@@ -1554,6 +1554,7 @@ bool layout_table(struct box *table, int available_width,
 						c->padding[BOTTOM] -= spare_height;
 						layout_move_children(c, 0, spare_height);
 						break;
+					case CSS_VERTICAL_ALIGN_NOT_SET:
 					case CSS_VERTICAL_ALIGN_INHERIT:
 						assert(0);
 						break;

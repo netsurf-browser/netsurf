@@ -26,7 +26,8 @@ while (<>) {
     print H "extern const char * const ${name}_name[];\n";
     print H "typedef enum {\n	${uc_name}_";
     print H join ",\n	${uc_name}_", @uc_enum;
-    print H ",\n	${uc_name}_UNKNOWN\n";
+    print H ",\n	${uc_name}_UNKNOWN";
+    print H ",\n	${uc_name}_NOT_SET\n";
     print H "} $name;\n";
     print H "$name ${name}_parse(const char * const s, int length);\n\n";
     

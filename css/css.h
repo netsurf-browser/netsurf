@@ -33,6 +33,7 @@ typedef unsigned long colour;  /* 0xbbggrr */
 #define TRANSPARENT 0x1000000
 #define CSS_COLOR_INHERIT 0x2000000
 #define CSS_COLOR_NONE 0x3000000
+#define CSS_COLOR_NOT_SET 0x4000000
 #define TOP 0
 #define RIGHT 1
 #define BOTTOM 2
@@ -51,13 +52,15 @@ typedef enum {
 	CSS_TEXT_DECORATION_BLINK = 0x4,
 	CSS_TEXT_DECORATION_LINE_THROUGH = 0x8,
 	CSS_TEXT_DECORATION_OVERLINE = 0x10,
-	CSS_TEXT_DECORATION_UNKNOWN = 0x1000
+	CSS_TEXT_DECORATION_UNKNOWN = 0x1000,
+	CSS_TEXT_DECORATION_NOT_SET = 0x2000
 } css_text_decoration;
 
 typedef enum {
 	CSS_BACKGROUND_IMAGE_NONE,
 	CSS_BACKGROUND_IMAGE_INHERIT,
-	CSS_BACKGROUND_IMAGE_URI
+	CSS_BACKGROUND_IMAGE_URI,
+	CSS_BACKGROUND_IMAGE_NOT_SET
 } css_background_image_type;
 
 /** Part of struct css_style, for convenience. */
@@ -65,7 +68,8 @@ struct css_background_position {
 	enum {
 		CSS_BACKGROUND_POSITION_LENGTH,
 		CSS_BACKGROUND_POSITION_PERCENT,
-		CSS_BACKGROUND_POSITION_INHERIT
+		CSS_BACKGROUND_POSITION_INHERIT,
+		CSS_BACKGROUND_POSITION_NOT_SET
 	} pos;
 	union {
 		float percent;
@@ -75,20 +79,23 @@ struct css_background_position {
 
 struct css_border_width {
 	enum { CSS_BORDER_WIDTH_INHERIT,
-	       CSS_BORDER_WIDTH_LENGTH } width;
+	       CSS_BORDER_WIDTH_LENGTH,
+	       CSS_BORDER_WIDTH_NOT_SET } width;
 	struct css_length value;
 };
 
 typedef enum {
 	CSS_LIST_STYLE_IMAGE_INHERIT,
 	CSS_LIST_STYLE_IMAGE_NONE,
-	CSS_LIST_STYLE_IMAGE_URI
+	CSS_LIST_STYLE_IMAGE_URI,
+	CSS_LIST_STYLE_IMAGE_NOT_SET
 } css_list_style_image_type;
 
 typedef enum {
 	CSS_OUTLINE_COLOR_INHERIT,
 	CSS_OUTLINE_COLOR_COLOR,
-	CSS_OUTLINE_COLOR_INVERT
+	CSS_OUTLINE_COLOR_INVERT,
+	CSS_OUTLINE_COLOR_NOT_SET
 } css_outline_color_type;
 
 typedef enum {
@@ -102,7 +109,8 @@ typedef enum {
 	CSS_VERTICAL_ALIGN_BOTTOM,
 	CSS_VERTICAL_ALIGN_TEXT_BOTTOM,
 	CSS_VERTICAL_ALIGN_LENGTH,
-	CSS_VERTICAL_ALIGN_PERCENT
+	CSS_VERTICAL_ALIGN_PERCENT,
+	CSS_VERTICAL_ALIGN_NOT_SET
 } css_vertical_align_type;
 
 
@@ -130,7 +138,8 @@ struct css_style {
 	css_border_collapse border_collapse;
 	struct {
 		enum { CSS_BORDER_SPACING_INHERIT,
-		       CSS_BORDER_SPACING_LENGTH } border_spacing;
+		       CSS_BORDER_SPACING_LENGTH,
+		       CSS_BORDER_SPACING_NOT_SET } border_spacing;
 		struct css_length horz;
 		struct css_length vert;
 	} border_spacing;
@@ -141,7 +150,8 @@ struct css_style {
 	struct {
 		enum { CSS_CLIP_INHERIT,
 		       CSS_CLIP_AUTO,
-		       CSS_CLIP_RECT } clip;
+		       CSS_CLIP_RECT,
+		       CSS_CLIP_NOT_SET } clip;
 		struct {
 			enum { CSS_CLIP_RECT_AUTO,
 			       CSS_CLIP_RECT_LENGTH } rect;
@@ -165,7 +175,8 @@ struct css_style {
 		enum { CSS_FONT_SIZE_INHERIT,
 		       CSS_FONT_SIZE_ABSOLUTE,
 		       CSS_FONT_SIZE_LENGTH,
-		       CSS_FONT_SIZE_PERCENT } size;
+		       CSS_FONT_SIZE_PERCENT,
+		       CSS_FONT_SIZE_NOT_SET } size;
 		union {
 			struct css_length length;
 			float absolute;
@@ -179,14 +190,16 @@ struct css_style {
 	struct {
 		enum { CSS_HEIGHT_INHERIT,
 		       CSS_HEIGHT_AUTO,
-		       CSS_HEIGHT_LENGTH } height;
+		       CSS_HEIGHT_LENGTH,
+		       CSS_HEIGHT_NOT_SET } height;
 		struct css_length length;
 	} height;
 
 	struct {
 		enum { CSS_LETTER_SPACING_INHERIT,
 		       CSS_LETTER_SPACING_NORMAL,
-		       CSS_LETTER_SPACING_LENGTH } letter_spacing;
+		       CSS_LETTER_SPACING_LENGTH,
+		       CSS_LETTER_SPACING_NOT_SET } letter_spacing;
 		struct css_length length;
 	} letter_spacing;
 
@@ -194,7 +207,8 @@ struct css_style {
 		enum { CSS_LINE_HEIGHT_INHERIT,
 		       CSS_LINE_HEIGHT_ABSOLUTE,
 		       CSS_LINE_HEIGHT_LENGTH,
-		       CSS_LINE_HEIGHT_PERCENT } size;
+		       CSS_LINE_HEIGHT_PERCENT,
+		       CSS_LINE_HEIGHT_NOT_SET } size;
 		union {
 			float absolute;
 			struct css_length length;
@@ -215,7 +229,8 @@ struct css_style {
 		enum { CSS_MARGIN_INHERIT,
 		       CSS_MARGIN_LENGTH,
 		       CSS_MARGIN_PERCENT,
-		       CSS_MARGIN_AUTO } margin;
+		       CSS_MARGIN_AUTO,
+		       CSS_MARGIN_NOT_SET } margin;
 		union {
 			struct css_length length;
 			float percent;
@@ -227,7 +242,8 @@ struct css_style {
 		enum { CSS_MAX_HEIGHT_INHERIT,
 		       CSS_MAX_HEIGHT_NONE,
 		       CSS_MAX_HEIGHT_LENGTH,
-		       CSS_MAX_HEIGHT_PERCENT } max_height;
+		       CSS_MAX_HEIGHT_PERCENT,
+		       CSS_MAX_HEIGHT_NOT_SET } max_height;
 		union {
 			struct css_length length;
 			float percent;
@@ -237,7 +253,8 @@ struct css_style {
 		enum { CSS_MAX_WIDTH_INHERIT,
 		       CSS_MAX_WIDTH_NONE,
 		       CSS_MAX_WIDTH_LENGTH,
-		       CSS_MAX_WIDTH_PERCENT } max_width;
+		       CSS_MAX_WIDTH_PERCENT,
+		       CSS_MAX_WIDTH_NOT_SET } max_width;
 		union {
 			struct css_length length;
 			float percent;
@@ -246,7 +263,8 @@ struct css_style {
 	struct {
 		enum { CSS_MIN_HEIGHT_INHERIT,
 		       CSS_MIN_HEIGHT_LENGTH,
-		       CSS_MIN_HEIGHT_PERCENT } min_height;
+		       CSS_MIN_HEIGHT_PERCENT,
+		       CSS_MIN_HEIGHT_NOT_SET } min_height;
 		union {
 			struct css_length length;
 			float percent;
@@ -255,7 +273,8 @@ struct css_style {
 	struct {
 		enum { CSS_MIN_WIDTH_INHERIT,
 		       CSS_MIN_WIDTH_LENGTH,
-		       CSS_MIN_WIDTH_PERCENT } min_width;
+		       CSS_MIN_WIDTH_PERCENT,
+		       CSS_MIN_WIDTH_NOT_SET } min_width;
 		union {
 			struct css_length length;
 			float percent;
@@ -264,7 +283,8 @@ struct css_style {
 
 	struct {
 		enum { CSS_ORPHANS_INHERIT,
-		       CSS_ORPHANS_INTEGER } orphans;
+		       CSS_ORPHANS_INTEGER,
+		       CSS_ORPHANS_NOT_SET } orphans;
 		int value;
 	} orphans;
 
@@ -283,7 +303,8 @@ struct css_style {
 	struct {
 		enum { CSS_PADDING_INHERIT,
 		       CSS_PADDING_LENGTH,
-		       CSS_PADDING_PERCENT } padding;
+		       CSS_PADDING_PERCENT,
+		       CSS_PADDING_NOT_SET } padding;
 		union {
 			struct css_length length;
 			float percent;
@@ -298,7 +319,8 @@ struct css_style {
 		enum { CSS_POS_INHERIT,
 		       CSS_POS_AUTO,
 		       CSS_POS_PERCENT,
-		       CSS_POS_LENGTH } pos;
+		       CSS_POS_LENGTH,
+		       CSS_POS_NOT_SET } pos;
 		union {
 			struct css_length length;
 			float percent;
@@ -317,7 +339,8 @@ struct css_style {
 	struct {
 		enum { CSS_TEXT_INDENT_INHERIT,
 		       CSS_TEXT_INDENT_LENGTH,
-		       CSS_TEXT_INDENT_PERCENT } size;
+		       CSS_TEXT_INDENT_PERCENT,
+		       CSS_TEXT_INDENT_NOT_SET } size;
 		union {
 		       struct css_length length;
 		       float percent;
@@ -341,7 +364,8 @@ struct css_style {
 
 	struct {
 		enum { CSS_WIDOWS_INHERIT,
-		       CSS_WIDOWS_INTEGER } widows;
+		       CSS_WIDOWS_INTEGER,
+		       CSS_WIDOWS_NOT_SET } widows;
 		int value;
 	} widows;
 
@@ -349,7 +373,8 @@ struct css_style {
 		enum { CSS_WIDTH_INHERIT,
 		       CSS_WIDTH_AUTO,
 		       CSS_WIDTH_LENGTH,
-		       CSS_WIDTH_PERCENT } width;
+		       CSS_WIDTH_PERCENT,
+		       CSS_WIDTH_NOT_SET } width;
 		union {
 			struct css_length length;
 			float percent;
@@ -359,14 +384,16 @@ struct css_style {
 	struct {
 		enum { CSS_WORD_SPACING_INHERIT,
 		       CSS_WORD_SPACING_NORMAL,
-		       CSS_WORD_SPACING_LENGTH } word_spacing;
+		       CSS_WORD_SPACING_LENGTH,
+		       CSS_WORD_SPACING_NOT_SET } word_spacing;
 		struct css_length length;
 	} word_spacing;
 
 	struct {
 		enum { CSS_Z_INDEX_INHERIT,
 		       CSS_Z_INDEX_AUTO,
-		       CSS_Z_INDEX_INTEGER } z_index;
+		       CSS_Z_INDEX_INTEGER,
+		       CSS_Z_INDEX_NOT_SET } z_index;
 		int value;
 	} z_index;
 };

@@ -190,84 +190,84 @@ const struct css_style css_base_style = {
 
 /** Style with no values set. */
 const struct css_style css_empty_style = {
-	CSS_BACKGROUND_ATTACHMENT_INHERIT,
-	CSS_COLOR_INHERIT,
-	{ CSS_BACKGROUND_IMAGE_INHERIT, 0 },
-	{ { CSS_BACKGROUND_POSITION_INHERIT, { 0.0 } },
-	  { CSS_BACKGROUND_POSITION_INHERIT, { 0.0 } } },
-	CSS_BACKGROUND_REPEAT_INHERIT,
-	{ { CSS_COLOR_INHERIT, { CSS_BORDER_WIDTH_INHERIT,
-	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_INHERIT },
-	  { CSS_COLOR_INHERIT, { CSS_BORDER_WIDTH_INHERIT,
-	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_INHERIT },
-	  { CSS_COLOR_INHERIT, { CSS_BORDER_WIDTH_INHERIT,
-	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_INHERIT },
-	  { CSS_COLOR_INHERIT, { CSS_BORDER_WIDTH_INHERIT,
-	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_INHERIT } },
-	CSS_BORDER_COLLAPSE_INHERIT,
-	{ CSS_BORDER_SPACING_INHERIT,
+	CSS_BACKGROUND_ATTACHMENT_NOT_SET,
+	CSS_COLOR_NOT_SET,
+	{ CSS_BACKGROUND_IMAGE_NOT_SET, 0 },
+	{ { CSS_BACKGROUND_POSITION_NOT_SET, { 0.0 } },
+	  { CSS_BACKGROUND_POSITION_NOT_SET, { 0.0 } } },
+	CSS_BACKGROUND_REPEAT_NOT_SET,
+	{ { CSS_COLOR_NOT_SET, { CSS_BORDER_WIDTH_NOT_SET,
+	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NOT_SET },
+	  { CSS_COLOR_NOT_SET, { CSS_BORDER_WIDTH_NOT_SET,
+	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NOT_SET },
+	  { CSS_COLOR_NOT_SET, { CSS_BORDER_WIDTH_NOT_SET,
+	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NOT_SET },
+	  { CSS_COLOR_NOT_SET, { CSS_BORDER_WIDTH_NOT_SET,
+	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NOT_SET } },
+	CSS_BORDER_COLLAPSE_NOT_SET,
+	{ CSS_BORDER_SPACING_NOT_SET,
 	  { 0, CSS_UNIT_PX }, { 0, CSS_UNIT_PX } },
-	CSS_CAPTION_SIDE_INHERIT,
-	CSS_CLEAR_INHERIT,
-	{ CSS_CLIP_INHERIT, { { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } },
+	CSS_CAPTION_SIDE_NOT_SET,
+	CSS_CLEAR_NOT_SET,
+	{ CSS_CLIP_NOT_SET, { { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } },
 	  { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } },
 	  { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } },
 	  { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } } } },
-	CSS_COLOR_INHERIT,
-	CSS_CURSOR_INHERIT,
-	CSS_DIRECTION_INHERIT,
-	CSS_DISPLAY_INHERIT,
-	CSS_EMPTY_CELLS_INHERIT,
-	CSS_FLOAT_INHERIT,
-	CSS_FONT_FAMILY_INHERIT,
-	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_PT } } },
-	CSS_FONT_STYLE_INHERIT,
-	CSS_FONT_VARIANT_INHERIT,
-	CSS_FONT_WEIGHT_INHERIT,
-	{ CSS_HEIGHT_INHERIT, { 1, CSS_UNIT_EM } },
-	{ CSS_LETTER_SPACING_INHERIT, { 0, CSS_UNIT_PX } },
-	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
-	{ CSS_LIST_STYLE_IMAGE_INHERIT, 0 },
-	CSS_LIST_STYLE_POSITION_INHERIT,
-	CSS_LIST_STYLE_TYPE_INHERIT,
-	{ { CSS_MARGIN_INHERIT, { { 0, CSS_UNIT_PX } } },
-	  { CSS_MARGIN_INHERIT, { { 0, CSS_UNIT_PX } } },
-	  { CSS_MARGIN_INHERIT, { { 0, CSS_UNIT_PX } } },
-	  { CSS_MARGIN_INHERIT, { { 0, CSS_UNIT_PX } } } },
-	{ CSS_MAX_HEIGHT_INHERIT, { { 0, CSS_UNIT_PX } } },
-	{ CSS_MAX_WIDTH_INHERIT, { { 0, CSS_UNIT_PX } } },
-	{ CSS_MIN_HEIGHT_INHERIT, { { 0, CSS_UNIT_PX } } },
-	{ CSS_MIN_WIDTH_INHERIT, { { 0, CSS_UNIT_PX } } },
-	{ CSS_ORPHANS_INHERIT, 0 },
-	{ { CSS_OUTLINE_COLOR_INHERIT, CSS_COLOR_INHERIT },
-	  { CSS_BORDER_WIDTH_INHERIT, { 0, CSS_UNIT_PX } },
-	  CSS_BORDER_STYLE_INHERIT },
-	CSS_OVERFLOW_INHERIT,
-	{ { CSS_PADDING_INHERIT, { { 0, CSS_UNIT_PX } } },
-	  { CSS_PADDING_INHERIT, { { 0, CSS_UNIT_PX } } },
-	  { CSS_PADDING_INHERIT, { { 0, CSS_UNIT_PX } } },
-	  { CSS_PADDING_INHERIT, { { 0, CSS_UNIT_PX } } } },
-	CSS_PAGE_BREAK_AFTER_INHERIT,
-	CSS_PAGE_BREAK_BEFORE_INHERIT,
-	CSS_PAGE_BREAK_INSIDE_INHERIT,
-	{ { CSS_POS_INHERIT, { { 0, CSS_UNIT_PX } } },
-	  { CSS_POS_INHERIT, { { 0, CSS_UNIT_PX } } },
-	  { CSS_POS_INHERIT, { { 0, CSS_UNIT_PX } } },
-	  { CSS_POS_INHERIT, { { 0, CSS_UNIT_PX } } } },
-	CSS_POSITION_INHERIT,
-	CSS_TABLE_LAYOUT_INHERIT,
-	CSS_TEXT_ALIGN_INHERIT,
-	CSS_TEXT_DECORATION_INHERIT,
-	{ CSS_TEXT_INDENT_INHERIT, { { 0, CSS_UNIT_EM } } },
-	CSS_TEXT_TRANSFORM_INHERIT,
-	CSS_UNICODE_BIDI_INHERIT,
-	{ CSS_VERTICAL_ALIGN_INHERIT, { { 0, CSS_UNIT_PX } } },
-	CSS_VISIBILITY_INHERIT,
-	CSS_WHITE_SPACE_INHERIT,
-	{ CSS_WIDOWS_INHERIT, 0 },
-	{ CSS_WIDTH_INHERIT, { { 1, CSS_UNIT_EM } } },
-	{ CSS_WORD_SPACING_INHERIT, { 0, CSS_UNIT_PX } },
-	{ CSS_Z_INDEX_INHERIT, 0 }
+	CSS_COLOR_NOT_SET,
+	CSS_CURSOR_NOT_SET,
+	CSS_DIRECTION_NOT_SET,
+	CSS_DISPLAY_NOT_SET,
+	CSS_EMPTY_CELLS_NOT_SET,
+	CSS_FLOAT_NOT_SET,
+	CSS_FONT_FAMILY_NOT_SET,
+	{ CSS_FONT_SIZE_NOT_SET, { { 1, CSS_UNIT_PT } } },
+	CSS_FONT_STYLE_NOT_SET,
+	CSS_FONT_VARIANT_NOT_SET,
+	CSS_FONT_WEIGHT_NOT_SET,
+	{ CSS_HEIGHT_NOT_SET, { 1, CSS_UNIT_EM } },
+	{ CSS_LETTER_SPACING_NOT_SET, { 0, CSS_UNIT_PX } },
+	{ CSS_LINE_HEIGHT_NOT_SET, { 1.3 } },
+	{ CSS_LIST_STYLE_IMAGE_NOT_SET, 0 },
+	CSS_LIST_STYLE_POSITION_NOT_SET,
+	CSS_LIST_STYLE_TYPE_NOT_SET,
+	{ { CSS_MARGIN_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	  { CSS_MARGIN_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	  { CSS_MARGIN_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	  { CSS_MARGIN_NOT_SET, { { 0, CSS_UNIT_PX } } } },
+	{ CSS_MAX_HEIGHT_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	{ CSS_MAX_WIDTH_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	{ CSS_MIN_HEIGHT_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	{ CSS_MIN_WIDTH_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	{ CSS_ORPHANS_NOT_SET, 0 },
+	{ { CSS_OUTLINE_COLOR_NOT_SET, CSS_COLOR_NOT_SET },
+	  { CSS_BORDER_WIDTH_NOT_SET, { 0, CSS_UNIT_PX } },
+	  CSS_BORDER_STYLE_NOT_SET },
+	CSS_OVERFLOW_NOT_SET,
+	{ { CSS_PADDING_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_NOT_SET, { { 0, CSS_UNIT_PX } } } },
+	CSS_PAGE_BREAK_AFTER_NOT_SET,
+	CSS_PAGE_BREAK_BEFORE_NOT_SET,
+	CSS_PAGE_BREAK_INSIDE_NOT_SET,
+	{ { CSS_POS_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	  { CSS_POS_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	  { CSS_POS_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	  { CSS_POS_NOT_SET, { { 0, CSS_UNIT_PX } } } },
+	CSS_POSITION_NOT_SET,
+	CSS_TABLE_LAYOUT_NOT_SET,
+	CSS_TEXT_ALIGN_NOT_SET,
+	CSS_TEXT_DECORATION_NOT_SET,
+	{ CSS_TEXT_INDENT_NOT_SET, { { 0, CSS_UNIT_EM } } },
+	CSS_TEXT_TRANSFORM_NOT_SET,
+	CSS_UNICODE_BIDI_NOT_SET,
+	{ CSS_VERTICAL_ALIGN_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	CSS_VISIBILITY_NOT_SET,
+	CSS_WHITE_SPACE_NOT_SET,
+	{ CSS_WIDOWS_NOT_SET, 0 },
+	{ CSS_WIDTH_NOT_SET, { { 1, CSS_UNIT_EM } } },
+	{ CSS_WORD_SPACING_NOT_SET, { 0, CSS_UNIT_PX } },
+	{ CSS_Z_INDEX_NOT_SET, 0 }
 };
 
 /** Default style for an element. These should be INHERIT if 'Inherited' is yes,
@@ -1259,6 +1259,8 @@ void css_dump_style(const struct css_style * const style)
 			fprintf(stderr, s ": transparent; ");		\
 		else if (style->z == CSS_COLOR_NONE)			\
 			fprintf(stderr, s ": none; ");			\
+		else if (style->z == CSS_COLOR_NOT_SET)			\
+			fprintf(stderr, s ": NOT_SET; ");			\
 		else							\
 			fprintf(stderr, s ": #%.6lx; ", style->z);	\
 	}
@@ -1291,15 +1293,36 @@ void css_dump_style(const struct css_style * const style)
 						style->background_image.uri,
 						style->background_image.uri);
 				break;
+			case CSS_BACKGROUND_IMAGE_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
 			default:
 				fprintf(stderr, "UNKNOWN");
 				break;
 		}
-		fprintf(stderr, " %s %s ",
+
+		if (style->background_repeat ==
+				CSS_BACKGROUND_REPEAT_UNKNOWN)
+			fprintf(stderr, " UNKNOWN");
+		else if (style->background_repeat ==
+				CSS_BACKGROUND_REPEAT_NOT_SET)
+			fprintf(stderr, " NOT_SET");
+		else
+			fprintf(stderr, " %s",
 				css_background_repeat_name[
-						style->background_repeat],
+						style->background_repeat]);
+
+		if (style->background_attachment ==
+				CSS_BACKGROUND_ATTACHMENT_UNKNOWN)
+			fprintf(stderr, " UNKNOWN ");
+		else if (style->background_repeat ==
+				CSS_BACKGROUND_ATTACHMENT_NOT_SET)
+			fprintf(stderr, " NOT_SET ");
+		else
+			fprintf(stderr, " %s ",
 				css_background_attachment_name[
-						style->background_attachment]);
+					style->background_attachment]);
+
 		switch (style->background_position.horz.pos) {
 			case CSS_BACKGROUND_POSITION_LENGTH:
 				css_dump_length(&style->background_position.
@@ -1312,6 +1335,9 @@ void css_dump_style(const struct css_style * const style)
 				break;
 			case CSS_BACKGROUND_POSITION_INHERIT:
 				fprintf(stderr, "inherit");
+				break;
+			case CSS_BACKGROUND_POSITION_NOT_SET:
+				fprintf(stderr, "NOT_SET");
 				break;
 			default:
 				fprintf(stderr, "UNKNOWN");
@@ -1330,6 +1356,9 @@ void css_dump_style(const struct css_style * const style)
 				break;
 			case CSS_BACKGROUND_POSITION_INHERIT:
 				fprintf(stderr, "inherit");
+				break;
+			case CSS_BACKGROUND_POSITION_NOT_SET:
+				fprintf(stderr, "NOT_SET");
 				break;
 			default:
 				fprintf(stderr, "UNKNOWN");
@@ -1363,12 +1392,24 @@ void css_dump_style(const struct css_style * const style)
 				case CSS_BORDER_WIDTH_LENGTH:
 					css_dump_length(&style->border[i].width.value);
 					break;
+				case CSS_BORDER_WIDTH_NOT_SET:
+					fprintf(stderr, "NOT_SET");
+					break;
 				default:
 					fprintf(stderr, "UNKNOWN");
 					break;
 			}
-			fprintf(stderr, " %s",
-				css_border_style_name[style->border[i].style]);
+
+			if (style->border[i].style ==
+					CSS_BORDER_STYLE_UNKNOWN)
+				fprintf(stderr, " UNKNOWN");
+			else if (style->border[i].style ==
+					CSS_BORDER_STYLE_NOT_SET)
+				fprintf(stderr, " NOT_SET");
+			else
+				fprintf(stderr, " %s",
+					css_border_style_name[
+						style->border[i].style]);
 
 			if (style->border[i].color == TRANSPARENT)
 				fprintf(stderr, " transparent; ");
@@ -1376,12 +1417,15 @@ void css_dump_style(const struct css_style * const style)
 				fprintf(stderr, " none; ");
 			else if (style->border[i].color == CSS_COLOR_INHERIT)
 				fprintf(stderr, " inherit; ");
+			else if (style->border[i].color == CSS_COLOR_NOT_SET)
+				fprintf(stderr, " NOT_SET; ");
 			else
 				fprintf(stderr, " #%.6lx; ", style->border[i].color);
 		}
 	}
 	DUMP_KEYWORD(border_collapse, "border-collapse", css_border_collapse_name);
-	if (style->border_spacing.border_spacing != css_empty_style.border_spacing.border_spacing) {
+	if (style->border_spacing.border_spacing !=
+			css_empty_style.border_spacing.border_spacing) {
 		fprintf(stderr, "border-spacing: ");
 		css_dump_length(&style->border_spacing.horz);
 		fprintf(stderr, " ");
@@ -1417,6 +1461,12 @@ void css_dump_style(const struct css_style * const style)
 				}
 				fprintf(stderr, ")");
 				break;
+			case CSS_CLIP_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -1435,9 +1485,24 @@ void css_dump_style(const struct css_style * const style)
 					css_empty_style.line_height.size ||
 			style->font_family != css_empty_style.font_family ||
 			style->font_variant != css_empty_style.font_variant) {
-		fprintf(stderr, "font: %s %s ",
-				css_font_style_name[style->font_style],
+		fprintf(stderr, "font: ");
+
+		if (style->font_style == CSS_FONT_STYLE_UNKNOWN)
+			fprintf(stderr, "UNKNOWN");
+		else if (style->font_style == CSS_FONT_STYLE_NOT_SET)
+			fprintf(stderr, "NOT_SET");
+		else
+			fprintf(stderr, "%s",
+				css_font_style_name[style->font_style]);
+
+		if (style->font_weight == CSS_FONT_WEIGHT_UNKNOWN)
+			fprintf(stderr, " UNKNOWN ");
+		else if (style->font_weight == CSS_FONT_WEIGHT_NOT_SET)
+			fprintf(stderr, " NOT_SET ");
+		else
+			fprintf(stderr, " %s ",
 				css_font_weight_name[style->font_weight]);
+
 		switch (style->font_size.size) {
 			case CSS_FONT_SIZE_ABSOLUTE:
 				fprintf(stderr, "[%g]",
@@ -1452,6 +1517,9 @@ void css_dump_style(const struct css_style * const style)
 				break;
 			case CSS_FONT_SIZE_INHERIT:
 				fprintf(stderr, "inherit");
+				break;
+			case CSS_FONT_SIZE_NOT_SET:
+				fprintf(stderr, "NOT_SET");
 				break;
 			default:
 				fprintf(stderr, "UNKNOWN");
@@ -1473,13 +1541,27 @@ void css_dump_style(const struct css_style * const style)
 			case CSS_LINE_HEIGHT_INHERIT:
 				fprintf(stderr, "inherit");
 				break;
+			case CSS_LINE_HEIGHT_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
 			default:
 				fprintf(stderr, "UNKNOWN");
 				break;
 		}
-		fprintf(stderr, " %s",
+		if (style->font_family == CSS_FONT_FAMILY_UNKNOWN)
+			fprintf(stderr, " UNKNOWN");
+		else if (style->font_family == CSS_FONT_FAMILY_NOT_SET)
+			fprintf(stderr, " NOT_SET");
+		else
+			fprintf(stderr, " %s",
 				css_font_family_name[style->font_family]);
-		fprintf(stderr, " %s",
+
+		if (style->font_variant == CSS_FONT_VARIANT_UNKNOWN)
+			fprintf(stderr, " UNKNOWN");
+		else if (style->font_variant == CSS_FONT_VARIANT_NOT_SET)
+			fprintf(stderr, " NOT_SET");
+		else
+			fprintf(stderr, " %s",
 				css_font_variant_name[style->font_variant]);
 		fprintf(stderr, "; ");
 	}
@@ -1487,12 +1569,21 @@ void css_dump_style(const struct css_style * const style)
 	if (style->height.height != css_empty_style.height.height) {
 		fprintf(stderr, "height: ");
 		switch (style->height.height) {
+			case CSS_HEIGHT_INHERIT:
+				fprintf(stderr, "inherit");
+				break;
 			case CSS_HEIGHT_AUTO:
-				fprintf(stderr, "auto"); break;
+				fprintf(stderr, "auto");
+				break;
 			case CSS_HEIGHT_LENGTH:
-				css_dump_length(&style->height.length); break;
+				css_dump_length(&style->height.length);
+				break;
+			case CSS_HEIGHT_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
 			default:
-				fprintf(stderr, "UNKNOWN"); break;
+				fprintf(stderr, "UNKNOWN");
+				break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -1509,6 +1600,12 @@ void css_dump_style(const struct css_style * const style)
 			case CSS_LETTER_SPACING_LENGTH:
 				css_dump_length(&style->letter_spacing.length);
 				break;
+			case CSS_LETTER_SPACING_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -1516,9 +1613,28 @@ void css_dump_style(const struct css_style * const style)
 	if (style->list_style_type != css_empty_style.list_style_type ||
 			style->list_style_position != css_empty_style.list_style_position ||
 			style->list_style_image.type != css_empty_style.list_style_image.type) {
-		fprintf(stderr, "list-style: %s %s",
-			css_list_style_type_name[style->list_style_type],
-			css_list_style_position_name[style->list_style_position]);
+		fprintf(stderr, "list-style: ");
+
+		if (style->list_style_type == CSS_LIST_STYLE_TYPE_UNKNOWN)
+			fprintf(stderr, "UNKNOWN");
+		else if (style->list_style_type == CSS_LIST_STYLE_TYPE_NOT_SET)
+			fprintf(stderr, "NOT_SET");
+		else
+			fprintf(stderr, "%s",
+					css_list_style_type_name[
+						style->list_style_type]);
+
+		if (style->list_style_type ==
+				CSS_LIST_STYLE_POSITION_UNKNOWN)
+			fprintf(stderr, " UNKNOWN");
+		else if (style->list_style_type ==
+				CSS_LIST_STYLE_POSITION_NOT_SET)
+			fprintf(stderr, " NOT_SET");
+		else
+			fprintf(stderr, " %s",
+					css_list_style_position_name[
+						style->list_style_position]);
+
 		switch (style->list_style_image.type) {
 			case CSS_LIST_STYLE_IMAGE_INHERIT:
 				fprintf(stderr, " inherit");
@@ -1530,6 +1646,11 @@ void css_dump_style(const struct css_style * const style)
 				fprintf(stderr, " url('%s')",
 					style->list_style_image.uri);
 				break;
+			case CSS_LIST_STYLE_IMAGE_NOT_SET:
+				fprintf(stderr, " NOT_SET");
+				break;
+			default:
+				fprintf(stderr, " UNKNOWN");
 		}
 		fprintf(stderr, "; ");
 	}
@@ -1555,8 +1676,11 @@ void css_dump_style(const struct css_style * const style)
 				case CSS_MARGIN_AUTO:
 					fprintf(stderr, " auto");
 					break;
+				case CSS_MARGIN_NOT_SET:
+					fprintf(stderr, " NOT_SET");
+					break;
 				default:
-					fprintf(stderr, "UNKNOWN");
+					fprintf(stderr, " UNKNOWN");
 					break;
 			}
 		}
@@ -1579,6 +1703,12 @@ void css_dump_style(const struct css_style * const style)
 				fprintf(stderr, "%g%%",
 					style->max_height.value.percent);
 				break;
+			case CSS_MAX_HEIGHT_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -1599,6 +1729,12 @@ void css_dump_style(const struct css_style * const style)
 				fprintf(stderr, "%g%%",
 					style->max_width.value.percent);
 				break;
+			case CSS_MAX_WIDTH_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -1615,6 +1751,12 @@ void css_dump_style(const struct css_style * const style)
 			case CSS_MIN_HEIGHT_PERCENT:
 				fprintf(stderr, "%g%%",
 					style->min_height.value.percent);
+				break;
+			case CSS_MIN_HEIGHT_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
 				break;
 		}
 		fprintf(stderr, "; ");
@@ -1633,6 +1775,12 @@ void css_dump_style(const struct css_style * const style)
 				fprintf(stderr, "%g%%",
 					style->min_width.value.percent);
 				break;
+			case CSS_MIN_WIDTH_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -1646,6 +1794,12 @@ void css_dump_style(const struct css_style * const style)
 			case CSS_ORPHANS_INTEGER:
 				fprintf(stderr, "%d",
 					style->orphans.value);
+				break;
+			case CSS_ORPHANS_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
 				break;
 		}
 		fprintf(stderr, "; ");
@@ -1669,18 +1823,36 @@ void css_dump_style(const struct css_style * const style)
 					fprintf(stderr, "none");
 				else if (style->outline.color.value == CSS_COLOR_INHERIT)
 					fprintf(stderr, "inherit");
+				else if (style->outline.color.value == CSS_COLOR_NOT_SET)
+					fprintf(stderr, "NOT_SET");
 				else
 					fprintf(stderr, "#%.6lx", style->outline.color.value);
 				break;
+			case CSS_OUTLINE_COLOR_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
 		}
-		fprintf(stderr, " %s ",
-			css_border_style_name[style->outline.style]);
+
+		if (style->outline.style == CSS_BORDER_STYLE_UNKNOWN)
+			fprintf(stderr, " UNKNOWN ");
+		else if (style->outline.style == CSS_BORDER_STYLE_NOT_SET)
+			fprintf(stderr, " NOT_SET ");
+		else
+			fprintf(stderr, " %s ",
+				css_border_style_name[style->outline.style]);
+
 		switch (style->outline.width.width) {
 			case CSS_BORDER_WIDTH_INHERIT:
 				fprintf(stderr, "inherit");
 				break;
 			case CSS_BORDER_WIDTH_LENGTH:
 				css_dump_length(&style->outline.width.value);
+				break;
+			case CSS_BORDER_WIDTH_NOT_SET:
+				fprintf(stderr, "NOT_SET");
 				break;
 			default:
 				fprintf(stderr, "UNKNOWN");
@@ -1709,8 +1881,11 @@ void css_dump_style(const struct css_style * const style)
 					fprintf(stderr, " %g%%",
 						style->padding[i].value.percent);
 					break;
+				case CSS_PADDING_NOT_SET:
+					fprintf(stderr, " NOT_SET");
+					break;
 				default:
-					fprintf(stderr, "UNKNOWN");
+					fprintf(stderr, " UNKNOWN");
 					break;
 			}
 		}
@@ -1751,6 +1926,12 @@ void css_dump_style(const struct css_style * const style)
 				case CSS_POS_LENGTH:
 					css_dump_length(&style->pos[i].value.length);
 					break;
+				case CSS_POS_NOT_SET:
+					fprintf(stderr, "NOT_SET");
+					break;
+				default:
+					fprintf(stderr, "UNKNOWN");
+					break;
 			}
 			fprintf(stderr, "; ");
 		}
@@ -1789,6 +1970,9 @@ void css_dump_style(const struct css_style * const style)
 				break;
 			case CSS_TEXT_INDENT_INHERIT:
 				fprintf(stderr, "inherit");
+				break;
+			case CSS_TEXT_INDENT_NOT_SET:
+				fprintf(stderr, "NOT_SET");
 				break;
 			default:
 				fprintf(stderr, "UNKNOWN");
@@ -1838,6 +2022,12 @@ void css_dump_style(const struct css_style * const style)
 				fprintf(stderr, "%g%%",
 					style->vertical_align.value.percent);
 				break;
+			case CSS_VERTICAL_ALIGN_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -1854,6 +2044,12 @@ void css_dump_style(const struct css_style * const style)
 			case CSS_WIDOWS_INTEGER:
 				fprintf(stderr, "%d",
 					style->widows.value);
+				break;
+			case CSS_WIDOWS_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
 				break;
 		}
 		fprintf(stderr, "; ");
@@ -1875,6 +2071,9 @@ void css_dump_style(const struct css_style * const style)
 				fprintf(stderr, "%g%%",
 						style->width.value.percent);
 				break;
+			case CSS_WIDTH_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
 			default:
 				fprintf(stderr, "UNKNOWN");
 				break;
@@ -1894,6 +2093,12 @@ void css_dump_style(const struct css_style * const style)
 			case CSS_WORD_SPACING_LENGTH:
 				css_dump_length(&style->word_spacing.length);
 				break;
+			case CSS_WORD_SPACING_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -1910,6 +2115,12 @@ void css_dump_style(const struct css_style * const style)
 			case CSS_Z_INDEX_INTEGER:
 				fprintf(stderr, "%d",
 					style->z_index.value);
+				break;
+			case CSS_Z_INDEX_NOT_SET:
+				fprintf(stderr, "NOT_SET");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
 				break;
 		}
 		fprintf(stderr, "; ");
@@ -2033,7 +2244,8 @@ void css_dump_selector(const struct css_selector *r)
  * \param  style  css_style to modify
  * \param  apply  css_style to cascade onto style
  *
- * Attributes which have the value 'inherit' in apply are unchanged in style.
+ * Attributes which have the value 'inherit' or 'unset' in apply are
+ * unchanged in style.
  * Other attributes are copied to style, calculating percentages relative to
  * style where applicable.
  */
@@ -2044,105 +2256,168 @@ void css_cascade(struct css_style * const style,
 	unsigned int i;
 	float f;
 
-	if (apply->background_attachment != CSS_BACKGROUND_ATTACHMENT_INHERIT)
+	if (apply->background_attachment !=
+			CSS_BACKGROUND_ATTACHMENT_INHERIT &&
+				apply->background_attachment !=
+					CSS_BACKGROUND_ATTACHMENT_NOT_SET)
 		style->background_attachment = apply->background_attachment;
-	if (apply->background_color != CSS_COLOR_INHERIT)
+	if (apply->background_color != CSS_COLOR_INHERIT &&
+			apply->background_color != CSS_COLOR_NOT_SET)
 		style->background_color = apply->background_color;
-	if (apply->background_image.type != CSS_BACKGROUND_IMAGE_INHERIT)
+	if (apply->background_image.type != CSS_BACKGROUND_IMAGE_INHERIT &&
+			apply->background_image.type !=
+				CSS_BACKGROUND_IMAGE_INHERIT)
 		style->background_image = apply->background_image;
-	if (apply->background_repeat != CSS_BACKGROUND_REPEAT_INHERIT)
+	if (apply->background_repeat != CSS_BACKGROUND_REPEAT_INHERIT &&
+			apply->background_repeat !=
+				CSS_BACKGROUND_REPEAT_NOT_SET)
 		style->background_repeat = apply->background_repeat;
-	if (apply->border_collapse != CSS_BORDER_COLLAPSE_INHERIT)
+	if (apply->border_collapse != CSS_BORDER_COLLAPSE_INHERIT &&
+			apply->border_collapse != CSS_BORDER_COLLAPSE_NOT_SET)
 		style->border_collapse = apply->border_collapse;
-	if (apply->border_spacing.border_spacing != CSS_BORDER_SPACING_INHERIT)
+	if (apply->border_spacing.border_spacing !=
+			CSS_BORDER_SPACING_INHERIT &&
+				apply->border_spacing.border_spacing !=
+					CSS_BORDER_SPACING_NOT_SET)
 		style->border_spacing = apply->border_spacing;
-	if (apply->caption_side != CSS_CAPTION_SIDE_INHERIT)
+	if (apply->caption_side != CSS_CAPTION_SIDE_INHERIT &&
+			apply->caption_side != CSS_CAPTION_SIDE_NOT_SET)
 		style->caption_side = apply->caption_side;
-	if (apply->clear != CSS_CLEAR_INHERIT)
+	if (apply->clear != CSS_CLEAR_INHERIT &&
+			apply->clear != CSS_CLEAR_NOT_SET)
 		style->clear = apply->clear;
-	if (apply->color != CSS_COLOR_INHERIT)
+	if (apply->color != CSS_COLOR_INHERIT &&
+			apply->color != CSS_COLOR_NOT_SET)
 		style->color = apply->color;
-	if (apply->cursor != CSS_CURSOR_INHERIT)
+	if (apply->cursor != CSS_CURSOR_INHERIT &&
+			apply->cursor != CSS_CURSOR_NOT_SET)
 		style->cursor = apply->cursor;
-	if (apply->direction != CSS_DIRECTION_INHERIT)
+	if (apply->direction != CSS_DIRECTION_INHERIT &&
+			apply->direction != CSS_DIRECTION_NOT_SET)
 		style->direction = apply->direction;
-	if (apply->display != CSS_DISPLAY_INHERIT)
+	if (apply->display != CSS_DISPLAY_INHERIT &&
+			apply->display != CSS_DISPLAY_NOT_SET)
 		style->display = apply->display;
-	if (apply->empty_cells != CSS_EMPTY_CELLS_INHERIT)
+	if (apply->empty_cells != CSS_EMPTY_CELLS_INHERIT &&
+			apply->empty_cells != CSS_EMPTY_CELLS_NOT_SET)
 		style->empty_cells = apply->empty_cells;
-	if (apply->float_ != CSS_FLOAT_INHERIT)
+	if (apply->float_ != CSS_FLOAT_INHERIT &&
+			apply->float_ != CSS_FLOAT_NOT_SET)
 		style->float_ = apply->float_;
-	if (apply->font_family != CSS_FONT_FAMILY_INHERIT)
+	if (apply->font_family != CSS_FONT_FAMILY_INHERIT &&
+			apply->font_family != CSS_FONT_FAMILY_NOT_SET)
 		style->font_family = apply->font_family;
-	if (apply->font_style != CSS_FONT_STYLE_INHERIT)
+	if (apply->font_style != CSS_FONT_STYLE_INHERIT &&
+			apply->font_style != CSS_FONT_STYLE_NOT_SET)
 		style->font_style = apply->font_style;
-	if (apply->font_variant != CSS_FONT_VARIANT_INHERIT)
+	if (apply->font_variant != CSS_FONT_VARIANT_INHERIT &&
+			apply->font_variant != CSS_FONT_VARIANT_NOT_SET)
 		style->font_variant = apply->font_variant;
-	if (apply->font_weight != CSS_FONT_WEIGHT_INHERIT)
+	if (apply->font_weight != CSS_FONT_WEIGHT_INHERIT &&
+			apply->font_weight != CSS_FONT_WEIGHT_NOT_SET)
 		style->font_weight = apply->font_weight;
-	if (apply->height.height != CSS_HEIGHT_INHERIT)
+	if (apply->height.height != CSS_HEIGHT_INHERIT &&
+			apply->height.height != CSS_HEIGHT_NOT_SET)
 		style->height = apply->height;
-	if (apply->letter_spacing.letter_spacing != CSS_LETTER_SPACING_INHERIT)
+	if (apply->letter_spacing.letter_spacing !=
+			CSS_LETTER_SPACING_INHERIT &&
+				apply->letter_spacing.letter_spacing !=
+					CSS_LETTER_SPACING_NOT_SET)
 		style->letter_spacing = apply->letter_spacing;
-	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT)
+	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT &&
+			apply->line_height.size != CSS_LINE_HEIGHT_NOT_SET)
 		style->line_height = apply->line_height;
-	if (apply->list_style_image.type != CSS_LIST_STYLE_IMAGE_INHERIT)
+	if (apply->list_style_image.type != CSS_LIST_STYLE_IMAGE_INHERIT &&
+			apply->list_style_image.type !=
+				CSS_LIST_STYLE_IMAGE_NOT_SET)
 		style->list_style_image = apply->list_style_image;
-	if (apply->list_style_position != CSS_LIST_STYLE_POSITION_INHERIT)
+	if (apply->list_style_position != CSS_LIST_STYLE_POSITION_INHERIT &&
+			apply->list_style_position !=
+				CSS_LIST_STYLE_POSITION_NOT_SET)
 		style->list_style_position = apply->list_style_position;
-	if (apply->list_style_type != CSS_LIST_STYLE_TYPE_INHERIT)
+	if (apply->list_style_type != CSS_LIST_STYLE_TYPE_INHERIT &&
+			apply->list_style_type != CSS_LIST_STYLE_TYPE_NOT_SET)
 		style->list_style_type = apply->list_style_type;
-	if (apply->max_height.max_height != CSS_MAX_HEIGHT_INHERIT)
+	if (apply->max_height.max_height != CSS_MAX_HEIGHT_INHERIT &&
+			apply->max_height.max_height != CSS_MAX_HEIGHT_NOT_SET)
 		style->max_height = apply->max_height;
-	if (apply->max_width.max_width != CSS_MAX_WIDTH_INHERIT)
+	if (apply->max_width.max_width != CSS_MAX_WIDTH_INHERIT &&
+			apply->max_width.max_width != CSS_MAX_WIDTH_NOT_SET)
 		style->max_width = apply->max_width;
-	if (apply->min_height.min_height != CSS_MIN_HEIGHT_INHERIT)
+	if (apply->min_height.min_height != CSS_MIN_HEIGHT_INHERIT &&
+			apply->min_height.min_height != CSS_MIN_HEIGHT_NOT_SET)
 		style->min_height = apply->min_height;
-	if (apply->min_width.min_width != CSS_MIN_WIDTH_INHERIT)
+	if (apply->min_width.min_width != CSS_MIN_WIDTH_INHERIT &&
+			apply->min_width.min_width != CSS_MIN_WIDTH_NOT_SET)
 		style->min_width = apply->min_width;
-	if (apply->orphans.orphans != CSS_ORPHANS_INHERIT)
+	if (apply->orphans.orphans != CSS_ORPHANS_INHERIT &&
+			apply->orphans.orphans != CSS_ORPHANS_NOT_SET)
 		style->orphans = apply->orphans;
-	if (apply->overflow != CSS_OVERFLOW_INHERIT)
+	if (apply->overflow != CSS_OVERFLOW_INHERIT &&
+			apply->overflow != CSS_OVERFLOW_NOT_SET)
 		style->overflow = apply->overflow;
-	if (apply->page_break_after != CSS_PAGE_BREAK_AFTER_INHERIT)
+	if (apply->page_break_after != CSS_PAGE_BREAK_AFTER_INHERIT &&
+			apply->page_break_after !=
+				CSS_PAGE_BREAK_AFTER_NOT_SET)
 		style->page_break_after = apply->page_break_after;
-	if (apply->page_break_before != CSS_PAGE_BREAK_BEFORE_INHERIT)
+	if (apply->page_break_before != CSS_PAGE_BREAK_BEFORE_INHERIT &&
+			apply->page_break_before !=
+				CSS_PAGE_BREAK_BEFORE_NOT_SET)
 		style->page_break_before = apply->page_break_before;
-	if (apply->page_break_inside != CSS_PAGE_BREAK_INSIDE_INHERIT)
+	if (apply->page_break_inside != CSS_PAGE_BREAK_INSIDE_INHERIT &&
+			apply->page_break_inside !=
+				CSS_PAGE_BREAK_INSIDE_NOT_SET)
 		style->page_break_inside = apply->page_break_inside;
-	if (apply->position != CSS_POSITION_INHERIT)
+	if (apply->position != CSS_POSITION_INHERIT &&
+			apply->position != CSS_POSITION_NOT_SET)
 		style->position = apply->position;
-	if (apply->table_layout != CSS_TABLE_LAYOUT_INHERIT)
+	if (apply->table_layout != CSS_TABLE_LAYOUT_INHERIT &&
+			apply->table_layout != CSS_TABLE_LAYOUT_NOT_SET)
 		style->table_layout = apply->table_layout;
-	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
+	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT &&
+			apply->text_align != CSS_TEXT_ALIGN_NOT_SET)
 		style->text_align = apply->text_align;
 	/* text-decoration: approximate CSS 2.1 by inheriting into inline elements */
-	if (apply->text_decoration != CSS_TEXT_DECORATION_INHERIT)
+	if (apply->text_decoration != CSS_TEXT_DECORATION_INHERIT &&
+			apply->text_decoration != CSS_TEXT_DECORATION_NOT_SET)
 		style->text_decoration = apply->text_decoration;
-	if (apply->text_indent.size != CSS_TEXT_INDENT_INHERIT)
+	if (apply->text_indent.size != CSS_TEXT_INDENT_INHERIT &&
+			apply->text_indent.size != CSS_TEXT_INDENT_NOT_SET)
 		style->text_indent = apply->text_indent;
-	if (apply->text_transform != CSS_TEXT_TRANSFORM_INHERIT)
+	if (apply->text_transform != CSS_TEXT_TRANSFORM_INHERIT &&
+			apply->text_transform != CSS_TEXT_TRANSFORM_NOT_SET)
 		style->text_transform = apply->text_transform;
-	if (apply->unicode_bidi != CSS_UNICODE_BIDI_INHERIT)
+	if (apply->unicode_bidi != CSS_UNICODE_BIDI_INHERIT &&
+			apply->unicode_bidi != CSS_UNICODE_BIDI_NOT_SET)
 		style->unicode_bidi = apply->unicode_bidi;
-	if (apply->vertical_align.type != CSS_VERTICAL_ALIGN_INHERIT)
+	if (apply->vertical_align.type != CSS_VERTICAL_ALIGN_INHERIT &&
+			apply->vertical_align.type !=
+				CSS_VERTICAL_ALIGN_NOT_SET)
 		style->vertical_align = apply->vertical_align;
-	if (apply->visibility != CSS_VISIBILITY_INHERIT)
+	if (apply->visibility != CSS_VISIBILITY_INHERIT &&
+			apply->visibility != CSS_VISIBILITY_NOT_SET)
 		style->visibility = apply->visibility;
-	if (apply->white_space != CSS_WHITE_SPACE_INHERIT)
+	if (apply->white_space != CSS_WHITE_SPACE_INHERIT &&
+			apply->white_space != CSS_WHITE_SPACE_NOT_SET)
 		style->white_space = apply->white_space;
-	if (apply->widows.widows != CSS_WIDOWS_INHERIT)
+	if (apply->widows.widows != CSS_WIDOWS_INHERIT &&
+			apply->widows.widows != CSS_WIDOWS_NOT_SET)
 		style->widows = apply->widows;
-	if (apply->width.width != CSS_WIDTH_INHERIT)
+	if (apply->width.width != CSS_WIDTH_INHERIT &&
+			apply->width.width != CSS_WIDTH_NOT_SET)
 		style->width = apply->width;
-	if (apply->word_spacing.word_spacing != CSS_WORD_SPACING_INHERIT)
+	if (apply->word_spacing.word_spacing != CSS_WORD_SPACING_INHERIT &&
+			apply->word_spacing.word_spacing !=
+				CSS_WORD_SPACING_NOT_SET)
 		style->word_spacing = apply->word_spacing;
-	if (apply->z_index.z_index != CSS_Z_INDEX_INHERIT)
+	if (apply->z_index.z_index != CSS_Z_INDEX_INHERIT &&
+			apply->z_index.z_index != CSS_Z_INDEX_NOT_SET)
 		style->z_index = apply->z_index;
 
 
 	/* clip */
-	if (apply->clip.clip != CSS_CLIP_INHERIT) {
+	if (apply->clip.clip != CSS_CLIP_INHERIT &&
+			apply->clip.clip != CSS_CLIP_NOT_SET) {
 		for (i = 0; i != 4; i++) {
 			style->clip.rect[i] = apply->clip.rect[i];
 		}
@@ -2150,11 +2425,19 @@ void css_cascade(struct css_style * const style,
 
 
         /* background-position */
-	if (apply->background_position.horz.pos != CSS_BACKGROUND_POSITION_INHERIT) {
-	style->background_position.horz = apply->background_position.horz;
+	if (apply->background_position.horz.pos !=
+			CSS_BACKGROUND_POSITION_INHERIT &&
+				apply->background_position.horz.pos !=
+					CSS_BACKGROUND_POSITION_NOT_SET) {
+		style->background_position.horz =
+				apply->background_position.horz;
 	}
-	if (apply->background_position.vert.pos != CSS_BACKGROUND_POSITION_INHERIT) {
-		style->background_position.vert = apply->background_position.vert;
+	if (apply->background_position.vert.pos !=
+			CSS_BACKGROUND_POSITION_INHERIT &&
+				apply->background_position.vert.pos !=
+					CSS_BACKGROUND_POSITION_NOT_SET) {
+		style->background_position.vert =
+				apply->background_position.vert;
 	}
 
 	/* font-size */
@@ -2191,35 +2474,50 @@ void css_cascade(struct css_style * const style,
 			}
 			break;
 		case CSS_FONT_SIZE_INHERIT:
+		case CSS_FONT_SIZE_NOT_SET:
 		default:                     /* leave unchanged */
 			break;
 	}
 
 	/* outline */
-	if (apply->outline.color.color != CSS_OUTLINE_COLOR_INHERIT)
+	if (apply->outline.color.color != CSS_OUTLINE_COLOR_INHERIT &&
+			apply->outline.color.color !=
+				CSS_OUTLINE_COLOR_NOT_SET)
 		style->outline.color = apply->outline.color;
-	if (apply->outline.width.width != CSS_BORDER_WIDTH_INHERIT)
+	if (apply->outline.width.width != CSS_BORDER_WIDTH_INHERIT &&
+			apply->outline.width.width != CSS_BORDER_WIDTH_NOT_SET)
 		style->outline.width = apply->outline.width;
-	if (apply->outline.style != CSS_BORDER_STYLE_INHERIT)
+	if (apply->outline.style != CSS_BORDER_STYLE_INHERIT &&
+			apply->outline.style != CSS_BORDER_STYLE_NOT_SET)
 		style->outline.style = apply->outline.style;
 
 	/* borders, margins, padding and box position */
 	for (i = 0; i != 4; i++) {
-		if (apply->border[i].color != CSS_COLOR_INHERIT)
+		if (apply->border[i].color != CSS_COLOR_INHERIT &&
+				apply->border[i].color != CSS_COLOR_NOT_SET)
 			style->border[i].color = apply->border[i].color;
-		if (apply->border[i].width.width != CSS_BORDER_WIDTH_INHERIT)
+		if (apply->border[i].width.width !=
+				CSS_BORDER_WIDTH_INHERIT &&
+					apply->border[i].width.width !=
+						CSS_BORDER_WIDTH_NOT_SET)
 			style->border[i].width = apply->border[i].width;
-		if (apply->border[i].style != CSS_BORDER_STYLE_INHERIT)
+		if (apply->border[i].style != CSS_BORDER_STYLE_INHERIT &&
+				apply->border[i].style !=
+					CSS_BORDER_STYLE_NOT_SET)
 			style->border[i].style = apply->border[i].style;
 
-		if (apply->margin[i].margin != CSS_MARGIN_INHERIT)
+		if (apply->margin[i].margin != CSS_MARGIN_INHERIT &&
+				apply->margin[i].margin != CSS_MARGIN_NOT_SET)
 			style->margin[i] = apply->margin[i];
 
-		if (apply->padding[i].padding != CSS_PADDING_INHERIT)
+		if (apply->padding[i].padding != CSS_PADDING_INHERIT &&
+				apply->padding[i].padding !=
+					CSS_PADDING_NOT_SET)
 			style->padding[i] = apply->padding[i];
 
-		if (apply->pos[i].pos != CSS_POS_INHERIT)
-				style->pos[i] = apply->pos[i];
+		if (apply->pos[i].pos != CSS_POS_INHERIT &&
+				apply->pos[i].pos != CSS_POS_NOT_SET)
+			style->pos[i] = apply->pos[i];
 	}
 }
 
@@ -2230,7 +2528,7 @@ void css_cascade(struct css_style * const style,
  * \param  style  css_style to modify
  * \param  apply  css_style to merge onto style
  *
- * Attributes which have the value 'inherit' in apply are unchanged in style.
+ * Attributes which have the value 'unset' in apply are unchanged in style.
  * Other attributes are copied to style, overwriting it.
  */
 
@@ -2239,144 +2537,148 @@ void css_merge(struct css_style * const style,
 {
 	unsigned int i;
 
-	if (apply->background_attachment != CSS_BACKGROUND_ATTACHMENT_INHERIT)
+	if (apply->background_attachment != CSS_BACKGROUND_ATTACHMENT_NOT_SET)
 		style->background_attachment = apply->background_attachment;
-	if (apply->background_color != CSS_COLOR_INHERIT)
+	if (apply->background_color != CSS_COLOR_NOT_SET)
 		style->background_color = apply->background_color;
-	if (apply->background_image.type != CSS_BACKGROUND_IMAGE_INHERIT)
+	if (apply->background_image.type != CSS_BACKGROUND_IMAGE_NOT_SET)
 		style->background_image = apply->background_image;
-	if (apply->background_repeat != CSS_BACKGROUND_REPEAT_INHERIT)
+	if (apply->background_repeat != CSS_BACKGROUND_REPEAT_NOT_SET)
 		style->background_repeat = apply->background_repeat;
-	if (apply->border_collapse != CSS_BORDER_COLLAPSE_INHERIT)
+	if (apply->border_collapse != CSS_BORDER_COLLAPSE_NOT_SET)
 		style->border_collapse = apply->border_collapse;
-	if (apply->border_spacing.border_spacing != CSS_BORDER_SPACING_INHERIT)
+	if (apply->border_spacing.border_spacing != CSS_BORDER_SPACING_NOT_SET)
 		style->border_spacing = apply->border_spacing;
-	if (apply->caption_side != CSS_CAPTION_SIDE_INHERIT)
+	if (apply->caption_side != CSS_CAPTION_SIDE_NOT_SET)
 		style->caption_side = apply->caption_side;
-	if (apply->clear != CSS_CLEAR_INHERIT)
+	if (apply->clear != CSS_CLEAR_NOT_SET)
 		style->clear = apply->clear;
-	if (apply->color != CSS_COLOR_INHERIT)
+	if (apply->color != CSS_COLOR_NOT_SET)
 		style->color = apply->color;
-	if (apply->cursor != CSS_CURSOR_INHERIT)
+	if (apply->cursor != CSS_CURSOR_NOT_SET)
 		style->cursor = apply->cursor;
-	if (apply->direction != CSS_DIRECTION_INHERIT)
+	if (apply->direction != CSS_DIRECTION_NOT_SET)
 		style->direction = apply->direction;
-	if (apply->display != CSS_DISPLAY_INHERIT)
+	if (apply->display != CSS_DISPLAY_NOT_SET)
 		style->display = apply->display;
-	if (apply->empty_cells != CSS_EMPTY_CELLS_INHERIT)
+	if (apply->empty_cells != CSS_EMPTY_CELLS_NOT_SET)
 		style->empty_cells = apply->empty_cells;
-	if (apply->float_ != CSS_FLOAT_INHERIT)
+	if (apply->float_ != CSS_FLOAT_NOT_SET)
 		style->float_ = apply->float_;
-	if (apply->font_family != CSS_FONT_FAMILY_INHERIT)
+	if (apply->font_family != CSS_FONT_FAMILY_NOT_SET)
 		style->font_family = apply->font_family;
-	if (apply->font_size.size != CSS_FONT_SIZE_INHERIT)
+	if (apply->font_size.size != CSS_FONT_SIZE_NOT_SET)
 		style->font_size = apply->font_size;
-	if (apply->font_style != CSS_FONT_STYLE_INHERIT)
+	if (apply->font_style != CSS_FONT_STYLE_NOT_SET)
 		style->font_style = apply->font_style;
-	if (apply->font_variant != CSS_FONT_VARIANT_INHERIT)
+	if (apply->font_variant != CSS_FONT_VARIANT_NOT_SET)
 		style->font_variant = apply->font_variant;
-	if (apply->font_weight != CSS_FONT_WEIGHT_INHERIT)
+	if (apply->font_weight != CSS_FONT_WEIGHT_NOT_SET)
 		style->font_weight = apply->font_weight;
-	if (apply->height.height != CSS_HEIGHT_INHERIT)
+	if (apply->height.height != CSS_HEIGHT_NOT_SET)
 		style->height = apply->height;
-	if (apply->letter_spacing.letter_spacing != CSS_LETTER_SPACING_INHERIT)
+	if (apply->letter_spacing.letter_spacing != CSS_LETTER_SPACING_NOT_SET)
 		style->letter_spacing = apply->letter_spacing;
-	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT)
+	if (apply->line_height.size != CSS_LINE_HEIGHT_NOT_SET)
 		style->line_height = apply->line_height;
-	if (apply->list_style_image.type != CSS_LIST_STYLE_IMAGE_INHERIT)
+	if (apply->list_style_image.type != CSS_LIST_STYLE_IMAGE_NOT_SET)
 		style->list_style_image = apply->list_style_image;
-	if (apply->list_style_position != CSS_LIST_STYLE_POSITION_INHERIT)
+	if (apply->list_style_position != CSS_LIST_STYLE_POSITION_NOT_SET)
 		style->list_style_position = apply->list_style_position;
-	if (apply->list_style_type != CSS_LIST_STYLE_TYPE_INHERIT)
+	if (apply->list_style_type != CSS_LIST_STYLE_TYPE_NOT_SET)
 		style->list_style_type = apply->list_style_type;
-	if (apply->max_height.max_height != CSS_MAX_HEIGHT_INHERIT)
+	if (apply->max_height.max_height != CSS_MAX_HEIGHT_NOT_SET)
 		style->max_height = apply->max_height;
-	if (apply->max_width.max_width != CSS_MAX_WIDTH_INHERIT)
+	if (apply->max_width.max_width != CSS_MAX_WIDTH_NOT_SET)
 		style->max_width = apply->max_width;
-	if (apply->min_height.min_height != CSS_MIN_HEIGHT_INHERIT)
+	if (apply->min_height.min_height != CSS_MIN_HEIGHT_NOT_SET)
 		style->min_height = apply->min_height;
-	if (apply->min_width.min_width != CSS_MIN_WIDTH_INHERIT)
+	if (apply->min_width.min_width != CSS_MIN_WIDTH_NOT_SET)
 		style->min_width = apply->min_width;
-	if (apply->orphans.orphans != CSS_ORPHANS_INHERIT)
+	if (apply->orphans.orphans != CSS_ORPHANS_NOT_SET)
 		style->orphans = apply->orphans;
-	if (apply->overflow != CSS_OVERFLOW_INHERIT)
+	if (apply->overflow != CSS_OVERFLOW_NOT_SET)
 		style->overflow = apply->overflow;
-	if (apply->page_break_after != CSS_PAGE_BREAK_AFTER_INHERIT)
+	if (apply->page_break_after != CSS_PAGE_BREAK_AFTER_NOT_SET)
 		style->page_break_after = apply->page_break_after;
-	if (apply->page_break_before != CSS_PAGE_BREAK_BEFORE_INHERIT)
+	if (apply->page_break_before != CSS_PAGE_BREAK_BEFORE_NOT_SET)
 		style->page_break_before = apply->page_break_before;
-	if (apply->page_break_inside != CSS_PAGE_BREAK_INSIDE_INHERIT)
+	if (apply->page_break_inside != CSS_PAGE_BREAK_INSIDE_NOT_SET)
 		style->page_break_inside = apply->page_break_inside;
-	if (apply->position != CSS_POSITION_INHERIT)
+	if (apply->position != CSS_POSITION_NOT_SET)
 		style->position = apply->position;
-	if (apply->table_layout != CSS_TABLE_LAYOUT_INHERIT)
+	if (apply->table_layout != CSS_TABLE_LAYOUT_NOT_SET)
 		style->table_layout = apply->table_layout;
-	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
+	if (apply->text_align != CSS_TEXT_ALIGN_NOT_SET)
 		style->text_align = apply->text_align;
 	/* text-decoration: approximate CSS 2.1 by inheriting into inline elements */
-	if (apply->text_decoration != CSS_TEXT_DECORATION_INHERIT)
+	if (apply->text_decoration != CSS_TEXT_DECORATION_NOT_SET)
 		style->text_decoration = apply->text_decoration;
-	if (apply->text_indent.size != CSS_TEXT_INDENT_INHERIT)
+	if (apply->text_indent.size != CSS_TEXT_INDENT_NOT_SET)
 		style->text_indent = apply->text_indent;
-	if (apply->text_transform != CSS_TEXT_TRANSFORM_INHERIT)
+	if (apply->text_transform != CSS_TEXT_TRANSFORM_NOT_SET)
 		style->text_transform = apply->text_transform;
-	if (apply->unicode_bidi != CSS_UNICODE_BIDI_INHERIT)
+	if (apply->unicode_bidi != CSS_UNICODE_BIDI_NOT_SET)
 		style->unicode_bidi = apply->unicode_bidi;
-	if (apply->vertical_align.type != CSS_VERTICAL_ALIGN_INHERIT)
+	if (apply->vertical_align.type != CSS_VERTICAL_ALIGN_NOT_SET)
 		style->vertical_align = apply->vertical_align;
-	if (apply->visibility != CSS_VISIBILITY_INHERIT)
+	if (apply->visibility != CSS_VISIBILITY_NOT_SET)
 		style->visibility = apply->visibility;
-	if (apply->white_space != CSS_WHITE_SPACE_INHERIT)
+	if (apply->white_space != CSS_WHITE_SPACE_NOT_SET)
 		style->white_space = apply->white_space;
-	if (apply->widows.widows != CSS_WIDOWS_INHERIT)
+	if (apply->widows.widows != CSS_WIDOWS_NOT_SET)
 		style->widows = apply->widows;
-	if (apply->width.width != CSS_WIDTH_INHERIT)
+	if (apply->width.width != CSS_WIDTH_NOT_SET)
 		style->width = apply->width;
-	if (apply->word_spacing.word_spacing != CSS_WORD_SPACING_INHERIT)
+	if (apply->word_spacing.word_spacing != CSS_WORD_SPACING_NOT_SET)
 		style->word_spacing = apply->word_spacing;
-	if (apply->z_index.z_index != CSS_Z_INDEX_INHERIT)
+	if (apply->z_index.z_index != CSS_Z_INDEX_NOT_SET)
 		style->z_index = apply->z_index;
 
 
 	/* clip */
-	if (apply->clip.clip != CSS_CLIP_INHERIT) {
+	if (apply->clip.clip != CSS_CLIP_NOT_SET) {
 		for (i = 0; i != 4; i++) {
 			style->clip.rect[i] = apply->clip.rect[i];
 		}
 	}
 
 	/* background-position */
-	if (apply->background_position.horz.pos != CSS_BACKGROUND_POSITION_INHERIT) {
-		style->background_position.horz = apply->background_position.horz;
+	if (apply->background_position.horz.pos !=
+			CSS_BACKGROUND_POSITION_NOT_SET) {
+		style->background_position.horz =
+				apply->background_position.horz;
 	}
-	if (apply->background_position.vert.pos != CSS_BACKGROUND_POSITION_INHERIT) {
-		style->background_position.vert = apply->background_position.vert;
+	if (apply->background_position.vert.pos !=
+			CSS_BACKGROUND_POSITION_NOT_SET) {
+		style->background_position.vert =
+				apply->background_position.vert;
 	}
 
 	/* outline */
-	if (apply->outline.color.color != CSS_OUTLINE_COLOR_INHERIT)
+	if (apply->outline.color.color != CSS_OUTLINE_COLOR_NOT_SET)
 		style->outline.color = apply->outline.color;
-	if (apply->outline.width.width != CSS_BORDER_WIDTH_INHERIT)
+	if (apply->outline.width.width != CSS_BORDER_WIDTH_NOT_SET)
 		style->outline.width = apply->outline.width;
-	if (apply->outline.style != CSS_BORDER_STYLE_INHERIT)
+	if (apply->outline.style != CSS_BORDER_STYLE_NOT_SET)
 		style->outline.style = apply->outline.style;
 
 	/* borders, margins, padding and box position */
 	for (i = 0; i != 4; i++) {
-		if (apply->border[i].color != CSS_COLOR_INHERIT)
+		if (apply->border[i].color != CSS_COLOR_NOT_SET)
 			style->border[i].color = apply->border[i].color;
-		if (apply->border[i].width.width != CSS_BORDER_WIDTH_INHERIT)
+		if (apply->border[i].width.width != CSS_BORDER_WIDTH_NOT_SET)
 			style->border[i].width = apply->border[i].width;
-		if (apply->border[i].style != CSS_BORDER_STYLE_INHERIT)
+		if (apply->border[i].style != CSS_BORDER_STYLE_NOT_SET)
 			style->border[i].style = apply->border[i].style;
 
-		if (apply->margin[i].margin != CSS_MARGIN_INHERIT)
+		if (apply->margin[i].margin != CSS_MARGIN_NOT_SET)
 			style->margin[i] = apply->margin[i];
 
-		if (apply->padding[i].padding != CSS_PADDING_INHERIT)
+		if (apply->padding[i].padding != CSS_PADDING_NOT_SET)
 			style->padding[i] = apply->padding[i];
 
-		if (apply->pos[i].pos != CSS_POS_INHERIT)
+		if (apply->pos[i].pos != CSS_POS_NOT_SET)
 			style->pos[i] = apply->pos[i];
 	}
 }
