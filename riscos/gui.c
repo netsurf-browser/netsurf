@@ -499,7 +499,7 @@ void gui_init2(int argc, char** argv)
 #endif
 
 	if (open_window)
-			browser_window_create(url, NULL);
+			browser_window_create(url, NULL, 0);
 
 	free(url);
 }
@@ -900,12 +900,12 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 
 	} else if (pointer->buttons == wimp_CLICK_SELECT) {
 		if (option_homepage_url && option_homepage_url[0]) {
-			browser_window_create(option_homepage_url, NULL);
+			browser_window_create(option_homepage_url, NULL, 0);
 		} else {
 			snprintf(url, sizeof url,
 					"file:/<NetSurf$Dir>/Docs/intro_%s",
 					option_language);
-			browser_window_create(url, NULL);
+			browser_window_create(url, NULL, 0);
 		}
 
 	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
@@ -1164,9 +1164,9 @@ void ro_msg_dataload(wimp_message *message)
 		return;
 
 	if (g)
-		browser_window_go(g->bw, url, false);
+		browser_window_go(g->bw, url, 0);
 	else
-		browser_window_create(url, 0);
+		browser_window_create(url, 0, 0);
 
 	free(url);
 }
@@ -1388,7 +1388,7 @@ void ro_msg_dataopen(wimp_message *message)
 		url = ro_path_to_url(message->data.data_xfer.file_name);
 	}
 	if (url) {
-		browser_window_create(url, NULL);
+		browser_window_create(url, NULL, 0);
 		free(url);
 	}
 }
@@ -1475,7 +1475,7 @@ void ro_gui_open_help_page(const char *page)
 	if ((length = snprintf(url, sizeof url,
 			"file:/<NetSurf$Dir>/Docs/%s_%s",
 			page, option_language)) >= 0 && length < (int)sizeof(url))
-		browser_window_create(url, NULL);
+		browser_window_create(url, NULL, 0);
 }
 
 /**
