@@ -1,8 +1,9 @@
 /**
- * $Id: fetchcache.c,v 1.2 2003/02/25 21:00:27 bursa Exp $
+ * $Id: fetchcache.c,v 1.3 2003/02/28 11:49:13 bursa Exp $
  */
 
 #include <assert.h>
+#include <string.h>
 #include "netsurf/content/cache.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/content/fetch.h"
@@ -12,20 +13,21 @@
 
 struct fetchcache {
 	void *url;
-	void (*callback)(fetchcache_msg msg, struct content *c, void *p, char *error);
+	void (*callback)(fetchcache_msg msg, struct content *c, void *p, const char *error);
 	void *p;
 	struct fetch *f;
 	struct content *c;
 	unsigned long width, height;
+	unsigned long size;
 };
 
 
 void fetchcache_free(struct fetchcache *fc);
-void fetchcache_callback(fetchcache_msg msg, struct fetchcache *fc, char *data, unsigned long size);
+void fetchcache_callback(fetchcache_msg msg, void *p, char *data, unsigned long size);
 
 
 void fetchcache(char *url, char *referer,
-		void (*callback)(fetchcache_msg msg, struct content *c, void *p, char *error),
+		void (*callback)(fetchcache_msg msg, struct content *c, void *p, const char *error),
 		void *p, unsigned long width, unsigned long height)
 {
 	struct content *c;
@@ -33,11 +35,13 @@ void fetchcache(char *url, char *referer,
 
 	c = cache_get(url);
 	if (c != 0) {
+		callback(FETCHCACHE_STATUS, c, p, "Found in cache");
 		content_revive(c, width, height);
 		callback(FETCHCACHE_OK, c, p, 0);
 		return;
 	}
 
+	callback(FETCHCACHE_STATUS, c, p, "Starting fetch");
 	fc = xcalloc(1, sizeof(struct fetchcache));
 	fc->url = xstrdup(url);
 	fc->callback = callback;
@@ -45,6 +49,7 @@ void fetchcache(char *url, char *referer,
 	fc->c = 0;
 	fc->width = width;
 	fc->height = height;
+	fc->size = 0;
 	fc->f = fetch_start(url, referer, fetchcache_callback, fc);
 }
 
@@ -56,35 +61,41 @@ void fetchcache_free(struct fetchcache *fc)
 }
 
 
-void fetchcache_callback(fetch_msg msg, struct fetchcache *fc, char *data, unsigned long size)
+void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 {
+	struct fetchcache *fc = p;
 	content_type type;
 	char *mime_type;
 	char *semic;
+	char status[40];
 	switch (msg) {
 		case FETCH_TYPE:
 			mime_type = strdup(data);
 			if ((semic = strchr(mime_type, ';')) != 0)
 				*semic = 0;	/* remove "; charset=..." */
 			type = content_lookup(mime_type);
-			free(mime_type);
 			LOG(("FETCH_TYPE, type %u", type));
 			if (type == CONTENT_OTHER) {
 				fetch_abort(fc->f);
-				fc->callback(FETCHCACHE_BADTYPE, 0, fc->p, 0);
+				fc->callback(FETCHCACHE_BADTYPE, 0, fc->p, mime_type);
 				free(fc);
 			} else {
 				fc->c = content_create(type, fc->url);
 			}
+			free(mime_type);
 			break;
 		case FETCH_DATA:
 			LOG(("FETCH_DATA"));
 			assert(fc->c != 0);
+			fc->size += size;
+			sprintf(status, "Received %lu bytes", fc->size);
+			fc->callback(FETCHCACHE_STATUS, fc->c, fc->p, status);
 			content_process_data(fc->c, data, size);
 			break;
 		case FETCH_FINISHED:
 			LOG(("FETCH_FINISHED"));
 			assert(fc->c != 0);
+			sprintf(status, "Converting %lu bytes", fc->size);
 			if (content_convert(fc->c, fc->width, fc->height) == 0) {
 				cache_put(fc->c);
 				fc->callback(FETCHCACHE_OK, fc->c, fc->p, 0);

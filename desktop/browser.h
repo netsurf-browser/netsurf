@@ -1,10 +1,11 @@
 /**
- * $Id: browser.h,v 1.8 2003/02/09 19:33:19 bursa Exp $
+ * $Id: browser.h,v 1.9 2003/02/28 11:49:13 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
 #define _NETSURF_DESKTOP_BROWSER_H_
 
+#include <time.h>
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/render/box.h"
@@ -48,6 +49,7 @@ struct browser_window
 
   struct content* current_content;
   struct history* history;
+  clock_t time0;
 
   char* url;
 

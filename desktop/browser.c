@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.27 2003/02/26 18:22:24 bursa Exp $
+ * $Id: browser.c,v 1.28 2003/02/28 11:49:13 bursa Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -28,7 +28,7 @@ void browser_window_redraw_boxes(struct browser_window* bw, struct box_position*
 void browser_window_follow_link(struct browser_window* bw,
   int click_x, int click_y, int click_type);
 void browser_window_callback(fetchcache_msg msg, struct content *c,
-		struct browser_window* bw, char *error);
+		struct browser_window* bw, const char *error);
 void box_under_area(struct box* box, int x, int y, int ox, int oy, struct box_selection** found, int* count, int* plot_index);
 
 
@@ -48,9 +48,6 @@ void browser_window_stop_throbber(struct browser_window* bw)
 
 void browser_window_reformat(struct browser_window* bw)
 {
-  char status[100];
-  clock_t time0, time1;
-
   LOG(("Entering..."));
   assert(bw != 0);
   if (bw->current_content == NULL)
@@ -60,26 +57,23 @@ void browser_window_reformat(struct browser_window* bw)
   {
     case CONTENT_HTML:
       LOG(("HTML content."));
-      time0 = clock();
       if (bw->current_content->title == 0)
         gui_window_set_title(bw->window, bw->url);
       else
         gui_window_set_title(bw->window, bw->current_content->title);
-      time1 = clock();
       LOG(("Setting extent"));
       gui_window_set_extent(bw->window, bw->current_content->width, bw->current_content->height);
       LOG(("Setting scroll"));
       gui_window_set_scroll(bw->window, 0, 0);
-      LOG(("Redraw window"));
-      gui_window_redraw_window(bw->window);
       LOG(("Complete"));
-      sprintf(status, "Format complete (%gs).", ((float) time1 - time0) / CLOCKS_PER_SEC);
-      browser_window_set_status(bw, status);
       break;
     default:
-        LOG(("Unknown content type"));
+      LOG(("Unknown content type"));
       break;
   }
+
+  LOG(("Redraw window"));
+  gui_window_redraw_window(bw->window);
 }
 
 /* create a new history item */
@@ -225,6 +219,7 @@ void browser_window_open_location_historical(struct browser_window* bw, char* ur
   assert(bw != 0 && url != 0);
 
   browser_window_set_status(bw, "Opening page...");
+  bw->time0 = clock();
   fetchcache(url, 0, browser_window_callback, bw, gui_window_get_width(bw->window), 0);
   
   LOG(("end"));
@@ -248,14 +243,14 @@ void browser_window_open_location(struct browser_window* bw, char* url)
 }
 
 void browser_window_callback(fetchcache_msg msg, struct content *c,
-		struct browser_window* bw, char *error)
+		struct browser_window* bw, const char *error)
 {
   gui_safety previous_safety;
+  char status[40];
 
   switch (msg)
   {
     case FETCHCACHE_OK:
-      browser_window_set_status(bw, "Request complete.");
       {
         struct gui_message gmsg;
         if (bw->url != 0)
@@ -279,6 +274,8 @@ void browser_window_callback(fetchcache_msg msg, struct content *c,
         bw->current_content = c;
         browser_window_reformat(bw);
         gui_window_set_redraw_safety(bw->window, previous_safety);
+        sprintf(status, "Page complete (%gs)", ((float) clock() - bw->time0) / CLOCKS_PER_SEC);
+        browser_window_set_status(bw, status);
         browser_window_stop_throbber(bw);
       }
       break;
@@ -289,8 +286,13 @@ void browser_window_callback(fetchcache_msg msg, struct content *c,
       break;
 
     case FETCHCACHE_BADTYPE:
-      browser_window_set_status(bw, "Unknown type");
+      fprintf(status, "Unknown type '%s'", error);
+      browser_window_set_status(bw, status);
       browser_window_stop_throbber(bw);
+      break;
+
+    case FETCHCACHE_STATUS:
+      browser_window_set_status(bw, error);
       break;
 
     default:

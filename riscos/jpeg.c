@@ -1,5 +1,5 @@
 /**
- * $Id: jpeg.c,v 1.1 2003/02/25 21:00:27 bursa Exp $
+ * $Id: jpeg.c,v 1.2 2003/02/28 11:49:13 bursa Exp $
  *
  * This is just a temporary implementation using the JPEG renderer
  * available in some versions of RISC OS.
@@ -26,6 +26,7 @@ void jpeg_process_data(struct content *c, char *data, unsigned long size)
 	c->data.jpeg.data = xrealloc(c->data.jpeg.data, c->data.jpeg.length + size);
 	memcpy(c->data.jpeg.data + c->data.jpeg.length, data, size);
 	c->data.jpeg.length += size;
+	c->size += size;
 }
 
 
