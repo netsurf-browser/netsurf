@@ -5,30 +5,30 @@ RMEnsure UtilityModule 3.00 Error NetSurf needs RISC OS 3 or later
 
 | Ensure Nested WIMP is installed
 | http://acorn.riscos.com (in the universal boot archive)
-RMEnsure WindowManager 3.80 Error 0 NetSurf requires the Nested Window Manager.
+RMEnsure WindowManager 3.80 Error 0 NetSurf requires the Nested Window Manager. This can be obtained by downloading the Universal Boot sequence from http://acorn.riscos.com/
 
 | Ensure CallASWI is installed
 | http://www.iyonix.com/32bit/
 RMEnsure UtilityModule 3.70 RMEnsure CallASWI 0.02 RMLoad System:Modules.CallASWI
-RMEnsure UtilityModule 3.70 RMEnsure CallASWI 0.02 Error NetSurf requires the CallASWI module
+RMEnsure UtilityModule 3.70 RMEnsure CallASWI 0.02 Error NetSurf requires the CallASWI module. This can be downloaded from http://www.iyonix.com/32bit/system.shtml
 
 | Ensure DrawFile module is installed
 | http://acorn.riscos.com/riscos/releases/drawfile.arc
 | Should be installed in !System.310.Modules
 RMEnsure DrawFile 1.30 RMLoad System:Modules.DrawFile
-RMEnsure DrawFile 1.30 Error NetSurf requires the DrawFile module
+RMEnsure DrawFile 1.30 Error NetSurf requires the DrawFile module. An old verson of this can be downloaded from http://acorn.riscos.com/riscos/releases/drawfile.arc
 
 | Ensure SharedUnixLibrary is installed
 | http://www.chocky.org/unix/usage.html
 RMEnsure SharedUnixLibrary 1.02 RMLoad System:Modules.SharedULib
-RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.02 or later
+RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.02 or later. This can be downloaded from http://www.chocky.org/unix/usage.html
 
 | Load AcornURI if it isn't already
 | http://sudden.recoil.org/
 Set NetSurf$Start_URI_Handler "no"
 RMEnsure AcornURI 0.12 Set NetSurf$Start_URI_Handler "yes"
 RMEnsure AcornURI 0.12 RMLoad System:Modules.Network.URI
-RMEnsure AcornURI 0.12 Error NetSurf requires AcornURI 0.12 or later
+RMEnsure AcornURI 0.12 Error NetSurf requires AcornURI 0.12 or later. A version of this can be found at http://sudden.recoil.org/others/
 RMEnsure AcornURI 0.12 Set NetSurf$Start_URI_Handler "no"
 
 | Check for mime map module
