@@ -24,17 +24,18 @@
 <ul>
 <li>Basic HTML 4, including tables</li>
 <li>Parts of CSS</li>
-<li>Local and HTTP fetching</li>
 <li>External CSS files</li>
-<li>Memory cache</li>
 <li><em>&lt;style&gt;</em> element</li>
-<li>Encrypted HTTP or https (32-bit builds only)</li>
-<li>Plugin System</li>
-<li>Redirects</li>
-<li>View Source</li>
-<li>Support for Acorn URI Protocol and URI files</li>
+<li>Local and HTTP fetching</li>
+<li>Encrypted HTTP or https</li>
 <li>HTML forms, using GET and POST methods</li>
+<li>Cookie support</li>
 <li>Browser authentication</li>
+<li>Redirects</li>
+<li>Memory cache</li>
+<li>Plugin System</li>
+<li>View Source (Press F8)</li>
+<li>Support for Acorn URI Protocol and URI files</li>
 </ul>
 <p>The following is in progress:</p>
 <ul>
