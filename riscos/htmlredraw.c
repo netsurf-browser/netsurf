@@ -314,7 +314,6 @@ void html_redraw_box(struct content *content, struct box * box,
 			   x, y - (int) (box->height * 1.5),
 			   NULL, NULL, (int) box->length + 4);
 		        xfree(temp);
-		        LOG(("line-through"));
 		}
 		else {
                         char ulctrl[3];
