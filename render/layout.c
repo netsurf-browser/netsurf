@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.2 2002/05/11 15:22:24 bursa Exp $
+ * $Id: layout.c,v 1.3 2002/05/18 08:23:39 bursa Exp $
  */
 
 #include <assert.h>
@@ -98,6 +98,9 @@ unsigned long layout_block_children(struct box * box, unsigned long width)
 				y += c->height;
 				break;
 			default:
+				printf("%s -> %s\n",
+						box->node ? box->node->name : "()",
+						c->node ? c->node->name : "()");
 				die("block child not block, table, or inline container");
 		}
 	}

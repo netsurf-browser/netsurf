@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.9 2002/05/11 15:22:24 bursa Exp $
+ * $Id: render.c,v 1.10 2002/05/18 08:23:39 bursa Exp $
  */
 
 #include <assert.h>
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 	doc_box->node = c;
 	xml_to_box(c, style, stylesheet, &selector, 0, doc_box, 0);
 	html_box = doc_box->children;
-/*	box_dump(html_box, 0);*/
+	/*box_dump(html_box, 0);*/
 
 	layout_block(html_box, 600);
 /*	box_dump(html_box, 0);*/

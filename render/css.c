@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.2 2002/05/04 21:17:06 bursa Exp $
+ * $Id: css.c,v 1.3 2002/05/18 08:23:39 bursa Exp $
  */
 
 #include <string.h>
@@ -65,6 +65,15 @@ const struct css_style css_empty_style = {
 	{ CSS_HEIGHT_AUTO },
 	{ CSS_WIDTH_AUTO }
 };
+
+const struct css_style css_blank_style = {
+	CSS_DISPLAY_BLOCK,
+	CSS_FLOAT_NONE,
+	{ CSS_FONT_SIZE_INHERIT },
+	{ CSS_HEIGHT_AUTO },
+	{ CSS_WIDTH_AUTO }
+};
+
 
 
 /**
@@ -311,12 +320,17 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 		}
 	}
 
-	qsort(decl, decls, sizeof(struct decl), (int (*) (const void *, const void *)) cmpdecl);
+	if (decls == 0) {
+		css_cascade(style, &css_blank_style);
 
-	for (d = 0; d < decls; d++) {
-/* 		printf("%i: 0x%lx\n", d, decl[d].score); */
-/* 		css_dump_rule(decl[d].rule); */
-		css_cascade(style, decl[d].rule->style);
+	} else {
+		qsort(decl, decls, sizeof(struct decl), (int (*) (const void *, const void *)) cmpdecl);
+	
+		for (d = 0; d < decls; d++) {
+/* 			printf("%i: 0x%lx\n", d, decl[d].score); */
+/*	 		css_dump_rule(decl[d].rule); */
+			css_cascade(style, decl[d].rule->style);
+		}
 	}
 }
 
