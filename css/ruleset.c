@@ -11,6 +11,10 @@
  * This file implements the last stage of CSS parsing. It converts trees of
  * struct css_node produced by the parser into struct style, and adds them to a
  * stylesheet.
+ *
+ * This code is complicated by the CSS error handling rules. According to
+ * CSS 2.1 4.2 "Illegal values", the whole of a declaration must be legal for
+ * any of it to be used.
  */
 
 #include <assert.h>
@@ -34,13 +38,21 @@ static int parse_length(struct css_length * const length,
 		const struct css_node * const v, bool non_negative);
 static colour parse_colour(const struct css_node * const v);
 static colour css_parse_rgb(struct css_node *v);
-static void parse_background(struct css_style * const s, const struct css_node * v);
+static void parse_background(struct css_style * const s,
+		const struct css_node * v);
 static void parse_background_attachment(struct css_style * const s, const struct css_node * const v);
 static void parse_background_color(struct css_style * const s, const struct css_node * const v);
-static void parse_background_image(struct css_style * const s, const struct css_node * const v);
+static void parse_background_image(struct css_style * const s,
+		const struct css_node * const v);
+static bool css_background_image_parse(const struct css_node *v,
+		css_background_image_type *type, char **uri);
 static struct css_background_entry *css_background_lookup(
 		const struct css_node *v);
-static void parse_background_position(struct css_style * const s, const struct css_node * const v);
+static void parse_background_position(struct css_style * const s,
+		const struct css_node * const v);
+static bool css_background_position_parse(const struct css_node **node,
+		struct css_background_position *horz,
+		struct css_background_position *vert);
 static void parse_background_repeat(struct css_style * const s, const struct css_node * const v);
 static void parse_border(struct css_style * const s, const struct css_node * v);
 static void parse_border_bottom(struct css_style * const s, const struct css_node * v);
@@ -522,52 +534,113 @@ colour css_parse_rgb(struct css_node *v)
 }
 
 
-void parse_background(struct css_style * const s, const struct css_node * v)
+/**
+ * \name  Individual property parsers.
+ * \{
+ */
+
+void parse_background(struct css_style * const s,
+		const struct css_node * v)
 {
-	colour c;
-	css_background_attachment ba;
-	css_background_repeat br;
-	for (; v; v = v->next) {
+	colour c = TRANSPARENT, c2;
+	css_background_image_type bi = CSS_BACKGROUND_IMAGE_NONE, bi2;
+	char *bi_uri = 0;
+	css_background_repeat br = CSS_BACKGROUND_REPEAT_REPEAT, br2;
+	css_background_attachment ba = CSS_BACKGROUND_ATTACHMENT_SCROLL, ba2;
+	struct css_background_position horz =
+			{ CSS_BACKGROUND_POSITION_PERCENT, { 0 } };
+	struct css_background_position vert =
+			{ CSS_BACKGROUND_POSITION_PERCENT, { 0 } };
+	struct css_background_position horz2, vert2;
+
+	while (v) {
 		switch (v->type) {
-			/**\todo background-position */
 			case CSS_NODE_URI:
 			case CSS_NODE_STRING:
-				parse_background_image(s, v);
+				/* background-image */
+				if (!css_background_image_parse(v, &bi2,
+						&bi_uri))
+					return;
+				bi = bi2;
+				v = v->next;
 				break;
-			/*case CSS_NODE_DIMENSION:
+
+			case CSS_NODE_DIMENSION:
 			case CSS_NODE_PERCENTAGE:
-				parse_background_position(s, v);
-				v = v->naxt;
-				break;*/
+				/* background-position */
+				if (!css_background_position_parse(&v,
+						&horz2, &vert2))
+					return;
+				horz = horz2;
+				vert = vert2;
+				break;
+
 			case CSS_NODE_IDENT:
-				/* background-attachment */
-				ba = css_background_attachment_parse(v->data, v->data_length);
-				if (ba != CSS_BACKGROUND_ATTACHMENT_UNKNOWN) {
-					s->background_attachment = ba;
+				/* could be background-image: none */
+				if (v->data_length == 4 &&
+						strncasecmp(v->data, "none",
+						4) == 0) {
+					bi = CSS_BACKGROUND_IMAGE_NONE;
+					v = v->next;
 					break;
 				}
 
 				/* background-repeat */
-				br = css_background_repeat_parse(v->data, v->data_length);
-				if (br != CSS_BACKGROUND_REPEAT_UNKNOWN) {
-					s->background_repeat = br;
+				br2 = css_background_repeat_parse(v->data,
+						v->data_length);
+				if (br2 != CSS_BACKGROUND_REPEAT_UNKNOWN) {
+					br = br2;
+					v = v->next;
+					break;
+				}
+
+				/* background-attachment */
+				ba2 = css_background_attachment_parse(v->data,
+						v->data_length);
+				if (ba2 != CSS_BACKGROUND_ATTACHMENT_UNKNOWN) {
+					ba = ba2;
+					v = v->next;
+					break;
+				}
+
+				/* background-position */
+				if (css_background_position_parse(&v,
+						&horz2, &vert2)) {
+					horz = horz2;
+					vert = vert2;
 					break;
 				}
 
 				/* fall through */
 			case CSS_NODE_HASH:
 			case CSS_NODE_FUNCTION:
-				c = parse_colour(v);
-				if (c != CSS_COLOR_NONE)
-					s->background_color = c;
-				break;
+				/* background-color */
+				c2 = parse_colour(v);
+				if (c2 != CSS_COLOR_NONE) {
+					c = c2;
+					v = v->next;
+					break;
+				}
+
+				/* fall through */
 			default:
-				break;
+				/* parsing failed */
+				return;
 		}
 	}
+
+	s->background_color = c;
+	s->background_image.type = bi;
+	s->background_image.uri = bi_uri;
+	s->background_repeat = br;
+	s->background_attachment = ba;
+	s->background_position.horz = horz;
+	s->background_position.vert = vert;
 }
 
-void parse_background_attachment(struct css_style * const s, const struct css_node * const v)
+
+void parse_background_attachment(struct css_style * const s,
+		const struct css_node * const v)
 {
 	css_background_attachment z;
 	if (v->type != CSS_NODE_IDENT || v->next != 0)
@@ -577,19 +650,51 @@ void parse_background_attachment(struct css_style * const s, const struct css_no
 		s->background_attachment = z;
 }
 
-void parse_background_color(struct css_style * const s, const struct css_node * const v)
+
+void parse_background_color(struct css_style * const s,
+		const struct css_node * const v)
 {
-	colour c = parse_colour(v);
+	colour c;
+	if (v->next)
+		return;
+	c = parse_colour(v);
 	if (c != CSS_COLOR_NONE)
 		s->background_color = c;
 }
 
-void parse_background_image(struct css_style * const s, const struct css_node * const v)
+
+void parse_background_image(struct css_style * const s,
+		const struct css_node * const v)
+{
+	css_background_image_type type;
+	char *uri = 0;
+
+	if (v->next)
+		return;
+	if (!css_background_image_parse(v, &type, &uri))
+		return;
+
+	s->background_image.type = type;
+	s->background_image.uri = uri;
+}
+
+
+/**
+ * Parse a background-image property.
+ *
+ * \param  node  node to parse
+ * \param  type  updated to background image type
+ * \param  uri   updated to background image uri, if type is
+ *               CSS_BACKGROUND_IMAGE_URI
+ * \return  true on success, false on parse failure
+ */
+
+bool css_background_image_parse(const struct css_node *v,
+		css_background_image_type *type, char **uri)
 {
 	bool string = false;
 	const char *u;
 	char *t, *url;
-	s->background_image.uri = 0;
 
 	switch (v->type) {
 		case CSS_NODE_URI:
@@ -603,9 +708,8 @@ void parse_background_image(struct css_style * const s, const struct css_node * 
 				u++;
 			}
 			url = strndup(u, v->data_length - (u - v->data));
-			if (!url) {
-				return;
-			}
+			if (!url)
+				return false;
 			for (t = url + strlen(url) - 2;
 					*t == ' ' || *t == '\t' || *t == '\r' ||
 					*t == '\n' || *t == '\f';
@@ -620,32 +724,37 @@ void parse_background_image(struct css_style * const s, const struct css_node * 
 			 * content is the parent HTML content
 			 */
 			if (v->stylesheet->type == CONTENT_HTML)
-				s->background_image.uri = url_join(url, v->stylesheet->data.html.base_url);
+				*uri = url_join(url, v->stylesheet->data.html.base_url);
 			else
-				s->background_image.uri = url_join(url, v->stylesheet->url);
+				*uri = url_join(url, v->stylesheet->url);
 			free(url);
-			if (!s->background_image.uri) return;
-			s->background_image.type = CSS_BACKGROUND_IMAGE_URI;
+			if (!*uri)
+				return false;
+			*type = CSS_BACKGROUND_IMAGE_URI;
 			break;
 		case CSS_NODE_STRING:
 			url = strndup(v->data, v->data_length);
 			if (!url)
-				return;
+				return false;
 
-			s->background_image.uri = url_join(url, v->stylesheet->url);
+			*uri = url_join(url, v->stylesheet->url);
 			free(url);
-			if (!s->background_image.uri) return;
-			s->background_image.type = CSS_BACKGROUND_IMAGE_URI;
+			if (!*uri)
+				return false;
+			*type = CSS_BACKGROUND_IMAGE_URI;
 			break;
 		case CSS_NODE_IDENT:
-			if (v->data_length == 7 && strncasecmp(v->data, "inherit", 7) == 0)
-				s->background_image.type = CSS_BACKGROUND_IMAGE_INHERIT;
-			else if (v->data_length == 4 && strncasecmp(v->data, "none", 4) == 0)
-				s->background_image.type = CSS_BACKGROUND_IMAGE_NONE;
+			if (v->data_length == 7 &&
+					strncasecmp(v->data, "inherit", 7) == 0)
+				*type = CSS_BACKGROUND_IMAGE_INHERIT;
+			else if (v->data_length == 4 &&
+					strncasecmp(v->data, "none", 4) == 0)
+				*type = CSS_BACKGROUND_IMAGE_NONE;
 			break;
 		default:
-			break;
+			return false;
 	}
+	return true;
 }
 
 
@@ -695,128 +804,146 @@ struct css_background_entry *css_background_lookup(
 void parse_background_position(struct css_style * const s,
 		const struct css_node * v)
 {
-	struct css_node *w = v->next;
-	struct css_background_entry *bg = 0, *bg2 = 0;
+	const struct css_node *node = v;
+	struct css_background_position horz, vert;
 
-	if (w && w->next)
+	if (v->next && v->next->next)
+		/* more than two nodes */
 		return;
 
-	if (!w) { /* only one value specified */
+	if (!css_background_position_parse(&node, &horz, &vert))
+		return;
+	if (node)
+		/* didn't parse all the nodes */
+		return;
+
+	s->background_position.horz = horz;
+	s->background_position.vert = vert;
+}
+
+
+/**
+ * Parse a background-position property.
+ *
+ * \param  node  list of nodes, updated to first unused node
+ * \param  horz  updated to horizontal background position
+ * \param  vert  updated to vertical background position
+ * \return  true on success, false on parse failure
+ */
+
+bool css_background_position_parse(const struct css_node **node,
+		struct css_background_position *horz,
+		struct css_background_position *vert)
+{
+	const struct css_node *v = *node;
+	const struct css_node *w = v->next;
+	struct css_background_entry *bg = 0, *bg2 = 0;
+
+	if (v->type == CSS_NODE_IDENT)
+		bg = css_background_lookup(v);
+	if (w && w->type == CSS_NODE_IDENT)
+		bg2 = css_background_lookup(w);
+
+	if (!(w && ((w->type == CSS_NODE_IDENT && bg2) ||
+			w->type == CSS_NODE_PERCENTAGE ||
+			w->type == CSS_NODE_DIMENSION))) {
+		/* only one value specified */
 		if (v->type == CSS_NODE_IDENT) {
 			if (v->data_length == 7 &&
 					strncasecmp(v->data, "inherit", 7)
 					== 0) {
-				s->background_position.horz.pos =
-				s->background_position.vert.pos =
+				horz->pos = vert->pos =
 						CSS_BACKGROUND_POSITION_INHERIT;
-				return;
+				return false;
 			}
 
-			bg = css_background_lookup(v);
 			if (!bg)
-				return;
-			s->background_position.horz.pos =
-			s->background_position.vert.pos =
-					CSS_BACKGROUND_POSITION_PERCENT;
-			s->background_position.horz.value.percent =
-					bg->horizontal ? bg->value : 50;
-			s->background_position.vert.value.percent =
-					bg->vertical ? bg->value : 50;
+				return false;
+			horz->pos = vert->pos = CSS_BACKGROUND_POSITION_PERCENT;
+			horz->value.percent = bg->horizontal ? bg->value : 50;
+			vert->value.percent = bg->vertical ? bg->value : 50;
 		}
 		else if (v->type == CSS_NODE_PERCENTAGE) {
-			s->background_position.horz.pos =
-			s->background_position.vert.pos =
-					CSS_BACKGROUND_POSITION_PERCENT;
-			s->background_position.horz.value.percent =
-					atof(v->data);
-			s->background_position.vert.value.percent = 50.0;
+			horz->pos = vert->pos = CSS_BACKGROUND_POSITION_PERCENT;
+			horz->value.percent = atof(v->data);
+			vert->value.percent = 50.0;
 		}
 		else if (v->type == CSS_NODE_DIMENSION) {
-			if (parse_length(&s->background_position.horz.value.
+			if (parse_length(&horz->value.
 					length, v, false) == 0) {
-				s->background_position.horz.pos =
-						CSS_BACKGROUND_POSITION_LENGTH;
-				s->background_position.vert.pos =
-						CSS_BACKGROUND_POSITION_PERCENT;
-				s->background_position.vert.value.percent =
-						50.0;
+				horz->pos = CSS_BACKGROUND_POSITION_LENGTH;
+				vert->pos = CSS_BACKGROUND_POSITION_PERCENT;
+				vert->value.percent = 50.0;
 			}
 		}
 
-		return;
+		*node = w;
+		return true;
 	}
 
 	/* two values specified */
 	if (v->type == CSS_NODE_IDENT && w->type == CSS_NODE_IDENT) {
 		/* both keywords */
-		bg = css_background_lookup(v);
-		bg2 = css_background_lookup(w);
 		if (!bg || !bg2)
-			return;
+			return false;
 		if ((bg->horizontal && bg2->horizontal) ||
 				(bg->vertical && bg2->vertical))
-			return;
-		s->background_position.horz.pos =
-		s->background_position.vert.pos =
-				CSS_BACKGROUND_POSITION_PERCENT;
-		s->background_position.horz.value.percent =
-		s->background_position.vert.value.percent = 50;
+			return false;
+		horz->pos = vert->pos = CSS_BACKGROUND_POSITION_PERCENT;
+		horz->value.percent = vert->value.percent = 50;
 		if (bg->horizontal)
-			s->background_position.horz.value.percent = bg->value;
+			horz->value.percent = bg->value;
 		else if (bg2->horizontal)
-			s->background_position.horz.value.percent = bg2->value;
+			horz->value.percent = bg2->value;
 		if (bg->vertical)
-			s->background_position.vert.value.percent = bg->value;
+			vert->value.percent = bg->value;
 		else if (bg2->vertical)
-			s->background_position.vert.value.percent = bg2->value;
+			vert->value.percent = bg2->value;
 
-		return;
+		*node = w->next;
+		return true;
 	}
 
 	if (v->type == CSS_NODE_IDENT) { /* horizontal value */
-		bg = css_background_lookup(v);
 		if (!bg || bg->vertical)
-			return;
+			return false;
 	}
 	if (w->type == CSS_NODE_IDENT) { /* vertical value */
-		bg2 = css_background_lookup(w);
 		if (!bg2 || bg2->horizontal)
-			return;
+			return false;
 	}
 
 	if (v->type == CSS_NODE_IDENT) { /* horizontal value */
-		s->background_position.horz.pos =
-				CSS_BACKGROUND_POSITION_PERCENT;
-		s->background_position.horz.value.percent = bg->value;
+		horz->pos = CSS_BACKGROUND_POSITION_PERCENT;
+		horz->value.percent = bg->value;
 	} else if (v->type == CSS_NODE_PERCENTAGE) {
-		s->background_position.horz.pos =
-				CSS_BACKGROUND_POSITION_PERCENT;
-		s->background_position.horz.value.percent = atof(v->data);
+		horz->pos = CSS_BACKGROUND_POSITION_PERCENT;
+		horz->value.percent = atof(v->data);
 	} else if (v->type == CSS_NODE_DIMENSION) {
-		if (parse_length(&s->background_position.horz.value.length,
+		if (parse_length(&horz->value.length,
 				v, false) == 0)
-			s->background_position.horz.pos =
-					CSS_BACKGROUND_POSITION_LENGTH;
+			horz->pos = CSS_BACKGROUND_POSITION_LENGTH;
 	}
 
 	if (w->type == CSS_NODE_IDENT) { /* vertical value */
-		s->background_position.vert.pos =
-				CSS_BACKGROUND_POSITION_PERCENT;
-		s->background_position.vert.value.percent = bg2->value;
+		vert->pos = CSS_BACKGROUND_POSITION_PERCENT;
+		vert->value.percent = bg2->value;
 	} else if (w->type == CSS_NODE_PERCENTAGE) {
-		s->background_position.vert.pos =
-				CSS_BACKGROUND_POSITION_PERCENT;
-		s->background_position.vert.value.percent = atof(w->data);
+		vert->pos = CSS_BACKGROUND_POSITION_PERCENT;
+		vert->value.percent = atof(w->data);
 	} else if (w->type == CSS_NODE_DIMENSION) {
-		if (parse_length(&s->background_position.vert.value.length,
+		if (parse_length(&vert->value.length,
 				w, false) == 0)
-			s->background_position.vert.pos =
-					CSS_BACKGROUND_POSITION_LENGTH;
+			vert->pos = CSS_BACKGROUND_POSITION_LENGTH;
 	}
+
+	*node = w->next;
+	return true;
 }
 
 
-void parse_background_repeat(struct css_style * const s, const struct css_node * const v)
+void parse_background_repeat(struct css_style * const s,
+		const struct css_node * const v)
 {
 	css_background_repeat z;
 	if (v->type != CSS_NODE_IDENT || v->next != 0)
@@ -825,6 +952,7 @@ void parse_background_repeat(struct css_style * const s, const struct css_node *
 	if (z != CSS_BACKGROUND_REPEAT_UNKNOWN)
 		s->background_repeat = z;
 }
+
 
 void parse_border_width(struct css_style * const s,
 		const struct css_node * const v)
@@ -1616,3 +1744,4 @@ css_text_decoration css_text_decoration_parse(const char * const s,
 	return CSS_TEXT_DECORATION_UNKNOWN;
 }
 
+/** \} */

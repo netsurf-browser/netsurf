@@ -1005,10 +1005,10 @@ void css_dump_style(const struct css_style * const style)
 				break;
 		}
 		fprintf(stderr, " %s %s ",
-				css_background_attachment_name[
-						style->background_attachment],
 				css_background_repeat_name[
-						style->background_repeat]);
+						style->background_repeat],
+				css_background_attachment_name[
+						style->background_attachment]);
 		switch (style->background_position.horz.pos) {
 			case CSS_BACKGROUND_POSITION_LENGTH:
 				css_dump_length(&style->background_position.
@@ -1038,6 +1038,7 @@ void css_dump_style(const struct css_style * const style)
 						vert.value.percent);
 				break;
 			case CSS_BACKGROUND_POSITION_INHERIT:
+				fprintf(stderr, "inherit");
 				break;
 			default:
 				fprintf(stderr, "UNKNOWN");

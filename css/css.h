@@ -54,42 +54,42 @@ typedef enum {
 } css_text_decoration;
 
 typedef enum {
-        CSS_BACKGROUND_POSITION_LENGTH,
-        CSS_BACKGROUND_POSITION_PERCENT,
-        CSS_BACKGROUND_POSITION_INHERIT
-} css_background_position;
+	CSS_BACKGROUND_IMAGE_NONE,
+	CSS_BACKGROUND_IMAGE_INHERIT,
+	CSS_BACKGROUND_IMAGE_URI
+} css_background_image_type;
+
+/** Part of struct css_style, for convenience. */
+struct css_background_position {
+	enum {
+		CSS_BACKGROUND_POSITION_LENGTH,
+		CSS_BACKGROUND_POSITION_PERCENT,
+		CSS_BACKGROUND_POSITION_INHERIT
+	} pos;
+	union {
+		float percent;
+		struct css_length length;
+	} value;
+};
+
 
 /** Representation of a complete CSS 2 style. */
 struct css_style {
 	colour background_color;
 
-        css_background_attachment background_attachment;
+	css_background_attachment background_attachment;
 
 	struct {
-	        enum { CSS_BACKGROUND_IMAGE_NONE,
-	               CSS_BACKGROUND_IMAGE_INHERIT,
-	               CSS_BACKGROUND_IMAGE_URI } type;
-	        char *uri;
+		css_background_image_type type;
+		char *uri;
 	} background_image;
 
-        struct {
-                struct {
-                        css_background_position pos;
-                        union {
-                                float percent;
-                                struct css_length length;
-                        } value;
-                } horz;
-                struct {
-                        css_background_position pos;
-                        union {
-                                float percent;
-                                struct css_length length;
-                        } value;
-                } vert;
-        } background_position;
+	struct {
+		struct css_background_position horz;
+		struct css_background_position vert;
+	} background_position;
 
-        css_background_repeat background_repeat;
+	css_background_repeat background_repeat;
 
 	struct {
 		colour color;
@@ -119,7 +119,7 @@ struct css_style {
 		} value;
 	} font_size;
 
-        css_font_family font_family;
+	css_font_family font_family;
 	css_font_weight font_weight;
 	css_font_style font_style;
 	css_font_variant font_variant;
@@ -167,14 +167,14 @@ struct css_style {
 	css_text_align text_align;
 	css_text_decoration text_decoration;
 	struct {
-	        enum { CSS_TEXT_INDENT_INHERIT,
-	               CSS_TEXT_INDENT_LENGTH,
-	               CSS_TEXT_INDENT_PERCENT } size;
-	        union {
-	               struct css_length length;
-	               float percent;
-	        } value ;
-        } text_indent;
+		enum { CSS_TEXT_INDENT_INHERIT,
+		       CSS_TEXT_INDENT_LENGTH,
+		       CSS_TEXT_INDENT_PERCENT } size;
+		union {
+		       struct css_length length;
+		       float percent;
+		} value ;
+	} text_indent;
 	css_text_transform text_transform;
 
 	css_visibility visibility;
@@ -317,7 +317,7 @@ void css_destroy(struct content *c);
 #ifdef CSS_INTERNALS
 
 struct css_node * css_new_node(struct content *stylesheet,
-                css_node_type type,
+		css_node_type type,
 		const char *data, unsigned int data_length);
 void css_free_node(struct css_node *node);
 struct css_selector * css_new_selector(css_selector_type type,
@@ -349,7 +349,7 @@ void css_cascade(struct css_style * const style,
 void css_merge(struct css_style * const style,
 		const struct css_style * const apply);
 void css_parse_property_list(struct content *c, struct css_style * style,
-                            char * str);
+		char * str);
 colour named_colour(const char *name);
 void css_dump_style(const struct css_style * const style);
 void css_dump_stylesheet(const struct css_stylesheet * stylesheet);
