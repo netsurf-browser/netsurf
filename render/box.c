@@ -2281,14 +2281,24 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
 
 /**
  * Find the absolute coordinates of a box.
+ *
+ * \param  box  the box to calculate coordinates of
+ * \param  x    updated to x coordinate
+ * \param  y    updated to y coordinate
  */
 
-void box_coords(struct box *box, unsigned long *x, unsigned long *y)
+void box_coords(struct box *box, int *x, int *y)
 {
 	*x = box->x;
 	*y = box->y;
-	while (box->parent != 0) {
-		box = box->parent;
+	while (box->parent) {
+		if (box->type == BOX_FLOAT_LEFT ||
+				box->type == BOX_FLOAT_RIGHT) {
+			do {
+				box = box->parent;
+			} while (!box->float_children);
+		} else
+			box = box->parent;
 		*x += box->x;
 		*y += box->y;
 	}

@@ -212,6 +212,6 @@ struct box * box_create(struct css_style * style,
 void box_add_child(struct box * parent, struct box * child);
 void box_insert_sibling(struct box *box, struct box *new_box);
 void box_free(struct box *box);
-void box_coords(struct box *box, unsigned long *x, unsigned long *y);
+void box_coords(struct box *box, int *x, int *y);
 
 #endif
