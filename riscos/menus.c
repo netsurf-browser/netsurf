@@ -63,7 +63,7 @@ struct content *save_content = 0;
 
 /*	Iconbar menu
 */
-wimp_menu *iconbar_menu = (wimp_menu *)&(wimp_MENU(4)) {
+static wimp_MENU(4) ibar_menu = {
   { "NetSurf" }, 7,2,7,0, 200, 44, 0,
   {
     { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Info" } },
@@ -73,6 +73,7 @@ wimp_menu *iconbar_menu = (wimp_menu *)&(wimp_MENU(4)) {
   }
 };
 int iconbar_menu_height = 4 * 44;
+wimp_menu *iconbar_menu = (wimp_menu *)&ibar_menu;
 
 
 /*	Export submenu

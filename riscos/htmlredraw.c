@@ -9,12 +9,12 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
+#include "swis.h"
 #include "oslib/colourtrans.h"
 #include "oslib/draw.h"
 #include "oslib/font.h"
 #include "oslib/os.h"
 #include "oslib/wimp.h"
-#include "swis.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/css/css.h"
 #include "netsurf/content/content.h"
