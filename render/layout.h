@@ -17,6 +17,6 @@
 #define _NETSURF_RENDER_LAYOUT_H_
 
 void layout_document(struct box *box, int width);
-void layout_block(struct box *box, struct box *cont, int cx, int cy);
+void layout_block_context(struct box *block);
 
 #endif

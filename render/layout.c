@@ -35,17 +35,14 @@
 #define AUTO INT_MIN
 
 
-static void layout_node(struct box *box, int width, struct box *cont,
-		int cx, int cy);
-static void layout_block_find_dimensions(int available_width,
-		struct css_style *style, struct box *box);
+static void layout_block_find_dimensions(int available_width, struct box *box);
+static int layout_solve_width(int available_width, int width,
+		int margin[4], int padding[4], int border[4]);
 static void layout_float_find_dimensions(int available_width,
 		struct css_style *style, struct box *box);
 static void layout_find_dimensions(int available_width,
 		struct css_style *style,
 		int margin[4], int padding[4], int border[4]);
-static void layout_block_children(struct box *box, struct box *cont,
-		int cx, int cy);
 static int layout_clear(struct box *fl, css_clear clear);
 static void find_sides(struct box *fl, int y0, int y1,
 		int *x0, int *x1, struct box **left, struct box **right);
@@ -58,7 +55,7 @@ static int layout_text_indent(struct css_style *style, int width);
 static void layout_float(struct box *b, int width);
 static void place_float_below(struct box *c, int width, int y,
 		struct box *cont);
-static void layout_table(struct box *box);
+static void layout_table(struct box *box, int available_width);
 static void calculate_widths(struct box *box);
 static void calculate_inline_container_widths(struct box *box);
 static void calculate_table_widths(struct box *table);
@@ -78,12 +75,13 @@ void layout_document(struct box *doc, int width)
 
 	calculate_widths(doc);
 
-	layout_block_find_dimensions(width, doc->style, doc);
+	layout_block_find_dimensions(width, doc);
 	doc->x = doc->margin[LEFT] + doc->border[LEFT];
 	doc->y = doc->margin[TOP] + doc->border[TOP];
 	width -= doc->margin[LEFT] + doc->border[LEFT] +
 			doc->border[RIGHT] + doc->margin[RIGHT];
-	layout_node(doc, width, doc, 0, 0);
+	doc->width = width;
+	layout_block_context(doc);
 
 	for (box = doc->float_children; box != 0; box = box->next_float)
 		if (doc->height < box->y + box->height)
@@ -92,95 +90,137 @@ void layout_document(struct box *doc, int width)
 
 
 /**
- * Layout the children of a box.
+ * Layout a block formatting context.
  *
- * \param box    box to layout
- * \param width  horizontal space available
- * \param cont   ancestor box which defines horizontal space, for floats
- * \param cx     box position relative to cont
- * \param cy     box position relative to cont
+ * \param  block  BLOCK, INLINE_BLOCK, or TABLE_CELL to layout.
+ *
+ * This function carries out layout of a block and its children, as described
+ * in CSS 2.1 9.4.1.
  */
 
-void layout_node(struct box *box, int width, struct box *cont,
-		int cx, int cy)
+void layout_block_context(struct box *block)
 {
-	int cy1, x0, x1, table_width;
-	struct box *left, *right;
+	struct box *box;
+	int cx;
+	int cy;
+	int max_pos_margin = 0;
+	int max_neg_margin = 0;
+	int y;
+	struct box *margin_box;
 
-	LOG(("box %p, width %i, cont %p, cx %i, cy %i",
-			box, width, cont, cx, cy));
+	assert(block->type == BOX_BLOCK ||
+			block->type == BOX_INLINE_BLOCK ||
+			block->type == BOX_TABLE_CELL);
 
-	gui_multitask();
+	box = margin_box = block->children;
+	cx = block->padding[LEFT];
+	cy = block->padding[TOP];
+	if (box)
+		box->y = block->padding[TOP];
 
-	switch (box->type) {
-		case BOX_BLOCK:
-		case BOX_INLINE_BLOCK:
-			layout_block(box, cont, cx, cy);
-			break;
-		case BOX_INLINE_CONTAINER:
-			layout_inline_container(box, box->width, cont, cx, cy);
-			break;
-		case BOX_TABLE:
-			layout_table(box);
-			/* find sides and move table down if it doesn't fit
-			   in available width */
-			cy1 = cy;
-			table_width = box->width;
-			while (1) {
-				x0 = cx;
-				x1 = cx + width;
-				find_sides(cont->float_children, cy1, cy1 + box->height,
-						&x0, &x1, &left, &right);
-				if (table_width <= x1 - x0)
-					break;
-				if (left == 0 && right == 0)
-					break;
-				/* move down to the next place where the space may increase */
-				if (left == 0)
-					cy1 = right->y + right->height + 1;
-				else if (right == 0)
-					cy1 = left->y + left->height + 1;
-				else if (left->y + left->height < right->y + right->height)
-					cy1 = left->y + left->height + 1;
-				else
-					cy1 = right->y + right->height + 1;
+	while (box) {
+		assert(box->type == BOX_BLOCK || box->type == BOX_TABLE ||
+				box->type == BOX_INLINE_CONTAINER);
+		assert(margin_box);
+
+		/* Tables are laid out before being positioned, because the
+		 * position depends on the width which is calculated in
+		 * table layout. Blocks and inline containers are positioned
+		 * before being laid out, because width is not dependent on
+		 * content, and the position is required during layout for
+		 * correct handling of floats.
+		 */
+
+		if (box->type == BOX_BLOCK)
+			layout_block_find_dimensions(box->parent->width, box);
+		else if (box->type == BOX_TABLE) {
+			layout_table(box, box->parent->width);
+			layout_solve_width(box->parent->width, box->width,
+					box->margin, box->padding, box->border);
+		}
+
+		/* Position box: horizontal. */
+		box->x = box->parent->padding[LEFT] + box->margin[LEFT] +
+				box->border[LEFT];
+		cx += box->x;
+
+		/* Position box: top margin. */
+		if (max_pos_margin < box->margin[TOP])
+			max_pos_margin = box->margin[TOP];
+		else if (max_neg_margin < -box->margin[TOP])
+			max_neg_margin = -box->margin[TOP];
+
+		/* Clearance. */
+		y = 0;
+		if (box->style && box->style->clear != CSS_CLEAR_NONE)
+			y = layout_clear(block->float_children,
+					box->style->clear);
+
+		if (box->type != BOX_BLOCK || y ||
+				box->border[TOP] || box->padding[TOP]) {
+			margin_box->y += max_pos_margin - max_neg_margin;
+			cy += max_pos_margin - max_neg_margin;
+			max_pos_margin = max_neg_margin = 0;
+			margin_box = 0;
+			box->y += box->border[TOP];
+			cy += box->border[TOP];
+			if (cy < y) {
+				box->y += y - cy;
+				cy = y;
 			}
-			box->x = x0;
-			box->y += cy1 - cy;
-			break;
-		default:
-			assert(0);
-	}
-}
+		}
 
+		/* Layout (except tables). */
+		if (box->type == BOX_INLINE_CONTAINER) {
+			box->width = box->parent->width;
+			layout_inline_container(box, box->width, block, cx, cy);
+		} else if (box->type == BOX_TABLE) {
+			/** \todo  move down to avoid floats if necessary */
+		}
 
-/**
- * Layout the children of a block box.
- *
- * \param box    block box to layout
- * \param cont   ancestor box which defines horizontal space, for floats
- * \param cx     box position relative to cont
- * \param cy     box position relative to cont
- */
-
-void layout_block(struct box *box, struct box *cont, int cx, int cy)
-{
-	struct css_style *style = box->style;
-
-	assert(box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK);
-	assert(style != 0);
-
-	LOG(("box %p, cont %p, cx %i, cy %i", box, cont, cx, cy));
-
-	layout_block_children(box, cont, cx, cy);
-	switch (style->height.height) {
-		case CSS_HEIGHT_LENGTH:
-			box->height = len(&style->height.length, style);
-			break;
-		case CSS_HEIGHT_AUTO:
-		default:
-			/* use the computed height */
-			break;
+		/* Advance to next box. */
+		if (box->type == BOX_BLOCK && box->children) {
+			y = box->padding[TOP];
+			box = box->children;
+			box->y = y;
+			cy += y;
+			if (!margin_box) {
+				max_pos_margin = max_neg_margin = 0;
+				margin_box = box;
+			}
+			continue;
+		}
+		cy += box->height + box->padding[BOTTOM] + box->border[BOTTOM];
+		max_pos_margin = max_neg_margin = 0;
+		if (max_pos_margin < box->margin[BOTTOM])
+			max_pos_margin = box->margin[BOTTOM];
+		else if (max_neg_margin < -box->margin[BOTTOM])
+			max_neg_margin = -box->margin[BOTTOM];
+		if (!box->next) {
+			while (box != block && !box->next) {
+				cx -= box->x;
+				y = box->y + box->padding[TOP] + box->height +
+						box->padding[BOTTOM] +
+						box->border[BOTTOM];
+				box = box->parent;
+/* 				if (box->height == AUTO) */
+					box->height = y - box->padding[TOP];
+				cy += box->padding[BOTTOM] +
+						box->border[BOTTOM];
+				if (max_pos_margin < box->margin[BOTTOM])
+					max_pos_margin = box->margin[BOTTOM];
+				else if (max_neg_margin < -box->margin[BOTTOM])
+					max_neg_margin = -box->margin[BOTTOM];
+			}
+			if (box == block)
+				break;
+		}
+		cx -= box->x;
+		y = box->y + box->padding[TOP] + box->height +
+				box->padding[BOTTOM] + box->border[BOTTOM];
+		box = box->next;
+		box->y = y;
+		margin_box = box;
 	}
 }
 
@@ -190,13 +230,13 @@ void layout_block(struct box *box, struct box *cont, int cx, int cy)
  * element.
  */
 
-void layout_block_find_dimensions(int available_width,
-		struct css_style *style, struct box *box)
+void layout_block_find_dimensions(int available_width, struct box *box)
 {
 	int width;
 	int *margin = box->margin;
 	int *padding = box->padding;
 	int *border = box->border;
+	struct css_style *style = box->style;
 
 	/* calculate box width */
 	switch (style->width.width) {
@@ -214,7 +254,23 @@ void layout_block_find_dimensions(int available_width,
 
 	layout_find_dimensions(available_width, style, margin, padding, border);
 
-	/* solve the width constraint as given in CSS 2.1 section 10.3.3 */
+	box->width = layout_solve_width(available_width, width, margin,
+			padding, border);
+
+	if (margin[TOP] == AUTO)
+		margin[TOP] = 0;
+	if (margin[BOTTOM] == AUTO)
+		margin[BOTTOM] = 0;
+}
+
+
+/**
+ * Solve the width constraint as given in CSS 2.1 section 10.3.3.
+ */
+
+int layout_solve_width(int available_width, int width,
+		int margin[4], int padding[4], int border[4])
+{
 	if (width == AUTO) {
 		/* any other 'auto' become 0 */
 		if (margin[LEFT] == AUTO)
@@ -240,12 +296,7 @@ void layout_block_find_dimensions(int available_width,
 				 width + padding[RIGHT] + border[RIGHT]);
 	}
 
-	if (margin[TOP] == AUTO)
-		margin[TOP] = 0;
-	if (margin[BOTTOM] == AUTO)
-		margin[BOTTOM] = 0;
-
-	box->width = width;
+	return width;
 }
 
 
@@ -316,7 +367,7 @@ void layout_find_dimensions(int available_width,
 		}
 
 		switch (style->padding[i].padding) {
-			case CSS_MARGIN_PERCENT:
+			case CSS_PADDING_PERCENT:
 				padding[i] = available_width *
 						style->padding[i].value.percent / 100;
 				break;
@@ -333,67 +384,6 @@ void layout_find_dimensions(int available_width,
 		else
 			border[i] = len(&style->border[i].width.value, style);
 	}
-}
-
-
-/**
- * Recursively layout block children.
- *
- * \param box     block box to layout
- * \param cont    ancestor box which defines horizontal space, for floats
- * \param cx      box position relative to cont
- * \param cy      box position relative to cont
- *
- * box->width, box->margin, box->padding and box->border must be valid.
- * box->height is filled in.
- */
-
-void layout_block_children(struct box *box, struct box *cont,
-		int cx, int cy)
-{
-	struct box *c;
-	int width = box->width;
-	int y = box->padding[TOP];
-	int y1;
-	int vert_margin = 0;
-
-	assert(box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
-	       box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT ||
-	       box->type == BOX_TABLE_CELL);
-
-	LOG(("box %p, width %i, cont %p, cx %i, cy %i",
-			box, width, cont, cx, cy));
-
-	for (c = box->children; c != 0; c = c->next) {
-		if (c->style && c->style->clear != CSS_CLEAR_NONE) {
-			y1 = layout_clear(cont->float_children,
-					c->style->clear) - cy;
-			if (y < y1)
-				y = y1;
-		}
-
-		c->x = box->padding[LEFT];
-		c->y = y;
-
-		if (c->style) {
-			layout_block_find_dimensions(width, c->style, c);
-			c->x += c->margin[LEFT] + c->border[LEFT];
-			if (vert_margin < c->margin[TOP])
-				vert_margin = c->margin[TOP];
-			c->y += vert_margin + c->border[TOP];
-		} else {
-			c->width = box->width;
-		}
-
-		layout_node(c, width, cont, cx + c->x, cy + c->y);
-		y = c->y + c->height + c->padding[TOP] + c->padding[BOTTOM] +
-				c->border[BOTTOM];
-		if (box->width < c->width)
-			box->width = c->width;
-
-		vert_margin = c->margin[BOTTOM];
-	}
-	box->height = y - box->padding[TOP];
 }
 
 
@@ -858,7 +848,14 @@ void layout_float(struct box *b, int width)
 {
 	struct box *fl;
 	layout_float_find_dimensions(width, b->style, b);
-	layout_node(b, b->width, b, 0, 0);
+	if (b->type == BOX_TABLE) {
+		layout_table(b, width);
+		if (b->margin[LEFT] == AUTO)
+			b->margin[LEFT] = 0;
+		if (b->margin[RIGHT] == AUTO)
+			b->margin[RIGHT] = 0;
+	} else
+		layout_block_context(b);
 	/* increase height to contain any floats inside */
 	for (fl = b->float_children; fl != 0; fl = fl->next_float)
 		if (b->height < fl->y + fl->height)
@@ -909,7 +906,7 @@ void place_float_below(struct box *c, int width, int y,
  * layout a table
  */
 
-void layout_table(struct box *table)
+void layout_table(struct box *table, int available_width)
 {
 	unsigned int columns = table->columns;  /* total columns */
 	unsigned int i;
@@ -920,42 +917,70 @@ void layout_table(struct box *table)
 	int x;
 	int table_height = 0;
 	int *xs;  /* array of column x positions */
+	int auto_width;
 	struct box *c;
 	struct box *row;
 	struct box *row_group;
 	struct box **row_span_cell;
 	struct box *fl;
-	struct column col[table->columns];
+	struct column col[columns];
+	struct css_style *style = table->style;
 
 	assert(table->type == BOX_TABLE);
-	assert(table->style != 0);
-	assert(table->children != 0 && table->children->children != 0);
-	assert(columns != 0);
-
-	LOG(("table %p", table));
+	assert(style);
+	assert(table->children && table->children->children);
+	assert(columns);
 
 	memcpy(col, table->col, sizeof(col[0]) * columns);
 
-	table_width = table->width;
+	layout_find_dimensions(available_width, style, table->margin,
+			table->padding, table->border);
 
-	LOG(("width %i, min %i, max %i", table_width, table->min_width, table->max_width));
+	switch (style->width.width) {
+		case CSS_WIDTH_LENGTH:
+			table_width = len(&style->width.value.length, style);
+			auto_width = table_width;
+			break;
+		case CSS_WIDTH_PERCENT:
+			table_width = available_width *
+					style->width.value.percent / 100;
+			auto_width = table_width;
+			break;
+		case CSS_WIDTH_AUTO:
+		default:
+			table_width = AUTO;
+			auto_width = available_width -
+					((table->margin[LEFT] == AUTO ?
+						0 : table->margin[LEFT]) +
+					 table->border[LEFT] +
+					 table->padding[LEFT] +
+					 table->padding[RIGHT] +
+					 table->border[RIGHT] +
+					 (table->margin[RIGHT] == AUTO ?
+					 	0 : table->margin[RIGHT]));
+			break;
+	}
 
 	for (i = 0; i != columns; i++) {
 		if (col[i].type == COLUMN_WIDTH_FIXED)
 			required_width += col[i].width;
 		else if (col[i].type == COLUMN_WIDTH_PERCENT) {
-			int width = col[i].width * table_width / 100;
+			int width = col[i].width * auto_width / 100;
 			required_width += col[i].min < width ? width : col[i].min;
 		} else
 			required_width += col[i].min;
 	}
 
-	if (table_width < required_width) {
+	LOG(("width %i, min %i, max %i, auto %i, required %i",
+			table_width, table->min_width, table->max_width,
+			auto_width, required_width));
+
+	if (auto_width < required_width) {
 		/* table narrower than required width for columns:
 		 * treat percentage widths as maximums */
 		for (i = 0; i != columns; i++) {
 			if (col[i].type == COLUMN_WIDTH_PERCENT) {
-				col[i].max = table_width * col[i].width / 100;
+				col[i].max = auto_width * col[i].width / 100;
 				if (col[i].max < col[i].min)
 					col[i].max = col[i].min;
 			}
@@ -966,7 +991,7 @@ void layout_table(struct box *table)
 		/* take percentages exactly */
 		for (i = 0; i != columns; i++) {
 			if (col[i].type == COLUMN_WIDTH_PERCENT) {
-				int width = table_width * col[i].width / 100;
+				int width = auto_width * col[i].width / 100;
 				if (width < col[i].min)
 					width = col[i].min;
 				col[i].min = col[i].width = col[i].max = width;
@@ -977,15 +1002,15 @@ void layout_table(struct box *table)
 		}
 	}
 
-	if (table_width <= min_width) {
+	if (auto_width <= min_width) {
 		/* not enough space: minimise column widths */
 		for (i = 0; i < columns; i++) {
 			col[i].width = col[i].min;
 		}
 		table_width = min_width;
-	} else if (max_width <= table_width) {
+	} else if (max_width <= auto_width) {
 		/* more space than maximum width */
-		if (table->style->width.width == CSS_WIDTH_AUTO) {
+		if (table_width == AUTO) {
 			/* for auto-width tables, make columns max width */
 			for (i = 0; i < columns; i++) {
 				col[i].width = col[i].max;
@@ -1010,13 +1035,14 @@ void layout_table(struct box *table)
 		}
 	} else {
 		/* space between min and max: fill it exactly */
-		float scale = (float) (table_width - min_width) /
+		float scale = (float) (auto_width - min_width) /
 				(float) (max_width - min_width);
-/*         	fprintf(stderr, "filling, scale %f\n", scale); */
+        	fprintf(stderr, "filling, scale %f\n", scale);
 		for (i = 0; i < columns; i++) {
 			col[i].width = col[i].min +
 					(col[i].max - col[i].min) * scale;
 		}
+		table_width = auto_width;
 	}
 
 	xs = xcalloc(columns + 1, sizeof(*xs));
@@ -1041,13 +1067,13 @@ void layout_table(struct box *table)
 				assert(c->style != 0);
 				c->width = xs[c->start_column + c->columns] - xs[c->start_column];
 				c->float_children = 0;
-				layout_block_children(c, c, 0, 0);
+				layout_block_context(c);
 				if (c->style->height.height == CSS_HEIGHT_LENGTH) {
 					/* some sites use height="1" or similar to attempt
 					 * to make cells as small as possible, so treat
 					 * it as a minimum */
 					int h = len(&c->style->height.length, c->style);
-					if (c->height < h)
+/* 					if (c->height < h) */
 						c->height = h;
 				}
 				/* increase height to contain any floats inside */
