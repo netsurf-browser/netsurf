@@ -41,8 +41,8 @@ RMEnsure MimeMap 0.10 RMLoad System:Modules.Network.MimeMap
 RMEnsure MimeMap 0.10 Error NetSurf requires MimeMap 0.10 or later
 
 | Ensure Tinct is loaded
-RMEnsure Tinct 0.03 RMLoad <NetSurf$Dir>.Resources.Tinct
-RMEnsure Tinct 0.02 Error NetSurf requires Tinct 0.02 or later
+RMEnsure Tinct 0.05 RMLoad <NetSurf$Dir>.Resources.Tinct
+RMEnsure Tinct 0.05 Error NetSurf requires Tinct 0.05 or later
 
 Wimpslot -min 2150k -max 2150k
 Set NetSurf$Running yes
