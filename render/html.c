@@ -727,10 +727,10 @@ void html_object_done(struct box *box, struct content *object,
 
 	if (background) {
 		box->background = object;
+		return;
 	}
-	else {
-		box->object = object;
-	}
+
+	box->object = object;
 
 	if (box->width != UNKNOWN_WIDTH &&
 			object->available_width != box->width)

@@ -1009,6 +1009,40 @@ void css_dump_style(const struct css_style * const style)
 						style->background_attachment],
 				css_background_repeat_name[
 						style->background_repeat]);
+		switch (style->background_position.horz.pos) {
+			case CSS_BACKGROUND_POSITION_LENGTH:
+				css_dump_length(&style->background_position.
+						horz.value.length);
+				break;
+			case CSS_BACKGROUND_POSITION_PERCENT:
+				fprintf(stderr, "%g%%",
+						style->background_position.
+						horz.value.percent);
+				break;
+			case CSS_BACKGROUND_POSITION_INHERIT:
+				fprintf(stderr, "inherit");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
+		}
+		fprintf(stderr, " ");
+		switch (style->background_position.vert.pos) {
+			case CSS_BACKGROUND_POSITION_LENGTH:
+				css_dump_length(&style->background_position.
+						vert.value.length);
+				break;
+			case CSS_BACKGROUND_POSITION_PERCENT:
+				fprintf(stderr, "%g%%",
+						style->background_position.
+						vert.value.percent);
+				break;
+			case CSS_BACKGROUND_POSITION_INHERIT:
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
+		}
 		fprintf(stderr, "; ");
 	}
 	DUMP_KEYWORD(clear, "clear", css_clear_name);
