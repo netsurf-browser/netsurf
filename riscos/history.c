@@ -654,6 +654,10 @@ void history_go(struct browser_window *bw, struct history_entry *entry)
 	if (entry->frag_id) {
 		url = calloc(strlen(entry->url) + strlen(entry->frag_id) + 5,
 							sizeof(char));
+		if (!url) {
+			warn_user("NoMemory", 0);
+			return;
+		}
 		sprintf(url, "%s#%s", entry->url, entry->frag_id);
 	}
 	else
