@@ -22,3 +22,5 @@ caption         { display: table-caption }
 
 div { float: left; width: 90%; }
 
+td { width: 40%; }
+
