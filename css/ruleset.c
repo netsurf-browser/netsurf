@@ -202,7 +202,7 @@ void css_add_declarations(struct css_style *style, struct css_node *declaration)
 		assert(n->type == CSS_NODE_DECLARATION && n->data != 0 && n->left != 0);
 		p = bsearch(n->data, property_table,
 				sizeof(property_table) / sizeof(property_table[0]),
-				sizeof(property_table[0]), strcasecmp);
+				sizeof(property_table[0]), (void*)strcasecmp);
 		if (p == 0)
 			continue;
 		p->parse(style, n->left);
@@ -285,7 +285,7 @@ colour named_colour(const char *name)
 	struct colour_entry *col;
 	col = bsearch(name, colour_table,
 			sizeof(colour_table) / sizeof(colour_table[0]),
-			sizeof(colour_table[0]), strcasecmp);
+			sizeof(colour_table[0]), (void*)strcasecmp);
 	if (col == 0)
 		return TRANSPARENT;
 	return col->col;
@@ -318,7 +318,7 @@ colour parse_colour(const struct css_node * const v)
 		case CSS_NODE_IDENT:
 			col = bsearch(v->data, colour_table,
 					sizeof(colour_table) / sizeof(colour_table[0]),
-					sizeof(colour_table[0]), strcasecmp);
+					sizeof(colour_table[0]), (void*)strcasecmp);
 			if (col != 0)
 				c = col->col;
 			break;
@@ -439,7 +439,7 @@ void parse_font_size(struct css_style * const s, const struct css_node * const v
 		case CSS_NODE_IDENT:
 			fs = bsearch(v->data, font_size_table,
 					sizeof(font_size_table) / sizeof(font_size_table[0]),
-					sizeof(font_size_table[0]), strcasecmp);
+					sizeof(font_size_table[0]), (void*)strcasecmp);
 			if (fs != 0) {
 				s->font_size.size = CSS_FONT_SIZE_LENGTH;
 				s->font_size.value.length.unit = CSS_UNIT_PT;
@@ -524,6 +524,7 @@ void parse_text_align(struct css_style * const s, const struct css_node * const 
 
 void parse_text_decoration(struct css_style * const s, const struct css_node * const v)
 {
+        struct css_node *temp;
 	css_text_decoration z;
 	if (v->type != CSS_NODE_IDENT)
 		return;
@@ -535,8 +536,8 @@ void parse_text_decoration(struct css_style * const s, const struct css_node * c
 	}
 	if (z != CSS_TEXT_DECORATION_UNKNOWN)
 		s->text_decoration |= z;
-	for (v = v->next; v; v = v->next) {
-		z = css_text_decoration_parse(v->data);
+	for (temp = v->next; temp; temp = temp->next) {
+		z = css_text_decoration_parse(temp->data);
 		if (z != CSS_TEXT_DECORATION_UNKNOWN)
 			s->text_decoration |= z;
 	}

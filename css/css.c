@@ -98,7 +98,7 @@ void css_create(struct content *c)
 	c->data.css.css = xcalloc(1, sizeof(*c->data.css.css));
 	css_lex_init(&c->data.css.css->lexer);
 	/*css_parser_Trace(stderr, "css parser: ");*/
-	c->data.css.css->parser = css_parser_Alloc(malloc);
+	c->data.css.css->parser = css_parser_Alloc((void*)malloc);
 	for (i = 0; i != HASH_SIZE; i++)
 		c->data.css.css->rule[i] = 0;
 	c->data.css.import_count = 0;
@@ -129,7 +129,7 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 	buffer = css__scan_buffer(c->data.css.data, c->data.css.length + 2,
 			c->data.css.css->lexer);
 	assert(buffer);
-	while (token = css_lex(c->data.css.css->lexer)) {
+	while ((token = css_lex(c->data.css.css->lexer))) {
 		css_parser_(c->data.css.css->parser, token,
 				xstrdup(css_get_text(c->data.css.css->lexer)),
 				&param);
@@ -168,7 +168,7 @@ void css_revive(struct content *c, unsigned int width, unsigned int height)
 	for (i = 0; i != c->data.css.import_count; i++) {
 		c->data.css.import_content[i] = fetchcache(
 				c->data.css.import_url[i], c->url,
-				css_atimport_callback, c, i,
+				css_atimport_callback, c, (void*)i,
 				c->width, c->height, true, 0, 0, false);
 		if (c->data.css.import_content[i] == 0)
 			continue;
@@ -204,7 +204,7 @@ void css_destroy(struct content *c)
 		if (c->data.css.import_content[i] != 0) {
 			free(c->data.css.import_url[i]);
 			content_remove_user(c->data.css.import_content[i],
-					css_atimport_callback, c, i);
+					css_atimport_callback, c, (void*)i);
 		}
 	xfree(c->data.css.import_url);
 	xfree(c->data.css.import_content);
@@ -335,7 +335,7 @@ void css_atimport(struct content *c, struct css_node *node)
 	c->data.css.import_url[i] = url1;
 	c->data.css.import_content[i] = fetchcache(
 			c->data.css.import_url[i], c->url, css_atimport_callback,
-			c, i, c->width, c->height, true, 0, 0, false);
+			c, (void*)i, c->width, c->height, true, 0, 0, false);
 	if (c->data.css.import_content[i] &&
 			c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
 		c->active++;
@@ -352,7 +352,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
 			if (css->type != CONTENT_CSS) {
-				content_remove_user(css, css_atimport_callback, c, i);
+				content_remove_user(css, css_atimport_callback, c, (void*)i);
 				c->data.css.import_content[i] = 0;
 				c->active--;
 				c->error = 1;
@@ -383,7 +383,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 			c->data.css.import_url[i] = xstrdup(error);
 			c->data.css.import_content[i] = fetchcache(
 					c->data.css.import_url[i], c->url, css_atimport_callback,
-					c, i, css->width, css->height, true, 0, 0, false);
+					c, (void*)i, css->width, css->height, true, 0, 0, false);
 			if (c->data.css.import_content[i] &&
 					c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
 				c->active++;
@@ -573,7 +573,7 @@ void css_parse_property_list(struct css_style * style, char * str)
 	struct parse_params param = {1, 0, 0, false};
 
 	css_lex_init(&lexer);
-	parser = css_parser_Alloc(malloc);
+	parser = css_parser_Alloc((void*)malloc);
 	css_parser_(parser, LBRACE, xstrdup("{"), &param);
 
 	buffer = css__scan_string(str, lexer);
