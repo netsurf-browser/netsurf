@@ -13,9 +13,12 @@
 #include <assert.h>
 #include <string.h>
 #include "curl/curl.h"
+#include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/utils/utils.h"
 
+
+static char *form_textarea_value(struct form_control *textarea);
 
 /**
  * Add a control to the list of controls in a form.
@@ -88,13 +91,18 @@ struct form_successful_control *form_successful_controls(struct form *form,
 
 		/* textarea */
 		if (control->type == GADGET_TEXTAREA) {
-			/* TODO */
+			success_new = xcalloc(1, sizeof(*success_new));
+			success_new->name = xstrdup(control->name);
+			success_new->value = form_textarea_value(control);
+			success_new->next = 0;
+			last_success->next = success_new;
+			last_success = success_new;
 			continue;
 		}
 
 		/* image */
 		if (control->type == GADGET_IMAGE) {
-			int len = strlen(control->name) + 3;
+			unsigned int len = strlen(control->name) + 3;
 			/* x */
 			success_new = xcalloc(1, sizeof(*success_new));
 			success_new->name = xcalloc(1, len);
@@ -135,13 +143,56 @@ struct form_successful_control *form_successful_controls(struct form *form,
 
 
 /**
+ * Find the value for a textarea control.
+ */
+
+char *form_textarea_value(struct form_control *textarea)
+{
+	unsigned int len = 1;
+	char *value, *s;
+	struct box *inline_container, *text_box;
+
+	/* find required length */
+	for (inline_container = textarea->box->children;
+			inline_container;
+			inline_container = inline_container->next) {
+		for (text_box = inline_container->children;
+				text_box;
+				text_box = text_box->next) {
+			len += text_box->length + 1;
+		}
+		len += 2;
+	}
+
+	/* construct value */
+	s = value = xcalloc(1, len);
+	for (inline_container = textarea->box->children;
+			inline_container;
+			inline_container = inline_container->next) {
+		for (text_box = inline_container->children;
+				text_box;
+				text_box = text_box->next) {
+			strncpy(s, text_box->text, text_box->length);
+			s += text_box->length;
+			*s++ = ' ';
+		}
+		*s++ = '\r';
+		*s++ = '\n';
+	}
+	*s = 0;
+
+	return value;
+}
+
+
+/**
  * Encode controls using application/x-www-form-urlencoded.
  */
 
 char *form_url_encode(struct form_successful_control *control)
 {
 	char *s = xcalloc(1, 0);
-	int len = 0, len1;
+	unsigned int len = 0, len1;
 
 	for (; control; control = control->next) {
 		char *name = curl_escape(control->name, 0);
