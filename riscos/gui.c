@@ -371,10 +371,10 @@ void ro_gui_check_resolvers(void)
 {
 	char *resolvers;
 	resolvers = getenv("Inet$Resolvers");
-	if (resolvers) {
+	if (resolvers && resolvers[0]) {
 		LOG(("Inet$Resolvers '%s'", resolvers));
 	} else {
-		LOG(("Inet$Resolvers not set"));
+		LOG(("Inet$Resolvers not set or empty"));
 		warn_user("Resolvers", 0);
 	}
 }
