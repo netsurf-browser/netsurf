@@ -3,14 +3,15 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ */
+
+/** \file
+ * Interface to platform-specific gui functions.
  */
 
 #ifndef _NETSURF_DESKTOP_GUI_H_
 #define _NETSURF_DESKTOP_GUI_H_
-
-typedef enum { GUI_BROWSER_WINDOW, GUI_DOWNLOAD_WINDOW } gui_window_type;
-typedef enum { SAFE, UNSAFE } gui_safety;
 
 struct gui_window;
 typedef struct gui_window gui_window;
@@ -43,13 +44,13 @@ void gui_multitask(void);
 void gui_poll(bool active);
 void gui_quit(void);
 
-gui_safety gui_window_set_redraw_safety(gui_window* g, gui_safety s);
-
 void gui_window_start_throbber(gui_window* g);
 void gui_window_stop_throbber(gui_window* g);
 
 void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigned long mx, unsigned long my);
 
 void gui_window_place_caret(gui_window *g, int x, int y, int height);
+
+void warn_user(const char *warning);
 
 #endif

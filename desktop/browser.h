@@ -3,7 +3,11 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ */
+
+/** \file
+ * Browser window creation and manipulation (interface).
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
@@ -14,47 +18,39 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/gui.h"
-#include "netsurf/render/box.h"
 
-typedef int browser_window_flags;
-#define browser_TOOLBAR             ((browser_window_flags) 1)
-#define browser_TITLE               ((browser_window_flags) 2)
-#define browser_SCROLL_X_NONE       ((browser_window_flags) 4)
-#define browser_SCROLL_X_AUTO       ((browser_window_flags) 8)
-#define browser_SCROLL_X_ALWAYS     ((browser_window_flags) 16)
-#define browser_SCROLL_Y_NONE       ((browser_window_flags) 32)
-#define browser_SCROLL_Y_AUTO       ((browser_window_flags) 64)
-#define browser_SCROLL_Y_ALWAYS     ((browser_window_flags) 128)
+struct box;
+struct history;
 
-typedef int action_buttons;
-#define act_BUTTON_NORMAL        ((action_buttons) 4)
-#define act_BUTTON_ALTERNATIVE   ((action_buttons) 1)
-#define act_BUTTON_CONTEXT_MENU  ((action_buttons) 2)
-
-struct history_entry;
-
+/** Browser window data. */
 struct browser_window
 {
-  unsigned long format_width;
-  unsigned long format_height;
-  struct { int mult; int div; } scale;
+	/** Page currently displayed, or 0. Must have status READY or DONE. */
+	struct content *current_content;
+	/** Instance state pointer for current_content. */
+	void *current_content_state;
+	/** Page being loaded, or 0. */
+	struct content *loading_content;
 
-  struct content* current_content;
-  void *current_content_state;
-  struct content* loading_content;
-  struct history_entry *history_entry;
-  bool history_add;
-  clock_t time0;
+	/** Window history structure. */
+	struct history *history;
 
-  char* url;
+	/** Handler for keyboard input, or 0. */
+	void (*caret_callback)(struct browser_window *bw, char key, void *p);
+	/** User parameter for caret_callback. */
+	void *caret_p;
 
-  browser_window_flags flags;
-  gui_window* window;
+	/** Platform specific window handle. */
+	gui_window *window;
 
-  int throbbing;
+	/** Busy indicator is active. */
+	bool throbbing;
+	/** Add loading_content to the window history when it loads. */
+	bool history_add;
+	/** Start time of fetching loading_content. */
+	clock_t time0;
 
-  void (*caret_callback)(struct browser_window *bw, char key, void *p);
-  void *caret_p;
+
 #ifdef WITH_FRAMES
   struct browser_window *parent;
   unsigned int no_children;
@@ -75,7 +71,6 @@ struct browser_action
     struct {
       unsigned long x;
       unsigned long y;
-      action_buttons buttons;
     } mouse;
     struct {
       struct form_control* g;
@@ -92,31 +87,20 @@ struct box_selection
   int plot_index;
 };
 
-/* public functions */
 
-struct browser_window* create_browser_window(int flags, int width, int height
-#ifdef WITH_FRAMES
-, struct browser_window *parent
-#endif
-);
-void browser_window_destroy(struct browser_window* bw
-#ifdef WITH_FRAMES
-, bool self
-#endif
-);
-void browser_window_open_location(struct browser_window* bw, const char* url);
-void browser_window_open_location_historical(struct browser_window* bw,
-		const char* url
-#ifdef WITH_POST
-		, char *post_urlenc,
-		struct form_successful_control *post_multipart
-#endif
-		);
-int browser_window_action(struct browser_window* bw, struct browser_action* act);
-void browser_window_set_status(struct browser_window* bw, const char* text);
+void browser_window_create(const char *url);
+void browser_window_go(struct browser_window *bw, const char *url);
+void browser_window_go_post(struct browser_window *bw, const char *url,
+		char *post_urlenc,
+		struct form_successful_control *post_multipart,
+		bool history_add);
+void browser_window_stop(struct browser_window *bw);
+void browser_window_destroy(struct browser_window *bw);
 
 void browser_window_back(struct browser_window* bw);
 void browser_window_forward(struct browser_window* bw);
+
+int browser_window_action(struct browser_window* bw, struct browser_action* act);
 
 void box_under_area(struct box* box, unsigned long x, unsigned long y, unsigned long ox, unsigned long oy,
 		struct box_selection** found, int* count, int* plot_index);
@@ -128,12 +112,12 @@ int box_position_distance(struct box_position* x, struct box_position* y);
 
 void gui_redraw_gadget(struct browser_window* bw, struct form_control* g);
 
-void browser_window_stop_throbber(struct browser_window* bw);
-void browser_window_reformat(struct browser_window* bw, int scroll_to_top);
-
 bool browser_window_key_press(struct browser_window *bw, char key);
 
-struct history_entry * history_add(struct history_entry *current,
-		char *url, char *title);
+/* In platform specific history.c. */
+struct history *history_create(void);
+void history_add(struct history *history, struct content *content);
+void history_update(struct history *history, struct content *content);
+void history_destroy(struct history *history);
 
 #endif

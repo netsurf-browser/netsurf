@@ -103,7 +103,8 @@ void plugin_decode(void *a, void *b, void *c, void *d)
 
 void html_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
-		long x0, long y0, long x1, long y1)
+		long x0, long y0, long x1, long y1,
+		float scale)
 {
 }
 

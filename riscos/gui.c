@@ -245,7 +245,8 @@ void gui_poll(bool active)
 		for (g = window_list; g; g = g->next) {
 			if (g->type == GUI_BROWSER_WINDOW && g->data.browser.reformat_pending) {
 				content_reformat(g->data.browser.bw->current_content,
-						browser_x_units(g->data.browser.old_width), 1000);
+						g->data.browser.old_width / 2 / g->scale,
+						1000);
 				g->data.browser.reformat_pending = false;
 			}
 		}
@@ -475,14 +476,9 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 		ro_gui_icon_bar_click(pointer);
 	else if (pointer->w == history_window)
 		ro_gui_history_click(pointer);
+	else if (g && g->type == GUI_BROWSER_WINDOW && g->window == pointer->w)
+		ro_gui_window_click(g, pointer);
 	else if (g && g->type == GUI_BROWSER_WINDOW &&
-			g->window == pointer->w) {
-		if (g->redraw_safety == SAFE)
-			ro_gui_window_click(g, pointer);
-		else
-			ro_gui_poll_queue(wimp_MOUSE_CLICK,
-					(wimp_block *) pointer);
-	} else if (g && g->type == GUI_BROWSER_WINDOW &&
 			g->data.browser.toolbar == pointer->w)
 		ro_gui_toolbar_click(g, pointer);
 	else if (g && g->type == GUI_DOWNLOAD_WINDOW)
@@ -502,21 +498,7 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 		ro_gui_create_menu(iconbar_menu, pointer->pos.x - 64,
 				   96 + iconbar_menu_height, NULL);
 	} else if (pointer->buttons == wimp_CLICK_SELECT) {
-		struct browser_window *bw;
-		bw = create_browser_window(browser_TITLE | browser_TOOLBAR
-					   | browser_SCROLL_X_ALWAYS |
-					   browser_SCROLL_Y_ALWAYS, 640,
-					   480
-#ifdef WITH_FRAMES
-					   , NULL
-#endif
-		    );
-		gui_window_show(bw->window);
-		browser_window_open_location(bw, HOME_URL);
-		wimp_set_caret_position(bw->window->data.browser.toolbar,
-					ICON_TOOLBAR_URL,
-					0, 0, -1,
-					(int) strlen(bw->window->url));
+		browser_window_create(HOME_URL);
 	}
 }
 
@@ -690,8 +672,8 @@ void ro_msg_datasave(wimp_message* block)
 
         state.w = data->w;
         wimp_get_window_state(&state);
-  	x = browser_x_units(window_x_units(data->pos.x, &state));
-  	y = browser_y_units(window_y_units(data->pos.y, &state));
+  	x = window_x_units(data->pos.x, &state) / 2;
+  	y = -window_y_units(data->pos.y, &state) / 2;
 
   	found = 0;
 	click_boxes = NULL;
@@ -745,8 +727,8 @@ void ro_msg_dataload(wimp_message* block)
 
         state.w = data->w;
         wimp_get_window_state(&state);
-  	x = browser_x_units(window_x_units(data->pos.x, &state));
-  	y = browser_y_units(window_y_units(data->pos.y, &state));
+  	x = window_x_units(data->pos.x, &state) / 2;
+  	y = -window_y_units(data->pos.y, &state) / 2;
 
   	found = 0;
 	click_boxes = NULL;
@@ -832,7 +814,6 @@ int ro_save_data(void *data, unsigned long length, char *file_name, bits file_ty
 void ro_msg_dataopen(wimp_message *message)
 {
 	char *url;
-	struct browser_window *bw;
 
 	if (message->data.data_xfer.file_type != 0xfaf)
 		/* ignore all but HTML */
@@ -844,15 +825,8 @@ void ro_msg_dataopen(wimp_message *message)
 	wimp_send_message(wimp_USER_MESSAGE, message, message->sender);
 
 	/* create a new window with the file */
-	bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
-			browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480
-#ifdef WITH_FRAMES
-			, NULL
-#endif
-			);
-	gui_window_show(bw->window);
 	url = ro_path_to_url(message->data.data_xfer.file_name);
-	browser_window_open_location(bw, url);
+	browser_window_create(url);
 	free(url);
 }
 
@@ -888,21 +862,9 @@ void ro_gui_screen_size(int *width, int *height)
 }
 
 
-void ro_gui_open_help_page (void)
+void ro_gui_open_help_page(void)
 {
-        struct browser_window *bw;
-        bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
-                                   browser_SCROLL_X_ALWAYS |
-                                   browser_SCROLL_Y_ALWAYS, 640, 480
-#ifdef WITH_FRAMES
-                                   , NULL
-#endif
-                                   );
-        gui_window_show(bw->window);
-        browser_window_open_location(bw, HELP_URL);
-        wimp_set_caret_position(bw->window->data.browser.toolbar,
-                                ICON_TOOLBAR_URL,
-                                0,0,-1, (int) strlen(bw->window->url));
+        browser_window_create(HELP_URL);
 }
 
 
@@ -985,32 +947,24 @@ void ro_gui_drag_box_start(wimp_pointer *pointer)
 }
 
 
-int ro_x_units(unsigned long browser_units)
-{
-  return (browser_units << 1);
-}
 
-int ro_y_units(unsigned long browser_units)
-{
-  return -(browser_units << 1);
-}
+static os_error warn_error = { 1, "" };
 
-unsigned long browser_x_units(int ro_units)
-{
-  return (ro_units >> 1);
-}
 
-unsigned long browser_y_units(int ro_units)
-{
-  return -(ro_units >> 1);
-}
+/**
+ * Display a warning for a serious problem (eg memory exhaustion).
+ *
+ * \param  warning  message key for warning message
+ */
 
-int window_x_units(int scr_units, wimp_window_state* win)
+void warn_user(const char *warning)
 {
-  return scr_units - (win->visible.x0 - win->xscroll);
-}
-
-int window_y_units(int scr_units, wimp_window_state* win)
-{
-  return scr_units - (win->visible.y1 - win->yscroll);
+	strncpy(warn_error.errmess, messages_get(warning), 252);
+	/** \todo  get rid of cancel button, appears for unknown reason */
+	xwimp_report_error_by_category(&warn_error,
+			wimp_ERROR_BOX_OK_ICON |
+			wimp_ERROR_BOX_GIVEN_CATEGORY |
+			wimp_ERROR_BOX_CATEGORY_PROGRAM,
+			"NetSurf", "!netsurf",
+			(osspriteop_area *) 1, 0, 0);
 }

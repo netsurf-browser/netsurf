@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include <assert.h>
@@ -25,7 +25,8 @@ static void html_redraw_box(struct content *content, struct box * box,
 		unsigned long current_background_color,
 		signed long gadget_subtract_x, signed long gadget_subtract_y,
 		bool *select_on,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1);
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+		float scale);
 static void html_redraw_clip(long clip_x0, long clip_y0,
 		long clip_x1, long clip_y1);
 void html_redraw_rectangle(int x0, int y0, int width, int height,
@@ -33,10 +34,16 @@ void html_redraw_rectangle(int x0, int y0, int width, int height,
 
 bool gui_redraw_debug = false;
 
+static os_trfm trfm = { {
+		{ 65536, 0 },
+		{ 0, 65536 },
+		{ 0, 0 } } };
+
 
 void html_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+		float scale)
 {
 	bool select_on = false;
 	unsigned long background_colour = 0xffffff;
@@ -55,8 +62,10 @@ void html_redraw(struct content *c, long x, long y,
 		background_colour = c->data.html.background_colour;
 	}
 
+	trfm.entries[0][0] = trfm.entries[1][1] = 65536 * scale;
+
 	html_redraw_box(c, box, x, y, background_colour, x, y,
-			&select_on, clip_x0, clip_y0, clip_x1, clip_y1);
+			&select_on, clip_x0, clip_y0, clip_x1, clip_y1, scale);
 }
 
 
@@ -71,15 +80,16 @@ void html_redraw_box(struct content *content, struct box * box,
 		unsigned long current_background_color,
 		signed long gadget_subtract_x, signed long gadget_subtract_y,
 		bool *select_on,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+		float scale)
 {
 	struct box *c;
 	int width, height, x0, y0, x1, y1, colour;
 
-	x += box->x * 2;
-	y -= box->y * 2;
-	width = (box->padding[LEFT] + box->width + box->padding[RIGHT]) * 2;
-	height = (box->padding[TOP] + box->height + box->padding[BOTTOM]) * 2;
+	x += box->x * 2 * scale;
+	y -= box->y * 2 * scale;
+	width = (box->padding[LEFT] + box->width + box->padding[RIGHT]) * 2 * scale;
+	height = (box->padding[TOP] + box->height + box->padding[BOTTOM]) * 2 * scale;
 
 	x0 = x;
 	y1 = y - 1;
@@ -91,14 +101,15 @@ void html_redraw_box(struct content *content, struct box * box,
 		for (c = box->children; c; c = c->next)
 			html_redraw_box(content, c, x, y, current_background_color,
 					gadget_subtract_x, gadget_subtract_y, select_on,
-					x0, y0, x1, y1);
+					x0, y0, x1, y1, scale);
 		return;
 	}
 
 	if (gui_redraw_debug) {
 		html_redraw_rectangle(x, y, width, height, os_COLOUR_MAGENTA);
 		html_redraw_rectangle(x + box->padding[LEFT] * 2, y - box->padding[TOP] * 2,
-				box->width * 2, box->height * 2, os_COLOUR_CYAN);
+				box->width * 2 * scale, box->height * 2 * scale,
+				os_COLOUR_CYAN);
 		html_redraw_rectangle(x - (box->border[LEFT] + box->margin[LEFT]) * 2,
 				y + (box->border[TOP] + box->margin[TOP]) * 2,
 				width + (box->border[LEFT] + box->margin[LEFT] +
@@ -143,7 +154,7 @@ void html_redraw_box(struct content *content, struct box * box,
 
 	if (box->object) {
 		content_redraw(box->object, x, y, (unsigned int)width,
-		               (unsigned int)height, x0, y0, x1, y1);
+		               (unsigned int)height, x0, y0, x1, y1, scale);
 
 	} else if (box->gadget &&
 			(box->gadget->type == GADGET_CHECKBOX ||
@@ -249,40 +260,49 @@ void html_redraw_box(struct content *content, struct box * box,
 				os_ACTION_OVERWRITE, 0);
 
 		if (box->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE) {
-			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8));
-			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
+			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8 * scale));
+			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
 		}
 		if (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK) {
 		        colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-		        os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8));
-			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
+		        os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8 * scale));
+			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
 			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		}
 		if (box->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE) {
-			os_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2));
-			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
+			os_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2 * scale));
+			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
 		}
 		if (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK) {
 		        colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-		        os_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2));
-			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
+		        os_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2 * scale));
+			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
 			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		}
 		if (box->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH) {
-			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0));
-			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
+			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0 * scale));
+			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
 		}
 		if (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH && box->parent->parent->type == BOX_BLOCK) {
 		        colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-		        os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0));
-			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
+		        os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0 * scale));
+			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
 			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		}
 
-		font_paint(box->font->handle, box->text,
-		           font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
-		           x, y - (int) (box->height * 1.5),
-		           NULL, NULL, (int) box->length);
+		if (scale == 1)
+			font_paint(box->font->handle, box->text,
+					font_OS_UNITS | font_GIVEN_FONT |
+					font_KERN | font_GIVEN_LENGTH,
+					x, y - (int) (box->height * 1.5),
+					0, 0, (int) box->length);
+		else
+			font_paint(box->font->handle, box->text,
+					font_OS_UNITS | font_GIVEN_FONT |
+					font_KERN | font_GIVEN_LENGTH |
+					font_GIVEN_TRFM,
+					x, y - (int) (box->height * 1.5 * scale),
+					0, &trfm, (int) box->length);
 
 
 	} else {
@@ -291,13 +311,13 @@ void html_redraw_box(struct content *content, struct box * box,
 				html_redraw_box(content, c, x,
 						y, current_background_color,
 						gadget_subtract_x, gadget_subtract_y, select_on,
-						x0, y0, x1, y1);
+						x0, y0, x1, y1, scale);
 
 		for (c = box->float_children; c != 0; c = c->next_float)
 			html_redraw_box(content, c, x,
 					y, current_background_color,
 					gadget_subtract_x, gadget_subtract_y, select_on,
-					x0, y0, x1, y1);
+					x0, y0, x1, y1, scale);
 	}
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||

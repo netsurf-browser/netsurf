@@ -133,7 +133,8 @@ void nsgif_reformat(struct content *c, unsigned int width, unsigned int height)
 
 void nsgif_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+		float scale)
 {
   unsigned int size;
   osspriteop_trans_tab *table;

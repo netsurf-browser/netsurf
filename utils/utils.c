@@ -23,6 +23,7 @@
 #include "netsurf/riscos/about.h"
 #include "netsurf/riscos/constdata.h"
 #endif
+#define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"

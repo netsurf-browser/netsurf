@@ -1287,20 +1287,10 @@ void plugin_url_access(wimp_message *message) {
                              strcasecmp(window, "_parent") == 0 ||
                              strcasecmp(window, "_top") == 0 ||
                              strcasecmp(window, "") == 0) {
-                                 browser_window_open_location(npl->bw, url);
+                                 browser_window_go(npl->bw, url);
                          }
                          else if (strcasecmp(window, "_blank") == 0) {
-                                 struct browser_window *bwnew;
-                                 bwnew = create_browser_window(browser_TITLE
-                                  | browser_TOOLBAR | browser_SCROLL_X_ALWAYS
-                                  | browser_SCROLL_Y_ALWAYS, 640, 480
-#ifdef WITH_FRAMES
-                                  , NULL
-#endif
-                                  );
-                                 gui_window_show(bwnew->window);
-                                 bwnew->url = xstrdup(url);
-                                 browser_window_open_location(bwnew, url);
+                         	browser_window_create(url);
                          }
                  }
                  else { /* POST request */

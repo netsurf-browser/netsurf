@@ -99,29 +99,16 @@ void ro_url_message_received(wimp_message* message)
                      message->sender);
 
   /* create new browser window */
-  bw = create_browser_window(browser_TITLE | browser_TOOLBAR
-          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480
-#ifdef WITH_FRAMES
-          , NULL
-#endif
-          );
+  browser_window_create(uri_requested);
 
-  gui_window_show(bw->window);
-
-#ifdef ALLOW_POST
+#if 0
   if (post) {
     /* TODO - create urlencoded data from file contents.
      *        Delete the file when finished with it.
      */
     browser_window_open_location_historical(bw, uri_requested, /*data*/0, 0);
   }
-  else
 #endif
-    browser_window_open_location(bw, uri_requested);
-
-  wimp_set_caret_position(bw->window->data.browser.toolbar,
-               ICON_TOOLBAR_URL,
-               0,0,-1, (int) strlen(bw->window->url));
 
 #ifdef ALLOW_POST
   xfree(filename);

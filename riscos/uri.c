@@ -57,20 +57,7 @@ void ro_uri_message_received(uri_full_message_process* uri_message)
 
   xuri_request_uri(0, uri_requested, uri_length, uri_handle, NULL);
 
-  bw = create_browser_window(browser_TITLE | browser_TOOLBAR
-          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480
-#ifdef WITH_FRAMES
-          , NULL
-#endif
-          );
-
-  gui_window_show(bw->window);
-  browser_window_open_location(bw, uri_requested);
-
-  wimp_set_caret_position(bw->window->data.browser.toolbar,
-               ICON_TOOLBAR_URL,
-               0,0,-1, (int) strlen(bw->window->url) - 1);
-
+  browser_window_create(uri_requested);
 
   xfree(uri_requested);
 }

@@ -23,6 +23,8 @@ Home:Home page
 Back:Back one page
 Forward:Forward one page
 Reload:Reload this page
+View:View
+ScaleView:Scale view
 
 Themes:Themes
 
@@ -42,3 +44,5 @@ cookiejar:<Choices$Write>.WWW.NetSurf.Cookies
 
 ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><title>Page error</title></head><body><h1>Sorry, NetSurf was unable to display this page</h1><p><strong>%s</strong></p></body></html>
 InvalidURL:The address <em>%s</em> could not be understood.
+
+NoMemory:NetSurf is running out of memory. Please free some memory and try again.

@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -90,7 +90,8 @@ struct handler_entry {
 	void (*destroy)(struct content *c);
 	void (*redraw)(struct content *c, long x, long y,
 			unsigned long width, unsigned long height,
-			long clip_x0, long clip_y0, long clip_x1, long clip_y1);
+			long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+			float scale);
 	void (*add_instance)(struct content *c, struct browser_window *bw,
 			struct content *page, struct box *box,
 			struct object_params *params, void **state);
@@ -256,7 +257,7 @@ void content_process_data(struct content *c, char *data, unsigned long size)
  *   (eg. loading images), the content gets status CONTENT_STATUS_READY, and a
  *   CONTENT_MSG_READY is sent to all users.
  * - If the conversion succeeds and is complete, the content gets status
- *   CONTENT_STATUS_DONE, and CONTENT_MSG_DONE is sent.
+ *   CONTENT_STATUS_DONE, and CONTENT_MSG_READY then CONTENT_MSG_DONE are sent.
  * - If the conversion fails, CONTENT_MSG_ERROR is sent. The content is then
  *   destroyed and must no longer be used.
  */
@@ -278,9 +279,8 @@ void content_convert(struct content *c, unsigned long width, unsigned long heigh
 	}
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
-	if (c->status == CONTENT_STATUS_READY)
-		content_broadcast(c, CONTENT_MSG_READY, 0);
-	else
+	content_broadcast(c, CONTENT_MSG_READY, 0);
+	if (c->status == CONTENT_STATUS_DONE)
 		content_broadcast(c, CONTENT_MSG_DONE, 0);
 }
 
@@ -379,12 +379,13 @@ void content_reset(struct content *c)
 
 void content_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+		float scale)
 {
 	assert(c != 0);
 	if (handler_map[c->type].redraw != 0)
 		handler_map[c->type].redraw(c, x, y, width, height,
-		                clip_x0, clip_y0, clip_x1, clip_y1);
+		                clip_x0, clip_y0, clip_x1, clip_y1, scale);
 }
 
 

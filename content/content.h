@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Philip Pemberton <philpem@users.sourceforge.net>
  */
 
@@ -161,7 +161,8 @@ void content_destroy(struct content *c);
 void content_reset(struct content *c);
 void content_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1);
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+		float scale);
 void content_add_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),

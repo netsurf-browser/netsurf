@@ -3,7 +3,11 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ */
+
+/** \file
+ * Browser window creation and manipulation (implementation).
  */
 
 #include <assert.h>
@@ -13,10 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "curl/curl.h"
-#include "libxml/debugXML.h"
 #include "netsurf/utils/config.h"
-#include "netsurf/content/cache.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/css/css.h"
 #ifdef WITH_AUTH
@@ -31,7 +32,20 @@
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
-static void browser_window_start_throbber(struct browser_window* bw);
+
+static void browser_window_callback(content_msg msg, struct content *c,
+		void *p1, void *p2, const char *error);
+static void browser_window_convert_to_download(struct browser_window *bw,
+		content_msg msg);
+static void browser_window_start_throbber(struct browser_window *bw);
+static void browser_window_stop_throbber(struct browser_window *bw);
+static void browser_window_update(struct browser_window *bw,
+		bool scroll_to_top);
+static void browser_window_set_status(struct browser_window *bw,
+		const char *text);
+static void download_window_callback(content_msg msg, struct content *c,
+		void *p1, void *p2, const char *error);
+
 static void browser_window_text_selection(struct browser_window* bw,
 		unsigned long click_x, unsigned long click_y, int click_type);
 static void browser_window_clear_text_selection(struct browser_window* bw);
@@ -42,17 +56,6 @@ static int redraw_box_list(struct browser_window* bw, struct box* current,
 static void browser_window_redraw_boxes(struct browser_window* bw, struct box_position* start, struct box_position* end);
 static void browser_window_follow_link(struct browser_window* bw,
 		unsigned long click_x, unsigned long click_y, int click_type);
-static void browser_window_open_location_post(struct browser_window* bw,
-		const char* url0
-#ifdef WITH_POST
-		, char *post_urlenc,
-		struct form_successful_control *post_multipart
-#endif
-		);
-static void browser_window_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, const char *error);
-static void download_window_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, const char *error);
 static void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct form_control* group);
 static void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct form_control* g,
 		unsigned long x, unsigned long y);
@@ -74,39 +77,354 @@ static void browser_window_place_caret(struct browser_window *bw, int x, int y,
 		int height, void (*callback)(struct browser_window *bw, char key, void *p), void *p);
 
 
-void browser_window_start_throbber(struct browser_window* bw)
+/**
+ * Create and open a new browser window with the given page.
+ *
+ * \param  url  URL to start fetching in the new window (copied)
+ */
+
+void browser_window_create(const char *url)
 {
-  bw->throbbing = 1;
-  gui_window_start_throbber(bw->window);
-  return;
+	struct browser_window *bw;
+
+	bw = malloc(sizeof *bw);
+	if (!bw) {
+		warn_user("NoMemory");
+		return;
+	}
+
+	bw->current_content = 0;
+	bw->loading_content = 0;
+	bw->history = history_create();
+	bw->throbbing = false;
+	bw->caret_callback = 0;
+	bw->window = gui_create_browser_window(bw);
+	if (!bw->window) {
+		free(bw);
+		return;
+	}
+
+	browser_window_go(bw, url);
 }
 
-void browser_window_stop_throbber(struct browser_window* bw)
+
+/**
+ * Start fetching a page in a browser window.
+ *
+ * \param  bw   browser window
+ * \param  url  URL to start fetching (copied)
+ *
+ * Any existing fetches in the window are aborted.
+ */
+
+void browser_window_go(struct browser_window *bw, const char *url)
 {
-  bw->throbbing = 0;
-  gui_window_stop_throbber(bw->window);
+	browser_window_go_post(bw, url, 0, 0, true);
 }
 
 
-void browser_window_reformat(struct browser_window* bw, int scroll_to_top)
+/**
+ * Start fetching a page in a browser window, POSTing form data.
+ *
+ * \param  bw              browser window
+ * \param  url             URL to start fetching (copied)
+ * \param  post_urlenc     url encoded post data, or 0 if none
+ * \param  post_multipart  multipart post data, or 0 if none
+ * \param  history_add     add to window history
+ *
+ * Any existing fetches in the window are aborted.
+ *
+ * If post_urlenc and post_multipart are 0 the url is fetched using GET.
+ *
+ * The page is not added to the window history if add_history is false. This
+ * should be used when returning to a page in the window history.
+ */
+
+void browser_window_go_post(struct browser_window *bw, const char *url,
+		char *post_urlenc,
+		struct form_successful_control *post_multipart,
+		bool history_add)
 {
-  LOG(("bw = %p", bw));
+	struct content *c;
 
-  assert(bw != 0);
-  if (bw->current_content == NULL)
-    return;
+	browser_window_stop(bw);
 
-  if (bw->current_content->title == 0)
-    gui_window_set_title(bw->window, bw->url);
-  else
-    gui_window_set_title(bw->window, bw->current_content->title);
-  gui_window_set_extent(bw->window, bw->current_content->width, bw->current_content->height);
-  if (scroll_to_top)
-    gui_window_set_scroll(bw->window, 0, 0);
-  gui_window_redraw_window(bw->window);
+	browser_window_set_status(bw, "Opening page...");
+	bw->history_add = history_add;
+	bw->time0 = clock();
+	c = fetchcache(url, 0,
+			browser_window_callback, bw, 0,
+			gui_window_get_width(bw->window), 0,
+			false,
+			post_urlenc, post_multipart,
+			true);
+	if (!c) {
+		browser_window_set_status(bw, "Unable to fetch document");
+		return;
+	}
+	bw->loading_content = c;
+	browser_window_start_throbber(bw);
 
-  LOG(("done"));
+	if (c->status == CONTENT_STATUS_READY) {
+		browser_window_callback(CONTENT_MSG_READY, c, bw, 0, 0);
+
+	} else if (c->status == CONTENT_STATUS_DONE) {
+		browser_window_callback(CONTENT_MSG_READY, c, bw, 0, 0);
+		if (c->type == CONTENT_OTHER)
+			download_window_callback(CONTENT_MSG_DONE, c, bw, 0, 0);
+		else
+			browser_window_callback(CONTENT_MSG_DONE, c, bw, 0, 0);
+	}
 }
+
+
+/**
+ * Callback for fetchcache() for browser window fetches.
+ */
+
+void browser_window_callback(content_msg msg, struct content *c,
+	     void *p1, void *p2, const char *error)
+{
+	struct browser_window *bw = p1;
+	char status[40];
+
+	if (c->type == CONTENT_OTHER) {
+		browser_window_convert_to_download(bw, msg);
+		return;
+	}
+
+	switch (msg) {
+		case CONTENT_MSG_LOADING:
+			break;
+
+		case CONTENT_MSG_READY:
+			assert(bw->loading_content == c);
+
+			if (bw->current_content) {
+				if (bw->current_content->status ==
+						CONTENT_STATUS_DONE)
+					content_remove_instance(
+							bw->current_content,
+							bw, 0, 0,
+							0,
+							&bw->current_content_state);
+				content_remove_user(bw->current_content,
+						browser_window_callback,
+						bw, 0);
+			}
+			bw->current_content = c;
+			bw->loading_content = 0;
+			bw->caret_callback = 0;
+			gui_window_set_url(bw->window, c->url);
+			browser_window_update(bw, true);
+			browser_window_set_status(bw, c->status_message);
+			if (bw->history_add)
+				history_add(bw->history, c);
+			break;
+
+		case CONTENT_MSG_DONE:
+			assert(bw->current_content == c);
+
+			content_add_instance(c, bw, 0, 0, 0,
+					&bw->current_content_state);
+			browser_window_update(bw, false);
+			content_reshape_instance(c, bw, 0, 0, 0,
+					&bw->current_content_state);
+			sprintf(status, "Page complete (%gs)",
+					((float) (clock() - bw->time0)) /
+					CLOCKS_PER_SEC);
+			browser_window_set_status(bw, status);
+			browser_window_stop_throbber(bw);
+			history_update(bw->history, c);
+			break;
+
+		case CONTENT_MSG_ERROR:
+			browser_window_set_status(bw, error);
+			if (c == bw->loading_content)
+				bw->loading_content = 0;
+			else if (c == bw->current_content)
+				bw->current_content = 0;
+			browser_window_stop_throbber(bw);
+			break;
+
+		case CONTENT_MSG_STATUS:
+			browser_window_set_status(bw, c->status_message);
+			break;
+
+		case CONTENT_MSG_REDIRECT:
+			bw->loading_content = 0;
+			browser_window_set_status(bw, "Redirecting");
+			/* error actually holds the new URL */
+			browser_window_go(bw, error);
+			break;
+
+		case CONTENT_MSG_REFORMAT:
+			browser_window_update(bw, false);
+			break;
+
+#ifdef WITH_AUTH
+		case CONTENT_MSG_AUTH:
+			gui_401login_open(bw, c, error);
+			if (c == bw->loading_content)
+				bw->loading_content = 0;
+			else if (c == bw->current_content)
+				bw->current_content = 0;
+			browser_window_stop_throbber(bw);
+			break;
+#endif
+
+		default:
+			assert(0);
+	}
+}
+
+
+/**
+ * Transfer the loading_content to a new download window.
+ */
+
+void browser_window_convert_to_download(struct browser_window *bw,
+		content_msg msg)
+{
+	gui_window *download_window;
+	struct content *c = bw->loading_content;
+	assert(c);
+
+	/* create download window and add content to it */
+	download_window = gui_create_download_window(c);
+	content_add_user(c, download_window_callback, download_window, 0);
+
+	if (msg == CONTENT_MSG_DONE)
+		download_window_callback(CONTENT_MSG_DONE, c, download_window,
+				0, 0);
+
+	/* remove content from browser window */
+	bw->loading_content = 0;
+	content_remove_user(c, browser_window_callback, bw, 0);
+	browser_window_stop_throbber(bw);
+}
+
+
+/**
+ * Start the busy indicator.
+ *
+ * \param  bw  browser window
+ */
+
+void browser_window_start_throbber(struct browser_window *bw)
+{
+	bw->throbbing = true;
+	gui_window_start_throbber(bw->window);
+}
+
+
+/**
+ * Stop the busy indicator.
+ *
+ * \param  bw  browser window
+ */
+
+void browser_window_stop_throbber(struct browser_window *bw)
+{
+	bw->throbbing = false;
+	gui_window_stop_throbber(bw->window);
+}
+
+
+/**
+ * Redraw browser window, set extent to content, and update title.
+ *
+ * \param  bw             browser_window
+ * \param  scroll_to_top  move view to top of page
+ */
+
+void browser_window_update(struct browser_window *bw,
+		bool scroll_to_top)
+{
+	if (!bw->current_content)
+		return;
+
+	if (bw->current_content->title)
+		gui_window_set_title(bw->window, bw->current_content->title);
+	else
+		gui_window_set_title(bw->window, bw->current_content->url);
+
+	gui_window_set_extent(bw->window, bw->current_content->width,
+			bw->current_content->height);
+
+	if (scroll_to_top)
+		gui_window_set_scroll(bw->window, 0, 0);
+
+	gui_window_redraw_window(bw->window);
+}
+
+
+/**
+ * Stop all fetching activity in a browser window.
+ *
+ * \param  bw  browser window
+ */
+
+void browser_window_stop(struct browser_window *bw)
+{
+	if (bw->loading_content) {
+		content_remove_user(bw->loading_content,
+				browser_window_callback, bw, 0);
+		bw->loading_content = 0;
+	}
+
+	if (bw->current_content &&
+			bw->current_content->status != CONTENT_STATUS_DONE) {
+		assert(bw->current_content->status == CONTENT_STATUS_READY);
+		/** \todo implement content_stop */
+	}
+
+	browser_window_stop_throbber(bw);
+}
+
+
+/**
+ * Change the status bar of a browser window.
+ *
+ * \param  bw    browser window
+ * \param  text  new status text (copied)
+ */
+
+void browser_window_set_status(struct browser_window *bw, const char *text)
+{
+	gui_window_set_status(bw->window, text);
+}
+
+
+/**
+ * Close and destroy a browser window.
+ *
+ * \param  bw  browser window
+ */
+
+void browser_window_destroy(struct browser_window *bw)
+{
+	if (bw->loading_content) {
+		content_remove_user(bw->loading_content,
+				browser_window_callback, bw, 0);
+		bw->loading_content = 0;
+	}
+
+	if (bw->current_content) {
+		if (bw->current_content->status == CONTENT_STATUS_DONE)
+			content_remove_instance(bw->current_content, bw, 0,
+					0, 0, &bw->current_content_state);
+		content_remove_user(bw->current_content,
+				browser_window_callback, bw, 0);
+	}
+
+	history_destroy(bw->history);
+	gui_window_destroy(bw->window);
+
+	free(bw);
+}
+
+
 
 void browser_window_back(struct browser_window* bw)
 {
@@ -117,323 +435,9 @@ void browser_window_forward(struct browser_window* bw)
 }
 
 
-struct browser_window* create_browser_window(int flags, int width, int height
-#ifdef WITH_FRAMES
-, struct browser_window *parent
-#endif
-)
-{
-  struct browser_window* bw;
-  bw = (struct browser_window*) xcalloc(1, sizeof(struct browser_window));
-
-  bw->flags = flags;
-  bw->throbbing = 0;
-  bw->format_width = width;
-  bw->format_height = height;
-
-  bw->scale.mult = 1;
-  bw->scale.div = 1;
-
-  bw->current_content = NULL;
-  bw->loading_content = NULL;
-  bw->history_entry = 0;
-
-  bw->url = NULL;
-  bw->caret_callback = 0;
-
-#ifdef WITH_FRAMES
-  bw->parent = parent;
-
-  if (bw->parent != NULL) {
-    bw->parent->children = xrealloc(bw->parent->children,
-                                    (bw->parent->no_children+1) *
-                                    sizeof(struct browser_window));
-    bw->parent->children[bw->parent->no_children] = bw;
-    bw->parent->no_children++;
-
-    bw->window = NULL; /* This is filled in by frame_add_instance */
-  }
-  else {
-#endif
-
-    bw->window = gui_create_browser_window(bw);
-
-#ifdef WITH_FRAMES
-  }
-#endif
-
-  return bw;
-}
-
-void browser_window_set_status(struct browser_window* bw, const char* text)
-{
-  if (bw->window != NULL)
-    gui_window_set_status(bw->window, text);
-}
-
-void browser_window_destroy(struct browser_window* bw
-#ifdef WITH_FRAMES
-, bool self
-#endif
-)
-{
-  /*unsigned int i;*/
-  LOG(("bw = %p", bw));
-  assert(bw != 0);
-
-#ifdef WITH_FRAMES
-  if (bw->no_children == 0 && bw->parent != NULL) { /* leaf node -> delete */
-    if (bw->current_content != NULL) {
-      if (bw->current_content->status == CONTENT_STATUS_DONE)
-        content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
-#ifdef WITH_AUTH
-      login_list_remove(bw->current_content->url);
-#endif
-    }
-    xfree(bw->url);
-    xfree(bw);
-
-    return;
-  }
-
-  for (i=0; i!=bw->no_children; i++) { /* non-leaf node -> kill children */
-    browser_window_destroy(bw->children[i], true);
-  }
-
-  /* all children killed -> remove this node */
-  if (self || bw->parent != NULL) {
-#endif
-
-    if (bw->current_content != NULL) {
-      if (bw->current_content->status == CONTENT_STATUS_DONE)
-        content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
-      content_remove_user(bw->current_content, browser_window_callback, bw, 0);
-#ifdef WITH_AUTH
-      login_list_remove(bw->current_content->url);
-#endif
-    }
-    if (bw->loading_content != NULL) {
-      content_remove_user(bw->loading_content, browser_window_callback, bw, 0);
-    }
-    xfree(bw->url);
-
-    gui_window_destroy(bw->window);
-
-#ifdef WITH_FRAMES
-    xfree(bw->children);
-#endif
-
-    xfree(bw);
-
-#ifdef WITH_FRAMES
-  }
-  else {
-    bw->no_children = 0;
-    xfree(bw->children);
-  }
-#endif
-
-  LOG(("end"));
-}
-
-void browser_window_open_location_historical(struct browser_window* bw,
-		const char* url
-#ifdef WITH_POST
-		, char *post_urlenc,
-		struct form_successful_control *post_multipart
-#endif
-		)
-{
-#ifdef WITH_AUTH
-  struct login *li;
-#endif
-  LOG(("bw = %p, url = %s", bw, url));
-
-  assert(bw != 0 && url != 0);
-
-  /* Check window still exists, if not, don't bother going any further */
-  if (!gui_window_in_list(bw->window)) return;
-
-#ifdef WITH_FRAMES
-  if (bw->url != NULL)
-    browser_window_destroy(bw, false);
-#endif
-
-#ifdef WITH_AUTH
-  if ((li = login_list_get(url)) == NULL) {
-
-    if (bw->current_content != NULL) {
-      login_list_remove(bw->current_content->url);
-    }
-  }
-#endif
-
-  browser_window_set_status(bw, "Opening page...");
-  browser_window_start_throbber(bw);
-  bw->time0 = clock();
-  bw->history_add = false;
-  bw->loading_content = fetchcache(url, 0, browser_window_callback, bw, 0,
-		  gui_window_get_width(bw->window), 0, false
-#ifdef WITH_POST
-		  ,post_urlenc, post_multipart
-#endif
-#ifdef WITH_COOKIES
-		  , true
-#endif
-		  );
-  if (bw->loading_content == 0) {
-    browser_window_set_status(bw, "Unable to fetch document");
-    return;
-  }
-  if (bw->loading_content->status == CONTENT_STATUS_READY)
-    browser_window_callback(CONTENT_MSG_READY, bw->loading_content, bw, 0, 0);
-  else if (bw->loading_content->status == CONTENT_STATUS_DONE)
-    browser_window_callback(CONTENT_MSG_DONE, bw->loading_content, bw, 0, 0);
-
-  LOG(("end"));
-}
-
-void browser_window_open_location(struct browser_window* bw, const char* url0)
-{
-	browser_window_open_location_post(bw, url0
-#ifdef WITH_POST
-	, 0, 0
-#endif
-	);
-}
-
-void browser_window_open_location_post(struct browser_window* bw,
-		const char* url
-#ifdef WITH_POST
-		, char *post_urlenc,
-		struct form_successful_control *post_multipart
-#endif
-		)
-{
-  char *url1;
-  LOG(("bw = %p, url = %s", bw, url));
-  assert(bw != 0 && url != 0);
-  url1 = url_join(url, 0);
-  if (!url1)
-    return;
-  browser_window_open_location_historical(bw, url1
-#ifdef WITH_POST
-                                          , post_urlenc, post_multipart
-#endif
-                                          );
-  bw->history_add = true;
-  free(url1);
-  LOG(("end"));
-}
-
-void browser_window_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, const char *error)
-{
-  struct browser_window* bw = p1;
-  gui_safety previous_safety;
-  char status[40];
-
-  switch (msg)
-  {
-    case CONTENT_MSG_LOADING:
-    case CONTENT_MSG_READY:
-    case CONTENT_MSG_DONE:
-      if (c->type == CONTENT_OTHER) {
-        gui_window *download_window;
-        assert(bw->loading_content == c);
-
-        /* create download window and add content to it */
-        download_window = gui_create_download_window(c);
-        content_add_user(c, download_window_callback, download_window, 0);
-        if (msg == CONTENT_MSG_DONE)
-          download_window_callback(CONTENT_MSG_DONE, c, download_window, 0, 0);
-
-        /* remove content from browser window */
-        bw->loading_content = 0;
-        content_remove_user(c, browser_window_callback, bw, 0);
-        browser_window_stop_throbber(bw);
-
-        break;
-      }
-
-      if (msg == CONTENT_MSG_LOADING)
-        break;
-
-      previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
-      if (bw->loading_content == c) {
-        if (bw->url != 0)
-          xfree(bw->url);
-        bw->url = xstrdup(c->url);
-
-        gui_window_set_url(bw->window, bw->url);
-
-        if (bw->current_content != NULL)
-        {
-	  if (bw->current_content->status == CONTENT_STATUS_DONE)
-            content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
-          content_remove_user(bw->current_content, browser_window_callback, bw, 0);
-        }
-        bw->current_content = c;
-        bw->loading_content = 0;
-        bw->caret_callback = 0;
-	if (bw->history_add)
-          bw->history_entry = history_add(bw->history_entry, bw->url,
-			bw->current_content->title);
-	bw->history_add = false;
-      }
-      gui_window_set_redraw_safety(bw->window, previous_safety);
-      if (bw->current_content->status == CONTENT_STATUS_DONE) {
-        content_add_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
-        browser_window_reformat(bw, 0);
-        content_reshape_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
-        sprintf(status, "Page complete (%gs)", ((float) (clock() - bw->time0)) / CLOCKS_PER_SEC);
-        browser_window_set_status(bw, status);
-        browser_window_stop_throbber(bw);
-      } else {
-        browser_window_reformat(bw, 1);
-        browser_window_set_status(bw, c->status_message);
-      }
-      break;
-
-    case CONTENT_MSG_ERROR:
-      browser_window_set_status(bw, error);
-      if (c == bw->loading_content)
-        bw->loading_content = 0;
-      else if (c == bw->current_content)
-        bw->current_content = 0;
-      browser_window_stop_throbber(bw);
-      break;
-
-    case CONTENT_MSG_STATUS:
-      browser_window_set_status(bw, c->status_message);
-      break;
-
-    case CONTENT_MSG_REDIRECT:
-      bw->loading_content = 0;
-      browser_window_set_status(bw, "Redirecting");
-      /* error actually holds the new URL */
-      browser_window_open_location(bw, error);
-      break;
-
-    case CONTENT_MSG_REFORMAT:
-      browser_window_reformat(bw, 0);
-      break;
-
-#ifdef WITH_AUTH
-    case CONTENT_MSG_AUTH:
-      gui_401login_open(bw, c, error);
-      if (c == bw->loading_content)
-        bw->loading_content = 0;
-      else if (c == bw->current_content)
-        bw->current_content = 0;
-      browser_window_stop_throbber(bw);
-      break;
-#endif
-
-    default:
-      assert(0);
-  }
-}
+/**
+ * Callback for fetchcache() for download window fetches.
+ */
 
 void download_window_callback(content_msg msg, struct content *c,
 		void *p1, void *p2, const char *error)
@@ -454,13 +458,12 @@ void download_window_callback(content_msg msg, struct content *c,
 			break;
 
 		case CONTENT_MSG_READY:
-			/* not possible for CONTENT_OTHER */
-			assert(0);
 			break;
 
 		case CONTENT_MSG_LOADING:
 		case CONTENT_MSG_REDIRECT:
-			/* not possible at this point, handled above */
+			/* not possible at this point, handled in
+			   browser_window_callback() */
 			assert(0);
 			break;
 
@@ -474,49 +477,53 @@ void download_window_callback(content_msg msg, struct content *c,
 	}
 }
 
-void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct form_control* group)
+void clear_radio_gadgets(struct browser_window *bw, struct box *box,
+			 struct form_control *group)
 {
-	struct box* c;
+	struct box *c;
 	if (box == NULL)
 		return;
-	if (box->gadget != 0)
-	{
-		if (box->gadget->type == GADGET_RADIO && box->gadget->name != 0 && box->gadget != group)
-		{
-			if (strcmp(box->gadget->name, group->name) == 0)
-			{
-				if (box->gadget->data.radio.selected)
-				{
-					box->gadget->data.radio.selected = 0;
+	if (box->gadget != 0) {
+		if (box->gadget->type == GADGET_RADIO
+		    && box->gadget->name != 0 && box->gadget != group) {
+			if (strcmp(box->gadget->name, group->name) == 0) {
+				if (box->gadget->data.radio.selected) {
+					box->gadget->data.radio.selected =
+					    0;
 					gui_redraw_gadget(bw, box->gadget);
 				}
 			}
 		}
 	}
-  for (c = box->children; c != 0; c = c->next)
-    if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-      clear_radio_gadgets(bw, c, group);
+	for (c = box->children; c != 0; c = c->next)
+		if (c->type != BOX_FLOAT_LEFT
+		    && c->type != BOX_FLOAT_RIGHT)
+			clear_radio_gadgets(bw, c, group);
 
-  for (c = box->float_children; c != 0; c = c->next_float)
-      clear_radio_gadgets(bw, c, group);
+	for (c = box->float_children; c != 0; c = c->next_float)
+		clear_radio_gadgets(bw, c, group);
 }
 
-void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct form_control* g,
-		unsigned long x, unsigned long y)
+void gui_redraw_gadget2(struct browser_window *bw, struct box *box,
+			struct form_control *g, unsigned long x,
+			unsigned long y)
 {
-	struct box* c;
+	struct box *c;
 
-	if (box->gadget == g)
-	{
-  		gui_window_redraw(bw->window, x + box->x, y + box->y, x + box->x + box->width, y+box->y + box->height);
+	if (box->gadget == g) {
+		gui_window_redraw(bw->window, x + box->x, y + box->y,
+				  x + box->x + box->width,
+				  y + box->y + box->height);
 	}
 
-  for (c = box->children; c != 0; c = c->next)
-    if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-      gui_redraw_gadget2(bw, c, g, box->x + x, box->y + y);
+	for (c = box->children; c != 0; c = c->next)
+		if (c->type != BOX_FLOAT_LEFT
+		    && c->type != BOX_FLOAT_RIGHT)
+			gui_redraw_gadget2(bw, c, g, box->x + x,
+					   box->y + y);
 
-  for (c = box->float_children; c != 0; c = c->next_float)
-     gui_redraw_gadget2(bw, c, g, box->x + x, box->y + y);
+	for (c = box->float_children; c != 0; c = c->next_float)
+		gui_redraw_gadget2(bw, c, g, box->x + x, box->y + y);
 }
 
 void gui_redraw_gadget(struct browser_window* bw, struct form_control* g)
@@ -1209,378 +1216,422 @@ bool browser_window_key_press(struct browser_window *bw, char key)
 }
 
 
-int browser_window_action(struct browser_window* bw, struct browser_action* act)
+int browser_window_action(struct browser_window *bw,
+			  struct browser_action *act)
 {
-  switch (act->type)
-  {
-    case act_MOUSE_AT:
-     browser_window_follow_link(bw, act->data.mouse.x, act->data.mouse.y, 0);
-      break;
-    case act_MOUSE_CLICK:
-      return browser_window_gadget_click(bw, act->data.mouse.x, act->data.mouse.y);
-      break;
-    case act_CLEAR_SELECTION:
-     browser_window_text_selection(bw, act->data.mouse.x, act->data.mouse.y, 0);
-      break;
-    case act_START_NEW_SELECTION:
-     browser_window_text_selection(bw, act->data.mouse.x, act->data.mouse.y, 1);
-      break;
-    case act_ALTER_SELECTION:
-     browser_window_text_selection(bw, act->data.mouse.x, act->data.mouse.y, 2);
-      break;
-    case act_FOLLOW_LINK:
-     browser_window_follow_link(bw, act->data.mouse.x, act->data.mouse.y, 1);
-      break;
-    case act_FOLLOW_LINK_NEW_WINDOW:
-     browser_window_follow_link(bw, act->data.mouse.x, act->data.mouse.y, 2);
-      break;
-    case act_GADGET_SELECT:
-      browser_window_gadget_select(bw, act->data.gadget_select.g, act->data.gadget_select.item);
-    default:
-      break;
-  }
-  return 0;
+	switch (act->type) {
+	case act_MOUSE_AT:
+		browser_window_follow_link(bw, act->data.mouse.x,
+					   act->data.mouse.y, 0);
+		break;
+	case act_MOUSE_CLICK:
+		return browser_window_gadget_click(bw, act->data.mouse.x,
+						   act->data.mouse.y);
+		break;
+	case act_CLEAR_SELECTION:
+		browser_window_text_selection(bw, act->data.mouse.x,
+					      act->data.mouse.y, 0);
+		break;
+	case act_START_NEW_SELECTION:
+		browser_window_text_selection(bw, act->data.mouse.x,
+					      act->data.mouse.y, 1);
+		break;
+	case act_ALTER_SELECTION:
+		browser_window_text_selection(bw, act->data.mouse.x,
+					      act->data.mouse.y, 2);
+		break;
+	case act_FOLLOW_LINK:
+		browser_window_follow_link(bw, act->data.mouse.x,
+					   act->data.mouse.y, 1);
+		break;
+	case act_FOLLOW_LINK_NEW_WINDOW:
+		browser_window_follow_link(bw, act->data.mouse.x,
+					   act->data.mouse.y, 2);
+		break;
+	case act_GADGET_SELECT:
+		browser_window_gadget_select(bw, act->data.gadget_select.g,
+					     act->data.gadget_select.item);
+	default:
+		break;
+	}
+	return 0;
 }
 
-void box_under_area(struct box* box, unsigned long x, unsigned long y, unsigned long ox, unsigned long oy,
-		struct box_selection** found, int* count, int* plot_index)
+void box_under_area(struct box *box, unsigned long x, unsigned long y,
+		    unsigned long ox, unsigned long oy,
+		    struct box_selection **found, int *count,
+		    int *plot_index)
 {
-  struct box* c;
+	struct box *c;
 
-  if (box == NULL)
-    return;
+	if (box == NULL)
+		return;
 
-  *plot_index = *plot_index + 1;
+	*plot_index = *plot_index + 1;
 
-  if (x >= box->x + ox && x <= box->x + ox + box->width &&
-      y >= box->y + oy && y <= box->y + oy + box->height)
-  {
-    *found = xrealloc(*found, sizeof(struct box_selection) * (*count + 1));
-    (*found)[*count].box = box;
-    (*found)[*count].actual_x = box->x + ox;
-    (*found)[*count].actual_y = box->y + oy;
-    (*found)[*count].plot_index = *plot_index;
-    *count = *count + 1;
-  }
+	if (x >= box->x + ox && x <= box->x + ox + box->width &&
+	    y >= box->y + oy && y <= box->y + oy + box->height) {
+		*found =
+		    xrealloc(*found,
+			     sizeof(struct box_selection) * (*count + 1));
+		(*found)[*count].box = box;
+		(*found)[*count].actual_x = box->x + ox;
+		(*found)[*count].actual_y = box->y + oy;
+		(*found)[*count].plot_index = *plot_index;
+		*count = *count + 1;
+	}
 
-  for (c = box->children; c != 0; c = c->next)
-    if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-      box_under_area(c, x, y, box->x + ox, box->y + oy, found, count, plot_index);
+	for (c = box->children; c != 0; c = c->next)
+		if (c->type != BOX_FLOAT_LEFT
+		    && c->type != BOX_FLOAT_RIGHT)
+			box_under_area(c, x, y, box->x + ox, box->y + oy,
+				       found, count, plot_index);
 
-  for (c = box->float_children; c != 0; c = c->next_float)
-    box_under_area(c, x, y, box->x + ox, box->y + oy, found, count, plot_index);
+	for (c = box->float_children; c != 0; c = c->next_float)
+		box_under_area(c, x, y, box->x + ox, box->y + oy, found,
+			       count, plot_index);
 
-  return;
+	return;
 }
 
-void browser_window_follow_link(struct browser_window* bw,
-		unsigned long click_x, unsigned long click_y, int click_type)
+void browser_window_follow_link(struct browser_window *bw,
+				unsigned long click_x,
+				unsigned long click_y, int click_type)
 {
-  struct box_selection* click_boxes;
-  int found, plot_index;
-  int i;
-  int done = 0;
+	struct box_selection *click_boxes;
+	int found, plot_index;
+	int i;
+	int done = 0;
 
-  found = 0;
-  click_boxes = NULL;
-  plot_index = 0;
+	found = 0;
+	click_boxes = NULL;
+	plot_index = 0;
 
-  if (bw->current_content->type != CONTENT_HTML)
-    return;
+	if (bw->current_content->type != CONTENT_HTML)
+		return;
 
-  box_under_area(bw->current_content->data.html.layout->children,
-                 click_x, click_y, 0, 0, &click_boxes, &found, &plot_index);
+	box_under_area(bw->current_content->data.html.layout->children,
+		       click_x, click_y, 0, 0, &click_boxes, &found,
+		       &plot_index);
 
-  if (found == 0)
-    return;
+	if (found == 0)
+		return;
 
-  for (i = found - 1; i >= 0; i--)
-  {
-    if (click_boxes[i].box->style->visibility == CSS_VISIBILITY_HIDDEN)
-      continue;
-    if (click_boxes[i].box->href != NULL)
-    {
-      char *url = url_join((char*) click_boxes[i].box->href,
-		      bw->current_content->data.html.base_url);
-      if (!url)
-        continue;
+	for (i = found - 1; i >= 0; i--) {
+		if (click_boxes[i].box->style->visibility ==
+		    CSS_VISIBILITY_HIDDEN)
+			continue;
+		if (click_boxes[i].box->href != NULL) {
+			char *url =
+			    url_join((char *) click_boxes[i].box->href,
+				     bw->current_content->data.html.
+				     base_url);
+			if (!url)
+				continue;
 
-      if (click_type == 1) {
-        browser_window_open_location(bw, url);
-      }
-      else if (click_type == 2)
-      {
-        struct browser_window* bw_new;
-        bw_new = create_browser_window(browser_TITLE | browser_TOOLBAR
-          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480
-#ifdef WITH_FRAMES
-          , NULL
-#endif
-        );
-        gui_window_show(bw_new->window);
-        browser_window_open_location(bw_new, url);
-      }
-      else if (click_type == 0)
-      {
-        browser_window_set_status(bw, url);
-        done = 1;
-      }
-      free(url);
-      break;
-    }
-    if (click_type == 0 && click_boxes[i].box->title != NULL)
-    {
-      browser_window_set_status(bw, click_boxes[i].box->title);
-      done = 1;
-      break;
-    }
-  }
+			if (click_type == 1) {
+				browser_window_go(bw, url);
+			} else if (click_type == 2) {
+				browser_window_create(url);
+			} else if (click_type == 0) {
+				browser_window_set_status(bw, url);
+				done = 1;
+			}
+			free(url);
+			break;
+		}
+		if (click_type == 0 && click_boxes[i].box->title != NULL) {
+			browser_window_set_status(bw,
+						  click_boxes[i].box->
+						  title);
+			done = 1;
+			break;
+		}
+	}
 
-  if (click_type == 0 && done == 0) {
-    if (bw->loading_content != 0)
-      browser_window_set_status(bw, bw->loading_content->status_message);
-    else
-      browser_window_set_status(bw, bw->current_content->status_message);
-  }
+	if (click_type == 0 && done == 0) {
+		if (bw->loading_content != 0)
+			browser_window_set_status(bw,
+						  bw->loading_content->
+						  status_message);
+		else
+			browser_window_set_status(bw,
+						  bw->current_content->
+						  status_message);
+	}
 
-  free(click_boxes);
+	free(click_boxes);
 
-  return;
+	return;
 }
 
-void browser_window_text_selection(struct browser_window* bw,
-		unsigned long click_x, unsigned long click_y, int click_type)
+void browser_window_text_selection(struct browser_window *bw,
+				   unsigned long click_x,
+				   unsigned long click_y, int click_type)
 {
-  struct box_selection* click_boxes;
-  int found, plot_index;
-  int i;
+	struct box_selection *click_boxes;
+	int found, plot_index;
+	int i;
 
-  if (click_type == 0 /* click_CLEAR_SELECTION */ )
-  {
-    browser_window_clear_text_selection(bw);
-    return;
-  }
+	if (click_type == 0 /* click_CLEAR_SELECTION */ ) {
+		browser_window_clear_text_selection(bw);
+		return;
+	}
 
-  found = 0;
-  click_boxes = NULL;
-  plot_index = 0;
+	found = 0;
+	click_boxes = NULL;
+	plot_index = 0;
 
-  assert(bw->current_content->type == CONTENT_HTML);
-  box_under_area(bw->current_content->data.html.layout->children,
-                 click_x, click_y, 0, 0, &click_boxes, &found, &plot_index);
+	assert(bw->current_content->type == CONTENT_HTML);
+	box_under_area(bw->current_content->data.html.layout->children,
+		       click_x, click_y, 0, 0, &click_boxes, &found,
+		       &plot_index);
 
-  if (found == 0)
-    return;
+	if (found == 0)
+		return;
 
-  for (i = found - 1; i >= 0; i--)
-  {
-    if (click_boxes[i].box->type == BOX_INLINE)
-    {
-      struct box_position new_pos;
-      struct box_position* start;
-      struct box_position* end;
-      int click_char_offset, click_pixel_offset;
+	for (i = found - 1; i >= 0; i--) {
+		if (click_boxes[i].box->type == BOX_INLINE) {
+			struct box_position new_pos;
+			struct box_position *start;
+			struct box_position *end;
+			int click_char_offset, click_pixel_offset;
 
-      /* shortcuts */
-      start = &(bw->current_content->data.html.text_selection.start);
-      end = &(bw->current_content->data.html.text_selection.end);
+			/* shortcuts */
+			start =
+			    &(bw->current_content->data.html.
+			      text_selection.start);
+			end =
+			    &(bw->current_content->data.html.
+			      text_selection.end);
 
-      if (click_boxes[i].box->text && click_boxes[i].box->font)
-      {
-      font_position_in_string(click_boxes[i].box->text,
-          click_boxes[i].box->font, click_boxes[i].box->length,
-          click_x - click_boxes[i].actual_x,
-          &click_char_offset, &click_pixel_offset);
-      }
-      else
-      {
-        click_char_offset = 0;
-	click_pixel_offset = 0;
-      }
+			if (click_boxes[i].box->text
+			    && click_boxes[i].box->font) {
+				font_position_in_string(click_boxes[i].
+							box->text,
+							click_boxes[i].
+							box->font,
+							click_boxes[i].
+							box->length,
+							click_x -
+							click_boxes[i].
+							actual_x,
+							&click_char_offset,
+							&click_pixel_offset);
+			} else {
+				click_char_offset = 0;
+				click_pixel_offset = 0;
+			}
 
-      new_pos.box = click_boxes[i].box;
-      new_pos.actual_box_x = click_boxes[i].actual_x;
-      new_pos.actual_box_y = click_boxes[i].actual_y;
-      new_pos.plot_index = click_boxes[i].plot_index;
-      new_pos.char_offset = click_char_offset;
-      new_pos.pixel_offset = click_pixel_offset;
+			new_pos.box = click_boxes[i].box;
+			new_pos.actual_box_x = click_boxes[i].actual_x;
+			new_pos.actual_box_y = click_boxes[i].actual_y;
+			new_pos.plot_index = click_boxes[i].plot_index;
+			new_pos.char_offset = click_char_offset;
+			new_pos.pixel_offset = click_pixel_offset;
 
-      if (click_type == 1 /* click_START_SELECTION */ )
-      {
-        /* update both start and end */
-        browser_window_clear_text_selection(bw);
-        bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
-        bw->current_content->data.html.text_selection.selected = 1;
-        memcpy(start, &new_pos, sizeof(struct box_position));
-        memcpy(end, &new_pos, sizeof(struct box_position));
-        i = -1;
-      }
-      else if (bw->current_content->data.html.text_selection.selected == 1 &&
-               click_type == 2 /* click_ALTER_SELECTION */)
-      {
-        /* alter selection */
+			if (click_type == 1 /* click_START_SELECTION */ ) {
+				/* update both start and end */
+				browser_window_clear_text_selection(bw);
+				bw->current_content->data.html.
+				    text_selection.altering =
+				    alter_UNKNOWN;
+				bw->current_content->data.html.
+				    text_selection.selected = 1;
+				memcpy(start, &new_pos,
+				       sizeof(struct box_position));
+				memcpy(end, &new_pos,
+				       sizeof(struct box_position));
+				i = -1;
+			} else if (bw->current_content->data.html.
+				   text_selection.selected == 1
+				   && click_type ==
+				   2 /* click_ALTER_SELECTION */ ) {
+				/* alter selection */
 
-        if (bw->current_content->data.html.text_selection.altering
-            != alter_UNKNOWN)
-        {
-          if (bw->current_content->data.html.text_selection.altering
-              == alter_START)
-          {
-            if (box_position_gt(&new_pos,end))
-            {
-              bw->current_content->data.html.text_selection.altering
-                = alter_END;
-              browser_window_change_text_selection(bw, end, &new_pos);
-            }
-            else
-              browser_window_change_text_selection(bw, &new_pos, end);
-          }
-          else
-          {
-            if (box_position_lt(&new_pos,start))
-            {
-              bw->current_content->data.html.text_selection.altering
-                = alter_START;
-              browser_window_change_text_selection(bw, &new_pos, start);
-            }
-            else
-              browser_window_change_text_selection(bw, start, &new_pos);
-          }
-          i = -1;
-        }
-        else
-        {
-          /* work out whether the start or end is being dragged */
+				if (bw->current_content->data.html.
+				    text_selection.altering !=
+				    alter_UNKNOWN) {
+					if (bw->current_content->data.html.
+					    text_selection.altering ==
+					    alter_START) {
+						if (box_position_gt
+						    (&new_pos, end)) {
+							bw->current_content->data.html.text_selection.altering = alter_END;
+							browser_window_change_text_selection
+							    (bw, end,
+							     &new_pos);
+						} else
+							browser_window_change_text_selection
+							    (bw, &new_pos,
+							     end);
+					} else {
+						if (box_position_lt
+						    (&new_pos, start)) {
+							bw->current_content->data.html.text_selection.altering = alter_START;
+							browser_window_change_text_selection
+							    (bw, &new_pos,
+							     start);
+						} else
+							browser_window_change_text_selection
+							    (bw, start,
+							     &new_pos);
+					}
+					i = -1;
+				} else {
+					/* work out whether the start or end is being dragged */
 
-          int click_start_distance = 0;
-          int click_end_distance = 0;
+					int click_start_distance = 0;
+					int click_end_distance = 0;
 
-          int inside_block = 0;
-          int before_start = 0;
-          int after_end = 0;
+					int inside_block = 0;
+					int before_start = 0;
+					int after_end = 0;
 
-          if (box_position_lt(&new_pos, start))
-            before_start = 1;
+					if (box_position_lt
+					    (&new_pos, start))
+						before_start = 1;
 
-          if (box_position_gt(&new_pos, end))
-            after_end = 1;
+					if (box_position_gt(&new_pos, end))
+						after_end = 1;
 
-          if (!box_position_lt(&new_pos, start)
-              && !box_position_gt(&new_pos, end))
-            inside_block = 1;
+					if (!box_position_lt
+					    (&new_pos, start)
+					    && !box_position_gt(&new_pos,
+								end))
+						inside_block = 1;
 
-          if (inside_block == 1)
-          {
-            click_start_distance = box_position_distance(start, &new_pos);
-            click_end_distance = box_position_distance(end, &new_pos);
-          }
+					if (inside_block == 1) {
+						click_start_distance =
+						    box_position_distance
+						    (start, &new_pos);
+						click_end_distance =
+						    box_position_distance
+						    (end, &new_pos);
+					}
 
-          if (before_start == 1
-              || (after_end == 0 && inside_block == 1
-                  && click_start_distance < click_end_distance))
-          {
-            /* alter the start position */
-            bw->current_content->data.html.text_selection.altering
-              = alter_START;
-            browser_window_change_text_selection(bw, &new_pos, end);
-            i = -1;
-          }
-          else if (after_end == 1
-                   || (before_start == 0 && inside_block == 1
-                       && click_start_distance >= click_end_distance))
-          {
-            /* alter the end position */
-            bw->current_content->data.html.text_selection.altering = alter_END;
-            browser_window_change_text_selection(bw, start, &new_pos);
-            i = -1;
-          }
-        }
-      }
-    }
-  }
+					if (before_start == 1
+					    || (after_end == 0
+						&& inside_block == 1
+						&& click_start_distance <
+						click_end_distance)) {
+						/* alter the start position */
+						bw->current_content->data.
+						    html.text_selection.
+						    altering = alter_START;
+						browser_window_change_text_selection
+						    (bw, &new_pos, end);
+						i = -1;
+					} else if (after_end == 1
+						   || (before_start == 0
+						       && inside_block == 1
+						       &&
+						       click_start_distance
+						       >=
+						       click_end_distance))
+					{
+						/* alter the end position */
+						bw->current_content->data.
+						    html.text_selection.
+						    altering = alter_END;
+						browser_window_change_text_selection
+						    (bw, start, &new_pos);
+						i = -1;
+					}
+				}
+			}
+		}
+	}
 
-  free(click_boxes);
+	free(click_boxes);
 
-  return;
+	return;
 }
 
-void browser_window_clear_text_selection(struct browser_window* bw)
+void browser_window_clear_text_selection(struct browser_window *bw)
 {
-  struct box_position* old_start;
-  struct box_position* old_end;
+	struct box_position *old_start;
+	struct box_position *old_end;
 
-  assert(bw->current_content->type == CONTENT_HTML);
-  old_start = &(bw->current_content->data.html.text_selection.start);
-  old_end = &(bw->current_content->data.html.text_selection.end);
+	assert(bw->current_content->type == CONTENT_HTML);
+	old_start = &(bw->current_content->data.html.text_selection.start);
+	old_end = &(bw->current_content->data.html.text_selection.end);
 
-  if (bw->current_content->data.html.text_selection.selected == 1)
-  {
-    bw->current_content->data.html.text_selection.selected = 0;
-    browser_window_redraw_boxes(bw, old_start, old_end);
-  }
+	if (bw->current_content->data.html.text_selection.selected == 1) {
+		bw->current_content->data.html.text_selection.selected = 0;
+		browser_window_redraw_boxes(bw, old_start, old_end);
+	}
 
-  bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
+	bw->current_content->data.html.text_selection.altering =
+	    alter_UNKNOWN;
 }
 
-void browser_window_change_text_selection(struct browser_window* bw,
-  struct box_position* new_start, struct box_position* new_end)
+void browser_window_change_text_selection(struct browser_window *bw,
+					  struct box_position *new_start,
+					  struct box_position *new_end)
 {
-  struct box_position start;
-  struct box_position end;
+	struct box_position start;
+	struct box_position end;
 
-  assert(bw->current_content->type == CONTENT_HTML);
-  memcpy(&start, &(bw->current_content->data.html.text_selection.start), sizeof(struct box_position));
-  memcpy(&end, &(bw->current_content->data.html.text_selection.end), sizeof(struct box_position));
+	assert(bw->current_content->type == CONTENT_HTML);
+	memcpy(&start,
+	       &(bw->current_content->data.html.text_selection.start),
+	       sizeof(struct box_position));
+	memcpy(&end, &(bw->current_content->data.html.text_selection.end),
+	       sizeof(struct box_position));
 
-  if (!box_position_eq(new_start, &start))
-  {
-    if (box_position_lt(new_start, &start))
-      browser_window_redraw_boxes(bw, new_start, &start);
-    else
-      browser_window_redraw_boxes(bw, &start, new_start);
-    memcpy(&start, new_start, sizeof(struct box_position));
-  }
+	if (!box_position_eq(new_start, &start)) {
+		if (box_position_lt(new_start, &start))
+			browser_window_redraw_boxes(bw, new_start, &start);
+		else
+			browser_window_redraw_boxes(bw, &start, new_start);
+		memcpy(&start, new_start, sizeof(struct box_position));
+	}
 
-  if (!box_position_eq(new_end, &end))
-  {
-    if (box_position_lt(new_end, &end))
-      browser_window_redraw_boxes(bw, new_end, &end);
-    else
-      browser_window_redraw_boxes(bw, &end, new_end);
-    memcpy(&end, new_end, sizeof(struct box_position));
-  }
+	if (!box_position_eq(new_end, &end)) {
+		if (box_position_lt(new_end, &end))
+			browser_window_redraw_boxes(bw, new_end, &end);
+		else
+			browser_window_redraw_boxes(bw, &end, new_end);
+		memcpy(&end, new_end, sizeof(struct box_position));
+	}
 
-  memcpy(&(bw->current_content->data.html.text_selection.start), &start, sizeof(struct box_position));
-  memcpy(&(bw->current_content->data.html.text_selection.end), &end, sizeof(struct box_position));
+	memcpy(&(bw->current_content->data.html.text_selection.start),
+	       &start, sizeof(struct box_position));
+	memcpy(&(bw->current_content->data.html.text_selection.end), &end,
+	       sizeof(struct box_position));
 
-  bw->current_content->data.html.text_selection.selected = 1;
+	bw->current_content->data.html.text_selection.selected = 1;
 }
 
 
-int box_position_lt(struct box_position* x, struct box_position* y)
+int box_position_lt(struct box_position *x, struct box_position *y)
 {
-  return (x->plot_index < y->plot_index ||
-          (x->plot_index == y->plot_index && x->char_offset < y->char_offset));
+	return (x->plot_index < y->plot_index ||
+		(x->plot_index == y->plot_index
+		 && x->char_offset < y->char_offset));
 }
 
-int box_position_gt(struct box_position* x, struct box_position* y)
+int box_position_gt(struct box_position *x, struct box_position *y)
 {
-  return (x->plot_index > y->plot_index ||
-          (x->plot_index == y->plot_index && x->char_offset > y->char_offset));
+	return (x->plot_index > y->plot_index ||
+		(x->plot_index == y->plot_index
+		 && x->char_offset > y->char_offset));
 }
 
-int box_position_eq(struct box_position* x, struct box_position* y)
+int box_position_eq(struct box_position *x, struct box_position *y)
 {
-  return (x->plot_index == y->plot_index && x->char_offset == y->char_offset);
+	return (x->plot_index == y->plot_index
+		&& x->char_offset == y->char_offset);
 }
 
-int box_position_distance(struct box_position* x, struct box_position* y)
+int box_position_distance(struct box_position *x, struct box_position *y)
 {
-  int dx = (y->actual_box_x + y->pixel_offset)
-           - (x->actual_box_x + x->pixel_offset);
-  int dy = (y->actual_box_y + y->box->height / 2)
-           - (x->actual_box_y + x->box->height / 2);
-  return dx*dx + dy*dy;
+	int dx = (y->actual_box_x + y->pixel_offset)
+	    - (x->actual_box_x + x->pixel_offset);
+	int dy = (y->actual_box_y + y->box->height / 2)
+	    - (x->actual_box_y + x->box->height / 2);
+	return dx * dx + dy * dy;
 }
 
 unsigned long redraw_min_x = LONG_MAX;
@@ -1588,73 +1639,76 @@ unsigned long redraw_min_y = LONG_MAX;
 unsigned long redraw_max_x = 0;
 unsigned long redraw_max_y = 0;
 
-int redraw_box_list(struct browser_window* bw, struct box* current,
-		unsigned long x, unsigned long y, struct box_position* start,
-		struct box_position* end, int* plot)
+int redraw_box_list(struct browser_window *bw, struct box *current,
+		    unsigned long x, unsigned long y,
+		    struct box_position *start, struct box_position *end,
+		    int *plot)
 {
 
-  struct box* c;
+	struct box *c;
 
-  if (current == start->box)
-    *plot = 1;
+	if (current == start->box)
+		*plot = 1;
 
-  if (*plot >= 1 && current->type == BOX_INLINE)
-  {
-    unsigned long minx = x + current->x;
-    unsigned long miny = y + current->y;
-    unsigned long maxx = x + current->x + current->width;
-    unsigned long maxy = y + current->y + current->height;
+	if (*plot >= 1 && current->type == BOX_INLINE) {
+		unsigned long minx = x + current->x;
+		unsigned long miny = y + current->y;
+		unsigned long maxx = x + current->x + current->width;
+		unsigned long maxy = y + current->y + current->height;
 
-    if (minx < redraw_min_x)
-      redraw_min_x = minx;
-    if (miny < redraw_min_y)
-      redraw_min_y = miny;
-    if (maxx > redraw_max_x)
-      redraw_max_x = maxx;
-    if (maxy > redraw_max_y)
-      redraw_max_y = maxy;
+		if (minx < redraw_min_x)
+			redraw_min_x = minx;
+		if (miny < redraw_min_y)
+			redraw_min_y = miny;
+		if (maxx > redraw_max_x)
+			redraw_max_x = maxx;
+		if (maxy > redraw_max_y)
+			redraw_max_y = maxy;
 
-    *plot = 2;
-  }
+		*plot = 2;
+	}
 
-  if (current == end->box)
-    return 1;
+	if (current == end->box)
+		return 1;
 
-  for (c = current->children; c != 0; c = c->next)
-    if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-      if (redraw_box_list(bw, c, x + current->x, y + current->y,
-                          start, end, plot) == 1)
-        return 1;
+	for (c = current->children; c != 0; c = c->next)
+		if (c->type != BOX_FLOAT_LEFT
+		    && c->type != BOX_FLOAT_RIGHT)
+			if (redraw_box_list
+			    (bw, c, x + current->x, y + current->y, start,
+			     end, plot) == 1)
+				return 1;
 
-  for (c = current->float_children; c != 0; c = c->next_float)
-    if (redraw_box_list(bw, c, x + current->x, y + current->y,
-                        start, end, plot) == 1)
-      return 1;
+	for (c = current->float_children; c != 0; c = c->next_float)
+		if (redraw_box_list(bw, c, x + current->x, y + current->y,
+				    start, end, plot) == 1)
+			return 1;
 
-  return 0;
+	return 0;
 }
 
-void browser_window_redraw_boxes(struct browser_window* bw, struct box_position* start, struct box_position* end)
+void browser_window_redraw_boxes(struct browser_window *bw,
+				 struct box_position *start,
+				 struct box_position *end)
 {
-  int plot = 0;
+	int plot = 0;
 
-  assert(bw->current_content->type == CONTENT_HTML);
-  if (box_position_eq(start, end))
-    return;
+	assert(bw->current_content->type == CONTENT_HTML);
+	if (box_position_eq(start, end))
+		return;
 
-  redraw_min_x = LONG_MAX;
-  redraw_min_y = LONG_MAX;
-  redraw_max_x = 0;
-  redraw_max_y = 0;
+	redraw_min_x = LONG_MAX;
+	redraw_min_y = LONG_MAX;
+	redraw_max_x = 0;
+	redraw_max_y = 0;
 
-  redraw_box_list(bw, bw->current_content->data.html.layout,
-    0,0, start, end, &plot);
+	redraw_box_list(bw, bw->current_content->data.html.layout,
+			0, 0, start, end, &plot);
 
-  if (plot == 2)
-    gui_window_redraw(bw->window, redraw_min_x, redraw_min_y,
-      redraw_max_x, redraw_max_y);
+	if (plot == 2)
+		gui_window_redraw(bw->window, redraw_min_x, redraw_min_y,
+				  redraw_max_x, redraw_max_y);
 }
-
 
 /**
  * Collect controls and submit a form.
@@ -1685,26 +1739,22 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			url1 = url_join(url, base);
 			if (!url1)
 				break;
-			browser_window_open_location(bw, url1);
+			browser_window_go(bw, url1);
                 	break;
-#ifdef WITH_POST
+
                 case method_POST_URLENC:
 			data = form_url_encode(success);
 			url = url_join(form->action, base);
 			if (!url)
 				break;
-			browser_window_open_location_post(bw, url, data, 0);
+			browser_window_go_post(bw, url, data, 0, true);
                 	break;
 
                 case method_POST_MULTIPART:
 			url = url_join(form->action, base);
-			browser_window_open_location_post(bw, url, 0, success);
+			browser_window_go_post(bw, url, 0, success, true);
                 	break;
-#else
-                case method_POST_URLENC:
-                case method_POST_MULTIPART:
-                        break;
-#endif
+
                 default:
                 	assert(0);
         }

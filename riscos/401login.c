@@ -117,7 +117,7 @@ bool ro_gui_401login_keypress(wimp_key *key) {
     case wimp_KEY_RETURN:
             get_unamepwd();
             ro_gui_dialog_close(dialog_401li);
-            browser_window_open_location(bwin, url);
+            browser_window_go(bwin, url);
             return true;
     case wimp_KEY_ESCAPE:
             ro_gui_dialog_close(dialog_401li);
@@ -139,7 +139,7 @@ void ro_gui_401login_click(wimp_pointer *pointer) {
     case ICON_401LOGIN_LOGIN:
             get_unamepwd();
             ro_gui_dialog_close(dialog_401li);
-            browser_window_open_location(bwin, url);
+            browser_window_go(bwin, url);
             break;
     case ICON_401LOGIN_CANCEL:
             ro_gui_dialog_close(dialog_401li);

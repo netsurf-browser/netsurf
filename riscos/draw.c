@@ -92,7 +92,8 @@ void draw_destroy(struct content *c)
 
 void draw_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+		float scale)
 {
         os_trfm *matrix = xcalloc(1, sizeof(os_trfm));
 

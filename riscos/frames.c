@@ -76,7 +76,6 @@ void frame_add_instance(struct content *c, struct browser_window *parent,
   g->type = GUI_BROWSER_WINDOW;
   g->data.browser.bw = bw;
   g->data.browser.toolbar = 0;
-  g->redraw_safety = SAFE;
   g->data.browser.reformat_pending = false;
   g->data.browser.old_width = 0;
 

@@ -25,10 +25,11 @@
 #include "netsurf/utils/utils.h"
 
 wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
-	dialog_config_prox, dialog_config_th, download_template
+	dialog_config_prox, dialog_config_th, download_template,
 #ifdef WITH_AUTH
-	,dialog_401li
+	dialog_401li,
 #endif
+	dialog_zoom;
 	;
 wimp_menu* theme_menu = NULL;
 
@@ -41,6 +42,7 @@ static void ro_gui_dialog_click_config_br(wimp_pointer *pointer);
 static void ro_gui_dialog_update_config_br(void);
 static void ro_gui_dialog_click_config_prox(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_th(wimp_pointer *pointer);
+static void ro_gui_dialog_click_zoom(wimp_pointer *pointer);
 static void set_browser_choices(void);
 static void get_browser_choices(void);
 static void set_proxy_choices(void);
@@ -73,6 +75,7 @@ void ro_gui_dialog_init(void)
 	dialog_config_br = ro_gui_dialog_create("config_br");
 	dialog_config_prox = ro_gui_dialog_create("config_prox");
 	dialog_config_th = ro_gui_dialog_create("config_th");
+	dialog_zoom = ro_gui_dialog_create("zoom");
 
 	set_browser_choices();
 	set_proxy_choices();
@@ -176,6 +179,8 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 	else if (pointer->w == dialog_401li)
 	        ro_gui_401login_click(pointer);
 #endif
+	else if (pointer->w == dialog_zoom)
+	        ro_gui_dialog_click_zoom(pointer);
 }
 
 
@@ -243,14 +248,7 @@ void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 			set_browser_choices();
 			break;
 		case ICON_CONFIG_BR_EXPLAIN:
-			bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
-					browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 320, 256
-#ifdef WITH_FRAMES
-					, NULL
-#endif
-					);
-			gui_window_show(bw->window);
-			browser_window_open_location(bw, GESTURES_URL);
+			browser_window_create(GESTURES_URL);
 			break;
 		case ICON_CONFIG_BR_FONTSIZE_DEC:
 			if (font_size == 50)
@@ -295,8 +293,6 @@ void ro_gui_dialog_update_config_br(void)
 	set_icon_string(dialog_config_br, ICON_CONFIG_BR_FONTSIZE, s);
 	sprintf(s, "%i.%ipt", font_min_size / 10, font_min_size % 10);
 	set_icon_string(dialog_config_br, ICON_CONFIG_BR_MINSIZE, s);
-	wimp_set_icon_state(dialog_config_br, ICON_CONFIG_BR_FONTSIZE, 0, 0);
-	wimp_set_icon_state(dialog_config_br, ICON_CONFIG_BR_MINSIZE, 0, 0);
 }
 
 
@@ -348,16 +344,46 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 			os_cli("Filer_OpenDir " THEMES_DIR);
 			break;
 		case ICON_CONFIG_TH_GET:
-			bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
-					browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 480, 320
-#ifdef WITH_FRAMES
-					, NULL
-#endif
-					);
-			gui_window_show(bw->window);
-			browser_window_open_location(bw, THEMES_URL);
+			browser_window_create(THEMES_URL);
 			break;
 	}
+}
+
+
+/**
+ * Handle clicks in the Scale view dialog.
+ */
+
+void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
+{
+	unsigned int scale;
+	scale = atoi(get_icon_string(dialog_zoom, ICON_ZOOM_VALUE));
+
+	switch (pointer->i) {
+		case ICON_ZOOM_DEC: scale -= 10; break;
+		case ICON_ZOOM_INC: scale += 10; break;
+		case ICON_ZOOM_50:  scale = 50;	break;
+		case ICON_ZOOM_80:  scale = 80; break;
+		case ICON_ZOOM_100: scale = 100; break;
+		case ICON_ZOOM_120: scale = 120; break;
+	}
+
+	if (scale < 10)
+		scale = 10;
+	else if (500 < scale)
+		scale = 500;
+	set_icon_string_i(dialog_zoom, ICON_ZOOM_VALUE, scale);
+
+	if (pointer->i == ICON_ZOOM_OK) {
+		current_gui->scale = scale * 0.01;
+		current_gui->data.browser.reformat_pending = true;
+		gui_reformat_pending = true;
+	}
+
+	if (pointer->buttons == wimp_CLICK_SELECT &&
+			(pointer->i == ICON_ZOOM_CANCEL ||
+			 pointer->i == ICON_ZOOM_OK))
+		wimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 }
 
 
@@ -637,9 +663,7 @@ void ro_gui_theme_menu_selection(char *theme)
 {
 	set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME, theme);
 	load_theme_preview(theme);
-	wimp_set_icon_state(dialog_config_th, ICON_CONFIG_TH_NAME, 0, 0);
 	wimp_set_icon_state(dialog_config_th, ICON_CONFIG_TH_PREVIEW, 0, 0);
-
 }
 
 int file_exists(const char* base, const char* dir, const char* leaf, bits ftype)
@@ -695,6 +719,7 @@ void set_icon_string(wimp_w w, wimp_i i, const char *text)
 	wimp_get_icon_state(&ic);
 	strncpy(ic.icon.data.indirected_text.text, text,
 			(unsigned int)ic.icon.data.indirected_text.size);
+	wimp_set_icon_state(w, i, 0, 0);
 }
 
 char* get_icon_string(wimp_w w, wimp_i i)

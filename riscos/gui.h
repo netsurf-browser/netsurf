@@ -20,15 +20,17 @@
 #define THEMES_DIR "<NetSurf$Dir>.Themes"
 
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
-	dialog_config_prox, dialog_config_th;
+	dialog_config_prox, dialog_config_th, dialog_zoom;
 extern wimp_w history_window;
-extern wimp_menu *current_menu, *iconbar_menu, *browser_menu,
-	*combo_menu, *theme_menu;
-extern int current_menu_x, current_menu_y, iconbar_menu_height;
+extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *theme_menu;
+extern int iconbar_menu_height;
 extern struct form_control *current_gadget;
 extern gui_window *window_list;
 extern bool gui_reformat_pending;
 extern bool gui_redraw_debug;
+extern gui_window *current_gui;
+
+typedef enum { GUI_BROWSER_WINDOW, GUI_DOWNLOAD_WINDOW } gui_window_type;
 
 struct gui_window
 {
@@ -67,8 +69,9 @@ struct gui_window
   char throb_buf[12];
   float throbtime;
 
-  gui_safety redraw_safety;
   enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION } drag_status;
+
+  float scale;
 };
 
 struct ro_gui_drag_info
@@ -89,12 +92,6 @@ struct ro_gui_drag_info
 };
 
 /* in gui.c */
-int ro_x_units(unsigned long browser_units);
-int ro_y_units(unsigned long browser_units);
-unsigned long browser_x_units(int ro_units);
-unsigned long browser_y_units(int ro_units);
-int window_x_units(int scr_units, wimp_window_state* win);
-int window_y_units(int scr_units, wimp_window_state* win);
 void ro_gui_copy_selection(gui_window* g);
 void ro_gui_open_help_page(void);
 void ro_gui_screen_size(int *width, int *height);
@@ -152,12 +149,14 @@ gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window);
 gui_window *ro_gui_window_lookup(wimp_w w);
 bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar);
 void ro_gui_scroll_request(wimp_scroll *scroll);
+int window_x_units(int x, wimp_window_state *state);
+int window_y_units(int y, wimp_window_state *state);
 
 /* in history.c */
 void ro_gui_history_init(void);
 void ro_gui_history_quit(void);
 void ro_gui_history_open(struct browser_window *bw,
-		struct history_entry *entry, int wx, int wy);
+		struct history *history, int wx, int wy);
 void ro_gui_history_redraw(wimp_draw *redraw);
 void ro_gui_history_click(wimp_pointer *pointer);
 
@@ -222,5 +221,15 @@ void ro_gui_history_click(wimp_pointer *pointer);
 #define ICON_401LOGIN_REALM 3
 #define ICON_401LOGIN_USERNAME 4
 #define ICON_401LOGIN_PASSWORD 5
+
+#define ICON_ZOOM_VALUE 1
+#define ICON_ZOOM_DEC 2
+#define ICON_ZOOM_INC 3
+#define ICON_ZOOM_50 5
+#define ICON_ZOOM_80 6
+#define ICON_ZOOM_100 7
+#define ICON_ZOOM_120 8
+#define ICON_ZOOM_CANCEL 9
+#define ICON_ZOOM_OK 10
 
 #endif

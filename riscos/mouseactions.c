@@ -56,12 +56,12 @@ void ro_gui_mouse_action(gui_window *g) {
            break;
 
       case mouseaction_RELOAD:
-           browser_window_open_location_historical(g->data.browser.bw,
+/*           browser_window_open_location_historical(g->data.browser.bw,
            		g->data.browser.bw->url
 #ifdef WITH_POST
            		, 0, 0
 #endif
-           		);
+           		);*/
            break;
 
       default: break;

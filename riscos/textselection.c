@@ -59,8 +59,8 @@ void ro_gui_drag_end(wimp_dragged* drag)
     state.w = current_drag.data.selection.gui->window;
     wimp_get_window_state(&state);
 
-    final_x0 = browser_x_units(window_x_units(drag->final.x0, &state));
-    final_y0 = browser_y_units(window_y_units(drag->final.y0, &state));
+    final_x0 = window_x_units(drag->final.x0, &state) / 2;
+    final_y0 = window_y_units(drag->final.y0, &state) / 2;
 
     msg.data.mouse.x = final_x0;
     msg.data.mouse.y = final_y0;

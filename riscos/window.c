@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
@@ -14,15 +14,18 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
+#include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/css/css.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/options.h"
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/save_draw.h"
 #include "netsurf/riscos/theme.h"
+#include "netsurf/riscos/thumbnail.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -62,7 +65,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
 
   ro_gui_screen_size(&screen_width, &screen_height);
 
-  if (bw->flags & browser_TOOLBAR)
+  if (option_show_toolbar)
     toolbar_height = ro_theme_toolbar_height();
 
   win_width = screen_width * 3 / 4;
@@ -109,7 +112,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
   strcpy(g->title, "NetSurf");
 
   g->data.browser.toolbar = 0;
-  if ((bw->flags & browser_TOOLBAR) != 0)
+  if (option_show_toolbar)
   {
     g->data.browser.toolbar = ro_theme_create_toolbar(g->url, g->status,
         g->throb_buf);
@@ -117,9 +120,9 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
     sprintf(g->throb_buf, "throbber0");
   }
 
-  g->redraw_safety = SAFE;
   g->data.browser.reformat_pending = false;
   g->data.browser.old_width = 0;
+  g->scale = 1;
 
   g->next = window_list;
   window_list = g;
@@ -199,8 +202,7 @@ void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
   if (g == NULL)
     return;
 
-  wimp_force_redraw(g->window,
-    ro_x_units(x0), ro_y_units(y1), ro_x_units(x1), ro_y_units(y0));
+  wimp_force_redraw(g->window, x0 * 2, -y1 * 2, x1 * 2, -y0 * 2);
 }
 
 void gui_window_redraw_window(gui_window* g)
@@ -213,26 +215,13 @@ void gui_window_redraw_window(gui_window* g)
   wimp_force_redraw(g->window, info.extent.x0, info.extent.y0, info.extent.x1, info.extent.y1);
 }
 
-gui_safety gui_window_set_redraw_safety(gui_window* g, gui_safety s)
-{
-  gui_safety old;
-
-  if (g == NULL)
-    return SAFE;
-
-  old = g->redraw_safety;
-  g->redraw_safety = s;
-
-  return old;
-}
-
 
 void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
 {
   osbool more;
   struct content *c = g->data.browser.bw->current_content;
 
-  if (g->redraw_safety == SAFE && g->type == GUI_BROWSER_WINDOW && c != NULL)
+  if (g->type == GUI_BROWSER_WINDOW && c != NULL)
   {
     more = wimp_redraw_window(redraw);
     wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_BLACK);
@@ -244,7 +233,8 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
           (int) redraw->box.y1 - (int) redraw->yscroll,
           c->width * 2, c->height * 2,
 	  redraw->clip.x0, redraw->clip.y0,
-	  redraw->clip.x1 - 1, redraw->clip.y1 - 1);
+	  redraw->clip.x1 - 1, redraw->clip.y1 - 1,
+	  g->scale);
       more = wimp_get_rectangle(redraw);
     }
   }
@@ -263,9 +253,9 @@ void gui_window_set_scroll(gui_window* g, unsigned long sx, unsigned long sy)
     return;
   state.w = g->window;
   wimp_get_window_state(&state);
-  state.xscroll = ro_x_units(sx);
-  state.yscroll = ro_y_units(sy);
-  if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
+  state.xscroll = sx * 2;
+  state.yscroll = -sy * 2;
+  if (option_show_toolbar)
     state.yscroll += ro_theme_toolbar_height();
   ro_gui_window_open(g, (wimp_open*)&state);
 }
@@ -275,7 +265,7 @@ unsigned long gui_window_get_width(gui_window* g)
   wimp_window_state state;
   state.w = g->window;
   wimp_get_window_state(&state);
-  return browser_x_units(state.visible.x1 - state.visible.x0);
+  return (state.visible.x1 - state.visible.x0) / 2;
 }
 
 
@@ -286,14 +276,14 @@ void gui_window_set_extent(gui_window *g, unsigned long width,
 	wimp_window_state state;
 	int toolbar_height = 0;
 
-	width *= 2;
-	height *= 2;
+	width *= 2 * g->scale;
+	height *= 2 * g->scale;
 
 	state.w = g->window;
 	wimp_get_window_state(&state);
 
 	/* account for toolbar height, if present */
-	if (g->data.browser.bw->flags & browser_TOOLBAR)
+	if (option_show_toolbar)
 		toolbar_height = ro_theme_toolbar_height();
 
 	if (width < (unsigned int)(state.visible.x1 - state.visible.x0))
@@ -372,7 +362,7 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 	}
 
 	/* account for toolbar height, if present */
-	if (g->data.browser.bw->flags & browser_TOOLBAR) {
+	if (option_show_toolbar) {
 		toolbar_height = ro_theme_toolbar_height();
 		height -= toolbar_height;
 	}
@@ -443,7 +433,7 @@ void ro_gui_throb(void)
   {
     if (g->type == GUI_BROWSER_WINDOW)
     {
-      if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
+      if (option_show_toolbar)
       {
         if (g->data.browser.bw->throbbing != 0)
         {
@@ -517,7 +507,7 @@ gui_window *ro_gui_window_lookup(wimp_w w)
 
 void ro_gui_window_mouse_at(wimp_pointer* pointer)
 {
-  int x,y;
+  int x, y;
   wimp_window_state state;
   gui_window* g;
 
@@ -526,17 +516,11 @@ void ro_gui_window_mouse_at(wimp_pointer* pointer)
   if (g == NULL)
     return;
 
-  if (g->redraw_safety != SAFE)
-  {
-    fprintf(stderr, "mouse at UNSAFE\n");
-    return;
-  }
-
   state.w = pointer->w;
   wimp_get_window_state(&state);
 
-  x = browser_x_units(window_x_units(pointer->pos.x, &state));
-  y = browser_y_units(window_y_units(pointer->pos.y, &state));
+  x = window_x_units(pointer->pos.x, &state) / 2 / g->scale;
+  y = -window_y_units(pointer->pos.y, &state) / 2 / g->scale;
 
   if (g->drag_status == drag_BROWSER_TEXT_SELECTION)
   {
@@ -565,17 +549,17 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
 	switch (pointer->i) {
 		case ICON_TOOLBAR_HISTORY:
 			ro_gui_history_open(g->data.browser.bw,
-					g->data.browser.bw->history_entry,
+					g->data.browser.bw->history,
 					pointer->pos.x - 200,
 					pointer->pos.y + 100);
 			break;
 		case ICON_TOOLBAR_RELOAD:
-			browser_window_open_location_historical(g->data.browser.bw,
+/*			browser_window_open_location_historical(g->data.browser.bw,
 					g->data.browser.bw->url
 #ifdef WITH_POST
 					, 0, 0
 #endif
-					);
+					);*/
 			break;
 	}
 }
@@ -587,19 +571,13 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
   int x,y;
   wimp_window_state state;
 
-  if (g->redraw_safety != SAFE)
-  {
-    fprintf(stderr, "gui_window_click UNSAFE\n");
-    return;
-  }
-
   state.w = pointer->w;
   wimp_get_window_state(&state);
 
   if (g->type == GUI_BROWSER_WINDOW)
   {
-    x = browser_x_units(window_x_units(pointer->pos.x, &state));
-    y = browser_y_units(window_y_units(pointer->pos.y, &state));
+    x = window_x_units(pointer->pos.x, &state) / 2 / g->scale;
+    y = -window_y_units(pointer->pos.y, &state) / 2 / g->scale;
 
     if (pointer->buttons == wimp_CLICK_MENU)
     {
@@ -615,7 +593,6 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
 		msg.type = act_MOUSE_CLICK;
         	msg.data.mouse.x = x;
 		msg.data.mouse.y = y;
-		msg.data.mouse.buttons = act_BUTTON_NORMAL;
 		if (browser_window_action(g->data.browser.bw, &msg) == 1)
 			return;
 		msg.type = act_UNKNOWN;
@@ -770,7 +747,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			  free(url);
 			  if (url2) {
 				  gui_window_set_url(g, url2);
-				  browser_window_open_location(g->data.browser.bw, url2);
+				  browser_window_go(g->data.browser.bw, url2);
 				  free(url2);
 			  }
 			}
@@ -791,7 +768,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 	state.w = g->window;
 	wimp_get_window_state(&state);
 	y = state.visible.y1 - state.visible.y0 - 32;
-	if (g->data.browser.bw->flags & browser_TOOLBAR)
+	if (option_show_toolbar)
 		y -= ro_theme_toolbar_height();
 
 	switch (key) {
@@ -833,7 +810,7 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 
 	x = scroll->visible.x1 - scroll->visible.x0 - 32;
 	y = scroll->visible.y1 - scroll->visible.y0 - 32;
-	if (g->data.browser.bw->flags & browser_TOOLBAR)
+	if (option_show_toolbar)
 		y -= ro_theme_toolbar_height();
 
 	switch (scroll->xmin) {
@@ -871,4 +848,32 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 	}
 
 	wimp_open_window((wimp_open *) scroll);
+}
+
+
+/**
+ * Convert x from screen to window coordinates.
+ *
+ * \param  x      x coordinate / os units
+ * \param  state  window state
+ * \return  x coordinate in window / os units
+ */
+
+int window_x_units(int x, wimp_window_state *state)
+{
+	return x - (state->visible.x0 - state->xscroll);
+}
+
+
+/**
+ * Convert y from screen to window coordinates.
+ *
+ * \param  y      y coordinate / os units
+ * \param  state  window state
+ * \return  y coordinate in window / os units
+ */
+
+int window_y_units(int y, wimp_window_state *state)
+{
+	return y - (state->visible.y1 - state->yscroll);
 }

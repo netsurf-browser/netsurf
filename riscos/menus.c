@@ -3,8 +3,12 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
+ */
+
+/** \file
+ * Menu creation and handling (implementation).
  */
 
 #include <stdlib.h>
@@ -21,8 +25,8 @@
 
 static void translate_menu(wimp_menu *menu);
 
-wimp_menu *current_menu;
-int current_menu_x, current_menu_y;
+static wimp_menu *current_menu;
+static int current_menu_x, current_menu_y;
 gui_window *current_gui;
 
 
@@ -44,7 +48,6 @@ wimp_menu *iconbar_menu = (wimp_menu *) & (wimp_MENU(4)) {
 int iconbar_menu_height = 4 * 44;
 
 /* browser window menu structure - based on Style Guide */
-/*wimp_menu *browser_page_menu = (wimp_menu *) & (wimp_MENU(4)) {*/
 static wimp_MENU(4) page_menu = {
   { "Page" }, 7,2,7,0, 200, 44, 0,
   {
@@ -78,12 +81,21 @@ static wimp_MENU(5) navigate_menu = {
 };
 static wimp_menu *browser_navigate_menu = (wimp_menu *) &navigate_menu;
 
-wimp_menu *browser_menu = (wimp_menu *) & (wimp_MENU(3)) {
+static wimp_MENU(1) view_menu = {
+  { "View" }, 7,2,7,0, 300, 44, 0,
+  {
+    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "ScaleView" } }
+  }
+};
+static wimp_menu *browser_view_menu = (wimp_menu *) &view_menu;
+
+wimp_menu *browser_menu = (wimp_menu *) & (wimp_MENU(4)) {
   { "NetSurf" }, 7,2,7,0, 200, 44, 0,
   {
     { 0,              (wimp_menu *) &page_menu,      DEFAULT_FLAGS, { "Page" } },
     { 0,              (wimp_menu *) &selection_menu, DEFAULT_FLAGS, { "Selection" } },
-    { wimp_MENU_LAST, (wimp_menu *) &navigate_menu,  DEFAULT_FLAGS, { "Navigate" } }
+    { 0,              (wimp_menu *) &navigate_menu,  DEFAULT_FLAGS, { "Navigate" } },
+    { wimp_MENU_LAST, (wimp_menu *) &view_menu,      DEFAULT_FLAGS, { "View" } }
   }
 };
 
@@ -99,9 +111,11 @@ void ro_gui_menus_init(void)
 	translate_menu(browser_page_menu);
 	translate_menu(browser_selection_menu);
 	translate_menu(browser_navigate_menu);
+	translate_menu(browser_view_menu);
 
 	iconbar_menu->entries[0].sub_menu = (wimp_menu *) dialog_info;
 	browser_page_menu->entries[1].sub_menu = (wimp_menu *) dialog_saveas;
+	browser_view_menu->entries[0].sub_menu = (wimp_menu *) dialog_zoom;
 }
 
 
@@ -126,7 +140,7 @@ void translate_menu(wimp_menu *menu)
 		menu->entries[i].data.indirected_text.size =
 			strlen(menu->entries[i].data.indirected_text.text) + 1;
 		i++;
-	} while ((menu->entries[i].menu_flags & wimp_MENU_LAST) == 0);
+	} while ((menu->entries[i - 1].menu_flags & wimp_MENU_LAST) == 0);
 }
 
 
@@ -228,7 +242,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 0: /* Open URL... */
 						break;
 					case 1: /* Home */
-						browser_window_open_location(current_gui->data.browser.bw, HOME_URL);
+						browser_window_go(current_gui->data.browser.bw,
+								HOME_URL);
 						break;
 					case 2: /* Back */
 						browser_window_back(current_gui->data.browser.bw);
