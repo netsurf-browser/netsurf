@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.11 2002/08/18 16:46:45 bursa Exp $
+ * $Id: box.c,v 1.12 2002/09/08 18:11:56 bursa Exp $
  */
 
 #include <assert.h>
@@ -231,7 +231,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 }
 
 
-/*
+/**
  * get the style for an element
  */
 
@@ -288,7 +288,7 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 }
 
 
-/*
+/**
  * print a box tree to standard output
  */
 
@@ -329,8 +329,8 @@ void box_dump(struct box * box, unsigned int depth)
 }
 
 
-/*
- *  ensure the box tree is correctly nested
+/**
+ * ensure the box tree is correctly nested
  */
 
 void box_normalise_block(struct box *block)
@@ -606,4 +606,29 @@ void box_normalise_inline_container(struct box *cont)
 				assert(0);
 		}
 	}
+}
+
+
+/**
+ * free a box tree recursively
+ */
+
+void box_free(struct box *box)
+{
+	/* free children first */
+	if (box->children != 0)
+		box_free(box->children);
+
+	/* then siblings */
+	if (box->next != 0)
+		box_free(box->next);
+
+	/* last this box */
+	if (box->style != 0)
+		free(box->style);
+	if (box->text != 0)
+		free(box->text);
+	/* only free href if we're the top most user */
+	if (box->href != 0 && (box->parent == 0 || box->parent->href != box->href))
+		free(box->href);
 }

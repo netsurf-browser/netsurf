@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.7 2002/08/18 16:46:45 bursa Exp $
+ * $Id: box.h,v 1.8 2002/09/08 18:11:56 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -45,5 +45,6 @@ void xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesh
 		struct box * parent, struct box * inline_container,
 		const char *href);
 void box_dump(struct box * box, unsigned int depth);
+void box_free(struct box *box);
 
 #endif
