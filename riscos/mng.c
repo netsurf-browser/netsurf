@@ -9,7 +9,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
-#include <swis.h>
 #include "libmng/libmng.h"
 #include "oslib/os.h"
 #include "oslib/osspriteop.h"
