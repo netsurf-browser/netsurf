@@ -66,7 +66,8 @@ bool ro_uri_launch(char *uri) {
 	uri_dispatch_flags returned;
 	os_error *e;
 
-	e = xuri_dispatch(0, uri, task_handle, &returned, &handle_task, &uri_handle);
+	e = xuri_dispatch(uri_DISPATCH_INFORM_CALLER, uri, task_handle,
+	                  &returned, &handle_task, &uri_handle);
 
 	if (e || returned & 1) {
 		return false;
@@ -84,7 +85,10 @@ void ro_uri_bounce(uri_full_message_return_result *message) {
 
 	e = xuri_request_uri(0, uri_buf, sizeof uri_buf, message->handle, 0);
 
-	if (e) return;
+	if (e) {
+	   LOG(("xuri_request_uri: %d: %s", e->errnum, e->errmess));
+	   return;
+	}
 
 	ro_url_load(uri_buf);
 

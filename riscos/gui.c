@@ -818,8 +818,7 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 				ro_uri_message_received(message);
 			break;
 		case message_URI_RETURN_RESULT:
-			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE)
-				ro_uri_bounce(message);
+			ro_uri_bounce(message);
 			break;
 #endif
 #ifdef WITH_URL
