@@ -306,6 +306,8 @@ void gui_poll(bool active)
 	xhourglass_off();
 	if (active) {
 		event = wimp_poll(mask, &block, 0);
+	} else if (sched_active) {
+		event = wimp_poll_idle(mask, &block, sched_time, 0);
 	} else if (over_window || gui_reformat_pending) {
 		os_t t = os_read_monotonic_time();
 		event = wimp_poll_idle(mask, &block, t + 10, 0);
@@ -314,6 +316,7 @@ void gui_poll(bool active)
 	}
 	xhourglass_on();
 	ro_gui_handle_event(event, &block);
+	schedule_run();
 
         if (gui_reformat_pending && event == wimp_NULL_REASON_CODE) {
 		for (g = window_list; g; g = g->next) {

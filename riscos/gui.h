@@ -162,6 +162,13 @@ void ro_gui_save_datasave_ack(wimp_message *message);
 /* in filetype.c */
 int ro_content_filetype(struct content *content);
 
+/* in schedule.c */
+extern bool sched_active;
+extern os_t sched_time;
+void schedule(int t, void (*callback)(void *p), void *p);
+void schedule_remove(void (*callback)(void *p), void *p);
+void schedule_run(void);
+
 /* icon numbers */
 #define ICON_TOOLBAR_THROBBER 1
 #define ICON_TOOLBAR_URL 2
