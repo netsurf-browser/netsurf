@@ -93,6 +93,7 @@
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
+static void css_deep_free_style(struct css_style *style);
 static void css_atimport_callback(content_msg msg, struct content *css,
 		void *p1, void *p2, union content_msg_data data);
 static struct css_selector *css_merge_rule_lists(struct css_selector *l1, struct css_selector *l2);
@@ -448,7 +449,7 @@ void css_destroy(struct content *c)
 
 	for (i = 0; i != HASH_SIZE; i++) {
 		for (r = c->data.css.css->rule[i]; r != 0; r = r->next) {
-			css_free_style(r->style);
+			css_deep_free_style(r->style);
 		}
 		css_free_selector(c->data.css.css->rule[i]);
 	}
@@ -485,33 +486,6 @@ struct css_style *css_duplicate_style(const struct css_style * const style)
 	/* copy all style information into duplicate style */
 	memcpy(dup, style, sizeof(struct css_style));
 
-	/* duplicate strings, if in use */
-
-	/* background_image */
-	if (dup->background_image.type == CSS_BACKGROUND_IMAGE_URI) {
-		dup->background_image.uri = NULL;
-		dup->background_image.uri =
-				strdup(style->background_image.uri);
-		if (!dup->background_image.uri) {
-			free(dup);
-			return NULL;
-		}
-	}
-
-	/* list_style_image */
-	if (dup->list_style_image.type == CSS_LIST_STYLE_IMAGE_URI) {
-		dup->list_style_image.uri = NULL;
-		dup->list_style_image.uri =
-				strdup(style->list_style_image.uri);
-		if (!dup->list_style_image.uri) {
-			if (dup->background_image.type ==
-					CSS_BACKGROUND_IMAGE_URI)
-				free(dup->background_image.uri);
-			free(dup);
-			return NULL;
-		}
-	}
-
 	return dup;
 }
 
@@ -521,6 +495,18 @@ struct css_style *css_duplicate_style(const struct css_style * const style)
  * \param style The style to free
  */
 void css_free_style(struct css_style *style)
+{
+	assert(style);
+
+	free(style);
+}
+
+/**
+ * Free a CSS style, deleting all alloced elements
+ *
+ * \param style The style to free
+ */
+void css_deep_free_style(struct css_style *style)
 {
 	assert(style);
 
@@ -2331,7 +2317,7 @@ void css_cascade(struct css_style * const style,
 		style->background_color = apply->background_color;
 	if (apply->background_image.type != CSS_BACKGROUND_IMAGE_INHERIT &&
 			apply->background_image.type !=
-				CSS_BACKGROUND_IMAGE_INHERIT)
+				CSS_BACKGROUND_IMAGE_NOT_SET)
 		style->background_image = apply->background_image;
 	if (apply->background_repeat != CSS_BACKGROUND_REPEAT_INHERIT &&
 			apply->background_repeat !=
