@@ -15,6 +15,7 @@
 #include "libxml/encoding.h"
 #include "libxml/uri.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 void die(const char * const error)
@@ -290,4 +291,37 @@ bool is_dir(const char *path)
 		return false;
 
 	return S_ISDIR(s.st_mode) ? true : false;
+}
+
+/**
+ * Fills in the version string.
+ * The release version is defined in the Messages file.
+ */
+char *populate_version(void) {
+
+  const char *version = "%s (%s %s %s)"; /**< version string prototype */
+  char *p;
+  char *day;
+  char *mon;
+  char *year;
+  char *temp = xcalloc(12, sizeof(char));
+  char *ret = xcalloc(30, sizeof(char));
+
+  sprintf(temp, "%s", __DATE__);
+  p = strchr(temp, ' ');
+  *p = 0;
+  mon = strdup(temp);
+  if (strchr(p+1, ' ') == p+1)
+    day = p+2;
+  else
+    day = p+1;
+  p = strchr(day, ' ');
+  *p = 0;
+  year = p+1;
+
+  sprintf(ret, version, messages_get("Version:CVS Test Build"), day, mon, year);
+
+  xfree(temp);
+
+  return ret;
 }

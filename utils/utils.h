@@ -27,5 +27,6 @@ char *squash_tolat1(xmlChar *s);
 char *url_join(const char* new, const char* base);
 char *get_host_from_url(char* url);
 bool is_dir(const char *path);
+char * populate_version(void);
 
 #endif
