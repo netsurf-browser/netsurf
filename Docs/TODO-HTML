@@ -1,4 +1,4 @@
-$Id: TODO-HTML,v 1.9 2004/04/18 15:54:50 jmb Exp $
+$Id: TODO-HTML,v 1.10 2004/09/03 22:27:08 tlsa Exp $
 
 TODO-HTML file for NetSurf. 
 
@@ -18,8 +18,6 @@ Lists:
 	
 Tables: 
 	Borders, 
-	row spanning (only rowspan=0 needs implementing)
-	column spanning (only colspan=0 needs implementing)
 
 Objects:
 	Alt text

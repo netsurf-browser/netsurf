@@ -1,4 +1,4 @@
-$Id: TODO-General,v 1.7 2004/03/26 22:17:12 jmb Exp $
+$Id: TODO-General,v 1.8 2004/09/03 22:27:08 tlsa Exp $
 
 TODO-General for NetSurf.
 
@@ -6,7 +6,5 @@ This file documents general things which need doing.
 
 
 Disk Cache
-Printing
 Global Clipboard Support
 JavaScript?
-#targets in URLS eg: http://www.moo.com/index.html#blah
