@@ -29,13 +29,13 @@
     #define WITH_PNG
     #define WITH_MNG
 #endif
-#ifdef defined (riscos) || defined(ncos)
+#ifdef defined(riscos) || defined(ncos)
     #define WITH_DRAW
     #define WITH_SPRITE
 #endif
 
 /* Platform specific features */
-#if defined (riscos) || defined(ncos)
+#if defined(riscos) || defined(ncos)
     /* Plugin module */
     #define WITH_PLUGIN
     /* Acorn URI protocol support */
