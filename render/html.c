@@ -54,7 +54,7 @@ void html_create(struct content *c, const char *params[])
 	unsigned int i;
 	struct content_html_data *html = &c->data.html;
 
-	html->encoding = XML_CHAR_ENCODING_8859_1;
+	html->encoding = XML_CHAR_ENCODING_NONE;
 	html->getenc = true;
 
 	for (i = 0; params[i]; i += 2) {
@@ -62,7 +62,7 @@ void html_create(struct content *c, const char *params[])
 			html->encoding = xmlParseCharEncoding(params[i + 1]);
 			html->getenc = false; /* encoding specified - trust the server... */
 			if (html->encoding == XML_CHAR_ENCODING_ERROR) {
-				html->encoding = XML_CHAR_ENCODING_8859_1;
+				html->encoding = XML_CHAR_ENCODING_NONE;
 				html->getenc = true;
 			}
 			break;
@@ -95,21 +95,20 @@ void html_create(struct content *c, const char *params[])
 void html_process_data(struct content *c, char *data, unsigned long size)
 {
 	unsigned long x;
-	LOG(("content %s, size %lu", c->url, size));
-	/*cache_dump();*/
-	/* First time through, check if we need to get the encoding
-	 * if so, get it and reset the parser instance with it.
-	 * if it fails, assume Latin1
+
+	/* First time through, check if we need to detect the encoding
+	 * if so, detect it and reset the parser instance with it.
 	 */
 	if (c->data.html.getenc) {
-		c->data.html.encoding = xmlDetectCharEncoding(data, size);
-		if (c->data.html.encoding == XML_CHAR_ENCODING_ERROR ||
-				c->data.html.encoding == XML_CHAR_ENCODING_NONE)
-			c->data.html.encoding = XML_CHAR_ENCODING_8859_1;
-		xmlSwitchEncoding(c->data.html.parser, c->data.html.encoding);
+		xmlCharEncoding encoding = xmlDetectCharEncoding(data, size);
+		if (encoding != XML_CHAR_ENCODING_ERROR &&
+				encoding != XML_CHAR_ENCODING_NONE) {
+			xmlSwitchEncoding(c->data.html.parser, encoding);
+			c->data.html.encoding = encoding;
+		}
 		c->data.html.getenc = false;
-		LOG(("Encoding: %s", xmlGetCharEncodingName(c->data.html.encoding)));
 	}
+
 	for (x = 0; x + CHUNK <= size; x += CHUNK) {
 		htmlParseChunk(c->data.html.parser, data + x, CHUNK, 0);
 		gui_multitask();
