@@ -620,7 +620,9 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 
 	if (!abort && result == CURLE_OK) {
 		/* fetch completed normally */
-		if (!f->had_headers && fetch_process_headers(f))
+		if (f->stopped ||
+				(!f->had_headers &&
+					fetch_process_headers(f)))
 			; /* redirect with no body or similar */
 		else
 			finished = true;
