@@ -1,0 +1,70 @@
+Documentation for Developers
+
+This document contains an overview of the code for NetSurf, and any other
+information useful to developers.
+
+________________________________________________________________________________
+
+Source Code Overview
+
+The source is split at top level as follows:
+
+content -- fetching, caching, and converting content
+desktop -- non-platform specific front-end
+render -- HTML and CSS processing and layout
+riscos -- RISC OS specific code
+utils -- misc. useful functions
+
+________________________________________________________________________________
+
+HTML and CSS processing and layout
+
+This is the process to render an HTML document:
+
+First the HTML is parsed to a tree of xmlNodes using the HTML parser in libxml.
+This happens simultaneously with the fetch [html_process_data()].
+
+Any stylesheets which the document depends on are fetched and parsed.
+
+The tree is converted to a 'box tree' by xml_to_box(). The box tree contains a
+node for each block, inline element, table, etc. The aim of this stage is to
+determine the 'display' or 'float' CSS property of each element, and create the
+corresponding node in the box tree. At this stage the style for each element is
+also calculated (from CSS rules and element attributes). The tree is normalised
+so that each node only has children of permitted types (eg. TABLE_CELLs must be
+within TABLE_ROWs) by adding missing boxes.
+
+The box tree is passed to the layout engine [layout_document()], which finds the
+space required by each element and assigns coordinates to the boxes, based on
+the style of each element and the available width. This includes formatting
+inline elements into lines, laying out tables, and positioning floats. The
+layout engine can be invoked again on a already laid out box tree to reformat it
+to a new width. Coordinates in the box tree are relative to the position of the
+parent node.
+
+The box tree can then be rendered using each node's coordinates.
+
+box.[ch] -- definition of the box tree, conversion from xml tree, normalising
+css* -- CSS parser and handler
+html.[ch] -- interface to HTML processing
+layout.[ch] -- layout engine
+
+________________________________________________________________________________
+
+Specifications
+
+HTML 4.01	http://www.w3.org/TR/html401/
+XHTML 1.0	http://www.w3.org/TR/xhtml1/
+CSS2		http://www.w3.org/TR/REC-CSS2/
+HTTP/1.1	http://www.w3.org/Protocols/rfc2616/rfc2616.html
+PNG		http://www.w3.org/Graphics/PNG/
+
+________________________________________________________________________________
+
+Libraries
+
+libxml (XML and HTML parser)		http://xmlsoft.org/
+libcurl (HTTP, FTP, etc)		http://curl.haxx.se/libcurl/
+OSLib (C interface to RISC OS SWIs)	http://ro-oslib.sourceforge.net/
+
+________________________________________________________________________________
