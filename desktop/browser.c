@@ -99,6 +99,7 @@ void browser_window_create(const char *url, struct browser_window *clone)
 	bw->history = history_create();
 	bw->throbbing = false;
 	bw->caret_callback = 0;
+	bw->frag_id = 0;
 	bw->window = gui_create_browser_window(bw, clone);
 	if (!bw->window) {
 		free(bw);
@@ -147,6 +148,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 {
 	struct content *c;
 	char *url2;
+	char *hash;
 
 	LOG(("bw %p, url %s", bw, url));
 
@@ -154,6 +156,15 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	if (!url2) {
 		LOG(("failed to normalize url %s", url));
 		return;
+	}
+
+	hash = strchr(url2, '#');
+	if (bw->frag_id) {
+		free(bw->frag_id);
+		bw->frag_id = 0;
+	}
+	if (hash) {
+		bw->frag_id = strdup(hash+1);
 	}
 
 	browser_window_stop(bw);
@@ -172,6 +183,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		warn_user("NoMemory", 0);
 		return;
 	}
+
 	gui_window_set_url(bw->window, c->url);
 	bw->loading_content = c;
 	browser_window_start_throbber(bw);
@@ -222,7 +234,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			browser_window_update(bw, true);
 			browser_window_set_status(bw, c->status_message);
 			if (bw->history_add)
-				history_add(bw->history, c);
+				history_add(bw->history, c, bw->frag_id);
 			break;
 
 		case CONTENT_MSG_DONE:
@@ -363,6 +375,8 @@ void browser_window_update(struct browser_window *bw,
 		bool scroll_to_top)
 {
 	const char *title_local_enc;
+	struct box *pos;
+	int x, y;
 
 	if (!bw->current_content)
 		return;
@@ -379,6 +393,14 @@ void browser_window_update(struct browser_window *bw,
 
 	if (scroll_to_top)
 		gui_window_set_scroll(bw->window, 0, 0);
+
+	/* if frag_id exists, then try to scroll to it */
+	if (bw->frag_id && bw->current_content->type == CONTENT_HTML) {
+		if ((pos = box_find_by_id(bw->current_content->data.html.layout->children, bw->frag_id)) != 0) {
+			box_coords(pos, &x, &y);
+			gui_window_set_scroll(bw->window, x, y);
+		}
+	}
 
 	gui_window_redraw_window(bw->window);
 }
@@ -493,6 +515,7 @@ void browser_window_destroy(struct browser_window *bw)
 	history_destroy(bw->history);
 	gui_window_destroy(bw->window);
 
+	free(bw->frag_id);
 	free(bw);
 }
 
@@ -960,7 +983,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 			return;
 		}
 
-		new_br = box_create(text_box->style, 0, 0,
+		new_br = box_create(text_box->style, 0, 0, 0,
 				bw->current_content->data.html.box_pool);
 		new_text = pool_alloc(bw->current_content->data.html.box_pool,
 				sizeof (struct box));

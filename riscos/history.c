@@ -35,6 +35,7 @@
 /** A node in the history tree. */
 struct history_entry {
 	char *url;    /**< Page URL. */
+	char *frag_id; /** Fragment identifier */
 	char *title;  /**< Page title. */
 	struct history_entry *back;  /**< Parent. */
 	struct history_entry *next;  /**< Next sibling. */
@@ -67,6 +68,7 @@ static void ro_gui_history_redraw_tree(struct history_entry *he,
 		int x0, int y0);
 static struct history_entry * ro_gui_history_click_find(struct history_entry *he,
 		int x, int y);
+static void history_go(struct browser_window *bw, struct history_entry *entry);
 
 
 /**
@@ -97,11 +99,12 @@ struct history *history_create(void)
  *
  * \param  history  opaque history structure, as returned by history_create()
  * \param  content  content to add to history
+ * \param  frag_id  fragment identifier
  *
  * The page is added after the current entry and becomes current.
  */
 
-void history_add(struct history *history, struct content *content)
+void history_add(struct history *history, struct content *content, char *frag_id)
 {
 	struct history_entry *entry;
 	char *url;
@@ -136,6 +139,7 @@ void history_add(struct history *history, struct content *content)
 	}
 
 	entry->url = url;
+	entry->frag_id = frag_id ? strdup(frag_id) : 0;
 	entry->title = title;
 	entry->back = history->current;
 	entry->next = 0;
@@ -239,6 +243,8 @@ void history_free_entry(struct history_entry *entry)
 	history_free_entry(entry->forward);
 	history_free_entry(entry->next);
 	free(entry->url);
+	if (entry->frag_id)
+		free(entry->frag_id);
 	free(entry->title);
 	free(entry->sprite_area);
 	free(entry);
@@ -556,7 +562,7 @@ void ro_gui_history_click(wimp_pointer *pointer)
 		history_current->current = he;
 		wimp_close_window(history_window);
 		history_current = 0;
-		browser_window_go_post(history_bw, he->url, 0, 0, false);
+		history_go(history_bw, he);
 	}
 }
 
@@ -592,7 +598,7 @@ void history_back(struct browser_window *bw, struct history *history)
 	if (!history || !history->current->back)
 		return;
 	history->current = history->current->back;
-	browser_window_go_post(bw, history->current->url, 0, 0, false);
+	history_go(bw, history->current);
 }
 
 
@@ -608,7 +614,7 @@ void history_forward(struct browser_window *bw, struct history *history)
 	if (!history || !history->current->forward_pref)
 		return;
 	history->current = history->current->forward_pref;
-	browser_window_go_post(bw, history->current->url, 0, 0, false);
+	history_go(bw, history->current);
 }
 
 
@@ -633,4 +639,28 @@ bool history_back_available(struct history *history) {
 
 bool history_forward_available(struct history *history) {
 	return (history && history->current->forward_pref);
+}
+
+/**
+ * Open a history entry in the specified browser window
+ *
+ * \param bw     browser window
+ * \param entry  entry to open
+ */
+void history_go(struct browser_window *bw, struct history_entry *entry)
+{
+	char *url;
+
+	if (entry->frag_id) {
+		url = calloc(strlen(entry->url) + strlen(entry->frag_id) + 5,
+							sizeof(char));
+		sprintf(url, "%s#%s", entry->url, entry->frag_id);
+	}
+	else
+		url = entry->url;
+
+	browser_window_go_post(bw, url, 0, 0, false);
+
+	if (entry->frag_id)
+		free(url);
 }

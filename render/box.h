@@ -207,6 +207,7 @@ struct box {
 	struct form_control* gadget;
 
 	char *usemap; /** (Image)map to use with this object, or 0 if none */
+	char *id; /**<  value of id attribute (or name for anchors) */
 
 	/** Background image for this box, or 0 if none */
 	struct content *background;
@@ -242,7 +243,7 @@ struct column {
 void xml_to_box(xmlNode *n, struct content *c);
 void box_dump(struct box * box, unsigned int depth);
 struct box * box_create(struct css_style * style,
-		char *href, char *title, pool box_pool);
+		char *href, char *title, char *id, pool box_pool);
 void box_add_child(struct box * parent, struct box * child);
 void box_insert_sibling(struct box *box, struct box *new_box);
 void box_free(struct box *box);
@@ -251,5 +252,6 @@ struct box *box_at_point(struct box *box, int x, int y,
 		int *box_x, int *box_y,
 		struct content **content);
 struct box *box_object_at_point(struct content *c, int x, int y);
+struct box *box_find_by_id(struct box *box, char *id);
 
 #endif

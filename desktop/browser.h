@@ -51,6 +51,9 @@ struct browser_window
 	bool history_add;
 	/** Start time of fetching loading_content. */
 	clock_t time0;
+
+	/** Fragment identifier for current_content */
+	char *frag_id;
 };
 
 
@@ -82,7 +85,8 @@ void hotlist_visited(struct content *content);
 
 /* In platform specific history.c. */
 struct history *history_create(void);
-void history_add(struct history *history, struct content *content);
+void history_add(struct history *history, struct content *content,
+		char *frag_id);
 void history_update(struct history *history, struct content *content);
 void history_destroy(struct history *history);
 void history_back(struct browser_window *bw, struct history *history);
