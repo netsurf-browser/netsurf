@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.7 2002/12/27 20:35:32 bursa Exp $
+ * $Id: gui.c,v 1.8 2002/12/27 21:09:15 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -495,7 +495,7 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
     }
 #endif
 
-    if (box->style->background_color != TRANSPARENT)
+    if (box->style != 0 && box->style->background_color != TRANSPARENT)
     {
       colourtrans_set_gcol(box->style->background_color << 8, 0, os_ACTION_OVERWRITE, 0);
       os_plot(os_MOVE_TO, x + box->x * 2, y - box->y * 2);
