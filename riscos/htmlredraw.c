@@ -288,15 +288,15 @@ void html_redraw_box(struct content *content, struct box * box,
 		colourtrans_set_gcol(colour << 8, colourtrans_USE_ECFS,
 				os_ACTION_OVERWRITE, 0);
 
-		if (box->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE) {
+		if (box->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK)) {
 			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8));
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
 		}
-		if (box->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE) {
+		if (box->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK)) {
 			os_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2));
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
 		}
-		if (box->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH) {
+		if (box->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH && box->parent->parent->type == BOX_BLOCK)) {
 			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0));
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
 		}
