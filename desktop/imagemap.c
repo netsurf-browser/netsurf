@@ -435,6 +435,7 @@ char *imagemap_get(struct content *c, const char *key, unsigned long x,
 
 	assert(c->type == CONTENT_HTML);
 	if (key == NULL) return NULL;
+	if (c->data.html.imagemaps == NULL) return NULL;
 
 	slot = imagemap_hash(key);
 
@@ -444,7 +445,7 @@ char *imagemap_get(struct content *c, const char *key, unsigned long x,
 			break;
 	}
 
-	if (map == 0) return NULL;
+	if (map == 0 || map->list == NULL) return NULL;
 
 	for (entry = map->list; entry; entry = entry->next) {
 		switch (entry->type) {
