@@ -20,7 +20,7 @@
 #define THEMES_DIR "<NetSurf$Dir>.Themes"
 
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
-	dialog_config_prox, dialog_config_th, dialog_zoom;
+	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo;
 extern wimp_w history_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *theme_menu;
 extern int iconbar_menu_height;
@@ -251,5 +251,11 @@ void schedule_run(void);
 #define ICON_SAVE_PATH 1
 #define ICON_SAVE_OK 2
 #define ICON_SAVE_CANCEL 3
+
+#define ICON_PAGEINFO_TITLE 0
+#define ICON_PAGEINFO_URL 1
+#define ICON_PAGEINFO_ENC 2
+#define ICON_PAGEINFO_TYPE 3
+#define ICON_PAGEINFO_ICON 4
 
 #endif

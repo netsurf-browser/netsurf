@@ -29,7 +29,7 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 #ifdef WITH_AUTH
 	dialog_401li,
 #endif
-	dialog_zoom;
+	dialog_zoom, dialog_pageinfo;
 	;
 wimp_menu* theme_menu = NULL;
 
@@ -75,6 +75,7 @@ void ro_gui_dialog_init(void)
 	dialog_config_prox = ro_gui_dialog_create("config_prox");
 	dialog_config_th = ro_gui_dialog_create("config_th");
 	dialog_zoom = ro_gui_dialog_create("zoom");
+	dialog_pageinfo = ro_gui_dialog_create("pageinfo");
 
 	set_browser_choices();
 	set_proxy_choices();

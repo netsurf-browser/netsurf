@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "libxml/encoding.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/constdata.h"
@@ -25,6 +26,7 @@
 
 
 static void translate_menu(wimp_menu *menu);
+static void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning);
 
 static wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
@@ -61,7 +63,7 @@ static wimp_menu *browser_export_menu = (wimp_menu *) &export_menu;
 static wimp_MENU(5) page_menu = {
   { "Page" }, 7,2,7,0, 200, 44, 0,
   {
-    { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "Info" } },
+    { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS,            { "Info" } },
     { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS,            { "Save" } },
     { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS,            { "SaveComp" } },
     { 0,              (wimp_menu *) &export_menu, DEFAULT_FLAGS,          { "Export" } },
@@ -126,6 +128,7 @@ void ro_gui_menus_init(void)
 	translate_menu(browser_view_menu);
 
 	iconbar_menu->entries[0].sub_menu = (wimp_menu *) dialog_info;
+	browser_page_menu->entries[0].sub_menu = (wimp_menu*) dialog_pageinfo;
 	browser_page_menu->entries[1].sub_menu = (wimp_menu *) dialog_saveas;
 	browser_page_menu->entries[2].sub_menu = (wimp_menu *) dialog_saveas;
 	browser_export_menu->entries[0].sub_menu = (wimp_menu *) dialog_saveas;
@@ -288,7 +291,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 
 
 /**
- * Handle Message_MenuWarning by opening the save dialog.
+ * Handle Message_MenuWarning
  */
 
 void ro_gui_menu_warning(wimp_message_menu_warning *warning)
@@ -315,6 +318,10 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 		case 2: /* Save complete */
 			gui_current_save_type = GUI_SAVE_COMPLETE;
 			break;
+
+                case 0: /* Page info */
+                        ro_gui_menu_pageinfo(warning);
+                        return;
 
 		case 1:
 		default: /* Save */
@@ -376,4 +383,39 @@ void ro_gui_menu_prepare_save(struct content *c)
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_ICON, icon);
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);
+}
+
+void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
+{
+        struct content *c = current_gui->data.browser.bw->current_content;
+        os_error *error;
+        char icon_buf[20] = "file_xxx";
+        const char *icon = icon_buf;
+        const char *title = "-";
+        const char *url = "-";
+        const char *enc = "-";
+        const char *mime = "-";
+
+        if (c->title != 0)     title = c->title;
+        if (c->url != 0)       url = c->url;
+        if (c->mime_type != 0) mime = c->mime_type;
+
+        sprintf(icon_buf, "file_%x", ro_content_filetype(c));
+
+        if (c->type == CONTENT_HTML) {
+                enc = xmlGetCharEncodingName(c->data.html.encoding);
+        }
+
+        ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ICON, icon);
+	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TITLE, title);
+	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_URL, url);
+	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ENC, enc);
+	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TYPE, mime);
+
+        error = xwimp_create_sub_menu((wimp_menu *) dialog_pageinfo,
+			warning->pos.x, warning->pos.y);
+	if (error) {
+		LOG(("0x%x: %s\n", error->errnum, error->errmess));
+		warn_user(error->errmess);
+	}
 }
