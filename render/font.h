@@ -12,6 +12,7 @@
 #include "netsurf/css/css.h"
 
 struct font_data {
+        int id;
 	int handle;
 	unsigned int size;
 	unsigned int space_width;
@@ -26,5 +27,6 @@ void font_position_in_string(const char* text, struct font_data *font,
 		unsigned int length, unsigned long x, int* char_offset, int* pixel_offset);
 char * font_split(struct font_data *data, const char * text, unsigned int length,
 		unsigned int width, unsigned int *used_width);
+const char *enumerate_fonts(struct font_set *set, int *handle);
 
 #endif

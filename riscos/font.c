@@ -118,6 +118,36 @@ struct font_set *font_new_set()
 	return set;
 }
 
+/**
+ * Font enumerator
+ *
+ * Call this multiple times to enumerate all available font names.
+ * *handle should be zero (0) on first call.
+ *
+ * Returns a NULL pointer and a handle of -1 if there are no more fonts.
+ */
+const char *enumerate_fonts(struct font_set* set, int *handle)
+{
+        int i;
+
+        assert(set);
+
+        if (*handle < 0 || handle == 0) { /* a bit of sanity checking */
+                *handle = -1;
+                return NULL;
+        }
+
+        for (i = *handle; i!=FONT_FAMILIES*FONT_FACES && set->font[i]==0;
+             i++) ; /* find next font in use */
+
+        if (i == FONT_FAMILIES*FONT_FACES) { /* no more fonts */
+                *handle = -1;
+                return NULL;
+        }
+
+        *handle = i+1; /* update handle for next call */
+        return font_table[i];
+}
 
 /**
  * Open a font for use based on a css_style.
@@ -217,6 +247,7 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 	        }
 	}
 
+        data->id = f;
 	data->handle = handle;
 	data->size = size;
 	data->space_width = font_width(data, " ", 1);

@@ -23,8 +23,7 @@
 #include "netsurf/utils/utils.h"
 
 /**
- * \todo fix fonts (see below)
- *       fix jpegs
+ * \todo fix jpegs
  *       GUI
  */
 
@@ -36,7 +35,7 @@
 static unsigned long length;
 static drawfile_diagram *d;
 
-static void add_font_table(void);
+static void add_font_table(struct content *content);
 static void add_options(void);
 static void add_objects(struct content *content, struct box *box,
                         unsigned long cbc, long x, long y);
@@ -75,7 +74,7 @@ void save_as_draw(struct content *c) {
 	d->bbox.x1 = A4PAGEWIDTH*512;
 	d->bbox.y1 = A4PAGEHEIGHT*512;
 
-	add_font_table();
+	add_font_table(c);
 
 	add_options();
 
@@ -99,29 +98,52 @@ void save_as_draw(struct content *c) {
  * add font table
  * \todo add all fonts required. for now we just use Homerton Medium
  */
-void add_font_table() {
+void add_font_table(struct content *content) {
 
-        drawfile_object *dro = xcalloc(8+28, sizeof(char));
-        drawfile_font_table *ft = xcalloc(28, sizeof(char));
-        drawfile_FONT_DEF(40) fd[] = {
-              { 1, "Homerton.Medium\\ELatin1" },
-              /*{ 2, "Homerton.Medium.Oblique\\ELatin1" },
-              { 3, "Homerton.Bold\\ELatin1" },
-              { 4, "Homerton.Bold.Oblique\\ELatin1" },*/
-        };
+        drawfile_object *dro;
+        drawfile_font_table *ft = xcalloc(0, sizeof(char));
+        drawfile_font_def *fd = xcalloc(0, sizeof(char));
+        int handle = 0, ftlen=0;
+        const char *name;
 
-        memcpy(ft->font_def, (char*)&fd, 28);
+        do {
+          name = enumerate_fonts(content->data.html.fonts, &handle);
+
+          if (handle == -1 && name == 0)
+                  break;
+
+          /* at this point, handle is always (font_table entry + 1) */
+          fd = xrealloc(fd, 1+strlen(name)+1);
+          memset(fd, 0, 1+strlen(name)+1);
+          fd->font_index = handle;
+          memcpy((char*)&fd->font_name, name, strlen(name));
+
+          ft = xrealloc(ft, ftlen+1+strlen(name)+1);
+          memcpy((char*)ft+ftlen, fd, 1+strlen(name)+1);
+
+          ftlen += 1+strlen(name)+1;
+
+        } while (handle != -1);
+
+        /* word align end of list */
+        if (((ftlen+3)/4*4) != 0) {
+          ft = xrealloc(ft, (unsigned)(ftlen+3)/4*4);
+          ftlen = (ftlen+3)/4*4;
+        }
+
+        dro = xcalloc((unsigned)8+ftlen, sizeof(char));
 
 	dro->type = drawfile_TYPE_FONT_TABLE;
-	dro->size = 8+28;
-	memcpy((char*)&dro->data.font_table, ft, 28);
+	dro->size = 8+ftlen;
+	memcpy((char*)&dro->data.font_table, ft, (unsigned)ftlen);
 
         d = xrealloc(d, (unsigned)length+dro->size);
 
         memcpy((char*)&d->objects, dro, (unsigned)dro->size);
 
-	length += 8+28;
+	length += 8+ftlen;
 
+        xfree(fd);
 	xfree(ft);
 	xfree(dro);
 }
@@ -242,7 +264,7 @@ void add_objects(struct content *content, struct box *box,
 			dt->bbox.y1 = y;
 			dt->fill = box->style->color<<8;
 			dt->bg_hint = cbc<<8;
-			dt->style.font_index = 1;
+			dt->style.font_index = box->font->id+1;
 			dt->xsize = box->font->size*40;
 			dt->ysize = box->font->size*40;
 			dt->base.x = x;
