@@ -1364,9 +1364,14 @@ void ro_gui_keypress(wimp_key* key)
 {
   gui_window* g;
 
-  if (key->i == -1 && key->c < 256) {
+  if (key->i == -1 && (key->c < 256 || (key->c >= 396 && key->c <= 399))) {
 	  g = ro_lookup_gui_from_w(key->w);
 	  if (g) {
+	          /* Munge cursor keys into unused control chars */
+	          if (key->c == 396) key->c = 29;          /* Left */
+	          else if (key->c == 397) key->c = 28;     /* Right */
+	          else if (key->c == 398) key->c = 31;     /* Down */
+	          else if (key->c == 399) key->c = 30;     /* Up */
 		  browser_window_key_press(g->data.browser.bw, (char) key->c);
 		  return;
 	  }

@@ -732,7 +732,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 				text_box->length = 0;
 				text_box->width = UNKNOWN_WIDTH;
 				char_offset--;
-			}			
+			}
 		} else {
 			/* delete a character */
 			memmove(text_box->text + char_offset - 1,
@@ -742,6 +742,20 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 			text_box->width = UNKNOWN_WIDTH;
 			char_offset--;
 		}
+	} else if (key == 28 && char_offset != text_box->length) {
+	        /* Right cursor -> */
+	        char_offset++;
+	} else if (key == 29 && char_offset != 0) {
+	        /* Left cursor <- */
+	        char_offset--;
+	} else if (key == 30) {
+	        /* Up Cursor */
+	        /* TODO */
+	        return;
+	} else if (key == 31) {
+	        /* Down cursor */
+	        /* TODO */
+	        return;
 	} else {
 		return;
 	}
@@ -788,7 +802,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 			if (!t->next) assert(ic->last == t);
 		}
 	} */
-	
+
 	if (text_box->length < char_offset) {
 		/* the text box has been split and the caret is in the second part */
 		char_offset -= (text_box->length + 1);  /* +1 for the space */
@@ -862,6 +876,7 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
 	int char_offset = input->gadget->caret_char_offset;
 	int pixel_offset;
 	unsigned long actual_x, actual_y;
+	struct form* form = input->gadget->form;
 
 	box_coords(input, &actual_x, &actual_y);
 
@@ -895,6 +910,20 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
 		text_box->length--;
 		input->gadget->value[text_box->length] = 0;
 		char_offset--;
+	} else if (key == 10 || key == 13) {
+	        /* Return/Enter hit */
+	        browser_form_submit(bw, form);
+	        /*TODO: remove caret from new page */
+	} else if (key == 9) {
+	        /* Tab */
+	        /* TODO: tabbing between inputs */
+	        return;
+	} else if (key == 28 && char_offset != text_box->length) {
+	        /* Right cursor -> */
+	        char_offset++;
+	} else if (key == 29 && char_offset != 0) {
+	        /* Left cursor <- */
+	        char_offset--;
 	} else {
 		return;
 	}
