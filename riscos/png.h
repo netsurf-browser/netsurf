@@ -21,6 +21,9 @@ struct content_png_data {
 	osspriteop_area *sprite_area;
 	char *sprite_image;
 	enum { PNG_PALETTE, PNG_DITHER, PNG_DEEP } type;
+	/** for ImageFileConvert */
+	char *data;
+	unsigned long length;
 };
 
 void nspng_init(void);

@@ -36,7 +36,8 @@ LDFLAGS = \
 	/usr/local/riscoslibs/libpng/libpng.ro \
 	/usr/local/riscoslibs/zlib/libz.ro \
 	/usr/local/riscoslibs/openssl/libssl.a \
-	/usr/local/riscoslibs/openssl/libcrypto.a
+	/usr/local/riscoslibs/openssl/libcrypto.a \
+	/usr/local/riscoslibs/IFCLib/ifc.o
 LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl
 
 OBJDIR = $(shell $(CC) -dumpmachine)

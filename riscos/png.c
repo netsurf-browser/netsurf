@@ -6,8 +6,11 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
+#include <swis.h>
+#include "ifc.h"
 #include "libpng/png.h"
 #include "oslib/colourtrans.h"
 #include "oslib/os.h"
@@ -19,8 +22,12 @@
 
 /* libpng uses names starting png_, so use nspng_ here to avoid clashes */
 
-/* maps colours to 256 mode colour numbers */
+#define ImageFileConvert_ConverterInfo 0x56842
+#define PNG_TO_SPRITE 0x0b600ff9
+
+/** maps colours to 256 mode colour numbers */
 static os_colour_number colour_table[4096];
+static bool imagefileconvert;
 
 static void info_callback(png_structp png, png_infop info);
 static void row_callback(png_structp png, png_bytep new_row,
@@ -30,6 +37,15 @@ static void end_callback(png_structp png, png_infop info);
 
 void nspng_init(void)
 {
+	_kernel_oserror *error;
+
+	/* check if ImageFileConvert is available */
+	error = _swix(ImageFileConvert_ConverterInfo, _IN(0) | _IN(1),
+			0, PNG_TO_SPRITE);
+	imagefileconvert = !error;
+	if (imagefileconvert)
+		return;
+
 	/* generate colour lookup table for reducing to 8bpp */
 	unsigned int red, green, blue;
 	for (red = 0; red != 0x10; red++)
@@ -45,6 +61,12 @@ void nspng_init(void)
 
 void nspng_create(struct content *c)
 {
+	if (imagefileconvert) {
+		c->data.other.data = xcalloc(0, 1);
+		c->data.other.length = 0;
+		return;
+	}
+
 	c->data.png.sprite_area = 0;
 	c->data.png.png = png_create_read_struct(PNG_LIBPNG_VER_STRING,
 			0, 0, 0);
@@ -65,6 +87,15 @@ void nspng_create(struct content *c)
 
 void nspng_process_data(struct content *c, char *data, unsigned long size)
 {
+	if (imagefileconvert) {
+		c->data.png.data = xrealloc(c->data.png.data,
+				c->data.png.length + size);
+		memcpy(c->data.png.data + c->data.png.length, data, size);
+		c->data.png.length += size;
+		c->size += size;		
+		return;
+	}
+
 	if (setjmp(png_jmpbuf(c->data.png.png))) {
 		png_destroy_read_struct(&c->data.png.png,
 				&c->data.png.info, 0);
@@ -275,9 +306,38 @@ void end_callback(png_structp png, png_infop info)
 
 int nspng_convert(struct content *c, unsigned int width, unsigned int height)
 {
-	png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
+	if (imagefileconvert) {
+		_kernel_oserror *kerror;
+		size_t dest_len;
+		os_error *error;
+		int w, h;
+
+		kerror = ifc_convert(c->data.png.data, c->data.png.length,
+				0xb60, 0xff9, -1, 1,
+				&c->data.png.sprite_area, &dest_len);
+		if (kerror) {
+			LOG(("ifc_convert failed: %s", kerror->errmess));
+			return 1;
+		}
+
+		error = xosspriteop_read_sprite_info(osspriteop_PTR,
+				c->data.png.sprite_area,
+				(osspriteop_id)((char *) c->data.png.sprite_area
+					+ c->data.png.sprite_area->first),
+				&w, &h, NULL, NULL);
+		if (error) {
+			LOG(("error: %s", error->errmess));
+			return 1;
+		}
+		c->width = w;
+		c->height = h;
+
+	} else {
+		png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
+	}
+
 	c->title = xcalloc(100, 1);
-	sprintf(c->title, "png image (%ux%u)", c->width, c->height);
+	sprintf(c->title, "PNG image (%lux%lu)", c->width, c->height);
 	c->status = CONTENT_STATUS_DONE;
 	return 0;
 }
@@ -309,12 +369,14 @@ void nspng_redraw(struct content *c, long x, long y,
 	os_factors factors;
 
 	xcolourtrans_generate_table_for_sprite(c->data.png.sprite_area,
-			(osspriteop_id) (c->data.png.sprite_area + 1),
+			(osspriteop_id) ((char *) c->data.png.sprite_area +
+					 c->data.png.sprite_area->first),
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
 	table = xcalloc(size, 1);
 	xcolourtrans_generate_table_for_sprite(c->data.png.sprite_area,
-			(osspriteop_id) (c->data.png.sprite_area + 1),
+			(osspriteop_id) ((char *) c->data.png.sprite_area +
+					 c->data.png.sprite_area->first),
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
 
@@ -325,9 +387,11 @@ void nspng_redraw(struct content *c, long x, long y,
 
 	xosspriteop_put_sprite_scaled(osspriteop_PTR,
 			c->data.png.sprite_area,
-			(osspriteop_id) (c->data.png.sprite_area + 1),
+			(osspriteop_id) ((char *) c->data.png.sprite_area +
+					 c->data.png.sprite_area->first),
 			x, y - height,
-			os_ACTION_OVERWRITE, &factors, table);
+			os_ACTION_OVERWRITE | os_ACTION_USE_MASK,
+			&factors, table);
 
 	xfree(table);
 }
