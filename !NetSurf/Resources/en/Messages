@@ -76,7 +76,7 @@ Collapse:Collapse
 All:All
 Folders:Folders
 Folder:Folder
-Links:Hotlist
+Links:Addresses
 Link:Address
 SaveSelect:Save
 Launch:Launch
@@ -133,6 +133,8 @@ FileError:File does not exist:
 HotlistSaveError:The hotlist was unable to be correctly saved.
 HotlistLoadError:The hotlist was unable to be correctly loaded.
 NoPathError:To save, drag the icon to a directory display
+NoNameError:Please enter a name
+NoURLError:Please enter a URL
 
 # Some general purpose words and phrases
 Bytes: B

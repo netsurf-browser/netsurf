@@ -303,12 +303,20 @@ void ro_gui_dialog_close_persistant(wimp_w parent) {
 
 bool ro_gui_dialog_keypress(wimp_key *key)
 {
-
+	wimp_pointer pointer;
 	if (key->c == wimp_KEY_ESCAPE) {
 		ro_gui_dialog_close(key->w);
 		return true;
 	}
-  
+	if (key->c == wimp_KEY_RETURN) {
+		if ((key->w == dialog_folder) || (key->w == dialog_entry)) {
+		  	pointer.w = key->w;
+		  	pointer.i = (key->w == dialog_folder) ? 3 : 5;
+			pointer.buttons = wimp_CLICK_SELECT;
+			ro_gui_hotlist_dialog_click(&pointer);	  
+			return true;
+		} 
+  	}
 #ifdef WITH_AUTH
 	if (key->w == dialog_401li)
 	        return ro_gui_401login_keypress(key);
@@ -343,6 +351,8 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 		ro_gui_dialog_click_zoom(pointer);
 	else if (pointer->w == dialog_warning)
 		ro_gui_dialog_click_warning(pointer);
+	else if ((pointer->w == dialog_folder) || (pointer->w == dialog_entry))
+		ro_gui_hotlist_dialog_click(pointer);
 }
 
 

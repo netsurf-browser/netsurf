@@ -282,6 +282,10 @@ void ro_gui_hotlist_init(void) {
 	*/
 	title = messages_get("Hotlist");
 	new_title = malloc(strlen(title + 1));
+	if (!new_title) {
+		warn_user("NoMemory", 0);
+		return;
+	}
 	strcpy(new_title, title);
 	hotlist_window_definition.title_data.indirected_text.text = new_title;
 	hotlist_window_definition.title_data.indirected_text.validation = null_text_string;
@@ -2242,5 +2246,112 @@ void ro_gui_hotlist_delete_selected(void) {
   	struct hotlist_entry *entry;
 	while ((entry = ro_gui_hotlist_first_selection(root.child_entry)) != NULL) {
 		ro_gui_hotlist_delete_entry(entry, false);
+	}
+}
+
+void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
+	struct hotlist_entry *entry = NULL;
+	char *title = NULL;
+	char *url = NULL;
+	char *old_value;
+	int icon = pointer->i;
+	int close_icon, ok_icon;
+	bool folder;
+	bool add;
+	
+	/*	Get our data
+	*/
+	if (pointer->w == dialog_entry) {
+		title = strip(ro_gui_get_icon_string(pointer->w, 1));
+		url = strip(ro_gui_get_icon_string(pointer->w, 3));
+		close_icon = 4;
+		ok_icon = 5;
+		folder = false;
+		add = !dialog_entry_add;
+	} else {
+		title = strip(ro_gui_get_icon_string(pointer->w, 1));
+		close_icon = 2;
+		ok_icon = 3;
+		folder = true;
+		add = !dialog_folder_add;
+	}	
+
+	/*	Check for cancelling
+	*/
+	if (icon == close_icon) {
+		if (pointer->buttons == wimp_CLICK_SELECT) {
+			ro_gui_dialog_close(pointer->w);
+  		  	xwimp_create_menu((wimp_menu *)-1, 0, 0);
+			return;
+		}
+		if (folder) {
+			ro_gui_hotlist_prepare_folder_dialog(dialog_folder_add);
+		} else {
+			ro_gui_hotlist_prepare_entry_dialog(dialog_entry_add);
+		}
+		return; 
+	}
+
+	/*	Check for ok
+	*/
+	if (icon != ok_icon) return;
+
+	/*	Check we have valid values
+	*/
+	if ((title != NULL) && (strlen(title) == 0)) {
+		warn_user("NoNameError", 0);
+		return;
+	}
+	if ((url != NULL) && (strlen(url) == 0)) {
+		warn_user("NoURLError", 0);
+		return;
+	}
+	
+	/*	Update/insert our data
+	*/
+	if (add) {
+		/* todo: insert at the selection place if hotlist_insert is set */
+		ro_gui_hotlist_create_entry(title, url, folder ? 0 : 0xfaf, &root);
+	} else {
+		entry = ro_gui_hotlist_first_selection(root.child_entry);
+		if (entry == NULL) return;
+		if (url) {
+			old_value = entry->url;
+			entry->url = url_normalize(url);
+			if (!entry->url) {
+				warn_user("NoMemory", 0);
+				entry->url = old_value;
+				return;
+			}
+			if (old_value) free(old_value);
+		}
+		if (title) {
+			old_value = entry->title;
+			entry->title = malloc(strlen(title) + 1);
+			if (!entry->title) {
+				warn_user("NoMemory", 0);
+				entry->title = old_value;
+				return;
+			}
+			strcpy(entry->title, title);
+			if (old_value) free(old_value);
+		}
+		ro_gui_hotlist_update_entry_size(entry);
+	}
+	
+	/*	Close if we should
+	*/
+	if (pointer->buttons == wimp_CLICK_SELECT) {
+		ro_gui_dialog_close(pointer->w);
+	  	xwimp_create_menu((wimp_menu *)-1, 0, 0);
+		return;
+	}
+	
+	/*	Update our display
+	*/
+	if (folder) {
+		ro_gui_hotlist_prepare_folder_dialog(dialog_folder_add);
+	} else {
+		ro_gui_hotlist_prepare_entry_dialog(dialog_entry_add);
 	}
 }

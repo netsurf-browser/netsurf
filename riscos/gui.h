@@ -199,7 +199,6 @@ void ro_gui_hotlist_move_drag_end(wimp_dragged *drag);
 bool ro_gui_hotlist_keypress(int key);
 void ro_gui_hotlist_menu_closed(void);
 void ro_gui_hotlist_toolbar_click(wimp_pointer* pointer);
-
 int ro_gui_hotlist_get_selected(bool folders);
 void ro_gui_hotlist_reset_statistics(void);
 void ro_gui_hotlist_set_selected(bool selected);
@@ -208,6 +207,7 @@ void ro_gui_hotlist_delete_selected(void);
 void ro_gui_hotlist_save_as(const char *file);
 void ro_gui_hotlist_prepare_folder_dialog(bool selected);
 void ro_gui_hotlist_prepare_entry_dialog(bool selected);
+void ro_gui_hotlist_dialog_click(wimp_pointer *pointer);
 
 /* in save.c */
 void ro_gui_save_open(gui_save_type save_type, struct content *c,
