@@ -256,13 +256,13 @@ static wimp_MENU(2) hotlist_util_menu = {
 
 /*	Utilities submenu
 */
-static wimp_MENU(2) utilities_menu = {
+static wimp_MENU(3) utilities_menu = {
   { "Utilities" }, 7,2,7,0, 300, 44, 0,
   {
-    { 0,				       (wimp_menu *)&hotlist_util_menu, DEFAULT_FLAGS, { "Hotlist" } },
-    { wimp_MENU_GIVE_WARNING | wimp_MENU_LAST, (wimp_menu *)&window_menu,	DEFAULT_FLAGS, { "Window" } },
-/*    { 0,		  wimp_NO_SUB_MENU,	      DEFAULT_FLAGS, { "FindText" } },
-    { 0,		  wimp_NO_SUB_MENU,	      DEFAULT_FLAGS, { "HistLocal" } },
+    { 0,				 (wimp_menu *)&hotlist_util_menu,     DEFAULT_FLAGS, { "Hotlist" } },
+    { wimp_MENU_GIVE_WARNING,		 (wimp_menu *)&window_menu,	      DEFAULT_FLAGS, { "Window" } },
+    { wimp_MENU_GIVE_WARNING | wimp_MENU_LAST, (wimp_menu*)1,		      DEFAULT_FLAGS, { "FindText" } },
+/*    { 0,		  wimp_NO_SUB_MENU,	      DEFAULT_FLAGS, { "HistLocal" } },
     { wimp_MENU_LAST,	  wimp_NO_SUB_MENU,	      DEFAULT_FLAGS, { "HistGlobal" } }
 */  }
 };
@@ -938,6 +938,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						ro_gui_save_options();
 						ro_gui_menu_prepare_window();
 						break;
+					case 2: /* Find Text -> */
+						break;
 				}
 				break;
 			case MENU_HELP:
@@ -1170,7 +1172,14 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 				ro_gui_menu_prepare_window();
 				error = xwimp_create_sub_menu(browser_window_menu,
 						warning->pos.x, warning->pos.y);
-			break;
+				break;
+			case 2: /* Find text -> */
+				ro_gui_search_open(current_gui,
+						   warning->pos.x,
+						   warning->pos.y,
+						   true,
+						   false);
+				break;
 		}
 		break;
 	case MENU_HELP: /* Help -> */
