@@ -57,7 +57,7 @@ void gui_401login_open(struct browser_window *bw, struct content *c, char *realm
 
 	ro_gui_401login_open(bw->window->window, host, realm, murl);
 
-	xfree(host);
+	free(host);
 }
 
 
@@ -134,8 +134,8 @@ void get_unamepwd(void)
 {
 	char *lidets = calloc(strlen(uname)+strlen(pwd)+2, sizeof(char));
 	if (!lidets) {
-	  	LOG(("Insufficient memory for calloc"));
-	  	warn_user("NoMemory", 0);
+		LOG(("Insufficient memory for calloc"));
+		warn_user("NoMemory", 0);
 		return;
 	}
 

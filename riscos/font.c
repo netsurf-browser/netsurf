@@ -394,6 +394,9 @@ unsigned long nsfont_width(struct font_data *font, const char *text,
 			break;
 		case FONTTYPE_STANDARD_LATIN1: {
 			const char *loc_text = cnv_strn_local_enc(text, length, NULL);
+			if (!loc_text)
+				return 0;
+
 			error = xfont_scan_string((font_f)font->handle,
 					loc_text,
 					font_GIVEN_FONT
@@ -430,8 +433,9 @@ unsigned long nsfont_width(struct font_data *font, const char *text,
  * \param x horizontal position in pixels
  * \param char_offset updated to give the offset in the string
  * \param pixel_offset updated to give the coordinate of the character in pixels
+ * \return true on success, false on failure.
  */
-void nsfont_position_in_string(struct font_data *font, const char *text,
+bool nsfont_position_in_string(struct font_data *font, const char *text,
 		size_t length, unsigned long x,
 		int *char_offset, int *pixel_offset)
 {
@@ -475,6 +479,9 @@ void nsfont_position_in_string(struct font_data *font, const char *text,
 		case FONTTYPE_STANDARD_LATIN1: {
 			const ptrdiff_t *back_mapP;
 			const char *loc_text = cnv_strn_local_enc(text, length, &back_mapP);
+			if (!loc_text)
+				return false;
+
 			error = xfont_scan_string((font_f)font->handle,
 					loc_text,
 					font_GIVEN_BLOCK
@@ -495,11 +502,14 @@ void nsfont_position_in_string(struct font_data *font, const char *text,
 	}
 	if (error != NULL) {
 		LOG(("(u)font_scan_string failed : %s\n", error->errmess));
-		die("nsfont_position_in_string: (u)font_scan_string failed");
+/*		die("nsfont_position_in_string: (u)font_scan_string failed");*/
+		return false;
 	}
 
 	*char_offset = (int)(split - text);
 	*pixel_offset = x_out / 800;
+
+	return true;
 }
 
 
@@ -559,6 +569,9 @@ char *nsfont_split(struct font_data *font, const char *text,
 		case FONTTYPE_STANDARD_LATIN1: {
 			const ptrdiff_t *back_mapP;
 			const char *loc_text = cnv_strn_local_enc(text, length, &back_mapP);
+			if (!loc_text)
+				return NULL;
+
 			error = xfont_scan_string((font_f)font->handle,
 					loc_text,
 					font_GIVEN_BLOCK
@@ -591,7 +604,7 @@ char *nsfont_split(struct font_data *font, const char *text,
 }
 
 
-void nsfont_paint(struct font_data *data, const char *text,
+bool nsfont_paint(struct font_data *data, const char *text,
 		size_t length, int xpos, int ypos, void *trfm)
 {
 	os_error *error;
@@ -648,6 +661,9 @@ void nsfont_paint(struct font_data *data, const char *text,
 			break;
 		case FONTTYPE_STANDARD_LATIN1: {
 			const char *loc_text = cnv_strn_local_enc(text, length, NULL);
+			if (!loc_text)
+				return false;
+
 			error = xfont_paint((font_f)data->handle, loc_text,
 					flags, xpos, ypos, NULL,
 					trfm, 0);
@@ -660,8 +676,11 @@ void nsfont_paint(struct font_data *data, const char *text,
 	}
 	if (error != NULL) {
 		LOG(("(u)font_paint failed : %s\n", error->errmess));
-		die("nsfont_paint: (u)font_paint failed");
+		/*die("nsfont_paint: (u)font_paint failed");*/
+		return false;
 	}
+
+	return true;
 }
 
 

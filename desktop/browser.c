@@ -1095,7 +1095,7 @@ void browser_window_textarea_click(struct browser_window *bw,
 	 * Consecutive BR may not be present. These constraints are satisfied
 	 * by using a 0-length INLINE for blank lines. */
 
-	int char_offset, pixel_offset, new_scroll_y;
+	int char_offset = 0, pixel_offset = 0, new_scroll_y;
 	struct box *inline_container, *text_box;
 
 	inline_container = textarea->children;
@@ -1464,8 +1464,8 @@ void browser_window_input_click(struct browser_window* bw,
 		int box_x, int box_y,
 		int x, int y)
 {
-	size_t char_offset;
-	int pixel_offset, dx = 0;
+	size_t char_offset = 0;
+	int pixel_offset = 0, dx = 0;
 	struct box *text_box = input->children->children;
 	int uchars;
 	unsigned int offset;

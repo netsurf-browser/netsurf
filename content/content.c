@@ -392,7 +392,16 @@ bool content_set_type(struct content *c, content_type type,
 			callback = c->user_list->next->next->callback;
 			p1 = c->user_list->next->next->p1;
 			p2 = c->user_list->next->next->p2;
-			content_add_user(clone, callback, p1, p2);
+			if (!content_add_user(clone, callback, p1, p2)) {
+				c->type = CONTENT_UNKNOWN;
+				c->status = CONTENT_STATUS_ERROR;
+				content_destroy(clone);
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(c, CONTENT_MSG_ERROR,
+						msg_data);
+				warn_user("NoMemory", 0);
+				return false;
+			}
 			content_remove_user(c, callback, p1, p2);
 			content_broadcast(clone, CONTENT_MSG_NEWPTR, msg_data);
 			fetchcache_go(clone, 0, callback, p1, p2, 0, 0, false);
@@ -706,24 +715,39 @@ bool content_redraw(struct content *c, int x, int y,
 /**
  * Register a user for callbacks.
  *
+ * \param c         The content to register
+ * \param callback  The callback function
+ * \param p1, p2    Callback private data
+ * \return true on success, false otherwise and error broadcast to users
+ *
  * The callback will be called with p1 and p2 when content_broadcast() is
  * called with the content.
  */
 
-void content_add_user(struct content *c,
+bool content_add_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, union content_msg_data data),
 		void *p1, void *p2)
 {
 	struct content_user *user;
+	union content_msg_data msg_data;
+
 	LOG(("content %s, user %p %p %p", c->url, callback, p1, p2));
-	user = xcalloc(1, sizeof(*user));
+	user = calloc(1, sizeof(*user));
+	if (!user) {
+		c->status = CONTENT_STATUS_ERROR;
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
 	user->callback = callback;
 	user->p1 = p1;
 	user->p2 = p2;
 	user->stop = false;
 	user->next = c->user_list->next;
 	c->user_list->next = user;
+
+	return true;
 }
 
 

@@ -84,8 +84,10 @@ struct content * fetchcache(const char *url,
 	if (!post_urlenc && !post_multipart) {
 		if ((c = content_get(url1)) != NULL) {
 			free(url1);
-			content_add_user(c, callback, p1, p2);
-			return c;
+			if (!content_add_user(c, callback, p1, p2))
+				return NULL;
+			else
+				return c;
 		}
 	}
 
@@ -93,7 +95,9 @@ struct content * fetchcache(const char *url,
 	free(url1);
 	if (!c)
 		return NULL;
-	content_add_user(c, callback, p1, p2);
+	if (!content_add_user(c, callback, p1, p2)) {
+		return NULL;
+	}
 
 	if (!post_urlenc && !post_multipart)
 		c->fresh = true;

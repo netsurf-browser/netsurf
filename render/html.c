@@ -592,9 +592,13 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 	if (c->data.html.stylesheet_content[STYLESHEET_STYLE] != 0) {
 		if (css_convert(c->data.html.stylesheet_content[STYLESHEET_STYLE], c->width,
 				c->height)) {
-			content_add_user(c->data.html.stylesheet_content[STYLESHEET_STYLE],
+			if (!content_add_user(c->data.html.stylesheet_content[STYLESHEET_STYLE],
 					html_convert_css_callback,
-					c, (void *) STYLESHEET_STYLE);
+					c, (void *) STYLESHEET_STYLE)) {
+				/* no memory */
+				c->data.html.stylesheet_content[STYLESHEET_STYLE] = 0;
+				return false;
+			}
 		} else {
 			/* conversion failed */
 			c->data.html.stylesheet_content[STYLESHEET_STYLE] = 0;

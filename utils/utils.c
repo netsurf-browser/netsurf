@@ -46,40 +46,6 @@ int whitespace(const char * str)
 	return 1;
 }
 
-void * xcalloc(const size_t n, const size_t size)
-{
-	void * p = calloc(n, size);
-	if (p == 0) die("Out of memory in xcalloc()");
-	return p;
-}
-
-void * xrealloc(void * p, const size_t size)
-{
-	p = realloc(p, size);
-	if (p == 0) die("Out of memory in xrealloc()");
-	return p;
-}
-
-void xfree(void* p)
-{
-	if (p == 0)
-		fprintf(stderr, "Attempt to free NULL pointer\n");
-	else
-		free(p);
-}
-
-char * xstrdup(const char * const s)
-{
-	char *c;
-	if (s == NULL)
-		fprintf(stderr, "Attempt to strdup() NULL pointer\n");
-	c = malloc(((s == NULL) ? 0 : strlen(s)) + 1);
-	if (c == NULL) die("Out of memory in xstrdup()");
-	strcpy(c, (s == NULL) ? "" : s);
-	return c;
-}
-
-
 /**
  * Replace consecutive whitespace with a single space.
  *
@@ -223,13 +189,22 @@ char *cnv_strn_local_enc(const char *s, int length, const ptrdiff_t **back_mapPP
 	/* Buffer at d & back_mapP can be overdimentioned but is certainly
 	 * big enough to carry the end result.
 	 */
-	char *d = xcalloc(length + 1, sizeof(char));
-	ptrdiff_t *back_mapP = (back_mapPP != NULL) ? xcalloc(length + 1, sizeof(ptrdiff_t)) : NULL;
-	char *d0 = d;
+	char *d, *d0;
 	const char * const s0 = s;
+	ptrdiff_t *back_mapP = NULL;
 
-	if (back_mapPP != NULL)
+	if (back_mapPP != NULL) {
+		back_mapP = calloc(length + 1, sizeof(ptrdiff_t));
+		if (!back_mapP)
+			return NULL;
 		*back_mapPP = back_mapP;
+	}
+
+	d = calloc(length + 1, sizeof(char));
+	if (!d)
+		return NULL;
+
+	d0 = d;
 
 	while (length != 0) {
 		int u, chars;

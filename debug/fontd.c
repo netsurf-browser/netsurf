@@ -41,22 +41,26 @@ unsigned long nsfont_width(struct font_data *font, const char * text,
 	return length * 10;
 }
 
-void nsfont_position_in_string(struct font_data* font, const char* text,
+bool nsfont_position_in_string(struct font_data* font, const char* text,
 		size_t length, unsigned long x, int* char_offset, int* pixel_offset)
 {
-  assert(font != 0 && text != 0);
+	assert(font != 0 && text != 0);
 
-  *char_offset = x / 10;
-  *pixel_offset = x;
+	*char_offset = x / 10;
+	*pixel_offset = x;
 
-  return;
+	return true;
 }
 
 
 struct font_set *nsfont_new_set()
 {
-	struct font_set *set = xcalloc(1, sizeof(*set));
+	struct font_set *set;
 	unsigned int i;
+
+	set = calloc(1, sizeof(*set));
+	if (!set)
+		return NULL;
 
 	for (i = 0; i < FONT_FAMILIES * 4; i++)
 		set->font[i] = 0;
@@ -101,7 +105,9 @@ struct font_data *nsfont_open(struct font_set *set, struct css_style *style)
 		if (data->size == size)
 			return data;
 
-	data = xcalloc(1, sizeof(*data));
+	data = calloc(1, sizeof(*data));
+	if (!data)
+		return NULL;
 
 	data->size = size;
 	data->space_width = nsfont_width(data, " ", sizeof(" ")-1);
@@ -155,9 +161,11 @@ char *nsfont_split(struct font_data *data, const char * text,
 }
 
 
-void nsfont_paint(struct font_data *data, const char *text,
+bool nsfont_paint(struct font_data *data, const char *text,
 		size_t length, int xpos, int ypos, void *trfm)
 {
 	assert(data != NULL);
 	assert(text != NULL);
+
+	return true;
 }

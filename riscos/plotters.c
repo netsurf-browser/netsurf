@@ -312,11 +312,10 @@ bool ro_plot_text(int x, int y, struct font_data *font,
 				error->errnum, error->errmess));
 		return false;
 	}
-	nsfont_paint(font, text, length,
+	return nsfont_paint(font, text, length,
 			ro_plot_origin_x + x * 2,
 			ro_plot_origin_y - y * 2,
 			&ro_plot_trfm);
-	return true;
 }
 
 

@@ -107,7 +107,7 @@ unsigned long nsfont_width(struct font_data *font, const char *text,
 }
 
 
-void nsfont_position_in_string(struct font_data *font, const char *text,
+bool nsfont_position_in_string(struct font_data *font, const char *text,
 		size_t length, unsigned long x, int *char_offset,
 		int *pixel_offset)
 {
@@ -131,6 +131,8 @@ void nsfont_position_in_string(struct font_data *font, const char *text,
 
 	*char_offset = index;
 	*pixel_offset = PANGO_PIXELS(pos.x);
+
+	return true;
 }
 
 
