@@ -1,5 +1,5 @@
 /**
- * $Id: netsurf.c,v 1.1 2002/09/11 14:24:02 monkeyson Exp $
+ * $Id: netsurf.c,v 1.2 2002/10/08 09:38:29 bursa Exp $
  */
 
 #include "netsurf/desktop/netsurf.h"
@@ -22,6 +22,7 @@ void netsurf_poll(void)
 
 void netsurf_init(int argc, char** argv)
 {
+  stdout = stderr;
   gui_init(argc, argv);
 }
 

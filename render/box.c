@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.17 2002/09/26 21:38:32 bursa Exp $
+ * $Id: box.c,v 1.18 2002/10/08 09:38:29 bursa Exp $
  */
 
 #include <assert.h>
@@ -13,6 +13,7 @@
 #include "netsurf/riscos/font.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/utils.h"
+#include "netsurf/utils/log.h"
 
 /**
  * internal functions
@@ -123,8 +124,10 @@ void xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct box * parent, struct box * inline_container,
 		const char *href, struct font_set *fonts)
 {
+	LOG(("node %p", n));
 	convert_xml_to_box(n, parent_style, stylesheet,
 			selector, depth, parent, inline_container, href, fonts);
+	LOG(("normalising"));
 	box_normalise_block(parent->children);
 }
 
@@ -141,6 +144,9 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 	xmlNode * c;
 	char * s;
 
+	assert(n != 0 && parent_style != 0 && stylesheet != 0 && selector != 0 &&
+			parent != 0 && fonts != 0);
+	LOG(("depth %i, node %p, node type %i", depth, n, n->type));
 	gui_multitask();
 
 	if (n->type == XML_ELEMENT_NODE) {
@@ -153,6 +159,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			free(s);
 		}
 		style = box_get_style(stylesheet, parent_style, n, *selector, depth + 1);
+		LOG(("display: %s", css_display_name[style->display]));
 		if (style->display == CSS_DISPLAY_NONE)
 			return inline_container;
 
@@ -174,12 +181,16 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			box_add_child(parent, inline_container);
 		}
 		if (n->type == XML_TEXT_NODE) {
+			LOG(("text node"));
 			box = box_create(n, BOX_INLINE, parent_style, href);
 			box->text = squash_whitespace(n->content);
 			box->length = strlen(box->text);
+			LOG(("text node 2"));
 			box->font = font_open(fonts, box->style);
 			box_add_child(inline_container, box);
+			LOG(("text node 3"));
 		} else {
+			LOG(("float"));
 			box = box_create(0, BOX_FLOAT_LEFT, 0, href);
 			if (style->float_ == CSS_FLOAT_RIGHT) box->type = BOX_FLOAT_RIGHT;
 			box_add_child(inline_container, box);
@@ -258,6 +269,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		}
 	}
 
+	LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
 	return inline_container;
 }
 
@@ -373,6 +385,7 @@ void box_normalise_block(struct box *block)
 	struct box *table;
 	struct css_style *style;
 
+	LOG(("block %p", block));
 	assert(block->type == BOX_BLOCK || block->type == BOX_TABLE_CELL);
 
 	for (child = block->children; child != 0; prev_child = child, child = child->next) {
@@ -434,6 +447,7 @@ void box_normalise_table(struct box *table)
 	struct box *row_group;
 	struct css_style *style;
 
+	LOG(("table %p", table));
 	assert(table->type == BOX_TABLE);
 
 	for (child = table->children; child != 0; prev_child = child, child = child->next) {
@@ -495,6 +509,7 @@ void box_normalise_table_row_group(struct box *row_group)
 	struct box *row;
 	struct css_style *style;
 
+	LOG(("row_group %p", row_group));
 	assert(row_group->type == BOX_TABLE_ROW_GROUP);
 
 	for (child = row_group->children; child != 0; prev_child = child, child = child->next) {
@@ -555,6 +570,7 @@ void box_normalise_table_row(struct box *row)
 	struct css_style *style;
 	unsigned int columns = 0;
 
+	LOG(("row %p", row));
 	assert(row->type == BOX_TABLE_ROW);
 
 	for (child = row->children; child != 0; prev_child = child, child = child->next) {
@@ -616,6 +632,7 @@ void box_normalise_inline_container(struct box *cont)
 	struct box *child;
 	struct box *prev_child = 0;
 
+	LOG(("cont %p"));
 	assert(cont->type == BOX_INLINE_CONTAINER);
 
 	for (child = cont->children; child != 0; prev_child = child, child = child->next) {

@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.3 2002/09/11 21:19:24 bursa Exp $
+# $Id: makefile,v 1.4 2002/10/08 09:38:29 bursa Exp $
 
 all: netsurf,ff8
 clean:
@@ -9,7 +9,7 @@ FLAGS = -g -Wall -W -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
  -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -std=c9x \
  -I.. -I../../Tools/libxml2/include -I../../Tools/oslib \
  -I../../Tools/curl/include -I../../Tools/libutf-8 \
- -Dfd_set=long -mpoke-function-name
+ -Dfd_set=long -mpoke-function-name -DNETSURF_DUMP
 CC = riscos-gcc
 OBJECTS = render/objs-riscos/utils.o render/objs-riscos/css.o \
  render/objs-riscos/css_enum.o render/objs-riscos/box.o \
