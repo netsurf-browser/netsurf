@@ -48,13 +48,13 @@ static void ro_gui_menu_prepare_help(int forced);
 static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
 static struct box *ro_gui_menu_find_object_box(void);
 static void ro_gui_menu_object_reload(void);
+static void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning);
 static void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning);
 static void ro_gui_menu_prepare_hotlist(void);
 
 wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
 gui_window *current_gui;
-struct content *save_content = 0;
 
 /*	Default menu item flags
 */
@@ -546,12 +546,12 @@ void ro_gui_menu_selection(wimp_selection *selection)
 			case 0:	/* Hotlist-> */
 				switch (selection->items[1]) {
 					case 0: /* New */
-						break; 
+						break;
 					case 1: /* Save */
 						ro_gui_hotlist_save();
-						break; 
+						break;
 					case 2: /* Export */
-						break; 
+						break;
 					case 3: /* Expand */
 						ro_gui_hotlist_set_expanded(true,
 								(selection->items[2] != 2),
@@ -561,18 +561,18 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						ro_gui_hotlist_set_expanded(false,
 								(selection->items[2] != 2),
 								(selection->items[2] != 1));
-						break; 
+						break;
 				}
 				break;
 			case 1: /* Selection-> */
 				switch (selection->items[1]) {
 					case 0: /* Save */
-						break; 
+						break;
 					case 1: /* Edit title-> */
-						break; 
+						break;
 					case 2: /* Launch */
 						ro_gui_hotlist_keypress(wimp_KEY_RETURN);
-						break; 
+						break;
 					case 3: /* Delete */
 						ro_gui_hotlist_delete_selected();
 						break;
@@ -811,7 +811,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	} else {
 		if (current_menu == hotlist_menu) {
 			ro_gui_hotlist_menu_closed();
-		} 
+		}
 	}
 }
 
@@ -819,151 +819,188 @@ void ro_gui_menu_selection(wimp_selection *selection)
 /**
  * Handle Message_MenuWarning.
  */
+
 void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 {
-	struct content *c;
-	os_error *error = NULL; // No warnings
-
-	if (current_menu == hotlist_menu) {
+	if (current_menu == browser_menu)
+		ro_gui_menu_browser_warning(warning);
+	else if (current_menu == hotlist_menu)
 		ro_gui_menu_hotlist_warning(warning);
-		return; 
-	} else if (current_menu != browser_menu) {
-		return;
-	}
+}
+
+
+/**
+ * Handle Message_MenuWarning for the browser menu.
+ */
+
+void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
+{
+	struct content *c;
+	struct box *box;
+	os_error *error = 0;
 
 	c = current_gui->data.browser.bw->current_content;
+
 	switch (warning->selection.items[0]) {
-		case MENU_PAGE: /* Page -> */
-			switch (warning->selection.items[1]) {
-				case 4: /* Save Link */
-					switch (warning->selection.items[2]) {
-						case 0: /* URI */
-							gui_current_save_type = GUI_SAVE_LINK_URI;
-							break;
-
-						case 1: /* URL */
-							gui_current_save_type = GUI_SAVE_LINK_URL;
-							break;
-
-						case 2: /* Text */
-							gui_current_save_type = GUI_SAVE_LINK_TEXT;
-							break;
-					}
-					break;
-				case 3: /* Export as -> */
-					switch (warning->selection.items[2]) {
-						case 0: /* Draw */
-							gui_current_save_type = GUI_SAVE_DRAW;
-							break;
-
-						case 1: /* Text */
-							gui_current_save_type = GUI_SAVE_TEXT;
-							break;
-					}
-					break;
-
-				case 2: /* Save complete */
-					gui_current_save_type = GUI_SAVE_COMPLETE;
-					break;
-
-
-				case 0: /* Page info */
-					ro_gui_menu_prepare_pageinfo();
-					error = xwimp_create_sub_menu((wimp_menu *) dialog_pageinfo,
-							warning->pos.x, warning->pos.y);
-					if (error) {
-						LOG(("0x%x: %s\n", error->errnum, error->errmess));
-						warn_user("MenuError", error->errmess);
-					}
-					return;
-
-				case 1:
-				default: /* Save */
-					gui_current_save_type = GUI_SAVE_SOURCE;
-					break;
-			}
-			ro_gui_menu_prepare_save(c);
-			error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
+	case MENU_PAGE: /* Page -> */
+		switch (warning->selection.items[1]) {
+		case 0: /* Page info */
+			ro_gui_menu_prepare_pageinfo();
+			error = xwimp_create_sub_menu(
+					(wimp_menu *) dialog_pageinfo,
 					warning->pos.x, warning->pos.y);
 			break;
-		case MENU_OBJECT: /* Object -> */
-			switch (warning->selection.items[1]) {
-				case 0: /* Object info */
-					ro_gui_menu_objectinfo(warning);
-					return;
 
-				case 1: /* Save */
-					gui_current_save_type = GUI_SAVE_OBJECT_ORIG;
-					break;
+		case 1: /* Save */
+			ro_gui_save_open(GUI_SAVE_SOURCE, c, true,
+					warning->pos.x, warning->pos.y, 0);
+			break;
 
-				case 2: /* Export */
-					switch (warning->selection.items[2]) {
-						case 0: /* Sprite */
-							gui_current_save_type = GUI_SAVE_OBJECT_NATIVE;
-							break;
-					}
-					break;
-				case 3: /* Save Link */
-					switch (warning->selection.items[2]) {
-						case 0: /* URI */
-							gui_current_save_type = GUI_SAVE_LINK_URI;
-							break;
+		case 2: /* Save complete */
+			ro_gui_save_open(GUI_SAVE_COMPLETE, c, true,
+					warning->pos.x, warning->pos.y, 0);
+			break;
 
-						case 1: /* URL */
-							gui_current_save_type = GUI_SAVE_LINK_URL;
-							break;
+		case 3: /* Export as -> */
+			switch (warning->selection.items[2]) {
+			case 0: /* Draw */
+				ro_gui_save_open(GUI_SAVE_DRAW, c, true,
+						warning->pos.x, warning->pos.y,
+						0);
+				break;
 
-						case 2: /* Text */
-							gui_current_save_type = GUI_SAVE_LINK_TEXT;
-							break;
-					}
-					break;
-			}
-			struct box *box = ro_gui_menu_find_object_box();
-			if (box) {
-				ro_gui_menu_prepare_save(box->object);
-				error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
-					warning->pos.x, warning->pos.y);
+			case 1: /* Text */
+				ro_gui_save_open(GUI_SAVE_TEXT, c, true,
+						warning->pos.x, warning->pos.y,
+						0);
+				break;
 			}
 			break;
-		case MENU_NAVIGATE: /* Navigate -> */
-			ro_gui_prepare_navigate(current_gui);
-			error = xwimp_create_sub_menu(browser_navigate_menu,
-					warning->pos.x, warning->pos.y);
-			break;
-		case MENU_VIEW: /* View -> */
-			switch (warning->selection.items[1]) {
-				case 0: /* Scale view -> */
-					ro_gui_menu_prepare_scale();
-					error = xwimp_create_sub_menu((wimp_menu *) dialog_zoom,
-							warning->pos.x, warning->pos.y);
-					break;
-				case 1: /* Images -> */
-					ro_gui_menu_prepare_images();
-					error = xwimp_create_sub_menu(browser_image_menu,
-							warning->pos.x, warning->pos.y);
-					break;
-				case 2: /* Toolbars -> */
-					ro_gui_menu_prepare_toolbars();
-					error = xwimp_create_sub_menu(browser_toolbar_menu,
-							warning->pos.x, warning->pos.y);
-					break;
-				case 3: /* Window -> */
-					ro_gui_menu_prepare_window();
-					error = xwimp_create_sub_menu(browser_window_menu,
-							warning->pos.x, warning->pos.y);
-					break;
+
+		case 4: /* Save Link */
+			switch (warning->selection.items[2]) {
+			case 0: /* URI */
+				ro_gui_save_open(GUI_SAVE_LINK_URI, c, true,
+						warning->pos.x, warning->pos.y,
+						0);
+				break;
+
+			case 1: /* URL */
+				ro_gui_save_open(GUI_SAVE_LINK_URL, c, true,
+						warning->pos.x, warning->pos.y,
+						0);
+				break;
+
+			case 2: /* Text */
+				ro_gui_save_open(GUI_SAVE_LINK_TEXT, c, true,
+						warning->pos.x, warning->pos.y,
+						0);
+				break;
 			}
 			break;
-		case MENU_HELP: /* Help -> */
-			ro_gui_menu_prepare_help(false);
-			error = xwimp_create_sub_menu(browser_help_menu,
+                }
+		break;
+
+	case MENU_OBJECT: /* Object -> */
+		/** \todo  this is really dumb, the object should be the one
+		 * that the user clicked menu over, not the one that happens to
+		 * be under the menu now */
+		box = ro_gui_menu_find_object_box();
+		if (!box)
+			break;
+
+		switch (warning->selection.items[1]) {
+		case 0: /* Object info */
+			ro_gui_menu_objectinfo(warning);
+			return;
+
+		case 1: /* Save */
+			ro_gui_save_open(GUI_SAVE_OBJECT_ORIG, box->object,
+					true,
+					warning->pos.x, warning->pos.y, 0);
+			break;
+
+		case 2: /* Export */
+			switch (warning->selection.items[2]) {
+			case 0: /* Sprite */
+				ro_gui_save_open(GUI_SAVE_OBJECT_NATIVE,
+						box->object, true,
+						warning->pos.x, warning->pos.y,
+						0);
+				break;
+			}
+			break;
+
+		case 3: /* Save Link */
+			switch (warning->selection.items[2]) {
+			case 0: /* URI */
+				ro_gui_save_open(GUI_SAVE_LINK_URI,
+						box->object, true,
+						warning->pos.x, warning->pos.y,
+						0);
+				break;
+
+			case 1: /* URL */
+				ro_gui_save_open(GUI_SAVE_LINK_URL,
+						box->object, true,
+						warning->pos.x, warning->pos.y,
+						0);
+				break;
+
+			case 2: /* Text */
+				ro_gui_save_open(GUI_SAVE_LINK_TEXT,
+						box->object, true,
+						warning->pos.x, warning->pos.y,
+						0);
+				break;
+			}
+			break;
+		}
+		break;
+
+	case MENU_NAVIGATE: /* Navigate -> */
+		ro_gui_prepare_navigate(current_gui);
+		error = xwimp_create_sub_menu(browser_navigate_menu,
+				warning->pos.x, warning->pos.y);
+		break;
+
+	case MENU_VIEW: /* View -> */
+		switch (warning->selection.items[1]) {
+		case 0: /* Scale view -> */
+			ro_gui_menu_prepare_scale();
+			error = xwimp_create_sub_menu((wimp_menu *) dialog_zoom,
 					warning->pos.x, warning->pos.y);
+			break;
+
+		case 1: /* Images -> */
+			ro_gui_menu_prepare_images();
+			error = xwimp_create_sub_menu(browser_image_menu,
+					warning->pos.x, warning->pos.y);
+			break;
+
+		case 2: /* Toolbars -> */
+			ro_gui_menu_prepare_toolbars();
+			error = xwimp_create_sub_menu(browser_toolbar_menu,
+					warning->pos.x, warning->pos.y);
+			break;
+
+		case 3: /* Window -> */
+			ro_gui_menu_prepare_window();
+			error = xwimp_create_sub_menu(browser_window_menu,
+					warning->pos.x, warning->pos.y);
+			break;
+		}
+		break;
+
+	case MENU_HELP: /* Help -> */
+		ro_gui_menu_prepare_help(false);
+		error = xwimp_create_sub_menu(browser_help_menu,
+				warning->pos.x, warning->pos.y);
 	}
 
-
 	if (error) {
-		LOG(("0x%x: %s\n", error->errnum, error->errmess));
+		LOG(("xwimp_create_sub_menu: 0x%x: %s",
+				error->errnum, error->errmess));
 		warn_user("MenuError", error->errmess);
 	}
 }
@@ -972,149 +1009,68 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 /**
  * Handle Message_MenuWarning for the hotlist menu.
  */
-void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning) {
-	os_error *error = NULL; // No warnings
+
+void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning)
+{
+	os_error *error = 0;
 
 	switch (warning->selection.items[0]) {
-		case 0:	/* Hotlist-> */
-			switch (warning->selection.items[1]) {
-				case 0: /* New-> */
-					hotlist_insert = true;
-					switch (warning->selection.items[2]) {
-						case 0: /* Folder */
-						 	ro_gui_hotlist_prepare_folder_dialog(false);
-							error = xwimp_create_sub_menu((wimp_menu *) dialog_folder,
-								warning->pos.x, warning->pos.y);
-						 	break;
-						case 1: /* Entry */
-						 	ro_gui_hotlist_prepare_entry_dialog(false);
-							error = xwimp_create_sub_menu((wimp_menu *) dialog_entry,
-								warning->pos.x, warning->pos.y);
-					}
-					break; 
-				case 2: /* Export-> */
-					gui_current_save_type = GUI_HOTLIST_EXPORT_HTML;
-					ro_gui_menu_prepare_save(NULL);
-					error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
+	case 0:	/* Hotlist-> */
+		switch (warning->selection.items[1]) {
+		case 0: /* New-> */
+			hotlist_insert = true;
+			switch (warning->selection.items[2]) {
+			case 0: /* Folder */
+			 	ro_gui_hotlist_prepare_folder_dialog(false);
+				error = xwimp_create_sub_menu(
+						(wimp_menu *) dialog_folder,
 						warning->pos.x, warning->pos.y);
-					break; 
+			 	break;
+			case 1: /* Entry */
+			 	ro_gui_hotlist_prepare_entry_dialog(false);
+				error = xwimp_create_sub_menu(
+						(wimp_menu *) dialog_entry,
+						warning->pos.x, warning->pos.y);
 			}
 			break;
-		case 1: /* Selection-> */
-			switch (warning->selection.items[1]) {
-				case -1: /* Root */
-					ro_gui_menu_prepare_hotlist();
-					error = xwimp_create_sub_menu(hotlist_select_menu,
-							warning->pos.x, warning->pos.y);
-					break;
-				case 0: /* Save-> */
-					break;
-				case 1: /* Edit-> */
-					hotlist_insert = true;
-					if (ro_gui_hotlist_get_selected(false) == 0) {
-						ro_gui_hotlist_prepare_folder_dialog(true);
-						error = xwimp_create_sub_menu((wimp_menu *) dialog_folder,
-							warning->pos.x, warning->pos.y);
-					} else {
-					  	ro_gui_hotlist_prepare_entry_dialog(true);
-						error = xwimp_create_sub_menu((wimp_menu *) dialog_entry,
-							warning->pos.x, warning->pos.y);
-					}
-					break;
+		case 2: /* Export-> */
+			ro_gui_save_open(GUI_SAVE_HOTLIST_EXPORT_HTML, 0, true,
+					warning->pos.x, warning->pos.y, 0);
+			break;
+		}
+		break;
+	case 1: /* Selection-> */
+		switch (warning->selection.items[1]) {
+		case -1: /* Root */
+			ro_gui_menu_prepare_hotlist();
+			error = xwimp_create_sub_menu(hotlist_select_menu,
+					warning->pos.x, warning->pos.y);
+			break;
+		case 0: /* Save-> */
+			break;
+		case 1: /* Edit-> */
+			hotlist_insert = true;
+			if (ro_gui_hotlist_get_selected(false) == 0) {
+				ro_gui_hotlist_prepare_folder_dialog(true);
+				error = xwimp_create_sub_menu(
+						(wimp_menu *) dialog_folder,
+						warning->pos.x, warning->pos.y);
+			} else {
+			  	ro_gui_hotlist_prepare_entry_dialog(true);
+				error = xwimp_create_sub_menu(
+						(wimp_menu *) dialog_entry,
+						warning->pos.x, warning->pos.y);
 			}
 			break;
+		}
+		break;
 	}
-	
+
 	if (error) {
-		LOG(("0x%x: %s\n", error->errnum, error->errmess));
+		LOG(("xwimp_create_sub_menu: 0x%x: %s",
+				error->errnum, error->errmess));
 		warn_user("MenuError", error->errmess);
 	}
-}
-
-
-/**
- * Prepares the save box to reflect gui_current_save_type and a content.
- *
- * \param  c  content to save
- */
-
-void ro_gui_menu_prepare_save(struct content *c)
-{
-	char icon_buf[20] = "file_xxx";
-	const char *icon = icon_buf;
-	const char *name = "";
-	const char *nice;
-
-/*	We can't assert globally any more as hotlists have no content
-*/
-	if (gui_current_save_type != GUI_HOTLIST_EXPORT_HTML) {
-		assert(c);
-	}
-
-
-	switch (gui_current_save_type) {
-		case GUI_SAVE_SOURCE:
-			sprintf(icon_buf, "file_%x", ro_content_filetype(c));
-			name = messages_get("SaveSource");
-			break;
-
-		case GUI_SAVE_DRAW:
-			icon = "file_aff";
-			name = messages_get("SaveDraw");
-			break;
-
-		case GUI_SAVE_TEXT:
-			icon = "file_fff";
-			name = messages_get("SaveText");
-			break;
-
-		case GUI_SAVE_COMPLETE:
-			icon = "file_faf";
-			name = messages_get("SaveComplete");
-			break;
-		case GUI_SAVE_OBJECT_ORIG:
-			if (c)
-				sprintf(icon_buf, "file_%x",
-						ro_content_filetype(c));
-			name = messages_get("SaveObject");
-			break;
-		case GUI_SAVE_OBJECT_NATIVE:
-			icon = "file_ff9";
-			name = messages_get("SaveObject");
-			break;
-		case GUI_SAVE_LINK_URI:
-			icon = "file_f91";
-			name = messages_get("SaveLink");
-			break;
-		case GUI_SAVE_LINK_URL:
-			icon = "file_b28";
-			name = messages_get("SaveLink");
-			break;
-		case GUI_SAVE_LINK_TEXT:
-			icon = "file_fff";
-			name = messages_get("SaveLink");
-			break;
-		case GUI_HOTLIST_EXPORT_HTML:
-			icon = "file_faf";
-			name = "Hotlist";
-			break;
-	}
-
-	save_content = c;
-	if (c) {
-		if ((nice = url_nice(c->url))) name = nice;
-        }
-
-	/*	Ensure the correct icon exists
-	*/
-	if (xwimpspriteop_read_sprite_info(icon, 0, 0, 0, 0)) {
-		icon = "file_xxx";
-	}
-
-	/*	Update the GUI
-	*/
-	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_ICON, icon);
-	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);
 }
 
 
@@ -1328,11 +1284,11 @@ void ro_gui_menu_prepare_scale(void) {
  * Update hotlist menu (all of)
  */
 void ro_gui_menu_prepare_hotlist(void) {
-	int selection; 
-	int selection_full; 
+	int selection;
+	int selection_full;
 	selection = ro_gui_hotlist_get_selected(false);
 	selection_full = ro_gui_hotlist_get_selected(true);
-	
+
 	if (selection_full == 0) {
 		hotlist_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
 		hotlist_menu->entries[3].icon_flags |= wimp_ICON_SHADED;

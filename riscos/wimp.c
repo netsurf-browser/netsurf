@@ -10,14 +10,16 @@
  */
 
 #include <assert.h>
-#include <string.h>
+#include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include "oslib/os.h"
 #include "oslib/osfile.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpextend.h"
 #include "oslib/wimpreadsysinfo.h"
+#include "oslib/wimpspriteop.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
@@ -248,7 +250,7 @@ int ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
 void ro_gui_set_window_title(wimp_w w, const char *text) {
 	wimp_window_info_base window;
 	os_error *error;
-	
+
 	/*	Get the window details
 	*/
 	window.w = w;
@@ -259,14 +261,14 @@ void ro_gui_set_window_title(wimp_w w, const char *text) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	
+
 	/*	Set the title string
 	*/
 	strncpy(window.title_data.indirected_text.text, text,
 			(unsigned int)window.title_data.indirected_text.size - 1);
 	window.title_data.indirected_text.text[window.title_data.indirected_text.size - 1] = '\0';
 }
- 
+
 
 /**
  * Load a sprite file into memory.
@@ -317,4 +319,28 @@ osspriteop_area *ro_gui_load_sprite_file(const char *pathname)
 	}
 
 	return area;
+}
+
+
+/**
+ * Check if a sprite is present in the Wimp sprite pool.
+ *
+ * \param  sprite  name of sprite
+ * \return  true if the sprite is present
+ */
+
+bool ro_gui_wimp_sprite_exists(const char *sprite)
+{
+	os_error *error;
+
+	error = xwimpspriteop_select_sprite(sprite, 0);
+	if (error) {
+		if (error->errnum != error_SPRITE_OP_DOESNT_EXIST) {
+			LOG(("xwimpspriteop_select_sprite: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("MiscError", error->errmess);
+		}
+		return false;
+	}
+	return true;
 }

@@ -42,5 +42,6 @@ int ro_gui_get_icon_selected_state(wimp_w w, wimp_i i);
 void ro_gui_set_window_title(wimp_w w, const char *title);
 
 osspriteop_area *ro_gui_load_sprite_file(const char *pathname);
+bool ro_gui_wimp_sprite_exists(const char *sprite);
 
 #endif

@@ -27,17 +27,99 @@
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
-gui_save_type gui_current_save_type;
-
-extern struct content *save_content;
+static gui_save_type gui_save_current_type;
+static struct content *gui_save_content = 0;
+static int gui_save_filetype;
 
 typedef enum { LINK_ACORN, LINK_ANT, LINK_TEXT } link_format;
 
 static bool ro_gui_save_complete(struct content *c, char *path);
 static void ro_gui_save_object_native(struct content *c, char *path);
 static bool ro_gui_save_link(struct content *c, link_format format, char *path);
+
+
+/** An entry in gui_save_table. */
+struct gui_save_table_entry {
+	int filetype;
+	const char *name;
+};
+
+/** Table of filetypes and default filenames. Must be in sync with
+ * gui_save_type (riscos/gui.h). A filetype of 0 indicates the content should
+ * be used. */
+struct gui_save_table_entry gui_save_table[] = {
+	/* GUI_SAVE_SOURCE,              */ {     0, "SaveSource" },
+	/* GUI_SAVE_DRAW,                */ { 0xaff, "SaveDraw" },
+	/* GUI_SAVE_TEXT,                */ { 0xfff, "SaveText" },
+	/* GUI_SAVE_COMPLETE,            */ { 0xfaf, "SaveComplete" },
+	/* GUI_SAVE_OBJECT_ORIG,         */ {     0, "SaveObject" },
+	/* GUI_SAVE_OBJECT_NATIVE,       */ { 0xff9, "SaveObject" },
+	/* GUI_SAVE_LINK_URI,            */ { 0xf91, "SaveLink" },
+	/* GUI_SAVE_LINK_URL,            */ { 0xb28, "SaveLink" },
+	/* GUI_SAVE_LINK_TEXT,           */ { 0xfff, "SaveLink" },
+	/* GUI_SAVE_HOTLIST_EXPORT_HTML, */ { 0xfaf, "Hotlist" },
+};
+
+
+/**
+ * Prepares the save box to reflect gui_save_type and a content, and
+ * opens it.
+ *
+ * \param  save_type  type of save
+ * \param  c          content to save
+ * \param  sub_menu   open dialog as a sub menu, otherwise persistent
+ * \param  x          x position, for sub_menu true only
+ * \param  y          y position, for sub_menu true only
+ * \param  parent     parent window for persistent box, for sub_menu false only
+ */
+
+void ro_gui_save_open(gui_save_type save_type, struct content *c,
+		bool sub_menu, int x, int y, wimp_w parent)
+{
+	char icon_buf[20];
+	const char *icon = icon_buf;
+	const char *name = "";
+	const char *nice;
+	os_error *error;
+
+	assert(save_type == GUI_SAVE_HOTLIST_EXPORT_HTML || c);
+
+	gui_save_current_type = save_type;
+	gui_save_content = c;
+	gui_save_filetype = gui_save_table[save_type].filetype;
+	if (!gui_save_filetype)
+		gui_save_filetype = ro_content_filetype(c);
+
+	/* icon */
+	sprintf(icon_buf, "file_%.3x", gui_save_filetype);
+	if (!ro_gui_wimp_sprite_exists(icon_buf))
+		icon = "file_xxx";
+	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_ICON, icon);
+
+	/* filename */
+	name = gui_save_table[save_type].name;
+	if (c) {
+		if ((nice = url_nice(c->url)))
+			name = nice;
+        }
+	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);
+
+	/* open sub menu or persistent dialog */
+	if (sub_menu) {
+		error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
+				x, y);
+		if (error) {
+			LOG(("xwimp_create_sub_menu: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("MenuError", error->errmess);
+		}
+	} else {
+		ro_gui_dialog_open_persistant(parent, dialog_saveas);
+	}
+}
 
 
 /**
@@ -55,7 +137,7 @@ void ro_gui_save_click(wimp_pointer *pointer)
 	  		  	xwimp_close_window(pointer->w);
 	  		  	xwimp_create_menu((wimp_menu *)-1, 0, 0);
 	  		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
-	  			ro_gui_menu_prepare_save(save_content);
+/* 	  			ro_gui_menu_prepare_save(gui_save_content); */
 	  		}
 	  		break;
 		case ICON_SAVE_ICON:
@@ -122,27 +204,8 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 	message.data.data_xfer.pos.x = pointer.pos.x;
 	message.data.data_xfer.pos.y = pointer.pos.y;
 	message.data.data_xfer.est_size = 1000;
-
-	/* set the filetype correctly */
-	message.data.data_xfer.file_type = 0xfaf; /* default = html */
-	if (gui_current_save_type == GUI_SAVE_DRAW)
-		message.data.data_xfer.file_type = 0xaff;
-	else if (gui_current_save_type == GUI_SAVE_TEXT ||
-		gui_current_save_type == GUI_SAVE_LINK_TEXT)
-		message.data.data_xfer.file_type = 0xfff;
-	else if (gui_current_save_type == GUI_SAVE_LINK_URI)
-		message.data.data_xfer.file_type = 0xf91;
-	else if (gui_current_save_type == GUI_SAVE_LINK_URL)
-		message.data.data_xfer.file_type = 0xb28;
-	/* object as native type.
-	 * assume sprite here, although this isn't guaranteed
-	 */
-	else if (gui_current_save_type == GUI_SAVE_OBJECT_NATIVE)
-		message.data.data_xfer.file_type = 0xff9;
-	/* don't change the type as we've no idea what it is
-	else if (gui_current_save_type == GUI_SAVE_OBJECT_ORIG)
-	*/
-	if (gui_current_save_type == GUI_SAVE_COMPLETE) {
+	message.data.data_xfer.file_type = gui_save_filetype;
+	if (gui_save_current_type == GUI_SAVE_COMPLETE) {
 		message.data.data_xfer.file_type = 0x2000;
 		if (name[0] != '!') {
 			message.data.data_xfer.file_name[0] = '!';
@@ -169,17 +232,18 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 void ro_gui_save_datasave_ack(wimp_message *message)
 {
 	char *path = message->data.data_xfer.file_name;
-	struct content *c = save_content;
+	struct content *c = gui_save_content;
 	os_error *error;
 
-	if (!save_content && gui_current_save_type != GUI_HOTLIST_EXPORT_HTML) {
-		LOG(("unexpected DataSaveAck: save_content not set"));
+	if (!gui_save_content &&
+			gui_save_current_type != GUI_SAVE_HOTLIST_EXPORT_HTML) {
+		LOG(("unexpected DataSaveAck: gui_save_content not set"));
 		return;
 	}
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, path);
 
-	switch (gui_current_save_type) {
+	switch (gui_save_current_type) {
 		case GUI_SAVE_SOURCE:
 			error = xosfile_save_stamped(path,
 					ro_content_filetype(c),
@@ -239,7 +303,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			if (!ro_gui_save_link(c, LINK_TEXT, path))
 				return;
 			break;
-		case GUI_HOTLIST_EXPORT_HTML:
+		case GUI_SAVE_HOTLIST_EXPORT_HTML:
 			ro_gui_hotlist_save_as(path);
 			break;
 	}
@@ -266,7 +330,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 		warn_user("MenuError", error->errmess);
 	}
 
-	save_content = 0;
+	gui_save_content = 0;
 }
 
 

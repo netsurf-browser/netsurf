@@ -748,11 +748,9 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
 
 		case ICON_TOOLBAR_SAVE:
 			current_gui = g;
-			gui_current_save_type = GUI_SAVE_SOURCE;
-			ro_gui_menu_prepare_save(g->data.browser.bw->current_content);
-			/** \todo  make save window persistent */
-			xwimp_create_menu((wimp_menu *) dialog_saveas,
-					pointer->pos.x, pointer->pos.y);
+			ro_gui_save_open(GUI_SAVE_SOURCE,
+					g->data.browser.bw->current_content,
+					false, 0, 0, g->window);
 			break;
 	}
 }
@@ -999,30 +997,26 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 
 		case wimp_KEY_F3:
 			current_gui = g;
-			gui_current_save_type = GUI_SAVE_SOURCE;
-			ro_gui_menu_prepare_save(content);
-			ro_gui_dialog_open_persistant(g->window, dialog_saveas);
+			ro_gui_save_open(GUI_SAVE_SOURCE, content,
+					false, 0, 0, g->window);
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_F3:
 			current_gui = g;
-			gui_current_save_type = GUI_SAVE_TEXT;
-			ro_gui_menu_prepare_save(content);
-			ro_gui_dialog_open_persistant(g->window, dialog_saveas);
+			ro_gui_save_open(GUI_SAVE_TEXT, content,
+					false, 0, 0, g->window);
 			return true;
 
 		case wimp_KEY_SHIFT + wimp_KEY_F3:
 			current_gui = g;
-			gui_current_save_type = GUI_SAVE_COMPLETE;
-			ro_gui_menu_prepare_save(content);
-			ro_gui_dialog_open_persistant(g->window, dialog_saveas);
+			ro_gui_save_open(GUI_SAVE_COMPLETE, content,
+					false, 0, 0, g->window);
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F3:
 			current_gui = g;
-			gui_current_save_type = GUI_SAVE_DRAW;
-			ro_gui_menu_prepare_save(content);
-			ro_gui_dialog_open_persistant(g->window, dialog_saveas);
+			ro_gui_save_open(GUI_SAVE_DRAW, content,
+					false, 0, 0, g->window);
 			return true;
 
 		case wimp_KEY_RETURN:

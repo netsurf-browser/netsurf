@@ -41,13 +41,20 @@ extern struct toolbar *hotlist_toolbar;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
 
 typedef enum { GUI_BROWSER_WINDOW } gui_window_type;
-typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT,
-		GUI_SAVE_COMPLETE,
-		GUI_SAVE_OBJECT_ORIG, GUI_SAVE_OBJECT_NATIVE,
-		GUI_SAVE_LINK_URI, GUI_SAVE_LINK_URL,
-		GUI_SAVE_LINK_TEXT,
-		GUI_HOTLIST_EXPORT_HTML} gui_save_type;
-extern gui_save_type gui_current_save_type;
+
+typedef enum {
+	GUI_SAVE_SOURCE,
+	GUI_SAVE_DRAW,
+	GUI_SAVE_TEXT,
+	GUI_SAVE_COMPLETE,
+	GUI_SAVE_OBJECT_ORIG,
+	GUI_SAVE_OBJECT_NATIVE,
+	GUI_SAVE_LINK_URI,
+	GUI_SAVE_LINK_URL,
+	GUI_SAVE_LINK_TEXT,
+	GUI_SAVE_HOTLIST_EXPORT_HTML,
+} gui_save_type;
+
 typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_SAVE, GUI_DRAG_STATUS_RESIZE,
 		GUI_DRAG_HOTLIST_SELECT, GUI_DRAG_HOTLIST_MOVE } gui_drag_type;
@@ -110,7 +117,6 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
 void ro_gui_menu_selection(wimp_selection* selection);
 void ro_gui_menu_warning(wimp_message_menu_warning *warning);
 void ro_gui_prepare_navigate(gui_window *gui);
-void ro_gui_menu_prepare_save(struct content *c);
 void ro_gui_menu_prepare_scale(void);
 void ro_gui_menu_prepare_pageinfo(void);
 
@@ -204,6 +210,8 @@ void ro_gui_hotlist_prepare_folder_dialog(bool selected);
 void ro_gui_hotlist_prepare_entry_dialog(bool selected);
 
 /* in save.c */
+void ro_gui_save_open(gui_save_type save_type, struct content *c,
+		bool sub_menu, int x, int y, wimp_w parent);
 void ro_gui_save_click(wimp_pointer *pointer);
 void ro_gui_drag_icon(wimp_pointer *pointer);
 void ro_gui_save_drag_end(wimp_dragged *drag);

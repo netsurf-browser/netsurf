@@ -31,6 +31,7 @@
 #include "netsurf/content/fetch.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
@@ -181,15 +182,8 @@ struct gui_download_window *gui_download_window_create(const char *url,
 			size = sizeof dw->status;
 
 	sprintf(dw->sprite_name, "file_%.3x", dw->file_type);
-	error = xwimpspriteop_select_sprite(dw->sprite_name, 0);
-	if (error) {
-		if (error->errnum != error_SPRITE_OP_DOESNT_EXIST) {
-			LOG(("xwimpspriteop_select_sprite: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("MiscError", error->errmess);
-		}
+	if (!ro_gui_wimp_sprite_exists(dw->sprite_name))
 		strcpy(dw->sprite_name, "file_xxx");
-	}
 	download_template->icons[ICON_DOWNLOAD_ICON].data.indirected_sprite.id =
 			(osspriteop_id) dw->sprite_name;
 
