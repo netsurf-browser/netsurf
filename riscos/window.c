@@ -61,7 +61,8 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
       wimp_WINDOW_MOVEABLE | wimp_WINDOW_NEW_FORMAT | wimp_WINDOW_BACK_ICON |
       wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_TITLE_ICON | wimp_WINDOW_VSCROLL |
       wimp_WINDOW_HSCROLL | wimp_WINDOW_SIZE_ICON | wimp_WINDOW_TOGGLE_ICON |
-      wimp_WINDOW_IGNORE_XEXTENT | wimp_WINDOW_IGNORE_YEXTENT;
+      wimp_WINDOW_IGNORE_XEXTENT | wimp_WINDOW_IGNORE_YEXTENT |
+      wimp_WINDOW_SCROLL_REPEAT;
   window.title_fg = wimp_COLOUR_BLACK;
   window.title_bg = wimp_COLOUR_LIGHT_GREY;
   window.work_fg = wimp_COLOUR_LIGHT_GREY;
@@ -659,6 +660,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 {
 	struct content *content = g->data.browser.bw->current_content;
 	wimp_window_state state;
+	int y;
 
 	assert(g->type == GUI_BROWSER_WINDOW);
 
@@ -716,15 +718,97 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 
 		case wimp_KEY_UP:
 		case wimp_KEY_DOWN:
-			state.w = g->window;
-			wimp_get_window_state(&state);
-			state.yscroll += key == wimp_KEY_UP ? 32 : -32;
-			wimp_open_window((wimp_open *) &state);
-			return true;
+		case wimp_KEY_PAGE_UP:
+		case wimp_KEY_PAGE_DOWN:
+		case wimp_KEY_CONTROL | wimp_KEY_UP:
+		case wimp_KEY_CONTROL | wimp_KEY_DOWN:
+			break;
 
+		default:
+			return false;
+	}
+
+	state.w = g->window;
+	wimp_get_window_state(&state);
+	y = state.visible.y1 - state.visible.y0 - 32;
+	if (g->data.browser.bw->flags & browser_TOOLBAR)
+		y -= ro_theme_toolbar_height();
+
+	switch (key) {
+		case wimp_KEY_UP:
+			state.yscroll += 32;
+			break;
+		case wimp_KEY_DOWN:
+			state.yscroll -= 32;
+			break;
+		case wimp_KEY_PAGE_UP:
+			state.yscroll += y;
+			break;
+		case wimp_KEY_PAGE_DOWN:
+			state.yscroll -= y;
+			break;
+		case wimp_KEY_CONTROL | wimp_KEY_UP:
+			state.yscroll = 1000;
+			break;
+		case wimp_KEY_CONTROL | wimp_KEY_DOWN:
+			state.yscroll = -0x10000000;
+			break;
+        }
+
+	wimp_open_window((wimp_open *) &state);
+	return true;
+}
+
+
+/**
+ * Process Scroll_Request events.
+ */
+void ro_gui_scroll_request(wimp_scroll *scroll)
+{
+	int x, y;
+	gui_window *g = ro_gui_window_lookup(scroll->w);
+
+	if (!g || g->type != GUI_BROWSER_WINDOW)
+		return;
+
+	x = scroll->visible.x1 - scroll->visible.x0 - 32;
+	y = scroll->visible.y1 - scroll->visible.y0 - 32;
+	if (g->data.browser.bw->flags & browser_TOOLBAR)
+		y -= ro_theme_toolbar_height();
+
+	switch (scroll->xmin) {
+		case wimp_SCROLL_PAGE_LEFT:
+			scroll->xscroll -= x;
+			break;
+		case wimp_SCROLL_COLUMN_LEFT:
+			scroll->xscroll -= 32;
+			break;
+		case wimp_SCROLL_COLUMN_RIGHT:
+			scroll->xscroll += 32;
+			break;
+		case wimp_SCROLL_PAGE_RIGHT:
+			scroll->xscroll += x;
+			break;
 		default:
 			break;
 	}
 
-	return false;
+	switch (scroll->ymin) {
+		case wimp_SCROLL_PAGE_UP:
+			scroll->yscroll += y;
+			break;
+		case wimp_SCROLL_LINE_UP:
+			scroll->yscroll += 32;
+			break;
+		case wimp_SCROLL_LINE_DOWN:
+			scroll->yscroll -= 32;
+			break;
+		case wimp_SCROLL_PAGE_DOWN:
+			scroll->yscroll -= y;
+			break;
+		default:
+			break;
+	}
+
+	wimp_open_window((wimp_open *) scroll);
 }

@@ -145,6 +145,7 @@ gui_window* ro_lookup_gui_from_w(wimp_w window);
 gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window);
 gui_window *ro_gui_window_lookup(wimp_w w);
 bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar);
+void ro_gui_scroll_request(wimp_scroll *scroll);
 
 /* in history.c */
 void ro_gui_history_init(void);

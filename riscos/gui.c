@@ -308,6 +308,10 @@ void gui_poll(bool active)
         ro_gui_menu_selection(&(block.selection));
         break;
 
+      case wimp_SCROLL_REQUEST:
+        ro_gui_scroll_request(&(block.scroll));
+        break;
+
       case wimp_LOSE_CARET              :
         break;
       case wimp_GAIN_CARET              :
@@ -465,6 +469,12 @@ void gui_multitask(void)
       ro_gui_drag_end(&(block.dragged));
       break;
     case wimp_MENU_SELECTION          :
+      break;
+
+      case wimp_SCROLL_REQUEST:
+        ro_gui_scroll_request(&(block.scroll));
+        break;
+
     case wimp_USER_MESSAGE            :
     case wimp_USER_MESSAGE_RECORDED   :
     case wimp_USER_MESSAGE_ACKNOWLEDGE:
