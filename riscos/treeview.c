@@ -824,6 +824,12 @@ void ro_gui_tree_toolbar_click(wimp_pointer* pointer, struct tree *tree) {
 	current_toolbar = tree->toolbar;
 	ro_gui_tree_stop_edit(tree);
 
+	if (pointer->buttons == wimp_CLICK_MENU) {
+		ro_gui_create_menu(toolbar_menu, pointer->pos.x,
+				pointer->pos.y, NULL);
+		return;
+	}
+
 	switch (pointer->i) {
 	  	case ICON_TOOLBAR_CREATE:
 			node = tree_create_folder_node(tree->root,

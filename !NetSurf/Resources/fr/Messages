@@ -91,26 +91,7 @@ ImgStyle3:Avec diffusion d'erreur
 # Toolbar menus
 URLSuggest:Recent URLs
 Toolbar:Barre d'outils
-Icons:Boutons
-IconBack:Retour
-IconForward:Avance
-IconStop:Arrêter
-IconReload:Recharger
-IconHome:Accueil
-IconSearch:Recherche
-IconHistory:Historique
-IconScale:Ajuster la vue
-IconHotlist:Favoris
-IconSave:Sauver
-IconPrint:Imprimer
-IconCreate:Créer une entrée
-IconDelete:Supprimer une entrée
-IconLaunch:Atteindre
-IconOpen:Déployer les répertoires
-IconExpand:Détailler les entrées
-AddGap:Ajouter un séparateur
-DeleteGap:Supprimer le séparateur
-LockToolbar:Verrouiller la barre d'outils
+EditToolbar:Edit toolbar
 
 # Font menu
 Fonts:Fonts

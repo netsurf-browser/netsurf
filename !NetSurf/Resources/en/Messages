@@ -91,26 +91,7 @@ ImgStyle3:Error diffused
 # Toolbar menus
 URLSuggest:Recent URLs
 Toolbar:Toolbar
-Icons:Buttons
-IconBack:Back
-IconForward:Forward
-IconStop:Stop
-IconReload:Reload
-IconHome:Home
-IconSearch:Search
-IconHistory:History
-IconScale:Scale view
-IconHotlist:Hotlist
-IconSave:Save
-IconPrint:Print
-IconCreate:Create entry
-IconDelete:Delete entry
-IconLaunch:Launch
-IconOpen:Open directories
-IconExpand:Expand entries
-AddGap:Add separator
-DeleteGap:Remove separator
-LockToolbar:Lock toolbar
+EditToolbar:Edit toolbar
 
 # Font menu
 Fonts:Fonts

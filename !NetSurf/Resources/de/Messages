@@ -91,26 +91,7 @@ ImgStyle3:Error-Diffusion
 # Toolbar menus
 URLSuggest:Recent URLs
 Toolbar:Toolbar
-Icons:Schaltknöpfe
-IconBack:Zurück
-IconForward:Vorwärts
-IconStop:Stop
-IconReload:erneut laden
-IconHome:Homepage
-IconSearch:Text suchen
-IconHistory:History
-IconScale:Vergrößerung
-IconHotlist:Hotlist
-IconSave:Speichern
-IconPrint:Drucken
-IconCreate:Eintrag anlegen
-IconDelete:Eintrag löschen
-IconLaunch:Auswahl starten
-IconOpen:Verzeichnisse öffnen
-IconExpand:Einträge expandieren
-AddGap:Separator setzen
-DeleteGap:Separator entfernen
-LockToolbar:Leiste fixieren
+EditToolbar:Edit toolbar
 
 # Font menu
 Fonts:Fonts
