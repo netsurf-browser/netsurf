@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.14 2002/09/08 18:11:56 bursa Exp $
+ * $Id: layout.c,v 1.15 2002/09/11 14:24:02 monkeyson Exp $
  */
 
 #include <assert.h>
@@ -85,6 +85,8 @@ void layout_node(struct box * box, unsigned long width, struct box * cont,
 	fprintf(stderr, "layout_node(%p, %lu, %p, %lu, %lu)\n",
 			box, width, cont, cx, cy);
 #endif
+
+	gui_multitask();
 
 	switch (box->type) {
 		case BOX_BLOCK:

@@ -1,5 +1,5 @@
 /**
- * $Id: utils.c,v 1.4 2002/06/21 18:16:24 bursa Exp $
+ * $Id: utils.c,v 1.5 2002/09/11 14:24:02 monkeyson Exp $
  */
 
 #include <ctype.h>
@@ -44,6 +44,14 @@ void * xrealloc(void * p, const size_t size)
 	p = realloc(p, size);
 	if (p == 0) die("Out of memory in xrealloc()");
 	return p;
+}
+
+void xfree(void* p)
+{
+	if (p == 0)
+		fprintf(stderr, "Attempt to free NULL pointer\n");
+	else
+		free(p);
 }
 
 char * xstrdup(const char * const s)

@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.12 2002/09/08 18:11:56 bursa Exp $
+ * $Id: box.c,v 1.13 2002/09/11 14:24:02 monkeyson Exp $
  */
 
 #include <assert.h>
@@ -112,6 +112,8 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 	struct css_style * style, * style2;
 	xmlNode * c;
 	char * s;
+
+	gui_multitask();
 
 	if (n->type == XML_ELEMENT_NODE) {
 		/* work out the style for this element */
