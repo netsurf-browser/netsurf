@@ -182,7 +182,8 @@ char *url_join(char *rel_url, char *base_url)
 	LOG(("rel_url = %s, base_url = %s", rel_url, base_url));
 
 	if (!base_url) {
-		res = uri_cannonicalize_string(rel_url, strlen(rel_url),
+		res = uri_cannonicalize_string(rel_url,
+		                (int)(strlen(rel_url)),
 				URI_STRING_URI_STYLE);
 		LOG(("res = %s", res));
 		if (res)
@@ -190,20 +191,20 @@ char *url_join(char *rel_url, char *base_url)
 		return 0;
 	}
 
-	base = uri_alloc(base_url, strlen(base_url));
-	rel = uri_alloc(rel_url, strlen(rel_url));
+	base = uri_alloc(base_url, (int)(strlen(base_url)));
+	rel = uri_alloc(rel_url, (int)(strlen(rel_url)));
 	if (!base || !rel)
 		goto fail;
 	if (!base->scheme)
 		goto fail;
 
 	abs = uri_abs_1(base, rel);
-	
+
 	res = xstrdup(uri_uri(abs));
 
 	uri_free(base);
 	uri_free(rel);
-	
+
 	LOG(("res = %s", res));
 	return res;
 
@@ -231,7 +232,7 @@ char *get_host_from_url(char *url)
 	char *host = 0;
 	uri_t *uri;
 
-	uri = uri_alloc(url, strlen(url));
+	uri = uri_alloc(url, (int)(strlen(url)));
 	if (!uri)
 		return 0;
 	if (uri->host)
