@@ -13,3 +13,4 @@
 
 void thumbnail_create(struct content *content, osspriteop_area *area,
 		osspriteop_header *sprite, int width, int height);
+osspriteop_area* thumbnail_initialise(int width, int height, os_mode mode);
