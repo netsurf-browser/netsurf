@@ -130,12 +130,9 @@ const char *enumerate_fonts(struct font_set* set, int *handle)
 {
         int i;
 
-        assert(set);
-
-        if (*handle < 0 || handle == 0) { /* a bit of sanity checking */
-                *handle = -1;
-                return NULL;
-        }
+	assert(set);
+	assert(handle);
+	assert(0 <= *handle && *handle <= FONT_FAMILIES * FONT_FACES);
 
         for (i = *handle; i!=FONT_FAMILIES*FONT_FACES && set->font[i]==0;
              i++) ; /* find next font in use */
