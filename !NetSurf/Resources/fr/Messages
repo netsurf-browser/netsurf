@@ -70,7 +70,7 @@ Themes:Thèmes
 
 # Hotlist window
 HotlistURL:Address: %s
-HotlistAdd:Added: %s
+HotlistAdded:Added: %s
 HotlistLast:Last visited: %s
 HotlistVisits:Visits: %i
 
