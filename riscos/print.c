@@ -7,14 +7,13 @@
 
 #include <assert.h>
 #include <string.h>
-
 #include "oslib/font.h"
 #include "oslib/hourglass.h"
 #include "oslib/osfile.h"
 #include "oslib/osfind.h"
 #include "oslib/pdriver.h"
 #include "oslib/wimp.h"
-
+#include "rufl.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/plotters.h"
@@ -549,12 +548,14 @@ bool print_document(struct gui_window *g, const char *filename)
 		return false;
 	}
 
+	rufl_invalidate_cache();
+
 	/* declare fonts, if necessary */
-	if (features & pdriver_FEATURE_DECLARE_FONT &&
+	/*if (features & pdriver_FEATURE_DECLARE_FONT &&
 					c->type == CONTENT_HTML) {
 		if ((error_message = print_declare_fonts(box)))
 			goto error;
-	}
+	}*/
 
 	plot = ro_plotters;
 	ro_plot_set_scale(print_scale);
@@ -658,6 +659,8 @@ bool print_document(struct gui_window *g, const char *filename)
 		}
 	}
 
+	rufl_invalidate_cache();
+
 	/* restore document layout */
 	if (c->type == CONTENT_HTML)
 		layout_document(box, saved_width, c->data.html.box_pool);
@@ -673,6 +676,8 @@ error:
 	ro_gui_current_redraw_gui = 0;
 
 	warn_user("PrintError", error_message);
+
+	rufl_invalidate_cache();
 
 	/* restore document layout */
 	if (c->type == CONTENT_HTML)
