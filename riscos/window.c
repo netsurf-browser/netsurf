@@ -729,12 +729,23 @@ void gui_window_place_caret(gui_window *g, int x, int y, int height)
 /**
  * Process Key_Pressed events in a browser window.
  */
+
 bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 {
 	struct content *content = g->data.browser.bw->current_content;
 	wimp_window_state state;
 	int y;
 	char *url;
+	os_error *error;
+	wimp_pointer pointer;
+
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info: 0x%x: %s\n",
+				error->errnum, error->errmess));
+		warn_user(error->errmess);
+		return false;
+	}
 
 	assert(g->type == GUI_BROWSER_WINDOW);
 
@@ -786,21 +797,39 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 #endif
 			);
 			return true;
-#ifdef WITH_TEXT_EXPORT
-                case wimp_KEY_CONTROL + wimp_KEY_F3:
-/*                        save_as_text(g->data.browser.bw->current_content);*/
-                        return true;
-#endif
-#ifdef WITH_SAVE_COMPLETE
-                case wimp_KEY_SHIFT + wimp_KEY_F3:
-                        save_complete(g->data.browser.bw->current_content);
-                        return true;
-#endif
-#ifdef WITH_DRAW_EXPORT
-		case wimp_KEY_SHIFT + wimp_KEY_CONTROL + wimp_KEY_F3:
-/* 		        save_as_draw(g->data.browser.bw->current_content); */
-		        return true;
-#endif
+
+		case wimp_KEY_F3:
+			current_gui = g;
+			gui_current_save_type = GUI_SAVE_SOURCE;
+			ro_gui_menu_prepare_save(content);
+			/** \todo  make save window persistent */
+			xwimp_create_menu((wimp_menu *) dialog_saveas,
+					pointer.pos.x, pointer.pos.y);
+			break;
+
+		case wimp_KEY_CONTROL + wimp_KEY_F3:
+			current_gui = g;
+			gui_current_save_type = GUI_SAVE_TEXT;
+			ro_gui_menu_prepare_save(content);
+			xwimp_create_menu((wimp_menu *) dialog_saveas,
+					pointer.pos.x, pointer.pos.y);
+			break;
+
+		case wimp_KEY_SHIFT + wimp_KEY_F3:
+			current_gui = g;
+			gui_current_save_type = GUI_SAVE_COMPLETE;
+			ro_gui_menu_prepare_save(content);
+			xwimp_create_menu((wimp_menu *) dialog_saveas,
+					pointer.pos.x, pointer.pos.y);
+			break;
+
+		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F3:
+			current_gui = g;
+			gui_current_save_type = GUI_SAVE_DRAW;
+			ro_gui_menu_prepare_save(content);
+			xwimp_create_menu((wimp_menu *) dialog_saveas,
+					pointer.pos.x, pointer.pos.y);
+			break;
 
 		case wimp_KEY_RETURN:
 			if (!toolbar)

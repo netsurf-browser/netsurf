@@ -57,11 +57,12 @@ static wimp_MENU(2) export_menu = {
 };
 static wimp_menu *browser_export_menu = (wimp_menu *) &export_menu;
 
-static wimp_MENU(4) page_menu = {
+static wimp_MENU(5) page_menu = {
   { "Page" }, 7,2,7,0, 200, 44, 0,
   {
     { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "Info" } },
     { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS,            { "Save" } },
+    { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS,            { "SaveComp" } },
     { 0,              (wimp_menu *) &export_menu, DEFAULT_FLAGS,          { "Export" } },
     { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "Print" } }
   }
@@ -125,6 +126,7 @@ void ro_gui_menus_init(void)
 
 	iconbar_menu->entries[0].sub_menu = (wimp_menu *) dialog_info;
 	browser_page_menu->entries[1].sub_menu = (wimp_menu *) dialog_saveas;
+	browser_page_menu->entries[2].sub_menu = (wimp_menu *) dialog_saveas;
 	browser_export_menu->entries[0].sub_menu = (wimp_menu *) dialog_saveas;
 	browser_export_menu->entries[1].sub_menu = (wimp_menu *) dialog_saveas;
 	browser_view_menu->entries[0].sub_menu = (wimp_menu *) dialog_zoom;
@@ -230,9 +232,11 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						break;
 					case 1: /* Save */
 						break;
-					case 2: /* Export */
+					case 2: /* Save complete */
 						break;
-					case 3: /* Print */
+					case 3: /* Export */
+						break;
+					case 4: /* Print */
 						break;
 				}
 				break;
@@ -288,44 +292,35 @@ void ro_gui_menu_selection(wimp_selection *selection)
 
 void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 {
-	char icon[20] = "file_xxx";
 	struct content *c = current_gui->data.browser.bw->current_content;
 	os_error *error;
 
 	if (warning->selection.items[0] != 0)
 		return;
 
-	switch (warning->selection.items[2]) {
-		case 0: /* Export as -> Draw */
-			gui_current_save_type = GUI_SAVE_DRAW;
-			ro_gui_set_icon_string(dialog_saveas,
-					ICON_SAVE_ICON, "file_aff");
-			ro_gui_set_icon_string(dialog_saveas,
-					ICON_SAVE_PATH,
-					messages_get("SaveDraw"));
-			break;
-                case 1: /* Export as -> Text */
-			gui_current_save_type = GUI_SAVE_TEXT;
-			ro_gui_set_icon_string(dialog_saveas,
-					ICON_SAVE_ICON, "file_fff");
-			ro_gui_set_icon_string(dialog_saveas,
-					ICON_SAVE_PATH,
-					messages_get("SaveText"));
+	switch (warning->selection.items[1]) {
+		case 3: /* Export as -> */
+			switch (warning->selection.items[2]) {
+				case 0: /* Draw */
+					gui_current_save_type = GUI_SAVE_DRAW;
+					break;
+
+		                case 1: /* Text */
+					gui_current_save_type = GUI_SAVE_TEXT;
+					break;
+			}
+
+		case 2: /* Save complete */
+			gui_current_save_type = GUI_SAVE_COMPLETE;
 			break;
 
-		case -1:
+		case 1:
 		default: /* Save */
 			gui_current_save_type = GUI_SAVE_SOURCE;
-			if (c)
-				sprintf(icon, "file_%x",
-						ro_content_filetype(c));
-			ro_gui_set_icon_string(dialog_saveas,
-					ICON_SAVE_ICON, icon);
-			ro_gui_set_icon_string(dialog_saveas,
-					ICON_SAVE_PATH,
-					messages_get("SaveSource"));
 			break;
 	}
+
+	ro_gui_menu_prepare_save(c);
 
 	error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
 			warning->pos.x, warning->pos.y);
@@ -333,4 +328,45 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 		LOG(("0x%x: %s\n", error->errnum, error->errmess));
 		warn_user(error->errmess);
 	}
+}
+
+
+/**
+ * Prepares the save box to reflect gui_current_save_type and a content.
+ *
+ * \param  c  content to save
+ */
+
+void ro_gui_menu_prepare_save(struct content *c)
+{
+	char icon_buf[20] = "file_xxx";
+	const char *icon = icon_buf;
+	const char *name;
+
+	switch (gui_current_save_type) {
+		case GUI_SAVE_SOURCE:
+			if (c)
+				sprintf(icon_buf, "file_%x",
+						ro_content_filetype(c));
+			name = messages_get("SaveSource");
+			break;
+
+		case GUI_SAVE_DRAW:
+			icon = "file_aff";
+			name = messages_get("SaveDraw");
+			break;
+
+                case GUI_SAVE_TEXT:
+			icon = "file_fff";
+			name = messages_get("SaveText");
+			break;
+
+		case GUI_SAVE_COMPLETE:
+			icon = "file_faf";
+			name = messages_get("SaveComplete");
+			break;
+        }
+
+	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_ICON, icon);
+	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);
 }

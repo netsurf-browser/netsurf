@@ -31,7 +31,8 @@ extern bool gui_redraw_debug;
 extern gui_window *current_gui;
 
 typedef enum { GUI_BROWSER_WINDOW, GUI_DOWNLOAD_WINDOW } gui_window_type;
-typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT } gui_save_type;
+typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT,
+		GUI_SAVE_COMPLETE } gui_save_type;
 extern gui_save_type gui_current_save_type;
 typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_SAVE } gui_drag_type;
@@ -93,6 +94,7 @@ void ro_gui_create_menu(wimp_menu* menu, int x, int y, gui_window* g);
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
 void ro_gui_menu_selection(wimp_selection* selection);
 void ro_gui_menu_warning(wimp_message_menu_warning *warning);
+void ro_gui_menu_prepare_save(struct content *c);
 
 /* in dialog.c */
 void ro_gui_dialog_init(void);
