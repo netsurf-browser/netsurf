@@ -35,6 +35,8 @@ void html_create(struct content *c)
 	c->data.html.layout = NULL;
 	c->data.html.style = NULL;
 	c->data.html.fonts = NULL;
+	c->data.html.length = 0;
+	c->data.html.source = xcalloc(0, 1);
 }
 
 
@@ -45,6 +47,10 @@ void html_process_data(struct content *c, char *data, unsigned long size)
 	unsigned long x;
 	LOG(("content %s, size %lu", c->url, size));
 	cache_dump();
+	c->data.html.source = xrealloc(c->data.html.source, c->data.html.length + size);
+	memcpy(c->data.html.source + c->data.html.length, data, size);
+	c->data.html.length += size;
+	c->size += size;
 	for (x = 0; x + CHUNK <= size; x += CHUNK) {
 		htmlParseChunk(c->data.html.parser, data + x, CHUNK, 0);
 		gui_multitask();
@@ -571,5 +577,7 @@ void html_destroy(struct content *c)
 	LOG(("title %p", c->title));
 	if (c->title != 0)
 		xfree(c->title);
+	if (c->data.html.source != 0)
+	        xfree(c->data.html.source);
 }
 

@@ -100,6 +100,8 @@ struct content
     struct
     {
       htmlParserCtxt* parser;
+      char* source;
+      int length;
       struct box* layout;
       unsigned int stylesheet_count;
       struct content **stylesheet_content;

@@ -2065,6 +2065,18 @@ void ro_gui_keypress(wimp_key* key)
       browser_window_open_location(g->data.browser.bw, g->url);
       return;
     }
+    else if (key->c == wimp_KEY_F8)
+    {
+      /* TODO: use some protocol so it's type as HTML not Text. */
+      if(g->data.browser.bw->current_content->type == CONTENT_HTML ||
+         g->data.browser.bw->current_content->type == CONTENT_TEXTPLAIN)
+         xosfile_save_stamped("Pipe:$.Source", osfile_TYPE_TEXT,
+                g->data.browser.bw->current_content->data.html.source,
+                (g->data.browser.bw->current_content->data.html.source +
+                 g->data.browser.bw->current_content->data.html.length));
+         xosfile_set_type("Pipe:$.Source", osfile_TYPE_TEXT);
+         xos_cli("Filer_Run Pipe:$.Source");
+    }
     else if (key->c == wimp_KEY_F9)
     {
       if (g->data.browser.bw->current_content->type == CONTENT_HTML)
