@@ -160,9 +160,14 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	/*	Set the caret position to the URL bar
 	*/
-	error = xwimp_set_caret_position(
-			g->data.browser.toolbar->toolbar_handle,
-			ICON_TOOLBAR_URL, -1, -1, -1, 0);
+	if (g->data.browser.toolbar && g->data.browser.toolbar->url_bar)
+		error = xwimp_set_caret_position(
+				g->data.browser.toolbar->toolbar_handle,
+				ICON_TOOLBAR_URL, -1, -1, -1, 0);
+	else
+		error = xwimp_set_caret_position(g->window,
+				wimp_ICON_WINDOW, -100, -100, 32, -1);
+
 	if (error) {
 		LOG(("xwimp_set_caret_position: 0x%x: %s",
 				error->errnum, error->errmess));
