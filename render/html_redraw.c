@@ -93,8 +93,8 @@ bool html_redraw(struct content *c, int x, int y,
  * Recursively draw a box.
  *
  * \param  box	    box to draw
- * \param  x	    coordinate of parent box
- * \param  y	    coordinate of parent box
+ * \param  x_parent coordinate of parent box
+ * \param  y_parent coordinate of parent box
  * \param  clip_x0  clip rectangle
  * \param  clip_y0  clip rectangle
  * \param  clip_x1  clip rectangle
@@ -107,19 +107,20 @@ bool html_redraw(struct content *c, int x, int y,
  */
 
 bool html_redraw_box(struct box *box,
-		int x, int y,
+		int x_parent, int y_parent,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour current_background_color)
 {
 	struct box *c;
+	int x, y;
 	int width, height;
 	int padding_left, padding_top, padding_width, padding_height;
 	int x0, y0, x1, y1;
 	int colour;
 	int x_scrolled, y_scrolled;
 
-	x += box->x * scale;
-	y += box->y * scale;
+	x = (x_parent + box->x) * scale;
+	y = (y_parent + box->y) * scale;
 	width = box->width * scale;
 	height = box->height * scale;
 	padding_left = box->padding[LEFT] * scale;
@@ -128,8 +129,6 @@ bool html_redraw_box(struct box *box,
 			box->padding[RIGHT]) * scale;
 	padding_height = (box->padding[TOP] + box->height +
 			box->padding[BOTTOM]) * scale;
-	x_scrolled = x - box->scroll_x * scale;
-	y_scrolled = y - box->scroll_y * scale;
 
 	/* calculate clip rectangle for this box */
 	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
@@ -149,7 +148,9 @@ bool html_redraw_box(struct box *box,
 		if (!plot.group_start("hidden box"))
 			return false;
 		for (c = box->children; c; c = c->next)
-			if (!html_redraw_box(c, x_scrolled, y_scrolled,
+			if (!html_redraw_box(c,
+					x_parent + box->x - box->scroll_x,
+					y_parent + box->y - box->scroll_y,
 					x0, y0, x1, y1,
 					scale, current_background_color))
 				return false;
@@ -267,6 +268,8 @@ bool html_redraw_box(struct box *box,
 	}
 
 	if (box->object) {
+		x_scrolled = x - box->scroll_x * scale;
+		y_scrolled = y - box->scroll_y * scale;
 		if (!content_redraw(box->object,
 				x_scrolled + padding_left,
 				y_scrolled + padding_top,
@@ -336,13 +339,17 @@ bool html_redraw_box(struct box *box,
 	} else {
 		for (c = box->children; c != 0; c = c->next)
 			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-				if (!html_redraw_box(c, x_scrolled, y_scrolled,
+				if (!html_redraw_box(c,
+						x_parent + box->x - box->scroll_x,
+						y_parent + box->y - box->scroll_y,
 						x0, y0, x1, y1, scale,
 						current_background_color))
 					return false;
 
 		for (c = box->float_children; c != 0; c = c->next_float)
-			if (!html_redraw_box(c, x_scrolled, y_scrolled,
+			if (!html_redraw_box(c,
+					x_parent + box->x - box->scroll_x,
+					y_parent + box->y - box->scroll_y,
 					x0, y0, x1, y1, scale,
 					current_background_color))
 				return false;
