@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.15 2002/09/11 14:24:02 monkeyson Exp $
+ * $Id: layout.c,v 1.16 2002/09/11 21:18:18 bursa Exp $
  */
 
 #include <assert.h>
@@ -373,7 +373,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			} else {
 				c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
 				c2->text = xstrdup(space + 1);
-				c2->length = c->length - (c2->text - c->text);
+				c2->length = c->length - ((space + 1) - c->text);
 				c->length = space - c->text;
 				c2->next = c->next;
 				c->next = c2;
@@ -397,7 +397,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			}
 			c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
 			c2->text = xstrdup(space + 1);
-			c2->length = c->length - (c2->text - c->text);
+			c2->length = c->length - ((space + 1) - c->text);
 			c->length = space - c->text;
 			c2->next = c->next;
 			c->next = c2;
@@ -470,6 +470,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 {
 	unsigned int columns = 0;  /* total columns */
 	unsigned int auto_columns = 0;  /* number of columns with auto width */
+	unsigned int percent_columns = 0;  /* no of columns with percent width */
 	unsigned long table_width;
 	unsigned long percent_width;  /* width available for percent columns */
 	unsigned long used_width = 0;  /* width used by fixed or percent columns */
@@ -521,6 +522,8 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 				auto_columns += c->colspan;
 				break;
 			case CSS_WIDTH_PERCENT:
+				percent_columns += c->colspan;
+				break;
 			default:
 				break;
 		}
@@ -529,11 +532,20 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 	}
 	assert(columns != 0);
 
-	/* percentages are relative to remaining width */
-	percent_width = used_width < table_width ? table_width - used_width : 0;
-	for (c = table->children->children->children; c != 0; c = c->next)
-		if (c->style->width.width == CSS_WIDTH_PERCENT)
-			used_width += percent_width * c->style->width.value.percent / 100;
+	if (percent_columns != 0) {
+		/* percentages are relative to remaining width */
+		if (used_width < table_width)
+			/* fast heuristic */
+			percent_width = (table_width - used_width) *
+					percent_columns / (percent_columns + auto_columns);
+		else
+			/* unless there is none */
+			percent_width = table_width;
+
+		for (c = table->children->children->children; c != 0; c = c->next)
+			if (c->style->width.width == CSS_WIDTH_PERCENT)
+				used_width += percent_width * c->style->width.value.percent / 100;
+	}
 
 /* 	fprintf(stderr, "columns %u, auto_columns %u\n", columns, auto_columns); */
 
