@@ -540,6 +540,30 @@ void gui_window_set_pointer(gui_pointer_shape shape)
                         xosspriteop_set_pointer_shape(0x100, pointers,
                                  (osspriteop_id)"ptr_menu", 1, 6, 4, 0, 0);
                         break;
+                case GUI_POINTER_UD:
+                        xosspriteop_set_pointer_shape(0x100, pointers,
+                                 (osspriteop_id)"ptr_ud", 1, 6, 0, 0, 0);
+                        break;
+                case GUI_POINTER_LR:
+                        xosspriteop_set_pointer_shape(0x100, pointers,
+                                 (osspriteop_id)"ptr_lr", 1, 0, 6, 0, 0);
+                        break;
+                case GUI_POINTER_LD:
+                        xosspriteop_set_pointer_shape(0x100, pointers,
+                                 (osspriteop_id)"ptr_ld", 1, 13, 0, 0, 0);
+                        break;
+                case GUI_POINTER_RD:
+                        xosspriteop_set_pointer_shape(0x100, pointers,
+                                 (osspriteop_id)"ptr_rd", 1, 0, 0, 0, 0);
+                        break;
+                case GUI_POINTER_CROSS:
+                        xosspriteop_set_pointer_shape(0x100, pointers,
+                                 (osspriteop_id)"ptr_cross", 1, 8, 0, 0, 0);
+                        break;
+                case GUI_POINTER_MOVE:
+                        xosspriteop_set_pointer_shape(0x100, pointers,
+                                 (osspriteop_id)"ptr_move", 1, 8, 0, 0, 0);
+                        break;
         }
 
         curr_pointer = shape;

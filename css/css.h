@@ -72,6 +72,7 @@ struct css_style {
 
 	css_clear clear;
 	colour color;
+	css_cursor cursor;
 	css_display display;
 	css_float float_;
 

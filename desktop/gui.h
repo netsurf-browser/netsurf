@@ -16,7 +16,9 @@
 struct gui_window;
 typedef struct gui_window gui_window;
 typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
-               GUI_POINTER_MENU } gui_pointer_shape;
+               GUI_POINTER_MENU, GUI_POINTER_UD, GUI_POINTER_LR,
+               GUI_POINTER_LD, GUI_POINTER_RD, GUI_POINTER_CROSS,
+               GUI_POINTER_MOVE } gui_pointer_shape;
 
 #include <stdbool.h>
 #include "netsurf/desktop/browser.h"

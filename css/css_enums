@@ -4,6 +4,7 @@ css_background_position inherit top center bottom left right length percent
 css_background_repeat inherit repeat repeat_x repeat_y no_repeat
 css_border_style inherit none hidden dotted dashed solid double groove ridge inset outset
 css_clear inherit none both left right
+css_cursor inherit auto crosshair default pointer move e-resize ne-resize nw-resize n-resize se-resize sw-resize s-resize w-resize text wait help
 css_display inherit inline block list-item run-in inline-block table inline-table table-row-group table-header-group table-footer-group table-row table-column-group table-column table-cell table-caption none
 css_float inherit none left right
 css_font_family inherit sans-serif serif monospace cursive fantasy

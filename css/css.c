@@ -49,6 +49,7 @@ const struct css_style css_base_style = {
 	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE } },
 	CSS_CLEAR_NONE,
 	0x000000,
+	CSS_CURSOR_AUTO,
 	CSS_DISPLAY_BLOCK,
 	CSS_FLOAT_NONE,
 	{ CSS_FONT_SIZE_LENGTH, { { 10, CSS_UNIT_PT } } },
@@ -87,6 +88,7 @@ const struct css_style css_empty_style = {
 	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_INHERIT } },
 	CSS_CLEAR_INHERIT,
 	CSS_COLOR_INHERIT,
+	CSS_CURSOR_INHERIT,
 	CSS_DISPLAY_INHERIT,
 	CSS_FLOAT_INHERIT,
 	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_EM } } },
@@ -125,6 +127,7 @@ const struct css_style css_blank_style = {
 	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE } },
 	CSS_CLEAR_NONE,
 	CSS_COLOR_INHERIT,
+	CSS_CURSOR_INHERIT,
 	CSS_DISPLAY_INLINE,
 	CSS_FLOAT_NONE,
 	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_EM } } },
@@ -681,6 +684,7 @@ void css_dump_style(const struct css_style * const style)
 	fprintf(stderr, "background-color: #%lx; ", style->background_color);
 	fprintf(stderr, "clear: %s; ", css_clear_name[style->clear]);
 	fprintf(stderr, "color: #%lx; ", style->color);
+	fprintf(stderr, "cursor: %s", css_cursor_name[style->cursor]);
 	fprintf(stderr, "display: %s; ", css_display_name[style->display]);
 	fprintf(stderr, "float: %s; ", css_float_name[style->float_]);
 	fprintf(stderr, "font: %s %s ", css_font_style_name[style->font_style],
@@ -826,6 +830,8 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 		style->clear = apply->clear;
 	if (apply->color != CSS_COLOR_INHERIT)
 		style->color = apply->color;
+	if (apply->cursor != CSS_CURSOR_INHERIT)
+		style->cursor = apply->cursor;
 	if (apply->display != CSS_DISPLAY_INHERIT)
 		style->display = apply->display;
 	if (apply->float_ != CSS_FLOAT_INHERIT)
@@ -920,6 +926,8 @@ void css_merge(struct css_style * const style, const struct css_style * const ap
 		style->clear = apply->clear;
 	if (apply->color != CSS_COLOR_INHERIT)
 		style->color = apply->color;
+	if (apply->cursor != CSS_CURSOR_INHERIT)
+		style->cursor = apply->cursor;
 	if (apply->display != CSS_DISPLAY_INHERIT)
 		style->display = apply->display;
 	if (apply->float_ != CSS_FLOAT_INHERIT)

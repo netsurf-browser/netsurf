@@ -70,6 +70,7 @@ static void parse_border_width_side(struct css_style * const s,
 		const struct css_node * const v, unsigned int i);
 static void parse_clear(struct css_style * const s, const struct css_node * const v);
 static void parse_color(struct css_style * const s, const struct css_node * const v);
+static void parse_cursor(struct css_style * const s, const struct css_node * v);
 static void parse_display(struct css_style * const s, const struct css_node * const v);
 static void parse_float(struct css_style * const s, const struct css_node * const v);
 static void parse_font(struct css_style * const s, const struct css_node * v);
@@ -130,6 +131,7 @@ static const struct property_entry property_table[] = {
 	{ "border-width",     parse_border_width },
 	{ "clear",            parse_clear },
 	{ "color",            parse_color },
+	{ "cursor",           parse_cursor },
 	{ "display",          parse_display },
 	{ "float",            parse_float },
 	{ "font",             parse_font },
@@ -733,6 +735,24 @@ void parse_color(struct css_style * const s, const struct css_node * const v)
 	colour c = parse_colour(v);
 	if (c != CSS_COLOR_NONE)
 		s->color = c;
+}
+
+void parse_cursor(struct css_style * const s, const struct css_node * v)
+{
+	css_cursor z;
+	for (; v; v = v->next) {
+		switch (v->type) {
+			case CSS_NODE_IDENT:
+				z = css_cursor_parse(v->data);
+				if (z != CSS_CURSOR_UNKNOWN) {
+					s->cursor = z;
+					return;
+				}
+				break;
+			default:
+				break;
+		}
+	}
 }
 
 void parse_display(struct css_style * const s, const struct css_node * const v)

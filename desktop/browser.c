@@ -79,6 +79,7 @@ static void browser_window_input_click(struct browser_window* bw,
 static void browser_window_input_callback(struct browser_window *bw, char key, void *p);
 static void browser_window_place_caret(struct browser_window *bw, int x, int y,
 		int height, void (*callback)(struct browser_window *bw, char key, void *p), void *p);
+static gui_pointer_shape get_pointer_shape(css_cursor cursor);
 
 
 /**
@@ -1332,6 +1333,47 @@ void box_under_area(struct box *box, unsigned long x, unsigned long y,
 	return;
 }
 
+gui_pointer_shape get_pointer_shape(css_cursor cursor) {
+
+        gui_pointer_shape pointer;
+
+        switch (cursor) {
+                case CSS_CURSOR_CROSSHAIR:
+                        pointer = GUI_POINTER_CROSS;
+                        break;
+                case CSS_CURSOR_POINTER:
+                        pointer = GUI_POINTER_POINT;
+                        break;
+                case CSS_CURSOR_MOVE:
+                        pointer = GUI_POINTER_MOVE;
+                        break;
+                case CSS_CURSOR_E_RESIZE:
+                case CSS_CURSOR_W_RESIZE:
+                        pointer = GUI_POINTER_LR;
+                        break;
+                case CSS_CURSOR_N_RESIZE:
+                case CSS_CURSOR_S_RESIZE:
+                        pointer = GUI_POINTER_UD;
+                        break;
+                case CSS_CURSOR_NE_RESIZE:
+                case CSS_CURSOR_SW_RESIZE:
+                        pointer = GUI_POINTER_LD;
+                        break;
+                case CSS_CURSOR_SE_RESIZE:
+                case CSS_CURSOR_NW_RESIZE:
+                        pointer = GUI_POINTER_RD;
+                        break;
+                case CSS_CURSOR_TEXT:
+                        pointer = GUI_POINTER_CARET;
+                        break;
+                default:
+                        pointer = GUI_POINTER_DEFAULT;
+                        break;
+        }
+
+        return pointer;
+}
+
 void browser_window_follow_link(struct browser_window *bw,
 				unsigned long click_x,
 				unsigned long click_y, int click_type)
@@ -1340,6 +1382,7 @@ void browser_window_follow_link(struct browser_window *bw,
 	int found, plot_index;
 	int i;
 	int done = 0;
+	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
 
 	found = 0;
 	click_boxes = NULL;
@@ -1385,7 +1428,7 @@ void browser_window_follow_link(struct browser_window *bw,
 			        }
 			} else if (click_type == 0) {
 				browser_window_set_status(bw, url);
-				browser_window_set_pointer(GUI_POINTER_POINT);
+				pointer = GUI_POINTER_POINT;
 				done = 1;
 			}
 			free(url);
@@ -1426,7 +1469,7 @@ void browser_window_follow_link(struct browser_window *bw,
 			        }
 			} else if (click_type == 0) {
 				browser_window_set_status(bw, url);
-				browser_window_set_pointer(GUI_POINTER_POINT);
+				pointer = GUI_POINTER_POINT;
 				done = 1;
 			}
 			free(url);
@@ -1437,12 +1480,12 @@ void browser_window_follow_link(struct browser_window *bw,
 		            click_boxes[i].box->gadget->type == GADGET_TEXTAREA ||
 		            click_boxes[i].box->gadget->type == GADGET_PASSWORD ||
 		            click_boxes[i].box->gadget->type == GADGET_FILE) {
-                                browser_window_set_pointer(GUI_POINTER_CARET);
+                                pointer = GUI_POINTER_CARET;
                                 done = 1;
                                 break;
 		        }
 		        else if (click_boxes[i].box->gadget->type == GADGET_SELECT) {
-		                browser_window_set_pointer(GUI_POINTER_MENU);
+		                pointer = GUI_POINTER_MENU;
 		                done = 1;
 		                break;
 		        }
@@ -1465,9 +1508,13 @@ void browser_window_follow_link(struct browser_window *bw,
 			browser_window_set_status(bw,
 						  click_boxes[i].box->
 						  title);
-			browser_window_set_pointer(GUI_POINTER_DEFAULT);
 			done = 1;
 			break;
+		}
+		if (click_type == 0 && click_boxes[i].box->style->cursor != CSS_CURSOR_UNKNOWN) {
+		        pointer = get_pointer_shape(click_boxes[i].box->style->cursor);
+		        done = 1;
+		        break;
 		}
 	}
 
@@ -1476,15 +1523,15 @@ void browser_window_follow_link(struct browser_window *bw,
 			browser_window_set_status(bw,
 						  bw->loading_content->
 						  status_message);
-                        browser_window_set_pointer(GUI_POINTER_DEFAULT);
 		}
 		else {
 			browser_window_set_status(bw,
 						  bw->current_content->
 						  status_message);
-                        browser_window_set_pointer(GUI_POINTER_DEFAULT);
 		}
 	}
+
+        browser_window_set_pointer(pointer);
 
 	free(click_boxes);
 
