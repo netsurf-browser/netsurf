@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.45 2003/05/23 11:08:17 bursa Exp $
+ * $Id: box.c,v 1.46 2003/05/31 18:47:00 jmb Exp $
  */
 
 #include <assert.h>
@@ -10,12 +10,13 @@
 #include "libxml/HTMLparser.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/css/css.h"
-#include "netsurf/riscos/font.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/render/box.h"
+#include "netsurf/riscos/font.h"
+#include "netsurf/riscos/plugin.h"
+#include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 #define NDEBUG
-#include "netsurf/utils/log.h"
-#include "netsurf/desktop/gui.h"
 
 /**
  * internal functions
@@ -52,6 +53,12 @@ static struct box* box_image(xmlNode *n, struct content *content,
 static struct box* box_textarea(xmlNode* n, struct css_style* style, struct form* current_form);
 static struct box* box_select(xmlNode * n, struct css_style* style, struct form* current_form);
 static struct formoption* box_option(xmlNode* n, struct css_style* style, struct gui_gadget* current_select);
+static struct box* box_object(xmlNode *n, struct content *content,
+		struct css_style *style, char *href);
+static struct box* box_embed(xmlNode *n, struct content *content,
+		struct css_style *style, char *href);
+static struct box* box_applet(xmlNode *n, struct content *content,
+		struct css_style *style, char *href);
 static void textarea_addtext(struct gui_gadget* textarea, char* text);
 static void option_addtext(struct formoption* option, char* text);
 static struct box* box_input(xmlNode * n, struct css_style* style, struct form* current_form, struct page_elements* elements);
@@ -244,6 +251,15 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			LOG(("input"));
 			box = box_input(n, style, current_form, elements);
 
+		} else if (strcmp((const char*) n->name, "object") == 0) {		               LOG(("object"));
+		       box = box_object(n, content, style, href);
+
+		} else if (strcmp((const char*) n->name, "embed") == 0) {		               LOG(("embed"));
+		       box = box_embed(n, content, style, href);
+
+		} else if (strcmp((const char*) n->name, "applet") == 0) {		               LOG(("applet"));
+		       box = box_applet(n, content, style, href);
+
 		}
 
 		/* special elements must be inline or block */
@@ -255,7 +271,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 	}
 
 	content->size += sizeof(struct box) + sizeof(struct css_style);
-	
+
 	if (text != 0) {
 		if (text[0] == ' ' && text[1] == 0) {
 			if (inline_container != 0) {
@@ -1271,17 +1287,17 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			}
 
                         box->gadget->data.actionbutt.butttype = strdup(type);
-                        
+
 			add_gadget_element(elements, box->gadget);
 		}
 
 		if (!(stricmp(type, "text") == 0 || stricmp(type, "password") == 0))
 		{
-			
+
 		xmlFree (type);
 		return box;
 		}
-			
+
 	}
 			//style->display = CSS_DISPLAY_BLOCK;
 			fprintf(stderr, "CREATING TEXT BOX!\n");
@@ -1297,7 +1313,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 
 #ifdef ARSEMONKEYS
 //			box->gadget->data.textbox.maxlength = 255;
-//			if ((s = (char *) xmlGetProp(n, (xmlChar *) "maxlength"))) 
+//			if ((s = (char *) xmlGetProp(n, (xmlChar *) "maxlength")))
 //
 #endif
 			box->gadget->data.textbox.maxlength = 32;
@@ -1310,7 +1326,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 #ifdef ARSEMONKEYS
 //<<<<<<< box.c
 //			box->gadget->data.textbox.size = 20;/*box->gadget->data.textbox.maxlength;*/
-//			if ((s = (char *) xmlGetProp(n, (xmlChar *) "size"))) 
+//			if ((s = (char *) xmlGetProp(n, (xmlChar *) "size")))
 //=======
 #endif
 			box->gadget->data.textbox.size = box->gadget->data.textbox.maxlength;
@@ -1379,4 +1395,165 @@ void add_img_element(struct page_elements* pe, struct img* i)
 	pe->numImages++;
 }
 
+/**
+ * add an object to the box tree
+ */
 
+struct box* box_object(xmlNode *n, struct content *content,
+		struct css_style *style, char *href)
+{
+	struct box *box;
+	struct plugin_object *po;
+	char *s, *url;
+	xmlChar *s2;
+	struct fetch_data *fetch_data;
+
+	/* box type is decided by caller, BOX_INLINE is just a default */
+	box = box_create(BOX_INLINE, style, href);
+
+        po = xcalloc(1,sizeof(*po));
+
+	/* object data */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "data"))) {
+
+                po->data = s;
+	        url = url_join(s, content->url);
+	        LOG(("object '%s'", url));
+	        xmlFree(s);
+	}
+
+        /* object type */
+        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "type"))) {
+
+                po->type = s;
+                LOG(("type: %s", po->type));
+                xmlFree(s);
+        }
+
+        /* object codetype */
+        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codetype"))) {
+
+                po->codetype = s;
+                LOG(("codetype: %s", po->codetype));
+                xmlFree(s);
+        }
+
+        /* object codebase */
+        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codebase"))) {
+
+                po->codebase = s;
+                LOG(("codebase: %s", po->codebase));
+                xmlFree(s);
+        }
+
+        /* object classid */
+        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "classid"))) {
+
+                po->classid = s;
+                LOG(("classid: %s", po->classid));
+                xmlFree(s);
+        }
+
+        /* object param */
+        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "param"))) {
+
+                /* TODO - create data structure to hold param elements */
+                LOG(("param: %s", s));
+                xmlFree(s);
+        }
+
+        /* object width */
+        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "width"))) {
+
+          po->width = (unsigned int)atoi(s);
+          LOG(("width: %u", po->width));
+          xmlFree(s);
+        }
+
+        /* object height */
+        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "height"))) {
+
+          po->height = (unsigned int)atoi(s);
+          LOG(("height: %u",  po->height));
+          xmlFree(s);
+        }
+
+	/* start fetch */
+	plugin_fetch(content, url, box, po);
+
+	return box;
+}
+
+/**
+ * add an embed to the box tree
+ */
+
+struct box* box_embed(xmlNode *n, struct content *content,
+		struct css_style *style, char *href)
+{
+	struct box *box;
+	struct plugin_object *po;
+	char *s, *url;
+	xmlChar *s2;
+	struct fetch_data *fetch_data;
+
+	/* box type is decided by caller, BOX_INLINE is just a default */
+	box = box_create(BOX_INLINE, style, href);
+
+	po = xcalloc(1, sizeof(*po));
+
+	/* embed src */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
+
+                po->src = s;
+	        url = url_join(s, content->url);
+	        LOG(("embed '%s'", url));
+	        xmlFree(s);
+        }
+
+        /* embed param */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "param"))) {
+
+                /* TODO - create data structure for param elements */
+                LOG(("param '%s'", s));
+	        xmlFree(s);
+        }
+
+	/* start fetch */
+	plugin_fetch(content, url, box, po);
+
+	return box;
+}
+
+/**
+ * TODO - finish this ;-)
+ * add an applet to the box tree
+ */
+
+struct box* box_applet(xmlNode *n, struct content *content,
+		struct css_style *style, char *href)
+{
+	struct box *box;
+	struct plugin_object *po;
+	char *s, *url;
+	xmlChar *s2;
+	struct fetch_data *fetch_data;
+
+	/* box type is decided by caller, BOX_INLINE is just a default */
+	box = box_create(BOX_INLINE, style, href);
+
+        po = xcalloc(1,sizeof(struct plugin_object));
+
+	/* object without data is an error */
+	if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "data")))
+		return box;
+
+	url = url_join(s, content->url);
+	LOG(("object '%s'", url));
+	xmlFree(s);
+
+	/* start fetch */
+	//plugin_fetch(content, url, box, po);
+
+	return box;
+}
