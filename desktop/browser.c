@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.32 2003/04/09 21:57:09 bursa Exp $
+ * $Id: browser.c,v 1.33 2003/04/12 12:38:32 andrew Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -218,7 +218,7 @@ void browser_window_open_location_historical(struct browser_window* bw, const ch
   fetchcache(url, 0, browser_window_callback, bw,
 		  gui_window_get_width(bw->window), 0,
 		  (1 << CONTENT_HTML) | (1 << CONTENT_TEXTPLAIN) | (1 << CONTENT_JPEG));
-  
+
   LOG(("end"));
 }
 
@@ -338,7 +338,7 @@ void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct gui_g
 	{
   		gui_window_redraw(bw->window, x + box->x, y + box->y, x + box->x + box->width, y+box->y + box->height);
 	}
-	
+
   for (c = box->children; c != 0; c = c->next)
     if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
       gui_redraw_gadget2(bw, c, g, box->x + x, box->y + y);
@@ -529,7 +529,7 @@ void browser_window_follow_link(struct browser_window* bw,
       {
         struct browser_window* bw_new;
         bw_new = create_browser_window(browser_TITLE | browser_TOOLBAR
-          | browser_SCROLL_X_NONE | browser_SCROLL_Y_ALWAYS, 640, 480);
+          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480);
         gui_window_show(bw_new->window);
         if (bw->url != NULL)
           bw_new->url = xstrdup(bw->url);
