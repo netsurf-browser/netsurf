@@ -1,4 +1,4 @@
-$Id: TODO-CSS,v 1.9 2004/02/01 22:49:51 jmb Exp $
+$Id: TODO-CSS,v 1.10 2004/04/02 23:17:27 jmb Exp $
 
 TODO-CSS file for NetSurf.
 
@@ -15,15 +15,15 @@ See TODO-HTML for HTML related TODOs.
 - background-image
 - background-position
 - background-repeat
-- border
-- border-collapse
-- border-color
-- border-spacing
-- border-style
-- border-[top|right|left|bottom]
-- border-*-color
-- border-*-style
-- border-*-width
+= border
+= border-collapse
+= border-color
+= border-spacing
+= border-style
+= border-[top|right|left|bottom]
+= border-*-color
+= border-*-style
+= border-*-width
 - bottom
 - caption-side
 + clear
@@ -32,7 +32,7 @@ See TODO-HTML for HTML related TODOs.
 - content
 - counter-increment
 - counter-reset
-- cursor
++ cursor
 - direction
 + display
 - empty-cells
@@ -53,8 +53,8 @@ See TODO-HTML for HTML related TODOs.
 - list-style-image
 - list-style-position
 - list-style-type
-- margin
-- margin-[top|right|left|bottom]
+= margin
+= margin-[top|right|left|bottom]
 - marker-offset
 - marks
 - max-height
@@ -67,8 +67,8 @@ See TODO-HTML for HTML related TODOs.
 - outline-style
 - outline-width
 - overflow
-- padding
-- padding-[top|right|left|bottom]
+= padding
+= padding-[top|right|left|bottom]
 - page
 - page-break-[after|before|inside]
 - position
