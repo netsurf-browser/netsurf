@@ -1420,8 +1420,11 @@ void browser_window_follow_link(struct browser_window *bw,
 		                break;
 		        }
 		        else if (click_boxes[i].box->gadget->type == GADGET_SUBMIT) {
+		        	struct form *form;
 		        	char *url, *href;
-		        	href = click_boxes[i].box->gadget->form->action;
+		        	form = click_boxes[i].box->gadget->form;
+		        	if (!form) continue;
+		        	href = form->action;
 		        	if (!href) continue;
 				url = url_join(href, bw->current_content->data.html.base_url);
 				if (!url) continue;
