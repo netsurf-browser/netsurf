@@ -701,7 +701,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
-			browser_window_destroy(g->data.browser.bw);
+			browser_window_destroy(g->data.browser.bw, true);
 			return true;
 
 		case wimp_KEY_RETURN:

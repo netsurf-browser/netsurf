@@ -30,6 +30,8 @@
  *
  * where the left frame is main.html with three sub frames (top, mid, end)
  * and the entire page is index.html with two sub frames (nav, main)
+ *
+ * This is hung off the browser window structure.
  */
 
 #ifndef _NETSURF_RISCOS_FRAMES_H_
@@ -40,36 +42,29 @@
 #include "netsurf/render/box.h"
 #include "netsurf/riscos/gui.h"
 
+#include "oslib/wimp.h"
+
 struct frame_list {
 
-        struct frame *frame; /**< top most frame (ie root of tree) */
-        struct browser_window *bw; /**< main window */
-        struct frame_list *next; /**< next in list */
-        struct frame_list *prev; /**< previous in list */
+        struct content *c;
+        struct browser_window *parent;
+        struct content *page;
+        struct box *box;
+        struct object_params *params;
+        void **state;
+        struct browser_window *bw;
+        gui_window *g;
+        struct frame_list *next;
+        struct frame_list *prev;
 };
 
-struct frame {
-
-	struct browser_window *win; /**< window in which this frame appears */
-	struct box *box; /**< box in parent window containing this frame */
-	struct content *c; /**< content of this frame */
-	char *name; /**< name of this frame */
-	struct frame *parent; /**< parent frame */
-	unsigned int no_children; /**< number of children this frame has */
-	struct frame **children; /**< child frames */
-};
-
-void frameset_add_to_list(struct browser_window *bw, struct frame *frame);
-void frameset_remove_from_list(struct browser_window *bw);
-struct frame_list *frameset_get_from_list(struct browser_window *bw);
-struct frame *frame_get_from_list(struct browser_window *bw, struct box *b,
-                                  bool strict);
-
-void add_frame_to_tree (struct browser_window *pbw, struct box *box,
-                        struct browser_window *bw, struct content *c,
-                        char *name);
-struct frame *get_frame_from_tree(struct frame *root,
-                                  struct browser_window *bw,
-                                  struct box *b, bool strict);
-void delete_tree(struct frame *root);
+void frame_add_instance(struct content *c, struct browser_window *bw,
+                struct content *page, struct box *box,
+                struct object_params *params, void **state);
+void frame_remove_instance(struct content *c, struct browser_window *bw,
+                struct content *page, struct box *box,
+                struct object_params *params, void **state);
+void frame_reshape_instance(struct content *c, struct browser_window *bw,
+                struct content *page, struct box *box,
+                struct object_params *params, void **state);
 #endif

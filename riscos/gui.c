@@ -251,7 +251,7 @@ void gui_poll(bool active)
       case wimp_CLOSE_WINDOW_REQUEST    :
         g = ro_lookup_gui_from_w(block.close.w);
         if (g != NULL)
-          browser_window_destroy(g->data.browser.bw);
+          browser_window_destroy(g->data.browser.bw, true);
         else
           ro_gui_dialog_close(&(block.close.w));
         break;
@@ -577,7 +577,7 @@ void ro_gui_icon_bar_click(wimp_pointer* pointer)
   {
     struct browser_window* bw;
     bw = create_browser_window(browser_TITLE | browser_TOOLBAR
-      | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480);
+      | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
     gui_window_show(bw->window);
     browser_window_open_location(bw, HOME_URL);
     wimp_set_caret_position(bw->window->data.browser.toolbar,
@@ -844,7 +844,7 @@ void ro_msg_dataopen(wimp_message *message)
 
 	/* create a new window with the file */
 	bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
-			browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480);
+			browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
 	gui_window_show(bw->window);
 	url = ro_path_to_url(message->data.data_xfer.file_name);
 	browser_window_open_location(bw, url);
@@ -888,7 +888,7 @@ void ro_gui_open_help_page (void)
         struct browser_window *bw;
         bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
                                    browser_SCROLL_X_ALWAYS |
-                                   browser_SCROLL_Y_ALWAYS, 640, 480);
+                                   browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
         gui_window_show(bw->window);
         browser_window_open_location(bw, HELP_URL);
         wimp_set_caret_position(bw->window->data.browser.toolbar,

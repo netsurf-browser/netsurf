@@ -110,7 +110,7 @@ void browser_window_forward(struct browser_window* bw)
 }
 
 
-struct browser_window* create_browser_window(int flags, int width, int height)
+struct browser_window* create_browser_window(int flags, int width, int height, struct browser_window *parent)
 {
   struct browser_window* bw;
   bw = (struct browser_window*) xcalloc(1, sizeof(struct browser_window));
@@ -130,7 +130,20 @@ struct browser_window* create_browser_window(int flags, int width, int height)
   bw->url = NULL;
   bw->caret_callback = 0;
 
-  bw->window = gui_create_browser_window(bw);
+  bw->parent = parent;
+
+  if (bw->parent != NULL) {
+    bw->parent->children = xrealloc(bw->parent->children,
+                                    (bw->parent->no_children+1) *
+                                    sizeof(struct browser_window));
+    bw->parent->children[bw->parent->no_children] = bw;
+    bw->parent->no_children++;
+
+    bw->window = NULL; /* This is filled in by frame_add_instance */
+  }
+  else {
+    bw->window = gui_create_browser_window(bw);
+  }
 
   return bw;
 }
@@ -141,26 +154,49 @@ void browser_window_set_status(struct browser_window* bw, const char* text)
     gui_window_set_status(bw->window, text);
 }
 
-void browser_window_destroy(struct browser_window* bw)
+void browser_window_destroy(struct browser_window* bw, bool self)
 {
+  unsigned int i;
   LOG(("bw = %p", bw));
   assert(bw != 0);
 
-  if (bw->current_content != NULL) {
-    if (bw->current_content->status == CONTENT_STATUS_DONE)
-      content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
-    content_remove_user(bw->current_content, browser_window_callback, bw, 0);
-    login_list_remove(bw->current_content->url);
+  if (bw->no_children == 0 && bw->parent != NULL) { /* leaf node -> delete */
+    if (bw->current_content != NULL) {
+      if (bw->current_content->status == CONTENT_STATUS_DONE)
+        content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
+      login_list_remove(bw->current_content->url);
+    }
+    xfree(bw->url);
+    xfree(bw);
+
+    return;
   }
-  if (bw->loading_content != NULL) {
-    content_remove_user(bw->loading_content, browser_window_callback, bw, 0);
+
+  for (i=0; i!=bw->no_children; i++) { /* non-leaf node -> kill children */
+    browser_window_destroy(bw->children[i], true);
   }
-  xfree(bw->url);
 
-  gui_window_destroy(bw->window);
+  /* all children killed -> remove this node */
+  if (self || bw->parent != NULL) {
+    if (bw->current_content != NULL) {
+      if (bw->current_content->status == CONTENT_STATUS_DONE)
+        content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
+      content_remove_user(bw->current_content, browser_window_callback, bw, 0);
+      login_list_remove(bw->current_content->url);
+    }
+    if (bw->loading_content != NULL) {
+      content_remove_user(bw->loading_content, browser_window_callback, bw, 0);
+    }
+    xfree(bw->url);
 
-  xfree(bw);
-
+    gui_window_destroy(bw->window);
+    xfree(bw->children);
+    xfree(bw);
+  }
+  else {
+    bw->no_children = 0;
+    xfree(bw->children);
+  }
   LOG(("end"));
 }
 
@@ -172,6 +208,9 @@ void browser_window_open_location_historical(struct browser_window* bw,
   LOG(("bw = %p, url = %s", bw, url));
 
   assert(bw != 0 && url != 0);
+
+  if (bw->url != NULL)
+    browser_window_destroy(bw, false);
 
   if ((li = login_list_get(url)) == NULL) {
 
@@ -1186,7 +1225,7 @@ void browser_window_follow_link(struct browser_window* bw,
         char *url = url_join((char*) click_boxes[i].box->href, bw->url);
         struct browser_window* bw_new;
         bw_new = create_browser_window(browser_TITLE | browser_TOOLBAR
-          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480);
+          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
         gui_window_show(bw_new->window);
         browser_window_open_location(bw_new, url);
         free(url);

@@ -72,7 +72,7 @@ void ro_uri_message_received(uri_full_message_process* uri_message)
   }
 
   bw = create_browser_window(browser_TITLE | browser_TOOLBAR
-          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480);
+          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
 
   gui_window_show(bw->window);
   browser_window_open_location(bw, uri_requested);

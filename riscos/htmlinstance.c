@@ -4,7 +4,7 @@
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
- 
+
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/render/box.h"
@@ -21,8 +21,13 @@ void html_add_instance(struct content *c, struct browser_window *bw,
 		if (c->data.html.object[i].content == 0)
 			continue;
 		if (c->data.html.object[i].content->type == CONTENT_HTML)
-	                LOG(("html object"));
-		content_add_instance(c->data.html.object[i].content,
+		        frame_add_instance(c->data.html.object[i].content,
+				bw, c,
+				c->data.html.object[i].box,
+				c->data.html.object[i].box->object_params,
+				&c->data.html.object[i].box->object_state);
+		else
+                	content_add_instance(c->data.html.object[i].content,
 				bw, c,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params,
@@ -39,7 +44,14 @@ void html_reshape_instance(struct content *c, struct browser_window *bw,
 	for (i = 0; i != c->data.html.object_count; i++) {
 		if (c->data.html.object[i].content == 0)
 			continue;
-		content_reshape_instance(c->data.html.object[i].content,
+		if (c->data.html.object[i].content->type == CONTENT_HTML)
+		        frame_reshape_instance(c->data.html.object[i].content,
+				bw, c,
+				c->data.html.object[i].box,
+				c->data.html.object[i].box->object_params,
+				&c->data.html.object[i].box->object_state);
+		else
+		        content_reshape_instance(c->data.html.object[i].content,
 				bw, c,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params,
@@ -55,7 +67,14 @@ void html_remove_instance(struct content *c, struct browser_window *bw,
 	for (i = 0; i != c->data.html.object_count; i++) {
 		if (c->data.html.object[i].content == 0)
 			continue;
-		content_remove_instance(c->data.html.object[i].content,
+		if (c->data.html.object[i].content->type == CONTENT_HTML)
+		        frame_remove_instance(c->data.html.object[i].content,
+				bw, c,
+				c->data.html.object[i].box,
+				c->data.html.object[i].box->object_params,
+				&c->data.html.object[i].box->object_state);
+		else
+                	content_remove_instance(c->data.html.object[i].content,
 				bw, c,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params,

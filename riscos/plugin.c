@@ -1290,7 +1290,7 @@ void plugin_url_access(wimp_message *message) {
                                  struct browser_window *bwnew;
                                  bwnew = create_browser_window(browser_TITLE
                                   | browser_TOOLBAR | browser_SCROLL_X_ALWAYS
-                                  | browser_SCROLL_Y_ALWAYS, 640, 480);
+                                  | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
                                  gui_window_show(bwnew->window);
                                  bwnew->url = xstrdup(url);
                                  browser_window_open_location(bwnew, url);
