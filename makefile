@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.28 2003/06/04 22:12:32 bursa Exp $
+# $Id: makefile,v 1.29 2003/06/05 11:03:20 bursa Exp $
 
 CC = riscos-gcc
 OBJECTS = cache.o content.o fetch.o fetchcache.o \
@@ -32,7 +32,7 @@ DOCS=$(DOCUMENTS:%.html=$(DOCDIR)/%.html)
 all: !NetSurf/!RunImage,ff8 $(DOCS)
 !NetSurf/!RunImage,ff8 : $(OBJS)
 	$(CC) -o $@ $(LDFLAGS) $^
-netsurf.zip: !NetSurf/!RunImage,ff8
+netsurf.zip: !NetSurf/!RunImage,ff8 $(DOCS)
 	rm netsurf.zip; riscos-zip -9vr, netsurf.zip !NetSurf
 
 # pattern rule for c source
