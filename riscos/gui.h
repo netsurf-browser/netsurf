@@ -115,6 +115,7 @@ void ro_gui_create_menu(wimp_menu* menu, int x, int y, gui_window* g);
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
 void ro_gui_menu_selection(wimp_selection* selection);
 void ro_gui_menu_warning(wimp_message_menu_warning *warning);
+void ro_gui_prepare_navigate(gui_window *gui);
 void ro_gui_menu_prepare_save(struct content *c);
 void ro_gui_menu_prepare_scale(void);
 

@@ -824,12 +824,14 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer) {
 
 
 void gui_window_start_throbber(struct gui_window* g) {
+	ro_gui_prepare_navigate(g);
 	if (theme_throbs == 0) return;
 	g->throbtime = (float) (clock() + 0) / CLOCKS_PER_SEC;  /* workaround compiler warning */
 	g->throbber = 0;
 }
 
 void gui_window_stop_throbber(gui_window* g) {
+	ro_gui_prepare_navigate(g);
 	g->throbber = 0;
 	sprintf(g->throb_buf, "throbber%u", g->throbber);
 	ro_gui_redraw_icon(g->data.browser.toolbar->toolbar_handle, ICON_TOOLBAR_THROBBER);

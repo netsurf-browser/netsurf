@@ -114,6 +114,8 @@ void history_update(struct history *history, struct content *content);
 void history_destroy(struct history *history);
 void history_back(struct browser_window *bw, struct history *history);
 void history_forward(struct browser_window *bw, struct history *history);
+bool history_back_available(struct history *history);
+bool history_forward_available(struct history *history);
 
 /* In platform specific about.c. */
 struct content *about_create(const char *url,

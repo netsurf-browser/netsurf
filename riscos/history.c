@@ -610,3 +610,27 @@ void history_forward(struct browser_window *bw, struct history *history)
 	history->current = history->current->forward_pref;
 	browser_window_go_post(bw, history->current->url, 0, 0, false);
 }
+
+
+/**
+ * Check whether it is pssible to go back in the history.
+ *
+ * \param  history  history of the window
+ * \return true if the history can go back, false otherwise
+ */
+
+bool history_back_available(struct history *history) {
+	return (history && history->current->back);
+}
+
+
+/**
+ * Check whether it is pssible to go forwards in the history.
+ *
+ * \param  history  history of the window
+ * \return true if the history can go forwards, false otherwise
+ */
+
+bool history_forward_available(struct history *history) {
+	return (history && history->current->forward_pref);
+}
