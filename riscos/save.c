@@ -11,6 +11,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -143,6 +144,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 	char *path = message->data.data_xfer.file_name;
         struct content *c = save_content;
 	os_error *error;
+	bool ack = true;
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, path);
 
@@ -165,6 +167,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			if (!c)
 				return;
 			ro_gui_save_complete(c, path);
+			ack = false;
 			break;
 
 		case GUI_SAVE_DRAW:
@@ -219,10 +222,12 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 		        break;
 	}
 
-        /* Ack successful save with message_DATA_LOAD */
-	message->action = message_DATA_LOAD;
-	message->your_ref = message->my_ref;
-	wimp_send_message_to_window(wimp_USER_MESSAGE, message, message->data.data_xfer.w, message->data.data_xfer.i);
+        if (ack) {
+                /* Ack successful save with message_DATA_LOAD */
+	        message->action = message_DATA_LOAD;
+	        message->your_ref = message->my_ref;
+	        wimp_send_message_to_window(wimp_USER_MESSAGE, message, message->data.data_xfer.w, message->data.data_xfer.i);
+	}
 
         if (save_link) xfree(save_link);
         save_content = NULL;
