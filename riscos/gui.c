@@ -961,7 +961,8 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 
 		case message_DATA_LOAD_ACK:
 #ifdef WITH_PRINT
-			print_cleanup();
+			if (print_current_window)
+				print_cleanup();
 #endif
 			break;
 
