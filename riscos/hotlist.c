@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <swis.h>
-#include "libxml/parserInternals.h"
+#include "libxml/HTMLparser.h"
 #include "oslib/colourtrans.h"
 #include "oslib/dragasprite.h"
 #include "oslib/osfile.h"
@@ -128,7 +128,8 @@ static wimp_window hotlist_window_definition = {
 	wimp_TOP,
 	wimp_WINDOW_NEW_FORMAT | wimp_WINDOW_MOVEABLE | wimp_WINDOW_BACK_ICON |
 			wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_TITLE_ICON |
-			wimp_WINDOW_TOGGLE_ICON | wimp_WINDOW_SIZE_ICON |wimp_WINDOW_VSCROLL,
+			wimp_WINDOW_TOGGLE_ICON | wimp_WINDOW_SIZE_ICON |
+			wimp_WINDOW_VSCROLL,
 	wimp_COLOUR_BLACK,
 	wimp_COLOUR_LIGHT_GREY,
 	wimp_COLOUR_LIGHT_GREY,
@@ -138,8 +139,9 @@ static wimp_window hotlist_window_definition = {
 	wimp_COLOUR_CREAM,
 	0,
 	{0, -800, 16384, 0},
-	wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED,
-	(wimp_BUTTON_DOUBLE_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT),
+	wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
+			wimp_ICON_VCENTRED,
+	wimp_BUTTON_DOUBLE_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT,
 	wimpspriteop_AREA,
 	1,
 	256,
@@ -151,7 +153,6 @@ static wimp_window hotlist_window_definition = {
 */
 static wimp_icon text_icon;
 static wimp_icon sprite_icon;
-static char null_text_string[] = "\0";
 
 /*	Temporary workspace for plotting
 */
@@ -244,8 +245,7 @@ static bool ro_gui_hotlist_move_processing(struct hotlist_entry *entry, struct h
 
 void ro_gui_hotlist_init(void) {
   	const char *title;
-  	char *new_title;
-	os_box extent = {0, 0, 0, 0};;
+	os_box extent = {0, 0, 0, 0};
 	os_error *error;
 
 	/*	Set the initial root options
@@ -272,7 +272,7 @@ void ro_gui_hotlist_init(void) {
 
 	/*	Update our text icon
 	*/
-	text_icon.data.indirected_text.validation = null_text_string;
+	text_icon.data.indirected_text.validation = (char *) -1;
 	text_icon.data.indirected_text.size = 256;
 	sprite_icon.flags = wimp_ICON_SPRITE | wimp_ICON_INDIRECTED |
 			 wimp_ICON_HCENTRED | wimp_ICON_VCENTRED |
@@ -284,19 +284,15 @@ void ro_gui_hotlist_init(void) {
 	/*	Create our window
 	*/
 	title = messages_get("Hotlist");
-	new_title = malloc(strlen(title + 1));
-	if (!new_title) {
-		warn_user("NoMemory", 0);
-		return;
-	}
-	strcpy(new_title, title);
-	hotlist_window_definition.title_data.indirected_text.text = new_title;
-	hotlist_window_definition.title_data.indirected_text.validation = null_text_string;
+	hotlist_window_definition.title_data.indirected_text.text = title;
+	hotlist_window_definition.title_data.indirected_text.validation =
+			(char *) -1;
 	hotlist_window_definition.title_data.indirected_text.size = strlen(title);
 	error = xwimp_create_window(&hotlist_window_definition, &hotlist_window);
 	if (error) {
-		warn_user("WimpError", error->errmess);
-		return;
+		LOG(("xwimp_create_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		die(error->errmess);
 	}
 
 	/*	Create our toolbar
@@ -309,7 +305,12 @@ void ro_gui_hotlist_init(void) {
 		extent.x1 = 16384;
 		extent.y1 = hotlist_toolbar->height;
 		extent.y0 = -16384;
-		xwimp_set_extent(hotlist_window, &extent);
+		error = xwimp_set_extent(hotlist_window, &extent);
+		if (error) {
+			LOG(("xwimp_set_extent: 0x%x: %s",
+					error->errnum, error->errmess));
+			die(error->errmess);
+		}
 		reformat_pending = true;
 	}
 }
@@ -413,13 +414,13 @@ bool ro_gui_hotlist_load(void) {
 	/*	Check if we have an initial hotlist. OS_File does funny things relating to errors,
 		so we use the object type to determine success
 	*/
-	xosfile_read_stamped_no_path("<Choices$Write>.WWW.NetSurf.Hotlist", &obj_type,
+	xosfile_read_stamped_no_path("Choices:WWW.NetSurf.Hotlist", &obj_type,
 			(bits)0, (bits)0, (int *)0, (fileswitch_attr)0, (bits)0);
-	if (obj_type != 0) {
+	if (obj_type == fileswitch_IS_FILE) {
 		/*	Read our file
 		*/
 		encoding = xmlGetCharEncodingName(XML_CHAR_ENCODING_8859_1);
-		doc = htmlParseFile("<Choices$Write>.WWW.NetSurf.Hotlist", encoding);
+		doc = htmlParseFile("Choices:WWW.NetSurf.Hotlist", encoding);
 		if ((!doc) || (!(doc->children))) {
 			xmlFreeDoc(doc);
 			warn_user("HotlistLoadError", 0);
@@ -495,7 +496,7 @@ void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry, bool a
 				visits = 0;
 			}
 		}
-		
+
 		/*	Abort if we've ran out of content
 		*/
 		if (cur == NULL) return;
@@ -705,8 +706,9 @@ void ro_gui_hotlist_visited_update(struct content *content, struct hotlist_entry
  * \param url	 the entry url (NULL to create a folder)
  * \param folder the folder to add the entry into
  */
-struct hotlist_entry *ro_gui_hotlist_create_entry(const char *title, const char *url,
-		int filetype, struct hotlist_entry *folder) {
+struct hotlist_entry *ro_gui_hotlist_create_entry(const char *title,
+		const char *url, int filetype,
+		struct hotlist_entry *folder) {
 	struct hotlist_entry *entry;
 
 	/*	Check we have a title or a URL
@@ -724,23 +726,30 @@ struct hotlist_entry *ro_gui_hotlist_create_entry(const char *title, const char 
 	/*	Normalise the URL and add the title if we have one, or
 		use the URL instead
 	*/
+	entry->url = 0;
 	if ((url) && ((entry->url = url_normalize(url)) == 0)) {
 		warn_user("NoMemory", 0);
 		free(entry->url);
+		free(entry);
 		return NULL;
 	}
 	if (title) {
-		entry->title = malloc(strlen(title) + 1);
+		entry->title = strdup(title);
 		if (!entry->title) {
 			warn_user("NoMemory", 0);
 			free(entry->url);
 			free(entry);
 			return NULL;
 		}
-		strcpy(entry->title, title);
 		entry->title = strip(entry->title);
 	} else {
-		entry->title = entry->url;
+		entry->title = strdup(entry->url);
+		if (!entry->title) {
+			warn_user("NoMemory", 0);
+			free(entry->url);
+			free(entry);
+			return NULL;
+		}
 	}
 
 	/*	Set the other values
@@ -877,14 +886,8 @@ void ro_gui_hotlist_delete_entry(struct hotlist_entry *entry, bool siblings) {
 
 		/*	Free our memory
 		*/
-		if (entry->url) {
-			free(entry->url);
-			entry->url = NULL;
-		}
-		if (entry->title) {
-			free(entry->title);
-			entry->title = NULL;
-		}
+		free(entry->url);
+		free(entry->title);
 
 		/*	Get the next entry before we de-link and delete
 		*/
@@ -2312,14 +2315,13 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 		}
 		if (title) {
 			old_value = entry->title;
-			entry->title = malloc(strlen(title) + 1);
+			entry->title = strdup(title);
 			if (!entry->title) {
 				warn_user("NoMemory", 0);
 				entry->title = old_value;
 				return;
 			}
-			strcpy(entry->title, title);
-			if (old_value) free(old_value);
+			free(old_value);
 		}
 		ro_gui_hotlist_update_entry_size(entry);
 	}
