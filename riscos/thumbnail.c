@@ -68,6 +68,7 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 	osspriteop_area *temp_area = NULL;
 	struct thumbnail_save_area *save_area;
 	osspriteop_area *render_area = NULL;
+	osspriteop_header *render_sprite = sprite;
 
 	/*	Check for 32bpp support in case we've been called for a sprite
 		we didn't set up.
@@ -84,7 +85,11 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 				(os_mode)0x301680b5);
 		render_area = temp_area;
 	}
-	if (temp_area == NULL) render_area = area;
+	if (temp_area == NULL) {
+		render_area = area;
+	} else {
+	  	render_sprite = (osspriteop_header *)(temp_area + 1);
+	}
 
 	/*	Calculate the scale
 	*/
@@ -99,7 +104,7 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 
 	/*	Switch output and redraw
 	*/
-	save_area = thumbnail_switch_output(render_area, sprite);
+	save_area = thumbnail_switch_output(render_area, render_sprite);
 	if (save_area == NULL) {
 		if (temp_area) free(temp_area);
 		return;
