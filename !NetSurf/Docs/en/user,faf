@@ -24,15 +24,15 @@
 <p><strong>Status Line:</strong> This text displays information to the user.  When you move the pointer over a link, this will show the URL that the link points to.  The status line also displays information about NetSurf's progress while retrieving a page.</p>
 <p><strong>Throbber:</strong> This NetSurf logo animates while a page is downloading or rendering.  It indicates that NetSurf is doing something.</p>
 <table border="0" cellpadding="4" cellspacing="0">
-<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/back" alt="Back Button" height="34" width="34"></td><td><p><strong>Back:</strong> Clicking on this button, makes NetSurf go back to the previous page in the history list.  If you followed a link from one page to another, this button allows you to get back to the first page.</p></td></tr>
-<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/mark" alt="Bookmark Button" height="34" width="34"></td><td><p><strong>Bookmark:</strong> Select clicking on this button adds the current location to the bookmarks or favourites.  Adjust clicking opens the bookmarks window.</p></td></tr>
-<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/forward" alt="Forward Button" height="34" width="34"></td><td><p><strong>Forward:</strong> Clicking on this button allows you to advance through the history list.</p></td></tr>
-<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/history" alt="History Button" height="34" width="34"></td><td><p><strong>History:</strong> Clicking on this button opens a window containing a history tree.  Clicking on an item in this window will move to the relevant page in the history.</p></td></tr>
-<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/home" alt="Home Button" height="34" width="34"></td><td><p><strong>Home:</strong> Clicking on this button returns to the configured home page.</p></td></tr>
-<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/print" alt="Print Button" height="34" width="34"></td><td><p><strong>Print:</strong> Clicking on this button will print the current page.</p></td></tr>
-<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/reload" alt="Reload Button" height="34" width="34"></td><td><p><strong>Reload:</strong> Clicking on this button will make NetSurf fetch and redraw the current page again.</p></td></tr>
-<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/save" alt="Save Button" height="34" width="34"></td><td><p><strong>Save:</strong> Clicking on this button will open a save dialogue box, to allow you to save the page for future reference.</p></td></tr>
-<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/stop" alt="Stop Button" height="34" width="34"></td><td><p><strong>Stop:</strong> Clicking on this button stops whatever process that window is doing.</p></td></tr>
+<tr><td class="icon"><img src="images/back" alt="Back Button" height="34" width="34"></td><td><p><strong>Back:</strong> Clicking on this button, makes NetSurf go back to the previous page in the history list.  If you followed a link from one page to another, this button allows you to get back to the first page.</p></td></tr>
+<tr><td class="icon"><img src="images/mark" alt="Bookmark Button" height="34" width="34"></td><td><p><strong>Bookmark:</strong> Select clicking on this button adds the current location to the bookmarks or favourites.  Adjust clicking opens the bookmarks window.</p></td></tr>
+<tr><td class="icon"><img src="images/forward" alt="Forward Button" height="34" width="34"></td><td><p><strong>Forward:</strong> Clicking on this button allows you to advance through the history list.</p></td></tr>
+<tr><td class="icon"><img src="images/history" alt="History Button" height="34" width="34"></td><td><p><strong>History:</strong> Clicking on this button opens a window containing a history tree.  Clicking on an item in this window will move to the relevant page in the history.</p></td></tr>
+<tr><td class="icon"><img src="images/home" alt="Home Button" height="34" width="34"></td><td><p><strong>Home:</strong> Clicking on this button returns to the configured home page.</p></td></tr>
+<tr><td class="icon"><img src="images/print" alt="Print Button" height="34" width="34"></td><td><p><strong>Print:</strong> Clicking on this button will print the current page.</p></td></tr>
+<tr><td class="icon"><img src="images/reload" alt="Reload Button" height="34" width="34"></td><td><p><strong>Reload:</strong> Clicking on this button will make NetSurf fetch and redraw the current page again.</p></td></tr>
+<tr><td class="icon"><img src="images/save" alt="Save Button" height="34" width="34"></td><td><p><strong>Save:</strong> Clicking on this button will open a save dialogue box, to allow you to save the page for future reference.</p></td></tr>
+<tr><td class="icon"><img src="images/stop" alt="Stop Button" height="34" width="34"></td><td><p><strong>Stop:</strong> Clicking on this button stops whatever process that window is doing.</p></td></tr>
 </table>
 <p>Buttons that are grayed out indicate that their function is unavailable.  This happens when you open a new browser window.  Since the window will be displaying its first page, there would be no previous page and the back button is grayed out.  Also, as this is the first page, the forward button is also grayed out.</p>
 <h2><a name="menus">Menus</a></h2>
@@ -61,8 +61,6 @@
 <tr><td><p>Ctrl+Cursor Down</p></td><td><p>Go to bottom of page</p></td></tr>
 <tr><td><p>Ctrl+Cursor Up</p></td><td><p>Go to top of page</p></td></tr>
 <tr><td><p>F8</p></td><td><p>View webpage source</p></td></tr>
-<tr><td><p>F9</p></td><td><p>Dumps the box tree into stderr if it's an html page<br>Dumps the css into stderr if it's a CSS content</p></td></tr>
-<tr><td><p>F10</p></td><td><p>Dumps the cache into stderr</p></td></tr>
 <tr><td><p>Ctrl+F2</p></td><td><p>Closes the window</p></td></tr></table>
 <h2><a name="urls">URL Shortcuts</a></h2>
 <p>NetSurf also supports URL shortcuts, which allow quick access to various pages.  The supported URL shortcuts are listed below.  Type them into a NetSurf URL bar to see the corresponding page.</p>

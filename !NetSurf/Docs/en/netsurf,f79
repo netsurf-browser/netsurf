@@ -37,6 +37,11 @@ text-align: left;
 vertical-align: top;
 }
 
+.icon {
+text-align: center;
+vertical-align: top;
+background-color: #d8d8d8;
+}
 
 .center { text-align: center; }
 th { font-size: large; }
