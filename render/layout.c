@@ -213,11 +213,11 @@ bool layout_block_context(struct box *block, pool box_pool)
 					y = left->y + left->height + 1;
 				else
 					y = right->y + right->height + 1;
-                        }
-                        box->x += x0 - cx;
-                        cx = x0;
-                        box->y += y - cy;
-                        cy = y;
+			}
+			box->x += x0 - cx;
+			cx = x0;
+			box->y += y - cy;
+			cy = y;
 		}
 
 		/* Advance to next box. */
@@ -629,17 +629,17 @@ bool layout_inline_container(struct box *box, int width,
 
 int line_height(struct css_style *style)
 {
-        float font_len;
+	float font_len;
 
 	assert(style);
 	assert(style->line_height.size == CSS_LINE_HEIGHT_LENGTH ||
 	       style->line_height.size == CSS_LINE_HEIGHT_ABSOLUTE ||
 	       style->line_height.size == CSS_LINE_HEIGHT_PERCENT);
 
-        /* take account of minimum font size option */
+	/* take account of minimum font size option */
 	if ((font_len = len(&style->font_size.value.length, 0)) <
 	    ((float)(option_font_min_size * 9.0 / 72.0)))
-	        font_len = (float)(option_font_min_size * 9.0 / 72.0);
+		font_len = (float)(option_font_min_size * 9.0 / 72.0);
 
 	switch (style->line_height.size) {
 		case CSS_LINE_HEIGHT_LENGTH:
@@ -992,7 +992,7 @@ bool layout_line(struct box *first, int width, int *y,
 					- split_box->text;
 			LOG(("'%.*s' %i %u %i", (int) split_box->length,
 					split_box->text, x1 - x0, space, w));
-/* 			assert(space != split_box->text); */
+/* 			assert(space == split_box->length || split_box->text[space] = ' '); */
 			if (space == 0)
 				space = 1;
 			/* \todo use box pool */
@@ -1027,7 +1027,7 @@ bool layout_line(struct box *first, int width, int *y,
 	switch (first->parent->parent->style->text_align) {
 		case CSS_TEXT_ALIGN_RIGHT:  x0 = x1 - x; break;
 		case CSS_TEXT_ALIGN_CENTER: x0 = (x0 + (x1 - x)) / 2; break;
-		default:                    break; /* leave on left */
+		default:		    break; /* leave on left */
 	}
 
 	for (d = first; d != b; d = d->next) {
@@ -1272,14 +1272,17 @@ bool layout_table(struct box *table, int available_width,
 		else
 			spare_width -= col[i].min;
 	}
-	if (spare_width < 0)
-		spare_width = 0;
-	for (i = 0; i != columns; i++) {
-		if (col[i].type == COLUMN_WIDTH_RELATIVE) {
-			col[i].min = col[i].max = (float) spare_width *
-					(float) col[i].width / relative_sum;
-			min_width += col[i].min;
-			max_width += col[i].max;
+	if (relative_sum != 0) {
+		if (spare_width < 0)
+			spare_width = 0;
+		for (i = 0; i != columns; i++) {
+			if (col[i].type == COLUMN_WIDTH_RELATIVE) {
+				col[i].min = col[i].max = (float) spare_width
+						* (float) col[i].width
+						/ relative_sum;
+				min_width += col[i].min;
+				max_width += col[i].max;
+			}
 		}
 	}
 
@@ -1594,7 +1597,7 @@ bool calculate_inline_container_widths(struct box *box)
 			default:
 				assert(0);
 		}
-        }
+	}
 
 	if (max < line_max)
 		max = line_max;
@@ -1696,14 +1699,13 @@ bool calculate_table_widths(struct box *table)
 	if (table->max_width != UNKNOWN_MAX_WIDTH)
 		return true;
 
-	if (!table->col) {
+	if ((col = table->col) == NULL) {
 		col = table->col = malloc(table->columns * sizeof *col);
 		if (!col)
 			return false;
 		for (i = 0; i != table->columns; i++)
 			col[i].type = COLUMN_WIDTH_UNKNOWN;
 	}
-	col = table->col;
 	for (i = 0; i != table->columns; i++)
 		col[i].min = col[i].max = 0;
 
