@@ -26,6 +26,7 @@
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/about.h"
+#include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/plugin.h"
 #include "netsurf/riscos/theme.h"
@@ -36,8 +37,6 @@
 
 
 const char *__dynamic_da_name = "NetSurf";	/**< For UnixLib. */
-const char *HOME_URL = "file:///%3CNetSurf$Dir%3E/Docs/en/intro";
-const char *HELP_URL = "file:///%3CNetSurf$Dir%3E/Docs/en/index";
 
 char *NETSURF_DIR;
 wimp_menu *combo_menu;

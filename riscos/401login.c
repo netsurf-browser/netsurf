@@ -106,11 +106,16 @@ void ro_gui_401login_open(char *host, char* realm, char *fetchurl)
 
 bool ro_gui_401login_keypress(wimp_key *key) {
 
-  if (key->c == wimp_KEY_RETURN) {
-          get_unamepwd();
-          ro_gui_dialog_close(dialog_401li);
-          browser_window_open_location(bwin, url);
-          return true;
+  switch (key->c) {
+    case wimp_KEY_RETURN:
+            get_unamepwd();
+            ro_gui_dialog_close(dialog_401li);
+            browser_window_open_location(bwin, url);
+            return true;
+    case wimp_KEY_ESCAPE:
+            ro_gui_dialog_close(dialog_401li);
+            break;
+    default: break;
   }
 
   return false;

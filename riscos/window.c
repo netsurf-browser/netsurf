@@ -16,6 +16,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/riscos/about.h"
+#include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/utils/log.h"
@@ -703,7 +704,13 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			if (strcasecmp(g->url, "about:") == 0) {
 				about_create();
 				browser_window_open_location(g->data.browser.bw,
-						"file:///%3CWimp$ScrapDir%3E/WWW/NetSurf/About");
+				ABOUT_URL);
+			} else if (strcasecmp(g->url, "help:") == 0) {
+			        browser_window_open_location(g->data.browser.bw,
+			        HELP_URL);
+                        } else if (strcasecmp(g->url, "home:") == 0) {
+			        browser_window_open_location(g->data.browser.bw,
+			        HOME_URL);
 			} else {
 				char *url = xcalloc(1, 10 + strlen(g->url));
 				char *url2;

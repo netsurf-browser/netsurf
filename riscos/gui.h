@@ -25,7 +25,6 @@ extern wimp_menu *current_menu, *iconbar_menu, *browser_menu,
 	*combo_menu, *theme_menu;
 extern int current_menu_x, current_menu_y, iconbar_menu_height;
 extern struct form_control *current_gadget;
-extern const char *HOME_URL;
 extern gui_window *window_list;
 extern bool gui_reformat_pending;
 

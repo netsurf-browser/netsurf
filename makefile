@@ -13,7 +13,7 @@ OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o other.o \
 OBJECTS = $(OBJECTS_COMMON) \
 	browser.o loginlist.o netsurf.o \
 	htmlinstance.o htmlredraw.o \
-	401login.o dialog.o download.o frames.o gui.o \
+	401login.o constdata.o dialog.o download.o frames.o gui.o \
 	menus.o mouseactions.o \
 	options.o textselection.o theme.o window.o \
 	draw.o gif.o jpeg.o plugin.o png.o sprite.o \

@@ -16,16 +16,12 @@
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/netsurf.h"
+#include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
-
-
-#define GESTURES_URL "file:///%3CNetSurf$Dir%3E/Resources/gestures"
-#define THEMES_URL "http://netsurf.sourceforge.net/themes/"
-
 
 wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, download_template,
