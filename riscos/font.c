@@ -325,17 +325,17 @@ bool nsfont_split(const struct css_style *style,
 
 	nsfont_read_style(style, &font_family, &font_size, &font_style);
 
-	code = rufl_x_to_offset(font_family, font_style, font_size,
+	code = rufl_split(font_family, font_style, font_size,
 			string, length,
 			x * 2, char_offset, actual_x);
 	if (code != rufl_OK) {
 		if (code == rufl_FONT_MANAGER_ERROR)
-			LOG(("rufl_x_to_offset: rufl_FONT_MANAGER_ERROR: "
+			LOG(("rufl_split: rufl_FONT_MANAGER_ERROR: "
 					"0x%x: %s",
 					rufl_fm_error->errnum,
 					rufl_fm_error->errmess));
 		else
-			LOG(("rufl_x_to_offset: 0x%x", code));
+			LOG(("rufl_split: 0x%x", code));
 /* 		warn_user("MiscError", "font error"); */
 		return false;
 	}
@@ -391,11 +391,11 @@ bool nsfont_paint(struct css_style *style, const char *string,
 			string, length, x, y, rufl_BLEND_FONT);
 	if (code != rufl_OK) {
 		if (code == rufl_FONT_MANAGER_ERROR)
-			LOG(("rufl_width: rufl_FONT_MANAGER_ERROR: 0x%x: %s",
+			LOG(("rufl_paint: rufl_FONT_MANAGER_ERROR: 0x%x: %s",
 					rufl_fm_error->errnum,
 					rufl_fm_error->errmess));
 		else
-			LOG(("rufl_width: 0x%x", code));
+			LOG(("rufl_paint: 0x%x", code));
 	}
 
 	return true;
