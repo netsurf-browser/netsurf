@@ -54,13 +54,13 @@ block_body ::= block_body SEMI.
 ruleset ::= selector_list(A) LBRACE declaration_list(B) RBRACE.
 		{ css_add_ruleset(param->stylesheet, A, B);
 		css_free_node(B); }
-/*ruleset ::= any_list_1(A) LBRACE declaration_list(B) RBRACE.
-		{ css_free_node(A); css_free_node(B); } /* not CSS2 */
 ruleset ::= LBRACE declaration_list(A) RBRACE.
 		/* this form of ruleset not used in CSS2
 		   used to parse style attributes (ruleset_only = 1) */
 		{ if (param->ruleset_only) param->declaration = A;
 		  else css_free_node(A); }
+ruleset ::= any_list_1(A) LBRACE declaration_list(B) RBRACE.
+		{ css_free_node(A); css_free_node(B); } /* not CSS2 */
 
 selector_list(A) ::= selector(B).
 		{ A = B; }
@@ -84,7 +84,7 @@ simple_selector(A) ::= element_name(B) detail_list(C).
 		{ A = css_new_node(CSS_NODE_SELECTOR, B, C, 0);
 		A->specificity = (B ? 1 : 0) + (C ? C->specificity : 0); }
 
-element_name(A) ::= .
+element_name(A) ::= . [EMPTYIDENT]
 		{ A = 0; }
 element_name(A) ::= IDENT(B).
 		{ A = B; }
@@ -106,17 +106,26 @@ detail_list(A) ::= LBRAC IDENT(B) EQUALS IDENT(C) RBRAC detail_list(D).
 detail_list(A) ::= LBRAC IDENT(B) EQUALS STRING(C) RBRAC detail_list(D).
 		{ A = css_new_node(CSS_NODE_ATTRIB_EQ, B, 0, 0); A->data2 = css_unquote(C);
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
+detail_list(A) ::= LBRAC IDENT(B) EQUALS NUMBER(C) RBRAC detail_list(D).
+		{ A = css_new_node(CSS_NODE_ATTRIB_EQ, B, 0, 0); A->data2 = C;
+		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) INCLUDES IDENT(C) RBRAC detail_list(D).
 		{ A = css_new_node(CSS_NODE_ATTRIB_INC, B, 0, 0); A->data2 = C;
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) INCLUDES STRING(C) RBRAC detail_list(D).
 		{ A = css_new_node(CSS_NODE_ATTRIB_INC, B, 0, 0); A->data2 = css_unquote(C);
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
+detail_list(A) ::= LBRAC IDENT(B) INCLUDES NUMBER(C) RBRAC detail_list(D).
+		{ A = css_new_node(CSS_NODE_ATTRIB_INC, B, 0, 0); A->data2 = C;
+		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) DASHMATCH IDENT(C) RBRAC detail_list(D).
 		{ A = css_new_node(CSS_NODE_ATTRIB_DM, B, 0, 0); A->data2 = C;
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) DASHMATCH STRING(C) RBRAC detail_list(D).
 		{ A = css_new_node(CSS_NODE_ATTRIB_DM, B, 0, 0); A->data2 = css_unquote(C);
+		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
+detail_list(A) ::= LBRAC IDENT(B) DASHMATCH NUMBER(C) RBRAC detail_list(D).
+		{ A = css_new_node(CSS_NODE_ATTRIB_DM, B, 0, 0); A->data2 = C;
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 /* TODO: pseudo */
 
@@ -148,8 +157,8 @@ any_list(A) ::= .
 		{ A = 0; }
 any_list(A) ::= any(B) any_list(C).
 		{ B->next = C; A = B; }
-/*any_list_1(A) ::= any(B) any_list(C).
-		{ B->next = C; A = B; }*/
+any_list_1(A) ::= any(B) any_list(C).
+		{ B->next = C; A = B; }
 any(A) ::= IDENT(B).
 		{ A = css_new_node(CSS_NODE_IDENT, B, 0, 0); }
 any(A) ::= NUMBER(B).
@@ -224,4 +233,7 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 %destructor any_list_1 { css_free_node($$); }
 %destructor any { css_free_node($$); }
 
-
+%left COMMA GT HASH LBRAC PLUS.
+%left EMPTYIDENT.
+%left IDENT.
+%left LBRACE.
