@@ -67,7 +67,6 @@ static void calculate_inline_replaced_widths(struct box *box, int *min,
 		int *max, int *line_max);
 static void calculate_inline_widths(struct box *box, int *min, int *line_max);
 static bool calculate_table_widths(struct box *table);
-static void layout_calculate_descendant_bboxes(struct box *box);
 
 
 /**

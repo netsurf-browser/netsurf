@@ -20,9 +20,12 @@
 
 #define SCROLLBAR_WIDTH 16
 
+struct box;
+
 bool layout_document(struct box *box, int width, pool box_pool);
 bool layout_block_context(struct box *block, pool box_pool);
 bool layout_inline_container(struct box *box, int width,
 		struct box *cont, int cx, int cy, pool box_pool);
+void layout_calculate_descendant_bboxes(struct box *box);
 
 #endif

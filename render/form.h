@@ -58,7 +58,7 @@ struct form_control {
 	struct box *box;
 	struct box *caret_inline_container;
 	struct box *caret_text_box;
-	unsigned int caret_box_offset, caret_form_offset;
+	size_t caret_box_offset, caret_form_offset;
 	unsigned int length;
 	int caret_pixel_offset;
 	unsigned int maxlength;

@@ -64,7 +64,7 @@ static void browser_window_textarea_click(struct browser_window *bw,
 		int box_x, int box_y,
 		int x, int y);
 static void browser_window_textarea_callback(struct browser_window *bw,
-		unsigned int key, void *p);
+		wchar_t key, void *p);
 static void browser_window_input_click(struct browser_window* bw,
 		struct box *input,
 		int box_x, int box_y,
@@ -408,7 +408,7 @@ void browser_window_stop_throbber(struct browser_window *bw)
 void browser_window_update(struct browser_window *bw,
 		bool scroll_to_top)
 {
-	const char *title_local_enc;
+	char *title_local_enc;
 	struct box *pos;
 	int x, y;
 
@@ -418,7 +418,7 @@ void browser_window_update(struct browser_window *bw,
 	if (bw->current_content->title != NULL
 	    && (title_local_enc = cnv_str_local_enc(bw->current_content->title)) != NULL) {
 		gui_window_set_title(bw->window, title_local_enc);
-		free((void *)title_local_enc);
+		free(title_local_enc);
 	} else
 		gui_window_set_title(bw->window, bw->current_content->url);
 
@@ -951,7 +951,7 @@ void browser_window_textarea_click(struct browser_window *bw,
 	 * Consecutive BR may not be present. These constraints are satisfied
 	 * by using a 0-length INLINE for blank lines. */
 
-	int char_offset, pixel_offset, dy;
+	int char_offset, pixel_offset, new_scroll_y;
 	struct box *inline_container, *text_box;
 
 	inline_container = textarea->children;
@@ -1003,20 +1003,19 @@ void browser_window_textarea_click(struct browser_window *bw,
 		}
 	}
 
-	dy = textarea->height / 2 -
-			(inline_container->y + text_box->y +
-			text_box->height / 2);
-	if (textarea->last->y + textarea->last->height + dy < textarea->height)
-		dy = textarea->height - textarea->last->y -
-				textarea->last->height;
-	if (0 < textarea->children->y + dy)
-		dy = -textarea->children->y;
-	inline_container->y += dy;
+	/* scroll to place the caret in the centre of the visible region */
+	new_scroll_y = inline_container->y + text_box->y +
+			text_box->height / 2 -
+			textarea->height / 2;
+	if (textarea->descendant_y1 - textarea->height < new_scroll_y)
+		new_scroll_y = textarea->descendant_y1 - textarea->height;
+	if (new_scroll_y < 0)
+		new_scroll_y = 0;
+	box_y += textarea->scroll_y - new_scroll_y;
 
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
-	textarea->gadget->caret_box_offset =
-			textarea->gadget->caret_form_offset = char_offset;
+	textarea->gadget->caret_box_offset = char_offset;
 	textarea->gadget->caret_pixel_offset = pixel_offset;
 	browser_window_place_caret(bw,
 			box_x + inline_container->x + text_box->x +
@@ -1025,8 +1024,10 @@ void browser_window_textarea_click(struct browser_window *bw,
 			text_box->height,
 			browser_window_textarea_callback, textarea);
 
-	if (dy)
+	if (new_scroll_y != textarea->scroll_y) {
+		textarea->scroll_y = new_scroll_y;
 		browser_redraw_box(bw->current_content, textarea);
+	}
 }
 
 
@@ -1035,17 +1036,16 @@ void browser_window_textarea_click(struct browser_window *bw,
  */
 
 void browser_window_textarea_callback(struct browser_window *bw,
-		unsigned int key, void *p)
+		wchar_t key, void *p)
 {
 	struct box *textarea = p;
 	struct box *inline_container = textarea->gadget->caret_inline_container;
 	struct box *text_box = textarea->gadget->caret_text_box;
 	struct box *new_br, *new_text, *t;
 	struct box *prev;
-	/** \todo: consider changing the following 2 types in size_t */
-	int char_offset = textarea->gadget->caret_box_offset;
+	size_t char_offset = textarea->gadget->caret_box_offset;
 	int pixel_offset = textarea->gadget->caret_pixel_offset;
-	int dy;
+	int new_scroll_y;
 	int box_x, box_y;
 	char utf8[5];
 	unsigned int utf8_len, i;
@@ -1058,6 +1058,8 @@ void browser_window_textarea_callback(struct browser_window *bw,
 			(int) text_box->length, text_box->text));
 
 	box_coords(textarea, &box_x, &box_y);
+	box_x -= textarea->scroll_x;
+	box_y -= textarea->scroll_y;
 
 	if (!(key <= 0x001F || (0x007F <= key && key <= 0x009F))) {
 		/* normal character insertion */
@@ -1259,34 +1261,34 @@ void browser_window_textarea_callback(struct browser_window *bw,
 			warn_user("NoMemory", 0);
 		textarea->width = width;
 		textarea->height = height;
+		layout_calculate_descendant_bboxes(textarea);
 	}
 
-	if (text_box->length < (size_t)char_offset) {
+	if (text_box->length < char_offset) {
 		/* the text box has been split and the caret is in the
 		 * second part */
 		char_offset -= (text_box->length + 1);  /* +1 for the space */
 		text_box = text_box->next;
 		assert(text_box);
-		assert((unsigned int)char_offset <= text_box->length);
+		assert(char_offset <= text_box->length);
 	}
 
-	dy = textarea->height / 2 -
-			(inline_container->y + text_box->y +
-			text_box->height / 2);
-	if (textarea->last->y + textarea->last->height + dy < textarea->height)
-		dy = textarea->height - textarea->last->y -
-				textarea->last->height;
-	if (0 < textarea->children->y + dy)
-		dy = -textarea->children->y;
-	inline_container->y += dy;
+	/* scroll to place the caret in the centre of the visible region */
+	new_scroll_y = inline_container->y + text_box->y +
+			text_box->height / 2 -
+			textarea->height / 2;
+	if (textarea->descendant_y1 - textarea->height < new_scroll_y)
+		new_scroll_y = textarea->descendant_y1 - textarea->height;
+	if (new_scroll_y < 0)
+		new_scroll_y = 0;
+	box_y += textarea->scroll_y - new_scroll_y;
 
 	pixel_offset = nsfont_width(text_box->font, text_box->text,
-			(unsigned int)char_offset);
+			char_offset);
 
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
-	textarea->gadget->caret_box_offset =
-			textarea->gadget->caret_form_offset = char_offset;
+	textarea->gadget->caret_box_offset = char_offset;
 	textarea->gadget->caret_pixel_offset = pixel_offset;
 	browser_window_place_caret(bw,
 			box_x + inline_container->x + text_box->x +
@@ -1295,8 +1297,10 @@ void browser_window_textarea_callback(struct browser_window *bw,
 			text_box->height,
 			browser_window_textarea_callback, textarea);
 
-	if (dy || reflow)
+	if (new_scroll_y != textarea->scroll_y || reflow) {
+		textarea->scroll_y = new_scroll_y;
 		browser_redraw_box(bw->current_content, textarea);
+	}
 }
 
 
@@ -1316,7 +1320,8 @@ void browser_window_input_click(struct browser_window* bw,
 		int box_x, int box_y,
 		int x, int y)
 {
-	int char_offset, pixel_offset, dx = 0;
+	size_t char_offset;
+	int pixel_offset, dx = 0;
 	struct box *text_box = input->children->children;
 	int uchars;
 	unsigned int offset;
@@ -1392,7 +1397,7 @@ void browser_window_input_callback(struct browser_window *bw,
 
 	if (!(key <= 0x001F || (0x007F <= key && key <= 0x009F))) {
 		char key_to_insert;
-		const char *utf8key;
+		char *utf8key;
 		size_t utf8keySize;
 
 		/** \todo: text_box has data in UTF-8 and its length in
@@ -1416,7 +1421,7 @@ void browser_window_input_callback(struct browser_window *bw,
 		input->gadget->length += utf8keySize;
 		input->gadget->value[input->gadget->length] = 0;
 		form_offset += utf8keySize;
-		free((void *)utf8key);
+		free(utf8key);
 
 		/* Insert key in text box */
 		/* Convert space into NBSP */
@@ -1432,7 +1437,7 @@ void browser_window_input_callback(struct browser_window *bw,
 		text_box->length += utf8keySize;
 		text_box->text[text_box->length] = 0;
 		box_offset += utf8keySize;
-		free((void *)utf8key);
+		free(utf8key);
 
 		text_box->width = nsfont_width(text_box->font,
 				text_box->text, text_box->length);
