@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.33 2003/02/09 12:58:15 bursa Exp $
+ * $Id: layout.c,v 1.34 2003/03/04 11:59:35 bursa Exp $
  */
 
 #include <assert.h>
@@ -22,27 +22,27 @@
  * internal functions
  */
 
-signed long len(struct css_length * length, struct css_style * style);
+static signed long len(struct css_length * length, struct css_style * style);
 
-void layout_node(struct box * box, unsigned long width, struct box * cont,
+static void layout_node(struct box * box, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy);
-void layout_block(struct box * box, unsigned long width, struct box * cont,
+static void layout_block(struct box * box, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy);
-unsigned long layout_block_children(struct box * box, unsigned long width, struct box * cont,
+static unsigned long layout_block_children(struct box * box, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy);
-void find_sides(struct box * fl, unsigned long y0, unsigned long y1,
+static void find_sides(struct box * fl, unsigned long y0, unsigned long y1,
 		unsigned long * x0, unsigned long * x1, struct box ** left, struct box ** right);
-void layout_inline_container(struct box * box, unsigned long width, struct box * cont,
+static void layout_inline_container(struct box * box, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy);
-signed long line_height(struct css_style * style);
-struct box * layout_line(struct box * first, unsigned long width, unsigned long * y,
+static signed long line_height(struct css_style * style);
+static struct box * layout_line(struct box * first, unsigned long width, unsigned long * y,
 		unsigned long cy, struct box * cont);
-void place_float_below(struct box * c, unsigned long width, unsigned long y, struct box * cont);
-void layout_table(struct box * box, unsigned long width, struct box * cont,
+static void place_float_below(struct box * c, unsigned long width, unsigned long y, struct box * cont);
+static void layout_table(struct box * box, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy);
-void calculate_widths(struct box *box);
-void calculate_inline_container_widths(struct box *box);
-void calculate_table_widths(struct box *table);
+static void calculate_widths(struct box *box);
+static void calculate_inline_container_widths(struct box *box);
+static void calculate_table_widths(struct box *table);
 
 /**
  * convert a struct css_length to pixels
@@ -106,6 +106,7 @@ void layout_node(struct box * box, unsigned long width, struct box * cont,
 }
 
 
+/* TODO: change this to use style sheets */
 int gadget_width(struct gui_gadget* gadget)
 {
 	struct formoption* current;

@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.19 2003/02/09 12:58:15 bursa Exp $
+ * $Id: box.h,v 1.20 2003/03/04 11:59:35 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -44,7 +44,7 @@ struct gui_gadget {
 			char* value;
 		} hidden;
 		struct {
-			int maxlength;
+			unsigned int maxlength;
 			char* text;
 			int size;
 		} textbox;

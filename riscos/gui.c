@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.19 2003/03/03 22:40:39 bursa Exp $
+ * $Id: gui.c,v 1.20 2003/03/04 11:59:35 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -88,18 +88,48 @@ char* templates_messages_data;
 wimp_w netsurf_info;
 wimp_w netsurf_saveas;
 
-void ro_gui_load_messages(void);
-wimp_w ro_gui_load_template(const char* template_name);
-void ro_gui_load_templates(void);
-wimp_i ro_gui_icon(char* token);
-void ro_gui_transform_menu_entry(wimp_menu_entry* e);
-void ro_gui_transform_menus(void);
-void ro_gui_create_menu(wimp_menu* menu, int x, int y, gui_window* g);
-int window_x_units(int scr_units, wimp_window_state* win);
-int window_y_units(int scr_units, wimp_window_state* win);
-void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
-		signed long y, os_box* clip, int current_background_color);
-void ro_gui_toolbar_redraw(gui_window* g, wimp_draw* redraw);
+struct ro_gui_drag_info;
+typedef enum {
+	mouseaction_NONE,
+	mouseaction_BACK, mouseaction_FORWARD,
+	mouseaction_RELOAD, mouseaction_PARENT,
+	mouseaction_NEWWINDOW_OR_LINKFG, mouseaction_DUPLICATE_OR_LINKBG,
+	mouseaction_TOGGLESIZE, mouseaction_ICONISE, mouseaction_CLOSE
+     } mouseaction;
+
+static void ro_gui_load_messages(void);
+static wimp_w ro_gui_load_template(const char* template_name);
+static void ro_gui_load_templates(void);
+static wimp_i ro_gui_icon(char* token);
+static void ro_gui_transform_menu_entry(wimp_menu_entry* e);
+static void ro_gui_transform_menus(void);
+static void ro_gui_create_menu(wimp_menu* menu, int x, int y, gui_window* g);
+static int window_x_units(int scr_units, wimp_window_state* win);
+static int window_y_units(int scr_units, wimp_window_state* win);
+static void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
+		signed long y, os_box* clip, unsigned long current_background_color);
+static void ro_gui_toolbar_redraw(gui_window* g, wimp_draw* redraw);
+static void gui_disable_icon(wimp_w w, wimp_i i);
+static void gui_enable_icon(wimp_w w, wimp_i i);
+static void ro_gui_icon_bar_click(wimp_pointer* pointer);
+static void ro_gui_throb(void);
+static gui_window* ro_lookup_gui_from_w(wimp_w window);
+static gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window);
+static void ro_gui_drag_box(wimp_drag* drag, struct ro_gui_drag_info* drag_info);
+static void ro_gui_drag_end(wimp_dragged* drag);
+static void ro_gui_window_mouse_at(wimp_pointer* pointer);
+static void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer);
+static void ro_gui_w_click(wimp_pointer* pointer);
+static double calculate_angle(double x, double y);
+static int anglesDifferent(double a, double b);
+static mouseaction ro_gui_try_mouse_action(void);
+static void ro_gui_poll_queue(wimp_event_no event, wimp_block* block);
+static void ro_gui_keypress(wimp_key* key);
+static void ro_gui_copy_selection(gui_window* g);
+static void ro_gui_menu_selection(wimp_selection* selection);
+static void ro_msg_datasave(wimp_message* block);
+static void ro_msg_dataload(wimp_message* block);
+static void gui_set_gadget_extent(struct box* box, int x, int y, os_box* extent, struct gui_gadget* g);
 
 
 void ro_gui_load_messages(void)
@@ -516,7 +546,7 @@ static char select_text_none[] = "<None>";
 static char empty_text[] = "";
 
 void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
-		signed long y, os_box* clip, int current_background_color)
+		signed long y, os_box* clip, unsigned long current_background_color)
 {
   struct box * c;
   const char * const noname = "";
@@ -836,10 +866,13 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
           break;
 
         case CONTENT_JPEG:
-          xjpeg_plot_scaled(c->data.jpeg.data,
-            redraw->box.x0 - redraw->xscroll,
-            redraw->box.y1 - redraw->yscroll - c->height * 2,
-            0, c->data.jpeg.length, 0);
+          xjpeg_plot_scaled((jpeg_image *) c->data.jpeg.data,
+            (int) redraw->box.x0 - (int) redraw->xscroll,
+            (int) redraw->box.y1 - (int) redraw->yscroll - (int) c->height * 2,
+            0, (int) c->data.jpeg.length, 0);
+          break;
+	
+        default:
           break;
       }
       more = wimp_get_rectangle(redraw);
@@ -853,7 +886,7 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
   }
 }
 
-void gui_window_set_scroll(gui_window* g, int sx, int sy)
+void gui_window_set_scroll(gui_window* g, unsigned long sx, unsigned long sy)
 {
   wimp_window_state state;
   if (g == NULL)
@@ -872,7 +905,7 @@ unsigned long gui_window_get_width(gui_window* g)
   wimp_window_state state;
   state.w = g->data.browser.window;
   wimp_get_window_state(&state);
-  return browser_x_units(state.visible.x1 - state.visible.x0);
+  return browser_x_units((unsigned long) (state.visible.x1 - state.visible.x0));
 }
 
 void gui_window_set_extent(gui_window* g, unsigned long width, unsigned long height)
@@ -1008,8 +1041,9 @@ void ro_gui_icon_bar_click(wimp_pointer* pointer)
       | browser_SCROLL_X_NONE | browser_SCROLL_Y_ALWAYS, 640, 480);
     gui_window_show(bw->window);
     browser_window_open_location(bw, HOME_URL);
-    wimp_set_caret_position(bw->window->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_URL"),
-      0,0,-1, strlen(bw->window->url) - 1);
+    wimp_set_caret_position(bw->window->data.browser.toolbar,
+      ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_URL"),
+      0,0,-1, (int) strlen(bw->window->url) - 1);
   }
 //  else if (pointer->buttons == wimp_CLICK_ADJUST)
 //    netsurf_quit = 1;
@@ -1047,10 +1081,10 @@ void gui_init(int argc, char** argv)
   ro_gui_transform_menus();
 }
 
-void ro_gui_throb()
+void ro_gui_throb(void)
 {
   gui_window* g = netsurf_gui_windows;
-  float nowtime = (float) clock() / CLOCKS_PER_SEC;
+  float nowtime = (float) (clock() + 0) / CLOCKS_PER_SEC;  /* workaround compiler warning */
 
   while (g != NULL)
   {
@@ -1147,7 +1181,7 @@ struct ro_gui_drag_info
   } data;
 };
 
-struct ro_gui_drag_info current_drag;
+static struct ro_gui_drag_info current_drag;
 
 void ro_gui_drag_box(wimp_drag* drag, struct ro_gui_drag_info* drag_info)
 {
@@ -1309,14 +1343,6 @@ int anglesDifferent(double a, double b)
 		c -= M_2_PI;
 	return (c > M_PI / 6.0);
 }
-
-typedef enum {
-	mouseaction_NONE,
-	mouseaction_BACK, mouseaction_FORWARD,
-	mouseaction_RELOAD, mouseaction_PARENT,
-	mouseaction_NEWWINDOW_OR_LINKFG, mouseaction_DUPLICATE_OR_LINKBG,
-	mouseaction_TOGGLESIZE, mouseaction_ICONISE, mouseaction_CLOSE
-     } mouseaction;
 
 #define STOPPED 2
 #define THRESHOLD 16
@@ -1712,7 +1738,7 @@ void gui_multitask(void)
     case wimp_USER_MESSAGE            :
     case wimp_USER_MESSAGE_RECORDED   :
     case wimp_USER_MESSAGE_ACKNOWLEDGE:
-      fprintf(stderr, "MESSAGE %d (%x) HAS ARRIVED\n", block.message.action);
+      fprintf(stderr, "MESSAGE %d (%x) HAS ARRIVED\n", block.message.action, block.message.action);
       if (block.message.action == message_DATA_SAVE)
 	      ro_msg_datasave(&(block.message));
       else if (block.message.action == message_DATA_LOAD)
@@ -1983,7 +2009,7 @@ void gui_poll(void)
       case wimp_USER_MESSAGE            :
       case wimp_USER_MESSAGE_RECORDED   :
       case wimp_USER_MESSAGE_ACKNOWLEDGE:
-      fprintf(stderr, "MESSAGE %d (%x) HAS ARRIVED\n", block.message.action);
+      fprintf(stderr, "MESSAGE %d (%x) HAS ARRIVED\n", block.message.action, block.message.action);
         if (block.message.action == message_DATA_SAVE)
 	      ro_msg_datasave(&(block.message));
         else if (block.message.action == message_DATA_LOAD)
@@ -2046,7 +2072,7 @@ int gui_file_to_filename(char* location, char* actual_filename, int size)
 
 void gui_window_start_throbber(gui_window* g)
 {
-  g->throbtime = (float)clock() / CLOCKS_PER_SEC;
+  g->throbtime = (float) (clock() + 0) / CLOCKS_PER_SEC;  /* workaround compiler warning */
   g->throbber = 0;
 }
 
@@ -2125,22 +2151,11 @@ void gui_edit_textarea(struct browser_window* bw, struct gui_gadget* g)
 	xos_cli("filer_run <Wimp$ScrapDir>.NetSurf.TextArea");
 }
 
-struct msg_datasave {
-	wimp_w w;
-	wimp_i i;
-	os_coord pos;
-	int size;
-	int filetype;
-	char leafname[212];
-};
-
-typedef struct msg_datasave msg_datasave;
-
 void ro_msg_datasave(wimp_message* block)
 {
 	gui_window* gui;
 	struct browser_window* bw;
-	msg_datasave* data;
+	wimp_message_data_xfer* data;
 	int x,y;
   struct box_selection* click_boxes;
   int found, plot_index;
@@ -2148,7 +2163,7 @@ void ro_msg_datasave(wimp_message* block)
   int done = 0;
     wimp_window_state state;
 
-	data = (msg_datasave*)block->data.reserved;
+	data = &block->data.data_xfer;
 
 	gui = ro_lookup_gui_from_w(data->w);
 	if (gui == NULL)
@@ -2169,20 +2184,20 @@ void ro_msg_datasave(wimp_message* block)
                  x, y, 0, 0, &click_boxes, &found, &plot_index);
 
 	if (found == 0)
-		return 0;
+		return;
 
 	for (i = found - 1; i >= 0; i--)
 	{
 		if (click_boxes[i].box->gadget != NULL)
 		{
-			if (click_boxes[i].box->gadget->type == GADGET_TEXTAREA && data->filetype == 0xFFF)
+			if (click_boxes[i].box->gadget->type == GADGET_TEXTAREA && data->file_type == 0xFFF)
 			{
 				/* load the text in! */
 				fprintf(stderr, "REPLYING TO MESSAGE MATE\n");
 				block->action = message_DATA_SAVE_ACK;
 				block->your_ref = block->my_ref;
 				block->my_ref = 0;
-				strcpy(block->data.reserved[24], "<Wimp$Scrap>");
+				strcpy(block->data.data_xfer.file_name, "<Wimp$Scrap>");
 				wimp_send_message(wimp_USER_MESSAGE, block, block->sender);
 			}
 		}
@@ -2195,7 +2210,7 @@ void ro_msg_dataload(wimp_message* block)
 {
 	gui_window* gui;
 	struct browser_window* bw;
-	msg_datasave* data;
+	wimp_message_data_xfer* data;
 	int x,y;
   struct box_selection* click_boxes;
   int found, plot_index;
@@ -2203,7 +2218,7 @@ void ro_msg_dataload(wimp_message* block)
   int done = 0;
     wimp_window_state state;
 
-	data = (msg_datasave*)block->data.reserved;
+	data = &block->data.data_xfer;
 
 	gui = ro_lookup_gui_from_w(data->w);
 	if (gui == NULL)
@@ -2224,18 +2239,18 @@ void ro_msg_dataload(wimp_message* block)
                  x, y, 0, 0, &click_boxes, &found, &plot_index);
 
 	if (found == 0)
-		return 0;
+		return;
 
 	for (i = found - 1; i >= 0; i--)
 	{
 		if (click_boxes[i].box->gadget != NULL)
 		{
-			if (click_boxes[i].box->gadget->type == GADGET_TEXTAREA && data->filetype == 0xFFF)
+			if (click_boxes[i].box->gadget->type == GADGET_TEXTAREA && data->file_type == 0xFFF)
 			{
 				/* load the text in! */
 				if (click_boxes[i].box->gadget->data.textarea.text != 0)
 					xfree(click_boxes[i].box->gadget->data.textarea.text);
-				click_boxes[i].box->gadget->data.textarea.text = load(data->leafname);
+				click_boxes[i].box->gadget->data.textarea.text = load(data->file_name);
 				gui_redraw_gadget(bw, click_boxes[i].box->gadget);
 			}
 		}
@@ -2245,10 +2260,10 @@ void ro_msg_dataload(wimp_message* block)
 
 }
 
-struct browser_window* current_textbox_bw;
-struct gui_gadget* current_textbox = 0;
-wimp_w current_textbox_w;
-wimp_i current_textbox_i;
+static struct browser_window* current_textbox_bw;
+static struct gui_gadget* current_textbox = 0;
+static wimp_w current_textbox_w;
+static wimp_i current_textbox_i;
 
 void gui_set_gadget_extent(struct box* box, int x, int y, os_box* extent, struct gui_gadget* g)
 {
@@ -2301,7 +2316,7 @@ void gui_edit_textbox(struct browser_window* bw, struct gui_gadget* g)
 			(wimp_BUTTON_WRITABLE << wimp_ICON_BUTTON_TYPE_SHIFT);
 	icon.icon.data.indirected_text.text = g->data.textbox.text;
 	icon.icon.data.indirected_text.size = g->data.textbox.maxlength + 1;
-	icon.icon.data.indirected_text.validation = " ";
+	icon.icon.data.indirected_text.validation = empty_text;
 	current_textbox_i = wimp_create_icon(&icon);
 	current_textbox = g;
 	gui_redraw_gadget(bw, current_textbox);

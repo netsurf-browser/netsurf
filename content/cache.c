@@ -1,5 +1,5 @@
 /**
- * $Id: cache.c,v 1.1 2003/02/09 12:58:14 bursa Exp $
+ * $Id: cache.c,v 1.2 2003/03/04 11:59:35 bursa Exp $
  */
 
 #include <assert.h>
@@ -67,7 +67,7 @@ void cache_quit(void)
  * cache_get -- retrieve url from memory cache or disc cache
  */
 
-struct content * cache_get(char * const url)
+struct content * cache_get(const char * const url)
 {
 	struct cache_entry *e;
 

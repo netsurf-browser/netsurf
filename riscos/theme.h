@@ -64,11 +64,13 @@ typedef enum {theme_TOOLBAR_UNKNOWN,
 ro_theme* ro_theme_create(char* pathname);
 
 /* return icon number */
-wimp_i ro_theme_icon(ro_theme* theme, theme_window_type type, char* token);
+wimp_i ro_theme_icon(ro_theme* theme, theme_window_type type, const char* token);
 
 /* create a window */
 wimp_w ro_theme_create_window(ro_theme* theme, ro_theme_window* create);
 
 int ro_theme_toolbar_height(ro_theme* theme);
+
+void ro_theme_resize(ro_theme* theme, theme_window_type wintype, wimp_w w, int width, int height);
 
 #endif

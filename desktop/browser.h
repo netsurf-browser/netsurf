@@ -1,5 +1,5 @@
 /**
- * $Id: browser.h,v 1.10 2003/03/03 22:40:39 bursa Exp $
+ * $Id: browser.h,v 1.11 2003/03/04 11:59:35 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
@@ -93,19 +93,22 @@ struct box_selection
 
 struct browser_window* create_browser_window(int flags, int width, int height);
 void browser_window_destroy(struct browser_window* bw);
-void browser_window_open_location(struct browser_window* bw, char* url);
-void browser_window_open_location_historical(struct browser_window* bw, char* url);
+void browser_window_open_location(struct browser_window* bw, const char* url);
+void browser_window_open_location_historical(struct browser_window* bw, const char* url);
 int browser_window_action(struct browser_window* bw, struct browser_action* act);
 void browser_window_set_status(struct browser_window* bw, const char* text);
 
 void browser_window_back(struct browser_window* bw);
 void browser_window_forward(struct browser_window* bw);
 
+void box_under_area(struct box* box, unsigned long x, unsigned long y, unsigned long ox, unsigned long oy,
+		struct box_selection** found, int* count, int* plot_index);
 
 int box_position_lt(struct box_position* x, struct box_position* y);
 int box_position_gt(struct box_position* x, struct box_position* y);
 int box_position_eq(struct box_position* x, struct box_position* y);
 int box_position_distance(struct box_position* x, struct box_position* y);
 
+void gui_redraw_gadget(struct browser_window* bw, struct gui_gadget* g);
 
 #endif

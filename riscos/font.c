@@ -1,5 +1,5 @@
 /**
- * $Id: font.c,v 1.11 2003/03/03 22:40:39 bursa Exp $
+ * $Id: font.c,v 1.12 2003/03/04 11:59:35 bursa Exp $
  */
 
 #include <assert.h>
@@ -25,7 +25,7 @@ const char * const font_table[FONT_FAMILIES * 4] = {
 	"Homerton.Bold.Oblique\\ELatin1",
 };
 
-void font_close(struct font_data *data);
+static void font_close(struct font_data *data);
 
 /**
  * functions

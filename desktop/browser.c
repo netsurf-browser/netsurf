@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.29 2003/03/03 22:40:39 bursa Exp $
+ * $Id: browser.c,v 1.30 2003/03/04 11:59:35 bursa Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -18,30 +18,27 @@
 #include <time.h>
 #include <ctype.h>
 
-void browser_window_start_throbber(struct browser_window* bw);
-void browser_window_stop_throbber(struct browser_window* bw);
-void browser_window_reformat(struct browser_window* bw);
-void browser_window_text_selection(struct browser_window* bw,
+static void browser_window_start_throbber(struct browser_window* bw);
+static void browser_window_stop_throbber(struct browser_window* bw);
+static void browser_window_reformat(struct browser_window* bw);
+static void browser_window_text_selection(struct browser_window* bw,
 		unsigned long click_x, unsigned long click_y, int click_type);
-void browser_window_clear_text_selection(struct browser_window* bw);
-void browser_window_change_text_selection(struct browser_window* bw, struct box_position* new_start, struct box_position* new_end);
-int redraw_box_list(struct browser_window* bw, struct box* current,
+static void browser_window_clear_text_selection(struct browser_window* bw);
+static void browser_window_change_text_selection(struct browser_window* bw, struct box_position* new_start, struct box_position* new_end);
+static int redraw_box_list(struct browser_window* bw, struct box* current,
 		unsigned long x, unsigned long y, struct box_position* start,
 		struct box_position* end, int* plot);
-void browser_window_redraw_boxes(struct browser_window* bw, struct box_position* start, struct box_position* end);
-void browser_window_follow_link(struct browser_window* bw,
+static void browser_window_redraw_boxes(struct browser_window* bw, struct box_position* start, struct box_position* end);
+static void browser_window_follow_link(struct browser_window* bw,
 		unsigned long click_x, unsigned long click_y, int click_type);
-void browser_window_callback(fetchcache_msg msg, struct content *c,
+static void browser_window_callback(fetchcache_msg msg, struct content *c,
 		void *p, const char *error);
-void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct gui_gadget* group);
-void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct gui_gadget* g,
+static void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct gui_gadget* group);
+static void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct gui_gadget* g,
 		unsigned long x, unsigned long y);
-void gui_redraw_gadget(struct browser_window* bw, struct gui_gadget* g);
-void browser_window_gadget_select(struct browser_window* bw, struct gui_gadget* g, int item);
-int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x, unsigned long click_y);
-void box_under_area(struct box* box, unsigned long x, unsigned long y, unsigned long ox, unsigned long oy,
-		struct box_selection** found, int* count, int* plot_index);
-char *url_join(const char* new, const char* base);
+static void browser_window_gadget_select(struct browser_window* bw, struct gui_gadget* g, int item);
+static int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x, unsigned long click_y);
+static char *url_join(const char* new, const char* base);
 
 
 void browser_window_start_throbber(struct browser_window* bw)
@@ -211,7 +208,7 @@ void browser_window_destroy(struct browser_window* bw)
   LOG(("end"));
 }
 
-void browser_window_open_location_historical(struct browser_window* bw, char* url)
+void browser_window_open_location_historical(struct browser_window* bw, const char* url)
 {
   LOG(("bw = %p, url = %s", bw, url));
 
@@ -224,11 +221,12 @@ void browser_window_open_location_historical(struct browser_window* bw, char* ur
   LOG(("end"));
 }
 
-void browser_window_open_location(struct browser_window* bw, char* url)
+void browser_window_open_location(struct browser_window* bw, const char* url0)
 {
-  LOG(("bw = %p, url = %s", bw, url));
-  assert(bw != 0 && url != 0);
-  url = url_join(url, bw->url);
+  char *url;
+  LOG(("bw = %p, url0 = %s", bw, url0));
+  assert(bw != 0 && url0 != 0);
+  url = url_join(url0, bw->url);
   browser_window_open_location_historical(bw, url);
   if (bw->history == NULL)
     bw->history = history_create(NULL, url);

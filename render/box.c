@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.33 2003/02/09 12:58:15 bursa Exp $
+ * $Id: box.c,v 1.34 2003/03/04 11:59:35 bursa Exp $
  */
 
 #include <assert.h>
@@ -20,13 +20,11 @@
  * internal functions
  */
 
-struct box* input(xmlNode * n, struct css_style* style, struct form* current_form);
-
-void box_add_child(struct box * parent, struct box * child);
-struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
+static void box_add_child(struct box * parent, struct box * child);
+static struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
 		char *href);
-char * tolat1(xmlChar * s);
-struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
+static char * tolat1(xmlChar * s);
+static struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
@@ -34,26 +32,26 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct gui_gadget* current_select, struct formoption* current_option,
 		struct gui_gadget* current_textarea, struct form* current_form,
 		struct page_elements* elements);
-struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_style * parent_style,
+static struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_style * parent_style,
 		xmlNode * n, struct css_selector * selector, unsigned int depth);
-void box_normalise_block(struct box *block);
-void box_normalise_table(struct box *table);
-void box_normalise_table_row_group(struct box *row_group);
-void box_normalise_table_row(struct box *row);
-void box_normalise_inline_container(struct box *cont);
-void gadget_free(struct gui_gadget* g);
-void box_free_box(struct box *box);
-struct box* box_image(xmlNode * n, struct css_style* style, char* href);
-struct box* box_textarea(xmlNode* n, struct css_style* style, struct form* current_form);
-struct box* box_select(xmlNode * n, struct css_style* style, struct form* current_form);
-struct formoption* box_option(xmlNode* n, struct css_style* style, struct gui_gadget* current_select);
-void textarea_addtext(struct gui_gadget* textarea, char* text);
-void option_addtext(struct formoption* option, char* text);
-struct box* box_input(xmlNode * n, struct css_style* style, struct form* current_form, struct page_elements* elements);
-struct form* box_form(xmlNode* n);
-void add_form_element(struct page_elements* pe, struct form* f);
-void add_gadget_element(struct page_elements* pe, struct gui_gadget* g);
-void add_img_element(struct page_elements* pe, struct img* i);
+static void box_normalise_block(struct box *block);
+static void box_normalise_table(struct box *table);
+static void box_normalise_table_row_group(struct box *row_group);
+static void box_normalise_table_row(struct box *row);
+static void box_normalise_inline_container(struct box *cont);
+static void gadget_free(struct gui_gadget* g);
+static void box_free_box(struct box *box);
+static struct box* box_image(xmlNode * n, struct css_style* style, char* href);
+static struct box* box_textarea(xmlNode* n, struct css_style* style, struct form* current_form);
+static struct box* box_select(xmlNode * n, struct css_style* style, struct form* current_form);
+static struct formoption* box_option(xmlNode* n, struct css_style* style, struct gui_gadget* current_select);
+static void textarea_addtext(struct gui_gadget* textarea, char* text);
+static void option_addtext(struct formoption* option, char* text);
+static struct box* box_input(xmlNode * n, struct css_style* style, struct form* current_form, struct page_elements* elements);
+static struct form* box_form(xmlNode* n);
+static void add_form_element(struct page_elements* pe, struct form* f);
+static void add_gadget_element(struct page_elements* pe, struct gui_gadget* g);
+static void add_img_element(struct page_elements* pe, struct img* i);
 
 
 /**
@@ -1290,7 +1288,8 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 				free(s);
 			}
 
-			box->gadget->data.textbox.text = xcalloc(box->gadget->data.textbox.maxlength + 2, sizeof(char));
+			box->gadget->data.textbox.text = xcalloc(
+					box->gadget->data.textbox.maxlength + 2, sizeof(char));
 
 			if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
 				strncpy(box->gadget->data.textbox.text, s,

@@ -1,5 +1,5 @@
 /**
- * $Id: netsurf.c,v 1.6 2003/02/09 12:58:15 bursa Exp $
+ * $Id: netsurf.c,v 1.7 2003/03/04 11:59:35 bursa Exp $
  */
 
 #include "netsurf/desktop/netsurf.h"
@@ -12,6 +12,9 @@
 
 int netsurf_quit = 0;
 gui_window* netsurf_gui_windows = NULL;
+
+static void netsurf_init(int argc, char** argv);
+static void netsurf_exit(void);
 
 
 void netsurf_poll(void)

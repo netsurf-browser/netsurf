@@ -1,5 +1,5 @@
 /**
- * $Id: cache.h,v 1.1 2003/02/09 12:58:14 bursa Exp $
+ * $Id: cache.h,v 1.2 2003/03/04 11:59:35 bursa Exp $
  */
 
 /**
@@ -30,7 +30,7 @@ struct cache_entry;
 
 void cache_init(void);
 void cache_quit(void);
-struct content * cache_get(char * const url);
+struct content * cache_get(const char * const url);
 void cache_put(struct content * content);
 void cache_free(struct content * content);
 void cache_dump(void);

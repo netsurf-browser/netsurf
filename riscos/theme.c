@@ -166,7 +166,7 @@ fprintf(stderr, "Returning theme...\n");
   return theme;
 }
 
-wimp_i ro_theme_icon(ro_theme* theme, theme_window_type type, char* token)
+wimp_i ro_theme_icon(ro_theme* theme, theme_window_type type, const char* token)
 {
   int used;
   char buffer[32];

@@ -1,5 +1,5 @@
 /**
- * $Id: gui.h,v 1.5 2003/03/03 22:40:39 bursa Exp $
+ * $Id: gui.h,v 1.6 2003/03/04 11:59:35 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_GUI_H_
@@ -30,7 +30,7 @@ void gui_window_hide(gui_window* g);
 void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
 		unsigned long x1, unsigned long y1);
 void gui_window_redraw_window(gui_window* g);
-void gui_window_set_scroll(gui_window* g, int sx, int sy);
+void gui_window_set_scroll(gui_window* g, unsigned long sx, unsigned long sy);
 unsigned long gui_window_get_width(gui_window* g);
 void gui_window_set_extent(gui_window* g, unsigned long width, unsigned long height);
 void gui_window_set_status(gui_window* g, const char* text);

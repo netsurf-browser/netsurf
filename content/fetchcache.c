@@ -1,5 +1,5 @@
 /**
- * $Id: fetchcache.c,v 1.3 2003/02/28 11:49:13 bursa Exp $
+ * $Id: fetchcache.c,v 1.4 2003/03/04 11:59:35 bursa Exp $
  */
 
 #include <assert.h>
@@ -22,11 +22,11 @@ struct fetchcache {
 };
 
 
-void fetchcache_free(struct fetchcache *fc);
-void fetchcache_callback(fetchcache_msg msg, void *p, char *data, unsigned long size);
+static void fetchcache_free(struct fetchcache *fc);
+static void fetchcache_callback(fetchcache_msg msg, void *p, char *data, unsigned long size);
 
 
-void fetchcache(char *url, char *referer,
+void fetchcache(const char *url, char *referer,
 		void (*callback)(fetchcache_msg msg, struct content *c, void *p, const char *error),
 		void *p, unsigned long width, unsigned long height)
 {
