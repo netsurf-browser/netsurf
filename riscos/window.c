@@ -323,15 +323,19 @@ void gui_window_set_status(gui_window* g, const char* text)
 
 void gui_window_set_url(gui_window *g, char *url)
 {
+        wimp_caret c;
 	strncpy(g->url, url, 255);
 	wimp_set_icon_state(g->data.browser.toolbar, ICON_TOOLBAR_URL, 0, 0);
 	/* Move the caret to the url bar.
 	 * It's ok to do this as this only gets
 	 * called when fetching a new page .
 	 */
-	wimp_set_caret_position(g->data.browser.toolbar,
-               ICON_TOOLBAR_URL,
-               0,0,-1, (int) strlen(g->url) - 1);
+        wimp_get_caret_position(&c);
+        if (c.w == g->window || c.w == g->data.browser.toolbar) {
+	        wimp_set_caret_position(g->data.browser.toolbar,
+                                        ICON_TOOLBAR_URL,
+                                        0,0,-1, (int) strlen(g->url) - 1);
+        }
 }
 
 
