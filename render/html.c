@@ -239,7 +239,13 @@ bool html_convert(struct content *c, int width, int height)
 	/*box_dump(c->data.html.layout->children, 0);*/
 
 	/* extract image maps - can't do this sensibly in xml_to_box */
-	imagemap_extract(html, c);
+	if (!imagemap_extract(html, c)) {
+		LOG(("imagemap extraction failed"));
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		warn_user("NoMemory", 0);
+		return false;
+	}
 	/*imagemap_dump(c);*/
 
 	/* XML tree not required past this point */
