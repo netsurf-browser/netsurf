@@ -126,9 +126,6 @@ void ro_gui_hotlist_initialise(void) {
 		tree_create_URL_node(node, messages_get("HotlistHomepage"),
 				"http://netsurf.sourceforge.net/", 0xfaf,
 				time(NULL), -1, 0);
-		tree_create_URL_node(node, messages_get("HotlistTestBuild"),
-				"http://netsurf.strcprstskrzkrk.co.uk/", 0xfaf,
-				time(NULL), -1, 0);
 		tree_initialise(hotlist_tree);
 	} else {
 	  	fclose(fp);
