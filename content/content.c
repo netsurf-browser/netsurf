@@ -195,7 +195,7 @@ static const struct handler_entry handler_map[] = {
 		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, false},
 #endif
 #ifdef WITH_SPRITE
-	{sprite_create, 0, sprite_convert,
+	{0, 0, sprite_convert,
 		0, sprite_destroy, 0, sprite_redraw, 0, 0, false},
 #endif
 #ifdef WITH_DRAW

@@ -18,11 +18,8 @@ struct content;
 
 struct content_sprite_data {
 	void *data;
-	unsigned long length;
 };
 
-bool sprite_create(struct content *c, const char *params[]);
-bool sprite_process_data(struct content *c, char *data, unsigned int size);
 bool sprite_convert(struct content *c, int width, int height);
 void sprite_destroy(struct content *c);
 bool sprite_redraw(struct content *c, int x, int y,

@@ -31,28 +31,6 @@
 
 
 /**
- * Create a new CONTENT_SPRITE.
- *
- * A new empty sprite area is allocated.
- */
-
-bool sprite_create(struct content *c, const char *params[])
-{
-	union content_msg_data msg_data;
-
-	c->data.sprite.data = malloc(4);
-	if (!c->data.sprite.data) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
-		return false;
-	}
-	c->data.sprite.length = 4;
-	return true;
-}
-
-
-/**
  * Convert a CONTENT_SPRITE for display.
  *
  * No conversion is necessary. We merely read the sprite dimensions.
@@ -68,6 +46,13 @@ bool sprite_convert(struct content *c, int width, int height)
 	source_data = ((char *)c->source_data) - 4;
 	osspriteop_area *area = (osspriteop_area*)source_data;
 	c->data.sprite.data = area;
+	
+	/* check for bad data */
+	if ((int)c->source_size + 4 != area->used) {
+		msg_data.error = messages_get("BadSprite");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
 
 	error = xosspriteop_read_sprite_info(osspriteop_PTR,
 			(osspriteop_area *)0x100,
@@ -86,7 +71,7 @@ bool sprite_convert(struct content *c, int width, int height)
 	c->title = malloc(100);
 	if (c->title)
 		snprintf(c->title, 100, messages_get("SpriteTitle"), c->width,
-				c->height, c->data.sprite.length);
+				c->height, c->source_size);
 	c->status = CONTENT_STATUS_DONE;
 	return true;
 }
@@ -99,7 +84,7 @@ bool sprite_convert(struct content *c, int width, int height)
 void sprite_destroy(struct content *c)
 {
 	/* do not free c->data.sprite.data at it is simply a pointer to
-	 * 4 bytes before the c->data.source_data. */
+	 * 4 bytes beforec->source_data. */
 	free(c->title);
 }
 
