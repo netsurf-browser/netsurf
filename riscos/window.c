@@ -37,105 +37,124 @@
 
 gui_window *ro_gui_current_redraw_gui;
 gui_window *window_list = 0;
-static int window_count = 0;
 
-/**
- * Checks if a window still exists.
- */
-bool gui_window_in_list(gui_window *g) {
-
-  gui_window *temp;
-
-  if (g == window_list) return true;
-
-  for(temp=window_list; temp->next != g && temp->next!=0; temp=temp->next) ;
-
-  if (temp->next == NULL) return false;
-
-  return true;
-}
 
 /**
  * Create and open a new browser window.
  *
- * \param  clone the browser window to clone options from, or NULL for default
+ * \param  bw     browser_window structure to update
+ * \param  clone  the browser window to clone options from, or NULL for default
+ * \return  gui_window, or 0 on error and error reported
  */
 
-gui_window *gui_create_browser_window(struct browser_window *bw, struct browser_window *clone)
+gui_window *gui_create_browser_window(struct browser_window *bw,
+		struct browser_window *clone)
 {
-  int screen_width, screen_height, win_width, win_height, scroll_width;
-  wimp_window window;
-  wimp_window_state state;
+	int screen_width, screen_height, win_width, win_height, scroll_width;
+	static int window_count = 2;
+	wimp_window window;
+	wimp_window_state state;
+	os_error *error;
 
-  gui_window* g = (gui_window*)calloc(1, sizeof(gui_window));
-  if (!g) return NULL;
-  g->type = GUI_BROWSER_WINDOW;
-  g->data.browser.bw = bw;
+	gui_window *g = malloc(sizeof *g);
+	if (!g) {
+		warn_user("NoMemory", 0);
+		return 0;
+	}
+	g->type = GUI_BROWSER_WINDOW;
+	g->data.browser.bw = bw;
+	g->data.browser.toolbar = 0;
+	g->data.browser.reformat_pending = false;
+	g->data.browser.old_width = 0;
+	strcpy(g->status, "");
+	strcpy(g->title, "NetSurf");
+	strcpy(g->url, "");
+	strcpy(g->throb_buf, "throbber0");
+	g->throbber = 0;
+	g->throbtime = 0;
 
-  ro_gui_screen_size(&screen_width, &screen_height);
+	ro_gui_screen_size(&screen_width, &screen_height);
 
-  win_width = screen_width * 5 / 8;
-  if (1600 < win_width)
-    win_width = 1600;
-  win_height = win_width * 5 / 8;
+	win_width = screen_width * 3 / 4;
+	if (1600 < win_width)
+		win_width = 1600;
+	win_height = win_width * 3 / 4;
 
-  window.visible.x0 = (screen_width - win_width) / 2;
-  window.visible.y0 = ((screen_height - win_height) / 2) - (48 * (window_count%5));
-  window.visible.x1 = window.visible.x0 + win_width;
-  window.visible.y1 = window.visible.y0 + win_height;
-  window.xscroll = 0;
-  window.yscroll = 0;
-  window.next = wimp_TOP;
-  window.flags =
-      wimp_WINDOW_MOVEABLE | wimp_WINDOW_NEW_FORMAT | wimp_WINDOW_BACK_ICON |
-      wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_TITLE_ICON | wimp_WINDOW_VSCROLL |
-      wimp_WINDOW_HSCROLL | wimp_WINDOW_SIZE_ICON | wimp_WINDOW_TOGGLE_ICON |
-      wimp_WINDOW_IGNORE_XEXTENT | wimp_WINDOW_IGNORE_YEXTENT |
-      wimp_WINDOW_SCROLL_REPEAT;
-  window.title_fg = wimp_COLOUR_BLACK;
-  window.title_bg = wimp_COLOUR_LIGHT_GREY;
-  window.work_fg = wimp_COLOUR_LIGHT_GREY;
-  window.work_bg = wimp_COLOUR_TRANSPARENT;
-  window.scroll_outer = wimp_COLOUR_DARK_GREY;
-  window.scroll_inner = wimp_COLOUR_MID_LIGHT_GREY;
-  window.highlight_bg = wimp_COLOUR_CREAM;
-  window.extra_flags = 0;
-  window.extent.x0 = 0;
-  window.extent.y0 = win_height;
-  window.extent.x1 = win_width;
-  window.extent.y1 = 0;
-  window.title_flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED;
-  window.work_flags = wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT;
-  window.sprite_area = wimpspriteop_AREA;
-  window.xmin = 100;
-  window.ymin = window.extent.y1 + 100;
-  window.title_data.indirected_text.text = g->title;
-  window.title_data.indirected_text.validation = (char*)-1;
-  window.title_data.indirected_text.size = 255;
-  window.icon_count = 0;
-  g->window = wimp_create_window(&window);
+	window.visible.x0 = (screen_width - win_width) / 2;
+	window.visible.y0 = ((screen_height - win_height) / 2) + 96 -
+			(48 * (window_count % 5));
+	window.visible.x1 = window.visible.x0 + win_width;
+	window.visible.y1 = window.visible.y0 + win_height;
+	window.xscroll = 0;
+	window.yscroll = 0;
+	window.next = wimp_TOP;
+	window.flags = wimp_WINDOW_MOVEABLE |
+			wimp_WINDOW_NEW_FORMAT |
+			wimp_WINDOW_BACK_ICON |
+			wimp_WINDOW_CLOSE_ICON |
+			wimp_WINDOW_TITLE_ICON |
+			wimp_WINDOW_VSCROLL |
+			wimp_WINDOW_HSCROLL |
+			wimp_WINDOW_SIZE_ICON |
+			wimp_WINDOW_TOGGLE_ICON |
+			wimp_WINDOW_IGNORE_XEXTENT |
+			wimp_WINDOW_IGNORE_YEXTENT |
+			wimp_WINDOW_SCROLL_REPEAT;
+	window.title_fg = wimp_COLOUR_BLACK;
+	window.title_bg = wimp_COLOUR_LIGHT_GREY;
+	window.work_fg = wimp_COLOUR_LIGHT_GREY;
+	window.work_bg = wimp_COLOUR_TRANSPARENT;
+	window.scroll_outer = wimp_COLOUR_DARK_GREY;
+	window.scroll_inner = wimp_COLOUR_MID_LIGHT_GREY;
+	window.highlight_bg = wimp_COLOUR_CREAM;
+	window.extra_flags = 0;
+	window.extent.x0 = 0;
+	window.extent.y0 = win_height;
+	window.extent.x1 = win_width;
+	window.extent.y1 = 0;
+	window.title_flags = wimp_ICON_TEXT |
+			wimp_ICON_INDIRECTED |
+			wimp_ICON_HCENTRED;
+	window.work_flags = wimp_BUTTON_CLICK_DRAG <<
+			wimp_ICON_BUTTON_TYPE_SHIFT;
+	window.sprite_area = wimpspriteop_AREA;
+	window.xmin = 100;
+	window.ymin = window.extent.y1 + 100;
+	window.title_data.indirected_text.text = g->title;
+	window.title_data.indirected_text.validation = (char *) -1;
+	window.title_data.indirected_text.size = 255;
+	window.icon_count = 0;
 
-  strcpy(g->title, "NetSurf");
-  strcpy(g->throb_buf, "throbber0");
+	error = xwimp_create_window(&window, &g->window);
+	if (error) {
+		LOG(("xwimp_create_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		free(g);
+		return 0;
+	}
 
 	ro_theme_create_toolbar(g);
 
-	g->data.browser.reformat_pending = false;
-	g->data.browser.old_width = 0;
-
 	g->next = window_list;
 	window_list = g;
-  	window_count++;
+	window_count++;
 
 	/*	Set the window options
 	*/
-  	bw->window = g;
-  	gui_window_clone_options(bw, clone);
+	bw->window = g;
+	gui_window_clone_options(bw, clone);
 
 	/*	Open the window
 	*/
 	state.w = g->window;
-	wimp_get_window_state(&state);
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return g;
+	}
 	scroll_width = ro_get_vscroll_width(g->window);
 	state.visible.x0 -= scroll_width;
 	state.next = wimp_TOP;
@@ -143,9 +162,17 @@ gui_window *gui_create_browser_window(struct browser_window *bw, struct browser_
 
 	/*	Set the caret position to the URL bar
 	*/
-	xwimp_set_caret_position(g->data.browser.toolbar->toolbar_handle,
-					ICON_TOOLBAR_URL, -1, -1, -1, 0);
-  return g;
+	error = xwimp_set_caret_position(
+			g->data.browser.toolbar->toolbar_handle,
+			ICON_TOOLBAR_URL, -1, -1, -1, 0);
+	if (error) {
+		LOG(("xwimp_set_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return g;
+	}
+
+	return g;
 }
 
 
@@ -171,8 +198,6 @@ void gui_window_destroy(gui_window* g)
     assert(gg->next != NULL);
     gg->next = g->next;
   }
-
-  window_count--;
 
   ro_toolbar_destroy(g->data.browser.toolbar);
   xwimp_delete_window(g->window);
@@ -282,11 +307,11 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 	int size;
 	int addition_x = 0;
 	int addition_y = 0;
-	
+
 	/*	We must have an object otherwise things go very wrong
 	*/
 	assert(data->redraw.object);
-	
+
 	/*	Accomodate for rounding errors, minimising the number of those evil division things
 	*/
 	if (data->redraw.object_width < data->redraw.object->width) {
@@ -301,7 +326,7 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 	} else if (data->redraw.object_height > data->redraw.object->height) {
 	  	addition_y = 1;
 	}
-	
+
 	/*	Calculate the update box, taking care not to exceed our bounds
 	*/
 	update.w = g->window;

@@ -102,7 +102,7 @@ struct gui_window
 
 /* in gui.c */
 void ro_gui_copy_selection(gui_window* g);
-void ro_gui_open_help_page(char *page);
+void ro_gui_open_help_page(const char *page);
 void ro_gui_screen_size(int *width, int *height);
 void ro_gui_view_source(struct content *content);
 void ro_gui_drag_box_start(wimp_pointer *pointer);

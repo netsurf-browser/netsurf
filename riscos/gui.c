@@ -1259,10 +1259,10 @@ void ro_gui_screen_size(int *width, int *height)
  *
  * \param page  the page to open
  */
-void ro_gui_open_help_page(char *page)
+void ro_gui_open_help_page(const char *page)
 {
 	char url[80];
-	sprintf(url, "file:///%%3CNetSurf$Dir%%3E/Docs/%s_%s",
+	snprintf(url, sizeof url, "file:///%%3CNetSurf$Dir%%3E/Docs/%s_%s",
 			page, option_language);
         browser_window_create(url, NULL);
 }

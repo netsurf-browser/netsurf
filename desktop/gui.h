@@ -24,8 +24,8 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 
-bool gui_window_in_list(gui_window *g);
-gui_window *gui_create_browser_window(struct browser_window *bw, struct browser_window *clone);
+gui_window *gui_create_browser_window(struct browser_window *bw,
+		struct browser_window *clone);
 gui_window *gui_create_download_window(struct content *content);
 void gui_window_destroy(gui_window* g);
 void gui_window_show(gui_window* g);
