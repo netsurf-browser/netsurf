@@ -1,5 +1,5 @@
 /**
- * $Id: png.c,v 1.1 2003/05/10 11:15:49 bursa Exp $
+ * $Id: png.c,v 1.2 2003/06/05 14:24:58 bursa Exp $
  */
 
 #include <assert.h>
@@ -29,9 +29,9 @@ void nspng_init(void)
 {
 	/* generate colour lookup table for reducing to 8bpp */
 	unsigned int red, green, blue;
-	for (red = 0; red != 0xf; red++)
-		for (green = 0; green != 0xf; green++)
-			for (blue = 0; blue != 0xf; blue++)
+	for (red = 0; red != 0x10; red++)
+		for (green = 0; green != 0x10; green++)
+			for (blue = 0; blue != 0x10; blue++)
 				colour_table[red << 8 | green << 4 | blue] =
 					colourtrans_return_colour_number_for_mode(
 						blue << 28 | blue << 24 |
