@@ -17,8 +17,8 @@
 
 void sprite_create(struct content *c)
 {
-	c->data.sprite.data = xcalloc(0, 1);
-	c->data.sprite.length = 0;
+	c->data.sprite.data = xcalloc(4, 1);
+	c->data.sprite.length = 4;
 }
 
 
@@ -36,8 +36,11 @@ int sprite_convert(struct content *c, unsigned int width, unsigned int height)
 	os_error *error;
 	int w, h;
 
-	error = xosspriteop_read_sprite_info(osspriteop_USER_AREA,
-	     (osspriteop_area*)(c->data.sprite.data-4),
+        /* fill in the size (first word) of the area */
+        memcpy(c->data.sprite.data, (char*)&c->data.sprite.length, 4);
+
+	error = xosspriteop_read_sprite_info(osspriteop_PTR,
+	     (osspriteop_area*)(c->data.sprite.data),
 	     (osspriteop_id)((osspriteop_area*)c->data.sprite.data + 1),
 	     &w, &h, NULL, NULL);
 
@@ -82,13 +85,13 @@ void sprite_redraw(struct content *c, long x, long y,
 	os_factors factors;
 
 	xcolourtrans_generate_table_for_sprite(
-	                (osspriteop_area*)(c->data.sprite.data-4),
+	                (osspriteop_area*)(c->data.sprite.data),
 			(osspriteop_id) ((osspriteop_area*)c->data.sprite.data + 1),
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
 	table = xcalloc(size, 1);
 	xcolourtrans_generate_table_for_sprite(
-	                (osspriteop_area*)(c->data.sprite.data-4),
+	                (osspriteop_area*)(c->data.sprite.data),
 			(osspriteop_id) ((osspriteop_area*)c->data.sprite.data + 1),
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
@@ -98,8 +101,8 @@ void sprite_redraw(struct content *c, long x, long y,
 	factors.xdiv = c->width * 2;
 	factors.ydiv = c->height * 2;
 
-	xosspriteop_put_sprite_scaled(osspriteop_USER_AREA,
-			(osspriteop_area*)(c->data.sprite.data-4),
+	xosspriteop_put_sprite_scaled(osspriteop_PTR,
+			(osspriteop_area*)(c->data.sprite.data),
 			(osspriteop_id) ((osspriteop_area*)c->data.sprite.data + 1),
 			x, y - height,
 			osspriteop_USE_MASK | osspriteop_USE_PALETTE, &factors, table);
