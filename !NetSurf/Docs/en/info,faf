@@ -7,7 +7,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 </head>
 <body>
-<p class="logosmall"><a href="http://netsurf.sourceforge.net/"><img src="images/logosmall" alt="NetSurf"></a></p>
+<p class="logosmall"><a href="index"><img src="images/logosmall" alt="NetSurf"></a></p>
 <h1>User Information</h1>
 <h3><a name="requ">Requirements</a></h3>
 <p>NetSurf requires the <a href="http://www.chocky.org/unix/usage.html">SharedUnixLibrary</a> to run.  Also, you may need to download the <a href="http://sudden.recoil.org/others/">Acorn URI module</a>.</p>
@@ -53,6 +53,6 @@
 <li>PNGs with transparency don't display correctly unless you have Select.</li>
 <li>NetSurf quits when it runs out of memory</li>
 </ul>
-<p class="footer"><em>NetSurf</em> is copyright 2003 The NetSurf Developers<br>This page was written by Michael Drake</p>
+<p class="footer"><em>NetSurf</em> is copyright 2003 - 2004 The NetSurf Developers<br>This page was written by Michael Drake</p>
 </body>
 </html>

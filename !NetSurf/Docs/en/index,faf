@@ -7,7 +7,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 </head>
 <body>
-<h1 class="logofull"><a href="http://netsurf.sourceforge.net/"><img src="images/logofull" alt="NetSurf"></a></h1>
+<h1 class="logofull"><a href="intro"><img src="images/logofull" alt="NetSurf"></a></h1>
 <h2>Introduction</h2>
 <p><em>NetSurf</em> is an open-source web browser for RISC&nbsp;OS.  Its aim is to bring the HTML 4 (HyperText Markup Language) and CSS (Cascading Style Sheet) technologies to the RISC&nbsp;OS platform.  Currently, NetSurf supports only a fraction of these standards.</p>
 <h2>Documentation</h2>
@@ -29,6 +29,8 @@
 <ul><li><a href="user#using">Using NetSurf</a></li>
 <li><a href="user#toolbar">Toolbar description</a></li>
 <li><a href="user#menus">Menus</a></li>
+<li><a href="user#keys">Keyboard shortcuts</a></li>
+<li><a href="user#urls">URL shortcuts</a></li>
 <li><a href="user#conf">Configuration</a></li>
 </ul></td>
 </tr>
@@ -38,6 +40,17 @@
 <ul><li><a href="dev#contri">Contribution to the project</a></li>
 <li><a href="dev#libs">Libraries used</a></li>
 <li><a href="dev#further">Further information</a></li>
+</ul></td>
+</tr>
+<tr>
+<th class="contents"><p><a href="themes">NetSurf Themes</a></p></th>
+<td class="contents">
+<ul><li><a href="themes#intro">Introduction &amp; Overview</a></li>
+<li><a href="themes#tools">Tools required</a></li>
+<li><a href="themes#templates">Creating templates</a></li>
+<li><a href="themes#sprites">Sprites</a></li>
+<li><a href="themes#package">Packaging your theme</a></li>
+<li><a href="themes#submit">Submitting your theme</a></li>
 </ul></td>
 </tr>
 </table>
@@ -56,7 +69,7 @@
 <li>Andrew Poole - <em>(GUI stuff)</em></li>
 <li>Andrew Duffell - <em>(Website work, NetSurf logo and other graphics, beta testing)</em></li>
 <li>James Shaw - <em>(Started the NetSurf project)</em></li>
-<li>Michael Drake - <em>(This documentation, beta testing)</em></li>
+<li>Michael Drake - <em>(Most of this documentation, default theme graphics, beta testing)</em></li>
 </ul>
 <p>Also, thanks to everyone else who has helped with bug reports and suggestions.  If you feel you should be mentioned on the above list or have any other issues with it, please post to the <a href="info#devel">mailing list</a> or <a href="mailto:mike@smoothartist.com">contact me</a> directly.</p>
 <h2>License</h2>
@@ -65,6 +78,6 @@
 <h2>NetSurf Links</h2>
 <p><a href="http://netsurf.sourceforge.net/">Project homepage</a><br><a href="http://netsurf.strcprstskrzkrk.co.uk/">Recent builds</a><br><a href="http://cvs.semichrome.net/netsurf/">Web CVS interface</a></p>
 
-<p class="footer">NetSurf is copyright 2003 The NetSurf Developers<br>This page was written by Michael Drake</p>
+<p class="footer">NetSurf is copyright 2003 - 2004 The NetSurf Developers<br>This page was written by Michael Drake</p>
 
 </body></html>

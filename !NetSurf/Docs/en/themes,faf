@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>NetSurf: The open-source web browser for RISC OS</title>
+<link rel="stylesheet" type="text/css" href="netsurf">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+<body>
+<p class="logosmall"><a href="index"><img src="images/logosmall" alt="NetSurf"></a></p>
+<h1>NetSurf Themes</h1>
+<h2><a name="intro">Introduction &amp; Overview</a></h2>
+<p><em>NetSurf</em> has inbuilt support for themed icons and status bar tools.  This document details how to create your own themes for NetSurf.</p>
+<h2><a name="tools">Tools Required</a></h2>
+<p>In order to create a new theme, you will require the following tools:</p>
+<ul>
+<li>A template editor</li>
+<li>A sprite file editor</li>
+</ul>
+<h2><a name="templates">Creating Templates</a></h2>
+<p>The best way to go about creating a new theme is to take the templates for the default theme and edit them with a template editor.</p>
+<p>The templates file must contain one template. It should be called &quot;toolbar&quot;.</p>
+<h3>Toolbar</h3>
+<p>The toolbar template must contain the following icons, which <em>must</em> be numbered (as indicated in parentheses):</p>
+<ul>
+<li>Throbber (1)</li>
+<li>URL entry bar (2)</li>
+<li>Status bar (3)</li>
+<li>History Button (4)</li>   
+<li>Refresh Button (5)</li>
+<li>Stop Button (6)</li>
+<li>Back Button (7)</li>
+<li>Forward Button (8)</li>
+<li>Bookmark Button (9)</li>
+<li>Save Button (10)</li>
+<li>Print Button (11)</li>
+<li>Home Button (12)</li>
+</ul>
+<h2><a name="sprites">Sprites</a></h2>
+<p>Sprites should be contained in a single file named &quot;Sprites&quot;.</p>
+<p>Throbber sprites should display the various stages of progress and should be named &quot;throbberN&quot;, where N is a numerical suffix (eg throbber0, throbber 23 etc).</p>
+<p>Button sprites can be called whatever you like. The only limitation is that two sprites are provided per button - one unpressed, the other pressed. Also, the template validation strings for each button should contain the sprite names (eg Sbackl,backp)</p>
+<h3>Optional Preview Sprite</h3>
+<p>You may optionally provide a preview sprite for display in the theme configuration dialogue box. The sprite must be in a file called "Preview" and the sprite itself must be called &quot;preview&quot;.</p>
+<h2><a name="package">Packaging your Theme</a></h2>
+<p>The default packaging for NetSurf themes is simply a folder named the same as your theme name (eg &quot;Clear&quot; for the Clear theme). Simply place all the files for your theme into a single directory, name the directory appropriately and create a Zip archive containing your theme.</p>
+<h2><a name="submit">Submitting your Theme</a></h2>
+<p>Themes may be uploaded to the central NetSurf Theme repository at <a href="http://netsurf.sourceforge.net/themes/">http://netsurf.sourceforge.net/themes/</a>.</p>
+<p class="footer">NetSurf is copyright 2003 - 2004 The NetSurf Developers<br>This page was written by John-Mark Bell</p>
+</body></html>
