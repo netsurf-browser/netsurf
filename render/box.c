@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.49 2003/06/06 03:12:28 jmb Exp $
+ * $Id: box.c,v 1.50 2003/06/07 22:24:22 jmb Exp $
  */
 
 #include <assert.h>
@@ -253,6 +253,16 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 
 		} else if (strcmp((const char*) n->name, "object") == 0) {		               LOG(("object"));
 		       box = box_object(n, content, style, href);
+		       /* TODO - param data structure
+
+		       for (c = n->children; c != 0; c = c->next) {
+
+		         if (strcmp((const char*) c->name, "param") == 0) {
+
+		           LOG(("param"));
+		           current_param = box_param(c, style, current_object);
+		         }
+		       }  */
 
 		} else if (strcmp((const char*) n->name, "embed") == 0) {		               LOG(("embed"));
 		       box = box_embed(n, content, style, href);
@@ -1454,14 +1464,6 @@ struct box* box_object(xmlNode *n, struct content *content,
                 xmlFree(s);
         }
 
-        /* object param */
-        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "param"))) {
-
-                /* TODO - create data structure to hold param elements */
-                LOG(("param: %s", s));
-                xmlFree(s);
-        }
-
         /* object width */
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "width"))) {
 
@@ -1511,15 +1513,7 @@ struct box* box_embed(xmlNode *n, struct content *content,
 	        xmlFree(s);
         }
 
-        /* embed param */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "param"))) {
-
-                /* TODO - create data structure for param elements */
-                LOG(("param '%s'", s));
-	        xmlFree(s);
-        }
-
-	/* start fetch */
+        /* start fetch */
 	plugin_decode(content, url, box, po);
 
 	return box;

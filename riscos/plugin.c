@@ -1,5 +1,5 @@
 /**
- * $Id: plugin.c,v 1.8 2003/06/06 08:10:54 jmb Exp $
+ * $Id: plugin.c,v 1.9 2003/06/07 22:24:22 jmb Exp $
  */
 
 #include <assert.h>
@@ -18,7 +18,8 @@
 
 char* create_mime_from_ext(char* data);
 char* create_sysvar(char* mime);
-void plugin_fetch(/* vars here */);
+void plugin_fetch(struct plugin_object* po,
+                  char* alias_sysvar/* vars here */);
 
 /**
  * plugin_decode
@@ -155,10 +156,10 @@ void plugin_decode(struct content* content, char* url, struct box* box,
                      */
                         xfree(po);
                         LOG(("sending data to image handler"));
-                        /* TODO - get image handler to draw it */
-                        /*html_fetch_image(content, url, box);*/
+                        html_fetch_image(content, url, box);
+                        return;
                 }
-                else { /* not an image; is sys var set? */
+                else {  /* not an image; is sys var set? */
 
                         /* Create Alias variable */
                         alias_sysvar = create_sysvar(po->type);
@@ -190,7 +191,7 @@ void plugin_decode(struct content* content, char* url, struct box* box,
                                 else {
                                         /* yes, it exists */
                                         LOG(("%s exists", alias_sysvar));
-                                        plugin_fetch(/* insert vars here */);
+                                        plugin_fetch(po, alias_sysvar/* insert vars here */);
                                 }
                         }
                 }
@@ -216,6 +217,7 @@ char* create_mime_from_ext(char* data){
 
         LOG(("Creating Mime Type from File Extension"));
 
+        ret = xcalloc(90, sizeof(char));
         ret = strrchr(data, '.');
         LOG(("Extension = %s", ret));
 
@@ -246,7 +248,8 @@ char* create_sysvar(char* mime) {
         LOG(("Creating System Variable from Mime Type"));
 
         ret = xcalloc(22, sizeof(char));
-        ret = strdup("Alias$@PlugInType_");
+        ft = xcalloc(10, sizeof(char));
+        strcpy(ret, "Alias$@PlugInType_");
 
         LOG(("Mime Type: %s", mime));
 
@@ -261,6 +264,7 @@ char* create_sysvar(char* mime) {
                 LOG(("Alias Var: %s", ret));
         }
 
+        xfree(ft);
         return ret;
 }
 
@@ -269,8 +273,11 @@ char* create_sysvar(char* mime) {
  * attempts to negotiate with the plugin.
  * also fetches the object for the plugin to handle.
  */
-void plugin_fetch (/* insert vars here */) {
+void plugin_fetch (struct plugin_object* po,
+                   char* alias_sysvar/* insert vars here */) {
 
         LOG(("Entering plugin_fetch"));
+        xfree(po);
+        xfree(alias_sysvar);
         return;
 }
