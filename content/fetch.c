@@ -36,7 +36,9 @@
 #ifdef WITH_AUTH
 #include "netsurf/desktop/401login.h"
 #endif
+#ifdef WITH_POST
 #include "netsurf/render/form.h"
+#endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -64,8 +66,10 @@ struct fetch {
 #ifdef WITH_AUTH
 	char *realm;            /**< HTTP Auth Realm */
 #endif
+#ifdef WITH_POST
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
 	struct HttpPost *post_multipart;	/**< Multipart post data, or 0. */
+#endif
 	struct fetch *queue_prev;	/**< Previous fetch for this host. */
 	struct fetch *queue_next;	/**< Next fetch for this host. */
 	struct fetch *prev;	/**< Previous active fetch in ::fetch_list. */
@@ -79,7 +83,9 @@ static struct fetch *fetch_list = 0;	/**< List of active fetches. */
 static size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f);
 static size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f);
 static bool fetch_process_headers(struct fetch *f);
+#ifdef WITH_POST
 static struct HttpPost *fetch_post_convert(struct form_successful_control *control);
+#endif
 
 #ifdef riscos
 static char * ca_bundle;	/**< SSL certificate bundle filename. */
@@ -155,8 +161,11 @@ void fetch_quit(void)
 
 struct fetch * fetch_start(char *url, char *referer,
 		void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size),
-		void *p, bool only_2xx, char *post_urlenc,
+		void *p, bool only_2xx
+#ifdef WITH_POST
+		, char *post_urlenc,
 		struct form_successful_control *post_multipart
+#endif
 #ifdef WITH_COOKIES
 		, bool cookies
 #endif
@@ -194,12 +203,14 @@ struct fetch * fetch_start(char *url, char *referer,
 	if (uri->server != 0)
 		fetch->host = xstrdup(uri->server);
 	fetch->content_length = 0;
+#ifdef WITH_POST
 	fetch->post_urlenc = 0;
 	fetch->post_multipart = 0;
 	if (post_urlenc)
 		fetch->post_urlenc = xstrdup(post_urlenc);
 	else if (post_multipart)
 		fetch->post_multipart = fetch_post_convert(post_multipart);
+#endif
 	fetch->queue_prev = 0;
 	fetch->queue_next = 0;
 	fetch->prev = 0;
@@ -301,6 +312,7 @@ struct fetch * fetch_start(char *url, char *referer,
 #endif
 
 	/* POST */
+#ifdef WITH_POST
 	if (fetch->post_urlenc) {
 		code = curl_easy_setopt(fetch->curl_handle,
 				CURLOPT_POSTFIELDS, fetch->post_urlenc);
@@ -310,6 +322,7 @@ struct fetch * fetch_start(char *url, char *referer,
 				CURLOPT_HTTPPOST, fetch->post_multipart);
 		assert(code == CURLE_OK);
 	}
+#endif
 
 	/* Cookies */
 #ifdef WITH_COOKIES
@@ -410,6 +423,7 @@ void fetch_abort(struct fetch *f)
 #endif
 
 		/* POST */
+#ifdef WITH_POST
 		if (fetch->post_urlenc) {
 			code = curl_easy_setopt(fetch->curl_handle,
 					CURLOPT_POSTFIELDS, fetch->post_urlenc);
@@ -424,6 +438,7 @@ void fetch_abort(struct fetch *f)
 			code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPPOST, 0);
 			assert(code == CURLE_OK);
 		}
+#endif
 
 		/* add to the global curl multi handle */
 		codem = curl_multi_add_handle(curl_multi, fetch->curl_handle);
@@ -447,9 +462,11 @@ void fetch_abort(struct fetch *f)
 #ifdef WITH_AUTH
 	free(f->realm);
 #endif
+#ifdef WITH_POST
 	free(f->post_urlenc);
 	if (f->post_multipart)
 		curl_formfree(f->post_multipart);
+#endif
 	xfree(f);
 }
 
@@ -658,7 +675,7 @@ bool fetch_process_headers(struct fetch *f)
  * Convert a list of struct ::form_successful_control to a list of
  * struct HttpPost for libcurl.
  */
-
+#ifdef WITH_POST
 struct HttpPost *fetch_post_convert(struct form_successful_control *control)
 {
 	struct HttpPost *post = 0, *last = 0;
@@ -672,7 +689,7 @@ struct HttpPost *fetch_post_convert(struct form_successful_control *control)
 
 	return post;
 }
-
+#endif
 
 /**
  * testing framework

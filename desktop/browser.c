@@ -43,8 +43,12 @@ static void browser_window_redraw_boxes(struct browser_window* bw, struct box_po
 static void browser_window_follow_link(struct browser_window* bw,
 		unsigned long click_x, unsigned long click_y, int click_type);
 static void browser_window_open_location_post(struct browser_window* bw,
-		const char* url0, char *post_urlenc,
-		struct form_successful_control *post_multipart);
+		const char* url0
+#ifdef WITH_POST
+		, char *post_urlenc,
+		struct form_successful_control *post_multipart
+#endif
+		);
 static void browser_window_callback(content_msg msg, struct content *c,
 		void *p1, void *p2, const char *error);
 static void download_window_callback(content_msg msg, struct content *c,
@@ -233,8 +237,12 @@ void browser_window_destroy(struct browser_window* bw
 }
 
 void browser_window_open_location_historical(struct browser_window* bw,
-		const char* url, char *post_urlenc,
-		struct form_successful_control *post_multipart)
+		const char* url
+#ifdef WITH_POST
+		, char *post_urlenc,
+		struct form_successful_control *post_multipart
+#endif
+		)
 {
 #ifdef WITH_AUTH
   struct login *li;
@@ -265,8 +273,10 @@ void browser_window_open_location_historical(struct browser_window* bw,
   bw->time0 = clock();
   bw->history_add = false;
   bw->loading_content = fetchcache(url, 0, browser_window_callback, bw, 0,
-		  gui_window_get_width(bw->window), 0, false,
-		  post_urlenc, post_multipart
+		  gui_window_get_width(bw->window), 0, false
+#ifdef WITH_POST
+		  ,post_urlenc, post_multipart
+#endif
 #ifdef WITH_COOKIES
 		  , true
 #endif
@@ -285,12 +295,20 @@ void browser_window_open_location_historical(struct browser_window* bw,
 
 void browser_window_open_location(struct browser_window* bw, const char* url0)
 {
-	browser_window_open_location_post(bw, url0, 0, 0);
+	browser_window_open_location_post(bw, url0
+#ifdef WITH_POST
+	, 0, 0
+#endif
+	);
 }
 
 void browser_window_open_location_post(struct browser_window* bw,
-		const char* url, char *post_urlenc,
-		struct form_successful_control *post_multipart)
+		const char* url
+#ifdef WITH_POST
+		, char *post_urlenc,
+		struct form_successful_control *post_multipart
+#endif
+		)
 {
   char *url1;
   LOG(("bw = %p, url = %s", bw, url));
@@ -298,7 +316,11 @@ void browser_window_open_location_post(struct browser_window* bw,
   url1 = url_join(url, 0);
   if (!url1)
     return;
-  browser_window_open_location_historical(bw, url1, post_urlenc, post_multipart);
+  browser_window_open_location_historical(bw, url1
+#ifdef WITH_POST
+                                          , post_urlenc, post_multipart
+#endif
+                                          );
   bw->history_add = true;
   free(url1);
   LOG(("end"));
@@ -1661,7 +1683,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 				break;
 			browser_window_open_location(bw, url1);
                 	break;
-
+#ifdef WITH_POST
                 case method_POST_URLENC:
 			data = form_url_encode(success);
 			url = url_join(form->action, base);
@@ -1674,7 +1696,11 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			url = url_join(form->action, base);
 			browser_window_open_location_post(bw, url, 0, success);
                 	break;
-
+#else
+                case method_POST_URLENC:
+                case method_POST_MULTIPART:
+                        break;
+#endif
                 default:
                 	assert(0);
         }

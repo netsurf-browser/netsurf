@@ -203,7 +203,10 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			c->active--;
 			c->data.html.stylesheet_content[i] = fetchcache(
 					error, c->url, html_convert_css_callback,
-					c, (void*)i, css->width, css->height, true, 0, 0
+					c, (void*)i, css->width, css->height, true
+#ifdef WITH_POST
+					, 0, 0
+#endif
 #ifdef WITH_COOKIES
 					, false
 #endif
@@ -280,7 +283,10 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 #endif
 			c->url,
 			html_convert_css_callback,
-			c, 0, c->width, c->height, true, 0, 0
+			c, 0, c->width, c->height, true
+#ifdef WITH_POST
+			, 0, 0
+#endif
 #ifdef WITH_COOKIES
 			, false
 #endif
@@ -338,7 +344,10 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 					(i + 1) * sizeof(*c->data.html.stylesheet_content));
 			c->data.html.stylesheet_content[i] = fetchcache(url, c->url,
 					html_convert_css_callback, c, (void*)i,
-					c->width, c->height, true, 0, 0
+					c->width, c->height, true
+#ifdef WITH_POST
+					, 0, 0
+#endif
 #ifdef WITH_COOKIES
 					, false
 #endif
@@ -432,7 +441,10 @@ void html_fetch_object(struct content *c, char *url, struct box *box)
 	c->data.html.object[i].content = fetchcache(url, c->url,
 			html_object_callback,
 			c, (void*)i, c->width, c->height,
-			true, 0, 0
+			true
+#ifdef WITH_POST
+			, 0, 0
+#endif
 #ifdef WITH_COOKIES
 			, false
 #endif
@@ -526,7 +538,10 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->data.html.object[i].url = xstrdup(error);
 			c->data.html.object[i].content = fetchcache(
 					error, c->url, html_object_callback,
-					c, (void*)i, 0, 0, true, 0, 0
+					c, (void*)i, 0, 0, true
+#ifdef WITH_POST
+					, 0, 0
+#endif
 #ifdef WITH_COOKIES
 					, false
 #endif
@@ -577,7 +592,10 @@ void html_revive(struct content *c, unsigned int width, unsigned int height)
 			c->data.html.object[i].content = fetchcache(
 					c->data.html.object[i].url, c->url,
 					html_object_callback,
-					c, (void*)i, 0, 0, true, 0, 0
+					c, (void*)i, 0, 0, true
+#ifdef WITH_POST
+					, 0, 0
+#endif
 #ifdef WITH_COOKIES
 					, false
 #endif

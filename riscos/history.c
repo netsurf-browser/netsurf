@@ -10,6 +10,7 @@
 #include "oslib/colourtrans.h"
 #include "oslib/font.h"
 #include "oslib/wimp.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
@@ -256,7 +257,11 @@ void ro_gui_history_click(wimp_pointer *pointer)
 		history_bw->history_entry = he;
 		wimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 		browser_window_open_location_historical(history_bw,
-				he->url, 0, 0);
+				he->url
+#ifdef WITH_POST
+				, 0, 0
+#endif
+				);
 	}
 }
 

@@ -565,7 +565,11 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
 			break;
 		case ICON_TOOLBAR_RELOAD:
 			browser_window_open_location_historical(g->data.browser.bw,
-					g->data.browser.bw->url, 0, 0);
+					g->data.browser.bw->url
+#ifdef WITH_POST
+					, 0, 0
+#endif
+					);
 			break;
 	}
 }

@@ -48,7 +48,10 @@ int main(int argc, char *argv[])
 			break;
 		url[strlen(url) - 1] = 0;
 		destroyed = 0;
-		c = fetchcache(url, 0, callback, 0, 0, 100, 1000, false, 0, 0
+		c = fetchcache(url, 0, callback, 0, 0, 100, 1000, false
+#ifdef WITH_POST
+		, 0, 0
+#endif
 #ifdef WITH_COOKIES
 		, true
 #endif

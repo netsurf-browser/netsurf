@@ -12,6 +12,9 @@
  * Simply undefine a symbol to turn the relevant feature off.
  */
 
+/* HTTP POST support */
+#define WITH_POST
+
 /* Image renderering modules */
 #define WITH_DRAW
 #define WITH_GIF

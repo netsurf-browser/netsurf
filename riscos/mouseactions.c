@@ -9,6 +9,7 @@
 
 #include "oslib/os.h"
 
+#include "netsurf/utils/config.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/riscos/gui.h"
@@ -56,7 +57,11 @@ void ro_gui_mouse_action(gui_window *g) {
 
       case mouseaction_RELOAD:
            browser_window_open_location_historical(g->data.browser.bw,
-           		g->data.browser.bw->url, 0, 0);
+           		g->data.browser.bw->url
+#ifdef WITH_POST
+           		, 0, 0
+#endif
+           		);
            break;
 
       default: break;

@@ -47,8 +47,11 @@ struct content * fetchcache(const char *url0, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
 		void *p1, void *p2, unsigned long width, unsigned long height,
-		bool only_2xx, char *post_urlenc,
+		bool only_2xx
+#ifdef WITH_POST
+		, char *post_urlenc,
 		struct form_successful_control *post_multipart
+#endif
 #ifdef WITH_COOKIES
 		,bool cookies
 #endif
@@ -64,6 +67,7 @@ struct content * fetchcache(const char *url0, char *referer,
 
 	LOG(("url %s", url));
 
+#ifdef WITH_POST
 	if (!post_urlenc && !post_multipart) {
 		c = cache_get(url);
 		if (c != 0) {
@@ -72,16 +76,22 @@ struct content * fetchcache(const char *url0, char *referer,
 			return c;
 		}
 	}
+#endif
 
 	c = content_create(url);
 	content_add_user(c, callback, p1, p2);
+
+#ifdef WITH_POST
 	if (!post_urlenc && !post_multipart)
 		cache_put(c);
+#endif
 	c->fetch_size = 0;
 	c->width = width;
 	c->height = height;
-	c->fetch = fetch_start(url, referer, fetchcache_callback, c, only_2xx,
-			post_urlenc, post_multipart
+	c->fetch = fetch_start(url, referer, fetchcache_callback, c, only_2xx
+#ifdef WITH_POST
+			,post_urlenc, post_multipart
+#endif
 #ifdef WITH_COOKIES
 			,cookies
 #endif

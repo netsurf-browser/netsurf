@@ -166,6 +166,13 @@ void ro_gui_history_click(wimp_pointer *pointer);
 #define ICON_TOOLBAR_STATUS 3
 #define ICON_TOOLBAR_HISTORY 4
 #define ICON_TOOLBAR_RELOAD 5
+#define ICON_TOOLBAR_STOP 6
+#define ICON_TOOLBAR_BACK 7
+#define ICON_TOOLBAR_FORWARD 8
+#define ICON_TOOLBAR_BOOKMARK 9
+#define ICON_TOOLBAR_SAVE 10
+#define ICON_TOOLBAR_PRINT 11
+#define ICON_TOOLBAR_HOME 12
 
 #define ICON_CONFIG_SAVE 0
 #define ICON_CONFIG_CANCEL 1

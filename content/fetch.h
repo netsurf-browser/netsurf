@@ -28,15 +28,20 @@ typedef enum {
 
 struct content;
 struct fetch;
+#ifdef WITH_POST
 struct form_successful_control;
+#endif
 
 extern bool fetch_active;
 
 void fetch_init(void);
 struct fetch * fetch_start(char *url, char *referer,
 		void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size),
-		void *p, bool only_2xx, char *post_urlenc,
+		void *p, bool only_2xx
+#ifdef WITH_POST
+		, char *post_urlenc,
 		struct form_successful_control *post_multipart
+#endif
 #ifdef WITH_COOKIES
 		,bool cookies
 #endif
