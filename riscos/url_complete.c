@@ -17,7 +17,9 @@
 #include "oslib/wimp.h"
 #include "netsurf/content/url_store.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/url_complete.h"
 #include "netsurf/riscos/wimp.h"
@@ -82,7 +84,7 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 	bool currently_open;
 
 	/* we must have a toolbar/url bar */
-	if ((!g->toolbar) || (!g->toolbar->display_url)) {
+	if ((!g->toolbar) || (!g->toolbar->display_url) || (!option_url_suggestion)) {
 		ro_gui_url_complete_close(NULL, 0);
 		return false;
 	}
@@ -563,6 +565,7 @@ void ro_gui_url_complete_mouse_at(wimp_pointer *pointer) {
 		browser_window_go(g->bw,
 				url_complete_matches[url_complete_matches_selection],
 				0);
+		global_history_add_recent(url_complete_matches[url_complete_matches_selection]);
 		ro_gui_url_complete_close(NULL, 0);
 	}
 

@@ -35,17 +35,17 @@ extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 extern wimp_w history_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu,
 		*proxyauth_menu, *languages_menu, *toolbar_menu,
-		*image_quality_menu;
+		*image_quality_menu, *global_history_menu, *url_suggest_menu;
 extern int iconbar_menu_height;
 extern struct form_control *current_gadget;
 extern bool gui_reformat_pending;
 extern bool gui_redraw_debug;
 extern wimp_menu *current_menu;
 extern osspriteop_area *gui_sprites;
-extern struct toolbar *hotlist_toolbar;
+extern struct toolbar *hotlist_toolbar, *global_history_toolbar;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
 extern bool print_active, print_text_black;
-extern struct tree *hotlist_tree;
+extern struct tree *hotlist_tree, *global_history_tree;
 
 typedef enum {
 	GUI_SAVE_SOURCE,
@@ -58,6 +58,7 @@ typedef enum {
 	GUI_SAVE_LINK_URL,
 	GUI_SAVE_LINK_TEXT,
 	GUI_SAVE_HOTLIST_EXPORT_HTML,
+	GUI_SAVE_HISTORY_EXPORT_HTML,
 } gui_save_type;
 
 typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
@@ -113,6 +114,7 @@ void ro_gui_drag_box_start(wimp_pointer *pointer);
 
 /* in menus.c */
 void ro_gui_menus_init(void);
+bool ro_gui_menu_prepare_url_suggest(void);
 void ro_gui_create_menu(wimp_menu* menu, int x, int y, struct gui_window *g);
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
 void ro_gui_menu_selection(wimp_selection* selection);
@@ -121,6 +123,8 @@ void ro_gui_prepare_navigate(struct gui_window *gui);
 void ro_gui_menu_prepare_image_quality(unsigned int tinct_options);
 void ro_gui_menu_prepare_scale(void);
 void ro_gui_menu_prepare_pageinfo(void);
+void ro_gui_menu_prepare_hotlist(void);
+void ro_gui_menu_prepare_global_history(void);
 void ro_gui_display_font_menu(const char *tick, wimp_w w, wimp_i i);
 
 /* in dialog.c */
@@ -134,7 +138,6 @@ void ro_gui_dialog_click(wimp_pointer *pointer);
 void ro_gui_save_options(void);
 bool ro_gui_dialog_keypress(wimp_key *key);
 void ro_gui_dialog_close(wimp_w close);
-void ro_gui_menu_prepare_hotlist(void);
 void ro_gui_dialog_open_config(void);
 void ro_gui_dialog_proxyauth_menu_selection(int item);
 void ro_gui_dialog_image_menu_selection(int item);
@@ -192,13 +195,13 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message);
 void ro_gui_window_process_reformats(void);
 void ro_gui_window_default_options(struct browser_window *bw);
 void ro_gui_window_redraw_all(void);
+void ro_gui_window_prepare_navigate_all(void);
 
 /* in history.c */
 void ro_gui_history_init(void);
 void ro_gui_history_quit(void);
 void ro_gui_history_mode_change(void);
-void ro_gui_history_open(struct browser_window *bw,
-		struct history *history, int wx, int wy);
+void ro_gui_history_open(struct browser_window *bw, struct history *history, bool pointer);
 void ro_gui_history_redraw(wimp_draw *redraw);
 void ro_gui_history_click(wimp_pointer *pointer);
 void ro_gui_history_mouse_at(wimp_pointer *pointer);
@@ -255,10 +258,6 @@ void ro_plot_set_scale(float scale);
 /* in theme_install.c */
 void ro_gui_theme_install_click(wimp_pointer *pointer);
 
-/* toolbar types */
-#define TOOLBAR_BROWSER 0
-#define TOOLBAR_HOTLIST 1
-
 /* icon numbers for browser toolbars */
 #define ICON_TOOLBAR_BACK 0
 #define ICON_TOOLBAR_FORWARD 1
@@ -275,12 +274,13 @@ void ro_gui_theme_install_click(wimp_pointer *pointer);
 #define ICON_TOOLBAR_THROBBER 12
 #define ICON_TOOLBAR_SUGGEST 13
 
-/* icon numbers for hotlist toolbars */
-#define ICON_TOOLBAR_CREATE 0
-#define ICON_TOOLBAR_DELETE 1
-#define ICON_TOOLBAR_EXPAND 2
-#define ICON_TOOLBAR_OPEN 3
-#define ICON_TOOLBAR_LAUNCH 4
+/* icon numbers for hotlist/history toolbars */
+#define ICON_TOOLBAR_DELETE 0
+#define ICON_TOOLBAR_EXPAND 1
+#define ICON_TOOLBAR_OPEN 2
+#define ICON_TOOLBAR_LAUNCH 3
+#define ICON_TOOLBAR_HISTORY_LAST 4
+#define ICON_TOOLBAR_CREATE 4 // must be after last history icon
 #define ICON_TOOLBAR_HOTLIST_LAST 5
 
 /* icon numbers for toolbar status window */

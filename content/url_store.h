@@ -13,14 +13,14 @@
 #define _NETSURF_CONTENT_URLSTORE_H_
 
 struct url_content {
+	char *url;			/** URL (including hostname) */
+	int url_length;			/** Length of URL (including hostname) */
 	int visits;			/** Number of times visited */
 	int requests;			/** Number of times requested */
 };
 
 struct url_data {
   	struct url_content data;	/** Stored URL content data */
-	char *url;			/** URL (including hostname) */
-	int url_length;			/** Length of URL (including hostname) */
   	struct url_data *previous;	/** Previous URL */
   	struct url_data *next;		/** Next URL */
 	struct hostname_data *parent;	/** Parent hostname data */

@@ -31,6 +31,7 @@
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/riscos/buffer.h"
+#include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
@@ -833,6 +834,19 @@ void ro_gui_window_update_theme(void) {
 					0, -16384, 16384, 16384);
 		}
 	}
+	if (global_history_toolbar) {
+		if (!ro_gui_theme_update_toolbar(NULL, global_history_toolbar)) {
+			ro_gui_theme_destroy_toolbar(global_history_toolbar);
+			global_history_toolbar = NULL;
+		}
+		if (global_history_tree) {
+			ro_gui_theme_attach_toolbar(global_history_toolbar,
+					(wimp_w)global_history_tree->handle);
+			global_history_tree->offset_y = global_history_toolbar->height;
+			xwimp_force_redraw((wimp_w)global_history_tree->handle,
+					0, -16384, 16384, 16384);
+		}
+	}
 }
 
 
@@ -1134,9 +1148,11 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 			break;
 
 		case ICON_TOOLBAR_HISTORY:
-			ro_gui_history_open(g->bw,
-					g->bw->history,
-					pointer->pos.x, pointer->pos.y);
+			if (pointer->buttons == wimp_CLICK_SELECT) {
+				ro_gui_history_open(g->bw, g->bw->history, true);
+			} else if (global_history_tree) {
+				ro_gui_global_history_show();
+			}
 			break;
 		case ICON_TOOLBAR_HOME:
 			if (option_homepage_url && option_homepage_url[0]) {
@@ -1171,7 +1187,7 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 		case ICON_TOOLBAR_BOOKMARK:
 			if ((pointer->buttons == wimp_CLICK_ADJUST) && (hotlist_tree)) {
 				node = tree_create_URL_node(hotlist_tree->root,
-						messages_get(g->title),
+						g->title,
 						g->bw->current_content->url,
 						ro_content_filetype(g->bw->current_content),
 						time(NULL), -1, 0);
@@ -1197,6 +1213,13 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 			break;
 		case ICON_TOOLBAR_URL:
 			ro_gui_url_complete_start(g);
+			break;
+		case ICON_TOOLBAR_SUGGEST:
+		  	current_gui = g;
+			ro_gui_popup_menu(url_suggest_menu,
+					current_toolbar->toolbar_handle,
+					ICON_TOOLBAR_SUGGEST);
+			break;
 	}
 }
 
@@ -1496,12 +1519,15 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			ro_gui_hotlist_show();
 			return true;
 
-		case wimp_KEY_F7:	/* Toggle fullscreen browsing. */
-
-
-
+		case wimp_KEY_F7:	/* Show history. */
+			current_gui = g;
+			ro_gui_history_open(current_gui->bw,
+					current_gui->bw->history, false);
 			return true;
 
+		case wimp_KEY_CONTROL + wimp_KEY_F7:	/* Show global history. */
+			ro_gui_global_history_show();
+			return true;
 
 		case wimp_KEY_F8:	/* View source. */
 			ro_gui_view_source(content);
@@ -1545,6 +1571,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			if (res == URL_FUNC_OK) {
 				gui_window_set_url(g, url);
 				browser_window_go(g->bw, url, 0);
+				global_history_add_recent(url);
 				free(url);
 			}
 			return true;
@@ -1988,4 +2015,18 @@ void gui_window_new_content(struct gui_window *g)
 {
 	ro_gui_prepare_navigate(g);
 	ro_gui_dialog_close_persistant(g->window);
+}
+
+
+/**
+ * Updates the navigation controls for all toolbars;
+ *
+ * \param  g    the gui_window to launch the URL into
+ * \param  url  the URL to launch, or NULL to simply update the suggestion icon
+ */
+void ro_gui_window_prepare_navigate_all(void) {
+  	struct gui_window *g;
+
+	for (g = window_list; g; g = g->next)
+		ro_gui_prepare_navigate(g);
 }

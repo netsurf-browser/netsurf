@@ -22,6 +22,7 @@
 #include "oslib/wimp.h"
 #include "netsurf/desktop/tree.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/treeview.h"
 #include "netsurf/riscos/wimp.h"
@@ -785,6 +786,48 @@ void ro_gui_tree_menu_closed(struct tree *tree) {
 
 
 /**
+ * Respond to a mouse click for a tree (hotlist or history) toolbar
+ *
+ * \param pointer  the pointer state
+ */
+void ro_gui_tree_toolbar_click(wimp_pointer* pointer, struct tree *tree,
+		struct toolbar *toolbar) {
+	struct node *node;
+
+	current_toolbar = toolbar;
+	ro_gui_tree_stop_edit(tree);
+
+	switch (pointer->i) {
+	  	case ICON_TOOLBAR_CREATE:
+			node = tree_create_folder_node(tree->root,
+					messages_get("TreeNewFolder"));
+			tree_redraw_area(tree, node->box.x - NODE_INSTEP,
+					0, NODE_INSTEP, 16384);
+			tree_handle_node_changed(tree, node, false, true);
+			ro_gui_tree_start_edit(tree, &node->data, NULL);
+	  		break;
+	  	case ICON_TOOLBAR_OPEN:
+			tree_handle_expansion(tree, tree->root,
+					(pointer->buttons == wimp_CLICK_SELECT),
+					true, false);
+			break;
+	  	case ICON_TOOLBAR_EXPAND:
+			tree_handle_expansion(tree, tree->root,
+					(pointer->buttons == wimp_CLICK_SELECT),
+					false, true);
+			break;
+		case ICON_TOOLBAR_DELETE:
+			tree_delete_selected_nodes(tree,
+					tree->root);
+			break;
+		case ICON_TOOLBAR_LAUNCH:
+			ro_gui_tree_launch_selected(tree);
+			break;
+	}
+}
+
+
+/**
  * Starts an editing session
  *
  * \param tree     the tree to start editing for
@@ -921,6 +964,74 @@ void ro_gui_tree_scroll_visible(struct tree *tree, struct node_element *element)
 
 
 /**
+ * Shows the a tree window.
+ */
+void ro_gui_tree_show(struct tree *tree, struct toolbar *toolbar) {
+	os_error *error;
+	int screen_width, screen_height;
+	wimp_window_state state;
+	int dimension;
+	int scroll_width;
+
+	/*	We may have failed to initialise
+	*/
+	if (!tree) return;
+
+	/*	Get the window state
+	*/
+	state.w = (wimp_w)tree->handle;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	/*	If we're open we jump to the top of the stack, if not then we
+		open in the centre of the screen.
+	*/
+	if (!(state.flags & wimp_WINDOW_OPEN)) {
+	  
+	  	/*	Cancel any editing
+	  	*/
+	  	ro_gui_tree_stop_edit(tree);
+	  
+	 	/*	Set the default state
+	 	*/
+	 	if (tree->root->child)
+	 		tree_handle_node_changed(tree, tree->root,
+					false, true);
+
+		/*	Get the current screen size
+		*/
+		ro_gui_screen_size(&screen_width, &screen_height);
+
+		/*	Move to the centre
+		*/
+		dimension = 600; /*state.visible.x1 - state.visible.x0;*/
+		scroll_width = ro_get_vscroll_width((wimp_w)tree->handle);
+		state.visible.x0 = (screen_width - (dimension + scroll_width)) / 2;
+		state.visible.x1 = state.visible.x0 + dimension;
+		dimension = 800; /*state.visible.y1 - state.visible.y0;*/
+		state.visible.y0 = (screen_height - dimension) / 2;
+		state.visible.y1 = state.visible.y0 + dimension;
+		state.xscroll = 0;
+		state.yscroll = 0;
+		if (toolbar)
+			state.yscroll = toolbar->height;
+	}
+
+	/*	Open the window at the top of the stack
+	*/
+	state.next = wimp_TOP;
+	ro_gui_tree_open((wimp_open*)&state, tree);
+
+	/*	Set the caret position
+	*/
+	xwimp_set_caret_position(state.w, -1, -100, -100, 32, -1);
+}
+
+
+/**
  * Handles a window open request
  *
  * \param open  the window state
@@ -982,7 +1093,7 @@ bool ro_gui_tree_keypress(int key, struct tree *tree) {
 			return true;
 		case 24:	/* CTRL+X */
 			ro_gui_tree_stop_edit(tree);
-			tree_delete_selected_nodes(hotlist_tree, hotlist_tree->root);
+			tree_delete_selected_nodes(tree, tree->root);
 			return true;
 		case 26:	/* CTRL+Z */
 			tree->temp_selection = NULL;

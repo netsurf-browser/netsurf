@@ -118,6 +118,12 @@ void history_forward(struct browser_window *bw, struct history *history);
 bool history_back_available(struct history *history);
 bool history_forward_available(struct history *history);
 
+/* In platform specific global_history.c. */
+void global_history_add(struct gui_window *g);
+void global_history_add_recent(const char *url);
+char **global_history_get_recent(int *count);
+
+
 /* In platform specific schedule.c. */
 void schedule(int t, void (*callback)(void *p), void *p);
 void schedule_remove(void (*callback)(void *p), void *p);

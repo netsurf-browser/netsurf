@@ -38,7 +38,7 @@
 static void ro_gui_hotlist_visited(struct content *content, struct tree *tree,
 		struct node *node);
 
-/*	A basic window for the toolbar and status
+/*	A basic window for the hotlist
 */
 static wimp_window hotlist_window_definition = {
 	{0, 0, 600, 800},
@@ -129,7 +129,7 @@ void ro_gui_hotlist_initialise(void) {
 		tree_initialise(hotlist_tree);
 	} else {
 	  	fclose(fp);
-		hotlist_tree = options_load_hotlist("Choices:WWW.NetSurf.Hotlist");
+		hotlist_tree = options_load_tree("Choices:WWW.NetSurf.Hotlist");
 	}
 	if (!hotlist_tree) return;
 	hotlist_tree->handle = (int)hotlist_window;
@@ -154,7 +154,8 @@ void ro_gui_hotlist_save(void) {
 
 	/*	Save to our file
 	*/
-	options_save_hotlist(hotlist_tree, "<Choices$Write>.WWW.NetSurf.Hotlist");
+	options_save_tree(hotlist_tree, "<Choices$Write>.WWW.NetSurf.Hotlist",
+			"NetSurf hotlist");
 	error = xosfile_set_type("<Choices$Write>.WWW.NetSurf.Hotlist", 0xfaf);
 	if (error)
 		LOG(("xosfile_set_type: 0x%x: %s",
@@ -166,67 +167,8 @@ void ro_gui_hotlist_save(void) {
  * Shows the hotlist window.
  */
 void ro_gui_hotlist_show(void) {
-	os_error *error;
-	int screen_width, screen_height;
-	wimp_window_state state;
-	int dimension;
-	int scroll_width;
-
-	/*	We may have failed to initialise
-	*/
-	if (!hotlist_tree) return;
-
-	/*	Get the window state
-	*/
-	state.w = hotlist_window;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-
-	/*	If we're open we jump to the top of the stack, if not then we
-		open in the centre of the screen.
-	*/
-	if (!(state.flags & wimp_WINDOW_OPEN)) {
-	  
-	  	/*	Cancel any editing
-	  	*/
-	  	ro_gui_tree_stop_edit(hotlist_tree);
-	  
-	 	/*	Set the default state
-	 	*/
-	 	if (hotlist_tree->root->child)
-	 		tree_handle_node_changed(hotlist_tree, hotlist_tree->root,
-					false, true);
-
-		/*	Get the current screen size
-		*/
-		ro_gui_screen_size(&screen_width, &screen_height);
-
-		/*	Move to the centre
-		*/
-		dimension = 600; /*state.visible.x1 - state.visible.x0;*/
-		scroll_width = ro_get_vscroll_width(hotlist_window);
-		state.visible.x0 = (screen_width - (dimension + scroll_width)) / 2;
-		state.visible.x1 = state.visible.x0 + dimension;
-		dimension = 800; /*state.visible.y1 - state.visible.y0;*/
-		state.visible.y0 = (screen_height - dimension) / 2;
-		state.visible.y1 = state.visible.y0 + dimension;
-		state.xscroll = 0;
-		state.yscroll = 0;
-		if (hotlist_toolbar) state.yscroll = hotlist_toolbar->height;
-	}
-
-	/*	Open the window at the top of the stack
-	*/
+  	ro_gui_tree_show(hotlist_tree, hotlist_toolbar);
 	ro_gui_menu_prepare_hotlist();
-	state.next = wimp_TOP;
-	ro_gui_tree_open((wimp_open*)&state, hotlist_tree);
-
-	/*	Set the caret position
-	*/
-	xwimp_set_caret_position(state.w, -1, -100, -100, 32, -1);
 }
 
 
@@ -251,13 +193,8 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
  * \param key  the key pressed
  */
 bool ro_gui_hotlist_keypress(int key) {
- //	struct node_element *edit = hotlist_tree->editing;
   	bool result = ro_gui_tree_keypress(key, hotlist_tree);
 	ro_gui_menu_prepare_hotlist();
-
-/*	if ((edit) && (!hotlist_tree->editing))
-		ro_gui_hotlist_save();
-*/
 	return result;
 }
 
@@ -269,47 +206,6 @@ void ro_gui_hotlist_menu_closed(void) {
 	ro_gui_tree_menu_closed(hotlist_tree);
 	current_menu = NULL;
 	ro_gui_menu_prepare_hotlist();
-}
-
-
-/**
- * Respond to a mouse click
- *
- * \param pointer  the pointer state
- */
-void ro_gui_hotlist_toolbar_click(wimp_pointer* pointer) {
-	struct node *node;
-
-	current_toolbar = hotlist_toolbar;
-	ro_gui_tree_stop_edit(hotlist_tree);
-
-	switch (pointer->i) {
-	  	case ICON_TOOLBAR_CREATE:
-			node = tree_create_folder_node(hotlist_tree->root,
-					messages_get("TreeNewFolder"));
-			tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP,
-					0, NODE_INSTEP, 16384);
-			tree_handle_node_changed(hotlist_tree, node, false, true);
-			ro_gui_tree_start_edit(hotlist_tree, &node->data, NULL);
-	  		break;
-	  	case ICON_TOOLBAR_OPEN:
-			tree_handle_expansion(hotlist_tree, hotlist_tree->root,
-					(pointer->buttons == wimp_CLICK_SELECT),
-					true, false);
-			break;
-	  	case ICON_TOOLBAR_EXPAND:
-			tree_handle_expansion(hotlist_tree, hotlist_tree->root,
-					(pointer->buttons == wimp_CLICK_SELECT),
-					false, true);
-			break;
-		case ICON_TOOLBAR_DELETE:
-			tree_delete_selected_nodes(hotlist_tree,
-					hotlist_tree->root);
-			break;
-		case ICON_TOOLBAR_LAUNCH:
-			ro_gui_tree_launch_selected(hotlist_tree);
-			break;
-	}
 }
 
 

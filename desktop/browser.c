@@ -282,8 +282,10 @@ void browser_window_callback(content_msg msg, struct content *c,
 			browser_window_update(bw, true);
 			content_open(c, bw, 0, 0, 0);
 			browser_window_set_status(bw, c->status_message);
-			if (bw->history_add)
+			if (bw->history_add) {
 				history_add(bw->history, c, bw->frag_id);
+				global_history_add(bw->window);
+			}
 			break;
 
 		case CONTENT_MSG_DONE:

@@ -16,7 +16,8 @@
 
 typedef enum {
   	THEME_BROWSER_TOOLBAR,
-  	THEME_HOTLIST_TOOLBAR
+  	THEME_HOTLIST_TOOLBAR,
+  	THEME_HISTORY_TOOLBAR
 } toolbar_type;
 
 struct theme_file_header {
@@ -73,6 +74,7 @@ struct toolbar {
 	char *throbber_buffer;			/**< buffer for status text (read only) */
 	char *status_buffer;			/**< buffer for status text (read only) */
 	struct toolbar_icon *icon;		/**< first toolbar icon (read only) */
+	struct toolbar_icon *suggest;		/**< suggestion toolbar icon (read only) */
   	struct theme_descriptor *descriptor;	/**< theme descriptor (read only) */
 	toolbar_type type;			/**< toolbar type (read only) */
 	bool locked;				/**< toolbar is locked from editing */

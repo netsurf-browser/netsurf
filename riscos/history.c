@@ -283,10 +283,12 @@ void ro_gui_history_mode_change(void)
 
 /**
  * Open history window.
+ *
+ * \param pointer  whether to open the window at the pointer
  */
 
 void ro_gui_history_open(struct browser_window *bw,
-		struct history *history, int wx, int wy)
+		struct history *history, bool pointer)
 {
 	bool done = false;
 	unsigned int i, j, max_y = 0;
@@ -353,12 +355,13 @@ void ro_gui_history_open(struct browser_window *bw,
 	wimp_set_extent(history_window, &box);
 	state.w = history_window;
 	wimp_get_window_state(&state);
-	state.visible.x0 = wx - width / 2;
-	state.visible.y0 = wy - height / 2;
-	state.visible.x1 = wx + width / 2;
-	state.visible.y1 = wy + height / 2;
-	state.next = wimp_TOP;
+	state.visible.x0 = 0;
+	state.visible.y0 = 0;
+	state.visible.x1 = width;
+	state.visible.y1 = height;
+	state.next = wimp_HIDDEN;
 	wimp_open_window((wimp_open *) &state);
+	ro_gui_dialog_open_persistant(bw->window->window, history_window, pointer);
 }
 
 

@@ -48,7 +48,8 @@ extern bool option_animate_images;
 void options_read(const char *path);
 void options_write(const char *path);
 
-struct tree *options_load_hotlist(const char *filename);
-bool options_save_hotlist(struct tree *tree, const char *filename);
+struct tree *options_load_tree(const char *filename);
+bool options_save_tree(struct tree *tree, const char *filename,
+		const char *page_title);
 
 #endif

@@ -96,12 +96,12 @@ struct {
 #define option_table_entries (sizeof option_table / sizeof option_table[0])
 
 
-static void options_load_hotlist_directory(xmlNode *ul, struct node *directory);
-static void options_load_hotlist_entry(xmlNode *li, struct node *directory);
-xmlNode *options_find_hotlist_element(xmlNode *node, const char *name);
-bool options_save_hotlist_directory(struct node *directory, xmlNode *node);
-bool options_save_hotlist_entry(struct node *entry, xmlNode *node);
-bool options_save_hotlist_entry_comment(xmlNode *node, const char *name, int value);
+static void options_load_tree_directory(xmlNode *ul, struct node *directory);
+static void options_load_tree_entry(xmlNode *li, struct node *directory);
+xmlNode *options_find_tree_element(xmlNode *node, const char *name);
+bool options_save_tree_directory(struct node *directory, xmlNode *node);
+bool options_save_tree_entry(struct node *entry, xmlNode *node);
+bool options_save_tree_entry_comment(xmlNode *node, const char *name, int value);
 
 
 /**
@@ -227,7 +227,7 @@ void options_write(const char *path)
  * \param  filename  name of file to read
  * \return the hotlist file represented as a tree, or NULL on failure
  */
-struct tree *options_load_hotlist(const char *filename) {
+struct tree *options_load_tree(const char *filename) {
 	xmlDoc *doc;
 	xmlNode *html, *body, *ul;
 	struct tree *tree;
@@ -238,9 +238,9 @@ struct tree *options_load_hotlist(const char *filename) {
 		return NULL;
 	}
 	
-	html = options_find_hotlist_element((xmlNode *) doc, "html");
-	body = options_find_hotlist_element(html, "body");
-	ul = options_find_hotlist_element(body, "ul");
+	html = options_find_tree_element((xmlNode *) doc, "html");
+	body = options_find_tree_element(html, "body");
+	ul = options_find_tree_element(body, "ul");
 	if (!ul) {
 		xmlFreeDoc(doc);
 		warn_user("HotlistLoadError",
@@ -257,7 +257,7 @@ struct tree *options_load_hotlist(const char *filename) {
 	tree->root = tree_create_folder_node(NULL, "Root");
 	if (!tree->root) return NULL;
 
-	options_load_hotlist_directory(ul, tree->root);
+	options_load_tree_directory(ul, tree->root);
 	tree->root->expanded = true;
 	tree_initialise(tree);
 
@@ -272,7 +272,7 @@ struct tree *options_load_hotlist(const char *filename) {
  * \param  ul         xmlNode for parsed ul
  * \param  directory  directory to add this directory to
  */
-void options_load_hotlist_directory(xmlNode *ul, struct node *directory) {
+void options_load_tree_directory(xmlNode *ul, struct node *directory) {
 	char *title;
 	struct node *dir;
 	xmlNode *n;
@@ -290,7 +290,7 @@ void options_load_hotlist_directory(xmlNode *ul, struct node *directory) {
 
 		if (strcmp(n->name, "li") == 0) {
 			/* entry */
-			options_load_hotlist_entry(n, directory);
+			options_load_tree_entry(n, directory);
 
 		} else if (strcmp(n->name, "h4") == 0) {
 			/* directory */
@@ -316,7 +316,7 @@ void options_load_hotlist_directory(xmlNode *ul, struct node *directory) {
 			dir = tree_create_folder_node(directory, title);
 			if (!dir)
 				return;
-			options_load_hotlist_directory(n, dir);
+			options_load_tree_directory(n, dir);
 		}
 	}
 }
@@ -328,7 +328,7 @@ void options_load_hotlist_directory(xmlNode *ul, struct node *directory) {
  * \param  li         xmlNode for parsed li
  * \param  directory  directory to add this entry to
  */
-void options_load_hotlist_entry(xmlNode *li, struct node *directory) {
+void options_load_tree_entry(xmlNode *li, struct node *directory) {
 	char *url = 0;
 	char *title = 0;
   	int filetype = 0xfaf;
@@ -382,7 +382,7 @@ void options_load_hotlist_entry(xmlNode *li, struct node *directory) {
  * \return  first child of node which is an element and matches name, or
  *          0 if not found or parameter node is 0
  */
-xmlNode *options_find_hotlist_element(xmlNode *node, const char *name) {
+xmlNode *options_find_tree_element(xmlNode *node, const char *name) {
 	xmlNode *n;
 	if (!node)
 		return 0;
@@ -400,7 +400,7 @@ xmlNode *options_find_hotlist_element(xmlNode *node, const char *name) {
  *
  * /param  filename  the file to save to
  */
-bool options_save_hotlist(struct tree *tree, const char *filename) {
+bool options_save_tree(struct tree *tree, const char *filename, const char *page_title) {
 	int res;
 	xmlDoc *doc;
 	xmlNode *html, *head, *title, *body;
@@ -429,7 +429,7 @@ bool options_save_hotlist(struct tree *tree, const char *filename) {
 		return false;
 	}
 
-	title  = xmlNewTextChild(head, NULL, "title", "NetSurf Hotlist");
+	title  = xmlNewTextChild(head, NULL, "title", page_title);
 	if (!title) {
 		warn_user("NoMemory", 0);
 		xmlFreeDoc(doc);
@@ -443,7 +443,7 @@ bool options_save_hotlist(struct tree *tree, const char *filename) {
 		return false;
 	}
 
-	if (!options_save_hotlist_directory(tree->root, body)) {
+	if (!options_save_tree_directory(tree->root, body)) {
 		warn_user("NoMemory", 0);
 		xmlFreeDoc(doc);
 		return false;
@@ -469,7 +469,7 @@ bool options_save_hotlist(struct tree *tree, const char *filename) {
  * \param  node       node to add ul to
  * \return  true on success, false on memory exhaustion
  */
-bool options_save_hotlist_directory(struct node *directory, xmlNode *node) {
+bool options_save_tree_directory(struct node *directory, xmlNode *node) {
 	struct node *child;
 	xmlNode *ul, *h4;
 
@@ -480,7 +480,7 @@ bool options_save_hotlist_directory(struct node *directory, xmlNode *node) {
 	for (child = directory->child; child; child = child->next) {
 		if (!child->folder) {
 			/* entry */
-			if (!options_save_hotlist_entry(child, ul))
+			if (!options_save_tree_entry(child, ul))
 				return false;
 		} else {
 			/* directory */
@@ -489,7 +489,7 @@ bool options_save_hotlist_directory(struct node *directory, xmlNode *node) {
 			if (!h4)
 				return false;
 
-			if (!options_save_hotlist_directory(child, ul))
+			if (!options_save_tree_directory(child, ul))
 				return false;
 		}	}
 
@@ -506,7 +506,7 @@ bool options_save_hotlist_directory(struct node *directory, xmlNode *node) {
  * \param  node   node to add li to
  * \return  true on success, false on memory exhaustion
  */
-bool options_save_hotlist_entry(struct node *entry, xmlNode *node) {
+bool options_save_tree_entry(struct node *entry, xmlNode *node) {
 	xmlNode *li, *a;
 	xmlAttr *href;
 	struct node_element *element;
@@ -527,25 +527,25 @@ bool options_save_hotlist_entry(struct node *entry, xmlNode *node) {
 		return false;
 
 	if (element->user_data != 0xfaf)
-		if (!options_save_hotlist_entry_comment(li,
+		if (!options_save_tree_entry_comment(li,
 				"Type", element->user_data))
 			return false;
 
 	element = tree_find_element(entry, TREE_ELEMENT_ADDED);
 	if ((element) && (element->user_data != -1))
-		if (!options_save_hotlist_entry_comment(li,
+		if (!options_save_tree_entry_comment(li,
   				"Added", element->user_data))
 			return false;
 
 	element = tree_find_element(entry, TREE_ELEMENT_LAST_VISIT);
 	if ((element) && (element->user_data != -1))
-		if (!options_save_hotlist_entry_comment(li,
+		if (!options_save_tree_entry_comment(li,
 				"LastVisit", element->user_data))
 			return false;
 
 	element = tree_find_element(entry, TREE_ELEMENT_VISITS);
 	if ((element) && (element->user_data != 0))
-		if (!options_save_hotlist_entry_comment(li,
+		if (!options_save_tree_entry_comment(li,
 				"Visits", element->user_data))
 			return false;
 	return true;
@@ -560,7 +560,7 @@ bool options_save_hotlist_entry(struct node *entry, xmlNode *node) {
  * \param  value  value of special comment
  * \return  true on success, false on memory exhaustion
  */
-bool options_save_hotlist_entry_comment(xmlNode *node, const char *name, int value) {
+bool options_save_tree_entry_comment(xmlNode *node, const char *name, int value) {
 	char s[40];
 	xmlNode *comment;
 

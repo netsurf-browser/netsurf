@@ -151,8 +151,8 @@ struct url_content *url_store_find(const char *url) {
 	/* try to find a matching url fairly quickly */
 	for (search = hostname_data->url; search; search = search->next) {
 		if ((fast_exit_counter <= 0) ||
-				(search->url_length == url_length)) {
-			compare = strcmp(url, search->url);
+				(search->data.url_length == url_length)) {
+			compare = strcmp(url, search->data.url);
 			if (compare == 0)
 				return &search->data;
 			else if (compare < 0)
@@ -167,13 +167,13 @@ struct url_content *url_store_find(const char *url) {
 	result = calloc(sizeof(struct url_data), 1);
 	if (!result)
 		return NULL;
-	result->url = malloc(url_length + 1);
-	if (!result->url) {
+	result->data.url = malloc(url_length + 1);
+	if (!result->data.url) {
 		free(result);
 		return NULL;
 	}
-	strcpy(result->url, url);
-	result->url_length = url_length;
+	strcpy(result->data.url, url);
+	result->data.url_length = url_length;
 	result->data.requests = 0;
 	result->data.visits = 0;
 	result->parent = hostname_data;
@@ -197,7 +197,7 @@ struct url_content *url_store_find(const char *url) {
 	 * to link to (we either had an early exit from the searching so we
 	 * know we're in the block following where we need to link, or we're
 	 * at the very end of the list as we were in the last block.) */
-	while ((search) && (strcmp(url, search->url) < 0))
+	while ((search) && (strcmp(url, search->data.url) < 0))
 		search = search->previous;
 
 	/* simple case: our new hostname is the first in the list */
@@ -335,22 +335,22 @@ char *url_store_match(const char *url, struct url_data **reference) {
 				return NULL;
 		} else if ((search->data.visits > 0) && (search->data.requests > 0)){
 			/* straight match */
-			if ((search->url_length >= url_length) &&
-					(!strncmp(search->url, url, url_length))) {
+			if ((search->data.url_length >= url_length) &&
+					(!strncmp(search->data.url, url, url_length))) {
 				free(scheme);
 				*reference = search;
-				return search->url;
+				return search->data.url;
 			}
 			/* try with 'www.' inserted after the scheme */
-			if (www_test && ((search->url_length - 4) >= url_length) &&
-				(!strncmp(search->url, scheme, scheme_length)) &&
-				(!strncmp(search->url + scheme_length + 3, "www.", 4)) &&
-				(!strncmp(search->url + scheme_length + 7,
+			if (www_test && ((search->data.url_length - 4) >= url_length) &&
+				(!strncmp(search->data.url, scheme, scheme_length)) &&
+				(!strncmp(search->data.url + scheme_length + 3, "www.", 4)) &&
+				(!strncmp(search->data.url + scheme_length + 7,
 						url + scheme_length + 3,
 						url_length - scheme_length - 3))) {
 				free(scheme);
 				*reference = search;
-				return search->url;
+				return search->data.url;
 			}
 		}
 	}
@@ -442,12 +442,11 @@ void url_store_save(const char *file) {
 	/* file format version number */
 	fprintf(fp, "100\n");
 	for (search = url_store_hostnames; search; search = search->next) {
-		for (url = search->url; url; url = url->next) {
-		  	if (strlen(url->url) < 1024) {
-				fprintf(fp, "%s\n%i\n%i\n", url->url,
+		for (url = search->url; url; url = url->next)
+		  	if ((url->data.requests > 0) &&
+		  			(strlen(url->data.url) < MAXIMUM_URL_LENGTH))
+				fprintf(fp, "%s\n%i\n%i\n", url->data.url,
 						url->data.visits, url->data.requests);
-			}
-		}
 	}
 	fclose(fp);
 }
@@ -467,7 +466,7 @@ void url_store_dump(void) {
 		fprintf(stderr, ":\n");
 		for (url = search->url; url; url = url->next) {
 			fprintf(stderr, " - ");
-			fprintf(stderr, url->url);
+			fprintf(stderr, url->data.url);
 			fprintf(stderr, "\n");
 		}
 	}

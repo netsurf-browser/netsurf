@@ -63,6 +63,7 @@ struct gui_save_table_entry gui_save_table[] = {
 	/* GUI_SAVE_LINK_URL,            */ { 0xb28, "SaveLink" },
 	/* GUI_SAVE_LINK_TEXT,           */ { 0xfff, "SaveLink" },
 	/* GUI_SAVE_HOTLIST_EXPORT_HTML, */ { 0xfaf, "Hotlist" },
+	/* GUI_SAVE_HISTORY_EXPORT_HTML, */ { 0xfaf, "History" },
 };
 
 
@@ -88,7 +89,8 @@ void ro_gui_save_open(gui_save_type save_type, struct content *c,
 	os_error *error;
 	url_func_result res;
 
-	assert(save_type == GUI_SAVE_HOTLIST_EXPORT_HTML || c);
+	assert((save_type == GUI_SAVE_HOTLIST_EXPORT_HTML) ||
+			(save_type == GUI_SAVE_HISTORY_EXPORT_HTML) || c);
 
 	gui_save_current_type = save_type;
 	gui_save_content = c;
@@ -239,7 +241,8 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 	os_error *error;
 
 	if (!gui_save_content &&
-			gui_save_current_type != GUI_SAVE_HOTLIST_EXPORT_HTML) {
+			(gui_save_current_type != GUI_SAVE_HOTLIST_EXPORT_HTML) &&
+			(gui_save_current_type != GUI_SAVE_HISTORY_EXPORT_HTML)) {
 		LOG(("unexpected DataSaveAck: gui_save_content not set"));
 		return;
 	}
@@ -309,7 +312,15 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 				return;
 			break;
 		case GUI_SAVE_HOTLIST_EXPORT_HTML:
-			if (!options_save_hotlist(hotlist_tree, path))
+			if (!options_save_tree(hotlist_tree, path, "NetSurf hotlist"))
+				return;
+			error = xosfile_set_type(path, 0xfaf);
+			if (error)
+				LOG(("xosfile_set_type: 0x%x: %s",
+						error->errnum, error->errmess));
+			break;
+		case GUI_SAVE_HISTORY_EXPORT_HTML:
+			if (!options_save_tree(global_history_tree, path, "NetSurf history"))
 				return;
 			error = xosfile_set_type(path, 0xfaf);
 			if (error)

@@ -40,6 +40,7 @@
 #include "netsurf/desktop/tree.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
+#include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
 #include "netsurf/riscos/options.h"
@@ -273,6 +274,7 @@ void gui_init(int argc, char** argv)
 	ro_gui_sprites_init();
 	ro_gui_tree_initialise(); /* must be done after sprite loading */
 	ro_gui_hotlist_initialise();
+	ro_gui_global_history_initialise();
 
 	/*	Load our chosen theme
 	*/
@@ -545,6 +547,7 @@ void gui_quit(void)
 {
   	url_store_save("<Choices$Write>.WWW.NetSurf.URL");
 	ro_gui_window_quit();
+	ro_gui_global_history_save();
 	ro_gui_hotlist_save();
 	ro_gui_history_quit();
 	free(gui_sprites);
@@ -791,6 +794,11 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 		ro_gui_tree_redraw(redraw, hotlist_tree);
 	else if ((hotlist_toolbar) && (hotlist_toolbar->toolbar_handle == redraw->w))
 		ro_gui_theme_redraw(hotlist_toolbar, redraw);
+	else if ((global_history_tree) && (redraw->w == (wimp_w)global_history_tree->handle))
+		ro_gui_tree_redraw(redraw, global_history_tree);
+	else if ((global_history_toolbar) &&
+			(global_history_toolbar->toolbar_handle == redraw->w))
+		ro_gui_theme_redraw(global_history_toolbar, redraw);
 	else if (redraw->w == dialog_debug)
 		ro_gui_debugwin_redraw(redraw);
 	else if ((g = ro_gui_window_lookup(redraw->w)) != NULL)
@@ -817,6 +825,8 @@ void ro_gui_open_window_request(wimp_open *open)
 		ro_gui_window_open(g, open);
 	} else if ((hotlist_tree) && (open->w == (wimp_w)hotlist_tree->handle)){
 		ro_gui_tree_open(open, hotlist_tree);
+	} else if ((global_history_tree) && (open->w == (wimp_w)global_history_tree->handle)){
+		ro_gui_tree_open(open, global_history_tree);
 	} else {
 		error = xwimp_open_window(open);
 		if (error) {
@@ -911,11 +921,17 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 		ro_gui_url_complete_mouse_at(pointer);
 	else if ((hotlist_tree) && (pointer->w == (wimp_w)hotlist_tree->handle))
 		ro_gui_hotlist_click(pointer);
+	else if ((global_history_tree) && (pointer->w == (wimp_w)global_history_tree->handle))
+		ro_gui_global_history_click(pointer);
 	else if (pointer->w == dialog_saveas)
 		ro_gui_save_click(pointer);
 	else if (hotlist_toolbar &&
 			hotlist_toolbar->toolbar_handle == pointer->w)
-		ro_gui_hotlist_toolbar_click(pointer);
+		ro_gui_tree_toolbar_click(pointer, hotlist_tree, hotlist_toolbar);
+	else if (global_history_toolbar &&
+			global_history_toolbar->toolbar_handle == pointer->w)
+		ro_gui_tree_toolbar_click(pointer, global_history_tree,
+				global_history_toolbar);
 	else if ((g = ro_gui_window_lookup(pointer->w)) != NULL)
 		ro_gui_window_click(g, pointer);
 	else if ((g = ro_gui_toolbar_lookup(pointer->w)) != NULL)
@@ -1006,9 +1022,11 @@ void ro_gui_keypress(wimp_key *key)
 	struct gui_window *g;
 	os_error *error;
 
-	if ((hotlist_tree) && (key->w == (wimp_w)hotlist_tree->handle)) {
+	if ((hotlist_tree) && (key->w == (wimp_w)hotlist_tree->handle))
 		handled = ro_gui_hotlist_keypress(key->c);
-	} else if ((g = ro_gui_window_lookup(key->w)) != NULL)
+	else if ((global_history_tree) && (key->w == (wimp_w)global_history_tree->handle))
+		handled = ro_gui_global_history_keypress(key->c);
+	else if ((g = ro_gui_window_lookup(key->w)) != NULL)
 		handled = ro_gui_window_keypress(g, key->c, false);
 	else if ((g = ro_gui_toolbar_lookup(key->w)) != NULL)
 		handled = ro_gui_window_keypress(g, key->c, true);
@@ -1071,6 +1089,9 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 		case message_MENUS_DELETED:
 			if ((current_menu == hotlist_menu) && (hotlist_tree))
 				ro_gui_hotlist_menu_closed();
+			else if ((current_menu == global_history_menu) &&
+					(global_history_tree))
+				ro_gui_global_history_menu_closed();
 			current_menu = NULL;
 			current_gui = NULL;
 			break;
