@@ -1749,6 +1749,8 @@ struct result box_iframe(xmlNode *n, struct status *status,
 bool plugin_decode(struct content* content, char* url, struct box* box,
                   struct object_params* po)
 {
+  struct plugin_params * pp;
+
   /* Set basehref */
   po->basehref = strdup(content->url);
 
@@ -1772,8 +1774,19 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
    }
    if(po->data == 0 && po->classid != 0) {
            if(strncasecmp(po->classid, "clsid:", 6) == 0) {
-                   LOG(("ActiveX object - n0"));
-                   return false;
+                   /* Flash */
+                   if(strcasecmp(po->classid, "clsid:D27CDB6E-AE6D-11cf-96B8-444553540000") == 0) {
+                           for(pp = po->params; pp != 0 &&
+                               (strcasecmp(pp->name, "movie") != 0);
+                               pp = pp->next);
+                           if(pp != 0)
+                                   url = url_join(pp->value, po->basehref);
+                           else return false;
+                   }
+                   else {
+                           LOG(("ActiveX object - n0"));
+                           return false;
+                   }
            }
            else {
                    url = url_join(po->classid, po->codebase);
