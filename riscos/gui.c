@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.20 2003/03/04 11:59:35 bursa Exp $
+ * $Id: gui.c,v 1.21 2003/03/08 20:26:31 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -11,6 +11,7 @@
 #include "oslib/wimp.h"
 #include "oslib/colourtrans.h"
 #include "oslib/jpeg.h"
+#include "oslib/wimpspriteop.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/utils/log.h"
 #include <assert.h>
@@ -273,22 +274,22 @@ wimp_i ro_gui_iconbar_i;
 
 gui_window* over_window = NULL;
 
-unsigned long ro_x_units(unsigned long browser_units)
+int ro_x_units(unsigned long browser_units)
 {
   return (browser_units << 1);
 }
 
-unsigned long ro_y_units(unsigned long browser_units)
+int ro_y_units(unsigned long browser_units)
 {
   return -(browser_units << 1);
 }
 
-unsigned long browser_x_units(unsigned long ro_units)
+unsigned long browser_x_units(int ro_units)
 {
   return (ro_units >> 1);
 }
 
-unsigned long browser_y_units(unsigned long ro_units)
+unsigned long browser_y_units(int ro_units)
 {
   return -(ro_units >> 1);
 }
@@ -345,7 +346,7 @@ gui_window* create_gui_browser_window(struct browser_window* bw)
   }
   window.title_flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED;
   window.work_flags = wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT;
-  window.sprite_area = NULL;
+  window.sprite_area = wimpspriteop_AREA;
   window.xmin = 100;
   window.ymin = window.extent.y1 + 100;
   window.title_data.indirected_text.text = g->title;
@@ -501,7 +502,7 @@ void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
     return;
 
   wimp_force_redraw(g->data.browser.window,
-    (int) ro_x_units(x0), (int) ro_y_units(y1), (int) ro_x_units(x1), (int) ro_y_units(y0));
+    ro_x_units(x0), ro_y_units(y1), ro_x_units(x1), ro_y_units(y0));
 }
 
 void gui_window_redraw_window(gui_window* g)
@@ -601,7 +602,7 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
     else if (box->gadget != 0)
     {
 	wimp_icon icon;
-	fprintf(stderr, "writing GADGET\n");
+	LOG(("writing GADGET"));
 
 	icon.extent.x0 = -gadget_subtract_x + x + box->x * 2;
 	icon.extent.y0 = -gadget_subtract_y + y - box->y * 2 - box->height * 2;
@@ -619,7 +620,7 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
 			icon.data.indirected_text.text = box->gadget->data.textarea.text;
 			icon.data.indirected_text.size = strlen(box->gadget->data.textarea.text);
 			icon.data.indirected_text.validation = validation_textarea;
-			fprintf(stderr, "writing GADGET TEXTAREA\n");
+			LOG(("writing GADGET TEXTAREA"));
 			wimp_plot_icon(&icon);
       			break;
 
@@ -633,7 +634,7 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
 			icon.data.indirected_text.text = box->gadget->data.textbox.text;
 			icon.data.indirected_text.size = box->gadget->data.textbox.maxlength + 1;
 			icon.data.indirected_text.validation = validation_textbox;
-			fprintf(stderr, "writing GADGET TEXTBOX\n");
+			LOG(("writing GADGET TEXTBOX"));
 			wimp_plot_icon(&icon);
       			break;
 
@@ -654,7 +655,7 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
 			  icon.data.indirected_text.validation = validation_actionbutton;
 			  icon.flags |= (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
 			}
-			fprintf(stderr, "writing GADGET ACTION\n");
+			LOG(("writing GADGET ACTION"));
 			wimp_plot_icon(&icon);
 			break;
 
@@ -682,7 +683,7 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
 			icon.data.indirected_text.text = select_text;
 			icon.data.indirected_text.size = strlen(icon.data.indirected_text.text);
 			icon.data.indirected_text.validation = validation_select;
-			fprintf(stderr, "writing GADGET ACTION\n");
+			LOG(("writing GADGET ACTION"));
 			wimp_plot_icon(&icon);
 			break;
 
@@ -696,25 +697,25 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
 			else
 			  icon.data.indirected_text_and_sprite.validation = validation_checkbox_unselected;
 			icon.data.indirected_text_and_sprite.size = 1;
+			LOG(("writing GADGET CHECKBOX"));
 			wimp_plot_icon(&icon);
 			break;
 
 		case GADGET_RADIO:
-			icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
-				wimp_ICON_VCENTRED | wimp_ICON_HCENTRED |
-				wimp_ICON_INDIRECTED;
-			icon.data.indirected_text_and_sprite.text = empty_text;
+			icon.flags = wimp_ICON_SPRITE |
+				wimp_ICON_VCENTRED | wimp_ICON_HCENTRED;
 			if (box->gadget->data.radio.selected)
-			  icon.data.indirected_text_and_sprite.validation = validation_radio_selected;
+				strcpy(icon.data.sprite, "radioon");
 			else
-			  icon.data.indirected_text_and_sprite.validation = validation_radio_unselected;
-			icon.data.indirected_text_and_sprite.size = 1;
+				strcpy(icon.data.sprite, "radiooff");
+			LOG(("writing GADGET RADIO"));
 			wimp_plot_icon(&icon);
 			break;
 
 		case GADGET_HIDDEN:
 			break;
 	}
+	LOG(("gadgets finished"));
     }
 
     if (box->type == BOX_INLINE && box->font != 0)
@@ -905,7 +906,7 @@ unsigned long gui_window_get_width(gui_window* g)
   wimp_window_state state;
   state.w = g->data.browser.window;
   wimp_get_window_state(&state);
-  return browser_x_units((unsigned long) (state.visible.x1 - state.visible.x0));
+  return browser_x_units(state.visible.x1 - state.visible.x0);
 }
 
 void gui_window_set_extent(gui_window* g, unsigned long width, unsigned long height)

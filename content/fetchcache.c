@@ -1,5 +1,5 @@
 /**
- * $Id: fetchcache.c,v 1.4 2003/03/04 11:59:35 bursa Exp $
+ * $Id: fetchcache.c,v 1.5 2003/03/08 20:26:31 bursa Exp $
  */
 
 #include <assert.h>
@@ -12,7 +12,7 @@
 
 
 struct fetchcache {
-	void *url;
+	char *url;
 	void (*callback)(fetchcache_msg msg, struct content *c, void *p, const char *error);
 	void *p;
 	struct fetch *f;
@@ -50,7 +50,7 @@ void fetchcache(const char *url, char *referer,
 	fc->width = width;
 	fc->height = height;
 	fc->size = 0;
-	fc->f = fetch_start(url, referer, fetchcache_callback, fc);
+	fc->f = fetch_start(fc->url, referer, fetchcache_callback, fc);
 }
 
 
@@ -96,6 +96,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			LOG(("FETCH_FINISHED"));
 			assert(fc->c != 0);
 			sprintf(status, "Converting %lu bytes", fc->size);
+			fc->callback(FETCHCACHE_STATUS, fc->c, fc->p, status);
 			if (content_convert(fc->c, fc->width, fc->height) == 0) {
 				cache_put(fc->c);
 				fc->callback(FETCHCACHE_OK, fc->c, fc->p, 0);
@@ -103,14 +104,14 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 				content_destroy(fc->c);
 				fc->callback(FETCHCACHE_ERROR, 0, fc->p, "Conversion failed");
 			}
-			free(fc);
+			fetchcache_free(fc);
 			break;
 		case FETCH_ERROR:
 			LOG(("FETCH_ERROR, '%s'", data));
 			if (fc->c != 0)
 				content_destroy(fc->c);
 			fc->callback(FETCHCACHE_ERROR, 0, fc->p, data);
-			free(fc);
+			fetchcache_free(fc);
 			break;
 		default:
 			assert(0);
