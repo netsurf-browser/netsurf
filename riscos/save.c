@@ -103,7 +103,7 @@ void ro_gui_save_open(gui_save_type save_type, struct content *c,
 	/* filename */
 	name = gui_save_table[save_type].name;
 	if (c) {
-		if ((res = url_nice(c->url, &nice)) == URL_FUNC_OK)
+		if ((res = url_nice(c->url, (char **)&nice)) == URL_FUNC_OK)
 			name = nice;
         }
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);
