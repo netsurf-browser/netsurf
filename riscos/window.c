@@ -312,32 +312,23 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 	*/
 	assert(data->redraw.object);
 
-	/*	Accomodate for rounding errors, minimising the number of those evil division things
-	*/
-	if (data->redraw.object_width < data->redraw.object->width) {
-		addition_x = 1 + (data->redraw.width + 1) * (data->redraw.object->width / data->redraw.object_width) -
-			data->redraw.width;
-	} else if (data->redraw.object_width > data->redraw.object->width) {
-	  	addition_x = 1;
-	}
-	if (data->redraw.object_height < data->redraw.object->height) {
-		addition_y = 1 + (data->redraw.height + 1) * (data->redraw.object->height / data->redraw.object_height) -
-			data->redraw.height;
-	} else if (data->redraw.object_height > data->redraw.object->height) {
-	  	addition_y = 1;
-	}
-
-	/*	Calculate the update box, taking care not to exceed our bounds
+	/*	Calculate the update box. If we are scaled then redraw the whole bottom/right portion of the image,
+		if not then redraw a section. This is a hack and should be fixed properly.
 	*/
 	update.w = g->window;
 	update.box.x0 = data->redraw.x * 2 * g->scale;
 	update.box.y1 = -data->redraw.y * 2 * g->scale;
-	size = data->redraw.x + data->redraw.width + addition_x;
-	if (size > (data->redraw.x + data->redraw.object_width)) size = data->redraw.x + data->redraw.object_width;
-	update.box.x1 = size * 2 * g->scale;
-	size = data->redraw.y + data->redraw.height + addition_y;
-	if (size > (data->redraw.y + data->redraw.object_height)) size = data->redraw.y + data->redraw.object_height;
-	update.box.y0 = -size * 2 * g->scale;
+	if ((data->redraw.object_width != data->redraw.object->width) ||
+			(data->redraw.object_height != data->redraw.object->height)) {
+		update.box.x1 = (data->redraw.x + data->redraw.object_width) * 2 * g->scale;
+		update.box.y0 = -(data->redraw.y + data->redraw.object_height) * 2 * g->scale;
+	} else {
+		update.box.x1 = (data->redraw.x + data->redraw.width) * 2 * g->scale;
+		update.box.y0 = -(data->redraw.y + data->redraw.height) * 2 * g->scale;
+	}
+
+	/*	Perform the update
+	*/
 	error = xwimp_update_window(&update, &more);
 	if (error) {
 		LOG(("xwimp_update_window: 0x%x: %s",
