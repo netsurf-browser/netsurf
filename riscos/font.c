@@ -12,17 +12,159 @@
  */
 
 #include <assert.h>
+#include <string.h>
 #include "rufl.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/font.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
+#include "netsurf/utils/utils.h"
 
 
+static void nsfont_check_option(char **option, const char *family,
+		const char *fallback);
+static bool nsfont_exists(const char *font_family);
+static int nsfont_list_cmp(const void *keyval, const void *datum);
+static void nsfont_check_fonts(void);
 static void nsfont_read_style(const struct css_style *style,
 		const char **font_family, unsigned int *font_size,
 		rufl_style *font_style);
+
+
+/**
+ * Initialize font handling.
+ *
+ * Exits through die() on error.
+ */
+
+void nsfont_init(void)
+{
+	const char *fallback = "Homerton";
+	rufl_code code;
+
+	nsfont_check_fonts();
+
+	code = rufl_init();
+	if (code != rufl_OK) {
+		if (code == rufl_FONT_MANAGER_ERROR)
+			LOG(("rufl_init: rufl_FONT_MANAGER_ERROR: 0x%x: %s",
+					rufl_fm_error->errnum,
+					rufl_fm_error->errmess));
+		else
+			LOG(("rufl_init: 0x%x", code));
+		die("The Unicode font library could not be initialized. "
+				"Please report this to the developers.");
+	}
+
+	if (rufl_family_list_entries == 0)
+		die("No fonts could be found. At least one font must be "
+				"installed.");
+
+	if (!nsfont_exists("Homerton"))
+		fallback = rufl_family_list[0];
+
+	nsfont_check_option(&option_font_sans, "Homerton", fallback);
+	nsfont_check_option(&option_font_serif, "Trinity", fallback);
+	nsfont_check_option(&option_font_mono, "Corpus", fallback);
+	nsfont_check_option(&option_font_cursive, "Churchill", fallback);
+	nsfont_check_option(&option_font_fantasy, "Sassoon", fallback);
+
+	if (option_font_default != CSS_FONT_FAMILY_SANS_SERIF &&
+			option_font_default != CSS_FONT_FAMILY_SERIF &&
+			option_font_default != CSS_FONT_FAMILY_MONOSPACE &&
+			option_font_default != CSS_FONT_FAMILY_CURSIVE &&
+			option_font_default != CSS_FONT_FAMILY_FANTASY)
+		option_font_default = CSS_FONT_FAMILY_SANS_SERIF;
+}
+
+
+/**
+ * Check that a font option is valid, and fix it if not.
+ *
+ * \param  option    pointer to option, as used by options.[ch]
+ * \param  family    font family to use if option is not set, or the set
+ *                   family is not available
+ * \param  fallback  font family to use if family is not available either
+ */
+
+void nsfont_check_option(char **option, const char *family,
+		const char *fallback)
+{
+	if (*option && !nsfont_exists(*option)) {
+		free(*option);
+		*option = 0;
+	}
+	if (!*option) {
+		if (nsfont_exists(family))
+			*option = strdup(family);
+		else
+			*option = strdup(fallback);
+	}
+}
+
+
+/**
+ * Check if a font family is available.
+ *
+ * \param  font_family  name of font family
+ * \return  true if the family is available
+ */
+
+bool nsfont_exists(const char *font_family)
+{
+	if (bsearch(font_family, rufl_family_list,
+			rufl_family_list_entries, sizeof rufl_family_list[0],
+			nsfont_list_cmp))
+		return true;
+	return false;
+}
+
+
+int nsfont_list_cmp(const void *keyval, const void *datum)
+{
+	const char *key = keyval;
+	const char * const *entry = datum;
+	return strcmp(key, *entry);
+}
+
+
+/**
+ * Check that at least Homerton.Medium is available.
+ */
+
+void nsfont_check_fonts(void)
+{
+	char s[252];
+	font_f font;
+	os_error *error;
+
+	error = xfont_find_font("Homerton.Medium\\ELatin1",
+			160, 160, 0, 0, &font, 0, 0);
+	if (error) {
+		if (error->errnum == error_FILE_NOT_FOUND) {
+			xwimp_start_task("TaskWindow -wimpslot 200K -quit "
+					"<NetSurf$Dir>.FixFonts", 0);
+			die("FontBadInst");
+		} else {
+			LOG(("xfont_find_font: 0x%x: %s",
+					error->errnum, error->errmess));
+			snprintf(s, sizeof s, messages_get("FontError"),
+					error->errmess);
+			die(s);
+		}
+	}
+
+	error = xfont_lose_font(font);
+	if (error) {
+		LOG(("xfont_lose_font: 0x%x: %s",
+				error->errnum, error->errmess));
+		snprintf(s, sizeof s, messages_get("FontError"),
+				error->errmess);
+		die(s);
+	}
+}
 
 
 /**
@@ -228,8 +370,6 @@ void nsfont_read_style(const struct css_style *style,
 		const char **font_family, unsigned int *font_size,
 		rufl_style *font_style)
 {
-	*font_family = "Homerton";
-
 	assert(style->font_size.size == CSS_FONT_SIZE_LENGTH);
 	*font_size = css_len2px(&style->font_size.value.length, style) *
 			72.0 / 90.0 * 16.;
@@ -238,26 +378,47 @@ void nsfont_read_style(const struct css_style *style,
 	if (1600 < *font_size)
 		*font_size = 1600;
 
+	switch (style->font_family) {
+	case CSS_FONT_FAMILY_SANS_SERIF:
+		*font_family = option_font_sans;
+		break;
+	case CSS_FONT_FAMILY_SERIF:
+		*font_family = option_font_serif;
+		break;
+	case CSS_FONT_FAMILY_MONOSPACE:
+		*font_family = option_font_mono;
+		break;
+	case CSS_FONT_FAMILY_CURSIVE:
+		*font_family = option_font_cursive;
+		break;
+	case CSS_FONT_FAMILY_FANTASY:
+		*font_family = option_font_fantasy;
+		break;
+	default:
+		*font_family = option_font_sans;
+		break;
+	}
+
 	switch (style->font_style) {
-		case CSS_FONT_STYLE_ITALIC:
-		case CSS_FONT_STYLE_OBLIQUE:
-			*font_style = rufl_SLANTED;
-			break;
-		default:
-			*font_style = rufl_REGULAR;
-			break;
+	case CSS_FONT_STYLE_ITALIC:
+	case CSS_FONT_STYLE_OBLIQUE:
+		*font_style = rufl_SLANTED;
+		break;
+	default:
+		*font_style = rufl_REGULAR;
+		break;
 	}
 
 	switch (style->font_weight) {
-		case CSS_FONT_WEIGHT_BOLD:
-		case CSS_FONT_WEIGHT_600:
-		case CSS_FONT_WEIGHT_700:
-		case CSS_FONT_WEIGHT_800:
-		case CSS_FONT_WEIGHT_900:
-			*font_style += rufl_BOLD;
-			break;
-		default:
-			break;
+	case CSS_FONT_WEIGHT_BOLD:
+	case CSS_FONT_WEIGHT_600:
+	case CSS_FONT_WEIGHT_700:
+	case CSS_FONT_WEIGHT_800:
+	case CSS_FONT_WEIGHT_900:
+		*font_style += rufl_BOLD;
+		break;
+	default:
+		break;
 	}
 }
 

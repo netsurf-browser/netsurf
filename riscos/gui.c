@@ -149,7 +149,6 @@ struct ro_gui_poll_block {
 struct ro_gui_poll_block *ro_gui_poll_queued_blocks = 0;
 
 static void ro_gui_choose_language(void);
-static void ro_gui_check_fonts(void);
 static void ro_gui_sprites_init(void);
 static void ro_gui_icon_bar_create(void);
 static void ro_gui_signal(int sig);
@@ -188,7 +187,6 @@ void gui_init(int argc, char** argv)
 	os_error *error;
 	int length;
 	struct theme_descriptor *descriptor = NULL;
-	rufl_code code;
 
 	xhourglass_start(1);
 
@@ -253,22 +251,7 @@ void gui_init(int argc, char** argv)
 		die(error->errmess);
 	}
 
-#ifndef ncos
-	/* We don't need to check the fonts on NCOS */
-	ro_gui_check_fonts();
-#endif
-
-	code = rufl_init();
-	if (code != rufl_OK) {
-		if (code == rufl_FONT_MANAGER_ERROR)
-			LOG(("rufl_init: rufl_FONT_MANAGER_ERROR: 0x%x: %s",
-					rufl_fm_error->errnum,
-					rufl_fm_error->errmess));
-		else
-			LOG(("rufl_init: 0x%x", code));
-		die("The Unicode font library could not be initialized. "
-				"Please report this to the developers.");
-	}
+	nsfont_init();
 
 	/* Issue a *Desktop to poke AcornURI into life */
 	if (getenv("NetSurf$Start_URI_Handler"))
@@ -307,12 +290,12 @@ void gui_init(int argc, char** argv)
 		descriptor = ro_gui_theme_find("Aletheia");
 	ro_gui_theme_apply(descriptor);
 
-	/* We don't create an Iconbar icon on NCOS */
 #ifndef ncos
 	ro_gui_icon_bar_create();
 #endif
 	ro_gui_check_resolvers();
 }
+
 
 /**
  * Determine the language to use.
@@ -369,39 +352,6 @@ void ro_gui_choose_language(void)
 	assert(option_language);
 	if (!option_accept_language)
 		option_accept_language = strdup(option_language);
-}
-
-
-/**
- * Check that at least Homerton.Medium is available.
- */
-
-void ro_gui_check_fonts(void)
-{
-	char s[252];
-	font_f font;
-	os_error *error;
-
-	error = xfont_find_font("Homerton.Medium\\ELatin1",
-			160, 160, 0, 0, &font, 0, 0);
-	if (error) {
-		if (error->errnum == error_FILE_NOT_FOUND) {
-			xwimp_start_task("TaskWindow -wimpslot 200K -quit "
-					"<NetSurf$Dir>.FixFonts", 0);
-			die("FontBadInst");
-		} else {
-			snprintf(s, sizeof s, messages_get("FontError"),
-					error->errmess);
-			die(s);
-		}
-	}
-
-	error = xfont_lose_font(font);
-	if (error) {
-		snprintf(s, sizeof s, messages_get("FontError"),
-				error->errmess);
-		die(s);
-	}
 }
 
 

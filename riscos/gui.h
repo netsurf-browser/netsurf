@@ -250,6 +250,7 @@ void ro_gui_print_click(wimp_pointer *pointer);
 bool ro_gui_print_keypress(wimp_key *key);
 
 /* in font.c */
+void nsfont_init(void);
 bool nsfont_paint(struct css_style *style, const char *string,
 		size_t length, int x, int y, float scale);
 
@@ -351,7 +352,6 @@ void ro_gui_theme_install_click(wimp_pointer *pointer);
 #define ICON_CONFIG_FONT_MINSIZE 17
 #define ICON_CONFIG_FONT_MINSIZE_DEC 18
 #define ICON_CONFIG_FONT_MINSIZE_INC 19
-#define ICON_CONFIG_FONT_USE_UFONT 20
 
 #define ICON_DOWNLOAD_ICON 0
 #define ICON_DOWNLOAD_URL 1
