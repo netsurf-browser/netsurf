@@ -1832,3 +1832,19 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
    return true;
 }
 
+
+/**
+ * Find the absolute coordinates of a box.
+ */
+
+void box_coords(struct box *box, unsigned long *x, unsigned long *y)
+{
+	*x = box->x;
+	*y = box->y;
+	while (box->parent != 0) {
+		box = box->parent;
+		*x += box->x;
+		*y += box->y;
+	}
+}
+

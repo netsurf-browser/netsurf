@@ -167,5 +167,6 @@ struct page_elements
 void xml_to_box(xmlNode *n, struct content *c);
 void box_dump(struct box * box, unsigned int depth);
 void box_free(struct box *box);
+void box_coords(struct box *box, unsigned long *x, unsigned long *y);
 
 #endif
