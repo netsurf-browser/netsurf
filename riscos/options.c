@@ -66,7 +66,7 @@ const char* yesno(int q)
 		return "N";
 }
 
-static const char * const WRITE_DIR = "<Choices$Write>.NetSurf";
+static const char * const WRITE_DIR = "<Choices$Write>.WWW.NetSurf";
 
 void options_write(struct options* opt, char* filename)
 {
@@ -127,7 +127,7 @@ void options_read(struct options* opt, char* filename)
 	int size;
 
         fn = xcalloc(20 + (filename == 0 ? 7 : strlen(filename)), sizeof(char));
-	sprintf(fn, "Choices:NetSurf.%s", filename == 0 ? "Choices" : filename);
+	sprintf(fn, "Choices:WWW.NetSurf.%s", filename == 0 ? "Choices" : filename);
 
 	LOG(("Getting file info"));
   	if (xmessagetrans_file_info(fn, &flags, &size) != NULL)
