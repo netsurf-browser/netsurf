@@ -110,7 +110,6 @@ void about_create(void) {
   FILE *fp;
   char *buf, *val, var[20], *ptype, *pdetails, *fname, *furl, *p, *leafname;
   int i, nofiles, j, w, h, size, pneeded;
-  os_fw fh;
   os_error *e;
 
   abt = (struct about_page*)xcalloc(1, sizeof(*abt));
@@ -182,16 +181,19 @@ void about_create(void) {
 
         /* now see if there's an image to display */
         sprintf(buf, "%s.%2.2d", val, j);
+        LOG(("buf: %s", buf));
         e = xosfile_read_stamped_no_path(buf,0,0,0,&size,0,0);
 
         if(e || size < 0) {
           sprintf(buf, "%s.%2.2d*", val, j);
+          LOG(("buf: %s", buf));
           e = xosfile_read_stamped_no_path(buf,0,0,0,&size,0,0);
 
           if(e || size < 0) {
             /* Type 1: no image file */
             furl = xcalloc(strlen(paboutpl1) + strlen(ptype) + strlen(pdetails) + 10, sizeof(char));
             sprintf(furl, paboutpl1, ptype, pdetails);
+            LOG(("furl: %s", furl));
             abt->plugd = new_plugin(abt->plugd, furl);
             xfree(pdetails);
             continue;
@@ -200,12 +202,15 @@ void about_create(void) {
             /* Type 3: image file with name xxwwwwhhhh */
             /* get actual file name */
             sprintf(var, "%2.2d*", j);
+            LOG(("var: %s", var));
             sprintf(buf, "%s.", val);
+            buf[strlen(val)+1] = '\0'
+            LOG(("buf: %s", buf));
             xosfscontrol_canonicalise_path(var, 0, 0, buf, 0, &pneeded);
             fname = xcalloc((10-pneeded), sizeof(char));
             xosfscontrol_canonicalise_path(var, fname, 0, buf,
                                                           (10-pneeded), 0);
-
+            LOG(("fname: %s", fname));
             furl = xcalloc(strlen(fname) + 20, sizeof(char));
 
             /* grab leafname and get width and height */
