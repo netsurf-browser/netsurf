@@ -113,7 +113,7 @@ static int need_reformat = 0;
 /**
  * Initialises plugin system in readiness for receiving object data
  */
-void plugin_create(struct content *c)
+void plugin_create(struct content *c, const char *params[])
 {
         c->data.plugin.data = xcalloc(0, 1);
         c->data.plugin.length = 0;

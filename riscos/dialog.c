@@ -31,7 +31,6 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_401li,
 #endif
 	dialog_zoom, dialog_pageinfo, dialog_tooltip;
-	;
 wimp_menu* theme_menu = NULL;
 
 static int font_size;

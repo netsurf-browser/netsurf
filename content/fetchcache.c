@@ -160,7 +160,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			mime_type = fetchcache_parse_type(data, &params);
 			type = content_lookup(mime_type);
 			LOG(("FETCH_TYPE, type %u", type));
-			content_set_type(c, type, mime_type, params);
+			content_set_type(c, type, mime_type, (const char**)params);
 			free(mime_type);
 			for (i = 0; params[i]; i++)
 				free(params[i]);

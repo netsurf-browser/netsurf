@@ -443,7 +443,7 @@ void fetch_abort(struct fetch *f)
 			do {
 				fetch->locked++;
 				fetch->callback(FETCH_ERROR, fetch->p,
-						messages_get("FetchError"), 0);
+						(char*)messages_get("FetchError"), 0);
 				fetch->locked--;
 				next_fetch = fetch->queue_next;
 				fetch_free(fetch);
@@ -692,7 +692,7 @@ bool fetch_process_headers(struct fetch *f)
 	/* handle HTTP errors (non 2xx response codes) */
 	if (f->only_2xx && strncmp(f->url, "http", 4) == 0 &&
 			(http_code < 200 || 299 < http_code)) {
-		f->callback(FETCH_ERROR, f->p, messages_get("Not2xx"), 0);
+		f->callback(FETCH_ERROR, f->p, (char*)messages_get("Not2xx"), 0);
 		f->locked--;
 		return true;
 	}
@@ -717,7 +717,7 @@ bool fetch_process_headers(struct fetch *f)
 	}
 
 	LOG(("FETCH_TYPE, '%s'", type));
-	f->callback(FETCH_TYPE, f->p, type, f->content_length);
+	f->callback(FETCH_TYPE, f->p, (char*)type, f->content_length);
 	f->locked--;
 	if (f->aborting)
 		return true;

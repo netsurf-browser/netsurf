@@ -320,6 +320,7 @@ any(A) ::= ASTERISK(B).
 
 %extra_argument { struct css_parser_params *param }
 %include {
+#include <string.h>
 #define CSS_INTERNALS
 #include "netsurf/css/css.h"
 #include "netsurf/utils/utils.h" }
