@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.6 2002/06/18 21:24:21 bursa Exp $
+ * $Id: layout.c,v 1.7 2002/06/19 15:17:45 bursa Exp $
  */
 
 #include <assert.h>
@@ -88,7 +88,7 @@ void layout_block(struct box * box, unsigned long width, struct box * cont,
 {
 	struct css_style * style = box->style;
 
-	assert(box->type == BOX_BLOCK || box->type == BOX_FLOAT); 
+	assert(box->type == BOX_BLOCK || box->type == BOX_FLOAT);
 
 	switch (style->width.width) {
 		case CSS_WIDTH_AUTO:
@@ -126,7 +126,7 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 	struct box * c;
 	unsigned long y = 0;
 
-	assert(box->type == BOX_BLOCK || box->type == BOX_FLOAT || box->type == BOX_TABLE_CELL);	
+	assert(box->type == BOX_BLOCK || box->type == BOX_FLOAT || box->type == BOX_TABLE_CELL);
 
 	for (c = box->children; c != 0; c = c->next) {
 		switch (c->type) {
@@ -149,7 +149,7 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 				y += c->height;
 				break;
 			default:
-				printf("%s -> %s\n",
+				fprintf(stderr, "%s -> %s\n",
 						box->node ? box->node->name : "()",
 						c->node ? c->node->name : "()");
 				die("block child not block, table, or inline container");
@@ -184,7 +184,7 @@ void find_sides(struct box * fl, unsigned long y0, unsigned long y1,
 			}
 		}
 	}
-	fprintf(stderr, "find_sides: y0 %li y1 %li => x0 %li x1 %li\n", y0, y1, *x0, *x1);
+/* 	fprintf(stderr, "find_sides: y0 %li y1 %li => x0 %li x1 %li\n", y0, y1, *x0, *x1); */
 }
 
 
@@ -239,8 +239,8 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	struct box * c;
 	struct box * d;
 
-	fprintf(stderr, "layout_line: '%.*s' %li %li %li\n", first->length, first->text, width, *y, cy);
-	
+/* 	fprintf(stderr, "layout_line: '%.*s' %li %li %li\n", first->length, first->text, width, *y, cy); */
+
 	/* find sides at top of line */
 	find_sides(cont->float_children, cy, cy, &x0, &x1, &left, &right);
 
@@ -257,7 +257,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			x += font_width(b->style, b->text, b->length);
 		}
 	}
-	
+
 	/* find new sides using this height */
 	find_sides(cont->float_children, cy, cy + height, &x0, &x1, &left, &right);
 
@@ -269,7 +269,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			b->width = font_width(b->style, b->text, b->length);
 			x += b->width;
 			c = b;
-			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x);
+/* 			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x); */
 		} else {
 			b->float_children = 0;
 			css_dump_style(b->style);
@@ -286,12 +286,12 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 					right = b;
 				}
 				b->y = cy;
-				fprintf(stderr, "layout_line:     float fits %li %li, edges %li %li\n",
-						b->x, b->y, x0, x1);
+/* 				fprintf(stderr, "layout_line:     float fits %li %li, edges %li %li\n", */
+/* 						b->x, b->y, x0, x1); */
 			} else {
 				/* doesn't fit: place below */
 				place_float_below(b, width, cy + height + 1, cont);
-				fprintf(stderr, "layout_line:     float doesn't fit %li %li\n", b->x, b->y);
+/* 				fprintf(stderr, "layout_line:     float doesn't fit %li %li\n", b->x, b->y); */
 			}
 			b->next_float = cont->float_children;
 			cont->float_children = b;
@@ -314,16 +314,16 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			c2->next = c->next;
 			c->next = c2;
 			b = c2;
-			fprintf(stderr, "layout_line:     overflow, forcing\n");
+/* 			fprintf(stderr, "layout_line:     overflow, forcing\n"); */
 		} else if (x1 - x0 < xp + w) {
 			/* first word doesn't fit, but full width not available so leave for later */
 			b = c;
-			fprintf(stderr, "layout_line:     overflow, leaving\n");
+/* 			fprintf(stderr, "layout_line:     overflow, leaving\n"); */
 		} else {
 			/* fit as many words as possible */
 			while (xp + w < x1 - x0) {
-				fprintf(stderr, "%li + %li = %li < %li = %li - %li\n",
-						xp, w, xp + w, x1 - x0, x1, x0);
+/* 				fprintf(stderr, "%li + %li = %li < %li = %li - %li\n", */
+/* 						xp, w, xp + w, x1 - x0, x1, x0); */
 				space = space2;
 				wp = w;
 				space2 = strchr(space + 1, ' ');
@@ -336,25 +336,31 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			c2->next = c->next;
 			c->next = c2;
 			b = c2;
-			fprintf(stderr, "layout_line:     overflow, fit\n");
+/* 			fprintf(stderr, "layout_line:     overflow, fit\n"); */
 		}
 		c->width = wp;
+		x = xp + wp;
 	}
 
 	/* set positions */
+	switch (first->parent->parent->style->text_align) {
+		case CSS_TEXT_ALIGN_RIGHT:  x0 = x1 - x; break;
+		case CSS_TEXT_ALIGN_CENTER: x0 = (x0 + (x1 - x)) / 2; break;
+		default:                    /* leave on left */
+	}
 	for (d = first; d != b; d = d->next) {
 		if (d->type == BOX_INLINE) {
 			d->x += x0;
 			d->y = *y;
 		}
 	}
-	
+
 	*y += height + 1;
 	return b;
 }
 
 
-				
+
 void place_float_below(struct box * c, unsigned long width, unsigned long y, struct box * cont)
 {
 	unsigned long x0, x1, yy = y;
@@ -374,7 +380,7 @@ void place_float_below(struct box * c, unsigned long width, unsigned long y, str
 			yy = left->y + left->height + 1;
 		}
 	} while (!((left == 0 && right == 0) || (c->width < x1 - x0)));
-				
+
 	if (c->style->float_ == CSS_FLOAT_LEFT) {
 		c->x = x0;
 	} else {
@@ -448,7 +454,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 		auto_width = (table_width - used_width) / auto_columns;
 
 	/*printf("%i %i %i %i %i\n", table_width, columns, auto_columns, used_width, auto_width);*/
-	
+
 	/* find column widths */
 	xs = xcalloc(columns + 1, sizeof(*xs));
 	xs[0] = x = 0;
@@ -471,7 +477,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 
 	if (auto_columns == 0 && table->style->width.width == CSS_WIDTH_AUTO)
 		table_width = used_width;
-	
+
 	/* position cells */
 	for (r = table->children; r != 0; r = r->next) {
 		unsigned long height = 0;
@@ -498,7 +504,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 	}
 
 	free(xs);
-	
+
 	table->width = table_width;
 	table->height = y;
 }

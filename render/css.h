@@ -1,5 +1,5 @@
 /**
- * $Id: css.h,v 1.3 2002/06/18 21:24:21 bursa Exp $
+ * $Id: css.h,v 1.4 2002/06/19 15:17:45 bursa Exp $
  */
 
 #include "css_enum.h"
@@ -53,7 +53,8 @@ struct css_style {
 	css_text_align text_align;
 
 	struct {
-		enum { CSS_WIDTH_AUTO,
+		enum { CSS_WIDTH_INHERIT,
+		       CSS_WIDTH_AUTO,
 		       CSS_WIDTH_LENGTH,
 		       CSS_WIDTH_PERCENT } width;
 		union {

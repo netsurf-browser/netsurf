@@ -20,5 +20,4 @@ colgroup        { display: table-column-group }
 td, th          { display: table-cell }
 caption         { display: table-caption }
 
-div { float: left; width: 90%; }
-
+h1 { font-size: xx-large; text-align: center }

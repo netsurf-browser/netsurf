@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.4 2002/06/18 21:24:21 bursa Exp $
+ * $Id: css.c,v 1.5 2002/06/19 15:17:45 bursa Exp $
  */
 
 #include <string.h>
@@ -24,7 +24,7 @@ struct decl {
 	struct rule * rule;
 };
 
-#define HASH_SIZE 13
+#define HASH_SIZE 1
 
 struct css_stylesheet {
 	struct rule * hash[HASH_SIZE];
@@ -67,7 +67,7 @@ const struct css_style css_empty_style = {
 	{ CSS_HEIGHT_AUTO },
 	{ CSS_LINE_HEIGHT_INHERIT },
 	CSS_TEXT_ALIGN_INHERIT,
-	{ CSS_WIDTH_AUTO }
+	{ CSS_WIDTH_INHERIT }
 };
 
 const struct css_style css_blank_style = {
@@ -269,7 +269,7 @@ static int seleq(const struct css_selector * const s1, const struct css_selector
 static unsigned long selmatch(const struct css_selector * const s, const struct css_selector * const sr)
 {
 	unsigned int c;
-	if (strcmp(s->element, sr->element) != 0) return 0;
+	if (sr->element[0] != 0 && strcmp(s->element, sr->element) != 0) return 0;
 	c = s->element[0] == 0 ? 0 : 1;
 	if (sr->class != 0) {
 		if (s->class != 0 && strcmp(s->class, sr->class) == 0) return 0x100 + c;
@@ -320,16 +320,26 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 	struct decl * decl = xcalloc(0, sizeof(struct decl));
 	unsigned int d, decls = 0;
 
+/* 	fprintf(stderr, "css_get_style: "); */
+/* 	for (d = 0; d < selectors; d++)	dump_selector(&selector[d]); */
+/* 	fprintf(stderr, "\n"); */
+
 	for (rule = stylesheet->hash[hash_str(selector[selectors - 1].element)];
 	     rule != 0; rule = rule->next) {
 		unsigned int i = selectors - 1;
 		unsigned int j;
 		unsigned int score, s;
 
-		if ((score = selmatch(&selector[i], &rule->selector[rule->selectors - 1])) == 0)
+/* 		for (d = 0; d < rule->selectors; d++) dump_selector(&rule->selector[d]); */
+
+		if ((score = selmatch(&selector[i], &rule->selector[rule->selectors - 1])) == 0) {
+/* 			fprintf(stderr, " last selector match fails\n"); */
 			continue;
-		if (selectors < rule->selectors)
+		}
+		if (selectors < rule->selectors) {
+/* 			fprintf(stderr, " less selectors than in rule\n"); */
 			continue;
+		}
 
 		for (j = rule->selectors - 1; j != 0; j--) {
 			for (; i != 0 && (s = selmatch(&selector[i - 1], &rule->selector[j - 1])) == 0; i--)
@@ -339,10 +349,13 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 			score += s;
 		}
 		if (j == 0) {
+/* 			fprintf(stderr, " match\n"); */
 			decl = xrealloc(decl, (decls + 1) * sizeof(struct decl));
 			decl[decls].score = score;
 			decl[decls].rule = rule;
 			decls++;
+		} else {
+/* 			fprintf(stderr, " some selector match fails\n"); */
 		}
 	}
 
@@ -371,7 +384,7 @@ static void update_style(struct css_stylesheet * stylesheet, struct css_selector
 		rule->selector = selector;
 		rule->selectors = selectors;
 		rule->style = xcalloc(1, sizeof(struct css_style));
-		memcpy(rule->style, &css_empty_style, sizeof(struct css_style));
+		memcpy(rule->style, &css_blank_style, sizeof(struct css_style));
 		css_parse_property_list(rule->style, str);
 		rule->next = stylesheet->hash[h];
 		stylesheet->hash[h] = rule;
@@ -529,7 +542,8 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 	if (apply->display != CSS_DISPLAY_INHERIT) style->display = apply->display;
 	if (apply->float_ != CSS_FLOAT_INHERIT) style->float_ = apply->float_;
 	style->height = apply->height;
-	style->width = apply->width;
+	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT) style->text_align = apply->text_align;
+	if (apply->width.width != CSS_WIDTH_INHERIT) style->width = apply->width;
 
 	/* font-size */
 	f = apply->font_size.value.percent / 100;
