@@ -578,7 +578,12 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
 		/* white-space: pre */
 		char *text = cnv_space2nbsp(n->content);
 		char *current;
-		assert(parent_style->white_space == CSS_WHITE_SPACE_PRE);
+		/* note: pre-wrap/pre-line are unimplemented */
+		assert(parent_style->white_space == CSS_WHITE_SPACE_PRE ||
+			parent_style->white_space ==
+						CSS_WHITE_SPACE_PRE_LINE ||
+			parent_style->white_space ==
+						CSS_WHITE_SPACE_PRE_WRAP);
 		if (!text)
 			goto no_memory;
 		if (parent_style->text_transform != CSS_TEXT_TRANSFORM_NONE)
