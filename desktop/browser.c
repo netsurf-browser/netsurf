@@ -997,8 +997,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		/* reflow textarea preserving width and height */
 		width = textarea->width;
 		height = textarea->height;
-		layout_block(textarea, (unsigned int)textarea->parent->width,
-		             textarea, 0, 0);
+		layout_block(textarea, textarea, 0, 0);
 		textarea->width = width;
 		textarea->height = height;
 	}

@@ -32,7 +32,7 @@ typedef enum {
 struct column {
 	enum { COLUMN_WIDTH_UNKNOWN = 0, COLUMN_WIDTH_FIXED,
 	       COLUMN_WIDTH_AUTO, COLUMN_WIDTH_PERCENT } type;
-	unsigned long min, max, width;
+	int min, max, width;
 };
 
 struct box;
@@ -77,7 +77,7 @@ struct box {
 	int width;   /**< Width of content box (excluding padding etc.). */
 	int height;  /**< Height of content box (excluding padding etc.). */
 	int margin[4], padding[4], border[4];
-	long min_width, max_width;
+	int min_width, max_width;
 	char * text;
 	unsigned int space : 1;	/* 1 <=> followed by a space */
 	unsigned int clone : 1;
@@ -120,8 +120,8 @@ struct page_elements
 };
 
 
-#define UNKNOWN_WIDTH ULONG_MAX
-#define UNKNOWN_MAX_WIDTH ULONG_MAX
+#define UNKNOWN_WIDTH INT_MAX
+#define UNKNOWN_MAX_WIDTH INT_MAX
 
 /**
  * interface

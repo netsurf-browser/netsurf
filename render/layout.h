@@ -5,15 +5,18 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * HTML layout (interface).
+ *
+ * The main interface to the layout code is layout_document(), which takes a
+ * normalized box tree and assigns coordinates and dimensions to the boxes, and
+ * also adds boxes to the tree (eg. when formatting lines of text).
+ */
+
 #ifndef _NETSURF_RENDER_LAYOUT_H_
 #define _NETSURF_RENDER_LAYOUT_H_
 
-/**
- * interface
- */
-
-void layout_document(struct box * box, unsigned long width);
-void layout_block(struct box * box, unsigned long width, struct box * cont,
-		unsigned long cx, unsigned long cy);
+void layout_document(struct box *box, int width);
+void layout_block(struct box *box, struct box *cont, int cx, int cy);
 
 #endif
