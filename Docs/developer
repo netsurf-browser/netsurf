@@ -82,20 +82,28 @@ RISC OS specific protocols:
 
 Specifications:
 - HTML 4.01	http://www.w3.org/TR/html401/
+		(see also http://www.w3.org/MarkUp/)
 - XHTML 1.0	http://www.w3.org/TR/xhtml1/
 - CSS 2.1	http://www.w3.org/TR/CSS21/
 - HTTP/1.1	http://www.w3.org/Protocols/rfc2616/rfc2616.html
+		(see also http://www.w3.org/Protocols/)
+- HTTP Authentication	http://www.cis.ohio-state.edu/cgi-bin/rfc/rfc2617.html
 - PNG		http://www.w3.org/Graphics/PNG/
+- URI		http://www.cis.ohio-state.edu/cgi-bin/rfc/rfc2396.html
+		(see also http://www.w3.org/Addressing/ and RFC 2616)
+- Cookies	http://wp.netscape.com/newsref/std/cookie_spec.html and
+		http://www.cis.ohio-state.edu/cgi-bin/rfc/rfc2109.html
 
 \section libs Libraries
 
 Get these compiled for RISC OS with headers from
 http://netsurf.strcprstskrzkrk.co.uk/developer/
-- libxml (XML and HTML parser)		http://xmlsoft.org/
+- libxml (XML and HTML parser)		http://www.xmlsoft.org/
 - libcurl (HTTP, FTP, etc)		http://curl.haxx.se/libcurl/
 - OSLib (C interface to RISC OS SWIs)	http://ro-oslib.sourceforge.net/
 - libpng (PNG support)			http://www.libpng.org/pub/png/libpng.html
 - zlib					http://www.gzip.org/zlib/
+- uri					http://www.nongnu.org/uri/
 
 \section addcss Implementing a new CSS property
 
