@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.c,v 1.3 2002/12/25 20:17:18 bursa Exp $
+ * $Id: fetch.c,v 1.5 2002/12/25 21:38:45 bursa Exp $
  */
 
 #include "libxml/HTMLparser.h"
@@ -10,48 +10,22 @@
 #include "netsurf/desktop/fetch.h"
 #include "netsurf/render/utils.h"
 #include "curl/curl.h"
-#include "libxml/uri.h"
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
 
 void fetch_identify_location(struct fetch* f, char* location, char* previous)
 {
-/*  FILE* ff = fopen("identify", "a");
-  fprintf(ff, "identify: '%s' '%s'", location, previous);
-  if (f->location != NULL)
-    fprintf(ff, " '%s'\n", f->location);
-  else
-    fprintf(ff, "\n");
-  fclose(ff);*/
-
   if (f->location != NULL)
     xfree(f->location);
 
-  if (strspn(location, "http://") == strlen("http://"))
-  {
-    f->location = xstrdup(location);
-    f->type = fetch_CURL;
-    return;
-  }
-  else if (strspn(location, "file:/") == strlen("file:/"))
-  {
-    f->location = xstrdup(location);
-    f->type = fetch_FILE;
-    return;
-  }
-  else if (previous != NULL)
-  {
-    f->location = xmlBuildURI(location, previous);
-    assert(f->location != NULL);
-    f->type = fetch_CURL;
-    return;
-  }
+  f->location = xstrdup(location);
 
-  f->location = xcalloc(strlen(location) + strlen("http://") + 1, sizeof(char));
-  sprintf(f->location, "http://%s", location);
-  f->type = fetch_CURL;
-  return;
+  if (strspn(location, "file:/") == strlen("file:/"))
+    f->type = fetch_FILE;
+  else
+    /* throw everything else at curl, since it can fetch lots of protocols */
+    f->type = fetch_CURL;
 }
 
 struct fetch* create_fetch(char* location, char* previous, fetch_flags f, struct fetch_request* r)

@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.11 2002/12/25 20:17:18 bursa Exp $
+ * $Id: browser.c,v 1.13 2002/12/25 21:38:45 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -10,11 +10,13 @@
 #include "netsurf/render/utils.h"
 #include "netsurf/desktop/cache.h"
 #include "netsurf/utils/log.h"
+#include "libxml/uri.h"
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <limits.h>
 #include <time.h>
+#include <ctype.h>
 
 struct box_selection
 {
@@ -440,6 +442,7 @@ void browser_window_open_location(struct browser_window* bw, char* url)
 {
   LOG(("bw = %p, url = %s", bw, url));
   assert(bw != 0 && url != 0);
+  url = url_join(url, bw->url);
   browser_window_open_location_historical(bw, url);
   if (bw->history == NULL)
     bw->history = history_create(NULL, url);
@@ -448,6 +451,7 @@ void browser_window_open_location(struct browser_window* bw, char* url)
     history_remember(bw->history, NULL, url);
     bw->history = bw->history->later;
   }
+  xfree(url);
   LOG(("end"));
 }
 
@@ -937,4 +941,51 @@ void browser_window_redraw_boxes(struct browser_window* bw, struct box_position*
   if (plot == 2)
     gui_window_redraw(bw->window, redraw_min_x, redraw_min_y,
       redraw_max_x, redraw_max_y);
+}
+
+char *url_join(const char* new, const char* base)
+{
+  xmlURI* uri;
+  char* ret;
+  int i;
+
+  LOG(("new = %s, base = %s", new, base));
+
+  if (base == 0)
+  {
+    /* no base, so make an absolute URL */
+    uri = xmlParseURI(new);
+    assert(uri != 0);
+
+    if (uri->scheme == 0)
+      uri->scheme = "http";
+
+    if (uri->server == 0) {
+      uri->server = uri->path;
+      uri->path = 0;
+    }
+  }
+  else
+  {
+    /* relative url */
+    char* uri_string = xmlBuildURI(new, base);
+    uri = xmlParseURI(uri_string);
+    xfree(uri_string);
+    assert(uri != 0);
+  }
+
+  /* make server name lower case */
+  assert(uri->scheme != 0 && uri->server != 0);
+  for (i = 0; i < strlen(uri->server); i++)
+    uri->server[i] = tolower(uri->server[i]);
+
+  /* http://www.example.com -> http://www.example.com/ */
+  if (uri->path == 0)
+    uri->path = "/";
+
+  ret = xmlSaveUri(uri);
+  xmlFreeURI(uri);
+
+  LOG(("ret = %s", ret));
+  return ret;
 }
