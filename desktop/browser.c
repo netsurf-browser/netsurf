@@ -187,7 +187,7 @@ void browser_window_destroy(struct browser_window* bw)
 
   if (bw->history != NULL)
   {
-    struct history* current;
+    struct history* current = bw->history;
 
     while (current->earlier != NULL)
       current = current->earlier;
@@ -588,8 +588,12 @@ void browser_window_follow_link(struct browser_window* bw,
     }
   }
 
-  if (click_type == 0 && done == 0)
-    browser_window_set_status(bw, "");
+  if (click_type == 0 && done == 0) {
+    if (bw->loading_content != 0)
+      browser_window_set_status(bw, bw->loading_content->status_message);
+    else
+      browser_window_set_status(bw, bw->current_content->status_message);
+  }
 
   free(click_boxes);
 
