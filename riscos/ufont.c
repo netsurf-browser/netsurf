@@ -714,14 +714,20 @@ static os_error *delete_map(ufont_map_t *mapP)
 {
 assert(mapP->refCount > 0);
 --mapP->refCount;
-/* \todo: we don't remove the map from the oMapCollection list.  Should we ?
+/** \todo: we don't remove the map from the oMapCollection list.  Should we ?
  */
 
 return NULL;
 }
 
 
-/* Returns:
+/**
+ * Convert next sequence of UTF-8 bytes into wchar_t
+ *
+ * \param pwc resulting wchar_t result.
+ * \param s ptr to UTF-8 encoded string
+ * \param n maximum of bytes which can be consumed via s
+ * \return
  *   x > 0: number of bytes consumed at s, valid wchar_t returned at pwc[0]
  *   x = 0: too few input bytes, pwc[0] is undefined
  *   x < 0: illegal UTF-8 stream, skip -x characters at s, pwc[0] is undefined
@@ -731,12 +737,6 @@ static int eat_utf8(wchar_t *pwc, const byte *s, int n)
 	byte c;
 	int i;
 
-#if 0
-fputs("<", stderr);
-for (i = 0; i < n; ++i)
-  fputc(s[i], stderr);
-fputs(">\n", stderr);
-#endif
 	if (n < 1)
 		return 0; /* not enough input bytes */
 	else if ((c = s[0]) < 0x80) {
@@ -787,12 +787,13 @@ do_sync:
 	 * (both valid UTF-8 *starts* - not necessary valid sequences).
 	 */
 	for (i = 1; i < n && !((s[i] & 0x80) == 0x00 || (s[i] & 0xC0) == 0xC0); ++i)
-	  /* no body */;
+		/* no body */;
 	return -i;
 }
 
 
-/* Adds the RISC OS font <fontNameP> to the oVirtualFHArrayP list and
+/**
+ * Adds the RISC OS font <fontNameP> to the oVirtualFHArrayP list and
  * returns the index in that array.
  * oVirtualFHArrayP can be reallocated (and all virFHP ptrs in oUsageChain).
  * Results in xresOutP and yresOutP are not always that meaningful because
@@ -801,127 +802,119 @@ do_sync:
  */
 static os_error *addref_virtual_fonthandle(const char *fontNameP, int xsize, int ysize, int xres, int yres, int *xresOutP, int *yresOutP, size_t *offsetP)
 {
-  size_t curIndex;
-  virtual_fh_t *unusedSlotP;
+	size_t curIndex;
+	virtual_fh_t *unusedSlotP;
 
-assert(offsetP != NULL);
+	assert(offsetP != NULL);
 
-do_sanity_check("addref_virtual_fonthandle() : begin");
+	do_sanity_check("addref_virtual_fonthandle() : begin");
 
-if (oVirtualFHArrayP == NULL)
-  {
-  if ((oVirtualFHArrayP = (virtual_fh_t *)calloc(kInitialFHArraySize, sizeof(virtual_fh_t))) == NULL)
-    return &error_memory;
-  /* oCurVirtualFHArrayElems = 0; Isn't really necessary because of static */
-  oMaxVirtualFHArrayElems = kInitialFHArraySize;
-  }
+	if (oVirtualFHArrayP == NULL) {
+		if ((oVirtualFHArrayP = (virtual_fh_t *)calloc(kInitialFHArraySize, sizeof(virtual_fh_t))) == NULL)
+			return &error_memory;
+		/* oCurVirtualFHArrayElems = 0; Isn't really necessary because of static */
+		oMaxVirtualFHArrayElems = kInitialFHArraySize;
+	}
 
-/* Check for duplicate (and find first unused slot if any) :
- */
-for (unusedSlotP = NULL, curIndex = 0;
-     curIndex < oCurVirtualFHArrayElems;
-     ++curIndex)
-  {
-    virtual_fh_t *virFHP = &oVirtualFHArrayP[curIndex];
+	/* Check for duplicate (and find first unused slot if any) :
+	 */
+	for (unusedSlotP = NULL, curIndex = 0;
+	     curIndex < oCurVirtualFHArrayElems;
+	     ++curIndex) {
+		virtual_fh_t *virFHP = &oVirtualFHArrayP[curIndex];
 
-  if (virFHP->fontNameP != NULL /* case strdup(fontNameP) failed */
-      && stricmp(virFHP->fontNameP, fontNameP) == 0
-      && virFHP->xsize == xsize && virFHP->ysize == ysize)
-    {
-    if (xresOutP != NULL)
-      *xresOutP = virFHP->xres;
-    if (yresOutP != NULL)
-      *yresOutP = virFHP->yres;
-    ++virFHP->refCount;
-    *offsetP = curIndex;
+		if (virFHP->fontNameP != NULL /* case strdup(fontNameP) failed */
+		    && stricmp(virFHP->fontNameP, fontNameP) == 0
+		    && virFHP->xsize == xsize && virFHP->ysize == ysize) {
+			if (xresOutP != NULL)
+				*xresOutP = virFHP->xres;
+			if (yresOutP != NULL)
+				*yresOutP = virFHP->yres;
+			++virFHP->refCount;
+			*offsetP = curIndex;
+			do_sanity_check("addref_virtual_fonthandle() : case 1");
+			return NULL;
+			}
 
-    do_sanity_check("addref_virtual_fonthandle() : case 1");
-    return NULL;
-    }
+		if (virFHP->refCount == 0 && unusedSlotP == NULL)
+			unusedSlotP = virFHP;
+		}
 
-  if (virFHP->refCount == 0 && unusedSlotP == NULL)
-    unusedSlotP = virFHP;
-  }
+	/* Can we reuse a slot ?
+	 * I.e. a virtual FH which refCount is zero.
+	 */
+	if (unusedSlotP != NULL) {
+		if (unusedSlotP->usageP != NULL) {
+			os_error *errorP;
 
-/* Can we reuse a slot ?
- * I.e. a virtual FH which refCount is zero.
- */
-if (unusedSlotP != NULL)
-  {
-  if (unusedSlotP->usageP != NULL)
-    {
-      os_error *errorP;
+			/* This slot is refered in the usage chain, we have to unlink it.
+			 */
+			if ((errorP = remove_usage_chain_elem(unusedSlotP->usageP)) != NULL)
+				return errorP;
+			}
 
-    /* This slot is refered in the usage chain, we have to unlink it.
-     */
-    if ((errorP = remove_usage_chain_elem(unusedSlotP->usageP)) != NULL)
-      return errorP;
-    }
+		unusedSlotP->usage = 0;
+		if (unusedSlotP->fontNameP != NULL)
+			free((void *)unusedSlotP->fontNameP);
+		if ((unusedSlotP->fontNameP = strdup(fontNameP)) == NULL)
+			return &error_memory;
 
-  unusedSlotP->usage = 0;
-  if (unusedSlotP->fontNameP != NULL)
-    free((void *)unusedSlotP->fontNameP);
-  if ((unusedSlotP->fontNameP = strdup(fontNameP)) == NULL)
-    return &error_memory;
+		unusedSlotP->xsize = xsize;
+		unusedSlotP->ysize = ysize;
+		unusedSlotP->xres = (xres > 1) ? xres : 96;
+		if (xresOutP != NULL)
+			*xresOutP = unusedSlotP->xres;
+		unusedSlotP->yres = (yres > 1) ? yres : 96;
+		if (yresOutP != NULL)
+			*yresOutP = unusedSlotP->yres;
+		unusedSlotP->refCount = 1;
+		*offsetP = unusedSlotP - oVirtualFHArrayP;
+		do_sanity_check("addref_virtual_fonthandle() : case 2");
+		return NULL;
+		}
 
-  unusedSlotP->xsize = xsize;
-  unusedSlotP->ysize = ysize;
-  unusedSlotP->xres = (xres > 1) ? xres : 96;
-  if (xresOutP != NULL)
-    *xresOutP = unusedSlotP->xres;
-  unusedSlotP->yres = (yres > 1) ? yres : 96;
-  if (yresOutP != NULL)
-    *yresOutP = unusedSlotP->yres;
-  unusedSlotP->refCount = 1;
-  *offsetP = unusedSlotP - oVirtualFHArrayP;
-  do_sanity_check("addref_virtual_fonthandle() : case 2");
-  return NULL;
-  }
+	/* Add new entry :
+	 */
+	if (oCurVirtualFHArrayElems == oMaxVirtualFHArrayElems) {
+		virtual_fh_t *newVirtualFHArrayP;
+		size_t extraOffset;
+		usage_chain_t *usageP;
 
-/* Add new entry :
- */
-if (oCurVirtualFHArrayElems == oMaxVirtualFHArrayElems)
-  {
-    virtual_fh_t *newVirtualFHArrayP;
-    size_t extraOffset;
-    usage_chain_t *usageP;
+		/* Don't use realloc() as when that fails, we don't even have the original
+		 * memory block anymore.
+		 */
+		if ((newVirtualFHArrayP = (virtual_fh_t *)calloc(2*oMaxVirtualFHArrayElems, sizeof(virtual_fh_t))) == NULL)
+			return &error_memory;
+		memcpy(newVirtualFHArrayP, oVirtualFHArrayP, oMaxVirtualFHArrayElems * sizeof(virtual_fh_t));
+		free((void *)oVirtualFHArrayP);
+		extraOffset = (const char *)newVirtualFHArrayP - (const char *)oVirtualFHArrayP;
+		oVirtualFHArrayP = newVirtualFHArrayP;
+		oMaxVirtualFHArrayElems *= 2;
 
-  /* Don't use realloc() as when that fails, we don't even have the original
-   * memory block anymore.
-   */
-  if ((newVirtualFHArrayP = (virtual_fh_t *)calloc(2*oMaxVirtualFHArrayElems, sizeof(virtual_fh_t))) == NULL)
-    return &error_memory;
-  memcpy(newVirtualFHArrayP, oVirtualFHArrayP, oMaxVirtualFHArrayElems * sizeof(virtual_fh_t));
-  free((void *)oVirtualFHArrayP);
-  extraOffset = (const char *)newVirtualFHArrayP - (const char *)oVirtualFHArrayP;
-  oVirtualFHArrayP = newVirtualFHArrayP;
-  oMaxVirtualFHArrayElems *= 2;
+		/* Update the virFHP pointers in the usage chain :
+		 */
+		if (oUsageChain.nextP != NULL) {
+			for (usageP = oUsageChain.nextP; usageP != &oUsageChain; usageP = usageP->nextP)
+				usageP->virFHP = (virtual_fh_t *)&((char *)usageP->virFHP)[extraOffset];
+		}
+	}
 
-  /* Update the virFHP pointers in the usage chain :
-   */
-  if (oUsageChain.nextP != NULL)
-    {
-    for (usageP = oUsageChain.nextP; usageP != &oUsageChain; usageP = usageP->nextP)
-      usageP->virFHP = (virtual_fh_t *)&((char *)usageP->virFHP)[extraOffset];
-    }
-  }
+	unusedSlotP = &oVirtualFHArrayP[oCurVirtualFHArrayElems];
+	if ((unusedSlotP->fontNameP = (const char *)strdup(fontNameP)) == NULL)
+		return &error_memory;
+	unusedSlotP->xsize = xsize;
+	unusedSlotP->ysize = ysize;
+	unusedSlotP->xres = (xres > 1) ? xres : 96;
+	if (xresOutP != NULL)
+		*xresOutP = unusedSlotP->xres;
+	unusedSlotP->yres = (yres > 1) ? yres : 96;
+	if (yresOutP != NULL)
+		*yresOutP = unusedSlotP->yres;
+	unusedSlotP->refCount = 1;
+	*offsetP = oCurVirtualFHArrayElems++;
 
-unusedSlotP = &oVirtualFHArrayP[oCurVirtualFHArrayElems];
-if ((unusedSlotP->fontNameP = (const char *)strdup(fontNameP)) == NULL)
-  return &error_memory;
-unusedSlotP->xsize = xsize;
-unusedSlotP->ysize = ysize;
-unusedSlotP->xres = (xres > 1) ? xres : 96;
-if (xresOutP != NULL)
-  *xresOutP = unusedSlotP->xres;
-unusedSlotP->yres = (yres > 1) ? yres : 96;
-if (yresOutP != NULL)
-  *yresOutP = unusedSlotP->yres;
-unusedSlotP->refCount = 1;
-*offsetP = oCurVirtualFHArrayElems++;
-
-do_sanity_check("addref_virtual_fonthandle() : case 3");
-return NULL;
+	do_sanity_check("addref_virtual_fonthandle() : case 3");
+	return NULL;
 }
 
 
