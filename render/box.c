@@ -214,6 +214,7 @@ struct box * box_create(struct css_style * style,
 	box->descendant_x1 = box->descendant_y1 = 0;
 	for (i = 0; i != 4; i++)
 		box->margin[i] = box->padding[i] = box->border[i] = 0;
+	box->scroll_x = box->scroll_y = 0;
 	box->min_width = 0;
 	box->max_width = UNKNOWN_MAX_WIDTH;
 	box->text = NULL;

@@ -53,6 +53,12 @@ struct browser_window
 
 	/** Fragment identifier for current_content */
 	char *frag_id;
+
+	/** Box currently being scrolled, or 0. */
+	struct box *scrolling_box;
+	/** Mouse position last scroll movement. */
+	int scrolling_last_x;
+	int scrolling_last_y;
 };
 
 
@@ -60,6 +66,7 @@ typedef enum {
 	BROWSER_MOUSE_CLICK_1,
 	BROWSER_MOUSE_CLICK_2,
 	BROWSER_MOUSE_HOVER,
+	BROWSER_MOUSE_DRAG,	/**< CLICK is continuing as a drag. */
 } browser_mouse_click;
 
 

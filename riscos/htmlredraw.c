@@ -153,6 +153,7 @@ bool html_redraw_box(struct box *box,
 	int padding_left, padding_top, padding_width, padding_height;
 	int x0, y0, x1, y1;
 	int colour;
+	int x_scrolled, y_scrolled;
 	os_error *error;
 
 	ro_gui_redraw_box_depth++;
@@ -167,6 +168,8 @@ bool html_redraw_box(struct box *box,
 			box->padding[RIGHT]) * 2 * scale;
 	padding_height = (box->padding[TOP] + box->height +
 			box->padding[BOTTOM]) * 2 * scale;
+	x_scrolled = x - box->scroll_x * 2 * scale;
+	y_scrolled = y + box->scroll_y * 2 * scale;
 
 	/* calculate clip rectangle for this box */
 	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
@@ -184,7 +187,7 @@ bool html_redraw_box(struct box *box,
 	/* if visibility is hidden render children only */
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
 		for (c = box->children; c; c = c->next)
-			if (!html_redraw_box(c, x, y,
+			if (!html_redraw_box(c, x_scrolled, y_scrolled,
 					current_background_color,
 					x0, y0, x1, y1, scale))
 				return false;
@@ -537,14 +540,14 @@ bool html_redraw_box(struct box *box,
 	} else {
 		for (c = box->children; c != 0; c = c->next)
 			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-				if (!html_redraw_box(c, x,
-						y, current_background_color,
+				if (!html_redraw_box(c, x_scrolled, y_scrolled,
+						current_background_color,
 						x0, y0, x1, y1, scale))
 					return false;
 
 		for (c = box->float_children; c != 0; c = c->next_float)
-			if (!html_redraw_box(c, x,
-					y, current_background_color,
+			if (!html_redraw_box(c, x_scrolled, y_scrolled,
+					current_background_color,
 					x0, y0, x1, y1, scale))
 				return false;
 	}

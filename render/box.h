@@ -155,6 +155,9 @@ struct box {
 	int padding[4];  /**< Padding: TOP, RIGHT, BOTTOM, LEFT. */
 	int border[4];   /**< Border width: TOP, RIGHT, BOTTOM, LEFT. */
 
+	int scroll_x;  /**< Horizontal scroll of descendants. */
+	int scroll_y;  /**< Vertical scroll of descendants. */
+
 	/**< Width of box taking all line breaks (including margins etc.). */
 	int min_width;
 	int max_width;  /**< Width that would be taken with no line breaks. */

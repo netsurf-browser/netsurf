@@ -975,7 +975,10 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 	x = window_x_units(pointer->pos.x, &state) / 2 / g->option.scale;
 	y = -window_y_units(pointer->pos.y, &state) / 2 / g->option.scale;
 
-	browser_window_mouse_click(g->bw, BROWSER_MOUSE_HOVER, x, y);
+	if (pointer->buttons)
+		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG, x, y);
+	else
+		browser_window_mouse_click(g->bw, BROWSER_MOUSE_HOVER, x, y);
 }
 
 

@@ -100,6 +100,7 @@ void browser_window_create(const char *url, struct browser_window *clone)
 	bw->throbbing = false;
 	bw->caret_callback = NULL;
 	bw->frag_id = NULL;
+	bw->scrolling_box = NULL;
 	if ((bw->window = gui_create_browser_window(bw, clone)) == NULL) {
 		free(bw);
 		return;
@@ -227,6 +228,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			bw->current_content = c;
 			bw->loading_content = NULL;
 			bw->caret_callback = NULL;
+			bw->scrolling_box = NULL;
 			gui_window_new_content(bw->window);
 			gui_window_set_url(bw->window, c->url);
 			browser_window_update(bw, true);
@@ -254,8 +256,11 @@ void browser_window_callback(content_msg msg, struct content *c,
 			warn_user(data.error, 0);
 			if (c == bw->loading_content)
 				bw->loading_content = 0;
-			else if (c == bw->current_content)
+			else if (c == bw->current_content) {
 				bw->current_content = 0;
+				bw->caret_callback = NULL;
+				bw->scrolling_box = NULL;
+			}
 			browser_window_stop_throbber(bw);
 			break;
 
@@ -287,8 +292,11 @@ void browser_window_callback(content_msg msg, struct content *c,
 			gui_401login_open(bw, c, data.auth_realm);
 			if (c == bw->loading_content)
 				bw->loading_content = 0;
-			else if (c == bw->current_content)
+			else if (c == bw->current_content) {
 				bw->current_content = 0;
+				bw->caret_callback = NULL;
+				bw->scrolling_box = NULL;
+			}
 			browser_window_stop_throbber(bw);
 			break;
 #endif
@@ -596,16 +604,52 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
 	int box_x = 0, box_y = 0;
 	int gadget_box_x = 0, gadget_box_y = 0;
+	int scroll_x, scroll_y;
 	struct box *gadget_box = 0;
 	struct content *c = bw->current_content;
-	struct box *box = c->data.html.layout;
+	struct box *box;
 	struct content *content = c;
 	struct content *gadget_content = c;
 	struct form_control *gadget = 0;
 	url_func_result res;
 
-	/* search the box tree for a link, imagemap, or form control */
-	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content)) != NULL) {
+	if (click == BROWSER_MOUSE_DRAG) {
+		/* scroll box with overflow: scroll */
+		box = bw->scrolling_box;
+		if (!box)
+			return;
+		if (x == bw->scrolling_last_x && y == bw->scrolling_last_y)
+			return;
+
+		scroll_x = box->scroll_x - (x - bw->scrolling_last_x);
+		scroll_y = box->scroll_y - (y - bw->scrolling_last_y);
+		bw->scrolling_last_x = x;
+		bw->scrolling_last_y = y;
+
+		if (scroll_x < box->descendant_x0)
+			scroll_x = box->descendant_x0;
+		else if (box->descendant_x1 - box->width < scroll_x)
+			scroll_x = box->descendant_x1 - box->width;
+		if (scroll_y < box->descendant_y0)
+			scroll_y = box->descendant_y0;
+		else if (box->descendant_y1 - box->height < scroll_y)
+			scroll_y = box->descendant_y1 - box->height;
+
+		if (scroll_x == box->scroll_x && scroll_y == box->scroll_y)
+			return;
+		box->scroll_x = scroll_x;
+		box->scroll_y = scroll_y;
+
+		browser_redraw_box(bw->current_content, bw->scrolling_box);
+		return;
+	}
+
+	bw->scrolling_box = NULL;
+	/* search the box tree for a link, imagemap, form control, or
+	 * box with overflow: scroll */
+	box = c->data.html.layout;
+	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
+			NULL) {
 		if (box->style &&
 				box->style->visibility == CSS_VISIBILITY_HIDDEN)
 			continue;
@@ -635,6 +679,13 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 
 		if (box->style && box->style->cursor != CSS_CURSOR_UNKNOWN)
 			pointer = get_pointer_shape(box->style->cursor);
+
+		if (box->type == BOX_BLOCK && box->style &&
+				box->style->overflow == CSS_OVERFLOW_SCROLL) {
+			bw->scrolling_box = box;
+			bw->scrolling_last_x = x;
+			bw->scrolling_last_y = y;
+		}
 	}
 
 	if (gadget) {
