@@ -81,6 +81,7 @@ struct browser_action
 
 struct box_selection
 {
+  struct content *content;
   struct box* box;
   int actual_x;
   int actual_y;
@@ -99,7 +100,7 @@ void browser_window_destroy(struct browser_window *bw);
 
 int browser_window_action(struct browser_window* bw, struct browser_action* act);
 
-void box_under_area(struct box* box, unsigned long x, unsigned long y, unsigned long ox, unsigned long oy,
+void box_under_area(struct content *content, struct box* box, unsigned long x, unsigned long y, unsigned long ox, unsigned long oy,
 		struct box_selection** found, int* count, int* plot_index);
 
 int box_position_lt(struct box_position* x, struct box_position* y);

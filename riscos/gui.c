@@ -899,7 +899,8 @@ void ro_msg_datasave(wimp_message* block)
 	click_boxes = NULL;
 	plot_index = 0;
 
-	box_under_area(bw->current_content->data.html.layout->children,
+	box_under_area(bw->current_content,
+	         bw->current_content->data.html.layout->children,
                  (unsigned int)x, (unsigned int)y, 0, 0, &click_boxes,
                  &found, &plot_index);
 
@@ -1068,7 +1069,8 @@ void ro_msg_dataload(wimp_message *message)
 	click_boxes = NULL;
 	plot_index = 0;
 
-	box_under_area(bw->current_content->data.html.layout->children,
+	box_under_area(bw->current_content,
+	         bw->current_content->data.html.layout->children,
                  (unsigned int)x, (unsigned int)y, 0, 0, &click_boxes,
                  &found, &plot_index);
 

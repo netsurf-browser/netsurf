@@ -627,7 +627,8 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 	plot_index = 0;
 
 	assert(bw->current_content->type == CONTENT_HTML);
-	box_under_area(bw->current_content->data.html.layout->children,
+	box_under_area(bw->current_content,
+	               bw->current_content->data.html.layout->children,
 			click_x, click_y, 0, 0, &click_boxes, &found, &plot_index);
 
 	if (found == 0)
@@ -653,7 +654,7 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 					gui_redraw_gadget(bw, g);
 					break;
 				case GADGET_RADIO:
-					clear_radio_gadgets(bw, bw->current_content->data.html.layout->children, g);
+					clear_radio_gadgets(bw, click_boxes[i].content->data.html.layout->children, g);
 					g->data.radio.selected = -1;
 					gui_redraw_gadget(bw, g);
 					break;
@@ -1296,7 +1297,8 @@ int browser_window_action(struct browser_window *bw,
 	return 0;
 }
 
-void box_under_area(struct box *box, unsigned long x, unsigned long y,
+void box_under_area(struct content *content, struct box *box,
+                    unsigned long x, unsigned long y,
 		    unsigned long ox, unsigned long oy,
 		    struct box_selection **found, int *count,
 		    int *plot_index)
@@ -1313,6 +1315,7 @@ void box_under_area(struct box *box, unsigned long x, unsigned long y,
 		*found =
 		    xrealloc(*found,
 			     sizeof(struct box_selection) * (*count + 1));
+		(*found)[*count].content = content;
 		(*found)[*count].box = box;
 		(*found)[*count].actual_x = box->x + ox;
 		(*found)[*count].actual_y = box->y + oy;
@@ -1323,19 +1326,20 @@ void box_under_area(struct box *box, unsigned long x, unsigned long y,
         /* consider embedded HTML pages */
         if (box->object != 0 && box->object->type == CONTENT_HTML &&
             box->object->data.html.layout != 0)
-                box_under_area(box->object->data.html.layout, x, y,
-                               box->x + ox, box->y +oy,
+                box_under_area(box->object, box->object->data.html.layout,
+                               x, y, box->x + ox, box->y +oy,
                                found, count, plot_index);
 
 	for (c = box->children; c != 0; c = c->next)
 		if (c->type != BOX_FLOAT_LEFT
 		    && c->type != BOX_FLOAT_RIGHT)
-			box_under_area(c, x, y, box->x + ox, box->y + oy,
+			box_under_area(content, c, x, y,
+			               box->x + ox, box->y + oy,
 				       found, count, plot_index);
 
 	for (c = box->float_children; c != 0; c = c->next_float)
-		box_under_area(c, x, y, box->x + ox, box->y + oy, found,
-			       count, plot_index);
+		box_under_area(content, c, x, y, box->x + ox, box->y + oy,
+		               found, count, plot_index);
 
 	return;
 }
@@ -1399,7 +1403,8 @@ void browser_window_follow_link(struct browser_window *bw,
 	if (bw->current_content->type != CONTENT_HTML)
 		return;
 
-	box_under_area(bw->current_content->data.html.layout->children,
+	box_under_area(bw->current_content,
+	               bw->current_content->data.html.layout->children,
 		       click_x, click_y, 0, 0, &click_boxes, &found,
 		       &plot_index);
 
@@ -1413,7 +1418,7 @@ void browser_window_follow_link(struct browser_window *bw,
 		if (click_boxes[i].box->href != NULL) {
 			char *url =
 			    url_join((char *) click_boxes[i].box->href,
-				     bw->current_content->data.html.
+				     click_boxes[i].content->data.html.
 				     base_url);
 			if (!url)
 				continue;
@@ -1445,7 +1450,7 @@ void browser_window_follow_link(struct browser_window *bw,
 		if (click_boxes[i].box->usemap != NULL) {
 		        char *href, *url;
 
-		        href = imagemap_get(bw->current_content,
+		        href = imagemap_get(click_boxes[i].content,
 		                            click_boxes[i].box->usemap,
 		                            click_boxes[i].actual_x,
 		                            click_boxes[i].actual_y,
@@ -1454,7 +1459,7 @@ void browser_window_follow_link(struct browser_window *bw,
 		                continue;
 
 		        url = url_join(href,
-		                       bw->current_content->data.html.
+		                       click_boxes[i].content->data.html.
 		                       base_url);
 		        if (!url)
 		                continue;
@@ -1504,7 +1509,7 @@ void browser_window_follow_link(struct browser_window *bw,
 		        	if (!form) continue;
 		        	href = form->action;
 		        	if (!href) continue;
-				url = url_join(href, bw->current_content->data.html.base_url);
+				url = url_join(href, click_boxes[i].content->data.html.base_url);
 				if (!url) continue;
 		        	browser_window_set_status(bw, url);
 		        	free(url);
@@ -1564,7 +1569,8 @@ void browser_window_text_selection(struct browser_window *bw,
 	plot_index = 0;
 
 	assert(bw->current_content->type == CONTENT_HTML);
-	box_under_area(bw->current_content->data.html.layout->children,
+	box_under_area(bw->current_content,
+	               bw->current_content->data.html.layout->children,
 		       click_x, click_y, 0, 0, &click_boxes, &found,
 		       &plot_index);
 
@@ -1614,31 +1620,31 @@ void browser_window_text_selection(struct browser_window *bw,
 			if (click_type == 1 /* click_START_SELECTION */ ) {
 				/* update both start and end */
 				browser_window_clear_text_selection(bw);
-				bw->current_content->data.html.
+				click_boxes[i].content->data.html.
 				    text_selection.altering =
 				    alter_UNKNOWN;
-				bw->current_content->data.html.
+				click_boxes[i].content->data.html.
 				    text_selection.selected = 1;
 				memcpy(start, &new_pos,
 				       sizeof(struct box_position));
 				memcpy(end, &new_pos,
 				       sizeof(struct box_position));
 				i = -1;
-			} else if (bw->current_content->data.html.
+			} else if (click_boxes[i].content->data.html.
 				   text_selection.selected == 1
 				   && click_type ==
 				   2 /* click_ALTER_SELECTION */ ) {
 				/* alter selection */
 
-				if (bw->current_content->data.html.
+				if (click_boxes[i].content->data.html.
 				    text_selection.altering !=
 				    alter_UNKNOWN) {
-					if (bw->current_content->data.html.
+					if (click_boxes[i].content->data.html.
 					    text_selection.altering ==
 					    alter_START) {
 						if (box_position_gt
 						    (&new_pos, end)) {
-							bw->current_content->data.html.text_selection.altering = alter_END;
+							click_boxes[i].content->data.html.text_selection.altering = alter_END;
 							browser_window_change_text_selection
 							    (bw, end,
 							     &new_pos);
@@ -1649,7 +1655,7 @@ void browser_window_text_selection(struct browser_window *bw,
 					} else {
 						if (box_position_lt
 						    (&new_pos, start)) {
-							bw->current_content->data.html.text_selection.altering = alter_START;
+							click_boxes[i].content->data.html.text_selection.altering = alter_START;
 							browser_window_change_text_selection
 							    (bw, &new_pos,
 							     start);
@@ -1697,7 +1703,7 @@ void browser_window_text_selection(struct browser_window *bw,
 						&& click_start_distance <
 						click_end_distance)) {
 						/* alter the start position */
-						bw->current_content->data.
+						click_boxes[i].content->data.
 						    html.text_selection.
 						    altering = alter_START;
 						browser_window_change_text_selection
@@ -1712,7 +1718,7 @@ void browser_window_text_selection(struct browser_window *bw,
 						       click_end_distance))
 					{
 						/* alter the end position */
-						bw->current_content->data.
+						click_boxes[i].content->data.
 						    html.text_selection.
 						    altering = alter_END;
 						browser_window_change_text_selection
