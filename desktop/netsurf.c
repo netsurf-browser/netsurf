@@ -111,5 +111,5 @@ static void lib_init(void)
 	 * "Shift-JIS" is rather popular.
 	 */
 	if (xmlAddEncodingAlias(xmlGetCharEncodingName(XML_CHAR_ENCODING_SHIFT_JIS), "X-SJIS") != 0)
-		die(("Failed to add encoding alias"));
+		die("Failed to add encoding alias");
 }
