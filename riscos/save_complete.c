@@ -238,7 +238,7 @@ void save_complete_init(void)
 
 
 /**
- * Rewrite stylesheet @import rules for save complete.
+ * Rewrite stylesheet \@import rules for save complete.
  *
  * @param  source  stylesheet source
  * @param  size    size of source

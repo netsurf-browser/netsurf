@@ -451,7 +451,7 @@ void css_free_selector(struct css_selector *node)
 
 
 /**
- * Process an @import rule.
+ * Process an \@import rule.
  */
 
 void css_atimport(struct content *c, struct css_node *node)
