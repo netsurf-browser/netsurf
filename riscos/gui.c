@@ -14,6 +14,7 @@
 #include <string.h>
 #include <time.h>
 #include <unixlib/local.h>
+#include "oslib/hourglass.h"
 #include "oslib/inetsuite.h"
 #include "oslib/os.h"
 #include "oslib/osfile.h"
@@ -100,9 +101,16 @@ struct ro_gui_poll_block *ro_gui_poll_queued_blocks = 0;
 
 
 static void ro_gui_icon_bar_create(void);
+static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
 static void ro_gui_poll_queue(wimp_event_no event, wimp_block* block);
+static void ro_gui_null_reason_code(void);
+static void ro_gui_redraw_window_request(wimp_draw *redraw);
+static void ro_gui_open_window_request(wimp_open *open);
+static void ro_gui_close_window_request(wimp_close *close);
+static void ro_gui_mouse_click(wimp_pointer *pointer);
 static void ro_gui_icon_bar_click(wimp_pointer* pointer);
 static void ro_gui_keypress(wimp_key* key);
+static void ro_gui_user_message(wimp_event_no event, wimp_message *message);
 static void ro_msg_datasave(wimp_message* block);
 static void ro_msg_dataload(wimp_message* block);
 static void ro_msg_datasave_ack(wimp_message* message);
@@ -119,6 +127,8 @@ void gui_init(int argc, char** argv)
 {
 	char theme_fname[256];
 	os_error *e;
+
+	xhourglass_start(1);
 
 	NETSURF_DIR = getenv("NetSurf$Dir");
 	messages_load("<NetSurf$Dir>.Resources.en.Messages");
@@ -188,54 +198,48 @@ void gui_quit(void)
 #endif
 	ro_gui_history_quit();
 	wimp_close_down(task_handle);
+	xhourglass_off();
 }
 
 
+/**
+ * Poll the OS for events (RISC OS).
+ *
+ * \param active return as soon as possible
+ */
+
 void gui_poll(bool active)
 {
-  wimp_event_no event;
-  wimp_block block;
-  gui_window* g;
-  int finished = 0;
+	wimp_event_no event;
+	wimp_block block;
+	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN;
+	gui_window *g;
 
-  do
-  {
-    if (ro_gui_poll_queued_blocks == NULL)
-    {
-      const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN;
-      if (active) {
-        event = wimp_poll(mask, &block, 0);
-      } else if (over_window || gui_reformat_pending) {
-        os_t t = os_read_monotonic_time();
-        event = wimp_poll_idle(mask, &block, t + 10, 0);
-      } else {
-        event = wimp_poll(wimp_MASK_NULL | mask, &block, 0);
-      }
-      finished = 1;
-    }
-    else
-    {
-      struct ro_gui_poll_block* next;
-      event = ro_gui_poll_queued_blocks->event;
-      memcpy(&block, ro_gui_poll_queued_blocks->block, sizeof(block));
-      next = ro_gui_poll_queued_blocks->next;
-      xfree(ro_gui_poll_queued_blocks->block);
-      xfree(ro_gui_poll_queued_blocks);
-      ro_gui_poll_queued_blocks = next;
-      finished = 0;
-    }
-    switch (event)
-    {
-      case wimp_NULL_REASON_CODE        :
-        ro_gui_throb();
-        if (over_window != NULL
-            || current_drag.type == draginfo_BROWSER_TEXT_SELECTION)
-        {
-          wimp_pointer pointer;
-          wimp_get_pointer_info(&pointer);
-          ro_gui_window_mouse_at(&pointer);
-        }
-        if (gui_reformat_pending) {
+	/* Process queued events. */
+	while (ro_gui_poll_queued_blocks) {
+		struct ro_gui_poll_block *next;
+		ro_gui_handle_event(ro_gui_poll_queued_blocks->event,
+				ro_gui_poll_queued_blocks->block);
+		next = ro_gui_poll_queued_blocks->next;
+		free(ro_gui_poll_queued_blocks->block);
+		free(ro_gui_poll_queued_blocks);
+		ro_gui_poll_queued_blocks = next;
+	}
+
+	/* Poll wimp. */
+	xhourglass_off();
+	if (active) {
+		event = wimp_poll(mask, &block, 0);
+	} else if (over_window || gui_reformat_pending) {
+		os_t t = os_read_monotonic_time();
+		event = wimp_poll_idle(mask, &block, t + 10, 0);
+	} else {
+		event = wimp_poll(wimp_MASK_NULL | mask, &block, 0);
+	}
+	xhourglass_on();
+	ro_gui_handle_event(event, &block);
+
+        if (gui_reformat_pending && event == wimp_NULL_REASON_CODE) {
 		for (g = window_list; g; g = g->next) {
 			if (g->type == GUI_BROWSER_WINDOW && g->data.browser.reformat_pending) {
 				content_reformat(g->data.browser.bw->current_content,
@@ -245,405 +249,275 @@ void gui_poll(bool active)
 		}
 		gui_reformat_pending = false;
 	}
-        break;
-
-      case wimp_REDRAW_WINDOW_REQUEST   :
-	if (block.redraw.w == dialog_config_th)
-		ro_gui_redraw_config_th(&block.redraw);
-	else if (block.redraw.w == history_window)
-		ro_gui_history_redraw(&block.redraw);
-	else {
-		g = ro_lookup_gui_from_w(block.redraw.w);
-		if (g != NULL)
-			ro_gui_window_redraw(g, &(block.redraw));
-		else {
-			osbool more = wimp_redraw_window(&block.redraw);
-			while (more)
-				more = wimp_get_rectangle(&block.redraw);
-		}
-	}
-	break;
-
-      case wimp_OPEN_WINDOW_REQUEST     :
-        g = ro_lookup_gui_from_w(block.open.w);
-        if (g != NULL)
-          ro_gui_window_open(g, &(block.open));
-        else
-	{
-          wimp_open_window(&block.open);
-	}
-        break;
-
-      case wimp_CLOSE_WINDOW_REQUEST    :
-        g = ro_lookup_gui_from_w(block.close.w);
-        if (g != NULL) {
-          browser_window_destroy(g->data.browser.bw
-#ifdef WITH_FRAMES
-          , true
-#endif
-          );
-#ifdef WITH_COOKIES
-          clean_cookiejar();
-#endif
-        }
-        else
-          ro_gui_dialog_close((wimp_w)(&(block.close.w)));
-        break;
-
-      case wimp_POINTER_LEAVING_WINDOW  :
-        over_window = NULL;
-        break;
-
-      case wimp_POINTER_ENTERING_WINDOW :
-        over_window = ro_lookup_gui_from_w(block.entering.w);
-        break;
-
-      case wimp_MOUSE_CLICK             :
-        if (block.pointer.w == wimp_ICON_BAR)
-          ro_gui_icon_bar_click(&(block.pointer));
-	else if (block.pointer.w == history_window)
-	  ro_gui_history_click(&(block.pointer));
-        else
-        {
-          g = ro_lookup_gui_from_w(block.pointer.w);
-          if (g != NULL)
-          {
-            ro_gui_window_click(g, &(block.pointer));
-          }
-          else
-          {
-            g = ro_lookup_gui_toolbar_from_w(block.pointer.w);
-            if (g != NULL)
-            {
-              ro_gui_toolbar_click(g, &(block.pointer));
-            }
-            else
-            {
-              g = ro_lookup_download_window_from_w(block.pointer.w);
-              if (g != NULL)
-              {
-                ro_download_window_click(g, &(block.pointer));
-              }
-
-              else ro_gui_dialog_click(&(block.pointer));
-          }
-        }
-        break;
-
-      case wimp_USER_DRAG_BOX           :
-        ro_gui_drag_end(&(block.dragged));
-        break;
-
-      case wimp_KEY_PRESSED             :
-        ro_gui_keypress(&(block.key));
-        break;
-
-      case wimp_MENU_SELECTION          :
-        ro_gui_menu_selection(&(block.selection));
-        break;
-
-      case wimp_SCROLL_REQUEST:
-        ro_gui_scroll_request(&(block.scroll));
-        break;
-
-      case wimp_LOSE_CARET              :
-        break;
-      case wimp_GAIN_CARET              :
-        break;
-
-      case wimp_USER_MESSAGE            :
-      case wimp_USER_MESSAGE_RECORDED   :
-      case wimp_USER_MESSAGE_ACKNOWLEDGE:
-
-      fprintf(stderr, "MESSAGE %d (%x) HAS ARRIVED\n", block.message.action, block.message.action);
-
-      switch (block.message.action)
-      {
-        case message_DATA_SAVE        :
-               ro_msg_datasave(&(block.message));
-               break;
-
-        case message_DATA_SAVE_ACK     :
-               ro_msg_datasave_ack(&(block.message));
-               break;
-
-        case message_DATA_LOAD         :
-               ro_msg_dataload(&(block.message));
-               break;
-
-        case message_DATA_OPEN:
-               ro_msg_dataopen(&(block.message));
-               break;
-
-#ifdef WITH_URI
-        case message_URI_PROCESS       :
-               ro_uri_message_received(&(block.message));
-               break;
-#endif
-#ifdef WITH_URL
-        case message_INET_SUITE_OPEN_URL:
-               ro_url_message_received(&(block.message));
-               break;
-#endif
-#ifdef WITH_PLUGIN
-        case message_PLUG_IN_OPENING:
-        case message_PLUG_IN_CLOSED:
-        case message_PLUG_IN_RESHAPE_REQUEST:
-        case message_PLUG_IN_FOCUS:
-        case message_PLUG_IN_URL_ACCESS:
-        case message_PLUG_IN_STATUS:
-        case message_PLUG_IN_BUSY:
-        case message_PLUG_IN_STREAM_NEW:
-        case message_PLUG_IN_STREAM_WRITE:
-        case message_PLUG_IN_STREAM_WRITTEN:
-        case message_PLUG_IN_STREAM_DESTROY:
-        case message_PLUG_IN_OPEN:
-        case message_PLUG_IN_CLOSE:
-        case message_PLUG_IN_RESHAPE:
-        case message_PLUG_IN_STREAM_AS_FILE:
-        case message_PLUG_IN_NOTIFY:
-        case message_PLUG_IN_ABORT:
-        case message_PLUG_IN_ACTION:
-               plugin_msg_parse(&(block.message),
-                          (event == wimp_USER_MESSAGE_ACKNOWLEDGE ? 1 : 0));
-               break;
-#endif
-
-        case message_QUIT              :
-               netsurf_quit = true;
-               break;
-      }
-      break;
-    }
-    }
-  } while (finished == 0);
-
-  return;
 }
+
+
+/**
+ * Process a Wimp_Poll event.
+ *
+ * \param event wimp event number
+ * \param block parameter block
+ */
+
+void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
+{
+	switch (event) {
+		case wimp_NULL_REASON_CODE:
+			ro_gui_null_reason_code();
+			break;
+
+		case wimp_REDRAW_WINDOW_REQUEST:
+			ro_gui_redraw_window_request(&block->redraw);
+			break;
+
+		case wimp_OPEN_WINDOW_REQUEST:
+			ro_gui_open_window_request(&block->open);
+			break;
+
+		case wimp_CLOSE_WINDOW_REQUEST:
+			ro_gui_close_window_request(&block->close);
+			break;
+
+		case wimp_POINTER_LEAVING_WINDOW:
+			over_window = 0;
+			break;
+
+		case wimp_POINTER_ENTERING_WINDOW:
+			over_window = ro_lookup_gui_from_w(block->entering.w);
+			break;
+
+		case wimp_MOUSE_CLICK:
+			ro_gui_mouse_click(&block->pointer);
+			break;
+
+		case wimp_USER_DRAG_BOX:
+			ro_gui_drag_end(&(block->dragged));
+			break;
+
+		case wimp_KEY_PRESSED:
+			ro_gui_keypress(&(block->key));
+			break;
+
+		case wimp_MENU_SELECTION:
+			ro_gui_menu_selection(&(block->selection));
+			break;
+
+		case wimp_SCROLL_REQUEST:
+			ro_gui_scroll_request(&(block->scroll));
+			break;
+
+		case wimp_USER_MESSAGE:
+		case wimp_USER_MESSAGE_RECORDED:
+		case wimp_USER_MESSAGE_ACKNOWLEDGE:
+			ro_gui_user_message(event, &(block->message));
+			break;
+	}
+}
+
+
+/**
+ * Check for important events and yield CPU (RISC OS).
+ *
+ * Required on RISC OS for cooperative multitasking.
+ */
 
 void gui_multitask(void)
 {
-  wimp_event_no event;
-  wimp_block block;
-  gui_window* g;
+	wimp_event_no event;
+	wimp_block block;
 
-  event = wimp_poll(wimp_QUEUE_KEY |
-    wimp_MASK_LOSE | wimp_MASK_GAIN, &block, 0);
+	xhourglass_off();
+	event = wimp_poll(wimp_MASK_LOSE | wimp_MASK_GAIN, &block, 0);
+	xhourglass_on();
 
-  switch (event)
-  {
-    case wimp_NULL_REASON_CODE:
-      ro_gui_throb();
-      if (over_window != NULL)
-      {
-        wimp_pointer pointer;
-        wimp_get_pointer_info(&pointer);
-        ro_gui_window_mouse_at(&pointer);
-      }
-      break;
+	switch (event) {
+		case wimp_CLOSE_WINDOW_REQUEST:
+		case wimp_KEY_PRESSED:
+		case wimp_MENU_SELECTION:
+		case wimp_USER_MESSAGE:
+		case wimp_USER_MESSAGE_RECORDED:
+		case wimp_USER_MESSAGE_ACKNOWLEDGE:
+			ro_gui_poll_queue(event, &block);
+			break;
 
-    case wimp_REDRAW_WINDOW_REQUEST   :
-	if (block.redraw.w == dialog_config_th)
-		ro_gui_redraw_config_th(&block.redraw);
-	else if (block.redraw.w == history_window)
-		ro_gui_history_redraw(&block.redraw);
+		default:
+			ro_gui_handle_event(event, &block);
+			break;
+	}
+}
+
+
+/**
+ * Add a wimp_block to the queue for later handling.
+ */
+
+void ro_gui_poll_queue(wimp_event_no event, wimp_block *block)
+{
+	struct ro_gui_poll_block *q =
+			xcalloc(1, sizeof(struct ro_gui_poll_block));
+
+	q->event = event;
+	q->block = xcalloc(1, sizeof(*block));
+	memcpy(q->block, block, sizeof(*block));
+	q->next = NULL;
+
+	if (ro_gui_poll_queued_blocks == NULL) {
+		ro_gui_poll_queued_blocks = q;
+		return;
+	} else {
+		struct ro_gui_poll_block *current =
+				ro_gui_poll_queued_blocks;
+		while (current->next != NULL)
+			current = current->next;
+		current->next = q;
+	}
+	return;
+}
+
+
+/**
+ * Handle Null_Reason_Code events.
+ */
+
+void ro_gui_null_reason_code(void)
+{
+        ro_gui_throb();
+        if (over_window != NULL
+            || current_drag.type == draginfo_BROWSER_TEXT_SELECTION)
+        {
+          wimp_pointer pointer;
+          wimp_get_pointer_info(&pointer);
+          ro_gui_window_mouse_at(&pointer);
+        }
+}
+
+
+/**
+ * Handle Redraw_Window_Request events.
+ */
+
+void ro_gui_redraw_window_request(wimp_draw *redraw)
+{
+	gui_window *g;
+
+	if (redraw->w == dialog_config_th)
+		ro_gui_redraw_config_th(redraw);
+	else if (redraw->w == history_window)
+		ro_gui_history_redraw(redraw);
 	else {
-		g = ro_lookup_gui_from_w(block.redraw.w);
-		if (g)
-			ro_gui_window_redraw(g, &(block.redraw));
+		g = ro_lookup_gui_from_w(redraw->w);
+		if (g != NULL)
+			ro_gui_window_redraw(g, redraw);
 		else {
-			osbool more = wimp_redraw_window(&block.redraw);
+			osbool more = wimp_redraw_window(redraw);
 			while (more)
-				more = wimp_get_rectangle(&block.redraw);
+				more = wimp_get_rectangle(redraw);
 		}
 	}
-	break;
-
-    case wimp_OPEN_WINDOW_REQUEST     :
-      g = ro_lookup_gui_from_w(block.open.w);
-      if (g != NULL)
-        ro_gui_window_open(g, &(block.open));
-      else
-      {
-        wimp_open_window(&block.open);
-      }
-      break;
-
-    case wimp_CLOSE_WINDOW_REQUEST    :
-      ro_gui_poll_queue(event, &block);
-      break;
-
-    case wimp_MOUSE_CLICK :
-      if (block.pointer.w == wimp_ICON_BAR)
-        ro_gui_icon_bar_click(&(block.pointer));
-      else
-      {
-        g = ro_lookup_gui_from_w(block.pointer.w);
-        if (g != NULL)
-        {
-          if (g->redraw_safety == SAFE)
-            ro_gui_window_click(g, &(block.pointer));
-          else
-            ro_gui_poll_queue(event, &block);
-        }
-        else
-        {
-          g = ro_lookup_gui_toolbar_from_w(block.pointer.w);
-          if (g != NULL)
-          {
-            ro_gui_toolbar_click(g, &(block.pointer));
-          }
-          else
-          {
-            ro_gui_poll_queue(event, &block);
-          }
-        }
-      }
-      break;
-
-    case wimp_POINTER_LEAVING_WINDOW  :
-      over_window = NULL;
-      break;
-    case wimp_POINTER_ENTERING_WINDOW :
-      over_window = ro_lookup_gui_from_w(block.leaving.w);
-      break;
-    case wimp_USER_DRAG_BOX           :
-      ro_gui_drag_end(&(block.dragged));
-      break;
-    case wimp_MENU_SELECTION          :
-      break;
-
-      case wimp_SCROLL_REQUEST:
-        ro_gui_scroll_request(&(block.scroll));
-        break;
-
-    case wimp_USER_MESSAGE            :
-    case wimp_USER_MESSAGE_RECORDED   :
-    case wimp_USER_MESSAGE_ACKNOWLEDGE:
-
-      fprintf(stderr, "MESSAGE %d (%x) HAS ARRIVED\n", block.message.action, block.message.action);
-
-      switch (block.message.action)
-      {
-        case message_DATA_SAVE        :
-               ro_msg_datasave(&(block.message));
-               break;
-
-        case message_DATA_SAVE_ACK     :
-               ro_msg_datasave_ack(&(block.message));
-               break;
-
-        case message_DATA_LOAD         :
-               ro_msg_dataload(&(block.message));
-               break;
-
-        case message_DATA_OPEN:
-               ro_msg_dataopen(&(block.message));
-               break;
-
-#ifdef WITH_URI
-        case message_URI_PROCESS       :
-               ro_uri_message_received(&(block.message));
-               break;
-#endif
-#ifdef WITH_URL
-        case message_INET_SUITE_OPEN_URL:
-               ro_url_message_received(&(block.message));
-               break;
-#endif
-#ifdef WITH_PLUGIN
-        case message_PLUG_IN_OPENING:
-        case message_PLUG_IN_CLOSED:
-        case message_PLUG_IN_RESHAPE_REQUEST:
-        case message_PLUG_IN_FOCUS:
-        case message_PLUG_IN_URL_ACCESS:
-        case message_PLUG_IN_STATUS:
-        case message_PLUG_IN_BUSY:
-        case message_PLUG_IN_STREAM_NEW:
-        case message_PLUG_IN_STREAM_WRITE:
-        case message_PLUG_IN_STREAM_WRITTEN:
-        case message_PLUG_IN_STREAM_DESTROY:
-        case message_PLUG_IN_OPEN:
-        case message_PLUG_IN_CLOSE:
-        case message_PLUG_IN_RESHAPE:
-        case message_PLUG_IN_STREAM_AS_FILE:
-        case message_PLUG_IN_NOTIFY:
-        case message_PLUG_IN_ABORT:
-        case message_PLUG_IN_ACTION:
-               plugin_msg_parse(&(block.message),
-                          (event == wimp_USER_MESSAGE_ACKNOWLEDGE ? 1 : 0));
-               break;
-#endif
-
-        case message_QUIT              :
-               netsurf_quit = true;
-               break;
-
-	default:
-		ro_gui_poll_queue(event, &block);
-		break;
-
-      }
-      break;
-    default:
-      break;
-  }
-
-}
-
-void ro_gui_poll_queue(wimp_event_no event, wimp_block* block)
-{
-  struct ro_gui_poll_block* q = xcalloc(1, sizeof(struct ro_gui_poll_block));
-
-  q->event = event;
-  q->block = xcalloc(1, sizeof(*block));
-  memcpy(q->block, block, sizeof(*block));
-  q->next = NULL;
-
-  if (ro_gui_poll_queued_blocks == NULL)
-  {
-    ro_gui_poll_queued_blocks = q;
-    return;
-  }
-  else
-  {
-    struct ro_gui_poll_block* current = ro_gui_poll_queued_blocks;
-    while (current->next != NULL)
-      current = current->next;
-    current->next = q;
-  }
-  return;
 }
 
 
+/**
+ * Handle Open_Window_Request events.
+ */
 
-void ro_gui_icon_bar_click(wimp_pointer* pointer)
+void ro_gui_open_window_request(wimp_open *open)
 {
-  if (pointer->buttons == wimp_CLICK_MENU)
-  {
-    ro_gui_create_menu(iconbar_menu, pointer->pos.x - 64, 96 + iconbar_menu_height, NULL);
-  }
-  else if (pointer->buttons == wimp_CLICK_SELECT)
-  {
-    struct browser_window* bw;
-    bw = create_browser_window(browser_TITLE | browser_TOOLBAR
-      | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480
+	gui_window *g;
+
+	g = ro_lookup_gui_from_w(open->w);
+	if (g)
+		ro_gui_window_open(g, open);
+	else
+		wimp_open_window(open);
+}
+
+
+/**
+ * Handle Close_Window_Request events.
+ */
+
+void ro_gui_close_window_request(wimp_close *close)
+{
+	gui_window *g;
+
+	g = ro_lookup_gui_from_w(close->w);
+	if (g) {
+		browser_window_destroy(g->data.browser.bw
 #ifdef WITH_FRAMES
-      , NULL
+				, true
 #endif
-      );
-    gui_window_show(bw->window);
-    browser_window_open_location(bw, HOME_URL);
-    wimp_set_caret_position(bw->window->data.browser.toolbar,
-      ICON_TOOLBAR_URL,
-      0,0,-1, (int) strlen(bw->window->url) - 1);
-  }
+				);
+#ifdef WITH_COOKIES
+	clean_cookiejar();
+#endif
+	} else
+		ro_gui_dialog_close(close->w);
+}
+
+
+/**
+ * Handle Mouse_Click events.
+ */
+
+void ro_gui_mouse_click(wimp_pointer *pointer)
+{
+	gui_window *g = ro_gui_window_lookup(pointer->w);
+
+	if (pointer->w == wimp_ICON_BAR)
+		ro_gui_icon_bar_click(pointer);
+	else if (pointer->w == history_window)
+		ro_gui_history_click(pointer);
+	else if (g && g->type == GUI_BROWSER_WINDOW &&
+			g->window == pointer->w) {
+		if (g->redraw_safety == SAFE)
+			ro_gui_window_click(g, pointer);
+		else
+			ro_gui_poll_queue(wimp_MOUSE_CLICK,
+					(wimp_block *) pointer);
+	} else if (g && g->type == GUI_BROWSER_WINDOW &&
+			g->data.browser.toolbar == pointer->w)
+		ro_gui_toolbar_click(g, pointer);
+	else if (g && g->type == GUI_DOWNLOAD_WINDOW)
+		ro_download_window_click(g, pointer);
+	else
+		ro_gui_dialog_click(pointer);
+}
+
+
+/**
+ * Handle Mouse_Click events on the iconbar icon.
+ */
+
+void ro_gui_icon_bar_click(wimp_pointer *pointer)
+{
+	if (pointer->buttons == wimp_CLICK_MENU) {
+		ro_gui_create_menu(iconbar_menu, pointer->pos.x - 64,
+				   96 + iconbar_menu_height, NULL);
+	} else if (pointer->buttons == wimp_CLICK_SELECT) {
+		struct browser_window *bw;
+		bw = create_browser_window(browser_TITLE | browser_TOOLBAR
+					   | browser_SCROLL_X_ALWAYS |
+					   browser_SCROLL_Y_ALWAYS, 640,
+					   480
+#ifdef WITH_FRAMES
+					   , NULL
+#endif
+		    );
+		gui_window_show(bw->window);
+		browser_window_open_location(bw, HOME_URL);
+		wimp_set_caret_position(bw->window->data.browser.toolbar,
+					ICON_TOOLBAR_URL,
+					0, 0, -1,
+					(int) strlen(bw->window->url) - 1);
+	}
 }
 
 
 /**
  * Handle Key_Pressed events.
  */
+
 void ro_gui_keypress(wimp_key *key)
 {
 	bool handled = false;
@@ -668,6 +542,70 @@ void ro_gui_keypress(wimp_key *key)
 
 	if (!handled)
 		wimp_process_key(key->c);
+}
+
+
+/**
+ * Handle the three User_Message events.
+ */
+
+void ro_gui_user_message(wimp_event_no event, wimp_message *message)
+{
+	switch (message->action) {
+		case message_DATA_SAVE:
+			ro_msg_datasave(message);
+			break;
+
+		case message_DATA_SAVE_ACK:
+			ro_msg_datasave_ack(message);
+			break;
+
+		case message_DATA_LOAD:
+			ro_msg_dataload(message);
+			break;
+
+		case message_DATA_OPEN:
+			ro_msg_dataopen(message);
+			break;
+
+#ifdef WITH_URI
+		case message_URI_PROCESS:
+			ro_uri_message_received(message);
+			break;
+#endif
+#ifdef WITH_URL
+		case message_INET_SUITE_OPEN_URL:
+			ro_url_message_received(message);
+			break;
+#endif
+#ifdef WITH_PLUGIN
+		case message_PLUG_IN_OPENING:
+		case message_PLUG_IN_CLOSED:
+		case message_PLUG_IN_RESHAPE_REQUEST:
+		case message_PLUG_IN_FOCUS:
+		case message_PLUG_IN_URL_ACCESS:
+		case message_PLUG_IN_STATUS:
+		case message_PLUG_IN_BUSY:
+		case message_PLUG_IN_STREAM_NEW:
+		case message_PLUG_IN_STREAM_WRITE:
+		case message_PLUG_IN_STREAM_WRITTEN:
+		case message_PLUG_IN_STREAM_DESTROY:
+		case message_PLUG_IN_OPEN:
+		case message_PLUG_IN_CLOSE:
+		case message_PLUG_IN_RESHAPE:
+		case message_PLUG_IN_STREAM_AS_FILE:
+		case message_PLUG_IN_NOTIFY:
+		case message_PLUG_IN_ABORT:
+		case message_PLUG_IN_ACTION:
+			plugin_msg_parse(message,
+					event == wimp_USER_MESSAGE_ACKNOWLEDGE);
+			break;
+#endif
+
+		case message_QUIT:
+			netsurf_quit = true;
+			break;
+	}
 }
 
 
