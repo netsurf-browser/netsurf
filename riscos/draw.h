@@ -11,7 +11,7 @@
 struct content;
 
 struct content_draw_data {
-	void* data;
+	void *data;
 	unsigned long length;
 };
 

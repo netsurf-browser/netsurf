@@ -231,6 +231,7 @@ void css_merge(struct css_style * const style, const struct css_style * const ap
 void css_parse_property_list(struct css_style * style, char * str);
 colour named_colour(const char *name);
 void css_dump_style(const struct css_style * const style);
+void css_dump_stylesheet(const struct css_stylesheet * stylesheet);
 
 signed long len(struct css_length * length, struct css_style * style);
 

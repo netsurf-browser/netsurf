@@ -15,6 +15,7 @@
 #include <string.h>
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+#include "netsurf/css/css.h"
 #include "netsurf/riscos/about.h"
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
@@ -82,7 +83,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
   window.xmin = 100;
   window.ymin = window.extent.y1 + 100;
   window.title_data.indirected_text.text = g->title;
-  window.title_data.indirected_text.validation = -1;
+  window.title_data.indirected_text.validation = (char*)-1;
   window.title_data.indirected_text.size = 255;
   window.icon_count = 0;
   g->window = wimp_create_window(&window);
@@ -277,9 +278,9 @@ void gui_window_set_extent(gui_window *g, unsigned long width,
 	if (g->data.browser.bw->flags & browser_TOOLBAR)
 		toolbar_height = ro_theme_toolbar_height();
 
-	if (width < state.visible.x1 - state.visible.x0)
+	if (width < (unsigned int)(state.visible.x1 - state.visible.x0))
 		width = state.visible.x1 - state.visible.x0;
-	if (height < state.visible.y1 - state.visible.y0 - toolbar_height)
+	if (height < (unsigned int)(state.visible.y1 - state.visible.y0 - toolbar_height))
 		height = state.visible.y1 - state.visible.y0 - toolbar_height;
 
 	extent.y0 = -height;
@@ -348,7 +349,7 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 	}
 
 	/* the height should be no less than the content height */
-	if (content && height < content->height * 2)
+	if (content && (unsigned int)height < content->height * 2)
 		height = content->height * 2;
 
 	/* change extent if necessary */
@@ -361,7 +362,7 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 		g->data.browser.old_width = width;
 		g->data.browser.old_height = height;
 
-		if (content && width < content->width * 2)
+		if (content && (unsigned int)width < content->width * 2)
 			width = content->width * 2;
 		else {
 			os_box extent = { 0, -height, width, toolbar_height };
@@ -377,7 +378,7 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 			!(state.flags & wimp_WINDOW_FULL_SIZE)) {
 		width = open->visible.x1 - open->visible.x0;
 		height = open->visible.y1 - open->visible.y0 - toolbar_height;
-		if (content && height < content->height * 2)
+		if (content && (unsigned int)height < content->height * 2)
 			height = content->height * 2;
 		{
 			os_box extent = { 0, -height, width, toolbar_height };
@@ -407,7 +408,7 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 void ro_gui_throb(void)
 {
   gui_window* g;
-  float nowtime = (float) clock() / CLOCKS_PER_SEC;
+  float nowtime = (float) (clock() / CLOCKS_PER_SEC);
 
   for (g = window_list; g != NULL; g = g->next)
   {
@@ -421,7 +422,7 @@ void ro_gui_throb(void)
           {
             g->throbtime = nowtime;
             g->throbber++;
-            if (theme_throbs < g->throbber)
+            if (theme_throbs < (unsigned int)g->throbber)
               g->throbber = 0;
             sprintf(g->throb_buf, "throbber%u", g->throbber);
             wimp_set_icon_state(g->data.browser.toolbar,

@@ -34,8 +34,8 @@ void frame_add_instance(struct content *c, struct browser_window *parent,
   os_error *e;
   gui_window *g = (gui_window*)xcalloc(1, sizeof(gui_window));
 
-  bw = create_browser_window(parent->flags, parent->format_width,
-                             parent->format_height, parent);
+  bw = create_browser_window(parent->flags, (int)parent->format_width,
+                             (int)parent->format_height, parent);
 
   w.visible.x0 = 346;
   w.visible.x1 = 370;

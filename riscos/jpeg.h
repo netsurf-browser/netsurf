@@ -11,7 +11,7 @@
 struct content;
 
 struct content_jpeg_data {
-	char *data;
+	void *data;
 	unsigned long length;
 };
 

@@ -29,7 +29,7 @@ void jpeg_create(struct content *c)
 void jpeg_process_data(struct content *c, char *data, unsigned long size)
 {
 	c->data.jpeg.data = xrealloc(c->data.jpeg.data, c->data.jpeg.length + size);
-	memcpy(c->data.jpeg.data + c->data.jpeg.length, data, size);
+	memcpy((char*)(c->data.jpeg.data) + c->data.jpeg.length, data, size);
 	c->data.jpeg.length += size;
 	c->size += size;
 }
@@ -39,8 +39,9 @@ int jpeg_convert(struct content *c, unsigned int width, unsigned int height)
 {
 	os_error *error;
 	int w, h;
-	error = xjpeginfo_dimensions(c->data.jpeg.data, (int) c->data.jpeg.length,
-			0, &w, &h, 0, 0, 0);
+	error = xjpeginfo_dimensions((jpeg_image const*)c->data.jpeg.data,
+	                              (int) c->data.jpeg.length,
+			              0, &w, &h, 0, 0, 0);
 	if (error != 0)
 		return 1;
 	c->width = w;
@@ -80,7 +81,7 @@ void jpeg_redraw(struct content *c, long x, long y,
 	factors.ydiv = c->height * 2;
 
 	xjpeg_plot_scaled((jpeg_image *) c->data.jpeg.data,
-			x, y - height,
+			x, (int)(y - height),
 			&factors, (int) c->data.jpeg.length,
 			jpeg_SCALE_DITHERED);
 }

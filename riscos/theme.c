@@ -74,7 +74,7 @@ void ro_theme_load(char *pathname)
 	obj_type = osfile_read_no_path(filename, 0, 0, &size, 0);
 	assert(obj_type & fileswitch_IS_FILE);
 
-	theme_sprite_area = xcalloc(size + 16, 1);
+	theme_sprite_area = xcalloc((unsigned int)(size + 16), 1);
 	theme_sprite_area->size = size + 16;
 	theme_sprite_area->sprite_count = 0;
 	theme_sprite_area->first = 16;
@@ -94,7 +94,7 @@ void ro_theme_load(char *pathname)
 		osspriteop_return_name(osspriteop_USER_AREA,
 				theme_sprite_area, name, 32, i);
 		if (strncmp(name, "throbber", 8) == 0) {
-			int n = atoi(name + 8);
+			unsigned int n = atoi(name + 8);
 			if (theme_throbs < n)
 				theme_throbs = n;
 		}
@@ -140,7 +140,9 @@ int ro_theme_toolbar_height(void)
 
 void ro_theme_resize_toolbar(wimp_w w, int width, int height)
 {
-	wimp_icon_state ic = {w, ICON_TOOLBAR_URL};
+	wimp_icon_state ic;
+	ic.w = w;
+	ic.i = ICON_TOOLBAR_URL;
 	wimp_get_icon_state(&ic);
 
 	wimp_resize_icon(w, ICON_TOOLBAR_URL, ic.icon.extent.x0, ic.icon.extent.y0,

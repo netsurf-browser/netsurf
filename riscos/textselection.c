@@ -5,6 +5,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
 
+#include <string.h>
 #include "oslib/wimp.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
@@ -122,7 +123,7 @@ void ro_gui_drag_end(wimp_dragged* drag)
     strcpy(send_message->data.data_xfer.file_name,
                  current_drag.data.download.gui->data.download.path);
 
-    LOG(("Sending message to window owner, filename = %s, length = %lu",
+    LOG(("Sending message to window owner, filename = %s, length = %d",
                           send_message->data.data_xfer.file_name,
                           send_message->data.data_xfer.est_size));
 

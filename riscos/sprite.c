@@ -25,7 +25,7 @@ void sprite_create(struct content *c)
 void sprite_process_data(struct content *c, char *data, unsigned long size)
 {
 	c->data.sprite.data = xrealloc(c->data.sprite.data, c->data.sprite.length + size);
-	memcpy(c->data.sprite.data + c->data.sprite.length, data, size);
+	memcpy((char*)(c->data.sprite.data) + c->data.sprite.length, data, size);
 	c->data.sprite.length += size;
 	c->size += size;
 }
@@ -35,14 +35,14 @@ int sprite_convert(struct content *c, unsigned int width, unsigned int height)
 {
 	os_error *error;
 	int w, h;
-	osspriteop_area *area = c->data.sprite.data;
+	osspriteop_area *area = (osspriteop_area*)c->data.sprite.data;
 
         /* fill in the size (first word) of the area */
 	area->size = c->data.sprite.length;
 
 	error = xosspriteop_read_sprite_info(osspriteop_PTR,
 	     area,
-	     (osspriteop_id)(c->data.sprite.data + area->first),
+	     (osspriteop_id)((char*)(c->data.sprite.data) + area->first),
 	     &w, &h, NULL, NULL);
 
         if (error) {
@@ -82,19 +82,21 @@ void sprite_redraw(struct content *c, long x, long y,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
 {
         unsigned int size;
-	osspriteop_area *area = c->data.sprite.data;
+	osspriteop_area *area = (osspriteop_area*)c->data.sprite.data;
 	osspriteop_trans_tab *table;
 	os_factors factors;
 
 	xcolourtrans_generate_table_for_sprite(
 			area,
-			(osspriteop_id)(c->data.sprite.data + area->first),
+			(osspriteop_id)((char*)(c->data.sprite.data) +
+			                 area->first),
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
 	table = xcalloc(size, 1);
 	xcolourtrans_generate_table_for_sprite(
 			area,
-			(osspriteop_id)(c->data.sprite.data + area->first),
+			(osspriteop_id)((char*)(c->data.sprite.data) +
+			                 area->first),
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
 
@@ -105,8 +107,9 @@ void sprite_redraw(struct content *c, long x, long y,
 
 	xosspriteop_put_sprite_scaled(osspriteop_PTR,
 			area,
-			(osspriteop_id)(c->data.sprite.data + area->first),
-			x, y - height,
+			(osspriteop_id)((char*)(c->data.sprite.data) +
+			                 area->first),
+			x, (int)(y - height),
 			osspriteop_USE_MASK | osspriteop_USE_PALETTE, &factors, table);
 
 	xfree(table);

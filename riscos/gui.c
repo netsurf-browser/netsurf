@@ -252,7 +252,7 @@ void gui_poll(bool active)
         if (g != NULL)
           browser_window_destroy(g->data.browser.bw, true);
         else
-          ro_gui_dialog_close(&(block.close.w));
+          ro_gui_dialog_close((wimp_w)(&(block.close.w)));
         break;
 
       case wimp_POINTER_LEAVING_WINDOW  :
@@ -675,11 +675,10 @@ void ro_msg_datasave(wimp_message* block)
 	struct browser_window* bw;
 	wimp_message_data_xfer* data;
 	int x,y;
-  struct box_selection* click_boxes;
-  int found, plot_index;
-  int i;
-  int done = 0;
-    wimp_window_state state;
+        struct box_selection* click_boxes;
+        int found, plot_index;
+        int i;
+        wimp_window_state state;
 
 	data = &block->data.data_xfer;
 
@@ -689,8 +688,8 @@ void ro_msg_datasave(wimp_message* block)
 
 	bw = gui->data.browser.bw;
 
-    state.w = data->w;
-    wimp_get_window_state(&state);
+        state.w = data->w;
+        wimp_get_window_state(&state);
   	x = browser_x_units(window_x_units(data->pos.x, &state));
   	y = browser_y_units(window_y_units(data->pos.y, &state));
 
@@ -699,7 +698,8 @@ void ro_msg_datasave(wimp_message* block)
 	plot_index = 0;
 
 	box_under_area(bw->current_content->data.html.layout->children,
-                 x, y, 0, 0, &click_boxes, &found, &plot_index);
+                 (unsigned int)x, (unsigned int)y, 0, 0, &click_boxes,
+                 &found, &plot_index);
 
 	if (found == 0)
 		return;
@@ -730,11 +730,10 @@ void ro_msg_dataload(wimp_message* block)
 	struct browser_window* bw;
 	wimp_message_data_xfer* data;
 	int x,y;
-  struct box_selection* click_boxes;
-  int found, plot_index;
-  int i;
-  int done = 0;
-    wimp_window_state state;
+        struct box_selection* click_boxes;
+        int found, plot_index;
+        int i;
+        wimp_window_state state;
 
 	data = &block->data.data_xfer;
 
@@ -744,8 +743,8 @@ void ro_msg_dataload(wimp_message* block)
 
 	bw = gui->data.browser.bw;
 
-    state.w = data->w;
-    wimp_get_window_state(&state);
+        state.w = data->w;
+        wimp_get_window_state(&state);
   	x = browser_x_units(window_x_units(data->pos.x, &state));
   	y = browser_y_units(window_y_units(data->pos.y, &state));
 
@@ -754,7 +753,8 @@ void ro_msg_dataload(wimp_message* block)
 	plot_index = 0;
 
 	box_under_area(bw->current_content->data.html.layout->children,
-                 x, y, 0, 0, &click_boxes, &found, &plot_index);
+                 (unsigned int)x, (unsigned int)y, 0, 0, &click_boxes,
+                 &found, &plot_index);
 
 	if (found == 0)
 		return;
@@ -811,7 +811,7 @@ int ro_save_data(void *data, unsigned long length, char *file_name, bits file_ty
 {
   os_error *written = NULL;
 
-  void *end_data = (int)data + length;
+  void *end_data = (void*)((int)data + length);
 
   written = xosfile_save_stamped(file_name, file_type, data, end_data);
 
@@ -928,7 +928,7 @@ void ro_gui_drag_box_start(wimp_pointer *pointer)
   icon_icon = xcalloc(1, sizeof(*icon_icon));
   drag_box = xcalloc(1, sizeof(*drag_box));
 
-  drag_box->w = pointer->i;
+  drag_box->w = pointer->w;
   drag_box->type = wimp_DRAG_USER_FIXED;
 
   icon_window->w = pointer->w;

@@ -6,6 +6,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <unixlib/local.h>
 #include "oslib/osfile.h"
 #include "netsurf/content/fetch.h"

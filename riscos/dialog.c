@@ -45,7 +45,7 @@ static void get_proxy_choices(struct proxy_choices* newchoices);
 static void load_theme_preview(char* thname);
 static void set_theme_choices(struct theme_choices* newchoices);
 static void get_theme_choices(struct theme_choices* newchoices);
-static void ro_gui_destroy_theme_menu(void);
+/*static void ro_gui_destroy_theme_menu(void);*/
 static void ro_gui_build_theme_menu(void);
 static int file_exists(const char* base, const char* dir, const char* leaf, bits ftype);
 static void set_icon_state(wimp_w w, wimp_i i, int state);
@@ -375,7 +375,7 @@ int size;
   if ((size = (int) ftell(fp)) == -1) die("ftell() failed");
   fclose(fp);
 
-  theme_preview = xcalloc(size + 16, 1);
+  theme_preview = xcalloc((unsigned int)(size + 16), 1);
   if (theme_preview == NULL)
 	  return;
 
@@ -410,14 +410,24 @@ void ro_gui_redraw_config_th(wimp_draw* redraw)
   x = preview.icon.extent.x0 + win.visible.x0 + 4;
   y = preview.icon.extent.y0 + win.visible.y1 + 4;
 
-  xcolourtrans_generate_table_for_sprite(theme_preview, "preview", -1, -1, 0, 0, 0, 0, &size);
-  trans_tab = malloc(size + 32);
-  xcolourtrans_generate_table_for_sprite(theme_preview, "preview", -1, -1, trans_tab, 0, 0, 0, &size);
+  xcolourtrans_generate_table_for_sprite(theme_preview,
+                                         (osspriteop_id)"preview",
+                                         (os_mode)-1,
+                                         (os_palette const*)-1,
+                                         0, 0, 0, 0, &size);
+  trans_tab = malloc((unsigned int)(size + 32));
+  xcolourtrans_generate_table_for_sprite(theme_preview,
+                                         (osspriteop_id)"preview",
+                                         (os_mode)-1,
+                                         (os_palette const*)-1,
+                                         trans_tab, 0, 0, 0, &size);
 
   more = wimp_redraw_window(redraw);
   while (more)
   {
-    xosspriteop_put_sprite_scaled(osspriteop_NAME, theme_preview, "preview", x, y, 0, 0, trans_tab);
+    xosspriteop_put_sprite_scaled(osspriteop_NAME, theme_preview,
+                                  (osspriteop_id)"preview", x, y,
+                                  (osspriteop_action)0, 0, trans_tab);
     more = wimp_get_rectangle(redraw);
   }
 
@@ -508,7 +518,7 @@ void ro_gui_build_theme_menu(void)
 				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
 		theme_menu->entries[i].data.indirected_text.text =
 				xstrdup(info.name);
-		theme_menu->entries[i].data.indirected_text.validation = -1;
+ 		theme_menu->entries[i].data.indirected_text.validation = (char*)-1;
 		theme_menu->entries[i].data.indirected_text.size =
 				strlen(info.name) + 1;
 
@@ -576,7 +586,8 @@ void set_icon_string(wimp_w w, wimp_i i, char* text)
 	ic.w = w;
 	ic.i = i;
 	wimp_get_icon_state(&ic);
-	strncpy(ic.icon.data.indirected_text.text, text, ic.icon.data.indirected_text.size);
+	strncpy(ic.icon.data.indirected_text.text, text,
+	        (unsigned int)ic.icon.data.indirected_text.size);
 }
 
 char* get_icon_string(wimp_w w, wimp_i i)

@@ -143,7 +143,7 @@ void options_read(struct options* opt, char* filename)
         }
 
 	LOG(("Allocating %d bytes", size));
-  	data = xcalloc(size, sizeof(char));
+  	data = xcalloc((unsigned int)size, sizeof(char));
   	messagetrans_open_file(&cb, fn, data);
 
 	opt->http = lookup_yesno(&cb, "USE_HTTP", "N");

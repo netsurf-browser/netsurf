@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include "oslib/colourtrans.h"
 #include "oslib/font.h"
 #include "oslib/wimp.h"
 #include "netsurf/riscos/gui.h"
@@ -114,8 +115,8 @@ void ro_gui_history_open(struct browser_window *bw,
 		struct history_entry *entry, int wx, int wy)
 {
 	bool done = false;
-	unsigned int i, j;
-	int x, max_y = 0;
+	unsigned int i, j, max_y = 0;
+	int x;
 	struct history_entry *row[SIZE], *row2[SIZE];
 	struct history_entry *he;
 	os_box box = {0, 0, 0, 0};
@@ -170,7 +171,7 @@ void ro_gui_history_open(struct browser_window *bw,
 	}
 
 	box.x1 = WIDTH * (x - 1);
-	box.y0 = -HEIGHT * (max_y + 1);
+	box.y0 = -(HEIGHT * (max_y + 1));
 	wimp_set_extent(history_window, &box);
 	wimp_create_menu((wimp_menu *) history_window, wx, wy);
 }
@@ -212,7 +213,7 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 
 	if (he == history_current)
 		wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_RED);
-	else 
+	else
 		wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_BLACK);
 
 	font_paint(history_font, he->title,

@@ -106,7 +106,7 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
        }
   }
   else
-      memset(mask, 255, header->mask - header->image);
+      memset(mask, 255, (unsigned int)(header->mask - header->image));
 
   c->title = xcalloc(100, sizeof(char));
   sprintf(c->title, "GIF image (%lux%lu)", c->width, c->height);
@@ -156,11 +156,13 @@ void nsgif_redraw(struct content *c, long x, long y,
   xosspriteop_put_sprite_scaled(osspriteop_PTR,
 		c->data.gif.sprite_area,
 		(osspriteop_id) (c->data.gif.sprite_area + 1),
-		x, y - height,
+		x, (int)(y - height),
 		/* osspriteop_USE_PALETTE is RO 3.5+ only.
 		 * behaviour on RO < 3.5 is unknown...
 		 */
-		osspriteop_USE_MASK | osspriteop_USE_PALETTE, &factors, table);
+		(osspriteop_action)(osspriteop_USE_MASK |
+		                    osspriteop_USE_PALETTE),
+		&factors, table);
 
   xfree(table);
 }

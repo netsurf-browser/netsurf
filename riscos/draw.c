@@ -24,7 +24,7 @@ void draw_create(struct content *c)
 void draw_process_data(struct content *c, char *data, unsigned long size)
 {
 	c->data.draw.data = xrealloc(c->data.draw.data, c->data.draw.length + size);
-	memcpy(c->data.draw.data + c->data.draw.length, data, size);
+	memcpy((char*)c->data.draw.data + c->data.draw.length, data, size);
 	c->data.draw.length += size;
 	c->size += size;
 }
@@ -46,7 +46,7 @@ int draw_convert(struct content *c, unsigned int width, unsigned int height)
 
         /* BBox contents in Draw units (256*OS unit) */
 	error = xdrawfile_bbox(0, (drawfile_diagram*)(c->data.draw.data),
-	                       c->data.draw.length, matrix, bbox);
+	                       (int)c->data.draw.length, matrix, bbox);
 
         if (error) {
                 LOG(("error: %s", error->errmess));
@@ -90,9 +90,6 @@ void draw_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
 {
-        os_error *error;
-        unsigned int size;
-        os_box bbox;
         os_trfm *matrix = xcalloc(1, sizeof(os_trfm));
 
         /* Scaled image. Transform units (65536*OS units) */
@@ -105,7 +102,7 @@ void draw_redraw(struct content *c, long x, long y,
         matrix->entries[2][1] = (y-height) * 256;
 
 	xdrawfile_render(0, (drawfile_diagram*)(c->data.draw.data),
-			c->data.draw.length, matrix, 0, 0);
+			(int)c->data.draw.length, matrix, 0, 0);
 
         xfree(matrix);
 }

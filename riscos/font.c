@@ -12,6 +12,7 @@
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/render/font.h"
+#include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -53,11 +54,11 @@ unsigned long font_width(struct font_data *font, const char * text, unsigned int
 	if (length == 0)
 		return 0;
 
-	error = xfont_scan_string(font->handle, text,
+	error = xfont_scan_string((font_f)(font->handle), text,
 			font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
 			0x7fffffff, 0x7fffffff,
 			0,
-			0, length,
+			0, (int)length,
 			0, &width, 0, 0);
 	if (error != 0) {
 		fprintf(stderr, "%s\n", error->errmess);
@@ -80,11 +81,11 @@ void font_position_in_string(const char* text, struct font_data* font,
   block.letter.x = block.letter.y = 0;
   block.split_char = -1;
 
-  xfont_scan_string(font->handle, text,
+  xfont_scan_string((font_f)(font->handle), text,
     font_GIVEN_BLOCK | font_GIVEN_FONT | font_KERN | font_RETURN_CARET_POS | font_GIVEN_LENGTH,
     ro_x_units(x) * 400,
     0x7fffffff,
-    &block, 0, length,
+    &block, 0, (int)length,
     &split_point, &x_out, &y_out, &length_out);
 
   *char_offset = (int)(split_point - text);
@@ -149,7 +150,8 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 		os_error *error;
 
 		LOG(("font_find_font '%s' %i", font_table[f], size));
-		error = xfont_find_font(font_table[f], size, size, 0, 0, &handle, 0, 0);
+		error = xfont_find_font(font_table[f], (int)size, (int)size,
+		                        0, 0, &handle, 0, 0);
 		if (error != 0) {
 			fprintf(stderr, "%s\n", error->errmess);
 			die("font_find_font failed");
@@ -186,7 +188,7 @@ void font_free_set(struct font_set *set)
 
 void font_close(struct font_data *data)
 {
-	font_lose_font(data->handle);
+	font_lose_font((font_f)(data->handle));
 
 	free(data);
 }
@@ -202,12 +204,12 @@ char * font_split(struct font_data *data, const char * text, unsigned int length
 	block.space.x = block.space.y = block.letter.x = block.letter.y = 0;
 	block.split_char = ' ';
 
-	error = xfont_scan_string(data->handle, text,
+	error = xfont_scan_string((font_f)(data->handle), text,
 			font_GIVEN_BLOCK | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
 			ro_x_units(width) * 400, 0x7fffffff,
 			&block,
 			0,
-			length,
+			(int)length,
 			&split,
 			used_width, 0, 0);
 	if (error != 0) {
@@ -215,7 +217,7 @@ char * font_split(struct font_data *data, const char * text, unsigned int length
 		die("font_split: font_scan_string failed");
 	}
 
-	*used_width = browser_x_units(*used_width / 400);
+	*used_width = browser_x_units((int)(*used_width / 400));
 
 	return split;
 }

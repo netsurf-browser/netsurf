@@ -439,7 +439,7 @@ void plugin_create_sysvar(const char *mime_type, char* sysvar)
 
   e = xmimemaptranslate_mime_type_to_filetype(mime_type, (bits *) &fv);
 
-  sprintf(sysvar, "%s%x", ALIAS_PREFIX, fv);
+  sprintf(sysvar, "%s%x", ALIAS_PREFIX, (unsigned int)fv);
 }
 
 /**
@@ -458,7 +458,7 @@ bool plugin_handleable(const char *mime_type)
     return false;
   }
 
-  sprintf(sysvar, "%s%x", ALIAS_PREFIX, fv);
+  sprintf(sysvar, "%s%x", ALIAS_PREFIX, (unsigned int)fv);
   LOG(("%s, %s", mime_type, sysvar));
   if (getenv(sysvar) == 0)
 	  return false;
@@ -804,7 +804,7 @@ void plugin_write_stream(struct browser_window *bw, struct object_params *params
         plugin_message_stream_write *pmsw;
         plugin_message_stream_written *pmswt;
         struct plugin_message *temp;
-        int consumed = 0;
+        unsigned int consumed = 0;
 
         pmsw = (plugin_message_stream_write*)&m.data;
 

@@ -150,8 +150,11 @@ void ro_gui_create_menu(wimp_menu *menu, int x, int y, gui_window *g)
 
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 {
-	wimp_window_state state = { w };
-	wimp_icon_state icon_state = { w, i };
+	wimp_window_state state;
+	wimp_icon_state icon_state;
+	state.w = w;
+	icon_state.w = w;
+	icon_state.i = i;
 	wimp_get_window_state(&state);
 	wimp_get_icon_state(&icon_state);
 	ro_gui_create_menu(menu, state.visible.x0 + icon_state.icon.extent.x1,
@@ -245,7 +248,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 
 	if (pointer.buttons == wimp_CLICK_ADJUST) {
 		if (current_menu == combo_menu)
-			gui_gadget_combo(current_gui->data.browser.bw, current_gadget, current_menu_x, current_menu_y);
+			gui_gadget_combo(current_gui->data.browser.bw, current_gadget, (unsigned int)current_menu_x, (unsigned int)current_menu_y);
 		else
 			ro_gui_create_menu(current_menu, current_menu_x, current_menu_y, current_gui);
 	}

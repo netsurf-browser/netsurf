@@ -58,6 +58,8 @@ void ro_gui_mouse_action(gui_window *g) {
            browser_window_open_location_historical(g->data.browser.bw,
            		g->data.browser.bw->url, 0, 0);
            break;
+
+      default: break;
     }
   }
 }
@@ -145,13 +147,13 @@ mouseaction ro_gui_try_mouse_action(void) {
     offset.y = current.y - start.y;
     moved.x = current.x - last.x;
     moved.y = current.y - last.y;
-    offsetDistance = sqrt((offset.x * offset.x + offset.y * offset.y));
+    offsetDistance = sqrt((float)(offset.x * offset.x + offset.y * offset.y));
     if (moved.x > 0 || moved.y > 0)
-      movedDistance = sqrt((moved.x * moved.x + moved.y * moved.y));
+      movedDistance = sqrt((float)(moved.x * moved.x + moved.y * moved.y));
     else
       movedDistance = 0.0;
 
-    angle = calculate_angle(offset.x, offset.y);
+    angle = calculate_angle((float)offset.x, (float)offset.y);
 
     switch (status) {
 
@@ -168,10 +170,10 @@ mouseaction ro_gui_try_mouse_action(void) {
       case 0:
         if (offsetDistance > THRESHOLD) {
 
-          if (fabs(offset.x) > fabs(offset.y)) {
+          if (fabs((float)offset.x) > fabs((float)offset.y)) {
 
-            if (fabs(offset.y) < fabs(offset.x) * DAMPING &&
-                fabs(offset.x) > THRESHOLD*0.75) {
+            if (fabs((float)offset.y) < fabs((float)offset.x) * DAMPING &&
+                fabs((float)offset.x) > THRESHOLD*0.75) {
 
               if (offset.x < 0)
                 moves[m] = move_LEFT;
@@ -187,10 +189,10 @@ mouseaction ro_gui_try_mouse_action(void) {
               status = 1;
             }
           }
-          else if (fabs(offset.y) > fabs(offset.x)) {
+          else if (fabs((float)offset.y) > fabs((float)offset.x)) {
 
-            if (fabs(offset.x) < fabs(offset.y) * DAMPING &&
-                fabs(offset.y) > THRESHOLD*0.75) {
+            if (fabs((float)offset.x) < fabs((float)offset.y) * DAMPING &&
+                fabs((float)offset.y) > THRESHOLD*0.75) {
 
               if (offset.y < 0)
                 moves[m] = move_DOWN;
@@ -232,6 +234,8 @@ mouseaction ro_gui_try_mouse_action(void) {
       case move_DOWN:
         LOG(("mouse action: create new window // open link in new window, foreground"));
         return mouseaction_NEWWINDOW_OR_LINKFG;
+
+      default: break;
     }
   }
 
@@ -253,6 +257,8 @@ mouseaction ro_gui_try_mouse_action(void) {
           case move_LEFT:
             LOG(("mouse action: parent directroy"));
             return mouseaction_PARENT;
+
+          default: break;
         }
         break;
 
@@ -270,8 +276,12 @@ mouseaction ro_gui_try_mouse_action(void) {
           case move_RIGHT:
             LOG(("mouse action: close"));
             return mouseaction_CLOSE;
+
+          default: break;
         }
         break;
+
+      default: break;
     }
   }
 

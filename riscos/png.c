@@ -59,7 +59,8 @@ void nspng_init(void)
 					colourtrans_return_colour_number_for_mode(
 						blue << 28 | blue << 24 |
 						green << 20 | green << 16 |
-						red << 12 | red << 8, 21, 0);
+						red << 12 | red << 8,
+						(os_mode)21, 0);
 }
 
 
@@ -99,7 +100,7 @@ void nspng_process_data(struct content *c, char *data, unsigned long size)
 				c->data.png.length + size);
 		memcpy(c->data.png.data + c->data.png.length, data, size);
 		c->data.png.length += size;
-		c->size += size;		
+		c->size += size;
 		return;
 	}
 #endif
@@ -125,12 +126,10 @@ void nspng_process_data(struct content *c, char *data, unsigned long size)
 
 void info_callback(png_structp png, png_infop info)
 {
-	char *row, **row_pointers;
 	int i, bit_depth, color_type, palette_size, log2bpp, interlace;
 	unsigned int rowbytes, sprite_size;
 	unsigned long width, height;
 	struct content *c = png_get_progressive_ptr(png);
-	os_palette *palette;
 	os_sprite_palette *sprite_palette;
 	osspriteop_area *sprite_area;
 	osspriteop_header *sprite;
@@ -148,8 +147,8 @@ void info_callback(png_structp png, png_infop info)
 			&color_type, &interlace, 0, 0);
 	png_get_PLTE(png, info, &png_palette, &palette_size);
 
-	if (interlace == PNG_INTERLACE_ADAM7)
-		; /*png_set_interlace_handling(png);*/
+	/*if (interlace == PNG_INTERLACE_ADAM7)
+		; png_set_interlace_handling(png);*/
 
 	if (png_get_bKGD(png, info, &png_background))
 		png_set_background(png, png_background,
@@ -169,7 +168,7 @@ void info_callback(png_structp png, png_infop info)
 		sprite_size += height * ((width + 3) & ~3u);
 	else
 		sprite_size += height * ((width + 3) & ~3u) * 4;
-		
+
 	sprite_area = xcalloc(sprite_size + 1000, 1);
 	sprite_area->size = sprite_size;
 	sprite_area->sprite_count = 1;
@@ -249,7 +248,7 @@ void info_callback(png_structp png, png_infop info)
 	c->width = width;
 	c->height = height;
 
-	LOG(("size %li * %li, bpp %i, rowbytes %lu", width,
+	LOG(("size %li * %li, bpp %i, rowbytes %u", width,
 				height, bit_depth, rowbytes));
 }
 
@@ -265,9 +264,8 @@ void row_callback(png_structp png, png_bytep new_row,
 	struct content *c = png_get_progressive_ptr(png);
 	unsigned long i, j, rowbytes = c->data.png.rowbytes;
 	unsigned int start = 0, step = 1;
-	int red, green, blue, alpha;
+	int red, green, blue;
 	char *row = c->data.png.sprite_image + row_num * ((c->width + 3) & ~3u);
-	os_colour_number col;
 
 	/*LOG(("PNG row %li, pass %i, row %p, new_row %p",
 			row_num, pass, row, new_row));*/
@@ -302,7 +300,7 @@ void row_callback(png_structp png, png_bytep new_row,
 
 void end_callback(png_structp png, png_infop info)
 {
-	struct content *c = png_get_progressive_ptr(png);
+	/*struct content *c = png_get_progressive_ptr(png);*/
 
 	LOG(("PNG end"));
 
@@ -322,8 +320,8 @@ int nspng_convert(struct content *c, unsigned int width, unsigned int height)
 		int w, h;
 
 		kerror = ifc_convert(c->data.png.data, c->data.png.length,
-				0xb60, 0xff9, -1, 1,
-				&c->data.png.sprite_area, &dest_len);
+				0xb60, 0xff9, (unsigned int)-1, 1,
+				(char**)&c->data.png.sprite_area, &dest_len);
 		if (kerror) {
 			LOG(("ifc_convert failed: %s", kerror->errmess));
 			return 1;
@@ -382,7 +380,7 @@ void nspng_redraw(struct content *c, long x, long y,
 					 c->data.png.sprite_area->first),
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
-	table = xcalloc(size, 1);
+	table = xcalloc((unsigned int)size, 1);
 	xcolourtrans_generate_table_for_sprite(c->data.png.sprite_area,
 			(osspriteop_id) ((char *) c->data.png.sprite_area +
 					 c->data.png.sprite_area->first),
@@ -398,7 +396,7 @@ void nspng_redraw(struct content *c, long x, long y,
 			c->data.png.sprite_area,
 			(osspriteop_id) ((char *) c->data.png.sprite_area +
 					 c->data.png.sprite_area->first),
-			x, y - height,
+			x, (int)(y - height),
 			os_ACTION_OVERWRITE | os_ACTION_USE_MASK,
 			&factors, table);
 

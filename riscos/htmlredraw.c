@@ -131,7 +131,8 @@ void html_redraw_box(struct content *content, struct box * box,
 	}
 
 	if (box->object /*&& box->object->type != CONTENT_HTML*/) {
-		content_redraw(box->object, x, y, width, height, x0, y0, x1, y1);
+		content_redraw(box->object, x, y, (unsigned int)width,
+		               (unsigned int)height, x0, y0, x1, y1);
 
 	} else if (box->gadget &&
 			(box->gadget->type == GADGET_CHECKBOX ||
@@ -226,6 +227,14 @@ void html_redraw_box(struct content *content, struct box * box,
 			LOG(("writing GADGET RADIO"));
 			wimp_plot_icon(&icon);
 			break;
+		case GADGET_HIDDEN:
+		case GADGET_TEXTBOX:
+		case GADGET_TEXTAREA:
+		case GADGET_IMAGE:
+		case GADGET_PASSWORD:
+		case GADGET_SUBMIT:
+		case GADGET_RESET:
+		        break;
 		}
 
 	} else if (box->text && box->font) {
