@@ -1134,10 +1134,7 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 			gadget->type = GADGET_CHECKBOX;
 
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "checked"))) {
-			if (gadget->type == GADGET_CHECKBOX)
-				gadget->data.checkbox.selected = -1;
-			else
-				gadget->data.radio.selected = -1;
+			gadget->selected = true;
 			xmlFree(s);
 		}
 

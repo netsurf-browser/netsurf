@@ -60,6 +60,7 @@ struct form_control {
 	struct box *caret_text_box;
 	int caret_char_offset;
 	unsigned int maxlength;
+	bool selected;
 	union {
 		struct {
                         int mx, my;
@@ -72,12 +73,6 @@ struct form_control {
 			/** Currently selected item, if num_selected == 1. */
 			struct form_option *current;
 		} select;
-		struct {
-			int selected;
-		} checkbox;
-		struct {
-			int selected;
-		} radio;
 	} data;
 	struct form_control *prev;      /**< Previous control in this form */
 	struct form_control *next;	/**< Next control in this form. */

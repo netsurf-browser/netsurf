@@ -43,6 +43,7 @@ struct form_control *form_new_control(form_control_type type)
 	control->disabled = false;
 	control->form = 0;
 	control->box = 0;
+	control->selected = false;
 	control->prev = 0;
 	control->next = 0;
 	return control;
@@ -124,9 +125,9 @@ struct form_successful_control *form_successful_controls(struct form *form,
 			continue;
 
 		/* ignore checkboxes and radio buttons which aren't selected */
-		if (control->type == GADGET_CHECKBOX && !control->data.checkbox.selected)
+		if (control->type == GADGET_CHECKBOX && !control->selected)
 			continue;
-		if (control->type == GADGET_RADIO && !control->data.radio.selected)
+		if (control->type == GADGET_RADIO && !control->selected)
 			continue;
 
 		/* select */

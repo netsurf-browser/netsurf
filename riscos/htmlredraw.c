@@ -227,12 +227,12 @@ void html_redraw_box(struct content *content, struct box * box,
 	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
 		html_redraw_checkbox(x + padding_left, y - padding_top,
 				width, height,
-				box->gadget->data.checkbox.selected);
+				box->gadget->selected);
 
 	} else if (box->gadget && box->gadget->type == GADGET_RADIO) {
 		html_redraw_radio(x + padding_left, y - padding_top,
 				width, height,
-				box->gadget->data.radio.selected);
+				box->gadget->selected);
 
 	} else if (box->gadget && box->gadget->type == GADGET_FILE) {
 		colourtrans_set_font_colours(box->font->handle,

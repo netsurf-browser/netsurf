@@ -516,9 +516,8 @@ void clear_radio_gadgets(struct browser_window *bw, struct box *box,
 		if (box->gadget->type == GADGET_RADIO
 		    && box->gadget->name != 0 && box->gadget != group) {
 			if (strcmp(box->gadget->name, group->name) == 0) {
-				if (box->gadget->data.radio.selected) {
-					box->gadget->data.radio.selected =
-					    0;
+				if (box->gadget->selected) {
+					box->gadget->selected = false;
 					gui_redraw_gadget(bw, box->gadget);
 				}
 			}
@@ -641,12 +640,12 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 					gui_gadget_combo(bw, g, click_x, click_y);
 					break;
 				case GADGET_CHECKBOX:
-					g->data.checkbox.selected = !g->data.checkbox.selected;
+					g->selected = !g->selected;
 					gui_redraw_gadget(bw, g);
 					break;
 				case GADGET_RADIO:
 					clear_radio_gadgets(bw, click_boxes[i].content->data.html.layout->children, g);
-					g->data.radio.selected = -1;
+					g->selected = true;
 					gui_redraw_gadget(bw, g);
 					break;
 				case GADGET_SUBMIT:
