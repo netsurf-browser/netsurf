@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.8 2002/10/15 11:09:56 bursa Exp $
+# $Id: makefile,v 1.9 2002/11/02 22:28:05 bursa Exp $
 
 all: !NetSurf/!RunImage,ff8
 clean:
@@ -9,6 +9,7 @@ FLAGS = -g -Wall -W -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
  -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -std=c9x \
  -I.. -I../../Tools/libxml2/include -I../../Tools/oslib \
  -I../../Tools/curl/include -I../../Tools \
+ -I../../Tools/ubiqx \
  -Dfd_set=long -mpoke-function-name -DNETSURF_DUMP
 CC = riscos-gcc
 OBJECTS = render/objs-riscos/utils.o render/objs-riscos/css.o \
@@ -17,13 +18,15 @@ OBJECTS = render/objs-riscos/utils.o render/objs-riscos/css.o \
  riscos/objs-riscos/gui.o riscos/objs-riscos/font.o \
  riscos/objs-riscos/theme.o \
  desktop/objs-riscos/browser.o desktop/objs-riscos/fetch.o \
- desktop/objs-riscos/netsurf.o
+ desktop/objs-riscos/netsurf.o desktop/objs-riscos/cache.o
 HEADERS = render/box.h render/css.h render/css_enum.h \
  render/layout.h render/utils.h riscos/font.h riscos/gui.h \
  riscos/theme.h \
- desktop/browser.h desktop/fetch.h desktop/gui.h desktop/netsurf.h
+ desktop/browser.h desktop/fetch.h desktop/gui.h desktop/netsurf.h \
+ desktop/cache.h
 LIBS = ../../Tools/libxml2/libxml.ro ../../Tools/oslib/oslib.o \
- ../../Tools/curl/libcurl.ro ../../Tools/libutf-8/libutf-8.ro
+ ../../Tools/curl/libcurl.ro ../../Tools/libutf-8/libutf-8.ro \
+ ../../Tools/ubiqx/libubiqx.ro
 
 !NetSurf/!RunImage,ff8: $(OBJECTS)
 	$(CC) $(FLAGS) -o !NetSurf/!RunImage,ff8 $(OBJECTS) $(LIBS)

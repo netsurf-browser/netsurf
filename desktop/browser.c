@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.3 2002/10/15 10:41:12 monkeyson Exp $
+ * $Id: browser.c,v 1.4 2002/11/02 22:28:05 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -8,6 +8,7 @@
 #include "netsurf/render/css.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/render/utils.h"
+#include "netsurf/desktop/cache.h"
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -124,13 +125,10 @@ void content_html_reformat(struct content* c, int width)
   Log("content_html_reformat", "Starting stuff");
   if (c->data.html.layout != NULL)
   {
-    fprintf(stderr, "content_reformat box_free\n");
-//    box_free(c->data.html.layout);
-    fprintf(stderr, "content_reformat free box\n");
-//    xfree(c->data.html.layout);
-    c->data.html.layout = NULL; /* should be a freeing operation here */
+    /* TODO: skip if width is unchanged */
+    layout_document(c->data.html.layout->children, (unsigned long)width);
+    return;
   }
-  /* free other things too... */
 
   Log("content_html_reformat", "Setting document to myDoc");
   c->data.html.document = c->data.html.parser->myDoc;
@@ -225,7 +223,7 @@ void browser_window_reformat(struct browser_window* bw)
       {
         Log("browser_window_reformat", "This isn't html");
         browser_window_set_status(bw, "This is not HTML!");
-        content_destroy(bw->current_content);
+        cache_free(bw->current_content);
         bw->current_content = NULL;
       }
       break;
@@ -333,8 +331,8 @@ void browser_window_destroy(struct browser_window* bw)
   if (bw == NULL)
     return;
 
-  content_destroy(bw->current_content);
-  content_destroy(bw->future_content);
+  cache_free(bw->current_content);
+  cache_free(bw->future_content);
 
   if (bw->history != NULL)
   {
@@ -370,22 +368,34 @@ void browser_window_destroy(struct browser_window* bw)
 
 void browser_window_open_location_historical(struct browser_window* bw, char* url)
 {
-  struct fetch_request* req;
-
   if (bw == NULL)
     return;
 
   if (bw->future_content != NULL)
-    content_destroy(bw->future_content);
+    cache_free(bw->future_content);
 
-  req = xcalloc(1, sizeof(struct fetch_request));
-  req->type = REQUEST_FROM_BROWSER;
-  req->requestor.browser = bw;
+  bw->future_content = cache_get(url);
+  if (bw->future_content == 0)
+  {
+    /* not in cache: start fetch */
+    struct fetch_request* req;
 
-  bw->future_content = (struct content*) xcalloc(1, sizeof(struct content));
-  bw->future_content->main_fetch = create_fetch(url, bw->url, 0, req);
+    req = xcalloc(1, sizeof(struct fetch_request));
+    req->type = REQUEST_FROM_BROWSER;
+    req->requestor.browser = bw;
 
-  browser_window_start_throbber(bw);
+    bw->future_content = (struct content*) xcalloc(1, sizeof(struct content));
+    bw->future_content->main_fetch = create_fetch(url, bw->url, 0, req);
+
+    cache_put(url, bw->future_content, 1000);
+
+    browser_window_start_throbber(bw);
+  }
+  else
+  {
+    /* in cache: reformat page and display */
+    browser_window_reformat(bw);
+  }
 
   return;
 }
@@ -444,7 +454,7 @@ int browser_window_message(struct browser_window* bw, struct browser_message* ms
       {
         browser_window_stop_throbber(bw);
         bw->future_content->main_fetch = NULL;
-        content_destroy(bw->future_content);
+        cache_free(bw->future_content);
         bw->future_content = NULL;
       }
       break;
@@ -465,7 +475,7 @@ int browser_window_message(struct browser_window* bw, struct browser_message* ms
         htmlParseChunk(bw->future_content->data.html.parser, "", 0, 1);
         bw->future_content->main_fetch = NULL;
         previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
-        content_destroy(bw->current_content);
+        cache_free(bw->current_content);
         bw->current_content = bw->future_content;
         bw->future_content = NULL;
         browser_window_reformat(bw);
