@@ -18,7 +18,7 @@
  *       - Handle standalone objects
  */
 
-#define NDEBUG
+// #define NDEBUG
 
 #include <assert.h>
 #include <ctype.h>
@@ -100,6 +100,8 @@ static struct plugin_message *pmlist = &pm;
 
 static struct plugin_list pl = {0, 0, 0, 0, 0, 0, &pl, &pl};
 static struct plugin_list *plist = &pl;
+
+static int need_reformat = 0;
 
 /*-------------------------------------------------------------------------*/
 /* Externally visible functions                                            */
@@ -185,19 +187,9 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
         pmo->parent_window = bw->window->data.browser.window;
         pmo->bbox = b;
         xmimemaptranslate_mime_type_to_filetype(c->mime_type, &pmo->file_type);
+        pmo->filename.pointer = params->filename;
 
-        offset = 56;
-        pmo->filename.offset = offset;
-        strncpy((char*)&pchar[offset], params->filename, (unsigned int)236-offset);
-        offset = offset + strlen(params->filename) + 1;
-        if (offset > 235) {
-          LOG(("filename too long"));
-          xfree(npm);
-       	  xfree(npl);
-          return;
-        }
-
-        m.size = ((20 + offset + 3) / 4) * 4;
+        m.size = 60;
         m.your_ref = 0;
         m.action = message_PLUG_IN_OPEN;
 
@@ -517,6 +509,16 @@ void plugin_destroy(struct content *c)
 void plugin_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height)
 {
+        struct plugin_list *npl;
+
+        if(need_reformat) {
+                content_reformat(c, c->available_width, 0);
+                for(npl = plist->next; npl != plist; npl = npl->next)
+                        plugin_reshape_instance(npl->c, npl->bw, npl->page,
+                                                npl->box, npl->params,
+                                                npl->state);
+                need_reformat = 0;
+        }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -746,31 +748,16 @@ void plugin_create_stream(struct browser_window *bw, struct object_params *param
         pmsn->flags = 2;
         pmsn->plugin = (plugin_p)params->plugin;
         pmsn->browser = (plugin_b)params->browser;
+        pmsn->stream = (plugin_s)0;
         pmsn->browser_stream = (plugin_bs)params->browser;
+        pmsn->url.pointer = c->url;
         pmsn->end = c->data.plugin.length;
         pmsn->last_modified_date = 0;
         pmsn->notify_data = 0;
-
-        offset = 64;
-        pmsn->url.offset = offset;
-        strncpy((char*)&pchar[offset], c->url, (unsigned int)236-offset);
-        offset = offset + strlen(c->url) + 1;
-        if (offset > 235) {
-          LOG(("URL too long"));
-          return;
-        }
-
-        offset = (offset + 3) / 4 * 4;
-        pmsn->mime_type.offset = offset;
-        strncpy((char*)&pchar[offset], c->mime_type, (unsigned int)236-offset);
-        offset = offset + strlen(c->mime_type) + 1;
-        if (offset > 235) {
-          LOG(("mime_type too long"));
-          return;
-        }
+        pmsn->mime_type.pointer = c->mime_type;
         pmsn->target_window.offset = 0;
 
-        m.size = (20 + offset + 3) / 4 * 4;
+        m.size = 64;
         m.your_ref = 0;
         m.action = message_PLUG_IN_STREAM_NEW;
 
@@ -817,31 +804,16 @@ void plugin_write_stream_as_file(struct browser_window *bw, struct object_params
         pmsaf->browser = (plugin_b)params->browser;
         pmsaf->stream = (plugin_s)params->plugin_stream;
         pmsaf->browser_stream = (plugin_bs)params->browser_stream;
+        pmsaf->url.pointer = c->url;
         pmsaf->end = 0;
         pmsaf->last_modified_date = 0;
         pmsaf->notify_data = 0;
 
-        offset = 60;
-        pmsaf->url.offset = offset;
-        strncpy((char*)&pchar[offset], c->url, (unsigned int)236-offset);
-        offset = offset + strlen(c->url) + 1;
-        if (offset > 235) {
-          LOG(("URL too long"));
-          return;
-        }
-
-        offset = (offset + 3) / 4 * 4;
-        pmsaf->filename.offset = offset;
         p = strrchr((const char*)filename, 'p');
-        filename[(p-filename)] = 'd';
-        strncpy((char*)&pchar[offset], filename, (unsigned int)236-offset);
-        offset = offset + strlen(filename) + 1;
-        if (offset > 235) {
-          LOG(("filename too long"));
-          return;
-        }
+	filename[(p-filename)] = 'd';
+        pmsaf->filename.pointer = filename;
 
-        m.size = (20 + offset + 3) / 4 * 4;
+        m.size = 60;
         m.your_ref = 0;
         m.action = message_PLUG_IN_STREAM_AS_FILE;
 
@@ -872,21 +844,13 @@ void plugin_destroy_stream(struct browser_window *bw, struct object_params *para
         pmsd->browser = (plugin_b)params->browser;
         pmsd->stream = (plugin_s)params->plugin_stream;
         pmsd->browser_stream = (plugin_bs)params->browser_stream;
+        pmsd->url.pointer = c->url;
         pmsd->end = 0;
         pmsd->last_modified_date = 0;
         pmsd->notify_data = 0;
         pmsd->reason = plugin_STREAM_DESTROY_FINISHED;
 
-        offset = 60;
-        pmsd->url.offset = offset;
-        strncpy((char*)&pchar[offset], c->url, (unsigned int)236-offset);
-        offset = offset + strlen(c->url) + 1;
-        if (offset > 235) {
-          LOG(("URL too long"));
-          return;
-        }
-
-        m.size = (20 + offset + 3) / 4 * 4;
+        m.size = 60;
         m.your_ref = 0;
         m.action = message_PLUG_IN_STREAM_DESTROY;
 
@@ -1175,11 +1139,10 @@ void plugin_reshape_request(wimp_message *message) {
               i++) ;
 
          if (i != npl->page->data.html.object_count) {
-                 npl->c->width = pmrr->size.x;
-                 npl->c->height = pmrr->size.y;
+                 /* should probably shift by x and y eigen values here */
+                 npl->c->width = pmrr->size.x >> 1;
+                 npl->c->height = pmrr->size.y >> 1;
                  plugin_force_redraw(npl->c, npl->page, i);
-                 plugin_reshape_instance(npl->c, npl->bw, npl->page,
-                                         npl->box, npl->params, npl->state);
          }
 
          LOG(("requested (width, height): (%d, %d)", pmrr->size.x, pmrr->size.y));
@@ -1239,8 +1202,6 @@ void plugin_force_redraw(struct content *object, struct content *c,
 
 	struct box *box = c->data.html.object[i].box;
 
-	LOG(("got object '%s'", object->url));
-	LOG(("w, h: %d %d", object->width, object->height));
 	box->object = object;
 
         box->width = box->min_width = box->max_width = object->width;
@@ -1254,7 +1215,8 @@ void plugin_force_redraw(struct content *object, struct content *c,
 	box->style->height.length.unit = CSS_UNIT_PX;
 	box->style->height.length.value = object->height;
 
-        LOG(("w, h: %d %d", box->width, box->height));
-	content_reformat(c, c->available_width, 0);
-	LOG(("w, h: %d %d", box->width, box->height));
+        need_reformat = 1;
+	/* We don't call content_reformat here
+	   beacuse doing so breaks things :-)
+	 */
 }
