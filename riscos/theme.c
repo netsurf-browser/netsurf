@@ -1257,8 +1257,15 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 			if (!toolbar->display_url) {
 				if (!xwimp_get_caret_position(&caret)) {
 					if ((caret.w == toolbar->toolbar_handle) &&
-							(caret.i == ICON_TOOLBAR_URL))
-						xwimp_set_caret_position((wimp_w)-1, 0, 0, 0, 0, 0);
+							(caret.i == ICON_TOOLBAR_URL)) {
+						if (toolbar->parent_handle)
+							xwimp_set_caret_position(toolbar->parent_handle,
+									wimp_ICON_WINDOW,
+									-100, -100, 32, -1);
+						else
+							xwimp_set_caret_position((wimp_w)-1,
+									0, 0, 0, 0, 0);
+					}
 				}
 				xwimp_resize_icon(toolbar->toolbar_handle, ICON_TOOLBAR_URL,
 					0, -16384, 0, -16384);

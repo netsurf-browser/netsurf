@@ -50,6 +50,7 @@
 
 static void translate_menu(wimp_menu *menu);
 static void build_languages_menu(void);
+static void ro_gui_menu_toolbar_submenu_selection(int index);
 static void ro_gui_menu_prepare_images(void);
 static void ro_gui_menu_prepare_window(void);
 static void ro_gui_menu_prepare_theme(void);
@@ -260,7 +261,7 @@ static wimp_MENU(2) hotlist_util_menu = {
 };
 
 
-/*	Hotlist submenu
+/*	History submenu
 */
 static wimp_MENU(2) history_util_menu = {
   { "History" }, 7,2,7,0, 300, 44, 0,
@@ -351,13 +352,14 @@ static wimp_MENU(3) hotlist_collapse = {
 
 /*	Hotlist file submenu
 */
-static wimp_MENU(4) hotlist_file = {
+static wimp_MENU(5) hotlist_file = {
   { "Hotlist" }, 7,2,7,0, 300, 44, 0,
   {
-    { 0,					   (wimp_menu *)&hotlist_new,	   DEFAULT_FLAGS, { "New" } },
-    { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE, (wimp_menu *)1,		   DEFAULT_FLAGS, { "Export" } },
-    { 0,					   (wimp_menu *)&hotlist_expand,   DEFAULT_FLAGS, { "Expand" } },
-    { wimp_MENU_LAST,				   (wimp_menu *)&hotlist_collapse, DEFAULT_FLAGS, { "Collapse" } }
+    { 0,					   (wimp_menu *)&hotlist_new,	    DEFAULT_FLAGS, { "New" } },
+    { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE, (wimp_menu *)1,		    DEFAULT_FLAGS, { "Export" } },
+    { 0,					   (wimp_menu *)&hotlist_expand,    DEFAULT_FLAGS, { "Expand" } },
+    { 0,					   (wimp_menu *)&hotlist_collapse,  DEFAULT_FLAGS, { "Collapse" } },
+    { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING,	   (wimp_menu *)&show_toolbar_menu, DEFAULT_FLAGS, { "Toolbars" } }
   }
 };
 
@@ -366,9 +368,10 @@ static wimp_MENU(4) hotlist_file = {
 static wimp_MENU(4) history_file = {
   { "History" }, 7,2,7,0, 300, 44, 0,
   {
-    { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE, (wimp_menu *)1,		   DEFAULT_FLAGS, { "Export" } },
-    { 0,					   (wimp_menu *)&hotlist_expand,   DEFAULT_FLAGS, { "Expand" } },
-    { wimp_MENU_LAST,				   (wimp_menu *)&hotlist_collapse, DEFAULT_FLAGS, { "Collapse" } }
+    { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE, (wimp_menu *)1,		    DEFAULT_FLAGS, { "Export" } },
+    { 0,					   (wimp_menu *)&hotlist_expand,    DEFAULT_FLAGS, { "Expand" } },
+    { 0,					   (wimp_menu *)&hotlist_collapse,  DEFAULT_FLAGS, { "Collapse" } },
+    { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING,	   (wimp_menu *)&show_toolbar_menu, DEFAULT_FLAGS, { "Toolbars" } }
   }
 };
 
@@ -579,7 +582,7 @@ void translate_menu(wimp_menu *menu)
 	*/
 	indirected_text = messages_get(menu->title_data.text);
 	if (indirected_text != menu->title_data.text) {
-		menu->title_data.indirected_text.text = indirected_text;
+		menu->title_data.indirected_text.text = strdup(indirected_text);
 		menu->entries[0].menu_flags |= wimp_MENU_TITLE_INDIRECTED;
 
 	}
@@ -589,8 +592,8 @@ void translate_menu(wimp_menu *menu)
 		indirected_text = messages_get(menu->entries[i].data.text);
 		if (indirected_text != menu->entries[i].data.text) {
 			menu->entries[i].icon_flags |= wimp_ICON_INDIRECTED;
-			menu->entries[i].data.indirected_text.text = indirected_text;
-			menu->entries[i].data.indirected_text.validation = 0;
+			menu->entries[i].data.indirected_text.text = strdup(indirected_text);
+			menu->entries[i].data.indirected_text.validation = select_null_text_string;
 			menu->entries[i].data.indirected_text.size = strlen(indirected_text) + 1;
 		}
 		i++;
@@ -740,13 +743,16 @@ void ro_gui_create_menu(wimp_menu *menu, int x, int y, struct gui_window *g)
 		} else {
 			menu->entries[0].icon_flags |= wimp_ICON_SHADED;
 		}
+		current_toolbar = g->toolbar;
 
 	} else if (menu == toolbar_menu) {
 		ro_gui_menu_prepare_theme();
 	} else if (menu == hotlist_menu) {
 		ro_gui_menu_prepare_hotlist();
+		current_toolbar = hotlist_tree->toolbar;
 	} else if (menu == global_history_menu) {
 		ro_gui_menu_prepare_global_history();
+		current_toolbar = global_history_tree->toolbar;
 	} else if (menu == url_suggest_menu) {
 		if (!ro_gui_menu_prepare_url_suggest())
 			return;
@@ -816,7 +822,6 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	wimp_pointer pointer;
 	wimp_window_state state;
 	os_error *error;
-	int height;
 
 	wimp_get_pointer_info(&pointer);
 
@@ -853,39 +858,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	} else if (current_menu == toolbar_menu) {
 		switch (selection->items[0]) {
 			case 0:	/* Toolbars-> */
-				switch (selection->items[1]) {
-					case 0:
-						current_toolbar->display_buttons =
-								!current_toolbar->display_buttons;
-						break;
-					case 1:
-						current_toolbar->display_url =
-								!current_toolbar->display_url;
-						break;
-					case 2:
-						current_toolbar->display_throbber =
-								!current_toolbar->display_throbber;
-						break;
-					case 3:
-						current_toolbar->display_status =
-								!current_toolbar->display_status;
-						break;
-				}
-				ro_gui_menu_prepare_theme();
-				current_toolbar->reformat_buttons = true;
-				height = current_toolbar->height;
-				ro_gui_theme_process_toolbar(current_toolbar, -1);
-				if (current_toolbar->type == THEME_BROWSER_TOOLBAR) {
-					if ((height != current_toolbar->height) && (current_gui))
-						ro_gui_window_update_dimensions(current_gui,
-							height - current_toolbar->height);
-				} else if (current_toolbar->type == THEME_HOTLIST_TOOLBAR) {
-					tree_resized(hotlist_tree);
-					xwimp_force_redraw((wimp_w)hotlist_tree->handle, 0,-16384, 16384, 16384);
-				} else if (current_toolbar->type == THEME_HISTORY_TOOLBAR) {
-					tree_resized(global_history_tree);
-					xwimp_force_redraw((wimp_w)global_history_tree->handle, 0,-16384, 16384, 16384);
-				}
+				ro_gui_menu_toolbar_submenu_selection(selection->items[1]);
 				break;
 			case 1:	/* Edit toolbar */
 				current_toolbar->locked = !current_toolbar->locked;
@@ -907,6 +880,9 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 3: /* Collapse */
 						tree_handle_expansion(hotlist_tree, hotlist_tree->root, false,
 								(selection->items[2] != 2), (selection->items[2] != 1));
+						break;
+					case 4:	/* Toolbars-> */
+						ro_gui_menu_toolbar_submenu_selection(selection->items[2]);
 						break;
 				}
 				break;
@@ -947,6 +923,9 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 2: /* Collapse */
 						tree_handle_expansion(global_history_tree, global_history_tree->root, false,
 								(selection->items[2] != 2), (selection->items[2] != 1));
+						break;
+					case 3:	/* Toolbars-> */
+						ro_gui_menu_toolbar_submenu_selection(selection->items[2]);
 						break;
 				}
 				break;
@@ -1087,32 +1066,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						ro_gui_menu_prepare_images();
 						gui_window_redraw_window(current_gui);
 						break;
-					case 2: /* Toolbars -> */
-						switch (selection->items[2]) {
-							case 0:
-								current_gui->toolbar->display_buttons =
-										!current_gui->toolbar->display_buttons;
-								break;
-							case 1:
-								current_gui->toolbar->display_url =
-										!current_gui->toolbar->display_url;
-								break;
-							case 2:
-								current_gui->toolbar->display_throbber =
-										!current_gui->toolbar->display_throbber;
-								break;
-							case 3:
-								current_gui->toolbar->display_status =
-										!current_gui->toolbar->display_status;
-								break;
-						}
-						ro_gui_menu_prepare_toolbars(current_gui->toolbar);
-						current_gui->toolbar->reformat_buttons = true;
-						height = current_gui->toolbar->height;
-						ro_gui_theme_process_toolbar(current_gui->toolbar, -1);
-						if (height != current_gui->toolbar->height)
-							ro_gui_window_update_dimensions(current_gui,
-								height - current_gui->toolbar->height);
+					case 2:	/* Toolbars-> */
+						ro_gui_menu_toolbar_submenu_selection(selection->items[2]);
 						break;
 					case 3: /* Render -> */
 						switch (selection->items[2]) {
@@ -1262,6 +1217,49 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	  	current_gui = NULL;
 	}
 }
+
+
+/**
+ * Handle a selection for a toolbar submenu
+ */
+void ro_gui_menu_toolbar_submenu_selection(int index) {
+	int height;
+
+  	if ((index < 0) || (!current_toolbar))
+  		return;
+	switch (index) {
+		case 0:
+			current_toolbar->display_buttons = !current_toolbar->display_buttons;
+			break;
+		case 1:
+			current_toolbar->display_url = !current_toolbar->display_url;
+			break;
+		case 2:
+			current_toolbar->display_throbber = !current_toolbar->display_throbber;
+			break;
+		case 3:
+			current_toolbar->display_status = !current_toolbar->display_status;
+			break;
+	}
+	ro_gui_menu_prepare_theme();
+	current_toolbar->reformat_buttons = true;
+	height = current_toolbar->height;
+	ro_gui_theme_process_toolbar(current_toolbar, -1);
+	if ((index == 1) && (current_toolbar->display_url))
+		ro_gui_set_caret_first(current_toolbar->toolbar_handle);
+	if (current_toolbar->type == THEME_BROWSER_TOOLBAR) {
+		if ((height != current_toolbar->height) && (current_gui))
+			ro_gui_window_update_dimensions(current_gui,
+				height - current_toolbar->height);
+	} else if (current_toolbar->type == THEME_HOTLIST_TOOLBAR) {
+		tree_resized(hotlist_tree);
+		xwimp_force_redraw((wimp_w)hotlist_tree->handle, 0,-16384, 16384, 16384);
+	} else if (current_toolbar->type == THEME_HISTORY_TOOLBAR) {
+		tree_resized(global_history_tree);
+		xwimp_force_redraw((wimp_w)global_history_tree->handle, 0,-16384, 16384, 16384);
+	}
+}
+  
 
 
 /**
@@ -1523,6 +1521,11 @@ void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning)
 					ro_gui_save_open(GUI_SAVE_HOTLIST_EXPORT_HTML, 0, true,
 							warning->pos.x, warning->pos.y, 0, false);
 					break;
+				case 4: /* Toolbars -> */
+					ro_gui_menu_prepare_toolbars(hotlist_tree->toolbar);
+					error = xwimp_create_sub_menu(browser_toolbar_menu,
+							warning->pos.x, warning->pos.y);
+					break;
 			}
 			break;
 		case 1: /* Selection-> */
@@ -1574,6 +1577,11 @@ void ro_gui_menu_global_history_warning(wimp_message_menu_warning *warning)
 				case 0: /* Export-> */
 					ro_gui_save_open(GUI_SAVE_HISTORY_EXPORT_HTML, 0, true,
 							warning->pos.x, warning->pos.y, 0, false);
+					break;
+				case 3: /* Toolbars -> */
+					ro_gui_menu_prepare_toolbars(hotlist_tree->toolbar);
+					error = xwimp_create_sub_menu(browser_toolbar_menu,
+							warning->pos.x, warning->pos.y);
 					break;
 			}
 			break;
