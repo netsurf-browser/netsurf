@@ -162,6 +162,7 @@ void ro_gui_icon_bar_create(void)
 
 void gui_quit(void)
 {
+        about_quit();
 	ro_gui_history_quit();
 	wimp_close_down(task_handle);
 }

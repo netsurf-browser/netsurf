@@ -1,4 +1,12 @@
 <!-- Browser specific information -->
+<div style="float: left; width: 15%; background-color: #ddddee">
+<h4>Quick Links</h4>
+<ul>
+<li><a href="about:cookies">List Cookies</a></li>
+<li><a href="help:">User Manual</a></li>
+</ul>
+</div>
+<div style="float: right">
 <strong><i>NetSurf makes use of the following libraries:</i></strong><br>&nbsp;<br>
 <table border="0" cellspacing="2" width="100%">
 <tr valign="top">

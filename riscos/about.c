@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include <unixlib/local.h> /* for __unixify */
 
 #include "netsurf/desktop/netsurf.h"
@@ -28,13 +29,13 @@
 #include "oslib/osfind.h"
 #include "oslib/osfscontrol.h"
 
-static const char *pabouthdr = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/transitional.dtd\"><html><head><title>About NetSurf</title></head><body bgcolor=\"#f3f3ff\"><!-- About header --><table border=\"0\" width=\"100%%\" bgcolor=\"#94adff\" cellspacing=\"2\"><tr><td><a href=\"http://netsurf.sf.net\"><img src=\"file:///%%3CNetSurf$Dir%%3E/About/nslogo\" alt=\"Netsurf logo\"></a><td><table bgcolor=\"#94adff\" border=\"0\"><tr><td>&nbsp;<tr><td align=\"center\"><h2>NetSurf %s</h2><tr><td align=\"center\"><h5>Copyright &copy; 2002, 2003 NetSurf Developers.</h5><tr><td>&nbsp;</table></table><hr>"; /**< About page header */
+static const char *pabouthdr = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/transitional.dtd\"><html><head><title>%s</title></head><body bgcolor=\"#f3f3ff\"><!-- About header --><table border=\"0\" width=\"100%%\" bgcolor=\"#94adff\" cellspacing=\"2\"><tr><td><a href=\"http://netsurf.sf.net\"><img src=\"file:///%%3CNetSurf$Dir%%3E/About/nslogo\" alt=\"Netsurf logo\"></a><td><table bgcolor=\"#94adff\" border=\"0\"><tr><td>&nbsp;<tr><td align=\"center\"><h2>NetSurf %s</h2><tr><td align=\"center\"><h5>Copyright &copy; 2002, 2003 NetSurf Developers.</h5><tr><td>&nbsp;</table></table><hr>"; /**< About page header */
 static const char *pabtplghd = "<!-- Plugin information --><strong><i>The following plugins are installed on your system:</i></strong><br>&nbsp;<br><table border=\"0\" cellspacing=\"2\" width=\"100%\">"; /**< Plugin table header */
 static const char *paboutpl1 = "<tr valign=\"top\"><td width=\"30%%\"><font size=\"2\"><strong>%s</strong></font></td><td width=\"70%%\"><font size=\"2\">%s</font></td></tr><tr><td colspan=\"2\" bgcolor=\"#dddddd\" height=\"1\"></td></tr>"; /**< Plugin entry without image */
 static const char *paboutpl2 = "<tr valign=\"top\"><td width=\"30%%\"><font size=\"2\"><strong>%s</strong></font><br><img src=\"%s\" alt=\"%s\"></td><td width=\"70%%\"><font size=\"2\">%s</font></td></tr><tr><td colspan=\"2\" bgcolor=\"#dddddd\" height=\"1\"></td></tr>";/**< Plugin entry with image (filename=nn) */
 static const char *paboutpl3 = "<tr valign=\"top\"><td width=\"30%%\"><font size=\"2\"><strong>%s</strong></font><br><img src=\"%s\" alt=\"%s\" width=\"%d\" height=\"%d\"></td><td width=\"70%%\"><font size=\"2\">%s</font></td></tr><tr><td colspan=\"2\" bgcolor=\"#dddddd\" height=\"1\"></td></tr>"; /**< Plugin entry with image (filename=nnwwwwhhhh) */
 static const char *pabtplgft = "</table>"; /**< Plugin table footer */
-static const char *paboutftr = "</body></html>"; /**< Page footer */
+static const char *paboutftr = "</div></body></html>"; /**< Page footer */
 
 /** The about page */
 struct about_page {
@@ -88,8 +89,9 @@ void about_create(void) {
   abt->plugd = 0;
 
   /* Page header */
-  buf = xcalloc(strlen(pabouthdr) + 40, sizeof(char));
-  snprintf(buf, strlen(pabouthdr) + 40, pabouthdr, netsurf_version);
+  buf = xcalloc(strlen(pabouthdr) + 50, sizeof(char));
+  snprintf(buf, strlen(pabouthdr) + 50, pabouthdr, "About NetSurf",
+           netsurf_version);
   abt->header = xstrdup(buf);
   xfree(buf);
 
@@ -250,5 +252,75 @@ void about_create(void) {
   xfree(abt);
 
   return;
+}
+
+/**
+ * Creates the cookie list and stores it in <Wimp$ScrapDir>.WWW.Netsurf
+ */
+void cookie_create(void) {
+
+  FILE *fp;
+  int len, count=0;
+  char *cookies = 0, *pos;
+  char domain[256], flag[10], path[256], secure[10],
+       exp[50], name[256], val[256];
+  unsigned int expiry;
+
+  fp = fopen("Choices:WWW.NetSurf.Cookies", "r");
+  if (!fp) {
+    LOG(("Failed to open cookie jar"));
+    return;
+  }
+
+  /* read file length */
+  fseek(fp, 0, SEEK_END);
+  len = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+
+  cookies = xcalloc((unsigned int)len, sizeof(char));
+  fread(cookies, (unsigned int)len, sizeof(char), fp);
+  fclose(fp);
+
+  xosfile_create_dir("<Wimp$ScrapDir>.WWW", 77);
+  xosfile_create_dir("<Wimp$ScrapDir>.WWW.NetSurf", 77);
+  fp = fopen("<Wimp$ScrapDir>.WWW.NetSurf.Cookies", "w+");
+  if (!fp) {
+    xfree(cookies);
+    LOG(("Failed to create file"));
+    return;
+  }
+  fprintf(fp, pabouthdr, "About NetSurf - Cookies", netsurf_version);
+  fprintf(fp, "<strong><i>The following cookies are stored on your system:</i></strong><div align=\"center\"><table cellspacing=\"2\" cellpadding=\"2\" width=\"100%%\"><strong><thead><td nowrap>Domain:</td><td nowrap>Flag:</td><td nowrap>Path:</td><td nowrap>Secure:</td><td nowrap>Expiration:</td><td nowrap>Name:</td><td nowrap>Value:</td></thead></strong><tbody>");
+  pos = cookies;
+  while (pos != (cookies+len-1)) {
+    if (*pos == '#') {
+      for (; *pos != '\n'; pos++);
+      pos += 1;
+      continue;
+    }
+    sscanf(pos, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", domain, flag, path, secure,
+                                                exp, name, val);
+    pos += (strlen(domain) + strlen(flag) + strlen(path) + strlen(secure) +
+            strlen(exp) + strlen(name) +strlen(val) + 7);
+    sscanf(exp, "%u", &expiry);
+    fprintf(fp, "<tr%s><td nowrap>%s</td><td nowrap>%s</td><td nowrap>%s</td><td nowrap>%s</td><td nowrap>%s</td><td nowrap>%s</td><td nowrap>%s</td></tr>", (count%2 == 0 ? " bgcolor=\"#ddddee\"" : ""), domain, flag, path, secure,
+    (expiry == 0 ? "Expires on exit" : ctime((time_t*)&expiry)), name, val);
+    count++;
+  }
+
+  fprintf(fp, "</tbody></table></div></body></html>");
+  fclose(fp);
+  xosfile_set_type("<Wimp$ScrapDir>.WWW.NetSurf.Cookies", 0xfaf);
+  xfree(cookies);
+  return;
+}
+
+/**
+ * Clean up created files
+ */
+void about_quit(void) {
+
+  xosfile_delete("<Wimp$ScrapDir>.WWW.NetSurf.About", 0, 0, 0, 0, 0);
+  xosfile_delete("<Wimp$ScrapDir>.WWW.NetSurf.Cookies", 0, 0, 0, 0, 0);
 }
 

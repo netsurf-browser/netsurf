@@ -17,6 +17,10 @@
 #include <regex.h>
 #include "libxml/encoding.h"
 #include "libxml/uri.h"
+#ifdef riscos
+#include "netsurf/riscos/about.h"
+#include "netsurf/riscos/constdata.h"
+#endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -172,7 +176,7 @@ char *squash_tolat1(xmlChar *s)
 /**
  * Calculate a URL from a relative and base URL.
  *
- * base may be 0 for a new URL, in which case the URL is cannonicalized and
+ * base may be 0 for a new URL, in which case the URL is canonicalized and
  * returned. Returns 0 in case of error.
  */
 
@@ -182,6 +186,29 @@ char *url_join(char *rel_url, char *base_url)
 	uri_t *base = 0, *rel = 0, *abs;
 
 	LOG(("rel_url = %s, base_url = %s", rel_url, base_url));
+
+#ifdef riscos
+       /* hacky, hacky, hacky...
+        * It is, however, best to do this here as it avoids
+        * duplicating code for clicking links and url bar handling.
+        * It simplifies the code it the other places too (they just
+        * call this as usual, then we handle it here).
+        */
+       if (strcasecmp(rel_url, "about:") == 0) {
+               about_create();
+               return xstrdup(ABOUT_URL);
+       }
+       else if (strcasecmp(rel_url, "about:cookies") == 0) {
+               cookie_create();
+               return xstrdup(COOKIE_URL);
+       }
+       else if (strcasecmp(rel_url, "help:") == 0) {
+               return xstrdup(HELP_URL);
+       }
+       else if (strcasecmp(rel_url, "home:") == 0) {
+               return xstrdup(HOME_URL);
+       }
+#endif
 
 	if (!base_url) {
 		res = uri_cannonicalize_string(rel_url,

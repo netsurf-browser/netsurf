@@ -16,7 +16,6 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/css/css.h"
-#include "netsurf/riscos/about.h"
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/theme.h"
@@ -309,6 +308,13 @@ void gui_window_set_url(gui_window *g, char *url)
 {
 	strncpy(g->url, url, 255);
 	wimp_set_icon_state(g->data.browser.toolbar, ICON_TOOLBAR_URL, 0, 0);
+	/* Move the caret to the url bar.
+	 * It's ok to do this as this only gets
+	 * called when fetching a new page .
+	 */
+	wimp_set_caret_position(g->data.browser.toolbar,
+               ICON_TOOLBAR_URL,
+               0,0,-1, (int) strlen(g->url) - 1);
 }
 
 
@@ -702,32 +708,20 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 		case wimp_KEY_RETURN:
 			if (!toolbar)
 				break;
-			if (strcasecmp(g->url, "about:") == 0) {
-				about_create();
-				browser_window_open_location(g->data.browser.bw,
-				ABOUT_URL);
-			} else if (strcasecmp(g->url, "help:") == 0) {
-			        browser_window_open_location(g->data.browser.bw,
-			        HELP_URL);
-                        } else if (strcasecmp(g->url, "home:") == 0) {
-			        browser_window_open_location(g->data.browser.bw,
-			        HOME_URL);
+			char *url = xcalloc(1, 10 + strlen(g->url));
+			char *url2;
+			if (g->url[strspn(g->url, "abcdefghijklmnopqrstuvwxyz")] != ':') {
+				strcpy(url, "http://");
+				strcpy(url + 7, g->url);
 			} else {
-				char *url = xcalloc(1, 10 + strlen(g->url));
-				char *url2;
-				if (g->url[strspn(g->url, "abcdefghijklmnopqrstuvwxyz")] != ':') {
-					strcpy(url, "http://");
-					strcpy(url + 7, g->url);
-				} else {
-					strcpy(url, g->url);
-				}
-				url2 = url_join(url, 0);
-				free(url);
-				if (url2) {
-					gui_window_set_url(g, url2);
-					browser_window_open_location(g->data.browser.bw, url2);
-					free(url2);
-				}
+				strcpy(url, g->url);
+			}
+			url2 = url_join(url, 0);
+			free(url);
+			if (url2) {
+				gui_window_set_url(g, url2);
+				browser_window_open_location(g->data.browser.bw, url2);
+				free(url2);
 			}
 			return true;
 

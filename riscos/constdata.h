@@ -11,6 +11,7 @@
 #define _NETSURF_RISCOS_CONSTDATA_H_
 
 extern const char * const ABOUT_URL;
+extern const char * const COOKIE_URL;
 extern const char * const GESTURES_URL;
 extern const char * const HOME_URL;
 extern const char * const HELP_URL;

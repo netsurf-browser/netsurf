@@ -9,6 +9,8 @@
 #define _NETSURF_RISCOS_ABOUT_H_
 
 void about_create(void);
+void cookie_create(void);
+void about_quit(void);
 
 #endif
 

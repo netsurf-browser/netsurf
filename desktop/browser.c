@@ -1073,7 +1073,6 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
 	        /* Return/Enter hit */
 	        if (form)
 		        browser_form_submit(bw, form, 0);
-	        /*TODO: remove caret from new page */
 	} else if (key == 9) {
 	        /* Tab */
 	        /* TODO: tabbing between inputs */
