@@ -629,12 +629,17 @@ struct css_style * box_get_style(struct content *c,
 	   so let's be generic ;)
 	 */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "background"))) {
-	        style->background_image.type = CSS_BACKGROUND_IMAGE_URI;
-	        /**\todo This will leak memory. */
-                style->background_image.uri = url_join(s, c->data.html.base_url);
-                if (!style->background_image.uri)
-                        style->background_image.type = CSS_BACKGROUND_IMAGE_NONE;
-                xmlFree(s);
+		style->background_image.type = CSS_BACKGROUND_IMAGE_URI;
+		/**\todo This will leak memory. */
+		style->background_image.uri = url_join(s, c->data.html.base_url);
+		/* if url is equivalent to the parent's url,
+		 * we've got infinite inclusion. stop it here.
+		 * also bail if url_join failed.
+		 */
+		if (!style->background_image.uri ||
+		    strcasecmp(style->background_image.uri, c->data.html.base_url) == 0)
+			style->background_image.type = CSS_BACKGROUND_IMAGE_NONE;
+		xmlFree(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bgcolor"))) {
@@ -860,19 +865,24 @@ struct box_result box_image(xmlNode *n, struct box_status *status,
 
 	/* imagemap associated with this image */
 	if ((map = xmlGetProp(n, (const xmlChar *) "usemap"))) {
-	        if (map[0] == '#') {
-	                box->usemap = xstrdup(map+1);
-	        }
-	        else {
-	                box->usemap = xstrdup(map);
-	        }
-	        xmlFree(map);
+		if (map[0] == '#') {
+			box->usemap = xstrdup(map+1);
+		}
+		else {
+			box->usemap = xstrdup(map);
+		}
+		xmlFree(map);
 	}
 
 	/* remove leading and trailing whitespace */
 	s1 = strip(s);
 	url = url_join(s1, status->content->data.html.base_url);
-	if (!url) {
+	/* if url is equivalent to the parent's url,
+	 * we've got infinite inclusion. stop it here.
+	 * also bail if url_join failed.
+	 */
+	if (!url ||
+	    strcasecmp(url, status->content->data.html.base_url) == 0) {
 		xmlFree(s);
 		return (struct box_result) {box, false, false};
 	}
@@ -1278,7 +1288,11 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 		gadget->type = GADGET_IMAGE;
 		if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src"))) {
 			url = url_join(s, status->content->data.html.base_url);
-			if (url)
+			/* if url is equivalent to the parent's url,
+			 * we've got infinite inclusion. stop it here.
+			 * also bail if url_join failed.
+			 */
+			if (url && strcasecmp(url, status->content->data.html.base_url) != 0)
 				html_fetch_object(status->content, url, box,
 						image_types,
 						status->content->available_width,
@@ -1978,7 +1992,11 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
         /* object data */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "data"))) {
 		url = url_join(s, status->content->data.html.base_url);
-		if (!url) {
+		/* if url is equivalent to the parent's url,
+		 * we've got infinite inclusion. stop it here.
+		 * also bail if url_join failed.
+		 */
+		if (!url || strcasecmp(url, status->content->data.html.base_url) == 0) {
 			free(po);
 			xmlFree(s);
 			return (struct box_result) {box, true, true};
@@ -2118,7 +2136,11 @@ struct box_result box_embed(xmlNode *n, struct box_status *status,
 	/* embed src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
 		url = url_join(s, status->content->data.html.base_url);
-		if (!url) {
+		/* if url is equivalent to the parent's url,
+		 * we've got infinite inclusion. stop it here.
+		 * also bail if url_join failed.
+		 */
+		if (!url || strcasecmp(url, status->content->data.html.base_url) == 0) {
 			free(po);
 			xmlFree(s);
 			return (struct box_result) {box, false, true};
@@ -2189,7 +2211,11 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 	/* code */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "code"))) {
 		url = url_join(s, status->content->data.html.base_url);
-		if (!url) {
+		/* if url is equivalent to the parent's url,
+		 * we've got infinite inclusion. stop it here.
+		 * also bail if url_join failed.
+		 */
+		if (!url || strcasecmp(url, status->content->data.html.base_url) == 0) {
 			free(po);
 			xmlFree(s);
 			return (struct box_result) {box, true, false};
@@ -2293,7 +2319,11 @@ struct box_result box_iframe(xmlNode *n, struct box_status *status,
 	/* iframe src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
 		url = url_join(s, status->content->data.html.base_url);
-		if (!url) {
+		/* if url is equivalent to the parent's url,
+		 * we've got infinite inclusion. stop it here.
+		 * also bail if url_join failed.
+		 */
+		if (!url || strcasecmp(url, status->content->data.html.base_url) == 0) {
 			free(po);
 			xmlFree(s);
 			return (struct box_result) {box, false, true};
@@ -2599,7 +2629,11 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 
 			s1 = strip(s);
 			url = url_join(s1, status->content->data.html.base_url);
-			if (!url) {
+			/* if url is equivalent to the parent's url,
+			 * we've got infinite inclusion. stop it here.
+			 * also bail if url_join failed.
+			 */
+			if (!url || strcasecmp(url, status->content->data.html.base_url) == 0) {
 				xmlFree(s);
 				c = c->next;
 				continue;
