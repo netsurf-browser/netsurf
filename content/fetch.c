@@ -58,21 +58,17 @@ struct fetch {
 	bool in_callback;	/**< Waiting for return from callback. */
 	bool aborting;		/**< Abort requested in callback. */
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
+	bool cookies;		/**< Send & accept cookies. */
 	char *url;		/**< URL. */
 	char *referer;		/**< URL for Referer header. */
-	char error_buffer[CURL_ERROR_SIZE + 10];	/**< Error buffer for cURL. */
 	void *p;		/**< Private data for callback. */
 	struct curl_slist *headers;	/**< List of request headers. */
 	char *host;		/**< Host part of URL. */
 	char *location;		/**< Response Location header, or 0. */
 	unsigned long content_length;	/**< Response Content-Length, or 0. */
-#ifdef WITH_AUTH
 	char *realm;            /**< HTTP Auth Realm */
-#endif
-#ifdef WITH_POST
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
-	struct HttpPost *post_multipart;	/**< Multipart post data, or 0. */
-#endif
+	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
 	struct fetch *queue_prev;	/**< Previous fetch for this host. */
 	struct fetch *queue_next;	/**< Next fetch for this host. */
 	struct fetch *prev;	/**< Previous active fetch in ::fetch_list. */
@@ -80,14 +76,20 @@ struct fetch {
 };
 
 static const char * const user_agent = "NetSurf";
-static CURLM * curl_multi;		/**< Global cURL multi handle. */
+static CURLM *curl_multi;		/**< Global cURL multi handle. */
+/** Curl handle with default options set; not used for transfers. */
+static CURL *fetch_blank_curl;
 static struct fetch *fetch_list = 0;	/**< List of active fetches. */
+static char fetch_error_buffer[CURL_ERROR_SIZE]; /**< Error buffer for cURL. */
 
+static CURLcode fetch_set_options(struct fetch *f);
+static void fetch_free(struct fetch *f);
+static void fetch_done(CURL *curl_handle, CURLcode result);
 static size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f);
 static size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f);
 static bool fetch_process_headers(struct fetch *f);
 #ifdef WITH_POST
-static struct HttpPost *fetch_post_convert(struct form_successful_control *control);
+static struct curl_httppost *fetch_post_convert(struct form_successful_control *control);
 #endif
 
 #ifdef riscos
@@ -108,17 +110,52 @@ void fetch_init(void)
 
 	code = curl_global_init(CURL_GLOBAL_ALL);
 	if (code != CURLE_OK)
-		die("curl_global_init failed");
+		die("Failed to initialise the fetch module "
+				"(curl_global_init failed).");
 
 	curl_multi = curl_multi_init();
-	if (curl_multi == 0)
-		die("curl_multi_init failed");
+	if (!curl_multi)
+		die("Failed to initialise the fetch module "
+				"(curl_multi_init failed).");
 
 #ifdef riscos
-	ca_bundle = xcalloc(strlen(NETSURF_DIR) + 100, 1);
+	ca_bundle = malloc(strlen(NETSURF_DIR) + 40);
+	if (!ca_bundle)
+		die("NoMemory");
 	sprintf(ca_bundle, "%s.Resources.ca-bundle", NETSURF_DIR);
-	LOG(("ca_bundle '%s'", ca_bundle));
 #endif
+
+	/* Create a curl easy handle with the options that are common to all
+	   fetches. */
+	fetch_blank_curl = curl_easy_init();
+	if (!fetch_blank_curl)
+		die("Failed to initialise the fetch module "
+				"(curl_easy_init failed).");
+
+#define SETOPT(option, value) \
+	code = curl_easy_setopt(fetch_blank_curl, option, value);	\
+	if (code != CURLE_OK)						\
+		goto curl_easy_setopt_failed;
+
+	SETOPT(CURLOPT_VERBOSE, 1);
+	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
+	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
+	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
+	SETOPT(CURLOPT_USERAGENT, user_agent);
+	SETOPT(CURLOPT_ENCODING, "");
+	SETOPT(CURLOPT_LOW_SPEED_LIMIT, 1L);
+	SETOPT(CURLOPT_LOW_SPEED_TIME, 60L);
+	SETOPT(CURLOPT_NOSIGNAL, 1L);
+	SETOPT(CURLOPT_CONNECTTIMEOUT, 60L);
+#ifdef riscos
+	SETOPT(CURLOPT_CAINFO, ca_bundle);
+#endif
+
+	return;
+
+curl_easy_setopt_failed:
+	die("Failed to initialise the fetch module "
+			"(curl_easy_setopt failed).");
 }
 
 
@@ -131,6 +168,8 @@ void fetch_init(void)
 void fetch_quit(void)
 {
 	CURLMcode codem;
+
+	curl_easy_cleanup(fetch_blank_curl);
 
 	codem = curl_multi_cleanup(curl_multi);
 	if (codem != CURLM_OK)
@@ -147,8 +186,8 @@ void fetch_quit(void)
  * processing.
  *
  * A pointer to an opaque struct fetch is returned, which can be passed to
- * fetch_abort() to abort the fetch at any time. Returns 0 if the URL is
- * invalid.
+ * fetch_abort() to abort the fetch at any time. Returns 0 if memory is
+ * exhausted (or some other fatal error occurred).
  *
  * The caller must supply a callback function which is called when anything
  * interesting happens. The callback function is first called with msg
@@ -163,66 +202,92 @@ void fetch_quit(void)
  */
 
 struct fetch * fetch_start(char *url, char *referer,
-		void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size),
-		void *p, bool only_2xx
-#ifdef WITH_POST
-		, char *post_urlenc,
-		struct form_successful_control *post_multipart
-#endif
-#ifdef WITH_COOKIES
-		, bool cookies
-#endif
-		)
+		void (*callback)(fetch_msg msg, void *p, char *data,
+				unsigned long size),
+		void *p, bool only_2xx, char *post_urlenc,
+		struct form_successful_control *post_multipart, bool cookies)
 {
-	struct fetch *fetch = xcalloc(1, sizeof(*fetch)), *host_fetch;
+	char *host;
+	struct fetch *fetch;
+	struct fetch *host_fetch;
 	CURLcode code;
 	CURLMcode codem;
-#ifdef WITH_AUTH
-	struct login *li;
-#endif
+	struct curl_slist *slist;
+
+	fetch = malloc(sizeof (*fetch));
+	if (!fetch)
+		return 0;
+
+	host = url_host(url);
 
 	LOG(("fetch %p, url '%s'", fetch, url));
 
 	/* construct a new fetch structure */
+	fetch->curl_handle = 0;
 	fetch->callback = callback;
 	fetch->had_headers = false;
 	fetch->in_callback = false;
 	fetch->aborting = false;
 	fetch->only_2xx = only_2xx;
-	fetch->url = xstrdup(url);
+	fetch->cookies = cookies;
+	fetch->url = strdup(url);
 	fetch->referer = 0;
-	if (referer != 0)
-		fetch->referer = xstrdup(referer);
+	if (referer)
+		fetch->referer = strdup(referer);
 	fetch->p = p;
 	fetch->headers = 0;
-	fetch->host = url_host(url);
+	fetch->host = host;
+	fetch->location = 0;
 	fetch->content_length = 0;
-#ifdef WITH_POST
+	fetch->realm = 0;
 	fetch->post_urlenc = 0;
 	fetch->post_multipart = 0;
 	if (post_urlenc)
-		fetch->post_urlenc = xstrdup(post_urlenc);
+		fetch->post_urlenc = strdup(post_urlenc);
 	else if (post_multipart)
 		fetch->post_multipart = fetch_post_convert(post_multipart);
-#endif
 	fetch->queue_prev = 0;
 	fetch->queue_next = 0;
 	fetch->prev = 0;
 	fetch->next = 0;
 
+	if (!fetch->url || (referer && !fetch->referer) ||
+			(post_urlenc && !fetch->post_urlenc) ||
+			(post_multipart && !fetch->post_multipart))
+		goto failed;
+
+#define APPEND(list, value) \
+	slist = curl_slist_append(list, value);		\
+	if (!slist)					\
+		goto failed;				\
+	list = slist;
+
+	/* remove curl default headers */
+	APPEND(fetch->headers, "Accept:");
+	APPEND(fetch->headers, "Pragma:");
+	if (option_accept_language) {
+		char s[80];
+		snprintf(s, sizeof s, "Accept-Language: %s, *;q=0.1",
+				option_accept_language);
+		s[sizeof s - 1] = 0;
+		APPEND(fetch->headers, s);
+	}
+
 	/* look for a fetch from the same host */
-	if (fetch->host != 0) {
+	if (host) {
 		for (host_fetch = fetch_list;
-				host_fetch != 0 && (host_fetch->host == 0 ||
-					strcasecmp(host_fetch->host, fetch->host) != 0);
+				host_fetch && (host_fetch->host == 0 ||
+				strcasecmp(host_fetch->host, host) != 0);
 				host_fetch = host_fetch->next)
 			;
-		if (host_fetch != 0) {
-			/* fetch from this host in progress: queue the new fetch */
+		if (host_fetch) {
+			/* fetch from this host in progress:
+			   queue the new fetch */
 			LOG(("queueing"));
 			fetch->curl_handle = 0;
 			/* queue at end */
-			for (; host_fetch->queue_next; host_fetch = host_fetch->queue_next)
+			for (; host_fetch->queue_next;
+					host_fetch = host_fetch->queue_next)
 				;
 			fetch->queue_prev = host_fetch;
 			host_fetch->queue_next = fetch;
@@ -237,110 +302,80 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch_active = true;
 
 	/* create the curl easy handle */
-	fetch->curl_handle = curl_easy_init();
-	assert(fetch->curl_handle != 0);  /* TODO: handle curl errors */
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_VERBOSE, 1);
-	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_URL, fetch->url);
-	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PRIVATE, fetch);
-	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_ERRORBUFFER, fetch->error_buffer);
-	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEFUNCTION, fetch_curl_data);
-	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEDATA, fetch);
-	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HEADERFUNCTION, fetch_curl_header);
-	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEHEADER, fetch);
-	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_USERAGENT, user_agent);
-	assert(code == CURLE_OK);
-	if (referer != 0) {
-		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_REFERER, referer);
-		assert(code == CURLE_OK);
-	}
-#ifdef riscos
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_CAINFO, ca_bundle);
-	assert(code == CURLE_OK);
-#endif
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_LOW_SPEED_LIMIT, 1L);
-	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_LOW_SPEED_TIME, 60L);
-	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_NOSIGNAL, 1L);
-	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_CONNECTTIMEOUT, 60L);
-	assert(code == CURLE_OK);
+	fetch->curl_handle = curl_easy_duphandle(fetch_blank_curl);
+	if (!fetch->curl_handle)
+		goto failed;
 
-	/* custom request headers */
-	fetch->headers = 0;
-	/* remove curl default headers */
-	fetch->headers = curl_slist_append(fetch->headers, "Accept:");
-	fetch->headers = curl_slist_append(fetch->headers, "Pragma:");
-	if (option_accept_language) {
-		char s[80];
-		snprintf(s, sizeof s, "Accept-Language: %s, *;q=0.1",
-				option_accept_language);
-		s[sizeof s - 1] = 0;
-		fetch->headers = curl_slist_append(fetch->headers, s);
-	}
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPHEADER, fetch->headers);
-	assert(code == CURLE_OK);
-
-	/* use proxy if options dictate this */
-	if (option_http_proxy && option_http_proxy_host) {
-		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXY,
-				option_http_proxy_host);
-		assert(code == CURLE_OK);
-		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXYPORT,
-				(long) option_http_proxy_port);
-		assert(code == CURLE_OK);
-	}
-
-        /* HTTP auth */
-#ifdef WITH_AUTH
-        if ((li=login_list_get(url)) != NULL) {
-                code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
-                assert(code == CURLE_OK);
-
-                code = curl_easy_setopt(fetch->curl_handle, CURLOPT_USERPWD, li->logindetails);
-
-                assert(code == CURLE_OK);
-        }
-#endif
-
-	/* POST */
-#ifdef WITH_POST
-	if (fetch->post_urlenc) {
-		code = curl_easy_setopt(fetch->curl_handle,
-				CURLOPT_POSTFIELDS, fetch->post_urlenc);
-		assert(code == CURLE_OK);
-	} else if (fetch->post_multipart) {
-		code = curl_easy_setopt(fetch->curl_handle,
-				CURLOPT_HTTPPOST, fetch->post_multipart);
-		assert(code == CURLE_OK);
-	}
-#endif
-
-	/* Cookies */
-#ifdef WITH_COOKIES
-	if (cookies) {
-		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_COOKIEFILE,
-				messages_get("cookiefile"));
-		assert(code == CURLE_OK);
-		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_COOKIEJAR,
-				messages_get("cookiejar"));
-		assert(code == CURLE_OK);
-	}
-#endif
+	code = fetch_set_options(fetch);
+	if (code != CURLE_OK)
+		goto failed;
 
 	/* add to the global curl multi handle */
 	codem = curl_multi_add_handle(curl_multi, fetch->curl_handle);
 	assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
 
 	return fetch;
+
+failed:
+	free(host);
+	free(fetch->url);
+	free(fetch->referer);
+	free(fetch->post_urlenc);
+	if (fetch->post_multipart)
+		curl_formfree(fetch->post_multipart);
+	curl_slist_free_all(fetch->headers);
+	free(fetch);
+	return 0;
+}
+
+
+/**
+ * Set options specific for a fetch.
+ */
+
+CURLcode fetch_set_options(struct fetch *f)
+{
+	CURLcode code;
+	struct login *li;
+
+#undef SETOPT
+#define SETOPT(option, value) \
+	code = curl_easy_setopt(f->curl_handle, option, value);	\
+	if (code != CURLE_OK)					\
+		return code;
+
+	SETOPT(CURLOPT_URL, f->url);
+	SETOPT(CURLOPT_PRIVATE, f);
+	SETOPT(CURLOPT_WRITEDATA, f);
+	SETOPT(CURLOPT_WRITEHEADER, f);
+	SETOPT(CURLOPT_REFERER, f->referer);
+	SETOPT(CURLOPT_HTTPHEADER, f->headers);
+	if (f->post_urlenc) {
+		SETOPT(CURLOPT_POSTFIELDS, f->post_urlenc);
+	} else if (f->post_multipart) {
+		SETOPT(CURLOPT_HTTPPOST, f->post_multipart);
+	} else {
+		SETOPT(CURLOPT_HTTPGET, 1L);
+	}
+	if (f->cookies) {
+		SETOPT(CURLOPT_COOKIEFILE, messages_get("cookiefile"));
+		SETOPT(CURLOPT_COOKIEJAR, messages_get("cookiejar"));
+	} else {
+		SETOPT(CURLOPT_COOKIEFILE, 0);
+		SETOPT(CURLOPT_COOKIEJAR, 0);
+	}
+	if ((li = login_list_get(f->url))) {
+		SETOPT(CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+		SETOPT(CURLOPT_USERPWD, li->logindetails);
+	} else {
+		SETOPT(CURLOPT_USERPWD, 0);
+	}
+	if (option_http_proxy && option_http_proxy_host) {
+		SETOPT(CURLOPT_PROXY, option_http_proxy_host);
+		SETOPT(CURLOPT_PROXYPORT, (long) option_http_proxy_port);
+	}
+
+	return CURLE_OK;
 }
 
 
@@ -350,10 +385,10 @@ struct fetch * fetch_start(char *url, char *referer,
 
 void fetch_abort(struct fetch *f)
 {
+	CURLcode code;
 	CURLMcode codem;
-#ifdef WITH_AUTH
-	struct login *li;
-#endif
+	struct fetch *fetch;
+	struct fetch *next_fetch;
 
 	assert(f != 0);
 	LOG(("fetch %p, url '%s'", f, f->url));
@@ -379,95 +414,69 @@ void fetch_abort(struct fetch *f)
 	}
 
 	if (f->curl_handle && f->queue_next) {
-		/* start a queued fetch for this host, reusing the handle for this host */
-		struct fetch *fetch = f->queue_next;
-		CURLcode code;
-		CURLMcode codem;
+		/* start a queued fetch for this host, reusing the handle */
+		fetch = f->queue_next;
 
 		LOG(("starting queued %p '%s'", fetch, fetch->url));
 
-		fetch->prev = 0;
-		fetch->next = fetch_list;
-		if (fetch_list != 0)
-			fetch_list->prev = fetch;
-		fetch_list = fetch;
-		fetch->queue_prev = 0;
-
 		fetch->curl_handle = f->curl_handle;
-		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_URL, fetch->url);
-		assert(code == CURLE_OK);
-		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PRIVATE, fetch);
-		assert(code == CURLE_OK);
-		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_ERRORBUFFER, fetch->error_buffer);
-		assert(code == CURLE_OK);
-		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEDATA, fetch);
-		assert(code == CURLE_OK);
-		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEHEADER, fetch);
-		assert(code == CURLE_OK);
-		/* TODO: remove referer header if fetch->referer == 0 */
-		/*if (fetch->referer != 0)*/ {
-			code = curl_easy_setopt(fetch->curl_handle, CURLOPT_REFERER, fetch->referer);
-			assert(code == CURLE_OK);
-		}
+		f->curl_handle = 0;
+		code = fetch_set_options(fetch);
+		if (code == CURLE_OK)
+			/* add to the global curl multi handle */
+			codem = curl_multi_add_handle(curl_multi,
+					fetch->curl_handle);
 
-                /* HTTP auth */
-#ifdef WITH_AUTH
-                if ((li=login_list_get(f->url)) != NULL) {
-                        code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
-                        assert(code == CURLE_OK);
-
-                        code = curl_easy_setopt(fetch->curl_handle, CURLOPT_USERPWD, li->logindetails);
-
-                        assert(code == CURLE_OK);
-                }
-#endif
-
-		/* POST */
-#ifdef WITH_POST
-		if (fetch->post_urlenc) {
-			code = curl_easy_setopt(fetch->curl_handle,
-					CURLOPT_POSTFIELDS, fetch->post_urlenc);
-			assert(code == CURLE_OK);
-		} else if (fetch->post_multipart) {
-			code = curl_easy_setopt(fetch->curl_handle,
-					CURLOPT_HTTPPOST, fetch->post_multipart);
-			assert(code == CURLE_OK);
+		if (code == CURLE_OK && (codem == CURLM_OK ||
+				codem == CURLM_CALL_MULTI_PERFORM)) {
+			/* add to list of fetches */
+			fetch->prev = 0;
+			fetch->next = fetch_list;
+			if (fetch_list != 0)
+				fetch_list->prev = fetch;
+			fetch_list = fetch;
+			fetch->queue_prev = 0;
 		} else {
-			code = curl_easy_setopt(fetch->curl_handle, CURLOPT_POST, 0);
-			assert(code == CURLE_OK);
-			code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPPOST, 0);
-			assert(code == CURLE_OK);
+			/* destroy all queued fetches for this host */
+			do {
+				fetch->callback(FETCH_ERROR, fetch->p,
+						messages_get("FetchError"), 0);
+				next_fetch = fetch->queue_next;
+				fetch_free(fetch);
+				fetch = next_fetch;
+			} while (fetch);
 		}
-#endif
-
-		/* add to the global curl multi handle */
-		codem = curl_multi_add_handle(curl_multi, fetch->curl_handle);
-		assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
 
 	} else {
-		if (f->curl_handle)
-			curl_easy_cleanup(f->curl_handle);
-		if (f->headers)
-			curl_slist_free_all(f->headers);
 		if (f->queue_prev)
 			f->queue_prev->queue_next = f->queue_next;
 		if (f->queue_next)
 			f->queue_next->queue_prev = f->queue_prev;
 	}
 
-	xfree(f->url);
+	fetch_free(f);
+}
+
+
+/**
+ * Free a fetch structure and associated resources.
+ */
+
+void fetch_free(struct fetch *f)
+{
+	if (f->curl_handle)
+		curl_easy_cleanup(f->curl_handle);
+	free(f->url);
 	free(f->host);
 	free(f->referer);
 	free(f->location);
-#ifdef WITH_AUTH
 	free(f->realm);
-#endif
-#ifdef WITH_POST
+	if (f->headers)
+		curl_slist_free_all(f->headers);
 	free(f->post_urlenc);
 	if (f->post_multipart)
 		curl_formfree(f->post_multipart);
-#endif
-	xfree(f);
+	free(f);
 }
 
 
@@ -479,14 +488,9 @@ void fetch_abort(struct fetch *f)
 
 void fetch_poll(void)
 {
-	CURLcode code;
-	CURLMcode codem;
 	int running, queue;
-	bool finished;
-	CURLMsg * curl_msg;
-	struct fetch *f;
-	void *p;
-	void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size);
+	CURLMcode codem;
+	CURLMsg *curl_msg;
 
 	/* do any possible work on the current fetches */
 	do {
@@ -499,45 +503,64 @@ void fetch_poll(void)
 	while (curl_msg) {
 		switch (curl_msg->msg) {
 			case CURLMSG_DONE:
-				/* find the structure associated with this fetch */
-				code = curl_easy_getinfo(curl_msg->easy_handle, CURLINFO_PRIVATE, &f);
-				assert(code == CURLE_OK);
-
-				LOG(("CURLMSG_DONE, result %i", curl_msg->data.result));
-
-				/* inform the caller that the fetch is done */
-				finished = false;
-				callback = f->callback;
-				p = f->p;
-				if (curl_msg->data.result == CURLE_OK) {
-					/* fetch completed normally */
-					if (!f->had_headers && fetch_process_headers(f))
-						; /* redirect with no body or similar */
-					else
-						finished = true;
-				} else if (curl_msg->data.result != CURLE_WRITE_ERROR) {
-					/* CURLE_WRITE_ERROR occurs when fetch_curl_data
-					 * returns 0, which we use to abort intentionally */
-					callback(FETCH_ERROR, f->p, f->error_buffer, 0);
-				}
-
-				/* clean up fetch */
-				fetch_abort(f);
-
-				/* postponed until after abort so that queue fetches are started */
-				if (finished)
-					callback(FETCH_FINISHED, p, 0, 0);
-
+				fetch_done(curl_msg->easy_handle,
+						curl_msg->data.result);
 				break;
-
 			default:
-				assert(0);
+				break;
 		}
 		curl_msg = curl_multi_info_read(curl_multi, &queue);
 	}
 
 	if (!fetch_list)
 		fetch_active = false;
+}
+
+
+/**
+ * Handle a completed fetch (CURLMSG_DONE from curl_multi_info_read()).
+ *
+ * \param  curl_handle  curl easy handle of fetch
+ */
+
+void fetch_done(CURL *curl_handle, CURLcode result)
+{
+	bool finished = false;
+	bool error = false;
+	struct fetch *f;
+	void *p;
+	void (*callback)(fetch_msg msg, void *p, char *data,
+			unsigned long size);
+	CURLcode code;
+
+	/* find the structure associated with this fetch */
+	code = curl_easy_getinfo(curl_handle, CURLINFO_PRIVATE, &f);
+	assert(code == CURLE_OK);
+
+	callback = f->callback;
+	p = f->p;
+
+	if (result == CURLE_OK) {
+		/* fetch completed normally */
+		if (!f->had_headers && fetch_process_headers(f))
+			; /* redirect with no body or similar */
+		else
+			finished = true;
+	} else if (result == CURLE_WRITE_ERROR)
+		/* CURLE_WRITE_ERROR occurs when fetch_curl_data
+		 * returns 0, which we use to abort intentionally */
+		;
+	else
+		error = true;
+
+	/* clean up fetch */
+	fetch_abort(f);
+
+	/* postponed until after abort so that queue fetches are started */
+	if (finished)
+		callback(FETCH_FINISHED, p, 0, 0);
+	else if (error)
+		callback(FETCH_ERROR, p, fetch_error_buffer, 0);
 }
 
 
@@ -575,7 +598,12 @@ size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f
 	size *= nmemb;
 	if (12 < size && strncasecmp(data, "Location:", 9) == 0) {
 		/* extract Location header */
-		f->location = xcalloc(size, 1);
+		free(f->location);
+		f->location = malloc(size);
+		if (!f->location) {
+			LOG(("malloc failed"));
+			return size;
+		}
 		for (i = 9; data[i] == ' ' || data[i] == '\t'; i++)
 			;
 		strncpy(f->location, data + i, size - i);
@@ -592,8 +620,14 @@ size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f
 			f->content_length = atol(data + i);
 #ifdef WITH_AUTH
 	} else if (16 < size && strncasecmp(data, "WWW-Authenticate",16) == 0) {
-	        /* extract Realm from WWW-Authenticate header */
-	        f->realm = xcalloc(size, 1);
+		/* extract Realm from WWW-Authenticate header */
+		free(f->realm);
+		f->realm = malloc(size);
+		if (!f->realm) {
+			LOG(("malloc failed"));
+			return size;
+		}
+		/** \todo  this code looks dangerous */
 	        for (i=16;(unsigned int)i!=strlen(data);i++)
 	               if(data[i]=='=')break;
 	        strncpy(f->realm, data+i+2, size-i-5);
@@ -630,10 +664,10 @@ bool fetch_process_headers(struct fetch *f)
 
         /* handle HTTP 401 (Authentication errors) */
 #ifdef WITH_AUTH
-        if (http_code == 401) {
-                f->callback(FETCH_AUTH, f->p, f->realm,0);
-                return true;
-        }
+	if (http_code == 401) {
+		f->callback(FETCH_AUTH, f->p, f->realm,0);
+		return true;
+	}
 #endif
 
 	/* handle HTTP errors (non 2xx response codes) */
@@ -673,53 +707,54 @@ bool fetch_process_headers(struct fetch *f)
 
 /**
  * Convert a list of struct ::form_successful_control to a list of
- * struct HttpPost for libcurl.
+ * struct curl_httppost for libcurl.
  */
 #ifdef WITH_POST
-struct HttpPost *fetch_post_convert(struct form_successful_control *control)
+struct curl_httppost *fetch_post_convert(struct form_successful_control *control)
 {
-	struct HttpPost *post = 0, *last = 0;
+	struct curl_httppost *post = 0, *last = 0;
 	char *mimetype = 0;
 	char *leafname = 0, *temp = 0;
 
 	for (; control; control = control->next) {
-	        if (control->file) {
-	                mimetype = fetch_mimetype(control->value);
+		if (control->file) {
+			mimetype = fetch_mimetype(control->value);
 #ifdef riscos
-	                temp = strrchr(control->value, '.');
-	                if (!temp) {
-	                        temp = control->value; /* already leafname */
-	                }
-	                else {
-	                        temp += 1;
-	                }
-	                leafname = xcalloc(strlen(temp), sizeof(char));
-	                __unixify_std(temp, leafname, strlen(temp), 0xfff);
+			temp = strrchr(control->value, '.');
+			if (!temp)
+				temp = control->value; /* already leafname */
+			else
+				temp += 1;
+			leafname = malloc(strlen(temp));
+			if (!leafname) {
+				LOG(("malloc failed"));
+				free(mimetype);
+				continue;
+			}
+			__unixify_std(temp, leafname, strlen(temp), 0xfff);
 #else
-                        leafname = strrchr(control->value, '/') ;
-                        if (!leafname) {
-                                leafname = control->value;
-                        }
-                        else {
-                                leafname += 1;
-                        }
+			leafname = strrchr(control->value, '/') ;
+			if (!leafname)
+				leafname = control->value;
+			else
+				leafname += 1;
 #endif
-	                curl_formadd(&post, &last,
+			curl_formadd(&post, &last,
 					CURLFORM_COPYNAME, control->name,
 					CURLFORM_FILE, leafname,
 					CURLFORM_CONTENTTYPE,
 					(mimetype != 0 ? mimetype : "text/plain"),
 					CURLFORM_END);
 #ifdef riscos
-			xfree(leafname);
+			free(leafname);
 #endif
-			xfree(mimetype);
-	        }
-	        else {
-	        	curl_formadd(&post, &last,
-		        		CURLFORM_COPYNAME, control->name,
-		                        CURLFORM_COPYCONTENTS, control->value,
-				        CURLFORM_END);
+			free(mimetype);
+		}
+		else {
+			curl_formadd(&post, &last,
+					CURLFORM_COPYNAME, control->name,
+					CURLFORM_COPYCONTENTS, control->value,
+					CURLFORM_END);
 		}
 	}
 
