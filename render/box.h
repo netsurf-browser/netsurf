@@ -195,6 +195,8 @@ struct box {
 	/** Form control data, or 0 if not a form control. */
 	struct form_control* gadget;
 
+        char *usemap; /** (Image)map to use with this object, or 0 if none */
+
 	/** Object in this box (usually an image), or 0 if none. */
 	struct content* object;
 	/** Parameters for the object, or 0. */

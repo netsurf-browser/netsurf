@@ -12,7 +12,7 @@ OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o \
 	messages.o utils.o translit.o pool.o url.o
 OBJECTS = $(OBJECTS_COMMON) \
 	browser.o loginlist.o netsurf.o options.o \
-	htmlinstance.o htmlredraw.o \
+	htmlinstance.o htmlredraw.o imagemap.o \
 	401login.o constdata.o dialog.o download.o frames.o gui.o \
 	menus.o mouseactions.o \
 	textselection.o theme.o window.o \

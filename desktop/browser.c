@@ -24,6 +24,7 @@
 #include "netsurf/desktop/401login.h"
 #endif
 #include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/imagemap.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
@@ -1352,6 +1353,34 @@ void browser_window_follow_link(struct browser_window *bw,
 				continue;
 
 			if (click_type == 1) {
+				browser_window_go(bw, url);
+			} else if (click_type == 2) {
+				browser_window_create(url);
+			} else if (click_type == 0) {
+				browser_window_set_status(bw, url);
+				done = 1;
+			}
+			free(url);
+			break;
+		}
+		if (click_boxes[i].box->usemap != NULL) {
+		        char *href, *url;
+
+		        href = imagemap_get(bw->current_content,
+		                            click_boxes[i].box->usemap,
+		                            click_boxes[i].actual_x,
+		                            click_boxes[i].actual_y,
+		                            click_x, click_y);
+		        if (!href)
+		                continue;
+
+		        url = url_join(href,
+		                       bw->current_content->data.html.
+		                       base_url);
+		        if (!url)
+		                continue;
+
+		        if (click_type == 1) {
 				browser_window_go(bw, url);
 			} else if (click_type == 2) {
 				browser_window_create(url);

@@ -23,6 +23,7 @@ struct box;
 struct browser_window;
 struct content;
 struct object_params;
+struct imagemap;
 
 struct box_position {
 	struct box *box;
@@ -72,6 +73,8 @@ struct content_html_data {
 		 *  CONTENT_UNKNOWN, or 0 if any type is acceptable. */
 		const content_type *permitted_types;
 	} *object;
+
+	struct imagemap **imagemaps; /**< Hashtable of imagemaps */
 
 	pool box_pool;		/**< Memory pool for box tree. */
 	pool string_pool;	/**< Memory pool for strings. */

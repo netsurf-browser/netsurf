@@ -18,6 +18,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
+#include "netsurf/desktop/imagemap.h"
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
 #endif
@@ -179,6 +180,10 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	content_broadcast(c, CONTENT_MSG_STATUS, 0);
 	xml_to_box(html, c);
 	/*box_dump(c->data.html.layout->children, 0);*/
+
+	/* extract image maps - can't do this sensibly in xml_to_box */
+	imagemap_extract(html, c);
+	/*imagemap_dump(c);*/
 
 	/* XML tree not required past this point */
 	xmlFreeDoc(document);
@@ -751,6 +756,8 @@ void html_destroy(struct content *c)
 	LOG(("content %p", c));
 
 	free(c->title);
+
+        imagemap_destroy(c);
 
 	if (c->data.html.parser)
 		htmlFreeParserCtxt(c->data.html.parser);
