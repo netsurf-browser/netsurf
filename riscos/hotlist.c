@@ -175,6 +175,7 @@ wimp_mouse_state drag_buttons;
 /*	Whether the current selection was from a menu click
 */
 bool menu_selection = false;
+bool menu_open = false;
 
 /*	Hotlist loading buffer
 */
@@ -195,7 +196,7 @@ static int ro_gui_hotlist_selection_state(struct hotlist_entry *entry, bool sele
 static void ro_gui_hotlist_selection_drag(struct hotlist_entry *entry,
 		int x0, int y0, int x1, int y1,
 		bool toggle, bool redraw);
-static int ro_gui_hotlist_selection_count(struct hotlist_entry *entry);
+static int ro_gui_hotlist_selection_count(struct hotlist_entry *entry, bool folders);
 static void ro_gui_hotlist_update_expansion(struct hotlist_entry *entry, bool only_selected,
 		bool folders, bool links, bool expand, bool contract);
 static void ro_gui_hotlist_launch_selection(struct hotlist_entry *entry);
@@ -410,8 +411,11 @@ bool ro_gui_hotlist_load(void) {
 	}
 }
 
+
+/**
+ * Perform a save to the default file
+ */
 void ro_gui_hotlist_save(void) {
-	FILE *fp;
 
 	/*	Don't save if we didn't load
 	*/
@@ -422,9 +426,23 @@ void ro_gui_hotlist_save(void) {
 	xosfile_create_dir("<Choices$Write>.WWW", 0);
 	xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
 
+	/*	Save to our file
+	*/
+	ro_gui_hotlist_save_as("<Choices$Write>.WWW.NetSurf.Hotlist");
+}
+
+
+/**
+ * Perform a save to a specified file
+ *
+ * /param file the file to save to
+ */
+void ro_gui_hotlist_save_as(const char *file) {
+	FILE *fp;
+
 	/*	Open our file
 	*/
-	fp = fopen("<Choices$Write>.WWW.NetSurf.Hotlist", "w");
+	fp = fopen(file, "w");
 	if (!fp) {
 		warn_user("HotlistSaveError", 0);
 		return;
@@ -450,7 +468,7 @@ void ro_gui_hotlist_save(void) {
 
 	/*	Set the filetype to HTML
 	*/
-	xosfile_set_type("<Choices$Write>.WWW.NetSurf.Hotlist", 0xfaf);
+	xosfile_set_type(file, 0xfaf);
 }
 
 bool ro_gui_hotlist_save_entry(FILE *fp, struct hotlist_entry *entry) {
@@ -1305,7 +1323,8 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 		*/
 		x_offset = x - entry->x0;
 		y_offset = y - (entry->y0 + entry->height);
-		if (((x_offset < HOTLIST_LEAF_INSET) && (y_offset > -HOTLIST_LINE_HEIGHT)) ||
+		if (((x_offset < HOTLIST_LEAF_INSET) && (y_offset > -HOTLIST_LINE_HEIGHT) &&
+			((buttons == wimp_CLICK_SELECT << 8) || (buttons == wimp_CLICK_ADJUST << 8))) ||
 				((entry->children != -1) &&
 			((buttons == wimp_DOUBLE_SELECT) || (buttons == wimp_DOUBLE_ADJUST)))) {
 			ro_gui_hotlist_update_expansion(entry->child_entry, false, true, true, false, true);
@@ -1322,7 +1341,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 		  	/*	We treat a menu click as a Select click if we have no selections
 		  	*/
 		  	if (buttons == wimp_CLICK_MENU) {
-		  		if (ro_gui_hotlist_selection_count(root.child_entry) == 0) {
+		  		if (ro_gui_hotlist_selection_count(root.child_entry, true) == 0) {
 		  		  	menu_selection = true;
 		  			buttons = (wimp_CLICK_SELECT << 8);
 		  		}
@@ -1363,7 +1382,9 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 				}
 			}
 		} else {
-			no_entry = true;
+			if (!((x_offset < HOTLIST_LEAF_INSET) && (y_offset > -HOTLIST_LINE_HEIGHT))) {
+				no_entry = true;
+			}
 		}
 	} else {
 		no_entry = true;
@@ -1376,9 +1397,10 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 	/*	Create a menu if we should
 	*/
 	if (buttons == wimp_CLICK_MENU) {
-/*		ro_gui_create_menu(hotlist_menu, pointer->pos.x - 64,
+		ro_gui_create_menu(hotlist_menu, pointer->pos.x - 64,
 				pointer->pos.y, NULL);
-*/		return;
+		menu_open = true;
+		return;
 	}
 
 	/*	Handle a click without an entry
@@ -1517,7 +1539,7 @@ int ro_gui_hotlist_selection_state(struct hotlist_entry *entry, bool selected, b
 
 		/*	Continue onwards
 		*/
-		if (entry->child_entry) {
+		if ((entry->child_entry) && ((!selected) || (entry->expanded))) {
 			changes += ro_gui_hotlist_selection_state(entry->child_entry,
 					selected, redraw & (entry->expanded));
 		}
@@ -1526,7 +1548,13 @@ int ro_gui_hotlist_selection_state(struct hotlist_entry *entry, bool selected, b
 	return changes;
 }
 
-int ro_gui_hotlist_selection_count(struct hotlist_entry *entry) {
+
+/**
+ * Return the current number of selected items (internal interface)
+ *
+ * \param entry the entry to count siblings and children of
+ */
+int ro_gui_hotlist_selection_count(struct hotlist_entry *entry, bool folders) {
 	int count = 0;
 
 	/*	Check we have an entry (only applies if we have an empty hotlist)
@@ -1538,12 +1566,12 @@ int ro_gui_hotlist_selection_count(struct hotlist_entry *entry) {
 	while (entry) {
 		/*	Check this entry
 		*/
-		if (entry->selected) count++;
+		if ((entry->selected) && (folders || (entry->children == -1))) count++;
 
 		/*	Continue onwards
 		*/
 		if (entry->child_entry) {
-			count += ro_gui_hotlist_selection_count(entry->child_entry);
+			count += ro_gui_hotlist_selection_count(entry->child_entry, folders);
 		}
 		entry = entry->next_entry;
 	}
@@ -1589,6 +1617,11 @@ void ro_gui_hotlist_launch_selection(struct hotlist_entry *entry) {
 void ro_gui_hotlist_update_expansion(struct hotlist_entry *entry, bool only_selected,
 		bool folders, bool links, bool expand, bool contract) {
 	bool current;
+	
+	/*	Set a reformat to be pending
+	*/
+	reformat_pending = true;
+
 	/*	Check we have an entry (only applies if we have an empty hotlist)
 	*/
 	if (!entry) return;
@@ -1603,7 +1636,7 @@ void ro_gui_hotlist_update_expansion(struct hotlist_entry *entry, bool only_sele
 
 			/*	Only update what we should
 			*/
-			if (((links) && (entry->children != -1)) || ((folders) && (entry->children > 0))) {
+			if (((links) && (entry->children == -1)) || ((folders) && (entry->children > 0))) {
 				/*	Update the expansion state
 				*/
 				if (expand) {
@@ -1793,6 +1826,7 @@ void ro_gui_hotlist_move_drag_end(wimp_dragged *drag) {
  * Handle a menu being closed
  */
 void ro_gui_hotlist_menu_closed(void) {
+  	menu_open = false;
 	if (menu_selection) {
 		ro_gui_hotlist_selection_state(root.child_entry, false, true);
 		menu_selection = false;
@@ -1814,15 +1848,21 @@ bool ro_gui_hotlist_keypress(int key) {
 	switch (key) {
 		case 1:		/* CTRL+A */
 			ro_gui_hotlist_selection_state(root.child_entry, true, true);
+			if (menu_open) ro_gui_create_menu(hotlist_menu, 0, 0, NULL);
 			return true;
 		case 26:	/* CTRL+Z */
 			ro_gui_hotlist_selection_state(root.child_entry, false, true);
+			if (menu_open) ro_gui_create_menu(hotlist_menu, 0, 0, NULL);
 			return true;
 		case 32:	/* SPACE */
 			ro_gui_hotlist_update_expansion(root.child_entry, true, true, true, false, false);
+			if (menu_open) ro_gui_create_menu(hotlist_menu, 0, 0, NULL);
 			return true;
 		case wimp_KEY_RETURN:
 			ro_gui_hotlist_launch_selection(root.child_entry);
+			return true;
+		case wimp_KEY_F3:
+			ro_gui_hotlist_save();
 			return true;
 		case wimp_KEY_UP:
 		case wimp_KEY_DOWN:
@@ -1864,6 +1904,50 @@ bool ro_gui_hotlist_keypress(int key) {
 	xwimp_open_window((wimp_open *) &state);
 	return true;
 }
+
+
+
+
+
+
+
+/**
+ * Set all items to either selected or deselected
+ *
+ * \param selected the state to set all items to
+ */
+void ro_gui_hotlist_set_selected(bool selected) {
+	ro_gui_hotlist_selection_state(root.child_entry, selected, true);
+	menu_selection = false;
+}
+
+
+/**
+ * Return the current number of selected items
+ *
+ * \param folders include folders in the selection count
+ * \return the number of selected items
+ */
+int ro_gui_hotlist_get_selected(bool folders) {
+	return ro_gui_hotlist_selection_count(root.child_entry, folders);
+}
+
+
+/**
+ * Set all items to either selected or deselected
+ *
+ * \param expand  whether to expand (collapse otherwise)
+ * \param folders whether to update folders
+ * \param links   whether to update links
+ */
+void ro_gui_hotlist_set_expanded(bool expand, bool folders, bool links) {
+	ro_gui_hotlist_update_expansion(root.child_entry, false, folders, links, expand, !expand);
+}
+
+
+
+
+
 
 
 

@@ -144,7 +144,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 	struct content *c = save_content;
 	os_error *error;
 
-	if (!save_content) {
+	if (!save_content && gui_current_save_type != GUI_HOTLIST_EXPORT_HTML) {
 		LOG(("unexpected DataSaveAck: save_content not set"));
 		return;
 	}
@@ -210,6 +210,9 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 		case GUI_SAVE_LINK_TEXT:
 			if (!ro_gui_save_link(c, LINK_TEXT, path))
 				return;
+			break;
+		case GUI_HOTLIST_EXPORT_HTML:
+			ro_gui_hotlist_save_as(path);
 			break;
 	}
 

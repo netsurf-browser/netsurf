@@ -49,6 +49,7 @@ static void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning);
 static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
 static struct box *ro_gui_menu_find_object_box(void);
 static void ro_gui_menu_object_reload(void);
+static void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning);
 
 wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
@@ -274,40 +275,87 @@ wimp_menu *browser_menu = (wimp_menu *) &menu;
 
 
 
+/*	Hotlist new submenu
+*/
+static wimp_MENU(2) hotlist_new = {
+  { "New" }, 7,2,7,0, 300, 44, 0,
+  {
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Folder" } },
+    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Link" } },
+  }
+};
+
+
+/*	Hotlist expand submenu
+*/
+static wimp_MENU(3) hotlist_expand = {
+  { "Expand" }, 7,2,7,0, 300, 44, 0,
+  {
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "All" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Folders" } },
+    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Links" } },
+  }
+};
+
+/*	Hotlist collapse submenu
+*/
+static wimp_MENU(3) hotlist_collapse = {
+  { "Collapse" }, 7,2,7,0, 300, 44, 0,
+  {
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "All" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Folders" } },
+    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Links" } },
+  }
+};
+
+
+static wimp_MENU(4) hotlist_save = {
+  { "SaveHotlist" }, 7,2,7,0, 200, 44, 0,
+  {
+    { wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "URI" } },
+    { wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "URL" } },
+    { wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "HTML" } },
+    { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "LinkText" } }
+  }
+};
+
 /*	Hotlist file submenu
 */
-static wimp_MENU(6) hotlist_file = {
+static wimp_MENU(5) hotlist_file = {
   { "Hotlist" }, 7,2,7,0, 300, 44, 0,
   {
-    { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Save" } },
-    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Export" } },
-    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "OpenDir" } },
-    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "CloseDir" } },
-    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "OpenLinks" } },
-    { wimp_MENU_LAST,	  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "CloseLinks" } }
+    { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)&hotlist_new,	   DEFAULT_FLAGS, { "New" } },
+    { wimp_MENU_GIVE_WARNING,			   wimp_NO_SUB_MENU,		   DEFAULT_FLAGS, { "Save" } },
+    { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE, (wimp_menu *)1,		   DEFAULT_FLAGS, { "Export" } },
+    { 0,					   (wimp_menu *)&hotlist_expand,   DEFAULT_FLAGS, { "Expand" } },
+    { wimp_MENU_LAST,				   (wimp_menu *)&hotlist_collapse, DEFAULT_FLAGS, { "Collapse" } },
   }
 };
 
 
 /*	Hotlist file submenu
 */
-static wimp_MENU(3) hotlist_select = {
+static wimp_MENU(5) hotlist_select = {
   { "Selection" }, 7,2,7,0, 300, 44, 0,
   {
-    { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Save" } },
-    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Launch" } },
-    { wimp_MENU_LAST,     wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Delete" } },
+    { wimp_MENU_GIVE_WARNING, (wimp_menu *)&hotlist_save, DEFAULT_FLAGS, { "Save" } },
+    { wimp_MENU_SEPARATE,     wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "Launch" } },
+    { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "EditTitle" } },
+    { 0,		      wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "Delete" } },
+    { wimp_MENU_LAST,	      wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "ResetUsage" } },
   }
 };
 
 
 /*	Hotlist menu
 */
-static wimp_MENU(2) hotlist_root = {
+static wimp_MENU(4) hotlist_root = {
   { "Hotlist" }, 7,2,7,0, 200, 44, 0,
   {
-    { 0,				       (wimp_menu *)&hotlist_file,   DEFAULT_FLAGS, { "Hotlist" } },
-    { wimp_MENU_LAST,			       (wimp_menu *)&hotlist_select, DEFAULT_FLAGS, { "Selection" } },
+    { 0,		      (wimp_menu *)&hotlist_file,   DEFAULT_FLAGS, { "Hotlist" } },
+    { wimp_MENU_GIVE_WARNING, (wimp_menu *)&hotlist_select, DEFAULT_FLAGS, { "Selection" } },
+    { 0,		      wimp_NO_SUB_MENU,		    DEFAULT_FLAGS, { "SelectAll" } },
+    { wimp_MENU_LAST,	      wimp_NO_SUB_MENU,		    DEFAULT_FLAGS, { "Clear" } },
   }
 };
 wimp_menu *hotlist_menu = (wimp_menu *)&hotlist_root;
@@ -328,7 +376,12 @@ static wimp_menu *browser_window_menu = (wimp_menu *)&window_menu;
 static wimp_menu *browser_utilities_menu = (wimp_menu *)&utilities_menu;
 static wimp_menu *browser_hotlist_menu = (wimp_menu *)&hotlist_util_menu;
 static wimp_menu *browser_help_menu = (wimp_menu *)&help_menu;
+
+static wimp_menu *hotlist_new_menu = (wimp_menu *)&hotlist_new;
+static wimp_menu *hotlist_expand_menu = (wimp_menu *)&hotlist_expand;
+static wimp_menu *hotlist_collapse_menu = (wimp_menu *)&hotlist_collapse;
 static wimp_menu *hotlist_file_menu = (wimp_menu *)&hotlist_file;
+static wimp_menu *hotlist_save_menu = (wimp_menu *)&hotlist_save;
 static wimp_menu *hotlist_select_menu = (wimp_menu *)&hotlist_select;
 
 
@@ -339,8 +392,8 @@ static wimp_menu *hotlist_select_menu = (wimp_menu *)&hotlist_select;
 void ro_gui_menus_init(void)
 {
 	translate_menu(iconbar_menu);
+
 	translate_menu(browser_menu);
-	translate_menu(hotlist_menu);
 	translate_menu(browser_page_menu);
 	translate_menu(browser_export_menu);
 	translate_menu(browser_object_menu);
@@ -355,7 +408,13 @@ void ro_gui_menus_init(void)
 	translate_menu(browser_utilities_menu);
 	translate_menu(browser_hotlist_menu);
 	translate_menu(browser_help_menu);
+
+	translate_menu(hotlist_menu);
+	translate_menu(hotlist_new_menu);
+	translate_menu(hotlist_expand_menu);
+	translate_menu(hotlist_collapse_menu);
 	translate_menu(hotlist_file_menu);
+	translate_menu(hotlist_save_menu);
 	translate_menu(hotlist_select_menu);
 
 	iconbar_menu->entries[0].sub_menu = (wimp_menu *) dialog_info;
@@ -410,6 +469,8 @@ void translate_menu(wimp_menu *menu)
 
 void ro_gui_create_menu(wimp_menu *menu, int x, int y, gui_window *g)
 {
+	int selection;
+	
 	current_menu = menu;
 	current_menu_x = x;
 	current_menu_y = y;
@@ -419,6 +480,16 @@ void ro_gui_create_menu(wimp_menu *menu, int x, int y, gui_window *g)
 			menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
 		else
 			menu->entries[1].icon_flags |= wimp_ICON_SHADED;
+	}
+	if (menu == hotlist_menu) {
+		selection = ro_gui_hotlist_get_selected(true);
+		if (selection == 0) {
+			hotlist_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
+			hotlist_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
+		} else {
+			hotlist_menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
+			hotlist_menu->entries[3].icon_flags &= ~wimp_ICON_SHADED;
+		}
 	}
 	wimp_create_menu(menu, x, y);
 }
@@ -478,6 +549,38 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				break;
 		}
 
+	} else if (current_menu == hotlist_menu) {
+		switch (selection->items[0]) {
+			case 0:	/* Hotlist-> */
+				switch (selection->items[1]) {
+					case 0: /* New */
+						break; 
+					case 1: /* Save */
+						ro_gui_hotlist_save();
+						break; 
+					case 2: /* Export */
+						break; 
+					case 3: /* Expand */
+						ro_gui_hotlist_set_expanded(true,
+								(selection->items[2] != 2),
+								(selection->items[2] != 1));
+						break;
+					case 4: /* Collapse */
+						ro_gui_hotlist_set_expanded(false,
+								(selection->items[2] != 2),
+								(selection->items[2] != 1));
+						break; 
+				}
+				break;
+			case 1: /* Selection-> */
+				break;
+			case 2: /* Select all */
+				ro_gui_hotlist_set_selected(true);
+				break;
+			case 3: /* Clear */
+				ro_gui_hotlist_set_selected(false);
+				break;
+		}
 	} else if (current_menu == browser_menu) {
 		struct content *c = current_gui->data.browser.bw->current_content;
 		switch (selection->items[0]) {
@@ -653,17 +756,17 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				break;
 			case MENU_UTILITIES:
 				switch (selection->items[1]) {
-				  	case 0: /* Hotlist -> */
-				  		switch (selection->items[2]) {
-				  			case 0:	/* Add to hotlist */
-				  				ro_gui_hotlist_add(current_gui->title,
-				  						current_gui->data.browser.bw->current_content);
-				  				break;
-				  			case 1: /* Show hotlist */
-				  				ro_gui_hotlist_show();
-				  				break;
-				  		}
-				  		break;
+					case 0: /* Hotlist -> */
+						switch (selection->items[2]) {
+							case 0:	/* Add to hotlist */
+								ro_gui_hotlist_add(current_gui->title,
+										current_gui->data.browser.bw->current_content);
+								break;
+							case 1: /* Show hotlist */
+								ro_gui_hotlist_show();
+								break;
+						}
+						break;
 				}
 				break;
 			case MENU_HELP:
@@ -706,14 +809,21 @@ void ro_gui_menu_selection(wimp_selection *selection)
 
 
 /**
- * Handle Message_MenuWarning by opening the save dialog.
+ * Handle Message_MenuWarning.
  */
-
 void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 {
-	struct content *c = current_gui->data.browser.bw->current_content;
+	struct content *c;
 	os_error *error = NULL; // No warnings
 
+	if (current_menu == hotlist_menu) {
+		ro_gui_menu_hotlist_warning(warning);
+		return; 
+	} else if (current_menu != browser_menu) {
+		return;
+	}
+
+	c = current_gui->data.browser.bw->current_content;
 	switch (warning->selection.items[0]) {
 		case MENU_PAGE: /* Page -> */
 			switch (warning->selection.items[1]) {
@@ -846,6 +956,37 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 
 
 /**
+ * Handle Message_MenuWarning for the hotlist menu.
+ */
+void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning) {
+	os_error *error = NULL; // No warnings
+
+
+	switch (warning->selection.items[0]) {
+		case 0:	/* Hotlist-> */
+			switch (warning->selection.items[1]) {
+				case 0: /* New */
+					break; 
+				case 2: /* Export */
+					gui_current_save_type = GUI_HOTLIST_EXPORT_HTML;
+					ro_gui_menu_prepare_save(NULL);
+					error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
+						warning->pos.x, warning->pos.y);
+					break; 
+			}
+			break;
+		case 1: /* Selection-> */
+			break;
+	}
+	
+	if (error) {
+		LOG(("0x%x: %s\n", error->errnum, error->errmess));
+		warn_user("MenuError", error->errmess);
+	}
+}
+
+
+/**
  * Prepares the save box to reflect gui_current_save_type and a content.
  *
  * \param  c  content to save
@@ -858,7 +999,12 @@ void ro_gui_menu_prepare_save(struct content *c)
 	const char *name = "";
 	const char *nice;
 
-	assert(c);
+/*	We can't assert globally any more as hotlists have no content
+*/
+	if (gui_current_save_type != GUI_HOTLIST_EXPORT_HTML) {
+		assert(c);
+	}
+
 
 	switch (gui_current_save_type) {
 		case GUI_SAVE_SOURCE:
@@ -902,11 +1048,16 @@ void ro_gui_menu_prepare_save(struct content *c)
 			icon = "file_fff";
 			name = messages_get("SaveLink");
 			break;
+		case GUI_HOTLIST_EXPORT_HTML:
+			icon = "file_faf";
+			name = "Hotlist";
+			break;
 	}
 
 	save_content = c;
-	if ((nice = url_nice(c->url)))
-		name = nice;
+	if (c) {
+		if ((nice = url_nice(c->url))) name = nice;
+        }
 
 	/*	Ensure the correct icon exists
 	*/

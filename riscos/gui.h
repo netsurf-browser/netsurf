@@ -43,7 +43,8 @@ typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT,
 		GUI_SAVE_COMPLETE,
 		GUI_SAVE_OBJECT_ORIG, GUI_SAVE_OBJECT_NATIVE,
 		GUI_SAVE_LINK_URI, GUI_SAVE_LINK_URL,
-		GUI_SAVE_LINK_TEXT } gui_save_type;
+		GUI_SAVE_LINK_TEXT,
+		GUI_HOTLIST_EXPORT_HTML} gui_save_type;
 extern gui_save_type gui_current_save_type;
 typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_SAVE, GUI_DRAG_STATUS_RESIZE,
@@ -186,6 +187,11 @@ void ro_gui_hotlist_selection_drag_end(wimp_dragged *drag);
 void ro_gui_hotlist_move_drag_end(wimp_dragged *drag);
 bool ro_gui_hotlist_keypress(int key);
 void ro_gui_hotlist_menu_closed(void);
+
+int ro_gui_hotlist_get_selected(bool folders);
+void ro_gui_hotlist_set_selected(bool selected);
+void ro_gui_hotlist_set_expanded(bool expand, bool folders, bool links);
+void ro_gui_hotlist_save_as(const char *file);
 
 /* in save.c */
 void ro_gui_save_click(wimp_pointer *pointer);
