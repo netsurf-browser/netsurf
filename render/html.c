@@ -38,7 +38,8 @@ static void html_head(struct content *c, xmlNode *head);
 static void html_find_stylesheets(struct content *c, xmlNode *head);
 static void html_object_callback(content_msg msg, struct content *object,
 		void *p1, void *p2, union content_msg_data data);
-static void html_object_done(struct box *box, struct content *object);
+static void html_object_done(struct box *box, struct content *object,
+                             bool background);
 static bool html_object_type_permitted(const content_type type,
 		const content_type *permitted_types);
 
@@ -537,6 +538,10 @@ void html_fetch_object(struct content *c, char *url, struct box *box,
 	c->data.html.object[i].url = url;
 	c->data.html.object[i].box = box;
 	c->data.html.object[i].permitted_types = permitted_types;
+	if (box->style->background_image.type == CSS_BACKGROUND_IMAGE_URI)
+        	c->data.html.object[i].background = true;
+        else
+                c->data.html.object[i].background = false;
 
 	/* start fetch */
 	c->data.html.object[i].content = fetchcache(url, c->url,
@@ -591,13 +596,13 @@ void html_object_callback(content_msg msg, struct content *object,
 
 		case CONTENT_MSG_READY:
 			if (object->type == CONTENT_HTML) {
-				html_object_done(box, object);
+				html_object_done(box, object, c->data.html.object[i].background);
 				content_reformat(c, c->available_width, 0);
 			}
 			break;
 
 		case CONTENT_MSG_DONE:
-			html_object_done(box, object);
+			html_object_done(box, object, c->data.html.object[i].background);
 			c->active--;
 			break;
 
@@ -696,11 +701,17 @@ void html_object_callback(content_msg msg, struct content *object,
  * Update a box whose content has completed rendering.
  */
 
-void html_object_done(struct box *box, struct content *object)
+void html_object_done(struct box *box, struct content *object,
+                      bool background)
 {
 	struct box *b;
 
-	box->object = object;
+        if (background) {
+                box->background = object;
+        }
+        else {
+        	box->object = object;
+        }
 
 	if (box->width != UNKNOWN_WIDTH &&
 			object->available_width != box->width)

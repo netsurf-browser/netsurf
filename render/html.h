@@ -14,6 +14,7 @@
 #ifndef _NETSURF_RENDER_HTML_H_
 #define _NETSURF_RENDER_HTML_H_
 
+#include <stdbool.h>
 #include "libxml/HTMLparser.h"
 #include "netsurf/content/content_type.h"
 #include "netsurf/css/css.h"
@@ -72,6 +73,7 @@ struct content_html_data {
 		/** Pointer to array of permitted content_type, terminated by
 		 *  CONTENT_UNKNOWN, or 0 if any type is acceptable. */
 		const content_type *permitted_types;
+		bool background; /** Is this object a background image? */
 	} *object;
 
 	struct imagemap **imagemaps; /**< Hashtable of imagemaps */

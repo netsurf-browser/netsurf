@@ -53,9 +53,43 @@ typedef enum {
 	CSS_TEXT_DECORATION_UNKNOWN = 0x1000
 } css_text_decoration;
 
+typedef enum {
+        CSS_BACKGROUND_POSITION_LENGTH,
+        CSS_BACKGROUND_POSITION_PERCENT,
+        CSS_BACKGROUND_POSITION_INHERIT
+} css_background_position;
+
 /** Representation of a complete CSS 2 style. */
 struct css_style {
 	colour background_color;
+
+        css_background_attachment background_attachment;
+
+	struct {
+	        enum { CSS_BACKGROUND_IMAGE_NONE,
+	               CSS_BACKGROUND_IMAGE_INHERIT,
+	               CSS_BACKGROUND_IMAGE_URI } type;
+	        char *uri;
+	} background_image;
+
+        struct {
+                struct {
+                        css_background_position pos;
+                        union {
+                                float percent;
+                                struct css_length length;
+                        } value;
+                } horz;
+                struct {
+                        css_background_position pos;
+                        union {
+                                float percent;
+                                struct css_length length;
+                        } value;
+                } vert;
+        } background_position;
+
+        css_background_repeat background_repeat;
 
 	struct {
 		colour color;
@@ -246,6 +280,7 @@ struct css_node {
 	css_combinator comb;
 	struct css_style *style;
 	unsigned long specificity;
+	struct content *stylesheet;
 };
 
 
@@ -282,7 +317,8 @@ void css_destroy(struct content *c);
 
 #ifdef CSS_INTERNALS
 
-struct css_node * css_new_node(css_node_type type,
+struct css_node * css_new_node(struct content *stylesheet,
+                css_node_type type,
 		const char *data, unsigned int data_length);
 void css_free_node(struct css_node *node);
 struct css_selector * css_new_selector(css_selector_type type,

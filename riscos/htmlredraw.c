@@ -12,11 +12,15 @@
 #include "oslib/colourtrans.h"
 #include "oslib/draw.h"
 #include "oslib/font.h"
+#include "swis.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/css/css.h"
 #include "netsurf/content/content.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/options.h"
+#include "netsurf/riscos/tinct.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -44,6 +48,8 @@ static void html_redraw_radio(int x, int y, int width, int height,
 		bool selected);
 static void html_redraw_file(int x, int y, int width, int height,
 		struct box *box, float scale);
+static void html_redraw_background(long x, long y, int width, int height,
+                struct box *box);
 
 bool gui_redraw_debug = false;
 
@@ -194,7 +200,7 @@ void html_redraw_box(struct content *content, struct box * box,
 		if (clip_x1 < x1) x1 = clip_x1;
 		if (clip_y1 < y1) y1 = clip_y1;
 		/* clip to it */
-		html_redraw_clip(x0, y0, x1, y1);
+        	html_redraw_clip(x0, y0, x1, y1);
 	} else {
 		/* clip box unchanged */
 		x0 = clip_x0;
@@ -210,6 +216,8 @@ void html_redraw_box(struct content *content, struct box * box,
 		int py0 = y - padding_height < y0 ? y0 : y - padding_height;
 		int px1 = x + padding_width < x1 ? x + padding_width : x1;
 		int py1 = y < y1 ? y : y1;
+		/* clip to it */
+		html_redraw_clip(px0, py0, px1, py1);
 		colourtrans_set_gcol(box->style->background_color << 8,
 				colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		os_plot(os_MOVE_TO, px0, py0);
@@ -217,6 +225,9 @@ void html_redraw_box(struct content *content, struct box * box,
 			os_plot(os_PLOT_RECTANGLE | os_PLOT_TO, px1, py1);
 		current_background_color = box->style->background_color;
 	}
+
+        /* plot background image */
+        html_redraw_background(x, y, width, clip_y1-clip_y0, box);
 
 	if (box->object) {
 		content_redraw(box->object, x + padding_left, y - padding_top,
@@ -365,7 +376,7 @@ void html_redraw_box(struct content *content, struct box * box,
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object)
-		html_redraw_clip(clip_x0, clip_y0, clip_x1, clip_y1);
+               	html_redraw_clip(clip_x0, clip_y0, clip_x1, clip_y1);
 
 /*	} else {
 		if (content->data.html.text_selection.selected == 1) {
@@ -541,4 +552,114 @@ void html_redraw_file(int x, int y, int width, int height,
 
 /* 	xwimpspriteop_put_sprite_user_coords(sprite, x + 4, */
 /* 			y - height / 2 - 17, os_ACTION_OVERWRITE); */
+}
+
+void html_redraw_background(long xi, long yi, int width, int height,
+           struct box *box)
+{
+        unsigned int tinct_options = 0;
+        long x = 0;
+        long y = 0;
+        float multiplier;
+        bool fixed = false;
+
+        if (box->background == 0) return;
+
+        if (ro_gui_current_redraw_gui) {
+		tinct_options = (ro_gui_current_redraw_gui->option_filter_sprites?tinct_BILINEAR_FILTER:0) |
+				(ro_gui_current_redraw_gui->option_dither_sprites?tinct_DITHER:0);
+	} else {
+		tinct_options = (option_filter_sprites?tinct_BILINEAR_FILTER:0) |
+				(option_dither_sprites?tinct_DITHER:0);
+	}
+
+        /* handle background-attachment */
+	switch (box->style->background_attachment) {
+	        case CSS_BACKGROUND_ATTACHMENT_FIXED:
+	                fixed = true;
+	                break;
+	        case CSS_BACKGROUND_ATTACHMENT_SCROLL:
+	                break;
+	        default:
+	                break;
+	}
+
+        /* handle background-repeat */
+	switch (box->style->background_repeat) {
+	        case CSS_BACKGROUND_REPEAT_REPEAT:
+	                tinct_options |= tinct_FILL_HORIZONTALLY | tinct_FILL_VERTICALLY;
+	                break;
+	        case CSS_BACKGROUND_REPEAT_REPEAT_X:
+	                tinct_options |= tinct_FILL_HORIZONTALLY;
+	                break;
+	        case CSS_BACKGROUND_REPEAT_REPEAT_Y:
+	                tinct_options |= tinct_FILL_VERTICALLY;
+	                break;
+	        case CSS_BACKGROUND_REPEAT_NO_REPEAT:
+	                x = xi;
+	                if (fixed)
+	                        /**\todo fixed background attachments */
+	                        y = yi/*-height*/;
+	                else
+	                        y = yi-height;
+	                break;
+	        default:
+	                break;
+	}
+
+	/* handle background-position */
+	switch (box->style->background_position.horz.pos) {
+	        case CSS_BACKGROUND_POSITION_PERCENT:
+	                multiplier =
+	                        box->style->background_position.horz.value.percent / 100;
+	                x += box->x + (box->width * multiplier) -
+	                        (box->background->width * multiplier);
+	                break;
+	        case CSS_BACKGROUND_POSITION_LENGTH:
+	                x += box->x + len(&box->style->background_position.horz.value.length, box->style);
+	                break;
+	        default:
+	                break;
+	}
+
+	switch (box->style->background_position.vert.pos) {
+	        case CSS_BACKGROUND_POSITION_PERCENT:
+	                multiplier =
+	                        box->style->background_position.vert.value.percent / 100;
+	                y += box->y + (box->height * multiplier) -
+	                        (box->background->height * multiplier);
+	                break;
+	        case CSS_BACKGROUND_POSITION_LENGTH:
+	                y += box->y + len(&box->style->background_position.vert.value.length, box->style);
+	                break;
+	        default:
+	                break;
+	}
+
+//        LOG(("Body [%ld, %ld], Image: [%ld, %ld], Flags: %x", xi, yi, x, y, tinct_options));
+
+        /* and plot the image */
+        switch (box->background->type) {
+#ifdef WITH_PNG
+                case CONTENT_PNG:
+                        _swix(Tinct_PlotAlpha, _INR(2,4) | _IN(7),
+                            ((char*) box->background->data.png.sprite_area + box->background->data.png.sprite_area->first), x, y, tinct_options);
+                        break;
+#endif
+#ifdef WITH_JPEG
+                case CONTENT_JPEG:
+                        _swix(Tinct_Plot, _INR(2,4) | _IN(7),
+                            ((char*) box->background->data.jpeg.sprite_area + box->background->data.jpeg.sprite_area->first), x, -y, tinct_options);
+                        break;
+#endif
+#ifdef WITH_GIF
+                case CONTENT_GIF:
+                        _swix(Tinct_PlotAlpha, _INR(2,4) | _IN(7),
+                            (char*) box->background->data.gif.gif->frame_image, x, -y, tinct_options);
+                        break;
+#endif
+        /**\todo Add draw/sprite background support? */
+                default:
+                        break;
+        }
 }

@@ -1,7 +1,6 @@
 css_unit em ex px in cm mm pt pc
 css_background_attachment inherit fixed scroll
-css_background_position inherit top center bottom left right length percent
-css_background_repeat inherit repeat repeat_x repeat_y no_repeat
+css_background_repeat inherit repeat repeat-x repeat-y no-repeat
 css_border_style inherit none hidden dotted dashed solid double groove ridge inset outset
 css_clear inherit none both left right
 css_cursor inherit auto crosshair default pointer move e-resize ne-resize nw-resize n-resize se-resize sw-resize s-resize w-resize text wait help

@@ -23,6 +23,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -33,7 +34,11 @@ static int parse_length(struct css_length * const length,
 		const struct css_node * const v, bool non_negative);
 static colour parse_colour(const struct css_node * const v);
 static void parse_background(struct css_style * const s, const struct css_node * v);
+static void parse_background_attachment(struct css_style * const s, const struct css_node * const v);
 static void parse_background_color(struct css_style * const s, const struct css_node * const v);
+static void parse_background_image(struct css_style * const s, const struct css_node * const v);
+static void parse_background_position(struct css_style * const s, const struct css_node * const v);
+static void parse_background_repeat(struct css_style * const s, const struct css_node * const v);
 static void parse_border(struct css_style * const s, const struct css_node * v);
 static void parse_border_bottom(struct css_style * const s, const struct css_node * v);
 static void parse_border_bottom_color(struct css_style * const s, const struct css_node * v);
@@ -102,7 +107,7 @@ static css_text_decoration css_text_decoration_parse(const char * const s,
 
 /** An entry in css_property_table. */
 struct css_property_entry {
-	const char name[20];
+	const char name[25];
 	void (*parse) (struct css_style * const s,
 			const struct css_node * const v);
 };
@@ -110,7 +115,11 @@ struct css_property_entry {
 /** Table of property parsers. MUST be sorted by property name. */
 static const struct css_property_entry css_property_table[] = {
 	{ "background",       parse_background },
+	{ "background-attachment", parse_background_attachment },
 	{ "background-color", parse_background_color },
+	{ "background-image", parse_background_image },
+	{ "background-position", parse_background_position },
+	{ "background-repeat", parse_background_repeat },
 	{ "border",           parse_border },
 	{ "border-bottom",    parse_border_bottom },
 	{ "border-bottom-color", parse_border_bottom_color },
@@ -481,11 +490,277 @@ void parse_background(struct css_style * const s, const struct css_node * v)
 	}
 }
 
+void parse_background_attachment(struct css_style * const s, const struct css_node * const v)
+{
+        css_background_attachment z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_background_attachment_parse(v->data, v->data_length);
+	if (z != CSS_BACKGROUND_ATTACHMENT_UNKNOWN)
+		s->background_attachment = z;
+}
+
 void parse_background_color(struct css_style * const s, const struct css_node * const v)
 {
 	colour c = parse_colour(v);
 	if (c != CSS_COLOR_NONE)
 		s->background_color = c;
+}
+
+void parse_background_image(struct css_style * const s, const struct css_node * const v)
+{
+        bool string = false;
+        const char *u;
+        char *t, *url;
+        s->background_image.uri = 0;
+
+        switch (v->type) {
+                case CSS_NODE_URI:
+                        for (u = v->data + 4;
+					*u == ' ' || *u == '\t' || *u == '\r' ||
+					*u == '\n' || *u == '\f';
+					u++)
+				;
+			if (*u == '\'' || *u == '"') {
+				string = true;
+				u++;
+			}
+			url = strndup(u, v->data_length - (u - v->data));
+			if (!url) {
+				return;
+			}
+			for (t = url + strlen(url) - 2;
+					*t == ' ' || *t == '\t' || *t == '\r' ||
+					*t == '\n' || *t == '\f';
+					t--)
+				;
+			if (string)
+				*t = 0;
+			else
+				*(t + 1) = 0;
+
+			s->background_image.uri = url_join(url, v->stylesheet->url);
+			free(url);
+			if (!s->background_image.uri) return;
+			s->background_image.type = CSS_BACKGROUND_IMAGE_URI;
+                        break;
+                case CSS_NODE_STRING:
+                        url = strndup(v->data, v->data_length);
+                        if (!url)
+                                return;
+
+                        s->background_image.uri = url_join(url, v->stylesheet->url);
+			free(url);
+			if (!s->background_image.uri) return;
+			s->background_image.type = CSS_BACKGROUND_IMAGE_URI;
+                        break;
+                case CSS_NODE_IDENT:
+                        if (v->data_length == 7 && strncasecmp(v->data, "inherit", 7) == 0)
+                                s->background_image.type = CSS_BACKGROUND_IMAGE_INHERIT;
+                        else if (v->data_length == 4 && strncasecmp(v->data, "none", 4) == 0)
+                                s->background_image.type = CSS_BACKGROUND_IMAGE_NONE;
+                        break;
+                default:
+                        break;
+        }
+}
+
+void parse_background_position(struct css_style * const s, const struct css_node * v)
+{
+        struct css_node *w = v->next;
+
+        if (!w) { /* only one value specified */
+                if (v->type == CSS_NODE_IDENT) {
+                        if (v->data_length == 3 && strncasecmp(v->data, "top", 3) == 0) {
+                                s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                                s->background_position.horz.value.percent = 50.0;
+                                s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                                s->background_position.vert.value.percent = 0.0;
+                        }
+                        else if (v->data_length == 4 && strncasecmp(v->data, "left", 4) == 0) {
+                                s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                                s->background_position.horz.value.percent = 0.0;
+                                s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                                s->background_position.vert.value.percent = 50.0;
+                        }
+                        else if (v->data_length == 6 && strncasecmp(v->data, "center", 6) == 0) {
+                                s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                                s->background_position.horz.value.percent = 50.0;
+                                s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                                s->background_position.vert.value.percent = 50.0;
+                        }
+                        else if (v->data_length == 5 && strncasecmp(v->data, "right", 5) == 0) {
+                                s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                                s->background_position.horz.value.percent = 100.0;
+                                s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                                s->background_position.vert.value.percent = 50.0;
+                        }
+                        else if (v->data_length == 6 && strncasecmp(v->data, "bottom", 6) == 0) {
+                                s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                                s->background_position.horz.value.percent = 50.0;
+                                s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                                s->background_position.vert.value.percent = 100.0;
+                        }
+                }
+                else if (v->type == CSS_NODE_PERCENTAGE) {
+                        s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.horz.value.percent = atof(v->data);
+                        s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.vert.value.percent = 50.0;
+                }
+                else if (v->type == CSS_NODE_DIMENSION) {
+
+                        if (parse_length(&s->background_position.horz.value.length, v, false) == 0) {
+                                s->background_position.horz.pos = CSS_BACKGROUND_POSITION_LENGTH;
+                                s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                                s->background_position.vert.value.percent = 50.0;
+                        }
+                }
+        }
+
+        /* two values specified */
+        if (v->type == CSS_NODE_IDENT && w->type == CSS_NODE_IDENT) {
+                /* both keywords */
+                if ((v->data_length == 3 && strncasecmp(v->data, "top", 3) == 0 && w->data_length == 4 && strncasecmp(w->data, "left", 4) == 0) ||
+                    (v->data_length == 4 && strncasecmp(v->data, "left", 4) == 0 && w->data_length == 3 && strncasecmp(w->data, "top", 3) == 0)) {
+                        /* top left / left top */
+                        s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.horz.value.percent = 0.0;
+                        s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.vert.value.percent = 0.0;
+                }
+                else if ((v->data_length == 3 && strncasecmp(v->data, "top", 3) == 0 && w->data_length == 6 && strncasecmp(w->data, "center", 6) == 0) ||
+                    (v->data_length == 6 && strncasecmp(v->data, "center", 6) == 0 && w->data_length == 3 && strncasecmp(w->data, "top", 3) == 0)) {
+                        /* top center / center top */
+                        s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.horz.value.percent = 50.0;
+                        s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.vert.value.percent = 0.0;
+                }
+                else if ((v->data_length == 3 && strncasecmp(v->data, "top", 3) == 0 && w->data_length == 5 && strncasecmp(w->data, "right", 5) == 0) ||
+                    (v->data_length == 5 && strncasecmp(v->data, "right", 5) == 0 && w->data_length == 3 && strncasecmp(w->data, "top", 3) == 0)) {
+                        /* top right / right top */
+                        s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.horz.value.percent = 100.0;
+                        s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.vert.value.percent = 0.0;
+                }
+                else if ((v->data_length == 4 && strncasecmp(v->data, "left", 4) == 0 && w->data_length == 6 && strncasecmp(w->data, "center", 6) == 0) ||
+                    (v->data_length == 6 && strncasecmp(v->data, "center", 6) == 0 && w->data_length == 4 && strncasecmp(w->data, "left", 4) == 0)) {
+                        /* left center / center left */
+                        s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.horz.value.percent = 0.0;
+                        s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.vert.value.percent = 50.0;
+                }
+                else if (v->data_length == 6 && strncasecmp(v->data, "center", 6) == 0 && w->data_length == 6 && strncasecmp(w->data, "center", 6) == 0) {
+                        /* center center */
+                        s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.horz.value.percent = 50.0;
+                        s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.vert.value.percent = 50.0;
+                }
+                else if ((v->data_length == 5 && strncasecmp(v->data, "right", 5) == 0 && w->data_length == 6 && strncasecmp(w->data, "center", 6) == 0) ||
+                    (v->data_length == 6 && strncasecmp(v->data, "center", 6) == 0 && w->data_length == 5 && strncasecmp(w->data, "right", 5) == 0)) {
+                        /* right center / center right */
+                        s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.horz.value.percent = 100.0;
+                        s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.vert.value.percent = 50.0;
+                }
+                else if ((v->data_length == 6 && strncasecmp(v->data, "bottom", 6) == 0 && w->data_length == 4 && strncasecmp(w->data, "left", 4) == 0) ||
+                    (v->data_length == 4 && strncasecmp(v->data, "left", 4) == 0 && w->data_length == 6 && strncasecmp(w->data, "bottom", 6) == 0)) {
+                        /* bottom left / left bottom */
+                        s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.horz.value.percent = 0.0;
+                        s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.vert.value.percent = 100.0;
+                }
+                else if ((v->data_length == 6 && strncasecmp(v->data, "bottom", 6) == 0 && w->data_length == 6 && strncasecmp(w->data, "center", 6) == 0) ||
+                    (v->data_length == 6 && strncasecmp(v->data, "center", 6) == 0 && w->data_length == 6 && strncasecmp(w->data, "bottom", 6) == 0)) {
+                        /* bottom center / center bottom */
+                        s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.horz.value.percent = 50.0;
+                        s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.vert.value.percent = 100.0;
+                }
+                else if ((v->data_length == 6 && strncasecmp(v->data, "bottom", 6) == 0 && w->data_length == 5 && strncasecmp(w->data, "right", 5) == 0) ||
+                    (v->data_length == 5 && strncasecmp(v->data, "right", 5) == 0 && w->data_length == 6 && strncasecmp(w->data, "bottom", 6) == 0)) {
+                        /* bottom right / right bottom */
+                        s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.horz.value.percent = 100.0;
+                        s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+                        s->background_position.vert.value.percent = 100.0;
+                }
+        }
+        else {
+        	switch (v->type) { /* horizontal value */
+	        	case CSS_NODE_IDENT:
+	                        if (v->data_length == 7 && strncasecmp(v->data, "inherit", 7) == 0)
+	                                s->background_position.horz.pos = CSS_BACKGROUND_POSITION_INHERIT;
+	                        else if (v->data_length == 4 && strncasecmp(v->data, "left", 4) == 0) {
+	                                s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+	                                s->background_position.horz.value.percent = 0.0;
+	                        }
+	                        else if (v->data_length == 5 && strncasecmp(v->data, "right", 5) == 0) {
+	                                s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+	                                s->background_position.horz.value.percent = 100.0;
+	                        }
+	                        else if (v->data_length == 6 && strncasecmp(v->data, "center", 6) == 0) {
+	                                s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+	                                s->background_position.horz.value.percent = 50.0;
+	                        }
+			        break;
+		        case CSS_NODE_PERCENTAGE:
+		                s->background_position.horz.pos = CSS_BACKGROUND_POSITION_PERCENT;
+		                s->background_position.horz.value.percent = atof(v->data);
+		                break;
+		        case CSS_NODE_DIMENSION:
+		                if (parse_length(&s->background_position.horz.value.length, v, false) == 0)
+		                        s->background_position.horz.pos = CSS_BACKGROUND_POSITION_LENGTH;
+		                break;
+		        default:
+			        break;
+		}
+		switch (w->type) { /* vertical value */
+	        	case CSS_NODE_IDENT:
+	                        if (v->data_length == 7 && strncasecmp(v->data, "inherit", 7) == 0)
+	                                s->background_position.vert.pos = CSS_BACKGROUND_POSITION_INHERIT;
+	                        else if (v->data_length == 3 && strncasecmp(v->data, "top", 3) == 0) {
+	                                s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+	                                s->background_position.vert.value.percent = 0.0;
+	                        }
+	                        else if (v->data_length == 6 && strncasecmp(v->data, "bottom", 6) == 0) {
+	                                s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+	                                s->background_position.vert.value.percent = 100.0;
+	                        }
+	                        else if (v->data_length == 6 && strncasecmp(v->data, "center", 6) == 0) {
+	                                s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+	                                s->background_position.vert.value.percent = 50.0;
+	                        }
+			        break;
+		        case CSS_NODE_PERCENTAGE:
+		                s->background_position.vert.pos = CSS_BACKGROUND_POSITION_PERCENT;
+		                s->background_position.vert.value.percent = atof(v->data);
+		                break;
+		        case CSS_NODE_DIMENSION:
+		                if (parse_length(&s->background_position.vert.value.length, v, false) == 0)
+		                        s->background_position.vert.pos = CSS_BACKGROUND_POSITION_LENGTH;
+		                break;
+		        default:
+			        break;
+		}
+	}
+}
+
+void parse_background_repeat(struct css_style * const s, const struct css_node * const v)
+{
+        css_background_repeat z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_background_repeat_parse(v->data, v->data_length);
+	if (z != CSS_BACKGROUND_REPEAT_UNKNOWN)
+		s->background_repeat = z;
 }
 
 void parse_border_width(struct css_style * const s,

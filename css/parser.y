@@ -211,7 +211,8 @@ declaration_list(A) ::= declaration(B) SEMI declaration_list(C).
 		{ if (B) { B->next = C; A = B; } else { A = C; } }
 
 declaration(A) ::= property(B) COLON value(C).
-		{ if (C && (A = css_new_node(CSS_NODE_DECLARATION,
+		{ if (C && (A = css_new_node(param->stylesheet,
+		                CSS_NODE_DECLARATION,
 				B.text, B.length)))
 			A->value = C;
 		else {
@@ -245,58 +246,71 @@ any_list_1(A) ::= any(B) any_list(C).
 		{ if (B) { B->next = C; A = B; }
 		else { css_free_node(B); css_free_node(C); A = 0; } }
 any(A) ::= IDENT(B).
-		{ A = css_new_node(CSS_NODE_IDENT, B.text, B.length);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_IDENT,
+		                   B.text, B.length);
 		if (!A) param->memory_error = true; }
 any(A) ::= NUMBER(B).
-		{ A = css_new_node(CSS_NODE_NUMBER, B.text, B.length);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_NUMBER,
+		                   B.text, B.length);
 		if (!A) param->memory_error = true; }
 any(A) ::= PERCENTAGE(B).
-		{ A = css_new_node(CSS_NODE_PERCENTAGE, B.text, B.length);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_PERCENTAGE,
+		                   B.text, B.length);
 		if (!A) param->memory_error = true; }
 any(A) ::= DIMENSION(B).
-		{ A = css_new_node(CSS_NODE_DIMENSION, B.text, B.length);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_DIMENSION,
+		                   B.text, B.length);
 		if (!A) param->memory_error = true; }
 any(A) ::= STRING(B).
-		{ A = css_new_node(CSS_NODE_STRING, B.text + 1, B.length - 2);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_STRING,
+		                   B.text + 1, B.length - 2);
 		if (!A) param->memory_error = true; }
 any(A) ::= DELIM(B).
-		{ A = css_new_node(CSS_NODE_DELIM, B.text, B.length);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_DELIM,
+		                   B.text, B.length);
 		if (!A) param->memory_error = true; }
 any(A) ::= URI(B).
-		{ A = css_new_node(CSS_NODE_URI, B.text, B.length);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_URI,
+		                   B.text, B.length);
 		if (!A) param->memory_error = true; }
 any(A) ::= HASH(B).
-		{ A = css_new_node(CSS_NODE_HASH, B.text, B.length);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_HASH,
+		                   B.text, B.length);
 		if (!A) param->memory_error = true; }
 any(A) ::= UNICODE_RANGE(B).
-		{ A = css_new_node(CSS_NODE_UNICODE_RANGE, B.text, B.length);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_UNICODE_RANGE,
+		                   B.text, B.length);
 		if (!A) param->memory_error = true; }
 any(A) ::= INCLUDES.
-		{ A = css_new_node(CSS_NODE_INCLUDES, 0, 0);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_INCLUDES,
+		                   0, 0);
 		if (!A) param->memory_error = true; }
 any(A) ::= FUNCTION(B).
-		{ A = css_new_node(CSS_NODE_FUNCTION, B.text, B.length);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_FUNCTION,
+		                   B.text, B.length);
 		if (!A) param->memory_error = true; }
 any(A) ::= DASHMATCH.
-		{ A = css_new_node(CSS_NODE_DASHMATCH, 0, 0);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_DASHMATCH,
+		                   0, 0);
 		if (!A) param->memory_error = true; }
 any(A) ::= COLON.
-		{ A = css_new_node(CSS_NODE_COLON, 0, 0);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_COLON, 0, 0);
 		if (!A) param->memory_error = true; }
 any(A) ::= COMMA.
-		{ A = css_new_node(CSS_NODE_COMMA, 0, 0);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_COMMA, 0, 0);
 		if (!A) param->memory_error = true; }
 any(A) ::= DOT.
-		{ A = css_new_node(CSS_NODE_DOT, 0, 0);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_DOT, 0, 0);
 		if (!A) param->memory_error = true; }
 any(A) ::= PLUS.
-		{ A = css_new_node(CSS_NODE_PLUS, 0, 0);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_PLUS, 0, 0);
 		if (!A) param->memory_error = true; }
 any(A) ::= GT.
-		{ A = css_new_node(CSS_NODE_GT, 0, 0);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_GT, 0, 0);
 		if (!A) param->memory_error = true; }
 any(A) ::= LPAREN any_list(B) RPAREN.
-		{ if ((A = css_new_node(CSS_NODE_PAREN, 0, 0)))
+		{ if ((A = css_new_node(param->stylesheet, CSS_NODE_PAREN,
+		                        0, 0)))
 			A->value = B;
 		else {
 			param->memory_error = true;
@@ -304,7 +318,8 @@ any(A) ::= LPAREN any_list(B) RPAREN.
 			A = 0;
 		} }
 any(A) ::= LBRAC any_list(B) RBRAC.
-		{ if ((A = css_new_node(CSS_NODE_BRAC, 0, 0)))
+		{ if ((A = css_new_node(param->stylesheet, CSS_NODE_BRAC,
+		                        0, 0)))
 			A->value = B;
 		else {
 			param->memory_error = true;
@@ -312,7 +327,8 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 			A = 0;
 		} }
 any(A) ::= ASTERISK(B).
-		{ A = css_new_node(CSS_NODE_DELIM, B.text, B.length);
+		{ A = css_new_node(param->stylesheet, CSS_NODE_DELIM,
+		                   B.text, B.length);
 		if (!A) param->memory_error = true; }
 
 

@@ -103,6 +103,11 @@ static void css_dump_selector(const struct css_selector *r);
  *  spec. */
 const struct css_style css_base_style = {
 	0xffffff,
+	CSS_BACKGROUND_ATTACHMENT_SCROLL,
+	{ CSS_BACKGROUND_IMAGE_NONE, 0 },
+	{ { CSS_BACKGROUND_POSITION_PERCENT, { 0.0 } },
+	  { CSS_BACKGROUND_POSITION_PERCENT, { 0.0 } } },
+	CSS_BACKGROUND_REPEAT_REPEAT,
 	{ { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
 	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
 	  { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
@@ -143,6 +148,11 @@ const struct css_style css_base_style = {
 /** Style with no values set. */
 const struct css_style css_empty_style = {
 	CSS_COLOR_INHERIT,
+	CSS_BACKGROUND_ATTACHMENT_INHERIT,
+	{ CSS_BACKGROUND_IMAGE_INHERIT, 0 },
+	{ { CSS_BACKGROUND_POSITION_INHERIT, { 0.0 } },
+	  { CSS_BACKGROUND_POSITION_INHERIT, { 0.0 } } },
+	CSS_BACKGROUND_REPEAT_INHERIT,
 	{ { CSS_COLOR_INHERIT, { CSS_BORDER_WIDTH_INHERIT,
 	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_INHERIT },
 	  { CSS_COLOR_INHERIT, { CSS_BORDER_WIDTH_INHERIT,
@@ -184,6 +194,11 @@ const struct css_style css_empty_style = {
  *  and the 'Initial value' otherwise. */
 const struct css_style css_blank_style = {
 	TRANSPARENT,
+	CSS_BACKGROUND_ATTACHMENT_SCROLL,
+	{ CSS_BACKGROUND_IMAGE_NONE, 0 },
+	{ { CSS_BACKGROUND_POSITION_PERCENT, { 0.0 } },
+	  { CSS_BACKGROUND_POSITION_PERCENT, { 0.0 } } },
+	CSS_BACKGROUND_REPEAT_REPEAT,
 	{ { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
 	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
 	  { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
@@ -332,8 +347,11 @@ void css_destroy(struct content *c)
 	struct css_selector *r;
 
 	for (i = 0; i != HASH_SIZE; i++) {
-		for (r = c->data.css.css->rule[i]; r != 0; r = r->next)
+		for (r = c->data.css.css->rule[i]; r != 0; r = r->next) {
+		        if (r->style->background_image.uri != NULL)
+		                free(r->style->background_image.uri);
 			free(r->style);
+		}
 		css_free_selector(c->data.css.css->rule[i]);
 	}
 	free(c->data.css.css);
@@ -361,7 +379,8 @@ void css_destroy(struct content *c)
  * Used by the parser.
  */
 
-struct css_node * css_new_node(css_node_type type,
+struct css_node * css_new_node(struct content *stylesheet,
+                css_node_type type,
 		const char *data, unsigned int data_length)
 {
 	struct css_node *node = malloc(sizeof *node);
@@ -375,6 +394,7 @@ struct css_node * css_new_node(css_node_type type,
 	node->comb = CSS_COMB_NONE;
 	node->style = 0;
 	node->specificity = 0;
+	node->stylesheet = stylesheet;
 	return node;
 }
 
@@ -976,7 +996,9 @@ void css_dump_style(const struct css_style * const style)
 	if (style->z != css_empty_style.z)				\
 		fprintf(stderr, s ": %s; ", n[style->z]);
 
+        DUMP_KEYWORD(background_attachment, "background-attachment", css_background_attachment_name);
 	DUMP_COLOR(background_color, "background-color");
+	DUMP_KEYWORD(background_repeat, "background-repeat", css_background_repeat_name);
 	DUMP_KEYWORD(clear, "clear", css_clear_name);
 	DUMP_COLOR(color, "color");
 	DUMP_KEYWORD(cursor, "cursor", css_cursor_name);
@@ -1294,9 +1316,14 @@ void css_cascade(struct css_style * const style,
 		style->text_decoration = apply->text_decoration;
 /*	if (style->display == CSS_DISPLAY_INLINE && apply->display != CSS_DISPLAY_INLINE)
 		style->text_decoration = CSS_TEXT_DECORATION_NONE;*/
-
+        if (apply->background_attachment != CSS_BACKGROUND_ATTACHMENT_INHERIT)
+                style->background_attachment = apply->background_attachment;
 	if (apply->background_color != CSS_COLOR_INHERIT)
 		style->background_color = apply->background_color;
+	if (apply->background_image.type != CSS_BACKGROUND_IMAGE_INHERIT)
+		style->background_image = apply->background_image;
+	if (apply->background_repeat != CSS_BACKGROUND_REPEAT_INHERIT)
+		style->background_repeat = apply->background_repeat;
 	if (apply->clear != CSS_CLEAR_INHERIT)
 		style->clear = apply->clear;
 	if (apply->color != CSS_COLOR_INHERIT)
@@ -1331,6 +1358,14 @@ void css_cascade(struct css_style * const style,
 		style->width = apply->width;
 	if (apply->white_space != CSS_WHITE_SPACE_INHERIT)
 		style->white_space = apply->white_space;
+
+        /* background-position */
+        if (apply->background_position.horz.pos != CSS_BACKGROUND_POSITION_INHERIT) {
+                style->background_position.horz = apply->background_position.horz;
+        }
+        if (apply->background_position.vert.pos != CSS_BACKGROUND_POSITION_INHERIT) {
+                style->background_position.vert = apply->background_position.vert;
+        }
 
 	/* font-size */
 	f = apply->font_size.value.percent / 100;
@@ -1402,8 +1437,14 @@ void css_merge(struct css_style * const style,
 {
 	unsigned int i;
 
+        if (apply->background_attachment != CSS_BACKGROUND_ATTACHMENT_INHERIT)
+                style->background_attachment = apply->background_attachment;
 	if (apply->background_color != CSS_COLOR_INHERIT)
 		style->background_color = apply->background_color;
+	if (apply->background_image.type != CSS_BACKGROUND_IMAGE_INHERIT)
+		style->background_image = apply->background_image;
+	if (apply->background_repeat != CSS_BACKGROUND_REPEAT_INHERIT)
+		style->background_repeat = apply->background_repeat;
 	if (apply->clear != CSS_CLEAR_INHERIT)
 		style->clear = apply->clear;
 	if (apply->color != CSS_COLOR_INHERIT)
@@ -1442,6 +1483,14 @@ void css_merge(struct css_style * const style,
 		style->width = apply->width;
 	if (apply->white_space != CSS_WHITE_SPACE_INHERIT)
 		style->white_space = apply->white_space;
+
+	/* background-position */
+        if (apply->background_position.horz.pos != CSS_BACKGROUND_POSITION_INHERIT) {
+                style->background_position.horz = apply->background_position.horz;
+        }
+        if (apply->background_position.vert.pos != CSS_BACKGROUND_POSITION_INHERIT) {
+                style->background_position.vert = apply->background_position.vert;
+        }
 
 	for (i = 0; i != 4; i++) {
 		if (apply->border[i].color != CSS_COLOR_INHERIT)

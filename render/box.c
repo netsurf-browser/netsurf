@@ -60,12 +60,30 @@ struct box_multi_length {
 	float value;
 };
 
+static const content_type image_types[] = {
+#ifdef WITH_JPEG
+	CONTENT_JPEG,
+#endif
+#ifdef WITH_GIF
+	CONTENT_GIF,
+#endif
+#ifdef WITH_PNG
+	CONTENT_PNG,
+#endif
+#ifdef WITH_SPRITE
+	CONTENT_SPRITE,
+#endif
+#ifdef WITH_DRAW
+	CONTENT_DRAW,
+#endif
+	CONTENT_UNKNOWN };
 
 static struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		struct css_style * parent_style,
 		struct box * parent, struct box *inline_container,
 		struct box_status status);
-static struct css_style * box_get_style(struct content ** stylesheet,
+static struct css_style * box_get_style(struct content *c,
+                struct content ** stylesheet,
 		unsigned int stylesheet_count, struct css_style * parent_style,
 		xmlNode * n);
 static void box_text_transform(char *s, unsigned int len,
@@ -195,6 +213,7 @@ struct box * box_create(struct css_style * style,
 	box->font = 0;
 	box->gadget = 0;
 	box->usemap = 0;
+	box->background = 0;
 	box->object = 0;
 	box->object_params = 0;
 	box->object_state = 0;
@@ -312,7 +331,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 
 		gui_multitask();
 
-		style = box_get_style(content->data.html.stylesheet_content,
+		style = box_get_style(content, content->data.html.stylesheet_content,
 				content->data.html.stylesheet_count, parent_style, n);
 		LOG(("display: %s", css_display_name[style->display]));
 		if (style->display == CSS_DISPLAY_NONE) {
@@ -551,6 +570,17 @@ end:
 	if (!href_in)
 		xmlFree(status.href);
 
+	/* Now fetch any background image for this box */
+	if (box && box->style &&
+	    box->style->background_image.type == CSS_BACKGROUND_IMAGE_URI) {
+                /* start fetch */
+                html_fetch_object(content, box->style->background_image.uri,
+                                  box,
+                                  image_types,
+                                  content->available_width,
+                                  1000);
+        }
+
 	LOG(("node %p, node type %i END", n, n->type));
 	return inline_container;
 }
@@ -565,7 +595,8 @@ end:
  *  3. the 'style' attribute
  */
 
-struct css_style * box_get_style(struct content ** stylesheet,
+struct css_style * box_get_style(struct content *c,
+                struct content ** stylesheet,
 		unsigned int stylesheet_count, struct css_style * parent_style,
 		xmlNode * n)
 {
@@ -583,6 +614,19 @@ struct css_style * box_get_style(struct content ** stylesheet,
 		}
 	}
 	css_cascade(style, &style_new);
+
+	/* This property only applies to the body element, if you believe
+	   the spec. Many browsers seem to allow it on other elements too,
+	   so let's be generic ;)
+	 */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "background"))) {
+	        style->background_image.type = CSS_BACKGROUND_IMAGE_URI;
+	        /**\todo This will leak memory. */
+                style->background_image.uri = url_join(s, c->data.html.base_url);
+                if (!style->background_image.uri)
+                        style->background_image.type = CSS_BACKGROUND_IMAGE_NONE;
+                xmlFree(s);
+	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bgcolor"))) {
 		unsigned int r, g, b;
@@ -747,7 +791,6 @@ void box_text_transform(char *s, unsigned int len,
  * have been processed in some way by the function). If box is 0, no box will
  * be created for that element, and convert_children must be 0.
  */
-
 struct box_result box_a(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
@@ -765,8 +808,9 @@ struct box_result box_body(xmlNode *n, struct box_status *status,
 {
 	struct box *box;
 	status->content->data.html.background_colour = style->background_color;
-	box = box_create(style, status->href, status->title,
+        box = box_create(style, status->href, status->title,
 			status->content->data.html.box_pool);
+
 	return (struct box_result) {box, true, false};
 }
 
@@ -779,24 +823,6 @@ struct box_result box_br(xmlNode *n, struct box_status *status,
 	box->type = BOX_BR;
 	return (struct box_result) {box, false, false};
 }
-
-static const content_type image_types[] = {
-#ifdef WITH_JPEG
-	CONTENT_JPEG,
-#endif
-#ifdef WITH_GIF
-	CONTENT_GIF,
-#endif
-#ifdef WITH_PNG
-	CONTENT_PNG,
-#endif
-#ifdef WITH_SPRITE
-	CONTENT_SPRITE,
-#endif
-#ifdef WITH_DRAW
-	CONTENT_DRAW,
-#endif
-	CONTENT_UNKNOWN };
 
 struct box_result box_image(xmlNode *n, struct box_status *status,
 		struct css_style *style)

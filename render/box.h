@@ -77,6 +77,7 @@
 #include <stdbool.h>
 #include "libxml/HTMLparser.h"
 #include "netsurf/utils/config.h"
+#include "netsurf/content/content_type.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/font.h"
 #include "netsurf/utils/pool.h"
@@ -188,6 +189,9 @@ struct box {
 	struct form_control* gadget;
 
         char *usemap; /** (Image)map to use with this object, or 0 if none */
+
+        /** Background image for this box, or 0 if none */
+        struct content *background;
 
 	/** Object in this box (usually an image), or 0 if none. */
 	struct content* object;
