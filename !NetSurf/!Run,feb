@@ -1,5 +1,8 @@
 <Obey$Dir>.!Boot
 
+| Can't run more than one copy of NetSurf at once.
+If "<NetSurf$Running>" = "yes" Then Error NetSurf is already running
+
 | We need RISC OS  3
 RMEnsure UtilityModule 3.00 Error NetSurf needs RISC OS 3 or later
 
@@ -42,4 +45,6 @@ RMEnsure Tinct 0.03 RMLoad <NetSurf$Dir>.Resources.Tinct
 RMEnsure Tinct 0.02 Error NetSurf requires Tinct 0.02 or later
 
 Wimpslot -min 2100k -max 2100k
+Set NetSurf$Running yes
 Run <NetSurf$Dir>.!RunImage 2><NetSurf$Dir>.stderr
+UnSet NetSurf$Running
