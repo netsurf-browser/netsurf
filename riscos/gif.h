@@ -3,56 +3,26 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Philip Pemberton <philpem@users.sourceforge.net>
- * Copyright 2004 Richard Wilson <not_ginger_matt@hotmail.com>
+ * Copyright 2004 Richard Wilson <not_ginger_matt@sourceforge.net>
  */
 
 #ifndef _NETSURF_RISCOS_GIF_H_
 #define _NETSURF_RISCOS_GIF_H_
 
 #include "oslib/osspriteop.h"
+#include "netsurf/riscos/gifread.h"
 
 struct content;
 
 struct content_gif_data {
-	unsigned long buffer_pos;
 
-        /*	The sprite area containing the 8bpp frames.
+        /*	The GIF data
 	*/
-	osspriteop_area *sprite_area;
-
-	/*	The sprite header of the current 32bpp image.
-	*/
-	osspriteop_header *buffer_header;
+	struct gif_animation *gif;
 
 	/**	The current frame number of the GIF to display, [0...(max-1)]
 	*/
 	unsigned int current_frame;
-
-	/**	The current frame that we hold a 32bpp version of [0...(max-1)]
-	*/
-	unsigned int expanded_frame;
-
-	/**	Whether the GIF should be animated
-	*/
-	bool animate_gif;
-
-	/**	Whether the GIF should loop
-	*/
-	bool loop_gif;
-
-	/**	The number of cs unprocessed as the next transition has
-		not yet occurred.
-	*/
-	unsigned int remainder_time;
-
-	/**	The total number of frames
-	*/
-	unsigned int total_frames;
-
-	/**	An array of times (in cs) for the frame transitions between each frame
-	*/
-	unsigned int *frame_transitions;
-
 };
 
 void nsgif_init(void);

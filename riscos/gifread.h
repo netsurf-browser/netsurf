@@ -12,11 +12,11 @@
 
 /*	Error return values
 */
-#define GIF_INSUFFICIENT_DATA -1
-#define GIF_DATA_ERROR -2
-#define GIF_INSUFFICIENT_MEMORY -3
-#define GIF_INSUFFICIENT_FRAME_DATA -4
-#define GIF_FRAME_DATA_ERROR -5
+#define GIF_INSUFFICIENT_FRAME_DATA -1
+#define GIF_FRAME_DATA_ERROR -2
+#define GIF_INSUFFICIENT_DATA -3
+#define GIF_DATA_ERROR -4
+#define GIF_INSUFFICIENT_MEMORY -5
 
 /*	Colour map size constant. Because we don't want to allocate
 	memory each time we decode a frame we get enough so all frames
@@ -30,7 +30,7 @@
 
 /*	A simple hold-all for our GIF data
 */
-struct gif_animation {
+typedef struct gif_animation {
 	/*	Encoded GIF data
 	*/
 	unsigned char *gif_data;
@@ -46,7 +46,6 @@ struct gif_animation {
 
 	/*	Animation data
 	*/
-	unsigned int current_frame;
 	unsigned int decoded_frame;
 	unsigned int loop_count;
 	unsigned int *frame_delays;
@@ -64,18 +63,18 @@ struct gif_animation {
 
 	/*	Decoded frame data
 	*/
-	unsigned int frame_offset_x;
-	unsigned int frame_offset_y;
-	unsigned int frame_width;
-	unsigned int frame_height;
+//	unsigned int frame_offset_x;
+//	unsigned int frame_offset_y;
+//	unsigned int frame_width;
+//	unsigned int frame_height;
 	unsigned int background_action;
 	osspriteop_header *frame_image;
-};
+} gif_animation;
 
 /*	Function declarations
 */
 int gif_initialise(struct gif_animation *gif);
-int gif_decode_frame(struct gif_animation *gif, int frame);
+int gif_decode_frame(struct gif_animation *gif, unsigned int frame);
 void gif_finalise(struct gif_animation *gif);
 
 #endif
