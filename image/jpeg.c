@@ -122,7 +122,12 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 			scanlines[0][i * 4 + 2] = b;
 			scanlines[0][i * 4 + 3] = 0xff;
 		}
-
+#else
+		/* make fully opaque for alpha plotting
+		 * (is there a better way?) */
+		for (int i = width - 1; 0 <= i; i--) {
+			scanlines[0][i * 4 + 3] = 0xff;
+		}
 #endif
 	} while (cinfo.output_scanline != cinfo.output_height);
 

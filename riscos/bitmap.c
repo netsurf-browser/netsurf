@@ -18,14 +18,10 @@
 #include "oslib/osspriteop.h"
 #include "netsurf/content/content.h"
 #include "netsurf/image/bitmap.h"
+#include "netsurf/riscos/bitmap.h"
 #include "netsurf/riscos/image.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
-
-
-struct bitmap {
-	osspriteop_area sprite_area;
-};
 
 
 /**

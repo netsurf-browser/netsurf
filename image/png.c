@@ -11,13 +11,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include "libpng/png.h"
-#include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/image.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/png.h"
+#include "netsurf/image/bitmap.h"
+#include "netsurf/image/png.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -35,7 +32,6 @@ bool nspng_create(struct content *c, const char *params[])
 {
 	union content_msg_data msg_data;
 
-	c->data.png.sprite_area = 0;
 	c->data.png.png = png_create_read_struct(PNG_LIBPNG_VER_STRING,
 			0, 0, 0);
 	if (!c->data.png.png) {
@@ -105,11 +101,10 @@ void info_callback(png_structp png, png_infop info)
 {
 	int bit_depth, color_type, interlace, intent;
 	double gamma;
-	unsigned int rowbytes, sprite_size;
+	unsigned int rowbytes;
 	unsigned long width, height;
 	struct content *c = png_get_progressive_ptr(png);
-	osspriteop_area *sprite_area;
-	osspriteop_header *sprite;
+	union content_msg_data msg_data;
 
 	/*	Read the PNG details
 	*/
@@ -118,32 +113,13 @@ void info_callback(png_structp png, png_infop info)
 
 	/*	Claim the required memory for the converted PNG
 	*/
-	sprite_size = sizeof(*sprite_area) + sizeof(*sprite) + (height * width * 4);
-	sprite_area = xcalloc(sprite_size, 1);
-
-	/*	Fill in the sprite area header information
-	*/
-	sprite_area->size = sprite_size;
-	sprite_area->sprite_count = 1;
-	sprite_area->first = sizeof(*sprite_area);
-	sprite_area->used = sprite_size;
-
-	/*	Fill in the sprite header information
-	*/
-	sprite = (osspriteop_header *) (sprite_area + 1);
-	sprite->size = sprite_size - sizeof(*sprite_area);
-	memset(sprite->name, 0x00, 12);
-	strcpy(sprite->name, "png");
-	sprite->width = width - 1;
-	sprite->height = height - 1;
-	sprite->left_bit = 0;
-	sprite->right_bit = 31;
-	sprite->mask = sprite->image = sizeof(*sprite);
-	sprite->mode = (os_mode) 0x301680b5;
-
-	/*	Store the sprite area
-	*/
-	c->data.png.sprite_area = sprite_area;
+	c->bitmap = bitmap_create(width, height);
+	if (!c->bitmap) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		LOG(("Insufficient memory to create canvas."));
+		return;
+	}
 
 	/*	Set up our transformations
 	*/
@@ -178,7 +154,6 @@ void info_callback(png_structp png, png_infop info)
 
 	c->data.png.rowbytes = rowbytes = png_get_rowbytes(png, info);
 	c->data.png.interlace = (interlace == PNG_INTERLACE_ADAM7);
-	c->data.png.sprite_image = ((char *) sprite) + sprite->image;
 	c->width = width;
 	c->height = height;
 
@@ -198,7 +173,8 @@ void row_callback(png_structp png, png_bytep new_row,
 	struct content *c = png_get_progressive_ptr(png);
 	unsigned long i, j, rowbytes = c->data.png.rowbytes;
 	unsigned int start, step;
-	char *row = c->data.png.sprite_image + row_num * (c->width * 4);
+	char *row = bitmap_get_buffer(c->bitmap) +
+			bitmap_get_rowstride(c->bitmap) * row_num;
 
 	/*	Abort if we've not got any data
 	*/
@@ -215,7 +191,8 @@ void row_callback(png_structp png, png_bytep new_row,
 
 		/*	Copy the data to our current row taking into consideration interlacing
 		*/
-		row = c->data.png.sprite_image + row_num * (c->width * 4);
+		row = bitmap_get_buffer(c->bitmap) +
+				bitmap_get_rowstride(c->bitmap) * row_num;
 		for (j = 0, i = start; i < rowbytes; i += step) {
 			row[i++] = new_row[j++];
 			row[i++] = new_row[j++];
@@ -262,17 +239,7 @@ bool nspng_convert(struct content *c, int width, int height)
 void nspng_destroy(struct content *c)
 {
 	free(c->title);
-	free(c->data.png.sprite_area);
-}
-
-
-bool nspng_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour)
-{
-	return image_redraw(c->data.png.sprite_area, x, y, width, height,
-			c->width * 2, c->height * 2, background_colour,
-			false, false, IMAGE_PLOT_TINCT_ALPHA);
+	if (c->bitmap)
+		bitmap_destroy(c->bitmap);
 }
 #endif

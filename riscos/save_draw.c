@@ -25,6 +25,7 @@
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/layout.h"
+#include "netsurf/riscos/bitmap.h"
 #include "netsurf/riscos/save_draw.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
@@ -595,7 +596,9 @@ static bool add_box(struct box *box, colour cbc, int x, int y)
 
 	if (box->object) {
 		switch (box->object->type) {
+#ifdef WITH_JPEG
 			case CONTENT_JPEG:
+#endif
 #ifdef WITH_PNG
 			case CONTENT_PNG:
 #endif
@@ -603,7 +606,9 @@ static bool add_box(struct box *box, colour cbc, int x, int y)
 			case CONTENT_JNG:
 			case CONTENT_MNG:
 #endif
+#ifdef WITH_GIF
 			case CONTENT_GIF:
+#endif
 #ifdef WITH_SPRITE
 			case CONTENT_SPRITE:
 #endif
@@ -702,24 +707,27 @@ static bool add_graphic(struct content *content, struct box *box,
 
 	/* cast-tastic... */
 	switch (content->type) {
+#ifdef WITH_JPEG
 		case CONTENT_JPEG:
-			return true;
-			/*sprite_length = ((osspriteop_header*)((char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first))->size;*/
+			sprite_length = ((osspriteop_header*)((char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first))->size;
 			break;
+#endif
 #ifdef WITH_PNG
 		case CONTENT_PNG:
-			/*sprite_length = ((osspriteop_header*)((char*)content->data.png.sprite_area+content->data.png.sprite_area->first))->size;*/
+			sprite_length = ((osspriteop_header*)((char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first))->size;
 			break;
 #endif
 #ifdef WITH_MNG
 		case CONTENT_JNG:
 		case CONTENT_MNG:
-			/*sprite_length = ((osspriteop_header*)((char*)content->data.mng.sprite_area+content->data.mng.sprite_area->first))->size;*/
+			sprite_length = ((osspriteop_header*)((char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first))->size;
 			break;
 #endif
+#ifdef WITH_GIF
 		case CONTENT_GIF:
 			sprite_length = ((osspriteop_header*)((char*)content->data.gif.gif->frame_image+content->data.gif.gif->frame_image->first))->size;
 			break;
+#endif
 #ifdef WITH_SPRITE
 		case CONTENT_SPRITE:
 			sprite_length = ((osspriteop_header*)((char*)content->data.sprite.data+(((osspriteop_area*)content->data.sprite.data)->first)))->size;
@@ -742,23 +750,27 @@ static bool add_graphic(struct content *content, struct box *box,
 	ds->bbox.y1 = y;
 
 	switch (content->type) {
+#ifdef WITH_JPEG
 		case CONTENT_JPEG:
-			/*memcpy((char*)ds+16, (char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first, (unsigned)sprite_length);*/
+			memcpy((char*)ds+16, (char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first, (unsigned)sprite_length);
 			break;
+#endif
 #ifdef WITH_PNG
 		case CONTENT_PNG:
-			/*memcpy((char*)ds+16, (char*)content->data.png.sprite_area+content->data.png.sprite_area->first, (unsigned)sprite_length);*/
+			memcpy((char*)ds+16, (char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first, (unsigned)sprite_length);
 			break;
 #endif
 #ifdef WITH_MNG
 		case CONTENT_JNG:
 		case CONTENT_MNG:
-			/*memcpy((char*)ds+16, (char*)content->data.mng.sprite_area+content->data.mng.sprite_area->first, (unsigned)sprite_length);*/
+			memcpy((char*)ds+16, (char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first, (unsigned)sprite_length);
 			break;
 #endif
+#ifdef WITH_GIF
 		case CONTENT_GIF:
 			memcpy((char*)ds+16, (char*)content->data.gif.gif->frame_image+content->data.gif.gif->frame_image->first, (unsigned)sprite_length);
 			break;
+#endif
 #ifdef WITH_SPRITE
 		case CONTENT_SPRITE:
 			memcpy((char*)ds+16, (char*)content->data.sprite.data+((osspriteop_area*)content->data.sprite.data)->first, (unsigned)sprite_length);

@@ -25,6 +25,7 @@
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
+#include "netsurf/riscos/bitmap.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/image.h"
 #include "netsurf/riscos/options.h"
@@ -1010,38 +1011,38 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 	/* and plot the image */
 	switch (box->background->type) {
 #ifdef WITH_PNG
-		case CONTENT_PNG:/*
-			image_redraw(box->background->data.png.sprite_area,
+		case CONTENT_PNG:
+			image_redraw(&box->background->bitmap->sprite_area,
 					x, y, image_width, image_height,
 					box->background->width * 2,
 					box->background->height * 2,
 					background_colour,
 					repeat_x, repeat_y,
-                   IMAGE_PLOT_TINCT_ALPHA);*/
+					IMAGE_PLOT_TINCT_ALPHA);
                    break;
 #endif
 #ifdef WITH_MNG
 		case CONTENT_JNG:
 		case CONTENT_MNG:
-			/*image_redraw(box->background->data.mng.sprite_area,
+			image_redraw(&box->background->bitmap->sprite_area,
 					x, y, image_width, image_height,
 					box->background->width * 2,
 					box->background->height * 2,
 					background_colour,
 					repeat_x, repeat_y,
-                   IMAGE_PLOT_TINCT_ALPHA);*/
+					IMAGE_PLOT_TINCT_ALPHA);
 			break;
 #endif
 #ifdef WITH_JPEG
-		case CONTENT_JPEG:/*
-			image_redraw(box->background->data.jpeg.sprite_area,
+		case CONTENT_JPEG:
+			image_redraw(&box->background->bitmap->sprite_area,
 					x, y, image_width, image_height,
 					box->background->width * 2,
 					box->background->height * 2,
 					background_colour,
 					repeat_x, repeat_y,
 					IMAGE_PLOT_TINCT_OPAQUE);
-			*/break;
+			break;
 #endif
 #ifdef WITH_GIF
 		case CONTENT_GIF:
