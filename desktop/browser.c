@@ -192,11 +192,20 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	}
 	if (hash) {
 		bw->frag_id = strdup(hash+1);
+		/* if we're simply moving to another ID on the same page,
+		 * don't bother to fetch, just update the window
+		 */
+		if (strncasecmp(bw->current_content->url,
+						url2, hash - url2) == 0) {
+			free(url2);
+			browser_window_update(bw, false);
+			return;
+		}
 	}
 
-  	url_content = url_store_find(url2);
-  	if (url_content)
-  		url_content->visits++;
+	url_content = url_store_find(url2);
+	if (url_content)
+		url_content->visits++;
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
