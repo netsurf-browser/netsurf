@@ -5,6 +5,72 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * CSS handling (implementation).
+ *
+ * See CSS 2.1 chapter 5 for the terms used here.
+ *
+ * CSS style sheets are stored as a hash table mapping selectors to styles.
+ * Selectors are hashed by the <em>type selector</em> of the last <em>simple
+ * selector</em> in the selector. The <em>universal selector</em> is hashed to
+ * chain 0.
+ *
+ * A <em>simple selector</em> is a struct css_selector with type
+ * CSS_SELECTOR_ELEMENT. The data field is the <em>type selector</em>, or 0 for
+ * the <em>universal selector</em>. Any <em>attribute selectors</em>, <em>ID
+ * selectors</em>, or <em>pseudo-classes</em> form a linked list of
+ * css_selector hanging from detail.
+ *
+ * A <em>selector</em> is a linked list by the combiner field of these simple
+ * selectors, in reverse order that they appear in the concrete syntax. The last
+ * simple selector is first, then the previous one is linked at combiner and has
+ * relationship comb to the last, etc.
+ *
+ * Selectors are then linked in each hash chain by next, in order of increasing
+ * specificity.
+ *
+ * As an example, the stylesheet
+ * \code
+ *   th { [1] }
+ *   div#id1 > h4.class1 { [2] }
+ *   center * { [3] }                                                  \endcode
+ *
+ * would result in a struct css_stylesheet (content::data.css.css) like this
+ * \dot
+ *   digraph example {
+ *     node [shape=record, fontname=Helvetica, fontsize=9];
+ *     edge [fontname=Helvetica, fontsize=9];
+ *     css -> n0 [label="rule[0]"];
+ *     css -> n2 [label="rule[29]"];
+ *
+ *     n0 [label="css_selector\ntype CSS_SELECTOR_ELEMENT\ldata 0\lcomb CSS_COMB_ANCESTOR\lspecificity 2\l"];
+ *     n0 -> n1 [label="combiner"];
+ *     n0 -> n0style [label="style"]; n0style [label="[3]"];
+ *
+ *     n1 [label="css_selector\ntype CSS_SELECTOR_ELEMENT\ldata \"center\"\lcomb CSS_COMB_NONE\lspecificity 1\l"];
+ *
+ *     n2 [label="css_selector\ntype CSS_SELECTOR_ELEMENT\ldata \"th\"\lcomb CSS_COMB_NONE\lspecificity 1\l"];
+ *     n2 -> n3 [label="next"];
+ *     n2 -> n2style [label="style"]; n2style [label="[1]"];
+ *
+ *     n3 [label="css_selector\ntype CSS_SELECTOR_ELEMENT\ldata \"h4\"\lcomb CSS_COMB_PARENT\lspecificity 0x10102\l"];
+ *     n3 -> n4 [label="detail"];
+ *     n3 -> n5 [label="combiner"];
+ *     n3 -> n3style [label="style"]; n3style [label="[2]"];
+ *
+ *     n4 [label="css_selector\ntype CSS_SELECTOR_CLASS\ldata \"class1\"\lcomb CSS_COMB_NONE\lspecificity 0x100\l"];
+ *
+ *     n5 [label="css_selector\ntype CSS_SELECTOR_ELEMENT\ldata \"div\"\lcomb CSS_COMB_NONE\lspecificity 0x10001\l"];
+ *     n5 -> n6 [label="detail"];
+ *
+ *     n6 [label="css_selector\ntype CSS_SELECTOR_ID\ldata \"#id1\"\lcomb CSS_COMB_NONE\lspecificity 0x10000\l"];
+ *   }
+ * \enddot
+ *
+ * (any fields not shown are 0). In this example the first two rules happen to
+ * have hashed to the same value.
+ */
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,19 +90,17 @@
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
-/**
- * internal structures
- */
-
-struct decl {
-	unsigned long score;
-	struct rule * rule;
-};
 
 static void css_atimport_callback(content_msg msg, struct content *css,
 		void *p1, void *p2, const char *error);
-static bool css_match_rule(struct css_node *rule, xmlNode *element);
+static bool css_match_rule(struct css_selector *rule, xmlNode *element);
+static bool css_match_detail(const struct css_selector *detail,
+		xmlNode *element);
+static void css_dump_length(const struct css_length * const length);
+static void css_dump_selector(const struct css_selector *r);
 
+/** Default style for a document. These are the 'Initial values' from the
+ *  spec. */
 const struct css_style css_base_style = {
 	0xffffff,
 	{ { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
@@ -76,6 +140,7 @@ const struct css_style css_base_style = {
 	CSS_WHITE_SPACE_NORMAL
 };
 
+/** Style with no values set. */
 const struct css_style css_empty_style = {
 	CSS_COLOR_INHERIT,
 	{ { CSS_COLOR_INHERIT, { CSS_BORDER_WIDTH_INHERIT,
@@ -115,6 +180,8 @@ const struct css_style css_empty_style = {
 	CSS_WHITE_SPACE_INHERIT
 };
 
+/** Default style for an element. These should be INHERIT if 'Inherited' is yes,
+ *  and the 'Initial value' otherwise. */
 const struct css_style css_blank_style = {
 	TRANSPARENT,
 	{ { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
@@ -155,27 +222,27 @@ const struct css_style css_blank_style = {
 };
 
 
+/**
+ * Convert a CONTENT_CSS for use.
+ */
 
 int css_convert(struct content *c, unsigned int width, unsigned int height)
 {
-	char *source_data;
+	unsigned char *source_data;
+	unsigned char *current, *end, *token_text;
 	unsigned int i;
 	int token;
-	int error;
 	void *parser;
-	struct parse_params param = {0, c, 0, false};
-	yyscan_t lexer;
-	YY_BUFFER_STATE buffer;
+	struct css_parser_params param = {false, c, 0, false, false};
+	struct css_parser_token token_data;
 
 	c->data.css.css = malloc(sizeof *c->data.css.css);
 	parser = css_parser_Alloc(malloc);
-	error = css_lex_init(&lexer);
-	source_data = realloc(c->source_data, c->source_size + 2);
+	source_data = realloc(c->source_data, c->source_size + 10);
 
-	if (!c->data.css.css || !parser || error || !source_data) {
+	if (!c->data.css.css || !parser || !source_data) {
 		free(c->data.css.css);
-		free(parser);
-		css_lex_destroy(lexer);
+		css_parser_Free(parser, free);
 		return 1;
 	}
 
@@ -187,27 +254,33 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 	c->active = 0;
 	c->source_data = source_data;
 
-	source_data[c->source_size] = 0;
-	source_data[c->source_size + 1] = 0;
-	/** \todo  handle errors from the lexer (YY_FATAL_ERROR etc.) */
-	buffer = css__scan_buffer(source_data, c->source_size + 2, lexer);
-	assert(buffer);
-	while ((token = css_lex(lexer))) {
-		css_parser_(parser, token,
-				xstrdup(css_get_text(lexer)),
-				&param);
+	for (i = 0; i != 10; i++)
+		source_data[c->source_size + i] = 0;
+
+	current = source_data;
+	end = source_data + c->source_size;
+	while (current < end && (token = css_tokenise(&current, end + 10,
+			&token_text))) {
+		token_data.text = token_text;
+		token_data.length = current - token_text;
+		printf("%i \"%.*s\"\n", token, token_data.length,
+				token_data.text);
+		css_parser_(parser, token, token_data, &param);
 		if (param.syntax_error) {
-			int line = css_get_lineno(lexer);
-			LOG(("syntax error near line %i", line));
+			LOG(("syntax error near offset %i",
+					token_text - source_data));
 			param.syntax_error = false;
+		} else if (param.memory_error) {
+			LOG(("out of memory"));
+			break;
 		}
 	}
-	css__delete_buffer(buffer, lexer);
 
-	css_parser_(parser, 0, 0, &param);
+	css_parser_(parser, 0, token_data, &param);
 	css_parser_Free(parser, free);
 
-	css_lex_destroy(lexer);
+	if (param.memory_error)
+		return 1;
 
 	/*css_dump_stylesheet(c->data.css.css);*/
 
@@ -251,17 +324,21 @@ void css_revive(struct content *c, unsigned int width, unsigned int height)
 }
 
 
+/**
+ * Destroy a CONTENT_CSS and free all resources it owns.
+ */
+
 void css_destroy(struct content *c)
 {
 	unsigned int i;
-	struct css_node *r;
+	struct css_selector *r;
 
 	for (i = 0; i != HASH_SIZE; i++) {
 		for (r = c->data.css.css->rule[i]; r != 0; r = r->next)
-			xfree(r->style);
-		css_free_node(c->data.css.css->rule[i]);
+			free(r->style);
+		css_free_selector(c->data.css.css->rule[i]);
 	}
-	xfree(c->data.css.css);
+	free(c->data.css.css);
 
 	/* imported stylesheets */
 	for (i = 0; i != c->data.css.import_count; i++)
@@ -270,24 +347,32 @@ void css_destroy(struct content *c)
 			content_remove_user(c->data.css.import_content[i],
 					css_atimport_callback, c, (void*)i);
 		}
-	xfree(c->data.css.import_url);
-	xfree(c->data.css.import_content);
+	free(c->data.css.import_url);
+	free(c->data.css.import_content);
 }
 
 
 /**
- * parser support functions
+ * Create a new struct css_node.
+ *
+ * \param  type  type of node
+ * \param  data  string for data, not copied
+ * \param  data_length  length of data
+ * \return  allocated node, or 0 if memory exhausted
+ *
+ * Used by the parser.
  */
 
-struct css_node * css_new_node(css_node_type type, char *data,
-		struct css_node *left, struct css_node *right)
+struct css_node * css_new_node(css_node_type type,
+		const char *data, unsigned int data_length)
 {
-	struct css_node *node = xcalloc(1, sizeof(*node));
+	struct css_node *node = malloc(sizeof *node);
+	if (!node)
+		return 0;
 	node->type = type;
 	node->data = data;
-	node->data2 = 0;
-	node->left = left;
-	node->right = right;
+	node->data_length = data_length;
+	node->value = 0;
 	node->next = 0;
 	node->comb = CSS_COMB_NONE;
 	node->style = 0;
@@ -295,65 +380,144 @@ struct css_node * css_new_node(css_node_type type, char *data,
 	return node;
 }
 
+
+/**
+ * Free a struct css_node recursively.
+ *
+ * \param  node  css_node to free
+ *
+ * Used by the parser.
+ */
+
 void css_free_node(struct css_node *node)
 {
-	if (node == 0)
+	if (!node)
 		return;
-	if (node->left != 0)
-		css_free_node(node->left);
-	if (node->right != 0)
-		css_free_node(node->right);
-	if (node->next != 0)
+	if (node->value)
+		css_free_node(node->value);
+	if (node->next)
 		css_free_node(node->next);
-	if (node->data != 0)
-		free(node->data);
 	free(node);
 }
 
-char *css_unquote(char *s)
+
+/**
+ * Create a new struct css_selector.
+ *
+ * \param  type  type of selector
+ * \param  data  string for data, not copied
+ * \param  data_length  length of data
+ * \return  allocated selector, or 0 if memory exhausted
+ */
+
+struct css_selector * css_new_selector(css_selector_type type,
+		const char *data, unsigned int data_length)
 {
-	unsigned int len = strlen(s);
-	memmove(s, s + 1, len);
-	s[len - 2] = 0;
-	return s;
+	struct css_selector *node = malloc(sizeof *node);
+	if (!node)
+		return 0;
+	node->type = type;
+	node->data = data;
+	node->data_length = data_length;
+	node->data2 = 0;
+	node->detail = 0;
+	node->combiner = 0;
+	node->next = 0;
+	node->comb = CSS_COMB_NONE;
+	node->style = 0;
+	node->specificity = 0;
+	return node;
 }
 
 
+/**
+ * Free a struct css_selector recursively.
+ *
+ * \param  node  css_selector to free
+ */
+
+void css_free_selector(struct css_selector *node)
+{
+	if (!node)
+		return;
+	if (node->detail)
+		css_free_selector(node->detail);
+	if (node->combiner)
+		css_free_selector(node->combiner);
+	if (node->next)
+		css_free_selector(node->next);
+	free(node);
+}
+
+
+/**
+ * Process an @import rule.
+ */
+
 void css_atimport(struct content *c, struct css_node *node)
 {
-	char *s, *url, *url1;
-	int string = 0, screen = 1;
+	const char *s;
+	char *t, *url, *url1;
+	bool string = false, screen = true;
 	unsigned int i;
+	char **import_url;
+	struct content **import_content;
 
 	LOG(("@import rule"));
+
+	import_url = realloc(c->data.css.import_url,
+			(c->data.css.import_count + 1) *
+			sizeof(*c->data.css.import_url));
+	if (!import_url) {
+		/** \todo report to user */
+		return;
+	}
+	c->data.css.import_url = import_url;
+
+	import_content = realloc(c->data.css.import_content,
+			(c->data.css.import_count + 1) *
+			sizeof(*c->data.css.import_content));
+	if (!import_content)  {
+		/** \todo report to user */
+		return;
+	}
+	c->data.css.import_content = import_content;
 
 	/* uri(...) or "..." */
 	switch (node->type) {
 		case CSS_NODE_URI:
-			LOG(("URI '%s'", node->data));
+			LOG(("URI '%.*s'", node->data_length, node->data));
 			for (s = node->data + 4;
 					*s == ' ' || *s == '\t' || *s == '\r' ||
 					*s == '\n' || *s == '\f';
 					s++)
 				;
 			if (*s == '\'' || *s == '"') {
-				string = 1;
+				string = true;
 				s++;
 			}
-			url = xstrdup(s);
-			for (s = url + strlen(url) - 2;
-					*s == ' ' || *s == '\t' || *s == '\r' ||
-					*s == '\n' || *s == '\f';
-					s--)
+			url = strndup(s, node->data_length - (s - node->data));
+			if (!url) {
+				/** \todo report to user */
+				return;
+			}
+			for (t = url + strlen(url) - 2;
+					*t == ' ' || *t == '\t' || *t == '\r' ||
+					*t == '\n' || *t == '\f';
+					t--)
 				;
 			if (string)
-				*s = 0;
+				*t = 0;
 			else
-				*(s + 1) = 0;
+				*(t + 1) = 0;
 			break;
 		case CSS_NODE_STRING:
-			LOG(("STRING '%s'", node->data));
-			url = xstrdup(node->data);
+			LOG(("STRING '%.*s'", node->data_length, node->data));
+			url = strndup(node->data, node->data_length);
+			if (!url) {
+				/** \todo report to user */
+				return;
+			}
 			break;
 		default:
 			return;
@@ -361,14 +525,17 @@ void css_atimport(struct content *c, struct css_node *node)
 
 	/* media not specified, 'screen', or 'all' */
 	for (node = node->next; node != 0; node = node->next) {
-		screen = 0;
+		screen = false;
 		if (node->type != CSS_NODE_IDENT) {
 			free(url);
 			return;
 		}
 		LOG(("medium '%s'", node->data));
-		if (strcmp(node->data, "screen") == 0 || strcmp(node->data, "all") == 0) {
-			screen = 1;
+		if ((node->data_length == 6 &&
+				strncmp(node->data, "screen", 6) == 0) ||
+				(node->data_length == 3 &&
+				strncmp(node->data, "all", 3) == 0)) {
+			screen = true;
 			break;
 		}
 		node = node->next;
@@ -390,11 +557,6 @@ void css_atimport(struct content *c, struct css_node *node)
 
 	/* start the fetch */
 	c->data.css.import_count++;
-	c->data.css.import_url = xrealloc(c->data.css.import_url,
-			c->data.css.import_count * sizeof(*c->data.css.import_url));
-	c->data.css.import_content = xrealloc(c->data.css.import_content,
-			c->data.css.import_count * sizeof(*c->data.css.import_content));
-
 	i = c->data.css.import_count - 1;
 	c->data.css.import_url[i] = url1;
 	c->data.css.import_content[i] = fetchcache(
@@ -414,6 +576,10 @@ void css_atimport(struct content *c, struct css_node *node)
 	free(url);
 }
 
+
+/**
+ * Fetchcache callback for imported stylesheets.
+ */
 
 void css_atimport_callback(content_msg msg, struct content *css,
 		void *p1, void *p2, const char *error)
@@ -451,7 +617,12 @@ void css_atimport_callback(content_msg msg, struct content *css,
 		case CONTENT_MSG_REDIRECT:
 			c->active--;
 			free(c->data.css.import_url[i]);
-			c->data.css.import_url[i] = xstrdup(error);
+			c->data.css.import_url[i] = strdup(error);
+			if (!c->data.css.import_url[i]) {
+				/** \todo report to user */
+				c->error = 1;
+				return;
+			}
 			c->data.css.import_content[i] = fetchcache(
 					c->data.css.import_url[i], c->url, css_atimport_callback,
 					c, (void*)i, css->width, css->height, true
@@ -475,13 +646,19 @@ void css_atimport_callback(content_msg msg, struct content *css,
 
 /**
  * Find the style which applies to an element.
+ *
+ * \param  css      content of type CONTENT_CSS
+ * \param  element  element in xml tree to match
+ * \param  style    style to update
+ *
+ * The style is updated with any rules that match the element.
  */
 
 void css_get_style(struct content *css, xmlNode *element,
 		struct css_style *style)
 {
 	struct css_stylesheet *stylesheet = css->data.css.css;
-	struct css_node *rule;
+	struct css_selector *rule;
 	unsigned int hash, i;
 
 	/* imported stylesheets */
@@ -491,7 +668,8 @@ void css_get_style(struct content *css, xmlNode *element,
 					element, style);
 
 	/* match rules which end with the same element */
-	hash = css_hash((char *) element->name);
+	hash = css_hash((const char *) element->name,
+			strlen((const char *) element->name));
 	for (rule = stylesheet->rule[hash]; rule; rule = rule->next)
 		if (css_match_rule(rule, element))
 			css_merge(style, rule->style);
@@ -507,110 +685,32 @@ void css_get_style(struct content *css, xmlNode *element,
  * Determine if a rule applies to an element.
  */
 
-bool css_match_rule(struct css_node *rule, xmlNode *element)
+bool css_match_rule(struct css_selector *rule, xmlNode *element)
 {
-	bool match;
-	char *s, *word, *space;
-	unsigned int i;
-	struct css_node *detail;
+	struct css_selector *detail;
 	xmlNode *anc, *prev;
 
 	assert(element->type == XML_ELEMENT_NODE);
 
-	if (rule->data && strcasecmp(rule->data, (char *) element->name) != 0)
+	if (rule->data && (rule->data_length !=
+			strlen((const char *) element->name) ||
+			strncasecmp(rule->data, (const char *) element->name,
+				rule->data_length) != 0))
 		return false;
 
-	for (detail = rule->left; detail; detail = detail->next) {
-		s = 0;
-		match = false;
-		switch (detail->type) {
-			case CSS_NODE_ID:
-				s = (char *) xmlGetProp(element, (const xmlChar *) "id");
-				if (s && strcasecmp(detail->data + 1, s) == 0)
-					match = true;
-				break;
-
-			case CSS_NODE_CLASS:
-				s = (char *) xmlGetProp(element, (const xmlChar *) "class");
-				if (s) {
-					word = s;
-					do {
-						space = strchr(word, ' ');
-						if (space)
-							*space = 0;
-						if (strcasecmp(word, detail->data) == 0) {
-							match = true;
-							break;
-						}
-						word = space + 1;
-					} while (space);
-				}
-				break;
-
-			case CSS_NODE_ATTRIB:
-				/* matches if an attribute is present */
-				s = (char *) xmlGetProp(element, (const xmlChar *) detail->data);
-				if (s)
-					match = true;
-				break;
-
-			case CSS_NODE_ATTRIB_EQ:
-				/* matches if an attribute has a certain value */
-				s = (char *) xmlGetProp(element, (const xmlChar *) detail->data);
-				if (s && strcasecmp(detail->data2, s) == 0)
-					match = true;
-				break;
-
-			case CSS_NODE_ATTRIB_INC:
-				/* matches if one of the space separated words
-				 * in the attribute is equal */
-				s = (char *) xmlGetProp(element, (const xmlChar *) detail->data);
-				if (s) {
-					word = s;
-					do {
-						space = strchr(word, ' ');
-						if (space)
-							*space = 0;
-						if (strcasecmp(word, detail->data2) == 0) {
-							match = true;
-							break;
-						}
-						word = space + 1;
-					} while (space);
-				}
-				break;
-
-			case CSS_NODE_ATTRIB_DM:
-				/* matches if a prefix up to a hyphen matches */
-				s = (char *) xmlGetProp(element, (const xmlChar *) detail->data);
-				if (s) {
-					i = strlen(detail->data2);
-					if (strncasecmp(detail->data2, s, i) == 0 &&
-							(s[i] == '-' || s[i] == 0))
-						match = true;
-				}
-				break;
-
-			case CSS_NODE_PSEUDO:
-				break;
-
-			default:
-				assert(0);
-		}
-		if (s)
-			xmlFree(s);
-		if (!match)
+	for (detail = rule->detail; detail; detail = detail->next) {
+		if (!css_match_detail(detail, element))
 			return false;
 	}
 
-	if (!rule->right)
+	if (!rule->combiner)
 		return true;
 
 	switch (rule->comb) {
 		case CSS_COMB_ANCESTOR:
 			for (anc = element->parent; anc; anc = anc->parent)
 				if (anc->type == XML_ELEMENT_NODE &&
-						css_match_rule(rule->right, anc))
+						css_match_rule(rule->combiner, anc))
 					return true;
 			break;
 
@@ -621,7 +721,7 @@ bool css_match_rule(struct css_node *rule, xmlNode *element)
 				;
 			if (!prev)
 				return false;
-			return css_match_rule(rule->right, prev);
+			return css_match_rule(rule->combiner, prev);
 			break;
 
 		case CSS_COMB_PARENT:
@@ -631,7 +731,7 @@ bool css_match_rule(struct css_node *rule, xmlNode *element)
 				;
 			if (!anc)
 				return false;
-			return css_match_rule(rule->right, anc);
+			return css_match_rule(rule->combiner, anc);
 			break;
 
 		default:
@@ -642,173 +742,468 @@ bool css_match_rule(struct css_node *rule, xmlNode *element)
 }
 
 
+/**
+ * Determine if a selector detail matches an element.
+ *
+ * \param  detail   a css_selector of type other than CSS_SELECTOR_ELEMENT
+ * \param  element  element in xml tree to match
+ * \return  true if the selector matches the element
+ */
+
+bool css_match_detail(const struct css_selector *detail,
+		xmlNode *element)
+{
+	bool match = false;
+	char *s = 0;
+	char *space, *word;
+	unsigned int length;
+
+	switch (detail->type) {
+		case CSS_SELECTOR_ID:
+			s = (char *) xmlGetProp(element,
+					(const xmlChar *) "id");
+			if (s && strlen(s) == detail->data_length &&
+					strncasecmp(detail->data, s,
+					detail->data_length) == 0)
+				match = true;
+			break;
+
+		case CSS_SELECTOR_CLASS:
+			s = (char *) xmlGetProp(element,
+					(const xmlChar *) "class");
+			if (!s)
+				break;
+			word = s;
+			do {
+				space = strchr(word, ' ');
+				if (space)
+					length = space - word;
+				else
+					length = strlen(word);
+				if (length == detail->data_length &&
+		   				strncasecmp(word, detail->data,
+						length) == 0) {
+					match = true;
+					break;
+				}
+				word = space + 1;
+			} while (space);
+			break;
+
+		case CSS_SELECTOR_ATTRIB:
+			/* matches if an attribute is present */
+			word = strndup(detail->data, detail->data_length);
+			if (!word) {
+				/** \todo report to user */
+				return false;
+			}
+			s = (char *) xmlGetProp(element,
+					(const xmlChar *) word);
+			free(word);
+			if (s)
+				match = true;
+			break;
+
+		case CSS_SELECTOR_ATTRIB_EQ:
+			/* matches if an attribute has a certain value*/
+			word = strndup(detail->data, detail->data_length);
+			if (!word) {
+				/** \todo report to user */
+				return false;
+			}
+			s = (char *) xmlGetProp(element,
+					(const xmlChar *) word);
+			free(word);
+			if (s && strlen(s) == detail->data2_length &&
+					strncasecmp(detail->data2, s,
+					detail->data2_length) == 0)
+				match = true;
+			break;
+
+		case CSS_SELECTOR_ATTRIB_INC:
+			/* matches if one of the space separated words
+			 * in the attribute is equal */
+			word = strndup(detail->data,
+					detail->data_length);
+			if (!word) {
+				/** \todo report to user */
+				return false;
+			}
+			s = (char *) xmlGetProp(element,
+					(const xmlChar *) word);
+			free(word);
+			if (!s)
+				break;
+			word = s;
+			do {
+				space = strchr(word, ' ');
+				if (space)
+					length = space - word;
+				else
+					length = strlen(word);
+				if (length == detail->data2_length &&
+						strncasecmp(word, detail->data2,
+						length) == 0) {
+					match = true;
+					break;
+				}
+				word = space + 1;
+			} while (space);
+			break;
+
+		case CSS_SELECTOR_ATTRIB_DM:
+			/* matches if a prefix up to a hyphen matches */
+			word = strndup(detail->data,
+					detail->data_length);
+			if (!word) {
+				/** \todo report to user */
+				return false;
+			}
+			s = (char *) xmlGetProp(element,
+					(const xmlChar *) word);
+			free(word);
+			if (!s)
+				break;
+			length = detail->data2_length;
+			if (strncasecmp(detail->data2, s, length) == 0 &&
+					(s[length] == '-' || s[length] == 0))
+				match = true;
+			break;
+
+		case CSS_SELECTOR_PSEUDO:
+			break;
+
+		default:
+			assert(0);
+	}
+
+	if (s)
+		xmlFree(s);
+
+	return match;
+}
+
+
+/**
+ * Parse a stand-alone CSS property list.
+ *
+ * \param  style  css_style to update
+ * \param  str    property list, as found in HTML style attributes
+ */
+
 void css_parse_property_list(struct css_style * style, char * str)
 {
-	yyscan_t lexer;
-	void *parser;
-	YY_BUFFER_STATE buffer;
+	unsigned char *source_data;
+	unsigned char *current, *end, *token_text;
+	size_t length;
+	unsigned int i;
 	int token;
-	struct parse_params param = {1, 0, 0, false};
+	void *parser;
+	struct css_parser_params param = {true, 0, 0, false, false};
+	struct css_parser_token token_data;
+	const struct css_parser_token token_start = { "{", 1 };
+	const struct css_parser_token token_end = { "}", 1 };
 
-	css_lex_init(&lexer);
-	parser = css_parser_Alloc((void*)malloc);
-	css_parser_(parser, LBRACE, xstrdup("{"), &param);
+	length = strlen(str);
 
-	buffer = css__scan_string(str, lexer);
-	while ((token = css_lex(lexer))) {
-		css_parser_(parser, token,
-				xstrdup(css_get_text(lexer)),
-				&param);
+	parser = css_parser_Alloc(malloc);
+	source_data = malloc(length + 10);
+
+	if (!parser || !source_data) {
+		free(parser);
+		css_parser_Free(parser, free);
+		return;
 	}
-	css__delete_buffer(buffer, lexer);
-	css_parser_(parser, RBRACE, xstrdup("}"), &param);
-	css_parser_(parser, 0, 0, &param);
+
+	strcpy(source_data, str);
+	for (i = 0; i != 10; i++)
+		source_data[length + i] = 0;
+
+	css_parser_(parser, LBRACE, token_start, &param);
+
+	current = source_data;
+	end = source_data + strlen(str);
+	while (current < end && (token = css_tokenise(&current, end + 10,
+			&token_text))) {
+		token_data.text = token_text;
+		token_data.length = current - token_text;
+		css_parser_(parser, token, token_data, &param);
+		if (param.syntax_error) {
+			LOG(("syntax error near offset %i",
+					token_text - source_data));
+			param.syntax_error = false;
+		} else if (param.memory_error) {
+			LOG(("out of memory"));
+			break;
+		}
+	}
+	css_parser_(parser, RBRACE, token_end, &param);
+	css_parser_(parser, 0, token_data, &param);
 
 	css_parser_Free(parser, free);
-	css_lex_destroy(lexer);
+
+	if (param.memory_error) {
+		css_free_node(param.declaration);
+		return;
+	}
 
 	css_add_declarations(style, param.declaration);
 
 	css_free_node(param.declaration);
-}
 
+	free(source_data);
+}
 
 
 /**
- * dump a style
+ * Dump a css_style to stderr in CSS-like syntax.
  */
-
-static void dump_length(const struct css_length * const length)
-{
-	fprintf(stderr, "%g%s", length->value,
-		       css_unit_name[length->unit]);
-}
 
 void css_dump_style(const struct css_style * const style)
 {
 	unsigned int i;
 	fprintf(stderr, "{ ");
-	fprintf(stderr, "background-color: #%lx; ", style->background_color);
-	fprintf(stderr, "clear: %s; ", css_clear_name[style->clear]);
-	fprintf(stderr, "color: #%lx; ", style->color);
-	fprintf(stderr, "cursor: %s", css_cursor_name[style->cursor]);
-	fprintf(stderr, "display: %s; ", css_display_name[style->display]);
-	fprintf(stderr, "float: %s; ", css_float_name[style->float_]);
-	fprintf(stderr, "font: %s %s ", css_font_style_name[style->font_style],
-			css_font_weight_name[style->font_weight]);
-	switch (style->font_size.size) {
-		case CSS_FONT_SIZE_ABSOLUTE: fprintf(stderr, "[%g]", style->font_size.value.absolute); break;
-		case CSS_FONT_SIZE_LENGTH:   dump_length(&style->font_size.value.length); break;
-		case CSS_FONT_SIZE_PERCENT:  fprintf(stderr, "%g%%", style->font_size.value.percent); break;
-		case CSS_FONT_SIZE_INHERIT:  fprintf(stderr, "inherit"); break;
-		default:                     fprintf(stderr, "UNKNOWN"); break;
+
+#define DUMP_COLOR(z, s) \
+	if (style->z != css_empty_style.z) {				\
+		if (style->z == TRANSPARENT)				\
+			fprintf(stderr, s ": transparent; ");		\
+		else if (style->z == CSS_COLOR_NONE)			\
+			fprintf(stderr, s ": none; ");			\
+		else							\
+			fprintf(stderr, s ": #%.6lx; ", style->z);	\
 	}
-	fprintf(stderr, "/");
-	switch (style->line_height.size) {
-		case CSS_LINE_HEIGHT_ABSOLUTE: fprintf(stderr, "[%g]", style->line_height.value.absolute); break;
-		case CSS_LINE_HEIGHT_LENGTH:   dump_length(&style->line_height.value.length); break;
-		case CSS_LINE_HEIGHT_PERCENT:  fprintf(stderr, "%g%%", style->line_height.value.percent); break;
-		case CSS_LINE_HEIGHT_INHERIT:  fprintf(stderr, "inherit"); break;
-		default:                       fprintf(stderr, "UNKNOWN"); break;
-	}
-	fprintf(stderr, " %s", css_font_family_name[style->font_family]);
-	fprintf(stderr, " %s", css_font_variant_name[style->font_variant]);
-	fprintf(stderr, "; ");
-	fprintf(stderr, "height: ");
-	switch (style->height.height) {
-		case CSS_HEIGHT_AUTO:   fprintf(stderr, "auto"); break;
-		case CSS_HEIGHT_LENGTH: dump_length(&style->height.length); break;
-		default:                fprintf(stderr, "UNKNOWN"); break;
-	}
-	fprintf(stderr, "; ");
-	fprintf(stderr, "margin:");
-	for (i = 0; i != 4; i++) {
-		switch (style->margin[i].margin) {
-			case CSS_MARGIN_INHERIT: fprintf(stderr, " inherit"); break;
-			case CSS_MARGIN_LENGTH:  fprintf(stderr, " ");
-				dump_length(&style->margin[i].value.length); break;
-			case CSS_MARGIN_PERCENT: fprintf(stderr, " %g%%", style->margin[i].value.percent);
-			case CSS_MARGIN_AUTO:    fprintf(stderr, " auto"); break;
-			default:                 fprintf(stderr, "UNKNOWN"); break;
+
+#define DUMP_KEYWORD(z, s, n) \
+	if (style->z != css_empty_style.z)				\
+		fprintf(stderr, s ": %s; ", n[style->z]);
+
+	DUMP_COLOR(background_color, "background-color");
+	DUMP_KEYWORD(clear, "clear", css_clear_name);
+	DUMP_COLOR(color, "color");
+	DUMP_KEYWORD(cursor, "cursor", css_cursor_name);
+	DUMP_KEYWORD(display, "display", css_display_name);
+	DUMP_KEYWORD(float_, "float", css_float_name);
+
+	if (style->font_style != css_empty_style.font_style ||
+			style->font_weight != css_empty_style.font_weight ||
+			style->font_size.size !=
+					css_empty_style.font_size.size ||
+			style->line_height.size !=
+					css_empty_style.line_height.size ||
+			style->font_family != css_empty_style.font_family ||
+			style->font_variant != css_empty_style.font_variant) {
+		fprintf(stderr, "font: %s %s ",
+				css_font_style_name[style->font_style],
+				css_font_weight_name[style->font_weight]);
+		switch (style->font_size.size) {
+			case CSS_FONT_SIZE_ABSOLUTE:
+				fprintf(stderr, "[%g]",
+					style->font_size.value.absolute);
+				break;
+			case CSS_FONT_SIZE_LENGTH:
+				css_dump_length(&style->font_size.value.length);
+				break;
+			case CSS_FONT_SIZE_PERCENT:
+				fprintf(stderr, "%g%%",
+					style->font_size.value.percent);
+				break;
+			case CSS_FONT_SIZE_INHERIT:
+				fprintf(stderr, "inherit");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
 		}
-	}
-	fprintf(stderr, "; ");
-	fprintf(stderr, "padding:");
-	for (i = 0; i != 4; i++) {
-		switch (style->padding[i].padding) {
-			case CSS_PADDING_INHERIT: fprintf(stderr, " inherit"); break;
-			case CSS_PADDING_LENGTH:  fprintf(stderr, " ");
-				dump_length(&style->padding[i].value.length); break;
-			case CSS_PADDING_PERCENT: fprintf(stderr, " %g%%", style->padding[i].value.percent);
-			default:                 fprintf(stderr, "UNKNOWN"); break;
+		fprintf(stderr, "/");
+		switch (style->line_height.size) {
+			case CSS_LINE_HEIGHT_ABSOLUTE:
+				fprintf(stderr, "[%g]",
+					style->line_height.value.absolute);
+					break;
+			case CSS_LINE_HEIGHT_LENGTH:
+				css_dump_length(&style->line_height.value.length);
+				break;
+			case CSS_LINE_HEIGHT_PERCENT:
+				fprintf(stderr, "%g%%",
+					style->line_height.value.percent);
+					break;
+			case CSS_LINE_HEIGHT_INHERIT:
+				fprintf(stderr, "inherit");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
 		}
+		fprintf(stderr, " %s",
+				css_font_family_name[style->font_family]);
+		fprintf(stderr, " %s",
+				css_font_variant_name[style->font_variant]);
+		fprintf(stderr, "; ");
 	}
-	fprintf(stderr, "; ");
-	fprintf(stderr, "text-align: %s; ", css_text_align_name[style->text_align]);
-	fprintf(stderr, "text-decoration:");
-	switch (style->text_decoration) {
-		case CSS_TEXT_DECORATION_NONE:    fprintf(stderr, " none"); break;
-		case CSS_TEXT_DECORATION_INHERIT: fprintf(stderr, " inherit"); break;
-		default:
-			if (style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE)
-				fprintf(stderr, " underline");
-			if (style->text_decoration & CSS_TEXT_DECORATION_OVERLINE)
-				fprintf(stderr, " overline");
-			if (style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH)
-				fprintf(stderr, " line-through");
-			if (style->text_decoration & CSS_TEXT_DECORATION_BLINK)
-				fprintf(stderr, " blink");
+
+	if (style->height.height != css_empty_style.height.height) {
+		fprintf(stderr, "height: ");
+		switch (style->height.height) {
+			case CSS_HEIGHT_AUTO:
+				fprintf(stderr, "auto"); break;
+			case CSS_HEIGHT_LENGTH:
+				css_dump_length(&style->height.length); break;
+			default:
+				fprintf(stderr, "UNKNOWN"); break;
+		}
+		fprintf(stderr, "; ");
 	}
-	fprintf(stderr, "; ");
-	fprintf(stderr, "text-indent: ");
-	switch (style->text_indent.size) {
-	        case CSS_TEXT_INDENT_LENGTH:  dump_length(&style->text_indent.value.length); break;
-	        case CSS_TEXT_INDENT_PERCENT: fprintf(stderr, "%g%%", style->text_indent.value.percent); break;
-	        case CSS_TEXT_INDENT_INHERIT: fprintf(stderr, "inherit"); break;
-	        default:                      fprintf(stderr, "UNKNOWN"); break;
+
+	if (style->margin[0].margin != css_empty_style.margin[0].margin ||
+			style->margin[1].margin != css_empty_style.margin[1].margin ||
+			style->margin[2].margin != css_empty_style.margin[2].margin ||
+      			style->margin[3].margin != css_empty_style.margin[3].margin) {
+		fprintf(stderr, "margin:");
+		for (i = 0; i != 4; i++) {
+			switch (style->margin[i].margin) {
+				case CSS_MARGIN_INHERIT:
+					fprintf(stderr, " inherit");
+					break;
+				case CSS_MARGIN_LENGTH:
+					fprintf(stderr, " ");
+					css_dump_length(&style->margin[i].value.length);
+					break;
+				case CSS_MARGIN_PERCENT:
+					fprintf(stderr, " %g%%",
+						style->margin[i].value.percent);
+					break;
+				case CSS_MARGIN_AUTO:
+					fprintf(stderr, " auto");
+					break;
+				default:
+					fprintf(stderr, "UNKNOWN");
+					break;
+			}
+		}
+		fprintf(stderr, "; ");
 	}
-	fprintf(stderr, "; ");
-	fprintf(stderr, "text-transform: %s; ", css_text_transform_name[style->text_transform]);
-	fprintf(stderr, "visibility: %s; ", css_visibility_name[style->visibility]);
-	fprintf(stderr, "width: ");
-	switch (style->width.width) {
-		case CSS_WIDTH_INHERIT: fprintf(stderr, "inherit"); break;
-		case CSS_WIDTH_AUTO:    fprintf(stderr, "auto"); break;
-		case CSS_WIDTH_LENGTH:  dump_length(&style->width.value.length); break;
-		case CSS_WIDTH_PERCENT: fprintf(stderr, "%g%%", style->width.value.percent); break;
-		default:                fprintf(stderr, "UNKNOWN"); break;
+
+	if (style->padding[0].padding != css_empty_style.padding[0].padding ||
+			style->padding[1].padding != css_empty_style.padding[1].padding ||
+			style->padding[2].padding != css_empty_style.padding[2].padding ||
+			style->padding[3].padding != css_empty_style.padding[3].padding) {
+		fprintf(stderr, "padding:");
+		for (i = 0; i != 4; i++) {
+			switch (style->padding[i].padding) {
+				case CSS_PADDING_INHERIT:
+					fprintf(stderr, " inherit");
+					break;
+				case CSS_PADDING_LENGTH:
+					fprintf(stderr, " ");
+					css_dump_length(&style->padding[i].value.length);
+					break;
+				case CSS_PADDING_PERCENT:
+					fprintf(stderr, " %g%%",
+						style->padding[i].value.percent);
+					break;
+				default:
+					fprintf(stderr, "UNKNOWN");
+					break;
+			}
+		}
+		fprintf(stderr, "; ");
 	}
-	fprintf(stderr, "; ");
-	fprintf(stderr, "white-space: %s; ", css_white_space_name[style->white_space]);
+
+	DUMP_KEYWORD(text_align, "text-align", css_text_align_name);
+
+	if (style->text_decoration != css_empty_style.text_decoration) {
+		fprintf(stderr, "text-decoration:");
+		if (style->text_decoration == CSS_TEXT_DECORATION_NONE)
+			fprintf(stderr, " none");
+		if (style->text_decoration == CSS_TEXT_DECORATION_INHERIT)
+			fprintf(stderr, " inherit");
+		if (style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE)
+			fprintf(stderr, " underline");
+		if (style->text_decoration & CSS_TEXT_DECORATION_OVERLINE)
+			fprintf(stderr, " overline");
+		if (style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH)
+			fprintf(stderr, " line-through");
+		if (style->text_decoration & CSS_TEXT_DECORATION_BLINK)
+			fprintf(stderr, " blink");
+		fprintf(stderr, "; ");
+	}
+
+	if (style->text_indent.size != css_empty_style.text_indent.size) {
+		fprintf(stderr, "text-indent: ");
+		switch (style->text_indent.size) {
+		        case CSS_TEXT_INDENT_LENGTH:
+		        	css_dump_length(&style->text_indent.value.length);
+		        	break;
+		        case CSS_TEXT_INDENT_PERCENT:
+		        	fprintf(stderr, "%g%%",
+		        		style->text_indent.value.percent);
+		        	break;
+		        case CSS_TEXT_INDENT_INHERIT:
+		        	fprintf(stderr, "inherit");
+		        	break;
+		        default:
+		        	fprintf(stderr, "UNKNOWN");
+		        	break;
+		}
+		fprintf(stderr, "; ");
+	}
+
+	DUMP_KEYWORD(text_transform, "text-transform", css_text_transform_name);
+	DUMP_KEYWORD(visibility, "visibility", css_visibility_name);
+
+	if (style->width.width != css_empty_style.width.width) {
+		fprintf(stderr, "width: ");
+		switch (style->width.width) {
+			case CSS_WIDTH_INHERIT:
+				fprintf(stderr, "inherit");
+				break;
+			case CSS_WIDTH_AUTO:
+				fprintf(stderr, "auto");
+				break;
+			case CSS_WIDTH_LENGTH:
+				css_dump_length(&style->width.value.length);
+				break;
+			case CSS_WIDTH_PERCENT:
+				fprintf(stderr, "%g%%",
+						style->width.value.percent);
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
+		}
+		fprintf(stderr, "; ");
+	}
+
+	DUMP_KEYWORD(white_space, "white-space", css_white_space_name);
+
 	fprintf(stderr, "}");
 }
 
 
+/**
+ * Dump a css_length to stderr.
+ */
+
+void css_dump_length(const struct css_length * const length)
+{
+	fprintf(stderr, "%g%s", length->value, css_unit_name[length->unit]);
+}
+
+
+/**
+ * Dump a complete css_stylesheet to stderr in CSS syntax.
+ */
+
 void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 {
 	unsigned int i;
-	struct css_node *r, *n, *m;
+	struct css_selector *r;
 	for (i = 0; i != HASH_SIZE; i++) {
 		/*fprintf(stderr, "hash %i:\n", i);*/
 		for (r = stylesheet->rule[i]; r != 0; r = r->next) {
-			for (n = r; n != 0; n = n->right) {
-				if (n->data != 0)
-					fprintf(stderr, "%s", n->data);
-				for (m = n->left; m != 0; m = m->next) {
-					switch (m->type) {
-						case CSS_NODE_ID: fprintf(stderr, "%s", m->data); break;
-						case CSS_NODE_CLASS: fprintf(stderr, ".%s", m->data); break;
-						case CSS_NODE_ATTRIB: fprintf(stderr, "[%s]", m->data); break;
-						case CSS_NODE_ATTRIB_EQ: fprintf(stderr, "[%s=%s]", m->data, m->data2); break;
-						case CSS_NODE_ATTRIB_INC: fprintf(stderr, "[%s~=%s]", m->data, m->data2); break;
-						case CSS_NODE_ATTRIB_DM: fprintf(stderr, "[%s|=%s]", m->data, m->data2); break;
-						case CSS_NODE_PSEUDO: fprintf(stderr, ":%s", m->data); break;
-						default: fprintf(stderr, "unexpected node");
-					}
-				}
-				fprintf(stderr, " ");
-			}
-			fprintf(stderr, "%lx ", r->specificity);
+			css_dump_selector(r);
+			fprintf(stderr, " <%lx> ", r->specificity);
 			css_dump_style(r->style);
 			fprintf(stderr, "\n");
 		}
@@ -817,10 +1212,81 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 
 
 /**
- * cascade styles
+ * Dump a css_selector to stderr in CSS syntax.
  */
 
-void css_cascade(struct css_style * const style, const struct css_style * const apply)
+void css_dump_selector(const struct css_selector *r)
+{
+	struct css_selector *m;
+
+	if (r->combiner)
+		css_dump_selector(r->combiner);
+
+	switch (r->comb) {
+		case CSS_COMB_NONE:     break;
+		case CSS_COMB_ANCESTOR: fprintf(stderr, " "); break;
+		case CSS_COMB_PARENT:   fprintf(stderr, " > "); break;
+		case CSS_COMB_PRECEDED: fprintf(stderr, " + "); break;
+	}
+
+	if (r->data)
+		fprintf(stderr, "%.*s", r->data_length, r->data);
+	else
+		fprintf(stderr, "*");
+
+	for (m = r->detail; m; m = m->next) {
+		switch (m->type) {
+			case CSS_SELECTOR_ID:
+				fprintf(stderr, "#%.*s",
+						m->data_length, m->data);
+				break;
+			case CSS_SELECTOR_CLASS:
+				fprintf(stderr, ".%.*s",
+						m->data_length,	m->data);
+				break;
+			case CSS_SELECTOR_ATTRIB:
+				fprintf(stderr, "[%.*s]",
+						m->data_length, m->data);
+				break;
+			case CSS_SELECTOR_ATTRIB_EQ:
+				fprintf(stderr, "[%.*s=%.*s]",
+						m->data_length,	m->data,
+						m->data2_length, m->data2);
+				break;
+			case CSS_SELECTOR_ATTRIB_INC:
+				fprintf(stderr, "[%.*s~=%.*s]",
+						m->data_length, m->data,
+						m->data2_length, m->data2);
+				break;
+			case CSS_SELECTOR_ATTRIB_DM:
+				fprintf(stderr, "[%.*s|=%.*s]",
+						m->data_length, m->data,
+						m->data2_length, m->data2);
+				break;
+			case CSS_SELECTOR_PSEUDO:
+				fprintf(stderr, ":%.*s",
+						m->data_length, m->data);
+				break;
+			default:
+				fprintf(stderr, "(unexpected detail)");
+		}
+	}
+}
+
+
+/**
+ * Cascade styles.
+ *
+ * \param  style  css_style to modify
+ * \param  apply  css_style to cascade onto style
+ *
+ * Attributes which have the value 'inherit' in apply are unchanged in style.
+ * Other attributes are copied to style, calculating percentages relative to
+ * style where applicable.
+ */
+
+void css_cascade(struct css_style * const style,
+		const struct css_style * const apply)
 {
 	unsigned int i;
 	float f;
@@ -923,7 +1389,18 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 }
 
 
-void css_merge(struct css_style * const style, const struct css_style * const apply)
+/**
+ * Merge styles.
+ *
+ * \param  style  css_style to modify
+ * \param  apply  css_style to merge onto style
+ *
+ * Attributes which have the value 'inherit' in apply are unchanged in style.
+ * Other attributes are copied to style, overwriting it.
+ */
+
+void css_merge(struct css_style * const style,
+		const struct css_style * const apply)
 {
 	unsigned int i;
 
@@ -985,14 +1462,20 @@ void css_merge(struct css_style * const style, const struct css_style * const ap
 }
 
 
+/**
+ * Calculate a hash for an element name.
+ *
+ * The hash is case-insensitive.
+ */
 
-unsigned int css_hash(const char *s)
+unsigned int css_hash(const char *s, int length)
 {
+	int i;
 	unsigned int z = 0;
 	if (s == 0)
 		return 0;
-	for (; *s != 0; s++)
-		z += *s & 0x1f;  /* lower 5 bits, case insensitive */
+	for (i = 0; i != length; i++)
+		z += s[i] & 0x1f;  /* lower 5 bits, case insensitive */
 	return (z % (HASH_SIZE - 1)) + 1;
 }
 

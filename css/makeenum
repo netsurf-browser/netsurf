@@ -28,17 +28,18 @@ while (<>) {
     print H join ",\n	${uc_name}_", @uc_enum;
     print H ",\n	${uc_name}_UNKNOWN\n";
     print H "} $name;\n";
-    print H "$name ${name}_parse(const char * const s);\n\n";
+    print H "$name ${name}_parse(const char * const s, int length);\n\n";
     
     print C "/**\n * $name\n */\n\n";
     print C "const char * const ${name}_name[] = {\n	\"";
     print C join "\",\n	\"", @enum;
     print C "\"\n};\n\n";
-    print C "$name ${name}_parse(const char * const s)\n{\n";
+    print C "$name ${name}_parse(const char * const s, int length)\n{\n";
     foreach $x (@enum) {
         $ux = uc $x;
 	$ux =~ s/-/_/g;
-        print C "	if (strcasecmp(s, \"$x\") == 0) return ${uc_name}_$ux;\n";
+	$len = length $x;
+        print C "	if (length == $len && strncasecmp(s, \"$x\", $len) == 0) return ${uc_name}_$ux;\n";
     }
     print C "	return ${uc_name}_UNKNOWN;\n}\n\n";
 }

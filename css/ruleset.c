@@ -5,6 +5,14 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * CSS ruleset parsing.
+ *
+ * This file implements the last stage of CSS parsing. It converts trees of
+ * struct css_node produced by the parser into struct style, and adds them to a
+ * stylesheet.
+ */
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -18,23 +26,9 @@
 #include "netsurf/utils/utils.h"
 
 
-struct property_entry {
-	const char name[20];
-	void (*parse) (struct css_style * const s, const struct css_node * const v);
-};
 
-struct colour_entry {
-	const char name[12];
-	colour col;
-};
-
-struct font_size_entry {
-	const char name[10];
-	float size;
-};
-
-
-static int compare_selectors(const struct css_node *n0, const struct css_node *n1);
+static bool css_compare_selectors(const struct css_selector *n0,
+		const struct css_selector *n1);
 static int parse_length(struct css_length * const length,
 		const struct css_node * const v, bool non_negative);
 static colour parse_colour(const struct css_node * const v);
@@ -102,11 +96,19 @@ static void parse_text_transform(struct css_style * const s, const struct css_no
 static void parse_visibility(struct css_style * const s, const struct css_node * const v);
 static void parse_width(struct css_style * const s, const struct css_node * const v);
 static void parse_white_space(struct css_style * const s, const struct css_node * const v);
-static css_text_decoration css_text_decoration_parse(const char * const s);
+static css_text_decoration css_text_decoration_parse(const char * const s,
+		int length);
 
 
-/* table of property parsers: MUST be sorted by property name */
-static const struct property_entry property_table[] = {
+/** An entry in css_property_table. */
+struct css_property_entry {
+	const char name[20];
+	void (*parse) (struct css_style * const s,
+			const struct css_node * const v);
+};
+
+/** Table of property parsers. MUST be sorted by property name. */
+static const struct css_property_entry css_property_table[] = {
 	{ "background",       parse_background },
 	{ "background-color", parse_background_color },
 	{ "border",           parse_border },
@@ -161,9 +163,16 @@ static const struct property_entry property_table[] = {
 	{ "width",            parse_width },
 };
 
-/* table of standard colour names: MUST be sorted by colour name
- * note: colour is 0xbbggrr */
-static const struct colour_entry colour_table[] = {
+
+/** An entry in css_colour_table. */
+struct css_colour_entry {
+	const char name[12];
+	colour col;
+};
+
+/* Table of standard colour names. MUST be sorted by colour name.
+ * Note: colour is 0xbbggrr. */
+static const struct css_colour_entry css_colour_table[] = {
 	{ "aqua",    0xffff00 },
 	{ "black",   0x000000 },
 	{ "blue",    0xff0000 },
@@ -184,9 +193,16 @@ static const struct colour_entry colour_table[] = {
 	{ "yellow",  0x00ffff },
 };
 
-/* table of font sizes: MUST be sorted by name */
+
+/** An entry in css_font_size_table. */
+struct css_font_size_entry {
+	const char name[10];
+	float size;
+};
+
+/** Table of font sizes. MUST be sorted by name. */
 #define SIZE_FACTOR 1.2
-static const struct font_size_entry font_size_table[] = {
+static const struct css_font_size_entry css_font_size_table[] = {
 	{ "large", 1.0 * SIZE_FACTOR },
 	{ "medium", 1.0 },
 	{ "small", 1.0 / SIZE_FACTOR },
@@ -198,42 +214,26 @@ static const struct font_size_entry font_size_table[] = {
 
 
 /**
- * css_add_ruleset -- add a ruleset to a stylesheet
+ * Add a ruleset to a stylesheet.
  */
 
 void css_add_ruleset(struct content *c,
-		struct css_node *selector,
+		struct css_selector *selector,
 		struct css_node *declaration)
 {
 	bool found;
 	struct css_stylesheet *stylesheet = c->data.css.css;
-	struct css_node *n, *sel, *next_sel, *prev;
+	struct css_selector *n, *sel, *next_sel, *prev;
 	struct css_style *style;
 	unsigned int hash;
 
 	for (sel = selector; sel != 0; sel = next_sel) {
 		next_sel = sel->next;
 
-		/*LOG(("+++"));
-		for (n = sel; n != 0; n = n->right) {
-			struct css_node *m;
-			if (n->data != 0)
-				fprintf(stderr, "%s", n->data);
-			for (m = n->left; m != 0; m = m->next) {
-				switch (m->type) {
-					case CSS_NODE_ID: fprintf(stderr, "%s", m->data); break;
-					case CSS_NODE_CLASS: fprintf(stderr, ".%s", m->data); break;
-					default: fprintf(stderr, "unexpected node");
-				}
-			}
-			fprintf(stderr, " ");
-		}
-		fprintf(stderr, "\n");*/
-
 		/* check if this selector is already present */
 		found = false;
 		prev = 0;
-		hash = css_hash(sel->data);
+		hash = css_hash(sel->data, sel->data_length);
 		/* selectors are ordered by specificity in the hash chain */
 		for (n = stylesheet->rule[hash];
 				n && n->specificity < sel->specificity;
@@ -242,7 +242,7 @@ void css_add_ruleset(struct content *c,
 		for ( ;	n && n->specificity == sel->specificity;
 				n = n->next) {
 			prev = n;
-			if (compare_selectors(sel, n)) {
+			if (css_compare_selectors(sel, n)) {
 				found = true;
 				break;
 			}
@@ -250,7 +250,12 @@ void css_add_ruleset(struct content *c,
 		if (!found) {
 			/* not present: construct a new struct css_style */
 			LOG(("constructing new style"));
-			style = xcalloc(1, sizeof(*style));
+			style = malloc(sizeof *style);
+			if (!style) {
+				/** \todo report to user */
+				css_free_selector(sel);
+				return;
+			}
 			memcpy(style, &css_empty_style, sizeof(*style));
 			sel->style = style;
 			sel->next = n;
@@ -264,7 +269,7 @@ void css_add_ruleset(struct content *c,
 			LOG(("augumenting existing style"));
 			style = n->style;
 			sel->next = 0;
-			css_free_node(sel);
+			css_free_selector(sel);
 		}
 
 		/* fill in the declarations */
@@ -273,69 +278,91 @@ void css_add_ruleset(struct content *c,
 }
 
 
+/**
+ * Add declarations to a style.
+ */
+
 void css_add_declarations(struct css_style *style, struct css_node *declaration)
 {
+	char name[20];
 	struct css_node *n;
 	for (n = declaration; n != 0; n = n->next) {
-		struct property_entry *p;
-		assert(n->type == CSS_NODE_DECLARATION && n->data != 0 && n->left != 0);
-		p = bsearch(n->data, property_table,
-				sizeof(property_table) / sizeof(property_table[0]),
-				sizeof(property_table[0]), (void*)strcasecmp);
+		struct css_property_entry *p;
+		assert(n->type == CSS_NODE_DECLARATION && n->data && n->value);
+		if (19 < n->data_length)
+			continue;
+		strncpy(name, n->data, n->data_length);
+		name[n->data_length] = 0;
+		p = bsearch(name, css_property_table,
+				sizeof css_property_table /
+						sizeof css_property_table[0],
+				sizeof css_property_table[0],
+				(int (*)(const void *, const void *))
+						strcasecmp);
 		if (p == 0)
 			continue;
-		p->parse(style, n->left);
+		p->parse(style, n->value);
 	}
 }
 
 
-int compare_selectors(const struct css_node *n0, const struct css_node *n1)
+/**
+ * Compare two css_selectors.
+ */
+
+bool css_compare_selectors(const struct css_selector *n0,
+		const struct css_selector *n1)
 {
-	struct css_node *m0, *m1;
+	struct css_selector *m0, *m1;
 	unsigned int count0 = 0, count1 = 0;
 
 	/* compare element name */
 	if (!((n0->data == 0 && n1->data == 0) ||
-	      (n0->data != 0 && n1->data != 0 && strcmp(n0->data, n1->data) == 0)))
-		return 0;
+			(n0->data != 0 && n1->data != 0 &&
+			n0->data_length == n1->data_length &&
+			strncmp(n0->data, n1->data, n0->data_length) == 0)))
+		return false;
 
 	if (n0->comb != n1->comb)
-		return 0;
+		return false;
 
 	/* compare classes and ids */
-	for (m0 = n0->left; m0 != 0; m0 = m0->next)
+	for (m0 = n0->detail; m0 != 0; m0 = m0->next)
 		count0++;
-	for (m1 = n1->left; m1 != 0; m1 = m1->next)
+	for (m1 = n1->detail; m1 != 0; m1 = m1->next)
 		count1++;
 	if (count0 != count1)
-		return 0;
-	for (m0 = n0->left; m0 != 0; m0 = m0->next) {
-		int found = 0;
-		for (m1 = n1->left; m1 != 0; m1 = m1->next) {
+		return false;
+	for (m0 = n0->detail; m0 != 0; m0 = m0->next) {
+		bool found = false;
+		for (m1 = n1->detail; m1 != 0; m1 = m1->next) {
 			/* TODO: should this be case sensitive for IDs? */
 			if (m0->type == m1->type &&
-					strcasecmp(m0->data, m1->data) == 0 &&
+					m0->data_length == m1->data_length &&
+					strncasecmp(m0->data, m1->data,
+					m0->data_length) == 0 &&
 					((m0->data2 == 0 && m1->data2 == 0) ||
-					 strcasecmp(m0->data2, m1->data2) == 0)) {
-				found = 1;
+					 (m0->data2_length == m1->data2_length &&
+					 strncasecmp(m0->data2, m1->data2,
+					 m0->data2_length) == 0))) {
+				found = true;
 				break;
 			}
 		}
 		if (!found)
-			return 0;
+			return false;
 	}
 
 	/* compare ancestors */
 	if (n0->comb == CSS_COMB_NONE)
-		return 1;
+		return true;
 
-	return compare_selectors(n0->right, n1->right);
+	return css_compare_selectors(n0->combiner, n1->combiner);
 }
 
 
-
-/**
- * property parsers
+/*
+ * Property parsers.
  */
 
 /* TODO: consider CSS_NODE_NUMBER whenever a value may be '0' */
@@ -345,6 +372,7 @@ int parse_length(struct css_length * const length,
 {
 	css_unit u;
 	float value;
+	int num_length;
 	if (v->type == CSS_NODE_NUMBER && atof(v->data) == 0) {
 		length->unit = CSS_UNIT_EM;
 		length->value = 0;
@@ -352,7 +380,8 @@ int parse_length(struct css_length * const length,
 	}
 	if (v->type != CSS_NODE_DIMENSION)
 		return 1;
-	u = css_unit_parse(v->data + strspn(v->data, "0123456789+-."));
+	num_length = strspn(v->data, "0123456789+-.");
+	u = css_unit_parse(v->data + num_length, v->data_length - num_length);
 	if (u == CSS_UNIT_UNKNOWN)
 		return 1;
 	value = atof(v->data);
@@ -366,12 +395,13 @@ int parse_length(struct css_length * const length,
 
 colour named_colour(const char *name)
 {
-	struct colour_entry *col;
+	struct css_colour_entry *col;
 	unsigned int r, g, b;
 
-	col = bsearch(name, colour_table,
-			sizeof(colour_table) / sizeof(colour_table[0]),
-			sizeof(colour_table[0]), (void*)strcasecmp);
+	col = bsearch(name, css_colour_table,
+			sizeof css_colour_table / sizeof css_colour_table[0],
+			sizeof css_colour_table[0],
+			(int (*)(const void *, const void *)) strcasecmp);
 	if (col == 0) {
 	        /* A common error is the omission of the '#' from the
 	         * start of a colour specified in #rrggbb format.
@@ -391,17 +421,16 @@ colour named_colour(const char *name)
 colour parse_colour(const struct css_node * const v)
 {
 	colour c = CSS_COLOR_NONE;
-	int len;
 	unsigned int r, g, b;
-	struct colour_entry *col;
+	struct css_colour_entry *col;
+	char colour_name[12];
 
 	switch (v->type) {
 		case CSS_NODE_HASH:
-			len = strlen(v->data);
-			if (len == 4) {
+			if (v->data_length == 4) {
 				if (sscanf(v->data + 1, "%1x%1x%1x", &r, &g, &b) == 3)
 					c = (b << 20) | (b << 16) | (g << 12) | (g << 8) | (r << 4) | r;
-			} else if (len == 7) {
+			} else if (v->data_length == 7) {
 				if (sscanf(v->data + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 					c = (b << 16) | (g << 8) | r;
 			}
@@ -412,9 +441,16 @@ colour parse_colour(const struct css_node * const v)
 			break;
 
 		case CSS_NODE_IDENT:
-			col = bsearch(v->data, colour_table,
-					sizeof(colour_table) / sizeof(colour_table[0]),
-					sizeof(colour_table[0]), (void*)strcasecmp);
+			if (11 < v->data_length)
+				break;
+			strncpy(colour_name, v->data, v->data_length);
+			colour_name[v->data_length] = 0;
+			col = bsearch(colour_name, css_colour_table,
+					sizeof css_colour_table /
+						sizeof css_colour_table[0],
+					sizeof css_colour_table[0],
+					(int (*)(const void *, const void *))
+							strcasecmp);
 			if (col != 0)
 				c = col->col;
 			break;
@@ -460,10 +496,14 @@ void parse_border_width(struct css_style * const s,
 
 	for (w = v; w; w = w->next, count++)
 		if (!((w->type == CSS_NODE_IDENT && (
-				  (strcasecmp(w->data, "inherit") == 0) ||
-				  (strcasecmp(w->data, "thin") == 0) ||
-				  (strcasecmp(w->data, "medium") == 0) ||
-				  (strcasecmp(w->data, "thick") == 0))) ||
+				  (w->data_length == 7 &&
+				   strncasecmp(w->data, "inherit", 7) == 0) ||
+				  (w->data_length == 4 &&
+				   strncasecmp(w->data, "thin", 4) == 0) ||
+				  (w->data_length == 6 &&
+				   strncasecmp(w->data, "medium", 6) == 0) ||
+				  (w->data_length == 5 &&
+				   strncasecmp(w->data, "thick", 5) == 0))) ||
 				(w->type == CSS_NODE_DIMENSION) ||
 				(w->type == CSS_NODE_NUMBER)))
 			return;
@@ -521,17 +561,21 @@ void parse_border_width_side(struct css_style * const s,
 		const struct css_node * const v, unsigned int i)
 {
 	if (v->type == CSS_NODE_IDENT) {
-		if (strcasecmp(v->data, "inherit") == 0)
+		if (v->data_length == 7 &&
+				strncasecmp(v->data, "inherit", 7) == 0)
 			s->border[i].width.width = CSS_BORDER_WIDTH_INHERIT;
-		else if (strcasecmp(v->data, "thin") == 0) {
+		else if (v->data_length == 4 &&
+				strncasecmp(v->data, "thin", 4) == 0) {
 			s->border[i].width.width = CSS_BORDER_WIDTH_LENGTH;
 			s->border[i].width.value.value = 1;
 			s->border[i].width.value.unit = CSS_UNIT_PX;
-		} else if (strcasecmp(v->data, "medium") == 0) {
+		} else if (v->data_length == 6 &&
+				strncasecmp(v->data, "medium", 6) == 0) {
 			s->border[i].width.width = CSS_BORDER_WIDTH_LENGTH;
 			s->border[i].width.value.value = 2;
 			s->border[i].width.value.unit = CSS_UNIT_PX;
-		} else if (strcasecmp(v->data, "thick") == 0) {
+		} else if (v->data_length == 5 &&
+				strncasecmp(v->data, "thick", 5) == 0) {
 			s->border[i].width.width = CSS_BORDER_WIDTH_LENGTH;
 			s->border[i].width.value.value = 4;
 			s->border[i].width.value.unit = CSS_UNIT_PX;
@@ -673,7 +717,7 @@ PARSE_BORDER_STYLE(left,   LEFT)
 void parse_border_style_side(struct css_style * const s,
 		const struct css_node * const v, unsigned int i)
 {
-	css_border_style z = css_border_style_parse(v->data);
+	css_border_style z = css_border_style_parse(v->data, v->data_length);
 	if (z != CSS_BORDER_STYLE_UNKNOWN)
 		s->border[i].style = z;
 }
@@ -706,7 +750,8 @@ void parse_border_side(struct css_style * const s,
 	css_border_style z;
 
 	if (!v->next && v->type == CSS_NODE_IDENT &&
-			strcasecmp(v->data, "inherit") == 0) {
+			v->data_length == 7 &&
+			strncasecmp(v->data, "inherit", 7) == 0) {
 		s->border[i].color = CSS_COLOR_INHERIT;
 		s->border[i].width.width = CSS_BORDER_WIDTH_INHERIT;
 		s->border[i].style = CSS_BORDER_STYLE_INHERIT;
@@ -721,7 +766,7 @@ void parse_border_side(struct css_style * const s,
 		}
 
 		if (v->type == CSS_NODE_IDENT) {
-			z = css_border_style_parse(v->data);
+			z = css_border_style_parse(v->data, v->data_length);
 			if (z != CSS_BORDER_STYLE_UNKNOWN) {
 				s->border[i].style = z;
 				continue;
@@ -737,7 +782,7 @@ void parse_clear(struct css_style * const s, const struct css_node * const v)
 	css_clear z;
 	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
-	z = css_clear_parse(v->data);
+	z = css_clear_parse(v->data, v->data_length);
 	if (z != CSS_CLEAR_UNKNOWN)
 		s->clear = z;
 }
@@ -755,7 +800,7 @@ void parse_cursor(struct css_style * const s, const struct css_node * v)
 	for (; v; v = v->next) {
 		switch (v->type) {
 			case CSS_NODE_IDENT:
-				z = css_cursor_parse(v->data);
+				z = css_cursor_parse(v->data, v->data_length);
 				if (z != CSS_CURSOR_UNKNOWN) {
 					s->cursor = z;
 					return;
@@ -772,7 +817,7 @@ void parse_display(struct css_style * const s, const struct css_node * const v)
 	css_display z;
 	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
-	z = css_display_parse(v->data);
+	z = css_display_parse(v->data, v->data_length);
 	if (z != CSS_DISPLAY_UNKNOWN)
 		s->display = z;
 }
@@ -782,7 +827,7 @@ void parse_float(struct css_style * const s, const struct css_node * const v)
 	css_float z;
 	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
-	z = css_float_parse(v->data);
+	z = css_float_parse(v->data, v->data_length);
 	if (z != CSS_FLOAT_UNKNOWN)
 		s->float_ = z;
 }
@@ -802,23 +847,27 @@ void parse_font(struct css_style * const s, const struct css_node * v)
 		switch (v->type) {
 			case CSS_NODE_IDENT:
 			        /* font-family */
-			        ff = css_font_family_parse(v->data);
+			        ff = css_font_family_parse(v->data,
+			        		v->data_length);
 			        if (ff != CSS_FONT_FAMILY_UNKNOWN) {
 			                s->font_family = ff;
 			                break;
 			        }
 				/* font-style, font-variant, or font-weight */
-				fs = css_font_style_parse(v->data);
+				fs = css_font_style_parse(v->data,
+						v->data_length);
 				if (fs != CSS_FONT_STYLE_UNKNOWN) {
 					s->font_style = fs;
 					break;
 				}
-				fv = css_font_variant_parse(v->data);
+				fv = css_font_variant_parse(v->data,
+						v->data_length);
 				if (fv != CSS_FONT_VARIANT_UNKNOWN) {
 				        s->font_variant = fv;
 				        break;
 				}
-				fw = css_font_weight_parse(v->data);
+				fw = css_font_weight_parse(v->data,
+						v->data_length);
 				if (fw != CSS_FONT_WEIGHT_UNKNOWN) {
 					s->font_weight = fw;
 					break;
@@ -828,7 +877,7 @@ void parse_font(struct css_style * const s, const struct css_node * v)
 				parse_font_size(s, v);
 				break;
 			case CSS_NODE_DELIM:
-				if (v->data[0] == '/' && v->data[1] == 0 &&
+				if (v->data[0] == '/' && v->data_length == 1 &&
 						v->next) {
 					v = v->next;
 					parse_line_height(s, v);
@@ -846,7 +895,8 @@ void parse_font_family(struct css_style * const s, const struct css_node * v)
 	for (; v; v = v->next) {
 		switch (v->type) {
 			case CSS_NODE_IDENT:
-				z = css_font_family_parse(v->data);
+				z = css_font_family_parse(v->data,
+						v->data_length);
 				if (z != CSS_FONT_FAMILY_UNKNOWN) {
 					s->font_family = z;
 					return;
@@ -860,21 +910,31 @@ void parse_font_family(struct css_style * const s, const struct css_node * v)
 
 void parse_font_size(struct css_style * const s, const struct css_node * const v)
 {
-	struct font_size_entry *fs;
+	char font_size_name[10];
+	struct css_font_size_entry *fs;
 	switch (v->type) {
 		case CSS_NODE_IDENT:
-			fs = bsearch(v->data, font_size_table,
-					sizeof(font_size_table) / sizeof(font_size_table[0]),
-					sizeof(font_size_table[0]), (void*)strcasecmp);
+			if (9 < v->data_length)
+				break;
+			strncpy(font_size_name, v->data, v->data_length);
+			font_size_name[v->data_length] = 0;
+			fs = bsearch(font_size_name, css_font_size_table,
+					sizeof css_font_size_table /
+						sizeof css_font_size_table[0],
+					sizeof css_font_size_table[0],
+					(int (*)(const void *, const void *))
+							strcasecmp);
 			if (fs != 0) {
 				s->font_size.size = CSS_FONT_SIZE_LENGTH;
 				s->font_size.value.length.unit = CSS_UNIT_PT;
 				s->font_size.value.length.value = fs->size *
 						option_font_size / 10;
-			} else if (strcasecmp(v->data, "larger") == 0) {
+			} else if (v->data_length == 6 &&
+					strncasecmp(v->data, "larger", 6) == 0) {
 				s->font_size.size = CSS_FONT_SIZE_PERCENT;
 				s->font_size.value.percent = SIZE_FACTOR * 100;
-			} else if (strcmp(v->data, "smaller") == 0) {
+			} else if (v->data_length == 7 &&
+					strncasecmp(v->data, "smaller", 7) == 0) {
 				s->font_size.size = CSS_FONT_SIZE_PERCENT;
 				s->font_size.value.percent = 1 / SIZE_FACTOR * 100;
 		        }
@@ -900,7 +960,7 @@ void parse_font_style(struct css_style * const s, const struct css_node * const 
 	css_font_style z;
 	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
-	z = css_font_style_parse(v->data);
+	z = css_font_style_parse(v->data, v->data_length);
 	if (z != CSS_FONT_STYLE_UNKNOWN)
 		s->font_style = z;
 }
@@ -910,7 +970,7 @@ void parse_font_variant(struct css_style * const s, const struct css_node * cons
 	css_font_variant z;
 	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
-	z = css_font_variant_parse(v->data);
+	z = css_font_variant_parse(v->data, v->data_length);
 	if (z != CSS_FONT_VARIANT_UNKNOWN)
 		s->font_variant = z;
 }
@@ -920,14 +980,15 @@ void parse_font_weight(struct css_style * const s, const struct css_node * const
 	css_font_weight z;
 	if ((v->type != CSS_NODE_IDENT && v->type != CSS_NODE_NUMBER) || v->next != 0)
 		return;
-	z = css_font_weight_parse(v->data);
+	z = css_font_weight_parse(v->data, v->data_length);
 	if (z != CSS_FONT_WEIGHT_UNKNOWN)
 		s->font_weight = z;
 }
 
 void parse_height(struct css_style * const s, const struct css_node * const v)
 {
-	if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "auto") == 0)
+	if (v->type == CSS_NODE_IDENT && v->data_length == 4 &&
+			strncasecmp(v->data, "auto", 4) == 0)
 		s->height.height = CSS_HEIGHT_AUTO;
 	else if ((v->type == CSS_NODE_DIMENSION || v->type == CSS_NODE_NUMBER) &&
 			parse_length(&s->height.length, v, true) == 0)
@@ -936,7 +997,8 @@ void parse_height(struct css_style * const s, const struct css_node * const v)
 
 void parse_line_height(struct css_style * const s, const struct css_node * const v)
 {
-	if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "normal") == 0) {
+	if (v->type == CSS_NODE_IDENT && v->data_length == 6 &&
+			strncasecmp(v->data, "normal", 6) == 0) {
 		s->line_height.size = CSS_LINE_HEIGHT_ABSOLUTE;
 		s->line_height.value.absolute = 1.3;
 	} else if (v->type == CSS_NODE_PERCENTAGE) {
@@ -958,8 +1020,10 @@ void parse_margin(struct css_style * const s, const struct css_node * const v)
 
 	for (w = v; w; w = w->next, count++)
 		if (!((w->type == CSS_NODE_IDENT && (
-				  (strcasecmp(w->data, "inherit") == 0) ||
-				  (strcasecmp(w->data, "auto") == 0))) ||
+				  (w->data_length == 7 &&
+				   strncasecmp(w->data, "inherit", 7) == 0) ||
+				  (w->data_length == 4 &&
+				   strncasecmp(w->data, "auto", 4) == 0))) ||
 				(w->type == CSS_NODE_PERCENTAGE) ||
 				(w->type == CSS_NODE_DIMENSION) ||
 				(w->type == CSS_NODE_NUMBER)))
@@ -1017,9 +1081,11 @@ PARSE_MARGIN_(left,   LEFT)
 void parse_margin_side(struct css_style * const s, const struct css_node * const v,
 		unsigned int i)
 {
-	if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "inherit") == 0)
+	if (v->type == CSS_NODE_IDENT && v->data_length == 7 &&
+			strncasecmp(v->data, "inherit", 7) == 0)
 		s->margin[i].margin = CSS_MARGIN_INHERIT;
-	else if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "auto") == 0)
+	else if (v->type == CSS_NODE_IDENT && v->data_length == 4 &&
+			strncasecmp(v->data, "auto", 4) == 0)
 		s->margin[i].margin = CSS_MARGIN_AUTO;
 	else if (v->type == CSS_NODE_PERCENTAGE) {
 		s->margin[i].margin = CSS_MARGIN_PERCENT;
@@ -1036,7 +1102,8 @@ void parse_padding(struct css_style * const s, const struct css_node * const v)
 	const struct css_node *w;
 
 	for (w = v; w; w = w->next, count++)
-		if (!((w->type == CSS_NODE_IDENT && strcasecmp(w->data, "inherit") == 0) ||
+		if (!((w->type == CSS_NODE_IDENT && w->data_length == 7 &&
+				 strncasecmp(w->data, "inherit", 7) == 0) ||
 				(w->type == CSS_NODE_PERCENTAGE) ||
 				(w->type == CSS_NODE_DIMENSION) ||
 				(w->type == CSS_NODE_NUMBER)))
@@ -1094,7 +1161,8 @@ PARSE_PADDING_(left,   LEFT)
 void parse_padding_side(struct css_style * const s, const struct css_node * const v,
 		unsigned int i)
 {
-	if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "inherit") == 0)
+	if (v->type == CSS_NODE_IDENT && v->data_length == 7 &&
+			strncasecmp(v->data, "inherit", 7) == 0)
 		s->padding[i].padding = CSS_PADDING_INHERIT;
 	else if (v->type == CSS_NODE_PERCENTAGE) {
 		s->padding[i].padding = CSS_PADDING_PERCENT;
@@ -1110,7 +1178,7 @@ void parse_text_align(struct css_style * const s, const struct css_node * const 
 	css_text_align z;
 	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
-	z = css_text_align_parse(v->data);
+	z = css_text_align_parse(v->data, v->data_length);
 	if (z != CSS_TEXT_ALIGN_UNKNOWN)
 		s->text_align = z;
 }
@@ -1134,7 +1202,7 @@ void parse_text_decoration(struct css_style * const s, const struct css_node * c
 	css_text_decoration z;
 	if (v->type != CSS_NODE_IDENT)
 		return;
-	z = css_text_decoration_parse(v->data);
+	z = css_text_decoration_parse(v->data, v->data_length);
 	if (z == CSS_TEXT_DECORATION_INHERIT || z == CSS_TEXT_DECORATION_NONE) {
 		if (v->next != 0)
 			return;
@@ -1143,7 +1211,7 @@ void parse_text_decoration(struct css_style * const s, const struct css_node * c
 	if (z != CSS_TEXT_DECORATION_UNKNOWN)
 		s->text_decoration |= z;
 	for (temp = v->next; temp; temp = temp->next) {
-		z = css_text_decoration_parse(temp->data);
+		z = css_text_decoration_parse(temp->data, temp->data_length);
 		if (z != CSS_TEXT_DECORATION_UNKNOWN)
 			s->text_decoration |= z;
 	}
@@ -1154,7 +1222,7 @@ void parse_text_transform(struct css_style * const s, const struct css_node * co
 	css_text_transform z;
 	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
-	z = css_text_transform_parse(v->data);
+	z = css_text_transform_parse(v->data, v->data_length);
 	if (z != CSS_TEXT_TRANSFORM_UNKNOWN)
 		s->text_transform = z;
 }
@@ -1164,14 +1232,15 @@ void parse_visibility(struct css_style * const s, const struct css_node * const 
 	css_visibility z;
 	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
-	z = css_visibility_parse(v->data);
+	z = css_visibility_parse(v->data, v->data_length);
 	if (z != CSS_VISIBILITY_UNKNOWN)
 		s->visibility = z;
 }
 
 void parse_width(struct css_style * const s, const struct css_node * const v)
 {
-	if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "auto") == 0)
+	if (v->type == CSS_NODE_IDENT && v->data_length == 4 &&
+			strncasecmp(v->data, "auto", 4) == 0)
 		s->width.width = CSS_WIDTH_AUTO;
 	else if (v->type == CSS_NODE_PERCENTAGE) {
 		s->width.width = CSS_WIDTH_PERCENT;
@@ -1186,19 +1255,26 @@ void parse_white_space(struct css_style * const s, const struct css_node * const
 	css_white_space z;
 	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
-	z = css_white_space_parse(v->data);
+	z = css_white_space_parse(v->data, v->data_length);
 	if (z != CSS_WHITE_SPACE_UNKNOWN)
 		s->white_space = z;
 }
 
-css_text_decoration css_text_decoration_parse(const char * const s)
+css_text_decoration css_text_decoration_parse(const char * const s,
+		int length)
 {
-	if (strcasecmp(s, "inherit") == 0) return CSS_TEXT_DECORATION_INHERIT;
-	if (strcasecmp(s, "none") == 0) return CSS_TEXT_DECORATION_NONE;
-	if (strcasecmp(s, "blink") == 0) return CSS_TEXT_DECORATION_BLINK;
-	if (strcasecmp(s, "line-through") == 0) return CSS_TEXT_DECORATION_LINE_THROUGH;
-	if (strcasecmp(s, "overline") == 0) return CSS_TEXT_DECORATION_OVERLINE;
-	if (strcasecmp(s, "underline") == 0) return CSS_TEXT_DECORATION_UNDERLINE;
+	if (length == 7 && strncasecmp(s, "inherit", 7) == 0)
+		return CSS_TEXT_DECORATION_INHERIT;
+	if (length == 4 && strncasecmp(s, "none", 4) == 0)
+		return CSS_TEXT_DECORATION_NONE;
+	if (length == 5 && strncasecmp(s, "blink", 5) == 0)
+		return CSS_TEXT_DECORATION_BLINK;
+	if (length == 12 && strncasecmp(s, "line-through", 12) == 0)
+		return CSS_TEXT_DECORATION_LINE_THROUGH;
+	if (length == 8 && strncasecmp(s, "overline", 8) == 0)
+		return CSS_TEXT_DECORATION_OVERLINE;
+	if (length == 9 && strncasecmp(s, "underline", 9) == 0)
+		return CSS_TEXT_DECORATION_UNDERLINE;
 	return CSS_TEXT_DECORATION_UNKNOWN;
 }
 

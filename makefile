@@ -41,9 +41,9 @@ CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. \
 	-mpoke-function-name
 CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE $(WARNFLAGS) -I.. -I/usr/include/libxml2 -g \
 	-I/riscos/include
-LDFLAGS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lares -lanim -lpng \
+LDFLAGS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lcares -lanim -lpng \
 	-loslib -ljpeg
-LDFLAGS_SMALL = -L/riscos/lib -lxml2 -lz -lucurl -lares -lanim -lpng -loslib -ljpeg
+LDFLAGS_SMALL = -L/riscos/lib -lxml2 -lz -lucurl -lcares -lanim -lpng -loslib -ljpeg
 LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -ljpeg
 
 OBJDIR = $(shell $(CC) -dumpmachine)
@@ -82,8 +82,8 @@ css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
 	cd ..; /usr/bin/perl netsurf/css/makeenum netsurf/css/css_enum < netsurf/css/css_enums
 css/parser.c: css/parser.y
 	-cd css; lemon parser.y
-css/scanner.c css/scanner.h: css/scanner.l
-	cd css; flex scanner.l
+css/scanner.c: css/scanner.l
+	cd css; re2c -s scanner.l > scanner.c
 utils/translit.c: transtab
 	cd utils; ./tt2code < transtab > translit.c
 

@@ -27,9 +27,6 @@
 #include "libxml/HTMLparser.h"
 #include "css_enum.h"
 
-/*
- * structures and typedefs
- */
 
 typedef unsigned long colour;  /* 0xbbggrr */
 #define TRANSPARENT 0x1000000
@@ -180,8 +177,43 @@ extern const struct css_style css_blank_style;
 
 #ifdef CSS_INTERNALS
 
+/** Type of a css_selector. */
 typedef enum {
-	CSS_NODE_BLOCK,
+	CSS_SELECTOR_ELEMENT,
+	CSS_SELECTOR_ID,
+	CSS_SELECTOR_CLASS,
+	CSS_SELECTOR_ATTRIB,
+	CSS_SELECTOR_ATTRIB_EQ,
+	CSS_SELECTOR_ATTRIB_INC,
+	CSS_SELECTOR_ATTRIB_DM,
+	CSS_SELECTOR_PSEUDO,
+} css_selector_type;
+
+/** Relationship to combiner in a css_selector. */
+typedef enum {
+	CSS_COMB_NONE,
+	CSS_COMB_ANCESTOR,
+	CSS_COMB_PARENT,
+	CSS_COMB_PRECEDED,
+} css_combinator;
+
+/** Representation of a CSS selector. */
+struct css_selector {
+	css_selector_type type;
+	const char *data;
+	unsigned int data_length;
+	const char *data2;
+	unsigned int data2_length;
+	struct css_selector *detail;
+	struct css_selector *combiner;
+	struct css_selector *next;
+	css_combinator comb;
+	struct css_style *style;
+	unsigned long specificity;
+};
+
+/** Type of a css_node. */
+typedef enum {
 	CSS_NODE_DECLARATION,
 	CSS_NODE_IDENT,
 	CSS_NODE_NUMBER,
@@ -202,55 +234,45 @@ typedef enum {
 	CSS_NODE_GT,
 	CSS_NODE_PAREN,
 	CSS_NODE_BRAC,
-	CSS_NODE_SELECTOR,
-	CSS_NODE_ID,
-	CSS_NODE_CLASS,
-	CSS_NODE_ATTRIB,
-	CSS_NODE_ATTRIB_EQ,
-	CSS_NODE_ATTRIB_INC,
-	CSS_NODE_ATTRIB_DM,
-	CSS_NODE_PSEUDO,
 } css_node_type;
 
-typedef enum {
-	CSS_COMB_NONE,
-	CSS_COMB_ANCESTOR,
-	CSS_COMB_PARENT,
-	CSS_COMB_PRECEDED,
-} css_combinator;
-
+/** A node in a CSS parse tree. */
 struct css_node {
 	css_node_type type;
-	char *data;
-	char *data2;
-	struct css_node *left;
-	struct css_node *right;
+	const char *data;
+	unsigned int data_length;
+	struct css_node *value;
 	struct css_node *next;
 	css_combinator comb;
 	struct css_style *style;
 	unsigned long specificity;
 };
 
-#include "netsurf/css/scanner.h"
 
 #define HASH_SIZE (47 + 1)
 
+/** Representation of a CSS 2 style sheet. */
 struct css_stylesheet {
-	struct css_node *rule[HASH_SIZE];
+	struct css_selector *rule[HASH_SIZE];
 };
 
-struct parse_params {
-	int ruleset_only;
+/** Parameters to and results from the CSS parser. */
+struct css_parser_params {
+	bool ruleset_only;
 	struct content *stylesheet;
 	struct css_node *declaration;
 	bool syntax_error;
+	bool memory_error;
+};
+
+/** Token type for the CSS parser. */
+struct css_parser_token {
+	const char *text;
+	unsigned int length;
 };
 
 #endif
 
-/*
- * interface
- */
 
 struct content;
 
@@ -260,28 +282,36 @@ void css_destroy(struct content *c);
 
 #ifdef CSS_INTERNALS
 
-struct css_node * css_new_node(css_node_type type, char *data,
-		struct css_node *left, struct css_node *right);
+struct css_node * css_new_node(css_node_type type,
+		const char *data, unsigned int data_length);
 void css_free_node(struct css_node *node);
-char *css_unquote(char *s);
+struct css_selector * css_new_selector(css_selector_type type,
+		const char *data, unsigned int data_length);
+void css_free_selector(struct css_selector *node);
 void css_atimport(struct content *c, struct css_node *node);
 void css_add_ruleset(struct content *c,
-		struct css_node *selector,
+		struct css_selector *selector,
 		struct css_node *declaration);
-void css_add_declarations(struct css_style *style, struct css_node *declaration);
-unsigned int css_hash(const char *s);
+void css_add_declarations(struct css_style *style,
+		struct css_node *declaration);
+unsigned int css_hash(const char *s, int length);
+
+int css_tokenise(unsigned char **buffer, unsigned char *end,
+		unsigned char **token_text);
 
 void css_parser_Trace(FILE *TraceFILE, char *zTracePrompt);
 void *css_parser_Alloc(void *(*mallocProc)(/*size_t*/int));
 void css_parser_Free(void *p, void (*freeProc)(void*));
-void css_parser_(void *yyp, int yymajor, char* yyminor,
-		struct parse_params *param);
+void css_parser_(void *yyp, int yymajor, struct css_parser_token yyminor,
+		struct css_parser_params *param);
 
 #endif
 
 void css_get_style(struct content *c, xmlNode *n, struct css_style * style);
-void css_cascade(struct css_style * const style, const struct css_style * const apply);
-void css_merge(struct css_style * const style, const struct css_style * const apply);
+void css_cascade(struct css_style * const style,
+		const struct css_style * const apply);
+void css_merge(struct css_style * const style,
+		const struct css_style * const apply);
 void css_parse_property_list(struct css_style * style, char * str);
 colour named_colour(const char *name);
 void css_dump_style(const struct css_style * const style);
