@@ -17,6 +17,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <regex.h>
+#include "netsurf/utils/config.h"
 #include "netsurf/content/cache.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
@@ -47,7 +48,11 @@ struct content * fetchcache(const char *url0, char *referer,
 			void *p2, const char *error),
 		void *p1, void *p2, unsigned long width, unsigned long height,
 		bool only_2xx, char *post_urlenc,
-		struct form_successful_control *post_multipart, bool cookies)
+		struct form_successful_control *post_multipart
+#ifdef WITH_COOKIES
+		,bool cookies
+#endif
+		)
 {
 	struct content *c;
 	char *url = xstrdup(url0);
@@ -76,7 +81,11 @@ struct content * fetchcache(const char *url0, char *referer,
 	c->width = width;
 	c->height = height;
 	c->fetch = fetch_start(url, referer, fetchcache_callback, c, only_2xx,
-			post_urlenc, post_multipart, cookies);
+			post_urlenc, post_multipart
+#ifdef WITH_COOKIES
+			,cookies
+#endif
+			);
 	free(url);
 	if (c->fetch == 0) {
 		LOG(("warning: fetch_start failed"));
@@ -162,7 +171,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 				cache_destroy(c);
 			content_destroy(c);
 			break;
-
+#ifdef WITH_AUTH
 		case FETCH_AUTH:
 		        /* data -> string containing the Realm */
 		        LOG(("FETCH_AUTH, '%s'", data));
@@ -170,7 +179,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 		        content_broadcast(c, CONTENT_MSG_AUTH, data);
 		        cache_destroy(c);
 		        break;
-
+#endif
 		default:
 			assert(0);
 	}

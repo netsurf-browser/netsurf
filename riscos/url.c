@@ -10,6 +10,7 @@
 #include <string.h>
 #include "oslib/inetsuite.h"
 #include "oslib/wimp.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/desktop/gui.h"
@@ -99,7 +100,11 @@ void ro_url_message_received(wimp_message* message)
 
   /* create new browser window */
   bw = create_browser_window(browser_TITLE | browser_TOOLBAR
-          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
+          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480
+#ifdef WITH_FRAMES
+          , NULL
+#endif
+          );
 
   gui_window_show(bw->window);
 

@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
@@ -41,6 +42,8 @@
 #include "oslib/osgbpb.h"
 #include "oslib/plugin.h"
 #include "oslib/wimp.h"
+
+#ifdef WITH_PLUGIN
 
 /* parameters file creation */
 void plugin_write_parameters_file(struct object_params *params);
@@ -1290,7 +1293,11 @@ void plugin_url_access(wimp_message *message) {
                                  struct browser_window *bwnew;
                                  bwnew = create_browser_window(browser_TITLE
                                   | browser_TOOLBAR | browser_SCROLL_X_ALWAYS
-                                  | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
+                                  | browser_SCROLL_Y_ALWAYS, 640, 480
+#ifdef WITH_FRAMES
+                                  , NULL
+#endif
+                                  );
                                  gui_window_show(bwnew->window);
                                  bwnew->url = xstrdup(url);
                                  browser_window_open_location(bwnew, url);
@@ -1375,3 +1382,4 @@ void plugin_force_redraw(struct content *object, struct content *c,
 	   because doing so breaks things :-)
 	 */
 }
+#endif

@@ -27,12 +27,15 @@
 #include <time.h>
 #include "curl/curl.h"
 #include "libxml/uri.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
 #endif
 #include "netsurf/desktop/options.h"
+#ifdef WITH_AUTH
 #include "netsurf/desktop/401login.h"
+#endif
 #include "netsurf/render/form.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -58,7 +61,9 @@ struct fetch {
 	char *host;		/**< Host part of URL. */
 	char *location;		/**< Response Location header, or 0. */
 	unsigned long content_length;	/**< Response Content-Length, or 0. */
+#ifdef WITH_AUTH
 	char *realm;            /**< HTTP Auth Realm */
+#endif
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
 	struct HttpPost *post_multipart;	/**< Multipart post data, or 0. */
 	struct fetch *queue_prev;	/**< Previous fetch for this host. */
@@ -151,13 +156,19 @@ void fetch_quit(void)
 struct fetch * fetch_start(char *url, char *referer,
 		void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size),
 		void *p, bool only_2xx, char *post_urlenc,
-		struct form_successful_control *post_multipart, bool cookies)
+		struct form_successful_control *post_multipart
+#ifdef WITH_COOKIES
+		, bool cookies
+#endif
+		)
 {
 	struct fetch *fetch = xcalloc(1, sizeof(*fetch)), *host_fetch;
 	CURLcode code;
 	CURLMcode codem;
 	xmlURI *uri;
+#ifdef WITH_AUTH
 	struct login *li;
+#endif
 
 	LOG(("fetch %p, url '%s'", fetch, url));
 
@@ -278,6 +289,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	}
 
         /* HTTP auth */
+#ifdef WITH_AUTH
         if ((li=login_list_get(url)) != NULL) {
                 code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
                 assert(code == CURLE_OK);
@@ -286,6 +298,7 @@ struct fetch * fetch_start(char *url, char *referer,
 
                 assert(code == CURLE_OK);
         }
+#endif
 
 	/* POST */
 	if (fetch->post_urlenc) {
@@ -299,6 +312,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	}
 
 	/* Cookies */
+#ifdef WITH_COOKIES
 	if (cookies) {
 		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_COOKIEFILE,
 				messages_get("cookiefile"));
@@ -307,6 +321,7 @@ struct fetch * fetch_start(char *url, char *referer,
 				messages_get("cookiejar"));
 		assert(code == CURLE_OK);
 	}
+#endif
 
 	/* add to the global curl multi handle */
 	codem = curl_multi_add_handle(curl_multi, fetch->curl_handle);
@@ -323,7 +338,9 @@ struct fetch * fetch_start(char *url, char *referer,
 void fetch_abort(struct fetch *f)
 {
 	CURLMcode codem;
+#ifdef WITH_AUTH
 	struct login *li;
+#endif
 
 	assert(f != 0);
 	LOG(("fetch %p, url '%s'", f, f->url));
@@ -381,6 +398,7 @@ void fetch_abort(struct fetch *f)
 		}
 
                 /* HTTP auth */
+#ifdef WITH_AUTH
                 if ((li=login_list_get(f->url)) != NULL) {
                         code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
                         assert(code == CURLE_OK);
@@ -389,6 +407,7 @@ void fetch_abort(struct fetch *f)
 
                         assert(code == CURLE_OK);
                 }
+#endif
 
 		/* POST */
 		if (fetch->post_urlenc) {
@@ -425,7 +444,9 @@ void fetch_abort(struct fetch *f)
 	free(f->host);
 	free(f->referer);
 	free(f->location);
+#ifdef WITH_AUTH
 	free(f->realm);
+#endif
 	free(f->post_urlenc);
 	if (f->post_multipart)
 		curl_formfree(f->post_multipart);
@@ -552,12 +573,14 @@ size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f
 			;
 		if ('0' <= data[i] && data[i] <= '9')
 			f->content_length = atol(data + i);
+#ifdef WITH_AUTH
 	} else if (16 < size && strncasecmp(data, "WWW-Authenticate",16) == 0) {
 	        /* extract Realm from WWW-Authenticate header */
 	        f->realm = xcalloc(size, 1);
 	        for (i=16;(unsigned int)i!=strlen(data);i++)
 	               if(data[i]=='=')break;
 	        strncpy(f->realm, data+i+2, size-i-5);
+#endif
 	}
 	return size;
 }
@@ -589,10 +612,12 @@ bool fetch_process_headers(struct fetch *f)
 	}
 
         /* handle HTTP 401 (Authentication errors) */
+#ifdef WITH_AUTH
         if (http_code == 401) {
                 f->callback(FETCH_AUTH, f->p, f->realm,0);
                 return true;
         }
+#endif
 
 	/* handle HTTP errors (non 2xx response codes) */
 	if (f->only_2xx && strncmp(f->url, "http", 4) == 0 &&

@@ -15,6 +15,7 @@
 #include "oslib/osgbpb.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
@@ -24,8 +25,11 @@
 #include "netsurf/utils/utils.h"
 
 wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
-	dialog_config_prox, dialog_config_th, download_template,
-	dialog_401li;
+	dialog_config_prox, dialog_config_th, download_template
+#ifdef WITH_AUTH
+	,dialog_401li
+#endif
+	;
 wimp_menu* theme_menu = NULL;
 
 static struct ro_choices choices;
@@ -146,8 +150,10 @@ void ro_gui_dialog_open(wimp_w w)
 
 bool ro_gui_dialog_keypress(wimp_key *key)
 {
+#ifdef WITH_AUTH
 	if (key->w == dialog_401li)
 	        return ro_gui_401login_keypress(key);
+#endif
 	return false;
 }
 
@@ -168,8 +174,10 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 		ro_gui_dialog_click_config_prox(pointer);
 	else if (pointer->w == dialog_config_th)
 		ro_gui_dialog_click_config_th(pointer);
+#ifdef WITH_AUTH
 	else if (pointer->w == dialog_401li)
 	        ro_gui_401login_click(pointer);
+#endif
 }
 
 
@@ -236,7 +244,11 @@ void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 			break;
 		case ICON_CONFIG_BR_EXPLAIN:
 			bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
-					browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 320, 256, NULL);
+					browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 320, 256
+#ifdef WITH_FRAMES
+					, NULL
+#endif
+					);
 			gui_window_show(bw->window);
 			browser_window_open_location(bw, GESTURES_URL);
 			break;
@@ -299,7 +311,11 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 			break;
 		case ICON_CONFIG_TH_GET:
 			bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
-					browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 480, 320, NULL);
+					browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 480, 320
+#ifdef WITH_FRAMES
+					, NULL
+#endif
+					);
 			gui_window_show(bw->window);
 			browser_window_open_location(bw, THEMES_URL);
 			break;

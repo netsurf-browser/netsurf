@@ -11,6 +11,7 @@
 
 #include <stdbool.h>
 #include <time.h>
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/render/box.h"
@@ -54,10 +55,11 @@ struct browser_window
 
   void (*caret_callback)(struct browser_window *bw, char key, void *p);
   void *caret_p;
-
+#ifdef WITH_FRAMES
   struct browser_window *parent;
   unsigned int no_children;
   struct browser_window **children;
+#endif
 };
 
 
@@ -92,8 +94,16 @@ struct box_selection
 
 /* public functions */
 
-struct browser_window* create_browser_window(int flags, int width, int height, struct browser_window *parent);
-void browser_window_destroy(struct browser_window* bw, bool self);
+struct browser_window* create_browser_window(int flags, int width, int height
+#ifdef WITH_FRAMES
+, struct browser_window *parent
+#endif
+);
+void browser_window_destroy(struct browser_window* bw
+#ifdef WITH_FRAMES
+, bool self
+#endif
+);
 void browser_window_open_location(struct browser_window* bw, const char* url);
 void browser_window_open_location_historical(struct browser_window* bw,
 		const char* url, char *post_urlenc,

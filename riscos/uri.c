@@ -9,12 +9,15 @@
 #include <string.h>
 #include "oslib/uri.h"
 #include "oslib/wimp.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
+
+#ifdef WITH_URI
 
 void ro_uri_message_received(uri_full_message_process*);
 
@@ -55,7 +58,11 @@ void ro_uri_message_received(uri_full_message_process* uri_message)
   xuri_request_uri(0, uri_requested, uri_length, uri_handle, NULL);
 
   bw = create_browser_window(browser_TITLE | browser_TOOLBAR
-          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
+          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480
+#ifdef WITH_FRAMES
+          , NULL
+#endif
+          );
 
   gui_window_show(bw->window);
   browser_window_open_location(bw, uri_requested);
@@ -67,3 +74,4 @@ void ro_uri_message_received(uri_full_message_process* uri_message)
 
   xfree(uri_requested);
 }
+#endif

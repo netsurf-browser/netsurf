@@ -11,6 +11,7 @@
 
 #include <stdbool.h>
 #include "oslib/wimp.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/gui.h"
@@ -131,10 +132,12 @@ void ro_gui_start_selection(wimp_pointer *pointer, wimp_window_state *state,
 void ro_gui_drag_end(wimp_dragged* drag);
 
 /* in 401login.c */
+#ifdef WITH_AUTH
 void ro_gui_401login_init(void);
 void ro_gui_401login_open(char* host, char * realm, char* fetchurl);
 void ro_gui_401login_click(wimp_pointer *pointer);
 bool ro_gui_401login_keypress(wimp_key *key);
+#endif
 
 /* in window.c */
 void ro_gui_window_click(gui_window* g, wimp_pointer* mouse);

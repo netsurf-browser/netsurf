@@ -37,12 +37,15 @@
 #ifndef _NETSURF_RISCOS_FRAMES_H_
 #define _NETSURF_RISCOS_FRAMES_H_
 
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/render/box.h"
 #include "netsurf/riscos/gui.h"
 
 #include "oslib/wimp.h"
+
+#ifdef WITH_FRAMES
 
 struct frame_list {
 
@@ -67,4 +70,5 @@ void frame_remove_instance(struct content *c, struct browser_window *bw,
 void frame_reshape_instance(struct content *c, struct browser_window *bw,
                 struct content *page, struct box *box,
                 struct object_params *params, void **state);
+#endif
 #endif

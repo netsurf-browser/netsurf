@@ -8,12 +8,14 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/draw.h"
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
 #include "oslib/drawfile.h"
 
+#ifdef WITH_DRAW
 void draw_create(struct content *c, const char *params[])
 {
 	c->data.draw.data = xcalloc(0, 1);
@@ -106,3 +108,4 @@ void draw_redraw(struct content *c, long x, long y,
 
         xfree(matrix);
 }
+#endif

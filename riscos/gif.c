@@ -15,10 +15,13 @@
 #include "oslib/colourtrans.h"
 #include "oslib/os.h"
 #include "oslib/osspriteop.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/gif.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
+
+#ifdef WITH_GIF
 
 static osspriteop_area *create_buffer_sprite(struct content *c, anim a);
 
@@ -217,3 +220,4 @@ static osspriteop_area *create_buffer_sprite( struct content *c, anim a )
 
     return result;
 }
+#endif

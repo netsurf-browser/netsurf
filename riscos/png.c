@@ -15,11 +15,13 @@
 #include "oslib/colourtrans.h"
 #include "oslib/os.h"
 #include "oslib/osspriteop.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/png.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
+#ifdef WITH_PNG
 /* libpng uses names starting png_, so use nspng_ here to avoid clashes */
 
 #ifndef NO_IFC
@@ -402,4 +404,4 @@ void nspng_redraw(struct content *c, long x, long y,
 
 	xfree(table);
 }
-
+#endif

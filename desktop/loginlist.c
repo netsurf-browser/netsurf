@@ -9,9 +9,12 @@
 
 #include <assert.h>
 #include <string.h>
+#include "netsurf/utils/config.h"
 #include "netsurf/desktop/401login.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
+
+#ifdef WITH_AUTH
 
 void login_list_dump(void);
 
@@ -162,3 +165,5 @@ void login_list_dump(void) {
     LOG(("%s", nli->host));
   }
 }
+
+#endif

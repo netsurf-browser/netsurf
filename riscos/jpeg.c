@@ -13,12 +13,13 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/jpeg.h"
 #include "netsurf/utils/utils.h"
 #include "oslib/jpeg.h"
 
-
+#ifdef WITH_JPEG
 void jpeg_create(struct content *c, const char *params[])
 {
 	c->data.jpeg.data = xcalloc(0, 1);
@@ -85,4 +86,4 @@ void jpeg_redraw(struct content *c, long x, long y,
 			&factors, (int) c->data.jpeg.length,
 			jpeg_SCALE_DITHERED);
 }
-
+#endif

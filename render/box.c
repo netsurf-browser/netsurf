@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libxml/HTMLparser.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
@@ -22,7 +23,9 @@
 #include "netsurf/render/html.h"
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
+#ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
+#endif
 #endif
 #define NDEBUG
 #include "netsurf/utils/log.h"
@@ -83,18 +86,24 @@ void box_normalise_table_row(struct box *row,
 static void box_normalise_inline_container(struct box *cont, pool box_pool);
 static void gadget_free(struct form_control* g);
 static void box_free_box(struct box *box);
+#ifdef WITH_PLUGIN
 static struct result box_object(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_embed(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_applet(xmlNode *n, struct status *status,
 		struct css_style *style);
+#endif
+#if defined(WITH_PLUGIN)
 static struct result box_iframe(xmlNode *n, struct status *status,
 		struct css_style *style);
+#endif
 static void add_form_element(struct page_elements* pe, struct form* f);
 static void add_gadget_element(struct page_elements* pe, struct form_control* g);
+#ifdef WITH_PLUGIN
 static bool plugin_decode(struct content* content, char* url, struct box* box,
                   struct object_params* po);
+#endif
 
 /* element_table must be sorted by name */
 struct element_entry {
@@ -104,15 +113,23 @@ struct element_entry {
 };
 static const struct element_entry element_table[] = {
 	{"a", box_a},
+#ifdef WITH_PLUGIN
 	{"applet", box_applet},
+#endif
 	{"body", box_body},
 	{"button", box_button},
+#ifdef WITH_PLUGIN
 	{"embed", box_embed},
+#endif
 	{"form", box_form},
+#if defined(WITH_PLUGIN)
 	{"iframe", box_iframe},
+#endif
 	{"img", box_image},
 	{"input", box_input},
+#ifdef WITH_PLUGIN
 	{"object", box_object},
+#endif
 	{"select", box_select},
 	{"textarea", box_textarea}
 };
@@ -172,8 +189,10 @@ struct box * box_create(struct css_style * style,
 	box->font = 0;
 	box->gadget = 0;
 	box->object = 0;
+#ifdef WITH_PLUGIN
 	box->object_params = 0;
 	box->object_state = 0;
+#endif
 	box->x = box->y = 0;
 	return box;
 }
@@ -1684,6 +1703,7 @@ void add_gadget_element(struct page_elements* pe, struct form_control* g)
 }
 
 
+#ifdef WITH_PLUGIN
 /**
  * add an object to the box tree
  */
@@ -2139,7 +2159,7 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
 
    return true;
 }
-
+#endif
 
 /**
  * Find the absolute coordinates of a box.

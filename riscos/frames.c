@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 
+#include "netsurf/utils/config.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/frames.h"
@@ -19,6 +20,8 @@
 
 #include "oslib/os.h"
 #include "oslib/wimp.h"
+
+#ifdef WITH_FRAMES
 
 void frame_add_instance_to_list(struct content *c, struct browser_window *parent, struct content *page, struct box *box, struct object_params *params, void **state, struct browser_window *bw, gui_window *g);
 void frame_remove_instance_from_list(struct content *c);
@@ -206,3 +209,4 @@ struct frame_list *frame_get_instance_from_list(struct content *c) {
 
          return NULL;
 }
+#endif

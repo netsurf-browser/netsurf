@@ -8,8 +8,11 @@
 #ifndef NETSURF_DESKTOP_401LOGIN_H
 #define NETSURF_DESKTOP_401LOGIN_H
 
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
+
+#ifdef WITH_AUTH
 
 struct login {
 
@@ -24,5 +27,7 @@ void gui_401login_open(struct browser_window *bw, struct content *c,
 void login_list_add(char *host, char *logindets);
 struct login *login_list_get(char *host);
 void login_list_remove(char *host);
+
+#endif
 
 #endif

@@ -20,19 +20,28 @@
 #include "oslib/plugin.h"
 #include "oslib/wimp.h"
 #include "oslib/uri.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
+#ifdef WITH_ABOUT
 #include "netsurf/riscos/about.h"
+#endif
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
+#ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
+#endif
 #include "netsurf/riscos/theme.h"
+#ifdef WITH_URI
 #include "netsurf/riscos/uri.h"
+#endif
+#ifdef WITH_URL
 #include "netsurf/riscos/url.h"
+#endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -53,8 +62,13 @@ static const wimp_MESSAGE_LIST(25) task_messages = { {
 	message_DATA_SAVE_ACK,
 	message_DATA_LOAD,
 	message_DATA_OPEN,
+#ifdef WITH_URI
 	message_URI_PROCESS,
+#endif
+#ifdef WITH_URL
 	message_INET_SUITE_OPEN_URL,
+#endif
+#ifdef WITH_PLUGIN
 	message_PLUG_IN_OPENING,
 	message_PLUG_IN_CLOSED,
 	message_PLUG_IN_RESHAPE_REQUEST,
@@ -74,6 +88,7 @@ static const wimp_MESSAGE_LIST(25) task_messages = { {
 	message_PLUG_IN_ABORT,
 	message_PLUG_IN_ACTION,
 	/* message_PLUG_IN_INFORMED, (not provided by oslib) */
+#endif
 	0
 } };
 struct ro_gui_poll_block {
@@ -137,7 +152,9 @@ void gui_init(int argc, char** argv)
 	ro_gui_dialog_init();
 	ro_gui_download_init();
 	ro_gui_menus_init();
+#ifdef WITH_AUTH
 	ro_gui_401login_init();
+#endif
 	ro_gui_history_init();
 	wimp_close_template();
 	ro_gui_icon_bar_create();
@@ -166,7 +183,9 @@ void ro_gui_icon_bar_create(void)
 
 void gui_quit(void)
 {
+#ifdef WITH_ABOUT
         about_quit();
+#endif
 	ro_gui_history_quit();
 	wimp_close_down(task_handle);
 }
@@ -258,8 +277,14 @@ void gui_poll(bool active)
       case wimp_CLOSE_WINDOW_REQUEST    :
         g = ro_lookup_gui_from_w(block.close.w);
         if (g != NULL) {
-          browser_window_destroy(g->data.browser.bw, true);
+          browser_window_destroy(g->data.browser.bw
+#ifdef WITH_FRAMES
+          , true
+#endif
+          );
+#ifdef WITH_COOKIES
           clean_cookiejar();
+#endif
         }
         else
           ro_gui_dialog_close((wimp_w)(&(block.close.w)));
@@ -350,14 +375,17 @@ void gui_poll(bool active)
                ro_msg_dataopen(&(block.message));
                break;
 
+#ifdef WITH_URI
         case message_URI_PROCESS       :
                ro_uri_message_received(&(block.message));
                break;
-
+#endif
+#ifdef WITH_URL
         case message_INET_SUITE_OPEN_URL:
                ro_url_message_received(&(block.message));
                break;
-
+#endif
+#ifdef WITH_PLUGIN
         case message_PLUG_IN_OPENING:
         case message_PLUG_IN_CLOSED:
         case message_PLUG_IN_RESHAPE_REQUEST:
@@ -379,6 +407,7 @@ void gui_poll(bool active)
                plugin_msg_parse(&(block.message),
                           (event == wimp_USER_MESSAGE_ACKNOWLEDGE ? 1 : 0));
                break;
+#endif
 
         case message_QUIT              :
                netsurf_quit = true;
@@ -404,13 +433,13 @@ void gui_multitask(void)
   switch (event)
   {
     case wimp_NULL_REASON_CODE:
+      ro_gui_throb();
       if (over_window != NULL)
       {
         wimp_pointer pointer;
         wimp_get_pointer_info(&pointer);
         ro_gui_window_mouse_at(&pointer);
       }
-      ro_gui_throb();
       break;
 
     case wimp_REDRAW_WINDOW_REQUEST   :
@@ -512,14 +541,17 @@ void gui_multitask(void)
                ro_msg_dataopen(&(block.message));
                break;
 
+#ifdef WITH_URI
         case message_URI_PROCESS       :
                ro_uri_message_received(&(block.message));
                break;
-
+#endif
+#ifdef WITH_URL
         case message_INET_SUITE_OPEN_URL:
                ro_url_message_received(&(block.message));
                break;
-
+#endif
+#ifdef WITH_PLUGIN
         case message_PLUG_IN_OPENING:
         case message_PLUG_IN_CLOSED:
         case message_PLUG_IN_RESHAPE_REQUEST:
@@ -541,6 +573,7 @@ void gui_multitask(void)
                plugin_msg_parse(&(block.message),
                           (event == wimp_USER_MESSAGE_ACKNOWLEDGE ? 1 : 0));
                break;
+#endif
 
         case message_QUIT              :
                netsurf_quit = true;
@@ -594,7 +627,11 @@ void ro_gui_icon_bar_click(wimp_pointer* pointer)
   {
     struct browser_window* bw;
     bw = create_browser_window(browser_TITLE | browser_TOOLBAR
-      | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
+      | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480
+#ifdef WITH_FRAMES
+      , NULL
+#endif
+      );
     gui_window_show(bw->window);
     browser_window_open_location(bw, HOME_URL);
     wimp_set_caret_position(bw->window->data.browser.toolbar,
@@ -863,7 +900,11 @@ void ro_msg_dataopen(wimp_message *message)
 
 	/* create a new window with the file */
 	bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
-			browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
+			browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480
+#ifdef WITH_FRAMES
+			, NULL
+#endif
+			);
 	gui_window_show(bw->window);
 	url = ro_path_to_url(message->data.data_xfer.file_name);
 	browser_window_open_location(bw, url);
@@ -907,7 +948,11 @@ void ro_gui_open_help_page (void)
         struct browser_window *bw;
         bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
                                    browser_SCROLL_X_ALWAYS |
-                                   browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
+                                   browser_SCROLL_Y_ALWAYS, 640, 480
+#ifdef WITH_FRAMES
+                                   , NULL
+#endif
+                                   );
         gui_window_show(bw->window);
         browser_window_open_location(bw, HELP_URL);
         wimp_set_caret_position(bw->window->data.browser.toolbar,

@@ -10,8 +10,14 @@
 #ifndef _NETSURF_RISCOS_CONSTDATA_H_
 #define _NETSURF_RISCOS_CONSTDATA_H_
 
+#include "netsurf/utils/config.h"
+
+#ifdef WITH_ABOUT
 extern const char * const ABOUT_URL;
+#ifdef WITH_COOKIES
 extern const char * const COOKIE_URL;
+#endif
+#endif
 extern const char * const GESTURES_URL;
 extern const char * const HOME_URL;
 extern const char * const HELP_URL;

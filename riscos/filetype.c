@@ -9,6 +9,7 @@
 #include <string.h>
 #include <unixlib/local.h>
 #include "oslib/osfile.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
@@ -19,14 +20,26 @@ struct type_entry {
 	char mime_type[40];
 };
 static const struct type_entry type_map[] = {
+#ifdef WITH_PLUGIN
         {0x188, "application/x-shockwave-flash"},
+#endif
+#ifdef WITH_GIF
 	{0x695, "image/gif"},
+#endif
+#ifdef WITH_DRAW
 	{0xaff, "image/x-drawfile"},
+#endif
+#ifdef WITH_PNG
 	{0xb60, "image/png"},
+#endif
+#ifdef WITH_JPEG
 	{0xc85, "image/jpeg"},
+#endif
 	{0xf79, "text/css"},
 	{0xfaf, "text/html"},
+#ifdef WITH_SPRITE
 	{0xff9, "image/x-riscos-sprite"},
+#endif
 	{0xfff, "text/plain"},
 };
 #define TYPE_MAP_COUNT (sizeof(type_map) / sizeof(type_map[0]))

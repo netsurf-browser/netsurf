@@ -15,18 +15,31 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/other.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/textplain.h"
 #ifdef riscos
+#ifdef WITH_JPEG
 #include "netsurf/riscos/jpeg.h"
+#endif
+#ifdef WITH_PNG
 #include "netsurf/riscos/png.h"
+#endif
+#ifdef WITH_GIF
 #include "netsurf/riscos/gif.h"
+#endif
+#ifdef WITH_SPRITE
 #include "netsurf/riscos/sprite.h"
+#endif
+#ifdef WITH_DRAW
 #include "netsurf/riscos/draw.h"
+#endif
+#ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
+#endif
 #endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
@@ -40,14 +53,26 @@ struct mime_entry {
 /** A map from MIME type to ::content_type. Must be sorted by mime_type. */
 static const struct mime_entry mime_map[] = {
 #ifdef riscos
+#ifdef WITH_DRAW
         {"application/drawfile", CONTENT_DRAW},
         {"application/x-drawfile", CONTENT_DRAW},
         {"image/drawfile", CONTENT_DRAW},
+#endif
+#ifdef WITH_GIF
 	{"image/gif", CONTENT_GIF},
+#endif
+#ifdef WITH_JPEG
 	{"image/jpeg", CONTENT_JPEG},
+#endif
+#ifdef WITH_PNG
 	{"image/png", CONTENT_PNG},
+#endif
+#ifdef WITH_DRAW
 	{"image/x-drawfile", CONTENT_DRAW},
+#endif
+#ifdef WITH_SPRITE
 	{"image/x-riscos-sprite", CONTENT_SPRITE},
+#endif
 #endif
 	{"text/css", CONTENT_CSS},
 	{"text/html", CONTENT_HTML},
@@ -85,24 +110,36 @@ static const struct handler_entry handler_map[] = {
 	{textplain_create, textplain_process_data, textplain_convert,
 		textplain_revive, textplain_reformat, textplain_destroy, 0, 0, 0, 0},
 #ifdef riscos
+#ifdef WITH_JPEG
 	{jpeg_create, jpeg_process_data, jpeg_convert, jpeg_revive,
 		jpeg_reformat, jpeg_destroy, jpeg_redraw, 0, 0, 0},
+#endif
 #endif
 	{css_create, css_process_data, css_convert, css_revive,
 		css_reformat, css_destroy, 0, 0, 0, 0},
 #ifdef riscos
+#ifdef WITH_PNG
 	{nspng_create, nspng_process_data, nspng_convert, nspng_revive,
 		nspng_reformat, nspng_destroy, nspng_redraw, 0, 0, 0},
+#endif
+#ifdef WITH_GIF
 	{nsgif_create, nsgif_process_data, nsgif_convert, nsgif_revive,
 	        nsgif_reformat, nsgif_destroy, nsgif_redraw, 0, 0, 0},
+#endif
+#ifdef WITH_SPRITE
 	{sprite_create, sprite_process_data, sprite_convert, sprite_revive,
 		sprite_reformat, sprite_destroy, sprite_redraw, 0, 0, 0},
+#endif
+#ifdef WITH_DRAW
 	{draw_create, draw_process_data, draw_convert, draw_revive,
 		draw_reformat, draw_destroy, draw_redraw, 0, 0, 0},
+#endif
+#ifdef WITH_PLUGIN
 	{plugin_create, plugin_process_data, plugin_convert, plugin_revive,
 	        plugin_reformat, plugin_destroy, plugin_redraw,
 		plugin_add_instance, plugin_remove_instance,
 		plugin_reshape_instance},
+#endif
 #endif
 	{other_create, other_process_data, other_convert, other_revive,
 		other_reformat, other_destroy, 0, 0, 0, 0}
@@ -123,8 +160,10 @@ content_type content_lookup(const char *mime_type)
 			(int (*)(const void *, const void *)) strcmp);
 	if (m == 0) {
 #ifdef riscos
+#ifdef WITH_PLUGIN
 		if (plugin_handleable(mime_type))
 			return CONTENT_PLUGIN;
+#endif
 #endif
 		return CONTENT_OTHER;
 	}

@@ -17,6 +17,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/css/css.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/theme.h"
@@ -430,7 +431,7 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 void ro_gui_throb(void)
 {
   gui_window* g;
-  float nowtime = (float) (clock() / CLOCKS_PER_SEC);
+  float nowtime = (float) (clock() / (CLOCKS_PER_SEC/(15*23/theme_throbs)));
 
   for (g = window_list; g != NULL; g = g->next)
   {
@@ -444,7 +445,7 @@ void ro_gui_throb(void)
           {
             g->throbtime = nowtime;
             g->throbber++;
-            if (theme_throbs < (unsigned int)g->throbber)
+            if (theme_throbs < (float)g->throbber)
               g->throbber = 0;
             sprintf(g->throb_buf, "throbber%u", g->throbber);
             wimp_set_icon_state(g->data.browser.toolbar,
@@ -718,8 +719,14 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
-			browser_window_destroy(g->data.browser.bw, true);
+			browser_window_destroy(g->data.browser.bw
+#ifdef WITH_FRAMES
+			, true
+#endif
+			);
+#ifdef WITH_COOKIES
 			clean_cookiejar();
+#endif
 			return true;
 
 		case wimp_KEY_RETURN:

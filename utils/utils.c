@@ -18,6 +18,7 @@
 #include <time.h>
 #include "libxml/encoding.h"
 #include "libxml/uri.h"
+#include "netsurf/utils/config.h"
 #ifdef riscos
 #include "netsurf/riscos/about.h"
 #include "netsurf/riscos/constdata.h"
@@ -208,15 +209,20 @@ char *url_join(char *rel_url, char *base_url)
         * It simplifies the code it the other places too (they just
         * call this as usual, then we handle it here).
         */
+#ifdef WITH_ABOUT
        if (strcasecmp(rel_url, "about:") == 0) {
                about_create();
                return xstrdup(ABOUT_URL);
        }
+#ifdef WITH_COOKIES
        else if (strcasecmp(rel_url, "about:cookies") == 0) {
                cookie_create();
                return xstrdup(COOKIE_URL);
        }
-       else if (strcasecmp(rel_url, "help:") == 0) {
+#endif
+       else
+#endif
+       if (strcasecmp(rel_url, "help:") == 0) {
                return xstrdup(HELP_URL);
        }
        else if (strcasecmp(rel_url, "home:") == 0) {
@@ -324,7 +330,7 @@ void regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
  * libcurl /really/ should do this for us.
  * This gets called every time a window is closed or NetSurf is quit.
  */
-
+#ifdef WITH_COOKIES
 void clean_cookiejar(void) {
 
         FILE *fp;
@@ -389,3 +395,4 @@ void clean_cookiejar(void) {
 
         xfree(cookies);
 }
+#endif

@@ -17,6 +17,7 @@
 #include <time.h>
 #include <unixlib/local.h> /* for __unixify */
 
+#include "netsurf/utils/config.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/riscos/about.h"
 #include "netsurf/utils/log.h"
@@ -29,6 +30,8 @@
 #include "oslib/osfind.h"
 #include "oslib/osfscontrol.h"
 #include "oslib/osgbpb.h"
+
+#ifdef WITH_ABOUT
 
 static const char *pabouthdr = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/transitional.dtd\"><html><head><title>%s</title></head><body bgcolor=\"#f3f3ff\"><!-- About header --><table border=\"0\" width=\"100%%\" bgcolor=\"#94adff\" cellspacing=\"2\"><tr><td><a href=\"http://netsurf.sf.net\"><img src=\"file:///%%3CNetSurf$Dir%%3E/About/nslogo\" alt=\"Netsurf logo\"></a><td><table bgcolor=\"#94adff\" border=\"0\"><tr><td>&nbsp;<tr><td align=\"center\"><h2>NetSurf %s</h2><tr><td align=\"center\"><h5>Copyright &copy; 2002, 2003 NetSurf Developers.</h5><tr><td>&nbsp;</table></table><hr>"; /**< About page header */
 static const char *pabtplghd = "<!-- Plugin information --><strong><i>The following plugins are installed on your system:</i></strong><br>&nbsp;<br><table border=\"0\" cellspacing=\"2\" width=\"100%\">"; /**< Plugin table header */
@@ -261,6 +264,7 @@ void about_create(void) {
   return;
 }
 
+#ifdef WITH_COOKIES
 /**
  * Creates the cookie list and stores it in <Wimp$ScrapDir>.WWW.Netsurf
  */
@@ -321,6 +325,7 @@ void cookie_create(void) {
   xfree(cookies);
   return;
 }
+#endif
 
 /**
  * Clean up created files
@@ -331,3 +336,4 @@ void about_quit(void) {
   xosfile_delete("<Wimp$ScrapDir>.WWW.NetSurf.Cookies", 0, 0, 0, 0, 0);
 }
 
+#endif

@@ -8,9 +8,15 @@
 #ifndef _NETSURF_RISCOS_ABOUT_H_
 #define _NETSURF_RISCOS_ABOUT_H_
 
+#include "netsurf/utils/config.h"
+
+#ifdef WITH_ABOUT
 void about_create(void);
+#ifdef WITH_COOKIES
 void cookie_create(void);
+#endif
 void about_quit(void);
+#endif
 
 #endif
 

@@ -15,10 +15,13 @@
 #include <time.h>
 #include "curl/curl.h"
 #include "libxml/debugXML.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/content/cache.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/css/css.h"
+#ifdef WITH_AUTH
 #include "netsurf/desktop/401login.h"
+#endif
 #include "netsurf/desktop/browser.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
@@ -110,7 +113,11 @@ void browser_window_forward(struct browser_window* bw)
 }
 
 
-struct browser_window* create_browser_window(int flags, int width, int height, struct browser_window *parent)
+struct browser_window* create_browser_window(int flags, int width, int height
+#ifdef WITH_FRAMES
+, struct browser_window *parent
+#endif
+)
 {
   struct browser_window* bw;
   bw = (struct browser_window*) xcalloc(1, sizeof(struct browser_window));
@@ -130,9 +137,7 @@ struct browser_window* create_browser_window(int flags, int width, int height, s
   bw->url = NULL;
   bw->caret_callback = 0;
 
-  bw->parent = NULL;
-
-#if 0
+#ifdef WITH_FRAMES
   bw->parent = parent;
 
   if (bw->parent != NULL) {
@@ -149,7 +154,7 @@ struct browser_window* create_browser_window(int flags, int width, int height, s
 
     bw->window = gui_create_browser_window(bw);
 
-#if 0
+#ifdef WITH_FRAMES
   }
 #endif
 
@@ -162,17 +167,24 @@ void browser_window_set_status(struct browser_window* bw, const char* text)
     gui_window_set_status(bw->window, text);
 }
 
-void browser_window_destroy(struct browser_window* bw, bool self)
+void browser_window_destroy(struct browser_window* bw
+#ifdef WITH_FRAMES
+, bool self
+#endif
+)
 {
   /*unsigned int i;*/
   LOG(("bw = %p", bw));
   assert(bw != 0);
-#if 0
+
+#ifdef WITH_FRAMES
   if (bw->no_children == 0 && bw->parent != NULL) { /* leaf node -> delete */
     if (bw->current_content != NULL) {
       if (bw->current_content->status == CONTENT_STATUS_DONE)
         content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
+#ifdef WITH_AUTH
       login_list_remove(bw->current_content->url);
+#endif
     }
     xfree(bw->url);
     xfree(bw);
@@ -187,11 +199,14 @@ void browser_window_destroy(struct browser_window* bw, bool self)
   /* all children killed -> remove this node */
   if (self || bw->parent != NULL) {
 #endif
+
     if (bw->current_content != NULL) {
       if (bw->current_content->status == CONTENT_STATUS_DONE)
         content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
       content_remove_user(bw->current_content, browser_window_callback, bw, 0);
+#ifdef WITH_AUTH
       login_list_remove(bw->current_content->url);
+#endif
     }
     if (bw->loading_content != NULL) {
       content_remove_user(bw->loading_content, browser_window_callback, bw, 0);
@@ -199,15 +214,21 @@ void browser_window_destroy(struct browser_window* bw, bool self)
     xfree(bw->url);
 
     gui_window_destroy(bw->window);
-    /*xfree(bw->children);*/
+
+#ifdef WITH_FRAMES
+    xfree(bw->children);
+#endif
+
     xfree(bw);
-#if 0
+
+#ifdef WITH_FRAMES
   }
   else {
     bw->no_children = 0;
     xfree(bw->children);
   }
 #endif
+
   LOG(("end"));
 }
 
@@ -215,7 +236,9 @@ void browser_window_open_location_historical(struct browser_window* bw,
 		const char* url, char *post_urlenc,
 		struct form_successful_control *post_multipart)
 {
+#ifdef WITH_AUTH
   struct login *li;
+#endif
   LOG(("bw = %p, url = %s", bw, url));
 
   assert(bw != 0 && url != 0);
@@ -223,15 +246,19 @@ void browser_window_open_location_historical(struct browser_window* bw,
   /* Check window still exists, if not, don't bother going any further */
   if (!gui_window_in_list(bw->window)) return;
 
-  /*if (bw->url != NULL)
-    browser_window_destroy(bw, false);*/
+#ifdef WITH_FRAMES
+  if (bw->url != NULL)
+    browser_window_destroy(bw, false);
+#endif
 
+#ifdef WITH_AUTH
   if ((li = login_list_get(url)) == NULL) {
 
     if (bw->current_content != NULL) {
       login_list_remove(bw->current_content->url);
     }
   }
+#endif
 
   browser_window_set_status(bw, "Opening page...");
   browser_window_start_throbber(bw);
@@ -239,7 +266,11 @@ void browser_window_open_location_historical(struct browser_window* bw,
   bw->history_add = false;
   bw->loading_content = fetchcache(url, 0, browser_window_callback, bw, 0,
 		  gui_window_get_width(bw->window), 0, false,
-		  post_urlenc, post_multipart, true);
+		  post_urlenc, post_multipart
+#ifdef WITH_COOKIES
+		  , true
+#endif
+		  );
   if (bw->loading_content == 0) {
     browser_window_set_status(bw, "Unable to fetch document");
     return;
@@ -366,6 +397,7 @@ void browser_window_callback(content_msg msg, struct content *c,
       browser_window_reformat(bw, 0);
       break;
 
+#ifdef WITH_AUTH
     case CONTENT_MSG_AUTH:
       gui_401login_open(bw, c, error);
       if (c == bw->loading_content)
@@ -374,6 +406,7 @@ void browser_window_callback(content_msg msg, struct content *c,
         bw->current_content = 0;
       browser_window_stop_throbber(bw);
       break;
+#endif
 
     default:
       assert(0);
@@ -412,8 +445,10 @@ void download_window_callback(content_msg msg, struct content *c,
 		case CONTENT_MSG_REFORMAT:
 			break;
 
+#ifdef WITH_AUTH
 		case CONTENT_MSG_AUTH:
 		        break;
+#endif
 	}
 }
 
@@ -1256,7 +1291,11 @@ void browser_window_follow_link(struct browser_window* bw,
       {
         struct browser_window* bw_new;
         bw_new = create_browser_window(browser_TITLE | browser_TOOLBAR
-          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
+          | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480
+#ifdef WITH_FRAMES
+          , NULL
+#endif
+        );
         gui_window_show(bw_new->window);
         browser_window_open_location(bw_new, url);
       }

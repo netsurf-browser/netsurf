@@ -26,6 +26,7 @@
 #define _NETSURF_DESKTOP_CONTENT_H_
 
 #include "libxml/HTMLparser.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/content/cache.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/other.h"
@@ -34,12 +35,24 @@
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
 #ifdef riscos
+#ifdef WITH_GIF
 #include "netsurf/riscos/gif.h"
+#endif
+#ifdef WITH_JPEG
 #include "netsurf/riscos/jpeg.h"
+#endif
+#ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
+#endif
+#ifdef WITH_PNG
 #include "netsurf/riscos/png.h"
+#endif
+#ifdef WITH_SPRITE
 #include "netsurf/riscos/sprite.h"
+#endif
+#ifdef WITH_DRAW
 #include "netsurf/riscos/draw.h"
+#endif
 #endif
 
 
@@ -48,15 +61,27 @@ typedef enum {
 	CONTENT_HTML,
 	CONTENT_TEXTPLAIN,
 #ifdef riscos
+#ifdef WITH_JPEG
 	CONTENT_JPEG,
+#endif
 #endif
 	CONTENT_CSS,
 #ifdef riscos
+#ifdef WITH_PNG
 	CONTENT_PNG,
+#endif
+#ifdef WITH_GIF
 	CONTENT_GIF,
+#endif
+#ifdef WITH_SPRITE
 	CONTENT_SPRITE,
+#endif
+#ifdef WITH_DRAW
 	CONTENT_DRAW,
+#endif
+#ifdef WITH_PLUGIN
 	CONTENT_PLUGIN,
+#endif
 #endif
 	CONTENT_OTHER,
 	CONTENT_UNKNOWN  /**< content-type not received yet */
@@ -72,7 +97,9 @@ typedef enum {
 	CONTENT_MSG_STATUS,    /**< new status string */
 	CONTENT_MSG_REDIRECT,  /**< replacement URL */
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
+#ifdef WITH_AUTH
 	CONTENT_MSG_AUTH       /**< authentication required */
+#endif
 } content_msg;
 
 /** Linked list of users of a content. */
@@ -108,12 +135,24 @@ struct content {
 		struct content_html_data html;
 		struct content_css_data css;
 #ifdef riscos
+#ifdef WITH_JPEG
 		struct content_jpeg_data jpeg;
+#endif
+#ifdef WITH_PNG
 		struct content_png_data png;
+#endif
+#ifdef WITH_GIF
 		struct content_gif_data gif;
+#endif
+#ifdef WITH_SPRITE
 		struct content_sprite_data sprite;
+#endif
+#ifdef WITH_DRAW
 		struct content_draw_data draw;
+#endif
+#ifdef WITH_PLUGIN
 		struct content_plugin_data plugin;
+#endif
 #endif
 		struct content_other_data other;
 	} data;

@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/cache.h"
 #include "netsurf/content/content.h"
@@ -47,7 +48,11 @@ int main(int argc, char *argv[])
 			break;
 		url[strlen(url) - 1] = 0;
 		destroyed = 0;
-		c = fetchcache(url, 0, callback, 0, 0, 100, 1000, false, 0, 0, true);
+		c = fetchcache(url, 0, callback, 0, 0, 100, 1000, false, 0, 0
+#ifdef WITH_COOKIES
+		, true
+#endif
+		);
 		if (c) {
 			done = c->status == CONTENT_STATUS_DONE;
 			while (!done)
@@ -84,9 +89,11 @@ void gui_remove_gadget(void *p)
 {
 }
 
+#ifdef WITH_PLUGIN
 void plugin_decode(void *a, void *b, void *c, void *d)
 {
 }
+#endif
 
 void html_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
@@ -112,17 +119,22 @@ void html_remove_instance(struct content *c, struct browser_window *bw,
 {
 }
 
+#ifdef WITH_AUTH
 void *login_list_get(char *url)
 {
 	return 0;
 }
+#endif
 
+#ifdef WITH_PLUGIN
 bool plugin_handleable(const char *mime_type)
 {
 	return false;
 }
+#endif
 
 #ifdef riscos
+#ifdef WITH_PLUGIN
 void plugin_msg_parse(wimp_message *message, int ack) {}
 void plugin_create(struct content *c) {}
 void plugin_process_data(struct content *c, char *data, unsigned long size) {}
@@ -142,6 +154,7 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
 void plugin_reshape_instance(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params, void **state) {}
+#endif
 
 char *NETSURF_DIR = "<NetSurf$Dir>";
 #endif

@@ -8,12 +8,15 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/sprite.h"
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
 #include "oslib/colourtrans.h"
 #include "oslib/osspriteop.h"
+
+#ifdef WITH_SPRITE
 
 void sprite_create(struct content *c, const char *params[])
 {
@@ -114,3 +117,4 @@ void sprite_redraw(struct content *c, long x, long y,
 
 	xfree(table);
 }
+#endif

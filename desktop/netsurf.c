@@ -8,6 +8,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include "netsurf/utils/config.h"
 #include "netsurf/content/cache.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
@@ -55,8 +56,12 @@ void netsurf_init(int argc, char** argv)
   fetch_init();
   cache_init();
   fetchcache_init();
+#ifdef WITH_PNG
   nspng_init();
+#endif
+#ifdef WITH_GIF
   nsgif_init();
+#endif
 }
 
 
@@ -79,6 +84,8 @@ void netsurf_exit(void)
 {
   cache_quit();
   fetch_quit();
+#ifdef WITH_COOKIES
   clean_cookiejar();
+#endif
   gui_quit();
 }

@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "oslib/wimp.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/401login.h"
@@ -17,6 +18,8 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
+
+#ifdef WITH_AUTH
 
 static void get_unamepwd(void);
 
@@ -153,3 +156,5 @@ void get_unamepwd() {
 
   login_list_add(url, lidets);
 }
+
+#endif
