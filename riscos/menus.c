@@ -1532,9 +1532,16 @@ static void ro_gui_menu_prepare_toolbars(void) {
 			browser_toolbar_menu->entries[index].icon_flags &= ~wimp_ICON_SHADED;
 			browser_toolbar_menu->entries[index].menu_flags &= ~wimp_MENU_TICKED;
 		}
-		if (toolbar->display_buttons) browser_toolbar_menu->entries[0].menu_flags |= wimp_MENU_TICKED;
+	  	if ((toolbar->descriptor) && (toolbar->descriptor->theme)) {
+			if (toolbar->display_buttons) browser_toolbar_menu->entries[0].menu_flags |= wimp_MENU_TICKED;
+			if (toolbar->display_throbber) browser_toolbar_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
+		} else {
+			for (index = 0; index < 3; index += 2) {
+				browser_toolbar_menu->entries[index].icon_flags |= wimp_ICON_SHADED;
+				browser_toolbar_menu->entries[index].menu_flags &= ~wimp_MENU_TICKED;
+			}
+		}
 		if (toolbar->display_url) browser_toolbar_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
-		if (toolbar->display_throbber) browser_toolbar_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
 		if (toolbar->display_status) browser_toolbar_menu->entries[3].menu_flags |= wimp_MENU_TICKED;
 	} else {
 		for (index = 0; index < 4; index++) {

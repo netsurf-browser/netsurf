@@ -64,6 +64,8 @@ static struct theme_descriptor *theme_list = NULL;
 static int theme_count = 0;
 static struct toolbar_display *toolbars = NULL;
 static char theme_radio_validation[] = "Sradiooff,radioon\0";
+static char theme_null_validation[] = "\0";
+static char theme_line_validation[] = "R2\0";
 
 
 static const char *ro_gui_proxy_auth_name[] = {
@@ -854,7 +856,7 @@ void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer) {
 	*/
 	link = toolbars;
 	while (link) {
-	  	if (link->icon_number == i) {
+	  	if ((link->icon_number == i) || (link->icon_number == (i - 1))) {
 	  	  	theme_choice = link->descriptor;
 	  		ro_gui_set_icon_selected_state(dialog_config_th_pane,
 	  			link->icon_number, true);
@@ -1017,6 +1019,7 @@ void ro_gui_dialog_load_themes(void) {
 	wimp_icon_create new_icon;
 	wimp_window_state state;
 	int parent_width, nested_y, min_extent, base_extent;
+	int item_height;
  
 	/*	Delete our old list and get/open a new one
 	*/
@@ -1071,34 +1074,62 @@ void ro_gui_dialog_load_themes(void) {
 	extent.x1 = parent_width;
 	link = toolbars;
 	new_icon.w = dialog_config_th_pane;
-	new_icon.icon.extent.x0 = 0;
-	new_icon.icon.extent.x1 = parent_width;
-	new_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE | wimp_ICON_INDIRECTED |
+	new_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | 
 			wimp_ICON_VCENTRED |
 			(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
 			(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) |
-			(wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT) |
-			(1 << wimp_ICON_ESG_SHIFT);
-	new_icon.icon.data.indirected_text_and_sprite.validation =
-			theme_radio_validation;
+			(wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT);
 	while (link) {
-		/*	Update the toolbar and extent
+		/*	Update the toolbar
 		*/
+		item_height = 44 + 44 + 16;
+		if (link->next) item_height += 16;
 		ro_gui_theme_process_toolbar(link->toolbar, parent_width);
-		extent.y0 = nested_y - link->toolbar->height - 48;
+		extent.y0 = nested_y - link->toolbar->height - item_height;
 		if (link->next) extent.y0 -= 16;
 		if (extent.y0 > min_extent) extent.y0 = min_extent;
 		xwimp_set_extent(dialog_config_th_pane, &extent);
 		
-		/*	Create the descriptor icon
+		/*	Create the descriptor icons and separator line
 		*/
-		new_icon.icon.extent.y1 = nested_y - link->toolbar->height;
-		new_icon.icon.extent.y0 = nested_y - link->toolbar->height - 48;
+		new_icon.icon.extent.x0 = 8;
+		new_icon.icon.extent.x1 = parent_width - 8;
+		new_icon.icon.flags &= ~wimp_ICON_BORDER;
+		new_icon.icon.flags |= wimp_ICON_SPRITE;
+		new_icon.icon.extent.y1 = nested_y - link->toolbar->height - 8;
+		new_icon.icon.extent.y0 = nested_y - link->toolbar->height - 52;
 		new_icon.icon.data.indirected_text_and_sprite.text =
-			link->descriptor->filename;
+			(char *)&link->descriptor->name;
 		new_icon.icon.data.indirected_text_and_sprite.size =
-			strlen(link->descriptor->filename) + 1;
+			strlen(link->descriptor->name) + 1;
+		new_icon.icon.data.indirected_text_and_sprite.validation =
+				theme_radio_validation;
 		xwimp_create_icon(&new_icon, &link->icon_number);
+		new_icon.icon.flags &= ~wimp_ICON_SPRITE;
+		new_icon.icon.extent.x0 = 52;
+		new_icon.icon.extent.y1 -= 44;
+		new_icon.icon.extent.y0 -= 44;
+		new_icon.icon.data.indirected_text.text =
+			(char *)&link->descriptor->author;
+		new_icon.icon.data.indirected_text.size =
+			strlen(link->descriptor->filename) + 1;
+		new_icon.icon.data.indirected_text.validation =
+				theme_null_validation;
+		xwimp_create_icon(&new_icon, 0);
+		if (link->next) {
+			new_icon.icon.flags |= wimp_ICON_BORDER;
+			new_icon.icon.extent.x0 = -8;
+			new_icon.icon.extent.x1 = parent_width + 8;
+			new_icon.icon.extent.y1 -= 52;
+			new_icon.icon.extent.y0 = new_icon.icon.extent.y1 - 8;
+			new_icon.icon.data.indirected_text.text =
+					theme_null_validation;
+			new_icon.icon.data.indirected_text.validation =
+					theme_line_validation;
+			new_icon.icon.data.indirected_text.size = 1;
+					strlen(link->descriptor->filename) + 1;
+			xwimp_create_icon(&new_icon, 0);
+		}
 		
 		/*	Nest the toolbar window
 		*/
@@ -1114,7 +1145,7 @@ void ro_gui_dialog_load_themes(void) {
 						
 		/*	Continue processing
 		*/
-		nested_y -= link->toolbar->height + 48 + 16;
+		nested_y -= link->toolbar->height + item_height;
 		link = link->next;
 	}
 	
@@ -1142,6 +1173,9 @@ void ro_gui_dialog_free_themes(void) {
 	next_toolbar = toolbars;
 	while ((toolbar = next_toolbar) != NULL) {
 		xwimp_delete_icon(dialog_config_th_pane, toolbar->icon_number);
+		xwimp_delete_icon(dialog_config_th_pane, toolbar->icon_number + 1);
+		if (toolbar->next)
+			xwimp_delete_icon(dialog_config_th_pane, toolbar->icon_number + 2);
 		ro_gui_theme_destroy_toolbar(toolbar->toolbar);
 		next_toolbar = toolbar->next;
 		free(toolbar);

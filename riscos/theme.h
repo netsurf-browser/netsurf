@@ -19,15 +19,14 @@ typedef enum {
   	THEME_HOTLIST_TOOLBAR
 } toolbar_type;
 
+struct toolbar_icon;
 
-struct toolbar_icon {
-	int icon_number;			/**< wimp icon number */
-	bool display;				/**< whether to display the icon */
-	int width;				/**< icon width */
-	int height;				/**< icon height */
-	char name[12];				/**< icon name */
-	char validation[40];			/**< validation string */
-	struct toolbar_icon *next;		/**< next toolbar icon, or NULL for no more */
+struct theme {
+	osspriteop_area *sprite_area;		/**< sprite area for theme */
+	int throbber_width;			/**< width of the throbber */
+	int throbber_height;			/**< height of the throbber */
+	int throbber_frames;			/**< frames of animation for the throbber */
+	int users;				/**< number of users for the theme */
 };
 
 struct toolbar {
@@ -47,28 +46,21 @@ struct toolbar {
 	char *throbber_buffer;			/**< buffer for status text (read only) */
 	char *status_buffer;			/**< buffer for status text (read only) */
 	struct toolbar_icon *icon;		/**< first toolbar icon (read only) */
-  	struct theme *theme;			/**< themem or NULL for no theme (read only) */
+  	struct theme_descriptor *descriptor;	/**< theme descriptor (read only) */
 	toolbar_type type;			/**< toolbar type (read only) */
 };
 
-
-struct theme {
-	char *details;				/**< theme details */
-	char *author;				/**< theme author */
-	osspriteop_area *sprite_area;		/**< sprite area for theme */
-	bool throbber_right;			/**< throbber is on the right (left otherwise) */
-	int throbber_width;			/**< width of the throbber */
-	int throbber_height;			/**< height of the throbber */
-	int throbber_frames;			/**< frames of animation for the throbber */
+struct theme_descriptor {
+	char *filename;				/**< theme filename (leaf only) */
+	char name[32];				/**< theme name */
+	char author[64];			/**< theme author */
 	int browser_background;			/**< background colour of browser toolbar */
 	int hotlist_background;			/**< background colour of hotlist toolbar */
 	int status_background;			/**< background colour of status window */
 	int status_foreground;			/**< colour of status window text */
-	int users;				/**< number of users for the theme */
-};
-
-struct theme_descriptor {
-	char *filename;				/**< theme filename */
+	bool throbber_right;			/**< throbber is on the right (left otherwise) */
+	unsigned int decompressed_size;		/**< decompressed sprite size */
+	unsigned int compressed_size;		/**< compressed sprite size */
 	struct theme *theme;			/**< corresponding theme (must be opened) */
 	struct theme_descriptor *previous;	/**< previous descriptor in the list */
 	struct theme_descriptor *next;		/**< next descriptor in the list */

@@ -943,11 +943,12 @@ void ro_gui_throb(void)
 
 	for (g = window_list; g; g = g->next) {
 		if (!g->bw->throbbing || !g->toolbar || !g->toolbar->display_throbber ||
-				!g->toolbar->theme || (t < g->throbtime + 10))
+				!g->toolbar->descriptor ||!g->toolbar->descriptor->theme ||
+				(t < g->throbtime + 10))
 			continue;
 		g->throbtime = t;
 		g->throbber++;
-		if (g->toolbar->theme->throbber_frames < g->throbber)
+		if (g->toolbar->descriptor->theme->throbber_frames < g->throbber)
 			g->throbber = 1;
 		sprintf(throb_buf, "throbber%i", g->throbber);
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
