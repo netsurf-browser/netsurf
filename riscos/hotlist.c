@@ -525,7 +525,7 @@ void ro_gui_hotlist_load_directory(xmlNode *ul,
 					n && n->type != XML_ELEMENT_NODE;
 					n = n->next)
 				;
-			if (strcmp(n->name, "ul") != 0) {
+			if (!n || strcmp(n->name, "ul") != 0) {
 				/* next element isn't expected ul */
 				free(title);
 				warn_user("HotlistLoadError", "(Expected "
