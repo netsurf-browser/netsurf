@@ -134,6 +134,7 @@ void info_callback(png_structp png, png_infop info)
 	*/
 	sprite = (osspriteop_header *) (sprite_area + 1);
 	sprite->size = sprite_size - sizeof(*sprite_area);
+	memset(sprite->name, 0x00, 12);
 	strcpy(sprite->name, "png");
 	sprite->width = width - 1;
 	sprite->height = height - 1;

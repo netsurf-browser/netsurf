@@ -203,6 +203,7 @@ int gif_initialise(struct gif_animation *gif) {
 		header = (osspriteop_header*)((char*)gif->frame_image +
 						gif->frame_image->first);
 		header->size = sizeof(osspriteop_header);
+		memset(header->name, 0x00, 12);
 		strcpy(header->name, "gif");
 		header->left_bit = 0;
 		header->right_bit = 31;

@@ -129,6 +129,7 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 	/* sprite control block */
 	sprite = (osspriteop_header *) (sprite_area + 1);
 	sprite->size = area_size - 16;
+	memset(sprite->name, 0x00, 12);
 	strncpy(sprite->name, "jpeg", 12);
 	sprite->width = width - 1;
 	sprite->height = height - 1;

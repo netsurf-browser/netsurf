@@ -192,6 +192,7 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 	*/
 	sprite_header = (osspriteop_header *)(sprite_area + 1);
 	sprite_header->size = sprite_size - sizeof(osspriteop_area);
+	memset(sprite_header->name, 0x00, 12);
 	strcpy(sprite_header->name, "mng");
 	sprite_header->width = width - 1;
 	sprite_header->height = height - 1;
