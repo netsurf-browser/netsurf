@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.2 2002/04/23 17:06:20 bursa Exp $
+ * $Id: render.c,v 1.3 2002/04/23 22:05:19 bursa Exp $
  */
 
 #include <assert.h>
@@ -15,15 +15,6 @@
  * internal structures
  */
 
-struct coord {
-	unsigned long x, y;
-};
-
-struct data {    /* used in _private field of xmlNode */
-	struct css_style * style;
-	unsigned long x, y, width, height;
-};
-
 struct box {
 	enum { BOX_BLOCK, BOX_INLINE_CONTAINER, BOX_INLINE, BOX_FLOAT } type;
 	xmlNode * node;
@@ -37,8 +28,14 @@ struct box {
 	struct box * parent;
 };
 
-void layout_element(xmlNode * e, unsigned long width);
-unsigned long layout_element_children(xmlNode * e, unsigned long width);
+signed long len(struct css_length * length, unsigned long em);
+
+void layout_block(struct box * box, unsigned long width);
+unsigned long layout_block_children(struct box * box, unsigned long width);
+void layout_inline_container(struct box * box, unsigned long width);
+
+void render_plain_element(char * g, struct box * box, unsigned long x, unsigned long y);
+void render_plain(struct box * box);
 
 void box_add_child(struct box * parent, struct box * child);
 struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesheet * stylesheet,
@@ -71,203 +68,119 @@ signed long len(struct css_length * length, unsigned long em)
  * layout algorithm
  */
 
-void layout_element(xmlNode * e, unsigned long width)
+void layout_block(struct box * box, unsigned long width)
 {
-	struct data * data = (struct data *) e->_private;
-	struct css_style * style = data->style;
+	struct css_style * style = box->style;
 	switch (style->width.width) {
 		case CSS_WIDTH_AUTO:
-			data->width = width;
+			box->width = width;
 			break;
 		case CSS_WIDTH_LENGTH:
-			data->width = len(&style->width.value.length, 10);
+			box->width = len(&style->width.value.length, 10);
 			break;
 		case CSS_WIDTH_PERCENT:
-			data->width = width * style->width.value.percent / 100;
+			box->width = width * style->width.value.percent / 100;
 			break;
 	}
-	data->height = layout_element_children(e, data->width);
+	box->height = layout_block_children(box, box->width);
 	switch (style->height.height) {
 		case CSS_HEIGHT_AUTO:
 			break;
 		case CSS_HEIGHT_LENGTH:
-			data->height = len(&style->height.length, 10);
+			box->height = len(&style->height.length, 10);
 			break;
 	}
 }
 
-unsigned long layout_element_children(xmlNode * e, unsigned long width)
+unsigned long layout_block_children(struct box * box, unsigned long width)
 {
-	struct coord pos;
-	int inline_mode = 0;
-	xmlNode * c = e->children;
-	xmlNode * next;
-	unsigned long y = 0;
-	struct coord float_left = { 0, 0 }, float_right = { 0, 0 };  /* bottom corner of current float */
-	xmlNode * line;  /* first node in current line box */
-
-	printf("layout_element_children: starting %s\n", e->name);
-
-	while (c != 0) {
-		struct data * data = (struct data *) c->_private;
-		next = c->next;
+	struct box * c;
+	unsigned long y = 1;
+	
+	for (c = box->children; c != 0; c = c->next) {
 		switch (c->type) {
-			case XML_ELEMENT_NODE: {
-				struct css_style * style = data->style;
-				printf("element %s: ", c->name);
-				switch (style->float_) {
-					case CSS_FLOAT_NONE:
-						switch (style->display) {
-							case CSS_DISPLAY_BLOCK:
-								printf("block");
-								if (inline_mode) {
-									y = pos.y;
-									inline_mode = 0;
-									printf(" (inline_mode = 0)");
-								}
-								puts("");
-								layout_element(c, width);
-								data->x = 0;
-								data->y = y;
-								y += data->height;
-								break;
-							case CSS_DISPLAY_INLINE:
-								puts("inline");
-								next = c->children;
-								/* TODO: fill x, y, width, height [1] */
-								/* TODO: replaced elements */
-								break;
-						}
-						break;
-					case CSS_FLOAT_LEFT:
-						puts("float left");
-						layout_element(c, width);
-						data->x = 0;
-						if (inline_mode) {
-							if (data->width <= width - pos.y) {
-								xmlNode * n;
-								for (n = line; n != c;
-								   n = n->next ? n->next : n->parent->next) {
-									printf("moving %s\n", n->name);
-									if (n->_private)
-									  ((struct data *) n->_private)->x +=
-												data->width;
-								}
-								data->y = y;
-							} else {
-								data->y = pos.y;
-							}
-						} else {
-							data->y = y;
-						}
-						float_left.x = data->width;
-						float_left.y = data->y + data->height;
-						break;
-					case CSS_FLOAT_RIGHT:
-						puts("float right");
-						layout_element(c, width);
-						data->x = width - data->width;
-						if (inline_mode) {
-							if (data->width <= width - pos.y) {
-								data->y = y;
-							} else {
-								data->y = pos.y;
-							}
-						} else {
-							data->y = y;
-						}
-						float_right.x = data->x;
-						float_right.y = data->y + data->height;
-						break;
-				}
+			case BOX_BLOCK:
+				layout_block(c, width-4);
+				c->x = 2;
+				c->y = y;
+				y += c->height + 1;
 				break;
-			}
-			case XML_TEXT_NODE:
-				printf("text: ");
-				if (whitespace(c->content)) {
-					c->_private = 0;
-					puts("whitespace");
-				} else {
-					struct data * data = xcalloc(1, sizeof(struct data));
-					unsigned int x1 = y < float_right.y ? float_right.x : width;
-					if (!inline_mode) {
-						pos.x = y < float_left.y ? float_left.x : 0;
-						pos.y = y;
-						inline_mode = 1;
-						line = c;
-						printf("(inline_mode = 1)");
-					}
-					puts("");
-					c->_private = data;
-					data->height = 2;
-					data->width = strlen(c->content) + 1;
-					/* space available is pos.x to x1 */
-					if (x1 - pos.x < data->width) {
-						/* insufficient space: start new line */
-						y = pos.y;
-						pos.x = y < float_left.y ? float_left.x : 0;
-						line = c;
-					}
-					data->x = pos.x;
-					data->y = y;
-					pos.x += data->width;
-					pos.y = y + 2;
-				}
+			case BOX_INLINE_CONTAINER:
+				layout_inline_container(c, width-4);
+				c->x = 2;
+				c->y = y;
+				y += c->height + 1;
 				break;
+			default:
+				die("block child not block or inline container");
 		}
-		while (next == 0 && c->parent != e)
-			/* TODO: fill coords of just finished inline element [1] */
-			c = c->parent, next = c->next;
-		c = next;
 	}
-	if (inline_mode) y = pos.y;
 	return y;
+}
+
+void layout_inline_container(struct box * box, unsigned long width)
+{
+	/* TODO: write this */
+	struct box * c;
+	unsigned long y = 1;
+
+	for (c = box->children; c != 0; c = c->next) {
+		c->x = 2;
+		c->y = y;
+		c->width = width-4;
+		c->height = 2;
+		y += 3;
+	}
+
+	box->width = width;
+	box->height = y;
 }
 
 
 /******************************************************************************/
 
 
-void render_plain_element(char *g, xmlNode *e, unsigned long x, unsigned long y)
+void render_plain_element(char * g, struct box * box, unsigned long x, unsigned long y)
 {
 	unsigned long i;
 	unsigned int l;
-	xmlNode *c;
-	struct data * data = e->_private;
+	struct box * c;
+	const char vline = box->type == BOX_INLINE_CONTAINER ? ':' : '|';
+	const char hline = box->type == BOX_INLINE_CONTAINER ? '·' : '-';
 
-	for (c = e->children; c != 0; c = c->next)
-		render_plain_element(g, c, x + data->x, y + data->y);
+	for (c = box->children; c != 0; c = c->next)
+		render_plain_element(g, c, x + box->x, y + box->y);
 
-	if (data == 0) return;
-
-//	printf("render_plain_element: x0 %li y0 %li x1 %li y1 %li\n", data->x0, data->y0, data->x1, data->y1);
-
-	for (i = (y + data->y) + 1; i < (y + data->y + data->height); i++) {
-		g[80 * i + (x + data->x)] = '|';
-		g[80 * i + (x + data->x + data->width)] = '|';
+	for (i = (y + box->y) + 1; i < (y + box->y + box->height); i++) {
+		g[80 * i + (x + box->x)] = vline;
+		g[80 * i + (x + box->x + box->width)] = vline;
+	}
+	for (i = (x + box->x); i <= (x + box->x + box->width); i++) {
+		g[80 * (y + box->y) + i] = hline;
+		g[80 * (y + box->y + box->height) + i] = hline;
 	}
 
-//	if (e->style->display != INLINE) {
-		for (i = (x + data->x); i < (x + data->x + data->width); i++) {
-			g[80 * (y + data->y) + i] = '-';
-			g[80 * (y + data->y + data->height) + i] = '-';
-		}
-		g[80 * (y + data->y) + (x + data->x)] = '+';
-		g[80 * (y + data->y) + (x + data->x + data->width)] = '+';
-		g[80 * (y + data->y + data->height) + (x + data->x)] = '+';
-		g[80 * (y + data->y + data->height) + (x + data->x + data->width)] = '+';
-//	}
+	switch (box->type) {
+		case BOX_BLOCK: strncpy(g + 80 * (y + box->y) + x + box->x,
+						box->node->name, strlen(box->node->name));
+				break;
+		case BOX_INLINE: strncpy(g + 80 * (y + box->y) + x + box->x,
+						box->node->parent->name, strlen(box->node->parent->name));
+				break;
+		case BOX_INLINE_CONTAINER:
+		default:
+	}
 
-	if (e->type == XML_TEXT_NODE && e->content) {
-		l = strlen(e->content);
-		if ((x + data->x + data->width) - (x + data->x) - 1 < l)
-			l = (x + data->x + data->width) - (x + data->x) - 1;
-		strncpy(g + 80 * ((y + data->y) + 1) + (x + data->x) + 1, e->content, l);
+	if (box->type == BOX_INLINE && box->node->content) {
+		l = strlen(box->node->content);
+		if ((x + box->x + box->width) - (x + box->x) - 1 < l)
+			l = (x + box->x + box->width) - (x + box->x) - 1;
+		strncpy(g + 80 * ((y + box->y) + 1) + (x + box->x) + 1, box->node->content, l);
 	}
 }
 
 
-void render_plain(xmlNode *doc)
+void render_plain(struct box * box)
 {
 	int i;
 	char *g;
@@ -278,62 +191,14 @@ void render_plain(xmlNode *doc)
         for (i = 0; i < 10000; i++)
 		g[i] = ' ';
 
-	render_plain_element(g, doc, 0, 0);
+	render_plain_element(g, box, 0, 0);
 
-	for (i = 0; i < 40; i++)
+	for (i = 0; i < 100; i++)
 		printf("%.80s\n", g + (80 * i));
 }
 
 
 /******************************************************************************/
-
-
-void walk(xmlNode *n, unsigned int depth)
-{
-	xmlNode *c;
-	xmlAttr *a;
-	struct data * data;
-	unsigned int i;
-
-	for (i = 0; i < depth; i++)
-		printf("  ");
-
-	data = n->_private;
-
-	switch (n->type) {
-		case XML_ELEMENT_NODE:
-			if (data == 0)
-				printf("ELEMENT %s", n->name);
-			else
-				printf("ELEMENT %s [%li %li %li*%li]", n->name, data->x,
-							data->y, data->width, data->height);
-		/*	for (a = n->properties; a != 0; a = a->next) {
-				assert(a->type == XML_ATTRIBUTE_NODE);
-				printf(" %s='", a->name);
-				for (c = a->children; c != 0; c = c->next)
-					walk(c);
-				printf("'");
-			}*/
-			printf("\n");
-			for (c = n->children; c != 0; c = c->next)
-				walk(c, depth + 1);
-//			printf("</%s>", n->name);
-			break;
-
-		case XML_TEXT_NODE:
-			if (data == 0)
-				printf("TEXT '%s'\n", n->content);
-			else
-				printf("TEXT [%li %li %li*%li] '%s'\n", data->x, data->y,
-							data->width, data->height, n->content);
-			break;
-
-		default:
-			printf("UNHANDLED\n");
-			break;
-	}
-}
-
 
 /**
  * add a child to a box tree node
@@ -436,6 +301,8 @@ void box_dump(struct box * box, unsigned int depth)
 	for (i = 0; i < depth; i++)
 		printf("  ");
 
+	printf("x%li y%li w%li h%li ", box->x, box->y, box->width, box->height);
+
 	switch (box->type) {
 		case BOX_BLOCK:            printf("BOX_BLOCK <%s>\n", box->node->name); break;
 		case BOX_INLINE_CONTAINER: printf("BOX_INLINE_CONTAINER\n"); break;
@@ -450,14 +317,13 @@ void box_dump(struct box * box, unsigned int depth)
 
 int main(int argc, char *argv[])
 {
-/* 	struct layout canvas = { 0, 0, 79, 0 }; */
-
 	struct css_stylesheet * stylesheet;
 	struct css_style * style = xcalloc(1, sizeof(struct css_style));
 	struct css_selector * selector = xcalloc(1, sizeof(struct css_selector));
 	xmlNode * c;
 	xmlDoc * doc;
 	struct box * doc_box = xcalloc(1, sizeof(struct box));
+	struct box * html_box;
 
 	if (argc < 3) die("usage: render htmlfile cssfile");
 	
@@ -475,14 +341,13 @@ int main(int argc, char *argv[])
 	doc_box->type = BOX_BLOCK;
 	doc_box->node = c;
 	xml_to_box(c, style, stylesheet, &selector, 0, doc_box, 0);
-	box_dump(doc_box->children, 0);
+	html_box = doc_box->children;
+	box_dump(html_box, 0);
 
-/*	walk(c, 0);
-	layout_element(c, 79);
-	walk(c, 0);
-	printf("\n\n");
-	render_plain(c);*/
-
+	layout_block(html_box, 79);
+	box_dump(html_box, 0);
+	render_plain(html_box);
+	
 	return 0;
 }
 
