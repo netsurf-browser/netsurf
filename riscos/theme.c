@@ -5,6 +5,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  */
 
 /** \file
@@ -52,6 +53,7 @@ void ro_theme_load(char *pathname) {
  	os_coord dimensions;
 	int size, i, n;
 	char *filename = alloca(strlen(pathname) + 16);
+	char *kioskfilename = alloca(strlen(pathname) + 16);
 	fileswitch_object_type obj_type;
 
 	/*	Release previous sprite are
@@ -70,6 +72,17 @@ void ro_theme_load(char *pathname) {
 	sprintf(filename, "%s.Sprites", pathname);
 	xosfile_read_no_path(filename, &obj_type, 0, 0, &size, 0);
 
+       /*       Load the window furniture if using Kiosk Themes
+        *
+        *       Yes I know this is one serious hack!
+        *       I'll do something a little more "realistic" when I've
+        *       finished various other bits... Right now it works.
+        */
+#ifdef WITH_KIOSK_THEMES
+        sprintf(kioskfilename, "%s.!SetTheme", pathname);
+        xos_cli(kioskfilename);
+
+#endif
 	/*	Claim memory for a sprite file if we have one
 	*/
 	if (obj_type & fileswitch_IS_FILE) theme_sprite_area = malloc(size + 16);
@@ -113,7 +126,6 @@ void ro_theme_load(char *pathname) {
 			}
 		}
 	}
-
 }
 
 

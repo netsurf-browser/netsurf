@@ -6,6 +6,7 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  */
 
 #include <assert.h>
@@ -159,6 +160,7 @@ void gui_init(int argc, char** argv)
 {
 	char path[40];
 	char theme_fname[256];
+	char url[80];
 	os_error *error;
 	int length;
 
@@ -166,8 +168,12 @@ void gui_init(int argc, char** argv)
 
 	save_complete_init();
 
+        /* We dont have the universal boot sequence on NCOS */
+#ifndef ncos
 	options_read("Choices:WWW.NetSurf.Choices");
-
+#else
+	options_read("<User$Path>.Choices.NetSurf.Choices");
+#endif
 	ro_gui_choose_language();
 
 	NETSURF_DIR = getenv("NetSurf$Dir");
@@ -178,17 +184,27 @@ void gui_init(int argc, char** argv)
 	messages_load(path);
 	messages_load("<NetSurf$Dir>.Resources.LangNames");
 
+        /* Totally pedantic But base the taskname on the buid options!
+        */
+#ifndef ncos
 	error = xwimp_initialise(wimp_VERSION_RO38, "NetSurf",
 			(const wimp_message_list *) &task_messages, 0,
 			&task_handle);
+#else
+	error = xwimp_initialise(wimp_VERSION_RO38, "NCNetSurf",
+			(const wimp_message_list *) &task_messages, 0,
+			&task_handle);
+#endif
 	if (error) {
 		LOG(("xwimp_initialise failed: 0x%x: %s",
 				error->errnum, error->errmess));
 		die(error->errmess);
 	}
 
+        /* We dont need to check the fonts on NCOS */
+#ifndef ncos
 	ro_gui_check_fonts();
-
+#endif
 	/* Issue a *Desktop to poke AcornURI into life */
 	if (getenv("NetSurf$Start_URI_Handler"))
 		xwimp_start_task("Desktop", 0);
@@ -227,10 +243,13 @@ void gui_init(int argc, char** argv)
 	wimp_close_template();
 	ro_gui_pointers_init();
 	ro_gui_hotlist_init();
+
+        /* We dont create an Iconbar icon on NCOS */
+#ifndef ncos
 	ro_gui_icon_bar_create();
+#endif
 	ro_gui_check_resolvers();
 }
-
 
 /**
  * Determine the language to use.

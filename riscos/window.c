@@ -6,6 +6,7 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  */
 
 /** \file
@@ -121,10 +122,19 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			if (win_height < 100)
 				win_height = 100;
 		} else {
+
+                       /* Base how we define the window height/width
+                       on the compile time options set */
+#ifdef WITH_KIOSK_BROWSING
+                        /* We're going fullscreen, forget the iconbar! */
+			win_width = screen_width;
+			win_height = screen_height;
+#else
 			win_width = screen_width * 3 / 4;
 			if (1600 < win_width)
 				win_width = 1600;
 			win_height = win_width * 3 / 4;
+#endif
 
 			window.visible.x0 = (screen_width - win_width) / 2;
 			window.visible.y0 = ((screen_height - win_height) / 2) +
@@ -139,7 +149,18 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window.xscroll = 0;
 	window.yscroll = 0;
 	window.next = wimp_TOP;
-	window.flags = wimp_WINDOW_MOVEABLE |
+
+        /* Base how we define the window characteristics
+         on the compile time options set */
+#ifdef WITH_KIOSK_BROWSING
+	window.flags = 	wimp_WINDOW_NEW_FORMAT |
+			wimp_WINDOW_VSCROLL |
+			wimp_WINDOW_HSCROLL |
+			wimp_WINDOW_IGNORE_XEXTENT |
+			wimp_WINDOW_IGNORE_YEXTENT |
+			wimp_WINDOW_SCROLL_REPEAT;
+#else
+	window.flags =  wimp_WINDOW_MOVEABLE |
 			wimp_WINDOW_NEW_FORMAT |
 			wimp_WINDOW_BACK_ICON |
 			wimp_WINDOW_CLOSE_ICON |
@@ -151,6 +172,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			wimp_WINDOW_IGNORE_XEXTENT |
 			wimp_WINDOW_IGNORE_YEXTENT |
 			wimp_WINDOW_SCROLL_REPEAT;
+#endif
+
 	window.title_fg = wimp_COLOUR_BLACK;
 	window.title_bg = wimp_COLOUR_LIGHT_GREY;
 	window.work_fg = wimp_COLOUR_LIGHT_GREY;

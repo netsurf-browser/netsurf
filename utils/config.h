@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003,4 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  */
 
 #ifndef _NETSURF_UTILS_CONFIG_H_
@@ -16,42 +17,46 @@
 
 /* HTTP POST support */
 #define WITH_POST
-
-/* Image renderering modules */
-#if defined(riscos) || defined(debug)
-#define WITH_GIF
-#define WITH_JPEG
-#define WITH_PNG
-#define WITH_MNG
-#endif
-#ifdef riscos
-#define WITH_DRAW
-#define WITH_SPRITE
-#endif
-
 /* HTTP Auth */
 #define WITH_AUTH
-
 /* Cookies */
 #define WITH_COOKIES
 
+/* Image renderering modules */
+#if defined(riscos) || defined(debug)
+    #define WITH_GIF
+    #define WITH_JPEG
+    #define WITH_PNG
+    #define WITH_MNG
+#endif
 #ifdef riscos
-/* Plugin module */
-#define WITH_PLUGIN
+    #define WITH_DRAW
+    #define WITH_SPRITE
+#endif
 
-/* Acorn URI protocol support */
-#define WITH_URI
-
-/* ANT URL protocol support */
-#define WITH_URL
-
+/* Platform specific features */
+#ifdef riscos
+    /* Plugin module */
+    #define WITH_PLUGIN
+    /* Acorn URI protocol support */
+    #define WITH_URI
+    /* ANT URL protocol support */
+    #define WITH_URL
+#endif
+#ifdef ncos
+    /* Kiosk style browsing support */
+    #define WITH_KIOSK_BROWSING
+    /* Kiosk style browsing themes support */
+    #define WITH_KIOSK_THEMES
+    /* Keyboard navigation support */
+    #define WITH_KEYBOARD_NAVIGATION
 #endif
 
 #if defined(riscos) || defined(debug)
-/* Export modules */
-#define WITH_SAVE_COMPLETE
-#define WITH_DRAW_EXPORT
-#define WITH_TEXT_EXPORT
+    /* Export modules */
+    #define WITH_SAVE_COMPLETE
+    #define WITH_DRAW_EXPORT
+    #define WITH_TEXT_EXPORT
 #endif
 
 #endif

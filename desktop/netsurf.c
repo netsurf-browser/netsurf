@@ -27,9 +27,10 @@ static void netsurf_init(int argc, char** argv);
 static void netsurf_poll(void);
 static void netsurf_exit(void);
 static void lib_init(void);
+extern void ro_gui_choose_language(void);
 
 #ifndef curl_memdebug
-extern void curl_memdebug(const char *logname);
+        extern void curl_memdebug(const char *logname);
 #endif
 
 /**
@@ -38,7 +39,11 @@ extern void curl_memdebug(const char *logname);
 
 int main(int argc, char** argv)
 {
-	netsurf_init(argc, argv);
+  	netsurf_init(argc, argv);
+
+#ifdef WITH_KIOSK_BROWSING
+ 	browser_window_create("file:/<NetSurf$Dir>/Docs/Intro_En", NULL);
+#endif
 
 	while (!netsurf_quit)
 		netsurf_poll();
@@ -76,7 +81,6 @@ void netsurf_init(int argc, char** argv)
 	fetch_init();
 	fetchcache_init();
 }
-
 
 /**
  * Poll components which require it.
