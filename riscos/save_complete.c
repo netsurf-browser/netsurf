@@ -137,11 +137,7 @@ void save_complete(struct content *c) {
 
 	/* make a copy of the document tree */
 	toSave = htmlCreateMemoryParserCtxt(c->source_data, c->source_size);
-	if (htmlParseDocument(toSave) == -1) {
-	        htmlFreeParserCtxt(toSave);
-	        xfree(spath);
-	        return;
-	}
+	htmlParseDocument(toSave);
 
 	/* rewrite all urls we know about */
        	if (rewrite_document_urls(toSave->myDoc, &urls, fname) == 0) {
@@ -516,7 +512,6 @@ int rewrite_urls(xmlNode *n, struct url_entry *head, char *fname)
          * 3)   src          <script> <input> <frame> <iframe> <img>
          */
         if (n->type == XML_ELEMENT_NODE) {
-                LOG(("%s", n->name));
                 /* 1 */
                 if (strcmp(n->name, "object") == 0) {
                       rewrite_url(n, head, fname, "data");
