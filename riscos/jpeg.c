@@ -14,6 +14,7 @@
 #include "libjpeg/jpeglib.h"
 #include "oslib/colourtrans.h"
 #include "oslib/jpeg.h"
+#include "oslib/osbyte.h"
 #include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
@@ -24,11 +25,9 @@
 #include "netsurf/utils/utils.h"
 
 /**
- * TODO -
  *      screen mode		image			result
- *      any			8bpp or less (palette)	8bpp sprite
- *      8bpp or less		16 or 24bpp		dither to 8bpp
- *      16 or 24bpp		16 or 24bpp		sprite of same depth
+ *      8bpp or less		8, 16 or 24bpp		dither to 8bpp
+ *      16 or 24bpp		8, 16 or 24bpp		24bpp sprite
  */
 
 #ifdef WITH_JPEG
@@ -149,6 +148,10 @@ int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
         struct nsjpeg_error_mgr jerr;
         unsigned int line_size;
         unsigned char *dstcur;
+        os_mode_block curr_mode;
+
+        /* get screenmode (RO3.1 compliant) */
+        xos_byte(osbyte_SCREEN_CHAR, 0, 0, 0, (int*)&curr_mode);
 
         /* Try to use OS routines */
         {
@@ -190,9 +193,20 @@ int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
         LOG(("creating sprite area"));
         {
           struct osspriteop_header *spr;
-          unsigned int abw = ((c->width + 3) &~ 3u) * c->height; /* sprite */
-          /* nBytes = spr + msk + spr ctrl blk + area ctrl blk + palette */
-          unsigned int nBytes = abw*2 + 44 + 16 /*+ 256*8*/; /* 8bpp */
+          unsigned int abw;
+          unsigned int nBytes;
+
+          if ((curr_mode.size < 256 && curr_mode.size >= 0) ||
+              curr_mode.log2_bpp <= 3 /*256*/) {
+            abw = ((c->width + 3) &~ 3u) * c->height; /* sprite */
+            nBytes = abw + 44 + 16;
+          }
+          else {
+            abw = ((c->width + 3) &~ 3u) * 4 * c->height; /* sprite */
+            nBytes = abw + 44 + 16;
+          }
+          /* nBytes = spr + spr ctrl blk + area ctrl blk */
+
           c->data.jpeg.sprite_area = xcalloc(1, nBytes);
           spr = (osspriteop_header*) (c->data.jpeg.sprite_area + 1);
 
@@ -205,14 +219,28 @@ int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
           /* sprite control block */
           spr->size = nBytes-sizeof(*c->data.jpeg.sprite_area);
           strncpy(spr->name, "jpeg", 12);
-          spr->width = ((c->width+3)>>2)-1; /* in words-1 */
+
+          if ((curr_mode.size < 256 && curr_mode.size >= 0) ||
+              curr_mode.log2_bpp <= 3 /*256*/) {
+             spr->width = ((c->width+3)>>2)-1; /* in words-1 */
+          }
+          else {
+             spr->width = c->width - 1;
+          }
+
           spr->height = c->height-1;        /* in scanlines-1 */
           spr->left_bit = 0;
           spr->right_bit = ((c->width & 3) * 8 - 1) & 31;
-          spr->image = sizeof(*spr) /*+ 256*8*/;
-          spr->mask = sizeof(*spr) /*+ 256*8*/ /*+ abw*/;
-          spr->mode = os_MODE8BPP90X90; /* 28 */
-          /* TODO - create palette entries */
+          spr->image = sizeof(*spr);
+          spr->mask = sizeof(*spr);
+
+          if ((curr_mode.size < 256 && curr_mode.size >= 0) ||
+              curr_mode.log2_bpp <= 3 /*256*/) {
+            spr->mode = os_MODE8BPP90X90; /* 28 */
+          }
+          else {
+            spr->mode = (os_mode)((osspriteop_TYPE32BPP<<27) | (90<<14) | (90<<1) | 1);
+          }
 
           c->data.jpeg.sprite_image = ((char*)spr) + spr->image;
 
@@ -221,7 +249,8 @@ int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
 
         LOG(("processing image: %ldx%ld,%d", c->width, c->height, cinfo.actual_number_of_colors));
 
-        {
+        if ((curr_mode.size < 256 && curr_mode.size >= 0) ||
+            curr_mode.log2_bpp <= 3 /*256*/) {
           JSAMPARRAY buf = (*cinfo.mem->alloc_sarray)
                            ((j_common_ptr)&cinfo, JPOOL_IMAGE, line_size, 1);
           unsigned int col;
@@ -243,6 +272,29 @@ int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
             }
           }
         }
+        else {
+          JSAMPARRAY buf = (*cinfo.mem->alloc_sarray)
+                           ((j_common_ptr)&cinfo, JPOOL_IMAGE, line_size, 1);
+          unsigned int col;
+          JSAMPROW row;
+
+          gui_multitask(); /* this takes some time so poll the wimp */
+	  dstcur = c->data.jpeg.sprite_image;
+          while (cinfo.output_scanline < cinfo.output_height) {
+
+            jpeg_read_scanlines(&cinfo, buf, 1);
+
+            row = buf[0];
+            for (col = 0; col != cinfo.output_width; col++) {
+              dstcur[0] = GETJSAMPLE(row[0]); /* R */
+              dstcur[1] = GETJSAMPLE(row[1]); /* G */
+              dstcur[2] = GETJSAMPLE(row[2]); /* B */
+              dstcur[3] = 0;                  /* A */
+              row += 3; dstcur += 4;
+            }
+          }
+        }
+
         jpeg_finish_decompress(&cinfo);
         jpeg_destroy_decompress(&cinfo);
         LOG(("image decompressed"));
