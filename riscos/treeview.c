@@ -76,7 +76,7 @@ bool ro_gui_tree_initialise(void) {
 	ro_gui_tree_edit_icon.icon.data.indirected_text.validation =
 			ro_gui_tree_icon_null;
 	ro_gui_tree_edit_icon.icon.data.indirected_text.size = 256;
-	
+
 	return true;
 }
 
@@ -91,7 +91,7 @@ bool ro_gui_tree_initialise(void) {
 bool ro_gui_tree_initialise_sprite(const char *name, int number) {
 	char icon_name[12];
 	os_error *error;
-	
+
 	sprintf(icon_name, "tr_%s", name);
 	error = xosspriteop_select_sprite(osspriteop_USER_AREA, gui_sprites,
 				(osspriteop_id)icon_name,
@@ -116,10 +116,10 @@ bool ro_gui_tree_initialise_sprite(const char *name, int number) {
  */
 void tree_redraw_area(struct tree *tree, int x, int y, int width, int height) {
 	os_error *error;
-	
+
 	assert(tree);
 	assert(tree->handle);
-	
+
 	error = xwimp_force_redraw((wimp_w)tree->handle, tree->offset_x + x - 2,
 			-tree->offset_y - y - height, tree->offset_x + x + width + 4,
 			-tree->offset_y - y);
@@ -193,10 +193,10 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 		if (element->parent->selected)
 			ro_gui_tree_icon.flags |= wimp_ICON_SELECTED;
 		ro_gui_tree_icon.flags |= (wimp_COLOUR_BLACK <<
-				wimp_ICON_FG_COLOUR_SHIFT);		
+				wimp_ICON_FG_COLOUR_SHIFT);
 	} else {
 		ro_gui_tree_icon.flags |= (wimp_COLOUR_DARK_GREY <<
-				wimp_ICON_FG_COLOUR_SHIFT);	  
+				wimp_ICON_FG_COLOUR_SHIFT);
 	}
 
 	switch (element->type) {
@@ -214,7 +214,7 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 						element->sprite->expanded_name);
 			} else {
 				sprintf(ro_gui_tree_icon_validation, "S%s",
-						element->sprite->name);	
+						element->sprite->name);
 			}
 			temp = ro_gui_tree_icon.extent.x1;
 			ro_gui_tree_icon.extent.x1 = ro_gui_tree_icon.extent.x0 +
@@ -228,10 +228,10 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 			ro_gui_tree_icon.extent.x0 = ro_gui_tree_icon.extent.x1;
 			ro_gui_tree_icon.extent.x1 = temp;
 			ro_gui_tree_icon.flags &= ~wimp_ICON_SPRITE;
-			
+
 		case NODE_ELEMENT_TEXT:
 			assert(element->text);
-			
+
 			if (element == tree->editing)
 				return;
 
@@ -257,7 +257,7 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 					strlen(element->sprite->name);
 			break;
 	}
-	
+
 	error = xwimp_plot_icon(&ro_gui_tree_icon);
 	if (error) {
 		LOG(("xwimp_plot_icon: 0x%x: %s",
@@ -307,7 +307,7 @@ void tree_initialise_redraw(struct tree *tree) {
 	wimp_window_state state;
 
 	assert(tree->handle);
-	
+
 	state.w = (wimp_w)tree->handle;
 	error = xwimp_get_window_state(&state);
 	if (error) {
@@ -315,7 +315,7 @@ void tree_initialise_redraw(struct tree *tree) {
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
-	
+
 	ro_gui_tree_origin_x = state.visible.x0 - state.xscroll + tree->offset_x;
 	ro_gui_tree_origin_y = state.visible.y1 - state.yscroll - tree->offset_y;
 }
@@ -331,15 +331,15 @@ void tree_recalculate_node_element(struct node_element *element) {
 	int sprite_width;
 	int sprite_height;
 	osspriteop_flags flags;
-  	
+
 	assert(element);
-	
+
 	switch (element->type) {
 		case NODE_ELEMENT_TEXT_PLUS_SPRITE:
 			assert(element->sprite);
 		case NODE_ELEMENT_TEXT:
 			assert(element->text);
-			
+
 			error = xwimptextop_string_width(element->text,
 					strlen(element->text),
 					&element->box.width);
@@ -448,7 +448,7 @@ void tree_update_URL_node(struct node *node) {
 		}
 		element->text = strdup(buffer);
 	}
-	
+
 	element = tree_find_element(node, TREE_ELEMENT_LAST_VISIT);
 	if (element) {
 		if (element->text) {
@@ -464,7 +464,7 @@ void tree_update_URL_node(struct node *node) {
 		}
 		element->text = strdup(buffer);
 	}
-	
+
 	element = tree_find_element(node, TREE_ELEMENT_VISITS);
 	if (element) {
 		if (element->text) {
@@ -490,7 +490,7 @@ void tree_resized(struct tree *tree) {
 
 	assert(tree->handle);
 
-	
+
 	state.w = (wimp_w)tree->handle;
 	error = xwimp_get_window_state(&state);
 	if (error) {
@@ -515,7 +515,7 @@ void ro_gui_tree_redraw(wimp_draw *redraw, struct tree *tree) {
 	int clip_x0, clip_x1, clip_y0, clip_y1, origin_x, origin_y;
 
 	more = wimp_redraw_window(redraw);
-	while (more) {	
+	while (more) {
 		clip_x0 = redraw->clip.x0;
 		clip_y0 = redraw->clip.y0;
 		clip_x1 = redraw->clip.x1;
@@ -550,7 +550,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 	os_error *error;
 	os_box box = { pointer->pos.x - 34, pointer->pos.y - 34,
 			pointer->pos.x + 34, pointer->pos.y + 34 };
-	
+
 	assert(tree);
 	assert(tree->root);
 
@@ -576,7 +576,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 
 	if (!tree->root->child)
 		return true;
-	
+
 	tree_initialise_redraw(tree);
 	x = pointer->pos.x - ro_gui_tree_origin_x;
 	y = ro_gui_tree_origin_y - pointer->pos.y;
@@ -598,7 +598,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 		node->selected = true;
 		tree_handle_node_element_changed(tree, &node->data);
 		return true;
-	  
+
 	}
 
 	/* no item either means cancel selection on (select) click or a drag */
@@ -608,7 +608,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 			tree_set_node_selected(tree, tree->root->child, false);
 		if ((pointer->buttons == (wimp_CLICK_SELECT << 4)) ||
 				(pointer->buttons == (wimp_CLICK_ADJUST << 4))) {
-			
+
 			scroll.w = (wimp_w)tree->handle;
 			scroll.pause_zone_sizes.y0 = 80;
 			scroll.pause_zone_sizes.y1 = 80;
@@ -640,7 +640,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 			if (error)
 				LOG(("xwimp_drag_box_with_flags: 0x%x: %s",
 						error->errnum, error->errmess));
-						
+
 		}
 		return true;
 	}
@@ -659,7 +659,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 		tree_handle_node_changed(tree, node, false, true);
 		return true;
 	}
-	
+
 	/* no use for any other furniture click */
 	if (furniture)
 		return true;
@@ -686,7 +686,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 			ro_gui_tree_keypress(wimp_KEY_CONTROL + wimp_KEY_F2, tree);
 		return true;
 	}
-	
+
 	/* single click (select) cancels current selection and selects item */
 	if (pointer->buttons == (wimp_CLICK_SELECT << 8)) {
 		if (!node->selected) {
@@ -707,12 +707,12 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 	/* drag starts a drag operation */
 	if ((!tree->editing) && ((pointer->buttons == (wimp_CLICK_SELECT << 4)) ||
 			(pointer->buttons == (wimp_CLICK_ADJUST << 4)))) {
-		
+
 		if (!node->selected) {
 			node->selected = true;
 			tree_handle_node_element_changed(tree, &node->data);
 		}
-		
+
 		scroll.w = (wimp_w)tree->handle;
 		scroll.pause_zone_sizes.y0 = 80;
 		scroll.pause_zone_sizes.y1 = 80;
@@ -731,7 +731,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 		node = tree_get_selected_node(tree->root);
 		if (node) {
 		  	if (node->folder) {
-		  		if ((node->expanded) && 
+		  		if ((node->expanded) &&
 		  				(ro_gui_wimp_sprite_exists("directoryo")))
 		  	  		sprintf(ro_gui_tree_drag_name, "directoryo");
 		  	  	else
@@ -750,7 +750,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 		} else {
 	  		sprintf(ro_gui_tree_drag_name, "package");
 		}
-		
+
 		error = xdragasprite_start(dragasprite_HPOS_CENTRE |
 				dragasprite_VPOS_CENTRE |
 				dragasprite_BOUND_POINTER |
@@ -775,7 +775,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
  */
 void ro_gui_tree_menu_closed(struct tree *tree) {
 	assert(tree);
-	
+
 	if (tree->temp_selection) {
 		tree->temp_selection->selected = false;
 		tree_handle_node_element_changed(tree, &tree->temp_selection->data);
@@ -799,10 +799,10 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
 
 	assert(tree);
 	assert(element);
-	
+
 	if (tree->editing)
 		ro_gui_tree_stop_edit(tree);
-	
+
 	parent = element->parent;
 	if (&parent->data == element)
 		parent = parent->parent;
@@ -827,7 +827,7 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
 		ro_gui_tree_edit_icon.icon.extent.x0 += NODE_INSTEP;
 	ro_gui_tree_edit_icon.icon.data.indirected_text.text = tree->edit_buffer;
 	error = xwimp_create_icon(&ro_gui_tree_edit_icon,
-			&(wimp_i)tree->edit_handle); 
+			(wimp_i *)&tree->edit_handle);
 	if (error)
 		LOG(("xwimp_create_icon: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -860,13 +860,13 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
  * \param tree  the tree to stop editing for
  */
 void ro_gui_tree_stop_edit(struct tree *tree) {
-	os_error *error;  
+	os_error *error;
 
 	assert(tree);
-	
+
 	if (!tree->editing) return;
 
-	error = xwimp_delete_icon((wimp_w)tree->handle, (wimp_i)tree->edit_handle); 
+	error = xwimp_delete_icon((wimp_w)tree->handle, (wimp_i)tree->edit_handle);
 	if (error)
 		LOG(("xwimp_delete_icon: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -906,7 +906,7 @@ void ro_gui_tree_scroll_visible(struct tree *tree, struct node_element *element)
 	y0 = -state.yscroll;
 	x1 = x0 + state.visible.x1 - state.visible.x0 - tree->offset_x;
 	y1 = y0 - state.visible.y0 + state.visible.y1 - tree->offset_y;
-	
+
 	state.yscroll = state.visible.y1 - state.visible.y0 - tree->offset_y - y1;
 	if ((element->box.y >= y0) && (element->box.y + element->box.height <= y1))
 		return;
@@ -930,7 +930,7 @@ void ro_gui_tree_open(wimp_open *open, struct tree *tree) {
 	os_error *error;
 	int width;
 	int height;
-	
+
 	width = open->visible.x1 - open->visible.x0;
 	if (width < (tree->offset_x + tree->width))
 		width = tree->offset_x + tree->width;
@@ -1007,7 +1007,7 @@ bool ro_gui_tree_keypress(int key, struct tree *tree) {
 			return true;
 		case wimp_KEY_CONTROL + wimp_KEY_F2:
 			error = xwimp_close_window((wimp_w)tree->handle);
-			if (error) 
+			if (error)
 				LOG(("xwimp_close_window: 0x%x: %s",
 						error->errnum, error->errmess));
 			return true;
@@ -1032,7 +1032,7 @@ void ro_gui_tree_selection_drag_end(wimp_dragged *drag) {
 	wimp_auto_scroll_info scroll;
 	os_error *error;
 	int x0, y0, x1, y1;
-			
+
 	scroll.w = (wimp_w)ro_gui_tree_current_drag_tree->handle;
 	error = xwimp_auto_scroll(0, &scroll, 0);
 	if (error)
@@ -1065,7 +1065,7 @@ void ro_gui_tree_selection_drag_end(wimp_dragged *drag) {
 	error = xwimp_process_key(0);
 	if (error)
 		LOG(("xwimp_process_key: 0x%x: %s",
-				error->errnum, error->errmess));	
+				error->errnum, error->errmess));
 }
 
 
@@ -1120,7 +1120,7 @@ void ro_gui_tree_move_drag_end(wimp_dragged *drag) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	
+
 	/* todo: handle export */
 	if (pointer.w != (wimp_w)ro_gui_tree_current_drag_tree->handle)
 		return;
@@ -1140,9 +1140,9 @@ void ro_gui_tree_move_drag_end(wimp_dragged *drag) {
  */
 void ro_gui_tree_launch_selected(struct tree *tree) {
 	assert(tree);
-	
+
   	if (tree->root->child)
-		ro_gui_tree_launch_selected_node(tree->root->child, false);	
+		ro_gui_tree_launch_selected_node(tree->root->child, false);
 }
 
 
@@ -1170,14 +1170,14 @@ void ro_gui_tree_launch_selected_node(struct node *node, bool all) {
  */
 bool ro_gui_tree_launch_node(struct node *node) {
 	struct node_element *element;
-  	
+
 	assert(node);
-	
+
 	element = tree_find_element(node, TREE_ELEMENT_URL);
 	if (element) {
 		browser_window_create(element->text, NULL, 0);
 		return true;
 	}
-	
+
 	return false;
 }
