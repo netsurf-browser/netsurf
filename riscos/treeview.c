@@ -830,7 +830,7 @@ void ro_gui_tree_toolbar_click(wimp_pointer* pointer, struct tree *tree) {
 		return;
 	}
 
-	if ((pointer->i < 0) && (current_toolbar)) {
+	if (current_toolbar->editor) {
 		ro_gui_theme_toolbar_editor_click(tree->toolbar, pointer);
 		return; 
 	}

@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include "oslib/dragasprite.h"
 #include "oslib/os.h"
 #include "oslib/osgbpb.h"
 #include "oslib/osgbpb.h"
@@ -37,6 +38,9 @@
 
 static struct theme_descriptor *theme_current = NULL;
 static struct theme_descriptor *theme_descriptors = NULL;
+static struct toolbar *theme_toolbar_drag = NULL;
+static struct toolbar_icon *theme_toolbar_icon_drag = NULL;
+static bool theme_toolbar_editor_drag = false;
 
 static void ro_gui_theme_get_available_in_dir(const char *directory);
 static void ro_gui_theme_free(struct theme_descriptor *descriptor, bool list);
@@ -44,6 +48,11 @@ static struct toolbar_icon *ro_gui_theme_add_toolbar_icon(struct toolbar *toolba
 		int icon_number);
 static void ro_gui_theme_update_toolbar_icon(struct toolbar *toolbar, struct toolbar_icon *icon);
 static void ro_gui_theme_destroy_toolbar_icon(struct toolbar_icon *icon);
+static void ro_gui_theme_link_toolbar_icon(struct toolbar *toolbar, struct toolbar_icon *icon,
+		struct toolbar_icon *link, bool before);
+static void ro_gui_theme_delink_toolbar_icon(struct toolbar *toolbar, struct toolbar_icon *icon);
+static struct toolbar_icon *ro_gui_theme_toolbar_get_insert_icon(struct toolbar *toolbar, int x, int y,
+		bool *before);
 
 
 /*	A basic window for the toolbar and status
@@ -860,7 +869,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	if ((toolbar->editor) || (toolbar->type == THEME_HOTLIST_EDIT_TOOLBAR) ||
 			(toolbar->type == THEME_HISTORY_EDIT_TOOLBAR) ||
 			(toolbar->type == THEME_BROWSER_EDIT_TOOLBAR))
-		new_icon.icon.flags |= (wimp_BUTTON_NEVER << wimp_ICON_BUTTON_TYPE_SHIFT);
+		new_icon.icon.flags |= (wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT);
 	else
 		new_icon.icon.flags |= (wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT);
 	if (toolbar->descriptor)
@@ -1578,20 +1587,20 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar) {
  * \param toolbar      the toolbar to toggle editing for
  */
 void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
-  	int height;
-  	struct gui_window *g = NULL;
+	int height;
+	struct gui_window *g = NULL;
 	wimp_window_state state;
 	os_error *error;
  
-  	if (!toolbar)
-  		return;
+	if (!toolbar)
+		return;
 
 	if ((toolbar->type == THEME_BROWSER_TOOLBAR) && (toolbar->parent_handle))
 		g = ro_gui_window_lookup(toolbar->parent_handle);
 
 	if (toolbar->editor) {
 		/* todo: save options */
-	  	height = toolbar->editor->height;
+		height = toolbar->editor->height;
 		ro_gui_theme_destroy_toolbar(toolbar->editor);
 		toolbar->editor = NULL;
 		ro_gui_theme_update_toolbar(toolbar->descriptor, toolbar);
@@ -1607,7 +1616,7 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
 				break;
 		}
 	} else {
-	  	/* create/initialise the toolbar editor */
+		/* create/initialise the toolbar editor */
 		switch (toolbar->type) {
 			case THEME_BROWSER_TOOLBAR:
 				toolbar->editor = ro_gui_theme_create_toolbar(toolbar->descriptor,
@@ -1625,8 +1634,8 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
 				return;
 		}
 		if (!toolbar->editor) {
-		  	LOG(("Unable to create toolbar editor"));
-		  	return;
+			LOG(("Unable to create toolbar editor"));
+			return;
 		}
 		ro_gui_theme_update_toolbar(toolbar->descriptor, toolbar);
 		switch (toolbar->type) {
@@ -1636,7 +1645,7 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
 				break;
 			default:
 				if (toolbar->parent_handle) {
-				  	state.w = toolbar->parent_handle;
+					state.w = toolbar->parent_handle;
 					error = xwimp_get_window_state(&state);
 					if (error) {
 						LOG(("xwimp_get_window_state: 0x%x: %s",
@@ -1684,7 +1693,57 @@ void ro_gui_theme_toolbar_editor_sync(struct toolbar *toolbar) {
  * \param pointer  the WIMP pointer details
  */
 void ro_gui_theme_toolbar_editor_click(struct toolbar *toolbar, wimp_pointer *pointer) {
-  
+	wimp_window_state state;
+	os_error *error;
+	os_box box;
+
+	if (!toolbar->editor)
+		return;
+	if ((pointer->buttons != (wimp_CLICK_SELECT << 4)) &&
+			(pointer->buttons != (wimp_CLICK_ADJUST << 4)))
+		return;
+
+	state.w = pointer->w;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+			error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	
+	gui_current_drag_type = GUI_DRAG_TOOLBAR_CONFIG;
+	theme_toolbar_drag = toolbar;
+	theme_toolbar_editor_drag = !(pointer->w == toolbar->toolbar_handle);
+	if (theme_toolbar_editor_drag)
+		theme_toolbar_icon_drag = ro_gui_theme_toolbar_get_icon(toolbar->editor,
+				pointer->pos.x - state.visible.x0,
+				state.visible.y1 - pointer->pos.y);
+	else
+		theme_toolbar_icon_drag = ro_gui_theme_toolbar_get_icon(toolbar,
+				pointer->pos.x - state.visible.x0,
+				state.visible.y1 - pointer->pos.y);
+	if (!theme_toolbar_icon_drag)
+		return;
+	if ((theme_toolbar_icon_drag->icon_number >= 0) &&
+			(pointer->w == toolbar->editor->toolbar_handle) &&
+			(ro_gui_get_icon_shaded_state(toolbar->editor->toolbar_handle,
+					theme_toolbar_icon_drag->icon_number)))
+		return;
+
+	box.x0 = pointer->pos.x - theme_toolbar_icon_drag->width / 2;
+	box.x1 = box.x0 + theme_toolbar_icon_drag->width;
+	box.y0 = pointer->pos.y - theme_toolbar_icon_drag->height / 2;
+	box.y1 = box.y0 + theme_toolbar_icon_drag->height;
+	error = xdragasprite_start(dragasprite_HPOS_CENTRE |
+			dragasprite_VPOS_CENTRE |
+			dragasprite_BOUND_POINTER |
+			dragasprite_DROP_SHADOW,
+			toolbar->descriptor->theme->sprite_area,
+			theme_toolbar_icon_drag->name, &box, 0);
+	if (error)
+		LOG(("xdragasprite_start: 0x%x: %s",
+				error->errnum, error->errmess));
 }
 
 
@@ -1694,12 +1753,88 @@ void ro_gui_theme_toolbar_editor_click(struct toolbar *toolbar, wimp_pointer *po
  * \param drag  the details for the drag end
  */
 void ro_gui_theme_toolbar_editor_drag_end(wimp_dragged *drag) {
+	wimp_window_state state;
+	os_error *error;
+	wimp_pointer pointer;
+	struct toolbar_icon *insert_icon;
+	struct toolbar_icon *local_icon = NULL;
+	struct toolbar_icon *icon;
+	bool before;
+
+	if ((!theme_toolbar_drag) || (!theme_toolbar_icon_drag) || (!theme_toolbar_drag->editor))
+		return;
+
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info: 0x%x: %s", error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	
+	if (pointer.w == theme_toolbar_drag->toolbar_handle) {
+		/* drag from editor or toolbar to toolbar */
+		state.w = pointer.w;
+		error = xwimp_get_window_state(&state);
+		if (error) {
+			LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+		insert_icon = ro_gui_theme_toolbar_get_insert_icon(theme_toolbar_drag,
+				pointer.pos.x - state.visible.x0,
+				state.visible.y1 - pointer.pos.y, &before);
+		if (theme_toolbar_icon_drag->icon_number == -1) {
+			if (theme_toolbar_editor_drag) {
+				theme_toolbar_icon_drag = ro_gui_theme_add_toolbar_icon(theme_toolbar_drag,
+						NULL, -1);
+				ro_gui_theme_update_toolbar_icon(theme_toolbar_drag,
+						theme_toolbar_icon_drag);
+			}
+			/* move the separator */
+			if (theme_toolbar_icon_drag != insert_icon) {
+				ro_gui_theme_delink_toolbar_icon(theme_toolbar_drag,
+						theme_toolbar_icon_drag);
+				ro_gui_theme_link_toolbar_icon(theme_toolbar_drag,
+						theme_toolbar_icon_drag,
+						insert_icon, before);
+			}
+		} else {
+			/* move/enable the icon */
+			for (icon = theme_toolbar_drag->icon; icon; icon = icon->next)
+				if (icon->icon_number == theme_toolbar_icon_drag->icon_number)
+					local_icon = icon;
+			if (!local_icon)
+				return;
+			if (local_icon != insert_icon) {
+				ro_gui_theme_delink_toolbar_icon(theme_toolbar_drag, local_icon);
+				ro_gui_theme_link_toolbar_icon(theme_toolbar_drag, local_icon,
+						insert_icon, before);
+			}
+			local_icon->display = true;
+		}
+	} else if ((pointer.w == theme_toolbar_drag->editor->toolbar_handle) &&
+			(!theme_toolbar_editor_drag)) {
+		/* drag from toolbar to editor */
+		if (theme_toolbar_icon_drag->icon_number == -1) {
+			/* delete separators */
+			ro_gui_theme_delink_toolbar_icon(theme_toolbar_drag, theme_toolbar_icon_drag);
+			ro_gui_theme_destroy_toolbar_icon(theme_toolbar_icon_drag);
+		} else {
+			/* hide icons */
+			theme_toolbar_icon_drag->display = false;
+		}
+	}
+	theme_toolbar_drag->reformat_buttons = true;
+	ro_gui_theme_process_toolbar(theme_toolbar_drag, -1);
+	ro_gui_theme_toolbar_editor_sync(theme_toolbar_drag);
 }
+
 
 /**
  * Adds a toolbar icon to the end of a toolbar
  *
- * \param toolbar      the toolbar to add the icon to the end of
+ * \param toolbar      the toolbar to add the icon to the end of (or NULL not to link)
  * \param name	       the icon name, or NULL for a separator
  * \param icon_number  the RISC OS Wimp icon number for the icon (not used for separators)
  */
@@ -1809,6 +1944,65 @@ void ro_gui_theme_destroy_toolbar_icon(struct toolbar_icon *icon) {
 
 
 /**
+ * Links a toolbar icon
+ *
+ * \param icon	   the toolbar icon to link
+ */
+void ro_gui_theme_link_toolbar_icon(struct toolbar *toolbar, struct toolbar_icon *icon,
+		struct toolbar_icon *link, bool before) {
+	struct toolbar_icon *temp;
+	assert(toolbar);
+	assert(icon);
+	assert(icon != link);
+
+	/* no icon set, no link icon, or insert at head of list */
+	if ((!toolbar->icon) || (!link) || (before && (toolbar->icon == link))) {
+		icon->next = toolbar->icon;
+		toolbar->icon = icon;
+		return;
+	}
+	
+	if (before) {
+		for (temp = toolbar->icon; temp; temp = temp->next)
+			if (temp->next == link) {
+				temp->next = icon;
+				icon->next = link;
+				return;
+			}
+		LOG(("Failed to link icon"));
+	} else {
+		icon->next = link->next;
+		link->next = icon;
+	}
+}
+
+/**
+ * Delinks a toolbar icon
+ *
+ * \param icon	   the toolbar icon to delink
+ */
+void ro_gui_theme_delink_toolbar_icon(struct toolbar *toolbar, struct toolbar_icon *icon) {
+	struct toolbar_icon *link;
+	assert(toolbar);
+	assert(icon);
+
+	if (toolbar->icon == icon) {
+		toolbar->icon = icon->next;
+		icon->next = NULL;
+		return;
+	}
+
+	for (link = toolbar->icon; link; link = link->next)
+		if (link->next == icon) {
+			link->next = icon->next;
+			icon->next = NULL;
+			return;
+		}
+	LOG(("Failed to delink icon"));
+}
+
+
+/**
  * Returns the toolbar icon at a specified position
  *
  * \param toolbar  the toolbar to examine
@@ -1820,9 +2014,44 @@ struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar, int 
 	struct toolbar_icon *icon;
 	
 	for (icon = toolbar->icon; icon; icon = icon->next)
-		if ((icon->display) && (icon->x <= x) && (icon->y <= y) &&
+		if ((icon->display) && (icon->width > 0) && (icon->x <= x) && (icon->y <= y) &&
 				(icon->x + icon->width > x) &&
 				(icon->y + icon->height > y))
 			return icon;
 	return NULL;
+}
+
+
+/**
+ * Returns the toolbar icon closest to the specified position, and whether the position is before (left)
+ * or after (right) of it.
+ *
+ * \param toolbar  the toolbar to examine
+ * \param x	   the x co-ordinate to check
+ * \param y	   the y co-ordinate to check
+ * \return the toolbar icon closest to the specified position, or NULL for no icon
+ */
+struct toolbar_icon *ro_gui_theme_toolbar_get_insert_icon(struct toolbar *toolbar, int x, int y,
+		bool *before) {
+	struct toolbar_icon *match = NULL;
+	struct toolbar_icon *icon;
+	int closest = 65536;
+	int distance;
+
+	if (!toolbar->icon)
+		return NULL;
+	
+	for (icon = toolbar->icon; icon; icon = icon->next) {
+		if ((icon->display) && (icon->width > 0)) {
+			distance = icon->x + icon->width / 2 - x;
+			if (distance < 0)
+				distance = -distance;
+			if (distance < closest) {
+				closest = distance;
+				match = icon;
+				*before = (icon->x + icon->width / 2 - x) > 0;
+			}
+		}
+	}
+	return match;
 }

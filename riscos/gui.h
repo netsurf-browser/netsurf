@@ -63,7 +63,8 @@ typedef enum {
 
 typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_SAVE, GUI_DRAG_STATUS_RESIZE,
-		GUI_DRAG_TREE_SELECT, GUI_DRAG_TREE_MOVE } gui_drag_type;
+		GUI_DRAG_TREE_SELECT, GUI_DRAG_TREE_MOVE,
+		GUI_DRAG_TOOLBAR_CONFIG } gui_drag_type;
 extern gui_drag_type gui_current_drag_type;
 
 

@@ -1199,7 +1199,7 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 	
 	/*	Handle toolbar edits
 	*/
-	if (pointer->i < 0) {
+	if ((g->toolbar->editor) && (pointer->i < ICON_TOOLBAR_URL)) {
 		ro_gui_theme_toolbar_editor_click(g->toolbar, pointer);
 		return; 
 	}

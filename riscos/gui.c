@@ -1025,6 +1025,10 @@ void ro_gui_drag_end(wimp_dragged *drag)
 		case GUI_DRAG_TREE_MOVE:
 			ro_gui_tree_move_drag_end(drag);
 			break;
+
+		case GUI_DRAG_TOOLBAR_CONFIG:
+			ro_gui_theme_toolbar_editor_drag_end(drag);
+			break;
 	}
 }
 
