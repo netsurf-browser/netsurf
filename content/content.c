@@ -46,6 +46,7 @@
 #endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/talloc.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -256,20 +257,20 @@ struct content * content_create(const char *url)
 	struct content *c;
 	struct content_user *user_sentinel;
 	LOG(("url %s", url));
-	c = malloc(sizeof(struct content));
+	c = talloc(0, struct content);
 	if (!c)
 		return 0;
-	user_sentinel = malloc(sizeof *user_sentinel);
+	user_sentinel = talloc(c, struct content_user);
 	if (!user_sentinel) {
-		free(c);
+		talloc_free(c);
 		return 0;
 	}
-	c->url = strdup(url);
+	c->url = talloc_strdup(c, url);
 	if (!c->url) {
-		free(c);
-		free(user_sentinel);
+		talloc_free(c);
 		return 0;
 	}
+	talloc_set_name_const(c, c->url);
 	c->type = CONTENT_UNKNOWN;
 	c->mime_type = 0;
 	c->status = CONTENT_STATUS_TYPE_UNKNOWN;
@@ -370,7 +371,7 @@ bool content_set_type(struct content *c, content_type type,
 
 	LOG(("content %s, type %i", c->url, type));
 
-	c->mime_type = strdup(mime_type);
+	c->mime_type = talloc_strdup(c, mime_type);
 	if (!c->mime_type) {
 		c->status = CONTENT_STATUS_ERROR;
 		msg_data.error = messages_get("NoMemory");
@@ -480,7 +481,8 @@ bool content_process_data(struct content *c, const char *data,
 	assert(c->status == CONTENT_STATUS_LOADING);
 	LOG(("content %s, size %u", c->url, size));
 
-	source_data = realloc(c->source_data, c->source_size + size);
+	source_data = talloc_realloc(c, c->source_data, char,
+			c->source_size + size);
 	if (!source_data) {
 		c->status = CONTENT_STATUS_ERROR;
 		msg_data.error = messages_get("NoMemory");
@@ -628,7 +630,6 @@ void content_clean(void)
 
 void content_destroy(struct content *c)
 {
-	struct content_user *user, *next;
 	assert(c);
 	LOG(("content %p %s", c, c->url));
 
@@ -644,14 +645,8 @@ void content_destroy(struct content *c)
 
 	if (c->type < HANDLER_MAP_COUNT && handler_map[c->type].destroy)
 		handler_map[c->type].destroy(c);
-	for (user = c->user_list; user != 0; user = next) {
-		next = user->next;
-		free(user);
-	}
-	free(c->mime_type);
-	free(c->url);
-	free(c->source_data);
-	free(c);
+
+	talloc_free(c);
 }
 
 
@@ -671,7 +666,7 @@ void content_reset(struct content *c)
 	c->type = CONTENT_UNKNOWN;
 	c->status = CONTENT_STATUS_TYPE_UNKNOWN;
 	c->size = sizeof(struct content);
-	free(c->mime_type);
+	talloc_free(c->mime_type);
 	c->mime_type = 0;
 }
 
@@ -747,7 +742,7 @@ bool content_add_user(struct content *c,
 	struct content_user *user;
 
 	LOG(("content %s, user %p %p %p", c->url, callback, p1, p2));
-	user = calloc(1, sizeof(*user));
+	user = talloc(c, struct content_user);
 	if (!user)
 		return false;
 	user->callback = callback;
@@ -812,7 +807,7 @@ void content_remove_user(struct content *c,
 	}
 	next = user->next;
 	user->next = next->next;
-	free(next);
+	talloc_free(next);
 }
 
 
