@@ -726,27 +726,33 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 {
 	unsigned int i = c->data.html.object_count;
 	struct content_html_object *object;
+	struct content *c_fetch;
+	
+	/* initialise fetch */
+	c_fetch = fetchcache(url, html_object_callback,
+			c, (void *) i, available_width, available_height,
+			true, 0, 0, false, false);
+	if (!c_fetch)
+		return false;
 
 	/* add to object list */
 	object = realloc(c->data.html.object,
 			(i + 1) * sizeof *c->data.html.object);
-	if (!object)
+	if (!object) {
+		content_remove_user(c_fetch, html_object_callback, c, (void*)i);
 		return false;
+	}
 	c->data.html.object = object;
 	c->data.html.object[i].url = url;
 	c->data.html.object[i].box = box;
 	c->data.html.object[i].permitted_types = permitted_types;
        	c->data.html.object[i].background = background;
+	c->data.html.object[i].content = c_fetch;
 	c->data.html.object_count++;
+	c->active++;
 
 	/* start fetch */
-	c->data.html.object[i].content = fetchcache(url, html_object_callback,
-			c, (void *) i, available_width, available_height,
-			true, 0, 0, false, false);
-	if (!c->data.html.object[i].content)
-		return false;
-	c->active++;
-	fetchcache_go(c->data.html.object[i].content, c->url,
+	fetchcache_go(c_fetch, c->url,
 			html_object_callback, c, (void *) i,
 			available_width, available_height,
 			0, 0, false);
