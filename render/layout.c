@@ -54,6 +54,7 @@ static void layout_inline_container(struct box *box, int width,
 static int line_height(struct css_style *style);
 static struct box * layout_line(struct box *first, int width, int *y,
 		int cx, int cy, struct box *cont, bool indent);
+static int layout_text_indent(struct css_style *style, int width);
 static void place_float_below(struct box *c, int width, int y,
 		struct box *cont);
 static void layout_table(struct box *box);
@@ -484,6 +485,7 @@ void layout_inline_container(struct box *box, int width,
 			box, width, cont, cx, cy));
 
 	for (c = box->children; c; ) {
+		LOG(("c %p", c));
 		c = layout_line(c, width, &y, cx, cy + y, cont, first_line);
 		first_line = false;
 	}
@@ -539,12 +541,12 @@ struct box * layout_line(struct box *first, int width, int *y,
 	int x0 = 0;
 	int x1 = width;
 	int x, h, x_previous;
-	struct box * left;
-	struct box * right;
-	struct box * b;
-	struct box * c;
-	struct box * d;
-	struct box * fl;
+	struct box *left;
+	struct box *right;
+	struct box *b;
+	struct box *split_box = 0;
+	struct box *d;
+	struct box *fl;
 	int move_y = 0;
 	int space_before = 0, space_after = 0;
 
@@ -564,62 +566,57 @@ struct box * layout_line(struct box *first, int width, int *y,
 	/* pass 1: find height of line assuming sides at top of line */
 	for (x = 0, b = first; x < x1 - x0 && b != 0; b = b->next) {
 		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
-				b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT);
-		if (b->type == BOX_INLINE) {
-			if ((b->object || b->gadget) && b->style && b->style->height.height == CSS_HEIGHT_LENGTH)
-				h = len(&b->style->height.length, b->style);
-			else
-				h = line_height(b->style ? b->style : b->parent->parent->style);
-			b->height = h;
+				b->type == BOX_FLOAT_LEFT ||
+				b->type == BOX_FLOAT_RIGHT);
+		if (b->type != BOX_INLINE)
+			continue;
 
-			if (h > height) height = h;
+		if ((b->object || b->gadget) && b->style &&
+				b->style->height.height == CSS_HEIGHT_LENGTH)
+			h = len(&b->style->height.length, b->style);
+		else
+			h = line_height(b->style ? b->style :
+					b->parent->parent->style);
+		b->height = h;
 
-			if ((b->object || b->gadget) && b->style && b->style->width.width == CSS_WIDTH_LENGTH)
-				b->width = len(&b->style->width.value.length, b->style);
-			else if ((b->object || b->gadget) && b->style && b->style->width.width == CSS_WIDTH_PERCENT)
-				b->width = width * b->style->width.value.percent / 100;
-			else if (b->text) {
-				if (b->width == UNKNOWN_WIDTH)
-					b->width = font_width(b->font, b->text, b->length);
-			} else
-				b->width = 0;
+		if (height < h)
+			height = h;
 
-			if (b->text != 0)
-				x += b->width + b->space ? b->font->space_width : 0;
-			else
-				x += b->width;
-		}
+		if ((b->object || b->gadget) && b->style &&
+				b->style->width.width == CSS_WIDTH_LENGTH)
+			b->width = len(&b->style->width.value.length, b->style);
+		else if ((b->object || b->gadget) && b->style &&
+				b->style->width.width == CSS_WIDTH_PERCENT)
+			b->width = width * b->style->width.value.percent / 100;
+		else if (b->text) {
+			if (b->width == UNKNOWN_WIDTH)
+				b->width = font_width(b->font, b->text,
+						b->length);
+		} else
+			b->width = 0;
+
+		if (b->text)
+			x += b->width + b->space ? b->font->space_width : 0;
+		else
+			x += b->width;
 	}
 
 	/* find new sides using this height */
 	x0 = cx;
 	x1 = cx + width;
-	find_sides(cont->float_children, cy, cy + height, &x0, &x1, &left, &right);
+	find_sides(cont->float_children, cy, cy + height, &x0, &x1,
+			&left, &right);
 	x0 -= cx;
 	x1 -= cx;
 
-        /* text-indent */
-        /* TODO - fix <BR> related b0rkage */
-        if (indent) {
-        	switch (first->parent->parent->style->text_indent.size) {
-	                case CSS_TEXT_INDENT_LENGTH:
-	                        x0 += len(&first->parent->parent->style->text_indent.value.length, first->parent->parent->style);
-	                        if (x0 + x > x1)
-	                                x1 = x0 + x;
-	                        break;
-	                case CSS_TEXT_INDENT_PERCENT:
-	                        x0 += ((x1-x0) * first->parent->parent->style->text_indent.value.percent) / 100;
-	                        if (x0 + x > x1)
-	                                x1 = x0 + x;
-	                        break;
-	                default:
-	                        break;
-	        }
-	}
+        if (indent)
+        	x0 += layout_text_indent(first->parent->parent->style, width);
 
-	c = first;
-	/* pass 2: place boxes in line */
-	for (x = x_previous = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
+        if (x1 < x0)
+        	x1 = x0;
+
+	/* pass 2: place boxes in line: loop body executed at least once */
+	for (x = x_previous = 0, b = first; x <= x1 - x0 && b; b = b->next) {
 		if (b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK) {
 			x_previous = x;
 			x += space_after;
@@ -645,7 +642,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 				space_after = b->space ? b->font->space_width : 0;
 			else
 				space_after = 0;
-			c = b;
+			split_box = b;
 			move_y = 1;
 /* 			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x); */
 		} else {
@@ -693,48 +690,57 @@ struct box * layout_line(struct box *first, int width, int *y,
 			assert(cont->float_children != b);
 			b->next_float = cont->float_children;
 			cont->float_children = b;
+			split_box = 0;
 		}
 	}
 
-	if (x1 - x0 < x) {
+	if (x1 - x0 < x && split_box) {
 		/* the last box went over the end */
-		char * space = 0;
+		unsigned int i;
+		unsigned int space = 0;
 		int w;
 		struct box * c2;
 
 		x = x_previous;
 
-		if (!c->object && !c->gadget && c->text)
-			space = strchr(c->text, ' ');
-		if (space != 0 && c->length <= (unsigned int) (space - c->text))
-			/* space after end of string */
-			space = 0;
+		if (!split_box->object && !split_box->gadget &&
+				split_box->text) {
+			for (i = 0; i != split_box->length &&
+					split_box->text[i] != ' '; i++)
+				;
+			if (split_box->text[i] == ' ')
+				space = i;
+		}
 
-		/* space != 0 implies c->text != 0 */
+		/* space != 0 implies split_box->text != 0 */
 
 		if (space == 0)
-			w = c->width;
+			w = split_box->width;
 		else
-			w = font_width(c->font, c->text, (unsigned int) (space - c->text));
+			w = font_width(split_box->font, split_box->text, space);
 
-		if (x1 - x0 <= x + space_before + w && left == 0 && right == 0 && c == first) {
-			/* first word doesn't fit, but no floats and first on line so force in */
+		if (x1 - x0 <= x + space_before + w && !left && !right &&
+				split_box == first) {
+			/* first word doesn't fit, but no floats and first
+			   on line so force in */
 			if (space == 0) {
 				/* only one word in this box or not text */
-				b = c->next;
+				b = split_box->next;
 			} else {
 				/* cut off first word for this line */
-				c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
-				c2->text = xstrdup(space + 1);
-				c2->length = c->length - ((space + 1) - c->text);
+				/* \todo allocate from box_pool */
+				c2 = memcpy(xcalloc(1, sizeof (struct box)),
+						split_box, sizeof (struct box));
+				c2->text = xstrdup(split_box->text + space + 1);
+				c2->length = split_box->length - (space + 1);
 				c2->width = UNKNOWN_WIDTH;
 				c2->clone = 1;
-				c->length = space - c->text;
-				c->width = w;
-				c->space = 1;
-				c2->next = c->next;
-				c->next = c2;
-				c2->prev = c;
+				split_box->length = space;
+				split_box->width = w;
+				split_box->space = 1;
+				c2->next = split_box->next;
+				split_box->next = c2;
+				c2->prev = split_box;
 				if (c2->next)
 					c2->next->prev = c2;
 				else
@@ -745,30 +751,33 @@ struct box * layout_line(struct box *first, int width, int *y,
 /* 			fprintf(stderr, "layout_line:     overflow, forcing\n"); */
 		} else if (x1 - x0 <= x + space_before + w) {
 			/* first word doesn't fit, but full width not available so leave for later */
-			b = c;
+			b = split_box;
 			assert(used_height);
 /* 			fprintf(stderr, "layout_line:     overflow, leaving\n"); */
 		} else {
 			/* fit as many words as possible */
 			assert(space != 0);
-			space = font_split(c->font, c->text, c->length,
-					x1 - x0 - x - space_before, &w);
-			LOG(("'%.*s' %lu %u (%c) %u", (int) c->length, c->text,
-					 (x1 - x0), space - c->text, *space, w));
-/* 			assert(space != c->text); */
-			if (space == c->text)
-				space = c->text + 1;
-			c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
-			c2->text = xstrdup(space + 1);
-			c2->length = c->length - ((space + 1) - c->text);
+			space = font_split(split_box->font, split_box->text,
+					split_box->length,
+					x1 - x0 - x - space_before, &w)
+					- split_box->text;
+			LOG(("'%.*s' %i %u %i", (int) split_box->length,
+					split_box->text, x1 - x0, space, w));
+/* 			assert(space != split_box->text); */
+			if (space == 0)
+				space = 1;
+			c2 = memcpy(xcalloc(1, sizeof (struct box)), split_box,
+					sizeof (struct box));
+			c2->text = xstrdup(split_box->text + space + 1);
+			c2->length = split_box->length - (space + 1);
 			c2->width = UNKNOWN_WIDTH;
 			c2->clone = 1;
-			c->length = space - c->text;
-			c->width = w;
-			c->space = 1;
-			c2->next = c->next;
-			c->next = c2;
-			c2->prev = c;
+			split_box->length = space;
+			split_box->width = w;
+			split_box->space = 1;
+			c2->next = split_box->next;
+			split_box->next = c2;
+			c2->prev = split_box;
 			if (c2->next)
 				c2->next->prev = c2;
 			else
@@ -798,6 +807,27 @@ struct box * layout_line(struct box *first, int width, int *y,
 
 	if (move_y) *y += used_height + 1;
 	return b;
+}
+
+
+/**
+ * Calculate the text-indent length.
+ *
+ * \param  style  style of block
+ * \param  width  width of containing block
+ * \return  length of indent
+ */
+
+int layout_text_indent(struct css_style *style, int width)
+{
+	switch (style->text_indent.size) {
+		case CSS_TEXT_INDENT_LENGTH:
+			return len(&style->text_indent.value.length, style);
+		case CSS_TEXT_INDENT_PERCENT:
+			return width * style->text_indent.value.percent / 100;
+		default:
+			return 0;
+	}
 }
 
 
@@ -873,7 +903,7 @@ void layout_table(struct box *table)
 
 	table_width = table->width;
 
-	LOG(("width %lu, min %lu, max %lu", table_width, table->min_width, table->max_width));
+	LOG(("width %i, min %i, max %i", table_width, table->min_width, table->max_width));
 
 	for (i = 0; i != columns; i++) {
 		if (col[i].type == COLUMN_WIDTH_FIXED)
@@ -1369,7 +1399,7 @@ void calculate_table_widths(struct box *table)
 	}
 
 	for (i = 0; i < table->columns; i++) {
-		LOG(("col %u, type %i, min %lu, max %lu, width %lu",
+		LOG(("col %u, type %i, min %i, max %i, width %i",
 				i, col[i].type, col[i].min, col[i].max, col[i].width));
 		assert(col[i].min <= col[i].max);
 		min_width += col[i].min;
@@ -1378,5 +1408,5 @@ void calculate_table_widths(struct box *table)
 	table->min_width = min_width;
 	table->max_width = max_width;
 
-	LOG(("min_width %lu, max_width %lu", min_width, max_width));
+	LOG(("min_width %i, max_width %i", min_width, max_width));
 }
