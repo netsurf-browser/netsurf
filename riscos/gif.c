@@ -405,9 +405,11 @@ void nsgif_redraw(struct content *c, long x, long y,
 
 
 
-void nsgif_destroy(struct content *c) {
+void nsgif_destroy(struct content *c)
+{
 	/*	Free all the associated memory buffers
 	*/
+	schedule_remove(nsgif_animate, c);
 	xfree(c->title);
 	xfree(c->data.gif.sprite_area);
 	xfree(c->data.gif.buffer_header);
