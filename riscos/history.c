@@ -433,24 +433,29 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 					area, (osspriteop_id)header,
 					colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 					0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
-			table = xcalloc(size, 1);
-			xcolourtrans_generate_table_for_sprite(
-					area, (osspriteop_id)header,
-					colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
-					table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
+			table = calloc(size, 1);
+			if (!table) {
+				LOG(("Insufficient memory for calloc"));
+				warn_user("NoMemory", 0);
+			} else {
+				xcolourtrans_generate_table_for_sprite(
+						area, (osspriteop_id)header,
+						colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
+						table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
 
-			factors.xmul = 1;
-			factors.ymul = 1;
-			factors.xdiv = 1;
-			factors.ydiv = 1;
+				factors.xmul = 1;
+				factors.ymul = 1;
+				factors.xdiv = 1;
+				factors.ydiv = 1;
 
-			xosspriteop_put_sprite_scaled(osspriteop_PTR,
-					area, (osspriteop_id)header,
-					x0 + he->x * FULL_WIDTH + MARGIN,
-					y0 - he->y * FULL_HEIGHT - FULL_HEIGHT + MARGIN,
-					osspriteop_USE_MASK | osspriteop_USE_PALETTE, &factors, table);
-
-			xfree(table);
+				xosspriteop_put_sprite_scaled(osspriteop_PTR,
+						area, (osspriteop_id)header,
+						x0 + he->x * FULL_WIDTH + MARGIN,
+						y0 - he->y * FULL_HEIGHT - FULL_HEIGHT + MARGIN,
+						osspriteop_USE_MASK | osspriteop_USE_PALETTE,
+						&factors, table);
+				free(table);
+			}
 		}
 	}
 
@@ -465,7 +470,6 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 			x0 + he->x * FULL_WIDTH + (FULL_WIDTH - he->width) / 2,
 			y0 - he->y * FULL_HEIGHT - HEIGHT - MARGIN - 24,
 			NULL, NULL, 0);
-
 
 	colourtrans_set_gcol(os_COLOUR_MID_DARK_GREY, 0,
 			os_ACTION_OVERWRITE, 0);

@@ -94,3 +94,12 @@ void tree_update_URL_node(struct node *node) {
  */
 void tree_resized(struct tree *tree) {
 }
+
+
+/**
+ * Sets a node element as having a folder sprite
+ *
+ * \param node  the node to update
+ */
+void tree_set_node_sprite_folder(struct node *node) {
+}

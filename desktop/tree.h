@@ -104,7 +104,6 @@ struct node *tree_create_folder_node(struct node *parent, const char *title);
 struct node *tree_create_leaf_node(struct node *parent, const char *title);
 void tree_set_node_sprite(struct node *node, const char *sprite,
 		const char *expanded);
-void tree_set_node_sprite_folder(struct node *node);
 struct node *tree_create_URL_node(struct node *parent, const char *title,
 		const char *url, int filetype, int add_date, int last_date,
 		int visits);
@@ -133,5 +132,6 @@ void tree_draw_node_expansion(struct tree *tree, struct node *node);
 void tree_recalculate_node_element(struct node_element *element);
 void tree_update_URL_node(struct node *node);
 void tree_resized(struct tree *tree);
+void tree_set_node_sprite_folder(struct node *node);
 
 #endif
