@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
+#include "oslib/colourtrans.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
@@ -196,34 +197,52 @@ void gui_window_redraw_window(gui_window* g)
 }
 
 
-void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
-{
-  osbool more;
-  struct content *c = g->data.browser.bw->current_content;
+void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw) {
+	osbool more;
+	osbool clear_background = false;
+	struct content *c = g->data.browser.bw->current_content;
+	unsigned long background_colour = 0xffffff;
 
-  if (g->type == GUI_BROWSER_WINDOW && c != NULL)
-  {
-    more = wimp_redraw_window(redraw);
-    wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_BLACK);
+	if (g->type == GUI_BROWSER_WINDOW && c != NULL) {
+	
+		/*	We should clear the background for GIFs and PNGs
+		*/
+		if ((c->type != CONTENT_HTML) &&
+				(c->type != CONTENT_TEXTPLAIN)) {
+		        clear_background = true;
+		}
+	
+		more = wimp_redraw_window(redraw);
+		wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_BLACK);
 
-    while (more)
-    {
-      content_redraw(c,
-	  (int) redraw->box.x0 - (int) redraw->xscroll,
-	  (int) redraw->box.y1 - (int) redraw->yscroll,
-	  c->width * 2, c->height * 2,
-	  redraw->clip.x0, redraw->clip.y0,
-	  redraw->clip.x1 - 1, redraw->clip.y1 - 1,
-	  g->scale);
-      more = wimp_get_rectangle(redraw);
-    }
-  }
-  else
-  {
-    more = wimp_redraw_window(redraw);
-    while (more)
-      more = wimp_get_rectangle(redraw);
-  }
+    		while (more) {
+			if (clear_background) {
+				colourtrans_set_gcol(background_colour << 8,
+					colourtrans_SET_BG | colourtrans_USE_ECFS,
+					os_ACTION_OVERWRITE, 0);
+				os_clg();
+			}
+		      	content_redraw(c,
+				(int) redraw->box.x0 - (int) redraw->xscroll,
+			  	(int) redraw->box.y1 - (int) redraw->yscroll,
+			  	c->width * 2, c->height * 2,
+			  	redraw->clip.x0, redraw->clip.y0,
+			  	redraw->clip.x1 - 1, redraw->clip.y1 - 1,
+			  	g->scale);
+      			more = wimp_get_rectangle(redraw);
+    		}
+ 	} else {
+    		more = wimp_redraw_window(redraw);
+    		while (more) {
+			if (g->type == GUI_BROWSER_WINDOW && c == NULL) {
+				colourtrans_set_gcol(background_colour << 8,
+					colourtrans_SET_BG | colourtrans_USE_ECFS,
+					os_ACTION_OVERWRITE, 0);
+				os_clg();
+			}
+      			more = wimp_get_rectangle(redraw);
+      		}
+      	}
 }
 
 
@@ -263,6 +282,7 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 					update.clip.x1 - 1, update.clip.y1 - 1,
 					g->scale);
 		} else {
+
 			assert(data->redraw.object);
 			content_redraw(data->redraw.object,
 					update.box.x0 - update.xscroll +
