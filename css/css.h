@@ -236,8 +236,6 @@ struct css_node {
 #define HASH_SIZE (47 + 1)
 
 struct css_stylesheet {
-	yyscan_t lexer;
-	void *parser;
 	struct css_node *rule[HASH_SIZE];
 };
 
@@ -256,7 +254,6 @@ struct parse_params {
 
 struct content;
 
-void css_create(struct content *c, const char *params[]);
 int css_convert(struct content *c, unsigned int width, unsigned int height);
 void css_revive(struct content *c, unsigned int width, unsigned int height);
 void css_destroy(struct content *c);

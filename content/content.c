@@ -114,8 +114,7 @@ static const struct handler_entry handler_map[] = {
 		html_add_instance, html_remove_instance, html_reshape_instance},
 	{textplain_create, html_process_data, textplain_convert,
 		0, 0, 0, 0, 0, 0, 0},
-	{css_create, 0, css_convert, css_revive,
-		0, css_destroy, 0, 0, 0, 0},
+	{0, 0, css_convert, css_revive, 0, css_destroy, 0, 0, 0, 0},
 #ifdef WITH_JPEG
 	{nsjpeg_create, 0, nsjpeg_convert, 0,
 		0, nsjpeg_destroy, nsjpeg_redraw, 0, 0, 0},

@@ -156,51 +156,58 @@ const struct css_style css_blank_style = {
 
 
 
-void css_create(struct content *c, const char *params[])
+int css_convert(struct content *c, unsigned int width, unsigned int height)
 {
+	char *source_data;
 	unsigned int i;
-	LOG(("content %p", c));
-	c->data.css.css = xcalloc(1, sizeof(*c->data.css.css));
-	css_lex_init(&c->data.css.css->lexer);
-	/*css_parser_Trace(stderr, "css parser: ");*/
-	c->data.css.css->parser = css_parser_Alloc((void*)malloc);
+	int token;
+	int error;
+	void *parser;
+	struct parse_params param = {0, c, 0, false};
+	yyscan_t lexer;
+	YY_BUFFER_STATE buffer;
+
+	c->data.css.css = malloc(sizeof *c->data.css.css);
+	parser = css_parser_Alloc(malloc);
+	error = css_lex_init(&lexer);
+	source_data = realloc(c->source_data, c->source_size + 2);
+
+	if (!c->data.css.css || !parser || error || !source_data) {
+		free(c->data.css.css);
+		free(parser);
+		css_lex_destroy(lexer);
+		return 1;
+	}
+
 	for (i = 0; i != HASH_SIZE; i++)
 		c->data.css.css->rule[i] = 0;
 	c->data.css.import_count = 0;
-	c->data.css.import_url = xcalloc(0, sizeof(*c->data.css.import_url));
-	c->data.css.import_content = xcalloc(0, sizeof(*c->data.css.import_content));
+	c->data.css.import_url = 0;
+	c->data.css.import_content = 0;
 	c->active = 0;
-}
+	c->source_data = source_data;
 
-
-int css_convert(struct content *c, unsigned int width, unsigned int height)
-{
-	int token;
-	YY_BUFFER_STATE buffer;
-	struct parse_params param = {0, c, 0, false};
-
-	c->source_data = xrealloc(c->source_data, c->source_size + 2);
-	c->source_data[c->source_size] = 0;
-	c->source_data[c->source_size + 1] = 0;
-	buffer = css__scan_buffer(c->source_data, c->source_size + 2,
-			c->data.css.css->lexer);
+	source_data[c->source_size] = 0;
+	source_data[c->source_size + 1] = 0;
+	/** \todo  handle errors from the lexer (YY_FATAL_ERROR etc.) */
+	buffer = css__scan_buffer(source_data, c->source_size + 2, lexer);
 	assert(buffer);
-	while ((token = css_lex(c->data.css.css->lexer))) {
-		css_parser_(c->data.css.css->parser, token,
-				xstrdup(css_get_text(c->data.css.css->lexer)),
+	while ((token = css_lex(lexer))) {
+		css_parser_(parser, token,
+				xstrdup(css_get_text(lexer)),
 				&param);
 		if (param.syntax_error) {
-			int line = css_get_lineno(c->data.css.css->lexer);
+			int line = css_get_lineno(lexer);
 			LOG(("syntax error near line %i", line));
 			param.syntax_error = false;
 		}
 	}
-	css__delete_buffer(buffer, c->data.css.css->lexer);
+	css__delete_buffer(buffer, lexer);
 
-	css_parser_(c->data.css.css->parser, 0, 0, &param);
-	css_parser_Free(c->data.css.css->parser, free);
+	css_parser_(parser, 0, 0, &param);
+	css_parser_Free(parser, free);
 
-	css_lex_destroy(c->data.css.css->lexer);
+	css_lex_destroy(lexer);
 
 	/*css_dump_stylesheet(c->data.css.css);*/
 
