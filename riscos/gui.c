@@ -369,8 +369,14 @@ void ro_gui_icon_bar_create(void)
 
 void ro_gui_check_resolvers(void)
 {
-	if (!getenv("Inet$Resolvers"))
+	char *resolvers;
+	resolvers = getenv("Inet$Resolvers");
+	if (resolvers) {
+		LOG(("Inet$Resolvers '%s'", resolvers));
+	} else {
+		LOG(("Inet$Resolvers not set", resolvers));
 		warn_user("Resolvers", 0);
+	}
 }
 
 
