@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.1.1.1 2002/04/22 09:24:35 bursa Exp $
+ * $Id: render.c,v 1.2 2002/04/23 17:06:20 bursa Exp $
  */
 
 #include <assert.h>
@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "parser.h" /* libxml */
+#include "HTMLparser.h" /* libxml */
 #include "css.h"
 #include "utils.h"
 
@@ -25,8 +25,7 @@ struct data {    /* used in _private field of xmlNode */
 };
 
 struct box {
-	enum { BOX_BLOCK, BOX_INLINE, BOX_FLOAT } type;
-	enum { CONTENT_BLOCK, CONTENT_INLINE } content;
+	enum { BOX_BLOCK, BOX_INLINE_CONTAINER, BOX_INLINE, BOX_FLOAT } type;
 	xmlNode * node;
 	struct css_style * style;
 	unsigned long x, y, width, height;
@@ -34,11 +33,19 @@ struct box {
 	unsigned int length;
 	struct box * next;
 	struct box * children;
+	struct box * last;
 	struct box * parent;
 };
 
 void layout_element(xmlNode * e, unsigned long width);
 unsigned long layout_element_children(xmlNode * e, unsigned long width);
+
+void box_add_child(struct box * parent, struct box * child);
+struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesheet * stylesheet,
+		struct css_selector ** selector, unsigned int depth,
+		struct box * parent, struct box * inline_container);
+void box_dump(struct box * box, unsigned int depth);
+
 
 /**
  * convert a struct css_length to pixels
@@ -328,107 +335,100 @@ void walk(xmlNode *n, unsigned int depth)
 }
 
 
+/**
+ * add a child to a box tree node
+ */
+
+void box_add_child(struct box * parent, struct box * child)
+{
+	if (parent->children)	/* has children already */
+		parent->last->next = child;
+	else			/* this is the first child */
+		parent->children = child;
+
+	parent->last = child;
+	child->parent = parent;
+}
+
 
 /**
  * make a box tree with style data from an xml tree
+ *
+ * arguments:
+ * 	n		xml tree
+ * 	parent_style	style at this point in xml tree
+ * 	stylesheet	stylesheet to use
+ * 	selector	element selector hierachy to this point
+ * 	depth		depth in xml tree
+ * 	parent		parent in box tree
+ * 	inline_container	current inline container box, or 0
+ *
+ * returns:
+ * 	updated current inline container
  */
 
-struct box * make_box(xmlNode * n, struct css_style * style, struct css_stylesheet * stylesheet,
+struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
-		struct box * parent, struct box * prev,	struct box * containing_block,
-		struct box ** inline_parent)
+		struct box * parent, struct box * inline_container)
 {
-	struct box * box = xcalloc(1, sizeof(struct box));
+	struct box * box;
+	struct box * inline_container_c;
+	struct css_style * style;
 	xmlNode * c;
-	unsigned int i;
 
-	box->node = n;
-	box->parent = parent;
-	
 	if (n->type == XML_ELEMENT_NODE) {
+		/* work out the style for this element */
 		*selector = xrealloc(*selector, (depth + 1) * sizeof(struct css_selector));
 		(*selector)[depth].element = n->name;
 		(*selector)[depth].class = (*selector)[depth].id = 0;
 
-		box->style = xcalloc(1, sizeof(struct css_style));
-		memcpy(box->style, style, sizeof(struct css_style));
-		css_get_style(stylesheet, *selector, depth + 1, box->style);
+		style = xcalloc(1, sizeof(struct css_style));
+		memcpy(style, parent_style, sizeof(struct css_style));
+		css_get_style(stylesheet, *selector, depth + 1, style);
 
-		switch (box->style->display) {
-			case CSS_DISPLAY_BLOCK:
+		switch (style->display) {
+			case CSS_DISPLAY_BLOCK:  /* blocks get a node in the box tree */
+				box = xcalloc(1, sizeof(struct box));
+				box->node = n;
 				box->type = BOX_BLOCK;
+				box->style = style;
+				box_add_child(parent, box);
+				inline_container_c = 0;
+				for (c = n->children; c != 0; c = c->next)
+					inline_container_c = xml_to_box(c, style, stylesheet,
+							selector, depth + 1, box, inline_container_c);
+				inline_container = 0;
 				break;
-			case CSS_DISPLAY_INLINE:
-				box->type = BOX_INLINE;
+			case CSS_DISPLAY_INLINE:  /* inline elements get no box, but their children do */
+				for (c = n->children; c != 0; c = c->next)
+					inline_container = xml_to_box(c, style, stylesheet,
+							selector, depth + 1, box, inline_container);
 				break;
 			case CSS_DISPLAY_NONE:
 			default:
-				free(box->style);
-				free(box);
-				return 0;
 		}
 	} else if (n->type == XML_TEXT_NODE) {
-		/* anonymous inline box */
+		/* text nodes are converted to inline boxes, wrapped in an inline container block */
+		if (inline_container == 0) {  /* this is the first inline node: make a container */
+			inline_container = xcalloc(1, sizeof(struct box));
+			inline_container->type = BOX_INLINE_CONTAINER;
+			box_add_child(parent, inline_container);
+		}
+		box = calloc(1, sizeof(struct box));
+		box->node = n;
 		box->type = BOX_INLINE;
+		box_add_child(inline_container, box);
 	}
 
-	for (i = 0; i < depth; i++)
-		printf("  ");
-	printf("make_box: %s: %s\n", box->type == BOX_INLINE ? "inline" : "block", n->name);
-
-	if (*inline_parent && box->type == BOX_BLOCK) {
-		/* block following inline: end inline_parent */
-		printf("ending anonymous container for inlines\n");
-		(*inline_parent)->next = box;
-		*inline_parent = 0;
-	} else if (*inline_parent && box->type == BOX_INLINE) {
-		/* inline following inline */
-		prev->next = box;
-	} else if (!(*inline_parent) && box->type == BOX_BLOCK) {
-		/* block following block */
-		if (prev) prev->next = box;
-	} else if (!(*inline_parent) && box->type == BOX_INLINE) {
-		/* inline following block: create anonymous container block */
-		printf("starting anonymous container for inlines\n");
-		*inline_parent = xcalloc(1, sizeof(struct box));
-		(*inline_parent)->parent = parent;
-		if (prev) prev->next = *inline_parent;
-		(*inline_parent)->children = box;
-	}
-
-	
-/*	for (i = 0; i < depth; i++)
-		printf("  ");
-	printf("%s ", n->name);
-	css_dump_style(data->style);*/
-
-	{
-		struct box * prev_c;
-		struct box * b;
-		struct box * containing;
-		struct box * inline_parent_c = 0;
-		
-		if (box->type == BOX_BLOCK) {
-			prev_c = 0;
-			containing = box;
-		} else {
-			prev_c = box;
-			containing = containing_block;
-		}
-
-		for (c = n->children; c != 0; c = c->next) {
-			b = make_box(c, box->style, stylesheet, selector, depth + 1,
-					box, prev_c, containing, &inline_parent_c);
-			if (!box->children) box->children = b;
-			if (b) prev_c = b;
-		}
-	}
-
-	return box;
+	return inline_container;
 }
 
 
-void dump_box(struct box * box, unsigned int depth)
+/*
+ * print a box tree to standard output
+ */
+
+void box_dump(struct box * box, unsigned int depth)
 {
 	unsigned int i;
 	struct box * c;
@@ -436,11 +436,15 @@ void dump_box(struct box * box, unsigned int depth)
 	for (i = 0; i < depth; i++)
 		printf("  ");
 
-	printf("%s: %s\n", box->type == BOX_INLINE ? "inline" : "block",
-			box->node->name);
+	switch (box->type) {
+		case BOX_BLOCK:            printf("BOX_BLOCK <%s>\n", box->node->name); break;
+		case BOX_INLINE_CONTAINER: printf("BOX_INLINE_CONTAINER\n"); break;
+		case BOX_INLINE:           printf("BOX_INLINE '%s'\n", box->node->content); break;
+		default:                   printf("Unknown box type\n");
+	}
 	
 	for (c = box->children; c != 0; c = c->next)
-		dump_box(c, depth + 1);
+		box_dump(c, depth + 1);
 }
 
 
@@ -453,11 +457,12 @@ int main(int argc, char *argv[])
 	struct css_selector * selector = xcalloc(1, sizeof(struct css_selector));
 	xmlNode * c;
 	xmlDoc * doc;
-	struct box * box;
-	struct box * inline_parent = 0;
+	struct box * doc_box = xcalloc(1, sizeof(struct box));
 
-	doc = xmlParseFile(argv[1]);
-	if (doc == 0) die("xmlParseFile failed");
+	if (argc < 3) die("usage: render htmlfile cssfile");
+	
+	doc = htmlParseFile(argv[1], 0);
+	if (doc == 0) die("htmlParseFile failed");
 
 	for (c = doc->children; c != 0 && c->type != XML_ELEMENT_NODE; c = c->next)
 		;
@@ -467,8 +472,10 @@ int main(int argc, char *argv[])
 	stylesheet = css_new_stylesheet();
 	css_parse_stylesheet(stylesheet, load(argv[2]));
 
-	box = make_box(c, style, stylesheet, &selector, 0, 0, 0, 0, &inline_parent);
-	dump_box(box, 0);
+	doc_box->type = BOX_BLOCK;
+	doc_box->node = c;
+	xml_to_box(c, style, stylesheet, &selector, 0, doc_box, 0);
+	box_dump(doc_box->children, 0);
 
 /*	walk(c, 0);
 	layout_element(c, 79);
