@@ -592,11 +592,8 @@ void html_redraw_background(long xi, long yi, int width, int height,
 	}
 
 	/* Get the image dimensions for our positioning and scaling */
-	image_size.x = box->background->width;
-	image_size.y = box->background->height;
-	ro_convert_pixels_to_os_units(&image_size, (os_mode)-1);
-	image_width = image_size.x * scale;
-	image_height = image_size.y * scale;
+	image_size.x = box->background->width * scale;
+	image_size.y = box->background->height * scale;
 
 	/* handle background-attachment */
 	switch (box->style->background_attachment) {
@@ -643,13 +640,11 @@ void html_redraw_background(long xi, long yi, int width, int height,
 	/* handle background-position */
 	switch (box->style->background_position.horz.pos) {
 		case CSS_BACKGROUND_POSITION_PERCENT:
-			multiplier =
-				box->style->background_position.horz.value.percent / 100;
-			x += (box->width * multiplier) -
-				(box->background->width * scale * multiplier);
+			multiplier = box->style->background_position.horz.value.percent / 100;
+			x += 2 * (box->width + box->padding[LEFT] + box->padding[RIGHT] - image_size.x) * multiplier;
 			break;
 		case CSS_BACKGROUND_POSITION_LENGTH:
-			x += len(&box->style->background_position.horz.value.length, box->style) * scale;
+			x += 2 * len(&box->style->background_position.horz.value.length, box->style) * scale;
 			break;
 		default:
 			break;
@@ -657,19 +652,22 @@ void html_redraw_background(long xi, long yi, int width, int height,
 
 	switch (box->style->background_position.vert.pos) {
 		case CSS_BACKGROUND_POSITION_PERCENT:
-			multiplier =
-				box->style->background_position.vert.value.percent / 100;
-			y += (box->height * multiplier) -
-				(box->background->height * scale * multiplier);
+			multiplier = box->style->background_position.vert.value.percent / 100;
+			y -= 2 * (box->height + box->padding[TOP] + box->padding[BOTTOM] - image_size.y) * multiplier;
 			break;
 		case CSS_BACKGROUND_POSITION_LENGTH:
-			y += len(&box->style->background_position.vert.value.length, box->style) * scale;
+			y -= 2 * len(&box->style->background_position.vert.value.length, box->style) * scale;
 			break;
 		default:
 			break;
 	}
 
 //	  LOG(("Body [%ld, %ld], Image: [%ld, %ld], Flags: %x", xi, yi, x, y, tinct_options));
+
+	/* convert our sizes into OS units */
+//	ro_convert_pixels_to_os_units(&image_size, (os_mode)-1);
+	image_width = image_size.x * 2;
+	image_height = image_size.y * 2;
 
 	/* and plot the image */
 	switch (box->background->type) {
