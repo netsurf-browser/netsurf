@@ -93,11 +93,13 @@ Template:A window template is missing from the Templates file. Please reinstall 
 MiscError:An unexpected error occurred:
 FileError:File does not exist:
 
+# Some general purpose words and phrases
 Bytes: O
 kBytes: kO
 MBytes: MO
 GBytes: GO
 
+# Progress
 Loading:Ouverture de la page...
 RecPercent:%s reçus de %s (%u%%)
 Received:%s reçus
@@ -133,3 +135,99 @@ SaveDraw:PageWeb
 SaveText:PageWeb
 SaveObject:Objet
 SaveLink:Lien
+
+# Interactive help
+HelpToolbar0:\Tback button.|M\Straverse back one page in the history tree.|MDoes not resubmit form information.
+HelpToolbar1:\Tforward button.|M\Straverse forward one page in the history tree.|MDoes not resubmit form information.
+#HelpToolbar2:\Tstop button.|M\Sstop loading this page.
+#HelpToolbar3:\Treload button.|M\Sreload this page.
+#HelpToolbar4:\Thome button.|M\Sgo to your home page.
+HelpToolbar5:\Thistory button.|M\Sopen the local history \w.
+HelpToolbar6:\Tsave button.|M\Ssave the current document.
+#HelpToolbar7:\Tprint button.|M\Sprint this page.|MOpens a print dialogue box.
+#HelpToolbar8:\Thotlist button.|M\Sopen the hotlist management \w.|M\Aadd this page to the hotlist.
+HelpToolbar9:\Tscale view button.|M\Sscale the page, affecting both text and images.
+#HelpToolbar10:\Tsearch button.
+#HelpToolbar11:\Tup button.|M\Smove up the directory structure.
+HelpToolbar12:\TURL bar.|MType in the address of a site to visit and press Return to go there.
+HelpToolbar13:\Tthrobber.|MIt animates while this \w is active.
+
+HelpStatus0:\Tstatus bar.|MIt displays information on what the browser \w is doing.
+HelpStatus1:\Tstatus bar resizer.|MDrag to alter the size of the status bar.
+
+HelpIconMenu0:\Rview information about this software.
+HelpIconMenu1:\Sview NetSurf's documentation.
+HelpIconMenu2:\Sopen the Choices dialogue box.
+HelpIconMenu3:\Squit NetSurf.
+
+HelpBrowserMenu0:\Rsee the options relating to the current page.
+HelpBrowserMenu0-0:\Rsee information about the current page.
+HelpBrowserMenu0-1:\Rsave the current page as an HTML file.
+HelpBrowserMenu0-2:\Rsave the current page including all the images and style sheets used.
+HelpBrowserMenu0-3:\Rsee the export options.
+HelpBrowserMenu0-3-0:\Rexport the current page as a Drawfile.
+HelpBrowserMenu0-3-1:\Rexport the current page as a plain text file.
+HelpBrowserMenu0-4:\Rsave the address of the current page.
+HelpBrowserMenu0-4-0:\Rsave the current address in Acorn URI format.
+HelpBrowserMenu0-4-1:\Rsave the current address in Ant URL format.
+HelpBrowserMenu0-4-2:\Rsave the current address as plain text.
+#HelpBrowserMenu0-5:\Sopen the print dialogue box.
+HelpBrowserMenu0-6:\Sview the source code of the current page in a text editor.
+HelpBrowserMenu1:\Rsee the options relating to the current item.
+HelpBrowserMenu1-0:\Rsee information about the current item.
+HelpBrowserMenu1-1:\Rsave the current item.
+HelpBrowserMenu1-2:\Rsee the export options.
+HelpBrowserMenu1-2-0:\Rsave the image as a Sprite.
+HelpBrowserMenu1-3:\Rsave the address of the current item.
+HelpBrowserMenu1-3-0:\Rsave the current item's address in Acorn URI format.
+HelpBrowserMenu1-3-1:\Rsave the current item's address in Ant URL format.
+HelpBrowserMenu1-3-2:\Rsave the current item's address as plain text.
+HelpBrowserMenu2:\Rsee the navigation options.
+#HelpBrowserMenu2-0:\Sreturn to the configured home page.
+HelpBrowserMenu2-1:\Sgo back a page in the local history.|MForm information is not resubmitted.
+HelpBrowserMenu2-2:\Sstep forward a page in the local history.|MForm information is not resubmitted.
+#HelpBrowserMenu2-3:\Sfetch the current page again.
+HelpBrowserMenu3:\Rset the local display options.
+HelpBrowserMenu3-0:\Rscale the page, affecting both text and images.
+HelpBrowserMenu3-1:\Rset the local image options.
+#HelpBrowserMenu3-1-0:\Stoggle the display of foreground images.
+HelpBrowserMenu3-1-1:\Stoggle the display of background images.
+HelpBrowserMenu3-1-2:\Stoggle the display of animations.|MIf turned off, the first frame is displayed.
+HelpBrowserMenu3-1-3:\Stoggle dithering of images.|MImproves display in sub true colour screen modes.
+#HelpBrowserMenu3-1-4:\Stoggle smoothing of scaled images.|MUses bi-linear filtering to enhance display of scaled images.
+HelpBrowserMenu3-2:\Rcontrol the display of NetSurf's toolbars.
+HelpBrowserMenu3-2-0:\Stoggle the display of the toolbar buttons.|MURL bar uses the remaining space.
+HelpBrowserMenu3-2-1:\Stoggle the display of the address (URL) bar.
+HelpBrowserMenu3-2-2:\Stoggle the display of the throbber.|MURL bar uses the remaining space.
+HelpBrowserMenu3-2-3:\Stoggle the display of the status bar.|MHorizontal scroll bar uses the remaining width.
+HelpBrowserMenu3-3:\Rcontrol the default window positioning.
+HelpBrowserMenu3-3-0:\Sto make the current window position the default.
+HelpBrowserMenu3-3-1:\Sto return to the default window positioning.
+HelpBrowserMenu3-4:\Smake your local display options the default options for NetSurf.
+HelpBrowserMenu4:\Rsee the help resources available.
+HelpBrowserMenu4-0:\Sopen the documentation contents page in a new \w.
+HelpBrowserMenu4-1:\Sopen the user guide in a new \w.
+HelpBrowserMenu4-2:\Sopen the user information page in a new \w.
+HelpBrowserMenu4-3:\Sopen the NetSurf about page in a new \w.
+HelpBrowserMenu4-4:\Srun Help.
+
+HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.
+
+HelpIconbar:\TNetSurf icon.|M\Sopen a new browser window.
+HelpHistory:Use this \w to navigate around the local history tree.|M\Son a thumbnail to return to that page.
+
+HelpSaveAs0:Drag SELECT this icon to the directory in which you want to save the file.
+HelpSaveAs1:This is the filename under which this document will be saved.
+HelpSaveAs2:\Ssave the file with the current filename.|MIf a full path is not set, you must drag the icon to a directory.
+HelpSaveAs3:\Sclose this \w without saving.
+
+HelpScaleView:Use this \w to change the scale the page is displayed at.
+HelpScaleView1:Enter the scale you wish the page to be displayed at.
+HelpScaleView2:\Sreduce the scale, 10% at a time.
+HelpScaleView3:\Sincrease the scale, 10% at a time.
+HelpScaleView5:\Sautomatically choose a scale of 50%.
+HelpScaleView6:\Sautomatically choose a scale of 80%.
+HelpScaleView7:\Sautomatically choose a scale of 100%.
+HelpScaleView8:\Sautomatically choose a scale of 120%.
+HelpScaleView9:\Scancel changes.|MThe current scale will not be changed.
+HelpScaleView10:\Schange the view to the scale you have chosen.

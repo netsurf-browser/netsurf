@@ -139,9 +139,16 @@ SaveLink:Link
 # Interactive help
 HelpToolbar0:\Tback button.|M\Straverse back one page in the history tree.|MDoes not resubmit form information.
 HelpToolbar1:\Tforward button.|M\Straverse forward one page in the history tree.|MDoes not resubmit form information.
+#HelpToolbar2:\Tstop button.|M\Sstop loading this page.
+#HelpToolbar3:\Treload button.|M\Sreload this page.
+#HelpToolbar4:\Thome button.|M\Sgo to your home page.
 HelpToolbar5:\Thistory button.|M\Sopen the local history \w.
 HelpToolbar6:\Tsave button.|M\Ssave the current document.
+#HelpToolbar7:\Tprint button.|M\Sprint this page.|MOpens a print dialogue box.
+#HelpToolbar8:\Thotlist button.|M\Sopen the hotlist management \w.|M\Aadd this page to the hotlist.
 HelpToolbar9:\Tscale view button.|M\Sscale the page, affecting both text and images.
+#HelpToolbar10:\Tsearch button.
+#HelpToolbar11:\Tup button.|M\Smove up the directory structure.
 HelpToolbar12:\TURL bar.|MType in the address of a site to visit and press Return to go there.
 HelpToolbar13:\Tthrobber.|MIt animates while this \w is active.
 
@@ -207,13 +214,14 @@ HelpBrowserMenu4-4:\Srun Help.
 HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.
 
 HelpIconbar:\TNetSurf icon.|M\Sopen a new browser window.
+HelpHistory:Use this \w to navigate around the local history tree.|M\Son a thumbnail to return to that page.
 
 HelpSaveAs0:Drag SELECT this icon to the directory in which you want to save the file.
 HelpSaveAs1:This is the filename under which this document will be saved.
 HelpSaveAs2:\Ssave the file with the current filename.|MIf a full path is not set, you must drag the icon to a directory.
 HelpSaveAs3:\Sclose this \w without saving.
 
-HelpScaleView:Use this window to change the scale the page is displayed at.
+HelpScaleView:Use this \w to change the scale the page is displayed at.
 HelpScaleView1:Enter the scale you wish the page to be displayed at.
 HelpScaleView2:\Sreduce the scale, 10% at a time.
 HelpScaleView3:\Sincrease the scale, 10% at a time.
