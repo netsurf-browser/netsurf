@@ -50,6 +50,7 @@ static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
 static struct box *ro_gui_menu_find_object_box(void);
 static void ro_gui_menu_object_reload(void);
 static void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning);
+static void ro_gui_menu_prepare_hotlist(void);
 
 wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
@@ -310,7 +311,7 @@ static wimp_MENU(3) hotlist_collapse = {
 
 
 static wimp_MENU(4) hotlist_save = {
-  { "SaveHotlist" }, 7,2,7,0, 200, 44, 0,
+  { "SaveSelect" }, 7,2,7,0, 200, 44, 0,
   {
     { wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "URI" } },
     { wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "URL" } },
@@ -338,9 +339,9 @@ static wimp_MENU(5) hotlist_file = {
 static wimp_MENU(5) hotlist_select = {
   { "Selection" }, 7,2,7,0, 300, 44, 0,
   {
-    { wimp_MENU_GIVE_WARNING, (wimp_menu *)&hotlist_save, DEFAULT_FLAGS, { "Save" } },
-    { wimp_MENU_SEPARATE,     wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "Launch" } },
-    { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "EditTitle" } },
+    { wimp_MENU_GIVE_WARNING, (wimp_menu *)&hotlist_save, DEFAULT_FLAGS, { "SaveSelect" } },
+    { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,		  DEFAULT_FLAGS, { "Edit" } },
+    { 0,		      wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "Launch" } },
     { 0,		      wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "Delete" } },
     { wimp_MENU_LAST,	      wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "ResetUsage" } },
   }
@@ -469,8 +470,6 @@ void translate_menu(wimp_menu *menu)
 
 void ro_gui_create_menu(wimp_menu *menu, int x, int y, gui_window *g)
 {
-	int selection;
-	
 	current_menu = menu;
 	current_menu_x = x;
 	current_menu_y = y;
@@ -482,14 +481,7 @@ void ro_gui_create_menu(wimp_menu *menu, int x, int y, gui_window *g)
 			menu->entries[1].icon_flags |= wimp_ICON_SHADED;
 	}
 	if (menu == hotlist_menu) {
-		selection = ro_gui_hotlist_get_selected(true);
-		if (selection == 0) {
-			hotlist_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
-			hotlist_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
-		} else {
-			hotlist_menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
-			hotlist_menu->entries[3].icon_flags &= ~wimp_ICON_SHADED;
-		}
+	  	ro_gui_menu_prepare_hotlist();
 	}
 	wimp_create_menu(menu, x, y);
 }
@@ -573,12 +565,26 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				}
 				break;
 			case 1: /* Selection-> */
+				switch (selection->items[1]) {
+					case 0: /* Save */
+						break; 
+					case 1: /* Edit title-> */
+						break; 
+					case 2: /* Launch */
+						ro_gui_hotlist_keypress(wimp_KEY_RETURN);
+						break; 
+					case 3: /* Delete */
+						ro_gui_hotlist_delete_selected();
+						break;
+					case 4: /* Reset usage */
+						break;
+				}
 				break;
 			case 2: /* Select all */
-				ro_gui_hotlist_set_selected(true);
+				ro_gui_hotlist_keypress(1);	/* CTRL+A */
 				break;
 			case 3: /* Clear */
-				ro_gui_hotlist_set_selected(false);
+				ro_gui_hotlist_keypress(26);	/* CTRL+Z */
 				break;
 		}
 	} else if (current_menu == browser_menu) {
@@ -961,13 +967,12 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning) {
 	os_error *error = NULL; // No warnings
 
-
 	switch (warning->selection.items[0]) {
 		case 0:	/* Hotlist-> */
 			switch (warning->selection.items[1]) {
-				case 0: /* New */
+				case 0: /* New-> */
 					break; 
-				case 2: /* Export */
+				case 2: /* Export-> */
 					gui_current_save_type = GUI_HOTLIST_EXPORT_HTML;
 					ro_gui_menu_prepare_save(NULL);
 					error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
@@ -976,6 +981,17 @@ void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning) {
 			}
 			break;
 		case 1: /* Selection-> */
+			switch (warning->selection.items[1]) {
+				case -1: /* Root */
+					ro_gui_menu_prepare_hotlist();
+					error = xwimp_create_sub_menu(hotlist_select_menu,
+							warning->pos.x, warning->pos.y);
+					break;
+				case 0: /* Save-> */
+					break;
+				case 1: /* Edit title-> */
+					break;
+			}
 			break;
 	}
 	
@@ -1277,6 +1293,35 @@ void ro_gui_menu_prepare_scale(void) {
 	sprintf(scale_buffer, "%.0f", current_gui->scale * 100);
 	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
 }
+
+/**
+ * Update hotlist menu (all of)
+ */
+void ro_gui_menu_prepare_hotlist(void) {
+	int selection; 
+	selection = ro_gui_hotlist_get_selected(false);
+	if (selection == 0) {
+		hotlist_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
+		hotlist_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
+		hotlist_select_menu->entries[2].icon_flags |= wimp_ICON_SHADED;
+		hotlist_select_menu->entries[4].icon_flags |= wimp_ICON_SHADED;
+	} else {
+		hotlist_menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
+		hotlist_menu->entries[3].icon_flags &= ~wimp_ICON_SHADED;
+		hotlist_select_menu->entries[2].icon_flags &= ~wimp_ICON_SHADED;
+		hotlist_select_menu->entries[4].icon_flags &= ~wimp_ICON_SHADED;
+	}
+	if (selection != 1) {
+		hotlist_select_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
+		hotlist_save_menu->entries[0].icon_flags |= wimp_ICON_SHADED;
+		hotlist_save_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
+	} else {
+		hotlist_select_menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
+		hotlist_save_menu->entries[0].icon_flags &= ~wimp_ICON_SHADED;
+		hotlist_save_menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
+	}
+}
+
 /**
  * Update the Interactive Help status
  *
@@ -1301,12 +1346,9 @@ void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
 	const char *enc = "-";
 	const char *mime = "-";
 
-	if (c->title != NULL)
-		title = cnv_str_local_enc(c->title);
-	if (c->url != NULL)
-		url = c->url;
-	if (c->mime_type != NULL)
-		mime = c->mime_type;
+	if (c->title != 0)     title = c->title;
+	if (c->url != 0)       url = c->url;
+	if (c->mime_type != 0) mime = c->mime_type;
 
 	sprintf(icon_buf, "file_%x", ro_content_filetype(c));
 
@@ -1319,9 +1361,6 @@ void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_URL, url);
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ENC, enc);
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TYPE, mime);
-
-	if (title != NULL)
-		free(title);
 
 	error = xwimp_create_sub_menu((wimp_menu *) dialog_pageinfo,
 			warning->pos.x, warning->pos.y);

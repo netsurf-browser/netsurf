@@ -191,6 +191,7 @@ void ro_gui_hotlist_menu_closed(void);
 int ro_gui_hotlist_get_selected(bool folders);
 void ro_gui_hotlist_set_selected(bool selected);
 void ro_gui_hotlist_set_expanded(bool expand, bool folders, bool links);
+void ro_gui_hotlist_delete_selected(void);
 void ro_gui_hotlist_save_as(const char *file);
 
 /* in save.c */
