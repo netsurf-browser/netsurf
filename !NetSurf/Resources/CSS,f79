@@ -52,7 +52,7 @@ input[type=checkbox], input[type=radio] { background-color: transparent;
 img[align=left], table[align=left] { float: left; }
 img[align=right], table[align=right] { float: right; text-align: left; }
 
-[clear=all] { clear: both; }
-[clear=left] { clear: left; }
-[clear=right] { clear: right; }
+br[clear=all] { clear: both; }
+br[clear=left] { clear: left; }
+br[clear=right] { clear: right; }
 
