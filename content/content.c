@@ -71,10 +71,14 @@ static const struct mime_entry mime_map[] = {
 #endif
 #ifdef WITH_MNG
 	{"image/jng", CONTENT_JNG},
-	{"image/mng", CONTENT_MNG},
 #endif
 #ifdef WITH_JPEG
 	{"image/jpeg", CONTENT_JPEG},
+#endif
+#ifdef WITH_MNG
+	{"image/mng", CONTENT_MNG},
+#endif
+#ifdef WITH_JPEG
 	{"image/pjpeg", CONTENT_JPEG},
 #endif
 #ifdef WITH_PNG
@@ -178,8 +182,8 @@ static const struct handler_entry handler_map[] = {
 	        0, nsgif_destroy, 0, nsgif_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_PNG
-	{nspng_create, nspng_process_data, nspng_convert,
-		0, nspng_destroy, 0, nspng_redraw, 0, 0, 0},
+	{nsmng_create, nsmng_process_data, nsmng_convert,
+		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,

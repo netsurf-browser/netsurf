@@ -245,6 +245,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	*/
 	state.next = wimp_TOP;
 	ro_gui_window_open(g, (wimp_open*)&state);
+	ro_gui_prepare_navigate(g);
 
 	/*	Set the caret position to the URL bar
 	*/
@@ -555,10 +556,19 @@ void gui_window_update_box(struct gui_window *g,
 	  			(ro_gui_current_redraw_gui->option.buffer_everything))
 	  		ro_gui_buffer_close();
 		error = xwimp_get_rectangle(&update, &more);
+
 		if (error) {
-			LOG(("xwimp_get_rectangle: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
+		  	/*	RISC OS 3.7 returns the following error is enough buffer
+		  		is claimed to cause a new dynamic area to be created. It
+		  		doesn't actually stop anything working, so we mask it out
+		  		for now until a better fix is found.
+		  	*/
+			if ((!ro_gui_current_redraw_gui->option.buffer_everything) ||
+					(error->errnum != 0x286)) {
+				LOG(("xwimp_get_rectangle: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
 			ro_gui_current_redraw_gui = NULL;
 			return;
 		}
@@ -1750,5 +1760,6 @@ void gui_window_set_pointer(gui_pointer_shape shape)
 
 void gui_window_new_content(struct gui_window *g)
 {
+	ro_gui_prepare_navigate(g);
 	ro_gui_dialog_close_persistant(g->window);
 }

@@ -29,7 +29,7 @@ OBJECTS_RISCOS += 401login.o debugwin.o \
 	buffer.o dialog.o download.o draw.o filetype.o font.o gif.o \
 	gifread.o gui.o help.o history.o hotlist.o htmlinstance.o \
 	htmlredraw.o jpeg.o menus.o mng.o mouseactions.o plugin.o \
-	png.o save.o save_complete.o save_draw.o save_text.o \
+	save.o save_complete.o save_draw.o save_text.o \
 	schedule.o sprite.o textselection.o theme.o thumbnail.o \
 	toolbar.o ufont.o uri.o url_protocol.o wimp.o window.o	# riscos/
 # OBJECTS_RISCOS += memdebug.o

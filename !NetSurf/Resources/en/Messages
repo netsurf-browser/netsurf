@@ -182,11 +182,14 @@ ObjError:Error loading object: %s
 ParsingFail:Parsing the document failed.
 BadGIF:Reading GIF failed.
 PNGError:PNG library error.
+MNGError:MNG library error.
 
 DrawTitle:Draw image (%lux%lu, %lu bytes)
 GIFTitle:GIF image (%lux%lu, %lu bytes)
 JPEGTitle:JPEG image (%ux%u, %lu bytes)
 PNGTitle:PNG image (%lux%lu, %lu bytes)
+JNGTitle:JNG image (%lux%lu, %lu bytes)
+MNGTitle:MNG image (%lux%lu, %lu bytes)
 SpriteTitle:Sprite image (%lux%lu, %lu bytes)
 
 SelectMenu:Select

@@ -182,11 +182,14 @@ ObjError:Erreur lors du chargement de: %s
 ParsingFail:L'analyse syntaxique du document a échoué.
 BadGIF:Erreur de lecture de GIF.
 PNGError:Erreur dans la bibliothèque PNG.
+MNGError:Erreur dans la bibliothèque MNG.
 
 DrawTitle:Image Draw (%lux%lu, %lu octets)
 GIFTitle:Image GIF (%lux%lu, %lu octets)
 JPEGTitle:Image JPEG (%ux%u, %lu octets)
 PNGTitle:Image PNG (%lux%lu, %lu octets)
+JNGTitle:Image JNG (%lux%lu, %lu octets)
+MNGTitle:Image MNG (%lux%lu, %lu octets)
 SpriteTitle:Image Sprite (%lux%lu, %lu octets)
 
 SelectMenu:Sélection

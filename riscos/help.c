@@ -213,15 +213,18 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token
 	help_full_message_reply *reply;
 	char *base_token;
 
+	/*	Start off with an empty reply
+	*/
+	reply = (help_full_message_reply *)message;
+	reply->reply[0] = '\0';
+
 	/*	Check if the message exists
 	*/
 	translated_token = messages_get(token);
 	if (translated_token == token) {
 		/*	We must never provide default help for a 'g' suffix.
 		*/
-		if (token[strlen(token) - 1] == 'g') {
-			token[0] = '\0';
-		} else {
+		if (token[strlen(token) - 1] != 'g') {
 			/*	Find the key from the token.
 			*/
 			base_token = token;
@@ -237,15 +240,16 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token
 			/*	Check if the base key exists and use an empty string if not
 			*/
 			translated_token = messages_get(token);
-			if (translated_token == token) token[0] = '\0';
 		}
 	}
+	
 
 	/*	Copy our message string
 	*/
-	reply = (help_full_message_reply *)message;
-	reply->reply[235] = 0;
-	strncpy(reply->reply, translated_token, 235);
+	if (translated_token != token) {
+		reply->reply[235] = 0;
+		strncpy(reply->reply, translated_token, 235);
+	}
 
 	/*	Broadcast the help reply
 	*/

@@ -994,6 +994,8 @@ void ro_msg_dataload(wimp_message *message)
 	else if (file_type == 0xb28)		/* ANT URL file */
 		url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
 	else if (file_type == 0xfaf ||
+			file_type == 0xf78 ||
+			file_type == 0xf83 || 
 			file_type == 0x695 ||
 			file_type == 0xaff ||
 			file_type == 0xb60 ||

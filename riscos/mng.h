@@ -1,20 +1,25 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  */
 
 #ifndef _NETSURF_RISCOS_MNG_H_
 #define _NETSURF_RISCOS_MNG_H_
 
+#include "libmng/libmng.h"
 #include "oslib/osspriteop.h"
 
 struct content;
 
 struct content_mng_data {
+	bool read_start;
+	bool read_resume;
+	int read_size;
+	bool waiting;
+	mng_handle handle;
 	osspriteop_area *sprite_area;
-	char *sprite_image;
 };
 
 bool nsmng_create(struct content *c, const char *params[]);
