@@ -1,0 +1,22 @@
+css_unit em ex px in cm mm pt pc
+css_background_attachment inherit fixed scroll
+css_background_position inherit top center bottom left right length percent
+css_background_repeat inherit repeat repeat_x repeat_y no_repeat
+css_border_width inherit medium thin thick length
+css_border_style inherit none dashed dotted double groove inset outset ridge solid
+css_clear none both left right
+css_display block inline none
+css_float none left right
+css_font_style normal italic oblique
+css_font_variant normal smallcaps
+css_font_weight normal bold bolder lighter 100 200 300 400 500 600 700 800 900
+css_letter_spacing normal length
+css_line_height normal length number percent
+css_list_style_position outside inside
+css_list_style_type disc circle square decimal lower_alpha lower_roman upper_alpha upper_roman none
+css_margin auto length percent
+css_text_align left right center justify
+css_text_decoration none blink line_through overline underline
+css_text_transform none capitalize lowercase uppercase
+css_vertical_align baseline bottom middle sub super text_bottom text_top top percent
+css_white_space normal nowrap pre
