@@ -220,6 +220,7 @@ bool html_redraw_box(struct box *box,
 				 * image covering it */
 				((box->style->background_repeat !=
 				  CSS_BACKGROUND_REPEAT_REPEAT) ||
+				(box->background == NULL) ||
 				(box->background->bitmap == NULL) ||
 				/*(ro_gui_current_redraw_gui == NULL) ||
 				(!ro_gui_current_redraw_gui->
