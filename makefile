@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.23 2003/05/31 19:01:43 jmb Exp $
+# $Id: makefile,v 1.24 2003/05/31 21:19:12 bursa Exp $
 
 CC = riscos-gcc
 OBJECTS = cache.o content.o fetch.o fetchcache.o \
@@ -42,12 +42,11 @@ css/parser.c: css/parser.y
 	-cd css; lemon parser.y
 css/scanner.c css/scanner.h: css/scanner.l
 	cd css; flex scanner.l
-$(OBJDIR) :
-	-mkdir $(OBJDIR)
 
 # generate dependencies
 depend : $(SOURCES)
-	$(CC) -MM -MG $(CFLAGS) $^ | sed 's|.*\.o:|$(OBJDIR)/& $(OBJDIR)|g' > $@
+	-mkdir $(OBJDIR)
+	$(CC) -MM -MG $(CFLAGS) $^ | sed 's|.*\.o:|$(OBJDIR)/&|g' > $@
 
 # remove generated files
 clean :
