@@ -187,10 +187,25 @@ HelpBrowserMenu3-2-3:\Stoggle the display of the status bar.|MHorizontal scroll 
 HelpBrowserMenu3-3:\Smake your local display options the default options for NetSurf.
 HelpBrowserMenu4:\Rsee the help resources available.
 HelpBrowserMenu4-0:\Sopen the documentation contents page in a new \w.
-#HelpBrowserMenu4-1:\Sopen the user guide in a new \w.
-#HelpBrowserMenu4-2:\Sopen the user information page in a new \w.
-#HelpBrowserMenu4-3:\Stoggle interactive help.
+HelpBrowserMenu4-1:\Sopen the user guide in a new \w.
+HelpBrowserMenu4-2:\Sopen the user information page in a new \w.
+HelpBrowserMenu4-3:\Srun Help.
 
 HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.
 
 HelpIconbar:\TNetSurf icon.|M\Sopen a new browser window.
+
+HelpSaveAs0:Drag SELECT this icon to the directory in which you want to save the file.
+HelpSaveAs1:This is the filename under which this document will be saved.
+HelpSaveAs2:\Ssave the file with the current filename.|MIf a full path is not set, you must drag the icon to a directory.
+HelpSaveAs3:\Sclose this \w without saving.
+
+HelpScaleView1:Enter the scale you wish the page to be displayed at.
+HelpScaleView2:\Sreduce the scale, 10% at a time.
+HelpScaleView3:\Sincrease the scale, 10% at a time.
+HelpScaleView5:\Sautomatically choose a scale of 50%.
+HelpScaleView6:\Sautomatically choose a scale of 80%.
+HelpScaleView7:\Sautomatically choose a scale of 100%.
+HelpScaleView8:\Sautomatically choose a scale of 120%.
+HelpScaleView9:\Scancel changes.|MThe current scale will not be changed.
+HelpScaleView10:\Schange the view to the scale you have chosen.
