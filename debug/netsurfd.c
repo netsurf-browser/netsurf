@@ -12,6 +12,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 
 int done, destroyed;
 
@@ -88,4 +89,9 @@ void html_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
 		long x0, long y0, long x1, long y1)
 {
+}
+
+void *login_list_get(char *url)
+{
+	return 0;
 }
