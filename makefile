@@ -46,8 +46,8 @@ OBJECTS_DEBUGRO += draw.o filetype.o font.o \
 
 OBJECTS_GTK = $(OBJECTS_COMMON)
 OBJECTS_GTK += filetyped.o					# debug/
-OBJECTS_GTK += browser.o netsurf.o				# desktop/
-OBJECTS_GTK += font_pango.o gtk_gui.o				# gtk/
+OBJECTS_GTK += browser.o netsurf.o version.o			# desktop/
+OBJECTS_GTK += font_pango.o gtk_gui.o gtk_window.o		# gtk/
 
 
 OBJDIR_RISCOS = $(shell $(CC) -dumpmachine)
