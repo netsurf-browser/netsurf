@@ -20,7 +20,7 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
-static osspriteop_area *create_buffer_sprite(struct content *c, anim a, int *bgc);
+static osspriteop_area *create_buffer_sprite(struct content *c, anim a);
 
 void nsgif_init(void)
 {
@@ -47,7 +47,6 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
   anim a;
   frame f;
   pixel *img, *mask;
-  int bg;
   struct osspriteop_header *header;
   struct osspriteop_area *area;
 
@@ -65,7 +64,7 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
     return 1;
   }
 
-  area = create_buffer_sprite(c, a, &bg);
+  area = create_buffer_sprite(c, a);
   if(!area) {
 
     LOG(("Failed to create sprite"));
@@ -94,7 +93,7 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
        if(!mask[i]) {
 
          img[i] = 255;
-         mask[i] = bg;
+         mask[i] = 0;
        }
   }
   else
@@ -164,9 +163,9 @@ void nsgif_destroy(struct content *c)
 }
 
 
-static osspriteop_area *create_buffer_sprite( struct content *c, anim a, int *bgc )
+static osspriteop_area *create_buffer_sprite( struct content *c, anim a )
 {
-    unsigned int abw = ((a->nWidth + 3 ) & ~3) * a->nHeight;
+    unsigned int abw = ((a->nWidth + 3 ) & ~3u) * a->nHeight;
     unsigned int nBytes = abw*2 + 44 + 16 + 256*8;
     struct osspriteop_area *result = xcalloc(1, nBytes);
     struct osspriteop_header *spr = (osspriteop_header*)(result+1);
@@ -202,35 +201,6 @@ static osspriteop_area *create_buffer_sprite( struct content *c, anim a, int *bg
     {
         *pPalDest++ = *pPalSrc;
         *pPalDest++ = *pPalSrc++;
-    }
-
-    if ( !bgc )
-        return result;
-
-    /* A bit of faff here to return a useful (near-white) background colour */
-
-    pPalDest = (unsigned int*)(spr+1);
-
-    if ( n < 256 )
-    {
-        pPalDest[255*2] = 0xFFFFFF00;
-        pPalDest[255*2+1] = 0xFFFFFF00;
-        *bgc = 255;
-    }
-    else
-    {
-        unsigned int max = 0;
-        for ( i=0; i<256; i++ )
-        {
-            unsigned int dark = pPalDest[i*2];
-            dark = (dark>>24) + ((dark>>16)&0xFF) + ((dark>>8)&0xFF);
-            if ( dark > max )
-            {
-                max = dark;
-                n = i;
-            }
-        }
-        *bgc = n;
     }
 
     return result;
