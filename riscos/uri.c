@@ -11,6 +11,7 @@
 #include "oslib/uri.h"
 #include "oslib/wimp.h"
 #include "netsurf/utils/config.h"
+#include "netsurf/content/fetch.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/desktop/gui.h"
@@ -32,21 +33,11 @@ void ro_uri_message_received(uri_full_message_process* uri_message)
 {
   uri_h uri_handle;
   char* uri_requested;
-
-  struct browser_window* bw;
   int uri_length;
 
   uri_handle = uri_message->handle;
 
-  LOG(("URI message... %s, handle = %d", uri_message->uri,
-                                         (int)uri_message->handle));
-
-  if ( (strspn(uri_message->uri, "http://") != strlen("http://")) &&
-       (strspn(uri_message->uri, "https://") != strlen("https://")) &&
-       (strspn(uri_message->uri, "file:/")  != strlen("file:/")) )
-            return;
-
-  else LOG(("URI message deemed relevant"));
+  if (!fetch_can_fetch(uri_message->uri)) return;
 
   uri_message->your_ref = uri_message->my_ref;
   uri_message->action = message_URI_PROCESS_ACK;

@@ -11,6 +11,7 @@
 #include "oslib/inetsuite.h"
 #include "oslib/wimp.h"
 #include "netsurf/utils/config.h"
+#include "netsurf/content/fetch.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/desktop/gui.h"
@@ -31,8 +32,8 @@ void ro_url_message_received(wimp_message* message)
 #ifdef ALLOW_POST
   char* filename = NULL, *mimetype = NULL;
   bool post=false;
-#endif
   struct browser_window* bw;
+#endif
   inetsuite_message_open_url *url_message = (inetsuite_message_open_url*)&message->data;
 
   /* If the url_message->indirect.tag is non-zero,
@@ -83,9 +84,7 @@ void ro_url_message_received(wimp_message* message)
 #endif
   }
 
-  if ( (strspn(uri_requested, "http://") != strlen("http://")) &&
-       (strspn(uri_requested, "https://") != strlen("https://")) &&
-       (strspn(uri_requested, "file:/")  != strlen("file:/")) ) {
+  if (!fetch_can_fetch(uri_requested)) {
 #ifdef ALLOW_POST
             xfree(filename);
             xfree(mimetype);
