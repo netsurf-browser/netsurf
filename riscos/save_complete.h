@@ -15,6 +15,6 @@
 struct content;
 
 void save_complete_init(void);
-void save_complete(struct content *c, const char *path);
+bool save_complete(struct content *c, const char *path);
 
 #endif

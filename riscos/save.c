@@ -35,7 +35,7 @@ extern struct content *save_content;
 
 typedef enum { LINK_ACORN, LINK_ANT, LINK_TEXT } link_format;
 
-static void ro_gui_save_complete(struct content *c, char *path);
+static bool ro_gui_save_complete(struct content *c, char *path);
 static void ro_gui_save_object_native(struct content *c, char *path);
 static bool ro_gui_save_link(struct content *c, link_format format, char *path);
 
@@ -166,7 +166,8 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			break;
 
 		case GUI_SAVE_COMPLETE:
-			ro_gui_save_complete(c, path);
+			if (!ro_gui_save_complete(c, path))
+				return;
 			break;
 
 		case GUI_SAVE_DRAW:
@@ -236,13 +237,17 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 
 /**
  * Prepare an application directory and save_complete() to it.
+ *
+ * \param  c     content of type CONTENT_HTML to save
+ * \param  path  path to save as
+ * \return  true on success, false on error and error reported
  */
 
 #define WIDTH 64
 #define HEIGHT 64
 #define SPRITE_SIZE (16 + 44 + ((WIDTH / 2 + 3) & ~3) * HEIGHT / 2)
 
-void ro_gui_save_complete(struct content *c, char *path)
+bool ro_gui_save_complete(struct content *c, char *path)
 {
 	char buf[256];
 	FILE *fp;
@@ -258,7 +263,7 @@ void ro_gui_save_complete(struct content *c, char *path)
 		LOG(("xosfile_create_dir: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("SaveError", error->errmess);
-		return;
+		return false;
 	}
 
         /* Save !Run file */
@@ -267,7 +272,7 @@ void ro_gui_save_complete(struct content *c, char *path)
 	if (!fp) {
 		LOG(("fopen(): errno = %i", errno));
 		warn_user("SaveError", strerror(errno));
-		return;
+		return false;
 	}
 	fprintf(fp, "Filer_Run <Obey$Dir>.index\n");
 	fclose(fp);
@@ -276,7 +281,7 @@ void ro_gui_save_complete(struct content *c, char *path)
 		LOG(("xosfile_set_type: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("SaveError", error->errmess);
-		return;
+		return false;
 	}
 
 	/* Create !Sprites */
@@ -288,7 +293,7 @@ void ro_gui_save_complete(struct content *c, char *path)
   	area = thumbnail_initialise(34, 34, os_MODE8BPP90X90);
   	if (!area) {
 		warn_user("NoMemory", 0);
-		return;
+		return false;
 	}
 	sprite_header = (osspriteop_header *)(area + 1);
 	strncpy(sprite_header->name, appname + 1, 12);
@@ -305,11 +310,13 @@ void ro_gui_save_complete(struct content *c, char *path)
 		LOG(("xosspriteop_save_sprite_file: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("SaveError", error->errmess);
-	        return;
+	        return false;
 	}
 
-	save_complete(c, path);
+	return save_complete(c, path);
 }
+
+
 
 void ro_gui_save_object_native(struct content *c, char *path)
 {
