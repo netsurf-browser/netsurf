@@ -1191,10 +1191,14 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 						g->bw->current_content->url,
 						ro_content_filetype(g->bw->current_content),
 						time(NULL), -1, 0);
-				tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP, 0,
-						NODE_INSTEP, 16384);
-				tree_handle_node_changed(hotlist_tree, node, false, true);
-				ro_gui_tree_scroll_visible(hotlist_tree, &node->data);
+				if (node) {
+					tree_redraw_area(hotlist_tree,
+							node->box.x - NODE_INSTEP, 0,
+							NODE_INSTEP, 16384);
+					tree_handle_node_changed(hotlist_tree, node, false,
+							true);
+					ro_gui_tree_scroll_visible(hotlist_tree, &node->data);
+				}
 			} else if (hotlist_tree) {
 				ro_gui_hotlist_show();
 			}

@@ -988,6 +988,41 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				ro_gui_menu_prepare_hotlist();
 				break;
 		}
+	} else if (current_menu == global_history_menu) {
+		switch (selection->items[0]) {
+			case 0:	/* Hotlist-> */
+				switch (selection->items[1]) {
+					case 0: /* Export */
+						break;
+					case 1: /* Expand */
+						tree_handle_expansion(global_history_tree, global_history_tree->root, true,
+								(selection->items[2] != 2), (selection->items[2] != 1));
+						break;
+					case 2: /* Collapse */
+						tree_handle_expansion(global_history_tree, global_history_tree->root, false,
+								(selection->items[2] != 2), (selection->items[2] != 1));
+						break;
+				}
+				break;
+			case 1: /* Selection-> */
+				switch (selection->items[1]) {
+					case 0: /* Launch */
+						ro_gui_tree_launch_selected(global_history_tree);
+						break;
+					case 1: /* Delete */
+						tree_delete_selected_nodes(global_history_tree, global_history_tree->root);
+						break;
+				}
+				break;
+			case 2: /* Select all */
+				ro_gui_tree_keypress(1, global_history_tree);
+				ro_gui_menu_prepare_global_history();
+				break;
+			case 3: /* Clear */
+				ro_gui_tree_keypress(26, global_history_tree);
+				ro_gui_menu_prepare_global_history();
+				break;
+		}
 	} else if (current_menu == browser_menu) {
 		struct content *c = current_gui->bw->current_content;
 		switch (selection->items[0]) {
@@ -1598,7 +1633,7 @@ void ro_gui_menu_global_history_warning(wimp_message_menu_warning *warning)
 			switch (warning->selection.items[1]) {
 				case -1: /* Root */
 					ro_gui_menu_prepare_global_history();
-					error = xwimp_create_sub_menu(hotlist_select_menu,
+					error = xwimp_create_sub_menu(history_select_menu,
 							warning->pos.x, warning->pos.y);
 					break;
 			}

@@ -133,6 +133,7 @@ void ro_gui_hotlist_initialise(void) {
 	}
 	if (!hotlist_tree) return;
 	hotlist_tree->handle = (int)hotlist_window;
+	hotlist_tree->movable = true;
 
 	/*	Create our toolbar
 	*/

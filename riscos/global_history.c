@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/content/url_store.h"
@@ -28,6 +29,7 @@
 #include "netsurf/utils/utils.h"
 
 #define MAXIMUM_URL_LENGTH 1024
+#define MAXIMUM_BASE_NODES 16
 
 #define GLOBAL_HISTORY_RECENT_READ "Choices:WWW.NetSurf.Recent"
 #define GLOBAL_HISTORY_RECENT_WRITE "<Choices$Write>.WWW.NetSurf.Recent"
@@ -35,9 +37,16 @@
 #define GLOBAL_HISTORY_WRITE "<Choices$Write>.WWW.NetSurf.History"
 
 
+static struct node *global_history_base_node[MAXIMUM_BASE_NODES];
+static int global_history_base_node_time[MAXIMUM_BASE_NODES];
+static int global_history_base_node_count = 0;
+
 static char *global_history_recent_url[GLOBAL_HISTORY_RECENT_URLS];
 static int global_history_recent_count = 0;
 
+static void ro_gui_global_history_initialise_nodes(void);
+static void ro_gui_global_history_initialise_node(const char *title, time_t base,
+		int days_back);
 static void ro_gui_global_history_add(char *title, char *url, int visit_date);
 
 /*	A basic window for the history
@@ -113,11 +122,11 @@ void ro_gui_global_history_initialise(void) {
 	  	global_history_tree = NULL;
 	}
 	global_history_tree->root->expanded = true;
+	ro_gui_global_history_initialise_nodes();
+	/* todo: load history */
 	tree_initialise(global_history_tree);
-
-
-	if (!global_history_tree) return;
 	global_history_tree->handle = (int)global_history_window;
+	global_history_tree->movable = false;
 
 	/*	Create our toolbar
 	*/
@@ -142,6 +151,70 @@ void ro_gui_global_history_initialise(void) {
 		}
 		fclose(fp);
 	}
+}
+
+
+/**
+ * Initialises the base nodes
+ */
+static void ro_gui_global_history_initialise_nodes(void) {
+	struct tm *full_time;
+	time_t t;
+	int weekday;
+	int i;
+	
+	/* get the current time */
+	t = time(NULL);
+	if (t == -1)
+		return;
+	
+	/* get the time at the start of today */
+	full_time = localtime(&t);
+	weekday = full_time->tm_wday;
+	full_time->tm_sec = 0;
+	full_time->tm_min = 0;
+	full_time->tm_hour = 0;
+	t = mktime(full_time);
+	if (t == -1)
+		return;
+	
+	ro_gui_global_history_initialise_node(messages_get("DateToday"), t, 0);
+	if (weekday > 0)
+		ro_gui_global_history_initialise_node(messages_get("DateYesterday"),
+				t, -1);
+	for (i = 2; i <= weekday; i++)
+		ro_gui_global_history_initialise_node(NULL, t, -i);
+	ro_gui_global_history_initialise_node(messages_get("Date1Week"),
+				t, -weekday - 7);
+	ro_gui_global_history_initialise_node(messages_get("Date2Week"),
+				t, -weekday - 14);
+	ro_gui_global_history_initialise_node(messages_get("Date3Week"),
+				t, -weekday - 21);
+}
+
+static void ro_gui_global_history_initialise_node(const char *title, time_t base,
+		int days_back) {
+	struct tm *full_time;
+	char buffer[64];
+	struct node *node;
+	
+	base += days_back * 60 * 60 * 24;
+	if (!title) {
+		full_time = localtime(&base);
+		strftime((char *)&buffer, (size_t)64, "%A", full_time);
+		node = tree_create_folder_node(NULL, buffer);
+	} else
+		node = tree_create_folder_node(NULL, title);
+
+	if (!node)
+		return;
+
+	node->retain_in_memory = true;
+	node->deleted = true;
+	node->editable = false;
+	global_history_base_node[global_history_base_node_count] = node;
+	global_history_base_node_time[global_history_base_node_count] = base;
+	global_history_base_node_count++;
 }
 
 
@@ -250,8 +323,42 @@ void global_history_add(struct gui_window *g) {
  * \param visit_date  the visit date
  */
 void ro_gui_global_history_add(char *title, char *url, int visit_date) {
-	LOG(("Added '%s' ('%s') dated %i.", title, url, visit_date));
-  
+  	int i, j;
+  	struct node *parent = NULL;
+  	struct node *link;
+  	struct node *node;
+  	bool before = false;
+  	
+  	/*	Find/create the node to link into
+  	*/
+  	for (i = 0; i < global_history_base_node_count; i++) {
+  		if (global_history_base_node_time[i] <= visit_date) {
+  		  	parent = global_history_base_node[i];
+  		  	if (parent->deleted) {
+  		  	  	link = global_history_tree->root;
+			  	for (j = 0; j < i; j++) {
+			  		if (!global_history_base_node[j]->deleted) {
+			  			link = global_history_base_node[j];
+			  			before = true;
+			  			break;
+			  		}
+			  	}
+			  	tree_link_node(link, parent, before);
+				tree_recalculate_node_positions(global_history_tree->root);
+				tree_redraw_area(global_history_tree, 0, 0, 16384, 16384);			}
+  		  	break;
+  		}
+  	}
+ 
+  	if (parent) {
+	  	node = tree_create_URL_node_brief(parent, title, url, 0xfaf, visit_date);
+		if (node) {
+			tree_redraw_area(global_history_tree, node->box.x - NODE_INSTEP,
+					0, NODE_INSTEP, 16384);
+			tree_handle_node_changed(global_history_tree, node, false,
+					true);
+		}
+	} 	
 }
 
 
