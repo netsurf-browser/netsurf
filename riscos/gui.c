@@ -149,17 +149,21 @@ void gui_init(int argc, char** argv)
 	char path[40];
 	char theme_fname[256];
 	os_error *error;
+	int length;
 
 	xhourglass_start(1);
 
-        save_complete_init();
+	save_complete_init();
 
 	options_read("Choices:WWW.NetSurf.Choices");
 
 	ro_gui_choose_language();
 
 	NETSURF_DIR = getenv("NetSurf$Dir");
-	sprintf(path, "<NetSurf$Dir>.Resources.%s.Messages", option_language);
+	if ((length = snprintf(path, sizeof(path),
+			"<NetSurf$Dir>.Resources.%s.Messages",
+			option_language)) < 0 || length >= sizeof(path))
+		die("Failed to locate Messages resource.");
 	messages_load(path);
 	messages_load("<NetSurf$Dir>.Resources.LangNames");
 
@@ -178,21 +182,24 @@ void gui_init(int argc, char** argv)
 	if (getenv("NetSurf$Start_URI_Handler"))
 		xwimp_start_task("Desktop", 0);
 
-	if (option_theme) {
-		snprintf(theme_fname, sizeof(theme_fname),
-				"<NetSurf$Dir>.Themes.%s", option_theme);
-	        /* check if theme directory exists */
-		if (!is_dir(theme_fname)) {
+	if (option_theme != NULL) {
+		if ((length = snprintf(theme_fname, sizeof(theme_fname),
+				"<NetSurf$Dir>.Themes.%s", option_theme)) >= 0
+				&& length < sizeof(theme_fname)
+		/* check if theme directory exists */
+				&& !is_dir(theme_fname)) {
 			free(option_theme);
-			option_theme = 0;
-			sprintf(theme_fname, "<NetSurf$Dir>.Themes.Default");
+			option_theme = NULL;
 		}
-	} else {
-		strcpy(theme_fname, "<NetSurf$Dir>.Themes.Default");
 	}
+	if (option_theme == NULL)
+		strcpy(theme_fname, "<NetSurf$Dir>.Themes.Default");
 	ro_theme_load(theme_fname);
 
-	sprintf(path, "<NetSurf$Dir>.Resources.%s.Templates", option_language);
+	if ((length = snprintf(path, sizeof(path),
+			"<NetSurf$Dir>.Resources.%s.Templates",
+			option_language)) < 0 || length >= sizeof(path))
+		die("Failed to locate Templates resource.");
 	error = xwimp_open_template(path);
 	if (error) {
 		LOG(("xwimp_open_template failed: 0x%x: %s",
@@ -307,9 +314,9 @@ void ro_gui_check_fonts(void)
 
 void ro_gui_pointers_init(void)
 {
-        int len;
-        fileswitch_object_type obj_type;
-        os_error *e;
+	int len;
+	fileswitch_object_type obj_type;
+	os_error *e;
 
 	e = xosfile_read_stamped_no_path("<NetSurf$Dir>.Resources.Pointers",
 			&obj_type, 0, 0, &len, 0, 0);
@@ -321,22 +328,22 @@ void ro_gui_pointers_init(void)
 	if (obj_type != fileswitch_IS_FILE)
 		die("<NetSurf$Dir>.Resources.Pointers missing.");
 
-        gui_pointers = malloc(len + 4);
-        if (!gui_pointers)
-        	die("NoMemory");
+	gui_pointers = malloc(len + 4);
+	if (!gui_pointers)
+		die("NoMemory");
 
-        gui_pointers->size = len+4;
-        gui_pointers->sprite_count = 0;
-        gui_pointers->first = 16;
-        gui_pointers->used = 16;
+	gui_pointers->size = len+4;
+	gui_pointers->sprite_count = 0;
+	gui_pointers->first = 16;
+	gui_pointers->used = 16;
 
-        e = xosspriteop_load_sprite_file(osspriteop_USER_AREA,
+	e = xosspriteop_load_sprite_file(osspriteop_USER_AREA,
 			gui_pointers, "<NetSurf$Dir>.Resources.Pointers");
-        if (e) {
+	if (e) {
 		LOG(("xosspriteop_load_sprite_file: 0x%x: %s",
 				e->errnum, e->errmess));
 		die(e->errmess);
-        }
+	}
 }
 
 
@@ -426,7 +433,7 @@ void gui_poll(bool active)
 	ro_gui_handle_event(event, &block);
 	schedule_run();
 
-        if (gui_reformat_pending && event == wimp_NULL_REASON_CODE) {
+	if (gui_reformat_pending && event == wimp_NULL_REASON_CODE) {
 		for (g = window_list; g; g = g->next) {
 			if (g->type == GUI_BROWSER_WINDOW && g->data.browser.reformat_pending) {
 				content_reformat(g->data.browser.bw->current_content,
@@ -467,8 +474,8 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 			break;
 
 		case wimp_POINTER_LEAVING_WINDOW:
-		        if (over_window == (gui_window*)history_window)
-		                wimp_close_window(dialog_tooltip);
+			if (over_window == (gui_window*)history_window)
+				wimp_close_window(dialog_tooltip);
 			over_window = 0;
 			gui_window_set_pointer(GUI_POINTER_DEFAULT);
 			break;
@@ -476,7 +483,7 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 		case wimp_POINTER_ENTERING_WINDOW:
 			over_window = ro_lookup_gui_from_w(block->entering.w);
 			if (over_window == 0 && block->entering.w == history_window)
-			        over_window = (gui_window*)history_window;
+				over_window = (gui_window*)history_window;
 			break;
 
 		case wimp_MOUSE_CLICK:
@@ -617,7 +624,8 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
  * Handle Open_Window_Request events.
  */
 
-void ro_gui_open_window_request(wimp_open *open) {
+void ro_gui_open_window_request(wimp_open *open)
+{
 	struct toolbar *toolbar;
 	gui_window *g;
 
@@ -630,9 +638,9 @@ void ro_gui_open_window_request(wimp_open *open) {
 		if (g) {
 			toolbar = g->data.browser.toolbar;
 			if (toolbar) {
-			  	toolbar->resize_status = 1;
-		  		ro_theme_resize_toolbar(g);
-		  	}
+				toolbar->resize_status = 1;
+				ro_theme_resize_toolbar(g);
+			}
 		}
 	}
 }
@@ -699,9 +707,12 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 				   96 + iconbar_menu_height, NULL);
 	} else if (pointer->buttons == wimp_CLICK_SELECT) {
 		char url[80];
-		sprintf(url, "file:///%%3CNetSurf$Dir%%3E/Docs/intro_%s",
-				option_language);
-		browser_window_create(url, NULL);
+		int length;
+
+		if ((length = snprintf(url, sizeof(url),
+				"file:///%%3CNetSurf$Dir%%3E/Docs/intro_%s",
+				option_language)) >= 0 && length < sizeof(url))
+			browser_window_create(url, NULL);
 	}
 }
 
@@ -742,9 +753,9 @@ void ro_gui_keypress(wimp_key *key)
 	gui_window *g = ro_gui_window_lookup(key->w);
 
 	if (!g) {
-	        handled = ro_gui_dialog_keypress(key);
-	        if (!handled)
-		        wimp_process_key(key->c);
+		handled = ro_gui_dialog_keypress(key);
+		if (!handled)
+			wimp_process_key(key->c);
 		return;
 	}
 
@@ -770,9 +781,9 @@ void ro_gui_keypress(wimp_key *key)
 void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 {
 	switch (message->action) {
-	 	case message_HELP_REQUEST:
-	 		ro_gui_interactive_help_request(message);
-	 		break;
+		case message_HELP_REQUEST:
+			ro_gui_interactive_help_request(message);
+			break;
 
 		case message_DATA_SAVE:
 			ro_msg_datasave(message);
@@ -897,10 +908,10 @@ void ro_msg_datasave(wimp_message* block)
 	struct browser_window* bw;
 	wimp_message_data_xfer* data;
 	int x,y;
-        struct box_selection* click_boxes;
-        int found, plot_index;
-        int i;
-        wimp_window_state state;
+	struct box_selection* click_boxes;
+	int found, plot_index;
+	int i;
+	wimp_window_state state;
 
 	data = &block->data.data_xfer;
 
@@ -910,19 +921,19 @@ void ro_msg_datasave(wimp_message* block)
 
 	bw = gui->data.browser.bw;
 
-        state.w = data->w;
-        wimp_get_window_state(&state);
-  	x = window_x_units(data->pos.x, &state) / 2;
-  	y = -window_y_units(data->pos.y, &state) / 2;
+	state.w = data->w;
+	wimp_get_window_state(&state);
+	x = window_x_units(data->pos.x, &state) / 2;
+	y = -window_y_units(data->pos.y, &state) / 2;
 
-  	found = 0;
+	found = 0;
 	click_boxes = NULL;
 	plot_index = 0;
 
 	box_under_area(bw->current_content,
-	         bw->current_content->data.html.layout->children,
-                 (unsigned int)x, (unsigned int)y, 0, 0, &click_boxes,
-                 &found, &plot_index);
+		 bw->current_content->data.html.layout->children,
+		 (unsigned int)x, (unsigned int)y, 0, 0, &click_boxes,
+		 &found, &plot_index);
 
 	if (found == 0)
 		return;
@@ -975,69 +986,64 @@ void ro_msg_dataload(wimp_message *message)
 			message->data.data_xfer.file_type != 0xb28)
 		return;
 
-        /* uri file
-         * Format: Each "line" is separated by a tab.
-         *         Comments are prefixed by a "#"
-         *
-         * Line:        Content:
-         *      1       URI
-         *      2       100 (version of file format * 100)
-         *      3       An URL (eg http;//www.google.com/)
-         *      4       Title associated with URL (eg Google)
-         */
-        if (message->data.data_xfer.file_type == 0xf91) {
-               char *buf, *temp;
-               int lineno=0;
+	/* uri file
+	 * Format: Each "line" is separated by a tab.
+	 *         Comments are prefixed by a "#"
+	 *
+	 * Line:        Content:
+	 *      1       URI
+	 *      2       100 (version of file format * 100)
+	 *      3       An URL (eg http;//www.google.com/)
+	 *      4       Title associated with URL (eg Google)
+	 */
+	if (message->data.data_xfer.file_type == 0xf91) {
+		char *buf, *temp;
+		int lineno=0;
+		buf = load(message->data.data_xfer.file_name);
+		temp = strtok(buf, "\t");
 
-               buf = load(message->data.data_xfer.file_name);
+		if (!temp) {
+			xfree(buf);
+			return;
+		}
 
-               temp = strtok(buf, "\t");
+		if (temp[0] != '#') lineno = 1;
 
-               if (!temp) {
-                       xfree(buf);
-                       return;
-               }
+		while (temp && lineno<=2) {
+			temp = strtok('\0', "\t");
+			if (!temp) break;
+			if (temp[0] == '#') continue; /* ignore commented lines */
+			lineno++;
+		}
 
-               if (temp[0] != '#') lineno = 1;
+		if (!temp) {
+			xfree(buf);
+			return;
+		}
 
-               while (temp && lineno<=2) {
+		url = xstrdup(temp);
 
-                       temp = strtok('\0', "\t");
+		xfree(buf);
+	}
 
-                       if (!temp) break;
+	/* url file */
+	if (message->data.data_xfer.file_type == 0xb28) {
+		char *temp;
+		FILE *fp = fopen(message->data.data_xfer.file_name, "r");
 
-                       if (temp[0] == '#') continue; /* ignore commented lines */
-                       lineno++;
-               }
+		if (!fp) return;
 
-               if (!temp) {
-                       xfree(buf);
-                       return;
-               }
+		url = xcalloc(256, sizeof(char));
 
-               url = xstrdup(temp);
+		temp = fgets(url, 256, fp);
 
-               xfree(buf);
-        }
+		fclose(fp);
 
-        /* url file */
-        if (message->data.data_xfer.file_type == 0xb28) {
-	        char *temp;
-	        FILE *fp = fopen(message->data.data_xfer.file_name, "r");
+		if (!temp) return;
 
-	        if (!fp) return;
-
-	        url = xcalloc(256, sizeof(char));
-
-	        temp = fgets(url, 256, fp);
-
-	        fclose(fp);
-
-	        if (!temp) return;
-
-	        if (url[strlen(url)-1] == '\n') {
-	                url[strlen(url)-1] = '\0';
-	        }
+		if (url[strlen(url)-1] == '\n') {
+			url[strlen(url)-1] = '\0';
+		}
 	}
 
 	/* send DataLoadAck */
@@ -1048,14 +1054,14 @@ void ro_msg_dataload(wimp_message *message)
 	/* create a new window with the file */
 	if (message->data.data_xfer.file_type != 0xb28 &&
 	    message->data.data_xfer.file_type != 0xf91) {
-	        url = ro_path_to_url(message->data.data_xfer.file_name);
+		url = ro_path_to_url(message->data.data_xfer.file_name);
 	}
 	if (!url)
-	        return;
+		return;
 
 	if (gui) {
-	        gui_window_set_url(gui, url);
-	        browser_window_go(gui->data.browser.bw, url);
+		gui_window_set_url(gui, url);
+		browser_window_go(gui->data.browser.bw, url);
 	}
 	else {
 		browser_window_create(url, NULL);
@@ -1069,10 +1075,10 @@ void ro_msg_dataload(wimp_message *message)
 	struct browser_window* bw;
 	wimp_message_data_xfer* data;
 	int x,y;
-        struct box_selection* click_boxes;
-        int found, plot_index;
-        int i;
-        wimp_window_state state;
+	struct box_selection* click_boxes;
+	int found, plot_index;
+	int i;
+	wimp_window_state state;
 
 	data = &block->data.data_xfer;
 
@@ -1082,19 +1088,19 @@ void ro_msg_dataload(wimp_message *message)
 
 	bw = gui->data.browser.bw;
 
-        state.w = data->w;
-        wimp_get_window_state(&state);
-  	x = window_x_units(data->pos.x, &state) / 2;
-  	y = -window_y_units(data->pos.y, &state) / 2;
+	state.w = data->w;
+	wimp_get_window_state(&state);
+	x = window_x_units(data->pos.x, &state) / 2;
+	y = -window_y_units(data->pos.y, &state) / 2;
 
-  	found = 0;
+	found = 0;
 	click_boxes = NULL;
 	plot_index = 0;
 
 	box_under_area(bw->current_content,
-	         bw->current_content->data.html.layout->children,
-                 (unsigned int)x, (unsigned int)y, 0, 0, &click_boxes,
-                 &found, &plot_index);
+		 bw->current_content->data.html.layout->children,
+		 (unsigned int)x, (unsigned int)y, 0, 0, &click_boxes,
+		 &found, &plot_index);
 
 	if (found == 0)
 		return;
@@ -1150,24 +1156,24 @@ void ro_msg_dataopen(wimp_message *message)
 		/* ignore all but HTML and URL */
 		return;
 
-        /* url file */
-        if (message->data.data_xfer.file_type == 0xb28) {
-	        char *temp;
-	        FILE *fp = fopen(message->data.data_xfer.file_name, "r");
+	/* url file */
+	if (message->data.data_xfer.file_type == 0xb28) {
+		char *temp;
+		FILE *fp = fopen(message->data.data_xfer.file_name, "r");
 
-	        if (!fp) return;
+		if (!fp) return;
 
-	        url = xcalloc(256, sizeof(char));
+		url = xcalloc(256, sizeof(char));
 
-	        temp = fgets(url, 256, fp);
+		temp = fgets(url, 256, fp);
 
-	        fclose(fp);
+		fclose(fp);
 
-	        if (!temp) return;
+		if (!temp) return;
 
-	        if (url[strlen(url)-1] == '\n') {
-	                url[strlen(url)-1] = '\0';
-	        }
+		if (url[strlen(url)-1] == '\n') {
+			url[strlen(url)-1] = '\0';
+		}
 	}
 
 	/* send DataLoadAck */
@@ -1177,7 +1183,7 @@ void ro_msg_dataopen(wimp_message *message)
 
 	/* create a new window with the file */
 	if (message->data.data_xfer.file_type != 0xb28) {
-	        url = ro_path_to_url(message->data.data_xfer.file_name);
+		url = ro_path_to_url(message->data.data_xfer.file_name);
 	}
 	if (url) {
 		browser_window_create(url, NULL);
@@ -1262,9 +1268,12 @@ void ro_gui_screen_size(int *width, int *height)
 void ro_gui_open_help_page(const char *page)
 {
 	char url[80];
-	snprintf(url, sizeof url, "file:///%%3CNetSurf$Dir%%3E/Docs/%s_%s",
-			page, option_language);
-        browser_window_create(url, NULL);
+	int length;
+
+	if ((length = snprintf(url, sizeof url,
+			"file:///%%3CNetSurf$Dir%%3E/Docs/%s_%s",
+			page, option_language)) >= 0 && length < sizeof(url))
+		browser_window_create(url, NULL);
 }
 
 /**
