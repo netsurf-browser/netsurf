@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.10 2002/12/27 20:08:18 bursa Exp $
+ * $Id: css.c,v 1.11 2002/12/27 20:13:18 bursa Exp $
  */
 
 #include <string.h>
@@ -55,7 +55,9 @@ static void dump_selector(const struct css_selector * const sel);
 static void dump_rule(const struct rule * rule);
 
 const struct css_style css_base_style = {
+	TRANSPARENT,
 	CSS_CLEAR_NONE,
+	0x000000,
 	CSS_DISPLAY_BLOCK,
 	CSS_FLOAT_NONE,
 	{ CSS_FONT_SIZE_LENGTH, { { 12, CSS_UNIT_PT } } },
@@ -68,7 +70,9 @@ const struct css_style css_base_style = {
 };
 
 const struct css_style css_empty_style = {
+	CSS_COLOR_INHERIT,
 	CSS_CLEAR_INHERIT,
+	CSS_COLOR_INHERIT,
 	CSS_DISPLAY_INHERIT,
 	CSS_FLOAT_INHERIT,
 	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_EM } } },
@@ -81,7 +85,9 @@ const struct css_style css_empty_style = {
 };
 
 const struct css_style css_blank_style = {
+	CSS_COLOR_INHERIT,
 	CSS_CLEAR_NONE,
+	CSS_COLOR_INHERIT,
 	CSS_DISPLAY_INLINE,
 	CSS_FLOAT_NONE,
 	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_EM } } },
@@ -114,18 +120,18 @@ static colour parse_colour(const char *s)
 	unsigned int r, g, b;
 
 	if (s[0] == '#' && len == 4) {
-		if (sscanf(s + 1, "%1lx%1lx%1lx", &r, &g, &b) == 3)
+		if (sscanf(s + 1, "%1x%1x%1x", &r, &g, &b) == 3)
 			c = (b << 20) | (b << 16) | (g << 12) | (g << 8) | (r << 4) | r;
 
 	} else if (s[0] == '#' && len == 7) {
-		if (sscanf(s + 1, "%2lx%2lx%2lx", &r, &g, &b) == 3)
+		if (sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 			c = (b << 16) | (g << 8) | r;
 
 	} else if (sscanf(s, "rgb(%u, %u, %u)", &r, &g, &b) == 3) {
 		c = (b << 16) | (g << 8) | r;
 
 	} else if (sscanf(s, "rgb(%u%%, %u%%, %u%%)", &r, &g, &b) == 3) {
-		c = (b * 2.55 << 16) | (g * 2.55 << 8) | r * 2.55;
+		c = ((int) (b * 2.55) << 16) | ((int) (g * 2.55) << 8) | (int) (r * 2.55);
 	}
 
 	return c;
@@ -621,10 +627,12 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 {
 	float f;
 
-	style->background_color = apply->background_color;
+	if (apply->background_color != CSS_COLOR_INHERIT)
+		style->background_color = apply->background_color;
 	if (apply->clear != CSS_CLEAR_INHERIT)
 		style->clear = apply->clear;
-	style->color = apply->color;
+	if (apply->color != CSS_COLOR_INHERIT)
+		style->color = apply->color;
 	if (apply->display != CSS_DISPLAY_INHERIT)
 		style->display = apply->display;
 	if (apply->float_ != CSS_FLOAT_INHERIT)

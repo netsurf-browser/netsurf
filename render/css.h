@@ -1,5 +1,5 @@
 /**
- * $Id: css.h,v 1.8 2002/12/27 20:08:18 bursa Exp $
+ * $Id: css.h,v 1.9 2002/12/27 20:13:18 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_CSS_H_
@@ -13,6 +13,7 @@
 
 typedef unsigned long colour;  /* 0xbbggrr */
 #define TRANSPARENT 0x1000000
+#define CSS_COLOR_INHERIT 0x2000000
 
 struct css_length {
 	float value;
