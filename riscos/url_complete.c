@@ -499,8 +499,11 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw) {
 
 /**
  * Handle mouse movements/clicks over the URL completion window.
+ *
+ * \param pointer  the pointer state
+ * \param buttons  whethere to react to mouse buttons
  */
-void ro_gui_url_complete_mouse_at(wimp_pointer *pointer) {
+void ro_gui_url_complete_mouse_at(wimp_pointer *pointer, bool buttons) {
 	wimp_window_state state;
 	os_error *error;
 	int selection, old_selection;
@@ -553,9 +556,9 @@ void ro_gui_url_complete_mouse_at(wimp_pointer *pointer) {
 			warn_user("WimpError", error->errmess);
 		}
 	}
-
+	
 	/* Select sets the text and launches */
-	if (pointer->buttons == wimp_CLICK_SELECT) {
+	if ((pointer->buttons == wimp_CLICK_SELECT) && (buttons)) {
 		g = ro_gui_window_lookup(url_complete_parent);
 		if (!g)
 			return;
@@ -567,10 +570,9 @@ void ro_gui_url_complete_mouse_at(wimp_pointer *pointer) {
 				0);
 		global_history_add_recent(url_complete_matches[url_complete_matches_selection]);
 		ro_gui_url_complete_close(NULL, 0);
-	}
 
 	/* Adjust just sets the text */
-	if (pointer->buttons == wimp_CLICK_ADJUST) {
+	} else if ((pointer->buttons == wimp_CLICK_ADJUST) && (buttons)) {
 		g = ro_gui_window_lookup(url_complete_parent);
 		if (!g)
 			return;

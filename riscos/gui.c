@@ -800,7 +800,7 @@ void ro_gui_null_reason_code(void)
 	if (gui_track_wimp_w == history_window)
 		ro_gui_history_mouse_at(&pointer);
 	if (gui_track_wimp_w == dialog_url_complete)
-		ro_gui_url_complete_mouse_at(&pointer);
+		ro_gui_url_complete_mouse_at(&pointer, false);
 	else if (gui_track_gui_window)
 		ro_gui_window_mouse_at(gui_track_gui_window, &pointer);
 }
@@ -946,7 +946,7 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 	else if (pointer->w == history_window)
 		ro_gui_history_click(pointer);
 	else if (pointer->w == dialog_url_complete)
-		ro_gui_url_complete_mouse_at(pointer);
+		ro_gui_url_complete_mouse_at(pointer, true);
 	else if ((hotlist_tree) && (pointer->w == (wimp_w)hotlist_tree->handle))
 		ro_gui_hotlist_click(pointer);
 	else if ((global_history_tree) && (pointer->w == (wimp_w)global_history_tree->handle))
