@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
@@ -41,7 +41,6 @@ struct status {
 	char *href;
 	char *title;
 	struct form* current_form;
-	struct page_elements* elements;
 };
 
 /* result of converting a special case element */
@@ -99,8 +98,6 @@ static struct result box_applet(xmlNode *n, struct status *status,
 static struct result box_iframe(xmlNode *n, struct status *status,
 		struct css_style *style);
 #endif
-static void add_form_element(struct page_elements* pe, struct form* f);
-static void add_gadget_element(struct page_elements* pe, struct form_control* g);
 #ifdef WITH_PLUGIN
 static bool plugin_decode(struct content* content, char* url, struct box* box,
                   struct object_params* po);
@@ -226,7 +223,7 @@ void box_insert_sibling(struct box *box, struct box *new_box)
 
 void xml_to_box(xmlNode *n, struct content *c)
 {
-	struct status status = {c, 0, 0, 0, &c->data.html.elements};
+	struct status status = {c, 0, 0, 0};
 
 	LOG(("node %p", n));
 	assert(c->type == CONTENT_HTML);
@@ -865,7 +862,6 @@ struct result box_form(xmlNode *n, struct status *status,
 
 	form->controls = form->last_control = 0;
 
-	add_form_element(status->elements, status->current_form);
 	return (struct result) {box, 1};
 }
 
@@ -919,8 +915,6 @@ struct result box_textarea(xmlNode *n, struct status *status,
 	{
 		box->gadget->name = s;
 	}
-
-	add_gadget_element(status->elements, box->gadget);
 
 	return (struct result) {box, 0};
 }
@@ -1012,8 +1006,6 @@ struct result box_select(xmlNode *n, struct status *status,
 
 	inline_box->length = strlen(inline_box->text);
 	inline_box->font = font_open(status->content->data.html.fonts, style);
-
-	add_gadget_element(status->elements, gadget);
 
 	return (struct result) {box, 0};
 }
@@ -1156,7 +1148,6 @@ struct result box_input(xmlNode *n, struct status *status,
 		else
 		  	gadget->form = 0;
 		gadget->name = (char *) xmlGetProp(n, (const xmlChar *) "name");
-		add_gadget_element(status->elements, gadget);
 	}
 
 	return (struct result) {box, 0};
@@ -1766,25 +1757,6 @@ void box_free_box(struct box *box)
 
 	free(box->text);
 	/* TODO: free object_params */
-}
-
-
-/**
- * form helper functions
- */
-
-void add_form_element(struct page_elements* pe, struct form* f)
-{
-	pe->forms = xrealloc(pe->forms, (pe->numForms + 1) * sizeof(struct form*));
-	pe->forms[pe->numForms] = f;
-	pe->numForms++;
-}
-
-void add_gadget_element(struct page_elements* pe, struct form_control* g)
-{
-	pe->gadgets = xrealloc(pe->gadgets, (pe->numGadgets + 1) * sizeof(struct form_control*));
-	pe->gadgets[pe->numGadgets] = g;
-	pe->numGadgets++;
 }
 
 

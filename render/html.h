@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
 #ifndef _NETSURF_RENDER_HTML_H_
@@ -44,7 +44,6 @@ struct content_html_data {
 		int selected;	/* 0 = unselected, 1 = selected */
 	} text_selection;
 	struct font_set *fonts;
-	struct page_elements elements;
 	unsigned int object_count;	/* images etc. */
 	struct {
 		char *url;
