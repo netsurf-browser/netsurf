@@ -48,7 +48,10 @@ void nspng_create(struct content *c, const char *params[])
 	if (setjmp(png_jmpbuf(c->data.png.png))) {
 		png_destroy_read_struct(&c->data.png.png,
 				&c->data.png.info, 0);
-		assert(0);
+		LOG(("Failed to set callbacks"));
+		c->data.png.png = NULL;
+		c->data.png.info = NULL;
+		return;
 	}
 
 	png_set_progressive_read_fn(c->data.png.png, c,
@@ -61,7 +64,10 @@ void nspng_process_data(struct content *c, char *data, unsigned long size)
 	if (setjmp(png_jmpbuf(c->data.png.png))) {
 		png_destroy_read_struct(&c->data.png.png,
 				&c->data.png.info, 0);
-		assert(0);
+		LOG(("Failed to process data"));
+		c->data.png.png = NULL;
+		c->data.png.info = NULL;
+		return;
 	}
 
 	LOG(("data %p, size %li", data, size));
@@ -219,6 +225,9 @@ void end_callback(png_structp png, png_infop info)
 
 int nspng_convert(struct content *c, unsigned int width, unsigned int height)
 {
+	if (c->data.png.png == NULL || c->data.png.info == NULL)
+		return 1;
+
 	png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
 
 	c->title = xcalloc(100, 1);
