@@ -99,6 +99,8 @@ void schedule_remove(void (*callback)(void *p), void *p)
 		next = entry->next;
 		entry->next = entry->next->next;
 		free(next);
+		if (!entry->next)
+			break;
 	}
 
 	if (sched_queue.next) {
