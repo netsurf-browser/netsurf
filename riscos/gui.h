@@ -10,6 +10,7 @@
 #define _NETSURF_RISCOS_GUI_H_
 
 #include <stdbool.h>
+#include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/browser.h"
@@ -31,6 +32,7 @@ extern gui_window *window_list;
 extern bool gui_reformat_pending;
 extern bool gui_redraw_debug;
 extern gui_window *current_gui;
+extern osspriteop_area *gui_pointers;
 
 typedef enum { GUI_BROWSER_WINDOW, GUI_DOWNLOAD_WINDOW } gui_window_type;
 typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT,

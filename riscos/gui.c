@@ -5,6 +5,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  */
 
 #include <assert.h>
@@ -66,8 +67,8 @@ bool gui_reformat_pending = false;	/**< Some windows have been resized,
 gui_drag_type gui_current_drag_type;
 wimp_t task_handle;	/**< RISC OS wimp task handle. */
 static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
-osspriteop_area *pointers;      /**< Sprite area containing pointer data */
-gui_pointer_shape curr_pointer; /**< Current shape of the pointer */
+osspriteop_area *gui_pointers;      /**< Sprite area containing pointer data */
+
 /** Accepted wimp user messages. */
 static wimp_MESSAGE_LIST(27) task_messages = { {
 	message_DATA_SAVE,
@@ -160,13 +161,13 @@ void gui_init(int argc, char** argv)
 	messages_load("<NetSurf$Dir>.Resources.LangNames");
 
 	error = xwimp_initialise(wimp_VERSION_RO38, "NetSurf",
-  			(const wimp_message_list *) &task_messages, 0,
-  			&task_handle);
-  	if (error) {
-  		LOG(("xwimp_initialise failed: 0x%x: %s",
+			(const wimp_message_list *) &task_messages, 0,
+			&task_handle);
+	if (error) {
+		LOG(("xwimp_initialise failed: 0x%x: %s",
 				error->errnum, error->errmess));
-		exit(EXIT_FAILURE);
-  	}
+		die(error->errmess);
+	}
 
 	ro_gui_check_fonts();
 
@@ -206,100 +207,6 @@ void gui_init(int argc, char** argv)
 	ro_gui_pointers_init();
 	ro_gui_icon_bar_create();
 	ro_gui_check_resolvers();
-}
-
-
-/**
- * Clones a browser window's options.
- *
- * \param new_bw the new browser window
- * \param old_bw the browser window to clone from, or NULL for default
- */
-void gui_window_clone_options(struct browser_window *new_bw, struct browser_window *old_bw) {
-	gui_window *old_gui = NULL;
-	gui_window *new_gui;
-
-	/*	Abort on bad input
-	*/
-	if (new_bw == NULL) return;
-
-	/*	Get our GUIs
-	*/
-	new_gui = new_bw->window;
-
-	/*	Abort on bad input
-	*/
-	if (!new_gui) return;
-	if (old_bw) old_gui = old_bw->window;
-
-	/*	Clone the basic options
-	*/
-	if (!old_gui) {
-		new_gui->scale = ((float)option_scale) / 100;
-		new_gui->option_dither_sprites = option_dither_sprites;
-		new_gui->option_filter_sprites = option_filter_sprites;
-		new_gui->option_animate_images = option_animate_images;
-	} else {
-		new_gui->scale = old_gui->scale;
-		new_gui->option_dither_sprites = old_gui->option_dither_sprites;
-		new_gui->option_filter_sprites = old_gui->option_filter_sprites;
-		new_gui->option_animate_images = old_gui->option_animate_images;
-	}
-
-	/*	Set up the toolbar
-	*/
-	if (new_gui->data.browser.toolbar) {
-	  	if ((old_gui) && (old_gui->data.browser.toolbar)) {
-			new_gui->data.browser.toolbar->status_width = old_gui->data.browser.toolbar->status_width;
-			new_gui->data.browser.toolbar->status_window = old_gui->data.browser.toolbar->status_window;
-			new_gui->data.browser.toolbar->standard_buttons = old_gui->data.browser.toolbar->standard_buttons;
-			new_gui->data.browser.toolbar->url_bar = old_gui->data.browser.toolbar->url_bar;
-			new_gui->data.browser.toolbar->throbber = old_gui->data.browser.toolbar->throbber;
-	  	} else {
-			new_gui->data.browser.toolbar->status_width = option_toolbar_status_width;
-			new_gui->data.browser.toolbar->status_window = option_toolbar_show_status;
-			new_gui->data.browser.toolbar->standard_buttons = option_toolbar_show_buttons;
-			new_gui->data.browser.toolbar->url_bar = option_toolbar_show_address;
-			new_gui->data.browser.toolbar->throbber = option_toolbar_show_throbber;
-		}
-		ro_theme_update_toolbar(new_gui);
-	}
-}
-
-
-/**
- * Makes a browser window's options the default.
- *
- * \param bw the browser window to read options from
- */
-void gui_window_default_options(struct browser_window *bw) {
-	gui_window *gui;
-
-	/*	Abort on bad input
-	*/
-	if (bw == NULL) return;
-
-	/*	Get our GUI
-	*/
-	gui = bw->window;
-	if (!gui) return;
-
-	/*	Save the basic options
-	*/
-	option_scale = gui->scale * 100;
-	option_dither_sprites = gui->option_dither_sprites;
-	option_filter_sprites = gui->option_filter_sprites;
-	option_animate_images = gui->option_animate_images;
-
-	/*	Set up the toolbar
-	*/
-	if (gui->data.browser.toolbar) {
-		option_toolbar_status_width = gui->data.browser.toolbar->status_width;
-		option_toolbar_show_status = gui->data.browser.toolbar->status_window;
-		option_toolbar_show_buttons = gui->data.browser.toolbar->standard_buttons;
-		option_toolbar_show_address = gui->data.browser.toolbar->url_bar;
-		option_toolbar_show_throbber = gui->data.browser.toolbar->throbber;
-	}
 }
 
 
@@ -411,17 +318,17 @@ void ro_gui_pointers_init(void)
 	if (obj_type != fileswitch_IS_FILE)
 		die("<NetSurf$Dir>.Resources.Pointers missing.");
 
-        pointers = malloc(len + 4);
-        if (!pointers)
+        gui_pointers = malloc(len + 4);
+        if (!gui_pointers)
         	die("NoMemory");
 
-        pointers->size = len+4;
-        pointers->sprite_count = 0;
-        pointers->first = 16;
-        pointers->used = 16;
+        gui_pointers->size = len+4;
+        gui_pointers->sprite_count = 0;
+        gui_pointers->first = 16;
+        gui_pointers->used = 16;
 
         e = xosspriteop_load_sprite_file(osspriteop_USER_AREA,
-			pointers, "<NetSurf$Dir>.Resources.Pointers");
+			gui_pointers, "<NetSurf$Dir>.Resources.Pointers");
         if (e) {
 		LOG(("xosspriteop_load_sprite_file: 0x%x: %s",
 				e->errnum, e->errmess));
@@ -464,7 +371,7 @@ void ro_gui_check_resolvers(void)
 void gui_quit(void)
 {
 	ro_gui_history_quit();
-	free(pointers);
+	free(gui_pointers);
 	wimp_close_down(task_handle);
 	xhourglass_off();
 }
@@ -675,59 +582,6 @@ void ro_gui_null_reason_code(void)
 		wimp_get_pointer_info(&pointer);
 		ro_gui_window_mouse_at(&pointer);
 	}
-}
-
-/**
- * Change mouse pointer shape
- */
-void gui_window_set_pointer(gui_pointer_shape shape)
-{
-        if (shape == curr_pointer) return;
-
-        switch (shape) {
-                case GUI_POINTER_DEFAULT:
-                        xwimpspriteop_set_pointer_shape("ptr_default",
-                                                         1, 0, 0, 0, 0);
-                        break;
-                case GUI_POINTER_POINT:
-                        xosspriteop_set_pointer_shape(0x100, pointers,
-                                 (osspriteop_id)"ptr_point", 1, 6, 0, 0, 0);
-                        break;
-                case GUI_POINTER_CARET:
-                        xosspriteop_set_pointer_shape(0x100, pointers,
-                                 (osspriteop_id)"ptr_caret", 1, 5, 0, 0, 0);
-                        break;
-                case GUI_POINTER_MENU:
-                        xosspriteop_set_pointer_shape(0x100, pointers,
-                                 (osspriteop_id)"ptr_menu", 1, 6, 4, 0, 0);
-                        break;
-                case GUI_POINTER_UD:
-                        xosspriteop_set_pointer_shape(0x100, pointers,
-                                 (osspriteop_id)"ptr_ud", 1, 6, 0, 0, 0);
-                        break;
-                case GUI_POINTER_LR:
-                        xosspriteop_set_pointer_shape(0x100, pointers,
-                                 (osspriteop_id)"ptr_lr", 1, 0, 6, 0, 0);
-                        break;
-                case GUI_POINTER_LD:
-                        xosspriteop_set_pointer_shape(0x100, pointers,
-                                 (osspriteop_id)"ptr_ld", 1, 13, 0, 0, 0);
-                        break;
-                case GUI_POINTER_RD:
-                        xosspriteop_set_pointer_shape(0x100, pointers,
-                                 (osspriteop_id)"ptr_rd", 1, 0, 0, 0, 0);
-                        break;
-                case GUI_POINTER_CROSS:
-                        xosspriteop_set_pointer_shape(0x100, pointers,
-                                 (osspriteop_id)"ptr_cross", 1, 8, 0, 0, 0);
-                        break;
-                case GUI_POINTER_MOVE:
-                        xosspriteop_set_pointer_shape(0x100, pointers,
-                                 (osspriteop_id)"ptr_move", 1, 8, 0, 0, 0);
-                        break;
-        }
-
-        curr_pointer = shape;
 }
 
 void gui_launch_url(char *url) {

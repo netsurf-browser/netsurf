@@ -5,6 +5,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  */
 
 /** \file
@@ -1052,4 +1053,168 @@ bool ro_gui_window_dataload(gui_window *g, wimp_message *message)
 	wimp_send_message(wimp_USER_MESSAGE, message, message->sender);
 
 	return true;
+}
+
+
+/**
+ * Clones a browser window's options.
+ *
+ * \param  new_bw  the new browser window
+ * \param  old_bw  the browser window to clone from, or NULL for default
+ */
+
+void gui_window_clone_options(struct browser_window *new_bw,
+		struct browser_window *old_bw) {
+	gui_window *old_gui = NULL;
+	gui_window *new_gui;
+
+	/*	Abort on bad input
+	*/
+	if (new_bw == NULL) return;
+
+	/*	Get our GUIs
+	*/
+	new_gui = new_bw->window;
+
+	/*	Abort on bad input
+	*/
+	if (!new_gui) return;
+	if (old_bw) old_gui = old_bw->window;
+
+	/*	Clone the basic options
+	*/
+	if (!old_gui) {
+		new_gui->scale = ((float)option_scale) / 100;
+		new_gui->option_dither_sprites = option_dither_sprites;
+		new_gui->option_filter_sprites = option_filter_sprites;
+		new_gui->option_animate_images = option_animate_images;
+	} else {
+		new_gui->scale = old_gui->scale;
+		new_gui->option_dither_sprites = old_gui->option_dither_sprites;
+		new_gui->option_filter_sprites = old_gui->option_filter_sprites;
+		new_gui->option_animate_images = old_gui->option_animate_images;
+	}
+
+	/*	Set up the toolbar
+	*/
+	if (new_gui->data.browser.toolbar) {
+	  	if ((old_gui) && (old_gui->data.browser.toolbar)) {
+			new_gui->data.browser.toolbar->status_width = old_gui->data.browser.toolbar->status_width;
+			new_gui->data.browser.toolbar->status_window = old_gui->data.browser.toolbar->status_window;
+			new_gui->data.browser.toolbar->standard_buttons = old_gui->data.browser.toolbar->standard_buttons;
+			new_gui->data.browser.toolbar->url_bar = old_gui->data.browser.toolbar->url_bar;
+			new_gui->data.browser.toolbar->throbber = old_gui->data.browser.toolbar->throbber;
+	  	} else {
+			new_gui->data.browser.toolbar->status_width = option_toolbar_status_width;
+			new_gui->data.browser.toolbar->status_window = option_toolbar_show_status;
+			new_gui->data.browser.toolbar->standard_buttons = option_toolbar_show_buttons;
+			new_gui->data.browser.toolbar->url_bar = option_toolbar_show_address;
+			new_gui->data.browser.toolbar->throbber = option_toolbar_show_throbber;
+		}
+		ro_theme_update_toolbar(new_gui);
+	}
+}
+
+
+/**
+ * Makes a browser window's options the default.
+ *
+ * \param  bw  the browser window to read options from
+ */
+
+void gui_window_default_options(struct browser_window *bw) {
+	gui_window *gui;
+
+	/*	Abort on bad input
+	*/
+	if (bw == NULL) return;
+
+	/*	Get our GUI
+	*/
+	gui = bw->window;
+	if (!gui) return;
+
+	/*	Save the basic options
+	*/
+	option_scale = gui->scale * 100;
+	option_dither_sprites = gui->option_dither_sprites;
+	option_filter_sprites = gui->option_filter_sprites;
+	option_animate_images = gui->option_animate_images;
+
+	/*	Set up the toolbar
+	*/
+	if (gui->data.browser.toolbar) {
+		option_toolbar_status_width = gui->data.browser.toolbar->status_width;
+		option_toolbar_show_status = gui->data.browser.toolbar->status_window;
+		option_toolbar_show_buttons = gui->data.browser.toolbar->standard_buttons;
+		option_toolbar_show_address = gui->data.browser.toolbar->url_bar;
+		option_toolbar_show_throbber = gui->data.browser.toolbar->throbber;
+	}
+}
+
+
+/** An entry in ro_gui_pointer_table. */
+struct ro_gui_pointer_entry {
+	bool wimp_area;  /** The pointer is in the Wimp's sprite area. */
+	char sprite_name[12];
+	int xactive;
+	int yactive;
+};
+
+/** Map from gui_pointer_shape to pointer sprite data. Must be ordered as
+ * enum gui_pointer_shape. */
+struct ro_gui_pointer_entry ro_gui_pointer_table[] = {
+	{ true, "ptr_default", 0, 0 },
+	{ false, "ptr_point", 6, 0 },
+	{ false, "ptr_caret", 4, 9 },
+	{ false, "ptr_menu", 6, 4 },
+	{ false, "ptr_ud", 6, 7 },
+	{ false, "ptr_lr", 7, 6 },
+	{ false, "ptr_ld", 7, 7 },
+	{ false, "ptr_rd", 7, 7 },
+	{ false, "ptr_cross", 7, 7 },
+	{ false, "ptr_move", 8, 0 },
+};
+
+/**
+ * Change mouse pointer shape
+ */
+
+void gui_window_set_pointer(gui_pointer_shape shape)
+{
+	static gui_pointer_shape curr_pointer = GUI_POINTER_DEFAULT;
+	struct ro_gui_pointer_entry *entry;
+	os_error *error;
+
+	if (shape == curr_pointer)
+		return;
+
+	assert(shape < sizeof ro_gui_pointer_table /
+			sizeof ro_gui_pointer_table[0]);
+
+	entry = &ro_gui_pointer_table[shape];
+
+	if (entry->wimp_area) {
+		/* pointer in the Wimp's sprite area */
+		error = xwimpspriteop_set_pointer_shape(entry->sprite_name,
+				1, entry->xactive, entry->yactive, 0, 0);
+		if (error) {
+			LOG(("xwimpspriteop_set_pointer_shape: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	} else {
+		/* pointer in our own sprite area */
+		error = xosspriteop_set_pointer_shape(osspriteop_USER_AREA,
+				gui_pointers,
+				(osspriteop_id) entry->sprite_name,
+				1, entry->xactive, entry->yactive, 0, 0);
+		if (error) {
+			LOG(("xosspriteop_set_pointer_shape: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
+
+	curr_pointer = shape;
 }
