@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.3 2002/04/23 22:05:19 bursa Exp $
+ * $Id: render.c,v 1.4 2002/04/24 17:38:36 bursa Exp $
  */
 
 #include <assert.h>
@@ -16,7 +16,8 @@
  */
 
 struct box {
-	enum { BOX_BLOCK, BOX_INLINE_CONTAINER, BOX_INLINE, BOX_FLOAT } type;
+	enum { BOX_BLOCK, BOX_INLINE_CONTAINER, BOX_INLINE,
+		BOX_TABLE, BOX_TABLE_ROW, BOX_TABLE_CELL, BOX_FLOAT } type;
 	xmlNode * node;
 	struct css_style * style;
 	unsigned long x, y, width, height;
@@ -33,6 +34,7 @@ signed long len(struct css_length * length, unsigned long em);
 void layout_block(struct box * box, unsigned long width);
 unsigned long layout_block_children(struct box * box, unsigned long width);
 void layout_inline_container(struct box * box, unsigned long width);
+void layout_table(struct box * box, unsigned long width);
 
 void render_plain_element(char * g, struct box * box, unsigned long x, unsigned long y);
 void render_plain(struct box * box);
@@ -111,8 +113,14 @@ unsigned long layout_block_children(struct box * box, unsigned long width)
 				c->y = y;
 				y += c->height + 1;
 				break;
+			case BOX_TABLE:
+				layout_table(c, width-4);
+				c->x = 2;
+				c->y = y;
+				y += c->height + 1;
+				break;
 			default:
-				die("block child not block or inline container");
+				die("block child not block, table, or inline container");
 		}
 	}
 	return y;
@@ -130,6 +138,41 @@ void layout_inline_container(struct box * box, unsigned long width)
 		c->width = width-4;
 		c->height = 2;
 		y += 3;
+	}
+
+	box->width = width;
+	box->height = y;
+}
+
+void layout_table(struct box * box, unsigned long width)
+{
+	/* TODO: do this properly */
+	unsigned int columns;
+	unsigned long cwidth;
+	unsigned long y = 1;
+	struct box * c;
+	struct box * r;
+
+	for (columns = 0, c = box->children->children; c != 0; c = c->next) {
+		assert(c->type == BOX_TABLE_CELL);
+		columns++;
+	}
+	cwidth = (width-8) / columns;  /* just split into equal width columns */
+	
+	for (r = box->children; r != 0; r = r->next) {
+		unsigned long height = 0;
+		unsigned int col;
+		for (col = 0, c = r->children; c != 0; col++, c = c->next) {
+			layout_block(c, cwidth);
+			c->x = 2 + col * cwidth;
+			c->y = 1;
+			if (c->height > height) height = c->height;
+		}
+		r->x = 2;
+		r->y = y;
+		r->width = width-4;
+		r->height = height + 2;
+		y += height + 3;
 	}
 
 	box->width = width;
@@ -161,6 +204,9 @@ void render_plain_element(char * g, struct box * box, unsigned long x, unsigned 
 	}
 
 	switch (box->type) {
+		case BOX_TABLE:
+		case BOX_TABLE_ROW:
+		case BOX_TABLE_CELL:
 		case BOX_BLOCK: strncpy(g + 80 * (y + box->y) + x + box->x,
 						box->node->name, strlen(box->node->name));
 				break;
@@ -269,6 +315,40 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 					inline_container = xml_to_box(c, style, stylesheet,
 							selector, depth + 1, box, inline_container);
 				break;
+			case CSS_DISPLAY_TABLE:
+				box = xcalloc(1, sizeof(struct box));
+				box->node = n;
+				box->type = BOX_TABLE;
+				box->style = style;
+				box_add_child(parent, box);
+				for (c = n->children; c != 0; c = c->next)
+					xml_to_box(c, style, stylesheet,
+							selector, depth + 1, box, 0);
+				inline_container = 0;
+				break;
+			case CSS_DISPLAY_TABLE_ROW:
+				box = xcalloc(1, sizeof(struct box));
+				box->node = n;
+				box->type = BOX_TABLE_ROW;
+				box->style = style;
+				box_add_child(parent, box);
+				for (c = n->children; c != 0; c = c->next)
+					xml_to_box(c, style, stylesheet,
+							selector, depth + 1, box, 0);
+				inline_container = 0;
+				break;
+			case CSS_DISPLAY_TABLE_CELL:
+				box = xcalloc(1, sizeof(struct box));
+				box->node = n;
+				box->type = BOX_TABLE_CELL;
+				box->style = style;
+				box_add_child(parent, box);
+				inline_container_c = 0;
+				for (c = n->children; c != 0; c = c->next)
+					inline_container_c = xml_to_box(c, style, stylesheet,
+							selector, depth + 1, box, inline_container_c);
+				inline_container = 0;
+				break;
 			case CSS_DISPLAY_NONE:
 			default:
 		}
@@ -307,6 +387,9 @@ void box_dump(struct box * box, unsigned int depth)
 		case BOX_BLOCK:            printf("BOX_BLOCK <%s>\n", box->node->name); break;
 		case BOX_INLINE_CONTAINER: printf("BOX_INLINE_CONTAINER\n"); break;
 		case BOX_INLINE:           printf("BOX_INLINE '%s'\n", box->node->content); break;
+		case BOX_TABLE:            printf("BOX_TABLE <%s>\n", box->node->name); break;
+		case BOX_TABLE_ROW:        printf("BOX_TABLE_ROW <%s>\n", box->node->name); break;
+		case BOX_TABLE_CELL:       printf("BOX_TABLE_CELL <%s>\n", box->node->name); break;
 		default:                   printf("Unknown box type\n");
 	}
 	
