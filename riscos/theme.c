@@ -27,6 +27,7 @@
 #include "oslib/wimpextend.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
@@ -42,6 +43,13 @@ static struct toolbar *theme_toolbar_drag = NULL;
 static struct toolbar_icon *theme_toolbar_icon_drag = NULL;
 static bool theme_toolbar_editor_drag = false;
 
+/* these order of the icons must match the numbers defined in riscos/gui.h */
+static const char * theme_browser_icons[] = {"back", "forward", "stop", "reload", "home", "history",
+		"save", "print", "hotlist", "scale", "search", NULL};
+static const char * theme_hotlist_icons[] = {"delete", "expand", "open", "launch", "create", NULL};
+static const char * theme_history_icons[] = {"delete", "expand", "open", "launch", NULL};
+
+
 static void ro_gui_theme_get_available_in_dir(const char *directory);
 static void ro_gui_theme_free(struct theme_descriptor *descriptor, bool list);
 static struct toolbar_icon *ro_gui_theme_add_toolbar_icon(struct toolbar *toolbar, const char *name,
@@ -53,7 +61,7 @@ static void ro_gui_theme_link_toolbar_icon(struct toolbar *toolbar, struct toolb
 static void ro_gui_theme_delink_toolbar_icon(struct toolbar *toolbar, struct toolbar_icon *icon);
 static struct toolbar_icon *ro_gui_theme_toolbar_get_insert_icon(struct toolbar *toolbar, int x, int y,
 		bool *before);
-
+static void ro_gui_theme_add_toolbar_icons(struct toolbar *toolbar, const char* icons[], const char* ident);
 
 /*	A basic window for the toolbar and status
 */
@@ -705,53 +713,24 @@ struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor,
 			toolbar->display_url = true;
 			toolbar->display_throbber = true;
 			toolbar->display_status = true;
-			ro_gui_theme_add_toolbar_icon(toolbar, "back", ICON_TOOLBAR_BACK);
-			ro_gui_theme_add_toolbar_icon(toolbar, "forward", ICON_TOOLBAR_FORWARD);
-			ro_gui_theme_add_toolbar_icon(toolbar, "stop", ICON_TOOLBAR_STOP);
-			ro_gui_theme_add_toolbar_icon(toolbar, "reload", ICON_TOOLBAR_RELOAD);
-			ro_gui_theme_add_toolbar_icon(toolbar, "home", ICON_TOOLBAR_HOME);
-			ro_gui_theme_add_toolbar_icon(toolbar, NULL, -1);
-			ro_gui_theme_add_toolbar_icon(toolbar, "search", ICON_TOOLBAR_SEARCH);
-			ro_gui_theme_add_toolbar_icon(toolbar, "history", ICON_TOOLBAR_HISTORY);
-			ro_gui_theme_add_toolbar_icon(toolbar, "scale", ICON_TOOLBAR_SCALE);
-			ro_gui_theme_add_toolbar_icon(toolbar, NULL, -1);
-			ro_gui_theme_add_toolbar_icon(toolbar, "hotlist", ICON_TOOLBAR_BOOKMARK);
-			ro_gui_theme_add_toolbar_icon(toolbar, "save", ICON_TOOLBAR_SAVE);
-			ro_gui_theme_add_toolbar_icon(toolbar, "print", ICON_TOOLBAR_PRINT);
+			ro_gui_theme_add_toolbar_icons(toolbar, theme_browser_icons, option_toolbar_browser);
 			toolbar->suggest = ro_gui_theme_add_toolbar_icon(NULL, "gright",
 					ICON_TOOLBAR_SUGGEST);
 			break;
 		case THEME_HOTLIST_TOOLBAR:
-			ro_gui_theme_add_toolbar_icon(toolbar, "create", ICON_TOOLBAR_CREATE);
+			ro_gui_theme_add_toolbar_icons(toolbar, theme_hotlist_icons, option_toolbar_hotlist);
+			break;
 		case THEME_HISTORY_TOOLBAR:
-			ro_gui_theme_add_toolbar_icon(toolbar, "delete", ICON_TOOLBAR_DELETE);
-			ro_gui_theme_add_toolbar_icon(toolbar, "launch", ICON_TOOLBAR_LAUNCH);
-			ro_gui_theme_add_toolbar_icon(toolbar, NULL, -1);
-			ro_gui_theme_add_toolbar_icon(toolbar, "open", ICON_TOOLBAR_OPEN);
-			ro_gui_theme_add_toolbar_icon(toolbar, "expand", ICON_TOOLBAR_EXPAND);
+			ro_gui_theme_add_toolbar_icons(toolbar, theme_history_icons, option_toolbar_history);
 			break;
 		case THEME_BROWSER_EDIT_TOOLBAR:
-			ro_gui_theme_add_toolbar_icon(toolbar, "back", ICON_TOOLBAR_BACK);
-			ro_gui_theme_add_toolbar_icon(toolbar, "forward", ICON_TOOLBAR_FORWARD);
-			ro_gui_theme_add_toolbar_icon(toolbar, "stop", ICON_TOOLBAR_STOP);
-			ro_gui_theme_add_toolbar_icon(toolbar, "reload", ICON_TOOLBAR_RELOAD);
-			ro_gui_theme_add_toolbar_icon(toolbar, "home", ICON_TOOLBAR_HOME);
-			ro_gui_theme_add_toolbar_icon(toolbar, "search", ICON_TOOLBAR_SEARCH);
-			ro_gui_theme_add_toolbar_icon(toolbar, "history", ICON_TOOLBAR_HISTORY);
-			ro_gui_theme_add_toolbar_icon(toolbar, "scale", ICON_TOOLBAR_SCALE);
-			ro_gui_theme_add_toolbar_icon(toolbar, "hotlist", ICON_TOOLBAR_BOOKMARK);
-			ro_gui_theme_add_toolbar_icon(toolbar, "save", ICON_TOOLBAR_SAVE);
-			ro_gui_theme_add_toolbar_icon(toolbar, "print", ICON_TOOLBAR_PRINT);
-			ro_gui_theme_add_toolbar_icon(toolbar, NULL, -1);
+			ro_gui_theme_add_toolbar_icons(toolbar, theme_browser_icons, "0123456789a|");
 			break;
 		case THEME_HOTLIST_EDIT_TOOLBAR:
-			ro_gui_theme_add_toolbar_icon(toolbar, "create", ICON_TOOLBAR_CREATE);
+			ro_gui_theme_add_toolbar_icons(toolbar, theme_hotlist_icons, "40123|");
+			break;
 		case THEME_HISTORY_EDIT_TOOLBAR:
-			ro_gui_theme_add_toolbar_icon(toolbar, "delete", ICON_TOOLBAR_DELETE);
-			ro_gui_theme_add_toolbar_icon(toolbar, "launch", ICON_TOOLBAR_LAUNCH);
-			ro_gui_theme_add_toolbar_icon(toolbar, "open", ICON_TOOLBAR_OPEN);
-			ro_gui_theme_add_toolbar_icon(toolbar, "expand", ICON_TOOLBAR_EXPAND);
-			ro_gui_theme_add_toolbar_icon(toolbar, NULL, -1);
+			ro_gui_theme_add_toolbar_icons(toolbar, theme_history_icons, "0123|");
 			break;
 	}
 
@@ -1588,10 +1567,14 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar) {
  */
 void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
 	int height;
+	int icons = 0;
+	struct toolbar_icon *icon;
 	struct gui_window *g = NULL;
 	wimp_window_state state;
 	os_error *error;
- 
+	char *option;
+ 	char hex_no[4];
+
 	if (!toolbar)
 		return;
 
@@ -1599,7 +1582,46 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
 		g = ro_gui_window_lookup(toolbar->parent_handle);
 
 	if (toolbar->editor) {
-		/* todo: save options */
+		/* save options */
+		icons = 0;
+		for (icon = toolbar->icon; icon; icon = icon->next)
+			if (icon->display) icons++;
+		option = calloc(icons + 1, 1);
+		if (!option) {
+		  	LOG(("No memory to save toolbar options"));
+		  	warn_user("NoMemory", 0);
+		} else {
+		  	icons = 0;
+			for (icon = toolbar->icon; icon; icon = icon->next)
+				if (icon->display) {
+				  	if (icon->icon_number == -1) {
+				  		option[icons] = '|';
+				  	} else {
+						sprintf(hex_no, "%x", icon->icon_number);
+				  		option[icons] = hex_no[0];
+				  	}
+					icons++;
+				}
+			switch (toolbar->type) {
+				case THEME_BROWSER_TOOLBAR:
+					free(option_toolbar_browser);
+					option_toolbar_browser = option;
+					break;
+				case THEME_HOTLIST_TOOLBAR:
+					free(option_toolbar_hotlist);
+					option_toolbar_hotlist = option;
+					break;
+				case THEME_HISTORY_TOOLBAR:
+					free(option_toolbar_history);
+					option_toolbar_history = option;
+					break;
+				default:
+					break;
+			}
+			ro_gui_save_options();
+		}
+		
+		/* turn off editing */
 		height = toolbar->editor->height;
 		ro_gui_theme_destroy_toolbar(toolbar->editor);
 		toolbar->editor = NULL;
@@ -1957,8 +1979,10 @@ void ro_gui_theme_link_toolbar_icon(struct toolbar *toolbar, struct toolbar_icon
 
 	/* no icon set, no link icon, or insert at head of list */
 	if ((!toolbar->icon) || (!link) || (before && (toolbar->icon == link))) {
-		icon->next = toolbar->icon;
-		toolbar->icon = icon;
+	  	if (toolbar->icon != icon) {
+			icon->next = toolbar->icon;
+			toolbar->icon = icon;
+		}
 		return;
 	}
 	
@@ -2054,4 +2078,43 @@ struct toolbar_icon *ro_gui_theme_toolbar_get_insert_icon(struct toolbar *toolba
 		}
 	}
 	return match;
+}
+
+
+/**
+ * Sets up a toolbar with icons according to an identifier string
+ */
+void ro_gui_theme_add_toolbar_icons(struct toolbar *toolbar, const char* icons[], const char* ident) {
+	struct toolbar_icon *icon;
+	int index = 0;
+	int number = 0;
+	char hex_no[4];
+
+	/* step 1: add all main icons in their correct state */
+	while (icons[index]) {
+		icon = ro_gui_theme_add_toolbar_icon(toolbar, icons[index], index);
+		sprintf(hex_no, "%x", index);
+		if ((icon) && (!strchr(ident, hex_no[0])))
+			icon->display = false;
+		index++;
+	}
+	
+	/* step 2: re-order and add separators */
+	index = strlen(ident);
+	while (index--) {
+		if (ident[index] == '|') {
+			icon = ro_gui_theme_add_toolbar_icon(NULL, NULL, -1);
+			if (icon)
+				ro_gui_theme_link_toolbar_icon(toolbar, icon, NULL, NULL);
+		} else {
+		  	hex_no[0] = ident[index];
+		  	hex_no[1] = '\0';
+			number = (int)strtol(&hex_no, (char **)NULL, 16);
+			for (icon = toolbar->icon; icon; icon = icon->next)
+				if (icon->icon_number == number) {
+					ro_gui_theme_delink_toolbar_icon(toolbar, icon);
+					ro_gui_theme_link_toolbar_icon(toolbar, icon, NULL, NULL);
+				}
+		}
+	}
 }

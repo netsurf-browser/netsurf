@@ -32,6 +32,9 @@ extern bool option_toolbar_show_status;
 extern bool option_toolbar_show_buttons;
 extern bool option_toolbar_show_address;
 extern bool option_toolbar_show_throbber;
+extern char *option_toolbar_browser;
+extern char *option_toolbar_hotlist;
+extern char *option_toolbar_history;
 extern int option_window_x;
 extern int option_window_y;
 extern int option_window_width;
@@ -75,6 +78,9 @@ bool option_toolbar_show_status = true; \
 bool option_toolbar_show_buttons = true; \
 bool option_toolbar_show_address = true; \
 bool option_toolbar_show_throbber = true; \
+char *option_toolbar_browser = 0; \
+char *option_toolbar_hotlist = 0; \
+char *option_toolbar_history = 0; \
 int option_window_x = 0; \
 int option_window_y = 0; \
 int option_window_width = 0; \
@@ -115,6 +121,9 @@ bool option_url_suggestion = true;
 { "toolbar_show_buttons",   OPTION_BOOL,    &option_toolbar_show_buttons }, \
 { "toolbar_show_address",   OPTION_BOOL,    &option_toolbar_show_address }, \
 { "toolbar_show_throbber",  OPTION_BOOL,    &option_toolbar_show_throbber }, \
+{ "toolbar_browser",	    OPTION_STRING,  &option_toolbar_browser }, \
+{ "toolbar_hotlist",	    OPTION_STRING,  &option_toolbar_hotlist }, \
+{ "toolbar_history",	    OPTION_STRING,  &option_toolbar_history }, \
 { "window_x",               OPTION_INTEGER, &option_window_x }, \
 { "window_y",               OPTION_INTEGER, &option_window_y }, \
 { "window_width",           OPTION_INTEGER, &option_window_width }, \
