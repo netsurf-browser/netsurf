@@ -156,6 +156,7 @@ static bool calculate_table_row(struct columns *col_info,
 		unsigned int *start_column);
 static bool box_normalise_inline_container(struct box *cont, pool box_pool);
 static void box_free_box(struct box *box);
+static void box_free_object_params(struct object_params *op);
 static struct box_result box_object(xmlNode *n, struct box_status *status,
 		struct css_style *style);
 static struct box_result box_embed(xmlNode *n, struct box_status *status,
@@ -164,8 +165,7 @@ static struct box_result box_applet(xmlNode *n, struct box_status *status,
 		struct css_style *style);
 static struct box_result box_iframe(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static bool plugin_decode(struct content* content, char* url, struct box* box,
-		struct object_params* po);
+static bool plugin_decode(struct content* content, struct box* box);
 static struct box_multi_length *box_parse_multi_lengths(const char *s,
 		unsigned int *count);
 static bool box_contains_point(struct box *box, int x, int y);
@@ -181,7 +181,7 @@ struct element_entry {
 };
 static const struct element_entry element_table[] = {
 	{"a", box_a},
-	{"applet", box_applet},
+/*	{"applet", box_applet},*/
 	{"body", box_body},
 	{"br", box_br},
 	{"button", box_button},
@@ -2470,9 +2470,39 @@ void box_free_box(struct box *box)
 	free(box->usemap);
 	free(box->text);
 	free(box->id);
-	/* TODO: free object_params */
+	box_free_object_params(box->object_params);
 }
 
+/**
+ * Free an object parameter struct
+ *
+ * \param op The struct to free
+ */
+void box_free_object_params(struct object_params *op)
+{
+	struct plugin_params *a, *b;
+
+	if (!op)
+		return;
+
+	free(op->data);
+	free(op->type);
+	free(op->codetype);
+	free(op->codebase);
+	free(op->classid);
+	free(op->basehref);
+
+	for (a = op->params; a; a = b) {
+		b = a->next;
+		free(a->name);
+		free(a->value);
+		free(a->type);
+		free(a->valuetype);
+		free(a);
+	}
+
+	free(op);
+}
 
 /**
  * add an object to the box tree
@@ -2482,43 +2512,28 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
 {
 	struct box *box;
 	struct object_params *po;
-	struct plugin_params* pp;
-	char *s, *url = NULL, *map;
+	struct plugin_params *pp = NULL;
+	char *s, *map;
 	xmlNode *c;
-	url_func_result res;
 
-	po = malloc(sizeof *po);
+	po = calloc(1, sizeof(struct  object_params));
 	if (!po)
 		return (struct box_result) {0, false, true};
 
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
-	if (!box)
+	if (!box) {
+		free(po);
 		return (struct box_result) {0, false, true};
-
-	/* initialise po struct */
-	po->data = 0;
-	po->type = 0;
-	po->codetype = 0;
-	po->codebase = 0;
-	po->classid = 0;
-	po->params = 0;
+	}
 
 	/* object data */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "data")) != NULL) {
-		res = url_join(s, status->content->data.html.base_url, &url);
-		/* if url is equivalent to the parent's url,
-		 * we've got infinite inclusion. stop it here.
-		 * also bail if url_join failed.
-		 */
-		if (res != URL_FUNC_OK || strcasecmp(url, status->content->data.html.base_url) == 0) {
-			free(po);
-			xmlFree(s);
-			return (struct box_result) {0, true, true};
-		}
 		po->data = strdup(s);
-		LOG(("object '%s'", po->data));
 		xmlFree(s);
+		if (!po->data)
+			goto no_memory;
+		LOG(("object '%s'", po->data));
 	}
 
 	/* imagemap associated with this object */
@@ -2526,35 +2541,43 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
 		box->usemap = (map[0] == '#') ? strdup(map+1) : strdup(map);
 		xmlFree(map);
 		if (!box->usemap)
-			return (struct box_result) {0, false, true};
+			goto no_memory;
 	}
 
 	/* object type */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "type")) != NULL) {
 		po->type = strdup(s);
-		LOG(("type: %s", s));
 		xmlFree(s);
+		if (!po->type)
+			goto no_memory;
+		LOG(("type: %s", po->type));
 	}
 
 	/* object codetype */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codetype")) != NULL) {
 		po->codetype = strdup(s);
-		LOG(("codetype: %s", s));
 		xmlFree(s);
+		if (!po->codetype)
+			goto no_memory;
+		LOG(("codetype: %s", po->codetype));
 	}
 
 	/* object codebase */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codebase")) != NULL) {
 		po->codebase = strdup(s);
-		LOG(("codebase: %s", s));
 		xmlFree(s);
+		if (!po->codebase)
+			goto no_memory;
+		LOG(("codebase: %s", po->codebase));
 	}
 
 	/* object classid */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "classid")) != NULL) {
 		po->classid = strdup(s);
-		LOG(("classid: %s", s));
 		xmlFree(s);
+		if (!po->classid)
+			goto no_memory;
+		LOG(("classid: %s", po->classid));
 	}
 
 	/* parameters
@@ -2563,35 +2586,41 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
 	 * new parameters are added to the head of the list.
 	 */
 	for (c = n->children; c != NULL; c = c->next) {
-		if (strcmp((const char *) c->name, "param") == 0) {
-			pp = malloc(sizeof *pp);
-			if (!pp)
-				return (struct box_result) {0, false, true};
+		if (c->type != XML_ELEMENT_NODE)
+			continue;
 
-			/* initialise pp struct */
-			pp->name = 0;
-			pp->value = 0;
-			pp->valuetype = 0;
-			pp->type = 0;
-			pp->next = 0;
+		if (strcmp((const char *) c->name, "param") == 0) {
+			pp = calloc(1, sizeof(struct plugin_params));
+			if (!pp)
+				goto no_memory;
 
 			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "name")) != NULL) {
 				pp->name = strdup(s);
 				xmlFree(s);
+				if (!pp->name)
+					goto no_memory;
 			}
 			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "value")) != NULL) {
 				pp->value = strdup(s);
 				xmlFree(s);
+				if (!pp->value)
+					goto no_memory;
 			}
 			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "type")) != NULL) {
 				pp->type = strdup(s);
 				xmlFree(s);
+				if (!pp->type)
+					goto no_memory;
 			}
 			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "valuetype")) != NULL) {
 				pp->valuetype = strdup(s);
 				xmlFree(s);
+				if (!pp->valuetype)
+					goto no_memory;
 			} else {
 				pp->valuetype = strdup("data");
+				if (!pp->valuetype)
+					goto no_memory;
 			}
 
 			pp->next = po->params;
@@ -2601,87 +2630,82 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
 				 * of the alt html. Therefore, we should
 				 * break out of this loop.
 				 */
-				/** \todo: following statement is *not* breaking the loop ?! Is comment or code wrong here ? */
-				continue;
+				break;
 		}
 	}
 
 	box->object_params = po;
 
 	/* start fetch */
-	if (plugin_decode(status->content, url, box, po))
+	if (plugin_decode(status->content, box))
 		return (struct box_result) {box, false, false};
 
 	return (struct box_result) {box, true, false};
+
+no_memory:
+	if (pp && pp != po->params) {
+		/* ran out of memory creating parameter struct */
+		free(pp->name);
+		free(pp->value);
+		free(pp->type);
+		free(pp->valuetype);
+		free(pp);
+	}
+
+	box_free_object_params(po);
+	box_free_box(box);
+
+	return (struct box_result) {0, false, true};
 }
 
 /**
  * add an embed to the box tree
  */
-
 struct box_result box_embed(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	struct box *box;
 	struct object_params *po;
-	struct plugin_params *pp;
-	char *s, *url = NULL;
+	struct plugin_params *pp = NULL;
+	char *s;
 	xmlAttr *a;
-	url_func_result res;
 
-	po = malloc(sizeof *po);
+	po = calloc(1, sizeof(struct object_params));
 	if (!po)
 		return (struct box_result) {0, false, true};
 
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
-	if (!box)
+	if (!box) {
+		free(po);
 		return (struct box_result) {0, false, true};
-
-	/* initialise po struct */
-	po->data = 0;
-	po->type = 0;
-	po->codetype = 0;
-	po->codebase = 0;
-	po->classid = 0;
-	po->params = 0;
+	}
 
 	/* embed src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src")) != NULL) {
-		res = url_join(s, status->content->data.html.base_url, &url);
-		/* if url is equivalent to the parent's url,
-		 * we've got infinite inclusion. stop it here.
-		 * also bail if url_join failed.
-		 */
-		if (res != URL_FUNC_OK || strcasecmp(url, status->content->data.html.base_url) == 0) {
-			free(po);
-			xmlFree(s);
-			return (struct box_result) {0, false, true};
-		}
-		LOG(("embed '%s'", url));
+		LOG(("embed '%s'", s));
 		po->data = strdup(s);
 		xmlFree(s);
+		if (!po->data)
+			goto no_memory;
 	}
 
 	/**
 	 * we munge all other attributes into a plugin_parameter structure
 	 */
 	for (a=n->properties; a != NULL; a=a->next) {
-		pp = malloc(sizeof *pp);
+		pp = calloc(1, sizeof(struct plugin_params));
 		if (!pp)
-			return (struct box_result) {0, false, true};
+			goto no_memory;
 
-		/* initialise pp struct */
-		pp->name = 0;
-		pp->value = 0;
-		pp->valuetype = 0;
-		pp->type = 0;
-		pp->next = 0;
-
-		if (strcasecmp((const char*)a->name, "src") != 0) {
+		if (strcasecmp((const char*)a->name, "src") != 0 &&
+				a->children && a->children->content) {
 			pp->name = strdup((const char*)a->name);
 			pp->value = strdup((char*)a->children->content);
 			pp->valuetype = strdup("data");
+			if (!pp->name || !pp->value || !pp->valuetype)
+				goto no_memory;
+
 			pp->next = po->params;
 			po->params = pp;
 		}
@@ -2690,57 +2714,69 @@ struct box_result box_embed(xmlNode *n, struct box_status *status,
 	box->object_params = po;
 
 	/* start fetch */
-	plugin_decode(status->content, url, box, po);
+	/* embeds have no content, so we don't care if this returns false */
+	plugin_decode(status->content, box);
 
 	return (struct box_result) {box, false, false};
+
+no_memory:
+	if (pp && pp != po->params) {
+		/* ran out of memory creating parameter struct */
+		free(pp->name);
+		free(pp->value);
+		free(pp->type);
+		free(pp->valuetype);
+		free(pp);
+	}
+
+	box_free_object_params(po);
+	box_free_box(box);
+
+	return (struct box_result) {0, false, true};
 }
 
 /**
  * add an applet to the box tree
+ *
+ * \todo This needs reworking to be compliant to the spec
+ * For now, we simply ignore all applet tags.
  */
-
 struct box_result box_applet(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	struct box *box;
 	struct object_params *po;
-	struct plugin_params *pp;
-	char *s, *url = NULL;
+	struct plugin_params *pp = NULL;
+	char *s;
 	xmlNode *c;
-	url_func_result res;
 
-	po = malloc(sizeof *po);
+	po = calloc(1, sizeof(struct object_params));
 	if (!po)
 		return (struct box_result) {0, false, true};
 
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
-	if (!box)
+	if (!box) {
+		free(po);
 		return (struct box_result) {0, false, true};
+	}
 
-	/* initialise po struct */
-	po->data = 0;
-	po->type = 0;
-	po->codetype = 0;
-	po->codebase = 0;
-	po->classid = 0;
-	po->params = 0;
-
+	/* archive */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "archive")) != NULL ) {
+		/** \todo tokenise this comma separated list */
+		LOG(("archive '%s'", s));
+		po->data = strdup(s);
+		xmlFree(s);
+		if (!po->data)
+			goto no_memory;
+	}
 	/* code */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "code")) != NULL) {
-		res = url_join(s, status->content->data.html.base_url, &url);
-		/* if url is equivalent to the parent's url,
-		 * we've got infinite inclusion. stop it here.
-		 * also bail if url_join failed.
-		 */
-		if (res != URL_FUNC_OK || strcasecmp(url, status->content->data.html.base_url) == 0) {
-			free(po);
-			xmlFree(s);
-			return (struct box_result) {box, true, false};
-		}
-		LOG(("applet '%s'", url));
+		LOG(("applet '%s'", s));
 		po->classid = strdup(s);
 		xmlFree(s);
+		if (!po->classid)
+			goto no_memory;
 	}
 
 	/* object codebase */
@@ -2748,6 +2784,8 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 		po->codebase = strdup(s);
 		LOG(("codebase: %s", s));
 		xmlFree(s);
+		if (!po->codebase)
+			goto no_memory;
 	}
 
 	/* parameters
@@ -2756,35 +2794,41 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 	 * new parameters are added to the head of the list.
 	 */
 	for (c = n->children; c != 0; c = c->next) {
-		if (strcmp((const char *) c->name, "param") == 0) {
-			pp = malloc(sizeof *pp);
-			if (!pp)
-				return (struct box_result) {0, false, true};
+		if (c->type != XML_ELEMENT_NODE)
+			continue;
 
-			/* initialise pp struct */
-			pp->name = 0;
-			pp->value = 0;
-			pp->valuetype = 0;
-			pp->type = 0;
-			pp->next = 0;
+		if (strcmp((const char *) c->name, "param") == 0) {
+			pp = calloc(1, sizeof(struct plugin_params));
+			if (!pp)
+				goto no_memory;
 
 			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "name")) != NULL) {
 				pp->name = strdup(s);
 				xmlFree(s);
+				if (!pp->name)
+					goto no_memory;
 			}
 			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "value")) != NULL) {
 				pp->value = strdup(s);
 				xmlFree(s);
+				if (!pp->value)
+					goto no_memory;
 			}
 			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "type")) != NULL) {
 				pp->type = strdup(s);
 				xmlFree(s);
+				if (!pp->type)
+					goto no_memory;
 			}
 			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "valuetype")) != NULL) {
 				pp->valuetype = strdup(s);
 				xmlFree(s);
+				if (!pp->valuetype)
+					goto no_memory;
 			} else {
 				pp->valuetype = strdup("data");
+				if (!pp->valuetype)
+					goto no_memory;
 			}
 
 			pp->next = po->params;
@@ -2794,18 +2838,32 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 				  * of the alt html. Therefore, we should
 				  * break out of this loop.
 				  */
-				/** \todo: following statement is *not* breaking the loop ?! Is comment or code wrong here ? */
-				continue;
+				break;
 		}
 	}
 
 	box->object_params = po;
 
 	/* start fetch */
-	if (plugin_decode(status->content, url, box, po))
+	if (plugin_decode(status->content, box))
 		return (struct box_result) {box, false, false};
 
 	return (struct box_result) {box, true, false};
+
+no_memory:
+	if (pp && pp != po->params) {
+		/* ran out of memory creating parameter struct */
+		free(pp->name);
+		free(pp->value);
+		free(pp->type);
+		free(pp->valuetype);
+		free(pp);
+	}
+
+	box_free_object_params(po);
+	box_free_box(box);
+
+	return (struct box_result) {0, false, true};
 }
 
 /**
@@ -2818,49 +2876,40 @@ struct box_result box_iframe(xmlNode *n, struct box_status *status,
 {
 	struct box *box;
 	struct object_params *po;
-	char *s, *url = NULL;
-	url_func_result res;
+	char *s;
 
-	po = malloc(sizeof *po);
+	po = calloc(1, sizeof(struct object_params));
 	if (!po)
 		return (struct box_result) {0, false, true};
 
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
-	if (!box)
+	if (!box) {
+		free(po);
 		return (struct box_result) {0, false, true};
-
-	/* initialise po struct */
-	po->data = 0;
-	po->type = 0;
-	po->codetype = 0;
-	po->codebase = 0;
-	po->classid = 0;
-	po->params = 0;
+	}
 
 	/* iframe src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src")) != NULL) {
-		res = url_join(s, status->content->data.html.base_url, &url);
-		/* if url is equivalent to the parent's url,
-		 * we've got infinite inclusion. stop it here.
-		 * also bail if url_join failed.
-		 */
-		if (res != URL_FUNC_OK || strcasecmp(url, status->content->data.html.base_url) == 0) {
-			free(po);
-			xmlFree(s);
-			return (struct box_result) {0, false, true};
-		}
-		LOG(("embed '%s'", url));
+		LOG(("iframe '%s'", s));
 		po->data = strdup(s);
 		xmlFree(s);
+		if (!po->data)
+			goto no_memory;
 	}
 
 	box->object_params = po;
 
 	/* start fetch */
-	plugin_decode(status->content, url, box, po);
+	plugin_decode(status->content, box);
 
 	return (struct box_result) {box, false, false};
+
+no_memory:
+	box_free_object_params(po);
+	box_free_box(box);
+
+	return (struct box_result) {0, false, true};
 }
 
 /**
@@ -2871,45 +2920,52 @@ struct box_result box_iframe(xmlNode *n, struct box_status *status,
  * necessary as there are multiple ways of declaring an object's attributes.
  *
  * Returns false if the object could not be handled.
- *
- * TODO: plug failure leaks
  */
-bool plugin_decode(struct content* content, char* url, struct box* box,
-		struct object_params* po)
+bool plugin_decode(struct content *content, struct box *box)
 {
-	struct plugin_params * pp;
+	char *codebase, *url = NULL;
+	struct object_params *po;
+	struct plugin_params *pp;
 	url_func_result res;
+
+	assert(content && box);
+
+	po = box->object_params;
 
 	/* Check if the codebase attribute is defined.
 	 * If it is not, set it to the codebase of the current document.
 	 */
 	if (po->codebase == 0)
-		res = url_join("./", content->data.html.base_url, &po->codebase);
+		res = url_join("./", content->data.html.base_url,
+							&codebase);
 	else
-		res = url_join(po->codebase, content->data.html.base_url, &po->codebase);
+		res = url_join(po->codebase, content->data.html.base_url,
+							&codebase);
 
 	if (res != URL_FUNC_OK)
 		return false;
 
+	/* free pre-existing codebase */
+	if (po->codebase)
+		free(po->codebase);
+
+	po->codebase = codebase;
+
 	/* Set basehref */
 	po->basehref = strdup(content->data.html.base_url);
 
-	/* Check that we have some data specified.
-	 * First, check the data attribute.
-	 * Second, check the classid attribute.
-	 * The data attribute takes precedence.
-	 * If neither are specified or if classid begins "clsid:",
-	 * we can't handle this object.
-	 */
 	if (po->data == 0 && po->classid == 0)
+		/* no data => ignore this object */
 		return false;
 
 	if (po->data == 0 && po->classid != 0) {
+		/* just classid specified */
 		if (strncasecmp(po->classid, "clsid:", 6) == 0) {
-			/* Flash */
 			if (strcasecmp(po->classid, "clsid:D27CDB6E-AE6D-11cf-96B8-444553540000") == 0) {
+				/* Flash */
 				for (pp = po->params;
-					pp != 0 && strcasecmp(pp->name, "movie") != 0;
+					pp != 0 &&
+					strcasecmp(pp->name, "movie") != 0;
 					pp = pp->next)
 					/* no body */;
 				if (pp == 0)
@@ -2920,12 +2976,17 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
 				/* munge the codebase */
 				res = url_join("./",
 						content->data.html.base_url,
-						&po->codebase);
-				if (res != URL_FUNC_OK)
+						&codebase);
+				if (res != URL_FUNC_OK) {
+						free(url);
 						return false;
+				}
+				if (po->codebase)
+					free(po->codebase);
+				po->codebase = codebase;
 			}
 			else {
-				LOG(("ActiveX object - n0"));
+				LOG(("ActiveX object"));
 				return false;
 			}
 		} else {
@@ -2933,14 +2994,18 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
 			if (res != URL_FUNC_OK)
 				return false;
 
+#if 0
+			/* jmb - I'm not convinced by this */
 			/* The java plugin doesn't need the .class extension
 			 * so we strip it.
 			 */
 			if (strcasecmp(&po->classid[strlen(po->classid)-6],
 					".class") == 0)
 				po->classid[strlen(po->classid)-6] = 0;
+#endif
 		}
 	} else {
+		/* just data (or both) specified - data takes precedence */
 		res = url_join(po->data, po->codebase, &url);
 		if (res != URL_FUNC_OK)
 			return false;
@@ -2950,9 +3015,14 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
 	 * Checks type and codetype attributes.
 	 */
 	if (po->type != 0 && content_lookup(po->type) == CONTENT_OTHER)
-		return false;
-	if (po->codetype != 0 && content_lookup(po->codetype) == CONTENT_OTHER)
-		return false;
+		goto no_handler;
+	if (po->codetype != 0 &&
+			content_lookup(po->codetype) == CONTENT_OTHER)
+		goto no_handler;
+
+	/* Ensure that the object to be included isn't this document */
+	if (strcasecmp(url, content->data.html.base_url) == 0)
+		goto no_handler;
 
 	/* If we've got to here, the object declaration has provided us with
 	 * enough data to enable us to have a go at downloading and
@@ -2963,9 +3033,15 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
 	 * different to that given in the attributes).
 	 */
 	if (!html_fetch_object(content, url, box, 0, 1000, 1000, false))
-		return false;
+		goto no_handler;
+
+	/* do _not_ free url here - html_fetch_object doesn't copy it */
 
 	return true;
+
+no_handler:
+	free(url);
+	return false;
 }
 
 
