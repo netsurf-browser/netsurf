@@ -112,7 +112,6 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 	unsigned int f = 0;
 	font_f handle;
 	os_error *error;
-	bool bold=false, italic=false;
 
 	assert(set);
 	assert(style);
@@ -147,7 +146,6 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 		case CSS_FONT_WEIGHT_800:
 		case CSS_FONT_WEIGHT_900:
 			f += FONT_BOLD;
-			bold = true;
 			break;
 		default:
 			break;
@@ -157,7 +155,6 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 		case CSS_FONT_STYLE_ITALIC:
 		case CSS_FONT_STYLE_OBLIQUE:
 			f += FONT_SLANTED;
-			italic = true;
 			break;
 		default:
 			break;
@@ -174,9 +171,7 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 
 	if (error) { /* fall back to Homerton */
 	        LOG(("font_find_font failed; falling back to Homerton"));
-	        f = 0 + (bold ? FONT_BOLD : 0) + (italic ? FONT_SLANTED: 0);
-
-	        error = xfont_find_font(font_table[f], (int)size, (int)size,
+	        error = xfont_find_font(font_table[f % 4], (int)size, (int)size,
 	                                0, 0, &handle, 0, 0);
 	        if (error) {
 		        LOG(("%i: %s\n", error->errnum, error->errmess));

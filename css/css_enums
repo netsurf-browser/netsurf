@@ -7,6 +7,7 @@ css_border_style inherit none dashed dotted double groove inset outset ridge sol
 css_clear inherit none both left right
 css_display inherit inline block list-item run-in inline-block table inline-table table-row-group table-header-group table-footer-group table-row table-column-group table-column table-cell table-caption none
 css_float inherit none left right
+css_font_family inherit sans-serif serif monospace cursive fantasy
 css_font_style inherit normal italic oblique
 css_font_variant normal smallcaps
 css_font_weight inherit normal bold bolder lighter 100 200 300 400 500 600 700 800 900
