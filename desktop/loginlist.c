@@ -28,154 +28,187 @@ static struct login *loginlist = &login;
 /**
  * Adds an item to the list of login details
  */
-void login_list_add(char *host, char* logindets) {
+void login_list_add(char *host, char* logindets)
+{
+	struct login *nli;
+	char *temp;
+	char *i;
+	url_func_result res;
 
-  struct login *nli = xcalloc(1, sizeof(*nli));
-  char *temp;
-  char *i;
-  url_func_result res;
+	nli = calloc(1, sizeof(*nli));
+	if (!nli) {
+		warn_user("NoMemory", 0);
+		return;
+	}
 
-  res = url_host(host, &temp);
+	res = url_host(host, &temp);
 
-  assert(res == URL_FUNC_OK);
+	if (res != URL_FUNC_OK) {
+		free(temp);
+		free(nli);
+		warn_user("NoMemory", 0);
+		return;
+	}
 
-  /* Go back to the path base ie strip the document name
-   * eg. http://www.blah.com/blah/test.htm becomes
-   *     http://www.blah.com/blah/
-   * This does, however, mean that directories MUST have a '/' at the end
-   */
-  if (strlen(temp) < strlen(host)) {
+	/* Go back to the path base ie strip the document name
+	 * eg. http://www.blah.com/blah/test.htm becomes
+	 *     http://www.blah.com/blah/
+	 * This does, however, mean that directories MUST have a '/' at the end
+	 */
+	if (strlen(temp) < strlen(host)) {
+		free(temp);
+		temp = strdup(host);
+		if (!temp) {
+			free(nli);
+			warn_user("NoMemory", 0);
+			return;
+		}
+		if (temp[strlen(temp)-1] != '/') {
+			i = strrchr(temp, '/');
+			temp[(i-temp)+1] = 0;
+		}
+	}
 
-    xfree(temp);
-    temp = xstrdup(host);
-    if (temp[strlen(temp)-1] != '/') {
-      i = strrchr(temp, '/');
-      temp[(i-temp)+1] = 0;
-    }
-  }
+	nli->host = strdup(temp);
+	if (!nli->host) {
+		free(temp);
+		free(nli);
+		warn_user("NoMemory", 0);
+		return;
+	}
+	nli->logindetails = strdup(logindets);
+	if (!nli->logindetails) {
+		free(nli->host);
+		free(temp);
+		free(nli);
+		warn_user("NoMemory", 0);
+		return;
+	}
+	nli->prev = loginlist->prev;
+	nli->next = loginlist;
+	loginlist->prev->next = nli;
+	loginlist->prev = nli;
 
-  nli->host = xstrdup(temp);
-  nli->logindetails = xstrdup(logindets);
-  nli->prev = loginlist->prev;
-  nli->next = loginlist;
-  loginlist->prev->next = nli;
-  loginlist->prev = nli;
-
-  LOG(("Adding %s", temp));
-#ifndef NDEBUG
-  login_list_dump();
-#endif
-  xfree(temp);
+	LOG(("Adding %s", temp));
+	#ifndef NDEBUG
+	login_list_dump();
+	#endif
+	free(temp);
 }
 
 /**
  * Retrieves an element from the login list
  */
 /** \todo Make the matching spec compliant (see RFC 2617) */
-struct login *login_list_get(char *url) {
+struct login *login_list_get(char *url)
+{
+	struct login *nli;
+	char *temp, *host;
+	char *i;
+	int reached_scheme = 0;
+	 url_func_result res;
 
-  struct login *nli;
-  char *temp, *host;
-  char *i;
-  int reached_scheme = 0;
-  url_func_result res;
+	if (url == NULL)
+		return NULL;
 
-  if (url == NULL)
-    return NULL;
+	if ((strncasecmp(url, "http://", 7) != 0) &&
+			(strncasecmp(url, "https://", 8) != 0))
+		return NULL;
 
-  if ((strncasecmp(url, "http://", 7) != 0) &&
-                        (strncasecmp(url, "https://", 8) != 0))
-    return NULL;
+	res = url_host(url, &host);
+	if (res != URL_FUNC_OK || strlen(host) == 0) return NULL;
 
-  res = url_host(url, &host);
-  if (res != URL_FUNC_OK || strlen(host) == 0) return NULL;
+	temp = strdup(url);
+	if (!temp) {
+		warn_user("NoMemory", 0);
+		free(host);
+		return NULL;
+	}
 
-  temp = xstrdup(url);
+	/* Smallest thing to check for is the scheme + host name +
+	 * trailing '/'
+	 * So make sure we've got that at least
+	 */
+	if (strlen(host) > strlen(temp)) {
+		free(temp);
+		res = url_host(url, &temp);
+		if (res != URL_FUNC_OK || strlen(temp) == 0) {
+			free(host);
+			return NULL;
+		}
+	}
+	free(host);
 
-  /* Smallest thing to check for is the scheme + host name + trailing '/'
-   * So make sure we've got that at least
-   */
-  if (strlen(host) > strlen(temp)) {
-    xfree(temp);
-    res = url_host(url, &temp);
-    if (res != URL_FUNC_OK || strlen(temp) == 0) {
-      xfree(host);
-      return NULL;
-    }
-  }
-  xfree(host);
+	/* Work backwards through the path, directory at at time.
+	 * Finds the closest match.
+	 * eg. http://www.blah.com/moo/ matches the url
+	 *     http://www.blah.com/moo/test/index.htm
+	 * This allows multiple realms (and login details) per host.
+	 * Only one set of login details per realm are allowed.
+	 */
+	do {
+		LOG(("%s, %d", temp, strlen(temp)));
 
-  /* Work backwards through the path, directory at at time.
-   * Finds the closest match.
-   * eg. http://www.blah.com/moo/ matches the url
-   *     http://www.blah.com/moo/test/index.htm
-   * This allows multiple realms (and login details) per host.
-   * Only one set of login details per realm are allowed.
-   */
-  do {
+			for (nli = loginlist->next; nli != loginlist &&
+					(strcasecmp(nli->host, temp)!=0);
+					nli = nli->next)
+				/* do nothing */;
 
-    LOG(("%s, %d", temp, strlen(temp)));
+		if (nli != loginlist) {
+			LOG(("Got %s", nli->host));
+			free(temp);
+			return nli;
+		}
+		else {
+			if (temp[strlen(temp)-1] == '/') {
+				temp[strlen(temp)-1] = 0;
+			}
 
-    for (nli = loginlist->next; nli != loginlist &&
-                                (strcasecmp(nli->host, temp)!=0);
-         nli = nli->next) ;
+			i = strrchr(temp, '/');
 
-    if (nli != loginlist) {
-      LOG(("Got %s", nli->host));
-      xfree(temp);
-      return nli;
-    }
-    else {
+			if (temp[(i-temp)-1] != '/') /* reached the scheme? */
+				temp[(i-temp)+1] = 0;
+			else {
+				reached_scheme = 1;
+			}
+		}
+	} while (reached_scheme == 0);
 
-      if (temp[strlen(temp)-1] == '/') {
-        temp[strlen(temp)-1] = 0;
-      }
-
-      i = strrchr(temp, '/');
-
-      if (temp[(i-temp)-1] != '/') /* reached the scheme? */
-        temp[(i-temp)+1] = 0;
-      else {
-        reached_scheme = 1;
-      }
-    }
-  } while (reached_scheme == 0);
-
-  xfree(temp);
-  return NULL;
+	free(temp);
+	return NULL;
 }
 
 /**
  * Remove a realm's login details from the list
  */
-void login_list_remove(char *host) {
+void login_list_remove(char *host)
+{
+	struct login *nli = login_list_get(host);
 
-  struct login *nli = login_list_get(host);
+	if (nli != NULL) {
+		nli->prev->next = nli->next;
+		nli->next->prev = nli->prev;
+		free(nli->logindetails);
+		free(nli->host);
+		free(nli);
+	}
 
-  if (nli != NULL) {
-    nli->prev->next = nli->next;
-    nli->next->prev = nli->prev;
-    xfree(nli->logindetails);
-    xfree(nli->host);
-    xfree(nli);
-  }
-
-  LOG(("Removing %s", host));
+	LOG(("Removing %s", host));
 #ifndef NDEBUG
-  login_list_dump();
+	login_list_dump();
 #endif
 }
 
 /**
  * Dumps the list of login details (base paths only)
  */
-void login_list_dump(void) {
+void login_list_dump(void)
+{
+	struct login *nli;
 
-  struct login *nli;
-
-  for (nli = loginlist->next; nli != loginlist; nli = nli->next) {
-    LOG(("%s", nli->host));
-  }
+	for (nli = loginlist->next; nli != loginlist; nli = nli->next) {
+		LOG(("%s", nli->host));
+	}
 }
 
 #endif

@@ -1543,6 +1543,7 @@ void browser_window_input_callback(struct browser_window *bw,
 		char key_to_insert;
 		char *utf8key;
 		size_t utf8keySize;
+		char *value;
 
 		/** \todo: text_box has data in UTF-8 and its length in
 		 * bytes is not necessarily equal to number of characters.
@@ -1557,7 +1558,15 @@ void browser_window_input_callback(struct browser_window *bw,
 		if ((utf8key = cnv_local_enc_str(&key_to_insert, 1)) == NULL)
 			return;
 		utf8keySize = strlen(utf8key);
-		input->gadget->value = xrealloc(input->gadget->value, input->gadget->length + utf8keySize + 1);
+
+		value = realloc(input->gadget->value, input->gadget->length + utf8keySize + 1);
+		if (!value) {
+			free(utf8key);
+			warn_user("NoMemory", 0);
+			return;
+		}
+		input->gadget->value = value;
+
 		memmove(input->gadget->value + form_offset + utf8keySize,
 				input->gadget->value + form_offset,
 				input->gadget->length - form_offset);
@@ -1573,7 +1582,15 @@ void browser_window_input_callback(struct browser_window *bw,
 		if ((utf8key = cnv_local_enc_str(&key_to_insert, 1)) == NULL)
 			return;
 		utf8keySize = strlen(utf8key);
-		text_box->text = xrealloc(text_box->text, text_box->length + utf8keySize + 1);
+
+		value = realloc(text_box->text, text_box->length + utf8keySize + 1);
+		if (!value) {
+			free(utf8key);
+			warn_user("NoMemory", 0);
+			return;
+		}
+		text_box->text = value;
+
 		memmove(text_box->text + box_offset + utf8keySize,
 				text_box->text + box_offset,
 				text_box->length - box_offset);
@@ -1910,7 +1927,12 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 				warn_user("NoMemory", 0);
 				return;
 			}
-			url = xcalloc(1, strlen(form->action) + strlen(data) + 2);
+			url = calloc(1, strlen(form->action) + strlen(data) + 2);
+			if (!url) {
+				form_free_successful(success);
+				warn_user("NoMemory", 0);
+				return;
+			}
 			if(form->action[strlen(form->action)-1] == '?') {
 				sprintf(url, "%s%s", form->action, data);
 			}

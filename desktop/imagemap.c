@@ -49,15 +49,17 @@ struct imagemap {
 	struct imagemap *next;	/**< next entry in this hash chain */
 };
 
-static void imagemap_add(struct content *c, const char *key,
-			 struct mapentry *list);
-static void imagemap_create(struct content *c);
-static struct mapentry *imagemap_extract_map(xmlNode *node, struct content *c,
-				 struct mapentry *entry);
-static struct mapentry *imagemap_addtolist(xmlNode *n, struct mapentry *entry);
+static bool imagemap_add(struct content *c, const char *key,
+		struct mapentry *list);
+static bool imagemap_create(struct content *c);
+static bool imagemap_extract_map(xmlNode *node, struct content *c,
+		struct mapentry **entry);
+static bool imagemap_addtolist(xmlNode *n, struct mapentry **entry);
 static void imagemap_freelist(struct mapentry *list);
 static unsigned int imagemap_hash(const char *key);
-static int imagemap_point_in_poly(int num, float *xpt, float *ypt, unsigned long x, unsigned long y, unsigned long click_x, unsigned long click_y);
+static int imagemap_point_in_poly(int num, float *xpt, float *ypt,
+		unsigned long x, unsigned long y, unsigned long click_x,
+		unsigned long click_y);
 
 /**
  * Add an imagemap to the hashtable, creating it if it doesn't exist
@@ -65,37 +67,58 @@ static int imagemap_point_in_poly(int num, float *xpt, float *ypt, unsigned long
  * @param c The containing content
  * @param key The name of the imagemap
  * @param list List of map regions
+ * \return true on succes, false otherwise
  */
-void imagemap_add(struct content *c, const char *key, struct mapentry *list) {
+bool imagemap_add(struct content *c, const char *key, struct mapentry *list)
+{
 
 	struct imagemap *map;
 	unsigned int slot;
 
+	assert(c != NULL);
 	assert(c->type == CONTENT_HTML);
+	assert(key != NULL);
+	assert(list != NULL);
 
 	imagemap_create(c);
 
-	map = xcalloc(1, sizeof(*map));
-	map->key = xstrdup(key);
+	map = calloc(1, sizeof(*map));
+	if (!map) {
+		return false;
+	}
+	map->key = strdup(key);
+	if (!map->key) {
+		free(map);
+		return false;
+	}
 	map->list = list;
 	slot = imagemap_hash(key);
 	map->next = c->data.html.imagemaps[slot];
 	c->data.html.imagemaps[slot] = map;
+
+	return true;
 }
 
 /**
  * Create hashtable of imagemaps
  *
  * @param c The containing content
+ * \return true on success, false otherwise
  */
-void imagemap_create(struct content *c) {
-
+bool imagemap_create(struct content *c)
+{
+	assert(c != NULL);
 	assert(c->type == CONTENT_HTML);
 
 	if (c->data.html.imagemaps == 0) {
-		c->data.html.imagemaps = xcalloc(HASH_SIZE,
+		c->data.html.imagemaps = calloc(HASH_SIZE,
 						 sizeof(struct imagemap));
+		if (!c->data.html.imagemaps) {
+			return false;
+		}
 	}
+
+	return true;
 }
 
 /**
@@ -103,8 +126,8 @@ void imagemap_create(struct content *c) {
  *
  * @param c The containing content
  */
-void imagemap_destroy(struct content *c) {
-
+void imagemap_destroy(struct content *c)
+{
 	unsigned int i;
 
 	assert(c->type == CONTENT_HTML);
@@ -116,15 +139,15 @@ void imagemap_destroy(struct content *c) {
 		struct imagemap *map, *next;
 		map = c->data.html.imagemaps[i];
 		while (map != 0) {
-		       next = map->next;
-		       imagemap_freelist(map->list);
-		       xfree(map->key);
-		       xfree(map);
-		       map = next;
+			next = map->next;
+			imagemap_freelist(map->list);
+			free(map->key);
+			free(map);
+			map = next;
 		}
 	}
 
-	xfree(c->data.html.imagemaps);
+	free(c->data.html.imagemaps);
 }
 
 /**
@@ -132,8 +155,8 @@ void imagemap_destroy(struct content *c) {
  *
  * @param c The containing content
  */
-void imagemap_dump(struct content *c) {
-
+void imagemap_dump(struct content *c)
+{
 	unsigned int i;
 
 	int j;
@@ -147,42 +170,40 @@ void imagemap_dump(struct content *c) {
 		struct mapentry *entry;
 		map = c->data.html.imagemaps[i];
 		while (map != 0) {
-		       LOG(("Imagemap: %s", map->key));
-		       for (entry = map->list; entry; entry = entry->next) {
-			       switch (entry->type) {
-				 case IMAGEMAP_DEFAULT:
-					 LOG(("\tDefault: %s", entry->url));
-					 break;
-				 case IMAGEMAP_RECT:
-					 LOG(("\tRectangle: %s: [(%d,%d),(%d,%d)]",
-					       entry->url,
-					       entry->bounds.rect.x0,
-					       entry->bounds.rect.y0,
-					       entry->bounds.rect.x1,
-					       entry->bounds.rect.y1));
-					 break;
-				 case IMAGEMAP_CIRCLE:
-					 LOG(("\tCircle: %s: [(%d,%d),%d]",
-					       entry->url,
-					       entry->bounds.circle.x,
-					       entry->bounds.circle.y,
-					       entry->bounds.circle.r));
-					 break;
-				 case IMAGEMAP_POLY:
-					 LOG(("\tPolygon: %s:",
-					       entry->url));
-					 for (j=0;
-					      j!=entry->bounds.poly.num;
-					      j++) {
-					   fprintf(stderr, "(%d,%d) ",
-					   (int)entry->bounds.poly.xcoords[j],
-					   (int)entry->bounds.poly.ycoords[j]);
-					 }
-					 fprintf(stderr,"\n");
-					 break;
-			       }
-		       }
-		       map = map->next;
+			LOG(("Imagemap: %s", map->key));
+			for (entry = map->list; entry; entry = entry->next) {
+				switch (entry->type) {
+					case IMAGEMAP_DEFAULT:
+						LOG(("\tDefault: %s", entry->url));
+						break;
+					case IMAGEMAP_RECT:
+						LOG(("\tRectangle: %s: [(%d,%d),(%d,%d)]",
+							entry->url,
+							entry->bounds.rect.x0,
+							entry->bounds.rect.y0,
+							entry->bounds.rect.x1,
+							entry->bounds.rect.y1));
+						break;
+					case IMAGEMAP_CIRCLE:
+						LOG(("\tCircle: %s: [(%d,%d),%d]",
+							entry->url,
+							entry->bounds.circle.x,
+							entry->bounds.circle.y,
+							entry->bounds.circle.r));
+						break;
+					case IMAGEMAP_POLY:
+						LOG(("\tPolygon: %s:", entry->url));
+						for (j=0; j!=entry->bounds.poly.num;
+								j++) {
+							fprintf(stderr, "(%d,%d) ",
+							(int)entry->bounds.poly.xcoords[j],
+							(int)entry->bounds.poly.ycoords[j]);
+						}
+						fprintf(stderr,"\n");
+						break;
+				}
+			}
+			map = map->next;
 		}
 	}
 }
@@ -192,9 +213,10 @@ void imagemap_dump(struct content *c) {
  *
  * @param node Root node of tree
  * @param c The containing content
+ * \return false on memory exhaustion, true otherwise
  */
-void imagemap_extract(xmlNode *node, struct content *c) {
-
+bool imagemap_extract(xmlNode *node, struct content *c)
+{
 	xmlNode *this_node;
 	struct mapentry *entry = 0;
 	char *name;
@@ -202,22 +224,41 @@ void imagemap_extract(xmlNode *node, struct content *c) {
 	if (node->type == XML_ELEMENT_NODE) {
 		if (strcmp(node->name, "map") == 0) {
 			if ((name = (char*)xmlGetProp(node, (const xmlChar*)"name")) == NULL)
-				return;
-			entry = imagemap_extract_map(node, c, entry);
-			imagemap_add(c, name, entry);
+				return true;
+			if (!imagemap_extract_map(node, c, &entry)) {
+				xmlFree(name);
+				return false;
+			}
+			if (!imagemap_add(c, name, entry)) {
+				xmlFree(name);
+				return false;
+			}
 			xmlFree(name);
-			return;
+			return true;
 		}
 	}
-	else return;
+	else return true;
 
 	/* now recurse */
 	for (this_node = node->children; this_node != 0; this_node = this_node->next) {
-		imagemap_extract(this_node, c);
+		if (!imagemap_extract(this_node, c))
+			return false;
 	}
+
+	return true;
 }
 
-struct mapentry *imagemap_extract_map(xmlNode *node, struct content *c, struct mapentry *entry) {
+/**
+ * Extract an imagemap from html source
+ *
+ * \param node  XML node containing map
+ * \param c     Content containing document
+ * \param entry List of map entries
+ * \return false on memory exhaustion, true otherwise
+ */
+bool imagemap_extract_map(xmlNode *node, struct content *c,
+		struct mapentry **entry)
+{
 
 	xmlNode *this_node;
 
@@ -227,34 +268,44 @@ struct mapentry *imagemap_extract_map(xmlNode *node, struct content *c, struct m
 		 */
 		if (strcmp(node->name, "area") == 0 ||
 		    strcmp(node->name, "a") == 0) {
-			entry = imagemap_addtolist(node, entry);
-			return entry;
+			return imagemap_addtolist(node, entry);
 		}
 	}
-	else return entry;
+	else return true;
 
 	for (this_node = node->children; this_node != 0; this_node = this_node->next) {
-		entry = imagemap_extract_map(this_node, c, entry);
+		if (!imagemap_extract_map(this_node, c, entry))
+			return false;
 	}
 
-	return entry;
+	return true;
 }
 
-struct mapentry *imagemap_addtolist(xmlNode *n, struct mapentry *entry) {
-
+/**
+ * Adds an imagemap entry to the list
+ *
+ * \param n     The xmlNode representing the entry to add
+ * \param entry Pointer to list of entries
+ * \return false on memory exhaustion, true otherwise
+ */
+bool imagemap_addtolist(xmlNode *n, struct mapentry **entry)
+{
 	char *shape, *coords = 0, *href, *val;
 	int num;
 	struct mapentry *new_map, *temp;
 
+	assert(n != NULL);
+	assert(entry != NULL);
+
 	if (strcmp(n->name, "area") == 0) {
 		/* nohref attribute present - ignore this entry */
 		if (xmlGetProp(n, (const xmlChar*)"nohref") != 0) {
-			return entry;
+			return true;
 		}
 	}
 	/* no href -> ignore */
 	if ((href = (char*)xmlGetProp(n, (const xmlChar*)"href")) == NULL) {
-		return entry;
+		return true;
 	}
 	/* no shape -> shape is a rectangle */
 	if ((shape = (char*)xmlGetProp(n, (const xmlChar*)"shape")) == NULL) {
@@ -265,11 +316,14 @@ struct mapentry *imagemap_addtolist(xmlNode *n, struct mapentry *entry) {
 		if ((coords = (char*)xmlGetProp(n, (const xmlChar*)"coords")) == NULL) {
 			xmlFree(href);
 			xmlFree(shape);
-			return entry;
+			return true;
 		}
 	}
 
-	new_map = xcalloc(1, sizeof(*new_map));
+	new_map = calloc(1, sizeof(*new_map));
+	if (!new_map) {
+		return false;
+	}
 
 	/* extract area shape */
 	if (strcasecmp(shape, "rect") == 0) {
@@ -287,14 +341,21 @@ struct mapentry *imagemap_addtolist(xmlNode *n, struct mapentry *entry) {
 		new_map->type = IMAGEMAP_DEFAULT;
 	}
 	else { /* unknown shape -> bail */
-		xfree(new_map);
+		free(new_map);
 		xmlFree(href);
 		xmlFree(shape);
 		xmlFree(coords);
-		return entry;
+		return true;
 	}
 
-	new_map->url = xstrdup(href);
+	new_map->url = strdup(href);
+	if (!new_map->url) {
+		free(new_map);
+		xmlFree(href);
+		xmlFree(shape);
+		xmlFree(coords);
+		return false;
+	}
 
 	if (new_map->type != IMAGEMAP_DEFAULT) {
 
@@ -331,7 +392,8 @@ struct mapentry *imagemap_addtolist(xmlNode *n, struct mapentry *entry) {
 						case 1:
 						    new_map->bounds.circle.x = atoi(val);
 						    break;
-						case 2:									  new_map->bounds.circle.y = atoi(val);
+						case 2:
+						    new_map->bounds.circle.y = atoi(val);
 						    break;
 						case 3:
 						    new_map->bounds.circle.r = atoi(val);
@@ -343,22 +405,64 @@ struct mapentry *imagemap_addtolist(xmlNode *n, struct mapentry *entry) {
 				break;
 			case IMAGEMAP_POLY:
 				new_map->bounds.poly.xcoords =
-						 xcalloc(0, sizeof(*new_map->bounds.poly.xcoords));
+						calloc(0, sizeof(*new_map->bounds.poly.xcoords));
+				if (!new_map->bounds.poly.xcoords) {
+					free(new_map->url);
+					free(new_map);
+					xmlFree(href);
+					xmlFree(shape);
+					xmlFree(coords);
+					return false;
+				}
 				new_map->bounds.poly.ycoords =
-						 xcalloc(0, sizeof(*new_map->bounds.poly.ycoords));
+						 calloc(0, sizeof(*new_map->bounds.poly.ycoords));
+				if (!new_map->bounds.poly.ycoords) {
+					free(new_map->bounds.poly.xcoords);
+					free(new_map->url);
+					free(new_map);
+					xmlFree(href);
+					xmlFree(shape);
+					xmlFree(coords);
+					return false;
+				}
 				int x, y;
+				float *xcoords, *ycoords;
 				while (val) {
 					x = atoi(val);
 					val = strtok('\0', ",");
 					if (!val) break;
 					y = atoi(val);
 
-					new_map->bounds.poly.xcoords =
-						xrealloc(new_map->bounds.poly.xcoords,
+					xcoords =
+						realloc(new_map->bounds.poly.xcoords,
 							 num*sizeof(*new_map->bounds.poly.xcoords));
-					new_map->bounds.poly.ycoords =
-						xrealloc(new_map->bounds.poly.ycoords,
+					if (!xcoords) {
+						free(new_map->bounds.poly.ycoords);
+						free(new_map->bounds.poly.xcoords);
+						free(new_map->url);
+						free(new_map);
+						xmlFree(href);
+						xmlFree(shape);
+						xmlFree(coords);
+						return false;
+					}
+					ycoords =
+						realloc(new_map->bounds.poly.ycoords,
 							 num*sizeof(*new_map->bounds.poly.ycoords));
+					if (!ycoords) {
+						free(new_map->bounds.poly.ycoords);
+						free(new_map->bounds.poly.xcoords);
+						free(new_map->url);
+						free(new_map);
+						xmlFree(href);
+						xmlFree(shape);
+						xmlFree(coords);
+						return false;
+					}
+
+					new_map->bounds.poly.xcoords = xcoords;
+					new_map->bounds.poly.ycoords = ycoords;
+
 					new_map->bounds.poly.xcoords[num-1] = x;
 					new_map->bounds.poly.ycoords[num-1] = y;
 
@@ -375,21 +479,21 @@ struct mapentry *imagemap_addtolist(xmlNode *n, struct mapentry *entry) {
 	}
 
 	new_map->next = 0;
-	if (entry) {
+	if (entry && (*entry)) {
 		/* add to END of list */
-		for (temp = entry; temp->next != 0; temp = temp->next)
+		for (temp = (*entry); temp->next != 0; temp = temp->next)
 			;
 		temp->next = new_map;
 	}
 	else {
-		entry = new_map;
+		(*entry) = new_map;
 	}
 
 	xmlFree(href);
 	xmlFree(shape);
 	xmlFree(coords);
 
-	return entry;
+	return true;
 }
 
 /**
@@ -405,13 +509,13 @@ void imagemap_freelist(struct mapentry *list) {
 
 	while (entry != 0) {
 		prev = entry;
-		xfree(entry->url);
+		free(entry->url);
 		if (entry->type == IMAGEMAP_POLY) {
-			xfree(entry->bounds.poly.xcoords);
-			xfree(entry->bounds.poly.ycoords);
+			free(entry->bounds.poly.xcoords);
+			free(entry->bounds.poly.ycoords);
 		}
 		entry = entry->next;
-		xfree(prev);
+		free(prev);
 	}
 }
 

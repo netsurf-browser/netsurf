@@ -14,7 +14,7 @@ struct content;
 
 void imagemap_destroy(struct content *c);
 void imagemap_dump(struct content *c);
-void imagemap_extract(xmlNode *node, struct content *c);
+bool imagemap_extract(xmlNode *node, struct content *c);
 char *imagemap_get(struct content *c, const char *key, unsigned long x,
               unsigned long y, unsigned long click_x, unsigned long click_y);
 
