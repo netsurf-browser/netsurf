@@ -681,7 +681,7 @@ bool draw_plot_line(int x0, int y0, int x1, int y1, int width, colour c,
 	dpe->tag = draw_LINE_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
 	dpe->data.line_to.x = dp->bbox.x1;
-	dpe->data.line_to.y = dp->bbox.y0;
+	dpe->data.line_to.y = dp->bbox.y1;
 
 	/* end */
 	dpe = (draw_path_element *) (((int *) &dp->path) + 24 / sizeof (int));
@@ -720,10 +720,12 @@ bool draw_plot_polygon(int *p, unsigned int n, colour fill)
 
 	dp->fill = fill<<8;
 	dp->outline = 0xFFFFFFFF; /* no outline */
+	dp->width = 0;
 	dp->style.flags = 0;
 	dp->style.reserved = 0;
 	dp->style.cap_width = 0;
 	dp->style.cap_length = 0;
+
 
 	for (i = 0; i != n; i++) {
 		dpe = (draw_path_element *) (((int *) &dp->path) + (12 * i) / sizeof (int));
@@ -734,11 +736,10 @@ bool draw_plot_polygon(int *p, unsigned int n, colour fill)
 
 		if (p[i*2+0] < xmin) xmin = p[i*2+0];
 		if (p[i*2+0] > xmax) xmax = p[i*2+0];
-		if (draw_plot_origin_y - p[i*2+1] < ymin)
+		if ((draw_plot_origin_y - p[i*2+1]) < ymin)
 			ymin = draw_plot_origin_y - p[i*2+1];
-		if (draw_plot_origin_y - p[i*2+1] > ymax)
+		if ((draw_plot_origin_y - p[i*2+1]) > ymax)
 			ymax = draw_plot_origin_y - p[i*2+1];
-
 	}
 
 	dpe = (draw_path_element *) (((int *) &dp->path) + 0 / sizeof (int));
@@ -753,7 +754,6 @@ bool draw_plot_polygon(int *p, unsigned int n, colour fill)
 	dp->bbox.y0 = ymin * 512;
 	dp->bbox.x1 = xmax * 512;
 	dp->bbox.y1 = ymax * 512;
-	dp->width = (xmax - xmin) * 512;
 
 	return true;
 }
@@ -779,10 +779,22 @@ bool draw_plot_fill(int x0, int y0, int x1, int y1, colour c)
 	dro->size = 8 + 96;
 
 	dp = &dro->data.path;
-	dp->bbox.x0 = x0 * 512;
-	dp->bbox.y0 = (draw_plot_origin_y - y1) * 512;
-	dp->bbox.x1 = x1 * 512;
-	dp->bbox.y1 = (draw_plot_origin_y - y0) * 512;
+	if (x0 < x1) {
+		dp->bbox.x0 = x0 * 512;
+		dp->bbox.x1 = x1 * 512;
+	}
+	else {
+		dp->bbox.x0 = x1 * 512;
+		dp->bbox.x1 = x0 * 512;
+	}
+	if (y0 < y1) {
+		dp->bbox.y0 = (draw_plot_origin_y - y1) * 512;
+		dp->bbox.y1 = (draw_plot_origin_y - y0) * 512;
+	}
+	else {
+		dp->bbox.y0 = (draw_plot_origin_y - y0) * 512;
+		dp->bbox.y1 = (draw_plot_origin_y - y1) * 512;
+	}
 
 	dp->fill = c<<8;
 	dp->outline = 0xFFFFFFFF; /* no stroke */
@@ -792,32 +804,32 @@ bool draw_plot_fill(int x0, int y0, int x1, int y1, colour c)
 	dpe = (draw_path_element *) (((int *) &dp->path) + 0 / sizeof (int));
 	dpe->tag = draw_MOVE_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.move_to.x = x0 * 512;
-	dpe->data.move_to.y = (draw_plot_origin_y - y1) * 512;
+	dpe->data.move_to.x = dp->bbox.x0;
+	dpe->data.move_to.y = dp->bbox.y0;
 
 	dpe = (draw_path_element *) (((int *) &dp->path) + 12 / sizeof (int));
 	dpe->tag = draw_LINE_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.line_to.x = x0 * 512;
-	dpe->data.line_to.y = (draw_plot_origin_y - y0) * 512;
+	dpe->data.line_to.x = dp->bbox.x0;
+	dpe->data.line_to.y = dp->bbox.y1;
 
 	dpe = (draw_path_element *) (((int *) &dp->path) + 24 / sizeof (int));
 	dpe->tag = draw_LINE_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.line_to.x = x1 * 512;
-	dpe->data.line_to.y = (draw_plot_origin_y - y0) * 512;
+	dpe->data.line_to.x = dp->bbox.x1;
+	dpe->data.line_to.y = dp->bbox.y1;
 
 	dpe = (draw_path_element *) (((int *) &dp->path) + 36 / sizeof (int));
 	dpe->tag = draw_LINE_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.line_to.x = x1 * 512;
-	dpe->data.line_to.y = (draw_plot_origin_y - y1) * 512;
+	dpe->data.line_to.x = dp->bbox.x1;
+	dpe->data.line_to.y = dp->bbox.y0;
 
 	dpe = (draw_path_element *) (((int *) &dp->path) + 48 / sizeof (int));
 	dpe->tag = draw_LINE_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.line_to.x = x0 * 512;
-	dpe->data.line_to.y = (draw_plot_origin_y - y1) * 512;
+	dpe->data.line_to.x = dp->bbox.x0;
+	dpe->data.line_to.y = dp->bbox.y0;
 
 	dpe = (draw_path_element *) (((int *) &dp->path) + 60 / sizeof (int));
 	dpe->tag = draw_END_PATH;
