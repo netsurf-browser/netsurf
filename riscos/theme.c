@@ -225,7 +225,7 @@ int ro_theme_update_toolbar(struct toolbar *toolbar, wimp_w window) {
 		xwimp_get_window_state(&state);
 		state.w = toolbar->toolbar_handle;
 		state.visible.x1 = outline.outline.x1 - 2;
-		state.visible.y0 = state.visible.y1 - toolbar->height;
+		state.visible.y0 = state.visible.y1 - toolbar->height + 2;
 		state.xscroll = 0;
 		state.yscroll = 0;
 		state.next = wimp_TOP;

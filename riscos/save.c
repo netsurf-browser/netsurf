@@ -226,6 +226,10 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			ro_gui_hotlist_save_as(path);
 			break;
 	}
+	
+	/*	Close the save window
+	*/
+	xwimp_close_window(dialog_saveas);
 
 	/* Ack successful save with message_DATA_LOAD */
 	message->action = message_DATA_LOAD;

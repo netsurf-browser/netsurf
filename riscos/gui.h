@@ -195,6 +195,7 @@ void ro_gui_hotlist_menu_closed(void);
 void ro_gui_hotlist_toolbar_click(wimp_pointer* pointer);
 
 int ro_gui_hotlist_get_selected(bool folders);
+void ro_gui_hotlist_reset_statistics(void);
 void ro_gui_hotlist_set_selected(bool selected);
 void ro_gui_hotlist_set_expanded(bool expand, bool folders, bool links);
 void ro_gui_hotlist_delete_selected(void);

@@ -681,7 +681,7 @@ int ro_toolbar_update(struct toolbar *toolbar) {
 
 	/*	Set our return status
 	*/
-	if (toolbar_height != 0) toolbar_height += 8;
+	if (toolbar_height != 0) toolbar_height += 8 + 2;
 	return_status = (toolbar_height == toolbar->height);
 	toolbar->height = toolbar_height;
 

@@ -474,6 +474,7 @@ void ro_gui_create_menu(wimp_menu *menu, int x, int y, gui_window *g)
 	current_menu_y = y;
 	current_gui = g;
 	if (menu == browser_menu) {
+	  	if (!hotlist_window) browser_utilities_menu->entries[0].icon_flags |= wimp_ICON_SHADED;
 		if (ro_gui_menu_find_object_box())
 			menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
 		else
@@ -576,6 +577,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						ro_gui_hotlist_delete_selected();
 						break;
 					case 4: /* Reset usage */
+						ro_gui_hotlist_reset_statistics();
 						break;
 				}
 				break;
