@@ -42,13 +42,12 @@ OBJECTS_NCOS = $(OBJECTS_RISCOS)
 
 OBJECTS_DEBUG = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_DEBUG += debug_bitmap.o filetyped.o fontd.o netsurfd.o	# debug/
-OBJECTS_DEBUG += gif.o gifread.o save_complete.o schedule.o	# riscos/
 
 OBJECTS_DEBUGRO = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_DEBUGRO += netsurfd.o					# debug/
 OBJECTS_DEBUGRO += version.o					# desktop/
 OBJECTS_DEBUGRO += bitmap.o draw.o filetype.o font.o \
-	gif.o gifread.o image.o jpeg.o save_complete.o \
+	gif.o gifread.o image.o jpeg.o plotters.o save_complete.o \
 	schedule.o sprite.o ufont.o				# riscos/
 
 OBJECTS_GTK = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)

@@ -29,6 +29,8 @@ const char *fetch_filetype(const char *unix_path)
 		return "image/gif";
 	if (2 < l && strcasecmp(unix_path + l - 3, "png") == 0)
 		return "image/png";
+	if (2 < l && strcasecmp(unix_path + l - 3, "jng") == 0)
+		return "image/jng";
 	return "text/html";
 }
 

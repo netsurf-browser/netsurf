@@ -15,6 +15,7 @@
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/image/bitmap.h"
 #include "netsurf/render/box.h"
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/utils/log.h"
@@ -27,32 +28,41 @@ bool print_active = false;
 void *hotlist_toolbar = NULL;
 void *hotlist_window = NULL;
 
-void callback(content_msg msg, struct content *c, void *p1,
-		void *p2,  union content_msg_data data)
-{
-	LOG(("content %s, message %i", c->url, msg));
-	if (msg == CONTENT_MSG_DONE)
-		done = 1;
-	else if (msg == CONTENT_MSG_ERROR) {
-		printf("=== ERROR: %s\n", data.error);
-		done = destroyed = 1;
-	} else if (msg == CONTENT_MSG_STATUS)
-		printf("=== STATUS: %s\n", c->status_message);
-	else if (msg == CONTENT_MSG_REDIRECT) {
-		printf("=== REDIRECT to '%s'\n", data.redirect);
-		done = destroyed = 1;
-	}
-}
+#ifndef riscos
+char *default_stylesheet_url;
+char *adblock_stylesheet_url;
+bool option_filter_sprites = false;
+bool option_dither_sprites = false;
+void *plot = 0;
+#endif
+
+#ifdef riscos
+void *ro_gui_current_redraw_gui = 0;
+const char *NETSURF_DIR = "<NetSurf$Dir>";
+char *default_stylesheet_url = "file:/<NetSurf$Dir>/Resources/CSS";
+char *adblock_stylesheet_url = "file:/<NetSurf$Dir>/Resources/AdBlock";
+#endif
+
+static void callback(content_msg msg, struct content *c, void *p1,
+		void *p2,  union content_msg_data data);
+
 
 int main(int argc, char *argv[])
 {
 	char url[1000];
 	struct content *c;
 
+#ifndef riscos
+	default_stylesheet_url = malloc(200);
+	adblock_stylesheet_url = malloc(200);
+	getcwd(url, sizeof url);
+	snprintf(default_stylesheet_url, 200, "file:%s/CSS", url);
+	snprintf(adblock_stylesheet_url, 200, "file:%s/AdBlock", url);
+#endif
+
 	fetch_init();
 	fetchcache_init();
 	url_init();
-	save_complete_init();
 	options_read("options");
 	messages_load("messages");
 
@@ -99,38 +109,43 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+
+void callback(content_msg msg, struct content *c, void *p1,
+	      void *p2,  union content_msg_data data)
+{
+	LOG(("content %s, message %i", c->url, msg));
+	if (msg == CONTENT_MSG_DONE)
+		done = 1;
+	else if (msg == CONTENT_MSG_ERROR) {
+		printf("=== ERROR: %s\n", data.error);
+		done = destroyed = 1;
+	} else if (msg == CONTENT_MSG_STATUS)
+		printf("=== STATUS: %s\n", c->status_message);
+		else if (msg == CONTENT_MSG_REDIRECT) {
+			printf("=== REDIRECT to '%s'\n", data.redirect);
+			done = destroyed = 1;
+		}
+}
+
+
 void gui_multitask(void)
 {
 /* 	putchar('-'); */
 }
 
-#ifndef riscos
-int stricmp(char *s0, char *s1)
-{
-	return strcasecmp(s0, s1);
-}
-#endif
 
-#ifdef WITH_PLUGIN
-void plugin_decode(void *a, void *b, void *c, void *d)
+void die(const char *error)
 {
-}
-#endif
-
-bool html_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int x0, int y0, int x1, int y1,
-		float scale, unsigned long background_colour)
-{
-	return true;
+	printf("die: %s\n", error);
+	exit(1);
 }
 
-#ifdef WITH_PLUGIN
-bool plugin_handleable(const char *mime_type)
+
+void warn_user(const char *warning, const char *detail)
 {
-	return false;
+	printf("WARNING: %s %s\n", warning, detail);
 }
-#endif
+
 
 #ifdef WITH_PLUGIN
 void plugin_msg_parse(wimp_message *message, int ack) {}
@@ -146,100 +161,27 @@ void plugin_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params) {}
 void plugin_close(struct content *c) {}
+bool plugin_handleable(const char *mime_type) {return false;}
 #endif
-
-#ifdef riscos
-const char *NETSURF_DIR = "<NetSurf$Dir>";
-#endif
-
-void xcolourtrans_generate_table_for_sprite(void)
-{
-	assert(0);
-}
-
-os_error *xosspriteop_put_sprite_scaled (osspriteop_flags flags,
-      osspriteop_area const *area,
-      osspriteop_id id,
-      int x,
-      int y,
-      osspriteop_action action,
-      os_factors const *factors,
-      osspriteop_trans_tab const *trans_tab)
-{
-	assert(0);
-}
-
-void _swix(void)
-{
-	assert(0);
-}
 
 #ifndef riscos
-bool option_filter_sprites = false;
-bool option_dither_sprites = false;
-int option_minimum_gif_delay = 10;
+bool bitmap_get_opaque(struct bitmap *bitmap) { return false; }
+bool bitmap_test_opaque(struct bitmap *bitmap) { return false; }
+void bitmap_set_opaque(struct bitmap *bitmap, bool opaque) {}
 #endif
 
-void ro_gui_screen_size(int *width, int *height)
-{
-	*width = 0;
-	*height = 0;
-}
-
-void die(const char *error)
-{
-	printf("die: %s\n", error);
-	exit(1);
-}
+void tree_initialise_redraw(struct tree *tree) {}
+void tree_redraw_area(struct tree *tree, int x, int y, int width, int height) {}
+void tree_draw_line(struct tree *tree, int x, int y, int width, int height) {}
+void tree_draw_node_element(struct tree *tree, struct node_element *element) {}
+void tree_draw_node_expansion(struct tree *tree, struct node *node) {}
+void tree_recalculate_node_element(struct node_element *element) {}
+void tree_update_URL_node(struct node *node) {}
+void tree_resized(struct tree *tree) {}
+void tree_set_node_sprite_folder(struct node *node) {}
 
 #ifndef riscos
-int ro_content_filetype(int x)
-{
-	return 0;
-}
-
-extern os_error *xosfile_save_stamped (char const *file_name,
-      bits file_type,
-      byte const *data,
-      byte const *end)
-{
-	return 0;
-}
-
-extern os_error *xosfile_set_type (char const *file_name,
-      bits file_type)
-{
-	return 0;
-}
-
-extern os_t os_read_monotonic_time(void)
-{
-	return clock() / 10000;
-}
-#endif
-
-void warn_user(const char *warning, const char *detail)
-{
-	printf("WARNING: %s %s\n", warning, detail);
-}
-
-void *ro_gui_current_redraw_gui = 0;
-
-os_error *xos_read_monotonic_time (os_t *t)
-{
-	*t = clock() / 1000;
-	return 0;
-}
-
-#ifndef riscos
-typedef enum {
-	IMAGE_PLOT_TINCT_ALPHA,
-	IMAGE_PLOT_TINCT_OPAQUE,
-	IMAGE_PLOT_OS
-} image_type;
-
-bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
-		int req_height, int width, int height,
-		unsigned long background_colour,
-		bool repeatx, bool repeaty, image_type type) { return true; }
+void schedule(int t, void (*callback)(void *p), void *p) {}
+void schedule_remove(void (*callback)(void *p), void *p) {}
+void schedule_run(void) {}
 #endif
