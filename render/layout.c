@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.3 2002/05/18 08:23:39 bursa Exp $
+ * $Id: layout.c,v 1.4 2002/05/21 21:32:35 bursa Exp $
  */
 
 #include <assert.h>
@@ -118,6 +118,15 @@ void layout_inline_container(struct box * box, unsigned long width)
 	struct font_split split;
 
 	for (c = box->children; c != 0; ) {
+		if (c->type == BOX_FLOAT) {
+			layout_block(c, width);
+			c->x = 0;
+			c->y = y;
+			c = c->next;
+			continue;
+		}
+		
+		assert(c->type == BOX_INLINE);
 		split = font_split(0, c->font, c->text, width - x, x == 0);
 		if (*(split.end) == 0) {
 			/* fits into this line */
@@ -132,9 +141,6 @@ void layout_inline_container(struct box * box, unsigned long width)
 			/* doesn't fit at all: move down a line */
 			x = 0;
 			y += 30;
-			/*c->width = font_split(0, c->font, c->text, (width-x)/20+1, &end)*20;
-			if (end == c->text) end = strchr(c->text, ' ');
-			if (end == 0) end = c->text + 1;*/
 		} else {
 			/* split into two lines */ 
 			c->x = x;

@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.3 2002/05/11 15:22:24 bursa Exp $
+ * $Id: box.c,v 1.4 2002/05/21 21:32:35 bursa Exp $
  */
 
 #include <assert.h>
@@ -18,6 +18,8 @@
  */
 
 void box_add_child(struct box * parent, struct box * child);
+struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_style * parent_style,
+		xmlNode * n, struct css_selector * selector, unsigned int depth);
 
 
 /**
@@ -60,7 +62,6 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 	struct box * inline_container_c;
 	struct css_style * style;
 	xmlNode * c;
-	xmlChar * s;
 
 	if (n->type == XML_ELEMENT_NODE) {
 		/* work out the style for this element */
@@ -68,19 +69,34 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 		(*selector)[depth].element = n->name;
 		(*selector)[depth].class = (*selector)[depth].id = 0;
 
-		style = xcalloc(1, sizeof(struct css_style));
-		memcpy(style, parent_style, sizeof(struct css_style));
-		css_get_style(stylesheet, *selector, depth + 1, style);
+		style = box_get_style(stylesheet, parent_style, n, *selector, depth + 1);
+	}
 
-		if ((s = xmlGetProp(n, "style"))) {
-			struct css_style * astyle = xcalloc(1, sizeof(struct css_style));
-			memcpy(astyle, &css_empty_style, sizeof(struct css_style));
-			css_parse_property_list(astyle, s);
-			css_cascade(style, astyle);
-			free(astyle);
-			free(s);
+	if (n->type == XML_TEXT_NODE ||
+			(n->type == XML_ELEMENT_NODE && (style->float_ == CSS_FLOAT_LEFT ||
+							 style->float_ == CSS_FLOAT_RIGHT))) {
+		/* text nodes are converted to inline boxes, wrapped in an inline container block */
+		if (inline_container == 0) {  /* this is the first inline node: make a container */
+			inline_container = xcalloc(1, sizeof(struct box));
+			inline_container->type = BOX_INLINE_CONTAINER;
+			box_add_child(parent, inline_container);
+		}
+		box = calloc(1, sizeof(struct box));
+		box->node = n;
+		box_add_child(inline_container, box);
+		if (n->type == XML_TEXT_NODE) {
+			box->type = BOX_INLINE;
+			box->text = squash_whitespace(n->content);
+		} else {
+			box->type = BOX_FLOAT;
+			box->style = style;
+			inline_container_c = 0;
+			for (c = n->children; c != 0; c = c->next)
+				inline_container_c = xml_to_box(c, style, stylesheet,
+						selector, depth + 1, box, inline_container_c);
 		}
 
+	} else if (n->type == XML_ELEMENT_NODE) {
 		switch (style->display) {
 			case CSS_DISPLAY_BLOCK:  /* blocks get a node in the box tree */
 				box = xcalloc(1, sizeof(struct box));
@@ -111,6 +127,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_TABLE_ROW:
+				assert(parent->type == BOX_TABLE);
 				box = xcalloc(1, sizeof(struct box));
 				box->node = n;
 				box->type = BOX_TABLE_ROW;
@@ -122,6 +139,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_TABLE_CELL:
+				assert(parent->type == BOX_TABLE_ROW);
 				box = xcalloc(1, sizeof(struct box));
 				box->node = n;
 				box->type = BOX_TABLE_CELL;
@@ -136,21 +154,45 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 			case CSS_DISPLAY_NONE:
 			default:
 		}
-	} else if (n->type == XML_TEXT_NODE) {
-		/* text nodes are converted to inline boxes, wrapped in an inline container block */
-		if (inline_container == 0) {  /* this is the first inline node: make a container */
-			inline_container = xcalloc(1, sizeof(struct box));
-			inline_container->type = BOX_INLINE_CONTAINER;
-			box_add_child(parent, inline_container);
-		}
-		box = calloc(1, sizeof(struct box));
-		box->node = n;
-		box->type = BOX_INLINE;
-		box->text = n->content;
-		box_add_child(inline_container, box);
 	}
 
 	return inline_container;
+}
+
+
+/*
+ * get the style for an element
+ */
+
+struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_style * parent_style,
+		xmlNode * n, struct css_selector * selector, unsigned int depth)
+{
+	struct css_style * style = xcalloc(1, sizeof(struct css_style));
+	xmlChar * s;
+
+	memcpy(style, parent_style, sizeof(struct css_style));
+	css_get_style(stylesheet, selector, depth, style);
+
+	if ((s = xmlGetProp(n, "width"))) {
+		if (strrchr(s, '%'))
+			style->width.width = CSS_WIDTH_PERCENT,
+			style->width.value.percent = atof(s);
+		else
+			style->width.width = CSS_WIDTH_LENGTH,
+			style->width.value.length.unit = CSS_UNIT_PX,
+			style->width.value.length.value = atof(s);
+	}
+
+	if ((s = xmlGetProp(n, "style"))) {
+		struct css_style * astyle = xcalloc(1, sizeof(struct css_style));
+		memcpy(astyle, &css_empty_style, sizeof(struct css_style));
+		css_parse_property_list(astyle, s);
+		css_cascade(style, astyle);
+		free(astyle);
+		free(s);
+	}
+
+	return style;
 }
 
 
@@ -175,6 +217,7 @@ void box_dump(struct box * box, unsigned int depth)
 		case BOX_TABLE:            printf("BOX_TABLE <%s>\n", box->node->name); break;
 		case BOX_TABLE_ROW:        printf("BOX_TABLE_ROW <%s>\n", box->node->name); break;
 		case BOX_TABLE_CELL:       printf("BOX_TABLE_CELL <%s>\n", box->node->name); break;
+		case BOX_FLOAT:            printf("BOX_FLOAT <%s>\n", box->node->name); break;
 		default:                   printf("Unknown box type\n");
 	}
 	
