@@ -78,6 +78,8 @@ struct css_style {
 			float percent;
 		} value;
 	} width;
+
+	css_white_space white_space;
 };
 
 struct css_stylesheet;
@@ -104,50 +106,50 @@ extern const struct css_style css_blank_style;
 #ifdef CSS_INTERNALS
 
 typedef enum {
-	NODE_BLOCK,
-	NODE_DECLARATION,
-	NODE_IDENT,
-	NODE_NUMBER,
-	NODE_PERCENTAGE,
-	NODE_DIMENSION,
-	NODE_STRING,
-	NODE_DELIM,
-	NODE_URI,
-	NODE_HASH,
-	NODE_UNICODE_RANGE,
-	NODE_INCLUDES,
-	NODE_FUNCTION,
-	NODE_DASHMATCH,
-	NODE_COLON,
-	NODE_COMMA,
-	NODE_PLUS,
-	NODE_GT,
-	NODE_PAREN,
-	NODE_BRAC,
-	NODE_SELECTOR,
-	NODE_ID,
-	NODE_CLASS,
-	NODE_ATTRIB,
-	NODE_ATTRIB_EQ,
-	NODE_ATTRIB_INC,
-	NODE_ATTRIB_DM,
-} node_type;
+	CSS_NODE_BLOCK,
+	CSS_NODE_DECLARATION,
+	CSS_NODE_IDENT,
+	CSS_NODE_NUMBER,
+	CSS_NODE_PERCENTAGE,
+	CSS_NODE_DIMENSION,
+	CSS_NODE_STRING,
+	CSS_NODE_DELIM,
+	CSS_NODE_URI,
+	CSS_NODE_HASH,
+	CSS_NODE_UNICODE_RANGE,
+	CSS_NODE_INCLUDES,
+	CSS_NODE_FUNCTION,
+	CSS_NODE_DASHMATCH,
+	CSS_NODE_COLON,
+	CSS_NODE_COMMA,
+	CSS_NODE_PLUS,
+	CSS_NODE_GT,
+	CSS_NODE_PAREN,
+	CSS_NODE_BRAC,
+	CSS_NODE_SELECTOR,
+	CSS_NODE_ID,
+	CSS_NODE_CLASS,
+	CSS_NODE_ATTRIB,
+	CSS_NODE_ATTRIB_EQ,
+	CSS_NODE_ATTRIB_INC,
+	CSS_NODE_ATTRIB_DM,
+} css_node_type;
 
 typedef enum {
-	COMB_NONE,
-	COMB_ANCESTOR,
-	COMB_PARENT,
-	COMB_PRECEDED,
-} combinator;
+	CSS_COMB_NONE,
+	CSS_COMB_ANCESTOR,
+	CSS_COMB_PARENT,
+	CSS_COMB_PRECEDED,
+} css_combinator;
 
-struct node {
-	node_type type;
+struct css_node {
+	css_node_type type;
 	char *data;
 	char *data2;
-	struct node *left;
-	struct node *right;
-	struct node *next;
-	combinator comb;
+	struct css_node *left;
+	struct css_node *right;
+	struct css_node *next;
+	css_combinator comb;
 	struct css_style *style;
 	unsigned long specificity;
 };
@@ -159,13 +161,13 @@ struct node {
 struct css_stylesheet {
 	yyscan_t lexer;
 	void *parser;
-	struct node *rule[HASH_SIZE];
+	struct css_node *rule[HASH_SIZE];
 };
 
 struct parse_params {
 	int ruleset_only;
 	struct content *stylesheet;
-	struct node *declaration;
+	struct css_node *declaration;
 };
 
 #endif
@@ -185,15 +187,15 @@ void css_destroy(struct content *c);
 
 #ifdef CSS_INTERNALS
 
-struct node * css_new_node(node_type type, char *data,
-		struct node *left, struct node *right);
-void css_free_node(struct node *node);
+struct css_node * css_new_node(css_node_type type, char *data,
+		struct css_node *left, struct css_node *right);
+void css_free_node(struct css_node *node);
 char *css_unquote(char *s);
-void css_atimport(struct content *c, struct node *node);
+void css_atimport(struct content *c, struct css_node *node);
 void css_add_ruleset(struct content *c,
-		struct node *selector,
-		struct node *declaration);
-void css_add_declarations(struct css_style *style, struct node *declaration);
+		struct css_node *selector,
+		struct css_node *declaration);
+void css_add_declarations(struct css_style *style, struct css_node *declaration);
 unsigned int css_hash(const char *s);
 
 void css_parser_Trace(FILE *TraceFILE, char *zTracePrompt);

@@ -33,8 +33,8 @@ struct decl {
 
 static void css_atimport_callback(content_msg msg, struct content *css,
 		void *p1, void *p2, const char *error);
-static bool css_match_rule(struct node *rule, xmlNode *element);
-	
+static bool css_match_rule(struct css_node *rule, xmlNode *element);
+
 const struct css_style css_base_style = {
 	0xffffff,
 	CSS_CLEAR_NONE,
@@ -47,7 +47,8 @@ const struct css_style css_base_style = {
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_ABSOLUTE, { 1.3 } },
 	CSS_TEXT_ALIGN_LEFT,
-	{ CSS_WIDTH_AUTO, { { 1, CSS_UNIT_EM } } }
+	{ CSS_WIDTH_AUTO, { { 1, CSS_UNIT_EM } } },
+	CSS_WHITE_SPACE_NORMAL
 };
 
 const struct css_style css_empty_style = {
@@ -62,7 +63,8 @@ const struct css_style css_empty_style = {
 	{ CSS_HEIGHT_INHERIT, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
 	CSS_TEXT_ALIGN_INHERIT,
-	{ CSS_WIDTH_INHERIT, { { 1, CSS_UNIT_EM } } }
+	{ CSS_WIDTH_INHERIT, { { 1, CSS_UNIT_EM } } },
+	CSS_WHITE_SPACE_INHERIT
 };
 
 const struct css_style css_blank_style = {
@@ -77,7 +79,8 @@ const struct css_style css_blank_style = {
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
 	CSS_TEXT_ALIGN_INHERIT,
-	{ CSS_WIDTH_AUTO, { { 1, CSS_UNIT_EM } } }
+	{ CSS_WIDTH_AUTO, { { 1, CSS_UNIT_EM } } },
+	CSS_WHITE_SPACE_INHERIT
 };
 
 
@@ -170,8 +173,8 @@ void css_reformat(struct content *c, unsigned int width, unsigned int height)
 void css_destroy(struct content *c)
 {
 	unsigned int i;
-	struct node *r;
-	
+	struct css_node *r;
+
 	for (i = 0; i != HASH_SIZE; i++) {
 		for (r = c->data.css.css->rule[i]; r != 0; r = r->next)
 			xfree(r->style);
@@ -195,23 +198,23 @@ void css_destroy(struct content *c)
  * parser support functions
  */
 
-struct node * css_new_node(node_type type, char *data,
-		struct node *left, struct node *right)
+struct css_node * css_new_node(css_node_type type, char *data,
+		struct css_node *left, struct css_node *right)
 {
-	struct node *node = xcalloc(1, sizeof(*node));
+	struct css_node *node = xcalloc(1, sizeof(*node));
 	node->type = type;
 	node->data = data;
 	node->data2 = 0;
 	node->left = left;
 	node->right = right;
 	node->next = 0;
-	node->comb = COMB_NONE;
+	node->comb = CSS_COMB_NONE;
 	node->style = 0;
 	node->specificity = 0;
 	return node;
 }
 
-void css_free_node(struct node *node)
+void css_free_node(struct css_node *node)
 {
 	if (node == 0)
 		return;
@@ -235,7 +238,7 @@ char *css_unquote(char *s)
 }
 
 
-void css_atimport(struct content *c, struct node *node)
+void css_atimport(struct content *c, struct css_node *node)
 {
 	char *s, *url;
 	int string = 0, screen = 1;
@@ -245,7 +248,7 @@ void css_atimport(struct content *c, struct node *node)
 
 	/* uri(...) or "..." */
 	switch (node->type) {
-		case NODE_URI:
+		case CSS_NODE_URI:
 			LOG(("URI '%s'", node->data));
 			for (s = node->data + 4;
 					*s == ' ' || *s == '\t' || *s == '\r' ||
@@ -267,7 +270,7 @@ void css_atimport(struct content *c, struct node *node)
 			else
 				*(s + 1) = 0;
 			break;
-		case NODE_STRING:
+		case CSS_NODE_STRING:
 			LOG(("STRING '%s'", node->data));
 			url = xstrdup(node->data);
 			break;
@@ -278,7 +281,7 @@ void css_atimport(struct content *c, struct node *node)
 	/* media not specified, 'screen', or 'all' */
 	for (node = node->next; node != 0; node = node->next) {
 		screen = 0;
-		if (node->type != NODE_IDENT) {
+		if (node->type != CSS_NODE_IDENT) {
 			free(url);
 			return;
 		}
@@ -288,7 +291,7 @@ void css_atimport(struct content *c, struct node *node)
 			break;
 		}
 		node = node->next;
-		if (node == 0 || node->type != NODE_COMMA) {
+		if (node == 0 || node->type != CSS_NODE_COMMA) {
 			free(url);
 			return;
 		}
@@ -377,7 +380,7 @@ void css_get_style(struct content *css, xmlNode *element,
 		struct css_style *style)
 {
 	struct css_stylesheet *stylesheet = css->data.css.css;
-	struct node *rule;
+	struct css_node *rule;
 	unsigned int hash, i;
 
 	/* imported stylesheets */
@@ -403,12 +406,12 @@ void css_get_style(struct content *css, xmlNode *element,
  * Determine if a rule applies to an element.
  */
 
-bool css_match_rule(struct node *rule, xmlNode *element)
+bool css_match_rule(struct css_node *rule, xmlNode *element)
 {
 	bool match;
 	char *s, *word, *space;
 	unsigned int i;
-	struct node *detail;
+	struct css_node *detail;
 	xmlNode *anc, *prev;
 
 	assert(element->type == XML_ELEMENT_NODE);
@@ -419,13 +422,13 @@ bool css_match_rule(struct node *rule, xmlNode *element)
 	for (detail = rule->left; detail; detail = detail->next) {
 		match = false;
 		switch (detail->type) {
-			case NODE_ID:
+			case CSS_NODE_ID:
 				s = (char *) xmlGetProp(element, (const xmlChar *) "id");
 				if (s && strcasecmp(detail->data + 1, s) == 0)
 					match = true;
 				break;
 
-			case NODE_CLASS:
+			case CSS_NODE_CLASS:
 				s = (char *) xmlGetProp(element, (const xmlChar *) "class");
 				if (s) {
 					word = s;
@@ -442,21 +445,21 @@ bool css_match_rule(struct node *rule, xmlNode *element)
 				}
 				break;
 
-			case NODE_ATTRIB:
+			case CSS_NODE_ATTRIB:
 				/* matches if an attribute is present */
 				s = (char *) xmlGetProp(element, (const xmlChar *) detail->data);
 				if (s)
 					match = true;
 				break;
 
-			case NODE_ATTRIB_EQ:
+			case CSS_NODE_ATTRIB_EQ:
 				/* matches if an attribute has a certain value */
 				s = (char *) xmlGetProp(element, (const xmlChar *) detail->data);
 				if (s && strcasecmp(detail->data2, s) == 0)
 					match = true;
 				break;
 
-			case NODE_ATTRIB_INC:
+			case CSS_NODE_ATTRIB_INC:
 				/* matches if one of the space separated words
 				 * in the attribute is equal */
 				s = (char *) xmlGetProp(element, (const xmlChar *) detail->data);
@@ -475,7 +478,7 @@ bool css_match_rule(struct node *rule, xmlNode *element)
 				}
 				break;
 
-			case NODE_ATTRIB_DM:
+			case CSS_NODE_ATTRIB_DM:
 				/* matches if a prefix up to a hyphen matches */
 				s = (char *) xmlGetProp(element, (const xmlChar *) detail->data);
 				if (s) {
@@ -497,16 +500,16 @@ bool css_match_rule(struct node *rule, xmlNode *element)
 
 	if (!rule->right)
 		return true;
-	
+
 	switch (rule->comb) {
-		case COMB_ANCESTOR:
+		case CSS_COMB_ANCESTOR:
 			for (anc = element->parent; anc; anc = anc->parent)
 				if (anc->type == XML_ELEMENT_NODE &&
 						css_match_rule(rule->right, anc))
 					return true;
 			break;
 
-		case COMB_PRECEDED:
+		case CSS_COMB_PRECEDED:
 			for (prev = element->prev;
 					prev && prev->type != XML_ELEMENT_NODE;
 					prev = prev->prev)
@@ -516,7 +519,7 @@ bool css_match_rule(struct node *rule, xmlNode *element)
 			return css_match_rule(rule->right, prev);
 			break;
 
-		case COMB_PARENT:
+		case CSS_COMB_PARENT:
 			for (anc = element->parent;
 					anc && anc->type != XML_ELEMENT_NODE;
 					anc = anc->parent)
@@ -618,6 +621,7 @@ void css_dump_style(const struct css_style * const style)
 		default:                fprintf(stderr, "UNKNOWN"); break;
 	}
 	fprintf(stderr, "; ");
+	fprintf(stderr, "white-space: %s; ", css_white_space_name[style->white_space]);
 	fprintf(stderr, "}");
 }
 
@@ -625,7 +629,7 @@ void css_dump_style(const struct css_style * const style)
 void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 {
 	unsigned int i;
-	struct node *r, *n, *m;
+	struct css_node *r, *n, *m;
 	for (i = 0; i != HASH_SIZE; i++) {
 		fprintf(stderr, "hash %i:\n", i);
 		for (r = stylesheet->rule[i]; r != 0; r = r->next) {
@@ -634,12 +638,12 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 					fprintf(stderr, "%s", n->data);
 				for (m = n->left; m != 0; m = m->next) {
 					switch (m->type) {
-						case NODE_ID: fprintf(stderr, "%s", m->data); break;
-						case NODE_CLASS: fprintf(stderr, ".%s", m->data); break;
-						case NODE_ATTRIB: fprintf(stderr, "[%s]", m->data); break;
-						case NODE_ATTRIB_EQ: fprintf(stderr, "[%s=%s]", m->data, m->data2); break;
-						case NODE_ATTRIB_INC: fprintf(stderr, "[%s~=%s]", m->data, m->data2); break;
-						case NODE_ATTRIB_DM: fprintf(stderr, "[%s|=%s]", m->data, m->data2); break;
+						case CSS_NODE_ID: fprintf(stderr, "%s", m->data); break;
+						case CSS_NODE_CLASS: fprintf(stderr, ".%s", m->data); break;
+						case CSS_NODE_ATTRIB: fprintf(stderr, "[%s]", m->data); break;
+						case CSS_NODE_ATTRIB_EQ: fprintf(stderr, "[%s=%s]", m->data, m->data2); break;
+						case CSS_NODE_ATTRIB_INC: fprintf(stderr, "[%s~=%s]", m->data, m->data2); break;
+						case CSS_NODE_ATTRIB_DM: fprintf(stderr, "[%s|=%s]", m->data, m->data2); break;
 						default: fprintf(stderr, "unexpected node");
 					}
 				}
@@ -671,6 +675,10 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 		style->display = apply->display;
 	if (apply->float_ != CSS_FLOAT_INHERIT)
 		style->float_ = apply->float_;
+	if (apply->font_style != CSS_FONT_STYLE_INHERIT)
+		style->font_style = apply->font_style;
+	if (apply->font_weight != CSS_FONT_WEIGHT_INHERIT)
+		style->font_weight = apply->font_weight;
 	if (apply->height.height != CSS_HEIGHT_INHERIT)
 		style->height = apply->height;
 	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT)
@@ -679,10 +687,8 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 		style->text_align = apply->text_align;
 	if (apply->width.width != CSS_WIDTH_INHERIT)
 		style->width = apply->width;
-	if (apply->font_weight != CSS_FONT_WEIGHT_INHERIT)
-		style->font_weight = apply->font_weight;
-	if (apply->font_style != CSS_FONT_STYLE_INHERIT)
-		style->font_style = apply->font_style;
+	if (apply->white_space != CSS_WHITE_SPACE_INHERIT)
+		style->white_space = apply->white_space;
 
 	/* font-size */
 	f = apply->font_size.value.percent / 100;
@@ -736,6 +742,12 @@ void css_merge(struct css_style * const style, const struct css_style * const ap
 		style->display = apply->display;
 	if (apply->float_ != CSS_FLOAT_INHERIT)
 		style->float_ = apply->float_;
+	if (apply->font_size.size != CSS_FONT_SIZE_INHERIT)
+		style->font_size = apply->font_size;
+	if (apply->font_style != CSS_FONT_STYLE_INHERIT)
+		style->font_style = apply->font_style;
+	if (apply->font_weight != CSS_FONT_WEIGHT_INHERIT)
+		style->font_weight = apply->font_weight;
 	if (apply->height.height != CSS_HEIGHT_INHERIT)
 		style->height = apply->height;
 	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT)
@@ -744,12 +756,8 @@ void css_merge(struct css_style * const style, const struct css_style * const ap
 		style->text_align = apply->text_align;
 	if (apply->width.width != CSS_WIDTH_INHERIT)
 		style->width = apply->width;
-	if (apply->font_weight != CSS_FONT_WEIGHT_INHERIT)
-		style->font_weight = apply->font_weight;
-	if (apply->font_style != CSS_FONT_STYLE_INHERIT)
-		style->font_style = apply->font_style;
-	if (apply->font_size.size != CSS_FONT_SIZE_INHERIT)
-		style->font_size = apply->font_size;
+	if (apply->white_space != CSS_WHITE_SPACE_INHERIT)
+		style->white_space = apply->white_space;
 }
 
 

@@ -19,7 +19,7 @@
 
 struct property_entry {
 	const char name[20];
-	void (*parse) (struct css_style * const s, const struct node * const v);
+	void (*parse) (struct css_style * const s, const struct css_node * const v);
 };
 
 struct colour_entry {
@@ -33,24 +33,25 @@ struct font_size_entry {
 };
 
 
-static int compare_selectors(const struct node *n0, const struct node *n1);
+static int compare_selectors(const struct css_node *n0, const struct css_node *n1);
 static int parse_length(struct css_length * const length,
-		const struct node * const v, bool non_negative);
-static colour parse_colour(const struct node * const v);
-static void parse_background(struct css_style * const s, const struct node * v);
-static void parse_background_color(struct css_style * const s, const struct node * const v);
-static void parse_clear(struct css_style * const s, const struct node * const v);
-static void parse_color(struct css_style * const s, const struct node * const v);
-static void parse_display(struct css_style * const s, const struct node * const v);
-static void parse_float(struct css_style * const s, const struct node * const v);
-static void parse_font(struct css_style * const s, const struct node * v);
-static void parse_font_size(struct css_style * const s, const struct node * const v);
-static void parse_font_style(struct css_style * const s, const struct node * const v);
-static void parse_font_weight(struct css_style * const s, const struct node * const v);
-static void parse_height(struct css_style * const s, const struct node * const v);
-static void parse_line_height(struct css_style * const s, const struct node * const v);
-static void parse_text_align(struct css_style * const s, const struct node * const v);
-static void parse_width(struct css_style * const s, const struct node * const v);
+		const struct css_node * const v, bool non_negative);
+static colour parse_colour(const struct css_node * const v);
+static void parse_background(struct css_style * const s, const struct css_node * v);
+static void parse_background_color(struct css_style * const s, const struct css_node * const v);
+static void parse_clear(struct css_style * const s, const struct css_node * const v);
+static void parse_color(struct css_style * const s, const struct css_node * const v);
+static void parse_display(struct css_style * const s, const struct css_node * const v);
+static void parse_float(struct css_style * const s, const struct css_node * const v);
+static void parse_font(struct css_style * const s, const struct css_node * v);
+static void parse_font_size(struct css_style * const s, const struct css_node * const v);
+static void parse_font_style(struct css_style * const s, const struct css_node * const v);
+static void parse_font_weight(struct css_style * const s, const struct css_node * const v);
+static void parse_height(struct css_style * const s, const struct css_node * const v);
+static void parse_line_height(struct css_style * const s, const struct css_node * const v);
+static void parse_text_align(struct css_style * const s, const struct css_node * const v);
+static void parse_width(struct css_style * const s, const struct css_node * const v);
+static void parse_white_space(struct css_style * const s, const struct css_node * const v);
 
 
 /* table of property parsers: MUST be sorted by property name */
@@ -68,6 +69,7 @@ static const struct property_entry property_table[] = {
 	{ "height",           parse_height },
 	{ "line-height",      parse_line_height },
 	{ "text-align",       parse_text_align },
+	{ "white-space",      parse_white_space },
 	{ "width",            parse_width },
 };
 
@@ -111,12 +113,12 @@ static const struct font_size_entry font_size_table[] = {
  */
 
 void css_add_ruleset(struct content *c,
-		struct node *selector,
-		struct node *declaration)
+		struct css_node *selector,
+		struct css_node *declaration)
 {
 	bool found;
 	struct css_stylesheet *stylesheet = c->data.css.css;
-	struct node *n, *sel, *next_sel, *prev;
+	struct css_node *n, *sel, *next_sel, *prev;
 	struct css_style *style;
 	unsigned int hash;
 
@@ -125,13 +127,13 @@ void css_add_ruleset(struct content *c,
 
 		/*LOG(("+++"));
 		for (n = sel; n != 0; n = n->right) {
-			struct node *m;
+			struct css_node *m;
 			if (n->data != 0)
 				fprintf(stderr, "%s", n->data);
 			for (m = n->left; m != 0; m = m->next) {
 				switch (m->type) {
-					case NODE_ID: fprintf(stderr, "%s", m->data); break;
-					case NODE_CLASS: fprintf(stderr, ".%s", m->data); break;
+					case CSS_NODE_ID: fprintf(stderr, "%s", m->data); break;
+					case CSS_NODE_CLASS: fprintf(stderr, ".%s", m->data); break;
 					default: fprintf(stderr, "unexpected node");
 				}
 			}
@@ -186,12 +188,12 @@ void css_add_ruleset(struct content *c,
 }
 
 
-void css_add_declarations(struct css_style *style, struct node *declaration)
+void css_add_declarations(struct css_style *style, struct css_node *declaration)
 {
-	struct node *n;
+	struct css_node *n;
 	for (n = declaration; n != 0; n = n->next) {
 		struct property_entry *p;
-		assert(n->type == NODE_DECLARATION && n->data != 0 && n->left != 0);
+		assert(n->type == CSS_NODE_DECLARATION && n->data != 0 && n->left != 0);
 		p = bsearch(n->data, property_table,
 				sizeof(property_table) / sizeof(property_table[0]),
 				sizeof(property_table[0]), strcasecmp);
@@ -202,9 +204,9 @@ void css_add_declarations(struct css_style *style, struct node *declaration)
 }
 
 
-int compare_selectors(const struct node *n0, const struct node *n1)
+int compare_selectors(const struct css_node *n0, const struct css_node *n1)
 {
-	struct node *m0, *m1;
+	struct css_node *m0, *m1;
 	unsigned int count0 = 0, count1 = 0;
 
 	/* compare element name */
@@ -239,7 +241,7 @@ int compare_selectors(const struct node *n0, const struct node *n1)
 	}
 
 	/* compare ancestors */
-	if (n0->comb == COMB_NONE)
+	if (n0->comb == CSS_COMB_NONE)
 		return 1;
 
 	return compare_selectors(n0->right, n1->right);
@@ -251,14 +253,14 @@ int compare_selectors(const struct node *n0, const struct node *n1)
  * property parsers
  */
 
-/* TODO: consider NODE_NUMBER whenever a value may be '0' */
+/* TODO: consider CSS_NODE_NUMBER whenever a value may be '0' */
 
 int parse_length(struct css_length * const length,
-		const struct node * const v, bool non_negative)
+		const struct css_node * const v, bool non_negative)
 {
 	css_unit u;
 	float value;
-	if (v->type != NODE_DIMENSION)
+	if (v->type != CSS_NODE_DIMENSION)
 		return 1;
 	u = css_unit_parse(v->data + strspn(v->data, "0123456789+-."));
 	if (u == CSS_UNIT_UNKNOWN)
@@ -284,7 +286,7 @@ colour named_colour(const char *name)
 }
 
 
-colour parse_colour(const struct node * const v)
+colour parse_colour(const struct css_node * const v)
 {
 	colour c = CSS_COLOR_NONE;
 	int len;
@@ -292,7 +294,7 @@ colour parse_colour(const struct node * const v)
 	struct colour_entry *col;
 
 	switch (v->type) {
-		case NODE_HASH:
+		case CSS_NODE_HASH:
 			len = strlen(v->data);
 			if (len == 4) {
 				if (sscanf(v->data + 1, "%1x%1x%1x", &r, &g, &b) == 3)
@@ -303,11 +305,11 @@ colour parse_colour(const struct node * const v)
 			}
 			break;
 
-		case NODE_FUNCTION:
+		case CSS_NODE_FUNCTION:
 			/* TODO: rgb(r, g, b) */
 			break;
 
-		case NODE_IDENT:
+		case CSS_NODE_IDENT:
 			col = bsearch(v->data, colour_table,
 					sizeof(colour_table) / sizeof(colour_table[0]),
 					sizeof(colour_table[0]), strcasecmp);
@@ -323,14 +325,14 @@ colour parse_colour(const struct node * const v)
 }
 
 
-void parse_background(struct css_style * const s, const struct node * v)
+void parse_background(struct css_style * const s, const struct css_node * v)
 {
 	colour c;
 	for (; v; v = v->next) {
 		switch (v->type) {
-			case NODE_HASH:
-			case NODE_FUNCTION:
-			case NODE_IDENT:
+			case CSS_NODE_HASH:
+			case CSS_NODE_FUNCTION:
+			case CSS_NODE_IDENT:
 				c = parse_colour(v);
 				if (c != CSS_COLOR_NONE)
 					s->background_color = c;
@@ -341,51 +343,51 @@ void parse_background(struct css_style * const s, const struct node * v)
 	}
 }
 
-void parse_background_color(struct css_style * const s, const struct node * const v)
+void parse_background_color(struct css_style * const s, const struct css_node * const v)
 {
 	colour c = parse_colour(v);
 	if (c != CSS_COLOR_NONE)
 		s->background_color = c;
 }
 
-void parse_clear(struct css_style * const s, const struct node * const v)
+void parse_clear(struct css_style * const s, const struct css_node * const v)
 {
 	css_clear z;
-	if (v->type != NODE_IDENT || v->next != 0)
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
 	z = css_clear_parse(v->data);
 	if (z != CSS_CLEAR_UNKNOWN)
 		s->clear = z;
 }
 
-void parse_color(struct css_style * const s, const struct node * const v)
+void parse_color(struct css_style * const s, const struct css_node * const v)
 {
 	colour c = parse_colour(v);
 	if (c != CSS_COLOR_NONE)
 		s->color = c;
 }
 
-void parse_display(struct css_style * const s, const struct node * const v)
+void parse_display(struct css_style * const s, const struct css_node * const v)
 {
 	css_display z;
-	if (v->type != NODE_IDENT || v->next != 0)
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
 	z = css_display_parse(v->data);
 	if (z != CSS_DISPLAY_UNKNOWN)
 		s->display = z;
 }
 
-void parse_float(struct css_style * const s, const struct node * const v)
+void parse_float(struct css_style * const s, const struct css_node * const v)
 {
 	css_float z;
-	if (v->type != NODE_IDENT || v->next != 0)
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
 	z = css_float_parse(v->data);
 	if (z != CSS_FLOAT_UNKNOWN)
 		s->float_ = z;
 }
 
-void parse_font(struct css_style * const s, const struct node * v)
+void parse_font(struct css_style * const s, const struct css_node * v)
 {
 	css_font_style fs;
 	css_font_weight fw;
@@ -395,7 +397,7 @@ void parse_font(struct css_style * const s, const struct node * v)
 	s->line_height.value.absolute = 1.3;
 	for (; v; v = v->next) {
 		switch (v->type) {
-			case NODE_IDENT:
+			case CSS_NODE_IDENT:
 				/* font-style, font-variant, or font-weight */
 				fs = css_font_style_parse(v->data);
 				if (fs != CSS_FONT_STYLE_UNKNOWN) {
@@ -407,11 +409,11 @@ void parse_font(struct css_style * const s, const struct node * v)
 					s->font_weight = fw;
 					break;
 				}
-			case NODE_PERCENTAGE:
-			case NODE_DIMENSION:
+			case CSS_NODE_PERCENTAGE:
+			case CSS_NODE_DIMENSION:
 				parse_font_size(s, v);
 				break;
-			case NODE_DELIM:
+			case CSS_NODE_DELIM:
 				if (v->data[0] == '/' && v->data[1] == 0 &&
 						v->next) {
 					v = v->next;
@@ -424,11 +426,11 @@ void parse_font(struct css_style * const s, const struct node * v)
 	}
 }
 
-void parse_font_size(struct css_style * const s, const struct node * const v)
+void parse_font_size(struct css_style * const s, const struct css_node * const v)
 {
 	struct font_size_entry *fs;
 	switch (v->type) {
-		case NODE_IDENT:
+		case CSS_NODE_IDENT:
 			fs = bsearch(v->data, font_size_table,
 					sizeof(font_size_table) / sizeof(font_size_table[0]),
 					sizeof(font_size_table[0]), strcasecmp);
@@ -445,12 +447,12 @@ void parse_font_size(struct css_style * const s, const struct node * const v)
 		        }
 		        break;
 
-		case NODE_PERCENTAGE:
+		case CSS_NODE_PERCENTAGE:
 			s->font_size.size = CSS_FONT_SIZE_PERCENT;
 			s->font_size.value.percent = atof(v->data);
 			break;
 
-		case NODE_DIMENSION:
+		case CSS_NODE_DIMENSION:
 			if (parse_length(&s->font_size.value.length, v, true) == 0)
 				s->font_size.size = CSS_FONT_SIZE_LENGTH;
 			break;
@@ -460,68 +462,78 @@ void parse_font_size(struct css_style * const s, const struct node * const v)
 	}
 }
 
-void parse_font_style(struct css_style * const s, const struct node * const v)
+void parse_font_style(struct css_style * const s, const struct css_node * const v)
 {
 	css_font_style z;
-	if (v->type != NODE_IDENT || v->next != 0)
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
 	z = css_font_style_parse(v->data);
 	if (z != CSS_FONT_STYLE_UNKNOWN)
 		s->font_style = z;
 }
 
-void parse_font_weight(struct css_style * const s, const struct node * const v)
+void parse_font_weight(struct css_style * const s, const struct css_node * const v)
 {
 	css_font_weight z;
-	if (v->type != NODE_IDENT || v->next != 0)
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
 	z = css_font_weight_parse(v->data);
 	if (z != CSS_FONT_WEIGHT_UNKNOWN)
 		s->font_weight = z;
 }
-void parse_height(struct css_style * const s, const struct node * const v)
+void parse_height(struct css_style * const s, const struct css_node * const v)
 {
-	if (v->type == NODE_IDENT && strcasecmp(v->data, "auto") == 0)
+	if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "auto") == 0)
 		s->height.height = CSS_HEIGHT_AUTO;
-	else if (v->type == NODE_DIMENSION && parse_length(&s->height.length, v, true) == 0)
+	else if (v->type == CSS_NODE_DIMENSION && parse_length(&s->height.length, v, true) == 0)
 		s->height.height = CSS_HEIGHT_LENGTH;
 }
 
-void parse_line_height(struct css_style * const s, const struct node * const v)
+void parse_line_height(struct css_style * const s, const struct css_node * const v)
 {
-	if (v->type == NODE_IDENT && strcasecmp(v->data, "normal") == 0) {
+	if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "normal") == 0) {
 		s->line_height.size = CSS_LINE_HEIGHT_ABSOLUTE;
 		s->line_height.value.absolute = 1.3;
-	} else if (v->type == NODE_PERCENTAGE) {
+	} else if (v->type == CSS_NODE_PERCENTAGE) {
 		s->line_height.size = CSS_LINE_HEIGHT_PERCENT;
 		s->line_height.value.percent = atof(v->data);
-	} else if (v->type == NODE_DIMENSION &&
+	} else if (v->type == CSS_NODE_DIMENSION &&
 			parse_length(&s->line_height.value.length, v, true) == 0) {
 		s->line_height.size = CSS_LINE_HEIGHT_LENGTH;
-	} else if (v->type == NODE_NUMBER) {
+	} else if (v->type == CSS_NODE_NUMBER) {
 		s->line_height.size = CSS_LINE_HEIGHT_ABSOLUTE;
 		s->line_height.value.absolute = atof(v->data);
 	}
 }
 
-void parse_text_align(struct css_style * const s, const struct node * const v)
+void parse_text_align(struct css_style * const s, const struct css_node * const v)
 {
 	css_text_align z;
-	if (v->type != NODE_IDENT || v->next != 0)
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
 	z = css_text_align_parse(v->data);
 	if (z != CSS_TEXT_ALIGN_UNKNOWN)
 		s->text_align = z;
 }
 
-void parse_width(struct css_style * const s, const struct node * const v)
+void parse_width(struct css_style * const s, const struct css_node * const v)
 {
-	if (v->type == NODE_IDENT && strcasecmp(v->data, "auto") == 0)
+	if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "auto") == 0)
 		s->width.width = CSS_WIDTH_AUTO;
-	else if (v->type == NODE_PERCENTAGE) {
+	else if (v->type == CSS_NODE_PERCENTAGE) {
 		s->width.width = CSS_WIDTH_PERCENT;
 		s->width.value.percent = atof(v->data);
-	} else if (v->type == NODE_DIMENSION &&
+	} else if (v->type == CSS_NODE_DIMENSION &&
 			parse_length(&s->width.value.length, v, true) == 0)
 		s->width.width = CSS_WIDTH_LENGTH;
+}
+
+void parse_white_space(struct css_style * const s, const struct css_node * const v)
+{
+	css_white_space z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_white_space_parse(v->data);
+	if (z != CSS_WHITE_SPACE_UNKNOWN)
+		s->white_space = z;
 }

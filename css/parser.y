@@ -69,19 +69,19 @@ selector_list(A) ::= selector_list(B) COMMA selector(C).
 
 selector(A) ::= simple_selector(B).
 		{ A = B; }
-selector(A) ::= selector(B) combinator(C) simple_selector(D).
+selector(A) ::= selector(B) css_combinator(C) simple_selector(D).
 		{ D->right = B; D->comb = C; A = D;
 		A->specificity += B->specificity; }
 
-combinator(A) ::= .
-		{ A = COMB_ANCESTOR; }
-combinator(A) ::= PLUS.
-		{ A = COMB_PRECEDED; }
-combinator(A) ::= GT.
-		{ A = COMB_PARENT; }
+css_combinator(A) ::= .
+		{ A = CSS_COMB_ANCESTOR; }
+css_combinator(A) ::= PLUS.
+		{ A = CSS_COMB_PRECEDED; }
+css_combinator(A) ::= GT.
+		{ A = CSS_COMB_PARENT; }
 
 simple_selector(A) ::= element_name(B) detail_list(C).
-		{ A = css_new_node(NODE_SELECTOR, B, C, 0);
+		{ A = css_new_node(CSS_NODE_SELECTOR, B, C, 0);
 		A->specificity = (B ? 1 : 0) + (C ? C->specificity : 0); }
 
 element_name(A) ::= .
@@ -92,31 +92,31 @@ element_name(A) ::= IDENT(B).
 detail_list(A) ::= .
 		{ A = 0; }
 detail_list(A) ::= HASH(B) detail_list(C).
-		{ A = css_new_node(NODE_ID, B, 0, 0);
+		{ A = css_new_node(CSS_NODE_ID, B, 0, 0);
 		A->specificity = 0x10000 + (C ? C->specificity : 0); A->next = C; }
 detail_list(A) ::= DOT IDENT(B) detail_list(C).
-		{ A = css_new_node(NODE_CLASS, B, 0, 0);
+		{ A = css_new_node(CSS_NODE_CLASS, B, 0, 0);
 		A->specificity = 0x100 + (C ? C->specificity : 0); A->next = C; }
 detail_list(A) ::= LBRAC IDENT(B) RBRAC detail_list(C).
-		{ A = css_new_node(NODE_ATTRIB, B, 0, 0);
+		{ A = css_new_node(CSS_NODE_ATTRIB, B, 0, 0);
 		A->specificity = 0x100 + (C ? C->specificity : 0); A->next = C; }
 detail_list(A) ::= LBRAC IDENT(B) EQUALS IDENT(C) RBRAC detail_list(D).
-		{ A = css_new_node(NODE_ATTRIB_EQ, B, 0, 0); A->data2 = C;
+		{ A = css_new_node(CSS_NODE_ATTRIB_EQ, B, 0, 0); A->data2 = C;
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) EQUALS STRING(C) RBRAC detail_list(D).
-		{ A = css_new_node(NODE_ATTRIB_EQ, B, 0, 0); A->data2 = css_unquote(C);
+		{ A = css_new_node(CSS_NODE_ATTRIB_EQ, B, 0, 0); A->data2 = css_unquote(C);
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) INCLUDES IDENT(C) RBRAC detail_list(D).
-		{ A = css_new_node(NODE_ATTRIB_INC, B, 0, 0); A->data2 = C;
+		{ A = css_new_node(CSS_NODE_ATTRIB_INC, B, 0, 0); A->data2 = C;
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) INCLUDES STRING(C) RBRAC detail_list(D).
-		{ A = css_new_node(NODE_ATTRIB_INC, B, 0, 0); A->data2 = css_unquote(C);
+		{ A = css_new_node(CSS_NODE_ATTRIB_INC, B, 0, 0); A->data2 = css_unquote(C);
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) DASHMATCH IDENT(C) RBRAC detail_list(D).
-		{ A = css_new_node(NODE_ATTRIB_DM, B, 0, 0); A->data2 = C;
+		{ A = css_new_node(CSS_NODE_ATTRIB_DM, B, 0, 0); A->data2 = C;
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) DASHMATCH STRING(C) RBRAC detail_list(D).
-		{ A = css_new_node(NODE_ATTRIB_DM, B, 0, 0); A->data2 = css_unquote(C);
+		{ A = css_new_node(CSS_NODE_ATTRIB_DM, B, 0, 0); A->data2 = css_unquote(C);
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 /* TODO: pseudo */
 
@@ -130,7 +130,7 @@ declaration_list(A) ::= declaration(B) SEMI declaration_list(C).
 		{ B->next = C; A = B; }
 
 declaration(A) ::= property(B) COLON value(C).
-		{ A = css_new_node(NODE_DECLARATION, B, C, 0); }
+		{ A = css_new_node(CSS_NODE_DECLARATION, B, C, 0); }
 
 property(A) ::= IDENT(B).
 		{ A = B; }
@@ -151,41 +151,41 @@ any_list(A) ::= any(B) any_list(C).
 /*any_list_1(A) ::= any(B) any_list(C).
 		{ B->next = C; A = B; }*/
 any(A) ::= IDENT(B).
-		{ A = css_new_node(NODE_IDENT, B, 0, 0); }
+		{ A = css_new_node(CSS_NODE_IDENT, B, 0, 0); }
 any(A) ::= NUMBER(B).
-		{ A = css_new_node(NODE_NUMBER, B, 0, 0); }
+		{ A = css_new_node(CSS_NODE_NUMBER, B, 0, 0); }
 any(A) ::= PERCENTAGE(B).
-		{ A = css_new_node(NODE_PERCENTAGE, B, 0, 0); }
+		{ A = css_new_node(CSS_NODE_PERCENTAGE, B, 0, 0); }
 any(A) ::= DIMENSION(B).
-		{ A = css_new_node(NODE_DIMENSION, B, 0, 0); }
+		{ A = css_new_node(CSS_NODE_DIMENSION, B, 0, 0); }
 any(A) ::= STRING(B).
-		{ A = css_new_node(NODE_STRING, css_unquote(B), 0, 0); }
+		{ A = css_new_node(CSS_NODE_STRING, css_unquote(B), 0, 0); }
 any(A) ::= DELIM(B).
-		{ A = css_new_node(NODE_DELIM, B, 0, 0); }
+		{ A = css_new_node(CSS_NODE_DELIM, B, 0, 0); }
 any(A) ::= URI(B).
-		{ A = css_new_node(NODE_URI, B, 0, 0); }
+		{ A = css_new_node(CSS_NODE_URI, B, 0, 0); }
 any(A) ::= HASH(B).
-		{ A = css_new_node(NODE_HASH, B, 0, 0); }
+		{ A = css_new_node(CSS_NODE_HASH, B, 0, 0); }
 any(A) ::= UNICODE_RANGE(B).
-		{ A = css_new_node(NODE_UNICODE_RANGE, B, 0, 0); }
+		{ A = css_new_node(CSS_NODE_UNICODE_RANGE, B, 0, 0); }
 any(A) ::= INCLUDES.
-		{ A = css_new_node(NODE_INCLUDES, 0, 0, 0); }
+		{ A = css_new_node(CSS_NODE_INCLUDES, 0, 0, 0); }
 any(A) ::= FUNCTION(B).
-		{ A = css_new_node(NODE_FUNCTION, B, 0, 0); }
+		{ A = css_new_node(CSS_NODE_FUNCTION, B, 0, 0); }
 any(A) ::= DASHMATCH.
-		{ A = css_new_node(NODE_DASHMATCH, 0, 0, 0); }
+		{ A = css_new_node(CSS_NODE_DASHMATCH, 0, 0, 0); }
 any(A) ::= COLON.
-		{ A = css_new_node(NODE_COLON, 0, 0, 0); }
+		{ A = css_new_node(CSS_NODE_COLON, 0, 0, 0); }
 any(A) ::= COMMA.
-		{ A = css_new_node(NODE_COMMA, 0, 0, 0); }
+		{ A = css_new_node(CSS_NODE_COMMA, 0, 0, 0); }
 any(A) ::= PLUS.
-		{ A = css_new_node(NODE_PLUS, 0, 0, 0); }
+		{ A = css_new_node(CSS_NODE_PLUS, 0, 0, 0); }
 any(A) ::= GT.
-		{ A = css_new_node(NODE_GT, 0, 0, 0); }
+		{ A = css_new_node(CSS_NODE_GT, 0, 0, 0); }
 any(A) ::= LPAREN any_list(B) RPAREN.
-		{ A = css_new_node(NODE_PAREN, 0, B, 0); }
+		{ A = css_new_node(CSS_NODE_PAREN, 0, B, 0); }
 any(A) ::= LBRAC any_list(B) RBRAC.
-		{ A = css_new_node(NODE_BRAC, 0, B, 0); }
+		{ A = css_new_node(CSS_NODE_BRAC, 0, B, 0); }
 
 
 /* lemon directives */
@@ -201,17 +201,17 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 %token_type { char* }
 %token_destructor { xfree($$); }
 
-%type selector_list { struct node * }
-%type selector { struct node * }
-%type combinator { combinator }
-%type simple_selector { struct node * }
-%type detail_list { struct node * }
-%type declaration_list { struct node * }
-%type declaration { struct node * }
-%type value { struct node * }
-%type any_list { struct node * }
-%type any_list_1 { struct node * }
-%type any { struct node * }
+%type selector_list { struct css_node * }
+%type selector { struct css_node * }
+%type css_combinator { css_combinator }
+%type simple_selector { struct css_node * }
+%type detail_list { struct css_node * }
+%type declaration_list { struct css_node * }
+%type declaration { struct css_node * }
+%type value { struct css_node * }
+%type any_list { struct css_node * }
+%type any_list_1 { struct css_node * }
+%type any { struct css_node * }
 
 %destructor selector_list { css_free_node($$); }
 %destructor selector { css_free_node($$); }
