@@ -409,13 +409,30 @@ void browser_window_stop(struct browser_window *bw)
  * Reload the page in a browser window.
  *
  * \param  bw  browser window
+ * \param  all whether to reload all objects associated with the page
  */
 
-void browser_window_reload(struct browser_window *bw)
+void browser_window_reload(struct browser_window *bw, bool all)
 {
+	struct content *c;
+	unsigned int i;
+
 	if (!bw->current_content || bw->loading_content)
 		return;
 
+	if (all && bw->current_content->type == CONTENT_HTML) {
+		c = bw->current_content;
+		/* invalidate objects */
+		for (i=0; i!=c->data.html.object_count; i++) {
+			if (c->data.html.object[i].content != 0)
+				c->data.html.object[i].content->fresh = false;
+		}
+		/* invalidate stylesheets */
+		for (i=2; i!=c->data.html.stylesheet_count; i++) {
+			if (c->data.html.stylesheet_content[i] != 0)
+				c->data.html.stylesheet_content[i]->fresh = false;
+		}
+	}
 	bw->current_content->fresh = false;
 	browser_window_go_post(bw, bw->current_content->url, 0, 0, false);
 }

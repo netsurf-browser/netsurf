@@ -514,7 +514,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						ro_gui_prepare_navigate(current_gui);
 						break;
 					case 3: /* Reload */
-						browser_window_reload(current_gui->data.browser.bw);
+						browser_window_reload(current_gui->data.browser.bw, false);
 						break;
 					case 4: /* Stop */
 						browser_window_stop(current_gui->data.browser.bw);
@@ -1181,7 +1181,7 @@ void ro_gui_menu_object_reload(void)
 
 	if (box) {
 		box->object->fresh = false;
-		browser_window_reload(current_gui->data.browser.bw);
+		browser_window_reload(current_gui->data.browser.bw, false);
 	}
 }
 

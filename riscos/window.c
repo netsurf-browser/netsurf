@@ -88,7 +88,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 		open_centred = false;
 	} else {
 		ro_gui_screen_size(&screen_width, &screen_height);
-		
+
 		/*	Check if we have a preferred position
 		*/
 		if ((option_window_screen_width != 0) && (option_window_screen_height != 0)) {
@@ -115,7 +115,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 		window.visible.x1 = window.visible.x0 + win_width;
 		window.visible.y1 = window.visible.y0 + win_height;
 	}
-	
+
 	/*	Set the general window characteristics
 	*/
 	window.xscroll = 0;
@@ -166,7 +166,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 		free(g);
 		return 0;
 	}
-	
+
 	ro_theme_create_toolbar(g);
 
 	g->next = window_list;
@@ -188,14 +188,14 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 		warn_user("WimpError", error->errmess);
 		return g;
 	}
-	
+
 	/*	Only fix the centralisation if we've opened the window centred
 	*/
 	if (open_centred) {
 		scroll_width = ro_get_vscroll_width(g->window);
 		state.visible.x0 -= scroll_width;
 	}
-	
+
 	/*	Open the window at the top of the stack
 	*/
 	state.next = wimp_TOP;
@@ -699,7 +699,7 @@ void ro_gui_window_mouse_at(wimp_pointer* pointer)
  */
 
 void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
-  	
+
 	/*	Reject Menu clicks
 	*/
 	if (pointer->buttons == wimp_CLICK_MENU) return;
@@ -719,7 +719,10 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
 			break;
 
 		case ICON_TOOLBAR_RELOAD:
-			browser_window_reload(g->data.browser.bw);
+			if (pointer->buttons == wimp_CLICK_SELECT)
+				browser_window_reload(g->data.browser.bw, false);
+			else if (pointer->buttons == wimp_CLICK_ADJUST)
+				browser_window_reload(g->data.browser.bw, true);
 			break;
 
 		case ICON_TOOLBAR_HISTORY:
@@ -1029,7 +1032,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			browser_window_create(g->url, g->data.browser.bw);
 			return true;
 		case 18:	/* CTRL+R */
-			browser_window_reload(g->data.browser.bw);
+			browser_window_reload(g->data.browser.bw, false);
 			return true;
 
 		case 17:       /* CTRL+Q (Zoom out) */
