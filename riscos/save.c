@@ -170,7 +170,8 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			break;
 
 		case GUI_SAVE_DRAW:
-			save_as_draw(c, path);
+			if (!save_as_draw(c, path))
+				return;
 			break;
 
 		case GUI_SAVE_TEXT:
