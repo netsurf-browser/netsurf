@@ -1,5 +1,5 @@
 /**
- * $Id: font.c,v 1.3 2002/09/26 21:38:33 bursa Exp $
+ * $Id: font.c,v 1.4 2002/10/05 17:50:21 bursa Exp $
  */
 
 #include <assert.h>
@@ -9,6 +9,7 @@
 #include "netsurf/riscos/font.h"
 #include "netsurf/render/utils.h"
 #include "netsurf/desktop/gui.h"
+#include "netsurf/utils/log.h"
 #include "oslib/font.h"
 
 /**
@@ -184,7 +185,15 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 	data = xcalloc(1, sizeof(*data));
 
 	for (i = 0; i < FONT_CHUNKS; i++) {
-		font_f handle = font_find_font(font_table[f][i], size, size, 0, 0, 0, 0);
+		font_f handle;
+		os_error *error;
+
+		LOG(("font_find_font '%s' %i", font_table[f][i], size));
+		error = xfont_find_font(font_table[f][i], size, size, 0, 0, &handle, 0, 0);
+		if (error != 0) {
+			fprintf(stderr, "%s\n", error->errmess);
+			die("font_find_font failed");
+		}
 		data->handle[i] = handle;
 	}
 	data->size = size;
