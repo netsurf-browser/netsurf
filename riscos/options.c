@@ -1,5 +1,5 @@
 /**
- * $Id: options.c,v 1.3 2003/06/06 02:14:28 jmb Exp $
+ * $Id: options.c,v 1.4 2003/06/08 04:00:05 jmb Exp $
  */
 
 #include "netsurf/desktop/options.h"
@@ -98,7 +98,7 @@ void options_write(struct options* opt, char* filename)
 void options_init(struct options* opt)
 {
 	opt->http = 0;
-	opt->http_proxy = strdup("http://www-cache.freeserve.co.uk");
+	opt->http_proxy = strdup("");
 	opt->http_port = 8080;
 	opt->use_mouse_gestures = 0;
 	opt->allow_text_selection = 1;
@@ -120,13 +120,21 @@ void options_read(struct options* opt, char* filename)
 
 	LOG(("Testing filename"));
 	if (filename == NULL)
-		fn = "Choices:NetSurf.Choices";
+		strcat(fn, "Choices");
 	else
 		strcat(fn, filename);
 
 	LOG(("Getting file info"));
   	if (xmessagetrans_file_info(fn, &flags, &size) != NULL)
 		return;
+
+        /* catch empty choices file - this is a kludge but should work */
+        if (size <= 10) {
+
+                LOG(("Empty Choices file - using defaults"));
+                options_init(opt);
+                return;
+        }
 
 	LOG(("Allocating %d bytes", size));
   	data = xcalloc(size, sizeof(char));

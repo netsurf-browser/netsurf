@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.30 2003/06/04 18:42:13 jmb Exp $
+ * $Id: gui.c,v 1.31 2003/06/08 04:00:05 jmb Exp $
  */
 
 #include "netsurf/desktop/options.h"
@@ -1104,6 +1104,10 @@ void gui_init(int argc, char** argv)
   wimp_icon_create iconbar;
   wimp_version_no version;
   char theme_fname[256];
+  int *varsize;
+  char *var;
+  os_error *e;
+  fileswitch_object_type *ot;
 
 /*   __riscosify_control = __RISCOSIFY_NO_PROCESS; */
 
@@ -1119,10 +1123,35 @@ void gui_init(int argc, char** argv)
   strcpy(iconbar.icon.data.sprite, "!netsurf");
   ro_gui_iconbar_i = wimp_create_icon(&iconbar);
 
-  if (OPTIONS.theme != NULL)
-  	sprintf(theme_fname, "<NetSurf$Dir>.Themes.%s", OPTIONS.theme);
-  else
+  if (OPTIONS.theme != NULL) {
+
+        /* get size of <netsurf$dir> */
+        e = xos_read_var_val_size ("NetSurf$Dir",0,os_VARTYPE_STRING,
+                                   &varsize, NULL, NULL);
+        var = xcalloc((~((int)varsize) + 10),sizeof(char));
+        /* get real value of <netsurf$dir> */
+        e = xos_read_var_val ("NetSurf$Dir", var, (~(int)varsize), 0,
+                              os_VARTYPE_STRING, NULL, NULL, NULL);
+        strcat(var, ".Themes.");
+        /* check if theme directory exists */
+        e = xosfile_read_stamped_path ((const char*)OPTIONS.theme,
+                                       (const char*)var,
+                                       &ot, NULL, NULL, NULL, NULL, NULL);
+        xfree(var);
+        /* yes -> use this theme */
+        if (ot != fileswitch_NOT_FOUND && ot == fileswitch_IS_DIR) {
+	  sprintf(theme_fname, "<NetSurf$Dir>.Themes.%s", OPTIONS.theme);
+	}
+	/* no -> use default theme */
+	else {
+	  OPTIONS.theme = strdup("Default");
 	  sprintf(theme_fname, "<NetSurf$Dir>.Themes.Default");
+        }
+  }
+  else {
+	  sprintf(theme_fname, "<NetSurf$Dir>.Themes.Default");
+	  OPTIONS.theme = strdup("Default");
+  }
   LOG(("Using theme '%s' - from '%s'",theme_fname, OPTIONS.theme));
   current_theme = ro_theme_create(theme_fname);
 
