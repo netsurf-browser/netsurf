@@ -550,8 +550,7 @@ bool ro_gui_hotlist_load_entry(FILE *fp, struct hotlist_entry *entry) {
 		*/
 		if (strncmp("<!-- ", load_buf, 5) == 0) {
 		  	val_length = strlen(load_buf) - 5 - 4;
-		  	load_buf[val_length + 5] = '\0';
-
+		  	load_buf[val_length + 4] = '\0';
 			if (strncmp("Title:", load_buf + 5, 6) == 0) {
 			  	if (title) free(title);
 				title = malloc(val_length);
@@ -692,6 +691,7 @@ struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char *url,
 			return NULL;
 		}
 		strcpy(entry->url, url);
+		entry->url = strip(entry->url);
 	}
 
 	/*	Add the title if we have one, or use the URL instead
@@ -705,6 +705,7 @@ struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char *url,
 			return NULL;
 		}
 		strcpy(entry->title, title);
+		entry->title = strip(entry->title);
 	} else {
 		entry->title = entry->url;
 	}
@@ -1839,13 +1840,13 @@ bool ro_gui_hotlist_keypress(int key) {
 	*/
 	state.w = hotlist_window;
 	wimp_get_window_state(&state);
-	y = state.visible.y1 - state.visible.y0 - HOTLIST_LEAF_INSET;
+	y = state.visible.y1 - state.visible.y0 - 32;
 	switch (key) {
 		case wimp_KEY_UP:
-			state.yscroll += HOTLIST_LEAF_INSET;
+			state.yscroll += 32;
 			break;
 		case wimp_KEY_DOWN:
-			state.yscroll -= HOTLIST_LEAF_INSET;
+			state.yscroll -= 32;
 			break;
 		case wimp_KEY_PAGE_UP:
 			state.yscroll += y;
