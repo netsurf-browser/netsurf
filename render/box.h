@@ -98,7 +98,6 @@ struct column {
 
 struct box;
 
-#ifdef WITH_PLUGIN
 /* parameters for <object> and related elements */
 struct object_params {
         char* data;
@@ -125,10 +124,6 @@ struct plugin_params {
         char* valuetype;
         struct plugin_params* next;
 };
-#else
-struct object_params {};
-struct plugin_params {};
-#endif
 
 /** Node in box tree. All dimensions are in pixels. */
 struct box {
