@@ -316,9 +316,9 @@ bool html_redraw_box(struct box *box,
 					}
 				}
 			}
+			/* set current background color for font painting */
+			current_background_color = box->style->background_color;
 		}
-		/* set current background color for font painting */
-		current_background_color = box->style->background_color;
 
 		if (box->background) {
 			/* clip to padding box for everything but the main window */
