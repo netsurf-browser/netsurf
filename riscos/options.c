@@ -1,5 +1,5 @@
 /**
- * $Id: options.c,v 1.4 2003/06/08 04:00:05 jmb Exp $
+ * $Id: options.c,v 1.5 2003/06/27 13:25:48 jmb Exp $
  */
 
 #include "netsurf/desktop/options.h"
@@ -63,7 +63,10 @@ void options_write(struct options* opt, char* filename)
 	char* fn, *dir;
 	FILE* f;
 
-        dir = "<Choices$Write>.NetSurf";
+        dir = xcalloc(40, sizeof(char));
+        fn = xcalloc(60, sizeof(char));
+
+        dir = strdup("<Choices$Write>.NetSurf");
         fn = strdup(dir);
         strcat(fn, ".");
 
@@ -73,6 +76,8 @@ void options_write(struct options* opt, char* filename)
 		strcat(fn, filename);
 
         xosfile_create_dir(dir, 0);
+
+        LOG(("filename: %s", fn));
 
 	f = fopen(fn, "w");
 	if (f != NULL)
@@ -91,8 +96,12 @@ void options_write(struct options* opt, char* filename)
 		fprintf(f, "\n# Theme\n");
 		fprintf(f, "RO_THEME:%s\n", opt->theme);
 	}
+	else
+	    LOG(("Couldn't open Choices file"));
 
 	fclose(f);
+	xfree(dir);
+//	xfree(fn);
 }
 
 void options_init(struct options* opt)
@@ -116,7 +125,8 @@ void options_read(struct options* opt, char* filename)
 	char* fn;
 	int size;
 
-        fn = "Choices:NetSurf.";
+        fn = xcalloc(40,sizeof(char));
+        fn = strdup("Choices:NetSurf.");
 
 	LOG(("Testing filename"));
 	if (filename == NULL)
@@ -153,6 +163,9 @@ void options_read(struct options* opt, char* filename)
 
 	xfree(opt->theme);
 	opt->theme = lookup(&cb, "RO_THEME", "Default");
+	messagetrans_close_file(&cb);
+	xfree(data);
+//	xfree(fn);
 }
 
 void options_to_ro(struct options* opt, struct ro_choices* ro)
