@@ -103,6 +103,7 @@ void html_redraw_box(struct content *content, struct box * box,
 	int padding_width, padding_height;
 	int x0, y0, x1, y1;
 	int colour;
+	font_string_flags font_flags;
 
 	x += box->x * 2 * scale;
 	y -= box->y * 2 * scale;
@@ -221,18 +222,24 @@ void html_redraw_box(struct content *content, struct box * box,
 		int py1 = y < y1 ? y : y1;
 
 		/* background colour */
-		/* optimisation: skip if fully repeated background image */
-		if (box->style->background_color != TRANSPARENT &&
-				(!box->background ||
+		if (box->style->background_color != TRANSPARENT) {
+			/* optimisation: skip if fully repeated bg image */
+			if (!box->background ||
 				box->style->background_repeat !=
-				CSS_BACKGROUND_REPEAT_REPEAT)) {
-			colourtrans_set_gcol(box->style->background_color << 8,
+				CSS_BACKGROUND_REPEAT_REPEAT) {
+
+				colourtrans_set_gcol(
+					box->style->background_color << 8,
 					colourtrans_USE_ECFS,
 					os_ACTION_OVERWRITE, 0);
-			os_plot(os_MOVE_TO, px0, py0);
-			if (px0 < px1 && py0 < py1)
-				os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
+
+				os_plot(os_MOVE_TO, px0, py0);
+
+				if (px0 < px1 && py0 < py1)
+					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
 						px1, py1);
+			}
+			/* set current background color for font painting */
 			current_background_color = box->style->background_color;
 		}
 
@@ -364,17 +371,29 @@ void html_redraw_box(struct content *content, struct box * box,
 			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		}
 
+		font_flags = font_OS_UNITS | font_GIVEN_FONT | font_KERN |
+			     font_GIVEN_LENGTH;
+
+		/* font background blending (RO3.7+) */
+		if (option_background_blending) {
+			int version;
+			os_error *e;
+
+			/* Font manager versions below 3.35 complain
+			 * about this flag being set.
+			 */
+			e = xfont_cache_addr(&version, 0, 0);
+			/**\todo should we do anything else on error? */
+			if (!e && version >= 335)
+				font_flags |= font_BLEND_FONT;
+		}
 		if (scale == 1)
-			font_paint(box->font->handle, box->text,
-					font_OS_UNITS | font_GIVEN_FONT |
-					font_KERN | font_GIVEN_LENGTH,
+			font_paint(box->font->handle, box->text, font_flags,
 					x, y - (int) (box->height * 1.5),
 					0, 0, (int) box->length);
 		else
 			font_paint(box->font->handle, box->text,
-					font_OS_UNITS | font_GIVEN_FONT |
-					font_KERN | font_GIVEN_LENGTH |
-					font_GIVEN_TRFM,
+					font_flags | font_GIVEN_TRFM,
 					x, y - (int) (box->height * 1.5 * scale),
 					0, &trfm, (int) box->length);
 
