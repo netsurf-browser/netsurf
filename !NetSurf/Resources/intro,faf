@@ -29,6 +29,7 @@ text-align, float, width &amp; height)</li>
 <a href='http://www.w3.org/Protocols/rfc2616/rfc2616.html'>HTTP</a>
 fetching</li>
 <li>Memory cache</li>
+<li>External CSS files</li>
 </ul>
 
 <h2>In Progress</h2>
@@ -36,7 +37,7 @@ fetching</li>
 <li>Improved memory handling (currently exits when memory is exhausted)</li>
 <li>Forms (display but don't submit)</li>
 <li>Images (stand-alone JPEGs so far)</li>
-<li>External CSS files</li>
+<li><em>&lt;style&gt;</em> element</li>
 </ul>
 
 <hr>

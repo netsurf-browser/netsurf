@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.9 2003/04/06 18:09:34 bursa Exp $
+ * $Id: html.c,v 1.10 2003/04/06 20:56:40 bursa Exp $
  */
 
 #include <assert.h>
@@ -202,6 +202,7 @@ void html_find_stylesheets(struct content *c)
 
 	c->data.html.stylesheet_url = xcalloc(1, sizeof(*c->data.html.stylesheet_url));
 	c->data.html.stylesheet_url[0] = "file:///%3CNetSurf$Dir%3E/Resources/CSS";
+	c->data.html.stylesheet_count = 1;
 
 	if (strcmp(head->name, "head") != 0)
 		return;

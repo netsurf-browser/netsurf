@@ -6,12 +6,10 @@ Purpose:	Open source web browser
 
 Developers:	Andrew Poole		Graphic/Other Designer
           	James Bursa		Developer (project admin)
-          	Paul F. Johnson		No specific role
           	James Shaw		No specific role (project admin)
           	Andrew Duffell		All-Hands Person
           	Phil Mellor		Developer
           	John Hoare		Developer
-          	Nick Boalch		No specific role
           	
 License:  	GNU General Public License (GPL)
 Website:  	http://netsurf.sf.net/
@@ -19,7 +17,7 @@ Website:  	http://netsurf.sf.net/
 
 About
 =====
-NetSurf is an open-source web browser for RISC OS. Its aim is to bring HTML 4 and CSS 1 standards to the RISC OS platform. The browser is being developed by a group of eight developers all with a large array of skills.
+NetSurf is an open-source web browser for RISC OS. Its aim is to bring HTML 4 and CSS standards to the RISC OS platform.
 
 Getting Started
 ===============
