@@ -12,21 +12,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libxml/HTMLparser.h"
+#include "netsurf/content/content.h"
+#include "netsurf/css/css.h"
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
 #endif
-#include "netsurf/content/content.h"
 #include "netsurf/render/box.h"
-#include "netsurf/css/css.h"
+#include "netsurf/render/font.h"
 #include "netsurf/render/layout.h"
-#ifdef riscos
-#include "netsurf/riscos/font.h"
-#else
-#include "netsurf/debug/fontd.h"
-#endif
-#include "netsurf/utils/utils.h"
 #define NDEBUG
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 
 /**
  * internal functions

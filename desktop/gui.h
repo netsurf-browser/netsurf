@@ -12,7 +12,9 @@
 typedef enum { GUI_BROWSER_WINDOW } gui_window_type;
 typedef enum { SAFE, UNSAFE } gui_safety;
 
-#include "netsurf/riscos/gui.h"
+struct ro_gui_window;
+typedef struct ro_gui_window gui_window;
+
 #include "netsurf/desktop/browser.h"
 
 struct gui_message
@@ -56,6 +58,6 @@ void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, unsigned 
 void gui_edit_textarea(struct browser_window* bw, struct gui_gadget* g);
 void gui_edit_textbox(struct browser_window* bw, struct gui_gadget* g);
 
-void gui_show_choices();
+void gui_show_choices(void);
 
 #endif

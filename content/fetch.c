@@ -60,6 +60,10 @@ static struct fetch *fetch_list = 0;
 static size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f);
 static size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f);
 
+#ifdef riscos
+extern const char * const NETSURF_DIR;
+#endif
+
 
 /**
  * fetch_init -- initialise the fetcher

@@ -7,6 +7,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -131,7 +132,7 @@ void plugin_create_sysvar(const char *mime_type, char* sysvar)
 /**
  * plugin_handleable
  * Tests whether we can handle an object using a browser plugin
- * returns TRUE if we can handle it, FALSE if we can't.
+ * returns true if we can handle it, false if we can't.
  */
 bool plugin_handleable(const char *mime_type)
 {
@@ -142,13 +143,13 @@ bool plugin_handleable(const char *mime_type)
   e = xmimemaptranslate_mime_type_to_filetype(mime_type, (bits *) &fv);
   if (e) {
     LOG(("xmimemaptranslate_mime_type_to_filetype failed: %s", e->errmess));
-    return FALSE;
+    return false;
   }
 
   sprintf(sysvar, "%s%x", ALIAS_PREFIX, fv);
   if (getenv(sysvar) == 0)
-	  return FALSE;
-  return TRUE;
+	  return false;
+  return true;
 }
 
 /**

@@ -12,9 +12,7 @@
 #include <limits.h>
 #include "libxml/HTMLparser.h"
 #include "netsurf/css/css.h"
-#ifdef riscos
-#include "netsurf/riscos/font.h"
-#endif
+#include "netsurf/render/font.h"
 
 /**
  * structures

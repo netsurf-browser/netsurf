@@ -6,22 +6,21 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
+#include <assert.h>
+#include <ctype.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include "curl/curl.h"
+#include "libxml/debugXML.h"
 #include "netsurf/content/cache.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/desktop/browser.h"
-#include "netsurf/riscos/font.h"
 #include "netsurf/render/box.h"
+#include "netsurf/render/font.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
-#include "libxml/uri.h"
-#include "libxml/debugXML.h"
-#include "curl/curl.h"
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <limits.h>
-#include <time.h>
-#include <ctype.h>
 
 static void browser_window_start_throbber(struct browser_window* bw);
 static void browser_window_text_selection(struct browser_window* bw,
@@ -187,7 +186,10 @@ void browser_window_destroy(struct browser_window* bw)
     content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
     content_remove_user(bw->current_content, browser_window_callback, bw, 0);
   }
-
+  if (bw->loading_content != NULL) {
+    content_remove_user(bw->loading_content, browser_window_callback, bw, 0);
+  }
+/*
   if (bw->history != NULL)
   {
     struct history* current = bw->history;
@@ -209,7 +211,7 @@ void browser_window_destroy(struct browser_window* bw)
       xfree(hh);
     }
   }
-
+*/
   xfree(bw->url);
 
   gui_window_destroy(bw->window);

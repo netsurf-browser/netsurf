@@ -8,12 +8,21 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include "netsurf/css/css.h"
-#include "netsurf/riscos/font.h"
-#include "netsurf/utils/utils.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/utils/log.h"
 #include "oslib/font.h"
+#include "netsurf/css/css.h"
+#include "netsurf/desktop/gui.h"
+#include "netsurf/render/font.h"
+#include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
+
+#define FONT_FAMILIES 1
+#define FONT_BOLD 2
+#define FONT_SLANTED 1
+
+/* a font_set is just a linked list of font_data for each face for now */
+struct font_set {
+	struct font_data *font[FONT_FAMILIES * 4];
+};
 
 /**
  * font id = font family * 4 + bold * 2 + slanted

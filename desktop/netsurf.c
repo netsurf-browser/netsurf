@@ -16,7 +16,6 @@
 #include <stdlib.h>
 
 int netsurf_quit = 0;
-gui_window* netsurf_gui_windows = NULL;
 
 static void netsurf_init(int argc, char** argv);
 static void netsurf_exit(void);

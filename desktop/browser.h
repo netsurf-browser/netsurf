@@ -13,7 +13,6 @@
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/render/box.h"
-#include "netsurf/riscos/font.h"
 
 typedef int browser_window_flags;
 #define browser_TOOLBAR             ((browser_window_flags) 1)
@@ -29,9 +28,6 @@ typedef int action_buttons;
 #define act_BUTTON_NORMAL        ((action_buttons) 4)
 #define act_BUTTON_ALTERNATIVE   ((action_buttons) 1)
 #define act_BUTTON_CONTEXT_MENU  ((action_buttons) 2)
-
-
-
 
 struct history
 {

@@ -22,8 +22,8 @@
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
-#include "netsurf/riscos/font.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
@@ -31,6 +31,7 @@
 const char *__dynamic_da_name = "NetSurf";
 
 char *NETSURF_DIR;
+static gui_window *window_list = 0;
 
 int gadget_subtract_x;
 int gadget_subtract_y;
@@ -122,23 +123,6 @@ int config_br_open = 0;
 int config_prox_open = 0;
 int config_th_open = 0;
 
-void wimp_close_window_CHECK(wimp_w close);
-void wimp_close_window_CHECK(wimp_w close)
-{
-	if (close == config)
-			config_open = 0;
-	else if (close == config_br)
-			config_br_open = 0;
-	else if (close == config_prox)
-			config_prox_open = 0;
-	else if (close == config_th)
-	{
-			config_th_open = 0;
-		ro_gui_destroy_theme_menu();
-	}
-	wimp_close_window(close);
-}
-
 struct ro_gui_drag_info;
 typedef enum {
 	mouseaction_NONE,
@@ -147,6 +131,47 @@ typedef enum {
 	mouseaction_NEWWINDOW_OR_LINKFG, mouseaction_DUPLICATE_OR_LINKBG,
 	mouseaction_TOGGLESIZE, mouseaction_ICONISE, mouseaction_CLOSE
      } mouseaction;
+
+
+int ro_x_units(unsigned long browser_units);
+int ro_y_units(unsigned long browser_units);
+unsigned long browser_x_units(int ro_units);
+unsigned long browser_y_units(int ro_units);
+
+struct ro_gui_window
+{
+  gui_window_type type;
+
+  union {
+    struct {
+      wimp_w window;
+      wimp_w toolbar;
+      int toolbar_width;
+      struct browser_window* bw;
+    } browser;
+  } data;
+
+  char status[256];
+  char title[256];
+  char url[256];
+  gui_window* next;
+
+  int throbber;
+  float throbtime;
+
+  gui_safety redraw_safety;
+  enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION } drag_status;
+  int old_width;
+};
+
+void ro_gui_window_click(gui_window* g, wimp_pointer* mouse);
+//void ro_gui_window_mouse_at(gui_window* g, wimp_pointer* mouse);
+void ro_gui_window_open(gui_window* g, wimp_open* open);
+void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw);
+//void ro_gui_window_keypress(gui_window* g, wimp_key* key);
+void gui_remove_gadget(struct gui_gadget* g);
+
+
 
 static void ro_gui_load_messages(void);
 static wimp_w ro_gui_load_template(const char* template_name);
@@ -184,7 +209,24 @@ static void ro_gui_menu_selection(wimp_selection* selection);
 static void ro_msg_datasave(wimp_message* block);
 static void ro_msg_dataload(wimp_message* block);
 static void gui_set_gadget_extent(struct box* box, int x, int y, os_box* extent, struct gui_gadget* g);
+static void ro_gui_close_dialog(wimp_w close);
 
+
+void ro_gui_close_dialog(wimp_w close)
+{
+	if (close == config)
+		config_open = 0;
+	else if (close == config_br)
+		config_br_open = 0;
+	else if (close == config_prox)
+		config_prox_open = 0;
+	else if (close == config_th)
+	{
+		config_th_open = 0;
+		ro_gui_destroy_theme_menu();
+	}
+	wimp_close_window(close);
+}
 
 void ro_gui_load_messages(void)
 {
@@ -415,6 +457,7 @@ gui_window* create_gui_browser_window(struct browser_window* bw)
 
   strcpy(g->title, "NetSurf");
 
+  g->data.browser.toolbar = 0;
   if ((bw->flags & browser_TOOLBAR) != 0)
   {
     ro_theme_window create_toolbar;
@@ -502,8 +545,8 @@ gui_window* create_gui_browser_window(struct browser_window* bw)
 
   g->redraw_safety = SAFE;
 
-  g->next = netsurf_gui_windows;
-  netsurf_gui_windows = g;
+  g->next = window_list;
+  window_list = g;
   return g;
 }
 
@@ -518,20 +561,25 @@ void gui_window_set_title(gui_window* g, char* title)
 
 void gui_window_destroy(gui_window* g)
 {
-  if (g == NULL)
-    return;
+  assert(g != 0);
 
-  if (g == netsurf_gui_windows)
-    netsurf_gui_windows = g->next;
+  if (g == window_list)
+    window_list = g->next;
   else
   {
     gui_window* gg;
-    gg = netsurf_gui_windows;
+    assert(window_list != NULL);
+    gg = window_list;
     while (gg->next != g && gg->next != NULL)
       gg = gg->next;
-    if (gg->next == g)
-      gg->next = g->next;
+    assert(gg->next != NULL);
+    gg->next = g->next;
   }
+
+  xwimp_delete_window(g->data.browser.window);
+  if (g->data.browser.toolbar)
+    xwimp_delete_window(g->data.browser.toolbar);
+
   xfree(g);
 }
 
@@ -544,13 +592,6 @@ void gui_window_show(gui_window* g)
   wimp_get_window_state(&state);
   state.next = wimp_TOP;
   ro_gui_window_open(g, (wimp_open*)&state);
-}
-
-void gui_window_hide(gui_window* g)
-{
-  if (g == NULL)
-    return;
-  wimp_close_window(g->data.browser.window);
 }
 
 void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
@@ -1183,11 +1224,11 @@ void gui_init(int argc, char** argv)
 
 void ro_gui_throb(void)
 {
-  gui_window* g = netsurf_gui_windows;
+  gui_window* g;
   //float nowtime = (float) (clock() + 0) / CLOCKS_PER_SEC;  /* workaround compiler warning */
   float nowtime = (float) clock() / CLOCKS_PER_SEC;
 
-  while (g != NULL)
+  for (g = window_list; g != NULL; g = g->next)
   {
     if (g->type == GUI_BROWSER_WINDOW)
     {
@@ -1230,14 +1271,13 @@ void ro_gui_throb(void)
         }
       }
     }
-    g = g->next;
   }
 }
 
 gui_window* ro_lookup_gui_from_w(wimp_w window)
 {
-  gui_window* g = netsurf_gui_windows;
-  while (g != NULL)
+  gui_window* g;
+  for (g = window_list; g != NULL; g = g->next)
   {
     if (g->type == GUI_BROWSER_WINDOW)
     {
@@ -1246,16 +1286,15 @@ gui_window* ro_lookup_gui_from_w(wimp_w window)
         return g;
       }
     }
-    g = g->next;
   }
   return NULL;
 }
 
 gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window)
 {
-  gui_window* g = netsurf_gui_windows;
+  gui_window* g;
 
-  while (g != NULL)
+  for (g = window_list; g != NULL; g = g->next)
   {
     if (g->type == GUI_BROWSER_WINDOW)
     {
@@ -1264,7 +1303,6 @@ gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window)
         return g;
       }
     }
-    g = g->next;
   }
   return NULL;
 }
@@ -1420,19 +1458,19 @@ void ro_gui_w_click(wimp_pointer* pointer)
 		  LOG(("closing windows"));
 		  if (pointer->buttons != 1)
 		  {
-			wimp_close_window_CHECK(config_br);
-			wimp_close_window_CHECK(config_prox);
-			wimp_close_window_CHECK(config_th);
-			wimp_close_window_CHECK(config);
+			ro_gui_close_dialog(config_br);
+			ro_gui_close_dialog(config_prox);
+			ro_gui_close_dialog(config_th);
+			ro_gui_close_dialog(config);
 		  }
 	  }
 	  else if (pointer->i == ro_gui_icon("CONFIG_CANCEL"))
 	  {
-		wimp_close_window_CHECK(config_br);
-		wimp_close_window_CHECK(config_prox);
-		wimp_close_window_CHECK(config_th);
+		ro_gui_close_dialog(config_br);
+		ro_gui_close_dialog(config_prox);
+		ro_gui_close_dialog(config_th);
 		  if (pointer->buttons != 1)
-			wimp_close_window_CHECK(config);
+			ro_gui_close_dialog(config);
 		  else
 			options_to_ro(&OPTIONS, &choices);
 	  }
@@ -1444,12 +1482,12 @@ void ro_gui_w_click(wimp_pointer* pointer)
 		  get_browser_choices(&choices.browser);
 		  get_browser_choices(&browser_choices);
 		  if (pointer->buttons != 1)
-			  wimp_close_window_CHECK(config_br);
+			  ro_gui_close_dialog(config_br);
           }
 	  else if (pointer->i == ro_gui_icon("CONFIG_BR_CANCEL"))
 	  {
 		  if (pointer->buttons != 1)
-			  wimp_close_window_CHECK(config_br);
+			  ro_gui_close_dialog(config_br);
 		  else
 			 set_browser_choices(&choices.browser);
 	  }
@@ -1471,12 +1509,12 @@ void ro_gui_w_click(wimp_pointer* pointer)
 		  get_proxy_choices(&choices.proxy);
 		  get_proxy_choices(&proxy_choices);
 		  if (pointer->buttons != 1)
-			  wimp_close_window_CHECK(config_prox);
+			  ro_gui_close_dialog(config_prox);
           }
 	  else if (pointer->i == ro_gui_icon("CONFIG_PROX_CANCEL"))
 	  {
 		  if (pointer->buttons != 1)
-			  wimp_close_window_CHECK(config_prox);
+			  ro_gui_close_dialog(config_prox);
 		  else
 			 set_proxy_choices(&choices.proxy);
 	  }
@@ -1491,12 +1529,12 @@ void ro_gui_w_click(wimp_pointer* pointer)
 		  get_theme_choices(&choices.theme);
 		  get_theme_choices(&theme_choices);
 		  if (pointer->buttons != 1)
-			  wimp_close_window_CHECK(config_th);
+			  ro_gui_close_dialog(config_th);
           }
 	  else if (pointer->i == ro_gui_icon("CONFIG_TH_CANCEL"))
 	  {
 		  if (pointer->buttons != 1)
-			  wimp_close_window_CHECK(config_th);
+			  ro_gui_close_dialog(config_th);
 		  else
 			 set_theme_choices(&choices.theme);
 	  }
@@ -2207,9 +2245,9 @@ void gui_poll(void)
       case wimp_CLOSE_WINDOW_REQUEST    :
         g = ro_lookup_gui_from_w(block.close.w);
         if (g != NULL)
-          gui_window_hide(g);
+          browser_window_destroy(g->data.browser.bw);
         else
-          wimp_close_window_CHECK(block.close.w);
+          ro_gui_close_dialog(block.close.w);
         break;
 
       case wimp_POINTER_LEAVING_WINDOW  :

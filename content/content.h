@@ -19,9 +19,7 @@
 #include "netsurf/content/fetch.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
-#ifdef riscos
-#include "netsurf/riscos/font.h"
-#endif
+#include "netsurf/render/font.h"
 
 
 /**
