@@ -1,1 +1,0 @@
-If "<NetSurf$running>" <> "yes" Then Run <NetSurf$Dir>.!Run
