@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.31 2003/01/07 23:24:43 bursa Exp $
+ * $Id: box.c,v 1.32 2003/01/11 17:36:40 monkeyson Exp $
  */
 
 #include <assert.h>
@@ -1043,6 +1043,8 @@ struct box* box_textarea(xmlNode* n, struct css_style* style, struct form* curre
 		box->gadget->name = s;
 	}
 
+	box->gadget->data.textarea.text = xcalloc(1, sizeof(char));
+
 	return box;
 }
 
@@ -1180,6 +1182,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			}
 			add_gadget_element(elements, g);
 		}
+
 		if (stricmp(type, "checkbox") == 0 || stricmp(type, "radio") == 0)
 		{
 			box = box_create(n, BOX_INLINE, style, NULL);
@@ -1214,6 +1217,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			}
 			add_gadget_element(elements, box->gadget);
 		}
+
 		if (stricmp(type, "submit") == 0 || stricmp(type, "reset") == 0)
 		{
 			//style->display = CSS_DISPLAY_BLOCK;
@@ -1241,9 +1245,17 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			}
 			add_gadget_element(elements, box->gadget);
 		}
-		if (stricmp(type, "text") == 0 || stricmp(type, "password") == 0)
+
+		if (!(stricmp(type, "text") == 0 || stricmp(type, "password") == 0))
 		{
+			
+		free (type);
+		return box;
+		}
+			
+	}
 			//style->display = CSS_DISPLAY_BLOCK;
+			fprintf(stderr, "CREATING TEXT BOX!\n");
 
 			box = box_create(n, BOX_INLINE, style, NULL);
 			box->gadget = xcalloc(1, sizeof(struct gui_gadget));
@@ -1254,19 +1266,31 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			box->length = 0;
 			box->font = 0;
 
+#ifdef ARSEMONKEYS
+//			box->gadget->data.textbox.maxlength = 255;
+//			if ((s = (char *) xmlGetProp(n, (xmlChar *) "maxlength"))) 
+//
+#endif
 			box->gadget->data.textbox.maxlength = 32;
 			if ((s = (char *) xmlGetProp(n, (const xmlChar *) "maxlength"))) {
+//>>>>>> 1.31
 				box->gadget->data.textbox.maxlength = atoi(s);
 				free(s);
 			}
 
+#ifdef ARSEMONKEYS
+//<<<<<<< box.c
+//			box->gadget->data.textbox.size = 20;/*box->gadget->data.textbox.maxlength;*/
+//			if ((s = (char *) xmlGetProp(n, (xmlChar *) "size"))) 
+//=======
+#endif
 			box->gadget->data.textbox.size = box->gadget->data.textbox.maxlength;
 			if ((s = (char *) xmlGetProp(n, (const xmlChar *) "size"))) {
 				box->gadget->data.textbox.size = atoi(s);
 				free(s);
 			}
 
-			box->gadget->data.textbox.text = xcalloc(box->gadget->data.textbox.maxlength + 1, sizeof(char));
+			box->gadget->data.textbox.text = xcalloc(box->gadget->data.textbox.maxlength + 2, sizeof(char));
 
 			if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
 				strncpy(box->gadget->data.textbox.text, s,
@@ -1278,9 +1302,8 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 				box->gadget->name = s;
 			}
 			add_gadget_element(elements, box->gadget);
-		}
+
 		free(type);
-	}
 	return box;
 }
 

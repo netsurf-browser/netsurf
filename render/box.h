@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.17 2003/01/06 23:53:40 bursa Exp $
+ * $Id: box.h,v 1.18 2003/01/11 17:36:40 monkeyson Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -107,6 +107,12 @@ struct form
 {
 	char* action; /* url */
 	enum {method_GET, method_POST} method;
+};
+
+struct formsubmit
+{
+	struct form* form;
+	struct gui_gadget* items;
 };
 
 struct page_elements
