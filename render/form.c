@@ -52,6 +52,7 @@ struct form_successful_control *form_successful_controls(struct form *form,
 	struct form_option *option;
 	struct form_successful_control sentinel, *last_success;
 	last_success = &sentinel;
+	sentinel.next = 0;
 
 	for (control = form->controls; control; control = control->next) {
 		struct form_successful_control *success_new;
