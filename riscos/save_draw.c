@@ -5,6 +5,7 @@
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
+#include <math.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -21,11 +22,11 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
-/* TODO - fix fonts (see below)
- *        fix text issues
- *        fix jpegs
- *        fix duplicate image issue (qv www.iconbar.com)
- *        GUI
+/**
+ * \todo fix fonts (see below)
+ *       fix jpegs
+ *       do radio buttons
+ *       GUI
  */
 
 #ifdef WITH_DRAW_EXPORT
@@ -46,8 +47,10 @@ static void add_jpeg(struct content *content, struct box *box,
                         unsigned long cbc, long x, long y);
 static void add_rect(struct content *content, struct box *box,
                         unsigned long cbc, long x, long y, bool bg);
+static void add_line(struct content *content, struct box *box,
+                        unsigned long cbc, long x, long y);
 
-/* TODO - this will probably want to take a filename/path too... */
+/** \todo this will probably want to take a filename/path too... */
 void save_as_draw(struct content *c) {
 
 	struct box *box = c->data.html.layout->children;
@@ -93,7 +96,7 @@ void save_as_draw(struct content *c) {
 
 /**
  * add font table
- * TODO - add all fonts required. for now we just use Homerton Medium
+ * \todo add all fonts required. for now we just use Homerton Medium
  */
 void add_font_table() {
 
@@ -196,40 +199,54 @@ void add_objects(struct content *content, struct box *box,
 		        return; /* don't handle these */
 		}
 		else {
-		  add_graphic(box->object, box, cbc, x, y);
-		  return;
+		        add_graphic(box->object, box, cbc, x, y);
+		        return;
 		}
 	}
 	else if (box->gadget && (box->gadget->type == GADGET_CHECKBOX ||
 		 box->gadget->type == GADGET_RADIO)) {
-		return; /* nor these... */
+		if (box->gadget->type == GADGET_CHECKBOX) {
+		        add_rect(content, box, 0xDEDEDE00, x, y, false);
+		}
+		return;
 	}
 	else if (box->text && box->font) {
+	        /* text-decoration */
 		colour = box->style->color;
 		colour = ((((colour >> 16) + (cbc >> 16)) / 2) << 16)
 			| (((((colour >> 8) & 0xff) +
 			     ((cbc >> 8) & 0xff)) / 2) << 8)
 			| ((((colour & 0xff) + (cbc & 0xff)) / 2) << 0);
-		/* ignore text decorations for now */
+		if (box->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK)) {
+		        add_line(content, box, (unsigned)colour<<8, x, (int)(y+(box->height*0.1*512)));
+		}
+                if (box->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK)) {
+		        add_line(content, box, (unsigned)colour<<8, x, (int)(y+(box->height*0.9*512)));
+		}
+		if (box->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH && box->parent->parent->type == BOX_BLOCK)) {
+		        add_line(content, box, (unsigned)colour<<8, x, (int)(y+(box->height*0.4*512)));
+		}
+
+		/* normal text */
 		{
-			drawfile_object *dro = xcalloc(8+44+((strlen(box->text)+1+3)/4*4), sizeof(char));
-			drawfile_text *dt = xcalloc(44+((strlen(box->text)+1+3)/4*4), sizeof(char));
+			drawfile_object *dro = xcalloc(8+44+((box->length+1+3)/4*4), sizeof(char));
+			drawfile_text *dt = xcalloc(44+((box->length+1+3)/4*4), sizeof(char));
 
 			dt->bbox.x0 = x;
 			dt->bbox.y0 = y-(box->height*1.5*512);
 			dt->bbox.x1 = x+(box->width*512);
 			dt->bbox.y1 = y;
-			dt->fill = colour<<8;
+			dt->fill = box->style->color<<8;
 			dt->bg_hint = cbc<<8;
 			dt->style.font_index = 1;
 			dt->xsize = box->font->size*40;
 			dt->ysize = box->font->size*40;
 			dt->base.x = x;
 			dt->base.y = y-(box->height*512)+1536;
-			memcpy(dt->text, box->text, strlen(box->text));
+			memcpy(dt->text, box->text, box->length);
 
 			dro->type = drawfile_TYPE_TEXT;
-			dro->size = ((strlen(box->text)+1+3)/4*4) + 44 + 8;
+			dro->size = ((box->length+1+3)/4*4) + 44 + 8;
 			memcpy((char*)&dro->data.text, dt, (unsigned)dro->size-8);
 			d = xrealloc(d, (unsigned)length + dro->size);
 			memcpy((char*)d+length, dro, (unsigned)dro->size);
@@ -242,7 +259,8 @@ void add_objects(struct content *content, struct box *box,
 	}
 	else {
 		for (c = box->children; c != 0; c = c->next) {
-			add_objects(content, c, cbc, x, y);
+		        if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
+			        add_objects(content, c, cbc, x, y);
 		}
 		for (c = box->float_children; c !=  0; c = c->next_float) {
 			add_objects(content, c, cbc, x, y);
@@ -442,6 +460,54 @@ void add_rect(struct content *content, struct box *box,
 
         dro->type = drawfile_TYPE_PATH;
         dro->size = 8+96;
+        memcpy((char*)&dro->data.path, dp, (unsigned)dro->size-8);
+
+        d = xrealloc(d, length+dro->size);
+        memcpy((char*)d+length, dro, (unsigned)dro->size);
+
+        length += dro->size;
+
+        xfree(dpe);
+        xfree(dp);
+        xfree(dro);
+}
+
+/**
+ * add a line to the diagram
+ */
+void add_line(struct content *content, struct box *box,
+              unsigned long cbc, long x, long y) {
+
+        drawfile_object *dro = xcalloc(8+60, sizeof(char));
+        drawfile_path *dp = xcalloc(60, sizeof(char));
+        draw_path_element *dpe = xcalloc(12, sizeof(char));
+
+        dp->bbox.x0 = x;
+        dp->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
+        dp->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
+        dp->bbox.y1 = y;
+
+        dp->fill = cbc;
+        dp->outline = cbc;
+        dp->width = 0;
+        dp->style.flags = 0;
+
+        /* left end */
+        dpe->tag = draw_MOVE_TO;
+        dpe->data.move_to.x = dp->bbox.x0;
+        dpe->data.move_to.y = dp->bbox.y0;
+        memcpy((char*)&dp->path, dpe, 12);
+        /* right end */
+        dpe->tag = draw_LINE_TO;
+        dpe->data.line_to.x = dp->bbox.x1;
+        dpe->data.line_to.y = dp->bbox.y0;
+        memcpy((char*)&dp->path+12, dpe, 12);
+        /* end */
+        dpe->tag = draw_END_PATH;
+        memcpy((char*)&dp->path+24, dpe, 4);
+
+        dro->type = drawfile_TYPE_PATH;
+        dro->size = 8+60;
         memcpy((char*)&dro->data.path, dp, (unsigned)dro->size-8);
 
         d = xrealloc(d, length+dro->size);
