@@ -21,11 +21,11 @@ void html_add_instance(struct content *c, struct browser_window *bw,
 		if (c->data.html.object[i].content == 0)
 			continue;
 		if (c->data.html.object[i].content->type == CONTENT_HTML)
-		        frame_add_instance(c->data.html.object[i].content,
+		        /*frame_add_instance(c->data.html.object[i].content,
 				bw, c,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params,
-				&c->data.html.object[i].box->object_state);
+				&c->data.html.object[i].box->object_state)*/;
 		else
                 	content_add_instance(c->data.html.object[i].content,
 				bw, c,
@@ -45,11 +45,11 @@ void html_reshape_instance(struct content *c, struct browser_window *bw,
 		if (c->data.html.object[i].content == 0)
 			continue;
 		if (c->data.html.object[i].content->type == CONTENT_HTML)
-		        frame_reshape_instance(c->data.html.object[i].content,
+		        /*frame_reshape_instance(c->data.html.object[i].content,
 				bw, c,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params,
-				&c->data.html.object[i].box->object_state);
+				&c->data.html.object[i].box->object_state)*/;
 		else
 		        content_reshape_instance(c->data.html.object[i].content,
 				bw, c,
@@ -68,11 +68,11 @@ void html_remove_instance(struct content *c, struct browser_window *bw,
 		if (c->data.html.object[i].content == 0)
 			continue;
 		if (c->data.html.object[i].content->type == CONTENT_HTML)
-		        frame_remove_instance(c->data.html.object[i].content,
+		        /*frame_remove_instance(c->data.html.object[i].content,
 				bw, c,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params,
-				&c->data.html.object[i].box->object_state);
+				&c->data.html.object[i].box->object_state)*/;
 		else
                 	content_remove_instance(c->data.html.object[i].content,
 				bw, c,
