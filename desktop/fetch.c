@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.c,v 1.2 2002/09/18 19:30:19 bursa Exp $
+ * $Id: fetch.c,v 1.3 2002/12/25 20:17:18 bursa Exp $
  */
 
 #include "libxml/HTMLparser.h"
@@ -10,19 +10,20 @@
 #include "netsurf/desktop/fetch.h"
 #include "netsurf/render/utils.h"
 #include "curl/curl.h"
+#include "libxml/uri.h"
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
 
 void fetch_identify_location(struct fetch* f, char* location, char* previous)
 {
-  FILE* ff = fopen("identify", "a");
+/*  FILE* ff = fopen("identify", "a");
   fprintf(ff, "identify: '%s' '%s'", location, previous);
   if (f->location != NULL)
     fprintf(ff, " '%s'\n", f->location);
   else
     fprintf(ff, "\n");
-  fclose(ff);
+  fclose(ff);*/
 
   if (f->location != NULL)
     xfree(f->location);
@@ -41,19 +42,10 @@ void fetch_identify_location(struct fetch* f, char* location, char* previous)
   }
   else if (previous != NULL)
   {
-    char* ext = strrchr(previous, '/');
-
-    if (ext != NULL && ext != previous)
-    {
-      int len = (int)(ext - previous) + strlen(location) + 2;
-      char* combined = xcalloc(len, sizeof(char));
-      strncpy(combined, previous, (int)(ext - previous));
-      strcpy(combined + (ext - previous), "/");
-      strcpy(combined + (ext - previous) + 1, location);
-      fetch_identify_location(f, combined, NULL);
-      xfree(combined);
-      return;
-    }
+    f->location = xmlBuildURI(location, previous);
+    assert(f->location != NULL);
+    f->type = fetch_CURL;
+    return;
   }
 
   f->location = xcalloc(strlen(location) + strlen("http://") + 1, sizeof(char));
@@ -253,9 +245,9 @@ struct fetch* fetch_poll(struct fetch* f)
     FILE* in;
 
     gui_file_to_filename(f->location, actual_filename, 1024);
-    in = fopen("files","a");
+/*    in = fopen("files","a");
     fprintf(in, "%s\n%s\n\n",f->location, actual_filename);
-    fclose(in);
+    fclose(in);*/
     in = fopen(actual_filename, "r");
 
     if (in == NULL)

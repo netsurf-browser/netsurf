@@ -6,7 +6,7 @@ IconSprites <NetSurf$Dir>.!Sprites
 
 RMensure WindowManager 3.80 Error 0 NetSurf requires the Nested Window Manager.
 RMEnsure UtilityModule 3.70 RMensure CallASWI 0.00 RMload <NetSurf$Dir>.CallASWI
-RMensure SharedUnixLibrary 1.00 RMload <NetSurf$Dir>.SharedULib
+RMEnsure SharedUnixLibrary 1.00 RMLoad System:Modules.SharedULib
 
 | drag the 'next' slot in the task manager to something huge and ridiculous,
 | and/or increase the number below

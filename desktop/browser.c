@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.10 2002/12/23 21:19:01 bursa Exp $
+ * $Id: browser.c,v 1.11 2002/12/25 20:17:18 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -412,9 +412,12 @@ void browser_window_open_location_historical(struct browser_window* bw, char* ur
     browser_window_start_throbber(bw);
 
     /* TODO: factor out code shared with browser_window_message(), case msg_FETCH_FINISHED */
-    if (bw->url != NULL)
-      xfree(bw->url);
-    bw->url = xstrdup(url);
+    if (url != bw->url)  /* reload <=> url == bw->url */
+    {
+      if (bw->url != NULL)
+        xfree(bw->url);
+      bw->url = xstrdup(url);
+    }
 
     gmsg.type = msg_SET_URL;
     gmsg.data.set_url.url = bw->url;
