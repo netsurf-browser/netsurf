@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.4 2002/10/15 10:41:12 monkeyson Exp $
+ * $Id: gui.c,v 1.5 2002/12/27 17:27:24 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -127,7 +127,7 @@ wimp_i ro_gui_icon(char* token)
 {
   int used;
   char buffer[32];
-  
+
   messagetrans_lookup(&templates_messages_cb, token, buffer, 32, 0,0,0,0, &used);
   if (used > 0)
     return atoi(buffer);
@@ -162,10 +162,10 @@ void ro_gui_transform_menu_entry(wimp_menu_entry* e)
 void ro_gui_transform_menus()
 {
   int i;
-  
+
   for (i = 0; i < 2; i++)
     ro_gui_transform_menu_entry(&netsurf_iconbar_menu.entries[i]);
-  
+
   for (i = 0; i < 3; i++)
     ro_gui_transform_menu_entry(&browser_save_menu.entries[i]);
 
@@ -182,7 +182,7 @@ void ro_gui_transform_menus()
   browser_save_menu.entries[1].sub_menu = (wimp_menu*) netsurf_saveas;
   browser_save_menu.entries[2].sub_menu = (wimp_menu*) netsurf_saveas;
   browser_selection_menu.entries[2].sub_menu = (wimp_menu*) netsurf_saveas;
-  
+
   netsurf_iconbar_menu.entries[0].sub_menu = (wimp_menu*) netsurf_info;
 }
 
@@ -285,8 +285,8 @@ gui_window* create_gui_browser_window(struct browser_window* bw)
   window.title_flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED;
   window.work_flags = wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT;
   window.sprite_area = NULL;
-  window.xmin = 0;
-  window.ymin = 2;
+  window.xmin = 100;
+  window.ymin = window.extent.y1 + 100;
   window.title_data.indirected_text.text = g->title;
   window.title_data.indirected_text.validation = BROWSER_VALIDATION;
   window.title_data.indirected_text.size = 255;
@@ -790,7 +790,7 @@ void ro_gui_icon_bar_click(wimp_pointer* pointer)
 {
   if (pointer->buttons == wimp_CLICK_MENU)
   {
-    ro_gui_create_menu((wimp_menu*)&netsurf_iconbar_menu, pointer->pos.x - 64, 96 + ICONBAR_MENU_ENTRIES*44, NULL); 
+    ro_gui_create_menu((wimp_menu*)&netsurf_iconbar_menu, pointer->pos.x - 64, 96 + ICONBAR_MENU_ENTRIES*44, NULL);
   }
   else if (pointer->buttons == wimp_CLICK_SELECT)
   {
