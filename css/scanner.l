@@ -72,6 +72,7 @@ U\+[0-9A-F?]{1,6}(-[0-9A-F]{1,6})?	{
 "+"		{ return PLUS; }
 >		{ return GT; }
 "."		{ return DOT; }
+"*"		{ return ASTERISK; }
 .		{ return DELIM; }
 
 %%

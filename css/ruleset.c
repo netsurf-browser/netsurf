@@ -228,10 +228,6 @@ void css_add_ruleset(struct content *c,
 		}
 		fprintf(stderr, "\n");*/
 
-		/* skip empty selectors */
-		if (sel->left == 0 && sel->data == 0)
-			continue;
-
 		/* check if this selector is already present */
 		found = false;
 		prev = 0;

@@ -92,6 +92,8 @@ simple_selector(A) ::= detail_list(C).
 
 element_name(A) ::= IDENT(B).
 		{ A = B; }
+element_name(A) ::= ASTERISK.
+		{ A = 0; }
 
 detail_list(A) ::= detail(B).
 		{ A = B; }
@@ -209,6 +211,8 @@ any(A) ::= LPAREN any_list(B) RPAREN.
 		{ A = css_new_node(CSS_NODE_PAREN, 0, B, 0); }
 any(A) ::= LBRAC any_list(B) RBRAC.
 		{ A = css_new_node(CSS_NODE_BRAC, 0, B, 0); }
+any(A) ::= ASTERISK(B).
+		{ A = css_new_node(CSS_NODE_DELIM, B, 0, 0); }
 
 
 /* lemon directives */
