@@ -793,7 +793,8 @@ struct result box_select(xmlNode *n, struct status *status,
 	if (!gadget->data.select.multiple &&
 			gadget->data.select.num_selected == 0) {
 		gadget->data.select.current = gadget->data.select.items;
-		gadget->data.select.current->selected = true;
+		gadget->data.select.current->initial_selected =
+			gadget->data.select.current->selected = true;
 		gadget->data.select.num_selected = 1;
 	}
 
