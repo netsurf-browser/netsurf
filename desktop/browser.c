@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.21 2003/01/11 17:33:31 monkeyson Exp $
+ * $Id: browser.c,v 1.22 2003/01/12 17:48:44 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -114,21 +114,44 @@ void set_content_html(struct content* c)
 }
 
 
-char* content_html_reformat(struct content* c, int width)
+void content_html_title(struct content *c)
+{
+  xmlNode *node = c->data.html.markup;
+
+  c->title = 0;
+
+  while (node != 0) {
+    if (node->type == XML_ELEMENT_NODE) {
+      if (stricmp(node->name, "html") == 0) {
+        node = node->children;
+        continue;
+      }
+      if (stricmp(node->name, "head") == 0) {
+        node = node->children;
+        continue;
+      }
+      if (stricmp(node->name, "title") == 0) {
+        c->title = xmlNodeGetContent(node);
+	return;
+      }
+    }
+    node = node->next;
+  }
+}
+
+
+void content_html_reformat(struct content* c, int width)
 {
   char* file;
-  char* title = NULL;
   struct css_selector* selector = xcalloc(1, sizeof(struct css_selector));
 
   LOG(("Starting stuff"));
 
-  /* need to find title of page */
-  
   if (c->data.html.layout != NULL)
   {
     /* TODO: skip if width is unchanged */
     layout_document(c->data.html.layout->children, (unsigned long)width);
-    return title;
+    return;
   }
 
   LOG(("Setting document to myDoc"));
@@ -140,7 +163,7 @@ char* content_html_reformat(struct content* c, int width)
   if (c->data.html.document == NULL)
   {
     LOG(("There is no document!"));
-    return title;
+    return;
   }
   for (c->data.html.markup = c->data.html.document->children;
        c->data.html.markup != 0 &&
@@ -151,17 +174,19 @@ char* content_html_reformat(struct content* c, int width)
   if (c->data.html.markup == 0)
   {
     LOG(("No markup"));
-    return title;
+    return;
   }
   if (strcmp((const char *) c->data.html.markup->name, "html"))
   {
     LOG(("Not html"));
-    return title;
+    return;
   }
 
 //  xfree(c->data.html.stylesheet);
 //  xfree(c->data.html.style);
 
+  content_html_title(c);
+  
   LOG(("Loading CSS"));
   file = load("<NetSurf$Dir>.Resources.CSS");  /*!!! not portable! !!!*/
   c->data.html.stylesheet = css_new_stylesheet();
@@ -188,7 +213,7 @@ char* content_html_reformat(struct content* c, int width)
 
   /* can tidy up memory here? */
 
-  return title;
+  return;
 }
 
 void browser_window_reformat(struct browser_window* bw)
@@ -208,7 +233,11 @@ void browser_window_reformat(struct browser_window* bw)
       LOG(("HTML content."));
       browser_window_set_status(bw, "Formatting page...");
       time0 = clock();
-      gui_window_set_title(bw->window, content_html_reformat(bw->current_content, gui_window_get_width(bw->window)));
+      content_html_reformat(bw->current_content, gui_window_get_width(bw->window));
+      if (bw->current_content == 0)
+        gui_window_set_title(bw->window, bw->url);
+      else
+        gui_window_set_title(bw->window, bw->current_content->title);
       time1 = clock();
       LOG(("Content reformatted"));
       if (bw->current_content->data.html.layout != NULL)

@@ -1,5 +1,5 @@
 /**
- * $Id: browser.h,v 1.5 2002/12/30 22:56:30 monkeyson Exp $
+ * $Id: browser.h,v 1.6 2003/01/12 17:48:44 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
@@ -65,6 +65,7 @@ struct content
   } data;
   struct fetch* main_fetch;
   unsigned int ref_count;
+  char *title;
 };
 
 

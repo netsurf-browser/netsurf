@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.15 2003/01/11 17:33:31 monkeyson Exp $
+ * $Id: gui.c,v 1.16 2003/01/12 17:48:44 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -19,7 +19,7 @@
 int gadget_subtract_x;
 int gadget_subtract_y;
 #define browser_menu_flags (wimp_ICON_TEXT | wimp_ICON_FILLED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT))
-char* HOME_URL = "file:///<NetSurf$Dir>/Resources/intro.html\0";
+char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro.html\0";
 
 wimp_MENU(2) netsurf_iconbar_menu =
   {
