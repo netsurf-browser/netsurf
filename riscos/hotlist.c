@@ -209,7 +209,7 @@ static char *load_url = NULL;
 
 static bool ro_gui_hotlist_initialise_sprite(const char *name, int number);
 static bool ro_gui_hotlist_load(void);
-static void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry);
+static void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry, bool allow_add);
 static bool ro_gui_hotlist_save_entry(FILE *fp, struct hotlist_entry *entry);
 static void ro_gui_hotlist_link_entry(struct hotlist_entry *link, struct hotlist_entry *entry, bool before);
 static void ro_gui_hotlist_delink_entry(struct hotlist_entry *entry);
@@ -427,7 +427,7 @@ bool ro_gui_hotlist_load(void) {
 
 		/*	Perform our recursive load
 		*/
-		ro_gui_hotlist_load_entry(doc->children, &root);
+		ro_gui_hotlist_load_entry(doc->children, &root, true);
 
 		/*	Exit cleanly
 		*/
@@ -454,7 +454,7 @@ bool ro_gui_hotlist_load(void) {
 }
 
 
-void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry) {
+void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry, bool allow_add) {
   	struct hotlist_entry *last_entry = entry;
   	char *xml_comment = NULL;
   	char *comment = comment;
@@ -462,49 +462,56 @@ void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry) {
 	int add_date = -1;
 	int last_date = -1;
 	int visits = 0;
+	bool add_entry;
 
 	while (cur) {
 	  	/*	Add any items that have had all the data they can have
 	  	*/
-	  	if ((load_title != NULL) && ((cur->next == NULL) || ((cur->type == XML_ELEMENT_NODE) &&
+	  	if ((allow_add) && (load_title != NULL)) {
+	  		if ((cur->next == NULL) || ((cur->type == XML_ELEMENT_NODE) &&
 		  		((!(strcmp(cur->name, "li"))) || (!(strcmp(cur->name, "h4"))) ||
-		  		(!(strcmp(cur->name, "ul"))))))) {
+		  		(!(strcmp(cur->name, "ul")))))) {
 
-			/*	Add the entry
-			*/
-			last_entry = ro_gui_hotlist_create_entry(load_title, load_url, filetype, entry);
-			last_entry->add_date = add_date;
-			if (last_entry->url) {
-				last_entry->last_date = last_date;
-				last_entry->visits = visits;
-				last_entry->filetype = filetype;
+				/*	Add the entry
+				*/
+				last_entry = ro_gui_hotlist_create_entry(load_title, load_url, filetype, entry);
+				last_entry->add_date = add_date;
+				if (last_entry->url) {
+					last_entry->last_date = last_date;
+					last_entry->visits = visits;
+					last_entry->filetype = filetype;
+				}
+
+		  		/*	Reset our variables
+		  		*/
+		  		if (load_title) xmlFree(load_title);
+		  		load_title = NULL;
+		  		if (load_url) xmlFree(load_url);
+		  		load_url = NULL;
+		  		filetype = 0xfaf;
+				add_date = -1;
+				last_date = -1;
+				visits = 0;
 			}
-
-	  		/*	Reset our variables
-	  		*/
-	  		if (load_title) xmlFree(load_title);
-	  		load_title = NULL;
-	  		if (load_url) xmlFree(load_url);
-	  		load_url = NULL;
-	  		filetype = 0xfaf;
-			add_date = -1;
-			last_date = -1;
-			visits = 0;
 		}
 
 	        /*	Gather further information and recurse
 	        */
 	  	if (cur->type == XML_ELEMENT_NODE) {
+	  	  	add_entry = allow_add;
 			if (!(strcmp(cur->name, "h4"))) {
+			  	add_entry = false;
 				if (!load_title) load_title = xmlNodeGetContent(cur);
 			} else if (!(strcmp(cur->name, "a"))) {
+			  	add_entry = false;
 			  	load_url = (char *)xmlGetProp(cur, (const xmlChar *)"href");
+			} else if (!(strcmp(cur->name, "li"))) {
+			  	add_entry = false;
 			}
 
 			if ((cur->children) && (strcmp(cur->name, "h4"))) {
-				ro_gui_hotlist_load_entry(cur->children, last_entry);
+				ro_gui_hotlist_load_entry(cur->children, last_entry, add_entry);
 			}
-
 		} else {
 		  	/*	Check for comment data
 		  	*/
