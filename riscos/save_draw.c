@@ -397,23 +397,28 @@ void add_jpeg(struct content *content, struct box *box,
 
         drawfile_object *dro = xcalloc(8+60+((content->data.jpeg.length+3)/4*4), sizeof(char));
         drawfile_jpeg *dj = xcalloc(60+((content->data.jpeg.length+3)/4*4), sizeof(char));
+        int flags;
 
-        dj->bbox.x0 = x;
-        dj->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
-        dj->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
-        dj->bbox.y1 = y;
+        dj->bbox.x0 = x+(box->padding[LEFT]*512);
+        dj->bbox.y0 = y-((box->padding[TOP] + box->height)*512);
+        dj->bbox.x1 = x+((box->padding[LEFT] + box->width)*512);
+        dj->bbox.y1 = y-(box->padding[TOP]*512);
 
         xjpeginfo_dimensions((jpeg_image const*)content->data.jpeg.data,
                               (int)content->data.jpeg.length,
-                              0, &dj->width, &dj->height,
+                              &flags, &dj->width, &dj->height,
                               &dj->xdpi, &dj->ydpi, 0);
         dj->width *= 512;
         dj->height *= 512;
-        dj->trfm.entries[0][0] = 1 << 16;
+        if (flags & 4) { /* pixel density is a ratio */
+           dj->ydpi = 90 * (dj->ydpi / dj->xdpi);
+           dj->xdpi = 90;
+        }
+        dj->trfm.entries[0][0] = (dj->width*256) / ((dj->bbox.x1-dj->bbox.x0)/256);
         dj->trfm.entries[0][1] = 0;
         dj->trfm.entries[1][0] = 0;
-        dj->trfm.entries[1][1] = 1 << 16;
-        dj->trfm.entries[2][0] = x;
+        dj->trfm.entries[1][1] = (dj->height*256) / ((dj->bbox.y1-dj->bbox.y0)/256);
+        dj->trfm.entries[2][0] = dj->bbox.x0;
         dj->trfm.entries[2][1] = dj->bbox.y0;
         dj->len = content->data.jpeg.length;
         memcpy((char*)&dj->image, content->data.jpeg.data, (unsigned)dj->len);
