@@ -76,7 +76,8 @@ int main(int argc, char *argv[])
 		cache_dump();
 		if (!destroyed) {
 /* 			content_reformat(c, 1, 1000); */
-			save_complete(c, "save_complete");
+/*			save_complete(c, "save_complete");*/
+			box_dump(c->data.html.layout, 0);
 			content_remove_user(c, callback, 0, 0);
 		}
 	}
@@ -251,3 +252,14 @@ void warn_user(const char *warn)
 	printf("WARNING: %s\n", warn);
 }
 
+#ifndef riscos
+void schedule(int t, void (*callback)(void *p), void *p)
+{
+	printf("UNIMPLEMENTED: schedule(%i, %p, %p)\n", t, callback, p);
+}
+
+void schedule_remove(void (*callback)(void *p), void *p)
+{
+	printf("UNIMPLEMENTED: schedule_remove(%p, %p)\n", callback, p);
+}
+#endif

@@ -21,6 +21,7 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
                GUI_POINTER_MOVE } gui_pointer_shape;
 
 #include <stdbool.h>
+#include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 
 bool gui_window_in_list(gui_window *g);
@@ -32,7 +33,7 @@ void gui_window_hide(gui_window* g);
 void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
 		unsigned long x1, unsigned long y1);
 void gui_window_redraw_window(gui_window* g);
-void gui_window_update_box(gui_window *g, int x0, int y0, int x1, int y1);
+void gui_window_update_box(gui_window *g, const union content_msg_data *data);
 void gui_window_set_scroll(gui_window* g, unsigned long sx, unsigned long sy);
 unsigned long gui_window_get_width(gui_window* g);
 void gui_window_set_extent(gui_window* g, unsigned long width, unsigned long height);

@@ -33,11 +33,11 @@
 
 
 static void html_convert_css_callback(content_msg msg, struct content *css,
-		void *p1, void *p2, const char *error);
+		void *p1, void *p2, union content_msg_data data);
 static void html_head(struct content *c, xmlNode *head);
 static void html_find_stylesheets(struct content *c, xmlNode *head);
 static void html_object_callback(content_msg msg, struct content *object,
-		void *p1, void *p2, const char *error);
+		void *p1, void *p2, union content_msg_data data);
 static bool html_object_type_permitted(const content_type type,
 		const content_type *permitted_types);
 
@@ -136,6 +136,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 {
 	xmlDoc *document;
 	xmlNode *html, *head;
+	union content_msg_data data;
 
 	/* finish parsing */
 	htmlParseChunk(c->data.html.parser, "", 0, 1);
@@ -176,7 +177,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	/* convert xml tree to box tree */
 	LOG(("XML to box"));
 	sprintf(c->status_message, messages_get("Processing"));
-	content_broadcast(c, CONTENT_MSG_STATUS, 0);
+	content_broadcast(c, CONTENT_MSG_STATUS, data);
 	xml_to_box(html, c);
 	/*box_dump(c->data.html.layout->children, 0);*/
 
@@ -189,7 +190,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 
 	/* layout the box tree */
 	sprintf(c->status_message, messages_get("Formatting"));
-	content_broadcast(c, CONTENT_MSG_STATUS, 0);
+	content_broadcast(c, CONTENT_MSG_STATUS, data);
 	LOG(("Layout document"));
 	layout_document(c->data.html.layout->children, width);
 	/*box_dump(c->data.html.layout->children, 0);*/
@@ -262,6 +263,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 	char *rel, *type, *media, *href, *data, *url;
 	unsigned int i = 2;
 	unsigned int last_active = 0;
+	union content_msg_data msg_data;
 
 	/* stylesheet 0 is the base style sheet, stylesheet 1 is any <style> elements */
 	c->data.html.stylesheet_content = xcalloc(2, sizeof(*c->data.html.stylesheet_content));
@@ -414,7 +416,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 		if (c->active != last_active) {
 			sprintf(c->status_message, messages_get("FetchStyle"),
 					c->active);
-			content_broadcast(c, CONTENT_MSG_STATUS, 0);
+			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 			last_active = c->active;
 		}
 		fetch_poll();
@@ -423,7 +425,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 
 	if (c->error) {
 		sprintf(c->status_message, "Warning: some stylesheets failed to load");
-		content_broadcast(c, CONTENT_MSG_STATUS, 0);
+		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	}
 }
 
@@ -433,10 +435,11 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
  */
 
 void html_convert_css_callback(content_msg msg, struct content *css,
-		void *p1, void *p2, const char *error)
+		void *p1, void *p2, union content_msg_data data)
 {
 	struct content *c = p1;
 	unsigned int i = (unsigned int) p2;
+
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
 			/* check that the stylesheet is really CSS */
@@ -445,7 +448,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 				c->active--;
 				c->error = 1;
 				sprintf(c->status_message, messages_get("NotCSS"));
-				content_broadcast(c, CONTENT_MSG_STATUS, 0);
+				content_broadcast(c, CONTENT_MSG_STATUS, data);
 				content_remove_user(css, html_convert_css_callback, c, (void*)i);
 			}
 			break;
@@ -467,13 +470,14 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 		case CONTENT_MSG_STATUS:
 			snprintf(c->status_message, 80, messages_get("FetchStyle2"),
 					c->active, css->status_message);
-			content_broadcast(c, CONTENT_MSG_STATUS, 0);
+			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			break;
 
 		case CONTENT_MSG_REDIRECT:
 			c->active--;
 			c->data.html.stylesheet_content[i] = fetchcache(
-					error, c->url, html_convert_css_callback,
+					data.redirect, c->url,
+					html_convert_css_callback,
 					c, (void*)i, css->width, css->height, true
 #ifdef WITH_POST
 					, 0, 0
@@ -515,6 +519,7 @@ void html_fetch_object(struct content *c, char *url, struct box *box,
 		const content_type *permitted_types)
 {
 	unsigned int i = c->data.html.object_count;
+	union content_msg_data data;
 
 	/* add to object list */
 	c->data.html.object = xrealloc(c->data.html.object,
@@ -541,7 +546,7 @@ void html_fetch_object(struct content *c, char *url, struct box *box,
 		c->active++;
 		if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
 			html_object_callback(CONTENT_MSG_DONE,
-					c->data.html.object[i].content, c, (void*)i, 0);
+					c->data.html.object[i].content, c, (void*)i, data);
 	}
 	c->data.html.object_count++;
 }
@@ -552,10 +557,11 @@ void html_fetch_object(struct content *c, char *url, struct box *box,
  */
 
 void html_object_callback(content_msg msg, struct content *object,
-		void *p1, void *p2, const char *error)
+		void *p1, void *p2, union content_msg_data data)
 {
 	struct content *c = p1;
 	unsigned int i = (unsigned int) p2;
+	int x, y;
 	struct box *box = c->data.html.object[i].box;
 	struct box *b;
 
@@ -571,7 +577,7 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->active--;
 			c->error = 1;
 			sprintf(c->status_message, messages_get("BadObject"));
-			content_broadcast(c, CONTENT_MSG_STATUS, 0);
+			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			content_remove_user(object, html_object_callback, c, (void*)i);
 			break;
 
@@ -631,8 +637,8 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->active--;
 			c->error = 1;
 			snprintf(c->status_message, 80,
-					messages_get("ObjError"), error);
-			content_broadcast(c, CONTENT_MSG_STATUS, 0);
+					messages_get("ObjError"), data.error);
+			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			break;
 
 		case CONTENT_MSG_STATUS:
@@ -644,9 +650,10 @@ void html_object_callback(content_msg msg, struct content *object,
 		case CONTENT_MSG_REDIRECT:
 			c->active--;
 			free(c->data.html.object[i].url);
-			c->data.html.object[i].url = xstrdup(error);
+			c->data.html.object[i].url = xstrdup(data.redirect);
 			c->data.html.object[i].content = fetchcache(
-					error, c->url, html_object_callback,
+					data.redirect, c->url,
+					html_object_callback,
 					c, (void*)i, 0, 0, true
 #ifdef WITH_POST
 					, 0, 0
@@ -659,7 +666,7 @@ void html_object_callback(content_msg msg, struct content *object,
 				c->active++;
 				if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
 					html_object_callback(CONTENT_MSG_DONE,
-							c->data.html.object[i].content, c, (void*)i, 0);
+							c->data.html.object[i].content, c, (void*)i, data);
 			}
 			break;
 
@@ -667,7 +674,12 @@ void html_object_callback(content_msg msg, struct content *object,
 			break;
 
 		case CONTENT_MSG_REDRAW:
-			content_broadcast(c, CONTENT_MSG_REDRAW, box);
+			box_coords(box, &x, &y);
+			data.redraw.x += x;
+			data.redraw.y += y;
+			data.redraw.object_x += x;
+			data.redraw.object_y += y;
+			content_broadcast(c, CONTENT_MSG_REDRAW, data);
 			break;
 
 #ifdef WITH_AUTH
@@ -687,7 +699,7 @@ void html_object_callback(content_msg msg, struct content *object,
 		content_reformat(c, c->available_width, 0);
 		c->status = CONTENT_STATUS_DONE;
 		sprintf(c->status_message, messages_get("Done"));
-		content_broadcast(c, CONTENT_MSG_DONE, 0);
+		content_broadcast(c, CONTENT_MSG_DONE, data);
 	}
 	if (c->status == CONTENT_STATUS_READY)
 		sprintf(c->status_message, messages_get("FetchObjs"),

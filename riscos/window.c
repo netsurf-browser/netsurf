@@ -93,7 +93,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
   window.title_fg = wimp_COLOUR_BLACK;
   window.title_bg = wimp_COLOUR_LIGHT_GREY;
   window.work_fg = wimp_COLOUR_LIGHT_GREY;
-  window.work_bg = wimp_COLOUR_WHITE;
+  window.work_bg = wimp_COLOUR_TRANSPARENT;
   window.scroll_outer = wimp_COLOUR_DARK_GREY;
   window.scroll_inner = wimp_COLOUR_MID_LIGHT_GREY;
   window.highlight_bg = wimp_COLOUR_CREAM;
@@ -264,13 +264,10 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
  * Redraw an area of a window.
  *
  * \param  g   gui_window
- * \param  x0  minimum x
- * \param  y0  minimum y
- * \param  x1  maximum x
- * \param  y1  maximum y
+ * \param  data  content_msg_data union with filled in redraw data
  */
 
-void gui_window_update_box(gui_window *g, int x0, int y0, int x1, int y1)
+void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 {
 	struct content *c = g->data.browser.bw->current_content;
 	osbool more;
@@ -278,10 +275,10 @@ void gui_window_update_box(gui_window *g, int x0, int y0, int x1, int y1)
 	wimp_draw update;
 
 	update.w = g->window;
-	update.box.x0 = x0 * 2;
-	update.box.y0 = -y1 * 2;
-	update.box.x1 = x1 * 2;
-	update.box.y1 = -y0 * 2;
+	update.box.x0 = data->redraw.x * 2;
+	update.box.y0 = -(data->redraw.y + data->redraw.height) * 2;
+	update.box.x1 = (data->redraw.x + data->redraw.width) * 2;
+	update.box.y1 = -data->redraw.y * 2;
 	error = xwimp_update_window(&update, &more);
 	if (error) {
 		LOG(("xwimp_update_window: 0x%x: %s",
@@ -290,13 +287,27 @@ void gui_window_update_box(gui_window *g, int x0, int y0, int x1, int y1)
 	}
 
 	while (more) {
-		content_redraw(c,
-				update.box.x0 - update.xscroll,
-				update.box.y1 - update.yscroll,
-				c->width * 2, c->height * 2,
-				update.clip.x0, update.clip.y0,
-				update.clip.x1 - 1, update.clip.y1 - 1,
-				g->scale);
+		if (data->redraw.full_redraw) {
+			content_redraw(c,
+					update.box.x0 - update.xscroll,
+					update.box.y1 - update.yscroll,
+					c->width * 2, c->height * 2,
+					update.clip.x0, update.clip.y0,
+					update.clip.x1 - 1, update.clip.y1 - 1,
+					g->scale);
+		} else {
+			assert(data->redraw.object);
+			content_redraw(data->redraw.object,
+					update.box.x0 - update.xscroll +
+						data->redraw.object_x * 2,
+					update.box.y1 - update.yscroll -
+						data->redraw.object_y * 2,
+					data->redraw.object->width * 2,
+					data->redraw.object->height * 2,
+					update.clip.x0, update.clip.y0,
+					update.clip.x1 - 1, update.clip.y1 - 1,
+					g->scale);
+		}
 
 		error = xwimp_get_rectangle(&update, &more);
 		if (error) {

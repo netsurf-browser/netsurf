@@ -25,7 +25,7 @@ struct form_successful_control;
 
 struct content * fetchcache(const char *url, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, const char *error),
+			void *p2, union content_msg_data data),
 		void *p1, void *p2, unsigned long width, unsigned long height,
 		bool no_error_pages
 #ifdef WITH_POST

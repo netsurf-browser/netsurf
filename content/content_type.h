@@ -25,12 +25,12 @@ typedef enum {
 #ifdef WITH_JPEG
 	CONTENT_JPEG,
 #endif
+#ifdef WITH_GIF
+	CONTENT_GIF,
+#endif
 #ifdef riscos
 #ifdef WITH_PNG
 	CONTENT_PNG,
-#endif
-#ifdef WITH_GIF
-	CONTENT_GIF,
 #endif
 #ifdef WITH_SPRITE
 	CONTENT_SPRITE,

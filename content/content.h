@@ -37,10 +37,10 @@
 #ifdef WITH_JPEG
 #include "netsurf/riscos/jpeg.h"
 #endif
-#ifdef riscos
 #ifdef WITH_GIF
 #include "netsurf/riscos/gif.h"
 #endif
+#ifdef riscos
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
 #endif
@@ -71,11 +71,29 @@ typedef enum {
 #endif
 } content_msg;
 
+/** Extra data for some content_msg messages. */
+union content_msg_data {
+	const char *error;	/**< Error message, for CONTENT_MSG_ERROR. */
+	char *redirect;	/**< Redirect URL, for CONTENT_MSG_REDIRECT. */
+	/** Area of content which needs redrawing, for CONTENT_MSG_REDRAW. */
+	struct {
+		int x, y, width, height;
+		/** Redraw the area fully. If false, object must be set,
+		 * and only the object will be redrawn. */
+		bool full_redraw;
+		/** Object to redraw if full_redraw is false. */
+		struct content *object;
+		/** Coordinates to plot object at. */
+		int object_x, object_y;
+	} redraw;
+	char *auth_realm;	/**< Realm, for CONTENT_MSG_AUTH. */
+};
+
 /** Linked list of users of a content. */
 struct content_user
 {
 	void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, const char *error);
+			void *p2, union content_msg_data data);
 	void *p1;
 	void *p2;
 	struct content_user *next;
@@ -106,12 +124,12 @@ struct content {
 #ifdef WITH_JPEG
 		struct content_jpeg_data jpeg;
 #endif
+#ifdef WITH_GIF
+		struct content_gif_data gif;
+#endif
 #ifdef riscos
 #ifdef WITH_PNG
 		struct content_png_data png;
-#endif
-#ifdef WITH_GIF
-		struct content_gif_data gif;
 #endif
 #ifdef WITH_SPRITE
 		struct content_sprite_data sprite;
@@ -165,13 +183,14 @@ void content_redraw(struct content *c, long x, long y,
 		float scale);
 void content_add_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, const char *error),
+			void *p2, union content_msg_data data),
 		void *p1, void *p2);
 void content_remove_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, const char *error),
+			void *p2, union content_msg_data data),
 		void *p1, void *p2);
-void content_broadcast(struct content *c, content_msg msg, char *error);
+void content_broadcast(struct content *c, content_msg msg,
+		union content_msg_data data);
 void content_add_instance(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params, void **state);

@@ -58,9 +58,9 @@ static const struct mime_entry mime_map[] = {
         {"application/x-drawfile", CONTENT_DRAW},
         {"image/drawfile", CONTENT_DRAW},
 #endif
+#endif
 #ifdef WITH_GIF
 	{"image/gif", CONTENT_GIF},
-#endif
 #endif
 #ifdef WITH_JPEG
 	{"image/jpeg", CONTENT_JPEG},
@@ -118,14 +118,14 @@ static const struct handler_entry handler_map[] = {
 	{nsjpeg_create, 0, nsjpeg_convert, 0,
 		0, nsjpeg_destroy, nsjpeg_redraw, 0, 0, 0},
 #endif
+#ifdef WITH_GIF
+	{nsgif_create, 0, nsgif_convert, 0,
+	        0, nsgif_destroy, nsgif_redraw, 0, 0, 0},
+#endif
 #ifdef riscos
 #ifdef WITH_PNG
 	{nspng_create, nspng_process_data, nspng_convert, 0,
 		0, nspng_destroy, nspng_redraw, 0, 0, 0},
-#endif
-#ifdef WITH_GIF
-	{nsgif_create, 0, nsgif_convert, 0,
-	        0, nsgif_destroy, nsgif_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_SPRITE
 	{sprite_create, sprite_process_data, sprite_convert, sprite_revive,
@@ -222,6 +222,7 @@ struct content * content_create(char *url)
 void content_set_type(struct content *c, content_type type, char* mime_type,
 		const char *params[])
 {
+	union content_msg_data data;
 	assert(c != 0);
 	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
 	assert(type < CONTENT_UNKNOWN);
@@ -232,7 +233,7 @@ void content_set_type(struct content *c, content_type type, char* mime_type,
 	c->source_data = xcalloc(0, 1);
 	if (handler_map[type].create)
 		handler_map[type].create(c, params);
-	content_broadcast(c, CONTENT_MSG_LOADING, 0);
+	content_broadcast(c, CONTENT_MSG_LOADING, data);
 	/* c may be destroyed at this point as a result of
 	 * CONTENT_MSG_LOADING, so must not be accessed */
 }
@@ -274,6 +275,7 @@ void content_process_data(struct content *c, char *data, unsigned long size)
 
 void content_convert(struct content *c, unsigned long width, unsigned long height)
 {
+	union content_msg_data data;
 	assert(c != 0);
 	assert(c->type < HANDLER_MAP_COUNT);
 	assert(c->status == CONTENT_STATUS_LOADING);
@@ -282,8 +284,8 @@ void content_convert(struct content *c, unsigned long width, unsigned long heigh
 	if (handler_map[c->type].convert) {
 		if (handler_map[c->type].convert(c, width, height)) {
 			/* convert failed, destroy content */
-			content_broadcast(c, CONTENT_MSG_ERROR,
-					"Conversion failed");
+			data.error = "Conversion failed";
+			content_broadcast(c, CONTENT_MSG_ERROR, data);
 			if (c->cache)
 				cache_destroy(c);
 			content_destroy(c);
@@ -294,9 +296,9 @@ void content_convert(struct content *c, unsigned long width, unsigned long heigh
 	}
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
-	content_broadcast(c, CONTENT_MSG_READY, 0);
+	content_broadcast(c, CONTENT_MSG_READY, data);
 	if (c->status == CONTENT_STATUS_DONE)
-		content_broadcast(c, CONTENT_MSG_DONE, 0);
+		content_broadcast(c, CONTENT_MSG_DONE, data);
 }
 
 
@@ -326,13 +328,14 @@ void content_revive(struct content *c, unsigned long width, unsigned long height
 
 void content_reformat(struct content *c, unsigned long width, unsigned long height)
 {
+	union content_msg_data data;
 	assert(c != 0);
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
 	c->available_width = width;
 	if (handler_map[c->type].reformat) {
 		handler_map[c->type].reformat(c, width, height);
-		content_broadcast(c, CONTENT_MSG_REFORMAT, 0);
+		content_broadcast(c, CONTENT_MSG_REFORMAT, data);
 	}
 }
 
@@ -417,7 +420,7 @@ void content_redraw(struct content *c, long x, long y,
 
 void content_add_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, const char *error),
+			void *p2, union content_msg_data data),
 		void *p1, void *p2)
 {
 	struct content_user *user;
@@ -440,7 +443,7 @@ void content_add_user(struct content *c,
 
 void content_remove_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, const char *error),
+			void *p2, union content_msg_data data),
 		void *p1, void *p2)
 {
 	struct content_user *user, *next;
@@ -487,14 +490,15 @@ void content_remove_user(struct content *c,
  * Send a message to all users.
  */
 
-void content_broadcast(struct content *c, content_msg msg, char *error)
+void content_broadcast(struct content *c, content_msg msg,
+		union content_msg_data data)
 {
 	struct content_user *user, *next;
 	c->lock++;
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0)
-			user->callback(msg, c, user->p1, user->p2, error);
+			user->callback(msg, c, user->p1, user->p2, data);
 	}
 	if (--(c->lock) == 0 && c->destroy_pending)
 		content_destroy(c);

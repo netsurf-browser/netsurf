@@ -33,7 +33,7 @@
 	All GIFs are dynamically decompressed using the routines that gifread.c
 	provides. Whilst this allows support for progressive decoding, it is
 	not implemented here as NetSurf currently does not provide such support.
-	
+
 	[rjw] - Sun 4th April 2004
 */
 
@@ -54,18 +54,18 @@ void nsgif_create(struct content *c, const char *params[]) {
 
 int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight) {
 	struct gif_animation *gif;
-	
+
 	/*	Create our animation
 	*/
 	gif = c->data.gif.gif;
 	gif->gif_data = c->source_data;
 	gif->buffer_size = c->source_size;
 	gif->buffer_position = 0;	// Paranoid
-	
+
 	/*	Initialise the GIF
 	*/
 	gif_initialise(gif);
-	
+
 	/*	Store our content width
 	*/
 	c->width = gif->width;
@@ -88,10 +88,10 @@ void nsgif_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
 		float scale) {
-		  
+
 	int previous_frame;
 	unsigned int frame;
-		  
+
 	/*	Decode from the last frame to the current frame
 	*/
 	previous_frame = c->data.gif.gif->decoded_frame;
@@ -132,6 +132,7 @@ void nsgif_destroy(struct content *c)
 void nsgif_animate(void *p)
 {
 	struct content *c = p;
+	union content_msg_data data;
 
 	/* at the moment just advance by one frame */
 	c->data.gif.current_frame++;
@@ -147,7 +148,20 @@ void nsgif_animate(void *p)
 	schedule(c->data.gif.gif->frame_delays[c->data.gif.current_frame],
 			nsgif_animate, c);
 
-	content_broadcast(c, CONTENT_MSG_REDRAW, 0);
+	/* area within gif to redraw (currently whole gif) */
+	data.redraw.x = 0;
+	data.redraw.y = 0;
+	data.redraw.width = c->width;
+	data.redraw.height = c->height;
+
+	/* redraw background (true) or plot on top (false) */
+	data.redraw.full_redraw = false;
+
+	/* other data */
+	data.redraw.object = c;
+	data.redraw.object_x = 0;
+	data.redraw.object_y = 0;
+	content_broadcast(c, CONTENT_MSG_REDRAW, data);
 }
 
 #endif

@@ -64,7 +64,7 @@ static void fetchcache_error_page(struct content *c, const char *error);
 
 struct content * fetchcache(const char *url, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, const char *error),
+			void *p2, union content_msg_data data),
 		void *p1, void *p2, unsigned long width, unsigned long height,
 		bool no_error_pages
 #ifdef WITH_POST
@@ -150,6 +150,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 	char *mime_type, *url;
 	char **params;
 	unsigned int i;
+	union content_msg_data msg_data;
 
         c->lock++;
 
@@ -180,7 +181,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 				sprintf(c->status_message,
 						messages_get("Received"),
 						c->source_size + size);
-			content_broadcast(c, CONTENT_MSG_STATUS, 0);
+			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 			content_process_data(c, data, size);
 			break;
 
@@ -189,7 +190,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			sprintf(c->status_message, messages_get("Converting"),
 					c->source_size);
 			c->fetch = 0;
-			content_broadcast(c, CONTENT_MSG_STATUS, 0);
+			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 			content_convert(c, c->width, c->height);
 			break;
 
@@ -199,7 +200,8 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			if (c->cache)
 				cache_destroy(c);
 			if (c->no_error_pages) {
-				content_broadcast(c, CONTENT_MSG_ERROR, data);
+				msg_data.error = data;
+				content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 				content_destroy(c);
 			} else {
 				content_reset(c);
@@ -214,11 +216,12 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			 * relative ones: treat them as relative to requested URL */
 			url = url_join(data, c->url);
 			if (url) {
-				content_broadcast(c, CONTENT_MSG_REDIRECT, url);
-				xfree(url);
+				msg_data.redirect = url;
+				content_broadcast(c, CONTENT_MSG_REDIRECT, msg_data);
+				free(url);
 			} else {
-				content_broadcast(c, CONTENT_MSG_ERROR,
-						messages_get("BadRedirect"));
+				msg_data.error = messages_get("BadRedirect");
+				content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			}
 			if (c->cache)
 				cache_destroy(c);
@@ -229,7 +232,8 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 		        /* data -> string containing the Realm */
 		        LOG(("FETCH_AUTH, '%s'", data));
 		        c->fetch = 0;
-		        content_broadcast(c, CONTENT_MSG_AUTH, data);
+		        msg_data.auth_realm = data;
+		        content_broadcast(c, CONTENT_MSG_AUTH, msg_data);
 		        cache_destroy(c);
 		        break;
 #endif

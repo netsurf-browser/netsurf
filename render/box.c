@@ -765,8 +765,9 @@ struct result box_br(xmlNode *n, struct status *status,
 }
 
 static const content_type image_types[] = {
+	CONTENT_JPEG, CONTENT_GIF,
 #ifdef riscos
-	CONTENT_JPEG, CONTENT_PNG, CONTENT_GIF,	CONTENT_SPRITE, CONTENT_DRAW,
+	CONTENT_PNG, CONTENT_SPRITE, CONTENT_DRAW,
 #endif
 	CONTENT_UNKNOWN };
 

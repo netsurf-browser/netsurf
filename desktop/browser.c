@@ -37,7 +37,7 @@
 
 
 static void browser_window_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, const char *error);
+		void *p1, void *p2, union content_msg_data data);
 static void browser_window_convert_to_download(struct browser_window *bw,
 		content_msg msg);
 static void browser_window_start_throbber(struct browser_window *bw);
@@ -48,7 +48,7 @@ static void browser_window_set_status(struct browser_window *bw,
 		const char *text);
 static void browser_window_set_pointer(gui_pointer_shape shape);
 static void download_window_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, const char *error);
+		void *p1, void *p2, union content_msg_data data);
 
 static void browser_window_text_selection(struct browser_window* bw,
 		unsigned long click_x, unsigned long click_y, int click_type);
@@ -152,6 +152,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 {
 	struct content *c;
 	char *url2;
+	union content_msg_data data;
 
 	url2 = url_normalize(url);
 	if (!url2) {
@@ -185,14 +186,14 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_start_throbber(bw);
 
 	if (c->status == CONTENT_STATUS_READY) {
-		browser_window_callback(CONTENT_MSG_READY, c, bw, 0, 0);
+		browser_window_callback(CONTENT_MSG_READY, c, bw, 0, data);
 
 	} else if (c->status == CONTENT_STATUS_DONE) {
-		browser_window_callback(CONTENT_MSG_READY, c, bw, 0, 0);
+		browser_window_callback(CONTENT_MSG_READY, c, bw, 0, data);
 		if (c->type == CONTENT_OTHER)
-			download_window_callback(CONTENT_MSG_DONE, c, bw, 0, 0);
+			download_window_callback(CONTENT_MSG_DONE, c, bw, 0, data);
 		else
-			browser_window_callback(CONTENT_MSG_DONE, c, bw, 0, 0);
+			browser_window_callback(CONTENT_MSG_DONE, c, bw, 0, data);
 	}
 }
 
@@ -202,10 +203,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
  */
 
 void browser_window_callback(content_msg msg, struct content *c,
-	     void *p1, void *p2, const char *error)
+	     void *p1, void *p2, union content_msg_data data)
 {
 	struct browser_window *bw = p1;
-	struct box *box;
 	char status[40];
 
 	if (c->type == CONTENT_OTHER) {
@@ -259,7 +259,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			break;
 
 		case CONTENT_MSG_ERROR:
-			browser_window_set_status(bw, error);
+			browser_window_set_status(bw, data.error);
 			if (c == bw->loading_content)
 				bw->loading_content = 0;
 			else if (c == bw->current_content)
@@ -275,8 +275,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			bw->loading_content = 0;
 			browser_window_set_status(bw,
 					messages_get("Redirecting"));
-			/* error actually holds the new URL */
-			browser_window_go(bw, error);
+			browser_window_go(bw, data.redirect);
 			break;
 
 		case CONTENT_MSG_REFORMAT:
@@ -284,21 +283,12 @@ void browser_window_callback(content_msg msg, struct content *c,
 			break;
 
 		case CONTENT_MSG_REDRAW:
-			/* error actually holds the box */
-			box = (struct box *) error;
-			if (box) {
-				int x, y;
-				box_coords(box, &x, &y);
-				gui_window_update_box(bw->window, x, y,
-						x + box->width,
-						y + box->height);
-			} else
-				gui_window_redraw_window(bw->window);
+			gui_window_update_box(bw->window, &data);
 			break;
 
 #ifdef WITH_AUTH
 		case CONTENT_MSG_AUTH:
-			gui_401login_open(bw, c, error);
+			gui_401login_open(bw, c, data.auth_realm);
 			if (c == bw->loading_content)
 				bw->loading_content = 0;
 			else if (c == bw->current_content)
@@ -322,6 +312,7 @@ void browser_window_convert_to_download(struct browser_window *bw,
 {
 	gui_window *download_window;
 	struct content *c = bw->loading_content;
+	union content_msg_data data;
 	assert(c);
 
 	/* create download window and add content to it */
@@ -330,7 +321,7 @@ void browser_window_convert_to_download(struct browser_window *bw,
 
 	if (msg == CONTENT_MSG_DONE)
 		download_window_callback(CONTENT_MSG_DONE, c, download_window,
-				0, 0);
+				0, data);
 
 	/* remove content from browser window */
 	bw->loading_content = 0;
@@ -475,7 +466,7 @@ void browser_window_destroy(struct browser_window *bw)
  */
 
 void download_window_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, const char *error)
+		void *p1, void *p2, union content_msg_data data)
 {
 	gui_window *download_window = p1;
 
@@ -489,7 +480,7 @@ void download_window_callback(content_msg msg, struct content *c,
 			break;
 
 		case CONTENT_MSG_ERROR:
-			gui_download_window_error(download_window, error);
+			gui_download_window_error(download_window, data.error);
 			break;
 
 		case CONTENT_MSG_READY:

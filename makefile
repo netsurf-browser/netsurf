@@ -10,14 +10,14 @@ OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
 	box.o form.o html.o layout.o textplain.o \
 	messages.o utils.o translit.o pool.o url.o imagemap.o \
-	jpeg.o save_complete.o loginlist.o
+	jpeg.o save_complete.o loginlist.o gif.o gifread.o
 OBJECTS = $(OBJECTS_COMMON) \
 	browser.o netsurf.o options.o \
 	htmlinstance.o htmlredraw.o \
 	401login.o constdata.o dialog.o download.o frames.o gui.o \
 	menus.o mouseactions.o \
 	textselection.o theme.o window.o \
-	draw.o gif.o gifread.o plugin.o png.o sprite.o \
+	draw.o plugin.o png.o sprite.o \
 	about.o filetype.o font.o uri.o url_protocol.o history.o \
 	version.o thumbnail.o \
 	save.o save_draw.o save_text.o schedule.o

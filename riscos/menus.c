@@ -187,7 +187,7 @@ void translate_menu(wimp_menu *menu)
 		menu->entries[0].menu_flags |= wimp_MENU_TITLE_INDIRECTED;
 
         }
-        
+
 	/* items */
 	do {
 	  	indirected_text = (char *)messages_get(menu->entries[i].data.text);
@@ -325,7 +325,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						if (selection->items[2] == 1) option_filter_sprites = !option_filter_sprites;
 						if (selection->items[2] >= 0) {
 							ro_gui_menu_prepare_images();
-							content_broadcast(c, CONTENT_MSG_REDRAW, 0);
+/* 							content_broadcast(c, CONTENT_MSG_REDRAW, 0); */
 
 						}
 						break;
@@ -374,7 +374,7 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 
 //	if ((warning->selection.items[0] != 0) && (warning->selection.items[0] != 3))
 //		return;
-	
+
 	switch (warning->selection.items[0]) {
 		case 0: /* Page -> */
 			switch (warning->selection.items[1]) {
@@ -393,7 +393,7 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 				case 2: /* Save complete */
 					gui_current_save_type = GUI_SAVE_COMPLETE;
 					break;
-		
+
 
        	         		case 0: /* Page info */
        	                 		ro_gui_menu_pageinfo(warning);
@@ -478,7 +478,7 @@ void ro_gui_menu_prepare_save(struct content *c)
 
 static void ro_gui_menu_prepare_images(void) {
 	if (current_menu != browser_menu) return;
-	
+
 	/*	We don't currently have any local options so we update from the global ones
 	*/
 	browser_image_menu->entries[0].menu_flags &= ~wimp_MENU_TICKED;
