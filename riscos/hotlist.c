@@ -932,7 +932,7 @@ struct hotlist_entry *ro_gui_hotlist_create_entry(const char *title,
 		return NULL;
 	}
 	if (title) {
-		entry->title = strdup(title);
+		entry->title = squash_whitespace(title);
 		if (!entry->title) {
 			warn_user("NoMemory", 0);
 			free(entry->url);
