@@ -1,4 +1,4 @@
-$Id: TODO-CSS,v 1.14 2004/09/03 22:27:08 tlsa Exp $
+$Id: TODO-CSS,v 1.15 2005/01/12 00:01:18 tlsa Exp $
 
 TODO-CSS file for NetSurf.
 
@@ -83,7 +83,7 @@ See TODO-HTML for HTML related TODOs.
 + text-transform
 - top
 - unicode-bidi
-- vertical-align
+= vertical-align
 = visibility (not collapse)
 = white-space
 - widows
