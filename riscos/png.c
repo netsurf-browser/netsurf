@@ -1,5 +1,5 @@
 /**
- * $Id: png.c,v 1.2 2003/06/05 14:24:58 bursa Exp $
+ * $Id: png.c,v 1.3 2003/06/14 11:34:02 bursa Exp $
  */
 
 #include <assert.h>
@@ -283,9 +283,9 @@ void nspng_destroy(struct content *c)
 void nspng_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height)
 {
-	/* TODO: scale to width, height */
 	int size;
 	osspriteop_trans_tab *table;
+	os_factors factors;
 
 	xcolourtrans_generate_table_for_sprite(c->data.png.sprite_area,
 			(osspriteop_id) (c->data.png.sprite_area + 1),
@@ -297,10 +297,15 @@ void nspng_redraw(struct content *c, long x, long y,
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
 
+	factors.xmul = width;
+	factors.ymul = height;
+	factors.xdiv = c->width * 2;
+	factors.ydiv = c->height * 2;
+
 	xosspriteop_put_sprite_scaled(osspriteop_PTR,
 			c->data.png.sprite_area,
 			(osspriteop_id) (c->data.png.sprite_area + 1),
-			x, y, 0, 0, table);
+			x, y, os_ACTION_OVERWRITE, &factors, table);
 
 	xfree(table);
 }

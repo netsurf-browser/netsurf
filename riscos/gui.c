@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.31 2003/06/08 04:00:05 jmb Exp $
+ * $Id: gui.c,v 1.32 2003/06/14 11:34:02 bursa Exp $
  */
 
 #include "netsurf/desktop/options.h"
@@ -903,7 +903,7 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
         content_redraw(c,
             (int) redraw->box.x0 - (int) redraw->xscroll,
             (int) redraw->box.y1 - (int) redraw->yscroll - (int) c->height * 2,
-            c->width, c->height);
+            c->width * 2, c->height * 2);
       }
       more = wimp_get_rectangle(redraw);
     }

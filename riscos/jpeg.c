@@ -1,5 +1,5 @@
 /**
- * $Id: jpeg.c,v 1.4 2003/05/10 11:13:34 bursa Exp $
+ * $Id: jpeg.c,v 1.5 2003/06/14 11:34:02 bursa Exp $
  *
  * This is just a temporary implementation using the JPEG renderer
  * available in some versions of RISC OS.
@@ -66,9 +66,14 @@ void jpeg_destroy(struct content *c)
 void jpeg_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height)
 {
-	/* TODO: scale to width, height */
+	os_factors factors;
+	factors.xmul = width;
+	factors.ymul = height;
+	factors.xdiv = c->width * 2;
+	factors.ydiv = c->height * 2;
+
 	xjpeg_plot_scaled((jpeg_image *) c->data.jpeg.data,
-			x, y, 0, (int) c->data.jpeg.length,
+			x, y, &factors, (int) c->data.jpeg.length,
 			jpeg_SCALE_DITHERED);
 }
 
