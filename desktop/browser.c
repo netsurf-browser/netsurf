@@ -1382,6 +1382,7 @@ void browser_window_follow_link(struct browser_window *bw,
 	int found, plot_index;
 	int i;
 	int done = 0;
+	struct css_style *style;
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
 
 	found = 0;
@@ -1399,8 +1400,8 @@ void browser_window_follow_link(struct browser_window *bw,
 		return;
 
 	for (i = found - 1; i >= 0; i--) {
-		if (click_boxes[i].box->style->visibility ==
-		    CSS_VISIBILITY_HIDDEN)
+	        style = click_boxes[i].box->style;
+		if (style != 0 && style->visibility == CSS_VISIBILITY_HIDDEN)
 			continue;
 		if (click_boxes[i].box->href != NULL) {
 			char *url =
@@ -1511,10 +1512,10 @@ void browser_window_follow_link(struct browser_window *bw,
 			done = 1;
 			break;
 		}
-		if (click_type == 0 && click_boxes[i].box->style->cursor != CSS_CURSOR_UNKNOWN) {
+		if (click_type == 0 && style != 0 &&
+		    style->cursor != CSS_CURSOR_UNKNOWN &&
+		    pointer == GUI_POINTER_DEFAULT) {
 		        pointer = get_pointer_shape(click_boxes[i].box->style->cursor);
-		        done = 1;
-		        break;
 		}
 	}
 
