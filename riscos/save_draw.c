@@ -282,23 +282,24 @@ void add_graphic(struct content *content, struct box *box,
         drawfile_sprite *ds;
         long sprite_length = 0;
 
+        /* cast-tastic... */
         switch (content->type) {
           case CONTENT_JPEG:
                if (content->data.jpeg.use_module) {
                  sprite_length = -1;
                }
                else {
-                 sprite_length = content->data.jpeg.sprite_area->size;
+                 sprite_length = ((osspriteop_header*)((char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first))->size;
                }
                break;
           case CONTENT_PNG:
-               sprite_length = content->data.png.sprite_area->size;
+               sprite_length = ((osspriteop_header*)((char*)content->data.png.sprite_area+content->data.png.sprite_area->first))->size;
                break;
           case CONTENT_GIF:
-               sprite_length = content->data.gif.sprite_area->size;
+               sprite_length = ((osspriteop_header*)((char*)content->data.gif.sprite_area+content->data.gif.sprite_area->first))->size;
                break;
           case CONTENT_SPRITE:
-               sprite_length = content->data.sprite.length-16;
+               sprite_length = ((osspriteop_header*)((char*)content->data.sprite.data+(((osspriteop_area*)content->data.sprite.data)->first)))->size;
                break;
           default:
                break;
@@ -320,19 +321,19 @@ void add_graphic(struct content *content, struct box *box,
 
         switch (content->type) {
           case CONTENT_JPEG:
-               memcpy((char*)ds+16, content->data.jpeg.sprite_area+1,
+               memcpy((char*)ds+16, (char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first,
                        (unsigned)sprite_length);
                break;
           case CONTENT_PNG:
-               memcpy((char*)ds+16, content->data.png.sprite_area+1,
+               memcpy((char*)ds+16, (char*)content->data.png.sprite_area+content->data.png.sprite_area->first,
                        (unsigned)sprite_length);
                break;
           case CONTENT_GIF:
-               memcpy((char*)ds+16, content->data.gif.sprite_area+1,
+               memcpy((char*)ds+16, (char*)content->data.gif.sprite_area+content->data.gif.sprite_area->first,
                        (unsigned)sprite_length);
                break;
           case CONTENT_SPRITE:
-               memcpy((char*)ds+16, (char*)content->data.sprite.data+16,
+               memcpy((char*)ds+16, (char*)content->data.sprite.data+((osspriteop_area*)content->data.sprite.data)->first,
                        (unsigned)sprite_length);
                break;
           default:
