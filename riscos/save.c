@@ -25,6 +25,7 @@
 #include "netsurf/riscos/save_draw.h"
 #include "netsurf/riscos/thumbnail.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
@@ -257,22 +258,24 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 				return;
 			}
 			break;
-
+#ifdef WITH_SAVE_COMPLETE
 		case GUI_SAVE_COMPLETE:
 			if (!ro_gui_save_complete(c, path))
 				return;
 			break;
-
+#endif
+#ifdef WITH_DRAW_EXPORT
 		case GUI_SAVE_DRAW:
 			if (!save_as_draw(c, path))
 				return;
 			break;
-
+#endif
+#ifdef WITH_TEXT_EXPORT
 		case GUI_SAVE_TEXT:
 			save_as_text(c, path);
 			xosfile_set_type(path, 0xfff);
 			break;
-
+#endif
 		case GUI_SAVE_OBJECT_ORIG:
 			error = xosfile_save_stamped(path,
 					ro_content_filetype(c),
@@ -347,6 +350,8 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 #define HEIGHT 64
 #define SPRITE_SIZE (16 + 44 + ((WIDTH / 2 + 3) & ~3) * HEIGHT / 2)
 
+#ifdef WITH_SAVE_COMPLETE
+
 bool ro_gui_save_complete(struct content *c, char *path)
 {
 	char buf[256];
@@ -416,43 +421,37 @@ bool ro_gui_save_complete(struct content *c, char *path)
 	return save_complete(c, path);
 }
 
-
+#endif
 
 void ro_gui_save_object_native(struct content *c, char *path)
 {
-        os_error *error;
-        osspriteop_area *temp;
+	os_error *error;
 
-        switch (c->type) {
-                case CONTENT_JPEG:
-                        error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.jpeg.sprite_area, path);
-                        break;
-                case CONTENT_PNG:
-                        error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.png.sprite_area, path);
-                        break;
-                case CONTENT_JNG:
-                case CONTENT_MNG:
-                        error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.mng.sprite_area, path);
-                        break;
-                case CONTENT_GIF:
-                        /* create sprite area */
-                        temp = calloc(c->data.gif.gif->frame_image->size+16,
-                                      sizeof(char));
-                        temp->size = c->data.gif.gif->frame_image->size+16;
-                        temp->sprite_count = 1;
-                        temp->first = 16;
-                        temp->used = c->data.gif.gif->frame_image->size+16;
-                        memcpy((char*)temp+16,
-                               (char*)c->data.gif.gif->frame_image,
-                               c->data.gif.gif->frame_image->size);
-                        /* ensure extra words for name are null */
-                        memset((char*)temp+24, 0, 8);
-                        error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, temp, path);
-                        free(temp);
-                        break;
-                default:
-                        break;
-        }
+	switch (c->type) {
+#ifdef WITH_JPEG
+		case CONTENT_JPEG:
+			error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.jpeg.sprite_area, path);
+			break;
+#endif
+#ifdef WITH_PNG
+		case CONTENT_PNG:
+			error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.png.sprite_area, path);
+			break;
+#endif
+#ifdef WITH_MNG
+		case CONTENT_JNG:
+		case CONTENT_MNG:
+			error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.mng.sprite_area, path);
+			break;
+#endif
+#ifdef WITH_GIF
+		case CONTENT_GIF:
+			error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.gif.gif->frame_image, path);
+			break;
+#endif
+		default:
+			break;
+	}
 }
 
 
@@ -474,32 +473,32 @@ bool ro_gui_save_link(struct content *c, link_format format, char *path)
 		return false;
 	}
 
-        switch (format) {
-               case LINK_ACORN: /* URI */
-                       fprintf(fp, "%s\t%s\n", "URI", "100");
-                       fprintf(fp, "\t# NetSurf %s\n\n", netsurf_version);
-                       fprintf(fp, "\t%s\n", c->url);
-                       fprintf(fp, "\t*\n");
-                       break;
-               case LINK_ANT: /* URL */
-               case LINK_TEXT: /* Text */
-                       fprintf(fp, "%s\n", c->url);
-                       break;
-        }
+	switch (format) {
+		case LINK_ACORN: /* URI */
+			fprintf(fp, "%s\t%s\n", "URI", "100");
+			fprintf(fp, "\t# NetSurf %s\n\n", netsurf_version);
+			fprintf(fp, "\t%s\n", c->url);
+			fprintf(fp, "\t*\n");
+			break;
+		case LINK_ANT: /* URL */
+		case LINK_TEXT: /* Text */
+			fprintf(fp, "%s\n", c->url);
+			break;
+	}
 
-        fclose(fp);
+	fclose(fp);
 
-        switch (format) {
-               case LINK_ACORN: /* URI */
-                       xosfile_set_type(path, 0xf91);
-                       break;
-               case LINK_ANT: /* URL */
-                       xosfile_set_type(path, 0xb28);
-                       break;
-               case LINK_TEXT: /* Text */
-                       xosfile_set_type(path, 0xfff);
-                       break;
-        }
+	switch (format) {
+		case LINK_ACORN: /* URI */
+			xosfile_set_type(path, 0xf91);
+			break;
+		case LINK_ANT: /* URL */
+			xosfile_set_type(path, 0xb28);
+			break;
+		case LINK_TEXT: /* Text */
+			xosfile_set_type(path, 0xfff);
+			break;
+	}
 
-        return true;
+	return true;
 }
