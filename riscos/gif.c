@@ -124,6 +124,7 @@ void nsgif_redraw(struct content *c, long x, long y,
 {
   unsigned int size;
   osspriteop_trans_tab *table;
+  os_factors factors;
 
 
   xcolourtrans_generate_table_for_sprite(c->data.gif.sprite_area,
@@ -138,6 +139,11 @@ void nsgif_redraw(struct content *c, long x, long y,
 		colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 		table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
 
+  factors.xmul = width;
+  factors.ymul = height;
+  factors.xdiv = c->width * 2;
+  factors.ydiv = c->height * 2;
+
   xosspriteop_put_sprite_scaled(osspriteop_PTR,
 		c->data.gif.sprite_area,
 		(osspriteop_id) (c->data.gif.sprite_area + 1),
@@ -145,7 +151,7 @@ void nsgif_redraw(struct content *c, long x, long y,
 		/* osspriteop_USE_PALETTE is RO 3.5+ only.
 		 * behaviour on RO < 3.5 is unknown...
 		 */
-		osspriteop_USE_MASK | osspriteop_USE_PALETTE, 0, table);
+		osspriteop_USE_MASK | osspriteop_USE_PALETTE, &factors, table);
 
   xfree(table);
 }
