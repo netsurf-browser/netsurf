@@ -397,6 +397,11 @@ void browser_window_callback(content_msg msg, struct content *c,
 
     case CONTENT_MSG_AUTH:
       gui_401login_open(bw, c, error);
+      if (c == bw->loading_content)
+        bw->loading_content = 0;
+      else if (c == bw->current_content)
+        bw->current_content = 0;
+      browser_window_stop_throbber(bw);
       break;
 
     default:

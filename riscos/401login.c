@@ -112,22 +112,12 @@ void ro_gui_401login_click(wimp_pointer *pointer) {
 
   switch (pointer->i) {
     case ICON_401LOGIN_LOGIN:
-            if (pointer->buttons == wimp_CLICK_SELECT) {
-                    get_unamepwd();
-                    ro_gui_dialog_close(dialog_401li);
-                    browser_window_open_location(bwin, url);
-            }
-            else
-                    ro_gui_dialog_close(dialog_401li);
+            get_unamepwd();
+            ro_gui_dialog_close(dialog_401li);
+            browser_window_open_location(bwin, url);
             break;
     case ICON_401LOGIN_CANCEL:
-            if (pointer->buttons == wimp_CLICK_SELECT)
-                    ro_gui_dialog_close(dialog_401li);
-            else {
-                    get_unamepwd();
-                    ro_gui_dialog_close(dialog_401li);
-                    browser_window_open_location(bwin, url);
-            }
+            ro_gui_dialog_close(dialog_401li);
             break;
     default: break;
   }
