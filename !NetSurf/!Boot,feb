@@ -2,7 +2,15 @@ Set NetSurf$Dir <Obey$Dir>
 
 Set File$Type_F79 CSS
 
-|NetSurf Sprites
+| Application system variables
+Set NetSurf$Help <NetSurf$Dir>.Docs.docs/en
+Set NetSurf$Version "Development Build"
+Set NetSurf$Web "http://www.netsurf.sourceforge.net/"
+Set NetSurf$Title "NetSurf"
+Set NetSurf$Publisher "The NetSurf Developers"
+Set NetSurf$Description "Web browser"
+
+| NetSurf Sprites
 Set NetSurf$Sprites <NetSurf$Dir>.!Sprites
 RMEnsure UtilityModule 5.00 Set NetSurf$Sprites <NetSurf$Dir>.!SpritesA
 RMEnsure UtilityModule 4.37 Set NetSurf$Sprites <NetSurf$Dir>.!Sprites
