@@ -44,13 +44,28 @@ static void fetchcache_error_page(struct content *c, const char *error);
  *
  * If an error occurs immediately, 0 may be returned. Later errors will be
  * reported via the callback.
+ *
+ * \param url address to fetch
+ * \param referer url of referring page, or 0 if none
+ * \param callback function to call when anything interesting happens to
+ *              the new content
+ * \param p1 user parameter for callback
+ * \param p2 user parameter for callback
+ * \param width available space
+ * \param height available space
+ * \param no_error_pages if an error occurs, send CONTENT_MSG_ERROR instead
+ *              of generating an error page
+ * \param post_urlenc url encoded post data, or 0 if none
+ * \param post_multipart multipart post data, or 0 if none
+ * \param cookies send and accept cookies
+ * \return a new content, or 0 if an error occurred and no_error_pages is true
  */
 
-struct content * fetchcache(const char *url0, char *referer,
+struct content * fetchcache(const char *url, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
 		void *p1, void *p2, unsigned long width, unsigned long height,
-		bool only_2xx
+		bool no_error_pages
 #ifdef WITH_POST
 		, char *post_urlenc,
 		struct form_successful_control *post_multipart
@@ -61,8 +76,8 @@ struct content * fetchcache(const char *url0, char *referer,
 		)
 {
 	struct content *c;
-	char *url = xstrdup(url0);
-	char *hash = strchr(url, '#');
+	char *url1 = xstrdup(url);
+	char *hash = strchr(url1, '#');
 	const char *params[] = { 0 };
 	char error_message[500];
 
@@ -70,21 +85,21 @@ struct content * fetchcache(const char *url0, char *referer,
 	if (hash != 0)
 		*hash = 0;
 
-	LOG(("url %s", url));
+	LOG(("url %s", url1));
 
 #ifdef WITH_POST
 	if (!post_urlenc && !post_multipart)
 #endif
 	{
-		c = cache_get(url);
+		c = cache_get(url1);
 		if (c != 0) {
-			free(url);
+			free(url1);
 			content_add_user(c, callback, p1, p2);
 			return c;
 		}
 	}
 
-	c = content_create(url);
+	c = content_create(url1);
 	content_add_user(c, callback, p1, p2);
 
 #ifdef WITH_POST
@@ -95,7 +110,8 @@ struct content * fetchcache(const char *url0, char *referer,
 	c->fetch_size = 0;
 	c->width = width;
 	c->height = height;
-	c->fetch = fetch_start(url, referer, fetchcache_callback, c, only_2xx
+	c->no_error_pages = no_error_pages;
+	c->fetch = fetch_start(url1, referer, fetchcache_callback, c, no_error_pages
 #ifdef WITH_POST
 			,post_urlenc, post_multipart
 #endif
@@ -107,11 +123,16 @@ struct content * fetchcache(const char *url0, char *referer,
 		LOG(("warning: fetch_start failed"));
 		if (c->cache)
 			cache_destroy(c);
+		if (no_error_pages) {
+			content_destroy(c);
+			free(url1);
+			return 0;
+		}
 		snprintf(error_message, sizeof error_message,
-				messages_get("InvalidURL"), url);
+				messages_get("InvalidURL"), url1);
 		fetchcache_error_page(c, error_message);
 	}
-	free(url);
+	free(url1);
 	return c;
 }
 
@@ -129,6 +150,8 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 	char *mime_type, *url;
 	char **params;
 	unsigned int i;
+
+        c->lock++;
 
 	switch (msg) {
 		case FETCH_TYPE:
@@ -167,11 +190,15 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 		case FETCH_ERROR:
 			LOG(("FETCH_ERROR, '%s'", data));
 			c->fetch = 0;
-/* 			content_broadcast(c, CONTENT_MSG_ERROR, data); */
 			if (c->cache)
 				cache_destroy(c);
-			content_reset(c);
-			fetchcache_error_page(c, data);
+			if (c->no_error_pages) {
+				content_broadcast(c, CONTENT_MSG_ERROR, data);
+				content_destroy(c);
+			} else {
+				content_reset(c);
+				fetchcache_error_page(c, data);
+			}
 			break;
 
 		case FETCH_REDIRECT:
@@ -202,6 +229,9 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 		default:
 			assert(0);
 	}
+
+	if (--(c->lock) == 0 && c->destroy_pending)
+		content_destroy(c);
 }
 
 

@@ -213,6 +213,7 @@ void cache_shrink(void)
 		LOG(("size %lu, removing %p '%s'", size, e->content, e->content->url));
 		/* TODO: move to disc cache */
 		size -= e->content->size;
+		e->content->cache = 0;
 		content_destroy(e->content);
 		unused_list->prev = e->prev;
 		e->prev->next = unused_list;

@@ -195,6 +195,8 @@ struct content * content_create(char *url)
 	user_sentinel->p1 = user_sentinel->p2 = 0;
 	user_sentinel->next = 0;
 	c->user_list = user_sentinel;
+	c->lock = 0;
+	c->destroy_pending = false;
 	return c;
 }
 
@@ -326,8 +328,16 @@ void content_reformat(struct content *c, unsigned long width, unsigned long heig
 void content_destroy(struct content *c)
 {
 	struct content_user *user, *next;
-	assert(c != 0);
+	assert(c);
 	LOG(("content %p %s", c, c->url));
+	assert(!c->fetch);
+	assert(!c->cache);
+
+	if (c->lock) {
+		c->destroy_pending = true;
+		return;
+	}
+
 	if (c->type < HANDLER_MAP_COUNT)
 		handler_map[c->type].destroy(c);
 	for (user = c->user_list; user != 0; user = next) {
@@ -435,8 +445,10 @@ void content_remove_user(struct content *c,
 	 * and destroy content structure if not in state READY or DONE */
 	if (c->user_list->next == 0) {
 		LOG(("no users for %p %s", c, c->url));
-		if (c->fetch != 0)
+		if (c->fetch != 0) {
 			fetch_abort(c->fetch);
+			c->fetch = 0;
+		}
 		if (c->status < CONTENT_STATUS_READY) {
 			if (c->cache)
 				cache_destroy(c);
@@ -444,6 +456,8 @@ void content_remove_user(struct content *c,
 		} else {
 			if (c->cache)
 				cache_freeable(c);
+			else
+				content_destroy(c);
 		}
 	}
 }
@@ -457,11 +471,14 @@ void content_broadcast(struct content *c, content_msg msg, char *error)
 {
 	struct content_user *user, *next;
         LOG(("content %s, message %i", c->url, msg));
+        c->lock++;
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0)
 			user->callback(msg, c, user->p1, user->p2, error);
 	}
+	if (--(c->lock) == 0 && c->destroy_pending)
+		content_destroy(c);
 }
 
 

@@ -139,6 +139,10 @@ struct content {
 	struct fetch *fetch;		/**< Associated fetch, or 0. */
 	unsigned long fetch_size;	/**< Amount of data fetched so far. */
 	unsigned long total_size;	/**< Total data size, 0 if unknown. */
+
+	int lock;			/**< Content in use, do not destroy. */
+	bool destroy_pending;		/**< Destroy when lock returns to 0. */
+	bool no_error_pages;		/**< Used by fetchcache(). */
 };
 
 
