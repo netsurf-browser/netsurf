@@ -613,6 +613,7 @@ bool fetch_process_headers(struct fetch *f)
 {
 	long http_code;
 	const char *type;
+	char *temp;
 	CURLcode code;
 
 	f->had_headers = true;
@@ -623,6 +624,9 @@ bool fetch_process_headers(struct fetch *f)
 
 	/* handle HTTP redirects (3xx response codes) */
 	if (300 <= http_code && http_code < 400 && f->location != 0) {
+	        temp = curl_unescape(f->location, strlen(f->location));
+	        xfree(f->location);
+	        f->location = temp;
 		LOG(("FETCH_REDIRECT, '%s'", f->location));
 		f->callback(FETCH_REDIRECT, f->p, f->location, 0);
 		return true;

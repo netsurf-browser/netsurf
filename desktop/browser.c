@@ -1677,7 +1677,12 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 		case method_GET:
 			data = form_url_encode(success);
 			url = xcalloc(1, strlen(form->action) + strlen(data) + 2);
-			sprintf(url, "%s?%s", form->action, data);
+			if(form->action[strlen(form->action)-1] == '?') {
+			        sprintf(url, "%s%s", form->action, data);
+			}
+			else {
+			        sprintf(url, "%s?%s", form->action, data);
+			}
 			url1 = url_join(url, base);
 			if (!url1)
 				break;
