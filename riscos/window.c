@@ -644,7 +644,7 @@ int gui_window_get_width(struct gui_window *g)
 		warn_user("WimpError", error->errmess);
 		return 800;
 	}
-	return (state.visible.x1 - state.visible.x0) / 2;
+	return (state.visible.x1 - state.visible.x0) / 2 / g->option.scale;
 }
 
 
