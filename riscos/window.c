@@ -732,8 +732,9 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer) {
 	state.w = pointer->w;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG(("Failed reading window state"));
-		warn_user("WimpError", "Failed reading window state");
+		LOG(("xwimp_get_window_state: 0x%x: %s", error->errnum,
+							 error->errmess));
+		warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -743,8 +744,9 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer) {
 	/* set input focus */
 	error = xwimp_get_caret_position(&caret);
 	if (error) {
-		LOG(("Failed reading caret position"));
-		warn_user("WimpError", "Failed reading caret position");
+		LOG(("xwimp_get_caret_position: 0x%x: %s", error->errnum,
+							   error->errmess));
+		warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -752,9 +754,9 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer) {
 		error = xwimp_set_caret_position(state.w, -1, -100,
 						-100, 32, -1);
 		if (error) {
-			LOG(("Failed setting caret position"));
-			warn_user("WimpError",
-				"Failed setting caret position");
+			LOG(("xwimp_set_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
 			return;
 		}
 	}
