@@ -5,6 +5,7 @@
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
+#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include <string.h>
@@ -16,6 +17,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/layout.h"
 #include "netsurf/riscos/save_draw.h"
@@ -27,346 +29,437 @@
 /* in browser units = OS/2 = draw/512 */
 #define A4PAGEWIDTH (744)
 #define A4PAGEHEIGHT (1052)
-static unsigned long length;
-static drawfile_diagram *d;
 
-static void add_font_table(struct content *content);
-static void add_options(void);
-static void add_objects(struct content *content, struct box *box,
-                        unsigned long cbc, long x, long y);
-static void add_graphic(struct content *content, struct box *box,
-                        unsigned long cbc, long x, long y);
-static void add_rect(struct content *content, struct box *box,
-                        unsigned long cbc, long x, long y, bool bg);
-static void add_line(struct content *content, struct box *box,
-                        unsigned long cbc, long x, long y);
-static void add_circle(struct content *content, struct box *box,
-                        unsigned long cbc, long x, long y);
+static bool add_font_table(int **d, unsigned int *length,
+		struct content *content);
+static bool add_options(int **d, unsigned int *length);
+static bool add_box(int **d, unsigned int *length, struct box *box,
+		unsigned long cbc, long x, long y);
+static bool add_graphic(int **d, unsigned int *length,
+		struct content *content, struct box *box,
+		unsigned long cbc, long x, long y);
+static bool add_rect(int **d, unsigned int *length, struct box *box,
+		unsigned long cbc, long x, long y, bool bg);
+static bool add_line(int **d, unsigned int *length, struct box *box,
+		unsigned long cbc, long x, long y);
+static bool add_circle(int **d, unsigned int *length, struct box *box,
+		unsigned long cbc, long x, long y);
 
-void save_as_draw(struct content *c, char *path)
+
+/**
+ * Export a content as a Drawfile.
+ *
+ * \param  c     content to export
+ * \param  path  path to save Drawfile as
+ * \return  true on success, false on error and error reported
+ */
+
+bool save_as_draw(struct content *c, char *path)
 {
 	struct box *box;
-	int temp;
+	int current_width;
 	unsigned long bc;
+	int *d;
+	unsigned int length;
+	drawfile_diagram *diagram;
+	os_error *error;
 
 	if (c->type != CONTENT_HTML) {
-	        return;
+		return false;
 	}
 
 	box = c->data.html.layout->children;
-	temp = c->width;
-        bc = 0xffffff;
+	current_width = c->available_width;
+	bc = 0xffffff;
 
-	d = xcalloc(40, sizeof(char));
+	d = calloc(40, sizeof(char));
+	if (!d) {
+		warn_user("NoMemory", 0);
+		return false;
+	}
 
-        length = 40;
+	length = 40;
 
-        memcpy((char*)&d->tag, "Draw", 4);
-	d->major_version = 201;
-	d->minor_version = 0;
-	memcpy((char*)&d->source, "NetSurf     ", 12);
+	diagram = (drawfile_diagram *) d;
+	memcpy(diagram->tag, "Draw", 4);
+	diagram->major_version = 201;
+	diagram->minor_version = 0;
+	memcpy(diagram->source, "NetSurf     ", 12);
 
 	/* recalculate box widths for an A4 page */
-	layout_document(box, A4PAGEWIDTH);
+	if (!layout_document(box, A4PAGEWIDTH, c->data.html.box_pool))
+		goto no_memory;
 
-	d->bbox.x0 = 0;
-	d->bbox.y0 = 0;
-	d->bbox.x1 = A4PAGEWIDTH*512;
-	d->bbox.y1 = A4PAGEHEIGHT*512;
+	diagram->bbox.x0 = 0;
+	diagram->bbox.y0 = 0;
+	diagram->bbox.x1 = A4PAGEWIDTH*512;
+	diagram->bbox.y1 = A4PAGEHEIGHT*512;
 
-	add_font_table(c);
+	if (!add_font_table(&d, &length, c))
+		goto no_memory;
 
-	add_options();
+	if (!add_options(&d, &length))
+		goto no_memory;
 
 	if (c->data.html.background_colour != TRANSPARENT) {
 		bc = c->data.html.background_colour;
-		add_rect(c, box, bc<<8, 0, A4PAGEHEIGHT*512, true);
+		if (!add_rect(&d, &length, box, bc<<8, 0,
+				A4PAGEHEIGHT*512, true))
+			goto no_memory;
 	}
 
 	/* right, traverse the tree and grab the contents */
-	add_objects(c, box, bc, 0, A4PAGEHEIGHT*512);
+	if (!add_box(&d, &length, box, bc, 0, A4PAGEHEIGHT*512))
+		goto no_memory;
 
-	xosfile_save_stamped(path, 0xaff, (byte*)d, (byte*)d+length);
+	error = xosfile_save_stamped(path, osfile_TYPE_DRAW, (char *) d,
+			(char *) d + length);
 
-	xfree(d);
+	free(d);
 
-        /* reset layout to current window width */
-	layout_document(box, temp);
+	if (error) {
+		LOG(("xosfile_save_stamped: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("SaveError", error->errmess);
+		return false;
+	}
+
+	/* reset layout to current window width */
+	if (!layout_document(box, current_width, c->data.html.box_pool))
+		warn_user("NoMemory", 0);
+
+	return true;
+
+no_memory:
+	free(d);
+	/* attempt to reflow back on failure */
+	layout_document(box, current_width, c->data.html.box_pool);
+	warn_user("NoMemory", 0);
+	return false;
 }
+
 
 /**
  * add font table
  */
-void add_font_table(struct content *content) {
+bool add_font_table(int **d, unsigned int *length,
+		struct content *content)
+{
+	int *d2;
+	unsigned int length0 = *length;
+	unsigned int i;
+	unsigned int padding;
+	int handle = 0;
+	int ftlen = 0;
+	const char *name;
+	drawfile_object *dro;
+	drawfile_font_table *ft;
 
-        drawfile_object *dro;
-        drawfile_font_table *ft = xcalloc(0, sizeof(char));
-        drawfile_font_def *fd = xcalloc(0, sizeof(char));
-        int handle = 0, ftlen=0;
-        const char *name;
-
-        do {
-          name = enumerate_fonts(content->data.html.fonts, &handle);
-
-          if (handle == -1 && name == 0)
-                  break;
-
-          /* at this point, handle is always (font_table entry + 1) */
-          fd = xrealloc(fd, 1+strlen(name)+1);
-          memset(fd, 0, 1+strlen(name)+1);
-          fd->font_index = handle;
-          memcpy((char*)&fd->font_name, name, strlen(name));
-
-          ft = xrealloc(ft, ftlen+1+strlen(name)+1);
-          memcpy((char*)ft+ftlen, fd, 1+strlen(name)+1);
-
-          ftlen += 1+strlen(name)+1;
-
-        } while (handle != -1);
-
-        /* word align end of list */
-        if (((ftlen+3)/4*4) != 0) {
-          ft = xrealloc(ft, (unsigned)(ftlen+3)/4*4);
-          ftlen = (ftlen+3)/4*4;
-        }
-
-        dro = xcalloc((unsigned)8+ftlen, sizeof(char));
+	d2 = realloc(*d, *length += 8);
+	if (!d2)
+		return false;
+	*d = d2;
+	dro = (drawfile_object *) (*d + length0 / sizeof *d);
+	ft = &dro->data.font_table;
 
 	dro->type = drawfile_TYPE_FONT_TABLE;
-	dro->size = 8+ftlen;
-	memcpy((char*)&dro->data.font_table, ft, (unsigned)ftlen);
 
-        d = xrealloc(d, (unsigned)length+dro->size);
+	do {
+		name = enumerate_fonts(content->data.html.fonts, &handle);
+		if (handle == -1 && name == 0)
+			break;
 
-        memcpy((char*)&d->objects, dro, (unsigned)dro->size);
+		/* at this point, handle is always (font_table entry + 1) */
+		d2 = realloc(*d, *length += 1 + strlen(name) + 1);
+		if (!d2)
+			return false;
+		*d = d2;
+		dro = (drawfile_object *) (*d + length0 / sizeof *d);
+		ft = &dro->data.font_table;
 
-	length += 8+ftlen;
+		((char *) ft)[ftlen] = handle;
+		strcpy(((char *) ft) + ftlen + 1, name);
 
-        xfree(fd);
-	xfree(ft);
-	xfree(dro);
+		ftlen += 1 + strlen(name) + 1;
+	} while (handle != -1);
+
+	/* word align end of list */
+	padding = (ftlen + 3) / 4 * 4 - ftlen;
+
+	d2 = realloc(*d, *length + padding);
+	if (!d2)
+		return false;
+	*d = d2;
+	dro = (drawfile_object *) (*d + length0 / sizeof *d);
+	ft = &dro->data.font_table;
+
+	for (i = 0; i != padding; i++)
+		((char *) *d)[*length + i] = 0;
+	*length += padding;
+	ftlen += padding;
+
+	dro->size = 8 + ftlen;
+
+	return true;
 }
+
 
 /**
  * add options object
  */
-void add_options() {
+bool add_options(int **d, unsigned int *length)
+{
+	int *d2;
+	unsigned int length0 = *length;
+	drawfile_object *dro;
+	drawfile_options *dfo;
 
-        drawfile_object *dro = xcalloc(8+80, sizeof(char));
-        drawfile_options *dfo = xcalloc(80, sizeof(char));
+	d2 = realloc(*d, *length += 8 + 80);
+	if (!d2)
+		return false;
+	*d = d2;
+	dro = (drawfile_object *) (*d + length0 / sizeof *d);
+	dfo = &dro->data.options;
 
-        dfo->bbox.x0 = dfo->bbox.y0 = dfo->bbox.x1 = dfo->bbox.y1 = 0;
-        dfo->paper_size = 0x500; /* A4 */
-        dfo->paper_options = (drawfile_paper_options)0;
-        dfo->grid_spacing = 1;
-        dfo->grid_division = 2;
-        dfo->isometric = false;
-        dfo->auto_adjust = false;
-        dfo->show = false;
-        dfo->lock = false;
-        dfo->cm = true;
-        dfo->zoom_mul = 1;
-        dfo->zoom_div = 1;
-        dfo->zoom_lock = false;
-        dfo->toolbox = true;
-        dfo->entry_mode = drawfile_ENTRY_MODE_SELECT;
-        dfo->undo_size = 5000;
+	dro->type = drawfile_TYPE_OPTIONS;
+	dro->size = 8 + 80;
 
-        dro->type = drawfile_TYPE_OPTIONS;
-        dro->size = 8+80;
-        memcpy((char*)&dro->data.options, dfo,(unsigned)dro->size-8);
+	dfo->bbox.x0 = dfo->bbox.y0 = dfo->bbox.x1 = dfo->bbox.y1 = 0;
+	dfo->paper_size = 0x500; /* A4 */
+	dfo->paper_options = (drawfile_paper_options)0;
+	dfo->grid_spacing = 1;
+	dfo->grid_division = 2;
+	dfo->isometric = false;
+	dfo->auto_adjust = false;
+	dfo->show = false;
+	dfo->lock = false;
+	dfo->cm = true;
+	dfo->zoom_mul = 1;
+	dfo->zoom_div = 1;
+	dfo->zoom_lock = false;
+	dfo->toolbox = true;
+	dfo->entry_mode = drawfile_ENTRY_MODE_SELECT;
+	dfo->undo_size = 5000;
 
-        d = xrealloc(d, length+dro->size);
-        memcpy((char*)d+length, dro, (unsigned)dro->size);
-
-        length += dro->size;
-
-        xfree(dfo);
-        xfree(dro);
+	return true;
 }
+
 
 /**
  * Traverses box tree, adding objects to the diagram as it goes.
  */
-void add_objects(struct content *content, struct box *box,
-                 unsigned long cbc, long x, long y) {
-
+bool add_box(int **d, unsigned int *length, struct box *box,
+		unsigned long cbc, long x, long y)
+{
+	int *d2;
+	unsigned int length0 = *length;
 	struct box *c;
 	int width, height, colour;
+	unsigned int i;
+	drawfile_object *dro;
+	drawfile_text *dt;
 
 	x += box->x * 512;
 	y -= box->y * 512;
 	width = (box->padding[LEFT] + box->width + box->padding[RIGHT]) * 2;
 	height = (box->padding[TOP] + box->height + box->padding[BOTTOM]) * 2;
 
-	if (box->style->visibility == CSS_VISIBILITY_HIDDEN) {
-		for (c = box->children; c; c = c->next)
-			add_objects(content, c, cbc, x, y);
-		return;
+	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
+		for (c = box->children; c; c = c->next) {
+			if (!add_box(d, length, c, cbc, x, y))
+				return false;
+		}
+		return true;
 	}
 
 	if (box->style != 0 && box->style->background_color != TRANSPARENT) {
 		cbc = box->style->background_color;
-		add_rect(content, box, cbc<<8, x, y, false);
+		if (!add_rect(d, length, box, cbc<<8, x, y, false))
+			return false;
 	}
 
 	if (box->object) {
-	        if (box->object->type == CONTENT_PLUGIN    ||
-	            box->object->type == CONTENT_OTHER     ||
-	            box->object->type == CONTENT_UNKNOWN   ||
-	            box->object->type == CONTENT_HTML      ||
-	            box->object->type == CONTENT_TEXTPLAIN ||
-	            box->object->type == CONTENT_CSS       ||
-	            box->object->type == CONTENT_DRAW) {
-		        return; /* don't handle these */
-		}
-		else {
-		        add_graphic(box->object, box, cbc, x, y);
-		        return;
-		}
-	}
-	else if (box->gadget && (box->gadget->type == GADGET_CHECKBOX ||
-		 box->gadget->type == GADGET_RADIO)) {
-		if (box->gadget->type == GADGET_CHECKBOX) {
-		        add_rect(content, box, 0xDEDEDE00, x, y, false);
-		}
-		else {
-		        add_circle(content, box, 0xDEDEDE00, x, y);
-		}
-		return;
-	}
-	else if (box->text && box->font) {
+		switch (box->object->type) {
+			case CONTENT_JPEG:
+#ifdef WITH_PNG
+			case CONTENT_PNG:
+#endif
+			case CONTENT_GIF:
+#ifdef WITH_SPRITE
+			case CONTENT_SPRITE:
+#endif
+				return add_graphic(d, length, box->object,
+						box, cbc, x, y);
 
-	        if (box->length == 0) {
-	                return;
-	        }
+			case CONTENT_HTML:
+				c = box->object->data.html.layout->children;
+				return add_box(d, length, c, cbc, x, y);
 
-	        /* text-decoration */
+			default:
+				break;
+		}
+
+	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
+		return add_rect(d, length, box, 0xDEDEDE00, x, y, false);
+
+	} else if (box->gadget && box->gadget->type == GADGET_RADIO) {
+		return add_circle(d, length, box, 0xDEDEDE00, x, y);
+
+	} else if (box->text && box->font) {
+
+		if (box->length == 0) {
+			return true;
+		}
+
+		/* text-decoration */
 		colour = box->style->color;
 		colour = ((((colour >> 16) + (cbc >> 16)) / 2) << 16)
 			| (((((colour >> 8) & 0xff) +
 			     ((cbc >> 8) & 0xff)) / 2) << 8)
 			| ((((colour & 0xff) + (cbc & 0xff)) / 2) << 0);
 		if (box->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK)) {
-		        add_line(content, box, (unsigned)colour<<8, x, (int)(y+(box->height*0.1*512)));
+			if (!add_line(d, length, box, (unsigned)colour<<8,
+					x, (int)(y+(box->height*0.1*512))))
+				return false;
 		}
-                if (box->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK)) {
-		        add_line(content, box, (unsigned)colour<<8, x, (int)(y+(box->height*0.9*512)));
+		if (box->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK)) {
+			if (!add_line(d, length, box, (unsigned)colour<<8,
+					x, (int)(y+(box->height*0.9*512))))
+				return false;
 		}
 		if (box->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH && box->parent->parent->type == BOX_BLOCK)) {
-		        add_line(content, box, (unsigned)colour<<8, x, (int)(y+(box->height*0.4*512)));
+			if (!add_line(d, length, box, (unsigned)colour<<8,
+					x, (int)(y+(box->height*0.4*512))))
+				return false;
 		}
 
 		/* normal text */
-		{
-			drawfile_object *dro = xcalloc(8+44+((box->length+1+3)/4*4), sizeof(char));
-			drawfile_text *dt = xcalloc(44+((box->length+1+3)/4*4), sizeof(char));
+		length0 = *length;
+		d2 = realloc(*d, *length += 8 + 44 +
+				(box->length + 1 + 3) / 4 * 4);
+		if (!d2)
+			return false;
+		*d = d2;
+		dro = (drawfile_object *) (*d + length0 / sizeof *d);
+		dt = &dro->data.text;
 
-			dt->bbox.x0 = x;
-			dt->bbox.y0 = y-(box->height*1.5*512);
-			dt->bbox.x1 = x+(box->width*512);
-			dt->bbox.y1 = y;
-			dt->fill = box->style->color<<8;
-			dt->bg_hint = cbc<<8;
-			dt->style.font_index = box->font->id+1;
-			dt->xsize = box->font->size*40;
-			dt->ysize = box->font->size*40;
-			dt->base.x = x;
-			dt->base.y = y-(box->height*512)+1536;
-			memcpy(dt->text, box->text, box->length);
+		dro->type = drawfile_TYPE_TEXT;
+		dro->size = 8 + 44 + (box->length + 1 + 3) / 4 * 4;
 
-			dro->type = drawfile_TYPE_TEXT;
-			dro->size = ((box->length+1+3)/4*4) + 44 + 8;
-			memcpy((char*)&dro->data.text, dt, (unsigned)dro->size-8);
-			d = xrealloc(d, (unsigned)length + dro->size);
-			memcpy((char*)d+length, dro, (unsigned)dro->size);
-			length += dro->size;
+		dt->bbox.x0 = x;
+		dt->bbox.y0 = y-(box->height*1.5*512);
+		dt->bbox.x1 = x+(box->width*512);
+		dt->bbox.y1 = y;
+		dt->fill = box->style->color<<8;
+		dt->bg_hint = cbc<<8;
+		dt->style.font_index = box->font->id + 1;
+		dt->style.reserved[0] = 0;
+		dt->style.reserved[1] = 0;
+		dt->style.reserved[2] = 0;
+		dt->xsize = box->font->size*40;
+		dt->ysize = box->font->size*40;
+		dt->base.x = x;
+		dt->base.y = y-(box->height*512)+1536;
+		strncpy(dt->text, box->text, box->length);
+		dt->text[box->length] = 0;
+		for (i = box->length + 1; i % 4; i++)
+			dt->text[i] = 0;
 
-			xfree(dt);
-			xfree(dro);
-			return;
-		}
-	}
-	else {
+		return true;
+
+	} else {
 		for (c = box->children; c != 0; c = c->next) {
-		        if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-			        add_objects(content, c, cbc, x, y);
+			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
+				if (!add_box(d, length, c, cbc, x, y))
+					return false;
 		}
 		for (c = box->float_children; c !=  0; c = c->next_float) {
-			add_objects(content, c, cbc, x, y);
+			if (!add_box(d, length, c, cbc, x, y))
+				return false;
 		}
 	}
+
+	return true;
 }
+
 
 /**
  * Add images to the drawfile. Uses add_jpeg as a helper.
  */
-void add_graphic(struct content *content, struct box *box,
-                        unsigned long cbc, long x, long y) {
+bool add_graphic(int **d, unsigned int *length,
+		struct content *content, struct box *box,
+		unsigned long cbc, long x, long y) {
 
-        drawfile_object *dro;
-        drawfile_sprite *ds;
-        long sprite_length = 0;
+	int *d2;
+	unsigned int length0 = *length;
+	int sprite_length = 0;
+	drawfile_object *dro;
+	drawfile_sprite *ds;
 
-        /* cast-tastic... */
-        switch (content->type) {
-          case CONTENT_JPEG:
-               sprite_length = ((osspriteop_header*)((char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first))->size;
-               break;
-          case CONTENT_PNG:
-               sprite_length = ((osspriteop_header*)((char*)content->data.png.sprite_area+content->data.png.sprite_area->first))->size;
-               break;
-          case CONTENT_GIF:
-               sprite_length = content->data.gif.gif->frame_image->size;
-               break;
-          case CONTENT_SPRITE:
-               sprite_length = ((osspriteop_header*)((char*)content->data.sprite.data+(((osspriteop_area*)content->data.sprite.data)->first)))->size;
-               break;
-          default:
-               break;
-        }
+	/* cast-tastic... */
+	switch (content->type) {
+	  case CONTENT_JPEG:
+	       sprite_length = ((osspriteop_header*)((char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first))->size;
+	       break;
+#ifdef WITH_PNG
+	  case CONTENT_PNG:
+	       sprite_length = ((osspriteop_header*)((char*)content->data.png.sprite_area+content->data.png.sprite_area->first))->size;
+	       break;
+#endif
+	  case CONTENT_GIF:
+	       sprite_length = content->data.gif.gif->frame_image->size;
+	       break;
+#ifdef WITH_SPRITE
+	  case CONTENT_SPRITE:
+	       sprite_length = ((osspriteop_header*)((char*)content->data.sprite.data+(((osspriteop_area*)content->data.sprite.data)->first)))->size;
+	       break;
+#endif
+	  default:
+	       assert(0);
+	}
 
-        dro = xcalloc((unsigned)8 + 16 + sprite_length, sizeof(char));
-        ds = xcalloc((unsigned)16 + sprite_length, sizeof(char));
+	d2 = realloc(*d, *length += 8 + 16 + sprite_length);
+	if (!d2)
+		return false;
+	*d = d2;
+	dro = (drawfile_object *) (*d + length0 / sizeof *d);
+	ds = &dro->data.sprite;
 
-        ds->bbox.x0 = x;
-        ds->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
-        ds->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
+	dro->type = drawfile_TYPE_SPRITE;
+	dro->size = 8 + 16 + sprite_length;
 
-        ds->bbox.y1 = y;
+	ds->bbox.x0 = x;
+	ds->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
+	ds->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
 
-        switch (content->type) {
-          case CONTENT_JPEG:
-               memcpy((char*)ds+16, (char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first,
-                       (unsigned)sprite_length);
-               break;
-          case CONTENT_PNG:
-               memcpy((char*)ds+16, (char*)content->data.png.sprite_area+content->data.png.sprite_area->first,
-                       (unsigned)sprite_length);
-               break;
-          case CONTENT_GIF:
-               memcpy((char*)ds+16, (char*)content->data.gif.gif->frame_image,
-                       (unsigned)sprite_length);
-               break;
-          case CONTENT_SPRITE:
-               memcpy((char*)ds+16, (char*)content->data.sprite.data+((osspriteop_area*)content->data.sprite.data)->first,
-                       (unsigned)sprite_length);
-               break;
-          default:
-               break;
-        }
+	ds->bbox.y1 = y;
 
-        dro->type = drawfile_TYPE_SPRITE;
-        dro->size = 8 + 16 + sprite_length;
-        memcpy((char*)&dro->data.sprite, ds, (unsigned)16 + sprite_length);
+	switch (content->type) {
+	  case CONTENT_JPEG:
+	       memcpy((char*)ds+16, (char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first,
+		       (unsigned)sprite_length);
+	       break;
+#ifdef WITH_PNG
+	  case CONTENT_PNG:
+	       memcpy((char*)ds+16, (char*)content->data.png.sprite_area+content->data.png.sprite_area->first,
+		       (unsigned)sprite_length);
+	       break;
+#endif
+	  case CONTENT_GIF:
+	       memcpy((char*)ds+16, (char*)content->data.gif.gif->frame_image,
+		       (unsigned)sprite_length);
+	       break;
+#ifdef WITH_SPRITE
+	  case CONTENT_SPRITE:
+	       memcpy((char*)ds+16, (char*)content->data.sprite.data+((osspriteop_area*)content->data.sprite.data)->first,
+		       (unsigned)sprite_length);
+	       break;
+#endif
+	  default:
+	       assert(0);
+	}
 
-        d = xrealloc(d, length+dro->size);
-        memcpy((char*)d+length, dro, (unsigned)dro->size);
-
-        length += dro->size;
-
-        xfree(ds);
-        xfree(dro);
+	return true;
 }
 
 
@@ -374,250 +467,279 @@ void add_graphic(struct content *content, struct box *box,
  * Add a filled, borderless rectangle to the diagram
  * Set bg to true to produce the background rectangle.
  */
-void add_rect(struct content *content, struct box *box,
-              unsigned long cbc, long x, long y, bool bg) {
+bool add_rect(int **d, unsigned int *length, struct box *box,
+		unsigned long cbc, long x, long y, bool bg) {
 
-        drawfile_object *dro = xcalloc(8+96, sizeof(char));
-        drawfile_path *dp = xcalloc(96, sizeof(char));
-        draw_path_element *dpe = xcalloc(12, sizeof(char));
+	int *d2;
+	unsigned int length0 = *length;
+	drawfile_object *dro;
+	drawfile_path *dp;
+	draw_path_element *dpe;
 
-        if (bg) {
-                dp->bbox.x0 = 0;
-                dp->bbox.y0 = 0;
-                dp->bbox.x1 = A4PAGEWIDTH*512;
-                dp->bbox.y1 = A4PAGEHEIGHT*512;
-        }
-        else {
-                dp->bbox.x0 = x;
-                dp->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
-                dp->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
-                dp->bbox.y1 = y;
-        }
+	d2 = realloc(*d, *length += 8 + 96);
+	if (!d2)
+		return false;
+	*d = d2;
+	dro = (drawfile_object *) (*d + length0 / sizeof *d);
+	dp = &dro->data.path;
 
-        dp->fill = cbc;
-        dp->outline = cbc;
-        dp->width = 0;
-        dp->style.flags = 0;
+	dro->type = drawfile_TYPE_PATH;
+	dro->size = 8 + 96;
 
-        /**
-         *     X<------X
-         *     |       ^
-         *     |       |
-         *     v       |
-         *  -->X------>X
-         */
+	if (bg) {
+		dp->bbox.x0 = 0;
+		dp->bbox.y0 = 0;
+		dp->bbox.x1 = A4PAGEWIDTH*512;
+		dp->bbox.y1 = A4PAGEHEIGHT*512;
+	} else {
+		dp->bbox.x0 = x;
+		dp->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
+		dp->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
+		dp->bbox.y1 = y;
+	}
 
-        /* bottom left */
-        dpe->tag = draw_MOVE_TO;
-        dpe->data.move_to.x = dp->bbox.x0;
-        dpe->data.move_to.y = dp->bbox.y0;
-        memcpy((char*)&dp->path, dpe, 12);
-        /* bottom right */
-        dpe->tag = draw_LINE_TO;
-        dpe->data.line_to.x = dp->bbox.x1;
-        dpe->data.line_to.y = dp->bbox.y0;
-        memcpy((char*)&dp->path+12, dpe, 12);
-        /* top right */
-        dpe->tag = draw_LINE_TO;
-        dpe->data.line_to.x = dp->bbox.x1;
-        dpe->data.line_to.y = dp->bbox.y1;
-        memcpy((char*)&dp->path+24, dpe, 12);
-        /* top left */
-        dpe->tag = draw_LINE_TO;
-        dpe->data.line_to.x = dp->bbox.x0;
-        dpe->data.line_to.y = dp->bbox.y1;
-        memcpy((char*)&dp->path+36, dpe, 12);
-        /* bottom left */
-        dpe->tag = draw_LINE_TO;
-        dpe->data.line_to.x = dp->bbox.x0;
-        dpe->data.line_to.y = dp->bbox.y0;
-        memcpy((char*)&dp->path+48, dpe, 12);
-        /* end */
-        dpe->tag = draw_END_PATH;
-        memcpy((char*)&dp->path+60, dpe, 4);
+	dp->fill = cbc;
+	dp->outline = cbc;
+	dp->width = 0;
+	dp->style.flags = 0;
 
-        dro->type = drawfile_TYPE_PATH;
-        dro->size = 8+96;
-        memcpy((char*)&dro->data.path, dp, (unsigned)dro->size-8);
+	/**
+	 *     X<------X
+	 *     |       ^
+	 *     |       |
+	 *     v       |
+	 *  -->X------>X
+	 */
 
-        d = xrealloc(d, length+dro->size);
-        memcpy((char*)d+length, dro, (unsigned)dro->size);
+	/* bottom left */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 0 / sizeof (int));
+	dpe->tag = draw_MOVE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.move_to.x = dp->bbox.x0;
+	dpe->data.move_to.y = dp->bbox.y0;
 
-        length += dro->size;
+	/* bottom right */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 12 / sizeof (int));
+	dpe->tag = draw_LINE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.line_to.x = dp->bbox.x1;
+	dpe->data.line_to.y = dp->bbox.y0;
 
-        xfree(dpe);
-        xfree(dp);
-        xfree(dro);
+	/* top right */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 24 / sizeof (int));
+	dpe->tag = draw_LINE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.line_to.x = dp->bbox.x1;
+	dpe->data.line_to.y = dp->bbox.y1;
+
+	/* top left */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 36 / sizeof (int));
+	dpe->tag = draw_LINE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.line_to.x = dp->bbox.x0;
+	dpe->data.line_to.y = dp->bbox.y1;
+
+	/* bottom left */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 48 / sizeof (int));
+	dpe->tag = draw_LINE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.line_to.x = dp->bbox.x0;
+	dpe->data.line_to.y = dp->bbox.y0;
+
+	/* end */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 60 / sizeof (int));
+	dpe->tag = draw_END_PATH;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+
+	return true;
 }
+
 
 /**
  * add a line to the diagram
  */
-void add_line(struct content *content, struct box *box,
-              unsigned long cbc, long x, long y) {
+bool add_line(int **d, unsigned int *length, struct box *box,
+		unsigned long cbc, long x, long y) {
 
-        drawfile_object *dro = xcalloc(8+60, sizeof(char));
-        drawfile_path *dp = xcalloc(60, sizeof(char));
-        draw_path_element *dpe = xcalloc(12, sizeof(char));
+	int *d2;
+	unsigned int length0 = *length;
+	drawfile_object *dro;
+	drawfile_path *dp;
+	draw_path_element *dpe;
 
-        dp->bbox.x0 = x;
-        dp->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
-        dp->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
-        dp->bbox.y1 = y;
+	d2 = realloc(*d, *length += 8 + 60);
+	if (!d2)
+		return false;
+	*d = d2;
+	dro = (drawfile_object *) (*d + length0 / sizeof *d);
+	dp = &dro->data.path;
 
-        dp->fill = cbc;
-        dp->outline = cbc;
-        dp->width = 0;
-        dp->style.flags = 0;
+	dro->type = drawfile_TYPE_PATH;
+	dro->size = 8 + 60;
 
-        /* left end */
-        dpe->tag = draw_MOVE_TO;
-        dpe->data.move_to.x = dp->bbox.x0;
-        dpe->data.move_to.y = dp->bbox.y0;
-        memcpy((char*)&dp->path, dpe, 12);
-        /* right end */
-        dpe->tag = draw_LINE_TO;
-        dpe->data.line_to.x = dp->bbox.x1;
-        dpe->data.line_to.y = dp->bbox.y0;
-        memcpy((char*)&dp->path+12, dpe, 12);
-        /* end */
-        dpe->tag = draw_END_PATH;
-        memcpy((char*)&dp->path+24, dpe, 4);
+	dp->bbox.x0 = x;
+	dp->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
+	dp->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
+	dp->bbox.y1 = y;
 
-        dro->type = drawfile_TYPE_PATH;
-        dro->size = 8+60;
-        memcpy((char*)&dro->data.path, dp, (unsigned)dro->size-8);
+	dp->fill = cbc;
+	dp->outline = cbc;
+	dp->width = 0;
+	dp->style.flags = 0;
+	dp->style.reserved = 0;
+	dp->style.cap_width = 0;
+	dp->style.cap_length = 0;
 
-        d = xrealloc(d, length+dro->size);
-        memcpy((char*)d+length, dro, (unsigned)dro->size);
+	/* left end */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 0 / sizeof (int));
+	dpe->tag = draw_MOVE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.move_to.x = dp->bbox.x0;
+	dpe->data.move_to.y = dp->bbox.y0;
 
-        length += dro->size;
+	/* right end */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 12 / sizeof (int));
+	dpe->tag = draw_LINE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.line_to.x = dp->bbox.x1;
+	dpe->data.line_to.y = dp->bbox.y0;
 
-        xfree(dpe);
-        xfree(dp);
-        xfree(dro);
+	/* end */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 24 / sizeof (int));
+	dpe->tag = draw_END_PATH;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+
+	return true;
 }
+
 
 /**
  * add a circle to the diagram.
  */
-void add_circle(struct content *content, struct box *box,
-                        unsigned long cbc, long x, long y) {
+bool add_circle(int **d, unsigned int *length, struct box *box,
+		unsigned long cbc, long x, long y) {
 
-        drawfile_object *dro = xcalloc(8+160, sizeof(char));
-        drawfile_path *dp = xcalloc(160, sizeof(char));
-        draw_path_element *dpe = xcalloc(28, sizeof(char));
+	int *d2;
+	unsigned int length0 = *length;
+	double radius = 0, kappa;
+	double cx, cy;
+	drawfile_object *dro;
+	drawfile_path *dp;
+	draw_path_element *dpe;
 
-        double radius = 0, kappa;
-        double cx, cy;
+	d2 = realloc(*d, *length += 8 + 160);
+	if (!d2)
+		return false;
+	*d = d2;
+	dro = (drawfile_object *) (*d + length0 / sizeof *d);
+	dp = &dro->data.path;
 
-        dp->bbox.x0 = x;
-        dp->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
-        dp->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
-        dp->bbox.y1 = y;
+	dro->type = drawfile_TYPE_PATH;
+	dro->size = 8 + 160;
 
-        cx = ((dp->bbox.x1-dp->bbox.x0)/2.0);
-        cy = ((dp->bbox.y1-dp->bbox.y0)/2.0);
-        if (cx == cy) {
-                radius = cx; /* box is square */
-        }
-        else if (cx > cy) {
-                radius = cy;
-                dp->bbox.x1 -= (cx-cy); /* reduce box width */
-        }
-        else if (cy > cx) {
-                radius = cx;
-                dp->bbox.y0 += (cy-cx); /* reduce box height */
-        }
-        kappa = radius * ((4.0/3.0)*(sqrt(2.0)-1.0)); /* ~= 0.5522847498 */
+	dp->bbox.x0 = x;
+	dp->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
+	dp->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
+	dp->bbox.y1 = y;
 
-        dp->fill = cbc;
-        dp->outline = cbc;
-        dp->width = 0;
-        dp->style.flags = drawfile_PATH_ROUND;
+	cx = ((dp->bbox.x1-dp->bbox.x0)/2.0);
+	cy = ((dp->bbox.y1-dp->bbox.y0)/2.0);
+	if (cx == cy) {
+		radius = cx; /* box is square */
+	}
+	else if (cx > cy) {
+		radius = cy;
+		dp->bbox.x1 -= (cx-cy); /* reduce box width */
+	}
+	else if (cy > cx) {
+		radius = cx;
+		dp->bbox.y0 += (cy-cx); /* reduce box height */
+	}
+	kappa = radius * ((4.0/3.0)*(sqrt(2.0)-1.0)); /* ~= 0.5522847498 */
 
-        /*
-         *    Z   b   Y
-         *
-         *    a   X   c
-         *
-         *    V   d   W
-         *
-         *    V = (x0,y0)
-         *    W = (x1,y0)
-         *    Y = (x1,y1)
-         *    Z = (x0,y1)
-         *
-         *    X = centre of circle (x0+cx, y0+cx)
-         *
-         *    The points a,b,c,d are where the circle intersects
-         *    the bounding box. at these points, the bounding box is
-         *    tangental to the circle.
-         */
+	dp->fill = cbc;
+	dp->outline = cbc;
+	dp->width = 0;
+	dp->style.flags = drawfile_PATH_ROUND;
 
-        /* start at a */
-        dpe->tag = draw_MOVE_TO;
-        dpe->data.move_to.x = (dp->bbox.x0+cx)-radius;
-        dpe->data.move_to.y = (dp->bbox.y0+cy);
-        memcpy((char*)&dp->path, dpe, 12);
+	/*
+	 *    Z	  b   Y
+	 *
+	 *    a	  X   c
+	 *
+	 *    V	  d   W
+	 *
+	 *    V = (x0,y0)
+	 *    W = (x1,y0)
+	 *    Y = (x1,y1)
+	 *    Z = (x0,y1)
+	 *
+	 *    X = centre of circle (x0+cx, y0+cx)
+	 *
+	 *    The points a,b,c,d are where the circle intersects
+	 *    the bounding box. at these points, the bounding box is
+	 *    tangental to the circle.
+	 */
 
-        /* point1->point2 : (point1)(ctrl1)(ctrl2)(point2) */
+	/* start at a */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 0 / sizeof (int));
+	dpe->tag = draw_MOVE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.move_to.x = (dp->bbox.x0+cx)-radius;
+	dpe->data.move_to.y = (dp->bbox.y0+cy);
 
-        /* a->b : (x-r, y)(x-r, y+k)(x-k, y+r)(x, y+r) */
-        dpe->tag = draw_BEZIER_TO;
-        dpe->data.bezier_to[0].x = (dp->bbox.x0+cx)-radius;
-        dpe->data.bezier_to[0].y = (dp->bbox.y0+cy)+kappa;
-        dpe->data.bezier_to[1].x = (dp->bbox.x0+cx)-kappa;
-        dpe->data.bezier_to[1].y = (dp->bbox.y0+cy)+radius;
-        dpe->data.bezier_to[2].x = (dp->bbox.x0+cx);
-        dpe->data.bezier_to[2].y = (dp->bbox.y0+cy)+radius;
-        memcpy((char*)&dp->path+12, dpe, 28);
+	/* point1->point2 : (point1)(ctrl1)(ctrl2)(point2) */
 
-        /* b->c : (x, y+r)(x+k, y+r)(x+r, y+k)(x+r, y)*/
-        dpe->tag = draw_BEZIER_TO;
-        dpe->data.bezier_to[0].x = (dp->bbox.x0+cx)+kappa;
-        dpe->data.bezier_to[0].y = (dp->bbox.y0+cy)+radius;
-        dpe->data.bezier_to[1].x = (dp->bbox.x0+cx)+radius;
-        dpe->data.bezier_to[1].y = (dp->bbox.y0+cy)+kappa;
-        dpe->data.bezier_to[2].x = (dp->bbox.x0+cx)+radius;
-        dpe->data.bezier_to[2].y = (dp->bbox.y0+cy);
-        memcpy((char*)&dp->path+40, dpe, 28);
+	/* a->b : (x-r, y)(x-r, y+k)(x-k, y+r)(x, y+r) */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 12 / sizeof (int));
+	dpe->tag = draw_BEZIER_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.bezier_to[0].x = (dp->bbox.x0+cx)-radius;
+	dpe->data.bezier_to[0].y = (dp->bbox.y0+cy)+kappa;
+	dpe->data.bezier_to[1].x = (dp->bbox.x0+cx)-kappa;
+	dpe->data.bezier_to[1].y = (dp->bbox.y0+cy)+radius;
+	dpe->data.bezier_to[2].x = (dp->bbox.x0+cx);
+	dpe->data.bezier_to[2].y = (dp->bbox.y0+cy)+radius;
 
-        /* c->d : (x+r, y)(x+r, y-k)(x+k, y-r)(x, y-r) */
-        dpe->tag = draw_BEZIER_TO;
-        dpe->data.bezier_to[0].x = (dp->bbox.x0+cx)+radius;
-        dpe->data.bezier_to[0].y = (dp->bbox.y0+cy)-kappa;
-        dpe->data.bezier_to[1].x = (dp->bbox.x0+cx)+kappa;
-        dpe->data.bezier_to[1].y = (dp->bbox.y0+cy)-radius;
-        dpe->data.bezier_to[2].x = (dp->bbox.x0+cx);
-        dpe->data.bezier_to[2].y = (dp->bbox.y0+cy)-radius;
-        memcpy((char*)&dp->path+68, dpe, 28);
+	/* b->c : (x, y+r)(x+k, y+r)(x+r, y+k)(x+r, y)*/
+	dpe = (draw_path_element *) (((int *) &dp->path) + 40 / sizeof (int));
+	dpe->tag = draw_BEZIER_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.bezier_to[0].x = (dp->bbox.x0+cx)+kappa;
+	dpe->data.bezier_to[0].y = (dp->bbox.y0+cy)+radius;
+	dpe->data.bezier_to[1].x = (dp->bbox.x0+cx)+radius;
+	dpe->data.bezier_to[1].y = (dp->bbox.y0+cy)+kappa;
+	dpe->data.bezier_to[2].x = (dp->bbox.x0+cx)+radius;
+	dpe->data.bezier_to[2].y = (dp->bbox.y0+cy);
 
-        /* d->a : (x, y-r)(x-k, y-r)(x-r, y-k)(x-r, y)*/
-        dpe->tag = draw_BEZIER_TO;
-        dpe->data.bezier_to[0].x = (dp->bbox.x0+cx)-kappa;
-        dpe->data.bezier_to[0].y = (dp->bbox.y0+cy)-radius;
-        dpe->data.bezier_to[1].x = (dp->bbox.x0+cx)-radius;
-        dpe->data.bezier_to[1].y = (dp->bbox.y0+cy)-kappa;
-        dpe->data.bezier_to[2].x = (dp->bbox.x0+cx)-radius;
-        dpe->data.bezier_to[2].y = (dp->bbox.y0+cy);
-        memcpy((char*)&dp->path+96, dpe, 28);
+	/* c->d : (x+r, y)(x+r, y-k)(x+k, y-r)(x, y-r) */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 68 / sizeof (int));
+	dpe->tag = draw_BEZIER_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.bezier_to[0].x = (dp->bbox.x0+cx)+radius;
+	dpe->data.bezier_to[0].y = (dp->bbox.y0+cy)-kappa;
+	dpe->data.bezier_to[1].x = (dp->bbox.x0+cx)+kappa;
+	dpe->data.bezier_to[1].y = (dp->bbox.y0+cy)-radius;
+	dpe->data.bezier_to[2].x = (dp->bbox.x0+cx);
+	dpe->data.bezier_to[2].y = (dp->bbox.y0+cy)-radius;
 
-        /* end */
-        dpe->tag = draw_END_PATH;
-        memcpy((char*)&dp->path+124, dpe, 4);
+	/* d->a : (x, y-r)(x-k, y-r)(x-r, y-k)(x-r, y)*/
+	dpe = (draw_path_element *) (((int *) &dp->path) + 96 / sizeof (int));
+	dpe->tag = draw_BEZIER_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.bezier_to[0].x = (dp->bbox.x0+cx)-kappa;
+	dpe->data.bezier_to[0].y = (dp->bbox.y0+cy)-radius;
+	dpe->data.bezier_to[1].x = (dp->bbox.x0+cx)-radius;
+	dpe->data.bezier_to[1].y = (dp->bbox.y0+cy)-kappa;
+	dpe->data.bezier_to[2].x = (dp->bbox.x0+cx)-radius;
+	dpe->data.bezier_to[2].y = (dp->bbox.y0+cy);
 
-        dro->type = drawfile_TYPE_PATH;
-        dro->size = 8+160;
-        memcpy((char*)&dro->data.path, dp, (unsigned)dro->size-8);
+	/* end */
+	dpe = (draw_path_element *) (((int *) &dp->path) + 124 / sizeof (int));
+	dpe->tag = draw_END_PATH;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
 
-        d = xrealloc(d, length+dro->size);
-        memcpy((char*)d+length, dro, (unsigned)dro->size);
-
-        length += dro->size;
-
-        xfree(dpe);
-        xfree(dp);
-        xfree(dro);
+	return true;
 }
+
 #endif
