@@ -523,7 +523,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 	struct box * left;
 	struct box * right;
 	struct box * b;
-	struct box * c = NULL;
+	struct box * c;
 	struct box * d;
 	struct box * fl;
 	int move_y = 0;
@@ -598,6 +598,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 	        }
 	}
 
+	c = first;
 	/* pass 2: place boxes in line */
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
 		if (b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK) {
