@@ -485,8 +485,11 @@ bool rewrite_urls(xmlNode *n, const char *base)
 	 * 5)   background   any (except those above)
 
 	 */
+	if (!n->name) {
+		/* ignore */
+	}
 	/* 1 */
-	if (strcmp(n->name, "object") == 0) {
+	else if (strcmp(n->name, "object") == 0) {
 		if (!rewrite_url(n, "data", base))
 			return false;
 	}
