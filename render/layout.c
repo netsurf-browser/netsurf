@@ -704,7 +704,10 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 				c->height = 0;
 			}
 			for (i = 0; i != columns; i++)
-				row_span[i]--;
+				if (row_span[i] != 0)
+					row_span[i]--;
+				else
+					row_span_cell[i] = 0;
 			/* if all columns have a row span, shrink it to the lowest equivalent */
 			min = row_span[0];
 			for (i = 1; i != columns; i++)

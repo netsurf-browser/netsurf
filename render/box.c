@@ -1170,10 +1170,8 @@ void box_normalise_table_row(struct box *row,
 		}
 
 		/* skip columns with cells spanning from above */
-		while ((*row_span)[columns] != 0) {
-			(*row_span)[columns]--;
+		while ((*row_span)[columns] != 0)
 			columns++;
-		}
 		cell->start_column = columns;
 		if (*table_columns < columns + cell->columns) {
 			*table_columns = columns + cell->columns;
@@ -1183,9 +1181,13 @@ void box_normalise_table_row(struct box *row,
 			(*row_span)[*table_columns] = 0;  /* sentinel */
 		}
 		for (i = 0; i != cell->columns; i++)
-			(*row_span)[columns + i] = cell->rows - 1;
+			(*row_span)[columns + i] = cell->rows;
 		columns += cell->columns;
 	}
+
+	for (i = 0; i != *table_columns; i++)
+		if ((*row_span)[i] != 0)
+			(*row_span)[i]--;
 
 	/* if all columns have a rowspan, shrink it to the lowest equivalent */
 	min = (*row_span)[0];
