@@ -42,14 +42,14 @@
     #define WITH_URI
     /* ANT URL protocol support */
     #define WITH_URL
+    /* Keyboard navigation support */
+    #define WITH_KEYBOARD_NAVIGATION
 #endif
 #ifdef ncos
     /* Kiosk style browsing support */
     #define WITH_KIOSK_BROWSING
     /* Kiosk style browsing themes support */
     #define WITH_KIOSK_THEMES
-    /* Keyboard navigation support */
-    #define WITH_KEYBOARD_NAVIGATION
 #endif
 
 #if defined(riscos) || defined(ncos) || defined(debug)

@@ -6,6 +6,7 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  */
 
 #include <assert.h>
@@ -392,10 +393,10 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 			set_theme_choices();
 			break;
 		case ICON_CONFIG_BROWSER:
-			ro_gui_dialog_open(dialog_config_br);
+			ro_gui_dialog_update_config(dialog_config_br);
 			break;
 		case ICON_CONFIG_PROXY:
-			ro_gui_dialog_open(dialog_config_prox);
+			ro_gui_dialog_update_config(dialog_config_prox);
 			break;
 		case ICON_CONFIG_THEME:
 			ro_gui_dialog_open_config_th();
@@ -410,11 +411,18 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 
 void ro_gui_save_options(void)
 {
+     /* NCOS doesnt have the fancy Universal Boot vars; so select
+      * the path to the choices file based on the build options */
+     #ifndef NCOS
 	xosfile_create_dir("<Choices$Write>.WWW", 0);
 	xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
 	options_write("<Choices$Write>.WWW.NetSurf.Choices");
+     #else
+	xosfile_create_dir("<User$Path>.Choices.NetSurf", 0);
+	xosfile_create_dir("<User$Path>.Choices.NetSurf.Choices", 0);
+	options_write("<User$Path>.Choices.NetSurf.Choices");
+     #endif
 }
-
 
 /**
  * Handle clicks in the Browser Choices dialog.
@@ -497,6 +505,71 @@ void ro_gui_dialog_click_config_prox(wimp_pointer *pointer)
 	}
 }
 
+/**
+ * Prepare and open the Choices dialog.
+ */
+
+void ro_gui_dialog_open_config(void)
+{
+	wimp_window_state state;
+
+	ro_gui_dialog_open(dialog_config);
+
+	state.w = dialog_config;
+	xwimp_get_window_state(&state);
+	state.w = dialog_config_prox;
+	state.visible.x0 += 0;
+	state.visible.y1 -= 0;
+	state.xscroll = 0;
+	state.yscroll = 0;
+	state.next = wimp_TOP;
+	if (xwimp_open_window_nested((wimp_open *)&state, dialog_config,
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_XORIGIN_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_YORIGIN_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+				<< wimp_CHILD_LS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_BS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_RS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT									<< wimp_CHILD_TS_EDGE_SHIFT)) {
+		LOG(("Unable to open config proxy pane window"));
+	}
+}
+
+/**
+ * Update the pane in the Choices dialog.
+ */
+
+void ro_gui_dialog_update_config(wimp_w w)
+{
+	wimp_window_state state;
+
+	state.w = dialog_config;
+	xwimp_get_window_state(&state);
+	state.w = w;
+	state.visible.x0 += 0;
+	state.visible.y1 -= 0;
+	state.xscroll = 0;
+	state.yscroll = 0;
+	state.next = wimp_TOP;
+	if (xwimp_open_window_nested((wimp_open *)&state, dialog_config,
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_XORIGIN_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_YORIGIN_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+				<< wimp_CHILD_LS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_BS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_RS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT									<< wimp_CHILD_TS_EDGE_SHIFT)) {
+		LOG(("Unable to update config pane window"));
+	}
+}
 
 /**
  * Prepare and open the Theme Choices dialog.
@@ -512,13 +585,12 @@ void ro_gui_dialog_open_config_th(void)
 	if (!theme_list)
 		return;
 
-	ro_gui_dialog_open(dialog_config_th);
-//	ro_gui_dialog_open(dialog_config_th_pane);
+        ro_gui_dialog_update_config(dialog_config_th);
 
 	state.w = dialog_config_th;
 	xwimp_get_window_state(&state);
 	state.w = dialog_config_th_pane;
-	state.visible.x0 += 24;
+	state.visible.x0 += 12;
 	state.visible.y1 -= 12;
 	state.xscroll = 0;
 	state.yscroll = 0;
@@ -694,7 +766,7 @@ void ro_gui_redraw_config_th_pane_plot(wimp_draw *redraw)
 			if (error)
 				break;
 			error = xos_plot(os_PLOT_RECTANGLE | os_PLOT_BY,
-					600, -THEME_HEIGHT);
+					705, -THEME_HEIGHT);
 			if (error)
 				break;
 			error = xwimptextop_set_colour(os_COLOUR_BLACK,

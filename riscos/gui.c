@@ -183,7 +183,7 @@ void gui_init(int argc, char** argv)
 	messages_load(path);
 	messages_load("<NetSurf$Dir>.Resources.LangNames");
 
-        /* Totally pedantic But base the taskname on the buid options!
+        /* Totally pedantic, but base the taskname on the buid options.
         */
 #ifndef ncos
 	error = xwimp_initialise(wimp_VERSION_RO38, "NetSurf",

@@ -4,6 +4,7 @@
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  */
 
 #ifndef _NETSURF_RISCOS_GUI_H_
@@ -266,9 +267,10 @@ void ro_gui_debugwin_redraw(wimp_draw *redraw);
 
 #define ICON_CONFIG_SAVE 0
 #define ICON_CONFIG_CANCEL 1
-#define ICON_CONFIG_BROWSER 2
-#define ICON_CONFIG_PROXY 3
-#define ICON_CONFIG_THEME 4
+#define ICON_CONFIG_BROWSER 7
+#define ICON_CONFIG_PROXY 6
+#define ICON_CONFIG_THEME 8
+#define ICON_CONFIG_MISC 9
 
 #define ICON_CONFIG_BR_OK 0
 #define ICON_CONFIG_BR_CANCEL 1

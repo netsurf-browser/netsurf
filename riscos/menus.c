@@ -592,7 +592,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				ro_gui_open_help_page("docs");
 				break;
 			case 2: /* Choices */
-				ro_gui_dialog_open(dialog_config);
+			     ro_gui_dialog_open_config();
 				break;
 			case 3: /* Quit */
 				netsurf_quit = true;
