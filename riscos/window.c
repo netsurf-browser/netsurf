@@ -26,6 +26,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/plotters.h"
+#include "netsurf/dom/dom.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/riscos/buffer.h"
@@ -1406,13 +1407,51 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 	}
 
 	switch (key) {
+		case wimp_KEY_F1:	/* Help. */
+			ro_gui_open_help_page("docs");
+			return true;
+
 		case wimp_KEY_CONTROL + wimp_KEY_F1:
 			current_gui = g;
 			ro_gui_menu_prepare_pageinfo();
 			ro_gui_dialog_open_persistant(g->window, dialog_pageinfo, false);
 			return true;
-		case wimp_KEY_F1:	/* Help. */
-			ro_gui_open_help_page("docs");
+
+		case wimp_KEY_F2:
+			if (!g->toolbar)
+				return false;
+			ro_gui_set_icon_string(g->toolbar->toolbar_handle,
+					ICON_TOOLBAR_URL, "www.");
+			xwimp_set_caret_position(g->toolbar->toolbar_handle,
+					ICON_TOOLBAR_URL, 0, 0, -1, 4);
+			return true;
+
+		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
+			browser_window_destroy(g->bw);
+			return true;
+
+		case wimp_KEY_F3:
+			current_gui = g;
+			ro_gui_save_open(GUI_SAVE_SOURCE, content,
+					false, 0, 0, g->window, true);
+			return true;
+
+		case wimp_KEY_CONTROL + wimp_KEY_F3:
+			current_gui = g;
+			ro_gui_save_open(GUI_SAVE_TEXT, content,
+					false, 0, 0, g->window, true);
+			return true;
+
+		case wimp_KEY_SHIFT + wimp_KEY_F3:
+			current_gui = g;
+			ro_gui_save_open(GUI_SAVE_COMPLETE, content,
+					false, 0, 0, g->window, true);
+			return true;
+
+		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F3:
+			current_gui = g;
+			ro_gui_save_open(GUI_SAVE_DRAW, content,
+					false, 0, 0, g->window, true);
 			return true;
 
 #ifdef WITH_SEARCH
@@ -1462,43 +1501,6 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		case wimp_KEY_SHIFT + wimp_KEY_F11:	/* Toggle display of box outlines. */
 			html_redraw_debug = !html_redraw_debug;
 			gui_window_redraw_window(g);
-			return true;
-
-		case wimp_KEY_F2:
-			if (!g->toolbar)
-				return false;
-			ro_gui_set_icon_string(g->toolbar->toolbar_handle,
-					ICON_TOOLBAR_URL, "www.");
-			xwimp_set_caret_position(g->toolbar->toolbar_handle,
-					ICON_TOOLBAR_URL, 0, 0, -1, 4);
-			return true;
-
-		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
-			browser_window_destroy(g->bw);
-			return true;
-
-		case wimp_KEY_F3:
-			current_gui = g;
-			ro_gui_save_open(GUI_SAVE_SOURCE, content,
-					false, 0, 0, g->window, true);
-			return true;
-
-		case wimp_KEY_CONTROL + wimp_KEY_F3:
-			current_gui = g;
-			ro_gui_save_open(GUI_SAVE_TEXT, content,
-					false, 0, 0, g->window, true);
-			return true;
-
-		case wimp_KEY_SHIFT + wimp_KEY_F3:
-			current_gui = g;
-			ro_gui_save_open(GUI_SAVE_COMPLETE, content,
-					false, 0, 0, g->window, true);
-			return true;
-
-		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F3:
-			current_gui = g;
-			ro_gui_save_open(GUI_SAVE_DRAW, content,
-					false, 0, 0, g->window, true);
 			return true;
 
 		case wimp_KEY_RETURN:
