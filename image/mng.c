@@ -44,7 +44,6 @@ static mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_ui
 static mng_bool nsmng_settimer(mng_handle mng, mng_uint32 msecs);
 static void nsmng_animate(void *p);
 static bool nsmng_broadcast_error(struct content *c);
-static mng_bool nsmng_trace(mng_handle mng, mng_int32 iFunNr, mng_int32 iFuncseq, mng_pchar zFuncname);
 static mng_bool nsmng_errorproc(mng_handle mng, mng_int32 code,
 	mng_int8 severity, mng_chunkid chunktype, mng_uint32 chunkseq,
 	mng_int32 extra1, mng_int32 extra2, mng_pchar text);
@@ -55,6 +54,9 @@ static void nsmng_free(mng_ptr p, mng_size_t n);
 
 
 bool nsmng_create(struct content *c, const char *params[]) {
+
+	assert(c != NULL);
+	assert(params != NULL);
 
 	/*	Initialise the library
 	*/
@@ -134,15 +136,21 @@ bool nsmng_create(struct content *c, const char *params[]) {
 
 
 mng_bool nsmng_openstream(mng_handle mng) {
+	assert(mng != NULL);
 	return MNG_TRUE;
 }
 
 mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size, mng_uint32 *bytesread) {
 	struct content *c;
 
+	assert(mng != NULL);
+	assert(buffer != NULL);
+	assert(bytesread != NULL);
+
 	/*	Get our content back
 	*/
 	c = (struct content *)mng_get_userdata(mng);
+	assert(c != NULL);
 
 	/*	Copy any data we have (maximum of 'size')
 	*/
@@ -162,6 +170,7 @@ mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size, mng_uin
 }
 
 mng_bool nsmng_closestream(mng_handle mng) {
+	assert(mng != NULL);
 	return MNG_TRUE;
 }
 
@@ -169,10 +178,14 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 	struct content *c;
 	union content_msg_data msg_data;
 
+	assert(mng != NULL);
+
 	/*	This function is called when the header has been read and we know
 		the dimensions of the canvas.
 	*/
 	c = (struct content *)mng_get_userdata(mng);
+	assert(c != NULL);
+
 	c->bitmap = bitmap_create(width, height);
 	if (!c->bitmap) {
 		msg_data.error = messages_get("NoMemory");
@@ -205,8 +218,11 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 bool nsmng_process_data(struct content *c, char *data, unsigned int size) {
 	mng_retcode status;
 
-  	/*	We only need to do any processing if we're starting/resuming reading.
-  	*/
+	assert(c != NULL);
+	assert(data != NULL);
+
+	/*	We only need to do any processing if we're starting/resuming reading.
+	*/
 	if ((!c->data.mng.read_resume) && (!c->data.mng.read_start)) return true;
 
 	/*	Try to start processing, or process some more data
@@ -232,23 +248,32 @@ bool nsmng_process_data(struct content *c, char *data, unsigned int size) {
 bool nsmng_convert(struct content *c, int width, int height) {
 	mng_retcode status;
 
+	union content_msg_data msg_data;
+
+	assert(c != NULL);
+
 	LOG(("Converting"));
 
 	/*	Set the title
 	*/
 	c->title = malloc(100);
-	if (c->title) {
-		if (c->type == CONTENT_MNG) {
-			snprintf(c->title, 100, messages_get("MNGTitle"),
-					c->width, c->height, c->source_size);
-		} else if (c->type == CONTENT_PNG) {
-			snprintf(c->title, 100, messages_get("PNGTitle"),
-					c->width, c->height, c->source_size);
-		} else {
-			snprintf(c->title, 100, messages_get("JNGTitle"),
-					c->width, c->height, c->source_size);
-		}
+	if (!c->title) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
 	}
+
+	if (c->type == CONTENT_MNG) {
+		snprintf(c->title, 100, messages_get("MNGTitle"),
+				c->width, c->height, c->source_size);
+	} else if (c->type == CONTENT_PNG) {
+		snprintf(c->title, 100, messages_get("PNGTitle"),
+				c->width, c->height, c->source_size);
+	} else {
+		snprintf(c->title, 100, messages_get("JNGTitle"),
+				c->width, c->height, c->source_size);
+	}
+
 	c->size += c->width * c->height * 4 + 100;
 	c->status = CONTENT_STATUS_DONE;
 
@@ -275,9 +300,12 @@ bool nsmng_convert(struct content *c, int width, int height) {
 mng_ptr nsmng_getcanvasline(mng_handle mng, mng_uint32 line) {
 	struct content *c;
 
+	assert(mng != NULL);
+
 	/*	Get our content back
 	*/
 	c = (struct content *)mng_get_userdata(mng);
+	assert(c != NULL);
 
 	/*	Calculate the address
 	*/
@@ -296,6 +324,8 @@ mng_uint32 nsmng_gettickcount(mng_handle mng) {
 	struct timeval tv;
 	struct timezone tz;
 
+	assert(mng != NULL);
+
 	gettimeofday(&tv, &tz);
 	if (start) {
 		t0 = tv.tv_sec;
@@ -310,9 +340,12 @@ mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_uint32 w,
 	union content_msg_data data;
 	struct content *c;
 
+	assert(mng != NULL);
+
 	/*	Get our content back
 	*/
 	c = (struct content *)mng_get_userdata(mng);
+	assert(c != NULL);
 
 	/*	Set the minimum redraw area
 	*/
@@ -348,9 +381,12 @@ mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_uint32 w,
 mng_bool nsmng_settimer(mng_handle mng, mng_uint32 msecs) {
 	struct content *c;
 
+	assert(mng != NULL);
+
 	/*	Get our content back
 	*/
 	c = (struct content *)mng_get_userdata(mng);
+	assert(c != NULL);
 
 	/*	Perform the scheduling
 	*/
@@ -364,6 +400,9 @@ mng_bool nsmng_settimer(mng_handle mng, mng_uint32 msecs) {
 
 
 void nsmng_destroy(struct content *c) {
+
+	assert (c != NULL);
+
 	/*	Cleanup the MNG structure and release the canvas memory
 	*/
 	schedule_remove(nsmng_animate, c);
@@ -380,9 +419,11 @@ bool nsmng_redraw(struct content *c, int x, int y,
 		float scale, unsigned long background_colour)
 {
 	bool ret;
-	
+
 	if ((c->bitmap) && (c->data.mng.opaque_test_pending))
 		bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
+
+	assert(c != NULL);
 
 	ret = plot.bitmap(x, y, width, height,
 			c->bitmap, background_colour);
@@ -399,7 +440,11 @@ bool nsmng_redraw(struct content *c, int x, int y,
  * Animates to the next frame
  */
 void nsmng_animate(void *p) {
- 	struct content *c = p;
+ 	struct content *c;
+
+ 	assert(p != NULL);
+
+ 	c = (struct content *)p;
 
  	/*	If we used the last animation we advance, if not we try again later
  	*/
@@ -421,6 +466,9 @@ void nsmng_animate(void *p) {
  */
 bool nsmng_broadcast_error(struct content *c) {
 	union content_msg_data msg_data;
+
+	assert(c != NULL);
+
 	if (c->type == CONTENT_MNG) {
 		msg_data.error = messages_get("MNGError");
 	} else if (c->type == CONTENT_PNG) {
@@ -433,12 +481,6 @@ bool nsmng_broadcast_error(struct content *c) {
 
 }
 
-mng_bool nsmng_trace(mng_handle mng, mng_int32 iFunNr, mng_int32 iFuncseq, mng_pchar zFuncname)
-{
-	LOG(("In %s(%d,%d), processing: %p", zFuncname, iFunNr, iFuncseq, mng));
-	return MNG_TRUE;
-}
-
 mng_bool nsmng_errorproc(mng_handle mng, mng_int32 code,
 	mng_int8 severity,
     mng_chunkid chunktype, mng_uint32 chunkseq,
@@ -447,7 +489,10 @@ mng_bool nsmng_errorproc(mng_handle mng, mng_int32 code,
 	struct content *c;
 	char chunk[5];
 
+	assert(mng != NULL);
+
 	c = (struct content *)mng_get_userdata(mng);
+	assert(c != NULL);
 
 	chunk[0] = (char)((chunktype >> 24) & 0xFF);
 	chunk[1] = (char)((chunktype >> 16) & 0xFF);
