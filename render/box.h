@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.4 2002/06/26 23:27:30 bursa Exp $
+ * $Id: box.h,v 1.5 2002/06/28 20:14:04 bursa Exp $
  */
 
 /**
@@ -8,7 +8,8 @@
 
 typedef enum {
 	BOX_BLOCK, BOX_INLINE_CONTAINER, BOX_INLINE,
-	BOX_TABLE, BOX_TABLE_ROW, BOX_TABLE_CELL, BOX_FLOAT
+	BOX_TABLE, BOX_TABLE_ROW, BOX_TABLE_CELL,
+	BOX_FLOAT_LEFT, BOX_FLOAT_RIGHT
 } box_type;
 
 struct box {

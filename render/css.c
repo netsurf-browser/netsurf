@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.7 2002/06/26 12:19:24 bursa Exp $
+ * $Id: css.c,v 1.8 2002/06/28 20:14:04 bursa Exp $
  */
 
 #include <string.h>
@@ -75,7 +75,7 @@ const struct css_style css_empty_style = {
 
 const struct css_style css_blank_style = {
 	CSS_CLEAR_NONE,
-	CSS_DISPLAY_BLOCK,
+	CSS_DISPLAY_INLINE,
 	CSS_FLOAT_NONE,
 	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_EM } } },
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },

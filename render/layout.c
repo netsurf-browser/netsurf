@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.10 2002/06/26 23:27:30 bursa Exp $
+ * $Id: layout.c,v 1.11 2002/06/28 20:14:04 bursa Exp $
  */
 
 #include <assert.h>
@@ -70,9 +70,27 @@ signed long len(struct css_length * length, struct css_style * style)
 void layout_document(struct box * doc, unsigned long width)
 {
 	doc->float_children = 0;
-	layout_block(doc, width, doc, 0, 0);
+	layout_node(doc, width, doc, 0, 0);
 }
 
+
+void layout_node(struct box * box, unsigned long width, struct box * cont,
+		unsigned long cx, unsigned long cy)
+{
+	switch (box->type) {
+		case BOX_BLOCK:
+			layout_block(box, width, cont, cx, cy);
+			break;
+		case BOX_INLINE_CONTAINER:
+			layout_inline_container(box, width, cont, cx, cy);
+			break;
+		case BOX_TABLE:
+			layout_table(box, width, cont, cx, cy);
+			break;
+		default:
+			assert(0);
+	}
+}
 
 /**
  * layout_block -- position block and recursively layout children
@@ -88,7 +106,7 @@ void layout_block(struct box * box, unsigned long width, struct box * cont,
 {
 	struct css_style * style = box->style;
 
-	assert(box->type == BOX_BLOCK || box->type == BOX_FLOAT);
+	assert(box->type == BOX_BLOCK);
 
 	switch (style->width.width) {
 		case CSS_WIDTH_LENGTH:
@@ -127,7 +145,8 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 	struct box * c;
 	unsigned long y = 0;
 
-	assert(box->type == BOX_BLOCK || box->type == BOX_FLOAT || box->type == BOX_TABLE_CELL);
+	assert(box->type == BOX_BLOCK || box->type == BOX_FLOAT_LEFT ||
+	       box->type == BOX_FLOAT_RIGHT || box->type == BOX_TABLE_CELL);
 
 	for (c = box->children; c != 0; c = c->next) {
 		if (c->style && c->style->clear != CSS_CLEAR_NONE) {
@@ -149,31 +168,11 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 			         (c->style->clear == CSS_CLEAR_RIGHT && right != 0) ||
 			         (c->style->clear == CSS_CLEAR_BOTH && (left != 0 || right != 0)));
 		}
-		switch (c->type) {
-			case BOX_BLOCK:
-				layout_block(c, width, cont, cx, cy + y);
-				c->x = 0;
-				c->y = y;
-				y += c->height;
-				break;
-			case BOX_INLINE_CONTAINER:
-				layout_inline_container(c, width, cont, cx, cy + y);
-				c->x = 0;
-				c->y = y;
-				y += c->height;
-				break;
-			case BOX_TABLE:
-				layout_table(c, width, cont, cx, cy + y);
-				c->x = 0;
-				c->y = y;
-				y += c->height;
-				break;
-			default:
-				fprintf(stderr, "%s -> %s\n",
-						box->node ? (const char *) box->node->name : "()",
-						c->node ? (const char *) c->node->name : "()");
-				die("block child not block, table, or inline container");
-		}
+
+		layout_node(c, width, cont, cx, cy + y);
+		c->x = 0;
+		c->y = y;
+		y += c->height;
 	}
 	return y;
 }
@@ -196,10 +195,10 @@ void find_sides(struct box * fl, unsigned long y0, unsigned long y1,
 	*left = *right = 0;
 	for (; fl; fl = fl->next_float) {
 		if (y0 <= fl->y + fl->height && fl->y <= y1) {
-			if (fl->style->float_ == CSS_FLOAT_LEFT && *x0 < fl->x + fl->width) {
+			if (fl->type == BOX_FLOAT_LEFT && *x0 < fl->x + fl->width) {
 				*x0 = fl->x + fl->width;
 				*left = fl;
-			} else if (fl->style->float_ == CSS_FLOAT_RIGHT && fl->x < *x1) {
+			} else if (fl->type == BOX_FLOAT_RIGHT && fl->x < *x1) {
 				*x1 = fl->x;
 				*right = fl;
 			}
@@ -271,7 +270,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 
 	/* pass 1: find height of line assuming sides at top of line */
 	for (x = 0, b = first; x < x1 - x0 && b != 0; b = b->next) {
-		assert(b->type == BOX_INLINE || b->type == BOX_FLOAT);
+		assert(b->type == BOX_INLINE || b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT);
 		if (b->type == BOX_INLINE) {
 			h = line_height(b->style ? b->style : b->parent->parent->style);
 			b->height = h;
@@ -296,12 +295,16 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			move_y = 1;
 /* 			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x); */
 		} else {
-			b->float_children = 0;
+			d = b->children;
+			d->float_children = 0;
 /* 			css_dump_style(b->style); */
-			layout_block(b, width, b, 0, 0);
+			layout_node(d, width, d, 0, 0);
+			d->x = d->y = 0;
+			b->width = d->width;
+			b->height = d->height;
 			if (b->width < (x1 - x0) - x || (left == 0 && right == 0 && x == 0)) {
 				/* fits next to this line, or this line is empty with no floats */
-				if (b->style->float_ == CSS_FLOAT_LEFT) {
+				if (b->type == BOX_FLOAT_LEFT) {
 					b->x = x0;
 					x0 += b->width;
 					left = b;
@@ -417,7 +420,7 @@ void place_float_below(struct box * c, unsigned long width, unsigned long y, str
 		}
 	} while (!((left == 0 && right == 0) || (c->width < x1 - x0)));
 
-	if (c->style->float_ == CSS_FLOAT_LEFT) {
+	if (c->type == BOX_FLOAT_LEFT) {
 		c->x = x0;
 	} else {
 		c->x = x1 - c->width;

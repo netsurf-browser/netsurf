@@ -5,10 +5,10 @@ dl, dt, fieldset, form,
 h1, h2, h3, h4, h5, h6, html,
 object, ol, p, ul,
 hr, menu, pre   { display: block }
-a, abbr, acronym, b, code,
+/* a, abbr, acronym, b, code,
 em, i, q, s, strong, u, font, span,
-var             { display: inline }
-li              { display: list-item }
+var             { display: inline } */
+li              { display: /* list-item */ block }
 head            { display: none }
 table           { display: table }
 tr              { display: table-row }
@@ -19,5 +19,6 @@ col             { display: table-column }
 colgroup        { display: table-column-group }
 td, th          { display: table-cell }
 caption         { display: table-caption }
+img { display:none}
 
 h1 { font-size: xx-large; text-align: center }

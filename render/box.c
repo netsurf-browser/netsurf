@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.8 2002/06/26 23:27:30 bursa Exp $
+ * $Id: box.c,v 1.9 2002/06/28 20:14:04 bursa Exp $
  */
 
 #include <assert.h>
@@ -85,6 +85,8 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 		if ((s = (char *) xmlGetProp(n, (xmlChar *) "class")))
 			(*selector)[depth].class = s;
 		style = box_get_style(stylesheet, parent_style, n, *selector, depth + 1);
+		if (style->display == CSS_DISPLAY_NONE)
+			return inline_container;
 	}
 
 	if (n->type == XML_TEXT_NODE ||
@@ -116,30 +118,31 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 					break;
 				case BOX_BLOCK:
 				case BOX_TABLE_CELL:
-				case BOX_FLOAT:
+				case BOX_FLOAT_LEFT:
+				case BOX_FLOAT_RIGHT:
 					break;
 				default:
 					assert(0);
 			}
 			box_add_child(parent, inline_container);
 		}
-		box = calloc(1, sizeof(struct box));
-		box->node = n;
-		box_add_child(inline_container, box);
 		if (n->type == XML_TEXT_NODE) {
-			box->type = BOX_INLINE;
+			box = box_create(n, BOX_INLINE, 0);
 			box->text = squash_whitespace((char *) n->content);
 			box->length = strlen(box->text);
+			box_add_child(inline_container, box);
 		} else {
-			box->type = BOX_FLOAT;
-			box->style = style;
-			inline_container_c = 0;
-			for (c = n->children; c != 0; c = c->next)
-				inline_container_c = xml_to_box(c, style, stylesheet,
-						selector, depth + 1, box, inline_container_c);
+			box = box_create(0, BOX_FLOAT_LEFT, 0);
+			if (style->float_ == CSS_FLOAT_RIGHT) box->type = BOX_FLOAT_RIGHT;
+			box_add_child(inline_container, box);
+			style->float_ = CSS_FLOAT_NONE;
+			parent = box;
+			if (style->display == CSS_DISPLAY_INLINE)
+				style->display = CSS_DISPLAY_BLOCK;
 		}
+	}
 
-	} else if (n->type == XML_ELEMENT_NODE) {
+	if (n->type == XML_ELEMENT_NODE) {
 		switch (style->display) {
 			case CSS_DISPLAY_BLOCK:  /* blocks get a node in the box tree */
 				switch (parent->type) {
@@ -164,7 +167,8 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 						break;
 					case BOX_BLOCK:
 					case BOX_TABLE_CELL:
-					case BOX_FLOAT:
+					case BOX_FLOAT_LEFT:
+					case BOX_FLOAT_RIGHT:
 						break;
 					default:
 						assert(0);
@@ -223,7 +227,6 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 							selector, depth + 1, box, inline_container_c);
 				inline_container = 0;
 				break;
-			case CSS_DISPLAY_NONE:
 			default:
 				break;
 		}
@@ -245,6 +248,18 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 
 	memcpy(style, parent_style, sizeof(struct css_style));
 	css_get_style(stylesheet, selector, depth, style);
+
+	if ((s = (char *) xmlGetProp(n, (xmlChar *) "align"))) {
+		if (strcmp((const char *) n->name, "table") == 0 ||
+		    strcmp((const char *) n->name, "img") == 0) {
+			if (strcmp(s, "left") == 0) style->float_ = CSS_FLOAT_LEFT;
+			else if (strcmp(s, "right") == 0) style->float_ = CSS_FLOAT_RIGHT;
+		} else {
+			if (strcmp(s, "left") == 0) style->text_align = CSS_TEXT_ALIGN_LEFT;
+			else if (strcmp(s, "center") == 0) style->text_align = CSS_TEXT_ALIGN_CENTER;
+			else if (strcmp(s, "right") == 0) style->text_align = CSS_TEXT_ALIGN_RIGHT;
+		}
+	}
 
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "clear"))) {
 		if (strcmp(s, "all") == 0) style->clear = CSS_CLEAR_BOTH;
@@ -298,7 +313,8 @@ void box_dump(struct box * box, unsigned int depth)
 		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW "); break;
 		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL [colspan %i] ",
 		                                   box->colspan); break;
-		case BOX_FLOAT:            fprintf(stderr, "BOX_FLOAT "); break;
+		case BOX_FLOAT_LEFT:       fprintf(stderr, "BOX_FLOAT_LEFT "); break;
+		case BOX_FLOAT_RIGHT:      fprintf(stderr, "BOX_FLOAT_RIGHT "); break;
 		default:                   fprintf(stderr, "Unknown box type ");
 	}
 	if (box->node)
