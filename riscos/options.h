@@ -72,6 +72,7 @@ extern char *option_font_default_bold;
 extern char *option_font_default_bold_italic;
 extern bool option_font_ufont;
 extern int option_screen_cache;
+extern bool option_block_popups;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -128,7 +129,8 @@ char *option_font_default_italic = 0; \
 char *option_font_default_bold = 0; \
 char *option_font_default_bold_italic = 0; \
 bool option_font_ufont = false; \
-int option_screen_cache = 0;
+int option_screen_cache = 0; \
+bool option_block_popups = 0;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -184,7 +186,8 @@ int option_screen_cache = 0;
 { "font_default_italic",    OPTION_STRING,  &option_font_default_italic }, \
 { "font_default_bold",      OPTION_STRING,  &option_font_default_bold }, \
 { "font_default_bold_italic", OPTION_STRING,  &option_font_default_bold_italic }, \
-{ "font_ufont",             OPTION_BOOL,    &option_font_ufont}, \
-{ "screen_cache",	    OPTION_INTEGER,  &option_screen_cache}
+{ "font_ufont",             OPTION_BOOL,    &option_font_ufont }, \
+{ "screen_cache",           OPTION_INTEGER,  &option_screen_cache }, \
+{ "block_popups",           OPTION_BOOL,    &option_block_popups }
 
 #endif

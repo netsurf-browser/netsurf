@@ -796,13 +796,22 @@ void plugin_url_access(wimp_message *message)
 		 *        other window names
 		 */
 		if (!post) { /* GET request */
-			if (strcasecmp(window, "_self") == 0 ||
+			if (strcasecmp(url,
+			    c->data.plugin.bw->current_content->url) &&
+			    (strcasecmp(window, "_self") == 0 ||
 			    strcasecmp(window, "_parent") == 0 ||
 			    strcasecmp(window, "_top") == 0 ||
-			    strcasecmp(window, "") == 0) {
+			    strcasecmp(window, "") == 0)) {
+				/* only open in current window if not
+				 * already at the URL requested, else you
+				 * end up in an infinite loop of fetching
+				 * the same page
+				 */
 				browser_window_go(c->data.plugin.bw, url, 0);
 			}
-			else if (strcasecmp(window, "_blank") == 0) {
+			else if (!option_block_popups &&
+					strcasecmp(window, "_blank") == 0) {
+				/* don't do this if popups are blocked */
 				browser_window_create(url, NULL, 0);
 			}
 		}
