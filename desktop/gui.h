@@ -15,6 +15,8 @@
 
 struct gui_window;
 typedef struct gui_window gui_window;
+typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
+               GUI_POINTER_MENU } gui_pointer_shape;
 
 #include <stdbool.h>
 #include "netsurf/desktop/browser.h"
@@ -33,6 +35,7 @@ void gui_window_set_scroll(gui_window* g, unsigned long sx, unsigned long sy);
 unsigned long gui_window_get_width(gui_window* g);
 void gui_window_set_extent(gui_window* g, unsigned long width, unsigned long height);
 void gui_window_set_status(gui_window* g, const char* text);
+void gui_window_set_pointer(gui_pointer_shape shape);
 void gui_window_set_title(gui_window* g, char* title);
 void gui_window_set_url(gui_window *g, char *url);
 

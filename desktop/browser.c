@@ -45,6 +45,7 @@ static void browser_window_update(struct browser_window *bw,
 		bool scroll_to_top);
 static void browser_window_set_status(struct browser_window *bw,
 		const char *text);
+static void browser_window_set_pointer(gui_pointer_shape shape);
 static void download_window_callback(content_msg msg, struct content *c,
 		void *p1, void *p2, const char *error);
 
@@ -422,6 +423,17 @@ void browser_window_stop(struct browser_window *bw)
 void browser_window_set_status(struct browser_window *bw, const char *text)
 {
 	gui_window_set_status(bw->window, text);
+}
+
+/**
+ * Change the shape of the mouse pointer
+ *
+ * \param  shape    shape to use
+ */
+
+void browser_window_set_pointer(gui_pointer_shape shape)
+{
+	gui_window_set_pointer(shape);
 }
 
 
@@ -1358,6 +1370,7 @@ void browser_window_follow_link(struct browser_window *bw,
 				browser_window_create(url);
 			} else if (click_type == 0) {
 				browser_window_set_status(bw, url);
+				browser_window_set_pointer(GUI_POINTER_POINT);
 				done = 1;
 			}
 			free(url);
@@ -1386,29 +1399,50 @@ void browser_window_follow_link(struct browser_window *bw,
 				browser_window_create(url);
 			} else if (click_type == 0) {
 				browser_window_set_status(bw, url);
+				browser_window_set_pointer(GUI_POINTER_POINT);
 				done = 1;
 			}
 			free(url);
 			break;
 		}
+		if (click_type == 0 && click_boxes[i].box->gadget != NULL) {
+		        if (click_boxes[i].box->gadget->type == GADGET_TEXTBOX ||
+		            click_boxes[i].box->gadget->type == GADGET_TEXTAREA ||
+		            click_boxes[i].box->gadget->type == GADGET_PASSWORD ||
+		            click_boxes[i].box->gadget->type == GADGET_FILE) {
+                                browser_window_set_pointer(GUI_POINTER_CARET);
+                                done = 1;
+                                break;
+		        }
+		        else if (click_boxes[i].box->gadget->type == GADGET_SELECT) {
+		                browser_window_set_pointer(GUI_POINTER_MENU);
+		                done = 1;
+		                break;
+		        }
+		}
 		if (click_type == 0 && click_boxes[i].box->title != NULL) {
 			browser_window_set_status(bw,
 						  click_boxes[i].box->
 						  title);
+			browser_window_set_pointer(GUI_POINTER_DEFAULT);
 			done = 1;
 			break;
 		}
 	}
 
 	if (click_type == 0 && done == 0) {
-		if (bw->loading_content != 0)
+		if (bw->loading_content != 0) {
 			browser_window_set_status(bw,
 						  bw->loading_content->
 						  status_message);
-		else
+                        browser_window_set_pointer(GUI_POINTER_DEFAULT);
+		}
+		else {
 			browser_window_set_status(bw,
 						  bw->current_content->
 						  status_message);
+                        browser_window_set_pointer(GUI_POINTER_DEFAULT);
+		}
 	}
 
 	free(click_boxes);

@@ -21,8 +21,10 @@
 #include "oslib/osbyte.h"
 #include "oslib/osfile.h"
 #include "oslib/osfscontrol.h"
+#include "oslib/osspriteop.h"
 #include "oslib/plugin.h"
 #include "oslib/wimp.h"
+#include "oslib/wimpspriteop.h"
 #include "oslib/uri.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/gui.h"
@@ -61,6 +63,8 @@ bool gui_reformat_pending = false;	/**< Some windows have been resized,
 gui_drag_type gui_current_drag_type;
 static wimp_t task_handle;	/**< RISC OS wimp task handle. */
 static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
+osspriteop_area *pointers;      /**< Sprite area containing pointer data */
+gui_pointer_shape curr_pointer; /**< Current shape of the pointer */
 /** Accepted wimp user messages. */
 static const wimp_MESSAGE_LIST(26) task_messages = { {
 	message_DATA_SAVE,
@@ -106,6 +110,7 @@ struct ro_gui_poll_block *ro_gui_poll_queued_blocks = 0;
 
 
 static void ro_gui_choose_language(void);
+static void ro_gui_pointers_init(const char *filename);
 static void ro_gui_icon_bar_create(void);
 static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
 static void ro_gui_poll_queue(wimp_event_no event, wimp_block* block);
@@ -193,6 +198,7 @@ void gui_init(int argc, char** argv)
 #endif
 	ro_gui_history_init();
 	wimp_close_template();
+	ro_gui_pointers_init("<NetSurf$Dir>.Resources.Pointers");
 	ro_gui_icon_bar_create();
 }
 
@@ -251,6 +257,31 @@ void ro_gui_choose_language(void)
 		option_accept_language = strdup(option_language);
 }
 
+/**
+ * Initialise pointer sprite area
+ */
+void ro_gui_pointers_init(const char *filename)
+{
+        FILE *fp;
+        unsigned int len;
+        os_error *e;
+
+        fp = fopen(filename, "rb");
+        if (!fp) return;
+        fseek(fp, 0, SEEK_END);
+        len = ftell(fp);
+        fclose(fp);
+        pointers = xcalloc(len+4, sizeof(char));
+
+        pointers->size = len+4;
+        pointers->sprite_count = 0;
+        pointers->first = 16;
+        pointers->used = 16;
+
+        e = xosspriteop_load_sprite_file(osspriteop_USER_AREA,
+                                         pointers, filename);
+        if (e) xfree(pointers);
+}
 
 /**
  * Create an iconbar icon.
@@ -275,6 +306,7 @@ void ro_gui_icon_bar_create(void)
 void gui_quit(void)
 {
 	ro_gui_history_quit();
+	xfree(pointers);
 	wimp_close_down(task_handle);
 	xhourglass_off();
 }
@@ -368,6 +400,7 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 
 		case wimp_POINTER_LEAVING_WINDOW:
 			over_window = 0;
+			gui_window_set_pointer(GUI_POINTER_DEFAULT);
 			break;
 
 		case wimp_POINTER_ENTERING_WINDOW:
@@ -480,6 +513,35 @@ void ro_gui_null_reason_code(void)
 		wimp_get_pointer_info(&pointer);
 		ro_gui_window_mouse_at(&pointer);
 	}
+}
+
+/**
+ * Change mouse pointer shape
+ */
+void gui_window_set_pointer(gui_pointer_shape shape)
+{
+        if (shape == curr_pointer) return;
+
+        switch (shape) {
+                case GUI_POINTER_DEFAULT:
+                        xwimpspriteop_set_pointer_shape("ptr_default",
+                                                         1, 0, 0, 0, 0);
+                        break;
+                case GUI_POINTER_POINT:
+                        xosspriteop_set_pointer_shape(0x100, pointers,
+                                 (osspriteop_id)"ptr_point", 1, 6, 0, 0, 0);
+                        break;
+                case GUI_POINTER_CARET:
+                        xosspriteop_set_pointer_shape(0x100, pointers,
+                                 (osspriteop_id)"ptr_caret", 1, 5, 0, 0, 0);
+                        break;
+                case GUI_POINTER_MENU:
+                        xosspriteop_set_pointer_shape(0x100, pointers,
+                                 (osspriteop_id)"ptr_menu", 1, 6, 4, 0, 0);
+                        break;
+        }
+
+        curr_pointer = shape;
 }
 
 
