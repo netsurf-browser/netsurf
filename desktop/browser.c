@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.4 2002/11/02 22:28:05 bursa Exp $
+ * $Id: browser.c,v 1.6 2002/12/23 20:06:21 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -9,6 +9,7 @@
 #include "netsurf/desktop/browser.h"
 #include "netsurf/render/utils.h"
 #include "netsurf/desktop/cache.h"
+#include "netsurf/utils/log.h"
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -55,20 +56,20 @@ void content_destroy(struct content* c)
     case CONTENT_HTML:
       /* free other memory here */
 //      xmlFreeParserCtxt(c->data.html.parser);
-      fprintf(stderr, "free parser\n");
+      LOG(("free parser"));
 //      htmlFreeParserCtxt(c->data.html.parser);
-      fprintf(stderr, "free sheet\n");
+      LOG(("free sheet"));
 //      xfree(c->data.html.stylesheet);
-      fprintf(stderr, "free style\n");
+      LOG(("free style"));
 //      xfree(c->data.html.style);
       if (c->data.html.layout != NULL)
       {
-        fprintf(stderr, "box_free box\n");
+        LOG(("box_free box"));
 //        box_free(c->data.html.layout);
-        fprintf(stderr, "free box\n");
+        LOG(("free box"));
 //        xfree(c->data.html.layout);
       }
-      fprintf(stderr, "free font\n");
+      LOG(("free font"));
       font_free_set(c->data.html.fonts);
       break;
     default:
@@ -122,7 +123,7 @@ void content_html_reformat(struct content* c, int width)
   char* file;
   struct css_selector* selector = xcalloc(1, sizeof(struct css_selector));
 
-  Log("content_html_reformat", "Starting stuff");
+  LOG(("Starting stuff"));
   if (c->data.html.layout != NULL)
   {
     /* TODO: skip if width is unchanged */
@@ -130,14 +131,14 @@ void content_html_reformat(struct content* c, int width)
     return;
   }
 
-  Log("content_html_reformat", "Setting document to myDoc");
+  LOG(("Setting document to myDoc"));
   c->data.html.document = c->data.html.parser->myDoc;
 
   /* skip to start of html */
-  Log("content_html_reformat", "Skipping to html");
+  LOG(("Skipping to html"));
   if (c->data.html.document == NULL)
   {
-    Log("content_html_reformat", "There is no document!");
+    LOG(("There is no document!"));
     return;
   }
   for (c->data.html.markup = c->data.html.document->children;
@@ -148,38 +149,38 @@ void content_html_reformat(struct content* c, int width)
 
   if (c->data.html.markup == 0)
   {
-    Log("content_html_reformat", "No markup");
+    LOG(("No markup"));
     return;
   }
   if (strcmp((const char *) c->data.html.markup->name, "html"))
   {
-    Log("content_html_reformat", "Not html");
+    LOG(("Not html"));
     return;
   }
 
 //  xfree(c->data.html.stylesheet);
 //  xfree(c->data.html.style);
 
-  Log("content_html_reformat", "Loading CSS");
+  LOG(("Loading CSS"));
   file = load("<NetSurf$Dir>.Resources.CSS");  /*!!! not portable! !!!*/
   c->data.html.stylesheet = css_new_stylesheet();
-  Log("content_html_reformat", "Parsing stylesheet");
+  LOG(("Parsing stylesheet"));
   css_parse_stylesheet(c->data.html.stylesheet, file);
 
-  Log("content_html_reformat", "Copying base style");
+  LOG(("Copying base style"));
   c->data.html.style = xcalloc(1, sizeof(struct css_style));
   memcpy(c->data.html.style, &css_base_style, sizeof(struct css_style));
 
-  Log("content_html_reformat", "Creating box");
+  LOG(("Creating box"));
   c->data.html.layout = xcalloc(1, sizeof(struct box));
   c->data.html.layout->type = BOX_BLOCK;
   c->data.html.layout->node = c->data.html.markup;
 
   c->data.html.fonts = font_new_set();
 
-  Log("content_html_reformat", "XML to box");
+  LOG(("XML to box"));
   xml_to_box(c->data.html.markup, c->data.html.style, c->data.html.stylesheet, &selector, 0, c->data.html.layout, 0, 0, c->data.html.fonts);
-  Log("content_html_reformat", "Layout document");
+  LOG(("Layout document"));
   layout_document(c->data.html.layout->children, (unsigned long)width);
 
   /* can tidy up memory here? */
@@ -192,7 +193,7 @@ void browser_window_reformat(struct browser_window* bw)
   char status[100];
   clock_t time0, time1;
 
-  Log("browser_window_reformat", "Entering...");
+  LOG(("Entering..."));
   if (bw == NULL)
     return;
   if (bw->current_content == NULL)
@@ -201,34 +202,34 @@ void browser_window_reformat(struct browser_window* bw)
   switch (bw->current_content->type)
   {
     case CONTENT_HTML:
-      Log("browser_window_reformat", "HTML content.");
+      LOG(("HTML content."));
       browser_window_set_status(bw, "Formatting page...");
       time0 = clock();
       content_html_reformat(bw->current_content, gui_window_get_width(bw->window));
       time1 = clock();
-      Log("browser_window_reformat", "Content reformatted");
+      LOG(("Content reformatted"));
       if (bw->current_content->data.html.layout != NULL)
       {
-        Log("browser_window_reformat", "Setting extent");
+        LOG(("Setting extent"));
         gui_window_set_extent(bw->window, bw->current_content->data.html.layout->children->width, bw->current_content->data.html.layout->children->height);
-        Log("browser_window_reformat", "Setting scroll");
+        LOG(("Setting scroll"));
         gui_window_set_scroll(bw->window, 0, 0);
-        Log("browser_window_reformat", "Redraw window");
+        LOG(("Redraw window"));
         gui_window_redraw_window(bw->window);
-        Log("browser_window_reformat", "Complete");
+        LOG(("Complete"));
         sprintf(status, "Format complete (%gs).", ((float) time1 - time0) / CLOCKS_PER_SEC);
         browser_window_set_status(bw, status);
       }
       else
       {
-        Log("browser_window_reformat", "This isn't html");
+        LOG(("This isn't html"));
         browser_window_set_status(bw, "This is not HTML!");
         cache_free(bw->current_content);
         bw->current_content = NULL;
       }
       break;
     default:
-        Log("browser_window_reformat", "Unknown content type");
+        LOG(("Unknown content type"));
       break;
   }
 }
@@ -328,11 +329,13 @@ void browser_window_set_status(struct browser_window* bw, char* text)
 
 void browser_window_destroy(struct browser_window* bw)
 {
-  if (bw == NULL)
-    return;
+  LOG(("bw = %p", bw));
+  assert(bw != 0);
 
-  cache_free(bw->current_content);
-  cache_free(bw->future_content);
+  if (bw->current_content != NULL)
+    cache_free(bw->current_content);
+  if (bw->future_content != NULL)
+    cache_free(bw->future_content);
 
   if (bw->history != NULL)
   {
@@ -363,13 +366,14 @@ void browser_window_destroy(struct browser_window* bw)
 
   xfree(bw);
 
-  return;
+  LOG(("end"));
 }
 
 void browser_window_open_location_historical(struct browser_window* bw, char* url)
 {
-  if (bw == NULL)
-    return;
+  LOG(("bw = %p, url = %s", bw, url));
+
+  assert(bw != 0 && url != 0);
 
   if (bw->future_content != NULL)
     cache_free(bw->future_content);
@@ -379,6 +383,8 @@ void browser_window_open_location_historical(struct browser_window* bw, char* ur
   {
     /* not in cache: start fetch */
     struct fetch_request* req;
+
+    LOG(("not in cache: starting fetch"));
 
     req = xcalloc(1, sizeof(struct fetch_request));
     req->type = REQUEST_FROM_BROWSER;
@@ -394,14 +400,17 @@ void browser_window_open_location_historical(struct browser_window* bw, char* ur
   else
   {
     /* in cache: reformat page and display */
+    LOG(("in cache: reformatting"));
     browser_window_reformat(bw);
   }
 
-  return;
+  LOG(("end"));
 }
 
 void browser_window_open_location(struct browser_window* bw, char* url)
 {
+  LOG(("bw = %p, url = %s", bw, url));
+  assert(bw != 0 && url != 0);
   browser_window_open_location_historical(bw, url);
   if (bw->history == NULL)
     bw->history = history_create(NULL, bw->future_content->main_fetch->location);
@@ -410,6 +419,7 @@ void browser_window_open_location(struct browser_window* bw, char* url)
     history_remember(bw->history, NULL, bw->future_content->main_fetch->location);
     bw->history = bw->history->later;
   }
+  LOG(("end"));
 }
 
 int browser_window_message(struct browser_window* bw, struct browser_message* msg)
@@ -475,7 +485,8 @@ int browser_window_message(struct browser_window* bw, struct browser_message* ms
         htmlParseChunk(bw->future_content->data.html.parser, "", 0, 1);
         bw->future_content->main_fetch = NULL;
         previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
-        cache_free(bw->current_content);
+        if (bw->current_content != NULL)
+          cache_free(bw->current_content);
         bw->current_content = bw->future_content;
         bw->future_content = NULL;
         browser_window_reformat(bw);
