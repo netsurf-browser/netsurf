@@ -353,6 +353,7 @@ void layout_block_children(struct box *box, struct box *cont,
 	int width = box->width;
 	int y = box->padding[TOP];
 	int y1;
+	int vert_margin = 0;
 
 	assert(box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 	       box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT ||
@@ -375,16 +376,20 @@ void layout_block_children(struct box *box, struct box *cont,
 		if (c->style) {
 			layout_block_find_dimensions(width, c->style, c);
 			c->x += c->margin[LEFT] + c->border[LEFT];
-			c->y += c->margin[TOP] + c->border[TOP];
+			if (vert_margin < c->margin[TOP])
+				vert_margin = c->margin[TOP];
+			c->y += vert_margin + c->border[TOP];
 		} else {
 			c->width = box->width;
 		}
 
 		layout_node(c, width, cont, cx + c->x, cy + c->y);
 		y = c->y + c->height + c->padding[TOP] + c->padding[BOTTOM] +
-				c->border[BOTTOM] + c->margin[BOTTOM];
+				c->border[BOTTOM];
 		if (box->width < c->width)
 			box->width = c->width;
+
+		vert_margin = c->margin[BOTTOM];
 	}
 	box->height = y - box->padding[TOP];
 }
@@ -685,6 +690,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 				place_float_below(b, width, cy + height + 1, cont);
 /* 				fprintf(stderr, "layout_line:     float doesn't fit %li %li\n", b->x, b->y); */
 			}
+			assert(cont->float_children != b);
 			b->next_float = cont->float_children;
 			cont->float_children = b;
 		}
