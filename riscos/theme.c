@@ -131,17 +131,17 @@ void ro_gui_theme_finalise(void) {
  */
 struct theme_descriptor *ro_gui_theme_find(const char *filename) {
 	struct theme_descriptor *descriptor;
-	
+
 	/*	Check for bad filename
 	*/
 	if (!filename) return NULL;
-	
+
 	/*	Work through until we find our required filename
 	*/
 	descriptor = theme_descriptors;
 	while (descriptor) {
-		if (!strcmp(filename, descriptor->filename)) return descriptor; 
-		descriptor = descriptor->next; 
+		if (!strcmp(filename, descriptor->filename)) return descriptor;
+		descriptor = descriptor->next;
 	}
 	return NULL;
 }
@@ -182,12 +182,12 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 			warn_user("MiscError", error->errmess);
 			break;
 		}
-		
+
 		/*	Check if we've read anything
 		*/
 		if (read_count == 0)
 			continue;
-		
+
 		/*	Only process files
 		*/
 		if ((info.obj_type == fileswitch_IS_FILE) && (!ro_gui_theme_find(info.name))) {
@@ -197,7 +197,7 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 			snprintf(pathname, sizeof pathname, "%s.%s",
 					THEMES_DIR, info.name);
 			pathname[sizeof pathname - 1] = 0;
-			
+
 			/*	Get the header
 			*/
 			error = xosfind_openinw(osfind_NO_PATH, pathname, 0, &file_handle);
@@ -220,8 +220,8 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 				continue;
 			}
 			if (output_left > 0)
-				continue;	/* should try to read more? */			
-	
+				continue;	/* should try to read more? */
+
 			/*	Check we are a valid theme
 			*/
 			if ((file_header.magic_value != 0x4d54534e) ||
@@ -254,7 +254,7 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 			current->throbber_right = (file_header.throbber_left == 0x00);
 			current->decompressed_size = file_header.decompressed_sprite_size;
 			current->compressed_size = file_header.compressed_sprite_size;
-		
+
 			/*	Link in our new descriptor alphabetically
 			*/
 			if (theme_descriptors) {
@@ -264,7 +264,7 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 			theme_descriptors = current;
 		}
 	}
-	
+
 	/*	Sort alphabetically in a very rubbish way
 	*/
 	if (theme_descriptors->next) {
@@ -281,7 +281,7 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 					current->next->previous = current;
 
 				current = test->previous;
-				if (!current) current = test; 
+				if (!current) current = test;
 			} else {
 				current = current->next;
 			}
@@ -300,7 +300,7 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
  * \param list	      whether to open all themes in the list
  * \return whether the operation was successful
  */
-bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {	
+bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 	fileswitch_object_type obj_type;
 	squash_output_status status;
 	os_coord dimensions;
@@ -312,7 +312,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 	int workspace_size, file_size;
 	char *raw_data, *workspace;
 	osspriteop_area *decompressed;
-	
+
 	/*	If we are freeing the whole of the list then we need to
 		start at the first descriptor.
 	*/
@@ -373,7 +373,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 				warn_user("FileError", error->errmess);
 				goto ro_gui_theme_open_continue;
 			}
-			
+
 			/*	Decompress the sprites
 			*/
 			error = xsquash_decompress_return_sizes(-1, &workspace_size, 0);
@@ -434,7 +434,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 						descriptor->theme->throbber_width = dimensions.x;
 					if (dimensions.y > descriptor->theme->throbber_height)
 						descriptor->theme->throbber_height = dimensions.y;
-	
+
 					/*	Get the throbber number
 					*/
 					n = atoi(pathname + 8);
@@ -443,7 +443,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 				}
 	  		}
 		}
-	  	
+
 ro_gui_theme_open_continue:
 		/*	Loop or return depending on whether the entire list
 			is to be processed.
@@ -452,7 +452,7 @@ ro_gui_theme_open_continue:
 			descriptor = descriptor->next;
 		} else {
 			return result;
-		} 
+		}
 	}
 	return result;
 }
@@ -470,21 +470,21 @@ bool ro_gui_theme_apply(struct theme_descriptor *descriptor) {
 	/*	Check if the theme is already applied
 	*/
 	if (descriptor == theme_current) return true;
-	
+
 	/*	Re-open the new-theme and release the current theme
 	*/
 	if (!ro_gui_theme_open(descriptor, false)) {
 		/*	The error has already been reported
 		*/
-		return false; 
+		return false;
 	}
 	theme_previous = theme_current;
 	theme_current = descriptor;
-	
+
 	/*	Apply the theme to all the current windows
 	*/
 	ro_gui_window_update_theme();
-	
+
 	/*	Release the previous theme
 	*/
 	ro_gui_theme_close(theme_previous, false);
@@ -504,14 +504,14 @@ void ro_gui_theme_close(struct theme_descriptor *descriptor, bool list) {
 	/*	We might not have created any descriptors yet to close.
 	*/
 	if (!descriptor) return;
-	
+
 	/*	If we are freeing the whole of the list then we need to
 		start at the first descriptor.
 	*/
 	if (list) {
 		while (descriptor->previous) descriptor = descriptor->previous;
 	}
-	
+
 	/*	Close the themes
 	*/
 	while (descriptor) {
@@ -533,7 +533,7 @@ void ro_gui_theme_close(struct theme_descriptor *descriptor, bool list) {
 			descriptor = descriptor->next;
 		} else {
 			return;
-		} 
+		}
 	}
 }
 
@@ -551,7 +551,7 @@ void ro_gui_theme_redraw(struct toolbar *toolbar, wimp_draw *redraw) {
 	osbool more = wimp_redraw_window(redraw);
 	wimp_icon separator_icon;
 	bool perform_redraw = false;
-	
+
 	/*	Set up the icon
 	*/
 	if ((toolbar->descriptor) && (toolbar->descriptor->theme) &&
@@ -567,7 +567,7 @@ void ro_gui_theme_redraw(struct toolbar *toolbar, wimp_draw *redraw) {
 		perform_redraw = true;
 	}
 	perform_redraw &= toolbar->display_buttons;
-	
+
 	while (more) {
 	  	if (perform_redraw) {
 	  	  	for (icon = toolbar->icon; icon; icon = icon->next) {
@@ -578,7 +578,7 @@ void ro_gui_theme_redraw(struct toolbar *toolbar, wimp_draw *redraw) {
 				}
 			}
 
-	  	  
+
 	  	}
 		more = wimp_get_rectangle(redraw);
 	}
@@ -598,7 +598,7 @@ void ro_gui_theme_free(struct theme_descriptor *descriptor, bool list) {
 	/*	We might not have created any descriptors yet to close.
 	*/
 	if (!descriptor) return;
-	
+
 	/*	If we are freeing the whole of the list then we need to
 		start at the first descriptor.
 	*/
@@ -612,7 +612,7 @@ void ro_gui_theme_free(struct theme_descriptor *descriptor, bool list) {
 		/*	Remember where we are going next
 		*/
 		next_descriptor = descriptor->next;
-	  	
+
 		/*	If we have no loaded theme then we can kill the descriptor
 		*/
 		if (!descriptor->theme) {
@@ -622,7 +622,7 @@ void ro_gui_theme_free(struct theme_descriptor *descriptor, bool list) {
 					descriptor->previous->next = descriptor->next;
 			if (descriptor->next)
 					descriptor->next->previous = descriptor->previous;
-			
+
 			/*	Keep the cached list in sync
 			*/
 			if (theme_descriptors == descriptor)
@@ -640,7 +640,7 @@ void ro_gui_theme_free(struct theme_descriptor *descriptor, bool list) {
 			descriptor = next_descriptor;
 		} else {
 			return;
-		} 
+		}
 	}
 }
 
@@ -664,7 +664,7 @@ struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor,
 		return NULL;
 	}
 	toolbar->type = type;
-	
+
 	/*	Store the theme
 	*/
 	if (!descriptor) descriptor = theme_current;
@@ -702,7 +702,7 @@ struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor,
 			ro_gui_theme_add_toolbar_icon(toolbar, "expand", ICON_TOOLBAR_EXPAND);
 			break;
 	}
-        
+
 	/*	Claim the memory for our Wimp indirection
 	*/
 	if (type == THEME_BROWSER_TOOLBAR) {
@@ -743,7 +743,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	struct toolbar_icon *toolbar_icon;
 	int width;
 	if (!toolbar) return false;
-	
+
 	/*	Set the theme and window sprite area
 	*/
 	if (!descriptor) descriptor = theme_current;
@@ -754,7 +754,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 		sprite_area = (osspriteop_area *)1;
 	}
 	theme_toolbar_window.sprite_area = sprite_area;
-	
+
 	/*	Update the icon sizes
 	*/
 	toolbar_icon = toolbar->icon;
@@ -762,7 +762,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 		ro_gui_theme_update_toolbar_icon(toolbar, toolbar_icon);
 		toolbar_icon = toolbar_icon->next;
 	}
-	
+
 	/*	Recreate the toolbar window
 	*/
 	if (toolbar->descriptor) {
@@ -791,22 +791,23 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 		warn_user("WimpError", error->errmess);
 		return false;
 	}
-	
+
 	/*	Create the basic icons
-	*/	
+	*/
 	int max_icon = ICON_TOOLBAR_URL;
 	if (toolbar->type == THEME_HOTLIST_TOOLBAR) max_icon = ICON_TOOLBAR_HOTLIST_LAST;
 	new_icon.w = toolbar->toolbar_handle;
 	new_icon.icon.data.indirected_text.size = 1;
-	new_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE | wimp_ICON_INDIRECTED |
-					wimp_ICON_HCENTRED | wimp_ICON_VCENTRED |
-					(wimp_BUTTON_RELEASE_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT);
+	new_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
+			wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
+			wimp_ICON_VCENTRED |
+			(wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT);
 	if (toolbar->descriptor) {
 		new_icon.icon.flags |= (toolbar->descriptor->browser_background
 				 << wimp_ICON_BG_COLOUR_SHIFT);
 	} else {
 		new_icon.icon.flags |= (wimp_COLOUR_VERY_LIGHT_GREY
-				 << wimp_ICON_BG_COLOUR_SHIFT);	  
+				 << wimp_ICON_BG_COLOUR_SHIFT);
 	}
 	for (int i = 0; i < max_icon; i++) {
 		new_icon.icon.data.indirected_text.text = theme_null_text_string;
@@ -828,7 +829,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 			return false;
 		}
 	}
-	
+
 	/*	Create the URL/throbber icons
 	*/
 	if (toolbar->type == THEME_BROWSER_TOOLBAR) {
@@ -865,7 +866,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	if (toolbar->parent_handle) {
 		ro_gui_theme_attach_toolbar(toolbar, toolbar->parent_handle);
 	}
-	
+
 	/*	Recreate the status window
 	*/
 	if (toolbar->type == THEME_BROWSER_TOOLBAR) {
@@ -892,7 +893,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 			warn_user("WimpError", error->errmess);
 			return false;
 		}
-		
+
 		/*	Create the status resize icon
 		*/
 		new_icon.w = toolbar->status_handle;
@@ -935,7 +936,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 		}
 
 	}
-	
+
 	/*	Force a re-processing of the toolbar
 	*/
 	width = toolbar->toolbar_current;
@@ -1004,7 +1005,7 @@ void ro_gui_theme_resize_toolbar_status(struct toolbar *toolbar) {
 	wimp_w parent = NULL;
 	int parent_size, status_size;
 	if ((!toolbar) || (!toolbar->parent_handle)) return;
-	
+
 	/*	Get the width to scale to
 	*/
 	parent = toolbar->parent_handle;
@@ -1064,7 +1065,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 	struct toolbar_icon *toolbar_icon;
 	struct toolbar_icon *last_icon = NULL;
 	bool visible_icon = false;
-  	
+
   	/*	Disable lone separators
   	*/
   	if (toolbar->reformat_buttons) {
@@ -1085,15 +1086,15 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
   		}
   		visible_icon = false;
   	}
-  	
+
 	/*	Find the parent window handle if we need to process the status window,
 		or the caller has requested we calculate the width ourself.
 	*/
 	if ((width == -1) || ((toolbar->status_handle) && (toolbar->display_status))) {
 		parent = toolbar->parent_handle;
-		
+
 		/*	Get the window outline width
-		*/ 
+		*/
 		if (width == -1) {
 			if (!parent) return false;
 			outline.w = toolbar->parent_handle;
@@ -1107,7 +1108,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 			width = outline.outline.x1 - outline.outline.x0 - 2;
 		}
 	}
-	
+
 	/*	Reformat the buttons starting with the throbber
 	*/
 	if ((width != old_width) || (toolbar->reformat_buttons)) {
@@ -1137,7 +1138,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 				if (toolbar_icon->display) {
 					bottom_edge += toolbar_icon->width;
 					visible_icon = true;
-					if ((toolbar_icon->height != 0) && 
+					if ((toolbar_icon->height != 0) &&
 						(toolbar->height < toolbar_icon->height + 8)) {
 						toolbar->height = toolbar_icon->height + 8;
 					}
@@ -1146,7 +1147,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 			}
 			if (visible_icon) bottom_edge += 8;
 		}
-		
+
 		/*	Check for minimum widths
 		*/
 		if (toolbar->type == THEME_BROWSER_TOOLBAR) {
@@ -1179,7 +1180,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 				!toolbar->display_url);
 			xwimp_force_redraw(toolbar->toolbar_handle,
 				0, 0, 16384, 16384);
-			
+
 			/*	Move the buttons
 			*/
 			toolbar_icon = toolbar->icon;
@@ -1279,7 +1280,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 			warn_user("WimpError", error->errmess);
 			return false;
 		}
-		
+
 		/*	Open or close the window
 		*/
 		if (!toolbar->display_status) {
@@ -1292,13 +1293,13 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 			status_size = (status_max * toolbar->status_width) / 10000;
 			if (status_size < 12) status_size = 12;
 			status_height = ro_get_hscroll_height(parent) - 2;
-			
+
 			/*	Update the extent
 			*/
 			extent.x1 = status_max;
 			extent.y1 = status_height - 2;
 			xwimp_set_extent(toolbar->status_handle, &extent);
-			
+
 			/*	Re-open the window
 			*/
 			state.w = toolbar->status_handle;
@@ -1356,7 +1357,7 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar) {
 	struct toolbar_icon *icon;
 	struct toolbar_icon *next_icon;
 	if (!toolbar) return;
-  	
+
 	/*	Delete our windows
 	*/
 	if (toolbar->toolbar_handle)
@@ -1367,7 +1368,7 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar) {
 	/*	Free the Wimp buffer (we only created one for them all)
 	*/
 	free(toolbar->url_buffer);
-	
+
 	/*	Free all the icons
 	*/
 	next_icon = toolbar->icon;
@@ -1406,7 +1407,7 @@ void ro_gui_theme_add_toolbar_icon(struct toolbar *toolbar, const char *name, in
 		warn_user("NoMemory", 0);
 		return;
 	}
-	
+
 	/*	Set up and link in the icon
 	*/
 	sprintf(toolbar_icon->name, name);
@@ -1433,11 +1434,11 @@ void ro_gui_theme_update_toolbar_icon(struct toolbar *toolbar, struct toolbar_ic
 	os_mode mode;
 	os_error *error;
 	int default_width = 0;
-  	
+
 	/*	Separators default to a width of 16
 	*/
 	if (icon->icon_number == -1) default_width = 16;
-  	
+
 	/*	Handle no theme/no sprite area
 	*/
 	if (!toolbar) return;
@@ -1463,7 +1464,7 @@ void ro_gui_theme_update_toolbar_icon(struct toolbar *toolbar, struct toolbar_ic
 		}
 		return;
 	}
-	
+
 	/*	Store the details
 	*/
 	ro_convert_pixels_to_os_units(&dimensions, mode);
@@ -1507,7 +1508,7 @@ struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar, int 
 bool ro_gui_theme_toolbar_separator_following(struct toolbar_icon *icon) {
 	while (icon) {
 		if (icon->display) return (icon->width > 0);
-                icon = icon->next;	
+                icon = icon->next;
 	}
-	return false; 
+	return false;
 }
