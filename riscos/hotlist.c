@@ -710,7 +710,7 @@ void ro_gui_hotlist_visited_update(struct content *content, struct hotlist_entry
 
 			/*	Update our values
 			*/
-			if (entry->children == 0) entry->filetype = ro_content_filetype(content);
+			if (entry->children == -1) entry->filetype = ro_content_filetype(content);
 			entry->visits++;
 			entry->last_date = time(NULL);
 			ro_gui_hotlist_update_entry_size(entry);
