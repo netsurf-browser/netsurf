@@ -10,6 +10,7 @@
  * Toolbar themes (implementation).
  */
 
+#include <alloca.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -37,26 +38,7 @@ void ro_theme_load(char *pathname)
 	char name[] = "toolbar";
 	int context, window_size, data_size, size, i;
 	static char *data = 0;
-	/**
-	 * \note
-	 * This is necessary as, when compiling with Norcroft 5.54,
-	 * linking fails due to it trying to use
-	 * __rt_allocauto and __rt_freeauto to allocate (and free)
-	 * the stack space used by the filename buffer.
-	 * These symbols are provided by the SCL but not by Unixlib
-	 *
-	 * \note
-	 * There are three possible ways around this \#ifdef nastiness:
-	 *  - Allocate filename on the heap instead
-	 *  - Get NetSurf to build and link against the SCL
-	 *  - Implement __rt_allocauto and __rt_freeauto for Unixlib
-	 *
-	 */
-#ifdef __GNUC__
-	char filename[strlen(pathname) + 12];
-#else
-        char *filename = xcalloc(strlen(pathname) + 12, sizeof(char));
-#endif
+        char *filename = alloca(strlen(pathname) + 12);
 	fileswitch_object_type obj_type;
 
 	/* free old theme data */
@@ -117,9 +99,6 @@ void ro_theme_load(char *pathname)
 				theme_throbs = n;
 		}
 	}
-#ifndef __GNUC__
-        xfree(filename);
-#endif
 }
 
 

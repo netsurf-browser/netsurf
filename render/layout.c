@@ -13,6 +13,7 @@
  * precalculation of minimum / maximum box widths.
  */
 
+#include <alloca.h>
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
@@ -1002,16 +1003,7 @@ void layout_table(struct box *table, int available_width)
 	struct box *row;
 	struct box *row_group;
 	struct box **row_span_cell;
-	/**
-	 * \attention
-	 * See the note at the top of ro_theme_load()
-	 * in riscos/theme.c for an explaination of this \#ifdef silliness
-	 */
-#ifdef __GNUC__
-	struct column col[columns];
-#else
-        struct column *col = xcalloc(columns, sizeof(*col));
-#endif
+        struct column *col = alloca(columns * sizeof(struct column));
 	struct css_style *style = table->style;
 
 	assert(table->type == BOX_TABLE);
@@ -1218,9 +1210,6 @@ void layout_table(struct box *table, int available_width)
 	xfree(excess_y);
 	xfree(row_span);
 	xfree(xs);
-#ifndef __GNUC__
-        xfree(col);
-#endif
 
 	table->width = table_width;
 	table->height = table_height;
