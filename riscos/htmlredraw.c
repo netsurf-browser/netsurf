@@ -130,7 +130,7 @@ void html_redraw_box(struct content *content, struct box * box,
 		current_background_color = box->style->background_color;
 	}
 
-	if (box->object) {
+	if (box->object /*&& box->object->type != CONTENT_HTML*/) {
 		content_redraw(box->object, x, y, width, height, x0, y0, x1, y1);
 
 	} else if (box->gadget &&
