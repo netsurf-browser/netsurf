@@ -232,11 +232,11 @@ struct column {
 
 
 void xml_to_box(xmlNode *n, struct content *c);
-void box_dump(struct box * box, unsigned int depth);
-struct box * box_create(struct css_style * style,
+void box_dump(struct box *box, unsigned int depth);
+struct box * box_create(struct css_style *style,
 		const char *href, const char *title,
 		const char *id, pool box_pool);
-void box_add_child(struct box * parent, struct box * child);
+void box_add_child(struct box * parent, struct box *child);
 void box_insert_sibling(struct box *box, struct box *new_box);
 void box_free(struct box *box);
 void box_coords(struct box *box, int *x, int *y);
@@ -244,6 +244,6 @@ struct box *box_at_point(struct box *box, int x, int y,
 		int *box_x, int *box_y,
 		struct content **content);
 struct box *box_object_at_point(struct content *c, int x, int y);
-struct box *box_find_by_id(struct box *box, char *id);
+struct box *box_find_by_id(struct box *box, const char *id);
 
 #endif

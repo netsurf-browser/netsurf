@@ -386,7 +386,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 
 		if (strcmp(node->name, "link") == 0) {
 			/* rel='stylesheet' */
-			if (!(rel = (char *) xmlGetProp(node, (const xmlChar *) "rel")))
+			if ((rel = (char *) xmlGetProp(node, (const xmlChar *) "rel")) == NULL)
 				continue;
 			if (strcasecmp(rel, "stylesheet") != 0) {
 				xmlFree(rel);
@@ -395,7 +395,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			xmlFree(rel);
 
 			/* type='text/css' or not present */
-			if ((type = (char *) xmlGetProp(node, (const xmlChar *) "type"))) {
+			if ((type = (char *) xmlGetProp(node, (const xmlChar *) "type")) != NULL) {
 				if (strcmp(type, "text/css") != 0) {
 					xmlFree(type);
 					continue;
@@ -404,7 +404,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			}
 
 			/* media contains 'screen' or 'all' or not present */
-			if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media"))) {
+			if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media")) != NULL) {
 				if (strstr(media, "screen") == 0 &&
 						strstr(media, "all") == 0) {
 					xmlFree(media);
@@ -414,7 +414,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			}
 
 			/* href='...' */
-			if (!(href = (char *) xmlGetProp(node, (const xmlChar *) "href")))
+			if ((href = (char *) xmlGetProp(node, (const xmlChar *) "href")) == NULL)
 				continue;
 
 			/* TODO: only the first preferred stylesheets (ie. those with a
@@ -447,7 +447,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 
 		} else if (strcmp(node->name, "style") == 0) {
 			/* type='text/css', or not present (invalid but common) */
-			if ((type = (char *) xmlGetProp(node, (const xmlChar *) "type"))) {
+			if ((type = (char *) xmlGetProp(node, (const xmlChar *) "type")) != NULL) {
 				if (strcmp(type, "text/css") != 0) {
 					xmlFree(type);
 					continue;
@@ -456,7 +456,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			}
 
 			/* media contains 'screen' or 'all' or not present */
-			if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media"))) {
+			if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media")) != NULL) {
 				if (strstr(media, "screen") == 0 &&
 						strstr(media, "all") == 0) {
 					xmlFree(media);

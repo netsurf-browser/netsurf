@@ -92,8 +92,9 @@ static struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		struct box * parent, struct box *inline_container,
 		struct box_status status);
 static struct css_style * box_get_style(struct content *c,
-                struct content ** stylesheet,
-		unsigned int stylesheet_count, struct css_style * parent_style,
+		struct content ** stylesheet,
+		unsigned int stylesheet_count,
+		struct css_style * parent_style,
 		xmlNode * n);
 static void box_text_transform(char *s, unsigned int len,
 		css_text_transform tt);
@@ -119,7 +120,8 @@ static struct box_result box_button(xmlNode *n, struct box_status *status,
 		struct css_style *style);
 static struct box_result box_frameset(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static void add_option(xmlNode* n, struct form_control* current_select, const char *text);
+static void add_option(xmlNode* n, struct form_control* current_select,
+		const char *text);
 static void box_normalise_block(struct box *block, pool box_pool);
 static void box_normalise_table(struct box *table, pool box_pool);
 void box_normalise_table_row_group(struct box *row_group,
@@ -139,7 +141,7 @@ static struct box_result box_applet(xmlNode *n, struct box_status *status,
 static struct box_result box_iframe(xmlNode *n, struct box_status *status,
 		struct css_style *style);
 static bool plugin_decode(struct content* content, char* url, struct box* box,
-                  struct object_params* po);
+		struct object_params* po);
 static struct box_multi_length *box_parse_multi_lengths(const char *s,
 		unsigned int *count);
 
@@ -308,7 +310,7 @@ void xml_to_box(xmlNode *n, struct content *c)
 
 /* mapping from CSS display to box type
  * this table must be in sync with css/css_enums */
-static box_type box_map[] = {
+static const box_type box_map[] = {
 	0, /*CSS_DISPLAY_INHERIT,*/
 	BOX_INLINE, /*CSS_DISPLAY_INLINE,*/
 	BOX_BLOCK, /*CSS_DISPLAY_BLOCK,*/
@@ -369,13 +371,13 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 				style->display = CSS_DISPLAY_BLOCK;
 
 		/* extract title attribute, if present */
-		if ((title0 = xmlGetProp(n, (const xmlChar *) "title"))) {
+		if ((title0 = xmlGetProp(n, (const xmlChar *) "title")) != NULL) {
 			status.title = title = squash_whitespace(title0);
 			xmlFree(title0);
 		}
 
 		/* extract id attribute, if present */
-		if ((title0 = xmlGetProp(n, (const xmlChar *) "id"))) {
+		if ((title0 = xmlGetProp(n, (const xmlChar *) "id")) != NULL) {
 			status.id = id = squash_whitespace(title0);
 			xmlFree(title0);
 		}
@@ -590,13 +592,13 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		/* new inline container unless this is a float */
 		inline_container = 0;
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "colspan"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "colspan")) != NULL) {
 		int colspan = atoi(s);
 		if (1 <= colspan && colspan <= 100)
 			box->columns = colspan;
 		xmlFree(s);
 	}
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rowspan"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rowspan")) != NULL) {
 		if ((box->rows = strtol(s, 0, 10)) == 0)
 			box->rows = 1;
 		xmlFree(s);
@@ -636,7 +638,7 @@ end:
  */
 
 struct css_style * box_get_style(struct content *c,
-                struct content ** stylesheet,
+		struct content ** stylesheet,
 		unsigned int stylesheet_count, struct css_style * parent_style,
 		xmlNode * n)
 {
@@ -660,7 +662,7 @@ struct css_style * box_get_style(struct content *c,
 	   the spec. Many browsers seem to allow it on other elements too,
 	   so let's be generic ;)
 	 */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "background"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "background")) != NULL) {
 		style->background_image.type = CSS_BACKGROUND_IMAGE_URI;
 		/**\todo This will leak memory. */
 		res = url_join(s, c->data.html.base_url, &style->background_image.uri);
@@ -674,7 +676,7 @@ struct css_style * box_get_style(struct content *c,
 		xmlFree(s);
 	}
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bgcolor"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bgcolor")) != NULL) {
 		unsigned int r, g, b;
 		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 			style->background_color = (b << 16) | (g << 8) | r;
@@ -683,7 +685,7 @@ struct css_style * box_get_style(struct content *c,
 		xmlFree(s);
 	}
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "color"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "color")) != NULL) {
 		unsigned int r, g, b;
 		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 			style->color = (b << 16) | (g << 8) | r;
@@ -692,14 +694,14 @@ struct css_style * box_get_style(struct content *c,
 		xmlFree(s);
 	}
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "height"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "height")) != NULL) {
 		float value = atof(s);
 		if (value < 0 || strlen(s) == 0) {
 			/* ignore negative values and height="" */
 		} else if (strrchr(s, '%')) {
-	                /*the specification doesn't make clear what
-	                 * percentage heights mean, so ignore them */
-	        } else {
+			/*the specification doesn't make clear what
+			 * percentage heights mean, so ignore them */
+		} else {
 			style->height.height = CSS_HEIGHT_LENGTH;
 			style->height.length.unit = CSS_UNIT_PX;
 			style->height.length.value = value;
@@ -708,7 +710,7 @@ struct css_style * box_get_style(struct content *c,
 	}
 
 	if (strcmp((const char *) n->name, "input") == 0) {
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "size"))) {
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "size")) != NULL) {
 			int size = atoi(s);
 			if (0 < size) {
 				char *type = (char *) xmlGetProp(n, (const xmlChar *) "type");
@@ -729,7 +731,7 @@ struct css_style * box_get_style(struct content *c,
 	}
 
 	if (strcmp((const char *) n->name, "body") == 0) {
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "text"))) {
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "text")) != NULL) {
 			unsigned int r, g, b;
 			if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 				style->color = (b << 16) | (g << 8) | r;
@@ -739,7 +741,7 @@ struct css_style * box_get_style(struct content *c,
 		}
 	}
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "width"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "width")) != NULL) {
 		float value = atof(s);
 		if (value < 0 || strlen(s) == 0) {
 			/* ignore negative values and width="" */
@@ -755,7 +757,7 @@ struct css_style * box_get_style(struct content *c,
 	}
 
 	if (strcmp((const char *) n->name, "textarea") == 0) {
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows"))) {
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows")) != NULL) {
 			int value = atoi(s);
 			if (0 < value) {
 				style->height.height = CSS_HEIGHT_LENGTH;
@@ -764,7 +766,7 @@ struct css_style * box_get_style(struct content *c,
 			}
 			xmlFree(s);
 		}
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols"))) {
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols")) != NULL) {
 			int value = atoi(s);
 			if (0 < value) {
 				style->width.width = CSS_WIDTH_LENGTH;
@@ -775,7 +777,7 @@ struct css_style * box_get_style(struct content *c,
 		}
 	}
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style")) != NULL) {
 		struct css_style astyle;
 		memcpy(&astyle, &css_empty_style, sizeof(struct css_style));
 		css_parse_property_list(c, &astyle, s);
@@ -847,11 +849,11 @@ struct box_result box_a(xmlNode *n, struct box_status *status,
 	char *s, *s1;
 	char *id = status->id;
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "href")))
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "href")) != NULL)
 		status->href = s;
 
 	/* name and id share the same namespace */
-	if ((s1 = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
+	if ((s1 = (char *) xmlGetProp(n, (const xmlChar *) "name")) != NULL) {
 		if (status->id && strcmp(status->id, s1) == 0) {
 			/* both specified and they match => ok */
 			id = status->id;
@@ -880,7 +882,7 @@ struct box_result box_body(xmlNode *n, struct box_status *status,
 {
 	struct box *box;
 	status->content->data.html.background_colour = style->background_color;
-        box = box_create(style, status->href, status->title, status->id,
+	box = box_create(style, status->href, status->title, status->id,
 			status->content->data.html.box_pool);
 
 	return (struct box_result) {box, true, false};
@@ -908,7 +910,7 @@ struct box_result box_image(xmlNode *n, struct box_status *status,
 			status->content->data.html.box_pool);
 
 	/* handle alt text */
-	if ((s2 = xmlGetProp(n, (const xmlChar *) "alt"))) {
+	if ((s2 = xmlGetProp(n, (const xmlChar *) "alt")) != NULL) {
 		box->text = squash_whitespace(s2);
 		box->length = strlen(box->text);
 		box->font = nsfont_open(status->content->data.html.fonts, style);
@@ -916,11 +918,11 @@ struct box_result box_image(xmlNode *n, struct box_status *status,
 	}
 
 	/* img without src is an error */
-	if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "src")))
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src")) == NULL)
 		return (struct box_result) {box, false, false};
 
 	/* imagemap associated with this image */
-	if ((map = xmlGetProp(n, (const xmlChar *) "usemap"))) {
+	if ((map = xmlGetProp(n, (const xmlChar *) "usemap")) != NULL) {
 		if (map[0] == '#') {
 			box->usemap = xstrdup(map+1);
 		}
@@ -963,8 +965,7 @@ struct box_result box_form(xmlNode *n, struct box_status *status,
 	box = box_create(style, status->href, status->title, status->id,
 			status->content->data.html.box_pool);
 
-	s = (char *) xmlGetProp(n, (const xmlChar *) "action");
-	if (!s) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "action")) == NULL) {
 		/* the action attribute is required */
 		return (struct box_result) {box, true, false};
 	}
@@ -973,10 +974,10 @@ struct box_result box_form(xmlNode *n, struct box_status *status,
 	form->action = s;
 
 	form->method = method_GET;
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "method"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "method")) != NULL) {
 		if (strcasecmp(s, "post") == 0) {
 			form->method = method_POST_URLENC;
-			if ((s2 = (char *) xmlGetProp(n, (const xmlChar *) "enctype"))) {
+			if ((s2 = (char *) xmlGetProp(n, (const xmlChar *) "enctype")) != NULL) {
 				if (strcasecmp(s2, "multipart/form-data") == 0)
 					form->method = method_POST_MULTIPART;
 				xmlFree(s2);
@@ -1018,7 +1019,7 @@ struct box_result box_textarea(xmlNode *n, struct box_status *status,
 	else
 		box->gadget->form = 0;
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name")) != NULL) {
 		box->gadget->name = strdup(s);
 		xmlFree(s);
 		if (!box->gadget->name) {
@@ -1095,7 +1096,7 @@ struct box_result box_select(xmlNode *n, struct box_status *status,
 		gadget->form = 0;
 
 	gadget->data.select.multiple = false;
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "multiple"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "multiple")) != NULL) {
 		gadget->data.select.multiple = true;
 		xmlFree(s);
 	}
@@ -1129,7 +1130,7 @@ struct box_result box_select(xmlNode *n, struct box_status *status,
 		return (struct box_result) {0, false, false};
 	}
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name")) != NULL) {
 		gadget->name = strdup(s);
 		xmlFree(s);
 		if (!gadget->name) {
@@ -1193,7 +1194,7 @@ void add_option(xmlNode* n, struct form_control* current_select, const char *tex
 		current_select->data.select.last_item->next = option;
 	current_select->data.select.last_item = option;
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")) != NULL) {
 		option->value = xstrdup(s);
 		xmlFree(s);
 	} else {
@@ -1212,7 +1213,7 @@ void add_option(xmlNode* n, struct form_control* current_select, const char *tex
 	option->selected = option->initial_selected = false;
 	option->text = text;
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "selected"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "selected")) != NULL) {
 		xmlFree(s);
 		if (current_select->data.select.num_selected == 0 ||
 				current_select->data.select.multiple) {
@@ -1260,7 +1261,7 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 			return (struct box_result) {0, false, true};
 		}
 
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")) != NULL) {
 			gadget->value = strdup(s);
 			xmlFree(s);
 			if (!gadget->value) {
@@ -1283,12 +1284,12 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 		}
 		gadget->box = box;
 
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "checked"))) {
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "checked")) != NULL) {
 			gadget->selected = true;
 			xmlFree(s);
 		}
 
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")) != NULL) {
 			gadget->value = strdup(s);
 			xmlFree(s);
 			if (!gadget->value) {
@@ -1330,7 +1331,7 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 		box_add_child(box, inline_container);
 
 	} else if (type && strcasecmp(type, "button") == 0) {
-	        struct box_result result = box_button(n, status, style);
+		struct box_result result = box_button(n, status, style);
 		struct box *inline_container, *inline_box;
 		box = result.box;
 		inline_container = box_create(0, 0, 0, 0,
@@ -1340,11 +1341,11 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 				status->content->data.html.box_pool);
 		inline_box->type = BOX_INLINE;
 		inline_box->style_clone = 1;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
-		        inline_box->text = s;
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")) != NULL) {
+			inline_box->text = s;
 		}
 		else {
-		        inline_box->text = xstrdup("Button");
+			inline_box->text = xstrdup("Button");
 		}
 		inline_box->length = strlen(inline_box->text);
 		inline_box->font = nsfont_open(status->content->data.html.fonts, style);
@@ -1352,9 +1353,9 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 		box_add_child(box, inline_container);
 
 	} else if (type && strcasecmp(type, "image") == 0) {
-	        box = box_create(style, NULL, 0, status->id,
+		box = box_create(style, NULL, 0, status->id,
 				status->content->data.html.box_pool);
-	        box->gadget = gadget = form_new_control(GADGET_IMAGE);
+		box->gadget = gadget = form_new_control(GADGET_IMAGE);
 		if (!gadget) {
 			box_free_box(box);
 			xmlFree(type);
@@ -1362,7 +1363,7 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 		}
 		gadget->box = box;
 		gadget->type = GADGET_IMAGE;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src"))) {
+		if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src")) != NULL) {
 			res = url_join(s, status->content->data.html.base_url, &url);
 			/* if url is equivalent to the parent's url,
 			 * we've got infinite inclusion. stop it here.
@@ -1419,7 +1420,7 @@ struct box *box_input_text(xmlNode *n, struct box_status *status,
 	box->gadget->box = box;
 
 	box->gadget->maxlength = 100;
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "maxlength"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "maxlength")) != NULL) {
 		box->gadget->maxlength = atoi(s);
 		xmlFree(s);
 	}
@@ -1491,7 +1492,7 @@ struct box_result box_button(xmlNode *n, struct box_status *status,
 	else
 		box->gadget->form = 0;
 	box->gadget->box = box;
-	if ((s = xmlGetProp(n, (const xmlChar *) "name"))) {
+	if ((s = xmlGetProp(n, (const xmlChar *) "name")) != NULL) {
 		box->gadget->name = strdup((char *) s);
 		xmlFree(s);
 		if (!box->gadget->name) {
@@ -1499,7 +1500,7 @@ struct box_result box_button(xmlNode *n, struct box_status *status,
 			return (struct box_result) {0, false, true};
 		}
 	}
-	if ((s = xmlGetProp(n, (const xmlChar *) "value"))) {
+	if ((s = xmlGetProp(n, (const xmlChar *) "value")) != NULL) {
 		box->gadget->value = strdup((char *) s);
 		xmlFree(s);
 		if (!box->gadget->value) {
@@ -1538,11 +1539,11 @@ void box_dump(struct box * box, unsigned int depth)
 		case BOX_INLINE:           fprintf(stderr, "INLINE "); break;
 		case BOX_INLINE_BLOCK:     fprintf(stderr, "INLINE_BLOCK "); break;
 		case BOX_TABLE:            fprintf(stderr, "TABLE [columns %i] ",
-		                                   box->columns); break;
+						   box->columns); break;
 		case BOX_TABLE_ROW:        fprintf(stderr, "TABLE_ROW "); break;
 		case BOX_TABLE_CELL:       fprintf(stderr, "TABLE_CELL [columns %i, "
-		                                   "start %i, rows %i] ", box->columns,
-		                                   box->start_column, box->rows); break;
+						   "start %i, rows %i] ", box->columns,
+						   box->start_column, box->rows); break;
 		case BOX_TABLE_ROW_GROUP:  fprintf(stderr, "TABLE_ROW_GROUP "); break;
 		case BOX_FLOAT_LEFT:       fprintf(stderr, "FLOAT_LEFT "); break;
 		case BOX_FLOAT_RIGHT:      fprintf(stderr, "FLOAT_RIGHT "); break;
@@ -1552,7 +1553,7 @@ void box_dump(struct box * box, unsigned int depth)
 	if (box->text)
 		fprintf(stderr, "'%.*s' ", (int) box->length, box->text);
 	if (box->space)
-	        fprintf(stderr, "space ");
+		fprintf(stderr, "space ");
 	if (box->object)
 		fprintf(stderr, "(object '%s') ", box->object->url);
 	if (box->style)
@@ -2062,18 +2063,18 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
 
-        po = xcalloc(1, sizeof(*po));
+	po = xcalloc(1, sizeof(*po));
 
-        /* initialise po struct */
-        po->data = 0;
-        po->type = 0;
-        po->codetype = 0;
-        po->codebase = 0;
-        po->classid = 0;
-        po->params = 0;
+	/* initialise po struct */
+	po->data = 0;
+	po->type = 0;
+	po->codetype = 0;
+	po->codebase = 0;
+	po->classid = 0;
+	po->params = 0;
 
-        /* object data */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "data"))) {
+	/* object data */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "data")) != NULL) {
 		res = url_join(s, status->content->data.html.base_url, &url);
 		/* if url is equivalent to the parent's url,
 		 * we've got infinite inclusion. stop it here.
@@ -2090,95 +2091,84 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
 	}
 
 	/* imagemap associated with this object */
-	if ((map = xmlGetProp(n, (const xmlChar *) "usemap"))) {
-	        if (map[0] == '#') {
-	                box->usemap = xstrdup(map+1);
-	        }
-	        else {
-	                box->usemap = xstrdup(map);
-	        }
-	        xmlFree(map);
+	if ((map = xmlGetProp(n, (const xmlChar *) "usemap")) != NULL) {
+		box->usemap = (map[0] == '#') ? xstrdup(map+1) : xstrdup(map);
+		xmlFree(map);
 	}
 
-        /* object type */
-        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "type"))) {
+	/* object type */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "type")) != NULL) {
+		po->type = strdup(s);
+		LOG(("type: %s", s));
+		xmlFree(s);
+	}
 
-                po->type = strdup(s);
-                LOG(("type: %s", s));
-                xmlFree(s);
-        }
+	/* object codetype */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codetype")) != NULL) {
+		po->codetype = strdup(s);
+		LOG(("codetype: %s", s));
+		xmlFree(s);
+	}
 
-        /* object codetype */
-        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codetype"))) {
+	/* object codebase */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codebase")) != NULL) {
+		po->codebase = strdup(s);
+		LOG(("codebase: %s", s));
+		xmlFree(s);
+	}
 
-                po->codetype = strdup(s);
-                LOG(("codetype: %s", s));
-                xmlFree(s);
-        }
+	/* object classid */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "classid")) != NULL) {
+		po->classid = strdup(s);
+		LOG(("classid: %s", s));
+		xmlFree(s);
+	}
 
-        /* object codebase */
-        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codebase"))) {
+	/* parameters
+	 * parameter data is stored in a singly linked list.
+	 * po->params points to the head of the list.
+	 * new parameters are added to the head of the list.
+	 */
+	for (c = n->children; c != NULL; c = c->next) {
+		if (strcmp((const char *) c->name, "param") == 0) {
+			pp = xcalloc(1, sizeof(*pp));
 
-                po->codebase = strdup(s);
-                LOG(("codebase: %s", s));
-                xmlFree(s);
-        }
+			/* initialise pp struct */
+			pp->name = 0;
+			pp->value = 0;
+			pp->valuetype = 0;
+			pp->type = 0;
+			pp->next = 0;
 
-        /* object classid */
-        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "classid"))) {
+			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "name")) != NULL) {
+				pp->name = strdup(s);
+				xmlFree(s);
+			}
+			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "value")) != NULL) {
+				pp->value = strdup(s);
+				xmlFree(s);
+			}
+			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "type")) != NULL) {
+				pp->type = strdup(s);
+				xmlFree(s);
+			}
+			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "valuetype")) != NULL) {
+				pp->valuetype = strdup(s);
+				xmlFree(s);
+			} else {
+				pp->valuetype = strdup("data");
+			}
 
-                po->classid = strdup(s);
-                LOG(("classid: %s", s));
-                xmlFree(s);
-        }
-
-        /* parameters
-         * parameter data is stored in a singly linked list.
-         * po->params points to the head of the list.
-         * new parameters are added to the head of the list.
-         */
-        for (c = n->children; c != 0; c = c->next) {
-	    if (strcmp((const char *) c->name, "param") == 0) {
-
-               pp = xcalloc(1, sizeof(*pp));
-
-               /* initialise pp struct */
-               pp->name = 0;
-               pp->value = 0;
-               pp->valuetype = 0;
-               pp->type = 0;
-               pp->next = 0;
-
-               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "name"))) {
-                   pp->name = strdup(s);
-                   xmlFree(s);
-               }
-               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "value"))) {
-                   pp->value = strdup(s);
-                   xmlFree(s);
-               }
-               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "type"))) {
-                   pp->type = strdup(s);
-                   xmlFree(s);
-               }
-               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "valuetype"))) {
-                   pp->valuetype = strdup(s);
-                   xmlFree(s);
-               }
-               else {
-
-                   pp->valuetype = strdup("data");
-               }
-
-               pp->next = po->params;
-               po->params = pp;
-	    }
-	    else {
-	            /* The first non-param child is the start of the
-	             * alt html. Therefore, we should break out of this loop.
-	             */
-	             continue;
-	    }
+			pp->next = po->params;
+			po->params = pp;
+		} else {
+				/* The first non-param child is the start
+				 * of the alt html. Therefore, we should
+				 * break out of this loop.
+				 */
+				/** \todo: following statement is *not* breaking the loop ?! Is comment or code wrong here ? */
+				continue;
+		}
 	}
 
 	box->object_params = po;
@@ -2210,15 +2200,15 @@ struct box_result box_embed(xmlNode *n, struct box_status *status,
 	po = xcalloc(1, sizeof(*po));
 
 	/* initialise po struct */
-        po->data = 0;
-        po->type = 0;
-        po->codetype = 0;
-        po->codebase = 0;
-        po->classid = 0;
-        po->params = 0;
+	po->data = 0;
+	po->type = 0;
+	po->codetype = 0;
+	po->codebase = 0;
+	po->classid = 0;
+	po->params = 0;
 
 	/* embed src */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src")) != NULL) {
 		res = url_join(s, status->content->data.html.base_url, &url);
 		/* if url is equivalent to the parent's url,
 		 * we've got infinite inclusion. stop it here.
@@ -2230,37 +2220,35 @@ struct box_result box_embed(xmlNode *n, struct box_status *status,
 			return (struct box_result) {box, false, true};
 		}
 		LOG(("embed '%s'", url));
-                po->data = strdup(s);
-	        xmlFree(s);
-        }
+		po->data = strdup(s);
+		xmlFree(s);
+	}
 
-        /**
-         * we munge all other attributes into a plugin_parameter structure
-         */
-         for(a=n->properties; a!=0; a=a->next) {
+	/**
+	 * we munge all other attributes into a plugin_parameter structure
+	 */
+	for (a=n->properties; a != NULL; a=a->next) {
+		pp = xcalloc(1, sizeof(*pp));
 
-                pp = xcalloc(1, sizeof(*pp));
+		/* initialise pp struct */
+		pp->name = 0;
+		pp->value = 0;
+		pp->valuetype = 0;
+		pp->type = 0;
+		pp->next = 0;
 
-                /* initialise pp struct */
-                pp->name = 0;
-                pp->value = 0;
-                pp->valuetype = 0;
-                pp->type = 0;
-                pp->next = 0;
-
-                if(strcasecmp((const char*)a->name, "src") != 0) {
-                        pp->name = strdup((const char*)a->name);
-                        pp->value = strdup((char*)a->children->content);
-                        pp->valuetype = strdup("data");
-
-                        pp->next = po->params;
-                        po->params = pp;
-                }
-         }
+		if (strcasecmp((const char*)a->name, "src") != 0) {
+			pp->name = strdup((const char*)a->name);
+			pp->value = strdup((char*)a->children->content);
+			pp->valuetype = strdup("data");
+			pp->next = po->params;
+			po->params = pp;
+		}
+	 }
 
 	box->object_params = po;
 
-        /* start fetch */
+	/* start fetch */
 	plugin_decode(status->content, url, box, po);
 
 	return (struct box_result) {box, false, false};
@@ -2286,15 +2274,15 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 	po = xcalloc(1, sizeof(*po));
 
 	/* initialise po struct */
-        po->data = 0;
-        po->type = 0;
-        po->codetype = 0;
-        po->codebase = 0;
-        po->classid = 0;
-        po->params = 0;
+	po->data = 0;
+	po->type = 0;
+	po->codetype = 0;
+	po->codebase = 0;
+	po->classid = 0;
+	po->params = 0;
 
 	/* code */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "code"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "code")) != NULL) {
 		res = url_join(s, status->content->data.html.base_url, &url);
 		/* if url is equivalent to the parent's url,
 		 * we've got infinite inclusion. stop it here.
@@ -2310,70 +2298,67 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 		xmlFree(s);
 	}
 
-        /* object codebase */
-        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codebase"))) {
-
-                po->codebase = strdup(s);
-                LOG(("codebase: %s", s));
-                xmlFree(s);
-        }
-
-        /* parameters
-         * parameter data is stored in a singly linked list.
-         * po->params points to the head of the list.
-         * new parameters are added to the head of the list.
-         */
-        for (c = n->children; c != 0; c = c->next) {
-	    if (strcmp((const char *) c->name, "param") == 0) {
-
-               pp = xcalloc(1, sizeof(*pp));
-
-               /* initialise pp struct */
-               pp->name = 0;
-               pp->value = 0;
-               pp->valuetype = 0;
-               pp->type = 0;
-               pp->next = 0;
-
-               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "name"))) {
-                   pp->name = strdup(s);
-                   xmlFree(s);
-               }
-               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "value"))) {
-                   pp->value = strdup(s);
-                   xmlFree(s);
-               }
-               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "type"))) {
-                   pp->type = strdup(s);
-                   xmlFree(s);
-               }
-               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "valuetype"))) {
-                   pp->valuetype = strdup(s);
-                   xmlFree(s);
-               }
-               else {
-
-                   pp->valuetype = strdup("data");
-               }
-
-               pp->next = po->params;
-               po->params = pp;
-	    }
-	    else {
-	            /* The first non-param child is the start of the
-	             * alt html. Therefore, we should break out of this loop.
-	             */
-	             continue;
-	    }
+	/* object codebase */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codebase")) != NULL) {
+		po->codebase = strdup(s);
+		LOG(("codebase: %s", s));
+		xmlFree(s);
 	}
 
-        box->object_params = po;
+	/* parameters
+	 * parameter data is stored in a singly linked list.
+	 * po->params points to the head of the list.
+	 * new parameters are added to the head of the list.
+	 */
+	for (c = n->children; c != 0; c = c->next) {
+		if (strcmp((const char *) c->name, "param") == 0) {
+			pp = xcalloc(1, sizeof(*pp));
+
+			/* initialise pp struct */
+			pp->name = 0;
+			pp->value = 0;
+			pp->valuetype = 0;
+			pp->type = 0;
+			pp->next = 0;
+
+			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "name")) != NULL) {
+				pp->name = strdup(s);
+				xmlFree(s);
+			}
+			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "value")) != NULL) {
+				pp->value = strdup(s);
+				xmlFree(s);
+			}
+			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "type")) != NULL) {
+				pp->type = strdup(s);
+				xmlFree(s);
+			}
+			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "valuetype")) != NULL) {
+				pp->valuetype = strdup(s);
+				xmlFree(s);
+			} else {
+				pp->valuetype = strdup("data");
+			}
+
+			pp->next = po->params;
+			po->params = pp;
+		} else {
+				 /* The first non-param child is the start
+				  * of the alt html. Therefore, we should
+				  * break out of this loop.
+				  */
+				/** \todo: following statement is *not* breaking the loop ?! Is comment or code wrong here ? */
+				continue;
+		}
+	}
+
+	box->object_params = po;
 
 	/* start fetch */
-	if(plugin_decode(status->content, url, box, po))
-        	return (struct box_result) {box, false, false};
+	if (plugin_decode(status->content, url, box, po))
+		return (struct box_result) {box, false, false};
 
-        return (struct box_result) {box, true, false};
+	return (struct box_result) {box, true, false};
 }
 
 /**
@@ -2384,7 +2369,7 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 struct box_result box_iframe(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
-        struct box *box;
+	struct box *box;
 	struct object_params *po;
 	char *s, *url = NULL;
 	url_func_result res;
@@ -2395,15 +2380,15 @@ struct box_result box_iframe(xmlNode *n, struct box_status *status,
 	po = xcalloc(1, sizeof(*po));
 
 	/* initialise po struct */
-        po->data = 0;
-        po->type = 0;
-        po->codetype = 0;
-        po->codebase = 0;
-        po->classid = 0;
-        po->params = 0;
+	po->data = 0;
+	po->type = 0;
+	po->codetype = 0;
+	po->codebase = 0;
+	po->classid = 0;
+	po->params = 0;
 
 	/* iframe src */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src")) != NULL) {
 		res = url_join(s, status->content->data.html.base_url, &url);
 		/* if url is equivalent to the parent's url,
 		 * we've got infinite inclusion. stop it here.
@@ -2421,7 +2406,7 @@ struct box_result box_iframe(xmlNode *n, struct box_status *status,
 
 	box->object_params = po;
 
-        /* start fetch */
+	/* start fetch */
 	plugin_decode(status->content, url, box, po);
 
 	return (struct box_result) {box, false, false};
@@ -2436,103 +2421,99 @@ struct box_result box_iframe(xmlNode *n, struct box_status *status,
  *
  * Returns false if the object could not be handled.
  *
- * TODO: reformat, plug failure leaks
+ * TODO: plug failure leaks
  */
 bool plugin_decode(struct content* content, char* url, struct box* box,
-                  struct object_params* po)
+		struct object_params* po)
 {
-  struct plugin_params * pp;
-  url_func_result res;
+	struct plugin_params * pp;
+	url_func_result res;
 
-  /* Check if the codebase attribute is defined.
-   * If it is not, set it to the codebase of the current document.
-   */
-   if(po->codebase == 0)
-           res = url_join("./", content->data.html.base_url, &po->codebase);
-   else
-           res = url_join(po->codebase, content->data.html.base_url, &po->codebase);
+	/* Check if the codebase attribute is defined.
+	 * If it is not, set it to the codebase of the current document.
+	 */
+	if (po->codebase == 0)
+		res = url_join("./", content->data.html.base_url, &po->codebase);
+	else
+		res = url_join(po->codebase, content->data.html.base_url, &po->codebase);
 
-  if (res != URL_FUNC_OK)
-    return false;
+	if (res != URL_FUNC_OK)
+		return false;
 
-  /* Set basehref */
-  po->basehref = strdup(content->data.html.base_url);
+	/* Set basehref */
+	po->basehref = strdup(content->data.html.base_url);
 
-  /* Check that we have some data specified.
-   * First, check the data attribute.
-   * Second, check the classid attribute.
-   * The data attribute takes precedence.
-   * If neither are specified or if classid begins "clsid:",
-   * we can't handle this object.
-   */
-   if(po->data == 0 && po->classid == 0) {
-           return false;
-   }
-   if(po->data == 0 && po->classid != 0) {
-           if(strncasecmp(po->classid, "clsid:", 6) == 0) {
-                   /* Flash */
-                   if(strcasecmp(po->classid, "clsid:D27CDB6E-AE6D-11cf-96B8-444553540000") == 0) {
-                           for(pp = po->params; pp != 0 &&
-                               (strcasecmp(pp->name, "movie") != 0);
-                               pp = pp->next);
-                           if(pp == 0)
-                           	   return false;
-                           res = url_join(pp->value, po->basehref, &url);
-                           if (res != URL_FUNC_OK)
-                           	   return false;
-                           /* munge the codebase */
-                           res = url_join("./",
-					   content->data.html.base_url,
-					   &po->codebase);
-                           if (res != URL_FUNC_OK)
-                           	   return false;
-                   }
-                   else {
-                           LOG(("ActiveX object - n0"));
-                           return false;
-                   }
-           }
-           else {
-                   res = url_join(po->classid, po->codebase, &url);
-                   if (res != URL_FUNC_OK)
-                   	   return false;
+	/* Check that we have some data specified.
+	 * First, check the data attribute.
+	 * Second, check the classid attribute.
+	 * The data attribute takes precedence.
+	 * If neither are specified or if classid begins "clsid:",
+	 * we can't handle this object.
+	 */
+	if (po->data == 0 && po->classid == 0)
+		return false;
 
-                   /* The java plugin doesn't need the .class extension
-                    * so we strip it.
-                    */
-                   if(strcasecmp((&po->classid[strlen(po->classid)-6]),
-                                                            ".class") == 0)
-                           po->classid[strlen(po->classid)-6] = 0;
-           }
-   }
-   else {
-           res = url_join(po->data, po->codebase, &url);
-           if (res != URL_FUNC_OK)
-           	return false;
-   }
+	if (po->data == 0 && po->classid != 0) {
+		if (strncasecmp(po->classid, "clsid:", 6) == 0) {
+			/* Flash */
+			if (strcasecmp(po->classid, "clsid:D27CDB6E-AE6D-11cf-96B8-444553540000") == 0) {
+				for (pp = po->params;
+					pp != 0 && strcasecmp(pp->name, "movie") != 0;
+					pp = pp->next)
+					/* no body */;
+				if (pp == 0)
+						return false;
+				res = url_join(pp->value, po->basehref, &url);
+				if (res != URL_FUNC_OK)
+						return false;
+				/* munge the codebase */
+				res = url_join("./",
+						content->data.html.base_url,
+						&po->codebase);
+				if (res != URL_FUNC_OK)
+						return false;
+			}
+			else {
+				LOG(("ActiveX object - n0"));
+				return false;
+			}
+		} else {
+			res = url_join(po->classid, po->codebase, &url);
+			if (res != URL_FUNC_OK)
+				return false;
 
-   /* Check if the declared mime type is understandable.
-    * Checks type and codetype attributes.
-    */
-    if(po->type != 0) {
-           if (content_lookup(po->type) == CONTENT_OTHER)
-                  return false;
-    }
-    if(po->codetype != 0) {
-           if (content_lookup(po->codetype) == CONTENT_OTHER)
-                  return false;
-    }
+			/* The java plugin doesn't need the .class extension
+			 * so we strip it.
+			 */
+			if (strcasecmp(&po->classid[strlen(po->classid)-6],
+					".class") == 0)
+				po->classid[strlen(po->classid)-6] = 0;
+		}
+	} else {
+		res = url_join(po->data, po->codebase, &url);
+		if (res != URL_FUNC_OK)
+			return false;
+	}
 
-  /* If we've got to here, the object declaration has provided us with
-   * enough data to enable us to have a go at downloading and displaying it.
-   *
-   * We may still find that the object has a MIME type that we can't handle
-   * when we fetch it (if the type was not specified or is different to that
-   * given in the attributes).
-   */
-   html_fetch_object(content, url, box, 0, 1000, 1000, false);
+	/* Check if the declared mime type is understandable.
+	 * Checks type and codetype attributes.
+	 */
+	if (po->type != 0 && content_lookup(po->type) == CONTENT_OTHER)
+		return false;
+	if (po->codetype != 0 && content_lookup(po->codetype) == CONTENT_OTHER)
+		return false;
 
-   return true;
+	/* If we've got to here, the object declaration has provided us with
+	 * enough data to enable us to have a go at downloading and
+	 * displaying it.
+	 *
+	 * We may still find that the object has a MIME type that we can't
+	 * handle when we fetch it (if the type was not specified or is
+	 * different to that given in the attributes).
+	 */
+	html_fetch_object(content, url, box, 0, 1000, 1000, false);
+
+	return true;
 }
 
 
@@ -2558,7 +2539,7 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 	box->type = BOX_TABLE;
 
 	/* parse rows and columns */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows")) != NULL) {
 		row_height = box_parse_multi_lengths(s, &rows);
 		xmlFree(s);
 		if (!row_height) {
@@ -2567,7 +2548,7 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 		}
 	}
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols")) != NULL) {
 		col_width = box_parse_multi_lengths(s, &cols);
 		xmlFree(s);
 		if (!col_width) {
@@ -2684,8 +2665,7 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 			object_box->style_clone = 1;
 			box_add_child(cell_box, object_box);
 
-			if (!(s = (char *) xmlGetProp(c,
-					(const xmlChar *) "src"))) {
+			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "src")) == NULL) {
 				c = c->next;
 				continue;
 			}
@@ -2734,16 +2714,15 @@ struct box_multi_length *box_parse_multi_lengths(const char *s,
 		unsigned int *count)
 {
 	char *end;
-	unsigned int i, n = 1;
+	unsigned int i, n;
 	struct box_multi_length *length;
 
-	for (i = 0; s[i]; i++)
+	for (i = 0, n = 1; s[i]; i++)
 		if (s[i] == ',')
 			n++;
 
-	length = malloc(sizeof *length * n);
-	if (!length)
-		return 0;
+	if ((length = malloc(sizeof *length * n)) == NULL)
+		return NULL;
 
 	for (i = 0; i != n; i++) {
 		while (isspace(*s))
@@ -2797,7 +2776,7 @@ void box_coords(struct box *box, int *x, int *y)
  * Find the boxes at a point.
  *
  * \param  box      box to search children of
- * \param  x        point to find, in global document coordinates
+ * \param  x	point to find, in global document coordinates
  * \param  y        point to find, in global document coordinates
  * \param  box_x    position of box, in global document coordinates, updated
  *                  to position of returned box, if any
@@ -2934,7 +2913,7 @@ struct box *box_object_at_point(struct content *c, int x, int y)
 
 	assert(c->type == CONTENT_HTML);
 
-	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
+	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content)) != NULL) {
 		if (box->style &&
 				box->style->visibility == CSS_VISIBILITY_HIDDEN)
 			continue;
@@ -2953,7 +2932,7 @@ struct box *box_object_at_point(struct content *c, int x, int y)
  * \param id  id to look for
  * \return the box or 0 if not found
  */
-struct box *box_find_by_id(struct box *box, char *id)
+struct box *box_find_by_id(struct box *box, const char *id)
 {
 	struct box *a, *b;
 
@@ -2965,5 +2944,5 @@ struct box *box_find_by_id(struct box *box, char *id)
 			return b;
 	}
 
-	return 0;
+	return NULL;
 }

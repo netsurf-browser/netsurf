@@ -201,8 +201,7 @@ void imagemap_extract(xmlNode *node, struct content *c) {
 
 	if (node->type == XML_ELEMENT_NODE) {
 		if (strcmp(node->name, "map") == 0) {
-			if (!(name = (char*)xmlGetProp(node,
-						    (const xmlChar*)"name")))
+			if ((name = (char*)xmlGetProp(node, (const xmlChar*)"name")) == NULL)
 				return;
 			entry = imagemap_extract_map(node, c, entry);
 			imagemap_add(c, name, entry);
@@ -254,16 +253,16 @@ struct mapentry *imagemap_addtolist(xmlNode *n, struct mapentry *entry) {
 		}
 	}
 	/* no href -> ignore */
-	if (!(href = (char*)xmlGetProp(n, (const xmlChar*)"href"))) {
+	if ((href = (char*)xmlGetProp(n, (const xmlChar*)"href")) == NULL) {
 		return entry;
 	}
 	/* no shape -> shape is a rectangle */
-	if (!(shape = (char*)xmlGetProp(n, (const xmlChar*)"shape"))) {
+	if ((shape = (char*)xmlGetProp(n, (const xmlChar*)"shape")) == NULL) {
 		shape = (char*)xmlMemStrdup("rect");
 	}
 	if (strcasecmp(shape, "default") != 0) {
 		/* no coords -> ignore */
-		if (!(coords = (char*)xmlGetProp(n, (const xmlChar*)"coords"))) {
+		if ((coords = (char*)xmlGetProp(n, (const xmlChar*)"coords")) == NULL) {
 			xmlFree(href);
 			xmlFree(shape);
 			return entry;

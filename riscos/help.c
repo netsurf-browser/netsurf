@@ -51,7 +51,7 @@
 	of numbers representing the menu structure (eg 'HelpBrowserMenu3-1-2').
 	If '<key><identifier>' is not available, then simply '<key>' is then used. For example
 	if 'HelpToolbar7' is not available then 'HelpToolbar' is then tried.
-	
+
 	If an item is greyed out then a suffix of 'g' is added (eg 'HelpToolbar7g'). For this to
 	work, windows must have bit 4 of the window flag byte set and the user must be running
 	RISC OS 5.03 or greater.
@@ -126,11 +126,11 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	} else if (hotlist_toolbar &&
 			window == hotlist_toolbar->toolbar_handle) {
 		sprintf(message_token, "HelpHotToolbar%i", (int)icon);
-	} else if ((g = ro_gui_window_lookup(window))) {
+	} else if ((g = ro_gui_window_lookup(window)) != NULL) {
 		sprintf(message_token, "HelpBrowser%i", (int)icon);
-	} else if ((g = ro_gui_toolbar_lookup(window))) {
+	} else if ((g = ro_gui_toolbar_lookup(window)) != NULL) {
 		sprintf(message_token, "HelpToolbar%i", (int)icon);
-	} else if ((g = ro_gui_status_lookup(window))) {
+	} else if ((g = ro_gui_status_lookup(window)) != NULL) {
 		sprintf(message_token, "HelpStatus%i", (int)icon);
 	}
 
@@ -142,7 +142,7 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		if ((icon >= 0) && (ro_gui_get_icon_shaded_state(window, icon))) {
 			strcat(message_token, "g");
 		}
-		
+
 		/*	Broadcast out message
 		*/
 		ro_gui_interactive_help_broadcast(message, &message_token[0]);
@@ -183,7 +183,7 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		*/
 		greyed |= test_menu->entries[menu_tree.items[index]].icon_flags & wimp_ICON_SHADED;
 		test_menu = test_menu->entries[menu_tree.items[index]].sub_menu;
-	  	
+
 		/*	Continue adding the entries
 		*/
 		if (index == 0) {
@@ -230,7 +230,7 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token
 			base_token = token;
 			while (base_token[0] != 0x00) {
 				if ((base_token[0] == '-') ||
-						((base_token[0] >= '0') && (base_token[0] <= '9'))) {	
+						((base_token[0] >= '0') && (base_token[0] <= '9'))) {
 					base_token[0] = 0x00;
 				} else {
 					++base_token;
@@ -242,7 +242,7 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token
 			translated_token = messages_get(token);
 		}
 	}
-	
+
 
 	/*	Copy our message string
 	*/

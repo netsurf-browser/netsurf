@@ -605,7 +605,7 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 	url_func_result res;
 
 	/* search the box tree for a link, imagemap, or form control */
-	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
+	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content)) != NULL) {
 		if (box->style &&
 				box->style->visibility == CSS_VISIBILITY_HIDDEN)
 			continue;

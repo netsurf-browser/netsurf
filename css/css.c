@@ -395,8 +395,8 @@ bool css_convert(struct content *c, int width, int height)
 
 	current = source_data;
 	end = source_data + c->source_size;
-	while (current < end && (token = css_tokenise(&current, end + 10,
-			&token_text))) {
+	while (current < end
+			&& (token = css_tokenise(&current, end + 10, &token_text)) != NULL) {
 		token_data.text = token_text;
 		token_data.length = current - token_text;
 		css_parser_(parser, token, token_data, &param);
@@ -1207,8 +1207,8 @@ void css_parse_property_list(struct content *c, struct css_style * style,
 
 	current = source_data;
 	end = source_data + strlen(str);
-	while (current < end && (token = css_tokenise(&current, end + 10,
-			&token_text))) {
+	while (current < end
+			&& (token = css_tokenise(&current, end + 10, &token_text)) != NULL) {
 		token_data.text = token_text;
 		token_data.length = current - token_text;
 		css_parser_(parser, token, token_data, &param);

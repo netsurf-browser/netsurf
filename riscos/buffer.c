@@ -18,18 +18,18 @@
 
 /*	SCREEN BUFFERING
 	================
-	
+
 	Because RISC OS provides no native way for windows to be buffered (ie
 	the contents is only updated when the task has finished doing any
 	drawing) certain situation cause the window contents to flicker in an
 	undesirable manner. Examples of this are GIF and MNG animations, and
 	web pages with fixed backgrounds.
-	
+
 	To overcome this, a very simple, transparent, interface is provided here
 	to allow for output to be buffered. It should be noted that screen
 	buffering can lower the perceived client response time as the user is
 	unable to see that the application is doing anything.
-	
+
 	[rjw] - Mon 19th July 2004
 */
 
@@ -104,13 +104,14 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	buffer->sprite_count = 0;
 	buffer->first = 16;
 	buffer->used = 16;
-	
+
 	/*	Fill in the sprite header details
 	*/
 	sprintf(name, "buffer");
-	if ((error = xosspriteop_get_sprite_user_coords(osspriteop_NAME, buffer,
-			name, palette,
-			clipping.x0, clipping.y0, clipping.x1, clipping.y1))) {
+	if ((error = xosspriteop_get_sprite_user_coords(osspriteop_NAME,
+			buffer, name, palette,
+			clipping.x0, clipping.y0,
+			clipping.x1, clipping.y1)) != NULL) {
 //		LOG(("Grab error '%s'", error->errmess));
 		free(buffer);
 		buffer = NULL;
@@ -119,14 +120,14 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 
 	/*	Allocate OS_SpriteOp save area
 	*/
-	if ((error = xosspriteop_read_save_area_size(osspriteop_NAME, buffer,
-			(osspriteop_id)name, &size))) {
+	if ((error = xosspriteop_read_save_area_size(osspriteop_NAME,
+			buffer, (osspriteop_id)name, &size)) != NULL) {
 //		LOG(("Save area error '%s'", error->errmess));
 		free(buffer);
 		buffer = NULL;
 		return;
 	}
-	if (!(save_area = malloc((unsigned)size))) {
+	if ((save_area = malloc((size_t)size)) == NULL) {
 		free(buffer);
 		buffer = NULL;
 		return;
@@ -135,9 +136,10 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 
 	/*	Switch output to sprite
 	*/
-	if ((error = xosspriteop_switch_output_to_sprite(osspriteop_NAME, buffer,
-			(osspriteop_id)name, save_area,
-			0, (int *)&context1, (int *)&context2, (int *)&context3))) {
+	if ((error = xosspriteop_switch_output_to_sprite(osspriteop_NAME,
+			buffer, (osspriteop_id)name, save_area, 0,
+			(int *)&context1, (int *)&context2,
+			(int *)&context3)) != NULL) {
 //		LOG(("Switching error '%s'", error->errmess));
 		free(save_area);
 		free(buffer);
@@ -161,7 +163,7 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
  * Closes any open buffer and flushes the contents to screen
  */
 void ro_gui_buffer_close(void) {
-  
+
 	/*	Check we have an open buffer
 	*/
 	if (!buffer) return;
@@ -178,7 +180,7 @@ void ro_gui_buffer_close(void) {
 	xosspriteop_put_sprite_user_coords(osspriteop_NAME,
 		buffer, (osspriteop_id)name,
 		clipping.x0, clipping.y0, (os_action)0);
-		
+
 	/*	Free our memory
 	*/
 	free(buffer);

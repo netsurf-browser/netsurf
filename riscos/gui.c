@@ -692,7 +692,7 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 		ro_gui_hotlist_redraw(redraw);
 	else if (redraw->w == dialog_debug)
 		ro_gui_debugwin_redraw(redraw);
-	else if ((g = ro_gui_window_lookup(redraw->w)))
+	else if ((g = ro_gui_window_lookup(redraw->w)) != NULL)
 		ro_gui_window_redraw(g, redraw);
 	else {
 		error = xwimp_redraw_window(redraw, &more);
@@ -760,9 +760,9 @@ void ro_gui_close_window_request(wimp_close *close)
 
 	if (close->w == dialog_debug)
 		ro_gui_debugwin_close();
-	else if ((g = ro_gui_window_lookup(close->w)))
+	else if ((g = ro_gui_window_lookup(close->w)) != NULL)
 		browser_window_destroy(g->bw);
-	else if ((dw = ro_gui_download_window_lookup(close->w)))
+	else if ((dw = ro_gui_download_window_lookup(close->w)) != NULL)
 		ro_gui_download_window_destroy(dw);
 	else
 		ro_gui_dialog_close(close->w);
@@ -823,13 +823,13 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 	else if (hotlist_toolbar &&
 			hotlist_toolbar->toolbar_handle == pointer->w)
 		ro_gui_hotlist_toolbar_click(pointer);
-	else if ((g = ro_gui_window_lookup(pointer->w)))
+	else if ((g = ro_gui_window_lookup(pointer->w)) != NULL)
 		ro_gui_window_click(g, pointer);
-	else if ((g = ro_gui_toolbar_lookup(pointer->w)))
+	else if ((g = ro_gui_toolbar_lookup(pointer->w)) != NULL)
 		ro_gui_toolbar_click(g, pointer);
-	else if ((g = ro_gui_status_lookup(pointer->w)))
+	else if ((g = ro_gui_status_lookup(pointer->w)) != NULL)
 		ro_gui_status_click(g, pointer);
-	else if ((dw = ro_gui_download_window_lookup(pointer->w)))
+	else if ((dw = ro_gui_download_window_lookup(pointer->w)) != NULL)
 		ro_gui_download_window_click(dw, pointer);
 	else
 		ro_gui_dialog_click(pointer);
@@ -915,9 +915,9 @@ void ro_gui_keypress(wimp_key *key)
 
 	if (key->w == hotlist_window)
 		handled = ro_gui_hotlist_keypress(key->c);
-	else if ((g = ro_gui_window_lookup(key->w)))
+	else if ((g = ro_gui_window_lookup(key->w)) != NULL)
 		handled = ro_gui_window_keypress(g, key->c, false);
-	else if ((g = ro_gui_toolbar_lookup(key->w)))
+	else if ((g = ro_gui_toolbar_lookup(key->w)) != NULL)
 		handled = ro_gui_window_keypress(g, key->c, true);
         else
 		handled = ro_gui_dialog_keypress(key);

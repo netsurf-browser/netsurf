@@ -384,7 +384,7 @@ CURLcode fetch_set_options(struct fetch *f)
 		SETOPT(CURLOPT_COOKIEFILE, 0);
 		SETOPT(CURLOPT_COOKIEJAR, 0);
 	}
-	if ((li = login_list_get(f->url))) {
+	if ((li = login_list_get(f->url)) != NULL) {
 		SETOPT(CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 		SETOPT(CURLOPT_USERPWD, li->logindetails);
 	} else {

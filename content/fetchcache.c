@@ -72,19 +72,17 @@ struct content * fetchcache(const char *url,
 	char *url1;
 	char *hash;
 
-	url1 = strdup(url);
-	if (!url1)
-		return 0;
+	if ((url1 = strdup(url)) == NULL)
+		return NULL;
 
 	/* strip fragment identifier */
-	if ((hash = strchr(url1, '#')))
-		*hash = 0;
+	if ((hash = strchr(url1, '#')) != NULL)
+		*hash = NULL;
 
 	LOG(("url %s", url1));
 
 	if (!post_urlenc && !post_multipart) {
-		c = content_get(url1);
-		if (c) {
+		if ((c = content_get(url1)) != NULL) {
 			free(url1);
 			content_add_user(c, callback, p1, p2);
 			return c;
@@ -94,7 +92,7 @@ struct content * fetchcache(const char *url,
 	c = content_create(url1);
 	free(url1);
 	if (!c)
-		return 0;
+		return NULL;
 	content_add_user(c, callback, p1, p2);
 
 	if (!post_urlenc && !post_multipart)
