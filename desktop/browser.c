@@ -572,6 +572,7 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 	char *href = 0;
 	char *title = 0;
 	struct form_control *gadget = 0;
+	struct box *gadget_box = 0;
 	const char *status = 0;
 	char status_buffer[200];
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
@@ -598,6 +599,7 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 			gadget_content = content;
 			base_url = content->data.html.base_url;
 			gadget = box->gadget;
+			gadget_box = box;
 		}
 
 		if (box->title)
@@ -661,7 +663,7 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 				browser_window_textarea_click(bw,
 						box_x, box_y,
 						x - box_x, y - box_y,
-						box);
+						gadget_box);
 			break;
 		case GADGET_TEXTBOX:
 		case GADGET_PASSWORD:
@@ -671,7 +673,7 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 				browser_window_input_click(bw,
 						box_x, box_y,
 						x - box_x, y - box_y,
-						box);
+						gadget_box);
 			break;
 		case GADGET_HIDDEN:
 			/* not possible: no box generated */
