@@ -77,6 +77,7 @@ void options_write(struct options* opt, char* filename)
 			sizeof(char));
 	sprintf(fn, "%s.%s", WRITE_DIR, filename == 0 ? "Choices" : filename);
 
+        xosfile_create_dir("<Choices$Write>.WWW", 0);
 	xosfile_create_dir(WRITE_DIR, 0);
 
 	LOG(("filename: %s", fn));
