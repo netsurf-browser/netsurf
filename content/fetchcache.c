@@ -56,6 +56,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 	content_type type;
 	char *mime_type;
 	char *semic;
+	char *url;
 
 	switch (msg) {
 		case FETCH_TYPE:
@@ -95,7 +96,11 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 		case FETCH_REDIRECT:
 			LOG(("FETCH_REDIRECT, '%s'", data));
 			c->fetch = 0;
-			content_broadcast(c, CONTENT_MSG_REDIRECT, data);
+			/* redirect URLs must be absolute by HTTP/1.1, but many sites send
+			 * relative ones: treat them as relative to requested URL */
+			url = url_join(data, c->url);
+			content_broadcast(c, CONTENT_MSG_REDIRECT, url);
+			xfree(url);
 			cache_destroy(c);
 			content_destroy(c);
 			break;
