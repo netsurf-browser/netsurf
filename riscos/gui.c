@@ -132,15 +132,22 @@ void gui_init(int argc, char** argv)
 	char theme_fname[256];
 	os_error *error;
 
+        LOG(("starting hourglass"));
 	xhourglass_start(1);
 
+        LOG(("reading choices"));
 	options_read("Choices:WWW.NetSurf.Choices");
 
+        LOG(("choosing language"));
 	ro_gui_choose_language();
 
+        LOG(("grabbing NetSurf$Dir from the environment"));
 	NETSURF_DIR = getenv("NetSurf$Dir");
 	sprintf(path, "<NetSurf$Dir>.Resources.%s.Messages", option_language);
+	LOG(("Loading messages from '%s'", path));
 	messages_load(path);
+
+	LOG(("done"));
 
 	task_handle = wimp_initialise(wimp_VERSION_RO38, "NetSurf",
   			(wimp_message_list*) &task_messages, 0);
@@ -829,7 +836,10 @@ void ro_msg_dataload(wimp_message *message)
 
 	        fclose(fp);
 
-	        if (!temp) return;
+	        if (!temp) { 
+			xfree(url);
+			return;
+		}
 
 	        if (url[strlen(url)-1] == '\n') {
 	                url[strlen(url)-1] = '\0';
@@ -949,7 +959,10 @@ void ro_msg_dataopen(wimp_message *message)
 
 	        fclose(fp);
 
-	        if (!temp) return;
+	        if (!temp) {
+			xfree(url);
+			return;
+		}
 
 	        if (url[strlen(url)-1] == '\n') {
 	                url[strlen(url)-1] = '\0';
