@@ -91,6 +91,8 @@ char * load(const char * const path)
 	read = fread(buf, 1, (size_t) size, fp);
 	if (read < size) die("fread() failed");
 
+	fclose(fp);
+
 	return buf;
 }
 

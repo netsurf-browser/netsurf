@@ -818,40 +818,61 @@ void ro_msg_dataload(wimp_message *message)
 			message->data.data_xfer.file_type != 0xaff &&
 			message->data.data_xfer.file_type != 0xb60 &&
 			message->data.data_xfer.file_type != 0xc85 &&
-			message->data.data_xfer.file_type != 0xf91 &&
 			message->data.data_xfer.file_type != 0xff9 &&
 			message->data.data_xfer.file_type != 0xfff &&
+			message->data.data_xfer.file_type != 0xf91 &&
 			message->data.data_xfer.file_type != 0xb28)
 		return;
 
-	/* uri file */
-	if (message->data.data_xfer.file_type == 0xf91) {
-		char *temp, *url1;
-		int i=0;
-		FILE *fp = fopen(message->data.data_xfer.file_name, "r");
+        /* uri file
+         * Format: Each "line" is separated by a tab.
+         *         Comments are prefixed by a "#"
+         *
+         * Line:        Content:
+         *      1       URI
+         *      2       100 (version of file format * 100)
+         *      3       An URL (eg http;//www.google.com/)
+         *      4       Title associated with URL (eg Google)
+         */
+        if (message->data.data_xfer.file_type == 0xf91) {
+               char *buf, *temp;
+               int lineno=0;
 
-		if (!fp) return;
+               buf = load(message->data.data_xfer.file_name);
 
-		url1 = xcalloc(256, sizeof(char)); /* fixed size != good */
+               temp = strtok(buf, "\t");
 
-		while (i != 2) {
-			temp = fgets(url1, 256, fp);
-			if (!temp) {
-				i = 2;
-				break;
-			}
-			
-			temp = strip(url1);
-			url = xstrdup(temp);
-			if (url[0] != '#') { /* not a comment */
-				i++;
-			}
-		}
+               if (!temp) {
+                       xfree(buf);
+                       return;
+               }
 
-		xfree(url1);
-		if (!temp) return;
-	}
-	
+               if (temp[0] != '#') lineno = 1;
+
+               while (temp && lineno<=2) {
+
+                       temp = strtok('\0', "\t");
+
+                       if (!temp) break;
+
+                       if (temp[0] == '#') continue; /* ignore commented lines */
+                       LOG(("%d: %s", lineno, temp));
+
+                       lineno++;
+               }
+
+               if (!temp) {
+                       xfree(buf);
+                       return;
+               }
+
+               url = xstrdup(temp);
+
+               LOG(("%s", url));
+
+               xfree(buf);
+        }
+
         /* url file */
         if (message->data.data_xfer.file_type == 0xb28) {
 	        char *temp;
@@ -865,10 +886,7 @@ void ro_msg_dataload(wimp_message *message)
 
 	        fclose(fp);
 
-	        if (!temp) { 
-			xfree(url);
-			return;
-		}
+	        if (!temp) return;
 
 	        if (url[strlen(url)-1] == '\n') {
 	                url[strlen(url)-1] = '\0';
@@ -882,7 +900,7 @@ void ro_msg_dataload(wimp_message *message)
 
 	/* create a new window with the file */
 	if (message->data.data_xfer.file_type != 0xb28 &&
-		message->data.data_xfer.file_type != 0xf91) {
+	    message->data.data_xfer.file_type != 0xf91) {
 	        url = ro_path_to_url(message->data.data_xfer.file_name);
 	}
 	if (url) {
@@ -989,10 +1007,7 @@ void ro_msg_dataopen(wimp_message *message)
 
 	        fclose(fp);
 
-	        if (!temp) {
-			xfree(url);
-			return;
-		}
+	        if (!temp) return;
 
 	        if (url[strlen(url)-1] == '\n') {
 	                url[strlen(url)-1] = '\0';
