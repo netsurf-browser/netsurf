@@ -803,19 +803,14 @@ void ro_gui_menu_selection(wimp_selection *selection)
 			case MENU_NAVIGATE:
 				switch (selection->items[1]) {
 					case 0: /* Home */
-
-					        /* Open the homepage based on our the user options. */
-
-                                                if (!(option_homepage_url == NULL)){
-                                                     browser_window_create(option_homepage_url, NULL);
-                                                }
-                                                else {
-		                                if ((length = snprintf(url, sizeof(url),
-				                     "file:/<NetSurf$Dir>/Docs/intro_%s",
-				                     option_language)) >= 0 && length < (int)sizeof(url))
-				                     browser_window_create(url, NULL);
-                                                }
-
+						if (option_homepage_url && option_homepage_url[0]) {
+							browser_window_go_post(current_gui->bw, option_homepage_url, 0, 0, true);
+						} else {
+							snprintf(url, sizeof url,
+									"file:/<NetSurf$Dir>/Docs/intro_%s",
+									option_language);
+							browser_window_go_post(current_gui->bw, url, 0, 0, true);
+						}
 						break;
 					case 1: /* Back */
 						history_back(current_gui->bw,

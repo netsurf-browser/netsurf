@@ -983,6 +983,7 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 
 void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 {
+        char url[80];
 	os_error *error;
 
 	/*	Reject Menu clicks
@@ -1016,7 +1017,28 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 					g->bw->history,
 					pointer->pos.x, pointer->pos.y);
 			break;
-
+		case ICON_TOOLBAR_HOME:
+			if (option_homepage_url && option_homepage_url[0]) {
+				if (pointer->buttons == wimp_CLICK_SELECT) {
+					browser_window_go_post(g->bw, option_homepage_url,
+							0, 0, true);
+				} else {
+                           		browser_window_create(option_homepage_url, NULL);
+                           	}
+ 			} else {
+				snprintf(url, sizeof url,
+						"file:/<NetSurf$Dir>/Docs/intro_%s",
+						option_language);
+				if (pointer->buttons == wimp_CLICK_SELECT) {
+					browser_window_go_post(g->bw, url, 0, 0, true);
+				} else {
+					browser_window_create(url, NULL);
+				}
+			}
+			break;
+		case ICON_TOOLBAR_SEARCH:
+			ro_gui_search_open(g, 0, 0, false, true);
+			break;
 		case ICON_TOOLBAR_SCALE:
 			current_gui = g;
 			ro_gui_menu_prepare_scale();

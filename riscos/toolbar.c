@@ -125,10 +125,10 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "forward", ICON_TOOLBAR_FORWARD));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "stop", ICON_TOOLBAR_STOP));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "reload", ICON_TOOLBAR_RELOAD));
+ 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "home", ICON_TOOLBAR_HOME));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_create_separator());
-/* 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "home", ICON_TOOLBAR_HOME)); */
 /* 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "up", ICON_TOOLBAR_UP)); */
-/* 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "search", ICON_TOOLBAR_SEARCH)); */
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "search", ICON_TOOLBAR_SEARCH));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "history", ICON_TOOLBAR_HISTORY));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "scale", ICON_TOOLBAR_SCALE));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_create_separator());
