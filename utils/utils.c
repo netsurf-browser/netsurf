@@ -79,11 +79,20 @@ char * xstrdup(const char * const s)
 	return c;
 }
 
-char * squash_whitespace(const char * s)
+
+/**
+ * Replace consecutive whitespace with a single space.
+ *
+ * \param  s  source string
+ * \return  heap allocated result, or 0 on memory exhaustion
+ */
+
+char * squash_whitespace(const char *s)
 {
-	char * c = malloc(strlen(s) + 1);
+	char *c = malloc(strlen(s) + 1);
 	int i = 0, j = 0;
-	if (c == 0) die("Out of memory in squash_whitespace()");
+	if (!c)
+		return 0;
 	do {
 		if (s[i] == ' ' || s[i] == '\n' || s[i] == '\r' ||
 				s[i] == '\t') {
