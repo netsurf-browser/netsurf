@@ -27,7 +27,6 @@ static void netsurf_init(int argc, char** argv);
 static void netsurf_poll(void);
 static void netsurf_exit(void);
 static void lib_init(void);
-extern void ro_gui_choose_language(void);
 
 #ifndef curl_memdebug
         extern void curl_memdebug(const char *logname);
