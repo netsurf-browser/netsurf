@@ -336,8 +336,14 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 
 	c->data.html.stylesheet_count = i;
 
-	if (c->data.html.stylesheet_content[1] != 0)
-		content_convert(c->data.html.stylesheet_content[1], c->width, c->height);
+	if (c->data.html.stylesheet_content[1] != 0) {
+		if (css_convert(c->data.html.stylesheet_content[1], c->width,
+				c->height)) {
+			/* conversion failed */
+			content_destroy(c->data.html.stylesheet_content[1]);
+			c->data.html.stylesheet_content[1] = 0;
+		}
+	}
 
 	/* complete the fetches */
 	while (c->active != 0) {

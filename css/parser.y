@@ -106,17 +106,11 @@ detail_list(A) ::= LBRAC IDENT(B) EQUALS IDENT(C) RBRAC detail_list(D).
 detail_list(A) ::= LBRAC IDENT(B) EQUALS STRING(C) RBRAC detail_list(D).
 		{ A = css_new_node(CSS_NODE_ATTRIB_EQ, B, 0, 0); A->data2 = css_unquote(C);
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
-detail_list(A) ::= LBRAC IDENT(B) EQUALS NUMBER(C) RBRAC detail_list(D).
-		{ A = css_new_node(CSS_NODE_ATTRIB_EQ, B, 0, 0); A->data2 = C;
-		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) INCLUDES IDENT(C) RBRAC detail_list(D).
 		{ A = css_new_node(CSS_NODE_ATTRIB_INC, B, 0, 0); A->data2 = C;
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) INCLUDES STRING(C) RBRAC detail_list(D).
 		{ A = css_new_node(CSS_NODE_ATTRIB_INC, B, 0, 0); A->data2 = css_unquote(C);
-		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
-detail_list(A) ::= LBRAC IDENT(B) INCLUDES NUMBER(C) RBRAC detail_list(D).
-		{ A = css_new_node(CSS_NODE_ATTRIB_INC, B, 0, 0); A->data2 = C;
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) DASHMATCH IDENT(C) RBRAC detail_list(D).
 		{ A = css_new_node(CSS_NODE_ATTRIB_DM, B, 0, 0); A->data2 = C;
@@ -124,10 +118,18 @@ detail_list(A) ::= LBRAC IDENT(B) DASHMATCH IDENT(C) RBRAC detail_list(D).
 detail_list(A) ::= LBRAC IDENT(B) DASHMATCH STRING(C) RBRAC detail_list(D).
 		{ A = css_new_node(CSS_NODE_ATTRIB_DM, B, 0, 0); A->data2 = css_unquote(C);
 		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
-detail_list(A) ::= LBRAC IDENT(B) DASHMATCH NUMBER(C) RBRAC detail_list(D).
-		{ A = css_new_node(CSS_NODE_ATTRIB_DM, B, 0, 0); A->data2 = C;
-		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
-/* TODO: pseudo */
+detail_list(A) ::= COLON IDENT(B) detail_list(C).
+		{ if (strcasecmp(B, "link") == 0) {
+			A = css_new_node(CSS_NODE_ATTRIB, xstrdup("href"), 0, 0);
+			A->specificity = 0x100 + (C ? C->specificity : 0); A->next = C;
+			free(B);
+		} else {
+			A = css_new_node(CSS_NODE_PSEUDO, B, 0, 0);
+			A->specificity = 0x100 + (C ? C->specificity : 0); A->next = C;
+		} }
+detail_list(A) ::= COLON FUNCTION(B) IDENT RPAREN detail_list(C).
+		{ A = css_new_node(CSS_NODE_PSEUDO, B, 0, 0);
+		A->specificity = 0x100 + (C ? C->specificity : 0); A->next = C; }
 
 declaration_list(A) ::= .
 		{ A = 0; }
@@ -187,6 +189,8 @@ any(A) ::= COLON.
 		{ A = css_new_node(CSS_NODE_COLON, 0, 0, 0); }
 any(A) ::= COMMA.
 		{ A = css_new_node(CSS_NODE_COMMA, 0, 0, 0); }
+any(A) ::= DOT.
+		{ A = css_new_node(CSS_NODE_DOT, 0, 0, 0); }
 any(A) ::= PLUS.
 		{ A = css_new_node(CSS_NODE_PLUS, 0, 0, 0); }
 any(A) ::= GT.
@@ -233,7 +237,10 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 %destructor any_list_1 { css_free_node($$); }
 %destructor any { css_free_node($$); }
 
-%left COMMA GT HASH LBRAC PLUS.
+%left COLON COMMA GT HASH LBRAC PLUS.
+%left DOT.
 %left EMPTYIDENT.
 %left IDENT.
 %left LBRACE.
+
+%syntax_error { param->syntax_error = true; }

@@ -94,6 +94,7 @@ void css_create(struct content *c)
 	LOG(("content %p", c));
 	c->data.css.css = xcalloc(1, sizeof(*c->data.css.css));
 	css_lex_init(&c->data.css.css->lexer);
+	/*css_parser_Trace(stderr, "css parser: ");*/
 	c->data.css.css->parser = css_parser_Alloc(malloc);
 	for (i = 0; i != HASH_SIZE; i++)
 		c->data.css.css->rule[i] = 0;
@@ -118,14 +119,15 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 {
 	int token;
 	YY_BUFFER_STATE buffer;
-	struct parse_params param = {0, c, 0};
+	struct parse_params param = {0, c, 0, false};
 
 	c->data.css.data[c->data.css.length] =
 			c->data.css.data[c->data.css.length + 1] = 0;
 	buffer = css__scan_buffer(c->data.css.data, c->data.css.length + 2,
 			c->data.css.css->lexer);
 	assert(buffer);
-	while ((token = css_lex(c->data.css.css->lexer))) {
+	while ((token = css_lex(c->data.css.css->lexer)) &&
+			!param.syntax_error) {
 		css_parser_(c->data.css.css->parser, token,
 				xstrdup(css_get_text(c->data.css.css->lexer)),
 				&param);
@@ -133,12 +135,20 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 	css__delete_buffer(buffer, c->data.css.css->lexer);
 	free(c->data.css.data);
 
-	css_parser_(c->data.css.css->parser, 0, 0, &param);
-
+	if (!param.syntax_error)
+		css_parser_(c->data.css.css->parser, 0, 0, &param);
 	css_parser_Free(c->data.css.css->parser, free);
+
+	if (param.syntax_error) {
+		int line = css_get_lineno(c->data.css.css->lexer);
+		css_lex_destroy(c->data.css.css->lexer);
+		LOG(("syntax error near line %i", line));
+		/*css_destroy(c);*/
+		return 1;
+	}
 	css_lex_destroy(c->data.css.css->lexer);
 
-	/*css_dump_stylesheet(c->data.css.css);*/
+	css_dump_stylesheet(c->data.css.css);
 
 	/* complete fetch of any imported stylesheets */
 	while (c->active != 0) {
@@ -428,6 +438,7 @@ bool css_match_rule(struct css_node *rule, xmlNode *element)
 		return false;
 
 	for (detail = rule->left; detail; detail = detail->next) {
+		s = 0;
 		match = false;
 		switch (detail->type) {
 			case CSS_NODE_ID:
@@ -495,6 +506,9 @@ bool css_match_rule(struct css_node *rule, xmlNode *element)
 							(s[i] == '-' || s[i] == 0))
 						match = true;
 				}
+				break;
+
+			case CSS_NODE_PSEUDO:
 				break;
 
 			default:
@@ -653,6 +667,7 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 						case CSS_NODE_ATTRIB_EQ: fprintf(stderr, "[%s=%s]", m->data, m->data2); break;
 						case CSS_NODE_ATTRIB_INC: fprintf(stderr, "[%s~=%s]", m->data, m->data2); break;
 						case CSS_NODE_ATTRIB_DM: fprintf(stderr, "[%s|=%s]", m->data, m->data2); break;
+						case CSS_NODE_PSEUDO: fprintf(stderr, ":%s", m->data); break;
 						default: fprintf(stderr, "unexpected node");
 					}
 				}

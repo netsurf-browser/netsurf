@@ -27,7 +27,7 @@ h5 { font-size: medium; font-style: italic; }
 h6 { font-size: medium; font-style: italic; }
 b, strong { font-weight: bold; }
 i, em { font-style: italic; }
-a { color: #00f; }
+a:link { color: #00f; }
 th { font-weight: bold; }
 td { text-align: left; }
 
@@ -54,15 +54,15 @@ br[clear=all] { clear: both; }
 br[clear=left] { clear: left; }
 br[clear=right] { clear: right; }
 
-font[size=1] { font-size: x-small; }
-font[size=2] { font-size: small; }
-font[size=3] { font-size: medium; }
-font[size=4] { font-size: large; }
-font[size=5] { font-size: x-large; }
-font[size=6] { font-size: xx-large; }
-font[size=7] { font-size: xx-large; }
-font[size=-1] { font-size: smaller; }
-font[size=+1] { font-size: larger; }
+font[size="1"] { font-size: x-small; }
+font[size="2"] { font-size: small; }
+font[size="3"] { font-size: medium; }
+font[size="4"] { font-size: large; }
+font[size="5"] { font-size: x-large; }
+font[size="6"] { font-size: xx-large; }
+font[size="7"] { font-size: xx-large; }
+font[size="-1"] { font-size: smaller; }
+font[size="+1"] { font-size: larger; }
 
 td[nowrap], th[nowrap] { white-space: nowrap; }
 pre { white-space: pre; }

@@ -18,6 +18,7 @@
 %option reentrant
 %option never-interactive
 %option noyywrap
+%option yylineno
 
 /* see CSS2 Specification, chapter 4
    http://www.w3.org/TR/REC-CSS2/syndata.html,

@@ -8,6 +8,7 @@
 #ifndef _NETSURF_CSS_CSS_H_
 #define _NETSURF_CSS_CSS_H_
 
+#include <stdbool.h>
 #include "libxml/HTMLparser.h"
 #include "css_enum.h"
 
@@ -126,6 +127,7 @@ typedef enum {
 	CSS_NODE_DASHMATCH,
 	CSS_NODE_COLON,
 	CSS_NODE_COMMA,
+	CSS_NODE_DOT,
 	CSS_NODE_PLUS,
 	CSS_NODE_GT,
 	CSS_NODE_PAREN,
@@ -137,6 +139,7 @@ typedef enum {
 	CSS_NODE_ATTRIB_EQ,
 	CSS_NODE_ATTRIB_INC,
 	CSS_NODE_ATTRIB_DM,
+	CSS_NODE_PSEUDO,
 } css_node_type;
 
 typedef enum {
@@ -172,6 +175,7 @@ struct parse_params {
 	int ruleset_only;
 	struct content *stylesheet;
 	struct css_node *declaration;
+	bool syntax_error;
 };
 
 #endif
