@@ -1,5 +1,5 @@
 /**
- * $Id: fetchcache.h,v 1.3 2003/03/04 11:59:35 bursa Exp $
+ * $Id: fetchcache.h,v 1.4 2003/04/09 21:57:09 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_FETCHCACHE_H_
@@ -11,6 +11,6 @@ typedef enum {FETCHCACHE_OK, FETCHCACHE_BADTYPE, FETCHCACHE_ERROR, FETCHCACHE_ST
 
 void fetchcache(const char *url, char *referer,
 		void (*callback)(fetchcache_msg msg, struct content *c, void *p, const char *error),
-		void *p, unsigned long width, unsigned long height);
+		void *p, unsigned long width, unsigned long height, content_type allowed);
 
 #endif

@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.c,v 1.3 2003/03/15 15:53:20 bursa Exp $
+ * $Id: fetch.c,v 1.4 2003/04/09 21:57:09 bursa Exp $
  */
 
 #include <assert.h>
@@ -21,12 +21,14 @@ struct fetch
 	char *url;
 	char error_buffer[CURL_ERROR_SIZE];
 	void *p;
+	struct curl_slist *headers;
 };
 
 static const char * const user_agent = "NetSurf";
 static CURLM * curl_multi;
 
 static size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f);
+static size_t fetch_curl_header(void *data, size_t size, size_t nmemb, struct fetch *f);
 
 
 /**
@@ -102,12 +104,24 @@ struct fetch * fetch_start(char *url, char *referer,
 	assert(code == CURLE_OK);
 	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEDATA, fetch);
 	assert(code == CURLE_OK);
+/*	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HEADERFUNCTION, fetch_curl_header);
+	assert(code == CURLE_OK);
+	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEHEADER, fetch);
+	assert(code == CURLE_OK);*/
 	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_USERAGENT, user_agent);
 	assert(code == CURLE_OK);
 	if (referer != 0) {
 		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_REFERER, referer);
 		assert(code == CURLE_OK);
-	} 
+	}
+
+	/* custom request headers */
+	fetch->headers = 0;
+	/* remove curl default headers */
+	fetch->headers = curl_slist_append(fetch->headers, "Accept:");
+	fetch->headers = curl_slist_append(fetch->headers, "Pragma:");
+	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPHEADER, fetch->headers);
+	assert(code == CURLE_OK);
 
 	/* add to the global curl multi handle */
 	codem = curl_multi_add_handle(curl_multi, fetch->curl_handle);
@@ -138,6 +152,7 @@ void fetch_abort(struct fetch *f)
 	codem = curl_multi_remove_handle(curl_multi, f->curl_handle);
 	assert(codem == CURLM_OK);
 	curl_easy_cleanup(f->curl_handle);
+	curl_slist_free_all(f->headers);
 
 	xfree(f->url);
 	xfree(f);
@@ -239,6 +254,18 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 	f->in_callback = 0;
 	return size * nmemb;
 }
+
+
+/**
+ * fetch_curl_header -- callback function for headers
+ */
+
+size_t fetch_curl_header(void *data, size_t size, size_t nmemb, struct fetch *f)
+{
+	LOG(("header '%*s'", size * nmemb, data));
+	return size * nmemb;
+}
+
 
 
 /**

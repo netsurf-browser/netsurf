@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.5 2003/04/06 18:09:34 bursa Exp $
+ * $Id: css.c,v 1.6 2003/04/09 21:57:09 bursa Exp $
  */
 
 #include <assert.h>
@@ -94,6 +94,7 @@ void css_create(struct content *c)
 	for (i = 0; i != HASH_SIZE; i++)
 		c->data.css.css->rule[i] = 0;
 	c->data.css.import_count = 0;
+	c->data.css.import_url = xcalloc(0, sizeof(*c->data.css.import_url));
 	c->data.css.import_content = xcalloc(0, sizeof(*c->data.css.import_content));
 	c->active = 0;
 }
@@ -140,6 +141,21 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 
 void css_revive(struct content *c, unsigned int width, unsigned int height)
 {
+	unsigned int i;
+	struct fetch_data *fetch_data;
+	/* imported stylesheets */
+	for (i = 0; i != c->data.css.import_count; i++) {
+		fetch_data = xcalloc(1, sizeof(*fetch_data));
+		fetch_data->c = c;
+		fetch_data->i = i;
+		c->active++;
+		fetchcache(c->data.css.import_url[i], c->url, css_atimport_callback,
+				fetch_data, c->width, c->height, 1 << CONTENT_CSS);
+	}
+	while (c->active != 0) {
+		fetch_poll();
+		gui_multitask();
+	}
 }
 
 
@@ -162,8 +178,11 @@ void css_destroy(struct content *c)
 
 	/* imported stylesheets */
 	for (i = 0; i != c->data.css.import_count; i++)
-		if (c->data.css.import_content[i] != 0)
+		if (c->data.css.import_content[i] != 0) {
+			free(c->data.css.import_url[i]);
 			cache_free(c->data.css.import_content[i]);
+		}
+	xfree(c->data.css.import_url);
 	xfree(c->data.css.import_content);
 }
 
@@ -268,15 +287,18 @@ void css_atimport(struct content *c, struct node *node)
 
 	/* start the fetch */
 	c->data.css.import_count++;
+	c->data.css.import_url = xrealloc(c->data.css.import_url,
+			c->data.css.import_count * sizeof(*c->data.css.import_url));
 	c->data.css.import_content = xrealloc(c->data.css.import_content,
 			c->data.css.import_count * sizeof(*c->data.css.import_content));
 
 	fetch_data = xcalloc(1, sizeof(*fetch_data));
 	fetch_data->c = c;
 	fetch_data->i = c->data.css.import_count - 1;
+	c->data.css.import_url[fetch_data->i] = url_join(url, c->url);
 	c->active++;
-	fetchcache(url_join(url, c->url), c->url, css_atimport_callback,
-			fetch_data, c->width, c->height);
+	fetchcache(c->data.css.import_url[fetch_data->i], c->url, css_atimport_callback,
+			fetch_data, c->width, c->height, 1 << CONTENT_CSS);
 
 	free(url);
 }

@@ -1,5 +1,5 @@
 /**
- * $Id: content.h,v 1.5 2003/04/06 18:09:34 bursa Exp $
+ * $Id: content.h,v 1.6 2003/04/09 21:57:09 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
@@ -26,8 +26,14 @@
  * the content may be removed from the memory cache.
  */
 
-typedef enum {CONTENT_HTML, CONTENT_TEXTPLAIN, CONTENT_JPEG, CONTENT_CSS,
-	CONTENT_PNG, CONTENT_OTHER} content_type;
+typedef enum {
+	CONTENT_HTML,
+	CONTENT_TEXTPLAIN,
+	CONTENT_JPEG,
+	CONTENT_CSS,
+	CONTENT_PNG,
+	CONTENT_OTHER
+} content_type;
 
 struct box_position
 {
@@ -72,6 +78,7 @@ struct content
     {
       struct css_stylesheet *css;
       unsigned int import_count;
+      char **import_url;
       struct content **import_content;
     } css;
 

@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.37 2003/04/04 15:19:31 bursa Exp $
+ * $Id: layout.c,v 1.38 2003/04/09 21:57:09 bursa Exp $
  */
 
 #include <assert.h>
@@ -845,9 +845,37 @@ void calculate_table_widths(struct box *table)
 				for (j = 0; j != cell->columns; j++) {
 					min += col[i + j].min;
 					max += col[i + j].max;
+				}
+	
+				/* use specified width if colspan == 1 */
+				if (col[i].type != COLUMN_WIDTH_FIXED &&
+						cell->style->width.width == CSS_WIDTH_LENGTH &&
+						cell->columns == 1) {
+					width = len(&cell->style->width.value.length,
+							cell->style);
+					col[i].type = COLUMN_WIDTH_FIXED;
+					if (min < width)
+						/* specified width greater than min => use it */
+						col[i].width = col[i].max = max = col[i].min = min = width;
+					else
+						/* specified width not big enough => use min */
+						col[i].width = col[i].max = max = min;
+				}
+
+				else if (col[i].type == COLUMN_WIDTH_UNKNOWN) {
+					if (cell->style->width.width == CSS_WIDTH_PERCENT) {
+						col[i].type = COLUMN_WIDTH_PERCENT;
+						col[i].width = cell->style->width.value.percent;
+					} else if (cell->style->width.width == CSS_WIDTH_AUTO) {
+						col[i].type = COLUMN_WIDTH_AUTO;
+					}
+				}
+
+				for (j = 0; j != cell->columns; j++) {
 					if (col[i + j].type != COLUMN_WIDTH_FIXED)
 						flexible_columns++;
 				}
+
 				/* distribute extra width to spanned columns */
 				if (min < cell->min_width) {
 					if (flexible_columns == 0) {
@@ -888,40 +916,16 @@ void calculate_table_widths(struct box *table)
 								col[i + j].max += extra;
 					}
 				}
-
-				/* use specified width if colspan == 1 */
-				if (col[i].type != COLUMN_WIDTH_FIXED &&
-						cell->style->width.width == CSS_WIDTH_LENGTH &&
-						cell->columns == 1) {
-					width = len(&cell->style->width.value.length,
-							cell->style);
-					col[i].type = COLUMN_WIDTH_FIXED;
-					if (min < width)
-						/* specified width greater than min => use it */
-						col[i].width = col[i].max = col[i].min = width;
-					else
-						/* specified width not big enough => use min */
-						col[i].width = col[i].max = min;
-				}
-
-				else if (col[i].type == COLUMN_WIDTH_UNKNOWN) {
-					if (cell->style->width.width == CSS_WIDTH_PERCENT) {
-						col[i].type = COLUMN_WIDTH_PERCENT;
-						col[i].width = cell->style->width.value.percent;
-					} else if (cell->style->width.width == CSS_WIDTH_AUTO) {
-						col[i].type = COLUMN_WIDTH_AUTO;
-					}
-				}
 			}
 		}
 	}
 
 	for (i = 0; i < table->columns; i++) {
+		LOG(("col %u, type %i, min %lu, max %lu, width %lu",
+				i, col[i].type, col[i].min, col[i].max, col[i].width));
 		assert(col[i].min <= col[i].max);
 		min_width += col[i].min;
 		max_width += col[i].max;
-		LOG(("col %u, type %i, min %lu, max %lu, width %lu",
-				i, col[i].type, col[i].min, col[i].max, col[i].width));
 	}
 	table->min_width = min_width;
 	table->max_width = max_width;

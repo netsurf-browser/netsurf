@@ -1,5 +1,5 @@
 /**
- * $Id: filetype.c,v 1.2 2003/04/04 15:19:31 bursa Exp $
+ * $Id: filetype.c,v 1.3 2003/04/09 21:57:09 bursa Exp $
  */
 
 #include <stdlib.h>
@@ -15,8 +15,8 @@ struct type_entry {
 	char mime_type[16];
 };
 static const struct type_entry type_map[] = {
-	{0x0cc, "text/css"},
 	{0xc85, "image/jpeg"},
+	{0xf79, "text/css"},
 	{0xfaf, "text/html"},
 	{0xfff, "text/plain"},
 };

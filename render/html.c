@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.10 2003/04/06 20:56:40 bursa Exp $
+ * $Id: html.c,v 1.11 2003/04/09 21:57:09 bursa Exp $
  */
 
 #include <assert.h>
@@ -96,8 +96,9 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 		fetch_data->c = c;
 		fetch_data->i = i;
 		c->active++;
-		fetchcache(c->data.html.stylesheet_url[i], c->url, html_convert_css_callback,
-				fetch_data, width, height);
+		fetchcache(c->data.html.stylesheet_url[i], c->url,
+				html_convert_css_callback,
+				fetch_data, width, height, 1 << CONTENT_CSS);
 	}
 
 	while (c->active != 0) {

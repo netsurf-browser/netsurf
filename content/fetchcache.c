@@ -1,5 +1,5 @@
 /**
- * $Id: fetchcache.c,v 1.6 2003/04/06 18:09:34 bursa Exp $
+ * $Id: fetchcache.c,v 1.7 2003/04/09 21:57:09 bursa Exp $
  */
 
 #include <assert.h>
@@ -19,6 +19,7 @@ struct fetchcache {
 	struct content *c;
 	unsigned long width, height;
 	unsigned long size;
+	content_type allowed;
 };
 
 
@@ -29,16 +30,22 @@ static void status_callback(void *p, const char *status);
 
 void fetchcache(const char *url, char *referer,
 		void (*callback)(fetchcache_msg msg, struct content *c, void *p, const char *error),
-		void *p, unsigned long width, unsigned long height)
+		void *p, unsigned long width, unsigned long height, content_type allowed)
 {
 	struct content *c;
 	struct fetchcache *fc;
 
 	c = cache_get(url);
 	if (c != 0) {
-		callback(FETCHCACHE_STATUS, c, p, "Found in cache");
-		content_revive(c, width, height);
-		callback(FETCHCACHE_OK, c, p, 0);
+		/* check type is allowed */
+		if ((1 << c->type) & allowed) {
+			callback(FETCHCACHE_STATUS, c, p, "Found in cache");
+			content_revive(c, width, height);
+			callback(FETCHCACHE_OK, c, p, 0);
+		} else {
+			callback(FETCHCACHE_BADTYPE, 0, p, "");
+			cache_free(c);
+		}
 		return;
 	}
 
@@ -51,6 +58,7 @@ void fetchcache(const char *url, char *referer,
 	fc->width = width;
 	fc->height = height;
 	fc->size = 0;
+	fc->allowed = allowed;
 	fc->f = fetch_start(fc->url, referer, fetchcache_callback, fc);
 }
 
@@ -76,14 +84,14 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 				*semic = 0;	/* remove "; charset=..." */
 			type = content_lookup(mime_type);
 			LOG(("FETCH_TYPE, type %u", type));
-			if (type == CONTENT_OTHER) {
-				fetch_abort(fc->f);
-				fc->callback(FETCHCACHE_BADTYPE, 0, fc->p, mime_type);
-				free(fc);
-			} else {
+			if ((1 << type) & fc->allowed) {
 				fc->c = content_create(type, fc->url);
 				fc->c->status_callback = status_callback;
 				fc->c->status_p = fc;
+			} else {
+				fetch_abort(fc->f);
+				fc->callback(FETCHCACHE_BADTYPE, 0, fc->p, mime_type);
+				free(fc);
 			}
 			free(mime_type);
 			break;
