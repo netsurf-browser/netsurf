@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.14 2002/09/11 21:19:24 bursa Exp $
+ * $Id: box.c,v 1.15 2002/09/18 19:36:28 bursa Exp $
  */
 
 #include <assert.h>
@@ -61,16 +61,18 @@ struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
 	box->type = type;
 	box->node = node;
 	box->style = style;
+	box->max_width = UNKNOWN_MAX_WIDTH;
 	box->text = 0;
 	box->href = href;
 	box->length = 0;
-	box->colspan = 1;
+	box->columns = 1;
 	box->next = 0;
 	box->children = 0;
 	box->last = 0;
 	box->parent = 0;
 	box->float_children = 0;
 	box->next_float = 0;
+	box->col = 0;
 	return box;
 }
 
@@ -84,7 +86,12 @@ char * tolat1(const xmlChar * s)
 	while (*s != 0) {
 		u = sgetu8(s, &chars);
 		s += chars;
-		*d = u < 0x100 ? u : '?';
+		if (u == 0x09 || u == 0x0a || u == 0x0d)
+			*d = ' ';
+		else if ((0x20 <= u && u <= 0x7f) || (0xa0 <= u && u <= 0xff))
+			*d = u;
+		else
+			*d = '?';
 		d++;
 	}
 	*d = 0;
@@ -231,10 +238,10 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			case CSS_DISPLAY_TABLE_CELL:
 				box = box_create(n, BOX_TABLE_CELL, style, href);
 				if ((s = (char *) xmlGetProp(n, (xmlChar *) "colspan"))) {
-					if ((box->colspan = strtol(s, 0, 10)) == 0)
-						box->colspan = 1;
+					if ((box->columns = strtol(s, 0, 10)) == 0)
+						box->columns = 1;
 				} else
-					box->colspan = 1;
+					box->columns = 1;
 				box_add_child(parent, box);
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
@@ -322,6 +329,8 @@ void box_dump(struct box * box, unsigned int depth)
 		fprintf(stderr, "  ");
 
 	fprintf(stderr, "x%li y%li w%li h%li ", box->x, box->y, box->width, box->height);
+	if (box->max_width != UNKNOWN_MAX_WIDTH)
+		fprintf(stderr, "min%lu max%lu ", box->min_width, box->max_width);
 
 	switch (box->type) {
 		case BOX_BLOCK:            fprintf(stderr, "BOX_BLOCK "); break;
@@ -330,8 +339,8 @@ void box_dump(struct box * box, unsigned int depth)
 		                                   (int) box->length, box->text); break;
 		case BOX_TABLE:            fprintf(stderr, "BOX_TABLE "); break;
 		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW "); break;
-		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL [colspan %i] ",
-		                                   box->colspan); break;
+		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL [columns %i] ",
+		                                   box->columns); break;
 		case BOX_TABLE_ROW_GROUP:  fprintf(stderr, "BOX_TABLE_ROW_GROUP "); break;
 		case BOX_FLOAT_LEFT:       fprintf(stderr, "BOX_FLOAT_LEFT "); break;
 		case BOX_FLOAT_RIGHT:      fprintf(stderr, "BOX_FLOAT_RIGHT "); break;
@@ -404,6 +413,7 @@ void box_normalise_block(struct box *block)
 				}
 				prev_child->next = 0;
 				table->next = child;
+				table->parent = block;
 				box_normalise_table(table);
 				child = table;
 				break;
@@ -456,6 +466,7 @@ void box_normalise_table(struct box *table)
 				}
 				prev_child->next = 0;
 				row_group->next = child;
+				row_group->parent = table;
 				box_normalise_table_row_group(row_group);
 				child = row_group;
 				break;
@@ -515,6 +526,7 @@ void box_normalise_table_row_group(struct box *row_group)
 				}
 				prev_child->next = 0;
 				row->next = child;
+				row->parent = row_group;
 				box_normalise_table_row(row);
 				child = row;
 				break;
@@ -538,6 +550,7 @@ void box_normalise_table_row(struct box *row)
 	struct box *prev_child = 0;
 	struct box *cell;
 	struct css_style *style;
+	unsigned int columns = 0;
 
 	assert(row->type == BOX_TABLE_ROW);
 
@@ -546,6 +559,7 @@ void box_normalise_table_row(struct box *row)
 			case BOX_TABLE_CELL:
 				/* ok */
 				box_normalise_block(child);
+				columns += child->columns;
 				break;
 			case BOX_BLOCK:
 			case BOX_INLINE_CONTAINER:
@@ -573,8 +587,10 @@ void box_normalise_table_row(struct box *row)
 				}
 				prev_child->next = 0;
 				cell->next = child;
+				cell->parent = row;
 				box_normalise_block(cell);
 				child = cell;
+				columns++;
 				break;
 			case BOX_INLINE:
 			case BOX_FLOAT_LEFT:
@@ -587,6 +603,8 @@ void box_normalise_table_row(struct box *row)
 				assert(0);
 		}
 	}
+	if (row->parent->parent->columns < columns)
+		row->parent->parent->columns = columns;
 }
 
 

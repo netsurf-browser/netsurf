@@ -1,10 +1,11 @@
 /**
- * $Id: box.h,v 1.8 2002/09/08 18:11:56 bursa Exp $
+ * $Id: box.h,v 1.9 2002/09/18 19:36:28 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
 #define _NETSURF_RENDER_BOX_H_
 
+#include <limits.h>
 #include "libxml/HTMLparser.h"
 #include "netsurf/render/css.h"
 
@@ -19,22 +20,32 @@ typedef enum {
 	BOX_FLOAT_LEFT, BOX_FLOAT_RIGHT
 } box_type;
 
+struct column {
+	enum { COLUMN_WIDTH_UNKNOWN = 0, COLUMN_WIDTH_FIXED,
+	       COLUMN_WIDTH_AUTO, COLUMN_WIDTH_PERCENT } type;
+	unsigned long min, max, width;
+};
+
 struct box {
 	box_type type;
 	xmlNode * node;
 	struct css_style * style;
 	unsigned long x, y, width, height;
+	unsigned long min_width, max_width;
 	const char * text;
 	const char * href;
 	unsigned int length;
-	unsigned int colspan;
+	unsigned int columns;
 	struct box * next;
 	struct box * children;
 	struct box * last;
 	struct box * parent;
 	struct box * float_children;
 	struct box * next_float;
+	struct column *col;
 };
+
+#define UNKNOWN_MAX_WIDTH ULONG_MAX
 
 /**
  * interface
