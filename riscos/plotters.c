@@ -150,16 +150,16 @@ bool ro_plot_line(int x0, int y0, int x1, int y1, int width,
 		dash_pattern = NULL;
 
 	path[1] = (ro_plot_origin_x + x0 * 2) * 256;
-	path[2] = (ro_plot_origin_y - y0 * 2) * 256;
+	path[2] = (ro_plot_origin_y - y0 * 2 - 1) * 256;
 	path[4] = (ro_plot_origin_x + x1 * 2) * 256;
-	path[5] = (ro_plot_origin_y - y1 * 2) * 256;
+	path[5] = (ro_plot_origin_y - y1 * 2 - 1) * 256;
 	error = xcolourtrans_set_gcol(c << 8, 0, os_ACTION_OVERWRITE, 0, 0);
 	if (error) {
 		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
 				error->errnum, error->errmess));
 		return false;
 	}
-	error = xdraw_stroke((draw_path *) path, 0, 0, 0, width * 256,
+	error = xdraw_stroke((draw_path *) path, 0, 0, 0, width * 2 * 256,
 			&line_style, dash_pattern);
 	if (error) {
 		LOG(("xdraw_stroke: 0x%x: %s",
