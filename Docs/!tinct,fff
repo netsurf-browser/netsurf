@@ -1,0 +1,140 @@
+Tinct
+=====
+The ability to plot alpha-blended sprites is only provided by certain
+versions of RISC OS provided by RISC OS Ltd (ie RISC OS Select), and
+currently not by the latest versions provided by Castle (ie RISC OS 5)
+ There is currently no separate module available from RISC OS Ltd, nor a
+version of Select that will function on an Iyonix. As such, users of machines
+that will not run RISC OS 4 (and thus Select) cannot display images with
+variable transparency (eg PNGs).
+ This module provides the necessary functionality to display alpha-blended
+sprites both scaled and otherwise. It also provides functions for dithering
+and performing bi-linear filtering to improve their appearance.
+
+ 
+Technical information
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+To ensure future compatibilty, this module does not patch the OS in any way
+and works in a totally legal way. It also does not write to itself in any
+way, so is suitable for running from ROM.
+ Redirection to sprites is supported, although due to the overheads involved
+with caching the colour translation tables it is not recommended that this is
+done. There are some exceptions to this, however, as output to a 32bpp mode
+does not cause the tables to be re-calculated, and redirecting to a sprite
+that has the same characteristics as the current mode and palette has a
+minimal overhead.
+ Tinct comes in two different variants - one that is slightly faster and
+only suitable for memory architectures that support LDRH and STRH (denoted by
+a '_h' filename suffix), and one that is suitable for all machines (denoted
+by a '_b' filename suffix).
+
+
+Format of a sprite with 8-bit alpha channel
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+The sprite format used by Tinct differs from those used by RISC OS Select,
+and no facilities to manipulate or create the required format is provided.
+ All sprites used by Tinct must be 32bpp, and cannot have a mask.
+ The basic format of the sprite is shown below, with the restrictions to the
+standard sprite format marked with an asterisk (*):
+
+	[+0]	Offset to next sprite
+	[+4]	Sprite name, up to 12 characters with trailing zeroes
+	[+16]	Width in words - 1
+	[+20]	Height in scan lines - 1
+	[+24] *	First bit used (must be 0)
+	[+28] *	Last bit used (must be 31)
+	[+32]	Offset to sprite image
+	[+36] *	Offset to sprite image (no mask allowed)
+	[+40] *	Sprite type (must be &301680B5)
+
+Whereas for normal sprites the sprite image would be a series of colour words
+of the format RrGgBb00, alpha-blended sprites use the empty byte to specify
+the alpha value, ie RrGgBbAa.
+ The alpha values represent the blending level on a linear scale where 0x00
+represents that the source pixel is totally transparent and 0xff that it is
+totally opaque. It should be noted that as a standard 32bpp sprite (eg as
+created with !Paint) will have the alpha channel set to 0x00 by default no
+output will be visible when plotting as an alpha-blended sprite.
+
+
+SWIs provided
+¯¯¯¯¯¯¯¯¯¯¯¯¯
+Tinct provides four SWIs to plot sprites and one to convert sprites to their
+32bpp equivalent. All values supplied to Tinct must be in OS units, and the
+current OS clipping rectangle is used.
+ The sprite pointers provided are equivalent to calling OS_SpriteOp with
+bit 9 of the reason code set. To plot a sprite by name, the sprite should
+first be found by using OS_SpriteOp with reason code 0x18 and using the
+returned sprite address.
+
+
+Tinct_PlotAlpha (0x57240)
+¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨
+Plots an alpha-blended sprite at the specified coordinates.
+
+->	R2	Sprite pointer
+	R3	X coordinate
+	R4	Y coordinate
+	R7	Flag word
+
+
+Tinct_PlotScaledAlpha (0x57241)
+¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨
+Plots a scaled alpha-blended sprite at the specified coordinates.
+
+->	R2	Sprite pointer
+	R3	X coordinate
+	R4	Y coordinate
+	R5	Scaled sprite width
+	R6	Scaled sprite height
+	R7	Flag word
+
+
+Tinct_Plot (0x57242)
+¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨
+Plots a sprite at the specified coordinates with a constant 0xff value for
+the alpha channel, ie without a mask.
+
+->	R2	Sprite pointer
+	R3	X coordinate
+	R4	Y coordinate
+	R7	Flag word
+
+
+Tinct_PlotScaled (0x57243)
+¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨
+Plots a scaled sprite at the specified coordinates with a constant 0xff value
+for the alpha channel, ie without a mask.
+
+->	R2	Sprite pointer
+	R3	X coordinate
+	R4	Y coordinate
+	R5	Scaled sprite width
+	R6	Scaled sprite height
+	R7	Flag word
+
+
+Tinct_ConvertSprite
+¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨
+Converts a paletted sprite into its 32bpp equivalent. Sufficient memory must
+have previously been allocated for the sprite (44 + width * height * 4).
+
+->	R2	Source sprite pointer
+	R3	Destination sprite pointer
+
+
+Flag word
+¯¯¯¯¯¯¯¯¯
+All the SWIs provided by Tinct for plotting use a common flag word to
+describe the manner in which the plot is performed. Each bit controls a
+particular characteristic of the plotting:
+
+	0  Forcably read the screen base (only use if hardware scrolling)
+	1  Use bi-linear filtering when scaling sprites
+	2  Dither colours in 16bpp and below
+        3  Invert dither pattern
+        4+ Reserved (must be 0)
+
+Although bi-linear filtering is only relevant during scaled plotting, this
+situation occurs when the EigFactors of the mode are not equal. As such, an
+application should always set their preferred flags to ensure consistency.
