@@ -54,6 +54,7 @@ static void parse_text_decoration(struct css_style * const s, const struct css_n
 static void parse_visibility(struct css_style * const s, const struct css_node * const v);
 static void parse_width(struct css_style * const s, const struct css_node * const v);
 static void parse_white_space(struct css_style * const s, const struct css_node * const v);
+static css_text_decoration css_text_decoration_parse(const char * const s);
 
 
 /* table of property parsers: MUST be sorted by property name */
@@ -90,6 +91,7 @@ static const struct colour_entry colour_table[] = {
 	{ "maroon",  0x000080 },
 	{ "navy",    0x800000 },
 	{ "olive",   0x008080 },
+	{ "orange",  0xffa500 },
 	{ "purple",  0x800080 },
 	{ "red",     0x0000ff },
 	{ "silver",  0xc0c0c0 },
@@ -523,11 +525,21 @@ void parse_text_align(struct css_style * const s, const struct css_node * const 
 void parse_text_decoration(struct css_style * const s, const struct css_node * const v)
 {
 	css_text_decoration z;
-	if (v->type != CSS_NODE_IDENT || v->next != 0)
+	if (v->type != CSS_NODE_IDENT)
 		return;
 	z = css_text_decoration_parse(v->data);
-	if (z != CSS_TEXT_DECORATION_UNKNOWN)
+	if (z == CSS_TEXT_DECORATION_INHERIT || z == CSS_TEXT_DECORATION_NONE) {
+		if (v->next != 0)
+			return;
 		s->text_decoration = z;
+	}
+	if (z != CSS_TEXT_DECORATION_UNKNOWN)
+		s->text_decoration |= z;
+	for (v = v->next; v; v = v->next) {
+		z = css_text_decoration_parse(v->data);
+		if (z != CSS_TEXT_DECORATION_UNKNOWN)
+			s->text_decoration |= z;
+	}
 }
 
 void parse_visibility(struct css_style * const s, const struct css_node * const v)
@@ -560,4 +572,15 @@ void parse_white_space(struct css_style * const s, const struct css_node * const
 	z = css_white_space_parse(v->data);
 	if (z != CSS_WHITE_SPACE_UNKNOWN)
 		s->white_space = z;
+}
+
+css_text_decoration css_text_decoration_parse(const char * const s)
+{
+	if (strcasecmp(s, "inherit") == 0) return CSS_TEXT_DECORATION_INHERIT;
+	if (strcasecmp(s, "none") == 0) return CSS_TEXT_DECORATION_NONE;
+	if (strcasecmp(s, "blink") == 0) return CSS_TEXT_DECORATION_BLINK;
+	if (strcasecmp(s, "line-through") == 0) return CSS_TEXT_DECORATION_LINE_THROUGH;
+	if (strcasecmp(s, "overline") == 0) return CSS_TEXT_DECORATION_OVERLINE;
+	if (strcasecmp(s, "underline") == 0) return CSS_TEXT_DECORATION_UNDERLINE;
+	return CSS_TEXT_DECORATION_UNKNOWN;
 }

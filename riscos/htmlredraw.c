@@ -76,7 +76,7 @@ void html_redraw_box(struct content *content, struct box * box,
 	struct box *c;
 	char *select_text;
 	struct form_option *opt;
-	int width, height, x0, y0, x1, y1;
+	int width, height, x0, y0, x1, y1, colour;
 
 	x += box->x * 2;
 	y -= box->y * 2;
@@ -279,53 +279,34 @@ void html_redraw_box(struct content *content, struct box * box,
 
 		colourtrans_set_font_colours(box->font->handle, current_background_color << 8,
 					     box->style->color << 8, 14, 0, 0, 0);
+		colour = box->style->color;
+		colour = ((((colour >> 16) + (current_background_color >> 16)) / 2) << 16)
+				| (((((colour >> 8) & 0xff) +
+				     ((current_background_color >> 8) & 0xff)) / 2) << 8)
+				| ((((colour & 0xff) +
+				     (current_background_color & 0xff)) / 2) << 0);
+		colourtrans_set_gcol(colour << 8, colourtrans_USE_ECFS,
+				os_ACTION_OVERWRITE, 0);
 
-                if (box->style->text_decoration == CSS_TEXT_DECORATION_NONE ||
-		    box->style->text_decoration == CSS_TEXT_DECORATION_BLINK) {
-	               font_paint(box->font->handle, box->text,
+		if (box->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE) {
+			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8));
+			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
+		}
+		if (box->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE) {
+			os_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2));
+			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
+		}
+		if (box->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH) {
+			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0));
+			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
+		}
+
+		font_paint(box->font->handle, box->text,
 		           font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
 		           x, y - (int) (box->height * 1.5),
 		           NULL, NULL, (int) box->length);
-		}
-                if (box->style->text_decoration == CSS_TEXT_DECORATION_UNDERLINE || (box->parent->parent->style->text_decoration == CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK)) {
-                        char ulctrl[3];
-                        char *temp = xcalloc(strlen(box->text)+4,
-                                             sizeof(char));
-                        sprintf(ulctrl, "%c%c%c", (char)25, (char)230,
-                                                                  (char)10);
-                        sprintf(temp, "%s%s", ulctrl, box->text);
-                        font_paint(box->font->handle, temp,
-			   font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
-			   x, y - (int) (box->height * 1.5),
-			   NULL, NULL, (int) box->length + 3);
-		        xfree(temp);
-		}
-                if (box->style->text_decoration == CSS_TEXT_DECORATION_LINE_THROUGH || (box->parent->parent->style->text_decoration == CSS_TEXT_DECORATION_LINE_THROUGH && box->parent->parent->type == BOX_BLOCK)) {
-                        char ulctrl[3];
-                        char *temp = xcalloc(strlen(box->text)+4,
-                                             sizeof(char));
-                        sprintf(ulctrl, "%c%c%c", (char)25, (char)95,
-                                                                  (char)10);
-                        sprintf(temp, "%s%s", ulctrl, box->text);
-                        font_paint(box->font->handle, temp,
-			   font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
-			   x, y - (int) (box->height * 1.5),
-			   NULL, NULL, (int) box->length + 3);
-		        xfree(temp);
-		}
-		if (box->style->text_decoration == CSS_TEXT_DECORATION_OVERLINE || (box->parent->parent->style->text_decoration == CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK)) {
-                        char ulctrl[3];
-                        char *temp = xcalloc(strlen(box->text)+4,
-                                             sizeof(char));
-                        sprintf(ulctrl, "%c%c%c", (char)25, (char)127,
-                                                                  (char)10);
-                        sprintf(temp, "%s%s", ulctrl, box->text);
-                        font_paint(box->font->handle, temp,
-			   font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
-			   x, y - (int) (box->height * 1.5),
-			   NULL, NULL, (int) box->length + 3);
-		        xfree(temp);
-		}
+
+
 	} else {
 		for (c = box->children; c != 0; c = c->next)
 			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)

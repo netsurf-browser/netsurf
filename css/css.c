@@ -83,7 +83,7 @@ const struct css_style css_blank_style = {
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
 	CSS_TEXT_ALIGN_INHERIT,
-	CSS_TEXT_DECORATION_NONE,
+	CSS_TEXT_DECORATION_INHERIT,
 	CSS_VISIBILITY_INHERIT,
 	{ CSS_WIDTH_AUTO, { { 1, CSS_UNIT_EM } } },
 	CSS_WHITE_SPACE_INHERIT
@@ -601,7 +601,7 @@ void css_parse_property_list(struct css_style * style, char * str)
 static void dump_length(const struct css_length * const length)
 {
 	fprintf(stderr, "%g%s", length->value,
-	               css_unit_name[length->unit]);
+		       css_unit_name[length->unit]);
 }
 
 void css_dump_style(const struct css_style * const style)
@@ -638,7 +638,21 @@ void css_dump_style(const struct css_style * const style)
 	}
 	fprintf(stderr, "; ");
 	fprintf(stderr, "text-align: %s; ", css_text_align_name[style->text_align]);
-        fprintf(stderr, "text-decoration: %s; ", css_text_decoration_name[style->text_decoration]);
+	fprintf(stderr, "text-decoration:");
+	switch (style->text_decoration) {
+		case CSS_TEXT_DECORATION_NONE:    fprintf(stderr, " none"); break;
+		case CSS_TEXT_DECORATION_INHERIT: fprintf(stderr, " inherit"); break;
+		default:
+			if (style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE)
+				fprintf(stderr, " underline");
+			if (style->text_decoration & CSS_TEXT_DECORATION_OVERLINE)
+				fprintf(stderr, " overline");
+			if (style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH)
+				fprintf(stderr, " line-through");
+			if (style->text_decoration & CSS_TEXT_DECORATION_BLINK)
+				fprintf(stderr, " blink");
+	}
+	fprintf(stderr, "; ");
 	fprintf(stderr, "visibility: %s; ", css_visibility_name[style->visibility]);
 	fprintf(stderr, "width: ");
 	switch (style->width.width) {
@@ -693,6 +707,12 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 {
 	float f;
 
+	/* text-decoration: approximate CSS 2.1 by inheriting into inline elements */
+	if (apply->text_decoration != CSS_TEXT_DECORATION_INHERIT)
+		style->text_decoration = apply->text_decoration;
+/*	if (style->display == CSS_DISPLAY_INLINE && apply->display != CSS_DISPLAY_INLINE)
+		style->text_decoration = CSS_TEXT_DECORATION_NONE;*/
+
 	if (apply->background_color != CSS_COLOR_INHERIT)
 		style->background_color = apply->background_color;
 	if (apply->clear != CSS_CLEAR_INHERIT)
@@ -713,10 +733,8 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 		style->line_height = apply->line_height;
 	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
 		style->text_align = apply->text_align;
-        if (apply->text_decoration != CSS_TEXT_DECORATION_INHERIT)
-		style->text_decoration = apply->text_decoration;
 	if (apply->visibility != CSS_VISIBILITY_INHERIT)
-	        style->visibility = apply->visibility;
+		style->visibility = apply->visibility;
 	if (apply->width.width != CSS_WIDTH_INHERIT)
 		style->width = apply->width;
 	if (apply->white_space != CSS_WHITE_SPACE_INHERIT)
@@ -786,9 +804,9 @@ void css_merge(struct css_style * const style, const struct css_style * const ap
 		style->line_height = apply->line_height;
 	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
 		style->text_align = apply->text_align;
-        if (apply->text_decoration != CSS_TEXT_DECORATION_INHERIT)
+	if (apply->text_decoration != CSS_TEXT_DECORATION_INHERIT)
 		style->text_decoration = apply->text_decoration;
-        if (apply->visibility != CSS_VISIBILITY_INHERIT)
+	if (apply->visibility != CSS_VISIBILITY_INHERIT)
 		style->visibility = apply->visibility;
 	if (apply->width.width != CSS_WIDTH_INHERIT)
 		style->width = apply->width;

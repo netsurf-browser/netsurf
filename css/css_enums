@@ -15,7 +15,6 @@ css_list_style_position outside inside
 css_list_style_type disc circle square decimal lower_alpha lower_roman upper_alpha upper_roman none
 css_margin auto length percent
 css_text_align inherit left right center justify
-css_text_decoration inherit none blink line-through overline underline
 css_text_transform none capitalize lowercase uppercase
 css_vertical_align baseline bottom middle sub super text_bottom text_top top percent
 css_visibility inherit visible hidden

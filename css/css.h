@@ -26,6 +26,16 @@ struct css_length {
 	css_unit unit;
 };
 
+typedef enum {
+	CSS_TEXT_DECORATION_NONE = 0x0,
+	CSS_TEXT_DECORATION_INHERIT = 0x1,
+	CSS_TEXT_DECORATION_UNDERLINE = 0x2,
+	CSS_TEXT_DECORATION_BLINK = 0x4,
+	CSS_TEXT_DECORATION_LINE_THROUGH = 0x8,
+	CSS_TEXT_DECORATION_OVERLINE = 0x10,
+	CSS_TEXT_DECORATION_UNKNOWN = 0x1000
+} css_text_decoration;
+
 struct css_style {
 	colour background_color;
 	css_clear clear;
