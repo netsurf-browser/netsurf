@@ -1,0 +1,15 @@
+$Id: TODO-General,v 1.1 2003/05/31 18:39:35 jmb Exp $
+
+TODO-General for NetSurf.
+
+This file documents general things which need doing.
+
+
+Browser Redirect
+Disk Cache
+Saving
+Printing
+View Source
+Global Clipboard Support
+More Image file formats
+JavaScript?
