@@ -725,7 +725,7 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 				   96 + iconbar_menu_height, NULL);
 	} else if (pointer->buttons == wimp_CLICK_SELECT) {
 		char url[80];
-		sprintf(url, "file:///%%3CNetSurf$Dir%%3E/Docs/intro.%s",
+		sprintf(url, "file:///%%3CNetSurf$Dir%%3E/Docs/intro_%s",
 				option_language);
 		browser_window_create(url);
 	}
@@ -1282,7 +1282,7 @@ void ro_gui_screen_size(int *width, int *height)
 void ro_gui_open_help_page(void)
 {
 	char url[80];
-	sprintf(url, "file:///%%3CNetSurf$Dir%%3E/Docs/docs.%s",
+	sprintf(url, "file:///%%3CNetSurf$Dir%%3E/Docs/docs_%s",
 			option_language);
         browser_window_create(url);
 }
