@@ -21,6 +21,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/gui.h"
+#include "netsurf/desktop/plotters.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
@@ -33,6 +34,7 @@
 #ifdef WITH_DRAW_EXPORT
 
 /* in browser units = OS/2 = draw/512 */
+/* note that all coordinates passed into draw_plot_* are in browser units */
 #define A4PAGEWIDTH (744)
 #define A4PAGEHEIGHT (1052)
 
@@ -76,23 +78,41 @@ static bool drawbuf_group_begin(const char *name);
 static bool drawbuf_group_end(void);
 
 static bool add_options(void);
-static bool add_box(struct box *box, colour cbc, int x, int y);
-static bool add_graphic(struct content *content, struct box *box,
-		colour cbc, int x, int y);
-static bool add_line(struct box *box, os_colour cbc, int x, int y);
-static bool add_text(struct box *box, os_colour cbc, os_colour fc,
-		int x, int y);
-
-static bool add_checkbox(int x, int y, int width, int height, bool selected);
-static bool add_radio(int x, int y, int width, int height, bool selected);
-
-static bool add_rect(int x, int y, int width, int height, os_colour col);
-static bool add_circle(int x0, int y0, int radius, os_colour colour);
-static bool add_border(os_colour col, int width, css_border_style style,
-		int x0, int y0, int x1, int y1);
-
+static bool draw_plot_clg(colour c);
+static bool draw_plot_rectangle(int x0, int y0, int width, int height,
+		colour c, bool dotted);
+static bool draw_plot_line(int x0, int y0, int x1, int y1, int width,
+		colour c, bool dotted, bool dashed);
+static bool draw_plot_polygon(int *p, unsigned int n, colour fill);
+static bool draw_plot_fill(int x0, int y0, int x1, int y1, colour c);
+static bool draw_plot_clip(int clip_x0, int clip_y0, int clip_x1,
+		int clip_y1);
+static bool draw_plot_text(int x, int y, struct font_data *font,
+		const char *text, size_t length, colour bc, colour colour);
+static bool draw_plot_disc(int x, int y, int radius, colour colour);
+static bool draw_plot_bitmap(int x, int y, int width, int height,
+		struct bitmap *bitmap, colour bc);
+static bool draw_plot_bitmap_tile(int x, int y, int width, int height,
+		struct bitmap *bitmap, colour bg,
+		bool repeat_x, bool repeat_y);
 
 static drawbuf_t oDrawBuf; /* static -> complete struct inited to 0 */
+
+/* our plotters */
+const struct plotter_table draw_plotters = {
+	draw_plot_clg,
+	draw_plot_rectangle,
+	draw_plot_line,
+	draw_plot_polygon,
+	draw_plot_fill,
+	draw_plot_clip,
+	draw_plot_text,
+	draw_plot_disc,
+	draw_plot_bitmap,
+	draw_plot_bitmap_tile
+};
+
+static int draw_plot_origin_y = 0; /* plot origin, in browser units */
 
 /**
  * Export a content as a Drawfile.
@@ -105,13 +125,12 @@ bool save_as_draw(struct content *c, const char *path)
 {
 	struct box *box;
 	int current_width;
-	colour bc;
 	drawfile_diagram_base *diagram;
 
 	if (c->type != CONTENT_HTML)
 		return false;
 
-	box = c->data.html.layout->children;
+	box = c->data.html.layout;
 	current_width = c->available_width;
 
 	if ((diagram = (drawfile_diagram_base *)drawbuf_claim(sizeof(drawfile_diagram_base), DrawBuf_eHeader)) == NULL)
@@ -137,22 +156,19 @@ bool save_as_draw(struct content *c, const char *path)
 	if (!add_options())
 		goto draw_save_error;
 
-	bc = 0xffffff;
-	if (c->data.html.background_colour != TRANSPARENT) {
-		bc = c->data.html.background_colour;
-		if (!add_rect(0, A4PAGEHEIGHT*512, A4PAGEWIDTH*512,
-				A4PAGEHEIGHT*512, (os_colour)bc<<8))
-			goto draw_save_error;
-	}
+	/* set up plotters */
+	plot = draw_plotters;
+	draw_plot_origin_y = A4PAGEHEIGHT;
 
-	/* right, traverse the tree and grab the contents */
-	if (!add_box(box, bc, 0, A4PAGEHEIGHT*512))
+	if (!drawbuf_group_begin("page"))
 		goto draw_save_error;
 
-	if (oDrawBuf.currentNumGroups != 0) {
-		/** \todo: give GUI error. */
+	/* redraw page at 100% and a stupidly large clipping rectangle */
+	content_redraw(c, 0, 0, c->width, c->height, 0, 0,
+			INT_MAX, INT_MAX, 1.0, 0xFFFFFF);
+
+	if (!drawbuf_group_end())
 		goto draw_save_error;
-	}
 
 	if (!drawbuf_save_file(path))
 		goto draw_save_error;
@@ -503,296 +519,34 @@ static bool add_options(void)
 	return true;
 }
 
-
 /**
- * Traverses box tree, adding objects to the diagram as it goes.
+ * Simulate clearing the graphics window.
  *
- * \param box
- * \param cbc current background color
- * \param x
- * \param y
- * \return  true on success, false on error (error got reported)
- *
- * Very similar to html_redraw_box.
+ * \param c the colour to clear to
+ * \return true on success, false otherwise.
  */
-static bool add_box(struct box *box, colour cbc, int x, int y)
+bool draw_plot_clg(colour c)
 {
-	struct box *c;
-	int width, height;
-	int padding_left, padding_top;
-	int padding_width, padding_height;
-
-	x += box->x * 512;
-	y -= box->y * 512;
-	width = box->width * 512;
-	height = box->height * 512;
-	padding_left = box->padding[LEFT] * 512;
-	padding_top = box->padding[TOP] * 512;
-	padding_width = (box->padding[LEFT] + box->width +
-			box->padding[RIGHT]) * 512;
-	padding_height = (box->padding[TOP] + box->height +
-			box->padding[BOTTOM]) * 512;
-
-	/* if visibility is hidden render children only */
-	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
-		if (!drawbuf_group_begin("hidden box"))
-			return false;
-		for (c = box->children; c != NULL; c = c->next) {
-			if (!add_box(c, cbc, x, y))
-				return false;
-		}
-		return drawbuf_group_end();
-	}
-
-	if (!drawbuf_group_begin("vis box"))
-		return false;
-
-	/* borders */
-	if (box->style && box->border[TOP])
-		add_border((os_colour)box->style->border[TOP].color << 8,
-				box->border[TOP] * 512,
-				box->style->border[TOP].style,
-				x - box->border[LEFT] * 512,
-				y + box->border[TOP] * 256,
-				x + padding_width + box->border[RIGHT] * 512,
-				y + box->border[TOP] * 256);
-	if (box->style && box->border[RIGHT])
-		add_border((os_colour)box->style->border[RIGHT].color << 8,
-				box->border[RIGHT] * 512,
-				box->style->border[RIGHT].style,
-				x + padding_width + box->border[RIGHT] * 256,
-				y + box->border[TOP] * 512,
-				x + padding_width + box->border[RIGHT] * 256,
-				y - padding_height - box->border[BOTTOM] * 512);
-	if (box->style && box->border[BOTTOM])
-		add_border((os_colour)box->style->border[BOTTOM].color << 8,
-				box->border[BOTTOM] * 512,
-				box->style->border[BOTTOM].style,
-				x - box->border[LEFT] * 512,
-				y - padding_height - box->border[BOTTOM] * 256,
-				x + padding_width + box->border[RIGHT] * 512,
-				y - padding_height - box->border[BOTTOM] * 256);
-	if (box->style && box->border[LEFT])
-		add_border((os_colour)box->style->border[LEFT].color << 8,
-				box->border[LEFT] * 512,
-				box->style->border[LEFT].style,
-				x - box->border[LEFT] * 256,
-				y + box->border[TOP] * 512,
-				x - box->border[LEFT] * 256,
-				y - padding_height - box->border[BOTTOM] * 512);
-
-	/* background */
-	if (box->style && (box->type != BOX_INLINE ||
-			box->style != box->parent->parent->style)) {
-		if (box->style->background_color != TRANSPARENT) {
-			cbc = box->style->background_color;
-			if (!add_rect(x, y,
-					padding_width,
-					padding_height,
-					(os_colour)cbc<<8))
-				return false;
-		}
-	}
-
-	if (box->object) {
-		switch (box->object->type) {
-#ifdef WITH_JPEG
-			case CONTENT_JPEG:
-#endif
-#ifdef WITH_PNG
-			case CONTENT_PNG:
-#endif
-#ifdef WITH_MNG
-			case CONTENT_JNG:
-			case CONTENT_MNG:
-#endif
-#ifdef WITH_GIF
-			case CONTENT_GIF:
-#endif
-#ifdef WITH_SPRITE
-			case CONTENT_SPRITE:
-#endif
-				if (!add_graphic(box->object,
-						box, cbc, x, y))
-					return false;
-				break;
-
-			case CONTENT_HTML:
-				c = box->object->data.html.layout->children;
-				if (!add_box(c, cbc, x, y))
-					return false;
-				break;
-
-			default:
-				break;
-		}
-
-	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
-		if (!add_checkbox(x + padding_left, y - padding_top,
-				width, height,
-				box->gadget->selected))
-			return false;
-		return drawbuf_group_end();
-
-	} else if (box->gadget && box->gadget->type == GADGET_RADIO) {
-		if (!add_radio(x + padding_left, y - padding_top,
-				width, height,
-				box->gadget->selected))
-			return false;
-
-	} else if (box->gadget && box->gadget->type == GADGET_FILE) {
-		/** \todo: something to do here ? */
-
-	} else if (box->text && box->font) {
-		colour colour;
-
-		if (box->length == 0)
-			return drawbuf_group_end();
-
-		/* text-decoration */
-		colour = box->style->color;
-		colour = ((((colour >> 16) + (cbc >> 16)) >> 1) << 16)
-			| (((((colour >> 8) & 0xff) + ((cbc >> 8) & 0xff)) >> 1) << 8)
-			| ((((colour & 0xff) + (cbc & 0xff)) >> 1) << 0);
-		if (box->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE
-			|| (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK)) {
-			if (!add_line(box, (os_colour)colour<<8,
-					x, (int)(y+(box->height*0.1*512))))
-				return false;
-		}
-		if (box->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE
-			|| (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK)) {
-			if (!add_line(box, (os_colour)colour<<8,
-					x, (int)(y+(box->height*0.9*512))))
-				return false;
-		}
-		if (box->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH && box->parent->parent->type == BOX_BLOCK)) {
-			if (!add_line(box, (os_colour)colour<<8,
-					x, (int)(y+(box->height*0.4*512))))
-				return false;
-		}
-
-		if (!add_text(box, (os_colour)cbc<<8,
-				(os_colour)box->style->color<<8, x, y))
-			return false;
-
-	} else {
-		for (c = box->children; c != NULL; c = c->next) {
-			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-				if (!add_box(c, cbc, x, y))
-					return false;
-		}
-
-		for (c = box->float_children; c !=  NULL; c = c->next_float) {
-			if (!add_box(c, cbc, x, y))
-				return false;
-		}
-	}
-
-	return drawbuf_group_end();
-}
-
-
-/**
- * Add images to the drawfile.
- *
- * \return  true on success, false on error (error got reported)
- */
-static bool add_graphic(struct content *content, struct box *box,
-		colour cbc, int x, int y)
-{
-	int sprite_length;
-	drawfile_object *dro;
-	drawfile_sprite *ds;
-
-	/* cast-tastic... */
-	switch (content->type) {
-#ifdef WITH_JPEG
-		case CONTENT_JPEG:
-			sprite_length = ((osspriteop_header*)((char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first))->size;
-			break;
-#endif
-#ifdef WITH_PNG
-		case CONTENT_PNG:
-			sprite_length = ((osspriteop_header*)((char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first))->size;
-			break;
-#endif
-#ifdef WITH_MNG
-		case CONTENT_JNG:
-		case CONTENT_MNG:
-			sprite_length = ((osspriteop_header*)((char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first))->size;
-			break;
-#endif
-#ifdef WITH_GIF
-		case CONTENT_GIF:
-			sprite_length = ((osspriteop_header*)((char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first))->size;
-			break;
-#endif
-#ifdef WITH_SPRITE
-		case CONTENT_SPRITE:
-			sprite_length = ((osspriteop_header*)((char*)content->data.sprite.data+(((osspriteop_area*)content->data.sprite.data)->first)))->size;
-			break;
-#endif
-		default:
-			assert(0);
-	}
-
-	if ((dro = (drawfile_object *)drawbuf_claim(8 + 16 + sprite_length, DrawBuf_eBody)) == NULL)
-		return false;
-
-	dro->type = drawfile_TYPE_SPRITE;
-	dro->size = 8 + 16 + sprite_length;
-
-	ds = &dro->data.sprite;
-	ds->bbox.x0 = x;
-	ds->bbox.y0 = y - (box->padding[TOP] + box->height + box->padding[BOTTOM])*512;
-	ds->bbox.x1 = x + (box->padding[LEFT] + box->width + box->padding[RIGHT])*512;
-	ds->bbox.y1 = y;
-
-	switch (content->type) {
-#ifdef WITH_JPEG
-		case CONTENT_JPEG:
-			memcpy((char*)ds+16, (char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first, (unsigned)sprite_length);
-			break;
-#endif
-#ifdef WITH_PNG
-		case CONTENT_PNG:
-			memcpy((char*)ds+16, (char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first, (unsigned)sprite_length);
-			break;
-#endif
-#ifdef WITH_MNG
-		case CONTENT_JNG:
-		case CONTENT_MNG:
-			memcpy((char*)ds+16, (char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first, (unsigned)sprite_length);
-			break;
-#endif
-#ifdef WITH_GIF
-		case CONTENT_GIF:
-			memcpy((char*)ds+16, (char*)&content->bitmap->sprite_area+content->bitmap->sprite_area.first, (unsigned)sprite_length);
-			break;
-#endif
-#ifdef WITH_SPRITE
-		case CONTENT_SPRITE:
-			memcpy((char*)ds+16, (char*)content->data.sprite.data+((osspriteop_area*)content->data.sprite.data)->first, (unsigned)sprite_length);
-			break;
-#endif
-		default:
-			assert(0);
-	}
-
+	/* we could plot a filled rectangle here.
+	 * we don't, however, because it breaks on drobe ;)
+	 * this does mean that the background colour of pages gets lost.
+	 */
 	return true;
 }
 
-
 /**
- * Add a filled, borderless rectangle to the diagram
+ * Draw a rectangle outline, optionally dotted.
  *
- * \param x,y top-left coord of the rectangle.
- * \param width,height width,height of the rectangle
- * \param col rectangle colour Draw format
- * \return  true on success, false on error (error got reported)
+ * \param x0 Left edge of rectangle
+ * \param y0 Top edge of rectangle
+ * \param width Width of rectangle
+ * \param height Height of rectangle
+ * \param c colour of outline
+ * \param dotted whether outline should be plotted as a dotted line
+ * \return true on success, false otherwise.
  */
-static bool add_rect(int x, int y, int width, int height, os_colour col)
+bool draw_plot_rectangle(int x0, int y0, int width, int height,
+		colour c, bool dotted)
 {
 	drawfile_object *dro;
 	drawfile_path *dp;
@@ -805,45 +559,54 @@ static bool add_rect(int x, int y, int width, int height, os_colour col)
 	dro->size = 8 + 96;
 
 	dp = &dro->data.path;
-	dp->bbox.x0 = x;
-	dp->bbox.y0 = y - height;
-	dp->bbox.x1 = x + width;
-	dp->bbox.y1 = y;
+	dp->bbox.x0 = x0 * 512;
+	dp->bbox.y0 = (draw_plot_origin_y - y0 - height) * 512;
+	dp->bbox.x1 = (x0 + width) * 512;
+	dp->bbox.y1 = (draw_plot_origin_y - y0) * 512;
 
-	dp->fill = col;
-	dp->outline = 0xFFFFFFFF; /* no stroke */
+	/* If saving with the debug rectangles visible, some bbox y
+	 * coordinates end up in the wrong order, due to the box height
+	 * being negative. we correct that here.
+	 */
+	if (height < 0) {
+		dp->bbox.y0 = (draw_plot_origin_y - y0) * 512;
+		dp->bbox.y1 = (draw_plot_origin_y - y0 - height) * 512;
+	}
+
+	dp->fill = 0xFFFFFFFF; /* not filled */
+	dp->outline = c<<8;
 	dp->width = 0;
-	dp->style.flags = 0;
+	dp->style.flags = 0; /**\todo dotted rectangles */
 
 	dpe = (draw_path_element *) (((int *) &dp->path) + 0 / sizeof (int));
 	dpe->tag = draw_MOVE_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.move_to.x = x;
-	dpe->data.move_to.y = y;
+	dpe->data.move_to.x = dp->bbox.x0;
+	dpe->data.move_to.y = dp->bbox.y0;
 
 	dpe = (draw_path_element *) (((int *) &dp->path) + 12 / sizeof (int));
 	dpe->tag = draw_LINE_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.line_to.x = x;
-	dpe->data.line_to.y = y - height;
+	dpe->data.line_to.x = dp->bbox.x0;
+	dpe->data.line_to.y = dp->bbox.y1;
 
 	dpe = (draw_path_element *) (((int *) &dp->path) + 24 / sizeof (int));
 	dpe->tag = draw_LINE_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.line_to.x = x + width;
-	dpe->data.line_to.y = y - height;
+	dpe->data.line_to.x = dp->bbox.x1;
+	dpe->data.line_to.y = dp->bbox.y1;
 
 	dpe = (draw_path_element *) (((int *) &dp->path) + 36 / sizeof (int));
 	dpe->tag = draw_LINE_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.line_to.x = x + width;
-	dpe->data.line_to.y = y;
+	dpe->data.line_to.x = dp->bbox.x1;
+	dpe->data.line_to.y = dp->bbox.y0;
 
 	dpe = (draw_path_element *) (((int *) &dp->path) + 48 / sizeof (int));
 	dpe->tag = draw_LINE_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.line_to.x = x;
-	dpe->data.line_to.y = y;
+	dpe->data.line_to.x = dp->bbox.x0;
+	dpe->data.line_to.y = dp->bbox.y0;
 
 	dpe = (draw_path_element *) (((int *) &dp->path) + 60 / sizeof (int));
 	dpe->tag = draw_END_PATH;
@@ -852,13 +615,19 @@ static bool add_rect(int x, int y, int width, int height, os_colour col)
 	return true;
 }
 
-
 /**
  * Add a line to the diagram
  *
+ * \param x0,y0 top left coordinate of line
+ * \param x1,y1 bottom right coordinate of line
+ * \param width width of line
+ * \param c the line's colour
+ * \param dotted whether to plot dotted
+ * \param dashed whether to plot dashed
  * \return  true on success, false on error (error got reported)
  */
-static bool add_line(struct box *box, os_colour cbc, int x, int y)
+bool draw_plot_line(int x0, int y0, int x1, int y1, int width, colour c,
+		bool dotted, bool dashed)
 {
 	drawfile_object *dro;
 	drawfile_path *dp;
@@ -871,15 +640,15 @@ static bool add_line(struct box *box, os_colour cbc, int x, int y)
 	dro->size = 8 + 60;
 
 	dp = &dro->data.path;
-	dp->bbox.x0 = x;
-	dp->bbox.y0 = y - (box->padding[TOP] + box->height + box->padding[BOTTOM])*512;
-	dp->bbox.x1 = x + (box->padding[LEFT] + box->width + box->padding[RIGHT])*512;
-	dp->bbox.y1 = y;
+	dp->bbox.x0 = x0 * 512;
+	dp->bbox.y0 = (draw_plot_origin_y - y1) * 512;
+	dp->bbox.x1 = x1 * 512;
+	dp->bbox.y1 = (draw_plot_origin_y - y0) * 512;
 
 	dp->fill = 0xFFFFFFFF; /* do not fill */
-	dp->outline = cbc;
-	dp->width = 0;
-	dp->style.flags = 0;
+	dp->outline = c<<8;
+	dp->width = width * 512;
+	dp->style.flags = 0; /**\todo dashed/dotted lines*/
 	dp->style.reserved = 0;
 	dp->style.cap_width = 0;
 	dp->style.cap_length = 0;
@@ -906,13 +675,221 @@ static bool add_line(struct box *box, os_colour cbc, int x, int y)
 	return true;
 }
 
+/**
+ * Add a filled polygon to the diagram
+ *
+ * \param p array of coordinate pairs (x,y)
+ * \param n number of points
+ * \param the fill colour
+ * \return true on success, false otherwise
+ */
+bool draw_plot_polygon(int *p, unsigned int n, colour fill)
+{
+	drawfile_object *dro;
+	drawfile_path *dp;
+	draw_path_element *dpe;
+	int xmin = 0, ymin = 0, xmax = 0, ymax = 0;
+	unsigned int i;
+
+	if ((dro = (drawfile_object *)drawbuf_claim(8 + 36 + n * 12, DrawBuf_eBody)) == NULL)
+		return false;
+
+	dro->type = drawfile_TYPE_PATH;
+	dro->size = 8 + 36 + n * 12;
+
+	dp = &dro->data.path;
+
+	/* bbox filled in at end (as we need to calculate it first) */
+
+	dp->fill = fill<<8;
+	dp->outline = 0xFFFFFFFF; /* no outline */
+	dp->width = (xmax - xmin) * 512;
+	dp->style.flags = 0;
+	dp->style.reserved = 0;
+	dp->style.cap_width = 0;
+	dp->style.cap_length = 0;
+
+	for (i = 0; i != n; i++) {
+		dpe = (draw_path_element *) (((int *) &dp->path) + (12 * i) / sizeof (int));
+		dpe->tag = draw_LINE_TO;
+		dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+		dpe->data.line_to.x = p[i*2+0] * 512;
+		dpe->data.line_to.y = (draw_plot_origin_y - p[i*2+1]) * 512;
+
+		if (p[i*2+0] < xmin) xmin = p[i*2+0];
+		if (p[i*2+0] > xmax) xmax = p[i*2+0];
+		if (draw_plot_origin_y - p[i*2+1] < ymin) ymin = draw_plot_origin_y - p[i*2+1];
+		if (draw_plot_origin_y - p[i*2+1] > ymax) ymax = draw_plot_origin_y - p[i*2+1];
+
+	}
+
+	dpe = (draw_path_element *) (((int *) &dp->path) + 0 / sizeof (int));
+	dpe->tag = draw_MOVE_TO;
+
+	dpe = (draw_path_element *) (((int *) &dp->path) + (12 * i) / sizeof (int));
+	dpe->tag = draw_END_PATH;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+
+	/* fill in bounding box */
+	dp->bbox.x0 = xmin * 512;
+	dp->bbox.y0 = ymin * 512;
+	dp->bbox.x1 = xmax * 512;
+	dp->bbox.y1 = ymax * 512;
+
+	return true;
+}
+
+/**
+ * Add a filled, borderless rectangle to the diagram
+ *
+ * \param x0,y0 top left coordinate of rectangle
+ * \param x1,y1 bottom right coordinate of rectangle
+ * \param c the rectangle's colour
+ * \return  true on success, false on error (error got reported)
+ */
+bool draw_plot_fill(int x0, int y0, int x1, int y1, colour c)
+{
+	drawfile_object *dro;
+	drawfile_path *dp;
+	draw_path_element *dpe;
+
+	if ((dro = (drawfile_object *)drawbuf_claim(8 + 96, DrawBuf_eBody)) == NULL)
+		return false;
+
+	dro->type = drawfile_TYPE_PATH;
+	dro->size = 8 + 96;
+
+	dp = &dro->data.path;
+	dp->bbox.x0 = x0 * 512;
+	dp->bbox.y0 = (draw_plot_origin_y - y1) * 512;
+	dp->bbox.x1 = x1 * 512;
+	dp->bbox.y1 = (draw_plot_origin_y - y0) * 512;
+
+	dp->fill = c<<8;
+	dp->outline = 0xFFFFFFFF; /* no stroke */
+	dp->width = 0;
+	dp->style.flags = 0;
+
+	dpe = (draw_path_element *) (((int *) &dp->path) + 0 / sizeof (int));
+	dpe->tag = draw_MOVE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.move_to.x = x0 * 512;
+	dpe->data.move_to.y = (draw_plot_origin_y - y1) * 512;
+
+	dpe = (draw_path_element *) (((int *) &dp->path) + 12 / sizeof (int));
+	dpe->tag = draw_LINE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.line_to.x = x0 * 512;
+	dpe->data.line_to.y = (draw_plot_origin_y - y0) * 512;
+
+	dpe = (draw_path_element *) (((int *) &dp->path) + 24 / sizeof (int));
+	dpe->tag = draw_LINE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.line_to.x = x1 * 512;
+	dpe->data.line_to.y = (draw_plot_origin_y - y0) * 512;
+
+	dpe = (draw_path_element *) (((int *) &dp->path) + 36 / sizeof (int));
+	dpe->tag = draw_LINE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.line_to.x = x1 * 512;
+	dpe->data.line_to.y = (draw_plot_origin_y - y1) * 512;
+
+	dpe = (draw_path_element *) (((int *) &dp->path) + 48 / sizeof (int));
+	dpe->tag = draw_LINE_TO;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+	dpe->data.line_to.x = x0 * 512;
+	dpe->data.line_to.y = (draw_plot_origin_y - y1) * 512;
+
+	dpe = (draw_path_element *) (((int *) &dp->path) + 60 / sizeof (int));
+	dpe->tag = draw_END_PATH;
+	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
+
+	return true;
+}
+
+bool draw_plot_clip(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
+{
+	return true;
+}
+
+/**
+ * Add the text line to the diagram.
+ *
+ * \param x,y top left of area containing text
+ * \param font the font data
+ * \param text the text to plot
+ * \param length the length of the text
+ * \param bc the background colour to blend to
+ * \param colour the text colour
+ * \return  true on success, false on error (error got reported)
+ */
+bool draw_plot_text(int x, int y, struct font_data *font,
+		const char *text, size_t length, colour bc, colour colour)
+{
+	while (length != 0) {
+		size_t width, rolength, consumed;
+		const char *rofontname, *rotext;
+		byte fontIndex;
+		drawfile_object *dro;
+		drawfile_text *dt;
+
+		nsfont_txtenum(font, text, length,
+				&width,
+				&rofontname,
+				&rotext,
+				&rolength,
+				&consumed);
+		/* Error happened ? */
+		if (rotext == NULL)
+			return false;
+
+		if (!drawbuf_add_font(rofontname, &fontIndex))
+			return false;
+
+		if ((dro = (drawfile_object *)drawbuf_claim(8 + 44 + ((rolength + 1 + 3) & -4), DrawBuf_eBody)) == NULL)
+			return false;
+
+		dro->type = drawfile_TYPE_TEXT;
+		dro->size = 8 + 44 + ((rolength + 1 + 3) & -4);
+
+		dt = &dro->data.text;
+		dt->bbox.x0 = x * 512;
+		dt->bbox.y0 = (draw_plot_origin_y - y) * 512 - font->size*40;
+		dt->bbox.x1 = (x + width) * 512;
+		dt->bbox.y1 = (draw_plot_origin_y - y) * 512;
+		dt->fill = colour<<8;
+		dt->bg_hint = bc<<8;
+		dt->style.font_index = fontIndex;
+		dt->style.reserved[0] = dt->style.reserved[1] = dt->style.reserved[2] = 0;
+		dt->xsize = font->size * 40;
+		dt->ysize = font->size * 40;
+		dt->base.x = x * 512;
+		dt->base.y = (draw_plot_origin_y - y) * 512;
+		strncpy(dt->text, rotext, rolength);
+		do {
+			dt->text[rolength++] = 0;
+		} while (rolength % 4);
+
+		free((void *)rotext);
+
+		/* Go to next chunk : */
+		x += width;
+		text += consumed;
+		length -= consumed;
+	}
+
+	return true;
+}
 
 /**
  * Add a filled circle to the diagram.
  *
+ * \param x,y the centre of the circle
+ * \param radius the circle's radius
+ * \param colour the colour of the circle
  * \return  true on success, false on error (error got reported)
  */
-static bool add_circle(int x0, int y0, int radius, os_colour colour)
+bool draw_plot_disc(int x, int y, int radius, colour colour)
 {
 	int kappa;
 	drawfile_object *dro;
@@ -926,14 +903,14 @@ static bool add_circle(int x0, int y0, int radius, os_colour colour)
 	dro->size = 8 + 160;
 
 	dp = &dro->data.path;
-	dp->bbox.x0 = x0 - radius;
-	dp->bbox.y0 = y0 - radius;
-	dp->bbox.x1 = x0 + radius;
-	dp->bbox.y1 = y0 + radius;
+	dp->bbox.x0 = (x - radius) * 512;
+	dp->bbox.y0 = (draw_plot_origin_y - y - radius) * 512;
+	dp->bbox.x1 = (x + radius) * 512;
+	dp->bbox.y1 = (draw_plot_origin_y - y + radius) * 512;
 
 	kappa = (int)(radius * 4. * (sqrt(2.) - 1.) / 3.); /* ~= 0.5522847498 */
 
-	dp->fill = colour;
+	dp->fill = colour<<8;
 	dp->outline = 0xFFFFFFFF; /* do not stroke */
 	dp->width = 0;
 	dp->style.flags = drawfile_PATH_ROUND;
@@ -961,8 +938,8 @@ static bool add_circle(int x0, int y0, int radius, os_colour colour)
 	dpe = (draw_path_element *) (((int *) &dp->path) + 0 / sizeof (int));
 	dpe->tag = draw_MOVE_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.move_to.x = x0 - radius;
-	dpe->data.move_to.y = y0;
+	dpe->data.move_to.x = (x - radius) * 512;
+	dpe->data.move_to.y = (draw_plot_origin_y - y) * 512;
 
 	/* point1->point2 : (point1)(ctrl1)(ctrl2)(point2) */
 
@@ -970,45 +947,45 @@ static bool add_circle(int x0, int y0, int radius, os_colour colour)
 	dpe = (draw_path_element *) (((int *) &dp->path) + 12 / sizeof (int));
 	dpe->tag = draw_BEZIER_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.bezier_to[0].x = x0 - radius;
-	dpe->data.bezier_to[0].y = y0 + kappa;
-	dpe->data.bezier_to[1].x = x0 - kappa;
-	dpe->data.bezier_to[1].y = y0 + radius;
-	dpe->data.bezier_to[2].x = x0;
-	dpe->data.bezier_to[2].y = y0 + radius;
+	dpe->data.bezier_to[0].x = (x - radius) * 512;
+	dpe->data.bezier_to[0].y = (draw_plot_origin_y - y + kappa) * 512;
+	dpe->data.bezier_to[1].x = (x - kappa) * 512;
+	dpe->data.bezier_to[1].y = (draw_plot_origin_y - y + radius) * 512;
+	dpe->data.bezier_to[2].x = x * 512;
+	dpe->data.bezier_to[2].y = (draw_plot_origin_y - y + radius) * 512;
 
 	/* b->c : (x, y+r)(x+k, y+r)(x+r, y+k)(x+r, y)*/
 	dpe = (draw_path_element *) (((int *) &dp->path) + 40 / sizeof (int));
 	dpe->tag = draw_BEZIER_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.bezier_to[0].x = x0 + kappa;
-	dpe->data.bezier_to[0].y = y0 + radius;
-	dpe->data.bezier_to[1].x = x0 + radius;
-	dpe->data.bezier_to[1].y = y0 + kappa;
-	dpe->data.bezier_to[2].x = x0 + radius;
-	dpe->data.bezier_to[2].y = y0;
+	dpe->data.bezier_to[0].x = (x + kappa) * 512;
+	dpe->data.bezier_to[0].y = (draw_plot_origin_y - y + radius) * 512;
+	dpe->data.bezier_to[1].x = (x + radius) * 512;
+	dpe->data.bezier_to[1].y = (draw_plot_origin_y - y + kappa) * 512;
+	dpe->data.bezier_to[2].x = (x + radius) * 512;
+	dpe->data.bezier_to[2].y = (draw_plot_origin_y - y) * 512;
 
 	/* c->d : (x+r, y)(x+r, y-k)(x+k, y-r)(x, y-r) */
 	dpe = (draw_path_element *) (((int *) &dp->path) + 68 / sizeof (int));
 	dpe->tag = draw_BEZIER_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.bezier_to[0].x = x0 + radius;
-	dpe->data.bezier_to[0].y = y0 - kappa;
-	dpe->data.bezier_to[1].x = x0 + kappa;
-	dpe->data.bezier_to[1].y = y0 - radius;
-	dpe->data.bezier_to[2].x = x0;
-	dpe->data.bezier_to[2].y = y0 - radius;
+	dpe->data.bezier_to[0].x = (x + radius) * 512;
+	dpe->data.bezier_to[0].y = (draw_plot_origin_y - y - kappa) * 512;
+	dpe->data.bezier_to[1].x = (x + kappa) * 512;
+	dpe->data.bezier_to[1].y = (draw_plot_origin_y - y - radius) * 512;
+	dpe->data.bezier_to[2].x = x * 512;
+	dpe->data.bezier_to[2].y = (draw_plot_origin_y - y - radius) * 512;
 
 	/* d->a : (x, y-r)(x-k, y-r)(x-r, y-k)(x-r, y)*/
 	dpe = (draw_path_element *) (((int *) &dp->path) + 96 / sizeof (int));
 	dpe->tag = draw_BEZIER_TO;
 	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.bezier_to[0].x = x0 - kappa;
-	dpe->data.bezier_to[0].y = y0 - radius;
-	dpe->data.bezier_to[1].x = x0 - radius;
-	dpe->data.bezier_to[1].y = y0 - kappa;
-	dpe->data.bezier_to[2].x = x0 - radius;
-	dpe->data.bezier_to[2].y = y0;
+	dpe->data.bezier_to[0].x = (x - kappa) * 512;
+	dpe->data.bezier_to[0].y = (draw_plot_origin_y - y - radius) * 512;
+	dpe->data.bezier_to[1].x = (x - radius) * 512;
+	dpe->data.bezier_to[1].y = (draw_plot_origin_y - y - kappa) * 512;
+	dpe->data.bezier_to[2].x = (x - radius) * 512;
+	dpe->data.bezier_to[2].y = (draw_plot_origin_y - y) * 512;
 
 	/* end */
 	dpe = (draw_path_element *) (((int *) &dp->path) + 124 / sizeof (int));
@@ -1018,215 +995,49 @@ static bool add_circle(int x0, int y0, int radius, os_colour colour)
 	return true;
 }
 
-
 /**
- * Add the text line to the diagram.
+ * Add images to the drawfile.
  *
- * \param cbc background colour (Draw format)
- * \param fc foreground (text) colour (Draw format)
- * \param x,y top-left corner
+ * \param x,y top left coordinate of image
+ * \param width image width
+ * \param height image height
+ * \param bitmap the data area containing the image
+ * \param bc the background colour behind the image (unused)
  * \return  true on success, false on error (error got reported)
  */
-static bool add_text(struct box *box, os_colour cbc, os_colour fc,
-		int x, int y)
+bool draw_plot_bitmap(int x, int y, int width, int height,
+		struct bitmap *bitmap, colour bc)
 {
-	const char *txt = box->text;
-	size_t txt_len = box->length;
-
-	while (txt_len != 0) {
-		size_t width, rolength, consumed;
-		const char *rofontname, *rotext;
-		byte fontIndex;
-		drawfile_object *dro;
-		drawfile_text *dt;
-
-		nsfont_txtenum(box->font, txt, txt_len,
-				&width,
-				&rofontname,
-				&rotext,
-				&rolength,
-				&consumed);
-		/* Error happened ? */
-		if (rotext == NULL)
-			return false;
-
-		if (!drawbuf_add_font(rofontname, &fontIndex))
-			return false;
-
-		if ((dro = (drawfile_object *)drawbuf_claim(8 + 44 + ((rolength + 1 + 3) & -4), DrawBuf_eBody)) == NULL)
-			return false;
-
-		dro->type = drawfile_TYPE_TEXT;
-		dro->size = 8 + 44 + ((rolength + 1 + 3) & -4);
-
-		dt = &dro->data.text;
-		dt->bbox.x0 = x;
-		dt->bbox.y0 = y - box->height*512;
-		dt->bbox.x1 = x + width*512;
-		dt->bbox.y1 = y;
-		dt->fill = fc;
-		dt->bg_hint = cbc;
-		dt->style.font_index = fontIndex;
-		dt->style.reserved[0] = dt->style.reserved[1] = dt->style.reserved[2] = 0;
-		dt->xsize = box->font->size*40;
-		dt->ysize = box->font->size*40;
-		dt->base.x = x;
-		dt->base.y = y - (int)(box->height*.75*512);
-		strncpy(dt->text, rotext, rolength);
-		do {
-			dt->text[rolength++] = 0;
-		} while (rolength % 4);
-
-		free((void *)rotext);
-
-		/* Go to next chunk : */
-		x += width * 512;
-		txt += consumed;
-		txt_len -= consumed;
-	}
-
-	return true;
-}
-
-/**
- * Add checkbox object
- *
- * \param x,y top left of checkbox object
- * \param width,height width and height of the checkbox object
- * \param selected true when this checkbox object is selected, false otherwise
- * \return  true on success, false on error (error got reported)
- *
- * Very similar to html_redraw_checkbox()
- */
-static bool add_checkbox(int x, int y, int width, int height, bool selected)
-{
-	const int min = (width < height) ? width : height;
-	const int z = (min == 0) ? 1 : (int)(min * 0.15);
-
-	if (!add_rect(x, y, width, height, os_COLOUR_BLACK)
-		|| !add_rect(x + z, y - z, width - z - z, height - z - z,
-			os_COLOUR_WHITE))
-		return false;
-
-	if (selected
-		&& !add_rect(x + z + z, y - z - z,
-				width - z - z - z - z,
-				height - z - z - z - z,
-				os_COLOUR_RED))
-		return false;
-
-	return true;
-}
-
-
-/**
- * Add radio object
- *
- * \param x,y top left of radio object
- * \param width,height width and height of the bounding box of radio object
- * \param selected true when this radio object is selected, false otherwise
- * \return  true on success, false on error (error got reported)
- *
- * Very similar to html_redraw_radio()
- */
-static bool add_radio(int x, int y, int width, int height, bool selected)
-{
-	const int orgx = x + width / 2;
-	const int orgy = y - height / 2;
-	const int radius = (width < height) ? width : height;
-
-	if (!add_circle(orgx, orgy, (int)(radius * .5), os_COLOUR_BLACK)
-		|| !add_circle(orgx, orgy, (int)(radius * .4), os_COLOUR_WHITE))
-		return false;
-
-	if (selected
-		&& !add_circle(orgx, orgy, (int)(radius * .3), os_COLOUR_RED))
-		return false;
-
-	return true;
-}
-
-
-/**
- * Add one of the borders of a box.
- *
- * \param col border colour (Draw format)
- * \param width border width (Draw format)
- * \param style CSS style specifying the type of the border
- * \param x0,y0,x1,y1 start & end of the border (Draw coordinates)
- * \return  true on success, false on error (error got reported)
- *
- * Very similar to html_redraw_border().
- */
-static bool add_border(os_colour col, int width, css_border_style style,
-		int x0, int y0, int x1, int y1)
-{
+	int sprite_length;
 	drawfile_object *dro;
-	drawfile_path *dp;
-	draw_path_element *dpe;
-	static const int dash_pattern_dotted[] = { 0, 1, 512 };
-	static const int dash_pattern_dashed[] = { 0, 1, 2048 };
-	const draw_dash_pattern *dash_pattern;
-	size_t sizeNeeded;
+	drawfile_sprite *ds;
 
-	if (style == CSS_BORDER_STYLE_DOTTED)
-		dash_pattern = (const draw_dash_pattern *) &dash_pattern_dotted;
-	else if (style == CSS_BORDER_STYLE_DASHED)
-		dash_pattern = (const draw_dash_pattern *) &dash_pattern_dashed;
-	else
-		dash_pattern = NULL;
+	sprite_length = ((osspriteop_header*)((char*)&bitmap->sprite_area+bitmap->sprite_area.first))->size;
 
-	sizeNeeded = (dash_pattern != NULL) ? 8 + 12 + 60 : 8 + 60;
-	if ((dro = (drawfile_object *)drawbuf_claim(sizeNeeded, DrawBuf_eBody)) == NULL)
+	if ((dro = (drawfile_object *)drawbuf_claim(8 + 16 + sprite_length, DrawBuf_eBody)) == NULL)
 		return false;
 
-	dro->type = drawfile_TYPE_PATH;
-	dro->size = sizeNeeded;
+	dro->type = drawfile_TYPE_SPRITE;
+	dro->size = 8 + 16 + sprite_length;
 
-	dp = &dro->data.path;
-	dp->bbox.x0 = (x0 < x1) ? x0 : x1;
-	dp->bbox.y0 = (y0 < y1) ? y0 : y1;
-	dp->bbox.x1 = (x0 < x1) ? x1 : x0;
-	dp->bbox.y1 = (y0 < y1) ? y1 : y0;
+	ds = &dro->data.sprite;
+	ds->bbox.x0 = x * 512;
+	ds->bbox.y0 = (draw_plot_origin_y - y - height) * 512;
+	ds->bbox.x1 = (x + width) * 512;
+	ds->bbox.y1 = (draw_plot_origin_y - y) * 512;
 
-	dp->fill = 0xFFFFFFFF; /* do not fill */
-	dp->outline = col;
-	dp->width = width;
-	dp->style.flags = (drawfile_PATH_MITRED << drawfile_PATH_JOIN_SHIFT)
-		| (drawfile_PATH_BUTT << drawfile_PATH_END_SHIFT)
-		| (drawfile_PATH_BUTT << drawfile_PATH_START_SHIFT);
-	if (dash_pattern != NULL)
-		dp->style.flags |= drawfile_PATH_DASHED;
-	dp->style.reserved = 0;
-	dp->style.cap_width = 0;
-	dp->style.cap_length = 0;
+	memcpy((char*)ds+16, (char*)&bitmap->sprite_area+bitmap->sprite_area.first, (unsigned)sprite_length);
 
-	/* dash ? */
-	if (dash_pattern != NULL) {
-		draw_dash_pattern *dpp = (draw_dash_pattern *)&dp->path;
-		memcpy(dpp, dash_pattern, sizeof(dash_pattern_dotted));
-		dpe = (draw_path_element *)(((byte *)dpp) + sizeof(dash_pattern_dotted));
-	} else
-		dpe = (draw_path_element *)&dp->path;
+	return true;
+}
 
-	/* left end */
-	dpe->tag = draw_MOVE_TO;
-	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.move_to.x = x0;
-	dpe->data.move_to.y = y0;
-
-	/* right end */
-	dpe = (draw_path_element *)(((int *)dpe) + 3);
-	dpe->tag = draw_LINE_TO;
-	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-	dpe->data.line_to.x = x1;
-	dpe->data.line_to.y = y1;
-
-	/* end */
-	dpe = (draw_path_element *)(((int *)dpe) + 3);
-	dpe->tag = draw_END_PATH;
-	dpe->reserved[0] = dpe->reserved[1] = dpe->reserved[2] = 0;
-
+bool draw_plot_bitmap_tile(int x, int y, int width, int height,
+		struct bitmap *bitmap, colour bg,
+		bool repeat_x, bool repeat_y)
+{
+	/* do nothing - background images and drawfiles probably don't
+	 * mix very well
+	 */
 	return true;
 }
 #endif
