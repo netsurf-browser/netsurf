@@ -154,7 +154,7 @@ url_func_result url_normalize(const char *url, char **result)
 	}
 
 	/* unescape non-"reserved" escaped characters */
-	for (i = 0; i != len; i++) {
+	for (i = 0; (unsigned)i != len; i++) {
 		if ((*result)[i] != '%')
 			continue;
 		c = tolower((*result)[i + 1]);
