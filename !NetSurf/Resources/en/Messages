@@ -142,6 +142,10 @@ DownloadU:%s of unknown  è  %s/s  è  %s total
 Downloaded:%s complete  è  average %s/s  è  %s total
 Unwritten:Writing data to file failed.
 
+# Print dialog
+PrintSheetFilled:sheet is filled
+PrintSheetsFilled:sheets are filled
+
 # Forms
 Form_Submit:Submit
 Form_Reset:Reset

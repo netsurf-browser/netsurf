@@ -99,7 +99,8 @@ void ro_gui_print_open(struct gui_window *g, int x, int y, bool sub_menu, bool k
 
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_SHEETS, false);
 	ro_gui_set_icon_integer(dialog_print, ICON_PRINT_SHEETS_VALUE, 1);
-	ro_gui_set_icon_string(dialog_print, ICON_PRINT_SHEETS_TEXT, "sheet is filled");
+	ro_gui_set_icon_string(dialog_print, ICON_PRINT_SHEETS_TEXT,
+			messages_get("PrintSheetFilled"));
 	print_update_sheets_shaded_state(true);
 
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_FG_IMAGES, true);
@@ -199,9 +200,11 @@ void ro_gui_print_click(wimp_pointer *pointer)
 		sheets = 99;
 	ro_gui_set_icon_integer(dialog_print, ICON_PRINT_SHEETS_VALUE, sheets);
 	if (sheets > 1)
-		ro_gui_set_icon_string(dialog_print, ICON_PRINT_SHEETS_TEXT, "sheets are filled");
+		ro_gui_set_icon_string(dialog_print, ICON_PRINT_SHEETS_TEXT,
+				messages_get("PrintSheetsFilled"));
 	else
-		ro_gui_set_icon_string(dialog_print, ICON_PRINT_SHEETS_TEXT, "sheet is filled");
+		ro_gui_set_icon_string(dialog_print, ICON_PRINT_SHEETS_TEXT,
+				messages_get("PrintSheetFilled"));
 }
 
 /**

@@ -142,6 +142,10 @@ DownloadU:%s von unbekannt è %s/s è bisher %s
 Downloaded:%s komplett è etwa %s/s è gesamt %s
 Unwritten:Schreiben der Datei ist fehlgeschlagen.
 
+# Print dialog
+PrintSheetFilled:sheet is filled
+PrintSheetsFilled:sheets are filled
+
 # Forms
 Form_Submit:‹bertragen
 Form_Reset:Reset
