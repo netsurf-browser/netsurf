@@ -111,9 +111,8 @@ struct plugin_params {
 struct box {
 	box_type type;
 	struct css_style * style;
-	long x, y;
-	unsigned long width, height;
-	unsigned long min_width, max_width;
+	long x, y, width, height;
+	long min_width, max_width;
 	char * text;
 	unsigned int space : 1;	/* 1 <=> followed by a space */
 	unsigned int clone : 1;

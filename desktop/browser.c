@@ -48,7 +48,7 @@ static char* browser_form_construct_get(struct page_elements *elements, struct f
 static void browser_form_get_append(char **s, int *length, char sep, char *name, char *value);
 static void browser_window_textarea_click(struct browser_window* bw,
 		unsigned long actual_x, unsigned long actual_y,
-		unsigned long x, unsigned long y,
+		long x, long y,
 		struct box *box);
 static void browser_window_textarea_callback(struct browser_window *bw, char key, void *p);
 static void browser_window_input_click(struct browser_window* bw,
@@ -565,14 +565,14 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 
 void browser_window_textarea_click(struct browser_window* bw,
 		unsigned long actual_x, unsigned long actual_y,
-		unsigned long x, unsigned long y,
+		long x, long y,
 		struct box *textarea)
 {
 	/* a textarea contains one or more inline containers, which contain
 	 * the formatted paragraphs of text as inline boxes */
 
-	int char_offset, pixel_offset;
-	struct box *inline_container, *text_box;
+	int char_offset, pixel_offset, dy;
+	struct box *inline_container, *text_box, *ic;
 
 	for (inline_container = textarea->children;
 			inline_container && inline_container->y + inline_container->height < y;
@@ -612,6 +612,16 @@ void browser_window_textarea_click(struct browser_window* bw,
 					&char_offset, &pixel_offset);
 		}
 	}
+
+	dy = textarea->height / 2 -
+		(inline_container->y + text_box->y + text_box->height / 2);
+	if (textarea->last->y + textarea->last->height + dy < textarea->height)
+		dy = textarea->height - textarea->last->y - textarea->last->height;
+	if (0 < textarea->children->y + dy)
+		dy = -textarea->children->y;
+	for (ic = textarea->children; ic; ic = ic->next)
+		ic->y += dy;
+
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
 	textarea->gadget->caret_char_offset = char_offset;
@@ -619,6 +629,12 @@ void browser_window_textarea_click(struct browser_window* bw,
 			actual_y + inline_container->y + text_box->y,
 			text_box->height,
 			browser_window_textarea_callback, textarea);
+
+	gui_window_redraw(bw->window,
+			actual_x,
+			actual_y,
+			actual_x + textarea->width,
+			actual_y + textarea->height);
 }
 
 
@@ -631,8 +647,9 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	struct box *textarea = p;
 	struct box *inline_container = textarea->gadget->caret_inline_container;
 	struct box *text_box = textarea->gadget->caret_text_box;
+	struct box *ic;
 	int char_offset = textarea->gadget->caret_char_offset;
-	int pixel_offset;
+	int pixel_offset, dy;
 	unsigned long actual_x, actual_y;
 	unsigned long width, height;
 
@@ -811,6 +828,15 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		assert(char_offset <= text_box->length);
 	}
 
+	dy = textarea->height / 2 -
+		(inline_container->y + text_box->y + text_box->height / 2);
+	if (textarea->last->y + textarea->last->height + dy < textarea->height)
+		dy = textarea->height - textarea->last->y - textarea->last->height;
+	if (0 < textarea->children->y + dy)
+		dy = -textarea->children->y;
+	for (ic = textarea->children; ic; ic = ic->next)
+		ic->y += dy;
+	
 	pixel_offset = font_width(text_box->font, text_box->text, char_offset);
 
 	textarea->gadget->caret_inline_container = inline_container;
@@ -823,7 +849,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 
 	gui_window_redraw(bw->window,
 			actual_x,
-			actual_y + inline_container->y,
+			actual_y,
 			actual_x + width,
 			actual_y + height);
 }
