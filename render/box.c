@@ -1208,14 +1208,6 @@ void box_normalise_table_row(struct box *row,
 		if ((*row_span)[i] != 0)
 			(*row_span)[i]--;
 
-	/* if all columns have a rowspan, shrink it to the lowest equivalent */
-	min = (*row_span)[0];
-	for (i = 1; i != *table_columns; i++)
-		if ((*row_span)[i] < min)
-			min = (*row_span)[i];
-	for (i = 0; i != *table_columns; i++)
-		(*row_span)[i] -= min;
-
 	if (row->children == 0) {
 		LOG(("row->children == 0, removing"));
 		if (row->prev == 0)

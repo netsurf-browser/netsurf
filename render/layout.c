@@ -712,13 +712,6 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 					row_span[i]--;
 				else
 					row_span_cell[i] = 0;
-			/* if all columns have a row span, shrink it to the lowest equivalent */
-			min = row_span[0];
-			for (i = 1; i != columns; i++)
-				if (row_span[i] < min)
-					min = row_span[i];
-			for (i = 0; i != columns; i++)
-				row_span[i] -= min;
 			/* row height is greatest excess of a cell which ends in this row */
 			for (i = 0; i != columns; i++)
 				if (row_span[i] == 0 && row_height < excess_y[i])
