@@ -552,9 +552,8 @@ void ro_gui_url_complete_mouse_at(wimp_pointer *pointer) {
 		}
 	}
 
-	/* clicks */
-	if ((pointer->buttons == wimp_CLICK_SELECT) ||
-			(pointer->buttons == wimp_CLICK_ADJUST)) {
+	/* Select sets the text and launches */
+	if (pointer->buttons == wimp_CLICK_SELECT) {
 		g = ro_gui_window_lookup(url_complete_parent);
 		if (!g)
 			return;
@@ -567,6 +566,16 @@ void ro_gui_url_complete_mouse_at(wimp_pointer *pointer) {
 		ro_gui_url_complete_close(NULL, 0);
 	}
 
+	/* Adjust just sets the text */
+	if (pointer->buttons == wimp_CLICK_ADJUST) {
+		g = ro_gui_window_lookup(url_complete_parent);
+		if (!g)
+			return;
+		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
+				ICON_TOOLBAR_URL,
+				url_complete_matches[url_complete_matches_selection]);
+		ro_gui_url_complete_keypress(g, 0);
+	}
 }
 
 
