@@ -176,7 +176,8 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			c->data.html.stylesheet_content[i] = fetchcache(
 					error, c->url, html_convert_css_callback,
 					c, i, css->width, css->height);
-			if (c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
+			if (c->data.html.stylesheet_content[i] != 0 &&
+					c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
 				c->active++;
 			break;
 
@@ -228,6 +229,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			c->url,
 			html_convert_css_callback,
 			c, 0, c->width, c->height);
+	assert(c->data.html.stylesheet_content[0] != 0);
 	if (c->data.html.stylesheet_content[0]->status != CONTENT_STATUS_DONE)
 		c->active++;
 
@@ -278,7 +280,8 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			c->data.html.stylesheet_content[i] = fetchcache(url, c->url,
 					html_convert_css_callback, c, i,
 					c->width, c->height);
-			if (c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
+			if (c->data.html.stylesheet_content[i] &&
+					c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
 				c->active++;
 			free(url);
 			i++;
@@ -362,10 +365,12 @@ void html_fetch_object(struct content *c, char *url, struct box *box)
 			c->width, c->height);  /* we don't know the object's
 						  dimensions yet; use
 						  parent's as an estimate */
-	c->active++;
-	if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
-		html_object_callback(CONTENT_MSG_DONE,
-				c->data.html.object[i].content, c, i, 0);
+	if (c->data.html.object[i].content) {
+		c->active++;
+		if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
+			html_object_callback(CONTENT_MSG_DONE,
+					c->data.html.object[i].content, c, i, 0);
+	}
 	c->data.html.object_count++;
 }
 
@@ -453,7 +458,8 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->data.html.object[i].content = fetchcache(
 					error, c->url, html_object_callback,
 					c, i, 0, 0);
-			if (c->data.html.object[i].content->status != CONTENT_STATUS_DONE)
+			if (c->data.html.object[i].content &&
+					c->data.html.object[i].content->status != CONTENT_STATUS_DONE)
 				c->active++;
 			break;
 
@@ -519,7 +525,8 @@ void html_revive(struct content *c, unsigned int width, unsigned int height)
 					c->data.html.object[i].url, c->url,
 					html_object_callback,
 					c, i, 0, 0);
-			if (c->data.html.object[i].content->status != CONTENT_STATUS_DONE)
+			if (c->data.html.object[i].content &&
+					c->data.html.object[i].content->status != CONTENT_STATUS_DONE)
 				c->active++;
 		}
 	}

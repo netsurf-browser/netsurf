@@ -121,6 +121,7 @@ struct content * content_create(char *url)
 	c->url = xstrdup(url);
 	c->type = CONTENT_UNKNOWN;
 	c->status = CONTENT_STATUS_TYPE_UNKNOWN;
+	c->cache = 0;
 	c->size = sizeof(struct content);
 	c->fetch = 0;
 	strcpy(c->status_message, "Loading");
@@ -178,6 +179,8 @@ void content_convert(struct content *c, unsigned long width, unsigned long heigh
 	if (handler_map[c->type].convert(c, width, height)) {
 		/* convert failed, destroy content */
 		content_broadcast(c, CONTENT_MSG_ERROR, "Conversion failed");
+		if (c->cache)
+			cache_destroy(c);
 		content_destroy(c);
 		return;
 	}
@@ -305,10 +308,13 @@ void content_remove_user(struct content *c,
 		if (c->fetch != 0)
 			fetch_abort(c->fetch);
 		if (c->status < CONTENT_STATUS_READY) {
-			cache_destroy(c);
+			if (c->cache)
+				cache_destroy(c);
 			content_destroy(c);
-		} else
-			cache_freeable(c);
+		} else {
+			if (c->cache)
+				cache_freeable(c);
+		}
 	}
 }
 

@@ -40,10 +40,14 @@ int main(int argc, char *argv[])
 		puts("=== URL:");
 		gets(url);
 		c = fetchcache(url, 0, callback, 0, 0, 100, 1000);
-		done = c->status == CONTENT_STATUS_DONE;
-		while (!done)
-			fetch_poll();
-		puts("=== SUCCESS, dumping cache");
+		if (c) {
+			done = c->status == CONTENT_STATUS_DONE;
+			while (!done)
+				fetch_poll();
+			puts("=== SUCCESS, dumping cache");
+		} else {
+			puts("=== FAILURE, dumping cache");
+		}
 		cache_dump();
 		content_remove_user(c, callback, 0, 0);
 	}

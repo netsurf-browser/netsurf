@@ -230,6 +230,10 @@ void browser_window_open_location_historical(struct browser_window* bw, const ch
   bw->time0 = clock();
   bw->loading_content = fetchcache(url, 0, browser_window_callback, bw, 0,
 		  gui_window_get_width(bw->window), 0);
+  if (bw->loading_content == 0) {
+    browser_window_set_status(bw, "Unable to fetch document");
+    return;
+  }
   if (bw->loading_content->status == CONTENT_STATUS_READY)
     browser_window_callback(CONTENT_MSG_READY, bw->loading_content, bw, 0, 0);
   else if (bw->loading_content->status == CONTENT_STATUS_DONE)

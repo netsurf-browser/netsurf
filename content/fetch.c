@@ -119,7 +119,10 @@ struct fetch * fetch_start(char *url, char *referer,
 	LOG(("fetch %p, url '%s'", fetch, url));
 
 	uri = xmlParseURI(url);
-	assert(uri != 0);
+	if (uri == 0) {
+		LOG(("warning: failed to parse url"));
+		return 0;
+	}
 
 	/* construct a new fetch structure */
 	fetch->start_time = time(0);

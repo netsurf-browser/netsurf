@@ -46,6 +46,12 @@ struct content * fetchcache(const char *url0, char *referer,
 	c->width = width;
 	c->height = height;
 	c->fetch = fetch_start(url, referer, fetchcache_callback, c);
+	if (c->fetch == 0) {
+		LOG(("warning: fetch_start failed"));
+		cache_destroy(c);
+		content_destroy(c);
+		return 0;
+	}
 	return c;
 }
 
