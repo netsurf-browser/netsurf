@@ -12,4 +12,4 @@ RMEnsure SharedUnixLibrary 1.00 RMLoad System:Modules.SharedULib
 | drag the 'next' slot in the task manager to something huge and ridiculous,
 | and/or increase the number below
 Wimpslot -min 1600k
-<NetSurf$Dir>.!RunImage 2>stderr
+<NetSurf$Dir>.!RunImage 2><NetSurf$Dir>.stderr
