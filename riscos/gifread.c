@@ -17,21 +17,21 @@
 
 /*	READING GIF FILES
 	=================
-	
+
 	The functions provided by this file allow for efficient progressive GIF
 	decoding. Whilst the initialisation does not ensure that there is
 	sufficient image data to complete the entire frame, it does ensure that
 	the information provided is valid. Any subsequent attempts to decode an
 	initialised GIF are guaranteed to succeed, and any bytes of the image
 	not present are assumed to be totally transparent.
-	
+
 	To begin decoding a GIF, the 'gif' structure must be initialised with
 	the 'gif_data' and 'buffer_size' set to their initial values. The
 	'buffer_position' should initially be 0, and will be internally updated
 	as the decoding commences. The caller should then repeatedly call
 	gif_initialise() with the structure until the function returns 1, or
 	no more data is avaliable.
-	
+
 	Once the initialisation has begun, the decoder completes the variables
 	'frame_count' and 'frame_count_partial'. The former being the total
 	number of frames that have been successfully initialised, and the
@@ -92,7 +92,7 @@ static int clear_image = FALSE;
 /*	Initialises any workspace held by the animation and attempts to decode
 	any information that hasn't already been decoded.
 	If an error occurs, all previously decoded frames are retained.
-	
+
 	@return -5 for GIF frame data error
 		-4 for insufficient data to process any more frames
 		-3 for memory error
@@ -108,9 +108,7 @@ int gif_initialise(struct gif_animation *gif) {
 
 	/*	Check for sufficient data to be a GIF
 	*/
-	if (gif->buffer_size < 13) {
-		return -1;
-	}
+	if (gif->buffer_size < 13) return -1;
 
 	/*	Get our current processing position
 	*/
@@ -122,28 +120,30 @@ int gif_initialise(struct gif_animation *gif) {
 
 		/*	The 12th byte must be a 0 for the block terminator
 		*/
-		if (gif_data[12] != 0x00) return GIF_DATA_ERROR;
+		if (gif_data[11] != 0x00) return GIF_DATA_ERROR;
 
 		/*	We want everything to be NULL before we start so we've no chance
 			of freeing bad pointers (paranoia)
 		*/
 		gif->frame_image = NULL;
-		gif->frame_pointers = NULL;
-		gif->frame_delays = NULL;
+		gif->frames = NULL;
 		gif->local_colour_table = NULL;
 		gif->global_colour_table = NULL;
-		
+
 		/*	The caller may have been lazy and not reset any values
 		*/
 		gif->frame_count = 0;
 		gif->frame_count_partial = 0;
 		gif->decoded_frame = 0xffffffff;
-		
+
 		/*	Check we are a GIF
 		*/
-		if (strncmp(gif_data, "GIF", 3) != 0) return GIF_DATA_ERROR;
+		if (strncmp(gif_data, "GIF", 3) != 0) {
+		  	LOG(("Invalid GIF header - should be 'GIF'"));
+		  	return GIF_DATA_ERROR;
+		}
 		gif_data += 3;
-		
+
 		/*	Check we are a GIF type 87a or 89a
 		*/
 		if ((strncmp(gif_data, "87a", 3) != 0) &&
@@ -161,9 +161,8 @@ int gif_initialise(struct gif_animation *gif) {
 		gif->background_colour = gif_data[5];
 		gif->aspect_ratio = gif_data[6];
 		gif->dirty_frame = -1;
-		gif->dirty_plot = 0;
 		gif_data += 7;
-		
+
 		/*	Allocate some data irrespective of whether we've got any colour tables. We
 			always get the maximum size in case a GIF is lying to us. It's far better
 			to give the wrong colours than to trample over some memory somewhere.
@@ -174,7 +173,7 @@ int gif_initialise(struct gif_animation *gif) {
 			gif_finalise(gif);
 			return GIF_INSUFFICIENT_MEMORY;
 		}
-		
+
 		/*	Set the first colour to a value that will never occur in reality so we
 			know if we've processed it
 		*/
@@ -182,11 +181,7 @@ int gif_initialise(struct gif_animation *gif) {
 
 		/*	Initialise enough workspace for 4 frame initially
 		*/
-		if ((gif->frame_delays = (unsigned int *)malloc(sizeof(int))) == NULL) {
-			gif_finalise(gif);
-			return GIF_INSUFFICIENT_MEMORY;
-		}
-		if ((gif->frame_pointers = (unsigned int *)malloc(sizeof(int))) == NULL) {
+		if ((gif->frames = (gif_frame *)malloc(sizeof(gif_frame))) == NULL) {
 			gif_finalise(gif);
 			return GIF_INSUFFICIENT_MEMORY;
 		}
@@ -238,25 +233,25 @@ int gif_initialise(struct gif_animation *gif) {
 			gif->global_colour_table[1] = 0xffffffff;
 		}
 	}
-	
+
 	/*	Repeatedly try to decode frames
 	*/
 	while ((return_value = gif_initialise_frame(gif)) == 0);
-	
+
 	/*	If there was a memory error tell the caller
 	*/
-	if ((return_value == GIF_INSUFFICIENT_MEMORY) || 
+	if ((return_value == GIF_INSUFFICIENT_MEMORY) ||
 			(return_value == GIF_DATA_ERROR)) {
 		return return_value;
 	}
-	
+
 	/*	If we didn't have some frames then a GIF_INSUFFICIENT_DATA becomes a
 		GIF_INSUFFICIENT_FRAME_DATA
 	*/
 	if ((return_value == GIF_INSUFFICIENT_DATA) && (gif->frame_count_partial > 0)) {
 		return_value = GIF_INSUFFICIENT_FRAME_DATA;
 	}
-	
+
 	/*	Return how many we got
 	*/
 	return return_value;
@@ -265,7 +260,7 @@ int gif_initialise(struct gif_animation *gif) {
 
 
 /**	Updates the sprite memory size
-	
+
 	@return -3 for a memory error
 		0 for success
 */
@@ -280,11 +275,11 @@ static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, 
   	if ((width <= gif->width) && (height <= gif->height)) return 0;
 
 	/*	Get our maximum values
-	*/  	
+	*/
   	max_width = (width > gif->width) ? width : gif->width;
   	max_height = (height > gif->height) ? height : gif->height;
 	frame_bytes = max_width * max_height * 4 + sizeof(osspriteop_header);
-  
+
   	/*	Allocate some more memory
   	*/
   	if ((buffer = (osspriteop_header *)realloc(gif->frame_image, frame_bytes)) == NULL) {
@@ -296,7 +291,7 @@ static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, 
 	*/
 	gif->width = max_width;
 	gif->height = max_height;
-	
+
   	/*	Update our sprite image
   	*/
   	buffer->size = frame_bytes;
@@ -311,7 +306,7 @@ static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, 
 
 
 /*	Attempts to initialise the next frame
-	
+
 	@return -4 for insufficient data to process the entire frame
 		-3 for a memory error
 		-2 for a data error
@@ -321,15 +316,17 @@ static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, 
 */
 int gif_initialise_frame(struct gif_animation *gif) {
 	unsigned int frame;
-	unsigned int *temp_buf;
+	gif_frame *temp_buf;
 
 	unsigned char *gif_data, *gif_end;
 	int gif_bytes;
 	unsigned int flags = 0;
+	unsigned int background_action;
 	unsigned int width, height, offset_x, offset_y;
 	unsigned int extension_size, colour_table_size;
 	unsigned int block_size;
 	unsigned int more_images;
+	unsigned int increment, first_image;
 
 	/*	Get the frame to decode and our data position
 	*/
@@ -356,118 +353,143 @@ int gif_initialise_frame(struct gif_animation *gif) {
 	if (gif->frame_holders <= frame) {
 		/*	Allocate more memory
 		*/
-		if ((temp_buf = (unsigned int *)realloc(gif->frame_delays,
-					(frame + 1) * sizeof(int))) == NULL) {
+		if ((temp_buf = (gif_frame *)realloc(gif->frames,
+					(frame + 1) * sizeof(gif_frame))) == NULL) {
 			return GIF_INSUFFICIENT_MEMORY;
 		}
-		gif->frame_delays = temp_buf;
-		if ((temp_buf = (unsigned int *)realloc(gif->frame_pointers,
-					(frame + 1) * sizeof(int))) == NULL) {
-			return GIF_INSUFFICIENT_MEMORY;
-		}
-		gif->frame_pointers = temp_buf;
+		gif->frames = temp_buf;
 
 		/*	Remember we allocated it
 		*/
 		gif->frame_holders = frame + 1;
 	}
-	
+
 	/*	Store our frame pointer. We would do it when allocating except we
 		start off with one frame allocated so we can always use realloc.
 	*/
 //	LOG(("Set frame number %i to offset %i", frame, gif->buffer_position));
-	gif->frame_pointers[frame] = gif->buffer_position;
-	gif->frame_delays[frame] = 100;	// Paranoia
-	
+	gif->frames[frame].frame_pointer = gif->buffer_position;
+	gif->frames[frame].frame_delay = 100;	// Paranoia
+	gif->frames[frame].redraw_required = 0;	// Paranoia
+
 	/*	Invalidate any previous decoding we have of this frame
 	*/
 	if (gif->decoded_frame == frame) gif->decoded_frame = 0xffffffff;
-	
+
 	/*	We pretend to initialise the frames, but really we just skip over all
 		the data contained within. This is all basically a cut down version of
 		gif_decode_frame that doesn't have any of the LZW bits in it.
 	*/
 	more_images = 1;
+	first_image = 1;
 	while (more_images != 0) {
-	  
+
 		/*	Ensure we have some data
 		*/
 	  	if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;
-	  	
+
 	  	/*	Decode the extensions
 	  	*/
+		background_action = 0;
 		while (gif_data[0] == 0x21) {
 			/*	Get the extension size
 			*/
 			extension_size = gif_data[2];
-  
+
 			/*	Check we've enough data for the extension then header
 			*/
 			if ((gif_end - gif_data) < (int)(extension_size + 13)) return GIF_INSUFFICIENT_FRAME_DATA;
 			/*	Graphic control extension - store the frame delay.
 			*/
 			if (gif_data[1] == 0xf9) {
-				gif->frame_delays[frame] = gif_data[4] | (gif_data[5] << 8);
-				more_images = ((gif->frame_delays[frame]) == 0);
+				gif->frames[frame].frame_delay = gif_data[4] | (gif_data[5] << 8);
+				background_action = ((gif_data[3] & 0x1c) >> 2);
+				more_images = ((gif->frames[frame].frame_delay) == 0);
 			}
 			/*	Move to the first sub-block
 			*/
 			gif_data += 2;
-        	  	
+
 			/*	Skip all the sub-blocks
 			*/
 			while (gif_data[0] != 0x00) {
 				gif_data += gif_data[0] + 1;
-				if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;  
+				if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;
 			}
 			gif_data++;
 		}
-        
+
 		/*	We must have at least one image descriptor
 		*/
 		if (gif_data[0] != 0x2c) return GIF_FRAME_DATA_ERROR;
-        
+
 		/*	Do some simple boundary checking
 		*/
 		offset_x = gif_data[1] | (gif_data[2] << 8);
 		offset_y = gif_data[3] | (gif_data[4] << 8);
 		width = gif_data[5] | (gif_data[6] << 8);
 		height = gif_data[7] | (gif_data[8] << 8);
-//		LOG(("Found image %ix%i with offset (%i,%i)", width, height, offset_x, offset_y));
-        
+
+        	/*	Set up the redraw characteristics. We have to check for extending the area
+        		due to multi-image frames.
+        	*/
+	  	if ((background_action == 2) || (background_action == 3)) gif->frames[frame].redraw_required = 1;
+	  	if (first_image == 0) {
+ 			if (gif->frames[frame].redraw_x > offset_x) {
+	  		  	gif->frames[frame].redraw_width += (gif->frames[frame].redraw_x - offset_x);
+	  			gif->frames[frame].redraw_x = offset_x;
+	  		}
+	  		if (gif->frames[frame].redraw_y > offset_y) {
+	  		  	gif->frames[frame].redraw_height += (gif->frames[frame].redraw_y - offset_y);
+	  			gif->frames[frame].redraw_y = offset_y;
+	  		}
+	  		increment = (offset_x + width) -
+	  				(gif->frames[frame].redraw_x + gif->frames[frame].redraw_width);
+	  		if (increment > 0) gif->frames[frame].redraw_width += increment;
+	  		increment = (offset_y + height) -
+	  				(gif->frames[frame].redraw_y + gif->frames[frame].redraw_height);
+	  		if (increment > 0) gif->frames[frame].redraw_height += increment;
+	  	} else {
+	  		first_image = 0;
+	  		gif->frames[frame].redraw_x = offset_x;
+	  		gif->frames[frame].redraw_y = offset_y;
+	  		gif->frames[frame].redraw_width = width;
+	  		gif->frames[frame].redraw_height = height;
+	  	}
+
 		/*	Boundary checking - shouldn't ever happen except with junk data
 		*/
 		if (gif_initialise_sprite(gif, (offset_x + width), (offset_y + height))) {
 			return GIF_INSUFFICIENT_MEMORY;
 		}
-        
+
 		/*	Decode the flags
 		*/
 		flags = gif_data[9];
 		colour_table_size = 2 << (flags & 0x07);
-        	
+
 		/*	Move our data onwards and remember we've got a bit of this frame
 		*/
 		gif_data += 10;
 		gif_bytes = (gif_end - gif_data);
 		gif->frame_count_partial = frame + 1;
-      
+
 		/*	Skip the local colour table
 		*/
 		if (flags & 0x80) {
 			gif_data += 3 * colour_table_size;
 			if ((gif_bytes = (gif_end - gif_data)) < 0) return GIF_INSUFFICIENT_FRAME_DATA;
 		}
-        		
+
 		/*	Ensure we have a correct code size
 		*/
 		if (gif_data[0] > GIF_MAX_LZW) return GIF_DATA_ERROR;
-        
+
 		/*	Move our data onwards
 		*/
 		gif_data++;
 		if (--gif_bytes < 0) return GIF_INSUFFICIENT_FRAME_DATA;
-        		
+
 		/*	Repeatedly skip blocks until we get a zero block or run out of data
 		*/
 		block_size = 0;
@@ -490,7 +512,7 @@ int gif_initialise_frame(struct gif_animation *gif) {
 	  	return GIF_INSUFFICIENT_FRAME_DATA;
 	} else {
 		gif->buffer_position = gif_data - gif->gif_data;
-		gif->frame_count = frame + 1;	
+		gif->frame_count = frame + 1;
 		if (gif_data[0] == 0x3b) return 1;
 	}
 	return 0;
@@ -529,7 +551,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 	*/
 	if (frame > gif->frame_count_partial) return GIF_INSUFFICIENT_DATA;
 	if ((!clear_image) && (frame == gif->decoded_frame)) return 0;
-	
+
 	/*	If the previous frame was dirty, remove it
 	*/
 	if (!clear_image) {
@@ -537,16 +559,13 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			clear_image = TRUE;
 			if (frame != 0) gif_decode_frame(gif, gif->dirty_frame);
 			clear_image = FALSE;
-			gif->dirty_plot = 1;
-		} else {
-		  	gif->dirty_plot = 0;
 		}
 		gif->dirty_frame = -1;
 	}
- 
+
 	/*	Get the start of our frame data and the end of the GIF data
 	*/
-	gif_data = gif->gif_data + gif->frame_pointers[frame];
+	gif_data = gif->gif_data + gif->frames[frame].frame_pointer;
 	gif_end = gif->gif_data + gif->buffer_size;
 	gif_bytes = (gif_end - gif_data);
 
@@ -570,18 +589,18 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 	*/
 	save_buffer_position = gif->buffer_position;
 	gif->buffer_position = gif_data - gif->gif_data;
-	
+
 	/*	We've got to do this more than one time if we've got multiple images
 	*/
-	background_action = 0;
 	more_images = 1;
 	while (more_images != 0) {
-	  
+		background_action = 0;
+
 		/*	Ensure we have some data
 		*/
 		gif_data = gif->gif_data + gif->buffer_position;
 	  	if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;
-	  	
+
 	  	/*	Decode the extensions
 	  	*/
 		while (gif_data[0] == 0x21) {
@@ -589,7 +608,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			/*	Get the extension size
 			*/
 			extension_size = gif_data[2];
-  
+
 			/*	Check we've enough data for the extension then header
 			*/
 			if ((gif_end - gif_data) < (int)(extension_size + 13)) return GIF_INSUFFICIENT_FRAME_DATA;
@@ -605,12 +624,12 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			/*	Move to the first sub-block
 			*/
 			gif_data += 2;
-        	  	
+
 			/*	Skip all the sub-blocks
 			*/
 			while (gif_data[0] != 0x00) {
 				gif_data += gif_data[0] + 1;
-				if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;  
+				if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;
 			}
 			gif_data++;
 		}
@@ -629,7 +648,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		if ((offset_x + width > gif->width) || (offset_y + height > gif->height)) {
 			return GIF_DATA_ERROR;
 		}
-	
+
 		/*	Decode the flags
 		*/
 		flags = gif_data[9];
@@ -640,7 +659,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		*/
 		gif_data += 10;
 		gif_bytes = (int)(gif_end - gif_data);
-	
+
 		/*	Set up the colour table
 		*/
 		if (flags & 0x80) {
@@ -668,7 +687,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		  	if ((background_action == 2) || (background_action == 3)) {
 		  		gif->dirty_frame = frame;
 		  	}
-		  
+
 			/*	Initialise the LZW decoding
 			*/
 			set_code_size = gif_data[0];
@@ -706,7 +725,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 					} else {
 						return_value = GIF_INSUFFICIENT_FRAME_DATA;
 						goto gif_decode_frame_exit;
-					}	
+					}
 				}
 			}
 		} else {
@@ -718,7 +737,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 				  	memset(frame_scanline, 0x00, width * 4);
 				}
 			}
-			
+
 			/*	Repeatedly skip blocks until we get a zero block or run out of data
 			*/
 			gif_bytes = gif->buffer_size - gif->buffer_position;
@@ -767,15 +786,14 @@ static unsigned int gif_interlaced_line(unsigned int height, unsigned int y) {
 /*	Releases any workspace held by the animation
 */
 void gif_finalise(struct gif_animation *gif) {
+  	LOG(("Finalising image"));
 	/*	Release all our memory blocks
 	*/
 	free(gif->frame_image);
 	gif->frame_image = NULL;
-	free(gif->frame_pointers);
-	gif->frame_pointers = NULL;
-	free(gif->frame_delays);
-	gif->frame_delays = NULL;
-	free(gif->local_colour_table);	
+	free(gif->frames);
+	gif->frames = NULL;
+	free(gif->local_colour_table);
 	gif->local_colour_table = NULL;
 	free(gif->global_colour_table);
 	gif->global_colour_table = NULL;
@@ -793,17 +811,17 @@ static int gif_next_LZW(struct gif_animation *gif) {
 			/*	Check we have a valid clear code
 			*/
 			if (clear_code >= (1 << GIF_MAX_LZW)) return -2;
-                        
+
 			/*	Initialise our table
 			*/
-			for (i = 0; i < clear_code; ++i) {
+			for (i = 0; i < (unsigned int)clear_code; ++i) {
 				table[0][i] = 0;
 				table[1][i] = i;
 			}
 			for (; i < (1 << GIF_MAX_LZW); ++i) {
 				table[0][i] = table[1][i] = 0;
 			}
-		
+
 			/*	Update our LZW parameters
 			*/
 			code_size = set_code_size + 1;
@@ -842,7 +860,7 @@ static int gif_next_LZW(struct gif_animation *gif) {
 			if (code == table[0][code]) return(code);
 			if (((char *)stack_pointer - (char *)stack) >= (int)sizeof(stack)) return(code);
 			code = table[0][code];
-		}		
+		}
 
 		*stack_pointer++ = firstcode = table[1][code];
 
@@ -854,7 +872,7 @@ static int gif_next_LZW(struct gif_animation *gif) {
 				max_code_size *= 2;
 				++code_size;
 			}
-		}	
+		}
 
 		oldcode = incode;
 
@@ -888,7 +906,7 @@ static int gif_next_code(struct gif_animation *gif, int code_size) {
 		lastbit = (2 + count) * 8;
 		end = curbit + code_size;
 	}
-	
+
 	j = end / 8;
 	i = curbit / 8;
 	if (i == j) {
@@ -898,7 +916,7 @@ static int gif_next_code(struct gif_animation *gif, int code_size) {
 	} else {
 		ret = (long)buf[i] | ((long)buf[i+1] << 8) | ((long)buf[i+2] << 16);
 	}
-	
+
 	ret = (ret >> (curbit % 8)) & maskTbl[code_size];
 	curbit += code_size;
 	return (int)ret;
@@ -907,7 +925,7 @@ static int gif_next_code(struct gif_animation *gif, int code_size) {
 static int gif_next_block(struct gif_animation *gif, unsigned char *buf) {
 	unsigned int block_size;
 	unsigned char *gif_data;
-	
+
 	gif_data = gif->gif_data + gif->buffer_position;
 	zero_data_block = ((block_size = gif_data[0]) == 0);
 

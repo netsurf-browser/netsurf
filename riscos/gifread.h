@@ -5,6 +5,10 @@
  * Copyright 2004 Richard Wilson <not_ginger_matt@sourceforge.net>
  */
 
+/** \file
+ * Progressive animated GIF file decoding (interface).
+ */
+
 #ifndef _NETSURF_RISCOS_GIFREAD_H_
 #define _NETSURF_RISCOS_GIFREAD_H_
 
@@ -28,6 +32,25 @@
 */
 #define GIF_MAX_LZW 12
 
+/*	The GIF frame dats
+*/
+typedef struct gif_frame {
+  	/*	Frame data
+  	*/
+  	unsigned int frame_pointer;
+  	unsigned int frame_delay;
+
+	/*	Redraw characteristics
+	*/
+	unsigned int redraw_required;
+	unsigned int redraw_x;
+	unsigned int redraw_y;
+	unsigned int redraw_width;
+	unsigned int redraw_height;
+  
+} gif_frame;
+
+
 /*	A simple hold-all for our GIF data
 */
 typedef struct gif_animation {
@@ -42,13 +65,12 @@ typedef struct gif_animation {
 	unsigned int global_colours;
 	unsigned int frame_holders;
 	unsigned int colour_table_size;
-	unsigned int *frame_pointers;
 
 	/*	Animation data
 	*/
 	unsigned int decoded_frame;
-	unsigned int loop_count;
-	unsigned int *frame_delays;
+	int loop_count;
+	gif_frame *frames;
 
 	/*	Decoded GIF data
 	*/
@@ -63,7 +85,6 @@ typedef struct gif_animation {
 
 	/*	Decoded frame data
 	*/
-	unsigned int dirty_plot;	// Frame needs background erasing
 	unsigned int dirty_frame;	// Frame needs erasing before next
 	osspriteop_header *frame_image;
 } gif_animation;

@@ -63,6 +63,10 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight) 
 	*/
 	gif_initialise(gif);
 
+	/*	Abort on bad GIFs
+	*/
+	if ((gif->frame_count_partial == 0) || (gif->width == 0) || (gif->height == 0)) return 1;
+
 	/*	Store our content width
 	*/
 	c->width = gif->width;
@@ -71,7 +75,7 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight) 
 	/*	Schedule the animation if we have one
 	*/
 	if (gif->frame_count > 1) {
-		schedule(gif->frame_delays[0], nsgif_animate, c);
+		schedule(gif->frames[0].frame_delay, nsgif_animate, c);
 	}
 
 	/*	Exit as a success
@@ -88,6 +92,10 @@ void nsgif_redraw(struct content *c, long x, long y,
 
 	int previous_frame;
 	unsigned int frame;
+
+	/*	Reject no images (paranoia)
+	*/
+	if (c->data.gif.gif->frame_count_partial < 1) return;
 
 	/*	Decode from the last frame to the current frame
 	*/
@@ -145,17 +153,18 @@ void nsgif_animate(void *p)
 */			c->data.gif.current_frame = 0;
 	}
 
-	schedule(c->data.gif.gif->frame_delays[c->data.gif.current_frame],
+	schedule(c->data.gif.gif->frames[c->data.gif.current_frame].frame_delay,
 			nsgif_animate, c);
 
 	/* area within gif to redraw (currently whole gif) */
-	data.redraw.x = 0;
-	data.redraw.y = 0;
-	data.redraw.width = c->width;
-	data.redraw.height = c->height;
+	data.redraw.x = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_x;
+	data.redraw.y = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_y;
+	data.redraw.width = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_width;
+	data.redraw.height = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_height;
 
 	/* redraw background (true) or plot on top (false) */
-	data.redraw.full_redraw = false;
+	data.redraw.full_redraw =
+			c->data.gif.gif->frames[c->data.gif.current_frame].redraw_required;
 
 	/* other data */
 	data.redraw.object = c;

@@ -258,6 +258,8 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 {
 	struct content *c = g->data.browser.bw->current_content;
 	osbool more;
+	osbool clear_background = false;
+	unsigned long background_colour = 0xffffff;
 	os_error *error;
 	wimp_draw update;
 
@@ -273,8 +275,21 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 		return;
 	}
 
+	/*	We should clear the background for content that isn't HTML or plain text
+	*/
+	if ((c->type != CONTENT_HTML) &&
+			(c->type != CONTENT_TEXTPLAIN)) {
+	        clear_background = true;
+	}
+
 	while (more) {
 		if (data->redraw.full_redraw) {
+			if (clear_background) {
+				colourtrans_set_gcol(background_colour << 8,
+					colourtrans_SET_BG | colourtrans_USE_ECFS,
+					os_ACTION_OVERWRITE, 0);
+				os_clg();
+			}
 			content_redraw(c,
 					update.box.x0 - update.xscroll,
 					update.box.y1 - update.yscroll,
