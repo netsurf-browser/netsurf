@@ -699,6 +699,7 @@ void ro_gui_download_window_destroy(struct gui_download_window *dw)
 	os_error *error;
 
 	schedule_remove(ro_gui_download_update_status_wrapper, dw);
+	schedule_remove(ro_gui_download_window_destroy_wrapper, dw);
 
 	/* remove from list */
 	if (dw->prev)
