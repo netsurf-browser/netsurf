@@ -26,8 +26,6 @@
  *
  * No support for "helper" applications
  * No support for standalone objects (must be embedded in HTML page)
- *
- *
  */
 
 #include <assert.h>
@@ -90,6 +88,7 @@ struct plugin_param_item {
 static bool plugin_create_sysvar(const char *mime_type, char* sysvar);
 static void plugin_create_stream(struct content *c);
 static void plugin_write_stream(struct content *c, unsigned int consumed);
+static void plugin_stream_write_callback(void *p);
 static void plugin_write_stream_as_file(struct content *c);
 static void plugin_destroy_stream(struct content *c);
 static bool plugin_write_parameters_file(struct content *c,
@@ -147,19 +146,6 @@ bool plugin_convert(struct content *c, int width, int height)
 	LOG(("plugin_convert"));
 	c->width = width;
 	c->height = height;
-
-	/* deal with a plugin waiting for a normal stream */
-	/** \todo I can see no reason for waiting for all the data
-	 * If the plugin app wants to be streamed to, then it should
-	 * be able to cope with repeated PLUG_IN_WRITE/PLUG_IN_WRITTEN
-	 * message pairs (until all the data has been streamed.
-	 * (In fact, the only reason we wait at all is because !Flash
-	 * dies otherwise)
-	 */
-	if (c->data.plugin.stream_waiting) {
-		c->data.plugin.stream_waiting = false;
-		plugin_write_stream(c, 0);
-	}
 
 	/* deal with a plugin waiting for a file stream */
 	if (c->data.plugin.file_stream_waiting) {
@@ -359,6 +345,8 @@ void plugin_reformat(struct content *c, int width, int height)
 		c->data.plugin.height = height;
 		return;
 	}
+
+	c->data.plugin.reformat_pending = false;
 
 	box_coords(c->data.plugin.box, &x, &y);
 	pmr.size = 52;
@@ -560,6 +548,7 @@ void plugin_closed(wimp_message *message)
 void plugin_reshape_request(wimp_message *message)
 {
 	struct content *c;
+	struct box *b;
 	union content_msg_data data;
 	plugin_message_reshape_request *pmrr = (plugin_message_reshape_request*)&message->data;
 
@@ -572,11 +561,21 @@ void plugin_reshape_request(wimp_message *message)
 
 	LOG(("handling reshape request"));
 
+	/* we can be called prior to the box content being set up,
+	 * so we set it up here. This is ok as the content won't change
+	 * under us.
+	 */
+	c->data.plugin.box->object = c;
+
 	/* should probably shift by x and y eig values here */
 	c->width = pmrr->size.x / 2;
 	c->height = pmrr->size.y / 2;
 	c->data.plugin.box->style->width.width = CSS_WIDTH_AUTO;
 	c->data.plugin.box->style->height.height = CSS_HEIGHT_AUTO;
+
+	/* invalidate parent box widths */
+	for (b = c->data.plugin.box->parent; b; b = b->parent)
+		b->max_width = UNKNOWN_MAX_WIDTH;
 
 	/* force a reformat of the parent */
 	content_reformat(c->data.plugin.page,
@@ -651,13 +650,7 @@ void plugin_stream_new(wimp_message *message)
 		}
 		else if (stream_type < 3) {
 			LOG(("write stream"));
-			/* this sucks - see plugin_convert for why */
-			if (c->source_size == c->total_size)
-				plugin_write_stream(c, 0);
-			else {
-				LOG(("waiting for data"));
-				c->data.plugin.stream_waiting = true;
-			}
+			plugin_write_stream(c, 0);
 		}
 	}
 	/* new stream, initiated by plugin */
@@ -850,10 +843,35 @@ void plugin_write_stream(struct content *c, unsigned int consumed)
 			return;
 		}
 	}
+	else if (c->source_size < c->total_size) {
+		/* the plugin has consumed all the available data,
+		 * but there's still more to fetch, so we wait for
+		 * 20 cs then try again (note that streams of unknown
+		 * total length won't ever get in here as c->total_size
+		 * will be 0)
+		 */
+		schedule(20, plugin_stream_write_callback, c);
+	}
 	/* no further data => destroy stream */
 	else {
 		plugin_destroy_stream(c);
 	}
+}
+
+/**
+ * Stream write callback - used to wait for data to download
+ *
+ * \param p The appropriate content struct
+ */
+void plugin_stream_write_callback(void *p)
+{
+	struct content *c = (struct content *)p;
+
+	/* remove ourselves from the schedule queue */
+	schedule_remove(plugin_stream_write_callback, p);
+
+	/* continue writing stream */
+	plugin_write_stream(c, 0);
 }
 
 /**
@@ -927,6 +945,9 @@ void plugin_destroy_stream(struct content *c)
 	plugin_full_message_stream_destroy pmsd;
 	os_error *error;
 
+	/* reset stream */
+	c->data.plugin.consumed = 0;
+
 	pmsd.size = 60;
 	pmsd.your_ref = 0;
 	pmsd.action = message_PLUG_IN_STREAM_DESTROY;
@@ -936,7 +957,7 @@ void plugin_destroy_stream(struct content *c)
 	pmsd.stream = (plugin_s)c->data.plugin.plugin_stream;
 	pmsd.browser_stream = (plugin_bs)c->data.plugin.browser_stream;
 	pmsd.url.pointer = c->url;
-	pmsd.end = 0;
+	pmsd.end = c->total_size;
 	pmsd.last_modified_date = 0;
 	pmsd.notify_data = 0;
 	pmsd.reason = plugin_STREAM_DESTROY_FINISHED;
