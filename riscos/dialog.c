@@ -5,6 +5,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  */
 
 #include <assert.h>
@@ -43,6 +44,7 @@ static void ro_gui_dialog_update_config_br(void);
 static void ro_gui_dialog_click_config_prox(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_th(wimp_pointer *pointer);
 static void ro_gui_dialog_click_zoom(wimp_pointer *pointer);
+static void ro_gui_dialog_reset_zoom(void);
 static void set_browser_choices(void);
 static void get_browser_choices(void);
 static void set_proxy_choices(void);
@@ -351,11 +353,16 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 {
 	unsigned int scale;
+	int stepping = 10;
 	scale = atoi(ro_gui_get_icon_string(dialog_zoom, ICON_ZOOM_VALUE));
 
+	/*	Adjust moves values the opposite direction
+	*/
+	if (pointer->buttons == wimp_CLICK_ADJUST) stepping = -stepping;
+
 	switch (pointer->i) {
-		case ICON_ZOOM_DEC: scale -= 10; break;
-		case ICON_ZOOM_INC: scale += 10; break;
+		case ICON_ZOOM_DEC: scale -= stepping; break;
+		case ICON_ZOOM_INC: scale += stepping; break;
 		case ICON_ZOOM_50:  scale = 50;	break;
 		case ICON_ZOOM_80:  scale = 80; break;
 		case ICON_ZOOM_100: scale = 100; break;
@@ -374,10 +381,24 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 		gui_reformat_pending = true;
 	}
 
+	if ((pointer->buttons == wimp_CLICK_ADJUST) && (pointer->i == ICON_ZOOM_CANCEL)) {
+	  	ro_gui_dialog_reset_zoom();
+	}
+
 	if (pointer->buttons == wimp_CLICK_SELECT &&
 			(pointer->i == ICON_ZOOM_CANCEL ||
 			 pointer->i == ICON_ZOOM_OK))
 		wimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+}
+
+
+/*
+ * Resets the Scale view dialog
+ */
+void ro_gui_dialog_reset_zoom(void) {
+  	char scale_buffer[8];
+	sprintf(scale_buffer, "%.0f", current_gui->scale * 100);
+	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
 }
 
 
@@ -699,14 +720,41 @@ int get_icon_state(wimp_w w, wimp_i i)
  * \param  text  string (copied)
  */
 
-void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text)
-{
+void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
+  	wimp_caret caret;
 	wimp_icon_state ic;
+	unsigned int old_len, len;
+
+	/*	Get the icon data
+	*/
 	ic.w = w;
 	ic.i = i;
 	wimp_get_icon_state(&ic);
+
+	/*	Check that the existing text is not the same as the updated text
+		to stop flicker
+	*/
+	if (!strncmp(ic.icon.data.indirected_text.text, text,
+			(unsigned int)ic.icon.data.indirected_text.size)) return;
+
+	/*	Copy the text across
+	*/
+	old_len = strlen(ic.icon.data.indirected_text.text);
 	strncpy(ic.icon.data.indirected_text.text, text,
 			(unsigned int)ic.icon.data.indirected_text.size);
+
+	/*	Handle the caret being in the icon
+	*/
+	if (!xwimp_get_caret_position(&caret)) {
+		if ((caret.w == w) && (caret.i == i)) {
+		  	len = strlen(text);
+		  	if ((caret.index > len) || (caret.index == old_len)) caret.index = len;
+			xwimp_set_caret_position(w, i, caret.pos.x, caret.pos.y, -1, caret.index);
+		}
+	}
+
+	/*	Redraw the icon
+	*/
 	wimp_set_icon_state(w, i, 0, 0);
 }
 
