@@ -1,0 +1,66 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>NetSurf | Open Source Web Browser for RISC OS</title>
+<link rel="stylesheet" type="text/css" href="netsurf">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+<body>
+<h1 class="logofull"><img src="images/logofull" alt="NetSurf"></h1>
+
+<div class="cell">
+
+<h2>The RISC OS web browser</h2>
+<h3>Introduction</h3>
+<p><em>NetSurf</em> is an open-source web browser for RISC OS. Its aim is to bring
+HTML&nbsp;4 and CSS standards to the RISC OS platform.  For more information about NetSurf see the <a href="index">documentation</a>.</p>
+
+<h3>Current Status</h3>
+<p>NetSurf is currently incomplete and many features aren't yet implemented.  If you experience any crashes or unexpected behaviour while using NetSurf please report the problem to the <a href="info#devel">developers</a>.</p>
+
+<h2>NetSurf Links</h2>
+
+<dl>
+<dt><a href="http://sourceforge.net/projects/netsurf/">SourceForge project
+page</a></dt>
+<dd>SourceForge provides the mailing list, bug tracker, and other services</dd>
+
+<dt><a href="http://netsurf.strcprstskrzkrk.co.uk/">Test builds</a></dt>
+<dd>Built automatically from the latest source</dd>
+
+<dt><a href="http://sourceforge.net/tracker/?atid=464312&amp;group_id=51719">Bug
+tracker</a></dt>
+<dd>Please submit bugs to the tracker, or report them to the mailing list</dd>
+
+<dt><a href="http://lists.sourceforge.net/lists/listinfo/netsurf-develop">Development
+mailing list</a></dt>
+<dd>Subscribe to the list if you plan to develop or test NetSurf</dd>
+
+<dt><a href="http://cvs.semichrome.net/netsurf/">CVS web interface</a></dt>
+<dd>Browse the source code using the web interface</dd>
+</dl>
+
+</div>
+
+<div class="links">
+<h3>Search the web</h3>
+
+<form method="get" action="http://www.google.com/search"><p><a href="http://www.google.com">Google</a> search:<br><input type="text" size="15" name="q" maxlength="255"><br><input type="submit" value="Go" name="btnG"></p></form>
+
+<h3>Web Standards</h3>
+<p><a href="http://www.w3c.org">W3C</a></p>
+
+<h3>RISC OS Links</h3>
+<p><a href="http://www.drobe.co.uk">Drobe</a><br><a href="http://www.iconbar.com">Iconbar</a></p>
+
+<h3>Other Links</h3>
+<p><a href="http://www.slashdot.org">Slashdot</a><br><a href="http://www.theregister.co.uk">The&nbsp;Register</a></p>
+
+</div>
+
+<p class="footer"><em>NetSurf</em> is copyright 2003 The NetSurf Developers</p>
+
+</body>
+</html>
+
