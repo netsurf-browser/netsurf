@@ -22,6 +22,9 @@ Object:Object
 ObjInfo:Info
 ObjSave:Save
 ObjReload:Reload
+URI:Acorn URI
+URL:ANT URL
+LinkText:Text
 Selection:Sélection
 Copy:Copier vers le presse papier
 SelectAll:Tout sélectionner
@@ -111,3 +114,5 @@ SelectMenu:Sélection
 SaveSource:Source
 SaveDraw:PageWeb
 SaveText:PageWeb
+SaveObject:Object
+SaveLink:Link

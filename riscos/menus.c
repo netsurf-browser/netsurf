@@ -30,23 +30,25 @@
 	be quickly commented out. Use -ve numbers below -1 to hide an entry.
 */
 #define MENU_PAGE	0
-#define MENU_OBJECT	-2
+#define MENU_OBJECT	1
 #define MENU_SELECTION	-2
-#define MENU_NAVIGATE	1
-#define MENU_VIEW	2
+#define MENU_NAVIGATE	2
+#define MENU_VIEW	3
 #define MENU_UTILITIES	-2
-#define MENU_HELP	3
+#define MENU_HELP	4
 
 static void translate_menu(wimp_menu *menu);
 static void ro_gui_menu_prepare_images(void);
 static void ro_gui_menu_prepare_toolbars(void);
 static void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning);
-
+static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
+static struct box *find_object_box(void);
 
 static wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
 gui_window *current_gui;
-
+struct content *save_content;
+char *save_link;
 
 /*	Default menu item flags
 */
@@ -79,6 +81,15 @@ static wimp_MENU(2) export_menu = {
   }
 };
 
+static wimp_MENU(3) link_menu = {
+  { "SaveLink" }, 7,2,7,0, 200, 44, 0,
+  {
+    { wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "URI" } },
+    { wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "URL" } },
+    { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "LinkText" } }
+  }
+};
+
 
 /*	Page submenu
 */
@@ -89,7 +100,7 @@ static wimp_MENU(7) page_menu = {
     { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,            DEFAULT_FLAGS,                    { "Save" } },
     { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,            DEFAULT_FLAGS,                    { "SaveComp" } },
     { 0,                      (wimp_menu *)&export_menu, DEFAULT_FLAGS,                    { "Export" } },
-    { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,            DEFAULT_FLAGS,                    { "SaveURL" } },
+    { 0,                      (wimp_menu *)&link_menu,   DEFAULT_FLAGS,                    { "SaveURL" } },
     { wimp_MENU_SEPARATE,     wimp_NO_SUB_MENU,          DEFAULT_FLAGS | wimp_ICON_SHADED, { "Print" } },
     { wimp_MENU_LAST,         wimp_NO_SUB_MENU,          DEFAULT_FLAGS,                    { "ViewSrc" } }
   }
@@ -114,7 +125,7 @@ static wimp_MENU(5) object_menu = {
     { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,                   DEFAULT_FLAGS, { "ObjInfo" } },
     { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,                   DEFAULT_FLAGS, { "ObjSave" } },
     { 0,                      (wimp_menu *)&object_export_menu, DEFAULT_FLAGS, { "Export" } },
-    { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE, (wimp_menu *)1,                   DEFAULT_FLAGS, { "SaveURL" } },
+    { wimp_MENU_SEPARATE, (wimp_menu *)&link_menu,              DEFAULT_FLAGS, { "SaveURL" } },
     { wimp_MENU_LAST,         wimp_NO_SUB_MENU,                 DEFAULT_FLAGS, { "ObjReload" } }
   }
 };
@@ -228,7 +239,7 @@ static wimp_MENU(5) menu = {
   { "NetSurf" }, 7,2,7,0, 200, 44, 0,
   {
     { 0,              (wimp_menu *)&page_menu,      DEFAULT_FLAGS, { "Page" } },
-//    { 0,              (wimp_menu *)&object_menu,    DEFAULT_FLAGS, { "Object" } },
+    { 0,              (wimp_menu *)&object_menu,    DEFAULT_FLAGS, { "Object" } },
 //    { 0,              (wimp_menu *)&selection_menu, DEFAULT_FLAGS, { "Selection" } },
     { 0,              (wimp_menu *)&navigate_menu,  DEFAULT_FLAGS, { "Navigate" } },
     { 0,              (wimp_menu *)&view_menu,      DEFAULT_FLAGS, { "View" } },
@@ -242,6 +253,7 @@ wimp_menu *browser_menu = (wimp_menu *) &menu;
 static wimp_menu *browser_page_menu = (wimp_menu *)&page_menu;
 static wimp_menu *browser_export_menu = (wimp_menu *)&export_menu;
 static wimp_menu *browser_object_menu = (wimp_menu *)&object_menu;
+static wimp_menu *browser_link_menu = (wimp_menu *)&link_menu;
 static wimp_menu *browser_object_export_menu = (wimp_menu *)&object_export_menu;
 static wimp_menu *browser_selection_menu = (wimp_menu *)&selection_menu;
 static wimp_menu *browser_navigate_menu = (wimp_menu *)&navigate_menu;
@@ -264,6 +276,7 @@ void ro_gui_menus_init(void)
 	translate_menu(browser_page_menu);
 	translate_menu(browser_export_menu);
 	translate_menu(browser_object_menu);
+	translate_menu(browser_link_menu);
 	translate_menu(browser_object_export_menu);
 	translate_menu(browser_selection_menu);
 	translate_menu(browser_navigate_menu);
@@ -276,6 +289,7 @@ void ro_gui_menus_init(void)
 
 	iconbar_menu->entries[0].sub_menu = (wimp_menu *) dialog_info;
 	browser_page_menu->entries[0].sub_menu = (wimp_menu*) dialog_pageinfo;
+	browser_object_menu->entries[0].sub_menu = (wimp_menu*) dialog_objinfo;
 //	browser_page_menu->entries[1].sub_menu = (wimp_menu *) dialog_saveas;
 //	browser_page_menu->entries[2].sub_menu = (wimp_menu *) dialog_saveas;
 //	browser_export_menu->entries[0].sub_menu = (wimp_menu *) dialog_saveas;
@@ -399,6 +413,14 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 3: /* Export */
 						break;
 					case 4: /* Save location */
+					        switch (selection->items[2]) {
+					                case 0: /* URI */
+					                        break;
+					                case 1: /* URL */
+					                        break;
+					                case 2: /* Text */
+					                        break;
+					        }
 						break;
 					case 5: /* Print */
 						break;
@@ -407,6 +429,26 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						break;
 				}
 				break;
+			case MENU_OBJECT:
+			        switch (selection->items[1]) {
+			                case 0: /* Info */
+			                        break;
+			                case 1: /* Save */
+			                        break;
+			                case 2: /* Export */
+			                        break;
+			                case 3: /* Save Link */
+					        switch (selection->items[2]) {
+					                case 0: /* URI */
+					                        break;
+					                case 1: /* URL */
+					                        break;
+					                case 2: /* Text */
+					                        break;
+					        }
+					        break;
+			        }
+			        break;
 			case MENU_SELECTION:
 				switch (selection->items[1]) {
 					case 0: /* Copy to clipboard */
@@ -526,6 +568,21 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 	switch (warning->selection.items[0]) {
 		case MENU_PAGE: /* Page -> */
 			switch (warning->selection.items[1]) {
+			        case 4: /* Save Link */
+			                switch (warning->selection.items[2]) {
+			                        case 0: /* URI */
+			                                gui_current_save_type = GUI_SAVE_LINK_URI;
+			                                break;
+
+			                        case 1: /* URL */
+			                                gui_current_save_type = GUI_SAVE_LINK_URL;
+			                                break;
+
+			                        case 2: /* Text */
+			                                gui_current_save_type = GUI_SAVE_LINK_TEXT;
+			                                break;
+			                }
+			                break;
 				case 3: /* Export as -> */
 					switch (warning->selection.items[2]) {
 						case 0: /* Draw */
@@ -552,10 +609,54 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 					gui_current_save_type = GUI_SAVE_SOURCE;
 					break;
 			}
+			save_link = xstrdup(c->url);
 			ro_gui_menu_prepare_save(c);
 			error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
 					warning->pos.x, warning->pos.y);
+			if (error) xfree(save_link);
 			break;
+		case MENU_OBJECT: /* Object -> */
+		        switch (warning->selection.items[1]) {
+		                case 0: /* Object info */
+		                        ro_gui_menu_objectinfo(warning);
+		                        return;
+
+		                case 1: /* Save */
+		                        gui_current_save_type = GUI_SAVE_OBJECT_ORIG;
+		                        break;
+
+		                case 2: /* Export */
+		                        switch (warning->selection.items[2]) {
+		                                case 0: /* Sprite */
+		                                        gui_current_save_type = GUI_SAVE_OBJECT_NATIVE;
+		                                        break;
+		                        }
+		                        break;
+		                case 3: /* Save Link */
+			                switch (warning->selection.items[2]) {
+			                        case 0: /* URI */
+			                                gui_current_save_type = GUI_SAVE_LINK_URI;
+			                                break;
+
+			                        case 1: /* URL */
+			                                gui_current_save_type = GUI_SAVE_LINK_URL;
+			                                break;
+
+			                        case 2: /* Text */
+			                                gui_current_save_type = GUI_SAVE_LINK_TEXT;
+			                                break;
+			                }
+			                break;
+		        }
+		        struct box *box = find_object_box();
+		        if (box) {
+		                ro_gui_menu_prepare_save(box->object);
+			        error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
+					warning->pos.x, warning->pos.y);
+				if (!error && box->href)
+				        save_link = url_join(box->href, c->url);
+			}
+		        break;
 		case MENU_VIEW: /* View -> */
 			switch (warning->selection.items[1]) {
 				case 0: /* Scale view -> */
@@ -620,11 +721,35 @@ void ro_gui_menu_prepare_save(struct content *c)
 			icon = "file_faf";
 			name = messages_get("SaveComplete");
 			break;
+		case GUI_SAVE_OBJECT_ORIG:
+		        if (c)
+		                sprintf(icon_buf, "file_%x",
+		                                ro_content_filetype(c));
+		        name = messages_get("SaveObject");
+		        break;
+		case GUI_SAVE_OBJECT_NATIVE:
+		        icon = "file_ff9";
+		        name = messages_get("SaveObject");
+		        break;
+		case GUI_SAVE_LINK_URI:
+		        icon = "file_f91";
+		        name = messages_get("SaveLink");
+		        break;
+		case GUI_SAVE_LINK_URL:
+		        icon = "file_b28";
+		        name = messages_get("SaveLink");
+		        break;
+		case GUI_SAVE_LINK_TEXT:
+		        icon = "file_fff";
+		        name = messages_get("SaveLink");
+		        break;
         }
 
-	if (c)
+	if (c) {
+	        save_content = c;
 		if ((nice = url_nice(c->url)))
 			name = nice;
+	}
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_ICON, icon);
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);
@@ -707,7 +832,7 @@ void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
 
         sprintf(icon_buf, "file_%x", ro_content_filetype(c));
 
-        if (c->type == CONTENT_HTML) {
+        if (c->type == CONTENT_HTML && c->data.html.encoding != 0) {
                 enc = xmlGetCharEncodingName(c->data.html.encoding);
         }
 
@@ -724,3 +849,80 @@ void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
 		warn_user(error->errmess);
 	}
 }
+
+void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning)
+{
+        struct content *c = current_gui->data.browser.bw->current_content;
+        struct box *box;
+        os_error *error;
+        char icon_buf[20] = "file_xxx";
+        const char *icon = icon_buf;
+        const char *url = "-";
+        const char *target = "-";
+        const char *mime = "-";
+
+        box = find_object_box();
+        if (box) {
+                sprintf(icon_buf, "file_%x", ro_content_filetype(box->object));
+                if (box->object->url) url = box->object->url;
+                if (box->href) target = box->href;
+                if (box->object->mime_type) mime = box->object->mime_type;
+        }
+        else if (c->type == CONTENT_JPEG || c->type == CONTENT_PNG ||
+                 c->type == CONTENT_GIF || c->type == CONTENT_SPRITE ||
+                 c->type == CONTENT_DRAW) {
+                sprintf(icon_buf, "file_%x", ro_content_filetype(c));
+                if (c->url) url = c->url;
+                if (c->mime_type) mime = c->mime_type;
+        }
+
+        ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_ICON, icon);
+	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_URL, url);
+	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TARGET, target);
+	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TYPE, mime);
+
+        error = xwimp_create_sub_menu((wimp_menu *) dialog_objinfo,
+			warning->pos.x, warning->pos.y);
+	if (error) {
+		LOG(("0x%x: %s\n", error->errnum, error->errmess));
+		warn_user(error->errmess);
+	}
+}
+
+struct box *find_object_box(void)
+{
+        struct content *c = current_gui->data.browser.bw->current_content;
+        struct box_selection *boxes = NULL;
+        struct box *box = NULL;
+        int found = 0, plot_index = 0, i, x, y;
+        wimp_window_state state;
+
+        state.w = current_gui->window;
+        wimp_get_window_state(&state);
+
+        /* The menu is initially created 64 units to the left
+         * of the mouse position. Therefore, we negate the offset here
+         */
+        x = window_x_units(current_menu_x+64, &state) / 2 / current_gui->scale;
+        y = -window_y_units(current_menu_y, &state) / 2 / current_gui->scale;
+
+        if (c->type == CONTENT_HTML) {
+
+                box_under_area(c, c->data.html.layout->children,
+                               x, y, 0, 0, &boxes, &found, &plot_index);
+
+                if (found > 0) {
+                        for (i=found-1;i>=0;i--) {
+                                if (boxes[i].box->object != 0) {
+                                        box = boxes[i].box;
+                                        break;
+                                }
+                        }
+                }
+
+                free(boxes);
+        }
+
+        return box;
+}
+

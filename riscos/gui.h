@@ -22,7 +22,7 @@
 
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
-	dialog_tooltip;
+	dialog_objinfo, dialog_tooltip;
 extern wimp_w history_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *theme_menu;
 extern int iconbar_menu_height;
@@ -34,7 +34,10 @@ extern gui_window *current_gui;
 
 typedef enum { GUI_BROWSER_WINDOW, GUI_DOWNLOAD_WINDOW } gui_window_type;
 typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT,
-		GUI_SAVE_COMPLETE } gui_save_type;
+		GUI_SAVE_COMPLETE,
+		GUI_SAVE_OBJECT_ORIG, GUI_SAVE_OBJECT_NATIVE,
+		GUI_SAVE_LINK_URI, GUI_SAVE_LINK_URL,
+		GUI_SAVE_LINK_TEXT } gui_save_type;
 extern gui_save_type gui_current_save_type;
 typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_SAVE, GUI_DRAG_STATUS_RESIZE } gui_drag_type;
@@ -275,5 +278,10 @@ void schedule_run(void);
 #define ICON_PAGEINFO_ENC 2
 #define ICON_PAGEINFO_TYPE 3
 #define ICON_PAGEINFO_ICON 4
+
+#define ICON_OBJINFO_URL 0
+#define ICON_OBJINFO_TARGET 1
+#define ICON_OBJINFO_TYPE 2
+#define ICON_OBJINFO_ICON 3
 
 #endif

@@ -29,7 +29,12 @@
 
 gui_save_type gui_current_save_type;
 
-void ro_gui_save_complete(struct content *c, char *path);
+extern struct content *save_content;
+extern char *save_link;
+
+static void ro_gui_save_complete(struct content *c, char *path);
+static void ro_gui_save_object_native(struct content *c, char *path);
+static void ro_gui_save_link(int format, char *path);
 
 
 /**
@@ -133,7 +138,7 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 void ro_gui_save_datasave_ack(wimp_message *message)
 {
 	char *path = message->data.data_xfer.file_name;
-	struct content *c = current_gui->data.browser.bw->current_content;
+        struct content *c = save_content;
 	os_error *error;
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, path);
@@ -171,8 +176,48 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			save_as_text(c, path);
 			xosfile_set_type(path, 0xfff);
 			break;
+
+		case GUI_SAVE_OBJECT_ORIG:
+		        if (!c)
+		                return;
+		        error = xosfile_save_stamped(path,
+	                		ro_content_filetype(c),
+					c->source_data,
+					c->source_data + c->source_size);
+			if (error) {
+				LOG(("xosfile_save_stamped: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user(error->errmess);
+			}
+			break;
+
+		case GUI_SAVE_OBJECT_NATIVE:
+		        if (!c)
+		                return;
+		        ro_gui_save_object_native(c, path);
+		        break;
+
+		case GUI_SAVE_LINK_URI:
+		        if (!save_link)
+		                return;
+		        ro_gui_save_link(1, path);
+		        break;
+
+		case GUI_SAVE_LINK_URL:
+		        if (!save_link)
+		                return;
+		        ro_gui_save_link(2, path);
+		        break;
+
+		case GUI_SAVE_LINK_TEXT:
+		        if (!save_link)
+		                return;
+		        ro_gui_save_link(3, path);
+		        break;
 	}
 
+        if (save_link) xfree(save_link);
+        save_content = NULL;
 	wimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 }
 
@@ -230,29 +275,9 @@ void ro_gui_save_complete(struct content *c, char *path)
 	        warn_user("Failed to acquire dirname");
 	        return;
 	}
-/*	snprintf(spritename, sizeof spritename, "%s", appname+1);
-	area = malloc(SPRITE_SIZE);
-	if (!area) {
-	        LOG(("malloc failed"));
-	        warn_user("No memory for sprite");
-	        return;
-	}
-	area->size = SPRITE_SIZE;
-	area->sprite_count = 0;
-	area->first = 16;
-	area->used = 16;
-	error = xosspriteop_create_sprite(osspriteop_NAME, area,
-	                    spritename, false,
-	                    WIDTH / 2, HEIGHT / 2, os_MODE8BPP90X90);
-	if (error) {
-	        LOG(("Failed to create sprite"));
-	        warn_user("Failed to create iconsprite");
-	        free(area);
-	        return;
-	}
-*/
+
   	area = thumbnail_initialise(34, 34, os_MODE8BPP90X90);
-  	if (!area) { 
+  	if (!area) {
 		LOG(("Iconsprite initialisation failed."));
 		return;
 	}
@@ -296,4 +321,71 @@ void ro_gui_save_complete(struct content *c, char *path)
 	}
 
 	save_complete(c, path);
+}
+
+void ro_gui_save_object_native(struct content *c, char *path)
+{
+        os_error *error;
+        osspriteop_area *temp;
+
+        switch (c->type) {
+                case CONTENT_JPEG:
+                        error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.jpeg.sprite_area, path);
+                        break;
+                case CONTENT_PNG:
+                        error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.png.sprite_area, path);
+                        break;
+                case CONTENT_GIF:
+                        /* create sprite area */
+                        temp = calloc(c->data.gif.gif->frame_image->size+16,
+                                      sizeof(char));
+                        temp->size = c->data.gif.gif->frame_image->size+16;
+                        temp->sprite_count = 1;
+                        temp->first = 16;
+                        temp->used = c->data.gif.gif->frame_image->size+16;
+                        memcpy((char*)temp+16,
+                               (char*)c->data.gif.gif->frame_image,
+                               c->data.gif.gif->frame_image->size);
+                        /* ensure extra words for name are null */
+                        memset((char*)temp+24, 0, 8);
+                        error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, temp, path);
+                        free(temp);
+                        break;
+                default:
+                        break;
+        }
+}
+
+void ro_gui_save_link(int format, char *path)
+{
+        FILE *fp = fopen(path, "w");
+
+        if (!fp) return;
+
+        switch (format) {
+               case 1: /* URI */
+                       fprintf(fp, "%s\t%s\n", "URI", "100");
+                       fprintf(fp, "\t# NetSurf %s\n\n", netsurf_version);
+                       fprintf(fp, "\t%s\n", save_link);
+                       fprintf(fp, "\t*\n");
+                       break;
+               case 2: /* URL */
+               case 3: /* Text */
+                       fprintf(fp, "%s\n", save_link);
+                       break;
+        }
+
+        fclose(fp);
+
+        switch (format) {
+               case 1: /* URI */
+                       xosfile_set_type(path, 0xf91);
+                       break;
+               case 2: /* URL */
+                       xosfile_set_type(path, 0xb28);
+                       break;
+               case 3: /* Text */
+                       xosfile_set_type(path, 0xfff);
+                       break;
+        }
 }
