@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.19 2002/12/30 22:56:30 monkeyson Exp $
+ * $Id: browser.c,v 1.20 2003/01/06 23:53:39 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -11,6 +11,7 @@
 #include "netsurf/desktop/cache.h"
 #include "netsurf/utils/log.h"
 #include "libxml/uri.h"
+#include "libxml/debugXML.h"
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -127,6 +128,7 @@ void content_html_reformat(struct content* c, int width)
 
   LOG(("Setting document to myDoc"));
   c->data.html.document = c->data.html.parser->myDoc;
+  xmlDebugDumpDocument(stderr, c->data.html.parser->myDoc);
 
   /* skip to start of html */
   LOG(("Skipping to html"));
@@ -174,8 +176,10 @@ void content_html_reformat(struct content* c, int width)
 
   LOG(("XML to box"));
   xml_to_box(c->data.html.markup, c->data.html.style, c->data.html.stylesheet, &selector, 0, c->data.html.layout, 0, 0, c->data.html.fonts, 0, 0, 0, 0, &c->data.html.elements);
+  box_dump(c->data.html.layout->children, 0);
   LOG(("Layout document"));
   layout_document(c->data.html.layout->children, (unsigned long)width);
+  box_dump(c->data.html.layout->children, 0);
 
   /* can tidy up memory here? */
 

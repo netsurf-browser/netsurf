@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.31 2003/01/03 22:19:39 bursa Exp $
+ * $Id: layout.c,v 1.32 2003/01/06 23:53:40 bursa Exp $
  */
 
 #include <assert.h>
@@ -104,17 +104,6 @@ void layout_node(struct box * box, unsigned long width, struct box * cont,
 	}
 }
 
-
-
-int img_width(struct img* img)
-{
-	return img->width;
-}
-
-int img_height(struct img* img)
-{
-	return img->height;
-}
 
 int gadget_width(struct gui_gadget* gadget)
 {
@@ -353,12 +342,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	find_sides(cont->float_children, cy, cy, &x0, &x1, &left, &right);
 
 	/* get minimum line height from containing block */
-	if (first->text != 0)
-		height = line_height(first->parent->parent->style);
-	else if (first->img != 0)
-		height = img_height(first->img);
-	else if (first->gadget != 0)
-		height = gadget_height(first->gadget);
+	height = line_height(first->parent->parent->style);
 
 	/* pass 1: find height of line assuming sides at top of line */
 	for (x = 0, b = first; x < x1 - x0 && b != 0; b = b->next) {
@@ -366,23 +350,38 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		if (b->type == BOX_INLINE) {
 			if (b->text != 0)
 				h = line_height(b->style ? b->style : b->parent->parent->style);
-			else if (b->img != 0)
-				h = img_height(b->img);
 			else if (b->gadget != 0)
 				h = gadget_height(b->gadget);
-
+			else {
+				assert(b->style != 0);
+				assert(b->style->height.height == CSS_HEIGHT_LENGTH);
+				h = len(&b->style->height.length, b->style);
+			}
 			b->height = h;
-			if (h > height) height = h;
-			if (b->width == UNKNOWN_WIDTH && b->font != 0)
-				b->width = font_width(b->font, b->text, b->length);
-			else if (b->width == UNKNOWN_WIDTH && b->img != 0)
-				b->width = img_width(b->img);
-			else if (b->width == UNKNOWN_WIDTH && b->gadget != 0)
-				b->width = gadget_width(b->gadget);
 
-			if (b->font != 0)
+			if (h > height) height = h;
+
+			if (b->width == UNKNOWN_WIDTH) {
+				if (b->text != 0)
+					b->width = font_width(b->font, b->text, b->length);
+				else if (b->gadget != 0)
+					b->width = gadget_width(b->gadget);
+				else {
+					assert(b->style != 0);
+					assert(b->style->width.width == CSS_WIDTH_LENGTH ||
+						b->style->width.width == CSS_WIDTH_PERCENT);
+					if (b->style->width.width == CSS_WIDTH_LENGTH)
+						b->width = len(&b->style->width.value.length,
+								b->style);
+					else
+						b->width = width * b->style->width.value.percent
+								/ 100;
+				}
+			}
+
+			if (b->text != 0)
 				x += b->width + b->space ? b->font->space_width : 0;
-			else if (b->gadget != 0 || b->img != 0)
+			else
 				x += b->width;
 		}
 	}
@@ -400,7 +399,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			b->x = x;
 			x += b->width;
 			space_before = space_after;
-			if (b->font != 0)
+			if (b->text != 0)
 				space_after = b->space ? b->font->space_width : 0;
 			else
 				space_after = 0;
@@ -441,29 +440,29 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 
 	if (x1 - x0 < x) {
 		/* the last box went over the end */
-		char * space = strchr(c->text, ' ');
+		char * space = 0;
 		unsigned long w;
 		struct box * c2;
 
 		x = x_previous;
 
+		if (c->text != 0)
+			space = strchr(c->text, ' ');
 		if (space != 0 && c->length <= space - c->text)
 			/* space after end of string */
 			space = 0;
 
+		/* space != 0 implies c->text != 0 */
+
 		if (space == 0)
 			w = c->width;
-		else if (c->font != 0)
+		else
 			w = font_width(c->font, c->text, space - c->text);
-		else if (c->img != 0)
-			w = img_width(c->img);
-		else if (c->gadget != 0)
-			w = gadget_width(c->gadget);
 
 		if (x1 - x0 < x + space_before + w && left == 0 && right == 0 && c == first) {
 			/* first word doesn't fit, but no floats and first on line so force in */
 			if (space == 0) {
-				/* only one word in this box */
+				/* only one word in this box or not text */
 				b = c->next;
 			} else {
 				/* cut off first word for this line */
@@ -484,7 +483,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			/* first word doesn't fit, but full width not available so leave for later */
 			b = c;
 /* 			fprintf(stderr, "layout_line:     overflow, leaving\n"); */
-		} else if (c->text != 0) {
+		} else {
 			/* fit as many words as possible */
 			assert(space != 0);
 			space = font_split(c->font, c->text, c->length,
@@ -745,34 +744,38 @@ void calculate_inline_container_widths(struct box *box)
 	for (child = box->children; child != 0; child = child->next) {
 		switch (child->type) {
 			case BOX_INLINE:
-				/* max = all one line */
-				if (child->font != 0)
+				if (child->text != 0)
 				{
-				child->width = font_width(child->font,
-						child->text, child->length);
-
-				max += child->width;
-
-				/* min = widest word */
-				for (word = child->text, space = strchr(child->text, ' ');
-						space != 0;
-						word = space + 1, space = strchr(word, ' ')) {
-					width = font_width(child->font, word, space - word);
-					if (min < width) min = width;
-				}
-				width = font_width(child->font, word, strlen(word));
-				if (min < width) min = width;
-				}
-				else if (child->img != 0)
-				{
-					child->width = img_width(child->img);
+					/* max = all one line */
+					child->width = font_width(child->font,
+							child->text, child->length);
 					max += child->width;
-					if (min < child->width)
-						min = child->width;
+					/* TODO: add spaces */
+
+					/* min = widest word */
+					for (word = child->text,
+							space = strchr(child->text, ' ');
+							space != 0;
+							word = space + 1,
+							space = strchr(word, ' ')) {
+						width = font_width(child->font, word,
+								space - word);
+						if (min < width) min = width;
+					}
+					width = font_width(child->font, word, strlen(word));
+					if (min < width) min = width;
 				}
 				else if (child->gadget != 0)
 				{
 					child->width = gadget_width(child->gadget);
+					max += child->width;
+					if (min < child->width)
+						min = child->width;
+				}
+				else if (child->style->width.width == CSS_WIDTH_LENGTH)
+				{
+					child->width = len(&child->style->width.value.length,
+							child->style);
 					max += child->width;
 					if (min < child->width)
 						min = child->width;

@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.27 2003/01/03 22:19:39 bursa Exp $
+ * $Id: box.c,v 1.28 2003/01/06 23:53:39 bursa Exp $
  */
 
 #include <assert.h>
@@ -147,12 +147,6 @@ void xml_to_box(xmlNode * n, struct css_style * parent_style,
 	box_normalise_block(parent->children);
 }
 
-
-void LOG2(char* log)
-{
-	fprintf(stderr, "%s\n", log);
-}
-
 struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
@@ -162,11 +156,12 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct gui_gadget* current_textarea, struct form* current_form,
 		struct page_elements* elements)
 {
-	struct box * box;
+	struct box * box = 0;
 	struct box * inline_container_c;
 	struct css_style * style;
 	xmlNode * c;
 	char * s;
+	char * text = 0;
 
 	assert(n != 0 && parent_style != 0 && stylesheet != 0 && selector != 0 &&
 			parent != 0 && fonts != 0);
@@ -187,69 +182,84 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		if (style->display == CSS_DISPLAY_NONE)
 			return inline_container;
 
+		/* special elements */
 		if (strcmp((const char *) n->name, "a") == 0) {
-			if ((s = (char *) xmlGetProp(n, (xmlChar *) "href"))) {
-				href = strdup(s);
-				free(s);
-			}
-		}
-	}
+			if ((s = (char *) xmlGetProp(n, (xmlChar *) "href")))
+				href = s;
 
-	if (n->type == XML_ELEMENT_NODE && (strcmp((const char *) n->name, "form") == 0))
-	{
-		struct form* form = box_form(n);
-		if (form != NULL)
-		{
+		} else if (strcmp((const char *) n->name, "form") == 0) {
+			struct form* form = box_form(n);
 			current_form = form;
 			add_form_element(elements, form);
-		}
-	}
-	else if (n->type == XML_TEXT_NODE ||
-			(n->type == XML_ELEMENT_NODE && (strcmp((const char *) n->name, "input") == 0)) ||
-			(n->type == XML_ELEMENT_NODE && (strcmp((const char *) n->name, "select") == 0)) ||
-			(n->type == XML_ELEMENT_NODE && (strcmp((const char *) n->name, "option") == 0)) ||
-			(n->type == XML_ELEMENT_NODE && (strcmp((const char *) n->name, "textarea") == 0)) ||
-			(n->type == XML_ELEMENT_NODE && (strcmp((const char *) n->name, "img") == 0)) ||
-			(n->type == XML_ELEMENT_NODE && (style->float_ == CSS_FLOAT_LEFT ||
-							 style->float_ == CSS_FLOAT_RIGHT))) {
-		char * text = 0;
-		int ignore;
 
-		if (n->type == XML_TEXT_NODE)
-			text = squash_whitespace(tolat1(n->content));
-		ignore = n->type == XML_TEXT_NODE && text[0] == ' ' && text[1] == 0;
+		} else if (strcmp((const char *) n->name, "img") == 0) {
+			LOG(("image"));
+			box = box_image(n, style, href);
+			add_img_element(elements, box->img);
 
-		/* text nodes are converted to inline boxes, wrapped in an inline container block */
-		if (inline_container == 0 && !ignore) {
-			/* this is the first inline node: make a container */
-			inline_container = xcalloc(1, sizeof(struct box));
-			inline_container->type = BOX_INLINE_CONTAINER;
-			box_add_child(parent, inline_container);
+		} else if (strcmp((const char *) n->name, "textarea") == 0) {
+			char * content = xmlNodeGetContent(n);
+			char * thistext = squash_whitespace(tolat1(content));  /* squash ? */
+			LOG(("textarea"));
+			box = box_textarea(n, style, current_form);
+			current_textarea = box->gadget;
+			add_gadget_element(elements, box->gadget);
+			textarea_addtext(current_textarea, thistext);
+			free(content);
+
+		} else if (strcmp((const char *) n->name, "select") == 0) {
+			LOG(("select"));
+			box = box_select(n, style, current_form);
+			current_select = box->gadget;
+			add_gadget_element(elements, box->gadget);
+
+		} else if (strcmp((const char *) n->name, "option") == 0) {
+			char * content = xmlNodeGetContent(n);
+			char * thistext = tolat1(content);
+			LOG(("option"));
+			current_option = box_option(n, style, current_select);
+			LOG(("adding to option"));
+			option_addtext(current_option, thistext);
+			LOG(("freeing thistext"));
+			LOG(("arse"));
+			free(content);
+
+		} else if (strcmp((const char *) n->name, "input") == 0) {
+			LOG(("input"));
+			box = box_input(n, style, current_form, elements);
+
 		}
-		if (ignore) {
+
+		/* special elements must be inline or block */
+		if (box != 0 && style->display != CSS_DISPLAY_INLINE)
+			style->display = CSS_DISPLAY_BLOCK;
+
+	} else if (n->type == XML_TEXT_NODE) {
+		text = squash_whitespace(tolat1(n->content));
+		if (text[0] == ' ' && text[1] == 0) {
 			if (inline_container != 0) {
 				assert(inline_container->last != 0);
 				inline_container->last->space = 1;
 			}
 			xfree(text);
-		} else if (n->type == XML_TEXT_NODE) {
-			LOG2("TEXT NODE");
-			if (current_textarea != 0)
-			{
-				char* thistext = squash_whitespace(tolat1(n->content));
-				textarea_addtext(current_textarea, thistext);
-			}
-			else if (current_option != 0)
-			{
-				char* thistext = (tolat1(n->content));
-				LOG2("adding to option");
-				option_addtext(current_option, thistext);
-				LOG2("freeing thistext");
-				LOG2("arse");
-			}
-			else
-			{
-			LOG2(("text node"));
+			return inline_container;
+		}
+	}
+
+	if (n->type == XML_TEXT_NODE ||
+			(box != 0 && style->display == CSS_DISPLAY_INLINE) ||
+			(n->type == XML_ELEMENT_NODE && (style->float_ == CSS_FLOAT_LEFT ||
+							 style->float_ == CSS_FLOAT_RIGHT))) {
+		/* text nodes are converted to inline boxes, wrapped in an inline container block */
+		if (inline_container == 0) {
+			/* this is the first inline node: make a container */
+			inline_container = xcalloc(1, sizeof(struct box));
+			inline_container->type = BOX_INLINE_CONTAINER;
+			box_add_child(parent, inline_container);
+		}
+
+		if (n->type == XML_TEXT_NODE) {
+			LOG(("text node"));
 			box = box_create(n, BOX_INLINE, parent_style, href);
 			box_add_child(inline_container, box);
 			box->length = strlen(text);
@@ -267,60 +277,30 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			}
 			box->text = text;
 			box->font = font_open(fonts, box->style);
-			}
-		} else if (strcmp((const char *) n->name, "img") == 0) {
-			LOG2(("image"));
-			box = box_image(n, parent_style, href);
-			if (box != NULL)
-			{
-				box_add_child(inline_container, box);
-				add_img_element(elements, box->img);
-			}
-		} else if (strcmp((const char *) n->name, "textarea") == 0) {
-			LOG2(("textarea"));
-			box = box_textarea(n, parent_style, current_form);
-			if (box != NULL)
-			{
-				box_add_child(inline_container, box);
-				current_textarea = box->gadget;
-				add_gadget_element(elements, box->gadget);
-			}
-		} else if (strcmp((const char *) n->name, "select") == 0) {
-			LOG2(("select"));
-			box = box_select(n, parent_style, current_form);
-			if (box != NULL)
-			{
-				box_add_child(inline_container, box);
-				current_select = box->gadget;
-				add_gadget_element(elements, box->gadget);
-			}
-		} else if (strcmp((const char *) n->name, "option") == 0) {
-			LOG2(("option"));
-			current_option = box_option(n, parent_style, current_select);
-		} else if (strcmp((const char *) n->name, "input") == 0) {
-			LOG2(("input"));
-			box = box_input(n, parent_style, current_form, elements);
-			if (box != NULL)
-			{
-				box_add_child(inline_container, box);
-				add_gadget_element(elements, box->gadget);
-			}
-		} else {
-			LOG2(("float"));
-			box = box_create(0, BOX_FLOAT_LEFT, 0, href);
-			if (style->float_ == CSS_FLOAT_RIGHT) box->type = BOX_FLOAT_RIGHT;
-			box_add_child(inline_container, box);
+
+		} else if (style->float_ == CSS_FLOAT_LEFT || style->float_ == CSS_FLOAT_RIGHT) {
+			LOG(("float"));
+			parent = box_create(0, BOX_FLOAT_LEFT, 0, href);
+			if (style->float_ == CSS_FLOAT_RIGHT) parent->type = BOX_FLOAT_RIGHT;
+			box_add_child(inline_container, parent);
 			style->float_ = CSS_FLOAT_NONE;
-			parent = box;
 			if (style->display == CSS_DISPLAY_INLINE)
 				style->display = CSS_DISPLAY_BLOCK;
+
+		} else {
+			assert(box != 0);
+			box_add_child(inline_container, box);
+			return inline_container;
 		}
 	}
 
 	if (n->type == XML_ELEMENT_NODE) {
 		switch (style->display) {
 			case CSS_DISPLAY_BLOCK:  /* blocks get a node in the box tree */
-				box = box_create(n, BOX_BLOCK, style, href);
+				if (box == 0)
+					box = box_create(n, BOX_BLOCK, style, href);
+				else
+					box->type = BOX_BLOCK;
 				box_add_child(parent, box);
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
@@ -331,6 +311,8 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_INLINE:  /* inline elements get no box, but their children do */
+				assert(box == 0);  /* special inline elements have already been
+							added to the inline container above */
 				for (c = n->children; c != 0; c = c->next)
 					inline_container = convert_xml_to_box(c, style, stylesheet,
 							selector, depth + 1, parent, inline_container,
@@ -412,12 +394,12 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "align"))) {
 		if (strcmp((const char *) n->name, "table") == 0 ||
 		    strcmp((const char *) n->name, "img") == 0) {
-			if (strcmp(s, "left") == 0) style->float_ = CSS_FLOAT_LEFT;
-			else if (strcmp(s, "right") == 0) style->float_ = CSS_FLOAT_RIGHT;
+			if (stricmp(s, "left") == 0) style->float_ = CSS_FLOAT_LEFT;
+			else if (stricmp(s, "right") == 0) style->float_ = CSS_FLOAT_RIGHT;
 		} else {
-			if (strcmp(s, "left") == 0) style->text_align = CSS_TEXT_ALIGN_LEFT;
-			else if (strcmp(s, "center") == 0) style->text_align = CSS_TEXT_ALIGN_CENTER;
-			else if (strcmp(s, "right") == 0) style->text_align = CSS_TEXT_ALIGN_RIGHT;
+			if (stricmp(s, "left") == 0) style->text_align = CSS_TEXT_ALIGN_LEFT;
+			else if (stricmp(s, "center") == 0) style->text_align = CSS_TEXT_ALIGN_CENTER;
+			else if (stricmp(s, "right") == 0) style->text_align = CSS_TEXT_ALIGN_RIGHT;
 		}
 		free(s);
 	}
@@ -429,15 +411,22 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 	}
 
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "clear"))) {
-		if (strcmp(s, "all") == 0) style->clear = CSS_CLEAR_BOTH;
-		else if (strcmp(s, "left") == 0) style->clear = CSS_CLEAR_LEFT;
-		else if (strcmp(s, "right") == 0) style->clear = CSS_CLEAR_RIGHT;
+		if (stricmp(s, "all") == 0) style->clear = CSS_CLEAR_BOTH;
+		else if (stricmp(s, "left") == 0) style->clear = CSS_CLEAR_LEFT;
+		else if (stricmp(s, "right") == 0) style->clear = CSS_CLEAR_RIGHT;
 	}
 
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "color"))) {
 		unsigned int r, g, b;
 		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 			style->color = (b << 16) | (g << 8) | r;
+	}
+
+	if ((s = (char *) xmlGetProp(n, (xmlChar *) "height"))) {
+		style->height.height = CSS_HEIGHT_LENGTH;
+		style->height.length.unit = CSS_UNIT_PX;
+		style->height.length.value = atof(s);
+		free(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "width"))) {
@@ -484,8 +473,12 @@ void box_dump(struct box * box, unsigned int depth)
 	switch (box->type) {
 		case BOX_BLOCK:            fprintf(stderr, "BOX_BLOCK "); break;
 		case BOX_INLINE_CONTAINER: fprintf(stderr, "BOX_INLINE_CONTAINER "); break;
-		case BOX_INLINE:           fprintf(stderr, "BOX_INLINE '%.*s' ",
-		                                   (int) box->length, box->text); break;
+		case BOX_INLINE:           if (box->text != 0)
+		                                   fprintf(stderr, "BOX_INLINE '%.*s' ",
+		                                           (int) box->length, box->text);
+		                           else
+		                                   fprintf(stderr, "BOX_INLINE (special) ");
+		                           break;
 		case BOX_TABLE:            fprintf(stderr, "BOX_TABLE "); break;
 		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW "); break;
 		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL [columns %i] ",
@@ -966,21 +959,19 @@ struct box* box_image(xmlNode * n, struct css_style* style, char* href)
 	box->length = 0;
 	box->font = 0;
 
-	if ((s = (char *) xmlGetProp(n, (xmlChar *) "width")))
-	{
-		box->img->width = atoi(s);
-		free(s);
+	if (style->width.width == CSS_WIDTH_AUTO) {
+		/* should find the real image width */
+		style->width.width = CSS_WIDTH_LENGTH;
+		style->width.value.length.unit = CSS_UNIT_PX;
+		style->width.value.length.value = 24;
 	}
-	else
-		box->img->width = 24;
 
-	if ((s = (char *) xmlGetProp(n, (xmlChar *) "height")))
-	{
-		box->img->height = atoi(s);
-		free(s);
+	if (style->height.height == CSS_HEIGHT_AUTO) {
+		/* should find the real image height */
+		style->height.height = CSS_HEIGHT_LENGTH;
+		style->height.length.unit = CSS_UNIT_PX;
+		style->height.length.value = 24;
 	}
-	else
-		box->img->height = 24;
 
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "alt")))
 	{
@@ -995,9 +986,9 @@ struct box* box_textarea(xmlNode* n, struct css_style* style, struct form* curre
 	struct box* box = 0;
 	char* s;
 
-	LOG2("creating box");
+	LOG(("creating box"));
 	box = box_create(n, BOX_INLINE, style, NULL);
-	LOG2("creating gadget");
+	LOG(("creating gadget"));
 	box->gadget = xcalloc(1, sizeof(struct gui_gadget));
 	box->gadget->type = GADGET_TEXTAREA;
 	box->gadget->form = current_form;
@@ -1035,9 +1026,9 @@ struct box* box_select(xmlNode * n, struct css_style* style, struct form* curren
 	struct box* box = 0;
 	char* s;
 
-	LOG2("creating box");
+	LOG(("creating box"));
 	box = box_create(n, BOX_INLINE, style, NULL);
-	LOG2("creating gadget");
+	LOG(("creating gadget"));
 	box->gadget = xcalloc(1, sizeof(struct gui_gadget));
 	box->gadget->type = GADGET_SELECT;
 	box->gadget->form = current_form;
@@ -1065,7 +1056,7 @@ struct box* box_select(xmlNode * n, struct css_style* style, struct form* curren
 	box->gadget->data.select.items = NULL;
 	box->gadget->data.select.numitems = 0;
 	/* to do: multiple, name */
-	LOG2("returning from select");
+	LOG(("returning from select"));
 	return box;
 }
 
@@ -1075,7 +1066,7 @@ struct formoption* box_option(xmlNode* n, struct css_style* style, struct gui_ga
 	char* s;
 	assert(current_select != 0);
 
-	LOG2("realloc option");
+	LOG(("realloc option"));
 	if (current_select->data.select.items == 0)
 	{
 		option = xcalloc(1, sizeof(struct formoption));
@@ -1101,7 +1092,7 @@ struct formoption* box_option(xmlNode* n, struct css_style* style, struct gui_ga
 		option->value = s;
 	}
 
-	LOG2("returning");
+	LOG(("returning"));
 	return option;
 }
 
@@ -1128,16 +1119,16 @@ void option_addtext(struct formoption* option, char* text)
 
 	if (option->text == 0)
 	{
-		LOG2("option->text is 0");
+		LOG(("option->text is 0"));
 		option->text = strdup(text);
 	}
 	else
 	{
-		LOG2("option->text is realloced");
+		LOG(("option->text is realloced"));
 		option->text = xrealloc(option->text, strlen(option->text) + strlen(text) + 1);
 		strcat(option->text, text);
 	}
-	LOG2("returning");
+	LOG(("returning"));
 	return;
 }
 
@@ -1149,7 +1140,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 
 	if ((type = (char *) xmlGetProp(n, (xmlChar *) "type")))
 	{
-		if (strcmp(type, "hidden") == 0)
+		if (stricmp(type, "hidden") == 0)
 		{
 			struct gui_gadget* g = xcalloc(1, sizeof(struct gui_gadget));
 			g->type = GADGET_HIDDEN;
@@ -1162,8 +1153,9 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			if ((s = (char *) xmlGetProp(n, (xmlChar *) "name"))) {
 				g->name = s;
 			}
+			add_gadget_element(elements, g);
 		}
-		if (strcmp(type, "checkbox") == 0 || strcmp(type, "radio") == 0)
+		if (stricmp(type, "checkbox") == 0 || stricmp(type, "radio") == 0)
 		{
 			box = box_create(n, BOX_INLINE, style, NULL);
 			box->gadget = xcalloc(1, sizeof(struct gui_gadget));
@@ -1195,8 +1187,9 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			if ((s = (char *) xmlGetProp(n, (xmlChar *) "name"))) {
 				box->gadget->name = s;
 			}
+			add_gadget_element(elements, box->gadget);
 		}
-		if (strcmp(type, "submit") == 0 || strcmp(type, "reset") == 0)
+		if (stricmp(type, "submit") == 0 || stricmp(type, "reset") == 0)
 		{
 			//style->display = CSS_DISPLAY_BLOCK;
 
@@ -1221,8 +1214,9 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			if ((s = (char *) xmlGetProp(n, (xmlChar *) "name"))) {
 				box->gadget->name = s;
 			}
+			add_gadget_element(elements, box->gadget);
 		}
-		if (strcmp(type, "text") == 0 || strcmp(type, "password") == 0)
+		if (stricmp(type, "text") == 0 || stricmp(type, "password") == 0)
 		{
 			//style->display = CSS_DISPLAY_BLOCK;
 
@@ -1258,6 +1252,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			if ((s = (char *) xmlGetProp(n, (xmlChar *) "name"))) {
 				box->gadget->name = s;
 			}
+			add_gadget_element(elements, box->gadget);
 		}
 		free(type);
 	}
@@ -1275,11 +1270,10 @@ struct form* box_form(xmlNode* n)
 		form->action = s;
 	}
 
+	form->method = method_GET;
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "method"))) {
-		if (strcmp(s, "get") == 0)
-			form->action = method_GET;
-		else if (strcmp(s, "post") == 0)
-			form->action = method_POST;
+		if (stricmp(s, "post") == 0)
+			form->method = method_POST;
 		xfree(s);
 	}
 
