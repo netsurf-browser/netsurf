@@ -5,31 +5,8 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
-/**
- * This module handles fetching of data from any url.
- *
- * Usage:
- *
- * fetch_init() must be called once before any other function. fetch_quit()
- * must be called before exiting.
- *
- * fetch_start() will begin fetching a url. The function returns immediately.
- * A pointer to an opaque struct fetch is returned, which can be passed to
- * fetch_abort() to abort the fetch at any time. The caller must supply a
- * callback function which is called when anything interesting happens. The
- * callback function is first called with msg = FETCH_TYPE, with the
- * Content-Type header in data, then one or more times with FETCH_DATA with
- * some data for the url, and finally with FETCH_FINISHED. Alternatively,
- * FETCH_ERROR indicates an error occurred: data contains an error message.
- * FETCH_REDIRECT may replace the FETCH_TYPE, FETCH_DATA, FETCH_FINISHED
- * sequence if the server sends a replacement URL.
- * Some private data can be passed as the last parameter to fetch_start, and
- * callbacks will contain this.
- *
- * fetch_poll() must be called regularly to make progress on fetches.
- *
- * fetch_filetype() is used internally to determine the mime type of local
- * files. It is platform specific, and implemented elsewhere.
+/** \file
+ * Fetching of data from a URL (interface).
  */
 
 #ifndef _NETSURF_DESKTOP_FETCH_H_

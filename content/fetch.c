@@ -6,15 +6,14 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
 
-/**
- * This module handles fetching of data from any url.
+/** \file
+ * Fetching of data from a URL (implementation).
  *
- * Implementation:
  * This implementation uses libcurl's 'multi' interface.
  *
  * Active fetches are held in the linked list fetch_list. There may be at most
- * one fetch from each host. Any further fetches are queued until the previous
- * one ends.
+ * one fetch in progress from each host. Any further fetches are queued until
+ * the previous one ends.
  */
 
 #include <assert.h>
@@ -33,45 +32,47 @@
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
-struct fetch
-{
-	time_t start_time;
-	CURL * curl_handle;
+
+/** Information for a single fetch. */
+struct fetch {
+	CURL * curl_handle;	/**< cURL handle if being fetched, or 0. */
 	void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size);
-	bool had_headers;
-	bool in_callback;
-	bool aborting;
-	bool only_2xx;
-	char *url;
-	char *referer;
-	char error_buffer[CURL_ERROR_SIZE];
-	void *p;
-	struct curl_slist *headers;
-	char *host;
-	int status_code;
-	char *location;
-	unsigned long content_length;
-	struct fetch *queue;
-	struct fetch *prev;
-	struct fetch *next;
+				/**< Callback function. */
+	bool had_headers;	/**< Headers have been processed. */
+	bool in_callback;	/**< Waiting for return from callback. */
+	bool aborting;		/**< Abort requested in callback. */
+	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
+	char *url;		/**< URL. */
+	char *referer;		/**< URL for Referer header. */
+	char error_buffer[CURL_ERROR_SIZE];	/**< Error buffer for cURL. */
+	void *p;		/**< Private data for callback. */
+	struct curl_slist *headers;	/**< List of request headers. */
+	char *host;		/**< Host part of URL. */
+	char *location;		/**< Response Location header, or 0. */
+	unsigned long content_length;	/**< Response Content-Length, or 0. */
+	struct fetch *queue;	/**< Next fetch for this host. */
+	struct fetch *prev;	/**< Previous active fetch in ::fetch_list. */
+	struct fetch *next;	/**< Next active fetch in ::fetch_list. */
 };
 
 static const char * const user_agent = "NetSurf";
-static char * ca_bundle;
-static CURLM * curl_multi;
-static struct fetch *fetch_list = 0;
+static CURLM * curl_multi;		/**< Global cURL multi handle. */
+static struct fetch *fetch_list = 0;	/**< List of active fetches. */
 
 static size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f);
 static size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f);
 static bool fetch_process_headers(struct fetch *f);
 
 #ifdef riscos
+static char * ca_bundle;	/**< SSL certificate bundle filename. */
 extern const char * const NETSURF_DIR;
 #endif
 
 
 /**
- * fetch_init -- initialise the fetcher
+ * Initialise the fetcher.
+ *
+ * Must be called once before any other function.
  */
 
 void fetch_init(void)
@@ -95,7 +96,9 @@ void fetch_init(void)
 
 
 /**
- * fetch_quit -- clean up for quit
+ * Clean up for quit.
+ *
+ * Must be called before exiting.
  */
 
 void fetch_quit(void)
@@ -111,10 +114,25 @@ void fetch_quit(void)
 
 
 /**
- * fetch_start -- start fetching data for the given url
+ * Start fetching data for the given URL.
  *
- * Returns immediately. The callback function will be called when
- * something interesting happens.
+ * The function returns immediately. The fetch may be queued for later
+ * processing.
+ *
+ * A pointer to an opaque struct fetch is returned, which can be passed to
+ * fetch_abort() to abort the fetch at any time. Returns 0 if the URL is
+ * invalid.
+ *
+ * The caller must supply a callback function which is called when anything
+ * interesting happens. The callback function is first called with msg
+ * FETCH_TYPE, with the Content-Type header in data, then one or more times
+ * with FETCH_DATA with some data for the url, and finally with
+ * FETCH_FINISHED. Alternatively, FETCH_ERROR indicates an error occurred:
+ * data contains an error message. FETCH_REDIRECT may replace the FETCH_TYPE,
+ * FETCH_DATA, FETCH_FINISHED sequence if the server sends a replacement URL.
+ *
+ * Some private data can be passed as the last parameter to fetch_start, and
+ * callbacks will contain this.
  */
 
 struct fetch * fetch_start(char *url, char *referer,
@@ -135,7 +153,6 @@ struct fetch * fetch_start(char *url, char *referer,
 	}
 
 	/* construct a new fetch structure */
-	fetch->start_time = time(0);
 	fetch->callback = callback;
 	fetch->had_headers = false;
 	fetch->in_callback = false;
@@ -150,7 +167,6 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->host = 0;
 	if (uri->server != 0)
 		fetch->host = xstrdup(uri->server);
-	fetch->status_code = 0;
 	fetch->content_length = 0;
 	fetch->queue = 0;
 	fetch->prev = 0;
@@ -245,7 +261,7 @@ struct fetch * fetch_start(char *url, char *referer,
 
 
 /**
- * fetch_abort -- stop a fetch
+ * Stop a fetch.
  */
 
 void fetch_abort(struct fetch *f)
@@ -324,9 +340,9 @@ void fetch_abort(struct fetch *f)
 
 
 /**
- * fetch_poll -- do some work on current fetches
+ * Do some work on current fetches.
  *
- * Must return as soon as possible.
+ * Must be called regularly to make progress on fetches.
  */
 
 void fetch_poll(void)
@@ -391,7 +407,7 @@ void fetch_poll(void)
 
 
 /**
- * fetch_curl_data -- callback function for curl (internal)
+ * Callback function for cURL.
  */
 
 size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
@@ -415,7 +431,7 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 
 
 /**
- * fetch_curl_header -- callback function for headers
+ * Callback function for headers.
  */
 
 size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f)
