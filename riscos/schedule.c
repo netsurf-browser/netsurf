@@ -118,15 +118,21 @@ void schedule_remove(void (*callback)(void *p), void *p)
 void schedule_run(void)
 {
 	struct sched_entry *entry;
+	void (*callback)(void *p);
+	void *p;
 	os_t now;
 
 	now = os_read_monotonic_time();
 
 	while (sched_queue.next && sched_queue.next->time <= now) {
 		entry = sched_queue.next;
-		entry->callback(entry->p);
+		callback = entry->callback;
+		p = entry->p;
 		sched_queue.next = entry->next;
 		free(entry);
+		/* The callback may call schedule() or schedule_remove(), so
+		 * leave the queue in a safe state. */
+		callback(p);
 	}
 
 	if (sched_queue.next) {
