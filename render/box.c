@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.7 2002/06/26 12:19:24 bursa Exp $
+ * $Id: box.c,v 1.8 2002/06/26 23:27:30 bursa Exp $
  */
 
 #include <assert.h>
@@ -18,6 +18,7 @@
  */
 
 void box_add_child(struct box * parent, struct box * child);
+struct box * box_create(xmlNode * node, box_type type, struct css_style * style);
 struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_style * parent_style,
 		xmlNode * n, struct css_selector * selector, unsigned int depth);
 
@@ -37,6 +38,18 @@ void box_add_child(struct box * parent, struct box * child)
 	child->parent = parent;
 }
 
+/**
+ * create a box tree node
+ */
+
+struct box * box_create(xmlNode * node, box_type type, struct css_style * style)
+{
+	struct box * box = xcalloc(1, sizeof(struct box));
+	box->node = node;
+	box->type = type;
+	box->style = style;
+	return box;
+}
 
 /**
  * make a box tree with style data from an xml tree
@@ -60,17 +73,17 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 {
 	struct box * box;
 	struct box * inline_container_c;
-	struct css_style * style;
+	struct css_style * style, * style2;
 	xmlNode * c;
-	xmlChar * s;
+	char * s;
 
 	if (n->type == XML_ELEMENT_NODE) {
 		/* work out the style for this element */
 		*selector = xrealloc(*selector, (depth + 1) * sizeof(struct css_selector));
 		(*selector)[depth].element = (const char *) n->name;
 		(*selector)[depth].class = (*selector)[depth].id = 0;
-		if ((s = xmlGetProp(n, (xmlChar *) "class")))
-			(*selector)[depth].class = (char *) s;
+		if ((s = (char *) xmlGetProp(n, (xmlChar *) "class")))
+			(*selector)[depth].class = s;
 		style = box_get_style(stylesheet, parent_style, n, *selector, depth + 1);
 	}
 
@@ -81,6 +94,33 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 		if (inline_container == 0) {  /* this is the first inline node: make a container */
 			inline_container = xcalloc(1, sizeof(struct box));
 			inline_container->type = BOX_INLINE_CONTAINER;
+			switch (parent->type) {
+				case BOX_TABLE:
+					/* insert implied table row and cell */
+					style2 = xcalloc(1, sizeof(struct css_style));
+					memcpy(style2, parent_style, sizeof(struct css_style));
+					css_cascade(style2, &css_blank_style);
+					box = box_create(0, BOX_TABLE_ROW, style2);
+					box_add_child(parent, box);
+					parent = box;
+					/* fall through */
+				case BOX_TABLE_ROW:
+					/* insert implied table cell */
+					style2 = xcalloc(1, sizeof(struct css_style));
+					memcpy(style2, parent_style, sizeof(struct css_style));
+					css_cascade(style2, &css_blank_style);
+					box = box_create(0, BOX_TABLE_CELL, style2);
+					box->colspan = 1;
+					box_add_child(parent, box);
+					parent = box;
+					break;
+				case BOX_BLOCK:
+				case BOX_TABLE_CELL:
+				case BOX_FLOAT:
+					break;
+				default:
+					assert(0);
+			}
 			box_add_child(parent, inline_container);
 		}
 		box = calloc(1, sizeof(struct box));
@@ -102,10 +142,34 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 	} else if (n->type == XML_ELEMENT_NODE) {
 		switch (style->display) {
 			case CSS_DISPLAY_BLOCK:  /* blocks get a node in the box tree */
-				box = xcalloc(1, sizeof(struct box));
-				box->node = n;
-				box->type = BOX_BLOCK;
-				box->style = style;
+				switch (parent->type) {
+					case BOX_TABLE:
+						/* insert implied table row and cell */
+						style2 = xcalloc(1, sizeof(struct css_style));
+						memcpy(style2, parent_style, sizeof(struct css_style));
+						css_cascade(style2, &css_blank_style);
+						box = box_create(0, BOX_TABLE_ROW, style2);
+						box_add_child(parent, box);
+						parent = box;
+						/* fall through */
+					case BOX_TABLE_ROW:
+						/* insert implied table cell */
+						style2 = xcalloc(1, sizeof(struct css_style));
+						memcpy(style2, parent_style, sizeof(struct css_style));
+						css_cascade(style2, &css_blank_style);
+						box = box_create(0, BOX_TABLE_CELL, style2);
+						box->colspan = 1;
+						box_add_child(parent, box);
+						parent = box;
+						break;
+					case BOX_BLOCK:
+					case BOX_TABLE_CELL:
+					case BOX_FLOAT:
+						break;
+					default:
+						assert(0);
+				}
+				box = box_create(n, BOX_BLOCK, style);
 				box_add_child(parent, box);
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
@@ -119,10 +183,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 							selector, depth + 1, parent, inline_container);
 				break;
 			case CSS_DISPLAY_TABLE:
-				box = xcalloc(1, sizeof(struct box));
-				box->node = n;
-				box->type = BOX_TABLE;
-				box->style = style;
+				box = box_create(n, BOX_TABLE, style);
 				box_add_child(parent, box);
 				for (c = n->children; c != 0; c = c->next)
 					xml_to_box(c, style, stylesheet,
@@ -130,11 +191,17 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_TABLE_ROW:
+				if (parent->type != BOX_TABLE) {
+					/* insert implied table */
+					style2 = xcalloc(1, sizeof(struct css_style));
+					memcpy(style2, parent_style, sizeof(struct css_style));
+					css_cascade(style2, &css_blank_style);
+					box = box_create(0, BOX_TABLE, style2);
+					box_add_child(parent, box);
+					parent = box;
+				}
 				assert(parent->type == BOX_TABLE);
-				box = xcalloc(1, sizeof(struct box));
-				box->node = n;
-				box->type = BOX_TABLE_ROW;
-				box->style = style;
+				box = box_create(n, BOX_TABLE_ROW, style);
 				box_add_child(parent, box);
 				for (c = n->children; c != 0; c = c->next)
 					xml_to_box(c, style, stylesheet,
@@ -143,10 +210,12 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 				break;
 			case CSS_DISPLAY_TABLE_CELL:
 				assert(parent->type == BOX_TABLE_ROW);
-				box = xcalloc(1, sizeof(struct box));
-				box->node = n;
-				box->type = BOX_TABLE_CELL;
-				box->style = style;
+				box = box_create(n, BOX_TABLE_CELL, style);
+				if ((s = (char *) xmlGetProp(n, (xmlChar *) "colspan"))) {
+					if ((box->colspan = strtol(s, 0, 10)) == 0)
+						box->colspan = 1;
+				} else
+					box->colspan = 1;
 				box_add_child(parent, box);
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
@@ -221,16 +290,19 @@ void box_dump(struct box * box, unsigned int depth)
 	fprintf(stderr, "x%li y%li w%li h%li ", box->x, box->y, box->width, box->height);
 
 	switch (box->type) {
-		case BOX_BLOCK:            fprintf(stderr, "BOX_BLOCK <%s> ", box->node->name); break;
+		case BOX_BLOCK:            fprintf(stderr, "BOX_BLOCK "); break;
 		case BOX_INLINE_CONTAINER: fprintf(stderr, "BOX_INLINE_CONTAINER "); break;
 		case BOX_INLINE:           fprintf(stderr, "BOX_INLINE '%.*s' ",
 		                                   (int) box->length, box->text); break;
-		case BOX_TABLE:            fprintf(stderr, "BOX_TABLE <%s> ", box->node->name); break;
-		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW <%s> ", box->node->name); break;
-		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL <%s> ", box->node->name); break;
-		case BOX_FLOAT:            fprintf(stderr, "BOX_FLOAT <%s> ", box->node->name); break;
+		case BOX_TABLE:            fprintf(stderr, "BOX_TABLE "); break;
+		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW "); break;
+		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL [colspan %i] ",
+		                                   box->colspan); break;
+		case BOX_FLOAT:            fprintf(stderr, "BOX_FLOAT "); break;
 		default:                   fprintf(stderr, "Unknown box type ");
 	}
+	if (box->node)
+		fprintf(stderr, "<%s> ", box->node->name);
 	if (box->style)
 		css_dump_style(box->style);
 	fprintf(stderr, "\n");

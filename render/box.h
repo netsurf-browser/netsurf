@@ -1,19 +1,24 @@
 /**
- * $Id: box.h,v 1.3 2002/06/18 21:24:21 bursa Exp $
+ * $Id: box.h,v 1.4 2002/06/26 23:27:30 bursa Exp $
  */
 
 /**
  * structures
  */
 
+typedef enum {
+	BOX_BLOCK, BOX_INLINE_CONTAINER, BOX_INLINE,
+	BOX_TABLE, BOX_TABLE_ROW, BOX_TABLE_CELL, BOX_FLOAT
+} box_type;
+
 struct box {
-	enum { BOX_BLOCK, BOX_INLINE_CONTAINER, BOX_INLINE,
-		BOX_TABLE, BOX_TABLE_ROW, BOX_TABLE_CELL, BOX_FLOAT } type;
+	box_type type;
 	xmlNode * node;
 	struct css_style * style;
 	unsigned long x, y, width, height;
 	const char * text;
 	unsigned int length;
+	unsigned int colspan;
 	struct box * next;
 	struct box * children;
 	struct box * last;

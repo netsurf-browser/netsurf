@@ -3,10 +3,10 @@ html { font-size: medium }
 address, blockquote, body, dd, div, 
 dl, dt, fieldset, form,
 h1, h2, h3, h4, h5, h6, html,
-object, ol, p, ul
+object, ol, p, ul,
 hr, menu, pre   { display: block }
-a, abbr, acronym, b, code
-em, i, q, s, strong, u,
+a, abbr, acronym, b, code,
+em, i, q, s, strong, u, font, span,
 var             { display: inline }
 li              { display: list-item }
 head            { display: none }

@@ -1,5 +1,5 @@
 /**
- * $Id: css.h,v 1.5 2002/06/21 18:16:24 bursa Exp $
+ * $Id: css.h,v 1.6 2002/06/26 23:27:30 bursa Exp $
  */
 
 #include "css_enum.h"
@@ -76,6 +76,7 @@ struct css_selector {
 
 extern const struct css_style css_base_style;
 extern const struct css_style css_empty_style;
+extern const struct css_style css_blank_style;
 
 /**
  * interface

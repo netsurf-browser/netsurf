@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.15 2002/06/26 12:19:24 bursa Exp $
+ * $Id: render.c,v 1.16 2002/06/26 23:27:30 bursa Exp $
  */
 
 #include <assert.h>
@@ -102,7 +102,7 @@ void render_dump(struct box * box, unsigned long x, unsigned long y)
 		case BOX_TABLE_ROW:
 		case BOX_TABLE_CELL:
 		case BOX_FLOAT:
-		case BOX_BLOCK: name = (const char *) box->node->name;
+		case BOX_BLOCK: if (box->node) name = (const char *) box->node->name;
 				break;
 		case BOX_INLINE:
 		case BOX_INLINE_CONTAINER:
@@ -117,6 +117,10 @@ void render_dump(struct box * box, unsigned long x, unsigned long y)
 		for (i = 0; i < box->length; i++) {
 			if (box->text[i] == '"')
 				printf("\\\"");
+			else if (box->text[i] == '[')
+				printf("\\[");
+			else if (box->text[i] == '$')
+				printf("\\$");
 			else
 				printf("%c", box->text[i]);
 		}
