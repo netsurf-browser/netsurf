@@ -1,4 +1,4 @@
-$Id: TODO-CSS,v 1.12 2004/06/10 11:43:27 tlsa Exp $
+$Id: TODO-CSS,v 1.13 2004/06/25 23:43:11 tlsa Exp $
 
 TODO-CSS file for NetSurf.
 
@@ -9,11 +9,11 @@ A "=" before the property means that it is partially implemented.
 
 See TODO-HTML for HTML related TODOs.
 
-= background (colour only)
++ background (attachment in progress)
 = background-attachment
 + background-color
 + background-image
-= background-position
++ background-position
 + background-repeat
 = border
 = border-collapse
