@@ -11,7 +11,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <swis.h>
-#include "oslib/colourtrans.h"
 #include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
@@ -19,8 +18,8 @@
 #include "netsurf/riscos/gif.h"
 #include "netsurf/riscos/gifread.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/image.h"
 #include "netsurf/riscos/options.h"
-#include "netsurf/riscos/tinct.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -125,24 +124,16 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 bool nsgif_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale) {
+		float scale, unsigned long background_colour) {
 
 	int previous_frame;
 	unsigned int frame, current_frame;
-	unsigned int tinct_options;
-	os_factors f;
-	osspriteop_trans_tab *table;
-	unsigned int size;
-	_kernel_oserror *e;
-	os_error *error;
 
 	/*	If we have a gui_window then we work from there, if not we use the global
 		settings. We default to the first image if we don't have a GUI as we are
 		drawing a thumbnail unless something has gone very wrong somewhere else.
 	*/
 	if (ro_gui_current_redraw_gui) {
-		tinct_options = (ro_gui_current_redraw_gui->option.filter_sprites?tinct_BILINEAR_FILTER:0) |
-				(ro_gui_current_redraw_gui->option.dither_sprites?tinct_DITHER:0);
 		if (ro_gui_current_redraw_gui->option.animate_images) {
 			current_frame = c->data.gif.current_frame;
 		} else {
@@ -158,8 +149,6 @@ bool nsgif_redraw(struct content *c, int x, int y,
 				current_frame = 0;
 			}
 		}
-		tinct_options = (option_filter_sprites?tinct_BILINEAR_FILTER:0) |
-				(option_dither_sprites?tinct_DITHER:0);
 	}
 
 	/*	Decode from the last frame to the current frame
@@ -174,75 +163,10 @@ bool nsgif_redraw(struct content *c, int x, int y,
 		gif_decode_frame(c->data.gif.gif, frame);
 	}
 
-	/*	Tinct currently only handles 32bpp sprites that have an embedded alpha mask. Any
-		sprites not matching the required specifications are ignored. See the Tinct
-		documentation for further information.
-	*/
-	if (!print_active) {
-		e = _swix(Tinct_PlotScaledAlpha, _INR(2,7),
-			(char *)c->data.gif.gif->frame_image +
-			c->data.gif.gif->frame_image->first,
-			x, (int)(y - height),
-			width, height,
-			tinct_options);
-		if (e) {
-			LOG(("tinct_plotscaledalpha: 0x%x: %s", e->errnum, e->errmess));
-			return false;
-		}
-	}
-	else {
-		error = xcolourtrans_generate_table_for_sprite(
-			c->data.gif.gif->frame_image,
-			(osspriteop_id)((char *)
-				c->data.gif.gif->frame_image +
-				c->data.gif.gif->frame_image->first),
-			colourtrans_CURRENT_MODE,
-			colourtrans_CURRENT_PALETTE,
-			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
-		if (error) {
-			LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess));
-			return false;
-		}
-
-		table = calloc(size, sizeof(char));
-
-		error = xcolourtrans_generate_table_for_sprite(
-			c->data.gif.gif->frame_image,
-			(osspriteop_id)((char *)
-				c->data.gif.gif->frame_image +
-				c->data.gif.gif->frame_image->first),
-			colourtrans_CURRENT_MODE,
-			colourtrans_CURRENT_PALETTE,
-			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
-		if (error) {
-			LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess));
-			free(table);
-			return false;
-		}
-
-		f.xmul = width;
-		f.ymul = height;
-		f.xdiv = c->width * 2;
-		f.ydiv = c->height * 2;
-
-		error = xosspriteop_put_sprite_scaled(osspriteop_PTR,
-			c->data.gif.gif->frame_image,
-			(osspriteop_id)((char *)
-				c->data.gif.gif->frame_image +
-				c->data.gif.gif->frame_image->first),
-			x, (int)(y - height),
-			osspriteop_USE_MASK | osspriteop_USE_PALETTE,
-			&f, table);
-		if (error) {
-			LOG(("xosspriteop_put_sprite_scaled: 0x%x: %s", error->errnum, error->errmess));
-			free(table);
-			return false;
-		}
-
-		free(table);
-	}
-
-	return true;
+	return image_redraw(c->data.gif.gif->frame_image, x, y, width,
+			height, c->width * 2, c->height * 2,
+			background_colour, false, false,
+			IMAGE_PLOT_TINCT_ALPHA);
 }
 
 

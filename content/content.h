@@ -277,7 +277,7 @@ void content_quit(void);
 bool content_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale);
+		float scale, unsigned long background_colour);
 void content_add_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, union content_msg_data data),

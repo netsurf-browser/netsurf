@@ -105,7 +105,7 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 						(osspriteop_header *)(oversampled_area + 1));
 		if (save_area == NULL) return;
 		content_redraw(content, 0, height * 2, width * 2, height * 2,
-				0, 0, width * 2, height * 2, scale);
+				0, 0, width * 2, height * 2, scale, 0xFFFFFF);
 		thumbnail_restore_output(save_area);
 
 		/*	Scale back
@@ -152,7 +152,7 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 				os_ACTION_OVERWRITE, 0);
 		os_clg();
 		content_redraw(content, 0, height * 2, width * 2, height * 2,
-				0, 0, width * 2, height * 2, scale);
+				0, 0, width * 2, height * 2, scale, 0xFFFFFF);
 		thumbnail_restore_output(save_area);
 	}
 }

@@ -12,6 +12,7 @@
 #include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
+#include "netsurf/riscos/image.h"
 #include "netsurf/riscos/sprite.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -100,56 +101,10 @@ void sprite_destroy(struct content *c)
 bool sprite_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale)
+		float scale, unsigned long background_colour)
 {
-	unsigned int size;
-	osspriteop_area *area = (osspriteop_area*)c->data.sprite.data;
-	osspriteop_trans_tab *table;
-	os_factors factors;
-	os_error *error;
-
-	error = xcolourtrans_generate_table_for_sprite(
-			area,
-			(osspriteop_id)((char*)(c->data.sprite.data) +
-					 area->first),
-			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
-			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
-	if (error) {
-		LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	table = xcalloc(size, 1);
-	error = xcolourtrans_generate_table_for_sprite(
-			area,
-			(osspriteop_id)((char*)(c->data.sprite.data) +
-					 area->first),
-			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
-			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
-	if (error) {
-		LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess));
-		free(table);
-		return false;
-	}
-
-	factors.xmul = width;
-	factors.ymul = height;
-	factors.xdiv = c->width * 2;
-	factors.ydiv = c->height * 2;
-
-	error = xosspriteop_put_sprite_scaled(osspriteop_PTR,
-			area,
-			(osspriteop_id)((char*)(c->data.sprite.data) +
-					 area->first),
-			x, (int)(y - height),
-			osspriteop_USE_MASK | osspriteop_USE_PALETTE, &factors, table);
-	if (error) {
-		LOG(("xosspriteop_put_sprite_scaled: 0x%x: %s", error->errnum, error->errmess));
-		free(table);
-		return false;
-	}
-
-	xfree(table);
-
-	return true;
+	return image_redraw(c->data.sprite.data, x, y, width, height,
+			c->width * 2, c->height * 2, background_colour,
+			false, false, IMAGE_PLOT_OS);
 }
 #endif

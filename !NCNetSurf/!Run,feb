@@ -36,8 +36,8 @@ RMEnsure MimeMap 0.10 RMLoad System:Modules.Network.MimeMap
 RMEnsure MimeMap 0.10 Error NCNetSurf requires MimeMap 0.10 or later.
 
 | Ensure Tinct is installed.
-RMEnsure Tinct 0.05 RMLoad <NetSurf$Dir>.Resources.Tinct
-RMEnsure Tinct 0.05 Error NetSurf requires Tinct 0.05 or later.
+RMEnsure Tinct 0.07 RMLoad <NetSurf$Dir>.Resources.Tinct
+RMEnsure Tinct 0.07 Error NetSurf requires Tinct 0.07 or later.
 
 | Ensue that the Wimp Scrap directory has been set.
 WimpSlot -Min 32k -Max 32k

@@ -13,7 +13,6 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
-#include "swis.h"
 #include "oslib/colourtrans.h"
 #include "oslib/draw.h"
 #include "oslib/font.h"
@@ -27,8 +26,8 @@
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/image.h"
 #include "netsurf/riscos/options.h"
-#include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/toolbar.h"
 #include "netsurf/riscos/ufont.h"
 #include "netsurf/riscos/wimp.h"
@@ -59,7 +58,8 @@ static bool html_redraw_radio(int x, int y, int width, int height,
 static bool html_redraw_file(int x, int y, int width, int height,
 		struct box *box, float scale);
 static bool html_redraw_background(int x, int y, int width, int height,
-		struct box *box, float scale);
+		struct box *box, float scale,
+		unsigned long background_colour);
 
 bool gui_redraw_debug = false;
 static int ro_gui_redraw_box_depth;
@@ -73,16 +73,17 @@ static os_trfm trfm = { {
 /**
  * Draw a CONTENT_HTML to a RISC OS window.
  *
- * \param  c        content of type CONTENT_HTML
- * \param  x        coordinate for top-left of redraw
- * \param  y        coordinate for top-left of redraw
- * \param  width    available width (not used for HTML redraw)
- * \param  height   available height (not used for HTML redraw)
- * \param  clip_x0  clip rectangle
- * \param  clip_y0  clip rectangle
- * \param  clip_x1  clip rectangle
- * \param  clip_y1  clip rectangle
- * \param  scale    scale for redraw
+ * \param  c                 content of type CONTENT_HTML
+ * \param  x                 coordinate for top-left of redraw
+ * \param  y                 coordinate for top-left of redraw
+ * \param  width             available width (not used for HTML redraw)
+ * \param  height            available height (not used for HTML redraw)
+ * \param  clip_x0           clip rectangle
+ * \param  clip_y0           clip rectangle
+ * \param  clip_x1           clip rectangle
+ * \param  clip_y1           clip rectangle
+ * \param  scale             scale for redraw
+ * \param  background_colour the background colour
  * \return true if successful, false otherwise
  *
  * x, y, clip_[xy][01] are in RISC OS screen absolute OS-units.
@@ -91,9 +92,8 @@ static os_trfm trfm = { {
 bool html_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale)
+		float scale, unsigned long background_colour)
 {
-	unsigned long background_colour = 0xffffff;
 	struct box *box;
 	os_error *error;
 
@@ -195,7 +195,7 @@ bool html_redraw_box(struct box *box,
 		if (!html_redraw_rectangle(x, y, padding_width,
 				padding_height, os_COLOUR_MAGENTA))
 			return false;
-		if (html_redraw_rectangle(x + padding_left, y - padding_top,
+		if (!html_redraw_rectangle(x + padding_left, y - padding_top,
 				width, height, os_COLOUR_CYAN))
 			return false;
 		if (!html_redraw_rectangle(x - (box->border[LEFT] +
@@ -343,7 +343,8 @@ bool html_redraw_box(struct box *box,
 
 			/* plot background image */
 			if (!html_redraw_background(x, y, width, clip_y1 - clip_y0,
-					box, scale))
+					box, scale,
+					current_background_color))
 				return false;
 
 			/* restore previous graphics window */
@@ -354,7 +355,8 @@ bool html_redraw_box(struct box *box,
 
 	if (box->object) {
 		if (!content_redraw(box->object, x + padding_left, y - padding_top,
-				width, height, x0, y0, x1, y1, scale))
+				width, height, x0, y0, x1, y1, scale,
+				current_background_color))
 			return false;
 
 	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
@@ -858,9 +860,8 @@ bool html_redraw_file(int x, int y, int width, int height,
 }
 
 bool html_redraw_background(int xi, int yi, int width, int height,
-	   struct box *box, float scale)
+	   struct box *box, float scale, unsigned long background_colour)
 {
-	unsigned int tinct_options = 0;
 	int x = 0;
 	int y = 0;
 	unsigned int image_width, image_height;
@@ -869,6 +870,8 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 	bool fixed = false;
 	wimp_window_state state;
 	os_error *error;
+	bool repeat_x = false;
+	bool repeat_y = false;
 
 	if (box->background == 0) return true;
 
@@ -876,8 +879,11 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 
 	if (ro_gui_current_redraw_gui) {
 
-		/* read state of window we're drawing in */
+		/* exit if background images aren't wanted */
+		if (!ro_gui_current_redraw_gui->option.background_images)
+			return true;
 
+		/* read state of window we're drawing in */
 		state.w = ro_gui_current_redraw_gui->window;
 		error = xwimp_get_window_state(&state);
 		if (error) {
@@ -887,16 +893,11 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 			/* invalidate state.w */
 			state.w = 0;
 		}
-
-		/* Set the plot options */
-		if (!ro_gui_current_redraw_gui->option.background_images)
+	}
+	else {
+		/* exit if background images aren't wanted */
+		if (!option_background_images)
 			return true;
-		tinct_options = (ro_gui_current_redraw_gui->option.filter_sprites?tinct_BILINEAR_FILTER:0) |
-				(ro_gui_current_redraw_gui->option.dither_sprites?tinct_DITHER:0);
-	} else {
-		if (!option_background_images) return true;
-		tinct_options = (option_filter_sprites?tinct_BILINEAR_FILTER:0) |
-				(option_dither_sprites?tinct_DITHER:0);
 	}
 
 	/* Get the image dimensions for our positioning and scaling */
@@ -919,13 +920,13 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 	/* handle background-repeat */
 	switch (box->style->background_repeat) {
 		case CSS_BACKGROUND_REPEAT_REPEAT:
-			tinct_options |= tinct_FILL_HORIZONTALLY | tinct_FILL_VERTICALLY;
+			repeat_x = repeat_y = true;
 			break;
 		case CSS_BACKGROUND_REPEAT_REPEAT_X:
-			tinct_options |= tinct_FILL_HORIZONTALLY;
+			repeat_x = true;
 			break;
 		case CSS_BACKGROUND_REPEAT_REPEAT_Y:
-			tinct_options |= tinct_FILL_VERTICALLY;
+			repeat_y = true;
 			break;
 		case CSS_BACKGROUND_REPEAT_NO_REPEAT:
 			break;
@@ -1014,35 +1015,47 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 	switch (box->background->type) {
 #ifdef WITH_PNG
 		case CONTENT_PNG:
-			_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
-			    ((char*) box->background->data.png.sprite_area + box->background->data.png.sprite_area->first),
-			    x, y - image_height, image_width, image_height,
-			    tinct_options);
+			image_redraw(box->background->data.png.sprite_area,
+					x, y, image_width, image_height,
+					box->background->width * 2,
+					box->background->height * 2,
+					background_colour,
+					repeat_x, repeat_y,
+					IMAGE_PLOT_TINCT_ALPHA);
 			break;
 #endif
-#ifdef WITH_PNG
+#ifdef WITH_MNG
 		case CONTENT_JNG:
 		case CONTENT_MNG:
-			_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
-			    ((char*) box->background->data.mng.sprite_area + box->background->data.mng.sprite_area->first),
-			    x, y - image_height, image_width, image_height,
-			    tinct_options);
+			image_redraw(box->background->data.mng.sprite_area,
+					x, y, image_width, image_height,
+					box->background->width * 2,
+					box->background->height * 2,
+					background_colour,
+					repeat_x, repeat_y,
+					IMAGE_PLOT_TINCT_ALPHA);
 			break;
 #endif
 #ifdef WITH_JPEG
 		case CONTENT_JPEG:
-			_swix(Tinct_PlotScaled, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
-			    ((char*) box->background->data.jpeg.sprite_area + box->background->data.jpeg.sprite_area->first),
-			    x, y - image_height, image_width, image_height,
-			    tinct_options);
+			image_redraw(box->background->data.jpeg.sprite_area,
+					x, y, image_width, image_height,
+					box->background->width * 2,
+					box->background->height * 2,
+					background_colour,
+					repeat_x, repeat_y,
+					IMAGE_PLOT_TINCT_OPAQUE);
 			break;
 #endif
 #ifdef WITH_GIF
 		case CONTENT_GIF:
-			_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
-			    ((char*) box->background->data.gif.gif->frame_image + box->background->data.gif.gif->frame_image->first),
-			    x, y - image_height, image_width, image_height,
-			    tinct_options);
+			image_redraw(box->background->data.gif.gif->frame_image,
+					x, y, image_width, image_height,
+					box->background->width * 2,
+					box->background->height * 2,
+					background_colour,
+					repeat_x, repeat_y,
+					IMAGE_PLOT_TINCT_ALPHA);
 			break;
 #endif
 	/**\todo Add draw/sprite background support? */

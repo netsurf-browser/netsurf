@@ -9,7 +9,6 @@
 #ifndef _NETSURF_RISCOS_GIF_H_
 #define _NETSURF_RISCOS_GIF_H_
 
-#include "oslib/osspriteop.h"
 #include "netsurf/riscos/gifread.h"
 
 struct content;
@@ -31,6 +30,6 @@ void nsgif_destroy(struct content *c);
 bool nsgif_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale);
+		float scale, unsigned long background_colour);
 
 #endif

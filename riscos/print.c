@@ -27,11 +27,7 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
-/** \todo position images correctly (seem to be offset
- *        to the right and upwards by half the print margin width)
- *  \todo fix images when printing with the PostScript driver
- *        (redraws appear not to be intercepted)
- *  \todo landscape format pages
+/** \todo landscape format pages
  *  \todo be somewhat more intelligent and try not to crop pages
  *        half way up a line of text
  *  \todo make use of print stylesheets
@@ -104,9 +100,7 @@ void ro_gui_print_open(struct gui_window *g, int x, int y, bool sub_menu, bool k
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_FG_IMAGES, true);
 	ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_FG_IMAGES, true);
 
-	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_BG_IMAGES, false/*print_bg_images*/);
-	ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_BG_IMAGES, true);
-
+	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_BG_IMAGES, print_bg_images);
 
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_IN_BACKGROUND, false);
 
@@ -119,6 +113,7 @@ void ro_gui_print_open(struct gui_window *g, int x, int y, bool sub_menu, bool k
 		ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_PRINT, true);
 	}
 	else {
+		ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_PRINT, false);
 		ro_gui_set_window_title(dialog_print, pdName);
 	}
 
@@ -637,7 +632,7 @@ void print_document(struct gui_window *g, const char *filename)
 						c->width * 2, c->height * 2,
 						b.x0, b.y0,
 						b.x1-1, b.y1-1,
-						print_scale)) {
+						print_scale, 0xFFFFFF)) {
 					ro_gui_current_redraw_gui = NULL;
 					goto error;
 				}

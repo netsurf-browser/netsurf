@@ -450,7 +450,8 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 					redraw->clip.y0,
 					redraw->clip.x1 - 1,
 					redraw->clip.y1 - 1,
-					g->option.scale);
+					g->option.scale,
+					0xFFFFFF);
 		}
 		if (ro_gui_current_redraw_gui->option.buffer_everything) {
 			ro_gui_buffer_close();
@@ -546,7 +547,8 @@ void gui_window_update_box(struct gui_window *g,
 					c->width * 2, c->height * 2,
 					update.clip.x0, update.clip.y0,
 					update.clip.x1 - 1, update.clip.y1 - 1,
-					g->option.scale);
+					g->option.scale,
+					0xFFFFFF);
 		} else {
 			assert(data->redraw.object);
 			content_redraw(data->redraw.object,
@@ -562,7 +564,8 @@ void gui_window_update_box(struct gui_window *g,
 						g->option.scale,
 					update.clip.x0, update.clip.y0,
 					update.clip.x1 - 1, update.clip.y1 - 1,
-					g->option.scale);
+					g->option.scale,
+					0xFFFFFF);
 		}
 
 		if (use_buffer) ro_gui_buffer_close();
