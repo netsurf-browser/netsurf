@@ -286,8 +286,9 @@ bool css_convert(struct content *c, int width, int height)
 		token_data.length = current - token_text;
 		css_parser_(parser, token, token_data, &param);
 		if (param.syntax_error) {
-			LOG(("syntax error near offset %i",
-					token_text - source_data));
+			LOG(("syntax error near offset %i (%s)",
+					token_text - source_data,
+					c->url));
 			param.syntax_error = false;
 		} else if (param.memory_error) {
 			LOG(("out of memory"));
