@@ -1451,8 +1451,9 @@ bool layout_table(struct box *table, int available_width,
 					free(xs);
 					return false;
 				}
-				/* preserve c->padding[BOTTOM] in c->descendant_y1 which is not used at this
-				 * point in time. */
+				/* warning: c->descendant_y0 and c->descendant_y1 used as temporary 
+				 * storage until after vertical alignment is complete */
+				c->descendant_y0 = c->height;
 				c->descendant_y1 = c->padding[BOTTOM];
 				if (c->style->height.height ==
 						CSS_HEIGHT_LENGTH) {
@@ -1528,8 +1529,10 @@ bool layout_table(struct box *table, int available_width,
 	for (row_group = table->children; row_group; row_group = row_group->next) {
 		for (row = row_group->children; row; row = row->next) {
 			for (c = row->children; c; c = c->next) {
-				/* unextended bottom padding is in c->descendant_y1 */
-			  	spare_height = c->padding[BOTTOM] - c->descendant_y1;
+				/* unextended bottom padding is in c->descendant_y1, and unextended
+				 * cell height is in c->descendant_y0 */
+			  	spare_height = (c->padding[BOTTOM] - c->descendant_y1) +
+			  			(c->height - c->descendant_y0);
 				switch (c->style->vertical_align.type) {
 					case CSS_VERTICAL_ALIGN_SUB:
 					case CSS_VERTICAL_ALIGN_SUPER:
