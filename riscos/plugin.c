@@ -229,7 +229,7 @@ void plugin_open(struct content *c, struct browser_window *bw,
 	os_error *error;
 
 
-	if (!option_plugins)
+	if (option_no_plugins)
 		return;
 
 	/** \todo Standalone plugins */
