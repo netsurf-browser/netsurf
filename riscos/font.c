@@ -1201,10 +1201,10 @@ void nsfont_reopen_set(struct font_set *fonts) {
 						LOG(("xufont_lose_font: 0x%x: %s",
 							error->errnum, error->errmess));
 					}
-					error = nsfont_open_ufont(fontName1, fontName2, (int)f->size,
-							&f->handle, &using_fb, true);
+					error = nsfont_open_ufont(font_table[f->id], font_table[f->id % 4],
+							(int)f->size, &f->handle, &using_fb, true);
 		 			if (error) {
-						LOG(("nsfont_open_standard: 0x%x: %s",
+						LOG(("nsfont_open_ufont: 0x%x: %s",
 							error->errnum, error->errmess));
 					}
 		 			break;
