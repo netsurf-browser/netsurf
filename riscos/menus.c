@@ -50,6 +50,7 @@ static void ro_gui_menu_prepare_window(void);
 static void ro_gui_menu_prepare_toolbars(void);
 static void ro_gui_menu_prepare_render(void);
 static void ro_gui_menu_prepare_help(int forced);
+static void ro_gui_menu_prepare_view(void);
 static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
 static void ro_gui_menu_object_reload(void);
 static void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning);
@@ -291,7 +292,7 @@ static wimp_MENU(6) menu = {
     { 0,				       (wimp_menu *)&object_menu,    DEFAULT_FLAGS, { "Object" } },
 //    { 0,					 (wimp_menu *)&selection_menu, DEFAULT_FLAGS, { "Selection" } },
     { wimp_MENU_GIVE_WARNING,		       (wimp_menu *)&navigate_menu,  DEFAULT_FLAGS, { "Navigate" } },
-    { 0,				       (wimp_menu *)&view_menu,	     DEFAULT_FLAGS, { "View" } },
+    { wimp_MENU_GIVE_WARNING,		       (wimp_menu *)&view_menu,	     DEFAULT_FLAGS, { "View" } },
     { 0,				       (wimp_menu *)&utilities_menu, DEFAULT_FLAGS, { "Utilities" } },
     { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING, (wimp_menu *)&help_menu,	     DEFAULT_FLAGS, { "Help" } }
   }
@@ -613,6 +614,11 @@ void ro_gui_create_menu(wimp_menu *menu, int x, int y, struct gui_window *g)
 			menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
 		else
 			menu->entries[1].icon_flags |= wimp_ICON_SHADED;
+		if ((current_gui->bw) && (current_gui->bw->current_content)) {
+		  	menu->entries[0].icon_flags &= ~wimp_ICON_SHADED;
+		} else {
+		  	menu->entries[0].icon_flags |= wimp_ICON_SHADED;
+		}
 
 	} else if (menu == hotlist_menu) {
 		ro_gui_menu_prepare_hotlist();
@@ -1142,6 +1148,16 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 
 	case MENU_VIEW: /* View -> */
 		switch (warning->selection.items[1]) {
+		case -1: /* View-> */
+			ro_gui_menu_prepare_view();
+			if (current_gui->toolbar) {
+				view_menu.entries[2].icon_flags &= ~wimp_ICON_SHADED;
+			} else {
+				view_menu.entries[2].icon_flags |= wimp_ICON_SHADED;
+			} 
+			error = xwimp_create_sub_menu((wimp_menu *) browser_view_menu,
+					warning->pos.x, warning->pos.y);
+			break;
 		case 0: /* Scale view -> */
 			ro_gui_menu_prepare_scale();
 			error = xwimp_create_sub_menu((wimp_menu *) dialog_zoom,
@@ -1315,6 +1331,7 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 				menu_changed += (1 << i);
 			}
 		}
+		if (menu.entries[0].icon_flags & wimp_ICON_SHADED) menu_changed += (1 << 4);
 	}
 
 	/*	Update the back/forwards icons/buttons
@@ -1337,9 +1354,10 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 					!history_back_available(h));
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_FORWARD,
 					!history_forward_available(h));
-			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_HISTORY, false);
-		} else {
+			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_HISTORY,
+				!(c || history_back_available(h) || history_forward_available(h)));
 
+		} else {
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_BACK, true);
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_FORWARD, true);
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_HISTORY, true);
@@ -1348,22 +1366,41 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 
 	/*	Update the stop/refresh icons/buttons
 	*/
+	if (bw->current_content && !bw->loading_content) {
+		if (update_menu) browser_navigate_menu->entries[3].icon_flags &= ~wimp_ICON_SHADED;
+		if (t) ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_RELOAD, false);
+	} else {
+		if (update_menu) browser_navigate_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
+		if (t) ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_RELOAD, true);
+	}
 	if (bw->loading_content || (bw->current_content &&
 			bw->current_content->status != CONTENT_STATUS_DONE)) {
-		if (update_menu) browser_navigate_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
-		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_RELOAD, true);
-	} else {
-		if (update_menu) browser_navigate_menu->entries[3].icon_flags &= ~wimp_ICON_SHADED;
-		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_RELOAD, false);
-	}
-	if (bw->current_content && bw->loading_content) {
 		if (update_menu) browser_navigate_menu->entries[4].icon_flags &= ~wimp_ICON_SHADED;
-		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_STOP, false);
+		if (t) ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_STOP, false);
 	} else {
 		if (update_menu) browser_navigate_menu->entries[4].icon_flags |= wimp_ICON_SHADED;
-		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_STOP, true);
+		if (t) ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_STOP, true);
 	}
 
+	/*	Set the scale view icon
+	*/
+	if (c) {
+	  	if (update_menu) menu.entries[0].icon_flags &= ~wimp_ICON_SHADED;
+		if (t) {
+			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SEARCH, false);
+			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SCALE, false);
+			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SAVE, false);
+			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_PRINT, false);
+		}
+	} else {
+	  	if (update_menu) menu.entries[0].icon_flags |= wimp_ICON_SHADED;
+		if (t) {
+			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SEARCH, true);
+			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SCALE, true);
+			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SAVE, true);
+			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_PRINT, true);
+		}
+	}
 
 	/*	Check if we've changed our menu state
 	*/
@@ -1373,6 +1410,7 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 				menu_changed -= (1 << i);
 			}
 		}
+		if (menu.entries[0].icon_flags & wimp_ICON_SHADED) menu_changed -= (1 << 4);
 
 		/*	Re-open the submenu
 		*/
@@ -1386,7 +1424,6 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 			}
 		}
 	}
-
 }
 
 
@@ -1571,6 +1608,19 @@ void ro_gui_menu_prepare_help(int forced) {
 		browser_help_menu->entries[4].icon_flags |= wimp_ICON_SHADED;
 	} else {
 		browser_help_menu->entries[4].icon_flags &= ~wimp_ICON_SHADED;
+	}
+}
+
+void ro_gui_menu_prepare_view(void) {
+	if (current_gui->toolbar) {
+		view_menu.entries[2].icon_flags &= ~wimp_ICON_SHADED;
+	} else {
+		view_menu.entries[2].icon_flags |= wimp_ICON_SHADED;
+	}
+	if ((current_gui->bw) && (current_gui->bw->current_content)) {
+		view_menu.entries[0].icon_flags &= ~wimp_ICON_SHADED;
+	} else {
+		view_menu.entries[0].icon_flags |= wimp_ICON_SHADED;
 	}
 }
 
