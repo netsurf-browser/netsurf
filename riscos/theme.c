@@ -652,7 +652,7 @@ struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor,
 			ro_gui_theme_add_toolbar_icon(toolbar, "history", ICON_TOOLBAR_HISTORY);
 			ro_gui_theme_add_toolbar_icon(toolbar, "scale", ICON_TOOLBAR_SCALE);
 			ro_gui_theme_add_toolbar_icon(toolbar, NULL, -1);
-			ro_gui_theme_add_toolbar_icon(toolbar, "mark", ICON_TOOLBAR_BOOKMARK);
+			ro_gui_theme_add_toolbar_icon(toolbar, "hotlist", ICON_TOOLBAR_BOOKMARK);
 			ro_gui_theme_add_toolbar_icon(toolbar, "save", ICON_TOOLBAR_SAVE);
 			ro_gui_theme_add_toolbar_icon(toolbar, "print", ICON_TOOLBAR_PRINT);
 			break;
