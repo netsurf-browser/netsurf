@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.5 2002/04/25 15:54:05 bursa Exp $
+ * $Id: render.c,v 1.6 2002/05/02 08:50:46 bursa Exp $
  */
 
 #include <assert.h>
@@ -173,39 +173,120 @@ void layout_inline_container(struct box * box, unsigned long width)
 	box->height = y + 3;
 }
 
-void layout_table(struct box * box, unsigned long width)
+/**
+ * layout a table
+ *
+ * this is the fixed table layout algorithm,
+ * <http://www.w3.org/TR/REC-CSS2/tables.html#fixed-table-layout>
+ */
+
+void layout_table(struct box * table, unsigned long width)
 {
-	/* TODO: do this properly */
-	unsigned int columns;
-	unsigned long cwidth;
+	unsigned int columns;  /* total columns */
+	unsigned int auto_columns;  /* number of columns with auto width */
+	unsigned long table_width;
+	unsigned long used_width = 0;  /* width used by fixed or percent columns */
+	unsigned long auto_width;  /* width of each auto column (all equal) */
+	unsigned long extra_width = 0;  /* extra width for each column if table is wider than columns */
+	unsigned long x;
 	unsigned long y = 1;
+	unsigned long * xs;
+	unsigned int i;
 	struct box * c;
 	struct box * r;
 
-	for (columns = 0, c = box->children->children; c != 0; c = c->next) {
+	assert(table->type == BOX_TABLE);
+
+	/* find table width */
+	switch (table->style->width.width) {
+		case CSS_WIDTH_LENGTH:
+			table_width = len(&table->style->width.value.length, 10);
+			break;
+		case CSS_WIDTH_PERCENT:
+			table_width = width * table->style->width.value.percent / 100;
+			break;
+		case CSS_WIDTH_AUTO:
+		default:
+			table_width = width;
+			break;
+	}
+
+	/* calculate column statistics */
+	for (columns = 0, auto_columns = 0, c = table->children->children;
+			c != 0; c = c->next) {
 		assert(c->type == BOX_TABLE_CELL);
+		switch (c->style->width.width) {
+			case CSS_WIDTH_LENGTH:
+				used_width += len(&c->style->width.value.length, 10);
+				break;
+			case CSS_WIDTH_PERCENT:
+				used_width += table_width * c->style->width.value.percent / 100;
+				break;
+			case CSS_WIDTH_AUTO:
+				auto_columns++;
+				break;
+		}
 		columns++;
 	}
-	cwidth = (width-8) / columns;  /* just split into equal width columns */
+
+	if (auto_columns == 0 && table->style->width.width != CSS_WIDTH_AUTO)
+		extra_width = (table_width - used_width) / columns;
+	else if (auto_columns != 0)
+		auto_width = (table_width - used_width) / auto_columns;
+
+	/*printf("%i %i %i %i %i\n", table_width, columns, auto_columns, used_width, auto_width);*/
 	
-	for (r = box->children; r != 0; r = r->next) {
+	/* find column widths */
+	xs = xcalloc(columns + 1, sizeof(*xs));
+	xs[0] = x = 0;
+	for (i = 1, c = table->children->children; c != 0; i++, c = c->next) {
+		switch (c->style->width.width) {
+			case CSS_WIDTH_LENGTH:
+				x += len(&c->style->width.value.length, 10) + extra_width;
+				break;
+			case CSS_WIDTH_PERCENT:
+				x += table_width * c->style->width.value.percent / 100 + extra_width;
+				break;
+			case CSS_WIDTH_AUTO:
+				x += auto_width;
+				break;
+		}
+		xs[i] = x;
+		printf("%i ", x);
+	}
+	printf("\n");
+
+	if (auto_columns == 0 && table->style->width.width == CSS_WIDTH_AUTO)
+		table_width = used_width;
+	
+	/* position cells */
+	for (r = table->children; r != 0; r = r->next) {
 		unsigned long height = 0;
-		unsigned int col;
-		for (col = 0, c = r->children; c != 0; col++, c = c->next) {
-			layout_block(c, cwidth);
-			c->x = 2 + col * cwidth;
+		for (i = 0, c = r->children; c != 0; i++, c = c->next) {
+			c->width = xs[i+1] - xs[i];
+			c->height = layout_block_children(c, c->width);
+			switch (c->style->height.height) {
+				case CSS_HEIGHT_AUTO:
+					break;
+				case CSS_HEIGHT_LENGTH:
+					c->height = len(&c->style->height.length, 10);
+					break;
+			}
+			c->x = xs[i];
 			c->y = 1;
 			if (c->height > height) height = c->height;
 		}
-		r->x = 2;
+		r->x = 0;
 		r->y = y;
-		r->width = width-4;
+		r->width = table_width;
 		r->height = height + 2;
 		y += height + 3;
 	}
 
-	box->width = width;
-	box->height = y;
+	free(xs);
+	
+	table->width = table_width;
+	table->height = y;
 }
 
 
@@ -219,9 +300,6 @@ void render_plain_element(char * g, struct box * box, unsigned long x, unsigned 
 	struct box * c;
 	const char vline = box->type == BOX_INLINE_CONTAINER ? ':' : '|';
 	const char hline = box->type == BOX_INLINE_CONTAINER ? '·' : '-';
-
-	for (c = box->children; c != 0; c = c->next)
-		render_plain_element(g, c, x + box->x, y + box->y);
 
 	for (i = (y + box->y) + 1; i < (y + box->y + box->height); i++) {
 		g[80 * i + (x + box->x)] = vline;
@@ -252,6 +330,9 @@ void render_plain_element(char * g, struct box * box, unsigned long x, unsigned 
 			l = (x + box->x + box->width) - (x + box->x) - 1;
 		strncpy(g + 80 * ((y + box->y) + 1) + (x + box->x) + 1, box->text, l);
 	}
+
+	for (c = box->children; c != 0; c = c->next)
+		render_plain_element(g, c, x + box->x, y + box->y);
 }
 
 
