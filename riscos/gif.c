@@ -69,7 +69,6 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
 
     LOG(("Failed to create sprite"));
     Anim_Destroy(&a);
-    xfree(area);
     return 1;
   }
   c->data.gif.sprite_area = area;
@@ -79,15 +78,25 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
   img = (pixel*)header + header->image;
   mask = (pixel*)header + header->mask;
 
-  Anim_DecompressAligned(f->pImageData, f->nImageSize,
-                         a->nWidth, a->nHeight, img);
+  if (!Anim_DecompressAligned(f->pImageData, f->nImageSize,
+                         a->nWidth, a->nHeight, img)) {
+    LOG(("Anim_DecompressAligned image failed"));
+    Anim_Destroy(&a);
+    xfree(area);
+    return 1;
+  }
 
   if(f->pMaskData) {
 
     int i,n = header->mask - header->image;
 
-    Anim_DecompressAligned(f->pMaskData, f->nMaskSize,
-                           a->nWidth, a->nHeight, mask);
+    if (!Anim_DecompressAligned(f->pMaskData, f->nMaskSize,
+                           a->nWidth, a->nHeight, mask)) {
+      LOG(("Anim_DecompressAligned mask failed"));
+      Anim_Destroy(&a);
+      xfree(area);
+      return 1;
+    }
 
     for(i=0; i<n; i++)
        if(!mask[i]) {
