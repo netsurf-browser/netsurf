@@ -14,6 +14,7 @@
 #include <string.h>
 #include <time.h>
 #include <unixlib/local.h>
+#include "oslib/inetsuite.h"
 #include "oslib/os.h"
 #include "oslib/osfile.h"
 #include "oslib/plugin.h"
@@ -31,6 +32,7 @@
 #include "netsurf/riscos/plugin.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/uri.h"
+#include "netsurf/riscos/url.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -46,12 +48,13 @@ bool gui_reformat_pending = false;	/**< Some windows have been resized,
 						and should be reformatted. */
 static wimp_t task_handle;	/**< RISC OS wimp task handle. */
 /** Accepted wimp user messages. */
-static const wimp_MESSAGE_LIST(24) task_messages = { {
+static const wimp_MESSAGE_LIST(25) task_messages = { {
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
 	message_DATA_LOAD,
 	message_DATA_OPEN,
 	message_URI_PROCESS,
+	message_INET_SUITE_OPEN_URL,
 	message_PLUG_IN_OPENING,
 	message_PLUG_IN_CLOSED,
 	message_PLUG_IN_RESHAPE_REQUEST,
@@ -344,6 +347,10 @@ void gui_poll(bool active)
                ro_uri_message_received(&(block.message));
                break;
 
+        case message_INET_SUITE_OPEN_URL:
+               ro_url_message_received(&(block.message));
+               break;
+
         case message_PLUG_IN_OPENING:
         case message_PLUG_IN_CLOSED:
         case message_PLUG_IN_RESHAPE_REQUEST:
@@ -500,6 +507,10 @@ void gui_multitask(void)
 
         case message_URI_PROCESS       :
                ro_uri_message_received(&(block.message));
+               break;
+
+        case message_INET_SUITE_OPEN_URL:
+               ro_url_message_received(&(block.message));
                break;
 
         case message_PLUG_IN_OPENING:

@@ -17,7 +17,7 @@ OBJECTS = $(OBJECTS_COMMON) \
 	menus.o mouseactions.o \
 	options.o textselection.o theme.o window.o \
 	draw.o gif.o jpeg.o plugin.o png.o sprite.o \
-	about.o filetype.o font.o uri.o history.o \
+	about.o filetype.o font.o uri.o url.o history.o \
 	version.o
 OBJECTS_DEBUG = $(OBJECTS_COMMON) \
 	netsurfd.o \
