@@ -627,8 +627,14 @@ void ro_gui_keypress(wimp_key* key)
     }
     else if (key->c == wimp_KEY_F9)
     {
-      if (g->data.browser.bw->current_content->type == CONTENT_HTML)
-        box_dump(g->data.browser.bw->current_content->data.html.layout->children, 0);
+      switch (g->data.browser.bw->current_content->type) {
+        case CONTENT_HTML:
+          box_dump(g->data.browser.bw->current_content->data.html.layout->children, 0);
+          break;
+        case CONTENT_CSS:
+          css_dump_stylesheet(g->data.browser.bw->current_content->data.css.css);
+          break;
+      }
     }
     else if (key->c == wimp_KEY_F10)
     {
