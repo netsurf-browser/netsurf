@@ -103,7 +103,7 @@ CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
 	`pkg-config --cflags gtk+-2.0` `xml2-config --cflags`
 
 # targets
-riscos: $(RUNIMAGE)
+riscos: clean $(RUNIMAGE)
 $(RUNIMAGE) : $(OBJS_RISCOS)
 	$(CC) -o $@ $(LDFLAGS_RISCOS) $^
 riscos_small: u!RunImage,ff8
