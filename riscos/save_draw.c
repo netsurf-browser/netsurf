@@ -49,6 +49,8 @@ static void add_rect(struct content *content, struct box *box,
                         unsigned long cbc, long x, long y, bool bg);
 static void add_line(struct content *content, struct box *box,
                         unsigned long cbc, long x, long y);
+static void add_circle(struct content *content, struct box *box,
+                        unsigned long cbc, long x, long y);
 
 /** \todo this will probably want to take a filename/path too... */
 void save_as_draw(struct content *c) {
@@ -207,6 +209,9 @@ void add_objects(struct content *content, struct box *box,
 		 box->gadget->type == GADGET_RADIO)) {
 		if (box->gadget->type == GADGET_CHECKBOX) {
 		        add_rect(content, box, 0xDEDEDE00, x, y, false);
+		}
+		else {
+		        add_circle(content, box, 0xDEDEDE00, x, y);
 		}
 		return;
 	}
@@ -508,6 +513,130 @@ void add_line(struct content *content, struct box *box,
 
         dro->type = drawfile_TYPE_PATH;
         dro->size = 8+60;
+        memcpy((char*)&dro->data.path, dp, (unsigned)dro->size-8);
+
+        d = xrealloc(d, length+dro->size);
+        memcpy((char*)d+length, dro, (unsigned)dro->size);
+
+        length += dro->size;
+
+        xfree(dpe);
+        xfree(dp);
+        xfree(dro);
+}
+
+/**
+ * add a circle to the diagram.
+ */
+void add_circle(struct content *content, struct box *box,
+                        unsigned long cbc, long x, long y) {
+
+        drawfile_object *dro = xcalloc(8+160, sizeof(char));
+        drawfile_path *dp = xcalloc(160, sizeof(char));
+        draw_path_element *dpe = xcalloc(28, sizeof(char));
+
+        double radius = 0, kappa;
+        double cx, cy;
+
+        dp->bbox.x0 = x;
+        dp->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
+        dp->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
+        dp->bbox.y1 = y;
+
+        cx = ((dp->bbox.x1-dp->bbox.x0)/2.0);
+        cy = ((dp->bbox.y1-dp->bbox.y0)/2.0);
+        if (cx == cy) {
+                radius = cx; /* box is square */
+        }
+        else if (cx > cy) {
+                radius = cy;
+                dp->bbox.x1 -= (cx-cy); /* reduce box width */
+        }
+        else if (cy > cx) {
+                radius = cx;
+                dp->bbox.y0 += (cy-cx); /* reduce box height */
+        }
+        kappa = radius * ((4.0/3.0)*(sqrt(2.0)-1.0)); /* ~= 0.5522877498 */
+        LOG(("%e, %e", radius, kappa));
+
+        dp->fill = cbc;
+        dp->outline = cbc;
+        dp->width = 0;
+        dp->style.flags = drawfile_PATH_ROUND;
+
+        /*
+         *    Z   b   Y
+         *
+         *    a   X   c
+         *
+         *    V   d   W
+         *
+         *    V = (x0,y0)
+         *    W = (x1,y0)
+         *    Y = (x1,y1)
+         *    Z = (x0,y1)
+         *
+         *    X = centre of circle (x0+cx, y0+cx)
+         *
+         *    The points a,b,c,d are where the circle intersects
+         *    the bounding box. at these points, the bounding box is
+         *    tangental to the circle.
+         */
+
+        /* start at a */
+        dpe->tag = draw_MOVE_TO;
+        dpe->data.move_to.x = (dp->bbox.x0+cx)-radius;
+        dpe->data.move_to.y = (dp->bbox.y0+cy);
+        memcpy((char*)&dp->path, dpe, 12);
+
+        /* point1->point2 : (point1)(ctrl1)(ctrl2)(point2) */
+
+        /* a->b : (x-r, y)(x-r, y+k)(x-k, y+r)(x, y+r) */
+        dpe->tag = draw_BEZIER_TO;
+        dpe->data.bezier_to[0].x = (dp->bbox.x0+cx)-radius;
+        dpe->data.bezier_to[0].y = (dp->bbox.y0+cy)+kappa;
+        dpe->data.bezier_to[1].x = (dp->bbox.x0+cx)-kappa;
+        dpe->data.bezier_to[1].y = (dp->bbox.y0+cy)+radius;
+        dpe->data.bezier_to[2].x = (dp->bbox.x0+cx);
+        dpe->data.bezier_to[2].y = (dp->bbox.y0+cy)+radius;
+        memcpy((char*)&dp->path+12, dpe, 28);
+
+        /* b->c : (x, y+r)(x+k, y+r)(x+r, y+k)(x+r, y)*/
+        dpe->tag = draw_BEZIER_TO;
+        dpe->data.bezier_to[0].x = (dp->bbox.x0+cx)+kappa;
+        dpe->data.bezier_to[0].y = (dp->bbox.y0+cy)+radius;
+        dpe->data.bezier_to[1].x = (dp->bbox.x0+cx)+radius;
+        dpe->data.bezier_to[1].y = (dp->bbox.y0+cy)+kappa;
+        dpe->data.bezier_to[2].x = (dp->bbox.x0+cx)+radius;
+        dpe->data.bezier_to[2].y = (dp->bbox.y0+cy);
+        memcpy((char*)&dp->path+40, dpe, 28);
+
+        /* c->d : (x+r, y)(x+r, y-k)(x+k, y-r)(x, y-r) */
+        dpe->tag = draw_BEZIER_TO;
+        dpe->data.bezier_to[0].x = (dp->bbox.x0+cx)+radius;
+        dpe->data.bezier_to[0].y = (dp->bbox.y0+cy)-kappa;
+        dpe->data.bezier_to[1].x = (dp->bbox.x0+cx)+kappa;
+        dpe->data.bezier_to[1].y = (dp->bbox.y0+cy)-radius;
+        dpe->data.bezier_to[2].x = (dp->bbox.x0+cx);
+        dpe->data.bezier_to[2].y = (dp->bbox.y0+cy)-radius;
+        memcpy((char*)&dp->path+68, dpe, 28);
+
+        /* d->a : (x, y-r)(x-k, y-r)(x-r, y-k)(x-r, y)*/
+        dpe->tag = draw_BEZIER_TO;
+        dpe->data.bezier_to[0].x = (dp->bbox.x0+cx)-kappa;
+        dpe->data.bezier_to[0].y = (dp->bbox.y0+cy)-radius;
+        dpe->data.bezier_to[1].x = (dp->bbox.x0+cx)-radius;
+        dpe->data.bezier_to[1].y = (dp->bbox.y0+cy)-kappa;
+        dpe->data.bezier_to[2].x = (dp->bbox.x0+cx)-radius;
+        dpe->data.bezier_to[2].y = (dp->bbox.y0+cy);
+        memcpy((char*)&dp->path+96, dpe, 28);
+
+        /* end */
+        dpe->tag = draw_END_PATH;
+        memcpy((char*)&dp->path+124, dpe, 4);
+
+        dro->type = drawfile_TYPE_PATH;
+        dro->size = 8+160;
         memcpy((char*)&dro->data.path, dp, (unsigned)dro->size-8);
 
         d = xrealloc(d, length+dro->size);
