@@ -327,10 +327,6 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 	gtk_entry_set_text(GTK_ENTRY(g->url_bar), url);
 }
 
-char *gui_window_get_url(struct gui_window *g)
-{
-	return gtk_entry_get_text(GTK_ENTRY(g->url_bar));
-}
 
 void gui_window_start_throbber(struct gui_window* g)
 {

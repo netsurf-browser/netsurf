@@ -791,20 +791,6 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 	}
 }
 
-/**
- * Get the contents of a window's address bar.
- *
- * \param  g	gui_window to update
- * \return The url in the address bar or NULL
- */
-char *gui_window_get_url(struct gui_window *g)
-{
-	if (!g->toolbar)
-		return NULL;
-
-	return ro_gui_get_icon_string(g->toolbar->toolbar_handle,
-			ICON_TOOLBAR_URL);
-}
 
 /**
  * Forces all windows to be set to the current theme
@@ -1350,25 +1336,36 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 
 
 /**
- * Remove/disown the caret.
+ * Remove the caret, if present.
  *
  * \param  g	   window with caret
- *
- * \todo: do we want to do a test if g really owns the caret ?
  */
 
 void gui_window_remove_caret(struct gui_window *g)
 {
+	wimp_caret caret;
 	os_error *error;
 
-	error = xwimp_set_caret_position((wimp_w)-1, (wimp_i)-1,
-			0,
-			0,
-			0, -1);
+	error = xwimp_get_caret_position(&caret);
+	if (error) {
+		LOG(("xwimp_get_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	if (caret.w != g->window)
+		/* we don't have the caret: do nothing */
+		return;
+
+	/* hide caret, but keep input focus */
+	error = xwimp_set_caret_position(g->window, -1,
+			-100, -100, 32, -1);
 	if (error) {
 		LOG(("xwimp_set_caret_position: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
+		return;
 	}
 }
 
