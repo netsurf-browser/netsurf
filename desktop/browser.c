@@ -500,7 +500,8 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 					gui_redraw_gadget(bw, g);
 					break;
 				case GADGET_SUBMIT:
-					browser_form_submit(bw, g->form, g);
+					if (g->form)
+						browser_form_submit(bw, g->form, g);
 					break;
 				case GADGET_TEXTAREA:
 					browser_window_textarea_click(bw,
@@ -525,7 +526,8 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 				        box_coords(click_boxes[i].box, &x, &y);
 				        g->data.image.mx = click_x - x;
 				        g->data.image.my = click_y - y;
-				        browser_form_submit(bw, g->form, g);
+				        if (g->form)
+					        browser_form_submit(bw, g->form, g);
 				        break;
 			}
 
@@ -1017,7 +1019,8 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
 		char_offset--;
 	} else if (key == 10 || key == 13) {
 	        /* Return/Enter hit */
-	        browser_form_submit(bw, form, 0);
+	        if (form)
+		        browser_form_submit(bw, form, 0);
 	        /*TODO: remove caret from new page */
 	} else if (key == 9) {
 	        /* Tab */
@@ -1532,6 +1535,8 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 {
 	char *data, *url, *url1;
 	struct form_successful_control *success;
+
+	assert(form);
 
 	success = form_successful_controls(form, submit_button);
 

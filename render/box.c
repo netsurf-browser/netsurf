@@ -766,6 +766,8 @@ struct result box_textarea(xmlNode *n, struct status *status,
 	box->gadget->type = GADGET_TEXTAREA;
 	if (status->current_form)
 		form_add_control(status->current_form, box->gadget);
+	else
+		box->gadget->form = 0;
 	style->display = CSS_DISPLAY_INLINE_BLOCK;
 
 	/* split the content at newlines and make an inline container with an
@@ -817,6 +819,8 @@ struct result box_select(xmlNode *n, struct status *status,
 	gadget->type = GADGET_SELECT;
 	if (status->current_form)
 		form_add_control(status->current_form, gadget);
+	else
+		gadget->form = 0;
 
 	gadget->data.select.multiple = false;
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "multiple"))) {
@@ -1022,6 +1026,8 @@ struct result box_input(xmlNode *n, struct status *status,
 	if (gadget != 0) {
 		if (status->current_form)
 			form_add_control(status->current_form, gadget);
+		else
+		  	gadget->form = 0;
 		gadget->name = (char *) xmlGetProp(n, (const xmlChar *) "name");
 		add_gadget_element(status->elements, gadget);
 	}
@@ -1103,6 +1109,8 @@ struct result box_button(xmlNode *n, struct status *status,
 
 	if (status->current_form)
 		form_add_control(status->current_form, box->gadget);
+	else
+		box->gadget->form = 0;
 	box->gadget->box = box;
 	box->gadget->name = (char *) xmlGetProp(n, (const xmlChar *) "name");
 	box->gadget->value = (char *) xmlGetProp(n, (const xmlChar *) "value");
