@@ -969,10 +969,12 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 	bool toggle_hack = false;
 	int screen_height, screen_width;
 	os_error *error;
+	int key_down = 0;
+	int inset = 0;
 
 	content = g->bw->current_content;
 
-	/* check for toggle to full size - NOW FEATURING "TEMPORARY HACK" */
+	/* check for toggle to full size so we can force to full height for short contents  */
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
@@ -981,16 +983,21 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	if ((state.flags & wimp_WINDOW_TOGGLED) &&
-			(state.flags & wimp_WINDOW_BOUNDED_ONCE) &&
-			!(state.flags & wimp_WINDOW_FULL_SIZE)) {
-		/*	Check if we need to perform our hack
-		*/
+	if ((state.flags & wimp_WINDOW_TOGGLED) && // bit 19
+			(state.flags & wimp_WINDOW_BOUNDED_ONCE) && // bit 21
+			!(state.flags & wimp_WINDOW_FULL_SIZE)) { // not bit 18
 		ro_gui_screen_size(&screen_width, &screen_height);
-		if ((content->height * 2 * g->option.scale) < screen_height) {
-			open->visible.y0 = 0;
-			open->visible.y1 = 0x1000;
-			height = 0x1000;
+		/* i can see no way of easily discovering if we were the result of a shift-
+		 * toggle as wimp_WINDOW_PARTIAL_SIZE does not seem to be what we need. As
+		 * such we do the really horrible thing of testing for Shift directly and
+		 * decreasing the value accordingly. Yuck. */
+		xosbyte1(osbyte_SCAN_KEYBOARD, 0 ^ 0x80, 0, &key_down);
+		if (key_down != 0)
+			inset = 160 + ro_get_hscroll_height(0);
+		if ((content->height * 2 * g->option.scale) < screen_height - inset) {
+			open->visible.y0 = inset;
+			open->visible.y1 = screen_height;
+			height = screen_height - inset;
 			toggle_hack = true;
 		}
 	}
