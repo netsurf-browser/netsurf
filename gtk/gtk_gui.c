@@ -12,6 +12,7 @@
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 #include "netsurf/content/content.h"
+#include "netsurf/desktop/401login.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
@@ -98,18 +99,6 @@ void warn_user(const char *warning, const char *detail)
 {
 }
 
-
-void html_add_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state) {}
-void html_reshape_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state) {}
-void html_remove_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state) {}
-
-
 void die(const char * const error)
 {
 	fprintf(stderr, error);
@@ -123,7 +112,8 @@ void hotlist_visited(struct content *content)
 
 
 struct history *history_create(void) { return 0; }
-void history_add(struct history *history, struct content *content) {}
+void history_add(struct history *history, struct content *content,
+	char *frag_id) {}
 void history_update(struct history *history, struct content *content) {}
 void history_destroy(struct history *history) {}
 void history_back(struct browser_window *bw, struct history *history) {}

@@ -16,6 +16,7 @@
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/render/box.h"
+#include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -171,7 +172,7 @@ gboolean gui_window_expose_event(GtkWidget *widget,
 			event->area.y,
 			event->area.x + event->area.width,
 			event->area.y + event->area.height,
-			1.0);
+			1.0, 0xFFFFFF);
 
 	g_object_unref(current_gc);
 
@@ -330,12 +331,13 @@ void gui_window_new_content(struct gui_window *g)
 }
 
 
-void html_redraw(struct content *c, int x, int y,
+bool html_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale)
+		float scale, unsigned long background_colour)
 {
 	html_redraw_box(c, c->data.html.layout->children, x, y);
+	return true;
 }
 
 
@@ -397,7 +399,7 @@ void html_redraw_box(struct content *content, struct box *box,
 
 	if (box->object) {
 		content_redraw(box->object, x + padding_left, y - padding_top,
-				width, height, x0, y0, x1, y1, 1.0);
+				width, height, x0, y0, x1, y1, 1.0, 0xFFFFFF);
 
 	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
 
@@ -418,7 +420,8 @@ void html_redraw_box(struct content *content, struct box *box,
 
 		context = gtk_widget_get_pango_context(current_widget);
 		layout = pango_layout_new(context);
-		pango_layout_set_font_description(layout, box->font->id);
+		pango_layout_set_font_description(layout,
+				(const PangoFontDescription *)box->font->id);
 		pango_layout_set_text(layout, box->text, box->length);
 
 		gdk_draw_layout_with_colors(current_drawable, current_gc,
