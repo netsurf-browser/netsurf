@@ -42,7 +42,7 @@ void ro_uri_message_received(uri_full_message_process* uri_message)
   uri_message->your_ref = uri_message->my_ref;
   uri_message->action = message_URI_PROCESS_ACK;
 
-  xwimp_send_message(wimp_USER_MESSAGE_ACKNOWLEDGE,
+  xwimp_send_message(wimp_USER_MESSAGE,
                     (wimp_message*)uri_message,
                     uri_message->sender);
 
