@@ -1,5 +1,5 @@
 /**
- * $Id: font.c,v 1.7 2002/10/15 10:41:12 monkeyson Exp $
+ * $Id: font.c,v 1.8 2002/12/27 17:28:19 bursa Exp $
  */
 
 #include <assert.h>
@@ -33,7 +33,7 @@ void font_close(struct font_data *data);
 
 unsigned long font_width(struct font_data *font, const char * text, unsigned int length)
 {
-	font_scan_block block;
+	int width;
 	os_error * error;
 
 	assert(font != 0 && text != 0);
@@ -41,44 +41,18 @@ unsigned long font_width(struct font_data *font, const char * text, unsigned int
 	if (length == 0)
 		return 0;
 
-	block.space.x = block.space.y = 0;
-	block.letter.x = block.letter.y = 0;
-	block.split_char = -1;
-
 	error = xfont_scan_string(font->handle, text,
-			font_GIVEN_BLOCK | font_GIVEN_FONT | font_KERN | font_RETURN_BBOX | font_GIVEN_LENGTH,
+			font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
 			0x7fffffff, 0x7fffffff,
-			&block,
+			0,
 			0, length,
-			0, 0, 0, 0);
+			0, &width, 0, 0);
 	if (error != 0) {
 		fprintf(stderr, "%s\n", error->errmess);
 		die("font_scan_string failed");
 	}
 
-/* 	fprintf(stderr, "font_width: '%.*s' => '%s' => %i %i %i %i\n", length, text, text2, */
-/* 			block.bbox.x0, block.bbox.y0, block.bbox.x1, block.bbox.y1); */
-
-	if (length < 0x7fffffff)
-	{
-		if (text[length - 1] == ' ')
-//		{
-			block.bbox.x1 += 4*800;
-/*			int minx,miny,maxx,maxy;
-			char space = ' ';
-//			fprintf(stderr, "Space at the end!\n");
-			error = xfont_char_bbox(font, space, 0, &minx, &miny, &maxx, &maxy);
-			if (error != 0) {
-				fprintf(stderr, "%s\n", error->errmess);
-				die("font_char_bbox failed");
-			}
-			block.bbox.x1 += maxx;
-		}
-//		else
-//			fprintf(stderr, "No space\n");*/
-	}
-
-	return block.bbox.x1 / 800;
+	return width / 800;
 }
 
 void font_position_in_string(const char* text, struct font_data* font,
@@ -171,6 +145,7 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 		data->handle = handle;
 	}
 	data->size = size;
+	data->space_width = font_width(data, " ", 1);
 
 	data->next = set->font[f];
 	set->font[f] = data;
@@ -227,9 +202,9 @@ char * font_split(struct font_data *data, const char * text, unsigned int length
 		fprintf(stderr, "%s\n", error->errmess);
 		die("font_scan_string failed");
 	}
-	
+
 	*used_width = browser_x_units(*used_width / 400);
-	
+
 	return split;
 }
 

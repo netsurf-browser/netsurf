@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.23 2002/12/26 23:02:38 bursa Exp $
+ * $Id: layout.c,v 1.24 2002/12/27 17:28:19 bursa Exp $
  */
 
 #include <assert.h>
@@ -285,13 +285,14 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	unsigned long height;
 	unsigned long x0 = 0;
 	unsigned long x1 = width;
-	unsigned long x, h, xp;
+	unsigned long x, h, x_previous;
 	struct box * left;
 	struct box * right;
 	struct box * b;
 	struct box * c;
 	struct box * d;
 	int move_y = 0;
+	unsigned int space_before = 0, space_after = 0;
 
 /* 	fprintf(stderr, "layout_line: '%.*s' %li %li %li\n", first->length, first->text, width, *y, cy); */
 
@@ -310,7 +311,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			if (h > height) height = h;
 			if (b->width == UNKNOWN_WIDTH)
 				b->width = font_width(b->font, b->text, b->length);
-			x += b->width;
+			x += b->width + b->space ? b->font->space_width : 0;
 		}
 	}
 
@@ -320,11 +321,14 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	find_sides(cont->float_children, cy, cy + height, &x0, &x1, &left, &right);
 
 	/* pass 2: place boxes in line */
-	for (x = xp = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
+	for (x = x_previous = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
 		if (b->type == BOX_INLINE) {
+			x_previous = x;
+			x += space_after;
 			b->x = x;
-			xp = x;
 			x += b->width;
+			space_before = space_after;
+			space_after = b->space ? b->font->space_width : 0;
 			c = b;
 			move_y = 1;
 /* 			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x); */
@@ -363,52 +367,62 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	if (x1 - x0 < x) {
 		/* the last box went over the end */
 		char * space = strchr(c->text, ' ');
-		char * space2 = space;
-		unsigned long w, wp;
+		unsigned long w;
 		struct box * c2;
 
-		if (space == 0)
-			wp = w = c->width;
-		else
-			wp = w = font_width(c->font, c->text, space - c->text);
+		x = x_previous;
 
-		if (x1 - x0 < xp + w && left == 0 && right == 0 && c == first) {
+		if (space != 0 && c->length <= space - c->text)
+			/* space after end of string */
+			space = 0;
+
+		if (space == 0)
+			w = c->width;
+		else
+			w = font_width(c->font, c->text, space - c->text);
+
+		if (x1 - x0 < x + space_before + w && left == 0 && right == 0 && c == first) {
 			/* first word doesn't fit, but no floats and first on line so force in */
 			if (space == 0) {
+				/* only one word in this box */
 				b = c->next;
 			} else {
+				/* cut off first word for this line */
 				c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
 				c2->text = xstrdup(space + 1);
 				c2->length = c->length - ((space + 1) - c->text);
 				c2->width = UNKNOWN_WIDTH;
 				c->length = space + 1 - c->text;
-				c->width = wp + 4;  /* should be the width of a space */
+				c->width = w;
+				c->space = 1;
 				c2->next = c->next;
 				c->next = c2;
 				b = c2;
 			}
-			x = xp + wp;
+			x += space_before + w;
 /* 			fprintf(stderr, "layout_line:     overflow, forcing\n"); */
-		} else if (x1 - x0 < xp + w) {
+		} else if (x1 - x0 < x + space_before + w) {
 			/* first word doesn't fit, but full width not available so leave for later */
 			b = c;
 /* 			fprintf(stderr, "layout_line:     overflow, leaving\n"); */
 		} else {
 			/* fit as many words as possible */
 			assert(space != 0);
-			space = font_split(c->font, c->text, c->length, x1 - x0 - xp, &wp);
+			space = font_split(c->font, c->text, c->length,
+					x1 - x0 - x - space_before, &w);
 			LOG(("'%.*s' %lu %lu (%c) %lu", c->length, c->text,
-					x1 - x0, space - c->text, *space, wp));
+					x1 - x0, space - c->text, *space, w));
 			c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
 			c2->text = xstrdup(space + 1);
 			c2->length = c->length - ((space + 1) - c->text);
 			c2->width = UNKNOWN_WIDTH;
 			c->length = space + 1 - c->text;
+			c->width = w;
+			c->space = 1;
 			c2->next = c->next;
 			c->next = c2;
 			b = c2;
-			c->width = wp + 4;  /* should be the width of a space */
-			x = xp + wp;
+			x += space_before + w;
 /* 			fprintf(stderr, "layout_line:     overflow, fit\n"); */
 		}
 		move_y = 1;
@@ -465,9 +479,6 @@ void place_float_below(struct box * c, unsigned long width, unsigned long y, str
 
 /**
  * layout a table
- *
- * this is the fixed table layout algorithm,
- * <http://www.w3.org/TR/REC-CSS2/tables.html#fixed-table-layout>
  */
 
 void layout_table(struct box * table, unsigned long width, struct box * cont,

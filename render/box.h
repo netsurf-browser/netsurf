@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.11 2002/09/26 21:38:33 bursa Exp $
+ * $Id: box.h,v 1.12 2002/12/27 17:28:19 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -34,6 +34,7 @@ struct box {
 	unsigned long x, y, width, height;
 	unsigned long min_width, max_width;
 	const char * text;
+	int space;	/* 1 <=> followed by a space */
 	const char * href;
 	unsigned int length;
 	unsigned int columns;

@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.20 2002/10/15 10:41:12 monkeyson Exp $
+ * $Id: box.c,v 1.21 2002/12/27 17:28:19 bursa Exp $
  */
 
 #include <assert.h>
@@ -186,6 +186,12 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			box = box_create(n, BOX_INLINE, parent_style, href);
 			box->text = squash_whitespace(tolat1(n->content));
 			box->length = strlen(box->text);
+			if (box->text[box->length - 1] == ' ') {
+				box->space = 1;
+				box->length--;
+			} else {
+				box->space = 0;
+			}
 			box->font = font_open(fonts, box->style);
 			box_add_child(inline_container, box);
 		} else {

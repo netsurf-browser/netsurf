@@ -1,5 +1,5 @@
 /**
- * $Id: font.h,v 1.4 2002/10/12 13:05:16 bursa Exp $
+ * $Id: font.h,v 1.5 2002/12/27 17:28:19 bursa Exp $
  */
 
 #ifndef _NETSURF_RISCOS_FONT_H_
@@ -26,6 +26,7 @@ struct font_set {
 struct font_data {
 	font_f handle;
 	unsigned int size;
+	unsigned int space_width;
 	struct font_data *next;
 };
 
