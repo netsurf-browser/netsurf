@@ -676,13 +676,18 @@ bool fetch_process_headers(struct fetch *f)
 struct HttpPost *fetch_post_convert(struct form_successful_control *control)
 {
 	struct HttpPost *post = 0, *last = 0;
+	char *mimetype = 0;
 
 	for (; control; control = control->next) {
 	        if (control->file) {
+	                mimetype = fetch_mimetype(control->value);
 	                curl_formadd(&post, &last,
 					CURLFORM_COPYNAME, control->name,
 					CURLFORM_FILE, control->value,
+					CURLFORM_CONTENTTYPE,
+					(mimetype != 0 ? mimetype : "text/plain"),
 					CURLFORM_END);
+			xfree(mimetype);
 	        }
 	        else {
 	        	curl_formadd(&post, &last,

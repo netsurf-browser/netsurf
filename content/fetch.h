@@ -50,5 +50,6 @@ void fetch_abort(struct fetch *f);
 void fetch_poll(void);
 void fetch_quit(void);
 const char *fetch_filetype(const char *unix_path);
+char *fetch_mimetype(const char *ro_path);
 
 #endif

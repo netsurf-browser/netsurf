@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unixlib/features.h>
 #include <unixlib/local.h>
 #include "oslib/hourglass.h"
 #include "oslib/inetsuite.h"
@@ -49,6 +50,7 @@
 
 
 const char *__dynamic_da_name = "NetSurf";	/**< For UnixLib. */
+int __feature_imagefs_is_file = 1;              /**< For UnixLib. */
 
 char *NETSURF_DIR;
 wimp_menu *combo_menu;
@@ -863,8 +865,6 @@ void ro_msg_dataload(wimp_message *message)
                        if (!temp) break;
 
                        if (temp[0] == '#') continue; /* ignore commented lines */
-                       LOG(("%d: %s", lineno, temp));
-
                        lineno++;
                }
 
@@ -874,8 +874,6 @@ void ro_msg_dataload(wimp_message *message)
                }
 
                url = xstrdup(temp);
-
-               LOG(("%s", url));
 
                xfree(buf);
         }

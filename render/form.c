@@ -16,7 +16,6 @@
 #include "curl/curl.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
-#include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
 

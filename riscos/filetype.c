@@ -76,6 +76,22 @@ const char *fetch_filetype(const char *unix_path)
 }
 
 
+char *fetch_mimetype(const char *ro_path) {
+
+        os_error *e;
+        bits filetype;
+        char *mime = xcalloc(256, sizeof(char));
+
+        e = xosfile_read_stamped_no_path(ro_path, 0, 0, 0, 0, 0, &filetype);
+        if (e) return 0;
+
+        e = xmimemaptranslate_filetype_to_mime_type(filetype, mime);
+        if (e) return 0;
+
+        return mime;
+}
+
+
 int cmp_type(const void *x, const void *y)
 {
 	const bits *p = x;
