@@ -34,12 +34,14 @@
 #include "oslib/wimpspriteop.h"
 #include "oslib/uri.h"
 #include "rufl.h"
-#include "netsurf/content/url_store.h"
 #include "netsurf/utils/config.h"
+#include "netsurf/content/content.h"
+#include "netsurf/content/url_store.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/tree.h"
+#include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/buffer.h"
@@ -546,6 +548,14 @@ void gui_quit(void)
 
 void ro_gui_signal(int sig)
 {
+	struct content *c;
+	if (sig == SIGFPE) {
+		for (c = content_list; c; c = c->next)
+			if (c->type == CONTENT_HTML && c->data.html.layout) {
+				LOG(("Dumping: '%s'", c->url));
+				box_dump(c->data.html.layout, 0);
+			}
+	}
 	ro_gui_cleanup();
 	raise(sig);
 }
