@@ -186,7 +186,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 
 void ro_gui_save_complete(struct content *c, char *path)
 {
-	char buf[256], spritename[12];
+	char buf[256], spritename[13];
 	FILE *fp;
 	os_error *error;
 	osspriteop_area *area;
@@ -228,9 +228,9 @@ void ro_gui_save_complete(struct content *c, char *path)
 	        return;
 	}
 	snprintf(spritename, sizeof spritename, "%s", appname+1);
-	area = xcalloc(SPRITE_SIZE, sizeof(char));
+	area = malloc(SPRITE_SIZE);
 	if (!area) {
-	        LOG(("xcalloc failed"));
+	        LOG(("malloc failed"));
 	        warn_user("No memory for sprite");
 	        return;
 	}
@@ -244,7 +244,7 @@ void ro_gui_save_complete(struct content *c, char *path)
 	if (error) {
 	        LOG(("Failed to create sprite"));
 	        warn_user("Failed to create iconsprite");
-	        xfree(area);
+	        free(area);
 	        return;
 	}
 	thumbnail_create(c, area,
@@ -254,11 +254,11 @@ void ro_gui_save_complete(struct content *c, char *path)
 	if (error) {
 	        LOG(("Failed to save iconsprite"));
 	        warn_user("Failed to save iconsprite");
-	        xfree(area);
+	        free(area);
 	        return;
 	}
 
-	xfree(area);
+	free(area);
 
         /* Create !Boot file */
 	snprintf(buf, sizeof buf, "%s.!Boot", path);
