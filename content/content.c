@@ -292,6 +292,7 @@ void content_destroy(struct content *c)
 		xfree(user);
 	}
 	free(c->mime_type);
+	xfree(c->url);
 	xfree(c);
 }
 

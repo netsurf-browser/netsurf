@@ -502,7 +502,7 @@ bool fetch_process_headers(struct fetch *f)
 			char *url_path;
 			url_path = curl_unescape(f->url + 8, (int) strlen(f->url) - 8);
 			type = fetch_filetype(url_path);
-			free(url_path);
+			curl_free(url_path);
 		}
 	}
 

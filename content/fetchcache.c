@@ -56,6 +56,7 @@ struct content * fetchcache(const char *url0, char *referer,
 
 	c = cache_get(url);
 	if (c != 0) {
+		free(url);
 		content_add_user(c, callback, p1, p2);
 		return c;
 	}
@@ -67,6 +68,7 @@ struct content * fetchcache(const char *url0, char *referer,
 	c->width = width;
 	c->height = height;
 	c->fetch = fetch_start(url, referer, fetchcache_callback, c, only_2xx);
+	free(url);
 	if (c->fetch == 0) {
 		LOG(("warning: fetch_start failed"));
 		cache_destroy(c);
