@@ -278,6 +278,9 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 				msg_data.error = messages_get("BadRedirect");
 				content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			}
+			/* set the status to ERROR so that the content is
+			 * destroyed in content_clean() */
+			c->status = CONTENT_STATUS_ERROR;
 			break;
 #ifdef WITH_AUTH
 		case FETCH_AUTH:
@@ -286,6 +289,9 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			c->fetch = 0;
 			msg_data.auth_realm = data;
 			content_broadcast(c, CONTENT_MSG_AUTH, msg_data);
+			/* set the status to ERROR so that the content is
+			 * destroyed in content_clean() */
+			c->status = CONTENT_STATUS_ERROR;
 			break;
 #endif
 		default:

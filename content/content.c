@@ -283,7 +283,8 @@ struct content * content_get(const char *url)
 	struct content *c;
 
 	for (c = content_list; c; c = c->next) {
-		if (c->fresh && strcmp(c->url, url) == 0)
+		if (c->fresh && c->status != CONTENT_STATUS_ERROR &&
+				strcmp(c->url, url) == 0)
 			return c;
 	}
 
