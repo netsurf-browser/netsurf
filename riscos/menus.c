@@ -237,11 +237,11 @@ static wimp_MENU(4) window_menu = {
 static wimp_MENU(5) view_menu = {
   { "View" }, 7,2,7,0, 300, 44, 0,
   {
-    { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)1,	       DEFAULT_FLAGS, { "ScaleView" } },
-    { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)&image_menu,   DEFAULT_FLAGS, { "Images" } },
-    { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)&toolbar_menu, DEFAULT_FLAGS, { "Toolbars" } },
-    { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE, (wimp_menu *)&render_menu, DEFAULT_FLAGS, { "Render" } },
-    { wimp_MENU_LAST,				   wimp_NO_SUB_MENU,	       DEFAULT_FLAGS, { "OptDefault" } }
+    { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)1,	            DEFAULT_FLAGS, { "ScaleView" } },
+    { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)&image_menu,        DEFAULT_FLAGS, { "Images" } },
+    { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)&show_toolbar_menu, DEFAULT_FLAGS, { "Toolbars" } },
+    { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE, (wimp_menu *)&render_menu,       DEFAULT_FLAGS, { "Render" } },
+    { wimp_MENU_LAST,				   wimp_NO_SUB_MENU,	            DEFAULT_FLAGS, { "OptDefault" } }
   }
 };
 
@@ -832,13 +832,13 @@ void ro_gui_menu_selection(wimp_selection *selection)
 								!current_toolbar->display_status;
 						break;
 				}
+				ro_gui_menu_prepare_theme();
 				current_toolbar->reformat_buttons = true;
 				height = current_toolbar->height;
 				ro_gui_theme_process_toolbar(current_toolbar, -1);
 				if ((height != current_toolbar->height) && (current_gui))
 					ro_gui_window_update_dimensions(current_gui,
 						height - current_toolbar->height);
-				ro_gui_menu_prepare_theme();
 				break;
 			case 2:	/* Add separator */
 				break;
@@ -1002,10 +1002,18 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 0: /* Scale view */
 						break;
 					case 1: /* Images -> */
-						if (selection->items[2] == 1) current_gui->option.background_images =
-								!current_gui->option.background_images;
-						if (selection->items[2] == 2) current_gui->option.animate_images =
-								!current_gui->option.animate_images;
+						switch (selection->items[2]) {
+							case 0:
+								break;
+							case 1:
+								current_gui->option.background_images =
+										!current_gui->option.background_images;
+								break;
+							case 2:
+								current_gui->option.animate_images =
+										!current_gui->option.animate_images;
+								break;
+						}
 						ro_gui_menu_prepare_images();
 						gui_window_redraw_window(current_gui);
 						break;
@@ -1026,27 +1034,33 @@ void ro_gui_menu_selection(wimp_selection *selection)
 							case 3:
 								current_gui->toolbar->display_status =
 										!current_gui->toolbar->display_status;
+								break;
 						}
+						ro_gui_menu_prepare_toolbars();
 						current_gui->toolbar->reformat_buttons = true;
 						height = current_gui->toolbar->height;
 						ro_gui_theme_process_toolbar(current_gui->toolbar, -1);
 						if (height != current_gui->toolbar->height)
 							ro_gui_window_update_dimensions(current_gui,
 								height - current_gui->toolbar->height);
-						ro_gui_menu_prepare_toolbars();
 						break;
 					case 3: /* Render -> */
-						if (selection->items[2] == 0) {
-							current_gui->option.background_blending =
-									!current_gui->option.background_blending;
-							gui_window_redraw_window(current_gui);
+						switch (selection->items[2]) {
+							case 0:
+								current_gui->option.background_blending =
+										!current_gui->option.background_blending;
+								gui_window_redraw_window(current_gui);
+								break;
+							case 1:
+								current_gui->option.buffer_animations =
+										!current_gui->option.buffer_animations;
+								break;
+							case 2:
+								current_gui->option.buffer_everything =
+										!current_gui->option.buffer_everything;
+								break;
 						}
-						if (selection->items[2] == 1) current_gui->option.buffer_animations =
-								!current_gui->option.buffer_animations;
-						if (selection->items[2] == 2) current_gui->option.buffer_everything =
-								!current_gui->option.buffer_everything;
 						ro_gui_menu_prepare_render();
-
 						break;
 					case 4: /* Make default */
 						ro_gui_window_default_options(current_gui->bw);
@@ -1124,7 +1138,6 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				}
 				break;
 		}
-
 	} else if (current_menu == proxyauth_menu) {
 		ro_gui_dialog_proxyauth_menu_selection(selection->items[0]);
 	} else if (current_menu == image_quality_menu) {
@@ -1308,38 +1321,36 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 
 	case MENU_VIEW: /* View -> */
 		switch (warning->selection.items[1]) {
-		case -1: /* View-> */
-			ro_gui_menu_prepare_view();
-			if (current_gui->toolbar) {
-				view_menu.entries[2].icon_flags &= ~wimp_ICON_SHADED;
-			} else {
-				view_menu.entries[2].icon_flags |= wimp_ICON_SHADED;
-			}
-			error = xwimp_create_sub_menu((wimp_menu *) browser_view_menu,
-					warning->pos.x, warning->pos.y);
-			break;
-		case 0: /* Scale view -> */
-			ro_gui_menu_prepare_scale();
-			error = xwimp_create_sub_menu((wimp_menu *) dialog_zoom,
-					warning->pos.x, warning->pos.y);
-			break;
-
-		case 1: /* Images -> */
-			ro_gui_menu_prepare_images();
-			error = xwimp_create_sub_menu(browser_image_menu,
-					warning->pos.x, warning->pos.y);
-			break;
-
-		case 2: /* Toolbars -> */
-			ro_gui_menu_prepare_toolbars();
-			error = xwimp_create_sub_menu(browser_toolbar_menu,
-					warning->pos.x, warning->pos.y);
-			break;
-		case 3: /* Render -> */
-			ro_gui_menu_prepare_render();
-			error = xwimp_create_sub_menu(browser_render_menu,
-					warning->pos.x, warning->pos.y);
-			break;
+			case -1: /* View-> */
+				ro_gui_menu_prepare_view();
+				if (current_gui->toolbar) 
+					view_menu.entries[2].icon_flags &= ~wimp_ICON_SHADED;
+				else
+					view_menu.entries[2].icon_flags |= wimp_ICON_SHADED;
+				error = xwimp_create_sub_menu((wimp_menu *) browser_view_menu,
+						warning->pos.x, warning->pos.y);
+				break;
+			case 0: /* Scale view -> */
+				ro_gui_menu_prepare_scale();
+				error = xwimp_create_sub_menu((wimp_menu *) dialog_zoom,
+						warning->pos.x, warning->pos.y);
+				break;
+	
+			case 1: /* Images -> */
+				ro_gui_menu_prepare_images();
+				error = xwimp_create_sub_menu(browser_image_menu,
+						warning->pos.x, warning->pos.y);
+				break;
+			case 2: /* Toolbars -> */
+				ro_gui_menu_prepare_toolbars();
+				error = xwimp_create_sub_menu(browser_toolbar_menu,
+						warning->pos.x, warning->pos.y);
+				break;
+			case 3: /* Render -> */
+				ro_gui_menu_prepare_render();
+				error = xwimp_create_sub_menu(browser_render_menu,
+						warning->pos.x, warning->pos.y);
+				break;
 		}
 		break;
 
