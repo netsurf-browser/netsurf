@@ -2,7 +2,7 @@
 <!DOCTYPE riscos-prm PUBLIC "-//Gerph//DTD PRM documentation 1.00//EN"
 			    "http://www.movspclr.co.uk/dtd/100/prm.dtd">
 
-<!-- $Id: Themes.xml,v 1.4 2003/11/23 18:08:07 jmb Exp $ -->
+<!-- $Id: Themes.xml,v 1.5 2004/01/05 20:20:44 tlsa Exp $ -->
 			    
 <riscos-prm doc-group="NetSurf User's Manual">
 <chapter title="NetSurf Themes">
@@ -31,8 +31,15 @@
     <item><p> Throbber (1)</p></item>
     <item><p> URL entry bar (2)</p></item>
     <item><p> Status bar (3)</p></item>
-    <item><p> Back Button (4)</p></item>   
+    <item><p> History Button (4)</p></item>   
     <item><p> Refresh Button (5)</p></item>
+    <item><p> Stop Button (6)</p></item>
+    <item><p> Back Button (7)</p></item>
+    <item><p> Forward Button (8)</p></item>
+    <item><p> Bookmark Button (9)</p></item>
+    <item><p> Save Button (10)</p></item>
+    <item><p> Print Button (11)</p></item>
+    <item><p> Home Button (12)</p></item>
    </list></p>
   </subsection>
  </section>
@@ -68,6 +75,7 @@
   <revision number="0.01" date="03/06/03" author="JMB" title="Initial version" />
   <revision number="0.02" date="03/06/03" author="JMB" title="Various changes for clarity" />
   <revision number="0.03" date="23/11/03" author="JMB" title="Updated after theme code tidy."/>
+  <revision number="0.04" date="05/01/04" author="tlsa" title="Add new icons."/>
  </history>
 </meta>
 </riscos-prm>			    

@@ -11,17 +11,30 @@
 <h1>User Guide</h1>
 <h2><a name="using">Using NetSurf</a></h2>
 <p>To run <em>NetSurf</em>, simply double click on the NetSurf application.  This will cause the NetSurf icon to appear on the iconbar.  Select clicking on this icon will open a browser window.  It should be noted that as NetSurf is at a very early stage of development, much of the following information is subject to change without warning.</p>
-<p class="screenshot"><img src="images/bwin" alt="Browser Window" height="289" width="331"></p>
+<p class="screenshot"><img src="images/bwin" alt="Browser Window" height="273" width="359"></p>
 <h3><a name="toolbar">The Toolbar</a></h3>
-<p>The section at the top of the window is called the toolbar.  It allows quick access to various functions and information.</p>
-<p class="screenshot"><img src="images/toolb" alt="Toolbar" height="236" width="592"></p>
-<p><strong>Back:</strong> Clicking on this button, makes NetSurf go back the the previous page in the history list.  If you followed a link from one page to another, this button allows you to get back to the first page.</p>
-<p><strong>Reload:</strong> Clicking on this button causes NetSurf to reload the current page.</p>
-<p><strong>Forward:</strong> Clicking on this button allows you to advance through the history list.</p>
+<p>The section at the top of the window is called the toolbar.  It allows quick access to various functions and information.  The standard, or <em>Default</em>, toolbar is shown below.</p>
+<p class="screenshot"><img src="images/toolb" alt="Toolbar" height="70" width="483"></p>
+<p>There are several different variations on this toolbar available, eg this minimal one:</p>
+<p class="screenshot"><img src="images/mini" alt="Mini Toolbar" height="60" width="483"></p>
+<p>In addition to this, NetSurf supports themes, which allow users to customize the look and feel of the program.</p>
+<h3>Toolbar Icons</h3>
+<p>Again, it should be noted that, as NetSurf is in development, many of the icons don't do anything yet.  In such situations, the following text describes what the icon will do, when the associated feature has been implemented.</p>
+<p><strong>URL Bar:</strong> The white writable icon on the toolbar is called the URL Bar and it shows the location of the current page.  Here, you can enter the address of the page you want to view next.</p>
+<p><strong>Status Line:</strong> This text displays information to the user.  When you move the pointer over a link, this will show the URL that the link points to.  The status line also displays information about NetSurf's progress while retrieving a page.</p>
+<p><strong>Throbber:</strong> This NetSurf logo animates while a page is downloading or rendering.  It indicates that NetSurf is doing something.</p>
+<table border="0" cellpadding="4" cellspacing="0">
+<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/back" alt="Back Button" height="34" width="34"></td><td><p><strong>Back:</strong> Clicking on this button, makes NetSurf go back to the previous page in the history list.  If you followed a link from one page to another, this button allows you to get back to the first page.</p></td></tr>
+<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/mark" alt="Bookmark Button" height="34" width="34"></td><td><p><strong>Bookmark:</strong> Select clicking on this button adds the current location to the bookmarks or favourites.  Adjust clicking opens the bookmarks window.</p></td></tr>
+<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/forward" alt="Forward Button" height="34" width="34"></td><td><p><strong>Forward:</strong> Clicking on this button allows you to advance through the history list.</p></td></tr>
+<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/history" alt="History Button" height="34" width="34"></td><td><p><strong>History:</strong> Clicking on this button opens a window containing a history tree.  Clicking on an item in this window will move to the relevant page in the history.</p></td></tr>
+<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/home" alt="Home Button" height="34" width="34"></td><td><p><strong>Home:</strong> Clicking on this button returns to the configured home page.</p></td></tr>
+<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/print" alt="Print Button" height="34" width="34"></td><td><p><strong>Print:</strong> Clicking on this button will print the current page.</p></td></tr>
+<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/reload" alt="Reload Button" height="34" width="34"></td><td><p><strong>Reload:</strong> Clicking on this button will make NetSurf fetch and redraw the current page again.</p></td></tr>
+<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/save" alt="Save Button" height="34" width="34"></td><td><p><strong>Save:</strong> Clicking on this button will open a save dialogue box, to allow you to save the page for future reference.</p></td></tr>
+<tr><td align="center" valign="top" bgcolor="#D8D8D8"><img src="images/stop" alt="Stop Button" height="34" width="34"></td><td><p><strong>Stop:</strong> Clicking on this button stops whatever process that window is doing.</p></td></tr>
+</table>
 <p>Buttons that are grayed out indicate that their function is unavailable.  This happens when you open a new browser window.  Since the window will be displaying its first page, there would be no previous page and the back button is grayed out.  Also, as this is the first page, the forward button is also grayed out.</p>
-<p><strong>URL Bar:</strong> This shows the location of the current page.  Here, you can enter the address of the page you want to view next.</p>
-<p><strong>Throbber:</strong> This animates while a page is downloading or rendering.  It indicates that NetSurf is doing something.</p>
-<p><strong>Status Line:</strong> This displays information to the user.  When you move the pointer over a link, this will show the URL that the link points to.  The status line also displays information about NetSurf's progress while retrieving a page.</p>
 <h2><a name="menus">Menus</a></h2>
 <p>NetSurf has two different menus, one is accessed by clicking menu over NetSurf's iconbar icon and the other is opened by clicking menu over a browser window.</p>
 <h3>Iconbar Menu</h3>
