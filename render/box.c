@@ -17,6 +17,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
+#include "netsurf/desktop/options.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
@@ -235,6 +236,7 @@ void xml_to_box(xmlNode *n, struct content *c)
 
 	c->data.html.style = xcalloc(1, sizeof(struct css_style));
 	memcpy(c->data.html.style, &css_base_style, sizeof(struct css_style));
+	c->data.html.style->font_size.value.length.value = option_font_size * 0.1;
 	c->data.html.fonts = font_new_set();
 
 	c->data.html.object_count = 0;

@@ -32,9 +32,13 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	;
 wimp_menu* theme_menu = NULL;
 
+static int font_size;
+static int font_min_size;
+
 
 static void ro_gui_dialog_click_config(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_br(wimp_pointer *pointer);
+static void ro_gui_dialog_update_config_br(void);
 static void ro_gui_dialog_click_config_prox(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_th(wimp_pointer *pointer);
 static void set_browser_choices(void);
@@ -248,7 +252,51 @@ void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 			gui_window_show(bw->window);
 			browser_window_open_location(bw, GESTURES_URL);
 			break;
+		case ICON_CONFIG_BR_FONTSIZE_DEC:
+			if (font_size == 50)
+				break;
+			font_size--;
+			if (font_size < font_min_size)
+				font_min_size = font_size;
+			ro_gui_dialog_update_config_br();
+			break;
+		case ICON_CONFIG_BR_FONTSIZE_INC:
+			if (font_size == 1000)
+				break;
+			font_size++;
+			ro_gui_dialog_update_config_br();
+			break;
+		case ICON_CONFIG_BR_MINSIZE_DEC:
+			if (font_min_size == 10)
+				break;
+			font_min_size--;
+			ro_gui_dialog_update_config_br();
+			break;
+		case ICON_CONFIG_BR_MINSIZE_INC:
+			if (font_min_size == 500)
+				break;
+			font_min_size++;
+			if (font_size < font_min_size)
+				font_size = font_min_size;
+			ro_gui_dialog_update_config_br();
+			break;
 	}
+}
+
+
+/**
+ * Update font size icons in browser choices dialog.
+ */
+
+void ro_gui_dialog_update_config_br(void)
+{
+	char s[10];
+	sprintf(s, "%i.%ipt", font_size / 10, font_size % 10);
+	set_icon_string(dialog_config_br, ICON_CONFIG_BR_FONTSIZE, s);
+	sprintf(s, "%i.%ipt", font_min_size / 10, font_min_size % 10);
+	set_icon_string(dialog_config_br, ICON_CONFIG_BR_MINSIZE, s);
+	wimp_set_icon_state(dialog_config_br, ICON_CONFIG_BR_FONTSIZE, 0, 0);
+	wimp_set_icon_state(dialog_config_br, ICON_CONFIG_BR_MINSIZE, 0, 0);
 }
 
 
@@ -335,6 +383,9 @@ void set_browser_choices(void)
 			option_allow_text_selection);
 	set_icon_state(dialog_config_br, ICON_CONFIG_BR_TOOLBAR,
 			option_show_toolbar);
+	font_size = option_font_size;
+	font_min_size = option_font_min_size;
+	ro_gui_dialog_update_config_br();
 }
 
 
@@ -350,6 +401,8 @@ void get_browser_choices(void)
 			ICON_CONFIG_BR_TEXT);
 	option_show_toolbar = get_icon_state(dialog_config_br,
 			ICON_CONFIG_BR_TOOLBAR);
+	option_font_size = font_size;
+	option_font_min_size = font_min_size;
 }
 
 
@@ -362,7 +415,7 @@ void set_proxy_choices(void)
 	set_icon_state(dialog_config_prox, ICON_CONFIG_PROX_HTTP,
 			option_http_proxy);
 	set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST,
-			option_http_proxy_host);
+			option_http_proxy_host ? "" : option_http_proxy_host);
 	set_icon_string_i(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT,
 			option_http_proxy_port);
 }

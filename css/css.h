@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -293,6 +293,6 @@ colour named_colour(const char *name);
 void css_dump_style(const struct css_style * const style);
 void css_dump_stylesheet(const struct css_stylesheet * stylesheet);
 
-signed long len(struct css_length * length, struct css_style * style);
+float len(struct css_length * length, struct css_style * style);
 
 #endif

@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include <assert.h>
@@ -998,10 +998,10 @@ unsigned int css_hash(const char *s)
 
 
 /**
- * convert a struct css_length to pixels
+ * Convert a struct css_length to pixels.
  */
 
-signed long len(struct css_length * length, struct css_style * style)
+float len(struct css_length * length, struct css_style * style)
 {
 	assert(!((length->unit == CSS_UNIT_EM || length->unit == CSS_UNIT_EX) && style == 0));
 	switch (length->unit) {

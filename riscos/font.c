@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
 
@@ -132,7 +132,7 @@ struct font_set *font_new_set()
 struct font_data *font_open(struct font_set *set, struct css_style *style)
 {
 	struct font_data *data;
-	unsigned int size = 16 * 11;
+	unsigned int size = option_font_size * 1.6;
 	unsigned int f = 0;
 	font_f handle;
 	os_error *error;
@@ -141,7 +141,12 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 	assert(style);
 
 	if (style->font_size.size == CSS_FONT_SIZE_LENGTH)
-		size = style->font_size.value.length.value * 16;
+		size = len(&style->font_size.value.length, style) *
+				72.0 / 90.0 * 16;
+	if (size < option_font_min_size * 1.6)
+		size = option_font_min_size * 1.6;
+	if (1600 < size)
+		size = 1600;
 
 	switch (style->font_family) {
 	        case CSS_FONT_FAMILY_SANS_SERIF:

@@ -35,6 +35,11 @@ bool option_http_proxy = false;
 char *option_http_proxy_host = 0;
 /** Proxy port. */
 int option_http_proxy_port = 8080;
+/** Default font size / 0.1pt. */
+int option_font_size = 100;
+/** Minimum font size. */
+int option_font_min_size = 70;
+
 EXTRA_OPTION_DEFINE
 
 
@@ -46,6 +51,8 @@ struct {
 	{ "http_proxy",      OPTION_BOOL,    &option_http_proxy },
 	{ "http_proxy_host", OPTION_STRING,  &option_http_proxy_host },
 	{ "http_proxy_port", OPTION_INTEGER, &option_http_proxy_port },
+	{ "font_size",       OPTION_INTEGER, &option_font_size },
+	{ "font_min_size",   OPTION_INTEGER, &option_font_min_size },
 	EXTRA_OPTION_TABLE
 };
 
@@ -111,6 +118,15 @@ void options_read(const char *path)
 	}
 
 	fclose(fp);
+
+	if (option_font_size < 50)
+		option_font_size = 50;
+	if (1000 < option_font_size)
+		option_font_size = 1000;
+	if (option_font_min_size < 10)
+		option_font_min_size = 10;
+	if (500 < option_font_min_size)
+		option_font_min_size = 500;
 }
 
 

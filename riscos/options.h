@@ -15,15 +15,15 @@
 
 #include "netsurf/desktop/options.h"
 
-extern int option_use_mouse_gestures;
-extern int option_allow_text_selection;
-extern int option_show_toolbar;
+extern bool option_use_mouse_gestures;
+extern bool option_allow_text_selection;
+extern bool option_show_toolbar;
 extern char *option_theme;
 
 #define EXTRA_OPTION_DEFINE \
-int option_use_mouse_gestures = false;\
-int option_allow_text_selection = true;\
-int option_show_toolbar = true;\
+bool option_use_mouse_gestures = false;\
+bool option_allow_text_selection = true;\
+bool option_show_toolbar = true;\
 char *option_theme = 0;
 
 #define EXTRA_OPTION_TABLE \
