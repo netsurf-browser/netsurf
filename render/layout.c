@@ -112,6 +112,8 @@ void layout_block_context(struct box *block)
 			block->type == BOX_INLINE_BLOCK ||
 			block->type == BOX_TABLE_CELL);
 
+	gui_multitask();
+
 	box = margin_box = block->children;
 	cx = block->padding[LEFT];
 	cy = block->padding[TOP];
@@ -175,7 +177,34 @@ void layout_block_context(struct box *block)
 			box->width = box->parent->width;
 			layout_inline_container(box, box->width, block, cx, cy);
 		} else if (box->type == BOX_TABLE) {
-			/** \todo  move down to avoid floats if necessary */
+			/* Move down to avoid floats if necessary. */
+			int x0, x1;
+			struct box *left, *right;
+			y = cy;
+			while (1) {
+				x0 = cx;
+				x1 = cx + box->parent->width;
+				find_sides(block->float_children, y,
+						y + box->height,
+						&x0, &x1, &left, &right);
+				if (box->width <= x1 - x0)
+					break;
+				if (!left && !right)
+					break;
+				else if (!left)
+					y = right->y + right->height + 1;
+				else if (!right)
+					y = left->y + left->height + 1;
+				else if (left->y + left->height <
+						right->y + right->height)
+					y = left->y + left->height + 1;
+				else
+					y = right->y + right->height + 1;
+                        }
+                        box->x += x0 - cx;
+                        cx = x0;
+                        box->y += y - cy;
+                        cy = y;
 		}
 
 		/* Advance to next box. */
@@ -1066,10 +1095,10 @@ void layout_table(struct box *table, int available_width)
 		/* space between min and max: fill it exactly */
 		float scale = (float) (auto_width - min_width) /
 				(float) (max_width - min_width);
-        	fprintf(stderr, "filling, scale %f\n", scale);
+		/* fprintf(stderr, "filling, scale %f\n", scale); */
 		for (i = 0; i < columns; i++) {
-			col[i].width = col[i].min +
-					(col[i].max - col[i].min) * scale;
+			col[i].width = col[i].min + (int) (0.5 +
+					(col[i].max - col[i].min) * scale);
 		}
 		table_width = auto_width;
 	}
