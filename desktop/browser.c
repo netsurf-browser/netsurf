@@ -166,6 +166,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	char *hash;
 	url_func_result res;
 	struct url_content *url_content;
+	char url_buf[256];
 
 	LOG(("bw %p, url %s", bw, url));
 
@@ -202,6 +203,10 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 					(unsigned int)(hash - url2)) {
 			free(url2);
 			browser_window_update(bw, false);
+			snprintf(url_buf, sizeof url_buf, "%s#%s",
+				bw->current_content->url, bw->frag_id);
+			url_buf[sizeof url_buf - 1] = 0;
+			gui_window_set_url(bw->window, url_buf);
 			return;
 		}
 	}
@@ -250,6 +255,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 {
 	struct browser_window *bw = p1;
 	char status[40];
+	char url[256];
 
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
@@ -266,8 +272,16 @@ void browser_window_callback(content_msg msg, struct content *c,
 				browser_window_stop_throbber(bw);
 			}
 #endif
-			else
-				gui_window_set_url(bw->window, c->url);
+			else {
+				if (bw->frag_id)
+					snprintf(url, sizeof url, "%s#%s",
+						c->url, bw->frag_id);
+				else
+					snprintf(url, sizeof url, "%s",
+						c->url);
+				url[sizeof url - 1] = 0;
+				gui_window_set_url(bw->window, url);
+			}
 			break;
 
 		case CONTENT_MSG_READY:
@@ -288,7 +302,13 @@ void browser_window_callback(content_msg msg, struct content *c,
 			bw->caret_callback = NULL;
 			bw->scrolling_box = NULL;
 			gui_window_new_content(bw->window);
-			gui_window_set_url(bw->window, c->url);
+			if (bw->frag_id)
+				snprintf(url, sizeof url, "%s#%s",
+					c->url, bw->frag_id);
+			else
+				snprintf(url, sizeof url, "%s", c->url);
+			url[sizeof url - 1] = 0;
+			gui_window_set_url(bw->window, url);
 			browser_window_update(bw, true);
 			content_open(c, bw, 0, 0, 0);
 			browser_window_set_status(bw, c->status_message);
