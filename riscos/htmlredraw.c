@@ -677,7 +677,7 @@ void html_redraw_background(long xi, long yi, int width, int height,
 		case CONTENT_PNG:
 			_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
 			    ((char*) box->background->data.png.sprite_area + box->background->data.png.sprite_area->first),
-			    x, y, image_width, image_height,
+			    x, y - image_height, image_width, image_height,
 			    tinct_options);
 			break;
 #endif
@@ -685,7 +685,7 @@ void html_redraw_background(long xi, long yi, int width, int height,
 		case CONTENT_JPEG:
 			_swix(Tinct_PlotScaled, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
 			    ((char*) box->background->data.jpeg.sprite_area + box->background->data.jpeg.sprite_area->first),
-			    x, y, image_width, image_height,
+			    x, y - image_height, image_width, image_height,
 			    tinct_options);
 			break;
 #endif
@@ -693,7 +693,7 @@ void html_redraw_background(long xi, long yi, int width, int height,
 		case CONTENT_GIF:
 			_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
 			    (char*) box->background->data.gif.gif->frame_image,
-			    x, y, image_width, image_height,
+			    x, y - image_height, image_width, image_height,
 			    tinct_options);
 			break;
 #endif
