@@ -13,6 +13,7 @@
  */
 
 #include <assert.h>
+#include <math.h>
 #include <stdbool.h>
 #include <string.h>
 #include "oslib/colourtrans.h"
@@ -202,7 +203,7 @@ void gui_window_destroy(gui_window* g)
   ro_toolbar_destroy(g->data.browser.toolbar);
   xwimp_delete_window(g->window);
 
-  xfree(g);
+  free(g);
 }
 
 void gui_window_show(gui_window* g)
@@ -304,31 +305,15 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 	unsigned long background_colour = 0xffffff;
 	os_error *error;
 	wimp_draw update;
-	int size;
-	int addition_x = 0;
-	int addition_y = 0;
 
-	/*	We must have an object otherwise things go very wrong
-	*/
-	assert(data->redraw.object);
-
-	/*	Calculate the update box. If we are scaled then redraw the whole bottom/right portion of the image,
-		if not then redraw a section. This is a hack and should be fixed properly.
-	*/
 	update.w = g->window;
-	update.box.x0 = data->redraw.x * 2 * g->scale;
-	update.box.y1 = -data->redraw.y * 2 * g->scale;
-	if ((data->redraw.object_width != data->redraw.object->width) ||
-			(data->redraw.object_height != data->redraw.object->height)) {
-		update.box.x1 = (data->redraw.x + data->redraw.object_width) * 2 * g->scale;
-		update.box.y0 = -(data->redraw.y + data->redraw.object_height) * 2 * g->scale;
-	} else {
-		update.box.x1 = (data->redraw.x + data->redraw.width) * 2 * g->scale;
-		update.box.y0 = -(data->redraw.y + data->redraw.height) * 2 * g->scale;
-	}
+	update.box.x0 = floorf(data->redraw.x * 2 * g->scale);
+	update.box.y0 = -ceilf((data->redraw.y + data->redraw.height) * 2 *
+			g->scale);
+	update.box.x1 = ceilf((data->redraw.x + data->redraw.width) * 2 *
+			g->scale) + 1;
+	update.box.y1 = -floorf(data->redraw.y * 2 * g->scale) + 1;
 
-	/*	Perform the update
-	*/
 	error = xwimp_update_window(&update, &more);
 	if (error) {
 		LOG(("xwimp_update_window: 0x%x: %s",
@@ -367,9 +352,11 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 			assert(data->redraw.object);
 			content_redraw(data->redraw.object,
 					update.box.x0 - update.xscroll +
-						data->redraw.object_x * 2 * g->scale,
+					floorf(data->redraw.object_x * 2 *
+						g->scale),
 					update.box.y1 - update.yscroll -
-						data->redraw.object_y * 2 * g->scale,
+					ceilf(data->redraw.object_y * 2 *
+						g->scale),
 					data->redraw.object_width * 2 * g->scale,
 					data->redraw.object_height * 2 * g->scale,
 					update.clip.x0, update.clip.y0,
