@@ -21,18 +21,6 @@ struct font_set {
 	struct font_data *font[FONT_FAMILIES * 4];
 };
 
-/**
- * font id = font family * 4 + bold * 2 + slanted
- * font family: 0 = sans-serif, 1 = serif, ...
- */
-
-const char * const font_table[FONT_FAMILIES * 4] = {
-	/* sans-serif */
-	"Homerton.Medium\\ELatin1",
-	"Homerton.Medium.Oblique\\ELatin1",
-	"Homerton.Bold\\ELatin1",
-	"Homerton.Bold.Oblique\\ELatin1",
-};
 
 static void font_close(struct font_data *data);
 
@@ -165,3 +153,16 @@ char * font_split(struct font_data *data, const char * text, unsigned int length
 	return text + i;
 }
 
+
+const char *enumerate_fonts(struct font_set *set, int *handle)
+{
+        assert(handle);
+
+	if (!handle) {
+		*handle = 1;
+		return "Homerton.Medium";
+	}
+
+	*handle = -1;
+	return 0;
+}
