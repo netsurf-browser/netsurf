@@ -167,6 +167,7 @@ static void ro_msg_dataload(wimp_message *block);
 static char *ro_gui_uri_file_parse(const char *file_name);
 static bool ro_gui_uri_file_parse_line(FILE *fp, char *b);
 static char *ro_gui_url_file_parse(const char *file_name);
+static char *ro_gui_ieurl_file_parse(const char *file_name);
 static void ro_msg_datasave_ack(wimp_message *message);
 static void ro_msg_dataopen(wimp_message *block);
 static char *ro_path_to_url(const char *path);
@@ -1189,6 +1190,9 @@ void ro_msg_dataload(wimp_message *message)
 		url = ro_gui_uri_file_parse(message->data.data_xfer.file_name);
 	else if (file_type == 0xb28)		/* ANT URL file */
 		url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
+	else if (file_type == 0x1ba)		/* IEURL file */
+		url = ro_gui_ieurl_file_parse(message->
+				data.data_xfer.file_name);
 	else if (file_type == 0xfaf ||
 			file_type == 0xf78 ||
 			file_type == 0xf79 ||
@@ -1205,31 +1209,29 @@ void ro_msg_dataload(wimp_message *message)
 
 
 	if (!url)
-		/* error has already been reported by one of the three
+		/* error has already been reported by one of the
 		 * functions called above */
 		return;
 
 	if (g) {
 		browser_window_go(g->bw, url, 0);
+	} else if ((hotlist_tree) && ((wimp_w)hotlist_tree->handle ==
+			message->data.data_xfer.w)) {
+		ro_gui_tree_get_tree_coordinates(hotlist_tree,
+				message->data.data_xfer.pos.x,
+				message->data.data_xfer.pos.y,
+				&x, &y);
+		link = tree_get_link_details(hotlist_tree, x, y, &before);
+		node = tree_create_URL_node(NULL,
+				messages_get("TreeImport"), url, file_type,
+				time(NULL), -1, 0);
+		tree_link_node(link, node, before);
+		tree_handle_node_changed(hotlist_tree, node, false, true);
+		tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP, 0,
+				NODE_INSTEP, 16384);
+		ro_gui_tree_start_edit(hotlist_tree, &node->data, NULL);
 	} else {
-		if ((hotlist_tree) && ((wimp_w)hotlist_tree->handle ==
-				message->data.data_xfer.w)) {
-			ro_gui_tree_get_tree_coordinates(hotlist_tree,
-					message->data.data_xfer.pos.x,
-					message->data.data_xfer.pos.y,
-					&x, &y);
-			link = tree_get_link_details(hotlist_tree, x, y, &before);
-			node = tree_create_URL_node(NULL,
-					messages_get("TreeImport"), url, file_type,
-					time(NULL), -1, 0);
-			tree_link_node(link, node, before);
-			tree_handle_node_changed(hotlist_tree, node, false, true);
-			tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP, 0,
-					NODE_INSTEP, 16384);
-			ro_gui_tree_start_edit(hotlist_tree, &node->data, NULL);
-		} else {
-			browser_window_create(url, 0, 0);
-		}
+		browser_window_create(url, 0, 0);
 	}
 
 	/* send DataLoadAck */
@@ -1395,6 +1397,57 @@ char *ro_gui_url_file_parse(const char *file_name)
 
 
 /**
+ * Parse an IEURL file.
+ *
+ * \param  file_name  file to read
+ * \return  URL from file, or 0 on error and error reported
+ */
+
+char *ro_gui_ieurl_file_parse(const char *file_name)
+{
+	char line[400];
+	char *url = 0;
+	FILE *fp;
+
+	fp = fopen(file_name, "r");
+	if (!fp) {
+		LOG(("fopen(\"%s\", \"r\"): %i: %s",
+				file_name, errno, strerror(errno)));
+		warn_user("LoadError", strerror(errno));
+		return 0;
+	}
+
+	while (fgets(line, sizeof line, fp)) {
+		if (strncmp(line, "URL=", 4) == 0) {
+			if (line[strlen(line) - 1] == '\n')
+				line[strlen(line) - 1] = '\0';
+			url = strdup(line + 4);
+			if (!url) {
+				fclose(fp);
+				warn_user("NoMemory", 0);
+				return 0;
+			}
+			break;
+		}
+	}
+	if (ferror(fp)) {
+		LOG(("fgets: %i: %s",
+				errno, strerror(errno)));
+		warn_user("LoadError", strerror(errno));
+		fclose(fp);
+		return 0;
+	}
+
+	fclose(fp);
+
+	if (!url)
+		warn_user("URIError", 0);
+
+	return url;
+}
+
+
+/**
  * Handle Message_DataSaveAck.
  */
 
@@ -1435,6 +1488,9 @@ void ro_msg_dataopen(wimp_message *message)
 		url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
 	else if (file_type == 0xfaf)		/* HTML file */
 		url = ro_path_to_url(message->data.data_xfer.file_name);
+	else if (file_type == 0x1ba)		/* IEURL file */
+		url = ro_gui_ieurl_file_parse(message->
+				data.data_xfer.file_name);
 	else if (file_type == 0x2000) {		/* application */
 		len = strlen(message->data.data_xfer.file_name);
 		if (len < 9 || strcmp(".!NetSurf",
@@ -1466,7 +1522,7 @@ void ro_msg_dataopen(wimp_message *message)
 	}
 
 	if (!url)
-		/* error has already been reported by one of the three
+		/* error has already been reported by one of the
 		 * functions called above */
 		return;
 
