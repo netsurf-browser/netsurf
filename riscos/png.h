@@ -26,7 +26,7 @@ bool nspng_create(struct content *c, const char *params[]);
 bool nspng_process_data(struct content *c, char *data, unsigned int size);
 bool nspng_convert(struct content *c, int width, int height);
 void nspng_destroy(struct content *c);
-void nspng_redraw(struct content *c, int x, int y,
+bool nspng_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale);

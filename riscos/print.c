@@ -40,11 +40,15 @@
 
 /* 1 millipoint == 1/400 OS unit = 1/800 browser units */
 
+/* extern globals */
 struct gui_window *print_current_window = 0;
+bool print_active = false;
+
+/* static globals */
 static bool print_in_background = false;
 static float print_scale = 1.0;
 static int print_num_copies = 1;
-static bool print_bg_images = true;
+static bool print_bg_images = false;
 static int print_max_sheets = -1;
 
 /* array of fonts in document - max 255 */
@@ -97,7 +101,9 @@ void ro_gui_print_open(struct gui_window *g, int x, int y, bool sub_menu, bool k
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_FG_IMAGES, true);
 	ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_FG_IMAGES, true);
 
-	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_BG_IMAGES, print_bg_images);
+	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_BG_IMAGES, false/*print_bg_images*/);
+	ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_BG_IMAGES, true);
+
 
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_IN_BACKGROUND, false);
 
@@ -205,6 +211,9 @@ bool ro_gui_print_keypress(wimp_key *key)
 			print_cleanup();
 			return true;
 		case wimp_KEY_RETURN:
+			if (ro_gui_get_icon_shaded_state(dialog_print, ICON_PRINT_PRINT))
+				return true;
+
 			print_in_background = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_IN_BACKGROUND);
 			print_num_copies = atoi(ro_gui_get_icon_string(dialog_print, ICON_PRINT_COPIES));
 			if (ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_SHEETS))
@@ -558,6 +567,9 @@ void print_document(struct gui_window *g, const char *filename)
 		LOG(("declared fonts"));
 	}
 
+	/* print is now active */
+	print_active = true;
+
 	do {
 		os_box b = {left/400 - 2, bottom/400 - 2,
 				right/400 + 2, top/400 + 2};
@@ -596,13 +608,17 @@ void print_document(struct gui_window *g, const char *filename)
 		while (more) {
 			LOG(("redrawing area: [(%d, %d), (%d, %d)]", b.x0, b.y0, b.x1, b.y1));
 			if (c) {
-				content_redraw(c, left/400,
+				if (!content_redraw(c, left/400,
 						top/400 + (yscroll*2),
 						c->width * 2, c->height * 2,
 						b.x0, b.y0,
 						b.x1-1, b.y1-1,
-						print_scale);
+						print_scale)) {
+					ro_gui_current_redraw_gui = NULL;
+					goto error;
+				}
 			}
+
 			e = xpdriver_get_rectangle(&b, &more, 0);
 			if (e) {
 				LOG(("%s", e->errmess));
@@ -613,6 +629,9 @@ void print_document(struct gui_window *g, const char *filename)
 
 		yscroll += height;
 	} while (yscroll <= c->height && --sheets != 0);
+
+	/* make print inactive */
+	print_active = false;
 
 	ro_gui_current_redraw_gui = NULL;
 	LOG(("finished redraw"));
@@ -638,6 +657,7 @@ error:
 	xpdriver_abort_job(fhandle);
 	xosfind_close(fhandle);
 	if (old_job) xpdriver_select_jobw(old_job, 0, 0);
+	print_active = false;
 
 	/* restore document layout */
 	if (c->type == CONTENT_HTML)
@@ -709,4 +729,5 @@ bool print_find_fonts(struct box *box, struct print_font **print_fonts, int *num
 
 	return true;
 }
+
 #endif

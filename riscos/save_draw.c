@@ -715,7 +715,7 @@ static bool add_graphic(struct content *content, struct box *box,
 			break;
 #endif
 		case CONTENT_GIF:
-			sprite_length = content->data.gif.gif->frame_image->size;
+			sprite_length = ((osspriteop_header*)((char*)content->data.gif.gif->frame_image+content->data.gif.gif->frame_image->first))->size;
 			break;
 #ifdef WITH_SPRITE
 		case CONTENT_SPRITE:
@@ -754,7 +754,7 @@ static bool add_graphic(struct content *content, struct box *box,
 			break;
 #endif
 		case CONTENT_GIF:
-			memcpy((char*)ds+16, (char*)content->data.gif.gif->frame_image, (unsigned)sprite_length);
+			memcpy((char*)ds+16, (char*)content->data.gif.gif->frame_image+content->data.gif.gif->frame_image->first, (unsigned)sprite_length);
 			break;
 #ifdef WITH_SPRITE
 		case CONTENT_SPRITE:

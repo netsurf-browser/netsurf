@@ -96,7 +96,7 @@ void html_remove_instance(struct content *c, struct browser_window *bw,
 		struct object_params *params, void **state);
 
 /* in riscos/htmlredraw.c */
-void html_redraw(struct content *c, int x, int y,
+bool html_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale);

@@ -28,7 +28,7 @@ struct content_gif_data {
 bool nsgif_create(struct content *c, const char *params[]);
 bool nsgif_convert(struct content *c, int width, int height);
 void nsgif_destroy(struct content *c);
-void nsgif_redraw(struct content *c, int x, int y,
+bool nsgif_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale);

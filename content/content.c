@@ -150,7 +150,7 @@ struct handler_entry {
 	void (*reformat)(struct content *c, int width, int height);
 	void (*destroy)(struct content *c);
 	void (*stop)(struct content *c);
-	void (*redraw)(struct content *c, int x, int y,
+	bool (*redraw)(struct content *c, int x, int y,
 			int width, int height,
 			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 			float scale);
@@ -200,8 +200,8 @@ static const struct handler_entry handler_map[] = {
 		0, draw_destroy, 0, draw_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_PLUGIN
-	{plugin_create, plugin_process_data, plugin_convert,
-	        plugin_reformat, plugin_destroy, 0, plugin_redraw,
+	{plugin_create, 0, plugin_convert,
+		0, plugin_destroy, 0, plugin_redraw,
 		plugin_add_instance, plugin_remove_instance,
 		plugin_reshape_instance},
 #endif
@@ -650,15 +650,16 @@ void content_quit(void)
  * Calls the redraw function for the content, if it exists.
  */
 
-void content_redraw(struct content *c, int x, int y,
+bool content_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale)
 {
 	assert(c != 0);
 	if (handler_map[c->type].redraw)
-		handler_map[c->type].redraw(c, x, y, width, height,
+		return handler_map[c->type].redraw(c, x, y, width, height,
 		                clip_x0, clip_y0, clip_x1, clip_y1, scale);
+	return true;
 }
 
 

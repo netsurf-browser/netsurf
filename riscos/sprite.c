@@ -97,7 +97,7 @@ void sprite_destroy(struct content *c)
 }
 
 
-void sprite_redraw(struct content *c, int x, int y,
+bool sprite_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale)
@@ -106,33 +106,50 @@ void sprite_redraw(struct content *c, int x, int y,
 	osspriteop_area *area = (osspriteop_area*)c->data.sprite.data;
 	osspriteop_trans_tab *table;
 	os_factors factors;
+	os_error *error;
 
-	xcolourtrans_generate_table_for_sprite(
+	error = xcolourtrans_generate_table_for_sprite(
 			area,
 			(osspriteop_id)((char*)(c->data.sprite.data) +
 					 area->first),
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
+	if (error) {
+		LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
 	table = xcalloc(size, 1);
-	xcolourtrans_generate_table_for_sprite(
+	error = xcolourtrans_generate_table_for_sprite(
 			area,
 			(osspriteop_id)((char*)(c->data.sprite.data) +
 					 area->first),
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
+	if (error) {
+		LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess));
+		free(table);
+		return false;
+	}
 
 	factors.xmul = width;
 	factors.ymul = height;
 	factors.xdiv = c->width * 2;
 	factors.ydiv = c->height * 2;
 
-	xosspriteop_put_sprite_scaled(osspriteop_PTR,
+	error = xosspriteop_put_sprite_scaled(osspriteop_PTR,
 			area,
 			(osspriteop_id)((char*)(c->data.sprite.data) +
 					 area->first),
 			x, (int)(y - height),
 			osspriteop_USE_MASK | osspriteop_USE_PALETTE, &factors, table);
+	if (error) {
+		LOG(("xosspriteop_put_sprite_scaled: 0x%x: %s", error->errnum, error->errmess));
+		free(table);
+		return false;
+	}
 
 	xfree(table);
+
+	return true;
 }
 #endif

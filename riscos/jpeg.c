@@ -243,12 +243,17 @@ void nsjpeg_destroy(struct content *c)
  * Redraw a CONTENT_JPEG.
  */
 
-void nsjpeg_redraw(struct content *c, int x, int y,
+bool nsjpeg_redraw(struct content *c, int x, int y,
 		   int width, int height,
 		   int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		   float scale)
 {
 	unsigned int tinct_options;
+	unsigned int size;
+	os_factors f;
+	osspriteop_trans_tab *table;
+	_kernel_oserror *e;
+	os_error *error;
 
 	/*	If we have a gui_window then we work from there, if not we use the global
 		settings as we are drawing a thumbnail.
@@ -265,11 +270,65 @@ void nsjpeg_redraw(struct content *c, int x, int y,
 		sprites not matching the required specifications are ignored. See the Tinct
 		documentation for further information.
 	*/
-	_swix(Tinct_PlotScaled,
-			_IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
+	if (!print_active) {
+		e = _swix(Tinct_PlotScaled, _INR(2,7),
 			(char *) c->data.jpeg.sprite_area +
 				c->data.jpeg.sprite_area->first,
 			x, y - height,
 			width, height,
 			tinct_options);
+		if (e) {
+			LOG(("tinct_plotscaled: 0x%x: %s", e->errnum, e->errmess));
+			return false;
+		}
+	}
+	else {
+		error = xcolourtrans_generate_table_for_sprite(
+			c->data.jpeg.sprite_area,
+			(osspriteop_id)((char*)c->data.jpeg.sprite_area +
+			c->data.jpeg.sprite_area->first),
+			colourtrans_CURRENT_MODE,
+			colourtrans_CURRENT_PALETTE,
+			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
+		if (error) {
+			LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess));
+			return false;
+		}
+
+		table = calloc(size, sizeof(char));
+
+		error = xcolourtrans_generate_table_for_sprite(
+			c->data.jpeg.sprite_area,
+			(osspriteop_id)((char*)c->data.jpeg.sprite_area +
+			c->data.jpeg.sprite_area->first),
+			colourtrans_CURRENT_MODE,
+			colourtrans_CURRENT_PALETTE,
+			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
+		if (error) {
+			LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess));
+			free(table);
+			return false;
+		}
+
+		f.xmul = width;
+		f.ymul = height;
+		f.xdiv = c->width * 2;
+		f.ydiv = c->height * 2;
+
+		error = xosspriteop_put_sprite_scaled(osspriteop_PTR,
+			c->data.jpeg.sprite_area,
+			(osspriteop_id)((char*)c->data.jpeg.sprite_area +
+			c->data.jpeg.sprite_area->first),
+			x, (int)(y - height),
+			0, &f, table);
+		if (error) {
+			LOG(("xosspriteop_put_sprite_scaled: 0x%x: %s", error->errnum, error->errmess));
+			free(table);
+			return false;
+		}
+
+		free(table);
+	}
+
+	return true;
 }

@@ -26,7 +26,7 @@ bool nsmng_create(struct content *c, const char *params[]);
 bool nsmng_process_data(struct content *c, char *data, unsigned int size);
 bool nsmng_convert(struct content *c, int width, int height);
 void nsmng_destroy(struct content *c);
-void nsmng_redraw(struct content *c, int x, int y,
+bool nsmng_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale);

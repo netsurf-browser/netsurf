@@ -110,6 +110,7 @@ int gif_initialise(struct gif_animation *gif) {
 	unsigned int index;
 	int return_value;
 	unsigned int frame;
+	osspriteop_header *header;
 
 	/*	Check for sufficient data to be a GIF
 	*/
@@ -191,19 +192,25 @@ int gif_initialise(struct gif_animation *gif) {
 
 		/*	Initialise the sprite header
 		*/
-		if ((gif->frame_image = (osspriteop_header *)malloc(sizeof(osspriteop_header))) == NULL) {
+		if ((gif->frame_image = (osspriteop_area *)malloc(sizeof(osspriteop_area)+sizeof(osspriteop_header))) == NULL) {
 			gif_finalise(gif);
 			return GIF_INSUFFICIENT_MEMORY;
 		}
-		gif->frame_image->size = sizeof(osspriteop_header);
-		strcpy(gif->frame_image->name, "gif");
-		gif->frame_image->left_bit = 0;
-		gif->frame_image->right_bit = 31;
-		gif->frame_image->width = 0;
-		gif->frame_image->height = 0;
-		gif->frame_image->image = sizeof(osspriteop_header);
-		gif->frame_image->mask = sizeof(osspriteop_header);
-		gif->frame_image->mode = (os_mode) 0x301680b5;
+		gif->frame_image->size = sizeof(osspriteop_area) + sizeof(osspriteop_header);
+		gif->frame_image->sprite_count = 1;
+		gif->frame_image->first = 16;
+		gif->frame_image->used = gif->frame_image->size;
+		header = (osspriteop_header*)((char*)gif->frame_image +
+						gif->frame_image->first);
+		header->size = sizeof(osspriteop_header);
+		strcpy(header->name, "gif");
+		header->left_bit = 0;
+		header->right_bit = 31;
+		header->width = 0;
+		header->height = 0;
+		header->image = sizeof(osspriteop_header);
+		header->mask = sizeof(osspriteop_header);
+		header->mode = (os_mode) 0x301680b5;
 
 		/*	Remember we've done this now
 		*/
@@ -312,7 +319,8 @@ int gif_initialise(struct gif_animation *gif) {
 		0 for success
 */
 static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, unsigned int height) {
-	struct osspriteop_header *buffer;
+	struct osspriteop_area *buffer;
+	struct osspriteop_header *header;
 	unsigned int max_width;
 	unsigned int max_height;
 	unsigned int frame_bytes;
@@ -325,11 +333,12 @@ static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, 
 	*/
 	max_width = (width > gif->width) ? width : gif->width;
 	max_height = (height > gif->height) ? height : gif->height;
-	frame_bytes = max_width * max_height * 4 + sizeof(osspriteop_header);
+	frame_bytes = max_width * max_height * 4 +
+			sizeof(osspriteop_header) + sizeof(osspriteop_area);
 
 	/*	Allocate some more memory
 	*/
-	if ((buffer = (osspriteop_header *)realloc(gif->frame_image, frame_bytes)) == NULL) {
+	if ((buffer = (osspriteop_area *)realloc(gif->frame_image, frame_bytes)) == NULL) {
 		return GIF_INSUFFICIENT_MEMORY;
 	}
 	gif->frame_image = buffer;
@@ -342,8 +351,12 @@ static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, 
 	/*	Update our sprite image
 	*/
 	buffer->size = frame_bytes;
-	buffer->width = max_width - 1;
-	buffer->height = max_height - 1;
+	buffer->used = frame_bytes;
+	header = (osspriteop_header*)((char*)gif->frame_image +
+						gif->frame_image->first);
+	header->size = frame_bytes - sizeof(osspriteop_area);
+	header->width = max_width - 1;
+	header->height = max_height - 1;
 
 	/*	Invalidate our currently decoded image
 	*/
@@ -640,7 +653,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		sprite and clear what we need as some frames have multiple images which would
 		produce errors.
 	*/
-	frame_data = (unsigned int*)((char *)gif->frame_image + sizeof(osspriteop_header));
+	frame_data = (unsigned int*)((char *)gif->frame_image + gif->frame_image->first + sizeof(osspriteop_header));
 	if (!clear_image) {
 		if ((frame == 0) || (gif->decoded_frame == 0xffffffff)) {
 			memset((char*)frame_data, 0x00, gif->width * gif->height * sizeof(int));

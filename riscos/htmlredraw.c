@@ -35,28 +35,28 @@
 #include "netsurf/utils/utils.h"
 
 
-static void html_redraw_box(struct box *box,
+static bool html_redraw_box(struct box *box,
 		int x, int y,
 		unsigned long current_background_color,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale);
-static void html_redraw_clip(int clip_x0, int clip_y0,
+static bool html_redraw_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
-static void html_redraw_rectangle(int x0, int y0, int width, int height,
+static bool html_redraw_rectangle(int x0, int y0, int width, int height,
 		os_colour colour);
-static void html_redraw_fill(int x0, int y0, int width, int height,
+static bool html_redraw_fill(int x0, int y0, int width, int height,
 		os_colour colour);
-static void html_redraw_circle(int x0, int y0, int radius,
+static bool html_redraw_circle(int x0, int y0, int radius,
 		os_colour colour);
-static void html_redraw_border(colour color, int width, css_border_style style,
+static bool html_redraw_border(colour color, int width, css_border_style style,
 		int x0, int y0, int x1, int y1);
-static void html_redraw_checkbox(int x, int y, int width, int height,
+static bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected);
-static void html_redraw_radio(int x, int y, int width, int height,
+static bool html_redraw_radio(int x, int y, int width, int height,
 		bool selected);
-static void html_redraw_file(int x, int y, int width, int height,
+static bool html_redraw_file(int x, int y, int width, int height,
 		struct box *box, float scale);
-static void html_redraw_background(int x, int y, int width, int height,
+static bool html_redraw_background(int x, int y, int width, int height,
 		struct box *box, float scale);
 
 bool gui_redraw_debug = false;
@@ -81,17 +81,19 @@ static os_trfm trfm = { {
  * \param  clip_x1  clip rectangle
  * \param  clip_y1  clip rectangle
  * \param  scale    scale for redraw
+ * \return true if successful, false otherwise
  *
  * x, y, clip_[xy][01] are in RISC OS screen absolute OS-units.
  */
 
-void html_redraw(struct content *c, int x, int y,
+bool html_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale)
 {
 	unsigned long background_colour = 0xffffff;
 	struct box *box;
+	os_error *error;
 
 	assert(c->data.html.layout != NULL);
 	box = c->data.html.layout->children;
@@ -100,15 +102,23 @@ void html_redraw(struct content *c, int x, int y,
 	/* clear to background colour */
 	if (c->data.html.background_colour != TRANSPARENT)
 		background_colour = c->data.html.background_colour;
-	colourtrans_set_gcol(background_colour << 8,
+	error = xcolourtrans_set_gcol(background_colour << 8,
 			colourtrans_SET_BG | colourtrans_USE_ECFS,
-			os_ACTION_OVERWRITE, 0);
-	os_clg();
+			os_ACTION_OVERWRITE, 0, 0);
+	if (error) {
+		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+				error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_clg();
+	if (error) {
+		LOG(("xos_clg: 0x%x: %s", error->errnum, error->errmess));
+	}
 
 	trfm.entries[0][0] = trfm.entries[1][1] = 65536 * scale;
 
 	ro_gui_redraw_box_depth = 0;
-	html_redraw_box(box, x, y, background_colour,
+	return html_redraw_box(box, x, y, background_colour,
 			clip_x0, clip_y0, clip_x1, clip_y1, scale);
 }
 
@@ -125,11 +135,12 @@ void html_redraw(struct content *c, int x, int y,
  * \param  clip_x1  clip rectangle
  * \param  clip_y1  clip rectangle
  * \param  scale    scale for redraw
+ * \return true if successful, false otherwise
  *
  * x, y, clip_[xy][01] are in RISC OS screen absolute OS-units.
  */
 
-void html_redraw_box(struct box *box,
+bool html_redraw_box(struct box *box,
 		int x, int y,
 		unsigned long current_background_color,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
@@ -140,6 +151,7 @@ void html_redraw_box(struct box *box,
 	int padding_left, padding_top, padding_width, padding_height;
 	int x0, y0, x1, y1;
 	int colour;
+	os_error *error;
 
 	ro_gui_redraw_box_depth++;
 
@@ -170,17 +182,21 @@ void html_redraw_box(struct box *box,
 	/* if visibility is hidden render children only */
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
 		for (c = box->children; c; c = c->next)
-			html_redraw_box(c, x, y, current_background_color,
-					x0, y0, x1, y1, scale);
-		return;
+			if (!html_redraw_box(c, x, y,
+					current_background_color,
+					x0, y0, x1, y1, scale))
+				return false;
+		return true;
 	}
 
 	if (gui_redraw_debug) {
-		html_redraw_rectangle(x, y, padding_width, padding_height,
-				os_COLOUR_MAGENTA);
-		html_redraw_rectangle(x + padding_left, y - padding_top,
-				width, height, os_COLOUR_CYAN);
-		html_redraw_rectangle(x - (box->border[LEFT] +
+		if (!html_redraw_rectangle(x, y, padding_width,
+				padding_height, os_COLOUR_MAGENTA))
+			return false;
+		if (html_redraw_rectangle(x + padding_left, y - padding_top,
+				width, height, os_COLOUR_CYAN))
+			return false;
+		if (!html_redraw_rectangle(x - (box->border[LEFT] +
 					box->margin[LEFT]) * 2 * scale,
 				y + (box->border[TOP] + box->margin[TOP]) *
 					2 * scale,
@@ -190,30 +206,33 @@ void html_redraw_box(struct box *box,
 				padding_height + (box->border[TOP] +
 					box->margin[TOP] + box->border[BOTTOM] +
 					box->margin[BOTTOM]) * 2 * scale,
-				os_COLOUR_YELLOW);
+				os_COLOUR_YELLOW))
+			return false;
 	}
 
 	/* borders */
 	if (box->style && box->border[TOP])
-		html_redraw_border(box->style->border[TOP].color,
+		if (!html_redraw_border(box->style->border[TOP].color,
 				box->border[TOP] * 2 * scale,
 				box->style->border[TOP].style,
 				x - box->border[LEFT] * 2 * scale,
 				y + box->border[TOP] * scale,
 				x + padding_width + box->border[RIGHT] *
 					2 * scale,
-				y + box->border[TOP] * scale);
+				y + box->border[TOP] * scale))
+			return false;
 	if (box->style && box->border[RIGHT])
-		html_redraw_border(box->style->border[RIGHT].color,
+		if (!html_redraw_border(box->style->border[RIGHT].color,
 				box->border[RIGHT] * 2 * scale,
 				box->style->border[RIGHT].style,
 				x + padding_width + box->border[RIGHT] * scale,
 				y + box->border[TOP] * 2 * scale,
 				x + padding_width + box->border[RIGHT] * scale,
 				y - padding_height - box->border[BOTTOM] *
-					2 * scale);
+					2 * scale))
+			return false;
 	if (box->style && box->border[BOTTOM])
-		html_redraw_border(box->style->border[BOTTOM].color,
+		if (!html_redraw_border(box->style->border[BOTTOM].color,
 				box->border[BOTTOM] * 2 * scale,
 				box->style->border[BOTTOM].style,
 				x - box->border[LEFT] * 2 * scale,
@@ -222,21 +241,23 @@ void html_redraw_box(struct box *box,
 				x + padding_width + box->border[RIGHT] *
 					2 * scale,
 				y - padding_height - box->border[BOTTOM] *
-					scale);
+					scale))
+			return false;
 	if (box->style && box->border[LEFT])
-		html_redraw_border(box->style->border[LEFT].color,
+		if (!html_redraw_border(box->style->border[LEFT].color,
 				box->border[LEFT] * 2 * scale,
 				box->style->border[LEFT].style,
 				x - box->border[LEFT] * scale,
 				y + box->border[TOP] * 2 * scale,
 				x - box->border[LEFT] * scale,
 				y - padding_height - box->border[BOTTOM] *
-					2 * scale);
+					2 * scale))
+			return false;
 
 	/* return if the box is completely outside the clip rectangle */
 	if ((ro_gui_redraw_box_depth > 2) &&
 			(clip_y1 < y0 || y1 < clip_y0 || clip_x1 < x0 || x1 < clip_x0))
-		return;
+		return true;
 
 	if ((ro_gui_redraw_box_depth > 2) &&
 		(box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
@@ -247,7 +268,8 @@ void html_redraw_box(struct box *box,
 		if (clip_x1 < x1) x1 = clip_x1;
 		if (clip_y1 < y1) y1 = clip_y1;
 		/* clip to it */
-		html_redraw_clip(x0, y0, x1, y1);
+		if (!html_redraw_clip(x0, y0, x1, y1))
+			return false;
 	} else {
 		/* clip box unchanged */
 		x0 = clip_x0;
@@ -277,16 +299,29 @@ void html_redraw_box(struct box *box,
 			/* || box->style->background_repeat !=
 					CSS_BACKGROUND_REPEAT_REPEAT*/) {
 
-					colourtrans_set_gcol(
+					error = xcolourtrans_set_gcol(
 						box->style->background_color << 8,
 						colourtrans_USE_ECFS,
-						os_ACTION_OVERWRITE, 0);
+						os_ACTION_OVERWRITE, 0, 0);
+					if (error) {
+						LOG(("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess));
+						return false;
+					}
 
-					os_plot(os_MOVE_TO, px0, py0);
+					error = xos_plot(os_MOVE_TO, px0, py0);
+					if (error) {
+						LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+						return false;
+					}
 
-					if (px0 < px1 && py0 < py1)
-						os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
+					if (px0 < px1 && py0 < py1) {
+						error = xos_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
 								px1 - 1, py1 - 1);
+						if (error) {
+							LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+							return false;
+						}
+					}
 				}
 
 			}
@@ -297,46 +332,64 @@ void html_redraw_box(struct box *box,
 		if (box->background) {
 			/* clip to padding box for everything but the main window */
 			if (ro_gui_redraw_box_depth > 2) {
-				html_redraw_clip(px0, py0, px1, py1);
+				if (!html_redraw_clip(px0, py0, px1, py1))
+					return false;
 			} else {
-				html_redraw_clip(clip_x0, clip_y0, clip_x1, clip_y1);
+				if (!html_redraw_clip(clip_x0, clip_y0, clip_x1, clip_y1))
+					return false;
 			}
 
 			/* plot background image */
-			html_redraw_background(x, y, width, clip_y1 - clip_y0,
-					box, scale);
+			if (!html_redraw_background(x, y, width, clip_y1 - clip_y0,
+					box, scale))
+				return false;
 
 			/* restore previous graphics window */
-			html_redraw_clip(x0, y0, x1, y1);
+			if (!html_redraw_clip(x0, y0, x1, y1))
+				return false;
 		}
 	}
 
 	if (box->object) {
-		content_redraw(box->object, x + padding_left, y - padding_top,
-				width, height, x0, y0, x1, y1, scale);
+		if (!content_redraw(box->object, x + padding_left, y - padding_top,
+				width, height, x0, y0, x1, y1, scale))
+			return false;
 
 	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
-		html_redraw_checkbox(x + padding_left, y - padding_top,
+		if (!html_redraw_checkbox(x + padding_left, y - padding_top,
 				width, height,
-				box->gadget->selected);
+				box->gadget->selected))
+			return false;
 
 	} else if (box->gadget && box->gadget->type == GADGET_RADIO) {
-		html_redraw_radio(x + padding_left, y - padding_top,
+		if (!html_redraw_radio(x + padding_left, y - padding_top,
 				width, height,
-				box->gadget->selected);
+				box->gadget->selected))
+			return false;
 
 	} else if (box->gadget && box->gadget->type == GADGET_FILE) {
-		colourtrans_set_font_colours(box->font->handle,
+		error = xcolourtrans_set_font_colours(box->font->handle,
 				current_background_color << 8,
 				box->style->color << 8, 14, 0, 0, 0);
-		html_redraw_file(x + padding_left, y - padding_top,
-				width, height, box, scale);
+		if (error) {
+			LOG(("xcolourtrans_set_font_colours: 0x%x: %s",
+					error->errnum, error->errmess));
+			return false;
+		}
+		if (!html_redraw_file(x + padding_left, y - padding_top,
+				width, height, box, scale))
+			return false;
 
 	} else if (box->text && box->font) {
 
-		colourtrans_set_font_colours(box->font->handle,
+		error = xcolourtrans_set_font_colours(box->font->handle,
 				current_background_color << 8,
 				box->style->color << 8, 14, 0, 0, 0);
+		if (error) {
+			LOG(("xcolourtrans_set_font_colours: 0x%x: %s",
+					error->errnum, error->errmess));
+			return false;
+		}
 
 		/* antialias colour for under/overline */
 		colour = box->style->color;
@@ -345,38 +398,133 @@ void html_redraw_box(struct box *box,
 				     ((current_background_color >> 8) & 0xff)) / 2) << 8)
 				| ((((colour & 0xff) +
 				     (current_background_color & 0xff)) / 2) << 0);
-		colourtrans_set_gcol((unsigned int)colour << 8, colourtrans_USE_ECFS,
-				os_ACTION_OVERWRITE, 0);
+		error = xcolourtrans_set_gcol((unsigned int)colour << 8, colourtrans_USE_ECFS,
+				os_ACTION_OVERWRITE, 0, 0);
+		if (error) {
+			LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+					error->errnum, error->errmess));
+			return false;
+		}
 
 		if (box->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE) {
-			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8 * scale));
-			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
+			error = xos_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8 * scale));
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
+			error = xos_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
 		}
 		if (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK) {
-			colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8 * scale));
-			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
-			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
+			error = xcolourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0, 0);
+			if (error) {
+				LOG(("xcolourtrans_set_gcol: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
+			error = xos_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8 * scale));
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
+			error = xos_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
+			error = xcolourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0, 0);
+			if (error) {
+				LOG(("xcolourtrans_set_gcol: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
 		}
 		if (box->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE) {
-			os_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2 * scale));
-			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
+			error = xos_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2 * scale));
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
+			error = xos_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
 		}
 		if (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK) {
-			colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-			os_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2 * scale));
-			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
-			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
+			error = xcolourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0, 0);
+			if (error) {
+				LOG(("xcolourtrans_set_gcol: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
+			error = xos_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2 * scale));
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
+			error = xos_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
+			error = xcolourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0, 0);
+			if (error) {
+				LOG(("xcolourtrans_set_gcol: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
 		}
 		if (box->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH) {
-			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0 * scale));
-			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
+			error = xos_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0 * scale));
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
+			error = xos_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
 		}
 		if (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH && box->parent->parent->type == BOX_BLOCK) {
-			colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0 * scale));
-			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
-			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
+			error = xcolourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0, 0);
+			if (error) {
+				LOG(("xcolourtrans_set_gcol: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
+			error = xos_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0 * scale));
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
+			error = xos_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
+			if (error) {
+				LOG(("xos_plot: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
+			error = xcolourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0, 0);
+			if (error) {
+				LOG(("xcolourtrans_set_gcol: 0x%x: %s", error->errnum,
+						error->errmess));
+				return false;
+			}
 		}
 
 		if (scale == 1)
@@ -392,19 +540,24 @@ void html_redraw_box(struct box *box,
 	} else {
 		for (c = box->children; c != 0; c = c->next)
 			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-				html_redraw_box(c, x,
+				if (!html_redraw_box(c, x,
 						y, current_background_color,
-						x0, y0, x1, y1, scale);
+						x0, y0, x1, y1, scale))
+					return false;
 
 		for (c = box->float_children; c != 0; c = c->next_float)
-			html_redraw_box(c, x,
+			if (!html_redraw_box(c, x,
 					y, current_background_color,
-					x0, y0, x1, y1, scale);
+					x0, y0, x1, y1, scale))
+				return false;
 	}
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object)
-		html_redraw_clip(clip_x0, clip_y0, clip_x1, clip_y1);
+		if (!html_redraw_clip(clip_x0, clip_y0, clip_x1, clip_y1))
+			return false;
+
+	return true;
 }
 
 
@@ -412,14 +565,59 @@ void html_redraw_box(struct box *box,
  * Set the clip rectangle.
  */
 
-void html_redraw_clip(int clip_x0, int clip_y0,
+bool html_redraw_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1)
 {
-	os_set_graphics_window();
-	os_writec((char) (clip_x0 & 0xff)); os_writec((char) (clip_x0 >> 8));
-	os_writec((char) (clip_y0 & 0xff)); os_writec((char) (clip_y0 >> 8));
-	os_writec((char) (clip_x1 & 0xff)); os_writec((char) (clip_x1 >> 8));
-	os_writec((char) (clip_y1 & 0xff)); os_writec((char) (clip_y1 >> 8));
+	os_error *error;
+
+	error = xos_set_graphics_window();
+	if (error) {
+		LOG(("xos_set_graphics_window: 0x%x: %s", error->errnum,
+				error->errmess));
+		return false;
+	}
+	error = xos_writec((char) (clip_x0 & 0xff));
+	if (error) {
+		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_writec((char) (clip_x0 >> 8));
+	if (error) {
+		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_writec((char) (clip_y0 & 0xff));
+	if (error) {
+		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_writec((char) (clip_y0 >> 8));
+	if (error) {
+		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_writec((char) (clip_x1 & 0xff));
+	if (error) {
+		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_writec((char) (clip_x1 >> 8));
+	if (error) {
+		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_writec((char) (clip_y1 & 0xff));
+	if (error) {
+		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_writec((char) (clip_y1 >> 8));
+	if (error) {
+		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -427,15 +625,44 @@ void html_redraw_clip(int clip_x0, int clip_y0,
  * Plot a dotted rectangle outline.
  */
 
-void html_redraw_rectangle(int x0, int y0, int width, int height,
+bool html_redraw_rectangle(int x0, int y0, int width, int height,
 		os_colour colour)
 {
-	colourtrans_set_gcol(colour, 0, os_ACTION_OVERWRITE, 0);
-	os_plot(os_MOVE_TO, x0, y0);
-	os_plot(os_PLOT_DOTTED | os_PLOT_BY, width, 0);
-	os_plot(os_PLOT_DOTTED | os_PLOT_BY, 0, -height);
-	os_plot(os_PLOT_DOTTED | os_PLOT_BY, -width, 0);
-	os_plot(os_PLOT_DOTTED | os_PLOT_BY, 0, height);
+	os_error *error;
+
+	error = xcolourtrans_set_gcol(colour, 0, os_ACTION_OVERWRITE, 0, 0);
+	if (error) {
+		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+				error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_plot(os_MOVE_TO, x0, y0);
+	if (error) {
+		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_plot(os_PLOT_DOTTED | os_PLOT_BY, width, 0);
+	if (error) {
+		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_plot(os_PLOT_DOTTED | os_PLOT_BY, 0, -height);
+	if (error) {
+		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_plot(os_PLOT_DOTTED | os_PLOT_BY, -width, 0);
+	if (error) {
+		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_plot(os_PLOT_DOTTED | os_PLOT_BY, 0, height);
+	if (error) {
+		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -443,12 +670,29 @@ void html_redraw_rectangle(int x0, int y0, int width, int height,
  * Fill a rectangle of colour.
  */
 
-void html_redraw_fill(int x0, int y0, int width, int height,
+bool html_redraw_fill(int x0, int y0, int width, int height,
 		os_colour colour)
 {
-	colourtrans_set_gcol(colour, 0, os_ACTION_OVERWRITE, 0);
-	os_plot(os_MOVE_TO, x0, y0 - height);
-	os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, width - 1, height - 1);
+	os_error *error;
+
+	error = xcolourtrans_set_gcol(colour, 0, os_ACTION_OVERWRITE, 0, 0);
+	if (error) {
+		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+				error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_plot(os_MOVE_TO, x0, y0 - height);
+	if (error) {
+		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_plot(os_PLOT_RECTANGLE | os_PLOT_BY, width - 1, height - 1);
+	if (error) {
+		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -456,12 +700,29 @@ void html_redraw_fill(int x0, int y0, int width, int height,
  * Fill a circle of colour.
  */
 
-void html_redraw_circle(int x0, int y0, int radius,
+bool html_redraw_circle(int x0, int y0, int radius,
 		os_colour colour)
 {
-	colourtrans_set_gcol(colour, 0, os_ACTION_OVERWRITE, 0);
-	os_plot(os_MOVE_TO, x0, y0);
-	os_plot(os_PLOT_CIRCLE | os_PLOT_BY, radius, 0);
+	os_error *error;
+
+	error = xcolourtrans_set_gcol(colour, 0, os_ACTION_OVERWRITE, 0, 0);
+	if (error) {
+		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+				error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_plot(os_MOVE_TO, x0, y0);
+	if (error) {
+		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+	error = xos_plot(os_PLOT_CIRCLE | os_PLOT_BY, radius, 0);
+	if (error) {
+		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -477,7 +738,7 @@ static const int dash_pattern_dashed[] = { 0, 1, 2048 };
  * Draw a border.
  */
 
-void html_redraw_border(colour color, int width, css_border_style style,
+bool html_redraw_border(colour color, int width, css_border_style style,
 		int x0, int y0, int x1, int y1)
 {
 	const draw_dash_pattern *dash_pattern;
@@ -495,14 +756,20 @@ void html_redraw_border(colour color, int width, css_border_style style,
 	path[4] = x1 * 256;
 	path[5] = y1 * 256;
 	error = xcolourtrans_set_gcol(color << 8, 0, os_ACTION_OVERWRITE, 0, 0);
-	if (error)
+	if (error) {
 		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
 				error->errnum, error->errmess));
+		return false;
+	}
 	error = xdraw_stroke((draw_path *) path, 0, 0, 0, width * 256,
 			&line_style, dash_pattern);
-	if (error)
+	if (error) {
 		LOG(("xdraw_stroke: 0x%x: %s",
 				error->errnum, error->errmess));
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -510,19 +777,24 @@ void html_redraw_border(colour color, int width, css_border_style style,
  * Plot a checkbox.
  */
 
-void html_redraw_checkbox(int x, int y, int width, int height,
+bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected)
 {
 	int z = width * 0.15;
 	if (z == 0)
 		z = 1;
-	html_redraw_fill(x, y, width, height, os_COLOUR_BLACK);
-	html_redraw_fill(x + z, y - z, width - z - z, height - z - z,
-			os_COLOUR_WHITE);
+	if (!html_redraw_fill(x, y, width, height, os_COLOUR_BLACK))
+		return false;
+	if (!html_redraw_fill(x + z, y - z, width - z - z, height - z - z,
+			os_COLOUR_WHITE))
+		return false;
 	if (selected)
-		html_redraw_fill(x + z + z, y - z - z,
+		if (!html_redraw_fill(x + z + z, y - z - z,
 				width - z - z - z - z, height - z - z - z - z,
-				os_COLOUR_RED);
+				os_COLOUR_RED))
+			return false;
+
+	return true;
 }
 
 
@@ -530,16 +802,21 @@ void html_redraw_checkbox(int x, int y, int width, int height,
  * Plot a radio icon.
  */
 
-void html_redraw_radio(int x, int y, int width, int height,
+bool html_redraw_radio(int x, int y, int width, int height,
 		bool selected)
 {
-	html_redraw_circle(x + width * 0.5, y - height * 0.5,
-			width * 0.5 - 1, os_COLOUR_BLACK);
-	html_redraw_circle(x + width * 0.5, y - height * 0.5,
-			width * 0.4 - 1, os_COLOUR_WHITE);
+	if (!html_redraw_circle(x + width * 0.5, y - height * 0.5,
+			width * 0.5 - 1, os_COLOUR_BLACK))
+		return false;
+	if (!html_redraw_circle(x + width * 0.5, y - height * 0.5,
+			width * 0.4 - 1, os_COLOUR_WHITE))
+		return false;
 	if (selected)
-		html_redraw_circle(x + width * 0.5, y - height * 0.5,
-				width * 0.3 - 1, os_COLOUR_RED);
+		if (!html_redraw_circle(x + width * 0.5, y - height * 0.5,
+				width * 0.3 - 1, os_COLOUR_RED))
+			return false;
+
+	return true;
 }
 
 
@@ -547,7 +824,7 @@ void html_redraw_radio(int x, int y, int width, int height,
  * Plot a file upload input.
  */
 
-void html_redraw_file(int x, int y, int width, int height,
+bool html_redraw_file(int x, int y, int width, int height,
 		struct box *box, float scale)
 {
 	int text_width;
@@ -575,9 +852,11 @@ void html_redraw_file(int x, int y, int width, int height,
 
 /*	xwimpspriteop_put_sprite_user_coords(sprite, x + 4, */
 /*			y - height / 2 - 17, os_ACTION_OVERWRITE); */
+
+	return true;
 }
 
-void html_redraw_background(int xi, int yi, int width, int height,
+bool html_redraw_background(int xi, int yi, int width, int height,
 	   struct box *box, float scale)
 {
 	unsigned int tinct_options = 0;
@@ -588,15 +867,15 @@ void html_redraw_background(int xi, int yi, int width, int height,
 	float multiplier;
 	bool fixed = false;
 	wimp_window_state state;
+	os_error *error;
 
-	if (box->background == 0) return;
+	if (box->background == 0) return true;
 
 	state.w = 0;
 
 	if (ro_gui_current_redraw_gui) {
 
 		/* read state of window we're drawing in */
-		os_error *error;
 
 		state.w = ro_gui_current_redraw_gui->window;
 		error = xwimp_get_window_state(&state);
@@ -610,11 +889,11 @@ void html_redraw_background(int xi, int yi, int width, int height,
 
 		/* Set the plot options */
 		if (!ro_gui_current_redraw_gui->option.background_images)
-			return;
+			return true;
 		tinct_options = (ro_gui_current_redraw_gui->option.filter_sprites?tinct_BILINEAR_FILTER:0) |
 				(ro_gui_current_redraw_gui->option.dither_sprites?tinct_DITHER:0);
 	} else {
-		if (!option_background_images) return;
+		if (!option_background_images) return true;
 		tinct_options = (option_filter_sprites?tinct_BILINEAR_FILTER:0) |
 				(option_dither_sprites?tinct_DITHER:0);
 	}
@@ -760,7 +1039,7 @@ void html_redraw_background(int xi, int yi, int width, int height,
 #ifdef WITH_GIF
 		case CONTENT_GIF:
 			_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
-			    (char*) box->background->data.gif.gif->frame_image,
+			    ((char*) box->background->data.gif.gif->frame_image + box->background->data.gif.gif->frame_image->first),
 			    x, y - image_height, image_width, image_height,
 			    tinct_options);
 			break;
@@ -769,4 +1048,6 @@ void html_redraw_background(int xi, int yi, int width, int height,
 		default:
 			break;
 	}
+
+	return true;
 }

@@ -47,7 +47,7 @@ typedef struct gif_frame {
 	unsigned int redraw_y;
 	unsigned int redraw_width;
 	unsigned int redraw_height;
-  
+
 } gif_frame;
 
 
@@ -59,7 +59,7 @@ typedef struct gif_animation {
 	unsigned char *gif_data;
 	unsigned int buffer_position;
 	unsigned int buffer_size;
-	
+
 	/*	Progressive decoding data
 	*/
 	unsigned int global_colours;
@@ -86,7 +86,7 @@ typedef struct gif_animation {
 	/*	Decoded frame data
 	*/
 	unsigned int dirty_frame;	// Frame needs erasing before next
-	osspriteop_header *frame_image;
+	osspriteop_area *frame_image;
 } gif_animation;
 
 /*	Function declarations

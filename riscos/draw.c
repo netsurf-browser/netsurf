@@ -56,24 +56,32 @@ void draw_destroy(struct content *c)
 }
 
 
-void draw_redraw(struct content *c, int x, int y,
+bool draw_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale)
 {
-        os_trfm matrix;
+	os_error *error;
+	os_trfm matrix;
 
-        /* Scaled image. Transform units (65536*OS units) */
-        matrix.entries[0][0] = ((width*65536) / (c->width*2));
-        matrix.entries[0][1] = 0;
-        matrix.entries[1][0] = 0;
-        matrix.entries[1][1] = ((height*65536) / (c->height*2));
-        /* Draw units. (x,y) = bottom left */
-        matrix.entries[2][0] = x * 256 - c->data.draw.x0 * width / c->width;
-        matrix.entries[2][1] = (y - height) * 256 -
-        		c->data.draw.y0 * height / c->height;
+	/* Scaled image. Transform units (65536*OS units) */
+	matrix.entries[0][0] = ((width*65536) / (c->width*2));
+	matrix.entries[0][1] = 0;
+	matrix.entries[1][0] = 0;
+	matrix.entries[1][1] = ((height*65536) / (c->height*2));
+	/* Draw units. (x,y) = bottom left */
+	matrix.entries[2][0] = x * 256 - c->data.draw.x0 * width / c->width;
+	matrix.entries[2][1] = (y - height) * 256 -
+			c->data.draw.y0 * height / c->height;
 
-	xdrawfile_render(0, (drawfile_diagram*)(c->source_data),
+	error = xdrawfile_render(0, (drawfile_diagram*)(c->source_data),
 			(int)c->source_size, &matrix, 0, 0);
+	if (error) {
+		LOG(("xdrawfile_render: 0x%x: %s",
+				error->errnum, error->errmess));
+		return false;
+	}
+
+	return true;
 }
 #endif

@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <swis.h>
+#include "oslib/colourtrans.h"
 #include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
@@ -121,7 +122,7 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 }
 
 
-void nsgif_redraw(struct content *c, int x, int y,
+bool nsgif_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale) {
@@ -129,6 +130,11 @@ void nsgif_redraw(struct content *c, int x, int y,
 	int previous_frame;
 	unsigned int frame, current_frame;
 	unsigned int tinct_options;
+	os_factors f;
+	osspriteop_trans_tab *table;
+	unsigned int size;
+	_kernel_oserror *e;
+	os_error *error;
 
 	/*	If we have a gui_window then we work from there, if not we use the global
 		settings. We default to the first image if we don't have a GUI as we are
@@ -172,12 +178,71 @@ void nsgif_redraw(struct content *c, int x, int y,
 		sprites not matching the required specifications are ignored. See the Tinct
 		documentation for further information.
 	*/
-	_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
-			(char *)c->data.gif.gif->frame_image,
+	if (!print_active) {
+		e = _swix(Tinct_PlotScaledAlpha, _INR(2,7),
+			(char *)c->data.gif.gif->frame_image +
+			c->data.gif.gif->frame_image->first,
 			x, (int)(y - height),
 			width, height,
 			tinct_options);
+		if (e) {
+			LOG(("tinct_plotscaledalpha: 0x%x: %s", e->errnum, e->errmess));
+			return false;
+		}
+	}
+	else {
+		error = xcolourtrans_generate_table_for_sprite(
+			c->data.gif.gif->frame_image,
+			(osspriteop_id)((char *)
+				c->data.gif.gif->frame_image +
+				c->data.gif.gif->frame_image->first),
+			colourtrans_CURRENT_MODE,
+			colourtrans_CURRENT_PALETTE,
+			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
+		if (error) {
+			LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess));
+			return false;
+		}
 
+		table = calloc(size, sizeof(char));
+
+		error = xcolourtrans_generate_table_for_sprite(
+			c->data.gif.gif->frame_image,
+			(osspriteop_id)((char *)
+				c->data.gif.gif->frame_image +
+				c->data.gif.gif->frame_image->first),
+			colourtrans_CURRENT_MODE,
+			colourtrans_CURRENT_PALETTE,
+			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
+		if (error) {
+			LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess));
+			free(table);
+			return false;
+		}
+
+		f.xmul = width;
+		f.ymul = height;
+		f.xdiv = c->width * 2;
+		f.ydiv = c->height * 2;
+
+		error = xosspriteop_put_sprite_scaled(osspriteop_PTR,
+			c->data.gif.gif->frame_image,
+			(osspriteop_id)((char *)
+				c->data.gif.gif->frame_image +
+				c->data.gif.gif->frame_image->first),
+			x, (int)(y - height),
+			osspriteop_USE_MASK | osspriteop_USE_PALETTE,
+			&f, table);
+		if (error) {
+			LOG(("xosspriteop_put_sprite_scaled: 0x%x: %s", error->errnum, error->errmess));
+			free(table);
+			return false;
+		}
+
+		free(table);
+	}
+
+	return true;
 }
 
 

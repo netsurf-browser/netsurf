@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <swis.h>
 #include "libmng/libmng.h"
+#include "oslib/colourtrans.h"
 #include "oslib/os.h"
 #include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
@@ -41,6 +42,10 @@ static mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_ui
 static mng_bool nsmng_settimer(mng_handle mng, mng_uint32 msecs);
 static void nsmng_animate(void *p);
 static bool nsmng_broadcast_error(struct content *c);
+static mng_bool nsmng_trace(mng_handle mng, mng_int32 iFunNr, mng_int32 iFuncseq, mng_pchar zFuncname);
+static mng_bool nsmng_errorproc(mng_handle mng, mng_int32 code,
+	mng_int8 severity, mng_chunkid chunktype, mng_uint32 chunkseq,
+	mng_int32 extra1, mng_int32 extra2, mng_pchar text);
 
 bool nsmng_create(struct content *c, const char *params[]) {
 
@@ -98,6 +103,12 @@ bool nsmng_create(struct content *c, const char *params[]) {
 		return nsmng_broadcast_error(c);
 	}
 
+	/* register error handling function */
+	if (mng_setcb_errorproc(c->data.mng.handle, nsmng_errorproc) != MNG_NOERROR) {
+		LOG(("Unable to set errorproc"));
+		return nsmng_broadcast_error(c);
+	}
+
 	/*	Initialise the reading
 	*/
 	c->data.mng.read_start = true;
@@ -127,6 +138,9 @@ mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size, mng_uin
 	*/
 	*bytesread = ((c->source_size - c->data.mng.read_size) < size) ?
 			(c->source_size - c->data.mng.read_size) : size;
+
+	LOG(("Read %d, processing %p", *bytesread, mng));
+
 	if ((*bytesread) > 0) {
 		memcpy(buffer, c->source_data + c->data.mng.read_size, *bytesread);
 		c->data.mng.read_size += *bytesread;
@@ -363,11 +377,16 @@ void nsmng_destroy(struct content *c) {
 }
 
 
-void nsmng_redraw(struct content *c, int x, int y,
+bool nsmng_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale) {
 	unsigned int tinct_options;
+	unsigned int size;
+	os_factors f;
+	osspriteop_trans_tab *table;
+	_kernel_oserror *e;
+	os_error *error;
 
 	/*	If we have a gui_window then we work from there, if not we use the global
 		settings as we are drawing a thumbnail.
@@ -384,15 +403,70 @@ void nsmng_redraw(struct content *c, int x, int y,
 		sprites not matching the required specifications are ignored. See the Tinct
 		documentation for further information.
 	*/
-	_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
+	if (!print_active) {
+		e = _swix(Tinct_PlotScaledAlpha, _INR(2,7),
 			((char *) c->data.mng.sprite_area + c->data.mng.sprite_area->first),
 			x, y - height,
 			width, height,
 			tinct_options);
+		if (e) {
+			LOG(("xtince_plotscaledalpha: 0x%x: %s", e->errnum, e->errmess));
+			return false;
+		}
+	}
+	else {
+		error = xcolourtrans_generate_table_for_sprite(
+			c->data.mng.sprite_area,
+			(osspriteop_id)((char*)c->data.mng.sprite_area +
+			c->data.mng.sprite_area->first),
+			colourtrans_CURRENT_MODE,
+			colourtrans_CURRENT_PALETTE,
+			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
+		if (error) {
+			LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess));
+			return false;
+		}
 
+		table = calloc(size, sizeof(char));
+
+		error = xcolourtrans_generate_table_for_sprite(
+			c->data.mng.sprite_area,
+			(osspriteop_id)((char*)c->data.mng.sprite_area +
+			c->data.mng.sprite_area->first),
+			colourtrans_CURRENT_MODE,
+			colourtrans_CURRENT_PALETTE,
+			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
+		if (error) {
+			LOG(("xcolourtrans_generate_table_for_sprite: 0x%x: %s", error->errnum, error->errmess));
+			free(table);
+			return false;
+		}
+
+		f.xmul = width;
+		f.ymul = height;
+		f.xdiv = c->width * 2;
+		f.ydiv = c->height * 2;
+
+		error = xosspriteop_put_sprite_scaled(osspriteop_PTR,
+			c->data.mng.sprite_area,
+			(osspriteop_id)((char*)c->data.mng.sprite_area +
+			c->data.mng.sprite_area->first),
+			x, (int)(y - height),
+			osspriteop_USE_MASK | osspriteop_USE_PALETTE,
+			&f, table);
+		if (error) {
+			LOG(("xosspriteop_put_sprite_scaled: 0x%x: %s", error->errnum, error->errmess));
+			free(table);
+			return false;
+		}
+
+		free(table);
+	}
 	/*	Check if we need to restart the animation
 	*/
 	if (c->data.mng.waiting) nsmng_animate(c);
+
+	return true;
 }
 
 /**
@@ -431,5 +505,34 @@ bool nsmng_broadcast_error(struct content *c) {
 	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 	return false;
 
+}
+
+mng_bool nsmng_trace(mng_handle mng, mng_int32 iFunNr, mng_int32 iFuncseq, mng_pchar zFuncname)
+{
+	LOG(("In %s(%d,%d), processing: %p", zFuncname, iFunNr, iFuncseq, mng));
+	return MNG_TRUE;
+}
+
+mng_bool nsmng_errorproc(mng_handle mng, mng_int32 code,
+	mng_int8 severity,
+    mng_chunkid chunktype, mng_uint32 chunkseq,
+    mng_int32 extra1, mng_int32 extra2, mng_pchar text)
+{
+	struct content *c;
+	char chunk[5];
+
+	c = (struct content *)mng_get_userdata(mng);
+
+	chunk[0] = (char)((chunktype >> 24) & 0xFF);
+	chunk[1] = (char)((chunktype >> 16) & 0xFF);
+	chunk[2] = (char)((chunktype >>  8) & 0xFF);
+	chunk[3] = (char)((chunktype      ) & 0xFF);
+	chunk[4] = '\0';
+
+	LOG(("error playing '%s' chunk %s (%d):", c->url, chunk, chunkseq));
+	LOG(("code %d severity %d extra1 %d extra2 %d text:'%s'", code,
+					severity, extra1, extra2, text));
+
+    return (0);
 }
 #endif
