@@ -175,6 +175,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		warn_user("NoMemory", 0);
 		return;
 	}
+	gui_window_set_url(bw->window, c->url);
 	bw->loading_content = c;
 	browser_window_start_throbber(bw);
 
