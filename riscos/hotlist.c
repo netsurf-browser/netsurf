@@ -2541,7 +2541,9 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 			}
 			free(old_value);
 		}
+		hotlist_redraw_entry(entry, false); /* first for contracting size */
 		ro_gui_hotlist_update_entry_size(entry);
+		hotlist_redraw_entry(entry, false); /* then for expanding size */
 	}
 
 	/*	Close if we should
