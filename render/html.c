@@ -465,9 +465,12 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->data.html.object[i].content = fetchcache(
 					error, c->url, html_object_callback,
 					c, i, 0, 0, true);
-			if (c->data.html.object[i].content &&
-					c->data.html.object[i].content->status != CONTENT_STATUS_DONE)
+			if (c->data.html.object[i].content) {
 				c->active++;
+				if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
+					html_object_callback(CONTENT_MSG_DONE,
+							c->data.html.object[i].content, c, i, 0);
+			}
 			break;
 
 		case CONTENT_MSG_REFORMAT:
