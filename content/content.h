@@ -12,7 +12,6 @@
 #include "libxml/HTMLparser.h"
 #ifdef riscos
 #include "libpng/png.h"
-#include "libungif/gif_lib.h"
 #include "oslib/osspriteop.h"
 #endif
 #include "netsurf/content/cache.h"
@@ -149,7 +148,6 @@ struct content
     // Structure for the GIF handler
     struct
     {
-      GifFileType *giffile;               // GIF file handler
       char *data;                         // GIF data
       unsigned long length;               // Length of GIF data
       unsigned long buffer_pos;           // Position in the buffer

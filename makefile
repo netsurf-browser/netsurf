@@ -28,7 +28,7 @@ CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. -I/
 CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -O $(WARNFLAGS) -I.. -I/usr/include/libxml2 \
 	-Dfd_set=long -g
 LDFLAGS = \
-	/usr/local/riscoslibs/libungif/libungif.ro \
+	/usr/local/riscoslibs/animlib/animlib.ro \
 	/usr/local/riscoslibs/libxml2/libxml2.ro \
 	/usr/local/riscoslibs/OSLib/OSLib32.ro \
 	/usr/local/riscoslibs/curl/libcurl.ro \
