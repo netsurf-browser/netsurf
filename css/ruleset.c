@@ -308,12 +308,12 @@ void css_add_ruleset(struct content *c,
 
 void css_add_declarations(struct css_style *style, struct css_node *declaration)
 {
-	char name[20];
+	char name[25]; /* this must be the same length as p->name */
 	struct css_node *n;
 	for (n = declaration; n != 0; n = n->next) {
 		struct css_property_entry *p;
 		assert(n->type == CSS_NODE_DECLARATION && n->data && n->value);
-		if (19 < n->data_length)
+		if (24 < n->data_length)
 			continue;
 		strncpy(name, n->data, n->data_length);
 		name[n->data_length] = 0;
