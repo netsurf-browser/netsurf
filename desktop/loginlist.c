@@ -5,7 +5,7 @@
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
-//#define NDEBUG
+#define NDEBUG
 
 #include <assert.h>
 #include <string.h>
@@ -67,6 +67,7 @@ struct login *login_list_get(char *host) {
   struct login *nli;
   char *temp, *temphost;
   char *i;
+  int reached_scheme = 0;
 
   if (host == NULL)
     return NULL;
@@ -74,8 +75,10 @@ struct login *login_list_get(char *host) {
   temphost = get_host_from_url(host);
   temp = xstrdup(host);
 
+  /* Smallest thing to check for is the scheme + host name + trailing '/'
+   * So make sure we've got that at least
+   */
   if (strlen(temphost) > strlen(temp)) {
-    LOG(("here"));
     temp = get_host_from_url(host);
   }
 
@@ -86,7 +89,7 @@ struct login *login_list_get(char *host) {
    * This allows multiple realms (and login details) per host.
    * Only one set of login details per realm are allowed.
    */
-   do {
+  do {
 
     LOG(("%s, %d", temp, strlen(temp)));
 
@@ -94,25 +97,26 @@ struct login *login_list_get(char *host) {
                                 (strcasecmp(nli->host, temp)!=0);
          nli = nli->next) ;
 
-    if (temp[strlen(temp)-1] == '/') {
-      temp[strlen(temp)-1] = 0;
-    }
-
-    i = strrchr(temp, '/');
-
-    if (temp[(i-temp)-1] != '/') /* reached the scheme? */
-      temp[(i-temp)+1] = 0;
-    else {
-      xfree(temphost);
-      return NULL;
-    }
-
     if (nli != loginlist) {
       LOG(("Got %s", nli->host));
       xfree(temphost);
       return nli;
     }
-  } while (strcasecmp(temp, temphost) != 0);
+    else {
+
+      if (temp[strlen(temp)-1] == '/') {
+        temp[strlen(temp)-1] = 0;
+      }
+
+      i = strrchr(temp, '/');
+
+      if (temp[(i-temp)-1] != '/') /* reached the scheme? */
+        temp[(i-temp)+1] = 0;
+      else {
+        reached_scheme = 1;
+      }
+    }
+  } while (reached_scheme == 0);
 
   xfree(temphost);
   return NULL;

@@ -84,7 +84,7 @@ void ro_gui_401login_open(char *host, char* realm, char *fetchurl)
 	dialog_401->icons[ICON_401LOGIN_HOST].data.indirected_text.size =
 		strlen(host) + 1;
 	dialog_401->icons[ICON_401LOGIN_REALM].data.indirected_text.text =
-		realm;
+		xstrdup(realm);
 	dialog_401->icons[ICON_401LOGIN_REALM].data.indirected_text.size =
 		strlen(realm) + 1;
 	dialog_401->icons[ICON_401LOGIN_USERNAME].data.indirected_text.text =

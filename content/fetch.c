@@ -558,7 +558,7 @@ bool fetch_process_headers(struct fetch *f)
 
         /* handle HTTP 401 (Authentication errors) */
         if (http_code == 401) {
-                f->callback(FETCH_AUTH, f->p, xstrdup(f->realm),0);
+                f->callback(FETCH_AUTH, f->p, f->realm,0);
                 return true;
         }
 
