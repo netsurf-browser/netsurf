@@ -234,11 +234,11 @@ void html_redraw_box(struct box *box,
 					2 * scale);
 
 	/* return if the box is completely outside the clip rectangle */
-	if ((ro_gui_redraw_box_depth > 2) && 
+	if ((ro_gui_redraw_box_depth > 2) &&
 			(clip_y1 < y0 || y1 < clip_y0 || clip_x1 < x0 || x1 < clip_x0))
 		return;
 
-	if ((ro_gui_redraw_box_depth > 2) && 
+	if ((ro_gui_redraw_box_depth > 2) &&
 		(box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object)) {
 		/* find intersection of clip rectangle and box */
@@ -271,15 +271,17 @@ void html_redraw_box(struct box *box,
 
 			/* optimisation removed - transparent images break */
 			/* optimisation: skip if fully repeated bg image */
-			if (!box->background/* ||
-					box->style->background_repeat !=
+			if (!box->background ||
+			    (ro_gui_current_redraw_gui &&
+			     !ro_gui_current_redraw_gui->option.background_images)
+			/* || box->style->background_repeat !=
 					CSS_BACKGROUND_REPEAT_REPEAT*/) {
 
 					colourtrans_set_gcol(
 						box->style->background_color << 8,
 						colourtrans_USE_ECFS,
 						os_ACTION_OVERWRITE, 0);
-	
+
 					os_plot(os_MOVE_TO, px0, py0);
 
 					if (px0 < px1 && py0 < py1)
