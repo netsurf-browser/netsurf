@@ -840,7 +840,7 @@ void calculate_inline_container_widths(struct box *box)
 
 void calculate_table_widths(struct box *table)
 {
-	unsigned int i;
+	unsigned int i, pass;
 	struct box *row_group, *row, *cell;
 	unsigned long width, min_width = 0, max_width = 0;
 	struct column *col = xcalloc(table->columns, sizeof(*col));
@@ -848,6 +848,7 @@ void calculate_table_widths(struct box *table)
 	LOG(("table %p, columns %u", table, table->columns));
 
 	assert(table->children != 0 && table->children->children != 0);
+	for (pass = 1; pass != 3; pass++) {
 	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
 		assert(row_group->type == BOX_TABLE_ROW_GROUP);
 		for (row = row_group->children; row != 0; row = row->next) {
@@ -856,6 +857,11 @@ void calculate_table_widths(struct box *table)
 					i += cell->columns, cell = cell->next) {
 				unsigned int j, flexible_columns = 0;
 				unsigned long min = 0, max = 0, extra;
+
+				/* consider cells with colspan 1 in 1st pass, rest
+				 * in 2nd pass */
+				if (pass != cell->columns)
+					continue;
 
 				assert(cell->type == BOX_TABLE_CELL);
 				assert(cell->style != 0);
@@ -939,6 +945,7 @@ void calculate_table_widths(struct box *table)
 				}
 			}
 		}
+	}
 	}
 
 	for (i = 0; i < table->columns; i++) {
