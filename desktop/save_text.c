@@ -31,7 +31,7 @@ void save_as_text(struct content *c, char *path) {
 		return;
 	}
 
-        out = fopen(path, "w+");
+        out = fopen(path, "w");
         if (!out) return;
 
 	toSave = htmlCreateMemoryParserCtxt(c->source_data, c->source_size);
