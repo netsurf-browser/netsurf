@@ -37,7 +37,8 @@ struct browser_window
 	struct history *history;
 
 	/** Handler for keyboard input, or 0. */
-	void (*caret_callback)(struct browser_window *bw, char key, void *p);
+	void (*caret_callback)(struct browser_window *bw,
+			unsigned int key, void *p);
 	/** User parameter for caret_callback. */
 	void *caret_p;
 
@@ -72,7 +73,7 @@ void browser_window_destroy(struct browser_window *bw);
 
 void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_click click, int x, int y);
-bool browser_window_key_press(struct browser_window *bw, char key);
+bool browser_window_key_press(struct browser_window *bw, unsigned int key);
 void browser_window_form_select(struct browser_window *bw,
 		struct form_control *control, int item);
 

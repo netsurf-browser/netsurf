@@ -7,6 +7,10 @@
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
+/** \file
+ * Conversion of XML tree to box tree (implementation).
+ */
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -943,9 +947,16 @@ struct box_result box_form(xmlNode *n, struct box_status *status,
 struct box_result box_textarea(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
+	/* A textarea is an INLINE_BLOCK containing a single INLINE_CONTAINER,
+	 * which contains the text as runs of INLINE separated by BR. There is
+	 * at least one INLINE. The first and last boxes are INLINE.
+	 * Consecutive BR may not be present. These constraints are satisfied
+	 * by using a 0-length INLINE for blank lines. */
+
 	xmlChar *content, *current;
-	struct box *box, *inline_container, *inline_box;
-	char* s;
+	struct box *box, *inline_container, *inline_box, *br_box;
+	char *s;
+	size_t len;
 
 	box = box_create(style, NULL, 0,
 			status->content->data.html.box_pool);
@@ -970,39 +981,49 @@ struct box_result box_textarea(xmlNode *n, struct box_status *status,
 		}
 	}
 
-	/* split the content at newlines and make an inline container with an
-	 * inline box for each line */
+	inline_container = box_create(0, 0, 0,
+			status->content->data.html.box_pool);
+	inline_container->type = BOX_INLINE_CONTAINER;
+	box_add_child(box, inline_container);
+
 	current = content = xmlNodeGetContent(n);
-	do {
-		size_t len = strcspn(current, "\r\n");
-		char old = current[len];
-		current[len] = 0;
-		inline_container = box_create(0, 0, 0,
-				status->content->data.html.box_pool);
-		inline_container->type = BOX_INLINE_CONTAINER;
+	while (1) {
+		/* BOX_INLINE */
+		len = strcspn(current, "\r\n");
+		s = strndup(current, len);
+		if (!s) {
+			box_free(box);
+			xmlFree(content);
+			return (struct box_result) {NULL, false, false};
+		}
+
 		inline_box = box_create(style, 0, 0,
 				status->content->data.html.box_pool);
 		inline_box->type = BOX_INLINE;
 		inline_box->style_clone = 1;
-		if ((inline_box->text = strdup(current)) == NULL) {
-				box_free(inline_box);
-				box_free(inline_container);
-				box_free(box);
-				current[len] = old;
-				xmlFree(content);
-				return (struct box_result) {NULL, false, false};
-		}
-		inline_box->length = strlen(inline_box->text);
-		inline_box->font = nsfont_open(status->content->data.html.fonts, style);
+		inline_box->text = s;
+		inline_box->length = len;
+		inline_box->font = nsfont_open(status->content->data.html.fonts,
+				style);
 		box_add_child(inline_container, inline_box);
-		box_add_child(box, inline_container);
-		current[len] = old;
+
 		current += len;
+		if (current[0] == 0)
+			/* finished */
+			break;
+
+		/* BOX_BR */
+		br_box = box_create(style, 0, 0,
+				status->content->data.html.box_pool);
+		br_box->type = BOX_BR;
+		br_box->style_clone = 1;
+		box_add_child(inline_container, br_box);
+
 		if (current[0] == '\r' && current[1] == '\n')
 			current += 2;
-		else if (current[0] != 0)
+		else
 			current++;
-	} while (*current);
+	}
 	xmlFree(content);
 
 	return (struct box_result) {box, false, false};
