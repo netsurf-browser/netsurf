@@ -96,7 +96,6 @@ void save_as_draw(struct content *c) {
 
 /**
  * add font table
- * \todo add all fonts required. for now we just use Homerton Medium
  */
 void add_font_table(struct content *content) {
 
@@ -583,7 +582,7 @@ void add_circle(struct content *content, struct box *box,
                 radius = cx;
                 dp->bbox.y0 += (cy-cx); /* reduce box height */
         }
-        kappa = radius * ((4.0/3.0)*(sqrt(2.0)-1.0)); /* ~= 0.5522877498 */
+        kappa = radius * ((4.0/3.0)*(sqrt(2.0)-1.0)); /* ~= 0.5522847498 */
 
         dp->fill = cbc;
         dp->outline = cbc;
