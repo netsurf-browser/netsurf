@@ -1,4 +1,4 @@
-$Id: TODO-HTML,v 1.8 2004/03/26 22:17:12 jmb Exp $
+$Id: TODO-HTML,v 1.9 2004/04/18 15:54:50 jmb Exp $
 
 TODO-HTML file for NetSurf. 
 
@@ -25,7 +25,6 @@ Objects:
 	Alt text
 
 Forms:
-       Tabbing between input values
        "disabled" attribute
        A few textarea rendering issues
 

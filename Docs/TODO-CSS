@@ -1,4 +1,4 @@
-$Id: TODO-CSS,v 1.10 2004/04/02 23:17:27 jmb Exp $
+$Id: TODO-CSS,v 1.11 2004/04/18 15:54:50 jmb Exp $
 
 TODO-CSS file for NetSurf.
 
@@ -78,7 +78,7 @@ See TODO-HTML for HTML related TODOs.
 - table-layout
 + text-align
 + text-decoration (not blink)
-+ text-indent (<br> causes this to break. text following a <br> should NOT be indented)
++ text-indent
 - text-shadow
 + text-transform
 - top
