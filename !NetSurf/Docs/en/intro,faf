@@ -5,6 +5,7 @@
 <title>NetSurf | Open Source Web Browser for RISC OS</title>
 <link rel="stylesheet" type="text/css" href="netsurf">
 </head>
+
 <body>
 <h1 class="logofull"><img src="images/logofull" alt="NetSurf"></h1>
 
@@ -22,6 +23,9 @@ please report the problem to the <a href="info#devel">developers</a>.</p>
 <h2>NetSurf Links</h2>
 
 <dl>
+<dt><a href="http://netsurf.sourceforge.net/">NetSurf home page</a></dt>
+<dd>The NetSurf website</dd>
+
 <dt><a href="http://sourceforge.net/projects/netsurf/">SourceForge project
 page</a></dt>
 <dd>SourceForge provides the mailing list, bug tracker, and other services</dd>
@@ -46,16 +50,24 @@ mailing list</a></dt>
 <div class="links">
 <h3>Search the web</h3>
 
-<form method="get" action="http://www.google.com/search"><p><a href="http://www.google.com">Google</a> search:<br><input type="text" size="15" name="q" maxlength="255"><br><input type="submit" value="Go" name="btnG"></p></form>
+<form method="get" action="http://www.google.com/search"><p><a href="http://www.google.com/">Google</a> search:<br><input type="text" size="15" name="q" maxlength="255"><input type="submit" value="Go" name="btnG"></p></form>
 
 <h3>Web Standards</h3>
-<p><a href="http://www.w3c.org">W3C</a></p>
+<ul>
+<li><a href="http://www.w3.org/">World Wide Web Consortium</a></li>
+</ul>
 
 <h3>RISC OS Links</h3>
-<p><a href="http://www.drobe.co.uk">Drobe</a><br><a href="http://www.iconbar.com">Iconbar</a></p>
+<ul>
+<li><a href="http://www.drobe.co.uk/">Drobe Launch Pad</a></li>
+<li><a href="http://www.iconbar.com/">The Icon Bar</a></li>
+</ul>
 
 <h3>Other Links</h3>
-<p><a href="http://www.slashdot.org">Slashdot</a><br><a href="http://www.theregister.co.uk">The&nbsp;Register</a></p>
+<ul>
+<li><a href="http://slashdot.org/">Slashdot</a></li>
+<li><a href="http://www.theregister.co.uk/">The&nbsp;Register</a></li>
+</ul>
 
 </div>
 
