@@ -13,9 +13,9 @@
 #include <string.h>
 #include "oslib/dragasprite.h"
 #include "oslib/wimp.h"
+#include "netsurf/desktop/save_text.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/save_draw.h"
-#include "netsurf/riscos/save_text.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
