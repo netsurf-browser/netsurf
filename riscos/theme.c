@@ -50,7 +50,7 @@ void ro_theme_load(char *pathname) {
 	os_mode mode;
  	os_coord dimensions;
 	int size, i, n;
-	char filename[strlen(pathname) + 16];
+	char *filename = alloca(strlen(pathname) + 16);
 	fileswitch_object_type obj_type;
 
 	/*	Release previous sprite are
