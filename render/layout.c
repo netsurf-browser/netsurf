@@ -931,10 +931,8 @@ void calculate_table_widths(struct box *table)
 	if (table->max_width != UNKNOWN_MAX_WIDTH)
 		return;
 
-	if (table->col)
-		col = table->col;
-	else
-		col = xcalloc(table->columns, sizeof(*col));
+	free(table->col);
+	table->col = col = xcalloc(table->columns, sizeof(*col));
 
 	assert(table->children != 0 && table->children->children != 0);
 
@@ -1082,7 +1080,6 @@ void calculate_table_widths(struct box *table)
 	}
 	table->min_width = min_width;
 	table->max_width = max_width;
-	table->col = col;
 
 	LOG(("min_width %lu, max_width %lu", min_width, max_width));
 }
