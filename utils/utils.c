@@ -149,6 +149,66 @@ char *cnv_space2nbsp(const char *s)
 }
 
 /**
+ * Convert local encoding to NUL terminated UTF-8 string.
+ * Caller needs to free return value.
+ *
+ * \param s string in local machine encoding. NUL or length terminated (which comes first).
+ * \param length maximum number of bytes to consider at s.
+ * \return malloc()'ed NUL termined string in UTF-8 encoding.
+ *
+ * Based on RISCOS-LATIN1 code from libiconv.
+ * \todo: we should use libiconv to support more local encodings instead
+ * of only RISCOS-LATIN1.
+ */
+char *cnv_local_enc_str(const char *s, size_t length)
+{
+	size_t l_out, l_in;
+	const char *s_in;
+	char *d, *d_out;
+	static const unsigned int riscos1_2uni[32] = {
+		/* 0x80 */
+		0x221a, 0x0174, 0x0175, 0x0083, 0x2573, 0x0176, 0x0177, 0x0087,
+		0x21e6, 0x21e8, 0x21e9, 0x21e7, 0x2026, 0x2122, 0x2030, 0x2022,
+		/* 0x90 */
+		0x2018, 0x2019, 0x2039, 0x203a, 0x201c, 0x201d, 0x201e, 0x2013,
+		0x2014, 0x2212, 0x0152, 0x0153, 0x2020, 0x2021, 0xfb01, 0xfb02,
+	};
+
+	/* We're counting on the fact that all riscos1_2uni[] values are
+	 * between 0x80 (incl) and 0x1000 (excl).
+	 */
+	for (s_in = s, l_in = length, l_out = 1;
+			*s_in != '\0' && l_in != 0;
+			++s_in, --l_in)
+		l_out += (*s_in >= 0x80 && *s_in < 0xA0) ? ((riscos1_2uni[*s_in - 0x80] < 0x800) ? 2 : 3) : 1;
+	if ((d_out = (char *)malloc(l_out)) == NULL)
+		return NULL;
+	for (s_in = s, l_in = length, d = d_out;
+			*s_in != '\0' && l_in != 0;
+			++s_in, --l_in) {
+		unsigned int uc = (*s_in >= 0x80 && *s_in < 0xA0) ? riscos1_2uni[*s_in - 0x80] : *s_in;
+		const int cnt = (uc < 0x80) ? 1 : (uc < 0x800) ? 2 : 3;
+		switch (cnt) {
+			case 3:
+				d[2] = 0x80 | (uc & 0x3F);
+				uc = (uc >> 6) | 0x800;
+				/* fall through */
+			case 2:
+				d[1] = 0x80 | (uc & 0x3F);
+				uc = (uc >> 6) | 0xC0;
+				/* fall through */
+			case 1:
+				d[0] = uc;
+		}
+		d += cnt;
+	}
+	*d = '\0';
+
+	return d_out;
+}
+
+
+/**
  * Converts NUL terminated UTF-8 string <s> to the machine local encoding.
  * Caller needs to free return value.
  */
@@ -156,6 +216,7 @@ char *cnv_str_local_enc(const char *s)
 {
 return cnv_strn_local_enc(s, strlen(s), NULL);
 }
+
 
 /**
  * Converts UTF-8 string <s> of <length> bytes to the machine local encoding.
@@ -165,7 +226,8 @@ return cnv_strn_local_enc(s, strlen(s), NULL);
  * needs to be free'd by the caller.  The array contains per character
  * in the return string, a ptrdiff in the <s> UTF-8 encoded string.
  *
- * \todo more work is needed here.  Only Latin1 is done here.
+ * \todo: we should use libiconv to support more local encodings instead
+ * of only ISOLATIN1.
  */
 char *cnv_strn_local_enc(const char *s, int length, const ptrdiff_t **back_mapPP)
 {
@@ -232,10 +294,10 @@ bool is_dir(const char *path)
 
 void regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
 {
-	char errbuf[200];
 	int r;
 	r = regcomp(preg, regex, cflags);
 	if (r) {
+		char errbuf[200];
 		regerror(r, preg, errbuf, sizeof errbuf);
 		fprintf(stderr, "Failed to compile regexp '%s'\n", regex);
 		die(errbuf);

@@ -26,6 +26,7 @@ char * xstrdup(const char * const s);
 char * load(const char * const path);
 char * squash_whitespace(const char * s);
 char *cnv_space2nbsp(const char *s);
+char *cnv_local_enc_str(const char *s, size_t length);
 char *cnv_str_local_enc(const char *s);
 char *cnv_strn_local_enc(const char *s, int length, const ptrdiff_t **back_mapPP);
 bool is_dir(const char *path);
