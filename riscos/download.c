@@ -577,7 +577,10 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 
 	/* move or copy temporary file to destination file */
 	error = xosfscontrol_rename(temp_name, file_name);
-	if (error && error->errnum == error_BAD_RENAME) {
+	/* Errors from a filing system have number 0x1XXnn, where XX is the FS
+	 * number, and nn the error number. 0x9F is "Not same disc". */
+	if (error && (error->errnum == error_BAD_RENAME ||
+			(error->errnum & 0xFF00FFu) == 0x1009Fu)) {
 		/* rename failed: copy with delete */
 		error = xosfscontrol_copy(temp_name, file_name,
 				osfscontrol_COPY_FORCE |
