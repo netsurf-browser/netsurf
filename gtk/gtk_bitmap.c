@@ -115,36 +115,6 @@ void bitmap_destroy(struct bitmap *bitmap)
 
 
 /**
- * Render a bitmap.
- */
-
-bool bitmap_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour)
-{
-	GdkPixbuf *scaled;
-
-	scaled = gdk_pixbuf_scale_simple((GdkPixbuf  *) c->bitmap,
-			width, height,
-			GDK_INTERP_BILINEAR);
-	if (!scaled)
-		return false;
-
-	gdk_draw_pixbuf(current_drawable, current_gc,
-			scaled,
-			0, 0,
-			x, y,
-			width, height,
-			GDK_RGB_DITHER_NORMAL, 0, 0);
-
-	g_object_unref(scaled);
-
-	return true;
-}
-
-
-/**
  * Save a bitmap in the platform's native format.
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()

@@ -40,7 +40,7 @@ void gui_init2(int argc, char** argv)
 
 void gui_poll(bool active)
 {
-	/*netsurf_quit =*/ gtk_main_iteration_do(!active);
+	gtk_main_iteration_do(!active);
 }
 
 
@@ -48,7 +48,7 @@ void gui_multitask(void)
 {
 	gui_in_multitask = true;
 	while (gtk_events_pending())
-		/*netsurf_quit =*/ gtk_main_iteration();
+		gtk_main_iteration();
 	gui_in_multitask = false;
 }
 

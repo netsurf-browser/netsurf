@@ -15,6 +15,7 @@
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
+#include "netsurf/desktop/plotters.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
@@ -33,11 +34,12 @@ struct gui_window {
 	int old_width;
 	struct browser_window *bw;
 };
-static GtkWidget *current_widget;
+GtkWidget *current_widget;
 GdkDrawable *current_drawable;
 GdkGC *current_gc;
 
 
+static void gui_window_destroy_event(GtkWidget *widget, gpointer data);
 static gboolean gui_window_expose_event(GtkWidget *widget,
 		GdkEventExpose *event, gpointer data);
 static gboolean gui_window_url_key_press_event(GtkWidget *widget,
@@ -139,6 +141,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->old_width = drawing_area->allocation.width;
 	g->bw = bw;
 
+	g_signal_connect(G_OBJECT(window), "destroy",
+			G_CALLBACK(gui_window_destroy_event), g);
+
 	g_signal_connect(G_OBJECT(drawing_area), "expose_event",
 			G_CALLBACK(gui_window_expose_event), g);
 	g_signal_connect(G_OBJECT(drawing_area), "configure_event",
@@ -152,6 +157,16 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 }
 
 
+void gui_window_destroy_event(GtkWidget *widget, gpointer data)
+{
+	struct gui_window *g = data;
+	gui_window_destroy(g);
+	netsurf_quit = true;
+}
+
+
+extern const struct plotter_table nsgtk_plotters;
+
 gboolean gui_window_expose_event(GtkWidget *widget,
 		GdkEventExpose *event, gpointer data)
 {
@@ -164,6 +179,8 @@ gboolean gui_window_expose_event(GtkWidget *widget,
 	current_widget = widget;
 	current_drawable = widget->window;
 	current_gc = gdk_gc_new(current_drawable);
+
+	plot = nsgtk_plotters;
 
 	content_redraw(c, 0, 0,
 			widget->allocation.width,
@@ -337,113 +354,4 @@ void gui_window_remove_caret(struct gui_window *g)
 
 void gui_window_new_content(struct gui_window *g)
 {
-}
-
-
-bool html_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour)
-{
-	html_redraw_box(c, c->data.html.layout->children, x, y);
-	return true;
-}
-
-
-void html_redraw_box(struct content *content, struct box *box,
-		int x, int y)
-{
-	struct box *c;
-	int width, height;
-	int padding_left, padding_top;
-	int padding_width, padding_height;
-	int x0, y0, x1, y1;
-
-	x += box->x;
-	y += box->y;
-	width = box->width;
-	height = box->height;
-	padding_left = box->padding[LEFT];
-	padding_top = box->padding[TOP];
-	padding_width = (box->padding[LEFT] + box->width +
-			box->padding[RIGHT]);
-	padding_height = (box->padding[TOP] + box->height +
-			box->padding[BOTTOM]);
-
-	x0 = x;
-	y1 = y - 1;
-	x1 = x0 + padding_width - 1;
-	y0 = y1 - padding_height + 1;
-
-	/* if visibility is hidden render children only */
-	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
-		for (c = box->children; c; c = c->next)
-			html_redraw_box(content, c, x, y);
-		return;
-	}
-
-	/* background colour */
-	if (box->style != 0 && box->style->background_color != TRANSPARENT) {
-		int r, g, b;
-		GdkColor colour;
-
-		r = box->style->background_color & 0xff;
-		g = (box->style->background_color & 0xff00) >> 8;
-		b = (box->style->background_color & 0xff0000) >> 16;
-
-		colour.red = r | (r << 8);
-		colour.green = g | (g << 8);
-		colour.blue = b | (b << 8);
-		colour.pixel = (r << 16) | (g << 8) | b;
-
-		gdk_color_alloc(gtk_widget_get_colormap(current_widget),
-				&colour);
-		gdk_gc_set_foreground(current_gc, &colour);
-		gdk_draw_rectangle(current_drawable, current_gc,
-				TRUE, x, y, padding_width, padding_height);
-	}
-
-/* 	gdk_draw_rectangle(current_drawable, current_gc, */
-/* 			FALSE, x, y, padding_width, padding_height); */
-
-	if (box->object) {
-		content_redraw(box->object, x + padding_left, y - padding_top,
-				width, height, x0, y0, x1, y1, 1.0, 0xFFFFFF);
-
-	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
-
-	} else if (box->gadget && box->gadget->type == GADGET_RADIO) {
-
-	} else if (box->gadget && box->gadget->type == GADGET_FILE) {
-
-	} else if (box->text && box->font) {
-		PangoContext *context;
-		PangoLayout *layout;
-		GdkColor colour = { 0,
-				((box->style->color & 0xff) << 8) |
-				(box->style->color & 0xff),
-				(box->style->color & 0xff00) |
-				(box->style->color & 0xff00 >> 8),
-				((box->style->color & 0xff0000) >> 8) |
-				(box->style->color & 0xff0000 >> 16) };
-
-		context = gtk_widget_get_pango_context(current_widget);
-		layout = pango_layout_new(context);
-		pango_layout_set_font_description(layout,
-				(const PangoFontDescription *)box->font->id);
-		pango_layout_set_text(layout, box->text, box->length);
-
-		gdk_draw_layout_with_colors(current_drawable, current_gc,
-				x, y, layout, &colour, 0);
-
-		g_object_unref(layout);
-
-	} else {
-		for (c = box->children; c; c = c->next)
-			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-				html_redraw_box(content, c, x, y);
-
-		for (c = box->float_children; c; c = c->next_float)
-			html_redraw_box(content, c, x, y);
-	}
 }
