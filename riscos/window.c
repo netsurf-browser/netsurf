@@ -100,8 +100,8 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 				window.visible.y0 += 96 - (48 * (window_count % 5));
 			}
 			open_centred = false;
-			if (100 < win_width) win_width = 100;
-			if (100 < win_height) win_height = 100;
+			if (win_width < 100) win_width = 100;
+			if (win_height < 100) win_height = 100;
 		} else {
 			win_width = screen_width * 3 / 4;
 			if (1600 < win_width)

@@ -41,6 +41,7 @@
 
 static void translate_menu(wimp_menu *menu);
 static void ro_gui_menu_prepare_images(void);
+static void ro_gui_menu_prepare_window(void);
 static void ro_gui_menu_prepare_toolbars(void);
 static void ro_gui_menu_prepare_help(int forced);
 static void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning);
@@ -95,7 +96,7 @@ static wimp_MENU(3) link_menu = {
 
 /*	Page submenu
 */
-static wimp_MENU(7) page_menu = {
+static wimp_MENU(8) page_menu = {
   { "Page" }, 7,2,7,0, 200, 44, 0,
   {
     { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,		 DEFAULT_FLAGS,			   { "PageInfo" } },
@@ -104,6 +105,7 @@ static wimp_MENU(7) page_menu = {
     { 0,		      (wimp_menu *)&export_menu, DEFAULT_FLAGS,			   { "Export" } },
     { 0,		      (wimp_menu *)&link_menu,	 DEFAULT_FLAGS,			   { "SaveURL" } },
     { wimp_MENU_SEPARATE,     wimp_NO_SUB_MENU,		 DEFAULT_FLAGS | wimp_ICON_SHADED, { "Print" } },
+    { 0,		      wimp_NO_SUB_MENU,		 DEFAULT_FLAGS,			   { "NewWindow" } },
     { wimp_MENU_LAST,	      wimp_NO_SUB_MENU,		 DEFAULT_FLAGS,			   { "ViewSrc" } }
   }
 };
@@ -153,7 +155,7 @@ static wimp_MENU(5) navigate_menu = {
     { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Home" } },
     { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Back" } },
     { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Forward" } },
-    { 0,	 	  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Reload" } },
+    { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Reload" } },
     { wimp_MENU_LAST,	  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Stop" } }
   }
 };
@@ -188,11 +190,12 @@ static wimp_MENU(4) toolbar_menu = {
 
 /*	Window submenu
 */
-static wimp_MENU(2) window_menu = {
+static wimp_MENU(3) window_menu = {
   { "Window" }, 7,2,7,0, 300, 44, 0,
   {
-    { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "WindowSave" } },
-    { wimp_MENU_LAST,	  wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "WindowReset" } }
+    { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "WindowSave" } },
+    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "WindowStagr" } },
+    { wimp_MENU_LAST,	  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "WindowReset" } }
   }
 };
 
@@ -202,11 +205,11 @@ static wimp_MENU(2) window_menu = {
 static wimp_MENU(5) view_menu = {
   { "View" }, 7,2,7,0, 300, 44, 0,
   {
-    { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,		  DEFAULT_FLAGS, { "ScaleView" } },
-    { wimp_MENU_GIVE_WARNING, (wimp_menu *)&image_menu,	  DEFAULT_FLAGS, { "Images" } },
-    { wimp_MENU_GIVE_WARNING, (wimp_menu *)&toolbar_menu, DEFAULT_FLAGS, { "Toolbars" } },
-    { wimp_MENU_SEPARATE,     (wimp_menu *)&window_menu,  DEFAULT_FLAGS | wimp_ICON_SHADED, { "Window" } },
-    { wimp_MENU_LAST,	      wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "OptDefault" } }
+    { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)1,	       DEFAULT_FLAGS, { "ScaleView" } },
+    { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)&image_menu,   DEFAULT_FLAGS, { "Images" } },
+    { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)&toolbar_menu, DEFAULT_FLAGS, { "Toolbars" } },
+    { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE, (wimp_menu *)&window_menu,  DEFAULT_FLAGS, { "Window" } },
+    { wimp_MENU_LAST,				   wimp_NO_SUB_MENU,	       DEFAULT_FLAGS, { "OptDefault" } }
   }
 };
 
@@ -397,6 +400,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 {
 	struct browser_action msg;
 	wimp_pointer pointer;
+	wimp_window_state state;
+	os_error *error;
 
 	wimp_get_pointer_info(&pointer);
 
@@ -448,7 +453,10 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						break;
 					case 5: /* Print */
 						break;
-					case 6: /* Page source */
+					case 6: /* New window */
+						browser_window_create(current_gui->url ,current_gui->data.browser.bw);
+						break;
+					case 7: /* Page source */
 						ro_gui_view_source(c);
 						break;
 				}
@@ -555,9 +563,35 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						ro_gui_menu_prepare_toolbars();
 						break;
 					case 3: /* Window -> */
+						switch (selection->items[2]) {
+							case 0:
+								ro_gui_screen_size(&option_window_screen_width, &option_window_screen_height);
+								state.w = current_gui->data.browser.bw->window->window;
+								error = xwimp_get_window_state(&state);
+								if (error) {
+									LOG(("xwimp_get_window_state: 0x%x: %s",
+										error->errnum, error->errmess));
+									warn_user("WimpError", error->errmess);
+								}
+								option_window_x = state.visible.x0;
+								option_window_y = state.visible.y0;
+								option_window_width = state.visible.x1 - state.visible.x0;
+								option_window_height = state.visible.y1 - state.visible.y0;
+								break;
+							case 1:
+								option_window_stagger = !option_window_stagger;
+								break;
+							case 2:
+								option_window_screen_width = 0;
+								option_window_screen_height = 0;
+								break;
+						}
+						ro_gui_save_options();
+						ro_gui_menu_prepare_window();
 						break;
 					case 4: /* Make default */
 						gui_window_default_options(current_gui->data.browser.bw);
+						ro_gui_save_options();
 						break;
 				}
 				break;
@@ -715,6 +749,11 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 					error = xwimp_create_sub_menu(browser_toolbar_menu,
 							warning->pos.x, warning->pos.y);
 					break;
+				case 3: /* Window -> */
+					ro_gui_menu_prepare_window();
+					error = xwimp_create_sub_menu(browser_window_menu,
+							warning->pos.x, warning->pos.y);
+					break;
 			}
 			break;
 		case MENU_HELP: /* Help -> */
@@ -805,7 +844,7 @@ void ro_gui_menu_prepare_save(struct content *c)
  * /param gui_window	the gui_window to update
  */
 void ro_gui_prepare_navigate(gui_window *gui) {
-  	struct browser_window *bw;
+	struct browser_window *bw;
 	struct history *h;
 	struct content *c;
 	struct toolbar *t;
@@ -815,7 +854,7 @@ void ro_gui_prepare_navigate(gui_window *gui) {
 	wimp_selection selection;
 	
 	if (!gui) {
-	  	LOG(("Attempt to update a NULL gui_window icon status"));
+		LOG(("Attempt to update a NULL gui_window icon status"));
 		return;
 	}
 	
@@ -896,13 +935,13 @@ void ro_gui_prepare_navigate(gui_window *gui) {
 		/*	Re-open the submenu
 		*/
 		if (menu_changed != 0) {
-		  	if (!xwimp_get_menu_state((wimp_menu_state_flags)0, &selection,
-		  			(wimp_w)0, (wimp_i)0)) {
-		  		if (selection.items[0] == MENU_NAVIGATE) {
-		  			ro_gui_create_menu(current_menu, 0, 0, current_gui);
-		  		}
+			if (!xwimp_get_menu_state((wimp_menu_state_flags)0, &selection,
+					(wimp_w)0, (wimp_i)0)) {
+				if (selection.items[0] == MENU_NAVIGATE) {
+					ro_gui_create_menu(current_menu, 0, 0, current_gui);
+				}
 		  			  
-		  	}
+			}
 		}
 	}
 
@@ -925,6 +964,33 @@ static void ro_gui_menu_prepare_images(void) {
 	if (current_gui->option_dither_sprites) browser_image_menu->entries[3].menu_flags |= wimp_MENU_TICKED;
 	browser_image_menu->entries[4].menu_flags &= ~wimp_MENU_TICKED;
 	if (current_gui->option_filter_sprites) browser_image_menu->entries[4].menu_flags |= wimp_MENU_TICKED;
+}
+
+
+/**
+ * Update window menu status
+ */
+static void ro_gui_menu_prepare_window(void) {
+	if (current_menu != browser_menu) return;
+
+	/*	Check if we can reset
+	*/
+	if ((option_window_screen_width != 0) && (option_window_screen_height != 0)) {
+		browser_window_menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
+		browser_window_menu->entries[2].icon_flags &= ~wimp_ICON_SHADED;
+		
+		/*	Check if we are staggered
+		*/
+		if (option_window_stagger) {
+			browser_window_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
+		} else {
+			browser_window_menu->entries[1].menu_flags &= ~wimp_MENU_TICKED;
+		}
+	} else {
+		browser_window_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
+		browser_window_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
+		browser_window_menu->entries[2].icon_flags |= wimp_ICON_SHADED;
+	}
 }
 
 
