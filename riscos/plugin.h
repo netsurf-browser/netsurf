@@ -1,5 +1,5 @@
 /**
- * $Id: plugin.h,v 1.1 2003/05/31 18:47:00 jmb Exp $
+ * $Id: plugin.h,v 1.2 2003/06/06 02:08:56 jmb Exp $
  */
 
 #ifndef _NETSURF_RISCOS_PLUGIN_H_
@@ -20,7 +20,7 @@ struct plugin_object {
 };
 
 
-void plugin_fetch(struct content* content, char* url, struct box* box,
+void plugin_decode(struct content* content, char* url, struct box* box,
                   struct plugin_object* po);
 
 #endif

@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.47 2003/05/31 19:01:43 jmb Exp $
+ * $Id: box.c,v 1.48 2003/06/06 02:08:56 jmb Exp $
  */
 
 #include <assert.h>
@@ -1416,8 +1416,8 @@ struct box* box_object(xmlNode *n, struct content *content,
 	/* object data */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "data"))) {
 
-                po->data = s;
-	        url = url_join(s, content->url);
+                po->data = strdup(s);
+	        url = url_join(strdup(s), content->url);
 	        LOG(("object '%s'", url));
 	        xmlFree(s);
 	}
@@ -1425,7 +1425,7 @@ struct box* box_object(xmlNode *n, struct content *content,
         /* object type */
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "type"))) {
 
-                po->type = s;
+                po->type = strdup(s);
                 LOG(("type: %s", po->type));
                 xmlFree(s);
         }
@@ -1433,7 +1433,7 @@ struct box* box_object(xmlNode *n, struct content *content,
         /* object codetype */
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codetype"))) {
 
-                po->codetype = s;
+                po->codetype = strdup(s);
                 LOG(("codetype: %s", po->codetype));
                 xmlFree(s);
         }
@@ -1441,7 +1441,7 @@ struct box* box_object(xmlNode *n, struct content *content,
         /* object codebase */
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codebase"))) {
 
-                po->codebase = s;
+                po->codebase = strdup(s);
                 LOG(("codebase: %s", po->codebase));
                 xmlFree(s);
         }
@@ -1449,7 +1449,7 @@ struct box* box_object(xmlNode *n, struct content *content,
         /* object classid */
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "classid"))) {
 
-                po->classid = s;
+                po->classid = strdup(s);
                 LOG(("classid: %s", po->classid));
                 xmlFree(s);
         }
@@ -1479,7 +1479,7 @@ struct box* box_object(xmlNode *n, struct content *content,
         }
 
 	/* start fetch */
-	plugin_fetch(content, url, box, po);
+	plugin_decode(content, url, box, po);
 
 	return box;
 }
@@ -1505,8 +1505,8 @@ struct box* box_embed(xmlNode *n, struct content *content,
 	/* embed src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
 
-                po->src = s;
-	        url = url_join(s, content->url);
+                po->src = strdup(s);
+	        url = url_join(strdup(s), content->url);
 	        LOG(("embed '%s'", url));
 	        xmlFree(s);
         }
@@ -1520,7 +1520,7 @@ struct box* box_embed(xmlNode *n, struct content *content,
         }
 
 	/* start fetch */
-	plugin_fetch(content, url, box, po);
+	plugin_decode(content, url, box, po);
 
 	return box;
 }
@@ -1548,12 +1548,12 @@ struct box* box_applet(xmlNode *n, struct content *content,
 	if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "data")))
 		return box;
 
-	url = url_join(s, content->url);
+	url = url_join(strdup(s), content->url);
 	LOG(("object '%s'", url));
 	xmlFree(s);
 
 	/* start fetch */
-	//plugin_fetch(content, url, box, po);
+	//plugin_decode(content, url, box, po);
 
 	return box;
 }
