@@ -40,7 +40,7 @@ Stop:ArrÍter le chargement de la page
 View:Affichage
 ScaleView:Ajuster la vue  F11
 Images:Images
-ForeImg:Images d'avant-plan
+ForeImg:Images de premier plan
 BackImg:Images de fond
 AnimImg:Animations
 DitherImg:Tramage
@@ -79,34 +79,34 @@ ProxyBasic:Basique
 ProxyNTLM:NTLM
 
 # Image redraw style
-Display:Display
-ImgStyle0:Use OS
-ImgStyle1:Direct to screen
-ImgStyle2:Dithered
-ImgStyle3:Error diffused
+Display:Affichage
+ImgStyle0:Utiliser l'OS
+ImgStyle1:Directement sur l'Ècran
+ImgStyle2:TramÈ
+ImgStyle3:Avec diffusion d'erreur
 
 # Toolbar menus
-Toolbar:Toolbar
-Icons:Buttons
-IconBack:Back
-IconForward:Forward
-IconStop:Stop
-IconReload:Reload
-IconHome:Home
-IconSearch:Search
-IconHistory:History
-IconScale:Scale view
-IconHotlist:Hotlist
-IconSave:Save
-IconPrint:Print
-IconCreate:Create entry
-IconDelete:Delete entry
-IconLaunch:Launch
-IconOpen:Open directories
-IconExpand:Expand entries
-AddGap:Add separator
-DeleteGap:Remove separator
-LockToolbar:Lock toolbar
+Toolbar:Barre d'outils
+Icons:Boutons
+IconBack:Retour
+IconForward:Avance
+IconStop:ArrÍter
+IconReload:Recharger
+IconHome:Accueil
+IconSearch:Recherche
+IconHistory:Historique
+IconScale:Ajuster la vue
+IconHotlist:Favoris
+IconSave:Sauver
+IconPrint:Imprimer
+IconCreate:CrÈer une entrÈe
+IconDelete:Supprimer une entrÈe
+IconLaunch:Atteindre
+IconOpen:DÈployer les rÈpertoires
+IconExpand:DÈtailler les entrÈes
+AddGap:Ajouter un sÈparateur
+DeleteGap:Supprimer le sÈparateur
+LockToolbar:Verrouiller la barre d'outils
 
 # Hotlist menus
 Hotlist:Favoris
@@ -117,7 +117,7 @@ All:Tout
 Folders:Dossiers
 Folder:Dossier
 Links:Adresses
-Link:Adresses
+Link:Adresse
 SaveSelect:Sauver
 Launch:Lancer  RETURN
 Edit:…diter
@@ -131,16 +131,16 @@ EditLink:…diter l'adresse
 EditFolder:…diter le dossier
 
 # Default hotlist
-HotlistHomepage:NetSurf homepage
-HotlistTestBuild:NetSurf test builds
+HotlistHomepage:Page d'accueil de NetSurf
+HotlistTestBuild:Versions test de NetSurf
 
 # Tree URL text
 TreeAdded:AjoutÈe: %s
 TreeLast:DerniËre visitÈe: %s
 TreeVisits:Visites: %i
-TreeUnknown:Unknown
-TreeImport:Imported URL
-TreeNewFolder:New directory
+TreeUnknown:Inconnu
+TreeImport:URL importÈe
+TreeNewFolder:Nouv. rÈpertoire
 
 # Download window
 Download:%s de %s  è  %s/s  è  %s restants
@@ -149,8 +149,8 @@ Downloaded:%s effectuÈs  è  moyenne %s/s  è  %s total
 Unwritten:L'Ècriture de donnÈes dans le fichier a ÈchouÈ.
 
 # Print dialog
-PrintSheetFilled:sheet is filled
-PrintSheetsFilled:sheets are filled
+PrintSheetFilled:feuille remplie
+PrintSheetsFilled:feuilles remplies
 
 # Forms
 Form_Submit:Soumettre
@@ -248,16 +248,16 @@ SaveText:PageWeb
 SaveObject:Objet
 SaveLink:Lien
 
-ScrollUp:Click the arrow to scroll up
-ScrollPUp:Click to scroll up one page
-ScrollV:Drag the bar to scroll vertically
-ScrollPDown:Click to scroll down one page
-ScrollDown:Click the arrow to scroll down
-ScrollLeft:Click the arrow to scroll left
-ScrollPLeft:Click to scroll left one page
-ScrollH:Drag the bar to scroll horizontally
-ScrollPRight:Click to scroll right one page
-ScrollRight:Click the arrow to scroll right
+ScrollUp:Cliquez sur la flËche pour faire dÈfiler vers le haut
+ScrollPUp:Cliquez pour faire dÈfiler d'une page vers le haut
+ScrollV:Tirez la barre pour la faire dÈfiler verticalement
+ScrollPDown:Cliquez pour faire dÈfiler d'une page vers le bas
+ScrollDown:Cliquez sur la flËche pour faire dÈfiler vers le bas
+ScrollLeft:Cliquez sur la flËche pour faire dÈfiler vers la gauche
+ScrollPLeft:Cliquez pour faire dÈfiler d'une page vers la gauche
+ScrollH:Tirez la barre pour la faire dÈfiler horizontalement
+ScrollPRight:Cliquez pour faire dÈfiler d'une page vers la droite
+ScrollRight:Cliquez sur la flËche pour faire dÈfiler vers la droite
 
 Encoding0:from HTTP headers
 Encoding1:detected
@@ -321,7 +321,7 @@ HelpBrowserMenu2-4:\SarrÍter le chargement de la page par NetSurf.
 HelpBrowserMenu3:\RdÈfinir les options d'affichage locales.
 HelpBrowserMenu3-0:\Rredimensionner la page, y compris texte et images.
 HelpBrowserMenu3-1:\RdÈfinir les options d'images locales.
-#HelpBrowserMenu3-1-0:\Safficher ou pas des images d'avant-plan.
+#HelpBrowserMenu3-1-0:\Safficher ou pas des images de premier plan.
 HelpBrowserMenu3-1-1:\Safficher ou pas des images de fond.
 HelpBrowserMenu3-1-2:\Safficher ou pas des animations.|MSi les animations ne sont pas montrÈes, seule la premiËre image est affichÈe.
 HelpBrowserMenu3-2:\Rcontroler l'affichage des barres d'outils de NetSurf.
