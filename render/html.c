@@ -37,6 +37,7 @@ void html_create(struct content *c)
 	c->data.html.fonts = NULL;
 	c->data.html.length = 0;
 	c->data.html.source = xcalloc(0, 1);
+	c->data.html.background_colour = TRANSPARENT;
 }
 
 

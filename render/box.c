@@ -56,6 +56,8 @@ static struct css_style * box_get_style(struct content ** stylesheet,
 		xmlNode * n, struct css_selector * selector, unsigned int depth);
 static struct result box_a(xmlNode *n, struct status *status,
 		struct css_style *style);
+static struct result box_body(xmlNode *n, struct status *status,
+		struct css_style *style);
 static struct result box_image(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_form(xmlNode *n, struct status *status,
@@ -99,6 +101,7 @@ struct element_entry {
 static const struct element_entry element_table[] = {
 	{"a", box_a},
 	{"applet", box_applet},
+	{"body", box_body},
         {"embed", box_embed},
 	{"form", box_form},
 	{"iframe", box_iframe},
@@ -569,6 +572,15 @@ struct result box_a(xmlNode *n, struct status *status,
 	char *s;
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "href")))
 		status->href = s;
+	box = box_create(style, status->href, status->title);
+	return (struct result) {box, 1};
+}
+
+struct result box_body(xmlNode *n, struct status *status,
+		struct css_style *style)
+{
+	struct box *box;
+	status->content->data.html.background_colour = style->background_color;
 	box = box_create(style, status->href, status->title);
 	return (struct result) {box, 1};
 }
@@ -1347,6 +1359,7 @@ void box_free_box(struct box *box)
 
 	free(box->text);
 	xmlFree(box->title);
+	free(box->col);
 
 	/* only free href if we're the top most user */
 	/*if (box->href != 0)

@@ -103,6 +103,7 @@ struct content
       char* source;
       int length;
       struct box* layout;
+      colour background_colour;
       unsigned int stylesheet_count;
       struct content **stylesheet_content;
       struct css_style* style;

@@ -326,9 +326,24 @@ void html_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height)
 {
 	bool select_on = false;
+	unsigned long background_colour = 0xffffff;
+	struct box *box;
+
 	assert(c->data.html.layout != NULL);
-	ro_gui_window_redraw_box(c, c->data.html.layout->children,
-			x, y, clip, 0xffffff, x, y, &select_on);
+	box = c->data.html.layout->children;
+	assert(box);
+
+	/* clear to background colour */
+	if (c->data.html.background_colour != TRANSPARENT) {
+		colourtrans_set_gcol(c->data.html.background_colour << 8,
+				colourtrans_SET_BG | colourtrans_USE_ECFS,
+				os_ACTION_OVERWRITE, 0);
+		os_clg();
+		background_colour = c->data.html.background_colour;
+	}
+
+	ro_gui_window_redraw_box(c, box, x, y, clip, background_colour, x, y,
+			&select_on);
 }
 
 
