@@ -37,3 +37,6 @@ hr { background-color: #000; height: 1px; }
 
 center { text-align: center; }
 small { font-size: smaller; }
+big { font-size: larger; }
+input, select { width: 10em; height: 2em; background-color: #eeeebb; }
+textarea { width: 20em; height: 4em; background-color: #eeeebb; }

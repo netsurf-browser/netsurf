@@ -524,6 +524,27 @@ struct css_style * box_get_style(struct content ** stylesheet,
 		xmlFree(s);
 	}
 
+	if (strcmp((const char *) n->name, "input") == 0) {
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "size"))) {
+			int size = atoi(s);
+			if (0 < size) {
+				char *type = (char *) xmlGetProp(n, (const xmlChar *) "type");
+				style->width.width = CSS_WIDTH_LENGTH;
+				if (!type || stricmp(type, "text") == 0 ||
+						stricmp(type, "password") == 0)
+					/* in characters for text or password */
+					style->width.value.length.unit = CSS_UNIT_EX;
+				else
+					/* in pixels otherwise */
+					style->width.value.length.unit = CSS_UNIT_PX;
+				style->width.value.length.value = size;
+				if (type)
+					xmlFree(type);
+			}
+			xmlFree(s);
+		}
+	}
+
 	if (strcmp((const char *) n->name, "body") == 0) {
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "text"))) {
 			unsigned int r, g, b;
@@ -773,6 +794,7 @@ struct result box_input(xmlNode *n, struct status *status,
 	if (type == 0 || stricmp(type, "text") == 0)
 	{
 		box = box_create(style, NULL, 0);
+		box->font = font_open(status->content->data.html.fonts, style);
 		box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
 		gadget->type = GADGET_TEXTBOX;
 
@@ -801,6 +823,7 @@ struct result box_input(xmlNode *n, struct status *status,
 	else if (stricmp(type, "password") == 0)
 	{
 		box = box_create(style, NULL, 0);
+		box->font = font_open(status->content->data.html.fonts, style);
 		box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
 		gadget->type = GADGET_PASSWORD;
 

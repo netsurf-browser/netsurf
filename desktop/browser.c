@@ -713,7 +713,7 @@ void browser_window_text_selection(struct browser_window* bw,
       start = &(bw->current_content->data.html.text_selection.start);
       end = &(bw->current_content->data.html.text_selection.end);
 
-      if (click_boxes[i].box->font != 0)
+      if (click_boxes[i].box->text && click_boxes[i].box->font)
       {
       font_position_in_string(click_boxes[i].box->text,
           click_boxes[i].box->font, click_boxes[i].box->length,

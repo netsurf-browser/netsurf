@@ -16,12 +16,21 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
 
+
+static long x0, y0, x1, y1;
+
 static void html_redraw_box(struct content *content, struct box * box,
 		signed long x, signed long y,
 		unsigned long current_background_color,
 		signed long gadget_subtract_x, signed long gadget_subtract_y,
 		bool *select_on,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1);
+static void html_redraw_clip(struct box * box,
+		signed long x, signed long y,
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1);
+static void html_redraw_unclip(long clip_x0, long clip_y0,
+		long clip_x1, long clip_y1);
+
 
 void html_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
@@ -91,35 +100,13 @@ void html_redraw_box(struct content *content, struct box * box,
 	}
 
 	if (box->object) {
-		long x0 = x + box->x * 2;
-		long y1 = y - box->y * 2 - 1;
-		long x1 = x0 + box->width * 2 - 1;
-		long y0 = y1 - box->height * 2 + 1;
-
-		LOG(("%s %li %li %li %li", box->object->url, x0, y0, x1, y1));
-
-		if (x0 < clip_x0) x0 = clip_x0;
-		if (y0 < clip_y0) y0 = clip_y0;
-		if (clip_x1 < x1) x1 = clip_x1;
-		if (clip_y1 < y1) y1 = clip_y1;
-
-		os_set_graphics_window();
-		os_writec((char) (x0 & 0xff)); os_writec((char) (x0 >> 8));
-		os_writec((char) (y0 & 0xff)); os_writec((char) (y0 >> 8));
-		os_writec((char) (x1 & 0xff)); os_writec((char) (x1 >> 8));
-		os_writec((char) (y1 & 0xff)); os_writec((char) (y1 >> 8));
-
+		html_redraw_clip(box, x, y, clip_x0, clip_y0, clip_x1, clip_y1);
 		content_redraw(box->object,
 				(int) x + (int) box->x * 2,
 				(int) y - (int) box->y * 2,
 				box->width * 2, box->height * 2,
 				x0, y0, x1, y1);
-
-		os_set_graphics_window();
-		os_writec((char) (clip_x0 & 0xff)); os_writec((char) (clip_x0 >> 8));
-		os_writec((char) (clip_y0 & 0xff)); os_writec((char) (clip_y0 >> 8));
-		os_writec((char) (clip_x1 & 0xff)); os_writec((char) (clip_x1 >> 8));
-		os_writec((char) (clip_y1 & 0xff)); os_writec((char) (clip_y1 >> 8));
+		html_redraw_unclip(clip_x0, clip_y0, clip_x1, clip_y1);
 
 	} else if (box->gadget) {
 		wimp_icon icon;
@@ -144,18 +131,15 @@ void html_redraw_box(struct content *content, struct box * box,
 			wimp_plot_icon(&icon);
 			break;
 
-
 		case GADGET_TEXTBOX:
-			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
-			    wimp_ICON_VCENTRED | wimp_ICON_FILLED |
-			    wimp_ICON_INDIRECTED |
-			    (wimp_COLOUR_DARK_GREY << wimp_ICON_FG_COLOUR_SHIFT) |
-			    (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
-			icon.data.indirected_text.text = box->gadget->data.textbox.text;
-			icon.data.indirected_text.size = box->gadget->data.textbox.maxlength + 1;
-			icon.data.indirected_text.validation = validation_textbox;
-			LOG(("writing GADGET TEXTBOX"));
-			wimp_plot_icon(&icon);
+			colourtrans_set_font_colours(box->font->handle, current_background_color << 8,
+					     box->style->color << 8, 14, 0, 0, 0);
+			html_redraw_clip(box, x, y, clip_x0, clip_y0, clip_x1, clip_y1);
+			font_paint(box->font->handle, box->gadget->data.textbox.text,
+					font_OS_UNITS | font_GIVEN_FONT | font_KERN,
+					(int) x + (int) box->x * 2, (int) y - (int) box->y * 2 - (int) (box->height * 1.5),
+					NULL, NULL, 0);
+			html_redraw_unclip(clip_x0, clip_y0, clip_x1, clip_y1);
 			break;
 
                 case GADGET_PASSWORD:
@@ -365,5 +349,38 @@ void html_redraw_box(struct content *content, struct box * box,
 				*select_on = false;
 		}
 	}*/
+}
+
+
+void html_redraw_clip(struct box * box,
+		signed long x, signed long y,
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
+{
+	x0 = x + box->x * 2;
+	y1 = y - box->y * 2 - 1;
+	x1 = x0 + box->width * 2 - 1;
+	y0 = y1 - box->height * 2 + 1;
+
+	if (x0 < clip_x0) x0 = clip_x0;
+	if (y0 < clip_y0) y0 = clip_y0;
+	if (clip_x1 < x1) x1 = clip_x1;
+	if (clip_y1 < y1) y1 = clip_y1;
+
+	os_set_graphics_window();
+	os_writec((char) (x0 & 0xff)); os_writec((char) (x0 >> 8));
+	os_writec((char) (y0 & 0xff)); os_writec((char) (y0 >> 8));
+	os_writec((char) (x1 & 0xff)); os_writec((char) (x1 >> 8));
+	os_writec((char) (y1 & 0xff)); os_writec((char) (y1 >> 8));
+}
+
+
+void html_redraw_unclip(long clip_x0, long clip_y0,
+		long clip_x1, long clip_y1)
+{
+	os_set_graphics_window();
+	os_writec((char) (clip_x0 & 0xff)); os_writec((char) (clip_x0 >> 8));
+	os_writec((char) (clip_y0 & 0xff)); os_writec((char) (clip_y0 >> 8));
+	os_writec((char) (clip_x1 & 0xff)); os_writec((char) (clip_x1 >> 8));
+	os_writec((char) (clip_y1 & 0xff)); os_writec((char) (clip_y1 >> 8));
 }
 

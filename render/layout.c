@@ -95,69 +95,6 @@ void layout_node(struct box * box, unsigned long width, struct box * cont,
 }
 
 
-/* TODO: change this to use style sheets */
-int gadget_width(struct gui_gadget* gadget)
-{
-	struct formoption* current;
-	int max;
-
-	/* should use wimp_textop via a gui wrapper for these */
-	switch (gadget->type)
-	{
-		case GADGET_CHECKBOX:
-		case GADGET_RADIO:
-			return 22;
-		case GADGET_TEXTBOX:
-			return gadget->data.textbox.size * 8;
-		case GADGET_PASSWORD:
-		        return gadget->data.password.size * 8;
-		case GADGET_ACTIONBUTTON:
-			return strlen(gadget->data.actionbutt.label) * 8 + 16;
-		case GADGET_IMAGE:
-		        return gadget->data.image.width;
-		case GADGET_SELECT:
-			current = gadget->data.select.items;
-			max = 32;
-			while (current != NULL)
-			{
-				if (strlen(current->text) * 8 + 16 > max)
-					max = strlen(current->text) * 8 + 16;
-				current = current->next;
-			}
-			return max;
-		case GADGET_TEXTAREA:
-			return gadget->data.textarea.cols * 8 + 8;
-		default:
-			assert(0);
-	}
-	return 0;
-}
-
-int gadget_height(struct gui_gadget* gadget)
-{
-	switch (gadget->type)
-	{
-		case GADGET_CHECKBOX:
-		case GADGET_RADIO:
-			return 22;
-		case GADGET_TEXTBOX:
-			return 28;
-		case GADGET_PASSWORD:
-		        return 28;
-		case GADGET_ACTIONBUTTON:
-			return 28;
-		case GADGET_IMAGE:
-		        return gadget->data.image.height;
-		case GADGET_SELECT:
-			return 28; // * gadget->data.select.size;
-		case GADGET_TEXTAREA:
-			return gadget->data.textarea.rows * 16 + 8;
-		default:
-			assert(0);
-	}
-	return 0;
-}
-
 /**
  * layout_block -- position block and recursively layout children
  *
@@ -354,28 +291,24 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	for (x = 0, b = first; x < x1 - x0 && b != 0; b = b->next) {
 		assert(b->type == BOX_INLINE || b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT);
 		if (b->type == BOX_INLINE) {
-			if (b->object && b->style && b->style->height.height == CSS_HEIGHT_LENGTH)
+			if ((b->object || b->gadget) && b->style && b->style->height.height == CSS_HEIGHT_LENGTH)
 				h = len(&b->style->height.length, b->style);
 			else if (b->text)
 				h = line_height(b->style ? b->style : b->parent->parent->style);
-			else if (b->gadget != 0)
-				h = gadget_height(b->gadget);
 			else
 				h = 0;
 			b->height = h;
 
 			if (h > height) height = h;
 
-			if (b->object && b->style && b->style->width.width == CSS_WIDTH_LENGTH)
+			if ((b->object || b->gadget) && b->style && b->style->width.width == CSS_WIDTH_LENGTH)
 				b->width = len(&b->style->width.value.length, b->style);
-			else if (b->object && b->style && b->style->width.width == CSS_WIDTH_PERCENT)
+			else if ((b->object || b->gadget) && b->style && b->style->width.width == CSS_WIDTH_PERCENT)
 				b->width = width * b->style->width.value.percent / 100;
 			else if (b->text) {
 				if (b->width == UNKNOWN_WIDTH)
 					b->width = font_width(b->font, b->text, b->length);
-			} else if (b->gadget != 0)
-				b->width = gadget_width(b->gadget);
-			else
+			} else
 				b->width = 0;
 
 			if (b->text != 0)
@@ -885,7 +818,7 @@ void calculate_inline_container_widths(struct box *box)
 	for (child = box->children; child != 0; child = child->next) {
 		switch (child->type) {
 			case BOX_INLINE:
-				if (child->object) {
+				if (child->object || child->gadget) {
 					if (child->style->width.width == CSS_WIDTH_LENGTH) {
 						child->width = len(&child->style->width.value.length,
 								child->style);
@@ -910,12 +843,6 @@ void calculate_inline_container_widths(struct box *box)
 						if (min < width) min = width;
 						i = j + 1;
 					} while (j != child->length);
-
-				} else if (child->gadget) {
-					child->width = gadget_width(child->gadget);
-					max += child->width;
-					if (min < child->width)
-						min = child->width;
 				}
 				break;
 
