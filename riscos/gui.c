@@ -17,6 +17,7 @@
 #include <unixlib/features.h>
 #include <unixlib/local.h>
 #include "oslib/font.h"
+#include "oslib/help.h"
 #include "oslib/hourglass.h"
 #include "oslib/inetsuite.h"
 #include "oslib/os.h"
@@ -37,6 +38,7 @@
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/help.h"
 #include "netsurf/riscos/options.h"
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
@@ -70,7 +72,8 @@ static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 osspriteop_area *gui_pointers;      /**< Sprite area containing pointer data */
 
 /** Accepted wimp user messages. */
-static wimp_MESSAGE_LIST(27) task_messages = { {
+static wimp_MESSAGE_LIST(28) task_messages = { {
+  	message_HELP_REQUEST,
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
 	message_DATA_LOAD,
@@ -776,6 +779,10 @@ void ro_gui_keypress(wimp_key *key)
 void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 {
 	switch (message->action) {
+	 	case message_HELP_REQUEST:
+	 		ro_gui_interactive_help_request(message);
+	 		break;
+	 	
 		case message_DATA_SAVE:
 			ro_msg_datasave(message);
 			break;

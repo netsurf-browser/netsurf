@@ -31,6 +31,7 @@ extern struct form_control *current_gadget;
 extern gui_window *window_list;
 extern bool gui_reformat_pending;
 extern bool gui_redraw_debug;
+extern wimp_menu *current_menu;
 extern gui_window *current_gui;
 extern gui_window *ro_gui_current_redraw_gui;
 extern osspriteop_area *gui_pointers;

@@ -45,7 +45,7 @@ static void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning);
 static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
 static struct box *ro_gui_menu_find_object_box(void);
 
-static wimp_menu *current_menu;
+wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
 gui_window *current_gui;
 struct content *save_content = 0;
