@@ -14,8 +14,8 @@
 <p>Authors and contributors:
 <em>(code)</em> John M Bell, James Bursa, Matthew Hambley, Rob Jackson,
 Phil Mellor, Philip Pemberton, Andrew Timmins, John Tytgat, Richard Wilson;
-<em>(graphics, documentation &amp; translations)</em> Bruno D'Arcangeli,
-Michael Drake, Andrew Duffell, Jérôme Mathevet.</p>
+<em>(graphics, documentation &amp; translations)</em> Sebastian Barthel,
+Bruno D'Arcangeli, Michael Drake, Andrew Duffell, Jérôme Mathevet.</p>
 
 <h2>Libraries</h2>
 
@@ -23,21 +23,19 @@ Michael Drake, Andrew Duffell, Jérôme Mathevet.</p>
 <tr><th><a href="http://curl.haxx.se/libcurl/"><img src="libcurl" alt="libcurl"></a></th>
 <td>© 1996&#x2013;2004, Daniel Stenberg</td></tr>
 
-<tr><th>IJG JPEG library</th>
+<tr><th><a href="http://www.ijg.org/">IJG JPEG library</a></th>
 <td>This software is based in part on the work of the Independent JPEG Group<br>
 © 1991&#x2013;1998, Thomas G. Lane</td></tr>
 
-<tr><th><a href="http://www.openssl.org/">OpenSSL</a></th>
+<tr><th><a href="http://www.libmng.com/"><img src="libmng" alt="libmng"></a></th>
+<td>© 2000&#x2013;2002 Gerard Juyn</td></tr>
+
+<tr><th><a href="http://www.openssl.org/"><img src="openssl" alt="OpenSSL"></a></th>
 <td>© 1998&#x2013;2004 The OpenSSL Project<br>
 © 1995&#x2013;1998 Eric A. Young, Tim J. Hudson</td></tr>
 
 <tr><th><a href="http://ro-oslib.sourceforge.net/">OSLib</a></th>
 <td>© 1994&#x2013;2002 Jonathan Coxhead and OSLib maintainers</td></tr>
-
-<tr><th><a href="http://www.libpng.org/">libpng</a></th>
-<td>© 1998&#x2013;2002 Glenn Randers-Pehrson<br>
-© 1996, 1997 Andreas Dilger<br>
-© 1995, 1996 Guy Eric Schalnat, Group 42, Inc.</td></tr>
 
 <tr><th><a href="http://www.xmlsoft.org/"><img src="libxml2" alt="libxml2"></a></th>
 <td>© 1998&#x2013;2003 Daniel Veillard</td></tr>
