@@ -33,19 +33,22 @@ struct form_control *form_new_control(form_control_type type)
 {
 	struct form_control *control;
 
-	control = malloc(sizeof *control);
-	if (!control)
-		return 0;
+	if ((control = malloc(sizeof *control)) == NULL)
+		return NULL;
 	control->type = type;
-	control->name = 0;
-	control->value = 0;
-	control->initial_value = 0;
+	control->name = NULL;
+	control->value = NULL;
+	control->initial_value = NULL;
 	control->disabled = false;
-	control->form = 0;
-	control->box = 0;
+	control->form = NULL;
+	control->box = NULL;
+	control->caret_inline_container = NULL;
+	control->caret_text_box = NULL;
+	control->caret_box_offset = control->caret_form_offset = 0;
+	control->length = control->maxlength = 0;
 	control->selected = false;
-	control->prev = 0;
-	control->next = 0;
+	control->prev = NULL;
+	control->next = NULL;
 	return control;
 }
 
@@ -57,11 +60,11 @@ struct form_control *form_new_control(form_control_type type)
 void form_add_control(struct form *form, struct form_control *control)
 {
 	control->form = form;
-	if (form->controls) {
+	if (form->controls != NULL) {
 		assert(form->last_control);
 		form->last_control->next = control;
 		control->prev = form->last_control;
-		control->next = 0;
+		control->next = NULL;
 		form->last_control = control;
 	} else {
 		form->controls = form->last_control = control;
@@ -106,11 +109,13 @@ struct form_successful_control *form_successful_controls(struct form *form,
 	struct form_control *control;
 	struct form_option *option;
 	struct form_successful_control sentinel, *last_success;
+
 	last_success = &sentinel;
 	sentinel.next = 0;
 
 	for (control = form->controls; control; control = control->next) {
 		struct form_successful_control *success_new;
+		bool add_val;
 
 		/* ignore disabled controls */
 		if (control->disabled)
@@ -120,93 +125,120 @@ struct form_successful_control *form_successful_controls(struct form *form,
 		if (!control->name)
 			continue;
 
-		/* only the activated submit button is successful */
-		if (control->type == GADGET_SUBMIT && control != submit_button)
-			continue;
+		switch (control->type) {
+			case GADGET_HIDDEN:
+			case GADGET_TEXTBOX:
+			case GADGET_PASSWORD:
+				add_val = true;
+				break;
 
-		/* ignore checkboxes and radio buttons which aren't selected */
-		if (control->type == GADGET_CHECKBOX && !control->selected)
-			continue;
-		if (control->type == GADGET_RADIO && !control->selected)
-			continue;
+			case GADGET_RADIO:
+			case GADGET_CHECKBOX:
+				/* ignore checkboxes and radio buttons which
+				 * aren't selected
+				 */
+				add_val = control->selected;
+				break;
 
-		/* select */
-		if (control->type == GADGET_SELECT) {
-			for (option = control->data.select.items; option;
-					option = option->next) {
-				if (option->selected) {
-					success_new = xcalloc(1, sizeof(*success_new));
-					success_new->file = false;
-					success_new->name = xstrdup(control->name);
-					success_new->value = xstrdup(option->value);
-					success_new->next = 0;
-					last_success->next = success_new;
-					last_success = success_new;
+			case GADGET_SELECT:
+				/* select */
+				for (option = control->data.select.items;
+						option != NULL;
+						option = option->next) {
+					if (option->selected) {
+						success_new = xcalloc(1, sizeof(*success_new));
+						success_new->file = false;
+						success_new->name = cnv_str_local_enc(control->name);
+						success_new->value = cnv_str_local_enc(option->value);
+						success_new->next = NULL;
+						last_success->next = success_new;
+						last_success = success_new;
+					}
 				}
+
+				add_val = false;
+				break;
+
+			case GADGET_TEXTAREA:
+				/* textarea */
+				success_new = xcalloc(1, sizeof(*success_new));
+				success_new->file = false;
+				success_new->name = cnv_str_local_enc(control->name);
+				success_new->value = form_textarea_value(control);
+				success_new->next = 0;
+				last_success->next = success_new;
+				last_success = success_new;
+
+				add_val = false;
+				break;
+
+			case GADGET_IMAGE: {
+				/* image */
+				const size_t len = strlen(control->name) + 3;
+
+				/* x */
+				success_new = xcalloc(1, sizeof(*success_new));
+				success_new->file = false;
+				success_new->name = xcalloc(1, len);
+				sprintf(success_new->name, "%s.x", control->name);
+				success_new->value = xcalloc(1, 20);
+				sprintf(success_new->value, "%i", control->data.image.mx);
+				success_new->next = 0;
+				last_success->next = success_new;
+				last_success = success_new;
+
+				/* y */
+				success_new = xcalloc(1, sizeof(*success_new));
+				success_new->file = false;
+				success_new->name = xcalloc(1, len);
+				sprintf(success_new->name, "%s.y", control->name);
+				success_new->value = xcalloc(1, 20);
+				sprintf(success_new->value, "%i", control->data.image.my);
+				success_new->next = 0;
+				last_success->next = success_new;
+				last_success = success_new;
+
+				add_val = false;
+				break;
 			}
-			continue;
-		}
 
-		/* textarea */
-		if (control->type == GADGET_TEXTAREA) {
-			success_new = xcalloc(1, sizeof(*success_new));
-			success_new->file = false;
-			success_new->name = xstrdup(control->name);
-			success_new->value = form_textarea_value(control);
-			success_new->next = 0;
-			last_success->next = success_new;
-			last_success = success_new;
-			continue;
-		}
+			case GADGET_SUBMIT:
+				/* only the activated submit button is
+				 * successful
+				 */
+				add_val = (control != submit_button) ? false : true;
+				break;
 
-		/* image */
-		if (control->type == GADGET_IMAGE) {
-			unsigned int len = strlen(control->name) + 3;
-			/* x */
-			success_new = xcalloc(1, sizeof(*success_new));
-			success_new->file = false;
-			success_new->name = xcalloc(1, len);
-			sprintf(success_new->name, "%s.x", control->name);
-			success_new->value = xcalloc(1, 20);
-			sprintf(success_new->value, "%i", control->data.image.mx);
-			success_new->next = 0;
-			last_success->next = success_new;
-			last_success = success_new;
-			/* y */
-			success_new = xcalloc(1, sizeof(*success_new));
-			success_new->file = false;
-			success_new->name = xcalloc(1, len);
-			sprintf(success_new->name, "%s.y", control->name);
-			success_new->value = xcalloc(1, 20);
-			sprintf(success_new->value, "%i", control->data.image.my);
-			success_new->next = 0;
-			last_success->next = success_new;
-			last_success = success_new;
-		}
+			case GADGET_RESET:
+				/* ignore reset */
+				add_val = false;
+				break;
 
-		/* ignore reset */
-		if (control->type == GADGET_RESET)
-			continue;
+			case GADGET_FILE:
+				/* file */
+				success_new = xcalloc(1, sizeof(*success_new));
+				success_new->file = true;
+				success_new->name = cnv_str_local_enc(control->name);
+				success_new->value = cnv_str_local_enc(control->value);
+				success_new->next = 0;
+				last_success->next = success_new;
+				last_success = success_new;
 
-		/* file */
-		if (control->type == GADGET_FILE && control->value) {
-		        success_new = xcalloc(1, sizeof(*success_new));
-		        success_new->file = true;
-		        success_new->name = xstrdup(control->name);
-		        success_new->value = xstrdup(control->value);
-		        success_new->next = 0;
-		        last_success->next = success_new;
-		        last_success = success_new;
-		        continue;
+				add_val = false;
+				break;
+
+			default:
+				assert(0);
+				break;
 		}
 
 		/* all others added if they have a value */
-		if (control->value) {
+		if (add_val && control->value != NULL) {
 			success_new = xcalloc(1, sizeof(*success_new));
 			success_new->file = false;
-			success_new->name = xstrdup(control->name);
-			success_new->value = xstrdup(control->value);
-			success_new->next = 0;
+			success_new->name = cnv_str_local_enc(control->name);
+			success_new->value = cnv_str_local_enc(control->value);
+			success_new->next = NULL;
 			last_success->next = success_new;
 			last_success = success_new;
 		}
@@ -228,10 +260,10 @@ char *form_textarea_value(struct form_control *textarea)
 
 	/* find required length */
 	for (inline_container = textarea->box->children;
-			inline_container;
+			inline_container != NULL;
 			inline_container = inline_container->next) {
 		for (text_box = inline_container->children;
-				text_box;
+				text_box != NULL;
 				text_box = text_box->next) {
 			len += text_box->length + 1;
 		}
@@ -241,10 +273,10 @@ char *form_textarea_value(struct form_control *textarea)
 	/* construct value */
 	s = value = xcalloc(1, len);
 	for (inline_container = textarea->box->children;
-			inline_container;
+			inline_container != NULL;
 			inline_container = inline_container->next) {
 		for (text_box = inline_container->children;
-				text_box;
+				text_box != NULL;
 				text_box = text_box->next) {
 			strncpy(s, text_box->text, text_box->length);
 			s += text_box->length;
@@ -269,14 +301,14 @@ char *form_url_encode(struct form_successful_control *control)
 	unsigned int len = 0, len1;
 
 	for (; control; control = control->next) {
-		char *name = curl_escape(control->name, 0);
-		char *value = curl_escape(control->value, 0);
+		const char *name = curl_escape(control->name, 0);
+		const char *value = curl_escape(control->value, 0);
 		len1 = len + strlen(name) + strlen(value) + 2;
 		s = xrealloc(s, len1 + 1);
 		sprintf(s + len, "%s=%s&", name, value);
 		len = len1;
-                curl_free(name);
-                curl_free(value);
+		curl_free(name);
+		curl_free(value);
 	}
 	if (len)
 		s[len - 1] = 0;

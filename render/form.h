@@ -58,13 +58,14 @@ struct form_control {
 	struct box *box;
 	struct box *caret_inline_container;
 	struct box *caret_text_box;
-	int caret_char_offset;
+	unsigned int caret_box_offset, caret_form_offset;
+	unsigned int length;
 	int caret_pixel_offset;
 	unsigned int maxlength;
 	bool selected;
 	union {
 		struct {
-                        int mx, my;
+			int mx, my;
 		} image;
 		struct {
 			int num_items;

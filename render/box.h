@@ -98,12 +98,12 @@ typedef enum {
 
 /* parameters for <object> and related elements */
 struct object_params {
-        char* data;
-        char* type;
-        char* codetype;
-        char* codebase;
-        char* classid;
-        struct plugin_params* params;
+	char* data;
+	char* type;
+	char* codetype;
+	char* codebase;
+	char* classid;
+	struct plugin_params* params;
 	/* not a parameter, but stored here for convenience */
 	char* basehref;
 	char* filename;
@@ -115,12 +115,11 @@ struct object_params {
 };
 
 struct plugin_params {
-
-        char* name;
-        char* value;
-        char* type;
-        char* valuetype;
-        struct plugin_params* next;
+	char* name;
+	char* value;
+	char* type;
+	char* valuetype;
+	struct plugin_params* next;
 };
 
 /** Node in box tree. All dimensions are in pixels. */
@@ -207,10 +206,10 @@ struct box {
 	/** Form control data, or 0 if not a form control. */
 	struct form_control* gadget;
 
-        char *usemap; /** (Image)map to use with this object, or 0 if none */
+	char *usemap; /** (Image)map to use with this object, or 0 if none */
 
-        /** Background image for this box, or 0 if none */
-        struct content *background;
+	/** Background image for this box, or 0 if none */
+	struct content *background;
 
 	/** Object in this box (usually an image), or 0 if none. */
 	struct content* object;

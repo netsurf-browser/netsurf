@@ -183,7 +183,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
  */
 
 void browser_window_callback(content_msg msg, struct content *c,
-	     void *p1, void *p2, union content_msg_data data)
+		void *p1, void *p2, union content_msg_data data)
 {
 	struct browser_window *bw = p1;
 	char status[40];
@@ -524,7 +524,7 @@ void download_window_callback(fetch_msg msg, void *p, const char *data,
 			/* not possible */
 			assert(0);
 			break;
-        }
+	}
 }
 
 
@@ -881,7 +881,7 @@ void browser_window_textarea_click(struct browser_window *bw,
 
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
-	textarea->gadget->caret_char_offset = char_offset;
+	textarea->gadget->caret_box_offset = textarea->gadget->caret_form_offset = char_offset;
 	textarea->gadget->caret_pixel_offset = pixel_offset;
 	browser_window_place_caret(bw,
 			box_x + text_box->x + pixel_offset,
@@ -906,7 +906,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 	struct box *text_box = textarea->gadget->caret_text_box;
 	struct box *new_br, *new_text, *t;
 	struct box *prev;
-	int char_offset = textarea->gadget->caret_char_offset;
+	int char_offset = textarea->gadget->caret_box_offset;
 	int pixel_offset = textarea->gadget->caret_pixel_offset;
 	int dy;
 	int box_x, box_y;
@@ -1148,7 +1148,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
-	textarea->gadget->caret_char_offset = char_offset;
+	textarea->gadget->caret_box_offset = textarea->gadget->caret_form_offset = char_offset;
 	textarea->gadget->caret_pixel_offset = pixel_offset;
 	browser_window_place_caret(bw,
 			box_x + text_box->x + pixel_offset,
@@ -1179,10 +1179,13 @@ void browser_window_input_click(struct browser_window* bw,
 {
 	int char_offset, pixel_offset, dx = 0;
 	struct box *text_box = input->children->children;
+	int uchars;
+	unsigned int offset;
 
 	nsfont_position_in_string(text_box->font, text_box->text,
 			text_box->length, x - text_box->x,
 			&char_offset, &pixel_offset);
+	assert(char_offset <= text_box->length);
 
 	text_box->x = 0;
 	if ((input->width < text_box->width) &&
@@ -1193,7 +1196,31 @@ void browser_window_input_click(struct browser_window* bw,
 			text_box->x = input->width - text_box->width;
 		dx -= text_box->x;
 	}
-	input->gadget->caret_char_offset = char_offset;
+	input->gadget->caret_box_offset = char_offset;
+	/* Update caret_form_offset */
+	for (uchars = 0, offset = 0; offset < char_offset; ++uchars) {
+		if ((text_box->text[offset] & 0x80) == 0x00) {
+			++offset;
+			continue;
+		}
+		assert((text_box->text[offset] & 0xC0) == 0xC0);
+		for (++offset; offset < char_offset && (text_box->text[offset] & 0xC0) == 0x80; ++offset)
+			;
+		}
+	/* uchars is the number of real Unicode characters at the left
+	 * side of the caret.
+	 */
+	for (offset = 0; uchars > 0 && offset < input->gadget->length; --uchars) {
+		if ((input->gadget->value[offset] & 0x80) == 0x00) {
+			++offset;
+			continue;
+		}
+		assert((input->gadget->value[offset] & 0xC0) == 0xC0);
+		for (++offset; offset < input->gadget->length && (input->gadget->value[offset] & 0xC0) == 0x80; ++offset)
+			;
+	}
+	assert(uchars == 0);
+	input->gadget->caret_form_offset = offset;
 	input->gadget->caret_pixel_offset = pixel_offset;
 	browser_window_place_caret(bw,
 			box_x + text_box->x + pixel_offset,
@@ -1213,83 +1240,96 @@ void browser_window_input_click(struct browser_window* bw,
 void browser_window_input_callback(struct browser_window *bw,
 		unsigned int key, void *p)
 {
-	struct box *input = p;
+	struct box *input = (struct box *)p;
 	struct box *text_box = input->children->children;
-	int char_offset = input->gadget->caret_char_offset;
+	unsigned int box_offset = input->gadget->caret_box_offset;
+	unsigned int form_offset = input->gadget->caret_form_offset;
 	int pixel_offset, dx;
 	int box_x, box_y;
-	struct form *form = input->gadget->form;
-	char utf8[5];
-	unsigned int utf8_len, i;
-	char *text, *value;
+	struct form* form = input->gadget->form;
 	bool changed = false;
 
 	box_coords(input, &box_x, &box_y);
 
 	if (!(key <= 0x001F || (0x007F <= key && key <= 0x009F))) {
+		char key_to_insert;
+		const char *utf8key;
+		size_t utf8keySize;
+
+		/** \todo: text_box has data in UTF-8 and its length in
+		 * bytes is not necessarily equal to number of characters.
+		 */
+		if (input->gadget->length >= input->gadget->maxlength)
+			return;
+
 		/* normal character insertion */
-		/** \todo  convert key to UTF-8 properly */
-		utf8[0] = key;
-		utf8_len = 1;
 
-		/** \todo  this is wrong for passwords, because multi-byte
-		 * UTF-8 sequences in the value get only one character in
-		 * the password, so we can't just use char_offset in
-		 * input->gadget->value */
-
-		text = realloc(text_box->text, text_box->length + 8);
-		if (!text) {
-			warn_user("NoMemory", 0);
+		/* Insert key in gadget */
+		key_to_insert = (char)key;
+		if ((utf8key = cnv_local_enc_str(&key_to_insert, 1)) == NULL)
 			return;
-		}
-		text_box->text = text;
+		utf8keySize = strlen(utf8key);
+		input->gadget->value = xrealloc(input->gadget->value, input->gadget->length + utf8keySize + 1);
+		memmove(input->gadget->value + form_offset + utf8keySize,
+				input->gadget->value + form_offset,
+				input->gadget->length - form_offset);
+		memcpy(input->gadget->value + form_offset, utf8key, utf8keySize);
+		input->gadget->length += utf8keySize;
+		input->gadget->value[input->gadget->length] = 0;
+		form_offset += utf8keySize;
+		free((void *)utf8key);
 
-		value = realloc(input->gadget->value, text_box->length + 8);
-		if (!value) {
-			warn_user("NoMemory", 0);
+		/* Insert key in text box */
+		/* Convert space into NBSP */
+		key_to_insert = (input->gadget->type == GADGET_PASSWORD) ? '*' : (key == ' ') ? 160 : key;
+		if ((utf8key = cnv_local_enc_str(&key_to_insert, 1)) == NULL)
 			return;
-		}
-		input->gadget->value = value;
-
-		memmove(input->gadget->value + char_offset + utf8_len,
-				input->gadget->value + char_offset,
-				text_box->length - char_offset);
-		for (i = 0; i != utf8_len; i++)
-			input->gadget->value[char_offset + i] = key;
-
-		if (input->gadget->type == GADGET_PASSWORD) {
-			text_box->text[text_box->length] = '*';
-			text_box->length++;
-			char_offset++;
-		} else {
-			memmove(text_box->text + char_offset + utf8_len,
-					text_box->text + char_offset,
-					text_box->length - char_offset);
-			for (i = 0; i != utf8_len; i++)
-				text_box->text[char_offset + i] = utf8[i];
-			text_box->length += utf8_len;
-			char_offset += utf8_len;
-		}
+		utf8keySize = strlen(utf8key);
+		text_box->text = xrealloc(text_box->text, text_box->length + utf8keySize + 1);
+		memmove(text_box->text + box_offset + utf8keySize,
+				text_box->text + box_offset,
+				text_box->length - box_offset);
+		memcpy(text_box->text + box_offset, utf8key, utf8keySize);
+		text_box->length += utf8keySize;
 		text_box->text[text_box->length] = 0;
-		input->gadget->value[text_box->length] = 0;
+		box_offset += utf8keySize;
+		free((void *)utf8key);
+
 		text_box->width = nsfont_width(text_box->font, text_box->text,
 				(unsigned int)text_box->length);
-
 		changed = true;
 
-	} else if ((key == 8 || key == 127) && char_offset != 0) {
+	} else if (key == 8 || key == 127) {
 		/* delete to left */
-		/** \todo  delete entire UTF-8 character, handling passwords */
-		utf8_len = 1;
-		memmove(text_box->text + char_offset - utf8_len,
-				text_box->text + char_offset,
-				text_box->length - char_offset);
-		memmove(input->gadget->value + char_offset - utf8_len,
-				input->gadget->value + char_offset,
-				text_box->length - char_offset);
-		text_box->length--;
-		input->gadget->value[text_box->length] = 0;
-		char_offset--;
+			int prev_offset;
+
+		if (box_offset == 0)
+			return;
+
+		/* Gadget */
+		prev_offset = form_offset;
+		/* Go to the previous valid UTF-8 character */
+		while (form_offset != 0
+			&& !((input->gadget->value[--form_offset] & 0x80) == 0x00 || (input->gadget->value[form_offset] & 0xC0) == 0xC0))
+			;
+		memmove(input->gadget->value + form_offset,
+				input->gadget->value + prev_offset,
+				input->gadget->length - prev_offset);
+		input->gadget->length -= prev_offset - form_offset;
+		input->gadget->value[input->gadget->length] = 0;
+
+		/* Text box */
+		prev_offset = box_offset;
+		/* Go to the previous valid UTF-8 character */
+		while (box_offset != 0
+			&& !((text_box->text[--box_offset] & 0x80) == 0x00 || (text_box->text[box_offset] & 0xC0) == 0xC0))
+			;
+		memmove(text_box->text + box_offset,
+				text_box->text + prev_offset,
+				text_box->length - prev_offset);
+		text_box->length -= prev_offset - box_offset;
+		text_box->text[text_box->length] = 0;
+
 		text_box->width = nsfont_width(text_box->font, text_box->text,
 				(unsigned int)text_box->length);
 
@@ -1299,12 +1339,18 @@ void browser_window_input_callback(struct browser_window *bw,
 		/* Ctrl+U */
 		text_box->text[0] = 0;
 		text_box->length = 0;
+		box_offset = 0;
+
 		input->gadget->value[0] = 0;
-		char_offset = 0;
+		input->gadget->length = 0;
+		form_offset = 0;
+
+		text_box->width = 0;
 		changed = true;
 
 	} else if (key == 10 || key == 13) {
 		/* Return/Enter hit */
+LOG(("Submit, text <%s>, gadget <%s>\n", text_box->text, input->gadget->value));
 		if (form)
 			browser_form_submit(bw, form, 0);
 
@@ -1324,7 +1370,7 @@ void browser_window_input_callback(struct browser_window *bw,
 		input = next_input->box;
 		text_box = input->children->children;
 		box_coords(input, &box_x, &box_y);
-		char_offset = 0;
+		form_offset = box_offset = 0;
 
 	} else if (key == 11) {
 		/* Shift+Tab */
@@ -1342,34 +1388,49 @@ void browser_window_input_callback(struct browser_window *bw,
 		input = prev_input->box;
 		text_box = input->children->children;
 		box_coords(input, &box_x, &box_y);
-		char_offset = 0;
+		form_offset = box_offset = 0;
 
 	} else if (key == 26) {
 		/* Ctrl+Left */
-		char_offset = 0;
+		box_offset = form_offset = 0;
 
 	} else if (key == 27) {
 		/* Ctrl+Right */
-		char_offset = text_box->length;
+		box_offset = text_box->length;
+		form_offset = input->gadget->length;
 
-	} else if (key == 28 && (unsigned int)char_offset != text_box->length) {
+	} else if (key == 28) {
 		/* Right cursor -> */
-		/** \todo  UTF-8 */
-		utf8_len = 1;
-		char_offset += utf8_len;
+		/* Text box */
+		/* Go to the next valid UTF-8 character */
+		while (box_offset != text_box->length
+			&& !((text_box->text[++box_offset] & 0x80) == 0x00 || (text_box->text[box_offset] & 0xC0) == 0xC0))
+			;
+		/* Gadget */
+		/* Go to the next valid UTF-8 character */
+		while (form_offset != input->gadget->length
+			&& !((input->gadget->value[++form_offset] & 0x80) == 0x00 || (input->gadget->value[form_offset] & 0xC0) == 0xC0))
+			;
 
-	} else if (key == 29 && char_offset != 0) {
+	} else if (key == 29) {
 		/* Left cursor <- */
-		/** \todo  UTF-8 */
-		utf8_len = 1;
-		char_offset -= utf8_len;
+		/* Text box */
+		/* Go to the previous valid UTF-8 character */
+		while (box_offset != 0
+			&& !((text_box->text[--box_offset] & 0x80) == 0x00 || (text_box->text[box_offset] & 0xC0) == 0xC0))
+			;
+		/* Gadget */
+		/* Go to the previous valid UTF-8 character */
+		while (form_offset != 0
+			&& !((input->gadget->value[--form_offset] & 0x80) == 0x00 || (input->gadget->value[form_offset] & 0xC0) == 0xC0))
+			;
 
 	} else {
 		return;
 	}
 
 	pixel_offset = nsfont_width(text_box->font, text_box->text,
-			(unsigned int)char_offset);
+			(unsigned int)box_offset);
 	dx = text_box->x;
 	text_box->x = 0;
 	if (input->width < text_box->width && input->width / 2 < pixel_offset) {
@@ -1378,9 +1439,11 @@ void browser_window_input_callback(struct browser_window *bw,
 			text_box->x = input->width - text_box->width;
 	}
 	dx -= text_box->x;
-
-	input->gadget->caret_char_offset = char_offset;
 	input->gadget->caret_pixel_offset = pixel_offset;
+
+	input->gadget->caret_box_offset = box_offset;
+	input->gadget->caret_form_offset = form_offset;
+
 	browser_window_place_caret(bw,
 			box_x + text_box->x + pixel_offset,
 			box_y + text_box->y,
@@ -1477,45 +1540,45 @@ void browser_window_form_select(struct browser_window *bw,
 }
 
 
-gui_pointer_shape get_pointer_shape(css_cursor cursor) {
+gui_pointer_shape get_pointer_shape(css_cursor cursor)
+{
+	gui_pointer_shape pointer;
 
-        gui_pointer_shape pointer;
+	switch (cursor) {
+		case CSS_CURSOR_CROSSHAIR:
+			pointer = GUI_POINTER_CROSS;
+			break;
+		case CSS_CURSOR_POINTER:
+			pointer = GUI_POINTER_POINT;
+			break;
+		case CSS_CURSOR_MOVE:
+			pointer = GUI_POINTER_MOVE;
+			break;
+		case CSS_CURSOR_E_RESIZE:
+		case CSS_CURSOR_W_RESIZE:
+			pointer = GUI_POINTER_LR;
+			break;
+		case CSS_CURSOR_N_RESIZE:
+		case CSS_CURSOR_S_RESIZE:
+			pointer = GUI_POINTER_UD;
+			break;
+		case CSS_CURSOR_NE_RESIZE:
+		case CSS_CURSOR_SW_RESIZE:
+			pointer = GUI_POINTER_LD;
+			break;
+		case CSS_CURSOR_SE_RESIZE:
+		case CSS_CURSOR_NW_RESIZE:
+			pointer = GUI_POINTER_RD;
+			break;
+		case CSS_CURSOR_TEXT:
+			pointer = GUI_POINTER_CARET;
+			break;
+		default:
+			pointer = GUI_POINTER_DEFAULT;
+			break;
+	}
 
-        switch (cursor) {
-                case CSS_CURSOR_CROSSHAIR:
-                        pointer = GUI_POINTER_CROSS;
-                        break;
-                case CSS_CURSOR_POINTER:
-                        pointer = GUI_POINTER_POINT;
-                        break;
-                case CSS_CURSOR_MOVE:
-                        pointer = GUI_POINTER_MOVE;
-                        break;
-                case CSS_CURSOR_E_RESIZE:
-                case CSS_CURSOR_W_RESIZE:
-                        pointer = GUI_POINTER_LR;
-                        break;
-                case CSS_CURSOR_N_RESIZE:
-                case CSS_CURSOR_S_RESIZE:
-                        pointer = GUI_POINTER_UD;
-                        break;
-                case CSS_CURSOR_NE_RESIZE:
-                case CSS_CURSOR_SW_RESIZE:
-                        pointer = GUI_POINTER_LD;
-                        break;
-                case CSS_CURSOR_SE_RESIZE:
-                case CSS_CURSOR_NW_RESIZE:
-                        pointer = GUI_POINTER_RD;
-                        break;
-                case CSS_CURSOR_TEXT:
-                        pointer = GUI_POINTER_CARET;
-                        break;
-                default:
-                        pointer = GUI_POINTER_DEFAULT;
-                        break;
-        }
-
-        return pointer;
+	return pointer;
 }
 
 
@@ -1540,35 +1603,35 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			data = form_url_encode(success);
 			url = xcalloc(1, strlen(form->action) + strlen(data) + 2);
 			if(form->action[strlen(form->action)-1] == '?') {
-			        sprintf(url, "%s%s", form->action, data);
+				sprintf(url, "%s%s", form->action, data);
 			}
 			else {
-			        sprintf(url, "%s?%s", form->action, data);
+				sprintf(url, "%s?%s", form->action, data);
 			}
 			url1 = url_join(url, base);
 			if (!url1)
 				break;
 			browser_window_go(bw, url1);
-                	break;
+			break;
 
-                case method_POST_URLENC:
+		case method_POST_URLENC:
 			data = form_url_encode(success);
 			url = url_join(form->action, base);
 			if (!url)
 				break;
 			browser_window_go_post(bw, url, data, 0, true);
-                	break;
+			break;
 
-                case method_POST_MULTIPART:
+		case method_POST_MULTIPART:
 			url = url_join(form->action, base);
 			if (!url)
 				break;
 			browser_window_go_post(bw, url, 0, success, true);
-                	break;
+			break;
 
-                default:
-                	assert(0);
-        }
+		default:
+			assert(0);
+	}
 
 	form_free_successful(success);
 	free(data);
