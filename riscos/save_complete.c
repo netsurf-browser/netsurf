@@ -38,16 +38,19 @@ struct save_complete_entry {
         struct save_complete_entry *next; /**< Next entry in list */
 };
 
+/** List of urls seen and saved so far. */
+static struct save_complete_entry *save_complete_list;
+
 static void save_complete_internal(struct content *c, const char *path,
                 bool index);
-static void save_imported_sheets(struct save_complete_entry **save_complete_list, struct content *c, const char *path);
-static char * rewrite_stylesheet_urls(struct save_complete_entry *save_complete_list, const char *source, unsigned int size,
+static void save_imported_sheets(struct content *c, const char *path);
+static char * rewrite_stylesheet_urls(const char *source, unsigned int size,
 		int *osize, const char *base);
-static int rewrite_document_urls(struct save_complete_entry *save_complete_list, xmlDoc *doc, const char *base);
-static int rewrite_urls(struct save_complete_entry *save_complete_list, xmlNode *n, const char *base);
-static void rewrite_url(struct save_complete_entry *save_complete_list, xmlNode *n, const char *attr, const char *base);
-static void save_complete_add_url(struct save_complete_entry **save_complete_list, const char *url, int id);
-static int save_complete_find_url(struct save_complete_entry *save_complete_list, const char *url);
+static int rewrite_document_urls(xmlDoc *doc, const char *base);
+static int rewrite_urls(xmlNode *n, const char *base);
+static void rewrite_url(xmlNode *n, const char *attr, const char *base);
+static void save_complete_add_url(const char *url, int id);
+static int save_complete_find_url(const char *url);
 
 
 /**
@@ -60,12 +63,19 @@ static int save_complete_find_url(struct save_complete_entry *save_complete_list
 void save_complete(struct content *c, const char *path)
 {
         save_complete_internal(c, path, true);
+
+       	/* free save_complete_list */
+	while (save_complete_list) {
+		struct save_complete_entry *next = save_complete_list->next;
+		free(save_complete_list->url);
+		free(save_complete_list);
+		save_complete_list = next;
+	}
 }
 
 /**
  * Save an HTML page with all dependencies, recursing through imported pages.
  *
- * \param  save_complete_list head of list of URLs
  * \param  c     CONTENT_HTML to save
  * \param  path  directory to save to (must exist)
  */
@@ -75,9 +85,6 @@ void save_complete_internal(struct content *c, const char *path, bool index)
 	char spath[256];
 	unsigned int i;
 	htmlParserCtxtPtr toSave;
-	/** List of urls seen and saved so far. One per HTML document */
-        struct save_complete_entry *save_complete_list;
-
 
 	if (c->type != CONTENT_HTML)
 		return;
@@ -93,16 +100,15 @@ void save_complete_internal(struct content *c, const char *path, bool index)
                 if (!css)
                         continue;
 
-		save_complete_add_url(&save_complete_list, css->url, (int) css);
+		save_complete_add_url(css->url, (int) css);
 
-                save_imported_sheets(&save_complete_list, css, path);
+                save_imported_sheets(css, path);
 
                 if (i == 1) continue; /* don't save <style> elements */
 
 		snprintf(spath, sizeof spath, "%s.%x", path,
 				(unsigned int) css);
-		source = rewrite_stylesheet_urls(save_complete_list,
-		                css->source_data,
+		source = rewrite_stylesheet_urls(css->source_data,
 				css->source_size, &source_len, css->url);
 		if (source) {
 			xosfile_save_stamped(spath, 0xf79, source,
@@ -119,7 +125,7 @@ void save_complete_internal(struct content *c, const char *path, bool index)
 		if (!obj || obj->type >= CONTENT_OTHER || !obj->source_data)
 			continue;
 
-		save_complete_add_url(&save_complete_list, obj->url, (int) obj);
+		save_complete_add_url(obj->url, (int) obj);
 
                 if (obj->type == CONTENT_HTML) {
                         save_complete_internal(obj, path, false);
@@ -139,7 +145,7 @@ void save_complete_internal(struct content *c, const char *path, bool index)
 	htmlParseDocument(toSave);
 
 	/* rewrite all urls we know about */
-       	if (rewrite_document_urls(save_complete_list, toSave->myDoc, c->data.html.base_url) == 0) {
+       	if (rewrite_document_urls(toSave->myDoc, c->data.html.base_url) == 0) {
        	        xfree(spath);
        	        xmlFreeDoc(toSave->myDoc);
        	        htmlFreeParserCtxt(toSave);
@@ -156,25 +162,15 @@ void save_complete_internal(struct content *c, const char *path, bool index)
 
         xmlFreeDoc(toSave->myDoc);
         htmlFreeParserCtxt(toSave);
-
-	/* free save_complete_list */
-	while (save_complete_list) {
-		struct save_complete_entry *next = save_complete_list->next;
-		free(save_complete_list->url);
-		free(save_complete_list);
-		save_complete_list = next;
-	}
 }
 
 /**
  * Save all imported stylesheets
  *
- * \param  save_complete_list head of list of URLs
  * \param  c The content containing the stylesheet
  * \param path Path to save to
  */
-void save_imported_sheets(struct save_complete_entry **save_complete_list,
-                          struct content *c, const char *path)
+void save_imported_sheets(struct content *c, const char *path)
 {
 	char spath[256];
         unsigned int j;
@@ -187,14 +183,13 @@ void save_imported_sheets(struct save_complete_entry **save_complete_list,
                 if (!css)
                         continue;
 
-		save_complete_add_url(save_complete_list, css->url, (int) css);
+		save_complete_add_url(css->url, (int) css);
 
-                save_imported_sheets(save_complete_list, css, path);
+                save_imported_sheets(css, path);
 
 		snprintf(spath, sizeof spath, "%s.%x", path,
 				(unsigned int) css);
-		source = rewrite_stylesheet_urls(*save_complete_list,
-		                css->source_data,
+		source = rewrite_stylesheet_urls(css->source_data,
 				css->source_size, &source_len, css->url);
 		if (source) {
 			xosfile_save_stamped(spath, 0xf79, source,
@@ -245,7 +240,6 @@ void save_complete_init(void)
 /**
  * Rewrite stylesheet @import rules for save complete.
  *
- * \param  save_complete_list head of list of URLs
  * @param  source  stylesheet source
  * @param  size    size of source
  * @param  osize   updated with the size of the result
@@ -253,7 +247,7 @@ void save_complete_init(void)
  * @return  converted source, or 0 on error
  */
 
-char * rewrite_stylesheet_urls(struct save_complete_entry *save_complete_list, const char *source, unsigned int size,
+char * rewrite_stylesheet_urls(const char *source, unsigned int size,
 		int *osize, const char *base)
 {
 	char *res;
@@ -339,7 +333,7 @@ char * rewrite_stylesheet_urls(struct save_complete_entry *save_complete_list, c
 		memcpy(res + *osize, source + offset, match[0].rm_so);
 		*osize += match[0].rm_so;
 
-		id = save_complete_find_url(save_complete_list, url);
+		id = save_complete_find_url(url);
 		if (id) {
 			/* replace import */
 			sprintf(buf, "@import '%x'", id);
@@ -369,14 +363,12 @@ char * rewrite_stylesheet_urls(struct save_complete_entry *save_complete_list, c
 /**
  * Rewrite URLs in a HTML document to be relative
  *
- * \param  save_complete_list head of list of URLs
  * @param doc The root of the document tree
  * @return 0 on error. >0 otherwise
  * \param  base  base url of document
  */
 
-int rewrite_document_urls(struct save_complete_entry *save_complete_list,
-                          xmlDoc *doc, const char *base)
+int rewrite_document_urls(xmlDoc *doc, const char *base)
 {
         xmlNode *html;
 
@@ -389,7 +381,7 @@ int rewrite_document_urls(struct save_complete_entry *save_complete_list,
                 return 0;
         }
 
-	rewrite_urls(save_complete_list, html, base);
+	rewrite_urls(html, base);
 
         return 1;
 }
@@ -398,14 +390,12 @@ int rewrite_document_urls(struct save_complete_entry *save_complete_list,
 /**
  * Traverse tree, rewriting URLs as we go.
  *
- * \param  save_complete_list head of list of URLs
  * \param  base  base url of document
  * @param n The root of the tree
  * @return 0 on error. >0 otherwise
  */
 
-int rewrite_urls(struct save_complete_entry *save_complete_list, xmlNode *n,
-                 const char *base)
+int rewrite_urls(xmlNode *n, const char *base)
 {
         xmlNode *this;
 
@@ -422,14 +412,14 @@ int rewrite_urls(struct save_complete_entry *save_complete_list, xmlNode *n,
         if (n->type == XML_ELEMENT_NODE) {
                 /* 1 */
                 if (strcmp(n->name, "object") == 0) {
-                      rewrite_url(save_complete_list, n, "data", base);
+                      rewrite_url(n, "data", base);
                 }
                 /* 2 */
                 else if (strcmp(n->name, "a") == 0 ||
                          strcmp(n->name, "area") == 0 ||
                          strcmp(n->name, "link") == 0 ||
                          strcmp(n->name, "base") == 0) {
-                      rewrite_url(save_complete_list, n, "href", base);
+                      rewrite_url(n, "href", base);
                 }
                 /* 3 */
                 else if (strcmp(n->name, "frame") == 0 ||
@@ -437,28 +427,37 @@ int rewrite_urls(struct save_complete_entry *save_complete_list, xmlNode *n,
                          strcmp(n->name, "input") == 0 ||
                          strcmp(n->name, "img") == 0 ||
                          strcmp(n->name, "script") == 0) {
-                      rewrite_url(save_complete_list, n, "src", base);
+                      rewrite_url(n, "src", base);
                 }
                 /* 4 */
                 else if (strcmp(n->name, "style") == 0) {
                         unsigned int len;
-                        /* Get current content */
-                        xmlChar *content = xmlNodeGetContent(n);
-                        if (!content) return 0;
+                        xmlChar *content;
 
-                        /* Rewrite @import rules */
-                        char *rewritten = rewrite_stylesheet_urls(
-                                                  save_complete_list,
-		                                  content,
+                        for (this = n->children; this != 0; this = this->next) {
+                                /* Get current content */
+                                content = xmlNodeGetContent(n);
+                                if (!content) continue;
+
+                                /* Rewrite @import rules */
+                                char *rewritten = rewrite_stylesheet_urls(
+                                                  content,
 		                                  strlen((char*)content),
 		                                  &len, base);
-                        if (!rewritten) return 0;
+                                if (!rewritten) {
+                                        xmlFree(content);
+                                        continue;
+                                }
 
-                        /* set new content */
-                        xmlNodeSetContentLen(n, (const xmlChar*)rewritten,
+                                /* set new content */
+                                xmlNodeSetContentLen(n,
+                                             (const xmlChar*)rewritten,
                                              len);
-                        /* free old content */
-                        xmlFree(content);
+
+                                /* free old content */
+                                xmlFree(content);
+                        }
+
                         return 1;
                 }
         }
@@ -468,7 +467,7 @@ int rewrite_urls(struct save_complete_entry *save_complete_list, xmlNode *n,
 
         /* now recurse */
 	for (this = n->children; this != 0; this = this->next) {
-                rewrite_urls(save_complete_list, this, base);
+                rewrite_urls(this, base);
 	}
 
         return 1;
@@ -478,14 +477,12 @@ int rewrite_urls(struct save_complete_entry *save_complete_list, xmlNode *n,
 /**
  * Rewrite an URL in a HTML document.
  *
- * \param  save_complete_list head of list of URLs
  * \param  n     The node to modify
  * \param  attr  The html attribute to modify
  * \param  base  base url of document
  */
 
-void rewrite_url(struct save_complete_entry *save_complete_list, xmlNode *n,
-                 const char *attr, const char *base)
+void rewrite_url(xmlNode *n,const char *attr, const char *base)
 {
         char *url, *data;
         char rel[256];
@@ -501,7 +498,7 @@ void rewrite_url(struct save_complete_entry *save_complete_list, xmlNode *n,
                 return;
         }
 
-	id = save_complete_find_url(save_complete_list, url);
+	id = save_complete_find_url(url);
 	if (id) {
 		/* found a match */
 		snprintf(rel, sizeof rel, "%x", id);
@@ -519,13 +516,11 @@ void rewrite_url(struct save_complete_entry *save_complete_list, xmlNode *n,
 /**
  * Add a url to the save_complete_list.
  *
- * \param  save_complete_list head of list of URLs
  * \param  url  url to add (copied)
  * \param  id   id to use for url
  */
 
-void save_complete_add_url(struct save_complete_entry **save_complete_list,
-                           const char *url, int id)
+void save_complete_add_url(const char *url, int id)
 {
 	struct save_complete_entry *entry;
 	entry = malloc(sizeof (*entry));
@@ -537,22 +532,20 @@ void save_complete_add_url(struct save_complete_entry **save_complete_list,
 		return;
 	}
 	entry->ptr = id;
-	entry->next = *save_complete_list;
-	*save_complete_list = entry;
+	entry->next = save_complete_list;
+	save_complete_list = entry;
 }
 
 
 /**
  * Look up a url in the save_complete_list.
  *
- * \param  save_complete_list head of list of URLs
  * \param  url   url to find
  * \param  len   length of url
  * \return  id to use for url, or 0 if not present
  */
 
-int save_complete_find_url(struct save_complete_entry *save_complete_list,
-                           const char *url)
+int save_complete_find_url(const char *url)
 {
 	struct save_complete_entry *entry;
 	for (entry = save_complete_list; entry; entry = entry->next)
