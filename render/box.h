@@ -151,7 +151,8 @@ struct box {
 	int padding[4];  /**< Padding: TOP, RIGHT, BOTTOM, LEFT. */
 	int border[4];   /**< Border width: TOP, RIGHT, BOTTOM, LEFT. */
 
-	int min_width;  /**< Width for content taking all line breaks. */
+	/**< Width of box taking all line breaks (including margins etc.). */
+	int min_width;
 	int max_width;  /**< Width that would be taken with no line breaks. */
 
 	char *text;           /**< Text, or 0 if none. Unterminated. */

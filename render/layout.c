@@ -840,7 +840,6 @@ void place_float_below(struct box *c, int width, int y,
 }
 
 
-
 /**
  * layout a table
  */
@@ -1049,17 +1048,25 @@ void layout_table(struct box *table)
 
 
 /**
- * find min, max widths required by boxes
+ * Find min, max widths required by boxes.
+ *
+ * \param  box  top of tree of boxes
+ *
+ * The min_width and max_width fields of each box in the tree are computed.
  */
 
 void calculate_widths(struct box *box)
 {
 	struct box *child;
-	int min = 0, max = 0, width;
+	int min = 0, max = 0, width, extra_fixed = 0;
+	float extra_frac = 0;
+	unsigned int side;
+	struct css_style *style = box->style;
 
 	assert(box->type == BOX_TABLE_CELL ||
 	       box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 	       box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT);
+	assert(style);
 
 	/* check if the widths have already been calculated */
 	if (box->max_width != UNKNOWN_MAX_WIDTH)
@@ -1095,8 +1102,30 @@ void calculate_widths(struct box *box)
 		}
 	}
 
-	box->min_width = min;
-	box->max_width = max;
+	/* add margins, border, padding to min, max widths */
+	for (side = 1; side != 5; side += 2) {  /* RIGHT, LEFT */
+		if (style->padding[side].padding == CSS_PADDING_LENGTH)
+			extra_fixed += len(&style->padding[side].value.length,
+					style);
+		else if (style->padding[side].padding == CSS_PADDING_PERCENT)
+			extra_frac += style->padding[side].value.percent * 0.01;
+
+		if (style->border[side].style != CSS_BORDER_STYLE_NONE)
+			extra_fixed += len(&style->border[side].width.value,
+					style);
+
+		if (style->margin[side].margin == CSS_MARGIN_LENGTH)
+			extra_fixed += len(&style->margin[side].value.length,
+					style);
+		else if (style->margin[side].margin == CSS_MARGIN_PERCENT)
+			extra_frac += style->margin[side].value.percent * 0.01;
+	}
+
+	if (1.0 <= extra_frac)
+		extra_frac = 0.9;
+
+	box->min_width = (min + extra_fixed) / (1.0 - extra_frac);
+	box->max_width = (max + extra_fixed) / (1.0 - extra_frac);
 }
 
 
