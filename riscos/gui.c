@@ -934,9 +934,12 @@ void ro_msg_datasave(wimp_message* block)
 void ro_msg_dataload(wimp_message *message)
 {
 	char *url = 0;
+	gui_window *gui = 0;
 
-	if (message->data.data_xfer.w != wimp_ICON_BAR)
-		return;
+	if (message->data.data_xfer.w != wimp_ICON_BAR &&
+	   (gui = ro_lookup_gui_from_w(message->data.data_xfer.w)) == NULL) {
+	        return;
+	}
 
 	if (message->data.data_xfer.file_type != 0xfaf &&
 			message->data.data_xfer.file_type != 0x695 &&
@@ -1024,10 +1027,18 @@ void ro_msg_dataload(wimp_message *message)
 	    message->data.data_xfer.file_type != 0xf91) {
 	        url = ro_path_to_url(message->data.data_xfer.file_name);
 	}
-	if (url) {
-		browser_window_create(url);
-		free(url);
+	if (!url)
+	        return;
+
+	if (gui) {
+	        gui_window_set_url(gui, url);
+	        browser_window_go(gui->data.browser.bw, url);
 	}
+	else {
+		browser_window_create(url);
+	}
+
+	free(url);
 
 
 #if 0
