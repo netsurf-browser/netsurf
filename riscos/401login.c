@@ -17,6 +17,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 #ifdef WITH_AUTH
@@ -65,7 +66,7 @@ void gui_401login_open(struct browser_window *bw, struct content *c, char *realm
   char *murl, *host;
 
   murl = c->url;
-  host = get_host_from_url(murl);
+  host = url_host(murl);
   assert(host);
   bwin = bw;
 

@@ -32,6 +32,7 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/pool.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 

@@ -17,6 +17,7 @@
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 bool netsurf_quit = false;
@@ -63,6 +64,7 @@ void netsurf_init(int argc, char** argv)
 #ifdef WITH_GIF
   nsgif_init();
 #endif
+  url_init();
 }
 
 

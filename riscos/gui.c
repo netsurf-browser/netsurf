@@ -29,9 +29,6 @@
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
-#ifdef WITH_ABOUT
-#include "netsurf/riscos/about.h"
-#endif
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
@@ -43,7 +40,7 @@
 #include "netsurf/riscos/uri.h"
 #endif
 #ifdef WITH_URL
-#include "netsurf/riscos/url.h"
+#include "netsurf/riscos/url_protocol.h"
 #endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -257,9 +254,6 @@ void ro_gui_icon_bar_create(void)
 
 void gui_quit(void)
 {
-#ifdef WITH_ABOUT
-        about_quit();
-#endif
 	ro_gui_history_quit();
 	wimp_close_down(task_handle);
 	xhourglass_off();

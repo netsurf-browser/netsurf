@@ -6,13 +6,8 @@
  */
 
 #include <string.h>
-
 #include <unixlib/local.h> /* for __riscosify */
-
-#include <uri.h> /* possibly just have accessor methods in utils.c */
-
 #include "oslib/osfile.h"
-
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
@@ -30,7 +25,6 @@
  */
 
 void save_imported_sheets(struct content *c, int parent, int level, char *p, char* fn);
-char* get_filename(char * url);
 
 /* this is temporary. */
 const char * const SAVE_PATH = "<NetSurf$Dir>.savetest.";
@@ -46,7 +40,7 @@ void save_complete(struct content *c) {
 		return;
 	}
 
-	fname = get_filename(c->data.html.base_url);
+	fname = "test";  /*get_filename(c->data.html.base_url);*/
 
 	if (!fname) { /* no path -> exit */
 		return;
@@ -135,46 +129,4 @@ void save_imported_sheets(struct content *c, int parent, int level, char *p, cha
         }
 }
 
-char* get_filename(char * url) {
-
-	char *ret = 0, *offs;
-	uri_t *uri;
-
-	uri = uri_alloc(url, (int)strlen(url));
-
-	if (!uri) {
-		return 0;
-	}
-
-	if (uri->path) {
-	/* Two possible cases here:
-	 * a) no page name given (eg http://www.blah.com/) -> index.html
-	 * b) page name given
-	 */
-	 	/* case a */
-	 	if (strlen(uri->path) == 0) {
-	 		ret = xstrdup("index.html");
-	 	}
-	 	/* case b */
-	 	else {
-	 		offs = strrchr(uri->path, '/');
-	 		if (!offs) {
-	 			ret = xstrdup(uri->path);
-	 		}
-	 		else {
-	 			ret = xstrdup(offs+1);
-	 		}
-	 	}
-	}
-
-	uri_free(uri);
-
-	offs = xcalloc(strlen(ret)+1, sizeof(char));
-
-	__riscosify(ret, 0, 0, offs, strlen(ret)+1, 0);
-
-	xfree(ret);
-
-	return offs;
-}
 #endif

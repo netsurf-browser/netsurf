@@ -30,6 +30,7 @@
 #include "netsurf/render/layout.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -152,12 +153,16 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
 	bw->time0 = clock();
-	c = fetchcache(url, 0,
-			browser_window_callback, bw, 0,
-			gui_window_get_width(bw->window), 0,
-			false,
-			post_urlenc, post_multipart,
-			true);
+	if (strncmp(url, "about:", 6) == 0)
+		c = about_create(url, browser_window_callback, bw, 0,
+				gui_window_get_width(bw->window), 0);
+	else
+		c = fetchcache(url, 0,
+				browser_window_callback, bw, 0,
+				gui_window_get_width(bw->window), 0,
+				false,
+				post_urlenc, post_multipart,
+				true);
 	if (!c) {
 		browser_window_set_status(bw, messages_get("FetchFailed"));
 		return;
@@ -1743,6 +1748,8 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 
                 case method_POST_MULTIPART:
 			url = url_join(form->action, base);
+			if (!url)
+				break;
 			browser_window_go_post(bw, url, 0, success, true);
                 	break;
 

@@ -22,9 +22,10 @@
 #endif
 #include "netsurf/render/html.h"
 #include "netsurf/render/layout.h"
-#include "netsurf/utils/utils.h"
-#include "netsurf/utils/messages.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
+#include "netsurf/utils/utils.h"
 
 #define CHUNK 4096
 
@@ -220,7 +221,7 @@ void html_head(struct content *c, xmlNode *head)
 		} else if (strcmp(node->name, "base") == 0) {
 			char *href = (char *) xmlGetProp(node, (const xmlChar *) "href");
 			if (href) {
-				char *url = url_join(href, 0);
+				char *url = url_normalize(href);
 				if (url) {
 					free(c->data.html.base_url);
 					c->data.html.base_url = url;

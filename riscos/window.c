@@ -27,6 +27,7 @@
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/thumbnail.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 gui_window *window_list = 0;
@@ -676,6 +677,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 	struct content *content = g->data.browser.bw->current_content;
 	wimp_window_state state;
 	int y;
+	char *url;
 
 	assert(g->type == GUI_BROWSER_WINDOW);
 
@@ -744,22 +746,11 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 		case wimp_KEY_RETURN:
 			if (!toolbar)
 				break;
-			else {
-			  char *url = xcalloc(1, 10 + strlen(g->url));
-			  char *url2;
-			  if (g->url[strspn(g->url, "abcdefghijklmnopqrstuvwxyz")] != ':') {
-			    	  strcpy(url, "http://");
-				  strcpy(url + 7, g->url);
-			  } else {
-				  strcpy(url, g->url);
-			  }
-			  url2 = url_join(url, 0);
-			  free(url);
-			  if (url2) {
-				  gui_window_set_url(g, url2);
-				  browser_window_go(g->data.browser.bw, url2);
-				  free(url2);
-			  }
+			url = url_normalize(g->url);
+			if (url) {
+				gui_window_set_url(g, url);
+				browser_window_go(g->data.browser.bw, url);
+				free(url);
 			}
 			return true;
 

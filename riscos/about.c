@@ -16,20 +16,18 @@
 #include <stdio.h>
 #include <time.h>
 #include <unixlib/local.h> /* for __unixify */
-
-#include "netsurf/utils/config.h"
-#include "netsurf/desktop/netsurf.h"
-#include "netsurf/riscos/about.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/utils/messages.h"
-#include "netsurf/utils/utils.h"
-
 #include "oslib/fileswitch.h"
 #include "oslib/osargs.h"
 #include "oslib/osfile.h"
 #include "oslib/osfind.h"
 #include "oslib/osfscontrol.h"
 #include "oslib/osgbpb.h"
+#include "netsurf/utils/config.h"
+#include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/netsurf.h"
+#include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
+#include "netsurf/utils/utils.h"
 
 #ifdef WITH_ABOUT
 
@@ -41,81 +39,53 @@ static const char *paboutpl3 = "<tr valign=\"top\"><td width=\"30%%\"><font size
 static const char *pabtplgft = "</table>"; /**< Plugin table footer */
 static const char *paboutftr = "</div></body></html>"; /**< Page footer */
 
-/** The about page */
-struct about_page {
 
-  char *header;           /**< page header */
-  char *browser;          /**< browser details */
-  char *plghead;          /**< plugin header */
-  struct plugd *plugd;    /**< plugin details list */
-  char *plgfoot;          /**< plugin footer */
-  char *footer;           /**< page footer */
-};
-
-/** A set of plugin details */
-struct plugd {
-
-  char *details;          /**< plugin details */
-  struct plugd *next;     /**< next plugin details */
-};
-
-struct plugd *new_plugin(struct plugd *pd, char* details);
 
 /**
- * Adds a plugin's details to the head of the linked list of plugin details
- * Returns the new head of the list
+ * Create the browser about page.
+ *
+ * \param  url       requested url (about:...)
+ * \param  callback  content callback function, for content_add_user()
+ * \param  p1        user parameter for callback
+ * \param  p2        user parameter for callback
+ * \param  width     available width
+ * \param  height    available height
+ * \return  a new content containing the about page
  */
-struct plugd *new_plugin(struct plugd *pd, char* details) {
 
-  struct plugd *np = xcalloc(1, sizeof(*np));
-
-  np->details = 0;
-  np->details = details;
-
-  np->next = pd;
-  return np;
-}
-
-/**
- * Creates the about page and stores it in <Wimp$ScrapDir>.WWW.Netsurf
- */
-void about_create(void) {
-
-  struct about_page *abt;
-  struct plugd *temp;
+struct content *about_create(const char *url,
+		void (*callback)(content_msg msg, struct content *c, void *p1,
+			void *p2, const char *error),
+		void *p1, void *p2, unsigned long width, unsigned long height)
+{
+  struct content *c = 0;
   FILE *fp;
   char *buf, *val, var[20], *ptype, *pdetails, *fname, *furl;
   int i, nofiles, j, w, h, size;
   fileswitch_object_type fot;
   os_error *e;
+  const char *params[] = { 0 };
 
-  abt = (struct about_page*)xcalloc(1, sizeof(*abt));
-  abt->plugd = 0;
+  c = content_create(url);
+  c->width = width;
+  c->height = height;
+  content_add_user(c, callback, p1, p2);
+  content_set_type(c, CONTENT_HTML, "text/html", params);
 
   /* Page header */
   buf = xcalloc(strlen(pabouthdr) + 50, sizeof(char));
   snprintf(buf, strlen(pabouthdr) + 50, pabouthdr, "About NetSurf",
            netsurf_version);
-  abt->header = xstrdup(buf);
-  xfree(buf);
+  content_process_data(c, buf, strlen(buf));
+  free(buf);
 
   /* browser details */
-  xosfile_read_stamped_no_path("<NetSurf$Dir>.About.About",0,0,0,&i,0,0);
-  fp = fopen("<NetSurf$Dir>.About.About", "r");
-  buf = xcalloc((unsigned int)i + 10, sizeof(char));
-  fread(buf, sizeof(char), (unsigned int)i, fp);
-  fclose(fp);
-  abt->browser = xstrdup(buf);
-  xfree(buf);
+  buf = load("<NetSurf$Dir>.About.About");
+  content_process_data(c, buf, strlen(buf));
+  free(buf);
 
   /* plugin header */
-  abt->plghead = xstrdup(pabtplghd);
-
-  /* plugin footer */
-  abt->plgfoot = xstrdup(pabtplgft);
-
-  /* Page footer */
-  abt->footer = xstrdup(paboutftr);
+  content_process_data(c, pabtplghd, strlen(pabtplghd));
 
   /* plugins registered */
   for (i=0; i!=4096; i++) {
@@ -172,7 +142,7 @@ void about_create(void) {
             furl = xcalloc(strlen(paboutpl1) + strlen(ptype) + strlen(pdetails) + 10, sizeof(char));
             sprintf(furl, paboutpl1, ptype, pdetails);
             LOG(("furl: %s", furl));
-            abt->plugd = new_plugin(abt->plugd, furl);
+            content_process_data(c, furl, strlen(furl));
             xfree(pdetails);
             continue;
           }
@@ -214,7 +184,7 @@ void about_create(void) {
             furl = xcalloc(strlen(paboutpl3) + strlen(ptype) + strlen(buf) +
                            strlen(pdetails) + 10, sizeof(char));
             sprintf(furl, paboutpl3, ptype, buf, ptype, w, h, pdetails);
-            abt->plugd = new_plugin(abt->plugd, furl);
+            content_process_data(c, furl, strlen(furl));
             xfree(pdetails);
             continue;
           }
@@ -230,7 +200,7 @@ void about_create(void) {
 
           furl = xcalloc(strlen(paboutpl2) + strlen(ptype) + strlen(fname) + strlen(pdetails) + 10, sizeof(char));
           sprintf(furl, paboutpl2, ptype, fname, ptype, pdetails);
-          abt->plugd = new_plugin(abt->plugd, furl);
+          content_process_data(c, furl, strlen(furl));
           xfree(fname);
           xfree(pdetails);
         }
@@ -241,29 +211,15 @@ void about_create(void) {
     }
   }
 
-  /* write file */
-  xosfile_create_dir("<Wimp$ScrapDir>.WWW", 77);
-  xosfile_create_dir("<Wimp$ScrapDir>.WWW.NetSurf", 77);
+  /* plugin footer */
+  content_process_data(c, pabtplgft, strlen(pabtplgft));
 
-  fp = fopen("<Wimp$ScrapDir>.WWW.Netsurf.About", "w+");
-  fprintf(fp, "%s", abt->header);
-  fprintf(fp, "%s", abt->browser);
-  fprintf(fp, "%s", abt->plghead);
-  while (abt->plugd != 0) {
-    fprintf(fp, "%s", abt->plugd->details);
-    temp = abt->plugd;
-    abt->plugd = abt->plugd->next;
-    xfree(temp);
-  }
-  fprintf(fp, "%s", abt->plgfoot);
-  fprintf(fp, "%s", abt->footer);
-  fclose(fp);
+  /* Page footer */
+  content_process_data(c, paboutftr, strlen(paboutftr));
 
-  xosfile_set_type("<Wimp$ScrapDir>.WWW.NetSurf.About", 0xfaf);
+  content_convert(c, c->width, c->height);
 
-  xfree(abt);
-
-  return;
+  return c;
 }
 
 #ifdef WITH_COOKIES

@@ -15,7 +15,7 @@
 #include "netsurf/riscos/theme.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/url.h"
+#include "netsurf/riscos/url_protocol.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 

@@ -26,7 +26,6 @@
 #include <strings.h>
 #include <time.h>
 #include "curl/curl.h"
-#include "libxml/uri.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
 #ifdef riscos
@@ -41,6 +40,7 @@
 #endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -174,18 +174,11 @@ struct fetch * fetch_start(char *url, char *referer,
 	struct fetch *fetch = xcalloc(1, sizeof(*fetch)), *host_fetch;
 	CURLcode code;
 	CURLMcode codem;
-	xmlURI *uri;
 #ifdef WITH_AUTH
 	struct login *li;
 #endif
 
 	LOG(("fetch %p, url '%s'", fetch, url));
-
-	uri = xmlParseURI(url);
-	if (uri == 0) {
-		LOG(("warning: failed to parse url"));
-		return 0;
-	}
 
 	/* construct a new fetch structure */
 	fetch->callback = callback;
@@ -199,9 +192,7 @@ struct fetch * fetch_start(char *url, char *referer,
 		fetch->referer = xstrdup(referer);
 	fetch->p = p;
 	fetch->headers = 0;
-	fetch->host = 0;
-	if (uri->server != 0)
-		fetch->host = xstrdup(uri->server);
+	fetch->host = url_host(url);
 	fetch->content_length = 0;
 #ifdef WITH_POST
 	fetch->post_urlenc = 0;
@@ -215,8 +206,6 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->queue_next = 0;
 	fetch->prev = 0;
 	fetch->next = 0;
-
-	xmlFreeURI(uri);
 
 	/* look for a fetch from the same host */
 	if (fetch->host != 0) {

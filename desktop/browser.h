@@ -119,4 +119,10 @@ void history_destroy(struct history *history);
 void history_back(struct browser_window *bw, struct history *history);
 void history_forward(struct browser_window *bw, struct history *history);
 
+/* In platform specific about.c. */
+struct content *about_create(const char *url,
+		void (*callback)(content_msg msg, struct content *c, void *p1,
+			void *p2, const char *error),
+		void *p1, void *p2, unsigned long width, unsigned long height);
+
 #endif

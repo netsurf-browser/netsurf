@@ -9,7 +9,7 @@ CC_DEBUG = gcc
 OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o other.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
 	box.o form.o html.o layout.o textplain.o \
-	messages.o utils.o translit.o pool.o
+	messages.o utils.o translit.o pool.o url.o
 OBJECTS = $(OBJECTS_COMMON) \
 	browser.o loginlist.o netsurf.o options.o \
 	htmlinstance.o htmlredraw.o \
@@ -17,7 +17,7 @@ OBJECTS = $(OBJECTS_COMMON) \
 	menus.o mouseactions.o \
 	textselection.o theme.o window.o \
 	draw.o gif.o jpeg.o plugin.o png.o sprite.o \
-	about.o filetype.o font.o uri.o url.o history.o \
+	about.o filetype.o font.o uri.o url_protocol.o history.o \
 	version.o save_draw.o save_complete.o thumbnail.o save.o
 OBJECTS_DEBUG = $(OBJECTS_COMMON) \
 	netsurfd.o \
@@ -39,8 +39,8 @@ CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. \
 	-mpoke-function-name
 CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE $(WARNFLAGS) -I.. -I/usr/include/libxml2 -g
 LDFLAGS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lares -lanim -lpng \
-	-lifc -loslib -luri -ljpeg
-LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -luri
+	-lifc -loslib -ljpeg
+LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl
 
 OBJDIR = $(shell $(CC) -dumpmachine)
 SOURCES=$(OBJECTS:.o=.c)

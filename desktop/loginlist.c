@@ -12,6 +12,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/401login.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 #ifdef WITH_AUTH
@@ -30,7 +31,7 @@ static struct login *loginlist = &login;
 void login_list_add(char *host, char* logindets) {
 
   struct login *nli = xcalloc(1, sizeof(*nli));
-  char *temp = get_host_from_url(host);
+  char *temp = url_host(host);
   char *i;
 
   assert(temp);
@@ -81,7 +82,7 @@ struct login *login_list_get(char *host) {
                         (strncasecmp(host, "https://", 8) != 0))
     return NULL;
 
-  temphost = get_host_from_url(host);
+  temphost = url_host(host);
   assert(temphost);
   temp = xstrdup(host);
 
@@ -89,7 +90,7 @@ struct login *login_list_get(char *host) {
    * So make sure we've got that at least
    */
   if (strlen(temphost) > strlen(temp)) {
-    temp = get_host_from_url(host);
+    temp = url_host(host);
     assert(temp);
   }
 

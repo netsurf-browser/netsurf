@@ -21,6 +21,7 @@
 #include "netsurf/desktop/gui.h"
 #endif
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 /**
