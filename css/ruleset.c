@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include <assert.h>
@@ -13,6 +13,7 @@
 #define NDEBUG
 #include "netsurf/css/css.h"
 #include "netsurf/content/content.h"
+#include "netsurf/desktop/options.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -552,7 +553,8 @@ void parse_font_size(struct css_style * const s, const struct css_node * const v
 			if (fs != 0) {
 				s->font_size.size = CSS_FONT_SIZE_LENGTH;
 				s->font_size.value.length.unit = CSS_UNIT_PT;
-				s->font_size.value.length.value = fs->size * 10;
+				s->font_size.value.length.value = fs->size *
+						option_font_size / 10;
 			} else if (strcasecmp(v->data, "larger") == 0) {
 				s->font_size.size = CSS_FONT_SIZE_PERCENT;
 				s->font_size.value.percent = SIZE_FACTOR * 100;
