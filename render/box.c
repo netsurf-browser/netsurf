@@ -44,7 +44,6 @@ struct result {
 	int convert_children;  /* children should be converted */
 };
 
-static void box_add_child(struct box * parent, struct box * child);
 static struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		struct css_style * parent_style,
 		struct css_selector ** selector, unsigned int depth,
@@ -119,7 +118,7 @@ static const struct element_entry element_table[] = {
 
 
 /**
- * add a child to a box tree node
+ * Add a child to a box tree node.
  */
 
 void box_add_child(struct box * parent, struct box * child)
@@ -136,8 +135,9 @@ void box_add_child(struct box * parent, struct box * child)
 	child->parent = parent;
 }
 
+
 /**
- * create a box tree node
+ * Create a box tree node.
  */
 
 struct box * box_create(struct css_style * style,
@@ -175,6 +175,23 @@ struct box * box_create(struct css_style * style,
 	box->object_state = 0;
 #endif
 	return box;
+}
+
+
+/**
+ * Insert a new box as a sibling to a box in a tree.
+ */
+
+void box_insert_sibling(struct box *box, struct box *new_box)
+{
+	new_box->parent = box->parent;
+	new_box->prev = box;
+	new_box->next = box->next;
+	box->next = new_box;
+	if (new_box->next)
+		new_box->next->prev = new_box;
+	else if (new_box->parent)
+		new_box->parent->last = new_box;
 }
 
 

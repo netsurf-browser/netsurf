@@ -177,6 +177,8 @@ void xml_to_box(xmlNode *n, struct content *c);
 void box_dump(struct box * box, unsigned int depth);
 struct box * box_create(struct css_style * style,
 		char *href, char *title);
+void box_add_child(struct box * parent, struct box * child);
+void box_insert_sibling(struct box *box, struct box *new_box);
 void box_free(struct box *box);
 void box_coords(struct box *box, unsigned long *x, unsigned long *y);
 
