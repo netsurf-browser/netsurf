@@ -773,8 +773,11 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 
 /**
  * Fill in the font_table, based on the user's options
+ *
+ * \param force_rescan Indicate whether to rescan font names
+ *		       and update options
  */
-void nsfont_fill_nametable(void)
+void nsfont_fill_nametable(bool force_rescan)
 {
 	int i;
 	char *name = NULL, *created = NULL;
@@ -862,7 +865,7 @@ void nsfont_fill_nametable(void)
 				break;
 		}
 
-		if (name && name[0] != '\0') {
+		if ((!force_rescan || (force_rescan && i == ((i / FONT_FACES) * FONT_FACES))) && name && name[0] != '\0') {
 			/* got a configured font name => use it */
 			strncpy(font_table[i], name, FONT_MAX_NAME);
 		}
@@ -899,6 +902,140 @@ void nsfont_fill_nametable(void)
 			}
 
 			free(name);
+
+			/* don't modify options if not rescanning */
+			if (!force_rescan)
+				continue;
+
+			/* write the relevant option string */
+			switch (i) {
+				/* default */
+				case FONT_DEFAULT:
+					if (option_font_default)
+						free(option_font_default);
+					option_font_default = strdup(font_table[i]);
+					break;
+				case FONT_DEFAULT + FONT_SLANTED:
+					if (option_font_default_italic)
+						free(option_font_default_italic);
+					option_font_default_italic = strdup(font_table[i]);
+					break;
+				case FONT_DEFAULT + FONT_BOLD:
+					if (option_font_default_bold)
+						free(option_font_default_bold);
+					option_font_default_bold = strdup(font_table[i]);
+					break;
+				case FONT_DEFAULT + FONT_BOLD + FONT_SLANTED:
+					if (option_font_default_bold_italic)
+						free(option_font_default_bold_italic);
+					option_font_default_bold_italic = strdup(font_table[i]);
+					break;
+				/* sans */
+				case FONT_SANS_SERIF:
+					if (option_font_sans)
+						free(option_font_sans);
+					option_font_sans = strdup(font_table[i]);
+					break;
+				case FONT_SANS_SERIF + FONT_SLANTED:
+					if (option_font_sans_italic)
+						free(option_font_sans_italic);
+					option_font_sans_italic = strdup(font_table[i]);
+					break;
+				case FONT_SANS_SERIF + FONT_BOLD:
+					if (option_font_sans_bold)
+						free(option_font_sans_bold);
+					option_font_sans_bold = strdup(font_table[i]);
+					break;
+				case FONT_SANS_SERIF + FONT_BOLD + FONT_SLANTED:
+					if (option_font_sans_bold_italic)
+						free(option_font_sans_bold_italic);
+					option_font_sans_bold_italic = strdup(font_table[i]);
+					break;
+				/* serif */
+				case FONT_SERIF:
+					if (option_font_serif)
+						free(option_font_serif);
+					option_font_serif = strdup(font_table[i]);
+					break;
+				case FONT_SERIF + FONT_SLANTED:
+					if (option_font_serif_italic)
+						free(option_font_serif_italic);
+					option_font_serif_italic = strdup(font_table[i]);
+					break;
+				case FONT_SERIF + FONT_BOLD:
+					if (option_font_serif_bold)
+						free(option_font_serif_bold);
+					option_font_serif_bold = strdup(font_table[i]);
+					break;
+				case FONT_SERIF + FONT_BOLD + FONT_SLANTED:
+					if (option_font_serif_bold_italic)
+						free(option_font_serif_bold_italic);
+					option_font_serif_bold_italic = strdup(font_table[i]);
+					break;
+				/* mono */
+				case FONT_MONOSPACE:
+					if (option_font_mono)
+						free(option_font_mono);
+					option_font_mono = strdup(font_table[i]);
+					break;
+				case FONT_MONOSPACE + FONT_SLANTED:
+					if (option_font_mono_italic)
+						free(option_font_mono_italic);
+					option_font_mono_italic = strdup(font_table[i]);
+					break;
+				case FONT_MONOSPACE + FONT_BOLD:
+					if (option_font_mono_bold)
+						free(option_font_mono_bold);
+					option_font_mono_bold = strdup(font_table[i]);
+					break;
+				case FONT_MONOSPACE + FONT_BOLD + FONT_SLANTED:
+					if (option_font_mono_bold_italic)
+						free(option_font_mono_bold_italic);
+					option_font_mono_bold_italic = strdup(font_table[i]);
+					break;
+				/* cursive */
+				case FONT_CURSIVE:
+					if (option_font_cursive)
+						free(option_font_cursive);
+					option_font_cursive = strdup(font_table[i]);;
+					break;
+				case FONT_CURSIVE + FONT_SLANTED:
+					if (option_font_cursive_italic)
+						free(option_font_cursive_italic);
+					option_font_cursive_italic = strdup(font_table[i]);
+					break;
+				case FONT_CURSIVE + FONT_BOLD:
+					if (option_font_cursive_bold)
+						free(option_font_cursive_bold);
+					option_font_cursive_bold = strdup(font_table[i]);
+					break;
+				case FONT_CURSIVE + FONT_BOLD + FONT_SLANTED:
+					if (option_font_cursive_bold_italic)
+						free(option_font_cursive_bold_italic);
+					option_font_cursive_bold_italic = strdup(font_table[i]);
+					break;
+				/* fantasy */
+				case FONT_FANTASY:
+					if (option_font_fantasy)
+						free(option_font_fantasy);
+					option_font_fantasy = strdup(font_table[i]);
+					break;
+				case FONT_FANTASY + FONT_SLANTED:
+					if (option_font_fantasy_italic)
+						free(option_font_fantasy_italic);
+					option_font_fantasy_italic = strdup(font_table[i]);
+					break;
+				case FONT_FANTASY + FONT_BOLD:
+					if (option_font_fantasy_bold)
+						free(option_font_fantasy_bold);
+					option_font_fantasy_bold = strdup(font_table[i]);
+					break;
+				case FONT_FANTASY + FONT_BOLD + FONT_SLANTED:
+					if (option_font_fantasy_bold_italic)
+						free(option_font_fantasy_bold_italic);
+					option_font_fantasy_bold_italic = strdup(font_table[i]);
+					break;
+			}
 		}
 	}
 }

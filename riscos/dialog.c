@@ -717,7 +717,7 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 
 void ro_gui_save_options(void)
 {
-	nsfont_fill_nametable();
+	nsfont_fill_nametable(true);
 	/* NCOS doesnt have the fancy Universal Boot vars; so select
 	 * the path to the choices file based on the build options */
 #ifndef NCOS

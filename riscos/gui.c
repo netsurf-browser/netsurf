@@ -217,7 +217,7 @@ void gui_init(int argc, char** argv)
 #ifndef ncos
 	ro_gui_check_fonts();
 #endif
-	nsfont_fill_nametable();
+	nsfont_fill_nametable(false);
 
 	/* Issue a *Desktop to poke AcornURI into life */
 	if (getenv("NetSurf$Start_URI_Handler"))
