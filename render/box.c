@@ -571,15 +571,17 @@ end:
 		xmlFree(status.href);
 
 	/* Now fetch any background image for this box */
-	if (box && box->style &&
-	    box->style->background_image.type == CSS_BACKGROUND_IMAGE_URI) {
-                /* start fetch */
-                html_fetch_object(content, box->style->background_image.uri,
-                                  box,
-                                  image_types,
-                                  content->available_width,
-                                  1000);
-        }
+	if (box && box->style && box->style->background_image.type ==
+			CSS_BACKGROUND_IMAGE_URI) {
+		char *url = strdup(box->style->background_image.uri);
+		if (!url) {
+			/** \todo  handle this */
+			return inline_container;
+		}
+		/* start fetch */
+		html_fetch_object(content, url, box, image_types,
+				content->available_width, 1000, true);
+	}
 
 	LOG(("node %p, node type %i END", n, n->type));
 	return inline_container;
@@ -871,7 +873,7 @@ struct box_result box_image(xmlNode *n, struct box_status *status,
 
 	/* start fetch */
 	html_fetch_object(status->content, url, box, image_types,
-			status->content->available_width, 1000);
+			status->content->available_width, 1000, false);
 
 	return (struct box_result) {box, false, false};
 }
@@ -1240,16 +1242,16 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 			return (struct box_result) {0, false, true};
 		}
 		gadget->box = box;
-	        gadget->type = GADGET_IMAGE;
-	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src"))) {
-	                url = url_join(s, status->content->data.html.base_url);
-	                if (url)
-		                html_fetch_object(status->content, url, box,
-		                		image_types,
-		                		status->content->available_width,
-		                		1000);
-	                xmlFree(s);
-	        }
+		gadget->type = GADGET_IMAGE;
+		if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src"))) {
+			url = url_join(s, status->content->data.html.base_url);
+			if (url)
+				html_fetch_object(status->content, url, box,
+						image_types,
+						status->content->available_width,
+						1000, false);
+			xmlFree(s);
+		}
 
 	} else {
 		/* the default type is "text" */
@@ -2370,7 +2372,7 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
    * when we fetch it (if the type was not specified or is different to that
    * given in the attributes).
    */
-   html_fetch_object(content, url, box, 0, 1000, 1000);
+   html_fetch_object(content, url, box, 0, 1000, 1000, false);
 
    return true;
 }
@@ -2566,7 +2568,7 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 			LOG(("frame, url '%s'", url));
 
 			html_fetch_object(status->content, url, object_box, 0,
-					object_width, object_height);
+					object_width, object_height, false);
 			xmlFree(s);
 
 			c = c->next;

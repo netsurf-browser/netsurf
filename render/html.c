@@ -83,6 +83,7 @@ void html_create(struct content *c, const char *params[])
 	html->fonts = 0;
 	html->object_count = 0;
 	html->object = 0;
+	html->imagemaps = 0;
 	html->string_pool = pool_create(8000);
 	assert(html->string_pool);
 	html->box_pool = pool_create(sizeof (struct box) * 100);
@@ -519,15 +520,19 @@ void html_convert_css_callback(content_msg msg, struct content *css,
  * Start a fetch for an object required by a page.
  *
  * \param  c    content structure
- * \param  url  URL of object to fetch
+ * \param  url  URL of object to fetch (not copied, must be on heap)
  * \param  box  box that will contain the object
- * \param  permitted_types  array of types, terminated by CONTENT_UNKNOWN,
+ * \param  permitted_types   array of types, terminated by CONTENT_UNKNOWN,
  *              or 0 if all types except OTHER and UNKNOWN acceptable
+ * \param  available_width   estimate of width of object
+ * \param  available_height  estimate of height of object
+ * \param  background        this is a background image
  */
 
 void html_fetch_object(struct content *c, char *url, struct box *box,
 		const content_type *permitted_types,
-		int available_width, int available_height)
+		int available_width, int available_height,
+		bool background)
 {
 	unsigned int i = c->data.html.object_count;
 	union content_msg_data data;
@@ -538,10 +543,7 @@ void html_fetch_object(struct content *c, char *url, struct box *box,
 	c->data.html.object[i].url = url;
 	c->data.html.object[i].box = box;
 	c->data.html.object[i].permitted_types = permitted_types;
-	if (box->style->background_image.type == CSS_BACKGROUND_IMAGE_URI)
-        	c->data.html.object[i].background = true;
-        else
-                c->data.html.object[i].background = false;
+       	c->data.html.object[i].background = background;
 
 	/* start fetch */
 	c->data.html.object[i].content = fetchcache(url, c->url,
