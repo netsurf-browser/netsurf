@@ -179,10 +179,18 @@ void about_create(void) {
             LOG(("var: %s", var));
             sprintf(buf, "%s.", val);
             LOG(("buf: %s", buf));
-            xosfscontrol_canonicalise_path(var, 0, 0, buf, 0, &pneeded);
+            e = xosfscontrol_canonicalise_path(var, 0, 0, buf, 0, &pneeded);
+            if (e) {
+              LOG(("%s", e->errmess));
+              return;
+            }
             fname = xcalloc((unsigned int)(10-pneeded), sizeof(char));
-            xosfscontrol_canonicalise_path(var, fname, 0, buf,
+            e = xosfscontrol_canonicalise_path(var, fname, 0, buf,
                                                           (10-pneeded), 0);
+            if (e) {
+              LOG(("%s", e->errmess));
+              return;
+            }
             LOG(("fname: %s", fname));
             furl = xcalloc(strlen(fname) + 20, sizeof(char));
 
