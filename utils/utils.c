@@ -117,22 +117,35 @@ char * squash_whitespace(const char * s)
 char * tolat1(xmlChar * s)
 {
 	unsigned int length = strlen((char*) s);
-	char *d = xcalloc(length + 1, sizeof(char));
+	unsigned int space = length + 100;
+	char *d = xcalloc(space, sizeof(char));
 	char *d0 = d;
+	char *end = d0 + space - 10;
 	int u, chars;
 
 	while (*s != 0) {
 		chars = length;
 		u = xmlGetUTF8Char((unsigned char *) s, &chars);
+		if (chars <= 0) {
+			s += 1;
+			length -= 1;
+			LOG(("UTF-8 error"));
+			continue;
+		}
 		s += chars;
 		length -= chars;
 		if (u == 0x09 || u == 0x0a || u == 0x0d)
-			*d = ' ';
+			*d++ = ' ';
 		else if ((0x20 <= u && u <= 0x7f) || (0xa0 <= u && u <= 0xff))
-			*d = u;
-		else
-			*d = '?';
-		d++;
+			*d++ = u;
+		else {
+			unicode_transliterate((unsigned int) u, &d);
+			if (end < d) {
+				space += 100;
+				d0 = xrealloc(d0, space);
+				end = d0 + space - 10;
+			}
+		}
 	}
 	*d = 0;
 

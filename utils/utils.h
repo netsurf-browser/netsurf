@@ -31,5 +31,6 @@ char *get_host_from_url(char* url);
 bool is_dir(const char *path);
 void regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
 void clean_cookiejar(void);
+void unicode_transliterate(unsigned int c, char **r);
 
 #endif

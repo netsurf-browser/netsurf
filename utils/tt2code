@@ -1,0 +1,51 @@
+#!/usr/bin/perl -W
+
+print <<END;
+void unicode_transliterate(unsigned int c, char **r)
+{
+	char *s = *r;
+	switch (c) {
+
+END
+
+LINE: while (<>) {
+	chomp;
+	next if m/^%/;
+	next if m/^ *$/;
+
+	m/^<U([0-9A-F]{4})> /g or die "invalid line '$_'";
+	$z = $1;
+	next if (hex($z) < 256);
+
+	SUBST: while (m/\G"?((<U([0-9A-F]{4})>)*)"?;?/g) {
+		next if $& eq '';
+		$m = $1;
+		if ($m eq '') {
+			print "case 0x$z: break;\n";
+			next;
+		}
+		chop $m;
+		@s = split /></, substr $m, 1;
+		foreach $s (@s) {
+			$s = substr $s, 1;
+			next SUBST if 255 < hex($s);
+		}
+
+		print "case 0x$z: ";
+		foreach $s (@s) {
+			print "*s++ = 0x$s; ";
+		}
+		print "break;\n";
+		next LINE;
+	}
+}
+
+print <<END;
+
+default: *s++ = '?'; break;
+	}
+
+	*r = s;
+}
+END
+
