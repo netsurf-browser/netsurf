@@ -38,6 +38,7 @@ static void end_callback(png_structp png, png_infop info);
 void nspng_init(void)
 {
 	_kernel_oserror *error;
+	unsigned int red, green, blue;
 
 	/* check if ImageFileConvert is available */
 	error = _swix(ImageFileConvert_ConverterInfo, _IN(0) | _IN(1),
@@ -47,7 +48,6 @@ void nspng_init(void)
 		return;
 
 	/* generate colour lookup table for reducing to 8bpp */
-	unsigned int red, green, blue;
 	for (red = 0; red != 0x10; red++)
 		for (green = 0; green != 0x10; green++)
 			for (blue = 0; blue != 0x10; blue++)
