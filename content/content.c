@@ -157,7 +157,7 @@ content_type content_lookup(const char *mime_type)
 {
 	struct mime_entry *m;
 	m = bsearch(mime_type, mime_map, MIME_MAP_COUNT, sizeof(mime_map[0]),
-			(int (*)(const void *, const void *)) strcmp);
+			(int (*)(const void *, const void *)) strcasecmp);
 	if (m == 0) {
 #ifdef riscos
 #ifdef WITH_PLUGIN
