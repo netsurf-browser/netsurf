@@ -27,10 +27,8 @@ static void get_unamepwd(void);
 static wimp_window *dialog_401_template;
 extern wimp_w dialog_401li;
 
-struct login LOGIN;
-
 static char *uname;
-static char* url;
+static char *url;
 static char *pwd;
 static struct browser_window *bwin;
 
@@ -45,18 +43,18 @@ void ro_gui_401login_init(void)
 }
 
 
-void gui_401login_open(struct browser_window *bw, struct content *c, char *realm) {
+void gui_401login_open(struct browser_window *bw, struct content *c, char *realm)
+{
+	char *murl, *host;
 
-  char *murl, *host;
+	murl = c->url;
+	host = url_host(murl);
+	assert(host);
+	bwin = bw;
 
-  murl = c->url;
-  host = url_host(murl);
-  assert(host);
-  bwin = bw;
+	ro_gui_401login_open(host, realm, murl);
 
-  ro_gui_401login_open(host, realm, murl);
-
-  xfree(host);
+	xfree(host);
 }
 
 
@@ -96,50 +94,51 @@ void ro_gui_401login_open(char *host, char* realm, char *fetchurl)
 			-1, -1, -1, 0);
 }
 
-bool ro_gui_401login_keypress(wimp_key *key) {
+bool ro_gui_401login_keypress(wimp_key *key)
+{
+	switch (key->c) {
+		case wimp_KEY_RETURN:
+			get_unamepwd();
+			ro_gui_dialog_close(dialog_401li);
+			browser_window_go(bwin, url);
+			return true;
+		case wimp_KEY_ESCAPE:
+			ro_gui_dialog_close(dialog_401li);
+			return true;
+	}
 
-  switch (key->c) {
-    case wimp_KEY_RETURN:
-            get_unamepwd();
-            ro_gui_dialog_close(dialog_401li);
-            browser_window_go(bwin, url);
-            return true;
-    case wimp_KEY_ESCAPE:
-            ro_gui_dialog_close(dialog_401li);
-            return true;
-    default: break;
-  }
-
-  return false;
+	return false;
 }
 
 /* Login Clicked -> create a new fetch request, specifying uname & pwd
  *                  CURLOPT_USERPWD takes a string "username:password"
  */
-void ro_gui_401login_click(wimp_pointer *pointer) {
+void ro_gui_401login_click(wimp_pointer *pointer)
+{
+	if (pointer->buttons == wimp_CLICK_MENU)
+		return;
 
-  if (pointer->buttons == wimp_CLICK_MENU) return;
-
-  switch (pointer->i) {
-    case ICON_401LOGIN_LOGIN:
-            get_unamepwd();
-            ro_gui_dialog_close(dialog_401li);
-            browser_window_go(bwin, url);
-            break;
-    case ICON_401LOGIN_CANCEL:
-            ro_gui_dialog_close(dialog_401li);
-            break;
-    default: break;
-  }
+	switch (pointer->i) {
+		case ICON_401LOGIN_LOGIN:
+			get_unamepwd();
+			ro_gui_dialog_close(dialog_401li);
+			browser_window_go(bwin, url);
+			break;
+		case ICON_401LOGIN_CANCEL:
+			ro_gui_dialog_close(dialog_401li);
+			break;
+	}
 }
 
-void get_unamepwd() {
+void get_unamepwd(void)
+{
+	char *lidets = xcalloc(strlen(uname)+strlen(pwd)+2, sizeof(char));
+	if (lidets == NULL)
+		return;
 
-  char *lidets = xcalloc(strlen(uname)+strlen(pwd)+2, sizeof(char));
+	sprintf(lidets, "%s:%s", uname, pwd);
 
-  sprintf(lidets, "%s:%s", uname, pwd);
-
-  login_list_add(url, lidets);
+	login_list_add(url, lidets);
 }
 
 #endif
