@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.29 $ )
+| Run file for NetSurf. ( $Revision: 1.30 $ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -60,7 +60,7 @@ RMEnsure Tinct 0.07 Error NetSurf requires Tinct 0.07 or later. This can be down
 | Ensure Iconv
 | http://moose.mine.nu:6888/iconv002.zip
 | Not an error if not present - there'll be no charset conversion.
-RMEnsure Iconv 0.02 RMLoad System:Modules.Iconv
+RMEnsure Iconv 0.02 IfThere System:Modules.Iconv Then RMLoad System:Modules.Iconv
 
 WimpSlot -min 2240k -max 2240k
 
