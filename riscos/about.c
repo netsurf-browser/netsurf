@@ -27,7 +27,6 @@
 #include "oslib/osfind.h"
 #include "oslib/osfscontrol.h"
 
-static const char *version = "%s (%s %s %s)"; /**< version string prototype */
 static const char *pabouthdr = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/transitional.dtd\"><html><head><title>About NetSurf</title></head><body bgcolor=\"#f3f3ff\"><!-- About header --><table border=\"0\" width=\"100%%\" bgcolor=\"#94adff\" cellspacing=\"2\"><tr><td><a href=\"http://netsurf.sf.net\"><img src=\"file:///%%3CNetSurf$Dir%%3E/About/nslogo\" alt=\"Netsurf logo\"></a><td><table bgcolor=\"#94adff\" border=\"0\"><tr><td>&nbsp;<tr><td align=\"center\"><h2>NetSurf %s</h2><tr><td align=\"center\"><h5>Copyright &copy; 2002, 2003 NetSurf Developers.</h5><tr><td>&nbsp;</table></table><hr>"; /**< About page header */
 static const char *pabtplghd = "<!-- Plugin information --><strong><i>The following plugins are installed on your system:</i></strong><br>&nbsp;<br><table border=\"0\" cellspacing=\"2\" width=\"100%\">"; /**< Plugin table header */
 static const char *paboutpl1 = "<tr valign=\"top\"><td width=\"30%%\"><font size=\"2\"><strong>%s</strong></font></td><td width=\"70%%\"><font size=\"2\">%s</font></td></tr><tr><td colspan=\"2\" bgcolor=\"#dddddd\" height=\"1\"></td></tr>"; /**< Plugin entry without image */
@@ -55,39 +54,6 @@ struct plugd {
 };
 
 struct plugd *new_plugin(struct plugd *pd, char* details);
-char* populate_version(void);
-
-/**
- * Fills in the version string.
- * The release version is defined in the Messages file.
- */
-char *populate_version(void) {
-
-  char *p;
-  char *day;
-  char *mon;
-  char *year;
-  char *temp = xcalloc(12, sizeof(char));
-  char *ret = xcalloc(30, sizeof(char));
-
-  sprintf(temp, "%s", __DATE__);
-  p = strchr(temp, ' ');
-  *p = 0;
-  mon = strdup(temp);
-  if (strchr(p+1, ' ') == p+1)
-    day = p+2;
-  else
-    day = p+1;
-  p = strchr(day, ' ');
-  *p = 0;
-  year = p+1;
-
-  sprintf(ret, version, messages_get("Version:CVS Test Build"), day, mon, year);
-
-  xfree(temp);
-
-  return ret;
-}
 
 /**
  * Adds a plugin's details to the head of the linked list of plugin details
