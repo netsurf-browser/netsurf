@@ -79,11 +79,21 @@ const char *fetch_filetype(const char *unix_path)
 char *fetch_mimetype(const char *ro_path) {
 
         os_error *e;
-        bits filetype;
+        bits filetype = 0, load;
+        int objtype;
         char *mime = xcalloc(256, sizeof(char));
 
-        e = xosfile_read_stamped_no_path(ro_path, 0, 0, 0, 0, 0, &filetype);
+        e = xosfile_read_no_path(ro_path, &objtype, &load, 0, 0, 0);
         if (e) return 0;
+
+        if (objtype == 0x2) return 0; /* directories are pointless */
+
+        if ((load >> 20) & 0xFFF) {
+                filetype = (load>>8) & 0x000FFF;
+        }
+        else {
+                return 0; /* no idea */
+        }
 
         e = xmimemaptranslate_filetype_to_mime_type(filetype, mime);
         if (e) return 0;
