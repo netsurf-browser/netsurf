@@ -316,6 +316,8 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 		}
 	} else {
 		left = dw->last_time.tv_sec - dw->start_time.tv_sec;
+		if (left == 0)
+			left = 1;
 		rate = (float) dw->received / (float) left;
 		sprintf(time, "%u:%.2u", left / 60, left % 60);
 		speed = human_friendly_bytesize(rate);
