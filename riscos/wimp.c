@@ -29,7 +29,7 @@ static wimpextend_furniture_sizes furniture_sizes;
 
 
 /**
- * Gets the default horzontal scrollbar height
+ * Gets the horzontal scrollbar height
  */
 int ro_get_hscroll_height(wimp_w w) {
 	wimp_version_no version;
@@ -57,10 +57,9 @@ int ro_get_hscroll_height(wimp_w w) {
 
 
 /**
- * Gets the default horzontal scrollbar height
+ * Gets the vertical scrollbar width
  */
 int ro_get_vscroll_width(wimp_w w) {
-	wimp_version_no version;
 
   	/*	Read the hscroll height
   	*/

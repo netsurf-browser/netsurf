@@ -73,7 +73,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	/*	Set the window position
 	*/
-	if (clone && clone->window) {
+	if (clone && clone->window && option_window_size_clone) {
 		state.w = clone->window->window;
 		error = xwimp_get_window_state(&state);
 		if (error) {
@@ -152,7 +152,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 			wimp_ICON_BUTTON_TYPE_SHIFT;
 	window.sprite_area = wimpspriteop_AREA;
 	window.xmin = 100;
-	window.ymin = window.extent.y1 + 100;
+	window.ymin = 100;
 	window.title_data.indirected_text.text = g->title;
 	window.title_data.indirected_text.validation = (char *) -1;
 	window.title_data.indirected_text.size = 255;
@@ -166,7 +166,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 		free(g);
 		return 0;
 	}
-
+	
 	ro_theme_create_toolbar(g);
 
 	g->next = window_list;
@@ -698,21 +698,20 @@ void ro_gui_window_mouse_at(wimp_pointer* pointer)
  * Process Mouse_Click events in a toolbar.
  */
 
-void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
-{
-	bool back;
+void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
+  	
+	/*	Reject Menu clicks
+	*/
+	if (pointer->buttons == wimp_CLICK_MENU) return;
+
+	/*	Handle the buttons appropriately
+	*/
 	switch (pointer->i) {
 		case ICON_TOOLBAR_BACK:
+			history_back(g->data.browser.bw, g->data.browser.bw->history);
+			break;
 		case ICON_TOOLBAR_FORWARD:
-			back = (pointer->i == ICON_TOOLBAR_BACK);
-			if (pointer->buttons == wimp_CLICK_ADJUST)
-				back = !back;
-			if (back)
-				history_back(g->data.browser.bw,
-						g->data.browser.bw->history);
-			else
-				history_forward(g->data.browser.bw,
-						g->data.browser.bw->history);
+			history_forward(g->data.browser.bw, g->data.browser.bw->history);
 			break;
 
 		case ICON_TOOLBAR_STOP:
@@ -1025,6 +1024,9 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			browser_window_stop(g->data.browser.bw);
 			return true;
 
+		case 14:	/* CTRL+N */
+			browser_window_create(g->url, g->data.browser.bw);
+			return true;
 		case 18:	/* CTRL+R */
 			browser_window_reload(g->data.browser.bw);
 			return true;

@@ -18,7 +18,6 @@
 
 extern bool option_use_mouse_gestures;
 extern bool option_allow_text_selection;
-extern bool option_show_toolbar;
 extern char *option_theme;
 extern char *option_language;
 extern bool option_dither_sprites;
@@ -40,6 +39,7 @@ extern int option_window_height;
 extern int option_window_screen_width;
 extern int option_window_screen_height;
 extern bool option_window_stagger;
+extern bool option_window_size_clone;
 extern int option_minimum_gif_delay;
 extern bool option_background_images;
 extern bool option_background_blending;
@@ -47,7 +47,6 @@ extern bool option_background_blending;
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
 bool option_allow_text_selection = true;\
-bool option_show_toolbar = true;\
 char *option_theme = 0;\
 char *option_language = 0;\
 bool option_dither_sprites = true;\
@@ -69,6 +68,7 @@ int option_window_height = 0; \
 int option_window_screen_width = 0; \
 int option_window_screen_height = 0; \
 bool option_window_stagger = true; \
+bool option_window_size_clone = true; \
 int option_minimum_gif_delay = 10; \
 bool option_background_images = true; \
 bool option_background_blending = false;
@@ -76,7 +76,6 @@ bool option_background_blending = false;
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
 { "allow_text_selection",   OPTION_BOOL,    &option_allow_text_selection },\
-{ "show_toolbar",           OPTION_BOOL,    &option_show_toolbar },\
 { "theme",                  OPTION_STRING,  &option_theme },\
 { "language",               OPTION_STRING,  &option_language },\
 { "dither_sprites",         OPTION_BOOL,    &option_dither_sprites },\
@@ -98,6 +97,7 @@ bool option_background_blending = false;
 { "window_screen_width",    OPTION_INTEGER, &option_window_screen_width }, \
 { "window_screen_height",   OPTION_INTEGER, &option_window_screen_height }, \
 { "window_stagger",         OPTION_BOOL,    &option_window_stagger }, \
+{ "window_size_clone",      OPTION_BOOL,    &option_window_size_clone }, \
 { "minimum_gif_delay",      OPTION_INTEGER, &option_minimum_gif_delay }, \
 { "background_images",      OPTION_BOOL,    &option_background_images }, \
 { "background_blending",    OPTION_BOOL,    &option_background_blending }

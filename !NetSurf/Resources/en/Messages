@@ -17,7 +17,7 @@ Draw:Draw  ‹^F3
 Text:Text  ^F3
 SaveURL:Save location
 Print:Print...
-NewWindow:New window
+NewWindow:New window  ^N
 ViewSrc:View source...  F8
 Object:Object
 ObjInfo:Info
@@ -54,6 +54,7 @@ OptDefault:Set as default
 Window:Window
 WindowSave:Set as default position
 WindowStagr:Stagger window position
+WindowSize:Maintain window size
 WindowReset:Reset default position
 Help:Help
 HelpContent:Contents  F1
@@ -208,7 +209,7 @@ HelpBrowserMenu3-2-2:\Stoggle the display of the throbber.|MURL bar uses the rem
 HelpBrowserMenu3-2-3:\Stoggle the display of the status bar.|MHorizontal scroll bar uses the remaining width.
 HelpBrowserMenu3-3:\Rcontrol the default window positioning.
 HelpBrowserMenu3-3-0:\Sto make the current window position the default.
-HelpBrowserMenu3-3-2:\Sto return to the default window positioning.
+HelpBrowserMenu3-3-3:\Sto return to the default window positioning.
 HelpBrowserMenu3-4:\Smake your local display options the default options for NetSurf.
 HelpBrowserMenu4:\Rsee the help resources available.
 HelpBrowserMenu4-0:\Sopen the documentation contents page in a new \w.

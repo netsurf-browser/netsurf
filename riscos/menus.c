@@ -190,11 +190,12 @@ static wimp_MENU(4) toolbar_menu = {
 
 /*	Window submenu
 */
-static wimp_MENU(3) window_menu = {
+static wimp_MENU(4) window_menu = {
   { "Window" }, 7,2,7,0, 300, 44, 0,
   {
     { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "WindowSave" } },
-    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "WindowStagr" } },
+    { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "WindowStagr" } },
+    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "WindowSize" } },
     { wimp_MENU_LAST,	  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "WindowReset" } }
   }
 };
@@ -454,7 +455,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 5: /* Print */
 						break;
 					case 6: /* New window */
-						browser_window_create(current_gui->url ,current_gui->data.browser.bw);
+						browser_window_create(current_gui->url, current_gui->data.browser.bw);
 						break;
 					case 7: /* Page source */
 						ro_gui_view_source(c);
@@ -582,6 +583,9 @@ void ro_gui_menu_selection(wimp_selection *selection)
 								option_window_stagger = !option_window_stagger;
 								break;
 							case 2:
+								option_window_size_clone = !option_window_size_clone;
+								break;
+							case 3:
 								option_window_screen_width = 0;
 								option_window_screen_height = 0;
 								break;
@@ -977,7 +981,7 @@ static void ro_gui_menu_prepare_window(void) {
 	*/
 	if ((option_window_screen_width != 0) && (option_window_screen_height != 0)) {
 		browser_window_menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
-		browser_window_menu->entries[2].icon_flags &= ~wimp_ICON_SHADED;
+		browser_window_menu->entries[3].icon_flags &= ~wimp_ICON_SHADED;
 		
 		/*	Check if we are staggered
 		*/
@@ -989,7 +993,15 @@ static void ro_gui_menu_prepare_window(void) {
 	} else {
 		browser_window_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
 		browser_window_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
-		browser_window_menu->entries[2].icon_flags |= wimp_ICON_SHADED;
+		browser_window_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
+	}
+	
+	/*	Set if we are cloing the window size
+	*/
+	if (option_window_size_clone) {
+		browser_window_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
+	} else {
+		browser_window_menu->entries[2].menu_flags &= ~wimp_MENU_TICKED;
 	}
 }
 
