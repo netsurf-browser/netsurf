@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.4 2002/04/24 17:38:36 bursa Exp $
+ * $Id: render.c,v 1.5 2002/04/25 15:54:05 bursa Exp $
  */
 
 #include <assert.h>
@@ -10,6 +10,7 @@
 #include "HTMLparser.h" /* libxml */
 #include "css.h"
 #include "utils.h"
+#include "font.h"
 
 /**
  * internal structures
@@ -27,6 +28,7 @@ struct box {
 	struct box * children;
 	struct box * last;
 	struct box * parent;
+	font_id font;
 };
 
 signed long len(struct css_length * length, unsigned long em);
@@ -131,17 +133,44 @@ void layout_inline_container(struct box * box, unsigned long width)
 	/* TODO: write this */
 	struct box * c;
 	unsigned long y = 1;
+	unsigned long x = 2;
+	const char * end;
+	struct box * new;
 
-	for (c = box->children; c != 0; c = c->next) {
-		c->x = 2;
+	for (c = box->children; c != 0; ) {
+		c->width = font_split(0, c->font, c->text, width-2-x, &end)+1;
+		if (*end == 0) {
+			/* fits into this line */
+			c->x = x;
+			c->y = y;
+			c->height = 2;
+			x += c->width;
+			c = c->next;
+			continue;
+		}
+		if (end == c->text) {
+			/* doesn't fit at all: move down a line */
+			x = 2;
+			y += 3;
+			c->width = font_split(0, c->font, c->text, width-2-x, &end)+1;
+			if (end == c->text) end = strchr(c->text, ' ');
+			if (end == 0) end = c->text + 1;
+		}
+		/* split into two lines */ 
+		c->x = x;
 		c->y = y;
-		c->width = width-4;
 		c->height = 2;
+		x = 2;
 		y += 3;
+		new = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
+		new->text = end + 1;
+		new->next = c->next;
+		c->next = new;
+		c = new;
 	}
 
 	box->width = width;
-	box->height = y;
+	box->height = y + 3;
 }
 
 void layout_table(struct box * box, unsigned long width)
@@ -218,10 +247,10 @@ void render_plain_element(char * g, struct box * box, unsigned long x, unsigned 
 	}
 
 	if (box->type == BOX_INLINE && box->node->content) {
-		l = strlen(box->node->content);
+		l = strlen(box->text);
 		if ((x + box->x + box->width) - (x + box->x) - 1 < l)
 			l = (x + box->x + box->width) - (x + box->x) - 1;
-		strncpy(g + 80 * ((y + box->y) + 1) + (x + box->x) + 1, box->node->content, l);
+		strncpy(g + 80 * ((y + box->y) + 1) + (x + box->x) + 1, box->text, l);
 	}
 }
 
@@ -231,7 +260,7 @@ void render_plain(struct box * box)
 	int i;
 	char *g;
 
-	g = calloc(10000, 1);
+	g = calloc(100000, 1);
 	if (g == 0) exit(1);
 
         for (i = 0; i < 10000; i++)
@@ -313,7 +342,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 			case CSS_DISPLAY_INLINE:  /* inline elements get no box, but their children do */
 				for (c = n->children; c != 0; c = c->next)
 					inline_container = xml_to_box(c, style, stylesheet,
-							selector, depth + 1, box, inline_container);
+							selector, depth + 1, parent, inline_container);
 				break;
 			case CSS_DISPLAY_TABLE:
 				box = xcalloc(1, sizeof(struct box));
@@ -362,6 +391,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 		box = calloc(1, sizeof(struct box));
 		box->node = n;
 		box->type = BOX_INLINE;
+		box->text = n->content;
 		box_add_child(inline_container, box);
 	}
 
@@ -386,7 +416,7 @@ void box_dump(struct box * box, unsigned int depth)
 	switch (box->type) {
 		case BOX_BLOCK:            printf("BOX_BLOCK <%s>\n", box->node->name); break;
 		case BOX_INLINE_CONTAINER: printf("BOX_INLINE_CONTAINER\n"); break;
-		case BOX_INLINE:           printf("BOX_INLINE '%s'\n", box->node->content); break;
+		case BOX_INLINE:           printf("BOX_INLINE '%s'\n", box->text); break;
 		case BOX_TABLE:            printf("BOX_TABLE <%s>\n", box->node->name); break;
 		case BOX_TABLE_ROW:        printf("BOX_TABLE_ROW <%s>\n", box->node->name); break;
 		case BOX_TABLE_CELL:       printf("BOX_TABLE_CELL <%s>\n", box->node->name); break;
