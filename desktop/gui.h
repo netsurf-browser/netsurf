@@ -28,8 +28,6 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone);
 gui_window *gui_create_download_window(struct content *content);
 void gui_window_destroy(gui_window* g);
-void gui_window_show(gui_window* g);
-void gui_window_hide(gui_window* g);
 void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
 		unsigned long x1, unsigned long y1);
 void gui_window_redraw_window(gui_window* g);

@@ -207,10 +207,6 @@ void gui_window_destroy(gui_window* g)
   free(g);
 }
 
-void gui_window_show(gui_window* g)
-{
-}
-
 void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
 		unsigned long x1, unsigned long y1)
 {
