@@ -1313,16 +1313,16 @@ int browser_window_action(struct browser_window *bw,
 						   act->data.mouse.y);
 		break;
 	case act_CLEAR_SELECTION:
-		browser_window_text_selection(bw, act->data.mouse.x,
-					      act->data.mouse.y, 0);
+//		browser_window_text_selection(bw, act->data.mouse.x,
+//					      act->data.mouse.y, 0);
 		break;
 	case act_START_NEW_SELECTION:
-		browser_window_text_selection(bw, act->data.mouse.x,
-					      act->data.mouse.y, 1);
+//		browser_window_text_selection(bw, act->data.mouse.x,
+//					      act->data.mouse.y, 1);
 		break;
 	case act_ALTER_SELECTION:
-		browser_window_text_selection(bw, act->data.mouse.x,
-					      act->data.mouse.y, 2);
+//		browser_window_text_selection(bw, act->data.mouse.x,
+//					      act->data.mouse.y, 2);
 		break;
 	case act_FOLLOW_LINK:
 		browser_window_follow_link(bw, act->data.mouse.x,
