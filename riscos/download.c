@@ -16,13 +16,11 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 
 static wimp_window *download_template;
-
-
-static void ro_gui_download_leaf(const char *url, char *leaf);
 
 
 /**
@@ -41,6 +39,7 @@ void ro_gui_download_init(void)
 
 gui_window *gui_create_download_window(struct content *content)
 {
+	char *nice;
 	gui_window *g = xcalloc(1, sizeof(gui_window));
 	os_error *e;
 
@@ -65,14 +64,18 @@ gui_window *gui_create_download_window(struct content *content)
 		g->status;
 	download_template->icons[ICON_DOWNLOAD_STATUS].data.indirected_text.size =
 		256;
-	sprintf(g->data.download.sprite_name, "file_%x",
+	sprintf(g->data.download.sprite_name, "file_%.3x",
 			g->data.download.file_type);
 	e = xwimpspriteop_select_sprite(g->data.download.sprite_name, 0);
 	if (e)
 		strcpy(g->data.download.sprite_name, "file_xxx");
 	download_template->icons[ICON_DOWNLOAD_ICON].data.indirected_sprite.id =
 			(osspriteop_id) g->data.download.sprite_name;
-	ro_gui_download_leaf(content->url, g->data.download.path);
+	strcpy(g->data.download.path, messages_get("SaveObject"));
+	if ((nice = url_nice(content->url))) {
+		strcpy(g->data.download.path, nice);
+		free(nice);
+	}
 	download_template->icons[ICON_DOWNLOAD_PATH].data.indirected_text.text =
 		g->data.download.path;
 	download_template->icons[ICON_DOWNLOAD_PATH].data.indirected_text.size =
@@ -87,38 +90,6 @@ gui_window *gui_create_download_window(struct content *content)
 	g->next = window_list;
 	window_list = g;
 	return g;
-}
-
-
-/**
- * Find a friendly RISC OS leaf name for a URL.
- */
-
-void ro_gui_download_leaf(const char *url, char *leaf)
-{
-	char *slash;
-	size_t len;
-	unsigned int i;
-
-	/* take url from last / to first non-RISC OS character, eg. '.' */
-	slash = strrchr(url, '/');
-	if (!slash) {
-		strcpy(leaf, "download");
-		return;
-	}
-	/*len = strspn(slash + 1, "0123456789" "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-			"abcdefghijklmnopqrstuvwxyz");*/  /* over-paranoid */
-	len = strlen(slash+1);
-	if (40 < len)
-		len = 40;
-	strncpy(leaf, slash + 1, len);
-	leaf[len] = 0;
-        /* swap "." for "/" */
-	for (i=0; i!=len; i++) {
-	        if (leaf[i] == '.') {
-	                leaf[i] = '/';
-	        }
-	}
 }
 
 
