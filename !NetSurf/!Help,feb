@@ -1,2 +1,0 @@
-Set NetSurf$Dir <Obey$Dir>
-If "<Alias$@RunType_FAF>" <> "" Then Filer_Run <NetSurf$Dir>.Docs.en.index Else Filer_Run <NetSurf$Dir>.Docs.en.txthelp
