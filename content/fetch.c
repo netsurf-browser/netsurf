@@ -270,7 +270,7 @@ void fetch_abort(struct fetch *f)
 		f->next->prev = f->prev;
 
 	/* remove from curl multi handle */
-	if (f->cull_handle) {
+	if (f->curl_handle) {
 		codem = curl_multi_remove_handle(curl_multi, f->curl_handle);
 		assert(codem == CURLM_OK);
 	}
