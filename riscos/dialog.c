@@ -89,36 +89,91 @@ void ro_gui_dialog_init(void)
 
 /**
  * Create a window from a template.
+ *
+ * \param  template_name  name of template to load
+ * \return  window handle
+ *
+ * Exits through die() on error.
  */
 
 wimp_w ro_gui_dialog_create(const char *template_name)
+{
+	wimp_window *window;
+	wimp_w w;
+	os_error *error;
+
+	window = ro_gui_dialog_load_template(template_name);
+
+	/* create window */
+	error = xwimp_create_window(window, &w);
+	if (error) {
+		LOG(("xwimp_create_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		xwimp_close_template();
+		die(error->errmess);
+	}
+
+	/* the window definition is copied by the wimp and may be freed */
+	free(window);
+
+	return w;
+}
+
+
+/**
+ * Load a template without creating a window.
+ *
+ * \param  template_name  name of template to load
+ * \return  window block
+ *
+ * Exits through die() on error.
+ */
+
+wimp_window * ro_gui_dialog_load_template(const char *template_name)
 {
 	char name[20];
 	int context, window_size, data_size;
 	char *data;
 	wimp_window *window;
-	wimp_w w;
+	os_error *error;
 
 	/* wimp_load_template won't accept a const char * */
-	strncpy(name, template_name, 20);
+	strncpy(name, template_name, sizeof name);
 
 	/* find required buffer sizes */
-	context = wimp_load_template(wimp_GET_SIZE, 0, 0, wimp_NO_FONTS,
-			name, 0, &window_size, &data_size);
-	assert(context != 0);
+	error = xwimp_load_template(wimp_GET_SIZE, 0, 0, wimp_NO_FONTS,
+			name, 0, &window_size, &data_size, &context);
+	if (error) {
+		LOG(("xwimp_load_template: 0x%x: %s",
+				error->errnum, error->errmess));
+		xwimp_close_template();
+		die(error->errmess);
+	}
+	if (!context) {
+		LOG(("template '%s' missing", template_name));
+		xwimp_close_template();
+		die("Template");
+	}
 
-	window = xcalloc((unsigned int) window_size, 1);
-	data = xcalloc((unsigned int) data_size, 1);
+	/* allocate space for indirected data and temporary window buffer */
+	data = malloc(data_size);
+	window = malloc(window_size);
+	if (!data || !window) {
+		xwimp_close_template();
+		die("NoMemory");
+	}
 
-	/* load and create */
-	wimp_load_template(window, data, data + data_size, wimp_NO_FONTS,
-			name, 0, 0, 0);
-	w = wimp_create_window(window);
+	/* load template */
+	error = xwimp_load_template(window, data, data + data_size,
+			wimp_NO_FONTS, name, 0, 0, 0, 0);
+	if (error) {
+		LOG(("xwimp_load_template: 0x%x: %s",
+				error->errnum, error->errmess));
+		xwimp_close_template();
+		die(error->errmess);
+	}
 
-	/* the window definition is copied by the wimp and may be freed */
-	xfree(window);
-
-	return w;
+	return window;
 }
 
 

@@ -31,21 +31,7 @@ static void ro_gui_download_leaf(const char *url, char *leaf);
 
 void ro_gui_download_init(void)
 {
-	char name[] = "download";
-	int context, window_size, data_size;
-	char *data;
-
-	/* find required buffer sizes */
-	context = wimp_load_template(wimp_GET_SIZE, 0, 0, wimp_NO_FONTS,
-			name, 0, &window_size, &data_size);
-	assert(context != 0);
-
-	download_template = xcalloc((unsigned int) window_size, 1);
-	data = xcalloc((unsigned int) data_size, 1);
-
-	/* load */
-	wimp_load_template(download_template, data, data + data_size,
-			wimp_NO_FONTS, name, 0, 0, 0);
+	download_template = ro_gui_dialog_load_template("download");
 }
 
 

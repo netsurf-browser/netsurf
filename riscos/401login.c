@@ -34,32 +34,16 @@ static char* url;
 static char *pwd;
 static struct browser_window *bwin;
 
+
 /**
  * Load the 401 login window template.
  */
 
 void ro_gui_401login_init(void)
 {
-	char name[20] = "login";
-	int context, window_size, data_size;
-	char *data;
-	os_error *e;
-
-        /* find required buffer sizes */
-	e = xwimp_load_template(wimp_GET_SIZE, 0, 0, wimp_NO_FONTS,
-			name, 0, &window_size, &data_size, &context);
-	if (e) {
-	  die(e->errmess);
-	}
-	assert(context != 0);
-
-	dialog_401_template = xcalloc((unsigned int) window_size, 1);
-	data = xcalloc((unsigned int) data_size, 1);
-
-	/* load */
-	wimp_load_template(dialog_401_template, data, data + data_size,
-			wimp_NO_FONTS, name, 0, 0, 0);
+	dialog_401_template = ro_gui_dialog_load_template("login");
 }
+
 
 void gui_401login_open(struct browser_window *bw, struct content *c, char *realm) {
 

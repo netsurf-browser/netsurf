@@ -85,6 +85,7 @@ MenuError:An error occurred when opening the menu:
 DragError:An error occurred when dragging the icon:
 TbarError:An error occurred when constructing the toolbar:
 WimpError:An unexpected Window Manager error occurred:
+Template:A window template is missing from the Templates file. Please reinstall NetSurf.
 
 # Some general purpose words and phrases
 Bytes: B

@@ -117,6 +117,7 @@ void ro_gui_menu_prepare_scale(void);
 /* in dialog.c */
 void ro_gui_dialog_init(void);
 wimp_w ro_gui_dialog_create(const char *template_name);
+wimp_window * ro_gui_dialog_load_template(const char *template_name);
 void ro_gui_dialog_open(wimp_w w);
 void ro_gui_dialog_click(wimp_pointer *pointer);
 bool ro_gui_dialog_keypress(wimp_key *key);
