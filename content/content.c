@@ -45,6 +45,10 @@
 #include "netsurf/utils/utils.h"
 
 
+/** Linked list of all content structures. May include more than one content
+ *  per URL. Doubly-linked. */
+struct content *content_list = 0;
+
 /** An entry in mime_map. */
 struct mime_entry {
 	char mime_type[40];
@@ -79,17 +83,50 @@ static const struct mime_entry mime_map[] = {
 };
 #define MIME_MAP_COUNT (sizeof(mime_map) / sizeof(mime_map[0]))
 
+const char *content_type_name[] = {
+	"HTML",
+	"TEXTPLAIN",
+	"CSS",
+#ifdef WITH_JPEG
+	"JPEG",
+#endif
+#ifdef WITH_GIF
+	"GIF",
+#endif
+#ifdef WITH_PNG
+	"PNG",
+#endif
+#ifdef WITH_SPRITE
+	"SPRITE",
+#endif
+#ifdef WITH_DRAW
+	"DRAW",
+#endif
+#ifdef WITH_PLUGIN
+	"PLUGIN",
+#endif
+	"OTHER",
+	"UNKNOWN"
+};
+
+const char *content_status_name[] = {
+	"TYPE_UNKNOWN",
+	"LOADING",
+	"READY",
+	"DONE",
+	"ERROR"
+};
+
 /** An entry in handler_map. */
 struct handler_entry {
-	void (*create)(struct content *c, const char *params[]);
-	void (*process_data)(struct content *c, char *data, unsigned long size);
-	int (*convert)(struct content *c, unsigned int width, unsigned int height);
-	void (*revive)(struct content *c, unsigned int width, unsigned int height);
-	void (*reformat)(struct content *c, unsigned int width, unsigned int height);
+	bool (*create)(struct content *c, const char *params[]);
+	bool (*process_data)(struct content *c, char *data, unsigned int size);
+	bool (*convert)(struct content *c, int width, int height);
+	void (*reformat)(struct content *c, int width, int height);
 	void (*destroy)(struct content *c);
-	void (*redraw)(struct content *c, long x, long y,
-			unsigned long width, unsigned long height,
-			long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+	void (*redraw)(struct content *c, int x, int y,
+			int width, int height,
+			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 			float scale);
 	void (*add_instance)(struct content *c, struct browser_window *bw,
 			struct content *page, struct box *box,
@@ -104,39 +141,39 @@ struct handler_entry {
 /** A table of handler functions, indexed by ::content_type.
  * Must be ordered as enum ::content_type. */
 static const struct handler_entry handler_map[] = {
-	{html_create, html_process_data, html_convert, html_revive,
+	{html_create, html_process_data, html_convert,
 		html_reformat, html_destroy, html_redraw,
 		html_add_instance, html_remove_instance, html_reshape_instance},
 	{textplain_create, html_process_data, textplain_convert,
-		0, 0, 0, 0, 0, 0, 0},
-	{0, 0, css_convert, css_revive, 0, css_destroy, 0, 0, 0, 0},
+		0, 0, 0, 0, 0, 0},
+	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0},
 #ifdef WITH_JPEG
-	{nsjpeg_create, 0, nsjpeg_convert, 0,
+	{nsjpeg_create, 0, nsjpeg_convert,
 		0, nsjpeg_destroy, nsjpeg_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_GIF
-	{nsgif_create, 0, nsgif_convert, 0,
+	{nsgif_create, 0, nsgif_convert,
 	        0, nsgif_destroy, nsgif_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_PNG
-	{nspng_create, nspng_process_data, nspng_convert, 0,
+	{nspng_create, nspng_process_data, nspng_convert,
 		0, nspng_destroy, nspng_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_SPRITE
-	{sprite_create, sprite_process_data, sprite_convert, sprite_revive,
-		sprite_reformat, sprite_destroy, sprite_redraw, 0, 0, 0},
+	{sprite_create, sprite_process_data, sprite_convert,
+		0, sprite_destroy, sprite_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_DRAW
-	{0, 0, draw_convert, 0,
+	{0, 0, draw_convert,
 		0, draw_destroy, draw_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_PLUGIN
-	{plugin_create, plugin_process_data, plugin_convert, plugin_revive,
+	{plugin_create, plugin_process_data, plugin_convert,
 	        plugin_reformat, plugin_destroy, plugin_redraw,
 		plugin_add_instance, plugin_remove_instance,
 		plugin_reshape_instance},
 #endif
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	{0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
@@ -166,33 +203,62 @@ content_type content_lookup(const char *mime_type)
 /**
  * Create a new content structure.
  *
+ * \param  url  URL of content, copied
+ * \return  the new content structure, or 0 on memory exhaustion
+ *
  * The type is initialised to CONTENT_UNKNOWN, and the status to
  * CONTENT_STATUS_TYPE_UNKNOWN.
  */
 
-struct content * content_create(char *url)
+struct content * content_create(const char *url)
 {
 	struct content *c;
 	struct content_user *user_sentinel;
 	LOG(("url %s", url));
-	c = xcalloc(1, sizeof(struct content));
-	c->url = xstrdup(url);
+	c = malloc(sizeof(struct content));
+	if (!c)
+		return 0;
+	user_sentinel = malloc(sizeof *user_sentinel);
+	if (!user_sentinel) {
+		free(c);
+		return 0;
+	}
+	c->url = strdup(url);
+	if (!c->url) {
+		free(c);
+		free(user_sentinel);
+		return 0;
+	}
 	c->type = CONTENT_UNKNOWN;
+	c->mime_type = 0;
 	c->status = CONTENT_STATUS_TYPE_UNKNOWN;
+	c->width = 0;
+	c->height = 0;
+	c->available_width = 0;
 	c->cache = 0;
 	c->size = sizeof(struct content);
-	c->fetch = 0;
-	c->source_data = 0;
-	c->source_size = 0;
-	c->mime_type = 0;
-	content_set_status(c, messages_get("Loading"));
-	user_sentinel = xcalloc(1, sizeof(*user_sentinel));
+	c->title = 0;
+	c->active = 0;
 	user_sentinel->callback = 0;
 	user_sentinel->p1 = user_sentinel->p2 = 0;
 	user_sentinel->next = 0;
 	c->user_list = user_sentinel;
+	content_set_status(c, messages_get("Loading"));
+	c->fetch = 0;
+	c->source_data = 0;
+	c->source_size = 0;
+	c->total_size = 0;
 	c->lock = 0;
 	c->destroy_pending = false;
+	c->no_error_pages = false;
+	c->error_count = 0;
+
+	c->prev = 0;
+	c->next = content_list;
+	if (content_list)
+		content_list->prev = c;
+	content_list = c;
+
 	return c;
 }
 
@@ -200,34 +266,51 @@ struct content * content_create(char *url)
 /**
  * Initialise the content for the specified type.
  *
+ * \param c        content structure
+ * \param type     content_type to initialise to
+ * \param mime_type  MIME-type string for this content
+ * \param params   array of strings, ordered attribute, value, attribute, ..., 0
+ * \return  true on success, false on error and error broadcast to users and
+ *		possibly reported
+ *
  * The type is updated to the given type, and a copy of mime_type is taken. The
  * status is changed to CONTENT_STATUS_LOADING. CONTENT_MSG_LOADING is sent to
  * all users. The create function for the type is called to initialise the type
  * specific parts of the content structure.
- *
- * \param c content structure
- * \param type content_type to initialise to
- * \param mime_type MIME-type string for this content
- * \param params array of strings, ordered attribute, value, attribute, ..., 0
  */
 
-void content_set_type(struct content *c, content_type type,
+bool content_set_type(struct content *c, content_type type,
 		const char *mime_type, const char *params[])
 {
-	union content_msg_data data;
+	union content_msg_data msg_data;
+
 	assert(c != 0);
 	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
 	assert(type < CONTENT_UNKNOWN);
+
 	LOG(("content %s, type %i", c->url, type));
+
+	c->mime_type = strdup(mime_type);
+	if (!c->mime_type) {
+		c->status = CONTENT_STATUS_ERROR;
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		warn_user("NoMemory", 0);
+		return false;
+	}
+
 	c->type = type;
-	c->mime_type = xstrdup(mime_type);
 	c->status = CONTENT_STATUS_LOADING;
-	c->source_data = xcalloc(0, 1);
-	if (handler_map[type].create)
-		handler_map[type].create(c, params);
-	content_broadcast(c, CONTENT_MSG_LOADING, data);
-	/* c may be destroyed at this point as a result of
-	 * CONTENT_MSG_LOADING, so must not be accessed */
+
+	if (handler_map[type].create) {
+		if (!handler_map[type].create(c, params)) {
+			c->status = CONTENT_STATUS_ERROR;
+			return false;
+		}
+	}
+
+	content_broadcast(c, CONTENT_MSG_LOADING, msg_data);
+	return true;
 }
 
 
@@ -255,19 +338,44 @@ void content_set_status(struct content *c, const char *status_message, ...)
  * Process a block of source data.
  *
  * Calls the process_data function for the content.
+ *
+ * \param   c     content structure
+ * \param   data  new data to process
+ * \param   size  size of data
+ * \return  true on success, false on error and error broadcast to users and
+ *		possibly reported
  */
 
-void content_process_data(struct content *c, char *data, unsigned long size)
+bool content_process_data(struct content *c, char *data, unsigned int size)
 {
-	assert(c != 0);
+	char *source_data;
+	union content_msg_data msg_data;
+
+	assert(c);
+	assert(c->type < HANDLER_MAP_COUNT);
 	assert(c->status == CONTENT_STATUS_LOADING);
-	LOG(("content %s, size %lu", c->url, size));
-	c->source_data = xrealloc(c->source_data, c->source_size + size);
+	LOG(("content %s, size %u", c->url, size));
+
+	source_data = realloc(c->source_data, c->source_size + size);
+	if (!source_data) {
+		c->status = CONTENT_STATUS_ERROR;
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		warn_user("NoMemory", 0);
+		return false;
+	}
+	c->source_data = source_data;
 	memcpy(c->source_data + c->source_size, data, size);
 	c->source_size += size;
 	c->size += size;
-	if (handler_map[c->type].process_data)
-		handler_map[c->type].process_data(c, data, size);
+
+	if (handler_map[c->type].process_data) {
+		if (!handler_map[c->type].process_data(c, data, size)) {
+			c->status = CONTENT_STATUS_ERROR;
+			return false;
+		}
+	}
+	return true;
 }
 
 
@@ -281,54 +389,34 @@ void content_process_data(struct content *c, char *data, unsigned long size)
  *   CONTENT_MSG_READY is sent to all users.
  * - If the conversion succeeds and is complete, the content gets status
  *   CONTENT_STATUS_DONE, and CONTENT_MSG_READY then CONTENT_MSG_DONE are sent.
- * - If the conversion fails, CONTENT_MSG_ERROR is sent. The content is then
- *   destroyed and must no longer be used.
+ * - If the conversion fails, CONTENT_MSG_ERROR is sent. The content will soon
+ *   be destroyed and must no longer be used.
  */
 
-void content_convert(struct content *c, unsigned long width, unsigned long height)
+void content_convert(struct content *c, int width, int height)
 {
-	union content_msg_data data;
-	assert(c != 0);
+	union content_msg_data msg_data;
+
+	assert(c);
 	assert(c->type < HANDLER_MAP_COUNT);
 	assert(c->status == CONTENT_STATUS_LOADING);
 	LOG(("content %s", c->url));
+
 	c->available_width = width;
 	if (handler_map[c->type].convert) {
-		if (handler_map[c->type].convert(c, width, height)) {
-			/* convert failed, destroy content */
-			data.error = "Conversion failed";
-			content_broadcast(c, CONTENT_MSG_ERROR, data);
-			if (c->cache)
-				cache_destroy(c);
-			content_destroy(c);
+		if (!handler_map[c->type].convert(c, width, height)) {
+			c->status = CONTENT_STATUS_ERROR;
 			return;
 		}
 	} else {
 		c->status = CONTENT_STATUS_DONE;
 	}
+
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
-	content_broadcast(c, CONTENT_MSG_READY, data);
+	content_broadcast(c, CONTENT_MSG_READY, msg_data);
 	if (c->status == CONTENT_STATUS_DONE)
-		content_broadcast(c, CONTENT_MSG_DONE, data);
-}
-
-
-/**
- * Fix content that has been loaded from the cache.
- *
- * Calls the revive function for the content. The content will be processed for
- * display, for example dependencies loaded or reformated to current width.
- */
-
-void content_revive(struct content *c, unsigned long width, unsigned long height)
-{
-	assert(0);  /* unmaintained */
-	assert(c != 0);
-	if (c->status != CONTENT_STATUS_DONE)
-		return;
-	c->available_width = width;
-	handler_map[c->type].revive(c, width, height);
+		content_broadcast(c, CONTENT_MSG_DONE, msg_data);
 }
 
 
@@ -338,7 +426,7 @@ void content_revive(struct content *c, unsigned long width, unsigned long height
  * Calls the reformat function for the content.
  */
 
-void content_reformat(struct content *c, unsigned long width, unsigned long height)
+void content_reformat(struct content *c, int width, int height)
 {
 	union content_msg_data data;
 	assert(c != 0);
@@ -348,6 +436,29 @@ void content_reformat(struct content *c, unsigned long width, unsigned long heig
 	if (handler_map[c->type].reformat) {
 		handler_map[c->type].reformat(c, width, height);
 		content_broadcast(c, CONTENT_MSG_REFORMAT, data);
+	}
+}
+
+
+/**
+ * Destroys any contents in the content_list with no users or in
+ * CONTENT_STATUS_ERROR, and not with an active fetch or cached.
+ */
+
+void content_clean(void)
+{
+	struct content *c, *next;
+
+	for (c = content_list; c; c = next) {
+		next = c->next;
+		if (((!c->user_list->next && !c->cache) ||
+				c->status == CONTENT_STATUS_ERROR) &&
+				!c->fetch) {
+			LOG(("%p %s", c, c->url));
+			if (c->cache)
+				cache_destroy(c);
+			content_destroy(c);
+		}
 	}
 }
 
@@ -370,6 +481,13 @@ void content_destroy(struct content *c)
 		c->destroy_pending = true;
 		return;
 	}
+
+	if (c->next)
+		c->next->prev = c->prev;
+	if (c->prev)
+		c->prev->next = c->next;
+	else
+		content_list = c->next;
 
 	if (c->type < HANDLER_MAP_COUNT && handler_map[c->type].destroy)
 		handler_map[c->type].destroy(c);
@@ -411,9 +529,9 @@ void content_reset(struct content *c)
  * Calls the redraw function for the content, if it exists.
  */
 
-void content_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void content_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale)
 {
 	assert(c != 0);
@@ -570,3 +688,9 @@ void content_reshape_instance(struct content *c, struct browser_window *bw,
 		handler_map[c->type].reshape_instance(c, bw, page, box, params, state);
 }
 
+
+
+void content_add_error(struct content *c, const char *token,
+		unsigned int line)
+{
+}

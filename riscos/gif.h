@@ -25,13 +25,12 @@ struct content_gif_data {
 	unsigned int current_frame;
 };
 
-void nsgif_init(void);
-void nsgif_create(struct content *c, const char *params[]);
-int nsgif_convert(struct content *c, unsigned int width, unsigned int height);
+bool nsgif_create(struct content *c, const char *params[]);
+bool nsgif_convert(struct content *c, int width, int height);
 void nsgif_destroy(struct content *c);
-void nsgif_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void nsgif_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale);
 
 #endif

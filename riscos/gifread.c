@@ -96,11 +96,12 @@ static int clear_image = FALSE;
 	any information that hasn't already been decoded.
 	If an error occurs, all previously decoded frames are retained.
 
-	@return -5 for GIF frame data error
-		-4 for insufficient data to process any more frames
-		-3 for memory error
-		-2 for GIF error
-		-1 for insufficient data to do anything
+	@return GIF_FRAME_DATA_ERROR for GIF frame data error
+		GIF_INSUFFICIENT_FRAME_DATA for insufficient data to process
+		          any more frames
+		GIF_INSUFFICIENT_MEMORY for memory error
+		GIF_DATA_ERROR for GIF error
+		GIF_INSUFFICIENT_DATA for insufficient data to do anything
 		0 for successful decoding
 		1 for successful decoding (all frames completely read)
 */
@@ -112,7 +113,7 @@ int gif_initialise(struct gif_animation *gif) {
 
 	/*	Check for sufficient data to be a GIF
 	*/
-	if (gif->buffer_size < 13) return -1;
+	if (gif->buffer_size < 13) return GIF_INSUFFICIENT_DATA;
 
 	/*	Get our current processing position
 	*/
@@ -244,12 +245,12 @@ int gif_initialise(struct gif_animation *gif) {
 	if (gif->frame_count_partial > 0) {
 		/*	Set the redraw for the first frame to the maximum frame size
 		*/
-		gif->frames[0].redraw_required = 0;	
+		gif->frames[0].redraw_required = 0;
 		gif->frames[0].redraw_x = 0;
 		gif->frames[0].redraw_y = 0;
 		gif->frames[0].redraw_width = gif->width;
 		gif->frames[0].redraw_height = gif->height;
-		
+
 		/*	We now work backwards to update the redraw characteristics of frames
 			with clear codes to stop a snowball effect of the redraw areas. It doesn't
 			really make much difference for most images, and will not work as well
@@ -282,7 +283,7 @@ int gif_initialise(struct gif_animation *gif) {
 				}
 			}
 		}
-		
+
 	}
 
 	/*	If there was a memory error tell the caller
@@ -512,7 +513,7 @@ int gif_initialise_frame(struct gif_animation *gif) {
 			gif->frames[frame].redraw_width = width;
 			gif->frames[frame].redraw_height = height;
 		}
-		
+
 		/*	if we are clearing the background then we need to redraw enough to cover the previous
 			frame too
 		*/
@@ -584,10 +585,10 @@ int gif_initialise_frame(struct gif_animation *gif) {
 
 /**	Decodes a GIF frame.
 
-	@return -5 for GIF frame data error
-		-4 for insufficient data to complete the frame
-		-2 for GIF error (invalid frame header)
-		-1 for insufficient data to do anything
+	@return GIF_FRAME_DATA_ERROR for GIF frame data error
+		GIF_INSUFFICIENT_FRAME_DATA for insufficient data to complete the frame
+		GIF_DATA_ERROR for GIF error (invalid frame header)
+		GIF_INSUFFICIENT_DATA for insufficient data to do anything
 		0 for successful decoding
 */
 int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {

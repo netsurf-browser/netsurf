@@ -23,7 +23,8 @@
 
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
-	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_config_th_pane;
+	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_config_th_pane,
+	dialog_debug;
 extern wimp_w history_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu;
 extern int iconbar_menu_height;
@@ -194,6 +195,11 @@ extern os_t sched_time;
 void schedule(int t, void (*callback)(void *p), void *p);
 void schedule_remove(void (*callback)(void *p), void *p);
 void schedule_run(void);
+
+/* in debugwin.c */
+void ro_gui_debugwin_open(void);
+void ro_gui_debugwin_close(void);
+void ro_gui_debugwin_redraw(wimp_draw *redraw);
 
 /* icon numbers */
 #define ICON_TOOLBAR_BACK 0

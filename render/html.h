@@ -83,11 +83,10 @@ struct content_html_data {
 };
 
 
-void html_create(struct content *c, const char *params[]);
-void html_process_data(struct content *c, char *data, unsigned long size);
-int html_convert(struct content *c, unsigned int width, unsigned int height);
-void html_revive(struct content *c, unsigned int width, unsigned int height);
-void html_reformat(struct content *c, unsigned int width, unsigned int height);
+bool html_create(struct content *c, const char *params[]);
+bool html_process_data(struct content *c, char *data, unsigned int size);
+bool html_convert(struct content *c, int width, int height);
+void html_reformat(struct content *c, int width, int height);
 void html_destroy(struct content *c);
 void html_fetch_object(struct content *c, char *url, struct box *box,
 		const content_type *permitted_types,
@@ -106,9 +105,9 @@ void html_remove_instance(struct content *c, struct browser_window *bw,
 		struct object_params *params, void **state);
 
 /* in riscos/htmlredraw.c */
-void html_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void html_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale);
 
 #endif

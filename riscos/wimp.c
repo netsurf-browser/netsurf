@@ -21,6 +21,7 @@
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 
 /*	Wimp_Extend,11 block
 */

@@ -14,10 +14,10 @@ struct content_draw_data {
 	int x0, y0;
 };
 
-int draw_convert(struct content *c, unsigned int width, unsigned int height);
+bool draw_convert(struct content *c, int width, int height);
 void draw_destroy(struct content *c);
-void draw_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void draw_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale);
 #endif

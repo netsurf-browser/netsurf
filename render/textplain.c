@@ -15,14 +15,18 @@ static const char header[] = "<html><body><pre>";
 static const char footer[] = "</pre></body></html>";
 
 
-void textplain_create(struct content *c, const char *params[])
+bool textplain_create(struct content *c, const char *params[])
 {
-	html_create(c, params);
+	if (!html_create(c, params))
+		/* html_create() must have broadcast MSG_ERROR already, so we
+		 * don't need to. */
+		return false;
 	htmlParseChunk(c->data.html.parser, header, sizeof(header) - 1, 0);
+	return true;
 }
 
 
-int textplain_convert(struct content *c, unsigned int width, unsigned int height)
+bool textplain_convert(struct content *c, int width, int height)
 {
 	htmlParseChunk(c->data.html.parser, footer, sizeof(footer) - 1, 0);
 	c->type = CONTENT_HTML;

@@ -119,9 +119,9 @@ void plugin_decode(void *a, void *b, void *c, void *d)
 }
 #endif
 
-void html_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long x0, long y0, long x1, long y1,
+void html_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int x0, int y0, int x1, int y1,
 		float scale)
 {
 }
@@ -262,9 +262,9 @@ extern os_t os_read_monotonic_time(void)
 }
 #endif
 
-void warn_user(const char *warn)
+void warn_user(const char *warning, const char *detail)
 {
-	printf("WARNING: %s\n", warn);
+	printf("WARNING: %s %s\n", warning, detail);
 }
 
 void *ro_gui_current_redraw_gui = 0;

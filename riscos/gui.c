@@ -374,7 +374,7 @@ void ro_gui_check_resolvers(void)
 	if (resolvers) {
 		LOG(("Inet$Resolvers '%s'", resolvers));
 	} else {
-		LOG(("Inet$Resolvers not set", resolvers));
+		LOG(("Inet$Resolvers not set"));
 		warn_user("Resolvers", 0);
 	}
 }
@@ -613,6 +613,8 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 		ro_gui_redraw_config_th_pane(redraw);
 	else if (redraw->w == history_window)
 		ro_gui_history_redraw(redraw);
+	else if (redraw->w == dialog_debug)
+		ro_gui_debugwin_redraw(redraw);
 	else {
 		g = ro_lookup_gui_from_w(redraw->w);
 		if (g != NULL)
@@ -659,6 +661,11 @@ void ro_gui_open_window_request(wimp_open *open)
 void ro_gui_close_window_request(wimp_close *close)
 {
 	gui_window *g;
+
+	if (close->w == dialog_debug) {
+		ro_gui_debugwin_close();
+		return;
+	}
 
 	g = ro_lookup_gui_from_w(close->w);
 
@@ -719,6 +726,8 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 				"file:///%%3CNetSurf$Dir%%3E/Docs/intro_%s",
 				option_language)) >= 0 && length < sizeof(url))
 			browser_window_create(url, NULL);
+	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
+		ro_gui_debugwin_open();
 	}
 }
 

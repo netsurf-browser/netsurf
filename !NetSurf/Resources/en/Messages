@@ -117,6 +117,9 @@ FetchStyle2:Loading %u stylesheets: %s
 NotCSS:Warning: stylesheet is not CSS
 BadObject:Warning: bad object type
 ObjError:Error loading object: %s
+ParsingFail:Parsing the document failed.
+BadGIF:Reading GIF failed.
+PNGError:PNG library error.
 
 DrawTitle:Draw image (%lux%lu, %lu bytes)
 GIFTitle:GIF image (%lux%lu)

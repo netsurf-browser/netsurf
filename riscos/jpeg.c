@@ -40,6 +40,9 @@
 #endif
 
 
+static char nsjpeg_error_buffer[JMSG_LENGTH_MAX];
+
+
 struct nsjpeg_error_mgr {
 	struct jpeg_error_mgr pub;
 	jmp_buf setjmp_buffer;
@@ -57,9 +60,10 @@ static void nsjpeg_term_source(j_decompress_ptr cinfo);
  * Create a CONTENT_JPEG.
  */
 
-void nsjpeg_create(struct content *c, const char *params[])
+bool nsjpeg_create(struct content *c, const char *params[])
 {
 	c->data.jpeg.sprite_area = 0;
+	return true;
 }
 
 
@@ -67,7 +71,7 @@ void nsjpeg_create(struct content *c, const char *params[])
  * Convert a CONTENT_JPEG for display.
  */
 
-int nsjpeg_convert(struct content *c, unsigned int w, unsigned int h)
+bool nsjpeg_convert(struct content *c, int w, int h)
 {
 	struct jpeg_decompress_struct cinfo;
 	struct nsjpeg_error_mgr jerr;
@@ -80,13 +84,17 @@ int nsjpeg_convert(struct content *c, unsigned int w, unsigned int h)
 	unsigned int area_size;
 	osspriteop_area *sprite_area = 0;
 	osspriteop_header *sprite;
+	union content_msg_data msg_data;
 
 	cinfo.err = jpeg_std_error(&jerr.pub);
 	jerr.pub.error_exit = nsjpeg_error_exit;
 	if (setjmp(jerr.setjmp_buffer)) {
 		jpeg_destroy_decompress(&cinfo);
 		free(sprite_area);
-		return 1;
+
+		msg_data.error = nsjpeg_error_buffer;
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
 	}
 	jpeg_create_decompress(&cinfo);
 	source_mgr.next_input_byte = c->source_data;
@@ -104,7 +112,12 @@ int nsjpeg_convert(struct content *c, unsigned int w, unsigned int h)
 	sprite_area = malloc(area_size);
 	if (!sprite_area) {
 		LOG(("malloc failed"));
-		return 1;
+		jpeg_destroy_decompress(&cinfo);
+
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		warn_user("NoMemory", 0);
+		return false;
 	}
 
 	/* area control block */
@@ -142,10 +155,10 @@ int nsjpeg_convert(struct content *c, unsigned int w, unsigned int h)
 	c->data.jpeg.sprite_area = sprite_area;
 	c->title = malloc(100);
 	if (c->title)
-		sprintf(c->title, messages_get("JPEGTitle"),
+		snprintf(c->title, 100, messages_get("JPEGTitle"),
 				width, height, c->source_size);
 	c->status = CONTENT_STATUS_DONE;
-	return 0;
+	return true;
 }
 
 
@@ -158,7 +171,7 @@ int nsjpeg_convert(struct content *c, unsigned int w, unsigned int h)
 void nsjpeg_error_exit(j_common_ptr cinfo)
 {
 	struct nsjpeg_error_mgr *err = (struct nsjpeg_error_mgr *) cinfo->err;
-	(*cinfo->err->output_message) (cinfo);
+	err->pub.format_message(cinfo, nsjpeg_error_buffer);
 	longjmp(err->setjmp_buffer, 1);
 }
 
@@ -229,9 +242,9 @@ void nsjpeg_destroy(struct content *c)
  * Redraw a CONTENT_JPEG.
  */
 
-void nsjpeg_redraw(struct content *c, long x, long y,
-		   unsigned long width, unsigned long height,
-		   long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void nsjpeg_redraw(struct content *c, int x, int y,
+		   int width, int height,
+		   int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		   float scale)
 {
 	unsigned int tinct_options;
@@ -255,7 +268,7 @@ void nsjpeg_redraw(struct content *c, long x, long y,
 			_IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
 			(char *) c->data.jpeg.sprite_area +
 				c->data.jpeg.sprite_area->first,
-			x, (int) (y - height),
+			x, y - height,
 			width, height,
 			tinct_options);
 }

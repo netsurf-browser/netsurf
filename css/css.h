@@ -311,8 +311,7 @@ struct css_parser_token {
 
 struct content;
 
-int css_convert(struct content *c, unsigned int width, unsigned int height);
-void css_revive(struct content *c, unsigned int width, unsigned int height);
+bool css_convert(struct content *c, int width, int height);
 void css_destroy(struct content *c);
 
 #ifdef CSS_INTERNALS
@@ -340,6 +339,7 @@ void *css_parser_Alloc(void *(*mallocProc)(/*size_t*/ int));
 void css_parser_Free(void *p, void (*freeProc)(void*));
 void css_parser_(void *yyp, int yymajor, struct css_parser_token yyminor,
 		struct css_parser_params *param);
+const char *css_parser_TokenName(int tokenType);
 
 #endif
 

@@ -59,7 +59,7 @@ static void fetchcache_error_page(struct content *c, const char *error);
  * \param post_urlenc url encoded post data, or 0 if none
  * \param post_multipart multipart post data, or 0 if none
  * \param cookies send and accept cookies
- * \return a new content, or 0 if an error occurred and no_error_pages is true
+ * \return a new content, or 0 if an error occurred
  */
 
 struct content * fetchcache(const char *url, char *referer,
@@ -77,12 +77,16 @@ struct content * fetchcache(const char *url, char *referer,
 		)
 {
 	struct content *c;
-	char *url1 = xstrdup(url);
-	char *hash = strchr(url1, '#');
+	char *url1;
+	char *hash;
 	char error_message[500];
 
+	url1 = strdup(url);
+	if (!url1)
+		return 0;
+
 	/* strip fragment identifier */
-	if (hash != 0)
+	if ((hash = strchr(url1, '#')))
 		*hash = 0;
 
 	LOG(("url %s", url1));
@@ -100,6 +104,10 @@ struct content * fetchcache(const char *url, char *referer,
 	}
 
 	c = content_create(url1);
+	if (!c) {
+		free(url1);
+		return 0;
+	}
 	content_add_user(c, callback, p1, p2);
 
 #ifdef WITH_POST
@@ -118,12 +126,10 @@ struct content * fetchcache(const char *url, char *referer,
 			,cookies
 #endif
 			);
-	if (c->fetch == 0) {
+	if (!c->fetch) {
 		LOG(("warning: fetch_start failed"));
-		if (c->cache)
-			cache_destroy(c);
+		c->status = CONTENT_STATUS_ERROR;
 		if (no_error_pages) {
-			content_destroy(c);
 			free(url1);
 			return 0;
 		}
@@ -144,6 +150,7 @@ struct content * fetchcache(const char *url, char *referer,
 
 void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 {
+	bool res;
 	struct content *c = p;
 	content_type type;
 	char *mime_type, *url;
@@ -159,11 +166,13 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			mime_type = fetchcache_parse_type(data, &params);
 			type = content_lookup(mime_type);
 			LOG(("FETCH_TYPE, type %u", type));
-			content_set_type(c, type, mime_type, (const char**)params);
+			res = content_set_type(c, type, mime_type, params);
 			free(mime_type);
 			for (i = 0; params[i]; i++)
 				free(params[i]);
 			free(params);
+			if (!res)
+				fetch_abort(c->fetch);
 			if (c->cache && c->type == CONTENT_OTHER)
 				cache_destroy(c);
 			break;
@@ -181,7 +190,8 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 						messages_get("Received"),
 						human_friendly_bytesize(c->source_size + size));
 			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
-			content_process_data(c, data, size);
+			if (!content_process_data(c, data, size))
+				fetch_abort(c->fetch);
 			break;
 
 		case FETCH_FINISHED:
@@ -199,9 +209,10 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			if (c->cache)
 				cache_destroy(c);
 			if (c->no_error_pages) {
+				c->status = CONTENT_STATUS_ERROR;
 				msg_data.error = data;
-				content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-				content_destroy(c);
+				content_broadcast(c, CONTENT_MSG_ERROR,
+						msg_data);
 			} else {
 				content_reset(c);
 				fetchcache_error_page(c, data);
@@ -233,15 +244,15 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			c->fetch = 0;
 			msg_data.auth_realm = data;
 			content_broadcast(c, CONTENT_MSG_AUTH, msg_data);
-			cache_destroy(c);
+			if (c->cache)
+				cache_destroy(c);
 			break;
 #endif
 		default:
 			assert(0);
 	}
 
-	if (--(c->lock) == 0 && c->destroy_pending)
-		content_destroy(c);
+	c->lock--;
 }
 
 

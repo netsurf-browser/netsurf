@@ -21,6 +21,7 @@
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -38,19 +39,27 @@
 
 static void nsgif_animate(void *p);
 
-void nsgif_init(void) {
-}
 
-void nsgif_create(struct content *c, const char *params[]) {
+bool nsgif_create(struct content *c, const char *params[]) {
+	union content_msg_data msg_data;
   	/*	Initialise our data structure
   	*/
-  	c->data.gif.gif = (gif_animation *)xcalloc(sizeof(gif_animation), 1);
+  	c->data.gif.gif = calloc(sizeof(gif_animation), 1);
+  	if (!c->data.gif.gif) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		warn_user("NoMemory", 0);
+  		return false;
+  	}
 	c->data.gif.current_frame = 0;
+	return true;
 }
 
 
-int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight) {
+bool nsgif_convert(struct content *c, int iwidth, int iheight) {
+	int res;
 	struct gif_animation *gif;
+	union content_msg_data msg_data;
 
 	/*	Create our animation
 	*/
@@ -61,16 +70,42 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight) 
 
 	/*	Initialise the GIF
 	*/
-	gif_initialise(gif);
+	res = gif_initialise(gif);
+	if (res < 0) {
+		if (res == GIF_INSUFFICIENT_MEMORY) {
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			warn_user("NoMemory", 0);
+		} else {
+			msg_data.error = messages_get("BadGIF");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		}
+		return false;
+	}
 
 	/*	Abort on bad GIFs
 	*/
-	if ((gif->frame_count_partial == 0) || (gif->width == 0) || (gif->height == 0)) return 1;
+	if ((gif->frame_count_partial == 0) || (gif->width == 0) ||
+			(gif->height == 0)) {
+		msg_data.error = messages_get("BadGIF");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
 
 	/*	Store our content width
 	*/
 	c->width = gif->width;
 	c->height = gif->height;
+
+	/*	Initialise the first frame so if we try to use the image data directly prior to
+		a plot we get some sensible data
+	*/
+	res = gif_decode_frame(c->data.gif.gif, 0);
+	if (res < 0 && res != GIF_INSUFFICIENT_FRAME_DATA) {
+		msg_data.error = messages_get("BadGIF");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
 
 	/*	Schedule the animation if we have one
 	*/
@@ -78,21 +113,16 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight) 
 		schedule(gif->frames[0].frame_delay, nsgif_animate, c);
 	}
 
-	/*	Initialise the first frame so if we try to use the image data directly prior to
-		a plot we get some sensible data
-	*/
-	gif_decode_frame(c->data.gif.gif, 0);
-
 	/*	Exit as a success
 	*/
 	c->status = CONTENT_STATUS_DONE;
-	return 0;
+	return true;
 }
 
 
-void nsgif_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void nsgif_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale) {
 
 	int previous_frame;
@@ -152,7 +182,7 @@ void nsgif_destroy(struct content *c)
 	*/
 	schedule_remove(nsgif_animate, c);
 	gif_finalise(c->data.gif.gif);
-	xfree(c->data.gif.gif);
+	free(c->data.gif.gif);
 }
 
 

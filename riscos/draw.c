@@ -18,56 +18,47 @@
 
 #ifdef WITH_DRAW
 
-int draw_convert(struct content *c, unsigned int width, unsigned int height)
+bool draw_convert(struct content *c, int width, int height)
 {
+	union content_msg_data msg_data;
+	os_box bbox;
 	os_error *error;
-	os_trfm *matrix = xcalloc(1, sizeof(os_trfm));
-	os_box *bbox = xcalloc(1, sizeof(os_box));
-
-        /* Full size image (1:1) */
-        matrix->entries[0][0] = 1 << 16;
-        matrix->entries[0][1] = 0;
-        matrix->entries[1][0] = 0;
-        matrix->entries[1][1] = 1 << 16;
-        matrix->entries[2][0] = 0;
-        matrix->entries[2][1] = 0;
 
         /* BBox contents in Draw units (256*OS unit) */
 	error = xdrawfile_bbox(0, (drawfile_diagram*)(c->source_data),
-	                       (int)c->source_size, matrix, bbox);
-
+			(int) c->source_size, 0, &bbox);
         if (error) {
-                LOG(("error: %s", error->errmess));
-                xfree(matrix);
-                xfree(bbox);
-                return 1;
+                LOG(("xdrawfile_bbox: 0x%x: %s",
+                		error->errnum, error->errmess));
+		msg_data.error = error->errmess;
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+                return false;
         }
 
         /* c->width & c->height stored as (OS units/2)
            => divide by 512 to convert from draw units */
-	c->width = ((bbox->x1 - bbox->x0) / 512);
-	c->height = ((bbox->y1 - bbox->y0) / 512);
-	c->data.draw.x0 = bbox->x0 / 2;
-	c->data.draw.y0 = bbox->y0 / 2;
-	c->title = xcalloc(100, 1);
-	sprintf(c->title, messages_get("DrawTitle"), c->width,
+	c->width = ((bbox.x1 - bbox.x0) / 512);
+	c->height = ((bbox.y1 - bbox.y0) / 512);
+	c->data.draw.x0 = bbox.x0 / 2;
+	c->data.draw.y0 = bbox.y0 / 2;
+	c->title = malloc(100);
+	if (c->title)
+		snprintf(c->title, 100, messages_get("DrawTitle"), c->width,
 	                                c->height, c->source_size);
 	c->status = CONTENT_STATUS_DONE;
-	xfree(matrix);
-	xfree(bbox);
-	return 0;
+	return true;
 }
 
 
 void draw_destroy(struct content *c)
 {
-	xfree(c->title);
+	free(c->title);
 }
 
 
-void draw_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void draw_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale)
 {
         os_trfm matrix;

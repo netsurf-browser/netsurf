@@ -31,5 +31,6 @@ void regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
 void clean_cookiejar(void);
 void unicode_transliterate(unsigned int c, char **r);
 char *human_friendly_bytesize(unsigned long bytesize);
+void warn_user(const char *warning, const char *detail);
 
 #endif

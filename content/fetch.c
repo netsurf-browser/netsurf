@@ -31,9 +31,6 @@
 #include "curl/curl.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
-#ifdef riscos
-#include "netsurf/desktop/gui.h"
-#endif
 #include "netsurf/desktop/options.h"
 #ifdef WITH_AUTH
 #include "netsurf/desktop/401login.h"
@@ -587,6 +584,11 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 	/* send data to the caller */
 	LOG(("FETCH_DATA"));
 	f->callback(FETCH_DATA, f->p, data, size * nmemb);
+	if (f->aborting) {
+		f->locked--;
+		f->stopped = true;
+		return 0;
+	}
 
 	f->locked--;
 	return size * nmemb;

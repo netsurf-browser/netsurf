@@ -60,9 +60,9 @@ static os_trfm trfm = { {
 		{ 0, 0 } } };
 
 
-void html_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void html_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale)
 {
 	bool select_on = false;

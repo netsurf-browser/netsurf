@@ -10,7 +10,7 @@
 
 struct content;
 
-void textplain_create(struct content *c, const char *params[]);
-int textplain_convert(struct content *c, unsigned int width, unsigned int height);
+bool textplain_create(struct content *c, const char *params[]);
+bool textplain_convert(struct content *c, int width, int height);
 
 #endif

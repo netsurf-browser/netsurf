@@ -54,6 +54,7 @@ void netsurf_init(int argc, char** argv)
   struct utsname utsname;
 
   stdout = stderr;
+  curl_memdebug("memdump");
   if (uname(&utsname) != 0)
     LOG(("Failed to extract machine information\n"));
   else
@@ -63,12 +64,6 @@ void netsurf_init(int argc, char** argv)
   fetch_init();
   cache_init();
   fetchcache_init();
-#ifdef WITH_PNG
-  nspng_init();
-#endif
-#ifdef WITH_GIF
-  nsgif_init();
-#endif
   url_init();
 }
 
@@ -79,8 +74,9 @@ void netsurf_init(int argc, char** argv)
 
 void netsurf_poll(void)
 {
-  gui_poll(fetch_active);
-  fetch_poll();
+	content_clean();
+	gui_poll(fetch_active);
+	fetch_poll();
 }
 
 

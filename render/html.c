@@ -51,10 +51,11 @@ static bool html_object_type_permitted(const content_type type,
  * created.
  */
 
-void html_create(struct content *c, const char *params[])
+bool html_create(struct content *c, const char *params[])
 {
 	unsigned int i;
 	struct content_html_data *html = &c->data.html;
+	union content_msg_data msg_data;
 	xmlCharEncoding encoding = XML_CHAR_ENCODING_NONE;
 
 	html->encoding = NULL;
@@ -74,7 +75,7 @@ void html_create(struct content *c, const char *params[])
 	}
 
 	html->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, encoding);
-	html->base_url = xstrdup(c->url);
+	html->base_url = strdup(c->url);
 	html->layout = 0;
 	html->background_colour = TRANSPARENT;
 	html->stylesheet_count = 0;
@@ -85,9 +86,24 @@ void html_create(struct content *c, const char *params[])
 	html->object = 0;
 	html->imagemaps = 0;
 	html->string_pool = pool_create(8000);
-	assert(html->string_pool);
 	html->box_pool = pool_create(sizeof (struct box) * 100);
-	assert(html->box_pool);
+
+	if (!html->parser || !html->base_url || !html->string_pool ||
+			!html->box_pool) {
+		htmlFreeParserCtxt(html->parser);
+		free(html->base_url);
+		if (html->string_pool)
+			pool_destroy(html->string_pool);
+		if (html->box_pool)
+			pool_destroy(html->box_pool);
+
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		warn_user("NoMemory", 0);
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -97,7 +113,7 @@ void html_create(struct content *c, const char *params[])
  * The data is parsed in chunks of size CHUNK, multitasking in between.
  */
 
-void html_process_data(struct content *c, char *data, unsigned long size)
+bool html_process_data(struct content *c, char *data, unsigned int size)
 {
 	unsigned long x;
 
@@ -120,6 +136,8 @@ void html_process_data(struct content *c, char *data, unsigned long size)
 		gui_multitask();
 	}
 	htmlParseChunk(c->data.html.parser, data + x, (int) (size - x), 0);
+
+	return true;
 }
 
 
@@ -138,11 +156,11 @@ void html_process_data(struct content *c, char *data, unsigned long size)
  * being fetched.
  */
 
-int html_convert(struct content *c, unsigned int width, unsigned int height)
+bool html_convert(struct content *c, int width, int height)
 {
 	xmlDoc *document;
 	xmlNode *html, *head;
-	union content_msg_data data;
+	union content_msg_data msg_data;
 
 	/* finish parsing */
 	htmlParseChunk(c->data.html.parser, "", 0, 1);
@@ -150,9 +168,12 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	/*xmlDebugDumpDocument(stderr, c->data.html.parser->myDoc);*/
 	htmlFreeParserCtxt(c->data.html.parser);
 	c->data.html.parser = 0;
-	if (document == NULL) {
+	if (!document) {
 		LOG(("Parsing failed"));
-		return 1;
+		msg_data.error = messages_get("ParsingFail");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		warn_user("ParsingFail", 0);
+		return false;
 	}
 	/* Last change to pick the Content-Type charset information if the
 	 * server didn't send it (or we're reading the HTML from disk)
@@ -168,7 +189,10 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	if (html == 0 || strcmp((const char *) html->name, "html") != 0) {
 		LOG(("html element not found"));
 		xmlFreeDoc(document);
-		return 1;
+		msg_data.error = messages_get("ParsingFail");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		warn_user("ParsingFail", 0);
+		return false;
 	}
 	for (head = html->children;
 			head != 0 && head->type != XML_ELEMENT_NODE;
@@ -188,7 +212,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	/* convert xml tree to box tree */
 	LOG(("XML to box"));
 	content_set_status(c, messages_get("Processing"));
-	content_broadcast(c, CONTENT_MSG_STATUS, data);
+	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	xml_to_box(html, c);
 	/*box_dump(c->data.html.layout->children, 0);*/
 
@@ -201,7 +225,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 
 	/* layout the box tree */
 	content_set_status(c, messages_get("Formatting"));
-	content_broadcast(c, CONTENT_MSG_STATUS, data);
+	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	LOG(("Layout document"));
 	layout_document(c->data.html.layout->children, width,
 			c->data.html.box_pool);
@@ -218,7 +242,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 		content_set_status(c, messages_get("FetchObjs"), c->active);
 	}
 
-	return 0;
+	return true;
 }
 
 
@@ -281,7 +305,6 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 	c->data.html.stylesheet_content[1] = 0;
 	c->data.html.stylesheet_count = 2;
 
-	c->error = 0;
 	c->active = 0;
 
 	c->data.html.stylesheet_content[0] = fetchcache(
@@ -396,6 +419,8 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 				const char *params[] = { 0 };
 				c->data.html.stylesheet_content[1] =
 						content_create(c->data.html.base_url);
+				if (!c->data.html.stylesheet_content[1])
+					return false;
 				content_set_type(c->data.html.stylesheet_content[1],
 						CONTENT_CSS, "text/css", params);
 			}
@@ -434,10 +459,10 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 		gui_multitask();
 	}
 
-	if (c->error) {
-		content_set_status(c, "Warning: some stylesheets failed to load");
-		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
-	}
+/* 	if (c->error) { */
+/* 		content_set_status(c, "Warning: some stylesheets failed to load"); */
+/* 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data); */
+/* 	} */
 }
 
 
@@ -457,7 +482,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			if (css->type != CONTENT_CSS) {
 				c->data.html.stylesheet_content[i] = 0;
 				c->active--;
-				c->error = 1;
+				content_add_error(c, "NotCSS", 0);
 				content_set_status(c, messages_get("NotCSS"));
 				content_broadcast(c, CONTENT_MSG_STATUS, data);
 				content_remove_user(css, html_convert_css_callback, c, (void*)i);
@@ -475,7 +500,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 		case CONTENT_MSG_ERROR:
 			c->data.html.stylesheet_content[i] = 0;
 			c->active--;
-			c->error = 1;
+			content_add_error(c, "?", 0);
 			break;
 
 		case CONTENT_MSG_STATUS:
@@ -506,7 +531,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 		case CONTENT_MSG_AUTH:
 		        c->data.html.stylesheet_content[i] = 0;
 			c->active--;
-			c->error = 1;
+			content_add_error(c, "?", 0);
 		        break;
 #endif
 
@@ -590,7 +615,7 @@ void html_object_callback(content_msg msg, struct content *object,
 			/* not acceptable */
 			c->data.html.object[i].content = 0;
 			c->active--;
-			c->error = 1;
+			content_add_error(c, "?", 0);
 			content_set_status(c, messages_get("BadObject"));
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			content_remove_user(object, html_object_callback, c, (void*)i);
@@ -611,7 +636,7 @@ void html_object_callback(content_msg msg, struct content *object,
 		case CONTENT_MSG_ERROR:
 			c->data.html.object[i].content = 0;
 			c->active--;
-			c->error = 1;
+			content_add_error(c, "?", 0);
 			content_set_status(c, messages_get("ObjError"),
 					data.error);
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
@@ -674,7 +699,7 @@ void html_object_callback(content_msg msg, struct content *object,
 		case CONTENT_MSG_AUTH:
 		        c->data.html.object[i].content = 0;
 			c->active--;
-			c->error = 1;
+			content_add_error(c, "?", 0);
 		        break;
 #endif
 
@@ -754,47 +779,11 @@ bool html_object_type_permitted(const content_type type,
 }
 
 
-void html_revive(struct content *c, unsigned int width, unsigned int height)
-{
-	unsigned int i;
-
-	assert(0);  /* dead code, do not use as is */
-
-	/* reload objects and fix pointers */
-	for (i = 0; i != c->data.html.object_count; i++) {
-		if (c->data.html.object[i].content != 0) {
-			c->data.html.object[i].content = fetchcache(
-					c->data.html.object[i].url, c->url,
-					html_object_callback,
-					c, (void*)i, 0, 0, true
-#ifdef WITH_POST
-					, 0, 0
-#endif
-#ifdef WITH_COOKIES
-					, false
-#endif
-					);
-			if (c->data.html.object[i].content &&
-					c->data.html.object[i].content->status != CONTENT_STATUS_DONE)
-				c->active++;
-		}
-	}
-
-	layout_document(c->data.html.layout->children, width,
-			c->data.html.box_pool);
-	c->width = c->data.html.layout->children->width;
-	c->height = c->data.html.layout->children->height;
-
-	if (c->active != 0)
-		c->status = CONTENT_STATUS_READY;
-}
-
-
 /**
  * Reformat a CONTENT_HTML to a new width.
  */
 
-void html_reformat(struct content *c, unsigned int width, unsigned int height)
+void html_reformat(struct content *c, int width, int height)
 {
 	layout_document(c->data.html.layout->children, width,
 			c->data.html.box_pool);

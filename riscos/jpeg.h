@@ -16,12 +16,12 @@ struct content_jpeg_data {
 	osspriteop_area *sprite_area;
 };
 
-void nsjpeg_create(struct content *c, const char *params[]);
-int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height);
+bool nsjpeg_create(struct content *c, const char *params[]);
+bool nsjpeg_convert(struct content *c, int width, int height);
 void nsjpeg_destroy(struct content *c);
-void nsjpeg_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void nsjpeg_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale);
 
 #endif

@@ -33,7 +33,7 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_401li,
 #endif
 	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
-	dialog_warning, dialog_config_th_pane;
+	dialog_warning, dialog_config_th_pane, dialog_debug;
 
 static int font_size;
 static int font_min_size;
@@ -83,6 +83,7 @@ void ro_gui_dialog_init(void)
 	dialog_objinfo = ro_gui_dialog_create("objectinfo");
 	dialog_tooltip = ro_gui_dialog_create("tooltip");
 	dialog_warning = ro_gui_dialog_create("warning");
+	dialog_debug = ro_gui_dialog_create("debug");
 
 	set_browser_choices();
 	set_proxy_choices();

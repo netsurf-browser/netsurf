@@ -87,6 +87,7 @@
 #include "netsurf/desktop/gui.h"
 #endif
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
@@ -241,7 +242,7 @@ const struct css_style css_blank_style = {
  * Convert a CONTENT_CSS for use.
  */
 
-int css_convert(struct content *c, unsigned int width, unsigned int height)
+bool css_convert(struct content *c, int width, int height)
 {
 	unsigned char *source_data;
 	unsigned char *current, *end, *token_text;
@@ -250,6 +251,7 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 	void *parser;
 	struct css_parser_params param = {false, c, 0, false, false};
 	struct css_parser_token token_data;
+	union content_msg_data msg_data;
 
 	c->data.css.css = malloc(sizeof *c->data.css.css);
 	parser = css_parser_Alloc(malloc);
@@ -258,7 +260,11 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 	if (!c->data.css.css || !parser || !source_data) {
 		free(c->data.css.css);
 		css_parser_Free(parser, free);
-		return 1;
+
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		warn_user("NoMemory", 0);
+		return false;
 	}
 
 	for (i = 0; i != HASH_SIZE; i++)
@@ -292,8 +298,12 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 	css_parser_(parser, 0, token_data, &param);
 	css_parser_Free(parser, free);
 
-	if (param.memory_error)
-		return 1;
+	if (param.memory_error) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		warn_user("NoMemory", 0);
+		return false;
+	}
 
 	/*css_dump_stylesheet(c->data.css.css);*/
 
@@ -305,35 +315,7 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 	}
 
 	c->status = CONTENT_STATUS_DONE;
-	return 0;
-}
-
-
-void css_revive(struct content *c, unsigned int width, unsigned int height)
-{
-	unsigned int i;
-	/* imported stylesheets */
-	for (i = 0; i != c->data.css.import_count; i++) {
-		c->data.css.import_content[i] = fetchcache(
-				c->data.css.import_url[i], c->url,
-				css_atimport_callback, c, (void*)i,
-				c->width, c->height, true
-#ifdef WITH_POST
-				, 0, 0
-#endif
-#ifdef WITH_COOKIES
-				, false
-#endif
-				);
-		if (c->data.css.import_content[i] == 0)
-			continue;
-		if (c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
-			c->active++;
-	}
-	while (c->active != 0) {
-		fetch_poll();
-		gui_multitask();
-	}
+	return true;
 }
 
 
@@ -371,6 +353,7 @@ void css_destroy(struct content *c)
 /**
  * Create a new struct css_node.
  *
+ * \param  stylesheet  content of type CONTENT_CSS
  * \param  type  type of node
  * \param  data  string for data, not copied
  * \param  data_length  length of data
@@ -610,7 +593,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 				content_remove_user(css, css_atimport_callback, c, (void*)i);
 				c->data.css.import_content[i] = 0;
 				c->active--;
-				c->error = 1;
+				content_add_error(c, "NotCSS", 0);
 			}
 			break;
 
@@ -626,7 +609,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 		case CONTENT_MSG_ERROR:
 			c->data.css.import_content[i] = 0;
 			c->active--;
-			c->error = 1;
+			content_add_error(c, "?", 0);
 			break;
 
 		case CONTENT_MSG_STATUS:
@@ -638,7 +621,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 			c->data.css.import_url[i] = strdup(data.redirect);
 			if (!c->data.css.import_url[i]) {
 				/** \todo report to user */
-				c->error = 1;
+				/* c->error = 1; */
 				return;
 			}
 			c->data.css.import_content[i] = fetchcache(
@@ -996,9 +979,41 @@ void css_dump_style(const struct css_style * const style)
 	if (style->z != css_empty_style.z)				\
 		fprintf(stderr, s ": %s; ", n[style->z]);
 
-        DUMP_KEYWORD(background_attachment, "background-attachment", css_background_attachment_name);
 	DUMP_COLOR(background_color, "background-color");
-	DUMP_KEYWORD(background_repeat, "background-repeat", css_background_repeat_name);
+	if (style->background_attachment !=
+			css_empty_style.background_attachment ||
+			style->background_image.type !=
+			css_empty_style.background_image.type ||
+			style->background_position.horz.pos !=
+			css_empty_style.background_position.horz.pos ||
+			style->background_position.vert.pos !=
+			css_empty_style.background_position.vert.pos ||
+			style->background_repeat !=
+			css_empty_style.background_repeat) {
+		fprintf(stderr, "background: ");
+		switch (style->background_image.type) {
+			case CSS_BACKGROUND_IMAGE_NONE:
+				fprintf(stderr, "none");
+				break;
+			case CSS_BACKGROUND_IMAGE_INHERIT:
+				fprintf(stderr, "inherit");
+				break;
+			case CSS_BACKGROUND_IMAGE_URI:
+				fprintf(stderr, "(%p) \"%s\"",
+						style->background_image.uri,
+						style->background_image.uri);
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
+		}
+		fprintf(stderr, " %s %s ",
+				css_background_attachment_name[
+						style->background_attachment],
+				css_background_repeat_name[
+						style->background_repeat]);
+		fprintf(stderr, "; ");
+	}
 	DUMP_KEYWORD(clear, "clear", css_clear_name);
 	DUMP_COLOR(color, "color");
 	DUMP_KEYWORD(cursor, "cursor", css_cursor_name);
@@ -1078,7 +1093,7 @@ void css_dump_style(const struct css_style * const style)
 	if (style->margin[0].margin != css_empty_style.margin[0].margin ||
 			style->margin[1].margin != css_empty_style.margin[1].margin ||
 			style->margin[2].margin != css_empty_style.margin[2].margin ||
-      			style->margin[3].margin != css_empty_style.margin[3].margin) {
+			style->margin[3].margin != css_empty_style.margin[3].margin) {
 		fprintf(stderr, "margin:");
 		for (i = 0; i != 4; i++) {
 			switch (style->margin[i].margin) {
@@ -1152,19 +1167,19 @@ void css_dump_style(const struct css_style * const style)
 	if (style->text_indent.size != css_empty_style.text_indent.size) {
 		fprintf(stderr, "text-indent: ");
 		switch (style->text_indent.size) {
-		        case CSS_TEXT_INDENT_LENGTH:
-		        	css_dump_length(&style->text_indent.value.length);
-		        	break;
-		        case CSS_TEXT_INDENT_PERCENT:
-		        	fprintf(stderr, "%g%%",
-		        		style->text_indent.value.percent);
-		        	break;
-		        case CSS_TEXT_INDENT_INHERIT:
-		        	fprintf(stderr, "inherit");
-		        	break;
-		        default:
-		        	fprintf(stderr, "UNKNOWN");
-		        	break;
+			case CSS_TEXT_INDENT_LENGTH:
+				css_dump_length(&style->text_indent.value.length);
+				break;
+			case CSS_TEXT_INDENT_PERCENT:
+				fprintf(stderr, "%g%%",
+					style->text_indent.value.percent);
+				break;
+			case CSS_TEXT_INDENT_INHERIT:
+				fprintf(stderr, "inherit");
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
 		}
 		fprintf(stderr, "; ");
 	}

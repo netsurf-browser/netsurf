@@ -115,6 +115,9 @@ FetchStyle2:Chargement de %u feuilles de styles: %s
 NotCSS:Attention: feuille de style non CSS
 BadObject:Attention: mauvais type d'objet
 ObjError:Erreur lors du chargement de: %s
+ParsingFail:Parsing the document failed.
+BadGIF:Reading GIF failed.
+PNGError:PNG library error.
 
 DrawTitle:Image Draw (%lux%lu, %lu octets)
 GIFTitle:Image GIF (%lux%lu)

@@ -32,19 +32,29 @@ static void row_callback(png_structp png, png_bytep new_row,
 static void end_callback(png_structp png, png_infop info);
 
 
-void nspng_init(void)
+bool nspng_create(struct content *c, const char *params[])
 {
-}
+	union content_msg_data msg_data;
 
-
-void nspng_create(struct content *c, const char *params[])
-{
 	c->data.png.sprite_area = 0;
 	c->data.png.png = png_create_read_struct(PNG_LIBPNG_VER_STRING,
 			0, 0, 0);
-	assert(c->data.png.png != 0);
+	if (!c->data.png.png) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		warn_user("NoMemory", 0);
+		return false;
+	}
 	c->data.png.info = png_create_info_struct(c->data.png.png);
-	assert(c->data.png.info != 0);
+	if (!c->data.png.info) {
+		png_destroy_read_struct(&c->data.png.png,
+				&c->data.png.info, 0);
+
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		warn_user("NoMemory", 0);
+		return false;
+	}
 
 	if (setjmp(png_jmpbuf(c->data.png.png))) {
 		png_destroy_read_struct(&c->data.png.png,
@@ -52,30 +62,38 @@ void nspng_create(struct content *c, const char *params[])
 		LOG(("Failed to set callbacks"));
 		c->data.png.png = NULL;
 		c->data.png.info = NULL;
-		return;
+
+		msg_data.error = messages_get("PNGError");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
 	}
 
 	png_set_progressive_read_fn(c->data.png.png, c,
 			info_callback, row_callback, end_callback);
+
+	return true;
 }
 
 
-void nspng_process_data(struct content *c, char *data, unsigned long size)
+bool nspng_process_data(struct content *c, char *data, unsigned int size)
 {
+	union content_msg_data msg_data;
+
 	if (setjmp(png_jmpbuf(c->data.png.png))) {
 		png_destroy_read_struct(&c->data.png.png,
 				&c->data.png.info, 0);
 		LOG(("Failed to process data"));
 		c->data.png.png = NULL;
 		c->data.png.info = NULL;
-		return;
+
+		msg_data.error = messages_get("PNGError");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
 	}
 
-	LOG(("data %p, size %li", data, size));
-	png_process_data(c->data.png.png, c->data.png.info,
-			data, size);
+	png_process_data(c->data.png.png, c->data.png.info, data, size);
 
-	c->size += size;
+	return true;
 }
 
 
@@ -224,30 +242,32 @@ void end_callback(png_structp png, png_infop info)
 
 
 
-int nspng_convert(struct content *c, unsigned int width, unsigned int height)
+bool nspng_convert(struct content *c, int width, int height)
 {
-	if (c->data.png.png == NULL || c->data.png.info == NULL)
-		return 1;
+	assert(c->data.png.png);
+	assert(c->data.png.info);
 
 	png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
 
-	c->title = xcalloc(100, 1);
-	sprintf(c->title, messages_get("PNGTitle"), c->width, c->height);
+	c->title = malloc(100);
+	if (c->title)
+		snprintf(c->title, 100, messages_get("PNGTitle"),
+				c->width, c->height);
 	c->status = CONTENT_STATUS_DONE;
-	return 0;
+	return true;
 }
 
 
 void nspng_destroy(struct content *c)
 {
-	xfree(c->title);
-	xfree(c->data.png.sprite_area);
+	free(c->title);
+	free(c->data.png.sprite_area);
 }
 
 
-void nspng_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void nspng_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale)
 {
 	unsigned int tinct_options;
@@ -269,7 +289,7 @@ void nspng_redraw(struct content *c, long x, long y,
 	*/
 	_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
 			((char *) c->data.png.sprite_area + c->data.png.sprite_area->first),
-			x, (int)(y - height),
+			x, y - height,
 			width, height,
 			tinct_options);
 }

@@ -14,12 +14,73 @@
  * Each content has a type. The type is used to call a specific implementation
  * of functions such as content_process_data().
  *
+ * The source data fetched from the URL is placed in the source_data buffer as
+ * it arrives.
+ *
  * Contents have an associated set of users, which are informed by a callback
  * when the state of the content changes or something interesting happens.
  *
  * Optionally, contents may have instances (depending on type). Instances
  * represent copies of the same URL, for example if a page is open in two
  * windows, or a page contains the same image twice.
+ *
+ * The status of a content follows a fixed order. Certain content functions
+ * change the state, and each change of state results in a message to all users
+ * of the content. The diagram below shows this:
+ * \dot
+ *   digraph status {
+ *     node [shape=plaintext, fontname=Helvetica, fontsize=9];
+ *     edge [fontname=Helvetica, fontsize=9];
+ *
+ *     content_create -> TYPE_UNKNOWN [style=bold];
+ *     TYPE_UNKNOWN -> content_set_type [style=bold];
+ *     content_set_type -> LOADING [label=MSG_LOADING, style=bold];
+ *     content_set_type -> ERROR [label=MSG_ERROR];
+ *     LOADING -> content_process_data [style=bold];
+ *     content_process_data -> LOADING [style=bold];
+ *     content_process_data -> ERROR [label=MSG_ERROR];
+ *     LOADING -> content_convert [style=bold];
+ *     content_convert -> READY [label=MSG_READY, style=bold];
+ *     content_convert -> DONE [label="MSG_READY\nMSG_DONE", style=bold];
+ *     content_convert -> ERROR [label=MSG_ERROR];
+ *     READY -> READY [style=bold];
+ *     READY -> DONE [label=MSG_DONE, style=bold];
+ *
+ *     TYPE_UNKNOWN [shape=ellipse];
+ *     LOADING [shape=ellipse];
+ *     READY [shape=ellipse];
+ *     DONE [shape=ellipse];
+ *     ERROR [shape=ellipse];
+ *   }
+ * \enddot
+ *
+ * To implement a new content type, implement the following functions:
+ *
+ * - <i>type</i>_create(): called to initialise type-specific fields in the
+ *   content structure. Optional.
+ *
+ * - <i>type</i>_process_data(): called when some data arrives. Optional.
+ *
+ * - <i>type</i>_convert(): called when data has finished arriving. The
+ *   content needs to be converted for display. Must set the status to one of
+ *   CONTENT_STATUS_READY or CONTENT_STATUS_DONE if no error occurs. Optional,
+ *   but probably required for non-trivial types.
+ *
+ * - <i>type</i>_reformat(): called when, for example, the window has been
+ *   resized, and the content needs reformatting for the new size. Optional.
+ *
+ * - <i>type</i>_destroy(): called when the content is being destroyed. Free all
+ *   resources. Optional.
+ *
+ * - <i>type</i>_redraw(): called to plot the content to screen.
+ *
+ * - <i>type</i>_(add|remove|reshape)_instance: ask James, this will probably
+ *   be redesigned sometime.
+ *
+ * - <i>type</i>_create(), <i>type</i>_process_data(), <i>type</i>_convert():
+ *   if an error occurs, must broadcast CONTENT_MSG_ERROR and return false.
+ *   Optionally use warn_user() for serious errors. The _destroy function will
+ *   be called soon after.
  */
 
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
@@ -111,7 +172,9 @@ struct content {
 					  converted and is not safe to display. */
 		CONTENT_STATUS_READY,	/**< Some parts of content still being
 					  loaded, but can be displayed. */
-		CONTENT_STATUS_DONE	/**< All finished. */
+		CONTENT_STATUS_DONE,	/**< All finished. */
+		CONTENT_STATUS_ERROR	/**< Error occurred, content will be
+					  destroyed imminently. */
 	} status;		/**< Current status. */
 
 	int width, height;	/**< Dimensions, if applicable. */
@@ -147,7 +210,6 @@ struct content {
 	char *title;			/**< Title for browser window. */
 	unsigned int active;		/**< Number of child fetches or
 					  conversions currently in progress. */
-	int error;			/**< Non-0 if an error has occurred. */
 	struct content_user *user_list;	/**< List of users. */
 	char status_message[80];	/**< Text for status bar. */
 
@@ -159,26 +221,40 @@ struct content {
 	int lock;			/**< Content in use, do not destroy. */
 	bool destroy_pending;		/**< Destroy when lock returns to 0. */
 	bool no_error_pages;		/**< Used by fetchcache(). */
+
+	/** Array of first n rendering errors or warnings. */
+	struct {
+		const char *token;
+		unsigned int line;	/**< Line no, 0 if not applicable. */
+	} error_list[40];
+	unsigned int error_count;	/**< Number of valid error entries. */
+
+	struct content *prev;		/**< Previous in global content list. */
+	struct content *next;		/**< Next in global content list. */
 };
+
+extern struct content *content_list;
+extern const char *content_type_name[];
+extern const char *content_status_name[];
 
 
 struct browser_window;
 
 
 content_type content_lookup(const char *mime_type);
-struct content * content_create(char *url);
-void content_set_type(struct content *c, content_type type,
+struct content * content_create(const char *url);
+bool content_set_type(struct content *c, content_type type,
 		const char *mime_type, const char *params[]);
 void content_set_status(struct content *c, const char *status_message, ...);
-void content_process_data(struct content *c, char *data, unsigned long size);
-void content_convert(struct content *c, unsigned long width, unsigned long height);
-void content_revive(struct content *c, unsigned long width, unsigned long height);
-void content_reformat(struct content *c, unsigned long width, unsigned long height);
+bool content_process_data(struct content *c, char *data, unsigned int size);
+void content_convert(struct content *c, int width, int height);
+void content_reformat(struct content *c, int width, int height);
+void content_clean(void);
 void content_destroy(struct content *c);
 void content_reset(struct content *c);
-void content_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void content_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale);
 void content_add_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
@@ -199,5 +275,7 @@ void content_remove_instance(struct content *c, struct browser_window *bw,
 void content_reshape_instance(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params, void **state);
+void content_add_error(struct content *c, const char *token,
+		unsigned int line);
 
 #endif
