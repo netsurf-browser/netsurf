@@ -249,7 +249,7 @@ void nspng_redraw(struct content *c, long x, long y,
 	_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
 			((char *) c->data.png.sprite_area + c->data.png.sprite_area->first),
 			x, (int)(y - height),
-			width, height,
+			width / 2, height / 2,	// [hack until Tinct is fixed] - rjw
 			(option_filter_sprites?0:(1<<1)) | (option_dither_sprites?0:(1<<2)));
 }
 #endif
