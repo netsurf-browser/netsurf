@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.24 2003/04/10 21:44:45 bursa Exp $
+ * $Id: gui.c,v 1.25 2003/04/11 21:06:51 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+
+const char *__dynamic_da_name = "NetSurf";
 
 int gadget_subtract_x;
 int gadget_subtract_y;

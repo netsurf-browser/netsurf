@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.12 2003/04/10 21:44:45 bursa Exp $
+ * $Id: html.c,v 1.13 2003/04/11 21:06:51 bursa Exp $
  */
 
 #include <assert.h>
@@ -82,13 +82,13 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 			head != 0 && head->type != XML_ELEMENT_NODE;
 			head = head->next)
 		;
-	if (head == 0 || strcmp((const char *) head->name, "head") != 0) {
+	if (strcmp((const char *) head->name, "head") != 0) {
+		head = 0;
 		LOG(("head element not found"));
-		xmlFreeDoc(document);
-		return 1;
 	}
 
-	html_title(c, head);
+	if (head != 0)
+		html_title(c, head);
 
 	/* get stylesheets */
 	html_find_stylesheets(c, head);
@@ -137,7 +137,18 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 			&selector, 0, c->data.html.layout, 0, 0, c->data.html.fonts,
 			0, 0, 0, 0, &c->data.html.elements);
 	/*box_dump(c->data.html.layout->children, 0);*/
+
+	/* XML tree and stylesheets not required past this point */
 	xmlFreeDoc(document);
+
+	cache_free(c->data.html.stylesheet_content[0]);
+	for (i = 1; i != c->data.html.stylesheet_count; i++) {
+		if (c->data.html.stylesheet_content[i] != 0)
+			cache_free(c->data.html.stylesheet_content[i]);
+		xfree(c->data.html.stylesheet_url[i]);
+	}
+	xfree(c->data.html.stylesheet_url);
+	xfree(c->data.html.stylesheet_content);
 
 	c->status_callback(c->status_p, "Formatting document");
 	LOG(("Layout document"));
@@ -185,12 +196,15 @@ void html_convert_css_callback(fetchcache_msg msg, struct content *css,
 void html_title(struct content *c, xmlNode *head)
 {
 	xmlNode *node;
+	xmlChar *title;
 
 	c->title = 0;
 
 	for (node = head->children; node != 0; node = node->next) {
 		if (strcmp(node->name, "title") == 0) {
-			c->title = xmlNodeGetContent(node);
+			title = xmlNodeGetContent(node);
+			c->title = squash_tolat1(title);
+			free(title);
 			return;
 		}
 	}
@@ -207,6 +221,9 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 	c->data.html.stylesheet_url[0] = "file:///%3CNetSurf$Dir%3E/Resources/CSS";
 	c->data.html.stylesheet_count = 1;
 
+	if (head == 0)
+		return;
+	
 	for (node = head->children; node != 0; node = node->next) {
 		if (strcmp(node->name, "link") == 0) {
 			/* rel='stylesheet' */
@@ -218,18 +235,19 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			}
 			free(rel);
 
-			/* type='text/css' */
-			if (!(type = (char *) xmlGetProp(node, (const xmlChar *) "type")))
-				continue;
-			if (strcmp(type, "text/css") != 0) {
+			/* type='text/css' or not present */
+			if ((type = (char *) xmlGetProp(node, (const xmlChar *) "type"))) {
+				if (strcmp(type, "text/css") != 0) {
+					free(type);
+					continue;
+				}
 				free(type);
-				continue;
 			}
-			free(type);
 
-			/* media='screen' or not present */
+			/* media contains 'screen' or 'all' or not present */
 			if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media"))) {
-				if (strcasecmp(media, "screen") != 0) {
+				if (strstr(media, "screen") == 0 &&
+						strstr(media, "all") == 0) {
 					free(media);
 					continue;
 				}
@@ -255,7 +273,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 
 void html_revive(struct content *c, unsigned int width, unsigned int height)
 {
-	/* TODO: reload stylesheets and images and fix any pointers to them */
+	/* TODO: reload images and fix any pointers to them */
 	layout_document(c->data.html.layout->children, width);
 	c->width = c->data.html.layout->children->width;
 	c->height = c->data.html.layout->children->height;
@@ -280,5 +298,4 @@ void html_destroy(struct content *c)
 		font_free_set(c->data.html.fonts);
 	if (c->title != 0)
 		xfree(c->title);
-	/* TODO: stylesheets */
 }

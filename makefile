@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.17 2003/04/06 18:09:34 bursa Exp $
+# $Id: makefile,v 1.18 2003/04/11 21:06:51 bursa Exp $
 
 all: !NetSurf/!RunImage,ff8
 clean:
@@ -38,8 +38,7 @@ HEADERS = \
 LIBS = \
  /usr/local/riscoslibs/libxml2/libxml2.ro \
  /usr/local/riscoslibs/OSLib/OSLib.ro \
- /usr/local/riscoslibs/curl/libcurl.ro \
- /usr/local/riscoslibs/libutf-8/libutf-8.ro
+ /usr/local/riscoslibs/curl/libcurl.ro
 
 !NetSurf/!RunImage,ff8: $(OBJECTS)
 	$(CC) $(FLAGS) -o !NetSurf/!RunImage,ff8 $(OBJECTS) $(LIBS)

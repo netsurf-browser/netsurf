@@ -1,11 +1,12 @@
 /**
- * $Id: utils.c,v 1.7 2003/04/05 21:38:06 bursa Exp $
+ * $Id: utils.c,v 1.8 2003/04/11 21:06:51 bursa Exp $
  */
 
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "libxml/encoding.h"
 #include "libxml/uri.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
@@ -96,6 +97,40 @@ char * squash_whitespace(const char * s)
 		c[j++] = s[i++];
 	} while (s[i - 1] != 0);
 	return c;
+}
+
+char * tolat1(xmlChar * s)
+{
+	unsigned int length = strlen((char*) s);
+	char *d = xcalloc(length + 1, sizeof(char));
+	char *d0 = d;
+	int u, chars;
+
+	while (*s != 0) {
+		chars = length;
+		u = xmlGetUTF8Char((unsigned char *) s, &chars);
+		s += chars;
+		length -= chars;
+		if (u == 0x09 || u == 0x0a || u == 0x0d)
+			*d = ' ';
+		else if ((0x20 <= u && u <= 0x7f) || (0xa0 <= u && u <= 0xff))
+			*d = u;
+		else
+			*d = '?';
+		d++;
+	}
+	*d = 0;
+
+	return d0;
+}
+
+char *squash_tolat1(xmlChar *s)
+{
+	/* TODO: optimize */
+	char *lat1 = tolat1(s);
+	char *squash = squash_whitespace(lat1);
+	free(lat1);
+	return squash;
 }
 
 char *url_join(const char* new, const char* base)

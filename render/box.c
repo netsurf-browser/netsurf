@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.39 2003/04/10 21:44:45 bursa Exp $
+ * $Id: box.c,v 1.40 2003/04/11 21:06:51 bursa Exp $
  */
 
 #include <assert.h>
@@ -24,7 +24,6 @@
 static void box_add_child(struct box * parent, struct box * child);
 static struct box * box_create(box_type type, struct css_style * style,
 		char *href);
-static char * tolat1(xmlChar * s);
 static struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct content ** stylesheet, unsigned int stylesheet_count,
 		struct css_selector ** selector, unsigned int depth,
@@ -104,28 +103,6 @@ struct box * box_create(box_type type, struct css_style * style,
 	return box;
 }
 
-
-char * tolat1(xmlChar * s)
-{
-	char *d = xcalloc(strlen((char*) s) + 1, sizeof(char));
-	char *d0 = d;
-	unsigned int u, chars;
-
-	while (*s != 0) {
-		u = sgetu8((unsigned char*) s, (int*) &chars);
-		s += chars;
-		if (u == 0x09 || u == 0x0a || u == 0x0d)
-			*d = ' ';
-		else if ((0x20 <= u && u <= 0x7f) || (0xa0 <= u && u <= 0xff))
-			*d = u;
-		else
-			*d = '?';
-		d++;
-	}
-	*d = 0;
-
-	return d0;
-}
 
 /**
  * make a box tree with style data from an xml tree
@@ -212,7 +189,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			add_img_element(elements, box->img);*/
 			if (style->display == CSS_DISPLAY_INLINE) {
 				if ((s = (char *) xmlGetProp(n, (const xmlChar *) "alt"))) {
-					text = squash_whitespace(tolat1(s));
+					text = squash_tolat1(s);
 					xfree(s);
 				}
 			}
@@ -220,7 +197,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 
 		} else if (strcmp((const char *) n->name, "textarea") == 0) {
 			char * content = xmlNodeGetContent(n);
-			char * thistext = squash_whitespace(tolat1(content));  /* squash ? */
+			char * thistext = squash_tolat1(content);  /* squash ? */
 			LOG(("textarea"));
 			box = box_textarea(n, style, current_form);
 			current_textarea = box->gadget;
@@ -255,7 +232,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			style->display = CSS_DISPLAY_BLOCK;
 
 	} else if (n->type == XML_TEXT_NODE) {
-		text = squash_whitespace(tolat1(n->content));
+		text = squash_tolat1(n->content);
 	}
 
 	if (text != 0) {
