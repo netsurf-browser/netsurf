@@ -20,13 +20,23 @@
 #include "netsurf/utils/log.h"
 
 
-/*	Current prefixes:
+/*	Recognised help keys
+	====================
 
-	HelpBrowser      Browser window
-	HelpIconMenu     Iconbar menu
+	HelpIconbar	 Iconbar (no icon suffix is used)
+
+	HelpAppInfo	 Application info window
+	HelpBrowser	 Browser window
+	HelpHistory	 History window
+	HelpObjInfo	 Object info window
+	HelpPageInfo	 Page info window
+	HelpSaveAs	 Save as window
+	HelpScaleView	 Scale view window
+	HelpStatus	 Status window
+	HelpToolbar	 Toolbar window
+
+	HelpIconMenu	 Iconbar menu
 	HelpBrowserMenu  Browser window menu
-	HelpToolbar      Toolbar window
-	HelpStatus       Status window
 
 	The prefixes are followed by either the icon number (eg 'HelpToolbar7'), or a series
 	of numbers representing the menu structure (eg 'HelpBrowserMenu3-1-2').
@@ -44,11 +54,11 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	char message_token[32];
 	char menu_buffer[4];
 	wimp_selection menu_tree;
-        help_full_message_request *message_data;
-        wimp_w window;
-        wimp_i icon;
-        gui_window *g;
-        unsigned int index;
+	help_full_message_request *message_data;
+	wimp_w window;
+	wimp_i icon;
+	gui_window *g;
+	unsigned int index;
 
 	/*	Ensure we have a help request
 	*/
@@ -64,18 +74,37 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	window = message_data->w;
 	icon = message_data->i;
 
-	/*	Check if we have a browser window, toolbar window or status window
+	/*	Do the basic window checks
 	*/
-	g = ro_gui_window_lookup(window);
-	if (g) {
-		if (g->window == window) {
-			sprintf(message_token, "HelpBrowser%i", (int)icon);
-		} else if ((g->data.browser.toolbar) &&
-					(g->data.browser.toolbar->toolbar_handle == window)) {
-			sprintf(message_token, "HelpToolbar%i", (int)icon);
-		} else if ((g->data.browser.toolbar) &&
-					(g->data.browser.toolbar->status_handle == window)) {
-			sprintf(message_token, "HelpStatus%i", (int)icon);
+	if (window == (wimp_w)-2) {
+		sprintf(message_token, "HelpIconbar");
+	} else if (window == dialog_info) {
+		sprintf(message_token, "HelpAppInfo%i", (int)icon);
+	} else if (window == history_window) {
+		sprintf(message_token, "HelpHistory%i", (int)icon);
+	} else if (window == dialog_objinfo) {
+		sprintf(message_token, "HelpObjInfo%i", (int)icon);
+	} else if (window == dialog_pageinfo) {
+		sprintf(message_token, "HelpPageInfo%i", (int)icon);
+	} else if (window == dialog_saveas) {
+		sprintf(message_token, "HelpSaveAs%i", (int)icon);
+	} else if (window == dialog_zoom) {
+		sprintf(message_token, "HelpScaleView%i", (int)icon);
+	} else {
+	
+		/*	Check if we have a browser window, toolbar window or status window
+		*/
+		g = ro_gui_window_lookup(window);
+		if (g) {
+			if (g->window == window) {
+				sprintf(message_token, "HelpBrowser%i", (int)icon);
+			} else if ((g->data.browser.toolbar) &&
+						(g->data.browser.toolbar->toolbar_handle == window))	{
+				sprintf(message_token, "HelpToolbar%i", (int)icon);
+			} else if ((g->data.browser.toolbar) &&
+						(g->data.browser.toolbar->status_handle == window)) {	
+				sprintf(message_token, "HelpStatus%i", (int)icon);
+			}
 		}
 	}
 
@@ -85,6 +114,12 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		ro_gui_interactive_help_broadcast(message, &message_token[0]);
 		return;
 	}
+
+	/*	If we are not on an icon, we can't be in a menu (which stops separators
+		giving help for their parent) so we abort. You don't even want to think
+		about the awful hack I was considering before I realised this...
+	*/
+	if (icon == (wimp_i)-1) return;
 
 	/*	As a last resort, check for menu help.
 	*/
@@ -96,9 +131,9 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	/*	Set the prefix
 	*/
 	if (current_menu == iconbar_menu) {
-	  	sprintf(message_token, "HelpIconMenu");
+		sprintf(message_token, "HelpIconMenu");
 	} else if (current_menu == browser_menu) {
-	  	sprintf(message_token, "HelpBrowserMenu");
+		sprintf(message_token, "HelpBrowserMenu");
 	} else {
 		return;
 	}
@@ -129,13 +164,13 @@ void ro_gui_interactive_help_request(wimp_message *message) {
  * \param  token the token to look up
  */
 static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token) {
-  	char *translated_token;
-  	help_full_message_reply *reply;
+	char *translated_token;
+	help_full_message_reply *reply;
 
-  	/*	Check if the message exists
-  	*/
-  	translated_token = (char *)messages_get(token);
-  	if (translated_token == token) return;
+	/*	Check if the message exists
+	*/
+	translated_token = (char *)messages_get(token);
+	if (translated_token == token) return;
 
 	/*	Copy our message string
 	*/
@@ -148,5 +183,5 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token
 	reply->size = 256;
 	reply->action = message_HELP_REPLY;
 	reply->your_ref = reply->my_ref;
-	wimp_send_message(wimp_USER_MESSAGE, reply, reply->sender);
+	wimp_send_message(wimp_USER_MESSAGE, (wimp_message *)reply, reply->sender);
 }
