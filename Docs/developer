@@ -177,4 +177,38 @@ white-space was pre, and to replace spaces with hard spaces for nowrap.
 Additionally, calculate_inline_container_widths() was changed to give the
 appropriate minimum width for pre and nowrap.
 
+\section errorhandling Error handling
+
+This section gives some suggestions for error handling in the code.
+
+The most common serious error is memory exhaustion. Previously we used xcalloc()
+etc. instead of malloc(), so that no recovery code was required, and NetSurf
+would just exit. We should no longer use this. If malloc(), strdup(), etc.
+fails, clean up and free any partially complete structures leaving data in a
+consistent state, and return a value which indicates failure, eg. 0 for
+functions which return a pointer (document the value in the function
+documentation). The caller should then propagate the failure up in the same way.
+At some point, the error should stop being passed up and be reported to the user
+using
+\code
+warn_user("NoMemory", 0);
+\endcode
+
+The other common error is one returned by a RISC OS SWI. Always use "X" SWIs,
+something like this:
+\code
+os_error *error;
+error = xwimp_get_pointer_info(&pointer);
+if (error) {
+	LOG(("xwimp_get_pointer_info: 0x%x: %s\n",
+			error->errnum, error->errmess));
+	warn_user("WimpError", error->errmess);
+	return false;
+}
+\endcode
+
+If an error occurs during initialisation, in most cases exit immediately using
+die(), since this indicates that there is already insufficient memory, or a
+resource file is corrupted, etc.
+
 */
