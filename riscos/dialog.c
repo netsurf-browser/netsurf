@@ -77,7 +77,7 @@ void ro_gui_dialog_init(void)
 	dialog_config_br = ro_gui_dialog_create("config_br");
 	dialog_config_prox = ro_gui_dialog_create("config_prox");
 	dialog_config_th = ro_gui_dialog_create("config_th");
-	dialog_config_th_pane = ro_gui_dialog_create("config_th_pa");
+	dialog_config_th_pane = ro_gui_dialog_create("config_th_p");
 	dialog_zoom = ro_gui_dialog_create("zoom");
 	dialog_pageinfo = ro_gui_dialog_create("pageinfo");
 	dialog_objinfo = ro_gui_dialog_create("objectinfo");
