@@ -37,4 +37,8 @@
 */
 #define Tinct_ConvertSprite 0x57244
 
+/*	Tinct_AvailableFeatures returns the current feature set.
+*/
+#define Tinct_AvailableFeatures 0x57245
+
 #endif
