@@ -801,7 +801,7 @@ void ro_msg_datasave(wimp_message* block)
 
 void ro_msg_dataload(wimp_message *message)
 {
-	char *url;
+	char *url = 0;
 
 	if (message->data.data_xfer.w != wimp_ICON_BAR)
 		return;
@@ -812,8 +812,29 @@ void ro_msg_dataload(wimp_message *message)
 			message->data.data_xfer.file_type != 0xb60 &&
 			message->data.data_xfer.file_type != 0xc85 &&
 			message->data.data_xfer.file_type != 0xff9 &&
-			message->data.data_xfer.file_type != 0xfff)
+			message->data.data_xfer.file_type != 0xfff &&
+			message->data.data_xfer.file_type != 0xb28)
 		return;
+
+        /* url file */
+        if (message->data.data_xfer.file_type == 0xb28) {
+	        char *temp;
+	        FILE *fp = fopen(message->data.data_xfer.file_name, "r");
+
+	        if (!fp) return;
+
+	        url = xcalloc(256, sizeof(char));
+
+	        temp = fgets(url, 256, fp);
+
+	        fclose(fp);
+
+	        if (!temp) return;
+
+	        if (url[strlen(url)-1] == '\n') {
+	                url[strlen(url)-1] = '\0';
+	        }
+	}
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
@@ -821,7 +842,9 @@ void ro_msg_dataload(wimp_message *message)
 	wimp_send_message(wimp_USER_MESSAGE, message, message->sender);
 
 	/* create a new window with the file */
-	url = ro_path_to_url(message->data.data_xfer.file_name);
+	if (message->data.data_xfer.file_type != 0xb28) {
+	        url = ro_path_to_url(message->data.data_xfer.file_name);
+	}
 	if (url) {
 		browser_window_create(url);
 		free(url);
@@ -906,11 +929,32 @@ void ro_msg_datasave_ack(wimp_message *message)
 
 void ro_msg_dataopen(wimp_message *message)
 {
-	char *url;
+	char *url = 0;
 
-	if (message->data.data_xfer.file_type != 0xfaf)
-		/* ignore all but HTML */
+	if (message->data.data_xfer.file_type != 0xfaf &&
+	    message->data.data_xfer.file_type != 0xb28)
+		/* ignore all but HTML and URL */
 		return;
+
+        /* url file */
+        if (message->data.data_xfer.file_type == 0xb28) {
+	        char *temp;
+	        FILE *fp = fopen(message->data.data_xfer.file_name, "r");
+
+	        if (!fp) return;
+
+	        url = xcalloc(256, sizeof(char));
+
+	        temp = fgets(url, 256, fp);
+
+	        fclose(fp);
+
+	        if (!temp) return;
+
+	        if (url[strlen(url)-1] == '\n') {
+	                url[strlen(url)-1] = '\0';
+	        }
+	}
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
@@ -918,7 +962,9 @@ void ro_msg_dataopen(wimp_message *message)
 	wimp_send_message(wimp_USER_MESSAGE, message, message->sender);
 
 	/* create a new window with the file */
-	url = ro_path_to_url(message->data.data_xfer.file_name);
+	if (message->data.data_xfer.file_type != 0xb28) {
+	        url = ro_path_to_url(message->data.data_xfer.file_name);
+	}
 	if (url) {
 		browser_window_create(url);
 		free(url);
