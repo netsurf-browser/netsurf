@@ -27,6 +27,10 @@ h5 { font-size: medium; font-style: italic; }
 h6 { font-size: medium; font-style: italic; }
 b, strong { font-weight: bold; }
 i, em { font-style: italic; }
+u { text-decoration: underline; }
+s { text-decoration: line-through; }
+ins { color: green; }
+del { color: red; text-decoration: line-through; }
 a:link { color: #00f; text-decoration: underline; }
 th { font-weight: bold; }
 td { text-align: left; }
