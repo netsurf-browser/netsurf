@@ -629,6 +629,15 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
 #endif
 					);*/
 			break;
+
+		case ICON_TOOLBAR_SAVE:
+		        current_gui = g;
+			gui_current_save_type = GUI_SAVE_SOURCE;
+			ro_gui_menu_prepare_save(g->data.browser.bw->current_content);
+			/** \todo  make save window persistent */
+			xwimp_create_menu((wimp_menu *) dialog_saveas,
+					pointer->pos.x, pointer->pos.y);
+		        break;
 	}
 }
 
