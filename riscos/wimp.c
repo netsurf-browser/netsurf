@@ -106,28 +106,34 @@ char *ro_gui_get_icon_string(wimp_w w, wimp_i i) {
  * \param  text  string (copied)
  */
 void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
-  	wimp_caret caret;
+	wimp_caret caret;
 	wimp_icon_state ic;
 	int old_len, len;
-	
+
 	/*	Get the icon data
 	*/
 	ic.w = w;
 	ic.i = i;
-	if (xwimp_get_icon_state(&ic)) return;
-	
+	if (xwimp_get_icon_state(&ic))
+		return;
+
 	/*	Check that the existing text is not the same as the updated text
 		to stop flicker
 	*/
-	if (!strncmp(ic.icon.data.indirected_text.text, text,
-			(unsigned int)ic.icon.data.indirected_text.size)) return;
-	
+	if (ic.icon.data.indirected_text.size
+	    && !strncmp(ic.icon.data.indirected_text.text, text,
+			(unsigned int)ic.icon.data.indirected_text.size - 1))
+		return;
+
 	/*	Copy the text across
 	*/
 	old_len = strlen(ic.icon.data.indirected_text.text);
-	strncpy(ic.icon.data.indirected_text.text, text,
-			(unsigned int)ic.icon.data.indirected_text.size);
-					
+	if (ic.icon.data.indirected_text.size) {
+		strncpy(ic.icon.data.indirected_text.text, text,
+			(unsigned int)ic.icon.data.indirected_text.size - 1);
+		ic.icon.data.indirected_text.text[ic.icon.data.indirected_text.size - 1] = '\0';
+	}
+
 	/*	Handle the caret being in the icon
 	*/
 	if (!xwimp_get_caret_position(&caret)) {
@@ -137,7 +143,7 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 			xwimp_set_caret_position(w, i, caret.pos.x, caret.pos.y, -1, caret.index);
 		}
 	}
-	
+
 	/*	Redraw the icon
 	*/
 	ro_gui_redraw_icon(w, i);
