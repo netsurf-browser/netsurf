@@ -343,6 +343,27 @@ void content_destroy(struct content *c)
 
 
 /**
+ * Reset a content.
+ *
+ * Calls the destroy function for the content, but does not free
+ * the structure.
+ */
+
+void content_reset(struct content *c)
+{
+	assert(c != 0);
+	LOG(("content %p %s", c, c->url));
+	if (c->type < HANDLER_MAP_COUNT)
+		handler_map[c->type].destroy(c);
+	c->type = CONTENT_UNKNOWN;
+	c->status = CONTENT_STATUS_TYPE_UNKNOWN;
+	c->size = sizeof(struct content);
+	free(c->mime_type);
+	c->mime_type = 0;
+}
+
+
+/**
  * Display content on screen.
  *
  * Calls the redraw function for the content, if it exists.

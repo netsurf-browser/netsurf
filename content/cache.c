@@ -194,6 +194,7 @@ void cache_destroy(struct content * content)
 	e->prev->next = e->next;
 	e->next->prev = e->prev;
 	xfree(e);
+	content->cache = 0;
 }
 
 

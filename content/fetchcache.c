@@ -23,12 +23,15 @@
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 
+static char error_page[1000];
 static regex_t re_content_type;
 static void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size);
 static char *fetchcache_parse_type(char *s, char **params[]);
+static void fetchcache_error_page(struct content *c, const char *error);
 
 
 /**
@@ -60,6 +63,8 @@ struct content * fetchcache(const char *url0, char *referer,
 	struct content *c;
 	char *url = xstrdup(url0);
 	char *hash = strchr(url, '#');
+	const char *params[] = { 0 };
+	char error_message[500];
 
 	/* strip fragment identifier */
 	if (hash != 0)
@@ -68,7 +73,9 @@ struct content * fetchcache(const char *url0, char *referer,
 	LOG(("url %s", url));
 
 #ifdef WITH_POST
-	if (!post_urlenc && !post_multipart) {
+	if (!post_urlenc && !post_multipart)
+#endif
+	{
 		c = cache_get(url);
 		if (c != 0) {
 			free(url);
@@ -76,15 +83,15 @@ struct content * fetchcache(const char *url0, char *referer,
 			return c;
 		}
 	}
-#endif
 
 	c = content_create(url);
 	content_add_user(c, callback, p1, p2);
 
 #ifdef WITH_POST
 	if (!post_urlenc && !post_multipart)
-		cache_put(c);
 #endif
+		cache_put(c);
+
 	c->fetch_size = 0;
 	c->width = width;
 	c->height = height;
@@ -96,14 +103,15 @@ struct content * fetchcache(const char *url0, char *referer,
 			,cookies
 #endif
 			);
-	free(url);
 	if (c->fetch == 0) {
 		LOG(("warning: fetch_start failed"));
 		if (c->cache)
 			cache_destroy(c);
-		content_destroy(c);
-		return 0;
+		snprintf(error_message, sizeof error_message,
+				messages_get("InvalidURL"), url);
+		fetchcache_error_page(c, error_message);
 	}
+	free(url);
 	return c;
 }
 
@@ -159,10 +167,11 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 		case FETCH_ERROR:
 			LOG(("FETCH_ERROR, '%s'", data));
 			c->fetch = 0;
-			content_broadcast(c, CONTENT_MSG_ERROR, data);
+/* 			content_broadcast(c, CONTENT_MSG_ERROR, data); */
 			if (c->cache)
 				cache_destroy(c);
-			content_destroy(c);
+			content_reset(c);
+			fetchcache_error_page(c, data);
 			break;
 
 		case FETCH_REDIRECT:
@@ -249,6 +258,23 @@ char *fetchcache_parse_type(char *s, char **params[])
 	(*params)[2 * i] = 0;
 
 	return type;
+}
+
+
+/**
+ * Generate an error page.
+ *
+ * \param c empty content to generate the page in
+ * \param error message to display
+ */
+
+void fetchcache_error_page(struct content *c, const char *error)
+{
+	const char *params[] = { 0 };
+	snprintf(error_page, sizeof error_page,	messages_get("ErrorPage"), error);
+	content_set_type(c, CONTENT_HTML, "text/html", params);
+	content_process_data(c, error_page, strlen(error_page));
+	content_convert(c, c->width, c->height);
 }
 
 
