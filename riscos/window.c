@@ -513,6 +513,11 @@ void gui_window_update_box(struct gui_window *g,
 	int clip_x0, clip_y0, clip_x1, clip_y1;
 	os_error *error;
 
+	/* in some cases an update can be triggered before a content has fully
+	 * loaded, so current_content is 0 */
+	if (!c)
+		return;
+
 	update.w = g->window;
 	update.box.x0 = floorf(data->redraw.x * 2 * g->option.scale);
 	update.box.y0 = -ceilf((data->redraw.y + data->redraw.height) * 2 *
@@ -915,7 +920,7 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 			g->reformat_pending = true;
 			gui_reformat_pending = true;
 		}
-		
+
 		g->old_width = width;
 		g->old_height = height;
 
