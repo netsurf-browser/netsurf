@@ -159,6 +159,8 @@ depend : $(SOURCES_RISCOS) $(SOURCES_NCOS) $(SOURCES_DEBUG) $(SOURCES_GTK)
 	-mkdir $(OBJDIR_RISCOS) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)
 	$(CC) -MM -MG $(CFLAGS_RISCOS) $^ | sed 's|.*\.o:|$(OBJDIR_RISCOS)/&|g' > depend
 	$(CC_DEBUG) -MM -MG $(CFLAGS_DEBUG) $^ | sed 's|.*\.o:|$(OBJDIR_DEBUG)/&|g' >> depend
+	-cp depend builds
+	-chmod 644 builds/depend
 
 # remove generated files
 clean :
