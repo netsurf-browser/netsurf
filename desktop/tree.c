@@ -848,7 +848,7 @@ void tree_delete_selected_nodes(struct tree *tree, struct node *node) {
 		next = node->next;
 		if ((node->selected) && (node != tree->root))
 			tree_delete_node(tree, node, false);
-		if (node->child)
+		else if (node->child)
 			tree_delete_selected_nodes(tree, node->child);
 		node = next;
 	}
