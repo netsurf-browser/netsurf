@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "oslib/help.h"
+#include "oslib/os.h"
 #include "oslib/taskmanager.h"
 #include "oslib/wimp.h"
 #include "netsurf/riscos/gui.h"
@@ -46,7 +47,7 @@
 */
 
 static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token);
-
+static os_t help_time = 0;
 
 /**
  * Attempts to process an interactive help message request
@@ -66,6 +67,10 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	/*	Ensure we have a help request
 	*/
 	if ((!message) || (message->action != message_HELP_REQUEST)) return;
+	
+	/*	Remember the time of the request
+	*/
+	xos_read_monotonic_time(&help_time);
 
 	/*	Initialise the basic token to a null byte
 	*/
@@ -212,14 +217,21 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token
 /**
  * Checks if interactive help is running
  *
- * \return the task handle of !Help, or 0 if not available
+ * \return non-zero if interactive help is available, or 0 if not available
  */
 int ro_gui_interactive_help_available() {
 	taskmanager_task task;
 	int context = 0;
 	char *end;
+	os_t time;
+	
+	/*	Check if we've received a help request in the last 0.5s to test for generic
+		interactive help applications
+	*/
+	xos_read_monotonic_time(&time);
+	if ((help_time + 50) > time) return true;
 
-	/*	Attempt to find 'Help'
+	/*	Attempt to find the task 'Help'
 	*/
 	do {
 		if (xtaskmanager_enumerate_tasks(context, &task, sizeof(taskmanager_task),
@@ -228,7 +240,7 @@ int ro_gui_interactive_help_available() {
 		/*	We can't just use strcmp due to string termination issues.
 		*/
 		if (strncmp(task.name, "Help", 4) == 0) {
-		  	if (task.name[4] < 32) return (int)task.task;
+		  	if (task.name[4] < 32) return true;
 		}
 	} while (context >= 0);
 
