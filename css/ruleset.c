@@ -206,7 +206,10 @@ int compare_selectors(struct node *n0, struct node *n1)
 		int found = 0;
 		for (m1 = n1->left; m1 != 0; m1 = m1->next) {
 			/* TODO: should this be case sensitive for IDs? */
-			if (m0->type == m1->type && strcasecmp(m0->data, m1->data) == 0) {
+			if (m0->type == m1->type &&
+					strcasecmp(m0->data, m1->data) == 0 &&
+					((m0->data2 == 0 && m1->data2 == 0) ||
+					 strcasecmp(m0->data2, m1->data2) == 0)) {
 				found = 1;
 				break;
 			}

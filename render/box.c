@@ -479,7 +479,7 @@ struct css_style * box_get_style(struct content ** stylesheet,
 	for (i = 0; i != stylesheet_count; i++) {
 		if (stylesheet[i] != 0) {
 			assert(stylesheet[i]->type == CONTENT_CSS);
-			css_get_style(stylesheet[i], selector, depth, style_new);
+			css_get_style(stylesheet[i], n, style_new);
 		}
 	}
 	css_cascade(style, style_new);

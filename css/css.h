@@ -8,6 +8,7 @@
 #ifndef _NETSURF_CSS_CSS_H_
 #define _NETSURF_CSS_CSS_H_
 
+#include "libxml/HTMLparser.h"
 #include "css_enum.h"
 
 /**
@@ -125,6 +126,10 @@ typedef enum {
 	NODE_SELECTOR,
 	NODE_ID,
 	NODE_CLASS,
+	NODE_ATTRIB,
+	NODE_ATTRIB_EQ,
+	NODE_ATTRIB_INC,
+	NODE_ATTRIB_DM,
 } node_type;
 
 typedef enum {
@@ -137,6 +142,7 @@ typedef enum {
 struct node {
 	node_type type;
 	char *data;
+	char *data2;
 	struct node *left;
 	struct node *right;
 	struct node *next;
@@ -195,8 +201,7 @@ void css_parser_(void *yyp, int yymajor, char* yyminor,
 
 #endif
 
-void css_get_style(struct content *c, struct css_selector * selector,
-			unsigned int selectors, struct css_style * style);
+void css_get_style(struct content *c, xmlNode *n, struct css_style * style);
 void css_cascade(struct css_style * const style, const struct css_style * const apply);
 void css_merge(struct css_style * const style, const struct css_style * const apply);
 void css_parse_property_list(struct css_style * style, char * str);

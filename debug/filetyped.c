@@ -16,8 +16,10 @@
 
 const char *fetch_filetype(const char *unix_path)
 {
+	int l;
 	LOG(("unix path %s", unix_path));
-	if (strcasecmp(unix_path, "home/james/Projects/netsurf/CSS") == 0)
+	l = strlen(unix_path);
+	if (2 < l && strcasecmp(unix_path + l - 3, "css") == 0)
 		return "text/css";
 	return "text/html";
 }

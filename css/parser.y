@@ -93,7 +93,21 @@ detail_list(A) ::= HASH(B) detail_list(C).
 		{ A = css_new_node(NODE_ID, B, 0, 0); A->next = C; }
 detail_list(A) ::= DOT IDENT(B) detail_list(C).
 		{ A = css_new_node(NODE_CLASS, B, 0, 0); A->next = C; }
-/* TODO: attrib, pseudo */
+detail_list(A) ::= LBRAC IDENT(B) RBRAC detail_list(C).
+		{ A = css_new_node(NODE_ATTRIB, B, 0, 0); A->next = C; }
+detail_list(A) ::= LBRAC IDENT(B) EQUALS IDENT(C) RBRAC detail_list(D).
+		{ A = css_new_node(NODE_ATTRIB_EQ, B, 0, 0); A->data2 = C; A->next = D; }
+detail_list(A) ::= LBRAC IDENT(B) EQUALS STRING(C) RBRAC detail_list(D).
+		{ A = css_new_node(NODE_ATTRIB_EQ, B, 0, 0); A->data2 = C; A->next = D; }
+detail_list(A) ::= LBRAC IDENT(B) INCLUDES IDENT(C) RBRAC detail_list(D).
+		{ A = css_new_node(NODE_ATTRIB_INC, B, 0, 0); A->data2 = C; A->next = D; }
+detail_list(A) ::= LBRAC IDENT(B) INCLUDES STRING(C) RBRAC detail_list(D).
+		{ A = css_new_node(NODE_ATTRIB_INC, B, 0, 0); A->data2 = C; A->next = D; }
+detail_list(A) ::= LBRAC IDENT(B) DASHMATCH IDENT(C) RBRAC detail_list(D).
+		{ A = css_new_node(NODE_ATTRIB_DM, B, 0, 0); A->data2 = C; A->next = D; }
+detail_list(A) ::= LBRAC IDENT(B) DASHMATCH STRING(C) RBRAC detail_list(D).
+		{ A = css_new_node(NODE_ATTRIB_DM, B, 0, 0); A->data2 = C; A->next = D; }
+/* TODO: pseudo */
 
 declaration_list(A) ::= .
 		{ A = 0; }
@@ -191,6 +205,7 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 %destructor selector_list { css_free_node($$); }
 %destructor selector { css_free_node($$); }
 %destructor simple_selector { css_free_node($$); }
+%destructor detail_list { css_free_node($$); }
 %destructor declaration_list { css_free_node($$); }
 %destructor declaration { css_free_node($$); }
 %destructor value { css_free_node($$); }

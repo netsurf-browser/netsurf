@@ -63,6 +63,7 @@ U\+[0-9A-F?]{1,6}(-[0-9A-F]{1,6})?	{
 [ \t\r\n\f]+	/* ignore whitespace */
 \/\*[^*]*\*+([^/][^*]*\*+)*\/	/* ignore comments */
 {ident}\(	{ return FUNCTION; }
+=		{ return EQUALS; }
 ~=		{ return INCLUDES; }
 "|="		{ return DASHMATCH; }
 :		{ return COLON; }

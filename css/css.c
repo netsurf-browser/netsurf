@@ -33,6 +33,7 @@ struct decl {
 
 static void css_atimport_callback(content_msg msg, struct content *css,
 		void *p1, void *p2, const char *error);
+static bool css_match_rule(struct node *rule, xmlNode *element);
 	
 const struct css_style css_base_style = {
 	0xffffff,
@@ -126,6 +127,8 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 	css_parser_Free(c->data.css.css->parser, free);
 	css_lex_destroy(c->data.css.css->lexer);
 
+	/*css_dump_stylesheet(c->data.css.css);*/
+
 	/* complete fetch of any imported stylesheets */
 	while (c->active != 0) {
 		LOG(("importing %i from '%s'", c->active, c->url));
@@ -198,6 +201,7 @@ struct node * css_new_node(node_type type, char *data,
 	struct node *node = xcalloc(1, sizeof(*node));
 	node->type = type;
 	node->data = data;
+	node->data2 = 0;
 	node->left = left;
 	node->right = right;
 	node->next = 0;
@@ -357,90 +361,150 @@ void css_atimport_callback(content_msg msg, struct content *css,
 }
 
 
+/**
+ * Find the style which applies to an element.
+ */
 
-
-
-
-
-
-void css_get_style(struct content *c, struct css_selector * selector,
-		unsigned int selectors, struct css_style * style)
+void css_get_style(struct content *css, xmlNode *element,
+		struct css_style *style)
 {
-	struct css_stylesheet *stylesheet = c->data.css.css;
-	struct node *r, *n, *m;
-	unsigned int hash, i, done_empty = 0;
+	struct css_stylesheet *stylesheet = css->data.css.css;
+	struct node *rule;
+	unsigned int hash, i;
 
-	/*LOG(("stylesheet '%s'", c->url));*/
+	/* match rules which end with the same element */
+	hash = css_hash((char *) element->name);
+	for (rule = stylesheet->rule[hash]; rule; rule = rule->next)
+		if (css_match_rule(rule, element))
+			css_merge(style, rule->style);
 
-	hash = css_hash(selector[selectors - 1].element);
-	for (r = stylesheet->rule[hash]; ; r = r->next) {
-		if (r == 0 && !done_empty) {
-			r = stylesheet->rule[0];
-			done_empty = 1;
-		}
-		if (r == 0)
-			break;
-		i = selectors - 1;
-		n = r;
-		/* compare element */
-		if (n->data != 0)
-			if (strcasecmp(selector[i].element, n->data) != 0)
-				goto not_matched;
-		/*LOG(("top element '%s' matched", selector[i].element));*/
-		while (1) {
-			/* class and id */
-			for (m = n->left; m != 0; m = m->next) {
-				if (m->type == NODE_ID) {
-					/* TODO: check if case sensitive */
-					if (selector[i].id == 0 ||
-							strcmp(selector[i].id, m->data + 1) != 0)
-						goto not_matched;
-				} else if (m->type == NODE_CLASS) {
-					/* TODO: check if case sensitive */
-					if (selector[i].class == 0 ||
-							strcmp(selector[i].class, m->data) != 0)
-						goto not_matched;
-				} else {
-					goto not_matched;
-				}
-			}
-			/*LOG(("class and id matched"));*/
-			/* ancestors etc. */
-			if (n->comb == COMB_NONE)
-				goto matched; /* match successful */
-			else if (n->comb == COMB_ANCESTOR) {
-				/* search for ancestor */
-				assert(n->right != 0);
-				n = n->right;
-				if (n->data == 0)
-					goto not_matched;  /* TODO: handle this case */
-				/*LOG(("searching for ancestor '%s'", n->data));*/
-				while (i != 0 && strcasecmp(selector[i - 1].element, n->data) != 0)
-					i--;
-				if (i == 0)
-					goto not_matched;
-				i--;
-				/*LOG(("found"));*/
-			} else {
-				/* TODO: COMB_PRECEDED, COMB_PARENT */
-				goto not_matched;
-			}
-		}
-
-matched:
-		/* TODO: sort by specificity */
-		/*LOG(("matched rule %p", r));*/
-		css_merge(style, r->style);
-
-not_matched:
-
-	}
+	/* match rules which apply to all elements */
+	for (rule = stylesheet->rule[0]; rule; rule = rule->next)
+		if (css_match_rule(rule, element))
+			css_merge(style, rule->style);
 
 	/* imported stylesheets */
-	for (i = 0; i != c->data.css.import_count; i++)
-		if (c->data.css.import_content[i] != 0)
-			css_get_style(c->data.css.import_content[i], selector,
-					selectors, style);
+	for (i = 0; i != css->data.css.import_count; i++)
+		if (css->data.css.import_content[i] != 0)
+			css_get_style(css->data.css.import_content[i],
+					element, style);
+}
+
+
+/**
+ * Determine if a rule applies to an element.
+ */
+
+bool css_match_rule(struct node *rule, xmlNode *element)
+{
+	bool match;
+	char *s, *word, *space;
+	unsigned int i;
+	struct node *detail;
+	xmlNode *anc, *prev;
+
+	if (rule->data && strcasecmp(rule->data, (char *) element->name) != 0)
+		return false;
+
+	for (detail = rule->left; detail; detail = detail->next) {
+		match = false;
+		switch (detail->type) {
+			case NODE_ID:
+				s = (char *) xmlGetProp(element, (const xmlChar *) "id");
+				if (s && strcasecmp(detail->data, s) == 0)
+					match = true;
+				break;
+
+			case NODE_CLASS:
+				s = (char *) xmlGetProp(element, (const xmlChar *) "class");
+				if (s && strcasecmp(detail->data, s) == 0)
+					match = true;
+				break;
+
+			case NODE_ATTRIB:
+				/* matches if an attribute is present */
+				s = (char *) xmlGetProp(element, (const xmlChar *) detail->data);
+				if (s)
+					match = true;
+				break;
+
+			case NODE_ATTRIB_EQ:
+				/* matches if an attribute has a certain value */
+				s = (char *) xmlGetProp(element, (const xmlChar *) detail->data);
+				if (s && strcasecmp(detail->data2, s) == 0)
+					match = true;
+				break;
+
+			case NODE_ATTRIB_INC:
+				/* matches if one of the space separated words
+				 * in the attribute is equal */
+				s = (char *) xmlGetProp(element, (const xmlChar *) detail->data);
+				if (s) {
+					word = s;
+					do {
+						space = strchr(word, ' ');
+						if (space)
+							*space = 0;
+						if (strcasecmp(word, detail->data2) == 0) {
+							match = true;
+							break;
+						}
+						word = space;
+					} while (word);
+				}
+				break;
+
+			case NODE_ATTRIB_DM:
+				/* matches if a prefix up to a hyphen matches */
+				s = (char *) xmlGetProp(element, (const xmlChar *) detail->data);
+				if (s) {
+					i = strlen(detail->data2);
+					if (strncasecmp(detail->data2, s, i) == 0 &&
+							(s[i] == '-' || s[i] == 0))
+						match = true;
+				}
+				break;
+
+			default:
+				assert(0);
+		}
+		if (s)
+			xmlFree(s);
+		if (!match)
+			return false;
+	}
+
+	if (!rule->right)
+		return true;
+	
+	switch (rule->comb) {
+		case COMB_ANCESTOR:
+			for (anc = element->parent; anc; anc = anc->parent)
+				if (css_match_rule(rule->right, anc))
+					return true;
+			break;
+
+		case COMB_PRECEDED:
+			for (prev = element->prev;
+					prev && prev->type != XML_ELEMENT_NODE;
+					prev = prev->prev)
+				;
+			if (!prev)
+				return false;
+			return css_match_rule(rule->right, prev);
+			break;
+
+		case COMB_PARENT:
+			if (!element->parent)
+				return false;
+			return css_match_rule(rule->right, element->parent);
+			break;
+
+		default:
+			assert(0);
+	}
+
+	return false;
 }
 
 
@@ -546,6 +610,10 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 					switch (m->type) {
 						case NODE_ID: fprintf(stderr, "%s", m->data); break;
 						case NODE_CLASS: fprintf(stderr, ".%s", m->data); break;
+						case NODE_ATTRIB: fprintf(stderr, "[%s]", m->data); break;
+						case NODE_ATTRIB_EQ: fprintf(stderr, "[%s=%s]", m->data, m->data2); break;
+						case NODE_ATTRIB_INC: fprintf(stderr, "[%s~=%s]", m->data, m->data2); break;
+						case NODE_ATTRIB_DM: fprintf(stderr, "[%s|=%s]", m->data, m->data2); break;
 						default: fprintf(stderr, "unexpected node");
 					}
 				}
