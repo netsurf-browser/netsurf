@@ -9,6 +9,7 @@
 
 #include <locale.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/utsname.h>
 #include "netsurf/utils/config.h"
@@ -35,6 +36,7 @@ static void lib_init(void);
 
 int main(int argc, char** argv)
 {
+	setbuf(stderr, NULL);
 	netsurf_init(argc, argv);
 
 	while (!netsurf_quit)
@@ -75,7 +77,7 @@ void netsurf_init(int argc, char** argv)
 	setlocale(LC_ALL, "");
 	fetch_init();
 	fetchcache_init();
-	gui_init2();
+	gui_init2(argc, argv);
 }
 
 /**

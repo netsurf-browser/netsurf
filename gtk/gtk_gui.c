@@ -32,7 +32,7 @@ void gui_init(int argc, char** argv)
 }
 
 
-void gui_init2(void)
+void gui_init2(int argc, char** argv)
 {
 	browser_window_create("http://netsurf.sourceforge.net/", 0);
 }

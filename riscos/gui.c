@@ -427,24 +427,81 @@ void ro_gui_check_resolvers(void)
  * Last-minute gui init, after all other modules have initialised.
  */
 
-void gui_init2(void)
+void gui_init2(int argc, char** argv)
 {
-#ifdef WITH_KIOSK_BROWSING
-	browser_window_create("file:/<NetSurf$Dir>/Docs/intro_en", NULL);
-#else
-	char url[80];
+	char *url = 0;
+	bool open_window = option_open_browser_at_startup;
 
-	if (option_open_browser_at_startup) {
-		if (option_homepage_url && option_homepage_url[0]) {
-			browser_window_create(option_homepage_url, NULL);
-		} else {
-			snprintf(url, sizeof url,
-					"file:/<NetSurf$Dir>/Docs/intro_%s",
-					option_language);
-			browser_window_create(url, NULL);
+	/* parse command-line arguments */
+	if (argc == 2) {
+		LOG(("parameters: '%s'", argv[1]));
+		/* this is needed for launching URI files */
+		if (strcasecmp(argv[1], "-nowin") == 0)
+			open_window = false;
+	}
+	else if (argc == 3) {
+		LOG(("parameters: '%s' '%s'", argv[1], argv[2]));
+		open_window = true;
+
+		/* HTML files */
+		if (strcasecmp(argv[1], "-html") == 0) {
+			url = ro_path_to_url(argv[2]);
+			if (!url) {
+				LOG(("malloc failed"));
+				die("Insufficient memory for URL");
+			}
+		}
+		/* URL files */
+		else if (strcasecmp(argv[1], "-urlf") == 0) {
+			url = ro_gui_url_file_parse(argv[2]);
+			if (!url) {
+				LOG(("malloc failed"));
+				die("Insufficient memory for URL");
+			}
+		}
+		/* ANT URL Load */
+		else if (strcasecmp(argv[1], "-url") == 0) {
+			url = strdup(argv[2]);
+			if (!url) {
+				LOG(("malloc failed"));
+				die("Insufficient memory for URL");
+			}
+		}
+		/* Unknown => exit here. */
+		else {
+			LOG(("Unknown parameters: '%s' '%s'",
+				argv[1], argv[2]));
+			return;
 		}
 	}
+	/* get user's homepage (if configured) */
+	else if (option_homepage_url && option_homepage_url[0]) {
+		url = calloc(strlen(option_homepage_url) + 5, sizeof(char));
+		if (!url) {
+			LOG(("malloc failed"));
+			die("Insufficient memory for URL");
+		}
+		sprintf(url, "%s", option_homepage_url);
+	}
+	/* default homepage */
+	else {
+		url = calloc(80, sizeof(char));
+		if (!url) {
+			LOG(("malloc failed"));
+			die("Insufficient memory for URL");
+		}
+		snprintf(url, 80, "file:/<NetSurf$Dir>/Docs/intro_%s",
+			option_language);
+	}
+
+#ifdef WITH_KIOSK_BROWSING
+	open_window = true;
 #endif
+
+	if (open_window)
+			browser_window_create(url, NULL);
+
+	free(url);
 }
 
 

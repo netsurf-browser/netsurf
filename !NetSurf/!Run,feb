@@ -1,14 +1,26 @@
+| Run file for NetSurf. ( $Revision: 1.29 $ )
+|
+| This file ensures that the system resources required by NetSurf are 
+| present. Additionally, it forces setting of system variables related
+| to NetSurf.
+
+| Set system variables and application sprites
+Set NetSurf$ForceVars 1
 <Obey$Dir>.!Boot
+UnSet NetSurf$ForceVars
 
 | Can't run more than one copy of NetSurf at once.
 If "<NetSurf$Running>" = "yes" Then Error NetSurf is already running
 
-| We need RISC OS  3
+| We need RISC OS 3
 RMEnsure UtilityModule 3.00 Error NetSurf needs RISC OS 3 or later
 
 | Ensure Nested WIMP is installed
 | http://acorn.riscos.com (in the universal boot archive)
-RMEnsure WindowManager 3.80 Error 0 NetSurf requires the Nested Window Manager. This can be obtained by downloading the Universal Boot sequence from http://acorn.riscos.com/
+RMEnsure WindowManager 3.80 Error NetSurf requires the Nested Window Manager. This can be obtained by downloading the Universal Boot sequence from http://acorn.riscos.com/
+
+| Ensure the System resource exists - can't do much if it doesn't
+If "<System$Path>" = "" Then Set System$Path_Message System resources not found.
 
 | Ensure CallASWI is installed
 | http://www.iyonix.com/32bit/
@@ -45,7 +57,13 @@ RMEnsure MimeMap 0.10 Error NetSurf requires MimeMap 0.10 or later
 RMEnsure Tinct 0.07 RMLoad System:Modules.Tinct
 RMEnsure Tinct 0.07 Error NetSurf requires Tinct 0.07 or later. This can be downloaded from http://www.tinct.net
 
-Wimpslot -min 2240k -max 2240k
+| Ensure Iconv
+| http://moose.mine.nu:6888/iconv002.zip
+| Not an error if not present - there'll be no charset conversion.
+RMEnsure Iconv 0.02 RMLoad System:Modules.Iconv
+
+WimpSlot -min 2240k -max 2240k
+
 Set NetSurf$Running yes
-Run <NetSurf$Dir>.!RunImage 2><NetSurf$Dir>.stderr
+Run <NetSurf$Dir>.!RunImage %*0 2><NetSurf$Dir>.stderr
 UnSet NetSurf$Running
