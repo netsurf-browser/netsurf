@@ -68,6 +68,7 @@ void login_list_add(char *host, char* logindets) {
 /**
  * Retrieves an element from the login list
  */
+/** \todo Make the matching spec compliant (see RFC 2617) */
 struct login *login_list_get(char *url) {
 
   struct login *nli;
@@ -83,7 +84,8 @@ struct login *login_list_get(char *url) {
     return NULL;
 
   host = url_host(url);
-  assert(host != 0);
+  if (host == 0 || strlen(host) == 0) return NULL;
+
   temp = xstrdup(url);
 
   /* Smallest thing to check for is the scheme + host name + trailing '/'
@@ -92,7 +94,10 @@ struct login *login_list_get(char *url) {
   if (strlen(host) > strlen(temp)) {
     xfree(temp);
     temp = url_host(url);
-    assert(temp != 0);
+    if (temp == 0 || strlen(temp) == 0) {
+      xfree(host);
+      return NULL;
+    }
   }
   xfree(host);
 
