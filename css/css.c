@@ -51,6 +51,7 @@ const struct css_style css_base_style = {
 	{ CSS_LINE_HEIGHT_ABSOLUTE, { 1.3 } },
 	CSS_TEXT_ALIGN_LEFT,
 	CSS_TEXT_DECORATION_NONE,
+	{ CSS_TEXT_INDENT_LENGTH, { { 0, CSS_UNIT_EM } } },
 	CSS_TEXT_TRANSFORM_NONE,
 	CSS_VISIBILITY_VISIBLE,
 	{ CSS_WIDTH_AUTO, { { 1, CSS_UNIT_EM } } },
@@ -72,6 +73,7 @@ const struct css_style css_empty_style = {
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
 	CSS_TEXT_ALIGN_INHERIT,
 	CSS_TEXT_DECORATION_INHERIT,
+	{ CSS_TEXT_INDENT_INHERIT, { { 0, CSS_UNIT_EM } } },
 	CSS_TEXT_TRANSFORM_INHERIT,
 	CSS_VISIBILITY_INHERIT,
 	{ CSS_WIDTH_INHERIT, { { 1, CSS_UNIT_EM } } },
@@ -93,6 +95,7 @@ const struct css_style css_blank_style = {
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
 	CSS_TEXT_ALIGN_INHERIT,
 	CSS_TEXT_DECORATION_INHERIT,
+	{ CSS_TEXT_INDENT_INHERIT, { { 0, CSS_UNIT_EM } } },
 	CSS_TEXT_TRANSFORM_INHERIT,
 	CSS_VISIBILITY_INHERIT,
 	{ CSS_WIDTH_AUTO, { { 1, CSS_UNIT_EM } } },
@@ -689,6 +692,14 @@ void css_dump_style(const struct css_style * const style)
 				fprintf(stderr, " blink");
 	}
 	fprintf(stderr, "; ");
+	fprintf(stderr, "text-indent: ");
+	switch (style->text_indent.size) {
+	        case CSS_TEXT_INDENT_LENGTH:  dump_length(&style->text_indent.value.length); break;
+	        case CSS_TEXT_INDENT_PERCENT: fprintf(stderr, "%g%%", style->text_indent.value.percent); break;
+	        case CSS_TEXT_INDENT_INHERIT: fprintf(stderr, "inherit"); break;
+	        default:                      fprintf(stderr, "UNKNOWN"); break;
+	}
+	fprintf(stderr, "; ");
 	fprintf(stderr, "text-transform: %s; ", css_text_transform_name[style->text_transform]);
 	fprintf(stderr, "visibility: %s; ", css_visibility_name[style->visibility]);
 	fprintf(stderr, "width: ");
@@ -774,6 +785,8 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 		style->line_height = apply->line_height;
 	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
 		style->text_align = apply->text_align;
+	if (apply->text_indent.size != CSS_TEXT_INDENT_INHERIT)
+	        style->text_indent = apply->text_indent;
 	if (apply->text_transform != CSS_TEXT_TRANSFORM_INHERIT)
 		style->text_transform = apply->text_transform;
 	if (apply->visibility != CSS_VISIBILITY_INHERIT)
@@ -853,6 +866,8 @@ void css_merge(struct css_style * const style, const struct css_style * const ap
 		style->text_align = apply->text_align;
 	if (apply->text_decoration != CSS_TEXT_DECORATION_INHERIT)
 		style->text_decoration = apply->text_decoration;
+	if (apply->text_indent.size != CSS_TEXT_INDENT_INHERIT)
+	        style->text_indent = apply->text_indent;
 	if (apply->text_transform != CSS_TEXT_TRANSFORM_INHERIT)
 		style->text_transform = apply->text_transform;
 	if (apply->visibility != CSS_VISIBILITY_INHERIT)

@@ -98,6 +98,15 @@ struct css_style {
 
 	css_text_align text_align;
 	css_text_decoration text_decoration;
+	struct {
+	        enum { CSS_TEXT_INDENT_INHERIT,
+	               CSS_TEXT_INDENT_LENGTH,
+	               CSS_TEXT_INDENT_PERCENT } size;
+	        union {
+	               struct css_length length;
+	               float percent;
+	        } value ;
+        } text_indent;
 	css_text_transform text_transform;
 
 	css_visibility visibility;
@@ -233,7 +242,7 @@ void css_add_declarations(struct css_style *style, struct css_node *declaration)
 unsigned int css_hash(const char *s);
 
 void css_parser_Trace(FILE *TraceFILE, char *zTracePrompt);
-void *css_parser_alloc(void *(*mallocProc)(size_t));
+void *css_parser_Alloc(void *(*mallocProc)(/*size_t*/int));
 void css_parser_Free(void *p, void (*freeProc)(void*));
 void css_parser_(void *yyp, int yymajor, char* yyminor,
 		struct parse_params *param);

@@ -53,6 +53,7 @@ static void parse_height(struct css_style * const s, const struct css_node * con
 static void parse_line_height(struct css_style * const s, const struct css_node * const v);
 static void parse_text_align(struct css_style * const s, const struct css_node * const v);
 static void parse_text_decoration(struct css_style * const s, const struct css_node * const v);
+static void parse_text_indent(struct css_style * const s, const struct css_node * const v);
 static void parse_text_transform(struct css_style * const s, const struct css_node * const v);
 static void parse_visibility(struct css_style * const s, const struct css_node * const v);
 static void parse_width(struct css_style * const s, const struct css_node * const v);
@@ -78,6 +79,7 @@ static const struct property_entry property_table[] = {
 	{ "line-height",      parse_line_height },
 	{ "text-align",       parse_text_align },
 	{ "text-decoration",  parse_text_decoration },
+	{ "text-indent",      parse_text_indent },
 	{ "text-transform",   parse_text_transform },
 	{ "visibility",       parse_visibility },
 	{ "white-space",      parse_white_space },
@@ -569,6 +571,18 @@ void parse_text_align(struct css_style * const s, const struct css_node * const 
 	z = css_text_align_parse(v->data);
 	if (z != CSS_TEXT_ALIGN_UNKNOWN)
 		s->text_align = z;
+}
+
+void parse_text_indent(struct css_style * const s, const struct css_node * const v)
+{
+	if (v->type == CSS_NODE_IDENT) {
+	        return;
+	} else if (v->type == CSS_NODE_PERCENTAGE) {
+	        s->text_indent.size = CSS_TEXT_INDENT_PERCENT;
+	        s->text_indent.value.percent = atof(v->data);
+	} else if (v->type == CSS_NODE_DIMENSION && parse_length(&s->text_indent.value.length, v, true) == 0) {
+	        s->text_indent.size = CSS_TEXT_INDENT_LENGTH;
+	}
 }
 
 void parse_text_decoration(struct css_style * const s, const struct css_node * const v)

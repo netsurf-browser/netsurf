@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,7 +40,7 @@ static void layout_inline_container(struct box * box, unsigned long width, struc
 		unsigned long cx, unsigned long cy);
 static signed long line_height(struct css_style * style);
 static struct box * layout_line(struct box * first, unsigned long width, unsigned long * y,
-		unsigned long cy, struct box * cont);
+		unsigned long cy, struct box * cont, bool indent);
 static void place_float_below(struct box * c, unsigned long width, unsigned long y, struct box * cont);
 static void layout_table(struct box * box, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy);
@@ -240,7 +241,8 @@ void layout_inline_container(struct box * box, unsigned long width, struct box *
 	LOG(("box %p, width %lu, cont %p, cx %lu, cy %lu", box, width, cont, cx, cy));
 
 	for (c = box->children; c != 0; ) {
-		c = layout_line(c, width, &y, cy + y, cont);
+		c = layout_line(c, width, &y, cy + y, cont,
+		                c == box->children ? true : false);
 	}
 
 	box->width = width;
@@ -265,7 +267,7 @@ signed long line_height(struct css_style * style)
 
 
 struct box * layout_line(struct box * first, unsigned long width, unsigned long * y,
-		unsigned long cy, struct box * cont)
+		unsigned long cy, struct box * cont, bool indent)
 {
 	unsigned long height, used_height;
 	unsigned long x0 = 0;
@@ -322,6 +324,25 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	x0 = 0;
 	x1 = width;
 	find_sides(cont->float_children, cy, cy + height, &x0, &x1, &left, &right);
+
+        /* text-indent */
+        /* TODO - fix <BR> related b0rkage */
+        if (indent) {
+        	switch (first->parent->parent->style->text_indent.size) {
+	                case CSS_TEXT_INDENT_LENGTH:
+	                        x0 += len(&first->parent->parent->style->text_indent.value.length, first->parent->parent->style);
+	                        if (x0 + x > x1)
+	                                x1 = x0 + x;
+	                        break;
+	                case CSS_TEXT_INDENT_PERCENT:
+	                        x0 += ((x1-x0) * first->parent->parent->style->text_indent.value.percent) / 100;
+	                        if (x0 + x > x1)
+	                                x1 = x0 + x;
+	                        break;
+	                default:
+	                        break;
+	        }
+	}
 
 	/* pass 2: place boxes in line */
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
@@ -491,6 +512,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		case CSS_TEXT_ALIGN_CENTER: x0 = (x0 + (x1 - x)) / 2; break;
 		default:                    break; /* leave on left */
 	}
+
 	for (d = first; d != b; d = d->next) {
 		if (d->type == BOX_INLINE || d->type == BOX_INLINE_BLOCK) {
 			d->x += x0;
