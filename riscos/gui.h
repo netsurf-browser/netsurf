@@ -120,6 +120,11 @@ void ro_gui_start_selection(wimp_pointer *pointer, wimp_window_state *state,
                             gui_window *g);
 void ro_gui_drag_end(wimp_dragged* drag);
 
+/* in 401login.c */
+void ro_gui_401login_init(void);
+void ro_gui_401login_open(char* host, char * realm, char* fetchurl);
+void ro_gui_401login_click(wimp_pointer *pointer);
+
 /* icon numbers */
 #define ICON_CONFIG_SAVE 0
 #define ICON_CONFIG_CANCEL 1
@@ -158,5 +163,12 @@ void ro_gui_drag_end(wimp_dragged* drag);
 #define ICON_DOWNLOAD_ICON 2
 #define ICON_DOWNLOAD_PATH 3
 #define ICON_DOWNLOAD_ABORT 4
+
+#define ICON_401LOGIN_LOGIN 0
+#define ICON_401LOGIN_CANCEL 1
+#define ICON_401LOGIN_HOST 2
+#define ICON_401LOGIN_REALM 3
+#define ICON_401LOGIN_USERNAME 4
+#define ICON_401LOGIN_PASSWORD 5
 
 #endif

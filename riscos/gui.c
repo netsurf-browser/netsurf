@@ -609,6 +609,7 @@ void gui_init(int argc, char** argv)
   ro_gui_dialog_init();
   ro_gui_download_init();
   ro_gui_menus_init();
+  ro_gui_401login_init();
   wimp_close_template();
 }
 

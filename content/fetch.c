@@ -28,6 +28,7 @@
 #include "netsurf/desktop/gui.h"
 #endif
 #include "netsurf/desktop/options.h"
+#include "netsurf/desktop/401login.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -50,6 +51,7 @@ struct fetch {
 	char *host;		/**< Host part of URL. */
 	char *location;		/**< Response Location header, or 0. */
 	unsigned long content_length;	/**< Response Content-Length, or 0. */
+	char *realm;            /**< HTTP Auth Realm */
 	struct fetch *queue;	/**< Next fetch for this host. */
 	struct fetch *prev;	/**< Previous active fetch in ::fetch_list. */
 	struct fetch *next;	/**< Next active fetch in ::fetch_list. */
@@ -251,6 +253,14 @@ struct fetch * fetch_start(char *url, char *referer,
 		assert(code == CURLE_OK);
 	}
 
+        /* HTTP auth */
+        code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
+        assert(code == CURLE_OK);
+
+        if (LOGIN.string != NULL) {
+                code = curl_easy_setopt(fetch->curl_handle, CURLOPT_USERPWD, LOGIN.string);
+                assert(code == CURLE_OK);
+        }
 
 	/* add to the global curl multi handle */
 	codem = curl_multi_add_handle(curl_multi, fetch->curl_handle);
@@ -335,6 +345,7 @@ void fetch_abort(struct fetch *f)
 	free(f->host);
 	free(f->referer);
 	free(f->location);
+	free(f->realm);
 	xfree(f);
 }
 
@@ -455,6 +466,12 @@ size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f
 			;
 		if ('0' <= data[i] && data[i] <= '9')
 			f->content_length = atol(data + i);
+	} else if (16 < size && strncasecmp(data, "WWW-Authenticate",16) == 0) {
+	        /* extract Realm from WWW-Authenticate header */
+	        f->realm = xcalloc(size, 1);
+	        for (i=16;i!=strlen(data);i++)
+	               if(data[i]=='=')break;
+	        strncpy(f->realm, data+i+2, size-i-5);
 	}
 	return size;
 }
@@ -475,7 +492,7 @@ bool fetch_process_headers(struct fetch *f)
 	f->had_headers = true;
 
 	code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE, &http_code);
-	assert(code == CURLE_OK); 
+	assert(code == CURLE_OK);
 	LOG(("HTTP status code %li", http_code));
 
 	/* handle HTTP redirects (3xx response codes) */
@@ -484,6 +501,15 @@ bool fetch_process_headers(struct fetch *f)
 		f->callback(FETCH_REDIRECT, f->p, f->location, 0);
 		return true;
 	}
+
+        /* handle HTTP 401 (Authentication errors) */
+        if (http_code == 401) {
+                /* this shouldn't be here... */
+                ro_gui_401login_open(xstrdup(f->host), xstrdup(f->realm),
+                                     xstrdup(f->url));
+                f->callback(FETCH_ERROR, f->p, "",0);
+                return true;
+        }
 
 	/* handle HTTP errors (non 2xx response codes) */
 	if (f->only_2xx && strncmp(f->url, "http", 4) == 0 &&

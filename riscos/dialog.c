@@ -25,7 +25,8 @@
 
 
 wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
-	dialog_config_prox, dialog_config_th, download_template;
+	dialog_config_prox, dialog_config_th, download_template,
+	dialog_401li;
 wimp_menu* theme_menu = NULL;
 
 static struct ro_choices choices;
@@ -121,7 +122,7 @@ void ro_gui_dialog_open(wimp_w w)
 		screen_x, screen_y, dx, dy;
   	wimp_window_state open;
 
-	/* find screen centre in os units */	
+	/* find screen centre in os units */
 	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_XEIG_FACTOR, &xeig_factor);
 	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_YEIG_FACTOR, &yeig_factor);
 	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_XWIND_LIMIT, &xwind_limit);
@@ -160,6 +161,8 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 		ro_gui_dialog_click_config_prox(pointer);
 	else if (pointer->w == dialog_config_th)
 		ro_gui_dialog_click_config_th(pointer);
+	else if (pointer->w == dialog_401li)
+	        ro_gui_401login_click(pointer);
 }
 
 

@@ -363,6 +363,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 
     case CONTENT_MSG_REDIRECT:
       bw->loading_content = 0;
+      bw->url = xstrdup(error);
       browser_window_set_status(bw, "Redirecting");
       /* error actually holds the new URL */
       browser_window_open_location(bw, error);
