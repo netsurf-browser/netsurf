@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
@@ -18,6 +18,7 @@
 #include "oslib/osgbpb.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
+#include "rufl.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/render/font.h"
@@ -1117,15 +1118,19 @@ void ro_gui_dialog_click_config_font(wimp_pointer *pointer)
 						ro_gui_choices_font_min_size;
 			ro_gui_dialog_update_config_font();
 			break;
+		case ICON_CONFIG_FONT_SANS:
 		case ICON_CONFIG_FONT_SANS_PICK:
+		case ICON_CONFIG_FONT_SERIF:
 		case ICON_CONFIG_FONT_SERIF_PICK:
+		case ICON_CONFIG_FONT_MONO:
 		case ICON_CONFIG_FONT_MONO_PICK:
+		case ICON_CONFIG_FONT_CURS:
 		case ICON_CONFIG_FONT_CURS_PICK:
+		case ICON_CONFIG_FONT_FANT:
 		case ICON_CONFIG_FONT_FANT_PICK:
-			/*config_font_icon = pointer->i - 1;
-			ro_gui_display_font_menu(ro_gui_get_icon_string(
-				dialog_config_font, pointer->i - 1),
-				dialog_config_font, pointer->i);*/
+			config_font_icon = pointer->i & ~1;
+			ro_gui_popup_menu(font_menu, dialog_config_font,
+					pointer->i | 1);
 			break;
 		case ICON_CONFIG_FONT_DEF_PICK:
 			break;
@@ -1137,30 +1142,12 @@ void ro_gui_dialog_click_config_font(wimp_pointer *pointer)
  * Handle font menu selections.
  */
 
-void ro_gui_dialog_font_menu_selection(char *name)
+void ro_gui_dialog_font_menu_selection(int item)
 {
-	char *n, *fn;
-	int len;
-
-	if (strlen(name) <= 3 || config_font_icon < 0)
+	if (item < 0 || rufl_family_list_entries <= (unsigned int) item)
 		return;
-
-	n = name + 2; /* \F */
-
-	len = strcspn(n, "\\");
-
-	fn = calloc(len+1, sizeof(char));
-	if (!fn) {
-		LOG(("malloc failed"));
-		return;
-	}
-
-	strncpy(fn, n, len);
-	ro_gui_set_icon_string(dialog_config_font, config_font_icon, fn);
-
-	free(fn);
-
-	config_font_icon = -1;
+	ro_gui_set_icon_string(dialog_config_font, config_font_icon,
+			rufl_family_list[item]);
 }
 
 

@@ -112,6 +112,9 @@ AddGap:Ajouter un séparateur
 DeleteGap:Supprimer le séparateur
 LockToolbar:Verrouiller la barre d'outils
 
+# Font menu
+Fonts:Fonts
+
 # Hotlist menus
 Hotlist:Favoris
 New:Nouveau

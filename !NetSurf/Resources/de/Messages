@@ -112,6 +112,9 @@ AddGap:Separator setzen
 DeleteGap:Separator entfernen
 LockToolbar:Leiste fixieren
 
+# Font menu
+Fonts:Fonts
+
 # Hotlist menus
 Hotlist:Hotlist
 New:Neu

@@ -35,7 +35,8 @@ extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 extern wimp_w history_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu,
 		*proxyauth_menu, *languages_menu, *toolbar_menu,
-		*image_quality_menu, *global_history_menu, *url_suggest_menu;
+		*image_quality_menu, *global_history_menu, *url_suggest_menu,
+		*font_menu;
 extern int iconbar_menu_height;
 extern struct form_control *current_gadget;
 extern bool gui_reformat_pending;
@@ -142,7 +143,7 @@ void ro_gui_dialog_open_config(void);
 void ro_gui_dialog_proxyauth_menu_selection(int item);
 void ro_gui_dialog_image_menu_selection(int item);
 void ro_gui_dialog_languages_menu_selection(char *lang);
-void ro_gui_dialog_font_menu_selection(char *name);
+void ro_gui_dialog_font_menu_selection(int item);
 void ro_gui_dialog_redraw(wimp_draw *redraw);
 
 /* in download.c */

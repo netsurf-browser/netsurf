@@ -112,6 +112,9 @@ AddGap:Add separator
 DeleteGap:Remove separator
 LockToolbar:Lock toolbar
 
+# Font menu
+Fonts:Fonts
+
 # Hotlist menus
 Hotlist:Hotlist
 New:New

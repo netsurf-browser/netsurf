@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2005 Richard Wilson <info@tinct.net>
  */
@@ -62,7 +62,6 @@ static void ro_gui_menu_object_reload(void);
 static void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning);
 static void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning);
 static void ro_gui_menu_global_history_warning(wimp_message_menu_warning *warning);
-static void ro_gui_font_menu_selection(wimp_selection *selection);
 
 struct gui_window *current_gui;
 wimp_menu *current_menu;
@@ -509,11 +508,6 @@ wimp_menu *languages_menu = NULL;
 */
 wimp_menu *toolbar_icon_menu = NULL;
 
-/*	Font popup menu (used in font choices dialog)
-*/
-static wimp_menu *font_menu = NULL;
-static byte *font_menu_data = NULL;
-
 /*	URL suggestion menu
 */
 static wimp_MENU(GLOBAL_HISTORY_RECENT_URLS) url_suggest;
@@ -709,11 +703,11 @@ bool ro_gui_menu_prepare_url_suggest(void) {
   	char **suggest_text;
 	int suggestions;
 	int i;
-  	
+
   	suggest_text = global_history_get_recent(&suggestions);
   	if (suggestions < 1)
   		return false;
-  
+
 	url_suggest_menu->title_data.indirected_text.text = messages_get("URLSuggest");
 	url_suggest_menu->title_fg = wimp_COLOUR_BLACK;
 	url_suggest_menu->title_bg = wimp_COLOUR_LIGHT_GREY;
@@ -822,20 +816,41 @@ void ro_gui_create_menu(wimp_menu *menu, int x, int y, struct gui_window *g)
 
 /**
  * Display a pop-up menu next to the specified icon.
+ *
+ * \param  menu  menu to open
+ * \param  w     window handle
+ * \param  i     icon handle
  */
 
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 {
 	wimp_window_state state;
 	wimp_icon_state icon_state;
+	os_error *error;
+
 	state.w = w;
 	icon_state.w = w;
 	icon_state.i = i;
-	wimp_get_window_state(&state);
-	wimp_get_icon_state(&icon_state);
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MenuError", error->errmess);
+		return;
+	}
+
+	error = xwimp_get_icon_state(&icon_state);
+	if (error) {
+		LOG(("xwimp_get_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MenuError", error->errmess);
+		return;
+	}
+
 	ro_gui_create_menu(menu,
 			state.visible.x0 + icon_state.icon.extent.x1 + 64,
-			state.visible.y1 + icon_state.icon.extent.y1 - state.yscroll, current_gui);
+			state.visible.y1 + icon_state.icon.extent.y1 -
+			state.yscroll, current_gui);
 }
 
 
@@ -1292,9 +1307,11 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	} else if (current_menu == image_quality_menu) {
 		ro_gui_dialog_image_menu_selection(selection->items[0]);
 	} else if (current_menu == languages_menu) {
-		ro_gui_dialog_languages_menu_selection(languages_menu->entries[selection->items[0]].data.indirected_text.text);
+		ro_gui_dialog_languages_menu_selection(languages_menu->
+				entries[selection->items[0]].
+				data.indirected_text.text);
 	} else if (current_menu == font_menu) {
-		ro_gui_font_menu_selection(selection);
+		ro_gui_dialog_font_menu_selection(selection->items[0]);
 	}
 
 	if (pointer.buttons == wimp_CLICK_ADJUST) {
@@ -2308,91 +2325,4 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	gui_form_select_control = control;
 	ro_gui_create_menu(gui_form_select_menu,
 			pointer.pos.x, pointer.pos.y, bw->window);
-}
-
-/**
- * Create and display a menu listing all fonts present in the system.
- *
- * \param tick The name of the currently selected font
- * \param w    The dialog containing the clicked icon
- * \param i    The clicked icon.
- */
-void ro_gui_display_font_menu(const char *tick, wimp_w w, wimp_i i)
-{
-	int size1, size2;
-	os_error *error;
-
-	error = xfont_list_fonts(0, font_RETURN_FONT_MENU | font_GIVEN_TICK,
-			0, 0, 0, tick, 0, &size1, &size2);
-	if (error) {
-		LOG(("xfont_list_fonts: 0x%x: %s",
-			error->errnum, error->errmess));
-		return;
-	}
-
-	/* free previous menu */
-	if (font_menu)
-		free(font_menu);
-	if (font_menu_data)
-		free(font_menu_data);
-
-	font_menu = calloc(size1, sizeof(byte));
-	if (!font_menu) {
-		LOG(("malloc failed"));
-		return;
-	}
-	font_menu_data = calloc(size2, sizeof(byte));
-	if (!font_menu_data) {
-		LOG(("malloc failed"));
-		return;
-	}
-
-	error = xfont_list_fonts((byte*)font_menu,
-			font_RETURN_FONT_MENU | font_GIVEN_TICK,
-			size1, font_menu_data, size2, tick, 0, 0, 0);
-	if (error) {
-		LOG(("xfont_list_fonts: 0x%x: %s",
-			error->errnum, error->errmess));
-		return;
-	}
-
-	ro_gui_popup_menu(font_menu, w, i);
-}
-
-/**
- * Handle a selection in the font menu
- *
- * \param selection The selection block
- */
-void ro_gui_font_menu_selection(wimp_selection *selection)
-{
-	int buf_size;
-	char *buf;
-	os_error *error;
-
-	error = xfont_decode_menu(0, (byte*)font_menu, (byte*)selection,
-			0, 0, 0, &buf_size);
-	if (error) {
-		LOG(("xfont_decode_menu: 0x%x: %s",
-			error->errnum, error->errmess));
-		return;
-	}
-
-	buf = calloc(buf_size, sizeof(char));
-	if (!buf) {
-		LOG(("malloc failed"));
-		return;
-	}
-
-	error = xfont_decode_menu(0, (byte*)font_menu, (byte*)selection,
-			buf, buf_size, 0, 0);
-	if (error) {
-		LOG(("xfont_decode_menu: 0x%x: %s",
-			error->errnum, error->errmess));
-		return;
-	}
-
-	ro_gui_dialog_font_menu_selection(buf);
-
-	free(buf);
 }
