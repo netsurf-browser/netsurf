@@ -10,7 +10,7 @@
  *   Add better error handling
  *      - especially where bad GIFs are concerned.
  *
- * $Id: gif.c,v 1.4 2003/06/06 08:06:55 philpem Exp $
+ * $Id: gif.c,v 1.5 2003/06/06 09:19:54 philpem Exp $
  */
 
 #include <assert.h>
@@ -25,27 +25,14 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
-/* maps colours to 256 mode colour numbers */
-static os_colour_number colour_table[4096];
-
-static int
+// Constants for GIF interlacing
+const int
     InterlacedOffset[] = { 0, 4, 2, 1 }, /* The way Interlaced image should. */
     InterlacedJumps[] = { 8, 8, 4, 2 };    /* be read - offsets and jumps... */
 
 
 void nsgif_init(void)
 {
-  // Generate a colour lookup table
-  // TODO: Use the PNG colour table instead of the GIF table...
-	unsigned int red, green, blue;
-	for (red = 0; red != 0xf; red++)
-		for (green = 0; green != 0xf; green++)
-			for (blue = 0; blue != 0xf; blue++)
-				colour_table[red << 8 | green << 4 | blue] =
-					colourtrans_return_colour_number_for_mode(
-						blue << 28 | blue << 24 |
-						green << 20 | green << 16 |
-						red << 12 | red << 8, 21, 0);
 }
 
 // Called when Netsurf wants us to prepare to decode a GIF
@@ -110,7 +97,7 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
   char *row, **row_pointers;
   int i, j, bit_depth, color_type, log2bpp, interlace;
   unsigned int rowbytes, sprite_size;
-  unsigned long width, height;
+  unsigned long width, height, left, top;
   os_palette *palette;
   os_sprite_palette *sprite_palette;
   osspriteop_area *sprite_area;
@@ -181,6 +168,10 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
         // TODO: ^^^ better error checking
 
           c->data.gif.sprite_area = sprite_area;
+          height = c->data.gif.giffile->Image.Height;
+          width = c->data.gif.giffile->Image.Width;
+          left = c->data.gif.giffile->Image.Left;
+          top = c->data.gif.giffile->Image.Top;
 
           if (c->data.gif.giffile->Image.Interlace)
           {
@@ -189,11 +180,11 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
             for (count = i = 0; i < 4; i++)
             {
               LOG(("Interlaced GIF file"));
-              for (j=InterlacedOffset[i]; j < height; j += InterlacedJumps[i])
+              for (j=(top+InterlacedOffset[i]); j < (top+c->data.gif.giffile->Image.Height); j += InterlacedJumps[i])
               {
                 LOG(("gif line %d", count));
                 count++;
-                assert (DGifGetLine(c->data.gif.giffile, c->data.gif.sprite_image + j * ((c->width + 3) & ~3u), width) != GIF_ERROR);
+                assert (DGifGetLine(c->data.gif.giffile, c->data.gif.sprite_image + (j * ((c->width + 3) & ~3u)) + left, width) != GIF_ERROR);
                 // TODO: ^^^ better error checking
               }
             }
@@ -201,10 +192,10 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
           else
           {
             LOG(("running DGifGetLine"));
-            for (i=0; i<height; i++)
+            for (i=top; i<(height+top); i++)
             {
   //            assert(DGifGetLine(c->data.gif.giffile, c->data.gif.sprite_image + i * ((c->width + 3) & ~3u), width) != GIF_ERROR);
-              if (DGifGetLine(c->data.gif.giffile, c->data.gif.sprite_image + i * ((c->width + 3) & ~3u), width) == GIF_ERROR)
+              if (DGifGetLine(c->data.gif.giffile, c->data.gif.sprite_image + (i * ((c->width + 3) & ~3u))+left, width) == GIF_ERROR)
               {
                 LOG(("error: gif line %d - error %d", i, GifLastError()));
                 LOG(("exp height = %d, width = %d", height, width));
