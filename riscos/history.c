@@ -203,7 +203,7 @@ void history_add(struct history *history, struct content *content, char *frag_id
 
 void history_update(struct history *history, struct content *content)
 {
-	if (!history || !history->current->sprite_area)
+	if (!history || !history->current || !history->current->sprite_area)
 		return;
 
 	thumbnail_create(content, history->current->sprite_area,
@@ -595,7 +595,7 @@ struct history_entry * ro_gui_history_click_find(struct history_entry *he,
 
 void history_back(struct browser_window *bw, struct history *history)
 {
-	if (!history || !history->current->back)
+	if (!history || !history->current || !history->current->back)
 		return;
 	history->current = history->current->back;
 	history_go(bw, history->current);
@@ -611,7 +611,7 @@ void history_back(struct browser_window *bw, struct history *history)
 
 void history_forward(struct browser_window *bw, struct history *history)
 {
-	if (!history || !history->current->forward_pref)
+	if (!history || !history->current || !history->current->forward_pref)
 		return;
 	history->current = history->current->forward_pref;
 	history_go(bw, history->current);
@@ -626,7 +626,7 @@ void history_forward(struct browser_window *bw, struct history *history)
  */
 
 bool history_back_available(struct history *history) {
-	return (history && history->current->back);
+	return (history && history->current && history->current->back);
 }
 
 
@@ -638,7 +638,7 @@ bool history_back_available(struct history *history) {
  */
 
 bool history_forward_available(struct history *history) {
-	return (history && history->current->forward_pref);
+	return (history && history->current && history->current->forward_pref);
 }
 
 /**
