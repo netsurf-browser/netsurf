@@ -228,7 +228,7 @@ void plugin_write_parameters_file(struct object_params *params)
         struct plugin_params* temp;
         int *time;
         byte pdata[4] = {0, 0, 0, 0};
-        os_fw *pfile;
+        os_fw pfile;
         int i, j, rsize;
         char *tstr;
 
