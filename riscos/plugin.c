@@ -540,7 +540,7 @@ void plugin_destroy(struct content *c)
 /**
  * Redraw plugin on page.
  */
-void plugin_redraw(struct content *c, int x, int y,
+bool plugin_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale)
@@ -555,6 +555,7 @@ void plugin_redraw(struct content *c, int x, int y,
                                                 npl->state);
                 need_reformat = 0;
         }
+        return true;
 }
 
 /*-------------------------------------------------------------------------*/

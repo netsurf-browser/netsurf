@@ -39,6 +39,7 @@ extern wimp_menu *current_menu;
 extern osspriteop_area *gui_sprites;
 extern struct toolbar *hotlist_toolbar;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
+extern bool print_active;
 
 typedef enum {
 	GUI_SAVE_SOURCE,

@@ -1018,8 +1018,7 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 		case message_PLUG_IN_NOTIFY:
 		case message_PLUG_IN_ABORT:
 		case message_PLUG_IN_ACTION:
-			plugin_msg_parse(message,
-					event == wimp_USER_MESSAGE_ACKNOWLEDGE);
+			plugin_msg_parse(message, event == wimp_USER_MESSAGE_ACKNOWLEDGE);
 			break;
 #endif
 #ifdef WITH_PRINT
