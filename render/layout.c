@@ -55,6 +55,7 @@ static int line_height(struct css_style *style);
 static struct box * layout_line(struct box *first, int width, int *y,
 		int cx, int cy, struct box *cont, bool indent);
 static int layout_text_indent(struct css_style *style, int width);
+static void layout_float(struct box *b, int width);
 static void place_float_below(struct box *c, int width, int y,
 		struct box *cont);
 static void layout_table(struct box *box);
@@ -546,9 +547,9 @@ struct box * layout_line(struct box *first, int width, int *y,
 	struct box *b;
 	struct box *split_box = 0;
 	struct box *d;
-	struct box *fl;
 	int move_y = 0;
 	int space_before = 0, space_after = 0;
+	unsigned int inline_count = 0;
 
 	LOG(("first->text '%.*s', width %i, y %i, cy %i",
 			first->length, first->text, width, *y, cy));
@@ -568,6 +569,21 @@ struct box * layout_line(struct box *first, int width, int *y,
 		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_FLOAT_LEFT ||
 				b->type == BOX_FLOAT_RIGHT);
+
+		if (b->type == BOX_INLINE_BLOCK) {
+			if (b->width == UNKNOWN_WIDTH)
+				layout_float(b, width);
+			/** \todo  should margin be included? spec unclear */
+			h = b->border[TOP] + b->padding[TOP] + b->height +
+					b->padding[BOTTOM] + b->border[BOTTOM];
+			if (height < h)
+				height = h;
+			x += b->margin[LEFT] + b->border[LEFT] +
+					b->padding[LEFT] + b->width +
+					b->padding[RIGHT] + b->border[RIGHT] +
+					b->margin[RIGHT];
+		}
+
 		if (b->type != BOX_INLINE)
 			continue;
 
@@ -623,15 +639,11 @@ struct box * layout_line(struct box *first, int width, int *y,
 			b->x = x;
 
 			if (b->type == BOX_INLINE_BLOCK) {
-				layout_float_find_dimensions(width, b->style, b);
 				b->x += b->margin[LEFT] + b->border[LEFT];
-				layout_node(b, b->width, b, 0, 0);
-				/* increase height to contain any floats inside */
-				for (fl = b->float_children; fl != 0; fl = fl->next_float)
-					if (b->height < fl->y + fl->height)
-						b->height = fl->y + fl->height;
-				x = b->x + b->padding[LEFT] + b->width + b->padding[RIGHT] +
-						b->border[RIGHT] + b->margin[RIGHT];
+				x = b->x + b->padding[LEFT] + b->width +
+						b->padding[RIGHT] +
+						b->border[RIGHT] +
+						b->margin[RIGHT];
 			} else
 				x += b->width;
 
@@ -644,6 +656,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 				space_after = 0;
 			split_box = b;
 			move_y = 1;
+			inline_count++;
 /* 			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x); */
 		} else {
 			/* float */
@@ -651,13 +664,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 			d->float_children = 0;
 /* 			css_dump_style(b->style); */
 
-			layout_float_find_dimensions(width, d->style, d);
-
-			layout_node(d, d->width, d, 0, 0);
-			/* increase height to contain any floats inside */
-			for (fl = d->float_children; fl != 0; fl = fl->next_float)
-				if (d->height < fl->y + fl->height)
-					d->height = fl->y + fl->height;
+			layout_float(d, width);
 			d->x = d->margin[LEFT] + d->border[LEFT];
 			d->y = d->margin[TOP] + d->border[TOP];
 			b->width = d->margin[LEFT] + d->border[LEFT] +
@@ -703,8 +710,8 @@ struct box * layout_line(struct box *first, int width, int *y,
 
 		x = x_previous;
 
-		if (!split_box->object && !split_box->gadget &&
-				split_box->text) {
+		if (split_box->type == BOX_INLINE && !split_box->object &&
+				!split_box->gadget && split_box->text) {
 			for (i = 0; i != split_box->length &&
 					split_box->text[i] != ' '; i++)
 				;
@@ -719,8 +726,13 @@ struct box * layout_line(struct box *first, int width, int *y,
 		else
 			w = font_width(split_box->font, split_box->text, space);
 
-		if (x1 - x0 <= x + space_before + w && !left && !right &&
-				split_box == first) {
+		LOG(("splitting: split_box %p, space %u, w %i, left %p, "
+				"right %p, inline_count %u",
+				split_box, space, w, left, right,
+				inline_count));
+
+		if ((space == 0 || x1 - x0 <= x + space_before + w) &&
+				!left && !right && inline_count == 1) {
 			/* first word doesn't fit, but no floats and first
 			   on line so force in */
 			if (space == 0) {
@@ -749,10 +761,10 @@ struct box * layout_line(struct box *first, int width, int *y,
 			}
 			x += space_before + w;
 /* 			fprintf(stderr, "layout_line:     overflow, forcing\n"); */
-		} else if (x1 - x0 <= x + space_before + w || space == 0) {
-			/* first word doesn't fit, but full width not available so leave for later */
+		} else if (space == 0 || x1 - x0 <= x + space_before + w) {
+			/* first word doesn't fit, but full width not
+			   available so leave for later */
 			b = split_box;
-			assert(used_height);
 /* 			fprintf(stderr, "layout_line:     overflow, leaving\n"); */
 		} else {
 			/* fit as many words as possible */
@@ -800,12 +812,15 @@ struct box * layout_line(struct box *first, int width, int *y,
 	for (d = first; d != b; d = d->next) {
 		if (d->type == BOX_INLINE || d->type == BOX_INLINE_BLOCK) {
 			d->x += x0;
-			d->y = *y;
-			if (used_height < d->height)
-				used_height = d->height;
+			d->y = *y + d->border[TOP];
+			h = d->border[TOP] + d->padding[TOP] + d->height +
+					d->padding[BOTTOM] + d->border[BOTTOM];
+			if (used_height < h)
+				used_height = h;
 		}
 	}
 
+	assert(b != first || (move_y && 0 < used_height && (left || right)));
 	if (move_y) *y += used_height;
 	return b;
 }
@@ -829,6 +844,25 @@ int layout_text_indent(struct css_style *style, int width)
 		default:
 			return 0;
 	}
+}
+
+
+/**
+ * Layout the contents of a float or inline block.
+ *
+ * \param  b      float or inline block box
+ * \param  width  available width
+ */
+
+void layout_float(struct box *b, int width)
+{
+	struct box *fl;
+	layout_float_find_dimensions(width, b->style, b);
+	layout_node(b, b->width, b, 0, 0);
+	/* increase height to contain any floats inside */
+	for (fl = b->float_children; fl != 0; fl = fl->next_float)
+		if (b->height < fl->y + fl->height)
+			b->height = fl->y + fl->height;
 }
 
 
