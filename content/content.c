@@ -17,7 +17,6 @@
 #include <stdlib.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
-#include "netsurf/content/other.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/textplain.h"
