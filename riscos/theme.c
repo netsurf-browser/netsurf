@@ -1254,12 +1254,14 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 		/*	Re-attach to the parent
 		*/
 		toolbar->toolbar_current = width;
-		if ((toolbar->reformat_buttons) && (parent) && (old_height != toolbar->height)) {
+		if (toolbar->reformat_buttons) {
 		  	extent.x1 = 16384;
 		  	extent.y0 = 0;
 		  	extent.y1 = toolbar->height;
 		  	xwimp_set_extent(toolbar->toolbar_handle, &extent);
-			ro_gui_theme_attach_toolbar(toolbar, parent);
+		  	if ((parent) && (old_height != toolbar->height)) {
+				ro_gui_theme_attach_toolbar(toolbar, parent);
+			}
 		}
 		toolbar->reformat_buttons = false;
 	}
