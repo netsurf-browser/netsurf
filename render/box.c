@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.40 2003/04/11 21:06:51 bursa Exp $
+ * $Id: box.c,v 1.41 2003/04/13 12:50:10 bursa Exp $
  */
 
 #include <assert.h>
@@ -148,10 +148,11 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 {
 	struct box * box = 0;
 	struct box * inline_container_c;
-	struct css_style * style;
+	struct css_style * style = 0;
 	xmlNode * c;
 	char * s;
 	char * text = 0;
+	xmlChar *s2;
 
 	assert(n != 0 && parent_style != 0 && stylesheet != 0 && selector != 0 &&
 			parent != 0 && fonts != 0);
@@ -163,15 +164,17 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		*selector = xrealloc(*selector, (depth + 1) * sizeof(struct css_selector));
 		(*selector)[depth].element = (const char *) n->name;
 		(*selector)[depth].class = (*selector)[depth].id = 0;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "class"))) {
-			(*selector)[depth].class = s;
-			/*free(s);*/
-		}
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "class")))
+			(*selector)[depth].class = s;  /* TODO: free this later */
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "id")))
+			(*selector)[depth].id = s;
 		style = box_get_style(stylesheet, stylesheet_count, parent_style, n,
 				*selector, depth + 1);
 		LOG(("display: %s", css_display_name[style->display]));
-		if (style->display == CSS_DISPLAY_NONE)
+		if (style->display == CSS_DISPLAY_NONE) {
+			free(style);
 			return inline_container;
+		}
 
 		/* special elements */
 		if (strcmp((const char *) n->name, "a") == 0) {
@@ -187,13 +190,18 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			LOG(("image"));
 			/*box = box_image(n, style, href);
 			add_img_element(elements, box->img);*/
-			if (style->display == CSS_DISPLAY_INLINE) {
+			/*if (style->display == CSS_DISPLAY_INLINE) {
 				if ((s = (char *) xmlGetProp(n, (const xmlChar *) "alt"))) {
 					text = squash_tolat1(s);
 					xfree(s);
 				}
-			}
+			}*/
 			/* TODO: block images, start fetch */
+			if ((s2 = xmlGetProp(n, (const xmlChar *) "alt"))) {
+				xmlNode *alt = xmlNewText(s2);
+				free(s2);
+				xmlAddChild(n, alt);
+			}
 
 		} else if (strcmp((const char *) n->name, "textarea") == 0) {
 			char * content = xmlNodeGetContent(n);
@@ -213,7 +221,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			for (c = n->children; c != 0; c = c->next) {
 				if (strcmp((const char *) c->name, "option") == 0) {
 					char * content = xmlNodeGetContent(c);
-					char * thistext = tolat1(content);
+					char * thistext = squash_tolat1(content);
 					LOG(("option"));
 					current_option = box_option(c, style, current_select);
 					option_addtext(current_option, thistext);
@@ -242,6 +250,8 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				inline_container->last->space = 1;
 			}
 			xfree(text);
+			if (style != 0)
+				free(style);
 			return inline_container;
 		}
 	}
@@ -283,7 +293,6 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			parent = box_create(BOX_FLOAT_LEFT, 0, href);
 			if (style->float_ == CSS_FLOAT_RIGHT) parent->type = BOX_FLOAT_RIGHT;
 			box_add_child(inline_container, parent);
-			style->float_ = CSS_FLOAT_NONE;
 			if (style->display == CSS_DISPLAY_INLINE)
 				style->display = CSS_DISPLAY_BLOCK;
 
@@ -309,7 +318,9 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 							selector, depth + 1, box, inline_container_c,
 							href, fonts, current_select, current_option,
 							current_textarea, current_form, elements);
-				inline_container = 0;
+				if (style->float_ == CSS_FLOAT_NONE)
+					/* continue in this inline container if this is a float */
+					inline_container = 0;
 				break;
 			case CSS_DISPLAY_INLINE:  /* inline elements get no box, but their children do */
 				assert(box == 0);  /* special inline elements have already been
@@ -423,6 +434,8 @@ struct css_style * box_get_style(struct content ** stylesheet,
 		unsigned int r, g, b;
 		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 			style->background_color = (b << 16) | (g << 8) | r;
+		else if (s[0] != '#')
+			style->background_color = named_colour(s);
 		free(s);
 	}
 
@@ -437,6 +450,8 @@ struct css_style * box_get_style(struct content ** stylesheet,
 		unsigned int r, g, b;
 		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 			style->color = (b << 16) | (g << 8) | r;
+		else if (s[0] != '#')
+			style->color = named_colour(s);
 		free(s);
 	}
 
@@ -452,6 +467,8 @@ struct css_style * box_get_style(struct content ** stylesheet,
 			unsigned int r, g, b;
 			if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 				style->color = (b << 16) | (g << 8) | r;
+			else if (s[0] != '#')
+				style->color = named_colour(s);
 			free(s);
 		}
 	}

@@ -1,5 +1,5 @@
 /**
- * $Id: css.h,v 1.5 2003/04/06 18:09:34 bursa Exp $
+ * $Id: css.h,v 1.6 2003/04/13 12:50:10 bursa Exp $
  */
 
 #ifndef _NETSURF_CSS_CSS_H_
@@ -190,5 +190,6 @@ void css_get_style(struct content *c, struct css_selector * selector,
 void css_cascade(struct css_style * const style, const struct css_style * const apply);
 void css_merge(struct css_style * const style, const struct css_style * const apply);
 void css_parse_property_list(struct css_style * style, char * str);
+colour named_colour(const char *name);
 
 #endif

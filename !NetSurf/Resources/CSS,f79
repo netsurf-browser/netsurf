@@ -1,6 +1,6 @@
 html { font-size: medium }
 
-address, blockquote, body, br, dd, div, 
+address, blockquote, body, br, dd, div,
 dl, dt, fieldset, form,
 h1, h2, h3, h4, h5, h6, html,
 object, ol, p, ul,
@@ -19,7 +19,7 @@ col             { display: table-column }
 colgroup        { display: table-column-group }
 td, th          { display: table-cell }
 caption         { display: table-caption }
-img { display:inline}
+img { color: #0b0; font-style: italic; }
 
 h1 { font-size: xx-large; font-weight: bold; }
 h2 { font-size: x-large; }
@@ -31,6 +31,7 @@ b, strong { font-weight: bold; }
 i, em { font-style: italic; }
 a { color: #00f; }
 th { font-weight: bold; }
+td { text-align: left; }
 
 hr { background-color: #000; height: 1px; }
 

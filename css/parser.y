@@ -1,5 +1,5 @@
 /**
- * $Id: parser.y,v 1.6 2003/04/06 18:09:34 bursa Exp $
+ * $Id: parser.y,v 1.7 2003/04/13 12:50:10 bursa Exp $
  */
 
 /*
@@ -51,7 +51,7 @@ block_body ::= block_body SEMI.
 ruleset ::= selector_list(A) LBRACE declaration_list(B) RBRACE.
 		{ css_add_ruleset(param->stylesheet, A, B);
 		css_free_node(B); }
-ruleset ::= any_list_1(A) LBRACE declaration_list(B) RBRACE.
+/*ruleset ::= any_list_1(A) LBRACE declaration_list(B) RBRACE.
 		{ css_free_node(A); css_free_node(B); } /* not CSS2 */
 ruleset ::= LBRACE declaration_list(A) RBRACE.
 		/* this form of ruleset not used in CSS2
@@ -120,8 +120,8 @@ any_list(A) ::= .
 		{ A = 0; }
 any_list(A) ::= any(B) any_list(C).
 		{ B->next = C; A = B; }
-any_list_1(A) ::= any(B) any_list(C).
-		{ B->next = C; A = B; }
+/*any_list_1(A) ::= any(B) any_list(C).
+		{ B->next = C; A = B; }*/
 any(A) ::= IDENT(B).
 		{ A = css_new_node(NODE_IDENT, B, 0, 0); }
 any(A) ::= NUMBER(B).

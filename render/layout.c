@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.38 2003/04/09 21:57:09 bursa Exp $
+ * $Id: layout.c,v 1.39 2003/04/13 12:50:10 bursa Exp $
  */
 
 #include <assert.h>
@@ -408,10 +408,22 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			move_y = 1;
 /* 			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x); */
 		} else {
+			/* float */
+			unsigned long w = width;
 			d = b->children;
 			d->float_children = 0;
 /* 			css_dump_style(b->style); */
-			layout_node(d, width, d, 0, 0);
+			if (d->style->width.width == CSS_WIDTH_AUTO) {
+				/* either a float with no width specified (contravenes standard)
+				 * or we don't know the width for some reason, eg. image not loaded */
+				calculate_widths(b);
+				w = width / 2;
+				if (d->max_width < w)
+					w = d->max_width;
+				else if (w < d->min_width)
+					w = d->min_width;
+			}
+			layout_node(d, w, d, 0, 0);
 			d->x = d->y = 0;
 			b->width = d->width;
 			b->height = d->height;

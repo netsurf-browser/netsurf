@@ -1,5 +1,5 @@
 /**
- * $Id: ruleset.c,v 1.6 2003/04/10 21:44:45 bursa Exp $
+ * $Id: ruleset.c,v 1.7 2003/04/13 12:50:10 bursa Exp $
  */
 
 #include <assert.h>
@@ -62,25 +62,26 @@ static const struct property_entry property_table[] = {
 	{ "width",            parse_width },
 };
 
-/* table of standard colour names: MUST be sorted by colour name */
+/* table of standard colour names: MUST be sorted by colour name
+ * note: colour is 0xbbggrr */
 static const struct colour_entry colour_table[] = {
-	{ "aqua",    0x00ffff },
+	{ "aqua",    0xffff00 },
 	{ "black",   0x000000 },
-	{ "blue",    0x0000ff },
+	{ "blue",    0xff0000 },
 	{ "fuchsia", 0xff00ff },
 	{ "gray",    0x808080 },
 	{ "green",   0x008000 },
 	{ "lime",    0x00ff00 },
-	{ "maroon",  0x800000 },
-	{ "navy",    0x000080 },
-	{ "olive",   0x808000 },
+	{ "maroon",  0x000080 },
+	{ "navy",    0x800000 },
+	{ "olive",   0x008080 },
 	{ "purple",  0x800080 },
-	{ "red",     0xff0000 },
+	{ "red",     0x0000ff },
 	{ "silver",  0xc0c0c0 },
-	{ "teal",    0x008080 },
+	{ "teal",    0x808000 },
 	{ "transparent", TRANSPARENT },
 	{ "white",   0xffffff },
-	{ "yellow",  0xffff00 },
+	{ "yellow",  0x00ffff },
 };
 
 /* table of font sizes: MUST be sorted by name */
@@ -111,6 +112,26 @@ void css_add_ruleset(struct content *c,
 
 	for (sel = selector; sel != 0; sel = next_sel) {
 		next_sel = sel->next;
+
+		/*LOG(("+++"));
+		for (n = sel; n != 0; n = n->right) {
+			struct node *m;
+			if (n->data != 0)
+				fprintf(stderr, "%s", n->data);
+			for (m = n->left; m != 0; m = m->next) {
+				switch (m->type) {
+					case NODE_ID: fprintf(stderr, "%s", m->data); break;
+					case NODE_CLASS: fprintf(stderr, ".%s", m->data); break;
+					default: fprintf(stderr, "unexpected node");
+				}
+			}
+			fprintf(stderr, " ");
+		}
+		fprintf(stderr, "\n");*/
+
+		/* skip empty selectors */
+		if (sel->left == 0 && sel->data == 0)
+			continue;
 
 		/* check if this selector is already present */
 		hash = css_hash(sel->data);
@@ -160,7 +181,7 @@ int compare_selectors(struct node *n0, struct node *n1)
 {
 	struct node *m0, *m1;
 	unsigned int count0 = 0, count1 = 0;
-	
+
 	/* compare element name */
 	if (!((n0->data == 0 && n1->data == 0) ||
 	      (n0->data != 0 && n1->data != 0 && strcmp(n0->data, n1->data) == 0)))
@@ -213,6 +234,18 @@ int parse_length(struct css_length * const length, const struct node * const v)
 	length->unit = u;
 	length->value = atof(v->data);
 	return 0;
+}
+
+
+colour named_colour(const char *name)
+{
+	struct colour_entry *col;
+	col = bsearch(name, colour_table,
+			sizeof(colour_table) / sizeof(colour_table[0]),
+			sizeof(colour_table[0]), strcasecmp);
+	if (col == 0)
+		return TRANSPARENT;
+	return col->col;
 }
 
 
