@@ -579,7 +579,7 @@ void html_redraw_background(long xi, long yi, int width, int height,
 	bool fixed = false;
 
 	if (box->background == 0) return;
-        
+
 	/* Set the plot options */
 	if (ro_gui_current_redraw_gui) {
 		if (!ro_gui_current_redraw_gui->option_background_images) return;
@@ -594,7 +594,7 @@ void html_redraw_background(long xi, long yi, int width, int height,
 	/* Get the image dimensions for our positioning and scaling */
 	image_size.x = box->background->width;
 	image_size.y = box->background->height;
-	ro_convert_pixels_to_os_units(&image_size, -1);
+	ro_convert_pixels_to_os_units(&image_size, (os_mode)-1);
 	image_width = image_size.x * scale;
 	image_height = image_size.y * scale;
 
@@ -625,7 +625,7 @@ void html_redraw_background(long xi, long yi, int width, int height,
 		default:
 			break;
 	}
-	
+
 	/* handle window offset */
 	x = xi;
 	if (fixed) {
@@ -634,7 +634,7 @@ void html_redraw_background(long xi, long yi, int width, int height,
 	} else {
 		y = yi;
 	}
-	
+
 	/* handle window offset */
 	x = xi;
 	if (fixed) {
