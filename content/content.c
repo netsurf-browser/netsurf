@@ -815,6 +815,7 @@ void content_broadcast(struct content *c, content_msg msg,
 		union content_msg_data data)
 {
 	struct content_user *user, *next;
+	assert(c);
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0)
