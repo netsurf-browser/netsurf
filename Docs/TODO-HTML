@@ -1,4 +1,4 @@
-$Id: TODO-HTML,v 1.5 2003/09/10 22:27:15 jmb Exp $
+$Id: TODO-HTML,v 1.6 2003/11/02 01:42:54 jmb Exp $
 
 TODO-HTML file for NetSurf. 
 
@@ -10,7 +10,6 @@ See TODO-CSS for CSS related TODOs.
 
 Text Formatting:
 
-	<PRE> tag
 	<CITE>, <DFN>, <CODE>, <SAMP>, <KBD>, 
 	<VAR>, <ABBR> and <ACRONYM> tags
 	<Q> tag
@@ -28,14 +27,13 @@ Images:
 	MAP, 
 	AREA
 
-<OBJECT>, <EMBED> and <APPLET> tags
+Objects:
+	Alt text
 
-Forms: 
-       <SELECT> - size attribute, multiple selections
-       <TEXTAREA> - implement it properly (use nested wimp?)
+Forms:
        Tabbing between input values
        "disabled" attribute
-       POST method support
+       A few textarea rendering issues
 
 Frames:
 	Actually support them. NetSurf passes the test suite's 
