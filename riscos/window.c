@@ -1190,8 +1190,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		else if (c == 398) c = 31;     /* Down */
 		else if (c == 399) c = 30;     /* Up */
 		if (c < 256)
-			if (browser_window_key_press(g->bw,
-					(char) c))
+			if (browser_window_key_press(g->bw, c))
 				return true;
 	}
 
