@@ -26,6 +26,7 @@ extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_config_th_pane,
 	dialog_debug;
 extern wimp_w history_window;
+extern wimp_w hotlist_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu;
 extern int iconbar_menu_height;
 extern struct form_control *current_gadget;
@@ -35,7 +36,7 @@ extern bool gui_redraw_debug;
 extern wimp_menu *current_menu;
 extern gui_window *current_gui;
 extern gui_window *ro_gui_current_redraw_gui;
-extern osspriteop_area *gui_pointers;
+extern osspriteop_area *gui_sprites;
 
 typedef enum { GUI_BROWSER_WINDOW } gui_window_type;
 typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT,
@@ -172,6 +173,13 @@ void ro_gui_history_open(struct browser_window *bw,
 void ro_gui_history_redraw(wimp_draw *redraw);
 void ro_gui_history_click(wimp_pointer *pointer);
 void ro_gui_history_mouse_at(wimp_pointer *pointer);
+
+/* in hotlist.c */
+void ro_gui_hotlist_init(void);
+void ro_gui_hotlist_show(void);
+void ro_gui_hotlist_add(char *title, char *url);
+void ro_gui_hotlist_redraw(wimp_draw *redraw);
+void ro_gui_hotlist_click(wimp_pointer *pointer);
 
 /* in save.c */
 void ro_gui_save_click(wimp_pointer *pointer);

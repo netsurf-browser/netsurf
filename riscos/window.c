@@ -738,6 +738,13 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
 			xwimp_create_menu((wimp_menu *) dialog_zoom,
 					pointer->pos.x, pointer->pos.y);
 			break;
+		case ICON_TOOLBAR_BOOKMARK:
+			if (pointer->buttons == wimp_CLICK_SELECT) {
+				ro_gui_hotlist_add(g->title, g->url);
+			} else {
+				ro_gui_hotlist_show();
+			}
+			break;
 
 		case ICON_TOOLBAR_SAVE:
 			current_gui = g;
@@ -942,6 +949,10 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 	switch (key) {
 		case wimp_KEY_F1:	/* Help. */
 			ro_gui_open_help_page("docs");
+			return true;
+
+		case wimp_KEY_F6:	/* Help. */
+			ro_gui_hotlist_show();
 			return true;
 
 		case wimp_KEY_F8:	/* View source. */
@@ -1400,7 +1411,7 @@ void gui_window_set_pointer(gui_pointer_shape shape)
 	} else {
 		/* pointer in our own sprite area */
 		error = xosspriteop_set_pointer_shape(osspriteop_USER_AREA,
-				gui_pointers,
+				gui_sprites,
 				(osspriteop_id) entry->sprite_name,
 				1, entry->xactive, entry->yactive, 0, 0);
 		if (error) {

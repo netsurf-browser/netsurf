@@ -68,7 +68,7 @@ bool gui_reformat_pending = false;	/**< Some windows have been resized,
 gui_drag_type gui_current_drag_type;
 wimp_t task_handle;	/**< RISC OS wimp task handle. */
 static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
-osspriteop_area *gui_pointers;      /**< Sprite area containing pointer data */
+osspriteop_area *gui_sprites;      /**< Sprite area containing pointer and hotlist sprites */
 
 /** Accepted wimp user messages. */
 static wimp_MESSAGE_LIST(28) task_messages = { {
@@ -214,6 +214,7 @@ void gui_init(int argc, char** argv)
 	ro_gui_history_init();
 	wimp_close_template();
 	ro_gui_pointers_init();
+	ro_gui_hotlist_init();
 	ro_gui_icon_bar_create();
 	ro_gui_check_resolvers();
 }
@@ -317,7 +318,7 @@ void ro_gui_pointers_init(void)
 	fileswitch_object_type obj_type;
 	os_error *e;
 
-	e = xosfile_read_stamped_no_path("<NetSurf$Dir>.Resources.Pointers",
+	e = xosfile_read_stamped_no_path("<NetSurf$Dir>.Resources.Sprites",
 			&obj_type, 0, 0, &len, 0, 0);
 	if (e) {
 		LOG(("xosfile_read_stamped_no_path: 0x%x: %s",
@@ -327,17 +328,17 @@ void ro_gui_pointers_init(void)
 	if (obj_type != fileswitch_IS_FILE)
 		die("<NetSurf$Dir>.Resources.Pointers missing.");
 
-	gui_pointers = malloc(len + 4);
-	if (!gui_pointers)
+	gui_sprites = malloc(len + 4);
+	if (!gui_sprites)
 		die("NoMemory");
 
-	gui_pointers->size = len+4;
-	gui_pointers->sprite_count = 0;
-	gui_pointers->first = 16;
-	gui_pointers->used = 16;
+	gui_sprites->size = len+4;
+	gui_sprites->sprite_count = 0;
+	gui_sprites->first = 16;
+	gui_sprites->used = 16;
 
 	e = xosspriteop_load_sprite_file(osspriteop_USER_AREA,
-			gui_pointers, "<NetSurf$Dir>.Resources.Pointers");
+			gui_sprites, "<NetSurf$Dir>.Resources.Sprites");
 	if (e) {
 		LOG(("xosspriteop_load_sprite_file: 0x%x: %s",
 				e->errnum, e->errmess));
@@ -386,7 +387,7 @@ void ro_gui_check_resolvers(void)
 void gui_quit(void)
 {
 	ro_gui_history_quit();
-	free(gui_pointers);
+	free(gui_sprites);
 	wimp_close_down(task_handle);
 	xhourglass_off();
 }
@@ -612,6 +613,8 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 		ro_gui_redraw_config_th_pane(redraw);
 	else if (redraw->w == history_window)
 		ro_gui_history_redraw(redraw);
+	else if (redraw->w == hotlist_window)
+		ro_gui_hotlist_redraw(redraw);
 	else if (redraw->w == dialog_debug)
 		ro_gui_debugwin_redraw(redraw);
 	else {
@@ -686,6 +689,8 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 		ro_gui_icon_bar_click(pointer);
 	else if (pointer->w == history_window)
 		ro_gui_history_click(pointer);
+	else if (pointer->w == hotlist_window)
+		ro_gui_hotlist_click(pointer);
 	else if (g && g->type == GUI_BROWSER_WINDOW && g->window == pointer->w)
 		ro_gui_window_click(g, pointer);
 	else if (g && g->type == GUI_BROWSER_WINDOW &&

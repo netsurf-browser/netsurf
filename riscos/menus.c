@@ -36,8 +36,8 @@
 #define MENU_SELECTION	-2
 #define MENU_NAVIGATE	2
 #define MENU_VIEW	3
-#define MENU_UTILITIES	-2
-#define MENU_HELP	4
+#define MENU_UTILITIES	4
+#define MENU_HELP	5
 
 static void translate_menu(wimp_menu *menu);
 static void ro_gui_menu_prepare_images(void);
@@ -232,11 +232,11 @@ static wimp_MENU(2) hotlist_menu = {
 static wimp_MENU(4) utilities_menu = {
   { "Utilities" }, 7,2,7,0, 300, 44, 0,
   {
-    { wimp_MENU_SEPARATE, (wimp_menu *)&hotlist_menu, DEFAULT_FLAGS, { "Hotlist" } },
-    { 0,		  wimp_NO_SUB_MENU,	      DEFAULT_FLAGS, { "FindText" } },
+    { wimp_MENU_LAST, (wimp_menu *)&hotlist_menu, DEFAULT_FLAGS, { "Hotlist" } },
+/*    { 0,		  wimp_NO_SUB_MENU,	      DEFAULT_FLAGS, { "FindText" } },
     { 0,		  wimp_NO_SUB_MENU,	      DEFAULT_FLAGS, { "HistLocal" } },
     { wimp_MENU_LAST,	  wimp_NO_SUB_MENU,	      DEFAULT_FLAGS, { "HistGlobal" } }
-  }
+*/  }
 };
 
 
@@ -256,7 +256,7 @@ static wimp_MENU(5) help_menu = {
 
 /*	Main browser menu
 */
-static wimp_MENU(5) menu = {
+static wimp_MENU(6) menu = {
   { "NetSurf" }, 7,2,7,0, 200, 44, 0,
   {
     { 0,				       (wimp_menu *)&page_menu,	     DEFAULT_FLAGS, { "Page" } },
@@ -264,7 +264,7 @@ static wimp_MENU(5) menu = {
 //    { 0,					 (wimp_menu *)&selection_menu, DEFAULT_FLAGS, { "Selection" } },
     { wimp_MENU_GIVE_WARNING,		       (wimp_menu *)&navigate_menu,  DEFAULT_FLAGS, { "Navigate" } },
     { 0,				       (wimp_menu *)&view_menu,	     DEFAULT_FLAGS, { "View" } },
-//    { 0,					 (wimp_menu *)&utilities_menu, DEFAULT_FLAGS, { "Utilities" } },
+    { 0,				       (wimp_menu *)&utilities_menu, DEFAULT_FLAGS, { "Utilities" } },
     { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING, (wimp_menu *)&help_menu,	     DEFAULT_FLAGS, { "Help" } }
   }
 };
@@ -601,6 +601,20 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						gui_window_default_options(current_gui->data.browser.bw);
 						ro_gui_save_options();
 						break;
+				}
+				break;
+			case MENU_UTILITIES:
+				switch (selection->items[1]) {
+				  	case 0: /* Hotlist -> */
+				  		switch (selection->items[2]) {
+				  			case 0:	/* Add to hotlist */
+				  				ro_gui_hotlist_add(current_gui->title, current_gui->url);
+				  				break;
+				  			case 1: /* Show hotlist */
+				  				ro_gui_hotlist_show();
+				  				break;
+				  		}
+				  		break;
 				}
 				break;
 			case MENU_HELP:

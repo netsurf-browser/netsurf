@@ -56,6 +56,9 @@ WindowSave:Set as default position
 WindowStagr:Stagger window position
 WindowSize:Maintain window size
 WindowReset:Reset default position
+Utilities:Utilities
+HotlistAdd:Add page to hotlist
+HotlistShow:Show hotlist  F6
 Help:Help
 HelpContent:Contents  F1
 HelpGuide:User guide
