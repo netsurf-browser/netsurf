@@ -20,7 +20,7 @@ OBJECTS = $(OBJECTS_COMMON) \
 	draw.o plugin.o png.o sprite.o \
 	about.o filetype.o font.o uri.o url_protocol.o history.o \
 	version.o thumbnail.o \
-	save.o save_draw.o save_text.o schedule.o
+	save.o save_draw.o save_text.o schedule.o help.o
 OBJECTS_DEBUG = $(OBJECTS_COMMON) \
 	netsurfd.o \
 	options.o filetyped.o fontd.o
