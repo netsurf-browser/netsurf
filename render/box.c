@@ -1100,6 +1100,26 @@ struct result box_input(xmlNode *n, struct status *status,
 		box_add_child(inline_container, inline_box);
 		box_add_child(box, inline_container);
 	}
+	else if (stricmp(type, "button") == 0)
+	{
+	        struct result result = box_button(n, status, style);
+		struct box *inline_container, *inline_box;
+		box = result.box;
+		inline_container = box_create(0, 0, 0,
+				status->content->data.html.box_pool);
+		inline_container->type = BOX_INLINE_CONTAINER;
+		inline_box = box_create(style, 0, 0,
+				status->content->data.html.box_pool);
+		inline_box->type = BOX_INLINE;
+		inline_box->style_clone = 1;
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
+		        inline_box->text = s;
+		}
+		inline_box->length = strlen(inline_box->text);
+		inline_box->font = font_open(status->content->data.html.fonts, style);
+		box_add_child(inline_container, inline_box);
+		box_add_child(box, inline_container);
+	}
 	else if (stricmp(type, "image") == 0)
 	{
 	        box = box_create(style, NULL, 0,
