@@ -131,18 +131,14 @@ bool form_successful_controls(struct form *form,
 		if (!control->name)
 			continue;
 
-		/* ignore controls with no value */
-		/* this fixes ebay silliness
-		 * From the spec:
-		 * "If a control doesn't have a current value when the
-		 *  form is submitted, user agents are not required to
-		 *  treat it as a successful control"
-		 */
-		if (!control->value)
-			continue;
-
 		switch (control->type) {
 			case GADGET_HIDDEN:
+				/* ignore hidden controls with no value */
+				/* this fixes ebay silliness */
+				if (!control->value)
+					continue;
+
+				/* fall through */
 			case GADGET_TEXTBOX:
 			case GADGET_PASSWORD:
 				value = strdup(control->value);
