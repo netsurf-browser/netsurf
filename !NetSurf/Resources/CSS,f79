@@ -46,12 +46,14 @@ hr { background-color: #000; height: 1px; }
 center { text-align: center; }
 small { font-size: smaller; }
 big { font-size: larger; }
-select, input { background-color: #ddd; color: #000; width: 10em;
+input { background-color: #fff; color: #000; width: 10em;
+	height: 1.5em; text-align: left; border-width: 1px; 
+	border-color: #000; border-style: solid; }
+select { background-color: #ddd; color: #000; width: 10em;
 	height: 1.5em; text-align: left; border-width: medium; 
 	border-color: #aaa #eee #eee #aaa; border-style: inset; }
-textarea { background-color: #ddd; color: #000; text-align: left; 
-	   border-width: medium; border-color: #aaa #eee #eee #aaa; 
-	   border-style: inset; }
+textarea { background-color: #fff; color: #000; text-align: left; 
+	border-width: 1px; border-color: #000; border-style: solid; }
 input[type=button], input[type=reset], input[type=submit], button {
 	background-color: #ddd; color: #000; width: auto;
 	border-width: medium; border-color: #eee #aaa #aaa #eee;
