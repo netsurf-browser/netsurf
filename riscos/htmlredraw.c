@@ -13,6 +13,7 @@
 #include "oslib/draw.h"
 #include "oslib/font.h"
 #include "oslib/os.h"
+#include "oslib/wimp.h"
 #include "swis.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/css/css.h"
@@ -22,6 +23,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/tinct.h"
+#include "netsurf/riscos/toolbar.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -603,11 +605,27 @@ void html_redraw_background(long xi, long yi, int width, int height,
 	os_coord image_size;
 	float multiplier;
 	bool fixed = false;
+	wimp_window_state state;
 
 	if (box->background == 0) return;
 
-	/* Set the plot options */
+	state.w = 0;
+
 	if (ro_gui_current_redraw_gui) {
+		/* read state of window we're drawing in */
+		os_error *error;
+
+		state.w = ro_gui_current_redraw_gui->window;
+		error = xwimp_get_window_state(&state);
+		if (error) {
+			/* not fatal: fixed backgrounds will scroll. */
+			LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+			/* invalidate state.w */
+			state.w = 0;
+		}
+
+		/* Set the plot options */
 		if (!ro_gui_current_redraw_gui->option_background_images) return;
 		tinct_options = (ro_gui_current_redraw_gui->option_filter_sprites?tinct_BILINEAR_FILTER:0) |
 				(ro_gui_current_redraw_gui->option_dither_sprites?tinct_DITHER:0);
@@ -624,7 +642,9 @@ void html_redraw_background(long xi, long yi, int width, int height,
 	/* handle background-attachment */
 	switch (box->style->background_attachment) {
 		case CSS_BACKGROUND_ATTACHMENT_FIXED:
-			fixed = true;
+			/* uncomment this to enable fixed backgrounds */
+			/*if (state.w != 0)
+				fixed = true;*/
 			break;
 		case CSS_BACKGROUND_ATTACHMENT_SCROLL:
 			break;
@@ -649,43 +669,73 @@ void html_redraw_background(long xi, long yi, int width, int height,
 			break;
 	}
 
-	/* handle window offset */
-	x = xi;
+	/* fixed background */
 	if (fixed) {
-		/**\todo fixed background attachments */
-		x -= 0;
+		int toolbar_height = 0;
+
+		/* get toolbar height */
+		if (ro_gui_current_redraw_gui &&
+			ro_gui_current_redraw_gui->data.browser.toolbar)
+			toolbar_height = ro_gui_current_redraw_gui->data.browser.toolbar->height;
+
+		/* top left of viewport, taking account of toolbar height */
+		x = state.visible.x0;
+		y = state.visible.y1 - toolbar_height;
+
+		/* handle background-position */
+		switch (box->style->background_position.horz.pos) {
+			case CSS_BACKGROUND_POSITION_PERCENT:
+				multiplier = box->style->background_position.horz.value.percent / 100;
+				x += ((state.visible.x1 - state.visible.x0) - (image_size.x * 2)) * multiplier;
+				break;
+			case CSS_BACKGROUND_POSITION_LENGTH:
+				x += 2 * len(&box->style->background_position.horz.value.length, box->style) * scale;
+				break;
+			default:
+				break;
+		}
+
+		switch (box->style->background_position.vert.pos) {
+			case CSS_BACKGROUND_POSITION_PERCENT:
+				multiplier = box->style->background_position.vert.value.percent / 100;
+				y -= ((state.visible.y1 - state.visible.y0 - toolbar_height) - (image_size.y * 2)) * multiplier;
+				break;
+			case CSS_BACKGROUND_POSITION_LENGTH:
+				y -= 2 * len(&box->style->background_position.vert.value.length, box->style) * scale;
+				break;
+			default:
+				break;
+		}
 	}
+	else {
+		/* handle window offset */
+		x = xi;
+		y = yi;
 
-	/* handle window offset */
-	y = yi;
-	if (fixed) {
-        	/**\todo fixed background attachments */
-                y -= 0;
-        }
+		/* handle background-position */
+		switch (box->style->background_position.horz.pos) {
+			case CSS_BACKGROUND_POSITION_PERCENT:
+				multiplier = box->style->background_position.horz.value.percent / 100;
+				x += 2 * (box->width + box->padding[LEFT] + box->padding[RIGHT] - image_size.x) * multiplier;
+				break;
+			case CSS_BACKGROUND_POSITION_LENGTH:
+				x += 2 * len(&box->style->background_position.horz.value.length, box->style) * scale;
+				break;
+			default:
+				break;
+		}
 
-	/* handle background-position */
-	switch (box->style->background_position.horz.pos) {
-		case CSS_BACKGROUND_POSITION_PERCENT:
-			multiplier = box->style->background_position.horz.value.percent / 100;
-			x += 2 * (box->width + box->padding[LEFT] + box->padding[RIGHT] - image_size.x) * multiplier;
-			break;
-		case CSS_BACKGROUND_POSITION_LENGTH:
-			x += 2 * len(&box->style->background_position.horz.value.length, box->style) * scale;
-			break;
-		default:
-			break;
-	}
-
-	switch (box->style->background_position.vert.pos) {
-		case CSS_BACKGROUND_POSITION_PERCENT:
-			multiplier = box->style->background_position.vert.value.percent / 100;
-			y -= 2 * (box->height + box->padding[TOP] + box->padding[BOTTOM] - image_size.y) * multiplier;
-			break;
-		case CSS_BACKGROUND_POSITION_LENGTH:
-			y -= 2 * len(&box->style->background_position.vert.value.length, box->style) * scale;
-			break;
-		default:
-			break;
+		switch (box->style->background_position.vert.pos) {
+			case CSS_BACKGROUND_POSITION_PERCENT:
+				multiplier = box->style->background_position.vert.value.percent / 100;
+				y -= 2 * (box->height + box->padding[TOP] + box->padding[BOTTOM] - image_size.y) * multiplier;
+				break;
+			case CSS_BACKGROUND_POSITION_LENGTH:
+				y -= 2 * len(&box->style->background_position.vert.value.length, box->style) * scale;
+				break;
+			default:
+				break;
+		}
 	}
 
 //	  LOG(("Body [%ld, %ld], Image: [%ld, %ld], Flags: %x", xi, yi, x, y, tinct_options));
