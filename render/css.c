@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.1.1.1 2002/04/22 09:24:34 bursa Exp $
+ * $Id: css.c,v 1.2 2002/05/04 21:17:06 bursa Exp $
  */
 
 #include <string.h>
@@ -36,7 +36,6 @@ static void parse_float(struct css_style * const style, const char * const value
 static void parse_font_size(struct css_style * const style, const char * const value);
 static void parse_height(struct css_style * const style, const char * const value);
 static void parse_width(struct css_style * const style, const char * const value);
-static void parse_property_list(struct css_style * style, char * str);
 static void parse_selector(struct css_selector * sel, char * const str);
 static unsigned int hash_str(const char * str);
 static int seleq(const struct css_selector * const s1, const struct css_selector * const s2);
@@ -50,6 +49,23 @@ static void dump_length(const struct css_length * const length);
 static void dump_selector(const struct css_selector * const sel);
 static void dump_rule(const struct rule * rule);
 static void css_dump_stylesheet(const struct css_stylesheet * stylesheet);
+
+const struct css_style css_base_style = {
+	CSS_DISPLAY_BLOCK,
+	CSS_FLOAT_NONE,
+	{ CSS_FONT_SIZE_ABSOLUTE, 10.0 },
+	{ CSS_HEIGHT_AUTO },
+	{ CSS_WIDTH_AUTO }
+};
+
+const struct css_style css_empty_style = {
+	CSS_DISPLAY_INHERIT,
+	CSS_FLOAT_INHERIT,
+	{ CSS_FONT_SIZE_INHERIT },
+	{ CSS_HEIGHT_AUTO },
+	{ CSS_WIDTH_AUTO }
+};
+
 
 /**
  * property parsers
@@ -145,7 +161,7 @@ static struct property {
  * parse a property list
  */
 
-static void parse_property_list(struct css_style * style, char * str)
+void css_parse_property_list(struct css_style * style, char * str)
 {
 	char * end;
 	for (; str != 0; str = end) {
@@ -158,7 +174,7 @@ static void parse_property_list(struct css_style * style, char * str)
 		*value = 0; value++;
 		prop = strip(str);
 		value = strip(value);
-		printf("css_parse: '%s' => '%s'\n", prop, value);
+		/*printf("css_parse: '%s' => '%s'\n", prop, value);*/
 
 		for (i = 0; i < sizeof(property) / sizeof(struct property); i++) {
 			if (strcmp(prop, property[i].name) == 0) {
@@ -310,17 +326,18 @@ static void update_style(struct css_stylesheet * stylesheet, struct css_selector
  	struct rule * rule = find_rule(stylesheet, selector, selectors);
  	if (rule == 0) {
 	 	unsigned int h = hash_str(selector[selectors - 1].element);
-	 	printf("update_style: not present - adding\n");
+	 	/*printf("update_style: not present - adding\n");*/
  		rule = xcalloc(1, sizeof(struct rule));
 		rule->selector = selector;
 		rule->selectors = selectors;
 		rule->style = xcalloc(1, sizeof(struct css_style));
-		parse_property_list(rule->style, str);
+		memcpy(rule->style, &css_empty_style, sizeof(struct css_style));
+		css_parse_property_list(rule->style, str);
 		rule->next = stylesheet->hash[h];
 		stylesheet->hash[h] = rule;
  	} else {
-	 	printf("update_style: already present - updating\n");
-		parse_property_list(rule->style, str);
+	 	/*printf("update_style: already present - updating\n");*/
+		css_parse_property_list(rule->style, str);
 		free(selector);
  	}
 }
@@ -361,7 +378,7 @@ void css_parse_stylesheet(struct css_stylesheet * stylesheet, char * str)
 			if (comma != 0) *comma = 0;
 
 			sel_str = strip(sels_str);
-			printf("css_parse_stylesheet: %s\n", sel_str);
+			/*printf("css_parse_stylesheet: %s\n", sel_str);*/
 			do {
 				space = strchr(sel_str, ' ');
 				if (space != 0) *space = 0;
@@ -459,8 +476,8 @@ static void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 void css_cascade(struct css_style * const style, const struct css_style * const apply)
 {
 	float f;
-	style->display = apply->display;
-	style->float_ = apply->float_;
+	if (apply->display != CSS_DISPLAY_INHERIT) style->display = apply->display;
+	if (apply->float_ != CSS_FLOAT_INHERIT) style->float_ = apply->float_;
 	style->height = apply->height;
 	style->width = apply->width;
 

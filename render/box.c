@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.1 2002/05/04 19:57:18 bursa Exp $
+ * $Id: box.c,v 1.2 2002/05/04 21:17:06 bursa Exp $
  */
 
 #include <assert.h>
@@ -60,6 +60,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 	struct box * inline_container_c;
 	struct css_style * style;
 	xmlNode * c;
+	xmlChar * s;
 
 	if (n->type == XML_ELEMENT_NODE) {
 		/* work out the style for this element */
@@ -70,6 +71,15 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 		style = xcalloc(1, sizeof(struct css_style));
 		memcpy(style, parent_style, sizeof(struct css_style));
 		css_get_style(stylesheet, *selector, depth + 1, style);
+
+		if (s = xmlGetProp(n, "style")) {
+			struct css_style * astyle = xcalloc(1, sizeof(struct css_style));
+			memcpy(astyle, &css_empty_style, sizeof(struct css_style));
+			css_parse_property_list(astyle, s);
+			css_cascade(style, astyle);
+			free(astyle);
+			free(s);
+		}
 
 		switch (style->display) {
 			case CSS_DISPLAY_BLOCK:  /* blocks get a node in the box tree */

@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.7 2002/05/04 19:57:18 bursa Exp $
+ * $Id: render.c,v 1.8 2002/05/04 21:17:06 bursa Exp $
  */
 
 #include <assert.h>
@@ -110,6 +110,7 @@ int main(int argc, char *argv[])
 	stylesheet = css_new_stylesheet();
 	css_parse_stylesheet(stylesheet, load(argv[2]));
 
+	memcpy(style, &css_base_style, sizeof(struct css_style));
 	doc_box->type = BOX_BLOCK;
 	doc_box->node = c;
 	xml_to_box(c, style, stylesheet, &selector, 0, doc_box, 0);

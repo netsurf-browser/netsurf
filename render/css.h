@@ -1,5 +1,5 @@
 /**
- * $Id: css.h,v 1.1.1.1 2002/04/22 09:24:34 bursa Exp $
+ * $Id: css.h,v 1.2 2002/05/04 21:17:06 bursa Exp $
  */
 
 #include "css_enum.h"
@@ -47,24 +47,6 @@ struct css_style {
 			float percent;
 		} value;
 	} width;
-
-
-	enum { BACKGROUND_SCROLL = 1, BACKGROUND_FIXED } background_attachment;
-	colour background_color;
-	/* char background_image[100]; */
-	/* background-position */
-	enum { BACKGROUND_REPEAT = 1, BACKGROUND_REPEAT_X,
-	       BACKGROUND_REPEAT_Y, BACKGROUND_NO_REPEAT } background_repeat;
-	/* borders */
-	enum { CLEAR_NONE = 1, CLEAR_BOTH, CLEAR_LEFT, CLEAR_RIGHT } clear;
-	colour color;
-	/* font-family */
-	enum { FONT_STRAIGHT, FONT_OBLIQUE, FONT_ITALIC } font_style;
-	enum { FONT_NORMAL, FONT_SMALLCAPS } font_variant;
-	struct {
-		enum { WEIGHT_ABSOLUTE, WEIGHT_BOLDER, WEIGHT_LIGHTER } weight;
-		unsigned int value;
-	} font_weight;
 };
 
 struct css_stylesheet;
@@ -74,6 +56,9 @@ struct css_selector {
 	char * class;
 	char * id;
 };
+
+extern const struct css_style css_base_style;
+extern const struct css_style css_empty_style;
 
 /**
  * interface
@@ -85,3 +70,5 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 void css_parse_stylesheet(struct css_stylesheet * stylesheet, char * str);
 void css_dump_style(const struct css_style * const style);
 void css_cascade(struct css_style * const style, const struct css_style * const apply);
+void css_parse_property_list(struct css_style * style, char * str);
+
