@@ -383,6 +383,7 @@ void ro_gui_dialog_click_config_prox(wimp_pointer *pointer)
 
 void ro_gui_dialog_open_config_th(void)
 {
+	wimp_window_state state;
 	if (theme_list)
 		ro_theme_list_free(theme_list, theme_list_entries);
 
@@ -391,7 +392,30 @@ void ro_gui_dialog_open_config_th(void)
 		return;
 
 	ro_gui_dialog_open(dialog_config_th);
-	ro_gui_dialog_open(dialog_config_th_pane);
+//	ro_gui_dialog_open(dialog_config_th_pane);
+
+	state.w = dialog_config_th;
+	xwimp_get_window_state(&state);
+	state.w = dialog_config_th_pane;
+	state.visible.x0 += 24;
+	state.visible.y1 -= 12;
+	state.xscroll = 0;
+	state.yscroll = 0;
+	state.next = wimp_TOP;
+	if (xwimp_open_window_nested((wimp_open *)&state, dialog_config_th,
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_XORIGIN_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_YORIGIN_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+				<< wimp_CHILD_LS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_BS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_RS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT									<< wimp_CHILD_TS_EDGE_SHIFT)) {
+		LOG(("Unable to open theme pane window"));
+	}
 }
 
 
