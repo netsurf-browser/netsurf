@@ -266,7 +266,7 @@ void cookie_create(void) {
        exp[50], name[256], val[256];
   unsigned int expiry;
 
-  fp = fopen(messages_get("cookiejar"), "r");
+  fp = fopen(messages_get("cookiefile"), "r");
   if (!fp) {
     LOG(("Failed to open cookie jar"));
     return;
