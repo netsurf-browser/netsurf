@@ -958,7 +958,8 @@ bool layout_line(struct box *first, int width, int *y,
 				if (!c2)
 					return false;
 				memcpy(c2, split_box, sizeof *c2);
-				c2->text = strdup(split_box->text + space + 1);
+				c2->text = strndup(split_box->text + space + 1,
+					split_box->length - (space + 1));
 				if (!c2->text)
 					return false;
 				c2->length = split_box->length - (space + 1);
@@ -1000,7 +1001,8 @@ bool layout_line(struct box *first, int width, int *y,
 			if (!c2)
 				return false;
 			memcpy(c2, split_box, sizeof *c2);
-			c2->text = strdup(split_box->text + space + 1);
+			c2->text = strndup(split_box->text + space + 1,
+					split_box->length - (space + 1));
 			if (!c2->text)
 				return false;
 			c2->length = split_box->length - (space + 1);
