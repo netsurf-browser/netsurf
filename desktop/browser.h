@@ -58,9 +58,15 @@ struct browser_window {
 
 	/** Box currently being scrolled, or 0. */
 	struct box *scrolling_box;
-	/** Mouse position last scroll movement. */
-	int scrolling_last_x;
-	int scrolling_last_y;
+	/** Mouse position at start of current scroll drag. */
+	int scrolling_start_x;
+	int scrolling_start_y;
+	/** Scroll offsets at start of current scroll draw. */
+	int scrolling_start_scroll_x;
+	int scrolling_start_scroll_y;
+	/** Well dimensions for current scroll drag. */
+	int scrolling_well_width;
+	int scrolling_well_height;
 
 	/** Referer for current fetch, or 0. */
 	char *referer;

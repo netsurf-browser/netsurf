@@ -24,7 +24,7 @@ struct font_data;
 struct plotter_table {
 	bool (*clg)(colour c);
 	bool (*rectangle)(int x0, int y0, int width, int height,
-			colour c, bool dotted);
+			int line_width, colour c, bool dotted, bool dashed);
 	bool (*line)(int x0, int y0, int x1, int y1, int width,
 			colour c, bool dotted, bool dashed);
 	bool (*polygon)(int *p, unsigned int n, colour fill);

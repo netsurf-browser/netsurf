@@ -22,8 +22,10 @@
 
 static bool ro_plot_clg(colour c);
 static bool ro_plot_rectangle(int x0, int y0, int width, int height,
-		colour c, bool dotted);
+		int line_width, colour c, bool dotted, bool dashed);
 static bool ro_plot_line(int x0, int y0, int x1, int y1, int width,
+		colour c, bool dotted, bool dashed);
+static bool ro_plot_path(const draw_path * const path, int width,
 		colour c, bool dotted, bool dashed);
 static bool ro_plot_polygon(int *p, unsigned int n, colour fill);
 static bool ro_plot_fill(int x0, int y0, int x1, int y1, colour c);
@@ -88,82 +90,74 @@ bool ro_plot_clg(colour c)
 
 
 bool ro_plot_rectangle(int x0, int y0, int width, int height,
-		colour c, bool dotted)
+		int line_width, colour c, bool dotted, bool dashed)
 {
-	os_plot_code plot_code = (dotted ? os_PLOT_DOTTED : os_PLOT_SOLID) |
-			os_PLOT_BY;
-	os_error *error;
+	const int path[] = { draw_MOVE_TO,
+			(ro_plot_origin_x + x0 * 2) * 256,
+			(ro_plot_origin_y - y0 * 2 - 1) * 256,
+			draw_LINE_TO,
+			(ro_plot_origin_x + (x0 + width) * 2) * 256,
+			(ro_plot_origin_y - y0 * 2 - 1) * 256,
+			draw_LINE_TO,
+			(ro_plot_origin_x + (x0 + width) * 2) * 256,
+			(ro_plot_origin_y - (y0 + height) * 2 - 1) * 256,
+			draw_LINE_TO,
+			(ro_plot_origin_x + x0 * 2) * 256,
+			(ro_plot_origin_y - (y0 + height) * 2 - 1) * 256,
+			draw_CLOSE_LINE,
+			(ro_plot_origin_x + x0 * 2) * 256,
+			(ro_plot_origin_y - y0 * 2 - 1) * 256,
+			draw_END_PATH };
 
-	error = xcolourtrans_set_gcol(c << 8, 0, os_ACTION_OVERWRITE, 0, 0);
-	if (error) {
-		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-				error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_plot(os_MOVE_TO,
-			ro_plot_origin_x + x0 * 2,
-			ro_plot_origin_y - y0 * 2);
-	if (error) {
-		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_plot(plot_code, width * 2, 0);
-	if (error) {
-		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_plot(plot_code, 0, -height * 2);
-	if (error) {
-		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_plot(plot_code, -width * 2, 0);
-	if (error) {
-		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_plot(plot_code, 0, height * 2);
-	if (error) {
-		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-
-	return true;
+	return ro_plot_path((const draw_path *) path, line_width, c,
+			dotted, dashed);
 }
 
-
-static int path[] = { draw_MOVE_TO, 0, 0, draw_LINE_TO, 0, 0,
-	draw_END_PATH, 0 };
-static const draw_line_style line_style = { draw_JOIN_MITRED,
-	draw_CAP_BUTT, draw_CAP_BUTT, 0, 0x7fffffff,
-	0, 0, 0, 0 };
-static const int dash_pattern_dotted[] = { 0, 1, 512 };
-static const int dash_pattern_dashed[] = { 0, 1, 2048 };
 
 bool ro_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed)
 {
-	const draw_dash_pattern *dash_pattern;
+	const int path[] = { draw_MOVE_TO,
+			(ro_plot_origin_x + x0 * 2) * 256,
+			(ro_plot_origin_y - y0 * 2 - 1) * 256,
+			draw_LINE_TO,
+			(ro_plot_origin_x + x1 * 2) * 256,
+			(ro_plot_origin_y - y1 * 2 - 1) * 256,
+			draw_END_PATH };
+
+	return ro_plot_path((const draw_path *) path, width, c, dotted, dashed);
+}
+
+
+bool ro_plot_path(const draw_path * const path, int width,
+		colour c, bool dotted, bool dashed)
+{
+	static const draw_line_style line_style = { draw_JOIN_MITRED,
+			draw_CAP_BUTT, draw_CAP_BUTT, 0, 0x7fffffff,
+			0, 0, 0, 0 };
+	draw_dash_pattern dash = { 0, 1, { 512 } };
+	const draw_dash_pattern *dash_pattern = 0;
 	os_error *error;
 
-	if (dotted)
-		dash_pattern = (const draw_dash_pattern *) &dash_pattern_dotted;
-	else if (dashed)
-		dash_pattern = (const draw_dash_pattern *) &dash_pattern_dashed;
-	else
-		dash_pattern = NULL;
+	if (width < 1)
+		width = 1;
 
-	path[1] = (ro_plot_origin_x + x0 * 2) * 256;
-	path[2] = (ro_plot_origin_y - y0 * 2 - 1) * 256;
-	path[4] = (ro_plot_origin_x + x1 * 2) * 256;
-	path[5] = (ro_plot_origin_y - y1 * 2 - 1) * 256;
+	if (dotted) {
+		dash.elements[0] = 512 * width;
+		dash_pattern = &dash;
+	} else if (dashed) {
+		dash.elements[0] = 1536 * width;
+		dash_pattern = &dash;
+	}
+
 	error = xcolourtrans_set_gcol(c << 8, 0, os_ACTION_OVERWRITE, 0, 0);
 	if (error) {
 		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
 				error->errnum, error->errmess));
 		return false;
 	}
-	error = xdraw_stroke((draw_path *) path, 0, 0, 0, width * 2 * 256,
+
+	error = xdraw_stroke(path, 0, 0, 0, width * 2 * 256,
 			&line_style, dash_pattern);
 	if (error) {
 		LOG(("xdraw_stroke: 0x%x: %s",

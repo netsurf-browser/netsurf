@@ -43,7 +43,8 @@ static bool html_redraw_file(int x, int y, int width, int height,
 static bool html_redraw_background(int x, int y,
 		struct box *box, float scale, colour background_colour);
 static bool html_redraw_scrollbars(struct box *box, float scale,
-		int x, int y, int padding_width, int padding_height);
+		int x, int y, int padding_width, int padding_height,
+		colour background_colour);
 
 bool html_redraw_debug = false;
 
@@ -161,10 +162,10 @@ bool html_redraw_box(struct box *box,
 	/* dotted debug outlines */
 	if (html_redraw_debug) {
 		if (!plot.rectangle(x, y, padding_width, padding_height,
-				0x0000ff, true))
+				1, 0x0000ff, true, false))
 			return false;
 		if (!plot.rectangle(x + padding_left, y + padding_top,
-				width, height, 0xff0000, true))
+				width, height, 1, 0xff0000, true, false))
 			return false;
 		if (!plot.rectangle(x - (box->border[LEFT] +
 				box->margin[LEFT]) * scale,
@@ -176,7 +177,7 @@ bool html_redraw_box(struct box *box,
 				padding_height + (box->border[TOP] +
 				box->margin[TOP] + box->border[BOTTOM] +
 				box->margin[BOTTOM]) * scale,
-				0x00ffff, true))
+				1, 0x00ffff, true, false))
 			return false;
 	}
 
@@ -259,14 +260,6 @@ bool html_redraw_box(struct box *box,
 			if (!plot.clip(x0, y0, x1, y1))
 				return false;
 		}
-
-		/* scrollbars */
-		if (box->style->overflow == CSS_OVERFLOW_SCROLL) {
-			if (!html_redraw_scrollbars(box, scale, x, y,
-					padding_width, padding_height))
-				return false;
-		}
-
 	}
 
 	if (box->object) {
@@ -349,6 +342,15 @@ bool html_redraw_box(struct box *box,
 					current_background_color))
 				return false;
 	}
+
+	/* scrollbars */
+	if (box->style && box->type != BOX_BR && box->type != BOX_INLINE &&
+			(box->style->overflow == CSS_OVERFLOW_SCROLL ||
+			box->style->overflow == CSS_OVERFLOW_AUTO))
+		if (!html_redraw_scrollbars(box, scale, x, y,
+				padding_width, padding_height,
+				current_background_color))
+			return false;
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object)
@@ -750,27 +752,186 @@ bool html_redraw_background(int x, int y,
  */
 
 bool html_redraw_scrollbars(struct box *box, float scale,
-		int x, int y, int padding_width, int padding_height)
+		int x, int y, int padding_width, int padding_height,
+		colour background_colour)
 {
-	int w = SCROLLBAR_WIDTH * scale;
+	const int w = SCROLLBAR_WIDTH * scale;
+	bool vscroll, hscroll;
+	int well_height, bar_top, bar_height;
+	int well_width, bar_left, bar_width;
+	const colour vcolour = box->style->border[RIGHT].color;
+	const colour hcolour = box->style->border[BOTTOM].color;
 
-	/* vertical scrollbar */
-	if (box->descendant_y0 < box->descendant_y1) {
-		int bar_top = (float) padding_height * (float) box->scroll_y /
-				(float) (box->descendant_y1 -
-				box->descendant_y0);
-		int bar_height = (float) padding_height * (float) box->height /
-				(float) (box->descendant_y1 -
-				box->descendant_y0);
+	box_scrollbar_dimensions(box, padding_width, padding_height, w,
+			&vscroll, &hscroll,
+			&well_height, &bar_top, &bar_height,
+			&well_width, &bar_left, &bar_width);
+
+#define TRIANGLE(x0, y0, x1, y1, x2, y2, c) \
+	if (!plot.line(x0, y0, x1, y1, scale, c, false, false))	\
+		return false;						\
+	if (!plot.line(x0, y0, x2, y2, scale, c, false, false))	\
+		return false;						\
+	if (!plot.line(x1, y1, x2, y2, scale, c, false, false))	\
+		return false;
+
+	/* fill scrollbar well(s) with background colour */
+	if (vscroll)
 		if (!plot.fill(x + padding_width - w, y,
 				x + padding_width, y + padding_height,
-				0x777777))
+				background_colour))
 			return false;
-		if (!plot.fill(x + padding_width - w + 4, y + bar_top,
-				x + padding_width - 4, y + bar_top + bar_height,
-				0xbbbbbb))
+	if (hscroll)
+		if (!plot.fill(x, y + padding_height - w,
+				x + padding_width, y + padding_height,
+				background_colour))
 			return false;
+
+	/* vertical scrollbar */
+	if (vscroll) {
+		/* left line */
+		if (!plot.line(x + padding_width - w, y,
+				x + padding_width - w, y + padding_height,
+				scale, vcolour, false, false))
+			return false;
+		/* up arrow */
+		TRIANGLE(x + padding_width - w / 2, y + w / 4,
+				x + padding_width - w * 3 / 4, y + w * 3 / 4,
+				x + padding_width - w / 4, y + w * 3 / 4,
+				vcolour);
+		/* separator */
+		if (!plot.line(x + padding_width - w, y + w,
+				x + padding_width, y + w,
+				scale, vcolour, false, false))
+			return false;
+		/* bar */
+		if (!plot.rectangle(x + padding_width - w * 3 / 4,
+				y + w + bar_top + w / 4,
+				w / 2, bar_height - w / 2,
+				scale, vcolour, false, false))
+			return false;
+		/* separator */
+		if (!plot.line(x + padding_width - w, y + w + well_height,
+				x + padding_width, y + w + well_height,
+				scale, vcolour, false, false))
+			return false;
+		/* down arrow */
+		TRIANGLE(x + padding_width - w / 2,
+				y + w + well_height + w * 3 / 4,
+				x + padding_width - w * 3 / 4,
+				y + w + well_height + w / 4,
+				x + padding_width - w / 4,
+				y + w + well_height + w / 4,
+				vcolour);
+	}
+
+	/* horizontal scrollbar */
+	if (hscroll) {
+		/* top line */
+		if (!plot.line(x, y + padding_height - w,
+				x + well_width + w + w, y + padding_height - w,
+				scale, hcolour, false, false))
+			return false;
+		/* left arrow */
+		TRIANGLE(x + w / 4, y + padding_height - w / 2,
+				x + w * 3 / 4, y + padding_height - w * 3 / 4,
+				x + w * 3 / 4, y + padding_height - w / 4,
+				hcolour);
+		/* separator */
+		if (!plot.line(x + w, y + padding_height - w,
+				x + w, y + padding_height,
+				scale, hcolour, false, false))
+			return false;
+		/* bar */
+		if (!plot.rectangle(x + w + bar_left + w / 4,
+				y + padding_height - w * 3 / 4,
+				bar_width - w / 2, w / 2,
+				scale, hcolour, false, false))
+			return false;
+		/* separator */
+		if (!plot.line(x + w + well_width, y + padding_height - w,
+				x + w + well_width, y + padding_height,
+				scale, hcolour, false, false))
+			return false;
+		/* right arrow */
+		TRIANGLE(x + w + well_width + w * 3 / 4,
+				y + padding_height - w / 2,
+				x + w + well_width + w / 4,
+				y + padding_height - w * 3 / 4,
+				x + w + well_width + w / 4,
+				y + padding_height - w / 4,
+				hcolour);
 	}
 
 	return true;
+}
+
+
+/**
+ * Determine if a box has a vertical scrollbar.
+ *
+ * \param  box  scrolling box
+ * \return the box has a vertical scrollbar
+ */
+
+bool box_vscrollbar_present(const struct box * const box)
+{
+	return box->descendant_y0 < -box->border[TOP] ||
+			box->padding[TOP] + box->height + box->padding[BOTTOM] +
+			box->border[BOTTOM] < box->descendant_y1;
+}
+
+
+/**
+ * Determine if a box has a horizontal scrollbar.
+ *
+ * \param  box  scrolling box
+ * \return the box has a horizontal scrollbar
+ */
+
+bool box_hscrollbar_present(const struct box * const box)
+{
+	return box->descendant_x0 < -box->border[LEFT] ||
+			box->padding[LEFT] + box->width + box->padding[RIGHT] +
+			box->border[RIGHT] < box->descendant_x1;
+}
+
+
+/**
+ * Calculate scrollbar dimensions and positions for a box.
+ *
+ * \param  box             scrolling box
+ * \param  padding_width   scaled width of padding box
+ * \param  padding_height  scaled height of padding box
+ * \param  w               scaled scrollbar width
+ * \param  vscroll         updated to vertical scrollbar present
+ * \param  hscroll         updated to horizontal scrollbar present
+ * \param  well_height     updated to vertical well height
+ * \param  bar_top         updated to top position of vertical scrollbar
+ * \param  bar_height      updated to height of vertical scrollbar
+ * \param  well_width      updated to horizontal well width
+ * \param  bar_left        updated to left position of horizontal scrollbar
+ * \param  bar_width       updated to width of horizontal scrollbar
+ */
+
+void box_scrollbar_dimensions(const struct box * const box,
+		const int padding_width, const int padding_height, const int w,
+		bool * const vscroll, bool * const hscroll,
+		int * const well_height,
+		int * const bar_top, int * const bar_height,
+		int * const well_width,
+		int * const bar_left, int * const bar_width)
+{
+	*vscroll = box_vscrollbar_present(box);
+	*hscroll = box_hscrollbar_present(box);
+	*well_height = padding_height - w - w;
+	*bar_top = (float) *well_height * (float) box->scroll_y /
+			(float) (box->descendant_y1 - box->descendant_y0);
+	*bar_height = (float) *well_height * (float) box->height /
+			(float) (box->descendant_y1 - box->descendant_y0);
+	*well_width = padding_width - w - w - (*vscroll ? w : 0);
+	*bar_left = (float) *well_width * (float) box->scroll_x /
+			(float) (box->descendant_x1 - box->descendant_x0);
+	*bar_width = (float) *well_width * (float) box->width /
+			(float) (box->descendant_x1 - box->descendant_x0);
 }

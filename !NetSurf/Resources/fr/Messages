@@ -242,6 +242,17 @@ SaveText:PageWeb
 SaveObject:Objet
 SaveLink:Lien
 
+ScrollUp:Click the arrow to scroll up
+ScrollPUp:Click to scroll up one page
+ScrollV:Drag the bar to scroll vertically
+ScrollPDown:Click to scroll down one page
+ScrollDown:Click the arrow to scroll down
+ScrollLeft:Click the arrow to scroll left
+ScrollPLeft:Click to scroll left one page
+ScrollH:Drag the bar to scroll horizontally
+ScrollPRight:Click to scroll right one page
+ScrollRight:Click the arrow to scroll right
+
 # Interactive help
 HelpToolbar0:\Tle bouton de retour.|M\Srevenir d'une page en arrière dans l'historique.|MNe renvoie pas l'information de formulaire.
 HelpToolbar1:\Tle bouton d'avance.|M\Savancer d'une page dans l'historique.|MNe renvoie pas l'information de formulaire.

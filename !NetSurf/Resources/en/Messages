@@ -242,6 +242,17 @@ SaveText:Webpage
 SaveObject:Object
 SaveLink:Link
 
+ScrollUp:Click the arrow to scroll up
+ScrollPUp:Click to scroll up one page
+ScrollV:Drag the bar to scroll vertically
+ScrollPDown:Click to scroll down one page
+ScrollDown:Click the arrow to scroll down
+ScrollLeft:Click the arrow to scroll left
+ScrollPLeft:Click to scroll left one page
+ScrollH:Drag the bar to scroll horizontally
+ScrollPRight:Click to scroll right one page
+ScrollRight:Click the arrow to scroll right
+
 # Interactive help
 HelpToolbar0:\Tback button.|M\Straverse back one page in the history tree.|MDoes not resubmit form information.
 HelpToolbar1:\Tforward button.|M\Straverse forward one page in the history tree.|MDoes not resubmit form information.

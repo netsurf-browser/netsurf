@@ -355,10 +355,12 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 	box->width = layout_solve_width(available_width, width, margin,
 			padding, border);
 
-	if (style->overflow == CSS_OVERFLOW_SCROLL) {
-		/* make space for vertical scrollbar */
+	if (style->overflow == CSS_OVERFLOW_SCROLL ||
+			style->overflow == CSS_OVERFLOW_AUTO) {
+		/* make space for scrollbars */
 		box->width -= SCROLLBAR_WIDTH;
 		box->padding[RIGHT] += SCROLLBAR_WIDTH;
+		box->padding[BOTTOM] += SCROLLBAR_WIDTH;
 	}
 
 	if (box->object && box->object->type == CONTENT_HTML &&
@@ -423,7 +425,8 @@ int layout_solve_width(int available_width, int width,
 void layout_float_find_dimensions(int available_width,
 		struct css_style *style, struct box *box)
 {
-	int scrollbar_width = style->overflow == CSS_OVERFLOW_SCROLL ?
+	int scrollbar_width = (style->overflow == CSS_OVERFLOW_SCROLL ||
+			style->overflow == CSS_OVERFLOW_AUTO) ?
 			SCROLLBAR_WIDTH : 0;
 
 	layout_find_dimensions(available_width, style,
@@ -461,6 +464,7 @@ void layout_float_find_dimensions(int available_width,
 	}
 
 	box->padding[RIGHT] += scrollbar_width;
+	box->padding[BOTTOM] += scrollbar_width;
 
 	if (box->object) {
 		/* floating replaced element, see 10.3.6 and 10.6.2 */

@@ -56,6 +56,9 @@ static void browser_window_mouse_click_html(struct browser_window *bw,
 		browser_mouse_click click, int x, int y);
 static void browser_window_mouse_drag_html(struct browser_window *bw,
 		int x, int y);
+static const char *browser_window_scrollbar_click(struct browser_window *bw,
+		browser_mouse_click click, struct box *box,
+		int box_x, int box_y, int x, int y);
 static void browser_radio_set(struct content *content,
 		struct form_control *radio);
 static void browser_redraw_box(struct content *c, struct box *box);
@@ -631,7 +634,9 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
 	int box_x = 0, box_y = 0;
 	int gadget_box_x = 0, gadget_box_y = 0;
+	int scroll_box_x = 0, scroll_box_y = 0;
 	struct box *gadget_box = 0;
+	struct box *scroll_box = 0;
 	struct content *c = bw->current_content;
 	struct box *box;
 	struct content *content = c;
@@ -681,24 +686,26 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 		if (box->style && box->style->cursor != CSS_CURSOR_UNKNOWN)
 			pointer = get_pointer_shape(box->style->cursor);
 
-		if ((box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
-				box->type == BOX_FLOAT_LEFT ||
-				box->type == BOX_FLOAT_RIGHT) &&
-				box->style &&
-				box->style->overflow == CSS_OVERFLOW_SCROLL) {
-			if (box_x + box->padding[LEFT] + box->width < x) {
-				/* vertical scrollbar */
-				bw->drag_type = DRAGGING_VSCROLL;
-				bw->scrolling_box = box;
-				bw->scrolling_last_x = x;
-				bw->scrolling_last_y = y;
-			}
+		if (box->style && box->type != BOX_BR &&
+				box->type != BOX_INLINE &&
+				(box->style->overflow == CSS_OVERFLOW_SCROLL ||
+				 box->style->overflow == CSS_OVERFLOW_AUTO) &&
+				((box_vscrollbar_present(box) &&
+				  box_x + box->scroll_x + box->padding[LEFT] +
+				  box->width < x) ||
+				 (box_hscrollbar_present(box) &&
+				  box_y + box->scroll_y + box->padding[TOP] +
+				  box->height < y))) {
+			scroll_box = box;
+			scroll_box_x = box_x + box->scroll_x;
+			scroll_box_y = box_y + box->scroll_y;
 		}
 	}
 
-	if (bw->drag_type == DRAGGING_VSCROLL ||
-			bw->drag_type == DRAGGING_HSCROLL) {
-		status = messages_get("Scrollbar");
+	if (scroll_box) {
+		status = browser_window_scrollbar_click(bw, click, scroll_box,
+				scroll_box_x, scroll_box_y,
+				x - scroll_box_x, y - scroll_box_y);
 
 	} else if (gadget) {
 		switch (gadget->type) {
@@ -728,7 +735,8 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 			/* drop through */
 		case GADGET_SUBMIT:
 			if (gadget->form) {
-				res = url_join(gadget->form->action, base_url, &url);
+				res = url_join(gadget->form->action, base_url,
+						&url);
 				snprintf(status_buffer, sizeof status_buffer,
 						messages_get("FormSubmit"),
 						(res == URL_FUNC_OK) ? url :
@@ -830,29 +838,162 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 void browser_window_mouse_drag_html(struct browser_window *bw,
 		int x, int y)
 {
-	int scroll_y;
+	int scroll_x, scroll_y;
 	struct box *box;
 
 	if (bw->drag_type == DRAGGING_VSCROLL) {
 		box = bw->scrolling_box;
 		assert(box);
-		if (y == bw->scrolling_last_y)
-			return;
-
-		scroll_y = box->scroll_y + (y - bw->scrolling_last_y);
-		bw->scrolling_last_y = y;
-
+		scroll_y = bw->scrolling_start_scroll_y +
+				(float) (y - bw->scrolling_start_y) /
+				(float) bw->scrolling_well_height *
+				(float) (box->descendant_y1 -
+				box->descendant_y0);
 		if (scroll_y < box->descendant_y0)
 			scroll_y = box->descendant_y0;
 		else if (box->descendant_y1 - box->height < scroll_y)
 			scroll_y = box->descendant_y1 - box->height;
-
 		if (scroll_y == box->scroll_y)
 			return;
 		box->scroll_y = scroll_y;
+		browser_redraw_box(bw->current_content, bw->scrolling_box);
 
+	} else if (bw->drag_type == DRAGGING_HSCROLL) {
+		box = bw->scrolling_box;
+		assert(box);
+		scroll_x = bw->scrolling_start_scroll_x +
+				(float) (x - bw->scrolling_start_x) /
+				(float) bw->scrolling_well_width *
+				(float) (box->descendant_x1 -
+				box->descendant_x0);
+		if (scroll_x < box->descendant_x0)
+			scroll_x = box->descendant_x0;
+		else if (box->descendant_x1 - box->width < scroll_x)
+			scroll_x = box->descendant_x1 - box->width;
+		if (scroll_x == box->scroll_x)
+			return;
+		box->scroll_x = scroll_x;
 		browser_redraw_box(bw->current_content, bw->scrolling_box);
 	}
+}
+
+
+/**
+ * Handle mouse clicks in a box scrollbar.
+ *
+ * \param  bw     browser window
+ * \param  click  type of mouse click
+ * \param  box    scrolling box
+ * \param  box_x  position of box in global document coordinates
+ * \param  box_y  position of box in global document coordinates
+ * \param  x      coordinate of click relative to box position
+ * \param  y      coordinate of click relative to box position
+ * \return status bar message
+ */
+
+const char *browser_window_scrollbar_click(struct browser_window *bw,
+		browser_mouse_click click, struct box *box,
+		int box_x, int box_y, int x, int y)
+{
+	const int w = SCROLLBAR_WIDTH;
+	bool vscroll, hscroll;
+	int well_height, bar_top, bar_height;
+	int well_width, bar_left, bar_width;
+	const char *status = 0;
+	bool vert;
+	int z, scroll, bar_start, bar_size, well_size, page;
+
+	box_scrollbar_dimensions(box,
+			box->padding[LEFT] + box->width + box->padding[RIGHT],
+			box->padding[TOP] + box->height + box->padding[BOTTOM],
+			w,
+			&vscroll, &hscroll,
+			&well_height, &bar_top, &bar_height,
+			&well_width, &bar_left, &bar_width);
+
+	/* store some data for scroll drags */
+	bw->scrolling_box = box;
+	bw->scrolling_start_x = box_x + x;
+	bw->scrolling_start_y = box_y + y;
+	bw->scrolling_start_scroll_x = box->scroll_x;
+	bw->scrolling_start_scroll_y = box->scroll_y;
+	bw->scrolling_well_width = well_width;
+	bw->scrolling_well_height = well_height;
+
+	/* determine which scrollbar was clicked */
+	if (box_vscrollbar_present(box) &&
+			box->padding[LEFT] + box->width < x) {
+		vert = true;
+		z = y;
+		scroll = box->scroll_y;
+		well_size = well_height;
+		bar_start = bar_top;
+		bar_size = bar_height;
+		page = box->height;
+	} else {
+		vert = false;
+		z = x;
+		scroll = box->scroll_x;
+		well_size = well_width;
+		bar_start = bar_left;
+		bar_size = bar_width;
+		page = box->width;
+	}
+
+	/* find icon in scrollbar and calculate scroll */
+	if (z < w) {
+		status = messages_get(vert ? "ScrollUp" : "ScrollLeft");
+		if (click == BROWSER_MOUSE_CLICK_1)
+			scroll -= 16;
+		else if (click == BROWSER_MOUSE_CLICK_2)
+			scroll += 16;
+	} else if (z < w + bar_start + w / 4) {
+		status = messages_get(vert ? "ScrollPUp" : "ScrollPLeft");
+		if (click == BROWSER_MOUSE_CLICK_1)
+			scroll -= page;
+		else if (click == BROWSER_MOUSE_CLICK_2)
+			scroll += page;
+	} else if (z < w + bar_start + bar_size - w / 4) {
+		status = messages_get(vert ? "ScrollV" : "ScrollH");
+		if (click == BROWSER_MOUSE_CLICK_1)
+			bw->drag_type = vert ? DRAGGING_VSCROLL :
+					DRAGGING_HSCROLL;
+	} else if (z < w + well_size) {
+		status = messages_get(vert ? "ScrollPDown" : "ScrollPRight");
+		if (click == BROWSER_MOUSE_CLICK_1)
+			scroll += page;
+		else if (click == BROWSER_MOUSE_CLICK_2)
+			scroll -= page;
+	} else {
+		status = messages_get(vert ? "ScrollDown" : "ScrollRight");
+		if (click == BROWSER_MOUSE_CLICK_1)
+			scroll += 16;
+		else if (click == BROWSER_MOUSE_CLICK_2)
+			scroll -= 16;
+	}
+
+	/* update box and redraw */
+	if (vert) {
+		if (scroll < box->descendant_y0)
+			scroll = box->descendant_y0;
+		else if (box->descendant_y1 - box->height < scroll)
+			scroll = box->descendant_y1 - box->height;
+		if (scroll != box->scroll_y) {
+			box->scroll_y = scroll;
+			browser_redraw_box(bw->current_content, box);
+		}
+	} else {
+		if (scroll < box->descendant_x0)
+			scroll = box->descendant_x0;
+		else if (box->descendant_x1 - box->width < scroll)
+			scroll = box->descendant_x1 - box->width;
+		if (scroll != box->scroll_x) {
+			box->scroll_x = scroll;
+			browser_redraw_box(bw->current_content, box);
+		}
+	}
+
+	return status;
 }
 
 
@@ -868,8 +1009,9 @@ void browser_radio_set(struct content *content,
 {
 	struct form_control *control;
 
-	/* some sanity checking */
-	if (content == NULL || radio == NULL || radio->form == NULL)
+	assert(content);
+	assert(radio);
+	if (!radio->form)
 		return;
 
 	if (radio->selected)

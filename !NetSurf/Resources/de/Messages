@@ -242,6 +242,17 @@ SaveText:Webpage
 SaveObject:Object
 SaveLink:Link
 
+ScrollUp:Click the arrow to scroll up
+ScrollPUp:Click to scroll up one page
+ScrollV:Drag the bar to scroll vertically
+ScrollPDown:Click to scroll down one page
+ScrollDown:Click the arrow to scroll down
+ScrollLeft:Click the arrow to scroll left
+ScrollPLeft:Click to scroll left one page
+ScrollH:Drag the bar to scroll horizontally
+ScrollPRight:Click to scroll right one page
+ScrollRight:Click the arrow to scroll right
+
 # Interactive help
 HelpToolbar0:Schaltet zurück auf die zuvor dargestellte Seite.|MDer Inhalt wird dabei nicht aktualisiert.
 HelpToolbar1:Schaltet vorwärts auf die nächste Seite.|MDer Inhalt wird dabei nicht aktualisiert.
