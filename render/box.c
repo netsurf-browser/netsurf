@@ -228,8 +228,7 @@ static box_type box_map[] = {
 	BOX_BLOCK, /*CSS_DISPLAY_BLOCK,*/
 	BOX_BLOCK, /*CSS_DISPLAY_LIST_ITEM,*/
 	BOX_INLINE, /*CSS_DISPLAY_RUN_IN,*/
-	BOX_INLINE, /*CSS_DISPLAY_COMPACT,*/
-	BOX_INLINE, /*CSS_DISPLAY_MARKER,*/
+	BOX_INLINE_BLOCK, /*CSS_DISPLAY_INLINE_BLOCK,*/
 	BOX_TABLE, /*CSS_DISPLAY_TABLE,*/
 	BOX_TABLE, /*CSS_DISPLAY_INLINE_TABLE,*/
 	BOX_TABLE_ROW_GROUP, /*CSS_DISPLAY_TABLE_ROW_GROUP,*/
@@ -353,6 +352,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 
 	if (text != 0 ||
 			box->type == BOX_INLINE ||
+			box->type == BOX_INLINE_BLOCK ||
 			style->float_ == CSS_FLOAT_LEFT ||
 			style->float_ == CSS_FLOAT_RIGHT) {
 		/* this is an inline box */
@@ -374,13 +374,25 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			}
 			LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
 			goto end;
-		} else if (style->float_ == CSS_FLOAT_NONE) {
+		} else if (box->type == BOX_INLINE) {
 			/* inline box: add to tree and recurse */
 			box_add_child(inline_container, box);
 			if (convert_children) {
 				for (c = n->children; c != 0; c = c->next)
 					inline_container = convert_xml_to_box(c, content, style,
 							selector, depth + 1, parent, inline_container,
+							status);
+			}
+			LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
+			goto end;
+		} else if (box->type == BOX_INLINE_BLOCK) {
+			/* inline block box: add to tree and recurse */
+			box_add_child(inline_container, box);
+			if (convert_children) {
+				inline_container_c = 0;
+				for (c = n->children; c != 0; c = c->next)
+					inline_container_c = convert_xml_to_box(c, content, style,
+							selector, depth + 1, box, inline_container_c,
 							status);
 			}
 			LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
@@ -395,7 +407,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			else
 				parent->type = BOX_FLOAT_RIGHT;
 			box_add_child(inline_container, parent);
-			if (box->type == BOX_INLINE)
+			if (box->type == BOX_INLINE || box->type == BOX_INLINE_BLOCK)
 				box->type = BOX_BLOCK;
 		}
 	}
@@ -571,6 +583,27 @@ struct css_style * box_get_style(struct content ** stylesheet,
 		xmlFree(s);
 	}
 
+	if (strcmp((const char *) n->name, "textarea") == 0) {
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows"))) {
+			int value = atoi(s);
+			if (0 < value) {
+				style->height.height = CSS_HEIGHT_LENGTH;
+				style->height.length.unit = CSS_UNIT_EM;
+				style->height.length.value = value;
+			}
+			xmlFree(s);
+		}
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols"))) {
+			int value = atoi(s);
+			if (0 < value) {
+				style->width.width = CSS_WIDTH_LENGTH;
+				style->width.value.length.unit = CSS_UNIT_EX;
+				style->width.value.length.value = value;
+			}
+			xmlFree(s);
+		}
+	}
+	
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
 		struct css_style * astyle = xcalloc(1, sizeof(struct css_style));
 		memcpy(astyle, &css_empty_style, sizeof(struct css_style));
@@ -664,8 +697,8 @@ struct result box_form(xmlNode *n, struct status *status,
 struct result box_textarea(xmlNode *n, struct status *status,
 		struct css_style *style)
 {
-	xmlChar *content;
-	struct box* box = 0;
+	xmlChar *content, *current;
+	struct box *box, *inline_container, *inline_box;
 	char* s;
 
 	box = box_create(style, NULL, 0);
@@ -673,25 +706,29 @@ struct result box_textarea(xmlNode *n, struct status *status,
 	box->gadget->type = GADGET_TEXTAREA;
 	box->gadget->form = status->current_form;
 
-	content = xmlNodeGetContent(n);
-	box->gadget->data.textarea.text = squash_tolat1(content);  /* squash ? */
+	/* split the content at newlines and make an inline container with an
+	 * inline box for each line */
+	current = content = xmlNodeGetContent(n);
+	current += strspn(current, "\r\n");  /* skip any initial CR, LF */
+	while (*current) {
+		size_t len = strcspn(current, "\r\n");
+		char old = current[len];
+		current[len] = 0;
+		inline_container = box_create(0, 0, 0);
+		inline_container->type = BOX_INLINE_CONTAINER;
+		inline_box = box_create(style, 0, 0);
+		inline_box->type = BOX_INLINE;
+		inline_box->style_clone = 1;
+		inline_box->text = tolat1(current);
+		inline_box->length = strlen(inline_box->text);
+		inline_box->font = font_open(status->content->data.html.fonts, style);
+		box_add_child(inline_container, inline_box);
+		box_add_child(box, inline_container);
+		current[len] = old;
+		current += len;
+		current += strspn(current, "\r\n");
+	}
 	xmlFree(content);
-
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols")))
-	{
-		box->gadget->data.textarea.cols = atoi(s);
-		xmlFree(s);
-	}
-	else
-		box->gadget->data.textarea.cols = 40;
-
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows")))
-	{
-		box->gadget->data.textarea.rows = atoi(s);
-		xmlFree(s);
-	}
-	else
-		box->gadget->data.textarea.rows = 16;
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name")))
 	{
@@ -957,6 +994,7 @@ void box_dump(struct box * box, unsigned int depth)
 		case BOX_BLOCK:            fprintf(stderr, "BOX_BLOCK "); break;
 		case BOX_INLINE_CONTAINER: fprintf(stderr, "BOX_INLINE_CONTAINER "); break;
 		case BOX_INLINE:           fprintf(stderr, "BOX_INLINE "); break;
+		case BOX_INLINE_BLOCK:     fprintf(stderr, "BOX_INLINE_BLOCK "); break;
 		case BOX_TABLE:            fprintf(stderr, "BOX_TABLE "); break;
 		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW "); break;
 		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL [columns %i] ",
@@ -987,8 +1025,8 @@ void box_dump(struct box * box, unsigned int depth)
  * ensure the box tree is correctly nested
  *
  * parent		permitted child nodes
- * BLOCK		BLOCK, INLINE_CONTAINER, TABLE
- * INLINE_CONTAINER	INLINE, FLOAT_LEFT, FLOAT_RIGHT
+ * BLOCK, INLINE_BLOCK	BLOCK, INLINE_CONTAINER, TABLE
+ * INLINE_CONTAINER	INLINE, INLINE_BLOCK, FLOAT_LEFT, FLOAT_RIGHT
  * INLINE		none
  * TABLE		at least 1 TABLE_ROW_GROUP
  * TABLE_ROW_GROUP	at least 1 TABLE_ROW
@@ -1005,7 +1043,8 @@ void box_normalise_block(struct box *block)
 	struct css_style *style;
 
 	assert(block != 0);
-	assert(block->type == BOX_BLOCK || block->type == BOX_TABLE_CELL);
+	assert(block->type == BOX_BLOCK || block->type == BOX_INLINE_BLOCK ||
+			block->type == BOX_TABLE_CELL);
 	LOG(("block %p, block->type %u", block, block->type));
 	gui_multitask();
 
@@ -1024,6 +1063,7 @@ void box_normalise_block(struct box *block)
 				box_normalise_table(child);
 				break;
 			case BOX_INLINE:
+			case BOX_INLINE_BLOCK:
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
 				/* should have been wrapped in inline
@@ -1118,6 +1158,7 @@ void box_normalise_table(struct box *table)
 						&table_columns);
 				break;
 			case BOX_INLINE:
+			case BOX_INLINE_BLOCK:
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
 				/* should have been wrapped in inline
@@ -1198,6 +1239,7 @@ void box_normalise_table_row_group(struct box *row_group,
 				box_normalise_table_row(row, row_span, table_columns);
 				break;
 			case BOX_INLINE:
+			case BOX_INLINE_BLOCK:
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
 				/* should have been wrapped in inline
@@ -1276,6 +1318,7 @@ void box_normalise_table_row(struct box *row,
 				box_normalise_block(cell);
 				break;
 			case BOX_INLINE:
+			case BOX_INLINE_BLOCK:
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
 				/* should have been wrapped in inline
@@ -1335,6 +1378,10 @@ void box_normalise_inline_container(struct box *cont)
 		switch (child->type) {
 			case BOX_INLINE:
 				/* ok */
+				break;
+			case BOX_INLINE_BLOCK:
+				/* ok */
+				box_normalise_block(child);
 				break;
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:

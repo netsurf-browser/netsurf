@@ -81,6 +81,7 @@ void layout_node(struct box * box, unsigned long width, struct box * cont,
 
 	switch (box->type) {
 		case BOX_BLOCK:
+		case BOX_INLINE_BLOCK:
 			layout_block(box, width, cont, cx, cy);
 			break;
 		case BOX_INLINE_CONTAINER:
@@ -109,7 +110,7 @@ void layout_block(struct box * box, unsigned long width, struct box * cont,
 {
 	struct css_style * style = box->style;
 
-	assert(box->type == BOX_BLOCK);
+	assert(box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK);
 	assert(style != 0);
 
 	LOG(("box %p, width %lu, cont %p, cx %lu, cy %lu", box, width, cont, cx, cy));
@@ -152,8 +153,9 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 	struct box * c;
 	unsigned long y = 0;
 
-	assert(box->type == BOX_BLOCK || box->type == BOX_FLOAT_LEFT ||
-	       box->type == BOX_FLOAT_RIGHT || box->type == BOX_TABLE_CELL);
+	assert(box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
+	       box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT ||
+	       box->type == BOX_TABLE_CELL);
 
 	LOG(("box %p, width %lu, cont %p, cx %lu, cy %lu", box, width, cont, cx, cy));
 
@@ -266,7 +268,7 @@ signed long line_height(struct css_style * style)
 struct box * layout_line(struct box * first, unsigned long width, unsigned long * y,
 		unsigned long cy, struct box * cont)
 {
-	unsigned long height;
+	unsigned long height, used_height;
 	unsigned long x0 = 0;
 	unsigned long x1 = width;
 	unsigned long x, h, x_previous;
@@ -285,18 +287,17 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	find_sides(cont->float_children, cy, cy, &x0, &x1, &left, &right);
 
 	/* get minimum line height from containing block */
-	height = line_height(first->parent->parent->style);
+	used_height = height = line_height(first->parent->parent->style);
 
 	/* pass 1: find height of line assuming sides at top of line */
 	for (x = 0, b = first; x < x1 - x0 && b != 0; b = b->next) {
-		assert(b->type == BOX_INLINE || b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT);
+		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
+				b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT);
 		if (b->type == BOX_INLINE) {
 			if ((b->object || b->gadget) && b->style && b->style->height.height == CSS_HEIGHT_LENGTH)
 				h = len(&b->style->height.length, b->style);
-			else if (b->text)
-				h = line_height(b->style ? b->style : b->parent->parent->style);
 			else
-				h = 0;
+				h = line_height(b->style ? b->style : b->parent->parent->style);
 			b->height = h;
 
 			if (h > height) height = h;
@@ -315,6 +316,12 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 				x += b->width + b->space ? b->font->space_width : 0;
 			else
 				x += b->width;
+
+		} else if (b->type == BOX_INLINE_BLOCK) {
+			layout_block(b, width, b, 0, 0);
+			if (height < b->height)
+				height = b->height;
+			x += b->width;
 		}
 	}
 
@@ -325,7 +332,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 
 	/* pass 2: place boxes in line */
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
-		if (b->type == BOX_INLINE) {
+		if (b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK) {
 			x_previous = x;
 			x += space_after;
 			b->x = x;
@@ -465,13 +472,15 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		default:                    break; /* leave on left */
 	}
 	for (d = first; d != b; d = d->next) {
-		if (d->type == BOX_INLINE) {
+		if (d->type == BOX_INLINE || d->type == BOX_INLINE_BLOCK) {
 			d->x += x0;
 			d->y = *y;
+			if (used_height < d->height)
+				used_height = d->height;
 		}
 	}
 
-	if (move_y) *y += height + 1;
+	if (move_y) *y += used_height + 1;
 	return b;
 }
 
@@ -765,7 +774,7 @@ void calculate_widths(struct box *box)
 	unsigned long min = 0, max = 0, width;
 
 	assert(box->type == BOX_TABLE_CELL ||
-	       box->type == BOX_BLOCK ||
+	       box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 	       box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT);
 
 	/* check if the widths have already been calculated */
@@ -846,6 +855,7 @@ void calculate_inline_container_widths(struct box *box)
 				}
 				break;
 
+			case BOX_INLINE_BLOCK:
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
 				if (child->style != 0 &&

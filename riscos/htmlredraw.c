@@ -108,7 +108,7 @@ void html_redraw_box(struct content *content, struct box * box,
 				x0, y0, x1, y1);
 		html_redraw_unclip(clip_x0, clip_y0, clip_x1, clip_y1);
 
-	} else if (box->gadget) {
+	} else if (box->gadget && box->gadget->type != GADGET_TEXTAREA) {
 		wimp_icon icon;
 		LOG(("writing GADGET"));
 
