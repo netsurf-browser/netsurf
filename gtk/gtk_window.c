@@ -294,6 +294,11 @@ void gui_window_place_caret(gui_window *g, int x, int y, int height)
 }
 
 
+void gui_window_remove_caret(struct gui_window *g)
+{
+}
+
+
 void html_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,

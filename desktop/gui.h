@@ -47,6 +47,7 @@ void gui_window_set_url(struct gui_window *g, const char *url);
 void gui_window_start_throbber(struct gui_window *g);
 void gui_window_stop_throbber(struct gui_window *g);
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height);
+void gui_window_remove_caret(struct gui_window *g);
 void gui_window_new_content(struct gui_window *g);
 
 struct gui_download_window *gui_download_window_create(const char *url,

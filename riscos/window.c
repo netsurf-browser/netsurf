@@ -392,7 +392,7 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 	bool clear_background = false;
 	struct content *c = g->bw->current_content;
 	os_error *error;
-	
+
 	/*	Set the current redraw gui_window to get options from
 	*/
 	ro_gui_current_redraw_gui = g;
@@ -447,7 +447,7 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 		  		doesn't actually stop anything working, so we mask it out
 		  		for now until a better fix is found.
 		  	*/
-			if ((!ro_gui_current_redraw_gui->option.buffer_everything) || 
+			if ((!ro_gui_current_redraw_gui->option.buffer_everything) ||
 					(error->errnum != 0x286)) {
 				LOG(("xwimp_get_rectangle: 0x%x: %s",
 						error->errnum, error->errmess));
@@ -1165,6 +1165,30 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 			x * 2 * g->option.scale,
 			-(y + height) * 2 * g->option.scale,
 			height * 2 * g->option.scale, -1);
+	if (error) {
+		LOG(("xwimp_set_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+}
+
+
+/**
+ * Remove/disown the caret.
+ *
+ * \param  g       window with caret
+ *
+ * \todo: do we want to do a test if g really owns the caret ?
+ */
+
+void gui_window_remove_caret(struct gui_window *g)
+{
+	os_error *error;
+
+	error = xwimp_set_caret_position(-1, -1,
+			0,
+			0,
+			0, -1);
 	if (error) {
 		LOG(("xwimp_set_caret_position: 0x%x: %s",
 				error->errnum, error->errmess));
