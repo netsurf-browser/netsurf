@@ -46,11 +46,19 @@ hr { background-color: #000; height: 1px; }
 center { text-align: center; }
 small { font-size: smaller; }
 big { font-size: larger; }
-select, input { background-color: #eeb; color: #000; width: 10em; height: 1.5em;
-	text-align: left; border: thin inset #bbb; }
-textarea { background-color: #eeb; color: #000; text-align: left; }
-input[type=button], input[type=image], input[type=reset], input[type=submit],
+select, input { /*background-color: #eeb;*/ background-color: #ddd;
+	color: #000; width: 10em; height: 1.5em;
+	text-align: left; border-width: medium; 
+	border-color: #aaa #eee #eee #aaa; border-style: inset; }
+textarea { /*background-color: #eeb;*/ background-color: #ddd; 
+	   color: #000; text-align: left; 
+	   border-width: medium; border-color: #aaa #eee #eee #aaa; 
+	   border-style: inset; }
+input[type=button], input[type=reset], input[type=submit],
 	button { background-color: #ddd; color: #000; width: auto;
+	height: auto; border-width: medium; border-color: #eee #aaa #aaa #eee;
+	border-style: outset; }
+input[type=image] { background-color: #ddd; color: #000; width: auto;
 	height: auto; }
 input[type=checkbox], input[type=radio] { background-color: transparent;
 	width: 22px; height: 22px; }
