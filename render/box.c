@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.50 2003/06/07 22:24:22 jmb Exp $
+ * $Id: box.c,v 1.51 2003/06/17 19:24:21 bursa Exp $
  */
 
 #include <assert.h>
@@ -10,13 +10,15 @@
 #include "libxml/HTMLparser.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/css/css.h"
-#include "netsurf/desktop/gui.h"
 #include "netsurf/render/box.h"
+#ifdef riscos
+#include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/font.h"
+#endif
 #include "netsurf/riscos/plugin.h"
+#define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
-//#define NDEBUG
 
 /**
  * internal functions
@@ -1052,7 +1054,7 @@ struct box* box_image(xmlNode *n, struct content *content,
 	xmlFree(s);
 
 	/* start fetch */
-	html_fetch_image(content, url, box);
+	html_fetch_object(content, url, box);
 
 	return box;
 }
@@ -1368,7 +1370,7 @@ struct form* box_form(xmlNode* n)
 	struct form* form;
 	char* s;
 
-	form = xcalloc(1, sizeof(struct form*));
+	form = xcalloc(1, sizeof(*form));
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "action"))) {
 		form->action = s;

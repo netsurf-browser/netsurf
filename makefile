@@ -1,7 +1,7 @@
-# $Id: makefile,v 1.33 2003/06/05 14:39:54 bursa Exp $
+# $Id: makefile,v 1.34 2003/06/17 19:24:20 bursa Exp $
 
 CC = riscos-gcc
-OBJECTS = cache.o content.o fetch.o fetchcache.o \
+OBJECTS = cache.o content.o fetch.o fetchcache.o other.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
 	browser.o netsurf.o \
 	box.o html.o layout.o textplain.o \

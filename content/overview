@@ -1,0 +1,52 @@
+NetSurf fetch, cache, and content system
+========================================
+
+There is a one-to-one mapping between URLs and content structures.
+
+The resource at a URL may be required for two reasons:
+
+1. The user requests a URL in the GUI by entering it or following a link.
+2. A page contains an object (such as an image).
+
+When a URL is required, call fetchcache() as follows:
+
+  c = fetchcache(url, referer, callback, p1, p2, width, height);
+
+p1 and p2 are the callers private pointers used to identify the resource, and
+they are passed to the callback. The triple (callback, p1, p2) must be unique.
+The call returns immediately with a struct content. The structure may be in the
+following states (c->status):
+
+  CONTENT_STATUS_TYPE_UNKNOWN -- the MIME type of the resource has not been
+    determined yet.
+
+  CONTENT_STATUS_LOADING -- the resource is being fetched or converted, and can
+    not be displayed.
+
+  CONTENT_STATUS_READY -- the resource is still loading, but may be displayed.
+
+  CONTENT_STATUS_DONE -- the resource has loaded completely.
+
+States may only follow in the above order (but some may be skipped). The
+callback function is called when the state changes or at other times as follows:
+
+  CONTENT_MSG_LOADING -- state has changed from CONTENT_STATUS_TYPE_UNKNOWN to
+    CONTENT_STATUS_LOADING. If the type is not acceptable content_remove_user()
+    should be called (see below).
+
+  CONTENT_MSG_READY -- state has changed to CONTENT_STATUS_READY.
+
+  CONTENT_MSG_DONE -- state has changed to CONTENT_STATUS_DONE.
+
+  CONTENT_MSG_ERROR -- a fatal error with the resource has occurred. The error
+    message is in the callback parameter. The content structure will be
+    destroyed after this message and must not be used.
+
+  CONTENT_MSG_STATUS -- the content structure's status message has changed.
+
+If at any time the resource is no longer required, call content_remove_user():
+
+  content_remove_user(c, callback, p1, p2);
+
+with the same callback, p1, p2 as passed to fetchcache().
+

@@ -1,5 +1,5 @@
 /**
- * $Id: png.c,v 1.3 2003/06/14 11:34:02 bursa Exp $
+ * $Id: png.c,v 1.4 2003/06/17 19:24:21 bursa Exp $
  */
 
 #include <assert.h>
@@ -259,6 +259,7 @@ int nspng_convert(struct content *c, unsigned int width, unsigned int height)
 	png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
 	c->title = xcalloc(100, 1);
 	sprintf(c->title, "png image (%ux%u)", c->width, c->height);
+	c->status = CONTENT_STATUS_DONE;
 	return 0;
 }
 

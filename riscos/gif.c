@@ -10,7 +10,7 @@
  *   Add better error handling
  *      - especially where bad GIFs are concerned.
  *
- * $Id: gif.c,v 1.6 2003/06/07 13:07:48 philpem Exp $
+ * $Id: gif.c,v 1.7 2003/06/17 19:24:21 bursa Exp $
  */
 
 #include <assert.h>
@@ -274,6 +274,7 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
 
   c->title = xcalloc(100, 1);
   sprintf(c->title, "GIF image (%lux%lu)", c->width, c->height);
+  c->status = CONTENT_STATUS_DONE;
 
 // Enable this if you want to debug the GIF loader
 //  xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.gif.sprite_area,

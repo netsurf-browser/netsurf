@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.39 2003/06/05 13:17:55 philpem Exp $
+ * $Id: browser.c,v 1.40 2003/06/17 19:24:21 bursa Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -30,8 +30,8 @@ static int redraw_box_list(struct browser_window* bw, struct box* current,
 static void browser_window_redraw_boxes(struct browser_window* bw, struct box_position* start, struct box_position* end);
 static void browser_window_follow_link(struct browser_window* bw,
 		unsigned long click_x, unsigned long click_y, int click_type);
-static void browser_window_callback(fetchcache_msg msg, struct content *c,
-		void *p, const char *error);
+static void browser_window_callback(content_msg msg, struct content *c,
+		void *p1, void *p2, const char *error);
 static void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct gui_gadget* group);
 static void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct gui_gadget* g,
 		unsigned long x, unsigned long y);
@@ -157,6 +157,7 @@ struct browser_window* create_browser_window(int flags, int width, int height)
   bw->scale.div = 1;
 
   bw->current_content = NULL;
+  bw->loading_content = NULL;
   bw->history = NULL;
 
   bw->url = NULL;
@@ -178,7 +179,7 @@ void browser_window_destroy(struct browser_window* bw)
   assert(bw != 0);
 
   if (bw->current_content != NULL)
-    cache_free(bw->current_content);
+    content_remove_user(bw->current_content, browser_window_callback, bw, 0);
 
   if (bw->history != NULL)
   {
@@ -220,11 +221,12 @@ void browser_window_open_location_historical(struct browser_window* bw, const ch
   browser_window_set_status(bw, "Opening page...");
   browser_window_start_throbber(bw);
   bw->time0 = clock();
-  fetchcache(url, 0, browser_window_callback, bw,
-		  gui_window_get_width(bw->window), 0,
-		  (1 << CONTENT_HTML) | (1 << CONTENT_TEXTPLAIN) |
-		  (1 << CONTENT_JPEG) | (1 << CONTENT_PNG) |
-		  (1 << CONTENT_GIF));
+  bw->loading_content = fetchcache(url, 0, browser_window_callback, bw, 0,
+		  gui_window_get_width(bw->window), 0);
+  if (bw->loading_content->status == CONTENT_STATUS_READY)
+    browser_window_callback(CONTENT_MSG_READY, bw->loading_content, bw, 0, 0);
+  else if (bw->loading_content->status == CONTENT_STATUS_DONE)
+    browser_window_callback(CONTENT_MSG_DONE, bw->loading_content, bw, 0, 0);
 
   LOG(("end"));
 }
@@ -247,17 +249,27 @@ void browser_window_open_location(struct browser_window* bw, const char* url0)
   LOG(("end"));
 }
 
-void browser_window_callback(fetchcache_msg msg, struct content *c,
-		void *p, const char *error)
+void browser_window_callback(content_msg msg, struct content *c,
+		void *p1, void *p2, const char *error)
 {
-  struct browser_window* bw = p;
+  struct browser_window* bw = p1;
   gui_safety previous_safety;
   char status[40];
 
   switch (msg)
   {
-    case FETCHCACHE_OK:
-      {
+    case CONTENT_MSG_LOADING:
+      if (c->type == CONTENT_OTHER) {
+        /* TODO: implement downloads */
+        /* we probably want to open a new window with a save icon and progress bar,
+         * and transfer content_loading to it */
+      }
+      break;
+
+    case CONTENT_MSG_READY:
+    case CONTENT_MSG_DONE:
+      previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
+      if (bw->loading_content == c) {
         struct gui_message gmsg;
         if (bw->url != 0)
           xfree(bw->url);
@@ -267,7 +279,6 @@ void browser_window_callback(fetchcache_msg msg, struct content *c,
         gmsg.data.set_url.url = bw->url;
         gui_window_message(bw->window, &gmsg);
 
-        previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
         if (bw->current_content != NULL)
         {
           if (bw->current_content->type == CONTENT_HTML)
@@ -278,34 +289,33 @@ void browser_window_callback(fetchcache_msg msg, struct content *c,
               gui_remove_gadget(bw->current_content->data.html.elements.gadgets[gc]);
             }
           }
-          cache_free(bw->current_content);
+          content_remove_user(bw->current_content, browser_window_callback, bw, 0);
         }
         bw->current_content = c;
-        browser_window_reformat(bw);
-        gui_window_set_redraw_safety(bw->window, previous_safety);
-	if (bw->current_content->status == CONTENT_DONE) {
-          sprintf(status, "Page complete (%gs)", ((float) (clock() - bw->time0)) / CLOCKS_PER_SEC);
-          browser_window_set_status(bw, status);
-          browser_window_stop_throbber(bw);
-	} else {
-          browser_window_set_status(bw, bw->current_content->status_message);
-	}
+        bw->loading_content = 0;
+      }
+      browser_window_reformat(bw);
+      gui_window_set_redraw_safety(bw->window, previous_safety);
+      if (bw->current_content->status == CONTENT_STATUS_DONE) {
+        sprintf(status, "Page complete (%gs)", ((float) (clock() - bw->time0)) / CLOCKS_PER_SEC);
+        browser_window_set_status(bw, status);
+        browser_window_stop_throbber(bw);
+      } else {
+        browser_window_set_status(bw, c->status_message);
       }
       break;
 
-    case FETCHCACHE_ERROR:
+    case CONTENT_MSG_ERROR:
       browser_window_set_status(bw, error);
+      if (c == bw->loading_content)
+        bw->loading_content = 0;
+      else if (c == bw->current_content)
+        bw->current_content = 0;
       browser_window_stop_throbber(bw);
       break;
 
-    case FETCHCACHE_BADTYPE:
-      sprintf(status, "Unknown type '%s'", error);
-      browser_window_set_status(bw, status);
-      browser_window_stop_throbber(bw);
-      break;
-
-    case FETCHCACHE_STATUS:
-      browser_window_set_status(bw, error);
+    case CONTENT_MSG_STATUS:
+      browser_window_set_status(bw, c->status_message);
       break;
 
     default:

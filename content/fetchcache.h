@@ -1,5 +1,5 @@
 /**
- * $Id: fetchcache.h,v 1.4 2003/04/09 21:57:09 bursa Exp $
+ * $Id: fetchcache.h,v 1.5 2003/06/17 19:24:20 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_FETCHCACHE_H_
@@ -7,10 +7,9 @@
 
 #include "netsurf/content/content.h"
 
-typedef enum {FETCHCACHE_OK, FETCHCACHE_BADTYPE, FETCHCACHE_ERROR, FETCHCACHE_STATUS} fetchcache_msg;
-
-void fetchcache(const char *url, char *referer,
-		void (*callback)(fetchcache_msg msg, struct content *c, void *p, const char *error),
-		void *p, unsigned long width, unsigned long height, content_type allowed);
+struct content * fetchcache(const char *url, char *referer,
+		void (*callback)(content_msg msg, struct content *c, void *p1,
+			void *p2, const char *error),
+		void *p1, void *p2, unsigned long width, unsigned long height);
 
 #endif

@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.8 2003/04/25 08:03:15 bursa Exp $
+ * $Id: css.c,v 1.9 2003/06/17 19:24:21 bursa Exp $
  */
 
 #include <assert.h>
@@ -13,7 +13,9 @@
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/css/css.h"
 #include "netsurf/css/parser.h"
+#ifdef riscos
 #include "netsurf/desktop/gui.h"
+#endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -26,13 +28,8 @@ struct decl {
 	struct rule * rule;
 };
 
-struct fetch_data {
-	struct content *c;
-	unsigned int i;
-};
-
-void css_atimport_callback(fetchcache_msg msg, struct content *css,
-		void *p, const char *error);
+void css_atimport_callback(content_msg msg, struct content *css,
+		void *p1, void *p2, const char *error);
 void css_dump_style(const struct css_style * const style);
 
 
@@ -136,6 +133,7 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 		gui_multitask();
 	}
 
+	c->status = CONTENT_STATUS_DONE;
 	return 0;
 }
 
@@ -143,15 +141,14 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 void css_revive(struct content *c, unsigned int width, unsigned int height)
 {
 	unsigned int i;
-	struct fetch_data *fetch_data;
 	/* imported stylesheets */
 	for (i = 0; i != c->data.css.import_count; i++) {
-		fetch_data = xcalloc(1, sizeof(*fetch_data));
-		fetch_data->c = c;
-		fetch_data->i = i;
-		c->active++;
-		fetchcache(c->data.css.import_url[i], c->url, css_atimport_callback,
-				fetch_data, c->width, c->height, 1 << CONTENT_CSS);
+		c->data.css.import_content[i] = fetchcache(
+				c->data.css.import_url[i], c->url,
+				css_atimport_callback, c, i,
+				c->width, c->height);
+		if (c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
+			c->active++;
 	}
 	while (c->active != 0) {
 		fetch_poll();
@@ -181,7 +178,8 @@ void css_destroy(struct content *c)
 	for (i = 0; i != c->data.css.import_count; i++)
 		if (c->data.css.import_content[i] != 0) {
 			free(c->data.css.import_url[i]);
-			cache_free(c->data.css.import_content[i]);
+			content_remove_user(c->data.css.import_content[i],
+					css_atimport_callback, c, i);
 		}
 	xfree(c->data.css.import_url);
 	xfree(c->data.css.import_content);
@@ -226,7 +224,7 @@ void css_atimport(struct content *c, struct node *node)
 {
 	char *s, *url;
 	int string = 0, screen = 1;
-	struct fetch_data *fetch_data;
+	unsigned int i;
 
 	LOG(("@import rule"));
 
@@ -293,43 +291,51 @@ void css_atimport(struct content *c, struct node *node)
 	c->data.css.import_content = xrealloc(c->data.css.import_content,
 			c->data.css.import_count * sizeof(*c->data.css.import_content));
 
-	fetch_data = xcalloc(1, sizeof(*fetch_data));
-	fetch_data->c = c;
-	fetch_data->i = c->data.css.import_count - 1;
-	c->data.css.import_url[fetch_data->i] = url_join(url, c->url);
-	c->active++;
-	fetchcache(c->data.css.import_url[fetch_data->i], c->url, css_atimport_callback,
-			fetch_data, c->width, c->height, 1 << CONTENT_CSS);
+	i = c->data.css.import_count - 1;
+	c->data.css.import_url[i] = url_join(url, c->url);
+	c->data.css.import_content[i] = fetchcache(
+			c->data.css.import_url[i], c->url, css_atimport_callback,
+			c, i, c->width, c->height);
+	if (c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
+		c->active++;
 
 	free(url);
 }
 
 
-void css_atimport_callback(fetchcache_msg msg, struct content *css,
-		void *p, const char *error)
+void css_atimport_callback(content_msg msg, struct content *css,
+		void *p1, void *p2, const char *error)
 {
-	struct fetch_data *data = p;
-	struct content *c = data->c;
-	unsigned int i = data->i;
+	struct content *c = p1;
+	unsigned int i = (unsigned int) p2;
 	switch (msg) {
-		case FETCHCACHE_OK:
-			free(data);
+		case CONTENT_MSG_LOADING:
+			if (css->type != CONTENT_CSS) {
+				content_remove_user(css, css_atimport_callback, c, i);
+				c->data.css.import_content[i] = 0;
+				c->active--;
+				c->error = 1;
+			}
+			break;
+
+		case CONTENT_MSG_READY:
+			break;
+
+		case CONTENT_MSG_DONE:
 			LOG(("got imported stylesheet '%s'", css->url));
-			c->data.css.import_content[i] = css;
 			/*css_dump_stylesheet(css->data.css);*/
 			c->active--;
 			break;
-		case FETCHCACHE_BADTYPE:
-		case FETCHCACHE_ERROR:
-			free(data);
+
+		case CONTENT_MSG_ERROR:
 			c->data.css.import_content[i] = 0;
 			c->active--;
 			c->error = 1;
 			break;
-		case FETCHCACHE_STATUS:
-			/* TODO: need to add a way of sending status to the
-			 * owning window */
+
+		case CONTENT_MSG_STATUS:
 			break;
+
 		default:
 			assert(0);
 	}
@@ -371,11 +377,13 @@ void css_get_style(struct content *c, struct css_selector * selector,
 			for (m = n->left; m != 0; m = m->next) {
 				if (m->type == NODE_ID) {
 					/* TODO: check if case sensitive */
-					if (strcmp(selector[i].id, m->data + 1) != 0)
+					if (selector[i].id == 0 ||
+							strcmp(selector[i].id, m->data + 1) != 0)
 						goto not_matched;
 				} else if (m->type == NODE_CLASS) {
 					/* TODO: check if case sensitive */
-					if (strcmp(selector[i].class, m->data) != 0)
+					if (selector[i].class == 0 ||
+							strcmp(selector[i].class, m->data) != 0)
 						goto not_matched;
 				} else {
 					goto not_matched;

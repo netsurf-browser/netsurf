@@ -1,18 +1,23 @@
 /**
- * $Id: content.h,v 1.11 2003/06/05 13:17:55 philpem Exp $
+ * $Id: content.h,v 1.12 2003/06/17 19:24:20 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
 #define _NETSURF_DESKTOP_CONTENT_H_
 
 #include "libxml/HTMLparser.h"
+#ifdef riscos
 #include "libpng/png.h"
 #include "libungif/gif_lib.h"
 #include "oslib/osspriteop.h"
+#endif
 #include "netsurf/content/cache.h"
+#include "netsurf/content/fetch.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
+#ifdef riscos
 #include "netsurf/riscos/font.h"
+#endif
 
 
 /**
@@ -32,11 +37,16 @@
 typedef enum {
 	CONTENT_HTML,
 	CONTENT_TEXTPLAIN,
+#ifdef riscos
 	CONTENT_JPEG,
+#endif
 	CONTENT_CSS,
+#ifdef riscos
 	CONTENT_PNG,
 	CONTENT_GIF,
-	CONTENT_OTHER
+#endif
+	CONTENT_OTHER,
+	CONTENT_UNKNOWN  /* content-type not received yet */
 } content_type;
 
 struct box_position
@@ -49,16 +59,34 @@ struct box_position
   int char_offset;
 };
 
+typedef enum {
+	CONTENT_MSG_LOADING,   /* fetching or converting */
+	CONTENT_MSG_READY,     /* may be displayed */
+	CONTENT_MSG_DONE,      /* finished */
+	CONTENT_MSG_ERROR,     /* error occurred */
+	CONTENT_MSG_STATUS     /* new status string */
+} content_msg;
+
+struct content_user
+{
+	void (*callback)(content_msg msg, struct content *c, void *p1,
+			void *p2, const char *error);
+	void *p1;
+	void *p2;
+	struct content_user *next;
+};
+
 struct content
 {
   char *url;
   content_type type;
   enum {
-	  CONTENT_LOADING,  /* content is being fetched or converted
-			       and is not safe to display */
-	  CONTENT_PENDING,  /* some parts of content still being
-			       loaded, but can be displayed */
-	  CONTENT_DONE      /* all finished */
+	  CONTENT_STATUS_TYPE_UNKNOWN,  /* type not yet known */
+	  CONTENT_STATUS_LOADING,  /* content is being fetched or converted
+			              and is not safe to display */
+	  CONTENT_STATUS_READY,    /* some parts of content still being
+			              loaded, but can be displayed */
+	  CONTENT_STATUS_DONE      /* all finished */
   } status;
   unsigned long width, height;
   unsigned long available_width;
@@ -95,7 +123,7 @@ struct content
       char **import_url;
       struct content **import_content;
     } css;
-
+#ifdef riscos
     struct
     {
       char * data;
@@ -122,6 +150,13 @@ struct content
       osspriteop_area *sprite_area;       // Sprite area
       char *sprite_image;                 // Sprite image
     } gif;
+#endif
+    /* downloads */
+    struct
+    {
+      char *data;
+      unsigned long length;
+    } other;
 
   } data;
 
@@ -130,20 +165,31 @@ struct content
   char *title;
   unsigned int active;
   int error;
-  void (*status_callback)(void *p, const char *status);
-  void *status_p;
+  struct content_user *user_list;
   char status_message[80];
+  struct fetch *fetch;
+  unsigned long fetch_size;
 };
 
 
 content_type content_lookup(const char *mime_type);
-struct content * content_create(content_type type, char *url);
+struct content * content_create(char *url);
+void content_set_type(struct content *c, content_type type);
 void content_process_data(struct content *c, char *data, unsigned long size);
-int content_convert(struct content *c, unsigned long width, unsigned long height);
+void content_convert(struct content *c, unsigned long width, unsigned long height);
 void content_revive(struct content *c, unsigned long width, unsigned long height);
 void content_reformat(struct content *c, unsigned long width, unsigned long height);
 void content_destroy(struct content *c);
 void content_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height);
+void content_add_user(struct content *c,
+		void (*callback)(content_msg msg, struct content *c, void *p1,
+			void *p2, const char *error),
+		void *p1, void *p2);
+void content_remove_user(struct content *c,
+		void (*callback)(content_msg msg, struct content *c, void *p1,
+			void *p2, const char *error),
+		void *p1, void *p2);
+void content_broadcast(struct content *c, content_msg msg, char *error);
 
 #endif

@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.40 2003/04/15 17:53:00 bursa Exp $
+ * $Id: layout.c,v 1.41 2003/06/17 19:24:21 bursa Exp $
  */
 
 #include <assert.h>
@@ -8,11 +8,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libxml/HTMLparser.h"
+#ifdef riscos
 #include "netsurf/desktop/gui.h"
+#endif
+#include "netsurf/content/content.h"
 #include "netsurf/render/box.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/layout.h"
+#ifdef riscos
 #include "netsurf/riscos/font.h"
+#else
+#include "netsurf/debug/font.h"
+#endif
 #include "netsurf/utils/utils.h"
 #define NDEBUG
 #include "netsurf/utils/log.h"

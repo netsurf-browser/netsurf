@@ -1,5 +1,5 @@
 /**
- * $Id: plugin.c,v 1.9 2003/06/07 22:24:22 jmb Exp $
+ * $Id: plugin.c,v 1.10 2003/06/17 19:24:21 bursa Exp $
  */
 
 #include <assert.h>
@@ -156,7 +156,7 @@ void plugin_decode(struct content* content, char* url, struct box* box,
                      */
                         xfree(po);
                         LOG(("sending data to image handler"));
-                        html_fetch_image(content, url, box);
+                        html_fetch_object(content, url, box);
                         return;
                 }
                 else {  /* not an image; is sys var set? */

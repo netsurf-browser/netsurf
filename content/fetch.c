@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.c,v 1.9 2003/06/02 01:09:50 jmb Exp $
+ * $Id: fetch.c,v 1.10 2003/06/17 19:24:20 bursa Exp $
  *
  * This module handles fetching of data from any url.
  *
@@ -285,6 +285,7 @@ void fetch_poll(void)
 	CURLMsg * curl_msg;
 	struct fetch *f;
 	void *p;
+	void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size);
 
 	/* do any possible work on the current fetches */
 	do {
@@ -305,20 +306,21 @@ void fetch_poll(void)
 
 				/* inform the caller that the fetch is done */
 				finished = 0;
+				callback = f->callback;
 				p = f->p;
 				if (curl_msg->data.result == CURLE_OK && f->had_headers)
 					finished = 1;
 				else if (curl_msg->data.result == CURLE_OK)
-					f->callback(FETCH_ERROR, f->p, "No data received", 0);
+					callback(FETCH_ERROR, f->p, "No data received", 0);
 				else if (curl_msg->data.result != CURLE_WRITE_ERROR)
-					f->callback(FETCH_ERROR, f->p, f->error_buffer, 0);
+					callback(FETCH_ERROR, f->p, f->error_buffer, 0);
 
 				/* clean up fetch */
 				fetch_abort(f);
 
 				/* postponed until after abort so that queue fetches are started */
 				if (finished)
-					f->callback(FETCH_FINISHED, p, 0, 0);
+					callback(FETCH_FINISHED, p, 0, 0);
 
 				break;
 

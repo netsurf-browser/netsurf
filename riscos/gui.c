@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.32 2003/06/14 11:34:02 bursa Exp $
+ * $Id: gui.c,v 1.33 2003/06/17 19:24:21 bursa Exp $
  */
 
 #include "netsurf/desktop/options.h"
@@ -1170,19 +1170,6 @@ void ro_gui_throb(void)
   {
     if (g->type == GUI_BROWSER_WINDOW)
     {
-      if (g->data.browser.bw->current_content->status == CONTENT_PENDING) {
-        /* images still loading */
-        gui_window_set_status(g, g->data.browser.bw->current_content->status_message);
-        if (g->data.browser.bw->current_content->active == 0) {
-          /* any image fetches have finished */
-	  browser_window_reformat(g->data.browser.bw);
-	  browser_window_stop_throbber(g->data.browser.bw);
-	  /* TODO: move this elsewhere: can't just move it to the image loader,
-	   * because then this if would be triggered when an old content is
-	   * present */
-          g->data.browser.bw->current_content->status = CONTENT_DONE;
-	}
-      }
       if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
       {
         if (g->data.browser.bw->throbbing != 0)

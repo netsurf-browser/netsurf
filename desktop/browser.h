@@ -1,5 +1,5 @@
 /**
- * $Id: browser.h,v 1.12 2003/04/15 17:53:00 bursa Exp $
+ * $Id: browser.h,v 1.13 2003/06/17 19:24:21 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
@@ -48,6 +48,7 @@ struct browser_window
   struct { int mult; int div; } scale;
 
   struct content* current_content;
+  struct content* loading_content;
   struct history* history;
   clock_t time0;
 
