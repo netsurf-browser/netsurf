@@ -582,6 +582,27 @@ void html_object_callback(content_msg msg, struct content *object,
 		case CONTENT_MSG_DONE:
 			LOG(("got object '%s'", object->url));
 			box->object = object;
+			/* retain aspect ratio of box content */
+			if ((box->style->width.width == CSS_WIDTH_LENGTH /*||
+			     box->style->width.width == CSS_WIDTH_PERCENT*/) &&
+			    box->style->height.height == CSS_HEIGHT_AUTO) {
+			        box->style->height.height = CSS_HEIGHT_LENGTH;
+				box->style->height.length.unit = CSS_UNIT_PX;
+				if (box->style->width.width == CSS_WIDTH_LENGTH) {
+				        box->style->height.length.value = object->height * (box->style->width.value.length.value / object->width);
+				}
+				/*else {
+				        box->style->height.length.value = object->height * (box->style->width.value.percent / 100);
+				}*/
+				box->height = box->style->height.length.value;
+			}
+			if (box->style->height.height == CSS_HEIGHT_LENGTH &&
+			    box->style->width.width == CSS_WIDTH_AUTO) {
+			        box->style->width.width = CSS_WIDTH_LENGTH;
+				box->style->width.value.length.unit = CSS_UNIT_PX;
+				box->style->width.value.length.value = object->width * (box->style->height.length.value / object->height);
+				box->min_width = box->max_width = box->width = box->style->width.value.length.value;
+			}
 			/* set dimensions to object dimensions if auto */
 			if (box->style->width.width == CSS_WIDTH_AUTO) {
 				box->style->width.width = CSS_WIDTH_LENGTH;
