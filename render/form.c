@@ -16,6 +16,7 @@
 #include "curl/curl.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
+#include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -130,13 +131,28 @@ bool form_successful_controls(struct form *form,
 		if (!control->name)
 			continue;
 
+		/* ignore controls with no value */
+		/* this fixes ebay silliness
+		 * From the spec:
+		 * "If a control doesn't have a current value when the
+		 *  form is submitted, user agents are not required to
+		 *  treat it as a successful control"
+		 */
+		if (!control->value)
+			continue;
+
 		switch (control->type) {
 			case GADGET_HIDDEN:
 			case GADGET_TEXTBOX:
 			case GADGET_PASSWORD:
 				value = strdup(control->value);
-				if (!value)
+				if (!value) {
+					LOG(("failed to duplicate value"
+						"'%s' for control %s",
+							control->value,
+							control->name));
 					goto no_memory;
+				}
 				break;
 
 			case GADGET_RADIO:
@@ -146,8 +162,13 @@ bool form_successful_controls(struct form *form,
 				if (!control->selected)
 					continue;
 				value = strdup(control->value);
-				if (!value)
+				if (!value) {
+					LOG(("failed to duplicate value"
+						"'%s' for control %s",
+							control->value,
+							control->name));
 					goto no_memory;
+				}
 				break;
 
 			case GADGET_SELECT:
@@ -158,8 +179,10 @@ bool form_successful_controls(struct form *form,
 					if (!option->selected)
 						continue;
 					success_new = malloc(sizeof(*success_new));
-					if (!success_new)
+					if (!success_new) {
+						LOG(("malloc failed"));
 						goto no_memory;
+					}
 					success_new->file = false;
 					success_new->name = strdup(control->name);
 					success_new->value = strdup(option->value);
@@ -167,8 +190,10 @@ bool form_successful_controls(struct form *form,
 					last_success->next = success_new;
 					last_success = success_new;
 					if (!success_new->name ||
-							!success_new->value)
+						!success_new->value) {
+						LOG(("strdup failed"));
 						goto no_memory;
+					}
 				}
 
 				continue;
@@ -177,8 +202,10 @@ bool form_successful_controls(struct form *form,
 			case GADGET_TEXTAREA:
 				/* textarea */
 				value = form_textarea_value(control);
-				if (!value)
+				if (!value) {
+					LOG(("failed handling textarea"));
 					goto no_memory;
+				}
 				if (value[0] == 0) {
 					free(value);
 					continue;
@@ -191,8 +218,10 @@ bool form_successful_controls(struct form *form,
 
 				/* x */
 				success_new = malloc(sizeof(*success_new));
-				if (!success_new)
+				if (!success_new) {
+					LOG(("malloc failed"));
 					goto no_memory;
+				}
 				success_new->file = false;
 				success_new->name = malloc(len);
 				success_new->value = malloc(20);
@@ -201,6 +230,7 @@ bool form_successful_controls(struct form *form,
 					free(success_new->name);
 					free(success_new->value);
 					free(success_new);
+					LOG(("malloc failed"));
 					goto no_memory;
 				}
 				sprintf(success_new->name, "%s.x",
@@ -213,8 +243,10 @@ bool form_successful_controls(struct form *form,
 
 				/* y */
 				success_new = malloc(sizeof(*success_new));
-				if (!success_new)
+				if (!success_new) {
+					LOG(("malloc failed"));
 					goto no_memory;
+				}
 				success_new->file = false;
 				success_new->name = malloc(len);
 				success_new->value = malloc(20);
@@ -223,6 +255,7 @@ bool form_successful_controls(struct form *form,
 					free(success_new->name);
 					free(success_new->value);
 					free(success_new);
+					LOG(("malloc failed"));
 					goto no_memory;
 				}
 				sprintf(success_new->name, "%s.y",
@@ -243,8 +276,13 @@ bool form_successful_controls(struct form *form,
 				if (control != submit_button)
 					continue;
 				value = strdup(control->value);
-				if (!value)
+				if (!value) {
+					LOG(("failed to duplicate value"
+						"'%s' for control %s",
+							control->value,
+							control->name));
 					goto no_memory;
+				}
 				break;
 
 			case GADGET_RESET:
@@ -257,16 +295,21 @@ bool form_successful_controls(struct form *form,
 				if (!control->value)
 					continue;
 				success_new = malloc(sizeof(*success_new));
-				if (!success_new)
+				if (!success_new) {
+					LOG(("malloc failed"));
 					goto no_memory;
+				}
 				success_new->file = true;
 				success_new->name = strdup(control->name);
 				success_new->value = strdup(control->value);
 				success_new->next = 0;
 				last_success->next = success_new;
 				last_success = success_new;
-				if (!success_new->name || !success_new->value)
+				if (!success_new->name ||
+						!success_new->value) {
+					LOG(("strdup failed"));
 					goto no_memory;
+				}
 
 				continue;
 				break;
@@ -277,16 +320,21 @@ bool form_successful_controls(struct form *form,
 		}
 
 		success_new = malloc(sizeof(*success_new));
-		if (!success_new)
+		if (!success_new) {
+			LOG(("malloc failed"));
 			goto no_memory;
+		}
 		success_new->file = false;
 		success_new->name = strdup(control->name);
 		success_new->value = value;
 		success_new->next = NULL;
 		last_success->next = success_new;
 		last_success = success_new;
-		if (!success_new->name)
+		if (!success_new->name) {
+			LOG(("failed to duplicate name '%s'",
+					control->name));
 			goto no_memory;
+		}
 	}
 
 	*successful_controls = sentinel.next;
