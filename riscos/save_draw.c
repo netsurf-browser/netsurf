@@ -238,7 +238,7 @@ void add_objects(struct content *content, struct box *box,
 	}
 	else if (box->text && box->font) {
 
-	        if (strlen(box->text) == 0) {
+	        if (box->length == 0) {
 	                return;
 	        }
 
