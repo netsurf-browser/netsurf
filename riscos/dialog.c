@@ -511,6 +511,8 @@ void ro_gui_dialog_config_prepare(void)
 	ro_gui_set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_AUTHPASS,
 			option_http_proxy_auth_pass ?
 			option_http_proxy_auth_pass : "");
+	ro_gui_set_icon_selected_state(dialog_config_prox,
+			ICON_CONFIG_PROX_REFERER, option_send_referer);
 	ro_gui_dialog_config_proxy_update();
 
 	/* themes pane */
@@ -594,6 +596,9 @@ void ro_gui_dialog_config_set(void) {
 	option_http_proxy_auth_pass = strdup(ro_gui_get_icon_string(
 			dialog_config_prox,
 			ICON_CONFIG_PROX_AUTHPASS));
+	option_send_referer = ro_gui_get_icon_selected_state(
+			dialog_config_prox,
+			ICON_CONFIG_PROX_REFERER);
 
 	/* theme pane */
 	if (option_theme) {

@@ -305,6 +305,7 @@ bool ro_gui_print_keypress(wimp_key *key);
 #define ICON_CONFIG_PROX_AUTHTYPE_PICK 6
 #define ICON_CONFIG_PROX_AUTHUSER 8
 #define ICON_CONFIG_PROX_AUTHPASS 10
+#define ICON_CONFIG_PROX_REFERER 11
 
 #define ICON_CONFIG_TH_GET 0
 #define ICON_CONFIG_TH_MANAGE 1
