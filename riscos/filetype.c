@@ -23,11 +23,11 @@ struct type_entry {
 };
 static const struct type_entry type_map[] = {
         {0x188, "application/x-shockwave-flash"},
+	{0x251, "image/jng"},	/* currently in user space */
+	{0x252, "image/mng"},	/* currently in user space */
 	{0x695, "image/gif"},
 	{0xaff, "image/x-drawfile"},
 	{0xb60, "image/png"},
-	{0x251, "image/jng"},	/* currently in user space */
-	{0x252, "image/mng"},	/* currently in user space */
 	{0xc85, "image/jpeg"},
 	{0xf79, "text/css"},
 	{0xfaf, "text/html"},

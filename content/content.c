@@ -69,6 +69,10 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_GIF
 	{"image/gif", CONTENT_GIF},
 #endif
+#ifdef WITH_MNG
+	{"image/jng", CONTENT_JNG},
+	{"image/mng", CONTENT_MNG},
+#endif
 #ifdef WITH_JPEG
 	{"image/jpeg", CONTENT_JPEG},
 	{"image/pjpeg", CONTENT_JPEG},
@@ -76,16 +80,12 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_PNG
 	{"image/png", CONTENT_PNG},
 #endif
-#ifdef WITH_MNG
-	{"image/jng", CONTENT_JNG},
-	{"image/x-jng", CONTENT_JNG},
-	{"image/mng", CONTENT_MNG},
-	{"image/x-mng", CONTENT_MNG},
-	{"video/mng", CONTENT_MNG},
-	{"video/x-mng", CONTENT_MNG},
-#endif
 #ifdef WITH_DRAW
 	{"image/x-drawfile", CONTENT_DRAW},
+#endif
+#ifdef WITH_MNG
+	{"image/x-jng", CONTENT_JNG},
+	{"image/x-mng", CONTENT_MNG},
 #endif
 #ifdef WITH_SPRITE
 	{"image/x-riscos-sprite", CONTENT_SPRITE},
@@ -93,6 +93,10 @@ static const struct mime_entry mime_map[] = {
 	{"text/css", CONTENT_CSS},
 	{"text/html", CONTENT_HTML},
 	{"text/plain", CONTENT_TEXTPLAIN},
+#ifdef WITH_MNG
+	{"video/mng", CONTENT_MNG},
+	{"video/x-mng", CONTENT_MNG},
+#endif
 };
 #define MIME_MAP_COUNT (sizeof(mime_map) / sizeof(mime_map[0]))
 
