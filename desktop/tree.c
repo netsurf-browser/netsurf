@@ -30,6 +30,7 @@ static void tree_reset_URL_node(struct tree *tree, struct node *node);
 static void tree_handle_selection_area_node(struct tree *tree, struct node *node, int x, int y,
 		int width, int height, bool invert);
 static void tree_selected_to_processing(struct node *node);
+void tree_clear_processing(struct node *node);
 struct node *tree_move_processing_node(struct node *node, struct node *link, bool before,
 		bool first);
 
@@ -463,9 +464,12 @@ struct node_element *tree_find_element(struct node *node, int user_type) {
 void tree_move_selected_nodes(struct tree *tree, struct node *destination, bool before) {
 	struct node *link;
 
+	tree_clear_processing(tree->root);
 	tree_selected_to_processing(tree->root);
-	if (destination->processing)
+	if (destination->processing) {
+		tree_clear_processing(tree->root);
 		return;
+	}
 	if ((destination->folder) && (!destination->expanded) && (!before)) {
 		destination->expanded = true;
 		tree_handle_node_changed(tree, destination, false, true);
@@ -474,6 +478,7 @@ void tree_move_selected_nodes(struct tree *tree, struct node *destination, bool 
 	while (link)
 		link = tree_move_processing_node(tree->root, link, false, false);
 
+	tree_clear_processing(tree->root);
 	tree_recalculate_node_positions(tree->root);
 	tree_redraw_area(tree, 0, 0, 16384, 16384);
 }
@@ -487,8 +492,22 @@ void tree_move_selected_nodes(struct tree *tree, struct node *destination, bool 
 void tree_selected_to_processing(struct node *node) {
 	for (; node; node = node->next) {
 		node->processing = node->selected;
-		if (node->child)
+		if ((node->child) && (node->expanded))
 			tree_selected_to_processing(node->child);
+	}
+}
+
+
+/**
+ * Clears the processing flag.
+ *
+ * \param node	  the node to process siblings and children of
+ */
+void tree_clear_processing(struct node *node) {
+	for (; node; node = node->next) {
+		node->processing = false;
+		if (node->child)
+			tree_clear_processing(node->child);
 	}
 }
 
