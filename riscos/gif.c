@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <swis.h>
 #include "animlib/animlib.h"
 #include "oslib/colourtrans.h"
 #include "oslib/os.h"
@@ -18,6 +19,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/gif.h"
+#include "netsurf/riscos/options.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
