@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.12 2002/12/30 22:56:30 monkeyson Exp $
+ * $Id: gui.c,v 1.13 2003/01/06 00:04:43 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -15,7 +15,7 @@
 int gadget_subtract_x;
 int gadget_subtract_y;
 #define browser_menu_flags (wimp_ICON_TEXT | wimp_ICON_FILLED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT))
-char* HOME_URL = "file:/<NetSurf$Dir>/Resources/intro.html\0";
+char* HOME_URL = "file:///<NetSurf$Dir>/Resources/intro.html\0";
 
 wimp_MENU(2) netsurf_iconbar_menu =
   {
@@ -530,9 +530,9 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
 	switch (box->gadget->type)
 	{
 		case GADGET_TEXTAREA:
-			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER | 
-				wimp_ICON_VCENTRED | wimp_ICON_FILLED | 
-				wimp_ICON_INDIRECTED | 
+			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
+				wimp_ICON_VCENTRED | wimp_ICON_FILLED |
+				wimp_ICON_INDIRECTED |
 				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
 				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
 			icon.data.indirected_text.text = box->gadget->data.textarea.text;
@@ -544,9 +544,9 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
 
 
 		case GADGET_TEXTBOX:
-			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER | 
-				wimp_ICON_VCENTRED | wimp_ICON_FILLED | 
-				wimp_ICON_INDIRECTED | 
+			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
+				wimp_ICON_VCENTRED | wimp_ICON_FILLED |
+				wimp_ICON_INDIRECTED |
 				(wimp_COLOUR_DARK_GREY << wimp_ICON_FG_COLOUR_SHIFT) |
 				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
 			icon.data.indirected_text.text = box->gadget->data.textbox.text;
@@ -557,8 +557,8 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
       			break;
 
 		case GADGET_ACTIONBUTTON:
-			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER | 
-				wimp_ICON_VCENTRED | wimp_ICON_FILLED | 
+			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
+				wimp_ICON_VCENTRED | wimp_ICON_FILLED |
 				wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
 				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT);
 			icon.data.indirected_text.text = box->gadget->data.actionbutt.label;
@@ -578,8 +578,8 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
 			break;
 
 		case GADGET_SELECT:
-			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER | 
-				wimp_ICON_VCENTRED | wimp_ICON_FILLED | 
+			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
+				wimp_ICON_VCENTRED | wimp_ICON_FILLED |
 				wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
 				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
 				(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
@@ -963,7 +963,7 @@ void gui_init(int argc, char** argv)
   wimp_icon_create iconbar;
   wimp_version_no version;
 
-  __riscosify_control = __RISCOSIFY_NO_PROCESS;
+/*   __riscosify_control = __RISCOSIFY_NO_PROCESS; */
 
   task_handle = wimp_initialise(wimp_VERSION_RO38, task_name, (wimp_message_list*) &task_messages, &version);
 
@@ -1766,10 +1766,10 @@ void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, int mx, i
 	int count = 0;
 	struct formoption* o;
 	wimp_pointer pointer;
-	
+
 	if (combo_menu != NULL)
 		xfree(combo_menu);
-	
+
 	o = g->data.select.items;
 	while (o != NULL)
 	{
@@ -1824,7 +1824,7 @@ void gui_edit_textarea(struct browser_window* bw, struct gui_gadget* g)
 	if (g->data.textarea.text != 0)
 	  fprintf(file, "%s", g->data.textarea.text);
 	fclose(file);
-	
+
 	system("settype <Wimp$ScrapDir>.NetSurf.TextArea FFF");
 	system("filer_run <Wimp$ScrapDir>.NetSurf.TextArea");
 }
@@ -1864,7 +1864,7 @@ void ro_msg_datasave(wimp_message* block)
     wimp_get_window_state(&state);
   	x = browser_x_units(window_x_units(data->pos.x, &state));
   	y = browser_y_units(window_y_units(data->pos.y, &state));
-	
+
   	found = 0;
 	click_boxes = NULL;
 	plot_index = 0;
@@ -1891,7 +1891,7 @@ void ro_msg_datasave(wimp_message* block)
 			}
 		}
 	}
- 
+
 	xfree(click_boxes);
 }
 
@@ -1919,7 +1919,7 @@ void ro_msg_dataload(wimp_message* block)
     wimp_get_window_state(&state);
   	x = browser_x_units(window_x_units(data->pos.x, &state));
   	y = browser_y_units(window_y_units(data->pos.y, &state));
-	
+
   	found = 0;
 	click_boxes = NULL;
 	plot_index = 0;
@@ -1944,7 +1944,7 @@ void ro_msg_dataload(wimp_message* block)
 			}
 		}
 	}
- 
+
 	xfree(click_boxes);
 
 }
@@ -1964,7 +1964,7 @@ void gui_set_gadget_extent(struct box* box, int x, int y, os_box* extent, struct
 		extent->x1 = x + box->x * 2 + box->width * 2;
 		extent->y1 = y - box->y * 2;
 		return;
-	}	
+	}
   for (c = box->children; c != 0; c = c->next)
     if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
       gui_set_gadget_extent(c, x + box->x * 2, y - box->y * 2, extent, g);
@@ -1984,7 +1984,7 @@ void gui_edit_textbox(struct browser_window* bw, struct gui_gadget* g)
 	int offset;
 
 	wimp_get_pointer_info(&pointer);
-	
+
 	if (current_textbox != 0)
 	{
 		wimp_delete_icon(current_textbox_w, current_textbox_i);
@@ -1997,9 +1997,9 @@ void gui_edit_textbox(struct browser_window* bw, struct gui_gadget* g)
 	icon.w = current_textbox_w;
 	gui_set_gadget_extent(bw->current_content->data.html.layout->children, 0, 0, &icon.icon.extent, g);
 	fprintf(stderr, "ICON EXTENT %d %d %d %d\n", icon.icon.extent.x0, icon.icon.extent.y0, icon.icon.extent.x1, icon.icon.extent.y1);
-	icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER | 
-			wimp_ICON_VCENTRED | wimp_ICON_FILLED | 
-			wimp_ICON_INDIRECTED | 
+	icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
+			wimp_ICON_VCENTRED | wimp_ICON_FILLED |
+			wimp_ICON_INDIRECTED |
 			(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
 			(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT) |
 			(wimp_BUTTON_WRITABLE << wimp_ICON_BUTTON_TYPE_SHIFT);
@@ -2022,7 +2022,7 @@ void gui_edit_textbox(struct browser_window* bw, struct gui_gadget* g)
 			break;
 		offset--;
 	}
-	
+
 	wimp_set_caret_position(current_textbox_w, current_textbox_i, 0,0,-1, offset);
 }
 

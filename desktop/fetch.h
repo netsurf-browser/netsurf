@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.h,v 1.1 2002/09/11 14:24:02 monkeyson Exp $
+ * $Id: fetch.h,v 1.2 2003/01/06 00:04:43 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_FETCH_H_
@@ -11,7 +11,7 @@
 #include "netsurf/desktop/browser.h"
 #include <time.h>
 
-typedef enum {fetch_FILE, fetch_CURL} fetch_type;
+typedef enum {fetch_CURL} fetch_type;
 typedef enum {fetch_STATUS_SEND, fetch_STATUS_WAIT, fetch_STATUS_FETCH, fetch_STATUS_FINISH, fetch_DELETED} fetch_status;
 
 typedef int fetch_flags;
