@@ -66,7 +66,7 @@ static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 osspriteop_area *pointers;      /**< Sprite area containing pointer data */
 gui_pointer_shape curr_pointer; /**< Current shape of the pointer */
 /** Accepted wimp user messages. */
-static const wimp_MESSAGE_LIST(26) task_messages = { {
+static const wimp_MESSAGE_LIST(27) task_messages = { {
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
 	message_DATA_LOAD,
