@@ -259,7 +259,6 @@ struct mapentry *imagemap_addtolist(xmlNode *n, struct mapentry *entry) {
         }
         /* no shape -> shape is a rectangle */
         if (!(shape = (char*)xmlGetProp(n, (const xmlChar*)"shape"))) {
-                xmlFree(shape);
                 shape = (char*)xmlMemStrdup("rect");
         }
         if (strcasecmp(shape, "default") != 0) {
