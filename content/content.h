@@ -38,6 +38,8 @@
 #include "netsurf/riscos/jpeg.h"
 #include "netsurf/riscos/plugin.h"
 #include "netsurf/riscos/png.h"
+#include "netsurf/riscos/sprite.h"
+#include "netsurf/riscos/draw.h"
 #endif
 
 
@@ -52,6 +54,8 @@ typedef enum {
 #ifdef riscos
 	CONTENT_PNG,
 	CONTENT_GIF,
+	CONTENT_SPRITE,
+	CONTENT_DRAW,
 	CONTENT_PLUGIN,
 #endif
 	CONTENT_OTHER,
@@ -106,6 +110,8 @@ struct content {
 		struct content_jpeg_data jpeg;
 		struct content_png_data png;
 		struct content_gif_data gif;
+		struct content_sprite_data sprite;
+		struct content_draw_data draw;
 		struct content_plugin_data plugin;
 #endif
 		struct content_other_data other;

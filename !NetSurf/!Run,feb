@@ -12,6 +12,12 @@ RMEnsure WindowManager 3.80 Error 0 NetSurf requires the Nested Window Manager.
 RMEnsure UtilityModule 3.70 RMEnsure CallASWI 0.02 RMLoad System:Modules.CallASWI
 RMEnsure UtilityModule 3.70 RMEnsure CallASWI 0.02 Error NetSurf requires the CallASWI module
 
+| Ensure DrawFile module is installed
+| http://acorn.riscos.com/riscos/releases/drawfile.arc
+| Should be installed in !System.310.Modules
+RMEnsure UtilityModule 3.50 RMEnsure DrawFile 1.30 RMLoad System:Modules.DrawFile
+RMEnsure UtilityModule 3.50 RMEnsure DrawFile 1.30 Error NetSurf requires the DrawFile module
+
 | Ensure SharedUnixLibrary is installed
 | http://www.chocky.org/unix/usage.html
 RMEnsure SharedUnixLibrary 1.02 RMLoad System:Modules.SharedULib

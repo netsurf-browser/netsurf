@@ -1,4 +1,4 @@
-$Id: TODO-HTML,v 1.4 2003/09/03 21:58:54 jmb Exp $
+$Id: TODO-HTML,v 1.5 2003/09/10 22:27:15 jmb Exp $
 
 TODO-HTML file for NetSurf. 
 
@@ -25,7 +25,6 @@ Tables:
 	column spanning (only colspan=0 needs implementing)    
 	
 Images: 
-	display ALT text, 
 	MAP, 
 	AREA
 

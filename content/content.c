@@ -7,7 +7,7 @@
 
 /** \file
  * Content handling (implementation).
- * 
+ *
  * This implementation is based on the ::handler_map array, which maps
  * ::content_type to the functions which implement that type.
  */
@@ -24,6 +24,8 @@
 #include "netsurf/riscos/jpeg.h"
 #include "netsurf/riscos/png.h"
 #include "netsurf/riscos/gif.h"
+#include "netsurf/riscos/sprite.h"
+#include "netsurf/riscos/draw.h"
 #include "netsurf/riscos/plugin.h"
 #endif
 #include "netsurf/utils/log.h"
@@ -38,9 +40,14 @@ struct mime_entry {
 /** A map from MIME type to ::content_type. Must be sorted by mime_type. */
 static const struct mime_entry mime_map[] = {
 #ifdef riscos
+        {"application/drawfile", CONTENT_DRAW},
+        {"application/x-drawfile", CONTENT_DRAW},
+        {"image/drawfile", CONTENT_DRAW},
 	{"image/gif", CONTENT_GIF},
 	{"image/jpeg", CONTENT_JPEG},
 	{"image/png", CONTENT_PNG},
+	{"image/x-drawfile", CONTENT_DRAW},
+	{"image/x-riscos-sprite", CONTENT_SPRITE},
 #endif
 	{"text/css", CONTENT_CSS},
 	{"text/html", CONTENT_HTML},
@@ -88,6 +95,10 @@ static const struct handler_entry handler_map[] = {
 		nspng_reformat, nspng_destroy, nspng_redraw, 0, 0, 0},
 	{nsgif_create, nsgif_process_data, nsgif_convert, nsgif_revive,
 	        nsgif_reformat, nsgif_destroy, nsgif_redraw, 0, 0, 0},
+	{sprite_create, sprite_process_data, sprite_convert, sprite_revive,
+		sprite_reformat, sprite_destroy, sprite_redraw, 0, 0, 0},
+	{draw_create, draw_process_data, draw_convert, draw_revive,
+		draw_reformat, draw_destroy, draw_redraw, 0, 0, 0},
 	{plugin_create, plugin_process_data, plugin_convert, plugin_revive,
 	        plugin_reformat, plugin_destroy, plugin_redraw,
 		plugin_add_instance, plugin_remove_instance,
@@ -296,7 +307,7 @@ void content_redraw(struct content *c, long x, long y,
 	assert(c != 0);
 	if (handler_map[c->type].redraw != 0)
 		handler_map[c->type].redraw(c, x, y, width, height,
-				clip_x0, clip_y0, clip_x1, clip_y1);
+		                clip_x0, clip_y0, clip_x1, clip_y1);
 }
 
 

@@ -20,10 +20,12 @@ struct type_entry {
 static const struct type_entry type_map[] = {
         {0x188, "application/x-shockwave-flash"},
 	{0x695, "image/gif"},
+	{0xaff, "image/x-drawfile"},
 	{0xb60, "image/png"},
 	{0xc85, "image/jpeg"},
 	{0xf79, "text/css"},
 	{0xfaf, "text/html"},
+	{0xff9, "image/x-riscos-sprite"},
 	{0xfff, "text/plain"},
 };
 #define TYPE_MAP_COUNT (sizeof(type_map) / sizeof(type_map[0]))
