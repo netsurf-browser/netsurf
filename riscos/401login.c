@@ -114,7 +114,7 @@ bool ro_gui_401login_keypress(wimp_key *key) {
             return true;
     case wimp_KEY_ESCAPE:
             ro_gui_dialog_close(dialog_401li);
-            break;
+            return true;
     default: break;
   }
 
