@@ -492,8 +492,7 @@ void content_remove_user(struct content *c,
 void content_broadcast(struct content *c, content_msg msg, char *error)
 {
 	struct content_user *user, *next;
-        LOG(("content %s, message %i", c->url, msg));
-        c->lock++;
+	c->lock++;
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0)

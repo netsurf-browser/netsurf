@@ -662,7 +662,6 @@ void html_object_callback(content_msg msg, struct content *object,
 			assert(0);
 	}
 
-	LOG(("%i active", c->active));
 	if (c->status == CONTENT_STATUS_READY && c->active == 0) {
 		/* all objects have arrived */
 		content_reformat(c, c->available_width, 0);
