@@ -9,6 +9,7 @@
 #include <locale.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <sys/utsname.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/cache.h"
 #include "netsurf/content/fetch.h"
@@ -50,7 +51,13 @@ int main(int argc, char** argv)
 
 void netsurf_init(int argc, char** argv)
 {
+  struct utsname utsname;
+
   stdout = stderr;
+  if (uname(&utsname) != 0)
+    LOG(("Failed to extract machine information\n"));
+  else
+    LOG(("NetSurf on <%s>, node <%s>, release <%s>, version <%s>, machine <%s>\n", utsname.sysname, utsname.nodename, utsname.release, utsname.version, utsname.machine));
   gui_init(argc, argv);
   setlocale(LC_ALL, "");
   fetch_init();
