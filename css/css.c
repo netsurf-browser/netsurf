@@ -448,9 +448,7 @@ void css_destroy(struct content *c)
 
 	for (i = 0; i != HASH_SIZE; i++) {
 		for (r = c->data.css.css->rule[i]; r != 0; r = r->next) {
-		        if (r->style->background_image.uri != NULL)
-		                free(r->style->background_image.uri);
-			free(r->style);
+			css_free_style(r->style);
 		}
 		css_free_selector(c->data.css.css->rule[i]);
 	}
