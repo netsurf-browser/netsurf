@@ -134,7 +134,7 @@ void ro_gui_save_click(wimp_pointer *pointer)
 	  		break;
 	  	case ICON_SAVE_CANCEL:
 	  		if (pointer->buttons == wimp_CLICK_SELECT) {
-	  		  	xwimp_close_window(pointer->w);
+	  		  	ro_gui_dialog_close(pointer->w);
 	  		  	xwimp_create_menu((wimp_menu *)-1, 0, 0);
 	  		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
 /* 	  			ro_gui_menu_prepare_save(gui_save_content); */
@@ -310,7 +310,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 
 	/*	Close the save window
 	*/
-	xwimp_close_window(dialog_saveas);
+	ro_gui_dialog_close(dialog_saveas);
 
 	/* Ack successful save with message_DATA_LOAD */
 	message->action = message_DATA_LOAD;

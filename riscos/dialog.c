@@ -289,8 +289,8 @@ void ro_gui_dialog_close_persistant(wimp_w parent) {
 	*/
 	if (parent == NULL) return;
 	for (i = 0; i < MAX_PERSISTANT; i++) {
-		if (persistant_dialog[i][1] == parent) {
-		  	xwimp_close_window(persistant_dialog[i][0]);
+		if ((persistant_dialog[i][1] == parent) && (persistant_dialog[i][0] != NULL)) {
+		  	ro_gui_dialog_close(persistant_dialog[i][0]);
 		  	persistant_dialog[i][0] = NULL;
 		}
 	}
@@ -802,7 +802,33 @@ void ro_gui_dialog_click_warning(wimp_pointer *pointer)
 
 void ro_gui_dialog_close(wimp_w close)
 {
-	os_error *error;
+  	int i;
+	wimp_caret caret;
+	os_error *error = NULL;
+
+	/*	Give the caret back to the parent window. This code relies on the fact that
+		only hotlist windows and browser windows open persistant dialogues, as the caret
+		gets placed to no icon.
+	*/
+	if (!xwimp_get_caret_position(&caret)) {
+		if (caret.w == close) {
+	  
+			/*	Check if we are a persistant window
+			*/
+			for (i = 0; i < MAX_PERSISTANT; i++) {
+				if (persistant_dialog[i][0] == close) {
+				  	persistant_dialog[i][0] = NULL;
+					error = xwimp_set_caret_position(persistant_dialog[i][1],
+							wimp_ICON_WINDOW, -100, -100, 32, -1);
+				}
+			}
+		}
+		if (error) {
+			LOG(("xwimp_set_caret_position: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
 
 	error = xwimp_close_window(close);
 	if (error) {
@@ -827,6 +853,7 @@ void ro_gui_dialog_close(wimp_w close)
 			return;
 		}
 	}
+
 }
 
 
