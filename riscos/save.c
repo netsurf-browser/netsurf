@@ -32,13 +32,12 @@
 gui_save_type gui_current_save_type;
 
 extern struct content *save_content;
-extern char *save_link;
 
 typedef enum { LINK_ACORN, LINK_ANT, LINK_TEXT } link_format;
 
 static void ro_gui_save_complete(struct content *c, char *path);
 static void ro_gui_save_object_native(struct content *c, char *path);
-static void ro_gui_save_link(link_format format, char *path);
+static bool ro_gui_save_link(struct content *c, link_format format, char *path);
 
 
 /**
@@ -142,96 +141,95 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 void ro_gui_save_datasave_ack(wimp_message *message)
 {
 	char *path = message->data.data_xfer.file_name;
-        struct content *c = save_content;
+	struct content *c = save_content;
 	os_error *error;
-	bool ack = true;
+
+	if (!save_content) {
+		LOG(("unexpected DataSaveAck: save_content not set"));
+		return;
+	}
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, path);
 
 	switch (gui_current_save_type) {
 		case GUI_SAVE_SOURCE:
-		        if (!c)
-		                return;
-	                error = xosfile_save_stamped(path,
-	                		ro_content_filetype(c),
+			error = xosfile_save_stamped(path,
+					ro_content_filetype(c),
 					c->source_data,
 					c->source_data + c->source_size);
 			if (error) {
 				LOG(("xosfile_save_stamped: 0x%x: %s",
 						error->errnum, error->errmess));
 				warn_user(error->errmess);
+				return;
 			}
 			break;
 
 		case GUI_SAVE_COMPLETE:
-			if (!c)
-				return;
 			ro_gui_save_complete(c, path);
-			ack = false;
 			break;
 
 		case GUI_SAVE_DRAW:
-			if (!c)
-				return;
 			save_as_draw(c, path);
 			break;
 
 		case GUI_SAVE_TEXT:
-			if (!c)
-				return;
 			save_as_text(c, path);
 			xosfile_set_type(path, 0xfff);
 			break;
 
 		case GUI_SAVE_OBJECT_ORIG:
-		        if (!c)
-		                return;
-		        error = xosfile_save_stamped(path,
-	                		ro_content_filetype(c),
+			error = xosfile_save_stamped(path,
+					ro_content_filetype(c),
 					c->source_data,
 					c->source_data + c->source_size);
 			if (error) {
 				LOG(("xosfile_save_stamped: 0x%x: %s",
 						error->errnum, error->errmess));
 				warn_user(error->errmess);
+				return;
 			}
 			break;
 
 		case GUI_SAVE_OBJECT_NATIVE:
-		        if (!c)
-		                return;
-		        ro_gui_save_object_native(c, path);
-		        break;
+			ro_gui_save_object_native(c, path);
+			break;
 
 		case GUI_SAVE_LINK_URI:
-		        if (!save_link)
-		                return;
-		        ro_gui_save_link(LINK_ACORN, path);
-		        break;
+			if (!ro_gui_save_link(c, LINK_ACORN, path))
+				return;
+			break;
 
 		case GUI_SAVE_LINK_URL:
-		        if (!save_link)
-		                return;
-		        ro_gui_save_link(LINK_ANT, path);
-		        break;
+			if (!ro_gui_save_link(c, LINK_ANT, path))
+				return;
+			break;
 
 		case GUI_SAVE_LINK_TEXT:
-		        if (!save_link)
-		                return;
-		        ro_gui_save_link(LINK_TEXT, path);
-		        break;
+			if (!ro_gui_save_link(c, LINK_TEXT, path))
+				return;
+			break;
 	}
 
-        if (ack) {
-                /* Ack successful save with message_DATA_LOAD */
-	        message->action = message_DATA_LOAD;
-	        message->your_ref = message->my_ref;
-	        wimp_send_message_to_window(wimp_USER_MESSAGE, message, message->data.data_xfer.w, message->data.data_xfer.i);
+	/* Ack successful save with message_DATA_LOAD */
+	message->action = message_DATA_LOAD;
+	message->your_ref = message->my_ref;
+	error = xwimp_send_message_to_window(wimp_USER_MESSAGE, message,
+			message->data.data_xfer.w, message->data.data_xfer.i, 0);
+	if (error) {
+		LOG(("xwimp_send_message_to_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user(error->errmess);
 	}
 
-        if (save_link) xfree(save_link);
-        save_content = NULL;
-	wimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+	error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+	if (error) {
+		LOG(("xwimp_create_menu: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user(error->errmess);
+	}
+
+	save_content = 0;
 }
 
 
@@ -369,22 +367,35 @@ void ro_gui_save_object_native(struct content *c, char *path)
         }
 }
 
-void ro_gui_save_link(link_format format, char *path)
+
+/**
+ * Save a link file.
+ *
+ * \param  c       content to save link to
+ * \param  format  format of link file
+ * \param  path    pathname for link file
+ * \return  true on success, false on failure and reports the error
+ */
+
+bool ro_gui_save_link(struct content *c, link_format format, char *path)
 {
         FILE *fp = fopen(path, "w");
 
-        if (!fp) return;
+	if (!fp) {
+		warn_user(strerror(errno));
+		return false;
+	}
 
         switch (format) {
                case LINK_ACORN: /* URI */
                        fprintf(fp, "%s\t%s\n", "URI", "100");
                        fprintf(fp, "\t# NetSurf %s\n\n", netsurf_version);
-                       fprintf(fp, "\t%s\n", save_link);
+                       fprintf(fp, "\t%s\n", c->url);
                        fprintf(fp, "\t*\n");
                        break;
                case LINK_ANT: /* URL */
                case LINK_TEXT: /* Text */
-                       fprintf(fp, "%s\n", save_link);
+                       fprintf(fp, "%s\n", c->url);
                        break;
         }
 
@@ -401,4 +412,6 @@ void ro_gui_save_link(link_format format, char *path)
                        xosfile_set_type(path, 0xfff);
                        break;
         }
+
+        return true;
 }

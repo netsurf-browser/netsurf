@@ -48,8 +48,7 @@ static struct box *find_object_box(void);
 static wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
 gui_window *current_gui;
-struct content *save_content;
-char *save_link;
+struct content *save_content = 0;
 
 /*	Default menu item flags
 */
@@ -620,11 +619,9 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 					gui_current_save_type = GUI_SAVE_SOURCE;
 					break;
 			}
-			save_link = xstrdup(c->url);
 			ro_gui_menu_prepare_save(c);
 			error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
 					warning->pos.x, warning->pos.y);
-			if (error) xfree(save_link);
 			break;
 		case MENU_OBJECT: /* Object -> */
 		        switch (warning->selection.items[1]) {
@@ -664,9 +661,6 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 		                ro_gui_menu_prepare_save(box->object);
 			        error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
 					warning->pos.x, warning->pos.y);
-				if (!error/* && box->href*/)
-				        save_link = xstrdup(box->object->url);
-//				        save_link = url_join(box->href, c->url);
 			}
 		        break;
 		case MENU_VIEW: /* View -> */
@@ -711,11 +705,11 @@ void ro_gui_menu_prepare_save(struct content *c)
 	const char *name = "";
 	const char *nice;
 
+	assert(c);
+
 	switch (gui_current_save_type) {
 		case GUI_SAVE_SOURCE:
-			if (c)
-				sprintf(icon_buf, "file_%x",
-						ro_content_filetype(c));
+			sprintf(icon_buf, "file_%x", ro_content_filetype(c));
 			name = messages_get("SaveSource");
 			break;
 
@@ -757,11 +751,9 @@ void ro_gui_menu_prepare_save(struct content *c)
 		        break;
         }
 
-	if (c) {
-	        save_content = c;
-		if ((nice = url_nice(c->url)))
-			name = nice;
-	}
+	save_content = c;
+	if ((nice = url_nice(c->url)))
+		name = nice;
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_ICON, icon);
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);
