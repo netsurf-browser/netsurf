@@ -22,9 +22,18 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
-#define FONT_FAMILIES 1
+#define FONT_FAMILIES 5 /* Number of families */
+
+/* Font Styles */
 #define FONT_BOLD 2
 #define FONT_SLANTED 1
+
+/* Font families */
+#define FONT_SANS_SERIF  0
+#define FONT_SERIF       4
+#define FONT_MONOSPACE   8
+#define FONT_CURSIVE    12
+#define FONT_FANTASY    16
 
 /* a font_set is just a linked list of font_data for each face for now */
 struct font_set {
@@ -34,16 +43,37 @@ struct font_set {
 /** Table of font names.
  *
  * font id = font family * 4 + bold * 2 + slanted
- * 
- * font family: 0 = sans-serif, 1 = serif, ...
+ *
+ * font family: 0 = sans-serif, 1 = serif, 2 = monospace, 3 = cursive
+ *              4 = fantasy
  */
 
 const char * const font_table[FONT_FAMILIES * 4] = {
 	/* sans-serif */
-	"Homerton.Medium\\ELatin1",
-	"Homerton.Medium.Oblique\\ELatin1",
-	"Homerton.Bold\\ELatin1",
-	"Homerton.Bold.Oblique\\ELatin1",
+/*0*/	"Homerton.Medium\\ELatin1",
+/*1*/	"Homerton.Medium.Oblique\\ELatin1",
+/*2*/	"Homerton.Bold\\ELatin1",
+/*3*/	"Homerton.Bold.Oblique\\ELatin1",
+	/* serif */
+/*4*/	"Trinity.Medium\\ELatin1",
+/*5*/	"Trinity.Medium.Italic\\ELatin1",
+/*6*/	"Trinity.Bold\\ELatin1",
+/*7*/	"Trinity.Bold.Italic\\ELatin1",
+	/* monospace */
+/*8*/	"Corpus.Medium\\ELatin1",
+/*9*/	"Corpus.Medium.Oblique\\ELatin1",
+/*10*/	"Corpus.Bold\\ELatin1",
+/*11*/	"Corpus.Bold.Oblique\\ELatin1",
+	/* cursive */
+/*12*/	"Churchill.Medium\\ELatin1",
+/*13*/	"Churchill.Medium\\ELatin1\\M65536 0 13930 65536 0 0",
+/*14*/	"Churchill.Bold\\ELatin1",
+/*15*/	"Churchill.Bold\\ELatin1\\M65536 0 13930 65536 0 0",
+        /* fantasy */
+/*16*/	"Sassoon.Primary\\ELatin1",
+/*17*/	"Sassoon.Primary\\ELatin1\\M65536 0 13930 65536 0 0",
+/*18*/	"Sassoon.Primary.Bold\\ELatin1",
+/*19*/	"Sassoon.Primary.Bold\\ELatin1\\M65536 0 13930 65536 0 0",
 };
 
 
@@ -82,12 +112,33 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 	unsigned int f = 0;
 	font_f handle;
 	os_error *error;
+	bool bold=false, italic=false;
 
 	assert(set);
 	assert(style);
 
 	if (style->font_size.size == CSS_FONT_SIZE_LENGTH)
 		size = style->font_size.value.length.value * 16;
+
+	switch (style->font_family) {
+	        case CSS_FONT_FAMILY_SANS_SERIF:
+	                f += FONT_SANS_SERIF;
+	                break;
+	        case CSS_FONT_FAMILY_SERIF:
+	                f += FONT_SERIF;
+	                break;
+	        case CSS_FONT_FAMILY_MONOSPACE:
+	                f += FONT_MONOSPACE;
+	                break;
+	        case CSS_FONT_FAMILY_CURSIVE:
+	                f += FONT_CURSIVE;
+	                break;
+	        case CSS_FONT_FAMILY_FANTASY:
+	                f += FONT_FANTASY;
+	                break;
+	        default:
+	                break;
+	}
 
 	switch (style->font_weight) {
 		case CSS_FONT_WEIGHT_BOLD:
@@ -96,6 +147,7 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 		case CSS_FONT_WEIGHT_800:
 		case CSS_FONT_WEIGHT_900:
 			f += FONT_BOLD;
+			bold = true;
 			break;
 		default:
 			break;
@@ -105,6 +157,7 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 		case CSS_FONT_STYLE_ITALIC:
 		case CSS_FONT_STYLE_OBLIQUE:
 			f += FONT_SLANTED;
+			italic = true;
 			break;
 		default:
 			break;
@@ -118,9 +171,17 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 
 	error = xfont_find_font(font_table[f], (int)size, (int)size,
 	                        0, 0, &handle, 0, 0);
-	if (error) {
-		fprintf(stderr, "%i: %s\n", error->errnum, error->errmess);
-		die("font_find_font failed");
+
+	if (error) { /* fall back to Homerton */
+	        LOG(("font_find_font failed; falling back to Homerton"));
+	        f = 0 + (bold ? FONT_BOLD : 0) + (italic ? FONT_SLANTED: 0);
+
+	        error = xfont_find_font(font_table[f], (int)size, (int)size,
+	                                0, 0, &handle, 0, 0);
+	        if (error) {
+		        LOG(("%i: %s\n", error->errnum, error->errmess));
+		        die("font_find_font failed");
+	        }
 	}
 
 	data->handle = handle;
@@ -196,7 +257,7 @@ unsigned long font_width(struct font_data *font, const char * text, unsigned int
 /**
  * Find where in a string a x coordinate falls.
  *
- * For example, used to find where to position the caret in response to mouse 
+ * For example, used to find where to position the caret in response to mouse
  * click.
  *
  * \param text a string
@@ -289,6 +350,7 @@ int main(void)
 	struct font_set *set;
 	struct css_style style;
 
+        style.font_family = CSS_FONT_FAMILY_SANS_SERIF;
 	style.font_size.size = CSS_FONT_SIZE_LENGTH;
 	style.font_weight = CSS_FONT_WEIGHT_BOLD;
 	style.font_style = CSS_FONT_STYLE_ITALIC;

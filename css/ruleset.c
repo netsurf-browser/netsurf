@@ -44,6 +44,7 @@ static void parse_color(struct css_style * const s, const struct css_node * cons
 static void parse_display(struct css_style * const s, const struct css_node * const v);
 static void parse_float(struct css_style * const s, const struct css_node * const v);
 static void parse_font(struct css_style * const s, const struct css_node * v);
+static void parse_font_family(struct css_style * const s, const struct css_node * const v);
 static void parse_font_size(struct css_style * const s, const struct css_node * const v);
 static void parse_font_style(struct css_style * const s, const struct css_node * const v);
 static void parse_font_weight(struct css_style * const s, const struct css_node * const v);
@@ -55,6 +56,7 @@ static void parse_visibility(struct css_style * const s, const struct css_node *
 static void parse_width(struct css_style * const s, const struct css_node * const v);
 static void parse_white_space(struct css_style * const s, const struct css_node * const v);
 static css_text_decoration css_text_decoration_parse(const char * const s);
+static css_font_family css_font_family_parse(const char * const s);
 
 
 /* table of property parsers: MUST be sorted by property name */
@@ -66,6 +68,7 @@ static const struct property_entry property_table[] = {
 	{ "display",          parse_display },
 	{ "float",            parse_float },
 	{ "font",             parse_font },
+	{ "font-family",      parse_font_family },
 	{ "font-size",        parse_font_size },
 	{ "font-style",       parse_font_style },
 	{ "font-weight",      parse_font_weight },
@@ -395,8 +398,10 @@ void parse_float(struct css_style * const s, const struct css_node * const v)
 
 void parse_font(struct css_style * const s, const struct css_node * v)
 {
+        css_font_family ff;
 	css_font_style fs;
 	css_font_weight fw;
+	s->font_family = CSS_FONT_FAMILY_SANS_SERIF;
 	s->font_style = CSS_FONT_STYLE_NORMAL;
 	s->font_weight = CSS_FONT_WEIGHT_NORMAL;
 	s->line_height.size = CSS_LINE_HEIGHT_ABSOLUTE;
@@ -404,6 +409,13 @@ void parse_font(struct css_style * const s, const struct css_node * v)
 	for (; v; v = v->next) {
 		switch (v->type) {
 			case CSS_NODE_IDENT:
+			        /* font-family */
+			        ff = css_font_family_parse(v->data);
+			        if (ff != CSS_FONT_FAMILY_UNKNOWN) {
+			                s->font_family = ff;
+			                break;
+			        }
+
 				/* font-style, font-variant, or font-weight */
 				fs = css_font_style_parse(v->data);
 				if (fs != CSS_FONT_STYLE_UNKNOWN) {
@@ -430,6 +442,32 @@ void parse_font(struct css_style * const s, const struct css_node * v)
 				break;
 		}
 	}
+}
+
+void parse_font_family(struct css_style * const s, const struct css_node * const v)
+{
+        /* TODO - font-family values are found in a comma separated list.
+         *        Each list element should be considered in turn.
+         *        The first match should be used.
+         *        White space in a quoted string should be left alone,
+         *        other white space should be reduced to a single space.*/
+        struct css_node *temp;
+	css_font_family z;
+	if (v->type != CSS_NODE_IDENT)
+		return;
+	z = css_font_family_parse(v->data);
+	if (z == CSS_FONT_FAMILY_INHERIT) {
+	        if (v->next != 0)
+	                return;
+	        s->font_family = z;
+	}
+	if (z != CSS_FONT_FAMILY_UNKNOWN)
+		s->font_family = z;
+	/* for now, take the first item */
+	/*for (temp = v->next; temp; temp=temp->next) {
+	        z = css_font_family_parse(temp->data);
+	        s->font_family |= z;
+	}*/
 }
 
 void parse_font_size(struct css_style * const s, const struct css_node * const v)
@@ -583,5 +621,16 @@ css_text_decoration css_text_decoration_parse(const char * const s)
 	if (strcasecmp(s, "line-through") == 0) return CSS_TEXT_DECORATION_LINE_THROUGH;
 	if (strcasecmp(s, "overline") == 0) return CSS_TEXT_DECORATION_OVERLINE;
 	if (strcasecmp(s, "underline") == 0) return CSS_TEXT_DECORATION_UNDERLINE;
+	return CSS_TEXT_DECORATION_UNKNOWN;
+}
+
+css_font_family css_font_family_parse(const char * const s)
+{
+	if (strcasecmp(s, "inherit") == 0) return CSS_FONT_FAMILY_INHERIT;
+	if (strcasecmp(s, "sans-serif") == 0) return CSS_FONT_FAMILY_SANS_SERIF;
+	if (strcasecmp(s, "serif") == 0) return CSS_FONT_FAMILY_SERIF;
+	if (strcasecmp(s, "monospace") == 0) return CSS_FONT_FAMILY_MONOSPACE;
+	if (strcasecmp(s, "cursive") == 0) return CSS_FONT_FAMILY_CURSIVE;
+	if (strcasecmp(s, "fantasy") == 0) return CSS_FONT_FAMILY_FANTASY;
 	return CSS_TEXT_DECORATION_UNKNOWN;
 }

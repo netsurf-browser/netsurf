@@ -71,3 +71,6 @@ font[size="+1"] { font-size: larger; }
 
 td[nowrap], th[nowrap] { white-space: nowrap; }
 pre { white-space: pre; }
+
+cite, dfn, code, samp, 
+kbd, var, abbr, acronym { font-family: monospace; text-align: center; }

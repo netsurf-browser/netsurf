@@ -1,4 +1,4 @@
-$Id: TODO-HTML,v 1.6 2003/11/02 01:42:54 jmb Exp $
+$Id: TODO-HTML,v 1.7 2004/01/28 21:48:10 jmb Exp $
 
 TODO-HTML file for NetSurf. 
 
@@ -10,8 +10,6 @@ See TODO-CSS for CSS related TODOs.
 
 Text Formatting:
 
-	<CITE>, <DFN>, <CODE>, <SAMP>, <KBD>, 
-	<VAR>, <ABBR> and <ACRONYM> tags
 	<Q> tag
 	
 Lists:

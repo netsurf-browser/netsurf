@@ -43,6 +43,7 @@ const struct css_style css_base_style = {
 	CSS_DISPLAY_BLOCK,
 	CSS_FLOAT_NONE,
 	{ CSS_FONT_SIZE_LENGTH, { { 10, CSS_UNIT_PT } } },
+	CSS_FONT_FAMILY_SANS_SERIF,
 	CSS_FONT_WEIGHT_NORMAL,
 	CSS_FONT_STYLE_NORMAL,
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
@@ -61,6 +62,7 @@ const struct css_style css_empty_style = {
 	CSS_DISPLAY_INHERIT,
 	CSS_FLOAT_INHERIT,
 	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_EM } } },
+	CSS_FONT_FAMILY_INHERIT,
 	CSS_FONT_WEIGHT_INHERIT,
 	CSS_FONT_STYLE_INHERIT,
 	{ CSS_HEIGHT_INHERIT, { 1, CSS_UNIT_EM } },
@@ -79,6 +81,7 @@ const struct css_style css_blank_style = {
 	CSS_DISPLAY_INLINE,
 	CSS_FLOAT_NONE,
 	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_EM } } },
+	CSS_FONT_FAMILY_INHERIT,
 	CSS_FONT_WEIGHT_INHERIT,
 	CSS_FONT_STYLE_INHERIT,
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
@@ -748,6 +751,8 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 		style->display = apply->display;
 	if (apply->float_ != CSS_FLOAT_INHERIT)
 		style->float_ = apply->float_;
+	if (apply->font_family != CSS_FONT_FAMILY_INHERIT)
+	        style->font_family = apply->font_family;
 	if (apply->font_style != CSS_FONT_STYLE_INHERIT)
 		style->font_style = apply->font_style;
 	if (apply->font_weight != CSS_FONT_WEIGHT_INHERIT)
@@ -817,6 +822,8 @@ void css_merge(struct css_style * const style, const struct css_style * const ap
 		style->display = apply->display;
 	if (apply->float_ != CSS_FLOAT_INHERIT)
 		style->float_ = apply->float_;
+	if (apply->font_family != CSS_FONT_FAMILY_INHERIT)
+	        style->font_family = apply->font_family;
 	if (apply->font_size.size != CSS_FONT_SIZE_INHERIT)
 		style->font_size = apply->font_size;
 	if (apply->font_style != CSS_FONT_STYLE_INHERIT)

@@ -52,6 +52,16 @@ typedef enum {
 	CSS_TEXT_DECORATION_UNKNOWN = 0x1000
 } css_text_decoration;
 
+typedef enum {
+	CSS_FONT_FAMILY_INHERIT = 0x1,
+	CSS_FONT_FAMILY_SANS_SERIF = 0x2,
+	CSS_FONT_FAMILY_SERIF = 0x4,
+	CSS_FONT_FAMILY_MONOSPACE = 0x8,
+	CSS_FONT_FAMILY_CURSIVE = 0x10,
+	CSS_FONT_FAMILY_FANTASY = 0x20,
+	CSS_FONT_FAMILY_UNKNOWN = 0x1000
+} css_font_family;
+
 /** Representation of a complete CSS 2 style. */
 struct css_style {
 	colour background_color;
@@ -72,6 +82,7 @@ struct css_style {
 		} value;
 	} font_size;
 
+        css_font_family font_family;
 	css_font_weight font_weight;
 	css_font_style font_style;
 
