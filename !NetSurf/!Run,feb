@@ -41,5 +41,5 @@ RMEnsure MimeMap 0.10 Error NetSurf requires MimeMap 0.10 or later
 RMEnsure Tinct 0.02 Run <NetSurf$Dir>.Resources.Tinct
 RMEnsure Tinct 0.02 Error NetSurf requires Tinct 0.02 or later
 
-Wimpslot -min 2000k -max 2000k
+Wimpslot -min 2100k -max 2100k
 Run <NetSurf$Dir>.!RunImage 2><NetSurf$Dir>.stderr
