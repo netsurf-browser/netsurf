@@ -17,6 +17,7 @@
 #include "libxml/debugXML.h"
 #include "netsurf/content/cache.h"
 #include "netsurf/content/fetchcache.h"
+#include "netsurf/css/css.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
@@ -526,6 +527,9 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 
 	for (i = found - 1; i >= 0; i--)
 	{
+	        if (click_boxes[i].box->style->visibility == CSS_VISIBILITY_HIDDEN)
+	                continue;
+
 		if (click_boxes[i].box->gadget)
 		{
 			struct gui_gadget* g = click_boxes[i].box->gadget;
@@ -1214,6 +1218,8 @@ void browser_window_follow_link(struct browser_window* bw,
 
   for (i = found - 1; i >= 0; i--)
   {
+    if (click_boxes[i].box->style->visibility == CSS_VISIBILITY_HIDDEN)
+      continue;
     if (click_boxes[i].box->href != NULL)
     {
       if (click_type == 1)
