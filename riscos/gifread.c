@@ -84,6 +84,9 @@ static int curbit, lastbit, get_done, last_byte;
 static int return_clear;
 static int zero_data_block = FALSE;
 
+/*	Whether to clear the decoded image rather than plot
+*/
+static int clear_image = FALSE;
 
 
 /*	Initialises any workspace held by the animation and attempts to decode
@@ -153,12 +156,12 @@ int gif_initialise(struct gif_animation *gif) {
 		*/
 		gif->width = 0;		// Can't trust the supplied value
 		gif->height = 0;	// Can't trust the supplied value
-//		gif->width = (gif_data[0] | (gif_data[1] << 8));
-//		gif->height = (gif_data[2] | (gif_data[3] << 8));
 		gif->global_colours = (gif_data[4] & 0x80);
 		gif->colour_table_size = (2 << (gif_data[4] & 0x07));
 		gif->background_colour = gif_data[5];
 		gif->aspect_ratio = gif_data[6];
+		gif->dirty_frame = -1;
+		gif->dirty_plot = 0;
 		gif_data += 7;
 		
 		/*	Allocate some data irrespective of whether we've got any colour tables. We
@@ -513,21 +516,34 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 	unsigned int *frame_data = 0;	// Set to 0 for no warnings
 	unsigned int *frame_scanline;
 	unsigned int extension_size;
+	unsigned int background_action;
 	int transparency_index = -1;
-	unsigned int transparent_colour = 0;	// Set to 0 for no warnings
 	unsigned int save_buffer_position;
-	unsigned int frame_data_size;
 	unsigned int return_value = 0;
 	unsigned int x, y, decode_y;
+	unsigned int block_size;
 	int colour;
-	
 	unsigned int more_images;
 
 	/*	Ensure we have a frame to decode
 	*/
 	if (frame > gif->frame_count_partial) return GIF_INSUFFICIENT_DATA;
-	if (frame == gif->decoded_frame) return 0;
-
+	if ((!clear_image) && (frame == gif->decoded_frame)) return 0;
+	
+	/*	If the previous frame was dirty, remove it
+	*/
+	if (!clear_image) {
+		if (gif->decoded_frame == gif->dirty_frame) {
+			clear_image = TRUE;
+			if (frame != 0) gif_decode_frame(gif, gif->dirty_frame);
+			clear_image = FALSE;
+			gif->dirty_plot = 1;
+		} else {
+		  	gif->dirty_plot = 0;
+		}
+		gif->dirty_frame = -1;
+	}
+ 
 	/*	Get the start of our frame data and the end of the GIF data
 	*/
 	gif_data = gif->gif_data + gif->frame_pointers[frame];
@@ -543,10 +559,12 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		produce errors.
 	*/
 	frame_data = (unsigned int*)((char *)gif->frame_image + sizeof(osspriteop_header));
-	if ((frame == 0) || (gif->decoded_frame == 0xffffffff)) {
-		memset((char*)frame_data, 0x00, gif->width * gif->height * sizeof(int));
+	if (!clear_image) {
+		if ((frame == 0) || (gif->decoded_frame == 0xffffffff)) {
+			memset((char*)frame_data, 0x00, gif->width * gif->height * sizeof(int));
+		}
+		gif->decoded_frame = frame;
 	}
-	gif->decoded_frame = frame;
 
 	/*	Save the buffer position
 	*/
@@ -555,7 +573,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 	
 	/*	We've got to do this more than one time if we've got multiple images
 	*/
-	gif->background_action = 0;
+	background_action = 0;
 	more_images = 1;
 	while (more_images != 0) {
 	  
@@ -575,12 +593,13 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			/*	Check we've enough data for the extension then header
 			*/
 			if ((gif_end - gif_data) < (int)(extension_size + 13)) return GIF_INSUFFICIENT_FRAME_DATA;
+
 			/*	Graphic control extension - store the frame delay.
 			*/
 			if (gif_data[1] == 0xf9) {
 				flags = gif_data[3];
 				if (flags & 0x01) transparency_index = gif_data[6];
-				gif->background_action = ((flags & 0x1c) >> 2);
+				background_action = ((flags & 0x1c) >> 2);
 				more_images = ((gif_data[4] | (gif_data[5] << 8)) == 0);
 			}
 			/*	Move to the first sub-block
@@ -603,7 +622,6 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		offset_y = gif_data[3] | (gif_data[4] << 8);
 		width = gif_data[5] | (gif_data[6] << 8);
 		height = gif_data[7] | (gif_data[8] << 8);
-//		LOG(("Decoding %ix%i at offset (%i,%i)", width, height, offset_x, offset_y));
 
 		/*	Boundary checking - shouldn't ever happen except unless the data has been
 			modified since initialisation.
@@ -623,76 +641,54 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		gif_data += 10;
 		gif_bytes = (int)(gif_end - gif_data);
 	
-		/*	Initialise our sprite to be totally transparent if we should
-		*/
-//		gif->frame_offset_x = offset_x;
-//		gif->frame_offset_y = offset_y;
-//		gif->frame_image->width = width; 
-//		gif->frame_image->height = height;
-	
 		/*	Set up the colour table
 		*/
 		if (flags & 0x80) {
-//			LOG(("Found local colour table"));
 			if (gif_bytes < (int)(3 * colour_table_size)) return GIF_INSUFFICIENT_FRAME_DATA;
 			colour_table = gif->local_colour_table;
-			for (index = 0; index < colour_table_size; index++) {
-				colour_table[index] = gif_data[0] | (gif_data[1] << 8) |
-					(gif_data[2] << 16) | 0xff000000;
-				gif_data += 3;
+			if (!clear_image) {
+				for (index = 0; index < colour_table_size; index++) {
+					colour_table[index] = gif_data[0] | (gif_data[1] << 8) |
+						(gif_data[2] << 16) | 0xff000000;
+					gif_data += 3;
+				}
+			} else {
+			  	gif_data += 3 * colour_table_size;
 			}
 			gif_bytes = (int)(gif_end - gif_data);
 		} else {
 			colour_table = gif->global_colour_table;
 		}
-		/*	Initialise the LZW decoding
-		*/
-		set_code_size = gif_data[0];
-		gif->buffer_position = (gif_data - gif->gif_data) + 1;
 
-		/*	Set our code variables
+		/*	If we are clearing the image we just clear, if not decode
 		*/
-		code_size = set_code_size + 1;
-		clear_code = (1 << set_code_size);
-		end_code = clear_code + 1;
-		max_code_size = 2 * clear_code;
-		max_code = clear_code + 2;
-		curbit = lastbit = 0;
-		last_byte = 2;
-		get_done = 0;
-		return_clear = 1;
-		stack_pointer = stack;
+		if (!clear_image) {
+		  	/*	Set our dirty status
+		  	*/
+		  	if ((background_action == 2) || (background_action == 3)) {
+		  		gif->dirty_frame = frame;
+		  	}
+		  
+			/*	Initialise the LZW decoding
+			*/
+			set_code_size = gif_data[0];
+			gif->buffer_position = (gif_data - gif->gif_data) + 1;
 
-		/*	Set the transparent colour as transparent
-		*/
-		if (transparency_index >= 0) {
-			transparent_colour = colour_table[transparency_index];
-			colour_table[transparency_index] = 0x00000000;
-		}
+			/*	Set our code variables
+			*/
+			code_size = set_code_size + 1;
+			clear_code = (1 << set_code_size);
+			end_code = clear_code + 1;
+			max_code_size = 2 * clear_code;
+			max_code = clear_code + 2;
+			curbit = lastbit = 0;
+			last_byte = 2;
+			get_done = 0;
+			return_clear = 1;
+			stack_pointer = stack;
 
-		/*	Decompress the data
-		*/
-		if ((gif->background_action == 2) || (gif->background_action == 3)) {
-			frame_data_size = width * height;
-			for (y = 0; y < height; y++) {
-				if (interlace) {
-					decode_y = gif_interlaced_line(height, y) + offset_y;
-				} else {
-			  		decode_y = y + offset_y;
-			  	}
-			  	frame_scanline = frame_data + offset_x + (decode_y * gif->width);
-			  	for (x = 0; x < width; x++) {
-			  	  	if ((colour = gif_read_LZW(gif)) >= 0) {
-			  	  	  	*frame_scanline++ = colour_table[colour];
-					} else {
-						LOG(("%i bytes of %i read", index, frame_data_size));
-						return_value = GIF_INSUFFICIENT_FRAME_DATA;
-						goto gif_decode_frame_exit;
-					}	
-				}
-			}
-		} else {
-			frame_data_size = width * height;
+			/*	Decompress the data
+			*/
 			for (y = 0; y < height; y++) {
 				if (interlace) {
 					decode_y = gif_interlaced_line(height, y) + offset_y;
@@ -708,20 +704,38 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			  	  	  		*frame_scanline++ = colour_table[colour];
 			  	  	  	}
 					} else {
-						LOG(("%i bytes of %i read", index, frame_data_size));
 						return_value = GIF_INSUFFICIENT_FRAME_DATA;
 						goto gif_decode_frame_exit;
 					}	
 				}
-			}	
-		}		  
-gif_decode_frame_exit:
-
-		/*	Unset the transparent colour
-		*/
-		if (transparency_index >= 0) {
-			colour_table[transparency_index] = transparent_colour;
+			}
+		} else {
+		  	/*	Clear our frame
+		  	*/
+		  	if ((background_action == 2) || (background_action == 3)) {
+				for (y = 0; y < height; y++) {
+				  	frame_scanline = frame_data + offset_x + ((offset_y + y) * gif->width);
+				  	memset(frame_scanline, 0x00, width * 4);
+				}
+			}
+			
+			/*	Repeatedly skip blocks until we get a zero block or run out of data
+			*/
+			gif_bytes = gif->buffer_size - gif->buffer_position;
+			gif_data = gif->gif_data + gif->buffer_size;
+			block_size = 0;
+			while (block_size != 1) {
+				/*	Skip the block data
+				*/
+				block_size = gif_data[0] + 1;
+				if ((gif_bytes -= block_size) < 0) {
+					return_value = GIF_INSUFFICIENT_FRAME_DATA;
+					goto gif_decode_frame_exit;
+				}
+				gif_data += block_size;
+			}
 		}
+gif_decode_frame_exit:
 
 		/*	Check for end of data
 		*/
@@ -748,14 +762,6 @@ static unsigned int gif_interlaced_line(unsigned int height, unsigned int y) {
 	if ((y << 2) < (height - 2)) return (y << 2) + 2;
 	y -= ((height + 1) >> 2);
 	return (y << 1) + 1;
-
-/*	if ((y & 7) == 0) return (y >> 3);
-	offset = (height + 7) >> 3;
-	if ((y & 7) == 4) return offset + ((y - 4) >> 3);
-	offset += (height + 3) >> 3;
-	if ((y & 3) == 2) return offset + ((y - 2) >> 2);
-	return offset + ((height + 1) >> 2) + ((y - 1) >> 1);
-*/
 }
 
 /*	Releases any workspace held by the animation

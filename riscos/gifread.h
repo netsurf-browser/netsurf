@@ -63,11 +63,8 @@ typedef struct gif_animation {
 
 	/*	Decoded frame data
 	*/
-//	unsigned int frame_offset_x;
-//	unsigned int frame_offset_y;
-//	unsigned int frame_width;
-//	unsigned int frame_height;
-	unsigned int background_action;
+	unsigned int dirty_plot;	// Frame needs background erasing
+	unsigned int dirty_frame;	// Frame needs erasing before next
 	osspriteop_header *frame_image;
 } gif_animation;
 
