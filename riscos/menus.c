@@ -309,6 +309,7 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 					gui_current_save_type = GUI_SAVE_TEXT;
 					break;
 			}
+			break;
 
 		case 2: /* Save complete */
 			gui_current_save_type = GUI_SAVE_COMPLETE;
