@@ -46,7 +46,8 @@ typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT,
 		GUI_SAVE_LINK_TEXT } gui_save_type;
 extern gui_save_type gui_current_save_type;
 typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
-		GUI_DRAG_SAVE, GUI_DRAG_STATUS_RESIZE } gui_drag_type;
+		GUI_DRAG_SAVE, GUI_DRAG_STATUS_RESIZE,
+		GUI_DRAG_HOTLIST_SELECT, GUI_DRAG_HOTLIST_MOVE } gui_drag_type;
 extern gui_drag_type gui_current_drag_type;
 
 struct gui_window {
@@ -178,9 +179,10 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer);
 void ro_gui_hotlist_init(void);
 void ro_gui_hotlist_show(void);
 void ro_gui_hotlist_add(char *title, struct content *content);
-void ro_gui_hotlist_visited(struct content *content);
 void ro_gui_hotlist_redraw(wimp_draw *redraw);
 void ro_gui_hotlist_click(wimp_pointer *pointer);
+void ro_gui_hotlist_selection_drag_end(wimp_dragged *drag);
+void ro_gui_hotlist_move_drag_end(wimp_dragged *drag);
 
 /* in save.c */
 void ro_gui_save_click(wimp_pointer *pointer);

@@ -751,7 +751,14 @@ void ro_gui_drag_end(wimp_dragged *drag)
 			break;
 
 		case GUI_DRAG_STATUS_RESIZE:
-//			ro_gui_save_drag_end(drag);
+			break;
+
+		case GUI_DRAG_HOTLIST_SELECT:
+			ro_gui_hotlist_selection_drag_end(drag);
+			break;
+
+		case GUI_DRAG_HOTLIST_MOVE:
+			ro_gui_hotlist_move_drag_end(drag);
 			break;
 	}
 }

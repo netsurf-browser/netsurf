@@ -240,6 +240,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			browser_window_set_status(bw, status);
 			browser_window_stop_throbber(bw);
 			history_update(bw->history, c);
+			hotlist_visited(c);
 			break;
 
 		case CONTENT_MSG_ERROR:

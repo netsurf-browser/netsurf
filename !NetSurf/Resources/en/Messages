@@ -68,6 +68,12 @@ HelpAbout:About NetSurf
 
 Themes:Themes
 
+# Hotlist window
+HotlistURL:Address: %s
+HotlistAdd:Added: %s
+HotlistLast:Last visited: %s
+HotlistVisits:Visits: %i
+
 # Download window
 Download:%s of %s  è  %s/s  è  %s remaining
 DownloadU:%s of unknown  è  %s/s  è  %s total

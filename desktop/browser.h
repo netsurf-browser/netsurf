@@ -107,6 +107,9 @@ void gui_redraw_gadget(struct browser_window* bw, struct form_control* g);
 
 bool browser_window_key_press(struct browser_window *bw, char key);
 
+/* In platform specific hotlist.c. */
+void hotlist_visited(struct content *content);
+
 /* In platform specific history.c. */
 struct history *history_create(void);
 void history_add(struct history *history, struct content *content);
