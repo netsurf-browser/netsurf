@@ -124,10 +124,10 @@ static void add_option(xmlNode* n, struct form_control* current_select,
 		const char *text);
 static void box_normalise_block(struct box *block, pool box_pool);
 static void box_normalise_table(struct box *table, pool box_pool);
-void box_normalise_table_row_group(struct box *row_group,
+static void box_normalise_table_row_group(struct box *row_group,
 		unsigned int **row_span, unsigned int *table_columns,
 		pool box_pool);
-void box_normalise_table_row(struct box *row,
+static void box_normalise_table_row(struct box *row,
 		unsigned int **row_span, unsigned int *table_columns,
 		pool box_pool);
 static void box_normalise_inline_container(struct box *cont, pool box_pool);

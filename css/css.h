@@ -538,6 +538,6 @@ colour named_colour(const char *name);
 void css_dump_style(const struct css_style * const style);
 void css_dump_stylesheet(const struct css_stylesheet * stylesheet);
 
-float len(struct css_length * length, struct css_style * style);
+float css_len2px(struct css_length * length, struct css_style * style);
 
 #endif

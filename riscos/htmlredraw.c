@@ -954,7 +954,7 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 				x += ((state.visible.x1 - state.visible.x0) - (image_size.x * 2)) * multiplier;
 				break;
 			case CSS_BACKGROUND_POSITION_LENGTH:
-				x += 2 * len(&box->style->background_position.horz.value.length, box->style) * scale;
+				x += (int)(2. * css_len2px(&box->style->background_position.horz.value.length, box->style) * scale);
 				break;
 			default:
 				break;
@@ -966,7 +966,7 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 				y -= ((state.visible.y1 - state.visible.y0 - toolbar_height) - (image_size.y * 2)) * multiplier;
 				break;
 			case CSS_BACKGROUND_POSITION_LENGTH:
-				y -= 2 * len(&box->style->background_position.vert.value.length, box->style) * scale;
+				y -= (int)(2. * css_len2px(&box->style->background_position.vert.value.length, box->style) * scale);
 				break;
 			default:
 				break;
@@ -984,7 +984,7 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 				x += 2 * (box->width + box->padding[LEFT] + box->padding[RIGHT] - image_size.x) * multiplier;
 				break;
 			case CSS_BACKGROUND_POSITION_LENGTH:
-				x += 2 * len(&box->style->background_position.horz.value.length, box->style) * scale;
+				x += (int)(2. * css_len2px(&box->style->background_position.horz.value.length, box->style) * scale);
 				break;
 			default:
 				break;
@@ -996,7 +996,7 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 				y -= 2 * (box->height + box->padding[TOP] + box->padding[BOTTOM] - image_size.y) * multiplier;
 				break;
 			case CSS_BACKGROUND_POSITION_LENGTH:
-				y -= 2 * len(&box->style->background_position.vert.value.length, box->style) * scale;
+				y -= (int)(2. * css_len2px(&box->style->background_position.vert.value.length, box->style) * scale);
 				break;
 			default:
 				break;

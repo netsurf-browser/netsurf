@@ -307,7 +307,7 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 	/* calculate box width */
 	switch (style->width.width) {
 		case CSS_WIDTH_LENGTH:
-			width = len(&style->width.value.length, style);
+			width = (int)css_len2px(&style->width.value.length, style);
 			break;
 		case CSS_WIDTH_PERCENT:
 			width = available_width * style->width.value.percent / 100;
@@ -321,7 +321,7 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 	/* height */
 	switch (style->height.height) {
 		case CSS_HEIGHT_LENGTH:
-			box->height = len(&style->height.length, style);
+			box->height = (int)css_len2px(&style->height.length, style);
 			break;
 		case CSS_HEIGHT_AUTO:
 		default:
@@ -429,7 +429,7 @@ void layout_float_find_dimensions(int available_width,
 	/* calculate box width */
 	switch (style->width.width) {
 		case CSS_WIDTH_LENGTH:
-			box->width = len(&style->width.value.length, style);
+			box->width = (int)css_len2px(&style->width.value.length, style);
 			break;
 		case CSS_WIDTH_PERCENT:
 			box->width = available_width *
@@ -444,7 +444,7 @@ void layout_float_find_dimensions(int available_width,
 	/* height */
 	switch (style->height.height) {
 		case CSS_HEIGHT_LENGTH:
-			box->height = len(&style->height.length, style);
+			box->height = (int)css_len2px(&style->height.length, style);
 			break;
 		case CSS_HEIGHT_AUTO:
 		default:
@@ -495,7 +495,7 @@ void layout_find_dimensions(int available_width,
 	for (i = 0; i != 4; i++) {
 		switch (style->margin[i].margin) {
 			case CSS_MARGIN_LENGTH:
-				margin[i] = len(&style->margin[i].value.length, style);
+				margin[i] = (int)css_len2px(&style->margin[i].value.length, style);
 				break;
 			case CSS_MARGIN_PERCENT:
 				margin[i] = available_width *
@@ -514,7 +514,7 @@ void layout_find_dimensions(int available_width,
 				break;
 			case CSS_PADDING_LENGTH:
 			default:
-				padding[i] = len(&style->padding[i].value.length, style);
+				padding[i] = (int)css_len2px(&style->padding[i].value.length, style);
 				break;
 		}
 
@@ -523,7 +523,7 @@ void layout_find_dimensions(int available_width,
 			/* spec unclear: following Mozilla */
 			border[i] = 0;
 		else
-			border[i] = len(&style->border[i].width.value, style);
+			border[i] = (int)css_len2px(&style->border[i].width.value, style);
 	}
 }
 
@@ -648,13 +648,13 @@ int line_height(struct css_style *style)
 	       style->line_height.size == CSS_LINE_HEIGHT_PERCENT);
 
 	/* take account of minimum font size option */
-	if ((font_len = len(&style->font_size.value.length, 0)) <
+	if ((font_len = css_len2px(&style->font_size.value.length, 0)) <
 	    ((float)(option_font_min_size * 9.0 / 72.0)))
 		font_len = (float)(option_font_min_size * 9.0 / 72.0);
 
 	switch (style->line_height.size) {
 		case CSS_LINE_HEIGHT_LENGTH:
-			return len(&style->line_height.value.length, style);
+			return (int)css_len2px(&style->line_height.value.length, style);
 
 		case CSS_LINE_HEIGHT_ABSOLUTE:
 			return style->line_height.value.absolute * font_len;
@@ -766,7 +766,7 @@ bool layout_line(struct box *first, int width, int *y,
 		/* calculate box width */
 		switch (b->style->width.width) {
 			case CSS_WIDTH_LENGTH:
-				b->width = len(&b->style->width.value.length,
+				b->width = (int)css_len2px(&b->style->width.value.length,
 						b->style);
 				break;
 			case CSS_WIDTH_PERCENT:
@@ -783,7 +783,7 @@ bool layout_line(struct box *first, int width, int *y,
 		/* height */
 		switch (b->style->height.height) {
 			case CSS_HEIGHT_LENGTH:
-				b->height = len(&b->style->height.length,
+				b->height = (int)css_len2px(&b->style->height.length,
 						b->style);
 				break;
 			case CSS_HEIGHT_AUTO:
@@ -1076,7 +1076,7 @@ int layout_text_indent(struct css_style *style, int width)
 {
 	switch (style->text_indent.size) {
 		case CSS_TEXT_INDENT_LENGTH:
-			return len(&style->text_indent.value.length, style);
+			return (int)css_len2px(&style->text_indent.value.length, style);
 		case CSS_TEXT_INDENT_PERCENT:
 			return width * style->text_indent.value.percent / 100;
 		default:
@@ -1205,7 +1205,7 @@ bool layout_table(struct box *table, int available_width,
 
 	switch (style->width.width) {
 		case CSS_WIDTH_LENGTH:
-			table_width = len(&style->width.value.length, style);
+			table_width = (int)css_len2px(&style->width.value.length, style);
 			auto_width = table_width;
 			break;
 		case CSS_WIDTH_PERCENT:
@@ -1376,7 +1376,7 @@ bool layout_table(struct box *table, int available_width,
 					/* some sites use height="1" or similar to attempt
 					 * to make cells as small as possible, so treat
 					 * it as a minimum */
-					int h = len(&c->style->height.length, c->style);
+					int h = (int)css_len2px(&c->style->height.length, c->style);
 					if (c->height < h)
 						c->height = h;
 				}
@@ -1493,17 +1493,17 @@ bool calculate_widths(struct box *box)
 	if (style) {
 		for (side = 1; side != 5; side += 2) {  /* RIGHT, LEFT */
 			if (style->padding[side].padding == CSS_PADDING_LENGTH)
-				extra_fixed += len(&style->padding[side].value.length,
+				extra_fixed += (int)css_len2px(&style->padding[side].value.length,
 						style);
 			else if (style->padding[side].padding == CSS_PADDING_PERCENT)
 				extra_frac += style->padding[side].value.percent * 0.01;
 
 			if (style->border[side].style != CSS_BORDER_STYLE_NONE)
-				extra_fixed += len(&style->border[side].width.value,
+				extra_fixed += (int)css_len2px(&style->border[side].width.value,
 						style);
 
 			if (style->margin[side].margin == CSS_MARGIN_LENGTH)
-				extra_fixed += len(&style->margin[side].value.length,
+				extra_fixed += (int)css_len2px(&style->margin[side].value.length,
 						style);
 			else if (style->margin[side].margin == CSS_MARGIN_PERCENT)
 				extra_frac += style->margin[side].value.percent * 0.01;
@@ -1545,7 +1545,7 @@ bool calculate_block_widths(struct box *box, int *min, int *max,
 	}
 
 	if (box->style->width.width == CSS_WIDTH_LENGTH) {
-		width = len(&box->style->width.value.length, box->style);
+		width = (int)css_len2px(&box->style->width.value.length, box->style);
 		if (*min < width) *min = width;
 		if (*max < width) *max = width;
 		if (max_sum) *max_sum += width;
@@ -1555,7 +1555,7 @@ bool calculate_block_widths(struct box *box, int *min, int *max,
 			width = box->object->width;
 		else
 			width = box->object->width *
-					(float) len(&box->style->height.length,
+					css_len2px(&box->style->height.length,
 					box->style) / box->object->height;
 		if (*min < width) *min = width;
 		if (*max < width) *max = width;
@@ -1640,7 +1640,7 @@ void calculate_inline_replaced_widths(struct box *box, int *min,
 	int width;
 
 	if (box->style->width.width == CSS_WIDTH_LENGTH) {
-		box->width = len(&box->style->width.value.length, box->style);
+		box->width = (int)css_len2px(&box->style->width.value.length, box->style);
 		*line_max += box->width;
 		if (*min < box->width)
 			*min = box->width;
@@ -1649,7 +1649,7 @@ void calculate_inline_replaced_widths(struct box *box, int *min,
 			width = box->object->width;
 		else
 			width = box->object->width *
-					(float) len(&box->style->height.length,
+					css_len2px(&box->style->height.length,
 					box->style) / box->object->height;
 		if (*min < width) *min = width;
 		if (*max < width) *max = width;
@@ -1756,7 +1756,7 @@ bool calculate_table_widths(struct box *table)
 						cell->style->width.width ==
 						CSS_WIDTH_LENGTH) {
 					col[i].type = COLUMN_WIDTH_FIXED;
-					col[i].width = len(&cell->style->
+					col[i].width = (int)css_len2px(&cell->style->
 							width.value.length,
 							cell->style);
 					continue;
@@ -1812,7 +1812,7 @@ bool calculate_table_widths(struct box *table)
 				}
 
 				if (cell->style->width.width == CSS_WIDTH_LENGTH) {
-					width = len(&cell->style->width.value.length,
+					width = (int)css_len2px(&cell->style->width.value.length,
 							cell->style);
 					if (cell_min < width)
 						cell_min = width;

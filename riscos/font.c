@@ -208,8 +208,8 @@ struct font_data *nsfont_open(struct font_set *set, struct css_style *style)
 	assert(style != NULL);
 
 	if (style->font_size.size == CSS_FONT_SIZE_LENGTH)
-		size = len(&style->font_size.value.length, style) *
-				72.0 / 90.0 * 16;
+		size = (int)(css_len2px(&style->font_size.value.length,
+				style) * 72.0 / 90.0 * 16.);
 	if (size < option_font_min_size * 1.6)
 		size = option_font_min_size * 1.6;
 	if (1600 < size)

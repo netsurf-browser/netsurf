@@ -62,14 +62,13 @@ url_func_result url_normalize(const char *url, char **result)
 	char c;
 	int m;
 	int i;
-	int len;
+	size_t len;
 	bool http = false;
 	regmatch_t match[10];
 
-	(*result) = 0;
+	*result = NULL;
 
-	m = regexec(&url_re, url, 10, match, 0);
-	if (m) {
+	if ((m = regexec(&url_re, url, 10, match, 0)) != NULL) {
 		LOG(("url '%s' failed to match regex", url));
 		return URL_FUNC_FAILED;
 	}
@@ -79,27 +78,24 @@ url_func_result url_normalize(const char *url, char **result)
 	if (match[1].rm_so == -1) {
 		/* scheme missing: add http:// and reparse */
 		LOG(("scheme missing: using http"));
-		(*result) = malloc(strlen(url) + 13);
-		if (!(*result)) {
+		if ((*result = malloc(len + 13)) == NULL) {
 			LOG(("malloc failed"));
 			return URL_FUNC_NOMEM;
 		}
-		strcpy((*result), "http://");
-		strcpy((*result) + 7, url);
-		m = regexec(&url_re, (*result), 10, match, 0);
-		if (m) {
+		strcpy(*result, "http://");
+		strcpy(*result + sizeof("http://")-1, url);
+		if ((m = regexec(&url_re, *result, 10, match, 0)) != NULL) {
 			LOG(("url '%s' failed to match regex", (*result)));
-			free((*result));
+			free(*result);
 			return URL_FUNC_FAILED;
 		}
-		len += 7;
+		len += sizeof("http://")-1;
 	} else {
-		(*result) = malloc(len + 6);
-		if (!(*result)) {
+		if ((*result = malloc(len + 6)) == NULL) {
 			LOG(("strdup failed"));
 			return URL_FUNC_FAILED;
 		}
-		strcpy((*result), url);
+		strcpy(*result, url);
 	}
 
 	/*for (unsigned int i = 0; i != 10; i++) {
@@ -115,9 +111,11 @@ url_func_result url_normalize(const char *url, char **result)
 	if (match[2].rm_so != -1) {
 		for (i = match[2].rm_so; i != match[2].rm_eo; i++)
 			(*result)[i] = tolower((*result)[i]);
-		if (match[2].rm_eo == 4 && (*result)[0] == 'h' &&
-				(*result)[1] == 't' && (*result)[2] == 't' &&
-				(*result)[3] == 'p')
+		if (match[2].rm_eo == 4
+				&& (*result)[0] == 'h'
+				&& (*result)[1] == 't'
+				&& (*result)[2] == 't'
+				&& (*result)[3] == 'p')
 			http = true;
 	}
 
@@ -174,8 +172,7 @@ url_func_result url_normalize(const char *url, char **result)
 		else
 			continue;
 
-		if (m <= 0x20 || strchr(";/?:@&=+$," "<>#%\""
-				"{}|\\^[]`", m)) {
+		if (m <= 0x20 || strchr(";/?:@&=+$," "<>#%\"{}|\\^[]`", m)) {
 			i += 2;
 			continue;
 		}

@@ -948,7 +948,7 @@ bool css_match_detail(const struct css_selector *detail,
 	bool match = false;
 	char *s = 0;
 	char *space, *word;
-	unsigned int length;
+	size_t length;
 
 	switch (detail->type) {
 		case CSS_SELECTOR_ID:
@@ -2396,12 +2396,12 @@ unsigned int css_hash(const char *s, int length)
  * Convert a struct css_length to pixels.
  */
 
-float len(struct css_length * length, struct css_style * style)
+float css_len2px(struct css_length * length, struct css_style * style)
 {
 	assert(!((length->unit == CSS_UNIT_EM || length->unit == CSS_UNIT_EX) && style == 0));
 	switch (length->unit) {
-		case CSS_UNIT_EM: return length->value * len(&style->font_size.value.length, 0);
-		case CSS_UNIT_EX: return length->value * len(&style->font_size.value.length, 0) * 0.6;
+		case CSS_UNIT_EM: return length->value * css_len2px(&style->font_size.value.length, 0);
+		case CSS_UNIT_EX: return length->value * css_len2px(&style->font_size.value.length, 0) * 0.6;
 		case CSS_UNIT_PX: return length->value;
 		case CSS_UNIT_IN: return length->value * 90.0;
 		case CSS_UNIT_CM: return length->value * 35.0;

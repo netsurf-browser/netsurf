@@ -863,11 +863,10 @@ bool fetch_can_fetch(const char *url)
 {
 	unsigned int i;
 	const char *semi;
-	unsigned int len;
+	size_t len;
 	curl_version_info_data *data;
 
-	semi = strchr(url, ':');
-	if (!semi)
+	if ((semi = strchr(url, ':')) == NULL)
 		return false;
 	len = semi - url;
 
