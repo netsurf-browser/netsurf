@@ -54,6 +54,8 @@ static void download_window_callback(fetch_msg msg, void *p, const char *data,
 		unsigned long size);
 static void browser_window_mouse_click_html(struct browser_window *bw,
 		browser_mouse_click click, int x, int y);
+static void browser_window_mouse_drag_html(struct browser_window *bw,
+		int x, int y);
 static void browser_radio_set(struct content *content,
 		struct form_control *radio);
 static void browser_redraw_box(struct content *c, struct box *box);
@@ -104,6 +106,7 @@ void browser_window_create(const char *url, struct browser_window *clone,
 	bw->throbbing = false;
 	bw->caret_callback = NULL;
 	bw->frag_id = NULL;
+	bw->drag_type = DRAGGING_NONE;
 	bw->scrolling_box = NULL;
 	bw->referer = NULL;
 	if ((bw->window = gui_create_browser_window(bw, clone)) == NULL) {
@@ -427,7 +430,7 @@ void browser_window_update(struct browser_window *bw,
 
 	/* if frag_id exists, then try to scroll to it */
 	if (bw->frag_id && bw->current_content->type == CONTENT_HTML) {
-		if ((pos = box_find_by_id(bw->current_content->data.html.layout->children, bw->frag_id)) != 0) {
+		if ((pos = box_find_by_id(bw->current_content->data.html.layout, bw->frag_id)) != 0) {
 			box_coords(pos, &x, &y);
 			gui_window_set_scroll(bw->window, x, y);
 		}
@@ -628,7 +631,6 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
 	int box_x = 0, box_y = 0;
 	int gadget_box_x = 0, gadget_box_y = 0;
-	int scroll_x, scroll_y;
 	struct box *gadget_box = 0;
 	struct content *c = bw->current_content;
 	struct box *box;
@@ -638,39 +640,14 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 	url_func_result res;
 
 	if (click == BROWSER_MOUSE_DRAG) {
-		/* scroll box with overflow: scroll */
-		box = bw->scrolling_box;
-		if (!box)
-			return;
-		if (x == bw->scrolling_last_x && y == bw->scrolling_last_y)
-			return;
-
-		scroll_x = box->scroll_x - (x - bw->scrolling_last_x);
-		scroll_y = box->scroll_y - (y - bw->scrolling_last_y);
-		bw->scrolling_last_x = x;
-		bw->scrolling_last_y = y;
-
-		if (scroll_x < box->descendant_x0)
-			scroll_x = box->descendant_x0;
-		else if (box->descendant_x1 - box->width < scroll_x)
-			scroll_x = box->descendant_x1 - box->width;
-		if (scroll_y < box->descendant_y0)
-			scroll_y = box->descendant_y0;
-		else if (box->descendant_y1 - box->height < scroll_y)
-			scroll_y = box->descendant_y1 - box->height;
-
-		if (scroll_x == box->scroll_x && scroll_y == box->scroll_y)
-			return;
-		box->scroll_x = scroll_x;
-		box->scroll_y = scroll_y;
-
-		browser_redraw_box(bw->current_content, bw->scrolling_box);
+		browser_window_mouse_drag_html(bw, x, y);
 		return;
-	}
+        }
 
+	bw->drag_type = DRAGGING_NONE;
 	bw->scrolling_box = NULL;
 	/* search the box tree for a link, imagemap, form control, or
-	 * box with overflow: scroll */
+	 * box with scrollbars */
 	box = c->data.html.layout;
 	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
 			NULL) {
@@ -704,15 +681,26 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 		if (box->style && box->style->cursor != CSS_CURSOR_UNKNOWN)
 			pointer = get_pointer_shape(box->style->cursor);
 
-		if (box->type == BOX_BLOCK && box->style &&
+		if ((box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
+				box->type == BOX_FLOAT_LEFT ||
+				box->type == BOX_FLOAT_RIGHT) &&
+				box->style &&
 				box->style->overflow == CSS_OVERFLOW_SCROLL) {
-			bw->scrolling_box = box;
-			bw->scrolling_last_x = x;
-			bw->scrolling_last_y = y;
+			if (box_x + box->padding[LEFT] + box->width < x) {
+				/* vertical scrollbar */
+				bw->drag_type = DRAGGING_VSCROLL;
+				bw->scrolling_box = box;
+				bw->scrolling_last_x = x;
+				bw->scrolling_last_y = y;
+			}
 		}
 	}
 
-	if (gadget) {
+	if (bw->drag_type == DRAGGING_VSCROLL ||
+			bw->drag_type == DRAGGING_HSCROLL) {
+		status = messages_get("Scrollbar");
+
+	} else if (gadget) {
 		switch (gadget->type) {
 		case GADGET_SELECT:
 			status = messages_get("FormSelect");
@@ -832,6 +820,43 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 
 
 /**
+ * Handle mouse drags in an HTML content window.
+ *
+ * \param  bw     browser window
+ * \param  x      coordinate of mouse
+ * \param  y      coordinate of mouse
+ */
+
+void browser_window_mouse_drag_html(struct browser_window *bw,
+		int x, int y)
+{
+	int scroll_y;
+	struct box *box;
+
+	if (bw->drag_type == DRAGGING_VSCROLL) {
+		box = bw->scrolling_box;
+		assert(box);
+		if (y == bw->scrolling_last_y)
+			return;
+
+		scroll_y = box->scroll_y + (y - bw->scrolling_last_y);
+		bw->scrolling_last_y = y;
+
+		if (scroll_y < box->descendant_y0)
+			scroll_y = box->descendant_y0;
+		else if (box->descendant_y1 - box->height < scroll_y)
+			scroll_y = box->descendant_y1 - box->height;
+
+		if (scroll_y == box->scroll_y)
+			return;
+		box->scroll_y = scroll_y;
+
+		browser_redraw_box(bw->current_content, bw->scrolling_box);
+	}
+}
+
+
+/**
  * Set a radio form control and clear the others in the group.
  *
  * \param  content  content containing the form, of type CONTENT_TYPE
@@ -886,8 +911,10 @@ void browser_redraw_box(struct content *c, struct box *box)
 
 	data.redraw.x = x;
 	data.redraw.y = y;
-	data.redraw.width = box->width;
-	data.redraw.height = box->height;
+	data.redraw.width = box->padding[LEFT] + box->width +
+			box->padding[RIGHT];
+	data.redraw.height = box->padding[TOP] + box->height +
+			box->padding[BOTTOM];
 
 	data.redraw.full_redraw = true;
 

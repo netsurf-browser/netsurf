@@ -25,8 +25,7 @@ struct gui_window;
 struct history;
 
 /** Browser window data. */
-struct browser_window
-{
+struct browser_window {
 	/** Page currently displayed, or 0. Must have status READY or DONE. */
 	struct content *current_content;
 	/** Page being loaded, or 0. */
@@ -51,8 +50,11 @@ struct browser_window
 	/** Start time of fetching loading_content. */
 	clock_t time0;
 
-	/** Fragment identifier for current_content */
+	/** Fragment identifier for current_content. */
 	char *frag_id;
+
+	/** Current drag status. */
+	enum { DRAGGING_NONE, DRAGGING_VSCROLL, DRAGGING_HSCROLL } drag_type;
 
 	/** Box currently being scrolled, or 0. */
 	struct box *scrolling_box;
