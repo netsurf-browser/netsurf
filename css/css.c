@@ -403,7 +403,7 @@ bool css_convert(struct content *c, int width, int height)
 		token_data.length = current - token_text;
 		css_parser_(parser, token, token_data, &param);
 		if (param.syntax_error) {
-			LOG(("syntax error near offset %ti (%s)",
+			LOG(("syntax error near offset %i (%s)",
 					token_text - source_data,
 					c->url));
 			param.syntax_error = false;
@@ -496,6 +496,7 @@ struct css_node * css_new_node(struct content *stylesheet,
 	node->style = 0;
 	node->specificity = 0;
 	node->stylesheet = stylesheet;
+
 	return node;
 }
 
@@ -1217,7 +1218,7 @@ void css_parse_property_list(struct content *c, struct css_style * style,
 		token_data.length = current - token_text;
 		css_parser_(parser, token, token_data, &param);
 		if (param.syntax_error) {
-			LOG(("syntax error near offset %ti",
+			LOG(("syntax error near offset %i",
 					token_text - source_data));
 			param.syntax_error = false;
 		} else if (param.memory_error) {
