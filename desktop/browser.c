@@ -176,9 +176,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		return;
 	}
 
-	browser_window_stop(bw);
-	browser_window_remove_caret(bw);
-
 	/* check we can actually handle this URL */
 	if (!fetch_can_fetch(url2)) {
 		gui_launch_url(url2);
@@ -210,6 +207,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 			return;
 		}
 	}
+
+	browser_window_stop(bw);
+	browser_window_remove_caret(bw);
 
 	url_content = url_store_find(url2);
 	if (url_content)
