@@ -103,7 +103,7 @@ CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
 	`pkg-config --cflags gtk+-2.0` `xml2-config --cflags`
 
 # targets
-riscos: clean $(RUNIMAGE)
+riscos: $(RUNIMAGE)
 $(RUNIMAGE) : $(OBJS_RISCOS)
 	$(CC) -o $@ $(LDFLAGS_RISCOS) $^
 riscos_small: u!RunImage,ff8
@@ -169,6 +169,6 @@ clean :
 		depend css/css_enum.c css/css_enum.h \
 		css/parser.c css/parser.h css/scanner.c css/scanner.h
 
-#ifneq ($(OS),riscos)
-#include depend
-#endif
+ifneq ($(OS),riscos)
+include depend
+endif
