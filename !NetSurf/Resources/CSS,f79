@@ -64,7 +64,7 @@ dd { display: block; padding-left: 1em; margin-bottom: 0.3em; }
 dir { display: block; padding-left: 0.5em; }
 menu { display: block; padding-left: 0.5em; }
 
-table { display: table; }
+table { display: table; border-spacing: 1px; }
 table[align=left] { float: left; }
 table[align=center] { margin-left: auto; margin-right: auto; text-align: left; }
 table[align=right] { float: right; text-align: left; }
