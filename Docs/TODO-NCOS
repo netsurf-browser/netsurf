@@ -1,0 +1,17 @@
+$Id: TODO-NCOS,v 0.0 2004/07/19 18:06:25 atimmins Exp $
+
+TODO-General for NCNetSurf.
+
+This file documents general things which need doing.
+
+
+Tidy up 'kiosk' theme support (right now it's a bodge!)
+Tidy up templates to give better layout on widescreen displays
+Finish keyboard based page navigation support (this will also be munged into NetSurf)
+Unset unsued, and claim used NCFresco & NCBrowse system variables
+Make compatible with default NC applications such as !Sennen & NCConfig (This will be semicomplete when the NCFresco & NCBrowse system variables are claimed!)
+Create fancy HTML based pages for the following:
+	* Welcome
+	* Help
+	* About / Credits
+	* SmartCard information (not required but Acorn's look awful!)
