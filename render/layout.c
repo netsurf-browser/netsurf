@@ -880,7 +880,7 @@ void calculate_inline_container_widths(struct box *box)
 							word = space + 1,
 							space = strchr(word, ' ')) {
 						width = font_width(child->font, word,
-								(unsigned int) (space - word));
+								(unsigned int) (space - word - 1));
 						if (min < width) min = width;
 					}
 					width = font_width(child->font, word, strlen(word));
