@@ -404,8 +404,13 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		                break;
 		        case CSS_TEXT_TRANSFORM_CAPITALIZE:
 		                for (ch=0; ch!=box->length; ch++) {
-		                    if (ch == 0) {
-		                      box->text[ch] = toupper(box->text[ch]);
+		                    if (ch == 0) { /* first char in box */
+		                      if (inline_container && (inline_container->last->text && inline_container->last->space)) { /* end of previous box */
+		                        box->text[ch] = toupper(box->text[ch]);
+		                      }
+		                      else if (inline_container && (inline_container->last->prev && inline_container->last->prev->text && inline_container->last->prev->space)) { /* end of box before previous box */
+		                        box->text[ch] = toupper(box->text[ch]);
+		                      }
 		                    }
 		                    else if (!((box->text[ch-1] > 64 && box->text[ch-1] < 91) ||
 		                             (box->text[ch-1] > 96 && box->text[ch-1] < 123))) {
@@ -475,9 +480,13 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		                        break;
 		                case CSS_TEXT_TRANSFORM_CAPITALIZE:
 		                        for (ch=0; ch!=box->length; ch++) {
-		                             if (ch == 0) {
-		                                 box->text[ch] =
-		                                      toupper(box->text[ch]);
+		                             if (ch == 0) { /* first char in box */
+		                               if (inline_container && (inline_container->last->text && inline_container->last->space)) { /* end of previous box */
+		                                 box->text[ch] = toupper(box->text[ch]);
+		                               }
+		                               else if (inline_container && (inline_container->last->prev && inline_container->last->prev->text && inline_container->last->prev->space)) { /* end of box before previous box */
+		                                 box->text[ch] = toupper(box->text[ch]);
+		                               }
 		                             }
 		                             else if (!((box->text[ch-1] > 64 && box->text[ch-1] < 91) ||
 		                                      (box->text[ch-1] > 96 && box->text[ch-1] < 123))) {
@@ -1268,6 +1277,8 @@ void box_dump(struct box * box, unsigned int depth)
 	}
 	if (box->text)
 		fprintf(stderr, "'%.*s' ", (int) box->length, box->text);
+	if (box->space)
+	        fprintf(stderr, "space ");
 	if (box->object)
 		fprintf(stderr, "(object '%s') ", box->object->url);
 	if (box->style)
