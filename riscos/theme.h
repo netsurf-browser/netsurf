@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2005 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -81,7 +81,8 @@ struct toolbar {
 };
 
 struct theme_descriptor {
-	char *filename;				/**< theme filename (leaf only) */
+  	char *leafname;				/**< theme leafname */
+	char *filename;				/**< theme filename */
 	char name[32];				/**< theme name */
 	char author[64];			/**< theme author */
 	int browser_background;			/**< background colour of browser toolbar */
@@ -99,7 +100,7 @@ struct theme_descriptor {
 
 void ro_gui_theme_initialise(void);
 void ro_gui_theme_finalise(void);
-struct theme_descriptor *ro_gui_theme_find(const char *filename);
+struct theme_descriptor *ro_gui_theme_find(const char *leafname);
 struct theme_descriptor *ro_gui_theme_get_available(void);
 bool ro_gui_theme_read_file_header(struct theme_descriptor *descriptor,
 		struct theme_file_header *file_header);

@@ -678,7 +678,7 @@ void ro_gui_dialog_config_set(void) {
 		option_theme = NULL;
 	}
 	if (theme_choice) {
-		option_theme = strdup(theme_choice->filename);
+		option_theme = strdup(theme_choice->leafname);
 		ro_gui_theme_apply(theme_choice);
 	}
 

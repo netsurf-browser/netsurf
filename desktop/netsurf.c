@@ -31,7 +31,6 @@ static void netsurf_init(int argc, char** argv);
 static void netsurf_poll(void);
 static void netsurf_exit(void);
 static void lib_init(void);
-static void netsurf_cleanup(void);
 
 
 /**
@@ -74,8 +73,6 @@ void netsurf_init(int argc, char** argv)
 				"machine <%s>", utsname.sysname,
 				utsname.nodename, utsname.release,
 				utsname.version, utsname.machine));
-
-	atexit(netsurf_cleanup);
 	lib_init();
 	url_init();
 	gui_init(argc, argv);
@@ -121,12 +118,4 @@ static void lib_init(void)
 		die("Failed to add encoding alias");
 }
 
-/**
- * Ensures NetSurf exits cleanly.
- */
-static void netsurf_cleanup(void)
-{
-#ifdef riscos
-	ro_gui_buffer_close();
-#endif
-}
+

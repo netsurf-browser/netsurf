@@ -87,8 +87,6 @@ static char theme_separator_name[] = "separator\0";
  * Initialise the theme handler
  */
 void ro_gui_theme_initialise(void) {
-	/*	Get an initial theme list
-	*/
 	theme_descriptors = ro_gui_theme_get_available();
 }
 
@@ -97,8 +95,6 @@ void ro_gui_theme_initialise(void) {
  * Finalise the theme handler
  */
 void ro_gui_theme_finalise(void) {
-	/*	Free all closed descriptors
-	*/
 	ro_gui_theme_close(theme_current, false);
 	ro_gui_theme_free(theme_descriptors, true);
 }
@@ -111,23 +107,19 @@ void ro_gui_theme_finalise(void) {
  * to ro_gui_theme_get_available() unless it has been opened using
  * ro_gui_theme_open().
  *
- * \param filename  the filename of the theme_descriptor to return
+ * \param leafname  the filename of the theme_descriptor to return
  * \return the requested theme_descriptor, or NULL if not found
  */
-struct theme_descriptor *ro_gui_theme_find(const char *filename) {
+struct theme_descriptor *ro_gui_theme_find(const char *leafname) {
 	struct theme_descriptor *descriptor;
 
-	/*	Check for bad filename
-	*/
-	if (!filename) return NULL;
+	if (!leafname)
+		return NULL;
 
-	/*	Work through until we find our required filename
-	*/
-	descriptor = theme_descriptors;
-	while (descriptor) {
-		if (!strcmp(filename, descriptor->filename)) return descriptor;
-		descriptor = descriptor->next;
-	}
+	for (descriptor = theme_descriptors; descriptor; descriptor = descriptor->next)
+		if ((!strcmp(leafname, descriptor->leafname)) ||
+				(!strcmp(leafname, descriptor->filename))) /* legacy (preserve options) */
+			return descriptor;
 	return NULL;
 }
 
@@ -231,7 +223,7 @@ static void ro_gui_theme_get_available_in_dir(const char *directory) {
 
 		/*	Only process files
 		*/
-		if ((info.obj_type == fileswitch_IS_FILE) && (!ro_gui_theme_find(pathname))) {
+		if ((info.obj_type == fileswitch_IS_FILE) && (!ro_gui_theme_find(info.name))) {
 
 			/*	Get the header
 			*/
@@ -280,6 +272,7 @@ static void ro_gui_theme_get_available_in_dir(const char *directory) {
 				return;
 			}
 			strcpy(current->filename, pathname);
+			current->leafname = current->filename + strlen(directory) + 1;
 
 			/*	Link in our new descriptor
 			*/
@@ -1326,7 +1319,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 		if (toolbar->reformat_buttons) {
 			extent.x1 = 16384;
 			extent.y0 = 0;
-			extent.y1 = toolbar->height;
+			extent.y1 = toolbar->height - 2;
 			xwimp_set_extent(toolbar->toolbar_handle, &extent);
 			if ((parent) && (old_height != toolbar->height)) {
 				ro_gui_theme_attach_toolbar(toolbar, parent);

@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -40,6 +41,7 @@
 #include "netsurf/desktop/tree.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
+#include "netsurf/riscos/buffer.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
@@ -145,7 +147,8 @@ struct ro_gui_poll_block {
 };
 struct ro_gui_poll_block *ro_gui_poll_queued_blocks = 0;
 
-
+static void gui_signal(int sig);
+static void ro_gui_cleanup(void);
 static void ro_gui_choose_language(void);
 static void ro_gui_check_fonts(void);
 static void ro_gui_sprites_init(void);
@@ -180,13 +183,20 @@ static char *ro_path_to_url(const char *path);
 
 void gui_init(int argc, char** argv)
 {
-	char theme_path[256];
 	char path[40];
 	os_error *error;
 	int length;
 	struct theme_descriptor *descriptor = NULL;
 
 	xhourglass_start(1);
+
+	atexit(ro_gui_cleanup);
+	signal(SIGABRT, gui_signal);
+	signal(SIGFPE, gui_signal);
+	signal(SIGILL, gui_signal);
+	signal(SIGINT, gui_signal);
+	signal(SIGSEGV, gui_signal);
+	signal(SIGTERM, gui_signal);
 
 	/* create our choices directories */
 #ifndef NCOS
@@ -209,6 +219,9 @@ void gui_init(int argc, char** argv)
 #else
 	options_read("<User$Path>.Choices.NetSurf.Choices");
 #endif
+	if (!option_theme)
+		option_theme = strdup("Aletheia"); /* default for no options */
+
 	ro_gui_choose_language();
 	
 	url_store_load("Choices:WWW.NetSurf.URL");
@@ -280,11 +293,8 @@ void gui_init(int argc, char** argv)
 	*/
 	ro_gui_theme_initialise();
 	descriptor = ro_gui_theme_find(option_theme);
-	if (!descriptor) {
-		snprintf(theme_path, 256, "%s.Resources.Theme", NETSURF_DIR);
-		theme_path[255] = '\0';
-		descriptor = ro_gui_theme_find(theme_path);
-	}
+	if (!descriptor)
+		descriptor = ro_gui_theme_find("Aletheia");
 	ro_gui_theme_apply(descriptor);
 
 	/* We don't create an Iconbar icon on NCOS */
@@ -554,6 +564,24 @@ void gui_quit(void)
 	xwimp_close_down(task_handle);
 	free(default_stylesheet_url);
 	free(adblock_stylesheet_url);
+	xhourglass_off();
+}
+
+
+/**
+ * Handles a signal
+ */
+static void gui_signal(int sig) {
+	ro_gui_cleanup();	
+	raise(sig);
+}
+
+
+/**
+ * Ensures the gui exits cleanly.
+ */
+void ro_gui_cleanup(void) {
+	ro_gui_buffer_close();
 	xhourglass_off();
 }
 
