@@ -9,11 +9,11 @@
 #ifndef _NETSURF_DESKTOP_GUI_H_
 #define _NETSURF_DESKTOP_GUI_H_
 
-typedef enum { GUI_BROWSER_WINDOW } gui_window_type;
+typedef enum { GUI_BROWSER_WINDOW, GUI_DOWNLOAD_WINDOW } gui_window_type;
 typedef enum { SAFE, UNSAFE } gui_safety;
 
-struct ro_gui_window;
-typedef struct ro_gui_window gui_window;
+struct gui_window;
+typedef struct gui_window gui_window;
 
 #include "netsurf/desktop/browser.h"
 
@@ -29,7 +29,8 @@ struct gui_message
 
 typedef struct gui_message gui_message;
 
-gui_window* create_gui_browser_window(struct browser_window* bw);
+gui_window *gui_create_browser_window(struct browser_window *bw);
+gui_window *gui_create_download_window(struct content *content);
 void gui_window_destroy(gui_window* g);
 void gui_window_show(gui_window* g);
 void gui_window_hide(gui_window* g);
@@ -43,6 +44,10 @@ void gui_window_set_status(gui_window* g, const char* text);
 void gui_window_set_title(gui_window* g, char* title);
 
 void gui_window_message(gui_window* g, gui_message* msg);
+
+void gui_download_window_update_status(gui_window *g);
+void gui_download_window_done(gui_window *g);
+void gui_download_window_error(gui_window *g, const char *error);
 
 void gui_init(int argc, char** argv);
 void gui_multitask(void);

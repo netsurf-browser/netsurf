@@ -23,9 +23,10 @@ extern wimp_menu *current_menu, *iconbar_menu, *browser_menu,
 extern int current_menu_x, current_menu_y, iconbar_menu_height;
 extern struct gui_gadget *current_gadget;
 extern const char *HOME_URL;
+extern gui_window *window_list;
 
 
-struct ro_gui_window
+struct gui_window
 {
   gui_window_type type;
 
@@ -36,6 +37,13 @@ struct ro_gui_window
       int toolbar_width;
       struct browser_window* bw;
     } browser;
+    struct {
+      wimp_w window;
+      struct content *content;
+      bits file_type;
+      char sprite_name[20];
+      char path[256];
+    } download;
   } data;
 
   char status[256];
@@ -50,6 +58,7 @@ struct ro_gui_window
   enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION } drag_status;
   int old_width;
 };
+
 
 /* in gui.c */
 void ro_gui_copy_selection(gui_window* g);
@@ -66,6 +75,9 @@ void ro_gui_dialog_click(wimp_pointer *pointer);
 void ro_gui_dialog_close(wimp_w close);
 void ro_gui_redraw_config_th(wimp_draw* redraw);
 void ro_gui_theme_menu_selection(char *theme);
+
+/* in download.c */
+void ro_gui_download_init(void);
 
 /* icon numbers */
 #define ICON_CONFIG_SAVE 0
@@ -99,5 +111,11 @@ void ro_gui_theme_menu_selection(char *theme);
 #define ICON_CONFIG_TH_PREVIEW 7
 #define ICON_CONFIG_TH_GET 8
 #define ICON_CONFIG_TH_MANAGE 9
+
+#define ICON_DOWNLOAD_URL 0
+#define ICON_DOWNLOAD_STATUS 1
+#define ICON_DOWNLOAD_ICON 2
+#define ICON_DOWNLOAD_PATH 3
+#define ICON_DOWNLOAD_ABORT 4
 
 #endif

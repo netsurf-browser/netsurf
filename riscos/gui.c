@@ -37,7 +37,7 @@
 const char *__dynamic_da_name = "NetSurf";
 
 char *NETSURF_DIR;
-static gui_window *window_list = 0;
+gui_window *window_list = 0;
 
 int gadget_subtract_x;
 int gadget_subtract_y;
@@ -170,7 +170,7 @@ int window_y_units(int scr_units, wimp_window_state* win)
 }
 
 
-gui_window* create_gui_browser_window(struct browser_window* bw)
+gui_window *gui_create_browser_window(struct browser_window *bw)
 {
   struct wimp_window window;
 
@@ -915,8 +915,11 @@ void gui_init(int argc, char** argv)
   LOG(("Using theme '%s' - from '%s'",theme_fname, OPTIONS.theme));
   current_theme = ro_theme_create(theme_fname);
 
+  wimp_open_template("<NetSurf$Dir>.Resources.Templates");
   ro_gui_dialog_init();
+  ro_gui_download_init();
   ro_gui_menus_init();
+  wimp_close_template();
 }
 
 void ro_gui_throb(void)

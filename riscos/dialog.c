@@ -25,7 +25,7 @@
 
 
 wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
-	dialog_config_prox, dialog_config_th;
+	dialog_config_prox, dialog_config_th, download_template;
 wimp_menu* theme_menu = NULL;
 
 static struct ro_choices choices;
@@ -62,14 +62,12 @@ static void set_icon_string_i(wimp_w w, wimp_i i, int num);
 
 void ro_gui_dialog_init(void)
 {
-	wimp_open_template("<NetSurf$Dir>.Resources.Templates");
 	dialog_info = ro_gui_dialog_create("info");
 	dialog_saveas = ro_gui_dialog_create("saveas");
 	dialog_config = ro_gui_dialog_create("config");
 	dialog_config_br = ro_gui_dialog_create("config_br");
 	dialog_config_prox = ro_gui_dialog_create("config_prox");
 	dialog_config_th = ro_gui_dialog_create("config_th");
-	wimp_close_template();
 
 	options_to_ro(&OPTIONS, &choices);
 	set_browser_choices(&choices.browser);

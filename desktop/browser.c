@@ -35,6 +35,8 @@ static void browser_window_follow_link(struct browser_window* bw,
 		unsigned long click_x, unsigned long click_y, int click_type);
 static void browser_window_callback(content_msg msg, struct content *c,
 		void *p1, void *p2, const char *error);
+static void download_window_callback(content_msg msg, struct content *c,
+		void *p1, void *p2, const char *error);
 static void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct gui_gadget* group);
 static void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct gui_gadget* g,
 		unsigned long x, unsigned long y);
@@ -166,7 +168,7 @@ struct browser_window* create_browser_window(int flags, int width, int height)
 
   bw->url = NULL;
 
-  bw->window = create_gui_browser_window(bw);
+  bw->window = gui_create_browser_window(bw);
 
   return bw;
 }
@@ -274,9 +276,20 @@ void browser_window_callback(content_msg msg, struct content *c,
   {
     case CONTENT_MSG_LOADING:
       if (c->type == CONTENT_OTHER) {
+        gui_window *download_window;
         /* TODO: implement downloads */
         /* we probably want to open a new window with a save icon and progress bar,
          * and transfer content_loading to it */
+        assert(bw->loading_content == c);
+
+        /* create download window and add content to it */
+        download_window = gui_create_download_window(c);
+        content_add_user(c, download_window_callback, download_window, 0);
+
+        /* remove content from browser window */
+        bw->loading_content = 0;
+        content_remove_user(c, browser_window_callback, bw, 0);
+        browser_window_stop_throbber(bw);
       }
       break;
 
@@ -345,6 +358,37 @@ void browser_window_callback(content_msg msg, struct content *c,
     default:
       assert(0);
   }
+}
+
+void download_window_callback(content_msg msg, struct content *c,
+		void *p1, void *p2, const char *error)
+{
+	gui_window *download_window = p1;
+
+	switch (msg) {
+		case CONTENT_MSG_STATUS:
+			gui_download_window_update_status(download_window);
+			break;
+
+		case CONTENT_MSG_DONE:
+			gui_download_window_done(download_window);
+			break;
+
+		case CONTENT_MSG_ERROR:
+			gui_download_window_error(download_window, error);
+			break;
+
+		case CONTENT_MSG_READY:
+			/* not possible for CONTENT_OTHER */
+			assert(0);
+			break;
+
+		case CONTENT_MSG_LOADING:
+		case CONTENT_MSG_REDIRECT:
+			/* not possible at this point, handled above */
+			assert(0);
+			break;
+	}
 }
 
 void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct gui_gadget* group)
