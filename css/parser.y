@@ -70,7 +70,8 @@ selector_list(A) ::= selector_list(B) COMMA selector(C).
 selector(A) ::= simple_selector(B).
 		{ A = B; }
 selector(A) ::= selector(B) combinator(C) simple_selector(D).
-		{ D->right = B; D->comb = C; A = D; }
+		{ D->right = B; D->comb = C; A = D;
+		A->specificity += B->specificity; }
 
 combinator(A) ::= .
 		{ A = COMB_ANCESTOR; }
@@ -80,7 +81,8 @@ combinator(A) ::= GT.
 		{ A = COMB_PARENT; }
 
 simple_selector(A) ::= element_name(B) detail_list(C).
-		{ A = css_new_node(NODE_SELECTOR, B, C, 0); }
+		{ A = css_new_node(NODE_SELECTOR, B, C, 0);
+		A->specificity = (B ? 1 : 0) + (C ? C->specificity : 0); }
 
 element_name(A) ::= .
 		{ A = 0; }
@@ -90,23 +92,32 @@ element_name(A) ::= IDENT(B).
 detail_list(A) ::= .
 		{ A = 0; }
 detail_list(A) ::= HASH(B) detail_list(C).
-		{ A = css_new_node(NODE_ID, B, 0, 0); A->next = C; }
+		{ A = css_new_node(NODE_ID, B, 0, 0);
+		A->specificity = 0x10000 + (C ? C->specificity : 0); A->next = C; }
 detail_list(A) ::= DOT IDENT(B) detail_list(C).
-		{ A = css_new_node(NODE_CLASS, B, 0, 0); A->next = C; }
+		{ A = css_new_node(NODE_CLASS, B, 0, 0);
+		A->specificity = 0x100 + (C ? C->specificity : 0); A->next = C; }
 detail_list(A) ::= LBRAC IDENT(B) RBRAC detail_list(C).
-		{ A = css_new_node(NODE_ATTRIB, B, 0, 0); A->next = C; }
+		{ A = css_new_node(NODE_ATTRIB, B, 0, 0);
+		A->specificity = 0x100 + (C ? C->specificity : 0); A->next = C; }
 detail_list(A) ::= LBRAC IDENT(B) EQUALS IDENT(C) RBRAC detail_list(D).
-		{ A = css_new_node(NODE_ATTRIB_EQ, B, 0, 0); A->data2 = C; A->next = D; }
+		{ A = css_new_node(NODE_ATTRIB_EQ, B, 0, 0); A->data2 = C;
+		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) EQUALS STRING(C) RBRAC detail_list(D).
-		{ A = css_new_node(NODE_ATTRIB_EQ, B, 0, 0); A->data2 = C; A->next = D; }
+		{ A = css_new_node(NODE_ATTRIB_EQ, B, 0, 0); A->data2 = css_unquote(C);
+		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) INCLUDES IDENT(C) RBRAC detail_list(D).
-		{ A = css_new_node(NODE_ATTRIB_INC, B, 0, 0); A->data2 = C; A->next = D; }
+		{ A = css_new_node(NODE_ATTRIB_INC, B, 0, 0); A->data2 = C;
+		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) INCLUDES STRING(C) RBRAC detail_list(D).
-		{ A = css_new_node(NODE_ATTRIB_INC, B, 0, 0); A->data2 = C; A->next = D; }
+		{ A = css_new_node(NODE_ATTRIB_INC, B, 0, 0); A->data2 = css_unquote(C);
+		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) DASHMATCH IDENT(C) RBRAC detail_list(D).
-		{ A = css_new_node(NODE_ATTRIB_DM, B, 0, 0); A->data2 = C; A->next = D; }
+		{ A = css_new_node(NODE_ATTRIB_DM, B, 0, 0); A->data2 = C;
+		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 detail_list(A) ::= LBRAC IDENT(B) DASHMATCH STRING(C) RBRAC detail_list(D).
-		{ A = css_new_node(NODE_ATTRIB_DM, B, 0, 0); A->data2 = C; A->next = D; }
+		{ A = css_new_node(NODE_ATTRIB_DM, B, 0, 0); A->data2 = css_unquote(C);
+		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
 /* TODO: pseudo */
 
 declaration_list(A) ::= .
@@ -148,7 +159,7 @@ any(A) ::= PERCENTAGE(B).
 any(A) ::= DIMENSION(B).
 		{ A = css_new_node(NODE_DIMENSION, B, 0, 0); }
 any(A) ::= STRING(B).
-		{ A = css_new_node(NODE_STRING, B, 0, 0); }
+		{ A = css_new_node(NODE_STRING, css_unquote(B), 0, 0); }
 any(A) ::= DELIM(B).
 		{ A = css_new_node(NODE_DELIM, B, 0, 0); }
 any(A) ::= URI(B).

@@ -485,32 +485,12 @@ struct css_style * box_get_style(struct content ** stylesheet,
 	css_cascade(style, style_new);
 	free(style_new);
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "align"))) {
-		if (strcmp((const char *) n->name, "table") == 0 ||
-		    strcmp((const char *) n->name, "img") == 0) {
-			if (stricmp(s, "left") == 0) style->float_ = CSS_FLOAT_LEFT;
-			else if (stricmp(s, "right") == 0) style->float_ = CSS_FLOAT_RIGHT;
-		} else {
-			if (stricmp(s, "left") == 0) style->text_align = CSS_TEXT_ALIGN_LEFT;
-			else if (stricmp(s, "center") == 0) style->text_align = CSS_TEXT_ALIGN_CENTER;
-			else if (stricmp(s, "right") == 0) style->text_align = CSS_TEXT_ALIGN_RIGHT;
-		}
-		xmlFree(s);
-	}
-
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bgcolor"))) {
 		unsigned int r, g, b;
 		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 			style->background_color = (b << 16) | (g << 8) | r;
 		else if (s[0] != '#')
 			style->background_color = named_colour(s);
-		xmlFree(s);
-	}
-
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "clear"))) {
-		if (stricmp(s, "all") == 0) style->clear = CSS_CLEAR_BOTH;
-		else if (stricmp(s, "left") == 0) style->clear = CSS_CLEAR_LEFT;
-		else if (stricmp(s, "right") == 0) style->clear = CSS_CLEAR_RIGHT;
 		xmlFree(s);
 	}
 

@@ -33,7 +33,7 @@ struct font_size_entry {
 };
 
 
-static int compare_selectors(struct node *n0, struct node *n1);
+static int compare_selectors(const struct node *n0, const struct node *n1);
 static int parse_length(struct css_length * const length,
 		const struct node * const v, bool non_negative);
 static colour parse_colour(const struct node * const v);
@@ -110,8 +110,9 @@ void css_add_ruleset(struct content *c,
 		struct node *selector,
 		struct node *declaration)
 {
+	bool found;
 	struct css_stylesheet *stylesheet = c->data.css.css;
-	struct node *n, *sel, *next_sel;
+	struct node *n, *sel, *next_sel, *prev;
 	struct css_style *style;
 	unsigned int hash;
 
@@ -139,18 +140,33 @@ void css_add_ruleset(struct content *c,
 			continue;
 
 		/* check if this selector is already present */
+		found = false;
+		prev = 0;
 		hash = css_hash(sel->data);
-		for (n = stylesheet->rule[hash]; n != 0; n = n->next)
-			if (compare_selectors(sel, n))
+		/* selectors are ordered by specificity in the hash chain */
+		for (n = stylesheet->rule[hash];
+				n && n->specificity < sel->specificity;
+				n = n->next)
+			prev = n;
+		for ( ;	n && n->specificity == sel->specificity;
+				n = n->next) {
+			prev = n;
+			if (compare_selectors(sel, n)) {
+				found = true;
 				break;
-		if (n == 0) {
+			}
+		}
+		if (!found) {
 			/* not present: construct a new struct css_style */
 			LOG(("constructing new style"));
 			style = xcalloc(1, sizeof(*style));
 			memcpy(style, &css_empty_style, sizeof(*style));
 			sel->style = style;
-			sel->next = stylesheet->rule[hash];
-			stylesheet->rule[hash] = sel;
+			sel->next = n;
+			if (prev)
+				prev->next = sel;
+			else
+				stylesheet->rule[hash] = sel;
 			c->size += sizeof(*style);
 		} else {
 			/* already exists: augument existing style */
@@ -182,7 +198,7 @@ void css_add_declarations(struct css_style *style, struct node *declaration)
 }
 
 
-int compare_selectors(struct node *n0, struct node *n1)
+int compare_selectors(const struct node *n0, const struct node *n1)
 {
 	struct node *m0, *m1;
 	unsigned int count0 = 0, count1 = 0;

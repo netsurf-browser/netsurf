@@ -148,6 +148,7 @@ struct node {
 	struct node *next;
 	combinator comb;
 	struct css_style *style;
+	unsigned long specificity;
 };
 
 #include "netsurf/css/scanner.h"
@@ -186,6 +187,7 @@ void css_destroy(struct content *c);
 struct node * css_new_node(node_type type, char *data,
 		struct node *left, struct node *right);
 void css_free_node(struct node *node);
+char *css_unquote(char *s);
 void css_atimport(struct content *c, struct node *node);
 void css_add_ruleset(struct content *c,
 		struct node *selector,

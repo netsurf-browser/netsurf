@@ -207,6 +207,7 @@ struct node * css_new_node(node_type type, char *data,
 	node->next = 0;
 	node->comb = COMB_NONE;
 	node->style = 0;
+	node->specificity = 0;
 	return node;
 }
 
@@ -223,6 +224,14 @@ void css_free_node(struct node *node)
 	if (node->data != 0)
 		free(node->data);
 	free(node);
+}
+
+char *css_unquote(char *s)
+{
+	unsigned int len = strlen(s);
+	memmove(s, s + 1, len);
+	s[len - 2] = 0;
+	return s;
 }
 
 
@@ -260,8 +269,7 @@ void css_atimport(struct content *c, struct node *node)
 			break;
 		case NODE_STRING:
 			LOG(("STRING '%s'", node->data));
-			url = xstrdup(node->data + 1);
-			*(url + strlen(url) - 1) = 0;
+			url = xstrdup(node->data);
 			break;
 		default:
 			return;
@@ -372,6 +380,12 @@ void css_get_style(struct content *css, xmlNode *element,
 	struct node *rule;
 	unsigned int hash, i;
 
+	/* imported stylesheets */
+	for (i = 0; i != css->data.css.import_count; i++)
+		if (css->data.css.import_content[i] != 0)
+			css_get_style(css->data.css.import_content[i],
+					element, style);
+
 	/* match rules which end with the same element */
 	hash = css_hash((char *) element->name);
 	for (rule = stylesheet->rule[hash]; rule; rule = rule->next)
@@ -382,12 +396,6 @@ void css_get_style(struct content *css, xmlNode *element,
 	for (rule = stylesheet->rule[0]; rule; rule = rule->next)
 		if (css_match_rule(rule, element))
 			css_merge(style, rule->style);
-
-	/* imported stylesheets */
-	for (i = 0; i != css->data.css.import_count; i++)
-		if (css->data.css.import_content[i] != 0)
-			css_get_style(css->data.css.import_content[i],
-					element, style);
 }
 
 
@@ -411,14 +419,25 @@ bool css_match_rule(struct node *rule, xmlNode *element)
 		switch (detail->type) {
 			case NODE_ID:
 				s = (char *) xmlGetProp(element, (const xmlChar *) "id");
-				if (s && strcasecmp(detail->data, s) == 0)
+				if (s && strcasecmp(detail->data + 1, s) == 0)
 					match = true;
 				break;
 
 			case NODE_CLASS:
 				s = (char *) xmlGetProp(element, (const xmlChar *) "class");
-				if (s && strcasecmp(detail->data, s) == 0)
-					match = true;
+				if (s) {
+					word = s;
+					do {
+						space = strchr(word, ' ');
+						if (space)
+							*space = 0;
+						if (strcasecmp(word, detail->data) == 0) {
+							match = true;
+							break;
+						}
+						word = space + 1;
+					} while (space);
+				}
 				break;
 
 			case NODE_ATTRIB:
@@ -449,8 +468,8 @@ bool css_match_rule(struct node *rule, xmlNode *element)
 							match = true;
 							break;
 						}
-						word = space;
-					} while (word);
+						word = space + 1;
+					} while (space);
 				}
 				break;
 
@@ -619,6 +638,7 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 				}
 				fprintf(stderr, " ");
 			}
+			fprintf(stderr, "%lx ", r->specificity);
 			css_dump_style(r->style);
 			fprintf(stderr, "\n");
 		}
