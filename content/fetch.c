@@ -14,6 +14,10 @@
  * Active fetches are held in the linked list fetch_list. There may be at most
  * one fetch in progress from each host. Any further fetches are queued until
  * the previous one ends.
+ *
+ * Invariant: only the fetch at the head of each queue is in progress, ie.
+ *        queue_prev == 0  <=>  curl_handle != 0
+ *   and  queue_prev != 0  <=>  curl_handle == 0.
  */
 
 #include <assert.h>
@@ -57,7 +61,8 @@ struct fetch {
 	char *realm;            /**< HTTP Auth Realm */
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
 	struct HttpPost *post_multipart;	/**< Multipart post data, or 0. */
-	struct fetch *queue;	/**< Next fetch for this host. */
+	struct fetch *queue_prev;	/**< Previous fetch for this host. */
+	struct fetch *queue_next;	/**< Next fetch for this host. */
 	struct fetch *prev;	/**< Previous active fetch in ::fetch_list. */
 	struct fetch *next;	/**< Next active fetch in ::fetch_list. */
 };
@@ -184,7 +189,8 @@ struct fetch * fetch_start(char *url, char *referer,
 		fetch->post_urlenc = xstrdup(post_urlenc);
 	else if (post_multipart)
 		fetch->post_multipart = fetch_post_convert(post_multipart);
-	fetch->queue = 0;
+	fetch->queue_prev = 0;
+	fetch->queue_next = 0;
 	fetch->prev = 0;
 	fetch->next = 0;
 
@@ -201,8 +207,11 @@ struct fetch * fetch_start(char *url, char *referer,
 			/* fetch from this host in progress: queue the new fetch */
 			LOG(("queueing"));
 			fetch->curl_handle = 0;
-			fetch->queue = host_fetch->queue;
-			host_fetch->queue = fetch;
+			/* queue at end */
+			for (; host_fetch->queue_next; host_fetch = host_fetch->queue_next)
+				;
+			fetch->queue_prev = host_fetch;
+			host_fetch->queue_next = fetch;
 			return fetch;
 		}
 	}
@@ -329,9 +338,9 @@ void fetch_abort(struct fetch *f)
 		assert(codem == CURLM_OK);
 	}
 
-	if (f->queue != 0) {
+	if (f->curl_handle && f->queue_next) {
 		/* start a queued fetch for this host, reusing the handle for this host */
-		struct fetch *fetch = f->queue;
+		struct fetch *fetch = f->queue_next;
 		CURLcode code;
 		CURLMcode codem;
 
@@ -342,6 +351,7 @@ void fetch_abort(struct fetch *f)
 		if (fetch_list != 0)
 			fetch_list->prev = fetch;
 		fetch_list = fetch;
+		fetch->queue_prev = 0;
 
 		fetch->curl_handle = f->curl_handle;
 		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_URL, fetch->url);
@@ -391,8 +401,14 @@ void fetch_abort(struct fetch *f)
 		assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
 
 	} else {
-		curl_easy_cleanup(f->curl_handle);
-		curl_slist_free_all(f->headers);
+		if (f->curl_handle)
+			curl_easy_cleanup(f->curl_handle);
+		if (f->headers)
+			curl_slist_free_all(f->headers);
+		if (f->queue_prev)
+			f->queue_prev->queue_next = f->queue_next;
+		if (f->queue_next)
+			f->queue_next->queue_prev = f->queue_prev;
 	}
 
 	xfree(f->url);
