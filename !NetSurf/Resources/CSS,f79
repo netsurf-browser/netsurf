@@ -138,7 +138,7 @@ input[type=button], input[type=reset], input[type=submit], button {
 	background-color: #d9d9d9; color: #000; width: auto;
 	border-width: medium; border-color: #d9d9d9;
 	border-style: outset; height: auto; text-align: center;}
-input[type=image] { background-color: #ddd; color: #000; width: auto;
+input[type=image] { background-color: transparent; color: #000; width: auto;
 	height: auto; }
 input[type=checkbox], input[type=radio] { background-color: transparent;
 	padding: 0 0.1em; border: 0; width: 1em; height: 1em; }
