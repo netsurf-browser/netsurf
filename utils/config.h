@@ -10,6 +10,8 @@
 
 /* This file toggles build options on and off.
  * Simply undefine a symbol to turn the relevant feature off.
+ *
+ * IF ADDING A FEATURE HERE, ADD IT TO Docs/Doxyfile LINE 892 AS WELL.
  */
 
 /* HTTP POST support */
