@@ -109,15 +109,13 @@ struct columns {
 	unsigned int num_rows;
 };
 
-static struct box * convert_xml_to_box(xmlNode * n, struct content *content,
-		struct css_style * parent_style,
-		struct box * parent, struct box *inline_container,
+static bool convert_xml_to_box(xmlNode *n, struct content *content,
+		struct css_style *parent_style,
+		struct box *parent, struct box **inline_container,
 		struct box_status status);
-static struct css_style * box_get_style(struct content *c,
-		struct content ** stylesheet,
-		unsigned int stylesheet_count,
-		struct css_style * parent_style,
-		xmlNode * n);
+struct css_style * box_get_style(struct content *c,
+		struct css_style *parent_style,
+		xmlNode *n);
 static void box_text_transform(char *s, unsigned int len,
 		css_text_transform tt);
 static struct box_result box_a(xmlNode *n, struct box_status *status,
@@ -220,6 +218,13 @@ void box_add_child(struct box * parent, struct box * child)
 
 /**
  * Create a box tree node.
+ *
+ * \param  style     style for the box (not copied)
+ * \param  href      href for the box (copied), or 0
+ * \param  title     title for the box (copied), or 0
+ * \param  id        id for the box (copied), or 0
+ * \param  box_pool  pool to allocate box from
+ * \return  allocated and initialised box, or 0 on memory exhaustion
  */
 
 struct box * box_create(struct css_style * style,
@@ -228,9 +233,31 @@ struct box * box_create(struct css_style * style,
 {
 	unsigned int i;
 	struct box *box;
+	char *href1 = 0;
+	char *title1 = 0;
+	char *id1 = 0;
 
-	if ((box = pool_alloc(box_pool, sizeof (struct box))) == NULL)
-		return NULL;
+	if (href)
+		href1 = strdup(href);
+	if (title)
+		title1 = strdup(title);
+	if (id)
+		id1 = strdup(id);
+	if ((href && !href1) || (title && !title1) || (id && !id1)) {
+		free(href1);
+		free(title1);
+		free(id1);
+		return 0;
+	}
+
+	box = pool_alloc(box_pool, sizeof (struct box));
+	if (!box) {
+		free(href1);
+		free(title1);
+		free(id1);
+		return 0;
+	}
+
 	box->type = BOX_INLINE;
 	box->style = style;
 	box->x = box->y = 0;
@@ -248,8 +275,8 @@ struct box * box_create(struct css_style * style,
 	box->space = 0;
 	box->clone = 0;
 	box->style_clone = 0;
-	box->href = href ? xstrdup(href) : NULL;
-	box->title = title ? xstrdup(title) : NULL;
+	box->href = href1;
+	box->title = title1;
 	box->columns = 1;
 	box->rows = 1;
 	box->start_column = 0;
@@ -264,7 +291,7 @@ struct box * box_create(struct css_style * style,
 	box->font = NULL;
 	box->gadget = NULL;
 	box->usemap = NULL;
-	box->id = id ? xstrdup(id) : NULL;
+	box->id = id1;
 	box->background = NULL;
 	box->object = NULL;
 	box->object_params = NULL;
@@ -291,13 +318,18 @@ void box_insert_sibling(struct box *box, struct box *new_box)
 
 
 /**
- * make a box tree with style data from an xml tree
+ * Construct a box tree from an xml tree and stylesheets.
+ *
+ * \param  n  xml tree
+ * \param  c  content of type CONTENT_HTML to construct box tree in
+ * \return  true on success, false on memory exhaustion
  */
 
-void xml_to_box(xmlNode *n, struct content *c)
+bool xml_to_box(xmlNode *n, struct content *c)
 {
 	struct box root;
 	struct box_status status = {c, 0, 0, 0, 0};
+	struct box *inline_container = 0;
 
 	assert(c->type == CONTENT_HTML);
 
@@ -311,37 +343,31 @@ void xml_to_box(xmlNode *n, struct content *c)
 	root.float_children = NULL;
 	root.next_float = NULL;
 
-	c->data.html.style = xcalloc(1, sizeof(struct css_style));
+	c->data.html.style = malloc(sizeof (struct css_style));
+	if (!c->data.html.style)
+		return false;
 	memcpy(c->data.html.style, &css_base_style, sizeof(struct css_style));
 	c->data.html.style->font_size.value.length.value =
 			option_font_size * 0.1;
 	c->data.html.fonts = nsfont_new_set();
+	if (!c->data.html.fonts) {
+		free(c->data.html.style);
+		return false;
+	}
 
 	c->data.html.object_count = 0;
-	c->data.html.object = xcalloc(0, sizeof(*c->data.html.object));
+	c->data.html.object = 0;
 
-	convert_xml_to_box(n, c, c->data.html.style, &root, 0, status);
+	convert_xml_to_box(n, c, c->data.html.style, &root, &inline_container,
+			status);
 	box_normalise_block(&root, c->data.html.box_pool);
 
 	c->data.html.layout = root.children;
 	c->data.html.layout->parent = NULL;
+
+	return true;
 }
 
-
-/**
- * make a box tree with style data from an xml tree
- *
- * arguments:
- * 	n		xml tree
- * 	content		content structure
- * 	parent_style	style at this point in xml tree
- * 	parent		parent in box tree
- * 	inline_container	current inline container box, or 0
- * 	status		status for forms etc.
- *
- * returns:
- * 	updated current inline container
- */
 
 /* mapping from CSS display to box type
  * this table must be in sync with css/css_enums */
@@ -364,82 +390,96 @@ static const box_type box_map[] = {
 	BOX_INLINE /*CSS_DISPLAY_TABLE_CAPTION,*/
 };
 
-struct box * convert_xml_to_box(xmlNode * n, struct content *content,
-		struct css_style * parent_style,
-		struct box * parent, struct box *inline_container,
+
+/**
+ * Recursively construct a box tree from an xml tree and stylesheets.
+ *
+ * \param  n             fragment of xml tree
+ * \param  content       content of type CONTENT_HTML that is being processed
+ * \param  parent_style  style at this point in xml tree
+ * \param  parent        parent in box tree
+ * \param  inline_container  current inline container box, or 0, updated to
+ *                       new current inline container on exit
+ * \param  status        status for forms etc.
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool convert_xml_to_box(xmlNode *n, struct content *content,
+		struct css_style *parent_style,
+		struct box *parent, struct box **inline_container,
 		struct box_status status)
 {
-	struct box * box = 0;
-	struct box * inline_container_c;
-	struct css_style * style = 0;
-	xmlNode * c;
-	char * s;
-	xmlChar * title0;
-	char * title = 0, *id = 0;
+	struct box *box = 0;
+	struct box *inline_container_c;
+	struct css_style *style = 0;
+	xmlNode *c;
+	char *s;
+	xmlChar *title0, *id0;
+	char *title = 0, *id = 0;
 	bool convert_children = true;
 	char *href_in = status.href;
 
-	assert(n != 0 && parent_style != 0 && parent != 0);
-	LOG(("node %p, node type %i", n, n->type));
+	assert(n);
+	assert(parent_style);
+	assert(parent);
+	assert(inline_container);
 
 	if (n->type == XML_ELEMENT_NODE) {
 		struct element_entry *element;
 
-#ifndef NDEBUG
-		xmlElemDump(stderr, n->doc, n);
-		fprintf(stderr "\n");
-#endif
-
 		gui_multitask();
 
-		style = box_get_style(content, content->data.html.stylesheet_content,
-				content->data.html.stylesheet_count, parent_style, n);
-		LOG(("display: %s", css_display_name[style->display]));
+		style = box_get_style(content, parent_style, n);
 		if (style->display == CSS_DISPLAY_NONE) {
 			free(style);
-			LOG(("node %p, node type %i END", n, n->type));
 			goto end;
 		}
 		/* floats are treated as blocks */
-		if (style->float_ == CSS_FLOAT_LEFT || style->float_ == CSS_FLOAT_RIGHT)
+		if (style->float_ == CSS_FLOAT_LEFT ||
+				style->float_ == CSS_FLOAT_RIGHT)
 			if (style->display == CSS_DISPLAY_INLINE)
 				style->display = CSS_DISPLAY_BLOCK;
 
 		/* extract title attribute, if present */
-		if ((title0 = xmlGetProp(n, (const xmlChar *) "title")) != NULL) {
+		if ((title0 = xmlGetProp(n, (const xmlChar *) "title"))) {
 			status.title = title = squash_whitespace(title0);
 			xmlFree(title0);
+			if (!title)
+				goto no_memory;
 		}
 
 		/* extract id attribute, if present */
-		if ((title0 = xmlGetProp(n, (const xmlChar *) "id")) != NULL) {
-			status.id = id = squash_whitespace(title0);
-			xmlFree(title0);
+		if ((id0 = xmlGetProp(n, (const xmlChar *) "id"))) {
+			status.id = id = squash_whitespace(id0);
+			xmlFree(id0);
+			if (!id)
+				goto no_memory;
 		}
 
 		/* special elements */
 		element = bsearch((const char *) n->name, element_table,
 				ELEMENT_TABLE_COUNT, sizeof(element_table[0]),
 				(int (*)(const void *, const void *)) strcmp);
-		if (element != 0) {
+		if (element) {
 			/* a special convert function exists for this element */
-			struct box_result res = element->convert(n, &status, style);
+			struct box_result res =
+					element->convert(n, &status, style);
 			box = res.box;
 			convert_children = res.convert_children;
-			if (res.memory_error) {
-				/** \todo  handle memory exhaustion */
-			}
-			if (box == 0) {
+			if (res.memory_error)
+				goto no_memory;
+			if (!box) {
 				/* no box for this element */
-				assert(convert_children == 0);
+				assert(!convert_children);
 				free(style);
-				LOG(("node %p, node type %i END", n, n->type));
 				goto end;
 			}
 		} else {
 			/* general element */
 			box = box_create(style, status.href, title, id,
 					content->data.html.box_pool);
+			if (!box)
+				goto no_memory;
 		}
 		/* set box type from style if it has not been set already */
 		if (box->type == BOX_INLINE)
@@ -450,7 +490,6 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 
 	} else {
 		/* not an element or text node: ignore it (eg. comment) */
-		LOG(("node %p, node type %i END", n, n->type));
 		goto end;
 	}
 
@@ -460,28 +499,38 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			(parent_style->white_space == CSS_WHITE_SPACE_NORMAL ||
 			 parent_style->white_space == CSS_WHITE_SPACE_NOWRAP)) {
 		char *text = squash_whitespace(n->content);
+		if (!text)
+			goto no_memory;
 
 		/* if the text is just a space, combine it with the preceding
 		 * text node, if any */
 		if (text[0] == ' ' && text[1] == 0) {
-			if (inline_container != 0) {
-				assert(inline_container->last != 0);
-				inline_container->last->space = 1;
+			if (*inline_container) {
+				assert((*inline_container)->last != 0);
+				(*inline_container)->last->space = 1;
 			}
 			free(text);
 			goto end;
 		}
 
-		if (inline_container == 0) {
+		if (!*inline_container) {
 			/* this is the first inline node: make a container */
-			inline_container = box_create(0, 0, 0, 0,
+			*inline_container = box_create(0, 0, 0, 0,
 					content->data.html.box_pool);
-			inline_container->type = BOX_INLINE_CONTAINER;
-			box_add_child(parent, inline_container);
+			if (!*inline_container)	{
+				free(text);
+				goto no_memory;
+			}
+			(*inline_container)->type = BOX_INLINE_CONTAINER;
+			box_add_child(parent, *inline_container);
 		}
 
 		box = box_create(parent_style, status.href, title, id,
 				content->data.html.box_pool);
+		if (!box) {
+			free(text);
+			goto no_memory;
+		}
 		box->text = text;
 		box->style_clone = 1;
 		box->length = strlen(text);
@@ -496,21 +545,21 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		if (parent_style->white_space == CSS_WHITE_SPACE_NOWRAP) {
 			unsigned int i;
 			for (i = 0; i != box->length && text[i] != ' '; ++i)
-				/* no body */;
+				; /* no body */
 			if (i != box->length) {
 				/* there is a space in text block and we
 				 * want all spaces to be converted to NBSP
 				 */
-				char *org_text = box->text;
-				org_text[box->length] = '\0';
-				box->text = cnv_space2nbsp(org_text);
-				free(org_text);
-				box->length = strlen(box->text);
+				box->text = cnv_space2nbsp(text);
+				if (!box->text) {
+					free(text);
+					goto no_memory;
+				}
 			}
 		}
 		box->font = nsfont_open(content->data.html.fonts, box->style);
 
-		box_add_child(inline_container, box);
+		box_add_child(*inline_container, box);
 		if (box->text[0] == ' ') {
 			box->length--;
 			memmove(box->text, &box->text[1], box->length);
@@ -524,6 +573,8 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		char *text = cnv_space2nbsp(n->content);
 		char *current;
 		assert(parent_style->white_space == CSS_WHITE_SPACE_PRE);
+		if (!text)
+			goto no_memory;
 		if (parent_style->text_transform != CSS_TEXT_TRANSFORM_NONE)
 			box_text_transform(text, strlen(text),
 					parent_style->text_transform);
@@ -532,28 +583,42 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			size_t len = strcspn(current, "\r\n");
 			char old = current[len];
 			current[len] = 0;
-			if (!inline_container) {
-				inline_container = box_create(0, 0, 0, 0,
+			if (!*inline_container) {
+				*inline_container = box_create(0, 0, 0, 0,
 						content->data.html.box_pool);
-				inline_container->type = BOX_INLINE_CONTAINER;
-				box_add_child(parent, inline_container);
+				if (!*inline_container) {
+					free(text);
+					goto no_memory;
+				}
+				(*inline_container)->type =
+						BOX_INLINE_CONTAINER;
+				box_add_child(parent, *inline_container);
 			}
 			box = box_create(parent_style, status.href, title,
 					id, content->data.html.box_pool);
+			if (!box) {
+				free(text);
+				goto no_memory;
+			}
 			box->type = BOX_INLINE;
 			box->style_clone = 1;
-			box->text = xstrdup(current);
+			box->text = strdup(current);
+			if (!box->text) {
+				free(text);
+				goto no_memory;
+			}
 			box->length = strlen(box->text);
-			box->font = nsfont_open(content->data.html.fonts, box->style);
-			box_add_child(inline_container, box);
+			box->font = nsfont_open(content->data.html.fonts,
+					box->style);
+			box_add_child(*inline_container, box);
 			current[len] = old;
 			current += len;
 			if (current[0] == '\r' && current[1] == '\n') {
 				current += 2;
-				inline_container = 0;
+				*inline_container = 0;
 			} else if (current[0] != 0) {
 				current++;
-				inline_container = 0;
+				*inline_container = 0;
 			}
 		} while (*current);
 		free(text);
@@ -565,49 +630,57 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			style->float_ == CSS_FLOAT_RIGHT ||
 			box->type == BOX_BR) {
 		/* this is an inline box */
-		if (inline_container == 0) {
+		if (!*inline_container) {
 			/* this is the first inline node: make a container */
-			inline_container = box_create(0, 0, 0, 0,
+			*inline_container = box_create(0, 0, 0, 0,
 					content->data.html.box_pool);
-			inline_container->type = BOX_INLINE_CONTAINER;
-			box_add_child(parent, inline_container);
+			if (!*inline_container)
+				goto no_memory;
+			(*inline_container)->type = BOX_INLINE_CONTAINER;
+			box_add_child(parent, *inline_container);
 		}
 
 		if (box->type == BOX_INLINE || box->type == BOX_BR) {
 			/* inline box: add to tree and recurse */
-			box_add_child(inline_container, box);
+			box_add_child(*inline_container, box);
 			if (convert_children) {
 				for (c = n->children; c != 0; c = c->next)
-					inline_container = convert_xml_to_box(c, content, style,
-							parent, inline_container,
-							status);
+					if (!convert_xml_to_box(c, content,
+							style, parent,
+							inline_container,
+							status))
+						goto no_memory;
 			}
-			LOG(("node %p, node type %i END", n, n->type));
 			goto end;
 		} else if (box->type == BOX_INLINE_BLOCK) {
 			/* inline block box: add to tree and recurse */
-			box_add_child(inline_container, box);
+			box_add_child(*inline_container, box);
 			if (convert_children) {
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
-					inline_container_c = convert_xml_to_box(c, content, style,
-							box, inline_container_c,
-							status);
+					if (!convert_xml_to_box(c, content,
+							style, box,
+							&inline_container_c,
+							status))
+						goto no_memory;
 			}
-			LOG(("node %p, node type %i END", n, n->type));
 			goto end;
 		} else {
-			/* float: insert a float box between the parent and current node */
-			assert(style->float_ == CSS_FLOAT_LEFT || style->float_ == CSS_FLOAT_RIGHT);
-			LOG(("float"));
+			/* float: insert a float box between the parent and
+			 * current node */
+			assert(style->float_ == CSS_FLOAT_LEFT ||
+					style->float_ == CSS_FLOAT_RIGHT);
 			parent = box_create(0, status.href, title, id,
 					content->data.html.box_pool);
+			if (!parent)
+				goto no_memory;
 			if (style->float_ == CSS_FLOAT_LEFT)
 				parent->type = BOX_FLOAT_LEFT;
 			else
 				parent->type = BOX_FLOAT_RIGHT;
-			box_add_child(inline_container, parent);
-			if (box->type == BOX_INLINE || box->type == BOX_INLINE_BLOCK)
+			box_add_child(*inline_container, parent);
+			if (box->type == BOX_INLINE ||
+					box->type == BOX_INLINE_BLOCK)
 				box->type = BOX_BLOCK;
 		}
 	}
@@ -619,13 +692,13 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 	if (convert_children) {
 		inline_container_c = 0;
 		for (c = n->children; c != 0; c = c->next)
-			inline_container_c = convert_xml_to_box(c, content, style,
-					box, inline_container_c,
-					status);
+			if (!convert_xml_to_box(c, content, style,
+					box, &inline_container_c, status))
+				goto no_memory;
 	}
 	if (style->float_ == CSS_FLOAT_NONE)
 		/* new inline container unless this is a float */
-		inline_container = 0;
+		*inline_container = 0;
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "colspan")) != NULL) {
 		box->columns = strtol(s, NULL, 10);
@@ -652,17 +725,24 @@ end:
 	if (box && box->style && box->style->background_image.type ==
 			CSS_BACKGROUND_IMAGE_URI) {
 		char *url = strdup(box->style->background_image.uri);
-		if (!url) {
-			/** \todo  handle this */
-			return inline_container;
-		}
+		if (!url)
+			return false;
 		/* start fetch */
 		html_fetch_object(content, url, box, image_types,
 				content->available_width, 1000, true);
 	}
 
-	LOG(("node %p, node type %i END", n, n->type));
-	return inline_container;
+	return true;
+
+no_memory:
+	free(title);
+	free(id);
+	if (!href_in)
+		xmlFree(status.href);
+	if (style && !box)
+		free(style);
+
+	return false;
 }
 
 
@@ -676,15 +756,16 @@ end:
  */
 
 struct css_style * box_get_style(struct content *c,
-		struct content ** stylesheet,
-		unsigned int stylesheet_count, struct css_style * parent_style,
-		xmlNode * n)
+		struct css_style *parent_style,
+		xmlNode *n)
 {
 	struct css_style * style = xcalloc(1, sizeof(struct css_style));
 	struct css_style style_new;
 	char * s;
 	unsigned int i;
 	url_func_result res;
+	struct content **stylesheet = c->data.html.stylesheet_content;
+	unsigned int stylesheet_count = c->data.html.stylesheet_count;
 
 	memcpy(style, parent_style, sizeof(struct css_style));
 	memcpy(&style_new, &css_blank_style, sizeof(struct css_style));
@@ -820,7 +901,7 @@ struct css_style * box_get_style(struct content *c,
 				(const xmlChar *) "cellspacing"))) {
 			if (!strrchr(s, '%')) {		/* % not implemented */
 				int value = atoi(s);
-				if (0 < value) {
+				if (0 <= value) {
 					style->border_spacing.border_spacing =
 						CSS_BORDER_SPACING_LENGTH;
 					style->border_spacing.horz.unit =
@@ -2271,7 +2352,7 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
 		if (res != URL_FUNC_OK || strcasecmp(url, status->content->data.html.base_url) == 0) {
 			free(po);
 			xmlFree(s);
-			return (struct box_result) {box, true, true};
+			return (struct box_result) {0, true, true};
 		}
 		po->data = strdup(s);
 		LOG(("object '%s'", po->data));
@@ -2405,7 +2486,7 @@ struct box_result box_embed(xmlNode *n, struct box_status *status,
 		if (res != URL_FUNC_OK || strcasecmp(url, status->content->data.html.base_url) == 0) {
 			free(po);
 			xmlFree(s);
-			return (struct box_result) {box, false, true};
+			return (struct box_result) {0, false, true};
 		}
 		LOG(("embed '%s'", url));
 		po->data = strdup(s);
@@ -2585,7 +2666,7 @@ struct box_result box_iframe(xmlNode *n, struct box_status *status,
 		if (res != URL_FUNC_OK || strcasecmp(url, status->content->data.html.base_url) == 0) {
 			free(po);
 			xmlFree(s);
-			return (struct box_result) {box, false, true};
+			return (struct box_result) {0, false, true};
 		}
 		LOG(("embed '%s'", url));
 		po->data = strdup(s);
@@ -2872,9 +2953,9 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 				object_style->width.width = CSS_WIDTH_LENGTH;
 				object_style->width.value.length.unit =
 						CSS_UNIT_PX;
-  				object_style->width.value.length.value =
-  						object_width;
-  			}
+				object_style->width.value.length.value =
+						object_width;
+			}
 
 			object_box = box_create(object_style, 0, 0, 0,
 					status->content->data.html.box_pool);

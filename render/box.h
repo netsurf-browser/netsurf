@@ -234,7 +234,7 @@ struct column {
 #define UNKNOWN_MAX_WIDTH INT_MAX
 
 
-void xml_to_box(xmlNode *n, struct content *c);
+bool xml_to_box(xmlNode *n, struct content *c);
 void box_dump(struct box *box, unsigned int depth);
 struct box * box_create(struct css_style *style,
 		const char *href, const char *title,
