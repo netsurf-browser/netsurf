@@ -77,6 +77,8 @@ static struct box *box_input_text(xmlNode *n, struct status *status,
 		struct css_style *style, bool password, bool file);
 static struct result box_button(xmlNode *n, struct status *status,
 		struct css_style *style);
+static struct result box_frameset(xmlNode *n, struct status *status,
+		struct css_style *style);
 static void add_option(xmlNode* n, struct form_control* current_select, char *text);
 static void box_normalise_block(struct box *block, pool box_pool);
 static void box_normalise_table(struct box *table, pool box_pool);
@@ -89,22 +91,16 @@ void box_normalise_table_row(struct box *row,
 static void box_normalise_inline_container(struct box *cont, pool box_pool);
 static void gadget_free(struct form_control* g);
 static void box_free_box(struct box *box);
-#ifdef WITH_PLUGIN
 static struct result box_object(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_embed(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_applet(xmlNode *n, struct status *status,
 		struct css_style *style);
-#endif
-#if defined(WITH_PLUGIN)
 static struct result box_iframe(xmlNode *n, struct status *status,
 		struct css_style *style);
-#endif
-#ifdef WITH_PLUGIN
 static bool plugin_decode(struct content* content, char* url, struct box* box,
                   struct object_params* po);
-#endif
 
 /* element_table must be sorted by name */
 struct element_entry {
@@ -114,23 +110,16 @@ struct element_entry {
 };
 static const struct element_entry element_table[] = {
 	{"a", box_a},
-#ifdef WITH_PLUGIN
 	{"applet", box_applet},
-#endif
 	{"body", box_body},
 	{"button", box_button},
-#ifdef WITH_PLUGIN
 	{"embed", box_embed},
-#endif
 	{"form", box_form},
-#if defined(WITH_PLUGIN)
+	{"frameset", box_frameset},
 	{"iframe", box_iframe},
-#endif
 	{"img", box_image},
 	{"input", box_input},
-#ifdef WITH_PLUGIN
 	{"object", box_object},
-#endif
 	{"select", box_select},
 	{"textarea", box_textarea}
 };
@@ -192,10 +181,8 @@ struct box * box_create(struct css_style * style,
 	box->gadget = 0;
 	box->usemap = 0;
 	box->object = 0;
-#ifdef WITH_PLUGIN
 	box->object_params = 0;
 	box->object_state = 0;
-#endif
 	box->x = box->y = 0;
 	box->height = 0;
 	for (i = 0; i != 4; i++)
@@ -806,8 +793,10 @@ struct result box_image(xmlNode *n, struct status *status,
 	s1 = strip(s);
 
 	url = url_join(s1, status->content->data.html.base_url);
-	if (!url)
+	if (!url) {
+		xmlFree(s);
 		return (struct result) {box, 0};
+	}
 
 	LOG(("image '%s'", url));
 	xmlFree(s);
@@ -1784,7 +1773,6 @@ void box_free_box(struct box *box)
 }
 
 
-#ifdef WITH_PLUGIN
 /**
  * add an object to the box tree
  */
@@ -2251,7 +2239,7 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
 
    return true;
 }
-#endif
+
 
 /**
  * Find the absolute coordinates of a box.
@@ -2268,3 +2256,106 @@ void box_coords(struct box *box, unsigned long *x, unsigned long *y)
 	}
 }
 
+
+struct result box_frameset(xmlNode *n, struct status *status,
+		struct css_style *style)
+{
+	unsigned int i;
+	unsigned int row, col;
+	unsigned int rows = 1, cols = 1;
+	char *s, *s1, *url;
+	struct box *box;
+	struct box *row_box;
+	struct box *cell_box;
+	struct css_style *row_style;
+	struct css_style *cell_style;
+	struct result r;
+	xmlNode *c;
+
+	box = box_create(style, 0, status->title,
+			status->content->data.html.box_pool);
+	box->type = BOX_TABLE;
+	style->display = CSS_DISPLAY_TABLE;
+
+	/* count rows and columns */
+        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows"))) {
+        	for (i = 0; s[i]; i++)
+        		if (s[i] == ',')
+        			rows++;
+        	free(s);
+        }
+
+        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols"))) {
+        	for (i = 0; s[i]; i++)
+        		if (s[i] == ',')
+        			cols++;
+        	free(s);
+        }
+
+	LOG(("rows %u, cols %u", rows, cols));
+
+	/* create the frameset table */
+	c = n->children;
+	for (row = 0; c && row != rows; row++) {
+		row_style = malloc(sizeof (struct css_style));
+		if (!row_style)
+			return (struct result) {box, 0};
+		memcpy(row_style, style, sizeof (struct css_style));
+		row_box = box_create(row_style, 0, 0,
+				status->content->data.html.box_pool);
+		row_box->type = BOX_TABLE_ROW;
+		box_add_child(box, row_box);
+
+		for (col = 0; c && col != cols; col++) {
+			while (c && !(c->type == XML_ELEMENT_NODE && (
+				strcmp((const char *) c->name, "frame") == 0 ||
+				strcmp((const char *) c->name, "frameset") == 0
+					)))
+				c = c->next;
+			if (!c)
+				break;
+
+			cell_style = malloc(sizeof (struct css_style));
+			if (!cell_style)
+				return (struct result) {box, 0};
+			memcpy(cell_style, style, sizeof (struct css_style));
+			cell_box = box_create(cell_style, 0, 0,
+				status->content->data.html.box_pool);
+			cell_box->type = BOX_TABLE_CELL;
+			box_add_child(row_box, cell_box);
+
+			if (strcmp((const char *) c->name, "frameset") == 0) {
+				LOG(("frameset"));
+				r = box_frameset(c, status, style);
+				box_add_child(cell_box, r.box);
+
+				c = c->next;
+				continue;
+			}
+
+			if (!(s = (char *) xmlGetProp(c,
+					(const xmlChar *) "src"))) {
+				c = c->next;
+				continue;
+			}
+
+			s1 = strip(s);
+			url = url_join(s1, status->content->data.html.base_url);
+			if (!url) {
+				xmlFree(s);
+				c = c->next;
+				continue;
+			}
+
+			LOG(("frame, url '%s'", url));
+
+			html_fetch_object(status->content, url, cell_box, 0);
+			xmlFree(s);
+			free(url);
+
+			c = c->next;
+		}
+	}
+
+	return (struct result) {box, 0};
+}

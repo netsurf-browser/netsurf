@@ -7,7 +7,7 @@ hr, menu, pre   { display: block }
 em, i, q, s, strong, u, font, span,
 var             { display: inline } */
 li              { display: /* list-item */ block }
-head            { display: none }
+head, noframes  { display: none }
 table           { display: table }
 tr              { display: table-row }
 thead           { display: table-header-group }
@@ -47,12 +47,12 @@ center { text-align: center; }
 small { font-size: smaller; }
 big { font-size: larger; }
 input { background-color: #fff; color: #000; width: 10em;
-	height: 1.5em; text-align: left; border-width: 1px; 
+	height: 1.5em; text-align: left; border-width: 1px;
 	border-color: #000; border-style: solid; }
 select { background-color: #ddd; color: #000; width: 10em;
-	height: 1.5em; text-align: left; border-width: medium; 
+	height: 1.5em; text-align: left; border-width: medium;
 	border-color: #aaa #eee #eee #aaa; border-style: inset; }
-textarea { background-color: #fff; color: #000; text-align: left; 
+textarea { background-color: #fff; color: #000; text-align: left;
 	border-width: 1px; border-color: #000; border-style: solid; }
 input[type=button], input[type=reset], input[type=submit], button {
 	background-color: #ddd; color: #000; width: auto;
