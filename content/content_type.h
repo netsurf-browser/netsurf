@@ -42,6 +42,9 @@ typedef enum {
 #ifdef WITH_PLUGIN
 	CONTENT_PLUGIN,
 #endif
+#ifdef WITH_THEME_INSTALL
+	CONTENT_THEME,
+#endif
 	/* these must be the last two */
 	CONTENT_OTHER,
 	CONTENT_UNKNOWN  /**< content-type not received yet */

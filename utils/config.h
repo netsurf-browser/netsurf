@@ -46,12 +46,12 @@
     #define WITH_SEARCH
     /* Printing support */
     #define WITH_PRINT
+    /* Theme auto-install */
+    #define WITH_THEME_INSTALL
 #endif
 #ifdef ncos
     /* Kiosk style browsing support */
     #define WITH_KIOSK_BROWSING
-    /* Kiosk style browsing themes support */
-    #define WITH_KIOSK_THEMES
 #endif
 
 #if defined(riscos) || defined(ncos) || defined(debug)

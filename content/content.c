@@ -61,9 +61,12 @@ struct mime_entry {
 /** A map from MIME type to ::content_type. Must be sorted by mime_type. */
 static const struct mime_entry mime_map[] = {
 #ifdef WITH_DRAW
-        {"application/drawfile", CONTENT_DRAW},
-        {"application/x-drawfile", CONTENT_DRAW},
-        {"image/drawfile", CONTENT_DRAW},
+	{"application/drawfile", CONTENT_DRAW},
+	{"application/x-drawfile", CONTENT_DRAW},
+#ifdef WITH_THEME_INSTALL
+	{"application/x-netsurf-theme", CONTENT_THEME},
+#endif
+	{"image/drawfile", CONTENT_DRAW},
 #endif
 #ifdef WITH_GIF
 	{"image/gif", CONTENT_GIF},
@@ -126,6 +129,9 @@ const char *content_type_name[] = {
 #endif
 #ifdef WITH_PLUGIN
 	"PLUGIN",
+#endif
+#ifdef WITH_THEME_INSTALL
+	"THEME",
 #endif
 	"OTHER",
 	"UNKNOWN"
@@ -197,6 +203,9 @@ static const struct handler_entry handler_map[] = {
 		plugin_reformat, plugin_destroy, 0, plugin_redraw,
 		plugin_open, plugin_close,
 		true},
+#endif
+#ifdef WITH_THEME_INSTALL
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, false},
 #endif
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, false}
 };
@@ -716,10 +725,10 @@ bool content_redraw(struct content *c, int x, int y,
 /**
  * Register a user for callbacks.
  *
- * \param c         The content to register
- * \param callback  The callback function
- * \param p1, p2    Callback private data
- * \return true on success, false otherwise and error broadcast to users
+ * \param  c         the content to register
+ * \param  callback  the callback function
+ * \param  p1, p2    callback private data
+ * \return true on success, false otherwise on memory exhaustion
  *
  * The callback will be called with p1 and p2 when content_broadcast() is
  * called with the content.
@@ -731,16 +740,11 @@ bool content_add_user(struct content *c,
 		void *p1, void *p2)
 {
 	struct content_user *user;
-	union content_msg_data msg_data;
 
 	LOG(("content %s, user %p %p %p", c->url, callback, p1, p2));
 	user = calloc(1, sizeof(*user));
-	if (!user) {
-		c->status = CONTENT_STATUS_ERROR;
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+	if (!user)
 		return false;
-	}
 	user->callback = callback;
 	user->p1 = p1;
 	user->p2 = p2;

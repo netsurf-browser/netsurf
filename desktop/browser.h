@@ -123,4 +123,9 @@ void schedule(int t, void (*callback)(void *p), void *p);
 void schedule_remove(void (*callback)(void *p), void *p);
 void schedule_run(void);
 
+/* In platform specific theme_install.c. */
+#ifdef WITH_THEME_INSTALL
+void theme_install_start(struct content *c);
+#endif
+
 #endif

@@ -264,6 +264,9 @@ Encoding1:detected
 Encoding2:from <meta>
 EncodingUnk:Unknown
 
+ThemeInstActive:A theme is currently being downloaded or installed. Please wait for it to finish or cancel it before installing more themes.
+ThemeInstDown:Please wait for the theme to download.
+
 # Interactive help
 HelpToolbar0:\Tback button.|M\Straverse back one page in the history tree.|MDoes not resubmit form information.
 HelpToolbar1:\Tforward button.|M\Straverse forward one page in the history tree.|MDoes not resubmit form information.

@@ -258,6 +258,7 @@ void gui_init(int argc, char** argv)
 	ro_gui_401login_init();
 #endif
 	ro_gui_history_init();
+	ro_gui_theme_install_init();
 	wimp_close_template();
 	ro_gui_sprites_init();
 	ro_gui_tree_initialise(); /* must be done after sprite loading */

@@ -241,6 +241,15 @@ void browser_window_callback(content_msg msg, struct content *c,
 
 			if (c->type == CONTENT_OTHER)
 				browser_window_convert_to_download(bw);
+#ifdef WITH_THEME_INSTALL
+			else if (c->type == CONTENT_THEME) {
+				theme_install_start(c);
+				bw->loading_content = 0;
+				content_remove_user(c, browser_window_callback,
+						bw, 0);
+				browser_window_stop_throbber(bw);
+			}
+#endif
 			else
 				gui_window_set_url(bw->window, c->url);
 			break;
@@ -297,7 +306,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 				bw->scrolling_box = NULL;
 			}
 			browser_window_stop_throbber(bw);
-			free (bw->referer);
+			free(bw->referer);
 			bw->referer = 0;
 			break;
 
@@ -1087,7 +1096,6 @@ void browser_redraw_box(struct content *c, struct box *box)
 	data.redraw.object_height = c->height;
 
 	content_broadcast(c, CONTENT_MSG_REDRAW, data);
-
 }
 
 
