@@ -2249,6 +2249,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control)
 {
 	unsigned int i = 0, j;
+	char *text_convert;
 	struct form_option *option;
 	wimp_pointer pointer;
 	os_error *error;
@@ -2303,6 +2304,12 @@ void gui_create_form_select_menu(struct browser_window *bw,
 		/* \todo  can cnv_str_local_enc() fail? */
 		gui_form_select_menu->entries[i].data.indirected_text.text =
 				cnv_str_local_enc(option->text);
+		/* convert spaces to hard spaces to stop things like 'Go Home' being treated
+		   as if 'Home' is a keyboard shortcut and right aligned in the menu. */
+		text_convert = gui_form_select_menu->entries[i].data.indirected_text.text - 1;
+		while (*++text_convert != '\0')
+			if (*text_convert == 0x20)
+				*text_convert = 0xa0;
 		gui_form_select_menu->entries[i].data.indirected_text.
 				validation = "\0";
 		gui_form_select_menu->entries[i].data.indirected_text.size =
