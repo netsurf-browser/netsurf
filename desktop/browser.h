@@ -70,13 +70,14 @@ typedef enum {
 } browser_mouse_click;
 
 
-void browser_window_create(const char *url, struct browser_window *clone);
+void browser_window_create(const char *url, struct browser_window *clone,
+		char *referer);
 void browser_window_go(struct browser_window *bw, const char *url,
-		bool referer);
+		char *referer);
 void browser_window_go_post(struct browser_window *bw, const char *url,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool history_add, bool referer);
+		bool history_add, char *referer);
 void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);
 void browser_window_destroy(struct browser_window *bw);

@@ -411,6 +411,39 @@ url_func_result url_host(const char *url, char **result)
 	return URL_FUNC_OK;
 }
 
+/**
+ * Return the scheme name from an URL
+ *
+ * \param url     an absolute URL
+ * \param result  pointer to pointer to buffer to hold scheme name
+ * \return URL_FUNC_OK on success
+ */
+url_func_result url_scheme(const char *url, char **result)
+{
+	int m;
+	regmatch_t match[10];
+
+	(*result) = 0;
+
+	m = regexec(&url_re, url, 10, match, 0);
+	if (m) {
+		LOG(("url '%s' failed to match regex", url));
+		return URL_FUNC_FAILED;
+	}
+	if (match[2].rm_so == -1)
+		return URL_FUNC_FAILED;
+
+	(*result) = malloc(match[2].rm_eo - match[2].rm_so + 1);
+	if (!(*result)) {
+		LOG(("malloc failed"));
+		return URL_FUNC_NOMEM;
+	}
+
+	strncpy((*result), url + match[2].rm_so, match[2].rm_eo - match[2].rm_so);
+	(*result)[match[2].rm_eo - match[2].rm_so] = 0;
+
+	return URL_FUNC_OK;
+}
 
 /**
  * Attempt to find a nice filename for a URL.
@@ -514,8 +547,8 @@ int main(int argc, char *argv[])
 	url_func_result res;
 	char *s;
 	url_init();
-/*	for (i = 1; i != argc; i++) {
-		printf("==> '%s'\n", argv[i]);
+	for (i = 1; i != argc; i++) {
+/*		printf("==> '%s'\n", argv[i]);
 		res = url_normalize(argv[i], &s);
 		if (res == URL_FUNC_OK) {
 			printf("<== '%s'\n", s);
@@ -527,19 +560,19 @@ int main(int argc, char *argv[])
 			printf("<== '%s'\n", s);
 			free(s);
 		}*/
-/*		if (1 != i) {
+		if (1 != i) {
 			res = url_join(argv[i], argv[1], &s);
 			if (res == URL_FUNC_OK) {
 				printf("'%s' + '%s' \t= '%s'\n", argv[1],
 						argv[i], s);
 				free(s);
 			}
-		}*/
-		res = url_nice(argv[i], &s);
+		}
+/*		res = url_nice(argv[i], &s);
 		if (res == URL_FUNC_OK) {
 			printf("'%s'\n", s);
 			free(s);
-		}
+		}*/
 	}
 	return 0;
 }

@@ -1099,18 +1099,18 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 			if (option_homepage_url && option_homepage_url[0]) {
 				if (pointer->buttons == wimp_CLICK_SELECT) {
 					browser_window_go_post(g->bw, option_homepage_url,
-							0, 0, true, false);
+							0, 0, true, 0);
 				} else {
-					browser_window_create(option_homepage_url, NULL);
+					browser_window_create(option_homepage_url, NULL, 0);
 				}
 			} else {
 				snprintf(url, sizeof url,
 						"file:/<NetSurf$Dir>/Docs/intro_%s",
 						option_language);
 				if (pointer->buttons == wimp_CLICK_SELECT) {
-					browser_window_go_post(g->bw, url, 0, 0, true, false);
+					browser_window_go_post(g->bw, url, 0, 0, true, 0);
 				} else {
-					browser_window_create(url, NULL);
+					browser_window_create(url, NULL, 0);
 				}
 			}
 			break;
@@ -1461,7 +1461,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			res = url_normalize(toolbar_url, &url);
 			if (res == URL_FUNC_OK) {
 				gui_window_set_url(g, url);
-				browser_window_go(g->bw, url, false);
+				browser_window_go(g->bw, url, 0);
 				free(url);
 			}
 			return true;
@@ -1473,7 +1473,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		case 14:	/* CTRL+N */
 			current_gui = g;
 			browser_window_create(current_gui->bw->current_content->url,
-					current_gui->bw);
+					current_gui->bw, 0);
 			return true;
 		case 18:	/* CTRL+R */
 			browser_window_reload(g->bw, false);

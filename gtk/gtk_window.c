@@ -184,11 +184,16 @@ gboolean gui_window_url_key_press_event(GtkWidget *widget,
 		GdkEventKey *event, gpointer data)
 {
 	struct gui_window *g = data;
+	char *referer = 0;
 
 	if (event->keyval != GDK_Return)
 		return FALSE;
 
-	browser_window_go(g->bw, gtk_entry_get_text(GTK_ENTRY(g->url_bar)), false);
+	if (g->bw->current_content && g->bw->current_content->url)
+		referer = g->bw->current_content->url;
+
+	browser_window_go(g->bw, gtk_entry_get_text(GTK_ENTRY(g->url_bar)),
+				referer);
 
 	return TRUE;
 }

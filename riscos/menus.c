@@ -770,7 +770,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 5: /* Print */
 						break;
 					case 6: /* New window */
-						browser_window_create(current_gui->bw->current_content->url, current_gui->bw);
+						browser_window_create(current_gui->bw->current_content->url, current_gui->bw, 0);
 						break;
 					case 7: /* Page source */
 						ro_gui_view_source(c);
@@ -817,12 +817,12 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				switch (selection->items[1]) {
 					case 0: /* Home */
 						if (option_homepage_url && option_homepage_url[0]) {
-							browser_window_go_post(current_gui->bw, option_homepage_url, 0, 0, true, false);
+							browser_window_go_post(current_gui->bw, option_homepage_url, 0, 0, true, 0);
 						} else {
 							snprintf(url, sizeof url,
 									"file:/<NetSurf$Dir>/Docs/intro_%s",
 									option_language);
-							browser_window_go_post(current_gui->bw, url, 0, 0, true, false);
+							browser_window_go_post(current_gui->bw, url, 0, 0, true, 0);
 						}
 						break;
 					case 1: /* Back */
@@ -967,7 +967,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						break;
 					case 3: /* About NetSurf */
 						browser_window_create("file:/"
-						"<NetSurf$Dir>/Docs/about", 0);
+						"<NetSurf$Dir>/Docs/about", 0, 0);
 						break;
 					case 4: /* Interactive help */
 						xos_cli("Filer_Run Resources:$.Apps.!Help");

@@ -663,7 +663,7 @@ void history_go(struct browser_window *bw, struct history_entry *entry)
 	else
 		url = entry->url;
 
-	browser_window_go_post(bw, url, 0, 0, false, false);
+	browser_window_go_post(bw, url, 0, 0, false, 0);
 
 	if (entry->frag_id)
 		free(url);

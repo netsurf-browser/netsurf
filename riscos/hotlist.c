@@ -1612,7 +1612,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 			*/
 			if (((buttons == wimp_DOUBLE_SELECT) || (buttons == wimp_DOUBLE_ADJUST)) &&
 					(entry->children == -1)) {
-				browser_window_create(entry->url, NULL);
+				browser_window_create(entry->url, NULL, 0);
 				if (buttons == wimp_DOUBLE_SELECT) {
 					ro_gui_hotlist_selection_state(root.child_entry,
 							false, true);
@@ -1872,7 +1872,7 @@ int ro_gui_hotlist_selection_count(struct hotlist_entry *entry, bool folders) {
 void ro_gui_hotlist_launch_selection(struct hotlist_entry *entry) {
 	if (!entry) return;
 	while (entry) {
-		if ((entry->selected) && (entry->url)) browser_window_create(entry->url, NULL);
+		if ((entry->selected) && (entry->url)) browser_window_create(entry->url, NULL, 0);
 		if (entry->child_entry) ro_gui_hotlist_launch_selection(entry->child_entry);
 		entry = entry->next_entry;
 	}

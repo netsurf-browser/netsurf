@@ -228,6 +228,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	CURLMcode codem;
 	struct curl_slist *slist;
 	url_func_result res;
+	char *ref1 = 0, *ref2 = 0;
 
 	fetch = malloc(sizeof (*fetch));
 	if (!fetch)
@@ -237,6 +238,18 @@ struct fetch * fetch_start(char *url, char *referer,
 	/* we only fail memory exhaustion */
 	if (res == URL_FUNC_NOMEM)
 		goto failed;
+
+	res = url_scheme(url, &ref1);
+	/* we only fail memory exhaustion */
+	if (res == URL_FUNC_NOMEM)
+		goto failed;
+
+	if (referer) {
+		res = url_scheme(referer, &ref2);
+		/* we only fail memory exhaustion */
+		if (res == URL_FUNC_NOMEM)
+			goto failed;
+	}
 
 	LOG(("fetch %p, url '%s'", fetch, url));
 
@@ -250,8 +263,11 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->cookies = cookies;
 	fetch->url = strdup(url);
 	fetch->referer = 0;
-	if (referer)
-		fetch->referer = strdup(referer);
+	/* only send the referer if the schemes match */
+	if (referer) {
+		if (ref1 && ref2 && strcasecmp(ref1, ref2) == 0)
+			fetch->referer = strdup(referer);
+	}
 	fetch->p = p;
 	fetch->headers = 0;
 	fetch->host = host;
@@ -269,10 +285,22 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->prev = 0;
 	fetch->next = 0;
 
-	if (!fetch->url || (referer && !fetch->referer) ||
+	if (!fetch->url || (referer &&
+			(ref1 && ref2 && strcasecmp(ref1, ref2) == 0) &&
+			!fetch->referer) ||
 			(post_urlenc && !fetch->post_urlenc) ||
 			(post_multipart && !fetch->post_multipart))
 		goto failed;
+
+	/* these aren't needed past here */
+	if (ref1) {
+		free(ref1);
+		ref1 = 0;
+	}
+	if (ref2) {
+		free(ref2);
+		ref2 = 0;
+	}
 
 #define APPEND(list, value) \
 	slist = curl_slist_append(list, value);		\
@@ -336,6 +364,10 @@ struct fetch * fetch_start(char *url, char *referer,
 
 failed:
 	free(host);
+	if (ref1)
+		free(ref1);
+	if (ref2)
+		free(ref2);
 	free(fetch->url);
 	free(fetch->referer);
 	free(fetch->post_urlenc);

@@ -29,6 +29,7 @@
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/imagemap.h"
+#include "netsurf/desktop/options.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
@@ -82,11 +83,13 @@ static void browser_form_submit(struct browser_window *bw, struct form *form,
 /**
  * Create and open a new browser window with the given page.
  *
- * \param  url   URL to start fetching in the new window (copied)
- * \param  clone The browser window to clone
+ * \param  url     URL to start fetching in the new window (copied)
+ * \param  clone   The browser window to clone
+ * \param  referer The referring uri
  */
 
-void browser_window_create(const char *url, struct browser_window *clone)
+void browser_window_create(const char *url, struct browser_window *clone,
+		char *referer)
 {
 	struct browser_window *bw;
 
@@ -106,7 +109,7 @@ void browser_window_create(const char *url, struct browser_window *clone)
 		free(bw);
 		return;
 	}
-	browser_window_go(bw, url, false);
+	browser_window_go(bw, url, referer);
 }
 
 
@@ -115,13 +118,13 @@ void browser_window_create(const char *url, struct browser_window *clone)
  *
  * \param  bw      browser window
  * \param  url     URL to start fetching (copied)
- * \param  referer whether to send the referer header
+ * \param  referer the referring uri
  *
  * Any existing fetches in the window are aborted.
  */
 
 void browser_window_go(struct browser_window *bw, const char *url,
-		bool referer)
+		char* referer)
 {
 	browser_window_go_post(bw, url, 0, 0, true, referer);
 }
@@ -135,6 +138,7 @@ void browser_window_go(struct browser_window *bw, const char *url,
  * \param  post_urlenc     url encoded post data, or 0 if none
  * \param  post_multipart  multipart post data, or 0 if none
  * \param  history_add     add to window history
+ * \param  referer         the referring uri
  *
  * Any existing fetches in the window are aborted.
  *
@@ -147,7 +151,7 @@ void browser_window_go(struct browser_window *bw, const char *url,
 void browser_window_go_post(struct browser_window *bw, const char *url,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool history_add, bool referer)
+		bool history_add, char *referer)
 {
 	struct content *c;
 	char *url2;
@@ -191,7 +195,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	bw->loading_content = c;
 	browser_window_start_throbber(bw);
 
-	fetchcache_go(c, referer ? gui_window_get_url(bw->window) : 0,
+	fetchcache_go(c, option_send_referer ? referer : 0,
 			browser_window_callback, bw, 0,
 			post_urlenc, post_multipart, true);
 }
@@ -277,8 +281,27 @@ void browser_window_callback(content_msg msg, struct content *c,
 			bw->loading_content = 0;
 			browser_window_set_status(bw,
 					messages_get("Redirecting"));
-			/* hmm, should we do send the referrer here? */
-			browser_window_go(bw, data.redirect, false);
+			/** \todo Send referer on redirect.
+			 * We can't simply grab bw->current_content->url
+			 * because:
+			 *	a) This would leak data if the referer
+			 *	   wasn't sent by the initial call
+			 *	b) We may have started this fetch via
+			 *	   browser_window_create. Therefore,
+			 *	   there'd be no current_content to
+			 *	   read the referer from.
+			 *
+			 * Therefore, we either need a way of extracting
+			 * the referer information from the fetch struct
+			 * or we store the information at a higher level
+			 * (such as in the browser_window struct). I'm
+			 * not entirely sure of the best solution here,
+			 * so I've left it for now.
+			 */
+			/* the spec says nothing about referrers and
+			 * redirects => follow Mozilla and preserve the
+			 * referrer across the redirect */
+			browser_window_go(bw, data.redirect, 0);
 			break;
 
 		case CONTENT_MSG_REFORMAT:
@@ -474,7 +497,7 @@ void browser_window_reload(struct browser_window *bw, bool all)
 		}
 	}
 	bw->current_content->fresh = false;
-	browser_window_go_post(bw, bw->current_content->url, 0, 0, false, false);
+	browser_window_go_post(bw, bw->current_content->url, 0, 0, false, 0);
 }
 
 
@@ -788,9 +811,9 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 				click == BROWSER_MOUSE_CLICK_2) {
 			if (fetch_can_fetch(url)) {
 				if (click == BROWSER_MOUSE_CLICK_1)
-					browser_window_go(bw, url, true);
+					browser_window_go(bw, url, c->url);
 				else
-					browser_window_create(url, bw);
+					browser_window_create(url, bw, c->url);
 			} else {
 				gui_launch_url(url);
 			}
@@ -1726,7 +1749,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			res = url_join(url, base, &url1);
 			if (res != URL_FUNC_OK)
 				break;
-			browser_window_go(bw, url1, true);
+			browser_window_go(bw, url1, bw->current_content->url);
 			break;
 
 		case method_POST_URLENC:
@@ -1739,14 +1762,16 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			res = url_join(form->action, base, &url);
 			if (res != URL_FUNC_OK)
 				break;
-			browser_window_go_post(bw, url, data, 0, true, true);
+			browser_window_go_post(bw, url, data, 0, true,
+					bw->current_content->url);
 			break;
 
 		case method_POST_MULTIPART:
 			res = url_join(form->action, base, &url);
 			if (res != URL_FUNC_OK)
 				break;
-			browser_window_go_post(bw, url, 0, success, true, true);
+			browser_window_go_post(bw, url, 0, success, true,
+					bw->current_content->url);
 			break;
 
 		default:

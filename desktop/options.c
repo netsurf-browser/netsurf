@@ -53,6 +53,8 @@ bool option_ssl_verify_certificates = true;
 int option_memory_cache_size = 2 * 1024 * 1024;
 /** Whether to block advertisements */
 bool option_block_ads = false;
+/** Whether to send the referer HTTP header */
+bool option_send_referer = true;
 
 EXTRA_OPTION_DEFINE
 
@@ -74,6 +76,7 @@ struct {
 	{ "ssl_verify_certificates", OPTION_BOOL, &option_ssl_verify_certificates },
 	{ "memory_cache_size", OPTION_INTEGER, &option_memory_cache_size },
 	{ "block_advertisements", OPTION_BOOL, &option_block_ads },
+	{ "send_referer",    OPTION_BOOL,    &option_send_referer },
 	EXTRA_OPTION_TABLE
 };
 

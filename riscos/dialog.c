@@ -854,7 +854,7 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 		case ICON_CONFIG_TH_GET:
 			browser_window_create(
 					"http://netsurf.sourceforge.net/themes/",
-					NULL);
+					NULL, 0);
 			break;
 	}
 }

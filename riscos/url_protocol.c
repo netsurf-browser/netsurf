@@ -103,7 +103,7 @@ void ro_url_message_received(wimp_message *message)
 	}
 
 	/* create new browser window */
-	browser_window_create(url, 0);
+	browser_window_create(url, 0, 0);
 
 	free(url);
 }
