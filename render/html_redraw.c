@@ -239,7 +239,7 @@ bool html_redraw_box(struct box *box,
 			current_background_color = box->style->background_color;
 		}
 
-		if (box->background) {
+		if ((box->background) && (px0 < px1) && (py0 < py1)) {
 			/* clip to padding box for everything but the main window */
 			if (box->parent) {
 				if (!plot.clip(px0, py0, px1, py1))
@@ -252,7 +252,8 @@ bool html_redraw_box(struct box *box,
 
 			/* plot background image */
 			if (!html_redraw_background(x, y, box, scale,
-					current_background_color))							return false;
+					current_background_color))
+				return false;
 
 			/* restore previous graphics window */
 			if (!plot.clip(x0, y0, x1, y1))
