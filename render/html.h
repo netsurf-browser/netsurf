@@ -8,6 +8,7 @@
 #ifndef _NETSURF_RENDER_HTML_H_
 #define _NETSURF_RENDER_HTML_H_
 
+#include "netsurf/content/content_type.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
 #include "netsurf/utils/pool.h"
@@ -49,6 +50,9 @@ struct content_html_data {
 		char *url;
 		struct content *content;
 		struct box *box;
+		/** Pointer to array of permitted content_type, terminated by
+		 *  CONTENT_UNKNOWN, or 0 if any type is acceptable. */
+		const content_type *permitted_types;
 	} *object;
 	pool box_pool;		/**< Memory pool for box tree. */
 	pool string_pool;	/**< Memory pool for strings. */
@@ -60,7 +64,8 @@ int html_convert(struct content *c, unsigned int width, unsigned int height);
 void html_revive(struct content *c, unsigned int width, unsigned int height);
 void html_reformat(struct content *c, unsigned int width, unsigned int height);
 void html_destroy(struct content *c);
-void html_fetch_object(struct content *c, char *url, struct box *box);
+void html_fetch_object(struct content *c, char *url, struct box *box,
+		const content_type *permitted_types);
 
 /* in riscos/htmlinstance.c */
 void html_add_instance(struct content *c, struct browser_window *bw,

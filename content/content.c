@@ -109,15 +109,13 @@ static const struct handler_entry handler_map[] = {
 		html_add_instance, html_remove_instance, html_reshape_instance},
 	{textplain_create, textplain_process_data, textplain_convert,
 		textplain_revive, textplain_reformat, textplain_destroy, 0, 0, 0, 0},
+	{css_create, css_process_data, css_convert, css_revive,
+		css_reformat, css_destroy, 0, 0, 0, 0},
 #ifdef riscos
 #ifdef WITH_JPEG
 	{jpeg_create, jpeg_process_data, jpeg_convert, jpeg_revive,
 		jpeg_reformat, jpeg_destroy, jpeg_redraw, 0, 0, 0},
 #endif
-#endif
-	{css_create, css_process_data, css_convert, css_revive,
-		css_reformat, css_destroy, 0, 0, 0, 0},
-#ifdef riscos
 #ifdef WITH_PNG
 	{nspng_create, nspng_process_data, nspng_convert, nspng_revive,
 		nspng_reformat, nspng_destroy, nspng_redraw, 0, 0, 0},

@@ -28,6 +28,8 @@ static void html_head(struct content *c, xmlNode *head);
 static void html_find_stylesheets(struct content *c, xmlNode *head);
 static void html_object_callback(content_msg msg, struct content *object,
 		void *p1, void *p2, const char *error);
+static bool html_object_type_permitted(const content_type type,
+		const content_type *permitted_types);
 
 
 void html_create(struct content *c, const char *params[])
@@ -427,7 +429,8 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 }
 
 
-void html_fetch_object(struct content *c, char *url, struct box *box)
+void html_fetch_object(struct content *c, char *url, struct box *box,
+		const content_type *permitted_types)
 {
 	unsigned int i = c->data.html.object_count;
 
@@ -436,6 +439,7 @@ void html_fetch_object(struct content *c, char *url, struct box *box)
 			(i + 1) * sizeof(*c->data.html.object));
 	c->data.html.object[i].url = url;
 	c->data.html.object[i].box = box;
+	c->data.html.object[i].permitted_types = permitted_types;
 
 	/* start fetch */
 	c->data.html.object[i].content = fetchcache(url, c->url,
@@ -467,16 +471,21 @@ void html_object_callback(content_msg msg, struct content *object,
 	struct content *c = p1;
 	unsigned int i = (unsigned int) p2;
 	struct box *box = c->data.html.object[i].box;
+
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
-			if (CONTENT_OTHER <= c->type) {
-				c->data.html.object[i].content = 0;
-				c->active--;
-				c->error = 1;
-				sprintf(c->status_message, "Warning: bad object type");
-				content_broadcast(c, CONTENT_MSG_STATUS, 0);
-				content_remove_user(object, html_object_callback, c, (void*)i);
-			}
+			/* check if the type is acceptable for this object */
+			if (html_object_type_permitted(object->type,
+					c->data.html.object[i].permitted_types))
+				break;
+
+			/* not acceptable */
+			c->data.html.object[i].content = 0;
+			c->active--;
+			c->error = 1;
+			sprintf(c->status_message, "Warning: bad object type");
+			content_broadcast(c, CONTENT_MSG_STATUS, 0);
+			content_remove_user(object, html_object_callback, c, (void*)i);
 			break;
 
 		case CONTENT_MSG_READY:
@@ -579,6 +588,29 @@ void html_object_callback(content_msg msg, struct content *object,
 	}
 	if (c->status == CONTENT_STATUS_READY)
 		sprintf(c->status_message, "Loading %i objects", c->active);
+}
+
+
+/**
+ * Check if a type is in a list.
+ *
+ * \param type the content_type to search for
+ * \param permitted_types array of types, terminated by CONTENT_UNKNOWN,
+ *              or 0 if all types except OTHER and UNKNOWN acceptable
+ * \return the type is in the list or acceptable
+ */
+
+bool html_object_type_permitted(const content_type type,
+		const content_type *permitted_types)
+{
+	if (permitted_types) {
+		for (; *permitted_types != CONTENT_UNKNOWN; permitted_types++)
+			if (*permitted_types == type)
+				return true;
+	} else if (type < CONTENT_OTHER) {
+		return true;
+	}
+	return false;
 }
 
 

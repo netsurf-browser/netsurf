@@ -28,6 +28,7 @@
 #include "libxml/HTMLparser.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/cache.h"
+#include "netsurf/content/content_type.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/other.h"
 #include "netsurf/css/css.h"
@@ -54,38 +55,6 @@
 #include "netsurf/riscos/draw.h"
 #endif
 #endif
-
-
-/** The type of a content. */
-typedef enum {
-	CONTENT_HTML,
-	CONTENT_TEXTPLAIN,
-#ifdef riscos
-#ifdef WITH_JPEG
-	CONTENT_JPEG,
-#endif
-#endif
-	CONTENT_CSS,
-#ifdef riscos
-#ifdef WITH_PNG
-	CONTENT_PNG,
-#endif
-#ifdef WITH_GIF
-	CONTENT_GIF,
-#endif
-#ifdef WITH_SPRITE
-	CONTENT_SPRITE,
-#endif
-#ifdef WITH_DRAW
-	CONTENT_DRAW,
-#endif
-#ifdef WITH_PLUGIN
-	CONTENT_PLUGIN,
-#endif
-#endif
-	CONTENT_OTHER,
-	CONTENT_UNKNOWN  /**< content-type not received yet */
-} content_type;
 
 
 /** Used in callbacks to indicate what has occurred. */

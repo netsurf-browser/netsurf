@@ -676,7 +676,7 @@ struct css_style * box_get_style(struct content ** stylesheet,
 }
 
 
-/**
+/*
  * Special case elements
  *
  * These functions are called by convert_xml_to_box when an element is being
@@ -714,6 +714,12 @@ struct result box_body(xmlNode *n, struct status *status,
 	return (struct result) {box, 1};
 }
 
+static const content_type image_types[] = {
+#ifdef riscos
+	CONTENT_JPEG, CONTENT_PNG, CONTENT_GIF,	CONTENT_SPRITE, CONTENT_DRAW,
+#endif
+	CONTENT_UNKNOWN };
+
 struct result box_image(xmlNode *n, struct status *status,
 		struct css_style *style)
 {
@@ -747,7 +753,7 @@ struct result box_image(xmlNode *n, struct status *status,
 	xmlFree(s);
 
 	/* start fetch */
-	html_fetch_object(status->content, url, box);
+	html_fetch_object(status->content, url, box, image_types);
 
 	return (struct result) {box, 0};
 }
@@ -1062,7 +1068,8 @@ struct result box_input(xmlNode *n, struct status *status,
 	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src"))) {
 	                url = url_join(s, status->content->data.html.base_url);
 	                if (url)
-		                html_fetch_object(status->content, url, box);
+		                html_fetch_object(status->content, url, box,
+		                		image_types);
 	                xmlFree(s);
 	        }
 	}
@@ -2158,7 +2165,7 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
    * when we fetch it (if the type was not specified or is different to that
    * given in the attributes).
    */
-   html_fetch_object(content, url, box);
+   html_fetch_object(content, url, box, 0);
 
    return true;
 }
