@@ -51,16 +51,16 @@ bool html_redraw_debug = false;
 /**
  * Draw a CONTENT_HTML using the current set of plotters (plot).
  *
- * \param  c                 content of type CONTENT_HTML
- * \param  x                 coordinate for top-left of redraw
- * \param  y                 coordinate for top-left of redraw
- * \param  width             available width (not used for HTML redraw)
- * \param  height            available height (not used for HTML redraw)
- * \param  clip_x0           clip rectangle
- * \param  clip_y0           clip rectangle
- * \param  clip_x1           clip rectangle
- * \param  clip_y1           clip rectangle
- * \param  scale             scale for redraw
+ * \param  c		     content of type CONTENT_HTML
+ * \param  x		     coordinate for top-left of redraw
+ * \param  y		     coordinate for top-left of redraw
+ * \param  width	     available width (not used for HTML redraw)
+ * \param  height	     available height (not used for HTML redraw)
+ * \param  clip_x0	     clip rectangle
+ * \param  clip_y0	     clip rectangle
+ * \param  clip_x1	     clip rectangle
+ * \param  clip_y1	     clip rectangle
+ * \param  scale	     scale for redraw
  * \param  background_colour the background colour
  * \return true if successful, false otherwise
  *
@@ -91,9 +91,9 @@ bool html_redraw(struct content *c, int x, int y,
 /**
  * Recursively draw a box.
  *
- * \param  box      box to draw
- * \param  x        coordinate of parent box
- * \param  y        coordinate of parent box
+ * \param  box	    box to draw
+ * \param  x	    coordinate of parent box
+ * \param  y	    coordinate of parent box
  * \param  clip_x0  clip rectangle
  * \param  clip_y0  clip rectangle
  * \param  clip_x1  clip rectangle
@@ -136,12 +136,12 @@ bool html_redraw_box(struct box *box,
 		y0 = y;
 		x1 = x + padding_width;
 		y1 = y + padding_height;
-        } else {
+	} else {
 		x0 = x + box->descendant_x0 * scale;
 		y0 = y + box->descendant_y0 * scale;
 		x1 = x + box->descendant_x1 * scale + 1;
 		y1 = y + box->descendant_y1 * scale + 1;
-        }
+	}
 
 	/* if visibility is hidden render children only */
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
@@ -210,7 +210,7 @@ bool html_redraw_box(struct box *box,
 	}
 
 	/* background colour and image */
-        if (box->style && box->type != BOX_BR && (box->type != BOX_INLINE ||
+	if (box->style && box->type != BOX_BR && (box->type != BOX_INLINE ||
 			box->style != box->parent->parent->style)) {
 		/* find intersection of clip box and padding box */
 		int px0 = x < x0 ? x0 : x;
@@ -230,7 +230,7 @@ bool html_redraw_box(struct box *box,
 				/*(ro_gui_current_redraw_gui == NULL) ||
 				(!ro_gui_current_redraw_gui->
 				  option.background_images) ||*/
-				(!bitmap_test_opaque(box->background->
+				(!bitmap_get_opaque(box->background->
 				  bitmap)))) {
 			if (!plot.fill(px0, py0, px1, py1,
 					box->style->background_color))
@@ -252,8 +252,7 @@ bool html_redraw_box(struct box *box,
 
 			/* plot background image */
 			if (!html_redraw_background(x, y, box, scale,
-					current_background_color))
-				return false;
+					current_background_color))							return false;
 
 			/* restore previous graphics window */
 			if (!plot.clip(x0, y0, x1, y1))
@@ -362,12 +361,12 @@ bool html_redraw_box(struct box *box,
 /**
  * Draw borders for a box.
  *
- * \param  box             box to draw
- * \param  x               coordinate of left padding edge
- * \param  y               coordinate of top padding edge
+ * \param  box		   box to draw
+ * \param  x		   coordinate of left padding edge
+ * \param  y		   coordinate of top padding edge
  * \param  padding_width   width of padding box
  * \param  padding_height  height of padding box
- * \param  scale           scale for redraw
+ * \param  scale	   scale for redraw
  * \return true if successful, false otherwise
  */
 
@@ -551,8 +550,8 @@ colour html_redraw_aa(colour c0, colour c1)
 /**
  * Plot a checkbox.
  *
- * \param  x         left coordinate
- * \param  y         top coordinate
+ * \param  x	     left coordinate
+ * \param  y	     top coordinate
  * \param  width     dimensions of checkbox
  * \param  height    dimensions of checkbox
  * \param  selected  the checkbox is selected
@@ -582,8 +581,8 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 /**
  * Plot a radio icon.
  *
- * \param  x         left coordinate
- * \param  y         top coordinate
+ * \param  x	     left coordinate
+ * \param  y	     top coordinate
  * \param  width     dimensions of radio icon
  * \param  height    dimensions of radio icon
  * \param  selected  the radio icon is selected
@@ -611,11 +610,11 @@ bool html_redraw_radio(int x, int y, int width, int height,
 /**
  * Plot a file upload input.
  *
- * \param  x         left coordinate
- * \param  y         top coordinate
+ * \param  x	     left coordinate
+ * \param  y	     top coordinate
  * \param  width     dimensions of input
  * \param  height    dimensions of input
- * \param  box       box of input
+ * \param  box	     box of input
  * \param  scale     scale for redraw
  * \param  background_colour  current background colour
  * \return true if successful, false otherwise
@@ -649,9 +648,9 @@ bool html_redraw_file(int x, int y, int width, int height,
 /**
  * Plot background images.
  *
- * \param  x      coordinate of box
- * \param  y      coordinate of box
- * \param  box    box to draw background image of
+ * \param  x	  coordinate of box
+ * \param  y	  coordinate of box
+ * \param  box	  box to draw background image of
  * \param  scale  scale for redraw
  * \param  background_colour  current background colour
  * \return true if successful, false otherwise
@@ -740,10 +739,10 @@ bool html_redraw_background(int x, int y,
 /**
  * Plot scrollbars for a scrolling box.
  *
- * \param  box    scrolling box
+ * \param  box	  scrolling box
  * \param  scale  scale for redraw
- * \param  x      coordinate of box
- * \param  y      coordinate of box
+ * \param  x	  coordinate of box
+ * \param  y	  coordinate of box
  * \param  padding_width   width of padding box
  * \param  padding_height  height of padding box
  * \return true if successful, false otherwise
@@ -755,7 +754,7 @@ bool html_redraw_scrollbars(struct box *box, float scale,
 	int w = SCROLLBAR_WIDTH * scale;
 
 	/* vertical scrollbar */
-        if (box->descendant_y0 < box->descendant_y1) {
+	if (box->descendant_y0 < box->descendant_y1) {
 		int bar_top = (float) padding_height * (float) box->scroll_y /
 				(float) (box->descendant_y1 -
 				box->descendant_y0);
