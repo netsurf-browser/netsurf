@@ -1202,8 +1202,10 @@ void layout_table(struct box *table, int available_width)
 	for (i = 0; i != columns; i++) {
 		if (col[i].type == COLUMN_WIDTH_RELATIVE)
 			relative_sum += col[i].width;
-		else
+		else if (col[i].type == COLUMN_WIDTH_FIXED)
 			spare_width -= col[i].width;
+		else
+			spare_width -= col[i].min;
 	}
 	if (spare_width < 0)
 		spare_width = 0;
@@ -1494,7 +1496,8 @@ void calculate_inline_container_widths(struct box *box)
 
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
-				calculate_block_widths(child, &min, &max, 0);
+				calculate_block_widths(child->children,
+						&min, &max, 0);
 				break;
 
 			case BOX_BR:
