@@ -1419,6 +1419,17 @@ void browser_window_follow_link(struct browser_window *bw,
 		                done = 1;
 		                break;
 		        }
+		        else if (click_boxes[i].box->gadget->type == GADGET_SUBMIT) {
+		        	char *url, *href;
+		        	href = click_boxes[i].box->gadget->form->action;
+		        	if (!href) continue;
+				url = url_join(href, bw->current_content->data.html.base_url);
+				if (!url) continue;
+		        	browser_window_set_status(bw, url);
+		        	free(url);
+		        	done = 1;
+		        	break;
+		        }
 		}
 		if (click_type == 0 && click_boxes[i].box->title != NULL) {
 			browser_window_set_status(bw,
