@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.20 2002/10/08 09:38:29 bursa Exp $
+ * $Id: layout.c,v 1.21 2002/10/12 13:05:16 bursa Exp $
  */
 
 #include <assert.h>
@@ -13,6 +13,7 @@
 #include "netsurf/render/box.h"
 #include "netsurf/render/utils.h"
 #include "netsurf/render/layout.h"
+#include "netsurf/utils/log.h"
 
 #define DEBUG_LAYOUT
 
@@ -395,16 +396,9 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		} else {
 			/* fit as many words as possible */
 			assert(space != 0);
-			while (xp + w < x1 - x0 && space2 != 0) {
-/* 				fprintf(stderr, "%li + %li = %li < %li = %li - %li\n", */
-/* 						xp, w, xp + w, x1 - x0, x1, x0); */
-				space = space2;
-				wp = w;
-				space2 = strchr(space + 1, ' ');
-				if (space2 == 0)
-					space2 = c->text + c->length;
-				w = font_width(c->font, c->text, space2 - c->text);
-			}
+			space = font_split(c->font, c->text, c->length, x1 - x0 - xp, &wp);
+			LOG(("'%.*s' %lu %lu (%c) %lu", c->length, c->text,
+					x1 - x0, space - c->text, *space, wp));
 			c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
 			c2->text = xstrdup(space + 1);
 			c2->length = c->length - ((space + 1) - c->text);

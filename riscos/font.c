@@ -1,5 +1,5 @@
 /**
- * $Id: font.c,v 1.5 2002/10/08 11:15:29 bursa Exp $
+ * $Id: font.c,v 1.6 2002/10/12 13:05:16 bursa Exp $
  */
 
 #include <assert.h>
@@ -202,5 +202,34 @@ void font_close(struct font_data *data)
 	font_lose_font(data->handle);
 
 	free(data);
+}
+
+
+char * font_split(struct font_data *data, const char * text, unsigned int length,
+		unsigned int width, unsigned int *used_width)
+{
+	os_error *error;
+	font_scan_block block;
+	char *split;
+
+	block.space.x = block.space.y = block.letter.x = block.letter.y = 0;
+	block.split_char = ' ';
+
+	error = xfont_scan_string(data->handle, text,
+			font_GIVEN_BLOCK | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
+			ro_x_units(width) * 400, 0x7fffffff,
+			&block,
+			0,
+			length,
+			&split,
+			used_width, 0, 0);
+	if (error != 0) {
+		fprintf(stderr, "%s\n", error->errmess);
+		die("font_scan_string failed");
+	}
+	
+	*used_width = browser_x_units(*used_width / 400);
+	
+	return split;
 }
 

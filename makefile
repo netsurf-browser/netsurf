@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.5 2002/10/08 11:15:29 bursa Exp $
+# $Id: makefile,v 1.6 2002/10/12 13:05:16 bursa Exp $
 
 all: !NetSurf/!RunImage,ff8
 clean:
@@ -37,4 +37,7 @@ riscos/objs-riscos/%.o: riscos/%.c $(HEADERS)
 
 desktop/objs-riscos/%.o: desktop/%.c $(HEADERS) 
 	$(CC) $(FLAGS) -o $@ -c $<
+
+netsurf.zip: !NetSurf/!RunImage,ff8
+	riscos-zip -9vr, netsurf.zip !NetSurf
 

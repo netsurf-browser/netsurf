@@ -1,5 +1,5 @@
 /**
- * $Id: font.h,v 1.3 2002/10/08 11:15:29 bursa Exp $
+ * $Id: font.h,v 1.4 2002/10/12 13:05:16 bursa Exp $
  */
 
 #ifndef _NETSURF_RISCOS_FONT_H_
@@ -40,5 +40,7 @@ void font_position_in_string(const char* text, struct font_data *font,
 struct font_set *font_new_set(void);
 struct font_data *font_open(struct font_set *set, struct css_style *style);
 void font_free_set(struct font_set *set);
+char * font_split(struct font_data *data, const char * text, unsigned int length,
+		unsigned int width, unsigned int *used_width);
 
 #endif
