@@ -23,7 +23,7 @@ static void html_redraw_box(struct content *content, struct box * box,
 		signed long gadget_subtract_x, signed long gadget_subtract_y,
 		bool *select_on,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1);
-static inline void html_redraw_clip(long clip_x0, long clip_y0,
+static void html_redraw_clip(long clip_x0, long clip_y0,
 		long clip_x1, long clip_y1);
 
 
@@ -360,7 +360,7 @@ void html_redraw_box(struct content *content, struct box * box,
 }
 
 
-inline void html_redraw_clip(long clip_x0, long clip_y0,
+void html_redraw_clip(long clip_x0, long clip_y0,
 		long clip_x1, long clip_y1)
 {
 	os_set_graphics_window();
