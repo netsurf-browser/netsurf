@@ -1,3 +1,10 @@
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ */
+
 #include <string.h>
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/cache.h"

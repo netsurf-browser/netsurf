@@ -1,5 +1,8 @@
-/**
- * $Id: log.h,v 1.2 2003/02/09 12:58:15 bursa Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include <stdio.h>

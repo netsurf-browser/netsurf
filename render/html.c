@@ -1,5 +1,8 @@
-/**
- * $Id: html.c,v 1.20 2003/06/26 11:41:26 bursa Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include <assert.h>
@@ -259,6 +262,9 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			/* href='...' */
 			if (!(href = (char *) xmlGetProp(node, (const xmlChar *) "href")))
 				continue;
+
+			/* TODO: only the first preferred stylesheets (ie. those with a
+			 * title attribute) should be loaded (see HTML4 14.3) */
 
 			url = url_join(href, c->url);
 			LOG(("linked stylesheet %i '%s'", i, url));

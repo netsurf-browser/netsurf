@@ -1,5 +1,8 @@
-/**
- * $Id: cache.h,v 1.3 2003/06/17 19:24:20 bursa Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
 /**

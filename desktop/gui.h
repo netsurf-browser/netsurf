@@ -1,5 +1,9 @@
-/**
- * $Id: gui.h,v 1.7 2003/06/01 23:02:56 monkeyson Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
 #ifndef _NETSURF_DESKTOP_GUI_H_

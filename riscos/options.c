@@ -1,5 +1,9 @@
-/**
- * $Id: options.c,v 1.6 2003/06/30 11:47:36 bursa Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
 #include "netsurf/desktop/options.h"

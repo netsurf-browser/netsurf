@@ -1,5 +1,8 @@
-/**
- * $Id: cache.c,v 1.5 2003/06/24 23:22:00 bursa Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include <assert.h>

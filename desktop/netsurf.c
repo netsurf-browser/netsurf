@@ -1,5 +1,9 @@
-/**
- * $Id: netsurf.c,v 1.10 2003/06/05 13:17:55 philpem Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include "netsurf/desktop/options.h"

@@ -1,5 +1,9 @@
-/**
- * $Id: content.h,v 1.13 2003/06/26 11:41:26 bursa Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2003 Philip Pemberton <philpem@users.sourceforge.net>
  */
 
 #ifndef _NETSURF_DESKTOP_CONTENT_H_

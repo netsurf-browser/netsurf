@@ -1,5 +1,9 @@
-/**
- * $Id: font.c,v 1.14 2003/05/23 11:09:12 bursa Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
 
 #include <assert.h>

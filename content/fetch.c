@@ -1,6 +1,12 @@
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ */
+
 /**
- * $Id: fetch.c,v 1.12 2003/06/26 11:41:26 bursa Exp $
- *
  * This module handles fetching of data from any url.
  *
  * Implementation:

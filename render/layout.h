@@ -1,5 +1,8 @@
-/**
- * $Id: layout.h,v 1.3 2002/08/11 23:04:02 bursa Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
 #ifndef _NETSURF_RENDER_LAYOUT_H_

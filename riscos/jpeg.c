@@ -1,6 +1,11 @@
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ */
+
 /**
- * $Id: jpeg.c,v 1.6 2003/06/17 19:24:21 bursa Exp $
- *
  * This is just a temporary implementation using the JPEG renderer
  * available in some versions of RISC OS.
  */

@@ -1,3 +1,9 @@
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 Philip Pemberton <philpem@users.sourceforge.net>
+ */
 /*******************
  * GIF loader for Netsurf
  * Developed by Philip Pemberton for the Netsurf project
@@ -9,8 +15,6 @@
  *   Add support for GIF transparency
  *   Add better error handling
  *      - especially where bad GIFs are concerned.
- *
- * $Id: gif.c,v 1.7 2003/06/17 19:24:21 bursa Exp $
  */
 
 #include <assert.h>

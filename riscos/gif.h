@@ -1,5 +1,8 @@
-/**
- * $Id: gif.h,v 1.1 2003/06/05 13:24:28 philpem Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 Philip Pemberton <philpem@users.sourceforge.net>
  */
 
 #ifndef _NETSURF_RISCOS_GIF_H_

@@ -1,5 +1,8 @@
-/**
- * $Id: scanner.l,v 1.2 2003/04/01 21:33:08 bursa Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
 %{

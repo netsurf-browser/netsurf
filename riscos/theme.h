@@ -1,5 +1,8 @@
-/**
- * $Id: theme.h,v 1.3 2003/06/06 02:14:28 jmb Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
 
 #ifndef _MIGRATE_RISCOS_THEME_H_

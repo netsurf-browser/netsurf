@@ -1,5 +1,8 @@
-/**
- * $Id: fontd.c,v 1.1 2003/06/21 13:18:00 bursa Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include <assert.h>

@@ -1,5 +1,8 @@
-/**
- * $Id: jpeg.h,v 1.2 2003/05/10 11:13:34 bursa Exp $
+/*
+ * This file is part of NetSurf, http://netsurf.sourceforge.net/
+ * Licensed under the GNU General Public License,
+ *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
 #ifndef _NETSURF_RISCOS_JPEG_H_
