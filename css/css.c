@@ -133,6 +133,7 @@ const struct css_style css_base_style = {
 	  { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } },
 	  { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } },
 	  { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } } },
+	CSS_OVERFLOW_VISIBLE,
 	{ { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
 	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
 	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
@@ -178,6 +179,7 @@ const struct css_style css_empty_style = {
 	  { CSS_MARGIN_INHERIT, { { 0, CSS_UNIT_PX } } },
 	  { CSS_MARGIN_INHERIT, { { 0, CSS_UNIT_PX } } },
 	  { CSS_MARGIN_INHERIT, { { 0, CSS_UNIT_PX } } } },
+	CSS_OVERFLOW_INHERIT,
 	{ { CSS_PADDING_INHERIT, { { 0, CSS_UNIT_PX } } },
 	  { CSS_PADDING_INHERIT, { { 0, CSS_UNIT_PX } } },
 	  { CSS_PADDING_INHERIT, { { 0, CSS_UNIT_PX } } },
@@ -224,6 +226,7 @@ const struct css_style css_blank_style = {
 	  { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } },
 	  { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } },
 	  { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } } },
+	CSS_OVERFLOW_VISIBLE,
 	{ { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
 	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
 	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
@@ -1152,6 +1155,8 @@ void css_dump_style(const struct css_style * const style)
 		fprintf(stderr, "; ");
 	}
 
+	DUMP_KEYWORD(overflow, "overflow", css_overflow_name);
+
 	if (style->padding[0].padding != css_empty_style.padding[0].padding ||
 			style->padding[1].padding != css_empty_style.padding[1].padding ||
 			style->padding[2].padding != css_empty_style.padding[2].padding ||
@@ -1394,6 +1399,8 @@ void css_cascade(struct css_style * const style,
 		style->height = apply->height;
 	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT)
 		style->line_height = apply->line_height;
+	if (apply->overflow != CSS_OVERFLOW_INHERIT)
+		style->overflow = apply->overflow;
 	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
 		style->text_align = apply->text_align;
 	if (apply->text_indent.size != CSS_TEXT_INDENT_INHERIT)
@@ -1517,6 +1524,8 @@ void css_merge(struct css_style * const style,
 		style->height = apply->height;
 	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT)
 		style->line_height = apply->line_height;
+	if (apply->overflow != CSS_OVERFLOW_INHERIT)
+		style->overflow = apply->overflow;
 	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
 		style->text_align = apply->text_align;
 	if (apply->text_decoration != CSS_TEXT_DECORATION_INHERIT)

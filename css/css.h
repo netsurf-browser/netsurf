@@ -154,6 +154,8 @@ struct css_style {
 		} value;
 	} margin[4];  /**< top, right, bottom, left */
 
+	css_overflow overflow;
+
 	struct {
 		enum { CSS_PADDING_INHERIT,
 		       CSS_PADDING_LENGTH,

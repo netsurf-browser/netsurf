@@ -102,6 +102,7 @@ static void parse_margin_right(struct css_style * const s, const struct css_node
 static void parse_margin_top(struct css_style * const s, const struct css_node * const v);
 static void parse_margin_side(struct css_style * const s, const struct css_node * const v,
 		unsigned int i);
+static void parse_overflow(struct css_style * const s, const struct css_node * const v);
 static void parse_padding(struct css_style * const s, const struct css_node * const v);
 static void parse_padding_bottom(struct css_style * const s, const struct css_node * const v);
 static void parse_padding_left(struct css_style * const s, const struct css_node * const v);
@@ -129,62 +130,63 @@ struct css_property_entry {
 
 /** Table of property parsers. MUST be sorted by property name. */
 static const struct css_property_entry css_property_table[] = {
-	{ "background",	      parse_background },
-	{ "background-attachment", parse_background_attachment },
-	{ "background-color", parse_background_color },
-	{ "background-image", parse_background_image },
-	{ "background-position", parse_background_position },
-	{ "background-repeat", parse_background_repeat },
-	{ "border",	      parse_border },
-	{ "border-bottom",    parse_border_bottom },
-	{ "border-bottom-color", parse_border_bottom_color },
-	{ "border-bottom-style", parse_border_bottom_style },
-	{ "border-bottom-width", parse_border_bottom_width },
-	{ "border-color",     parse_border_color },
-	{ "border-left",      parse_border_left },
-	{ "border-left-color", parse_border_left_color },
-	{ "border-left-style", parse_border_left_style },
-	{ "border-left-width", parse_border_left_width },
-	{ "border-right",     parse_border_right },
-	{ "border-right-color", parse_border_right_color },
-	{ "border-right-style", parse_border_right_style },
-	{ "border-right-width", parse_border_right_width },
-	{ "border-style",     parse_border_style },
-	{ "border-top",	      parse_border_top },
-	{ "border-top-color", parse_border_top_color },
-	{ "border-top-style", parse_border_top_style },
-	{ "border-top-width", parse_border_top_width },
-	{ "border-width",     parse_border_width },
-	{ "clear",	      parse_clear },
-	{ "color",	      parse_color },
-	{ "cursor",	      parse_cursor },
-	{ "display",	      parse_display },
-	{ "float",	      parse_float },
-	{ "font",	      parse_font },
-	{ "font-family",      parse_font_family },
-	{ "font-size",	      parse_font_size },
-	{ "font-style",	      parse_font_style },
-	{ "font-variant",     parse_font_variant },
-	{ "font-weight",      parse_font_weight },
-	{ "height",	      parse_height },
-	{ "line-height",      parse_line_height },
-	{ "margin",	      parse_margin },
-	{ "margin-bottom",    parse_margin_bottom },
-	{ "margin-left",      parse_margin_left },
-	{ "margin-right",     parse_margin_right },
-	{ "margin-top",	      parse_margin_top },
-	{ "padding",	      parse_padding },
-	{ "padding-bottom",   parse_padding_bottom },
-	{ "padding-left",     parse_padding_left },
-	{ "padding-right",    parse_padding_right },
-	{ "padding-top",      parse_padding_top },
-	{ "text-align",	      parse_text_align },
-	{ "text-decoration",  parse_text_decoration },
-	{ "text-indent",      parse_text_indent },
-	{ "text-transform",   parse_text_transform },
-	{ "visibility",	      parse_visibility },
-	{ "white-space",      parse_white_space },
-	{ "width",	      parse_width },
+	{ "background",			parse_background },
+	{ "background-attachment",	parse_background_attachment },
+	{ "background-color",		parse_background_color },
+	{ "background-image",		parse_background_image },
+	{ "background-position",	parse_background_position },
+	{ "background-repeat",		parse_background_repeat },
+	{ "border",			parse_border },
+	{ "border-bottom",		parse_border_bottom },
+	{ "border-bottom-color",	parse_border_bottom_color },
+	{ "border-bottom-style",	parse_border_bottom_style },
+	{ "border-bottom-width",	parse_border_bottom_width },
+	{ "border-color",		parse_border_color },
+	{ "border-left",		parse_border_left },
+	{ "border-left-color",		parse_border_left_color },
+	{ "border-left-style",		parse_border_left_style },
+	{ "border-left-width",		parse_border_left_width },
+	{ "border-right",		parse_border_right },
+	{ "border-right-color",		parse_border_right_color },
+	{ "border-right-style",		parse_border_right_style },
+	{ "border-right-width",		parse_border_right_width },
+	{ "border-style",		parse_border_style },
+	{ "border-top",			parse_border_top },
+	{ "border-top-color",		parse_border_top_color },
+	{ "border-top-style",		parse_border_top_style },
+	{ "border-top-width",		parse_border_top_width },
+	{ "border-width",		parse_border_width },
+	{ "clear",			parse_clear },
+	{ "color",			parse_color },
+	{ "cursor",			parse_cursor },
+	{ "display",			parse_display },
+	{ "float",			parse_float },
+	{ "font",			parse_font },
+	{ "font-family",		parse_font_family },
+	{ "font-size",			parse_font_size },
+	{ "font-style",			parse_font_style },
+	{ "font-variant",		parse_font_variant },
+	{ "font-weight",		parse_font_weight },
+	{ "height",			parse_height },
+	{ "line-height",		parse_line_height },
+	{ "margin",			parse_margin },
+	{ "margin-bottom",		parse_margin_bottom },
+	{ "margin-left",		parse_margin_left },
+	{ "margin-right",		parse_margin_right },
+	{ "margin-top",			parse_margin_top },
+	{ "overflow",			parse_overflow },
+	{ "padding",			parse_padding },
+	{ "padding-bottom",		parse_padding_bottom },
+	{ "padding-left",		parse_padding_left },
+	{ "padding-right",		parse_padding_right },
+	{ "padding-top",		parse_padding_top },
+	{ "text-align",			parse_text_align },
+	{ "text-decoration",		parse_text_decoration },
+	{ "text-indent",		parse_text_indent },
+	{ "text-transform",		parse_text_transform },
+	{ "visibility",			parse_visibility },
+	{ "white-space",		parse_white_space },
+	{ "width",			parse_width },
 };
 
 
@@ -1563,6 +1565,16 @@ void parse_margin_side(struct css_style * const s, const struct css_node * const
 			parse_length(&s->margin[i].value.length, v, false) == 0) {
 		s->margin[i].margin = CSS_MARGIN_LENGTH;
 	}
+}
+
+void parse_overflow(struct css_style * const s, const struct css_node * const v)
+{
+	css_overflow z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_overflow_parse(v->data, v->data_length);
+	if (z != CSS_OVERFLOW_UNKNOWN)
+		s->overflow = z;
 }
 
 void parse_padding(struct css_style * const s, const struct css_node * const v)
