@@ -5,6 +5,8 @@
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
+/** \todo  plug leaks; check strdup() return values */
+
 #include <assert.h>
 #include <ctype.h>
 #include <string.h>
@@ -65,16 +67,20 @@ void gui_401login_open(struct browser_window *bw, struct content *c, char *realm
 
 void ro_gui_401login_open(wimp_w parent, char *host, char* realm, char *fetchurl)
 {
-	url = xstrdup(fetchurl);
+	url = strdup(fetchurl);
+	if (!url) {
+		warn_user("NoMemory", 0);
+		return;
+	}
 	uname[0] = pwd[0] = 0;
 
 	/* fill in download window icons */
 	dialog_401_template->icons[ICON_401LOGIN_HOST].data.indirected_text.text =
-		xstrdup(host);
+		strdup(host);
 	dialog_401_template->icons[ICON_401LOGIN_HOST].data.indirected_text.size =
 		strlen(host) + 1;
 	dialog_401_template->icons[ICON_401LOGIN_REALM].data.indirected_text.text =
-		xstrdup(realm);
+		strdup(realm);
 	dialog_401_template->icons[ICON_401LOGIN_REALM].data.indirected_text.size =
 		strlen(realm) + 1;
 	dialog_401_template->icons[ICON_401LOGIN_USERNAME].data.indirected_text.text =
