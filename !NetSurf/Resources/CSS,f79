@@ -40,3 +40,5 @@ small { font-size: smaller; }
 big { font-size: larger; }
 input, select { width: 10em; height: 2em; background-color: #eeeebb; }
 textarea { display: inline-block; width: 20em; height: 4em; background-color: #eeeebb; }
+button { background-color: #ddd; }
+

@@ -314,12 +314,6 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 				x += b->width + b->space ? b->font->space_width : 0;
 			else
 				x += b->width;
-
-		} else if (b->type == BOX_INLINE_BLOCK) {
-			layout_block(b, width, b, 0, 0);
-			if (height < b->height)
-				height = b->height;
-			x += b->width;
 		}
 	}
 
@@ -331,6 +325,21 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	/* pass 2: place boxes in line */
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
 		if (b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK) {
+			if (b->type == BOX_INLINE_BLOCK) {
+				unsigned long w = width;
+				if (b->style->width.width == CSS_WIDTH_AUTO) {
+					calculate_widths(b);
+					if (b->max_width < width)
+						w = b->max_width;
+					else
+						w = b->min_width;
+				}
+				layout_node(b, w, b, 0, 0);
+				/* increase height to contain any floats inside */
+				for (fl = b->float_children; fl != 0; fl = fl->next_float)
+					if (b->height < fl->y + fl->height)
+						b->height = fl->y + fl->height;
+			}
 			x_previous = x;
 			x += space_after;
 			b->x = x;
@@ -400,7 +409,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 
 		x = x_previous;
 
-		if (!c->object && c->text)
+		if (!c->object && !c->gadget && c->text)
 			space = strchr(c->text, ' ');
 		if (space != 0 && c->length <= (unsigned int) (space - c->text))
 			/* space after end of string */
@@ -849,7 +858,8 @@ void calculate_inline_container_widths(struct box *box)
 					child->width = font_width(child->font,
 							child->text, child->length);
 					max += child->width;
-					/* TODO: add spaces */
+					if (child->next && child->space)
+						max += child->font->space_width;
 
 					/* min = widest word */
 					i = 0;

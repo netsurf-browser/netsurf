@@ -27,5 +27,8 @@ Reload:Reload this page
 # Download window
 Downloaded:Download complete, %lu bytes
 
+# Forms
+Form_Submit:Submit
+Form_Reset:Reset
 
 Not2xx:Server returned an error

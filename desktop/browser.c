@@ -522,14 +522,8 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 					g->data.radio.selected = -1;
 					gui_redraw_gadget(bw, g);
 					break;
-				case GADGET_ACTIONBUTTON:
-				        /* redraw button */
-					g->data.actionbutt.pressed = -1;
-					gui_redraw_gadget(bw, g);
-					if (stricmp(g->data.actionbutt.butttype,"submit") == 0)
-						browser_form_submit(bw, g->form);
-					g->data.actionbutt.pressed = 0;
-					gui_redraw_gadget(bw,g);
+				case GADGET_SUBMIT:
+					browser_form_submit(bw, g->form);
 					break;
 				case GADGET_TEXTAREA:
 					browser_window_textarea_click(bw,

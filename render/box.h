@@ -43,9 +43,11 @@ struct box;
 
 struct gui_gadget {
 	enum { GADGET_HIDDEN = 0, GADGET_TEXTBOX, GADGET_RADIO, GADGET_CHECKBOX,
-		GADGET_SELECT, GADGET_TEXTAREA, GADGET_ACTIONBUTTON,
-		GADGET_IMAGE, GADGET_PASSWORD } type;
-	char* name;
+		GADGET_SELECT, GADGET_TEXTAREA,
+		GADGET_IMAGE, GADGET_PASSWORD, GADGET_SUBMIT, GADGET_RESET } type;
+	char *name;
+	char *value;
+	char *initial_value;
 	struct form* form;
         union {
 		struct {
@@ -61,11 +63,6 @@ struct gui_gadget {
 			char* text;
 			int size;
 		} password;
-		struct {
-		        char* butttype;
-			char* label;
-			int pressed;
-		} actionbutt;
 		struct {
                         char* name;
                         char* value;

@@ -57,8 +57,6 @@ void html_redraw(struct content *c, long x, long y,
 static char validation_textarea[] = "R7;L";
 static char validation_textbox[] = "";
 static char validation_password[] = "D*";
-static char validation_actionbutton[] = "R5";
-static char validation_actionbutton_pressed[] = "R5,3";
 static char validation_select[] = "R2";
 static char validation_checkbox_selected[] = "Sopton";
 static char validation_checkbox_unselected[] = "Soptoff";
@@ -127,7 +125,10 @@ void html_redraw_box(struct content *content, struct box * box,
 	if (box->object) {
 		content_redraw(box->object, x, y, width, height, x0, y0, x1, y1);
 
-	} else if (box->gadget && box->gadget->type != GADGET_TEXTAREA) {
+	} else if (box->gadget &&
+			box->gadget->type != GADGET_TEXTAREA &&
+			box->gadget->type != GADGET_SUBMIT &&
+			box->gadget->type != GADGET_RESET) {
 		wimp_icon icon;
 		LOG(("writing GADGET"));
 
@@ -158,25 +159,6 @@ void html_redraw_box(struct content *content, struct box * box,
 			LOG(("writing GADGET PASSWORD"));
 			wimp_plot_icon(&icon);
       			break;
-
-		case GADGET_ACTIONBUTTON:
-			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
-			    wimp_ICON_VCENTRED | wimp_ICON_FILLED |
-			    wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
-			    (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT);
-			icon.data.indirected_text.text = box->gadget->data.actionbutt.label;
-			icon.data.indirected_text.size = strlen(box->gadget->data.actionbutt.label);
-			if (box->gadget->data.actionbutt.pressed) {
-				icon.data.indirected_text.validation = validation_actionbutton_pressed;
-				icon.flags |=
-				    (wimp_COLOUR_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) | wimp_ICON_SELECTED;
-			} else {
-				icon.data.indirected_text.validation = validation_actionbutton;
-				icon.flags |= (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
-			}
-			LOG(("writing GADGET ACTION"));
-			wimp_plot_icon(&icon);
-			break;
 
 		case GADGET_SELECT:
 			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |

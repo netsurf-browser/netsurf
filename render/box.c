@@ -25,6 +25,7 @@
 #endif
 #define NDEBUG
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -64,7 +65,9 @@ static struct result box_textarea(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_select(xmlNode *n, struct status *status,
 		struct css_style *style);
-struct result box_input(xmlNode *n, struct status *status,
+static struct result box_input(xmlNode *n, struct status *status,
+		struct css_style *style);
+static struct result box_button(xmlNode *n, struct status *status,
 		struct css_style *style);
 static void add_option(xmlNode* n, struct gui_gadget* current_select, char *text);
 static void box_normalise_block(struct box *block);
@@ -100,7 +103,8 @@ static const struct element_entry element_table[] = {
 	{"a", box_a},
 	{"applet", box_applet},
 	{"body", box_body},
-        {"embed", box_embed},
+	{"button", box_button},
+	{"embed", box_embed},
 	{"form", box_form},
 	{"iframe", box_iframe},
 	{"img", box_image},
@@ -703,6 +707,7 @@ struct result box_textarea(xmlNode *n, struct status *status,
 	box->gadget = xcalloc(1, sizeof(struct gui_gadget));
 	box->gadget->type = GADGET_TEXTAREA;
 	box->gadget->form = status->current_form;
+	style->display = CSS_DISPLAY_INLINE_BLOCK;
 
 	/* split the content at newlines and make an inline container with an
 	 * inline box for each line */
@@ -918,20 +923,24 @@ struct result box_input(xmlNode *n, struct status *status,
 	}
 	else if (stricmp(type, "submit") == 0 || stricmp(type, "reset") == 0)
 	{
-		box = box_create(style, NULL, 0);
-		box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
-		gadget->type = GADGET_ACTIONBUTTON;
-
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
-			gadget->data.actionbutt.label = s;
-		}
+		struct result result = box_button(n, status, style);
+		struct box *inline_container, *inline_box;
+		box = result.box;
+		inline_container = box_create(0, 0, 0);
+		inline_container->type = BOX_INLINE_CONTAINER;
+		inline_box = box_create(style, 0, 0);
+		inline_box->type = BOX_INLINE;
+		inline_box->style_clone = 1;
+		if (box->gadget->value)
+			inline_box->text = tolat1(box->gadget->value);
+		else if (box->gadget->type == GADGET_SUBMIT)
+			inline_box->text = xstrdup(messages_get("Form_Submit"));
 		else
-		{
-			gadget->data.actionbutt.label = xstrdup(type);
-			gadget->data.actionbutt.label[0] = toupper(type[0]);
-		}
-
-                       box->gadget->data.actionbutt.butttype = strdup(type);
+			inline_box->text = xstrdup(messages_get("Form_Reset"));
+		inline_box->length = strlen(inline_box->text);
+		inline_box->font = font_open(status->content->data.html.fonts, style);
+		box_add_child(inline_container, inline_box);
+		box_add_child(box, inline_container);
 	}
 	else if (stricmp(type, "image") == 0)
 	{
@@ -962,12 +971,40 @@ struct result box_input(xmlNode *n, struct status *status,
 
 	if (gadget != 0) {
 		gadget->form = status->current_form;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name")))
-			gadget->name = s;
+		gadget->name = (char *) xmlGetProp(n, (const xmlChar *) "name");
 		add_gadget_element(status->elements, gadget);
 	}
 
 	return (struct result) {box, 0};
+}
+
+struct result box_button(xmlNode *n, struct status *status,
+		struct css_style *style)
+{
+	char *type = (char *) xmlGetProp(n, (const xmlChar *) "type");
+	struct box *box = box_create(style, 0, 0);
+	style->display = CSS_DISPLAY_INLINE_BLOCK;
+
+	if (!type || strcasecmp(type, "submit") == 0) {
+		box->gadget = xcalloc(1, sizeof(struct gui_gadget));
+		box->gadget->type = GADGET_SUBMIT;
+	} else if (strcasecmp(type, "reset") == 0) {
+		box->gadget = xcalloc(1, sizeof(struct gui_gadget));
+		box->gadget->type = GADGET_RESET;
+	} else {
+		/* type="button" or unknown: just render the contents */
+		xmlFree(type);
+		return (struct result) {box, 1};
+	}
+
+	if (type)
+		xmlFree(type);
+
+	box->gadget->form = status->current_form;
+	box->gadget->name = (char *) xmlGetProp(n, (const xmlChar *) "name");
+	box->gadget->value = (char *) xmlGetProp(n, (const xmlChar *) "value");
+
+	return (struct result) {box, 1};
 }
 
 
@@ -1425,6 +1462,8 @@ void gadget_free(struct gui_gadget* g)
 
 	if (g->name != 0)
 		xmlFree(g->name);
+	free(g->value);
+	free(g->initial_value);
 
 	switch (g->type)
 	{
@@ -1451,10 +1490,6 @@ void gadget_free(struct gui_gadget* g)
 			gui_remove_gadget(g);
 			if (g->data.password.text != 0)
 				xmlFree(g->data.password.text);
-			break;
-		case GADGET_ACTIONBUTTON:
-			if (g->data.actionbutt.label != 0)
-				xmlFree(g->data.actionbutt.label);
 			break;
 		case GADGET_IMAGE:
 		        if (g->data.image.n != 0)
