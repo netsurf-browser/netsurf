@@ -82,6 +82,12 @@ static bool calculate_table_widths(struct box *table);
 		parent->descendant_y1 = child->y+child->descendant_y1; \
 } while (0);
 
+#define invalidate_descendants(box) do { \
+	LOG(("invalidating descendents of %p", box)); \
+	box->descendant_x0 = box->descendant_x1 = 0; \
+	box->descendant_y0 = box->descendant_y1 = 0; \
+} while (0);
+
 
 /**
  * Calculate positions of boxes in a document.
@@ -105,6 +111,7 @@ bool layout_document(struct box *doc, int width, pool box_pool)
 	width -= doc->margin[LEFT] + doc->border[LEFT] +
 			doc->border[RIGHT] + doc->margin[RIGHT];
 	doc->width = width;
+	invalidate_descendants(doc);
 	return layout_block_context(doc, box_pool);
 }
 
@@ -136,6 +143,8 @@ bool layout_block_context(struct box *block, pool box_pool)
 
 	gui_multitask();
 
+	invalidate_descendants(block);
+
 	box = margin_box = block->children;
 	cx = block->padding[LEFT];
 	cy = block->padding[TOP];
@@ -154,6 +163,8 @@ bool layout_block_context(struct box *block, pool box_pool)
 		 * content, and the position is required during layout for
 		 * correct handling of floats.
 		 */
+
+		invalidate_descendants(box);
 
 		if (box->type == BOX_BLOCK)
 			layout_block_find_dimensions(box->parent->width, box);
@@ -628,6 +639,8 @@ bool layout_inline_container(struct box *box, int width,
 	LOG(("box %p, width %i, cont %p, cx %i, cy %i",
 			box, width, cont, cx, cy));
 
+	invalidate_descendants(box);
+
 	for (c = box->children; c; ) {
 		LOG(("c %p", c));
 		if (!layout_line(c, width, &y, cx, cy + y, cont, first_line,
@@ -730,6 +743,8 @@ bool layout_line(struct box *first, int width, int *y,
 				b->type == BOX_FLOAT_LEFT ||
 				b->type == BOX_FLOAT_RIGHT ||
 				b->type == BOX_BR);
+
+		invalidate_descendants(b);
 
 		if (b->type == BOX_INLINE_BLOCK) {
 			if (b->width == UNKNOWN_WIDTH)
@@ -1123,6 +1138,7 @@ int layout_text_indent(struct css_style *style, int width)
 bool layout_float(struct box *b, int width, pool box_pool)
 {
 	layout_float_find_dimensions(width, b->style, b);
+	invalidate_descendants(b);
 	if (b->type == BOX_TABLE) {
 		if (!layout_table(b, width, box_pool))
 			return false;
@@ -1379,11 +1395,15 @@ bool layout_table(struct box *table, int available_width,
 		row_span_cell[i] = 0;
 	}
 
+	invalidate_descendants(table);
+
 	/* position cells */
 	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
 		int row_group_height = 0;
+		invalidate_descendants(row_group);
 		for (row = row_group->children; row != 0; row = row->next) {
 			int row_height = 0;
+			invalidate_descendants(row);
 			for (c = row->children; c != 0; c = c->next) {
 				assert(c->style != 0);
 				c->width = xs[c->start_column + c->columns] - xs[c->start_column];
