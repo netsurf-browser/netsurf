@@ -32,7 +32,7 @@ SelectAll:Alles ausw‰hlen  ^A
 Clear:Auswahl aufheben  ^Z
 Navigate:Navigieren
 OpenURL:÷ffne URL...
-Home:Home page
+Home:Homepage
 Back:Eine Seite zur¸ck
 Forward:Eine Seite vor
 Reload:Seite erneut laden  ^R
@@ -74,7 +74,7 @@ HelpAbout:‹ber NetSurf
 Languages:Language
 
 ProxyAuth:Authentifizierung
-ProxyNone:None
+ProxyNone:Keine
 ProxyBasic:Basic
 ProxyNTLM:NTLM
 
@@ -109,26 +109,26 @@ HotlistVisits:Besuche gesamt: %i
 # Download window
 Download:%s von %s è %s/s è noch %s
 DownloadU:%s von unbekannt è %s/s è bisher %s
-Downloaded:%s komplett è durchschnittlich  %s/s è %s insgesamt
+Downloaded:%s komplett è etwa %s/s è gesamt %s
 Unwritten:Schreiben der Datei ist fehlgeschlagen.
 
 # Forms
-Form_Submit:Submit
+Form_Submit:‹bertragen
 Form_Reset:Reset
 Form_None:
-Form_Many:(Many)
-Form_Drop:Drop file here
-FormSelect:Click to choose a form item
-FormCheckbox:Click to check this option
-FormRadio:Click to choose this option
-FormSubmit:Send form to %s
-FormBadSubmit:Warning: form can not be submitted
-FormTextarea:Click to edit the text
-FormTextbox:Click to edit this field
+Form_Many:(Viele)
+Form_Drop:Datei hier hinziehen
+FormSelect:Anklicken ˆffnet Auswahlmen¸
+FormCheckbox:Anklicken um die Option an/abzuschalten
+FormRadio:Anklicken w‰hlt diese Option
+FormSubmit:Daten ¸bertragen an %s
+FormBadSubmit:Achtung: Daten kˆnnen nicht gesendet werden
+FormTextarea:Anklicken zum Editieren
+FormTextbox:Anklicken zum Bearbeiten des Feldes
 FormReset:Reset form (not implemented)
-FormFile:Drop a file here to upload it
+FormFile:Zum Upload Datei hierhin ziehen und fallenlassen
 
-Not2xx:Server returned an error
+Not2xx:Server meldet Fehler zur¸ck
 
 cookiefile:Choices:WWW.NetSurf.Cookies
 cookiejar:<Choices$Write>.WWW.NetSurf.Cookies
@@ -232,69 +232,69 @@ HelpIconMenu1:L‰dt die NetSurf Dokumentation in einem neuen Browserfenster.
 HelpIconMenu2:÷ffnet einen Dialog mit Einstellungen f¸r NetSurf.
 HelpIconMenu3:Beendet das Programm.|MAlle Browserfenster werden geschlossen. Downloads werden abgebrochen.
 
-###HelpBrowserMenu0:\Rsee the options relating to the current page.
-###HelpBrowserMenu0-0:\Rsee information about the current page.
-###HelpBrowserMenu0-1:\Rsave the current page as an HTML file.
-###HelpBrowserMenu0-2:\Rsave the current page including all the images and style sheets used.
-###HelpBrowserMenu0-3:\Rsee the export options.
-###HelpBrowserMenu0-3-0:\Rexport the current page as a Drawfile.
-###HelpBrowserMenu0-3-1:\Rexport the current page as a plain text file.
-###HelpBrowserMenu0-4:\Rsave the address of the current page.
-###HelpBrowserMenu0-4-0:\Rsave the current address in Acorn URI format.
-###HelpBrowserMenu0-4-1:\Rsave the current address in Ant URL format.
-###HelpBrowserMenu0-4-2:\Rsave the current address as plain text.
-###HelpBrowserMenu0-5:\Sopen the print dialogue box.
-###HelpBrowserMenu0-6:\Sopen the current page in a new window.
-###HelpBrowserMenu0-7:\Sview the source code of the current page in a text editor.
-###HelpBrowserMenu1:\Rsee the options relating to the current item.
-###HelpBrowserMenu1-0:\Rsee information about the current item.
-###HelpBrowserMenu1-1:\Rsave the current item.
-###HelpBrowserMenu1-2:\Rsee the export options.
-###HelpBrowserMenu1-2-0:\Rsave the image as a Sprite.
-###HelpBrowserMenu1-3:\Rsave the address of the current item.
-###HelpBrowserMenu1-3-0:\Rsave the current item's address in Acorn URI format.
-###HelpBrowserMenu1-3-1:\Rsave the current item's address in Ant URL format.
-###HelpBrowserMenu1-3-2:\Rsave the current item's address as plain text.
-###HelpBrowserMenu1-4:\Sreload all the items on this page.
-###HelpBrowserMenu2:\Rsee the navigation options.
-###HelpBrowserMenu2-0:\Sreturn to the configured home page.
-###HelpBrowserMenu2-1:\Sgo back a page in the local history.|MForm information is not resubmitted.
-###HelpBrowserMenu2-2:\Sstep forward a page in the local history.|MForm information is not resubmitted.
-###HelpBrowserMenu2-3:\Sfetch the current page again.
-###HelpBrowserMenu2-4:\Sstop NetSurf from continuing to load this page.
-###HelpBrowserMenu3:\Rset the local display options.
-###HelpBrowserMenu3-0:\Rscale the page, affecting both text and images.
-###HelpBrowserMenu3-1:\Rset the local image options.
-####HelpBrowserMenu3-1-0:\Stoggle the display of foreground images.
-###HelpBrowserMenu3-1-1:\Stoggle the display of background images.
-###HelpBrowserMenu3-1-2:\Stoggle the display of animations.|MIf turned off, the first frame is displayed.
-###HelpBrowserMenu3-1-3:\Stoggle dithering of images.|MImproves display in sub true colour screen modes.
-####HelpBrowserMenu3-1-4:\Stoggle smoothing of scaled images.|MUses bi-linear filtering to enhance display of scaled images.
-###HelpBrowserMenu3-2:\Rcontrol the display of NetSurf's toolbars.
-###HelpBrowserMenu3-2-0:\Stoggle the display of the toolbar buttons.|MURL bar uses the remaining space.
-###HelpBrowserMenu3-2-1:\Stoggle the display of the address (URL) bar.
-###HelpBrowserMenu3-2-2:\Stoggle the display of the throbber.|MURL bar uses the remaining space.
-###HelpBrowserMenu3-2-3:\Stoggle the display of the status bar.|MHorizontal scroll bar uses the remaining width.
-###HelpBrowserMenu3-3:\Scontrol the manner the display is rendered.
-###HelpBrowserMenu3-3-0:\Stoggle whether text is blended to the background.
-###HelpBrowserMenu3-3-1:\Stoggle whether animations are not displayed until all calculations are complete.
-###HelpBrowserMenu3-3-2:\Stoggle whether everything is not displayed until all calculations are complete.
-###HelpBrowserMenu3-4:\Smake your local display options the default options for NetSurf.
-###HelpBrowserMenu4:\Rto access NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and various setup options.
-###HelpBrowserMenu4-0:\Rmanage the hotlist.
-###HelpBrowserMenu4-0-0:\Sadd the current page to the hotlist.
-###HelpBrowserMenu4-0-1:\Sopen the hotlist management \w.
-###HelpBrowserMenu4-1:\Rcontrol the default \w positioning.
-###HelpBrowserMenu4-1-0:\Sto make the current \w position the default.
-###HelpBrowserMenu4-1-1:\Sto toggle whether subsequent windows are staggered down the screen.
-###HelpBrowserMenu4-1-2:\Sto toggle whether child windows are opened at the size of the parent.
-###HelpBrowserMenu4-1-3:\Sto return to the default \w positioning.
-###HelpBrowserMenu5:\Rsee the help resources available.
-###HelpBrowserMenu5-0:\Sopen the documentation contents page in a new \w.
-###HelpBrowserMenu5-1:\Sopen the user guide in a new \w.
-###HelpBrowserMenu5-2:\Sopen the user information page in a new \w.
-###HelpBrowserMenu5-3:\Sopen the NetSurf about page in a new \w.
-###HelpBrowserMenu5-4:\Srun Help.
+HelpBrowserMenu0:Untermen¸ Seite.|MMen¸punkte beziehen sich auf die angezeigte Seite.
+HelpBrowserMenu0-0:Zeigt Informationen zur aktuellen Seite.
+HelpBrowserMenu0-1:Abspeichern der Seite als HTML Datei.|MGespeichert wird nur der HTML Quellcode (keine Bilder etc.).
+HelpBrowserMenu0-2:Abspeichern der kompletten Seite.|MDer HTML Quellcode sowie alle Bilder und StyleSheets werden gespeichert.
+HelpBrowserMenu0-3:Abspeichern der Seite in verschiedenen Formaten.
+HelpBrowserMenu0-3-0:Exportieren der Seite als Draw Datei.
+HelpBrowserMenu0-3-1:Exportieren der Seite als Text Datei.
+HelpBrowserMenu0-4:Adresse der Seite speichern.
+HelpBrowserMenu0-4-0:Speichert die Adresse der Seite im Acorn URI Format.
+HelpBrowserMenu0-4-1:Speichert die Adresse der Seite im Ant URL Format.
+HelpBrowserMenu0-4-2:Speichert die Adresse der Seite als Text.
+HelpBrowserMenu0-5:Dialogfenster zum Drucken der Seite.
+HelpBrowserMenu0-6:÷ffnet die aktuelle Seite in einem neuen Fenster.
+HelpBrowserMenu0-7:L‰dt den Quellcode der Seite in einen Editor.
+HelpBrowserMenu1:Untermen¸ Objekt.|MMen¸punkte beziehen sich auf das aktuelle Objekt.
+HelpBrowserMenu1-0:Informationen zum aktuellen Objekt zeigen.
+HelpBrowserMenu1-1:Abspeichern des Objektes (Original).
+HelpBrowserMenu1-2:Optionen zum Export des aktuellen Objektes zeigen.
+HelpBrowserMenu1-2-0:Abspeichern des Bildes als Sprite Datei.
+HelpBrowserMenu1-3:Adresse des Objektes speichern.
+HelpBrowserMenu1-3-0:Speichert die Adresse des Objektes im Acorn URI Format.
+HelpBrowserMenu1-3-1:Speichert die Adresse des Objektes im Ant URL Format.
+HelpBrowserMenu1-3-2:Speichert die Adresse des Objektes als Text.
+HelpBrowserMenu1-4:Anklicken mit AUSWAHL um alle Objekte der Seite erneut zu laden.
+HelpBrowserMenu2:Untermen¸ Navigieren.
+HelpBrowserMenu2-0:÷ffnet die Homepage im aktuellen Fenster.
+HelpBrowserMenu2-1:Schaltet zur¸ck zur vorher dargestellten Seite.|MDie Seite wird dabei nicht aktualisiert.
+HelpBrowserMenu2-2:Schaltet zur n‰chsten Seite in der lokalen History Liste.|MDie Seite wird dabei nicht aktualisiert.
+HelpBrowserMenu2-3:L‰dt die aktuelle Seite erneut.|MDie Seite wird aktualisiert. ƒltere Informationen zu dieser Seite, die noch im lokalen Zwischenpuffer gespeichert sind, werden dabei ¸berschrieben.
+HelpBrowserMenu2-4:Unterbricht den Ladevorgang und alle anderen Prozesse im aktuellen Browserfenster.
+HelpBrowserMenu3:Untermen¸ Anzeige.|MFestlegen der Darstellungsparameter f¸r das Browserfenster.
+HelpBrowserMenu3-0:ƒndern der Grˆﬂe der Darstellung. Beeinfluﬂt werden Text und Bilder.
+HelpBrowserMenu3-1:Optionen zur Anzeige von Bildern.
+#HelpBrowserMenu3-1-0:Schaltet Vordergrundbilder ein/aus.
+HelpBrowserMenu3-1-1:Schaltet Hintergrundbilder ein/aus.
+HelpBrowserMenu3-1-2:Schaltet Animationen ein/aus.|MBei ausgeschalteter Animation, wird nur das erste Teilbild (Frame) angezeigt.
+HelpBrowserMenu3-1-3:Schaltet das Dithern von Bildern ein/aus.|MDithern verbessert die Bilddarstellung in Bildschirmmodi mit geringer Farbenzahl.
+#HelpBrowserMenu3-1-4:Schaltet das Weichzeichnen von Bildern ein/aus.|MDabei verbessert bi-lineares Filtern die Anzeige grˆﬂenskalierter Bilder.
+HelpBrowserMenu3-2:Optionen zur Anzeige von Kontroll- und Steuerelementen.
+HelpBrowserMenu3-2-0:Schaltet die Schaltknˆpfe am oberen Fensterrand ein/aus.|MDie L‰nge der Adressleiste wird angepaﬂt.
+HelpBrowserMenu3-2-1:Schaltet die Adressleiste am oberen Fensterrand ein/aus.
+HelpBrowserMenu3-2-2:Schaltet die Ladeaktivit‰tsanzeige am oberen Fensterrand ein/aus.|MDie L‰nge der Adressleiste wird angepaﬂt.
+HelpBrowserMenu3-2-3:Schaltet die Statusanzeige am unteren Fensterrand ein/aus.|MDie L‰nge des horizontalen Schiebebalkens wird angepaﬂt.
+HelpBrowserMenu3-3:Einstellungen zur Berechnung der Seitendarstellung.
+HelpBrowserMenu3-3-0:Schaltet den weichen ‹bergang zwischen Text und farbigem Hintergrund ein/aus. (Backgroundblending)
+HelpBrowserMenu3-3-1:Schaltet das Puffern von Objekten ein/aus.|MNachzuzeichnende Objekte, z.B. Bildanimationen oder Textbereiche, werden zwischengespeichert um Flackern zu vermeiden.
+HelpBrowserMenu3-3-2:Schaltet das Puffern der gesamten Seitenberechnung ein/aus.|MDie komplette Seite wird nach Berechnung und Aufbau zwischengespeichert. Das ist vorteilhaft bei groﬂen Hintergrundbildern und vielen sich ¸berschneidenden Seitenelementen.
+HelpBrowserMenu3-4:‹bernimmt die vorgenommenen Anzeigeeinstellungen als globale Standardwerte f¸r die Darstellung aller weiteren Seiten.
+HelpBrowserMenu4:Untermen¸ Werkzeuge.|MEnth‰lt verschiedene n¸tzliche Zusatz- und Sonderfunktionen.
+HelpBrowserMenu4-0:Verwaltung der Hotlist.
+HelpBrowserMenu4-0-0:Anklicken tr‰gt die Adresse der aktuellen Seite in die Hotlist ein.
+HelpBrowserMenu4-0-1:÷ffnet die Hotlist.
+HelpBrowserMenu4-1:Kontrolle ¸ber Anordnung und Positionierung neuer Fenster.
+HelpBrowserMenu4-1-0:Die Position des aktuellen Fensters wird als globaler Standardwert ¸bernommen. Alle nachfolgend neu geˆffneten Fenster werden an dieser Position plaziert.
+HelpBrowserMenu4-1-1:Neu geˆffnete Fenster werden nicht alle an der Standardposition sondern zueinander leicht versetzt plaziert.
+HelpBrowserMenu4-1-2:Neue Fenster behalten die Grˆﬂe des Fensters, aus dem heraus sie geˆffnet werden, bei.
+HelpBrowserMenu4-1-3:Setzt die festgelegte Standardposition f¸r Fenster auf einen in NetSurf voreingestellten Wert zur¸ck.
+HelpBrowserMenu5:Untermen¸ Hilfe.|MZeigt Informationen zu und ¸ber NetSurf.
+HelpBrowserMenu5-0:÷ffnet die NetSurf Dokumentation in einem neuen Browserfenster.
+HelpBrowserMenu5-1:÷ffnet das NetSurf Handbuch in einem neuen Browserfenster.
+HelpBrowserMenu5-2:÷ffnet eine Seite mit allgemeinen Informationen zu NetSurf in einem neuen Browserfenster.
+HelpBrowserMenu5-3:÷ffnet eine Seite mit Informationen zu Entwicklerteam und bei der Entwicklung genutzter Software in einem neuen Browserfenster.
+HelpBrowserMenu5-4:L‰dt die interaktive Hilfe.
 
 HelpBrowser-1:Das ist ein Browserfenster.|MEinen Link mit AUSWAHL anklicken, um ihm zu folgen.|MEinen Link mit SPEZIAL anklicken, um ihn in einem neuen Fenster zu ˆffnen.
 
@@ -335,30 +335,30 @@ HelpHotToolbar2:Expandiert Eintr‰ge.|MKlicken mit AUSWAHL expandiert alle / alle
 HelpHotToolbar3:÷ffnet Verzeichnisse.|MKlicken mit AUSWAHL ˆffnet alle / alle markierten Verzeichnisse.|MKlicken mit SPEZIAL schlieﬂt alle / alle markierten Verzeichnisse.
 HelpHotToolbar4:L‰dt alle markierten Eintr‰ge in jeweils ein neues Browserfenster.
 
-###HelpHotlistMenu0:\Rperform an operation on the hotlist.
-###HelpHotlistMenu0-0:\Rcreate a new item.
-###HelpHotlistMenu0-0-0:\Rcreate a new directory.
-###HelpHotlistMenu0-0-1:\Rcreate a new address.
-###HelpHotlistMenu0-1:\Ssave any changes made to the hotlist.
-###HelpHotlistMenu0-2:\Rexport the hotlist as an HTML file.
-###HelpHotlistMenu0-3:\Rexpand items within the hotlist.
-###HelpHotlistMenu0-3-0:\Sopen all directories and show all entry details.
-###HelpHotlistMenu0-3-1:\Sopen all directories.
-###HelpHotlistMenu0-3-2:\Sshow all entry details.
-###HelpHotlistMenu0-4:\Rcollapse items within the hotlist.
-###HelpHotlistMenu0-4-0:\Sclose all directories and hide all entry details.
-###HelpHotlistMenu0-4-1:\Sclose all directories.
-###HelpHotlistMenu0-4-2:\Shide all entry details.
-###HelpHotlistMenu1:\Roperate on the current selection.
-###HelpHotlistMenu1-0:\Rsave the current selection.
-###HelpHotlistMenu1-0-0:\Rto save the current address in Acorn URI format.
-###HelpHotlistMenu1-0-1:\Rto save the current address in Ant URL format.
-###HelpHotlistMenu1-0-2:\Rto save the current selection as HTML.
-###HelpHotlistMenu1-1:\Redit the current item.
-###HelpHotlistMenu1-2:\Slaunch the current selection.
-###HelpHotlistMenu1-3:\Sdelete the current selection from the hotlist.
-###HelpHotlistMenu1-4:\Sreset statistics, such as visit count, for selected items.
-###HelpHotlistMenu2:\Sselect all the items in the hotlist.
-###HelpHotlistMenu3:\Sdeselect all selected items.
+HelpHotlistMenu0:Untermen¸ Hotlist. Bearbeiten der Hotlist.
+HelpHotlistMenu0-0:Neues Element in die Hotlist einf¸gen.
+HelpHotlistMenu0-0-0:Neues Verzeichnis anlegen.
+HelpHotlistMenu0-0-1:Neuen Eintrag erstellen.
+HelpHotlistMenu0-1:Anklicken um ƒnderungen der Hotlist zu speichern.
+HelpHotlistMenu0-2:Die gesamte Hotlist als HTML Datei speichern.
+HelpHotlistMenu0-3:÷ffnen von Verzeichnissen und Anzeigen von Zusatzinformationen.
+HelpHotlistMenu0-3-0:÷ffnet alle Verzeichnisse und zeigt zu Eintr‰gen die Zusatzinformationen an.
+HelpHotlistMenu0-3-1:÷ffnet alle Verzeichnisse.
+HelpHotlistMenu0-3-2:Zeigt die Zusatzinformationen zu den Eintr‰gen an.
+HelpHotlistMenu0-4:Schlieﬂen von Verzeichnissen und Ausblenden der Zusatzinformationen.
+HelpHotlistMenu0-4-0:Schlieﬂt alle Verzeichnisse und versteckt die Zusatzinformationen bei Eintr‰gen.
+HelpHotlistMenu0-4-1:Schlieﬂt alle Verzeichnisse.
+HelpHotlistMenu0-4-2:Versteckt die Zusatzinformationen der Eintr‰ge.
+HelpHotlistMenu1:Untermen¸ Auswahl. Bearbeiten der markierten Hotlist Elemente.
+HelpHotlistMenu1-0:Speichern von Hotlist Elementen.
+HelpHotlistMenu1-0-0:Speichert die Adresse des markierten Eintrages im Acorn URI Format.
+HelpHotlistMenu1-0-1:Speichert die Adresse des markierten Eintrages im Ant URL format.
+HelpHotlistMenu1-0-2:Speichert den markierten Teil der Hotlist als HTML Datei.
+HelpHotlistMenu1-1:ƒndern des markierten Elementes in der Hotlist.
+HelpHotlistMenu1-2:÷ffnet markierte Eintr‰ge in je einem neuen Browserfenster.
+HelpHotlistMenu1-3:Lˆscht markierte Elemente aus der Hotlist.|MAchtung: Verzeichnisse werden mit allen in ihnen enthaltenen Eintr‰gen gelˆscht.
+HelpHotlistMenu1-4:Setzt f¸r die markierten Eintr‰ge die Statistik, z.B. Anzahl der Seitenbesuche, zur¸ck.
+HelpHotlistMenu2:Markiert alle Elemente der Hotlist.
+HelpHotlistMenu3:Deselektiert alle markierten Elemente.
 
-HelpAppInfo:Das ist das Info-Fenster zu NetSurf.|MGenauere Angaben zu Autoren und Entwicklerteam, zu genutzten Libraries etc. gibt es bei "‹ber NetSurf" im Untermenu Hilfe eines Browserfensters.
+HelpAppInfo:Das ist das Info-Fenster zu NetSurf.|MGenauere Angaben zu Autoren und Entwicklerteam, zu genutzten Libraries etc. gibt es bei "‹ber NetSurf" im Untermen¸ Hilfe eines Browserfensters.

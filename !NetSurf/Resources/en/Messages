@@ -247,8 +247,8 @@ HelpToolbar10:\Tsearch button.|M\Sfind instances of a string of text on the page
 HelpToolbar12:\TURL bar.|MType in the address of a site to visit and press Return to go there.
 HelpToolbar13:\Tthrobber.|MIt animates while this \w is active.
 
-HelpStatus0:\Tstatus bar.|MIt displays information on what the browser \w is doing.
-HelpStatus1:\Tstatus bar resizer.|MDrag to alter the size of the status bar.
+HelpStatus0:\Tstatus bar resizer.|MDrag to alter the size of the status bar.
+HelpStatus1:\Tstatus bar.|MIt displays information on what the browser \w is doing.
 
 HelpIconMenu0:\Rview information about this software.
 HelpIconMenu1:\Sview NetSurf's documentation.
