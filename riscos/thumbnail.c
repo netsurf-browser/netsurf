@@ -125,7 +125,7 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 		*/
 		_swix(Tinct_PlotScaled, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
 				(char *)(oversampled_area + 1), 0, 0, width * 2, height * 2,
-				(1<<1) | (1<<2));
+				tinct_BILINEAR_FILTER | tinct_DITHER);
 
 		/*	Restore output
 		*/

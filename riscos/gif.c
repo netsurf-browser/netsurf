@@ -103,8 +103,8 @@ void nsgif_redraw(struct content *c, long x, long y,
 		drawing a thumbnail unless something has gone very wrong somewhere else.
 	*/
 	if (ro_gui_current_redraw_gui) {
-		tinct_options = (ro_gui_current_redraw_gui->option_filter_sprites?(1<<1):0) |
-				(ro_gui_current_redraw_gui->option_dither_sprites?(1<<2):0);
+		tinct_options = (ro_gui_current_redraw_gui->option_filter_sprites?tinct_BILINEAR_FILTER:0) |
+				(ro_gui_current_redraw_gui->option_dither_sprites?tinct_DITHER:0);
 		if (ro_gui_current_redraw_gui->option_animate_images) {
 			current_frame = c->data.gif.current_frame;
 		} else {
@@ -116,8 +116,8 @@ void nsgif_redraw(struct content *c, long x, long y,
 		} else {
 			current_frame = c->data.gif.gif->frame_count - 1;
 		}
-		tinct_options = (option_filter_sprites?(1<<1):0) |
-				(option_dither_sprites?(1<<2):0);
+		tinct_options = (option_filter_sprites?tinct_BILINEAR_FILTER:0) |
+				(option_dither_sprites?tinct_DITHER:0);
 	}
 
 	/*	Decode from the last frame to the current frame

@@ -409,7 +409,7 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 				(char *)(header),
 				x0 + he->x * FULL_WIDTH + MARGIN,
 				y0 - he->y * FULL_HEIGHT - FULL_HEIGHT + MARGIN,
-				(option_filter_sprites?(1<<1):0) | (option_dither_sprites?(1<<2):0));
+				(option_filter_sprites?tinct_BILINEAR_FILTER:0) | (option_dither_sprites?tinct_DITHER:0));
 		} else {
 		        unsigned int size;
 			os_factors factors;

@@ -256,11 +256,11 @@ void nspng_redraw(struct content *c, long x, long y,
 		settings as we are drawing a thumbnail.
 	*/
 	if (ro_gui_current_redraw_gui) {
-		tinct_options = (ro_gui_current_redraw_gui->option_filter_sprites?(1<<1):0) |
-				(ro_gui_current_redraw_gui->option_dither_sprites?(1<<2):0);
+		tinct_options = (ro_gui_current_redraw_gui->option_filter_sprites?tinct_BILINEAR_FILTER:0) |
+				(ro_gui_current_redraw_gui->option_dither_sprites?tinct_DITHER:0);
 	} else {
-		tinct_options = (option_filter_sprites?(1<<1):0) |
-				(option_dither_sprites?(1<<2):0);
+		tinct_options = (option_filter_sprites?tinct_BILINEAR_FILTER:0) |
+				(option_dither_sprites?tinct_DITHER:0);
 	}
 
 	/*	Tinct currently only handles 32bpp sprites that have an embedded alpha mask. Any
