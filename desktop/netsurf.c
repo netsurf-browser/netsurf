@@ -38,14 +38,14 @@ extern void curl_memdebug(const char *logname);
 
 int main(int argc, char** argv)
 {
-  netsurf_init(argc, argv);
+	netsurf_init(argc, argv);
 
-  while (!netsurf_quit)
-    netsurf_poll();
+	while (!netsurf_quit)
+		netsurf_poll();
 
-  netsurf_exit();
+	netsurf_exit();
 
-  return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }
 
 
@@ -55,20 +55,26 @@ int main(int argc, char** argv)
 
 void netsurf_init(int argc, char** argv)
 {
-  struct utsname utsname;
+	struct utsname utsname;
 
-  stdout = stderr;
-  curl_memdebug("memdump");
-  if (uname(&utsname) != 0)
-    LOG(("Failed to extract machine information\n"));
-  else
-    LOG(("NetSurf on <%s>, node <%s>, release <%s>, version <%s>, machine <%s>\n", utsname.sysname, utsname.nodename, utsname.release, utsname.version, utsname.machine));
-  gui_init(argc, argv);
-  setlocale(LC_ALL, "");
-  fetch_init();
-  cache_init();
-  fetchcache_init();
-  url_init();
+	stdout = stderr;
+	curl_memdebug("memdump");
+
+	LOG(("version '%s'", netsurf_version));
+	if (uname(&utsname) != 0)
+		LOG(("Failed to extract machine information\n"));
+	else
+		LOG(("NetSurf on <%s>, node <%s>, release <%s>, version <%s>, "
+				"machine <%s>\n", utsname.sysname,
+				utsname.nodename, utsname.release,
+				utsname.version, utsname.machine));
+
+	gui_init(argc, argv);
+	setlocale(LC_ALL, "");
+	fetch_init();
+	cache_init();
+	fetchcache_init();
+	url_init();
 }
 
 
@@ -90,7 +96,7 @@ void netsurf_poll(void)
 
 void netsurf_exit(void)
 {
-  cache_quit();
-  fetch_quit();
-  gui_quit();
+	cache_quit();
+	fetch_quit();
+	gui_quit();
 }
