@@ -85,7 +85,7 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 # PLATFORM_CFLAGS variables are defined in them
 
 CFLAGS_RISCOS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O \
-	$(WARNFLAGS) -I.. $(PLATFORM_CFLAGS) -mpoke-function-name
+	$(WARNFLAGS) -I.. $(PLATFORM_CFLAGS_RISCOS) -mpoke-function-name
 CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -Ddebug $(WARNFLAGS) -I.. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
 CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
