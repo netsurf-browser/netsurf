@@ -19,12 +19,12 @@ td, th          { display: table-cell }
 caption         { display: table-caption }
 img { color: #888; }
 
-h1 { font-size: xx-large; font-weight: bold; }
-h2 { font-size: x-large; }
-h3 { font-size: large; font-weight: bold; }
-h4 { font-size: medium; font-weight: bold; }
-h5 { font-size: medium; font-style: italic; }
-h6 { font-size: medium; font-style: italic; }
+h1 { font-size: xx-large; font-weight: bold; margin: 0.58em 0; }
+h2 { font-size: x-large; margin: 0.69em 0; }
+h3 { font-size: large; font-weight: bold; margin: 0.83em 0; }
+h4 { font-size: medium; font-weight: bold; margin: 1em 0; }
+h5 { font-size: medium; font-style: italic; margin: 1em 0; }
+h6 { font-size: medium; font-style: italic; margin: 1em 0; }
 b, strong { font-weight: bold; }
 i, cite, dfn, em, var, address { font-style: italic; }
 u { text-decoration: underline; }
@@ -35,12 +35,14 @@ a:link { color: #00f; text-decoration: underline; }
 th { font-weight: bold; }
 td { text-align: left; }
 
+body { margin: 5px; }
 p { margin-top: 1em; margin-bottom: 1em; }
 
 /* kludge until this gets implemented */
 dl, ul, ol { padding-left: 0.5em; }
 li, dd { padding-left: 1em; margin-bottom: 0.3em; }
 
+blockquote { margin: 1em; }
 hr { background-color: #000; height: 1px; }
 
 center { text-align: center; }
