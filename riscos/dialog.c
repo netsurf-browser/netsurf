@@ -415,7 +415,7 @@ void set_proxy_choices(void)
 	set_icon_state(dialog_config_prox, ICON_CONFIG_PROX_HTTP,
 			option_http_proxy);
 	set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST,
-			option_http_proxy_host ? "" : option_http_proxy_host);
+			option_http_proxy_host ? option_http_proxy_host : "");
 	set_icon_string_i(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT,
 			option_http_proxy_port);
 }
