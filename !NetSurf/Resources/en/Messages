@@ -58,7 +58,7 @@ OptDefault:Set as default
 Window:Window
 WindowSave:Set as default position
 WindowStagr:Stagger window position
-WindowSize:Maintain window size
+WindowSize:Copy window position
 WindowReset:Reset default position
 Utilities:Utilities
 HotlistAdd:Add to hotlist
@@ -351,7 +351,7 @@ HelpBrowserMenu4-2:\Rsearch for instances of a string of text on the page.
 HelpBrowserMenu4-3:\Rcontrol the default \w positioning.
 HelpBrowserMenu4-3-0:\Sto make the current \w position the default.
 HelpBrowserMenu4-3-1:\Sto toggle whether subsequent windows are staggered down the screen.
-HelpBrowserMenu4-3-2:\Sto toggle whether child windows are opened at the size of the parent.
+HelpBrowserMenu4-3-2:\Sto toggle whether child windows copy the size and position of their parent.|MWhen off, all new windows open in the default position.
 HelpBrowserMenu4-3-3:\Sto return to the default \w positioning.
 HelpBrowserMenu5:\Rsee the help resources available.
 HelpBrowserMenu5-0:\Sopen the documentation contents page in a new \w.
