@@ -204,7 +204,6 @@ void about_create(void) {
             sprintf(var, "%2.2d*", j);
             LOG(("var: %s", var));
             sprintf(buf, "%s.", val);
-            buf[strlen(val)+1] = '\0'
             LOG(("buf: %s", buf));
             xosfscontrol_canonicalise_path(var, 0, 0, buf, 0, &pneeded);
             fname = xcalloc((10-pneeded), sizeof(char));
