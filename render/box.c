@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.48 2003/06/06 02:08:56 jmb Exp $
+ * $Id: box.c,v 1.49 2003/06/06 03:12:28 jmb Exp $
  */
 
 #include <assert.h>
@@ -1505,7 +1505,7 @@ struct box* box_embed(xmlNode *n, struct content *content,
 	/* embed src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
 
-                po->src = strdup(s);
+                po->data = strdup(s);
 	        url = url_join(strdup(s), content->url);
 	        LOG(("embed '%s'", url));
 	        xmlFree(s);

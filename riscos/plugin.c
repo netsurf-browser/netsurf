@@ -1,5 +1,5 @@
 /**
- * $Id: plugin.c,v 1.5 2003/06/06 02:30:00 jmb Exp $
+ * $Id: plugin.c,v 1.6 2003/06/06 03:12:28 jmb Exp $
  */
 
 #include <assert.h>
@@ -69,9 +69,9 @@ void plugin_decode(struct content* content, char* url, struct box* box,
 
                 /* no data so try using classid instead */
 
-                po->data = strdup(po->classid);
+                if (po->classid != NULL) {
 
-                if (po->data != NULL) {
+                        po->data = strdup(po->classid);
 
                         if (strnicmp(po->data,"clsid:",6) == 0) {
 
