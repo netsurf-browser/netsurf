@@ -400,6 +400,7 @@ bool html_redraw_borders(struct box *box, int x, int y,
 	};
 	int z[8];
 	colour c;
+	colour c_lit;
 	bool dotted;
 	unsigned int light;
 
@@ -463,8 +464,7 @@ bool html_redraw_borders(struct box *box, int x, int y,
 			z[5] = (p[i * 4 + 7] + p[i * 4 + 5]) / 2;
 			z[6] = p[i * 4 + 6];
 			z[7] = p[i * 4 + 7];
-			if (!plot.polygon(z, 4,
-					light == 0 || light == 1 ?
+			if (!plot.polygon(z, 4, light <= 1 ?
 					html_redraw_darker(c) :
 					html_redraw_lighter(c)))
 				return false;
@@ -472,25 +472,55 @@ bool html_redraw_borders(struct box *box, int x, int y,
 			z[1] = p[i * 4 + 3];
 			z[6] = p[i * 4 + 4];
 			z[7] = p[i * 4 + 5];
-			if (!plot.polygon(z, 4,
-					light == 0 || light == 1 ?
+			if (!plot.polygon(z, 4, light <= 1 ?
 					html_redraw_lighter(c) :
 					html_redraw_darker(c)))
 				return false;;
 			continue;
 
 		case CSS_BORDER_STYLE_INSET:
-			if (i == 0 || i == 3)
-				c = html_redraw_darker(c);
-			else
-				c = html_redraw_lighter(c);
-			break;
+			light = (light + 2) % 4;
 		case CSS_BORDER_STYLE_OUTSET:
-			if (i == 0 || i == 3)
+			z[0] = p[i * 4 + 0];
+			z[1] = p[i * 4 + 1];
+			z[2] = (p[i * 4 + 0] + p[i * 4 + 2]) / 2;
+			z[3] = (p[i * 4 + 1] + p[i * 4 + 3]) / 2;
+			z[4] = (p[i * 4 + 6] + p[i * 4 + 4]) / 2;
+			z[5] = (p[i * 4 + 7] + p[i * 4 + 5]) / 2;
+			z[6] = p[i * 4 + 6];
+			z[7] = p[i * 4 + 7];
+			c_lit = c;
+			switch (light) {
+			case 3:
+				c_lit = html_redraw_lighter(c_lit);
+			case 0:
+				c_lit = html_redraw_lighter(c_lit);
+				break;
+			case 1:
+			     	c_lit = html_redraw_darker(c_lit);
+			case 2:
+				c_lit = html_redraw_darker(c_lit);
+			}
+			if (!plot.polygon(z, 4,	c_lit))
+				return false;
+			z[0] = p[i * 4 + 2];
+			z[1] = p[i * 4 + 3];
+			z[6] = p[i * 4 + 4];
+			z[7] = p[i * 4 + 5];
+			switch (light) {
+			case 0:
 				c = html_redraw_lighter(c);
-			else
+			case 3:
+				c = html_redraw_lighter(c);
+				break;
+			case 2:
 				c = html_redraw_darker(c);
-			break;
+			case 1:
+				c = html_redraw_darker(c);
+			}
+			if (!plot.polygon(z, 4, c))
+				return false;
+			continue;
 
 		default:
 			break;
@@ -513,11 +543,14 @@ bool html_redraw_borders(struct box *box, int x, int y,
 
 colour html_redraw_darker(colour c)
 {
-	int b = c >> 16, g = (c >> 8) & 0xff, r = c & 0xff;
-	b = b * 3 / 4;
-	g = g * 3 / 4;
-	r = r * 3 / 4;
-	return (b << 16) | (g << 8) | r;
+  	int modified, channel;
+	channel = (((c & 0xff) * 7) - 0x8) >> 3;
+	modified = channel > 0 ? channel : 0;
+	channel = (((c & 0xff00) * 7) - 0x800) >> 11;
+	modified |= channel > 0 ? channel << 8 : 0;
+	channel = (((c & 0xff0000) * 7) - 0x80000) >> 19;
+	modified |= channel > 0 ? channel << 16 : 0;
+	return modified;
 }
 
 
@@ -530,12 +563,14 @@ colour html_redraw_darker(colour c)
 
 colour html_redraw_lighter(colour c)
 {
-	int b = 0xff - (c >> 16), g = 0xff - ((c >> 8) & 0xff),
-			r = 0xff - (c & 0xff);
-	b = b * 3 / 4;
-	g = g * 3 / 4;
-	r = r * 3 / 4;
-	return ((0xff - b) << 16) | ((0xff - g) << 8) | (0xff - r);
+  	int modified, channel;
+	channel = (((c & 0xff) * 9) + 0x8) >> 3;
+	modified = channel < 255 ? channel : 255;
+	channel = (((c & 0xff00) * 9) + 0x800) >> 11;
+	modified |= channel < 255 ? channel << 8 : 255 << 8;
+	channel = (((c & 0xff0000) * 9) + 0x80000) >> 19;
+	modified |= channel < 255 ? channel << 16 : 255 << 16;
+	return modified;
 }
 
 
