@@ -10,7 +10,7 @@
  *   Add better error handling
  *      - especially where bad GIFs are concerned.
  *
- * $Id: gif.c,v 1.3 2003/06/06 02:06:23 jmb Exp $
+ * $Id: gif.c,v 1.4 2003/06/06 08:06:55 philpem Exp $
  */
 
 #include <assert.h>
@@ -126,14 +126,11 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
 
   // Now decode the GIF
   c->data.gif.giffile = DGifOpen(c, &nsgif_input_callback);
-//  assert(c->data.gif.giffile != NULL);
   if (c->data.gif.giffile == NULL)
   {
     LOG(("ERROR: giffile is null! error %d", GifLastError()));
-//    assert(1 == 2);
-    return 0;  // more graceful exit
+    return 1;  // more graceful exit
   }
-  // TODO: ^^^ Error checking
 
   // Start creating the sprite
   width = c->data.gif.giffile->SWidth;
@@ -171,8 +168,7 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
     if (DGifGetRecordType(c->data.gif.giffile, &recordtype) == GIF_ERROR)
     {
       LOG(("gif error %d", GifLastError()));
-//      assert(1 == 2);
-      return(0); // more graceful exit
+      return(1); // more graceful exit
     }
     // TODO: ^^^ better error checking
     switch (recordtype)
@@ -212,7 +208,7 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
               {
                 LOG(("error: gif line %d - error %d", i, GifLastError()));
                 LOG(("exp height = %d, width = %d", height, width));
-//                assert(1 == 2);
+                return 1;
               }
               // TODO: ^^^ better error checking
               LOG(("gif line %d", i));
@@ -247,16 +243,7 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
    "There is no spoon."
  */
 
-//		for (i = 0; i != palette_size; i++)
-//			sprite_palette->entries[i].on =
-//			sprite_palette->entries[i].off =
-//					png_palette[i].blue << 24 |
-//					png_palette[i].green << 16 |
-//					png_palette[i].red << 8 | 16;
-
-  // FIXME: 255 is the size of the GIF palette
-  // FIXME: Load the palette instead of creating a greyscale palette
-
+  // Load the colour map
   colormap = (c->data.gif.giffile->Image.ColorMap ?
               c->data.gif.giffile->Image.ColorMap->Colors :
               c->data.gif.giffile->SColorMap->Colors);
