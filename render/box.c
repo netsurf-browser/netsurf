@@ -2925,8 +2925,9 @@ struct box *box_object_at_point(struct content *c, int x, int y)
 	return object_box;
 }
 
+
 /**
- * Find a box based upon its id attribute
+ * Find a box based upon its id attribute.
  *
  * \param box box to search
  * \param id  id to look for
@@ -2936,11 +2937,11 @@ struct box *box_find_by_id(struct box *box, const char *id)
 {
 	struct box *a, *b;
 
-	if (strcmp(id, box->id) == 0)
+	if (box->id != NULL && strcmp(id, box->id) == 0)
 		return box;
 
 	for (a = box->children; a; a = a->next) {
-		if ((b = box_find_by_id(a, id)) != 0)
+		if ((b = box_find_by_id(a, id)) != NULL)
 			return b;
 	}
 
