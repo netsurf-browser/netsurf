@@ -129,7 +129,7 @@ wimp_w ro_theme_create_toolbar(char *url_buffer, char *status_buffer,
 
 int ro_theme_toolbar_height(void)
 {
-	return abs(theme_toolbar_template->extent.y1 - theme_toolbar_template->extent.y0);
+	return abs(theme_toolbar_template->extent.y1 - theme_toolbar_template->extent.y0) + 2;
 }
 
 
