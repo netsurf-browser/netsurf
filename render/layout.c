@@ -459,7 +459,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		else
 			w = font_width(c->font, c->text, (unsigned int) (space - c->text));
 
-		if (x1 - x0 < x + space_before + w && left == 0 && right == 0 && c == first) {
+		if (x1 - x0 <= x + space_before + w && left == 0 && right == 0 && c == first) {
 			/* first word doesn't fit, but no floats and first on line so force in */
 			if (space == 0) {
 				/* only one word in this box or not text */
@@ -479,7 +479,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			}
 			x += space_before + w;
 /* 			fprintf(stderr, "layout_line:     overflow, forcing\n"); */
-		} else if (x1 - x0 < x + space_before + w) {
+		} else if (x1 - x0 <= x + space_before + w) {
 			/* first word doesn't fit, but full width not available so leave for later */
 			b = c;
 /* 			fprintf(stderr, "layout_line:     overflow, leaving\n"); */
@@ -490,6 +490,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 					x1 - x0 - x - space_before, &w);
 			LOG(("'%.*s' %lu %u (%c) %u", (int) c->length, c->text,
 					(unsigned long) (x1 - x0), space - c->text, *space, w));
+			assert(space != c->text);
 			c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
 			c2->text = xstrdup(space + 1);
 			c2->length = c->length - ((space + 1) - c->text);
