@@ -810,7 +810,10 @@ void ro_gui_prepare_navigate(gui_window *gui) {
 	struct content *c;
 	struct toolbar *t;
 	bool update_menu = ((current_menu == browser_menu) && (current_gui == gui));
-
+	int menu_changed = 0;
+	unsigned int i;
+	wimp_selection selection;
+	
 	if (!gui) {
 	  	LOG(("Attempt to update a NULL gui_window icon status"));
 		return;
@@ -822,6 +825,16 @@ void ro_gui_prepare_navigate(gui_window *gui) {
 	h = bw->history;
 	c = bw->current_content;
 	t = gui->data.browser.toolbar;
+	
+	/*	Get the initial menu state to check for changes
+	*/
+	if (update_menu) {
+		for (i = 0; i < 4; i++) {
+			if (browser_navigate_menu->entries[i].icon_flags & wimp_ICON_SHADED) {
+				menu_changed += (1 << i);
+			}
+		}
+	}
 
 	/*	Update the back/forwards icons/buttons
 	*/
@@ -869,6 +882,30 @@ void ro_gui_prepare_navigate(gui_window *gui) {
 		if (update_menu) browser_navigate_menu->entries[4].icon_flags |= wimp_ICON_SHADED;
 		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_STOP, true);
 	}
+
+	
+	/*	Check if we've changed our menu state
+	*/
+	if (update_menu) {
+		for (i = 0; i < 4; i++) {
+			if (browser_navigate_menu->entries[i].icon_flags & wimp_ICON_SHADED) {
+				menu_changed -= (1 << i);
+			}
+		}
+		
+		/*	Re-open the submenu
+		*/
+		if (menu_changed != 0) {
+		  	if (!xwimp_get_menu_state((wimp_menu_state_flags)0, &selection,
+		  			(wimp_w)0, (wimp_i)0)) {
+		  		if (selection.items[0] == MENU_NAVIGATE) {
+		  			ro_gui_create_menu(current_menu, 0, 0, current_gui);
+		  		}
+		  			  
+		  	}
+		}
+	}
+
 }
 
 
