@@ -20,19 +20,25 @@ extern bool option_allow_text_selection;
 extern bool option_show_toolbar;
 extern char *option_theme;
 extern char *option_language;
+extern bool option_dither_sprites;
+extern bool option_filter_sprites;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
 bool option_allow_text_selection = true;\
 bool option_show_toolbar = true;\
 char *option_theme = 0;\
-char *option_language = 0;
+char *option_language = 0;\
+bool option_dither_sprites = true;\
+bool option_filter_sprites = false;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",   OPTION_BOOL,   &option_use_mouse_gestures },\
 { "allow_text_selection", OPTION_BOOL,   &option_allow_text_selection },\
 { "show_toolbar",         OPTION_BOOL,   &option_show_toolbar },\
 { "theme",                OPTION_STRING, &option_theme },\
-{ "language",             OPTION_STRING, &option_language }
+{ "language",             OPTION_STRING, &option_language },\
+{ "dither_sprites",       OPTION_BOOL,   &option_dither_sprites },\
+{ "filter_sprites",       OPTION_BOOL,   &option_filter_sprites }
 
 #endif
