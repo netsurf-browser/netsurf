@@ -77,12 +77,16 @@ int main(int argc, char *argv[])
 		if (!destroyed) {
 /* 			content_reformat(c, 1, 1000); */
 /*			save_complete(c, "save_complete");*/
-			box_dump(c->data.html.layout, 0);
+			if (c->type == CONTENT_HTML)
+				box_dump(c->data.html.layout, 0);
+			else if (c->type == CONTENT_CSS)
+				css_dump_stylesheet(c->data.css.css);
 			content_remove_user(c, callback, 0, 0);
+			c = 0;
 		}
 	}
 
-	options_write("options");
+/* 	options_write("options"); */
 	cache_quit();
 	fetch_quit();
 
@@ -146,7 +150,7 @@ bool plugin_handleable(const char *mime_type)
 #ifdef riscos
 #ifdef WITH_PLUGIN
 void plugin_msg_parse(wimp_message *message, int ack) {}
-void plugin_create(struct content *c) {}
+void plugin_create(struct content *c, const char *params[]) {}
 void plugin_process_data(struct content *c, char *data, unsigned long size) {}
 int plugin_convert(struct content *c, unsigned int width, unsigned int height) {}
 void plugin_revive(struct content *c, unsigned int width, unsigned int height) {}
@@ -263,3 +267,5 @@ void schedule_remove(void (*callback)(void *p), void *p)
 	printf("UNIMPLEMENTED: schedule_remove(%p, %p)\n", callback, p);
 }
 #endif
+
+void *ro_gui_current_redraw_gui = 0;
