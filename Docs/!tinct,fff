@@ -114,8 +114,8 @@ for the alpha channel, ie without a mask.
 	R7	Flag word
 
 
-Tinct_ConvertSprite
-иииииииииииииииииии
+Tinct_ConvertSprite (0x57244)
+иииииииииииииииииииииииииииии
 Converts a paletted sprite into its 32bpp equivalent. Sufficient memory must
 have previously been allocated for the sprite (44 + width * height * 4).
 
