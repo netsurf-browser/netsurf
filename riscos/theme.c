@@ -3,9 +3,9 @@
 #include "oslib/wimp.h"
 #include "oslib/messagetrans.h"
 #include "oslib/osspriteop.h"
-#include "string.h"
+#include <string.h>
 #include "netsurf/utils/utils.h"
-#include "stdio.h"
+#include <stdio.h>
 
 void ro_theme_preload_template(ro_theme* theme, char* template_name,
     int* total_winicon, int* total_indirected)
@@ -170,7 +170,7 @@ wimp_i ro_theme_icon(ro_theme* theme, theme_window_type type, const char* token)
 {
   int used;
   char buffer[32];
-  
+
   messagetrans_lookup(&theme->iconNames.cb, token, buffer, 32, 0,0,0,0, &used);
   if (used > 0)
     return atoi(buffer);
@@ -284,7 +284,7 @@ void ro_theme_resize(ro_theme* theme, theme_window_type wintype, wimp_w w, int w
           *underscore = '\0';
         underscore++;
       }
-      
+
       i = (wimp_i) atoi(icon_num);
 
       if (os_evaluate_expression(formula, buffer, 255, &new_x) == 0)
