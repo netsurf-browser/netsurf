@@ -74,10 +74,10 @@ New:New
 Expand:Expand
 Collapse:Collapse
 All:All
-Folders:Folders
-Folder:Folder
-Links:Addresses
-Link:Address
+Folders:Directories
+Folder:Directory
+Links:Entries
+Link:Entry
 SaveSelect:Save
 Launch:Launch
 Edit:Edit
@@ -86,9 +86,9 @@ ResetUsage:Reset statistics
 
 # Hotlist sub-window titles
 NewLink:Create new address
-NewFolder:Create new folder
-EditLink:Edit address
-EditFolder:Edit folder
+NewFolder:Create new directory
+EditLink:Edit entry
+EditFolder:Rename directory
 
 # Hotlist window
 HotlistURL:URL: %s
@@ -190,7 +190,7 @@ HelpToolbar3:\Treload button.|M\Sreload this page.|M\Areload this page and any o
 HelpToolbar5:\Thistory button.|M\Sopen the local history \w.
 HelpToolbar6:\Tsave button.|M\Ssave the current document.
 #HelpToolbar7:\Tprint button.|M\Sprint this page.|MOpens a print dialogue box.
-HelpToolbar8:\Thotlist button.|M\Sopen the hotlist management \w.\Aadd this address to the hotlist.|M
+HelpToolbar8:\Thotlist button.|M\Sopen the hotlist management \w.|M\Aadd this address to the hotlist.
 HelpToolbar9:\Tscale view button.|M\Sscale the page, affecting both text and images.
 #HelpToolbar10:\Tsearch button.
 #HelpToolbar11:\Tup button.|M\Smove up the directory structure.
@@ -281,20 +281,43 @@ HelpScaleView8:\Sautomatically choose a scale of 120%.
 HelpScaleView9:\Scancel changes.|MThe current scale will not be changed.
 HelpScaleView10:\Schange the view to the scale you have chosen.
 
-HelpHotFolder:Use this \w to set the folder name.
+HelpHotFolder:Use this \w to set the directory name.
 HelpHotEntry:Use this \w to set the entry details.
-HelpHotlist:Use this window to view and modify your hotlists.
-HelpHotlist0:\Sto expand this folder.
-HelpHotlist1:\Sto collapse this folder.
-HelpHotlist2:\Sto show the entry details.
-HelpHotlist3:\Sto hide the entry details.
-HelpHotlist4:\Sto select this folder.
-HelpHotlist5:\Sto select this entry.
+HelpHotlist:\Thotlist management window.
+HelpHotlist0:\Sopen this directory.
+HelpHotlist1:\Sclose this directory.
+HelpHotlist2:\Sshow the entry details.
+HelpHotlist3:\Shide the entry details.
+HelpHotlist4:\Sselect this directory.|MDouble-click \s to open this directory.
+HelpHotlist5:\Sselect this entry.|MDouble-click \s to launch this URL.
 HelpHotlist6:Release the mouse buttons to complete your selection.
 HelpHotlist7:Release the mouse buttons to move the selection.
 
-HelpHotToolbar0:\Tcreate button.|M\Screate a new folder.|M\Acreate a new entry.
+HelpHotToolbar0:\Tcreate button.|M\Screate a new directory.|M\Acreate a new entry.
 HelpHotToolbar1:\Tdelete button.|M\Sdelete the current selection.
-HelpHotToolbar2:\Tlaunch button.|M\Slaunch the current selection.
-HelpHotToolbar3:\Texpand folders button.|M\Sexpand all folders.|M\Acollapse all folders.|M
-HelpHotToolbar4:\Texpand entries button.|M\Sexpand all entries.|M\Acollapse all entries.|M
+HelpHotToolbar2:\Texpand entries button.|M\Sexpand all entries.|M\Acollapse all entries.|MExpanded entries show additional details, such as a visit counter.
+HelpHotToolbar3:\Topen directories button.|M\Sopen all directories.|M\Aclose all directories.
+HelpHotToolbar4:\Tlaunch button.|M\Slaunch the current selection.
+
+HelpHotlistMenu0:\Rperform an operation on the hotlist.
+HelpHotlistMenu0-0:\Rcreate a new item.
+HelpHotlistMenu0-0-0:\Rcreate a new directory.
+HelpHotlistMenu0-0-1:\Rcreate a new address.
+HelpHotlistMenu0-1:\Ssave any changes made to the hotlist.
+HelpHotlistMenu0-2:\Rexport the hotlist as an HTML file.
+HelpHotlistMenu0-3:\Rexpand items within the hotlist.
+HelpHotlistMenu0-3-0:\Sopen all directories and show all entry details.
+HelpHotlistMenu0-3-1:\Sopen all directories.
+HelpHotlistMenu0-3-2:\Sshow all entry details.
+HelpHotlistMenu0-4:\Rcollapse items within the hotlist.
+HelpHotlistMenu0-4-0:\Sclose all directories and hide all entry details.
+HelpHotlistMenu0-4-1:\Sclose all directories.
+HelpHotlistMenu0-4-2:\Shide all entry details.
+HelpHotlistMenu1:\Roperate on the current selection.
+#HelpHotlistMenu1-0:\Rsave the current selection.
+HelpHotlistMenu1-1:\Redit the current item.
+HelpHotlistMenu1-2:\Slaunch the current selection.
+HelpHotlistMenu1-3:\Sdelete the current selection from the hotlist.
+HelpHotlistMenu1-4:\Sreset statistics, such as visit count, for selected items.
+HelpHotlistMenu2:\Sselect all the items in the hotlist.
+HelpHotlistMenu3:\Sdeselect all selected items.
