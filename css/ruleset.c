@@ -39,6 +39,7 @@ static int parse_length(struct css_length * const length,
 		const struct css_node * const v, bool non_negative);
 static colour parse_colour(const struct css_node * const v);
 static colour css_parse_rgb(struct css_node *v);
+static bool parse_uri(const struct css_node *v, char **uri);
 static void parse_background(struct css_style * const s,
 		const struct css_node * v);
 static void parse_background_attachment(struct css_style * const s, const struct css_node * const v);
@@ -608,6 +609,73 @@ colour css_parse_rgb(struct css_node *v)
 	return (c[2] << 16) | (c[1] << 8) | c[0];
 }
 
+/**
+ * Parse a uri
+ *
+ * \param v node to parse
+ * \param uri updated to uri, if successful
+ * \return true on success, false on failure
+ */
+bool parse_uri(const struct css_node *v, char **uri)
+{
+	bool string = false;
+	const char *u;
+	char *t, *url;
+
+	switch (v->type) {
+		case CSS_NODE_URI:
+			for (u = v->data + 4;
+					*u == ' ' || *u == '\t' || *u == '\r' ||
+					*u == '\n' || *u == '\f';
+					u++)
+				;
+			if (*u == '\'' || *u == '"') {
+				string = true;
+				u++;
+			}
+			url = strndup(u, v->data_length - (u - v->data));
+			if (!url)
+				return false;
+			for (t = url + strlen(url) - 2;
+					*t == ' ' || *t == '\t' || *t == '\r' ||
+					*t == '\n' || *t == '\f';
+					t--)
+				;
+			if (string)
+				*t = 0;
+			else
+				*(t + 1) = 0;
+
+			/* for inline style attributes, the stylesheet
+			 * content is the parent HTML content
+			 */
+			if (v->stylesheet->type == CONTENT_HTML)
+				*uri = url_join(url, v->stylesheet->data.html.base_url);
+			else
+				*uri = url_join(url, v->stylesheet->url);
+			free(url);
+			if (!*uri)
+				return false;
+			break;
+		case CSS_NODE_STRING:
+			url = strndup(v->data, v->data_length);
+			if (!url)
+				return false;
+
+			if (v->stylesheet->type == CONTENT_HTML)
+				*uri = url_join(url, v->stylesheet->data.html.base_url);
+			else
+				*uri = url_join(url, v->stylesheet->url);
+			free(url);
+			if (!*uri)
+				return false;
+			break;
+		default:
+			return false;
+	}
+
+	return true;
+}
 
 /**
  * \name  Individual property parsers.
@@ -754,6 +822,7 @@ void parse_background_image(struct css_style * const s,
 }
 
 
+
 /**
  * Parse a background-image property.
  *
@@ -767,54 +836,10 @@ void parse_background_image(struct css_style * const s,
 bool css_background_image_parse(const struct css_node *v,
 		css_background_image_type *type, char **uri)
 {
-	bool string = false;
-	const char *u;
-	char *t, *url;
-
 	switch (v->type) {
 		case CSS_NODE_URI:
-			for (u = v->data + 4;
-					*u == ' ' || *u == '\t' || *u == '\r' ||
-					*u == '\n' || *u == '\f';
-					u++)
-				;
-			if (*u == '\'' || *u == '"') {
-				string = true;
-				u++;
-			}
-			url = strndup(u, v->data_length - (u - v->data));
-			if (!url)
-				return false;
-			for (t = url + strlen(url) - 2;
-					*t == ' ' || *t == '\t' || *t == '\r' ||
-					*t == '\n' || *t == '\f';
-					t--)
-				;
-			if (string)
-				*t = 0;
-			else
-				*(t + 1) = 0;
-
-			/* for inline style attributes, the stylesheet
-			 * content is the parent HTML content
-			 */
-			if (v->stylesheet->type == CONTENT_HTML)
-				*uri = url_join(url, v->stylesheet->data.html.base_url);
-			else
-				*uri = url_join(url, v->stylesheet->url);
-			free(url);
-			if (!*uri)
-				return false;
-			*type = CSS_BACKGROUND_IMAGE_URI;
-			break;
 		case CSS_NODE_STRING:
-			url = strndup(v->data, v->data_length);
-			if (!url)
-				return false;
-
-			*uri = url_join(url, v->stylesheet->url);
-			free(url);
-			if (!*uri)
+			if (!parse_uri(v, uri))
 				return false;
 			*type = CSS_BACKGROUND_IMAGE_URI;
 			break;
@@ -1781,54 +1806,10 @@ void parse_list_style_image(struct css_style * const s, const struct css_node * 
 bool css_list_style_image_parse(const struct css_node *v,
 		css_list_style_image_type *type, char **uri)
 {
-	bool string = false;
-	const char *u;
-	char *t, *url;
-
 	switch (v->type) {
 		case CSS_NODE_URI:
-			for (u = v->data + 4;
-					*u == ' ' || *u == '\t' || *u == '\r' ||
-					*u == '\n' || *u == '\f';
-					u++)
-				;
-			if (*u == '\'' || *u == '"') {
-				string = true;
-				u++;
-			}
-			url = strndup(u, v->data_length - (u - v->data));
-			if (!url)
-				return false;
-			for (t = url + strlen(url) - 2;
-					*t == ' ' || *t == '\t' || *t == '\r' ||
-					*t == '\n' || *t == '\f';
-					t--)
-				;
-			if (string)
-				*t = 0;
-			else
-				*(t + 1) = 0;
-
-			/* for inline style attributes, the stylesheet
-			 * content is the parent HTML content
-			 */
-			if (v->stylesheet->type == CONTENT_HTML)
-				*uri = url_join(url, v->stylesheet->data.html.base_url);
-			else
-				*uri = url_join(url, v->stylesheet->url);
-			free(url);
-			if (!*uri)
-				return false;
-			*type = CSS_LIST_STYLE_IMAGE_URI;
-			break;
 		case CSS_NODE_STRING:
-			url = strndup(v->data, v->data_length);
-			if (!url)
-				return false;
-
-			*uri = url_join(url, v->stylesheet->url);
-			free(url);
-			if (!*uri)
+			if (!parse_uri(v, uri))
 				return false;
 			*type = CSS_LIST_STYLE_IMAGE_URI;
 			break;
