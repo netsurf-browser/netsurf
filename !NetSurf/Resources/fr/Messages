@@ -69,15 +69,15 @@ HelpAbout:À propos de NetSurf
 Themes:Thèmes
 
 # Hotlist menus
-Hotlist:Bookmarks
+Hotlist:Hotlist
 New:New
 Expand:Expand
 Collapse:Collapse
 All:All
 Folders:Folders
 Folder:Folder
-Links:Bookmarks
-Link:Bookmark
+Links:Hotlist
+Link:Address
 SaveSelect:Save
 Launch:Launch
 Edit:Edit
@@ -85,9 +85,9 @@ Delete:Delete
 ResetUsage:Reset statistics
 
 # Hotlist sub-window titles
-NewLink:Create new bookmark
+NewLink:Create new address
 NewFolder:Create new folder
-EditLink:Edit bookmark
+EditLink:Edit address
 EditFolder:Edit folder
 
 # Hotlist window
