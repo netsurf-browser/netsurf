@@ -8,7 +8,7 @@
  */
 
 /** \file
- * Tinct SWI numbers and flags
+ * Tinct SWI numbers and flags for version 0.06
  */
 
 #ifndef _NETSURF_RISCOS_TINCT_H_
@@ -45,13 +45,18 @@
 
 /*      Flags
 */
-#define tinct_READ_SCREEN_BASE    0x01
-#define tinct_BILINEAR_FILTER     0x02
-#define tinct_DITHER              0x04
-#define tinct_INVERT_DITHER       0x08
-#define tinct_FILL_HORIZONTALLY   0x10
-#define tinct_FILL_VERTICALLY     0x20
-#define tinct_FORCE_PALETTE_READ  0x40
-#define tinct_USE_OS_SPRITE_OP    0x80
+#define tinct_READ_SCREEN_BASE    0x01	/** <-- Use when hardware scrolling */
+#define tinct_BILINEAR_FILTER     0x02	/** <-- Perform bi-linear filtering */
+#define tinct_DITHER              0x04	/** <-- Perform dithering */
+#define tinct_ERROR_DIFFUSE       0x08	/** <-- Perform error diffusion */
+#define tinct_DITHER_INVERTED     0x0C	/** <-- Perform dithering with inverted pattern */
+#define tinct_FILL_HORIZONTALLY   0x10	/** <-- Horizontally fill clipping region with image */
+#define tinct_FILL_VERTICALLY     0x20	/** <-- Vertically fill clipping region with image */
+#define tinct_FORCE_PALETTE_READ  0x40	/** <-- Use after a palette change when out of the desktop */
+#define tinct_USE_OS_SPRITE_OP    0x80	/** <-- Use when printing */
+
+/*	Shifts
+*/
+#define tinct_BACKGROUND_SHIFT    0x08
 
 #endif
