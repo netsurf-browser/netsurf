@@ -35,6 +35,7 @@
 <li>Memory cache</li>
 <li>Plugin System</li>
 <li>View Source (Press F8)</li>
+<li>Save as Drawfile (Press Ctrl+Shift+F3)</li>
 <li>Support for Acorn URI Protocol and URI files</li>
 </ul>
 <p>The following is in progress:</p>
