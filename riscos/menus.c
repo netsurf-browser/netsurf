@@ -19,6 +19,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/desktop/gui.h"
+#include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
@@ -653,7 +654,6 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 void ro_gui_menu_selection(wimp_selection *selection)
 {
         char url[80];
-        int length;
 	wimp_pointer pointer;
 	wimp_window_state state;
 	os_error *error;

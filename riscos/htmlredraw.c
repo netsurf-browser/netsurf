@@ -22,6 +22,8 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
+#include "netsurf/render/box.h"
+#include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"

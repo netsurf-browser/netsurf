@@ -20,6 +20,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetch.h"
+#include "netsurf/content/fetchcache.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/html.h"
@@ -163,49 +164,52 @@ struct handler_entry {
 	void (*reshape_instance)(struct content *c, struct browser_window *bw,
 			struct content *page, struct box *box,
 			struct object_params *params, void **state);
+	/** There must be one content per user for this type. */
+	bool no_share;
 };
 /** A table of handler functions, indexed by ::content_type.
  * Must be ordered as enum ::content_type. */
 static const struct handler_entry handler_map[] = {
 	{html_create, html_process_data, html_convert,
 		html_reformat, html_destroy, html_stop, html_redraw,
-		html_add_instance, html_remove_instance, html_reshape_instance},
+		html_add_instance, html_remove_instance, html_reshape_instance,
+		true},
 	{textplain_create, html_process_data, textplain_convert,
-		0, 0, 0, 0, 0, 0, 0},
-	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0, 0},
+		0, 0, 0, 0, 0, 0, 0, true},
+	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0, 0, false},
 #ifdef WITH_JPEG
 	{nsjpeg_create, 0, nsjpeg_convert,
-		0, nsjpeg_destroy, 0, nsjpeg_redraw, 0, 0, 0},
+		0, nsjpeg_destroy, 0, nsjpeg_redraw, 0, 0, 0, false},
 #endif
 #ifdef WITH_GIF
 	{nsgif_create, 0, nsgif_convert,
-	        0, nsgif_destroy, 0, nsgif_redraw, 0, 0, 0},
+	        0, nsgif_destroy, 0, nsgif_redraw, 0, 0, 0, false},
 #endif
 #ifdef WITH_PNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, 0},
+		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, 0, false},
 #endif
 #ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, 0},
+		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, 0, false},
 	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, 0},
+		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, 0, false},
 #endif
 #ifdef WITH_SPRITE
 	{sprite_create, sprite_process_data, sprite_convert,
-		0, sprite_destroy, 0, sprite_redraw, 0, 0, 0},
+		0, sprite_destroy, 0, sprite_redraw, 0, 0, 0, false},
 #endif
 #ifdef WITH_DRAW
 	{0, 0, draw_convert,
-		0, draw_destroy, 0, draw_redraw, 0, 0, 0},
+		0, draw_destroy, 0, draw_redraw, 0, 0, 0, false},
 #endif
 #ifdef WITH_PLUGIN
 	{plugin_create, 0, plugin_convert,
 		0, plugin_destroy, 0, plugin_redraw,
 		plugin_add_instance, plugin_remove_instance,
-		plugin_reshape_instance},
+		plugin_reshape_instance, true},
 #endif
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
@@ -286,6 +290,9 @@ struct content * content_create(const char *url)
 	c->total_size = 0;
 	c->no_error_pages = false;
 	c->error_count = 0;
+	c->owning_bw = 0;
+	c->owning_box = 0;
+	c->params = 0;
 
 	c->prev = 0;
 	c->next = content_list;
@@ -304,7 +311,7 @@ struct content * content_create(const char *url)
  * \return  content if found, or 0
  *
  * Searches the list of contents for one corresponding to the given url, and
- * which is fresh.
+ * which is fresh and shareable.
  */
 
 struct content * content_get(const char *url)
@@ -312,9 +319,20 @@ struct content * content_get(const char *url)
 	struct content *c;
 
 	for (c = content_list; c; c = c->next) {
-		if (c->fresh && c->status != CONTENT_STATUS_ERROR &&
-				strcmp(c->url, url) == 0)
-			return c;
+		if (!c->fresh)
+			/* not fresh */
+			continue;
+		if (c->status == CONTENT_STATUS_ERROR)
+			/* error state */
+			continue;
+		if (c->type != CONTENT_UNKNOWN &&
+				handler_map[c->type].no_share &&
+				c->user_list->next)
+			/* not shareable, and has a user already */
+			continue;
+		if (strcmp(c->url, url))
+			continue;
+		return c;
 	}
 
 	return 0;
@@ -341,6 +359,10 @@ bool content_set_type(struct content *c, content_type type,
 		const char *mime_type, const char *params[])
 {
 	union content_msg_data msg_data;
+	struct content *clone;
+	void (*callback)(content_msg msg, struct content *c, void *p1,
+			void *p2, union content_msg_data data);
+	void *p1, *p2;
 
 	assert(c != 0);
 	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
@@ -359,6 +381,36 @@ bool content_set_type(struct content *c, content_type type,
 
 	c->type = type;
 	c->status = CONTENT_STATUS_LOADING;
+
+	if (handler_map[type].no_share && c->user_list->next &&
+			c->user_list->next->next) {
+		/* type not shareable, and more than one user: split into
+		 * a content per user */
+		while (c->user_list->next->next) {
+			clone = content_create(c->url);
+			if (!clone) {
+				c->type = CONTENT_UNKNOWN;
+				c->status = CONTENT_STATUS_ERROR;
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(c, CONTENT_MSG_ERROR,
+						msg_data);
+				warn_user("NoMemory", 0);
+				return false;
+			}
+
+			clone->width = c->width;
+			clone->height = c->height;
+			clone->fresh = c->fresh;
+
+			callback = c->user_list->next->next->callback;
+			p1 = c->user_list->next->next->p1;
+			p2 = c->user_list->next->next->p2;
+			content_add_user(clone, callback, p1, p2);
+			content_remove_user(c, callback, p1, p2);
+			content_broadcast(clone, CONTENT_MSG_NEWPTR, msg_data);
+			fetchcache_go(clone, 0, callback, p1, p2, 0, 0, false);
+		}
+	}
 
 	if (handler_map[type].create) {
 		if (!handler_map[type].create(c, params)) {

@@ -284,6 +284,10 @@ void browser_window_callback(content_msg msg, struct content *c,
 			gui_window_update_box(bw->window, &data);
 			break;
 
+		case CONTENT_MSG_NEWPTR:
+			bw->loading_content = c;
+			break;
+
 #ifdef WITH_AUTH
 		case CONTENT_MSG_AUTH:
 			gui_401login_open(bw, c, data.auth_realm);

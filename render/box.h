@@ -76,15 +76,13 @@
 #include <limits.h>
 #include <stdbool.h>
 #include "libxml/HTMLparser.h"
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content_type.h"
-#include "netsurf/css/css.h"
-#include "netsurf/render/font.h"
 #include "netsurf/utils/pool.h"
 
 
 struct box;
 struct column;
+struct css_style;
+struct font_data;
 
 
 /** Type of a struct box. */

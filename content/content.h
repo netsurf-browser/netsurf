@@ -35,6 +35,7 @@
  *     content_create -> TYPE_UNKNOWN [style=bold];
  *     TYPE_UNKNOWN -> content_set_type [style=bold];
  *     content_set_type -> LOADING [label=MSG_LOADING, style=bold];
+ *     content_set_type -> LOADING [label="MSG_NEWPTR\nMSG_LOADING",style=bold];
  *     content_set_type -> ERROR [label=MSG_ERROR];
  *     LOADING -> content_process_data [style=bold];
  *     content_process_data -> LOADING [style=bold];
@@ -95,8 +96,6 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content_type.h"
 #include "netsurf/css/css.h"
-#include "netsurf/render/box.h"
-#include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
 #ifdef WITH_JPEG
 #include "netsurf/riscos/jpeg.h"
@@ -121,7 +120,11 @@
 #endif
 
 
+struct box;
+struct browser_window;
+struct content;
 struct fetch;
+struct object_params;
 
 
 /** Used in callbacks to indicate what has occurred. */
@@ -134,6 +137,7 @@ typedef enum {
 	CONTENT_MSG_REDIRECT,  /**< replacement URL */
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
 	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
+	CONTENT_MSG_NEWPTR,    /**< address of structure has changed */
 #ifdef WITH_AUTH
 	CONTENT_MSG_AUTH       /**< authentication required */
 #endif
@@ -244,6 +248,17 @@ struct content {
 	} error_list[40];
 	unsigned int error_count;	/**< Number of valid error entries. */
 
+	/** Browser window that this content is in, valid only if
+	 *  handler_map[type].no_share and 1 user, 0 if not visible. */
+	struct browser_window *owning_bw;
+	/** Box window that this content is in, valid only if
+	 *  handler_map[type].no_share and 1 user, 0 if not in an HTML tree. */
+	struct box *owning_box;
+	/** Parameters of <object> or <embed>, valid only if
+	 *  handler_map[type].no_share and 1 user, 0 if not in an <object> or
+	 *  <embed>. */
+	struct object_params *params;
+
 	struct content *prev;		/**< Previous in global content list. */
 	struct content *next;		/**< Next in global content list. */
 };
@@ -251,9 +266,6 @@ struct content {
 extern struct content *content_list;
 extern const char *content_type_name[];
 extern const char *content_status_name[];
-
-
-struct browser_window;
 
 
 content_type content_lookup(const char *mime_type);

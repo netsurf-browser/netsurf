@@ -24,6 +24,8 @@
 #include "netsurf/desktop/gui.h"
 #endif
 #include "netsurf/desktop/options.h"
+#include "netsurf/render/box.h"
+#include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/layout.h"
 #include "netsurf/utils/log.h"
@@ -586,6 +588,10 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			}
 			break;
 
+		case CONTENT_MSG_NEWPTR:
+			c->data.html.stylesheet_content[i] = css;
+			break;
+
 #ifdef WITH_AUTH
 		case CONTENT_MSG_AUTH:
 			c->data.html.stylesheet_content[i] = 0;
@@ -741,6 +747,10 @@ void html_object_callback(content_msg msg, struct content *object,
 			data.redraw.object_x += x + box->padding[LEFT];
 			data.redraw.object_y += y + box->padding[TOP];
 			content_broadcast(c, CONTENT_MSG_REDRAW, data);
+			break;
+
+		case CONTENT_MSG_NEWPTR:
+			c->data.html.object[i].content = object;
 			break;
 
 #ifdef WITH_AUTH

@@ -751,6 +751,10 @@ void css_atimport_callback(content_msg msg, struct content *css,
 			}
 			break;
 
+		case CONTENT_MSG_NEWPTR:
+			c->data.css.import_content[i] = css;
+			break;
+
 		default:
 			assert(0);
 	}

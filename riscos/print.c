@@ -17,6 +17,7 @@
 
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
+#include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/layout.h"
