@@ -109,7 +109,7 @@ void about_create(void) {
   struct plugd *temp;
   FILE *fp;
   char *buf, *val, var[20], *ptype, *pdetails, *fname, *furl, *p, *leafname;
-  int i, nofiles, j, w, h, size;
+  int i, nofiles, j, w, h, size, pneeded;
   os_fw fh;
   os_error *e;
 
@@ -198,11 +198,13 @@ void about_create(void) {
           }
           else {
             /* Type 3: image file with name xxwwwwhhhh */
-            /* get actual file name - isn't there an easier way? */
-            fname = xcalloc(strlen(buf)+40, sizeof(char));
-            xosfind_openinw(osfind_NO_PATH, buf, 0, &fh);
-            xosargs_read_pathw(fh, fname, (int)strlen(buf)+10,0);
-            xosfind_closew(fh);
+            /* get actual file name */
+            sprintf(var, "%2.2d*", j);
+            sprintf(buf, "%s.", val);
+            xosfscontrol_canonicalise_path(var, 0, 0, buf, 0, &pneeded);
+            fname = xcalloc((10-pneeded), sizeof(char));
+            xosfscontrol_canonicalise_path(var, fname, 0, buf,
+                                                          (10-pneeded), 0);
 
             furl = xcalloc(strlen(fname) + 20, sizeof(char));
 
