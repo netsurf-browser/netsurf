@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -41,27 +42,9 @@ static gui_window *window_list = 0;
 int gadget_subtract_x;
 int gadget_subtract_y;
 const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro";
-const char* GESTURES_URL = "file:///%3CNetSurf$Dir%3E/Resources/gestures";
-const char* THEMES_URL = "http://netsurf.sourceforge.net/themes/";
 
 wimp_menu* theme_menu = NULL;
 
-const char* THEME_DIR = "<NetSurf$Dir>.Themes";
-
-const char* netsurf_messages_filename = "<NetSurf$Dir>.Resources.Messages";
-messagetrans_control_block netsurf_messages_cb;
-char* netsurf_messages_data;
-
-const char* templates_messages_filename = "<NetSurf$Dir>.Resources.IconNames";
-messagetrans_control_block templates_messages_cb;
-char* templates_messages_data;
-
-wimp_w netsurf_info;
-wimp_w netsurf_saveas;
-wimp_w config;
-wimp_w config_br;
-wimp_w config_prox;
-wimp_w config_th;
 
 struct ro_choices choices;
 struct browser_choices browser_choices;
@@ -97,10 +80,6 @@ void gui_remove_gadget(struct gui_gadget* g);
 
 
 
-static void ro_gui_load_messages(void);
-static wimp_w ro_gui_load_template(const char* template_name);
-static void ro_gui_load_templates(void);
-static wimp_i ro_gui_icon(char* token);
 static int window_x_units(int scr_units, wimp_window_state* win);
 static int window_y_units(int scr_units, wimp_window_state* win);
 static void ro_gui_window_redraw_box(struct content *content, struct box * box,
@@ -119,7 +98,6 @@ static void ro_gui_drag_box(wimp_drag* drag, struct ro_gui_drag_info* drag_info)
 static void ro_gui_drag_end(wimp_dragged* drag);
 static void ro_gui_window_mouse_at(wimp_pointer* pointer);
 static void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer);
-static void ro_gui_w_click(wimp_pointer* pointer);
 static double calculate_angle(double x, double y);
 static int anglesDifferent(double a, double b);
 static mouseaction ro_gui_try_mouse_action(void);
@@ -128,88 +106,9 @@ static void ro_gui_keypress(wimp_key* key);
 static void ro_msg_datasave(wimp_message* block);
 static void ro_msg_dataload(wimp_message* block);
 static void gui_set_gadget_extent(struct box* box, int x, int y, os_box* extent, struct gui_gadget* g);
-static void ro_gui_close_dialog(wimp_w close);
 
 
-void ro_gui_close_dialog(wimp_w close)
-{
-	if (close == config)
-		config_open = 0;
-	else if (close == config_br)
-		config_br_open = 0;
-	else if (close == config_prox)
-		config_prox_open = 0;
-	else if (close == config_th)
-	{
-		config_th_open = 0;
-		ro_gui_destroy_theme_menu();
-	}
-	wimp_close_window(close);
-}
 
-void ro_gui_load_messages(void)
-{
-  int size;
-  messagetrans_file_flags flags;
-
-  fprintf(stderr, "opening messages:\n");
-  messagetrans_file_info(netsurf_messages_filename, &flags, &size);
-  fprintf(stderr, "allocating %d bytes\n", size);
-  netsurf_messages_data = xcalloc((unsigned int) size, sizeof(char));
-  messagetrans_open_file(&netsurf_messages_cb, netsurf_messages_filename,
-                         netsurf_messages_data);
-  fprintf(stderr, "messages opened\n");
-}
-
-wimp_w ro_gui_load_template(const char* template_name)
-{
-  int winicon;
-  int indirected;
-  wimp_window *window;
-  char* data;
-  int temp;
-  char name[20];
-
-  strcpy(name, template_name);  /* wimp_load_template won't accept a const char * */
-
-  wimp_load_template(wimp_GET_SIZE, 0, 0, wimp_NO_FONTS, name, 0, &winicon, &indirected);
-  data = (char *) window = xcalloc((unsigned int) (winicon + indirected + 16), 1);
-  wimp_load_template(window, data+winicon, data+winicon+indirected,
-    wimp_NO_FONTS, name, 0, &temp, &temp);
-  return wimp_create_window(window);
-}
-
-void ro_gui_load_templates(void)
-{
-  int size;
-  messagetrans_file_flags flags;
-
-  messagetrans_file_info(templates_messages_filename, &flags, &size);
-  templates_messages_data = xcalloc((unsigned int) size, sizeof(char));
-  messagetrans_open_file(&templates_messages_cb, templates_messages_filename,
-                         templates_messages_data);
-
-  wimp_open_template("<NetSurf$Dir>.Resources.Templates");
-  netsurf_info = ro_gui_load_template("info");
-  netsurf_saveas = ro_gui_load_template("saveas");
-  config = ro_gui_load_template("config");
-  config_br = ro_gui_load_template("config_br");
-  config_prox = ro_gui_load_template("config_prox");
-  config_th = ro_gui_load_template("config_th");
-  wimp_close_template();
-}
-
-wimp_i ro_gui_icon(char* token)
-{
-  int used;
-  char buffer[32];
-
-  messagetrans_lookup(&templates_messages_cb, token, buffer, 32, 0,0,0,0, &used);
-  if (used > 0)
-    return atoi(buffer);
-  else
-    return -1;
-}
 
 
 wimp_menu* combo_menu;
@@ -1103,8 +1002,7 @@ void gui_init(int argc, char** argv)
   LOG(("Using theme '%s' - from '%s'",theme_fname, OPTIONS.theme));
   current_theme = ro_theme_create(theme_fname);
 
-  ro_gui_load_templates();
-  ro_gui_load_messages();
+  ro_gui_dialog_init();
   ro_gui_menus_init();
 }
 
@@ -1311,142 +1209,7 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
   }
 }
 
-void ro_gui_w_click(wimp_pointer* pointer)
-{
-  if (pointer->w == netsurf_info)
-  {
-    if (pointer->i == ro_gui_icon("INFO_URL"))
-    {
-      struct browser_window* bw;
-      bw = create_browser_window(browser_TITLE | browser_TOOLBAR
-        | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480);
-      gui_window_show(bw->window);
-      browser_window_open_location(bw, "http://sourceforge.net/projects/netsurf/");
-      wimp_set_caret_position(bw->window->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_URL"),
-      0,0,-1, strlen(bw->window->url) - 1);
-    }
-  }
-  else if (pointer->w == config && (pointer->buttons == 4 || pointer->buttons == 1))
-  {
-	  if (pointer->i == ro_gui_icon("CONFIG_BROWSER"))
-		ro_gui_show_browser_choices();
-	  else if (pointer->i == ro_gui_icon("CONFIG_PROXY"))
-		ro_gui_show_proxy_choices();
-	  else if (pointer->i == ro_gui_icon("CONFIG_THEME"))
-		ro_gui_show_theme_choices();
-	  else if (pointer->i == ro_gui_icon("CONFIG_OK") || pointer->i == ro_gui_icon("CONFIG_SAVE"))
-	  {
-		  LOG(("converting optons"));
-		  ro_to_options(&choices, &OPTIONS);
-		  LOG(("testing save"));
-		  if (pointer->i == ro_gui_icon("CONFIG_SAVE"))
-			options_write(&OPTIONS, NULL);
-		  LOG(("closing windows"));
-		  if (pointer->buttons != 1)
-		  {
-			ro_gui_close_dialog(config_br);
-			ro_gui_close_dialog(config_prox);
-			ro_gui_close_dialog(config_th);
-			ro_gui_close_dialog(config);
-		  }
-	  }
-	  else if (pointer->i == ro_gui_icon("CONFIG_CANCEL"))
-	  {
-		ro_gui_close_dialog(config_br);
-		ro_gui_close_dialog(config_prox);
-		ro_gui_close_dialog(config_th);
-		  if (pointer->buttons != 1)
-			ro_gui_close_dialog(config);
-		  else
-			options_to_ro(&OPTIONS, &choices);
-	  }
-  }
-  else if (pointer->w == config_br && (pointer->buttons == 4 || pointer->buttons == 1))
-  {
-	  if (pointer->i == ro_gui_icon("CONFIG_BR_OK"))
-	  {
-		  get_browser_choices(&choices.browser);
-		  get_browser_choices(&browser_choices);
-		  if (pointer->buttons != 1)
-			  ro_gui_close_dialog(config_br);
-          }
-	  else if (pointer->i == ro_gui_icon("CONFIG_BR_CANCEL"))
-	  {
-		  if (pointer->buttons != 1)
-			  ro_gui_close_dialog(config_br);
-		  else
-			 set_browser_choices(&choices.browser);
-	  }
-	  else if (pointer->i == ro_gui_icon("CONFIG_BR_DEFAULT"))
-	  {
-	  }
-	  else if (pointer->i == ro_gui_icon("CONFIG_BR_EXPLAIN"))
-	  {
-	struct browser_window* bw;
-    bw = create_browser_window(browser_TITLE | browser_TOOLBAR | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 320, 256);
-    gui_window_show(bw->window);
-    browser_window_open_location(bw, GESTURES_URL);
-	  }
-  }
-  else if (pointer->w == config_prox && (pointer->buttons == 4 || pointer->buttons == 1))
-  {
-	  if (pointer->i == ro_gui_icon("CONFIG_PROX_OK"))
-	  {
-		  get_proxy_choices(&choices.proxy);
-		  get_proxy_choices(&proxy_choices);
-		  if (pointer->buttons != 1)
-			  ro_gui_close_dialog(config_prox);
-          }
-	  else if (pointer->i == ro_gui_icon("CONFIG_PROX_CANCEL"))
-	  {
-		  if (pointer->buttons != 1)
-			  ro_gui_close_dialog(config_prox);
-		  else
-			 set_proxy_choices(&choices.proxy);
-	  }
-	  else if (pointer->i == ro_gui_icon("CONFIG_PROX_DEFAULT"))
-	  {
-	  }
-  }
-  else if (pointer->w == config_th && (pointer->buttons == 4 || pointer->buttons == 1))
-  {
-	  if (pointer->i == ro_gui_icon("CONFIG_TH_OK"))
-	  {
-		  get_theme_choices(&choices.theme);
-		  get_theme_choices(&theme_choices);
-		  if (pointer->buttons != 1)
-			  ro_gui_close_dialog(config_th);
-          }
-	  else if (pointer->i == ro_gui_icon("CONFIG_TH_CANCEL"))
-	  {
-		  if (pointer->buttons != 1)
-			  ro_gui_close_dialog(config_th);
-		  else
-			 set_theme_choices(&choices.theme);
-	  }
-	  else if (pointer->i == ro_gui_icon("CONFIG_TH_DEFAULT"))
-	  {
-	  }
-	  else if (pointer->i == ro_gui_icon("CONFIG_TH_PICK"))
-	  {
-		  ro_gui_build_theme_menu();
-		ro_gui_create_menu(theme_menu, pointer->pos.x - 64, pointer->pos.y, NULL);
-	  }
-	  else if (pointer->i == ro_gui_icon("CONFIG_TH_MANAGE"))
-	  {
-		 char buffer[256];
-		 sprintf(buffer, "*filer_opendir %s", THEME_DIR);
-		 os_cli(buffer);
-	  }
-	  else if (pointer->i == ro_gui_icon("CONFIG_TH_GET"))
-	  {
-struct browser_window* bw;
-    bw = create_browser_window(browser_TITLE | browser_TOOLBAR | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 480, 320);
-    gui_window_show(bw->window);
-    browser_window_open_location(bw, THEMES_URL);
-	  }
-  }
-}
+
 
 double calculate_angle(double x, double y)
 {
@@ -1822,7 +1585,7 @@ void gui_multitask(void)
       break;
 
     case wimp_REDRAW_WINDOW_REQUEST   :
-      if (block.redraw.w == config_th)
+      if (block.redraw.w == dialog_config_th)
 	      ro_gui_redraw_config_th(&block.redraw);
       else
       {
@@ -2067,7 +1830,7 @@ void gui_poll(void)
         break;
 
       case wimp_REDRAW_WINDOW_REQUEST   :
-      if (block.redraw.w == config_th)
+      if (block.redraw.w == dialog_config_th)
 	      ro_gui_redraw_config_th(&block.redraw);
       else
       {
@@ -2098,7 +1861,7 @@ void gui_poll(void)
         if (g != NULL)
           browser_window_destroy(g->data.browser.bw);
         else
-          ro_gui_close_dialog(block.close.w);
+          ro_gui_dialog_close(&(block.close.w));
         break;
 
       case wimp_POINTER_LEAVING_WINDOW  :
@@ -2131,7 +1894,7 @@ void gui_poll(void)
               ro_gui_toolbar_click(g, &(block.pointer));
             }
             else
-              ro_gui_w_click(&(block.pointer));
+              ro_gui_dialog_click(&(block.pointer));
           }
         }
         break;
@@ -2281,7 +2044,7 @@ void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, unsigned 
 		o = o->next;
 	}
 
-	combo_menu = xcalloc(1, sizeof(wimp_menu_entry) * count + offsetof(wimp_menu, entries));
+	combo_menu = xcalloc(1, wimp_SIZEOF_MENU(count));
 
 	combo_menu->title_data.indirected_text.text = "Select";
 	combo_menu->title_fg = wimp_COLOUR_BLACK;
@@ -2539,7 +2302,7 @@ void gui_show_choices()
 	if (!config_open)
 		options_to_ro(&OPTIONS, &choices);
 
-	open.w = config;
+	open.w = dialog_config;
 	wimp_get_window_state(&open);
 	open.next = wimp_TOP;
 	wimp_open_window(&open);
@@ -2592,35 +2355,35 @@ void set_icon_string_i(wimp_w w, wimp_i i, int num)
 void set_browser_choices(struct browser_choices* newchoices)
 {
 	memcpy(&browser_choices, newchoices, sizeof(struct browser_choices));
-	set_icon_state(config_br, ro_gui_icon("CONFIG_BR_GESTURES"), browser_choices.use_mouse_gestures);
-	set_icon_state(config_br, ro_gui_icon("CONFIG_BR_FORM"), browser_choices.use_riscos_elements);
-	set_icon_state(config_br, ro_gui_icon("CONFIG_BR_TEXT"), browser_choices.allow_text_selection);
-	set_icon_state(config_br, ro_gui_icon("CONFIG_BR_TOOLBAR"), browser_choices.show_toolbar);
-	set_icon_state(config_br, ro_gui_icon("CONFIG_BR_PREVIEW"), browser_choices.show_print_preview);
+	set_icon_state(dialog_config_br, ICON_CONFIG_BR_GESTURES, browser_choices.use_mouse_gestures);
+	set_icon_state(dialog_config_br, ICON_CONFIG_BR_FORM, browser_choices.use_riscos_elements);
+	set_icon_state(dialog_config_br, ICON_CONFIG_BR_TEXT, browser_choices.allow_text_selection);
+	set_icon_state(dialog_config_br, ICON_CONFIG_BR_TOOLBAR, browser_choices.show_toolbar);
+	set_icon_state(dialog_config_br, ICON_CONFIG_BR_PREVIEW, browser_choices.show_print_preview);
 }
 
 void get_browser_choices(struct browser_choices* newchoices)
 {
-	newchoices->use_mouse_gestures = get_icon_state(config_br, ro_gui_icon("CONFIG_BR_GESTURES"));
-	newchoices->use_riscos_elements = get_icon_state(config_br, ro_gui_icon("CONFIG_BR_FORM"));
-	newchoices->allow_text_selection = get_icon_state(config_br, ro_gui_icon("CONFIG_BR_TEXT"));
-	newchoices->show_toolbar = get_icon_state(config_br, ro_gui_icon("CONFIG_BR_TOOLBAR"));
-	newchoices->show_print_preview = get_icon_state(config_br, ro_gui_icon("CONFIG_BR_PREVIEW"));
+	newchoices->use_mouse_gestures = get_icon_state(dialog_config_br, ICON_CONFIG_BR_GESTURES);
+	newchoices->use_riscos_elements = get_icon_state(dialog_config_br, ICON_CONFIG_BR_FORM);
+	newchoices->allow_text_selection = get_icon_state(dialog_config_br, ICON_CONFIG_BR_TEXT);
+	newchoices->show_toolbar = get_icon_state(dialog_config_br, ICON_CONFIG_BR_TOOLBAR);
+	newchoices->show_print_preview = get_icon_state(dialog_config_br, ICON_CONFIG_BR_PREVIEW);
 }
 
 void set_proxy_choices(struct proxy_choices* newchoices)
 {
 	memcpy(&proxy_choices, newchoices, sizeof(struct proxy_choices));
-	set_icon_state(config_prox, ro_gui_icon("CONFIG_PROX_HTTP"), proxy_choices.http);
-	set_icon_string(config_prox, ro_gui_icon("CONFIG_PROX_HTTPHOST"), proxy_choices.http_proxy);
-	set_icon_string_i(config_prox, ro_gui_icon("CONFIG_PROX_HTTPPORT"), proxy_choices.http_port);
+	set_icon_state(dialog_config_prox, ICON_CONFIG_PROX_HTTP, proxy_choices.http);
+	set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST, proxy_choices.http_proxy);
+	set_icon_string_i(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT, proxy_choices.http_port);
 }
 
 void get_proxy_choices(struct proxy_choices* newchoices)
 {
-	newchoices->http = get_icon_state(config_prox, ro_gui_icon("CONFIG_PROX_HTTP"));
-	strncpy(newchoices->http_proxy, get_icon_string(config_prox, ro_gui_icon("CONFIG_PROX_HTTPHOST")), 255);
-	newchoices->http_port = atoi(get_icon_string(config_prox, ro_gui_icon("CONFIG_PROX_HTTPPORT")));
+	newchoices->http = get_icon_state(dialog_config_prox, ICON_CONFIG_PROX_HTTP);
+	strncpy(newchoices->http_proxy, get_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST), 255);
+	newchoices->http_port = atoi(get_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT));
 }
 
 osspriteop_area* theme_preview = NULL;
@@ -2632,14 +2395,14 @@ if (theme_preview != NULL)
 
 theme_preview = NULL;
 
-	if (file_exists(THEME_DIR, thname, "Preview", 0xff9))
+	if (file_exists(THEMES_DIR, thname, "Preview", 0xff9))
 	{
 char filename[256];
 FILE* fp;
 int size;
 
 
-  sprintf(filename, "%s.%s.Preview", THEME_DIR, thname);
+  sprintf(filename, "%s.%s.Preview", THEMES_DIR, thname);
   fp = fopen(filename, "rb");
   if (fp == 0) return;
   if (fseek(fp, 0, SEEK_END) != 0) die("fseek() failed");
@@ -2664,13 +2427,13 @@ int size;
 void set_theme_choices(struct theme_choices* newchoices)
 {
 	memcpy(&theme_choices, newchoices, sizeof(struct theme_choices));
-	set_icon_string(config_th, ro_gui_icon("CONFIG_TH_NAME"), theme_choices.name);
+	set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME, theme_choices.name);
 	load_theme_preview(theme_choices.name);
 }
 
 void get_theme_choices(struct theme_choices* newchoices)
 {
-	strncpy(newchoices->name, get_icon_string(config_th, ro_gui_icon("CONFIG_TH_NAME")), 255);
+	strncpy(newchoices->name, get_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME), 255);
 }
 
 void ro_gui_show_browser_choices()
@@ -2680,7 +2443,7 @@ void ro_gui_show_browser_choices()
 	if (!config_br_open)
 		set_browser_choices(&choices.browser);
 
-	open.w = config_br;
+	open.w = dialog_config_br;
 	wimp_get_window_state(&open);
 	open.next = wimp_TOP;
 	wimp_open_window(&open);
@@ -2694,7 +2457,7 @@ void ro_gui_show_proxy_choices()
 	if (!config_prox_open)
 		set_proxy_choices(&choices.proxy);
 
-	open.w = config_prox;
+	open.w = dialog_config_prox;
 	wimp_get_window_state(&open);
 	open.next = wimp_TOP;
 	wimp_open_window(&open);
@@ -2710,7 +2473,7 @@ void ro_gui_show_theme_choices()
 		set_theme_choices(&choices.theme);
 	}
 
-	open.w = config_th;
+	open.w = dialog_config_th;
 	wimp_get_window_state(&open);
 	open.next = wimp_TOP;
 	wimp_open_window(&open);
@@ -2774,17 +2537,17 @@ void ro_gui_build_theme_menu()
 		ro_gui_destroy_theme_menu();
 
 	LOG(("enumerate themes"));
-		context = osgbpb_dir_entries_system_info(THEME_DIR, buffer, 1, context, 256, 0, &count);
+		context = osgbpb_dir_entries_system_info(THEMES_DIR, buffer, 1, context, 256, 0, &count);
 	while (context != -1)
 	{
 		LOG(("called"));
 		info = (osgbpb_system_info*) buffer;
 		if (info->obj_type == 2 /* directory */)
 		{
-			if (file_exists(THEME_DIR, info->name, "Templates", 0xfec) &&
-			    file_exists(THEME_DIR, info->name, "Sprites", 0xff9) &&
-			    file_exists(THEME_DIR, info->name, "IconNames", 0xfff) &&
-			    file_exists(THEME_DIR, info->name, "IconSizes", 0xfff))
+			if (file_exists(THEMES_DIR, info->name, "Templates", 0xfec) &&
+			    file_exists(THEMES_DIR, info->name, "Sprites", 0xff9) &&
+			    file_exists(THEMES_DIR, info->name, "IconNames", 0xfff) &&
+			    file_exists(THEMES_DIR, info->name, "IconSizes", 0xfff))
 			{
 			LOG(("found"));
 			name[num] = malloc(strlen(info->name) + 2);
@@ -2792,7 +2555,7 @@ void ro_gui_build_theme_menu()
 			num++;
 			}
 		}
-		context = osgbpb_dir_entries_system_info(THEME_DIR, buffer, 1, context, 256, 0, &count);
+		context = osgbpb_dir_entries_system_info(THEMES_DIR, buffer, 1, context, 256, 0, &count);
 	}
 	LOG(("mallocing"));
 
@@ -2841,11 +2604,11 @@ void ro_gui_redraw_config_th(wimp_draw* redraw)
   wimp_window_state win;
   osspriteop_trans_tab* trans_tab;
 
-  win.w = config_th;
+  win.w = dialog_config_th;
   wimp_get_window_state(&win);
 
-  preview.w = config_th;
-  preview.i = ro_gui_icon("CONFIG_TH_PREVIEW");
+  preview.w = dialog_config_th;
+  preview.i = ICON_CONFIG_TH_PREVIEW;
   wimp_get_icon_state(&preview);
 
   if (theme_preview != NULL)
@@ -2887,10 +2650,10 @@ void ro_gui_redraw_config_th(wimp_draw* redraw)
 void ro_gui_theme_menu_selection(char *theme)
 {
 	strcpy(theme_choices.name, theme);
-	set_icon_string(config_th, ro_gui_icon("CONFIG_TH_NAME"), theme_choices.name);
+	set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME, theme_choices.name);
 	load_theme_preview(theme_choices.name);
-	wimp_set_icon_state(config_th, ro_gui_icon("CONFIG_TH_NAME"), 0, 0);
-	wimp_set_icon_state(config_th, ro_gui_icon("CONFIG_TH_PREVIEW"), 0, 0);
+	wimp_set_icon_state(dialog_config_th, ICON_CONFIG_TH_NAME, 0, 0);
+	wimp_set_icon_state(dialog_config_th, ICON_CONFIG_TH_PREVIEW, 0, 0);
 
 }
 

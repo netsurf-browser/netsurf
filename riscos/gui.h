@@ -12,13 +12,24 @@
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/gui.h"
+#include "netsurf/desktop/options.h"
 
-extern wimp_w netsurf_info, netsurf_saveas;
+#define THEMES_DIR "<NetSurf$Dir>.Themes"
+
+extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
+	dialog_config_prox, dialog_config_th;
 extern wimp_menu *current_menu, *iconbar_menu, *browser_menu,
 	*combo_menu, *theme_menu;
 extern int current_menu_x, current_menu_y, iconbar_menu_height;
 extern struct gui_gadget *current_gadget;
 extern const char *HOME_URL;
+
+extern struct ro_choices choices;
+extern struct browser_choices browser_choices;
+extern struct proxy_choices proxy_choices;
+extern struct theme_choices theme_choices;
+extern int config_open, config_br_open, config_prox_open, config_th_open;
+
 
 struct ro_gui_window
 {
@@ -54,5 +65,43 @@ void ro_gui_theme_menu_selection(char *theme);
 void ro_gui_menus_init(void);
 void ro_gui_create_menu(wimp_menu* menu, int x, int y, gui_window* g);
 void ro_gui_menu_selection(wimp_selection* selection);
+
+/* in dialog.c */
+void ro_gui_dialog_init(void);
+void ro_gui_dialog_click(wimp_pointer *pointer);
+void ro_gui_dialog_close(wimp_w close);
+
+/* icon numbers */
+#define ICON_CONFIG_SAVE 0
+#define ICON_CONFIG_CANCEL 1
+#define ICON_CONFIG_BROWSER 2
+#define ICON_CONFIG_PROXY 3
+#define ICON_CONFIG_THEME 4
+
+#define ICON_CONFIG_BR_OK 0
+#define ICON_CONFIG_BR_CANCEL 1
+#define ICON_CONFIG_BR_EXPLAIN 2
+#define ICON_CONFIG_BR_DEFAULT 3
+#define ICON_CONFIG_BR_FORM 4
+#define ICON_CONFIG_BR_GESTURES 5
+#define ICON_CONFIG_BR_TEXT 6
+#define ICON_CONFIG_BR_TOOLBAR 7
+#define ICON_CONFIG_BR_PREVIEW 8
+
+#define ICON_CONFIG_PROX_OK 0
+#define ICON_CONFIG_PROX_CANCEL 1
+#define ICON_CONFIG_PROX_DEFAULT 2
+#define ICON_CONFIG_PROX_HTTP 3
+#define ICON_CONFIG_PROX_HTTPHOST 4
+#define ICON_CONFIG_PROX_HTTPPORT 5
+
+#define ICON_CONFIG_TH_OK 0
+#define ICON_CONFIG_TH_CANCEL 1
+#define ICON_CONFIG_TH_DEFAULT 2
+#define ICON_CONFIG_TH_NAME 4
+#define ICON_CONFIG_TH_PICK 5
+#define ICON_CONFIG_TH_PREVIEW 7
+#define ICON_CONFIG_TH_GET 8
+#define ICON_CONFIG_TH_MANAGE 9
 
 #endif

@@ -98,8 +98,8 @@ void ro_gui_menus_init(void)
 	translate_menu(browser_selection_menu);
 	translate_menu(browser_navigate_menu);
 
-	iconbar_menu->entries[0].sub_menu = (wimp_menu *) netsurf_info;
-	browser_page_menu->entries[1].sub_menu = (wimp_menu *) netsurf_saveas;
+	iconbar_menu->entries[0].sub_menu = (wimp_menu *) dialog_info;
+	browser_page_menu->entries[1].sub_menu = (wimp_menu *) dialog_saveas;
 }
 
 
@@ -162,7 +162,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	} else if (current_menu == iconbar_menu) {
 		switch (selection->items[0]) {
 			case 0: /* Info */
-				ro_gui_create_menu((wimp_menu *) netsurf_info,
+				ro_gui_create_menu((wimp_menu *) dialog_info,
 						pointer.pos.x, pointer.pos.y, 0);
 				break;
 			case 1: /* Choices */
