@@ -216,7 +216,7 @@ HelpToolbar3:Aktualisiert den Seiteninhalt.|MKlicken mit AUSWAHL lädt die Seite 
 HelpToolbar4:Lädt die Homepage.
 HelpToolbar5:Öffnet die lokale History.
 HelpToolbar6:Speichert das aktuelle Dokument als HTML Datei.
-#HelpToolbar7:Drucken der aktuellen Seite.|MAnklicken öffnet den 'Drucken' Dialog.
+HelpToolbar7:Drucken der aktuellen Seite.|MAnklicken öffnet den 'Drucken' Dialog.
 HelpToolbar8:Das ist der Hotlist Schaltknopf.|MKlicken mit AUSWAHL öffnet die Hotlist.|MKlicken mit SPEZIAL trägt die aktuelle Seite in die Hotlist ein.
 HelpToolbar9:Anklicken öffnet den Vergrößerungs-Dialog.|MDie Vergrößerung betrifft Text und Bilder.
 HelpToolbar10:Anklicken öffnet das Fenster zur Textsuche.
@@ -243,7 +243,7 @@ HelpIconMenu3:Beendet das Programm.|MAlle Browserfenster werden geschlossen. Dow
 ###HelpBrowserMenu0-4-0:\Rsave the current address in Acorn URI format.
 ###HelpBrowserMenu0-4-1:\Rsave the current address in Ant URL format.
 ###HelpBrowserMenu0-4-2:\Rsave the current address as plain text.
-####HelpBrowserMenu0-5:\Sopen the print dialogue box.
+###HelpBrowserMenu0-5:\Sopen the print dialogue box.
 ###HelpBrowserMenu0-6:\Sopen the current page in a new window.
 ###HelpBrowserMenu0-7:\Sview the source code of the current page in a text editor.
 ###HelpBrowserMenu1:\Rsee the options relating to the current item.
@@ -257,7 +257,7 @@ HelpIconMenu3:Beendet das Programm.|MAlle Browserfenster werden geschlossen. Dow
 ###HelpBrowserMenu1-3-2:\Rsave the current item's address as plain text.
 ###HelpBrowserMenu1-4:\Sreload all the items on this page.
 ###HelpBrowserMenu2:\Rsee the navigation options.
-####HelpBrowserMenu2-0:\Sreturn to the configured home page.
+###HelpBrowserMenu2-0:\Sreturn to the configured home page.
 ###HelpBrowserMenu2-1:\Sgo back a page in the local history.|MForm information is not resubmitted.
 ###HelpBrowserMenu2-2:\Sstep forward a page in the local history.|MForm information is not resubmitted.
 ###HelpBrowserMenu2-3:\Sfetch the current page again.

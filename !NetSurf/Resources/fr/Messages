@@ -213,13 +213,13 @@ HelpToolbar0:\Tle bouton de retour.|M\Srevenir d'une page en arrière dans l'hist
 HelpToolbar1:\Tle bouton d'avance.|M\Savancer d'une page dans l'historique.|MNe renvoie pas l'information de formulaire.
 HelpToolbar2:\Tle bouton Stop.|M\Sarrêter le chargement de la page.
 HelpToolbar3:\Tle bouton de recharge.|M\Srecharger cette page.|M\Arecharger cette page et tous les objets qu'elle contient.
-#HelpToolbar4:\Tle bouton Accueil.|M\Saller à votre page d'accueil.
+HelpToolbar4:\Tle bouton Accueil.|M\Saller à votre page d'accueil.
 HelpToolbar5:\Tle bouton d'historique.|M\Souvrir la \w d'historique locale.
 HelpToolbar6:\Tle bouton de sauvegarde.|M\Ssauver le document en cours.
-#HelpToolbar7:\Tle bouton d'impression.|M\Simprimer cette page.|MOuvre une boîte de dialogue pour l'impression.
+HelpToolbar7:\Tle bouton d'impression.|M\Simprimer cette page.|MOuvre une boîte de dialogue pour l'impression.
 HelpToolbar8:\Tle bouton de favoris.|M\Souvrir la \w de gestion des favoris.|M\Aajouter cette adresse aux favoris.
 HelpToolbar9:\Tle bouton de changement d'échelle.|M\Sredimensionner la page, texte et images comprises.
-#HelpToolbar10:\Tle bouton de recherche.
+HelpToolbar10:\Tle bouton de recherche.|M\Sfind instances of a string of text on the page.
 #HelpToolbar11:\Tle bouton Remonter.|M\Sremonter dans l'arborescence du système de fichiers.
 HelpToolbar12:\Tla barre d'URL.|MTapez l'adresse d'un site à visiter et appuyez sur Return pour y aller.
 HelpToolbar13:\Tle pulseur.|MIl s'anime lorsque cette \w est active.
@@ -257,7 +257,7 @@ HelpBrowserMenu1-3-1:\Rsauver l'adresse de l'objet courant au format Ant URL.
 HelpBrowserMenu1-3-2:\Rsauver l'adresse de l'objet courant en texte simple.
 HelpBrowserMenu1-4:\Srecharger tous les objets de cete page.
 HelpBrowserMenu2:\Rvoir les options de navigation.
-#HelpBrowserMenu2-0:\Srevenir à la page d'accueil configurée.
+HelpBrowserMenu2-0:\Srevenir à la page d'accueil configurée.
 HelpBrowserMenu2-1:\Sreculer d'une page dans l'historique local.|ML'information du formlaire n'est pas réenvoyée.
 HelpBrowserMenu2-2:\Savancer d'une page dans l'historique local.|ML'information du formlaire n'est pas réenvoyée.
 HelpBrowserMenu2-3:\Srecommencer le chargement de la page courante.

@@ -216,7 +216,7 @@ HelpToolbar3:\Treload button.|M\Sreload this page.|M\Areload this page and any o
 HelpToolbar4:\Thome button.|M\Sgo to your home page.
 HelpToolbar5:\Thistory button.|M\Sopen the local history \w.
 HelpToolbar6:\Tsave button.|M\Ssave the current document.
-#HelpToolbar7:\Tprint button.|M\Sprint this page.|MOpens a print dialogue box.
+HelpToolbar7:\Tprint button.|M\Sopen the print dialogue box.
 HelpToolbar8:\Thotlist button.|M\Sopen the hotlist management \w.|M\Aadd this address to the hotlist.
 HelpToolbar9:\Tscale view button.|M\Sscale the page, affecting both text and images.
 HelpToolbar10:\Tsearch button.|M\Sfind instances of a string of text on the page.
@@ -243,7 +243,7 @@ HelpBrowserMenu0-4:\Rsave the address of the current page.
 HelpBrowserMenu0-4-0:\Rsave the current address in Acorn URI format.
 HelpBrowserMenu0-4-1:\Rsave the current address in Ant URL format.
 HelpBrowserMenu0-4-2:\Rsave the current address as plain text.
-#HelpBrowserMenu0-5:\Sopen the print dialogue box.
+HelpBrowserMenu0-5:\Sopen the print dialogue box.
 HelpBrowserMenu0-6:\Sopen the current page in a new window.
 HelpBrowserMenu0-7:\Sview the source code of the current page in a text editor.
 HelpBrowserMenu1:\Rsee the options relating to the current item.
@@ -257,7 +257,7 @@ HelpBrowserMenu1-3-1:\Rsave the current item's address in Ant URL format.
 HelpBrowserMenu1-3-2:\Rsave the current item's address as plain text.
 HelpBrowserMenu1-4:\Sreload all the items on this page.
 HelpBrowserMenu2:\Rsee the navigation options.
-#HelpBrowserMenu2-0:\Sreturn to the configured home page.
+HelpBrowserMenu2-0:\Sreturn to the configured home page.
 HelpBrowserMenu2-1:\Sgo back a page in the local history.|MForm information is not resubmitted.
 HelpBrowserMenu2-2:\Sstep forward a page in the local history.|MForm information is not resubmitted.
 HelpBrowserMenu2-3:\Sfetch the current page again.
