@@ -376,7 +376,8 @@ void content_set_status(struct content *c, const char *status_message, ...)
  *		possibly reported
  */
 
-bool content_process_data(struct content *c, char *data, unsigned int size)
+bool content_process_data(struct content *c, const char *data,
+		unsigned int size)
 {
 	char *source_data;
 	union content_msg_data msg_data;
@@ -400,7 +401,8 @@ bool content_process_data(struct content *c, char *data, unsigned int size)
 	c->size += size;
 
 	if (handler_map[c->type].process_data) {
-		if (!handler_map[c->type].process_data(c, data, size)) {
+		if (!handler_map[c->type].process_data(c,
+				source_data + c->source_size - size, size)) {
 			c->status = CONTENT_STATUS_ERROR;
 			return false;
 		}

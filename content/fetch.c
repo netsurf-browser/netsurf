@@ -49,11 +49,11 @@ bool fetch_active;	/**< Fetches in progress, please call fetch_poll(). */
 /** Information for a single fetch. */
 struct fetch {
 	CURL * curl_handle;	/**< cURL handle if being fetched, or 0. */
-	void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size);
+	void (*callback)(fetch_msg msg, void *p, const char *data,
+			unsigned long size);
 				/**< Callback function. */
 	bool had_headers;	/**< Headers have been processed. */
-	int locked;		/**< Lock count. */
-	bool aborting;		/**< Abort requested in callback. */
+	bool abort;		/**< Abort requested. */
 	bool stopped;		/**< Download stopped on purpose. */
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
 	bool cookies;		/**< Send & accept cookies. */
@@ -82,9 +82,12 @@ static char fetch_error_buffer[CURL_ERROR_SIZE]; /**< Error buffer for cURL. */
 
 static CURLcode fetch_set_options(struct fetch *f);
 static void fetch_free(struct fetch *f);
+static void fetch_stop(struct fetch *f);
 static void fetch_done(CURL *curl_handle, CURLcode result);
-static size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f);
-static size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f);
+static size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
+		struct fetch *f);
+static size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
+		struct fetch *f);
 static bool fetch_process_headers(struct fetch *f);
 #ifdef WITH_POST
 static struct curl_httppost *fetch_post_convert(struct form_successful_control *control);
@@ -208,7 +211,7 @@ void fetch_quit(void)
  */
 
 struct fetch * fetch_start(char *url, char *referer,
-		void (*callback)(fetch_msg msg, void *p, char *data,
+		void (*callback)(fetch_msg msg, void *p, const char *data,
 				unsigned long size),
 		void *p, bool only_2xx, char *post_urlenc,
 		struct form_successful_control *post_multipart, bool cookies)
@@ -232,8 +235,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->curl_handle = 0;
 	fetch->callback = callback;
 	fetch->had_headers = false;
-	fetch->locked = 0;
-	fetch->aborting = false;
+	fetch->abort = false;
 	fetch->stopped = false;
 	fetch->only_2xx = only_2xx;
 	fetch->cookies = cookies;
@@ -387,24 +389,30 @@ CURLcode fetch_set_options(struct fetch *f)
 
 
 /**
- * Stop a fetch.
+ * Abort a fetch.
  */
 
 void fetch_abort(struct fetch *f)
+{
+	assert(f);
+	LOG(("fetch %p, url '%s'", f, f->url));
+	f->abort = true;
+}
+
+
+/**
+ * Clean up a fetch and start any queued fetch for the same host.
+ */
+
+void fetch_stop(struct fetch *f)
 {
 	CURLcode code;
 	CURLMcode codem;
 	struct fetch *fetch;
 	struct fetch *next_fetch;
 
-	assert(f != 0);
+	assert(f);
 	LOG(("fetch %p, url '%s'", f, f->url));
-
-	if (f->locked) {
-		LOG(("locked: will abort later"));
-		f->aborting = true;
-		return;
-	}
 
 	/* remove from list of fetches */
 	if (f->prev == 0)
@@ -446,10 +454,8 @@ void fetch_abort(struct fetch *f)
 		} else {
 			/* destroy all queued fetches for this host */
 			do {
-				fetch->locked++;
 				fetch->callback(FETCH_ERROR, fetch->p,
-						(char*)messages_get("FetchError"), 0);
-				fetch->locked--;
+						messages_get("FetchError"), 0);
 				next_fetch = fetch->queue_next;
 				fetch_free(fetch);
 				fetch = next_fetch;
@@ -538,7 +544,7 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 	bool error = false;
 	struct fetch *f;
 	void *p;
-	void (*callback)(fetch_msg msg, void *p, char *data,
+	void (*callback)(fetch_msg msg, void *p, const char *data,
 			unsigned long size);
 	CURLcode code;
 
@@ -562,10 +568,10 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 	else
 		error = true;
 
-	/* clean up fetch */
-	fetch_abort(f);
+	/* clean up fetch and start any queued fetch for this host */
+	fetch_stop(f);
 
-	/* postponed until after abort so that queue fetches are started */
+	/* postponed until after stop so that queue fetches are started */
 	if (finished)
 		callback(FETCH_FINISHED, p, 0, 0);
 	else if (error)
@@ -577,14 +583,12 @@ void fetch_done(CURL *curl_handle, CURLcode result)
  * Callback function for cURL.
  */
 
-size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
+size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
+		struct fetch *f)
 {
-	f->locked++;
-
 	LOG(("fetch %p, size %u", f, size * nmemb));
 
-	if (!f->had_headers && fetch_process_headers(f)) {
-		f->locked--;
+	if (f->abort || (!f->had_headers && fetch_process_headers(f))) {
 		f->stopped = true;
 		return 0;
 	}
@@ -592,13 +596,12 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 	/* send data to the caller */
 	LOG(("FETCH_DATA"));
 	f->callback(FETCH_DATA, f->p, data, size * nmemb);
-	if (f->aborting) {
-		f->locked--;
+
+	if (f->abort) {
 		f->stopped = true;
 		return 0;
 	}
 
-	f->locked--;
 	return size * nmemb;
 }
 
@@ -607,7 +610,8 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
  * Callback function for headers.
  */
 
-size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f)
+size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
+		struct fetch *f)
 {
 	int i;
 	size *= nmemb;
@@ -675,7 +679,6 @@ bool fetch_process_headers(struct fetch *f)
 	const char *type;
 	CURLcode code;
 
-	f->locked++;
 	f->had_headers = true;
 
 	code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE, &http_code);
@@ -686,7 +689,6 @@ bool fetch_process_headers(struct fetch *f)
 	if (300 <= http_code && http_code < 400 && f->location != 0) {
 		LOG(("FETCH_REDIRECT, '%s'", f->location));
 		f->callback(FETCH_REDIRECT, f->p, f->location, 0);
-		f->locked--;
 		return true;
 	}
 
@@ -694,7 +696,6 @@ bool fetch_process_headers(struct fetch *f)
 #ifdef WITH_AUTH
 	if (http_code == 401) {
 		f->callback(FETCH_AUTH, f->p, f->realm,0);
-		f->locked--;
 		return true;
 	}
 #endif
@@ -702,8 +703,7 @@ bool fetch_process_headers(struct fetch *f)
 	/* handle HTTP errors (non 2xx response codes) */
 	if (f->only_2xx && strncmp(f->url, "http", 4) == 0 &&
 			(http_code < 200 || 299 < http_code)) {
-		f->callback(FETCH_ERROR, f->p, (char*)messages_get("Not2xx"), 0);
-		f->locked--;
+		f->callback(FETCH_ERROR, f->p, messages_get("Not2xx"), 0);
 		return true;
 	}
 
@@ -727,9 +727,8 @@ bool fetch_process_headers(struct fetch *f)
 	}
 
 	LOG(("FETCH_TYPE, '%s'", type));
-	f->callback(FETCH_TYPE, f->p, (char*)type, f->content_length);
-	f->locked--;
-	if (f->aborting)
+	f->callback(FETCH_TYPE, f->p, type, f->content_length);
+	if (f->abort)
 		return true;
 
 	return false;

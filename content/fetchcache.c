@@ -29,8 +29,9 @@
 
 static char error_page[1000];
 static regex_t re_content_type;
-static void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size);
-static char *fetchcache_parse_type(char *s, char **params[]);
+static void fetchcache_callback(fetch_msg msg, void *p, const char *data,
+		unsigned long size);
+static char *fetchcache_parse_type(const char *s, char **params[]);
 static void fetchcache_error_page(struct content *c, const char *error);
 
 
@@ -193,7 +194,8 @@ void fetchcache_go(struct content *content, char *referer,
  * This is called when the status of a fetch changes.
  */
 
-void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
+void fetchcache_callback(fetch_msg msg, void *p, const char *data,
+		unsigned long size)
 {
 	bool res;
 	struct content *c = p;
@@ -317,7 +319,7 @@ void fetchcache_init(void)
 
 #define MAX_ATTRS 10
 
-char *fetchcache_parse_type(char *s, char **params[])
+char *fetchcache_parse_type(const char *s, char **params[])
 {
 	char *type;
 	unsigned int i;

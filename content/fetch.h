@@ -36,7 +36,8 @@ extern bool fetch_active;
 
 void fetch_init(void);
 struct fetch * fetch_start(char *url, char *referer,
-		void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size),
+		void (*callback)(fetch_msg msg, void *p, const char *data,
+				unsigned long size),
 		void *p, bool only_2xx
 #ifdef WITH_POST
 		, char *post_urlenc,
