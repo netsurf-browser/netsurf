@@ -18,6 +18,7 @@ running <em>RISC OS</em>.</p>
 <li><a href="png">PNG image</a></li>
 <li><a href="gif">GIF image</a></li>
 <li><a href="text">Plain text</a></li>
+<li><a href="http://www.schaik.com/pngsuite/">PNG test suite</a></li>
 </ul>
 </div>
 
@@ -33,6 +34,8 @@ fetching</li>
 <li>Memory cache</li>
 <li>External CSS files</li>
 <li><em>&lt;style&gt;</em> element</li>
+<li>Encrypted HTTP (https)</li>
+<li>Redirects now working</li>
 </ul>
 
 <h2>In Progress</h2>
@@ -40,14 +43,14 @@ fetching</li>
 <li><strong>PNGs <img src="png" alt=""> now partially supported</strong></li>
 <li><strong>GIFs <img src="gif" alt=""> now partially supported</strong></li>
 <li>Improved memory handling (currently exits when memory is exhausted)</li>
-<li>Forms (display but don't submit)</li>
-<li><img style="float: left" src="jpeg" alt="">Images (JPEGs so far)</li>
+<li>Forms (GET but not POST)</li>
 </ul>
 
 <hr>
 
-<h2>Links</h2>
+<h2><img style="float: left" src="jpeg" alt="">Links</h2>
 <ul>
+<li><a href="http://netsurf.sourceforge.net/">NetSurf home page</a></li>
 <li><a href="http://sourceforge.net/projects/netsurf/">SourceForge development
 area</a></li>
 <li><a href="http://netsurf.strcprstskrzkrk.co.uk/">Latest builds</a></li>
