@@ -53,5 +53,5 @@ void textplain_reformat(struct content *c, unsigned int width, unsigned int heig
 
 void textplain_destroy(struct content *c)
 {
-	assert(0);
+	html_destroy(c);
 }
