@@ -292,44 +292,33 @@ bool html_redraw_box(struct box *box,
 		/* background colour */
 		if (box->style->background_color != TRANSPARENT) {
 			if (ro_gui_redraw_box_depth > 2) {
+				error = xcolourtrans_set_gcol(
+					box->style->background_color << 8,
+					colourtrans_USE_ECFS,
+					os_ACTION_OVERWRITE, 0, 0);
+				if (error) {
+					LOG(("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess));
+					return false;
+				}
 
-			/* optimisation removed - transparent images break */
-			/* optimisation: skip if fully repeated bg image */
-			if (!box->background ||
-			    (ro_gui_current_redraw_gui &&
-			     !ro_gui_current_redraw_gui->option.background_images)
-			/* || box->style->background_repeat !=
-					CSS_BACKGROUND_REPEAT_REPEAT*/) {
+				error = xos_plot(os_MOVE_TO, px0, py0);
+				if (error) {
+					LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+					return false;
+				}
 
-					error = xcolourtrans_set_gcol(
-						box->style->background_color << 8,
-						colourtrans_USE_ECFS,
-						os_ACTION_OVERWRITE, 0, 0);
-					if (error) {
-						LOG(("xcolourtrans_set_gcol: 0x%x: %s", error->errnum, error->errmess));
-						return false;
-					}
-
-					error = xos_plot(os_MOVE_TO, px0, py0);
+				if (px0 < px1 && py0 < py1) {
+					error = xos_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
+							px1 - 1, py1 - 1);
 					if (error) {
 						LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
 						return false;
 					}
-
-					if (px0 < px1 && py0 < py1) {
-						error = xos_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-								px1 - 1, py1 - 1);
-						if (error) {
-							LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
-							return false;
-						}
-					}
 				}
-
 			}
-			/* set current background color for font painting */
-			current_background_color = box->style->background_color;
 		}
+		/* set current background color for font painting */
+		current_background_color = box->style->background_color;
 
 		if (box->background) {
 			/* clip to padding box for everything but the main window */
