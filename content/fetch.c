@@ -266,7 +266,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	}
 
         /* HTTP auth */
-        code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
+        code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
         assert(code == CURLE_OK);
 
         if ((li=login_list_get(url)) != NULL) {
