@@ -151,7 +151,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 	unsigned int i;
 	union content_msg_data msg_data;
 
-        c->lock++;
+	c->lock++;
 
 	switch (msg) {
 		case FETCH_TYPE:
@@ -165,7 +165,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 				free(params[i]);
 			free(params);
 			if (c->cache && c->type == CONTENT_OTHER)
-			        cache_destroy(c);
+				cache_destroy(c);
 			break;
 
 		case FETCH_DATA:
@@ -175,7 +175,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 						messages_get("RecPercent"),
 						human_friendly_bytesize(c->source_size + size),
 						human_friendly_bytesize(c->total_size),
-						(unsigned int) ((c->source_size + size) * 100.0 / c->total_size));
+						(unsigned int) ((c->source_size + size) * 100 / c->total_size));
 			else
 				content_set_status(c,
 						messages_get("Received"),
@@ -228,13 +228,13 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			break;
 #ifdef WITH_AUTH
 		case FETCH_AUTH:
-		        /* data -> string containing the Realm */
-		        LOG(("FETCH_AUTH, '%s'", data));
-		        c->fetch = 0;
-		        msg_data.auth_realm = data;
-		        content_broadcast(c, CONTENT_MSG_AUTH, msg_data);
-		        cache_destroy(c);
-		        break;
+			/* data -> string containing the Realm */
+			LOG(("FETCH_AUTH, '%s'", data));
+			c->fetch = 0;
+			msg_data.auth_realm = data;
+			content_broadcast(c, CONTENT_MSG_AUTH, msg_data);
+			cache_destroy(c);
+			break;
 #endif
 		default:
 			assert(0);
@@ -311,9 +311,13 @@ char *fetchcache_parse_type(char *s, char **params[])
 void fetchcache_error_page(struct content *c, const char *error)
 {
 	const char *params[] = { 0 };
-	snprintf(error_page, sizeof error_page,	messages_get("ErrorPage"), error);
+	int length;
+
+	if ((length = snprintf(error_page, sizeof(error_page),
+			messages_get("ErrorPage"), error)) < 0)
+		length = 0;
 	content_set_type(c, CONTENT_HTML, "text/html", params);
-	content_process_data(c, error_page, strlen(error_page));
+	content_process_data(c, error_page, length);
 	content_convert(c, c->width, c->height);
 }
 
