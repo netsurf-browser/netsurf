@@ -75,12 +75,16 @@ int main(int argc, char *argv[])
 		}
 		cache_dump();
 		if (!destroyed) {
+			/*while (1)
+				schedule_run();*/
 /* 			content_reformat(c, 1, 1000); */
 /*			save_complete(c, "save_complete");*/
 			if (c->type == CONTENT_HTML)
 				box_dump(c->data.html.layout, 0);
 			else if (c->type == CONTENT_CSS)
 				css_dump_stylesheet(c->data.css.css);
+			else if (c->type == CONTENT_GIF)
+				gif_decode_frame(c->data.gif.gif, 0);
 			content_remove_user(c, callback, 0, 0);
 			c = 0;
 		}
@@ -147,7 +151,6 @@ bool plugin_handleable(const char *mime_type)
 }
 #endif
 
-#ifdef riscos
 #ifdef WITH_PLUGIN
 void plugin_msg_parse(wimp_message *message, int ack) {}
 void plugin_create(struct content *c, const char *params[]) {}
@@ -158,7 +161,8 @@ void plugin_reformat(struct content *c, unsigned int width, unsigned int height)
 void plugin_destroy(struct content *c) {}
 void plugin_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1) {}
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+		float scale) {}
 void plugin_add_instance(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params, void **state) {}
@@ -170,6 +174,7 @@ void plugin_reshape_instance(struct content *c, struct browser_window *bw,
 		struct object_params *params, void **state) {}
 #endif
 
+#ifdef riscos
 char *NETSURF_DIR = "<NetSurf$Dir>";
 #endif
 
@@ -222,6 +227,7 @@ void _swix(void)
 #ifndef riscos
 bool option_filter_sprites = false;
 bool option_dither_sprites = false;
+int option_minimum_gif_delay = 10;
 #endif
 
 void die(const char *error)
@@ -249,23 +255,16 @@ extern os_error *xosfile_set_type (char const *file_name,
 {
 	return 0;
 }
+
+extern os_t os_read_monotonic_time(void)
+{
+	return clock() / 10000;
+}
 #endif
 
 void warn_user(const char *warn)
 {
 	printf("WARNING: %s\n", warn);
 }
-
-#ifndef riscos
-void schedule(int t, void (*callback)(void *p), void *p)
-{
-	printf("UNIMPLEMENTED: schedule(%i, %p, %p)\n", t, callback, p);
-}
-
-void schedule_remove(void (*callback)(void *p), void *p)
-{
-	printf("UNIMPLEMENTED: schedule_remove(%p, %p)\n", callback, p);
-}
-#endif
 
 void *ro_gui_current_redraw_gui = 0;
