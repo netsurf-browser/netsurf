@@ -20,6 +20,8 @@
 #include "oslib/osspriteop.h"
 #include "netsurf/desktop/gui.h"
 
+struct toolbar;
+
 struct theme_entry {
 	char *name;
 	osspriteop_area *sprite_area;
