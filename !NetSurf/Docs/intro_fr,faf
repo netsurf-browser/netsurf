@@ -7,20 +7,20 @@
 </head>
 
 <body>
-<h1 class="banner"><img src="netsurf.png" alt="NetSurf"></h1>
-<p class="languages"><a href="intro.en">English</a> · français</p>
+<h1 class="banner"><img src="netsurf_png" alt="NetSurf"></h1>
+<p class="languages"><a href="intro_en">English</a> · français</p>
 
 <div>
 
 <p><em>NetSurf</em> est un navigateur Web libre pour RISC OS. Son but est
 d'apporter les normes HTML&nbsp;4 et CSS à RISC OS. Pour plus d'information sur
-NetSurf, veuillez lire la <a href="docs.fr">documentation</a>.</p>
+NetSurf, veuillez lire la <a href="docs_fr">documentation</a>.</p>
 
 <h2>État actuel</h2>
 <p>NetSurf est actuellement incomplet et un grand nombre de fonctionnalités ne
 sont pas encore implémentées. Si vous rencontrez des plantages ou des
 dysfonctionnements lors de l'utilisation de NetSurf veuillez rapporter le
-problème aux <a href="info.fr#devel">développeurs</a>.</p>
+problème aux <a href="info_fr#devel">développeurs</a>.</p>
 
 <h2>Liens NetSurf</h2>
 
