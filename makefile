@@ -14,8 +14,8 @@
 #   riscos_debug -- a cross between "riscos" and "debug"
 #   gtk -- experimental gtk version
 #
-# "riscos", "riscos_small", and "riscos_debug" can be compiled under RISC OS,
-# or cross-compiled using gccsdk.
+# "riscos", "riscos_small", "ncos", and "riscos_debug" can be compiled under
+# RISC OS, or cross-compiled using gccsdk.
 
 OBJECTS_COMMON = content.o fetch.o fetchcache.o			# content/
 OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
@@ -56,11 +56,11 @@ OBJECTS_GTK += browser.o netsurf.o version.o			# desktop/
 OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o gtk_window.o	# gtk/
 
 
-OBJDIR_RISCOS = $(shell $(CC) -dumpmachine)
+OBJDIR_RISCOS = arm-riscos-aof
 SOURCES_RISCOS=$(OBJECTS_RISCOS:.o=.c)
 OBJS_RISCOS=$(OBJECTS_RISCOS:%.o=$(OBJDIR_RISCOS)/%.o)
 
-OBJDIR_NCOS = $(shell $(CC) -dumpmachine)-ncos
+OBJDIR_NCOS = arm-ncos-aof
 SOURCES_NCOS=$(OBJECTS_NCOS:.o=.c)
 OBJS_NCOS=$(OBJECTS_NCOS:%.o=$(OBJDIR_NCOS)/%.o)
 
@@ -132,7 +132,7 @@ nsgtk: $(OBJS_GTK)
 netsurf.zip: $(RUNIMAGE)
 	rm netsurf.zip; riscos-zip -9vr, netsurf.zip !NetSurf
 
-# pattern rule for c source
+# pattern rules for c source
 $(OBJDIR_RISCOS)/%.o : %.c
 	@echo "==> $<"
 	@$(CC) -o $@ -c $(CFLAGS_RISCOS) $<
@@ -148,27 +148,30 @@ $(OBJDIR_GTK)/%.o : %.c
 
 # special cases
 css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
-	cd ..; /usr/bin/perl netsurf/css/makeenum netsurf/css/css_enum < netsurf/css/css_enums
-css/parser.c: css/parser.y
+	cd ..; perl netsurf/css/makeenum netsurf/css/css_enum < netsurf/css/css_enums
+css/parser.c css/parser.h: css/parser.y
 	-cd css; lemon parser.y
 css/scanner.c: css/scanner.l
 	cd css; re2c -s scanner.l > scanner.c
 utils/translit.c: transtab
-	cd utils; ./tt2code < transtab > translit.c
+	cd utils; perl tt2code < transtab > translit.c
 
-# generate dependencies
-depend : $(SOURCES_RISCOS) $(SOURCES_NCOS) $(SOURCES_DEBUG) $(SOURCES_GTK)
-	-mkdir $(OBJDIR_RISCOS) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)
-	$(CC) -MM -MG $(CFLAGS_RISCOS) $^ | sed 's|.*\.o:|$(OBJDIR_RISCOS)/&|g' > depend
-	$(CC_DEBUG) -MM -MG $(CFLAGS_DEBUG) $^ | sed 's|.*\.o:|$(OBJDIR_DEBUG)/&|g' >> depend
+# Generate dependencies.
+# To disable automatic regeneration of dependencies (eg. if perl is not
+# available), remove */*.[ch] from the line below.
+# Under RISC OS, you may require *Set UnixFS$sfix "", if perl gives
+# "No such file or directory" errors.
+depend: */*.[ch]
+	@echo "--> modified files $?"
+	@echo "--> updating dependencies"
+	@-mkdir -p $(OBJDIR_RISCOS) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)
+	@perl scandeps netsurf $(OBJDIR_RISCOS) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK) -- $^ > depend
+
+include depend
 
 # remove generated files
-clean :
+clean:
 	-rm $(OBJDIR_RISCOS)/* $(OBJDIR_NCOS)/* \
 		$(OBJDIR_DEBUG)/* $(OBJDIR_GTK)/* \
-		depend css/css_enum.c css/css_enum.h \
+		css/css_enum.c css/css_enum.h \
 		css/parser.c css/parser.h css/scanner.c css/scanner.h
-
-ifneq ($(OS),riscos)
-include depend
-endif
