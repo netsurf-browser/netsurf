@@ -298,9 +298,9 @@ HelpToolbar7:\Tle bouton d'impression.|M\Simprimer cette page.|MOuvre une boîte 
 HelpToolbar8:\Tle bouton de favoris.|M\Souvrir la \w de gestion des favoris.|M\Aajouter cette adresse aux favoris.
 HelpToolbar9:\Tle bouton de changement d'échelle.|M\Sredimensionner la page, texte et images comprises.
 HelpToolbar10:\Tle bouton de recherche.|M\Sfind instances of a string of text on the page.
-#HelpToolbar11:\Tle bouton Remonter.|M\Sremonter dans l'arborescence du système de fichiers.
-HelpToolbar12:\Tla barre d'URL.|MTapez l'adresse d'un site à visiter et appuyez sur Return pour y aller.
-HelpToolbar13:\Tle pulseur.|MIl s'anime lorsque cette \w est active.
+HelpToolbar11:\Tla barre d'URL.|MTapez l'adresse d'un site à visiter et appuyez sur Return pour y aller.
+HelpToolbar12:\Tle pulseur.|MIl s'anime lorsque cette \w est active.
+HelpToolbar13:\TURL suggestion icon.|M\Sopen a list of recently typed URLs.
 
 HelpStatus0:\Tla glissière de la barre d'état.|MDéplacez-la pour changer la taille de la barre d'état.
 HelpStatus1:\Tla barre d'état.|MElle affiche des informations sur ce que fait la \w de navigateur.
@@ -360,11 +360,15 @@ HelpBrowserMenu4:\Raccéder aux utilitaires intégrés à NetSurf.|MLes utilitaires 
 HelpBrowserMenu4-0:\Rgérer les favoris.
 HelpBrowserMenu4-0-0:\Sajouter la page en cours aux favoris.
 HelpBrowserMenu4-0-1:\Souvrir la \w de gestion des favoris.
-HelpBrowserMenu4-1:\Rcontroler le positionnement de fenêtre par défaut.
-HelpBrowserMenu4-1-0:\Spromouvoir la position de fenêtre courante en celle par défault.
-HelpBrowserMenu4-1-1:\Sdécider si les fenêtres suivantes doivent être ouvertes en décalage à l'écran.
-HelpBrowserMenu4-1-2:\Sdécider si les fenêtres-filles doivent être ouvertes à la même taille que celle de leurs parents.
-HelpBrowserMenu4-1-3:\Srevenir au positionnement de fenêtre par défaut.
+HelpBrowserMenu4-1:\Rview the history options.
+HelpBrowserMenu4-1-0:\Sopen the local history \w.
+HelpBrowserMenu4-1-1:\Sopen the global history \w.
+HelpBrowserMenu4-2:\Rsearch for instances of a string of text on the page.
+HelpBrowserMenu4-3:\Rcontroler le positionnement de fenêtre par défaut.
+HelpBrowserMenu4-3-0:\Spromouvoir la position de fenêtre courante en celle par défault.
+HelpBrowserMenu4-3-1:\Sdécider si les fenêtres suivantes doivent être ouvertes en décalage à l'écran.
+HelpBrowserMenu4-3-2:\Sdécider si les fenêtres-filles doivent être ouvertes à la même taille que celle de leurs parents.
+HelpBrowserMenu4-3-3:\Srevenir au positionnement de fenêtre par défaut.
 HelpBrowserMenu5:\Rvoir l'aide disponible.
 HelpBrowserMenu5-0:\Souvrir la page de documentation dans une nouvelle fenêtre.
 HelpBrowserMenu5-1:\Souvrir le guide de l'utilisateur dans une nouvelle fenêtre.
@@ -405,35 +409,30 @@ HelpHotlist5:\Ssélectionner cette entrée.|MDouble-cliquer \s pour lancer cette U
 HelpHotlist6:Lâcher les boutons de souris pour terminer votre sélection.
 HelpHotlist7:Lâcher les boutons de souris pour déplacer votre sélection.
 
-HelpHotToolbar0:\Tle bouton Créer.|M\Scréer un nouveau répertoire.
-HelpHotToolbar1:\Tle bouton Supprimer.|M\Ssupprimer la sélection courante.
-HelpHotToolbar2:\Tle bouton de déploiement des entrées.|M\Sdéployer toutes les entrées ou seulement celle de la sélection courante.|M\ARegrouper toutes les entrées ou seulement celles de la sélection courante.|MLes entrées déployées affichent des infos supplémentaires, comme un compteur de visite.
-HelpHotToolbar3:\Tle bouton d'ouverture de répertoires.|M\Souvrir tous les répertoires ou seulement ceux de la sélection courante.|M\Afermer tous les répertoires ou seulement ceux de la sélection courante.
-HelpHotToolbar4:\Tle bouton de lancement.|M\Slancer (ouvrir) la sélection en cours.
+HelpHotToolbar0:\Tle bouton Supprimer.|M\Ssupprimer la sélection courante.
+HelpHotToolbar1:\Tle bouton de déploiement des entrées.|M\Sdéployer toutes les entrées ou seulement celle de la sélection courante.|M\ARegrouper toutes les entrées ou seulement celles de la sélection courante.|MLes entrées déployées affichent des infos supplémentaires, comme un compteur de visite.
+HelpHotToolbar2:\Tle bouton d'ouverture de répertoires.|M\Souvrir tous les répertoires ou seulement ceux de la sélection courante.|M\Afermer tous les répertoires ou seulement ceux de la sélection courante.
+HelpHotToolbar3:\Tle bouton de lancement.|M\Slancer (ouvrir) la sélection en cours.
+HelpHotToolbar4:\Tle bouton Créer.|M\Scréer un nouveau répertoire.
 
 HelpHotlistMenu0:\Raccomplir une opération sur les favoris.
 HelpHotlistMenu0-0:\Rcréer un nouvel item.
 HelpHotlistMenu0-0-0:\Rcréer un nouveau répertoire.
 HelpHotlistMenu0-0-1:\Rcréer une nouvelle adresse.
-HelpHotlistMenu0-1:\Ssauver tout changement fait sur les favoris.
-HelpHotlistMenu0-2:\Rexporter les favoris en fichier HTML.
-HelpHotlistMenu0-3:\Rdéployer les items dans la liste des favoris.
-HelpHotlistMenu0-3-0:\Souvrir tous les répertoires et afficher tous les détails connus sur les entrées.
-HelpHotlistMenu0-3-1:\Souvrir tous les répertoires.
-HelpHotlistMenu0-3-2:\Smontrer tous les détails sur les entrées.
-HelpHotlistMenu0-4:\Rregrouper les items dans la liste des favoris.
-HelpHotlistMenu0-4-0:\Sfermer tous les répertoires et cacher les détails sur les entrées.
-HelpHotlistMenu0-4-1:\Sfermer tous les répertoires.
-HelpHotlistMenu0-4-2:\Scacher tous les détails sur les entrées.
+HelpHotlistMenu0-1:\Rexporter les favoris en fichier HTML.
+HelpHotlistMenu0-2:\Rdéployer les items dans la liste des favoris.
+HelpHotlistMenu0-2-0:\Souvrir tous les répertoires et afficher tous les détails connus sur les entrées.
+HelpHotlistMenu0-2-1:\Souvrir tous les répertoires.
+HelpHotlistMenu0-2-2:\Smontrer tous les détails sur les entrées.
+HelpHotlistMenu0-3:\Rregrouper les items dans la liste des favoris.
+HelpHotlistMenu0-3-0:\Sfermer tous les répertoires et cacher les détails sur les entrées.
+HelpHotlistMenu0-3-1:\Sfermer tous les répertoires.
+HelpHotlistMenu0-3-2:\Scacher tous les détails sur les entrées.
 HelpHotlistMenu1:\Ragir sur la sélection en cours.
-HelpHotlistMenu1-0:\Rsauver la sélection courante.
-HelpHotlistMenu1-0-0:\Rsauver l'adresse en cours au format Acorn URI.
-HelpHotlistMenu1-0-1:\Rsauver l'adresse en cours au format Ant URL.
-HelpHotlistMenu1-0-2:\Rsauver la sélection courante en HTML.
-HelpHotlistMenu1-1:\Rééditer l'item en cours.
-HelpHotlistMenu1-2:\Slancer la sélection courante.
-HelpHotlistMenu1-3:\Ssupprimer la sélection courante de la liste des favoris.
-HelpHotlistMenu1-4:\Sremettre à zéro les statistiques, comme le compteur de visite, pour les items sélectionnés.
+HelpHotlistMenu1-0:\Rééditer l'item en cours.
+HelpHotlistMenu1-1:\Slancer la sélection courante.
+HelpHotlistMenu1-2:\Ssupprimer la sélection courante de la liste des favoris.
+HelpHotlistMenu1-3:\Sremettre à zéro les statistiques, comme le compteur de visite, pour les items sélectionnés.
 HelpHotlistMenu2:\Ssélectionner tous les items de la liste des favoris.
 HelpHotlistMenu3:\Sdésélectionner la sélection courante.
 
