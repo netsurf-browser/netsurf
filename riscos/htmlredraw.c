@@ -630,18 +630,14 @@ void html_redraw_background(long xi, long yi, int width, int height,
 	x = xi;
 	if (fixed) {
 		/**\todo fixed background attachments */
-		y = yi;
-	} else {
-		y = yi;
+		x -= 0;
 	}
 
 	/* handle window offset */
-	x = xi;
+	y = yi;
 	if (fixed) {
         	/**\todo fixed background attachments */
-                y = yi;
-        } else {
-        	y = yi;
+                y -= 0;
         }
 
 	/* handle background-position */
@@ -649,11 +645,11 @@ void html_redraw_background(long xi, long yi, int width, int height,
 		case CSS_BACKGROUND_POSITION_PERCENT:
 			multiplier =
 				box->style->background_position.horz.value.percent / 100;
-			x += box->x + (box->width * multiplier) -
+			x += (box->width * multiplier) -
 				(box->background->width * scale * multiplier);
 			break;
 		case CSS_BACKGROUND_POSITION_LENGTH:
-			x += box->x + len(&box->style->background_position.horz.value.length, box->style) * scale;
+			x += len(&box->style->background_position.horz.value.length, box->style) * scale;
 			break;
 		default:
 			break;
@@ -663,11 +659,11 @@ void html_redraw_background(long xi, long yi, int width, int height,
 		case CSS_BACKGROUND_POSITION_PERCENT:
 			multiplier =
 				box->style->background_position.vert.value.percent / 100;
-			y += box->y + (box->height * multiplier) -
+			y += (box->height * multiplier) -
 				(box->background->height * scale * multiplier);
 			break;
 		case CSS_BACKGROUND_POSITION_LENGTH:
-			y += box->y + len(&box->style->background_position.vert.value.length, box->style) * scale;
+			y += len(&box->style->background_position.vert.value.length, box->style) * scale;
 			break;
 		default:
 			break;
