@@ -263,8 +263,6 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 			&token_text))) {
 		token_data.text = token_text;
 		token_data.length = current - token_text;
-		printf("%i \"%.*s\"\n", token, token_data.length,
-				token_data.text);
 		css_parser_(parser, token, token_data, &param);
 		if (param.syntax_error) {
 			LOG(("syntax error near offset %i",
