@@ -70,6 +70,40 @@
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
+
+
+#ifndef FILETYPE_ACORN_URI
+#define FILETYPE_ACORN_URI 0xf91
+#endif
+#ifndef FILETYPE_ANT_URL
+#define FILETYPE_ANT_URL 0xb28
+#endif
+#ifndef FILETYPE_IEURL
+#define FILETYPE_IEURL 0x1ba
+#endif
+#ifndef FILETYPE_HTML
+#define FILETYPE_HTML 0xfaf
+#endif
+#ifndef FILETYPE_JNG
+#define FILETYPE_JNG 0xf78
+#endif
+#ifndef FILETYPE_CSS
+#define FILETYPE_CSS 0xf79
+#endif
+#ifndef FILETYPE_MNG
+#define FILETYPE_MNG 0xf83
+#endif
+#ifndef FILETYPE_GIF
+#define FILETYPE_GIF 0x695
+#endif
+#ifndef FILETYPE_PNG
+#define FILETYPE_PNG 0xb60
+#endif
+#ifndef FILETYPE_JPEG
+#define FILETYPE_JPEG 0xc85
+#endif
+
+
 const char *__dynamic_da_name = "NetSurf";	/**< For UnixLib. */
 int __dynamic_da_max_size = 128 * 1024 * 1024;	/**< For UnixLib. */
 int __feature_imagefs_is_file = 1;		/**< For UnixLib. */
@@ -173,6 +207,7 @@ static char *ro_gui_uri_file_parse(const char *file_name);
 static bool ro_gui_uri_file_parse_line(FILE *fp, char *b);
 static char *ro_gui_url_file_parse(const char *file_name);
 static char *ro_gui_ieurl_file_parse(const char *file_name);
+static void ro_msg_datasave(wimp_message *message);
 static void ro_msg_datasave_ack(wimp_message *message);
 static void ro_msg_dataopen(wimp_message *block);
 static char *ro_path_to_url(const char *path);
@@ -1093,6 +1128,10 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			ro_gui_interactive_help_request(message);
 			break;
 
+		case message_DATA_SAVE:
+			ro_msg_datasave(message);
+			break;
+
 		case message_DATA_SAVE_ACK:
 			ro_msg_datasave_ack(message);
 			break;
@@ -1240,27 +1279,34 @@ void ro_msg_dataload(wimp_message *message)
 	if (g && ro_gui_window_dataload(g, message))
 		return;
 
-	if (file_type == 0xf91)			/* Acorn URI file */
-		url = ro_gui_uri_file_parse(message->data.data_xfer.file_name);
-	else if (file_type == 0xb28)		/* ANT URL file */
-		url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
-	else if (file_type == 0x1ba)		/* IEURL file */
-		url = ro_gui_ieurl_file_parse(message->
-				data.data_xfer.file_name);
-	else if (file_type == 0xfaf ||
-			file_type == 0xf78 ||
-			file_type == 0xf79 ||
-			file_type == 0xf83 ||
-			file_type == 0x695 ||
-			file_type == 0xaff ||
-			file_type == 0xb60 ||
-			file_type == 0xc85 ||
-			file_type == 0xff9 ||
-			file_type == 0xfff)	/* display the actual file */
-		url = ro_path_to_url(message->data.data_xfer.file_name);
-	else
-		return;
+	switch (file_type) {
+		case FILETYPE_ACORN_URI:
+			url = ro_gui_uri_file_parse(message->data.data_xfer.file_name);
+			break;
+		case FILETYPE_ANT_URL:
+			url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
+			break;
+		case FILETYPE_IEURL:
+			url = ro_gui_ieurl_file_parse(message->data.data_xfer.file_name);
+			break;
 
+		case FILETYPE_HTML:
+		case FILETYPE_JNG:
+		case FILETYPE_CSS:
+		case FILETYPE_MNG:
+		case FILETYPE_GIF:
+		case osfile_TYPE_DRAW:
+		case FILETYPE_PNG:
+		case FILETYPE_JPEG:
+		case osfile_TYPE_SPRITE:
+		case osfile_TYPE_TEXT:
+			/* display the actual file */
+			url = ro_path_to_url(message->data.data_xfer.file_name);
+			break;
+
+		default:
+			return;
+	}
 
 	if (!url)
 		/* error has already been reported by one of the
@@ -1498,6 +1544,47 @@ char *ro_gui_ieurl_file_parse(const char *file_name)
 		warn_user("URIError", 0);
 
 	return url;
+}
+
+
+/**
+ * Handle Message_DataSave
+ */
+
+void ro_msg_datasave(wimp_message *message)
+{
+	wimp_full_message_data_xfer *dataxfer = (wimp_full_message_data_xfer*)message;
+
+	switch (dataxfer->file_type) {
+		case FILETYPE_ACORN_URI:
+		case FILETYPE_ANT_URL:
+		case FILETYPE_IEURL:
+		case FILETYPE_HTML:
+		case FILETYPE_JNG:
+		case FILETYPE_CSS:
+		case FILETYPE_MNG:
+		case FILETYPE_GIF:
+		case osfile_TYPE_DRAW:
+		case FILETYPE_PNG:
+		case FILETYPE_JPEG:
+		case osfile_TYPE_SPRITE:
+		case osfile_TYPE_TEXT: {
+			os_error *error;
+
+			dataxfer->your_ref = dataxfer->my_ref;
+			dataxfer->size = offsetof(wimp_full_message_data_xfer, file_name) + 16;
+			dataxfer->action = message_DATA_SAVE_ACK;
+			dataxfer->est_size = -1;
+			memcpy(dataxfer->file_name, "<Wimp$Scrap>", 13);
+
+			error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)dataxfer, message->sender);
+			if (error) {
+				LOG(("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
+		}
+		break;
+	}
 }
 
 
