@@ -25,7 +25,6 @@
 /**
  * \todo fix fonts (see below)
  *       fix jpegs
- *       do radio buttons
  *       GUI
  */
 
@@ -557,7 +556,6 @@ void add_circle(struct content *content, struct box *box,
                 dp->bbox.y0 += (cy-cx); /* reduce box height */
         }
         kappa = radius * ((4.0/3.0)*(sqrt(2.0)-1.0)); /* ~= 0.5522877498 */
-        LOG(("%e, %e", radius, kappa));
 
         dp->fill = cbc;
         dp->outline = cbc;
