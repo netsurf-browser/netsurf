@@ -19,7 +19,6 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/utils/utils.h"
-#include "netsurf/utils/log.h"
 
 static wimp_window *theme_toolbar_template = 0;
 static osspriteop_area *theme_sprite_area = 0;
@@ -99,7 +98,6 @@ void ro_theme_load(char *pathname)
 				theme_throbs = n;
 		}
 	}
-	LOG(("theme_throbs: %d", theme_throbs));
 }
 
 
