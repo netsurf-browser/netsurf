@@ -1,5 +1,5 @@
 /**
- * $Id: ruleset.c,v 1.5 2003/04/06 18:09:34 bursa Exp $
+ * $Id: ruleset.c,v 1.6 2003/04/10 21:44:45 bursa Exp $
  */
 
 #include <assert.h>
@@ -125,6 +125,7 @@ void css_add_ruleset(struct content *c,
 			sel->style = style;
 			sel->next = stylesheet->rule[hash];
 			stylesheet->rule[hash] = sel;
+			c->size += sizeof(*style);
 		} else {
 			/* already exists: augument existing style */
 			LOG(("augumenting existing style"));

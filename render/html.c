@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.11 2003/04/09 21:57:09 bursa Exp $
+ * $Id: html.c,v 1.12 2003/04/10 21:44:45 bursa Exp $
  */
 
 #include <assert.h>
@@ -23,15 +23,13 @@ struct fetch_data {
 
 static void html_convert_css_callback(fetchcache_msg msg, struct content *css,
 		void *p, const char *error);
-static void html_title(struct content *c);
-static void html_find_stylesheets(struct content *c);
+static void html_title(struct content *c, xmlNode *head);
+static void html_find_stylesheets(struct content *c, xmlNode *head);
 
 
 void html_create(struct content *c)
 {
 	c->data.html.parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, XML_CHAR_ENCODING_8859_1);
-	c->data.html.document = NULL;
-	c->data.html.markup = NULL;
 	c->data.html.layout = NULL;
 	c->data.html.style = NULL;
 	c->data.html.fonts = NULL;
@@ -57,34 +55,43 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	struct fetch_data *fetch_data;
 	unsigned int i;
 	char status[80];
+	xmlDoc *document;
+	xmlNode *html, *head;
 
+	/* finish parsing */
 	htmlParseChunk(c->data.html.parser, "", 0, 1);
-	c->data.html.document = c->data.html.parser->myDoc;
+	document = c->data.html.parser->myDoc;
 	/*xmlDebugDumpDocument(stderr, c->data.html.parser->myDoc);*/
-
-	LOG(("Skipping to html"));
-	if (c->data.html.document == NULL) {
-		LOG(("There is no document!"));
+	htmlFreeParserCtxt(c->data.html.parser);
+	if (document == NULL) {
+		LOG(("Parsing failed"));
 		return 1;
 	}
-	for (c->data.html.markup = c->data.html.document->children;
-			c->data.html.markup != 0 && c->data.html.markup->type != XML_ELEMENT_NODE;
-			c->data.html.markup = c->data.html.markup->next)
+
+	/* locate html and head elements */
+	for (html = document->children;
+			html != 0 && html->type != XML_ELEMENT_NODE;
+			html = html->next)
 		;
+	if (html == 0 || strcmp((const char *) html->name, "html") != 0) {
+		LOG(("html element not found"));
+		xmlFreeDoc(document);
+		return 1;
+	}
+	for (head = html->children;
+			head != 0 && head->type != XML_ELEMENT_NODE;
+			head = head->next)
+		;
+	if (head == 0 || strcmp((const char *) head->name, "head") != 0) {
+		LOG(("head element not found"));
+		xmlFreeDoc(document);
+		return 1;
+	}
 
-	if (c->data.html.markup == 0) {
-		LOG(("No markup"));
-		return 1;
-	}
-	if (strcmp((const char *) c->data.html.markup->name, "html")) {
-		LOG(("Not html"));
-		return 1;
-	}
-	
-	html_title(c);
+	html_title(c, head);
 
 	/* get stylesheets */
-	html_find_stylesheets(c);
+	html_find_stylesheets(c, head);
 	c->data.html.stylesheet_content = xcalloc(c->data.html.stylesheet_count,
 			sizeof(*c->data.html.stylesheet_content));
 
@@ -111,8 +118,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	}
 
 	if (c->error) {
-		/* TODO: clean up */
-		return 1;
+		c->status_callback(c->status_p, "Warning: some stylesheets failed to load");
 	}
 
 	LOG(("Copying base style"));
@@ -122,18 +128,18 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	LOG(("Creating box"));
 	c->data.html.layout = xcalloc(1, sizeof(struct box));
 	c->data.html.layout->type = BOX_BLOCK;
-	c->data.html.layout->node = c->data.html.markup;
 
 	c->data.html.fonts = font_new_set();
 
-	c->status_callback(c->status_p, "Formatting document");
 	LOG(("XML to box"));
-	xml_to_box(c->data.html.markup, c->data.html.style,
+	xml_to_box(html, c->data.html.style,
 			c->data.html.stylesheet_content, c->data.html.stylesheet_count,
 			&selector, 0, c->data.html.layout, 0, 0, c->data.html.fonts,
 			0, 0, 0, 0, &c->data.html.elements);
 	/*box_dump(c->data.html.layout->children, 0);*/
+	xmlFreeDoc(document);
 
+	c->status_callback(c->status_p, "Formatting document");
 	LOG(("Layout document"));
 	layout_document(c->data.html.layout->children, width);
 	/*box_dump(c->data.html.layout->children, 0);*/
@@ -176,15 +182,12 @@ void html_convert_css_callback(fetchcache_msg msg, struct content *css,
 }
 
 
-void html_title(struct content *c)
+void html_title(struct content *c, xmlNode *head)
 {
-	xmlNode *head = c->data.html.markup->children;
 	xmlNode *node;
 
 	c->title = 0;
 
-	if (strcmp(head->name, "head") != 0)
-		return;
 	for (node = head->children; node != 0; node = node->next) {
 		if (strcmp(node->name, "title") == 0) {
 			c->title = xmlNodeGetContent(node);
@@ -194,9 +197,8 @@ void html_title(struct content *c)
 }
 
 
-void html_find_stylesheets(struct content *c)
+void html_find_stylesheets(struct content *c, xmlNode *head)
 {
-	xmlNode *head = c->data.html.markup->children;
 	xmlNode *node;
 	char *rel, *type, *media, *href;
 	unsigned int count = 1;
@@ -205,8 +207,6 @@ void html_find_stylesheets(struct content *c)
 	c->data.html.stylesheet_url[0] = "file:///%3CNetSurf$Dir%3E/Resources/CSS";
 	c->data.html.stylesheet_count = 1;
 
-	if (strcmp(head->name, "head") != 0)
-		return;
 	for (node = head->children; node != 0; node = node->next) {
 		if (strcmp(node->name, "link") == 0) {
 			/* rel='stylesheet' */
@@ -274,10 +274,6 @@ void html_destroy(struct content *c)
 {
 	LOG(("content %p", c));
 
-	htmlFreeParserCtxt(c->data.html.parser);
-
-	if (c->data.html.document != 0)
-		xmlFreeDoc(c->data.html.document);
 	if (c->data.html.layout != 0)
 		box_free(c->data.html.layout);
 	if (c->data.html.fonts != 0)

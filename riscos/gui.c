@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.23 2003/03/25 21:51:29 bursa Exp $
+ * $Id: gui.c,v 1.24 2003/04/10 21:44:45 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -550,25 +550,8 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
 		signed long y, os_box* clip, unsigned long current_background_color)
 {
   struct box * c;
-  const char * const noname = "";
-  const char * name = noname;
   char* select_text;
   struct formoption* opt;
-
-  switch (box->type)
-  {
-    case BOX_TABLE:
-    case BOX_TABLE_ROW:
-    case BOX_TABLE_CELL:
-    case BOX_FLOAT_LEFT:
-    case BOX_FLOAT_RIGHT:
-    case BOX_BLOCK: if (box->node) name = (const char *) box->node->name;
-        break;
-    case BOX_INLINE:
-    case BOX_INLINE_CONTAINER:
-    default:
-        break;
-  }
 
   if (x + (signed long) (box->x*2 + box->width*2) /* right edge */ >= clip->x0 &&
       x + (signed long) (box->x*2) /* left edge */ <= clip->x1 &&

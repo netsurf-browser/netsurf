@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.22 2003/04/05 21:38:06 bursa Exp $
+ * $Id: box.h,v 1.23 2003/04/10 21:44:45 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -81,7 +81,6 @@ struct img {
 
 struct box {
 	box_type type;
-	xmlNode * node;
 	struct css_style * style;
 	unsigned long x, y, width, height;
 	unsigned long min_width, max_width;
