@@ -1,4 +1,4 @@
-$Id: TODO-CSS,v 1.2 2003/10/08 17:03:17 jmb Exp $
+$Id: TODO-CSS,v 1.3 2003/10/09 15:46:30 bursa Exp $
 
 TODO-CSS file for NetSurf.
 
@@ -9,12 +9,12 @@ A "=" before the property means that it is partially implemented.
 
 See TODO-HTML for HTML related TODOs.
 
-= background
-= background-attachment
+= background (colour only)
+- background-attachment
 + background-color
 - background-image
-+ background-position
-+ background-repeat
+- background-position
+- background-repeat
 - border
 - border-collapse
 - border-color
@@ -22,8 +22,8 @@ See TODO-HTML for HTML related TODOs.
 - border-style
 - border-[top|right|left|bottom]
 - border-*-color
-= border-*-style
-= border-*-width
+- border-*-style
+- border-*-width
 - bottom
 - caption-side
 + clear
@@ -37,23 +37,23 @@ See TODO-HTML for HTML related TODOs.
 + display
 - empty-cells
 + float
-+ font
+= font (style, weight, size, line-spacing)
 - font-family
 + font-size
 - font-size-adjust
 - font-stretch
 + font-style
-= font-variant
+- font-variant
 + font-weight
 + height
 - left
-= letter-spacing
+- letter-spacing
 + line-height
 - list-style
 - list-style-image
-= list-style-position
-= list-style-type
-= margin
+- list-style-position
+- list-style-type
+- margin
 - margin-[top|right|left|bottom]
 - marker-offset
 - marks
@@ -77,13 +77,13 @@ See TODO-HTML for HTML related TODOs.
 - size
 - table-layout
 + text-align
-= text-decoration
+- text-decoration
 - text-indent
 - text-shadow
-= text-transform
+- text-transform
 - top
 - unicode-bidi
-= vertical-align
+- vertical-align
 - visibility
 = white-space
 - widows
