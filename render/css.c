@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.11 2002/12/27 20:13:18 bursa Exp $
+ * $Id: css.c,v 1.12 2002/12/27 20:42:31 bursa Exp $
  */
 
 #include <string.h>
@@ -55,7 +55,7 @@ static void dump_selector(const struct css_selector * const sel);
 static void dump_rule(const struct rule * rule);
 
 const struct css_style css_base_style = {
-	TRANSPARENT,
+	0xffffff,
 	CSS_CLEAR_NONE,
 	0x000000,
 	CSS_DISPLAY_BLOCK,
@@ -85,7 +85,7 @@ const struct css_style css_empty_style = {
 };
 
 const struct css_style css_blank_style = {
-	CSS_COLOR_INHERIT,
+	TRANSPARENT,
 	CSS_CLEAR_NONE,
 	CSS_COLOR_INHERIT,
 	CSS_DISPLAY_INLINE,
