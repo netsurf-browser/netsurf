@@ -570,8 +570,6 @@ void plugin_reshape_request(wimp_message *message)
 	/* should probably shift by x and y eig values here */
 	c->width = pmrr->size.x / 2;
 	c->height = pmrr->size.y / 2;
-	c->data.plugin.box->style->width.width = CSS_WIDTH_AUTO;
-	c->data.plugin.box->style->height.height = CSS_HEIGHT_AUTO;
 
 	/* invalidate parent box widths */
 	for (b = c->data.plugin.box->parent; b; b = b->parent)
