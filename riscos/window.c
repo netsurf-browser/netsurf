@@ -722,72 +722,102 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer) {
 	int x,y;
 	wimp_window_state state;
 	wimp_caret caret;
+	os_error *error;
+
+	assert(g != NULL);
+	assert(pointer != NULL);
 
 	if (g->type != GUI_BROWSER_WINDOW) return;
 
 	state.w = pointer->w;
-	wimp_get_window_state(&state);
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("Failed reading window state"));
+		warn_user("WimpError", "Failed reading window state");
+		return;
+	}
 
 	x = window_x_units(pointer->pos.x, &state) / 2 / g->scale;
 	y = -window_y_units(pointer->pos.y, &state) / 2 / g->scale;
 
-        /* set input focus */
-        wimp_get_caret_position(&caret);
-        if (pointer->buttons == wimp_CLICK_SELECT && caret.w != state.w) {
-                wimp_set_caret_position(state.w, -1, -100, -100, 32, -1);
-        }
+	/* set input focus */
+	error = xwimp_get_caret_position(&caret);
+	if (error) {
+		LOG(("Failed reading caret position"));
+		warn_user("WimpError", "Failed reading caret position");
+		return;
+	}
 
-    if (pointer->buttons == wimp_CLICK_MENU) {
-      ro_gui_create_menu(browser_menu, pointer->pos.x - 64, pointer->pos.y, g);
-    } else if (g->data.browser.bw->current_content != NULL) {
-      if (g->data.browser.bw->current_content->type == CONTENT_HTML)
-      {
-	if (pointer->buttons == wimp_CLICK_SELECT)
-	{
-		msg.type = act_MOUSE_CLICK;
-		msg.data.mouse.x = x;
-		msg.data.mouse.y = y;
-		if (browser_window_action(g->data.browser.bw, &msg) == 1)
+	if (pointer->buttons == wimp_CLICK_SELECT && caret.w != state.w) {
+		error = xwimp_set_caret_position(state.w, -1, -100,
+						-100, 32, -1);
+		if (error) {
+			LOG(("Failed setting caret position"));
+			warn_user("WimpError",
+				"Failed setting caret position");
 			return;
-		msg.type = act_UNKNOWN;
-	}
-	if (pointer->buttons == wimp_CLICK_SELECT && g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
-	  msg.type = act_CLEAR_SELECTION;
-	else if (pointer->buttons == wimp_CLICK_ADJUST && g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
-		  msg.type = act_ALTER_SELECTION;
-	else if (pointer->buttons == wimp_DRAG_SELECT ||
-		 pointer->buttons == wimp_DRAG_ADJUST)
-	{
-	  msg.type = act_START_NEW_SELECTION;
-	  if (pointer->buttons == wimp_DRAG_ADJUST && g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
-	    msg.type = act_ALTER_SELECTION;
-
-	  ro_gui_start_selection(pointer, &state, g);
-	  g->drag_status = drag_BROWSER_TEXT_SELECTION;
-	}
-	msg.data.mouse.x = x;
-	msg.data.mouse.y = y;
-	if (msg.type != act_UNKNOWN)
-	  browser_window_action(g->data.browser.bw, &msg);
-
-	if (pointer->buttons == wimp_CLICK_ADJUST && g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
-	{
-	  current_gui->data.browser.bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
+		}
 	}
 
-	if (pointer->buttons == wimp_CLICK_SELECT
-	    || pointer->buttons == wimp_CLICK_ADJUST)
-	{
-	  if (pointer->buttons == wimp_CLICK_SELECT)
-	    msg.type = act_FOLLOW_LINK;
-	  else
-	    msg.type = act_FOLLOW_LINK_NEW_WINDOW;
-	  msg.data.mouse.x = x;
-	  msg.data.mouse.y = y;
-	  browser_window_action(g->data.browser.bw, &msg);
+	if (pointer->buttons == wimp_CLICK_MENU) {
+		ro_gui_create_menu(browser_menu, pointer->pos.x - 64,
+				pointer->pos.y, g);
 	}
-      }
-    }
+	else {
+		if (g->data.browser.bw != NULL &&
+			g->data.browser.bw->current_content != NULL &&
+			g->data.browser.bw->current_content->type == CONTENT_HTML) {
+			if (pointer->buttons == wimp_CLICK_SELECT) {
+				msg.type = act_MOUSE_CLICK;
+				msg.data.mouse.x = x;
+				msg.data.mouse.y = y;
+				if (browser_window_action(
+					g->data.browser.bw, &msg) == 1)
+					return;
+				msg.type = act_UNKNOWN;
+			}
+			if (pointer->buttons == wimp_CLICK_SELECT && g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
+				msg.type = act_CLEAR_SELECTION;
+
+			else if (pointer->buttons == wimp_CLICK_ADJUST && g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
+				msg.type = act_ALTER_SELECTION;
+
+			else if (pointer->buttons == wimp_DRAG_SELECT ||
+				pointer->buttons == wimp_DRAG_ADJUST) {
+				msg.type = act_START_NEW_SELECTION;
+
+				if (pointer->buttons == wimp_DRAG_ADJUST && g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
+					msg.type = act_ALTER_SELECTION;
+
+				ro_gui_start_selection(pointer, &state, g);
+				g->drag_status = drag_BROWSER_TEXT_SELECTION;
+			}
+			msg.data.mouse.x = x;
+			msg.data.mouse.y = y;
+			if (msg.type != act_UNKNOWN)
+				browser_window_action(g->data.browser.bw, &msg);
+
+			if (pointer->buttons == wimp_CLICK_ADJUST &&
+				g->data.browser.bw->current_content->data.html.text_selection.selected == 1 &&
+				current_gui != NULL &&
+				current_gui->data.browser.bw != NULL &&
+				current_gui->data.browser.bw->current_content != NULL) {
+				current_gui->data.browser.bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
+			}
+
+			if (pointer->buttons == wimp_CLICK_SELECT
+				|| pointer->buttons == wimp_CLICK_ADJUST) {
+
+				if (pointer->buttons == wimp_CLICK_SELECT)
+					msg.type = act_FOLLOW_LINK;
+				else
+					msg.type = act_FOLLOW_LINK_NEW_WINDOW;
+				msg.data.mouse.x = x;
+				msg.data.mouse.y = y;
+				browser_window_action(g->data.browser.bw, &msg);
+			}
+		}
+	}
 }
 
 
