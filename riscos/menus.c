@@ -48,10 +48,11 @@ wimp_menu *iconbar_menu = (wimp_menu *) & (wimp_MENU(4)) {
 int iconbar_menu_height = 4 * 44;
 
 /* browser window menu structure - based on Style Guide */
-static wimp_MENU(1) export_menu = {
+static wimp_MENU(2) export_menu = {
   { "ExportAs" }, 7,2,7,0, 200, 44, 0,
   {
-    { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Draw" } }
+    { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Draw" } },
+    { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Text" } }
   }
 };
 static wimp_menu *browser_export_menu = (wimp_menu *) &export_menu;
@@ -125,6 +126,7 @@ void ro_gui_menus_init(void)
 	iconbar_menu->entries[0].sub_menu = (wimp_menu *) dialog_info;
 	browser_page_menu->entries[1].sub_menu = (wimp_menu *) dialog_saveas;
 	browser_export_menu->entries[0].sub_menu = (wimp_menu *) dialog_saveas;
+	browser_export_menu->entries[1].sub_menu = (wimp_menu *) dialog_saveas;
 	browser_view_menu->entries[0].sub_menu = (wimp_menu *) dialog_zoom;
 }
 
@@ -301,6 +303,14 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 			ro_gui_set_icon_string(dialog_saveas,
 					ICON_SAVE_PATH,
 					messages_get("SaveDraw"));
+			break;
+                case 1: /* Export as -> Text */
+			gui_current_save_type = GUI_SAVE_TEXT;
+			ro_gui_set_icon_string(dialog_saveas,
+					ICON_SAVE_ICON, "file_fff");
+			ro_gui_set_icon_string(dialog_saveas,
+					ICON_SAVE_PATH,
+					messages_get("SaveText"));
 			break;
 
 		case -1:

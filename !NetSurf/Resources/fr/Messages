@@ -13,6 +13,7 @@ Save:Sauver
 Export:Exporter
 ExportAs:Exporter sous
 Draw:Draw
+Text:Text
 Print:Imprimer...
 Selection:Sélection
 Copy:Copier vers le presse papier
@@ -77,3 +78,4 @@ SelectMenu:Sélection
 
 SaveSource:Source
 SaveDraw:PageWeb
+SaveText:PageWeb

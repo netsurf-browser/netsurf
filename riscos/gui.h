@@ -31,7 +31,7 @@ extern bool gui_redraw_debug;
 extern gui_window *current_gui;
 
 typedef enum { GUI_BROWSER_WINDOW, GUI_DOWNLOAD_WINDOW } gui_window_type;
-typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW } gui_save_type;
+typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT } gui_save_type;
 extern gui_save_type gui_current_save_type;
 typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_SAVE } gui_drag_type;

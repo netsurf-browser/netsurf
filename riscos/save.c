@@ -15,6 +15,7 @@
 #include "oslib/wimp.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/save_draw.h"
+#include "netsurf/riscos/save_text.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -123,6 +124,12 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			if (!c)
 				return;
 			save_as_draw(c, path);
+			break;
+
+		case GUI_SAVE_TEXT:
+			if (!c)
+				return;
+			save_as_text(c, path);
 			break;
 	}
 

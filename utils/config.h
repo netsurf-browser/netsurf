@@ -48,6 +48,7 @@
 /* Export modules */
 #define WITH_SAVE_COMPLETE
 #define WITH_DRAW_EXPORT
+#define WITH_TEXT_EXPORT
 
 #endif
 

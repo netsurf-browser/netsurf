@@ -13,6 +13,7 @@ Save:Save
 Export:Export
 ExportAs:Export as
 Draw:Draw
+Text:Text
 Print:Print...
 Selection:Selection
 Copy:Copy to clipboard
@@ -77,3 +78,4 @@ SelectMenu:Select
 
 SaveSource:Source
 SaveDraw:Webpage
+SaveText:Webpage

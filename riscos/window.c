@@ -24,6 +24,7 @@
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/save_draw.h"
+#include "netsurf/riscos/save_text.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/thumbnail.h"
 #include "netsurf/utils/log.h"
@@ -785,6 +786,11 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 #endif
 			);
 			return true;
+#ifdef WITH_TEXT_EXPORT
+                case wimp_KEY_CONTROL + wimp_KEY_F3:
+/*                        save_as_text(g->data.browser.bw->current_content);*/
+                        return true;
+#endif
 #ifdef WITH_SAVE_COMPLETE
                 case wimp_KEY_SHIFT + wimp_KEY_F3:
                         save_complete(g->data.browser.bw->current_content);
