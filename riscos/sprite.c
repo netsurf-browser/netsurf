@@ -35,13 +35,14 @@ int sprite_convert(struct content *c, unsigned int width, unsigned int height)
 {
 	os_error *error;
 	int w, h;
+	osspriteop_area *area = c->data.sprite.data;
 
         /* fill in the size (first word) of the area */
-        memcpy(c->data.sprite.data, (char*)&c->data.sprite.length, 4);
+	area->size = c->data.sprite.length;
 
 	error = xosspriteop_read_sprite_info(osspriteop_PTR,
-	     (osspriteop_area*)(c->data.sprite.data),
-	     (osspriteop_id)((osspriteop_area*)c->data.sprite.data + 1),
+	     area,
+	     (osspriteop_id)(c->data.sprite.data + area->first),
 	     &w, &h, NULL, NULL);
 
         if (error) {
@@ -81,18 +82,19 @@ void sprite_redraw(struct content *c, long x, long y,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
 {
         unsigned int size;
+	osspriteop_area *area = c->data.sprite.data;
 	osspriteop_trans_tab *table;
 	os_factors factors;
 
 	xcolourtrans_generate_table_for_sprite(
-	                (osspriteop_area*)(c->data.sprite.data),
-			(osspriteop_id) ((osspriteop_area*)c->data.sprite.data + 1),
+			area,
+			(osspriteop_id)(c->data.sprite.data + area->first),
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
 	table = xcalloc(size, 1);
 	xcolourtrans_generate_table_for_sprite(
-	                (osspriteop_area*)(c->data.sprite.data),
-			(osspriteop_id) ((osspriteop_area*)c->data.sprite.data + 1),
+			area,
+			(osspriteop_id)(c->data.sprite.data + area->first),
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
 
@@ -102,8 +104,8 @@ void sprite_redraw(struct content *c, long x, long y,
 	factors.ydiv = c->height * 2;
 
 	xosspriteop_put_sprite_scaled(osspriteop_PTR,
-			(osspriteop_area*)(c->data.sprite.data),
-			(osspriteop_id) ((osspriteop_area*)c->data.sprite.data + 1),
+			area,
+			(osspriteop_id)(c->data.sprite.data + area->first),
 			x, y - height,
 			osspriteop_USE_MASK | osspriteop_USE_PALETTE, &factors, table);
 

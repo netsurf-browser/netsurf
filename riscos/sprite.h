@@ -13,7 +13,7 @@
 struct content;
 
 struct content_sprite_data {
-	void* data;
+	char *data;
 	unsigned long length;
 };
 
