@@ -32,6 +32,7 @@ LDFLAGS = \
 	/usr/local/riscoslibs/libxml2/libxml2.ro \
 	/usr/local/riscoslibs/OSLib/OSLib32.ro \
 	/usr/local/riscoslibs/curl/libcurl.ro \
+	/usr/local/riscoslibs/curl/ares/libares.a \
 	/usr/local/riscoslibs/libpng/libpng.ro \
 	/usr/local/riscoslibs/zlib/libz.ro \
 	/usr/local/riscoslibs/openssl/libssl.a \
