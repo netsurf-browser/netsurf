@@ -1454,8 +1454,6 @@ void gui_launch_url(const char *url)
 }
 
 
-static char warn_buffer[300];
-
 /**
  * Display a warning for a serious problem (eg memory exhaustion).
  *
@@ -1465,6 +1463,8 @@ static char warn_buffer[300];
 
 void warn_user(const char *warning, const char *detail)
 {
+	static char warn_buffer[300];
+
 	LOG(("%s %s", warning, detail));
 	snprintf(warn_buffer, sizeof warn_buffer, "%s %s",
 			messages_get(warning),
@@ -1479,9 +1479,6 @@ void warn_user(const char *warning, const char *detail)
 }
 
 
-static os_error warn_error = { 1, "" };
-
-
 /**
  * Display an error and exit.
  *
@@ -1490,7 +1487,12 @@ static os_error warn_error = { 1, "" };
 
 void die(const char *error)
 {
-	strncpy(warn_error.errmess, messages_get(error), 252);
+	os_error warn_error;
+
+	warn_error.errnum = 1; /* \todo: reasonable ? */
+	strncpy(warn_error.errmess, messages_get(error),
+			sizeof(warn_error.errmess)-1);
+	warn_error.errmess[sizeof(warn_error.errmess)-1] = '\0';
 	xwimp_report_error_by_category(&warn_error,
 			wimp_ERROR_BOX_OK_ICON |
 			wimp_ERROR_BOX_GIVEN_CATEGORY |
