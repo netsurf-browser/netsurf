@@ -5,10 +5,12 @@
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
+/** \file
+ * Content for image/x-riscos-sprite (RISC OS interface).
+ */
+
 #ifndef _NETSURF_RISCOS_SPRITE_H_
 #define _NETSURF_RISCOS_SPRITE_H_
-
-#include "oslib/osspriteop.h"
 
 struct content;
 
@@ -24,5 +26,6 @@ void sprite_destroy(struct content *c);
 bool sprite_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour);
+		float scale, colour background_colour);
+
 #endif
