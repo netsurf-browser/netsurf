@@ -1,5 +1,5 @@
 #!/usr/bin/perl -W
-# $Id: makeenum,v 1.1.1.1 2002/04/22 09:24:34 bursa Exp $
+# $Id: makeenum,v 1.2 2002/04/24 17:37:37 bursa Exp $
 
 $out = shift or die "usage: makeenum leafname";
 
@@ -12,8 +12,9 @@ while (<>) {
     chomp;
     @enum = split;
     $name = shift @enum;
-    
+   
     @uc_enum = map uc, @enum;
+    s/-/_/g foreach (@uc_enum);
     $uc_name = uc $name;
     
     print H "extern const char * const ${name}_name[];\n";
@@ -30,6 +31,7 @@ while (<>) {
     print C "$name ${name}_parse(const char * const s)\n{\n";
     foreach $x (@enum) {
         $ux = uc $x;
+	$ux =~ s/-/_/g;
         print C "    if (strcmp(s, \"$x\") == 0) return ${uc_name}_$ux;\n";
     }
     print C "    return ${uc_name}_UNKNOWN;\n}\n\n";
