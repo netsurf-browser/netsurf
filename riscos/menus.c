@@ -952,12 +952,12 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 0: /* Home */
 						if (option_homepage_url && option_homepage_url[0]) {
 							browser_window_go_post(current_gui->bw, option_homepage_url,
-									0, 0, true, 0);
+									0, 0, true, 0, false);
 						} else {
 							snprintf(url, sizeof url,
 									"file:/<NetSurf$Dir>/Docs/intro_%s",
 									option_language);
-							browser_window_go_post(current_gui->bw, url, 0, 0, true, 0);
+							browser_window_go_post(current_gui->bw, url, 0, 0, true, 0, false);
 						}
 						break;
 					case 1: /* Back */

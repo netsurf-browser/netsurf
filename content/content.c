@@ -279,6 +279,7 @@ struct content * content_create(const char *url)
 	c->source_size = 0;
 	c->total_size = 0;
 	c->no_error_pages = false;
+	c->download = false;
 	c->error_count = 0;
 
 	c->prev = 0;

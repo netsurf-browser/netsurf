@@ -29,7 +29,8 @@ struct content * fetchcache(const char *url,
 		bool no_error_pages,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool cookies);
+		bool cookies,
+		bool download);
 void fetchcache_go(struct content *content, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, union content_msg_data data),

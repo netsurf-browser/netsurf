@@ -439,7 +439,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 			default_stylesheet_url,
 			html_convert_css_callback, c,
 			(void *) STYLESHEET_BASE, c->width, c->height,
-			true, 0, 0, false);
+			true, 0, 0, false, false);
 	if (!c->data.html.stylesheet_content[STYLESHEET_BASE])
 		return false;
 	c->active++;
@@ -452,7 +452,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 				fetchcache(adblock_stylesheet_url,
 				html_convert_css_callback, c,
 				(void *) STYLESHEET_ADBLOCK, c->width,
-				c->height, true, 0, 0, false);
+				c->height, true, 0, 0, false, false);
 		if (!c->data.html.stylesheet_content[STYLESHEET_ADBLOCK])
 			return false;
 		c->active++;
@@ -520,7 +520,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 			c->data.html.stylesheet_content[i] = fetchcache(url,
 					html_convert_css_callback,
 					c, (void *) i, c->width, c->height,
-					true, 0, 0, false);
+					true, 0, 0, false, false);
 			if (!c->data.html.stylesheet_content[i])
 				return false;
 			c->active++;
@@ -675,7 +675,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 					data.redirect,
 					html_convert_css_callback,
 					c, (void *) i, css->width, css->height,
-					true, 0, 0, false);
+					true, 0, 0, false, false);
 			if (c->data.html.stylesheet_content[i]) {
 				c->active++;
 				fetchcache_go(c->data.html.stylesheet_content[i],
@@ -741,7 +741,7 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 	/* start fetch */
 	c->data.html.object[i].content = fetchcache(url, html_object_callback,
 			c, (void *) i, available_width, available_height,
-			true, 0, 0, false);
+			true, 0, 0, false, false);
 	if (!c->data.html.object[i].content)
 		return false;
 	c->active++;
@@ -830,7 +830,7 @@ void html_object_callback(content_msg msg, struct content *object,
 						data.redirect,
 						html_object_callback,
 						c, (void * ) i, 0, 0, true,
-						0, 0, false);
+						0, 0, false, false);
 				if (!c->data.html.object[i].content) {
 					/** \todo  report oom */
 				} else {

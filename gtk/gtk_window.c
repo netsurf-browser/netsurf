@@ -210,7 +210,7 @@ gboolean gui_window_url_key_press_event(GtkWidget *widget,
 		referer = g->bw->current_content->url;
 
 	browser_window_go(g->bw, gtk_entry_get_text(GTK_ENTRY(g->url_bar)),
-				referer);
+				referer, false);
 
 	return TRUE;
 }

@@ -19,6 +19,7 @@
 #include <time.h>
 #include <string.h>
 #include "oslib/colourtrans.h"
+#include "oslib/osbyte.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
@@ -1142,7 +1143,7 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 			if (option_homepage_url && option_homepage_url[0]) {
 				if (pointer->buttons == wimp_CLICK_SELECT) {
 					browser_window_go_post(g->bw, option_homepage_url,
-							0, 0, true, 0);
+							0, 0, true, 0, false);
 				} else {
 					browser_window_create(option_homepage_url, NULL, 0);
 				}
@@ -1151,7 +1152,7 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 						"file:/<NetSurf$Dir>/Docs/intro_%s",
 						option_language);
 				if (pointer->buttons == wimp_CLICK_SELECT) {
-					browser_window_go_post(g->bw, url, 0, 0, true, 0);
+					browser_window_go_post(g->bw, url, 0, 0, true, 0, false);
 				} else {
 					browser_window_create(url, NULL, 0);
 				}
@@ -1239,11 +1240,13 @@ void ro_gui_status_click(struct gui_window *g, wimp_pointer *pointer)
 
 void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 {
-	int x, y;
+	int x, y, shift;
 	wimp_window_state state;
 	os_error *error;
 
 	assert(g);
+
+	xosbyte1(osbyte_SCAN_KEYBOARD, 0 ^ 0x80, 0, &shift);
 
 	state.w = pointer->w;
 	error = xwimp_get_window_state(&state);
@@ -1274,9 +1277,13 @@ void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 		ro_gui_create_menu(browser_menu, pointer->pos.x,
 				pointer->pos.y, g);
 	else if (pointer->buttons == wimp_CLICK_SELECT)
-		browser_window_mouse_click(g->bw, BROWSER_MOUSE_CLICK_1, x, y);
+		browser_window_mouse_click(g->bw,
+			(shift == 0xff) ? BROWSER_MOUSE_CLICK_1_MOD
+					: BROWSER_MOUSE_CLICK_1, x, y);
 	else if (pointer->buttons == wimp_CLICK_ADJUST)
-		browser_window_mouse_click(g->bw, BROWSER_MOUSE_CLICK_2, x, y);
+		browser_window_mouse_click(g->bw,
+			(shift == 0xff) ? BROWSER_MOUSE_CLICK_2_MOD
+					: BROWSER_MOUSE_CLICK_2, x, y);
 }
 
 
@@ -1511,7 +1518,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			res = url_normalize(toolbar_url, &url);
 			if (res == URL_FUNC_OK) {
 				gui_window_set_url(g, url);
-				browser_window_go(g->bw, url, 0);
+				browser_window_go(g->bw, url, 0, false);
 				free(url);
 			}
 			return true;

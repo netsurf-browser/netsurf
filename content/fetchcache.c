@@ -53,6 +53,7 @@ static void fetchcache_error_page(struct content *c, const char *error);
  * \param  post_urlenc     url encoded post data, or 0 if none
  * \param  post_multipart  multipart post data, or 0 if none
  * \param  cookies   send and accept cookies
+ * \param  download  download, rather than render content
  * \return  a new content, or 0 on memory exhaustion
  *
  * On success, call fetchcache_go() to start work on the new content.
@@ -66,7 +67,8 @@ struct content * fetchcache(const char *url,
 		bool no_error_pages,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool cookies)
+		bool cookies,
+		bool download)
 {
 	struct content *c;
 	char *url1;
@@ -105,6 +107,7 @@ struct content * fetchcache(const char *url,
 	c->width = width;
 	c->height = height;
 	c->no_error_pages = no_error_pages;
+	c->download = download;
 
 	return c;
 }
@@ -223,8 +226,11 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 				return;
 			}
 			type = content_lookup(mime_type);
-			LOG(("FETCH_TYPE, type %u", type));
-			res = content_set_type(c, type, mime_type, params);
+			LOG(("FETCH_TYPE, type %u", c->download ?
+						CONTENT_OTHER : type));
+			res = content_set_type(c,
+					c->download ? CONTENT_OTHER : type,
+					mime_type, params);
 			free(mime_type);
 			for (i = 0; params[i]; i++)
 				free(params[i]);

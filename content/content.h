@@ -242,6 +242,7 @@ struct content {
 	unsigned long total_size;	/**< Total data size, 0 if unknown. */
 
 	bool no_error_pages;		/**< Used by fetchcache(). */
+	bool download;			/**< Used by fetchcache(). */
 
 	/** Array of first n rendering errors or warnings. */
 	struct {

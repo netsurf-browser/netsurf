@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 		url[strlen(url) - 1] = 0;
 		destroyed = 0;
 		c = fetchcache(url, callback, 0, 0, 1000, 1000, false,
-				0, 0, true);
+				0, 0, true, false);
 		if (c) {
 			fetchcache_go(c, 0, callback, 0, 0, 0, 0, true);
 			done = c->status == CONTENT_STATUS_DONE;

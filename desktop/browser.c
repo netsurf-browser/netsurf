@@ -88,9 +88,9 @@ static void browser_form_submit(struct browser_window *bw, struct form *form,
 /**
  * Create and open a new browser window with the given page.
  *
- * \param  url     URL to start fetching in the new window (copied)
- * \param  clone   The browser window to clone
- * \param  referer The referring uri
+ * \param  url      URL to start fetching in the new window (copied)
+ * \param  clone    The browser window to clone
+ * \param  referer  The referring uri
  */
 
 void browser_window_create(const char *url, struct browser_window *clone,
@@ -112,28 +112,30 @@ void browser_window_create(const char *url, struct browser_window *clone,
 	bw->drag_type = DRAGGING_NONE;
 	bw->scrolling_box = NULL;
 	bw->referer = NULL;
+	bw->download = false;
 	if ((bw->window = gui_create_browser_window(bw, clone)) == NULL) {
 		free(bw);
 		return;
 	}
-	browser_window_go(bw, url, referer);
+	browser_window_go(bw, url, referer, false);
 }
 
 
 /**
  * Start fetching a page in a browser window.
  *
- * \param  bw      browser window
- * \param  url     URL to start fetching (copied)
- * \param  referer the referring uri
+ * \param  bw       browser window
+ * \param  url      URL to start fetching (copied)
+ * \param  referer  the referring uri
+ * \param  download download, rather than render the uri
  *
  * Any existing fetches in the window are aborted.
  */
 
 void browser_window_go(struct browser_window *bw, const char *url,
-		char* referer)
+		char* referer, bool download)
 {
-	browser_window_go_post(bw, url, 0, 0, true, referer);
+	browser_window_go_post(bw, url, 0, 0, true, referer, download);
 }
 
 
@@ -146,6 +148,7 @@ void browser_window_go(struct browser_window *bw, const char *url,
  * \param  post_multipart  multipart post data, or 0 if none
  * \param  history_add     add to window history
  * \param  referer         the referring uri
+ * \param  download        download, rather than render the uri
  *
  * Any existing fetches in the window are aborted.
  *
@@ -158,7 +161,7 @@ void browser_window_go(struct browser_window *bw, const char *url,
 void browser_window_go_post(struct browser_window *bw, const char *url,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool history_add, char *referer)
+		bool history_add, char *referer, bool download)
 {
 	struct content *c;
 	char *url2;
@@ -198,7 +201,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	c = fetchcache(url2, browser_window_callback, bw, 0,
 			gui_window_get_width(bw->window), 0,
 			false,
-			post_urlenc, post_multipart, true);
+			post_urlenc, post_multipart, true, download);
 	free(url2);
 	if (!c) {
 		browser_window_set_status(bw, messages_get("NoMemory"));
@@ -213,6 +216,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		free(bw->referer);
 		bw->referer = strdup(referer);
 	}
+
+	bw->download = download;
 
 	fetchcache_go(c, option_send_referer ? referer : 0,
 			browser_window_callback, bw, 0,
@@ -307,7 +312,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 			/* the spec says nothing about referrers and
 			 * redirects => follow Mozilla and preserve the
 			 * referer across the redirect */
-			browser_window_go(bw, data.redirect, bw->referer);
+			browser_window_go(bw, data.redirect, bw->referer,
+					bw->download);
 			break;
 
 		case CONTENT_MSG_REFORMAT:
@@ -505,7 +511,8 @@ void browser_window_reload(struct browser_window *bw, bool all)
 		}
 	}
 	bw->current_content->fresh = false;
-	browser_window_go_post(bw, bw->current_content->url, 0, 0, false, 0);
+	browser_window_go_post(bw, bw->current_content->url, 0, 0,
+							false, 0, false);
 }
 
 
@@ -719,23 +726,27 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 		case GADGET_SELECT:
 			status = messages_get("FormSelect");
 			pointer = GUI_POINTER_MENU;
-			if (click == BROWSER_MOUSE_CLICK_1)
+			if (click == BROWSER_MOUSE_CLICK_1 ||
+					click == BROWSER_MOUSE_CLICK_1_MOD)
 				gui_create_form_select_menu(bw, gadget);
 			break;
 		case GADGET_CHECKBOX:
 			status = messages_get("FormCheckbox");
-			if (click == BROWSER_MOUSE_CLICK_1) {
+			if (click == BROWSER_MOUSE_CLICK_1 ||
+					click == BROWSER_MOUSE_CLICK_1_MOD) {
 				gadget->selected = !gadget->selected;
 				browser_redraw_box(gadget_content, gadget_box);
 			}
 			break;
 		case GADGET_RADIO:
 			status = messages_get("FormRadio");
-			if (click == BROWSER_MOUSE_CLICK_1)
+			if (click == BROWSER_MOUSE_CLICK_1 ||
+					click == BROWSER_MOUSE_CLICK_1_MOD)
 				browser_radio_set(gadget_content, gadget);
 			break;
 		case GADGET_IMAGE:
-			if (click == BROWSER_MOUSE_CLICK_1) {
+			if (click == BROWSER_MOUSE_CLICK_1 ||
+					click == BROWSER_MOUSE_CLICK_1_MOD) {
 				gadget->data.image.mx = x - gadget_box_x;
 				gadget->data.image.my = y - gadget_box_y;
 			}
@@ -750,7 +761,8 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 						gadget->form->action);
 				status = status_buffer;
 				pointer = GUI_POINTER_POINT;
-				if (click == BROWSER_MOUSE_CLICK_1)
+				if (click == BROWSER_MOUSE_CLICK_1 ||
+						click == BROWSER_MOUSE_CLICK_1_MOD)
 					browser_form_submit(bw, gadget->form,
 							gadget);
 			} else {
@@ -760,7 +772,8 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 		case GADGET_TEXTAREA:
 			status = messages_get("FormTextarea");
 			pointer = GUI_POINTER_CARET;
-			if (click == BROWSER_MOUSE_CLICK_1)
+			if (click == BROWSER_MOUSE_CLICK_1 ||
+					click == BROWSER_MOUSE_CLICK_1_MOD)
 				browser_window_textarea_click(bw,
 						gadget_box,
 						gadget_box_x,
@@ -772,7 +785,8 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 		case GADGET_PASSWORD:
 			status = messages_get("FormTextbox");
 			pointer = GUI_POINTER_CARET;
-			if (click == BROWSER_MOUSE_CLICK_1)
+			if (click == BROWSER_MOUSE_CLICK_1 ||
+					click == BROWSER_MOUSE_CLICK_1_MOD)
 				browser_window_input_click(bw,
 						gadget_box,
 						gadget_box_x,
@@ -806,10 +820,14 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 		pointer = GUI_POINTER_POINT;
 
 		if (click == BROWSER_MOUSE_CLICK_1) {
-			browser_window_go(bw, url, c->url);
+			browser_window_go(bw, url, c->url, false);
 		}
 		else if (click == BROWSER_MOUSE_CLICK_2) {
 			browser_window_create(url, bw, c->url);
+		}
+		else if (click == BROWSER_MOUSE_CLICK_1_MOD ||
+				click == BROWSER_MOUSE_CLICK_2_MOD) {
+			browser_window_go(bw, url, c->url, true);
 		}
 
 	} else if (title) {
@@ -1942,7 +1960,8 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			res = url_join(url, base, &url1);
 			if (res != URL_FUNC_OK)
 				break;
-			browser_window_go(bw, url1, bw->current_content->url);
+			browser_window_go(bw, url1,
+					bw->current_content->url, false);
 			break;
 
 		case method_POST_URLENC:
@@ -1956,7 +1975,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			if (res != URL_FUNC_OK)
 				break;
 			browser_window_go_post(bw, url, data, 0, true,
-					bw->current_content->url);
+					bw->current_content->url, false);
 			break;
 
 		case method_POST_MULTIPART:
@@ -1964,7 +1983,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			if (res != URL_FUNC_OK)
 				break;
 			browser_window_go_post(bw, url, 0, success, true,
-					bw->current_content->url);
+					bw->current_content->url, false);
 			break;
 
 		default:
