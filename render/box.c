@@ -68,8 +68,10 @@ struct result box_input(xmlNode *n, struct status *status,
 static void add_option(xmlNode* n, struct gui_gadget* current_select, char *text);
 static void box_normalise_block(struct box *block);
 static void box_normalise_table(struct box *table);
-static void box_normalise_table_row_group(struct box *row_group);
-static void box_normalise_table_row(struct box *row);
+void box_normalise_table_row_group(struct box *row_group,
+		unsigned int **row_span, unsigned int *table_columns);
+void box_normalise_table_row(struct box *row,
+		unsigned int **row_span, unsigned int *table_columns);
 static void box_normalise_inline_container(struct box *cont);
 static void gadget_free(struct gui_gadget* g);
 static void box_free_box(struct box *box);
@@ -139,6 +141,7 @@ struct box * box_create(struct css_style * style,
 	box->text = 0;
 	box->space = 0;
 	box->length = 0;
+	box->start_column = 0;
 	box->next = 0;
 	box->prev = 0;
 	box->children = 0;
@@ -947,17 +950,21 @@ void box_normalise_table(struct box *table)
 	struct box *next_child;
 	struct box *row_group;
 	struct css_style *style;
+	unsigned int *row_span = xcalloc(2, sizeof(row_span[0]));
+	unsigned int table_columns = 0;
 
 	assert(table != 0);
 	assert(table->type == BOX_TABLE);
 	LOG(("table %p", table));
+	row_span[0] = row_span[1] = 0;
 
 	for (child = table->children; child != 0; child = next_child) {
 		next_child = child->next;
 		switch (child->type) {
 			case BOX_TABLE_ROW_GROUP:
 				/* ok */
-				box_normalise_table_row_group(child);
+				box_normalise_table_row_group(child, &row_span,
+						&table_columns);
 				break;
 			case BOX_BLOCK:
 			case BOX_INLINE_CONTAINER:
@@ -965,7 +972,6 @@ void box_normalise_table(struct box *table)
 			case BOX_TABLE_ROW:
 			case BOX_TABLE_CELL:
 				/* insert implied table row group */
-/* 				fprintf(stderr, "inserting implied table row group\n"); */
 				style = xcalloc(1, sizeof(struct css_style));
 				memcpy(style, table->style, sizeof(struct css_style));
 				css_cascade(style, &css_blank_style);
@@ -988,7 +994,8 @@ void box_normalise_table(struct box *table)
 				row_group->last->next = 0;
 				row_group->next = next_child = child;
 				row_group->parent = table;
-				box_normalise_table_row_group(row_group);
+				box_normalise_table_row_group(row_group, &row_span,
+						&table_columns);
 				break;
 			case BOX_INLINE:
 			case BOX_FLOAT_LEFT:
@@ -1002,6 +1009,9 @@ void box_normalise_table(struct box *table)
 				assert(0);
 		}
 	}
+
+	table->columns = table_columns;
+	xfree(row_span);
 
 	if (table->children == 0) {
 		LOG(("table->children == 0, removing"));
@@ -1018,7 +1028,8 @@ void box_normalise_table(struct box *table)
 }
 
 
-void box_normalise_table_row_group(struct box *row_group)
+void box_normalise_table_row_group(struct box *row_group,
+		unsigned int **row_span, unsigned int *table_columns)
 {
 	struct box *child;
 	struct box *next_child;
@@ -1034,7 +1045,7 @@ void box_normalise_table_row_group(struct box *row_group)
 		switch (child->type) {
 			case BOX_TABLE_ROW:
 				/* ok */
-				box_normalise_table_row(child);
+				box_normalise_table_row(child, row_span, table_columns);
 				break;
 			case BOX_BLOCK:
 			case BOX_INLINE_CONTAINER:
@@ -1064,7 +1075,7 @@ void box_normalise_table_row_group(struct box *row_group)
 				row->last->next = 0;
 				row->next = next_child = child;
 				row->parent = row_group;
-				box_normalise_table_row(row);
+				box_normalise_table_row(row, row_span, table_columns);
 				break;
 			case BOX_INLINE:
 			case BOX_FLOAT_LEFT:
@@ -1093,13 +1104,14 @@ void box_normalise_table_row_group(struct box *row_group)
 }
 
 
-void box_normalise_table_row(struct box *row)
+void box_normalise_table_row(struct box *row,
+		unsigned int **row_span, unsigned int *table_columns)
 {
 	struct box *child;
 	struct box *next_child;
 	struct box *cell;
 	struct css_style *style;
-	unsigned int columns = 0;
+	unsigned int columns = 0, i, min;
 
 	assert(row != 0);
 	assert(row->type == BOX_TABLE_ROW);
@@ -1111,7 +1123,7 @@ void box_normalise_table_row(struct box *row)
 			case BOX_TABLE_CELL:
 				/* ok */
 				box_normalise_block(child);
-				columns += child->columns;
+				cell = child;
 				break;
 			case BOX_BLOCK:
 			case BOX_INLINE_CONTAINER:
@@ -1142,7 +1154,6 @@ void box_normalise_table_row(struct box *row)
 				cell->next = next_child = child;
 				cell->parent = row;
 				box_normalise_block(cell);
-				columns++;
 				break;
 			case BOX_INLINE:
 			case BOX_FLOAT_LEFT:
@@ -1154,9 +1165,32 @@ void box_normalise_table_row(struct box *row)
 			default:
 				assert(0);
 		}
+
+		/* skip columns with cells spanning from above */
+		while ((*row_span)[columns] != 0) {
+			(*row_span)[columns]--;
+			columns++;
+		}
+		cell->start_column = columns;
+		if (*table_columns < columns + cell->columns) {
+			*table_columns = columns + cell->columns;
+			*row_span = xrealloc(*row_span,
+					sizeof((*row_span)[0]) *
+					(*table_columns + 1));
+			(*row_span)[*table_columns] = 0;  /* sentinel */
+		}
+		for (i = 0; i != cell->columns; i++)
+			(*row_span)[columns + i] = cell->rows - 1;
+		columns += cell->columns;
 	}
-	if (row->parent->parent->columns < columns)
-		row->parent->parent->columns = columns;
+
+	/* if all columns have a rowspan, shrink it to the lowest equivalent */
+	min = (*row_span)[0];
+	for (i = 1; i != *table_columns; i++)
+		if ((*row_span)[i] < min)
+			min = (*row_span)[i];
+	for (i = 0; i != *table_columns; i++)
+		(*row_span)[i] -= min;
 
 	if (row->children == 0) {
 		LOG(("row->children == 0, removing"));

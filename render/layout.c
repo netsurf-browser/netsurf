@@ -590,9 +590,11 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 	unsigned long table_height = 0;
 	unsigned long *xs;  /* array of column x positions */
 	unsigned int i;
+	unsigned int *row_span, *excess_y, min;
 	struct box *c;
 	struct box *row;
 	struct box *row_group;
+	struct box **row_span_cell;
 
 	assert(table->type == BOX_TABLE);
 	assert(table->style != 0);
@@ -661,20 +663,26 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 	}
 
 	xs = xcalloc(columns + 1, sizeof(*xs));
+	row_span = xcalloc(columns, sizeof(row_span[0]));
+	excess_y = xcalloc(columns, sizeof(excess_y[0]));
+	row_span_cell = xcalloc(columns, sizeof(row_span_cell[0]));
 	xs[0] = x = 0;
-	for (i = 0; i < table->columns; i++) {
+	for (i = 0; i != columns; i++) {
 		x += table->col[i].width;
 		xs[i + 1] = x;
+		row_span[i] = 0;
+		excess_y[i] = 0;
+		row_span_cell[i] = 0;
 	}
-
+	
 	/* position cells */
 	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
 		unsigned long row_group_height = 0;
 		for (row = row_group->children; row != 0; row = row->next) {
 			unsigned long row_height = 0;
-			for (i = 0, c = row->children; c != 0; i += c->columns, c = c->next) {
+			for (c = row->children; c != 0; c = c->next) {
 				assert(c->style != 0);
-				c->width = xs[i + c->columns] - xs[i];
+				c->width = xs[c->start_column + c->columns] - xs[c->start_column];
 				c->float_children = 0;
 				c->height = layout_block_children(c, c->width, c, 0, 0);
 				if (c->style->height.height == CSS_HEIGHT_LENGTH) {
@@ -685,12 +693,37 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 					if (c->height < h)
 						c->height = h;
 				}
-				c->x = xs[i];
+				c->x = xs[c->start_column];
 				c->y = 0;
-				if (c->height > row_height) row_height = c->height;
+				for (i = 0; i != c->columns; i++) {
+					row_span[c->start_column + i] = c->rows;
+					excess_y[c->start_column + i] = c->height;
+					row_span_cell[c->start_column + i] = 0;
+				}
+				row_span_cell[c->start_column] = c;
+				c->height = 0;
 			}
-			for (c = row->children; c != 0; c = c->next)
-				c->height = row_height;
+			for (i = 0; i != columns; i++)
+				row_span[i]--;
+			/* if all columns have a row span, shrink it to the lowest equivalent */
+			min = row_span[0];
+			for (i = 1; i != columns; i++)
+				if (row_span[i] < min)
+					min = row_span[i];
+			for (i = 0; i != columns; i++)
+				row_span[i] -= min;
+			/* row height is greatest excess of a cell which ends in this row */
+			for (i = 0; i != columns; i++)
+				if (row_span[i] == 0 && row_height < excess_y[i])
+					row_height = excess_y[i];
+			for (i = 0; i != columns; i++) {
+				excess_y[i] -= row_height;
+				if (row_span_cell[i] != 0)
+					row_span_cell[i]->height += row_height;
+			}
+
+			/*for (c = row->children; c != 0; c = c->next)
+				c->height = row_height;*/
 			row->x = 0;
 			row->y = row_group_height;
 			row->width = table_width;
@@ -704,7 +737,10 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 		table_height += row_group_height;
 	}
 
-	free(xs);
+	xfree(row_span_cell);
+	xfree(excess_y);
+	xfree(row_span);
+	xfree(xs);
 
 	table->width = table_width;
 	table->height = table_height;
@@ -848,25 +884,26 @@ void calculate_table_widths(struct box *table)
 	LOG(("table %p, columns %u", table, table->columns));
 
 	assert(table->children != 0 && table->children->children != 0);
-	for (pass = 1; pass != 3; pass++) {
+	for (pass = 0; pass != 2; pass++) {
 	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
 		assert(row_group->type == BOX_TABLE_ROW_GROUP);
 		for (row = row_group->children; row != 0; row = row->next) {
 			assert(row->type == BOX_TABLE_ROW);
-			for (i = 0, cell = row->children; cell != 0;
-					i += cell->columns, cell = cell->next) {
+			for (cell = row->children; cell != 0; cell = cell->next) {
 				unsigned int j, flexible_columns = 0;
 				unsigned long min = 0, max = 0, extra;
 
 				/* consider cells with colspan 1 in 1st pass, rest
 				 * in 2nd pass */
-				if (pass != cell->columns)
+				if ((pass == 0 && cell->columns != 1) ||
+						(pass == 1 && cell->columns == 1))
 					continue;
 
 				assert(cell->type == BOX_TABLE_CELL);
 				assert(cell->style != 0);
 
 				calculate_widths(cell);
+				i = cell->start_column;
 
 				/* find min, max width so far of spanned columns */
 				for (j = 0; j != cell->columns; j++) {

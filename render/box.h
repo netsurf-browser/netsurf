@@ -93,6 +93,7 @@ struct box {
 	unsigned int length;
 	unsigned int columns;
 	unsigned int rows;
+	unsigned int start_column; /* start column of table cell */
 	struct box * next;
 	struct box * prev;
 	struct box * children;
