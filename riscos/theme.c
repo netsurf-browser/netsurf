@@ -566,10 +566,12 @@ void ro_gui_theme_redraw(struct toolbar *toolbar, wimp_draw *redraw) {
 		separator_icon.extent.y1 = toolbar->height;
 		perform_redraw = true;
 	}
+	perform_redraw &= toolbar->display_buttons;
+	
 	while (more) {
 	  	if (perform_redraw) {
 	  	  	for (icon = toolbar->icon; icon; icon = icon->next) {
-	  	  		if (icon->icon_number == -1) {
+	  	  		if ((icon->icon_number == -1) && (icon->display))  {
 					separator_icon.extent.x0 = icon->x;
 					separator_icon.extent.x1 = icon->x + icon->width;
 					wimp_plot_icon(&separator_icon);
