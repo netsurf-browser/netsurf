@@ -265,6 +265,9 @@ void ro_gui_history_open(struct browser_window *bw,
 	struct history_entry *he;
 	os_box box = {0, 0, 0, 0};
 
+	if (!history || !history->start)
+		return;
+
 	history_bw = bw;
 	history_current = history;
 
