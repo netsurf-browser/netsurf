@@ -9,12 +9,12 @@ Quit:Quit
 
 Page:Page
 PageInfo:Info...
-Save:Save
-SaveComp:Full save
+Save:Save        F3
+SaveComp:Full save  ‹F3
 Export:Export
 ExportAs:Export as
-Draw:Draw
-Text:Text
+Draw:Draw  ‹^F3
+Text:Text   ^F3
 Print:Print...
 Selection:Selection
 Copy:Copy to clipboard

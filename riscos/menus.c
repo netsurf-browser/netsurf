@@ -20,6 +20,7 @@
 #include "netsurf/riscos/theme.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -342,7 +343,8 @@ void ro_gui_menu_prepare_save(struct content *c)
 {
 	char icon_buf[20] = "file_xxx";
 	const char *icon = icon_buf;
-	const char *name;
+	const char *name = "";
+	const char *nice;
 
 	switch (gui_current_save_type) {
 		case GUI_SAVE_SOURCE:
@@ -367,6 +369,10 @@ void ro_gui_menu_prepare_save(struct content *c)
 			name = messages_get("SaveComplete");
 			break;
         }
+
+	if (c)
+		if ((nice = url_nice(c->url)))
+			name = nice;
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_ICON, icon);
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);

@@ -9,11 +9,12 @@ Quit:Quitter
 
 Page:Page
 PageInfo:Info...
-Save:Sauver
+Save:Sauver      F3
+SaveComp:Full save  ‹F3
 Export:Exporter
 ExportAs:Exporter sous
-Draw:Draw
-Text:Text
+Draw:Draw  ‹^F3
+Text:Text   ^F3
 Print:Imprimer...
 Selection:Sélection
 Copy:Copier vers le presse papier

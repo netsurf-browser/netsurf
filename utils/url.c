@@ -9,6 +9,7 @@
  * URL parsing and joining (implementation).
  */
 
+#include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -20,7 +21,7 @@
 #include "netsurf/utils/utils.h"
 
 
-regex_t url_re, url_up_re;
+regex_t url_re, url_up_re, url_nice_re;
 
 /**
  * Initialise URL routines.
@@ -35,6 +36,10 @@ void url_init(void)
 			"(\\?([^#]*))?(#(.*))?$", REG_EXTENDED);
 	regcomp_wrapper(&url_up_re,
 			"/(|[^/]|[.][^./]|[^./][.]|[^/][^/][^/]+)/[.][.](/|$)",
+			REG_EXTENDED);
+	regcomp_wrapper(&url_nice_re,
+			"^([^.]{0,4}[.])?([^.][^.][.])?([^/?&;.=]*)"
+			"(=[^/?&;.]*)?[/?&;.]",
 			REG_EXTENDED);
 }
 
@@ -394,6 +399,95 @@ char *url_host(const char *url)
 }
 
 
+/**
+ * Attempt to find a nice filename for a URL.
+ *
+ * \param  url  an absolute URL
+ * \returns  filename allocated on heap, or 0 on memory exhaustion
+ */
+
+char *url_nice(const char *url)
+{
+	unsigned int i, j, k = 0, so;
+	unsigned int len;
+	const char *colon;
+	char buf[40];
+	char *result;
+	char *rurl;
+	int m;
+	regmatch_t match[10];
+
+	result = malloc(40);
+	if (!result)
+		return 0;
+
+	len = strlen(url);
+	assert(len != 0);
+	rurl = malloc(len + 1);
+	if (!rurl) {
+		free(result);
+		return 0;
+	}
+
+	/* reverse url into rurl */
+	for (i = 0, j = len - 1; i != len; i++, j--)
+		rurl[i] = url[j];
+	rurl[len] = 0;
+
+	/* prepare a fallback: always succeeds */
+	colon = strchr(url, ':');
+	if (colon)
+		url = colon + 1;
+	strncpy(result, url, 15);
+	result[15] = 0;
+	for (i = 0; result[i]; i++)
+		if (!isalnum(result[i]))
+			result[i] = '_';
+
+	/* append nice pieces */
+	j = 0;
+	do {
+		m = regexec(&url_nice_re, rurl + j, 10, match, 0);
+		if (m)
+			break;
+
+		if (match[3].rm_so != match[3].rm_eo) {
+			so = match[3].rm_so;
+			i = match[3].rm_eo - so;
+			if (15 < i) {
+				so = match[3].rm_eo - 15;
+				i = 15;
+			}
+			if (15 < k + i)
+				break;
+			if (k)
+				k++;
+			strncpy(buf + k, rurl + j + so, i);
+			k += i;
+			buf[k] = 160;	/* nbsp */
+		}
+
+		j += match[0].rm_eo;
+	} while (j != len);
+
+	if (k == 0) {
+		free(rurl);
+		return result;
+	}
+
+	/* reverse back */
+	for (i = 0, j = k - 1; i != k; i++, j--)
+		result[i] = buf[j];
+	result[k] = 0;
+
+	for (i = 0; i != k; i++)
+		if (result[i] != (char) 0xa0 && !isalnum(result[i]))
+			result[i] = '_';
+
+	return result;
+}
+
+
 
 #ifdef TEST
 
@@ -411,12 +505,15 @@ int main(int argc, char *argv[])
 		s = url_host(argv[i]);
 		if (s)
 			printf("<== '%s'\n", s);*/
-		if (1 != i) {
+/*		if (1 != i) {
 			s = url_join(argv[i], argv[1]);
 			if (s)
 				printf("'%s' + '%s' \t= '%s'\n", argv[1],
 						argv[i], s);
-		}
+		}*/
+		s = url_nice(argv[i]);
+		if (s)
+			printf("'%s'\n", s);
 	}
 	return 0;
 }

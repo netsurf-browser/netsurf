@@ -16,5 +16,6 @@ void url_init(void);
 char *url_normalize(const char *url);
 char *url_join(const char *rel, const char *base);
 char *url_host(const char *url);
+char *url_nice(const char *url);
 
 #endif
