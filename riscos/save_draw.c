@@ -121,6 +121,8 @@ bool save_as_draw(struct content *c, char *path)
 		LOG(("xosfile_save_stamped: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("SaveError", error->errmess);
+		/* attempt to reflow back on failure */
+		layout_document(box, current_width, c->data.html.box_pool);
 		return false;
 	}
 
