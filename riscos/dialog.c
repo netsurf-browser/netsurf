@@ -393,12 +393,20 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 			set_theme_choices();
 			break;
 		case ICON_CONFIG_BROWSER:
+			/* set selected state of radio icon to prevent
+			 * de-selection of all radio icons */
+			if (pointer->buttons == wimp_CLICK_ADJUST)
+				ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_BROWSER, true);
 			ro_gui_dialog_update_config(dialog_config_br);
 			break;
 		case ICON_CONFIG_PROXY:
+			if (pointer->buttons == wimp_CLICK_ADJUST)
+				ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_PROXY, true);
 			ro_gui_dialog_update_config(dialog_config_prox);
 			break;
 		case ICON_CONFIG_THEME:
+			if (pointer->buttons == wimp_CLICK_ADJUST)
+				ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_THEME, true);
 			ro_gui_dialog_open_config_th();
 			break;
 	}
@@ -651,6 +659,7 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 
 
 #define THEME_HEIGHT 80
+#define THEME_WIDTH  705
 
 /**
  * Handle clicks in the scrolling Theme Choices list pane.
@@ -687,7 +696,7 @@ void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer)
 		if (i != theme_list_entries) {
 			error = xwimp_force_redraw(dialog_config_th_pane,
 					0, -i * THEME_HEIGHT - THEME_HEIGHT - 2,
-					600, -i * THEME_HEIGHT + 2);
+					THEME_WIDTH, -i * THEME_HEIGHT + 2);
 			if (error) {
 				LOG(("xwimp_force_redraw: 0x%x: %s",
 						error->errnum, error->errmess));
@@ -702,7 +711,7 @@ void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer)
 
 	error = xwimp_force_redraw(dialog_config_th_pane,
 			0, -y * THEME_HEIGHT - THEME_HEIGHT - 2,
-			600, -y * THEME_HEIGHT + 2);
+			THEME_WIDTH, -y * THEME_HEIGHT + 2);
 	if (error) {
 		LOG(("xwimp_force_redraw: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -776,7 +785,7 @@ void ro_gui_redraw_config_th_pane_plot(wimp_draw *redraw)
 			if (error)
 				break;
 			error = xos_plot(os_PLOT_RECTANGLE | os_PLOT_BY,
-					705, -THEME_HEIGHT);
+					THEME_WIDTH, -THEME_HEIGHT);
 			if (error)
 				break;
 			error = xwimptextop_set_colour(os_COLOUR_BLACK,
@@ -963,7 +972,7 @@ void set_browser_choices(void) {
 			language_name(option_accept_language ?
 					option_accept_language : "en"));
 	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_HOMEPAGE_URL,
-	                              option_homepage_url);
+	                              option_homepage_url ? option_homepage_url : "");
 
         ro_gui_set_icon_selected_state(dialog_config_br, ICON_CONFIG_BR_OPENBROWSER,
 			option_open_browser_at_startup);
