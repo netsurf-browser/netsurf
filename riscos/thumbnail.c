@@ -20,6 +20,7 @@
 #include "oslib/osspriteop.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/plotters.h"
+#include "netsurf/render/font.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/thumbnail.h"
@@ -106,9 +107,15 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 	colourtrans_set_gcol(os_COLOUR_WHITE, colourtrans_SET_BG,
 			os_ACTION_OVERWRITE, 0);
 	os_clg();
+	if ((content->type == CONTENT_HTML) &&
+			(content->data.html.fonts))
+		nsfont_reopen_set(content->data.html.fonts);
 	content_redraw(content, 0, 0, width, height,
 			0, 0, width, height, scale, 0xFFFFFF);
 	thumbnail_restore_output(save_area);
+	if ((content->type == CONTENT_HTML) &&
+			(content->data.html.fonts))
+		nsfont_reopen_set(content->data.html.fonts);
 
 	/*	Go back from 32bpp to [n]bpp if we should.
 	*/

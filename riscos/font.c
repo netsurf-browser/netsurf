@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
@@ -30,7 +30,7 @@
 #define FONT_MAX_NAME 128 /* max length of a font name */
 
 #define FONT_FAMILIES 6 /* Number of families */
-#define FONT_FACES 4    /* Number of faces per family */
+#define FONT_FACES 4	/* Number of faces per family */
 
 /* Font Variants */
 #define FONT_SMALLCAPS 4
@@ -40,12 +40,12 @@
 #define FONT_SLANTED 1
 
 /* Font families */
-#define FONT_DEFAULT    (0 * FONT_FACES)
+#define FONT_DEFAULT	(0 * FONT_FACES)
 #define FONT_SANS_SERIF (1 * FONT_FACES)
-#define FONT_SERIF      (2 * FONT_FACES)
+#define FONT_SERIF	(2 * FONT_FACES)
 #define FONT_MONOSPACE  (3 * FONT_FACES)
-#define FONT_CURSIVE    (4 * FONT_FACES)
-#define FONT_FANTASY    (5 * FONT_FACES)
+#define FONT_CURSIVE	(4 * FONT_FACES)
+#define FONT_FANTASY	(5 * FONT_FACES)
 
 /* a font_set is just a linked list of font_data for each face for now */
 struct font_set {
@@ -1179,4 +1179,71 @@ char *nsfont_create_font_name(char *base, int id)
 
 	free(created);
 	return NULL;
+}
+
+
+/**
+ * Reopens all font handles to the current screen resolution
+ */
+void nsfont_reopen_set(struct font_set *fonts) {
+	os_error *error;
+	char fontName1[FONT_MAX_NAME+10];
+	char fontName2[FONT_MAX_NAME+10];
+	struct font_data *f;
+	bool using_fb;
+
+	for (int i = 0; i < (FONT_FAMILIES * FONT_FACES); i++) {
+		for (f = fonts->font[i]; f; f = f->next) {
+		 	switch (f->ftype) {
+		 		case FONTTYPE_UFONT:
+		 			error = xufont_lose_font((ufont_f)f->handle);
+		 			if (error) {
+						LOG(("xufont_lose_font: 0x%x: %s",
+							error->errnum, error->errmess));
+					}
+					error = nsfont_open_ufont(fontName1, fontName2, (int)f->size,
+							&f->handle, &using_fb, true);
+		 			if (error) {
+						LOG(("nsfont_open_standard: 0x%x: %s",
+							error->errnum, error->errmess));
+					}
+		 			break;
+				case FONTTYPE_STANDARD_LATIN1:
+		 			error = xfont_lose_font((font_f)f->handle);
+		 			if (error) {
+						LOG(("xfont_lose_font: 0x%x: %s",
+							error->errnum, error->errmess));
+					}
+					strcpy(fontName1, font_table[f->id]);
+					strcat(fontName1, "\\ELatin1");
+					strcpy(fontName2, font_table[f->id % 4]);
+					strcat(fontName2, "\\ELatin1");
+					error = nsfont_open_standard(fontName1, fontName2, (int)f->size,
+							&f->handle, &using_fb, true);
+		 			if (error) {
+						LOG(("nsfont_open_standard: 0x%x: %s",
+							error->errnum, error->errmess));
+					}
+					break;
+				case FONTTYPE_STANDARD_UTF8ENC:
+		 			error = xfont_lose_font((font_f)f->handle);
+		 			if (error) {
+						LOG(("xfont_lose_font: 0x%x: %s",
+							error->errnum, error->errmess));
+					}
+					strcpy(fontName1, font_table[f->id]);
+					strcat(fontName1, "\\EUTF8");
+					strcpy(fontName2, font_table[f->id % 4]);
+					strcat(fontName2, "\\EUTF8");
+					error = nsfont_open_standard(fontName1, fontName2, (int)f->size,
+							&f->handle, &using_fb, true);
+		 			if (error) {
+						LOG(("nsfont_open_standard: 0x%x: %s",
+							error->errnum, error->errmess));
+					}
+					break;
+			}
+			f->space_width = nsfont_width(f, " ", sizeof(" ")-1);
+		}
+	}
 }

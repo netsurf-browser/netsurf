@@ -194,6 +194,7 @@ void ro_gui_window_redraw_all(void);
 /* in history.c */
 void ro_gui_history_init(void);
 void ro_gui_history_quit(void);
+void ro_gui_history_mode_change(void);
 void ro_gui_history_open(struct browser_window *bw,
 		struct history *history, int wx, int wy);
 void ro_gui_history_redraw(wimp_draw *redraw);

@@ -273,6 +273,15 @@ void ro_gui_history_quit(void)
 
 
 /**
+ * Update resources folowing a mode change
+ */
+void ro_gui_history_mode_change(void)
+{
+	font_lose_font(history_font);
+	history_font = font_find_font("Homerton.Medium", 112, 128, 0, 0, 0, 0);
+}
+
+/**
  * Open history window.
  */
 
@@ -415,7 +424,7 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 				(char *)(header),
 				x0 + he->x * FULL_WIDTH + MARGIN,
 				y0 - he->y * FULL_HEIGHT - FULL_HEIGHT + MARGIN,
-				tinct_ERROR_DIFFUSE);
+				tinct_ERROR_DIFFUSE | tinct_BILINEAR_FILTER);
 		} else {
 		        unsigned int size;
 			os_factors factors;

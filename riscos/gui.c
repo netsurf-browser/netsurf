@@ -87,7 +87,7 @@ static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 osspriteop_area *gui_sprites;      /**< Sprite area containing pointer and hotlist sprites */
 
 /** Accepted wimp user messages. */
-static wimp_MESSAGE_LIST(33) task_messages = { {
+static wimp_MESSAGE_LIST(34) task_messages = { {
   	message_HELP_REQUEST,
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
@@ -96,6 +96,7 @@ static wimp_MESSAGE_LIST(33) task_messages = { {
 	message_DATA_OPEN,
 	message_MENU_WARNING,
 	message_MENUS_DELETED,
+	message_MODE_CHANGE,
 #ifdef WITH_URI
 	message_URI_PROCESS,
 	message_URI_RETURN_RESULT,
@@ -996,6 +997,7 @@ void ro_gui_keypress(wimp_key *key)
 
 void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 {
+	struct content *c;
 	switch (message->action) {
 		case message_HELP_REQUEST:
 			ro_gui_interactive_help_request(message);
@@ -1034,6 +1036,14 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 		case message_MENUS_DELETED:
 			if (current_menu == hotlist_menu) {
 				ro_gui_hotlist_menu_closed();
+			}
+			break;
+		case message_MODE_CHANGE:
+			ro_gui_history_mode_change();
+			for (c = content_list; c; c = c->next) {
+				if ((c->type == CONTENT_HTML) &&
+						(c->data.html.fonts))
+					nsfont_reopen_set(c->data.html.fonts);
 			}
 			break;
 

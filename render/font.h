@@ -49,5 +49,6 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 		size_t *rolength,
 		size_t *consumed);
 void nsfont_fill_nametable(bool force_rescan);
+void nsfont_reopen_set(struct font_set *fonts);
 
 #endif
