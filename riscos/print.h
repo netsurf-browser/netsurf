@@ -15,7 +15,7 @@ extern struct gui_window *print_current_window;
 void print_save_bounce(wimp_message *m);
 void print_error(wimp_message *m);
 void print_type_odd(wimp_message *m);
-void print_ack(wimp_message *m);
+bool print_ack(wimp_message *m);
 void print_dataload_bounce(wimp_message *m);
 void print_cleanup(void);
 

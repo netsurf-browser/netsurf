@@ -46,6 +46,7 @@ struct gui_window *print_current_window = 0;
 bool print_active = false;
 
 /* static globals */
+static int print_prev_message = 0;
 static bool print_in_background = false;
 static float print_scale = 1.0;
 static int print_num_copies = 1;
@@ -82,6 +83,7 @@ void ro_gui_print_open(struct gui_window *g, int x, int y, bool sub_menu, bool k
 	assert(g != NULL);
 
 	print_current_window = g;
+	print_prev_message = 0;
 
 	/* Read Printer Driver name */
 	e = xpdriver_info(0, 0, 0, 0, &pdName, 0, 0, 0);
@@ -275,6 +277,7 @@ void print_send_printsave(struct content *c)
 		warn_user("WimpError", e->errmess);
 		print_cleanup();
 	}
+	print_prev_message = m.my_ref;
 }
 
 /**
@@ -308,6 +311,9 @@ bool print_send_printtypeknown(wimp_message *m)
  */
 void print_save_bounce(wimp_message *m)
 {
+	if (m->my_ref == 0 || m->my_ref != print_prev_message)
+		return;
+
 	/* try to print anyway (we're graphics printing) */
 	if (print_current_window) {
 		print_document(print_current_window, "printer:");
@@ -323,6 +329,9 @@ void print_save_bounce(wimp_message *m)
 void print_error(wimp_message *m)
 {
 	pdriver_message_print_error *p = (pdriver_message_print_error*)&m->data;
+	if (m->your_ref == 0 || m->your_ref != print_prev_message)
+		return;
+
 	if (m->size == 20)
 		warn_user("PrintErrorRO2", 0);
 	else
@@ -338,7 +347,8 @@ void print_error(wimp_message *m)
  */
 void print_type_odd(wimp_message *m)
 {
-	if (m->your_ref != 0 && !print_in_background) {
+	if ((m->your_ref == 0 || m->your_ref == print_prev_message) &&
+						!print_in_background) {
 		/* reply to a previous message (ie printsave) */
 		if (print_current_window && print_send_printtypeknown(m)) {
 			print_document(print_current_window, "printer:");
@@ -356,18 +366,24 @@ void print_type_odd(wimp_message *m)
  * Handle message_DATASAVE_ACK for the printing protocol
  *
  * \param m the message to handle
+ * \return true if message successfully handled, false otherwise
  */
-void print_ack(wimp_message *m)
+bool print_ack(wimp_message *m)
 {
 	int type;
 	os_error *e;
+
+	if (m->your_ref == 0 || m->your_ref != print_prev_message) {
+		LOG(("message ignored"));
+		return false;
+	}
 
 	/* Read Printer Driver Type */
 	e = xpdriver_info(&type, 0, 0, 0, 0, 0, 0, 0);
 	if (e) {
 		LOG(("%s", e->errmess));
 		print_cleanup();
-		return;
+		return true;
 	}
 
 	type &= 0xFFFF0000; /* we don't care about the version no */
@@ -414,7 +430,10 @@ void print_ack(wimp_message *m)
 					0, 0, 0, 0, 0);
 			print_cleanup();
 		}
+		print_prev_message = m->my_ref;
 	}
+
+	return true;
 }
 
 /**
@@ -424,6 +443,9 @@ void print_ack(wimp_message *m)
  */
 void print_dataload_bounce(wimp_message *m)
 {
+	if (m->your_ref == 0 || m->your_ref != print_prev_message)
+		return;
+
 	xosfile_delete(m->data.data_xfer.file_name, 0, 0, 0, 0, 0);
 	print_cleanup();
 }
@@ -437,6 +459,7 @@ void print_cleanup(void)
 		print_current_window->option.background_images =
 							print_bg_images;
 	print_current_window = 0;
+	print_prev_message = 0;
 	print_max_sheets = -1;
 	xwimp_create_menu((wimp_menu *)-1, 0, 0);
 	ro_gui_dialog_close(dialog_print);
