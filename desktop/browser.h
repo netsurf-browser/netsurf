@@ -113,7 +113,7 @@ void gui_redraw_gadget(struct browser_window* bw, struct form_control* g);
 void browser_window_stop_throbber(struct browser_window* bw);
 void browser_window_reformat(struct browser_window* bw, int scroll_to_top);
 
-void browser_window_key_press(struct browser_window *bw, char key);
+bool browser_window_key_press(struct browser_window *bw, char key);
 
 struct history_entry * history_add(struct history_entry *current,
 		char *url, char *title);

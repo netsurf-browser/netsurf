@@ -413,6 +413,25 @@ gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window)
   return NULL;
 }
 
+
+/**
+ * Convert a wimp window handle to the owning gui_window structure.
+ */
+gui_window *ro_gui_window_lookup(wimp_w w)
+{
+	gui_window *g;
+
+	for (g = window_list; g; g = g->next) {
+		if (g->window == w)
+			return g;
+		else if (g->type == GUI_BROWSER_WINDOW &&
+				g->data.browser.toolbar == w)
+			return g;
+	}
+	return 0;
+}
+
+
 void ro_gui_window_mouse_at(wimp_pointer* pointer)
 {
   int x,y;
@@ -572,4 +591,82 @@ void gui_window_place_caret(gui_window *g, int x, int y, int height)
 {
 	wimp_set_caret_position(g->window, -1,
 			x * 2, -(y + height) * 2, height * 2, -1);
+}
+
+
+/**
+ * Process Key_Pressed events in a browser window.
+ */
+bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
+{
+	struct content *content = g->data.browser.bw->current_content;
+	wimp_window_state state;
+
+	assert(g->type == GUI_BROWSER_WINDOW);
+
+	/* First send the key to the browser window, eg. form fields. */
+	if (!toolbar) {
+		int c = key;
+		/* Munge cursor keys into unused control chars */
+		if (c == 396) c = 29;          /* Left */
+		else if (c == 397) c = 28;     /* Right */
+		else if (c == 398) c = 31;     /* Down */
+		else if (c == 399) c = 30;     /* Up */
+		if (c < 256)
+			if (browser_window_key_press(g->data.browser.bw,
+					(char) c))
+				return true;
+	}
+
+	switch (key) {
+		case wimp_KEY_F8:	/* View source. */
+			ro_gui_view_source(content);
+			return true;
+
+		case wimp_KEY_F9:	/* Dump content for debugging. */
+			switch (content->type) {
+				case CONTENT_HTML:
+					box_dump(content->data.html.layout->children, 0);
+					break;
+				case CONTENT_CSS:
+					css_dump_stylesheet(content->data.css.css);
+					break;
+				default:
+					break;
+			}
+			return true;
+
+		case wimp_KEY_F10:	/* Dump cache for debugging. */
+			cache_dump();
+			return true;
+
+		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
+			browser_window_destroy(g->data.browser.bw);
+			return true;
+
+		case wimp_KEY_RETURN:
+			if (!toolbar)
+				break;
+			if (strcasecmp(g->url, "about:") == 0) {
+				about_create();
+				browser_window_open_location(g->data.browser.bw,
+						"file:///%3CWimp$ScrapDir%3E/WWW/NetSurf/About");
+			} else {
+				browser_window_open_location(g->data.browser.bw, g->url);
+			}
+			return true;
+
+		case wimp_KEY_UP:
+		case wimp_KEY_DOWN:
+			state.w = g->window;
+			wimp_get_window_state(&state);
+			state.yscroll += key == wimp_KEY_UP ? 32 : -32;
+			wimp_open_window((wimp_open *) &state);
+			return true;
+
+		default:
+			break;
+	}
+
+	return false;
 }

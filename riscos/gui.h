@@ -96,6 +96,7 @@ int window_y_units(int scr_units, wimp_window_state* win);
 void ro_gui_copy_selection(gui_window* g);
 void ro_gui_open_help_page(void);
 void ro_gui_screen_size(int *width, int *height);
+void ro_gui_view_source(struct content *content);
 
 /* in menus.c */
 void ro_gui_menus_init(void);
@@ -140,6 +141,8 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer);
 void ro_gui_throb(void);
 gui_window* ro_lookup_gui_from_w(wimp_w window);
 gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window);
+gui_window *ro_gui_window_lookup(wimp_w w);
+bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar);
 
 /* in history.c */
 void ro_gui_history_init(void);

@@ -576,78 +576,34 @@ void ro_gui_icon_bar_click(wimp_pointer* pointer)
   }
 }
 
-void ro_gui_keypress(wimp_key* key)
+
+/**
+ * Handle Key_Pressed events.
+ */
+void ro_gui_keypress(wimp_key *key)
 {
-  gui_window* g;
+	bool handled = false;
+	gui_window *g = ro_gui_window_lookup(key->w);
 
-  if (key->i == -1 && (key->c < 256 || (key->c >= 396 && key->c <= 399))) {
-	  g = ro_lookup_gui_from_w(key->w);
-	  if (g) {
-	          /* Munge cursor keys into unused control chars */
-	          if (key->c == 396) key->c = 29;          /* Left */
-	          else if (key->c == 397) key->c = 28;     /* Right */
-	          else if (key->c == 398) key->c = 31;     /* Down */
-	          else if (key->c == 399) key->c = 30;     /* Up */
-		  browser_window_key_press(g->data.browser.bw, (char) key->c);
-		  return;
-	  }
-  }
+	if (!g) {
+		wimp_process_key(key->c);
+		return;
+	}
 
-  g = ro_lookup_gui_toolbar_from_w(key->w);
-  if (g != NULL)
-  {
-    if (key->c == wimp_KEY_RETURN)
-    {
-      if (g->data.browser.bw->url != NULL)
-      {
-        xfree(g->data.browser.bw->url);
-        g->data.browser.bw->url = NULL;
-      }
-      if (strcasecmp(g->url, "about:") == 0) {
-        about_create();
-        browser_window_open_location(g->data.browser.bw,
-                            "file:///%3CWimp$ScrapDir%3E/WWW/NetSurf/About");
-      }
-      else {
-        browser_window_open_location(g->data.browser.bw, g->url);
-      }
-      return;
-    }
-    else if (key->c == wimp_KEY_F8)
-    {
-      /* TODO: use some protocol so it's type as HTML not Text. */
-      if(g->data.browser.bw->current_content->type == CONTENT_HTML ||
-         g->data.browser.bw->current_content->type == CONTENT_TEXTPLAIN)
-         xosfile_save_stamped("Pipe:$.Source", osfile_TYPE_TEXT,
-                g->data.browser.bw->current_content->data.html.source,
-                (g->data.browser.bw->current_content->data.html.source +
-                 g->data.browser.bw->current_content->data.html.length));
-         xosfile_set_type("Pipe:$.Source", osfile_TYPE_TEXT);
-         xos_cli("Filer_Run Pipe:$.Source");
-    }
-    else if (key->c == wimp_KEY_F9)
-    {
-      switch (g->data.browser.bw->current_content->type) {
-        case CONTENT_HTML:
-          box_dump(g->data.browser.bw->current_content->data.html.layout->children, 0);
-          break;
-        case CONTENT_CSS:
-          css_dump_stylesheet(g->data.browser.bw->current_content->data.css.css);
-          break;
-      }
-    }
-    else if (key->c == wimp_KEY_F10)
-    {
-      cache_dump();
-    }
-    else if (key->c == (wimp_KEY_CONTROL + wimp_KEY_F2))
-    {
-      browser_window_destroy(g->data.browser.bw);
-    }
-  }
-  wimp_process_key(key->c);
-  return;
+	switch (g->type) {
+		case GUI_BROWSER_WINDOW:
+			handled = ro_gui_window_keypress(g, key->c,
+					(bool) (g->data.browser.toolbar == key->w));
+			break;
+
+		case GUI_DOWNLOAD_WINDOW:
+			break;
+	}
+
+	if (!handled)
+		wimp_process_key(key->c);
 }
+
 
 void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigned long mx, unsigned long my)
 {
@@ -929,6 +885,24 @@ void ro_gui_open_help_page (void)
                                 ICON_TOOLBAR_URL,
                                 0,0,-1, (int) strlen(bw->window->url) - 1);
 }
+
+
+/**
+ * Send the source of a content to a text editor.
+ */
+void ro_gui_view_source(struct content *content)
+{
+	if (content->type != CONTENT_HTML)
+		return;
+
+	xosfile_save_stamped("<Wimp$Scrap>", 0xfff,
+			content->data.html.source,
+			(content->data.html.source +
+			 content->data.html.length));
+	xos_cli("Filer_Run <Wimp$Scrap>");
+	xosfile_set_type("<Wimp$Scrap>", 0xfaf);
+}
+
 
 void ro_gui_drag_box_start(wimp_pointer *pointer)
 {
