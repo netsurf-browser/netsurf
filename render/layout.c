@@ -71,7 +71,6 @@ static void calculate_table_widths(struct box *table);
 
 void layout_document(struct box *doc, int width)
 {
-	struct box *box;
 	doc->float_children = 0;
 
 	calculate_widths(doc);
@@ -83,10 +82,6 @@ void layout_document(struct box *doc, int width)
 			doc->border[RIGHT] + doc->margin[RIGHT];
 	doc->width = width;
 	layout_block_context(doc);
-
-	for (box = doc->float_children; box != 0; box = box->next_float)
-		if (doc->height < box->y + box->height)
-			doc->height = box->y + box->height;
 }
 
 
@@ -235,7 +230,7 @@ void layout_block_context(struct box *block)
 						box->padding[BOTTOM] +
 						box->border[BOTTOM];
 				box = box->parent;
-				if (box->height == AUTO)
+				if (box != block && box->height == AUTO)
 					box->height = y - box->padding[TOP];
 				cy += box->padding[BOTTOM] +
 						box->border[BOTTOM];
@@ -254,6 +249,17 @@ void layout_block_context(struct box *block)
 		box->y = y;
 		margin_box = box;
 	}
+
+	/* Increase height to contain any floats inside (CSS 2.1 10.6.7). */
+	for (box = block->float_children; box; box = box->next_float) {
+		y = box->y + box->height + box->padding[BOTTOM] +
+				box->border[BOTTOM] + box->margin[BOTTOM];
+		if (cy < y)
+			cy = y;
+	}
+
+	if (block->height == AUTO)
+		block->height = cy - block->padding[TOP];
 }
 
 
@@ -910,7 +916,6 @@ int layout_text_indent(struct css_style *style, int width)
 
 void layout_float(struct box *b, int width)
 {
-	struct box *fl;
 	layout_float_find_dimensions(width, b->style, b);
 	if (b->type == BOX_TABLE) {
 		layout_table(b, width);
@@ -920,10 +925,6 @@ void layout_float(struct box *b, int width)
 			b->margin[RIGHT] = 0;
 	} else
 		layout_block_context(b);
-	/* increase height to contain any floats inside */
-	for (fl = b->float_children; fl != 0; fl = fl->next_float)
-		if (b->height < fl->y + fl->height)
-			b->height = fl->y + fl->height;
 }
 
 
@@ -986,7 +987,6 @@ void layout_table(struct box *table, int available_width)
 	struct box *row;
 	struct box *row_group;
 	struct box **row_span_cell;
-	struct box *fl;
 	struct column col[columns];
 	struct css_style *style = table->style;
 
@@ -1142,10 +1142,6 @@ void layout_table(struct box *table, int available_width)
 					if (c->height < h)
 						c->height = h;
 				}
-				/* increase height to contain any floats inside */
-				for (fl = c->float_children; fl != 0; fl = fl->next_float)
-					if (c->height < fl->y + fl->height)
-						c->height = fl->y + fl->height;
 				c->x = xs[c->start_column];
 				c->y = 0;
 				for (i = 0; i != c->columns; i++) {
