@@ -38,8 +38,10 @@
 
 /** List of all browser windows. */
 static struct gui_window *window_list = 0;
-/** Browser window which is being redrawn. Valid only during redraw. */
+/** GUI window which is being redrawn. Valid only during redraw. */
 struct gui_window *ro_gui_current_redraw_gui;
+/** GUI window which the current zoom window refers to. */
+struct gui_window *ro_gui_current_zoom_gui;
 
 
 static void ro_gui_window_clone_options(struct browser_window *new_bw,
@@ -50,7 +52,7 @@ static void ro_gui_window_clone_options(struct browser_window *new_bw,
 /**
  * Create and open a new browser window.
  *
- * \param  bw     browser_window structure to update
+ * \param  bw	  browser_window structure to update
  * \param  clone  the browser window to clone options from, or NULL for default
  * \return  gui_window, or 0 on error and error reported
  */
@@ -124,10 +126,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				win_height = 100;
 		} else {
 
-                       /* Base how we define the window height/width
-                       on the compile time options set */
+		       /* Base how we define the window height/width
+		       on the compile time options set */
 #ifdef WITH_KIOSK_BROWSING
-                        /* We're going fullscreen, forget the iconbar! */
+			/* We're going fullscreen, forget the iconbar! */
 			win_width = screen_width;
 			win_height = screen_height;
 #else
@@ -151,8 +153,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window.yscroll = 0;
 	window.next = wimp_TOP;
 
-        /* Base how we define the window characteristics
-         on the compile time options set */
+	/* Base how we define the window characteristics
+	 on the compile time options set */
 #ifdef WITH_KIOSK_BROWSING
 	window.flags = 	wimp_WINDOW_NEW_FORMAT |
 			wimp_WINDOW_VSCROLL |
@@ -316,7 +318,7 @@ void ro_gui_window_quit(void)
 /**
  * Set the title of a browser window.
  *
- * \param  g      gui_window to update
+ * \param  g	  gui_window to update
  * \param  title  new window title, copied
  */
 
@@ -454,11 +456,11 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 		}
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
-		  	/*	RISC OS 3.7 returns the following error is enough buffer
-		  		is claimed to cause a new dynamic area to be created. It
-		  		doesn't actually stop anything working, so we mask it out
-		  		for now until a better fix is found.
-		  	*/
+			/*	RISC OS 3.7 returns the following error is enough buffer
+				is claimed to cause a new dynamic area to be created. It
+				doesn't actually stop anything working, so we mask it out
+				for now until a better fix is found.
+			*/
 			if ((!ro_gui_current_redraw_gui->option.buffer_everything) ||
 					(error->errnum != 0x286)) {
 				LOG(("xwimp_get_rectangle: 0x%x: %s",
@@ -562,15 +564,15 @@ void gui_window_update_box(struct gui_window *g,
 					g->option.scale);
 		}
 
-	  	if (use_buffer) ro_gui_buffer_close();
+		if (use_buffer) ro_gui_buffer_close();
 		error = xwimp_get_rectangle(&update, &more);
 
 		if (error) {
-		  	/*	RISC OS 3.7 returns the following error is enough buffer
-		  		is claimed to cause a new dynamic area to be created. It
-		  		doesn't actually stop anything working, so we mask it out
-		  		for now until a better fix is found.
-		  	*/
+			/*	RISC OS 3.7 returns the following error is enough buffer
+				is claimed to cause a new dynamic area to be created. It
+				doesn't actually stop anything working, so we mask it out
+				for now until a better fix is found.
+			*/
 			if ((!use_buffer) || (error->errnum != 0x286)) {
 				LOG(("xwimp_get_rectangle: 0x%x: %s",
 						error->errnum, error->errmess));
@@ -647,7 +649,7 @@ int gui_window_get_width(struct gui_window *g)
 /**
  * Set the extent of the inside of a browser window.
  *
- * \param  g       gui_window to resize
+ * \param  g	   gui_window to resize
  * \param  width   new extent
  * \param  height  new extent
  */
@@ -703,7 +705,7 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 /**
  * Set the status bar of a browser window.
  *
- * \param  g     gui_window to update
+ * \param  g	 gui_window to update
  * \param  text  new status text
  */
 
@@ -720,7 +722,7 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 /**
  * Set the contents of a window's address bar.
  *
- * \param  g    gui_window to update
+ * \param  g	gui_window to update
  * \param  url  new url for address bar
  */
 
@@ -949,7 +951,7 @@ struct gui_window *ro_gui_status_lookup(wimp_w window)
 /**
  * Handle pointer movements in a browser window.
  *
- * \param  g        browser window that the pointer is in
+ * \param  g	    browser window that the pointer is in
  * \param  pointer  new mouse position
  */
 
@@ -983,8 +985,7 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 
 void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 {
-        char url[80];
-	os_error *error;
+	char url[80];
 
 	/*	Reject Menu clicks
 	*/
@@ -1023,9 +1024,9 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 					browser_window_go_post(g->bw, option_homepage_url,
 							0, 0, true);
 				} else {
-                           		browser_window_create(option_homepage_url, NULL);
-                           	}
- 			} else {
+					browser_window_create(option_homepage_url, NULL);
+				}
+			} else {
 				snprintf(url, sizeof url,
 						"file:/<NetSurf$Dir>/Docs/intro_%s",
 						option_language);
@@ -1042,15 +1043,7 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 		case ICON_TOOLBAR_SCALE:
 			current_gui = g;
 			ro_gui_menu_prepare_scale();
-			/** \todo  make scale window persistent */
-			error = xwimp_create_menu((wimp_menu *) dialog_zoom,
-					pointer->pos.x, pointer->pos.y);
-			if (error) {
-				LOG(("xwimp_create_menu: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("WimpError", error->errmess);
-				return;
-			}
+			ro_gui_dialog_open_persistant(g->window, dialog_zoom, true);
 			break;
 
 		case ICON_TOOLBAR_BOOKMARK:
@@ -1077,7 +1070,7 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 /**
  * Handle Mouse_Click events in the status bar.
  *
- * \param  g        browser window that owns the status bar
+ * \param  g	    browser window that owns the status bar
  * \param  pointer  details of mouse click
  */
 
@@ -1108,7 +1101,7 @@ void ro_gui_status_click(struct gui_window *g, wimp_pointer *pointer)
 /**
  * Handle Mouse_Click events in a browser window.
  *
- * \param  g        browser window
+ * \param  g	    browser window
  * \param  pointer  details of mouse click
  */
 
@@ -1190,9 +1183,9 @@ void gui_window_stop_throbber(struct gui_window *g)
 /**
  * Place the caret in a browser window.
  *
- * \param  g       window with caret
- * \param  x       coordinates of caret
- * \param  y       coordinates of caret
+ * \param  g	   window with caret
+ * \param  x	   coordinates of caret
+ * \param  y	   coordinates of caret
  * \param  height  height of caret
  */
 
@@ -1215,7 +1208,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 /**
  * Remove/disown the caret.
  *
- * \param  g       window with caret
+ * \param  g	   window with caret
  *
  * \todo: do we want to do a test if g really owns the caret ?
  */
@@ -1291,19 +1284,19 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			ro_gui_search_open(g, 0, 0, false, true);
 			return true;
 
-                case wimp_KEY_F5:       /* Refresh. */
-                        browser_window_reload(g->bw, false);
-                        return true;
+		case wimp_KEY_F5:	/* Refresh. */
+			browser_window_reload(g->bw, false);
+			return true;
 
-		case wimp_KEY_F6:	/* Help. */
+		case wimp_KEY_F6:	/* Hotlist. */
 			ro_gui_hotlist_show();
 			return true;
 
-                case wimp_KEY_F7:       /* Toggle fullscreen browsing. */
+		case wimp_KEY_F7:	/* Toggle fullscreen browsing. */
 
 
 
-                        return true;
+			return true;
 
 
 		case wimp_KEY_F8:	/* View source. */
@@ -1323,7 +1316,13 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			}
 			return true;
 
-		case wimp_KEY_F11:	/* Toggle display of box outlines. */
+		case wimp_KEY_F11:	/* Zoom */
+			current_gui = g;
+			ro_gui_menu_prepare_scale();
+			ro_gui_dialog_open_persistant(g->window, dialog_zoom, false);
+			return true;
+
+		case wimp_KEY_SHIFT + wimp_KEY_F11:	/* Toggle display of box outlines. */
 			gui_redraw_debug = !gui_redraw_debug;
 			gui_window_redraw_window(g);
 			return true;
@@ -1389,25 +1388,25 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			return true;
 
 		case 17:       /* CTRL+Q (Zoom out) */
-		        current_gui = g;
-		        if (0.1 < current_gui->option.scale) {
-		                current_gui->option.scale -= 0.1;
-		                if (current_gui->option.scale < 0.1)
-		                	current_gui->option.scale = 0.1;
-		                current_gui->reformat_pending = true;
-		                gui_reformat_pending = true;
-		        }
-		        return true;
+			current_gui = g;
+			if (0.1 < current_gui->option.scale) {
+				current_gui->option.scale -= 0.1;
+				if (current_gui->option.scale < 0.1)
+					current_gui->option.scale = 0.1;
+				current_gui->reformat_pending = true;
+				gui_reformat_pending = true;
+			}
+			return true;
 		case 23:       /* CTRL+W (Zoom in) */
-		        current_gui = g;
-		        if (current_gui->option.scale < 10.0) {
-		                current_gui->option.scale += 0.1;
-		                if (10.0 < current_gui->option.scale)
-		                	current_gui->option.scale = 10.0;
-		                current_gui->reformat_pending = true;
-		                gui_reformat_pending = true;
-		        }
-		        return true;
+			current_gui = g;
+			if (current_gui->option.scale < 10.0) {
+				current_gui->option.scale += 0.1;
+				if (10.0 < current_gui->option.scale)
+					current_gui->option.scale = 10.0;
+				current_gui->reformat_pending = true;
+				gui_reformat_pending = true;
+			}
+			return true;
 
 		case wimp_KEY_UP:
 		case wimp_KEY_DOWN:
@@ -1534,7 +1533,7 @@ int window_y_units(int y, wimp_window_state *state) {
 /**
  * Handle Message_DataLoad (file dragged in) for a window.
  *
- * \param  g        window
+ * \param  g	    window
  * \param  message  Message_DataLoad block
  * \return  true if the load was processed
  *
@@ -1673,13 +1672,13 @@ void ro_gui_window_clone_options(struct browser_window *new_bw,
 	/*	Set up the toolbar
 	*/
 	if (new_gui->toolbar) {
-	  	if ((old_gui) && (old_gui->toolbar)) {
+		if ((old_gui) && (old_gui->toolbar)) {
 			new_gui->toolbar->status_width = old_gui->toolbar->status_width;
 			new_gui->toolbar->status_window = old_gui->toolbar->status_window;
 			new_gui->toolbar->standard_buttons = old_gui->toolbar->standard_buttons;
 			new_gui->toolbar->url_bar = old_gui->toolbar->url_bar;
 			new_gui->toolbar->throbber = old_gui->toolbar->throbber;
-	  	} else {
+		} else {
 			new_gui->toolbar->status_width = option_toolbar_status_width;
 			new_gui->toolbar->status_window = option_toolbar_show_status;
 			new_gui->toolbar->standard_buttons = option_toolbar_show_buttons;

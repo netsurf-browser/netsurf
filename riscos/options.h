@@ -110,7 +110,7 @@ bool option_open_browser_at_startup = false;
 { "background_images",      OPTION_BOOL,    &option_background_images }, \
 { "background_blending",    OPTION_BOOL,    &option_background_blending }, \
 { "buffer_animations",      OPTION_BOOL,    &option_buffer_animations }, \
-{ "buffer_everything",      OPTION_BOOL,    &option_buffer_animations }, \
+{ "buffer_everything",      OPTION_BOOL,    &option_buffer_everything }, \
 { "homepage_url",           OPTION_STRING,  &option_homepage_url }, \
 { "open_browser_at_startup",OPTION_BOOL,    &option_open_browser_at_startup }
 #endif

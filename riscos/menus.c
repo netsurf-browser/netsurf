@@ -1501,9 +1501,9 @@ static void ro_gui_menu_prepare_toolbars(void) {
  */
 void ro_gui_menu_prepare_scale(void) {
 	char scale_buffer[8];
-	if (current_menu != browser_menu) return;
 	sprintf(scale_buffer, "%.0f", current_gui->option.scale * 100);
 	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
+	ro_gui_current_zoom_gui = current_gui;
 }
 
 /**

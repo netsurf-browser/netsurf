@@ -60,6 +60,7 @@ static void html_redraw_background(int x, int y, int width, int height,
 		struct box *box, float scale);
 
 bool gui_redraw_debug = false;
+static int ro_gui_redraw_box_depth;
 
 static os_trfm trfm = { {
 		{ 65536, 0 },
@@ -106,6 +107,7 @@ void html_redraw(struct content *c, int x, int y,
 
 	trfm.entries[0][0] = trfm.entries[1][1] = 65536 * scale;
 
+	ro_gui_redraw_box_depth = 0;
 	html_redraw_box(box, x, y, background_colour,
 			clip_x0, clip_y0, clip_x1, clip_y1, scale);
 }
@@ -138,6 +140,8 @@ void html_redraw_box(struct box *box,
 	int padding_left, padding_top, padding_width, padding_height;
 	int x0, y0, x1, y1;
 	int colour;
+
+	ro_gui_redraw_box_depth++;
 
 	x += box->x * 2 * scale;
 	y -= box->y * 2 * scale;
@@ -230,11 +234,13 @@ void html_redraw_box(struct box *box,
 					2 * scale);
 
 	/* return if the box is completely outside the clip rectangle */
-	if (clip_y1 < y0 || y1 < clip_y0 || clip_x1 < x0 || x1 < clip_x0)
+	if ((ro_gui_redraw_box_depth > 2) && 
+			(clip_y1 < y0 || y1 < clip_y0 || clip_x1 < x0 || x1 < clip_x0))
 		return;
 
-	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
-			box->type == BOX_TABLE_CELL || box->object) {
+	if ((ro_gui_redraw_box_depth > 2) && 
+		(box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
+			box->type == BOX_TABLE_CELL || box->object)) {
 		/* find intersection of clip rectangle and box */
 		if (x0 < clip_x0) x0 = clip_x0;
 		if (y0 < clip_y0) y0 = clip_y0;
@@ -261,29 +267,38 @@ void html_redraw_box(struct box *box,
 
 		/* background colour */
 		if (box->style->background_color != TRANSPARENT) {
+			if (ro_gui_redraw_box_depth > 2) {
+
+			/* optimisation removed - transparent images break */
 			/* optimisation: skip if fully repeated bg image */
-			if (!box->background ||
+			if (!box->background/* ||
 					box->style->background_repeat !=
-					CSS_BACKGROUND_REPEAT_REPEAT) {
+					CSS_BACKGROUND_REPEAT_REPEAT*/) {
 
-				colourtrans_set_gcol(
-					box->style->background_color << 8,
-					colourtrans_USE_ECFS,
-					os_ACTION_OVERWRITE, 0);
+					colourtrans_set_gcol(
+						box->style->background_color << 8,
+						colourtrans_USE_ECFS,
+						os_ACTION_OVERWRITE, 0);
+	
+					os_plot(os_MOVE_TO, px0, py0);
 
-				os_plot(os_MOVE_TO, px0, py0);
+					if (px0 < px1 && py0 < py1)
+						os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
+								px1 - 1, py1 - 1);
+				}
 
-				if (px0 < px1 && py0 < py1)
-					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-							px1 - 1, py1 - 1);
 			}
 			/* set current background color for font painting */
 			current_background_color = box->style->background_color;
 		}
 
 		if (box->background) {
-			/* clip to padding box */
-			html_redraw_clip(px0, py0, px1, py1);
+			/* clip to padding box for everything but the main window */
+			if (ro_gui_redraw_box_depth > 2) {
+				html_redraw_clip(px0, py0, px1, py1);
+			} else {
+				html_redraw_clip(clip_x0, clip_y0, clip_x1, clip_y1);
+			}
 
 			/* plot background image */
 			html_redraw_background(x, y, width, clip_y1 - clip_y0,
@@ -577,6 +592,7 @@ void html_redraw_background(int xi, int yi, int width, int height,
 	state.w = 0;
 
 	if (ro_gui_current_redraw_gui) {
+
 		/* read state of window we're drawing in */
 		os_error *error;
 

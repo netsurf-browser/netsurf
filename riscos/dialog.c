@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
@@ -50,6 +50,7 @@ static unsigned int theme_list_entries = 0;
 static int config_br_icon = -1;
 static const char *ro_gui_choices_lang = 0;
 static const char *ro_gui_choices_alang = 0;
+static struct gui_window *current_zoom_gui;
 
 static const char *ro_gui_proxy_auth_name[] = {
 	"ProxyNone", "ProxyBasic", "ProxyNTLM"
@@ -245,9 +246,9 @@ void ro_gui_dialog_open(wimp_w w)
  * Open a persistant dialog box relative to the pointer.
  *
  * \param  parent   the owning window (NULL for no owner)
- * \param  w        the dialog window
+ * \param  w	    the dialog window
  * \param  pointer  open the window at the pointer (centre of the parent
- *                  otherwise)
+ *		    otherwise)
  */
 
 void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
@@ -395,7 +396,7 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 		ro_gui_dialog_click_config_th_pane(pointer);
 #ifdef WITH_AUTH
 	else if (pointer->w == dialog_401li)
-	        ro_gui_401login_click(pointer);
+		ro_gui_401login_click(pointer);
 #endif
 	else if (pointer->w == dialog_zoom)
 		ro_gui_dialog_click_zoom(pointer);
@@ -992,8 +993,8 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 	ro_gui_set_icon_integer(dialog_zoom, ICON_ZOOM_VALUE, scale);
 
 	if (pointer->i == ICON_ZOOM_OK) {
-		current_gui->option.scale = scale * 0.01;
-		current_gui->reformat_pending = true;
+		ro_gui_current_zoom_gui->option.scale = scale * 0.01;
+		ro_gui_current_zoom_gui->reformat_pending = true;
 		gui_reformat_pending = true;
 	}
 
@@ -1003,8 +1004,10 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 
 	if (pointer->buttons == wimp_CLICK_SELECT &&
 			(pointer->i == ICON_ZOOM_CANCEL ||
-			 pointer->i == ICON_ZOOM_OK))
+			 pointer->i == ICON_ZOOM_OK)) {
+		ro_gui_dialog_close(dialog_zoom);
 		wimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+	}
 }
 
 
@@ -1014,7 +1017,7 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 
 void ro_gui_dialog_reset_zoom(void) {
 	char scale_buffer[8];
-	sprintf(scale_buffer, "%.0f", current_gui->option.scale * 100);
+	sprintf(scale_buffer, "%.0f", ro_gui_current_zoom_gui->option.scale * 100);
 	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
 }
 

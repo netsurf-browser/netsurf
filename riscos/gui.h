@@ -100,6 +100,7 @@ struct gui_window {
 
 extern struct gui_window *current_gui;
 extern struct gui_window *ro_gui_current_redraw_gui;
+extern struct gui_window *ro_gui_current_zoom_gui;
 
 
 /* in gui.c */
