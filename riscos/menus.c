@@ -144,6 +144,21 @@ void ro_gui_create_menu(wimp_menu *menu, int x, int y, gui_window *g)
 
 
 /**
+ * Display a pop-up menu next to the specified icon.
+ */
+
+void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
+{
+	wimp_window_state state = { w };
+	wimp_icon_state icon_state = { w, i };
+	wimp_get_window_state(&state);
+	wimp_get_icon_state(&icon_state);
+	ro_gui_create_menu(menu, state.visible.x0 + icon_state.icon.extent.x1,
+			state.visible.y1 + icon_state.icon.extent.y1, 0);
+}
+
+
+/**
  * Handle menu selection.
  */
 

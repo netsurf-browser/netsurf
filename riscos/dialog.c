@@ -8,6 +8,7 @@
  */
 
 #include <assert.h>
+#include <stddef.h>
 #include <string.h>
 #include "oslib/colourtrans.h"
 #include "oslib/osfile.h"
@@ -279,10 +280,11 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 			else
 				set_theme_choices(&choices.theme);
 			break;
+		case ICON_CONFIG_TH_NAME:
 		case ICON_CONFIG_TH_PICK:
 			ro_gui_build_theme_menu();
-			ro_gui_create_menu(theme_menu, pointer->pos.x - 64,
-					pointer->pos.y, NULL);
+			ro_gui_popup_menu(theme_menu, dialog_config_th,
+					ICON_CONFIG_TH_PICK);
 			break;
 		case ICON_CONFIG_TH_MANAGE:
 			os_cli("Filer_OpenDir " THEMES_DIR);
@@ -444,101 +446,75 @@ void get_theme_choices(struct theme_choices* newchoices)
 }
 
 
-void ro_gui_destroy_theme_menu(void)
-{
-	int i = 0;
-	LOG(("destroy?"));
-
-	if (theme_menu == NULL)
-		return;
-
-	LOG(("enumerating"));
-	while ((theme_menu->entries[i].menu_flags & wimp_MENU_LAST) == 0)
-	{
-		xfree(theme_menu->entries[i].data.indirected_text.text);
-		LOG(("freed"));
-		i++;
-	}
-
-	LOG(("freeing menu"));
-	xfree(theme_menu);
-	theme_menu = NULL;
-	LOG(("destroyed"));
-}
+/**
+ * Construct or update theme_menu by scanning THEMES_DIR.
+ */
 
 void ro_gui_build_theme_menu(void)
 {
-	wimp_menu* m;
-	int num = 0;
-	int i;
-	char* name[256];
-	char buffer[256];
-	osgbpb_system_info* info;
-	int context = 0, count = 1;
+	unsigned int i;
+	static unsigned int entries = 0;
+	int context = 0;
+	int read_count;
+	osgbpb_INFO(100) info;
 
-	LOG(("check for destroy"));
-	if (theme_menu != NULL)
-		ro_gui_destroy_theme_menu();
-
-	LOG(("enumerate themes"));
-		context = osgbpb_dir_entries_system_info(THEMES_DIR, buffer, 1, context, 256, 0, &count);
-	while (context != -1)
-	{
-		LOG(("called"));
-		info = (osgbpb_system_info*) buffer;
-		if (info->obj_type == 2 /* directory */)
-		{
-			if (file_exists(THEMES_DIR, info->name, "Templates", 0xfec) &&
-			    file_exists(THEMES_DIR, info->name, "Sprites", 0xff9) &&
-			    file_exists(THEMES_DIR, info->name, "IconNames", 0xfff) &&
-			    file_exists(THEMES_DIR, info->name, "IconSizes", 0xfff))
-			{
-			LOG(("found"));
-			name[num] = malloc(strlen(info->name) + 2);
-			strcpy(name[num], info->name);
-			num++;
-			}
-		}
-		context = osgbpb_dir_entries_system_info(THEMES_DIR, buffer, 1, context, 256, 0, &count);
-	}
-	LOG(("mallocing"));
-
-	m = malloc(sizeof(wimp_menu_base) + (num*2) * sizeof(wimp_menu_entry));
-	strcpy(m->title_data.text, "Themes");
-	m->title_fg = wimp_COLOUR_BLACK;
-	m->title_bg = wimp_COLOUR_LIGHT_GREY;
-	m->work_fg = wimp_COLOUR_BLACK;
-	m->work_bg = wimp_COLOUR_WHITE;
-	m->width = 256;
-	m->height = 44;
-	m->gap = 0;
-
-	LOG(("building entries"));
-	for (i = 0; i < num; i++)
-	{
-		if (i < num - 1)
-		  m->entries[i].menu_flags = 0;
-		else
-		{
-			LOG(("last one"));
-		  m->entries[i].menu_flags = wimp_MENU_LAST;
-		}
-
-		if (strcmp(name[i], theme_choices.name) == 0)
-			m->entries[i].menu_flags |= wimp_MENU_TICKED;
-
-		m->entries[i].sub_menu = wimp_NO_SUB_MENU;
-		m->entries[i].icon_flags = (wimp_ICON_TEXT | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT));
-		m->entries[i].data.indirected_text.text = name[i];
-		m->entries[i].data.indirected_text.validation = -1;
-		m->entries[i].data.indirected_text.size = strlen(name[i]) + 1;
-		LOG(("entry %d", i));
+	if (theme_menu) {
+		/* free entry text buffers */
+		for (i = 0; i != entries; i++)
+			free(theme_menu->entries[i].data.indirected_text.text);
+	} else {
+		theme_menu = xcalloc(1, wimp_SIZEOF_MENU(1));
+		theme_menu->title_data.indirected_text.text =
+				messages_get("Themes");
+		theme_menu->title_fg = wimp_COLOUR_BLACK;
+		theme_menu->title_bg = wimp_COLOUR_LIGHT_GREY;
+		theme_menu->work_fg = wimp_COLOUR_BLACK;
+		theme_menu->work_bg = wimp_COLOUR_WHITE;
+		theme_menu->width = 256;
+		theme_menu->height = 44;
+		theme_menu->gap = 0;
 	}
 
-	LOG(("done"));
+	i = 0;
+	while (context != -1) {
+		context = osgbpb_dir_entries_info(THEMES_DIR,
+				(osgbpb_info_list *) &info, 1, context,
+				sizeof(info), 0, &read_count);
+		if (read_count == 0)
+			continue;
+		if (info.obj_type != fileswitch_IS_DIR)
+			continue;
+		if (!(file_exists(THEMES_DIR, info.name, "Templates", 0xfec) &&
+		      file_exists(THEMES_DIR, info.name, "Sprites", 0xff9)))
+			continue;
 
-	theme_menu = m;
+		theme_menu = xrealloc(theme_menu, wimp_SIZEOF_MENU(i + 1));
+
+		theme_menu->entries[i].menu_flags = 0;
+		if (strcmp(info.name, theme_choices.name) == 0)
+			theme_menu->entries[i].menu_flags |= wimp_MENU_TICKED;
+		theme_menu->entries[i].sub_menu = wimp_NO_SUB_MENU;
+		theme_menu->entries[i].icon_flags = wimp_ICON_TEXT |
+				wimp_ICON_FILLED | wimp_ICON_INDIRECTED |
+				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
+				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
+		theme_menu->entries[i].data.indirected_text.text =
+				xstrdup(info.name);
+		theme_menu->entries[i].data.indirected_text.validation = -1;
+		theme_menu->entries[i].data.indirected_text.size =
+				strlen(info.name) + 1;
+
+		i++;
+	}
+	assert(i != 0);
+	entries = i;
+
+	theme_menu->entries[0].menu_flags |= wimp_MENU_TITLE_INDIRECTED;
+	theme_menu->entries[i - 1].menu_flags |= wimp_MENU_LAST;
 }
+
+
+
 
 void ro_gui_theme_menu_selection(char *theme)
 {

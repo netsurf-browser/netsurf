@@ -31,14 +31,19 @@ gui_window *window_list = 0;
 gui_window *gui_create_browser_window(struct browser_window *bw)
 {
   int screen_width, screen_height, win_width, win_height;
+  int toolbar_height = 0;
   wimp_window window;
   wimp_window_state state;
+  wimp_outline outline;
 
   gui_window* g = (gui_window*) xcalloc(1, sizeof(gui_window));
   g->type = GUI_BROWSER_WINDOW;
   g->data.browser.bw = bw;
 
   ro_gui_screen_size(&screen_width, &screen_height);
+
+  if (bw->flags & browser_TOOLBAR)
+    toolbar_height = ro_theme_toolbar_height();
 
   win_width = screen_width * 3 / 4;
   if (1600 < win_width)
@@ -68,14 +73,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
   window.extent.x0 = 0;
   window.extent.y0 = win_height;
   window.extent.x1 = win_width;
-  if ((bw->flags & browser_TOOLBAR) != 0)
-  {
-    window.extent.y1 = ro_theme_toolbar_height();
-  }
-  else
-  {
-    window.extent.y1 = 0;
-  }
+  window.extent.y1 = toolbar_height;
   window.title_flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED;
   window.work_flags = wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT;
   window.sprite_area = wimpspriteop_AREA;
@@ -109,6 +107,31 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
   wimp_get_window_state(&state);
   state.next = wimp_TOP;
   ro_gui_window_open(g, (wimp_open*)&state);
+
+	outline.w = g->window;
+	wimp_get_window_outline(&outline);
+
+	state.w = g->data.browser.toolbar;
+	state.visible.x1 = outline.outline.x1 - 2;
+	state.visible.y0 = state.visible.y1 - toolbar_height;
+	state.xscroll = 0;
+	state.yscroll = 0;
+	state.next = wimp_TOP;
+
+	g->data.browser.toolbar_width = state.visible.x1 - state.visible.x0;
+	ro_theme_resize_toolbar(g->data.browser.toolbar,
+			g->data.browser.toolbar_width,
+			state.visible.y1 - state.visible.y0);
+
+	wimp_open_window_nested((wimp_open *) &state, g->window,
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_LS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_BS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_RS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_TS_EDGE_SHIFT);
 
   return g;
 }
@@ -304,7 +327,6 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 	int toolbar_height = 0;
 	struct content *content;
 	wimp_window_state state;
-	wimp_outline outline;
 
 	if (g->type != GUI_BROWSER_WINDOW) {
 		wimp_open_window(open);
@@ -374,28 +396,8 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 	if (!toolbar_height)
 		return;
 
-	outline.w = g->window;
-	wimp_get_window_outline(&outline);
-
 	state.w = g->data.browser.toolbar;
-	state.visible.x0 = open->visible.x0;
-	state.visible.x1 = outline.outline.x1 - 2;
-	state.visible.y1 = open->visible.y1;
-	state.visible.y0 = state.visible.y1 - toolbar_height;
-	state.xscroll = 0;
-	state.yscroll = 0;
-	state.next = wimp_TOP;
-
-	wimp_open_window_nested((wimp_open *) &state, g->window,
-			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-					<< wimp_CHILD_LS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-					<< wimp_CHILD_BS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-					<< wimp_CHILD_RS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_TS_EDGE_SHIFT);
-
+	wimp_get_window_state(&state);
 	if (state.visible.x1 - state.visible.x0 !=
 			g->data.browser.toolbar_width) {
 		g->data.browser.toolbar_width = state.visible.x1 -
