@@ -65,9 +65,9 @@ dir { display: block; padding-left: 0.5em; }
 menu { display: block; padding-left: 0.5em; }
 
 table { display: table; }
-table[align=left] { margin-right: auto; }
-table[align=center] { margin-left: auto; margin-right: auto; }
-table[align=right] { margin-left: auto; }
+table[align=left] { float: left; }
+table[align=center] { margin-left: auto; margin-right: auto; text-align: left; }
+table[align=right] { float: right; text-align: left; }
 
 caption { display: table-caption; }
 
