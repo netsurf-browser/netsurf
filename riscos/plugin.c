@@ -48,7 +48,7 @@
 
 /* parameters file creation */
 void plugin_write_parameters_file(struct object_params *params);
-byte const *plugin_populate_pdata(int rsize);
+void plugin_populate_pdata(int rsize, byte *pdata);
 
 /* stream handling */
 void plugin_create_stream(struct browser_window *bw,
@@ -546,6 +546,7 @@ void plugin_write_parameters_file(struct object_params *params)
         os_fw pfile;
         int j, rsize = 0;
         char *tstr;
+        byte pdata[4] = {0, 0, 0, 0};
 
         /* Create the file */
         xosfile_create_dir("<Wimp$ScrapDir>.WWW", 77);
@@ -570,7 +571,8 @@ void plugin_write_parameters_file(struct object_params *params)
         if(params->classid != 0 && params->codetype != 0) {
 
           /* Record Type */
-          xosgbpb_writew(pfile, (plugin_populate_pdata(1)), 4, NULL);
+          plugin_populate_pdata(1, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata, 4, NULL);
 
           /* Record size */
           rsize = 0;
@@ -582,42 +584,49 @@ void plugin_write_parameters_file(struct object_params *params)
           if((strlen(params->codetype)%4) != 0)
                   rsize += (4-(strlen(params->codetype)%4));
 
-          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+          plugin_populate_pdata(rsize, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata, 4, NULL);
 
           /* name */
           /* size */
           rsize = strlen("CLASSID");
-          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+          plugin_populate_pdata(rsize, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata, 4, NULL);
 
           /* name */
           xosgbpb_writew(pfile, (byte const*)"CLASSID", rsize, NULL);
 
           /* pad to word boundary */
-          xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+          plugin_populate_pdata(0, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata,
           		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
           /* value */
           /* size */
           rsize = strlen(params->classid);
-          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+          plugin_populate_pdata(rsize, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata, 4, NULL);
 
           /* name */
           xosgbpb_writew(pfile, (byte const*)params->classid, rsize, NULL);
 
           /* pad to word boundary */
-          xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+          plugin_populate_pdata(0, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata,
           		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
           /* type */
           /* size */
           rsize = strlen(params->codetype);
-          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+          plugin_populate_pdata(rsize, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata, 4, NULL);
 
           /* name */
           xosgbpb_writew(pfile, (byte const*)params->codetype, rsize, NULL);
 
           /* pad to word boundary */
-          xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+          plugin_populate_pdata(rsize, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata,
           		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
         }
@@ -625,7 +634,8 @@ void plugin_write_parameters_file(struct object_params *params)
         else if(params->data !=0 && params->type != 0) {
 
           /* Record Type */
-          xosgbpb_writew(pfile, (plugin_populate_pdata(1)), 4, NULL);
+          plugin_populate_pdata(1, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata, 4, NULL);
 
           /* Record size */
           rsize = 0;
@@ -636,42 +646,50 @@ void plugin_write_parameters_file(struct object_params *params)
           rsize += (4 + strlen(params->type));
           if((strlen(params->type)%4) != 0)
                   rsize += (4-(strlen(params->type)%4));
-          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+
+          plugin_populate_pdata(rsize, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata, 4, NULL);
 
           /* name */
           /* size */
           rsize = strlen("DATA");
-          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+          plugin_populate_pdata(rsize, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata, 4, NULL);
 
           /* name */
           xosgbpb_writew(pfile, (byte const*)"DATA", rsize, NULL);
 
           /* pad to word boundary */
-          xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+          plugin_populate_pdata(0, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata,
           		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
           /* value */
           /* size */
           rsize = strlen(params->data);
-          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+          plugin_populate_pdata(rsize, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata, 4, NULL);
 
           /* name */
           xosgbpb_writew(pfile, (byte const*)params->data, rsize, NULL);
 
           /* pad to word boundary */
-          xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+          plugin_populate_pdata(0, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata,
           		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
           /* type */
           /* size */
           rsize = strlen(params->type);
-          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+          plugin_populate_pdata(rsize, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata, 4, NULL);
 
           /* name */
           xosgbpb_writew(pfile, (byte const*)params->type, rsize, NULL);
 
           /* pad to word boundary */
-          xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+          plugin_populate_pdata(0, (byte *)&pdata);
+          xosgbpb_writew(pfile, pdata,
           		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
         }
 
@@ -679,7 +697,8 @@ void plugin_write_parameters_file(struct object_params *params)
         if(params->codebase != 0) {
 
                 /* Record Type */
-                xosgbpb_writew(pfile, (plugin_populate_pdata(1)), 4, NULL);
+                plugin_populate_pdata(1, (byte *)&pdata);
+                xosgbpb_writew(pfile, pdata, 4, NULL);
 
                 /* Record size */
                 rsize = 0;
@@ -688,35 +707,41 @@ void plugin_write_parameters_file(struct object_params *params)
                 if((strlen(params->codebase)%4) != 0)
                         rsize += (4-(strlen(params->codebase)%4));
                 rsize += 4;
-                xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                plugin_populate_pdata(rsize, (byte *)&pdata);
+                xosgbpb_writew(pfile, pdata, 4, NULL);
 
                 /* name */
                 /* size */
                 rsize = strlen("CODEBASE");
-                xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                plugin_populate_pdata(rsize, (byte *)&pdata);
+                xosgbpb_writew(pfile, pdata, 4, NULL);
 
                 /* name */
                 xosgbpb_writew(pfile, (byte const*)"CODEBASE", rsize, NULL);
 
                 /* pad to word boundary */
-                xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+                plugin_populate_pdata(0, (byte *)&pdata);
+                xosgbpb_writew(pfile, pdata,
                 	       (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                 /* value */
                 /* size */
                 rsize = strlen(params->codebase);
-                xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                plugin_populate_pdata(rsize, (byte *)&pdata);
+                xosgbpb_writew(pfile, pdata, 4, NULL);
 
                 /* name */
                 xosgbpb_writew(pfile, (byte const*)params->codebase, rsize, NULL);
 
                 /* pad to word boundary */
-                xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+                plugin_populate_pdata(0, (byte *)&pdata);
+                xosgbpb_writew(pfile, pdata,
                 	       (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                 /* type */
                 /* size */
-                xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
+                plugin_populate_pdata(0, (byte *)&pdata);
+                xosgbpb_writew(pfile, pdata, 4, NULL);
 
         }
 
@@ -738,7 +763,8 @@ void plugin_write_parameters_file(struct object_params *params)
                         rsize = 2;
                 if(strcasecmp(params->params->valuetype, "object") == 0)
                         rsize = 3;
-                xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                plugin_populate_pdata(rsize, (byte *)&pdata);
+                xosgbpb_writew(pfile, pdata, 4, NULL);
 
                 /* Record Size */
                 rsize = 0;
@@ -762,20 +788,23 @@ void plugin_write_parameters_file(struct object_params *params)
                 } else {
                         rsize += 4;
                 }
-                xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                plugin_populate_pdata(rsize, (byte *)&pdata);
+                xosgbpb_writew(pfile, pdata, 4, NULL);
 
                 /* Record Name */
                 if(params->params->name != 0) {
 
                         /* Size */
                         rsize = strlen(params->params->name);
-                        xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                        plugin_populate_pdata(rsize, (byte *)&pdata);
+                        xosgbpb_writew(pfile, pdata, 4, NULL);
 
                         /* Name */
                         xosgbpb_writew(pfile, (byte const*)params->params->name, rsize, NULL);
 
                         /* Pad to word boundary */
-                        xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                        plugin_populate_pdata(0, (byte *)&pdata);
+                        xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
                 }
 
                 /* Record Value */
@@ -783,13 +812,15 @@ void plugin_write_parameters_file(struct object_params *params)
 
                         /* Size */
                         rsize = strlen(params->params->value);
-                        xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                        plugin_populate_pdata(rsize, (byte *)&pdata);
+                        xosgbpb_writew(pfile, pdata, 4, NULL);
 
                         /* Name */
                         xosgbpb_writew(pfile, (byte const*)params->params->value, rsize, NULL);
 
                         /* Pad to word boundary */
-                        xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                        plugin_populate_pdata(0, (byte *)&pdata);
+                        xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
                 }
 
                 /* Record Type */
@@ -797,15 +828,18 @@ void plugin_write_parameters_file(struct object_params *params)
 
                         /* Size */
                         rsize = strlen(params->params->type);
-                        xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                        plugin_populate_pdata(rsize, (byte *)&pdata);
+                        xosgbpb_writew(pfile, pdata, 4, NULL);
 
                         /* Name */
                         xosgbpb_writew(pfile, (byte const*)params->params->type, rsize, NULL);
 
                         /* Pad to word boundary */
-                        xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                        plugin_populate_pdata(0, (byte *)&pdata);
+                        xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
                 } else {
-                        xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
+                        plugin_populate_pdata(0, (byte *)&pdata);
+                        xosgbpb_writew(pfile, pdata, 4, NULL);
                 }
 
                 temp = params->params;
@@ -826,7 +860,8 @@ void plugin_write_parameters_file(struct object_params *params)
           */
          for(j=0; j!=5; j++) {
 
-                 xosgbpb_writew(pfile, (plugin_populate_pdata(4)), 4, NULL);
+                 plugin_populate_pdata(4, (byte *)&pdata);
+                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                  switch(j) {
 
@@ -836,23 +871,27 @@ void plugin_write_parameters_file(struct object_params *params)
                                  if((strlen(params->basehref)%4) != 0)
                                    rsize += (4-(strlen(params->basehref)%4));
                                  rsize += 4;
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  rsize = strlen("BASEHREF");
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"BASEHREF", rsize, NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                                  rsize = strlen(params->basehref);
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)params->basehref, rsize, NULL);
 
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  break;
 
@@ -862,23 +901,26 @@ void plugin_write_parameters_file(struct object_params *params)
                                  if((strlen("NetSurf")%4) != 0)
                                      rsize += (4-(strlen("NetSurf")%4));
                                  rsize += 4;
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  rsize = strlen("USERAGENT");
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"USERAGENT", rsize, NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                                  rsize = strlen("NetSurf");
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"NetSurf", rsize, NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
                                  break;
 
                          case 2: rsize = 0;
@@ -887,23 +929,26 @@ void plugin_write_parameters_file(struct object_params *params)
                                  if((strlen("0.01")%4) != 0)
                                      rsize += (4-(strlen("0.01")%4));
                                  rsize += 4;
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  rsize = strlen("UAVERSION");
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"UAVERSION", rsize, NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                                  rsize = strlen("0.01");
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"0.01", rsize, NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
                                  break;
 
                          case 3: rsize = 0;
@@ -912,23 +957,26 @@ void plugin_write_parameters_file(struct object_params *params)
                                  if((strlen("1.10")%4) != 0)
                                      rsize += (4-(strlen("1.10")%4));
                                  rsize += 4;
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  rsize = strlen("APIVERSION");
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"APIVERSION", rsize, NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                                  rsize = strlen("1.10");
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"1.10", rsize, NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
                                  break;
                          case 4: rsize = 0;
                                  rsize += (4 + 7 + 1);
@@ -936,30 +984,34 @@ void plugin_write_parameters_file(struct object_params *params)
                                  if((strlen("FFFFFF00")%4) != 0)
                                      rsize += (4-(strlen("FFFFFF00")%4));
                                  rsize += 4;
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  rsize = strlen("BGCOLOR");
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"BGCOLOR", rsize, NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                                  rsize = strlen("FFFFFF00");
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
+                                 plugin_populate_pdata(rsize, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"FFFFFF00", rsize, NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 plugin_populate_pdata(0, (byte *)&pdata);
+                                 xosgbpb_writew(pfile, pdata, 4, NULL);
                                  break;
                  }
 
          }
 
          /* Write terminator */
-         xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
+         plugin_populate_pdata(0, (byte *)&pdata);
+         xosgbpb_writew(pfile, pdata, 4, NULL);
          xosfind_closew(pfile);
 }
 
@@ -967,16 +1019,13 @@ void plugin_write_parameters_file(struct object_params *params)
  * plugin_populate_pdata
  * helper function for plugin_write_parameters_file
  */
-byte const *plugin_populate_pdata(int rsize) {
-
-	 byte pdata[4] = {0, 0, 0, 0};
+void plugin_populate_pdata(int rsize, byte *pdata) {
 
 	 pdata[0] = rsize & 0xff;
          pdata[1] = (rsize >> 0x08) & 0xff;
          pdata[2] = (rsize >> 0x10) & 0xff;
          pdata[3] = (rsize >> 0x18) & 0xff;
 
-         return (byte const*)&pdata;
 }
 
 /*-------------------------------------------------------------------------*/
