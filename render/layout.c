@@ -237,6 +237,8 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 		c->y = y;
 		layout_node(c, width, cont, cx, cy + y);
 		y = c->y + c->height;
+		if (box->width < c->width)
+			box->width = c->width;
 	}
 	return y;
 }

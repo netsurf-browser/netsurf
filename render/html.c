@@ -419,8 +419,10 @@ void html_object_callback(content_msg msg, struct content *object,
 						b->min_width = object->width;
 					if (b->max_width < object->width)
 						b->max_width = object->width;
-					for (b = b->parent;
-							b != 0 && b->max_width != UNKNOWN_MAX_WIDTH;
+					for (b = b->parent; b != 0 &&
+							(b->type == BOX_TABLE_ROW_GROUP ||
+							 b->type == BOX_TABLE_ROW ||
+							 b->max_width != UNKNOWN_MAX_WIDTH);
 							b = b->parent)
 						b->max_width = UNKNOWN_MAX_WIDTH;
 				}
