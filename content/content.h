@@ -45,6 +45,8 @@
  *     content_convert -> ERROR [label=MSG_ERROR];
  *     READY -> READY [style=bold];
  *     READY -> DONE [label=MSG_DONE, style=bold];
+ *     READY -> content_stop;
+ *     content_stop -> DONE [label=MSG_DONE];
  *
  *     TYPE_UNKNOWN [shape=ellipse];
  *     LOADING [shape=ellipse];
@@ -73,6 +75,10 @@
  *   resources. Optional.
  *
  * - <i>type</i>_redraw(): called to plot the content to screen.
+ *
+ * - <i>type</i>_stop(): called when the user interrupts in status
+ *   CONTENT_STATUS_READY. Must stop any processing and set the status to
+ *   CONTENT_STATUS_DONE. Required iff the status can be CONTENT_STATUS_READY.
  *
  * - <i>type</i>_(add|remove|reshape)_instance: ask James, this will probably
  *   be redesigned sometime.
@@ -157,6 +163,7 @@ struct content_user
 			void *p2, union content_msg_data data);
 	void *p1;
 	void *p2;
+	bool stop;
 	struct content_user *next;
 };
 
@@ -266,6 +273,10 @@ void content_remove_user(struct content *c,
 		void *p1, void *p2);
 void content_broadcast(struct content *c, content_msg msg,
 		union content_msg_data data);
+void content_stop(struct content *c,
+		void (*callback)(content_msg msg, struct content *c, void *p1,
+			void *p2, union content_msg_data data),
+		void *p1, void *p2);
 void content_add_instance(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params, void **state);

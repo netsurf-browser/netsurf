@@ -388,7 +388,8 @@ void browser_window_stop(struct browser_window *bw)
 	if (bw->current_content &&
 			bw->current_content->status != CONTENT_STATUS_DONE) {
 		assert(bw->current_content->status == CONTENT_STATUS_READY);
-		/** \todo implement content_stop */
+		content_stop(bw->current_content,
+				browser_window_callback, bw, 0);
 	}
 
 	browser_window_stop_throbber(bw);

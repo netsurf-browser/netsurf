@@ -124,6 +124,7 @@ struct handler_entry {
 	bool (*convert)(struct content *c, int width, int height);
 	void (*reformat)(struct content *c, int width, int height);
 	void (*destroy)(struct content *c);
+	void (*stop)(struct content *c);
 	void (*redraw)(struct content *c, int x, int y,
 			int width, int height,
 			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
@@ -142,40 +143,43 @@ struct handler_entry {
  * Must be ordered as enum ::content_type. */
 static const struct handler_entry handler_map[] = {
 	{html_create, html_process_data, html_convert,
-		html_reformat, html_destroy, html_redraw,
+		html_reformat, html_destroy, html_stop, html_redraw,
 		html_add_instance, html_remove_instance, html_reshape_instance},
 	{textplain_create, html_process_data, textplain_convert,
 		0, 0, 0, 0, 0, 0},
-	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0},
+	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0, 0},
 #ifdef WITH_JPEG
 	{nsjpeg_create, 0, nsjpeg_convert,
-		0, nsjpeg_destroy, nsjpeg_redraw, 0, 0, 0},
+		0, nsjpeg_destroy, 0, nsjpeg_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_GIF
 	{nsgif_create, 0, nsgif_convert,
-	        0, nsgif_destroy, nsgif_redraw, 0, 0, 0},
+	        0, nsgif_destroy, 0, nsgif_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_PNG
 	{nspng_create, nspng_process_data, nspng_convert,
-		0, nspng_destroy, nspng_redraw, 0, 0, 0},
+		0, nspng_destroy, 0, nspng_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_SPRITE
 	{sprite_create, sprite_process_data, sprite_convert,
-		0, sprite_destroy, sprite_redraw, 0, 0, 0},
+		0, sprite_destroy, 0, sprite_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_DRAW
 	{0, 0, draw_convert,
-		0, draw_destroy, draw_redraw, 0, 0, 0},
+		0, draw_destroy, 0, draw_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_PLUGIN
 	{plugin_create, plugin_process_data, plugin_convert,
-	        plugin_reformat, plugin_destroy, plugin_redraw,
+	        plugin_reformat, plugin_destroy, 0, plugin_redraw,
 		plugin_add_instance, plugin_remove_instance,
 		plugin_reshape_instance},
 #endif
-	{0, 0, 0, 0, 0, 0, 0, 0, 0}
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
+
+
+static void content_stop_check(struct content *c);
 
 
 /**
@@ -560,6 +564,7 @@ void content_add_user(struct content *c,
 	user->callback = callback;
 	user->p1 = p1;
 	user->p2 = p2;
+	user->stop = false;
 	user->next = c->user_list->next;
 	c->user_list->next = user;
 }
@@ -613,6 +618,8 @@ void content_remove_user(struct content *c,
 			else
 				content_destroy(c);
 		}
+	} else if (c->status == CONTENT_STATUS_READY) {
+		content_stop_check(c);
 	}
 }
 
@@ -633,6 +640,67 @@ void content_broadcast(struct content *c, content_msg msg,
 	}
 	if (--(c->lock) == 0 && c->destroy_pending)
 		content_destroy(c);
+}
+
+
+/**
+ * Stop a content loading.
+ *
+ * May only be called in CONTENT_STATUS_READY only. If all users have requested
+ * stop, the loading is stopped and the content placed in CONTENT_STATUS_DONE.
+ */
+
+void content_stop(struct content *c,
+		void (*callback)(content_msg msg, struct content *c, void *p1,
+			void *p2, union content_msg_data data),
+		void *p1, void *p2)
+{
+	struct content_user *user;
+
+	assert(c->status == CONTENT_STATUS_READY);
+
+	/* user_list starts with a sentinel */
+	for (user = c->user_list; user->next != 0 &&
+			!(user->next->callback == callback &&
+				user->next->p1 == p1 &&
+				user->next->p2 == p2); user = user->next)
+		;
+	if (user->next == 0) {
+		LOG(("user not found in list"));
+		assert(0);
+		return;
+	}
+	user = user->next;
+
+	user->stop = true;
+
+	content_stop_check(c);
+}
+
+
+/**
+ * Check if all users have requested a stop, and do it if so.
+ */
+
+void content_stop_check(struct content *c)
+{
+	struct content_user *user;
+	union content_msg_data data;
+
+	assert(c->status == CONTENT_STATUS_READY);
+
+	/* user_list starts with a sentinel */
+	for (user = c->user_list->next; user; user = user->next)
+		if (!user->stop)
+			return;
+
+	/* all users have requested stop */
+	assert(handler_map[c->type].stop);
+	handler_map[c->type].stop(c);
+	assert(c->status == CONTENT_STATUS_DONE);
+
+	content_set_status(c, messages_get("Stopped"));
+	content_broadcast(c, CONTENT_MSG_DONE, data);
 }
 
 

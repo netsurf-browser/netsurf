@@ -92,6 +92,7 @@ void html_fetch_object(struct content *c, char *url, struct box *box,
 		const content_type *permitted_types,
 		int available_width, int available_height,
 		bool background);
+void html_stop(struct content *c);
 
 /* in riscos/htmlinstance.c */
 void html_add_instance(struct content *c, struct browser_window *bw,

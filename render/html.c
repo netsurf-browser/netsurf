@@ -668,15 +668,15 @@ void html_object_callback(content_msg msg, struct content *object,
 
 		case CONTENT_MSG_REDRAW:
 			box_coords(box, &x, &y);
-			if (box->object == data.redraw.object) {
+			if (object == data.redraw.object) {
 				data.redraw.x = data.redraw.x *
-						box->width / box->object->width;
+						box->width / object->width;
 				data.redraw.y = data.redraw.y *
-						box->height / box->object->height;
+						box->height / object->height;
 				data.redraw.width = data.redraw.width *
-						box->width / box->object->width;
+						box->width / object->width;
 				data.redraw.height = data.redraw.height *
-						box->height / box->object->height;
+						box->height / object->height;
 				data.redraw.object_width = box->width;
 				data.redraw.object_height = box->height;
 			}
@@ -768,6 +768,37 @@ bool html_object_type_permitted(const content_type type,
 		return true;
 	}
 	return false;
+}
+
+
+/**
+ * Stop loading a CONTENT_HTML in state READY.
+ */
+
+void html_stop(struct content *c)
+{
+	unsigned int i;
+	struct content *object;
+
+	assert(c->status == CONTENT_STATUS_READY);
+
+	for (i = 0; i != c->data.html.object_count; i++) {
+		object = c->data.html.object[i].content;
+		if (!object)
+			continue;
+
+		if (object->status == CONTENT_STATUS_DONE)
+			; /* already loaded: do nothing */
+		else if (object->status == CONTENT_STATUS_READY)
+			content_stop(object, html_object_callback,
+					c, (void *) i);
+		else {
+			content_remove_user(c->data.html.object[i].content,
+					 html_object_callback, c, (void *) i);
+			c->data.html.object[i].content = 0;
+		}
+	}
+	c->status = CONTENT_STATUS_DONE;
 }
 
 
