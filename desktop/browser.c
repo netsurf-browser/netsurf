@@ -173,6 +173,16 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		return;
 	}
 
+	browser_window_stop(bw);
+	browser_window_remove_caret(bw);
+
+	/* check we can actually handle this URL */
+	if (!fetch_can_fetch(url2)) {
+		gui_launch_url(url2);
+		free(url2);
+		return;
+	}
+
 	hash = strchr(url2, '#');
 	if (bw->frag_id) {
 		free(bw->frag_id);
@@ -181,9 +191,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	if (hash) {
 		bw->frag_id = strdup(hash+1);
 	}
-
-	browser_window_stop(bw);
-	browser_window_remove_caret(bw);
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
@@ -798,16 +805,11 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 
 		pointer = GUI_POINTER_POINT;
 
-		if (click == BROWSER_MOUSE_CLICK_1 ||
-				click == BROWSER_MOUSE_CLICK_2) {
-			if (fetch_can_fetch(url)) {
-				if (click == BROWSER_MOUSE_CLICK_1)
-					browser_window_go(bw, url, c->url);
-				else
-					browser_window_create(url, bw, c->url);
-			} else {
-				gui_launch_url(url);
-			}
+		if (click == BROWSER_MOUSE_CLICK_1) {
+			browser_window_go(bw, url, c->url);
+		}
+		else if (click == BROWSER_MOUSE_CLICK_2) {
+			browser_window_create(url, bw, c->url);
 		}
 
 	} else if (title) {
