@@ -150,12 +150,12 @@ SaveLink:Link
 HelpToolbar0:\Tback button.|M\Straverse back one page in the history tree.|MDoes not resubmit form information.
 HelpToolbar1:\Tforward button.|M\Straverse forward one page in the history tree.|MDoes not resubmit form information.
 HelpToolbar2:\Tstop button.|M\Sstop loading this page.
-HelpToolbar3:\Treload button.|M\Sreload this page.
+HelpToolbar3:\Treload button.|M\Sreload this page.|M\Areload this page and any objects it contains.
 #HelpToolbar4:\Thome button.|M\Sgo to your home page.
 HelpToolbar5:\Thistory button.|M\Sopen the local history \w.
 HelpToolbar6:\Tsave button.|M\Ssave the current document.
 #HelpToolbar7:\Tprint button.|M\Sprint this page.|MOpens a print dialogue box.
-#HelpToolbar8:\Thotlist button.|M\Sopen the hotlist management \w.|M\Aadd this page to the hotlist.
+HelpToolbar8:\Thotlist button.|M\Sopen the hotlist management \w.|M\Aadd this page to the hotlist.
 HelpToolbar9:\Tscale view button.|M\Sscale the page, affecting both text and images.
 #HelpToolbar10:\Tsearch button.
 #HelpToolbar11:\Tup button.|M\Smove up the directory structure.
@@ -182,6 +182,7 @@ HelpBrowserMenu0-4-0:\Rsave the current address in Acorn URI format.
 HelpBrowserMenu0-4-1:\Rsave the current address in Ant URL format.
 HelpBrowserMenu0-4-2:\Rsave the current address as plain text.
 #HelpBrowserMenu0-5:\Sopen the print dialogue box.
+HelpBrowserMenu0-6:\Sopen the current page in a new window.
 HelpBrowserMenu0-7:\Sview the source code of the current page in a text editor.
 HelpBrowserMenu1:\Rsee the options relating to the current item.
 HelpBrowserMenu1-0:\Rsee information about the current item.
@@ -192,11 +193,13 @@ HelpBrowserMenu1-3:\Rsave the address of the current item.
 HelpBrowserMenu1-3-0:\Rsave the current item's address in Acorn URI format.
 HelpBrowserMenu1-3-1:\Rsave the current item's address in Ant URL format.
 HelpBrowserMenu1-3-2:\Rsave the current item's address as plain text.
+HelpBrowserMenu1-4:\Sreload all the items on this page.
 HelpBrowserMenu2:\Rsee the navigation options.
 #HelpBrowserMenu2-0:\Sreturn to the configured home page.
 HelpBrowserMenu2-1:\Sgo back a page in the local history.|MForm information is not resubmitted.
 HelpBrowserMenu2-2:\Sstep forward a page in the local history.|MForm information is not resubmitted.
-#HelpBrowserMenu2-3:\Sfetch the current page again.
+HelpBrowserMenu2-3:\Sfetch the current page again.
+HelpBrowserMenu2-3:\Sstop NetSurf from continuing to load this page.
 HelpBrowserMenu3:\Rset the local display options.
 HelpBrowserMenu3-0:\Rscale the page, affecting both text and images.
 HelpBrowserMenu3-1:\Rset the local image options.
@@ -214,12 +217,13 @@ HelpBrowserMenu3-3:\Rcontrol the default window positioning.
 HelpBrowserMenu3-3-0:\Sto make the current window position the default.
 HelpBrowserMenu3-3-3:\Sto return to the default window positioning.
 HelpBrowserMenu3-4:\Smake your local display options the default options for NetSurf.
-HelpBrowserMenu4:\Rsee the help resources available.
-HelpBrowserMenu4-0:\Sopen the documentation contents page in a new \w.
-HelpBrowserMenu4-1:\Sopen the user guide in a new \w.
-HelpBrowserMenu4-2:\Sopen the user information page in a new \w.
-HelpBrowserMenu4-3:\Sopen the NetSurf about page in a new \w.
-HelpBrowserMenu4-4:\Srun Help.
+HelpBrowserMenu4:\Rto access NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and setup options.
+HelpBrowserMenu5:\Rsee the help resources available.
+HelpBrowserMenu5-0:\Sopen the documentation contents page in a new \w.
+HelpBrowserMenu5-1:\Sopen the user guide in a new \w.
+HelpBrowserMenu5-2:\Sopen the user information page in a new \w.
+HelpBrowserMenu5-3:\Sopen the NetSurf about page in a new \w.
+HelpBrowserMenu5-4:\Srun Help.
 
 HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.
 
