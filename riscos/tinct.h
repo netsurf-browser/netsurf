@@ -32,4 +32,9 @@
 */
 #define Tinct_PlotScaled 0x57243
 
+/*	Tinct_ConvertSprite creates a 32bpp sprite (pointer to memory supplied in R3) from a paletted sprite
+	provided in R2 - see the Tinct documentation for further details.
+*/
+#define Tinct_ConvertSprite 0x57244
+
 #endif
