@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.19 2003/05/10 11:13:34 bursa Exp $
+# $Id: makefile,v 1.20 2003/05/23 11:08:17 bursa Exp $
 
 all: !NetSurf/!RunImage,ff8
 clean:
@@ -39,7 +39,7 @@ HEADERS = \
  riscos/png.h
 LIBS = \
  /usr/local/riscoslibs/libxml2/libxml2.ro \
- /usr/local/riscoslibs/OSLib/OSLib.ro \
+ /usr/local/riscoslibs/OSLib/OSLib32.ro \
  /usr/local/riscoslibs/curl/libcurl.ro \
  /usr/local/riscoslibs/libpng/libpng.ro \
  /usr/local/riscoslibs/zlib/libz.ro
