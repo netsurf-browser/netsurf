@@ -123,6 +123,7 @@ FontError:Failed to open font "Homerton.Medium" (%s).
 Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
 PathToURL:An error occurred converting the file path to an URL:
 SaveError:The file could not be saved due to an error:
+LoadError:The file could not be loaded due to an error:
 MenuError:An error occurred when opening the menu:
 DragError:An error occurred when dragging the icon:
 TbarError:An error occurred when constructing the toolbar:
@@ -135,6 +136,8 @@ HotlistLoadError:The hotlist was unable to be correctly loaded.
 NoPathError:To save, drag the icon to a directory display
 NoNameError:Please enter a name
 NoURLError:Please enter a URL
+URIError:NetSurf was unable to parse this URI file due to a syntax error.
+EmptyError:file is empty.
 
 # Some general purpose words and phrases
 Bytes: B

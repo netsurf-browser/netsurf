@@ -123,6 +123,7 @@ FontError:Échec d'ouverture de la fonte "Homerton.Medium" (%s).
 Resolvers:Aucun nom de domaine n'étant configuré, seul la consultation de fichiers locaux est possible. Utilisez Configure pour définir les serveurs de noms.
 PathToURL:Une erreur s'est produite en convertissant le chemin du fichier en une URL:
 SaveError:Le fichier n'a pas pu être sauvé suite à une erreur:
+LoadError:The file could not be loaded due to an error:
 MenuError:Une erreur s'est produite lors de l'ouverture du menu:
 DragError:Une erreur s'est produite lors du déplacement d'icône:
 TbarError:Une erreur s'est produite lors de la construction de la barre d'outils:
@@ -135,6 +136,8 @@ HotlistLoadError:The hotlist was unable to be correctly loaded.
 NoPathError:To save, drag the icon to a directory display
 NoNameError:Please enter a name
 NoURLError:Please enter a URL
+URIError:NetSurf was unable to parse this URI file due to a syntax error.
+EmptyError:file is empty.
 
 # Some general purpose words and phrases
 Bytes: O
