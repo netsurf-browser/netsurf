@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.16 2003/04/25 08:03:15 bursa Exp $
+ * $Id: html.c,v 1.17 2003/05/10 11:13:34 bursa Exp $
  */
 
 #include <assert.h>
@@ -324,7 +324,8 @@ void html_fetch_image(struct content *c, char *url, struct box *box)
 	c->active++;
 	fetchcache(url, c->url,
 			html_image_callback,
-			fetch_data, 0, 0, 1 << CONTENT_JPEG);
+			fetch_data, 0, 0,
+			(1 << CONTENT_JPEG) | (1 << CONTENT_PNG));
 }
 
 
@@ -345,7 +346,7 @@ void html_image_callback(fetchcache_msg msg, struct content *image,
 				box->style->width.width = CSS_WIDTH_LENGTH;
 				box->style->width.value.length.unit = CSS_UNIT_PX;
 				box->style->width.value.length.value = image->width;
-				box->min_width = box->max_width = image->width;
+				box->min_width = box->max_width = box->width = image->width;
 				/* invalidate parent min, max widths */
 				if (box->parent->max_width != UNKNOWN_MAX_WIDTH) {
 					struct box *b = box->parent;
@@ -381,6 +382,7 @@ void html_image_callback(fetchcache_msg msg, struct content *image,
 			if (c->active == 1 && c->status == CONTENT_PENDING) {
 				/* all images have arrived */
 				content_reformat(c, c->available_width, 0);
+				/*box_dump(c->data.html.layout->children, 0);*/
 			}
 			c->active--;
 			if (c->active == 0)
@@ -413,7 +415,8 @@ void html_revive(struct content *c, unsigned int width, unsigned int height)
 			c->active++;
 			fetchcache(c->data.html.object[i].url, c->url,
 					html_image_callback,
-					fetch_data, 0, 0, 1 << CONTENT_JPEG);
+					fetch_data, 0, 0,
+					(1 << CONTENT_JPEG) | (1 << CONTENT_PNG));
 		}
 	}
 

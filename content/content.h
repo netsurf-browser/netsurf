@@ -1,11 +1,13 @@
 /**
- * $Id: content.h,v 1.9 2003/04/15 17:53:00 bursa Exp $
+ * $Id: content.h,v 1.10 2003/05/10 11:13:34 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
 #define _NETSURF_DESKTOP_CONTENT_H_
 
 #include "libxml/HTMLparser.h"
+#include "libpng/png.h"
+#include "oslib/osspriteop.h"
 #include "netsurf/content/cache.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
@@ -98,6 +100,16 @@ struct content
       unsigned long length;
     } jpeg;
 
+    struct
+    {
+      png_structp png;
+      png_infop info;
+      unsigned long rowbytes;
+      osspriteop_area *sprite_area;
+      char *sprite_image;
+      enum { PNG_PALETTE, PNG_DITHER, PNG_DEEP } type;
+    } png;
+
   } data;
 
   struct cache_entry *cache;
@@ -118,5 +130,7 @@ int content_convert(struct content *c, unsigned long width, unsigned long height
 void content_revive(struct content *c, unsigned long width, unsigned long height);
 void content_reformat(struct content *c, unsigned long width, unsigned long height);
 void content_destroy(struct content *c);
+void content_redraw(struct content *c, long x, long y,
+		unsigned long width, unsigned long height);
 
 #endif

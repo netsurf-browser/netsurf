@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.27 2003/04/15 18:07:25 bursa Exp $
+ * $Id: gui.c,v 1.28 2003/05/10 11:13:34 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -10,7 +10,6 @@
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 #include "oslib/colourtrans.h"
-#include "oslib/jpeg.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/utils/log.h"
@@ -581,11 +580,10 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
 
     if (box->object != 0)
     {
-      if (box->object->type == CONTENT_JPEG) {
-	xjpeg_plot_scaled((jpeg_image *) box->object->data.jpeg.data,
-			(int) x + (int) box->x * 2, (int) y - (int) box->y * 2 - (int) box->height * 2,
-			0, (int) box->object->data.jpeg.length, jpeg_SCALE_DITHERED);
-      }
+      content_redraw(box->object,
+                      (int) x + (int) box->x * 2,
+                      (int) y - (int) box->y * 2 - (int) box->height * 2,
+                      box->width * 2, box->height * 2);
     }
 /*    if (box->img != 0)
     {
@@ -848,9 +846,7 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
 
     while (more)
     {
-      switch (c->type)
-      {
-        case CONTENT_HTML:
+      if (c->type == CONTENT_HTML) {
           gadget_subtract_x = redraw->box.x0 - redraw->xscroll;
           gadget_subtract_y = redraw->box.y1 - redraw->yscroll;
           assert(c->data.html.layout != NULL);
@@ -858,17 +854,12 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
             c->data.html.layout->children,
             redraw->box.x0 - redraw->xscroll, redraw->box.y1 - redraw->yscroll,
             &redraw->clip, 0xffffff);
-          break;
 
-        case CONTENT_JPEG:
-          xjpeg_plot_scaled((jpeg_image *) c->data.jpeg.data,
+      } else {
+        content_redraw(c,
             (int) redraw->box.x0 - (int) redraw->xscroll,
             (int) redraw->box.y1 - (int) redraw->yscroll - (int) c->height * 2,
-            0, (int) c->data.jpeg.length, jpeg_SCALE_DITHERED);
-          break;
-	
-        default:
-          break;
+            c->width, c->height);
       }
       more = wimp_get_rectangle(redraw);
     }

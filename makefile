@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.18 2003/04/11 21:06:51 bursa Exp $
+# $Id: makefile,v 1.19 2003/05/10 11:13:34 bursa Exp $
 
 all: !NetSurf/!RunImage,ff8
 clean:
@@ -25,6 +25,7 @@ OBJECTS = \
  riscos/arm-riscos-aof/font.o  riscos/arm-riscos-aof/gui.o \
  riscos/arm-riscos-aof/theme.o riscos/arm-riscos-aof/jpeg.o \
  riscos/arm-riscos-aof/filetype.o utils/arm-riscos-aof/utils.o \
+ riscos/arm-riscos-aof/png.o \
  css/arm-riscos-aof/css.o css/arm-riscos-aof/css_enum.o \
  css/arm-riscos-aof/parser.o css/arm-riscos-aof/scanner.o \
  css/arm-riscos-aof/ruleset.o
@@ -34,11 +35,14 @@ HEADERS = \
  render/html.h      render/layout.h \
  riscos/font.h      riscos/gui.h       riscos/theme.h     utils/log.h \
  utils/utils.h      render/textplain.h \
- css/css.h css/css_enum.h css/parser.h css/scanner.h
+ css/css.h css/css_enum.h css/parser.h css/scanner.h \
+ riscos/png.h
 LIBS = \
  /usr/local/riscoslibs/libxml2/libxml2.ro \
  /usr/local/riscoslibs/OSLib/OSLib.ro \
- /usr/local/riscoslibs/curl/libcurl.ro
+ /usr/local/riscoslibs/curl/libcurl.ro \
+ /usr/local/riscoslibs/libpng/libpng.ro \
+ /usr/local/riscoslibs/zlib/libz.ro
 
 !NetSurf/!RunImage,ff8: $(OBJECTS)
 	$(CC) $(FLAGS) -o !NetSurf/!RunImage,ff8 $(OBJECTS) $(LIBS)

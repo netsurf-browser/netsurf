@@ -1,5 +1,5 @@
 /**
- * $Id: netsurf.c,v 1.7 2003/03/04 11:59:35 bursa Exp $
+ * $Id: netsurf.c,v 1.8 2003/05/10 11:13:34 bursa Exp $
  */
 
 #include "netsurf/desktop/netsurf.h"
@@ -30,6 +30,7 @@ void netsurf_init(int argc, char** argv)
   gui_init(argc, argv);
   fetch_init();
   cache_init();
+  nspng_init();
 }
 
 

@@ -1,5 +1,5 @@
 /**
- * $Id: jpeg.c,v 1.3 2003/03/03 22:40:39 bursa Exp $
+ * $Id: jpeg.c,v 1.4 2003/05/10 11:13:34 bursa Exp $
  *
  * This is just a temporary implementation using the JPEG renderer
  * available in some versions of RISC OS.
@@ -61,3 +61,14 @@ void jpeg_destroy(struct content *c)
 	xfree(c->data.jpeg.data);
 	xfree(c->title);
 }
+
+
+void jpeg_redraw(struct content *c, long x, long y,
+		unsigned long width, unsigned long height)
+{
+	/* TODO: scale to width, height */
+	xjpeg_plot_scaled((jpeg_image *) c->data.jpeg.data,
+			x, y, 0, (int) c->data.jpeg.length,
+			jpeg_SCALE_DITHERED);
+}
+

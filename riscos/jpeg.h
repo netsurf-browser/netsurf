@@ -1,5 +1,5 @@
 /**
- * $Id: jpeg.h,v 1.1 2003/02/25 21:00:27 bursa Exp $
+ * $Id: jpeg.h,v 1.2 2003/05/10 11:13:34 bursa Exp $
  */
 
 #ifndef _NETSURF_RISCOS_JPEG_H_
@@ -13,5 +13,7 @@ int jpeg_convert(struct content *c, unsigned int width, unsigned int height);
 void jpeg_revive(struct content *c, unsigned int width, unsigned int height);
 void jpeg_reformat(struct content *c, unsigned int width, unsigned int height);
 void jpeg_destroy(struct content *c);
+void jpeg_redraw(struct content *c, long x, long y,
+		unsigned long width, unsigned long height);
 
 #endif

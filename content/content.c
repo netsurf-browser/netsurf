@@ -1,5 +1,5 @@
 /**
- * $Id: content.c,v 1.8 2003/04/17 21:35:02 bursa Exp $
+ * $Id: content.c,v 1.9 2003/05/10 11:13:34 bursa Exp $
  */
 
 #include <assert.h>
@@ -10,6 +10,7 @@
 #include "netsurf/render/html.h"
 #include "netsurf/render/textplain.h"
 #include "netsurf/riscos/jpeg.h"
+#include "netsurf/riscos/png.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -20,7 +21,7 @@ struct mime_entry {
 };
 static const struct mime_entry mime_map[] = {
 	{"image/jpeg", CONTENT_JPEG},
-/*	{"image/png", CONTENT_PNG},*/
+	{"image/png", CONTENT_PNG},
 	{"text/css", CONTENT_CSS},
 	{"text/html", CONTENT_HTML},
 	{"text/plain", CONTENT_TEXTPLAIN},
@@ -35,14 +36,19 @@ struct handler_entry {
 	void (*revive)(struct content *c, unsigned int width, unsigned int height);
 	void (*reformat)(struct content *c, unsigned int width, unsigned int height);
 	void (*destroy)(struct content *c);
+	void (*redraw)(struct content *c, long x, long y,
+			unsigned long width, unsigned long height);
 };
 static const struct handler_entry handler_map[] = {
-	{html_create, html_process_data, html_convert, html_revive, html_reformat, html_destroy},
+	{html_create, html_process_data, html_convert, html_revive,
+		html_reformat, html_destroy, 0},
 	{textplain_create, textplain_process_data, textplain_convert,
-		textplain_revive, textplain_reformat, textplain_destroy},
-	{jpeg_create, jpeg_process_data, jpeg_convert, jpeg_revive, jpeg_reformat, jpeg_destroy},
-	{css_create, css_process_data, css_convert, css_revive, css_reformat, css_destroy},
-/*	{png_create, png_process_data, png_convert, png_revive, png_destroy},*/
+		textplain_revive, textplain_reformat, textplain_destroy, 0},
+	{jpeg_create, jpeg_process_data, jpeg_convert, jpeg_revive,
+		jpeg_reformat, jpeg_destroy, jpeg_redraw},
+	{css_create, css_process_data, css_convert, css_revive, css_reformat, css_destroy, 0},
+	{nspng_create, nspng_process_data, nspng_convert, nspng_revive,
+		nspng_reformat, nspng_destroy, nspng_redraw},
 };
 
 
@@ -152,5 +158,19 @@ void content_destroy(struct content *c)
 	assert(c->type < CONTENT_OTHER);
 	handler_map[c->type].destroy(c);
 	xfree(c);
+}
+
+
+/**
+ * content_redraw -- display content on screen
+ */
+
+void content_redraw(struct content *c, long x, long y,
+		unsigned long width, unsigned long height)
+{
+	assert(c != 0);
+	assert(c->type < CONTENT_OTHER);
+	if (handler_map[c->type].redraw != 0)
+		handler_map[c->type].redraw(c, x, y, width, height);
 }
 
