@@ -34,10 +34,12 @@
 #define CHUNK 4096
 
 
+static bool html_set_parser_encoding(struct content *c, const char *encoding);
+static const char *html_detect_encoding(const char *data, unsigned int size);
 static void html_convert_css_callback(content_msg msg, struct content *css,
 		void *p1, void *p2, union content_msg_data data);
-static void html_head(struct content *c, xmlNode *head);
-static void html_find_stylesheets(struct content *c, xmlNode *head);
+static bool html_head(struct content *c, xmlNode *head);
+static bool html_find_stylesheets(struct content *c, xmlNode *head);
 static void html_object_callback(content_msg msg, struct content *object,
 		void *p1, void *p2, union content_msg_data data);
 static void html_object_done(struct box *box, struct content *object,
@@ -58,44 +60,11 @@ bool html_create(struct content *c, const char *params[])
 	unsigned int i;
 	struct content_html_data *html = &c->data.html;
 	union content_msg_data msg_data;
-	xmlCharEncoding encXML = XML_CHAR_ENCODING_NONE;
-	const char *encStr = NULL;
 
-	html->encoding = NULL;
+	html->parser = 0;
+	html->encoding_handler = 0;
+	html->encoding = 0;
 	html->getenc = true;
-
-	for (i = 0; params[i]; i += 2) {
-		if (strcasecmp(params[i], "charset") == 0) {
-			encXML = xmlParseCharEncoding(params[i + 1]);
-			if (encXML != XML_CHAR_ENCODING_ERROR
-					&& encXML != XML_CHAR_ENCODING_NONE) {
-				/* encoding specified - trust the server... */
-				html->encoding = xstrdup(xmlGetCharEncodingName(encXML));
-				html->getenc = false;
-			} else {
-				encStr = xstrdup(params[i + 1]);
-			}
-			break;
-		}
-	}
-
-	html->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, encXML);
-	if (encStr != NULL) {
-		xmlCharEncodingHandlerPtr handler;
-		if ((handler = xmlFindCharEncodingHandler(encStr)) != NULL) {
-			if (xmlSwitchToEncoding(html->parser, handler) == 0) {
-				html->encoding = encStr;
-				html->getenc = false;
-			} else {
-				LOG(("xmlSwitchToEncoding failed for <%s>\n", encStr));
-				free((void *)encStr);
-			}
-		} else {
-			LOG(("xmlFindCharEncodingHandler() failed for <%s>\n", encStr));
-			free((void *)encStr);
-		}
-	}
-	html->base_url = xstrdup(c->url);
 	html->base_url = strdup(c->url);
 	html->layout = 0;
 	html->background_colour = TRANSPARENT;
@@ -106,26 +75,43 @@ bool html_create(struct content *c, const char *params[])
 	html->object_count = 0;
 	html->object = 0;
 	html->imagemaps = 0;
-	html->string_pool = pool_create(8000);
 	html->box_pool = pool_create(sizeof (struct box) * 100);
+	html->string_pool = pool_create(8000);
 	html->bw = 0;
 
-	if (!html->parser || !html->base_url || !html->string_pool ||
-			!html->box_pool) {
-		htmlFreeParserCtxt(html->parser);
-		free(html->base_url);
-		if (html->string_pool)
-			pool_destroy(html->string_pool);
-		if (html->box_pool)
-			pool_destroy(html->box_pool);
+	if (!html->base_url || !html->string_pool || !html->box_pool)
+		goto no_memory;
 
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
-		return false;
+	for (i = 0; params[i]; i += 2) {
+		if (strcasecmp(params[i], "charset") == 0) {
+			html->encoding = strdup(params[i + 1]);
+			if (!html->encoding)
+				goto no_memory;
+			html->encoding_source = ENCODING_SOURCE_HEADER;
+			html->getenc = false;
+			break;
+		}
+	}
+
+	html->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0,
+			XML_CHAR_ENCODING_NONE);
+	if (!html->parser)
+		goto no_memory;
+
+	if (html->encoding) {
+		/* an encoding was specified in the Content-Type header */
+		if (!html_set_parser_encoding(c, html->encoding))
+			return false;
 	}
 
 	return true;
+
+no_memory:
+	/* memory allocated will be freed in html_destroy() */
+	msg_data.error = messages_get("NoMemory");
+	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+	warn_user("NoMemory", 0);
+	return false;
 }
 
 
@@ -139,16 +125,22 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 {
 	unsigned long x;
 
-	/* First time through, check if we need to detect the encoding
-	 * if so, detect it and reset the parser instance with it.
-	 * Do this detection only once.
-	 */
 	if (c->data.html.getenc) {
-		xmlCharEncoding encoding = xmlDetectCharEncoding(data, size);
-		if (encoding != XML_CHAR_ENCODING_ERROR &&
-				encoding != XML_CHAR_ENCODING_NONE) {
-			xmlSwitchEncoding(c->data.html.parser, encoding);
-			c->data.html.encoding = xstrdup(xmlGetCharEncodingName(encoding));
+		/* No encoding was specified in the Content-Type header.
+		 * Attempt to detect if the encoding is not 8-bit. If the
+		 * encoding is 8-bit, leave the parser unchanged, so that it
+		 * searches for a <meta http-equiv="content-type"
+		 * content="text/html; charset=...">. */
+		const char *encoding;
+		encoding = html_detect_encoding(data, size);
+		if (encoding) {
+			if (!html_set_parser_encoding(c, encoding))
+				return false;
+			c->data.html.encoding = strdup(encoding);
+			if (!c->data.html.encoding)
+				return false;
+			c->data.html.encoding_source =
+					ENCODING_SOURCE_DETECTED;
 		}
 		c->data.html.getenc = false;
 	}
@@ -160,6 +152,80 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 	htmlParseChunk(c->data.html.parser, data + x, (int) (size - x), 0);
 
 	return true;
+}
+
+
+/**
+ * Set the HTML parser character encoding.
+ *
+ * \param  c         content of type CONTENT_HTML
+ * \param  encoding  name of encoding
+ * \return  true on success, false on error and error reported
+ */
+
+bool html_set_parser_encoding(struct content *c, const char *encoding)
+{
+	struct content_html_data *html = &c->data.html;
+	xmlError *error;
+	char error_message[500];
+	union content_msg_data msg_data;
+
+	html->encoding_handler = xmlFindCharEncodingHandler(encoding);
+	if (!html->encoding_handler) {
+		/* either out of memory, or no handler available */
+		/* assume no handler available, which is not a fatal error */
+		LOG(("no encoding handler for \"%s\"", encoding));
+		/* \todo  warn user and ask them to install iconv? */
+		return true;
+	}
+
+	xmlCtxtResetLastError(html->parser);
+	if (xmlSwitchToEncoding(html->parser, html->encoding_handler)) {
+		error = xmlCtxtGetLastError(html->parser);
+		snprintf(error_message, sizeof error_message,
+				"%s xmlSwitchToEncoding(): %s",
+				messages_get("MiscError"),
+				error ? error->message : "failed");
+		msg_data.error = error_message;
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
+
+	return true;
+}
+
+
+/**
+ * Attempt to detect the encoding of some HTML data.
+ *
+ * \param  data  HTML source data
+ * \param  size  length of data
+ * \return  a constant string giving the encoding, or 0 if the encoding
+ *          appears to be some 8-bit encoding
+ */
+
+const char *html_detect_encoding(const char *data, unsigned int size)
+{
+	/* this detection assumes that the first two characters are <= 0xff */
+	if (size < 4)
+		return 0;
+	if (data[0] == 0xfe && data[1] == 0xff)	             /* BOM fe ff */
+		return "UTF-16BE";
+	else if (data[0] == 0xfe && data[1] == 0xff)         /* BOM ff fe */
+		return "UTF-16LE";
+	else if (data[0] == 0x00 && data[1] != 0x00 &&
+			data[2] == 0x00 && data[3] != 0x00)  /* 00 xx 00 xx */
+		return "UTF-16BE";
+	else if (data[0] != 0x00 && data[1] == 0x00 &&
+			data[2] != 0x00 && data[3] == 0x00)  /* xx 00 xx 00 */
+		return "UTF-16BE";
+	else if (data[0] == 0x00 && data[1] == 0x00 &&
+			data[2] == 0x00 && data[3] != 0x00)  /* 00 00 00 xx */
+		return "ISO-10646-UCS-4";
+	else if (data[0] != 0x00 && data[1] == 0x00 &&
+			data[2] == 0x00 && data[3] == 0x00)  /* xx 00 00 00 */
+		return "ISO-10646-UCS-4";
+	return 0;
 }
 
 
@@ -196,11 +262,19 @@ bool html_convert(struct content *c, int width, int height)
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
-	/* Last change to pick the Content-Type charset information if the
-	 * server didn't send it (or we're reading the HTML from disk)
-	 */
-	if (c->data.html.encoding == NULL && document->encoding != NULL)
-		c->data.html.encoding = xstrdup(document->encoding);
+
+	if (!c->data.html.encoding && document->encoding) {
+		/* The encoding was not in headers or detected, and the parser
+		 * found a <meta http-equiv="content-type"
+		 * content="text/html; charset=...">. */
+		c->data.html.encoding = strdup(document->encoding);
+		if (!c->data.html.encoding) {
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return false;
+		}
+		c->data.html.encoding_source = ENCODING_SOURCE_META;
+	}
 
 	/* locate html and head elements */
 	for (html = document->children;
@@ -223,11 +297,20 @@ bool html_convert(struct content *c, int width, int height)
 		LOG(("head element not found"));
 	}
 
-	if (head != 0)
-		html_head(c, head);
+	if (head) {
+		if (!html_head(c, head)) {
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return false;
+		}
+	}
 
 	/* get stylesheets */
-	html_find_stylesheets(c, head);
+	if (!html_find_stylesheets(c, head)) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
 
 	/* convert xml tree to box tree */
 	LOG(("XML to box"));
@@ -279,11 +362,12 @@ bool html_convert(struct content *c, int width, int height)
  *
  * \param  c     content structure
  * \param  head  xml node of head element
+ * \return  true on success, false on memory exhaustion
  *
  * The title and base href are extracted if present.
  */
 
-void html_head(struct content *c, xmlNode *head)
+bool html_head(struct content *c, xmlNode *head)
 {
 	xmlNode *node;
 
@@ -295,7 +379,11 @@ void html_head(struct content *c, xmlNode *head)
 
 		if (!c->title && strcmp(node->name, "title") == 0) {
 			xmlChar *title = xmlNodeGetContent(node);
+			if (!title)
+				return false;
 			c->title = squash_whitespace(title);
+			if (!c->title)
+				return false;
 			xmlFree(title);
 
 		} else if (strcmp(node->name, "base") == 0) {
@@ -312,6 +400,7 @@ void html_head(struct content *c, xmlNode *head)
 			}
 		}
 	}
+	return true;
 }
 
 
@@ -320,9 +409,10 @@ void html_head(struct content *c, xmlNode *head)
  *
  * \param  c     content structure
  * \param  head  xml node of head element, or 0 if none
+ * \return  true on success, false on memory exhaustion
  */
 
-void html_find_stylesheets(struct content *c, xmlNode *head)
+bool html_find_stylesheets(struct content *c, xmlNode *head)
 {
 	xmlNode *node, *node2;
 	char *rel, *type, *media, *href, *data, *url;
@@ -330,11 +420,15 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 	unsigned int last_active = 0;
 	union content_msg_data msg_data;
 	url_func_result res;
+	struct content **stylesheet_content;
 
 	/* stylesheet 0 is the base style sheet,
 	 * stylesheet 1 is the adblocking stylesheet,
 	 * stylesheet 2 is any <style> elements */
-	c->data.html.stylesheet_content = xcalloc(STYLESHEET_START, sizeof(*c->data.html.stylesheet_content));
+	c->data.html.stylesheet_content = malloc(STYLESHEET_START *
+			sizeof *c->data.html.stylesheet_content);
+	if (!c->data.html.stylesheet_content)
+		return false;
 	c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] = 0;
 	c->data.html.stylesheet_content[STYLESHEET_STYLE] = 0;
 	c->data.html.stylesheet_count = STYLESHEET_START;
@@ -346,27 +440,29 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			html_convert_css_callback, c,
 			(void *) STYLESHEET_BASE, c->width, c->height,
 			true, 0, 0, false);
-	assert(c->data.html.stylesheet_content[STYLESHEET_BASE]);
+	if (!c->data.html.stylesheet_content[STYLESHEET_BASE])
+		return false;
 	c->active++;
 	fetchcache_go(c->data.html.stylesheet_content[STYLESHEET_BASE], 0,
 			html_convert_css_callback, c,
 			(void *) STYLESHEET_BASE, 0, 0, false);
 
 	if (option_block_ads) {
-		c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] = fetchcache(
-			adblock_stylesheet_url,
-			html_convert_css_callback, c,
-			(void *) STYLESHEET_ADBLOCK, c->width,
-			c->height, true, 0, 0, false);
-		if (c->data.html.stylesheet_content[STYLESHEET_ADBLOCK]) {
-			c->active++;
-			fetchcache_go(c->data.html.stylesheet_content[STYLESHEET_ADBLOCK],
+		c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] =
+				fetchcache(adblock_stylesheet_url,
+				html_convert_css_callback, c,
+				(void *) STYLESHEET_ADBLOCK, c->width,
+				c->height, true, 0, 0, false);
+		if (!c->data.html.stylesheet_content[STYLESHEET_ADBLOCK])
+			return false;
+		c->active++;
+		fetchcache_go(c->data.html.
+				stylesheet_content[STYLESHEET_ADBLOCK],
 				0, html_convert_css_callback, c,
 				(void *) STYLESHEET_ADBLOCK, 0, 0, false);
-		}
 	}
 
-	for (node = head == 0 ? 0 : head->children; node != 0; node = node->next) {
+	for (node = head == 0 ? 0 : head->children; node; node = node->next) {
 		if (node->type != XML_ELEMENT_NODE)
 			continue;
 
@@ -414,20 +510,25 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			LOG(("linked stylesheet %i '%s'", i, url));
 
 			/* start fetch */
-			c->data.html.stylesheet_content = xrealloc(c->data.html.stylesheet_content,
-					(i + 1) * sizeof(*c->data.html.stylesheet_content));
+			stylesheet_content = realloc(
+					c->data.html.stylesheet_content,
+					(i + 1) * sizeof
+					*c->data.html.stylesheet_content);
+			if (!stylesheet_content)
+				return false;
+			c->data.html.stylesheet_content = stylesheet_content;
 			c->data.html.stylesheet_content[i] = fetchcache(url,
 					html_convert_css_callback,
 					c, (void *) i, c->width, c->height,
 					true, 0, 0, false);
-			if (c->data.html.stylesheet_content[i]) {
-				c->active++;
-				fetchcache_go(c->data.html.stylesheet_content[i],
-						c->url,
-						html_convert_css_callback,
-						c, (void *) i,
-						0, 0, false);
-			}
+			if (!c->data.html.stylesheet_content[i])
+				return false;
+			c->active++;
+			fetchcache_go(c->data.html.stylesheet_content[i],
+					c->url,
+					html_convert_css_callback,
+					c, (void *) i,
+					0, 0, false);
 			free(url);
 			i++;
 
@@ -459,12 +560,14 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 						content_create(c->data.html.
 						base_url);
 				if (!c->data.html.stylesheet_content[STYLESHEET_STYLE])
-					return;
+					return false;
 				if (!content_set_type(c->data.html.
 						stylesheet_content[STYLESHEET_STYLE],
 						CONTENT_CSS, "text/css",
 						params))
-					return;
+					/** \todo  not necessarily caused by
+					 *  memory exhaustion */
+					return false;
 			}
 
 			/* can't just use xmlNodeGetContent(node), because that won't give
@@ -475,7 +578,9 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 						stylesheet_content[STYLESHEET_STYLE],
 						data, strlen(data))) {
 					xmlFree(data);
-					return;
+					/** \todo  not necessarily caused by
+					 *  memory exhaustion */
+					return false;
 				}
 				xmlFree(data);
 			}
@@ -512,6 +617,8 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 /* 		content_set_status(c, "Warning: some stylesheets failed to load"); */
 /* 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data); */
 /* 	} */
+
+	return true;
 }
 
 
@@ -604,34 +711,41 @@ void html_convert_css_callback(content_msg msg, struct content *css,
  * \param  available_width   estimate of width of object
  * \param  available_height  estimate of height of object
  * \param  background	this is a background image
+ * \return  true on success, false on memory exhaustion
  */
 
-void html_fetch_object(struct content *c, char *url, struct box *box,
+bool html_fetch_object(struct content *c, char *url, struct box *box,
 		const content_type *permitted_types,
 		int available_width, int available_height,
 		bool background)
 {
 	unsigned int i = c->data.html.object_count;
+	struct content_html_object *object;
 
 	/* add to object list */
-	c->data.html.object = xrealloc(c->data.html.object,
-			(i + 1) * sizeof(*c->data.html.object));
+	object = realloc(c->data.html.object,
+			(i + 1) * sizeof *c->data.html.object);
+	if (!object)
+		return false;
+	c->data.html.object = object;
 	c->data.html.object[i].url = url;
 	c->data.html.object[i].box = box;
 	c->data.html.object[i].permitted_types = permitted_types;
        	c->data.html.object[i].background = background;
+	c->data.html.object_count++;
 
 	/* start fetch */
 	c->data.html.object[i].content = fetchcache(url, html_object_callback,
 			c, (void *) i, available_width, available_height,
 			true, 0, 0, false);
-	if (c->data.html.object[i].content) {
-		c->active++;
-		fetchcache_go(c->data.html.object[i].content, c->url,
-				html_object_callback, c, (void *) i,
-				0, 0, false);
-	}
-	c->data.html.object_count++;
+	if (!c->data.html.object[i].content)
+		return false;
+	c->active++;
+	fetchcache_go(c->data.html.object[i].content, c->url,
+			html_object_callback, c, (void *) i,
+			0, 0, false);
+
+	return true;
 }
 
 
@@ -704,17 +818,26 @@ void html_object_callback(content_msg msg, struct content *object,
 		case CONTENT_MSG_REDIRECT:
 			c->active--;
 			free(c->data.html.object[i].url);
-			c->data.html.object[i].url = xstrdup(data.redirect);
-			c->data.html.object[i].content = fetchcache(
-					data.redirect, html_object_callback,
-					c, (void * ) i, 0, 0, true, 0, 0,
-					false);
-			if (c->data.html.object[i].content) {
-				c->active++;
-				fetchcache_go(c->data.html.object[i].content,
-						c->url, html_object_callback,
-						c, (void * ) i,
+			c->data.html.object[i].url = strdup(data.redirect);
+			if (!c->data.html.object[i].url) {
+				/** \todo  report oom */
+			} else {
+				c->data.html.object[i].content = fetchcache(
+						data.redirect,
+						html_object_callback,
+						c, (void * ) i, 0, 0, true,
 						0, 0, false);
+				if (!c->data.html.object[i].content) {
+					/** \todo  report oom */
+				} else {
+					c->active++;
+					fetchcache_go(c->data.html.object[i].
+							content,
+							c->url,
+							html_object_callback,
+							c, (void * ) i,
+							0, 0, false);
+				}
 			}
 			break;
 

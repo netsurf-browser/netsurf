@@ -731,8 +731,9 @@ end:
 		if (!url)
 			return false;
 		/* start fetch */
-		html_fetch_object(content, url, box, image_types,
-				content->available_width, 1000, true);
+		if (!html_fetch_object(content, url, box, image_types,
+				content->available_width, 1000, true))
+			return false;
 	}
 
 	return true;
@@ -1120,8 +1121,9 @@ struct box_result box_image(xmlNode *n, struct box_status *status,
 		return (struct box_result) {box, false, false};
 
 	/* start fetch */
-	html_fetch_object(status->content, url, box, image_types,
-			status->content->available_width, 1000, false);
+	if (!html_fetch_object(status->content, url, box, image_types,
+			status->content->available_width, 1000, false))
+		return (struct box_result) {0, false, true};
 
 	return (struct box_result) {box, false, false};
 }
@@ -1551,10 +1553,11 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 			 */
 			if (res == URL_FUNC_OK &&
 					strcasecmp(url, status->content->data.html.base_url) != 0)
-				html_fetch_object(status->content, url, box,
+				if (!html_fetch_object(status->content, url, box,
 						image_types,
 						status->content->available_width,
-						1000, false);
+						1000, false))
+					goto no_memory;
 			xmlFree(s);
 		}
 
@@ -2942,7 +2945,8 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
 	 * handle when we fetch it (if the type was not specified or is
 	 * different to that given in the attributes).
 	 */
-	html_fetch_object(content, url, box, 0, 1000, 1000, false);
+	if (!html_fetch_object(content, url, box, 0, 1000, 1000, false))
+		return false;
 
 	return true;
 }
@@ -3152,8 +3156,10 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 
 			LOG(("frame, url '%s'", url));
 
-			html_fetch_object(status->content, url, object_box, 0,
-					object_width, object_height, false);
+			if (!html_fetch_object(status->content, url,
+					object_box, 0,
+					object_width, object_height, false))
+				return (struct box_result) {0, false, true};
 			xmlFree(s);
 
 			c = c->next;

@@ -450,7 +450,7 @@ wimp_menu *toolbar_menu = (wimp_menu *)&toolbar;
 
 
 /*	Current toolbar
-*/	
+*/
 struct toolbar *current_toolbar;
 static struct toolbar_icon *current_toolbar_icon;
 
@@ -525,7 +525,7 @@ void ro_gui_menus_init(void)
 	translate_menu(toolbar_menu);
 	translate_menu(toolbar_browser_menu);
 	translate_menu(toolbar_hotlist_menu);
-	
+
 	translate_menu(proxyauth_menu);
 
 	translate_menu(image_quality_menu);
@@ -794,10 +794,10 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						height - current_toolbar->height);
 /*				if ((height != current_toolbar->height) &&
 						(current_toolbar == hotlist_toolbar)) {
-					xwimp_force_redraw(hotlist_window, 0, -16384, 16384, 16384);		  
+					xwimp_force_redraw(hotlist_window, 0, -16384, 16384, 16384);
 				}
 */				ro_gui_menu_prepare_theme();
-				
+
 				break;
 			case 1:	/* Toolbars-> */
 				switch (selection->items[1]) {
@@ -1309,7 +1309,7 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 		switch (warning->selection.items[1]) {
 			case -1: /* View-> */
 				ro_gui_menu_prepare_view();
-				if (current_gui->toolbar) 
+				if (current_gui->toolbar)
 					view_menu.entries[2].icon_flags &= ~wimp_ICON_SHADED;
 				else
 					view_menu.entries[2].icon_flags |= wimp_ICON_SHADED;
@@ -1321,7 +1321,7 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 				error = xwimp_create_sub_menu((wimp_menu *) dialog_zoom,
 						warning->pos.x, warning->pos.y);
 				break;
-	
+
 			case 1: /* Images -> */
 				ro_gui_menu_prepare_images();
 				error = xwimp_create_sub_menu(browser_image_menu,
@@ -1663,9 +1663,9 @@ static void ro_gui_menu_prepare_theme(void) {
 	struct toolbar_icon *icon;
 	struct toolbar_icon *next;
 	wimp_menu *sub_menu;
-  	
+
 	if (!current_toolbar) return;
-  
+
 	/*	Set the icon states
 	*/
 	if (current_toolbar->display_buttons) {
@@ -1706,7 +1706,7 @@ static void ro_gui_menu_prepare_theme(void) {
 		toolbar_menu->entries[2].icon_flags |= wimp_ICON_SHADED;
 		toolbar_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
 	}
- 	
+
 	/*	Set the toolbars submenu state
 	*/
 	if (current_gui) {
@@ -1870,6 +1870,8 @@ void ro_gui_menu_prepare_pageinfo(void)
 {
 	struct content *c = current_gui->bw->current_content;
 	char icon_buf[20] = "file_xxx";
+	char enc_buf[40];
+	char enc_token[10] = "Encoding0";
 	const char *icon = icon_buf;
 	const char *title = "-";
 	const char *url = "-";
@@ -1888,8 +1890,16 @@ void ro_gui_menu_prepare_pageinfo(void)
 		sprintf(icon_buf, "file_xxx");
 	}
 
-	if (c->type == CONTENT_HTML && c->data.html.encoding != NULL) {
-		enc = c->data.html.encoding;
+	if (c->type == CONTENT_HTML) {
+		if (c->data.html.encoding) {
+			enc_token[8] = '0' + c->data.html.encoding_source;
+			snprintf(enc_buf, sizeof enc_buf, "%s (%s)",
+					c->data.html.encoding,
+					messages_get(enc_token));
+			enc = enc_buf;
+		} else {
+			enc = messages_get("EncodingUnk");
+		}
 	}
 
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ICON, icon);

@@ -36,11 +36,27 @@ struct plotters;
 extern char *default_stylesheet_url;
 extern char *adblock_stylesheet_url;
 
+/** An object (<img>, <object>, etc.) in a CONTENT_HTML document. */
+struct content_html_object {
+	char *url;  /**< URL of this object. */
+	struct content *content;  /**< Content, or 0. */
+	struct box *box;  /**< Node in box tree containing it. */
+	/** Pointer to array of permitted content_type, terminated by
+	 *  CONTENT_UNKNOWN, or 0 if any type is acceptable. */
+	const content_type *permitted_types;
+	bool background; /** Is this object a background image? */
+};
+
 /** Data specific to CONTENT_HTML. */
 struct content_html_data {
 	htmlParserCtxt *parser;  /**< HTML parser context. */
+	/** HTML parser encoding handler. */
+	xmlCharEncodingHandler *encoding_handler;
 
-	const char *encoding;  /**< Encoding of source. */
+	char *encoding;		/**< Encoding of source, 0 if unknown. */
+	enum { ENCODING_SOURCE_HEADER, ENCODING_SOURCE_DETECTED,
+			ENCODING_SOURCE_META } encoding_source;
+				/**< Source of encoding information. */
 	bool getenc; /**< Need to get the encoding from the document, as it
 	              * wasn't specified in the Content-Type header. */
 
@@ -60,15 +76,7 @@ struct content_html_data {
 	/** Number of entries in object. */
 	unsigned int object_count;
 	/** Objects. Each may be 0. */
-	struct {
-		char *url;  /**< URL of this object. */
-		struct content *content;  /**< Content, or 0. */
-		struct box *box;  /**< Node in box tree containing it. */
-		/** Pointer to array of permitted content_type, terminated by
-		 *  CONTENT_UNKNOWN, or 0 if any type is acceptable. */
-		const content_type *permitted_types;
-		bool background; /** Is this object a background image? */
-	} *object;
+	struct content_html_object *object;
 
 	struct imagemap **imagemaps; /**< Hashtable of imagemaps */
 
@@ -88,7 +96,7 @@ bool html_process_data(struct content *c, char *data, unsigned int size);
 bool html_convert(struct content *c, int width, int height);
 void html_reformat(struct content *c, int width, int height);
 void html_destroy(struct content *c);
-void html_fetch_object(struct content *c, char *url, struct box *box,
+bool html_fetch_object(struct content *c, char *url, struct box *box,
 		const content_type *permitted_types,
 		int available_width, int available_height,
 		bool background);

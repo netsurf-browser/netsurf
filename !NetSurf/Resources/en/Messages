@@ -259,6 +259,11 @@ ScrollH:Drag the bar to scroll horizontally
 ScrollPRight:Click to scroll right one page
 ScrollRight:Click the arrow to scroll right
 
+Encoding0:from HTTP headers
+Encoding1:detected
+Encoding2:from <meta>
+EncodingUnk:Unknown
+
 # Interactive help
 HelpToolbar0:\Tback button.|M\Straverse back one page in the history tree.|MDoes not resubmit form information.
 HelpToolbar1:\Tforward button.|M\Straverse forward one page in the history tree.|MDoes not resubmit form information.

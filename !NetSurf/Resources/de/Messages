@@ -259,6 +259,11 @@ ScrollH:Ziehen der Leiste scrollt horizontal
 ScrollPRight:Anklicken scrollt eine Seite nach rechts
 ScrollRight:Pfeil anklicken scrollt rechts
 
+Encoding0:from HTTP headers
+Encoding1:detected
+Encoding2:from <meta>
+EncodingUnk:Unknown
+
 # Interactive help
 HelpToolbar0:Schaltet zurück auf die zuvor dargestellte Seite.|MDer Inhalt wird dabei nicht aktualisiert.
 HelpToolbar1:Schaltet vorwärts auf die nächste Seite.|MDer Inhalt wird dabei nicht aktualisiert.

@@ -259,6 +259,11 @@ ScrollH:Drag the bar to scroll horizontally
 ScrollPRight:Click to scroll right one page
 ScrollRight:Click the arrow to scroll right
 
+Encoding0:from HTTP headers
+Encoding1:detected
+Encoding2:from <meta>
+EncodingUnk:Unknown
+
 # Interactive help
 HelpToolbar0:\Tle bouton de retour.|M\Srevenir d'une page en arrière dans l'historique.|MNe renvoie pas l'information de formulaire.
 HelpToolbar1:\Tle bouton d'avance.|M\Savancer d'une page dans l'historique.|MNe renvoie pas l'information de formulaire.
