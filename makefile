@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.27 2003/06/04 21:59:01 jmb Exp $
+# $Id: makefile,v 1.28 2003/06/04 22:12:32 bursa Exp $
 
 CC = riscos-gcc
 OBJECTS = cache.o content.o fetch.o fetchcache.o \
@@ -26,13 +26,12 @@ OBJDIR = $(shell $(CC) -dumpmachine)
 SOURCES=$(OBJECTS:.o=.c)
 OBJS=$(OBJECTS:%.o=$(OBJDIR)/%.o)
 DOCDIR = !NetSurf/Docs
-DOCS=$(DOCUMENTS:%.html=$(DOCDIR/%.html)
+DOCS=$(DOCUMENTS:%.html=$(DOCDIR)/%.html)
 
 # targets
-all: !NetSurf/!RunImage,ff8 Docs
+all: !NetSurf/!RunImage,ff8 $(DOCS)
 !NetSurf/!RunImage,ff8 : $(OBJS)
 	$(CC) -o $@ $(LDFLAGS) $^
-Docs: $(DOCS)	
 netsurf.zip: !NetSurf/!RunImage,ff8
 	rm netsurf.zip; riscos-zip -9vr, netsurf.zip !NetSurf
 
@@ -52,7 +51,7 @@ css/scanner.c css/scanner.h: css/scanner.l
 $(DOCDIR)/%.html: documentation/%.xml
 	# syntax: xsltproc [options] -o <output file> <XSL stylesheet> <input file>
 	# --nonet prevents connection to the web to find the stylesheet
-	xsltproc --nonet -o $@ http://www.movspclr.co.uk/dtd/100/prm-html.xsl $<
+	xsltproc -o $@ http://www.movspclr.co.uk/dtd/100/prm-html.xsl $<
 
 # generate dependencies
 depend : $(SOURCES)
