@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.13 2002/12/25 21:38:45 bursa Exp $
+ * $Id: browser.c,v 1.15 2002/12/25 22:47:03 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -945,7 +945,6 @@ void browser_window_redraw_boxes(struct browser_window* bw, struct box_position*
 
 char *url_join(const char* new, const char* base)
 {
-  xmlURI* uri;
   char* ret;
   int i;
 
@@ -954,37 +953,40 @@ char *url_join(const char* new, const char* base)
   if (base == 0)
   {
     /* no base, so make an absolute URL */
-    uri = xmlParseURI(new);
-    assert(uri != 0);
+    ret = xcalloc(strlen(new) + 10, sizeof(char));
 
-    if (uri->scheme == 0)
-      uri->scheme = "http";
-
-    if (uri->server == 0) {
-      uri->server = uri->path;
-      uri->path = 0;
+    /* check if a scheme is present */
+    i = strspn(new, "abcdefghijklmnopqrstuvwxyz");
+    if (new[i] == ':')
+    {
+      strcpy(ret, new);
+      i += 3;
     }
+    else
+    {
+      strcpy(ret, "http://");
+      strcat(ret, new);
+      i = 7;
+    }
+
+    /* make server name lower case */
+    for (; ret[i] != 0 && ret[i] != '/'; i++)
+      ret[i] = tolower(ret[i]);
+
+    /* http://www.example.com -> http://www.example.com/ */
+    if (ret[i] == 0)
+    {
+      ret[i] = '/';
+      ret[i+1] = 0;
+    }
+
+    xmlNormalizeURIPath(ret + i);
   }
   else
   {
     /* relative url */
-    char* uri_string = xmlBuildURI(new, base);
-    uri = xmlParseURI(uri_string);
-    xfree(uri_string);
-    assert(uri != 0);
+    ret = xmlBuildURI(new, base);
   }
-
-  /* make server name lower case */
-  assert(uri->scheme != 0 && uri->server != 0);
-  for (i = 0; i < strlen(uri->server); i++)
-    uri->server[i] = tolower(uri->server[i]);
-
-  /* http://www.example.com -> http://www.example.com/ */
-  if (uri->path == 0)
-    uri->path = "/";
-
-  ret = xmlSaveUri(uri);
-  xmlFreeURI(uri);
 
   LOG(("ret = %s", ret));
   return ret;
