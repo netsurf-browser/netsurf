@@ -944,16 +944,20 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 
 		case 17:       /* CTRL+Q (Zoom out) */
 		        current_gui = g;
-		        if (current_gui->scale > 0.1) {
+		        if (0.1 < current_gui->scale) {
 		                current_gui->scale -= 0.1;
+		                if (current_gui->scale < 0.1)
+		                	current_gui->scale = 0.1;
 		                current_gui->data.browser.reformat_pending = true;
 		                gui_reformat_pending = true;
 		        }
 		        return true;
 		case 23:       /* CTRL+W (Zoom in) */
 		        current_gui = g;
-		        if (current_gui->scale < 5) {
+		        if (current_gui->scale < 10.0) {
 		                current_gui->scale += 0.1;
+		                if (10.0 < current_gui->scale)
+		                	current_gui->scale = 10.0;
 		                current_gui->data.browser.reformat_pending = true;
 		                gui_reformat_pending = true;
 		        }

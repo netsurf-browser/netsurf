@@ -626,7 +626,8 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 
 	/*	Adjust moves values the opposite direction
 	*/
-	if (pointer->buttons == wimp_CLICK_ADJUST) stepping = -stepping;
+	if (pointer->buttons == wimp_CLICK_ADJUST)
+		stepping = -stepping;
 
 	switch (pointer->i) {
 		case ICON_ZOOM_DEC: scale -= stepping; break;
@@ -639,8 +640,8 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 
 	if (scale < 10)
 		scale = 10;
-	else if (500 < scale)
-		scale = 500;
+	else if (1000 < scale)
+		scale = 1000;
 	ro_gui_set_icon_integer(dialog_zoom, ICON_ZOOM_VALUE, scale);
 
 	if (pointer->i == ICON_ZOOM_OK) {
