@@ -32,8 +32,16 @@ static void html_redraw_clip(long clip_x0, long clip_y0,
 		long clip_x1, long clip_y1);
 static void html_redraw_rectangle(int x0, int y0, int width, int height,
 		os_colour colour);
+static void html_redraw_fill(int x0, int y0, int width, int height,
+		os_colour colour);
+static void html_redraw_circle(int x0, int y0, int radius,
+		os_colour colour);
 static void html_redraw_border(colour color, int width, css_border_style style,
 		int x0, int y0, int x1, int y1);
+static void html_redraw_checkbox(int x, int y, int width, int height,
+		bool selected);
+static void html_redraw_radio(int x, int y, int width, int height,
+		bool selected);
 
 bool gui_redraw_debug = false;
 
@@ -57,13 +65,12 @@ void html_redraw(struct content *c, long x, long y,
 	assert(box);
 
 	/* clear to background colour */
-	if (c->data.html.background_colour != TRANSPARENT) {
-		colourtrans_set_gcol(c->data.html.background_colour << 8,
-				colourtrans_SET_BG | colourtrans_USE_ECFS,
-				os_ACTION_OVERWRITE, 0);
-		os_clg();
+	if (c->data.html.background_colour != TRANSPARENT)
 		background_colour = c->data.html.background_colour;
-	}
+	colourtrans_set_gcol(background_colour << 8,
+			colourtrans_SET_BG | colourtrans_USE_ECFS,
+			os_ACTION_OVERWRITE, 0);
+	os_clg();
 
 	trfm.entries[0][0] = trfm.entries[1][1] = 65536 * scale;
 
@@ -72,11 +79,6 @@ void html_redraw(struct content *c, long x, long y,
 }
 
 
-/* validation strings can't be const */
-static char validation_checkbox_selected[] = "Sopton";
-static char validation_checkbox_unselected[] = "Soptoff";
-
-static char empty_text[] = "";
 
 void html_redraw_box(struct content *content, struct box * box,
 		signed long x, signed long y,
@@ -87,17 +89,27 @@ void html_redraw_box(struct content *content, struct box * box,
 		float scale)
 {
 	struct box *c;
-	int width, height, x0, y0, x1, y1, colour;
+	int width, height;
+	int padding_left, padding_top;
+	int padding_width, padding_height;
+	int x0, y0, x1, y1;
+	int colour;
 
 	x += box->x * 2 * scale;
 	y -= box->y * 2 * scale;
-	width = (box->padding[LEFT] + box->width + box->padding[RIGHT]) * 2 * scale;
-	height = (box->padding[TOP] + box->height + box->padding[BOTTOM]) * 2 * scale;
+	width = box->width * 2 * scale;
+	height = box->height * 2 * scale;
+	padding_left = box->padding[LEFT] * 2 * scale;
+	padding_top = box->padding[TOP] * 2 * scale;
+	padding_width = (box->padding[LEFT] + box->width +
+			box->padding[RIGHT]) * 2 * scale;
+	padding_height = (box->padding[TOP] + box->height +
+			box->padding[BOTTOM]) * 2 * scale;
 
 	x0 = x;
 	y1 = y - 1;
-	x1 = x0 + width - 1;
-	y0 = y1 - height + 1;
+	x1 = x0 + padding_width - 1;
+	y0 = y1 - padding_height + 1;
 
 	/* if visibility is hidden render children only */
 	if (box->style->visibility == CSS_VISIBILITY_HIDDEN) {
@@ -109,16 +121,20 @@ void html_redraw_box(struct content *content, struct box * box,
 	}
 
 	if (gui_redraw_debug) {
-		html_redraw_rectangle(x, y, width, height, os_COLOUR_MAGENTA);
-		html_redraw_rectangle(x + box->padding[LEFT] * 2, y - box->padding[TOP] * 2,
-				box->width * 2 * scale, box->height * 2 * scale,
-				os_COLOUR_CYAN);
-		html_redraw_rectangle(x - (box->border[LEFT] + box->margin[LEFT]) * 2,
-				y + (box->border[TOP] + box->margin[TOP]) * 2,
-				width + (box->border[LEFT] + box->margin[LEFT] +
-				         box->border[RIGHT] + box->margin[RIGHT]) * 2,
-				height + (box->border[TOP] + box->margin[TOP] +
-				         box->border[BOTTOM] + box->margin[BOTTOM]) * 2,
+		html_redraw_rectangle(x, y, padding_width, padding_height,
+				os_COLOUR_MAGENTA);
+		html_redraw_rectangle(x + padding_left, y - padding_top,
+				width, height, os_COLOUR_CYAN);
+		html_redraw_rectangle(x - (box->border[LEFT] +
+					box->margin[LEFT]) * 2 * scale,
+				y + (box->border[TOP] + box->margin[TOP]) *
+					2 * scale,
+				padding_width + (box->border[LEFT] +
+					box->margin[LEFT] + box->border[RIGHT] +
+					box->margin[RIGHT]) * 2 * scale,
+				padding_height + (box->border[TOP] +
+					box->margin[TOP] + box->border[BOTTOM] +
+					box->margin[BOTTOM]) * 2 * scale,
 				os_COLOUR_YELLOW);
 	}
 
@@ -129,24 +145,29 @@ void html_redraw_box(struct content *content, struct box * box,
 				box->style->border[TOP].style,
 				x - box->border[LEFT] * 2 * scale,
 				y + box->border[TOP] * scale,
-				x + width + box->border[RIGHT] * 2 * scale,
+				x + padding_width + box->border[RIGHT] *
+					2 * scale,
 				y + box->border[TOP] * scale);
 	if (box->style && box->border[RIGHT])
 		html_redraw_border(box->style->border[RIGHT].color,
 				box->border[RIGHT] * 2 * scale,
 				box->style->border[RIGHT].style,
-				x + width + box->border[RIGHT] * scale,
+				x + padding_width + box->border[RIGHT] * scale,
 				y + box->border[TOP] * 2 * scale,
-				x + width + box->border[RIGHT] * scale,
-				y - height - box->border[BOTTOM] * 2 * scale);
+				x + padding_width + box->border[RIGHT] * scale,
+				y - padding_height - box->border[BOTTOM] *
+					2 * scale);
 	if (box->style && box->border[BOTTOM])
 		html_redraw_border(box->style->border[BOTTOM].color,
 				box->border[BOTTOM] * 2 * scale,
 				box->style->border[BOTTOM].style,
 				x - box->border[LEFT] * 2 * scale,
-				y - height - box->border[BOTTOM] * scale,
-				x + width + box->border[RIGHT] * 2 * scale,
-				y - height - box->border[BOTTOM] * scale);
+				y - padding_height - box->border[BOTTOM] *
+					scale,
+				x + padding_width + box->border[RIGHT] *
+					2 * scale,
+				y - padding_height - box->border[BOTTOM] *
+					scale);
 	if (box->style && box->border[LEFT])
 		html_redraw_border(box->style->border[LEFT].color,
 				box->border[LEFT] * 2 * scale,
@@ -154,7 +175,8 @@ void html_redraw_box(struct content *content, struct box * box,
 				x - box->border[LEFT] * scale,
 				y + box->border[TOP] * 2 * scale,
 				x - box->border[LEFT] * scale,
-				y - height - box->border[BOTTOM] * 2 * scale);
+				y - padding_height - box->border[BOTTOM] *
+					2 * scale);
 
 	/* return if the box is completely outside the clip rectangle, except
 	 * for table rows which may contain cells spanning into other rows */
@@ -184,58 +206,29 @@ void html_redraw_box(struct content *content, struct box * box,
 	if (box->style != 0 && box->style->background_color != TRANSPARENT) {
 		colourtrans_set_gcol(box->style->background_color << 8,
 				colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-		os_plot(os_MOVE_TO, x, y);
-		os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, width, -height);
+		os_plot(os_MOVE_TO,
+				x < x0 ? x0 : x,
+				y < y1 ? y : y1);
+		os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
+				x + padding_width < x1 ? x + padding_width : x1,
+				y - padding_height < y0 ? y0 :
+					y - padding_height);
 		current_background_color = box->style->background_color;
 	}
 
 	if (box->object) {
-		content_redraw(box->object, x, y, (unsigned int)width,
-		               (unsigned int)height, x0, y0, x1, y1, scale);
+		content_redraw(box->object, x + padding_left, y - padding_top,
+				width, height, x0, y0, x1, y1, scale);
 
-	} else if (box->gadget &&
-			(box->gadget->type == GADGET_CHECKBOX ||
-			box->gadget->type == GADGET_RADIO)) {
-		wimp_icon icon;
+	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
+		html_redraw_checkbox(x + padding_left, y - padding_top,
+				width, height,
+				box->gadget->data.checkbox.selected);
 
-		icon.extent.x0 = -gadget_subtract_x + x;
-		icon.extent.y0 = -gadget_subtract_y + y - height;
-		icon.extent.x1 = -gadget_subtract_x + x + width;
-		icon.extent.y1 = -gadget_subtract_y + y;
-
-		switch (box->gadget->type) {
-		case GADGET_CHECKBOX:
-			icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
-			    wimp_ICON_VCENTRED | wimp_ICON_HCENTRED | wimp_ICON_INDIRECTED;
-			icon.data.indirected_text_and_sprite.text = empty_text;
-			if (box->gadget->data.checkbox.selected)
-				icon.data.indirected_text_and_sprite.validation = validation_checkbox_selected;
-			else
-				icon.data.indirected_text_and_sprite.validation = validation_checkbox_unselected;
-			icon.data.indirected_text_and_sprite.size = 1;
-			LOG(("writing GADGET CHECKBOX"));
-			wimp_plot_icon(&icon);
-			break;
-
-		case GADGET_RADIO:
-			icon.flags = wimp_ICON_SPRITE | wimp_ICON_VCENTRED | wimp_ICON_HCENTRED;
-			if (box->gadget->data.radio.selected)
-				strcpy(icon.data.sprite, "radioon");
-			else
-				strcpy(icon.data.sprite, "radiooff");
-			LOG(("writing GADGET RADIO"));
-			wimp_plot_icon(&icon);
-			break;
-		case GADGET_HIDDEN:
-		case GADGET_TEXTBOX:
-		case GADGET_TEXTAREA:
-		case GADGET_IMAGE:
-		case GADGET_PASSWORD:
-		case GADGET_SUBMIT:
-		case GADGET_RESET:
-		case GADGET_FILE:
-		        break;
-		}
+	} else if (box->gadget && box->gadget->type == GADGET_RADIO) {
+		html_redraw_radio(x + padding_left, y - padding_top,
+				width, height,
+				box->gadget->data.radio.selected);
 
 	} else if (box->text && box->font) {
 
@@ -286,8 +279,11 @@ void html_redraw_box(struct content *content, struct box * box,
 			}
 		}
 
-		colourtrans_set_font_colours(box->font->handle, current_background_color << 8,
-					     box->style->color << 8, 14, 0, 0, 0);
+		colourtrans_set_font_colours(box->font->handle,
+				current_background_color << 8,
+				box->style->color << 8, 14, 0, 0, 0);
+
+		/* antialias colour for under/overline */
 		colour = box->style->color;
 		colour = ((((colour >> 16) + (current_background_color >> 16)) / 2) << 16)
 				| (((((colour >> 8) & 0xff) +
@@ -390,6 +386,10 @@ void html_redraw_clip(long clip_x0, long clip_y0,
 }
 
 
+/**
+ * Plot a dotted rectangle outline.
+ */
+
 void html_redraw_rectangle(int x0, int y0, int width, int height,
 		os_colour colour)
 {
@@ -399,6 +399,32 @@ void html_redraw_rectangle(int x0, int y0, int width, int height,
 	os_plot(os_PLOT_DOTTED | os_PLOT_BY, 0, -height);
 	os_plot(os_PLOT_DOTTED | os_PLOT_BY, -width, 0);
 	os_plot(os_PLOT_DOTTED | os_PLOT_BY, 0, height);
+}
+
+
+/**
+ * Fill a rectangle of colour.
+ */
+
+void html_redraw_fill(int x0, int y0, int width, int height,
+		os_colour colour)
+{
+	colourtrans_set_gcol(colour, 0, os_ACTION_OVERWRITE, 0);
+	os_plot(os_MOVE_TO, x0, y0 - height);
+	os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, width - 1, height - 1);
+}
+
+
+/**
+ * Fill a circle of colour.
+ */
+
+void html_redraw_circle(int x0, int y0, int radius,
+		os_colour colour)
+{
+	colourtrans_set_gcol(colour, 0, os_ACTION_OVERWRITE, 0);
+	os_plot(os_MOVE_TO, x0, y0);
+	os_plot(os_PLOT_CIRCLE | os_PLOT_BY, radius, 0);
 }
 
 
@@ -434,4 +460,41 @@ void html_redraw_border(colour color, int width, css_border_style style,
 	if (error)
 		LOG(("xdraw_stroke: 0x%x: %s",
 				error->errnum, error->errmess));
+}
+
+
+/**
+ * Plot a checkbox.
+ */
+
+void html_redraw_checkbox(int x, int y, int width, int height,
+		bool selected)
+{
+	int z = width * 0.15;
+	if (z == 0)
+		z = 1;
+	html_redraw_fill(x, y, width, height, os_COLOUR_BLACK);
+	html_redraw_fill(x + z, y - z, width - z - z, height - z - z,
+			os_COLOUR_WHITE);
+	if (selected)
+		html_redraw_fill(x + z + z, y - z - z,
+				width - z - z - z - z, height - z - z - z - z,
+				os_COLOUR_RED);
+}
+
+
+/**
+ * Plot a radio icon.
+ */
+
+void html_redraw_radio(int x, int y, int width, int height,
+		bool selected)
+{
+	html_redraw_circle(x + width * 0.5, y - height * 0.5,
+			width * 0.5 - 1, os_COLOUR_BLACK);
+	html_redraw_circle(x + width * 0.5, y - height * 0.5,
+			width * 0.4 - 1, os_COLOUR_WHITE);
+	if (selected)
+		html_redraw_circle(x + width * 0.5, y - height * 0.5,
+				width * 0.3 - 1, os_COLOUR_RED);
 }
