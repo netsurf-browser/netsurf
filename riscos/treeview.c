@@ -830,6 +830,11 @@ void ro_gui_tree_toolbar_click(wimp_pointer* pointer, struct tree *tree) {
 		return;
 	}
 
+	if ((pointer->i < 0) && (current_toolbar)) {
+		ro_gui_theme_toolbar_editor_click(tree->toolbar, pointer);
+		return; 
+	}
+
 	switch (pointer->i) {
 	  	case ICON_TOOLBAR_CREATE:
 			node = tree_create_folder_node(tree->root,
@@ -1037,6 +1042,8 @@ void ro_gui_tree_show(struct tree *tree) {
 	  
 	  	/*	Cancel any editing
 	  	*/
+	  	if ((tree->toolbar) && (tree->toolbar->editor))
+	  		ro_gui_theme_toggle_edit(tree->toolbar);
 	  	ro_gui_tree_stop_edit(tree);
 	  
 	 	/*	Set the default state

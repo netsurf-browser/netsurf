@@ -53,7 +53,6 @@ static void build_languages_menu(void);
 static void ro_gui_menu_toolbar_submenu_selection(int index);
 static void ro_gui_menu_prepare_images(void);
 static void ro_gui_menu_prepare_window(void);
-static void ro_gui_menu_prepare_theme(void);
 static void ro_gui_menu_prepare_toolbars(struct toolbar *toolbar);
 static void ro_gui_menu_prepare_render(void);
 static void ro_gui_menu_prepare_help(int forced);
@@ -746,7 +745,10 @@ void ro_gui_create_menu(wimp_menu *menu, int x, int y, struct gui_window *g)
 		current_toolbar = g->toolbar;
 
 	} else if (menu == toolbar_menu) {
-		ro_gui_menu_prepare_theme();
+		ro_gui_menu_prepare_toolbars(current_toolbar);
+		toolbar_menu->entries[1].menu_flags &= ~wimp_MENU_TICKED;
+		if (current_toolbar->editor)
+			toolbar_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
 	} else if (menu == hotlist_menu) {
 		ro_gui_menu_prepare_hotlist();
 		current_toolbar = hotlist_tree->toolbar;
@@ -861,8 +863,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				ro_gui_menu_toolbar_submenu_selection(selection->items[1]);
 				break;
 			case 1:	/* Edit toolbar */
-				current_toolbar->locked = !current_toolbar->locked;
-				ro_gui_menu_prepare_theme();
+				ro_gui_theme_toggle_edit(current_toolbar);
+				ro_gui_menu_prepare_toolbars(current_toolbar);
 				break;
 		}
 	} else if (current_menu == hotlist_menu) {
@@ -1241,7 +1243,7 @@ void ro_gui_menu_toolbar_submenu_selection(int index) {
 			current_toolbar->display_status = !current_toolbar->display_status;
 			break;
 	}
-	ro_gui_menu_prepare_theme();
+	ro_gui_menu_prepare_toolbars(current_toolbar);
 	current_toolbar->reformat_buttons = true;
 	height = current_toolbar->height;
 	ro_gui_theme_process_toolbar(current_toolbar, -1);
@@ -1657,20 +1659,19 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 		}
 	}
 	if (t) {
-		if (h) {
+		if ((h) && (!t->editor)) {
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_BACK,
 					!history_back_available(h));
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_FORWARD,
 					!history_forward_available(h));
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_HISTORY,
 				!(c || history_back_available(h) || history_forward_available(h)));
-
 		} else {
-			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_BACK, true);
-			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_FORWARD, true);
-			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_HISTORY, true);
+			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_BACK, !t->editor);
+			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_FORWARD, !t->editor);
+			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_HISTORY, !t->editor);
 		}
-		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_BOOKMARK, !hotlist_tree);
+		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_BOOKMARK, (!hotlist_tree && !t->editor));
 		global_history_get_recent(&suggestions);
 		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SUGGEST, (suggestions <= 0));
 	}
@@ -1682,7 +1683,7 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 		if (t) ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_RELOAD, false);
 	} else {
 		if (update_menu) browser_navigate_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
-		if (t) ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_RELOAD, true);
+		if (t) ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_RELOAD, !t->editor);
 	}
 	if (bw->loading_content || (bw->current_content &&
 			bw->current_content->status != CONTENT_STATUS_DONE)) {
@@ -1690,27 +1691,22 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 		if (t) ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_STOP, false);
 	} else {
 		if (update_menu) browser_navigate_menu->entries[4].icon_flags |= wimp_ICON_SHADED;
-		if (t) ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_STOP, true);
+		if (t) ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_STOP, !t->editor);
 	}
 
 	/*	Set the scale view icon
 	*/
-	if (c) {
-		if (update_menu) menu.entries[0].icon_flags &= ~wimp_ICON_SHADED;
-		if (t) {
-			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SEARCH, false);
-			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SCALE, false);
-			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SAVE, false);
-			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_PRINT, false);
-		}
-	} else {
-		if (update_menu) menu.entries[0].icon_flags |= wimp_ICON_SHADED;
-		if (t) {
-			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SEARCH, true);
-			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SCALE, true);
-			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SAVE, true);
-			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_PRINT, true);
-		}
+	if (update_menu) {
+		if (c) 
+			menu.entries[0].icon_flags &= ~wimp_ICON_SHADED;
+		else
+			menu.entries[0].icon_flags |= wimp_ICON_SHADED;
+	}
+	if (t) {
+		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SEARCH, (!c && !t->editor));
+		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SCALE, (!c && !t->editor));
+		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SAVE, (!c && !t->editor));
+		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_PRINT, (!c && !t->editor));
 	}
 
 	/*	Check if we've changed our menu state
@@ -1822,20 +1818,6 @@ static void ro_gui_menu_prepare_window(void) {
 /**
  * Update toolbar menu status
  */
-static void ro_gui_menu_prepare_theme(void) {
-	if (!current_toolbar) return;
-
-	ro_gui_menu_prepare_toolbars(current_toolbar);
-	if (current_toolbar->locked) {
-		toolbar_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
-	} else {
-		toolbar_menu->entries[1].menu_flags &= ~wimp_MENU_TICKED;
-	}
-}
-
-/**
- * Update toolbar menu status
- */
 static void ro_gui_menu_prepare_toolbars(struct toolbar *toolbar) {
 	int index;
 
@@ -1845,6 +1827,10 @@ static void ro_gui_menu_prepare_toolbars(struct toolbar *toolbar) {
 		for (index = 0; index < 4; index++) {
 			browser_toolbar_menu->entries[index].icon_flags &= ~wimp_ICON_SHADED;
 			browser_toolbar_menu->entries[index].menu_flags &= ~wimp_MENU_TICKED;
+		}
+		if (toolbar->editor) {
+			browser_toolbar_menu->entries[0].icon_flags |= wimp_ICON_SHADED;
+			browser_toolbar_menu->entries[0].menu_flags |= wimp_MENU_TICKED;
 		}
 		if ((toolbar->descriptor) && (toolbar->descriptor->theme)) {
 			if (toolbar->display_buttons) browser_toolbar_menu->entries[0].menu_flags |= wimp_MENU_TICKED;
@@ -1911,14 +1897,25 @@ void ro_gui_menu_prepare_hotlist(void) {
 	}
 
 	if (hotlist_toolbar) {
-		ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
-				ICON_TOOLBAR_OPEN, !hotlist_tree->root->child);
-		ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
-				ICON_TOOLBAR_EXPAND, !hotlist_tree->root->child);
-		ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
-				ICON_TOOLBAR_DELETE, !selection);
-		ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
-				ICON_TOOLBAR_LAUNCH, !selection);
+	  	if (hotlist_toolbar->editor) {
+			ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
+					ICON_TOOLBAR_OPEN, false);
+			ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
+					ICON_TOOLBAR_EXPAND, false);
+			ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
+					ICON_TOOLBAR_DELETE, false);
+			ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
+					ICON_TOOLBAR_LAUNCH, false);
+	  	} else {
+			ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
+					ICON_TOOLBAR_OPEN, !hotlist_tree->root->child);
+			ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
+					ICON_TOOLBAR_EXPAND, !hotlist_tree->root->child);
+			ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
+					ICON_TOOLBAR_DELETE, !selection);
+			ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
+					ICON_TOOLBAR_LAUNCH, !selection);
+		}
 	}
 
 	if (selection) {
@@ -1975,14 +1972,25 @@ void ro_gui_menu_prepare_global_history(void) {
 	}
 
 	if (global_history_toolbar) {
-		ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
-				ICON_TOOLBAR_OPEN, !global_history_tree->root->child);
-		ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
-				ICON_TOOLBAR_EXPAND, !global_history_tree->root->child);
-		ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
-				ICON_TOOLBAR_DELETE, !selection);
-		ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
-				ICON_TOOLBAR_LAUNCH, !selection);
+	  	if (global_history_toolbar->editor) {
+			ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
+					ICON_TOOLBAR_OPEN, false);
+			ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
+					ICON_TOOLBAR_EXPAND, false);
+			ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
+					ICON_TOOLBAR_DELETE, false);
+			ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
+					ICON_TOOLBAR_LAUNCH, false);
+	  	} else {
+			ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
+					ICON_TOOLBAR_OPEN, !global_history_tree->root->child);
+			ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
+					ICON_TOOLBAR_EXPAND, !global_history_tree->root->child);
+			ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
+					ICON_TOOLBAR_DELETE, !selection);
+			ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
+					ICON_TOOLBAR_LAUNCH, !selection);
+		}
 	}
 
 	if (selection) {

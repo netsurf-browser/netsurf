@@ -17,7 +17,10 @@
 typedef enum {
   	THEME_BROWSER_TOOLBAR,
   	THEME_HOTLIST_TOOLBAR,
-  	THEME_HISTORY_TOOLBAR
+  	THEME_HISTORY_TOOLBAR,
+  	THEME_BROWSER_EDIT_TOOLBAR,
+  	THEME_HOTLIST_EDIT_TOOLBAR,
+  	THEME_HISTORY_EDIT_TOOLBAR
 } toolbar_type;
 
 struct theme_file_header {
@@ -78,7 +81,7 @@ struct toolbar {
 	struct toolbar_icon *suggest;		/**< suggestion toolbar icon (read only) */
   	struct theme_descriptor *descriptor;	/**< theme descriptor (read only) */
 	toolbar_type type;			/**< toolbar type (read only) */
-	bool locked;				/**< toolbar is locked from editing */
+	struct toolbar *editor;			/**< toolbar editor */
 };
 
 struct theme_descriptor {
@@ -118,9 +121,17 @@ void ro_gui_theme_resize_toolbar_status(struct toolbar *toolbar);
 bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width);
 void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar);
 
-struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar, int x, int y);
-bool ro_gui_theme_toolbar_separator_following(struct toolbar_icon *icon);
+void ro_gui_theme_toggle_edit(struct toolbar *toolbar);
+void ro_gui_theme_toolbar_editor_sync(struct toolbar *toolbar);
+void ro_gui_theme_toolbar_editor_click(struct toolbar *toolbar, wimp_pointer *pointer);
+void ro_gui_theme_toolbar_editor_drag_end(wimp_dragged *drag);
 
-#define ro_gui_theme_toolbar_height(toolbar) toolbar->height > toolbar->max_height ? \
-					toolbar->max_height : toolbar->height
+struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar, int x, int y);
+
+#define ro_gui_theme_toolbar_height(toolbar) toolbar->height + \
+		(toolbar->editor ? toolbar->editor->height : 0) > toolbar->max_height ? \
+		toolbar->max_height : toolbar->height + \
+		(toolbar->editor ? toolbar->editor->height : 0)
+#define ro_gui_theme_toolbar_full_height(toolbar) toolbar->height + \
+		(toolbar->editor ? toolbar->editor->height : 0)
 #endif

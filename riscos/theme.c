@@ -570,6 +570,7 @@ void ro_gui_theme_redraw(struct toolbar *toolbar, wimp_draw *redraw) {
 	struct toolbar_icon *icon;
 	osbool more = wimp_redraw_window(redraw);
 	wimp_icon separator_icon;
+	os_error *error;
 	bool perform_redraw = false;
 
 	/*	Set up the icon
@@ -586,7 +587,7 @@ void ro_gui_theme_redraw(struct toolbar *toolbar, wimp_draw *redraw) {
 		separator_icon.extent.y1 = toolbar->height;
 		perform_redraw = true;
 	}
-	perform_redraw &= toolbar->display_buttons;
+	perform_redraw &= toolbar->display_buttons || toolbar->editor;
 
 	while (more) {
 		if (perform_redraw) {
@@ -597,8 +598,14 @@ void ro_gui_theme_redraw(struct toolbar *toolbar, wimp_draw *redraw) {
 					wimp_plot_icon(&separator_icon);
 				}
 			}
-	  	}
-		more = wimp_get_rectangle(redraw);
+		}
+		error = xwimp_get_rectangle(redraw, &more);
+		if (error) {
+			LOG(("xwimp_get_rectangle: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
 	}
 }
 
@@ -714,6 +721,29 @@ struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor,
 			ro_gui_theme_add_toolbar_icon(toolbar, "open", ICON_TOOLBAR_OPEN);
 			ro_gui_theme_add_toolbar_icon(toolbar, "expand", ICON_TOOLBAR_EXPAND);
 			break;
+		case THEME_BROWSER_EDIT_TOOLBAR:
+			ro_gui_theme_add_toolbar_icon(toolbar, "back", ICON_TOOLBAR_BACK);
+			ro_gui_theme_add_toolbar_icon(toolbar, "forward", ICON_TOOLBAR_FORWARD);
+			ro_gui_theme_add_toolbar_icon(toolbar, "stop", ICON_TOOLBAR_STOP);
+			ro_gui_theme_add_toolbar_icon(toolbar, "reload", ICON_TOOLBAR_RELOAD);
+			ro_gui_theme_add_toolbar_icon(toolbar, "home", ICON_TOOLBAR_HOME);
+			ro_gui_theme_add_toolbar_icon(toolbar, "search", ICON_TOOLBAR_SEARCH);
+			ro_gui_theme_add_toolbar_icon(toolbar, "history", ICON_TOOLBAR_HISTORY);
+			ro_gui_theme_add_toolbar_icon(toolbar, "scale", ICON_TOOLBAR_SCALE);
+			ro_gui_theme_add_toolbar_icon(toolbar, "hotlist", ICON_TOOLBAR_BOOKMARK);
+			ro_gui_theme_add_toolbar_icon(toolbar, "save", ICON_TOOLBAR_SAVE);
+			ro_gui_theme_add_toolbar_icon(toolbar, "print", ICON_TOOLBAR_PRINT);
+			ro_gui_theme_add_toolbar_icon(toolbar, NULL, -1);
+			break;
+		case THEME_HOTLIST_EDIT_TOOLBAR:
+			ro_gui_theme_add_toolbar_icon(toolbar, "create", ICON_TOOLBAR_CREATE);
+		case THEME_HISTORY_EDIT_TOOLBAR:
+			ro_gui_theme_add_toolbar_icon(toolbar, "delete", ICON_TOOLBAR_DELETE);
+			ro_gui_theme_add_toolbar_icon(toolbar, "launch", ICON_TOOLBAR_LAUNCH);
+			ro_gui_theme_add_toolbar_icon(toolbar, "open", ICON_TOOLBAR_OPEN);
+			ro_gui_theme_add_toolbar_icon(toolbar, "expand", ICON_TOOLBAR_EXPAND);
+			ro_gui_theme_add_toolbar_icon(toolbar, NULL, -1);
+			break;
 	}
 
 	/*	Claim the memory for our Wimp indirection
@@ -756,6 +786,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	struct toolbar_icon *toolbar_icon;
 	int width, max_icon;
 	wimp_icon_flags icon_flags;
+	struct gui_window *g;
 	if (!toolbar) return false;
 
 	/*	Set the theme and window sprite area
@@ -785,6 +816,12 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	} else {
 		theme_toolbar_window.work_bg = wimp_COLOUR_VERY_LIGHT_GREY;
 	}
+
+	theme_toolbar_window.work_flags &= ~wimp_ICON_BUTTON_TYPE;
+	if ((toolbar->editor) || (toolbar->type == THEME_HOTLIST_EDIT_TOOLBAR) ||
+			(toolbar->type == THEME_HISTORY_EDIT_TOOLBAR) ||
+			(toolbar->type == THEME_BROWSER_EDIT_TOOLBAR))
+		theme_toolbar_window.work_flags |= (wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT);
 	theme_toolbar_window.flags &= ~wimp_WINDOW_AUTO_REDRAW;
 	theme_toolbar_window.flags |= wimp_WINDOW_NO_BOUNDS;
 	theme_toolbar_window.xmin = 1;
@@ -809,9 +846,9 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 
 	/*	Create the basic icons
 	*/	
-	if (toolbar->type == THEME_HOTLIST_TOOLBAR)
+	if ((toolbar->type == THEME_HOTLIST_TOOLBAR) || (toolbar->type == THEME_HOTLIST_EDIT_TOOLBAR))
 		max_icon = ICON_TOOLBAR_HOTLIST_LAST;
-	else if (toolbar->type == THEME_HISTORY_TOOLBAR)
+	else if ((toolbar->type == THEME_HISTORY_TOOLBAR) || (toolbar->type == THEME_HISTORY_EDIT_TOOLBAR))
 		max_icon = ICON_TOOLBAR_HISTORY_LAST;
 	else
 		max_icon = ICON_TOOLBAR_URL;
@@ -819,8 +856,13 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	new_icon.icon.data.indirected_text.size = 1;
 	new_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
 			wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
-			wimp_ICON_VCENTRED |
-			(wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT);
+			wimp_ICON_VCENTRED;
+	if ((toolbar->editor) || (toolbar->type == THEME_HOTLIST_EDIT_TOOLBAR) ||
+			(toolbar->type == THEME_HISTORY_EDIT_TOOLBAR) ||
+			(toolbar->type == THEME_BROWSER_EDIT_TOOLBAR))
+		new_icon.icon.flags |= (wimp_BUTTON_NEVER << wimp_ICON_BUTTON_TYPE_SHIFT);
+	else
+		new_icon.icon.flags |= (wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT);
 	if (toolbar->descriptor)
 		new_icon.icon.flags |= (toolbar->descriptor->browser_background
 				 << wimp_ICON_BG_COLOUR_SHIFT);
@@ -884,11 +926,11 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 			return false;
 		}
 		
-		/* 	Now the URL suggestion icon
+		/*	Now the URL suggestion icon
 		*/
 		new_icon.icon.data.indirected_text.text = theme_null_text_string;
 		new_icon.icon.data.indirected_text.size = 1;
-		new_icon.icon.flags = icon_flags;
+		new_icon.icon.flags = icon_flags | (wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT);
 		if (toolbar->suggest)
 			new_icon.icon.data.indirected_text.validation = toolbar->suggest->validation;
 		else
@@ -980,6 +1022,24 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	toolbar->toolbar_current = -1;
 	toolbar->status_current = -1;
 	ro_gui_theme_process_toolbar(toolbar, width);
+
+	/*	Keep menus up to date etc
+	*/
+	switch (toolbar->type) {
+		case THEME_BROWSER_TOOLBAR:
+			g = ro_gui_window_lookup(toolbar->parent_handle);
+			if (g)
+				ro_gui_prepare_navigate(g);
+			break;
+		case THEME_HOTLIST_TOOLBAR:
+			ro_gui_menu_prepare_hotlist();
+			break;
+		case THEME_HISTORY_TOOLBAR:
+			ro_gui_menu_prepare_global_history();
+			break;
+		default:
+			break;
+	}
 	return true;
 }
 
@@ -995,12 +1055,16 @@ bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent) {
 	wimp_outline outline;
 	wimp_window_state state;
 	int height;
+	int full_height;
+	os_error *error;
+
 	if (!toolbar) return false;
 
-	/*	Attach/close the window
+	/*	Attach/close the windows
 	*/
 	toolbar->parent_handle = parent;
 	height = ro_gui_theme_toolbar_height(toolbar);
+	full_height = ro_gui_theme_toolbar_full_height(toolbar);
 	if (height > 0) {
 		outline.w = parent;
 		xwimp_get_window_outline(&outline);
@@ -1010,8 +1074,8 @@ bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent) {
 		state.visible.x1 = outline.outline.x1 - 2;
 		state.visible.y0 = state.visible.y1 - height + 2;
 		state.xscroll = 0;
-		state.yscroll = toolbar->height;	/* clipped by WIMP to extent */
-		xwimp_open_window_nested((wimp_open *)&state, parent,
+		state.yscroll = toolbar->height - 2; /* clipped by the WIMP */
+		error = xwimp_open_window_nested((wimp_open *)&state, parent,
 				wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 						<< wimp_CHILD_XORIGIN_SHIFT |
 				wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
@@ -1024,6 +1088,36 @@ bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent) {
 						<< wimp_CHILD_RS_EDGE_SHIFT |
 				wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
 						<< wimp_CHILD_TS_EDGE_SHIFT);
+		if (error) {
+			LOG(("xwimp_open_window_nested: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return false;
+		}
+		if (toolbar->editor) {
+			state.w = toolbar->editor->toolbar_handle;
+			state.visible.y1 -= toolbar->height;
+			state.yscroll = toolbar->editor->height - 2;
+			error = xwimp_open_window_nested((wimp_open *)&state, toolbar->toolbar_handle,
+					wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+							<< wimp_CHILD_XORIGIN_SHIFT |
+					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+							<< wimp_CHILD_YORIGIN_SHIFT |
+					wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+							<< wimp_CHILD_LS_EDGE_SHIFT |
+					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+							<< wimp_CHILD_BS_EDGE_SHIFT |
+					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+							<< wimp_CHILD_RS_EDGE_SHIFT |
+					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+							<< wimp_CHILD_TS_EDGE_SHIFT);
+			if (error) {
+				LOG(("xwimp_open_window_nested: 0x%x: %s",
+					error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+				return false;
+			}
+		}
 	} else {
 		xwimp_close_window(toolbar->toolbar_handle);
 	}
@@ -1089,7 +1183,6 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 	wimp_caret caret;
 	os_box extent = { 0, 0, 0, 0 };
 	os_error *error;
-	wimp_w parent = NULL;
 	wimp_outline outline;
 	wimp_window_state state;
 	int height = -1;
@@ -1102,50 +1195,24 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 	int old_height = toolbar->height;
 	int old_width = toolbar->toolbar_current;
 	struct toolbar_icon *toolbar_icon;
-	struct toolbar_icon *last_icon = NULL;
 	bool visible_icon = false;
-
-  	/*	Disable lone separators
-  	*/
-  	if (toolbar->reformat_buttons) {
-	  	visible_icon = false;
-  		toolbar_icon = toolbar->icon;
-  		while (toolbar_icon) {
-  		  	if (toolbar_icon->icon_number < 0) {
-  		  		toolbar_icon->display = visible_icon;
-  		  		visible_icon = false;
-  		  	} else if (toolbar_icon->width > 0) {
-  		  	  	visible_icon |= toolbar_icon->display;
-  		  	}
-  		  	if (toolbar_icon->display) last_icon = toolbar_icon;
-  		  	toolbar_icon = toolbar_icon->next;
-  		}
-  		if ((last_icon) && (last_icon->icon_number < 0)) {
-  			last_icon->display = false;
-  		}
-  		visible_icon = false;
-  	}
+	int collapse_height;
 
 	/*	Find the parent window handle if we need to process the status window,
 		or the caller has requested we calculate the width ourself.
 	*/
-	if ((width == -1) || ((toolbar->status_handle) && (toolbar->display_status))) {
-		parent = toolbar->parent_handle;
-
-		/*	Get the window outline width
-		*/
-		if (width == -1) {
-			if (!parent) return false;
-			outline.w = toolbar->parent_handle;
-			error = xwimp_get_window_outline(&outline);
-			if (error) {
-				LOG(("xwimp_get_window_outline: 0x%x: %s",
-					error->errnum, error->errmess));
-				warn_user("WimpError", error->errmess);
-				return false;
-			}
-			width = outline.outline.x1 - outline.outline.x0 - 2;
+	if ((toolbar->parent_handle) && ((width == -1) ||
+			((toolbar->status_handle) && (toolbar->display_status)))) {
+		outline.w = toolbar->parent_handle;
+		error = xwimp_get_window_outline(&outline);
+		if (error) {
+			LOG(("xwimp_get_window_outline: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return false;
 		}
+		if (width == -1)
+			width = outline.outline.x1 - outline.outline.x0 - 2;
 	}
 	
 	/*	Find the parent visible height to clip our toolbar height to
@@ -1179,10 +1246,12 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 				xwimp_force_redraw(toolbar->parent_handle,
 					0, -16384, 16384, 16384);
 			toolbar->max_height = height;
+			collapse_height = toolbar->height +
+					(toolbar->editor ? toolbar->editor->height : 0);
 			ro_gui_theme_attach_toolbar(toolbar, toolbar->parent_handle);
 			if ((state.flags & wimp_WINDOW_SIZE_ICON) &&
 					!(state.flags & wimp_WINDOW_HSCROLL) &&
-					(toolbar->height > toolbar->max_height))
+					(collapse_height > toolbar->max_height))
 				xwimp_force_redraw(toolbar->parent_handle,
 					0, -16384, 16384, 16384);
 		}
@@ -1213,7 +1282,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 		/*	Get the minimum height of the icons
 		*/
 		bottom_edge = left_edge;
-		if ((toolbar->display_buttons) && (toolbar->descriptor) &&
+		if ((toolbar->display_buttons || toolbar->editor) && (toolbar->descriptor) &&
 				(toolbar->descriptor->theme)) {
 			toolbar_icon = toolbar->icon;
 			while (toolbar_icon) {
@@ -1251,10 +1320,12 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 			}
 		}
 
+		if (toolbar->height != 0)
+			toolbar->height += 2;
 		if (toolbar->reformat_buttons) {
 			/*	Hide the URL bar if we should
 			*/
-			if (!toolbar->display_url) {
+			if ((!toolbar->display_url) && (toolbar->type == THEME_BROWSER_TOOLBAR)) {
 				if (!xwimp_get_caret_position(&caret)) {
 					if ((caret.w == toolbar->toolbar_handle) &&
 							(caret.i == ICON_TOOLBAR_URL)) {
@@ -1271,9 +1342,10 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 					0, -16384, 0, -16384);
 				xwimp_resize_icon(toolbar->toolbar_handle, ICON_TOOLBAR_SUGGEST,
 					0, -16384, 0, -16384);
+			} else if (toolbar->type == THEME_BROWSER_TOOLBAR) {
+				ro_gui_set_icon_shaded_state(toolbar->toolbar_handle, ICON_TOOLBAR_URL,
+					!toolbar->display_url);
 			}
-			ro_gui_set_icon_shaded_state(toolbar->toolbar_handle, ICON_TOOLBAR_URL,
-				!toolbar->display_url);
 			xwimp_force_redraw(toolbar->toolbar_handle,
 				0, 0, 16384, 16384);
 
@@ -1281,8 +1353,9 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 			*/
 			toolbar_icon = toolbar->icon;
 			while (toolbar_icon) {
-				if ((toolbar->display_buttons) && (toolbar_icon->display)
-					&& (toolbar_icon->width > 0)) {
+				if ((toolbar->display_buttons || toolbar->editor) &&
+						(toolbar_icon->display)
+						&& (toolbar_icon->width > 0)) {
 					visible_icon = true;
 					bottom_edge = (toolbar->height -
 							toolbar_icon->height) / 2;
@@ -1305,12 +1378,11 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 		}
 
 
-		if (toolbar->height != 0) toolbar->height += 2;
 		if (toolbar->type == THEME_BROWSER_TOOLBAR) {
 			/*	Move the URL bar
 			*/
 			if (toolbar->display_url) {
-			  	if (toolbar->suggest) {
+				if (toolbar->suggest) {
 					xwimp_resize_icon(toolbar->toolbar_handle, ICON_TOOLBAR_URL,
 						left_edge, (toolbar->height / 2) - 26,
 						right_edge - toolbar->suggest->width - 8,
@@ -1323,7 +1395,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 					xwimp_force_redraw(toolbar->toolbar_handle,
 						right_edge - toolbar->suggest->width - 8, 0,
 						16384, 16384);
-			  	} else {
+				} else {
 					xwimp_resize_icon(toolbar->toolbar_handle, ICON_TOOLBAR_URL,
 						left_edge, (toolbar->height / 2) - 26,
 						right_edge, (toolbar->height / 2) + 26);
@@ -1368,19 +1440,18 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 		toolbar->toolbar_current = width;
 		if (toolbar->reformat_buttons) {
 			extent.x1 = 16384;
-			extent.y0 = 0;
+			extent.y0 = (toolbar->editor ? -toolbar->editor->height : 0);
 			extent.y1 = toolbar->height - 2;
 			xwimp_set_extent(toolbar->toolbar_handle, &extent);
-			if ((parent) && (old_height != toolbar->height)) {
-				ro_gui_theme_attach_toolbar(toolbar, parent);
-			}
+			if ((toolbar->parent_handle) && (old_height != toolbar->height))
+				ro_gui_theme_attach_toolbar(toolbar, toolbar->parent_handle);
 		}
 		toolbar->reformat_buttons = false;
 	}
 
 	/*	Reformat the status bar
 	*/
-	if ((toolbar->status_handle) && (parent)) {
+	if ((toolbar->status_handle) && (toolbar->parent_handle)) {
 		/*	Get the current state
 		*/
 		state.w = toolbar->status_handle;
@@ -1400,13 +1471,15 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 		} else {
 			/*	Get the status bar height/width
 			*/
-			status_max = width - ro_get_vscroll_width(parent);
+			status_max = width - ro_get_vscroll_width(toolbar->parent_handle);
 			status_size = (status_max * toolbar->status_width) / 10000;
 			if (status_size < 12) status_size = 12;
-			status_height = ro_get_hscroll_height(parent) - 2;
+			status_height = ro_get_hscroll_height(toolbar->parent_handle) - 2;
 
 			/*	Update the extent
 			*/
+			extent.x0 = 0;
+			extent.y0 = 0;
 			extent.x1 = status_max;
 			extent.y1 = status_height - 2;
 			xwimp_set_extent(toolbar->status_handle, &extent);
@@ -1421,7 +1494,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 			state.visible.x1 = outline.outline.x0 + status_size;
 			state.visible.y0 = outline.outline.y0 - status_height;
 			state.visible.y1 = outline.outline.y0 - 2;
-			xwimp_open_window_nested((wimp_open *)&state, parent,
+			xwimp_open_window_nested((wimp_open *)&state, toolbar->parent_handle,
 					wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 							<< wimp_CHILD_XORIGIN_SHIFT |
 					wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
@@ -1469,6 +1542,13 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar) {
 	struct toolbar_icon *next_icon;
 	if (!toolbar) return;
 
+	/*	Destroy our editor
+	*/
+	if (toolbar->editor) {
+		toolbar->editor = NULL;
+		ro_gui_theme_destroy_toolbar(toolbar->editor);
+	}
+	
 	/*	Delete our windows
 	*/
 	if (toolbar->toolbar_handle)
@@ -1491,6 +1571,130 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar) {
 	free(toolbar);
 }
 
+
+/**
+ * Toggles the toolbar editing mode
+ *
+ * \param toolbar      the toolbar to toggle editing for
+ */
+void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
+  	int height;
+  	struct gui_window *g = NULL;
+	wimp_window_state state;
+	os_error *error;
+ 
+  	if (!toolbar)
+  		return;
+
+	if ((toolbar->type == THEME_BROWSER_TOOLBAR) && (toolbar->parent_handle))
+		g = ro_gui_window_lookup(toolbar->parent_handle);
+
+	if (toolbar->editor) {
+		/* todo: save options */
+	  	height = toolbar->editor->height;
+		ro_gui_theme_destroy_toolbar(toolbar->editor);
+		toolbar->editor = NULL;
+		ro_gui_theme_update_toolbar(toolbar->descriptor, toolbar);
+		switch (toolbar->type) {
+			case THEME_BROWSER_TOOLBAR:
+				if (g)
+					ro_gui_window_update_dimensions(g, height);
+				break;
+			default:
+				if (toolbar->parent_handle)
+					xwimp_force_redraw(toolbar->parent_handle,
+							0, -16384, 16384, 16384);
+				break;
+		}
+	} else {
+	  	/* create/initialise the toolbar editor */
+		switch (toolbar->type) {
+			case THEME_BROWSER_TOOLBAR:
+				toolbar->editor = ro_gui_theme_create_toolbar(toolbar->descriptor,
+						THEME_BROWSER_EDIT_TOOLBAR);
+				break;
+			case THEME_HOTLIST_TOOLBAR:
+				toolbar->editor = ro_gui_theme_create_toolbar(toolbar->descriptor,
+						THEME_HOTLIST_EDIT_TOOLBAR);
+				break;
+			case THEME_HISTORY_TOOLBAR:
+				toolbar->editor = ro_gui_theme_create_toolbar(toolbar->descriptor,
+						THEME_HISTORY_EDIT_TOOLBAR);
+				break;
+			default:
+				return;
+		}
+		if (!toolbar->editor) {
+		  	LOG(("Unable to create toolbar editor"));
+		  	return;
+		}
+		ro_gui_theme_update_toolbar(toolbar->descriptor, toolbar);
+		switch (toolbar->type) {
+			case THEME_BROWSER_TOOLBAR:
+				if (g)
+					ro_gui_window_update_dimensions(g, -toolbar->editor->height);
+				break;
+			default:
+				if (toolbar->parent_handle) {
+				  	state.w = toolbar->parent_handle;
+					error = xwimp_get_window_state(&state);
+					if (error) {
+						LOG(("xwimp_get_window_state: 0x%x: %s",
+							error->errnum, error->errmess));
+						warn_user("WimpError", error->errmess);
+						return;
+					}
+					ro_gui_open_window_request((wimp_open *)&state);
+					xwimp_force_redraw(toolbar->parent_handle,
+							0, -16384, 16384, 16384);
+				}
+				break;
+		}
+		ro_gui_theme_process_toolbar(toolbar, -1);
+		ro_gui_theme_toolbar_editor_sync(toolbar);
+	}
+}
+
+
+/**
+ * Synchronise a toolbar window with the associated editor.
+ *
+ * \param toolbar  the toolbar to synchronise
+ */
+void ro_gui_theme_toolbar_editor_sync(struct toolbar *toolbar) {
+	struct toolbar_icon *icon;
+	struct toolbar_icon *icon_edit;
+	
+	if ((!toolbar) || (!toolbar->editor))
+		return;
+	
+	for (icon = toolbar->icon; icon; icon = icon->next)
+		if ((icon->icon_number >= 0) && (icon->width > 0))
+			for (icon_edit = toolbar->editor->icon; icon_edit; icon_edit = icon_edit->next)
+				if (icon_edit->icon_number == icon->icon_number)
+					ro_gui_set_icon_shaded_state(toolbar->editor->toolbar_handle,
+							icon_edit->icon_number, icon->display);
+}
+
+
+/**
+ * Handle a toolbar click during an editor session
+ *
+ * \param toolbar  the base toolbar (ie not editor) to respond to a click for
+ * \param pointer  the WIMP pointer details
+ */
+void ro_gui_theme_toolbar_editor_click(struct toolbar *toolbar, wimp_pointer *pointer) {
+  
+}
+
+
+/**
+ * Handle the end of a drag
+ *
+ * \param drag  the details for the drag end
+ */
+void ro_gui_theme_toolbar_editor_drag_end(wimp_dragged *drag) {
+}
 
 /**
  * Adds a toolbar icon to the end of a toolbar
@@ -1570,7 +1774,7 @@ void ro_gui_theme_update_toolbar_icon(struct toolbar *toolbar, struct toolbar_ic
 			toolbar->descriptor->theme->sprite_area, (osspriteop_id)icon->name,
 			&dimensions.x, &dimensions.y, 0, &mode);
 
-  	/* fallback to user area just for 'gright' */
+	/* fallback to user area just for 'gright' */
 	if ((error) && (!strcmp(icon->name, "gright")))
 		error = xwimpspriteop_read_sprite_info(icon->name,
 				&dimensions.x, &dimensions.y, 0, &mode);
@@ -1614,21 +1818,11 @@ void ro_gui_theme_destroy_toolbar_icon(struct toolbar_icon *icon) {
  */
 struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar, int x, int y) {
 	struct toolbar_icon *icon;
-	icon = toolbar->icon;
-/* FINISH ME */
+	
+	for (icon = toolbar->icon; icon; icon = icon->next)
+		if ((icon->display) && (icon->x <= x) && (icon->y <= y) &&
+				(icon->x + icon->width > x) &&
+				(icon->y + icon->height > y))
+			return icon;
 	return NULL;
-}
-
-/**
- * Returns whether a separator can follow the specified icon
- *
- * \param icon  the icon to check
- * \return whether a separator can follow
- */
-bool ro_gui_theme_toolbar_separator_following(struct toolbar_icon *icon) {
-	while (icon) {
-		if (icon->display) return (icon->width > 0);
-                icon = icon->next;
-	}
-	return false;
 }

@@ -726,7 +726,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	state.xscroll = sx * 2;
 	state.yscroll = -sy * 2;
 	if (g->toolbar)
-		state.yscroll += g->toolbar->height;
+		state.yscroll += ro_gui_theme_toolbar_full_height(g->toolbar);
 	ro_gui_window_open(g, (wimp_open *) &state);
 }
 
@@ -784,7 +784,7 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 
 	/* account for toolbar height, if present */
 	if (g->toolbar)
-		toolbar_height = g->toolbar->height;
+		toolbar_height = ro_gui_theme_toolbar_full_height(g->toolbar);
 
 	if (width < state.visible.x1 - state.visible.x0)
 		width = state.visible.x1 - state.visible.x0;
@@ -893,7 +893,6 @@ void ro_gui_window_update_theme(void) {
 					ro_gui_window_update_dimensions(g, height -
 						ro_gui_theme_toolbar_height(g->toolbar));
 			}
-			ro_gui_prepare_navigate(g);
 		}
 	}
 	if ((hotlist_tree) && (hotlist_tree->toolbar)) {
@@ -985,7 +984,7 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 
 	/* account for toolbar height, if present */
 	if (g->toolbar)
-		toolbar_height = g->toolbar->height;
+		toolbar_height = ro_gui_theme_toolbar_full_height(g->toolbar);
 	height -= toolbar_height;
 
 	/*	The height should be no less than the content height
@@ -1113,9 +1112,12 @@ struct gui_window *ro_gui_window_lookup(wimp_w window)
 struct gui_window *ro_gui_toolbar_lookup(wimp_w window)
 {
 	struct gui_window *g;
-	for (g = window_list; g; g = g->next)
-		if (g->toolbar && g->toolbar->toolbar_handle == window)
+	for (g = window_list; g; g = g->next) {
+		if ((g->toolbar) && ((g->toolbar->toolbar_handle == window) ||
+				((g->toolbar->editor) &&
+				(g->toolbar->editor->toolbar_handle == window))))
 			return g;
+	}
 	return 0;
 }
 
@@ -1193,6 +1195,13 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 		ro_gui_create_menu(toolbar_menu, pointer->pos.x,
 				pointer->pos.y, g);
 		return;
+	}
+	
+	/*	Handle toolbar edits
+	*/
+	if (pointer->i < 0) {
+		ro_gui_theme_toolbar_editor_click(g->toolbar, pointer);
+		return; 
 	}
 
 	/*	Handle the buttons appropriately
@@ -1723,7 +1732,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 	wimp_get_window_state(&state);
 	y = state.visible.y1 - state.visible.y0 - 32;
 	if (g->toolbar)
-		y -= g->toolbar->height;
+		y -= ro_gui_theme_toolbar_full_height(g->toolbar);
 
 	switch (key) {
 		case wimp_KEY_UP:
@@ -1765,7 +1774,7 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 	x = scroll->visible.x1 - scroll->visible.x0 - 32;
 	y = scroll->visible.y1 - scroll->visible.y0 - 32;
 	if (g->toolbar)
-		y -= g->toolbar->height;
+		y -= ro_gui_theme_toolbar_full_height(g->toolbar);
 
 	switch (scroll->xmin) {
 		case wimp_SCROLL_PAGE_LEFT:

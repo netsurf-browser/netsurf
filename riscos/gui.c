@@ -5,7 +5,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
- * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  */
 
@@ -157,7 +157,6 @@ static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
 static void ro_gui_poll_queue(wimp_event_no event, wimp_block *block);
 static void ro_gui_null_reason_code(void);
 static void ro_gui_redraw_window_request(wimp_draw *redraw);
-static void ro_gui_open_window_request(wimp_open *open);
 static void ro_gui_close_window_request(wimp_close *close);
 static void ro_gui_pointer_leaving_window(wimp_leaving *leaving);
 static void ro_gui_pointer_entering_window(wimp_entering *entering);
@@ -790,21 +789,33 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 		ro_gui_url_complete_redraw(redraw);
 	else if ((hotlist_tree) && (redraw->w == (wimp_w)hotlist_tree->handle))
 		ro_gui_tree_redraw(redraw, hotlist_tree);
+	else if ((global_history_tree) && (redraw->w == (wimp_w)global_history_tree->handle))
+		ro_gui_tree_redraw(redraw, global_history_tree);
 	else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
 			(hotlist_tree->toolbar->toolbar_handle == redraw->w))
 		ro_gui_theme_redraw(hotlist_tree->toolbar, redraw);
-	else if ((global_history_tree) && (redraw->w == (wimp_w)global_history_tree->handle))
-		ro_gui_tree_redraw(redraw, global_history_tree);
+	else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
+			(hotlist_tree->toolbar->editor) &&
+			(hotlist_tree->toolbar->editor->toolbar_handle == redraw->w))
+		ro_gui_theme_redraw(hotlist_tree->toolbar->editor, redraw);
 	else if ((global_history_tree) && (global_history_tree->toolbar) &&
 			(global_history_tree->toolbar->toolbar_handle == redraw->w))
 		ro_gui_theme_redraw(global_history_tree->toolbar, redraw);
+	else if ((global_history_tree) && (global_history_tree->toolbar) &&
+			(global_history_tree->toolbar->editor) &&
+			(global_history_tree->toolbar->editor->toolbar_handle == redraw->w))
+		ro_gui_theme_redraw(global_history_tree->toolbar->editor, redraw);
 	else if (redraw->w == dialog_debug)
 		ro_gui_debugwin_redraw(redraw);
 	else if ((g = ro_gui_window_lookup(redraw->w)) != NULL)
 		ro_gui_window_redraw(g, redraw);
-	else if ((g = ro_gui_toolbar_lookup(redraw->w)) != NULL)
-		ro_gui_theme_redraw(g->toolbar, redraw);
-	else {
+	else if ((g = ro_gui_toolbar_lookup(redraw->w)) != NULL) {
+	  	if (g->toolbar->toolbar_handle == redraw->w)
+			ro_gui_theme_redraw(g->toolbar, redraw);
+		else if ((g->toolbar->editor) &&
+				(g->toolbar->editor->toolbar_handle == redraw->w))
+			ro_gui_theme_redraw(g->toolbar->editor, redraw);
+	} else {
 		ro_gui_dialog_redraw(redraw);
 	}
 }
@@ -927,8 +938,16 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 	else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
 			(hotlist_tree->toolbar->toolbar_handle == pointer->w))
 		ro_gui_tree_toolbar_click(pointer, hotlist_tree);
+	else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
+			(hotlist_tree->toolbar->editor) &&
+			(hotlist_tree->toolbar->editor->toolbar_handle == pointer->w))
+		ro_gui_tree_toolbar_click(pointer, hotlist_tree);
 	else if ((global_history_tree) && (global_history_tree->toolbar) &&
-			(global_history_tree->toolbar->toolbar_handle == pointer->w))
+	 		(global_history_tree->toolbar->toolbar_handle == pointer->w))
+		ro_gui_tree_toolbar_click(pointer, global_history_tree);
+	else if ((global_history_tree) && (global_history_tree->toolbar) &&
+			(global_history_tree->toolbar->editor) &&
+			(global_history_tree->toolbar->editor->toolbar_handle == pointer->w))
 		ro_gui_tree_toolbar_click(pointer, global_history_tree);
 	else if ((g = ro_gui_window_lookup(pointer->w)) != NULL)
 		ro_gui_window_click(g, pointer);
