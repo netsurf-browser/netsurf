@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.15 2002/12/25 22:47:03 bursa Exp $
+ * $Id: browser.c,v 1.16 2002/12/25 22:59:21 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -973,14 +973,14 @@ char *url_join(const char* new, const char* base)
     for (; ret[i] != 0 && ret[i] != '/'; i++)
       ret[i] = tolower(ret[i]);
 
+    xmlNormalizeURIPath(ret + i);
+
     /* http://www.example.com -> http://www.example.com/ */
     if (ret[i] == 0)
     {
       ret[i] = '/';
       ret[i+1] = 0;
     }
-
-    xmlNormalizeURIPath(ret + i);
   }
   else
   {
