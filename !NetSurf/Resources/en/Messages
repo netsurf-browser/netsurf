@@ -34,7 +34,8 @@ OpenURL:Open URL...
 Home:Home page
 Back:Back one page
 Forward:Forward one page
-Reload:Reload this page
+Reload:Reload this page  ^R
+Stop:Stop loading this page
 View:Display
 ScaleView:Scale view
 Images:Images

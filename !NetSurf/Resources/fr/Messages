@@ -34,7 +34,8 @@ OpenURL:Ouvrir l'URL...
 Home:Page d'accueil
 Back:Retour
 Forward:Avancer
-Reload:Recharger cette page
+Reload:Recharger cette page  ^R
+Stop:Stop loading this page
 View:Affichage
 ScaleView:Ajuster la vue
 Images:Images
