@@ -83,7 +83,7 @@ struct form_option {
 	bool selected;
 	bool initial_selected;
 	char* value;
-	char* text;
+	char* text; /**< NUL terminated. */
 	struct form_option* next;
 };
 
