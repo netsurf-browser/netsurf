@@ -47,6 +47,7 @@ static void ro_gui_menu_prepare_help(int forced);
 static void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning);
 static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
 static struct box *ro_gui_menu_find_object_box(void);
+static void ro_gui_menu_object_reload(void);
 
 wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
@@ -123,14 +124,14 @@ static wimp_MENU(2) object_export_menu = {
 
 /*	Object submenu
 */
-static wimp_MENU(4) object_menu = {
+static wimp_MENU(5) object_menu = {
   { "Object" }, 7,2,7,0, 300, 44, 0,
   {
     { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,			DEFAULT_FLAGS, { "ObjInfo" } },
     { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,			DEFAULT_FLAGS, { "ObjSave" } },
     { 0,		      (wimp_menu *)&object_export_menu, DEFAULT_FLAGS, { "Export" } },
-    { wimp_MENU_LAST /*wimp_MENU_SEPARATE*/, (wimp_menu *)&link_menu,		   DEFAULT_FLAGS, { "SaveURL" } },
-//    { wimp_MENU_LAST,		wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "ObjReload" } }
+    { wimp_MENU_SEPARATE, (wimp_menu *)&link_menu,		   DEFAULT_FLAGS, { "SaveURL" } },
+    { wimp_MENU_LAST,		wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "ObjReload" } }
   }
 };
 
@@ -479,6 +480,9 @@ void ro_gui_menu_selection(wimp_selection *selection)
 							case 2: /* Text */
 								break;
 						}
+						break;
+					case 4: /* Reload */
+						ro_gui_menu_object_reload();
 						break;
 				}
 				break;
@@ -856,19 +860,19 @@ void ro_gui_prepare_navigate(gui_window *gui) {
 	int menu_changed = 0;
 	unsigned int i;
 	wimp_selection selection;
-	
+
 	if (!gui) {
 		LOG(("Attempt to update a NULL gui_window icon status"));
 		return;
 	}
-	
+
 	/*	Get the data we need to work with
 	*/
 	bw = gui->data.browser.bw;
 	h = bw->history;
 	c = bw->current_content;
 	t = gui->data.browser.toolbar;
-	
+
 	/*	Get the initial menu state to check for changes
 	*/
 	if (update_menu) {
@@ -890,7 +894,7 @@ void ro_gui_prepare_navigate(gui_window *gui) {
 		if (history_forward_available(h)) {
 			browser_navigate_menu->entries[2].icon_flags &= ~wimp_ICON_SHADED;
 		} else {
-			browser_navigate_menu->entries[2].icon_flags |= wimp_ICON_SHADED;	  
+			browser_navigate_menu->entries[2].icon_flags |= wimp_ICON_SHADED;
 		}
 	}
 	if (t) {
@@ -901,7 +905,7 @@ void ro_gui_prepare_navigate(gui_window *gui) {
 					!history_forward_available(h));
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_HISTORY, false);
 		} else {
-		  
+
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_BACK, true);
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_FORWARD, true);
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_HISTORY, true);
@@ -926,7 +930,7 @@ void ro_gui_prepare_navigate(gui_window *gui) {
 		ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_STOP, true);
 	}
 
-	
+
 	/*	Check if we've changed our menu state
 	*/
 	if (update_menu) {
@@ -935,7 +939,7 @@ void ro_gui_prepare_navigate(gui_window *gui) {
 				menu_changed -= (1 << i);
 			}
 		}
-		
+
 		/*	Re-open the submenu
 		*/
 		if (menu_changed != 0) {
@@ -944,7 +948,7 @@ void ro_gui_prepare_navigate(gui_window *gui) {
 				if (selection.items[0] == MENU_NAVIGATE) {
 					ro_gui_create_menu(current_menu, 0, 0, current_gui);
 				}
-		  			  
+
 			}
 		}
 	}
@@ -982,7 +986,7 @@ static void ro_gui_menu_prepare_window(void) {
 	if ((option_window_screen_width != 0) && (option_window_screen_height != 0)) {
 		browser_window_menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
 		browser_window_menu->entries[3].icon_flags &= ~wimp_ICON_SHADED;
-		
+
 		/*	Check if we are staggered
 		*/
 		if (option_window_stagger) {
@@ -995,7 +999,7 @@ static void ro_gui_menu_prepare_window(void) {
 		browser_window_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
 		browser_window_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
 	}
-	
+
 	/*	Set if we are cloing the window size
 	*/
 	if (option_window_size_clone) {
@@ -1169,5 +1173,15 @@ struct box *ro_gui_menu_find_object_box(void)
 	}
 
 	return box;
+}
+
+void ro_gui_menu_object_reload(void)
+{
+	struct box *box = ro_gui_menu_find_object_box();
+
+	if (box) {
+		box->object->fresh = false;
+		browser_window_reload(current_gui->data.browser.bw);
+	}
 }
 
