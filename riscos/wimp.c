@@ -240,6 +240,35 @@ int ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
 
 
 /**
+ * Set a window title (does *not* redraw the title)
+ *
+ * \param  w     window handle
+ * \param  text  new title (copied)
+ */
+void ro_gui_set_window_title(wimp_w w, const char *text) {
+	wimp_window_info_base window;
+	os_error *error;
+	
+	/*	Get the window details
+	*/
+	window.w = w;
+	error = xwimp_get_window_info_header_only((wimp_window_info *)&window);
+	if (error) {
+		LOG(("xwimp_get_window_info: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	
+	/*	Set the title string
+	*/
+	strncpy(window.title_data.indirected_text.text, text,
+			(unsigned int)window.title_data.indirected_text.size - 1);
+	window.title_data.indirected_text.text[window.title_data.indirected_text.size - 1] = '\0';
+}
+ 
+
+/**
  * Load a sprite file into memory.
  *
  * \param  pathname  file to load

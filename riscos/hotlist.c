@@ -193,10 +193,19 @@ wimp_mouse_state drag_buttons;
 bool menu_selection = false;
 bool menu_open = false;
 
+/*	Whether the editing facilities are for add so that we know how
+	to reset the dialog boxes on a adjust-cancel and the action to
+	perform on ok.
+*/
+bool dialog_folder_add = false;
+bool dialog_entry_add = false;
+bool hotlist_insert = false;
+
 /*	Hotlist loading buffer
 */
 char *load_buf;
 
+static bool ro_gui_hotlist_initialise_sprite(const char *name, int number);
 static bool ro_gui_hotlist_load(void);
 static bool ro_gui_hotlist_save_entry(FILE *fp, struct hotlist_entry *entry);
 static bool ro_gui_hotlist_load_entry(FILE *fp, struct hotlist_entry *entry);
@@ -242,37 +251,16 @@ void ro_gui_hotlist_init(void) {
 		return;
 	}
 
-	/*	Get our sprite ids for faster plotting. This could be done in a
-		far more elegant manner, but it's late and my girlfriend will
-		kill me if I don't go to bed soon. Sorry.
+	/*	Get our sprite ids for faster plotting.
 	*/
-	error = xosspriteop_select_sprite(osspriteop_USER_AREA, gui_sprites,
-				(osspriteop_id)"tr_expand",
-				(osspriteop_header **)&sprite[HOTLIST_EXPAND]);
-	if (!error)
-	error = xosspriteop_select_sprite(osspriteop_USER_AREA, gui_sprites,
-				(osspriteop_id)"tr_collapse",
-				(osspriteop_header **)&sprite[HOTLIST_COLLAPSE]);
-	if (!error)
-	error = xosspriteop_select_sprite(osspriteop_USER_AREA, gui_sprites,
-				(osspriteop_id)"tr_entry",
-				(osspriteop_header **)&sprite[HOTLIST_ENTRY]);
-	if (!error)
-	error = xosspriteop_select_sprite(osspriteop_USER_AREA, gui_sprites,
-				(osspriteop_id)"tr_line",
-				(osspriteop_header **)&sprite[HOTLIST_LINE]);
-	if (!error)
-	error = xosspriteop_select_sprite(osspriteop_USER_AREA, gui_sprites,
-				(osspriteop_id)"tr_halflinet",
-				(osspriteop_header **)&sprite[HOTLIST_TLINE]);
-	if (!error)
-	error = xosspriteop_select_sprite(osspriteop_USER_AREA, gui_sprites,
-				(osspriteop_id)"tr_halflineb",
-				(osspriteop_header **)&sprite[HOTLIST_BLINE]);
-	if (error) {
-		warn_user("MiscError", error->errmess);
+	if (ro_gui_hotlist_initialise_sprite("expand", HOTLIST_EXPAND) ||
+			ro_gui_hotlist_initialise_sprite("collapse", HOTLIST_COLLAPSE) || 
+			ro_gui_hotlist_initialise_sprite("entry", HOTLIST_ENTRY) || 
+			ro_gui_hotlist_initialise_sprite("line", HOTLIST_LINE) || 
+			ro_gui_hotlist_initialise_sprite("halflinet", HOTLIST_TLINE) || 
+			ro_gui_hotlist_initialise_sprite("halflineb", HOTLIST_BLINE)) {
 		return;
-	}
+        } 
 
 	/*	Update our text icon
 	*/
@@ -306,6 +294,27 @@ void ro_gui_hotlist_init(void) {
 		xwimp_set_extent(hotlist_window, &extent);
 		reformat_pending = true;
 	}
+}
+
+/**
+ * Initialise a hotlist sprite
+ *
+ * \param name   the name of the sprite
+ * \param number the sprite cache number
+ * \return whether an error occurred
+ */
+bool ro_gui_hotlist_initialise_sprite(const char *name, int number) {
+	os_error *error;
+	sprintf(icon_name, "tr_%s", name);
+	error = xosspriteop_select_sprite(osspriteop_USER_AREA, gui_sprites,
+				(osspriteop_id)icon_name,
+				(osspriteop_header **)&sprite[number]);
+	if (error) {
+		warn_user("MiscError", error->errmess);
+		LOG(("Failed to load hotlist sprite 'tr_%s'", name));
+		return true;
+	}
+	return false;
 }
 
 
@@ -373,6 +382,7 @@ void ro_gui_hotlist_show(void) {
 	xwimp_set_caret_position(state.w, -1, -100,
 			-100, 32, -1);
 }
+
 
 bool ro_gui_hotlist_load(void) {
 	FILE *fp;
@@ -824,7 +834,7 @@ struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char *url,
 void ro_gui_hotlist_link_entry(struct hotlist_entry *link, struct hotlist_entry *entry, bool before) {
 	struct hotlist_entry *link_entry;
 
-	if (!link || !entry) return;
+	if ((!link || !entry) || (link == entry)) return;
 
 	/*	Check if the parent is a folder or an entry
 	*/
@@ -2083,7 +2093,6 @@ void ro_gui_hotlist_move_drag_end(wimp_dragged *drag) {
 	/*	No parent of the destination can be processed
 	*/
 	test_entry = entry;
-	if (entry->children == -1) test_entry = entry->parent_entry;
 	while (test_entry != NULL) {
 		if (test_entry->process) return;
 		test_entry = test_entry->parent_entry;
@@ -2222,6 +2231,16 @@ void ro_gui_hotlist_toolbar_click(wimp_pointer* pointer) {
 	/*	Handle the buttons appropriately
 	*/
 	switch (pointer->i) {
+	  	case ICON_TOOLBAR_CREATE:
+	  		hotlist_insert = false;
+	  		if (pointer->buttons == wimp_CLICK_SELECT) {
+	  			ro_gui_hotlist_prepare_folder_dialog(false);
+	  			ro_gui_dialog_open_persistant(hotlist_window, dialog_folder);
+	  		} else {
+	  			ro_gui_hotlist_prepare_entry_dialog(false);
+	  			ro_gui_dialog_open_persistant(hotlist_window, dialog_entry);
+	  		}
+	  		break;
 	  	case ICON_TOOLBAR_OPEN:
 	  		selection = ro_gui_hotlist_get_selected(true);
 			ro_gui_hotlist_update_expansion(root.child_entry, (selection != 0), true, false,
@@ -2244,6 +2263,51 @@ void ro_gui_hotlist_toolbar_click(wimp_pointer* pointer) {
 }
 
 
+void ro_gui_hotlist_prepare_folder_dialog(bool selected) {
+	struct hotlist_entry *entry = NULL;
+	if (selected) entry = ro_gui_hotlist_first_selection(root.child_entry);
+	
+	/*	Update the title
+	*/
+	dialog_folder_add = selected;
+	if (selected) {
+		ro_gui_set_window_title(dialog_folder, messages_get("EditFolder"));
+	} else {
+		ro_gui_set_window_title(dialog_folder, messages_get("NewFolder"));
+	}
+	
+	/*	Update the icons
+	*/
+	if (entry == NULL) {
+		ro_gui_set_icon_string(dialog_folder, 1, messages_get("Folder"));
+	} else {
+		ro_gui_set_icon_string(dialog_folder, 1, entry->title);
+	}
+}
+
+void ro_gui_hotlist_prepare_entry_dialog(bool selected) {
+	struct hotlist_entry *entry = NULL;
+	if (selected) entry = ro_gui_hotlist_first_selection(root.child_entry);
+	
+	/*	Update the title
+	*/
+	dialog_entry_add = selected;
+	if (selected) {
+		ro_gui_set_window_title(dialog_entry, messages_get("EditLink"));
+	} else {
+		ro_gui_set_window_title(dialog_entry, messages_get("NewLink"));
+	}
+	
+	/*	Update the icons
+	*/
+	if (entry == NULL) {
+		ro_gui_set_icon_string(dialog_entry, 1, messages_get("Link"));
+		ro_gui_set_icon_string(dialog_entry, 3, "");
+	} else {
+		ro_gui_set_icon_string(dialog_entry, 1, entry->title);
+		ro_gui_set_icon_string(dialog_entry, 3, entry->url);	  
+	}
+}
 
 
 /**

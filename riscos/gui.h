@@ -24,7 +24,7 @@
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
 	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_config_th_pane,
-	dialog_debug;
+	dialog_debug, dialog_folder, dialog_entry;
 extern wimp_w history_window;
 extern wimp_w hotlist_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu;
@@ -38,6 +38,7 @@ extern gui_window *current_gui;
 extern gui_window *ro_gui_current_redraw_gui;
 extern osspriteop_area *gui_sprites;
 extern struct toolbar *hotlist_toolbar;
+extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
 
 typedef enum { GUI_BROWSER_WINDOW } gui_window_type;
 typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT,
@@ -198,6 +199,8 @@ void ro_gui_hotlist_set_selected(bool selected);
 void ro_gui_hotlist_set_expanded(bool expand, bool folders, bool links);
 void ro_gui_hotlist_delete_selected(void);
 void ro_gui_hotlist_save_as(const char *file);
+void ro_gui_hotlist_prepare_folder_dialog(bool selected);
+void ro_gui_hotlist_prepare_entry_dialog(bool selected);
 
 /* in save.c */
 void ro_gui_save_click(wimp_pointer *pointer);
