@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
  */
 
 #include <stdbool.h>
@@ -12,9 +12,13 @@
 #include "oslib/os.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
+#include "oslib/wimpreadsysinfo.h"
 #include "netsurf/riscos/buffer.h"
+#include "netsurf/riscos/options.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
+//#define NDEBUG
+#define BUFFER_EXCLUSIVE_USER_REDRAW "Only support pure user redraw (faster)"
 
 /*	SCREEN BUFFERING
 	================
@@ -33,14 +37,14 @@
 	[rjw] - Mon 19th July 2004
 */
 
+static void ro_gui_buffer_free(void);
 
-/** The current buffer
+
+/** The buffer characteristics
 */
+static bool buffer_active = false;
 static osspriteop_area *buffer = NULL;
-
-/** The sprite name
-*/
-static char name[12];
+static char buffer_name[] = "scr_buffer\0\0";
 
 /** The current clip area
 */
@@ -62,15 +66,22 @@ static osspriteop_save_area *context3;
 void ro_gui_buffer_open(wimp_draw *redraw) {
 	int size;
 	int orig_x0, orig_y0;
-	int buffer_size;
+	int total_size;
 	os_coord sprite_size;
-	int bpp, word_size;
-	osbool palette;
+	int bpp, word_width;
+	bool palette;
 	os_error *error;
+	int palette_size = 0;
+	int claim_size;
+#ifdef BUFFER_EXCLUSIVE_USER_REDRAW
+	os_mode mode;
+	osspriteop_header *header;
+#endif
 
 	/*	Close any open buffer
 	*/
-	if (buffer) ro_gui_buffer_close();
+	if (buffer_active)
+		ro_gui_buffer_close();
 
 	/*	Store our clipping region
 	*/
@@ -85,65 +96,95 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	/*	Get the screen depth as we can't use palettes for >8bpp
 	*/
 	xos_read_mode_variable((os_mode)-1, os_MODEVAR_LOG2_BPP, &bpp, 0);
-	palette = (bpp < 4) ? 1 : 0;
+	palette = (bpp < 4);;
 
-	/*	Create our buffer
+	/*	Get our required buffer size
 	*/
-	word_size = (((sprite_size.x << bpp) >> 3) + 32) & ~3;
-	buffer_size = sizeof(osspriteop_area) + sizeof(osspriteop_header) +
-			(word_size * sprite_size.y);
-	if (palette) buffer_size += ((1 << (1 << bpp)) << 3);
-	buffer = malloc(buffer_size);
-	if (!buffer) {
-	  	LOG(("Buffer memory allocation failed."));
+	word_width = ((sprite_size.x << bpp) + 31) >> 5;
+	if (palette)
+		palette_size = ((1 << (1 << bpp)) << 3);
+	total_size = sizeof(osspriteop_area) + sizeof(osspriteop_header) +
+			(word_width * sprite_size.y * 4) + palette_size;
+
+	if ((buffer == NULL) || (total_size > buffer->size)) {
+	  	claim_size = (total_size > (option_screen_cache << 10)) ?
+	  			total_size : (option_screen_cache << 10);
+	  	if (buffer)
+	  		free(buffer);
+	  	buffer = (osspriteop_area *)malloc(claim_size);
+		if (!buffer) {
+			LOG(("Failed to allocate memory"));
+			return;
+		}
+		buffer->size = claim_size;
+		buffer->first = 16;
+	}
+	
+	/*	Set the sprite area details
+	*/
+#ifdef BUFFER_EXCLUSIVE_USER_REDRAW
+	if ((error = xwimpreadsysinfo_wimp_mode(&mode)) != NULL) {
+		LOG(("Error reading mode '%s'", error->errmess));
+		ro_gui_buffer_free();
 		return;
 	}
-	/*	Fill in the sprite area details
+	
+	/*	Create the sprite manually so we don't waste time clearing the
+		background.
 	*/
-	buffer->size = buffer_size - sizeof(osspriteop_area);
+	buffer->sprite_count = 1;
+	buffer->used = total_size;
+	header = (osspriteop_header *)(buffer + 1);
+	header->size = total_size - sizeof(osspriteop_area);
+	memcpy(header->name, buffer_name, 12);
+	header->width = word_width - 1;
+	header->height = sprite_size.y - 1;
+	header->left_bit = 0;
+	header->right_bit = ((sprite_size.x << bpp) - 1) & 31;
+	header->image = sizeof(osspriteop_header) + palette_size;
+	header->mask = header->image;
+	header->mode = mode;
+	if (palette)
+		xcolourtrans_read_palette((osspriteop_area *)mode, (osspriteop_id)0,
+			(os_palette *)(header + 1), palette_size,
+			(colourtrans_palette_flags)(1 << 1), 0);
+#else
+	/*	Read the current contents of the screen
+	*/
 	buffer->sprite_count = 0;
-	buffer->first = 16;
 	buffer->used = 16;
-
-	/*	Fill in the sprite header details
-	*/
-	sprintf(name, "buffer");
 	if ((error = xosspriteop_get_sprite_user_coords(osspriteop_NAME,
-			buffer, name, palette,
+			buffer, buffer_name, palette,
 			clipping.x0, clipping.y0,
 			clipping.x1, clipping.y1)) != NULL) {
-//		LOG(("Grab error '%s'", error->errmess));
-		free(buffer);
-		buffer = NULL;
+		LOG(("Grab error '%s'", error->errmess));
+		ro_gui_buffer_free();
 		return;
 	}
-
+#endif
 	/*	Allocate OS_SpriteOp save area
 	*/
-	if ((error = xosspriteop_read_save_area_size(osspriteop_NAME,
-			buffer, (osspriteop_id)name, &size)) != NULL) {
-//		LOG(("Save area error '%s'", error->errmess));
-		free(buffer);
-		buffer = NULL;
+	if ((error = xosspriteop_read_save_area_size(osspriteop_PTR,
+			buffer, (osspriteop_id)(buffer + 1), &size)) != NULL) {
+		LOG(("Save area error '%s'", error->errmess));
+		ro_gui_buffer_free();
 		return;
 	}
 	if ((save_area = malloc((size_t)size)) == NULL) {
-		free(buffer);
-		buffer = NULL;
+		ro_gui_buffer_free();
 		return;
 	}
 	save_area->a[0] = 0;
 
 	/*	Switch output to sprite
 	*/
-	if ((error = xosspriteop_switch_output_to_sprite(osspriteop_NAME,
-			buffer, (osspriteop_id)name, save_area, 0,
+	if ((error = xosspriteop_switch_output_to_sprite(osspriteop_PTR,
+			buffer, (osspriteop_id)(buffer + 1), save_area, 0,
 			(int *)&context1, (int *)&context2,
 			(int *)&context3)) != NULL) {
-//		LOG(("Switching error '%s'", error->errmess));
+		LOG(("Switching error '%s'", error->errmess));
 		free(save_area);
-		free(buffer);
-		buffer = NULL;
+		ro_gui_buffer_free();
 		return;
 	}
 
@@ -156,6 +197,7 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	os_writec((char)29);
 	os_writec(orig_x0 & 0xff); os_writec(orig_x0 >> 8);
 	os_writec(orig_y0 & 0xff); os_writec(orig_y0 >> 8);
+	buffer_active = true;
 }
 
 
@@ -166,9 +208,10 @@ void ro_gui_buffer_close(void) {
 
 	/*	Check we have an open buffer
 	*/
-	if (!buffer) return;
+	if (!buffer_active)
+		return;
 
-	/*	Remove any redirection and origin hacking
+	/*	Remove any previous redirection
 	*/
 	xosspriteop_switch_output_to_sprite(osspriteop_PTR,
 			context1, context2, context3,
@@ -177,12 +220,22 @@ void ro_gui_buffer_close(void) {
 
 	/*	Plot the contents to screen
 	*/
-	xosspriteop_put_sprite_user_coords(osspriteop_NAME,
-		buffer, (osspriteop_id)name,
+	xosspriteop_put_sprite_user_coords(osspriteop_PTR,
+		buffer, (osspriteop_id)(buffer + 1),
 		clipping.x0, clipping.y0, (os_action)0);
+	ro_gui_buffer_free();
+	buffer_active = false;
+}
 
-	/*	Free our memory
-	*/
-	free(buffer);
-	buffer = NULL;
+
+/**
+ * Releases any buffer memory depending on cache constraints.
+ */
+static void ro_gui_buffer_free(void) {
+  	if (buffer == NULL)
+  		return;
+	if (buffer->size > (option_screen_cache << 10)) {
+		free(buffer);
+		buffer = NULL;
+	}
 }
