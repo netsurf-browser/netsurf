@@ -138,7 +138,7 @@ SaveLink:Lien
 HelpToolbar0:\Tback button.|M\Straverse back one page in the history tree.|MDoes not resubmit form information.
 HelpToolbar1:\Tforward button.|M\Straverse forward one page in the history tree.|MDoes not resubmit form information.
 HelpToolbar2:\Tstop button.|M\Sstop loading this page.
-#HelpToolbar3:\Treload button.|M\Sreload this page.
+HelpToolbar3:\Treload button.|M\Sreload this page.
 #HelpToolbar4:\Thome button.|M\Sgo to your home page.
 HelpToolbar5:\Thistory button.|M\Sopen the local history \w.
 HelpToolbar6:\Tsave button.|M\Ssave the current document.
