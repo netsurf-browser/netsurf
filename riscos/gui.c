@@ -132,25 +132,30 @@ void gui_init(int argc, char** argv)
 	char theme_fname[256];
 	os_error *error;
 
-        LOG(("starting hourglass"));
 	xhourglass_start(1);
 
-        LOG(("reading choices"));
+	LOG(("reading choices"));
 	options_read("Choices:WWW.NetSurf.Choices");
 
-        LOG(("choosing language"));
+	LOG(("choosing language"));
 	ro_gui_choose_language();
 
-        LOG(("grabbing NetSurf$Dir from the environment"));
 	NETSURF_DIR = getenv("NetSurf$Dir");
 	sprintf(path, "<NetSurf$Dir>.Resources.%s.Messages", option_language);
 	LOG(("Loading messages from '%s'", path));
 	messages_load(path);
+	messages_load("<NetSurf$Dir>.Resources.LangNames");
 
 	LOG(("done"));
 
-	task_handle = wimp_initialise(wimp_VERSION_RO38, "NetSurf",
-  			(wimp_message_list*) &task_messages, 0);
+	error = xwimp_initialise(wimp_VERSION_RO38, "NetSurf",
+  			(wimp_message_list*) &task_messages, 0,
+  			&task_handle);
+  	if (error) {
+  		LOG(("xwimp_initialise failed: 0x%x: %s",
+				error->errnum, error->errmess));
+		exit(EXIT_FAILURE);
+  	}
 
 	/* Issue a *Desktop to poke AcornURI into life */
 	if (getenv("NetSurf$Start_URI_Handler"))
@@ -209,8 +214,11 @@ void ro_gui_choose_language(void)
 		if (2 < strlen(option_language))
 			option_language[2] = 0;
 		sprintf(path, "<NetSurf$Dir>.Resources.%s", option_language);
-		if (is_dir(path))
+		if (is_dir(path)) {
+			if (!option_accept_language)
+				option_accept_language = strdup(option_language);
 			return;
+		}
 		free(option_language);
 		option_language = 0;
 	}
@@ -237,6 +245,8 @@ void ro_gui_choose_language(void)
 	else
 		option_language = strdup("en");
 	assert(option_language);
+	if (!option_accept_language)
+		option_accept_language = strdup(option_language);
 }
 
 

@@ -191,6 +191,10 @@ void ro_gui_save_datasave_ack(wimp_message *message);
 #define ICON_CONFIG_BR_MINSIZE 11
 #define ICON_CONFIG_BR_MINSIZE_DEC 12
 #define ICON_CONFIG_BR_MINSIZE_INC 13
+#define ICON_CONFIG_BR_LANG 15
+#define ICON_CONFIG_BR_LANG_PICK 16
+#define ICON_CONFIG_BR_ALANG 19
+#define ICON_CONFIG_BR_ALANG_PICK 20
 
 #define ICON_CONFIG_PROX_OK 0
 #define ICON_CONFIG_PROX_CANCEL 1

@@ -29,6 +29,7 @@ extern char *option_http_proxy_host;
 extern int option_http_proxy_port;
 extern int option_font_size;
 extern int option_font_min_size;
+extern char *option_accept_language;
 
 void options_read(const char *path);
 void options_write(const char *path);

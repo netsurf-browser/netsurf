@@ -56,6 +56,7 @@ static int file_exists(const char* base, const char* dir, const char* leaf, bits
 static void set_icon_state(wimp_w w, wimp_i i, int state);
 static int get_icon_state(wimp_w w, wimp_i i);
 static void set_icon_string_i(wimp_w w, wimp_i i, int num);
+static const char *language_name(const char *code);
 
 
 /**
@@ -406,6 +407,12 @@ void set_browser_choices(void)
 	font_size = option_font_size;
 	font_min_size = option_font_min_size;
 	ro_gui_dialog_update_config_br();
+	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_LANG,
+			language_name(option_language ?
+					option_language : "en"));
+	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_ALANG,
+			language_name(option_accept_language ?
+					option_accept_language : "en"));
 }
 
 
@@ -741,3 +748,18 @@ void set_icon_string_i(wimp_w w, wimp_i i, int num)
 	ro_gui_set_icon_string(w, i, buffer);
 }
 
+
+/**
+ * Convert a 2-letter ISO language code to the language name.
+ *
+ * \param  code  2-letter ISO language code
+ * \return  language name, or code if unknown
+ */
+
+const char *language_name(const char *code)
+{
+	char key[] = "lang_xx";
+	key[5] = code[0];
+	key[6] = code[1];
+	return messages_get(key);
+}

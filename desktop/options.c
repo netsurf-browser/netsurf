@@ -39,6 +39,8 @@ int option_http_proxy_port = 8080;
 int option_font_size = 100;
 /** Minimum font size. */
 int option_font_min_size = 70;
+/** Accept-Language header. */
+char *option_accept_language = 0;
 
 EXTRA_OPTION_DEFINE
 
@@ -53,6 +55,7 @@ struct {
 	{ "http_proxy_port", OPTION_INTEGER, &option_http_proxy_port },
 	{ "font_size",       OPTION_INTEGER, &option_font_size },
 	{ "font_min_size",   OPTION_INTEGER, &option_font_min_size },
+	{ "accept_language", OPTION_STRING,  &option_accept_language },
 	EXTRA_OPTION_TABLE
 };
 

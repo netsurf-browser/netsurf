@@ -276,6 +276,13 @@ struct fetch * fetch_start(char *url, char *referer,
 	/* remove curl default headers */
 	fetch->headers = curl_slist_append(fetch->headers, "Accept:");
 	fetch->headers = curl_slist_append(fetch->headers, "Pragma:");
+	if (option_accept_language) {
+		char s[80];
+		snprintf(s, sizeof s, "Accept-Language: %s, *;q=0.1",
+				option_accept_language);
+		s[sizeof s - 1] = 0;
+		fetch->headers = curl_slist_append(fetch->headers, s);
+	}
 	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPHEADER, fetch->headers);
 	assert(code == CURLE_OK);
 
