@@ -63,112 +63,64 @@ static void thumbnail_restore_output(struct thumbnail_save_area *save_area);
  */
 void thumbnail_create(struct content *content, osspriteop_area *area,
 		osspriteop_header *sprite, int width, int height) {
-	float scale;
-	osspriteop_area *oversampled_area = NULL;
+	float scale = 1.0;
+	osspriteop_area *temp_area = NULL;
 	struct thumbnail_save_area *save_area;
+	osspriteop_area *render_area = NULL;
 
 	/*	Check for 32bpp support in case we've been called for a sprite
 		we didn't set up.
 	*/
 	if (thumbnail_32bpp_available == -1) thumbnail_test();
 
-	/*	Check our oversampling is within a usable range
-	*/
-	if (option_thumbnail_oversampling < 0) option_thumbnail_oversampling = 0;
-	if (option_thumbnail_oversampling > 4) option_thumbnail_oversampling = 4;
-
-	/*	Get the oversampled sprite holder. We perform oversamling if either we
-		want to oversample, or the output sprite is 8bpp and we can do 32bpp and
-		thus improve the final rendition via dithering.
+	/*	Get a secondary holder for non-32bpp sprites as we get a better quality by
+		going to a 32bpp sprite and then down to an [n]bpp one.
 	*/
 	if ((thumbnail_32bpp_available == 1) &&
-		((option_thumbnail_oversampling > 0) || (sprite->mode != (os_mode)0x301680b5))) {
-		oversampled_area = thumbnail_initialise(
-				width << option_thumbnail_oversampling,
-				height << option_thumbnail_oversampling,
+			(sprite->mode != (os_mode)tinct_SPRITE_MODE)) {
+		temp_area = thumbnail_initialise(
+				width, height,
 				(os_mode)0x301680b5);
+		render_area = temp_area;
 	}
+	if (temp_area == NULL) render_area = area;
 
-	/*	Oversample if we have an oversampled sprite, don't otherwise
+	/*	Calculate the scale
 	*/
-	if (oversampled_area != NULL) {
-		/*	Scale up for oversampling
-		*/
-		width = width << option_thumbnail_oversampling;
-		height = height << option_thumbnail_oversampling;
+	if (content->width) scale = (float) width / (float) content->width;
 
-		/*	Calculate the scale
-		*/
-		scale = (float) width / (float) content->width;
+	/*	Set up plotters
+	*/
+	plot = ro_plotters;
+	ro_plot_origin_x = 0;
+	ro_plot_origin_y = height * 2;
+	ro_plot_set_scale(scale);
 
-		/*	Set up plotters
-		*/
-		plot = ro_plotters;
-		ro_plot_origin_x = 0;
-		ro_plot_origin_y = height * 2;
-		ro_plot_set_scale(scale);
+	/*	Switch output and redraw
+	*/
+	save_area = thumbnail_switch_output(render_area, sprite);
+	if (save_area == NULL) {
+		if (temp_area) free(temp_area);
+		return;
+	}
+	colourtrans_set_gcol(os_COLOUR_WHITE, colourtrans_SET_BG,
+			os_ACTION_OVERWRITE, 0);
+	os_clg();
+	content_redraw(content, 0, 0, width, height,
+			0, 0, width, height, scale, 0xFFFFFF);
+	thumbnail_restore_output(save_area);
 
-		/*	Switch output and redraw oversampled
-		*/
-		save_area = thumbnail_switch_output(oversampled_area,
-						(osspriteop_header *)(oversampled_area + 1));
-		if (save_area == NULL) return;
-		content_redraw(content, 0, 0, width, height,
-				0, 0, width, height, scale, 0xFFFFFF);
-		thumbnail_restore_output(save_area);
-
-		/*	Scale back
-		*/
-		width = width >> option_thumbnail_oversampling;
-		height = height >> option_thumbnail_oversampling;
-
-		/*	Switch output to the final sprite
-		*/
+	/*	Go back from 32bpp to [n]bpp if we should.
+	*/
+	if (temp_area != NULL) {
 		save_area = thumbnail_switch_output(area, sprite);
-		if (save_area == NULL) {
-			free(oversampled_area);
-			return;
+		if (save_area != NULL) {
+			_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+					(char *)(temp_area + 1), 0, 0,
+					tinct_ERROR_DIFFUSE);
+			thumbnail_restore_output(save_area);
 		}
-
-		/*	Get Tinct to dither and bilinear filter back to what we want.
-		*/
-		_swix(Tinct_PlotScaled, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
-				(char *)(oversampled_area + 1), 0, 0, width * 2, height * 2,
-				tinct_BILINEAR_FILTER | tinct_DITHER);
-
-		/*	Restore output
-		*/
-		thumbnail_restore_output(save_area);
-
-		/*	Free oversampled memory area
-		*/
-		free(oversampled_area);
-
-	} else {
-		/*	Calculate the scale
-		*/
-		if (content->width)
-			scale = (float) width / (float) content->width;
-		else
-			scale = 1.0;
-
-		/*	Set up plotters
-		*/
-		plot = ro_plotters;
-		ro_plot_origin_x = 0;
-		ro_plot_origin_y = height * 2;
-		ro_plot_set_scale(scale);
-
-		/*	Switch output and redraw
-		*/
-		save_area = thumbnail_switch_output(area, sprite);
-		if (save_area == NULL) return;
-		colourtrans_set_gcol(os_COLOUR_WHITE, colourtrans_SET_BG,
-				os_ACTION_OVERWRITE, 0);
-		os_clg();
-		content_redraw(content, 0, 0, width, height,
-				0, 0, width, height, scale, 0xFFFFFF);
-		thumbnail_restore_output(save_area);
+		free(temp_area);
 	}
 }
 
@@ -310,7 +262,7 @@ static void thumbnail_test(void) {
 	/*	Try to create a 32bpp sprite
 	*/
 	if (xosspriteop_create_sprite(osspriteop_NAME, sprite_area,
-			"test",	false, 1, 1, (os_mode)0x301680b5)) {
+			"test",	false, 1, 1, (os_mode)tinct_SPRITE_MODE)) {
 		thumbnail_32bpp_available = 0;
 	} else {
 		thumbnail_32bpp_available = 1;

@@ -22,6 +22,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/utils/config.h"
+#include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/render/box.h"
@@ -360,6 +361,18 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
+}
+
+
+/**
+ * Redraws the content for all windows.
+ */
+
+void ro_gui_window_redraw_all(void)
+{
+	struct gui_window *g;
+	for (g = window_list; g; g = g->next)
+		gui_window_redraw_window(g);
 }
 
 
@@ -1772,8 +1785,6 @@ void ro_gui_window_clone_options(struct browser_window *new_bw,
 	*/
 	if (!old_gui) {
 		new_gui->option.scale = ((float)option_scale) / 100;
-		new_gui->option.dither_sprites = option_dither_sprites;
-		new_gui->option.filter_sprites = option_filter_sprites;
 		new_gui->option.animate_images = option_animate_images;
 		new_gui->option.background_images = option_background_images;
 		new_gui->option.background_blending = option_background_blending;
@@ -1824,8 +1835,6 @@ void ro_gui_window_default_options(struct browser_window *bw) {
 	/*	Save the basic options
 	*/
 	option_scale = gui->option.scale * 100;
-	option_dither_sprites = gui->option.dither_sprites;
-	option_filter_sprites = gui->option.filter_sprites;
 	option_animate_images = gui->option.animate_images;
 	option_background_blending = gui->option.background_blending;
 	option_buffer_animations = gui->option.buffer_animations;

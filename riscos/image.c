@@ -22,7 +22,7 @@
 static bool image_redraw_tinct(osspriteop_area *area, int x, int y,
 		int req_width, int req_height, int width, int height,
 		unsigned long background_colour, bool repeatx, bool repeaty,
-		bool alpha);
+		bool alpha, unsigned int tinct_options);
 static bool image_redraw_os(osspriteop_area *area, int x, int y,
 		int req_width, int req_height, int width, int height);
 
@@ -39,31 +39,36 @@ static bool image_redraw_os(osspriteop_area *area, int x, int y,
  * \param background_colour The background colour to blend to
  * \param repeatx           Repeat the image in the x direction
  * \param repeaty           Repeat the image in the y direction
+ * \param background	    Use background image settings (otherwise foreground)
  * \param type              The plot method to use
  * \return true on success, false otherwise
  */
 bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 		int req_height, int width, int height,
 		unsigned long background_colour,
-		bool repeatx, bool repeaty,image_type type)
+		bool repeatx, bool repeaty, bool background, image_type type)
 {
+	unsigned int tinct_options;
 	req_width *= 2;
 	req_height *= 2;
 	width *= 2;
 	height *= 2;
+	tinct_options = background ? option_bg_plot_style : option_fg_plot_style;
 	switch (type) {
 		case IMAGE_PLOT_TINCT_ALPHA:
 			return image_redraw_tinct(area, x, y,
 						req_width, req_height,
 						width, height,
 						background_colour,
-						repeatx, repeaty, true);
+						repeatx, repeaty, true,
+						tinct_options);
 		case IMAGE_PLOT_TINCT_OPAQUE:
 			return image_redraw_tinct(area, x, y,
 						req_width, req_height,
 						width, height,
 						background_colour,
-						repeatx, repeaty, false);
+						repeatx, repeaty, false,
+						tinct_options);
 		case IMAGE_PLOT_OS:
 			return image_redraw_os(area, x, y, req_width,
 						req_height, width, height);
@@ -88,38 +93,23 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
  * \param repeatx           Repeat the image in the x direction
  * \param repeaty           Repeat the image in the y direction
  * \param alpha             Use the alpha channel
+ * \param tinct_options	    The base option set to use
  * \return true on success, false otherwise
  */
 bool image_redraw_tinct(osspriteop_area *area, int x, int y,
 		int req_width, int req_height, int width, int height,
 		unsigned long background_colour, bool repeatx, bool repeaty,
-		bool alpha)
+		bool alpha, unsigned int tinct_options)
 {
-	unsigned int tinct_options;
 	_kernel_oserror *error;
 
-	if (ro_gui_current_redraw_gui) {
-		tinct_options =
-			(ro_gui_current_redraw_gui->option.filter_sprites ?
-						tinct_BILINEAR_FILTER : 0)
-			|
-			(ro_gui_current_redraw_gui->option.dither_sprites ?
-						tinct_DITHER : 0);
-	} else {
-		tinct_options =
-			(option_filter_sprites ? tinct_BILINEAR_FILTER : 0)
-			|
-			(option_dither_sprites ? tinct_DITHER : 0);
-	}
-
-	if (print_active) {
-		tinct_options |= tinct_USE_OS_SPRITE_OP |
-				background_colour << tinct_BACKGROUND_SHIFT;
-	}
-
+	/*	Set up our flagword
+	*/
+	tinct_options |= background_colour << tinct_BACKGROUND_SHIFT;
+	if (print_active) 
+		tinct_options |= tinct_USE_OS_SPRITE_OP;
 	if (repeatx)
 		tinct_options |= tinct_FILL_HORIZONTALLY;
-
 	if (repeaty)
 		tinct_options |= tinct_FILL_VERTICALLY;
 

@@ -105,6 +105,6 @@ bool sprite_redraw(struct content *c, int x, int y,
 {
 	return image_redraw(c->data.sprite.data, x, y, width, height,
 			c->width * 2, c->height * 2, background_colour,
-			false, false, IMAGE_PLOT_OS);
+			false, false, false, IMAGE_PLOT_OS);
 }
 #endif

@@ -43,7 +43,7 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
 	dialog_warning, dialog_config_th_pane, dialog_debug,
 	dialog_folder, dialog_entry, dialog_search, dialog_print,
-	dialog_config_font;
+	dialog_config_font, dialog_config_image;
 
 static int ro_gui_choices_font_size;
 static int ro_gui_choices_font_min_size;
@@ -53,6 +53,9 @@ static int ro_gui_choices_http_proxy_auth;
 static int config_br_icon = -1;
 static const char *ro_gui_choices_lang = 0;
 static const char *ro_gui_choices_alang = 0;
+static int ro_gui_choices_image_edit_type = 0;
+static unsigned int ro_gui_choices_fg_plot_style = 0;
+static unsigned int ro_gui_choices_bg_plot_style = 0;
 
 
 struct toolbar_display {
@@ -75,6 +78,10 @@ static const char *ro_gui_proxy_auth_name[] = {
 	"ProxyNone", "ProxyBasic", "ProxyNTLM"
 };
 
+static const char *ro_gui_image_name[] = {
+	"ImgStyle0", "ImgStyle1", "ImgStyle2", "ImgStyle3"
+};
+
 
 /*	A simple mapping of parent and child
 */
@@ -84,10 +91,12 @@ static struct {
 } persistant_dialog[MAX_PERSISTANT];
 
 static void ro_gui_dialog_config_prepare(void);
+static void ro_gui_dialog_set_image_quality(int icon, unsigned int tinct_options);
 static void ro_gui_dialog_config_set(void);
 static void ro_gui_dialog_click_config(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_br(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_prox(wimp_pointer *pointer);
+static void ro_gui_dialog_click_config_image(wimp_pointer *pointer);
 static void ro_gui_dialog_config_proxy_update(void);
 static void ro_gui_dialog_click_config_th(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer);
@@ -129,6 +138,7 @@ void ro_gui_dialog_init(void)
 	dialog_search = ro_gui_dialog_create("search");
 	dialog_print = ro_gui_dialog_create("print");
 	dialog_config_font = ro_gui_dialog_create("config_font");
+	dialog_config_image = ro_gui_dialog_create("config_img");
 }
 
 
@@ -419,6 +429,8 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 		ro_gui_dialog_click_config_br(pointer);
 	else if (pointer->w == dialog_config_prox)
 		ro_gui_dialog_click_config_prox(pointer);
+	else if (pointer->w == dialog_config_image)
+		ro_gui_dialog_click_config_image(pointer);
 	else if (pointer->w == dialog_config_th)
 		ro_gui_dialog_click_config_th(pointer);
 	else if (pointer->w == dialog_config_th_pane)
@@ -460,6 +472,8 @@ void ro_gui_dialog_open_config(void)
 	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_THEME,
 			false);
 	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_FONT,
+			false);
+	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_IMAGE,
 			false);
 	ro_gui_dialog_open(dialog_config);
 	ro_gui_open_pane(dialog_config, dialog_config_br, 0);
@@ -543,8 +557,29 @@ void ro_gui_dialog_config_prepare(void)
 						"Homerton.Medium");
 	ro_gui_set_icon_selected_state(dialog_config_font,
 			ICON_CONFIG_FONT_USE_UFONT, option_font_ufont);
+			
+	/* image pane */
+	ro_gui_choices_fg_plot_style = option_fg_plot_style;
+	ro_gui_choices_bg_plot_style = option_bg_plot_style;
+	ro_gui_dialog_set_image_quality(ICON_CONFIG_IMG_FG_DISP, option_fg_plot_style);
+	ro_gui_dialog_set_image_quality(ICON_CONFIG_IMG_BG_DISP, option_bg_plot_style);
 }
 
+void ro_gui_dialog_set_image_quality(int icon, unsigned int tinct_options) {
+	int i = 1;
+	if (tinct_options & tinct_USE_OS_SPRITE_OP) {
+		i = 0;
+	} else if (tinct_options & tinct_ERROR_DIFFUSE) {
+		i = 3;
+	} else if (tinct_options & tinct_DITHER) {
+		i = 2;
+	}
+	ro_gui_set_icon_string(dialog_config_image, icon,
+			messages_get(ro_gui_image_name[i]));
+	ro_gui_set_icon_selected_state(dialog_config_image, icon + 3,
+			(tinct_options & tinct_BILINEAR_FILTER));
+	
+}
 
 /**
  * Set the current options to the settings in the choices panes.
@@ -639,6 +674,14 @@ void ro_gui_dialog_config_set(void) {
 			dialog_config_font, ICON_CONFIG_FONT_DEF));
 	option_font_ufont = ro_gui_get_icon_selected_state(
 			dialog_config_font, ICON_CONFIG_FONT_USE_UFONT);
+	
+	/* image pane */
+	if ((option_fg_plot_style != (int)ro_gui_choices_fg_plot_style) ||
+			(option_bg_plot_style != (int)ro_gui_choices_bg_plot_style)) {
+		option_fg_plot_style = ro_gui_choices_fg_plot_style;
+		option_bg_plot_style = ro_gui_choices_bg_plot_style;
+		ro_gui_window_redraw_all();
+	}
 }
 
 
@@ -711,6 +754,12 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 				ro_gui_set_icon_selected_state(dialog_config,
 						ICON_CONFIG_FONT, true);
 			ro_gui_open_pane(dialog_config, dialog_config_font, 0);
+			break;
+		case ICON_CONFIG_IMAGE:
+			if (pointer->buttons == wimp_CLICK_ADJUST)
+				ro_gui_set_icon_selected_state(dialog_config,
+						ICON_CONFIG_IMAGE, true);
+			ro_gui_open_pane(dialog_config, dialog_config_image, 0);
 			break;
 	}
 }
@@ -810,6 +859,45 @@ void ro_gui_dialog_click_config_prox(wimp_pointer *pointer)
 
 
 /**
+ * Handle clicks in the Proxy Choices pane.
+ */
+
+void ro_gui_dialog_click_config_image(wimp_pointer *pointer)
+{
+	switch (pointer->i) {
+		case ICON_CONFIG_IMG_FG_MENU:
+			ro_gui_choices_image_edit_type = 1;
+			ro_gui_menu_prepare_image_quality(ro_gui_choices_fg_plot_style);
+			ro_gui_popup_menu(image_quality_menu, dialog_config_image,
+					pointer->i);
+			break;
+		case ICON_CONFIG_IMG_FG_FILTER:
+			if (ro_gui_get_icon_selected_state(dialog_config_image,
+					ICON_CONFIG_IMG_FG_FILTER)) {
+				ro_gui_choices_fg_plot_style |= tinct_BILINEAR_FILTER;
+			} else {
+				ro_gui_choices_fg_plot_style &= ~tinct_BILINEAR_FILTER;
+			}
+ 			break;
+		case ICON_CONFIG_IMG_BG_MENU:
+			ro_gui_choices_image_edit_type = 2;
+			ro_gui_menu_prepare_image_quality(ro_gui_choices_bg_plot_style);
+			ro_gui_popup_menu(image_quality_menu, dialog_config_image,
+					pointer->i);
+			break;
+		case ICON_CONFIG_IMG_BG_FILTER:
+			if (ro_gui_get_icon_selected_state(dialog_config_image,
+					ICON_CONFIG_IMG_BG_FILTER)) {
+				ro_gui_choices_bg_plot_style |= tinct_BILINEAR_FILTER;
+			} else {
+				ro_gui_choices_bg_plot_style &= ~tinct_BILINEAR_FILTER;
+			}
+ 			break;
+	}
+}
+
+
+/**
  * Handle a selection from the proxy auth method popup menu.
  */
 
@@ -821,6 +909,35 @@ void ro_gui_dialog_proxyauth_menu_selection(int item)
 			messages_get(ro_gui_proxy_auth_name[
 			ro_gui_choices_http_proxy_auth]));
 	ro_gui_dialog_config_proxy_update();
+}
+
+
+/**
+ * Handle a selection from the image quality popup menu.
+ */
+
+void ro_gui_dialog_image_menu_selection(int item)
+{
+	unsigned int tinct_options = 0;
+	if (item == 0) {
+		tinct_options = tinct_USE_OS_SPRITE_OP;
+	} else if (item == 2) {
+		tinct_options = tinct_DITHER;
+	} else if (item == 3) {
+		tinct_options = tinct_ERROR_DIFFUSE;
+	}
+	if (ro_gui_choices_image_edit_type == 1) {
+		ro_gui_choices_fg_plot_style &= tinct_BILINEAR_FILTER;
+		ro_gui_choices_fg_plot_style |= tinct_options;
+		ro_gui_dialog_set_image_quality(ICON_CONFIG_IMG_FG_DISP,
+				ro_gui_choices_fg_plot_style);
+	} else {
+		ro_gui_choices_bg_plot_style &= tinct_BILINEAR_FILTER;
+		ro_gui_choices_bg_plot_style |= tinct_options;
+		ro_gui_dialog_set_image_quality(ICON_CONFIG_IMG_BG_DISP,
+				ro_gui_choices_bg_plot_style);
+	}
+	ro_gui_menu_prepare_image_quality(tinct_options);
 }
 
 
@@ -873,21 +990,21 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
  */
 void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer) {
 	struct toolbar_display *link;
-  	int i = pointer->i;
-  	if (i < 0) return;
+	int i = pointer->i;
+	if (i < 0) return;
 
 	/*	Set the clicked theme as selected
 	*/
 	link = toolbars;
 	while (link) {
-	  	if ((link->icon_number == i) || (link->icon_number == (i - 1))) {
-	  	  	theme_choice = link->descriptor;
-	  		ro_gui_set_icon_selected_state(dialog_config_th_pane,
-	  			link->icon_number, true);
-	  	} else {
-	  		ro_gui_set_icon_selected_state(dialog_config_th_pane,
-	  			link->icon_number, false);
-	  	}
+		if ((link->icon_number == i) || (link->icon_number == (i - 1))) {
+			theme_choice = link->descriptor;
+			ro_gui_set_icon_selected_state(dialog_config_th_pane,
+				link->icon_number, true);
+		} else {
+			ro_gui_set_icon_selected_state(dialog_config_th_pane,
+				link->icon_number, false);
+		}
 		link = link->next;
 	}
 }
@@ -1333,8 +1450,8 @@ void ro_gui_dialog_load_themes(void) {
 	*/
 	link = toolbars;
 	while (link) {
-	  	ro_gui_set_icon_selected_state(dialog_config_th_pane,
-	  			link->icon_number, (link->descriptor == theme_choice));
+		ro_gui_set_icon_selected_state(dialog_config_th_pane,
+				link->icon_number, (link->descriptor == theme_choice));
 		link = link->next;
 	}
 	xwimp_force_redraw(dialog_config_th_pane, 0, -16384, 16384, 16384);

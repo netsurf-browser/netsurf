@@ -19,6 +19,6 @@ typedef enum {
 bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 		int req_height, int width, int height,
 		unsigned long background_colour,
-		bool repeatx, bool repeaty, image_type type);
+		bool repeatx, bool repeaty, bool background, image_type type);
 
 #endif

@@ -33,7 +33,8 @@ extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 extern wimp_w history_window;
 extern wimp_w hotlist_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu,
-		*proxyauth_menu, *languages_menu, *toolbar_menu;
+		*proxyauth_menu, *languages_menu, *toolbar_menu,
+		*image_quality_menu;
 extern int iconbar_menu_height;
 extern struct form_control *current_gadget;
 extern bool gui_reformat_pending;
@@ -85,8 +86,6 @@ struct gui_window {
 	/** Options. */
 	struct {
 		float scale;		/**< Scale, 1.0 = 100%. */
-		bool dither_sprites;	/**< Images should be dithered. */
-		bool filter_sprites;	/**< Images should be smoothed. */
 		bool animate_images;	/**< Animations should run. */
 		bool background_images;	/**< Display background images. */
 		bool background_blending;	/**< Perform background blending on text. */
@@ -118,6 +117,7 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
 void ro_gui_menu_selection(wimp_selection* selection);
 void ro_gui_menu_warning(wimp_message_menu_warning *warning);
 void ro_gui_prepare_navigate(struct gui_window *gui);
+void ro_gui_menu_prepare_image_quality(unsigned int tinct_options);
 void ro_gui_menu_prepare_scale(void);
 void ro_gui_menu_prepare_pageinfo(void);
 void ro_gui_display_font_menu(const char *tick, wimp_w w, wimp_i i);
@@ -136,6 +136,7 @@ void ro_gui_dialog_close(wimp_w close);
 void ro_gui_menu_prepare_hotlist(void);
 void ro_gui_dialog_open_config(void);
 void ro_gui_dialog_proxyauth_menu_selection(int item);
+void ro_gui_dialog_image_menu_selection(int item);
 void ro_gui_dialog_languages_menu_selection(char *lang);
 void ro_gui_dialog_font_menu_selection(char *name);
 
@@ -188,6 +189,7 @@ int window_y_units(int y, wimp_window_state *state);
 bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message);
 void ro_gui_window_process_reformats(void);
 void ro_gui_window_default_options(struct browser_window *bw);
+void ro_gui_window_redraw_all(void);
 
 /* in history.c */
 void ro_gui_history_init(void);
@@ -294,6 +296,7 @@ void ro_plot_set_scale(float scale);
 #define ICON_CONFIG_PROXY 4
 #define ICON_CONFIG_THEME 5
 #define ICON_CONFIG_FONT 7
+#define ICON_CONFIG_IMAGE 8
 
 #define ICON_CONFIG_BR_LANG 1
 #define ICON_CONFIG_BR_LANG_PICK 2
@@ -315,6 +318,15 @@ void ro_plot_set_scale(float scale);
 
 #define ICON_CONFIG_TH_GET 0
 #define ICON_CONFIG_TH_MANAGE 1
+
+#define ICON_CONFIG_IMG_FG_DISP 3
+#define ICON_CONFIG_IMG_FG_MENU 4
+#define ICON_CONFIG_IMG_FG_VF 5
+#define ICON_CONFIG_IMG_FG_FILTER 6
+#define ICON_CONFIG_IMG_BG_DISP 10
+#define ICON_CONFIG_IMG_BG_MENU 11
+#define ICON_CONFIG_IMG_BG_VF 12
+#define ICON_CONFIG_IMG_BG_FILTER 13
 
 /* Note: The display icon numbers for font names *must* be ONE less
  *       than the icon number of the corresponding pick icon.

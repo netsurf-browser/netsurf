@@ -26,7 +26,7 @@
 
 #define SIZE 10
 #define WIDTH 200
-#define HEIGHT 150
+#define HEIGHT 152
 #define MARGIN 32
 #define FULL_WIDTH (WIDTH + MARGIN + MARGIN)
 #define FULL_HEIGHT (HEIGHT + MARGIN + MARGIN)
@@ -406,7 +406,7 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 		/* 	Because we're supporting people with OS3.1 we need to check if the
 			sprite we have is a legacy 256 colour one
 		*/
-		if (header->mode == (os_mode)0x301680b5) {
+		if (header->mode == (os_mode)tinct_SPRITE_MODE) {
 
 			/*	We plot with no mask and no scaling as any EIG factors are
 				handled internally by Tinct
@@ -415,7 +415,7 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 				(char *)(header),
 				x0 + he->x * FULL_WIDTH + MARGIN,
 				y0 - he->y * FULL_HEIGHT - FULL_HEIGHT + MARGIN,
-				(option_filter_sprites?tinct_BILINEAR_FILTER:0) | (option_dither_sprites?tinct_DITHER:0));
+				tinct_ERROR_DIFFUSE);
 		} else {
 		        unsigned int size;
 			os_factors factors;
@@ -424,7 +424,6 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 					area, (osspriteop_id)header,
 					colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 					0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
-			LOG(("Table size of %i", size));
 			table = xcalloc(size, 1);
 			xcolourtrans_generate_table_for_sprite(
 					area, (osspriteop_id)header,

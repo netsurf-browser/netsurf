@@ -78,6 +78,13 @@ ProxyNone:Keine
 ProxyBasic:Basic
 ProxyNTLM:NTLM
 
+# Image redraw style
+Display:Display
+ImgStyle0:Use OS
+ImgStyle1:Direct to screen
+ImgStyle2:Dithered
+ImgStyle3:Error diffused
+
 # Hotlist menus
 Hotlist:Hotlist
 New:Neu

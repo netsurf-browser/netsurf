@@ -15,15 +15,15 @@
 #define _NETSURF_RISCOS_OPTIONS_H_
 
 #include "netsurf/desktop/options.h"
+#include "netsurf/riscos/tinct.h"
 
 extern bool option_use_mouse_gestures;
 extern bool option_allow_text_selection;
 extern char *option_theme;
 extern char *option_language;
-extern bool option_dither_sprites;
-extern bool option_filter_sprites;
+extern int option_fg_plot_style;	/* tinct flagword */
+extern int option_bg_plot_style;	/* tinct flagword */
 extern bool option_thumbnail_32bpp;
-extern int option_thumbnail_oversampling;
 extern bool option_history_tooltip;
 extern int option_scale;
 extern int option_toolbar_status_width;
@@ -78,10 +78,9 @@ bool option_use_mouse_gestures = false;\
 bool option_allow_text_selection = true;\
 char *option_theme = 0;\
 char *option_language = 0;\
-bool option_dither_sprites = true;\
-bool option_filter_sprites = false;\
+int option_fg_plot_style = tinct_ERROR_DIFFUSE;\
+int option_bg_plot_style = tinct_DITHER;\
 bool option_thumbnail_32bpp = true;\
-int option_thumbnail_oversampling = 0;\
 bool option_history_tooltip = true; \
 int option_scale = 100; \
 int option_toolbar_status_width = 5000; \
@@ -136,10 +135,9 @@ bool option_font_ufont = false;
 { "allow_text_selection",   OPTION_BOOL,    &option_allow_text_selection },\
 { "theme",                  OPTION_STRING,  &option_theme },\
 { "language",               OPTION_STRING,  &option_language },\
-{ "dither_sprites",         OPTION_BOOL,    &option_dither_sprites },\
-{ "filter_sprites",         OPTION_BOOL,    &option_filter_sprites },\
+{ "plot_fg_quality",        OPTION_INTEGER, &option_fg_plot_style },\
+{ "plot_bg_quality",        OPTION_INTEGER, &option_bg_plot_style },\
 { "thumbnail_32bpp",        OPTION_BOOL,    &option_thumbnail_32bpp },\
-{ "thumbnail_oversampling", OPTION_INTEGER, &option_thumbnail_oversampling },\
 { "history_tooltip",        OPTION_BOOL,    &option_history_tooltip }, \
 { "scale",                  OPTION_INTEGER, &option_scale }, \
 { "toolbar_show_status",    OPTION_BOOL,    &option_toolbar_show_status }, \

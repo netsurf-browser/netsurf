@@ -25,6 +25,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
@@ -183,14 +184,12 @@ static wimp_MENU(5) navigate_menu = {
 
 /*	Image submenu
 */
-static wimp_MENU(5) image_menu = {
+static wimp_MENU(3) image_menu = {
   { "Images" }, 7,2,7,0, 300, 44, 0,
   {
     { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "ForeImg" } },
     { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS,		      { "BackImg" } },
-    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS,		      { "AnimImg" } },
-    { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS,		      { "DitherImg" } },
-    { wimp_MENU_LAST,	  wimp_NO_SUB_MENU, DEFAULT_FLAGS,		      { "FilterImg" } }
+    { wimp_MENU_LAST,     wimp_NO_SUB_MENU, DEFAULT_FLAGS,		      { "AnimImg" } }
   }
 };
 
@@ -402,6 +401,20 @@ static wimp_MENU(3) proxy_menu = {
 wimp_menu *proxyauth_menu = (wimp_menu *) &proxy_menu;
 
 
+/*	Image display quality popup menu (used in image Choices dialog)
+*/
+static wimp_MENU(4) imageq_menu = {
+  { "Display" }, 7,2,7,0, 200, 44, 0,
+  {
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ImgStyle0" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ImgStyle1" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ImgStyle2" } },
+    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ImgStyle3" } }
+  }
+};
+wimp_menu *image_quality_menu = (wimp_menu *) &imageq_menu;
+
+
 /*	Toolbar icon submenus.
 	The index of the name must be identical to the toolbar icon number.
 */
@@ -530,6 +543,8 @@ void ro_gui_menus_init(void)
 	translate_menu(toolbar_hotlist_menu);
 	
 	translate_menu(proxyauth_menu);
+
+	translate_menu(image_quality_menu);
 
 	build_languages_menu();
 
@@ -991,14 +1006,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 								!current_gui->option.background_images;
 						if (selection->items[2] == 2) current_gui->option.animate_images =
 								!current_gui->option.animate_images;
-						if (selection->items[2] == 3) current_gui->option.dither_sprites =
-								!current_gui->option.dither_sprites;
-						if (selection->items[2] == 4) current_gui->option.filter_sprites =
-								!current_gui->option.filter_sprites;
-						if (selection->items[2] >= 1) {
-							ro_gui_menu_prepare_images();
-							gui_window_redraw_window(current_gui);
-						}
+						ro_gui_menu_prepare_images();
+						gui_window_redraw_window(current_gui);
 						break;
 					case 2: /* Toolbars -> */
 						switch (selection->items[2]) {
@@ -1118,7 +1127,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 
 	} else if (current_menu == proxyauth_menu) {
 		ro_gui_dialog_proxyauth_menu_selection(selection->items[0]);
-
+	} else if (current_menu == image_quality_menu) {
+		ro_gui_dialog_image_menu_selection(selection->items[0]);
 	} else if (current_menu == languages_menu) {
 		ro_gui_dialog_languages_menu_selection(languages_menu->entries[selection->items[0]].data.indirected_text.text);
 	} else if (current_menu == font_menu) {
@@ -1591,10 +1601,6 @@ static void ro_gui_menu_prepare_images(void) {
 	if (current_gui->option.background_images) browser_image_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
 	browser_image_menu->entries[2].menu_flags &= ~wimp_MENU_TICKED;
 	if (current_gui->option.animate_images) browser_image_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
-	browser_image_menu->entries[3].menu_flags &= ~wimp_MENU_TICKED;
-	if (current_gui->option.dither_sprites) browser_image_menu->entries[3].menu_flags |= wimp_MENU_TICKED;
-	browser_image_menu->entries[4].menu_flags &= ~wimp_MENU_TICKED;
-	if (current_gui->option.filter_sprites) browser_image_menu->entries[4].menu_flags |= wimp_MENU_TICKED;
 }
 
 
@@ -1851,6 +1857,21 @@ void ro_gui_menu_prepare_view(void) {
 		view_menu.entries[0].icon_flags |= wimp_ICON_SHADED;
 	}
 }
+
+void ro_gui_menu_prepare_image_quality(unsigned int tinct_options) {
+  	for (int i = 0; i < 4; i++)
+  		image_quality_menu->entries[i].menu_flags &= ~wimp_MENU_TICKED;
+  	if (tinct_options & tinct_USE_OS_SPRITE_OP) {
+  		image_quality_menu->entries[0].menu_flags |= wimp_MENU_TICKED;
+  	} else if (tinct_options & tinct_ERROR_DIFFUSE) {
+  		image_quality_menu->entries[3].menu_flags |= wimp_MENU_TICKED;
+  	} else if (tinct_options & tinct_DITHER) {
+  		image_quality_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
+  	} else {
+  		image_quality_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
+  	}
+}
+
 
 void ro_gui_menu_prepare_pageinfo(void)
 {

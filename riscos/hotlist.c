@@ -1285,7 +1285,8 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 			*/
 			if (first && (level == 0)) {
 				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
-						sprite[HOTLIST_BLINE], x0 + 8, y0 - HOTLIST_LINE_HEIGHT, 0);
+						sprite[HOTLIST_BLINE], x0 + 8, y0 - HOTLIST_LINE_HEIGHT,
+						tinct_BILINEAR_FILTER);
 				y0 -= HOTLIST_LINE_HEIGHT;
 				height -= HOTLIST_LINE_HEIGHT;
 			}
@@ -1294,7 +1295,8 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 			*/
 			while (height > 0) {
 				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
-						sprite[HOTLIST_LINE], x0 + 8, y0 - HOTLIST_LINE_HEIGHT, 0);
+						sprite[HOTLIST_LINE], x0 + 8, y0 - HOTLIST_LINE_HEIGHT,
+						tinct_BILINEAR_FILTER);
 				y0 -= HOTLIST_LINE_HEIGHT;
 				height -= HOTLIST_LINE_HEIGHT;
 			}
@@ -1304,7 +1306,8 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 			*/
 			if (!first || (level != 0)) {
 				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
-						sprite[HOTLIST_TLINE], x0 + 8, y0 - 22, 0);
+						sprite[HOTLIST_TLINE], x0 + 8, y0 - 22,
+						tinct_BILINEAR_FILTER);
 				height -= HOTLIST_LINE_HEIGHT;
 				y0 -= HOTLIST_LINE_HEIGHT;
 			}
@@ -1314,14 +1317,17 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 		*/
 		if (entry->children == 0) {
 			_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
-					sprite[HOTLIST_ENTRY], x0, box_y0 - 23, 0);
+					sprite[HOTLIST_ENTRY], x0, box_y0 - 23,
+					tinct_BILINEAR_FILTER);
 		} else {
 			if (entry->expanded) {
 				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
-						sprite[HOTLIST_COLLAPSE], x0, box_y0 - 31, 0);
+						sprite[HOTLIST_COLLAPSE], x0, box_y0 - 31,
+						tinct_BILINEAR_FILTER);
 			} else {
 				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
-						sprite[HOTLIST_EXPAND], x0, box_y0 - 31, 0);
+						sprite[HOTLIST_EXPAND], x0, box_y0 - 31,
+						tinct_BILINEAR_FILTER);
 			}
 		}
 
@@ -1430,13 +1436,16 @@ int ro_gui_hotlist_redraw_item(struct hotlist_entry *entry, int level, int x0, i
 			while (line_height > 0) {
 				if (line_height == HOTLIST_LINE_HEIGHT) {
 					_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
-							sprite[HOTLIST_TLINE], x0 + 16, line_y0 - 22, 0);
+							sprite[HOTLIST_TLINE], x0 + 16, line_y0 - 22,
+							tinct_BILINEAR_FILTER);
 				} else {
 					_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
-							sprite[HOTLIST_LINE], x0 + 16, line_y0 - HOTLIST_LINE_HEIGHT, 0);
+							sprite[HOTLIST_LINE], x0 + 16, line_y0 - HOTLIST_LINE_HEIGHT,
+							tinct_BILINEAR_FILTER);
 				}
 				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
-						sprite[HOTLIST_ENTRY], x0 + 8, line_y0 - 23, 0);
+						sprite[HOTLIST_ENTRY], x0 + 8, line_y0 - 23,
+						tinct_BILINEAR_FILTER);
 				line_height -= HOTLIST_LINE_HEIGHT;
 				line_y0 -= HOTLIST_LINE_HEIGHT;
 			}

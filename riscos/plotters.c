@@ -358,7 +358,7 @@ bool ro_plot_bitmap(int x, int y, int width, int height,
 			bitmap->width,
 			bitmap->height,
 			bg,
-			false, false,
+			false, false, false,
 			bitmap->opaque ? IMAGE_PLOT_TINCT_OPAQUE :
 			IMAGE_PLOT_TINCT_ALPHA);
 }
@@ -375,7 +375,7 @@ bool ro_plot_bitmap_tile(int x, int y, int width, int height,
 			bitmap->width,
 			bitmap->height,
 			bg,
-			repeat_x, repeat_y,
+			repeat_x, repeat_y, true,
 			bitmap->opaque ? IMAGE_PLOT_TINCT_OPAQUE :
 			IMAGE_PLOT_TINCT_ALPHA);
 }

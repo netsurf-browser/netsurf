@@ -1023,7 +1023,7 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 					box->background->width * 2,
 					box->background->height * 2,
 					background_colour,
-					repeat_x, repeat_y,
+					repeat_x, repeat_y, true,
 					((box->background->bitmap->opaque) ?
 	                		IMAGE_PLOT_TINCT_OPAQUE : IMAGE_PLOT_TINCT_ALPHA));
                    break;
@@ -1036,7 +1036,7 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 					box->background->width * 2,
 					box->background->height * 2,
 					background_colour,
-					repeat_x, repeat_y,
+					repeat_x, repeat_y, true,
 					((box->background->bitmap->opaque) ?
 	                		IMAGE_PLOT_TINCT_OPAQUE : IMAGE_PLOT_TINCT_ALPHA));
 			break;
@@ -1048,7 +1048,7 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 					box->background->width * 2,
 					box->background->height * 2,
 					background_colour,
-					repeat_x, repeat_y,
+					repeat_x, repeat_y, true,
 					IMAGE_PLOT_TINCT_OPAQUE);
 			break;
 #endif
@@ -1059,7 +1059,7 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 					box->background->width * 2,
 					box->background->height * 2,
 					background_colour,
-					repeat_x, repeat_y,
+					repeat_x, repeat_y, true,
 					((box->background->bitmap->opaque) ?
 	                		IMAGE_PLOT_TINCT_OPAQUE : IMAGE_PLOT_TINCT_ALPHA));
 			break;

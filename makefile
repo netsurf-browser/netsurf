@@ -162,7 +162,7 @@ utils/translit.c: transtab
 # available), remove */*.[ch] from the line below.
 # Under RISC OS, you may require *Set UnixFS$sfix "", if perl gives
 # "No such file or directory" errors.
-depend: */*.[ch]
+depend: 
 	@echo "--> modified files $?"
 	@echo "--> updating dependencies"
 	@-mkdir -p $(OBJDIR_RISCOS) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)

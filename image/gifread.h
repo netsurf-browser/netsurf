@@ -64,7 +64,7 @@ typedef struct gif_animation {
 	bool global_colours;			/**< whether the GIF has a global colour table */
 	unsigned int *global_colour_table;	/**< global colour table */
 	unsigned int *local_colour_table;	/**< local colour table */
-	bool dirty_frame;			/**< whether the curent frame needs erasing on animation */
+	unsigned int dirty_frame;		/**< the current dirty frame, or -1 for none */
 	struct bitmap *frame_image;		/**< currently decoded image */
 } gif_animation;
 
