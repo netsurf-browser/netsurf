@@ -65,7 +65,7 @@ typedef struct {
 	size_t numFonts;
 } drawbuf_t;
 
-static byte *drawbuf_claim(size_t size, drawbuf_type_e type);
+static void *drawbuf_claim(size_t size, drawbuf_type_e type);
 static void drawbuf_free(void);
 static bool drawbuf_add_font(const char *fontNameP, byte *fontIndex);
 static bool drawbuf_save_file(const char *drawfilename);
@@ -180,7 +180,7 @@ draw_save_error:
  * \param type defines which Draw buffer needs its size to be ensured
  * \return non NULL when buffer size got correctly claimed, NULL on failure
  */
-static byte *drawbuf_claim(size_t size, drawbuf_type_e type)
+static void *drawbuf_claim(size_t size, drawbuf_type_e type)
 {
 	drawbuf_part_t *drawBufPartP;
 
@@ -289,7 +289,7 @@ static bool drawbuf_add_font(const char *fontNameP, byte *fontIndex)
 static bool drawbuf_save_file(const char *drawfilename)
 {
 	size_t index;
-	os_fw *handle = NULL;
+	os_fw handle = 0;
 	os_error *error = NULL;
 
 	/* create font table (if needed). */
@@ -307,7 +307,7 @@ static bool drawbuf_save_file(const char *drawfilename)
 			size_t len = 1 + strlen(fontNameP) + 1;
 			byte *bufP;
 
-			if ((bufP = drawbuf_claim(len, DrawBuf_eFontTable)) == NULL)
+			if ((bufP = (byte *)drawbuf_claim(len, DrawBuf_eFontTable)) == NULL)
 				goto file_save_error;
 			*bufP++ = (byte)index + 1;
 			memcpy(bufP, fontNameP, len + 1);
@@ -317,7 +317,7 @@ static bool drawbuf_save_file(const char *drawfilename)
 			size_t wordpad = 4 - (oDrawBuf.fontTable.currentSize & 3);
 			byte *bufP;
 
-			if ((bufP = drawbuf_claim(wordpad, DrawBuf_eFontTable)) == NULL)
+			if ((bufP = (byte *)drawbuf_claim(wordpad, DrawBuf_eFontTable)) == NULL)
 				goto file_save_error;
 			memset(bufP, '\0', wordpad);
 		}
@@ -346,6 +346,7 @@ static bool drawbuf_save_file(const char *drawfilename)
 
 	if ((error = xosfind_closew(handle)) != NULL)
 		goto file_save_error;
+	handle = 0;
 
 	if ((error = xosfile_set_type(drawfilename, osfile_TYPE_DRAW)) != NULL)
 		goto file_save_error;
@@ -356,7 +357,7 @@ file_save_error:
 	LOG(("drawbuf_save_file() error: 0x%x: %s",
 			error->errnum, error->errmess));
 	warn_user("SaveError", error->errmess);
-	if (handle != NULL)
+	if (handle != 0)
 		(void)xosfind_closew(handle);
 	return false;
 }
