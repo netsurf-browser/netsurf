@@ -1,6 +1,9 @@
 /**
- * $Id: css.h,v 1.6 2002/06/26 23:27:30 bursa Exp $
+ * $Id: css.h,v 1.7 2002/08/11 23:02:25 bursa Exp $
  */
+
+#ifndef _NETSURF_RENDER_CSS_H_
+#define _NETSURF_RENDER_CSS_H_
 
 #include "css_enum.h"
 
@@ -32,6 +35,9 @@ struct css_style {
 			float percent;
 		} value;
 	} font_size;
+
+	css_font_weight font_weight;
+	css_font_style font_style;
 
 	struct {
 		enum { CSS_HEIGHT_INHERIT,
@@ -91,3 +97,4 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet);
 void css_cascade(struct css_style * const style, const struct css_style * const apply);
 void css_parse_property_list(struct css_style * style, char * str);
 
+#endif

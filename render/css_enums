@@ -7,9 +7,9 @@ css_border_style inherit none dashed dotted double groove inset outset ridge sol
 css_clear inherit none both left right
 css_display inherit inline block list-item run-in compact marker table inline-table table-row-group table-header-group table-footer-group table-row table-column-group table-column table-cell table-caption none
 css_float inherit none left right
-css_font_style normal italic oblique
+css_font_style inherit normal italic oblique
 css_font_variant normal smallcaps
-css_font_weight normal bold bolder lighter 100 200 300 400 500 600 700 800 900
+css_font_weight inherit normal bold bolder lighter 100 200 300 400 500 600 700 800 900
 css_letter_spacing normal length
 css_list_style_position outside inside
 css_list_style_type disc circle square decimal lower_alpha lower_roman upper_alpha upper_roman none

@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.8 2002/06/28 20:14:04 bursa Exp $
+ * $Id: css.c,v 1.9 2002/08/11 23:02:25 bursa Exp $
  */
 
 #include <string.h>
@@ -56,6 +56,8 @@ const struct css_style css_base_style = {
 	CSS_DISPLAY_BLOCK,
 	CSS_FLOAT_NONE,
 	{ CSS_FONT_SIZE_LENGTH, { { 12, CSS_UNIT_PT } } },
+	CSS_FONT_WEIGHT_NORMAL,
+	CSS_FONT_STYLE_NORMAL,
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_ABSOLUTE, { 1.2 } },
 	CSS_TEXT_ALIGN_LEFT,
@@ -67,6 +69,8 @@ const struct css_style css_empty_style = {
 	CSS_DISPLAY_INHERIT,
 	CSS_FLOAT_INHERIT,
 	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_EM } } },
+	CSS_FONT_WEIGHT_INHERIT,
+	CSS_FONT_STYLE_INHERIT,
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.2 } },
 	CSS_TEXT_ALIGN_INHERIT,
@@ -78,6 +82,8 @@ const struct css_style css_blank_style = {
 	CSS_DISPLAY_INLINE,
 	CSS_FLOAT_NONE,
 	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_EM } } },
+	CSS_FONT_WEIGHT_INHERIT,
+	CSS_FONT_STYLE_INHERIT,
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.2 } },
 	CSS_TEXT_ALIGN_INHERIT,
@@ -113,6 +119,16 @@ static void parse_float(struct css_style * const style, const char * const value
 	style->float_ = css_float_parse(value);
 }
 
+static void parse_font_weight(struct css_style * const style, const char * const value)
+{
+  style->font_weight = css_font_weight_parse(value);
+}
+
+static void parse_font_style(struct css_style * const style, const char * const value)
+{
+  style->font_style = css_font_style_parse(value);
+}
+
 #define SIZE_FACTOR 1.2
 
 static struct font_size {
@@ -139,17 +155,18 @@ static void parse_font_size(struct css_style * const style, const char * const v
 			return;
 		}
 	}
-	if (strcmp(value, "larger") == 0)
-		style->font_size.size = CSS_FONT_SIZE_PERCENT,
+	if (strcmp(value, "larger") == 0) {
+		style->font_size.size = CSS_FONT_SIZE_PERCENT;
 		style->font_size.value.percent = SIZE_FACTOR * 100;
-	else if (strcmp(value, "smaller") == 0)
-		style->font_size.size = CSS_FONT_SIZE_PERCENT,
+	} else if (strcmp(value, "smaller") == 0) {
+		style->font_size.size = CSS_FONT_SIZE_PERCENT;
 		style->font_size.value.percent = 1 / SIZE_FACTOR * 100;
-	else if (strrchr(value, '%'))
-		style->font_size.size = CSS_FONT_SIZE_PERCENT,
+	} else if (strrchr(value, '%')) {
+		style->font_size.size = CSS_FONT_SIZE_PERCENT;
 		style->font_size.value.percent = atof(value);
-	else if (parse_length(&style->font_size.value.length, value) == 0)
+	} else if (parse_length(&style->font_size.value.length, value) == 0) {
 		style->font_size.size = CSS_FONT_SIZE_LENGTH;
+	}
 }
 
 static void parse_height(struct css_style * const style, const char * const value)
@@ -162,14 +179,15 @@ static void parse_height(struct css_style * const style, const char * const valu
 
 static void parse_line_height(struct css_style * const style, const char * const value)
 {
-	if (strcmp(value, "normal") == 0)
-		style->line_height.size = CSS_LINE_HEIGHT_ABSOLUTE,
+	if (strcmp(value, "normal") == 0) {
+		style->line_height.size = CSS_LINE_HEIGHT_ABSOLUTE;
 		style->line_height.value.absolute = 1.0;
-	else if (strrchr(value, '%'))
-		style->line_height.size = CSS_LINE_HEIGHT_PERCENT,
+	} else if (strrchr(value, '%')) {
+		style->line_height.size = CSS_LINE_HEIGHT_PERCENT;
 		style->line_height.value.percent = atof(value);
-	else if (parse_length(&style->line_height.value.length, value) == 0)
+	} else if (parse_length(&style->line_height.value.length, value) == 0) {
 		style->line_height.size = CSS_LINE_HEIGHT_LENGTH;
+	}
 }
 
 static void parse_text_align(struct css_style * const style, const char * const value)
@@ -181,10 +199,10 @@ static void parse_width(struct css_style * const style, const char * const value
 {
 	if (strcmp(value, "auto") == 0)
 		style->width.width = CSS_WIDTH_AUTO;
-	else if (strrchr(value, '%'))
-		style->width.width = CSS_WIDTH_PERCENT,
+	else if (strrchr(value, '%')) {
+		style->width.width = CSS_WIDTH_PERCENT;
 		style->width.value.percent = atof(value);
-	else if (parse_length(&style->width.value.length, value) == 0)
+	} else if (parse_length(&style->width.value.length, value) == 0)
 		style->width.width = CSS_WIDTH_LENGTH;
 }
 
@@ -195,7 +213,9 @@ static struct property {
 	{ "clear", parse_clear },
 	{ "display", parse_display },
 	{ "float", parse_float },
+	{ "font-weight", parse_font_weight },
 	{ "font-size", parse_font_size },
+	{ "font-style", parse_font_style },
 	{ "height", parse_height },
 	{ "line-height", parse_line_height },
 	{ "text-align", parse_text_align },
@@ -214,9 +234,14 @@ void css_parse_property_list(struct css_style * style, char * str)
 		char * value;
 		unsigned int i;
 
-		if ((end = strchr(str, ';')) != 0) *end = 0, end++;
-		if ((value = strchr(str, ':')) == 0) continue;
-		*value = 0; value++;
+		if ((end = strchr(str, ';')) != 0) {
+			*end = 0;
+			end++;
+		}
+		if ((value = strchr(str, ':')) == 0)
+			continue;
+		*value = 0;
+		value++;
 		prop = strip(str);
 		value = strip(value);
 		/*fprintf(stderr, "css_parse: '%s' => '%s'\n", prop, value);*/
@@ -550,31 +575,55 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 void css_cascade(struct css_style * const style, const struct css_style * const apply)
 {
 	float f;
-	if (apply->clear != CSS_CLEAR_INHERIT) style->clear = apply->clear;
-	if (apply->display != CSS_DISPLAY_INHERIT) style->display = apply->display;
-	if (apply->float_ != CSS_FLOAT_INHERIT) style->float_ = apply->float_;
-	if (apply->height.height != CSS_HEIGHT_INHERIT) style->height = apply->height;
-	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT) style->text_align = apply->text_align;
-	if (apply->width.width != CSS_WIDTH_INHERIT) style->width = apply->width;
+
+	if (apply->clear != CSS_CLEAR_INHERIT)
+		style->clear = apply->clear;
+	if (apply->display != CSS_DISPLAY_INHERIT)
+		style->display = apply->display;
+	if (apply->float_ != CSS_FLOAT_INHERIT)
+		style->float_ = apply->float_;
+	if (apply->height.height != CSS_HEIGHT_INHERIT)
+		style->height = apply->height;
+	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
+		style->text_align = apply->text_align;
+	if (apply->width.width != CSS_WIDTH_INHERIT)
+		style->width = apply->width;
+	if (apply->font_weight != CSS_FONT_WEIGHT_INHERIT)
+		style->font_weight = apply->font_weight;
+	if (apply->font_style != CSS_FONT_STYLE_INHERIT)
+		style->font_style = apply->font_style;
 
 	/* font-size */
 	f = apply->font_size.value.percent / 100;
 	switch (apply->font_size.size) {
-		case CSS_FONT_SIZE_ABSOLUTE: style->font_size = apply->font_size; break;
+		case CSS_FONT_SIZE_ABSOLUTE:
+			style->font_size = apply->font_size;
+			break;
 		case CSS_FONT_SIZE_LENGTH:
 			switch (apply->font_size.value.length.unit) {
-				case CSS_UNIT_EM: f = apply->font_size.value.length.value; break;
-				case CSS_UNIT_EX: f = apply->font_size.value.length.value * 0.6 /*?*/; break;
-				default: style->font_size = apply->font_size;
+				case CSS_UNIT_EM:
+					f = apply->font_size.value.length.value;
+					break;
+				case CSS_UNIT_EX:
+					f = apply->font_size.value.length.value * 0.6 /*?*/;
+					break;
+				default:
+					style->font_size = apply->font_size;
 			}
 			if ((apply->font_size.value.length.unit != CSS_UNIT_EM) &&
-			    (apply->font_size.value.length.unit != CSS_UNIT_EX)) break;
+			    (apply->font_size.value.length.unit != CSS_UNIT_EX))
+				break;
 			/* drop through if EM or EX */
 		case CSS_FONT_SIZE_PERCENT:
 			switch (style->font_size.size) {
-				case CSS_FONT_SIZE_ABSOLUTE: style->font_size.value.absolute *= f; break;
-				case CSS_FONT_SIZE_LENGTH: style->font_size.value.length.value *= f; break;
-				default: die("attempting percentage of unknown font-size");
+				case CSS_FONT_SIZE_ABSOLUTE:
+					style->font_size.value.absolute *= f;
+					break;
+				case CSS_FONT_SIZE_LENGTH:
+					style->font_size.value.length.value *= f;
+					break;
+				default:
+					die("attempting percentage of unknown font-size");
 			}
 			break;
 		case CSS_FONT_SIZE_INHERIT:
