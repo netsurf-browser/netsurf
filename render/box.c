@@ -815,6 +815,25 @@ struct css_style * box_get_style(struct content *c,
 		}
 	}
 
+	if (strcmp((const char *) n->name, "table") == 0) {
+		if ((s = (char *) xmlGetProp(n,
+				(const xmlChar *) "cellspacing"))) {
+			if (!strrchr(s, '%')) {		/* % not implemented */
+				int value = atoi(s);
+				if (0 < value) {
+					style->border_spacing.border_spacing =
+						CSS_BORDER_SPACING_LENGTH;
+					style->border_spacing.horz.unit =
+					style->border_spacing.vert.unit =
+							CSS_UNIT_PX;
+					style->border_spacing.vert.value =
+					style->border_spacing.vert.value =
+							value;
+				}
+			}
+		}
+	}
+
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style")) != NULL) {
 		struct css_style astyle;
 		memcpy(&astyle, &css_empty_style, sizeof(struct css_style));
@@ -2698,6 +2717,8 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 	struct box *cell_box;
 	struct box *object_box;
 	struct css_style *row_style;
+	struct css_style *cell_style;
+	struct css_style *object_style;
 	struct box_result r;
 	struct box_multi_length *row_height = 0, *col_width = 0;
 	xmlNode *c;
@@ -2766,9 +2787,10 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 	for (row = 0; c && row != rows; row++) {
 		row_style = malloc(sizeof (struct css_style));
 		if (!row_style) {
+			box_free(box);
 			free(row_height);
 			free(col_width);
-			return (struct box_result) {box, false, true};
+			return (struct box_result) {0, false, true};
 		}
 		memcpy(row_style, style, sizeof (struct css_style));
 		object_height = 1000;  /** \todo  get available height */
@@ -2805,10 +2827,20 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 			if (col_width && col_width[col].type == LENGTH_PX)
 				object_width = col_width[col].value;
 
-			cell_box = box_create(style, 0, 0, 0,
+			cell_style = malloc(sizeof (struct css_style));
+			if (!cell_style) {
+				box_free(box);
+				free(row_height);
+				free(col_width);
+				return (struct box_result) {0, false, true};
+			}
+			memcpy(cell_style, style, sizeof (struct css_style));
+			css_cascade(cell_style, &css_blank_style);
+			cell_style->overflow = CSS_OVERFLOW_AUTO;
+
+			cell_box = box_create(cell_style, 0, 0, 0,
 					status->content->data.html.box_pool);
 			cell_box->type = BOX_TABLE_CELL;
-			cell_box->style_clone = 1;
 			box_add_child(row_box, cell_box);
 
 			if (strcmp((const char *) c->name, "frameset") == 0) {
@@ -2828,10 +2860,25 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 				continue;
 			}
 
-			object_box = box_create(style, 0, 0, 0,
+			object_style = malloc(sizeof (struct css_style));
+			if (!object_style) {
+				box_free(box);
+				free(row_height);
+				free(col_width);
+				return (struct box_result) {0, false, true};
+			}
+			memcpy(object_style, style, sizeof (struct css_style));
+			if (col_width && col_width[col].type == LENGTH_PX) {
+				object_style->width.width = CSS_WIDTH_LENGTH;
+				object_style->width.value.length.unit =
+						CSS_UNIT_PX;
+  				object_style->width.value.length.value =
+  						object_width;
+  			}
+
+			object_box = box_create(object_style, 0, 0, 0,
 					status->content->data.html.box_pool);
 			object_box->type = BOX_BLOCK;
-			object_box->style_clone = 1;
 			box_add_child(cell_box, object_box);
 
 			if ((s = (char *) xmlGetProp(c, (const xmlChar *) "src")) == NULL) {

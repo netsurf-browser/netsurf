@@ -1244,6 +1244,13 @@ bool layout_table(struct box *table, int available_width,
 				layout_find_dimensions(available_width,
 						c->style, 0,
 						c->padding, c->border);
+				if (c->style->overflow ==
+						CSS_OVERFLOW_SCROLL ||
+						c->style->overflow ==
+						CSS_OVERFLOW_AUTO) {
+					c->padding[RIGHT] += SCROLLBAR_WIDTH;
+					c->padding[BOTTOM] += SCROLLBAR_WIDTH;
+				}
 			}
 		}
 	}
