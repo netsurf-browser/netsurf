@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "netsurf/css/css.h"
+#include "netsurf/content/content.h"
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
 #endif
@@ -59,7 +60,12 @@ static void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont);
 static void layout_table(struct box *box, int available_width);
 static void calculate_widths(struct box *box);
+static void calculate_block_widths(struct box *box, int *min, int *max,
+		int *max_sum);
 static void calculate_inline_container_widths(struct box *box);
+static void calculate_inline_replaced_widths(struct box *box, int *min,
+		int *max, int *line_max);
+static void calculate_inline_widths(struct box *box, int *min, int *line_max);
 static void calculate_table_widths(struct box *table);
 
 
@@ -267,6 +273,8 @@ void layout_block_context(struct box *block)
 /**
  * Compute dimensions of box, margins, paddings, and borders for a block-level
  * element.
+ *
+ * See CSS 2.1 10.3.3, 10.3.4, 10.6.2, and 10.6.3.
  */
 
 void layout_block_find_dimensions(int available_width, struct box *box)
@@ -291,11 +299,6 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 			break;
 	}
 
-	layout_find_dimensions(available_width, style, margin, padding, border);
-
-	box->width = layout_solve_width(available_width, width, margin,
-			padding, border);
-
 	/* height */
 	switch (style->height.height) {
 		case CSS_HEIGHT_LENGTH:
@@ -305,6 +308,40 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 		default:
 			box->height = AUTO;
 			break;
+	}
+
+	if (box->object) {
+		/* block-level replaced element, see 10.3.4 and 10.6.2 */
+		if (width == AUTO && box->height == AUTO) {
+			width = box->object->width;
+			box->height = box->object->height;
+		} else if (width == AUTO) {
+			if (box->object->height)
+				width = box->object->width *
+						(float) box->height /
+						box->object->height;
+			else
+				width = box->object->width;
+		} else if (box->height == AUTO) {
+			if (box->object->width)
+				box->height = box->object->height *
+						(float) width /
+						box->object->width;
+			else
+				box->height = box->object->height;
+		}
+	}
+
+	layout_find_dimensions(available_width, style, margin, padding, border);
+
+	box->width = layout_solve_width(available_width, width, margin,
+			padding, border);
+
+	if (box->object && box->object->type == CONTENT_HTML &&
+			 box->width != box->object->available_width) {
+		content_reformat(box->object, box->width, box->height);
+		if (style->height.height == CSS_HEIGHT_AUTO)
+			box->height = box->object->height;
 	}
 
 	if (margin[TOP] == AUTO)
@@ -377,16 +414,7 @@ void layout_float_find_dimensions(int available_width,
 			break;
 		case CSS_WIDTH_AUTO:
 		default:
-			/* CSS 2.1 section 10.3.5 */
-			available_width -= box->margin[LEFT] + box->border[LEFT] +
-					box->padding[LEFT] + box->padding[RIGHT] +
-					box->border[RIGHT] + box->margin[RIGHT];
-			if (box->min_width < available_width)
-				box->width = available_width;
-			else
-				box->width = box->min_width;
-			if (box->max_width < box->width)
-				box->width = box->max_width;
+			box->width = AUTO;
 			break;
 	}
 
@@ -399,6 +427,30 @@ void layout_float_find_dimensions(int available_width,
 		default:
 			box->height = AUTO;
 			break;
+	}
+
+	if (box->object) {
+		/* floating replaced element, see 10.3.6 and 10.6.2 */
+		if (box->width == AUTO && box->height == AUTO) {
+			box->width = box->object->width;
+			box->height = box->object->height;
+		} else if (box->width == AUTO)
+			box->width = box->object->width * (float) box->height /
+					box->object->height;
+		else if (box->height == AUTO)
+			box->height = box->object->height * (float) box->width /
+					box->object->width;
+	} else if (box->width == AUTO) {
+		/* CSS 2.1 section 10.3.5 */
+		available_width -= box->margin[LEFT] + box->border[LEFT] +
+				box->padding[LEFT] + box->padding[RIGHT] +
+				box->border[RIGHT] + box->margin[RIGHT];
+		if (box->min_width < available_width)
+			box->width = available_width;
+		else
+			box->width = box->min_width;
+		if (box->max_width < box->width)
+			box->width = box->max_width;
 	}
 
 	if (box->margin[TOP] == AUTO)
@@ -653,34 +705,87 @@ struct box * layout_line(struct box *first, int width, int *y,
 		if (b->type != BOX_INLINE)
 			continue;
 
-		if ((b->object || b->gadget) && b->style &&
-				b->style->height.height == CSS_HEIGHT_LENGTH)
-			h = len(&b->style->height.length, b->style);
-		else
-			h = line_height(b->style ? b->style :
+		if (!b->object && !b->gadget) {
+			/* inline non-replaced, 10.3.1 and 10.6.1 */
+			b->height = line_height(b->style ? b->style :
 					b->parent->parent->style);
-		b->height = h;
+			if (height < b->height)
+				height = b->height;
 
-		if (height < h)
-			height = h;
+			if (b->text) {
+				if (b->width == UNKNOWN_WIDTH)
+					b->width = font_width(b->font, b->text,
+							b->length);
+				x += b->width + b->space ?
+						b->font->space_width : 0;
+			} else
+				b->width = 0;
 
-		if ((b->object || b->gadget) && b->style &&
-				b->style->width.width == CSS_WIDTH_LENGTH)
-			b->width = len(&b->style->width.value.length, b->style);
-		else if ((b->object || b->gadget) && b->style &&
-				b->style->width.width == CSS_WIDTH_PERCENT)
-			b->width = width * b->style->width.value.percent / 100;
-		else if (b->text) {
-			if (b->width == UNKNOWN_WIDTH)
-				b->width = font_width(b->font, b->text,
-						b->length);
-		} else
-			b->width = 0;
+			continue;
+		}
 
-		if (b->text)
-			x += b->width + b->space ? b->font->space_width : 0;
-		else
-			x += b->width;
+		/* inline replaced, 10.3.2 and 10.6.2 */
+		assert(b->style);
+
+		/* calculate box width */
+		switch (b->style->width.width) {
+			case CSS_WIDTH_LENGTH:
+				b->width = len(&b->style->width.value.length,
+						b->style);
+				break;
+			case CSS_WIDTH_PERCENT:
+				b->width = width *
+						b->style->width.value.percent /
+						100;
+				break;
+			case CSS_WIDTH_AUTO:
+			default:
+				b->width = AUTO;
+				break;
+		}
+
+		/* height */
+		switch (b->style->height.height) {
+			case CSS_HEIGHT_LENGTH:
+				b->height = len(&b->style->height.length,
+						b->style);
+				break;
+			case CSS_HEIGHT_AUTO:
+			default:
+				b->height = AUTO;
+				break;
+		}
+
+		if (b->width == AUTO && b->height == AUTO) {
+			b->width = b->object->width;
+			b->height = b->object->height;
+		} else if (b->width == AUTO) {
+			if (b->object->height)
+				b->width = b->object->width *
+						(float) b->height /
+						b->object->height;
+			else
+				b->width = b->object->width;
+		} else if (b->height == AUTO) {
+			if (b->object->width)
+				b->height = b->object->height *
+						(float) b->width /
+						b->object->width;
+			else
+				b->height = b->object->height;
+		}
+
+		if (b->object && b->object->type == CONTENT_HTML &&
+				 b->width != b->object->available_width) {
+			content_reformat(b->object, b->width, b->height);
+			if (b->style->height.height == CSS_HEIGHT_AUTO)
+				b->height = b->object->height;
+		}
+
+		if (height < b->height)
+			height = b->height;
+
+		x += b->width;
 	}
 
 	/* find new sides using this height */
@@ -691,11 +796,11 @@ struct box * layout_line(struct box *first, int width, int *y,
 	x0 -= cx;
 	x1 -= cx;
 
-        if (indent)
-        	x0 += layout_text_indent(first->parent->parent->style, width);
+	if (indent)
+		x0 += layout_text_indent(first->parent->parent->style, width);
 
-        if (x1 < x0)
-        	x1 = x0;
+	if (x1 < x0)
+		x1 = x0;
 
 	/* pass 2: place boxes in line: loop body executed at least once */
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b; b = b->next) {
@@ -984,7 +1089,7 @@ void place_float_below(struct box *c, int width, int cx, int y,
 
 
 /**
- * layout a table
+ * Layout a table.
  */
 
 void layout_table(struct box *table, int available_width)
@@ -999,6 +1104,8 @@ void layout_table(struct box *table, int available_width)
 	int table_height = 0;
 	int *xs;  /* array of column x positions */
 	int auto_width;
+	int spare_width;
+	int relative_sum = 0;
 	struct box *c;
 	struct box *row;
 	struct box *row_group;
@@ -1059,6 +1166,8 @@ void layout_table(struct box *table, int available_width)
 		/* table narrower than required width for columns:
 		 * treat percentage widths as maximums */
 		for (i = 0; i != columns; i++) {
+			if (col[i].type == COLUMN_WIDTH_RELATIVE)
+				continue;
 			if (col[i].type == COLUMN_WIDTH_PERCENT) {
 				col[i].max = auto_width * col[i].width / 100;
 				if (col[i].max < col[i].min)
@@ -1070,6 +1179,8 @@ void layout_table(struct box *table, int available_width)
 	} else {
 		/* take percentages exactly */
 		for (i = 0; i != columns; i++) {
+			if (col[i].type == COLUMN_WIDTH_RELATIVE)
+				continue;
 			if (col[i].type == COLUMN_WIDTH_PERCENT) {
 				int width = auto_width * col[i].width / 100;
 				if (width < col[i].min)
@@ -1077,6 +1188,25 @@ void layout_table(struct box *table, int available_width)
 				col[i].min = col[i].width = col[i].max = width;
 				col[i].type = COLUMN_WIDTH_FIXED;
 			}
+			min_width += col[i].min;
+			max_width += col[i].max;
+		}
+	}
+
+	/* allocate relative widths */
+	spare_width = auto_width;
+	for (i = 0; i != columns; i++) {
+		if (col[i].type == COLUMN_WIDTH_RELATIVE)
+			relative_sum += col[i].width;
+		else
+			spare_width -= col[i].width;
+	}
+	if (spare_width < 0)
+		spare_width = 0;
+	for (i = 0; i != columns; i++) {
+		if (col[i].type == COLUMN_WIDTH_RELATIVE) {
+			col[i].min = col[i].max = (float) spare_width *
+					(float) col[i].width / relative_sum;
 			min_width += col[i].min;
 			max_width += col[i].max;
 		}
@@ -1227,7 +1357,7 @@ void layout_table(struct box *table, int available_width)
 void calculate_widths(struct box *box)
 {
 	struct box *child;
-	int min = 0, max = 0, width, extra_fixed = 0;
+	int min = 0, max = 0, extra_fixed = 0;
 	float extra_frac = 0;
 	unsigned int side;
 	struct css_style *style = box->style;
@@ -1244,25 +1374,15 @@ void calculate_widths(struct box *box)
 		switch (child->type) {
 			case BOX_BLOCK:
 			case BOX_TABLE:
-				if (child->type == BOX_TABLE)
-					calculate_table_widths(child);
-				else
-					calculate_widths(child);
-				if (child->style->width.width == CSS_WIDTH_LENGTH) {
-					width = len(&child->style->width.value.length,
-							child->style);
-					if (min < width) min = width;
-					if (max < width) max = width;
-				} else {
-					if (min < child->min_width) min = child->min_width;
-					if (max < child->max_width) max = child->max_width;
-				}
+				calculate_block_widths(child, &min, &max, 0);
 				break;
 
 			case BOX_INLINE_CONTAINER:
 				calculate_inline_container_widths(child);
-				if (min < child->min_width) min = child->min_width;
-				if (max < child->max_width) max = child->max_width;
+				if (min < child->min_width)
+					min = child->min_width;
+				if (max < child->max_width)
+					max = child->max_width;
 				break;
 
 			default:
@@ -1299,72 +1419,78 @@ void calculate_widths(struct box *box)
 }
 
 
+/**
+ * Find min, max widths for a BOX_BLOCK, BOX_INLINE_BLOCK, BOX_FLOAT_*,
+ * or BOX_TABLE.
+ *
+ * \param  box      BLOCK, INLINE_BLOCK, FLOAT, or TABLE box
+ * \param  min      current min, updated to new min
+ * \param  max      current max, updated to new max
+ * \param  max_sum  sum of maximum widths, updated, or 0 if not required
+ */
+
+void calculate_block_widths(struct box *box, int *min, int *max,
+		int *max_sum)
+{
+	int width;
+
+	if (box->type == BOX_TABLE)
+		calculate_table_widths(box);
+	else
+		calculate_widths(box);
+
+	if (box->style->width.width == CSS_WIDTH_LENGTH) {
+		width = len(&box->style->width.value.length, box->style);
+		if (*min < width) *min = width;
+		if (*max < width) *max = width;
+		if (max_sum) *max_sum += width;
+	} else if (box->style->width.width == CSS_WIDTH_AUTO && box->object) {
+		/* replaced element */
+		if (box->style->height.height == CSS_HEIGHT_AUTO)
+			width = box->object->width;
+		else
+			width = box->object->width *
+					(float) len(&box->style->height.length,
+					box->style) / box->object->height;
+		if (*min < width) *min = width;
+		if (*max < width) *max = width;
+		if (max_sum) *max_sum += width;
+	} else {
+		if (*min < box->min_width) *min = box->min_width;
+		if (*max < box->max_width) *max = box->max_width;
+		if (max_sum) *max_sum += box->max_width;
+	}
+}
+
+
+/**
+ * Find min, max width for an inline container.
+ */
 
 void calculate_inline_container_widths(struct box *box)
 {
 	struct box *child;
-	int min = 0, max = 0, line_max = 0, width;
-	unsigned int i, j;
+	int min = 0, max = 0, line_max = 0;
 
 	for (child = box->children; child != 0; child = child->next) {
 		switch (child->type) {
 			case BOX_INLINE:
-				if (child->object || child->gadget) {
-					if (child->style->width.width == CSS_WIDTH_LENGTH) {
-						child->width = len(&child->style->width.value.length,
-								child->style);
-						line_max += child->width;
-						if (min < child->width)
-							min = child->width;
-					}
-
-				} else if (child->text) {
-					/* max = all one line */
-					child->width = font_width(child->font,
-							child->text, child->length);
-					line_max += child->width;
-					if (child->next && child->space)
-						line_max += child->font->space_width;
-
-					/* min = widest word */
-					i = 0;
-					do {
-						for (j = i; j != child->length && child->text[j] != ' '; j++)
-							;
-						width = font_width(child->font, child->text + i, (j - i));
-						if (min < width) min = width;
-						i = j + 1;
-					} while (j != child->length);
-				}
+				if (child->object || child->gadget)
+					calculate_inline_replaced_widths(child,
+							&min, &max, &line_max);
+				else if (child->text)
+					calculate_inline_widths(child,
+							&min, &line_max);
 				break;
 
 			case BOX_INLINE_BLOCK:
-				calculate_widths(child);
-				if (child->style != 0 &&
-						child->style->width.width == CSS_WIDTH_LENGTH) {
-					width = len(&child->style->width.value.length,
-							child->style);
-					if (min < width) min = width;
-					line_max += width;
-				} else {
-					if (min < child->min_width) min = child->min_width;
-					line_max += child->max_width;
-				}
+				calculate_block_widths(child, &min, &max,
+						&line_max);
 				break;
 
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
-				calculate_widths(child);
-				if (child->style != 0 &&
-						child->style->width.width == CSS_WIDTH_LENGTH) {
-					width = len(&child->style->width.value.length,
-							child->style);
-					if (min < width) min = width;
-					if (max < width) max = width;
-				} else {
-					if (min < child->min_width) min = child->min_width;
-					if (max < child->max_width) max = child->max_width;
-				}
+				calculate_block_widths(child, &min, &max, 0);
 				break;
 
 			case BOX_BR:
@@ -1392,6 +1518,63 @@ void calculate_inline_container_widths(struct box *box)
 }
 
 
+/**
+ * Find min, max width for an inline replaced box.
+ */
+
+void calculate_inline_replaced_widths(struct box *box, int *min,
+		int *max, int *line_max)
+{
+	int width;
+
+	if (box->style->width.width == CSS_WIDTH_LENGTH) {
+		box->width = len(&box->style->width.value.length, box->style);
+		*line_max += box->width;
+		if (*min < box->width)
+			*min = box->width;
+	} else if (box->style->width.width == CSS_WIDTH_AUTO) {
+		if (box->style->height.height == CSS_HEIGHT_AUTO)
+			width = box->object->width;
+		else
+			width = box->object->width *
+					(float) len(&box->style->height.length,
+					box->style) / box->object->height;
+		if (*min < width) *min = width;
+		if (*max < width) *max = width;
+	}
+}
+
+
+/**
+ * Find min, max width for an inline text box.
+ */
+
+void calculate_inline_widths(struct box *box, int *min, int *line_max)
+{
+	unsigned int i, j;
+	int width;
+
+	/* max = all one line */
+	box->width = font_width(box->font, box->text, box->length);
+	*line_max += box->width;
+	if (box->next && box->space)
+		*line_max += box->font->space_width;
+
+	/* min = widest word */
+	i = 0;
+	do {
+		for (j = i; j != box->length && box->text[j] != ' '; j++)
+			;
+		width = font_width(box->font, box->text + i, (j - i));
+		if (*min < width) *min = width;
+		i = j + 1;
+	} while (j != box->length);
+}
+
+
+/**
+ * Find min, max widths for a table and determine column width types.
+ */
 
 void calculate_table_widths(struct box *table)
 {
@@ -1406,8 +1589,9 @@ void calculate_table_widths(struct box *table)
 	if (table->max_width != UNKNOWN_MAX_WIDTH)
 		return;
 
-	free(table->col);
-	table->col = col = xcalloc(table->columns, sizeof(*col));
+	if (!table->col)
+		table->col = xcalloc(table->columns, sizeof(*col));
+	col = table->col;
 
 	assert(table->children != 0 && table->children->children != 0);
 

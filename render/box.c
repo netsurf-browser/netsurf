@@ -36,50 +36,61 @@
 #include "netsurf/utils/utils.h"
 
 
-/* status for box tree construction */
-struct status {
+/** Status of box tree construction. */
+struct box_status {
 	struct content *content;
 	char *href;
 	char *title;
 	struct form* current_form;
 };
 
-/* result of converting a special case element */
-struct result {
-	struct box *box;       /* box for element, if any, 0 otherwise */
-	int convert_children;  /* children should be converted */
+/** Return type for special case element functions. */
+struct box_result {
+	/** Box for element, if any, 0 otherwise. */
+	struct box *box;
+	/** Children of this element should be converted. */
+	bool convert_children;
+	/** Memory was exhausted when handling the element. */
+	bool memory_error;
 };
+
+/** MultiLength, as defined by HTML 4.01. */
+struct box_multi_length {
+	enum { LENGTH_PX, LENGTH_PERCENT, LENGTH_RELATIVE } type;
+	float value;
+};
+
 
 static struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		struct css_style * parent_style,
 		struct box * parent, struct box *inline_container,
-		struct status status);
+		struct box_status status);
 static struct css_style * box_get_style(struct content ** stylesheet,
 		unsigned int stylesheet_count, struct css_style * parent_style,
 		xmlNode * n);
 static void box_text_transform(char *s, unsigned int len,
 		css_text_transform tt);
-static struct result box_a(xmlNode *n, struct status *status,
+static struct box_result box_a(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static struct result box_body(xmlNode *n, struct status *status,
+static struct box_result box_body(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static struct result box_br(xmlNode *n, struct status *status,
+static struct box_result box_br(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static struct result box_image(xmlNode *n, struct status *status,
+static struct box_result box_image(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static struct result box_form(xmlNode *n, struct status *status,
+static struct box_result box_form(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static struct result box_textarea(xmlNode *n, struct status *status,
+static struct box_result box_textarea(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static struct result box_select(xmlNode *n, struct status *status,
+static struct box_result box_select(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static struct result box_input(xmlNode *n, struct status *status,
+static struct box_result box_input(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static struct box *box_input_text(xmlNode *n, struct status *status,
+static struct box *box_input_text(xmlNode *n, struct box_status *status,
 		struct css_style *style, bool password);
-static struct result box_button(xmlNode *n, struct status *status,
+static struct box_result box_button(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static struct result box_frameset(xmlNode *n, struct status *status,
+static struct box_result box_frameset(xmlNode *n, struct box_status *status,
 		struct css_style *style);
 static void add_option(xmlNode* n, struct form_control* current_select, char *text);
 static void box_normalise_block(struct box *block, pool box_pool);
@@ -91,23 +102,24 @@ void box_normalise_table_row(struct box *row,
 		unsigned int **row_span, unsigned int *table_columns,
 		pool box_pool);
 static void box_normalise_inline_container(struct box *cont, pool box_pool);
-static void gadget_free(struct form_control* g);
 static void box_free_box(struct box *box);
-static struct result box_object(xmlNode *n, struct status *status,
+static struct box_result box_object(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static struct result box_embed(xmlNode *n, struct status *status,
+static struct box_result box_embed(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static struct result box_applet(xmlNode *n, struct status *status,
+static struct box_result box_applet(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static struct result box_iframe(xmlNode *n, struct status *status,
+static struct box_result box_iframe(xmlNode *n, struct box_status *status,
 		struct css_style *style);
 static bool plugin_decode(struct content* content, char* url, struct box* box,
                   struct object_params* po);
+static struct box_multi_length *box_parse_multi_lengths(const char *s,
+		unsigned int *count);
 
 /* element_table must be sorted by name */
 struct element_entry {
 	char name[10];   /* element type */
-	struct result (*convert)(xmlNode *n, struct status *status,
+	struct box_result (*convert)(xmlNode *n, struct box_status *status,
 			struct css_style *style);
 };
 static const struct element_entry element_table[] = {
@@ -217,7 +229,7 @@ void box_insert_sibling(struct box *box, struct box *new_box)
 
 void xml_to_box(xmlNode *n, struct content *c)
 {
-	struct status status = {c, 0, 0, 0};
+	struct box_status status = {c, 0, 0, 0};
 
 	LOG(("node %p", n));
 	assert(c->type == CONTENT_HTML);
@@ -280,7 +292,7 @@ static box_type box_map[] = {
 struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		struct css_style * parent_style,
 		struct box * parent, struct box *inline_container,
-		struct status status)
+		struct box_status status)
 {
 	struct box * box = 0;
 	struct box * inline_container_c;
@@ -289,7 +301,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 	char * s;
 	xmlChar * title0;
 	char * title = 0;
-	int convert_children = 1;
+	bool convert_children = true;
 	char *href_in = status.href;
 
 	assert(n != 0 && parent_style != 0 && parent != 0);
@@ -325,9 +337,12 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 				(int (*)(const void *, const void *)) strcmp);
 		if (element != 0) {
 			/* a special convert function exists for this element */
-			struct result res = element->convert(n, &status, style);
+			struct box_result res = element->convert(n, &status, style);
 			box = res.box;
 			convert_children = res.convert_children;
+			if (res.memory_error) {
+				/** \todo  handle memory exhaustion */
+			}
 			if (box == 0) {
 				/* no box for this element */
 				assert(convert_children == 0);
@@ -367,7 +382,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 				assert(inline_container->last != 0);
 				inline_container->last->space = 1;
 			}
-			xfree(text);
+			free(text);
 			goto end;
 		}
 
@@ -448,7 +463,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 				inline_container = 0;
 			}
 		} while (*current);
-		xfree(text);
+		free(text);
 		goto end;
 
 	} else if (box->type == BOX_INLINE ||
@@ -733,7 +748,7 @@ void box_text_transform(char *s, unsigned int len,
  * be created for that element, and convert_children must be 0.
  */
 
-struct result box_a(xmlNode *n, struct status *status,
+struct box_result box_a(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	struct box *box;
@@ -742,27 +757,27 @@ struct result box_a(xmlNode *n, struct status *status,
 		status->href = s;
 	box = box_create(style, status->href, status->title,
 			status->content->data.html.box_pool);
-	return (struct result) {box, 1};
+	return (struct box_result) {box, true, false};
 }
 
-struct result box_body(xmlNode *n, struct status *status,
+struct box_result box_body(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	struct box *box;
 	status->content->data.html.background_colour = style->background_color;
 	box = box_create(style, status->href, status->title,
 			status->content->data.html.box_pool);
-	return (struct result) {box, 1};
+	return (struct box_result) {box, true, false};
 }
 
-struct result box_br(xmlNode *n, struct status *status,
+struct box_result box_br(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	struct box *box;
 	box = box_create(style, status->href, status->title,
 			status->content->data.html.box_pool);
 	box->type = BOX_BR;
-	return (struct result) {box, 0};
+	return (struct box_result) {box, false, false};
 }
 
 static const content_type image_types[] = {
@@ -772,7 +787,7 @@ static const content_type image_types[] = {
 #endif
 	CONTENT_UNKNOWN };
 
-struct result box_image(xmlNode *n, struct status *status,
+struct box_result box_image(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	struct box *box;
@@ -792,7 +807,7 @@ struct result box_image(xmlNode *n, struct status *status,
 
 	/* img without src is an error */
 	if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "src")))
-		return (struct result) {box, 0};
+		return (struct box_result) {box, false, false};
 
 	/* imagemap associated with this image */
 	if ((map = xmlGetProp(n, (const xmlChar *) "usemap"))) {
@@ -811,19 +826,20 @@ struct result box_image(xmlNode *n, struct status *status,
 	url = url_join(s1, status->content->data.html.base_url);
 	if (!url) {
 		xmlFree(s);
-		return (struct result) {box, 0};
+		return (struct box_result) {box, false, false};
 	}
 
 	LOG(("image '%s'", url));
 	xmlFree(s);
 
 	/* start fetch */
-	html_fetch_object(status->content, url, box, image_types);
+	html_fetch_object(status->content, url, box, image_types,
+			status->content->available_width, 1000);
 
-	return (struct result) {box, 0};
+	return (struct box_result) {box, false, false};
 }
 
-struct result box_form(xmlNode *n, struct status *status,
+struct box_result box_form(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	char *s, *s2;
@@ -836,7 +852,7 @@ struct result box_form(xmlNode *n, struct status *status,
 	s = (char *) xmlGetProp(n, (const xmlChar *) "action");
 	if (!s) {
 		/* the action attribute is required */
-		return (struct result) {box, 1};
+		return (struct box_result) {box, true, false};
 	}
 
 	status->current_form = form = xcalloc(1, sizeof(*form));
@@ -857,10 +873,10 @@ struct result box_form(xmlNode *n, struct status *status,
 
 	form->controls = form->last_control = 0;
 
-	return (struct result) {box, 1};
+	return (struct box_result) {box, true, false};
 }
 
-struct result box_textarea(xmlNode *n, struct status *status,
+struct box_result box_textarea(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	xmlChar *content, *current;
@@ -870,13 +886,25 @@ struct result box_textarea(xmlNode *n, struct status *status,
 	box = box_create(style, NULL, 0,
 			status->content->data.html.box_pool);
 	box->type = BOX_INLINE_BLOCK;
-	box->gadget = xcalloc(1, sizeof(struct form_control));
+	box->gadget = form_new_control(GADGET_TEXTAREA);
+	if (!box->gadget) {
+		free(box);
+		return (struct box_result) {0, false, true};
+	}
 	box->gadget->box = box;
-	box->gadget->type = GADGET_TEXTAREA;
 	if (status->current_form)
 		form_add_control(status->current_form, box->gadget);
 	else
 		box->gadget->form = 0;
+
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
+		box->gadget->name = strdup(s);
+		xmlFree(s);
+		if (!box->gadget->name) {
+			box_free(box);
+			return (struct box_result) {0, false, true};
+		}
+	}
 
 	/* split the content at newlines and make an inline container with an
 	 * inline box for each line */
@@ -906,25 +934,23 @@ struct result box_textarea(xmlNode *n, struct status *status,
 	} while (*current);
 	xmlFree(content);
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name")))
-	{
-		box->gadget->name = s;
-	}
-
-	return (struct result) {box, 0};
+	return (struct box_result) {box, false, false};
 }
 
-struct result box_select(xmlNode *n, struct status *status,
+struct box_result box_select(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	struct box *box;
 	struct box *inline_container;
 	struct box *inline_box;
-	struct form_control *gadget = xcalloc(1, sizeof(struct form_control));
+	struct form_control *gadget;
 	char* s;
 	xmlNode *c, *c2;
 
-	gadget->type = GADGET_SELECT;
+	gadget = form_new_control(GADGET_SELECT);
+	if (gadget)
+		return (struct box_result) {0, false, true};
+
 	if (status->current_form)
 		form_add_control(status->current_form, gadget);
 	else
@@ -961,12 +987,17 @@ struct result box_select(xmlNode *n, struct status *status,
 
 	if (gadget->data.select.num_items == 0) {
 		/* no options: ignore entire select */
-		xfree(gadget);
-		return (struct result) {0, 0};
+		form_free_control(gadget);
+		return (struct box_result) {0, false, false};
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
-		gadget->name = s;
+		gadget->name = strdup(s);
+		xmlFree(s);
+		if (!gadget->name) {
+			form_free_control(gadget);
+			return (struct box_result) {0, false, true};
+		}
 	}
 
 	box = box_create(style, NULL, 0, status->content->data.html.box_pool);
@@ -1002,7 +1033,7 @@ struct result box_select(xmlNode *n, struct status *status,
 	inline_box->length = strlen(inline_box->text);
 	inline_box->font = font_open(status->content->data.html.fonts, style);
 
-	return (struct result) {box, 0};
+	return (struct box_result) {box, false, false};
 }
 
 void add_option(xmlNode* n, struct form_control* current_select, char *text)
@@ -1042,7 +1073,7 @@ void add_option(xmlNode* n, struct form_control* current_select, char *text)
 	}
 }
 
-struct result box_input(xmlNode *n, struct status *status,
+struct box_result box_input(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	struct box* box = 0;
@@ -1060,29 +1091,46 @@ struct result box_input(xmlNode *n, struct status *status,
 		box = box_create(style, NULL, 0,
 				status->content->data.html.box_pool);
 		box->type = BOX_INLINE_BLOCK;
-		box->gadget = gadget = xcalloc(1, sizeof(struct form_control));
+		box->gadget = gadget = form_new_control(GADGET_FILE);
+		if (!gadget) {
+			box_free_box(box);
+			xmlFree(type);
+			return (struct box_result) {0, false, true};
+		}
 		gadget->box = box;
-		gadget->type = GADGET_FILE;
 		box->font = font_open(status->content->data.html.fonts, style);
 
 	} else if (type && strcasecmp(type, "hidden") == 0) {
 		/* no box for hidden inputs */
-		gadget = xcalloc(1, sizeof(struct form_control));
-		gadget->type = GADGET_HIDDEN;
+		gadget = form_new_control(GADGET_HIDDEN);
+		if (!gadget) {
+			xmlFree(type);
+			return (struct box_result) {0, false, true};
+		}
 
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")))
-			gadget->value = s;
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
+			gadget->value = strdup(s);
+			xmlFree(s);
+			if (!gadget->value) {
+				form_free_control(gadget);
+				xmlFree(type);
+				return (struct box_result) {0, false, true};
+			}
+		}
 
 	} else if (type && (strcasecmp(type, "checkbox") == 0 ||
 			strcasecmp(type, "radio") == 0)) {
 		box = box_create(style, NULL, 0,
 				status->content->data.html.box_pool);
-		box->gadget = gadget = xcalloc(1, sizeof(struct form_control));
+		box->gadget = gadget = form_new_control(GADGET_RADIO);
+		if (!gadget) {
+			box_free_box(box);
+			xmlFree(type);
+			return (struct box_result) {0, false, true};
+		}
 		gadget->box = box;
 		if (type[0] == 'c' || type[0] == 'C')
 			gadget->type = GADGET_CHECKBOX;
-		else
-			gadget->type = GADGET_RADIO;
 
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "checked"))) {
 			if (gadget->type == GADGET_CHECKBOX)
@@ -1092,12 +1140,19 @@ struct result box_input(xmlNode *n, struct status *status,
 			xmlFree(s);
 		}
 
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")))
-			gadget->value = s;
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
+			gadget->value = strdup(s);
+			xmlFree(s);
+			if (!gadget->value) {
+				box_free_box(box);
+				xmlFree(type);
+				return (struct box_result) {0, false, true};
+			}
+		}
 
 	} else if (type && (strcasecmp(type, "submit") == 0 ||
 			strcasecmp(type, "reset") == 0)) {
-		struct result result = box_button(n, status, style);
+		struct box_result result = box_button(n, status, style);
 		struct box *inline_container, *inline_box;
 		box = result.box;
 		inline_container = box_create(0, 0, 0,
@@ -1119,7 +1174,7 @@ struct result box_input(xmlNode *n, struct status *status,
 		box_add_child(box, inline_container);
 
 	} else if (type && strcasecmp(type, "button") == 0) {
-	        struct result result = box_button(n, status, style);
+	        struct box_result result = box_button(n, status, style);
 		struct box *inline_container, *inline_box;
 		box = result.box;
 		inline_container = box_create(0, 0, 0,
@@ -1143,14 +1198,21 @@ struct result box_input(xmlNode *n, struct status *status,
 	} else if (type && strcasecmp(type, "image") == 0) {
 	        box = box_create(style, NULL, 0,
 				status->content->data.html.box_pool);
-	        box->gadget = gadget = xcalloc(1, sizeof(struct form_control));
+	        box->gadget = gadget = form_new_control(GADGET_IMAGE);
+		if (!gadget) {
+			box_free_box(box);
+			xmlFree(type);
+			return (struct box_result) {0, false, true};
+		}
 		gadget->box = box;
 	        gadget->type = GADGET_IMAGE;
 	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src"))) {
 	                url = url_join(s, status->content->data.html.base_url);
 	                if (url)
 		                html_fetch_object(status->content, url, box,
-		                		image_types);
+		                		image_types,
+		                		status->content->available_width,
+		                		1000);
 	                xmlFree(s);
 	        }
 
@@ -1168,14 +1230,22 @@ struct result box_input(xmlNode *n, struct status *status,
 		if (status->current_form)
 			form_add_control(status->current_form, gadget);
 		else
-		  	gadget->form = 0;
-		gadget->name = (char *) xmlGetProp(n, (const xmlChar *) "name");
+			gadget->form = 0;
+		s = (char *) xmlGetProp(n, (const xmlChar *) "name");
+		if (s) {
+			gadget->name = strdup(s);
+			xmlFree(s);
+			if (!gadget->name) {
+				box_free_box(box);
+				return (struct box_result) {0, false, true};
+			}
+		}
 	}
 
-	return (struct result) {box, 0};
+	return (struct box_result) {box, false, false};
 }
 
-struct box *box_input_text(xmlNode *n, struct status *status,
+struct box *box_input_text(xmlNode *n, struct box_status *status,
 		struct css_style *style, bool password)
 {
 	char *s;
@@ -1185,7 +1255,7 @@ struct box *box_input_text(xmlNode *n, struct status *status,
 	struct box *inline_container, *inline_box;
 	box->type = BOX_INLINE_BLOCK;
 
-	box->gadget = xcalloc(1, sizeof(struct form_control));
+	box->gadget = form_new_control(GADGET_TEXTBOX);
 	box->gadget->box = box;
 
 	box->gadget->maxlength = 100;
@@ -1228,38 +1298,56 @@ struct box *box_input_text(xmlNode *n, struct status *status,
 	return box;
 }
 
-struct result box_button(xmlNode *n, struct status *status,
+struct box_result box_button(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
+	xmlChar *s;
 	char *type = (char *) xmlGetProp(n, (const xmlChar *) "type");
 	struct box *box = box_create(style, 0, 0,
 			status->content->data.html.box_pool);
 	box->type = BOX_INLINE_BLOCK;
 
 	if (!type || strcasecmp(type, "submit") == 0) {
-		box->gadget = xcalloc(1, sizeof(struct form_control));
-		box->gadget->type = GADGET_SUBMIT;
+		box->gadget = form_new_control(GADGET_SUBMIT);
 	} else if (strcasecmp(type, "reset") == 0) {
-		box->gadget = xcalloc(1, sizeof(struct form_control));
-		box->gadget->type = GADGET_RESET;
+		box->gadget = form_new_control(GADGET_RESET);
 	} else {
 		/* type="button" or unknown: just render the contents */
 		xmlFree(type);
-		return (struct result) {box, 1};
+		return (struct box_result) {box, true, false};
 	}
 
 	if (type)
 		xmlFree(type);
+
+	if (!box->gadget) {
+		box_free_box(box);
+		return (struct box_result) {0, false, true};
+	}
 
 	if (status->current_form)
 		form_add_control(status->current_form, box->gadget);
 	else
 		box->gadget->form = 0;
 	box->gadget->box = box;
-	box->gadget->name = (char *) xmlGetProp(n, (const xmlChar *) "name");
-	box->gadget->value = (char *) xmlGetProp(n, (const xmlChar *) "value");
+	if ((s = xmlGetProp(n, (const xmlChar *) "name"))) {
+		box->gadget->name = strdup((char *) s);
+		xmlFree(s);
+		if (!box->gadget->name) {
+			box_free_box(box);
+			return (struct box_result) {0, false, true};
+		}
+	}
+	if ((s = xmlGetProp(n, (const xmlChar *) "value"))) {
+		box->gadget->value = strdup((char *) s);
+		xmlFree(s);
+		if (!box->gadget->value) {
+			box_free_box(box);
+			return (struct box_result) {0, false, true};
+		}
+	}
 
-	return (struct result) {box, 1};
+	return (struct box_result) {box, true, false};
 }
 
 
@@ -1476,7 +1564,7 @@ void box_normalise_table(struct box *table, pool box_pool)
 	}
 
 	table->columns = table_columns;
-	xfree(row_span);
+	free(row_span);
 
 	if (table->children == 0) {
 		LOG(("table->children == 0, removing"));
@@ -1744,32 +1832,8 @@ void box_normalise_inline_container(struct box *cont, pool box_pool)
 }
 
 
-void gadget_free(struct form_control* g)
-{
-	struct form_option *o, *o1;
-
-	if (g->name != 0)
-		xmlFree(g->name);
-	free(g->value);
-	free(g->initial_value);
-
-	if (g->type == GADGET_SELECT) {
-		o = g->data.select.items;
-		while (o != NULL)
-		{
-			if (o->text != 0)
-				xmlFree(o->text);
-			if (o->value != 0)
-				xmlFree(o->value);
-			o1 = o->next;
-			xfree(o);
-			o = o1;
-		}
-	}
-}
-
 /**
- * free a box tree recursively
+ * Free a box tree recursively.
  */
 
 void box_free(struct box *box)
@@ -1786,13 +1850,16 @@ void box_free(struct box *box)
 	box_free_box(box);
 }
 
+
+/**
+ * Free a single box structure.
+ */
+
 void box_free_box(struct box *box)
 {
 	if (!box->clone) {
-		if (box->gadget) {
-			gadget_free(box->gadget);
-			free(box->gadget);
-		}
+		if (box->gadget)
+			form_free_control(box->gadget);
 		free(box->href);
 		free(box->title);
 		free(box->col);
@@ -1800,8 +1867,7 @@ void box_free_box(struct box *box)
 			free(box->style);
 	}
 
-        if (box->usemap)
-                free(box->usemap);
+	free(box->usemap);
 	free(box->text);
 	/* TODO: free object_params */
 }
@@ -1810,7 +1876,7 @@ void box_free_box(struct box *box)
 /**
  * add an object to the box tree
  */
-struct result box_object(xmlNode *n, struct status *status,
+struct box_result box_object(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	struct box *box;
@@ -1838,7 +1904,7 @@ struct result box_object(xmlNode *n, struct status *status,
 	        if (!url) {
 	        	free(po);
 		        xmlFree(s);
-	        	return (struct result) {box, 1};
+	        	return (struct box_result) {box, true, true};
 	        }
                 po->data = strdup(s);
 	        LOG(("object '%s'", po->data));
@@ -1941,16 +2007,16 @@ struct result box_object(xmlNode *n, struct status *status,
 
 	/* start fetch */
 	if (plugin_decode(status->content, url, box, po))
-		return (struct result) {box, 0};
+		return (struct box_result) {box, false, false};
 
-	return (struct result) {box, 1};
+	return (struct box_result) {box, true, false};
 }
 
 /**
  * add an embed to the box tree
  */
 
-struct result box_embed(xmlNode *n, struct status *status,
+struct box_result box_embed(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	struct box *box;
@@ -1978,7 +2044,7 @@ struct result box_embed(xmlNode *n, struct status *status,
 	        if (!url) {
 	        	free(po);
 		        xmlFree(s);
-	        	return (struct result) {box, 0};
+	        	return (struct box_result) {box, false, true};
 	        }
 	        LOG(("embed '%s'", url));
                 po->data = strdup(s);
@@ -2014,14 +2080,14 @@ struct result box_embed(xmlNode *n, struct status *status,
         /* start fetch */
 	plugin_decode(status->content, url, box, po);
 
-	return (struct result) {box,0};
+	return (struct box_result) {box, false, false};
 }
 
 /**
  * add an applet to the box tree
  */
 
-struct result box_applet(xmlNode *n, struct status *status,
+struct box_result box_applet(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
 	struct box *box;
@@ -2049,7 +2115,7 @@ struct result box_applet(xmlNode *n, struct status *status,
 		if (!url) {
 			free(po);
 			xmlFree(s);
-			return (struct result) {box, 1};
+			return (struct box_result) {box, true, false};
 		}
 		LOG(("applet '%s'", url));
 		po->classid = strdup(s);
@@ -2117,9 +2183,9 @@ struct result box_applet(xmlNode *n, struct status *status,
 
 	/* start fetch */
 	if(plugin_decode(status->content, url, box, po))
-        	return (struct result) {box,0};
+        	return (struct box_result) {box, false, false};
 
-        return (struct result) {box,1};
+        return (struct box_result) {box, true, false};
 }
 
 /**
@@ -2127,7 +2193,7 @@ struct result box_applet(xmlNode *n, struct status *status,
  * add an iframe to the box tree
  * TODO - implement GUI nested wimp stuff 'cos this looks naff atm. (16_5)
  */
-struct result box_iframe(xmlNode *n, struct status *status,
+struct box_result box_iframe(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
         struct box *box;
@@ -2153,7 +2219,7 @@ struct result box_iframe(xmlNode *n, struct status *status,
 		if (!url) {
 			free(po);
 			xmlFree(s);
-			return (struct result) {box, 0};
+			return (struct box_result) {box, false, true};
 		}
 		LOG(("embed '%s'", url));
 		po->data = strdup(s);
@@ -2165,7 +2231,7 @@ struct result box_iframe(xmlNode *n, struct status *status,
         /* start fetch */
 	plugin_decode(status->content, url, box, po);
 
-	return (struct result) {box,0};
+	return (struct box_result) {box, false, false};
 }
 
 /**
@@ -2269,7 +2335,7 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
    * when we fetch it (if the type was not specified or is different to that
    * given in the attributes).
    */
-   html_fetch_object(content, url, box, 0);
+   html_fetch_object(content, url, box, 0, 1000, 1000);
 
    return true;
 }
@@ -2301,49 +2367,105 @@ void box_coords(struct box *box, int *x, int *y)
 }
 
 
-struct result box_frameset(xmlNode *n, struct status *status,
+struct box_result box_frameset(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
-	unsigned int i;
 	unsigned int row, col;
 	unsigned int rows = 1, cols = 1;
+	int object_width, object_height;
 	char *s, *s1, *url;
 	struct box *box;
 	struct box *row_box;
 	struct box *cell_box;
+	struct box *object_box;
 	struct css_style *row_style;
-	struct css_style *cell_style;
-	struct result r;
+	struct box_result r;
+	struct box_multi_length *row_height = 0, *col_width = 0;
 	xmlNode *c;
 
 	box = box_create(style, 0, status->title,
 			status->content->data.html.box_pool);
 	box->type = BOX_TABLE;
 
-	/* count rows and columns */
-        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows"))) {
-        	for (i = 0; s[i]; i++)
-        		if (s[i] == ',')
-        			rows++;
-        	free(s);
-        }
+	/* parse rows and columns */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows"))) {
+		row_height = box_parse_multi_lengths(s, &rows);
+		xmlFree(s);
+		if (!row_height) {
+			box_free_box(box);
+			return (struct box_result) {0, false, true};
+		}
+	}
 
-        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols"))) {
-        	for (i = 0; s[i]; i++)
-        		if (s[i] == ',')
-        			cols++;
-        	free(s);
-        }
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols"))) {
+		col_width = box_parse_multi_lengths(s, &cols);
+		xmlFree(s);
+		if (!col_width) {
+			free(row_height);
+			box_free_box(box);
+			return (struct box_result) {0, false, true};
+		}
+	}
 
 	LOG(("rows %u, cols %u", rows, cols));
+
+	box->min_width = 1;
+	box->max_width = 10000;
+	box->col = malloc(sizeof box->col[0] * cols);
+	if (!box->col) {
+		free(row_height);
+		free(col_width);
+		box_free_box(box);
+		return (struct box_result) {0, false, true};
+	}
+
+	if (col_width) {
+		for (col = 0; col != cols; col++) {
+			if (col_width[col].type == LENGTH_PX) {
+				box->col[col].type = COLUMN_WIDTH_FIXED;
+				box->col[col].width = col_width[col].value;
+			} else if (col_width[col].type == LENGTH_PERCENT) {
+				box->col[col].type = COLUMN_WIDTH_PERCENT;
+				box->col[col].width = col_width[col].value;
+			} else {
+				box->col[col].type = COLUMN_WIDTH_RELATIVE;
+				box->col[col].width = col_width[col].value;
+			}
+			box->col[col].min = 1;
+			box->col[col].max = 10000;
+		}
+	} else {
+		box->col[0].type = COLUMN_WIDTH_RELATIVE;
+		box->col[0].width = 1;
+		box->col[0].min = 1;
+		box->col[0].max = 10000;
+	}
 
 	/* create the frameset table */
 	c = n->children;
 	for (row = 0; c && row != rows; row++) {
 		row_style = malloc(sizeof (struct css_style));
-		if (!row_style)
-			return (struct result) {box, 0};
+		if (!row_style) {
+			free(row_height);
+			free(col_width);
+			return (struct box_result) {box, false, true};
+		}
 		memcpy(row_style, style, sizeof (struct css_style));
+		object_height = 1000;  /** \todo  get available height */
+	/*	if (row_height) {
+			row_style->height.height = CSS_HEIGHT_LENGTH;
+			row_style->height.length.unit = CSS_UNIT_PX;
+			if (row_height[row].type == LENGTH_PERCENT)
+				row_style->height.length.value = 1000 *
+						row_height[row].value / 100;
+			else if (row_height[row].type == LENGTH_RELATIVE)
+				row_style->height.length.value = 100 *
+						row_height[row].value;
+			else
+				row_style->height.length.value =
+						row_height[row].value;
+			object_height = row_style->height.length.value;
+		}*/
 		row_box = box_create(row_style, 0, 0,
 				status->content->data.html.box_pool);
 		row_box->type = BOX_TABLE_ROW;
@@ -2358,23 +2480,39 @@ struct result box_frameset(xmlNode *n, struct status *status,
 			if (!c)
 				break;
 
-			cell_style = malloc(sizeof (struct css_style));
-			if (!cell_style)
-				return (struct result) {box, 0};
-			memcpy(cell_style, style, sizeof (struct css_style));
-			cell_box = box_create(cell_style, 0, 0,
-				status->content->data.html.box_pool);
+			/* estimate frame width */
+			object_width = status->content->available_width;
+			if (col_width && col_width[col].type == LENGTH_PX)
+				object_width = col_width[col].value;
+
+			cell_box = box_create(style, 0, 0,
+					status->content->data.html.box_pool);
 			cell_box->type = BOX_TABLE_CELL;
+			cell_box->style_clone = 1;
 			box_add_child(row_box, cell_box);
 
 			if (strcmp((const char *) c->name, "frameset") == 0) {
 				LOG(("frameset"));
 				r = box_frameset(c, status, style);
+				if (r.memory_error) {
+					box_free(box);
+					free(row_height);
+					free(col_width);
+					return (struct box_result) {0, false,
+							true};
+				}
+				r.box->style_clone = 1;
 				box_add_child(cell_box, r.box);
 
 				c = c->next;
 				continue;
 			}
+
+			object_box = box_create(style, 0, 0,
+					status->content->data.html.box_pool);
+			object_box->type = BOX_BLOCK;
+			object_box->style_clone = 1;
+			box_add_child(cell_box, object_box);
 
 			if (!(s = (char *) xmlGetProp(c,
 					(const xmlChar *) "src"))) {
@@ -2392,12 +2530,63 @@ struct result box_frameset(xmlNode *n, struct status *status,
 
 			LOG(("frame, url '%s'", url));
 
-			html_fetch_object(status->content, url, cell_box, 0);
+			html_fetch_object(status->content, url, object_box, 0,
+					object_width, object_height);
 			xmlFree(s);
 
 			c = c->next;
 		}
 	}
 
-	return (struct result) {box, 0};
+	free(row_height);
+	free(col_width);
+
+	style->width.width = CSS_WIDTH_PERCENT;
+	style->width.value.percent = 100;
+
+	return (struct box_result) {box, false, false};
+}
+
+
+/**
+ * Parse a multi-length-list, as defined by HTML 4.01.
+ *
+ * \param  s    string to parse
+ * \param  count  updated to number of entries
+ * \return  array of struct box_multi_length, or 0 on memory exhaustion
+ */
+
+struct box_multi_length *box_parse_multi_lengths(const char *s,
+		unsigned int *count)
+{
+	char *end;
+	unsigned int i, n = 1;
+	struct box_multi_length *length;
+
+	for (i = 0; s[i]; i++)
+		if (s[i] == ',')
+			n++;
+
+	length = malloc(sizeof *length * n);
+	if (!length)
+		return 0;
+
+	for (i = 0; i != n; i++) {
+		length[i].value = strtof(s, &end);
+		if (length[i].value <= 0)
+			length[i].value = 1;
+		s = end;
+		switch (*s) {
+			case '%': length[i].type = LENGTH_PERCENT; break;
+			case '*': length[i].type = LENGTH_RELATIVE; break;
+			default:  length[i].type = LENGTH_PX; break;
+		}
+		while (*s && *s != ',')
+			s++;
+		if (*s == ',')
+			s++;
+	}
+
+	*count = n;
+	return length;
 }

@@ -116,8 +116,8 @@ struct content {
 		CONTENT_STATUS_DONE	/**< All finished. */
 	} status;		/**< Current status. */
 
-	unsigned long width, height;	/**< Dimensions, if applicable. */
-	unsigned long available_width;	/**< Available width (eg window width). */
+	int width, height;	/**< Dimensions, if applicable. */
+	int available_width;	/**< Available width (eg window width). */
 
 	/** Data dependent on type. */
 	union {

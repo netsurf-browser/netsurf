@@ -92,7 +92,8 @@ typedef enum {
 
 struct column {
 	enum { COLUMN_WIDTH_UNKNOWN = 0, COLUMN_WIDTH_FIXED,
-	       COLUMN_WIDTH_AUTO, COLUMN_WIDTH_PERCENT } type;
+	       COLUMN_WIDTH_AUTO, COLUMN_WIDTH_PERCENT,
+	       COLUMN_WIDTH_RELATIVE } type;
 	int min, max, width;
 };
 

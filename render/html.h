@@ -88,7 +88,8 @@ void html_revive(struct content *c, unsigned int width, unsigned int height);
 void html_reformat(struct content *c, unsigned int width, unsigned int height);
 void html_destroy(struct content *c);
 void html_fetch_object(struct content *c, char *url, struct box *box,
-		const content_type *permitted_types);
+		const content_type *permitted_types,
+		int available_width, int available_height);
 
 /* in riscos/htmlinstance.c */
 void html_add_instance(struct content *c, struct browser_window *bw,

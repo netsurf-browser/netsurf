@@ -38,6 +38,7 @@ static void html_head(struct content *c, xmlNode *head);
 static void html_find_stylesheets(struct content *c, xmlNode *head);
 static void html_object_callback(content_msg msg, struct content *object,
 		void *p1, void *p2, union content_msg_data data);
+static void html_object_done(struct box *box, struct content *object);
 static bool html_object_type_permitted(const content_type type,
 		const content_type *permitted_types);
 
@@ -524,7 +525,8 @@ void html_convert_css_callback(content_msg msg, struct content *css,
  */
 
 void html_fetch_object(struct content *c, char *url, struct box *box,
-		const content_type *permitted_types)
+		const content_type *permitted_types,
+		int available_width, int available_height)
 {
 	unsigned int i = c->data.html.object_count;
 	union content_msg_data data;
@@ -539,7 +541,7 @@ void html_fetch_object(struct content *c, char *url, struct box *box,
 	/* start fetch */
 	c->data.html.object[i].content = fetchcache(url, c->url,
 			html_object_callback,
-			c, (void*)i, c->width, c->height,
+			c, (void*)i, available_width, available_height,
 			true
 #ifdef WITH_POST
 			, 0, 0
@@ -547,9 +549,8 @@ void html_fetch_object(struct content *c, char *url, struct box *box,
 #ifdef WITH_COOKIES
 			, false
 #endif
-			);	/* we don't know the object's
-				  dimensions yet; use
-				  parent's as an estimate */
+			);
+
 	if (c->data.html.object[i].content) {
 		c->active++;
 		if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
@@ -571,7 +572,6 @@ void html_object_callback(content_msg msg, struct content *object,
 	unsigned int i = (unsigned int) p2;
 	int x, y;
 	struct box *box = c->data.html.object[i].box;
-	struct box *b;
 
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
@@ -590,53 +590,14 @@ void html_object_callback(content_msg msg, struct content *object,
 			break;
 
 		case CONTENT_MSG_READY:
+			if (object->type == CONTENT_HTML) {
+				html_object_done(box, object);
+				content_reformat(c, c->available_width, 0);
+			}
 			break;
 
 		case CONTENT_MSG_DONE:
-			LOG(("got object '%s'", object->url));
-			box->object = object;
-			/* retain aspect ratio of box content */
-			if ((box->style->width.width == CSS_WIDTH_LENGTH /*||
-			     box->style->width.width == CSS_WIDTH_PERCENT*/) &&
-			    box->style->height.height == CSS_HEIGHT_AUTO) {
-			        box->style->height.height = CSS_HEIGHT_LENGTH;
-				box->style->height.length.unit = CSS_UNIT_PX;
-				if (box->style->width.width == CSS_WIDTH_LENGTH) {
-				        box->style->height.length.value = object->height * (box->style->width.value.length.value / object->width);
-				}
-				/*else {
-				        box->style->height.length.value = object->height * (box->style->width.value.percent / 100);
-				}*/
-				box->height = box->style->height.length.value;
-			}
-			if (box->style->height.height == CSS_HEIGHT_LENGTH &&
-			    box->style->width.width == CSS_WIDTH_AUTO) {
-			        box->style->width.width = CSS_WIDTH_LENGTH;
-				box->style->width.value.length.unit = CSS_UNIT_PX;
-				box->style->width.value.length.value = object->width * (box->style->height.length.value / object->height);
-				box->min_width = box->max_width = box->width = box->style->width.value.length.value;
-			}
-			/* set dimensions to object dimensions if auto */
-			if (box->style->width.width == CSS_WIDTH_AUTO) {
-				box->style->width.width = CSS_WIDTH_LENGTH;
-				box->style->width.value.length.unit = CSS_UNIT_PX;
-				box->style->width.value.length.value = object->width;
-				box->min_width = box->max_width = box->width = object->width;
-			}
-			if (box->style->height.height == CSS_HEIGHT_AUTO) {
-				box->style->height.height = CSS_HEIGHT_LENGTH;
-				box->style->height.length.unit = CSS_UNIT_PX;
-				box->style->height.length.value = object->height;
-				box->height = object->height;
-			}
-			/* invalidate parent min, max widths */
-			for (b = box->parent; b; b = b->parent)
-				b->max_width = UNKNOWN_MAX_WIDTH;
-			/* delete any clones of this box */
-			while (box->next && box->next->clone) {
-				/* box_free_box(box->next); */
-				box->next = box->next->next;
-			}
+			html_object_done(box, object);
 			c->active--;
 			break;
 
@@ -714,7 +675,12 @@ void html_object_callback(content_msg msg, struct content *object,
 			assert(0);
 	}
 
-	if (c->status == CONTENT_STATUS_READY && c->active == 0) {
+	if (c->status == CONTENT_STATUS_READY && c->active == 0 &&
+			(msg == CONTENT_MSG_LOADING ||
+			msg == CONTENT_MSG_DONE ||
+			msg == CONTENT_MSG_ERROR ||
+			msg == CONTENT_MSG_REDIRECT ||
+			msg == CONTENT_MSG_AUTH)) {
 		/* all objects have arrived */
 		content_reformat(c, c->available_width, 0);
 		c->status = CONTENT_STATUS_DONE;
@@ -724,6 +690,32 @@ void html_object_callback(content_msg msg, struct content *object,
 	if (c->status == CONTENT_STATUS_READY)
 		sprintf(c->status_message, messages_get("FetchObjs"),
 				c->active);
+}
+
+
+/**
+ * Update a box whose content has completed rendering.
+ */
+
+void html_object_done(struct box *box, struct content *object)
+{
+	struct box *b;
+
+	box->object = object;
+
+	if (box->width != UNKNOWN_WIDTH &&
+			object->available_width != box->width)
+		content_reformat(object, box->width, box->height);
+
+	/* invalidate parent min, max widths */
+	for (b = box->parent; b; b = b->parent)
+		b->max_width = UNKNOWN_MAX_WIDTH;
+
+	/* delete any clones of this box */
+	while (box->next && box->next->clone) {
+		/* box_free_box(box->next); */
+		box->next = box->next->next;
+	}
 }
 
 
