@@ -141,6 +141,7 @@ HotlistTestBuild:NetSurf test builds
 # Tree URL text
 TreeAdded:eingetragen am: %s
 TreeLast:letzter Besuch: %s
+TreeVisited:Visited: %s
 TreeVisits:Besuche gesamt: %i
 TreeUnknown:Unknown
 TreeImport:Imported URL
