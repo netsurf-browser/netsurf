@@ -1,5 +1,5 @@
 /**
- * $Id: browser.h,v 1.4 2002/11/02 22:28:05 bursa Exp $
+ * $Id: browser.h,v 1.5 2002/12/30 22:56:30 monkeyson Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
@@ -60,6 +60,7 @@ struct content
         int selected; /* 0 = unselected, 1 = selected */
       } text_selection;
       struct font_set* fonts;
+      struct page_elements elements;
     } html;
   } data;
   struct fetch* main_fetch;
@@ -124,7 +125,8 @@ struct browser_action
   enum { act_UNKNOWN,
          act_MOUSE_AT, act_MOUSE_CLICK, act_START_NEW_SELECTION,
          act_ALTER_SELECTION, act_CLEAR_SELECTION,
-         act_FOLLOW_LINK, act_FOLLOW_LINK_NEW_WINDOW
+         act_FOLLOW_LINK, act_FOLLOW_LINK_NEW_WINDOW,
+	 act_GADGET_SELECT
        } type;
   union {
     struct {
@@ -132,7 +134,19 @@ struct browser_action
       int y;
       action_buttons buttons;
     } mouse;
+    struct {
+      struct gui_gadget* g;
+      int item;
+    } gadget_select;
   } data;
+};
+
+struct box_selection
+{
+  struct box* box;
+  int actual_x;
+  int actual_y;
+  int plot_index;
 };
 
 /* public functions */

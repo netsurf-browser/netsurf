@@ -1,5 +1,5 @@
 /**
- * $Id: gui.h,v 1.2 2002/10/15 10:41:12 monkeyson Exp $
+ * $Id: gui.h,v 1.3 2002/12/30 22:56:30 monkeyson Exp $
  */
 
 #ifndef _NETSURF_RISCOS_GUI_H_
@@ -47,5 +47,6 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* mouse);
 void ro_gui_window_open(gui_window* g, wimp_open* open);
 void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw);
 //void ro_gui_window_keypress(gui_window* g, wimp_key* key);
+void gui_remove_gadget(struct gui_gadget* g);
 
 #endif

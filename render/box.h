@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.14 2002/12/30 02:06:03 monkeyson Exp $
+ * $Id: box.h,v 1.15 2002/12/30 22:56:30 monkeyson Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -35,9 +35,14 @@ struct formoption {
 };
 
 struct gui_gadget {
-	enum { GADGET_HIDDEN = 0, GADGET_TEXTBOX, GADGET_RADIO, GADGET_OPTION,
+	enum { GADGET_HIDDEN = 0, GADGET_TEXTBOX, GADGET_RADIO, GADGET_CHECKBOX,
 		GADGET_SELECT, GADGET_TEXTAREA, GADGET_ACTIONBUTTON } type;
+	char* name;
+	struct form* form;
         union {
+		struct {
+			char* value;
+		} hidden;
 		struct {
 			int maxlength;
 			char* text;
@@ -45,6 +50,7 @@ struct gui_gadget {
 		} textbox;
 		struct {
 			char* label;
+			int pressed;
 		} actionbutt;
 		struct {
 			int numitems;
@@ -52,6 +58,19 @@ struct gui_gadget {
 			int size;
 			int multiple;
 		} select;
+		struct {
+			int selected;
+			char* value;
+		} checkbox;
+		struct {
+			int selected;
+			char* value;
+		} radio;
+		struct {
+			int cols;
+			int rows;
+			char* text;
+		} textarea;
 	} data;
 };
 
@@ -85,6 +104,23 @@ struct box {
 	struct img* img;
 };
 
+struct form
+{
+	char* action; /* url */
+	enum {method_GET, method_POST} method;
+};
+
+struct page_elements
+{
+	struct form** forms;
+	struct gui_gadget** gadgets;
+	struct img** images;
+	int numForms;
+	int numGadgets;
+	int numImages;
+};
+
+
 #define UNKNOWN_WIDTH ULONG_MAX
 #define UNKNOWN_MAX_WIDTH ULONG_MAX
 
@@ -96,7 +132,9 @@ void xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesh
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
 		const char *href, struct font_set *fonts,
-		struct gui_gadget* current_select, struct formoption* current_option);
+		struct gui_gadget* current_select, struct formoption* current_option,
+		struct gui_gadget* current_textarea, struct form* current_form, 
+		struct page_elements* elements);
 void box_dump(struct box * box, unsigned int depth);
 void box_free(struct box *box);
 

@@ -1,5 +1,5 @@
 /**
- * $Id: gui.h,v 1.2 2002/10/15 10:41:12 monkeyson Exp $
+ * $Id: gui.h,v 1.3 2002/12/30 22:56:30 monkeyson Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_GUI_H_
@@ -45,4 +45,5 @@ int gui_file_to_filename(char* location, char* actual_filename, int size);
 void gui_window_start_throbber(gui_window* g);
 void gui_window_stop_throbber(gui_window* g);
 
+void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, int mx, int my);
 #endif

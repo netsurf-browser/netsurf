@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.18 2002/12/30 21:14:29 bursa Exp $
+ * $Id: browser.c,v 1.19 2002/12/30 22:56:30 monkeyson Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -17,14 +17,6 @@
 #include <limits.h>
 #include <time.h>
 #include <ctype.h>
-
-struct box_selection
-{
-  struct box* box;
-  int actual_x;
-  int actual_y;
-  int plot_index;
-};
 
 void browser_window_text_selection(struct browser_window* bw, int click_x, int click_y, int click_type);
 void browser_window_clear_text_selection(struct browser_window* bw);
@@ -181,7 +173,7 @@ void content_html_reformat(struct content* c, int width)
   c->data.html.fonts = font_new_set();
 
   LOG(("XML to box"));
-  xml_to_box(c->data.html.markup, c->data.html.style, c->data.html.stylesheet, &selector, 0, c->data.html.layout, 0, 0, c->data.html.fonts, 0, 0);
+  xml_to_box(c->data.html.markup, c->data.html.style, c->data.html.stylesheet, &selector, 0, c->data.html.layout, 0, 0, c->data.html.fonts, 0, 0, 0, 0, &c->data.html.elements);
   LOG(("Layout document"));
   layout_document(c->data.html.layout->children, (unsigned long)width);
 
@@ -519,7 +511,14 @@ int browser_window_message(struct browser_window* bw, struct browser_message* ms
         bw->future_content->main_fetch = NULL;
         previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
         if (bw->current_content != NULL)
+	{
+	  int gc;
+	  for (gc = 0; gc < bw->current_content->data.html.elements.numGadgets; gc++)
+	  {
+		  gui_remove_gadget(bw->current_content->data.html.elements.gadgets[gc]);
+	  }
           cache_free(bw->current_content);
+	}
         bw->current_content = bw->future_content;
         bw->future_content = NULL;
         browser_window_reformat(bw);
@@ -536,6 +535,131 @@ int browser_window_message(struct browser_window* bw, struct browser_message* ms
   return 0;
 }
 
+void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct gui_gadget* group)
+{
+	struct box* c;
+	if (box == NULL)
+		return;
+	if (box->gadget != 0)
+	{
+		if (box->gadget->type == GADGET_RADIO && box->gadget->name != 0 && box->gadget != group)
+		{
+			if (strcmp(box->gadget->name, group->name) == 0)
+			{
+				if (box->gadget->data.radio.selected)
+				{
+					box->gadget->data.radio.selected = 0;
+					gui_redraw_gadget(bw, box->gadget);
+				}
+			}
+		}
+	}
+  for (c = box->children; c != 0; c = c->next)
+    if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
+      clear_radio_gadgets(bw, c, group);
+
+  for (c = box->float_children; c != 0; c = c->next_float)
+      clear_radio_gadgets(bw, c, group);
+}
+
+void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct gui_gadget* g, int x, int y)
+{
+	struct box* c;
+
+	if (box->gadget == g)
+	{
+  		gui_window_redraw(bw->window, x + box->x, y + box->y, x + box->x + box->width, y+box->y + box->height);
+	}
+	
+  for (c = box->children; c != 0; c = c->next)
+    if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
+      gui_redraw_gadget2(bw, c, g, box->x + x, box->y + y);
+
+  for (c = box->float_children; c != 0; c = c->next_float)
+     gui_redraw_gadget2(bw, c, g, box->x + x, box->y + y);
+}
+
+void gui_redraw_gadget(struct browser_window* bw, struct gui_gadget* g)
+{
+	gui_redraw_gadget2(bw, bw->current_content->data.html.layout->children, g, 0, 0);
+}
+
+void browser_window_gadget_select(struct browser_window* bw, struct gui_gadget* g, int item)
+{
+	struct formoption* o;
+	int count;
+
+	count = 0;
+	o = g->data.select.items;
+	while (o != NULL)
+	{
+		if (g->data.select.multiple == 0)
+			o->selected = 0;
+		if (count == item)
+			o->selected = !(o->selected);
+		o = o->next;
+		count++;
+	}
+
+	gui_redraw_gadget(bw, g);
+}
+
+int browser_window_gadget_click(struct browser_window* bw, int click_x, int click_y)
+{
+	struct box_selection* click_boxes;
+	int found, plot_index;
+	int i;
+
+	found = 0;
+	click_boxes = NULL;
+	plot_index = 0;
+
+	box_under_area(bw->current_content->data.html.layout->children,
+			click_x, click_y, 0, 0, &click_boxes, &found, &plot_index);
+
+	if (found == 0)
+		return 0;
+
+	for (i = found - 1; i >= 0; i--)
+	{
+		if (click_boxes[i].box->type == BOX_INLINE && click_boxes[i].box->gadget != 0)
+		{
+			struct gui_gadget* g = click_boxes[i].box->gadget;
+
+			/* gadget clicked */
+			switch (g->type)
+			{
+				case GADGET_SELECT:
+					gui_gadget_combo(bw, g, click_x, click_y);
+					break;
+				case GADGET_CHECKBOX:
+					g->data.checkbox.selected = !g->data.checkbox.selected;
+					gui_redraw_gadget(bw, g);
+					break;
+				case GADGET_RADIO:
+					clear_radio_gadgets(bw, bw->current_content->data.html.layout->children, g);
+					g->data.radio.selected = -1;
+					gui_redraw_gadget(bw, g);
+					break;
+				case GADGET_ACTIONBUTTON:
+					g->data.actionbutt.pressed = -1;
+					gui_redraw_gadget(bw, g);
+					break;
+				case GADGET_TEXTAREA:
+					gui_edit_textarea(bw, g);
+					break;
+				case GADGET_TEXTBOX:
+					gui_edit_textbox(bw, g);
+					break;
+			}
+
+			xfree(click_boxes);
+			return 1;
+		}
+	}
+	xfree(click_boxes);
+}
+
 int browser_window_action(struct browser_window* bw, struct browser_action* act)
 {
   switch (act->type)
@@ -544,6 +668,7 @@ int browser_window_action(struct browser_window* bw, struct browser_action* act)
      browser_window_follow_link(bw, act->data.mouse.x, act->data.mouse.y, 0);
       break;
     case act_MOUSE_CLICK:
+      return browser_window_gadget_click(bw, act->data.mouse.x, act->data.mouse.y);
       break;
     case act_CLEAR_SELECTION:
      browser_window_text_selection(bw, act->data.mouse.x, act->data.mouse.y, 0);
@@ -560,6 +685,8 @@ int browser_window_action(struct browser_window* bw, struct browser_action* act)
     case act_FOLLOW_LINK_NEW_WINDOW:
      browser_window_follow_link(bw, act->data.mouse.x, act->data.mouse.y, 2);
       break;
+    case act_GADGET_SELECT:
+      browser_window_gadget_select(bw, act->data.gadget_select.g, act->data.gadget_select.item);
     default:
       break;
   }

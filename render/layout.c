@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.29 2002/12/30 02:06:03 monkeyson Exp $
+ * $Id: layout.c,v 1.30 2002/12/30 22:56:30 monkeyson Exp $
  */
 
 #include <assert.h>
@@ -127,6 +127,9 @@ int gadget_width(struct gui_gadget* gadget)
 	/* should use wimp_textop via a gui wraper for these */
 	switch (gadget->type)
 	{
+		case GADGET_CHECKBOX:
+		case GADGET_RADIO:
+			return 22;
 		case GADGET_TEXTBOX:
 			return gadget->data.textbox.size * 8;
 		case GADGET_ACTIONBUTTON:
@@ -141,6 +144,8 @@ int gadget_width(struct gui_gadget* gadget)
 				current = current->next;
 			}
 			return max;
+		case GADGET_TEXTAREA:
+			return gadget->data.textarea.cols * 8 + 8;
 		default:
 			assert(0);
 	}
@@ -151,12 +156,17 @@ int gadget_height(struct gui_gadget* gadget)
 {
 	switch (gadget->type)
 	{
+		case GADGET_CHECKBOX:
+		case GADGET_RADIO:
+			return 22;
 		case GADGET_TEXTBOX:
 			return 28;
 		case GADGET_ACTIONBUTTON:
 			return 28;
 		case GADGET_SELECT:
 			return 28;
+		case GADGET_TEXTAREA:
+			return gadget->data.textarea.rows * 16 + 8;
 		default:
 			assert(0);
 	}
