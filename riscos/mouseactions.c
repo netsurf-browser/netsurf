@@ -6,9 +6,7 @@
  */
 
 #include <math.h>
-
 #include "oslib/os.h"
-
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/riscos/gui.h"

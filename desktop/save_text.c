@@ -93,7 +93,7 @@ void extract_text_from_tree(xmlNode *n)
 		/* do nothing, we just recurse through these nodes */
 	}
 	else if (n->type == XML_TEXT_NODE) {
-		if ((text = squash_tolat1(n->content)) != NULL) {
+		if ((text = squash_whitespace(n->content)) != NULL) {
 			fputs(text, out);
 			free(text);
 		}

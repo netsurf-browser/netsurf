@@ -70,8 +70,7 @@ static wimp_window empty_window = {
 	12,
 	1,
 	{""},
-	0,
-	{ }
+	0
 };
 
 /*	Holder for quick icon creation

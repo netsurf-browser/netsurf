@@ -30,7 +30,7 @@ OBJECTS_RISCOS += 401login.o debugwin.o \
 	htmlredraw.o jpeg.o menus.o mouseactions.o plugin.o \
 	png.o save.o save_complete.o save_draw.o save_text.o \
 	schedule.o sprite.o textselection.o theme.o thumbnail.o \
-	toolbar.o uri.o url_protocol.o wimp.o window.o		# riscos/
+	toolbar.o ufont.o uri.o url_protocol.o wimp.o window.o	# riscos/
 
 OBJECTS_DEBUG = $(OBJECTS_COMMON)
 OBJECTS_DEBUG += filetyped.o fontd.o netsurfd.o			# debug/

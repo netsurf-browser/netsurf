@@ -10,6 +10,7 @@
  */
 
 #include <assert.h>
+#include <ctype.h>
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
@@ -56,25 +57,44 @@ bool html_create(struct content *c, const char *params[])
 	unsigned int i;
 	struct content_html_data *html = &c->data.html;
 	union content_msg_data msg_data;
-	xmlCharEncoding encoding = XML_CHAR_ENCODING_NONE;
+	xmlCharEncoding encXML = XML_CHAR_ENCODING_NONE;
+	const char *encStr = NULL;
 
 	html->encoding = NULL;
 	html->getenc = true;
 
 	for (i = 0; params[i]; i += 2) {
 		if (strcasecmp(params[i], "charset") == 0) {
-			encoding = xmlParseCharEncoding(params[i + 1]);
-			if (encoding != XML_CHAR_ENCODING_ERROR
-					&& encoding != XML_CHAR_ENCODING_NONE) {
+			encXML = xmlParseCharEncoding(params[i + 1]);
+			if (encXML != XML_CHAR_ENCODING_ERROR
+					&& encXML != XML_CHAR_ENCODING_NONE) {
 				/* encoding specified - trust the server... */
-				html->encoding = xstrdup(xmlGetCharEncodingName(encoding));
+				html->encoding = xstrdup(xmlGetCharEncodingName(encXML));
 				html->getenc = false;
+			} else {
+				encStr = xstrdup(params[i + 1]);
 			}
 			break;
 		}
 	}
 
-	html->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, encoding);
+	html->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, encXML);
+	if (encStr != NULL) {
+		xmlCharEncodingHandlerPtr handler;
+		if ((handler = xmlFindCharEncodingHandler(encStr)) != NULL) {
+			if (xmlSwitchToEncoding(html->parser, handler) == 0) {
+				html->encoding = encStr;
+				html->getenc = false;
+			} else {
+				LOG(("xmlSwitchToEncoding failed for <%s>\n", encStr));
+				free(encStr);
+			}
+		} else {
+			LOG(("xmlFindCharEncodingHandler() failed for <%s>\n", encStr));
+			free(encStr);
+		}
+	}
+	html->base_url = xstrdup(c->url);
 	html->base_url = strdup(c->url);
 	html->layout = 0;
 	html->background_colour = TRANSPARENT;
@@ -267,7 +287,7 @@ void html_head(struct content *c, xmlNode *head)
 
 		if (!c->title && strcmp(node->name, "title") == 0) {
 			xmlChar *title = xmlNodeGetContent(node);
-			c->title = squash_tolat1(title);
+			c->title = squash_whitespace(title);
 			xmlFree(title);
 
 		} else if (strcmp(node->name, "base") == 0) {
@@ -852,7 +872,7 @@ void html_destroy(struct content *c)
 	free(c->data.html.style);
 
 	if (c->data.html.fonts)
-		font_free_set(c->data.html.fonts);
+		nsfont_free_set(c->data.html.fonts);
 
 	/* Free objects */
 	for (i = 0; i != c->data.html.object_count; i++) {

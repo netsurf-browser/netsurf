@@ -22,6 +22,7 @@
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/ufont.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/toolbar.h"
 #include "netsurf/riscos/wimp.h"
@@ -105,7 +106,6 @@ void html_redraw_box(struct content *content, struct box * box,
 	int padding_width, padding_height;
 	int x0, y0, x1, y1;
 	int colour;
-	font_string_flags font_flags;
 
 	x += box->x * 2 * scale;
 	y -= box->y * 2 * scale;
@@ -373,31 +373,14 @@ void html_redraw_box(struct content *content, struct box * box,
 			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		}
 
-		font_flags = font_OS_UNITS | font_GIVEN_FONT | font_KERN |
-			     font_GIVEN_LENGTH;
-
-		/* font background blending (RO3.7+) */
-		if (option_background_blending) {
-			int version;
-			os_error *e;
-
-			/* Font manager versions below 3.35 complain
-			 * about this flag being set.
-			 */
-			e = xfont_cache_addr(&version, 0, 0);
-			/**\todo should we do anything else on error? */
-			if (!e && version >= 335)
-				font_flags |= font_BLEND_FONT;
-		}
 		if (scale == 1)
-			font_paint(box->font->handle, box->text, font_flags,
+			nsfont_paint(box->font, box->text,
 					x, y - (int) (box->height * 1.5),
-					0, 0, (int) box->length);
+					NULL, (int) box->length);
 		else
-			font_paint(box->font->handle, box->text,
-					font_flags | font_GIVEN_TRFM,
+			nsfont_paint(box->font, box->text,
 					x, y - (int) (box->height * 1.5 * scale),
-					0, &trfm, (int) box->length);
+					&trfm, (int) box->length);
 
 
 	} else {
@@ -571,6 +554,7 @@ void html_redraw_file(int x, int y, int width, int height,
 	int text_width;
 	const char *text;
 	const char *sprite;
+	int length;
 
 	if (box->gadget->value) {
 		text = box->gadget->value;
@@ -579,17 +563,16 @@ void html_redraw_file(int x, int y, int width, int height,
 		text = messages_get("Form_Drop");
 		sprite = "drophere";
 	}
+	length = strlen(text);
 
-	text_width = font_width(box->font, text, strlen(text)) * 2 * scale;
+	text_width = nsfont_width(box->font, text, length) * 2 * scale;
 	if (width < text_width + 8)
 		x = x + width - text_width - 4;
 	else
 		x = x + 4;
 
-	font_paint(box->font->handle, text,
-			font_OS_UNITS | font_GIVEN_FONT |
-			font_KERN | font_GIVEN_TRFM,
-			x, y - height * 0.75, 0, &trfm, 0);
+	nsfont_paint(box->font, text,
+			x, y - height * 0.75, &trfm, length);
 
 /*	xwimpspriteop_put_sprite_user_coords(sprite, x + 4, */
 /*			y - height / 2 - 17, os_ACTION_OVERWRITE); */

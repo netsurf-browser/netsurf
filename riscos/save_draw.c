@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
  */
 
 #include <assert.h>
@@ -12,7 +13,9 @@
 
 #include "oslib/drawfile.h"
 #include "oslib/jpeg.h"
+#include "oslib/osgbpb.h"
 #include "oslib/osfile.h"
+#include "oslib/osfind.h"
 
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
@@ -30,21 +33,46 @@
 #define A4PAGEWIDTH (744)
 #define A4PAGEHEIGHT (1052)
 
-static bool add_font_table(int **d, unsigned int *length,
-		struct content *content);
-static bool add_options(int **d, unsigned int *length);
-static bool add_box(int **d, unsigned int *length, struct box *box,
-		unsigned long cbc, long x, long y);
-static bool add_graphic(int **d, unsigned int *length,
-		struct content *content, struct box *box,
-		unsigned long cbc, long x, long y);
-static bool add_rect(int **d, unsigned int *length, struct box *box,
-		unsigned long cbc, long x, long y, bool bg);
-static bool add_line(int **d, unsigned int *length, struct box *box,
-		unsigned long cbc, long x, long y);
-static bool add_circle(int **d, unsigned int *length, struct box *box,
-		unsigned long cbc, long x, long y);
+/* Must be a power of 2 */
+#define DRAWBUF_INITIAL_SIZE (1<<14)
 
+typedef enum {
+	DrawBuf_eHeader,
+	DrawBuf_eFontTable,
+	DrawBuf_eBody
+} drawbuf_type_e;
+
+typedef struct {
+	byte *bufP;
+	size_t currentSize;
+	size_t maxSize;
+} drawbuf_part_t;
+
+typedef struct {
+	drawbuf_part_t header;
+	drawbuf_part_t fontTable;
+	drawbuf_part_t body;
+	void **fontNamesP; /**< 256 element malloc() pointer array */
+	size_t numFonts;
+} drawbuf_t;
+
+static byte *drawbuf_claim(size_t size, drawbuf_type_e type);
+static void drawbuf_free(void);
+static bool drawbuf_add_font(const char *fontNameP, byte *fontIndex);
+static bool drawbuf_save_file(const char *drawfilename);
+
+static bool add_options(void);
+static bool add_box(struct box *box, unsigned long cbc, long x, long y);
+static bool add_graphic(struct content *content, struct box *box,
+		unsigned long cbc, long x, long y);
+static bool add_rect(struct box *box,
+		unsigned long cbc, long x, long y, bool bg);
+static bool add_line(struct box *box, unsigned long cbc, long x, long y);
+static bool add_circle(struct box *box, unsigned long cbc, long x, long y);
+static bool add_text(struct box *box, unsigned long cbc, long x, long y);
+
+
+static drawbuf_t oDrawBuf; /* static -> complete struct inited to 0 */
 
 /**
  * Export a content as a Drawfile.
@@ -54,178 +82,278 @@ static bool add_circle(int **d, unsigned int *length, struct box *box,
  * \return  true on success, false on error and error reported
  */
 
-bool save_as_draw(struct content *c, char *path)
+bool save_as_draw(struct content *c, const char *path)
 {
 	struct box *box;
 	int current_width;
 	unsigned long bc;
-	int *d;
-	unsigned int length;
-	drawfile_diagram *diagram;
-	os_error *error;
+	drawfile_diagram_base *diagram;
 
-	if (c->type != CONTENT_HTML) {
+	if (c->type != CONTENT_HTML)
 		return false;
-	}
 
 	box = c->data.html.layout->children;
 	current_width = c->available_width;
-	bc = 0xffffff;
 
-	d = calloc(40, sizeof(char));
-	if (!d) {
-		warn_user("NoMemory", 0);
-		return false;
-	}
+	if ((diagram = drawbuf_claim(sizeof(drawfile_diagram_base), DrawBuf_eHeader)) == NULL)
+		goto draw_save_error;
 
-	length = 40;
-
-	diagram = (drawfile_diagram *) d;
+	/* write the Draw diagram */
 	memcpy(diagram->tag, "Draw", 4);
 	diagram->major_version = 201;
 	diagram->minor_version = 0;
 	memcpy(diagram->source, "NetSurf     ", 12);
 
 	/* recalculate box widths for an A4 page */
-	if (!layout_document(box, A4PAGEWIDTH, c->data.html.box_pool))
-		goto no_memory;
+	if (!layout_document(box, A4PAGEWIDTH, c->data.html.box_pool)) {
+		warn_user("NoMemory", 0);
+		goto draw_save_error;
+	}
 
 	diagram->bbox.x0 = 0;
 	diagram->bbox.y0 = 0;
 	diagram->bbox.x1 = A4PAGEWIDTH*512;
 	diagram->bbox.y1 = A4PAGEHEIGHT*512;
 
-	if (!add_font_table(&d, &length, c))
-		goto no_memory;
+	if (!add_options())
+		goto draw_save_error;
 
-	if (!add_options(&d, &length))
-		goto no_memory;
-
+	bc = 0xffffff;
 	if (c->data.html.background_colour != TRANSPARENT) {
 		bc = c->data.html.background_colour;
-		if (!add_rect(&d, &length, box, bc<<8, 0,
-				A4PAGEHEIGHT*512, true))
-			goto no_memory;
+		if (!add_rect(box, bc<<8, 0, A4PAGEHEIGHT*512, true))
+			goto draw_save_error;
 	}
 
 	/* right, traverse the tree and grab the contents */
-	if (!add_box(&d, &length, box, bc, 0, A4PAGEHEIGHT*512))
-		goto no_memory;
+	if (!add_box(box, bc, 0, A4PAGEHEIGHT*512))
+		goto draw_save_error;
 
-	error = xosfile_save_stamped(path, osfile_TYPE_DRAW, (char *) d,
-			(char *) d + length);
+	if (!drawbuf_save_file(path))
+		goto draw_save_error;
 
-	free(d);
+	drawbuf_free();
 
-	if (error) {
-		LOG(("xosfile_save_stamped: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("SaveError", error->errmess);
-		/* attempt to reflow back on failure */
-		layout_document(box, current_width, c->data.html.box_pool);
+	/* reset layout to current window width */
+	if (!layout_document(box, current_width, c->data.html.box_pool)) {
+		warn_user("NoMemory", 0);
 		return false;
 	}
 
-	/* reset layout to current window width */
-	if (!layout_document(box, current_width, c->data.html.box_pool))
-		warn_user("NoMemory", 0);
-
 	return true;
 
-no_memory:
-	free(d);
+draw_save_error:
+	drawbuf_free();
 	/* attempt to reflow back on failure */
-	layout_document(box, current_width, c->data.html.box_pool);
-	warn_user("NoMemory", 0);
+	(void)layout_document(box, current_width, c->data.html.box_pool);
 	return false;
 }
 
 
 /**
- * add font table
+ * Claim size number of bytes available in that
+ * particular buffer.
+ *
+ * \param size number of bytes to claim
+ * \param type defines which Draw buffer needs its size to be ensured
+ * \return non NULL when buffer size got correctly claimed, NULL on failure
  */
-bool add_font_table(int **d, unsigned int *length,
-		struct content *content)
+static byte *drawbuf_claim(size_t size, drawbuf_type_e type)
 {
-	int *d2;
-	unsigned int length0 = *length;
-	unsigned int i;
-	unsigned int padding;
-	int handle = 0;
-	int ftlen = 0;
-	const char *name;
-	drawfile_object *dro;
-	drawfile_font_table *ft;
+	drawbuf_part_t *drawBufPartP;
 
-	d2 = realloc(*d, *length += 8);
-	if (!d2)
-		return false;
-	*d = d2;
-	dro = (drawfile_object *) (*d + length0 / sizeof *d);
-	ft = &dro->data.font_table;
-
-	dro->type = drawfile_TYPE_FONT_TABLE;
-
-	do {
-		name = enumerate_fonts(content->data.html.fonts, &handle);
-		if (handle == -1 && name == 0)
+	switch (type) {
+		case DrawBuf_eHeader:
+			drawBufPartP = &oDrawBuf.header;
 			break;
+		case DrawBuf_eFontTable:
+			drawBufPartP = &oDrawBuf.fontTable;
+			break;
+		case DrawBuf_eBody:
+			drawBufPartP = &oDrawBuf.body;
+			break;
+		default:
+			assert(0);
+	}
 
-		/* at this point, handle is always (font_table entry + 1) */
-		d2 = realloc(*d, *length += 1 + strlen(name) + 1);
-		if (!d2)
-			return false;
-		*d = d2;
-		dro = (drawfile_object *) (*d + length0 / sizeof *d);
-		ft = &dro->data.font_table;
+	if (drawBufPartP->bufP == NULL) {
+		const size_t sizeNeeded = (size > DRAWBUF_INITIAL_SIZE) ? size : DRAWBUF_INITIAL_SIZE;
+		if ((drawBufPartP->bufP = malloc(sizeNeeded)) == NULL) {
+			warn_user("NoMemory", 0);
+			return NULL;
+		}
+		drawBufPartP->currentSize = size;
+		drawBufPartP->maxSize = sizeNeeded;
+	} else if (drawBufPartP->maxSize < drawBufPartP->currentSize + size) {
+		size_t sizeNeeded = drawBufPartP->maxSize;
+		while ((sizeNeeded *= 2) < drawBufPartP->currentSize + size)
+			;
+		if ((drawBufPartP->bufP = realloc(drawBufPartP->bufP, sizeNeeded)) == NULL) {
+			warn_user("NoMemory", 0);
+			return NULL;
+		}
+		drawBufPartP->currentSize += size;
+		drawBufPartP->maxSize = sizeNeeded;
+	} else {
+		drawBufPartP->currentSize += size;
+	}
 
-		((char *) ft)[ftlen] = handle;
-		strcpy(((char *) ft) + ftlen + 1, name);
+	return drawBufPartP->bufP + drawBufPartP->currentSize - size;
+}
 
-		ftlen += 1 + strlen(name) + 1;
-	} while (handle != -1);
 
-	/* word align end of list */
-	padding = (ftlen + 3) / 4 * 4 - ftlen;
+/**
+ * Frees all the Draw buffers.
+ */
+static void drawbuf_free(void)
+{
+	free(oDrawBuf.header.bufP); oDrawBuf.header.bufP = NULL;
+	free(oDrawBuf.fontTable.bufP); oDrawBuf.fontTable.bufP = NULL;
+	free(oDrawBuf.body.bufP); oDrawBuf.body.bufP = NULL;
+	if (oDrawBuf.fontNamesP != NULL) {
+		while (oDrawBuf.numFonts > 0)
+			free(oDrawBuf.fontNamesP[--oDrawBuf.numFonts]);
+		free(oDrawBuf.fontNamesP); oDrawBuf.fontNamesP = NULL;
+	}
+	oDrawBuf.numFonts = 0;
+}
 
-	d2 = realloc(*d, *length + padding);
-	if (!d2)
+
+/**
+ * Return a font index for given RISC OS font name.
+ *
+ * \param fontNameP NUL terminated RISC OS font name.
+ * \param fontIndex Returned font index 0 - 255 for given font name.
+ * \return  true on success, false on error and error reported
+ */
+static bool drawbuf_add_font(const char *fontNameP, byte *fontIndex)
+{
+	size_t index;
+
+	for (index = 0; index < oDrawBuf.numFonts; ++index) {
+		if (!strcmp(oDrawBuf.fontNamesP[index], fontNameP)) {
+			*fontIndex = (byte)index + 1;
+			return true;
+		}
+	}
+
+	/* Only max 255 RISC OS outline fonts can be stored in a Draw
+	 * file.
+	 */
+	if (oDrawBuf.numFonts == 255)
+		return false; /** \todo: report GUI error */
+
+	if (oDrawBuf.fontNamesP == NULL
+	    && ((oDrawBuf.fontNamesP = malloc(255 * sizeof(void *))) == NULL)) {
+		warn_user("NoMemory", 0);
 		return false;
-	*d = d2;
-	dro = (drawfile_object *) (*d + length0 / sizeof *d);
-	ft = &dro->data.font_table;
+	}
 
-	for (i = 0; i != padding; i++)
-		((char *) *d)[*length + i] = 0;
-	*length += padding;
-	ftlen += padding;
-
-	dro->size = 8 + ftlen;
+	*fontIndex = (byte)oDrawBuf.numFonts + 1;
+	if ((oDrawBuf.fontNamesP[oDrawBuf.numFonts++] = strdup(fontNameP)) == NULL)
+		return false;
 
 	return true;
+}
+
+
+/**
+ * Save the Draw file from memory to disk.
+ *
+ * \param drawfilename RISC OS filename where to save the Draw file.
+ * \return  true on success, false on error and error reported
+ */
+static bool drawbuf_save_file(const char *drawfilename)
+{
+	size_t index;
+	os_fw *handle = NULL;
+	os_error *error;
+
+	/* create font table (if needed). */
+	if (oDrawBuf.numFonts > 0) {
+		drawfile_object *dro;
+
+		if ((dro = drawbuf_claim(8, DrawBuf_eFontTable)) == NULL)
+			goto file_save_error;
+
+		dro->type = drawfile_TYPE_FONT_TABLE;
+		/* we can't write dro->size yet. */
+
+		for (index = 0; index < oDrawBuf.numFonts; ++index) {
+			const char *fontNameP = oDrawBuf.fontNamesP[index];
+			size_t len = 1 + strlen(fontNameP) + 1;
+			byte *bufP;
+
+			if ((bufP = drawbuf_claim(len, DrawBuf_eFontTable)) == NULL)
+				goto file_save_error;
+			*bufP++ = (byte)index + 1;
+			memcpy(bufP, fontNameP, len + 1);
+		}
+		/* align to next word boundary */
+		if (oDrawBuf.fontTable.currentSize % 4) {
+			size_t wordpad = 4 - (oDrawBuf.fontTable.currentSize & 3);
+			byte *bufP;
+
+			if ((bufP = drawbuf_claim(wordpad, DrawBuf_eFontTable)) == NULL)
+				goto file_save_error;
+			memset(bufP, '\0', wordpad);
+		}
+
+		/* note that at the point it can be that
+		 * dro != oDrawBuf.fontTable.bufP
+		 */
+		((drawfile_object *)oDrawBuf.fontTable.bufP)->size = oDrawBuf.fontTable.currentSize;
+	}
+
+	if ((error = xosfind_openoutw(osfind_NO_PATH, drawfilename, NULL, &handle)) != NULL)
+		goto file_save_error;
+
+	/* write Draw header */
+	if ((error = xosgbpb_writew(handle, oDrawBuf.header.bufP, oDrawBuf.header.currentSize, NULL)) != NULL)
+		goto file_save_error;
+
+	/* write font table (if needed) */
+	if (oDrawBuf.fontTable.bufP != NULL
+	    && (error = xosgbpb_writew(handle, oDrawBuf.fontTable.bufP, oDrawBuf.fontTable.currentSize, NULL)) != NULL)
+		goto file_save_error;
+
+	/* write Draw body */
+	if ((error = xosgbpb_writew(handle, oDrawBuf.body.bufP, oDrawBuf.body.currentSize, NULL)) != NULL)
+		goto file_save_error;
+
+	if ((error = xosfind_closew(handle)) != NULL)
+		goto file_save_error;
+
+	if ((error = xosfile_set_type(drawfilename, osfile_TYPE_DRAW)) != NULL)
+		goto file_save_error;
+
+	return true;
+
+file_save_error:
+	LOG(("drawbuf_save_file() error: 0x%x: %s",
+			error->errnum, error->errmess));
+	warn_user("SaveError", error->errmess);
+	if (handle != NULL)
+		(void)xosfind_closew(handle);
+	return false;
 }
 
 
 /**
  * add options object
  */
-bool add_options(int **d, unsigned int *length)
+bool add_options(void)
 {
-	int *d2;
-	unsigned int length0 = *length;
 	drawfile_object *dro;
 	drawfile_options *dfo;
 
-	d2 = realloc(*d, *length += 8 + 80);
-	if (!d2)
+	if ((dro = drawbuf_claim(8 + sizeof(drawfile_options), DrawBuf_eBody)) == NULL)
 		return false;
-	*d = d2;
-	dro = (drawfile_object *) (*d + length0 / sizeof *d);
-	dfo = &dro->data.options;
 
 	dro->type = drawfile_TYPE_OPTIONS;
-	dro->size = 8 + 80;
+	dro->size = 8 + sizeof(drawfile_options);
 
+	dfo = &dro->data.options;
 	dfo->bbox.x0 = dfo->bbox.y0 = dfo->bbox.x1 = dfo->bbox.y1 = 0;
 	dfo->paper_size = 0x500; /* A4 */
 	dfo->paper_options = (drawfile_paper_options)0;
@@ -250,33 +378,24 @@ bool add_options(int **d, unsigned int *length)
 /**
  * Traverses box tree, adding objects to the diagram as it goes.
  */
-bool add_box(int **d, unsigned int *length, struct box *box,
-		unsigned long cbc, long x, long y)
+bool add_box(struct box *box, unsigned long cbc, long x, long y)
 {
-	int *d2;
-	unsigned int length0 = *length;
 	struct box *c;
-	int width, height, colour;
-	unsigned int i;
-	drawfile_object *dro;
-	drawfile_text *dt;
 
 	x += box->x * 512;
 	y -= box->y * 512;
-	width = (box->padding[LEFT] + box->width + box->padding[RIGHT]) * 2;
-	height = (box->padding[TOP] + box->height + box->padding[BOTTOM]) * 2;
 
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
-		for (c = box->children; c; c = c->next) {
-			if (!add_box(d, length, c, cbc, x, y))
+		for (c = box->children; c != NULL; c = c->next) {
+			if (!add_box(c, cbc, x, y))
 				return false;
 		}
 		return true;
 	}
 
-	if (box->style != 0 && box->style->background_color != TRANSPARENT) {
+	if (box->style && box->style->background_color != TRANSPARENT) {
 		cbc = box->style->background_color;
-		if (!add_rect(d, length, box, cbc<<8, x, y, false))
+		if (!add_rect(box, cbc<<8, x, y, false))
 			return false;
 	}
 
@@ -290,28 +409,25 @@ bool add_box(int **d, unsigned int *length, struct box *box,
 #ifdef WITH_SPRITE
 			case CONTENT_SPRITE:
 #endif
-				return add_graphic(d, length, box->object,
+				return add_graphic(box->object,
 						box, cbc, x, y);
 
 			case CONTENT_HTML:
 				c = box->object->data.html.layout->children;
-				return add_box(d, length, c, cbc, x, y);
-
-			default:
-				break;
+				return add_box(c, cbc, x, y);
 		}
 
 	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
-		return add_rect(d, length, box, 0xDEDEDE00, x, y, false);
+		return add_rect(box, 0xDEDEDE00, x, y, false);
 
 	} else if (box->gadget && box->gadget->type == GADGET_RADIO) {
-		return add_circle(d, length, box, 0xDEDEDE00, x, y);
+		return add_circle(box, 0xDEDEDE00, x, y);
 
 	} else if (box->text && box->font) {
+		int colour;
 
-		if (box->length == 0) {
+		if (box->length == 0)
 			return true;
-		}
 
 		/* text-decoration */
 		colour = box->style->color;
@@ -319,64 +435,33 @@ bool add_box(int **d, unsigned int *length, struct box *box,
 			| (((((colour >> 8) & 0xff) +
 			     ((cbc >> 8) & 0xff)) / 2) << 8)
 			| ((((colour & 0xff) + (cbc & 0xff)) / 2) << 0);
-		if (box->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK)) {
-			if (!add_line(d, length, box, (unsigned)colour<<8,
+		if (box->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE
+			|| (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK)) {
+			if (!add_line(box, (unsigned)colour<<8,
 					x, (int)(y+(box->height*0.1*512))))
 				return false;
 		}
-		if (box->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK)) {
-			if (!add_line(d, length, box, (unsigned)colour<<8,
+		if (box->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE
+			|| (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK)) {
+			if (!add_line(box, (unsigned)colour<<8,
 					x, (int)(y+(box->height*0.9*512))))
 				return false;
 		}
 		if (box->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH && box->parent->parent->type == BOX_BLOCK)) {
-			if (!add_line(d, length, box, (unsigned)colour<<8,
+			if (!add_line(box, (unsigned)colour<<8,
 					x, (int)(y+(box->height*0.4*512))))
 				return false;
 		}
 
-		/* normal text */
-		length0 = *length;
-		d2 = realloc(*d, *length += 8 + 44 +
-				(box->length + 1 + 3) / 4 * 4);
-		if (!d2)
-			return false;
-		*d = d2;
-		dro = (drawfile_object *) (*d + length0 / sizeof *d);
-		dt = &dro->data.text;
-
-		dro->type = drawfile_TYPE_TEXT;
-		dro->size = 8 + 44 + (box->length + 1 + 3) / 4 * 4;
-
-		dt->bbox.x0 = x;
-		dt->bbox.y0 = y-(box->height*1.5*512);
-		dt->bbox.x1 = x+(box->width*512);
-		dt->bbox.y1 = y;
-		dt->fill = box->style->color<<8;
-		dt->bg_hint = cbc<<8;
-		dt->style.font_index = box->font->id + 1;
-		dt->style.reserved[0] = 0;
-		dt->style.reserved[1] = 0;
-		dt->style.reserved[2] = 0;
-		dt->xsize = box->font->size*40;
-		dt->ysize = box->font->size*40;
-		dt->base.x = x;
-		dt->base.y = y-(box->height*512)+1536;
-		strncpy(dt->text, box->text, box->length);
-		dt->text[box->length] = 0;
-		for (i = box->length + 1; i % 4; i++)
-			dt->text[i] = 0;
-
-		return true;
-
+		return add_text(box, cbc, x, y);
 	} else {
 		for (c = box->children; c != 0; c = c->next) {
 			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-				if (!add_box(d, length, c, cbc, x, y))
+				if (!add_box(c, cbc, x, y))
 					return false;
 		}
 		for (c = box->float_children; c !=  0; c = c->next_float) {
-			if (!add_box(d, length, c, cbc, x, y))
+			if (!add_box(c, cbc, x, y))
 				return false;
 		}
 	}
@@ -386,79 +471,68 @@ bool add_box(int **d, unsigned int *length, struct box *box,
 
 
 /**
- * Add images to the drawfile. Uses add_jpeg as a helper.
+ * Add images to the drawfile.
  */
-bool add_graphic(int **d, unsigned int *length,
-		struct content *content, struct box *box,
-		unsigned long cbc, long x, long y) {
-
-	int *d2;
-	unsigned int length0 = *length;
-	int sprite_length = 0;
+bool add_graphic(struct content *content, struct box *box,
+		unsigned long cbc, long x, long y)
+{
+	int sprite_length;
 	drawfile_object *dro;
 	drawfile_sprite *ds;
 
 	/* cast-tastic... */
 	switch (content->type) {
-	  case CONTENT_JPEG:
-	       sprite_length = ((osspriteop_header*)((char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first))->size;
-	       break;
+		case CONTENT_JPEG:
+			sprite_length = ((osspriteop_header*)((char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first))->size;
+			break;
 #ifdef WITH_PNG
-	  case CONTENT_PNG:
-	       sprite_length = ((osspriteop_header*)((char*)content->data.png.sprite_area+content->data.png.sprite_area->first))->size;
-	       break;
+		case CONTENT_PNG:
+			sprite_length = ((osspriteop_header*)((char*)content->data.png.sprite_area+content->data.png.sprite_area->first))->size;
+			break;
 #endif
-	  case CONTENT_GIF:
-	       sprite_length = content->data.gif.gif->frame_image->size;
-	       break;
+		case CONTENT_GIF:
+			sprite_length = content->data.gif.gif->frame_image->size;
+			break;
 #ifdef WITH_SPRITE
-	  case CONTENT_SPRITE:
-	       sprite_length = ((osspriteop_header*)((char*)content->data.sprite.data+(((osspriteop_area*)content->data.sprite.data)->first)))->size;
-	       break;
+		case CONTENT_SPRITE:
+			sprite_length = ((osspriteop_header*)((char*)content->data.sprite.data+(((osspriteop_area*)content->data.sprite.data)->first)))->size;
+			break;
 #endif
-	  default:
-	       assert(0);
+		default:
+			assert(0);
 	}
 
-	d2 = realloc(*d, *length += 8 + 16 + sprite_length);
-	if (!d2)
+	if ((dro = (drawfile_object *)drawbuf_claim(8 + 16 + sprite_length, DrawBuf_eBody)) == NULL)
 		return false;
-	*d = d2;
-	dro = (drawfile_object *) (*d + length0 / sizeof *d);
-	ds = &dro->data.sprite;
 
 	dro->type = drawfile_TYPE_SPRITE;
 	dro->size = 8 + 16 + sprite_length;
 
+	ds = &dro->data.sprite;
 	ds->bbox.x0 = x;
-	ds->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
-	ds->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
-
+	ds->bbox.y0 = y - (box->padding[TOP] + box->height + box->padding[BOTTOM])*512;
+	ds->bbox.x1 = x + (box->padding[LEFT] + box->width + box->padding[RIGHT])*512;
 	ds->bbox.y1 = y;
 
 	switch (content->type) {
-	  case CONTENT_JPEG:
-	       memcpy((char*)ds+16, (char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first,
-		       (unsigned)sprite_length);
-	       break;
+		case CONTENT_JPEG:
+			memcpy((char*)ds+16, (char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first, (unsigned)sprite_length);
+			break;
 #ifdef WITH_PNG
-	  case CONTENT_PNG:
-	       memcpy((char*)ds+16, (char*)content->data.png.sprite_area+content->data.png.sprite_area->first,
-		       (unsigned)sprite_length);
-	       break;
+		case CONTENT_PNG:
+			memcpy((char*)ds+16, (char*)content->data.png.sprite_area+content->data.png.sprite_area->first, (unsigned)sprite_length);
+			break;
 #endif
-	  case CONTENT_GIF:
-	       memcpy((char*)ds+16, (char*)content->data.gif.gif->frame_image,
-		       (unsigned)sprite_length);
-	       break;
+		case CONTENT_GIF:
+			memcpy((char*)ds+16, (char*)content->data.gif.gif->frame_image, (unsigned)sprite_length);
+			break;
 #ifdef WITH_SPRITE
-	  case CONTENT_SPRITE:
-	       memcpy((char*)ds+16, (char*)content->data.sprite.data+((osspriteop_area*)content->data.sprite.data)->first,
-		       (unsigned)sprite_length);
-	       break;
+		case CONTENT_SPRITE:
+			memcpy((char*)ds+16, (char*)content->data.sprite.data+((osspriteop_area*)content->data.sprite.data)->first, (unsigned)sprite_length);
+			break;
 #endif
-	  default:
-	       assert(0);
+		default:
+			assert(0);
 	}
 
 	return true;
@@ -469,25 +543,20 @@ bool add_graphic(int **d, unsigned int *length,
  * Add a filled, borderless rectangle to the diagram
  * Set bg to true to produce the background rectangle.
  */
-bool add_rect(int **d, unsigned int *length, struct box *box,
-		unsigned long cbc, long x, long y, bool bg) {
-
-	int *d2;
-	unsigned int length0 = *length;
+bool add_rect(struct box *box,
+		unsigned long cbc, long x, long y, bool bg)
+{
 	drawfile_object *dro;
 	drawfile_path *dp;
 	draw_path_element *dpe;
 
-	d2 = realloc(*d, *length += 8 + 96);
-	if (!d2)
+	if ((dro = (drawfile_object *)drawbuf_claim(8 + 96, DrawBuf_eBody)) == NULL)
 		return false;
-	*d = d2;
-	dro = (drawfile_object *) (*d + length0 / sizeof *d);
-	dp = &dro->data.path;
 
 	dro->type = drawfile_TYPE_PATH;
 	dro->size = 8 + 96;
 
+	dp = &dro->data.path;
 	if (bg) {
 		dp->bbox.x0 = 0;
 		dp->bbox.y0 = 0;
@@ -495,8 +564,8 @@ bool add_rect(int **d, unsigned int *length, struct box *box,
 		dp->bbox.y1 = A4PAGEHEIGHT*512;
 	} else {
 		dp->bbox.x0 = x;
-		dp->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
-		dp->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
+		dp->bbox.y0 = y - (box->padding[TOP] + box->height + box->padding[BOTTOM])*512;
+		dp->bbox.x1 = x + (box->padding[LEFT] + box->width + box->padding[RIGHT])*512;
 		dp->bbox.y1 = y;
 	}
 
@@ -560,28 +629,22 @@ bool add_rect(int **d, unsigned int *length, struct box *box,
 /**
  * add a line to the diagram
  */
-bool add_line(int **d, unsigned int *length, struct box *box,
-		unsigned long cbc, long x, long y) {
-
-	int *d2;
-	unsigned int length0 = *length;
+bool add_line(struct box *box, unsigned long cbc, long x, long y)
+{
 	drawfile_object *dro;
 	drawfile_path *dp;
 	draw_path_element *dpe;
 
-	d2 = realloc(*d, *length += 8 + 60);
-	if (!d2)
+	if ((dro = (drawfile_object *)drawbuf_claim(8 + 60, DrawBuf_eBody)) == NULL)
 		return false;
-	*d = d2;
-	dro = (drawfile_object *) (*d + length0 / sizeof *d);
-	dp = &dro->data.path;
 
 	dro->type = drawfile_TYPE_PATH;
 	dro->size = 8 + 60;
 
+	dp = &dro->data.path;
 	dp->bbox.x0 = x;
-	dp->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
-	dp->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
+	dp->bbox.y0 = y - (box->padding[TOP] + box->height + box->padding[BOTTOM])*512;
+	dp->bbox.x1 = x + (box->padding[LEFT] + box->width + box->padding[RIGHT])*512;
 	dp->bbox.y1 = y;
 
 	dp->fill = cbc;
@@ -618,46 +681,39 @@ bool add_line(int **d, unsigned int *length, struct box *box,
 /**
  * add a circle to the diagram.
  */
-bool add_circle(int **d, unsigned int *length, struct box *box,
-		unsigned long cbc, long x, long y) {
-
-	int *d2;
-	unsigned int length0 = *length;
-	double radius = 0, kappa;
+bool add_circle(struct box *box, unsigned long cbc, long x, long y)
+{
+	double radius, kappa;
 	double cx, cy;
 	drawfile_object *dro;
 	drawfile_path *dp;
 	draw_path_element *dpe;
 
-	d2 = realloc(*d, *length += 8 + 160);
-	if (!d2)
+	if ((dro = (drawfile_object *)drawbuf_claim(8 + 160, DrawBuf_eBody)) == NULL)
 		return false;
-	*d = d2;
-	dro = (drawfile_object *) (*d + length0 / sizeof *d);
-	dp = &dro->data.path;
 
 	dro->type = drawfile_TYPE_PATH;
 	dro->size = 8 + 160;
 
+	dp = &dro->data.path;
 	dp->bbox.x0 = x;
-	dp->bbox.y0 = y-((box->padding[TOP] + box->height + box->padding[BOTTOM])*512);
-	dp->bbox.x1 = x+((box->padding[LEFT] + box->width + box->padding[RIGHT])*512);
+	dp->bbox.y0 = y - (box->padding[TOP] + box->height + box->padding[BOTTOM])*512;
+	dp->bbox.x1 = x + (box->padding[LEFT] + box->width + box->padding[RIGHT])*512;
 	dp->bbox.y1 = y;
 
-	cx = ((dp->bbox.x1-dp->bbox.x0)/2.0);
-	cy = ((dp->bbox.y1-dp->bbox.y0)/2.0);
-	if (cx == cy) {
-		radius = cx; /* box is square */
-	}
+	cx = (dp->bbox.x1 - dp->bbox.x0) / 2.;
+	cy = (dp->bbox.y1 - dp->bbox.y0) / 2.;
+	if (cx == cy)
+		radius = cx;		/* box is square */
 	else if (cx > cy) {
 		radius = cy;
-		dp->bbox.x1 -= (cx-cy); /* reduce box width */
+		dp->bbox.x1 -= cx - cy;	/* reduce box width */
 	}
 	else if (cy > cx) {
 		radius = cx;
-		dp->bbox.y0 += (cy-cx); /* reduce box height */
+		dp->bbox.y0 += cy - cx;	/* reduce box height */
 	}
-	kappa = radius * ((4.0/3.0)*(sqrt(2.0)-1.0)); /* ~= 0.5522847498 */
+	kappa = radius * 4. * (sqrt(2.) - 1.) / 3.; /* ~= 0.5522847498 */
 
 	dp->fill = cbc;
 	dp->outline = cbc;
@@ -665,11 +721,11 @@ bool add_circle(int **d, unsigned int *length, struct box *box,
 	dp->style.flags = drawfile_PATH_ROUND;
 
 	/*
-	 *    Z	  b   Y
+	 *    Z   b   Y
 	 *
-	 *    a	  X   c
+	 *    a   X   c
 	 *
-	 *    V	  d   W
+	 *    V   d   W
 	 *
 	 *    V = (x0,y0)
 	 *    W = (x1,y0)
@@ -744,4 +800,70 @@ bool add_circle(int **d, unsigned int *length, struct box *box,
 	return true;
 }
 
+
+/**
+ * Add the text line to the diagram.
+ */
+static bool add_text(struct box *box, unsigned long cbc, long x, long y)
+{
+	const char *txt = box->text;
+	size_t txt_len = box->length;
+
+	while (txt_len != 0) {
+		unsigned int width, rolength, consumed;
+		const char *rofontname, *rotext;
+		byte fontIndex;
+		drawfile_object *dro;
+		drawfile_text *dt;
+
+		nsfont_txtenum(box->font, txt, txt_len,
+				&width,
+				&rofontname,
+				&rotext,
+				&rolength,
+				&consumed);
+		LOG(("txtenum <%.*s> (%d bytes), returned width %d, font name <%s>, RISC OS text <%.*s>, consumed %d\n", txt_len, txt, txt_len, width, rofontname, rolength, rotext, consumed));
+		/* Error happened ? */
+		if (rotext == NULL)
+			return false;
+
+		if (!drawbuf_add_font(rofontname, &fontIndex))
+			return false;
+
+		if ((dro = (drawfile_object *)drawbuf_claim(8 + 44 + ((rolength + 1 + 3) & -4), DrawBuf_eBody)) == NULL)
+			return false;
+
+		dro->type = drawfile_TYPE_TEXT;
+		dro->size = 8 + 44 + ((rolength + 1 + 3) & -4);
+
+		dt = &dro->data.text;
+		dt->bbox.x0 = x;
+		dt->bbox.y0 = y - box->height*1.5*512;
+		dt->bbox.x1 = x + width*512;
+		dt->bbox.y1 = y;
+		dt->fill = box->style->color << 8;
+		dt->bg_hint = cbc << 8;
+		dt->style.font_index = fontIndex;
+		dt->style.reserved[0] = 0;
+		dt->style.reserved[1] = 0;
+		dt->style.reserved[2] = 0;
+		dt->xsize = box->font->size*40;
+		dt->ysize = box->font->size*40;
+		dt->base.x = x;
+		dt->base.y = y - box->height*512 + 1536;
+		strncpy(dt->text, rotext, rolength);
+		dt->text[rolength] = 0;
+		for (++rolength; rolength % 4; ++rolength)
+			dt->text[rolength] = 0;
+
+		free(rotext);
+
+		/* Go to next chunk : */
+		x += width * 512;
+		txt += consumed;
+		txt_len -= consumed;
+	}
+
+	return true;
+}
 #endif

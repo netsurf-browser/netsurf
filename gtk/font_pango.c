@@ -19,13 +19,13 @@ struct font_set {
 };
 
 
-struct font_set *font_new_set()
+struct font_set *nsfont_new_set()
 {
 	return 0;
 }
 
 
-struct font_data *font_open(struct font_set *set, struct css_style *style)
+struct font_data *nsfont_open(struct font_set *set, struct css_style *style)
 {
 	struct font_data *data;
 	unsigned int size = PANGO_SCALE * 11;
@@ -76,12 +76,12 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 }
 
 
-void font_free_set(struct font_set *set)
+void nsfont_free_set(struct font_set *set)
 {
 }
 
 
-unsigned long font_width(struct font_data *font, const char *text,
+unsigned long nsfont_width(struct font_data *font, const char *text,
 		unsigned int length)
 {
 	int width;
@@ -107,7 +107,7 @@ unsigned long font_width(struct font_data *font, const char *text,
 }
 
 
-void font_position_in_string(const char *text, struct font_data *font,
+void nsfont_position_in_string(struct font_data *font, const char *text,
 		unsigned int length, unsigned long x, int *char_offset,
 		int *pixel_offset)
 {
@@ -134,7 +134,7 @@ void font_position_in_string(const char *text, struct font_data *font,
 }
 
 
-char *font_split(struct font_data *font, const char *text, unsigned int length,
+char *nsfont_split(struct font_data *font, const char *text, unsigned int length,
 		unsigned int width, unsigned int *used_width)
 {
 	int index = length;

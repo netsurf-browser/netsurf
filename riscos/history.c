@@ -446,11 +446,11 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 	else
 		wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_BLACK);
 
-	font_paint(history_font, he->title,
+	xfont_paint(history_font, he->title,
 			font_OS_UNITS | font_GIVEN_FONT | font_KERN,
 			x0 + he->x * FULL_WIDTH + (FULL_WIDTH - he->width) / 2,
 			y0 - he->y * FULL_HEIGHT - HEIGHT - MARGIN - 24,
-			0, 0, 0);
+			NULL, NULL, 0);
 
 
 	colourtrans_set_gcol(os_COLOUR_MID_DARK_GREY, 0,

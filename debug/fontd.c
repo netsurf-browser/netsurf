@@ -28,7 +28,7 @@ static void font_close(struct font_data *data);
  * functions
  */
 
-unsigned long font_width(struct font_data *font, const char * text, unsigned int length)
+unsigned long nsfont_width(struct font_data *font, const char * text, unsigned int length)
 {
 	int width;
 
@@ -40,7 +40,7 @@ unsigned long font_width(struct font_data *font, const char * text, unsigned int
 	return length * 10;
 }
 
-void font_position_in_string(const char* text, struct font_data* font,
+void nsfont_position_in_string(struct font_data* font, const char* text,
 		unsigned int length, unsigned long x, int* char_offset, int* pixel_offset)
 {
   assert(font != 0 && text != 0);
@@ -52,7 +52,7 @@ void font_position_in_string(const char* text, struct font_data* font,
 }
 
 
-struct font_set *font_new_set()
+struct font_set *nsfont_new_set()
 {
 	struct font_set *set = xcalloc(1, sizeof(*set));
 	unsigned int i;
@@ -64,7 +64,7 @@ struct font_set *font_new_set()
 }
 
 
-struct font_data *font_open(struct font_set *set, struct css_style *style)
+struct font_data *nsfont_open(struct font_set *set, struct css_style *style)
 {
 	struct font_data *data;
 	unsigned int size = 16 * 11;
@@ -98,12 +98,12 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 
 	for (data = set->font[f]; data != 0; data = data->next)
 		if (data->size == size)
-	        	return data;
+			return data;
 
 	data = xcalloc(1, sizeof(*data));
 
 	data->size = size;
-	data->space_width = font_width(data, " ", 1);
+	data->space_width = nsfont_width(data, " ", sizeof(" ")-1);
 
 	data->next = set->font[f];
 	set->font[f] = data;
@@ -112,7 +112,7 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 }
 
 
-void font_free_set(struct font_set *set)
+void nsfont_free_set(struct font_set *set)
 {
 	unsigned int i;
 	struct font_data *data, *next;
@@ -137,7 +137,7 @@ void font_close(struct font_data *data)
 }
 
 
-char * font_split(struct font_data *data, const char * text, unsigned int length,
+char *nsfont_split(struct font_data *data, const char * text, unsigned int length,
 		unsigned int width, unsigned int *used_width)
 {
 	int i = width / 10;
@@ -154,15 +154,9 @@ char * font_split(struct font_data *data, const char * text, unsigned int length
 }
 
 
-const char *enumerate_fonts(struct font_set *set, int *handle)
+void nsfont_paint(struct font_data *data, const char *text,
+		int xpos, int ypos, void *trfm, int length)
 {
-        assert(handle);
-
-	if (*handle == 0) {
-		*handle = 1;
-		return "Homerton.Medium";
-	}
-
-	*handle = -1;
-	return 0;
+	assert(data != NULL);
+	assert(text != NULL);
 }

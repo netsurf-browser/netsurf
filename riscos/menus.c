@@ -1150,9 +1150,12 @@ void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
 	const char *enc = "-";
 	const char *mime = "-";
 
-	if (c->title != 0)     title = c->title;
-	if (c->url != 0)       url = c->url;
-	if (c->mime_type != 0) mime = c->mime_type;
+	if (c->title != NULL)
+		title = cnv_str_local_enc(c->title);
+	if (c->url != NULL)
+		url = c->url;
+	if (c->mime_type != NULL)
+		mime = c->mime_type;
 
 	sprintf(icon_buf, "file_%x", ro_content_filetype(c));
 
@@ -1165,6 +1168,9 @@ void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_URL, url);
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ENC, enc);
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TYPE, mime);
+
+	if (title != NULL)
+		free(title);
 
 	error = xwimp_create_sub_menu((wimp_menu *) dialog_pageinfo,
 			warning->pos.x, warning->pos.y);

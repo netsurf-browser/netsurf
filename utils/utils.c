@@ -5,8 +5,10 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
  */
 
+#include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -68,9 +70,12 @@ void xfree(void* p)
 
 char * xstrdup(const char * const s)
 {
-	char * c = malloc(strlen(s) + 1);
-	if (c == 0) die("Out of memory in xstrdup()");
-	strcpy(c, s);
+	char *c;
+	if (s == NULL)
+		fprintf(stderr, "Attempt to strdup() NULL pointer\n");
+	c = malloc(((s == NULL) ? 0 : strlen(s)) + 1);
+	if (c == NULL) die("Out of memory in xstrdup()");
+	strcpy(c, (s == NULL) ? "" : s);
 	return c;
 }
 
@@ -112,81 +117,95 @@ char * squash_whitespace(const char * s)
 	return c;
 }
 
-char * tolat1(xmlChar * s)
-{
-	unsigned int length = strlen((char*) s);
-	unsigned int space = length + 100;
-	char *d = xcalloc(space, sizeof(char));
-	char *d0 = d;
-	char *end = d0 + space - 10;
-	int u, chars;
 
-	while (*s != 0) {
+/**
+ * Converts NUL terminated UTF-8 encoded string s containing zero or more
+ * spaces (char 32) or TABs (char 9) to non-breaking spaces
+ * (0xC2 + 0xA0 in UTF-8 encoding).
+ *
+ * Caller needs to free() result.  Returns NULL in case of error.  No
+ * checking is done on validness of the UTF-8 input string.
+ */
+char *cnv_space2nbsp(const char *s)
+{
+	const char *srcP;
+	char *d, *d0;
+	unsigned int numNBS;
+	/* Convert space & TAB into non breaking space character (0xA0) */
+	for (numNBS = 0, srcP = (const char *)s; *srcP != '\0'; ++srcP)
+		if (*srcP == ' ' || *srcP == '\t')
+			++numNBS;
+	if ((d = (char *)malloc((srcP - s) + numNBS + 1)) == NULL)
+		return NULL;
+	for (d0 = d, srcP = (const char *)s; *srcP != '\0'; ++srcP) {
+		if (*srcP == ' ' || *srcP == '\t') {
+			*d0++ = 0xC2;
+			*d0++ = 0xA0;
+		} else
+			*d0++ = *srcP;
+	}
+	*d0 = '\0';
+	return d;
+}
+
+/**
+ * Converts NUL terminated UTF-8 string <s> to the machine local encoding.
+ * Caller needs to free return value.
+ */
+char *cnv_str_local_enc(const char *s)
+{
+return cnv_strn_local_enc(s, strlen(s), NULL);
+}
+
+/**
+ * Converts UTF-8 string <s> of <length> bytes to the machine local encoding.
+ * Caller needs to free return value.
+ *
+ * When back_map is non-NULL, a ptr to a ptrdiff_t array is filled in which
+ * needs to be free'd by the caller.  The array contains per character
+ * in the return string, a ptrdiff in the <s> UTF-8 encoded string.
+ *
+ * \todo more work is needed here.  Only Latin1 is done here.
+ */
+char *cnv_strn_local_enc(const char *s, int length, const ptrdiff_t **back_mapPP)
+{
+	/* Buffer at d & back_mapP can be overdimentioned but is certainly
+	 * big enough to carry the end result.
+	 */
+	char *d = xcalloc(length + 1, sizeof(char));
+	ptrdiff_t *back_mapP = (back_mapPP != NULL) ? xcalloc(length + 1, sizeof(ptrdiff_t)) : NULL;
+	char *d0 = d;
+	const char * const s0 = s;
+
+	if (back_mapPP != NULL)
+		*back_mapPP = back_mapP;
+
+	while (length != 0) {
+		int u, chars;
+
 		chars = length;
-		u = xmlGetUTF8Char((unsigned char *) s, &chars);
+		u = xmlGetUTF8Char(s, &chars);
 		if (chars <= 0) {
 			s += 1;
 			length -= 1;
-			LOG(("UTF-8 error"));
 			continue;
 		}
-		s += chars;
-		length -= chars;
-		if (u == 0x09 || u == 0x0a || u == 0x0d)
-			*d++ = ' ';
-		else if ((0x20 <= u && u <= 0x7f) || (0xa0 <= u && u <= 0xff))
-			*d++ = u;
-		else {
-			unicode_transliterate((unsigned int) u, &d);
-			if (end < d) {
-				space += 100;
-				d0 = xrealloc(d0, space);
-				end = d0 + space - 10;
-			}
-		}
-	}
-	*d = 0;
-
-	return d0;
-}
-
-char * tolat1_pre(xmlChar * s)
-{
-	unsigned int length = strlen((char*) s);
-	char *d = xcalloc(length + 1, sizeof(char));
-	char *d0 = d;
-	int u, chars;
-
-	while (*s != 0) {
-		chars = length;
-		u = xmlGetUTF8Char((unsigned char *) s, &chars);
-		if (chars <= 0) {
-		        s += 1;
-		        length -= 1;
-		        continue;
-		}
+		if (back_mapP != NULL)
+			*back_mapP++ = s - s0;
 		s += chars;
 		length -= chars;
 		if (u == 0x09 || u == 0x0a || u == 0x0d ||
 				(0x20 <= u && u <= 0x7f) ||
 				(0xa0 <= u && u <= 0xff))
-			*d = u;
+			*d++ = u;
 		else
-			*d = '?';
-		d++;
+			*d++ = '?';
 	}
+	if (back_mapP != NULL)
+		*back_mapP = s - s0;
 	*d = 0;
 
 	return d0;
-}
-
-char *squash_tolat1(xmlChar *s)
-{
-	/* TODO: optimize */
-	char *lat1 = tolat1(s);
-	char *squash = squash_whitespace(lat1);
-	free(lat1);
-	return squash;
 }
 
 

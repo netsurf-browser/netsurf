@@ -26,6 +26,7 @@ bool netsurf_quit = false;
 static void netsurf_init(int argc, char** argv);
 static void netsurf_poll(void);
 static void netsurf_exit(void);
+static void lib_init(void);
 
 #ifndef curl_memdebug
 extern void curl_memdebug(const char *logname);
@@ -68,6 +69,7 @@ void netsurf_init(int argc, char** argv)
 				utsname.nodename, utsname.release,
 				utsname.version, utsname.machine));
 
+	lib_init();
 	gui_init(argc, argv);
 	setlocale(LC_ALL, "");
 	fetch_init();
@@ -96,4 +98,17 @@ void netsurf_exit(void)
 {
 	fetch_quit();
 	gui_quit();
+}
+
+
+/**
+ * Initialises the libraries used in NetSurf.
+ */
+static void lib_init(void)
+{
+	/* Using encoding "X-SJIS" (unknown to libxmp2/iconv) instead as
+	 * "Shift-JIS" is rather popular.
+	 */
+	if (xmlAddEncodingAlias(xmlGetCharEncodingName(XML_CHAR_ENCODING_SHIFT_JIS), "X-SJIS") != 0)
+		die(("Failed to add encoding alias"));
 }

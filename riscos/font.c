@@ -4,6 +4,7 @@
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
  */
 
 /** \file
@@ -19,6 +20,8 @@
 #include "netsurf/desktop/gui.h"
 #include "netsurf/render/font.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/options.h"
+#include "netsurf/riscos/ufont.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -44,128 +47,164 @@ struct font_set {
 	struct font_data *font[FONT_FAMILIES * FONT_FACES];
 };
 
-/** Table of font names.
+static os_error *nsfont_open_ufont(const char *fontNameP, const char *fbFontNameP, int size, int *handleP, bool *using_fb);
+static os_error *nsfont_open_standard(const char *fontNameP, const char *fbFontNameP, int size, int *handleP, bool *using_fb);
+
+/** Table of font names for UFont and an UTF-8 capable FontManager.
  *
  * font id = font family * 8 + smallcaps * 4 + bold * 2 + slanted
  *
- * font family: 0 = sans-serif, 1 = serif, 2 = monospace, 3 = cursive
- *              4 = fantasy
+ * font family: 0 = sans-serif, 1 = serif, 2 = monospace, 3 = cursive,
+ * 4 = fantasy.
+ * Font family 0 must be available as it is the replacement font when
+ * the other font families can not be found.
  */
+static const char * const ufont_table[FONT_FAMILIES * FONT_FACES] = {
+	/* sans-serif */
+/*0*/	"Homerton.Medium",
+/*1*/	"Homerton.Medium.Oblique",
+/*2*/	"Homerton.Bold",
+/*3*/	"Homerton.Bold.Oblique",
+	"Homerton.Medium.SmallCaps",
+	"Homerton.Medium.Oblique.SmallCaps",
+	"Homerton.Bold.SmallCaps",
+	"Homerton.Bold.Oblique.SmallCaps",
+	/* serif */
+/*8*/	"Trinity.Medium",
+/*9*/	"Trinity.Medium.Italic",
+/*10*/	"Trinity.Bold",
+/*11*/	"Trinity.Bold.Italic",
+	"Trinity.Medium.SmallCaps",
+	"Trinity.Medium.Italic.SmallCaps",
+	"Trinity.Bold.SmallCaps",
+	"Trinity.Bold.Italic.SmallCaps",
+	/* monospace */
+/*16*/	"Corpus.Medium",
+/*17*/	"Corpus.Medium.Oblique",
+/*18*/	"Corpus.Bold",
+/*19*/	"Corpus.Bold.Oblique",
+	"Corpus.Medium.SmallCaps",
+	"Corpus.Medium.Oblique.SmallCaps",
+	"Corpus.Bold.SmallCaps",
+	"Corpus.Bold.Oblique.SmallCaps",
+	/* cursive */
+/*24*/	"Churchill.Medium",
+/*25*/	"Churchill.Medium.Oblique",
+/*26*/	"Churchill.Bold",
+/*27*/	"Churchill.Bold.Oblique",
+	"Churchill.Medium.SmallCaps",
+	"Churchill.Medium.Oblique.SmallCaps",
+	"Churchill.Bold.SmallCaps",
+	"Churchill.Bold.Oblique.SmallCaps",
+	/* fantasy */
+/*32*/	"Sassoon.Primary",
+/*33*/	"Sassoon.Primary.Oblique",
+/*34*/	"Sassoon.Primary.Bold",
+/*35*/	"Sassoon.Primary.Bold.Oblique",
+	"Sassoon.Primary.SmallCaps",
+	"Sassoon.Primary.Oblique.SmallCaps",
+	"Sassoon.Primary.Bold.SmallCaps",
+	"Sassoon.Primary.Bold.Oblique.SmallCaps",
+};
 
-const char * const font_table[FONT_FAMILIES * FONT_FACES] = {
+/** Table of Latin1 encoded font names for a pre-UTF-8 capable FontManager.
+ *
+ * font id = font family * 8 + smallcaps * 4 + bold * 2 + slanted
+ *
+ * font family: 0 = sans-serif, 1 = serif, 2 = monospace, 3 = cursive,
+ * 4 = fantasy.
+ * Font family 0 must be available as it is the replacement font when
+ * the other font families can not be found.
+ */
+static const char * const font_table[FONT_FAMILIES * FONT_FACES] = {
 	/* sans-serif */
 /*0*/	"Homerton.Medium\\ELatin1",
 /*1*/	"Homerton.Medium.Oblique\\ELatin1",
 /*2*/	"Homerton.Bold\\ELatin1",
 /*3*/	"Homerton.Bold.Oblique\\ELatin1",
-        "Homerton.Medium.SmallCaps\\ELatin1",
-        "Homerton.Medium.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-        "Homerton.Bold.SmallCaps\\ELatin1",
-        "Homerton.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
+	"Homerton.Medium.SmallCaps\\ELatin1",
+	"Homerton.Medium.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
+	"Homerton.Bold.SmallCaps\\ELatin1",
+	"Homerton.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
 	/* serif */
 /*8*/	"Trinity.Medium\\ELatin1",
 /*9*/	"Trinity.Medium.Italic\\ELatin1",
 /*10*/	"Trinity.Bold\\ELatin1",
 /*11*/	"Trinity.Bold.Italic\\ELatin1",
-        "Trinity.Medium.SmallCaps\\ELatin1",
-        "Trinity.Medium.Italic.SmallCaps\\ELatin1",
-        "Trinity.Bold.SmallCaps\\ELatin1",
-        "Trinity.Bold.Italic.SmallCaps\\ELatin1",
+	"Trinity.Medium.SmallCaps\\ELatin1",
+	"Trinity.Medium.Italic.SmallCaps\\ELatin1",
+	"Trinity.Bold.SmallCaps\\ELatin1",
+	"Trinity.Bold.Italic.SmallCaps\\ELatin1",
 	/* monospace */
 /*16*/	"Corpus.Medium\\ELatin1",
 /*17*/	"Corpus.Medium.Oblique\\ELatin1",
 /*18*/	"Corpus.Bold\\ELatin1",
 /*19*/	"Corpus.Bold.Oblique\\ELatin1",
-        "Corpus.Medium.SmallCaps\\ELatin1",
-        "Corpus.Medium.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-        "Corpus.Bold.SmallCaps\\ELatin1",
-        "Corpus.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
+	"Corpus.Medium.SmallCaps\\ELatin1",
+	"Corpus.Medium.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
+	"Corpus.Bold.SmallCaps\\ELatin1",
+	"Corpus.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
 	/* cursive */
 /*24*/	"Churchill.Medium\\ELatin1",
 /*25*/	"Churchill.Medium\\ELatin1\\M65536 0 13930 65536 0 0",
 /*26*/	"Churchill.Bold\\ELatin1",
 /*27*/	"Churchill.Bold\\ELatin1\\M65536 0 13930 65536 0 0",
-        "Churchill.Medium.SmallCaps\\ELatin1",
-        "Churchill.Medium.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-        "Churchill.Bold.SmallCaps\\ELatin1",
-        "Churchill.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-        /* fantasy */
+	"Churchill.Medium.SmallCaps\\ELatin1",
+	"Churchill.Medium.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
+	"Churchill.Bold.SmallCaps\\ELatin1",
+	"Churchill.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
+	/* fantasy */
 /*32*/	"Sassoon.Primary\\ELatin1",
 /*33*/	"Sassoon.Primary\\ELatin1\\M65536 0 13930 65536 0 0",
 /*34*/	"Sassoon.Primary.Bold\\ELatin1",
 /*35*/	"Sassoon.Primary.Bold\\ELatin1\\M65536 0 13930 65536 0 0",
-        "Sassoon.Primary.SmallCaps\\ELatin1",
-        "Sassoon.Primary.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-        "Sassoon.Primary.Bold.SmallCaps\\ELatin1",
-        "Sassoon.Primary.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
+	"Sassoon.Primary.SmallCaps\\ELatin1",
+	"Sassoon.Primary.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
+	"Sassoon.Primary.Bold.SmallCaps\\ELatin1",
+	"Sassoon.Primary.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
 };
-
 
 /**
  * Create an empty font_set.
  *
  * \return an opaque struct font_set.
  */
-
-struct font_set *font_new_set()
+struct font_set *nsfont_new_set(void)
 {
-	struct font_set *set = xcalloc(1, sizeof(*set));
+	struct font_set *set;
 	unsigned int i;
 
+	LOG(("nsfont_new_set()\n"));
+
+	if ((set = malloc(sizeof(*set))) == NULL)
+		return NULL;
+
 	for (i = 0; i < FONT_FAMILIES * FONT_FACES; i++)
-		set->font[i] = 0;
+		set->font[i] = NULL;
 
 	return set;
 }
 
 /**
- * Font enumerator
- *
- * Call this multiple times to enumerate all available font names.
- * *handle should be zero (0) on first call.
- *
- * Returns a NULL pointer and a handle of -1 if there are no more fonts.
- */
-const char *enumerate_fonts(struct font_set* set, int *handle)
-{
-        int i;
-
-	assert(set);
-	assert(handle);
-	assert(0 <= *handle && *handle <= FONT_FAMILIES * FONT_FACES);
-
-        for (i = *handle; i!=FONT_FAMILIES*FONT_FACES && set->font[i]==0;
-             i++) ; /* find next font in use */
-
-        if (i == FONT_FAMILIES*FONT_FACES) { /* no more fonts */
-                *handle = -1;
-                return NULL;
-        }
-
-        *handle = i+1; /* update handle for next call */
-        return font_table[i];
-}
-
-/**
  * Open a font for use based on a css_style.
  *
- * \param set a font_set, as returned by font_new_set()
+ * \param set a font_set, as returned by nsfont_new_set()
  * \param style a css_style which describes the font
- * \return a struct font_data, with a RISC OS font handle in handle
+ * \return a struct font_data, with an opaque font handle in handle
  *
  * The set is updated to include the font, if it was not present.
  */
-
-struct font_data *font_open(struct font_set *set, struct css_style *style)
+struct font_data *nsfont_open(struct font_set *set, struct css_style *style)
 {
 	struct font_data *data;
 	unsigned int size = option_font_size * 1.6;
 	unsigned int f = 0;
-	font_f handle;
+	int fhandle;
 	os_error *error;
+	bool using_fb;
 
-	assert(set);
-	assert(style);
+	assert(set != NULL);
+	assert(style != NULL);
 
 	if (style->font_size.size == CSS_FONT_SIZE_LENGTH)
 		size = len(&style->font_size.value.length, style) *
@@ -176,31 +215,31 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 		size = 1600;
 
 	switch (style->font_family) {
-	        case CSS_FONT_FAMILY_SANS_SERIF:
-	                f += FONT_SANS_SERIF;
-	                break;
-	        case CSS_FONT_FAMILY_SERIF:
-	                f += FONT_SERIF;
-	                break;
-	        case CSS_FONT_FAMILY_MONOSPACE:
-	                f += FONT_MONOSPACE;
-	                break;
-	        case CSS_FONT_FAMILY_CURSIVE:
-	                f += FONT_CURSIVE;
-	                break;
-	        case CSS_FONT_FAMILY_FANTASY:
-	                f += FONT_FANTASY;
-	                break;
-	        default:
-	                break;
+		case CSS_FONT_FAMILY_SANS_SERIF:
+			f += FONT_SANS_SERIF;
+			break;
+		case CSS_FONT_FAMILY_SERIF:
+			f += FONT_SERIF;
+			break;
+		case CSS_FONT_FAMILY_MONOSPACE:
+			f += FONT_MONOSPACE;
+			break;
+		case CSS_FONT_FAMILY_CURSIVE:
+			f += FONT_CURSIVE;
+			break;
+		case CSS_FONT_FAMILY_FANTASY:
+			f += FONT_FANTASY;
+			break;
+		default:
+			break;
 	}
 
 	switch (style->font_variant) {
-	       case CSS_FONT_VARIANT_SMALL_CAPS:
-	                f += FONT_SMALLCAPS;
-	                break;
-	       default:
-	                break;
+		case CSS_FONT_VARIANT_SMALL_CAPS:
+			f += FONT_SMALLCAPS;
+			break;
+		default:
+			break;
 	}
 
 	switch (style->font_weight) {
@@ -224,30 +263,44 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 			break;
 	}
 
-	for (data = set->font[f]; data != 0; data = data->next)
+	for (data = set->font[f]; data != NULL; data = data->next)
 		if (data->size == size)
-	        	return data;
+			return data;
 
-	data = xcalloc(1, sizeof(*data));
+	if ((data = malloc(sizeof(*data))) == NULL)
+		return NULL;
 
-	error = xfont_find_font(font_table[f], (int)size, (int)size,
-	                        0, 0, &handle, 0, 0);
+	/* Strategy : first try the UFont font code with given font name
+	 * or the default font name if the former fails.
+	 * If this still fails, try the use the default RISC OS font open
+	 * in UTF-8 encoding (again first with given font name, then with
+	 * the default font name).
+	 * If this still fails, we repeat the previous step but now using
+	 * the Latin 1 encoding.
+	 */
+	if ((error = nsfont_open_ufont(ufont_table[f], ufont_table[f % 4], (int)size, &fhandle, &using_fb)) != NULL) {
+		char fontName1[128], fontName2[128];
+		/* Go for the UTF-8 encoding with standard FontManager */
+		strcpy(fontName1, ufont_table[f]);
+		strcat(fontName1, "\\EUTF8");
+		strcpy(fontName2, ufont_table[f % 4]);
+		strcat(fontName2, "\\EUTF8");
+		if ((error = nsfont_open_standard(fontName1, fontName2, (int)size, &fhandle, &using_fb)) != NULL) {
+			/* All UTF-8 font methods failed, only support Latin 1 */
+			if ((error = nsfont_open_standard(font_table[f], font_table[f % 4], (int)size, &fhandle, &using_fb)) != NULL) {
+				LOG(("(u)font_find_font failed : %s\n", error->errmess));
+				die("(u)font_find_font failed");
+			}
+			data->ftype = FONTTYPE_STANDARD_LATIN1;
+		} else
+			data->ftype = FONTTYPE_STANDARD_UTF8ENC;
+	} else
+		data->ftype = FONTTYPE_UFONT;
 
-	if (error) { /* fall back to Homerton */
-	        LOG(("font_find_font failed; falling back to Homerton"));
-	        error = xfont_find_font(font_table[f % 4],
-	                                (int)size, (int)size,
-	                                0, 0, &handle, 0, 0);
-	        if (error) {
-		        LOG(("%i: %s\n", error->errnum, error->errmess));
-		        die("font_find_font failed");
-	        }
-	}
-
-        data->id = f;
-	data->handle = handle;
+	data->id = (using_fb) ? f % 4 : f;
+	data->handle = fhandle;
 	data->size = size;
-	data->space_width = font_width(data, " ", 1);
+	data->space_width = nsfont_width(data, " ", sizeof(" ")-1);
 
 	data->next = set->font[f];
 	set->font[f] = data;
@@ -257,25 +310,95 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 
 
 /**
+ * Open font via UFont code.
+ *
+ * \param fontNameP UFont font name
+ * \param fbFontNameP fallback UFont font name
+ * \param size font size
+ * \param handle returning UFont handle in case there isn't an error.
+ * \param using_fb returning whether the fallback font was used or not.
+ * \return error in case there was one.
+ */
+static os_error *nsfont_open_ufont(const char *fontNameP, const char *fbFontNameP, int size, int *handleP, bool *using_fb)
+{
+	os_error *errorP;
+	*handleP = 0; *using_fb = false;
+	if ((errorP = xufont_find_font(fontNameP, size, size, 0, 0, (ufont_f *)handleP, NULL, NULL)) == NULL)
+		return NULL;
+	LOG(("ufont_find_font(<%s>) failed <%s> (case 1)", fontNameP, errorP->errmess));
+	/* If the fallback font is the same as the first font name, return */
+	if (strcmp(fontNameP, fbFontNameP) == 0)
+		return errorP;
+	*using_fb = true;
+	if ((errorP = xufont_find_font(fbFontNameP, size, size, 0, 0, (ufont_f *)handleP, NULL, NULL)) == NULL)
+		return NULL;
+	LOG(("ufont_find_font(<%s>) failed <%s> (case 2)", fbFontNameP, errorP->errmess));
+	return errorP;
+}
+
+
+/**
+ * Open font via standard FontManager.
+ *
+ * \param fontNameP RISC OS font name
+ * \param fbFontNameP fallback RISC OS font name
+ * \param size font size
+ * \param handle RISC OS handle in case there isn't an error.
+ * \param using_fb returning whether the fallback font was used or not.
+ * \return error in case there was one.
+ */
+static os_error *nsfont_open_standard(const char *fontNameP, const char *fbFontNameP, int size, int *handleP, bool *using_fb)
+{
+	os_error *errorP;
+	*handleP = 0; *using_fb = false;
+	if ((errorP = xfont_find_font(fontNameP, size, size, 0, 0, (font_f *)handleP, NULL, NULL)) == NULL)
+		return NULL;
+	LOG(("font_find_font(<%s>) failed <%s> (case 1)", fontNameP, errorP->errmess));
+	/* If the fallback font is the same as the first font name, return */
+	if (strcmp(fontNameP, fbFontNameP) == 0)
+		return errorP;
+	*using_fb = true;
+	if ((errorP = xfont_find_font(fbFontNameP, size, size, 0, 0, (font_f *)handleP, NULL, NULL)) == NULL)
+		return NULL;
+	LOG(("font_find_font(<%s>) failed <%s> (case 2)", fbFontNameP, errorP->errmess));
+	return errorP;
+}
+
+
+/**
  * Frees all the fonts in a font_set.
  *
- * \param set a font_set as returned by font_new_set()
+ * \param set a font_set as returned by nsfont_new_set()
  */
-
-void font_free_set(struct font_set *set)
+void nsfont_free_set(struct font_set *set)
 {
 	unsigned int i;
-	struct font_data *data, *next;
 
-	assert(set != 0);
+	LOG(("nsfont_free_set()\n"));
+	assert(set != NULL);
 
 	for (i = 0; i < FONT_FAMILIES * FONT_FACES; i++) {
-		for (data = set->font[i]; data != 0; data = next) {
+		struct font_data *data, *next;
+		for (data = set->font[i]; data != NULL; data = next) {
+			os_error *error;
 			next = data->next;
-			font_lose_font((font_f)(data->handle));
+			switch (data->ftype) {
+				case FONTTYPE_UFONT:
+					error = xufont_lose_font((ufont_f)data->handle);
+					break;
+				case FONTTYPE_STANDARD_UTF8ENC:
+				case FONTTYPE_STANDARD_LATIN1:
+					error = xfont_lose_font((font_f)data->handle);
+					break;
+				default:
+					assert(0);
+					break;
+			}
+			if (error != NULL)
+				LOG(("(u)font_lose_font() failed : 0x%x <%s>\n", error->errnum, error->errmess));
 			free(data);
 		}
-        }
+	}
 
 	free(set);
 }
@@ -284,31 +407,65 @@ void font_free_set(struct font_set *set)
 /**
  * Find the width of some text in a font.
  *
- * \param font a font_data, as returned by font_open()
+ * \param font a font_data, as returned by nsfont_open()
  * \param text string to measure
  * \param length length of text
  * \return width of text in pixels
  */
-
-unsigned long font_width(struct font_data *font, const char * text, unsigned int length)
+unsigned long nsfont_width(struct font_data *font, const char *text,
+		unsigned int length)
 {
 	int width;
-	os_error * error;
+	os_error *error;
 
-	assert(font != 0 && text != 0);
+	assert(font != NULL && text != NULL);
 
 	if (length == 0)
 		return 0;
 
-	error = xfont_scan_string((font_f)(font->handle), text,
-			font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
-			0x7fffffff, 0x7fffffff,
-			0,
-			0, (int)length,
-			0, &width, 0, 0);
-	if (error != 0) {
-		fprintf(stderr, "%s\n", error->errmess);
-		die("font_width: font_scan_string failed");
+	switch (font->ftype) {
+		case FONTTYPE_UFONT:
+			error = xufont_scan_string((ufont_f)font->handle,
+					text,
+					font_GIVEN_FONT
+						| font_KERN
+						| font_GIVEN_LENGTH,
+					0x7fffffff, 0x7fffffff,
+					NULL,
+					NULL, (int)length,
+					NULL, &width, NULL, NULL);
+			break;
+		case FONTTYPE_STANDARD_UTF8ENC:
+			error = xfont_scan_string((font_f)font->handle,
+					text,
+					font_GIVEN_FONT
+						| font_KERN
+						| font_GIVEN_LENGTH,
+					0x7fffffff, 0x7fffffff,
+					NULL,
+					NULL, (int)length,
+					NULL, &width, NULL, NULL);
+			break;
+		case FONTTYPE_STANDARD_LATIN1: {
+			const char *loc_text = cnv_strn_local_enc(text, length, NULL);
+			error = xfont_scan_string((font_f)font->handle,
+					loc_text,
+					font_GIVEN_FONT
+						| font_KERN,
+					0x7fffffff, 0x7fffffff,
+					NULL,
+					NULL, 0,
+					NULL, &width, NULL, NULL);
+			free(loc_text);
+			break;
+		}
+		default:
+			assert(0);
+			break;
+	}
+	if (error != NULL) {
+		LOG(("(u)font_scan_string failed : %s\n", error->errmess));
+		die("nsfont_width: (u)font_scan_string failed");
 	}
 
 	return width / 800;
@@ -321,43 +478,79 @@ unsigned long font_width(struct font_data *font, const char * text, unsigned int
  * For example, used to find where to position the caret in response to mouse
  * click.
  *
+ * \param font a font_data, as returned by nsfont_open()
  * \param text a string
- * \param font a font_data, as returned by font_open()
  * \param length length of text
  * \param x horizontal position in pixels
  * \param char_offset updated to give the offset in the string
  * \param pixel_offset updated to give the coordinate of the character in pixels
  */
-
-void font_position_in_string(const char *text, struct font_data *font,
+void nsfont_position_in_string(struct font_data *font, const char *text,
 		unsigned int length, unsigned long x,
 		int *char_offset, int *pixel_offset)
 {
-	font_scan_block block;
-	char *split_point;
-	int x_out, y_out, length_out;
 	os_error *error;
+	font_scan_block block;
+	char *split;
+	int x_out;
 
-	assert(font != 0 && text != 0);
+	assert(font != NULL && text != NULL);
 
-	block.space.x = block.space.y = 0;
-	block.letter.x = block.letter.y = 0;
+	block.space.x = block.space.y = block.letter.x = block.letter.y = 0;
 	block.split_char = -1;
 
-	error = xfont_scan_string((font_f)(font->handle), text,
-			font_GIVEN_BLOCK | font_GIVEN_FONT | font_KERN |
-			font_RETURN_CARET_POS | font_GIVEN_LENGTH,
-			x * 2 * 400,
-			0x7fffffff,
-			&block, 0, (int)length,
-			&split_point, &x_out, &y_out, &length_out);
-	if (error) {
-		fprintf(stderr, "%s\n", error->errmess);
-		die("font_width: font_scan_string failed");
+	switch (font->ftype) {
+		case FONTTYPE_UFONT:
+			error = xufont_scan_string((ufont_f)font->handle,
+					text,
+					font_GIVEN_BLOCK
+						| font_GIVEN_FONT
+						| font_KERN
+						| font_RETURN_CARET_POS
+						| font_GIVEN_LENGTH,
+					x * 2 * 400, 0x7fffffff,
+					&block, NULL, (int)length,
+					&split, &x_out, NULL, NULL);
+			break;
+		case FONTTYPE_STANDARD_UTF8ENC:
+			error = xfont_scan_string((font_f)font->handle,
+					text,
+					font_GIVEN_BLOCK
+						| font_GIVEN_FONT
+						| font_KERN
+						| font_RETURN_CARET_POS
+						| font_GIVEN_LENGTH,
+					x * 2 * 400, 0x7fffffff,
+					&block, NULL, (int)length,
+					&split, &x_out, NULL, NULL);
+			break;
+		case FONTTYPE_STANDARD_LATIN1: {
+			const ptrdiff_t *back_mapP;
+			const char *loc_text = cnv_strn_local_enc(text, length, &back_mapP);
+			error = xfont_scan_string((font_f)font->handle,
+					loc_text,
+					font_GIVEN_BLOCK
+						| font_GIVEN_FONT
+						| font_KERN
+						| font_RETURN_CARET_POS,
+					x * 2 * 400, 0x7fffffff,
+					&block, NULL, 0,
+					&split, &x_out, NULL, NULL);
+			split = &text[back_mapP[split - loc_text]];
+			free(loc_text); free(back_mapP);
+			break;
+		}
+		default:
+			assert(0);
+			break;
+	}
+	if (error != NULL) {
+		LOG(("(u)font_scan_string failed : %s\n", error->errmess));
+		die("nsfont_position_in_string: (u)font_scan_string failed");
 	}
 
-	*char_offset = (int)(split_point - text);
-	*pixel_offset = x_out / 2 / 400;
+	*char_offset = (int)(split - text);
+	*pixel_offset = x_out / 800;
 }
 
 
@@ -366,36 +559,83 @@ void font_position_in_string(const char *text, struct font_data *font,
  *
  * For example, used when wrapping paragraphs.
  *
- * \param data a font_data, as returned by font_open()
+ * \param font a font_data, as returned by nsfont_open()
  * \param text string to split
  * \param length length of text
  * \param width available width
  * \param used_width updated to actual width used
  * \return pointer to character which does not fit
  */
-
-char * font_split(struct font_data *data, const char * text, unsigned int length,
+char *nsfont_split(struct font_data *font, const char *text,
+		unsigned int length,
 		unsigned int width, unsigned int *used_width)
 {
 	os_error *error;
 	font_scan_block block;
 	char *split;
 
+	assert(font != NULL && text != NULL);
+
 	block.space.x = block.space.y = block.letter.x = block.letter.y = 0;
 	block.split_char = ' ';
 
-	error = xfont_scan_string((font_f)(data->handle), text,
-			font_GIVEN_BLOCK | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
-			width * 2 * 400, 0x7fffffff,
-			&block,
-			0,
-			(int)length,
-			&split,
-			used_width, 0, 0);
-	if (error != 0) {
-		fprintf(stderr, "%s\n", error->errmess);
-		die("font_split: font_scan_string failed");
+	switch (font->ftype) {
+		case FONTTYPE_UFONT:
+			error = xufont_scan_string((ufont_f)font->handle,
+					text,
+					font_GIVEN_BLOCK
+						| font_GIVEN_FONT
+						| font_KERN
+						| font_GIVEN_LENGTH,
+					width * 2 * 400, 0x7fffffff,
+					&block,
+					NULL,
+					(int)length,
+					&split,
+					used_width, NULL, NULL);
+			break;
+		case FONTTYPE_STANDARD_UTF8ENC:
+			error = xfont_scan_string((font_f)font->handle,
+					text,
+					font_GIVEN_BLOCK
+						| font_GIVEN_FONT
+						| font_KERN
+						| font_GIVEN_LENGTH,
+					width * 2 * 400, 0x7fffffff,
+					&block,
+					NULL,
+					(int)length,
+					&split,
+					used_width, NULL, NULL);
+			break;
+		case FONTTYPE_STANDARD_LATIN1: {
+			const ptrdiff_t *back_mapP;
+			const char *loc_text = cnv_strn_local_enc(text, length, &back_mapP);
+			error = xfont_scan_string((font_f)font->handle,
+					loc_text,
+					font_GIVEN_BLOCK
+						| font_GIVEN_FONT
+						| font_KERN,
+					width * 2 * 400, 0x7fffffff,
+					&block,
+					NULL,
+					0,
+					&split,
+					used_width, NULL, NULL);
+			split = &text[back_mapP[split - loc_text]];
+			free(loc_text); free(back_mapP);
+			break;
+		}
+		default:
+			assert(0);
+			break;
 	}
+	if (error != NULL) {
+		LOG(("(u)font_scan_string failed : %s\n", error->errmess));
+		die("nsfont_split: (u)font_scan_string failed");
+	}
+
+	assert(split == &text[length] || *split == ' ');
 
 	*used_width = *used_width / 2 / 400;
 
@@ -403,30 +643,163 @@ char * font_split(struct font_data *data, const char * text, unsigned int length
 }
 
 
-#ifdef TEST
-
-int main(void)
+void nsfont_paint(struct font_data *data, const char *text,
+		int xpos, int ypos, void *trfm, int length)
 {
-	unsigned int i;
-	struct font_set *set;
-	struct css_style style;
+	os_error *error;
+	unsigned int flags;
 
-        style.font_family = CSS_FONT_FAMILY_SANS_SERIF;
-	style.font_size.size = CSS_FONT_SIZE_LENGTH;
-	style.font_weight = CSS_FONT_WEIGHT_BOLD;
-	style.font_style = CSS_FONT_STYLE_ITALIC;
+	flags = font_OS_UNITS | font_GIVEN_FONT | font_KERN;
+	if (trfm != NULL)
+		flags |= font_GIVEN_TRFM;
 
-	set = font_new_set();
+	/* font background blending (RO3.7+) */
+	if (option_background_blending) {
+		int version;
 
-	for (i = 10; i != 100; i += 10) {
-		style.font_size.value.length.value = i;
-		font_open(set, &style);
+		/* Font manager versions below 3.35 complain
+		 * about this flag being set.
+		 */
+		error = xfont_cache_addr(&version, 0, 0);
+		/**\todo should we do anything else on error? */
+		if (!error && version >= 335)
+			flags |= font_BLEND_FONT;
 	}
 
-	font_free_set(set);
+	assert(data != NULL);
+	assert(text != NULL);
 
-	return 0;
+	switch (data->ftype) {
+		case FONTTYPE_UFONT:
+			flags |= font_GIVEN_LENGTH;
+			error = xufont_paint((ufont_f)data->handle, text,
+					flags, xpos, ypos, NULL,
+					trfm, length);
+			break;
+		case FONTTYPE_STANDARD_UTF8ENC:
+			flags |= font_GIVEN_LENGTH;
+			error = xfont_paint((font_f)data->handle, text,
+					flags, xpos, ypos, NULL,
+					trfm, length);
+			break;
+		case FONTTYPE_STANDARD_LATIN1: {
+			const char *loc_text = cnv_strn_local_enc(text, length, NULL);
+			error = xfont_paint((font_f)data->handle, loc_text,
+					flags, xpos, ypos, NULL,
+					trfm, 0);
+			free(loc_text);
+			break;
+		}
+		default:
+			assert(0);
+			break;
+	}
+	if (error != NULL) {
+		LOG(("(u)font_paint failed : %s\n", error->errmess));
+		die("nsfont_paint: (u)font_paint failed");
+	}
 }
 
-#endif
 
+/**
+ * Given a text line, return the number of bytes which can be set using
+ * one RISC OS font and the bounding box fitting that part of the text
+ * only.
+ *
+ * \param font a font_data, as returned by nsfont_open()
+ * \param text string text.  Does not have to be NUL terminated.
+ * \param length length in bytes of the text to consider.
+ * \param width returned width of the text which can be set with one RISC OS font. If 0, then error happened or initial text length was 0.
+ * \param rofontname returned name of the RISC OS font which can be used to set the text. If NULL, then error happened or initial text length was 0.
+ * \param rotext returned string containing the characters in returned RISC OS font. Not necessary NUL terminated. free() after use.  If NULL, then error happened or initial text length was 0.
+ * \param rolength length of return rotext string. If 0, then error happened or initial text length was 0.
+ * \param consumed number of bytes of the given text which can be set with one RISC OS font. If 0, then error happened or initial text length was 0.
+ */
+void nsfont_txtenum(struct font_data *font, const char *text,
+		unsigned int length,
+		unsigned int *width,
+		const char **rofontname,
+		const char **rotext,
+		unsigned int *rolength,
+		unsigned int *consumed)
+{
+	assert(font != NULL && text != NULL && rofontname != NULL && rotext != NULL && rolength != NULL && consumed != NULL);
+
+	*rotext = *rofontname = NULL;
+	*consumed = *rolength = *width = 0;
+
+	if (length == 0)
+		return;
+
+	switch (font->ftype) {
+		case FONTTYPE_UFONT:
+			(void)xufont_txtenum((ufont_f)font->handle,
+					text,
+					font_GIVEN_FONT
+						| font_KERN
+						| font_GIVEN_LENGTH,
+					length,
+					(int *)width,
+					rofontname,
+					rotext,
+					rolength,
+					consumed);
+			*width /= 800;
+			break;
+		case FONTTYPE_STANDARD_UTF8ENC: {
+			static char *fontname[128]; /** /todo: not nice */
+			int rowidth;
+			os_error *error;
+
+			error = xfont_scan_string((font_f)font->handle,
+					text,
+					font_GIVEN_FONT
+						| font_KERN
+						| font_GIVEN_LENGTH,
+					0x7fffffff, 0x7fffffff,
+					NULL,
+					NULL, (int)length,
+					NULL, &rowidth, NULL, NULL);
+			if (error != NULL)
+				return;
+
+			strcpy(fontname, ufont_table[font->id]);
+			strcat(fontname, "\\EUTF8");
+			if ((*rotext = strndup(text, length)) == NULL)
+				return;
+			*rolength = length;
+			*rofontname = fontname;
+			*consumed = length;
+			*width = rowidth / 800;
+			break;
+		}
+		case FONTTYPE_STANDARD_LATIN1: {
+			int rowidth;
+			os_error *error;
+
+			if ((*rotext = cnv_strn_local_enc(text, length, NULL)) == NULL)
+				return;
+
+			error = xfont_scan_string((font_f)font->handle,
+					*rotext,
+					font_GIVEN_FONT
+						| font_KERN,
+					0x7fffffff, 0x7fffffff,
+					NULL,
+					NULL, 0,
+					NULL, &width, NULL, NULL);
+			if (error != NULL) {
+				free(*rotext); *rotext = NULL;
+				return;
+			}
+			*rolength = strlen(*rotext);
+			*rofontname = font_table[font->id];
+			*consumed = length;
+			*width = rowidth / 800;
+			break;
+		}
+		default:
+			assert(0);
+			break;
+	}
+}

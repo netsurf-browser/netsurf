@@ -67,7 +67,7 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	/*	Ensure we have a help request
 	*/
 	if ((!message) || (message->action != message_HELP_REQUEST)) return;
-	
+
 	/*	Remember the time of the request
 	*/
 	xos_read_monotonic_time(&help_time);
@@ -224,7 +224,7 @@ int ro_gui_interactive_help_available() {
 	int context = 0;
 	char *end;
 	os_t time;
-	
+
 	/*	Check if we've received a help request in the last 0.5s to test for generic
 		interactive help applications
 	*/

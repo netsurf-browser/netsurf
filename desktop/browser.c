@@ -364,12 +364,16 @@ void browser_window_stop_throbber(struct browser_window *bw)
 void browser_window_update(struct browser_window *bw,
 		bool scroll_to_top)
 {
+	const char *title_local_enc;
+
 	if (!bw->current_content)
 		return;
 
-	if (bw->current_content->title)
-		gui_window_set_title(bw->window, bw->current_content->title);
-	else
+	if (bw->current_content->title != NULL
+	    && (title_local_enc = cnv_str_local_enc(bw->current_content->title)) != NULL) {
+		gui_window_set_title(bw->window, title_local_enc);
+		free(title_local_enc);
+	} else
 		gui_window_set_title(bw->window, bw->current_content->url);
 
 	gui_window_set_extent(bw->window, bw->current_content->width,
@@ -739,7 +743,7 @@ void browser_window_textarea_click(struct browser_window* bw,
 		text_box = inline_container->last;
 		assert(text_box->type == BOX_INLINE);
 		assert(text_box->text && text_box->font);
-		font_position_in_string(text_box->text, text_box->font,
+		nsfont_position_in_string(text_box->font, text_box->text,
 				text_box->length,
 				(unsigned int)textarea->width,
 				&char_offset, &pixel_offset);
@@ -756,7 +760,8 @@ void browser_window_textarea_click(struct browser_window* bw,
 			text_box = inline_container->last;
 			assert(text_box->type == BOX_INLINE);
 			assert(text_box->text && text_box->font);
-			font_position_in_string(text_box->text, text_box->font,
+			nsfont_position_in_string(text_box->font,
+					text_box->text,
 					text_box->length,
 					(unsigned int)textarea->width,
 					&char_offset, &pixel_offset);
@@ -764,7 +769,8 @@ void browser_window_textarea_click(struct browser_window* bw,
 			/* in a text box */
 			assert(text_box->type == BOX_INLINE);
 			assert(text_box->text && text_box->font);
-			font_position_in_string(text_box->text, text_box->font,
+			nsfont_position_in_string(text_box->font,
+					text_box->text,
 					text_box->length,
 					(unsigned int)(x - text_box->x),
 					&char_offset, &pixel_offset);
@@ -1098,8 +1104,8 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	for (ic = textarea->children; ic; ic = ic->next)
 		ic->y += dy;
 
-	pixel_offset = font_width(text_box->font, text_box->text,
-	                          (unsigned int)char_offset);
+	pixel_offset = nsfont_width(text_box->font, text_box->text,
+			(unsigned int)char_offset);
 
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
@@ -1130,7 +1136,7 @@ void browser_window_input_click(struct browser_window* bw,
 	int char_offset, pixel_offset;
 	struct box *text_box = input->children->children;
 
-	font_position_in_string(text_box->text, text_box->font,
+	nsfont_position_in_string(text_box->font, text_box->text,
 			text_box->length, x - text_box->x,
 			&char_offset, &pixel_offset);
 
@@ -1170,7 +1176,7 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
 
 	box_coords(input, &actual_x, &actual_y);
 
-	if ((32 <= key && key != 127) && text_box->length < input->gadget->maxlength) {
+	if (32 <= key && key != 127 && text_box->length < input->gadget->maxlength) {
 		/* normal character insertion */
 		text_box->text = xrealloc(text_box->text, text_box->length + 2);
 		input->gadget->value = xrealloc(input->gadget->value, text_box->length + 2);
@@ -1183,7 +1189,7 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
 		if (input->gadget->type == GADGET_PASSWORD)
 			text_box->text[char_offset] = '*';
 		else
-			text_box->text[char_offset] = key == ' ' ? 160 : key;
+			text_box->text[char_offset] = key; /* /todo was a test on space -> change into NBSP, still needed ? */
 		input->gadget->value[char_offset] = key;
 		text_box->length++;
 		text_box->text[text_box->length] = 0;
@@ -1282,12 +1288,12 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
 		return;
 	}
 
-	text_box->width = font_width(text_box->font, text_box->text,
+	text_box->width = nsfont_width(text_box->font, text_box->text,
 			(unsigned int)text_box->length);
-	pixel_offset = font_width(text_box->font, text_box->text,
-	                          (unsigned int)char_offset);
+	pixel_offset = nsfont_width(text_box->font, text_box->text,
+			(unsigned int)char_offset);
 	text_box->x = 0;
-	if ((input->width < text_box->width) && (input->width / 2 < pixel_offset)) {
+	if (input->width < text_box->width && input->width / 2 < pixel_offset) {
 		text_box->x = input->width / 2 - pixel_offset;
 		if (text_box->x < input->width - text_box->width)
 			text_box->x = input->width - text_box->width;
@@ -1670,15 +1676,10 @@ void browser_window_text_selection(struct browser_window *bw,
 
 			if (click_boxes[i].box->text
 			    && click_boxes[i].box->font) {
-				font_position_in_string(click_boxes[i].
-							box->text,
-							click_boxes[i].
-							box->font,
-							click_boxes[i].
-							box->length,
-							click_x -
-							click_boxes[i].
-							actual_x,
+				nsfont_position_in_string(click_boxes[i].box->font,
+							click_boxes[i].box->text,
+							click_boxes[i].box->length,
+							click_x - click_boxes[i].actual_x,
 							&click_char_offset,
 							&click_pixel_offset);
 			} else {

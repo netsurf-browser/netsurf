@@ -3,12 +3,14 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
  */
 
 #ifndef _NETSURF_UTILS_UTILS_H_
 #define _NETSURF_UTILS_UTILS_H_
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <regex.h>
@@ -23,9 +25,9 @@ void xfree(void* p);
 char * xstrdup(const char * const s);
 char * load(const char * const path);
 char * squash_whitespace(const char * s);
-char * tolat1(xmlChar * s);
-char * tolat1_pre(xmlChar * s);
-char *squash_tolat1(xmlChar *s);
+char *cnv_space2nbsp(const char *s);
+char *cnv_str_local_enc(const char *s);
+char *cnv_strn_local_enc(const char *s, int length, const ptrdiff_t **back_mapPP);
 bool is_dir(const char *path);
 void regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
 void clean_cookiejar(void);

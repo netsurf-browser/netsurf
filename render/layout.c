@@ -738,7 +738,7 @@ bool layout_line(struct box *first, int width, int *y,
 
 			if (b->text) {
 				if (b->width == UNKNOWN_WIDTH)
-					b->width = font_width(b->font, b->text,
+					b->width = nsfont_width(b->font, b->text,
 							b->length);
 				x += b->width + b->space ?
 						b->font->space_width : 0;
@@ -937,7 +937,7 @@ bool layout_line(struct box *first, int width, int *y,
 		if (space == 0)
 			w = split_box->width;
 		else
-			w = font_width(split_box->font, split_box->text, space);
+			w = nsfont_width(split_box->font, split_box->text, space);
 
 		LOG(("splitting: split_box %p, space %u, w %i, left %p, "
 				"right %p, inline_count %u",
@@ -987,7 +987,7 @@ bool layout_line(struct box *first, int width, int *y,
 		} else {
 			/* fit as many words as possible */
 			assert(space != 0);
-			space = font_split(split_box->font, split_box->text,
+			space = nsfont_split(split_box->font, split_box->text,
 					split_box->length,
 					x1 - x0 - x - space_before, &w)
 					- split_box->text;
@@ -1654,7 +1654,7 @@ void calculate_inline_widths(struct box *box, int *min, int *line_max)
 	int width;
 
 	/* max = all one line */
-	box->width = font_width(box->font, box->text, box->length);
+	box->width = nsfont_width(box->font, box->text, box->length);
 	*line_max += box->width;
 	if (box->next && box->space)
 		*line_max += box->font->space_width;
@@ -1664,7 +1664,7 @@ void calculate_inline_widths(struct box *box, int *min, int *line_max)
 	do {
 		for (j = i; j != box->length && box->text[j] != ' '; j++)
 			;
-		width = font_width(box->font, box->text + i, (j - i));
+		width = nsfont_width(box->font, box->text + i, j - i);
 		if (*min < width) *min = width;
 		i = j + 1;
 	} while (j != box->length);
