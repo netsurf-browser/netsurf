@@ -229,7 +229,6 @@ struct box * box_create(struct css_style * style,
 	box->background = 0;
 	box->object = 0;
 	box->object_params = 0;
-	box->object_state = 0;
 	box->x = box->y = 0;
 	box->height = 0;
 	for (i = 0; i != 4; i++)

@@ -217,12 +217,10 @@ void browser_window_callback(content_msg msg, struct content *c,
 
 			if (bw->current_content) {
 				if (bw->current_content->status ==
+						CONTENT_STATUS_READY ||
+						bw->current_content->status ==
 						CONTENT_STATUS_DONE)
-					content_remove_instance(
-							bw->current_content,
-							bw, 0, 0,
-							0,
-							&bw->current_content_state);
+					content_close(bw->current_content);
 				content_remove_user(bw->current_content,
 						browser_window_callback,
 						bw, 0);
@@ -233,6 +231,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			gui_window_new_content(bw->window);
 			gui_window_set_url(bw->window, c->url);
 			browser_window_update(bw, true);
+			content_open(c, bw, 0, 0, 0);
 			browser_window_set_status(bw, c->status_message);
 			if (bw->history_add)
 				history_add(bw->history, c, bw->frag_id);
@@ -241,11 +240,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 		case CONTENT_MSG_DONE:
 			assert(bw->current_content == c);
 
-			content_add_instance(c, bw, 0, 0, 0,
-					&bw->current_content_state);
 			browser_window_update(bw, false);
-			content_reshape_instance(c, bw, 0, 0, 0,
-					&bw->current_content_state);
 			sprintf(status, messages_get("Complete"),
 					((float) (clock() - bw->time0)) /
 					CLOCKS_PER_SEC);
@@ -510,9 +505,10 @@ void browser_window_destroy(struct browser_window *bw)
 	}
 
 	if (bw->current_content) {
-		if (bw->current_content->status == CONTENT_STATUS_DONE)
-			content_remove_instance(bw->current_content, bw, 0,
-					0, 0, &bw->current_content_state);
+		if (bw->current_content->status == CONTENT_STATUS_READY ||
+				bw->current_content->status ==
+				CONTENT_STATUS_DONE)
+			content_close(bw->current_content);
 		content_remove_user(bw->current_content,
 				browser_window_callback, bw, 0);
 	}

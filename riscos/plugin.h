@@ -79,15 +79,10 @@ bool plugin_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale);
-void plugin_add_instance(struct content *c, struct browser_window *bw,
+void plugin_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
-		struct object_params *params, void **state);
-void plugin_remove_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state);
-void plugin_reshape_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state);
+		struct object_params *params);
+void plugin_close(struct content *c);
 
 
 #endif

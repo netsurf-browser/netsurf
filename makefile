@@ -27,7 +27,7 @@ OBJECTS_RISCOS = $(OBJECTS_COMMON)
 OBJECTS_RISCOS += browser.o netsurf.o version.o			# desktop/
 OBJECTS_RISCOS += 401login.o debugwin.o \
 	buffer.o dialog.o download.o draw.o filetype.o font.o gif.o \
-	gifread.o gui.o help.o history.o hotlist.o htmlinstance.o \
+	gifread.o gui.o help.o history.o hotlist.o \
 	htmlredraw.o jpeg.o menus.o mng.o mouseactions.o plugin.o \
 	print.o save.o save_complete.o save_draw.o save_text.o \
 	schedule.o search.o sprite.o textselection.o theme.o thumbnail.o \

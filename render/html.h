@@ -70,6 +70,9 @@ struct content_html_data {
 
 	pool box_pool;		/**< Memory pool for box tree. */
 	pool string_pool;	/**< Memory pool for strings. */
+
+	/**< Browser window containing this document, or 0 if not open. */
+	struct browser_window *bw;
 };
 
 
@@ -83,17 +86,10 @@ void html_fetch_object(struct content *c, char *url, struct box *box,
 		int available_width, int available_height,
 		bool background);
 void html_stop(struct content *c);
-
-/* in riscos/htmlinstance.c */
-void html_add_instance(struct content *c, struct browser_window *bw,
+void html_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
-		struct object_params *params, void **state);
-void html_reshape_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state);
-void html_remove_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state);
+		struct object_params *params);
+void html_close(struct content *c);
 
 /* in riscos/htmlredraw.c */
 bool html_redraw(struct content *c, int x, int y,

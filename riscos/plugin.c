@@ -77,9 +77,9 @@ struct plugin_list *plugin_get_instance_from_list(plugin_b browser,
                                                   plugin_p plugin);
 
 /* message handling */
-void plugin_open(wimp_message *message);
+void plugin_open_msg(wimp_message *message);
 void plugin_opening(wimp_message *message);
-void plugin_close(wimp_message *message);
+void plugin_close_msg(wimp_message *message);
 void plugin_closed(wimp_message *message);
 void plugin_reshape_request(wimp_message *message);
 void plugin_stream_new(wimp_message *message);
@@ -311,6 +311,18 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
 
 }
 
+
+/**
+ * Handle a window containing a CONTENT_PLUGIN being opened.
+ */
+
+void plugin_open(struct content *c, struct browser_window *bw,
+                struct content *page, struct box *box,
+                struct object_params *params)
+{
+}
+
+
 /**
  * Process plugin_opening message flags
  * NB: this is NOT externally visible.
@@ -389,6 +401,16 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
 	/* delete instance from list */
 	plugin_remove_instance_from_list(params);
 }
+
+
+/**
+ * Handle a window containing a CONTENT_PLUGIN being closed.
+ */
+
+void plugin_close(struct content *c)
+{
+}
+
 
 /**
  * The box containing the plugin has moved or resized,
@@ -1114,11 +1136,11 @@ void plugin_msg_parse(wimp_message *message, int ack)
                   */
                  case message_PLUG_IN_OPEN:
                           if(ack)
-                                  plugin_open(message);
+                                  plugin_open_msg(message);
                           break;
                  case message_PLUG_IN_CLOSE:
                           if(ack)
-                                  plugin_close(message);
+                                  plugin_close_msg(message);
                           break;
                  case message_PLUG_IN_RESHAPE:
                  case message_PLUG_IN_STREAM_AS_FILE:
@@ -1133,7 +1155,7 @@ void plugin_msg_parse(wimp_message *message, int ack)
 /**
  * Handles receipt of plugin_open messages
  */
-void plugin_open(wimp_message *message) {
+void plugin_open_msg(wimp_message *message) {
 
          struct plugin_message *npm = plugin_get_message_from_linked_list(message->my_ref);
 
@@ -1167,7 +1189,7 @@ void plugin_opening(wimp_message *message) {
 /**
  * Handles receipt of plugin_close messages
  */
-void plugin_close(wimp_message *message) {
+void plugin_close_msg(wimp_message *message) {
 
          struct plugin_message *npm = plugin_get_message_from_linked_list(message->my_ref);
 

@@ -216,8 +216,6 @@ struct box {
 	struct content* object;
 	/** Parameters for the object, or 0. */
 	struct object_params *object_params;
-	/** State of object, or 0. */
-	void *object_state;
 };
 
 /** Table column data. */

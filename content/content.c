@@ -155,15 +155,10 @@ struct handler_entry {
 			int width, int height,
 			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 			float scale);
-	void (*add_instance)(struct content *c, struct browser_window *bw,
+	void (*open)(struct content *c, struct browser_window *bw,
 			struct content *page, struct box *box,
-			struct object_params *params, void **state);
-	void (*remove_instance)(struct content *c, struct browser_window *bw,
-			struct content *page, struct box *box,
-			struct object_params *params, void **state);
-	void (*reshape_instance)(struct content *c, struct browser_window *bw,
-			struct content *page, struct box *box,
-			struct object_params *params, void **state);
+			struct object_params *params);
+	void (*close)(struct content *c);
 	/** There must be one content per user for this type. */
 	bool no_share;
 };
@@ -172,44 +167,44 @@ struct handler_entry {
 static const struct handler_entry handler_map[] = {
 	{html_create, html_process_data, html_convert,
 		html_reformat, html_destroy, html_stop, html_redraw,
-		html_add_instance, html_remove_instance, html_reshape_instance,
+		html_open, html_close,
 		true},
 	{textplain_create, html_process_data, textplain_convert,
-		0, 0, 0, 0, 0, 0, 0, true},
-	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0, 0, false},
+		0, 0, 0, 0, 0, 0, true},
+	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0, false},
 #ifdef WITH_JPEG
 	{nsjpeg_create, 0, nsjpeg_convert,
-		0, nsjpeg_destroy, 0, nsjpeg_redraw, 0, 0, 0, false},
+		0, nsjpeg_destroy, 0, nsjpeg_redraw, 0, 0, false},
 #endif
 #ifdef WITH_GIF
 	{nsgif_create, 0, nsgif_convert,
-	        0, nsgif_destroy, 0, nsgif_redraw, 0, 0, 0, false},
+	        0, nsgif_destroy, 0, nsgif_redraw, 0, 0, false},
 #endif
 #ifdef WITH_PNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, 0, false},
+		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, false},
 #endif
 #ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, 0, false},
+		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, false},
 	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, 0, false},
+		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, false},
 #endif
 #ifdef WITH_SPRITE
 	{sprite_create, sprite_process_data, sprite_convert,
-		0, sprite_destroy, 0, sprite_redraw, 0, 0, 0, false},
+		0, sprite_destroy, 0, sprite_redraw, 0, 0, false},
 #endif
 #ifdef WITH_DRAW
 	{0, 0, draw_convert,
-		0, draw_destroy, 0, draw_redraw, 0, 0, 0, false},
+		0, draw_destroy, 0, draw_redraw, 0, 0, false},
 #endif
 #ifdef WITH_PLUGIN
 	{plugin_create, 0, plugin_convert,
 		0, plugin_destroy, 0, plugin_redraw,
-		plugin_add_instance, plugin_remove_instance,
-		plugin_reshape_instance, true},
+		plugin_open, plugin_close,
+		true},
 #endif
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, false}
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
@@ -290,9 +285,6 @@ struct content * content_create(const char *url)
 	c->total_size = 0;
 	c->no_error_pages = false;
 	c->error_count = 0;
-	c->owning_bw = 0;
-	c->owning_box = 0;
-	c->params = 0;
 
 	c->prev = 0;
 	c->next = content_list;
@@ -867,58 +859,37 @@ void content_stop_check(struct content *c)
 
 
 /**
- * Add an instance to a content.
+ * A window containing the content has been opened.
  *
- * Calls the add_instance function for the content.
+ * Calls the open function for the content.
  */
 
-void content_add_instance(struct content *c, struct browser_window *bw,
+void content_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
-		struct object_params *params, void **state)
+		struct object_params *params)
 {
 	assert(c != 0);
 	assert(c->type < CONTENT_UNKNOWN);
 	LOG(("content %s", c->url));
-	if (handler_map[c->type].add_instance)
-		handler_map[c->type].add_instance(c, bw, page, box, params, state);
+	if (handler_map[c->type].open)
+		handler_map[c->type].open(c, bw, page, box, params);
 }
 
 
 /**
- * Remove an instance from a content.
+ * The window containing the content has been closed.
  *
- * Calls the remove_instance function for the content.
+ * Calls the close function for the content.
  */
 
-void content_remove_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state)
+void content_close(struct content *c)
 {
 	assert(c != 0);
 	assert(c->type < CONTENT_UNKNOWN);
 	LOG(("content %s", c->url));
-	if (handler_map[c->type].remove_instance)
-		handler_map[c->type].remove_instance(c, bw, page, box, params, state);
+	if (handler_map[c->type].close)
+		handler_map[c->type].close(c);
 }
-
-
-/**
- * Reshape an instance of a content.
- *
- * Calls the reshape_instance function for the content.
- */
-
-void content_reshape_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state)
-{
-	assert(c != 0);
-	assert(c->type < CONTENT_UNKNOWN);
-	LOG(("content %s", c->url));
-	if (handler_map[c->type].reshape_instance)
-		handler_map[c->type].reshape_instance(c, bw, page, box, params, state);
-}
-
 
 
 void content_add_error(struct content *c, const char *token,

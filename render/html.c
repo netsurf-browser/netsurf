@@ -110,6 +110,7 @@ bool html_create(struct content *c, const char *params[])
 	html->imagemaps = 0;
 	html->string_pool = pool_create(8000);
 	html->box_pool = pool_create(sizeof (struct box) * 100);
+	html->bw = 0;
 
 	if (!html->parser || !html->base_url || !html->string_pool ||
 			!html->box_pool) {
@@ -664,8 +665,14 @@ void html_object_callback(content_msg msg, struct content *object,
 		case CONTENT_MSG_LOADING:
 			/* check if the type is acceptable for this object */
 			if (html_object_type_permitted(object->type,
-					c->data.html.object[i].permitted_types))
+				c->data.html.object[i].permitted_types)) {
+				if (c->data.html.bw)
+					content_open(object,
+							c->data.html.bw, c,
+							box,
+							box->object_params);
 				break;
+			}
 
 			/* not acceptable */
 			c->data.html.object[i].content = 0;
@@ -944,4 +951,45 @@ void html_destroy(struct content *c)
 
 	pool_destroy(c->data.html.string_pool);
 	pool_destroy(c->data.html.box_pool);
+}
+
+
+/**
+ * Handle a window containing a CONTENT_HTML being opened.
+ */
+
+void html_open(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params)
+{
+	unsigned int i;
+	c->data.html.bw = bw;
+	for (i = 0; i != c->data.html.object_count; i++) {
+		if (c->data.html.object[i].content == 0)
+			continue;
+		if (c->data.html.object[i].content->type == CONTENT_UNKNOWN)
+			continue;
+               	content_open(c->data.html.object[i].content,
+				bw, c,
+				c->data.html.object[i].box,
+				c->data.html.object[i].box->object_params);
+	}
+}
+
+
+/**
+ * Handle a window containing a CONTENT_HTML being closed.
+ */
+
+void html_close(struct content *c)
+{
+	unsigned int i;
+	c->data.html.bw = 0;
+	for (i = 0; i != c->data.html.object_count; i++) {
+		if (c->data.html.object[i].content == 0)
+			continue;
+		if (c->data.html.object[i].content->type == CONTENT_UNKNOWN)
+			continue;
+               	content_close(c->data.html.object[i].content);
+	}
 }

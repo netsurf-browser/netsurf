@@ -35,7 +35,7 @@
  *     content_create -> TYPE_UNKNOWN [style=bold];
  *     TYPE_UNKNOWN -> content_set_type [style=bold];
  *     content_set_type -> LOADING [label=MSG_LOADING, style=bold];
- *     content_set_type -> LOADING [label="MSG_NEWPTR\nMSG_LOADING",style=bold];
+ *     content_set_type -> LOADING [label="MSG_NEWPTR\nMSG_LOADING"];
  *     content_set_type -> ERROR [label=MSG_ERROR];
  *     LOADING -> content_process_data [style=bold];
  *     content_process_data -> LOADING [style=bold];
@@ -81,8 +81,12 @@
  *   CONTENT_STATUS_READY. Must stop any processing and set the status to
  *   CONTENT_STATUS_DONE. Required iff the status can be CONTENT_STATUS_READY.
  *
- * - <i>type</i>_(add|remove|reshape)_instance: ask James, this will probably
- *   be redesigned sometime.
+ * - <i>type</i>_open(): called when a window containing the content is
+ *   opened. Probably only makes sense if no_share is set for the content type
+ *   in handler_map. Optional.
+ *
+ * - <i>type</i>_close(): called when the window containing the content is
+ *   closed. Optional.
  *
  * - <i>type</i>_create(), <i>type</i>_process_data(), <i>type</i>_convert():
  *   if an error occurs, must broadcast CONTENT_MSG_ERROR and return false.
@@ -248,17 +252,6 @@ struct content {
 	} error_list[40];
 	unsigned int error_count;	/**< Number of valid error entries. */
 
-	/** Browser window that this content is in, valid only if
-	 *  handler_map[type].no_share and 1 user, 0 if not visible. */
-	struct browser_window *owning_bw;
-	/** Box window that this content is in, valid only if
-	 *  handler_map[type].no_share and 1 user, 0 if not in an HTML tree. */
-	struct box *owning_box;
-	/** Parameters of <object> or <embed>, valid only if
-	 *  handler_map[type].no_share and 1 user, 0 if not in an <object> or
-	 *  <embed>. */
-	struct object_params *params;
-
 	struct content *prev;		/**< Previous in global content list. */
 	struct content *next;		/**< Next in global content list. */
 };
@@ -303,15 +296,10 @@ void content_stop(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, union content_msg_data data),
 		void *p1, void *p2);
-void content_add_instance(struct content *c, struct browser_window *bw,
+void content_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
-		struct object_params *params, void **state);
-void content_remove_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state);
-void content_reshape_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state);
+		struct object_params *params);
+void content_close(struct content *c);
 void content_add_error(struct content *c, const char *token,
 		unsigned int line);
 

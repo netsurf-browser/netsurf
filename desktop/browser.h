@@ -28,8 +28,6 @@ struct browser_window
 {
 	/** Page currently displayed, or 0. Must have status READY or DONE. */
 	struct content *current_content;
-	/** Instance state pointer for current_content. */
-	void *current_content_state;
 	/** Page being loaded, or 0. */
 	struct content *loading_content;
 
