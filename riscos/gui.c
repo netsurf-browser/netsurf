@@ -2027,6 +2027,11 @@ void ro_gui_keypress(wimp_key* key)
       browser_window_open_location(g->data.browser.bw, g->url);
       return;
     }
+    else if (key->c == wimp_KEY_F9)
+    {
+      if (g->data.browser.bw->current_content->type == CONTENT_HTML)
+        box_dump(g->data.browser.bw->current_content->data.html.layout->children, 0);
+    }
   }
   wimp_process_key(key->c);
   return;
