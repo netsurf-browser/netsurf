@@ -17,7 +17,28 @@ utils -- misc. useful functions
 
 ________________________________________________________________________________
 
-HTML and CSS processing and layout
+content -- fetching, caching, and converting content
+
+Each URL is stored in a struct content. This structure contains a union with
+fields for each type of data (HTML, CSS, images).
+
+The content_* functions provide a general interface for handling these
+structures. A content of a specified type is created using content_create(),
+data is fed to it using content_process_data(), terminated by a call to
+content_convert(), which converts the content into a structure which can be
+displayed easily.
+
+The cache stores this converted content. When content is retrieved from the
+cache, content_revive() should result in content which can be displayed (eg. by
+loading any images and styles required and updating pointers to them).
+
+Code should not usually use the fetch_* and cache_* functions directly, except
+for cache_free(). Instead use fetchcache(), which checks the cache for a url and
+fetches, converts, and caches it if not present.
+
+________________________________________________________________________________
+
+render -- HTML and CSS processing and layout
 
 This is the process to render an HTML document:
 
