@@ -43,7 +43,7 @@ Images:Images
 ForeImg:Images d'avant-plan
 BackImg:Images de fond
 AnimImg:Animations
-DitherImg:Diffusion d'erreur
+DitherImg:Tramage
 FilterImg:Adoucir les images
 Toolbars:Barre d'outils
 ToolButtons:Boutons
