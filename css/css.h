@@ -300,7 +300,7 @@ int css_tokenise(unsigned char **buffer, unsigned char *end,
 		unsigned char **token_text);
 
 void css_parser_Trace(FILE *TraceFILE, char *zTracePrompt);
-void *css_parser_Alloc(void *(*mallocProc)(/*size_t*/int));
+void *css_parser_Alloc(void *(*mallocProc)(size_t));
 void css_parser_Free(void *p, void (*freeProc)(void*));
 void css_parser_(void *yyp, int yymajor, struct css_parser_token yyminor,
 		struct css_parser_params *param);
