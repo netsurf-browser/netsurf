@@ -22,6 +22,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/content/fetch.h"
+#include "netsurf/content/url_store.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
@@ -74,7 +75,7 @@ struct content * fetchcache(const char *url,
 	struct content *c;
 	char *url1;
 	char *hash;
-
+	
 	if ((url1 = strdup(url)) == NULL)
 		return NULL;
 
@@ -210,6 +211,7 @@ void fetchcache_go(struct content *content, char *referer,
 void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 		unsigned long size)
 {
+	struct url_content *url_content;
 	bool res;
 	struct content *c = p;
 	content_type type;
@@ -279,6 +281,10 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			break;
 
 		case FETCH_FINISHED:
+			url_content = url_store_find(c->url);
+			if (url_content)
+				url_content->requests++;
+
 			LOG(("FETCH_FINISHED"));
 			c->fetch = 0;
 			content_set_status(c, messages_get("Converting"),

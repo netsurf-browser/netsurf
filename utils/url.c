@@ -77,7 +77,7 @@ url_func_result url_normalize(const char *url, char **result)
 
 	if (match[1].rm_so == -1) {
 		/* scheme missing: add http:// and reparse */
-		LOG(("scheme missing: using http"));
+/*		LOG(("scheme missing: using http"));*/
 		if ((*result = malloc(len + 13)) == NULL) {
 			LOG(("malloc failed"));
 			return URL_FUNC_NOMEM;

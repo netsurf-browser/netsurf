@@ -43,7 +43,7 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
 	dialog_warning, dialog_config_th_pane, dialog_debug,
 	dialog_folder, dialog_entry, dialog_search, dialog_print,
-	dialog_config_font, dialog_config_image;
+	dialog_config_font, dialog_config_image, dialog_url_complete;
 
 static int ro_gui_choices_font_size;
 static int ro_gui_choices_font_min_size;
@@ -140,6 +140,7 @@ void ro_gui_dialog_init(void)
 	dialog_config_font = ro_gui_dialog_create("config_font");
 	dialog_config_image = ro_gui_dialog_create("config_img");
 	dialog_theme_install = ro_gui_dialog_create("theme_inst");
+	dialog_url_complete = ro_gui_dialog_create("url_suggest");
 }
 
 
@@ -811,12 +812,8 @@ void ro_gui_save_options(void)
 	/* NCOS doesnt have the fancy Universal Boot vars; so select
 	 * the path to the choices file based on the build options */
 #ifndef NCOS
-	xosfile_create_dir("<Choices$Write>.WWW", 0);
-	xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
 	options_write("<Choices$Write>.WWW.NetSurf.Choices");
 #else
-	xosfile_create_dir("<User$Path>.Choices.NetSurf", 0);
-	xosfile_create_dir("<User$Path>.Choices.NetSurf.Choices", 0);
 	options_write("<User$Path>.Choices.NetSurf.Choices");
 #endif
 }

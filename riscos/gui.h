@@ -30,7 +30,8 @@ extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
 	dialog_objinfo, dialog_tooltip, dialog_warning,
 	dialog_config_th_pane, dialog_debug, dialog_folder, dialog_entry,
-	dialog_search, dialog_print, dialog_config_font, dialog_theme_install;
+	dialog_search, dialog_print, dialog_config_font, dialog_theme_install,
+	dialog_url_complete;
 extern wimp_w history_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu,
 		*proxyauth_menu, *languages_menu, *toolbar_menu,

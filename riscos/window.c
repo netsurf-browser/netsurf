@@ -25,6 +25,7 @@
 #include "oslib/wimpspriteop.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
+#include "netsurf/content/url_store.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/render/box.h"
@@ -35,6 +36,7 @@
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/thumbnail.h"
 #include "netsurf/riscos/treeview.h"
+#include "netsurf/riscos/url_complete.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/url.h"
@@ -929,6 +931,9 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 
 	}
 
+	/* first resize stops any flickering by making the URL window on top */
+	ro_gui_url_complete_resize(g, open);
+	
 	error = xwimp_open_window(open);
 	if (error) {
 		LOG(("xwimp_open_window: 0x%x: %s",
@@ -957,8 +962,11 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 		g->old_height = height;
 	}
 
-	if (g->toolbar)
+	if (g->toolbar) {
 		ro_gui_theme_process_toolbar(g->toolbar, -1);
+		/* second resize updates to the new URL bar width */
+		ro_gui_url_complete_resize(g, open);
+	}
 }
 
 
@@ -1090,6 +1098,9 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 	/*	Store the toolbar
 	*/
 	current_toolbar = g->toolbar;
+	
+	/* try to close url-completion */
+	ro_gui_url_complete_close(g, pointer->i);
 
 	/*	Handle Menu clicks
 	*/
@@ -1231,6 +1242,9 @@ void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 	os_error *error;
 
 	assert(g);
+
+	/* try to close url-completion */
+	ro_gui_url_complete_close(g, pointer->i);
 
 	xosbyte1(osbyte_SCAN_KEYBOARD, 0 ^ 0x80, 0, &shift);
 
@@ -1486,6 +1500,10 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			ro_gui_view_source(content);
 			return true;
 
+		case wimp_KEY_CONTROL + wimp_KEY_F8:	/* Dump url_store. */
+			url_store_dump();
+			return true;
+
 		case wimp_KEY_F9:	/* Dump content for debugging. */
 			switch (content->type) {
 				case CONTENT_HTML:
@@ -1513,6 +1531,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		case wimp_KEY_RETURN:
 			if (!toolbar)
 				break;
+			ro_gui_url_complete_close(NULL, 0);
 			toolbar_url = ro_gui_get_icon_string(g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_URL);
 			res = url_normalize(toolbar_url, &url);
@@ -1524,6 +1543,8 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			return true;
 
 		case wimp_KEY_ESCAPE:
+			if (ro_gui_url_complete_close(0, 0))
+				return true;
 			browser_window_stop(g->bw);
 			return true;
 
@@ -1569,9 +1590,12 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		case wimp_KEY_PAGE_DOWN:
 		case wimp_KEY_CONTROL | wimp_KEY_UP:
 		case wimp_KEY_CONTROL | wimp_KEY_DOWN:
+			if (toolbar)
+				return ro_gui_url_complete_keypress(g, key);
 			break;
-
 		default:
+			if (toolbar)
+				return ro_gui_url_complete_keypress(g, key);
 			return false;
 	}
 
@@ -1601,7 +1625,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			break;
 	}
 
-	wimp_open_window((wimp_open *) &state);
+		wimp_open_window((wimp_open *) &state);
 	return true;
 }
 

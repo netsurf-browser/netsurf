@@ -17,7 +17,7 @@
 # "riscos", "riscos_small", "ncos", and "riscos_debug" can be compiled under
 # RISC OS, or cross-compiled using gccsdk.
 
-OBJECTS_COMMON = content.o fetch.o fetchcache.o			# content/
+OBJECTS_COMMON = content.o fetch.o fetchcache.o	url_store.o	# content/
 OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
 OBJECTS_COMMON += box.o form.o html.o html_redraw.o layout.o \
 	list.o textplain.o					# render/
@@ -35,7 +35,7 @@ OBJECTS_RISCOS += 401login.o bitmap.o buffer.o debugwin.o \
 	save.o save_complete.o save_draw.o save_text.o \
 	schedule.o search.o sprite.o textselection.o theme.o \
 	theme_install.o thumbnail.o treeview.o ufont.o uri.o \
-	url_protocol.o wimp.o window.o				# riscos/
+	url_complete.o url_protocol.o wimp.o window.o		# riscos/
 # OBJECTS_RISCOS += memdebug.o
 
 OBJECTS_NCOS = $(OBJECTS_RISCOS)

@@ -22,6 +22,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
+#include "netsurf/content/url_store.h"
 #include "netsurf/css/css.h"
 #ifdef WITH_AUTH
 #include "netsurf/desktop/401login.h"
@@ -166,6 +167,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	char *url2;
 	char *hash;
 	url_func_result res;
+	struct url_content *url_content;
 
 	LOG(("bw %p, url %s", bw, url));
 
@@ -193,6 +195,10 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	if (hash) {
 		bw->frag_id = strdup(hash+1);
 	}
+
+  	url_content = url_store_find(url2);
+  	if (url_content)
+  		url_content->visits++;
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;

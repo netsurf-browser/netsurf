@@ -32,6 +32,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "oslib/uri.h"
+#include "netsurf/content/url_store.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
@@ -57,6 +58,7 @@
 #ifdef WITH_URL
 #include "netsurf/riscos/url_protocol.h"
 #endif
+#include "netsurf/riscos/url_complete.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -184,6 +186,17 @@ void gui_init(int argc, char** argv)
 
 	xhourglass_start(1);
 
+	/* create our choices directories */
+#ifndef NCOS
+	xosfile_create_dir("<Choices$Write>.WWW", 0);
+	xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
+	xosfile_create_dir("<Choices$Write>.WWW.NetSurf.Themes", 0);
+#else
+	xosfile_create_dir("<User$Path>.Choices.NetSurf", 0);
+	xosfile_create_dir("<User$Path>.Choices.NetSurf.Choices", 0);
+	xosfile_create_dir("<User$Path>.Choices.NetSurf.Choices.Themes", 0);
+#endif
+
 #ifdef WITH_SAVE_COMPLETE
 	save_complete_init();
 #endif
@@ -195,6 +208,8 @@ void gui_init(int argc, char** argv)
 	options_read("<User$Path>.Choices.NetSurf.Choices");
 #endif
 	ro_gui_choose_language();
+	
+	url_store_load("Choices:WWW.NetSurf.URL");
 
 	NETSURF_DIR = getenv("NetSurf$Dir");
 	if ((length = snprintf(path, sizeof(path),
@@ -527,6 +542,7 @@ void gui_init2(int argc, char** argv)
 
 void gui_quit(void)
 {
+  	url_store_save("<Choices$Write>.WWW.NetSurf.URL");
 	ro_gui_window_quit();
 	ro_gui_hotlist_save();
 	ro_gui_history_quit();
@@ -751,6 +767,8 @@ void ro_gui_null_reason_code(void)
 
 	if (gui_track_wimp_w == history_window)
 		ro_gui_history_mouse_at(&pointer);
+	if (gui_track_wimp_w == dialog_url_complete)
+		ro_gui_url_complete_mouse_at(&pointer);
 	else if (gui_track_gui_window)
 		ro_gui_window_mouse_at(gui_track_gui_window, &pointer);
 }
@@ -766,6 +784,8 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 
 	if (redraw->w == history_window)
 		ro_gui_history_redraw(redraw);
+	else if (redraw->w == dialog_url_complete)
+		ro_gui_url_complete_redraw(redraw);
 	else if ((hotlist_tree) && (redraw->w == (wimp_w)hotlist_tree->handle))
 		ro_gui_tree_redraw(redraw, hotlist_tree);
 	else if ((hotlist_toolbar) && (hotlist_toolbar->toolbar_handle == redraw->w))
@@ -827,8 +847,10 @@ void ro_gui_close_window_request(wimp_close *close)
 
 	if (close->w == dialog_debug)
 		ro_gui_debugwin_close();
-	else if ((g = ro_gui_window_lookup(close->w)) != NULL)
+	else if ((g = ro_gui_window_lookup(close->w)) != NULL) {
+		ro_gui_url_complete_close(NULL, 0);
 		browser_window_destroy(g->bw);
+	}
 	else if ((dw = ro_gui_download_window_lookup(close->w)) != NULL)
 		ro_gui_download_window_destroy(dw);
 	else
@@ -866,7 +888,8 @@ void ro_gui_pointer_entering_window(wimp_entering *entering)
 {
 	gui_track_wimp_w = entering->w;
 	gui_track_gui_window = ro_gui_window_lookup(entering->w);
-	gui_track = gui_track_gui_window || gui_track_wimp_w == history_window;
+	gui_track = gui_track_gui_window || gui_track_wimp_w == history_window ||
+			gui_track_wimp_w == dialog_url_complete;
 }
 
 
@@ -883,6 +906,8 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 		ro_gui_icon_bar_click(pointer);
 	else if (pointer->w == history_window)
 		ro_gui_history_click(pointer);
+	else if (pointer->w == dialog_url_complete)
+		ro_gui_url_complete_mouse_at(pointer);
 	else if ((hotlist_tree) && (pointer->w == (wimp_w)hotlist_tree->handle))
 		ro_gui_hotlist_click(pointer);
 	else if (pointer->w == dialog_saveas)

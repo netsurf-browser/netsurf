@@ -152,11 +152,6 @@ void ro_gui_hotlist_save(void) {
   
 	if (!hotlist_tree) return;
 
-	/*	Ensure we have a directory to save to later.
-	*/
-	xosfile_create_dir("<Choices$Write>.WWW", 0);
-	xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
-
 	/*	Save to our file
 	*/
 	options_save_hotlist(hotlist_tree, "<Choices$Write>.WWW.NetSurf.Hotlist");
