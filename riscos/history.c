@@ -66,9 +66,11 @@ font_f history_font;
 static void history_free_entry(struct history_entry *entry);
 static void ro_gui_history_redraw_tree(struct history_entry *he,
 		int x0, int y0);
-static struct history_entry * ro_gui_history_click_find(struct history_entry *he,
+static struct history_entry * ro_gui_history_click_find(
+		struct history_entry *he,
 		int x, int y);
-static void history_go(struct browser_window *bw, struct history_entry *entry);
+static void history_go(struct browser_window *bw,
+		struct history_entry *entry, bool new_window);
 
 
 /**
@@ -494,23 +496,23 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
  */
 void ro_gui_history_mouse_at(wimp_pointer *pointer)
 {
-        int x, y;
-        long width;
+	int x, y;
+	long width;
 	struct history_entry *he;
 	wimp_window_state state;
 	wimp_icon_state ic;
 	os_box box = {0, 0, 0, 0};
 
-        /* If the mouse hasn't moved, or if we don't want tooltips, exit */
-        if ((mouse_x == pointer->pos.x && mouse_y == pointer->pos.y) ||
-            !option_history_tooltip)
-                return;
+	/* If the mouse hasn't moved, or if we don't want tooltips, exit */
+	if ((mouse_x == pointer->pos.x && mouse_y == pointer->pos.y) ||
+			!option_history_tooltip)
+		return;
 
-        /* Update mouse position */
+	/* Update mouse position */
 	mouse_x = pointer->pos.x;
 	mouse_y = pointer->pos.y;
 
-        /* Find history tree entry under mouse */
+	/* Find history tree entry under mouse */
 	state.w = history_window;
 	wimp_get_window_state(&state);
 
@@ -518,37 +520,37 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer)
 	y = -(pointer->pos.y - (state.visible.y1 - state.yscroll)) / FULL_HEIGHT;
 	he = ro_gui_history_click_find(history_current->start, x, y);
 	if (he) {
-	        /* get width of string */
-                xwimptextop_string_width(he->url,
-                             strlen(he->url) > 256 ? 256 : strlen(he->url),
-                             (int*)&width);
+		/* get width of string */
+		xwimptextop_string_width(he->url,
+			strlen(he->url) > 256 ? 256 : strlen(he->url),
+				(int*)&width);
 
-                ro_gui_set_icon_string(dialog_tooltip, 0, he->url);
+		ro_gui_set_icon_string(dialog_tooltip, 0, he->url);
 
-                /* resize icon appropriately */
-                ic.w = dialog_tooltip;
-                ic.i = 0;
-                wimp_get_icon_state(&ic);
-                wimp_resize_icon(dialog_tooltip, 0,
-                                 ic.icon.extent.x0, ic.icon.extent.y0,
-                                 width + 16, ic.icon.extent.y1);
+		/* resize icon appropriately */
+		ic.w = dialog_tooltip;
+		ic.i = 0;
+		wimp_get_icon_state(&ic);
+		wimp_resize_icon(dialog_tooltip, 0,
+				ic.icon.extent.x0, ic.icon.extent.y0,
+				width + 16, ic.icon.extent.y1);
 
-	        state.w = dialog_tooltip;
-	        wimp_get_window_state(&state);
+		state.w = dialog_tooltip;
+		wimp_get_window_state(&state);
 
-	        /* update window extent */
-	        box.x1 = width + 16;
+		/* update window extent */
+		box.x1 = width + 16;
 		box.y0 = -36;
 		xwimp_set_extent(dialog_tooltip, &box);
 
 		/* set visible area */
-                state.visible.x0 = pointer->pos.x + 24;
-	        state.visible.y0 = pointer->pos.y - 22 - 36;
-	        state.visible.x1 = pointer->pos.x + 24 + width + 16;
-	        state.visible.y1 = pointer->pos.y - 22;
-	        state.next = wimp_TOP;
-	        /* open window */
-	        wimp_open_window((wimp_open *) &state);
+		state.visible.x0 = pointer->pos.x + 24;
+		state.visible.y0 = pointer->pos.y - 22 - 36;
+		state.visible.x1 = pointer->pos.x + 24 + width + 16;
+		state.visible.y1 = pointer->pos.y - 22;
+		state.next = wimp_TOP;
+		/* open window */
+		wimp_open_window((wimp_open *) &state);
 	}
 	else {
 	        /* not over a tree entry => close tooltip window. */
@@ -566,18 +568,24 @@ void ro_gui_history_click(wimp_pointer *pointer)
 	struct history_entry *he;
 	wimp_window_state state;
 
+	if (pointer->buttons != wimp_CLICK_SELECT &&
+			pointer->buttons != wimp_CLICK_ADJUST)
+		/* return if not select or adjust click */
+		return;
+
 	state.w = history_window;
 	wimp_get_window_state(&state);
 
 	x = (pointer->pos.x - (state.visible.x0 - state.xscroll)) / FULL_WIDTH;
 	y = -(pointer->pos.y - (state.visible.y1 - state.yscroll)) / FULL_HEIGHT;
-	LOG(("x = %i, y = %i", x, y));
 	he = ro_gui_history_click_find(history_current->start, x, y);
 	if (he) {
-		history_current->current = he;
+		if (pointer->buttons == wimp_CLICK_SELECT)
+			history_current->current = he;
 		wimp_close_window(history_window);
 		history_current = 0;
-		history_go(history_bw, he);
+		history_go(history_bw, he,
+				pointer->buttons == wimp_CLICK_ADJUST);
 	}
 }
 
@@ -613,7 +621,7 @@ void history_back(struct browser_window *bw, struct history *history)
 	if (!history || !history->current || !history->current->back)
 		return;
 	history->current = history->current->back;
-	history_go(bw, history->current);
+	history_go(bw, history->current, false);
 }
 
 
@@ -629,7 +637,7 @@ void history_forward(struct browser_window *bw, struct history *history)
 	if (!history || !history->current || !history->current->forward_pref)
 		return;
 	history->current = history->current->forward_pref;
-	history_go(bw, history->current);
+	history_go(bw, history->current, false);
 }
 
 
@@ -659,10 +667,12 @@ bool history_forward_available(struct history *history) {
 /**
  * Open a history entry in the specified browser window
  *
- * \param bw     browser window
- * \param entry  entry to open
+ * \param bw          browser window
+ * \param entry       entry to open
+ * \param new_window  open entry in new window
  */
-void history_go(struct browser_window *bw, struct history_entry *entry)
+void history_go(struct browser_window *bw, struct history_entry *entry,
+		bool new_window)
 {
 	char *url;
 
@@ -678,7 +688,10 @@ void history_go(struct browser_window *bw, struct history_entry *entry)
 	else
 		url = entry->url;
 
-	browser_window_go_post(bw, url, 0, 0, false, 0, false);
+	if (new_window)
+		browser_window_create(url, bw, 0);
+	else
+		browser_window_go_post(bw, url, 0, 0, false, 0, false);
 
 	if (entry->frag_id)
 		free(url);
