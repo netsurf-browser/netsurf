@@ -574,6 +574,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 	unsigned int *row_span, *excess_y, min;
 	unsigned long x0;
 	unsigned long x1;
+	unsigned long cy1;
 	struct box *left;
 	struct box *right;
 	struct box *c;
@@ -750,10 +751,11 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 	table->height = table_height;
 
 	/* find sides and move table down if it doesn't fit in available width */
+	cy1 = cy;
 	while (1) {
 		x0 = 0;
 		x1 = width;
-		find_sides(cont->float_children, cy, cy + table_height,
+		find_sides(cont->float_children, cy1, cy1 + table_height,
 				&x0, &x1, &left, &right);
 		if (table_width <= x1 - x0)
 			break;
@@ -761,16 +763,16 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 			break;
 		/* move down to the next place where the space may increase */
 		if (left == 0)
-			cy = right->y + right->height + 1;
+			cy1 = right->y + right->height + 1;
 		else if (right == 0)
-			cy = left->y + left->height + 1;
+			cy1 = left->y + left->height + 1;
 		else if (left->y + left->height < right->y + right->height)
-			cy = left->y + left->height + 1;
+			cy1 = left->y + left->height + 1;
 		else
-			cy = right->y + right->height + 1;
+			cy1 = right->y + right->height + 1;
 	}
 	table->x = x0;
-	table->y = cy;
+	table->y += cy1 - cy;
 }
 
 
