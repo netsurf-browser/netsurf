@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		puts("=== URL:");
 		if (!fgets(url, 1000, stdin))
-			return 0;
+			break;
 		url[strlen(url) - 1] = 0;
 		destroyed = 0;
 		c = fetchcache(url, 0, callback, 0, 0, 100, 1000, false, 0, 0, true);
@@ -73,10 +73,12 @@ void gui_multitask(void)
 	LOG(("-"));
 }
 
+#ifndef riscos
 int stricmp(char *s0, char *s1)
 {
 	return strcasecmp(s0, s1);
 }
+#endif
 
 void gui_remove_gadget(void *p)
 {
@@ -114,3 +116,33 @@ void *login_list_get(char *url)
 {
 	return 0;
 }
+
+bool plugin_handleable(const char *mime_type)
+{
+	return false;
+}
+
+#ifdef riscos
+void plugin_msg_parse(wimp_message *message, int ack) {}
+void plugin_create(struct content *c) {}
+void plugin_process_data(struct content *c, char *data, unsigned long size) {}
+int plugin_convert(struct content *c, unsigned int width, unsigned int height) {}
+void plugin_revive(struct content *c, unsigned int width, unsigned int height) {}
+void plugin_reformat(struct content *c, unsigned int width, unsigned int height) {}
+void plugin_destroy(struct content *c) {}
+void plugin_redraw(struct content *c, long x, long y,
+		unsigned long width, unsigned long height,
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1) {}
+void plugin_add_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state) {}
+void plugin_remove_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state) {}
+void plugin_reshape_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state) {}
+
+char *NETSURF_DIR = "<NetSurf$Dir>";
+#endif
+
