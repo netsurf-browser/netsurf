@@ -7,11 +7,16 @@
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
+/** \file
+ * Browser window handling (implementation).
+ */
+
 #include <string.h>
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/theme.h"
+#include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
 gui_window *window_list = 0;
@@ -19,19 +24,27 @@ gui_window *window_list = 0;
 static void gui_disable_icon(wimp_w w, wimp_i i);
 static void gui_enable_icon(wimp_w w, wimp_i i);
 
+
+/**
+ * Create and open a new browser window.
+ */
+
 gui_window *gui_create_browser_window(struct browser_window *bw)
 {
-  struct wimp_window window;
+  int width, height;
+  wimp_window window;
+  wimp_window_state state;
 
   gui_window* g = (gui_window*) xcalloc(1, sizeof(gui_window));
   g->type = GUI_BROWSER_WINDOW;
   g->data.browser.bw = bw;
-  /* create browser and toolbar windows here */
 
-  window.visible.x0 = 0;
-  window.visible.y0 = 0;
-  window.visible.x1 = ro_x_units(bw->format_width);
-  window.visible.y1 = 2000;
+  ro_gui_screen_size(&width, &height);
+
+  window.visible.x0 = width / 8;
+  window.visible.y0 = height / 8;
+  window.visible.x1 = width * 7 / 8;
+  window.visible.y1 = height * 7 / 8;
   window.xscroll = 0;
   window.yscroll = 0;
   window.next = wimp_TOP;
@@ -39,7 +52,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
       wimp_WINDOW_MOVEABLE | wimp_WINDOW_NEW_FORMAT | wimp_WINDOW_BACK_ICON |
       wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_TITLE_ICON | wimp_WINDOW_VSCROLL |
       wimp_WINDOW_HSCROLL | wimp_WINDOW_SIZE_ICON | wimp_WINDOW_TOGGLE_ICON |
-      wimp_WINDOW_IGNORE_XEXTENT;
+      wimp_WINDOW_IGNORE_XEXTENT | wimp_WINDOW_IGNORE_YEXTENT;
   window.title_fg = wimp_COLOUR_BLACK;
   window.title_bg = wimp_COLOUR_LIGHT_GREY;
   window.work_fg = wimp_COLOUR_LIGHT_GREY;
@@ -49,8 +62,8 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
   window.highlight_bg = wimp_COLOUR_CREAM;
   window.extra_flags = 0;
   window.extent.x0 = 0;
-  window.extent.y0 = ro_y_units(bw->format_height);
-  window.extent.x1 = 8192;//ro_x_units(bw->format_width);
+  window.extent.y0 = height * 3 / 4;
+  window.extent.x1 = width * 3 / 4;
   if ((bw->flags & browser_TOOLBAR) != 0)
   {
     window.extent.y1 = ro_theme_toolbar_height();
@@ -87,6 +100,12 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
 
   g->next = window_list;
   window_list = g;
+
+  state.w = g->window;
+  wimp_get_window_state(&state);
+  state.next = wimp_TOP;
+  ro_gui_window_open(g, (wimp_open*)&state);
+
   return g;
 }
 
@@ -124,13 +143,6 @@ void gui_window_destroy(gui_window* g)
 
 void gui_window_show(gui_window* g)
 {
-  wimp_window_state state;
-  if (g == NULL)
-    return;
-  state.w = g->window;
-  wimp_get_window_state(&state);
-  state.next = wimp_TOP;
-  ro_gui_window_open(g, (wimp_open*)&state);
 }
 
 void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
@@ -218,29 +230,36 @@ unsigned long gui_window_get_width(gui_window* g)
   return browser_x_units(state.visible.x1 - state.visible.x0);
 }
 
-void gui_window_set_extent(gui_window* g, unsigned long width, unsigned long height)
+
+void gui_window_set_extent(gui_window *g, unsigned long width,
+		unsigned long height)
 {
-  os_box extent;
+	os_box extent = { 0, 0, 0, 0 };
+	wimp_window_state state;
+	int toolbar_height = 0;
 
-  if (g == 0)
-    return;
+	width *= 2;
+	height *= 2;
 
-  extent.x0 = 0;
-  extent.y0 = ro_y_units(height);
-  if (extent.y0 > -960)
-    extent.y0 = -960;
-  extent.x1 = ro_x_units(width);
-  if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
-  {
-    extent.y1 = ro_theme_toolbar_height();
-  }
-  else
-  {
-    extent.y1 = 0;
-  }
-  wimp_set_extent(g->window, &extent);
+	state.w = g->window;
+	wimp_get_window_state(&state);
 
+	/* account for toolbar height, if present */
+	if (g->data.browser.bw->flags & browser_TOOLBAR)
+		toolbar_height = ro_theme_toolbar_height();
+
+	if (width < state.visible.x1 - state.visible.x0)
+		width = state.visible.x1 - state.visible.x0;
+	if (height < state.visible.y1 - state.visible.y0 - toolbar_height)
+		height = state.visible.y1 - state.visible.y0 - toolbar_height;
+
+	extent.y0 = -height;
+	extent.x1 = width;
+	extent.y1 = toolbar_height;
+	wimp_set_extent(g->window, &extent);
+	wimp_open_window((wimp_open *) &state);
 }
+
 
 void gui_window_set_status(gui_window* g, const char* text)
 {
@@ -279,75 +298,118 @@ void gui_window_message(gui_window* g, gui_message* msg)
   }
 }
 
-void ro_gui_window_open(gui_window* g, wimp_open* open)
+
+/**
+ * Open a window using the given wimp_open, handling toolbars and resizing.
+ */
+
+void ro_gui_window_open(gui_window *g, wimp_open *open)
 {
-  if (g->type == GUI_BROWSER_WINDOW)
-  {
-    wimp_window_state state;
-    state.w = g->window;
-    wimp_get_window_state(&state);
-    if (state.flags & wimp_WINDOW_TOGGLED) {
-	    open->visible.x0 = open->visible.y0 = 0;
-	    ro_gui_screen_size(&open->visible.x1, &open->visible.y1);
-    }
+	int width = open->visible.x1 - open->visible.x0;
+	int height = open->visible.y1 - open->visible.y0;
+	int toolbar_height = 0;
+	struct content *content;
+	wimp_window_state state;
+	wimp_outline outline;
 
-    if (g->data.browser.bw->current_content != 0) {
-      int width = open->visible.x1 - open->visible.x0;
-      if (g->data.browser.old_width != width) {
-	if (g->data.browser.bw->current_content->width
-		        < browser_x_units(width))
-          gui_window_set_extent(g, browser_x_units(width),
-			  g->data.browser.bw->current_content->height);
-        else
-          gui_window_set_extent(g, g->data.browser.bw->current_content->width,
-			  g->data.browser.bw->current_content->height);
-	g->data.browser.old_width = width;
-	g->data.browser.reformat_pending = true;
-        gui_reformat_pending = true;
-      }
-    }
-    wimp_open_window(open);
+	if (g->type != GUI_BROWSER_WINDOW) {
+		wimp_open_window(open);
+		return;
+	}
 
-    if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
-    {
-      wimp_outline outline;
-      wimp_window_state tstate;
+	content = g->data.browser.bw->current_content;
 
-      outline.w = g->window;
-      wimp_get_window_outline(&outline);
+	/* check for toggle to full size */
+	state.w = g->window;
+	wimp_get_window_state(&state);
+	if ((state.flags & wimp_WINDOW_TOGGLED) &&
+			(state.flags & wimp_WINDOW_BOUNDED_ONCE) &&
+			!(state.flags & wimp_WINDOW_FULL_SIZE)) {
+		open->visible.x0 = open->visible.y0 = 0;
+		open->visible.x1 = open->visible.y1 = 0x1000;
+		width = height = 0x1000;
+	}
 
+	/* account for toolbar height, if present */
+	if (g->data.browser.bw->flags & browser_TOOLBAR) {
+		toolbar_height = ro_theme_toolbar_height();
+		height -= toolbar_height;
+	}
 
-      tstate.w = g->data.browser.toolbar;
-      tstate.visible.x0 = open->visible.x0;
-      tstate.visible.x1 = outline.outline.x1 - 2;
-      tstate.visible.y1 = open->visible.y1;
-      tstate.visible.y0 = tstate.visible.y1 - ro_theme_toolbar_height();
-      tstate.xscroll = 0;
-      tstate.yscroll = 0;
-      tstate.next = wimp_TOP;
+	/* the height should be no less than the content height */
+	if (content && height < content->height * 2)
+		height = content->height * 2;
 
-      wimp_open_window_nested((wimp_open *) &tstate, g->window,
-        wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-          << wimp_CHILD_LS_EDGE_SHIFT |
-        wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-          << wimp_CHILD_BS_EDGE_SHIFT |
-        wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-          << wimp_CHILD_RS_EDGE_SHIFT |
-        wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-          << wimp_CHILD_TS_EDGE_SHIFT);
+	/* change extent if necessary */
+	if (g->data.browser.old_width != width ||
+			g->data.browser.old_height != height) {
+		if (g->data.browser.old_width != width) {
+			g->data.browser.reformat_pending = true;
+			gui_reformat_pending = true;
+		}
+		g->data.browser.old_width = width;
+		g->data.browser.old_height = height;
 
-      if (tstate.visible.x1 - tstate.visible.x0 != g->data.browser.toolbar_width)
-      {
-        g->data.browser.toolbar_width = tstate.visible.x1 - tstate.visible.x0;
-        ro_theme_resize_toolbar(g->data.browser.toolbar,
-            g->data.browser.toolbar_width,
-            tstate.visible.y1 - tstate.visible.y0);
-      }
+		if (content && width < content->width * 2)
+			width = content->width * 2;
+		else {
+			os_box extent = { 0, -height, width, toolbar_height };
+			wimp_set_extent(g->window, &extent);
+		}
+	}
 
-    }
-  } else {
-    wimp_open_window(open);
-  }
+	wimp_open_window(open);
+
+	/* update extent to actual size if toggled */
+	if ((state.flags & wimp_WINDOW_TOGGLED) &&
+			(state.flags & wimp_WINDOW_BOUNDED_ONCE) &&
+			!(state.flags & wimp_WINDOW_FULL_SIZE)) {
+		width = open->visible.x1 - open->visible.x0;
+		height = open->visible.y1 - open->visible.y0 - toolbar_height;
+		if (content && height < content->height * 2)
+			height = content->height * 2;
+		{
+			os_box extent = { 0, -height, width, toolbar_height };
+			wimp_set_extent(g->window, &extent);
+		}
+		g->data.browser.old_width = width;
+		g->data.browser.old_height = height;
+	}
+
+	/* open toolbar, if present */
+	if (!toolbar_height)
+		return;
+
+	outline.w = g->window;
+	wimp_get_window_outline(&outline);
+
+	state.w = g->data.browser.toolbar;
+	state.visible.x0 = open->visible.x0;
+	state.visible.x1 = outline.outline.x1 - 2;
+	state.visible.y1 = open->visible.y1;
+	state.visible.y0 = state.visible.y1 - toolbar_height;
+	state.xscroll = 0;
+	state.yscroll = 0;
+	state.next = wimp_TOP;
+
+	wimp_open_window_nested((wimp_open *) &state, g->window,
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_LS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_BS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_RS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_TS_EDGE_SHIFT);
+
+	if (state.visible.x1 - state.visible.x0 !=
+			g->data.browser.toolbar_width) {
+		g->data.browser.toolbar_width = state.visible.x1 -
+				state.visible.x0;
+		ro_theme_resize_toolbar(g->data.browser.toolbar,
+				g->data.browser.toolbar_width,
+				state.visible.y1 - state.visible.y0);
+	}
 }
 
 

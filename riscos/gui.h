@@ -42,6 +42,7 @@ struct gui_window
       struct browser_window* bw;
       bool reformat_pending;
       int old_width;
+      int old_height;
     } browser;
     struct {
       struct content *content;
