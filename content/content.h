@@ -40,7 +40,6 @@
 #ifdef WITH_GIF
 #include "netsurf/riscos/gif.h"
 #endif
-#ifdef riscos
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
 #endif
@@ -52,7 +51,6 @@
 #endif
 #ifdef WITH_DRAW
 #include "netsurf/riscos/draw.h"
-#endif
 #endif
 
 
@@ -77,16 +75,16 @@ union content_msg_data {
 	char *redirect;	/**< Redirect URL, for CONTENT_MSG_REDIRECT. */
 	/** Area of content which needs redrawing, for CONTENT_MSG_REDRAW. */
 	struct {
-		int x, y, width, height;
+		float x, y, width, height;
 		/** Redraw the area fully. If false, object must be set,
 		 * and only the object will be redrawn. */
 		bool full_redraw;
 		/** Object to redraw if full_redraw is false. */
 		struct content *object;
 		/** Coordinates to plot object at. */
-		int object_x, object_y;
+		float object_x, object_y;
 		/** Dimensions to plot object with. */
-		int object_width, object_height;
+		float object_width, object_height;
 	} redraw;
 	char *auth_realm;	/**< Realm, for CONTENT_MSG_AUTH. */
 };
@@ -129,7 +127,6 @@ struct content {
 #ifdef WITH_GIF
 		struct content_gif_data gif;
 #endif
-#ifdef riscos
 #ifdef WITH_PNG
 		struct content_png_data png;
 #endif
@@ -141,7 +138,6 @@ struct content {
 #endif
 #ifdef WITH_PLUGIN
 		struct content_plugin_data plugin;
-#endif
 #endif
 	} data;
 
