@@ -436,7 +436,7 @@ int rewrite_urls(xmlNode *n, const char *base)
 
                         for (this = n->children; this != 0; this = this->next) {
                                 /* Get current content */
-                                content = xmlNodeGetContent(n);
+                                content = xmlNodeGetContent(this);
                                 if (!content) continue;
 
                                 /* Rewrite @import rules */
@@ -450,7 +450,7 @@ int rewrite_urls(xmlNode *n, const char *base)
                                 }
 
                                 /* set new content */
-                                xmlNodeSetContentLen(n,
+                                xmlNodeSetContentLen(this,
                                              (const xmlChar*)rewritten,
                                              len);
 
