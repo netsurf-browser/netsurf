@@ -1,5 +1,5 @@
 /**
- * $Id: plugin.c,v 1.6 2003/06/06 03:12:28 jmb Exp $
+ * $Id: plugin.c,v 1.7 2003/06/06 05:49:22 jmb Exp $
  */
 
 #include <assert.h>
@@ -36,9 +36,9 @@ void plugin_decode(struct content* content, char* url, struct box* box,
         bool can_handle = TRUE;
         char* alias_sysvar;
 
-        if (po->data != NULL) {
+        if (strcmp(po->data,"") == 0) {
 
-                if (po->type != NULL) {
+                if (strcmp(po->type,"") == 0) {
 
                         /* acquire NS mime type from actual mime type */
                         mime_type = content_lookup((const char*)po->type);
@@ -53,7 +53,7 @@ void plugin_decode(struct content* content, char* url, struct box* box,
                          */
                         po->type = create_mime_from_ext(po->data);
 
-                        if (po->type != NULL)
+                        if (strcmp(po->type,"") == 0)
                           mime_type = content_lookup((const char*)po->type);
 
                         else {
@@ -69,7 +69,7 @@ void plugin_decode(struct content* content, char* url, struct box* box,
 
                 /* no data so try using classid instead */
 
-                if (po->classid != NULL) {
+                if (strcmp(po->classid,"") == 0) {
 
                         po->data = strdup(po->classid);
 
@@ -80,7 +80,7 @@ void plugin_decode(struct content* content, char* url, struct box* box,
                                 can_handle = FALSE;
                         }
 
-                        if (po->codetype != NULL) {
+                        if (strcmp(po->codetype,"") == 0) {
 
                                 /* use codetype instead of type if we can */
                                 po->type = strdup(po->codetype);
@@ -92,7 +92,7 @@ void plugin_decode(struct content* content, char* url, struct box* box,
                                 po->codetype = create_mime_from_ext(
                                                                   po->data);
 
-                                if (po->codetype != NULL) {
+                                if (strcmp(po->codetype,"") == 0) {
 
                                   /* well, it appeared to work... */
                                   mime_type = content_lookup(
@@ -156,7 +156,7 @@ void plugin_decode(struct content* content, char* url, struct box* box,
 
                         /* Create Alias variable */
                         alias_sysvar = create_sysvar(po->type);
-                        if (alias_sysvar == NULL) {
+                        if (strcmp(alias_sysvar,"") == 0) {
 
                                 /* oh dear, you can't handle it */
                                 xfree(po);
@@ -193,6 +193,7 @@ void plugin_decode(struct content* content, char* url, struct box* box,
         if (can_handle == FALSE) {
 
                 /* Get alternative HTML as we can't handle the object */
+                return;
         }
 }
 
