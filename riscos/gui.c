@@ -127,7 +127,7 @@ void gui_init(int argc, char** argv)
 	}
 	current_theme = ro_theme_create(theme_fname);
 
-	wimp_open_template("<NetSurf$Dir>.Resources.Templates");
+	wimp_open_template("<NetSurf$Dir>.Resources.en.Templates");
 	ro_gui_dialog_init();
 	ro_gui_download_init();
 	ro_gui_menus_init();
