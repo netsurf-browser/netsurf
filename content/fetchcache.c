@@ -164,6 +164,8 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			for (i = 0; params[i]; i++)
 				free(params[i]);
 			free(params);
+			if (c->cache && c->type == CONTENT_OTHER)
+			        cache_destroy(c);
 			break;
 
 		case FETCH_DATA:
