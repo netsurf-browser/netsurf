@@ -1767,6 +1767,8 @@ struct result box_applet(xmlNode *n, struct status *status,
 	    }
 	}
 
+        box->object_params = po;
+
 	/* start fetch */
 	if(plugin_decode(status->content, url, box, po))
         	return (struct result) {box,0};

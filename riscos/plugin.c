@@ -132,7 +132,7 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
                 struct object_params *params, void **state)
 {
         char sysvar[40];
-        char *varval;
+        char *varval, *filename, *p;
         os_error *e;
         wimp_message m;
         plugin_message_open *pmo;
@@ -284,10 +284,23 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
         plugin_add_instance_to_list(c, bw, page, box, params, state);
 
         /* TODO - handle other flags (see below) */
-        if(flags & 0x4)
+        if(flags & 0x4) { /* wants data fetching */
                plugin_create_stream(bw, params, c);
+               plugin_destroy_stream(bw, params, c);
 
-        plugin_destroy_stream(bw, params, c);
+               /* delete file_as_stream file
+                * (we don't care if the file doesn't exist)
+                */
+               filename = strdup(params->filename);
+	       p = strrchr((const char*)filename, 'p');
+	       filename[(p-filename)] = 'd';
+	       xosfile_delete((char const*)filename, NULL, NULL,
+	                       NULL, NULL, NULL);
+        }
+
+        if (!(flags & 0x08)) /* will delete parameters file */
+               xosfile_delete((char const*)params->filename, NULL, NULL,
+                               NULL, NULL, NULL);
 
 }
 
@@ -310,10 +323,6 @@ int plugin_process_opening(struct object_params *params,
                 LOG(("accepts input focus"));
         if(pmo->flags & 0x2)
                 LOG(("wants code fetching"));
-        if(pmo->flags & 0x4)
-                LOG(("wants data fetching"));
-        if(pmo->flags & 0x8)
-                LOG(("will delete parameters"));
         if(pmo->flags & 0x10)
                 LOG(("still busy"));
         if(pmo->flags & 0x20)
@@ -337,14 +346,11 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
         wimp_message m;
         plugin_message_close *pmc;
         struct plugin_message *temp;
-        char *p, *filename;
 
 	if (params == 0) {
 
 	        return;
 	}
-
-        filename = strdup(params->filename);
 
 	pmc = (plugin_message_close*)&m.data;
 	pmc->flags = 0;
@@ -375,12 +381,6 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
                 LOG(("message_PLUG_IN_CLOSE bounced"));
                 plugin_remove_message_from_linked_list(temp);
         }
-
-        /* delete parameters file */
-	xosfile_delete((char const*)params->filename, NULL, NULL, NULL, NULL, NULL);
-	p = strrchr((const char*)filename, 'p');
-	filename[(p-filename)] = 'd';
-	xosfile_delete((char const*)filename, NULL, NULL, NULL, NULL, NULL);
 
 	/* delete instance from list */
 	plugin_remove_instance_from_list(params);
