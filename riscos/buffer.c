@@ -38,6 +38,10 @@
 */
 static osspriteop_area *buffer = NULL;
 
+/** The sprite name
+*/
+static char name[12];
+
 /** The current clip area
 */
 static os_box clipping;
@@ -60,7 +64,8 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	int orig_x0, orig_y0;
 	int buffer_size;
 	os_coord sprite_size;
-	os_error *error;
+	int bpp, word_size;
+	osbool palette;
 
 	/*	Close any open buffer
 	*/
@@ -76,23 +81,31 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	sprite_size.y = clipping.y1 - clipping.y0 + 1;
 	ro_convert_os_units_to_pixels(&sprite_size, (os_mode)-1);
 
-	/*	Create our buffer (assume 32bpp for now (!))
+	/*	Get the screen depth as we can't use palettes for >8bpp
 	*/
+	xos_read_mode_variable((os_mode)-1, os_MODEVAR_LOG2_BPP, &bpp, 0);
+	palette = (bpp < 4) ? 1 : 0;
+
+	/*	Create our buffer
+	*/
+	word_size = (((sprite_size.x << bpp) >> 3) + 32) & ~3;
 	buffer_size = sizeof(osspriteop_area) + sizeof(osspriteop_header) +
-			(sprite_size.x * sprite_size.y * 4) + 2048;
+			(word_size * sprite_size.y);
+	if (palette) buffer_size += ((1 << (1 << bpp)) << 3);
 	if (!(buffer = (osspriteop_area *)malloc(buffer_size))) return;
 	
 	/*	Fill in the sprite area details
 	*/
-	buffer->size = buffer_size;
+	buffer->size = buffer_size + 1;
 	buffer->sprite_count = 0;
 	buffer->first = 16;
 	buffer->used = 16;
 	
 	/*	Fill in the sprite header details
 	*/
+	sprintf(name, "buffer");
 	if (xosspriteop_get_sprite_user_coords(osspriteop_NAME, buffer,
-			"buffer", (osbool)1,
+			name, palette,
 			clipping.x0, clipping.y0, clipping.x1, clipping.y1)) {
 		free(buffer);
 		buffer = NULL;
@@ -101,9 +114,8 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 
 	/*	Allocate OS_SpriteOp save area
 	*/
-	if ((error = xosspriteop_read_save_area_size(osspriteop_NAME, buffer,
-			(osspriteop_id)"buffer", &size))) {
-		LOG(("Save error: %s", error->errmess));
+	if (xosspriteop_read_save_area_size(osspriteop_NAME, buffer,
+			(osspriteop_id)name, &size)) {
 		free(buffer);
 		buffer = NULL;
 		return;
@@ -117,10 +129,9 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 
 	/*	Switch output to sprite
 	*/
-	if ((error = xosspriteop_switch_output_to_sprite(osspriteop_NAME, buffer,
-			(osspriteop_id)"buffer", save_area,
-			0, (int *)&context1, (int *)&context2, (int *)&context3))) {
-		LOG(("Switching error: %s", error->errmess));
+	if (xosspriteop_switch_output_to_sprite(osspriteop_NAME, buffer,
+			(osspriteop_id)name, save_area,
+			0, (int *)&context1, (int *)&context2, (int *)&context3)) {
 		free(save_area);
 		free(buffer);
 		buffer = NULL;
@@ -158,7 +169,7 @@ void ro_gui_buffer_close(void) {
 	/*	Plot the contents to screen
 	*/
 	xosspriteop_put_sprite_user_coords(osspriteop_NAME,
-		buffer, (osspriteop_id)"buffer",
+		buffer, (osspriteop_id)name,
 		clipping.x0, clipping.y0, (os_action)0);
 		
 	/*	Free our memory
