@@ -1,6 +1,11 @@
 /**
- * $Id: utils.h,v 1.2 2002/05/21 21:27:29 bursa Exp $
+ * $Id: utils.h,v 1.3 2002/08/11 23:04:02 bursa Exp $
  */
+
+#ifndef _NETSURF_RENDER_UTILS_H_
+#define _NETSURF_RENDER_UTILS_H_
+
+#include <stdlib.h>
 
 void die(const char * const error);
 char * strip(char * const s);
@@ -11,3 +16,4 @@ char * xstrdup(const char * const s);
 char * load(const char * const path);
 char * squash_whitespace(const char * s);
 
+#endif
