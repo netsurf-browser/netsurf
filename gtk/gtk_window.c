@@ -50,8 +50,6 @@ static gboolean gui_window_motion_notify_event(GtkWidget *widget,
 		GdkEventMotion *event, gpointer data);
 static gboolean gui_window_button_press_event(GtkWidget *widget,
 		GdkEventButton *event, gpointer data);
-static void html_redraw_box(struct content *content, struct box *box,
-		int x, int y);
 
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,

@@ -151,3 +151,5 @@ void gui_401login_open(struct browser_window *bw, struct content *c,
 void schedule(int t, void (*callback)(void *p), void *p) {}
 void schedule_remove(void (*callback)(void *p), void *p) {}
 void schedule_run(void) {}
+
+void global_history_add(struct gui_window *g) {}

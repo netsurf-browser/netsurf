@@ -30,7 +30,7 @@ static bool nsgtk_plot_polygon(int *p, unsigned int n, colour fill);
 static bool nsgtk_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool nsgtk_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
-static bool nsgtk_plot_text(int x, int y, struct font_data *font,
+static bool nsgtk_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
 static bool nsgtk_plot_disc(int x, int y, int radius, colour colour);
 static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
@@ -122,31 +122,10 @@ bool nsgtk_plot_clip(int clip_x0, int clip_y0,
 }
 
 
-bool nsgtk_plot_text(int x, int y, struct font_data *font,
+bool nsgtk_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c)
 {
-	PangoContext *context;
-	PangoLayout *layout;
-	PangoLayoutLine *line;
-	GdkColor colour = { 0,
-			((c & 0xff) << 8) | (c & 0xff),
-			(c & 0xff00) | (c & 0xff00 >> 8),
-			((c & 0xff0000) >> 8) | (c & 0xff0000 >> 16) };
-
-	context = gtk_widget_get_pango_context(current_widget);
-	layout = pango_layout_new(context);
-	pango_layout_set_font_description(layout,
-			(const PangoFontDescription *) font->id);
-	pango_layout_set_text(layout, text, length);
-
-	line = pango_layout_get_line(layout, 0);
-
-	gdk_draw_layout_line_with_colors(current_drawable, current_gc,
-			x, y, line, &colour, 0);
-
-	g_object_unref(layout);
-
-	return true;
+	return nsfont_paint(style, text, length, x, y, c);
 }
 
 
