@@ -57,9 +57,6 @@ void netsurf_init(int argc, char** argv)
   fetch_init();
   cache_init();
   fetchcache_init();
-#ifdef WITH_JPEG
-  nsjpeg_init();
-#endif
 #ifdef WITH_PNG
   nspng_init();
 #endif
