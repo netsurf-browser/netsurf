@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.23 2003/02/09 12:58:14 bursa Exp $
+ * $Id: browser.c,v 1.25 2003/02/09 19:33:32 bursa Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -18,6 +18,9 @@
 #include <time.h>
 #include <ctype.h>
 
+void browser_window_start_throbber(struct browser_window* bw);
+void browser_window_stop_throbber(struct browser_window* bw);
+void browser_window_reformat(struct browser_window* bw);
 void browser_window_text_selection(struct browser_window* bw, int click_x, int click_y, int click_type);
 void browser_window_clear_text_selection(struct browser_window* bw);
 void browser_window_change_text_selection(struct browser_window* bw, struct box_position* new_start, struct box_position* new_end);
@@ -169,7 +172,7 @@ struct browser_window* create_browser_window(int flags, int width, int height)
   return bw;
 }
 
-void browser_window_set_status(struct browser_window* bw, char* text)
+void browser_window_set_status(struct browser_window* bw, const char* text)
 {
   if (bw->window != NULL)
     gui_window_set_status(bw->window, text);
@@ -418,6 +421,8 @@ int browser_window_gadget_click(struct browser_window* bw, int click_x, int clic
 		}
 	}
 	xfree(click_boxes);
+
+	return 0;
 }
 
 int browser_window_action(struct browser_window* bw, struct browser_action* act)

@@ -1,5 +1,5 @@
 /**
- * $Id: browser.h,v 1.7 2003/02/09 12:58:14 bursa Exp $
+ * $Id: browser.h,v 1.8 2003/02/09 19:33:19 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
@@ -95,7 +95,7 @@ void browser_window_destroy(struct browser_window* bw);
 void browser_window_open_location(struct browser_window* bw, char* url);
 void browser_window_open_location_historical(struct browser_window* bw, char* url);
 int browser_window_action(struct browser_window* bw, struct browser_action* act);
-void browser_window_set_status(struct browser_window* bw, char* text);
+void browser_window_set_status(struct browser_window* bw, const char* text);
 
 void browser_window_back(struct browser_window* bw);
 void browser_window_forward(struct browser_window* bw);
