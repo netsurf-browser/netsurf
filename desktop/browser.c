@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.20 2003/01/06 23:53:39 bursa Exp $
+ * $Id: browser.c,v 1.21 2003/01/11 17:33:31 monkeyson Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -113,29 +113,34 @@ void set_content_html(struct content* c)
   return;
 }
 
-void content_html_reformat(struct content* c, int width)
+
+char* content_html_reformat(struct content* c, int width)
 {
   char* file;
+  char* title = NULL;
   struct css_selector* selector = xcalloc(1, sizeof(struct css_selector));
 
   LOG(("Starting stuff"));
+
+  /* need to find title of page */
+  
   if (c->data.html.layout != NULL)
   {
     /* TODO: skip if width is unchanged */
     layout_document(c->data.html.layout->children, (unsigned long)width);
-    return;
+    return title;
   }
 
   LOG(("Setting document to myDoc"));
   c->data.html.document = c->data.html.parser->myDoc;
-  xmlDebugDumpDocument(stderr, c->data.html.parser->myDoc);
+  //xmlDebugDumpDocument(stderr, c->data.html.parser->myDoc);
 
   /* skip to start of html */
   LOG(("Skipping to html"));
   if (c->data.html.document == NULL)
   {
     LOG(("There is no document!"));
-    return;
+    return title;
   }
   for (c->data.html.markup = c->data.html.document->children;
        c->data.html.markup != 0 &&
@@ -146,12 +151,12 @@ void content_html_reformat(struct content* c, int width)
   if (c->data.html.markup == 0)
   {
     LOG(("No markup"));
-    return;
+    return title;
   }
   if (strcmp((const char *) c->data.html.markup->name, "html"))
   {
     LOG(("Not html"));
-    return;
+    return title;
   }
 
 //  xfree(c->data.html.stylesheet);
@@ -183,7 +188,7 @@ void content_html_reformat(struct content* c, int width)
 
   /* can tidy up memory here? */
 
-  return;
+  return title;
 }
 
 void browser_window_reformat(struct browser_window* bw)
@@ -203,7 +208,7 @@ void browser_window_reformat(struct browser_window* bw)
       LOG(("HTML content."));
       browser_window_set_status(bw, "Formatting page...");
       time0 = clock();
-      content_html_reformat(bw->current_content, gui_window_get_width(bw->window));
+      gui_window_set_title(bw->window, content_html_reformat(bw->current_content, gui_window_get_width(bw->window)));
       time1 = clock();
       LOG(("Content reformatted"));
       if (bw->current_content->data.html.layout != NULL)
