@@ -155,7 +155,7 @@ HelpToolbar3:\Treload button.|M\Sreload this page.|M\Areload this page and any o
 HelpToolbar5:\Thistory button.|M\Sopen the local history \w.
 HelpToolbar6:\Tsave button.|M\Ssave the current document.
 #HelpToolbar7:\Tprint button.|M\Sprint this page.|MOpens a print dialogue box.
-HelpToolbar8:\Thotlist button.|M\Sopen the hotlist management \w.|M\Aadd this page to the hotlist.
+HelpToolbar8:\Thotlist button.|M\Sadd this address to the hotlist.|M\Aopen the hotlist management \w.
 HelpToolbar9:\Tscale view button.|M\Sscale the page, affecting both text and images.
 #HelpToolbar10:\Tsearch button.
 #HelpToolbar11:\Tup button.|M\Smove up the directory structure.
