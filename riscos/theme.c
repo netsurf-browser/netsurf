@@ -96,8 +96,8 @@ static wimp_window theme_toolbar_window = {
 	12,
 	1,
 	{""},
-	0,
-	{ }
+	0/*,
+	{ } */
 };
 
 

@@ -223,7 +223,7 @@ void gui_init(int argc, char** argv)
   	*/
   	ro_gui_theme_initialise();
   	descriptor = ro_gui_theme_find(option_theme);
-  	if (!descriptor) descriptor = ro_gui_theme_find("Default");
+  	if (!descriptor) descriptor = ro_gui_theme_find("NetSurf");
   	ro_gui_theme_apply(descriptor);
 
 	/*	Open the templates
