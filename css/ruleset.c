@@ -528,11 +528,38 @@ colour parse_colour(const struct css_node * const v)
 void parse_background(struct css_style * const s, const struct css_node * v)
 {
 	colour c;
+	css_background_attachment ba;
+	css_background_repeat br;
 	for (; v; v = v->next) {
 		switch (v->type) {
+		        /**\todo background-position */
+		        case CSS_NODE_URI:
+		        case CSS_NODE_STRING:
+		                parse_background_image(s, v);
+		                break;
+		        /*case CSS_NODE_DIMENSION:
+		        case CSS_NODE_PERCENTAGE:
+		                parse_background_position(s, v);
+		                v = v->naxt;
+		                break;*/
+			case CSS_NODE_IDENT:
+			        /* background-attachment */
+			        ba = css_background_attachment_parse(v->data, v->data_length);
+			        if (ba != CSS_BACKGROUND_ATTACHMENT_UNKNOWN) {
+			                s->background_attachment = ba;
+			                break;
+			        }
+
+			        /* background-repeat */
+			        br = css_background_repeat_parse(v->data, v->data_length);
+			        if (br != CSS_BACKGROUND_REPEAT_UNKNOWN) {
+			                s->background_repeat = br;
+			                break;
+			        }
+
+			        /* fall through */
 			case CSS_NODE_HASH:
 			case CSS_NODE_FUNCTION:
-			case CSS_NODE_IDENT:
 				c = parse_colour(v);
 				if (c != CSS_COLOR_NONE)
 					s->background_color = c;
