@@ -14,7 +14,11 @@ void callback(content_msg msg, struct content *c, void *p1,
 	if (msg == CONTENT_MSG_DONE || msg == CONTENT_MSG_ERROR)
 		done = 1;
 	else if (msg == CONTENT_MSG_STATUS)
-		printf("=== STATUS: %s", c->status_message);
+		printf("=== STATUS: %s\n", c->status_message);
+	else if (msg == CONTENT_MSG_REDIRECT) {
+		printf("=== REDIRECT to '%s'\n", error);
+		done = 1;
+	}
 }
 
 int main(int argc, char *argv[])

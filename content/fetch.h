@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.h,v 1.3 2003/04/17 21:35:02 bursa Exp $
+ * $Id: fetch.h,v 1.4 2003/06/26 11:41:26 bursa Exp $
  *
  * This module handles fetching of data from any url.
  *
@@ -16,6 +16,8 @@
  * Content-Type header in data, then one or more times with FETCH_DATA with
  * some data for the url, and finally with FETCH_FINISHED. Alternatively,
  * FETCH_ERROR indicates an error occurred: data contains an error message.
+ * FETCH_REDIRECT may replace the FETCH_TYPE, FETCH_DATA, FETCH_FINISHED
+ * sequence if the server sends a replacement URL.
  * Some private data can be passed as the last parameter to fetch_start, and
  * callbacks will contain this.
  *
@@ -28,7 +30,7 @@
 #ifndef _NETSURF_DESKTOP_FETCH_H_
 #define _NETSURF_DESKTOP_FETCH_H_
 
-typedef enum {FETCH_TYPE, FETCH_DATA, FETCH_FINISHED, FETCH_ERROR} fetch_msg;
+typedef enum {FETCH_TYPE, FETCH_DATA, FETCH_FINISHED, FETCH_ERROR, FETCH_REDIRECT} fetch_msg;
 
 struct content;
 struct fetch;

@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.c,v 1.11 2003/06/24 23:22:00 bursa Exp $
+ * $Id: fetch.c,v 1.12 2003/06/26 11:41:26 bursa Exp $
  *
  * This module handles fetching of data from any url.
  *
@@ -39,6 +39,8 @@ struct fetch
 	void *p;
 	struct curl_slist *headers;
 	char *host;
+	int status_code;
+	char *location;
 	struct fetch *queue;
 	struct fetch *prev;
 	struct fetch *next;
@@ -50,7 +52,7 @@ static CURLM * curl_multi;
 static struct fetch *fetch_list = 0;
 
 static size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f);
-static size_t fetch_curl_header(void *data, size_t size, size_t nmemb, struct fetch *f);
+static size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f);
 
 
 /**
@@ -128,6 +130,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->host = 0;
 	if (uri->server != 0)
 		fetch->host = xstrdup(uri->server);
+	fetch->status_code = 0;
 	fetch->queue = 0;
 	fetch->prev = 0;
 	fetch->next = 0;
@@ -170,10 +173,10 @@ struct fetch * fetch_start(char *url, char *referer,
 	assert(code == CURLE_OK);
 	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEDATA, fetch);
 	assert(code == CURLE_OK);
-/*	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HEADERFUNCTION, fetch_curl_header);
+	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HEADERFUNCTION, fetch_curl_header);
 	assert(code == CURLE_OK);
 	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEHEADER, fetch);
-	assert(code == CURLE_OK);*/
+	assert(code == CURLE_OK);
 	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_USERAGENT, user_agent);
 	assert(code == CURLE_OK);
 	if (referer != 0) {
@@ -279,8 +282,9 @@ void fetch_abort(struct fetch *f)
 	}
 
 	xfree(f->url);
-	xfree(f->host);
-	xfree(f->referer);
+	free(f->host);
+	free(f->referer);
+	free(f->location);
 	xfree(f);
 }
 
@@ -357,9 +361,22 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 	LOG(("fetch %p, size %u", f, size * nmemb));
 
 	if (!f->had_headers) {
-		/* find the content type and inform the caller */
+		/* find the status code and content type and inform the caller */
+		long http_code;
 		const char *type;
 		CURLcode code;
+
+		code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE, &http_code);
+		assert(code == CURLE_OK); 
+		LOG(("HTTP status code %li", http_code));
+
+		if (300 <= http_code && http_code < 400 && f->location != 0) {
+			/* redirect */
+			LOG(("FETCH_REDIRECT, '%s'", f->location));
+			f->callback(FETCH_REDIRECT, f->p, f->location, 0);
+			f->in_callback = 0;
+			return 0;
+		}
 
 		code = curl_easy_getinfo(f->curl_handle, CURLINFO_CONTENT_TYPE, &type);
 		assert(code == CURLE_OK);
@@ -397,10 +414,23 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
  * fetch_curl_header -- callback function for headers
  */
 
-size_t fetch_curl_header(void *data, size_t size, size_t nmemb, struct fetch *f)
+size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f)
 {
-	LOG(("header '%*s'", size * nmemb, data));
-	return size * nmemb;
+	int i;
+	size *= nmemb;
+	if (12 < size && strncasecmp(data, "Location:", 9) == 0) {
+		/* extract Location header */
+		f->location = xcalloc(size, 1);
+		for (i = 9; data[i] == ' ' || data[i] == '\t'; i++)
+			;
+		strncpy(f->location, data + i, size - i);
+		for (i = size - i - 1; f->location[i] == ' ' ||
+				f->location[i] == '\t' ||
+				f->location[i] == '\r' ||
+				f->location[i] == '\n'; i--)
+			f->location[i] = '\0';
+	}
+	return size;
 }
 
 

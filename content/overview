@@ -44,6 +44,10 @@ callback function is called when the state changes or at other times as follows:
 
   CONTENT_MSG_STATUS -- the content structure's status message has changed.
 
+  CONTENT_MSG_REDIRECT -- the server has sent a replacement URL for the content.
+    This message may only occur in CONTENT_STATUS_TYPE_UNKNOWN. The content
+    will be destroyed and must not be used.
+
 If at any time the resource is no longer required, call content_remove_user():
 
   content_remove_user(c, callback, p1, p2);

@@ -1,5 +1,5 @@
 /**
- * $Id: fetchcache.c,v 1.10 2003/06/17 19:24:20 bursa Exp $
+ * $Id: fetchcache.c,v 1.11 2003/06/26 11:41:26 bursa Exp $
  */
 
 #include <assert.h>
@@ -79,6 +79,14 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			LOG(("FETCH_ERROR, '%s'", data));
 			c->fetch = 0;
 			content_broadcast(c, CONTENT_MSG_ERROR, data);
+			cache_destroy(c);
+			content_destroy(c);
+			break;
+
+		case FETCH_REDIRECT:
+			LOG(("FETCH_REDIRECT, '%s'", data));
+			c->fetch = 0;
+			content_broadcast(c, CONTENT_MSG_REDIRECT, data);
 			cache_destroy(c);
 			content_destroy(c);
 			break;

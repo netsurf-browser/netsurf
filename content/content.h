@@ -1,5 +1,5 @@
 /**
- * $Id: content.h,v 1.12 2003/06/17 19:24:20 bursa Exp $
+ * $Id: content.h,v 1.13 2003/06/26 11:41:26 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
@@ -64,7 +64,8 @@ typedef enum {
 	CONTENT_MSG_READY,     /* may be displayed */
 	CONTENT_MSG_DONE,      /* finished */
 	CONTENT_MSG_ERROR,     /* error occurred */
-	CONTENT_MSG_STATUS     /* new status string */
+	CONTENT_MSG_STATUS,    /* new status string */
+	CONTENT_MSG_REDIRECT   /* replacement URL */
 } content_msg;
 
 struct content_user

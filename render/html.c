@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.19 2003/06/17 19:24:21 bursa Exp $
+ * $Id: html.c,v 1.20 2003/06/26 11:41:26 bursa Exp $
  */
 
 #include <assert.h>
@@ -165,6 +165,15 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 					c->active, css->status_message);
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			break;
+
+		case CONTENT_MSG_REDIRECT:
+			c->active--;
+			c->data.html.stylesheet_content[i] = fetchcache(
+					error, c->url, html_convert_css_callback,
+					c, i, css->width, css->height);
+			if (c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
+				c->active++;
+			break;	
 
 		default:
 			assert(0);
@@ -422,6 +431,17 @@ void html_object_callback(content_msg msg, struct content *object,
 			sprintf(c->status_message, "Loading %i objects: %s",
 					c->active, object->status_message);
 			break;
+
+		case CONTENT_MSG_REDIRECT:
+			c->active--;
+			free(c->data.html.object[i].url);
+			c->data.html.object[i].url = xstrdup(error);
+			c->data.html.object[i].content = fetchcache(
+					error, c->url, html_object_callback,
+					c, i, 0, 0);
+			if (c->data.html.object[i].content->status != CONTENT_STATUS_DONE)
+				c->active++;
+			break;	
 
 		default:
 			assert(0);

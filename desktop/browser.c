@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.40 2003/06/17 19:24:21 bursa Exp $
+ * $Id: browser.c,v 1.41 2003/06/26 11:41:26 bursa Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -238,6 +238,7 @@ void browser_window_open_location(struct browser_window* bw, const char* url0)
   assert(bw != 0 && url0 != 0);
   url = url_join(url0, bw->url);
   browser_window_open_location_historical(bw, url);
+  /* TODO: move this to somewhere below CONTENT_MSG_READY below */
   if (bw->history == NULL)
     bw->history = history_create(NULL, url);
   else
@@ -316,6 +317,13 @@ void browser_window_callback(content_msg msg, struct content *c,
 
     case CONTENT_MSG_STATUS:
       browser_window_set_status(bw, c->status_message);
+      break;
+
+    case CONTENT_MSG_REDIRECT:
+      bw->loading_content = 0;
+      browser_window_set_status(bw, "Redirecting");
+      /* error actually holds the new URL */
+      browser_window_open_location(bw, error);
       break;
 
     default:

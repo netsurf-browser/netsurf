@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.9 2003/06/17 19:24:21 bursa Exp $
+ * $Id: css.c,v 1.10 2003/06/26 11:41:26 bursa Exp $
  */
 
 #include <assert.h>
@@ -334,6 +334,17 @@ void css_atimport_callback(content_msg msg, struct content *css,
 			break;
 
 		case CONTENT_MSG_STATUS:
+			break;
+
+		case CONTENT_MSG_REDIRECT:
+			c->active--;
+			free(c->data.css.import_url[i]);
+			c->data.css.import_url[i] = xstrdup(error);
+			c->data.css.import_content[i] = fetchcache(
+					c->data.css.import_url[i], c->url, css_atimport_callback,
+					c, i, css->width, css->height);
+			if (c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
+				c->active++;
 			break;
 
 		default:
