@@ -39,7 +39,7 @@ static void html_find_stylesheets(struct content *c, xmlNode *head);
 static void html_object_callback(content_msg msg, struct content *object,
 		void *p1, void *p2, union content_msg_data data);
 static void html_object_done(struct box *box, struct content *object,
-                             bool background);
+			     bool background);
 static bool html_object_type_permitted(const content_type type,
 		const content_type *permitted_types);
 
@@ -414,12 +414,12 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 						content_create(c->data.html.
 						base_url);
 				if (!c->data.html.stylesheet_content[1])
-					return false;
+					return;
 				if (!content_set_type(c->data.html.
 						stylesheet_content[1],
 						CONTENT_CSS, "text/css",
 						params))
-					return false;
+					return;
 			}
 
 			/* can't just use xmlNodeGetContent(node), because that won't give
@@ -430,7 +430,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 						stylesheet_content[1],
 						data, strlen(data))) {
 					xmlFree(data);
-					return false;
+					return;
 				}
 				xmlFree(data);
 			}
@@ -532,10 +532,10 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 
 #ifdef WITH_AUTH
 		case CONTENT_MSG_AUTH:
-		        c->data.html.stylesheet_content[i] = 0;
+			c->data.html.stylesheet_content[i] = 0;
 			c->active--;
 			content_add_error(c, "?", 0);
-		        break;
+			break;
 #endif
 
 		default:
@@ -551,10 +551,10 @@ void html_convert_css_callback(content_msg msg, struct content *css,
  * \param  url  URL of object to fetch (not copied, must be on heap)
  * \param  box  box that will contain the object
  * \param  permitted_types   array of types, terminated by CONTENT_UNKNOWN,
- *              or 0 if all types except OTHER and UNKNOWN acceptable
+ *	      or 0 if all types except OTHER and UNKNOWN acceptable
  * \param  available_width   estimate of width of object
  * \param  available_height  estimate of height of object
- * \param  background        this is a background image
+ * \param  background	this is a background image
  */
 
 void html_fetch_object(struct content *c, char *url, struct box *box,
@@ -689,10 +689,10 @@ void html_object_callback(content_msg msg, struct content *object,
 
 #ifdef WITH_AUTH
 		case CONTENT_MSG_AUTH:
-		        c->data.html.object[i].content = 0;
+			c->data.html.object[i].content = 0;
 			c->active--;
 			content_add_error(c, "?", 0);
-		        break;
+			break;
 #endif
 
 		default:
@@ -721,16 +721,16 @@ void html_object_callback(content_msg msg, struct content *object,
  */
 
 void html_object_done(struct box *box, struct content *object,
-                      bool background)
+		      bool background)
 {
 	struct box *b;
 
-        if (background) {
-                box->background = object;
-        }
-        else {
-        	box->object = object;
-        }
+	if (background) {
+		box->background = object;
+	}
+	else {
+		box->object = object;
+	}
 
 	if (box->width != UNKNOWN_WIDTH &&
 			object->available_width != box->width)
@@ -753,7 +753,7 @@ void html_object_done(struct box *box, struct content *object,
  *
  * \param type the content_type to search for
  * \param permitted_types array of types, terminated by CONTENT_UNKNOWN,
- *              or 0 if all types except OTHER and UNKNOWN acceptable
+ *	      or 0 if all types except OTHER and UNKNOWN acceptable
  * \return the type is in the list or acceptable
  */
 
@@ -795,7 +795,7 @@ void html_destroy(struct content *c)
 
 	free(c->title);
 
-        imagemap_destroy(c);
+	imagemap_destroy(c);
 
 	if (c->data.html.parser)
 		htmlFreeParserCtxt(c->data.html.parser);
