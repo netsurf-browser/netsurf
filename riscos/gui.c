@@ -296,6 +296,9 @@ void ro_gui_choose_language(void)
 		country = 1;
 	}
 	switch (country) {
+		case 7: /* Germany */
+			lang = "de";
+			break;
 		case 6: /* France */
 		case 18: /* Canada2 (French Canada?) */
 			lang = "fr";
