@@ -1625,13 +1625,16 @@ void gui_multitask(void)
                plugin_msg_parse(&(block.message),
                           (event == wimp_USER_MESSAGE_ACKNOWLEDGE ? 1 : 0));
                break;
-      }
 
-      if (block.message.action == message_QUIT){
-        netsurf_quit = 1;
+        case message_QUIT              :
+               netsurf_quit = 1;
+               break;
+	
+	default:
+		ro_gui_poll_queue(event, &block);
+		break;
+
       }
-      else
-        ro_gui_poll_queue(event, &block);
       break;
     default:
       break;
