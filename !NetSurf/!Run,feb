@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.32 $ )
+| Run file for NetSurf. ( $Revision: 1.33 $ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -19,45 +19,52 @@ RMEnsure WindowManager 3.80 Error NetSurf requires the Nested Window Manager. Th
 | Ensure the System resource exists - can't do much if it doesn't
 If "<System$Path>" = "" Then Set System$Path_Message System resources not found.
 
+| Define this alias for clarity
+| Syntax: NetSurfRMLoad <Path to module>
+Set Alias$NetSurfRMLoad IfThere %%*0 Then RMLoad %%*0
+
 | Ensure CallASWI is installed
 | http://www.iyonix.com/32bit/
-RMEnsure UtilityModule 3.70 RMEnsure CallASWI 0.02 RMLoad System:Modules.CallASWI
+RMEnsure UtilityModule 3.70 RMEnsure CallASWI 0.02 NetSurfRMLoad System:Modules.CallASWI
 RMEnsure UtilityModule 3.70 RMEnsure CallASWI 0.02 Error NetSurf requires the CallASWI module. This can be downloaded from http://www.iyonix.com/32bit/system.shtml
 
 | Ensure DrawFile module is installed
 | http://acorn.riscos.com/riscos/releases/drawfile.arc
 | Should be installed in !System.310.Modules
-RMEnsure DrawFile 1.30 RMLoad System:Modules.DrawFile
+RMEnsure DrawFile 1.30 NetSurfRMLoad System:Modules.DrawFile
 RMEnsure DrawFile 1.30 Error NetSurf requires the DrawFile module. An old verson of this can be downloaded from http://acorn.riscos.com/riscos/releases/drawfile.arc
 
 | Ensure SharedUnixLibrary is installed
 | http://www.chocky.org/unix/usage.html
-RMEnsure SharedUnixLibrary 1.02 RMLoad System:Modules.SharedULib
+RMEnsure SharedUnixLibrary 1.02 NetSurfRMLoad System:Modules.SharedULib
 RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.02 or later. This can be downloaded from http://www.chocky.org/unix/usage.html
 
 | Load AcornURI if it isn't already
 | http://sudden.recoil.org/
 Unset NetSurf$Start_URI_Handler
 RMEnsure AcornURI 0.12 Set NetSurf$Start_URI_Handler 1
-RMEnsure AcornURI 0.12 RMLoad System:Modules.Network.URI
+RMEnsure AcornURI 0.12 NetSurfRMLoad System:Modules.Network.URI
 RMEnsure AcornURI 0.12 Error NetSurf requires AcornURI 0.12 or later. A version of this can be found at http://sudden.recoil.org/others/
 RMEnsure AcornURI 0.12 Unset NetSurf$Start_URI_Handler
 
 | Check for mime map module
 If "<InetDBase$Path>" = "" Then Error Inet databases can not be found
 If "<Inet$MimeMappings>" = "" Then Set Inet$MimeMappings InetDBase:MimeMap
-RMEnsure MimeMap 0.10 RMLoad System:Modules.Network.MimeMap
+RMEnsure MimeMap 0.10 NetSurfRMLoad System:Modules.Network.MimeMap
 RMEnsure MimeMap 0.10 Error NetSurf requires MimeMap 0.10 or later
 
 | Ensure Tinct is loaded
 | http://www.tinct.net
-RMEnsure Tinct 0.09 RMLoad System:Modules.Tinct
+RMEnsure Tinct 0.09 NetSurfRMLoad System:Modules.Tinct
 RMEnsure Tinct 0.09 Error NetSurf requires Tinct 0.09 or later. This can be downloaded from http://www.tinct.net
 
 | Ensure Iconv
 | http://moose.mine.nu:6888/iconv002.zip
 | Not an error if not present - there'll be no charset conversion.
-RMEnsure Iconv 0.02 IfThere System:Modules.Iconv Then RMLoad System:Modules.Iconv
+RMEnsure Iconv 0.02 NetSurfRMLoad System:Modules.Iconv
+
+| No longer need this alias
+Unset Alias$NetSurfRMLoad
 
 WimpSlot -min 2240k -max 2240k
 Run <NetSurf$Dir>.!RunImage %*0 2><NetSurf$Dir>.stderr
