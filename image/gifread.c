@@ -169,7 +169,9 @@ int gif_initialise(struct gif_animation *gif) {
 				((gif->width == 800) && (gif->width == 600)) ||
 				((gif->width == 1024) && (gif->width == 768)) ||
 				((gif->width == 1280) && (gif->width == 1024)) ||
-				((gif->width == 1600) && (gif->width == 1200))) {
+				((gif->width == 1600) && (gif->width == 1200)) ||
+				((gif->width == 0) || (gif->height == 0)) ||
+				((gif->width > 2048) || (gif->height > 2048))) {
 			gif->width = 1;
 			gif->height = 1;
 		}
@@ -278,11 +280,12 @@ static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, 
 
 	/*	Allocate some more memory
 	*/
-	if ((buffer = bitmap_create(max_width, max_height)) == NULL) {
+	if ((buffer = bitmap_create(max_width, max_height)) == NULL)
 		return GIF_INSUFFICIENT_MEMORY;
-	}
 	bitmap_destroy(gif->frame_image);
 	gif->frame_image = buffer;
+	gif->width = max_width;
+	gif->height = max_height;
 
 	/*	Invalidate our currently decoded image
 	*/
