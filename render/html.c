@@ -60,7 +60,7 @@ void html_process_data(struct content *c, char *data, unsigned long size)
 {
 	unsigned long x;
 	LOG(("content %s, size %lu", c->url, size));
-	cache_dump();
+	/*cache_dump();*/
 	c->data.html.source = xrealloc(c->data.html.source, c->data.html.length + size);
 	memcpy(c->data.html.source + c->data.html.length, data, size);
 	c->data.html.length += size;
