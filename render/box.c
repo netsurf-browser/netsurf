@@ -24,9 +24,9 @@
 #include "netsurf/render/html.h"
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
+#endif
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
-#endif
 #endif
 #define NDEBUG
 #include "netsurf/utils/log.h"
@@ -781,9 +781,20 @@ struct box_result box_br(xmlNode *n, struct box_status *status,
 }
 
 static const content_type image_types[] = {
-	CONTENT_JPEG, CONTENT_GIF,
-#ifdef riscos
-	CONTENT_PNG, CONTENT_SPRITE, CONTENT_DRAW,
+#ifdef WITH_JPEG
+	CONTENT_JPEG,
+#endif
+#ifdef WITH_GIF
+	CONTENT_GIF,
+#endif
+#ifdef WITH_PNG
+	CONTENT_PNG,
+#endif
+#ifdef WITH_SPRITE
+	CONTENT_SPRITE,
+#endif
+#ifdef WITH_DRAW
+	CONTENT_DRAW,
 #endif
 	CONTENT_UNKNOWN };
 
