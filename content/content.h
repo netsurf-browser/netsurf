@@ -71,7 +71,8 @@ typedef enum {
 	CONTENT_MSG_ERROR,     /**< error occurred */
 	CONTENT_MSG_STATUS,    /**< new status string */
 	CONTENT_MSG_REDIRECT,  /**< replacement URL */
-	CONTENT_MSG_REFORMAT   /**< content_reformat done */
+	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
+	CONTENT_MSG_AUTH       /**< authentication required */
 } content_msg;
 
 /** Linked list of users of a content. */

@@ -14,7 +14,7 @@
 
 #include <stdbool.h>
 
-typedef enum {FETCH_TYPE, FETCH_DATA, FETCH_FINISHED, FETCH_ERROR, FETCH_REDIRECT} fetch_msg;
+typedef enum {FETCH_TYPE, FETCH_DATA, FETCH_FINISHED, FETCH_ERROR, FETCH_REDIRECT, FETCH_AUTH} fetch_msg;
 
 struct content;
 struct fetch;

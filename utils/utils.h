@@ -24,5 +24,6 @@ char * tolat1(xmlChar * s);
 char * tolat1_pre(xmlChar * s);
 char *squash_tolat1(xmlChar *s);
 char *url_join(const char* new, const char* base);
+char *get_host_from_url(char* url);
 
 #endif

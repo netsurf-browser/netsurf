@@ -11,7 +11,7 @@ OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o other.o \
 	box.o form.o html.o layout.o textplain.o \
 	messages.o utils.o
 OBJECTS = $(OBJECTS_COMMON) \
-	browser.o netsurf.o \
+	browser.o loginlist.o netsurf.o \
 	htmlredraw.o \
 	401login.o dialog.o download.o gui.o menus.o mouseactions.o \
 	options.o textselection.o theme.o \

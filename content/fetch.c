@@ -150,6 +150,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	CURLcode code;
 	CURLMcode codem;
 	xmlURI *uri;
+	struct login *li;
 
 	LOG(("fetch %p, url '%s'", fetch, url));
 
@@ -268,12 +269,11 @@ struct fetch * fetch_start(char *url, char *referer,
         code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
         assert(code == CURLE_OK);
 
-#ifdef riscos
-        if (LOGIN.string != NULL) {
-                code = curl_easy_setopt(fetch->curl_handle, CURLOPT_USERPWD, LOGIN.string);
+        if ((li=login_list_get(url)) != NULL) {
+                code = curl_easy_setopt(fetch->curl_handle, CURLOPT_USERPWD, li->logindetails);
+
                 assert(code == CURLE_OK);
         }
-#endif
 
 	/* POST */
 	if (fetch->post_urlenc) {
@@ -545,16 +545,11 @@ bool fetch_process_headers(struct fetch *f)
 		return true;
 	}
 
-#ifdef riscos
         /* handle HTTP 401 (Authentication errors) */
         if (http_code == 401) {
-                /* this shouldn't be here... */
-                ro_gui_401login_open(xstrdup(f->host), xstrdup(f->realm),
-                                     xstrdup(f->url));
-                f->callback(FETCH_ERROR, f->p, "",0);
+                f->callback(FETCH_AUTH, f->p, xstrdup(f->realm),0);
                 return true;
         }
-#endif
 
 	/* handle HTTP errors (non 2xx response codes) */
 	if (f->only_2xx && strncmp(f->url, "http", 4) == 0 &&

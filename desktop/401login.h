@@ -8,11 +8,21 @@
 #ifndef NETSURF_DESKTOP_401LOGIN_H
 #define NETSURF_DESKTOP_401LOGIN_H
 
+#include "netsurf/content/content.h"
+#include "netsurf/desktop/browser.h"
+
 struct login {
 
-	char *string;
+        char *host;             /**< hostname */
+	char *logindetails;     /**< string containing "username:password" */
+	struct login *next;     /**< next in list */
+	struct login *prev;     /**< previous in list */
 };
 
-extern struct login LOGIN;
+void gui_401login_open(struct browser_window *bw, struct content *c,
+                       char *realm);
+void login_list_add(char *host, char *logindets);
+struct login *login_list_get(char *host);
+void login_list_remove(char *host);
 
 #endif

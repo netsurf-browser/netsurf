@@ -154,6 +154,14 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			content_destroy(c);
 			break;
 
+		case FETCH_AUTH:
+		        /* data -> string containing the Realm */
+		        LOG(("FETCH_AUTH, '%s'", data));
+		        c->fetch = 0;
+		        content_broadcast(c, CONTENT_MSG_AUTH, data);
+		        cache_destroy(c);
+		        break;
+
 		default:
 			assert(0);
 	}

@@ -197,14 +197,14 @@ char *url_join(const char* new, const char* base)
       nn[j] = new[i];
       k = j;
     }
-        
+
     j++;
   }
   if(k < j){
     nn[k+1] = '\0';
     LOG(("before: %s after: %s", new, nn));
   }
-  
+
   new = nn;
 
   if (base == 0)
@@ -252,7 +252,26 @@ char *url_join(const char* new, const char* base)
     strcpy(ret, new);
   }
 
-  xfree(nn); 
+  xfree(nn);
   return ret;
 }
 
+char *get_host_from_url (char *url) {
+
+  char *host = xcalloc(strlen(url)+10, sizeof(char));
+  int i;
+
+  i = strspn(url, "abcdefghijklmnopqrstuvwxyz");
+  if (url[i] == ':') {
+    strcpy(host, url);
+    i += 3;
+  }
+
+  for (; host[i] != 0 && host[i] != '/'; i++)
+    host[i] = tolower(host[i]);
+
+  host[i] = '/';
+  host[i+1] = 0;
+
+  return host;
+}

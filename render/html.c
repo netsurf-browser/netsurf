@@ -191,6 +191,9 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 				c->active++;
 			break;
 
+		case CONTENT_MSG_AUTH:
+		        break;
+
 		default:
 			assert(0);
 	}
@@ -478,6 +481,9 @@ void html_object_callback(content_msg msg, struct content *object,
 
 		case CONTENT_MSG_REFORMAT:
 			break;
+
+		case CONTENT_MSG_AUTH:
+		        break;
 
 		default:
 			assert(0);

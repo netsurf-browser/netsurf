@@ -18,6 +18,7 @@
 #include "netsurf/content/cache.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/css/css.h"
+#include "netsurf/desktop/401login.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
@@ -208,6 +209,7 @@ void browser_window_destroy(struct browser_window* bw)
     if (bw->current_content->status == CONTENT_STATUS_DONE)
       content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
     content_remove_user(bw->current_content, browser_window_callback, bw, 0);
+    login_list_remove(bw->current_content->url);
   }
   if (bw->loading_content != NULL) {
     content_remove_user(bw->loading_content, browser_window_callback, bw, 0);
@@ -248,9 +250,17 @@ void browser_window_open_location_historical(struct browser_window* bw,
 		const char* url, char *post_urlenc,
 		struct form_successful_control *post_multipart)
 {
+  struct login *li;
   LOG(("bw = %p, url = %s", bw, url));
 
   assert(bw != 0 && url != 0);
+
+  if ((li = login_list_get(url)) == NULL) {
+
+    if (bw->current_content != NULL) {
+      login_list_remove(bw->current_content->url);
+    }
+  }
 
   browser_window_set_status(bw, "Opening page...");
   browser_window_start_throbber(bw);
@@ -376,7 +386,6 @@ void browser_window_callback(content_msg msg, struct content *c,
 
     case CONTENT_MSG_REDIRECT:
       bw->loading_content = 0;
-      bw->url = xstrdup(error);
       browser_window_set_status(bw, "Redirecting");
       /* error actually holds the new URL */
       browser_window_open_location(bw, error);
@@ -384,6 +393,10 @@ void browser_window_callback(content_msg msg, struct content *c,
 
     case CONTENT_MSG_REFORMAT:
       browser_window_reformat(bw, 0);
+      break;
+
+    case CONTENT_MSG_AUTH:
+      gui_401login_open(bw, c, error);
       break;
 
     default:
