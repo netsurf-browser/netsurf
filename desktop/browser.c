@@ -71,6 +71,7 @@ static void browser_window_place_caret(struct browser_window *bw,
 		void (*callback)(struct browser_window *bw,
 		unsigned int key, void *p),
 		void *p);
+static void browser_window_remove_caret(struct browser_window *bw);
 static gui_pointer_shape get_pointer_shape(css_cursor cursor);
 static void browser_form_submit(struct browser_window *bw, struct form *form,
 		struct form_control *submit_button);
@@ -155,6 +156,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	}
 
 	browser_window_stop(bw);
+	browser_window_remove_caret(bw);
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
@@ -1350,9 +1352,9 @@ void browser_window_input_callback(struct browser_window *bw,
 
 	} else if (key == 10 || key == 13) {
 		/* Return/Enter hit */
-LOG(("Submit, text <%s>, gadget <%s>\n", text_box->text, input->gadget->value));
 		if (form)
 			browser_form_submit(bw, form, 0);
+		return;
 
 	} else if (key == 9) {
 		/* Tab */
@@ -1454,7 +1456,6 @@ LOG(("Submit, text <%s>, gadget <%s>\n", text_box->text, input->gadget->value));
 		browser_redraw_box(bw->current_content, input);
 }
 
-
 /**
  * Position the caret and assign a callback for key presses.
  */
@@ -1468,6 +1469,18 @@ void browser_window_place_caret(struct browser_window *bw,
 	gui_window_place_caret(bw->window, x, y, height);
 	bw->caret_callback = callback;
 	bw->caret_p = p;
+}
+
+
+/**
+ * Removes the caret and callback for key process.
+ */
+
+void browser_window_remove_caret(struct browser_window *bw)
+{
+	gui_window_remove_caret(bw->window);
+	bw->caret_callback = NULL;
+	bw->caret_p = NULL;
 }
 
 
