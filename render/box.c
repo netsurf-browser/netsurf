@@ -316,7 +316,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		/* extract title attribute, if present */
 		if ((title0 = xmlGetProp(n, (const xmlChar *) "title"))) {
 			status.title = title = squash_tolat1(title0);
-			xfree(title0);
+			xmlFree(title0);
 		}
 
 		/* special elements */
@@ -520,8 +520,9 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		inline_container = 0;
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "colspan"))) {
-		if ((box->columns = strtol(s, 0, 10)) == 0)
-			box->columns = 1;
+		int colspan = atoi(s);
+		if (1 <= colspan && colspan <= 100)
+			box->columns = colspan;
 		xmlFree(s);
 	}
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rowspan"))) {
