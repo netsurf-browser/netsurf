@@ -2785,3 +2785,33 @@ struct box *box_at_point(struct box *box, int x, int y,
 
 	return 0;
 }
+
+
+/**
+ * Find the box containing an object at the given coordinates, if any.
+ *
+ * \param  c  content to search, must have type CONTENT_HTML
+ * \param  x  coordinates in document units
+ * \param  y  coordinates in document units
+ */
+
+struct box *box_object_at_point(struct content *c, int x, int y)
+{
+	struct box *box = c->data.html.layout;
+	int box_x = 0, box_y = 0;
+	struct content *content = c;
+	struct box *object_box = 0;
+
+	assert(c->type == CONTENT_HTML);
+
+	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
+		if (box->style &&
+				box->style->visibility == CSS_VISIBILITY_HIDDEN)
+			continue;
+
+		if (box->object)
+			object_box = box;
+	}
+
+	return object_box;
+}

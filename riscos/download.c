@@ -217,6 +217,8 @@ struct gui_download_window *gui_download_window_create(const char *url,
 
 	dw->prev = 0;
 	dw->next = download_window_list;
+	if (download_window_list)
+		download_window_list->prev = dw;
 	download_window_list = dw;
 
 	ro_gui_download_update_status(dw);

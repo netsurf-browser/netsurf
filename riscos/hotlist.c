@@ -1452,7 +1452,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 	/*	Create a menu if we should
 	*/
 	if (buttons == wimp_CLICK_MENU) {
-		ro_gui_create_menu(hotlist_menu, pointer->pos.x - 64,
+		ro_gui_create_menu(hotlist_menu, pointer->pos.x,
 				pointer->pos.y, NULL);
 		menu_open = true;
 		return;

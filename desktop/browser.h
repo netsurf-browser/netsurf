@@ -15,10 +15,10 @@
 
 #include <stdbool.h>
 #include <time.h>
-#include "netsurf/utils/config.h"
-#include "netsurf/content/content.h"
 
 struct box;
+struct content;
+struct form_control;
 struct form_successful_control;
 struct gui_window;
 struct history;
@@ -60,16 +60,6 @@ typedef enum {
 } browser_mouse_click;
 
 
-struct box_selection
-{
-  struct content *content;
-  struct box* box;
-  int actual_x;
-  int actual_y;
-  int plot_index;
-};
-
-
 void browser_window_create(const char *url, struct browser_window *clone);
 void browser_window_go(struct browser_window *bw, const char *url);
 void browser_window_go_post(struct browser_window *bw, const char *url,
@@ -86,16 +76,6 @@ bool browser_window_key_press(struct browser_window *bw, char key);
 void browser_window_form_select(struct browser_window *bw,
 		struct form_control *control, int item);
 
-void box_under_area(struct content *content, struct box* box, unsigned long x, unsigned long y, unsigned long ox, unsigned long oy,
-		struct box_selection** found, int* count, int* plot_index);
-
-int box_position_lt(struct box_position* x, struct box_position* y);
-int box_position_gt(struct box_position* x, struct box_position* y);
-int box_position_eq(struct box_position* x, struct box_position* y);
-int box_position_distance(struct box_position* x, struct box_position* y);
-
-void gui_redraw_gadget(struct browser_window* bw, struct form_control* g);
-
 /* In platform specific hotlist.c. */
 void hotlist_visited(struct content *content);
 
@@ -108,11 +88,5 @@ void history_back(struct browser_window *bw, struct history *history);
 void history_forward(struct browser_window *bw, struct history *history);
 bool history_back_available(struct history *history);
 bool history_forward_available(struct history *history);
-
-/* In platform specific about.c. */
-struct content *about_create(const char *url,
-		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, const char *error),
-		void *p1, void *p2, unsigned long width, unsigned long height);
 
 #endif

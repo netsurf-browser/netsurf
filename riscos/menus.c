@@ -48,7 +48,6 @@ static void ro_gui_menu_prepare_window(void);
 static void ro_gui_menu_prepare_toolbars(void);
 static void ro_gui_menu_prepare_help(int forced);
 static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
-static struct box *ro_gui_menu_find_object_box(void);
 static void ro_gui_menu_object_reload(void);
 static void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning);
 static void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning);
@@ -57,6 +56,9 @@ static void ro_gui_menu_prepare_hotlist(void);
 struct gui_window *current_gui;
 wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
+
+/** Box for object under menu, or 0 if no object. */
+static struct box *gui_menu_object_box = 0;
 
 /** Menu of options for form select controls. */
 static wimp_menu *gui_form_select_menu = 0;
@@ -477,21 +479,55 @@ void translate_menu(wimp_menu *menu)
 
 void ro_gui_create_menu(wimp_menu *menu, int x, int y, struct gui_window *g)
 {
+	int doc_x, doc_y;
+	wimp_window_state state;
+	os_error *error;
+
 	current_menu = menu;
 	current_menu_x = x;
 	current_menu_y = y;
 	current_gui = g;
+
 	if (menu == browser_menu) {
-		if (!hotlist_window) browser_utilities_menu->entries[0].icon_flags |= wimp_ICON_SHADED;
-		if (ro_gui_menu_find_object_box())
+		assert(g);
+
+		state.w = g->window;
+		error = xwimp_get_window_state(&state);
+		if (error) {
+			LOG(("xwimp_get_window_state: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+
+		doc_x = window_x_units(x, &state) / 2 / g->option.scale;
+		doc_y = -window_y_units(y, &state) / 2 / g->option.scale;
+
+		gui_menu_object_box = 0;
+		if (g->bw->current_content &&
+				g->bw->current_content->type == CONTENT_HTML) {
+			gui_menu_object_box = box_object_at_point(
+					g->bw->current_content, doc_x, doc_y);
+		}
+
+		if (!hotlist_window)
+			browser_utilities_menu->entries[0].icon_flags |=
+					wimp_ICON_SHADED;
+		if (gui_menu_object_box)
 			menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
 		else
 			menu->entries[1].icon_flags |= wimp_ICON_SHADED;
-	}
-	if (menu == hotlist_menu) {
+
+	} else if (menu == hotlist_menu) {
 		ro_gui_menu_prepare_hotlist();
 	}
-	wimp_create_menu(menu, x, y);
+
+	error = xwimp_create_menu(menu, x - 64, y);
+	if (error) {
+		LOG(("xwimp_create_menu: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MenuError", error->errmess);
+	}
 }
 
 
@@ -508,7 +544,8 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 	icon_state.i = i;
 	wimp_get_window_state(&state);
 	wimp_get_icon_state(&icon_state);
-	ro_gui_create_menu(menu, state.visible.x0 + icon_state.icon.extent.x1,
+	ro_gui_create_menu(menu,
+			state.visible.x0 + icon_state.icon.extent.x1 + 64,
 			state.visible.y1 + icon_state.icon.extent.y1, 0);
 }
 
@@ -630,6 +667,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				}
 				break;
 			case MENU_OBJECT:
+				if (!gui_menu_object_box)
+					break;
 				switch (selection->items[1]) {
 					case 0: /* Info */
 						break;
@@ -914,7 +953,7 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 		/** \todo  this is really dumb, the object should be the one
 		 * that the user clicked menu over, not the one that happens to
 		 * be under the menu now */
-		box = ro_gui_menu_find_object_box();
+		box = gui_menu_object_box;
 		if (!box)
 			break;
 
@@ -1377,34 +1416,25 @@ void ro_gui_menu_prepare_pageinfo(void)
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TYPE, mime);
 }
 
+
 void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning)
 {
-	struct content *c = current_gui->bw->current_content;
-	struct box *box;
-	os_error *error;
 	char icon_buf[20] = "file_xxx";
-	const char *icon = icon_buf;
 	const char *url = "-";
 	const char *target = "-";
 	const char *mime = "-";
+	os_error *error;
 
-	box = ro_gui_menu_find_object_box();
-	if (box) {
-		sprintf(icon_buf, "file_%x", ro_content_filetype(box->object));
-		if (box->object->url) url = box->object->url;
-		if (box->href) target = box->href;
-		if (box->object->mime_type) mime = box->object->mime_type;
-	}
-	else if (c->type == CONTENT_JPEG || c->type == CONTENT_PNG ||
-		 c->type == CONTENT_JNG || c->type == CONTENT_MNG ||
-		 c->type == CONTENT_GIF || c->type == CONTENT_SPRITE ||
-		 c->type == CONTENT_DRAW) {
-		sprintf(icon_buf, "file_%x", ro_content_filetype(c));
-		if (c->url) url = c->url;
-		if (c->mime_type) mime = c->mime_type;
-	}
+	sprintf(icon_buf, "file_%x",
+			ro_content_filetype(gui_menu_object_box->object));
+	if (gui_menu_object_box->object->url)
+		url = gui_menu_object_box->object->url;
+	if (gui_menu_object_box->href)
+		target = gui_menu_object_box->href;
+	if (gui_menu_object_box->object->mime_type)
+		mime = gui_menu_object_box->object->mime_type;
 
-	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_ICON, icon);
+	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_ICON, icon_buf);
 	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_URL, url);
 	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TARGET, target);
 	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TYPE, mime);
@@ -1412,56 +1442,17 @@ void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning)
 	error = xwimp_create_sub_menu((wimp_menu *) dialog_objinfo,
 			warning->pos.x, warning->pos.y);
 	if (error) {
-		LOG(("0x%x: %s\n", error->errnum, error->errmess));
+		LOG(("xwimp_create_sub_menu: 0x%x: %s",
+				error->errnum, error->errmess));
 		warn_user("MenuError", error->errmess);
 	}
 }
 
-struct box *ro_gui_menu_find_object_box(void)
-{
-	struct content *c = current_gui->bw->current_content;
-	struct box_selection *boxes = NULL;
-	struct box *box = NULL;
-	int found = 0, plot_index = 0, i, x, y;
-	wimp_window_state state;
-
-	state.w = current_gui->window;
-	wimp_get_window_state(&state);
-
-	/* The menu is initially created 64 units to the left
-	 * of the mouse position. Therefore, we negate the offset here
-	 */
-	x = window_x_units(current_menu_x+64, &state) / 2 / current_gui->option.scale;
-	y = -window_y_units(current_menu_y, &state) / 2 / current_gui->option.scale;
-
-	if (c->type == CONTENT_HTML) {
-
-		box_under_area(c, c->data.html.layout->children,
-			       x, y, 0, 0, &boxes, &found, &plot_index);
-
-		if (found > 0) {
-			for (i=found-1;i>=0;i--) {
-				if (boxes[i].box->object != 0) {
-					box = boxes[i].box;
-					break;
-				}
-			}
-		}
-
-		free(boxes);
-	}
-
-	return box;
-}
 
 void ro_gui_menu_object_reload(void)
 {
-	struct box *box = ro_gui_menu_find_object_box();
-
-	if (box) {
-		box->object->fresh = false;
-		browser_window_reload(current_gui->bw, false);
-	}
+	gui_menu_object_box->object->fresh = false;
+	browser_window_reload(current_gui->bw, false);
 }
 
 
@@ -1551,5 +1542,5 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	current_gui = bw->window;
 	gui_form_select_control = control;
 	ro_gui_create_menu(gui_form_select_menu,
-			pointer.pos.x - 64, pointer.pos.y, bw->window);
+			pointer.pos.x, pointer.pos.y, bw->window);
 }

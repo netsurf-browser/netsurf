@@ -51,18 +51,9 @@ static void download_window_callback(fetch_msg msg, void *p, const char *data,
 		unsigned long size);
 static void browser_window_mouse_click_html(struct browser_window *bw,
 		browser_mouse_click click, int x, int y);
-
-static void browser_window_text_selection(struct browser_window* bw,
-		unsigned long click_x, unsigned long click_y, int click_type);
-static void browser_window_clear_text_selection(struct browser_window* bw);
-static void browser_window_change_text_selection(struct browser_window* bw, struct box_position* new_start, struct box_position* new_end);
-static int redraw_box_list(struct browser_window* bw, struct box* current,
-		unsigned long x, unsigned long y, struct box_position* start,
-		struct box_position* end, int* plot);
-static void browser_window_redraw_boxes(struct browser_window* bw, struct box_position* start, struct box_position* end);
-static void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct form_control* group);
-static void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct form_control* g,
-		unsigned long x, unsigned long y);
+static void browser_radio_set(struct content *content,
+		struct form_control *radio);
+static void browser_redraw_box(struct content *c, struct box *box);
 static void browser_form_submit(struct browser_window *bw, struct form *form,
 		struct form_control *submit_button);
 static void browser_window_textarea_click(struct browser_window* bw,
@@ -455,6 +446,7 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
 	gui_window_set_status(bw->window, text);
 }
 
+
 /**
  * Change the shape of the mouse pointer
  *
@@ -563,20 +555,20 @@ void browser_window_mouse_click(struct browser_window *bw,
 void browser_window_mouse_click_html(struct browser_window *bw,
 		browser_mouse_click click, int x, int y)
 {
-	struct content *c = bw->current_content;
-	struct box *box = c->data.html.layout;
-	int box_x = 0, box_y = 0;
-	struct content *content = c;
-	struct content *gadget_content = c;
 	char *base_url = 0;
 	char *href = 0;
 	char *title = 0;
-	struct form_control *gadget = 0;
-	struct box *gadget_box = 0;
-	const char *status = 0;
-	char status_buffer[200];
-	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
 	char *url;
+	char status_buffer[200];
+	const char *status = 0;
+	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	int box_x = 0, box_y = 0;
+	struct box *gadget_box = 0;
+	struct content *c = bw->current_content;
+	struct box *box = c->data.html.layout;
+	struct content *content = c;
+	struct content *gadget_content = c;
+	struct form_control *gadget = 0;
 
 	/* search the box tree for a link, imagemap, or form control */
 	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
@@ -621,18 +613,13 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 			status = messages_get("FormCheckbox");
 			if (click == BROWSER_MOUSE_CLICK_1) {
 				gadget->selected = !gadget->selected;
-				gui_redraw_gadget(bw, gadget);
+				browser_redraw_box(gadget_content, gadget_box);
 			}
 			break;
 		case GADGET_RADIO:
 			status = messages_get("FormRadio");
-			if (click == BROWSER_MOUSE_CLICK_1) {
-				clear_radio_gadgets(bw,
-						gadget_content->data.html.
-						layout, gadget);
-				gadget->selected = true;
-				gui_redraw_gadget(bw, gadget);
-			}
+			if (click == BROWSER_MOUSE_CLICK_1)
+				browser_radio_set(gadget_content, gadget);
 			break;
 		case GADGET_IMAGE:
 			if (click == BROWSER_MOUSE_CLICK_1) {
@@ -729,64 +716,71 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 }
 
 
+/**
+ * Set a radio form control and clear the others in the group.
+ *
+ * \param  content  content containing the form, of type CONTENT_TYPE
+ * \param  radio    form control of type GADGET_RADIO
+ */
 
-
-void clear_radio_gadgets(struct browser_window *bw, struct box *box,
-			 struct form_control *group)
+void browser_radio_set(struct content *content,
+		struct form_control *radio)
 {
-	struct box *c;
-	if (box == NULL)
+	struct form_control *control;
+
+	if (radio->selected)
 		return;
-	if (box->gadget != 0) {
-		if (box->gadget->type == GADGET_RADIO
-		    && box->gadget->name != 0 && box->gadget != group) {
-			if (strcmp(box->gadget->name, group->name) == 0) {
-				if (box->gadget->selected) {
-					box->gadget->selected = false;
-					gui_redraw_gadget(bw, box->gadget);
-				}
-			}
+
+	for (control = radio->form->controls; control;
+			control = control->next) {
+		if (control->type != GADGET_RADIO)
+			continue;
+		if (control == radio)
+			continue;
+		if (strcmp(control->name, radio->name) != 0)
+			continue;
+
+		if (control->selected) {
+			control->selected = false;
+			browser_redraw_box(content, control->box);
 		}
 	}
-	for (c = box->children; c != 0; c = c->next)
-		if (c->type != BOX_FLOAT_LEFT
-		    && c->type != BOX_FLOAT_RIGHT)
-			clear_radio_gadgets(bw, c, group);
 
-	for (c = box->float_children; c != 0; c = c->next_float)
-		clear_radio_gadgets(bw, c, group);
+	radio->selected = true;
+	browser_redraw_box(content, radio->box);
 }
 
-void gui_redraw_gadget2(struct browser_window *bw, struct box *box,
-			struct form_control *g, unsigned long x,
-			unsigned long y)
+
+/**
+ * Redraw a box.
+ *
+ * \param  c    content containing the box, of type CONTENT_HTML
+ * \param  box  box to redraw
+ */
+
+void browser_redraw_box(struct content *c, struct box *box)
 {
-	struct box *c;
+	int x, y;
+	union content_msg_data data;
 
-	if (box->gadget == g) {
-		gui_window_redraw(bw->window, x + box->x, y + box->y,
-				  x + box->x + box->width,
-				  y + box->y + box->height);
-	}
+	box_coords(box, &x, &y);
 
-	for (c = box->children; c != 0; c = c->next)
-		if (c->type != BOX_FLOAT_LEFT
-		    && c->type != BOX_FLOAT_RIGHT)
-			gui_redraw_gadget2(bw, c, g, box->x + x,
-					   box->y + y);
+	data.redraw.x = x;
+	data.redraw.y = y;
+	data.redraw.width = x + box->width;
+	data.redraw.height = y + box->height;
 
-	for (c = box->float_children; c != 0; c = c->next_float)
-		gui_redraw_gadget2(bw, c, g, box->x + x, box->y + y);
+	data.redraw.full_redraw = true;
+
+	data.redraw.object = c;
+	data.redraw.object_x = 0;
+	data.redraw.object_y = 0;
+	data.redraw.object_width = c->width;
+	data.redraw.object_height = c->height;
+
+	content_broadcast(c, CONTENT_MSG_REDRAW, data);
+
 }
-
-void gui_redraw_gadget(struct browser_window* bw, struct form_control* g)
-{
-	assert(bw->current_content->type == CONTENT_HTML);
-	gui_redraw_gadget2(bw, bw->current_content->data.html.layout->children, g, 0, 0);
-}
-
-
-
 
 
 /**
@@ -1469,55 +1463,6 @@ void browser_window_form_select(struct browser_window *bw,
 }
 
 
-
-
-void box_under_area(struct content *content, struct box *box,
-                    unsigned long x, unsigned long y,
-		    unsigned long ox, unsigned long oy,
-		    struct box_selection **found, int *count,
-		    int *plot_index)
-{
-	struct box *c;
-
-	if (box == NULL)
-		return;
-
-	*plot_index = *plot_index + 1;
-
-	if (x >= box->x + ox && x <= box->x + ox + box->width &&
-	    y >= box->y + oy && y <= box->y + oy + box->height) {
-		*found =
-		    xrealloc(*found,
-			     sizeof(struct box_selection) * (*count + 1));
-		(*found)[*count].content = content;
-		(*found)[*count].box = box;
-		(*found)[*count].actual_x = box->x + ox;
-		(*found)[*count].actual_y = box->y + oy;
-		(*found)[*count].plot_index = *plot_index;
-		*count = *count + 1;
-	}
-
-        /* consider embedded HTML pages */
-        if (box->object != 0 && box->object->type == CONTENT_HTML &&
-            box->object->data.html.layout != 0)
-                box_under_area(box->object, box->object->data.html.layout,
-                               x, y, box->x + ox, box->y +oy,
-                               found, count, plot_index);
-
-	for (c = box->children; c != 0; c = c->next)
-		if (c->type != BOX_FLOAT_LEFT
-		    && c->type != BOX_FLOAT_RIGHT)
-			box_under_area(content, c, x, y,
-			               box->x + ox, box->y + oy,
-				       found, count, plot_index);
-
-	for (c = box->float_children; c != 0; c = c->next_float)
-		box_under_area(content, c, x, y, box->x + ox, box->y + oy,
-		               found, count, plot_index);
-
-	return;
-}
-
 gui_pointer_shape get_pointer_shape(css_cursor cursor) {
 
         gui_pointer_shape pointer;
@@ -1559,347 +1504,6 @@ gui_pointer_shape get_pointer_shape(css_cursor cursor) {
         return pointer;
 }
 
-
-void browser_window_text_selection(struct browser_window *bw,
-				   unsigned long click_x,
-				   unsigned long click_y, int click_type)
-{
-	struct box_selection *click_boxes;
-	int found, plot_index;
-	int i;
-
-	if (click_type == 0 /* click_CLEAR_SELECTION */ ) {
-		browser_window_clear_text_selection(bw);
-		return;
-	}
-
-	found = 0;
-	click_boxes = NULL;
-	plot_index = 0;
-
-	assert(bw->current_content->type == CONTENT_HTML);
-	box_under_area(bw->current_content,
-	               bw->current_content->data.html.layout->children,
-		       click_x, click_y, 0, 0, &click_boxes, &found,
-		       &plot_index);
-
-	if (found == 0)
-		return;
-
-	for (i = found - 1; i >= 0; i--) {
-		if (click_boxes[i].box->type == BOX_INLINE) {
-			struct box_position new_pos;
-			struct box_position *start;
-			struct box_position *end;
-			int click_char_offset, click_pixel_offset;
-
-			/* shortcuts */
-			start =
-			    &(bw->current_content->data.html.
-			      text_selection.start);
-			end =
-			    &(bw->current_content->data.html.
-			      text_selection.end);
-
-			if (click_boxes[i].box->text
-			    && click_boxes[i].box->font) {
-				nsfont_position_in_string(click_boxes[i].box->font,
-							click_boxes[i].box->text,
-							click_boxes[i].box->length,
-							click_x - click_boxes[i].actual_x,
-							&click_char_offset,
-							&click_pixel_offset);
-			} else {
-				click_char_offset = 0;
-				click_pixel_offset = 0;
-			}
-
-			new_pos.box = click_boxes[i].box;
-			new_pos.actual_box_x = click_boxes[i].actual_x;
-			new_pos.actual_box_y = click_boxes[i].actual_y;
-			new_pos.plot_index = click_boxes[i].plot_index;
-			new_pos.char_offset = click_char_offset;
-			new_pos.pixel_offset = click_pixel_offset;
-
-			if (click_type == 1 /* click_START_SELECTION */ ) {
-				/* update both start and end */
-				browser_window_clear_text_selection(bw);
-				click_boxes[i].content->data.html.
-				    text_selection.altering =
-				    alter_UNKNOWN;
-				click_boxes[i].content->data.html.
-				    text_selection.selected = 1;
-				memcpy(start, &new_pos,
-				       sizeof(struct box_position));
-				memcpy(end, &new_pos,
-				       sizeof(struct box_position));
-				i = -1;
-			} else if (click_boxes[i].content->data.html.
-				   text_selection.selected == 1
-				   && click_type ==
-				   2 /* click_ALTER_SELECTION */ ) {
-				/* alter selection */
-
-				if (click_boxes[i].content->data.html.
-				    text_selection.altering !=
-				    alter_UNKNOWN) {
-					if (click_boxes[i].content->data.html.
-					    text_selection.altering ==
-					    alter_START) {
-						if (box_position_gt
-						    (&new_pos, end)) {
-							click_boxes[i].content->data.html.text_selection.altering = alter_END;
-							browser_window_change_text_selection
-							    (bw, end,
-							     &new_pos);
-						} else
-							browser_window_change_text_selection
-							    (bw, &new_pos,
-							     end);
-					} else {
-						if (box_position_lt
-						    (&new_pos, start)) {
-							click_boxes[i].content->data.html.text_selection.altering = alter_START;
-							browser_window_change_text_selection
-							    (bw, &new_pos,
-							     start);
-						} else
-							browser_window_change_text_selection
-							    (bw, start,
-							     &new_pos);
-					}
-					i = -1;
-				} else {
-					/* work out whether the start or end is being dragged */
-
-					int click_start_distance = 0;
-					int click_end_distance = 0;
-
-					int inside_block = 0;
-					int before_start = 0;
-					int after_end = 0;
-
-					if (box_position_lt
-					    (&new_pos, start))
-						before_start = 1;
-
-					if (box_position_gt(&new_pos, end))
-						after_end = 1;
-
-					if (!box_position_lt
-					    (&new_pos, start)
-					    && !box_position_gt(&new_pos,
-								end))
-						inside_block = 1;
-
-					if (inside_block == 1) {
-						click_start_distance =
-						    box_position_distance
-						    (start, &new_pos);
-						click_end_distance =
-						    box_position_distance
-						    (end, &new_pos);
-					}
-
-					if (before_start == 1
-					    || (after_end == 0
-						&& inside_block == 1
-						&& click_start_distance <
-						click_end_distance)) {
-						/* alter the start position */
-						click_boxes[i].content->data.
-						    html.text_selection.
-						    altering = alter_START;
-						browser_window_change_text_selection
-						    (bw, &new_pos, end);
-						i = -1;
-					} else if (after_end == 1
-						   || (before_start == 0
-						       && inside_block == 1
-						       &&
-						       click_start_distance
-						       >=
-						       click_end_distance))
-					{
-						/* alter the end position */
-						click_boxes[i].content->data.
-						    html.text_selection.
-						    altering = alter_END;
-						browser_window_change_text_selection
-						    (bw, start, &new_pos);
-						i = -1;
-					}
-				}
-			}
-		}
-	}
-
-	free(click_boxes);
-
-	return;
-}
-
-void browser_window_clear_text_selection(struct browser_window *bw)
-{
-	struct box_position *old_start;
-	struct box_position *old_end;
-
-	assert(bw->current_content->type == CONTENT_HTML);
-	old_start = &(bw->current_content->data.html.text_selection.start);
-	old_end = &(bw->current_content->data.html.text_selection.end);
-
-	if (bw->current_content->data.html.text_selection.selected == 1) {
-		bw->current_content->data.html.text_selection.selected = 0;
-		browser_window_redraw_boxes(bw, old_start, old_end);
-	}
-
-	bw->current_content->data.html.text_selection.altering =
-	    alter_UNKNOWN;
-}
-
-void browser_window_change_text_selection(struct browser_window *bw,
-					  struct box_position *new_start,
-					  struct box_position *new_end)
-{
-	struct box_position start;
-	struct box_position end;
-
-	assert(bw->current_content->type == CONTENT_HTML);
-	memcpy(&start,
-	       &(bw->current_content->data.html.text_selection.start),
-	       sizeof(struct box_position));
-	memcpy(&end, &(bw->current_content->data.html.text_selection.end),
-	       sizeof(struct box_position));
-
-	if (!box_position_eq(new_start, &start)) {
-		if (box_position_lt(new_start, &start))
-			browser_window_redraw_boxes(bw, new_start, &start);
-		else
-			browser_window_redraw_boxes(bw, &start, new_start);
-		memcpy(&start, new_start, sizeof(struct box_position));
-	}
-
-	if (!box_position_eq(new_end, &end)) {
-		if (box_position_lt(new_end, &end))
-			browser_window_redraw_boxes(bw, new_end, &end);
-		else
-			browser_window_redraw_boxes(bw, &end, new_end);
-		memcpy(&end, new_end, sizeof(struct box_position));
-	}
-
-	memcpy(&(bw->current_content->data.html.text_selection.start),
-	       &start, sizeof(struct box_position));
-	memcpy(&(bw->current_content->data.html.text_selection.end), &end,
-	       sizeof(struct box_position));
-
-	bw->current_content->data.html.text_selection.selected = 1;
-}
-
-
-int box_position_lt(struct box_position *x, struct box_position *y)
-{
-	return (x->plot_index < y->plot_index ||
-		(x->plot_index == y->plot_index
-		 && x->char_offset < y->char_offset));
-}
-
-int box_position_gt(struct box_position *x, struct box_position *y)
-{
-	return (x->plot_index > y->plot_index ||
-		(x->plot_index == y->plot_index
-		 && x->char_offset > y->char_offset));
-}
-
-int box_position_eq(struct box_position *x, struct box_position *y)
-{
-	return (x->plot_index == y->plot_index
-		&& x->char_offset == y->char_offset);
-}
-
-int box_position_distance(struct box_position *x, struct box_position *y)
-{
-	int dx = (y->actual_box_x + y->pixel_offset)
-	    - (x->actual_box_x + x->pixel_offset);
-	int dy = (y->actual_box_y + y->box->height / 2)
-	    - (x->actual_box_y + x->box->height / 2);
-	return dx * dx + dy * dy;
-}
-
-unsigned long redraw_min_x = LONG_MAX;
-unsigned long redraw_min_y = LONG_MAX;
-unsigned long redraw_max_x = 0;
-unsigned long redraw_max_y = 0;
-
-int redraw_box_list(struct browser_window *bw, struct box *current,
-		    unsigned long x, unsigned long y,
-		    struct box_position *start, struct box_position *end,
-		    int *plot)
-{
-
-	struct box *c;
-
-	if (current == start->box)
-		*plot = 1;
-
-	if (*plot >= 1 && current->type == BOX_INLINE) {
-		unsigned long minx = x + current->x;
-		unsigned long miny = y + current->y;
-		unsigned long maxx = x + current->x + current->width;
-		unsigned long maxy = y + current->y + current->height;
-
-		if (minx < redraw_min_x)
-			redraw_min_x = minx;
-		if (miny < redraw_min_y)
-			redraw_min_y = miny;
-		if (maxx > redraw_max_x)
-			redraw_max_x = maxx;
-		if (maxy > redraw_max_y)
-			redraw_max_y = maxy;
-
-		*plot = 2;
-	}
-
-	if (current == end->box)
-		return 1;
-
-	for (c = current->children; c != 0; c = c->next)
-		if (c->type != BOX_FLOAT_LEFT
-		    && c->type != BOX_FLOAT_RIGHT)
-			if (redraw_box_list
-			    (bw, c, x + current->x, y + current->y, start,
-			     end, plot) == 1)
-				return 1;
-
-	for (c = current->float_children; c != 0; c = c->next_float)
-		if (redraw_box_list(bw, c, x + current->x, y + current->y,
-				    start, end, plot) == 1)
-			return 1;
-
-	return 0;
-}
-
-void browser_window_redraw_boxes(struct browser_window *bw,
-				 struct box_position *start,
-				 struct box_position *end)
-{
-	int plot = 0;
-
-	assert(bw->current_content->type == CONTENT_HTML);
-	if (box_position_eq(start, end))
-		return;
-
-	redraw_min_x = LONG_MAX;
-	redraw_min_y = LONG_MAX;
-	redraw_max_x = 0;
-	redraw_max_y = 0;
-
-	redraw_box_list(bw, bw->current_content->data.html.layout,
-			0, 0, start, end, &plot);
-
-	if (plot == 2)
-		gui_window_redraw(bw->window, redraw_min_x, redraw_min_y,
-				  redraw_max_x, redraw_max_y);
-}
 
 /**
  * Collect controls and submit a form.

@@ -50,13 +50,13 @@ void ro_gui_selection_drag_end(wimp_dragged *drag)
     msg.type = act_ALTER_SELECTION;
     browser_window_action(current_gui->bw, &msg);*/
 
-    if (box_position_eq(&(current_gui->bw->current_content->data.html.text_selection.start),
-                        &(current_gui->bw->current_content->data.html.text_selection.end)))
+/*     if (box_position_eq(&(current_gui->bw->current_content->data.html.text_selection.start), */
+/*                         &(current_gui->bw->current_content->data.html.text_selection.end))) */
     {
 /*      msg.type = act_CLEAR_SELECTION;
       browser_window_action(current_gui->bw, &msg);*/
     }
-    current_gui->bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
+/*     current_gui->bw->current_content->data.html.text_selection.altering = alter_UNKNOWN; */
 }
 
 

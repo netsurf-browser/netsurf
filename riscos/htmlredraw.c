@@ -310,52 +310,6 @@ void html_redraw_box(struct content *content, struct box * box,
 
 	} else if (box->text && box->font) {
 
-		if (content->data.html.text_selection.selected == 1) {
-			struct box_position *start;
-			struct box_position *end;
-
-			start = &(content->data.html.text_selection.start);
-			end = &(content->data.html.text_selection.end);
-
-			if (start->box == box) {
-				if (end->box == box) {
-					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
-					os_plot(os_MOVE_TO,
-						x + start->pixel_offset * 2,
-						y - height);
-					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-						x + end->pixel_offset * 2 - 2,
-						y - 2);
-				} else {
-					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
-					os_plot(os_MOVE_TO,
-						x + start->pixel_offset * 2,
-						y - height);
-					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-						x + width - 2,
-						y - 2);
-					*select_on = true;
-				}
-			} else if (*select_on) {
-				if (end->box != box) {
-					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
-					os_plot(os_MOVE_TO, x,
-						y - height);
-					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-						x + width - 2,
-						y - 2);
-				} else {
-					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
-					os_plot(os_MOVE_TO, x,
-						y - height);
-					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-						x + end->pixel_offset * 2 - 2,
-						y - 2);
-					*select_on = false;
-				}
-			}
-		}
-
 		colourtrans_set_font_colours(box->font->handle,
 				current_background_color << 8,
 				box->style->color << 8, 14, 0, 0, 0);
@@ -429,21 +383,6 @@ void html_redraw_box(struct content *content, struct box * box,
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object)
 		html_redraw_clip(clip_x0, clip_y0, clip_x1, clip_y1);
-
-/*	} else {
-		if (content->data.html.text_selection.selected == 1) {
-			struct box_position *start;
-			struct box_position *end;
-
-			start = &(content->data.html.text_selection.start);
-			end = &(content->data.html.text_selection.end);
-
-			if (start->box == box && end->box != box)
-				*select_on = true;
-			else if (*select_on && end->box == box)
-				*select_on = false;
-		}
-	}*/
 }
 
 

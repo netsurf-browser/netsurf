@@ -189,6 +189,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	g->prev = 0;
 	g->next = window_list;
+	if (window_list)
+		window_list->prev = g;
 	window_list = g;
 	window_count++;
 
@@ -1059,7 +1061,7 @@ void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 	}
 
 	if (pointer->buttons == wimp_CLICK_MENU)
-		ro_gui_create_menu(browser_menu, pointer->pos.x - 64,
+		ro_gui_create_menu(browser_menu, pointer->pos.x,
 				pointer->pos.y, g);
 	else if (pointer->buttons == wimp_CLICK_SELECT)
 		browser_window_mouse_click(g->bw, BROWSER_MOUSE_CLICK_1, x, y);
@@ -1416,13 +1418,14 @@ int window_y_units(int y, wimp_window_state *state) {
 
 bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 {
-	struct browser_window *bw = g->bw;
-	struct box_selection *click_boxes = 0;
+	int box_x = 0, box_y = 0;
 	int x, y;
-	int i;
-	int found = 0;
-	int plot_index = 0;
+	struct box *box;
+	struct box *file_box = 0;
+	struct browser_window *bw = g->bw;
+	struct content *content;
 	wimp_window_state state;
+	os_error *error;
 
 	/* HTML content only. */
 	if (!bw->current_content || bw->current_content->type != CONTENT_HTML)
@@ -1434,41 +1437,53 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 
 	/* Search for a file input at the drop point. */
 	state.w = message->data.data_xfer.w;
-	wimp_get_window_state(&state);
-	x = window_x_units(message->data.data_xfer.pos.x, &state) / 2;
-	y = -window_y_units(message->data.data_xfer.pos.y, &state) / 2;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s\n",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
 
-	box_under_area(bw->current_content,
-			bw->current_content->data.html.layout->children,
-			x, y, 0, 0, &click_boxes, &found, &plot_index);
-	if (found == 0)
-		return false;
-	for (i = 0; i != found; i++) {
-		if (click_boxes[i].box->gadget &&
-				click_boxes[i].box->gadget->type ==
-				GADGET_FILE)
-			break;
+	x = window_x_units(message->data.data_xfer.pos.x, &state) / 2 /
+			g->option.scale;
+	y = -window_y_units(message->data.data_xfer.pos.y, &state) / 2 /
+			g->option.scale;
+
+	content = bw->current_content;
+	box = content->data.html.layout;
+	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
+		if (box->style &&
+				box->style->visibility == CSS_VISIBILITY_HIDDEN)
+			continue;
+
+		if (box->gadget && box->gadget->type == GADGET_FILE)
+			file_box = box;
 	}
-	if (i == found) {
-		free(click_boxes);
+
+	if (!file_box)
 		return false;
-	}
 
 	/* Found: update form input. */
-	free(click_boxes[i].box->gadget->value);
-	click_boxes[i].box->gadget->value =
+	free(file_box->gadget->value);
+	file_box->gadget->value =
 			strdup(message->data.data_xfer.file_name);
 
 	/* Redraw box. */
-	box_coords(click_boxes[i].box, &x, &y);
+	box_coords(file_box, &x, &y);
 	gui_window_redraw(bw->window, x, y,
-			x + click_boxes[i].box->width,
-			y + click_boxes[i].box->height);
+			x + file_box->width,
+			y + file_box->height);
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
 	message->your_ref = message->my_ref;
-	wimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+	error = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+	if (error) {
+		LOG(("xwimp_send_message: 0x%x: %s\n",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
 
 	return true;
 }

@@ -251,5 +251,6 @@ void box_coords(struct box *box, int *x, int *y);
 struct box *box_at_point(struct box *box, int x, int y,
 		int *box_x, int *box_y,
 		struct content **content);
+struct box *box_object_at_point(struct content *c, int x, int y);
 
 #endif

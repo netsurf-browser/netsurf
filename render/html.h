@@ -26,21 +26,13 @@ struct content;
 struct object_params;
 struct imagemap;
 
-struct box_position {
-	struct box *box;
-	int actual_box_x;
-	int actual_box_y;
-	int plot_index;
-	int pixel_offset;
-	int char_offset;
-};
-
 /** Data specific to CONTENT_HTML. */
 struct content_html_data {
 	htmlParserCtxt *parser;  /**< HTML parser context. */
 
 	xmlChar *encoding;  /**< Encoding of source. */
-	bool getenc; /**< Need to get the encoding from the document, as server is broken. */
+	bool getenc; /**< Need to get the encoding from the document, as it
+	              * wasn't specified in the Content-Type header. */
 
 	char *base_url;	/**< Base URL (may be a copy of content->url). */
 
@@ -53,13 +45,6 @@ struct content_html_data {
 	 * stylesheet 1 is any <style> elements (not cached). */
 	struct content **stylesheet_content;
 	struct css_style *style;  /**< Base style. */
-
-	struct {
-		struct box_position start;
-		struct box_position end;
-		enum { alter_UNKNOWN, alter_START, alter_END } altering;
-		int selected;	/* 0 = unselected, 1 = selected */
-	} text_selection;
 
 	struct font_set *fonts;  /**< Set of fonts. */
 

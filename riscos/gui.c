@@ -783,7 +783,7 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 {
   	int key_down = 0;
 	if (pointer->buttons == wimp_CLICK_MENU) {
-		ro_gui_create_menu(iconbar_menu, pointer->pos.x - 64,
+		ro_gui_create_menu(iconbar_menu, pointer->pos.x,
 				   96 + iconbar_menu_height, NULL);
 	} else if (pointer->buttons == wimp_CLICK_SELECT) {
 		char url[80];
