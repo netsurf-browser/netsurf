@@ -42,6 +42,7 @@
 
 struct gui_window *print_current_window = 0;
 static bool print_in_background = false;
+static float print_scale = 1.0;
 static int print_num_copies = 1;
 static bool print_bg_images = true;
 static int print_max_sheets = -1;
@@ -422,7 +423,9 @@ void print_dataload_bounce(wimp_message *m)
  */
 void print_cleanup(void)
 {
-	print_current_window->option.background_images = print_bg_images;
+	if (print_current_window)
+		print_current_window->option.background_images =
+							print_bg_images;
 	print_current_window = 0;
 	print_max_sheets = -1;
 	xwimp_create_menu((wimp_menu *)-1, 0, 0);
@@ -593,11 +596,12 @@ void print_document(struct gui_window *g, const char *filename)
 		while (more) {
 			LOG(("redrawing area: [(%d, %d), (%d, %d)]", b.x0, b.y0, b.x1, b.y1));
 			if (c) {
-				content_redraw(c, b.x0, b.y1+(yscroll*2),
+				content_redraw(c, left/400,
+						top/400 + (yscroll*2),
 						c->width * 2, c->height * 2,
 						b.x0, b.y0,
 						b.x1-1, b.y1-1,
-						1.0 /* scale == 100% */);
+						print_scale);
 			}
 			e = xpdriver_get_rectangle(&b, &more, 0);
 			if (e) {
