@@ -23,9 +23,6 @@
  * 	No support for Plugin_Focus, Plugin_Busy, Plugin_Action
  * 	No support for Plugin_Abort, Plugin_Inform, Plugin_Informed
  * 	Plugin_URL_Access is only part-implemented
- *
- * No support for "helper" applications
- * No support for standalone objects (must be embedded in HTML page)
  */
 
 #include <assert.h>
@@ -52,6 +49,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/plugin.h"
+#include "netsurf/riscos/theme.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -209,19 +207,41 @@ void plugin_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params)
 {
+	bool standalone = false;
 	char sysvar[25];
 	char *varval;
 	plugin_full_message_open pmo;
+	wimp_window_state state;
 	os_error *error;
 
 
 	if (option_no_plugins)
 		return;
 
-	/** \todo Standalone plugins */
 	if (!params) {
-		LOG(("cannot handle standalone plugins"));
-		return;
+		/* this is a standalone plugin, so fudge the parameters */
+		params = calloc(1, sizeof(struct object_params));
+		if (!params) {
+			warn_user("NoMemory", 0);
+			goto error;
+		}
+
+		params->data = strdup(c->url);
+		if (!params->data) {
+			warn_user("NoMemory", 0);
+			goto error;
+		}
+		params->type = strdup(c->mime_type);
+		if (!params->type) {
+			warn_user("NoMemory", 0);
+			goto error;
+		}
+		params->basehref = strdup(c->url);
+		if (!params->basehref) {
+			warn_user("NoMemory", 0);
+			goto error;
+		}
+		standalone = true;
 	}
 
 	/* we only do this here cos the box is needed by
@@ -232,18 +252,18 @@ void plugin_open(struct content *c, struct browser_window *bw,
 
 	LOG(("writing parameters file"));
 	if (!plugin_write_parameters_file(c, params))
-		return;
+		goto error;
 
 	LOG(("creating sysvar"));
 	/* get contents of Alias$@PlugInType_xxx variable */
 	if (!plugin_create_sysvar(c->mime_type, sysvar))
-		return;
+		goto error;
 
 	LOG(("getenv"));
 	varval = getenv(sysvar);
 	LOG(("%s: '%s'", sysvar, varval));
 	if(!varval) {
-		return;
+		goto error;
 	}
 
 	/* The browser instance handle is the content struct pointer */
@@ -252,17 +272,37 @@ void plugin_open(struct content *c, struct browser_window *bw,
 	pmo.size = 60;
 	pmo.your_ref = 0;
 	pmo.action = message_PLUG_IN_OPEN;
-	pmo.flags = 0;
+	/* open as helper, if standalone */
+	pmo.flags = /*standalone ? plugin_OPEN_AS_HELPER :*/ 0;
 	pmo.reserved = 0;
 	pmo.browser = (plugin_b)c->data.plugin.browser;
 	pmo.parent_window = bw->window->window;
-	pmo.bbox.x0 = -100;
-	pmo.bbox.x1 = pmo.bbox.y0 = 0;
-	pmo.bbox.y1 = 100;
+
+	/* initial position/dimensions */
+	if (standalone) {
+		/* if standalone, try to fill the browser window */
+		state.w = bw->window->window;
+		error = xwimp_get_window_state(&state);
+		if (error)
+			goto error;
+
+		pmo.bbox.x0 = 10;
+		/* avoid toolbar */
+		pmo.bbox.y1 = -10 - (bw->window->toolbar ?
+					bw->window->toolbar->height : 0);
+		pmo.bbox.x1 = (state.visible.x1 - state.visible.x0) - 10;
+		pmo.bbox.y0 = (state.visible.y0 - state.visible.y1) - 10;
+	}
+	else {
+		pmo.bbox.x0 = -100;
+		pmo.bbox.x1 = pmo.bbox.y0 = 0;
+		pmo.bbox.y1 = 100;
+	}
+
 	error = xmimemaptranslate_mime_type_to_filetype(c->mime_type,
 						&pmo.file_type);
 	if (error) {
-		return;
+		goto error;
 	}
 	pmo.filename.pointer = c->data.plugin.filename;
 
@@ -274,12 +314,21 @@ void plugin_open(struct content *c, struct browser_window *bw,
 	if (error) {
 		LOG(("xwimp_send_message: 0x%x: %s",
 				error->errnum, error->errmess));
-		return;
+		goto error;
 	}
 
 	c->data.plugin.bw = bw;
 	c->data.plugin.page = page;
 	c->data.plugin.taskname = strdup(varval);
+
+error:
+	/* clean up standalone stuff */
+	if (standalone) {
+		free(params->type);
+		free(params->data);
+		free(params->basehref);
+		free(params);
+	}
 
 	LOG(("done"));
 }
@@ -348,7 +397,18 @@ void plugin_reformat(struct content *c, int width, int height)
 
 	c->data.plugin.reformat_pending = false;
 
-	box_coords(c->data.plugin.box, &x, &y);
+	/* top left of plugin area, relative to top left of browser window */
+	if (c->data.plugin.box) {
+		box_coords(c->data.plugin.box, &x, &y);
+	}
+	else {
+		/* standalone */
+		x = 10 / 2;
+		/* avoid toolbar */
+		y = (10 + (c->data.plugin.bw->window->toolbar ?
+			c->data.plugin.bw->window->toolbar->height : 0)) / 2;
+	}
+
 	pmr.size = 52;
 	pmr.your_ref = 0;
 	pmr.action = message_PLUG_IN_RESHAPE;
@@ -359,8 +419,16 @@ void plugin_reformat(struct content *c, int width, int height)
 	pmr.parent_window = c->data.plugin.bw->window->window;
 	pmr.bbox.x0 = x * 2;
 	pmr.bbox.y1 = -y * 2;
-	pmr.bbox.x1 = pmr.bbox.x0 + c->data.plugin.box->width * 2;
-	pmr.bbox.y0 = pmr.bbox.y1 - c->data.plugin.box->height * 2;
+
+	if (c->data.plugin.box) {
+		pmr.bbox.x1 = pmr.bbox.x0 + c->data.plugin.box->width * 2;
+		pmr.bbox.y0 = pmr.bbox.y1 - c->data.plugin.box->height * 2;
+	}
+	else {
+		/* standalone */
+		pmr.bbox.x1 = pmr.bbox.x0 + width * 2;
+		pmr.bbox.y0 = pmr.bbox.y1 - height * 2;
+	}
 
 	LOG(("sending message"));
 	error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message *) &pmr,
@@ -563,21 +631,25 @@ void plugin_reshape_request(wimp_message *message)
 
 	/* we can be called prior to the box content being set up,
 	 * so we set it up here. This is ok as the content won't change
-	 * under us.
+	 * under us. However, the box may not exist (if we're standalone)
 	 */
-	c->data.plugin.box->object = c;
+	if (c->data.plugin.box)
+		c->data.plugin.box->object = c;
 
 	/* should probably shift by x and y eig values here */
 	c->width = pmrr->size.x / 2;
 	c->height = pmrr->size.y / 2;
 
-	/* invalidate parent box widths */
-	for (b = c->data.plugin.box->parent; b; b = b->parent)
-		b->max_width = UNKNOWN_MAX_WIDTH;
+	if (c->data.plugin.box)
+		/* invalidate parent box widths */
+		for (b = c->data.plugin.box->parent; b; b = b->parent)
+			b->max_width = UNKNOWN_MAX_WIDTH;
 
-	/* force a reformat of the parent */
-	content_reformat(c->data.plugin.page,
+	if (c->data.plugin.page)
+		/* force a reformat of the parent */
+		content_reformat(c->data.plugin.page,
 				c->data.plugin.page->available_width, 0);
+
 	/* redraw the window */
 	content_broadcast(c->data.plugin.bw->current_content,
 				CONTENT_MSG_REFORMAT, data);
@@ -829,7 +901,10 @@ void plugin_write_stream(struct content *c, unsigned int consumed)
 	/* length of data available */
 	pmsw.length = c->source_size - c->data.plugin.consumed;
 	/* pointer to available data */
-	pmsw.data = (byte*)c->source_data + c->data.plugin.consumed;
+	/**\todo This pointer can change underneath us (ie between us
+	 *       sending the message and the recipient handling it)
+	 */
+	pmsw.data = (byte*)(c->source_data + c->data.plugin.consumed);
 
 	/* still have data to send */
 	if (c->data.plugin.consumed < c->source_size) {
@@ -894,9 +969,16 @@ void plugin_write_stream_as_file(struct content *c)
 	}
 
 	/* create filename */
-	sprintf(c->data.plugin.datafile, "%s.WWW.NetSurf.d%x",
-		getenv("Wimp$ScrapDir"),
-		(unsigned int)c->data.plugin.box->object_params);
+	if (c->data.plugin.box) {
+		sprintf(c->data.plugin.datafile, "%s.WWW.NetSurf.d%x",
+			getenv("Wimp$ScrapDir"),
+			(unsigned int)c->data.plugin.box->object_params);
+	}
+	else {
+		sprintf(c->data.plugin.datafile, "%s.WWW.NetSurf.d%x",
+			getenv("Wimp$ScrapDir"),
+			(unsigned int)c);
+	}
 
 	pmsaf.size = 60;
 	pmsaf.your_ref = 0;
@@ -1097,7 +1179,9 @@ bool plugin_write_parameters_file(struct content *c,
 		goto error;
 
 	/* BGCOLOR */
-	if (c->data.plugin.box->style->background_color <= 0xFFFFFF)
+	if (c->data.plugin.box && c->data.plugin.box->style &&
+			c->data.plugin.box->style->background_color
+								<= 0xFFFFFF)
 		sprintf(bgcolor, "%X00",
 		(unsigned int)c->data.plugin.box->style->background_color);
 	else
