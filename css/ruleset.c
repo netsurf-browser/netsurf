@@ -407,9 +407,9 @@ void parse_line_height(struct css_style * const s, const struct node * const v)
 	} else if (v->type == NODE_DIMENSION &&
 			parse_length(&s->line_height.value.length, v) == 0) {
 		s->line_height.size = CSS_LINE_HEIGHT_LENGTH;
-	} else if (v->type == NODE_NUMBER && atof(v->data) == 0.0) {
+	} else if (v->type == NODE_NUMBER) {
 		s->line_height.size = CSS_LINE_HEIGHT_ABSOLUTE;
-		s->line_height.value.absolute = 0.0;
+		s->line_height.value.absolute = atof(v->data);
 	}
 }
 

@@ -304,12 +304,15 @@ signed long line_height(struct css_style * style)
 {
 	assert(style != 0);
 	assert(style->line_height.size == CSS_LINE_HEIGHT_LENGTH ||
-	       style->line_height.size == CSS_LINE_HEIGHT_ABSOLUTE);
+	       style->line_height.size == CSS_LINE_HEIGHT_ABSOLUTE ||
+	       style->line_height.size == CSS_LINE_HEIGHT_PERCENT);
 
 	if (style->line_height.size == CSS_LINE_HEIGHT_LENGTH)
 		return len(&style->line_height.value.length, style);
-	else
+	else if (style->line_height.size == CSS_LINE_HEIGHT_ABSOLUTE)
 		return style->line_height.value.absolute * len(&style->font_size.value.length, 0);
+	else
+		return style->line_height.value.percent * len(&style->font_size.value.length, 0) / 100.0;
 }
 
 
