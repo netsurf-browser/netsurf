@@ -334,7 +334,7 @@ bool ro_plot_disc(int x, int y, int radius, colour colour)
 		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
 		return false;
 	}
-	error = xos_plot(os_PLOT_CIRCLE | os_PLOT_BY, radius, 0);
+	error = xos_plot(os_PLOT_CIRCLE | os_PLOT_BY, radius * 2, 0);
 	if (error) {
 		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
 		return false;
