@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.13 2002/06/18 21:24:21 bursa Exp $
+ * $Id: render.c,v 1.14 2002/06/21 18:16:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -20,6 +20,7 @@
 
 void render_plain_element(char * g, struct box * box, unsigned long x, unsigned long y);
 void render_plain(struct box * box);
+void render_dump(struct box * box, unsigned long x, unsigned long y);
 
 
 /**
@@ -108,7 +109,7 @@ void render_dump(struct box * box, unsigned long x, unsigned long y)
 	printf("rect %li %li %li %li \"%s\" \"", x + box->x, y + box->y,
 			box->width, box->height, name);
 	if (box->type == BOX_INLINE) {
-		int i;
+		unsigned int i;
 		for (i = 0; i < box->length; i++) {
 			if (box->text[i] == '"')
 				printf("\\\"");

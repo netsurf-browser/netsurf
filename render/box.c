@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.5 2002/06/18 21:24:21 bursa Exp $
+ * $Id: box.c,v 1.6 2002/06/21 18:16:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -176,6 +176,12 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 	memcpy(style, parent_style, sizeof(struct css_style));
 	css_get_style(stylesheet, selector, depth, style);
 
+	if ((s = xmlGetProp(n, "clear"))) {
+		if (strcmp(s, "all") == 0) style->clear = CSS_CLEAR_BOTH;
+		else if (strcmp(s, "left") == 0) style->clear = CSS_CLEAR_LEFT;
+		else if (strcmp(s, "right") == 0) style->clear = CSS_CLEAR_RIGHT;
+	}
+
 	if ((s = xmlGetProp(n, "width"))) {
 		if (strrchr(s, '%'))
 			style->width.width = CSS_WIDTH_PERCENT,
@@ -216,7 +222,8 @@ void box_dump(struct box * box, unsigned int depth)
 	switch (box->type) {
 		case BOX_BLOCK:            fprintf(stderr, "BOX_BLOCK <%s> ", box->node->name); break;
 		case BOX_INLINE_CONTAINER: fprintf(stderr, "BOX_INLINE_CONTAINER "); break;
-		case BOX_INLINE:           fprintf(stderr, "BOX_INLINE '%.*s' ", box->length, box->text); break;
+		case BOX_INLINE:           fprintf(stderr, "BOX_INLINE '%.*s' ",
+		                                   (int) box->length, box->text); break;
 		case BOX_TABLE:            fprintf(stderr, "BOX_TABLE <%s> ", box->node->name); break;
 		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW <%s> ", box->node->name); break;
 		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL <%s> ", box->node->name); break;

@@ -1,5 +1,5 @@
 /**
- * $Id: utils.c,v 1.3 2002/06/18 21:24:21 bursa Exp $
+ * $Id: utils.c,v 1.4 2002/06/21 18:16:24 bursa Exp $
  */
 
 #include <ctype.h>
@@ -63,10 +63,10 @@ char * load(const char * const path)
 	if (fp == 0) die("Failed to open file");
 	if (fseek(fp, 0, SEEK_END) != 0) die("fseek() failed");
 	if ((size = ftell(fp)) == -1) die("ftell() failed");
-	buf = xcalloc(size, 1);
+	buf = xcalloc((size_t) size, 1);
 
 	if (fseek(fp, 0, SEEK_SET) != 0) die("fseek() failed");
-	read = fread(buf, 1, size, fp);
+	read = fread(buf, 1, (size_t) size, fp);
 	if (read < size) die("fread() failed");
 
 	return buf;

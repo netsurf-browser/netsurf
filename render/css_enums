@@ -4,7 +4,7 @@ css_background_position inherit top center bottom left right length percent
 css_background_repeat inherit repeat repeat_x repeat_y no_repeat
 css_border_width inherit medium thin thick length
 css_border_style inherit none dashed dotted double groove inset outset ridge solid
-css_clear none both left right
+css_clear inherit none both left right
 css_display inherit inline block list-item run-in compact marker table inline-table table-row-group table-header-group table-footer-group table-row table-column-group table-column table-cell table-caption none
 css_float inherit none left right
 css_font_style normal italic oblique

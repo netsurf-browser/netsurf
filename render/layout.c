@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.7 2002/06/19 15:17:45 bursa Exp $
+ * $Id: layout.c,v 1.8 2002/06/21 18:16:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -91,15 +91,16 @@ void layout_block(struct box * box, unsigned long width, struct box * cont,
 	assert(box->type == BOX_BLOCK || box->type == BOX_FLOAT);
 
 	switch (style->width.width) {
-		case CSS_WIDTH_AUTO:
-			/* take all available width */
-			box->width = width;
-			break;
 		case CSS_WIDTH_LENGTH:
 			box->width = len(&style->width.value.length, box->style);
 			break;
 		case CSS_WIDTH_PERCENT:
 			box->width = width * style->width.value.percent / 100;
+			break;
+		case CSS_WIDTH_AUTO:
+		default:
+			/* take all available width */
+			box->width = width;
 			break;
 	}
 	box->height = layout_block_children(box, box->width, cont, cx, cy);
@@ -129,6 +130,25 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 	assert(box->type == BOX_BLOCK || box->type == BOX_FLOAT || box->type == BOX_TABLE_CELL);
 
 	for (c = box->children; c != 0; c = c->next) {
+		if (c->style && c->style->clear != CSS_CLEAR_NONE) {
+			unsigned long x0, x1;
+			struct box * left, * right;
+			do {
+				x0 = cx;
+				x1 = cx + width;
+				find_sides(cont->float_children, cy + y, cy + y,
+						&x0, &x1, &left, &right);
+				if ((c->style->clear == CSS_CLEAR_LEFT || c->style->clear == CSS_CLEAR_BOTH)
+						&& left != 0)
+					y = left->y + left->height - cy + 1;
+				if ((c->style->clear == CSS_CLEAR_RIGHT || c->style->clear == CSS_CLEAR_BOTH)
+						&& right != 0)
+					if (cy + y < right->y + right->height + 1)
+						y = right->y + right->height - cy + 1;
+			} while ((c->style->clear == CSS_CLEAR_LEFT && left != 0) ||
+			         (c->style->clear == CSS_CLEAR_RIGHT && right != 0) ||
+			         (c->style->clear == CSS_CLEAR_BOTH && (left != 0 || right != 0)));
+		}
 		switch (c->type) {
 			case BOX_BLOCK:
 				layout_block(c, width, cont, cx, cy + y);
@@ -172,6 +192,7 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 void find_sides(struct box * fl, unsigned long y0, unsigned long y1,
 		unsigned long * x0, unsigned long * x1, struct box ** left, struct box ** right)
 {
+/* 	fprintf(stderr, "find_sides: y0 %li y1 %li x0 %li x1 %li => ", y0, y1, *x0, *x1); */
 	*left = *right = 0;
 	for (; fl; fl = fl->next_float) {
 		if (y0 <= fl->y + fl->height && fl->y <= y1) {
@@ -184,7 +205,7 @@ void find_sides(struct box * fl, unsigned long y0, unsigned long y1,
 			}
 		}
 	}
-/* 	fprintf(stderr, "find_sides: y0 %li y1 %li => x0 %li x1 %li\n", y0, y1, *x0, *x1); */
+/* 	fprintf(stderr, "x0 %li x1 %li left 0x%x right 0x%x\n", *x0, *x1, *left, *right); */
 }
 
 
@@ -238,6 +259,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	struct box * b;
 	struct box * c;
 	struct box * d;
+	int move_y = 0;
 
 /* 	fprintf(stderr, "layout_line: '%.*s' %li %li %li\n", first->length, first->text, width, *y, cy); */
 
@@ -259,20 +281,23 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	}
 
 	/* find new sides using this height */
+	x0 = 0;
+	x1 = width;
 	find_sides(cont->float_children, cy, cy + height, &x0, &x1, &left, &right);
 
 	/* pass 2: place boxes in line */
-	for (x = xp = 0, b = first; x < x1 - x0 && b != 0; b = b->next) {
+	for (x = xp = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
 		if (b->type == BOX_INLINE) {
 			b->x = x;
 			xp = x;
 			b->width = font_width(b->style, b->text, b->length);
 			x += b->width;
 			c = b;
+			move_y = 1;
 /* 			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x); */
 		} else {
 			b->float_children = 0;
-			css_dump_style(b->style);
+/* 			css_dump_style(b->style); */
 			layout_block(b, width, b, 0, 0);
 			if (b->width < (x1 - x0) - x || (left == 0 && right == 0 && x == 0)) {
 				/* fits next to this line, or this line is empty with no floats */
@@ -302,18 +327,27 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		/* the last box went over the end */
 		char * space = strchr(c->text, ' ');
 		char * space2 = space;
-		unsigned long w = font_width(c->style, c->text, space - c->text), wp = w;
+		unsigned long w, wp = w;
 		struct box * c2;
+
+		if (space == 0)
+			w = font_width(c->style, c->text, c->length);
+		else
+			w = font_width(c->style, c->text, space - c->text);
 
 		if (x1 - x0 < xp + w && left == 0 && right == 0 && c == first) {
 			/* first word doesn't fit, but no floats and first on line so force in */
-			c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
-			c2->text = space + 1;
-			c2->length = c->length - (c2->text - c->text);
-			c->length = space - c->text;
-			c2->next = c->next;
-			c->next = c2;
-			b = c2;
+			if (space == 0) {
+				b = c->next;
+			} else {
+				c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
+				c2->text = space + 1;
+				c2->length = c->length - (c2->text - c->text);
+				c->length = space - c->text;
+				c2->next = c->next;
+				c->next = c2;
+				b = c2;
+			}
 /* 			fprintf(stderr, "layout_line:     overflow, forcing\n"); */
 		} else if (x1 - x0 < xp + w) {
 			/* first word doesn't fit, but full width not available so leave for later */
@@ -321,6 +355,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 /* 			fprintf(stderr, "layout_line:     overflow, leaving\n"); */
 		} else {
 			/* fit as many words as possible */
+			assert(space != 0);
 			while (xp + w < x1 - x0) {
 /* 				fprintf(stderr, "%li + %li = %li < %li = %li - %li\n", */
 /* 						xp, w, xp + w, x1 - x0, x1, x0); */
@@ -340,6 +375,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		}
 		c->width = wp;
 		x = xp + wp;
+		move_y = 1;
 	}
 
 	/* set positions */
@@ -355,7 +391,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		}
 	}
 
-	*y += height + 1;
+	if (move_y) *y += height + 1;
 	return b;
 }
 
@@ -442,6 +478,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 				used_width += table_width * c->style->width.value.percent / 100;
 				break;
 			case CSS_WIDTH_AUTO:
+			default:
 				auto_columns++;
 				break;
 		}
@@ -467,6 +504,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 				x += table_width * c->style->width.value.percent / 100 + extra_width;
 				break;
 			case CSS_WIDTH_AUTO:
+			default:
 				x += auto_width;
 				break;
 		}

@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.5 2002/06/19 15:17:45 bursa Exp $
+ * $Id: css.c,v 1.6 2002/06/21 18:16:24 bursa Exp $
  */
 
 #include <string.h>
@@ -31,6 +31,7 @@ struct css_stylesheet {
 };
 
 static int parse_length(struct css_length * const length, const char *s);
+static void parse_clear(struct css_style * const style, const char * const value);
 static void parse_display(struct css_style * const style, const char * const value);
 static void parse_float(struct css_style * const style, const char * const value);
 static void parse_font_size(struct css_style * const style, const char * const value);
@@ -51,33 +52,36 @@ static void dump_selector(const struct css_selector * const sel);
 static void dump_rule(const struct rule * rule);
 
 const struct css_style css_base_style = {
+	CSS_CLEAR_NONE,
 	CSS_DISPLAY_BLOCK,
 	CSS_FLOAT_NONE,
-	{ CSS_FONT_SIZE_LENGTH, {12, CSS_UNIT_PT} },
-	{ CSS_HEIGHT_AUTO },
-	{ CSS_LINE_HEIGHT_ABSOLUTE, 1.2 },
+	{ CSS_FONT_SIZE_LENGTH, { { 12, CSS_UNIT_PT } } },
+	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
+	{ CSS_LINE_HEIGHT_ABSOLUTE, { 1.2 } },
 	CSS_TEXT_ALIGN_LEFT,
-	{ CSS_WIDTH_AUTO }
+	{ CSS_WIDTH_AUTO, { { 1, CSS_UNIT_EM } } }
 };
 
 const struct css_style css_empty_style = {
+	CSS_CLEAR_INHERIT,
 	CSS_DISPLAY_INHERIT,
 	CSS_FLOAT_INHERIT,
-	{ CSS_FONT_SIZE_INHERIT },
-	{ CSS_HEIGHT_AUTO },
-	{ CSS_LINE_HEIGHT_INHERIT },
+	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_EM } } },
+	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
+	{ CSS_LINE_HEIGHT_INHERIT, { 1.2 } },
 	CSS_TEXT_ALIGN_INHERIT,
-	{ CSS_WIDTH_INHERIT }
+	{ CSS_WIDTH_INHERIT, { { 1, CSS_UNIT_EM } } }
 };
 
 const struct css_style css_blank_style = {
+	CSS_CLEAR_NONE,
 	CSS_DISPLAY_BLOCK,
 	CSS_FLOAT_NONE,
-	{ CSS_FONT_SIZE_INHERIT },
-	{ CSS_HEIGHT_AUTO },
-	{ CSS_LINE_HEIGHT_INHERIT },
+	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_EM } } },
+	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
+	{ CSS_LINE_HEIGHT_INHERIT, { 1.2 } },
 	CSS_TEXT_ALIGN_INHERIT,
-	{ CSS_WIDTH_AUTO }
+	{ CSS_WIDTH_AUTO, { { 1, CSS_UNIT_EM } } }
 };
 
 
@@ -92,6 +96,11 @@ static int parse_length(struct css_length * const length, const char *s)
 	if (length->unit == CSS_UNIT_UNKNOWN) return 1;
 	length->value = atof(s);
 	return 0;
+}
+
+static void parse_clear(struct css_style * const style, const char * const value)
+{
+	style->clear = css_clear_parse(value);
 }
 
 static void parse_display(struct css_style * const style, const char * const value)
@@ -183,6 +192,7 @@ static struct property {
 	const char * const name;
 	void (*parse) (struct css_style * const s, const char * const value);
 } const property[] = {
+	{ "clear", parse_clear },
 	{ "display", parse_display },
 	{ "float", parse_float },
 	{ "font-size", parse_font_size },
@@ -464,6 +474,7 @@ static void dump_length(const struct css_length * const length)
 void css_dump_style(const struct css_style * const style)
 {
 	fprintf(stderr, "{ ");
+	fprintf(stderr, "clear: %s; ", css_clear_name[style->clear]);
 	fprintf(stderr, "display: %s; ", css_display_name[style->display]);
 	fprintf(stderr, "float: %s; ", css_float_name[style->float_]);
 	fprintf(stderr, "font-size: ");
@@ -539,9 +550,10 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 void css_cascade(struct css_style * const style, const struct css_style * const apply)
 {
 	float f;
+	if (apply->clear != CSS_CLEAR_INHERIT) style->clear = apply->clear;
 	if (apply->display != CSS_DISPLAY_INHERIT) style->display = apply->display;
 	if (apply->float_ != CSS_FLOAT_INHERIT) style->float_ = apply->float_;
-	style->height = apply->height;
+	if (apply->height.height != CSS_HEIGHT_INHERIT) style->height = apply->height;
 	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT) style->text_align = apply->text_align;
 	if (apply->width.width != CSS_WIDTH_INHERIT) style->width = apply->width;
 

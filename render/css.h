@@ -1,5 +1,5 @@
 /**
- * $Id: css.h,v 1.4 2002/06/19 15:17:45 bursa Exp $
+ * $Id: css.h,v 1.5 2002/06/21 18:16:24 bursa Exp $
  */
 
 #include "css_enum.h"
@@ -17,6 +17,7 @@ struct css_length {
 };
 
 struct css_style {
+	css_clear clear;
 	css_display display;
 	css_float float_;
 
@@ -26,14 +27,15 @@ struct css_style {
 		       CSS_FONT_SIZE_LENGTH,
 		       CSS_FONT_SIZE_PERCENT } size;
 		union {
-			float absolute;
 			struct css_length length;
+			float absolute;
 			float percent;
 		} value;
 	} font_size;
 
 	struct {
-		enum { CSS_HEIGHT_AUTO,
+		enum { CSS_HEIGHT_INHERIT,
+		       CSS_HEIGHT_AUTO,
 		       CSS_HEIGHT_LENGTH } height;
 		struct css_length length;
 	} height;
