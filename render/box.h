@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.24 2003/04/15 17:53:00 bursa Exp $
+ * $Id: box.h,v 1.25 2003/05/22 13:21:45 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -49,6 +49,7 @@ struct gui_gadget {
 			int size;
 		} textbox;
 		struct {
+		        char* butttype;
 			char* label;
 			int pressed;
 		} actionbutt;

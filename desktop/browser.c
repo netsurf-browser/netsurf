@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.36 2003/05/10 11:13:34 bursa Exp $
+ * $Id: browser.c,v 1.37 2003/05/22 13:21:45 bursa Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -11,6 +11,7 @@
 #include "netsurf/utils/utils.h"
 #include "libxml/uri.h"
 #include "libxml/debugXML.h"
+#include "curl/curl.h"
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -36,6 +37,9 @@ static void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struc
 		unsigned long x, unsigned long y);
 static void browser_window_gadget_select(struct browser_window* bw, struct gui_gadget* g, int item);
 static int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x, unsigned long click_y);
+static void browser_form_submit(struct browser_window *bw, struct form *form);
+static char* browser_form_construct_get(struct page_elements *elements, struct formsubmit* fs);
+static void browser_form_get_append(char **s, int *length, char sep, char *name, char *value);
 
 
 void browser_window_start_throbber(struct browser_window* bw)
@@ -418,8 +422,11 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 					gui_redraw_gadget(bw, g);
 					break;
 				case GADGET_ACTIONBUTTON:
+				        /* redraw button */
 					g->data.actionbutt.pressed = -1;
 					gui_redraw_gadget(bw, g);
+					if (stricmp(g->data.actionbutt.butttype,"submit") == 0)
+						browser_form_submit(bw, g->form);
 					break;
 				case GADGET_TEXTAREA:
 					gui_edit_textarea(bw, g);
@@ -865,4 +872,116 @@ void browser_window_redraw_boxes(struct browser_window* bw, struct box_position*
       redraw_max_x, redraw_max_y);
 }
 
+
+void browser_form_submit(struct browser_window *bw, struct form *form)
+{
+	/*create submission request*/
+	struct formsubmit* fs = (struct formsubmit*) xcalloc(1, sizeof(struct formsubmit));
+	fs->form = form;
+	/*fs->items = g;*/
+	LOG(("Submission request created"));
+
+	if (fs->form->method == method_GET) {
+		/*GET request*/
+		/*GET basically munges the entire form data
+		into one URL. */
+
+		char *url = browser_form_construct_get(&bw->current_content->data.html.elements,
+				fs);
+
+		LOG(("GET request"));
+
+		/*send request*/
+		browser_window_open_location(bw, url);
+                xfree(url);
+
+        } else {
+		/*POST request*/
+		assert(fs->form->method == method_POST);
+
+		LOG(("POST request - not implemented yet"));
+
+		/*POST is a standard HTTP method.
+		Basically, it creates a new request
+		and sends the form data as the request
+		body.*/
+	}
+
+	xfree(fs);
+}
+
+
+char* browser_form_construct_get(struct page_elements *elements, struct formsubmit* fs)
+{
+  char *ret;
+  int i,j, length;
+  struct formoption* opt;
+
+  ret = xstrdup(fs->form->action);
+  length = strlen(ret);
+
+  j=0;
+  for (i=0;i<elements->numGadgets;i++){
+    if(elements->gadgets[i]->form == fs->form){
+           
+      if(elements->gadgets[i]->name != 0){
+        char *value = 0;
+
+        switch(elements->gadgets[i]->type){
+
+          case GADGET_HIDDEN:   value = elements->gadgets[i]->data.hidden.value;
+                                break;
+          case GADGET_TEXTBOX:  value = elements->gadgets[i]->data.textbox.text;
+                                break;
+          case GADGET_RADIO:    if(elements->gadgets[i]->data.radio.selected == -1)
+                                  value = elements->gadgets[i]->data.radio.value;
+                                break;
+          case GADGET_CHECKBOX: if(elements->gadgets[i]->data.checkbox.selected == 1)
+                                  value = elements->gadgets[i]->data.checkbox.value;
+                                break;
+          case GADGET_SELECT:   opt = elements->gadgets[i]->data.select.items;
+                                while(opt != NULL){
+                                  if(opt->selected == -1 || opt->selected == 1) {
+                                    browser_form_get_append(&ret, &length, j == 0 ? '?' : '&',
+                                                    elements->gadgets[i]->name, opt->value);
+                                    j++;
+                                  }
+                                  opt = opt->next;
+                                }
+                                break;
+          case GADGET_TEXTAREA: value = elements->gadgets[i]->data.textarea.text;
+                                break;
+          default:              break;
+        }
+
+        if (value != 0) {
+          browser_form_get_append(&ret, &length, j == 0 ? '?' : '&',
+			  elements->gadgets[i]->name, value);
+          j++;
+        }
+      }
+      
+    }
+  }
+  return ret;
+}
+
+
+void browser_form_get_append(char **s, int *length, char sep, char *name, char *value)
+{
+	unsigned int length1;
+
+	name = curl_escape(name, 0);
+	value = curl_escape(value, 0);
+	length1 = 2 + strlen(name) + strlen(value);
+
+	LOG(("append %c%s=%s, length1 %i, *s %p", sep, name, value, length1, *s));
+	*s = xrealloc(*s, *length + length1 + 1);
+
+	sprintf(*s + *length, "%c%s=%s", sep, name, value);
+	*length += length1;
+
+	curl_free(name);
+	curl_free(value);
+}
 

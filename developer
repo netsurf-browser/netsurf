@@ -103,6 +103,7 @@ http://netsurf.strcprstskrzkrk.co.uk/developer/
 libxml (XML and HTML parser)		http://xmlsoft.org/
 libcurl (HTTP, FTP, etc)		http://curl.haxx.se/libcurl/
 OSLib (C interface to RISC OS SWIs)	http://ro-oslib.sourceforge.net/
-libutf-8				http://www.whizkidtech.redprince.net/i18n/
+libpng (PNG support)			http://www.libpng.org/pub/png/libpng.html
+zlib					http://www.gzip.org/zlib/
 
 ________________________________________________________________________________

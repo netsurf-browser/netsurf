@@ -1,5 +1,5 @@
 /**
- * $Id: utils.c,v 1.8 2003/04/11 21:06:51 bursa Exp $
+ * $Id: utils.c,v 1.9 2003/05/22 13:21:45 bursa Exp $
  */
 
 #include <ctype.h>
@@ -135,10 +135,47 @@ char *squash_tolat1(xmlChar *s)
 
 char *url_join(const char* new, const char* base)
 {
-  char* ret;
-  int i;
+  char* ret, *nn;
+  int i,j,k;
 
   LOG(("new = %s, base = %s", new, base));
+
+  /* deal with spaces and quotation marks in URLs etc.
+     also removes spaces from end of links.
+     There's definitely a better way to do this */
+  nn = xcalloc(strlen(new) * 3 + 40, sizeof(char));
+  j=0;
+  for(i=0;i<strlen(new);i++){
+
+    if(new[i] == ' '){  /* space */
+
+      nn[j] = '%';
+      nn[j+1] = '2';
+      nn[j+2] = '0';
+      j+=2;
+    }
+    else if(new[i] == '"'){   /* quotes */
+
+      nn[j] = '%';
+      nn[j+1] = '2';
+      nn[j+2] = '2';
+      j+=2;
+      k = j;
+    }
+    else{
+
+      nn[j] = new[i];
+      k = j;
+    }
+        
+    j++;
+  }
+  if(k < j){
+    nn[k+1] = '\0';
+    LOG(("before: %s after: %s", new, nn));
+  }
+  
+  new = nn;
 
   if (base == 0)
   {
@@ -184,6 +221,8 @@ char *url_join(const char* new, const char* base)
     ret = xcalloc(strlen(new) + 10, sizeof(char));
     strcpy(ret, new);
   }
+
+  xfree(nn); 
   return ret;
 }
 

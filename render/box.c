@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.43 2003/04/25 08:03:15 bursa Exp $
+ * $Id: box.c,v 1.44 2003/05/22 13:21:45 bursa Exp $
  */
 
 #include <assert.h>
@@ -1270,6 +1270,9 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
 				box->gadget->name = s;
 			}
+
+                        box->gadget->data.actionbutt.butttype = strdup(type);
+                        
 			add_gadget_element(elements, box->gadget);
 		}
 
