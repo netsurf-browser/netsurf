@@ -615,7 +615,7 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
 #ifdef FANCY_LINKS
     if (box == g->link_box)
     {
-      colourtrans_set_gcol(os_COLOUR_BLACK, 0, os_ACTION_OVERWRITE, 0);
+      colourtrans_set_gcol(os_COLOUR_BLACK, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
       os_plot(os_MOVE_TO, x + box->x * 2, y - box->y * 2 - box->height * 2 - 4);
       os_plot(os_PLOT_SOLID | os_PLOT_BY, box->width * 2, 0);
     }
@@ -623,7 +623,8 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
 
     if (box->style != 0 && box->style->background_color != TRANSPARENT)
     {
-      colourtrans_set_gcol(box->style->background_color << 8, 0, os_ACTION_OVERWRITE, 0);
+      colourtrans_set_gcol(box->style->background_color << 8, colourtrans_USE_ECFS,
+          os_ACTION_OVERWRITE, 0);
       os_plot(os_MOVE_TO, (int) x + (int) box->x * 2, (int) y - (int) box->y * 2);
       os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, (int) box->width * 2, - (int) box->height * 2);
       current_background_color = box->style->background_color;
@@ -777,7 +778,7 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
 	      fprintf(stderr, "THE START OFFSET IS %d\n", start->pixel_offset * 2);
         if (end->box == box)
         {
-          colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_SET_FG, 0, 0);
+          colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
           os_plot(os_MOVE_TO,
             (int) x + (int) box->x * 2 + start->pixel_offset * 2,
             (int) y - (int) box->y * 2 - (int) box->height * 2);
@@ -787,7 +788,7 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
         }
         else
         {
-          colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_SET_FG, 0, 0);
+          colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
           os_plot(os_MOVE_TO,
             (int) x + (int) box->x * 2 + start->pixel_offset * 2,
             (int) y - (int) box->y * 2 - (int) box->height * 2);
@@ -801,7 +802,7 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
       {
         if (end->box != box)
         {
-          colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_SET_FG, 0, 0);
+          colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
           os_plot(os_MOVE_TO,
             (int) x + (int) box->x * 2,
             (int) y - (int) box->y * 2 - (int) box->height * 2);
@@ -811,7 +812,7 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
         }
         else
         {
-          colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_SET_FG, 0, 0);
+          colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
           os_plot(os_MOVE_TO,
             (int) x + (int) box->x * 2,
             (int) y - (int) box->y * 2 - (int) box->height * 2);
