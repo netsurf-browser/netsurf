@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.41 2003/06/17 19:24:21 bursa Exp $
+ * $Id: layout.c,v 1.42 2003/06/21 13:18:00 bursa Exp $
  */
 
 #include <assert.h>
@@ -18,7 +18,7 @@
 #ifdef riscos
 #include "netsurf/riscos/font.h"
 #else
-#include "netsurf/debug/font.h"
+#include "netsurf/debug/fontd.h"
 #endif
 #include "netsurf/utils/utils.h"
 #define NDEBUG

@@ -1,20 +1,28 @@
-# $Id: makefile,v 1.34 2003/06/17 19:24:20 bursa Exp $
+# $Id: makefile,v 1.35 2003/06/21 13:18:00 bursa Exp $
 
 CC = riscos-gcc
-OBJECTS = cache.o content.o fetch.o fetchcache.o other.o \
+CC_DEBUG = gcc
+OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o other.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
-	browser.o netsurf.o \
 	box.o html.o layout.o textplain.o \
-	filetype.o font.o gif.o gui.o jpeg.o png.o theme.o \
-	utils.o plugin.o options.o
+	utils.o
+OBJECTS = $(OBJECTS_COMMON) \
+	browser.o netsurf.o \
+	gif.o gui.o jpeg.o png.o theme.o plugin.o \
+	options.o filetype.o font.o
+OBJECTS_DEBUG = $(OBJECTS_COMMON) \
+	netsurfd.o \
+	optionsd.o filetyped.o fontd.o
 DOCUMENTS = Themes.html	
-VPATH = content:css:desktop:render:riscos:utils
+VPATH = content:css:desktop:render:riscos:utils:debug
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wconversion -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
 	-Wnested-externs -Winline -Wno-unused-parameter
 CFLAGS = $(WARNFLAGS) -I.. -I/usr/local/riscoslibs/include \
 	-Dfd_set=long -mpoke-function-name
+CFLAGS_DEBUG = $(WARNFLAGS) -I.. -I/usr/include/libxml2 \
+	-Dfd_set=long -g
 LDFLAGS = \
 	/usr/local/riscoslibs/libungif/libungif.ro \
 	/usr/local/riscoslibs/libxml2/libxml2.ro \
@@ -22,10 +30,14 @@ LDFLAGS = \
 	/usr/local/riscoslibs/curl/libcurl.ro \
 	/usr/local/riscoslibs/libpng/libpng.ro \
 	/usr/local/riscoslibs/zlib/libz.ro
+LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl
 
 OBJDIR = $(shell $(CC) -dumpmachine)
 SOURCES=$(OBJECTS:.o=.c)
 OBJS=$(OBJECTS:%.o=$(OBJDIR)/%.o)
+OBJDIR_DEBUG = $(shell $(CC_DEBUG) -dumpmachine)
+SOURCES_DEBUG=$(OBJECTS_DEBUG:.o=.c)
+OBJS_DEBUG=$(OBJECTS_DEBUG:%.o=$(OBJDIR_DEBUG)/%.o)
 DOCDIR = !NetSurf/Docs
 DOCS=$(DOCUMENTS:%.html=$(DOCDIR)/%.html)
 
@@ -36,9 +48,16 @@ all: !NetSurf/!RunImage,ff8 $(DOCS)
 netsurf.zip: !NetSurf/!RunImage,ff8 $(DOCS)
 	rm netsurf.zip; riscos-zip -9vr, netsurf.zip !NetSurf
 
+# debug targets
+debug: netsurf
+netsurf: $(OBJS_DEBUG)
+	$(CC_DEBUG) -o $@ $(LDFLAGS_DEBUG) $^
+
 # pattern rule for c source
 $(OBJDIR)/%.o : %.c
-	$(CC) -o $@ -c $(CFLAGS) $(CFLAGS) $<
+	$(CC) -o $@ -c $(CFLAGS) $<
+$(OBJDIR_DEBUG)/%.o : %.c
+	$(CC_DEBUG) -o $@ -c $(CFLAGS_DEBUG) $<
 
 # special cases
 css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
@@ -55,13 +74,14 @@ $(DOCDIR)/%.html: documentation/%.xml
 	xsltproc -o $@ http://www.movspclr.co.uk/dtd/100/prm-html.xsl $<
 
 # generate dependencies
-depend : $(SOURCES)
-	-mkdir $(OBJDIR)
+depend : $(SOURCES) $(SOURCES_DEBUG)
+	-mkdir $(OBJDIR) $(OBJDIR_DEBUG)
 	$(CC) -MM -MG $(CFLAGS) $^ | sed 's|.*\.o:|$(OBJDIR)/&|g' > $@
+	$(CC_DEBUG) -MM -MG $(CFLAGS_DEBUG) $^ | sed 's|.*\.o:|$(OBJDIR_DEBUG)/&|g' >> $@
 
 # remove generated files
 clean :
-	-rm $(OBJDIR)/* depend css/css_enum.c css/css_enum.h \
+	-rm $(OBJDIR)/* $(OBJDIR_DEBUG)/* depend css/css_enum.c css/css_enum.h \
 		css/parser.c css/parser.h css/scanner.c css/scanner.h
 
 include depend
