@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.34 2003/03/04 11:59:35 bursa Exp $
+ * $Id: box.c,v 1.35 2003/03/25 21:51:29 bursa Exp $
  */
 
 #include <assert.h>
@@ -13,6 +13,7 @@
 #include "netsurf/riscos/font.h"
 #include "netsurf/render/box.h"
 #include "netsurf/utils/utils.h"
+#define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/desktop/gui.h"
 
@@ -206,8 +207,15 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 
 		} else if (strcmp((const char *) n->name, "img") == 0) {
 			LOG(("image"));
-			box = box_image(n, style, href);
-			add_img_element(elements, box->img);
+			/*box = box_image(n, style, href);
+			add_img_element(elements, box->img);*/
+			if (style->display == CSS_DISPLAY_INLINE) {
+				if ((s = (char *) xmlGetProp(n, (const xmlChar *) "alt"))) {
+					text = squash_whitespace(tolat1(s));
+					xfree(s);
+				}
+			}
+			/* TODO: block images, start fetch */
 
 		} else if (strcmp((const char *) n->name, "textarea") == 0) {
 			char * content = xmlNodeGetContent(n);
@@ -247,6 +255,9 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 
 	} else if (n->type == XML_TEXT_NODE) {
 		text = squash_whitespace(tolat1(n->content));
+	}
+
+	if (text != 0) {
 		if (text[0] == ' ' && text[1] == 0) {
 			if (inline_container != 0) {
 				assert(inline_container->last != 0);
@@ -257,7 +268,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		}
 	}
 
-	if (n->type == XML_TEXT_NODE ||
+	if (text != 0 ||
 			(box != 0 && style->display == CSS_DISPLAY_INLINE) ||
 			(n->type == XML_ELEMENT_NODE && (style->float_ == CSS_FLOAT_LEFT ||
 							 style->float_ == CSS_FLOAT_RIGHT))) {
@@ -269,7 +280,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			box_add_child(parent, inline_container);
 		}
 
-		if (n->type == XML_TEXT_NODE) {
+		if (text != 0) {
 			LOG(("text node"));
 			box = box_create(n, BOX_INLINE, parent_style, href);
 			box_add_child(inline_container, box);
@@ -305,7 +316,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		}
 	}
 
-	if (n->type == XML_ELEMENT_NODE) {
+	if (n->type == XML_ELEMENT_NODE && text == 0) {
 		switch (style->display) {
 			case CSS_DISPLAY_BLOCK:  /* blocks get a node in the box tree */
 				if (box == 0)

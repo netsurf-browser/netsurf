@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.22 2003/03/15 15:53:20 bursa Exp $
+ * $Id: gui.c,v 1.23 2003/03/25 21:51:29 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -1525,15 +1525,15 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
     if (pointer->buttons == wimp_CLICK_MENU)
     {
       /* check for mouse gestures */
-	    mouseaction ma = ro_gui_try_mouse_action();
+/*	    mouseaction ma = ro_gui_try_mouse_action();
       if (ma == mouseaction_NONE)
-      {
+      {*/
 	      os_t now;
 	      int z;
 
 	      os_mouse(&x, &y, &z, &now);
 	      ro_gui_create_menu((wimp_menu*) &browser_menu, x - 64, y, g);
-      }
+/*      }
       else
       {
 	      fprintf(stderr, "MOUSE GESTURE %d\n", ma);
@@ -1551,7 +1551,7 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
     			browser_window_open_location_historical(g->data.browser.bw, g->data.browser.bw->url);
 			break;
 		}
-      }
+      }*/
     }
     else if (g->data.browser.bw->current_content != NULL)
     {

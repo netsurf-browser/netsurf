@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.35 2003/03/08 21:25:56 bursa Exp $
+ * $Id: layout.c,v 1.36 2003/03/25 21:51:29 bursa Exp $
  */
 
 #include <assert.h>
@@ -14,9 +14,8 @@
 #include "netsurf/render/layout.h"
 #include "netsurf/riscos/font.h"
 #include "netsurf/utils/utils.h"
+#define NDEBUG
 #include "netsurf/utils/log.h"
-
-#define DEBUG_LAYOUT
 
 /**
  * internal functions

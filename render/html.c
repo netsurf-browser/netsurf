@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.5 2003/03/04 11:59:35 bursa Exp $
+ * $Id: html.c,v 1.6 2003/03/25 21:51:29 bursa Exp $
  */
 
 #include <assert.h>
@@ -92,11 +92,11 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	xml_to_box(c->data.html.markup, c->data.html.style, c->data.html.stylesheet,
 			&selector, 0, c->data.html.layout, 0, 0, c->data.html.fonts,
 			0, 0, 0, 0, &c->data.html.elements);
-	box_dump(c->data.html.layout->children, 0);
+	/*box_dump(c->data.html.layout->children, 0);*/
 
 	LOG(("Layout document"));
 	layout_document(c->data.html.layout->children, width);
-	box_dump(c->data.html.layout->children, 0);
+	/*box_dump(c->data.html.layout->children, 0);*/
 
 	c->width = c->data.html.layout->children->width;
 	c->height = c->data.html.layout->children->height;
