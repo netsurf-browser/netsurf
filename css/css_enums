@@ -18,4 +18,5 @@ css_text_align inherit left right center justify
 css_text_decoration none blink line_through overline underline
 css_text_transform none capitalize lowercase uppercase
 css_vertical_align baseline bottom middle sub super text_bottom text_top top percent
+css_visibility inherit visible hidden
 css_white_space inherit normal nowrap pre

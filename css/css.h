@@ -68,6 +68,8 @@ struct css_style {
 
 	css_text_align text_align;
 
+	css_visibility visibility;
+
 	struct {
 		enum { CSS_WIDTH_INHERIT,
 		       CSS_WIDTH_AUTO,

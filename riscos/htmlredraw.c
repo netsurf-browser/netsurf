@@ -11,6 +11,7 @@
 #include <string.h>
 #include "oslib/colourtrans.h"
 #include "oslib/font.h"
+#include "netsurf/css/css.h"
 #include "netsurf/content/content.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
@@ -89,6 +90,14 @@ void html_redraw_box(struct content *content, struct box * box,
 	y1 = y - 1;
 	x1 = x0 + width - 1;
 	y0 = y1 - height + 1;
+
+        /* return if visibility is hidden or inherited visibility is hidden
+         */
+        if (box->style->visibility == CSS_VISIBILITY_HIDDEN ||
+            (box->style->visibility == CSS_VISIBILITY_INHERIT &&
+            box->parent->style->visibility == CSS_VISIBILITY_HIDDEN)) {
+           return;
+        }
 
 	/* return if the box is completely outside the clip rectangle, except
 	 * for table rows which may contain cells spanning into other rows */
@@ -219,7 +228,7 @@ void html_redraw_box(struct content *content, struct box * box,
 			wimp_plot_icon(&icon);
 			break;
 		}
-	
+
 	} else if (box->text && box->font) {
 
 		if (content->data.html.text_selection.selected == 1) {
