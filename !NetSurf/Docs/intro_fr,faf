@@ -10,6 +10,8 @@
 <h1 class="banner"><img src="netsurf_png" alt="NetSurf"></h1>
 <p class="languages"><a href="intro_de">Deutsch</a> · <a href="intro_en">English</a> · français</p>
 
+<p class="headnote">Remarque: La traduction française n'est pas à jour, lisez plutôt la documentation anglaise ou allemande.</p>
+
 <div>
 
 <p><em>NetSurf</em> est un navigateur Web libre pour RISC OS. Son but est
