@@ -62,7 +62,10 @@ WindowSize:Garder cette taille de fenÍtre
 WindowReset:RAZ de la position par dÈfaut
 Utilities:Utilitaires
 HotlistAdd:Ajouter aux favoris
-HotlistShow:Montrer les favoris  F6
+HotlistShow:Montrer les favoris...  F6
+History:History
+HistLocal:Show local history... F7
+HistGlobal:Show global history... ^F7
 FindText:Recherche de texte  F4
 Help:Aide
 HelpContent:Contenus  F1
@@ -86,6 +89,7 @@ ImgStyle2:TramÈ
 ImgStyle3:Avec diffusion d'erreur
 
 # Toolbar menus
+URLSuggest:Recent URLs
 Toolbar:Barre d'outils
 Icons:Boutons
 IconBack:Retour
@@ -141,6 +145,18 @@ TreeVisits:Visites: %i
 TreeUnknown:Inconnu
 TreeImport:URL importÈe
 TreeNewFolder:Nouv. rÈpertoire
+
+# Tree export
+TreeHotlist:NetSurf hotlist
+TreeHistory:NetSurf history
+
+# Global history
+GlobalHistory:Global history
+DateToday:Today
+DateYesterday:Yesterday
+Date1Week:Last week
+Date2Week:2 weeks ago
+Date3Week:3 weeks ago
 
 # Download window
 Download:%s de %s  è  %s/s  è  %s restants

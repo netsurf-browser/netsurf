@@ -62,7 +62,10 @@ WindowSize:Maintain window size
 WindowReset:Reset default position
 Utilities:Utilities
 HotlistAdd:Add to hotlist
-HotlistShow:Show hotlist  F6
+HotlistShow:Show hotlist...  F6
+History:History
+HistLocal:Show local history... F7
+HistGlobal:Show global history... ^F7
 FindText:Find text  F4
 Help:Help
 HelpContent:Contents  F1
@@ -86,6 +89,7 @@ ImgStyle2:Dithered
 ImgStyle3:Error diffused
 
 # Toolbar menus
+URLSuggest:Recent URLs
 Toolbar:Toolbar
 Icons:Buttons
 IconBack:Back
@@ -141,6 +145,18 @@ TreeVisits:Visits: %i
 TreeUnknown:Unknown
 TreeImport:Imported URL
 TreeNewFolder:New directory
+
+# Tree export
+TreeHotlist:NetSurf hotlist
+TreeHistory:NetSurf history
+
+# Global history
+GlobalHistory:Global history
+DateToday:Today
+DateYesterday:Yesterday
+Date1Week:Last week
+Date2Week:2 weeks ago
+Date3Week:3 weeks ago
 
 # Download window
 Download:%s of %s  è  %s/s  è  %s remaining
