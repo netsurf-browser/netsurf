@@ -120,7 +120,7 @@ int gif_initialise(struct gif_animation *gif) {
 
 		/*	The 12th byte must be a 0 for the block terminator
 		*/
-		if (gif_data[11] != 0x00) return GIF_DATA_ERROR;
+//		if (gif_data[11] != 0x00) return GIF_DATA_ERROR;
 
 		/*	We want everything to be NULL before we start so we've no chance
 			of freeing bad pointers (paranoia)
