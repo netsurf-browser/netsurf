@@ -540,17 +540,14 @@ bool html_redraw_borders(struct box *box, int x, int y,
  * \param  c  colour
  * \return  a darker shade of c
  */
+ 
+#define mix_colour(c0, c1) ((((c0 >> 16) + 3 * (c1 >> 16)) >> 2) << 16) | \
+		(((((c0 >> 8) & 0xff) + 3 * ((c1 >> 8) & 0xff)) >> 2) << 8) | \
+		((((c0 & 0xff) + 3 * (c1 & 0xff)) >> 2) << 0);
 
 colour html_redraw_darker(colour c)
-{
-  	int modified, channel;
-	channel = ((((int)c & 0xff) * 15) - 256) >> 4;
-	modified = channel > 0 ? channel : 0;
-	channel = (((((int)c >> 8) & 0xff) * 15) - 256) >> 4;
-	modified |= channel > 0 ? channel << 8 : 0;
-	channel = (((((int)c >> 16) & 0xff) * 15) - 256) >> 4;
-	modified |= channel > 0 ? channel << 16 : 0;
-	return modified;
+{	
+	return mix_colour(0x000000, c)	
 }
 
 
@@ -563,14 +560,7 @@ colour html_redraw_darker(colour c)
 
 colour html_redraw_lighter(colour c)
 {
-  	int modified, channel;
-	channel = ((((int)c & 0xff) * 17) + 256) >> 4;
-	modified = channel < 255 ? channel : 255;
-	channel = (((((int)c >> 8) & 0xff) * 17) + 256) >> 4;
-	modified |= channel < 255 ? channel << 8 : 255 << 8;
-	channel = (((((int)c >> 16) & 0xff) * 17) + 256) >> 4;
-	modified |= channel < 255 ? channel << 16 : 255 << 16;
-	return modified;
+	return mix_colour(0xffffff, c)	
 }
 
 
