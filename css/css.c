@@ -411,6 +411,8 @@ bool css_match_rule(struct node *rule, xmlNode *element)
 	struct node *detail;
 	xmlNode *anc, *prev;
 
+	assert(element->type == XML_ELEMENT_NODE);
+
 	if (rule->data && strcasecmp(rule->data, (char *) element->name) != 0)
 		return false;
 
@@ -499,7 +501,8 @@ bool css_match_rule(struct node *rule, xmlNode *element)
 	switch (rule->comb) {
 		case COMB_ANCESTOR:
 			for (anc = element->parent; anc; anc = anc->parent)
-				if (css_match_rule(rule->right, anc))
+				if (anc->type == XML_ELEMENT_NODE &&
+						css_match_rule(rule->right, anc))
 					return true;
 			break;
 
@@ -514,9 +517,13 @@ bool css_match_rule(struct node *rule, xmlNode *element)
 			break;
 
 		case COMB_PARENT:
-			if (!element->parent)
+			for (anc = element->parent;
+					anc && anc->type != XML_ELEMENT_NODE;
+					anc = anc->parent)
+				;
+			if (!anc)
 				return false;
-			return css_match_rule(rule->right, element->parent);
+			return css_match_rule(rule->right, anc);
 			break;
 
 		default:
