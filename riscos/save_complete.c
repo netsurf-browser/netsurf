@@ -58,7 +58,7 @@ void save_complete(struct content *c) {
 	unsigned int i;
 	struct url_entry urls = {0, 0, 0, 0}; /* sentinel at head */
 	struct url_entry *object;
-	xmlDoc *toSave;
+	htmlParserCtxtPtr toSave;
 
 	if (c->type != CONTENT_HTML)
 		return;
@@ -136,26 +136,28 @@ void save_complete(struct content *c) {
 	}
 
 	/* make a copy of the document tree */
-	toSave = xmlCopyDoc(c->data.html.document, 1);
-
-	if (!toSave) {
+	toSave = htmlCreateMemoryParserCtxt(c->source_data, c->source_size);
+	if (htmlParseDocument(toSave) == -1) {
+	        htmlFreeParserCtxt(toSave);
 	        xfree(spath);
 	        return;
 	}
 
 	/* rewrite all urls we know about */
-       	if (rewrite_document_urls(toSave, &urls, fname) == 0) {
+       	if (rewrite_document_urls(toSave->myDoc, &urls, fname) == 0) {
        	        xfree(spath);
-       	        xmlFreeDoc(toSave);
+       	        xmlFreeDoc(toSave->myDoc);
+       	        htmlFreeParserCtxt(toSave);
        	        return;
        	}
 
 	/* save the html file out last of all */
 	sprintf(spath, "%s%s", SAVE_PATH, fname);
-	htmlSaveFile(spath, toSave);
+	htmlSaveFile(spath, toSave->myDoc);
 	xosfile_set_type(spath, 0xfaf);
 
-        xmlFreeDoc(toSave);
+        xmlFreeDoc(toSave->myDoc);
+        htmlFreeParserCtxt(toSave);
 	xfree(spath);
 	//xfree(fname);
 }

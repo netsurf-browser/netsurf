@@ -69,7 +69,6 @@ void html_create(struct content *c, const char *params[])
 	}
 
 	html->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, html->encoding);
-	html->document = 0;
 	html->base_url = xstrdup(c->url);
 	html->layout = 0;
 	html->background_colour = TRANSPARENT;
@@ -140,7 +139,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 
 	/* finish parsing */
 	htmlParseChunk(c->data.html.parser, "", 0, 1);
-	document = c->data.html.document = c->data.html.parser->myDoc;
+	document = c->data.html.parser->myDoc;
 	/*xmlDebugDumpDocument(stderr, c->data.html.parser->myDoc);*/
 	htmlFreeParserCtxt(c->data.html.parser);
 	c->data.html.parser = 0;
@@ -182,7 +181,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	/*box_dump(c->data.html.layout->children, 0);*/
 
 	/* XML tree not required past this point */
-	//xmlFreeDoc(document);
+	xmlFreeDoc(document);
 
 	/* layout the box tree */
 	sprintf(c->status_message, messages_get("Formatting"));
@@ -755,9 +754,6 @@ void html_destroy(struct content *c)
 
 	if (c->data.html.parser)
 		htmlFreeParserCtxt(c->data.html.parser);
-
-	if (c->data.html.document)
-	        xmlFreeDoc(c->data.html.document);
 
 	free(c->data.html.base_url);
 
