@@ -1320,6 +1320,13 @@ void box_under_area(struct box *box, unsigned long x, unsigned long y,
 		*count = *count + 1;
 	}
 
+        /* consider embedded HTML pages */
+        if (box->object != 0 && box->object->type == CONTENT_HTML &&
+            box->object->data.html.layout != 0)
+                box_under_area(box->object->data.html.layout, x, y,
+                               box->x + ox, box->y +oy,
+                               found, count, plot_index);
+
 	for (c = box->children; c != 0; c = c->next)
 		if (c->type != BOX_FLOAT_LEFT
 		    && c->type != BOX_FLOAT_RIGHT)
