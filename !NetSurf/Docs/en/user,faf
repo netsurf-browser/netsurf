@@ -24,9 +24,9 @@
 <p><strong>Status Line:</strong> This text displays information to the user.  When you move the pointer over a link, this will show the URL that the link points to.  The status line also displays information about NetSurf's progress while retrieving a page.</p>
 <p><strong>Throbber:</strong> This NetSurf logo animates while a page is downloading or rendering.  It indicates that NetSurf is doing something.</p>
 <table border="0" cellpadding="4" cellspacing="0">
-<tr><td class="icon"><img src="images/back" alt="Back Button" height="34" width="34"></td><td><p><strong>Back:</strong> Clicking on this button, makes NetSurf go back to the previous page in the history list.  If you followed a link from one page to another, this button allows you to get back to the first page.</p></td></tr>
+<tr><td class="icon"><img src="images/back" alt="Back Button" height="34" width="34"></td><td><p><strong>Back:</strong> Clicking on this button makes NetSurf go back to the previous page in the history list.  If you followed a link from one page to another, this button allows you to get back to the first page.  Select click to view the previous page in the current window.  Adjust click to view it in a new window.</p></td></tr>
 <tr><td class="icon"><img src="images/mark" alt="Bookmark Button" height="34" width="34"></td><td><p><strong>Bookmark:</strong> Select clicking on this button adds the current location to the bookmarks or favourites.  Adjust clicking opens the bookmarks window.</p></td></tr>
-<tr><td class="icon"><img src="images/forward" alt="Forward Button" height="34" width="34"></td><td><p><strong>Forward:</strong> Clicking on this button allows you to advance through the history list.</p></td></tr>
+<tr><td class="icon"><img src="images/forward" alt="Forward Button" height="34" width="34"></td><td><p><strong>Forward:</strong> Clicking on this button allows you to advance through the history list.  Select click to view the next page in the current window.  Adjust click to view it in a new window.</p></td></tr>
 <tr><td class="icon"><img src="images/history" alt="History Button" height="34" width="34"></td><td><p><strong>History:</strong> Clicking on this button opens a window containing a history tree.  Clicking on an item in this window will move to the relevant page in the history.</p></td></tr>
 <tr><td class="icon"><img src="images/home" alt="Home Button" height="34" width="34"></td><td><p><strong>Home:</strong> Clicking on this button returns to the configured home page.</p></td></tr>
 <tr><td class="icon"><img src="images/print" alt="Print Button" height="34" width="34"></td><td><p><strong>Print:</strong> Clicking on this button will print the current page.</p></td></tr>
@@ -61,7 +61,9 @@
 <tr><td><p>Ctrl+Cursor Down</p></td><td><p>Go to bottom of page</p></td></tr>
 <tr><td><p>Ctrl+Cursor Up</p></td><td><p>Go to top of page</p></td></tr>
 <tr><td><p>F8</p></td><td><p>View webpage source</p></td></tr>
-<tr><td><p>Ctrl+F2</p></td><td><p>Closes the window</p></td></tr></table>
+<tr><td><p>F11</p></td><td><p>View box outlines.  This may be useful if you are creating your own webpage.  Cyan marks the content's edge, magenta marks the padding's edge and yellow marks the margin's edge.</p></td></tr>
+<tr><td><p>Ctrl+F2</p></td><td><p>Closes the window</p></td></tr>
+<tr><td><p>Ctrl+Shift+F3</p></td><td><p>Save the page as a Drawfile to <em>!NetSurf.draw</em></p></td></tr></table>
 <h2><a name="urls">URL Shortcuts</a></h2>
 <p>NetSurf also supports URL shortcuts, which allow quick access to various pages.  The supported URL shortcuts are listed below.  Type them into a NetSurf URL bar to see the corresponding page.</p>
 <table border="0" cellpadding="2" cellspacing="0">
