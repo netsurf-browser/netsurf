@@ -72,6 +72,7 @@
  * have hashed to the same value.
  */
 
+#define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -396,12 +397,13 @@ bool css_convert(struct content *c, int width, int height)
 	current = source_data;
 	end = source_data + c->source_size;
 	while (current < end
-			&& (token = css_tokenise(&current, end + 10, &token_text)) != NULL) {
+			&& (token = css_tokenise(&current, end + 10,
+			&token_text))) {
 		token_data.text = token_text;
 		token_data.length = current - token_text;
 		css_parser_(parser, token, token_data, &param);
 		if (param.syntax_error) {
-			LOG(("syntax error near offset %i (%s)",
+			LOG(("syntax error near offset %ti (%s)",
 					token_text - source_data,
 					c->url));
 			param.syntax_error = false;
@@ -1208,12 +1210,13 @@ void css_parse_property_list(struct content *c, struct css_style * style,
 	current = source_data;
 	end = source_data + strlen(str);
 	while (current < end
-			&& (token = css_tokenise(&current, end + 10, &token_text)) != NULL) {
+			&& (token = css_tokenise(&current, end + 10,
+			&token_text))) {
 		token_data.text = token_text;
 		token_data.length = current - token_text;
 		css_parser_(parser, token, token_data, &param);
 		if (param.syntax_error) {
-			LOG(("syntax error near offset %i",
+			LOG(("syntax error near offset %ti",
 					token_text - source_data));
 			param.syntax_error = false;
 		} else if (param.memory_error) {
@@ -1379,6 +1382,7 @@ void css_dump_style(const struct css_style * const style)
 	if (style->border_spacing.border_spacing != css_empty_style.border_spacing.border_spacing) {
 		fprintf(stderr, "border-spacing: ");
 		css_dump_length(&style->border_spacing.horz);
+		fprintf(stderr, " ");
 		css_dump_length(&style->border_spacing.vert);
 		fprintf(stderr, "; ");
 	}
@@ -1565,6 +1569,7 @@ void css_dump_style(const struct css_style * const style)
 				break;
 			case CSS_MAX_HEIGHT_NONE:
 				fprintf(stderr, "none");
+				break;
 			case CSS_MAX_HEIGHT_LENGTH:
 				css_dump_length(&style->max_height.value.length);
 				break;
@@ -1584,6 +1589,7 @@ void css_dump_style(const struct css_style * const style)
 				break;
 			case CSS_MAX_WIDTH_NONE:
 				fprintf(stderr, "none");
+				break;
 			case CSS_MAX_WIDTH_LENGTH:
 				css_dump_length(&style->max_width.value.length);
 				break;
