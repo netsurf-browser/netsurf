@@ -44,6 +44,7 @@ extern int option_minimum_gif_delay;
 extern bool option_background_images;
 extern bool option_background_blending;
 extern bool option_buffer_animations;
+extern bool option_buffer_everything;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -73,7 +74,8 @@ bool option_window_size_clone = true; \
 int option_minimum_gif_delay = 10; \
 bool option_background_images = true; \
 bool option_background_blending = true; \
-bool option_buffer_animations = true;
+bool option_buffer_animations = true; \
+bool option_buffer_everything = false;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -103,6 +105,7 @@ bool option_buffer_animations = true;
 { "minimum_gif_delay",      OPTION_INTEGER, &option_minimum_gif_delay }, \
 { "background_images",      OPTION_BOOL,    &option_background_images }, \
 { "background_blending",    OPTION_BOOL,    &option_background_blending }, \
-{ "buffer_animations",      OPTION_BOOL,    &option_buffer_animations }
+{ "buffer_animations",      OPTION_BOOL,    &option_buffer_animations }, \
+{ "buffer_everything",      OPTION_BOOL,    &option_buffer_animations }
 
 #endif

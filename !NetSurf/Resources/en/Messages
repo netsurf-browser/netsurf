@@ -50,6 +50,10 @@ ToolButtons:Buttons
 ToolAddress:Address bar
 ToolThrob:Throbber
 ToolStatus:Status bar
+Render:Render
+RenderText:Blend text to background
+RenderAnims:Buffer animations
+RenderAll:Buffer all rendering
 OptDefault:Set as default
 Window:Window
 WindowSave:Set as default position

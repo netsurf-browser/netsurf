@@ -86,6 +86,9 @@ struct gui_window {
 		bool filter_sprites;	/**< Images should be smoothed. */
 		bool animate_images;	/**< Animations should run. */
 		bool background_images;	/**< Display background images. */
+		bool background_blending;	/**< Perform background blending on text. */
+		bool buffer_animations;	/**< Use screen buffering for animations. */
+		bool buffer_everything;	/**< Use screen buffering for everything. */
 	} option;
 
 	struct gui_window *prev;	/**< Previous in linked list. */

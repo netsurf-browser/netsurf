@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include "oslib/font.h"
+#include "oslib/os.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/render/font.h"
@@ -648,13 +649,18 @@ void nsfont_paint(struct font_data *data, const char *text,
 {
 	os_error *error;
 	unsigned int flags;
+	const int var_input[3] = {136, 137, -1}; /* XOrig, YOrig, Terminator */
+	int var_output[3];
+	bool background_blending = option_background_blending;
 
 	flags = font_OS_UNITS | font_GIVEN_FONT | font_KERN;
 	if (trfm != NULL)
 		flags |= font_GIVEN_TRFM;
 
 	/* font background blending (RO3.7+) */
-	if (option_background_blending) {
+	if (ro_gui_current_redraw_gui)
+		background_blending = ro_gui_current_redraw_gui->option.background_blending;
+	if (background_blending) {
 		int version;
 
 		/* Font manager versions below 3.35 complain
@@ -668,6 +674,12 @@ void nsfont_paint(struct font_data *data, const char *text,
 
 	assert(data != NULL);
 	assert(text != NULL);
+
+	/* adjust by the origin */
+	xos_read_vdu_variables((const os_vdu_var_list *)&var_input, (int *)&var_output);
+	xpos += var_output[0];
+	ypos += var_output[1];
+	
 
 	switch (data->ftype) {
 		case FONTTYPE_UFONT:

@@ -50,6 +50,10 @@ ToolButtons:Boutons
 ToolAddress:Barre d'adresse
 ToolThrob:Pulseur
 ToolStatus:Barre d'état
+Render:Render
+RenderText:Blend text to background
+RenderAnims:Buffer animations
+RenderAll:Buffer all rendering
 OptDefault:Définir par défaut
 Window:Fenêtre
 WindowSave:Définir comme position par défaut

@@ -392,7 +392,7 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 	bool clear_background = false;
 	struct content *c = g->bw->current_content;
 	os_error *error;
-
+	
 	/*	Set the current redraw gui_window to get options from
 	*/
 	ro_gui_current_redraw_gui = g;
@@ -410,6 +410,9 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 		return;
 	}
 	while (more) {
+		if (ro_gui_current_redraw_gui->option.buffer_everything) {
+//			ro_gui_buffer_open(redraw);
+		}
 		if (clear_background) {
 			error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
 					colourtrans_SET_BG,
@@ -434,12 +437,15 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 					redraw->clip.y1 - 1,
 					g->option.scale);
 		}
-
+		if (ro_gui_current_redraw_gui->option.buffer_everything) {
+//			ro_gui_buffer_close();
+		}
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
 			LOG(("xwimp_get_rectangle: 0x%x: %s",
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
+			ro_gui_current_redraw_gui = NULL;
 			return;
 		}
 	}
@@ -493,8 +499,12 @@ void gui_window_update_box(struct gui_window *g,
 		clear_background = true;
 
 	while (more) {
+		if (ro_gui_current_redraw_gui->option.buffer_everything)
+				ro_gui_buffer_open(&update);
 		if (data->redraw.full_redraw) {
-		  	if (option_buffer_animations) ro_gui_buffer_open(&update);
+		  	if ((ro_gui_current_redraw_gui->option.buffer_animations) &&
+		  			(!ro_gui_current_redraw_gui->option.buffer_everything))
+		  		ro_gui_buffer_open(&update);
 			if (clear_background) {
 				error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
 						colourtrans_SET_BG,
@@ -515,8 +525,6 @@ void gui_window_update_box(struct gui_window *g,
 					update.clip.x0, update.clip.y0,
 					update.clip.x1 - 1, update.clip.y1 - 1,
 					g->option.scale);
-			if (option_buffer_animations) ro_gui_buffer_close();
-
 		} else {
 			assert(data->redraw.object);
 			content_redraw(data->redraw.object,
@@ -535,11 +543,15 @@ void gui_window_update_box(struct gui_window *g,
 					g->option.scale);
 		}
 
+	  	if ((ro_gui_current_redraw_gui->option.buffer_animations) ||
+	  			(ro_gui_current_redraw_gui->option.buffer_everything))
+	  		ro_gui_buffer_close();
 		error = xwimp_get_rectangle(&update, &more);
 		if (error) {
 			LOG(("xwimp_get_rectangle: 0x%x: %s",
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
+			ro_gui_current_redraw_gui = NULL;
 			return;
 		}
 	}
@@ -1565,6 +1577,9 @@ void ro_gui_window_clone_options(struct browser_window *new_bw,
 		new_gui->option.filter_sprites = option_filter_sprites;
 		new_gui->option.animate_images = option_animate_images;
 		new_gui->option.background_images = option_background_images;
+		new_gui->option.background_blending = option_background_blending;
+		new_gui->option.buffer_animations = option_buffer_animations;
+		new_gui->option.buffer_everything = option_buffer_everything;
 	} else {
 		new_gui->option = old_gui->option;
 	}
@@ -1612,6 +1627,9 @@ void ro_gui_window_default_options(struct browser_window *bw) {
 	option_dither_sprites = gui->option.dither_sprites;
 	option_filter_sprites = gui->option.filter_sprites;
 	option_animate_images = gui->option.animate_images;
+	option_background_blending = gui->option.background_blending;
+	option_buffer_animations = gui->option.buffer_animations;
+	option_buffer_everything = gui->option.buffer_everything;
 
 	/*	Set up the toolbar
 	*/

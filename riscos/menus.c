@@ -46,6 +46,7 @@ static void translate_menu(wimp_menu *menu);
 static void ro_gui_menu_prepare_images(void);
 static void ro_gui_menu_prepare_window(void);
 static void ro_gui_menu_prepare_toolbars(void);
+static void ro_gui_menu_prepare_render(void);
 static void ro_gui_menu_prepare_help(int forced);
 static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
 static void ro_gui_menu_object_reload(void);
@@ -202,6 +203,18 @@ static wimp_MENU(4) toolbar_menu = {
 };
 
 
+/*	Render submenu
+*/
+static wimp_MENU(3) render_menu = {
+  { "Render" }, 7,2,7,0, 300, 44, 0,
+  {
+    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "RenderText" } },
+    { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "RenderAnims" } },
+    { wimp_MENU_LAST,	  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "RenderAll" } }
+  }
+};
+
+
 /*	Window submenu
 */
 static wimp_MENU(4) window_menu = {
@@ -217,12 +230,13 @@ static wimp_MENU(4) window_menu = {
 
 /*	View submenu
 */
-static wimp_MENU(4) view_menu = {
+static wimp_MENU(5) view_menu = {
   { "View" }, 7,2,7,0, 300, 44, 0,
   {
     { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)1,	       DEFAULT_FLAGS, { "ScaleView" } },
     { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)&image_menu,   DEFAULT_FLAGS, { "Images" } },
-    { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE, (wimp_menu *)&toolbar_menu, DEFAULT_FLAGS, { "Toolbars" } },
+    { wimp_MENU_GIVE_WARNING,			   (wimp_menu *)&toolbar_menu, DEFAULT_FLAGS, { "Toolbars" } },
+    { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE, (wimp_menu *)&render_menu, DEFAULT_FLAGS, { "Render" } },
     { wimp_MENU_LAST,				   wimp_NO_SUB_MENU,	       DEFAULT_FLAGS, { "OptDefault" } }
   }
 };
@@ -382,6 +396,7 @@ static wimp_menu *browser_navigate_menu = (wimp_menu *)&navigate_menu;
 static wimp_menu *browser_view_menu = (wimp_menu *)&view_menu;
 static wimp_menu *browser_image_menu = (wimp_menu *)&image_menu;
 static wimp_menu *browser_toolbar_menu = (wimp_menu *)&toolbar_menu;
+static wimp_menu *browser_render_menu = (wimp_menu *)&render_menu;
 static wimp_menu *browser_window_menu = (wimp_menu *)&window_menu;
 static wimp_menu *browser_utilities_menu = (wimp_menu *)&utilities_menu;
 static wimp_menu *browser_hotlist_menu = (wimp_menu *)&hotlist_util_menu;
@@ -414,6 +429,7 @@ void ro_gui_menus_init(void)
 	translate_menu(browser_view_menu);
 	translate_menu(browser_image_menu);
 	translate_menu(browser_toolbar_menu);
+	translate_menu(browser_render_menu);
 	translate_menu(browser_window_menu);
 	translate_menu(browser_utilities_menu);
 	translate_menu(browser_hotlist_menu);
@@ -445,14 +461,14 @@ void ro_gui_menus_init(void)
 void translate_menu(wimp_menu *menu)
 {
 	unsigned int i = 0;
-	char *indirected_text;
+	const char *indirected_text;
 
 	/*	We can't just blindly set something as indirected as if we use
 		the fallback messages text (ie the pointer we gave), we overwrite
 		this data when setting the pointer to the indirected text we
 		already had.
 	*/
-	indirected_text = (char *)messages_get(menu->title_data.text);
+	indirected_text = messages_get(menu->title_data.text);
 	if (indirected_text != menu->title_data.text) {
 		menu->title_data.indirected_text.text = indirected_text;
 		menu->entries[0].menu_flags |= wimp_MENU_TITLE_INDIRECTED;
@@ -461,7 +477,7 @@ void translate_menu(wimp_menu *menu)
 
 	/* items */
 	do {
-		indirected_text = (char *)messages_get(menu->entries[i].data.text);
+		indirected_text = messages_get(menu->entries[i].data.text);
 		if (indirected_text != menu->entries[i].data.text) {
 			menu->entries[i].icon_flags |= wimp_ICON_INDIRECTED;
 			menu->entries[i].data.indirected_text.text = indirected_text;
@@ -740,7 +756,6 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						if (selection->items[2] >= 1) {
 							ro_gui_menu_prepare_images();
 							gui_window_redraw_window(current_gui);
-//							content_broadcast(c, CONTENT_MSG_REDRAW, 0);
 						}
 						break;
 					case 2: /* Toolbars -> */
@@ -771,7 +786,20 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						}
 						ro_gui_menu_prepare_toolbars();
 						break;
-					case 3: /* Make default */
+					case 3: /* Render -> */
+						if (selection->items[2] == 0) {
+							current_gui->option.background_blending =
+									!current_gui->option.background_blending;
+							gui_window_redraw_window(current_gui);
+						}
+						if (selection->items[2] == 1) current_gui->option.buffer_animations =
+								!current_gui->option.buffer_animations;
+						if (selection->items[2] == 2) current_gui->option.buffer_everything =
+								!current_gui->option.buffer_everything;
+						ro_gui_menu_prepare_render();
+
+						break;
+					case 4: /* Make default */
 						ro_gui_window_default_options(current_gui->bw);
 						ro_gui_save_options();
 						break;
@@ -1031,6 +1059,11 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 			error = xwimp_create_sub_menu(browser_toolbar_menu,
 					warning->pos.x, warning->pos.y);
 			break;
+		case 3: /* Render -> */
+			ro_gui_menu_prepare_render();
+			error = xwimp_create_sub_menu(browser_render_menu,
+					warning->pos.x, warning->pos.y);
+			break;
 		}
 		break;
 
@@ -1243,7 +1276,7 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 static void ro_gui_menu_prepare_images(void) {
 	if (current_menu != browser_menu) return;
 
-	/*	We don't currently have any local options so we update from the global ones
+	/*	Set the options according to the local values
 	*/
 	browser_image_menu->entries[1].menu_flags &= ~wimp_MENU_TICKED;
 	if (current_gui->option.background_images) browser_image_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
@@ -1253,6 +1286,38 @@ static void ro_gui_menu_prepare_images(void) {
 	if (current_gui->option.dither_sprites) browser_image_menu->entries[3].menu_flags |= wimp_MENU_TICKED;
 	browser_image_menu->entries[4].menu_flags &= ~wimp_MENU_TICKED;
 	if (current_gui->option.filter_sprites) browser_image_menu->entries[4].menu_flags |= wimp_MENU_TICKED;
+}
+
+
+/**
+ * Update render menu status
+ */
+static void ro_gui_menu_prepare_render(void) {
+	if (current_menu != browser_menu) return;
+
+	/*	Set the options according to the local values
+	*/
+	browser_render_menu->entries[1].menu_flags &= ~wimp_MENU_TICKED;
+	browser_render_menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
+	browser_render_menu->entries[2].menu_flags &= ~wimp_MENU_TICKED;
+	if (current_gui->option.background_blending) {
+		browser_render_menu->entries[0].menu_flags |= wimp_MENU_TICKED;
+	} else {
+		browser_render_menu->entries[0].menu_flags &= ~wimp_MENU_TICKED;
+	}
+	if (current_gui->option.buffer_everything) {
+		browser_render_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
+		browser_render_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
+		browser_render_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
+	} else {
+		browser_render_menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
+		browser_render_menu->entries[2].menu_flags &= ~wimp_MENU_TICKED;
+		if (current_gui->option.buffer_animations) {
+			browser_render_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
+		} else {
+			browser_render_menu->entries[1].menu_flags &= ~wimp_MENU_TICKED;
+		}
+	}
 }
 
 

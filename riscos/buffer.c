@@ -66,6 +66,7 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	os_coord sprite_size;
 	int bpp, word_size;
 	osbool palette;
+	os_error *error;
 
 	/*	Close any open buffer
 	*/
@@ -92,8 +93,11 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	buffer_size = sizeof(osspriteop_area) + sizeof(osspriteop_header) +
 			(word_size * sprite_size.y);
 	if (palette) buffer_size += ((1 << (1 << bpp)) << 3);
-	if (!(buffer = (osspriteop_area *)malloc(buffer_size))) return;
-	
+	buffer = malloc(buffer_size);
+	if (!buffer) {
+	  	LOG(("Buffer memory allocation failed."));
+		return;
+	}
 	/*	Fill in the sprite area details
 	*/
 	buffer->size = buffer_size + 1;
@@ -104,9 +108,10 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	/*	Fill in the sprite header details
 	*/
 	sprintf(name, "buffer");
-	if (xosspriteop_get_sprite_user_coords(osspriteop_NAME, buffer,
+	if ((error = xosspriteop_get_sprite_user_coords(osspriteop_NAME, buffer,
 			name, palette,
-			clipping.x0, clipping.y0, clipping.x1, clipping.y1)) {
+			clipping.x0, clipping.y0, clipping.x1, clipping.y1))) {
+//		LOG(("Grab error '%s'", error->errmess));
 		free(buffer);
 		buffer = NULL;
 		return;
@@ -114,8 +119,9 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 
 	/*	Allocate OS_SpriteOp save area
 	*/
-	if (xosspriteop_read_save_area_size(osspriteop_NAME, buffer,
-			(osspriteop_id)name, &size)) {
+	if ((error = xosspriteop_read_save_area_size(osspriteop_NAME, buffer,
+			(osspriteop_id)name, &size))) {
+//		LOG(("Save area error '%s'", error->errmess));
 		free(buffer);
 		buffer = NULL;
 		return;
@@ -129,15 +135,16 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 
 	/*	Switch output to sprite
 	*/
-	if (xosspriteop_switch_output_to_sprite(osspriteop_NAME, buffer,
+	if ((error = xosspriteop_switch_output_to_sprite(osspriteop_NAME, buffer,
 			(osspriteop_id)name, save_area,
-			0, (int *)&context1, (int *)&context2, (int *)&context3)) {
+			0, (int *)&context1, (int *)&context2, (int *)&context3))) {
+//		LOG(("Switching error '%s'", error->errmess));
 		free(save_area);
 		free(buffer);
 		buffer = NULL;
 		return;
 	}
-	
+
 	/*	Move the origin such that (x0, y0) becomes (0, 0). To do this
 		we use VDU 29,(1 << 16) - x0; (1 << 16) - y0; because RISC OS
 		is so insanely legacy driven.
@@ -158,7 +165,7 @@ void ro_gui_buffer_close(void) {
 	/*	Check we have an open buffer
 	*/
 	if (!buffer) return;
-	
+
 	/*	Remove any redirection and origin hacking
 	*/
 	xosspriteop_switch_output_to_sprite(osspriteop_PTR,
