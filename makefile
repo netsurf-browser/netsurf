@@ -9,7 +9,7 @@ CC_DEBUG = gcc
 OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o other.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
 	box.o form.o html.o layout.o textplain.o \
-	messages.o utils.o translit.o
+	messages.o utils.o translit.o pool.o
 OBJECTS = $(OBJECTS_COMMON) \
 	browser.o loginlist.o netsurf.o \
 	htmlinstance.o htmlredraw.o \
@@ -22,6 +22,14 @@ OBJECTS = $(OBJECTS_COMMON) \
 OBJECTS_DEBUG = $(OBJECTS_COMMON) \
 	netsurfd.o \
 	optionsd.o filetyped.o fontd.o
+OBJECTS_DEBUGRO = $(OBJECTS_COMMON) \
+	netsurfd.o \
+	constdata.o \
+	theme.o \
+	draw.o gif.o jpeg.o png.o sprite.o \
+	about.o filetype.o \
+	version.o \
+	optionsd.o fontd.o
 DOCUMENTS = Themes.html	
 VPATH = content:css:desktop:render:riscos:utils:debug
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
@@ -41,6 +49,7 @@ OBJS=$(OBJECTS:%.o=$(OBJDIR)/%.o)
 OBJDIR_DEBUG = $(shell $(CC_DEBUG) -dumpmachine)
 SOURCES_DEBUG=$(OBJECTS_DEBUG:.o=.c)
 OBJS_DEBUG=$(OBJECTS_DEBUG:%.o=$(OBJDIR_DEBUG)/%.o)
+OBJS_DEBUGRO=$(OBJECTS_DEBUGRO:%.o=$(OBJDIR)/%.o)
 DOCDIR = !NetSurf/Docs
 DOCS=$(DOCUMENTS:%.html=$(DOCDIR)/%.html)
 
@@ -55,6 +64,9 @@ netsurf.zip: !NetSurf/!RunImage,ff8 $(DOCS)
 debug: netsurf
 netsurf: $(OBJS_DEBUG)
 	$(CC_DEBUG) -o $@ $(LDFLAGS_DEBUG) $^
+debugro: nsdebug,ff8
+nsdebug,ff8: $(OBJS_DEBUGRO)
+	$(CC) -o $@ $(LDFLAGS) $^
 
 # pattern rule for c source
 $(OBJDIR)/%.o : %.c
