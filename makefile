@@ -4,8 +4,14 @@
 #                http://www.opensource.org/licenses/gpl-license
 #
 
-CC = /riscos/bin/gcc
-CC_DEBUG = gcc
+OS = $(word 2,$(subst -, ,$(shell $(CC) -dumpmachine)))
+
+ifeq ($(OS),riscos)
+include riscos.mk
+else
+include posix.mk
+endif
+
 OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
 	box.o form.o html.o layout.o textplain.o \
@@ -21,6 +27,7 @@ OBJECTS = $(OBJECTS_COMMON) \
 	about.o filetype.o font.o uri.o url_protocol.o history.o \
 	version.o thumbnail.o \
 	save.o save_draw.o save_text.o schedule.o help.o
+
 OBJECTS_DEBUG = $(OBJECTS_COMMON) \
 	netsurfd.o \
 	options.o filetyped.o fontd.o
@@ -32,27 +39,26 @@ OBJECTS_DEBUGRO = $(OBJECTS_COMMON) \
 	about.o filetype.o \
 	version.o \
 	options.o font.o schedule.o
+
 VPATH = content:css:desktop:render:riscos:utils:debug
+
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
 	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
+
 CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. \
-	-mpoke-function-name
-CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE $(WARNFLAGS) -I.. -I/usr/include/libxml2 -g \
-	-I/riscos/include
-LDFLAGS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lcares -lanim -lpng \
-	-loslib -ljpeg
-LDFLAGS_SMALL = -L/riscos/lib -lxml2 -lz -lucurl -lcares -lanim -lpng -loslib -ljpeg
-LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -ljpeg
+	$(PLATFORM_CFLAGS) -mpoke-function-name
+CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -Driscos $(WARNFLAGS) -I.. $(PLATFORM_CFLAGS_DEBUG) -g
 
 OBJDIR = $(shell $(CC) -dumpmachine)
 SOURCES=$(OBJECTS:.o=.c)
 OBJS=$(OBJECTS:%.o=$(OBJDIR)/%.o)
-OBJDIR_DEBUG = $(shell $(CC_DEBUG) -dumpmachine)
+
+OBJDIR_DEBUG = $(shell $(CC_DEBUG) -dumpmachine)-debug
 SOURCES_DEBUG=$(OBJECTS_DEBUG:.o=.c)
 OBJS_DEBUG=$(OBJECTS_DEBUG:%.o=$(OBJDIR_DEBUG)/%.o)
-OBJS_DEBUGRO=$(OBJECTS_DEBUGRO:%.o=$(OBJDIR)/%.o)
+OBJS_DEBUGRO=$(OBJECTS_DEBUGRO:%.o=$(OBJDIR_DEBUG)/%.o)
 
 # targets
 all: !NetSurf/!RunImage,ff8 $(DOCS)
@@ -69,7 +75,7 @@ netsurf: $(OBJS_DEBUG)
 	$(CC_DEBUG) -o $@ $(LDFLAGS_DEBUG) $^
 debugro: nsdebug,ff8
 nsdebug,ff8: $(OBJS_DEBUGRO)
-	$(CC) -o $@ $(LDFLAGS) $^
+	$(CC_DEBUG) -o $@ $(LDFLAGS_DEBUG) $^
 
 # pattern rule for c source
 $(OBJDIR)/%.o : %.c
@@ -97,6 +103,3 @@ depend : $(SOURCES) $(SOURCES_DEBUG)
 clean :
 	-rm $(OBJDIR)/* $(OBJDIR_DEBUG)/* depend css/css_enum.c css/css_enum.h \
 		css/parser.c css/parser.h css/scanner.c css/scanner.h
-
-include depend
-
