@@ -13,6 +13,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
+#include "libxml/parserInternals.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetch.h"
@@ -53,12 +54,16 @@ void html_create(struct content *c, const char *params[])
 	struct content_html_data *html = &c->data.html;
 
 	html->encoding = XML_CHAR_ENCODING_8859_1;
+	html->getenc = true;
 
 	for (i = 0; params[i]; i += 2) {
 		if (strcasecmp(params[i], "charset") == 0) {
 			html->encoding = xmlParseCharEncoding(params[i + 1]);
-			if (html->encoding == XML_CHAR_ENCODING_ERROR)
+			html->getenc = false; /* encoding specified - trust the server... */
+			if (html->encoding == XML_CHAR_ENCODING_ERROR) {
 				html->encoding = XML_CHAR_ENCODING_8859_1;
+				html->getenc = true;
+			}
 			break;
 		}
 	}
@@ -97,6 +102,20 @@ void html_process_data(struct content *c, char *data, unsigned long size)
 	memcpy(c->data.html.source + c->data.html.length, data, size);
 	c->data.html.length += size;
 	c->size += size;
+	/* First time through, check if we need to get the encoding 
+	 * if so, get it and reset the parser instance with it.
+	 * if it fails, assume Latin1
+	 */
+	if (c->data.html.getenc) {
+		c->data.html.encoding = xmlDetectCharEncoding(c->data.html.source, c->data.html.length);
+		if (c->data.html.encoding == XML_CHAR_ENCODING_ERROR || 
+		    c->data.html.encoding == XML_CHAR_ENCODING_NONE) {
+				c->data.html.encoding = XML_CHAR_ENCODING_8859_1;
+		}
+		xmlSwitchEncoding((xmlParserCtxtPtr)c->data.html.parser, c->data.html.encoding);
+		c->data.html.getenc = false;
+		LOG(("Encoding: %s", xmlGetCharEncodingName(c->data.html.encoding)));
+	}
 	for (x = 0; x + CHUNK <= size; x += CHUNK) {
 		htmlParseChunk(c->data.html.parser, data + x, CHUNK, 0);
 		gui_multitask();

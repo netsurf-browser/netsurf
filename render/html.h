@@ -40,6 +40,7 @@ struct content_html_data {
 	char *source;   /**< Source data. */
 	int length;     /**< Length of source. */
 	xmlCharEncoding encoding;  /**< Encoding of source. */
+	bool getenc; /**< Need to get the encoding from the document, as server is broken. */
 
 	char *base_url;	/**< Base URL (may be a copy of content->url). */
 
