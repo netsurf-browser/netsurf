@@ -237,6 +237,11 @@ void add_objects(struct content *content, struct box *box,
 		return;
 	}
 	else if (box->text && box->font) {
+
+	        if (strlen(box->text) == 0) {
+	                return;
+	        }
+
 	        /* text-decoration */
 		colour = box->style->color;
 		colour = ((((colour >> 16) + (cbc >> 16)) / 2) << 16)
