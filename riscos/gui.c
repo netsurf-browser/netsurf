@@ -1184,7 +1184,7 @@ void ro_msg_dataload(wimp_message *message)
 		return;
 
 	if (g) {
-		browser_window_go(g->bw, url, 0, false);
+		browser_window_go(g->bw, url, 0);
 	} else {
 		if ((hotlist_tree) && ((wimp_w)hotlist_tree->handle ==
 				message->data.data_xfer.w)) {

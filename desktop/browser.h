@@ -89,7 +89,7 @@ typedef enum {
 void browser_window_create(const char *url, struct browser_window *clone,
 		char *referer);
 void browser_window_go(struct browser_window *bw, const char *url,
-		char *referer, bool download);
+		char *referer);
 void browser_window_go_post(struct browser_window *bw, const char *url,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,

@@ -800,8 +800,7 @@ void plugin_url_access(wimp_message *message)
 			    strcasecmp(window, "_parent") == 0 ||
 			    strcasecmp(window, "_top") == 0 ||
 			    strcasecmp(window, "") == 0) {
-				browser_window_go(c->data.plugin.bw, url,
-								0, false);
+				browser_window_go(c->data.plugin.bw, url, 0);
 			}
 			else if (strcasecmp(window, "_blank") == 0) {
 				browser_window_create(url, NULL, 0);

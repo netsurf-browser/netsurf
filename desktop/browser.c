@@ -117,7 +117,7 @@ void browser_window_create(const char *url, struct browser_window *clone,
 		free(bw);
 		return;
 	}
-	browser_window_go(bw, url, referer, false);
+	browser_window_go(bw, url, referer);
 }
 
 
@@ -127,15 +127,14 @@ void browser_window_create(const char *url, struct browser_window *clone,
  * \param  bw       browser window
  * \param  url      URL to start fetching (copied)
  * \param  referer  the referring uri
- * \param  download download, rather than render the uri
  *
  * Any existing fetches in the window are aborted.
  */
 
 void browser_window_go(struct browser_window *bw, const char *url,
-		char* referer, bool download)
+		char* referer)
 {
-	browser_window_go_post(bw, url, 0, 0, true, referer, download);
+	browser_window_go_post(bw, url, 0, 0, true, referer, false);
 }
 
 
@@ -321,7 +320,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 			/* the spec says nothing about referrers and
 			 * redirects => follow Mozilla and preserve the
 			 * referer across the redirect */
-			browser_window_go(bw, data.redirect, bw->referer,
+			browser_window_go_post(bw, data.redirect, 0, 0,
+					bw->history_add, bw->referer,
 					bw->download);
 			break;
 
@@ -521,7 +521,7 @@ void browser_window_reload(struct browser_window *bw, bool all)
 	}
 	bw->current_content->fresh = false;
 	browser_window_go_post(bw, bw->current_content->url, 0, 0,
-							false, 0, false);
+			false, 0, false);
 }
 
 
@@ -829,14 +829,15 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 		pointer = GUI_POINTER_POINT;
 
 		if (click == BROWSER_MOUSE_CLICK_1) {
-			browser_window_go(bw, url, c->url, false);
+			browser_window_go(bw, url, c->url);
 		}
 		else if (click == BROWSER_MOUSE_CLICK_2) {
 			browser_window_create(url, bw, c->url);
 		}
 		else if (click == BROWSER_MOUSE_CLICK_1_MOD ||
 				click == BROWSER_MOUSE_CLICK_2_MOD) {
-			browser_window_go(bw, url, c->url, true);
+			browser_window_go_post(bw, url, 0, 0, false, c->url,
+					true);
 		}
 
 	} else if (title) {
@@ -1968,8 +1969,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			res = url_join(url, base, &url1);
 			if (res != URL_FUNC_OK)
 				break;
-			browser_window_go(bw, url1,
-					bw->current_content->url, false);
+			browser_window_go(bw, url1, bw->current_content->url);
 			break;
 
 		case method_POST_URLENC:

@@ -1128,8 +1128,8 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 		case ICON_TOOLBAR_HOME:
 			if (option_homepage_url && option_homepage_url[0]) {
 				if (pointer->buttons == wimp_CLICK_SELECT) {
-					browser_window_go_post(g->bw, option_homepage_url,
-							0, 0, true, 0, false);
+					browser_window_go(g->bw,
+							option_homepage_url, 0);
 				} else {
 					browser_window_create(option_homepage_url, NULL, 0);
 				}
@@ -1138,7 +1138,7 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 						"file:/<NetSurf$Dir>/Docs/intro_%s",
 						option_language);
 				if (pointer->buttons == wimp_CLICK_SELECT) {
-					browser_window_go_post(g->bw, url, 0, 0, true, 0, false);
+					browser_window_go(g->bw, url, 0);
 				} else {
 					browser_window_create(url, NULL, 0);
 				}
@@ -1518,7 +1518,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			res = url_normalize(toolbar_url, &url);
 			if (res == URL_FUNC_OK) {
 				gui_window_set_url(g, url);
-				browser_window_go(g->bw, url, 0, false);
+				browser_window_go(g->bw, url, 0);
 				free(url);
 			}
 			return true;
