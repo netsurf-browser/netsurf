@@ -168,6 +168,7 @@ struct fetch * fetch_start(char *url, char *referer,
 		if (host_fetch != 0) {
 			/* fetch from this host in progress: queue the new fetch */
 			LOG(("queueing"));
+			fetch->curl_handle = 0;
 			fetch->queue = host_fetch->queue;
 			host_fetch->queue = fetch;
 			return fetch;
@@ -269,8 +270,10 @@ void fetch_abort(struct fetch *f)
 		f->next->prev = f->prev;
 
 	/* remove from curl multi handle */
-	codem = curl_multi_remove_handle(curl_multi, f->curl_handle);
-	assert(codem == CURLM_OK);
+	if (f->cull_handle) {
+		codem = curl_multi_remove_handle(curl_multi, f->curl_handle);
+		assert(codem == CURLM_OK);
+	}
 
 	if (f->queue != 0) {
 		/* start a queued fetch for this host, reusing the handle for this host */
