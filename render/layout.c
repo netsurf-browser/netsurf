@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.34 2003/03/04 11:59:35 bursa Exp $
+ * $Id: layout.c,v 1.35 2003/03/08 21:25:56 bursa Exp $
  */
 
 #include <assert.h>
@@ -657,12 +657,20 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 				c->width = xs[i + c->columns] - xs[i];
 				c->float_children = 0;
 				c->height = layout_block_children(c, c->width, c, 0, 0);
-				if (c->style->height.height == CSS_HEIGHT_LENGTH)
-					c->height = len(&c->style->height.length, c->style);
+				if (c->style->height.height == CSS_HEIGHT_LENGTH) {
+					/* some sites use height="1" or similar to attempt
+					 * to make cells as small as possible, so treat
+					 * it as a minimum */
+					unsigned long h = len(&c->style->height.length, c->style);
+					if (c->height < h)
+						c->height = h;
+				}
 				c->x = xs[i];
 				c->y = 0;
 				if (c->height > row_height) row_height = c->height;
 			}
+			for (c = row->children; c != 0; c = c->next)
+				c->height = row_height;
 			row->x = 0;
 			row->y = row_group_height;
 			row->width = table_width;
