@@ -57,6 +57,8 @@ static struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 static struct css_style * box_get_style(struct content ** stylesheet,
 		unsigned int stylesheet_count, struct css_style * parent_style,
 		xmlNode * n);
+static void box_text_transform(char *s, unsigned int len,
+		css_text_transform tt);
 static struct result box_a(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_body(xmlNode *n, struct status *status,
@@ -392,38 +394,9 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			box->space = 1;
 			box->length--;
 		}
-		switch (parent_style->text_transform) {
-		        /* perform text-transform */
-		        unsigned int ch;
-		        case CSS_TEXT_TRANSFORM_UPPERCASE:
-		                for (ch=0; ch!=box->length; ch++) {
-	                            box->text[ch] = toupper(box->text[ch]);
-		                }
-		                break;
-		        case CSS_TEXT_TRANSFORM_LOWERCASE:
-		                for (ch=0; ch!=box->length; ch++) {
-	                            box->text[ch] = tolower(box->text[ch]);
-		                }
-		                break;
-		        case CSS_TEXT_TRANSFORM_CAPITALIZE:
-		                for (ch=0; ch!=box->length; ch++) {
-		                    if (ch == 0) { /* first char in box */
-		                      if (inline_container && (inline_container->last->text && inline_container->last->space)) { /* end of previous box */
-		                        box->text[ch] = toupper(box->text[ch]);
-		                      }
-		                      else if (inline_container && (inline_container->last->prev && inline_container->last->prev->text && inline_container->last->prev->space)) { /* end of box before previous box */
-		                        box->text[ch] = toupper(box->text[ch]);
-		                      }
-		                    }
-		                    else if (!((box->text[ch-1] > 64 && box->text[ch-1] < 91) ||
-		                             (box->text[ch-1] > 96 && box->text[ch-1] < 123))) {
-	                              box->text[ch] = toupper(box->text[ch]);
-	                            }
-		                }
-		                break;
-		        default:
-		                break;
-		}
+		if (parent_style->text_transform != CSS_TEXT_TRANSFORM_NONE)
+			box_text_transform(box->text, box->length,
+					parent_style->text_transform);
 		if (parent_style->white_space == CSS_WHITE_SPACE_NOWRAP) {
 			unsigned int i;
 			for (i = 0; i != box->length; i++)
@@ -446,6 +419,9 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		char *text = tolat1_pre(n->content);
 		char *current;
 		assert(parent_style->white_space == CSS_WHITE_SPACE_PRE);
+		if (parent_style->text_transform != CSS_TEXT_TRANSFORM_NONE)
+			box_text_transform(text, strlen(text),
+					parent_style->text_transform);
 		for (current = text; *current; current++)
 			if (*current == ' ' || *current == '\t')
 				*current = 160;
@@ -466,41 +442,6 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			box->style_clone = 1;
 			box->text = xstrdup(current);
 			box->length = strlen(box->text);
-			switch (parent_style->text_transform) {
-		                /* perform text-transform */
-		                unsigned int ch;
-		                case CSS_TEXT_TRANSFORM_UPPERCASE:
-		                        for (ch=0; ch!=box->length; ch++) {
-	                                     box->text[ch] =
-	                                              toupper(box->text[ch]);
-		                        }
-		                        break;
-		                case CSS_TEXT_TRANSFORM_LOWERCASE:
-		                        for (ch=0; ch!=box->length; ch++) {
-	                                     box->text[ch] =
-	                                              tolower(box->text[ch]);
-		                        }
-		                        break;
-		                case CSS_TEXT_TRANSFORM_CAPITALIZE:
-		                        for (ch=0; ch!=box->length; ch++) {
-		                             if (ch == 0) { /* first char in box */
-		                               if (inline_container && (inline_container->last->text && inline_container->last->space)) { /* end of previous box */
-		                                 box->text[ch] = toupper(box->text[ch]);
-		                               }
-		                               else if (inline_container && (inline_container->last->prev && inline_container->last->prev->text && inline_container->last->prev->space)) { /* end of box before previous box */
-		                                 box->text[ch] = toupper(box->text[ch]);
-		                               }
-		                             }
-		                             else if (!((box->text[ch-1] > 64 && box->text[ch-1] < 91) ||
-		                                      (box->text[ch-1] > 96 && box->text[ch-1] < 123))) {
-	                                         box->text[ch] =
-	                                              toupper(box->text[ch]);
-	                                     }
-		                        }
-		                        break;
-		                default:
-		                        break;
-		        }
 			box->font = font_open(content->data.html.fonts, box->style);
 			box_add_child(inline_container, box);
 			current[len] = old;
@@ -744,6 +685,41 @@ struct css_style * box_get_style(struct content ** stylesheet,
 	}
 
 	return style;
+}
+
+
+/**
+ * Apply the CSS text-transform property to some text.
+ *
+ * \param  s    string to transform
+ * \param  len  length of s
+ * \param  tt   transform type
+ */
+
+void box_text_transform(char *s, unsigned int len,
+		css_text_transform tt)
+{
+	unsigned int i;
+	if (len == 0)
+		return;
+	switch (tt) {
+		case CSS_TEXT_TRANSFORM_UPPERCASE:
+			for (i = 0; i != len; i++)
+				s[i] = toupper(s[i]);
+			break;
+		case CSS_TEXT_TRANSFORM_LOWERCASE:
+			for (i = 0; i != len; i++)
+				s[i] = tolower(s[i]);
+			break;
+		case CSS_TEXT_TRANSFORM_CAPITALIZE:
+			s[0] = toupper(s[0]);
+			for (i = 1; i != len; i++)
+				if (isspace(s[i - 1]))
+					s[i] = toupper(s[i]);
+			break;
+		default:
+			break;
+	}
 }
 
 
@@ -1254,9 +1230,9 @@ void box_dump(struct box * box, unsigned int depth)
 	for (i = 0; i < depth; i++)
 		fprintf(stderr, "  ");
 
-	fprintf(stderr, "x%li y%li w%li h%li ", box->x, box->y, box->width, box->height);
+	fprintf(stderr, "x%i y%i w%i h%i ", box->x, box->y, box->width, box->height);
 	if ((unsigned long)box->max_width != UNKNOWN_MAX_WIDTH)
-		fprintf(stderr, "min%lu max%lu ", box->min_width, box->max_width);
+		fprintf(stderr, "min%i max%i ", box->min_width, box->max_width);
 
 	switch (box->type) {
 		case BOX_BLOCK:            fprintf(stderr, "BOX_BLOCK "); break;
