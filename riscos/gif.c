@@ -161,15 +161,30 @@ void nsgif_animate(void *p)
 {
 	struct content *c = p;
 	union content_msg_data data;
-
-	/* at the moment just advance by one frame */
+	
+	/*	Advance by a frame, updating the loop count accordingly
+	*/
 	c->data.gif.current_frame++;
 	if (c->data.gif.current_frame == c->data.gif.gif->frame_count) {
 		c->data.gif.current_frame = 0;
+		
+		/*	A loop count of 0 has a special meaning of infinite
+		*/
+		if (c->data.gif.gif->loop_count != 0) {
+			c->data.gif.gif->loop_count--;
+			if (c->data.gif.gif->loop_count == 0) {
+				c->data.gif.gif->loop_count = -1;
+			}
+		}
 	}
 
-	schedule(c->data.gif.gif->frames[c->data.gif.current_frame].frame_delay,
-			nsgif_animate, c);
+
+	/*	Continue animating if we should
+	*/
+	if (c->data.gif.gif->loop_count >= 0) {
+		schedule(c->data.gif.gif->frames[c->data.gif.current_frame].frame_delay,
+				nsgif_animate, c);
+	}
 
 	/* area within gif to redraw */
 	data.redraw.x = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_x;
