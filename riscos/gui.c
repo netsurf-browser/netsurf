@@ -2032,6 +2032,10 @@ void ro_gui_keypress(wimp_key* key)
       if (g->data.browser.bw->current_content->type == CONTENT_HTML)
         box_dump(g->data.browser.bw->current_content->data.html.layout->children, 0);
     }
+    else if (key->c == wimp_KEY_F10)
+    {
+      cache_dump();
+    }
   }
   wimp_process_key(key->c);
   return;
