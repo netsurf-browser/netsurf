@@ -1,7 +1,10 @@
 #include "netsurf/desktop/options.h"
 #include <stdio.h>
+#include <string.h>
 #include "oslib/messagetrans.h"
+#include "oslib/osfile.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 
 struct options OPTIONS;
 
@@ -53,13 +56,19 @@ const char* yesno(int q)
 
 void options_write(struct options* opt, char* filename)
 {
-	char* fn;
+	char* fn, *dir;
 	FILE* f;
 
+        dir = "<Choices$Write>.NetSurf";
+        fn = strdup(dir);
+        strcat(fn, ".");
+
 	if (filename == NULL)
-		fn = (char*) "<NetSurf$Dir>.Choices";
+		strcat(fn, "Choices");
 	else
-		fn = filename;
+		strcat(fn, filename);
+
+        xosfile_create_dir(dir, 0);
 
 	f = fopen(fn, "w");
 	if (f != NULL)
@@ -78,12 +87,14 @@ void options_write(struct options* opt, char* filename)
 		fprintf(f, "\n# Theme\n");
 		fprintf(f, "RO_THEME:%s\n", opt->theme);
 	}
+
+	fclose(f);
 }
 
 void options_init(struct options* opt)
 {
 	opt->http = 0;
-	opt->http_proxy = NULL;
+	opt->http_proxy = strdup("http://www-cache.freeserve.co.uk");
 	opt->http_port = 8080;
 	opt->use_mouse_gestures = 0;
 	opt->allow_text_selection = 1;
@@ -101,11 +112,13 @@ void options_read(struct options* opt, char* filename)
 	char* fn;
 	int size;
 
+        fn = "Choices:NetSurf.";
+
 	LOG(("Testing filename"));
 	if (filename == NULL)
-		fn = "<NetSurf$Dir>.Choices";
+		fn = "Choices:NetSurf.Choices";
 	else
-		fn = filename;
+		strcat(fn, filename);
 
 	LOG(("Getting file info"));
   	if (xmessagetrans_file_info(fn, &flags, &size) != NULL)
