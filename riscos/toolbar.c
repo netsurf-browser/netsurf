@@ -468,7 +468,7 @@ static void ro_toolbar_add_icon(struct toolbar *toolbar, struct toolbar_icon *ic
  * \param  height   the new status bar height
  */
 void ro_toolbar_resize_status(struct toolbar *toolbar, int height) {
-	os_box extent = { 0, 0, 0, 0 };
+	os_box extent = { 0, 0, 16384, (height - 2) };
 	wimp_WINDOW_INFO(3) status_definition;	// Barfs if 2 is used!?!?!
 	wimp_window *status_window;
 
@@ -500,13 +500,9 @@ void ro_toolbar_resize_status(struct toolbar *toolbar, int height) {
 	xwimp_delete_window(toolbar->status_handle);
 	xwimp_create_window(status_window, &toolbar->status_handle);
 
-	/*	Resize the text icon (resize icon is handled automatically
+	/*	Set a big extent (it'll automatically be updated later to
+		the correct value
 	*/
-	xwimp_resize_icon(toolbar->status_handle, ICON_STATUS_TEXT,
-			0, 0, 16384, height - 2);
-	xwimp_force_redraw(toolbar->status_handle, 0, 0, 16384, height);
-	extent.x1 = 16384;
-	extent.y1 = height - 2;
 	xwimp_set_extent(toolbar->status_handle, &extent);
 }
 
@@ -593,6 +589,11 @@ int ro_toolbar_reformat(struct toolbar *toolbar, int width) {
 	  	old_width = toolbar->status_old_width;
 	  	toolbar->status_old_width = status_width;
 	  	if (old_width != status_width) {
+			xwimp_resize_icon(toolbar->status_handle, ICON_STATUS_TEXT,
+					0,
+					0,
+					status_width - 12,
+					toolbar->status_height - 2);
 			xwimp_resize_icon(toolbar->status_handle, ICON_STATUS_RESIZE,
 					status_width - 12,
 					0,
