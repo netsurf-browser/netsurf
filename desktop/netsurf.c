@@ -64,6 +64,7 @@ void netsurf_init(int argc, char** argv)
   nsgif_init();
 #endif
   url_init();
+  save_complete_init();
 }
 
 
