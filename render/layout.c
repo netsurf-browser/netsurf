@@ -646,9 +646,19 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 			table_width = max_width;
 		} else {
 			/* for fixed-width tables, distribute the extra space too */
-			unsigned long extra = (table_width - max_width) / table->columns;
-			for (i = 0; i < table->columns; i++) {
-				table->col[i].width = table->col[i].max + extra;
+			unsigned int flexible_columns = 0;
+			for (i = 0; i != table->columns; i++)
+				if (table->col[i].type != COLUMN_WIDTH_FIXED)
+					flexible_columns++;
+			if (flexible_columns == 0) {
+				unsigned long extra = (table_width - max_width) / table->columns;
+				for (i = 0; i != table->columns; i++)
+					table->col[i].width = table->col[i].max + extra;
+			} else {
+				unsigned long extra = (table_width - max_width) / flexible_columns;
+				for (i = 0; i != table->columns; i++)
+					if (table->col[i].type != COLUMN_WIDTH_FIXED)
+						table->col[i].width = table->col[i].max + extra;
 			}
 		}
 	} else {
@@ -914,7 +924,7 @@ void calculate_table_widths(struct box *table)
 					min += col[i + j].min;
 					max += col[i + j].max;
 				}
-	
+
 				/* use specified width if colspan == 1 */
 				if (col[i].type != COLUMN_WIDTH_FIXED &&
 						cell->style->width.width == CSS_WIDTH_LENGTH &&
@@ -928,6 +938,7 @@ void calculate_table_widths(struct box *table)
 					else
 						/* specified width not big enough => use min */
 						col[i].width = col[i].max = max = min;
+					continue;
 				}
 
 				else if (col[i].type == COLUMN_WIDTH_UNKNOWN) {
