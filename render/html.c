@@ -128,18 +128,8 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	xml_to_box(html, c);
 	/*box_dump(c->data.html.layout->children, 0);*/
 
-	/* XML tree and stylesheets not required past this point */
+	/* XML tree not required past this point */
 	xmlFreeDoc(document);
-
-	content_remove_user(c->data.html.stylesheet_content[0],
-			html_convert_css_callback, c, 0);
-	if (c->data.html.stylesheet_content[1] != 0)
-		content_destroy(c->data.html.stylesheet_content[1]);
-	for (i = 2; i != c->data.html.stylesheet_count; i++)
-		if (c->data.html.stylesheet_content[i] != 0)
-			content_remove_user(c->data.html.stylesheet_content[i],
-					html_convert_css_callback, c, (void*)i);
-	xfree(c->data.html.stylesheet_content);
 
 	/* layout the box tree */
 	sprintf(c->status_message, "Formatting document");
@@ -660,6 +650,18 @@ void html_destroy(struct content *c)
 	unsigned int i;
 	LOG(("content %p", c));
 
+	/* Remove stylesheets */
+	content_remove_user(c->data.html.stylesheet_content[0],
+			html_convert_css_callback, c, 0);
+	if (c->data.html.stylesheet_content[1] != 0)
+		content_destroy(c->data.html.stylesheet_content[1]);
+	for (i = 2; i != c->data.html.stylesheet_count; i++)
+		if (c->data.html.stylesheet_content[i] != 0)
+			content_remove_user(c->data.html.stylesheet_content[i],
+					html_convert_css_callback, c, (void*)i);
+	xfree(c->data.html.stylesheet_content);
+
+	/* and objects */
 	for (i = 0; i != c->data.html.object_count; i++) {
 		LOG(("object %i %p", i, c->data.html.object[i].content));
 		if (c->data.html.object[i].content != 0)

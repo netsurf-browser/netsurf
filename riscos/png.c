@@ -69,11 +69,11 @@ void nspng_init(void)
 void nspng_create(struct content *c, const char *params[])
 {
 #ifndef NO_IFC
-	if (imagefileconvert) {
+//	if (imagefileconvert) {
 		c->data.other.data = xcalloc(0, 1);
 		c->data.other.length = 0;
-		return;
-	}
+//		return;
+//	}
 #endif
 
 	c->data.png.sprite_area = 0;
@@ -97,14 +97,14 @@ void nspng_create(struct content *c, const char *params[])
 void nspng_process_data(struct content *c, char *data, unsigned long size)
 {
 #ifndef NO_IFC
-	if (imagefileconvert) {
+//	if (imagefileconvert) {
 		c->data.png.data = xrealloc(c->data.png.data,
 				c->data.png.length + size);
 		memcpy(c->data.png.data + c->data.png.length, data, size);
 		c->data.png.length += size;
-		c->size += size;
-		return;
-	}
+//		c->size += size;
+//		return;
+//	}
 #endif
 
 	if (setjmp(png_jmpbuf(c->data.png.png))) {
@@ -366,6 +366,11 @@ void nspng_destroy(struct content *c)
 {
 	xfree(c->title);
 	xfree(c->data.png.sprite_area);
+#ifndef NO_IFC
+//        if (imagefileconvert) {
+                xfree(c->data.png.data);
+//        }
+#endif
 }
 
 

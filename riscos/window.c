@@ -20,6 +20,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/save_draw.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/utils/log.h"
@@ -742,10 +743,16 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			clean_cookiejar();
 #endif
 			return true;
-
+#ifdef WITH_SAVE_COMPLETE
+                case wimp_KEY_SHIFT + wimp_KEY_F3:
+                        save_complete(g->data.browser.bw->current_content);
+                        return true;
+#endif
+#ifdef WITH_DRAW_EXPORT
 		case wimp_KEY_SHIFT + wimp_KEY_CONTROL + wimp_KEY_F3:
 		        save_as_draw(g->data.browser.bw->current_content);
 		        return true;
+#endif
 
 		case wimp_KEY_RETURN:
 			if (!toolbar)
