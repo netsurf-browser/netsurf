@@ -45,33 +45,38 @@ start:
 
 /*!re2c
 nonascii	=	[\200-\377];
-unicode		=	"\\" [0-9a-f]+ [ \n\r\t\f]?;
+unicode		=	"\\" [0-9a-f]+ ("\r\n" | [ \n\r\t\f])?;
 escape		=	unicode | "\\" [ -~\200-\377];
 nmchar		=	[-a-zA-Z0-9_] | nonascii | escape;
 nmstart		=	[a-zA-Z_] | nonascii | escape;
-ident		=	nmstart nmchar*;
+ident		=	[-]? nmstart nmchar*;
 name		=	nmchar+;
 num		=	[+-]? [0-9]+ | [0-9]* "." [0-9]+;
 nl		=	"\n" | "\r\n" | "\r" | "\f";
 string1		=	"\"" ([\t !#$%&(-~] | "\\" nl | "'" | nonascii | escape)* "\"";
 string2		=	"'"  ([\t !#$%&(-~] | "\\" nl | "\""| nonascii | escape)* "'";
 string		=	string1 | string2;
-w		=	[ \t\r\n\f]*;
+s		=	[ \t\r\n\f];
+w		=	s*;
 any		=	[\000-\377];
 
 ident		{ return IDENT; }
 "@" ident	{ return ATKEYWORD; }
 string		{ return STRING; }
 "#" name	{ return HASH; }
+
 num		{ return NUMBER; }
 num "%"		{ return PERCENTAGE; }
 num ident	{ return DIMENSION; }
+
 "url(" w string w ")" | "url(" w ([!#$%&*-~]|nonascii|escape)* w ")"
 		{ return URI; }
 "U+" [0-9A-F?]+ ("-" [0-9A-F]+ )?
 		{ return UNICODE_RANGE; }
+
 "<!--"		{ goto start; /* ignore CDO */ }
 "-->"		{ goto start; /* ignore CDC */ }
+
 ";"		{ return SEMI; }
 "{"		{ return LBRACE; }
 "}"		{ return RBRACE; }
@@ -79,22 +84,28 @@ num ident	{ return DIMENSION; }
 ")"		{ return RPAREN; }
 "["		{ return LBRAC; }
 "]"		{ return RBRAC; }
-[ \t\r\n\f]+	{ goto start; /* ignore whitespace */ }
-"/*" (any\[*])* "*"+ ((any\[/]) (any\[*])* "*"+)* "/"
+
+s+		{ return S; }
+
+"/*" (any\[*])* "*"+ ((any\[/*]) (any\[*])* "*"+)* "/"
 		{ goto start; /* ignore comments */ }
+
 ident "("	{ return FUNCTION; }
-"="		{ return EQUALS; }
+
 "~="		{ return INCLUDES; }
 "|="		{ return DASHMATCH; }
 "^="		{ return PREFIX; }
 "$="		{ return SUFFIX; }
 "*="		{ return SUBSTR; }
+
+"="		{ return EQUALS; }
 ":"		{ return COLON; }
 ","		{ return COMMA; }
 "+"		{ return PLUS; }
 ">"		{ return GT; }
 "."		{ return DOT; }
 "*"		{ return ASTERISK; }
+
 any		{ return DELIM; }
 */
 

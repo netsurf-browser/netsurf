@@ -18,7 +18,7 @@ at-rule     : ATKEYWORD S* any* [ block | ';' S* ];
 block       : '{' S* [ any | block | ATKEYWORD S* | ';' S* ]* '}' S*;
 ruleset     : selector? '{' S* declaration? [ ';' S* declaration? ]* '}' S*;
 selector    : any+;
-declaration : DELIM? property S* ':' S* value;
+declaration : DELIM? property S* ':' S* value S*;
 property    : IDENT;
 value       : [ any | block | ATKEYWORD S* ]+;
 any         : [ IDENT | NUMBER | PERCENTAGE | DIMENSION | STRING
@@ -26,32 +26,38 @@ any         : [ IDENT | NUMBER | PERCENTAGE | DIMENSION | STRING
               | DASHMATCH | FUNCTION S* any* ')'
               | '(' S* any* ')' | '[' S* any* ']' ] S*;
 
-Note: S, CDO, CDC will be stripped out by the scanner
+Note: CDO, CDC will be stripped out by the scanner
 */
 
-stylesheet ::= statement_list.
+stylesheet ::= ws statement_list.
+
+ws ::= .
+ws ::= ws_1.
+
+ws_1 ::= S.
 
 statement_list ::= .
 statement_list ::= statement_list statement.
 
+statement ::= ws_1.
 statement ::= ruleset.
 statement ::= at_rule.
 
-at_rule ::= ATKEYWORD any_list block.
-at_rule ::= ATKEYWORD(A) any_list(B) SEMI.
+at_rule ::= ATKEYWORD ws any_list block.
+at_rule ::= ATKEYWORD(A) ws any_list(B) SEMI ws.
 		{ if ((A.length == 7) && (strncasecmp(A.text, "@import", 7) == 0)
 				&& B)
 			css_atimport(param->stylesheet, B);
 		css_free_node(B); }
 
-block ::= LBRACE block_body RBRACE.
+block ::= LBRACE ws block_body RBRACE ws.
 block_body ::= .
 block_body ::= block_body any.
 block_body ::= block_body block.
-block_body ::= block_body ATKEYWORD.
-block_body ::= block_body SEMI.
+block_body ::= block_body ATKEYWORD ws.
+block_body ::= block_body SEMI ws.
 
-ruleset ::= selector_list(A) LBRACE declaration_list(B) RBRACE.
+ruleset ::= selector_list(A) LBRACE ws declaration_list(B) RBRACE ws.
 		{ if (A && B)
 			css_add_ruleset(param->stylesheet, A, B);
 		else
@@ -65,9 +71,9 @@ ruleset ::= LBRACE declaration_list(A) RBRACE.
 ruleset ::= any_list_1(A) LBRACE declaration_list(B) RBRACE.
 		{ css_free_node(A); css_free_node(B); } /* not CSS2 */
 
-selector_list(A) ::= selector(B).
+selector_list(A) ::= selector(B) ws.
 		{ A = B; }
-selector_list(A) ::= selector_list(B) COMMA selector(C).
+selector_list(A) ::= selector_list(B) COMMA ws selector(C) ws.
 		{ if (B && C) {
 			C->next = B;
 			A = C;
@@ -91,12 +97,12 @@ selector(A) ::= selector(B) css_combinator(C) simple_selector(D).
 			A = 0;
 		} }
 
-css_combinator(A) ::= .
-		{ A = CSS_COMB_ANCESTOR; }
-css_combinator(A) ::= PLUS.
+css_combinator(A) ::= ws PLUS ws.
 		{ A = CSS_COMB_PRECEDED; }
-css_combinator(A) ::= GT.
+css_combinator(A) ::= ws GT ws.
 		{ A = CSS_COMB_PARENT; }
+css_combinator(A) ::= ws_1.
+		{ A = CSS_COMB_ANCESTOR; }
 
 simple_selector(A) ::= element_name(B) detail_list(C).
 		{ if (C && (A = css_new_selector(CSS_SELECTOR_ELEMENT,
@@ -151,66 +157,66 @@ detail(A) ::= DOT IDENT(B).
 		{ A = css_new_selector(CSS_SELECTOR_CLASS, B.text, B.length);
 		if (A) A->specificity = 0x100;
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB, B.text, B.length);
 		if (A) A->specificity = 0x100;
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) EQUALS IDENT(C) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws EQUALS ws IDENT(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_EQ, B.text, B.length);
 		if (A) { A->data2 = C.text; A->data2_length = C.length;
 			A->specificity = 0x100; }
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) EQUALS STRING(C) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws EQUALS ws STRING(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_EQ, B.text, B.length);
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
 			A->specificity = 0x100; }
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) INCLUDES IDENT(C) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws INCLUDES ws IDENT(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_INC, B.text, B.length);
 		if (A) { A->data2 = C.text; A->data2_length = C.length;
 			A->specificity = 0x100; }
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) INCLUDES STRING(C) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws INCLUDES ws STRING(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_INC, B.text, B.length);
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
 			A->specificity = 0x100; }
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) DASHMATCH IDENT(C) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws DASHMATCH ws IDENT(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_DM, B.text, B.length);
 		if (A) { A->data2 = C.text; A->data2_length = C.length;
 			A->specificity = 0x100; }
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) DASHMATCH STRING(C) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws DASHMATCH ws STRING(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_DM, B.text, B.length);
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
 			A->specificity = 0x100; }
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) PREFIX IDENT(C) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws PREFIX ws IDENT(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_PRE, B.text, B.length);
 		if (A) { A->data2 = C.text; A->data2_length = C.length;
 			A->specificity = 0x100; }
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) PREFIX STRING(C) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws PREFIX ws STRING(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_PRE, B.text, B.length);
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
 			A->specificity = 0x100; }
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) SUFFIX IDENT(C) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws SUFFIX ws IDENT(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_SUF, B.text, B.length);
 		if (A) { A->data2 = C.text; A->data2_length = C.length;
 			A->specificity = 0x100; }
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) SUFFIX STRING(C) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws SUFFIX ws STRING(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_SUF, B.text, B.length);
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
 			A->specificity = 0x100; }
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) SUBSTR IDENT(C) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws SUBSTR ws IDENT(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_SUB, B.text, B.length);
 		if (A) { A->data2 = C.text; A->data2_length = C.length;
 			A->specificity = 0x100; }
 		else param->memory_error = true; }
-detail(A) ::= LBRAC IDENT(B) SUBSTR STRING(C) RBRAC.
+detail(A) ::= LBRAC ws IDENT(B) ws SUBSTR ws STRING(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_SUB, B.text, B.length);
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
 			A->specificity = 0x100; }
@@ -225,7 +231,11 @@ detail(A) ::= COLON IDENT(B).
 			if (A) A->specificity = 0x100;
 			else param->memory_error = true;
 		} }
-detail(A) ::= COLON FUNCTION(B) IDENT RPAREN.
+detail(A) ::= COLON FUNCTION(B) ws IDENT ws RPAREN.
+		{ A = css_new_selector(CSS_SELECTOR_PSEUDO, B.text, B.length);
+		if (A) A->specificity = 0x100;
+		else param->memory_error = true; }
+detail(A) ::= COLON FUNCTION(B) ws RPAREN.
 		{ A = css_new_selector(CSS_SELECTOR_PSEUDO, B.text, B.length);
 		if (A) A->specificity = 0x100;
 		else param->memory_error = true; }
@@ -236,15 +246,18 @@ declaration_list(A) ::= declaration(B).
 		{ A = B; }
 declaration_list(A) ::= declaration_list(B) SEMI.
 		{ A = B; }
-declaration_list(A) ::= declaration(B) SEMI declaration_list(C).
+declaration_list(A) ::= declaration(B) SEMI ws declaration_list(C).
 		{ if (B) { B->next = C; A = B; } else { A = C; } }
 
-declaration(A) ::= property(B) COLON value(C).
+declaration ::= DELIM property ws COLON ws value ws.
+		/* ignore this as it has no meaning in CSS2 */
+
+declaration(A) ::= property(B) ws COLON ws value(C) ws.
 		{ if (C && (A = css_new_node(param->stylesheet,
 		                CSS_NODE_DECLARATION,
-				B.text, B.length)))
+				B.text, B.length))) {
 			A->value = C;
-		else {
+		} else {
 			param->memory_error = true;
 			css_free_node(C);
 			A = 0;
@@ -255,23 +268,23 @@ declaration(A) ::= any_list_1(B).  /* malformed declaration: ignore */
 property(A) ::= IDENT(B).
 		{ A = B; }
 
-value(A) ::= any(B).
+value(A) ::= any(B) ws.
 		{ A = B; }
-value(A) ::= any(B) value(C).
+value(A) ::= any(B) ws value(C).
 		{ if (B && C) { B->next = C; A = B; }
 		else { css_free_node(B); css_free_node(C); A = 0; } }
-value(A) ::= value(B) block.
+value(A) ::= value(B) ws block.
 		{ A = B; }
-value(A) ::= value(B) ATKEYWORD.
+value(A) ::= value(B) ws ATKEYWORD ws.
 		{ A = B; }
 
 
 any_list(A) ::= .
 		{ A = 0; }
-any_list(A) ::= any(B) any_list(C).
+any_list(A) ::= any(B) ws any_list(C).
 		{ if (B) { B->next = C; A = B; }
 		else { css_free_node(B); css_free_node(C); A = 0; } }
-any_list_1(A) ::= any(B) any_list(C).
+any_list_1(A) ::= any(B) ws any_list(C).
 		{ if (B) { B->next = C; A = B; }
 		else { css_free_node(B); css_free_node(C); A = 0; } }
 any(A) ::= IDENT(B).
@@ -314,7 +327,7 @@ any(A) ::= INCLUDES.
 		{ A = css_new_node(param->stylesheet, CSS_NODE_INCLUDES,
 		                   0, 0);
 		if (!A) param->memory_error = true; }
-any(A) ::= FUNCTION(B) any_list(C) RPAREN.
+any(A) ::= FUNCTION(B) ws any_list(C) RPAREN.
 		{ if ((A = css_new_node(param->stylesheet, CSS_NODE_FUNCTION,
 		                        B.text, B.length)))
 			A->value = C;
@@ -354,7 +367,7 @@ any(A) ::= PLUS.
 any(A) ::= GT.
 		{ A = css_new_node(param->stylesheet, CSS_NODE_GT, 0, 0);
 		if (!A) param->memory_error = true; }
-any(A) ::= LPAREN any_list(B) RPAREN.
+any(A) ::= LPAREN ws any_list(B) RPAREN.
 		{ if ((A = css_new_node(param->stylesheet, CSS_NODE_PAREN,
 		                        0, 0)))
 			A->value = B;
@@ -363,7 +376,7 @@ any(A) ::= LPAREN any_list(B) RPAREN.
 			css_free_node(B);
 			A = 0;
 		} }
-any(A) ::= LBRAC any_list(B) RBRAC.
+any(A) ::= LBRAC ws any_list(B) RBRAC.
 		{ if ((A = css_new_node(param->stylesheet, CSS_NODE_BRAC,
 		                        0, 0)))
 			A->value = B;
