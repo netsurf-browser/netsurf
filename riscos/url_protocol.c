@@ -28,6 +28,7 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
+#ifdef WITH_URL
 
 /**
  * Handle a Message_InetSuiteOpenURL.
@@ -190,3 +191,5 @@ void ro_url_bounce(wimp_message *message)
 	/* ant broadcast bounced -> try uri broadcast / load */
 	ro_uri_launch(url_message->url);
 }
+
+#endif

@@ -33,14 +33,14 @@
  *  \todo make use of print stylesheets
  */
 
+/* extern globals */
+struct gui_window *print_current_window = 0;
+bool print_text_black = false;
+bool print_active = false;
+
 #ifdef WITH_PRINT
 
 /* 1 millipoint == 1/400 OS unit = 1/800 browser units */
-
-/* extern globals */
-struct gui_window *print_current_window = 0;
-bool print_active = false;
-bool print_text_black = false;
 
 /* static globals */
 static int print_prev_message = 0;

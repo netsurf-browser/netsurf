@@ -13,6 +13,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/utils/config.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -124,14 +125,26 @@ int ro_content_filetype(struct content *content)
 	switch (content->type) {
 		case CONTENT_HTML:	return 0xfaf;
 		case CONTENT_TEXTPLAIN:	return 0xfff;
-		case CONTENT_MNG:	return 0xf84;
 		case CONTENT_CSS:	return 0xf79;
+#ifdef WITH_MNG
 		case CONTENT_JNG:	return 0xf78;
+		case CONTENT_MNG:	return 0xf84;
+#endif
+#ifdef WITH_JPEG
 		case CONTENT_JPEG:	return 0xc85;
+#endif
+#ifdef WITH_PNG
 		case CONTENT_PNG:	return 0xb60;
+#endif
+#ifdef WITH_GIF
 		case CONTENT_GIF:	return 0x695;
+#endif
+#ifdef WITH_SPRITE
 		case CONTENT_SPRITE:	return 0xff9;
+#endif
+#ifdef WITH_DRAW
 		case CONTENT_DRAW:	return 0xaff;
+#endif
 		default:		break;
 	}
 

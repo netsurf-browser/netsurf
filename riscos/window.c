@@ -1100,9 +1100,11 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 				}
 			}
 			break;
+#ifdef WITH_SEARCH
 		case ICON_TOOLBAR_SEARCH:
 			ro_gui_search_open(g, 0, 0, false, true);
 			break;
+#endif
 		case ICON_TOOLBAR_SCALE:
 			current_gui = g;
 			ro_gui_menu_prepare_scale();
@@ -1351,9 +1353,11 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			ro_gui_open_help_page("docs");
 			return true;
 
+#ifdef WITH_SEARCH
 		case wimp_KEY_F4:	/* Search */
 			ro_gui_search_open(g, 0, 0, false, true);
 			return true;
+#endif
 
 		case wimp_KEY_F5:	/* Refresh. */
 			browser_window_reload(g->bw, false);
@@ -1482,9 +1486,11 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			}
 			return true;
 
+#ifdef WITH_PRINT
 		case wimp_KEY_PRINT:
 			ro_gui_print_open(g, 0, 0, false, true);
 			return true;
+#endif
 
 		case wimp_KEY_UP:
 		case wimp_KEY_DOWN:
