@@ -256,10 +256,12 @@ void ro_gui_menu_selection(wimp_selection *selection)
 								HOME_URL);
 						break;
 					case 2: /* Back */
-						browser_window_back(current_gui->data.browser.bw);
+						history_back(current_gui->data.browser.bw,
+								current_gui->data.browser.bw->history);
 						break;
 					case 3: /* Forward */
-						browser_window_forward(current_gui->data.browser.bw);
+						history_forward(current_gui->data.browser.bw,
+								current_gui->data.browser.bw->history);
 						break;
 					case 4: /* Reload */
 						break;

@@ -331,6 +331,7 @@ void ro_gui_history_open(struct browser_window *bw,
 	state.visible.y0 = wy - height / 2;
 	state.visible.x1 = wx + width / 2;
 	state.visible.y1 = wy + height / 2;
+	state.next = wimp_TOP;
 	wimp_open_window((wimp_open *) &state);
 }
 
@@ -486,3 +487,34 @@ struct history_entry * ro_gui_history_click_find(struct history_entry *he,
 	return 0;
 }
 
+
+/**
+ * Go back in the history.
+ *
+ * \param  bw       browser window
+ * \param  history  history of the window
+ */
+
+void history_back(struct browser_window *bw, struct history *history)
+{
+	if (!history || !history->current->back)
+		return;
+	history->current = history->current->back;
+	browser_window_go_post(bw, history->current->url, 0, 0, false);
+}
+
+
+/**
+ * Go forward in the history.
+ *
+ * \param  bw       browser window
+ * \param  history  history of the window
+ */
+
+void history_forward(struct browser_window *bw, struct history *history)
+{
+	if (!history || !history->current->forward_pref)
+		return;
+	history->current = history->current->forward_pref;
+	browser_window_go_post(bw, history->current->url, 0, 0, false);
+}

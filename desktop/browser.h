@@ -97,9 +97,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 void browser_window_stop(struct browser_window *bw);
 void browser_window_destroy(struct browser_window *bw);
 
-void browser_window_back(struct browser_window* bw);
-void browser_window_forward(struct browser_window* bw);
-
 int browser_window_action(struct browser_window* bw, struct browser_action* act);
 
 void box_under_area(struct box* box, unsigned long x, unsigned long y, unsigned long ox, unsigned long oy,
@@ -119,5 +116,7 @@ struct history *history_create(void);
 void history_add(struct history *history, struct content *content);
 void history_update(struct history *history, struct content *content);
 void history_destroy(struct history *history);
+void history_back(struct browser_window *bw, struct history *history);
+void history_forward(struct browser_window *bw, struct history *history);
 
 #endif

@@ -48,11 +48,11 @@ void ro_gui_mouse_action(gui_window *g) {
     switch (ma) {
 
       case mouseaction_BACK:
-           browser_window_back(g->data.browser.bw);
+/*            browser_window_back(g->data.browser.bw); */
            break;
 
       case mouseaction_FORWARD:
-           browser_window_forward(g->data.browser.bw);
+/*            browser_window_forward(g->data.browser.bw); */
            break;
 
       case mouseaction_RELOAD:

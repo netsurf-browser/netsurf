@@ -547,11 +547,22 @@ void ro_gui_window_mouse_at(wimp_pointer* pointer)
 void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
 {
 	switch (pointer->i) {
+		case ICON_TOOLBAR_BACK:
+			history_back(g->data.browser.bw,
+					g->data.browser.bw->history);
+			break;
+
+		case ICON_TOOLBAR_FORWARD:
+			history_forward(g->data.browser.bw,
+					g->data.browser.bw->history);
+			break;
+
 		case ICON_TOOLBAR_HISTORY:
 			ro_gui_history_open(g->data.browser.bw,
 					g->data.browser.bw->history,
 					pointer->pos.x, pointer->pos.y);
 			break;
+
 		case ICON_TOOLBAR_RELOAD:
 /*			browser_window_open_location_historical(g->data.browser.bw,
 					g->data.browser.bw->url

@@ -425,16 +425,6 @@ void browser_window_destroy(struct browser_window *bw)
 }
 
 
-
-void browser_window_back(struct browser_window* bw)
-{
-}
-
-void browser_window_forward(struct browser_window* bw)
-{
-}
-
-
 /**
  * Callback for fetchcache() for download window fetches.
  */
