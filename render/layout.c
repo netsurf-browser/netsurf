@@ -745,7 +745,11 @@ bool layout_line(struct box *first, int width, int *y,
 	/* get minimum line height from containing block */
 	used_height = height = line_height(first->parent->parent->style);
 
-	/* pass 1: find height of line assuming sides at top of line */
+	if (x1 < x0)
+		x1 = x0;
+
+	/* pass 1: find height of line assuming sides at top of line: loop
+	 * body executed at least once */
 	for (x = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
 		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_FLOAT_LEFT ||
