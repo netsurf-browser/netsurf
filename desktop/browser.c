@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.7 2002/12/23 20:19:53 bursa Exp $
+ * $Id: browser.c,v 1.8 2002/12/23 20:29:25 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -417,10 +417,10 @@ void browser_window_open_location(struct browser_window* bw, char* url)
   assert(bw != 0 && url != 0);
   browser_window_open_location_historical(bw, url);
   if (bw->history == NULL)
-    bw->history = history_create(NULL, bw->future_content->main_fetch->location);
+    bw->history = history_create(NULL, url);
   else
   {
-    history_remember(bw->history, NULL, bw->future_content->main_fetch->location);
+    history_remember(bw->history, NULL, url);
     bw->history = bw->history->later;
   }
   LOG(("end"));
