@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.1 2003/04/04 15:19:31 bursa Exp $
+ * $Id: css.c,v 1.2 2003/04/05 15:35:55 bursa Exp $
  */
 
 #include <assert.h>
@@ -74,12 +74,13 @@ const struct css_style css_blank_style = {
 
 void css_create(struct content *c)
 {
+	unsigned int i;
 	LOG(("content %p", c));
 	c->data.css = xcalloc(1, sizeof(*c->data.css));
 	css_lex_init(&c->data.css->lexer);
 	c->data.css->parser = css_parser_Alloc(malloc);
-	c->data.css->rule = 0;
-	c->data.css->last_rule = 0;
+	for (i = 0; i != HASH_SIZE; i++)
+		c->data.css->rule[i] = 0;
 }
 
 
@@ -168,11 +169,12 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 		unsigned int selectors, struct css_style * style)
 {
 	struct node *r, *n, *m;
-	unsigned int i;
+	unsigned int hash, i;
 
 	LOG(("stylesheet %p, selectors %u", stylesheet, selectors));
-	
-	for (r = stylesheet->rule; r != 0; r = r->next) {
+
+	hash = css_hash(selector[selectors - 1].element);
+	for (r = stylesheet->rule[hash]; r != 0; r = r->next) {
 		i = selectors - 1;
 		n = r;
 		/* compare element */
@@ -218,14 +220,11 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 matched:
 		/* TODO: sort by specificity */
 		LOG(("matched rule %p", r));
-		css_dump_style(r->style);
 		css_cascade(style, r->style);
 
 not_matched:
 
 	}
-
-	css_dump_style(style);
 }
 
 
@@ -238,12 +237,6 @@ void css_parse_property_list(struct css_style * style, char * str)
 /**
  * dump a style
  */
-
-static void dump_length(const struct css_length * const length)
-{
-	LOG(("%g%s", length->value,
-	               css_unit_name[length->unit]));
-}
 
 #define DUMP_LENGTH(pre, len, post) LOG((pre "%g%s" post, (len)->value, css_unit_name[(len)->unit]));
 
@@ -387,6 +380,16 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 			break;
 	}
 }
+
+
+unsigned int css_hash(const char *s)
+{
+	unsigned int z = 0;
+	for (; *s != 0; s++)
+		z += *s;
+	return z % HASH_SIZE;
+}
+
 
 
 #ifdef DEBUG

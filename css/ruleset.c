@@ -1,5 +1,5 @@
 /**
- * $Id: ruleset.c,v 1.1 2003/04/04 15:19:31 bursa Exp $
+ * $Id: ruleset.c,v 1.2 2003/04/05 15:35:55 bursa Exp $
  */
 
 #include <assert.h>
@@ -28,6 +28,7 @@ struct font_size_entry {
 };
 
 
+static int compare_selectors(struct node *n0, struct node *n1);
 static int parse_length(struct css_length * const length, const struct node * const v);
 static colour parse_colour(const struct node * const v);
 static void parse_background_color(struct css_style * const s, const struct node * const v);
@@ -102,40 +103,86 @@ void css_add_ruleset(struct css_stylesheet *stylesheet,
 		struct node *selector,
 		struct node *declaration)
 {
-	struct node *n, *last;
+	struct node *n, *sel, *next_sel;
 	struct css_style *style;
+	unsigned int hash;
 
-	/* construct the struct css_style */
-	style = xcalloc(1, sizeof(*style));
-	memcpy(style, &css_blank_style, sizeof(*style));
+	for (sel = selector; sel != 0; sel = next_sel) {
+		next_sel = sel->next;
 
-	for (n = declaration; n != 0; n = n->next) {
-		struct property_entry *p;
-		assert(n->type == NODE_DECLARATION && n->data != 0 && n->left != 0);
-		p = bsearch(n->data, property_table,
-				sizeof(property_table) / sizeof(property_table[0]),
-				sizeof(property_table[0]), strcasecmp);
-		if (p == 0)
-			continue;
-		p->parse(style, n->left);
+		/* check if this selector is already present */
+		hash = css_hash(sel->data);
+		for (n = stylesheet->rule[hash]; n != 0; n = n->next)
+			if (compare_selectors(sel, n))
+				break;
+		if (n == 0) {
+			/* not present: construct a new struct css_style */
+			style = xcalloc(1, sizeof(*style));
+			memcpy(style, &css_blank_style, sizeof(*style));
+			sel->style = style;
+			sel->next = stylesheet->rule[hash];
+			stylesheet->rule[hash] = sel;
+		} else {
+			/* already exists: augument existing style */
+			style = n->style;
+			sel->next = 0;
+			css_free_node(sel);
+		}
+
+		/* fill in the declarations */
+		for (n = declaration; n != 0; n = n->next) {
+			struct property_entry *p;
+			assert(n->type == NODE_DECLARATION && n->data != 0 && n->left != 0);
+			p = bsearch(n->data, property_table,
+					sizeof(property_table) / sizeof(property_table[0]),
+					sizeof(property_table[0]), strcasecmp);
+			if (p == 0)
+				continue;
+			p->parse(style, n->left);
+		}
 	}
-
-	/*css_dump_style(style);*/
-
-	/* add selectors to the stylesheet */
-	/* TODO: merge with identical selector */
-	for (n = selector; n != 0; n = n->next) {
-		n->style = style;
-		last = n;
-	}
-
-	if (stylesheet->rule == 0)
-		stylesheet->rule = selector;
-	else
-		stylesheet->last_rule->next = selector;
-	stylesheet->last_rule = last;
 }
 
+
+int compare_selectors(struct node *n0, struct node *n1)
+{
+	struct node *m0, *m1;
+	unsigned int count0, count1;
+	
+	/* compare element name */
+	if (!((n0->data == 0 && n1->data == 0) ||
+	      (n0->data != 0 && n1->data != 0 && strcasecmp(n0->data, n1->data) == 0)))
+		return 0;
+
+	if (n0->comb != n1->comb)
+		return 0;
+
+	/* compare classes and ids */
+	for (m0 = n0->left; m0 != 0; m0 = m0->next)
+		count0++;
+	for (m1 = n1->left; m1 != 0; m1 = m1->next)
+		count1++;
+	if (count0 != count1)
+		return 0;
+	for (m0 = n0->left; m0 != 0; m0 = m0->next) {
+		int found = 0;
+		for (m1 = n1->left; m1 != 0; m1 = m1->next) {
+			/* TODO: should this be case sensitive for IDs? */
+			if (m0->type == m1->type && strcasecmp(m0->data, m1->data) == 0) {
+				found = 1;
+				break;
+			}
+		}
+		if (!found)
+			return 0;
+	}
+
+	/* compare ancestors */
+	if (n0->comb == COMB_NONE)
+		return 1;
+
+	return compare_selectors(n0->right, n1->right);
+}
 
 
 
