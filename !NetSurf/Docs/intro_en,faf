@@ -18,8 +18,10 @@ information about NetSurf see the <a href="docs_en">documentation</a>.</p>
 
 <h2>Current Status</h2>
 <p>NetSurf is currently incomplete and many features aren't yet implemented.
-If you experience any crashes or unexpected behaviour while using NetSurf
-please report the problem to the <a href="info_en#devel">developers</a>.</p>
+See the <a href="progress_en">progress</a> page to get an indication of
+NetSurf's development status. If you experience any crashes or unexpected
+behaviour while using NetSurf please report the problem to the <a
+href="info_en#devel">developers</a>.</p>
 
 <h2>NetSurf Links</h2>
 
