@@ -49,7 +49,7 @@ void ro_gui_save_click(wimp_pointer *pointer)
 	switch (pointer->i) {
 	  	case ICON_SAVE_OK:
 	  		/*	Todo: Try save, and report error NoPathError if needed */
-	  		break; 
+	  		break;
 	  	case ICON_SAVE_CANCEL:
 	  		if (pointer->buttons == wimp_CLICK_SELECT) {
 	  		  	xwimp_close_window(pointer->w);
@@ -122,9 +122,26 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 	message.data.data_xfer.pos.x = pointer.pos.x;
 	message.data.data_xfer.pos.y = pointer.pos.y;
 	message.data.data_xfer.est_size = 1000;
-	message.data.data_xfer.file_type = 0xfaf;
+
+	/* set the filetype correctly */
+	message.data.data_xfer.file_type = 0xfaf; /* default = html */
 	if (gui_current_save_type == GUI_SAVE_DRAW)
 		message.data.data_xfer.file_type = 0xaff;
+	else if (gui_current_save_type == GUI_SAVE_TEXT ||
+		gui_current_save_type == GUI_SAVE_LINK_TEXT)
+		message.data.data_xfer.file_type = 0xfff;
+	else if (gui_current_save_type == GUI_SAVE_LINK_URI)
+		message.data.data_xfer.file_type = 0xf91;
+	else if (gui_current_save_type == GUI_SAVE_LINK_URL)
+		message.data.data_xfer.file_type = 0xb28;
+	/* object as native type.
+	 * assume sprite here, although this isn't guaranteed
+	 */
+	else if (gui_current_save_type == GUI_SAVE_OBJECT_NATIVE)
+		message.data.data_xfer.file_type = 0xff9;
+	/* don't change the type as we've no idea what it is
+	else if (gui_current_save_type == GUI_SAVE_OBJECT_ORIG)
+	*/
 	if (gui_current_save_type == GUI_SAVE_COMPLETE) {
 		message.data.data_xfer.file_type = 0x2000;
 		if (name[0] != '!') {
@@ -226,7 +243,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			ro_gui_hotlist_save_as(path);
 			break;
 	}
-	
+
 	/*	Close the save window
 	*/
 	xwimp_close_window(dialog_saveas);
