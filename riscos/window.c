@@ -450,7 +450,7 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 			clip_x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2;
 			clip_y1 = (ro_plot_origin_y - redraw->clip.y0) / 2;
 			content_redraw(c, 0, 0,
-					c->width * 2, c->height * 2,
+					c->width, c->height,
 					clip_x0, clip_y0, clip_x1, clip_y1,
 					g->option.scale,
 					0xFFFFFF);
@@ -555,7 +555,7 @@ void gui_window_update_box(struct gui_window *g,
 			}
 
 			content_redraw(c, 0, 0,
-					c->width * 2, c->height * 2,
+					c->width, c->height,
 					clip_x0, clip_y0, clip_x1, clip_y1,
 					g->option.scale,
 					0xFFFFFF);
