@@ -14,10 +14,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "oslib/os.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/help.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/wimp.h"
@@ -41,6 +43,7 @@
 static void translate_menu(wimp_menu *menu);
 static void ro_gui_menu_prepare_images(void);
 static void ro_gui_menu_prepare_toolbars(void);
+static void ro_gui_menu_prepare_help(int forced);
 static void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning);
 static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
 static struct box *ro_gui_menu_find_object_box(void);
@@ -225,10 +228,10 @@ static wimp_MENU(4) utilities_menu = {
 static wimp_MENU(4) help_menu = {
   { "Help" }, 7,2,7,0, 300, 44, 0,
   {
-    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "HelpContent" } },
-    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "HelpGuide" } },
-    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "HelpInfo" } },
-    { wimp_MENU_LAST,     wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "HelpInter" } }
+    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "HelpContent" } },
+    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "HelpGuide" } },
+    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "HelpInfo" } },
+    { wimp_MENU_LAST,     wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "HelpInter" } }
   }
 };
 
@@ -238,13 +241,13 @@ static wimp_MENU(4) help_menu = {
 static wimp_MENU(5) menu = {
   { "NetSurf" }, 7,2,7,0, 200, 44, 0,
   {
-    { 0,              (wimp_menu *)&page_menu,      DEFAULT_FLAGS, { "Page" } },
-    { 0,              (wimp_menu *)&object_menu,    DEFAULT_FLAGS, { "Object" } },
-//    { 0,              (wimp_menu *)&selection_menu, DEFAULT_FLAGS, { "Selection" } },
-    { 0,              (wimp_menu *)&navigate_menu,  DEFAULT_FLAGS, { "Navigate" } },
-    { 0,              (wimp_menu *)&view_menu,      DEFAULT_FLAGS, { "View" } },
-//    { 0,              (wimp_menu *)&utilities_menu, DEFAULT_FLAGS, { "Utilities" } },
-    { wimp_MENU_LAST, (wimp_menu *)&help_menu,      DEFAULT_FLAGS, { "Help" } }
+    { 0,                                       (wimp_menu *)&page_menu,      DEFAULT_FLAGS, { "Page" } },
+    { 0,                                       (wimp_menu *)&object_menu,    DEFAULT_FLAGS, { "Object" } },
+//    { 0,                                       (wimp_menu *)&selection_menu, DEFAULT_FLAGS, { "Selection" } },
+    { 0,                                       (wimp_menu *)&navigate_menu,  DEFAULT_FLAGS, { "Navigate" } },
+    { 0,                                       (wimp_menu *)&view_menu,      DEFAULT_FLAGS, { "View" } },
+//    { 0,                                       (wimp_menu *)&utilities_menu, DEFAULT_FLAGS, { "Utilities" } },
+    { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING, (wimp_menu *)&help_menu,      DEFAULT_FLAGS, { "Help" } }
   }
 };
 wimp_menu *browser_menu = (wimp_menu *) &menu;
@@ -395,7 +398,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						pointer.pos.x, pointer.pos.y, 0);
 				break;
 			case 1: /* Help */
-			        ro_gui_open_help_page();
+			        ro_gui_open_help_page("docs");
 			        break;
 			case 2: /* Choices */
 				ro_gui_dialog_open(dialog_config);
@@ -537,13 +540,17 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				switch (selection->items[1]) {
 				  	case -1: /* No sub-item */
 					case 0: /* Contents */
-					        ro_gui_open_help_page();
+					        ro_gui_open_help_page("docs");
 					        break;
 					case 1: /* User guide -> */
+					        ro_gui_open_help_page("guide");
 						break;
 					case 2: /* User information */
+					        ro_gui_open_help_page("info");
 						break;
 					case 3: /* Interactive help */
+						xos_cli("Filer_Run Resources:$.Apps.!Help");
+						ro_gui_menu_prepare_help(true);
 						break;
 				}
 				break;
@@ -678,6 +685,10 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 					break;
 			}
 			break;
+		case MENU_HELP: /* Help -> */
+			ro_gui_menu_prepare_help(false);
+			error = xwimp_create_sub_menu(browser_help_menu,
+					warning->pos.x, warning->pos.y);
 	}
 
 
@@ -813,6 +824,18 @@ void ro_gui_menu_prepare_scale(void) {
 	if (current_menu != browser_menu) return;
 	sprintf(scale_buffer, "%.0f", current_gui->scale * 100);
 	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
+}
+/**
+ * Update the Interactive Help status
+ *
+ * \parmam force  force the status to be disabled
+ */
+void ro_gui_menu_prepare_help(int forced) {
+	if (ro_gui_interactive_help_available() || (forced)) {
+		browser_help_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
+	} else {
+		browser_help_menu->entries[3].icon_flags &= ~wimp_ICON_SHADED;
+	}
 }
 
 void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)

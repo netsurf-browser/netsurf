@@ -1263,14 +1263,18 @@ void ro_gui_screen_size(int *width, int *height)
 }
 
 
-void ro_gui_open_help_page(void)
+/**
+ * Opens a language sensitive help page
+ *
+ * \param page  the page to open
+ */
+void ro_gui_open_help_page(char *page)
 {
 	char url[80];
-	sprintf(url, "file:///%%3CNetSurf$Dir%%3E/Docs/docs_%s",
-			option_language);
+	sprintf(url, "file:///%%3CNetSurf$Dir%%3E/Docs/%s_%s",
+			page, option_language);
         browser_window_create(url, NULL);
 }
-
 
 /**
  * Send the source of a content to a text editor.

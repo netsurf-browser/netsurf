@@ -813,6 +813,10 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 	}
 
 	switch (key) {
+		case wimp_KEY_F1:	/* Help. */
+			ro_gui_open_help_page("docs");
+			return true;
+
 		case wimp_KEY_F8:	/* View source. */
 			ro_gui_view_source(content);
 			return true;

@@ -15,5 +15,6 @@
 #include "oslib/wimp.h"
 
 void ro_gui_interactive_help_request(wimp_message *message);
+int ro_gui_interactive_help_available(void);
 
 #endif

@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "oslib/help.h"
+#include "oslib/taskmanager.h"
 #include "oslib/wimp.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
@@ -40,6 +41,8 @@
 
 	The prefixes are followed by either the icon number (eg 'HelpToolbar7'), or a series
 	of numbers representing the menu structure (eg 'HelpBrowserMenu3-1-2').
+	If '<key><identifier>' is not available, then simply '<key>' is then used. For example
+	if 'HelpToolbar7' is not available then 'HelpToolbar' is then tried.
 */
 
 static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token);
@@ -165,13 +168,32 @@ void ro_gui_interactive_help_request(wimp_message *message) {
  */
 static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token) {
 	char *translated_token;
+	char *base_token;
 	help_full_message_reply *reply;
 
 	/*	Check if the message exists
 	*/
 	translated_token = (char *)messages_get(token);
-	if (translated_token == token) return;
-
+	if (translated_token == token) {
+		
+		/*	Find the key from the token.
+		*/
+		base_token = translated_token;
+		while (base_token[0] != 0x00) {
+			if ((base_token[0] == '-') ||
+					((base_token[0] >= '0') && (base_token[0] <= '9'))) {
+				base_token[0] = 0x00;
+			} else {
+				*base_token++;
+			}
+		}
+		
+		/*	Check if the base key exists
+		*/
+		translated_token = (char *)messages_get(token);
+		if (translated_token == token) return;
+	}
+	
 	/*	Copy our message string
 	*/
 	reply = (help_full_message_reply *)message;
@@ -184,4 +206,33 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token
 	reply->action = message_HELP_REPLY;
 	reply->your_ref = reply->my_ref;
 	wimp_send_message(wimp_USER_MESSAGE, (wimp_message *)reply, reply->sender);
+}
+
+
+/**
+ * Checks if interactive help is running
+ *
+ * \return the task handle of !Help, or 0 if not available
+ */
+int ro_gui_interactive_help_available() {
+	taskmanager_task task;
+	int context = 0;
+	char *end;
+ 
+	/*	Attempt to find 'Help'
+	*/     
+	do {
+		if (xtaskmanager_enumerate_tasks(context, &task, sizeof(taskmanager_task),
+					&context, &end)) return 0;
+		
+		/*	We can't just use strcmp due to string termination issues.
+		*/
+		if (strncmp(task.name, "Help", 4) == 0) {
+		  	if (task.name[4] < 32) return (int)task.task;
+		}
+	} while (context >= 0);	
+  
+	/*	Return failure
+	*/
+	return 0;
 }
