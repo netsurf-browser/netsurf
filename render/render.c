@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.11 2002/05/21 21:32:35 bursa Exp $
+ * $Id: render.c,v 1.12 2002/05/27 23:21:11 bursa Exp $
  */
 
 #include <assert.h>
@@ -124,6 +124,10 @@ void render_dump(struct box * box, unsigned long x, unsigned long y)
 	fflush(stdout);
 
 	for (c = box->children; c != 0; c = c->next)
+		if (c->type != BOX_FLOAT)
+			render_dump(c, x + box->x, y + box->y);
+
+	for (c = box->float_children; c != 0; c = c->next_float)
 		render_dump(c, x + box->x, y + box->y);
 }
 
@@ -158,7 +162,7 @@ int main(int argc, char *argv[])
 	html_box = doc_box->children;
 	/*box_dump(html_box, 0);*/
 
-	layout_block(html_box, 600);
+	layout_document(html_box, 600);
 /*	box_dump(html_box, 0);*/
 /*	render_plain(html_box);*/
 	printf("%li %li\n", html_box->width, html_box->height);

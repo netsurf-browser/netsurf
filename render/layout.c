@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.4 2002/05/21 21:32:35 bursa Exp $
+ * $Id: layout.c,v 1.5 2002/05/27 23:21:11 bursa Exp $
  */
 
 #include <assert.h>
@@ -12,6 +12,7 @@
 #include "font.h"
 #include "box.h"
 #include "utils.h"
+#include "layout.h"
 
 /**
  * internal functions
@@ -19,10 +20,16 @@
 
 signed long len(struct css_length * length, unsigned long em);
 
-unsigned long layout_block_children(struct box * box, unsigned long width);
-void layout_inline_container(struct box * box, unsigned long width);
-void layout_table(struct box * box, unsigned long width);
-
+void layout_block(struct box * box, unsigned long width, struct box * cont,
+		unsigned long cx, unsigned long cy);
+unsigned long layout_block_children(struct box * box, unsigned long width, struct box * cont,
+		unsigned long cx, unsigned long cy);
+void find_sides(struct box * fl, unsigned long y0, unsigned long y1,
+		unsigned long * x0, unsigned long * x1);
+void layout_inline_container(struct box * box, unsigned long width, struct box * cont,
+		unsigned long cx, unsigned long cy);
+void layout_table(struct box * box, unsigned long width, struct box * cont,
+		unsigned long cx, unsigned long cy);
 
 /**
  * convert a struct css_length to pixels
@@ -48,7 +55,14 @@ signed long len(struct css_length * length, unsigned long em)
  * layout algorithm
  */
 
-void layout_block(struct box * box, unsigned long width)
+void layout_document(struct box * doc, unsigned long width)
+{
+	doc->float_children = 0;
+	layout_block(doc, width, doc, 0, 0);
+}
+
+void layout_block(struct box * box, unsigned long width, struct box * cont,
+		unsigned long cx, unsigned long cy)
 {
 	struct css_style * style = box->style;
 	switch (style->width.width) {
@@ -62,7 +76,7 @@ void layout_block(struct box * box, unsigned long width)
 			box->width = width * style->width.value.percent / 100;
 			break;
 	}
-	box->height = layout_block_children(box, box->width);
+	box->height = layout_block_children(box, box->width, cont, cx, cy);
 	switch (style->height.height) {
 		case CSS_HEIGHT_AUTO:
 			break;
@@ -72,7 +86,8 @@ void layout_block(struct box * box, unsigned long width)
 	}
 }
 
-unsigned long layout_block_children(struct box * box, unsigned long width)
+unsigned long layout_block_children(struct box * box, unsigned long width, struct box * cont,
+		unsigned long cx, unsigned long cy)
 {
 	struct box * c;
 	unsigned long y = 0;
@@ -80,19 +95,19 @@ unsigned long layout_block_children(struct box * box, unsigned long width)
 	for (c = box->children; c != 0; c = c->next) {
 		switch (c->type) {
 			case BOX_BLOCK:
-				layout_block(c, width);
+				layout_block(c, width, cont, cx, cy + y);
 				c->x = 0;
 				c->y = y;
 				y += c->height;
 				break;
 			case BOX_INLINE_CONTAINER:
-				layout_inline_container(c, width);
+				layout_inline_container(c, width, cont, cx, cy + y);
 				c->x = 0;
 				c->y = y;
 				y += c->height;
 				break;
 			case BOX_TABLE:
-				layout_table(c, width);
+				layout_table(c, width, cont, cx, cy + y);
 				c->x = 0;
 				c->y = y;
 				y += c->height;
@@ -107,27 +122,51 @@ unsigned long layout_block_children(struct box * box, unsigned long width)
 	return y;
 }
 
-void layout_inline_container(struct box * box, unsigned long width)
+void find_sides(struct box * fl, unsigned long y0, unsigned long y1,
+		unsigned long * x0, unsigned long * x1)
+{
+	for (; fl; fl = fl->next_float) {
+		if (y0 <= fl->y + fl->height && fl->y <= y1) {
+			if (fl->style->float_ == CSS_FLOAT_LEFT && *x0 < fl->x + fl->width)
+				*x0 = fl->x + fl->width;
+			else if (fl->style->float_ == CSS_FLOAT_RIGHT && fl->x < *x1)
+				*x1 = fl->x;
+		}
+	}
+	fprintf(stderr, "find_sides: y0 %li y1 %li => x0 %li x1 %li\n", y0, y1, *x0, *x1);
+}
+
+void layout_inline_container(struct box * box, unsigned long width, struct box * cont,
+		unsigned long cx, unsigned long cy)
 {
 	/* TODO: write this */
 	struct box * c;
 	unsigned long y = 0;
 	unsigned long x = 0;
+	unsigned long x0 = cx, x1 = cx + width;
 	const char * end;
 	struct box * c2;
 	struct font_split split;
 
+	find_sides(cont->float_children, cy + y, cy + y, &x0, &x1);
+	x = x0;
+
 	for (c = box->children; c != 0; ) {
 		if (c->type == BOX_FLOAT) {
-			layout_block(c, width);
-			c->x = 0;
-			c->y = y;
+			c->float_children = 0;
+			layout_block(c, width, c, 0, 0);
+			c->x = cx;
+			c->y = cy + y + 30;
+			fprintf(stderr, "float at %li %li, size %li %li\n", c->x, c->y, c->width, c->height);
+			c->next_float = cont->float_children;
+			cont->float_children = c;
 			c = c->next;
 			continue;
 		}
 		
 		assert(c->type == BOX_INLINE);
-		split = font_split(0, c->font, c->text, width - x, x == 0);
+		
+		split = font_split(0, c->font, c->text, x1 - x, x == x0);
 		if (*(split.end) == 0) {
 			/* fits into this line */
 			c->x = x;
@@ -139,8 +178,11 @@ void layout_inline_container(struct box * box, unsigned long width)
 			c = c->next;
 		} else if (split.end == c->text) {
 			/* doesn't fit at all: move down a line */
-			x = 0;
 			y += 30;
+			x0 = cx;
+			x1 = cx + width;
+			find_sides(cont->float_children, cy + y, cy + y, &x0, &x1);
+			x = x0;
 		} else {
 			/* split into two lines */ 
 			c->x = x;
@@ -148,8 +190,11 @@ void layout_inline_container(struct box * box, unsigned long width)
 			c->width = split.width;
 			c->height = split.height;
 			c->length = split.end - c->text;
-			x = 0;
 			y += 30;
+			x0 = cx;
+			x1 = cx + width;
+			find_sides(cont->float_children, cy + y, cy + y, &x0, &x1);
+			x = x0;
 			c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
 			c2->text = split.end;
 			c2->next = c->next;
@@ -169,7 +214,8 @@ void layout_inline_container(struct box * box, unsigned long width)
  * <http://www.w3.org/TR/REC-CSS2/tables.html#fixed-table-layout>
  */
 
-void layout_table(struct box * table, unsigned long width)
+void layout_table(struct box * table, unsigned long width, struct box * cont,
+		unsigned long cx, unsigned long cy)
 {
 	unsigned int columns;  /* total columns */
 	unsigned int auto_columns;  /* number of columns with auto width */
@@ -253,7 +299,8 @@ void layout_table(struct box * table, unsigned long width)
 		unsigned long height = 0;
 		for (i = 0, c = r->children; c != 0; i++, c = c->next) {
 			c->width = xs[i+1] - xs[i];
-			c->height = layout_block_children(c, c->width);
+			c->float_children = 0;
+			c->height = layout_block_children(c, c->width, c, 0, 0);
 			switch (c->style->height.height) {
 				case CSS_HEIGHT_AUTO:
 					break;

@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.1 2002/05/04 19:57:18 bursa Exp $
+ * $Id: box.h,v 1.2 2002/05/27 23:21:11 bursa Exp $
  */
 
 /**
@@ -18,6 +18,8 @@ struct box {
 	struct box * children;
 	struct box * last;
 	struct box * parent;
+	struct box * float_children;
+	struct box * next_float;
 	font_id font;
 };
 
