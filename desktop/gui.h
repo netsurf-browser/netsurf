@@ -1,5 +1,5 @@
 /**
- * $Id: gui.h,v 1.6 2003/03/04 11:59:35 bursa Exp $
+ * $Id: gui.h,v 1.7 2003/06/01 23:02:56 monkeyson Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_GUI_H_
@@ -51,4 +51,7 @@ void gui_window_stop_throbber(gui_window* g);
 void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, unsigned long mx, unsigned long my);
 void gui_edit_textarea(struct browser_window* bw, struct gui_gadget* g);
 void gui_edit_textbox(struct browser_window* bw, struct gui_gadget* g);
+
+void gui_show_choices();
+
 #endif

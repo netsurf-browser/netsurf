@@ -1,0 +1,31 @@
+<html>
+<head>
+<title>NetSurf mouse gestures</title>
+</head>
+<body>
+<h1 style="align:center">Mouse gestures</h1>
+
+<p>This page will explain the mouse gesture commands.</p>
+
+<p>Mouse gestures are performed by holding down the Menu mouse button and moving the mouse.</p>
+
+<table border="1">
+<tr>
+<td>Gesture</td>
+<td>Result</td>
+</tr>
+<tr>
+<td>Move left</td>
+<td>Go backwards in the history list</td>
+</tr>
+<tr>
+<td>Move right</td>
+<td>Go forwards in the history list</td>
+</tr>
+<tr>Move down then up</td>
+<td>Reload the current page</td>
+</tr>
+</table>
+
+</body>
+</html>

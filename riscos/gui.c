@@ -1,7 +1,8 @@
 /**
- * $Id: gui.c,v 1.28 2003/05/10 11:13:34 bursa Exp $
+ * $Id: gui.c,v 1.29 2003/06/01 23:02:56 monkeyson Exp $
  */
 
+#include "netsurf/desktop/options.h"
 #include "netsurf/riscos/font.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/utils/utils.h"
@@ -11,6 +12,7 @@
 #include "oslib/wimp.h"
 #include "oslib/colourtrans.h"
 #include "oslib/wimpspriteop.h"
+#include "oslib/osgbpb.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/utils/log.h"
 #include <assert.h>
@@ -25,16 +27,19 @@ int gadget_subtract_x;
 int gadget_subtract_y;
 #define browser_menu_flags (wimp_ICON_TEXT | wimp_ICON_FILLED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT))
 const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro";
+const char* GESTURES_URL = "file:///%3CNetSurf$Dir%3E/Resources/gestures";
+const char* THEMES_URL = "http://netsurf.sf.net/themes";
 
-wimp_MENU(2) netsurf_iconbar_menu =
+wimp_MENU(3) netsurf_iconbar_menu =
   {
     { "NetSurf" }, 7,2,7,0, 0, 44, 0,
     {
       { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MICONBAR1" } },
-      { wimp_MENU_LAST, wimp_NO_SUB_MENU, browser_menu_flags, { "MICONBAR2" } }
+      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MICONBAR2" } },
+      { wimp_MENU_LAST, wimp_NO_SUB_MENU, browser_menu_flags, { "MICONBAR3" } }
     }
   };
-#define ICONBAR_MENU_ENTRIES 2
+#define ICONBAR_MENU_ENTRIES 3
 
 wimp_MENU(3) browser_save_menu =
   {
@@ -79,6 +84,10 @@ wimp_MENU(4) browser_menu =
     }
   };
 
+wimp_menu* theme_menu = NULL;
+
+const char* THEME_DIR = "<NetSurf$Dir>.Themes";
+
 const char* netsurf_messages_filename = "<NetSurf$Dir>.Resources.Messages";
 messagetrans_control_block netsurf_messages_cb;
 char* netsurf_messages_data;
@@ -89,6 +98,37 @@ char* templates_messages_data;
 
 wimp_w netsurf_info;
 wimp_w netsurf_saveas;
+wimp_w config;
+wimp_w config_br;
+wimp_w config_prox;
+wimp_w config_th;
+
+struct ro_choices choices;
+struct browser_choices browser_choices;
+struct proxy_choices proxy_choices;
+struct theme_choices theme_choices;
+
+int config_open = 0;
+int config_br_open = 0;
+int config_prox_open = 0;
+int config_th_open = 0;
+
+void wimp_close_window_CHECK(wimp_w close);
+void wimp_close_window_CHECK(wimp_w close)
+{
+	if (close == config)
+			config_open = 0;
+	else if (close == config_br)
+			config_br_open = 0;
+	else if (close == config_prox)
+			config_prox_open = 0;
+	else if (close == config_th)
+	{
+			config_th_open = 0;
+		ro_gui_destroy_theme_menu();
+	}
+	wimp_close_window(close);
+}
 
 struct ro_gui_drag_info;
 typedef enum {
@@ -179,6 +219,10 @@ void ro_gui_load_templates(void)
   wimp_open_template("<NetSurf$Dir>.Resources.Templates");
   netsurf_info = ro_gui_load_template("info");
   netsurf_saveas = ro_gui_load_template("saveas");
+  config = ro_gui_load_template("config");
+  config_br = ro_gui_load_template("config_br");
+  config_prox = ro_gui_load_template("config_prox");
+  config_th = ro_gui_load_template("config_th");
   wimp_close_template();
 }
 
@@ -222,7 +266,7 @@ void ro_gui_transform_menus(void)
 {
   int i;
 
-  for (i = 0; i < 2; i++)
+  for (i = 0; i < 3; i++)
     ro_gui_transform_menu_entry(&netsurf_iconbar_menu.entries[i]);
 
   for (i = 0; i < 3; i++)
@@ -535,8 +579,8 @@ int select_on = 0;
 /* validation strings can't be const */
 static char validation_textarea[] = "R7;L";
 static char validation_textbox[] = "";
-static char validation_actionbutton[] = "R1";
-static char validation_actionbutton_pressed[] = "R2";
+static char validation_actionbutton[] = "R5";
+static char validation_actionbutton_pressed[] = "R5,3";
 static char validation_select[] = "R2";
 static char validation_checkbox_selected[] = "Sopton";
 static char validation_checkbox_unselected[] = "Soptoff";
@@ -640,7 +684,7 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
 			if (box->gadget->data.actionbutt.pressed)
 			{
 			  icon.data.indirected_text.validation = validation_actionbutton_pressed;
-			  icon.flags |= (wimp_COLOUR_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
+			  icon.flags |= (wimp_COLOUR_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) | wimp_ICON_SELECTED;
 			}
 			else
 			{
@@ -1059,6 +1103,7 @@ void gui_init(int argc, char** argv)
 {
   wimp_icon_create iconbar;
   wimp_version_no version;
+  char theme_fname[256];
 
 /*   __riscosify_control = __RISCOSIFY_NO_PROCESS; */
 
@@ -1074,7 +1119,12 @@ void gui_init(int argc, char** argv)
   strcpy(iconbar.icon.data.sprite, "!netsurf");
   ro_gui_iconbar_i = wimp_create_icon(&iconbar);
 
-  current_theme = ro_theme_create("<NetSurf$Dir>.Themes.Default");
+  if (OPTIONS.theme != NULL)
+  	sprintf(theme_fname, "<NetSurf$Dir>.Themes.%s", OPTIONS.theme);
+  else
+	  sprintf(theme_fname, "<NetSurf$Dir>.Themes.Default");
+  LOG(("Using theme '%s' - from '%s'",theme_fname, OPTIONS.theme));
+  current_theme = ro_theme_create(theme_fname);
 
   ro_gui_load_templates();
   ro_gui_load_messages();
@@ -1307,13 +1357,133 @@ void ro_gui_w_click(wimp_pointer* pointer)
     if (pointer->i == ro_gui_icon("INFO_URL"))
     {
       struct browser_window* bw;
-      bw = create_browser_window(browser_TITLE | browser_TOOLBAR
+      bw = create_browser_window(browser_TITLE | browser_TOOLBAR 
         | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480);
       gui_window_show(bw->window);
       browser_window_open_location(bw, "http://sourceforge.net/projects/netsurf/");
       wimp_set_caret_position(bw->window->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_URL"),
       0,0,-1, strlen(bw->window->url) - 1);
     }
+  }
+  else if (pointer->w == config && (pointer->buttons == 4 || pointer->buttons == 1))
+  {
+	  if (pointer->i == ro_gui_icon("CONFIG_BROWSER"))
+		ro_gui_show_browser_choices();
+	  else if (pointer->i == ro_gui_icon("CONFIG_PROXY"))
+		ro_gui_show_proxy_choices();
+	  else if (pointer->i == ro_gui_icon("CONFIG_THEME"))
+		ro_gui_show_theme_choices();
+	  else if (pointer->i == ro_gui_icon("CONFIG_OK") || pointer->i == ro_gui_icon("CONFIG_SAVE"))
+	  {
+		  LOG(("converting optons"));
+		  ro_to_options(&choices, &OPTIONS);
+		  LOG(("testing save"));
+		  if (pointer->i == ro_gui_icon("CONFIG_SAVE"))
+			options_write(&OPTIONS, NULL);
+		  LOG(("closing windows"));
+		  if (pointer->buttons != 1)
+		  {
+			wimp_close_window_CHECK(config_br);
+			wimp_close_window_CHECK(config_prox);
+			wimp_close_window_CHECK(config_th);
+			wimp_close_window_CHECK(config);
+		  }
+	  }
+	  else if (pointer->i == ro_gui_icon("CONFIG_CANCEL"))
+	  {
+		wimp_close_window_CHECK(config_br);
+		wimp_close_window_CHECK(config_prox);
+		wimp_close_window_CHECK(config_th);
+		  if (pointer->buttons != 1)
+			wimp_close_window_CHECK(config);
+		  else
+			options_to_ro(&OPTIONS, &choices);
+	  }
+  }
+  else if (pointer->w == config_br && (pointer->buttons == 4 || pointer->buttons == 1))
+  {
+	  if (pointer->i == ro_gui_icon("CONFIG_BR_OK"))
+	  {
+		  get_browser_choices(&choices.browser);
+		  get_browser_choices(&browser_choices);
+		  if (pointer->buttons != 1)
+			  wimp_close_window_CHECK(config_br);
+          }
+	  else if (pointer->i == ro_gui_icon("CONFIG_BR_CANCEL"))
+	  {
+		  if (pointer->buttons != 1)
+			  wimp_close_window_CHECK(config_br);
+		  else
+			 set_browser_choices(&choices.browser);
+	  }
+	  else if (pointer->i == ro_gui_icon("CONFIG_BR_DEFAULT"))
+	  {
+	  }
+	  else if (pointer->i == ro_gui_icon("CONFIG_BR_EXPLAIN"))
+	  {
+	struct browser_window* bw;
+    bw = create_browser_window(browser_TITLE | browser_TOOLBAR | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 320, 256);
+    gui_window_show(bw->window);
+    browser_window_open_location(bw, GESTURES_URL);
+	  }
+  }
+  else if (pointer->w == config_prox && (pointer->buttons == 4 || pointer->buttons == 1))
+  {
+	  if (pointer->i == ro_gui_icon("CONFIG_PROX_OK"))
+	  {
+		  get_proxy_choices(&choices.proxy);
+		  get_proxy_choices(&proxy_choices);
+		  if (pointer->buttons != 1)
+			  wimp_close_window_CHECK(config_prox);
+          }
+	  else if (pointer->i == ro_gui_icon("CONFIG_PROX_CANCEL"))
+	  {
+		  if (pointer->buttons != 1)
+			  wimp_close_window_CHECK(config_prox);
+		  else
+			 set_proxy_choices(&choices.proxy);
+	  }
+	  else if (pointer->i == ro_gui_icon("CONFIG_PROX_DEFAULT"))
+	  {
+	  }
+  }
+  else if (pointer->w == config_th && (pointer->buttons == 4 || pointer->buttons == 1))
+  {
+	  if (pointer->i == ro_gui_icon("CONFIG_TH_OK"))
+	  {
+		  get_theme_choices(&choices.theme);
+		  get_theme_choices(&theme_choices);
+		  if (pointer->buttons != 1)
+			  wimp_close_window_CHECK(config_th);
+          }
+	  else if (pointer->i == ro_gui_icon("CONFIG_TH_CANCEL"))
+	  {
+		  if (pointer->buttons != 1)
+			  wimp_close_window_CHECK(config_th);
+		  else
+			 set_theme_choices(&choices.theme);
+	  }
+	  else if (pointer->i == ro_gui_icon("CONFIG_TH_DEFAULT"))
+	  {
+	  }
+	  else if (pointer->i == ro_gui_icon("CONFIG_TH_PICK"))
+	  {
+		  ro_gui_build_theme_menu();
+		ro_gui_create_menu(theme_menu, pointer->pos.x - 64, pointer->pos.y, NULL);  
+	  }
+	  else if (pointer->i == ro_gui_icon("CONFIG_TH_MANAGE"))
+	  {
+		 char buffer[256];
+		 sprintf(buffer, "*filer_opendir %s", THEME_DIR);
+		 os_cli(buffer);
+	  }
+	  else if (pointer->i == ro_gui_icon("CONFIG_TH_GET"))
+	  {
+struct browser_window* bw;
+    bw = create_browser_window(browser_TITLE | browser_TOOLBAR | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 480, 320);
+    gui_window_show(bw->window);
+    browser_window_open_location(bw, THEMES_URL);
+	  }
   }
 }
 
@@ -1537,15 +1707,18 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
     if (pointer->buttons == wimp_CLICK_MENU)
     {
       /* check for mouse gestures */
-/*	    mouseaction ma = ro_gui_try_mouse_action();
+	    mouseaction ma = mouseaction_NONE;
+	    if (OPTIONS.use_mouse_gestures)
+		    ma = ro_gui_try_mouse_action();
+
       if (ma == mouseaction_NONE)
-      {*/
+      {
 	      os_t now;
 	      int z;
 
 	      os_mouse(&x, &y, &z, &now);
 	      ro_gui_create_menu((wimp_menu*) &browser_menu, x - 64, y, g);
-/*      }
+      }
       else
       {
 	      fprintf(stderr, "MOUSE GESTURE %d\n", ma);
@@ -1563,7 +1736,7 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
     			browser_window_open_location_historical(g->data.browser.bw, g->data.browser.bw->url);
 			break;
 		}
-      }*/
+      }
     }
     else if (g->data.browser.bw->current_content != NULL)
     {
@@ -1688,6 +1861,10 @@ void gui_multitask(void)
       break;
 
     case wimp_REDRAW_WINDOW_REQUEST   :
+      if (block.redraw.w == config_th)
+	      ro_gui_redraw_config_th(&block.redraw);
+      else
+      {
       g = ro_lookup_gui_from_w(block.redraw.w);
       if (g != NULL)
         ro_gui_window_redraw(g, &(block.redraw));
@@ -1697,6 +1874,7 @@ void gui_multitask(void)
         if (g != NULL)
           ro_gui_toolbar_redraw(g, &(block.redraw));
       }
+      }
       break;
 
     case wimp_OPEN_WINDOW_REQUEST     :
@@ -1704,7 +1882,9 @@ void gui_multitask(void)
       if (g != NULL)
         ro_gui_window_open(g, &(block.open));
       else
+      {
         wimp_open_window(&block.open);
+      }
       break;
 
     case wimp_CLOSE_WINDOW_REQUEST    :
@@ -1850,6 +2030,8 @@ void ro_gui_menu_selection(wimp_selection* selection)
   else if (current_menu == (wimp_menu*) &netsurf_iconbar_menu)
   {
     if (selection->items[0] == 1)
+      gui_show_choices();
+    if (selection->items[0] == 2)
       netsurf_quit = 1;
   }
   else if (current_menu == (wimp_menu*) &browser_menu)
@@ -1892,6 +2074,14 @@ void ro_gui_menu_selection(wimp_selection* selection)
         break;
     }
 
+  }
+  else if (current_menu == theme_menu && theme_menu != NULL)
+  {
+	  strcpy(theme_choices.name, theme_menu->entries[selection->items[0]].data.indirected_text.text);
+	set_icon_string(config_th, ro_gui_icon("CONFIG_TH_NAME"), theme_choices.name);
+	load_theme_preview(theme_choices.name);
+  	wimp_set_icon_state(config_th, ro_gui_icon("CONFIG_TH_NAME"), 0, 0);
+  	wimp_set_icon_state(config_th, ro_gui_icon("CONFIG_TH_PREVIEW"), 0, 0);
   }
 
   if (pointer.buttons == wimp_CLICK_ADJUST)
@@ -1942,6 +2132,10 @@ void gui_poll(void)
         break;
 
       case wimp_REDRAW_WINDOW_REQUEST   :
+      if (block.redraw.w == config_th)
+	      ro_gui_redraw_config_th(&block.redraw);
+      else
+      {
         g = ro_lookup_gui_from_w(block.redraw.w);
         if (g != NULL)
           ro_gui_window_redraw(g, &(block.redraw));
@@ -1951,6 +2145,7 @@ void gui_poll(void)
           if (g != NULL)
             ro_gui_toolbar_redraw(g, &(block.redraw));
         }
+      }
         break;
 
       case wimp_OPEN_WINDOW_REQUEST     :
@@ -1958,7 +2153,9 @@ void gui_poll(void)
         if (g != NULL)
           ro_gui_window_open(g, &(block.open));
         else
+	{
           wimp_open_window(&block.open);
+	}
         break;
 
       case wimp_CLOSE_WINDOW_REQUEST    :
@@ -1966,7 +2163,7 @@ void gui_poll(void)
         if (g != NULL)
           gui_window_hide(g);
         else
-          wimp_close_window(block.close.w);
+          wimp_close_window_CHECK(block.close.w);
         break;
 
       case wimp_POINTER_LEAVING_WINDOW  :
@@ -2361,3 +2558,358 @@ void gui_remove_gadget(struct gui_gadget* g)
 		current_textbox = 0;
 	}
 }
+
+
+void gui_show_choices()
+{
+  	wimp_window_state open;
+
+	if (!config_open)
+		options_to_ro(&OPTIONS, &choices);
+
+	open.w = config;
+	wimp_get_window_state(&open);
+	open.next = wimp_TOP;
+	wimp_open_window(&open);
+	config_open = 1;
+	return;
+}
+
+void set_icon_state(wimp_w w, wimp_i i, int state)
+{
+	if (state)
+		wimp_set_icon_state(w,i, wimp_ICON_SELECTED, wimp_ICON_SELECTED);
+	else
+		wimp_set_icon_state(w,i, 0, wimp_ICON_SELECTED);
+}
+
+int get_icon_state(wimp_w w, wimp_i i)
+{
+	wimp_icon_state ic;
+	ic.w = w;
+	ic.i = i;
+	wimp_get_icon_state(&ic);
+	return (ic.icon.flags & wimp_ICON_SELECTED) != 0;
+}
+
+void set_icon_string(wimp_w w, wimp_i i, char* text)
+{
+	wimp_icon_state ic;
+	ic.w = w;
+	ic.i = i;
+	wimp_get_icon_state(&ic);
+	strncpy(ic.icon.data.indirected_text.text, text, ic.icon.data.indirected_text.size);
+}
+
+char* get_icon_string(wimp_w w, wimp_i i)
+{
+	wimp_icon_state ic;
+	ic.w = w;
+	ic.i = i;
+	wimp_get_icon_state(&ic);
+	return ic.icon.data.indirected_text.text;
+}
+
+void set_icon_string_i(wimp_w w, wimp_i i, int num)
+{
+	char buffer[255];
+	sprintf(buffer, "%d", num);
+	set_icon_string(w, i, buffer);
+}
+
+void set_browser_choices(struct browser_choices* newchoices)
+{
+	memcpy(&browser_choices, newchoices, sizeof(struct browser_choices));
+	set_icon_state(config_br, ro_gui_icon("CONFIG_BR_GESTURES"), browser_choices.use_mouse_gestures);
+	set_icon_state(config_br, ro_gui_icon("CONFIG_BR_FORM"), browser_choices.use_riscos_elements);
+	set_icon_state(config_br, ro_gui_icon("CONFIG_BR_TEXT"), browser_choices.allow_text_selection);
+	set_icon_state(config_br, ro_gui_icon("CONFIG_BR_TOOLBAR"), browser_choices.show_toolbar);
+	set_icon_state(config_br, ro_gui_icon("CONFIG_BR_PREVIEW"), browser_choices.show_print_preview);
+}
+
+void get_browser_choices(struct browser_choices* newchoices)
+{
+	newchoices->use_mouse_gestures = get_icon_state(config_br, ro_gui_icon("CONFIG_BR_GESTURES"));
+	newchoices->use_riscos_elements = get_icon_state(config_br, ro_gui_icon("CONFIG_BR_FORM"));
+	newchoices->allow_text_selection = get_icon_state(config_br, ro_gui_icon("CONFIG_BR_TEXT"));
+	newchoices->show_toolbar = get_icon_state(config_br, ro_gui_icon("CONFIG_BR_TOOLBAR"));
+	newchoices->show_print_preview = get_icon_state(config_br, ro_gui_icon("CONFIG_BR_PREVIEW"));
+}
+
+void set_proxy_choices(struct proxy_choices* newchoices)
+{
+	memcpy(&proxy_choices, newchoices, sizeof(struct proxy_choices));
+	set_icon_state(config_prox, ro_gui_icon("CONFIG_PROX_HTTP"), proxy_choices.http);
+	set_icon_string(config_prox, ro_gui_icon("CONFIG_PROX_HTTPHOST"), proxy_choices.http_proxy);
+	set_icon_string_i(config_prox, ro_gui_icon("CONFIG_PROX_HTTPPORT"), proxy_choices.http_port);
+}
+
+void get_proxy_choices(struct proxy_choices* newchoices)
+{
+	newchoices->http = get_icon_state(config_prox, ro_gui_icon("CONFIG_PROX_HTTP"));
+	strncpy(newchoices->http_proxy, get_icon_string(config_prox, ro_gui_icon("CONFIG_PROX_HTTPHOST")), 255);
+	newchoices->http_port = atoi(get_icon_string(config_prox, ro_gui_icon("CONFIG_PROX_HTTPPORT")));
+}
+
+osspriteop_area* theme_preview = NULL;
+
+void load_theme_preview(char* thname)
+{
+if (theme_preview != NULL)
+	xfree(theme_preview);
+
+theme_preview = NULL;
+
+	if (file_exists(THEME_DIR, thname, "Preview", 0xff9))
+	{
+char filename[256];
+FILE* fp;
+int size;
+
+
+  sprintf(filename, "%s.%s.Preview", THEME_DIR, thname);
+  fp = fopen(filename, "rb");
+  if (fp == 0) return;
+  if (fseek(fp, 0, SEEK_END) != 0) die("fseek() failed");
+  if ((size = (int) ftell(fp)) == -1) die("ftell() failed");
+  fclose(fp);
+
+  theme_preview = xcalloc(size + 16, 1);
+  if (theme_preview == NULL)
+	  return;
+
+  theme_preview->size = size + 16;
+  theme_preview->sprite_count = 0;
+  theme_preview->first = 16;
+  theme_preview->used = 16;
+  osspriteop_clear_sprites(osspriteop_USER_AREA, theme_preview);
+  osspriteop_load_sprite_file(osspriteop_USER_AREA, theme_preview, filename);
+
+ 
+	}
+}
+
+void set_theme_choices(struct theme_choices* newchoices)
+{
+	memcpy(&theme_choices, newchoices, sizeof(struct theme_choices));
+	set_icon_string(config_th, ro_gui_icon("CONFIG_TH_NAME"), theme_choices.name);
+	load_theme_preview(theme_choices.name);
+}
+
+void get_theme_choices(struct theme_choices* newchoices)
+{
+	strncpy(newchoices->name, get_icon_string(config_th, ro_gui_icon("CONFIG_TH_NAME")), 255);
+}
+
+void ro_gui_show_browser_choices()
+{
+  	wimp_window_state open;
+
+	if (!config_br_open)
+		set_browser_choices(&choices.browser);
+
+	open.w = config_br;
+	wimp_get_window_state(&open);
+	open.next = wimp_TOP;
+	wimp_open_window(&open);
+	config_br_open = 1;
+}
+
+void ro_gui_show_proxy_choices()
+{
+  	wimp_window_state open;
+
+	if (!config_prox_open)
+		set_proxy_choices(&choices.proxy);
+
+	open.w = config_prox;
+	wimp_get_window_state(&open);
+	open.next = wimp_TOP;
+	wimp_open_window(&open);
+	config_prox_open = 1;
+}
+
+void ro_gui_show_theme_choices()
+{
+  	wimp_window_state open;
+
+	if (!config_th_open)
+	{
+		set_theme_choices(&choices.theme);
+	}
+
+	open.w = config_th;
+	wimp_get_window_state(&open);
+	open.next = wimp_TOP;
+	wimp_open_window(&open);
+	config_th_open = 1;
+}
+
+
+void ro_gui_destroy_theme_menu()
+{
+	int i = 0;
+	LOG(("destroy?"));
+
+	if (theme_menu == NULL)
+		return;
+
+	LOG(("enumerating"));
+	while ((theme_menu->entries[i].menu_flags & wimp_MENU_LAST) == 0)
+	{
+		xfree(theme_menu->entries[i].data.indirected_text.text);
+		LOG(("freed"));
+		i++;
+	}
+
+	LOG(("freeing menu"));
+	xfree(theme_menu);
+	theme_menu = NULL;
+	LOG(("destroyed"));
+}
+
+int file_exists(char* base, char* dir, char* leaf, bits ftype)
+{
+	char buffer[256];
+	fileswitch_object_type type;
+	bits load, exec;
+	int size;
+	fileswitch_attr attr;
+	bits file_type;
+
+	snprintf(buffer, 255, "%s.%s.%s", base, dir, leaf);
+	LOG(("checking %s", buffer));
+	if (xosfile_read_stamped_no_path(buffer, &type, &load, &exec, &size, &attr, &file_type) == NULL)
+	{
+		return (type == 1 && ftype == file_type);
+	}
+
+	return 0;
+}
+
+void ro_gui_build_theme_menu()
+{
+	wimp_menu* m;
+	int num = 0;
+	int i;
+	char* name[256];
+	char buffer[256];
+	osgbpb_system_info* info;
+	int context = 0, count = 1;
+
+	LOG(("check for destroy"));
+	if (theme_menu != NULL)
+		ro_gui_destroy_theme_menu();
+
+	LOG(("enumerate themes"));
+		context = osgbpb_dir_entries_system_info(THEME_DIR, buffer, 1, context, 256, 0, &count);
+	while (context != -1)
+	{
+		LOG(("called"));
+		info = (osgbpb_system_info*) buffer;
+		if (info->obj_type == 2 /* directory */)
+		{
+			if (file_exists(THEME_DIR, info->name, "Templates", 0xfec) &&
+			    file_exists(THEME_DIR, info->name, "Sprites", 0xff9) &&
+			    file_exists(THEME_DIR, info->name, "IconNames", 0xfff) &&
+			    file_exists(THEME_DIR, info->name, "IconSizes", 0xfff))
+			{
+			LOG(("found"));
+			name[num] = malloc(strlen(info->name) + 2);
+			strcpy(name[num], info->name);
+			num++;
+			}
+		}
+		context = osgbpb_dir_entries_system_info(THEME_DIR, buffer, 1, context, 256, 0, &count);
+	}
+	LOG(("mallocing"));
+	
+	m = malloc(sizeof(wimp_menu_base) + (num*2) * sizeof(wimp_menu_entry));
+	strcpy(m->title_data.text, "Themes");
+	m->title_fg = wimp_COLOUR_BLACK;
+	m->title_bg = wimp_COLOUR_LIGHT_GREY;
+	m->work_fg = wimp_COLOUR_BLACK;
+	m->work_bg = wimp_COLOUR_WHITE;
+	m->width = 256;
+	m->height = 44;
+	m->gap = 0;
+	
+	LOG(("building entries"));
+	for (i = 0; i < num; i++)
+	{
+		if (i < num - 1)
+		  m->entries[i].menu_flags = 0;
+		else
+		{
+			LOG(("last one"));
+		  m->entries[i].menu_flags = wimp_MENU_LAST;
+		}
+
+		if (strcmp(name[i], theme_choices.name) == 0)
+			m->entries[i].menu_flags |= wimp_MENU_TICKED;
+
+		m->entries[i].sub_menu = wimp_NO_SUB_MENU;
+		m->entries[i].icon_flags = (wimp_ICON_TEXT | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT));
+		m->entries[i].data.indirected_text.text = name[i];
+		m->entries[i].data.indirected_text.validation = BROWSER_VALIDATION;
+		m->entries[i].data.indirected_text.size = strlen(name[i]) + 1;
+		LOG(("entry %d", i));
+	}
+
+	LOG(("done"));
+
+	theme_menu = m;
+}
+
+void ro_gui_redraw_config_th(wimp_draw* redraw)
+{
+	int x, y, size;
+  osbool more;
+  wimp_icon_state preview;
+  wimp_window_state win;
+  osspriteop_trans_tab* trans_tab;
+
+  win.w = config_th;
+  wimp_get_window_state(&win);
+
+  preview.w = config_th;
+  preview.i = ro_gui_icon("CONFIG_TH_PREVIEW");
+  wimp_get_icon_state(&preview);
+
+  if (theme_preview != NULL)
+  {
+  x = preview.icon.extent.x0 + win.visible.x0 + 4;
+  y = preview.icon.extent.y0 + win.visible.y1 + 4;
+
+  xcolourtrans_generate_table_for_sprite(theme_preview, "preview", -1, -1, 0, 0, 0, 0, &size);
+  trans_tab = malloc(size + 32);
+  xcolourtrans_generate_table_for_sprite(theme_preview, "preview", -1, -1, trans_tab, 0, 0, 0, &size);
+
+  more = wimp_redraw_window(redraw);
+  while (more)
+  {
+    xosspriteop_put_sprite_scaled(osspriteop_NAME, theme_preview, "preview", x, y, 0, 0, trans_tab);
+    more = wimp_get_rectangle(redraw);
+  }
+
+  xfree(trans_tab);
+  }
+  else
+ { 
+	 preview.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
+	 preview.icon.data.indirected_text.text = "No preview available";
+	 preview.icon.data.indirected_text.size = 21;
+
+  more = wimp_redraw_window(redraw);
+  while (more)
+  {
+	  wimp_plot_icon(&preview.icon);
+    more = wimp_get_rectangle(redraw);
+  }
+
+  }
+  return;
+
+}
+
+

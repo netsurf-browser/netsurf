@@ -23,4 +23,6 @@ MBROWSE3:Selection
 MBROWSE4:Navigate
 # Iconbar
 MICONBAR1:Info
-MICONBAR2:Quit
+MICONBAR2:Choices...
+MICONBAR3:Quit
+

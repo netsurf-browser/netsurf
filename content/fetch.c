@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.c,v 1.7 2003/04/25 08:03:15 bursa Exp $
+ * $Id: fetch.c,v 1.8 2003/06/01 23:02:56 monkeyson Exp $
  *
  * This module handles fetching of data from any url.
  *
@@ -20,6 +20,7 @@
 #include "netsurf/content/fetch.h"
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/desktop/options.h"
 
 struct fetch
 {
@@ -177,6 +178,16 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->headers = curl_slist_append(fetch->headers, "Pragma:");
 	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPHEADER, fetch->headers);
 	assert(code == CURLE_OK);
+
+	/* use proxy if options dictate this */
+	if (OPTIONS.http)
+	{
+	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXY, OPTIONS.http_proxy);
+	assert(code == CURLE_OK);
+	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXYPORT, (long)OPTIONS.http_proxy);
+	assert(code == CURLE_OK);
+	}
+
 
 	/* add to the global curl multi handle */
 	codem = curl_multi_add_handle(curl_multi, fetch->curl_handle);

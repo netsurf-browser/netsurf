@@ -1,7 +1,8 @@
 /**
- * $Id: netsurf.c,v 1.8 2003/05/10 11:13:34 bursa Exp $
+ * $Id: netsurf.c,v 1.9 2003/06/01 23:02:56 monkeyson Exp $
  */
 
+#include "netsurf/desktop/options.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
@@ -27,6 +28,8 @@ void netsurf_poll(void)
 void netsurf_init(int argc, char** argv)
 {
   stdout = stderr;
+  options_init(&OPTIONS);
+  options_read(&OPTIONS, NULL);
   gui_init(argc, argv);
   fetch_init();
   cache_init();

@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.24 2003/05/31 21:19:12 bursa Exp $
+# $Id: makefile,v 1.25 2003/06/01 23:02:56 monkeyson Exp $
 
 CC = riscos-gcc
 OBJECTS = cache.o content.o fetch.o fetchcache.o \
@@ -6,7 +6,7 @@ OBJECTS = cache.o content.o fetch.o fetchcache.o \
 	browser.o netsurf.o \
 	box.o html.o layout.o textplain.o \
 	filetype.o font.o gui.o jpeg.o png.o theme.o \
-	utils.o plugin.o
+	utils.o plugin.o choices.o
 VPATH = content:css:desktop:render:riscos:utils
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wconversion -Wstrict-prototypes \
