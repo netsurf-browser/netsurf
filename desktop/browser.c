@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.37 2003/05/22 13:21:45 bursa Exp $
+ * $Id: browser.c,v 1.38 2003/05/25 04:09:59 jmb Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -427,6 +427,8 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 					gui_redraw_gadget(bw, g);
 					if (stricmp(g->data.actionbutt.butttype,"submit") == 0)
 						browser_form_submit(bw, g->form);
+					g->data.actionbutt.pressed = 0;
+					gui_redraw_gadget(bw,g);
 					break;
 				case GADGET_TEXTAREA:
 					gui_edit_textarea(bw, g);
@@ -923,7 +925,7 @@ char* browser_form_construct_get(struct page_elements *elements, struct formsubm
   j=0;
   for (i=0;i<elements->numGadgets;i++){
     if(elements->gadgets[i]->form == fs->form){
-           
+
       if(elements->gadgets[i]->name != 0){
         char *value = 0;
 
@@ -960,7 +962,7 @@ char* browser_form_construct_get(struct page_elements *elements, struct formsubm
           j++;
         }
       }
-      
+
     }
   }
   return ret;
