@@ -1,5 +1,5 @@
 /**
- * $Id: parser.y,v 1.2 2003/04/01 20:18:18 bursa Exp $
+ * $Id: parser.y,v 1.3 2003/04/01 21:33:08 bursa Exp $
  */
 
 /*
@@ -45,14 +45,46 @@ block_body ::= block_body block.
 block_body ::= block_body ATKEYWORD.
 block_body ::= block_body SEMI.
 
-ruleset ::= selector(A) LBRACE declaration_list(B) RBRACE.
+ruleset ::= selector_list(A) LBRACE declaration_list(B) RBRACE.
 		{ css_add_ruleset(stylesheet, A, B);
 		css_free_node(A); css_free_node(B); }
+ruleset ::= any_list_1(A) LBRACE declaration_list(B) RBRACE.
+		{ css_free_node(A); css_free_node(B); } /* not CSS2 */
 ruleset ::= LBRACE declaration_list RBRACE.
 		/* this form of ruleset not used in CSS2 */
 
-selector(A) ::= any_list_1(B).
+selector_list(A) ::= selector(B).
 		{ A = B; }
+selector_list(A) ::= selector_list(B) COMMA selector(C).
+		{ C->next = B; A = C; }
+
+selector(A) ::= simple_selector(B).
+		{ A = B; }
+selector(A) ::= selector(B) combinator(C) simple_selector(D).
+		{ B->right = D; A->data = C; A = B; }
+
+combinator(A) ::= .
+		{ A = 0; }
+combinator(A) ::= PLUS(B).
+		{ A = B; }
+combinator(A) ::= GT(B).
+		{ A = B; }
+
+simple_selector(A) ::= element_name(B) detail_list(C).
+		{ A = css_new_node(NODE_SELECTOR, B, C, 0); }
+
+element_name(A) ::= .
+		{ A = 0; }
+element_name(A) ::= IDENT(B).
+		{ A = B; }
+
+detail_list(A) ::= .
+		{ A = 0; }
+detail_list(A) ::= HASH(B) detail_list(C).
+		{ A = css_new_node(NODE_ID, B, 0, 0); A->next = C; }
+detail_list(A) ::= DOT IDENT(B) detail_list(C).
+		{ A = css_new_node(NODE_CLASS, B, 0, 0); A->next = C; }
+/* TODO: attrib, pseudo */
 
 declaration_list(A) ::= .
 		{ A = 0; }
@@ -102,14 +134,20 @@ any(A) ::= HASH(B).
 		{ A = css_new_node(NODE_HASH, B, 0, 0); }
 any(A) ::= UNICODE_RANGE(B).
 		{ A = css_new_node(NODE_UNICODE_RANGE, B, 0, 0); }
-any(A) ::= INCLUDES(B).
-		{ A = css_new_node(NODE_INCLUDES, B, 0, 0); }
+any(A) ::= INCLUDES.
+		{ A = css_new_node(NODE_INCLUDES, 0, 0, 0); }
 any(A) ::= FUNCTION(B).
 		{ A = css_new_node(NODE_FUNCTION, B, 0, 0); }
-any(A) ::= DASHMATCH(B).
-		{ A = css_new_node(NODE_DASHMATCH, B, 0, 0); }
-any(A) ::= COLON(B).
-		{ A = css_new_node(NODE_COLON, B, 0, 0); }
+any(A) ::= DASHMATCH.
+		{ A = css_new_node(NODE_DASHMATCH, 0, 0, 0); }
+any(A) ::= COLON.
+		{ A = css_new_node(NODE_COLON, 0, 0, 0); }
+any(A) ::= COMMA.
+		{ A = css_new_node(NODE_COMMA, 0, 0, 0); }
+any(A) ::= PLUS.
+		{ A = css_new_node(NODE_PLUS, 0, 0, 0); }
+any(A) ::= GT.
+		{ A = css_new_node(NODE_GT, 0, 0, 0); }
 any(A) ::= LPAREN any_list(B) RPAREN.
 		{ A = css_new_node(NODE_PAREN, 0, B, 0); }
 any(A) ::= LBRAC any_list(B) RBRAC.
@@ -128,12 +166,11 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 %token_type { char* }
 %token_destructor { xfree($$); }
 
-/*%type stylesheet { struct node * }
-%type statement_list { struct node * }
-%type statement { struct node * }
-%type at_rule { struct node * }
-%type ruleset { struct node * }*/
+%type selector_list { struct node * }
 %type selector { struct node * }
+%type combinator { struct node * }
+%type simple_selector { struct node * }
+%type detail_list { struct node * }
 %type declaration_list { struct node * }
 %type declaration { struct node * }
 %type value { struct node * }
@@ -141,11 +178,6 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 %type any_list_1 { struct node * }
 %type any { struct node * }
 
-/*%destructor stylesheet { css_free_node($$); }
-%destructor statement_list { css_free_node($$); }
-%destructor statement { css_free_node($$); }
-%destructor at_rule { css_free_node($$); }
-%destructor ruleset { css_free_node($$); }*/
 %destructor selector { css_free_node($$); }
 %destructor declaration_list { css_free_node($$); }
 %destructor declaration { css_free_node($$); }
@@ -154,5 +186,4 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 %destructor any_list_1 { css_free_node($$); }
 %destructor any { css_free_node($$); }
 
-/*%parse_failure { *stylesheet = 0; }*/
 

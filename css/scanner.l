@@ -1,5 +1,5 @@
 /**
- * $Id: scanner.l,v 1.1 2003/03/25 21:03:14 bursa Exp $
+ * $Id: scanner.l,v 1.2 2003/04/01 21:33:08 bursa Exp $
  */
 
 %{
@@ -62,7 +62,11 @@ U\+[0-9A-F?]{1,6}(-[0-9A-F]{1,6})?	{
 {ident}\(	{ return FUNCTION; }
 ~=		{ return INCLUDES; }
 "|="		{ return DASHMATCH; }
-:		{ return COLON; /* missed out in spec */ }
+:		{ return COLON; }
+,		{ return COMMA; }
+"+"		{ return PLUS; }
+>		{ return GT; }
+"."		{ return DOT; }
 .		{ return DELIM; }
 
 %%
