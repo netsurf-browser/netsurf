@@ -15,7 +15,7 @@ Export:Exporter
 ExportAs:Exporter sous
 Draw:Draw  ‹^F3
 Text:Texte   ^F3
-SaveURL:Savuver le lieu
+SaveURL:Sauver le lieu
 Print:Imprimer...
 ViewSrc:Voir le source...  F8
 Object:Objet
@@ -41,23 +41,23 @@ Images:Images
 ForeImg:Images d'avant-plan
 BackImg:Images de fond
 AnimImg:Animations
-DitherImg:Dither images
+DitherImg:Diffusion d'erreur
 FilterImg:Adoucir les images
 Toolbars:Barre d'outils
 ToolButtons:Boutons
 ToolAddress:Barre d'adresse
-ToolThrob:Throbber
-ToolStatus:Status bar
+ToolThrob:Pulseur
+ToolStatus:Barre d'état
 OptDefault:Définir par défaut
-Window:Window
-WindowSave:Set as default position
-WindowReset:Reset default position
+Window:Fenêtre
+WindowSave:Définir comme position par défaut
+WindowReset:RAZ de la position par défaut
 Help:Aide
 HelpContent:Contenus  F1
 HelpGuide:Guide de l'utilisateur
 HelpInfo:Information utilisateur
 HelpInter:Aide interactive
-HelpAbout:About NetSurf
+HelpAbout:À propos de NetSurf
 
 Themes:Thèmes
 
@@ -82,24 +82,22 @@ InvalidURL:L'adresse <em>%s</em> est incomprise.
 NoMemory:NetSurf a besoin de plus de mémoire. Veuillez libérer de la mémoire et réessayer.
 FontBadInst:Une erreur s'est produite lors de l'initialisation des fontes à cause de la présence de copies obsolètes de fontes ROM sur disque. NetSurf va sortir et lancer un programme qui va tenter de réparer cela.
 FontError:Échec d'ouverture de la fonte "Homerton.Medium" (%s).
-Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
-PathToURL:An error occurred converting the file path to an URL:
-SaveError:The file could not be saved due to an error:
-MenuError:An error occurred when opening the menu:
-DragError:An error occurred when dragging the icon:
-TbarError:An error occurred when constructing the toolbar:
-WimpError:An unexpected Window Manager error occurred:
-Template:A window template is missing from the Templates file. Please reinstall NetSurf.
-MiscError:An unexpected error occurred:
-FileError:File does not exist:
+Resolvers:Aucun nom de domaine n'étant configuré, seul la consultation de fichiers locaux est possible. Utilisez Configure pour définir les serveurs de noms.
+PathToURL:Une erreur s'est produite en convertissant le chemin du fichier en une URL:
+SaveError:Le fichier n'a pas pu être sauvé suite à une erreur:
+MenuError:Une erreur s'est produite lors de l'ouverture du menu:
+DragError:Une erreur s'est produite lors du déplacement d'icône:
+TbarError:Une erreur s'est produite lors de la construction de la barre d'outils:
+WimpError:Une erreur inattendue du Window Manager s'est produite:
+Template:Un modèle de fenêtre est absent du fichier Templates. Réinstallez NetSurf SVP.
+MiscError:Une erreur inattendue s'est produite:
+FileError:Le fichier n'existe pas:
 
-# Some general purpose words and phrases
 Bytes: O
-kBytes: kO
+kBytes: KO
 MBytes: MO
 GBytes: GO
 
-# Progress
 Loading:Ouverture de la page...
 RecPercent:%s reçus de %s (%u%%)
 Received:%s reçus
@@ -118,9 +116,9 @@ FetchStyle2:Chargement de %u feuilles de styles: %s
 NotCSS:Attention: feuille de style non CSS
 BadObject:Attention: mauvais type d'objet
 ObjError:Erreur lors du chargement de: %s
-ParsingFail:Parsing the document failed.
-BadGIF:Reading GIF failed.
-PNGError:PNG library error.
+ParsingFail:L'analyse syntaxique du document a échoué.
+BadGIF:Erreur de lecture de GIF.
+PNGError:Erreur dans la bibliothèque PNG.
 
 DrawTitle:Image Draw (%lux%lu, %lu octets)
 GIFTitle:Image GIF (%lux%lu, %lu octets)
