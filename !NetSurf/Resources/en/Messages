@@ -48,6 +48,7 @@ Form_Submit:Submit
 Form_Reset:Reset
 Form_None:
 Form_Many:(Many)
+Form_Drop:Drop file here
 
 Not2xx:Server returned an error
 

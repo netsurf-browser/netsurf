@@ -39,6 +39,7 @@ Form_Submit:Soumettre
 Form_Reset:Effacer
 Form_None:
 Form_Many:(Plusieurs)
+Form_Drop:Drop file here
 
 Not2xx:Le serveur a renvoyé une erreur
 

@@ -65,6 +65,10 @@ input[type=image] { background-color: #ddd; color: #000; width: auto;
 	height: auto; }
 input[type=checkbox], input[type=radio] { background-color: transparent;
 	padding: 0 0.1em; border: 0; width: 1em; height: 1em; }
+input[type=file] { background-color: #ddd; color: #000;
+	border-width: medium; border-color: #aaa #eee #eee #aaa;
+	border-style: inset; width: 10em; height: 1.5em;
+	font-style: italic; }
 
 [align=left] { text-align: left; }
 [align=center] { text-align: center; }

@@ -76,7 +76,7 @@ static struct result box_select(xmlNode *n, struct status *status,
 static struct result box_input(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct box *box_input_text(xmlNode *n, struct status *status,
-		struct css_style *style, bool password, bool file);
+		struct css_style *style, bool password);
 static struct result box_button(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_frameset(xmlNode *n, struct status *status,
@@ -607,8 +607,8 @@ struct css_style * box_get_style(struct content ** stylesheet,
 			if (0 < size) {
 				char *type = (char *) xmlGetProp(n, (const xmlChar *) "type");
 				style->width.width = CSS_WIDTH_LENGTH;
-				if (!type || stricmp(type, "text") == 0 ||
-						stricmp(type, "password") == 0)
+				if (!type || strcasecmp(type, "text") == 0 ||
+						strcasecmp(type, "password") == 0)
 					/* in characters for text or password */
 					style->width.value.length.unit = CSS_UNIT_EX;
 				else
@@ -1050,36 +1050,30 @@ struct result box_input(xmlNode *n, struct status *status,
 
 	type = (char *) xmlGetProp(n, (const xmlChar *) "type");
 
-	/* the default type is "text" */
-	if (type == 0 || stricmp(type, "text") == 0)
-	{
-		box = box_input_text(n, status, style, false, false);
+	if (type && strcasecmp(type, "password") == 0) {
+		box = box_input_text(n, status, style, true);
 		gadget = box->gadget;
 		gadget->box = box;
-	}
-	else if (stricmp(type, "password") == 0)
-	{
-		box = box_input_text(n, status, style, true, false);
-		gadget = box->gadget;
+
+	} else if (type && strcasecmp(type, "file") == 0) {
+		box = box_create(style, NULL, 0,
+				status->content->data.html.box_pool);
+		box->type = BOX_INLINE_BLOCK;
+		box->gadget = gadget = xcalloc(1, sizeof(struct form_control));
 		gadget->box = box;
-	}
-	else if (stricmp(type, "file") == 0)
-	{
-	        box = box_input_text(n, status, style, false, true);
-	        gadget = box->gadget;
-	        gadget->box = box;
-	}
-	else if (stricmp(type, "hidden") == 0)
-	{
+		gadget->type = GADGET_FILE;
+		box->font = font_open(status->content->data.html.fonts, style);
+
+	} else if (type && strcasecmp(type, "hidden") == 0) {
 		/* no box for hidden inputs */
 		gadget = xcalloc(1, sizeof(struct form_control));
 		gadget->type = GADGET_HIDDEN;
 
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")))
 			gadget->value = s;
-	}
-	else if (stricmp(type, "checkbox") == 0 || stricmp(type, "radio") == 0)
-	{
+
+	} else if (type && (strcasecmp(type, "checkbox") == 0 ||
+			strcasecmp(type, "radio") == 0)) {
 		box = box_create(style, NULL, 0,
 				status->content->data.html.box_pool);
 		box->gadget = gadget = xcalloc(1, sizeof(struct form_control));
@@ -1099,9 +1093,9 @@ struct result box_input(xmlNode *n, struct status *status,
 
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")))
 			gadget->value = s;
-	}
-	else if (stricmp(type, "submit") == 0 || stricmp(type, "reset") == 0)
-	{
+
+	} else if (type && (strcasecmp(type, "submit") == 0 ||
+			strcasecmp(type, "reset") == 0)) {
 		struct result result = box_button(n, status, style);
 		struct box *inline_container, *inline_box;
 		box = result.box;
@@ -1122,9 +1116,8 @@ struct result box_input(xmlNode *n, struct status *status,
 		inline_box->font = font_open(status->content->data.html.fonts, style);
 		box_add_child(inline_container, inline_box);
 		box_add_child(box, inline_container);
-	}
-	else if (stricmp(type, "button") == 0)
-	{
+
+	} else if (type && strcasecmp(type, "button") == 0) {
 	        struct result result = box_button(n, status, style);
 		struct box *inline_container, *inline_box;
 		box = result.box;
@@ -1145,9 +1138,8 @@ struct result box_input(xmlNode *n, struct status *status,
 		inline_box->font = font_open(status->content->data.html.fonts, style);
 		box_add_child(inline_container, inline_box);
 		box_add_child(box, inline_container);
-	}
-	else if (stricmp(type, "image") == 0)
-	{
+
+	} else if (type && strcasecmp(type, "image") == 0) {
 	        box = box_create(style, NULL, 0,
 				status->content->data.html.box_pool);
 	        box->gadget = gadget = xcalloc(1, sizeof(struct form_control));
@@ -1160,6 +1152,12 @@ struct result box_input(xmlNode *n, struct status *status,
 		                		image_types);
 	                xmlFree(s);
 	        }
+
+	} else {
+		/* the default type is "text" */
+		box = box_input_text(n, status, style, false);
+		gadget = box->gadget;
+		gadget->box = box;
 	}
 
 	if (type != 0)
@@ -1177,7 +1175,7 @@ struct result box_input(xmlNode *n, struct status *status,
 }
 
 struct box *box_input_text(xmlNode *n, struct status *status,
-		struct css_style *style, bool password, bool file)
+		struct css_style *style, bool password)
 {
 	char *s;
 	unsigned int i;
@@ -1214,9 +1212,6 @@ struct box *box_input_text(xmlNode *n, struct status *status,
 		inline_box->text = xcalloc(inline_box->length + 1, 1);
 		for (i = 0; i != inline_box->length; i++)
 			inline_box->text[i] = '*';
-	} else if (file) {
-	        box->gadget->type = GADGET_FILE;
-	        inline_box->text = xcalloc(inline_box->length + 1, 1);
 	} else {
 		box->gadget->type = GADGET_TEXTBOX;
 		inline_box->text = xstrdup(box->gadget->value);
@@ -2243,7 +2238,7 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
                    /* The java plugin doesn't need the .class extension
                     * so we strip it.
                     */
-                   if(stricmp((&po->classid[strlen(po->classid)-6]),
+                   if(strcasecmp((&po->classid[strlen(po->classid)-6]),
                                                             ".class") == 0)
                            po->classid[strlen(po->classid)-6] = 0;
            }

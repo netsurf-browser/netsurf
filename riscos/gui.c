@@ -989,11 +989,13 @@ void ro_msg_datasave(wimp_message* block)
 void ro_msg_dataload(wimp_message *message)
 {
 	char *url = 0;
-	gui_window *gui = 0;
+	gui_window *gui;
 
-	if (message->data.data_xfer.w != wimp_ICON_BAR &&
-	   (gui = ro_lookup_gui_from_w(message->data.data_xfer.w)) == NULL) {
-	        return;
+	gui = ro_lookup_gui_from_w(message->data.data_xfer.w);
+
+	if (gui) {
+		if (ro_gui_window_dataload(gui, message))
+			return;
 	}
 
 	if (message->data.data_xfer.file_type != 0xfaf &&

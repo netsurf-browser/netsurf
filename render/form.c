@@ -135,7 +135,7 @@ struct form_successful_control *form_successful_controls(struct form *form,
 			continue;
 
 		/* file */
-		if (control->type == GADGET_FILE) {
+		if (control->type == GADGET_FILE && control->value) {
 		        success_new = xcalloc(1, sizeof(*success_new));
 		        success_new->file = true;
 		        success_new->name = xstrdup(control->name);

@@ -147,6 +147,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar);
 void ro_gui_scroll_request(wimp_scroll *scroll);
 int window_x_units(int x, wimp_window_state *state);
 int window_y_units(int y, wimp_window_state *state);
+bool ro_gui_window_dataload(gui_window *g, wimp_message *message);
 
 /* in history.c */
 void ro_gui_history_init(void);

@@ -18,6 +18,7 @@
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -42,6 +43,8 @@ static void html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected);
 static void html_redraw_radio(int x, int y, int width, int height,
 		bool selected);
+static void html_redraw_file(int x, int y, int width, int height,
+		struct box *box, float scale);
 
 bool gui_redraw_debug = false;
 
@@ -230,6 +233,13 @@ void html_redraw_box(struct content *content, struct box * box,
 		html_redraw_radio(x + padding_left, y - padding_top,
 				width, height,
 				box->gadget->data.radio.selected);
+
+	} else if (box->gadget && box->gadget->type == GADGET_FILE) {
+		colourtrans_set_font_colours(box->font->handle,
+				current_background_color << 8,
+				box->style->color << 8, 14, 0, 0, 0);
+		html_redraw_file(x + padding_left, y - padding_top,
+				width, height, box, scale);
 
 	} else if (box->text && box->font) {
 
@@ -498,4 +508,39 @@ void html_redraw_radio(int x, int y, int width, int height,
 	if (selected)
 		html_redraw_circle(x + width * 0.5, y - height * 0.5,
 				width * 0.3 - 1, os_COLOUR_RED);
+}
+
+
+/**
+ * Plot a file upload input.
+ */
+
+void html_redraw_file(int x, int y, int width, int height,
+		struct box *box, float scale)
+{
+	int text_width;
+	const char *text;
+	const char *sprite;
+
+	if (box->gadget->value) {
+		text = box->gadget->value;
+		sprite = "file_fff";
+	} else {
+		text = messages_get("Form_Drop");
+		sprite = "drophere";
+	}
+
+	text_width = font_width(box->font, text, strlen(text)) * 2 * scale;
+	if (width < text_width + 8)
+		x = x + width - text_width - 4;
+	else
+		x = x + 4;
+
+	font_paint(box->font->handle, text,
+			font_OS_UNITS | font_GIVEN_FONT |
+			font_KERN | font_GIVEN_TRFM,
+			x, y - height * 0.75, 0, &trfm, 0);
+
+/* 	xwimpspriteop_put_sprite_user_coords(sprite, x + 4, */
+/* 			y - height / 2 - 17, os_ACTION_OVERWRITE); */
 }

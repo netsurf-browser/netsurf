@@ -27,6 +27,7 @@
 #include "netsurf/riscos/save_draw.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/thumbnail.h"
+#include "netsurf/render/form.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
@@ -1002,4 +1003,74 @@ int window_x_units(int x, wimp_window_state *state)
 int window_y_units(int y, wimp_window_state *state)
 {
 	return y - (state->visible.y1 - state->yscroll);
+}
+
+
+/**
+ * Handle Message_DataLoad (file dragged in) for a window.
+ *
+ * \param  g        window
+ * \param  message  Message_DataLoad block
+ * \return  true if the load was processed
+ *
+ * If the file was dragged into a form file input, it is used as the value.
+ */
+
+bool ro_gui_window_dataload(gui_window *g, wimp_message *message)
+{
+	struct browser_window *bw = g->data.browser.bw;
+	struct box_selection *click_boxes = 0;
+	int x, y;
+	int i;
+	int found = 0;
+	int plot_index = 0;
+	wimp_window_state state;
+
+	/* HTML content only. */
+	if (!bw->current_content || bw->current_content->type != CONTENT_HTML)
+		return false;
+
+	/* Ignore directories etc. */
+	if (0x1000 <= message->data.data_xfer.file_type)
+		return false;
+
+	/* Search for a file input at the drop point. */
+	state.w = message->data.data_xfer.w;
+	wimp_get_window_state(&state);
+	x = window_x_units(message->data.data_xfer.pos.x, &state) / 2;
+	y = -window_y_units(message->data.data_xfer.pos.y, &state) / 2;
+
+	box_under_area(bw->current_content,
+			bw->current_content->data.html.layout->children,
+			x, y, 0, 0, &click_boxes, &found, &plot_index);
+	if (found == 0)
+		return false;
+	for (i = 0; i != found; i++) {
+		if (click_boxes[i].box->gadget &&
+				click_boxes[i].box->gadget->type ==
+				GADGET_FILE)
+			break;
+	}
+	if (i == found) {
+		free(click_boxes);
+		return false;
+	}
+
+	/* Found: update form input. */
+	free(click_boxes[i].box->gadget->value);
+	click_boxes[i].box->gadget->value =
+			strdup(message->data.data_xfer.file_name);
+
+	/* Redraw box. */
+	box_coords(click_boxes[i].box, &x, &y);
+	gui_window_redraw(bw->window, x, y,
+			x + click_boxes[i].box->width,
+			y + click_boxes[i].box->height);
+
+	/* send DataLoadAck */
+	message->action = message_DATA_LOAD_ACK;
+	message->your_ref = message->my_ref;
+	wimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+
+	return true;
 }

@@ -663,7 +663,6 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 					break;
 				case GADGET_TEXTBOX:
 				case GADGET_PASSWORD:
-				case GADGET_FILE:
 					browser_window_input_click(bw,
 							(unsigned int)click_boxes[i].actual_x,
 							(unsigned int)click_boxes[i].actual_y,
@@ -681,6 +680,8 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 					        browser_form_submit(bw, g->form, g);
 				        break;
 				case GADGET_RESET:
+				        break;
+				case GADGET_FILE:
 				        break;
 			}
 
@@ -1188,8 +1189,7 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
                 for (next_input = input->gadget->next;
                      next_input != 0 && next_input->type != GADGET_TEXTBOX &&
                      next_input->type != GADGET_TEXTAREA &&
-                     next_input->type != GADGET_PASSWORD &&
-                     next_input->type != GADGET_FILE;
+                     next_input->type != GADGET_PASSWORD;
                      next_input = next_input->next)
                         ;
                 if (!next_input) return;
@@ -1216,8 +1216,7 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
                 for (prev_input = input->gadget->prev;
                      prev_input != 0 && prev_input->type != GADGET_TEXTBOX &&
                      prev_input->type != GADGET_TEXTAREA &&
-                     prev_input->type != GADGET_PASSWORD &&
-                     prev_input->type != GADGET_FILE;
+                     prev_input->type != GADGET_PASSWORD;
                      prev_input = prev_input->prev)
                         ;
                 if (!prev_input) return;
@@ -1548,8 +1547,7 @@ void browser_window_follow_link(struct browser_window *bw,
 		if (click_type == 0 && click_boxes[i].box->gadget != NULL) {
 		        if (click_boxes[i].box->gadget->type == GADGET_TEXTBOX ||
 		            click_boxes[i].box->gadget->type == GADGET_TEXTAREA ||
-		            click_boxes[i].box->gadget->type == GADGET_PASSWORD ||
-		            click_boxes[i].box->gadget->type == GADGET_FILE) {
+		            click_boxes[i].box->gadget->type == GADGET_PASSWORD) {
                                 pointer = GUI_POINTER_CARET;
                                 done = 1;
                                 break;
