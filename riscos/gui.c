@@ -848,19 +848,15 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 
 void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigned long mx, unsigned long my)
 {
-	int count = 0;
+	int count;
 	struct form_option* o;
 	wimp_pointer pointer;
 
 	if (combo_menu != NULL)
 		xfree(combo_menu);
 
-	o = g->data.select.items;
-	while (o != NULL)
-	{
-		count++;
-		o = o->next;
-	}
+	for (count = 0, o = g->data.select.items; o != NULL; ++count, o = o->next)
+		/* no body */;
 
 	combo_menu = xcalloc(1, wimp_SIZEOF_MENU(count));
 
@@ -874,10 +870,7 @@ void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigne
 	combo_menu->height = wimp_MENU_ITEM_HEIGHT;
 	combo_menu->gap = wimp_MENU_ITEM_GAP;
 
-	o = g->data.select.items;
-	count = 0;
-	while (o != NULL)
-	{
+	for (count = 0, o = g->data.select.items; o != NULL; ++count, o = o->next) {
 		combo_menu->entries[count].menu_flags = 0;
 		if (count == 0)
 		  combo_menu->entries[count].menu_flags = wimp_MENU_TITLE_INDIRECTED;
@@ -891,13 +884,11 @@ void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigne
 		combo_menu->entries[count].data.indirected_text.text = o->text;
 		combo_menu->entries[count].data.indirected_text.validation = "\0";
 		combo_menu->entries[count].data.indirected_text.size = strlen(o->text);
-		count++;
-		o = o->next;
 	}
 
 	wimp_get_pointer_info(&pointer);
 	current_gadget = g;
-        ro_gui_create_menu(combo_menu, pointer.pos.x - 64, pointer.pos.y, bw->window);
+	ro_gui_create_menu(combo_menu, pointer.pos.x - 64, pointer.pos.y, bw->window);
 }
 
 void ro_msg_datasave(wimp_message* block)
