@@ -68,7 +68,7 @@ url_func_result url_normalize(const char *url, char **result)
 
 	*result = NULL;
 
-	if ((m = regexec(&url_re, url, 10, match, 0)) != NULL) {
+	if ((m = regexec(&url_re, url, 10, match, 0))) {
 		LOG(("url '%s' failed to match regex", url));
 		return URL_FUNC_FAILED;
 	}
@@ -84,7 +84,7 @@ url_func_result url_normalize(const char *url, char **result)
 		}
 		strcpy(*result, "http://");
 		strcpy(*result + sizeof("http://")-1, url);
-		if ((m = regexec(&url_re, *result, 10, match, 0)) != NULL) {
+		if ((m = regexec(&url_re, *result, 10, match, 0))) {
 			LOG(("url '%s' failed to match regex", (*result)));
 			free(*result);
 			return URL_FUNC_FAILED;
