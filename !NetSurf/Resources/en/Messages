@@ -1,4 +1,5 @@
 # English messages for NetSurf
+Version:0.01
 
 # Menus
 NetSurf:NetSurf
@@ -27,4 +28,3 @@ Downloaded:Download complete, %lu bytes
 
 
 Not2xx:Server returned an error
-

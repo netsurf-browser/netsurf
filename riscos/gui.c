@@ -26,6 +26,7 @@
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
+#include "netsurf/riscos/about.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/plugin.h"
 #include "netsurf/riscos/theme.h"
@@ -1377,7 +1378,14 @@ void ro_gui_keypress(wimp_key* key)
         xfree(g->data.browser.bw->url);
         g->data.browser.bw->url = NULL;
       }
-      browser_window_open_location(g->data.browser.bw, g->url);
+      if (strcasecmp(g->url, "about:") == 0) {
+        about_create();
+        browser_window_open_location(g->data.browser.bw,
+                            "file:///%3CWimp$ScrapDir%3E/WWW/NetSurf/About");
+      }
+      else {
+        browser_window_open_location(g->data.browser.bw, g->url);
+      }
       return;
     }
     else if (key->c == wimp_KEY_F8)
