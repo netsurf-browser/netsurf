@@ -91,7 +91,7 @@ static const struct colour_entry colour_table[] = {
 	{ "maroon",  0x000080 },
 	{ "navy",    0x800000 },
 	{ "olive",   0x008080 },
-	{ "orange",  0xffa500 },
+	{ "orange",  0x00a5ff },
 	{ "purple",  0x800080 },
 	{ "red",     0x0000ff },
 	{ "silver",  0xc0c0c0 },
