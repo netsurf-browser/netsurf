@@ -33,9 +33,11 @@ gui_save_type gui_current_save_type;
 extern struct content *save_content;
 extern char *save_link;
 
+typedef enum { LINK_ACORN, LINK_ANT, LINK_TEXT } link_format;
+
 static void ro_gui_save_complete(struct content *c, char *path);
 static void ro_gui_save_object_native(struct content *c, char *path);
-static void ro_gui_save_link(int format, char *path);
+static void ro_gui_save_link(link_format format, char *path);
 
 
 /**
@@ -201,21 +203,26 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 		case GUI_SAVE_LINK_URI:
 		        if (!save_link)
 		                return;
-		        ro_gui_save_link(1, path);
+		        ro_gui_save_link(LINK_ACORN, path);
 		        break;
 
 		case GUI_SAVE_LINK_URL:
 		        if (!save_link)
 		                return;
-		        ro_gui_save_link(2, path);
+		        ro_gui_save_link(LINK_ANT, path);
 		        break;
 
 		case GUI_SAVE_LINK_TEXT:
 		        if (!save_link)
 		                return;
-		        ro_gui_save_link(3, path);
+		        ro_gui_save_link(LINK_TEXT, path);
 		        break;
 	}
+
+        /* Ack successful save with message_DATA_LOAD */
+	message->action = message_DATA_LOAD;
+	message->your_ref = message->my_ref;
+	wimp_send_message_to_window(wimp_USER_MESSAGE, message, message->data.data_xfer.w, message->data.data_xfer.i);
 
         if (save_link) xfree(save_link);
         save_content = NULL;
@@ -357,21 +364,21 @@ void ro_gui_save_object_native(struct content *c, char *path)
         }
 }
 
-void ro_gui_save_link(int format, char *path)
+void ro_gui_save_link(link_format format, char *path)
 {
         FILE *fp = fopen(path, "w");
 
         if (!fp) return;
 
         switch (format) {
-               case 1: /* URI */
+               case LINK_ACORN: /* URI */
                        fprintf(fp, "%s\t%s\n", "URI", "100");
                        fprintf(fp, "\t# NetSurf %s\n\n", netsurf_version);
                        fprintf(fp, "\t%s\n", save_link);
                        fprintf(fp, "\t*\n");
                        break;
-               case 2: /* URL */
-               case 3: /* Text */
+               case LINK_ANT: /* URL */
+               case LINK_TEXT: /* Text */
                        fprintf(fp, "%s\n", save_link);
                        break;
         }
@@ -379,13 +386,13 @@ void ro_gui_save_link(int format, char *path)
         fclose(fp);
 
         switch (format) {
-               case 1: /* URI */
+               case LINK_ACORN: /* URI */
                        xosfile_set_type(path, 0xf91);
                        break;
-               case 2: /* URL */
+               case LINK_ANT: /* URL */
                        xosfile_set_type(path, 0xb28);
                        break;
-               case 3: /* Text */
+               case LINK_TEXT: /* Text */
                        xosfile_set_type(path, 0xfff);
                        break;
         }
