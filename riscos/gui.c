@@ -585,7 +585,7 @@ void gui_window_set_pointer(gui_pointer_shape shape)
                         break;
                 case GUI_POINTER_CARET:
                         xosspriteop_set_pointer_shape(0x100, pointers,
-                                 (osspriteop_id)"ptr_caret", 1, 5, 0, 0, 0);
+                                 (osspriteop_id)"ptr_caret", 1, 5, 10, 0, 0);
                         break;
                 case GUI_POINTER_MENU:
                         xosspriteop_set_pointer_shape(0x100, pointers,
