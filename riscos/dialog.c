@@ -65,8 +65,6 @@ static void set_icon_string_i(wimp_w w, wimp_i i, int num);
 
 void ro_gui_dialog_init(void)
 {
-        char *ver;
-
 	dialog_info = ro_gui_dialog_create("info");
 	/* fill in about box version info */
 	set_icon_string(dialog_info, 4, netsurf_version);
@@ -232,7 +230,7 @@ void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 			break;
 		case ICON_CONFIG_BR_EXPLAIN:
 			bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
-					browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 320, 256);
+					browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 320, 256, NULL);
 			gui_window_show(bw->window);
 			browser_window_open_location(bw, GESTURES_URL);
 			break;
@@ -295,7 +293,7 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 			break;
 		case ICON_CONFIG_TH_GET:
 			bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
-					browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 480, 320);
+					browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 480, 320, NULL);
 			gui_window_show(bw->window);
 			browser_window_open_location(bw, THEMES_URL);
 			break;
