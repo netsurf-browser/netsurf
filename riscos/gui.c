@@ -162,7 +162,7 @@ void gui_init(int argc, char** argv)
 	NETSURF_DIR = getenv("NetSurf$Dir");
 	if ((length = snprintf(path, sizeof(path),
 			"<NetSurf$Dir>.Resources.%s.Messages",
-			option_language)) < 0 || length >= sizeof(path))
+			option_language)) < 0 || length >= (int)sizeof(path))
 		die("Failed to locate Messages resource.");
 	messages_load(path);
 	messages_load("<NetSurf$Dir>.Resources.LangNames");
@@ -185,7 +185,7 @@ void gui_init(int argc, char** argv)
 	if (option_theme != NULL) {
 		if ((length = snprintf(theme_fname, sizeof(theme_fname),
 				"<NetSurf$Dir>.Themes.%s", option_theme)) >= 0
-				&& length < sizeof(theme_fname)
+				&& length < (int)sizeof(theme_fname)
 		/* check if theme directory exists */
 				&& !is_dir(theme_fname)) {
 			free(option_theme);
@@ -198,7 +198,7 @@ void gui_init(int argc, char** argv)
 
 	if ((length = snprintf(path, sizeof(path),
 			"<NetSurf$Dir>.Resources.%s.Templates",
-			option_language)) < 0 || length >= sizeof(path))
+			option_language)) < 0 || length >= (int)sizeof(path))
 		die("Failed to locate Templates resource.");
 	error = xwimp_open_template(path);
 	if (error) {
@@ -724,7 +724,7 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 
 		if ((length = snprintf(url, sizeof(url),
 				"file:///%%3CNetSurf$Dir%%3E/Docs/intro_%s",
-				option_language)) >= 0 && length < sizeof(url))
+				option_language)) >= 0 && length < (int)sizeof(url))
 			browser_window_create(url, NULL);
 	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
 		ro_gui_debugwin_open();
@@ -1287,7 +1287,7 @@ void ro_gui_open_help_page(const char *page)
 
 	if ((length = snprintf(url, sizeof url,
 			"file:///%%3CNetSurf$Dir%%3E/Docs/%s_%s",
-			page, option_language)) >= 0 && length < sizeof(url))
+			page, option_language)) >= 0 && length < (int)sizeof(url))
 		browser_window_create(url, NULL);
 }
 

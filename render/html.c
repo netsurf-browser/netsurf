@@ -420,7 +420,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 				c->data.html.stylesheet_content[1] =
 						content_create(c->data.html.base_url);
 				if (!c->data.html.stylesheet_content[1])
-					return false;
+					return;
 				content_set_type(c->data.html.stylesheet_content[1],
 						CONTENT_CSS, "text/css", params);
 			}

@@ -26,6 +26,7 @@
 #include "netsurf/riscos/uri.h"
 #include "netsurf/riscos/url_protocol.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 
 
 /**

@@ -328,7 +328,7 @@ void content_set_status(struct content *c, const char *status_message, ...)
 
 	va_start(ap, status_message);
 	if ((len = vsnprintf(c->status_message, sizeof(c->status_message), status_message, ap)) < 0
-			|| len >= sizeof(c->status_message))
+			|| len >= (int)sizeof(c->status_message))
 		c->status_message[sizeof(c->status_message) - 1] = '\0';
 	va_end(ap);
 }

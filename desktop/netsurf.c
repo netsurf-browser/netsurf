@@ -28,6 +28,10 @@ static void netsurf_init(int argc, char** argv);
 static void netsurf_poll(void);
 static void netsurf_exit(void);
 
+#ifndef curl_memdebug
+extern void curl_memdebug(const char *logname);
+#endif
+
 /**
  * Gui NetSurf main().
  */

@@ -33,6 +33,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/plugin.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 #include "oslib/mimemap.h"
@@ -113,12 +114,21 @@ static int need_reformat = 0;
 /**
  * Initialises plugin system in readiness for receiving object data
  */
-void plugin_create(struct content *c, const char *params[])
+bool plugin_create(struct content *c, const char *params[])
 {
-        c->data.plugin.data = xcalloc(0, 1);
+        union content_msg_data msg_data;
+
+        c->data.plugin.data = calloc(0, 1);
+        if (!c->data.plugin.data) {
+                msg_data.error = messages_get("NoMemory");
+                content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+                warn_user("NoMemory", 0);
+                return false;
+        }
         c->data.plugin.length = 0;
 	/* we can't create the plugin here, because this is only called
 	 * once, even if the object appears several times */
+	return true;
 }
 
 /**
@@ -396,19 +406,19 @@ void plugin_reshape_instance(struct content *c, struct browser_window *bw,
         wimp_message m;
         plugin_message_reshape *pmr;
         os_box bbox;
-        unsigned long x, y;
+        int x, y;
 
         if (params == 0) {
                 return;
         }
 
-        box_coords(box, (unsigned long*)&x, (unsigned long*)&y);
-        bbox.x0 = ((int)x << 1);
-        bbox.y1 = -(((int)y << 1));
+        box_coords(box, (int*)&x, (int*)&y);
+        bbox.x0 = (x << 1);
+        bbox.y1 = -(y << 1);
         bbox.x1 = (bbox.x0 + (box->width << 1));
         bbox.y0 = (bbox.y1 - (box->height << 1));
 
-        LOG(("Box w, h: %ld %ld", box->width, box->height));
+        LOG(("Box w, h: %d %d", box->width, box->height));
         LOG(("BBox: [(%d,%d),(%d,%d)]", bbox.x0, bbox.y0, bbox.x1, bbox.y1));
 
         pmr = (plugin_message_reshape*)&m.data;
@@ -471,7 +481,7 @@ bool plugin_handleable(const char *mime_type)
 /**
  * processes data retrieved by the fetch process
  */
-void plugin_process_data(struct content *c, char *data, unsigned long size)
+bool plugin_process_data(struct content *c, char *data, unsigned int size)
 {
 
   /* If the plugin requests, we send the data to it via the
@@ -486,27 +496,34 @@ void plugin_process_data(struct content *c, char *data, unsigned long size)
   /* I think we should just buffer the data here, in case the
    * plugin requests it sometime in the future. - James */
 
-        c->data.plugin.data = xrealloc(c->data.plugin.data, c->data.plugin.length + size);
+        char *plugin_data;
+        union content_msg_data msg_data;
+
+        plugin_data = realloc(c->data.plugin.data, c->data.plugin.length + size);
+        if (!plugin_data) {
+                msg_data.error = messages_get("NoMemory");
+                content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+                warn_user("NoMemory", 0);
+                return false;
+        }
+        c->data.plugin.data = plugin_data;
 	memcpy(c->data.plugin.data + c->data.plugin.length, data, size);
 	c->data.plugin.length += size;
 	c->size += size;
+	return true;
 }
 
 /**
  * This isn't needed by the plugin system as all the data processing is done
  * externally. Therefore, just tell NetSurf that everything's OK.
  */
-int plugin_convert(struct content *c, unsigned int width, unsigned int height)
+bool plugin_convert(struct content *c, int width, int height)
 {
   c->status=CONTENT_STATUS_DONE;
-  return 0;
+  return true;
 }
 
-void plugin_revive(struct content *c, unsigned int width, unsigned int height)
-{
-}
-
-void plugin_reformat(struct content *c, unsigned int width, unsigned int height)
+void plugin_reformat(struct content *c, int width, int height)
 {
 }
 
@@ -517,15 +534,15 @@ void plugin_reformat(struct content *c, unsigned int width, unsigned int height)
 void plugin_destroy(struct content *c)
 {
         /* simply free buffered data */
-        xfree(c->data.plugin.data);
+        free(c->data.plugin.data);
 }
 
 /**
  * Redraw plugin on page.
  */
-void plugin_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void plugin_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale)
 {
         struct plugin_list *npl;

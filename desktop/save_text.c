@@ -64,7 +64,7 @@ void extract_text(xmlDoc *doc)
 void extract_text_from_tree(xmlNode *n)
 {
 	xmlNode *this_node;
-	const char *text;
+	char *text;
 	int need_nl = 0;
 
 	if (n->type == XML_ELEMENT_NODE) {

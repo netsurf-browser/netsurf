@@ -20,6 +20,7 @@
 #include "netsurf/riscos/toolbar.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 
 
 struct toolbar_icon {
