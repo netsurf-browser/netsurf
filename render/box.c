@@ -87,6 +87,28 @@ static const content_type image_types[] = {
 #endif
 	CONTENT_UNKNOWN };
 
+#define MAX_SPAN	( 100 )
+
+struct span_info {
+	unsigned int row_span;
+	bool auto_row;
+	bool auto_column;
+};
+
+struct columns {
+	unsigned int current_column;
+	bool extra;
+	/* Number of columns in main part of table 1..max columns */
+	unsigned int num_columns;
+	/* Information about columns in main table,
+	  array 0 to num_columns - 1 */
+	struct span_info *spans;
+	/* Number of columns that have cells after a colspan 0 */
+	unsigned int extra_columns;
+	/* Number of rows in table */
+	unsigned int num_rows;
+};
+
 static struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		struct css_style * parent_style,
 		struct box * parent, struct box *inline_container,
@@ -124,12 +146,15 @@ static void add_option(xmlNode* n, struct form_control* current_select,
 		const char *text);
 static void box_normalise_block(struct box *block, pool box_pool);
 static void box_normalise_table(struct box *table, pool box_pool);
+static void box_normalise_table_spans( struct box *table );
 static void box_normalise_table_row_group(struct box *row_group,
-		unsigned int **row_span, unsigned int *table_columns,
+		struct columns *col_info,
 		pool box_pool);
 static void box_normalise_table_row(struct box *row,
-		unsigned int **row_span, unsigned int *table_columns,
+		struct columns *col_info,
 		pool box_pool);
+static unsigned int calculate_table_row( struct columns *col_info,
+		unsigned int col_span, unsigned int row_span );
 static void box_normalise_inline_container(struct box *cont, pool box_pool);
 static void box_free_box(struct box *box);
 static struct box_result box_object(xmlNode *n, struct box_status *status,
@@ -594,14 +619,17 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		inline_container = 0;
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "colspan")) != NULL) {
-		int colspan = atoi(s);
-		if (1 <= colspan && colspan <= 100)
-			box->columns = colspan;
+		box->columns = strtol(s, NULL, 10);
+		if ( MAX_SPAN < box->columns ) {
+			box->columns = 1;
+		}
 		xmlFree(s);
 	}
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rowspan")) != NULL) {
-		if ((box->rows = strtol(s, 0, 10)) == 0)
+		box->rows = strtol(s, NULL, 10);
+		if ( MAX_SPAN < box->rows ) {
 			box->rows = 1;
+		}
 		xmlFree(s);
 	}
 
@@ -1661,27 +1689,92 @@ void box_normalise_block(struct box *block, pool box_pool)
 }
 
 
+void box_normalise_table_spans( struct box *table )
+{
+	struct box *table_row_group;
+	struct box *table_row;
+	struct box *table_cell;
+	unsigned int last_column;
+	unsigned int max_extra = 0;
+	bool extra;
+	bool force = false;
+	unsigned int rows_left = table->rows;
+
+	/* Scan table filling in table the width and height of table cells for
+		cells with colspan = 0 or rowspan = 0. Ignore the colspan and
+		rowspan of any cells that that follow an colspan = 0 */
+	for (table_row_group = table->children; table_row_group != NULL;
+				table_row_group = table_row_group->next) {
+		for (table_row = table_row_group->children; NULL != table_row;
+				table_row = table_row->next){
+			last_column = 0;
+			extra = false;
+			for (table_cell = table_row->children; NULL != table_cell;
+					table_cell = table_cell->next) {
+				/* We hae reached the end of the row, and have passed
+					a cell with colspan = 0 so ignore col and row spans */
+				if ( force || extra || ( table_cell->start_column + 1 <=
+											last_column )) {
+					extra = true;
+					table_cell->columns = 1;
+					table_cell->rows = 1;
+					if ( table_cell->start_column <= max_extra ) {
+						max_extra = table_cell->start_column + 1;
+					}
+					table_cell->start_column += table->columns;
+				} else {
+					/* Fill out the number of columns or the number of rows
+						if necessary */
+					if ( 0 == table_cell->columns ) {
+						table_cell->columns = table->columns -
+								table_cell->start_column;
+						if (( 0 == table_cell->start_column ) &&
+								( 0 == table_cell->rows )) {
+							force = true;
+						}
+					}
+					assert( 0 != table_cell->columns );
+					if ( 0 == table_cell->rows ) {
+						table_cell->rows = rows_left;
+					}
+					assert( 0 != table_cell->rows );
+					last_column = table_cell->start_column + 1;
+				}
+			}           
+			rows_left--;
+		}
+	}
+	table->columns +=  max_extra;
+}
+
 void box_normalise_table(struct box *table, pool box_pool)
 {
 	struct box *child;
 	struct box *next_child;
 	struct box *row_group;
 	struct css_style *style;
-	unsigned int *row_span = xcalloc(2, sizeof(row_span[0]));
-	unsigned int table_columns = 1;
+	struct columns col_info;
+/*	struct span_info *span_info = xcalloc(2, sizeof(span_info[0]));
+	unsigned int table_columns = 1;*/
 
 	assert(table != 0);
 	assert(table->type == BOX_TABLE);
 	LOG(("table %p", table));
-	row_span[0] = row_span[1] = 0;
+	col_info.num_columns = 1;
+	col_info.current_column = 0;
+	col_info.spans = xcalloc( 2, sizeof( *col_info.spans));
+	col_info.spans[0].row_span = col_info.spans[1].row_span = 0;
+	col_info.spans[0].auto_row = col_info.spans[0].auto_column =
+		col_info.spans[1].auto_row = col_info.spans[1].auto_column = false;
+	col_info.num_rows = col_info.extra_columns = 0;
+	col_info.extra = false;
 
 	for (child = table->children; child != 0; child = next_child) {
 		next_child = child->next;
 		switch (child->type) {
 			case BOX_TABLE_ROW_GROUP:
 				/* ok */
-				box_normalise_table_row_group(child, &row_span,
-						&table_columns, box_pool);
+				box_normalise_table_row_group(child, &col_info, box_pool);
 				break;
 			case BOX_BLOCK:
 			case BOX_INLINE_CONTAINER:
@@ -1717,8 +1810,7 @@ void box_normalise_table(struct box *table, pool box_pool)
 				if (row_group->next)
 					row_group->next->prev = row_group;
 				row_group->parent = table;
-				box_normalise_table_row_group(row_group, &row_span,
-						&table_columns, box_pool);
+				box_normalise_table_row_group(row_group, &col_info, box_pool);
 				break;
 			case BOX_INLINE:
 			case BOX_INLINE_BLOCK:
@@ -1735,8 +1827,11 @@ void box_normalise_table(struct box *table, pool box_pool)
 		}
 	}
 
-	table->columns = table_columns;
-	free(row_span);
+	table->columns = col_info.num_columns;
+	table->rows = col_info.num_rows;
+	free(col_info.spans);
+
+	box_normalise_table_spans( table );
 
 	if (table->children == 0) {
 		LOG(("table->children == 0, removing"));
@@ -1753,8 +1848,8 @@ void box_normalise_table(struct box *table, pool box_pool)
 }
 
 
-void box_normalise_table_row_group(struct box *row_group,
-		unsigned int **row_span, unsigned int *table_columns,
+static void box_normalise_table_row_group(struct box *row_group,
+		struct columns *col_info,
 		pool box_pool)
 {
 	struct box *child;
@@ -1771,8 +1866,8 @@ void box_normalise_table_row_group(struct box *row_group,
 		switch (child->type) {
 			case BOX_TABLE_ROW:
 				/* ok */
-				box_normalise_table_row(child, row_span,
-						table_columns, box_pool);
+				box_normalise_table_row(child, col_info,
+						box_pool);
 				break;
 			case BOX_BLOCK:
 			case BOX_INLINE_CONTAINER:
@@ -1808,8 +1903,8 @@ void box_normalise_table_row_group(struct box *row_group,
 				if (row->next)
 					row->next->prev = row;
 				row->parent = row_group;
-				box_normalise_table_row(row, row_span,
-						table_columns, box_pool);
+				box_normalise_table_row(row, col_info,
+						box_pool);
 				break;
 			case BOX_INLINE:
 			case BOX_INLINE_BLOCK:
@@ -1839,16 +1934,80 @@ void box_normalise_table_row_group(struct box *row_group,
 	LOG(("row_group %p done", row_group));
 }
 
+static unsigned int calculate_table_row( struct columns *col_info,
+		unsigned int col_span, unsigned int row_span )
+{
+	unsigned int cell_start_col;
+	unsigned int cell_end_col;
+	unsigned int i;
 
-void box_normalise_table_row(struct box *row,
-		unsigned int **row_span, unsigned int *table_columns,
+	if ( !col_info->extra ) {
+		/* skip columns with cells spanning from above */
+		while (( col_info->spans[col_info->current_column].row_span != 0 ) &&
+		       ( !col_info->spans[col_info->current_column].auto_column )) {
+			col_info->current_column++;
+		}
+		if ( col_info->spans[col_info->current_column].auto_column ) {
+			col_info->extra = true;
+			col_info->current_column = 0;
+		}
+	}
+
+	cell_start_col = col_info->current_column;
+
+	/* If the current table cell follows a cell with colspan=0,
+	   ignore both colspan and rowspan just assume it is a standard
+	   size cell */
+	if ( col_info->extra ) {
+		col_info->current_column++;
+		col_info->extra_columns = col_info->current_column;
+	} else {
+		/* If span to end of table, assume spaning single column
+			at the moment */
+		cell_end_col = cell_start_col + (( 0 == col_span ) ? 1 : col_span );
+
+		if ( col_info->num_columns < cell_end_col ) {
+			col_info->spans = xrealloc( col_info->spans,
+					sizeof( *col_info->spans ) * ( cell_end_col + 1 ));
+			col_info->num_columns = cell_end_col;
+        	
+			/* Mark new final column as sentinal */
+			col_info->spans[ cell_end_col ].row_span = 0;
+			col_info->spans[ cell_end_col ].auto_row =
+				col_info->spans[ cell_end_col ].auto_column =
+				false;
+		}
+
+		if ( 0 == col_span ) {
+			col_info->spans[ cell_start_col ].auto_column = true;
+			col_info->spans[ cell_start_col ].row_span = row_span;
+			col_info->spans[ cell_start_col ].auto_row = ( 0 == row_span );
+		} else {
+			for (i = cell_start_col; i < cell_end_col; i++) {
+				col_info->spans[ i ].row_span = ( 0 == row_span )  ?
+					1 : row_span;
+				col_info->spans[ i ].auto_row = ( 0 == row_span );
+				col_info->spans[ i ].auto_column = false;
+			}
+		}
+		if ( 0 == col_span ) {
+			col_info->spans[ cell_end_col ].auto_column = true;
+		}
+		col_info->current_column = cell_end_col;
+	}
+
+	return cell_start_col;
+}
+
+static void box_normalise_table_row(struct box *row,
+		struct columns *col_info,
 		pool box_pool)
 {
 	struct box *child;
 	struct box *next_child;
 	struct box *cell;
 	struct css_style *style;
-	unsigned int columns = 0, i;
+	unsigned int i;
 
 	assert(row != 0);
 	assert(row->type == BOX_TABLE_ROW);
@@ -1910,25 +2069,19 @@ void box_normalise_table_row(struct box *row,
 				assert(0);
 		}
 
-		/* skip columns with cells spanning from above */
-		while ((*row_span)[columns] != 0)
-			columns++;
-		cell->start_column = columns;
-		if (*table_columns < columns + cell->columns) {
-			*table_columns = columns + cell->columns;
-			*row_span = xrealloc(*row_span,
-					sizeof((*row_span)[0]) *
-					(*table_columns + 1));
-			(*row_span)[*table_columns] = 0;  /* sentinel */
-		}
-		for (i = 0; i != cell->columns; i++)
-			(*row_span)[columns + i] = cell->rows;
-		columns += cell->columns;
+		cell->start_column = calculate_table_row( col_info, cell->columns, cell->rows );
 	}
 
-	for (i = 0; i != *table_columns; i++)
-		if ((*row_span)[i] != 0)
-			(*row_span)[i]--;
+	for ( i = 0; i < col_info->num_columns; i++ ) {
+		if (( col_info->spans[i].row_span != 0 ) && ( !col_info->spans[i].auto_row )) {
+			col_info->spans[i].row_span--;
+			if (( col_info->spans[i].auto_column ) && ( 0 == col_info->spans[i].row_span )) {
+				col_info->spans[i].auto_column = false;
+			}
+		} 
+	}
+	col_info->current_column = 0;
+	col_info->extra = false;
 
 	if (row->children == 0) {
 		LOG(("row->children == 0, removing"));
@@ -1939,6 +2092,8 @@ void box_normalise_table_row(struct box *row,
 		if (row->next != 0)
 			row->next->prev = row->prev;
 		box_free(row);
+	} else {
+		col_info->num_rows++;
 	}
 
 	LOG(("row %p done", row));
