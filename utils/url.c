@@ -240,6 +240,12 @@ char *url_join(const char *rel, const char *base)
 	}
 
 	/* 2) */
+	/* base + "#s" = (current document)#s (see Appendix C.1) */
+	/** \todo does (current document) include the query? */
+	if (rel_match[9].rm_so != -1) {
+		fragment = rel + rel_match[9].rm_so;
+		fragment_len = rel_match[9].rm_eo - rel_match[9].rm_so;
+	}
 	if (rel_match[5].rm_so == rel_match[5].rm_eo &&
 			rel_match[2].rm_so == -1 &&
 			rel_match[4].rm_so == -1 &&
@@ -249,10 +255,6 @@ char *url_join(const char *rel, const char *base)
 	if (rel_match[7].rm_so != -1) {
 		query = rel + rel_match[7].rm_so;
 		query_len = rel_match[7].rm_eo - rel_match[7].rm_so;
-	}
-	if (rel_match[9].rm_so != -1) {
-		fragment = rel + rel_match[9].rm_so;
-		fragment_len = rel_match[9].rm_eo - rel_match[9].rm_so;
 	}
 
 	/* 3) */
