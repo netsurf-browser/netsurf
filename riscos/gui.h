@@ -1,5 +1,5 @@
 /**
- * $Id: gui.h,v 1.3 2002/12/30 22:56:30 monkeyson Exp $
+ * $Id: gui.h,v 1.4 2003/03/03 22:40:39 bursa Exp $
  */
 
 #ifndef _NETSURF_RISCOS_GUI_H_
@@ -10,10 +10,10 @@
 struct ro_gui_window;
 typedef struct ro_gui_window gui_window;
 
-      int ro_x_units                   (int browser_units);
-      int ro_y_units                   (int browser_units);
-      int browser_x_units              (int ro_units)     ;
-      int browser_y_units              (int ro_units)     ;
+      unsigned long ro_x_units                   (unsigned long browser_units);
+      unsigned long ro_y_units                   (unsigned long browser_units);
+      unsigned long browser_x_units              (unsigned long ro_units)     ;
+      unsigned long browser_y_units              (unsigned long ro_units)     ;
 
 struct ro_gui_window
 {

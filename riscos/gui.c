@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.18 2003/02/25 21:00:27 bursa Exp $
+ * $Id: gui.c,v 1.19 2003/03/03 22:40:39 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -22,7 +22,7 @@
 int gadget_subtract_x;
 int gadget_subtract_y;
 #define browser_menu_flags (wimp_ICON_TEXT | wimp_ICON_FILLED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT))
-char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro.html\0";
+const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro.html\0";
 
 wimp_MENU(2) netsurf_iconbar_menu =
   {
@@ -77,18 +77,32 @@ wimp_MENU(4) browser_menu =
     }
   };
 
-char* netsurf_messages_filename = "<NetSurf$Dir>.Resources.Messages";
+const char* netsurf_messages_filename = "<NetSurf$Dir>.Resources.Messages";
 messagetrans_control_block netsurf_messages_cb;
 char* netsurf_messages_data;
 
-char* templates_messages_filename = "<NetSurf$Dir>.Resources.IconNames";
+const char* templates_messages_filename = "<NetSurf$Dir>.Resources.IconNames";
 messagetrans_control_block templates_messages_cb;
 char* templates_messages_data;
 
 wimp_w netsurf_info;
 wimp_w netsurf_saveas;
 
-void ro_gui_load_messages()
+void ro_gui_load_messages(void);
+wimp_w ro_gui_load_template(const char* template_name);
+void ro_gui_load_templates(void);
+wimp_i ro_gui_icon(char* token);
+void ro_gui_transform_menu_entry(wimp_menu_entry* e);
+void ro_gui_transform_menus(void);
+void ro_gui_create_menu(wimp_menu* menu, int x, int y, gui_window* g);
+int window_x_units(int scr_units, wimp_window_state* win);
+int window_y_units(int scr_units, wimp_window_state* win);
+void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
+		signed long y, os_box* clip, int current_background_color);
+void ro_gui_toolbar_redraw(gui_window* g, wimp_draw* redraw);
+
+
+void ro_gui_load_messages(void)
 {
   int size;
   messagetrans_file_flags flags;
@@ -96,33 +110,37 @@ void ro_gui_load_messages()
   fprintf(stderr, "opening messages:\n");
   messagetrans_file_info(netsurf_messages_filename, &flags, &size);
   fprintf(stderr, "allocating %d bytes\n", size);
-  netsurf_messages_data = xcalloc(size, sizeof(char));
+  netsurf_messages_data = xcalloc((unsigned int) size, sizeof(char));
   messagetrans_open_file(&netsurf_messages_cb, netsurf_messages_filename,
                          netsurf_messages_data);
   fprintf(stderr, "messages opened\n");
 }
 
-wimp_w ro_gui_load_template(char* template_name)
+wimp_w ro_gui_load_template(const char* template_name)
 {
   int winicon;
   int indirected;
+  wimp_window *window;
   char* data;
   int temp;
+  char name[20];
 
-  wimp_load_template(0,0,0, (byte*)0xffffffff, template_name,0, &winicon, &indirected);
-  data = xcalloc(winicon + indirected + 16, 1);
-  wimp_load_template((wimp_window*) data, data+winicon, data+winicon+indirected,
-    (byte*)0xffffffff, template_name, 0, &temp, &temp);
-  return wimp_create_window((wimp_window*) data);
+  strcpy(name, template_name);  /* wimp_load_template won't accept a const char * */
+
+  wimp_load_template(wimp_GET_SIZE, 0, 0, wimp_NO_FONTS, name, 0, &winicon, &indirected);
+  data = (char *) window = xcalloc((unsigned int) (winicon + indirected + 16), 1);
+  wimp_load_template(window, data+winicon, data+winicon+indirected,
+    wimp_NO_FONTS, name, 0, &temp, &temp);
+  return wimp_create_window(window);
 }
 
-void ro_gui_load_templates()
+void ro_gui_load_templates(void)
 {
   int size;
   messagetrans_file_flags flags;
 
   messagetrans_file_info(templates_messages_filename, &flags, &size);
-  templates_messages_data = xcalloc(size, sizeof(char));
+  templates_messages_data = xcalloc((unsigned int) size, sizeof(char));
   messagetrans_open_file(&templates_messages_cb, templates_messages_filename,
                          templates_messages_data);
 
@@ -153,9 +171,9 @@ void ro_gui_transform_menu_entry(wimp_menu_entry* e)
   fprintf(stderr, "looking up message %s\n", e->data.text);
   messagetrans_lookup(&netsurf_messages_cb, e->data.text, buffer, 256, 0,0,0,0, &size);
   fprintf(stderr, "message '%s' uses %d bytes\n", buffer, size + 1);
-  block = xcalloc(size + 1, 1);
+  block = xcalloc((unsigned int) size + 1, 1);
   fprintf(stderr, "copying buffer to block\n");
-  strncpy(block, buffer, size);
+  strncpy(block, buffer, (unsigned int) size);
 
   fprintf(stderr, "applying flags\n");
   e->icon_flags = e->icon_flags | wimp_ICON_INDIRECTED;
@@ -168,7 +186,7 @@ void ro_gui_transform_menu_entry(wimp_menu_entry* e)
   return;
 }
 
-void ro_gui_transform_menus()
+void ro_gui_transform_menus(void)
 {
   int i;
 
@@ -215,7 +233,7 @@ int TOOLBAR_HEIGHT = 128;
 
 ro_theme* current_theme = NULL;
 
-char* BROWSER_VALIDATION = "\0";
+const char* BROWSER_VALIDATION = "\0";
 
 const char* task_name = "NetSurf";
 const wimp_MESSAGE_LIST(3) task_messages = { {message_DATA_SAVE, message_DATA_LOAD, 0} };
@@ -225,22 +243,22 @@ wimp_i ro_gui_iconbar_i;
 
 gui_window* over_window = NULL;
 
-int ro_x_units(int browser_units)
+unsigned long ro_x_units(unsigned long browser_units)
 {
   return (browser_units << 1);
 }
 
-int ro_y_units(int browser_units)
+unsigned long ro_y_units(unsigned long browser_units)
 {
   return -(browser_units << 1);
 }
 
-int browser_x_units(int ro_units)
+unsigned long browser_x_units(unsigned long ro_units)
 {
   return (ro_units >> 1);
 }
 
-int browser_y_units(int ro_units)
+unsigned long browser_y_units(unsigned long ro_units)
 {
   return -(ro_units >> 1);
 }
@@ -446,13 +464,14 @@ void gui_window_hide(gui_window* g)
   wimp_close_window(g->data.browser.window);
 }
 
-void gui_window_redraw(gui_window* g, int x0, int y0, int x1, int y1)
+void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
+		unsigned long x1, unsigned long y1)
 {
   if (g == NULL)
     return;
 
   wimp_force_redraw(g->data.browser.window,
-    ro_x_units(x0), ro_y_units(y1), ro_x_units(x1), ro_y_units(y0));
+    (int) ro_x_units(x0), (int) ro_y_units(y1), (int) ro_x_units(x1), (int) ro_y_units(y0));
 }
 
 void gui_window_redraw_window(gui_window* g)
@@ -480,12 +499,28 @@ gui_safety gui_window_set_redraw_safety(gui_window* g, gui_safety s)
 
 int select_on = 0;
 
-void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, signed long y, os_box* clip, int current_background_color)
+/* validation strings can't be const */
+static char validation_textarea[] = "R7;L";
+static char validation_textbox[] = "";
+static char validation_actionbutton[] = "R1";
+static char validation_actionbutton_pressed[] = "R2";
+static char validation_select[] = "R2";
+static char validation_checkbox_selected[] = "Sopton";
+static char validation_checkbox_unselected[] = "Soptoff";
+static char validation_radio_selected[] = "Sradioon";
+static char validation_radio_unselected[] = "Sradiooff";
+
+static char select_text_multiple[] = "<Multiple>";  /* TODO: read from messages */
+static char select_text_none[] = "<None>";
+
+static char empty_text[] = "";
+
+void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
+		signed long y, os_box* clip, int current_background_color)
 {
   struct box * c;
   const char * const noname = "";
   const char * name = noname;
-  char *text;
   char* select_text;
   struct formoption* opt;
 
@@ -522,16 +557,16 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
     if (box->style != 0 && box->style->background_color != TRANSPARENT)
     {
       colourtrans_set_gcol(box->style->background_color << 8, 0, os_ACTION_OVERWRITE, 0);
-      os_plot(os_MOVE_TO, x + box->x * 2, y - box->y * 2);
-      os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, box->width * 2, -box->height * 2);
+      os_plot(os_MOVE_TO, (int) x + (int) box->x * 2, (int) y - (int) box->y * 2);
+      os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, (int) box->width * 2, - (int) box->height * 2);
       current_background_color = box->style->background_color;
     }
 
     if (box->img != 0)
     {
       colourtrans_set_gcol(os_COLOUR_LIGHT_GREY, 0, os_ACTION_OVERWRITE, 0);
-      os_plot(os_MOVE_TO, x + box->x * 2, y - box->y * 2);
-      os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, box->width * 2, -box->height * 2);
+      os_plot(os_MOVE_TO, (int) x + (int) box->x * 2, (int) y - (int) box->y * 2);
+      os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, (int) box->width * 2, - (int) box->height * 2);
     }
     else if (box->gadget != 0)
     {
@@ -553,7 +588,7 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
 				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
 			icon.data.indirected_text.text = box->gadget->data.textarea.text;
 			icon.data.indirected_text.size = strlen(box->gadget->data.textarea.text);
-			icon.data.indirected_text.validation = "R7;L";
+			icon.data.indirected_text.validation = validation_textarea;
 			fprintf(stderr, "writing GADGET TEXTAREA\n");
 			wimp_plot_icon(&icon);
       			break;
@@ -567,7 +602,7 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
 				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
 			icon.data.indirected_text.text = box->gadget->data.textbox.text;
 			icon.data.indirected_text.size = box->gadget->data.textbox.maxlength + 1;
-			icon.data.indirected_text.validation = " ";
+			icon.data.indirected_text.validation = validation_textbox;
 			fprintf(stderr, "writing GADGET TEXTBOX\n");
 			wimp_plot_icon(&icon);
       			break;
@@ -581,12 +616,12 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
 			icon.data.indirected_text.size = strlen(box->gadget->data.actionbutt.label);
 			if (box->gadget->data.actionbutt.pressed)
 			{
-			  icon.data.indirected_text.validation = "R2";
+			  icon.data.indirected_text.validation = validation_actionbutton_pressed;
 			  icon.flags |= (wimp_COLOUR_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
 			}
 			else
 			{
-			  icon.data.indirected_text.validation = "R1";
+			  icon.data.indirected_text.validation = validation_actionbutton;
 			  icon.flags |= (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
 			}
 			fprintf(stderr, "writing GADGET ACTION\n");
@@ -608,15 +643,15 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
 					if (select_text == 0)
 						select_text = opt->text;
 					else
-						select_text = "<Multiple>";
+						select_text = select_text_multiple;
 				}
 				opt = opt->next;
 			}
 			if (select_text == 0)
-				select_text = "<None>";
+				select_text = select_text_none;
 			icon.data.indirected_text.text = select_text;
 			icon.data.indirected_text.size = strlen(icon.data.indirected_text.text);
-			icon.data.indirected_text.validation = "R2";
+			icon.data.indirected_text.validation = validation_select;
 			fprintf(stderr, "writing GADGET ACTION\n");
 			wimp_plot_icon(&icon);
 			break;
@@ -625,11 +660,11 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
 			icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
 				wimp_ICON_VCENTRED | wimp_ICON_HCENTRED |
 				wimp_ICON_INDIRECTED;
-			icon.data.indirected_text_and_sprite.text = "\0";
+			icon.data.indirected_text_and_sprite.text = empty_text;
 			if (box->gadget->data.checkbox.selected)
-			  icon.data.indirected_text_and_sprite.validation = "Sopton;";
+			  icon.data.indirected_text_and_sprite.validation = validation_checkbox_selected;
 			else
-			  icon.data.indirected_text_and_sprite.validation = "Soptoff;";
+			  icon.data.indirected_text_and_sprite.validation = validation_checkbox_unselected;
 			icon.data.indirected_text_and_sprite.size = 1;
 			wimp_plot_icon(&icon);
 			break;
@@ -638,16 +673,17 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
 			icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
 				wimp_ICON_VCENTRED | wimp_ICON_HCENTRED |
 				wimp_ICON_INDIRECTED;
-			icon.data.indirected_text_and_sprite.text = "\0";
+			icon.data.indirected_text_and_sprite.text = empty_text;
 			if (box->gadget->data.radio.selected)
-			  icon.data.indirected_text_and_sprite.validation = "Sradioon;";
+			  icon.data.indirected_text_and_sprite.validation = validation_radio_selected;
 			else
-			  icon.data.indirected_text_and_sprite.validation = "Sradiooff;";
+			  icon.data.indirected_text_and_sprite.validation = validation_radio_unselected;
 			icon.data.indirected_text_and_sprite.size = 1;
 			wimp_plot_icon(&icon);
 			break;
 
-
+		case GADGET_HIDDEN:
+			break;
 	}
     }
 
@@ -669,21 +705,21 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
         {
           colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_SET_FG, 0, 0);
           os_plot(os_MOVE_TO,
-            x + box->x * 2 + start->pixel_offset * 2,
-            y - box->y * 2 - box->height * 2);
+            (int) x + (int) box->x * 2 + start->pixel_offset * 2,
+            (int) y - (int) box->y * 2 - (int) box->height * 2);
           os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-            x + box->x * 2 + end->pixel_offset * 2 - 2,
-            y - box->y * 2 - 2);
+            (int) x + (int) box->x * 2 + end->pixel_offset * 2 - 2,
+            (int) y - (int) box->y * 2 - 2);
         }
         else
         {
           colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_SET_FG, 0, 0);
           os_plot(os_MOVE_TO,
-            x + box->x * 2 + start->pixel_offset * 2,
-            y - box->y * 2 - box->height * 2);
+            (int) x + (int) box->x * 2 + start->pixel_offset * 2,
+            (int) y - (int) box->y * 2 - (int) box->height * 2);
           os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-            x + box->x * 2 + box->width * 2 - 2,
-            y - box->y * 2 - 2);
+            (int) x + (int) box->x * 2 + (int) box->width * 2 - 2,
+            (int) y - (int) box->y * 2 - 2);
           select_on = 1;
         }
       }
@@ -693,21 +729,21 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
         {
           colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_SET_FG, 0, 0);
           os_plot(os_MOVE_TO,
-            x + box->x * 2,
-            y - box->y * 2 - box->height * 2);
+            (int) x + (int) box->x * 2,
+            (int) y - (int) box->y * 2 - (int) box->height * 2);
           os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-            x + box->x * 2 + box->width * 2 - 2,
-            y - box->y * 2 - 2);
+            (int) x + (int) box->x * 2 + (int) box->width * 2 - 2,
+            (int) y - (int) box->y * 2 - 2);
         }
         else
         {
           colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_SET_FG, 0, 0);
           os_plot(os_MOVE_TO,
-            x + box->x * 2,
-            y - box->y * 2 - box->height * 2);
+            (int) x + (int) box->x * 2,
+            (int) y - (int) box->y * 2 - (int) box->height * 2);
           os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-            x + box->x * 2 + end->pixel_offset * 2 - 2,
-            y - box->y * 2 - 2);
+            (int) x + (int) box->x * 2 + end->pixel_offset * 2 - 2,
+            (int) y - (int) box->y * 2 - 2);
           select_on = 0;
         }
       }
@@ -718,9 +754,9 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
 
       font_paint(box->font->handle, box->text,
         font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
-        x + box->x * 2, y - box->y * 2 - box->height * 1.5,
+        (int) x + (int) box->x * 2, (int) y - (int) box->y * 2 - (int) (box->height * 1.5),
         NULL, NULL,
-        box->length);
+        (int) box->length);
 
     }
   }
@@ -743,10 +779,12 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
 
   for (c = box->children; c != 0; c = c->next)
     if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-      ro_gui_window_redraw_box(g, c, x + box->x * 2, y - box->y * 2, clip, current_background_color);
+      ro_gui_window_redraw_box(g, c, (int) x + (int) box->x * 2,
+		      (int) y - (int) box->y * 2, clip, current_background_color);
 
   for (c = box->float_children; c != 0; c = c->next_float)
-    ro_gui_window_redraw_box(g, c, x + box->x * 2, y - box->y * 2, clip, current_background_color);
+    ro_gui_window_redraw_box(g, c, (int) x + (int) box->x * 2,
+		    (int) y - (int) box->y * 2, clip, current_background_color);
 }
 
 
@@ -829,7 +867,7 @@ void gui_window_set_scroll(gui_window* g, int sx, int sy)
   ro_gui_window_open(g, (wimp_open*)&state);
 }
 
-int gui_window_get_width(gui_window* g)
+unsigned long gui_window_get_width(gui_window* g)
 {
   wimp_window_state state;
   state.w = g->data.browser.window;
@@ -837,7 +875,7 @@ int gui_window_get_width(gui_window* g)
   return browser_x_units(state.visible.x1 - state.visible.x0);
 }
 
-void gui_window_set_extent(gui_window* g, int width, int height)
+void gui_window_set_extent(gui_window* g, unsigned long width, unsigned long height)
 {
   os_box extent;
 
@@ -861,7 +899,7 @@ void gui_window_set_extent(gui_window* g, int width, int height)
 
 }
 
-void gui_window_set_status(gui_window* g, char* text)
+void gui_window_set_status(gui_window* g, const char* text)
 {
   if (strcmp(g->status, text) != 0)
   {
@@ -2018,7 +2056,7 @@ void gui_window_stop_throbber(gui_window* g)
   wimp_set_icon_state(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_THROBBER"), 0, 0);
 }
 
-void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, int mx, int my)
+void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, unsigned long mx, unsigned long my)
 {
 	int count = 0;
 	struct formoption* o;

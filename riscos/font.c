@@ -1,5 +1,5 @@
 /**
- * $Id: font.c,v 1.10 2003/02/09 12:58:15 bursa Exp $
+ * $Id: font.c,v 1.11 2003/03/03 22:40:39 bursa Exp $
  */
 
 #include <assert.h>
@@ -56,7 +56,7 @@ unsigned long font_width(struct font_data *font, const char * text, unsigned int
 }
 
 void font_position_in_string(const char* text, struct font_data* font,
-		int length, int x, int* char_offset, int* pixel_offset)
+		unsigned int length, unsigned long x, int* char_offset, int* pixel_offset)
 {
   font_scan_block block;
   char* split_point;

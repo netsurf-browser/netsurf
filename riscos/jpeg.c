@@ -1,5 +1,5 @@
 /**
- * $Id: jpeg.c,v 1.2 2003/02/28 11:49:13 bursa Exp $
+ * $Id: jpeg.c,v 1.3 2003/03/03 22:40:39 bursa Exp $
  *
  * This is just a temporary implementation using the JPEG renderer
  * available in some versions of RISC OS.
@@ -40,6 +40,8 @@ int jpeg_convert(struct content *c, unsigned int width, unsigned int height)
 		return 1;
 	c->width = w;
 	c->height = h;
+	c->title = xcalloc(100, 1);
+	sprintf(c->title, "JPEG image (%ux%u, %lu bytes)", w, h, c->data.jpeg.length);
 	return 0;
 }
 
@@ -57,4 +59,5 @@ void jpeg_reformat(struct content *c, unsigned int width, unsigned int height)
 void jpeg_destroy(struct content *c)
 {
 	xfree(c->data.jpeg.data);
+	xfree(c->title);
 }

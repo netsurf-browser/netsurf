@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.3 2003/02/26 18:22:24 bursa Exp $
+ * $Id: html.c,v 1.4 2003/03/03 22:40:39 bursa Exp $
  */
 
 #include <assert.h>
@@ -160,5 +160,7 @@ void html_destroy(struct content *c)
 		box_free(c->data.html.layout);
 	if (c->data.html.fonts != 0)
 		font_free_set(c->data.html.fonts);
+	if (c->title != 0)
+		xfree(c->title);
 	/* TODO: stylesheets */
 }

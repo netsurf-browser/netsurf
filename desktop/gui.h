@@ -1,5 +1,5 @@
 /**
- * $Id: gui.h,v 1.4 2003/01/11 17:33:31 monkeyson Exp $
+ * $Id: gui.h,v 1.5 2003/03/03 22:40:39 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_GUI_H_
@@ -27,11 +27,13 @@ gui_window* create_gui_browser_window(struct browser_window* bw);
 void gui_window_destroy(gui_window* g);
 void gui_window_show(gui_window* g);
 void gui_window_hide(gui_window* g);
-void gui_window_redraw(gui_window* g, int x0, int y0, int x1, int y1);
+void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
+		unsigned long x1, unsigned long y1);
 void gui_window_redraw_window(gui_window* g);
 void gui_window_set_scroll(gui_window* g, int sx, int sy);
-void gui_window_set_extent(gui_window* g, int width, int height);
-void gui_window_set_status(gui_window* g, char* text);
+unsigned long gui_window_get_width(gui_window* g);
+void gui_window_set_extent(gui_window* g, unsigned long width, unsigned long height);
+void gui_window_set_status(gui_window* g, const char* text);
 void gui_window_set_title(gui_window* g, char* title);
 
 void gui_window_message(gui_window* g, gui_message* msg);
@@ -46,5 +48,7 @@ int gui_file_to_filename(char* location, char* actual_filename, int size);
 void gui_window_start_throbber(gui_window* g);
 void gui_window_stop_throbber(gui_window* g);
 
-void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, int mx, int my);
+void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, unsigned long mx, unsigned long my);
+void gui_edit_textarea(struct browser_window* bw, struct gui_gadget* g);
+void gui_edit_textbox(struct browser_window* bw, struct gui_gadget* g);
 #endif

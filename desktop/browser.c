@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.28 2003/02/28 11:49:13 bursa Exp $
+ * $Id: browser.c,v 1.29 2003/03/03 22:40:39 bursa Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -21,15 +21,27 @@
 void browser_window_start_throbber(struct browser_window* bw);
 void browser_window_stop_throbber(struct browser_window* bw);
 void browser_window_reformat(struct browser_window* bw);
-void browser_window_text_selection(struct browser_window* bw, int click_x, int click_y, int click_type);
+void browser_window_text_selection(struct browser_window* bw,
+		unsigned long click_x, unsigned long click_y, int click_type);
 void browser_window_clear_text_selection(struct browser_window* bw);
 void browser_window_change_text_selection(struct browser_window* bw, struct box_position* new_start, struct box_position* new_end);
+int redraw_box_list(struct browser_window* bw, struct box* current,
+		unsigned long x, unsigned long y, struct box_position* start,
+		struct box_position* end, int* plot);
 void browser_window_redraw_boxes(struct browser_window* bw, struct box_position* start, struct box_position* end);
 void browser_window_follow_link(struct browser_window* bw,
-  int click_x, int click_y, int click_type);
+		unsigned long click_x, unsigned long click_y, int click_type);
 void browser_window_callback(fetchcache_msg msg, struct content *c,
-		struct browser_window* bw, const char *error);
-void box_under_area(struct box* box, int x, int y, int ox, int oy, struct box_selection** found, int* count, int* plot_index);
+		void *p, const char *error);
+void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct gui_gadget* group);
+void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct gui_gadget* g,
+		unsigned long x, unsigned long y);
+void gui_redraw_gadget(struct browser_window* bw, struct gui_gadget* g);
+void browser_window_gadget_select(struct browser_window* bw, struct gui_gadget* g, int item);
+int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x, unsigned long click_y);
+void box_under_area(struct box* box, unsigned long x, unsigned long y, unsigned long ox, unsigned long oy,
+		struct box_selection** found, int* count, int* plot_index);
+char *url_join(const char* new, const char* base);
 
 
 void browser_window_start_throbber(struct browser_window* bw)
@@ -48,32 +60,21 @@ void browser_window_stop_throbber(struct browser_window* bw)
 
 void browser_window_reformat(struct browser_window* bw)
 {
-  LOG(("Entering..."));
+  LOG(("bw = %p", bw));
+
   assert(bw != 0);
   if (bw->current_content == NULL)
     return;
 
-  switch (bw->current_content->type)
-  {
-    case CONTENT_HTML:
-      LOG(("HTML content."));
-      if (bw->current_content->title == 0)
-        gui_window_set_title(bw->window, bw->url);
-      else
-        gui_window_set_title(bw->window, bw->current_content->title);
-      LOG(("Setting extent"));
-      gui_window_set_extent(bw->window, bw->current_content->width, bw->current_content->height);
-      LOG(("Setting scroll"));
-      gui_window_set_scroll(bw->window, 0, 0);
-      LOG(("Complete"));
-      break;
-    default:
-      LOG(("Unknown content type"));
-      break;
-  }
-
-  LOG(("Redraw window"));
+  if (bw->current_content->title == 0)
+    gui_window_set_title(bw->window, bw->url);
+  else
+    gui_window_set_title(bw->window, bw->current_content->title);
+  gui_window_set_extent(bw->window, bw->current_content->width, bw->current_content->height);
+  gui_window_set_scroll(bw->window, 0, 0);
   gui_window_redraw_window(bw->window);
+
+  LOG(("done"));
 }
 
 /* create a new history item */
@@ -159,7 +160,6 @@ struct browser_window* create_browser_window(int flags, int width, int height)
   bw->history = NULL;
 
   bw->url = NULL;
-  bw->title = xstrdup("NetSurf");
 
   bw->window = create_gui_browser_window(bw);
 
@@ -203,7 +203,6 @@ void browser_window_destroy(struct browser_window* bw)
   }
 
   xfree(bw->url);
-  xfree(bw->title);
 
   gui_window_destroy(bw->window);
 
@@ -243,8 +242,9 @@ void browser_window_open_location(struct browser_window* bw, char* url)
 }
 
 void browser_window_callback(fetchcache_msg msg, struct content *c,
-		struct browser_window* bw, const char *error)
+		void *p, const char *error)
 {
+  struct browser_window* bw = p;
   gui_safety previous_safety;
   char status[40];
 
@@ -262,19 +262,22 @@ void browser_window_callback(fetchcache_msg msg, struct content *c,
         gui_window_message(bw->window, &gmsg);
 
         previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
-        if (bw->current_content != NULL && bw->current_content->type == CONTENT_HTML)
-	{
-	  int gc;
-	  for (gc = 0; gc < bw->current_content->data.html.elements.numGadgets; gc++)
-	  {
-		  gui_remove_gadget(bw->current_content->data.html.elements.gadgets[gc]);
-	  }
+        if (bw->current_content != NULL)
+        {
+          if (bw->current_content->type == CONTENT_HTML)
+          {
+            int gc;
+            for (gc = 0; gc < bw->current_content->data.html.elements.numGadgets; gc++)
+            {
+              gui_remove_gadget(bw->current_content->data.html.elements.gadgets[gc]);
+            }
+          }
           cache_free(bw->current_content);
-	}
+        }
         bw->current_content = c;
         browser_window_reformat(bw);
         gui_window_set_redraw_safety(bw->window, previous_safety);
-        sprintf(status, "Page complete (%gs)", ((float) clock() - bw->time0) / CLOCKS_PER_SEC);
+        sprintf(status, "Page complete (%gs)", ((float) (clock() - bw->time0)) / CLOCKS_PER_SEC);
         browser_window_set_status(bw, status);
         browser_window_stop_throbber(bw);
       }
@@ -286,7 +289,7 @@ void browser_window_callback(fetchcache_msg msg, struct content *c,
       break;
 
     case FETCHCACHE_BADTYPE:
-      fprintf(status, "Unknown type '%s'", error);
+      sprintf(status, "Unknown type '%s'", error);
       browser_window_set_status(bw, status);
       browser_window_stop_throbber(bw);
       break;
@@ -327,7 +330,8 @@ void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct gui_
       clear_radio_gadgets(bw, c, group);
 }
 
-void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct gui_gadget* g, int x, int y)
+void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct gui_gadget* g,
+		unsigned long x, unsigned long y)
 {
 	struct box* c;
 
@@ -370,7 +374,7 @@ void browser_window_gadget_select(struct browser_window* bw, struct gui_gadget* 
 	gui_redraw_gadget(bw, g);
 }
 
-int browser_window_gadget_click(struct browser_window* bw, int click_x, int click_y)
+int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x, unsigned long click_y)
 {
 	struct box_selection* click_boxes;
 	int found, plot_index;
@@ -418,6 +422,8 @@ int browser_window_gadget_click(struct browser_window* bw, int click_x, int clic
 				case GADGET_TEXTBOX:
 					gui_edit_textbox(bw, g);
 					break;
+				case GADGET_HIDDEN:
+					break;
 			}
 
 			xfree(click_boxes);
@@ -462,8 +468,8 @@ int browser_window_action(struct browser_window* bw, struct browser_action* act)
   return 0;
 }
 
-void box_under_area(struct box* box, int x, int y, int ox, int oy,
-    struct box_selection** found, int* count, int* plot_index)
+void box_under_area(struct box* box, unsigned long x, unsigned long y, unsigned long ox, unsigned long oy,
+		struct box_selection** found, int* count, int* plot_index)
 {
   struct box* c;
 
@@ -494,7 +500,7 @@ void box_under_area(struct box* box, int x, int y, int ox, int oy,
 }
 
 void browser_window_follow_link(struct browser_window* bw,
-  int click_x, int click_y, int click_type)
+		unsigned long click_x, unsigned long click_y, int click_type)
 {
   struct box_selection* click_boxes;
   int found, plot_index;
@@ -548,7 +554,7 @@ void browser_window_follow_link(struct browser_window* bw,
 }
 
 void browser_window_text_selection(struct browser_window* bw,
-  int click_x, int click_y, int click_type)
+		unsigned long click_x, unsigned long click_y, int click_type)
 {
   struct box_selection* click_boxes;
   int found, plot_index;
@@ -782,14 +788,14 @@ int box_position_distance(struct box_position* x, struct box_position* y)
   return dx*dx + dy*dy;
 }
 
-int redraw_min_x = INT_MAX;
-int redraw_min_y = INT_MAX;
-int redraw_max_x = INT_MIN;
-int redraw_max_y = INT_MIN;
+unsigned long redraw_min_x = LONG_MAX;
+unsigned long redraw_min_y = LONG_MAX;
+unsigned long redraw_max_x = 0;
+unsigned long redraw_max_y = 0;
 
 int redraw_box_list(struct browser_window* bw, struct box* current,
-    int x, int y, struct box_position* start, struct box_position* end,
-    int* plot)
+		unsigned long x, unsigned long y, struct box_position* start,
+		struct box_position* end, int* plot)
 {
 
   struct box* c;
@@ -799,10 +805,10 @@ int redraw_box_list(struct browser_window* bw, struct box* current,
 
   if (*plot >= 1 && current->type == BOX_INLINE)
   {
-    int minx = x + current->x;
-    int miny = y + current->y;
-    int maxx = x + current->x + current->width;
-    int maxy = y + current->y + current->height;
+    unsigned long minx = x + current->x;
+    unsigned long miny = y + current->y;
+    unsigned long maxx = x + current->x + current->width;
+    unsigned long maxy = y + current->y + current->height;
 
     if (minx < redraw_min_x)
       redraw_min_x = minx;
@@ -841,10 +847,10 @@ void browser_window_redraw_boxes(struct browser_window* bw, struct box_position*
   if (box_position_eq(start, end))
     return;
 
-  redraw_min_x = INT_MAX;
-  redraw_min_y = INT_MAX;
-  redraw_max_x = INT_MIN;
-  redraw_max_y = INT_MIN;
+  redraw_min_x = LONG_MAX;
+  redraw_min_y = LONG_MAX;
+  redraw_max_x = 0;
+  redraw_max_y = 0;
 
   redraw_box_list(bw, bw->current_content->data.html.layout,
     0,0, start, end, &plot);

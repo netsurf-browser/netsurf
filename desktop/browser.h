@@ -1,5 +1,5 @@
 /**
- * $Id: browser.h,v 1.9 2003/02/28 11:49:13 bursa Exp $
+ * $Id: browser.h,v 1.10 2003/03/03 22:40:39 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
@@ -43,8 +43,8 @@ void history_remember(struct history* current, char* desc, char* url);
 
 struct browser_window
 {
-  int format_width;
-  int format_height;
+  unsigned long format_width;
+  unsigned long format_height;
   struct { int mult; int div; } scale;
 
   struct content* current_content;
@@ -54,7 +54,6 @@ struct browser_window
   char* url;
 
   browser_window_flags flags;
-  char* title;
   gui_window* window;
 
   int throbbing;
@@ -71,8 +70,8 @@ struct browser_action
        } type;
   union {
     struct {
-      int x;
-      int y;
+      unsigned long x;
+      unsigned long y;
       action_buttons buttons;
     } mouse;
     struct {
