@@ -824,16 +824,14 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	        if (char_offset == text_box->length &&
 	            text_box == inline_container->last &&
 	            inline_container->next) {
-	                if (inline_container->next->children) {
-	                      /* move to start of next box (if it exists) */
-	                      text_box = inline_container->next->children;
-	                }
+	                /* move to start of next box (if it exists) */
+	                text_box = inline_container->next->children;
 	                char_offset = 0;
 	                inline_container=inline_container->next;
 	        }
 	        else if (char_offset == text_box->length && text_box->next) {
 	                text_box = text_box->next;
-	                char_offset == 0;
+	                char_offset = 0;
 	        }
 	        else if (char_offset != text_box->length) {
 	                char_offset++;
@@ -846,10 +844,8 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	        if (char_offset == 0 &&
 	            text_box == inline_container->children &&
 	            inline_container->prev) {
-	                if (inline_container->prev->children) {
-	                        /* move to end of previous box */
-	                        text_box = inline_container->prev->children;
-	                }
+	                /* move to end of previous box */
+	                text_box = inline_container->prev->children;
 	                inline_container=inline_container->prev;
 	                char_offset = text_box->length;
 	        }
@@ -867,9 +863,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	        /* Up Cursor */
 	        if (text_box == inline_container->children &&
 	            inline_container->prev) {
-	                if (inline_container->prev->children) {
-	                        text_box = inline_container->prev->children;
-	                }
+	                text_box = inline_container->prev->children;
 	                inline_container = inline_container->prev;
 	                if (char_offset > text_box->length) {
 	                        char_offset = text_box->length;
@@ -888,9 +882,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	        /* Down cursor */
                 if (text_box == inline_container->last &&
                     inline_container->next) {
-	                if (inline_container->next->children) {
-	                        text_box = inline_container->next->children;
-	                }
+	                text_box = inline_container->next->children;
 	                inline_container = inline_container->next;
 	                if (char_offset > text_box->length) {
 	                        char_offset = text_box->length;
