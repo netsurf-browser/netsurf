@@ -418,7 +418,14 @@ void fetch_abort(struct fetch *f)
 {
 	assert(f);
 	LOG(("fetch %p, url '%s'", f, f->url));
-	f->abort = true;
+	if (f->queue_prev) {
+		f->queue_prev->queue_next = f->queue_next;
+		if (f->queue_next)
+			f->queue_next->queue_prev = f->queue_prev;
+		fetch_free(f);
+	} else {
+		f->abort = true;
+	}
 }
 
 
@@ -579,7 +586,7 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 	callback = f->callback;
 	p = f->p;
 
-	if (result == CURLE_OK) {
+	if (!abort && result == CURLE_OK) {
 		/* fetch completed normally */
 		if (!f->had_headers && fetch_process_headers(f))
 			; /* redirect with no body or similar */
