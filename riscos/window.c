@@ -669,19 +669,14 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
 			browser_window_stop(g->data.browser.bw);
 			break;
 
+		case ICON_TOOLBAR_RELOAD:
+			browser_window_reload(g->data.browser.bw);
+			break;
+
 		case ICON_TOOLBAR_HISTORY:
 			ro_gui_history_open(g->data.browser.bw,
 					g->data.browser.bw->history,
 					pointer->pos.x, pointer->pos.y);
-			break;
-
-		case ICON_TOOLBAR_RELOAD:
-/*			browser_window_open_location_historical(g->data.browser.bw,
-					g->data.browser.bw->url
-#ifdef WITH_POST
-					, 0, 0
-#endif
-					);*/
 			break;
 
 		case ICON_TOOLBAR_SCALE:
@@ -841,7 +836,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 	if (!toolbar) {
 		int c = key;
 		/* Munge cursor keys into unused control chars */
-		/* We can't map on to any of: 3,8,10,13,17,21,22,23 or 24
+		/* We can't map on to any of: 3,8,10,13,17,18,21,22,23 or 24
 		 * That leaves 1,2,4-7,11,12,14-16,18-20,25-31 and 129-159
 		 */
 		if (c == 394) c = 9;	       /* Tab */
@@ -944,6 +939,10 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 
 		case wimp_KEY_ESCAPE:
 			browser_window_stop(g->data.browser.bw);
+			return true;
+
+		case 18:	/* CTRL+R */
+			browser_window_reload(g->data.browser.bw);
 			return true;
 
 		case 17:       /* CTRL+Q (Zoom out) */

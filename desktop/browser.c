@@ -397,6 +397,22 @@ void browser_window_stop(struct browser_window *bw)
 
 
 /**
+ * Reload the page in a browser window.
+ *
+ * \param  bw  browser window
+ */
+
+void browser_window_reload(struct browser_window *bw)
+{
+	if (!bw->current_content || bw->loading_content)
+		return;
+
+	bw->current_content->fresh = false;
+	browser_window_go_post(bw, bw->current_content->url, 0, 0, false);
+}
+
+
+/**
  * Change the status bar of a browser window.
  *
  * \param  bw    browser window

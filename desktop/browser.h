@@ -90,6 +90,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		struct form_successful_control *post_multipart,
 		bool history_add);
 void browser_window_stop(struct browser_window *bw);
+void browser_window_reload(struct browser_window *bw);
 void browser_window_destroy(struct browser_window *bw);
 
 int browser_window_action(struct browser_window* bw, struct browser_action* act);
