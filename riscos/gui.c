@@ -807,10 +807,18 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 		char url[80];
 		int length;
 
-		if ((length = snprintf(url, sizeof(url),
+                /* Open the homepage based on our the user options. */
+                if (!(option_homepage_url == NULL)){
+                  browser_window_create(option_homepage_url, NULL);
+                }
+                else {
+		  if ((length = snprintf(url, sizeof(url),
 				"file:/<NetSurf$Dir>/Docs/intro_%s",
 				option_language)) >= 0 && length < (int)sizeof(url))
-			browser_window_create(url, NULL);
+				browser_window_create(url, NULL);
+                }
+
+
 	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
 	  	/*	I've no idea what the correct way to scan for keys is when in the
 	  		desktop, so I've used os_byte to scan directly. This may cause some
@@ -995,7 +1003,7 @@ void ro_msg_dataload(wimp_message *message)
 		url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
 	else if (file_type == 0xfaf ||
 			file_type == 0xf78 ||
-			file_type == 0xf83 || 
+			file_type == 0xf83 ||
 			file_type == 0x695 ||
 			file_type == 0xaff ||
 			file_type == 0xb60 ||

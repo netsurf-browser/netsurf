@@ -4,6 +4,7 @@
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  */
 
 /** \file

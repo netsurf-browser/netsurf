@@ -537,6 +537,16 @@ void ro_gui_dialog_open_config(void)
 			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT									<< wimp_CHILD_TS_EDGE_SHIFT)) {
 		LOG(("Unable to open config proxy pane window"));
 	}
+
+	/* Always reset the selected panes to the default option */
+	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_PROXY,
+			true);
+	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_BROWSER,
+			false);
+	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_THEME,
+			false);
+	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_MISC,
+			false);
 }
 
 /**
@@ -952,6 +962,12 @@ void set_browser_choices(void) {
 	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_ALANG,
 			language_name(option_accept_language ?
 					option_accept_language : "en"));
+	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_HOMEPAGE_URL,
+	                              option_homepage_url);
+
+        ro_gui_set_icon_selected_state(dialog_config_br, ICON_CONFIG_BR_OPENBROWSER,
+			option_open_browser_at_startup);
+
 }
 
 
@@ -962,6 +978,10 @@ void set_browser_choices(void) {
 void get_browser_choices(void) {
 	option_font_size = font_size;
 	option_font_min_size = font_min_size;
+        option_homepage_url = ro_gui_get_icon_string(dialog_config_br,
+			ICON_CONFIG_BR_HOMEPAGE_URL);
+        option_open_browser_at_startup = ro_gui_get_icon_selected_state(dialog_config_br,
+			ICON_CONFIG_BR_OPENBROWSER);
 }
 
 

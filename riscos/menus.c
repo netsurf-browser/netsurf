@@ -571,6 +571,8 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 
 void ro_gui_menu_selection(wimp_selection *selection)
 {
+        char url[80];
+        int length;
 	wimp_pointer pointer;
 	wimp_window_state state;
 	os_error *error;
@@ -720,6 +722,19 @@ void ro_gui_menu_selection(wimp_selection *selection)
 			case MENU_NAVIGATE:
 				switch (selection->items[1]) {
 					case 0: /* Home */
+
+					        /* Open the homepage based on our the user options. */
+
+                                                if (!(option_homepage_url == NULL)){
+                                                     browser_window_create(option_homepage_url, NULL);
+                                                }
+                                                else {
+		                                if ((length = snprintf(url, sizeof(url),
+				                     "file:/<NetSurf$Dir>/Docs/intro_%s",
+				                     option_language)) >= 0 && length < (int)sizeof(url))
+				                     browser_window_create(url, NULL);
+                                                }
+
 						break;
 					case 1: /* Back */
 						history_back(current_gui->bw,

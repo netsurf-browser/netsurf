@@ -1258,9 +1258,20 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			ro_gui_open_help_page("docs");
 			return true;
 
+                case wimp_KEY_F5:       /* Refresh. */
+                        browser_window_reload(g->bw, false);
+                        return true;
+
 		case wimp_KEY_F6:	/* Help. */
 			ro_gui_hotlist_show();
 			return true;
+
+                case wimp_KEY_F7:       /* Toggle fullscreen browsing. */
+
+
+
+                        return true;
+
 
 		case wimp_KEY_F8:	/* View source. */
 			ro_gui_view_source(content);
