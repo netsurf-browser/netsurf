@@ -23,6 +23,7 @@
 #include "oslib/wimpspriteop.h"
 #include "netsurf/css/css.h"
 #include "netsurf/utils/config.h"
+#include "netsurf/riscos/buffer.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
@@ -493,6 +494,7 @@ void gui_window_update_box(struct gui_window *g,
 
 	while (more) {
 		if (data->redraw.full_redraw) {
+		  	if (option_buffer_animations) ro_gui_buffer_open(&update);
 			if (clear_background) {
 				error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
 						colourtrans_SET_BG,
@@ -513,6 +515,7 @@ void gui_window_update_box(struct gui_window *g,
 					update.clip.x0, update.clip.y0,
 					update.clip.x1 - 1, update.clip.y1 - 1,
 					g->option.scale);
+			if (option_buffer_animations) ro_gui_buffer_close();
 
 		} else {
 			assert(data->redraw.object);

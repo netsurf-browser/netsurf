@@ -25,7 +25,7 @@ OBJECTS_COMMON += imagemap.o loginlist.o options.o		# desktop/
 OBJECTS_RISCOS = $(OBJECTS_COMMON)
 OBJECTS_RISCOS += browser.o netsurf.o version.o			# desktop/
 OBJECTS_RISCOS += 401login.o debugwin.o \
-	dialog.o download.o draw.o filetype.o font.o gif.o \
+	buffer.o dialog.o download.o draw.o filetype.o font.o gif.o \
 	gifread.o gui.o help.o history.o hotlist.o htmlinstance.o \
 	htmlredraw.o jpeg.o menus.o mng.o mouseactions.o plugin.o \
 	png.o save.o save_complete.o save_draw.o save_text.o \
