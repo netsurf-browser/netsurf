@@ -10,8 +10,9 @@ Source Code Overview
 The source is split at top level as follows:
 
 content -- fetching, caching, and converting content
+css -- CSS parser and interfaces
 desktop -- non-platform specific front-end
-render -- HTML and CSS processing and layout
+render -- HTML processing and layout
 riscos -- RISC OS specific code
 utils -- misc. useful functions
 
@@ -38,7 +39,20 @@ fetches, converts, and caches it if not present.
 
 ________________________________________________________________________________
 
-render -- HTML and CSS processing and layout
+css -- CSS parser and interfaces
+
+CSS is tokenised by a flex-generated scanner (scanner.l), and then parsed into a
+memory representation by a lemon-generated parser (parser.y, ruleset.c).
+
+Styles are retrieved using css_get_style(). They can be cascaded by
+css_cascade().
+
+http://lex.sourceforge.net/
+http://www.hwaci.com/sw/lemon/
+
+________________________________________________________________________________
+
+render -- HTML processing and layout
 
 This is the process to render an HTML document:
 
@@ -66,7 +80,6 @@ parent node.
 The box tree can then be rendered using each node's coordinates.
 
 box.[ch] -- definition of the box tree, conversion from xml tree, normalising
-css* -- CSS parser and handler
 html.[ch] -- interface to HTML processing
 layout.[ch] -- layout engine
 
