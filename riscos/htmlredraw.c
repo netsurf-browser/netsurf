@@ -302,30 +302,30 @@ void html_redraw_box(struct content *content, struct box * box,
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
 		}
 		if (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK) {
-		        os_set_colour(0, box->parent->parent->style->color);
+		        colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		        os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8));
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
-			os_set_colour(0, box->style->color);
+			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		}
 		if (box->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE) {
 			os_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2));
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
 		}
 		if (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK) {
-		        os_set_colour(0, box->parent->parent->style->color);
+		        colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		        os_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2));
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
-			os_set_colour(0, box->style->color);
+			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		}
 		if (box->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH) {
 			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0));
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
 		}
 		if (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH && box->parent->parent->type == BOX_BLOCK) {
-		        os_set_colour(0, box->parent->parent->style->color);
+		        colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		        os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0));
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2, 0);
-			os_set_colour(0, box->style->color);
+			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		}
 
 		font_paint(box->font->handle, box->text,
