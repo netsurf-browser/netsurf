@@ -20,7 +20,7 @@
 OBJECTS_COMMON = content.o fetch.o fetchcache.o			# content/
 OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
 OBJECTS_COMMON += box.o form.o html.o html_redraw.o layout.o \
-	textplain.o						# render/
+	list.o textplain.o					# render/
 OBJECTS_COMMON += messages.o pool.o translit.o url.o utils.o	# utils/
 OBJECTS_COMMON += imagemap.o loginlist.o options.o tree.o	# desktop/
 

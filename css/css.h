@@ -112,7 +112,12 @@ typedef enum {
 	CSS_VERTICAL_ALIGN_PERCENT,
 	CSS_VERTICAL_ALIGN_NOT_SET
 } css_vertical_align_type;
-
+  	
+struct css_counter {
+  	const char *name;
+  	css_list_style_type style;
+  	const char *separator; /** NULL for counter() */
+};
 
 /** Representation of a complete CSS 2 style. */
 struct css_style {
