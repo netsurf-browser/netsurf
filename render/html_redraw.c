@@ -701,7 +701,6 @@ bool html_redraw_file(int x, int y, int width, int height,
 bool html_redraw_background(int x, int y,
 		struct box *box, float scale, colour background_colour)
 {
-	int image_width, image_height;
 	bool repeat_x = false;
 	bool repeat_y = false;
 
@@ -717,10 +716,6 @@ bool html_redraw_background(int x, int y,
 			return true;
 	else if (!option_background_images)
 		return true;*/
-
-	/* get the image dimensions for our positioning and scaling */
-	image_width = box->background->width * scale;
-	image_height = box->background->height * scale;
 
 	/* handle background-repeat */
 	switch (box->style->background_repeat) {
@@ -743,7 +738,8 @@ bool html_redraw_background(int x, int y,
 	switch (box->style->background_position.horz.pos) {
 		case CSS_BACKGROUND_POSITION_PERCENT:
 			x += (box->padding[LEFT] + box->width +
-					box->padding[RIGHT] - image_width) *
+					box->padding[RIGHT] -
+					box->background->width) * scale *
 					box->style->background_position.horz.
 					value.percent / 100;
 			break;
@@ -758,12 +754,13 @@ bool html_redraw_background(int x, int y,
 	switch (box->style->background_position.vert.pos) {
 		case CSS_BACKGROUND_POSITION_PERCENT:
 			y += (box->padding[TOP] + box->height +
-					box->padding[BOTTOM] - image_height) *
+					box->padding[BOTTOM] -
+					box->background->height) * scale *
 					box->style->background_position.vert.
 					value.percent / 100;
 			break;
 		case CSS_BACKGROUND_POSITION_LENGTH:
-			y -= (int) (css_len2px(&box->style->background_position.
+			y += (int) (css_len2px(&box->style->background_position.
 					vert.value.length, box->style) * scale);
 			break;
 		default:
@@ -771,7 +768,9 @@ bool html_redraw_background(int x, int y,
 	}
 
 	/* and plot the image */
-	return plot.bitmap_tile(x, y, image_width, image_height,
+	return plot.bitmap_tile(x, y,
+			box->background->width * scale,
+			box->background->height * scale,
 			box->background->bitmap,
 			background_colour,
 			repeat_x, repeat_y);

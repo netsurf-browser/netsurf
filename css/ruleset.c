@@ -1085,7 +1085,9 @@ bool css_background_position_parse(const struct css_node **node,
 {
 	const struct css_node *v = *node;
 	const struct css_node *w = v->next;
-	struct css_background_entry *bg = 0, *bg2 = 0;
+	const struct css_node *n_temp = 0;
+	struct css_background_entry *bg = 0, *bg2 = 0, *b_temp = 0;
+	bool switched = false;
 
 	if (v->type == CSS_NODE_IDENT)
 		bg = css_background_lookup(v);
@@ -1151,6 +1153,14 @@ bool css_background_position_parse(const struct css_node **node,
 		*node = w->next;
 		return true;
 	}
+	
+	/* reverse specifiers such that idents are places in h, v order */
+	if ((v->type == CSS_NODE_IDENT && bg && bg->vertical) ||
+			(w->type == CSS_NODE_IDENT && bg2 && bg2->horizontal)) {
+	  	n_temp = v; v = w; w = n_temp;
+	  	b_temp = bg; bg = bg2; bg2 = b_temp;
+	  	switched = true;
+	}
 
 	if (v->type == CSS_NODE_IDENT) { /* horizontal value */
 		if (!bg || bg->vertical)
@@ -1183,6 +1193,12 @@ bool css_background_position_parse(const struct css_node **node,
 		if (parse_length(&vert->value.length,
 				w, false) == 0)
 			vert->pos = CSS_BACKGROUND_POSITION_LENGTH;
+	}
+
+	/* undo any switching we did */
+	if (switched) {
+	  	n_temp = v; v = w; w = n_temp;
+	  	b_temp = bg; bg = bg2; bg2 = b_temp;
 	}
 
 	*node = w->next;
