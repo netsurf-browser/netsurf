@@ -33,6 +33,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "oslib/uri.h"
+#include "rufl.h"
 #include "netsurf/content/url_store.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/gui.h"
@@ -223,7 +224,7 @@ void gui_init(int argc, char** argv)
 		option_theme = strdup("Aletheia"); /* default for no options */
 
 	ro_gui_choose_language();
-	
+
 	url_store_load("Choices:WWW.NetSurf.URL");
 
 	NETSURF_DIR = getenv("NetSurf$Dir");
@@ -258,7 +259,9 @@ void gui_init(int argc, char** argv)
 #ifndef ncos
 	ro_gui_check_fonts();
 #endif
-	nsfont_fill_nametable(false);
+
+	/** \todo handle errors */
+	rufl_init();
 
 	/* Issue a *Desktop to poke AcornURI into life */
 	if (getenv("NetSurf$Start_URI_Handler"))
@@ -560,6 +563,7 @@ void gui_quit(void)
 	ro_gui_global_history_save();
 	ro_gui_hotlist_save();
 	ro_gui_history_quit();
+	rufl_quit();
 	free(gui_sprites);
 	xwimp_close_down(task_handle);
 	free(default_stylesheet_url);
@@ -572,7 +576,7 @@ void gui_quit(void)
  * Handles a signal
  */
 static void gui_signal(int sig) {
-	ro_gui_cleanup();	
+	ro_gui_cleanup();
 	raise(sig);
 }
 
@@ -1078,7 +1082,6 @@ void ro_gui_keypress(wimp_key *key)
 
 void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 {
-	struct content *c;
 	switch (message->action) {
 		case message_HELP_REQUEST:
 			ro_gui_interactive_help_request(message);
@@ -1125,11 +1128,7 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			break;
 		case message_MODE_CHANGE:
 			ro_gui_history_mode_change();
-			for (c = content_list; c; c = c->next) {
-				if ((c->type == CONTENT_HTML) &&
-						(c->data.html.fonts))
-					nsfont_reopen_set(c->data.html.fonts);
-			}
+			rufl_invalidate_cache();
 			break;
 
 #ifdef WITH_URI

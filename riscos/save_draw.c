@@ -87,7 +87,7 @@ static bool draw_plot_polygon(int *p, unsigned int n, colour fill);
 static bool draw_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool draw_plot_clip(int clip_x0, int clip_y0, int clip_x1,
 		int clip_y1);
-static bool draw_plot_text(int x, int y, struct font_data *font,
+static bool draw_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bc, colour colour);
 static bool draw_plot_disc(int x, int y, int radius, colour colour);
 static bool draw_plot_bitmap(int x, int y, int width, int height,
@@ -858,9 +858,10 @@ bool draw_plot_clip(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
  * \param colour the text colour
  * \return  true on success, false on error (error got reported)
  */
-bool draw_plot_text(int x, int y, struct font_data *font,
+bool draw_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bc, colour colour)
 {
+#if 0
 	while (length != 0) {
 		size_t width, rolength, consumed;
 		const char *rofontname, *rotext;
@@ -912,6 +913,7 @@ bool draw_plot_text(int x, int y, struct font_data *font,
 		text += consumed;
 		length -= consumed;
 	}
+#endif
 
 	return true;
 }

@@ -15,6 +15,7 @@
 
 #include <string.h>
 #include <swis.h>
+#include "rufl.h"
 #include "oslib/colourtrans.h"
 #include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
@@ -112,15 +113,11 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 	colourtrans_set_gcol(os_COLOUR_WHITE, colourtrans_SET_BG,
 			os_ACTION_OVERWRITE, 0);
 	os_clg();
-	if ((content->type == CONTENT_HTML) &&
-			(content->data.html.fonts))
-		nsfont_reopen_set(content->data.html.fonts);
+	rufl_invalidate_cache();
 	content_redraw(content, 0, 0, width, height,
 			0, 0, width, height, scale, 0xFFFFFF);
 	thumbnail_restore_output(save_area);
-	if ((content->type == CONTENT_HTML) &&
-			(content->data.html.fonts))
-		nsfont_reopen_set(content->data.html.fonts);
+	rufl_invalidate_cache();
 
 	/*	Go back from 32bpp to [n]bpp if we should.
 	*/

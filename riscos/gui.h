@@ -249,6 +249,10 @@ void ro_gui_print_open(struct gui_window *g, int x, int y, bool sub_menu, bool k
 void ro_gui_print_click(wimp_pointer *pointer);
 bool ro_gui_print_keypress(wimp_key *key);
 
+/* in font.c */
+bool nsfont_paint(struct css_style *style, const char *string,
+		size_t length, int x, int y, float scale);
+
 /* in plotters.c */
 extern const struct plotter_table ro_plotters;
 extern int ro_plot_origin_x;

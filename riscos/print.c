@@ -750,7 +750,7 @@ bool print_find_fonts(struct box *box, struct print_font **print_fonts, int *fon
 	int i;
 
 	assert(box);
-
+#if 0
 	if (box->text && box->font && box->length > 0) {
 		txt = box->text;
 		txt_len = box->length;
@@ -794,7 +794,7 @@ bool print_find_fonts(struct box *box, struct print_font **print_fonts, int *fon
 		if (!print_find_fonts(a, print_fonts, font_count))
 			return false;
 	}
-
+#endif
 	return true;
 }
 

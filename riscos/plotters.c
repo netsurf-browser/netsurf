@@ -31,7 +31,7 @@ static bool ro_plot_polygon(int *p, unsigned int n, colour fill);
 static bool ro_plot_fill(int x0, int y0, int x1, int y1, colour c);
 static bool ro_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
-static bool ro_plot_text(int x, int y, struct font_data *font,
+static bool ro_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
 static bool ro_plot_disc(int x, int y, int radius, colour colour);
 static bool ro_plot_bitmap(int x, int y, int width, int height,
@@ -62,11 +62,7 @@ const struct plotter_table ro_plotters = {
 
 int ro_plot_origin_x = 0;
 int ro_plot_origin_y = 0;
-
-os_trfm ro_plot_trfm = { {
-		{ 0x10000, 0 },
-		{ 0, 0x10000, },
-		{ 0, 0 } } };
+float ro_plot_scale = 1.0;
 
 
 bool ro_plot_clg(colour c)
@@ -300,22 +296,23 @@ bool ro_plot_clip(int clip_x0, int clip_y0,
 }
 
 
-bool ro_plot_text(int x, int y, struct font_data *font,
+bool ro_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c)
 {
 	os_error *error;
 
-	error = xcolourtrans_set_font_colours(font->handle,
+	error = xcolourtrans_set_font_colours(font_CURRENT,
 			bg << 8, c << 8, 14, 0, 0, 0);
 	if (error) {
 		LOG(("xcolourtrans_set_font_colours: 0x%x: %s",
 				error->errnum, error->errmess));
 		return false;
 	}
-	return nsfont_paint(font, text, length,
+
+	return nsfont_paint(style, text, length,
 			ro_plot_origin_x + x * 2,
 			ro_plot_origin_y - y * 2,
-			&ro_plot_trfm);
+			ro_plot_scale);
 }
 
 
@@ -395,6 +392,5 @@ bool ro_plot_group_end(void)
 
 void ro_plot_set_scale(float scale)
 {
-	ro_plot_trfm.entries[0][0] = ro_plot_trfm.entries[1][1] =
-			scale * 0x10000;
+	ro_plot_scale = scale;
 }

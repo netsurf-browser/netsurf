@@ -468,7 +468,7 @@ void ro_gui_dialog_redraw(wimp_draw *redraw) {
 	os_error *error;
 	osbool more;
 	struct toolbar_display *display;
-	
+
 	for (display = toolbars; display; display = display->next) {
 		if ((display->toolbar) && (display->toolbar->toolbar_handle == redraw->w)) {
 			ro_gui_theme_redraw(display->toolbar, redraw);
@@ -594,7 +594,7 @@ void ro_gui_dialog_config_prepare(void)
 						"Homerton.Medium");
 	ro_gui_set_icon_selected_state(dialog_config_font,
 			ICON_CONFIG_FONT_USE_UFONT, option_font_ufont);
-			
+
 	/* image pane */
 	ro_gui_choices_fg_plot_style = option_fg_plot_style;
 	ro_gui_choices_bg_plot_style = option_bg_plot_style;
@@ -615,7 +615,7 @@ void ro_gui_dialog_set_image_quality(int icon, unsigned int tinct_options) {
 			messages_get(ro_gui_image_name[i]));
 	ro_gui_set_icon_selected_state(dialog_config_image, icon + 3,
 			(tinct_options & tinct_BILINEAR_FILTER));
-	
+
 }
 
 /**
@@ -711,7 +711,7 @@ void ro_gui_dialog_config_set(void) {
 			dialog_config_font, ICON_CONFIG_FONT_DEF));
 	option_font_ufont = ro_gui_get_icon_selected_state(
 			dialog_config_font, ICON_CONFIG_FONT_USE_UFONT);
-	
+
 	/* image pane */
 	if ((option_fg_plot_style != (int)ro_gui_choices_fg_plot_style) ||
 			(option_bg_plot_style != (int)ro_gui_choices_bg_plot_style)) {
@@ -808,7 +808,6 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 
 void ro_gui_save_options(void)
 {
-	nsfont_fill_nametable(true);
 	/* NCOS doesnt have the fancy Universal Boot vars; so select
 	 * the path to the choices file based on the build options */
 #ifndef NCOS
@@ -1397,7 +1396,7 @@ void ro_gui_dialog_load_themes(void) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	
+
 	parent_width = state.visible.x1 - state.visible.x0;
 	min_extent = state.visible.y0 - state.visible.y1;
 	nested_y = 0;
