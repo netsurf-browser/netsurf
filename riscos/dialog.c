@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 #include "oslib/colourtrans.h"
 #include "oslib/osfile.h"

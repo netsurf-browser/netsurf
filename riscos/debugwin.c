@@ -9,6 +9,8 @@
  * Debug display window (implementation).
  */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include "oslib/wimp.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
