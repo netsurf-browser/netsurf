@@ -176,7 +176,9 @@ void gui_init(int argc, char** argv)
 
 	xhourglass_start(1);
 
+#ifdef WITH_SAVE_COMPLETE
 	save_complete_init();
+#endif
 
         /* We don't have the universal boot sequence on NCOS */
 #ifndef ncos
@@ -215,6 +217,8 @@ void gui_init(int argc, char** argv)
 #ifndef ncos
 	ro_gui_check_fonts();
 #endif
+	nsfont_fill_nametable();
+
 	/* Issue a *Desktop to poke AcornURI into life */
 	if (getenv("NetSurf$Start_URI_Handler"))
 		xwimp_start_task("Desktop", 0);
@@ -1434,8 +1438,10 @@ void ro_gui_view_source(struct content *content)
 
 void gui_launch_url(const char *url)
 {
+#ifdef WITH_URL
 	/* Try ant broadcast first */
 	ro_url_broadcast(url);
+#endif
 }
 
 

@@ -48,5 +48,6 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 		const char **rotext,
 		size_t *rolength,
 		size_t *consumed);
+void nsfont_fill_nametable(void);
 
 #endif

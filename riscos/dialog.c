@@ -20,6 +20,7 @@
 #include "oslib/wimp.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/netsurf.h"
+#include "netsurf/render/font.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
@@ -41,10 +42,12 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 #endif
 	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
 	dialog_warning, dialog_config_th_pane, dialog_debug,
-	dialog_folder, dialog_entry, dialog_search, dialog_print;
+	dialog_folder, dialog_entry, dialog_search, dialog_print,
+	dialog_config_font;
 
 static int ro_gui_choices_font_size;
 static int ro_gui_choices_font_min_size;
+static int config_font_icon = -1;
 static bool ro_gui_choices_http_proxy;
 static int ro_gui_choices_http_proxy_auth;
 static int config_br_icon = -1;
@@ -84,11 +87,12 @@ static void ro_gui_dialog_config_prepare(void);
 static void ro_gui_dialog_config_set(void);
 static void ro_gui_dialog_click_config(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_br(wimp_pointer *pointer);
-static void ro_gui_dialog_update_config_br(void);
 static void ro_gui_dialog_click_config_prox(wimp_pointer *pointer);
 static void ro_gui_dialog_config_proxy_update(void);
 static void ro_gui_dialog_click_config_th(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer);
+static void ro_gui_dialog_update_config_font(void);
+static void ro_gui_dialog_click_config_font(wimp_pointer *pointer);
 static void ro_gui_dialog_click_zoom(wimp_pointer *pointer);
 static void ro_gui_dialog_reset_zoom(void);
 static void ro_gui_dialog_click_warning(wimp_pointer *pointer);
@@ -124,6 +128,7 @@ void ro_gui_dialog_init(void)
 	dialog_entry = ro_gui_dialog_create("new_entry");
 	dialog_search = ro_gui_dialog_create("search");
 	dialog_print = ro_gui_dialog_create("print");
+	dialog_config_font = ro_gui_dialog_create("config_font");
 }
 
 
@@ -436,6 +441,8 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 	else if (pointer->w == dialog_print)
 		ro_gui_print_click(pointer);
 #endif
+	else if (pointer->w == dialog_config_font)
+		ro_gui_dialog_click_config_font(pointer);
 }
 
 
@@ -452,6 +459,8 @@ void ro_gui_dialog_open_config(void)
 			false);
 	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_THEME,
 			false);
+	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_FONT,
+			false);
 	ro_gui_dialog_open(dialog_config);
 	ro_gui_open_pane(dialog_config, dialog_config_br, 0);
 }
@@ -464,9 +473,6 @@ void ro_gui_dialog_open_config(void)
 void ro_gui_dialog_config_prepare(void)
 {
 	/* browser pane */
-	ro_gui_choices_font_size = option_font_size;
-	ro_gui_choices_font_min_size = option_font_min_size;
-	ro_gui_dialog_update_config_br();
 	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_LANG,
 			language_name(option_language ?
 					option_language : "en"));
@@ -478,6 +484,12 @@ void ro_gui_dialog_config_prepare(void)
 	ro_gui_set_icon_selected_state(dialog_config_br,
 			ICON_CONFIG_BR_OPENBROWSER,
 			option_open_browser_at_startup);
+	ro_gui_set_icon_selected_state(dialog_config_br,
+			ICON_CONFIG_BR_BLOCKADS,
+			option_block_ads);
+	ro_gui_set_icon_selected_state(dialog_config_br,
+			ICON_CONFIG_BR_PLUGINS,
+			option_no_plugins);
 
 	/* proxy pane */
 	ro_gui_choices_http_proxy = option_http_proxy;
@@ -504,6 +516,31 @@ void ro_gui_dialog_config_prepare(void)
 	/* themes pane */
 	ro_gui_dialog_load_themes();
 	theme_choice = ro_gui_theme_find(option_theme);
+
+	/* font pane */
+	ro_gui_choices_font_size = option_font_size;
+	ro_gui_choices_font_min_size = option_font_min_size;
+	ro_gui_dialog_update_config_font();
+	ro_gui_set_icon_string(dialog_config_font, ICON_CONFIG_FONT_SANS,
+			option_font_sans ? option_font_sans :
+						"Homerton.Medium");
+	ro_gui_set_icon_string(dialog_config_font, ICON_CONFIG_FONT_SERIF,
+			option_font_serif ? option_font_serif :
+						"Trinity.Medium");
+	ro_gui_set_icon_string(dialog_config_font, ICON_CONFIG_FONT_MONO,
+			option_font_mono ? option_font_mono :
+						"Corpus.Medium");
+	ro_gui_set_icon_string(dialog_config_font, ICON_CONFIG_FONT_CURS,
+			option_font_cursive ? option_font_cursive :
+						"Homerton.Medium");
+	ro_gui_set_icon_string(dialog_config_font, ICON_CONFIG_FONT_FANT,
+			option_font_fantasy ? option_font_fantasy :
+						"Homerton.Medium");
+	ro_gui_set_icon_string(dialog_config_font, ICON_CONFIG_FONT_DEF,
+			option_font_default ? option_font_default :
+						"Homerton.Medium");
+	ro_gui_set_icon_selected_state(dialog_config_font,
+			ICON_CONFIG_FONT_USE_UFONT, option_font_ufont);
 }
 
 
@@ -513,13 +550,19 @@ void ro_gui_dialog_config_prepare(void)
 
 void ro_gui_dialog_config_set(void) {
 	/* browser pane */
-	option_font_size = ro_gui_choices_font_size;
-	option_font_min_size = ro_gui_choices_font_min_size;
+	if (option_homepage_url)
+		free(option_homepage_url);
 	option_homepage_url = strdup(ro_gui_get_icon_string(dialog_config_br,
 			ICON_CONFIG_BR_HOMEPAGE));
 	option_open_browser_at_startup = ro_gui_get_icon_selected_state(
 			dialog_config_br,
 			ICON_CONFIG_BR_OPENBROWSER);
+	option_block_ads = ro_gui_get_icon_selected_state(
+			dialog_config_br,
+			ICON_CONFIG_BR_BLOCKADS);
+	option_no_plugins = ro_gui_get_icon_selected_state(
+			dialog_config_br,
+			ICON_CONFIG_BR_PLUGINS);
 	if (ro_gui_choices_lang) {
 		free(option_language);
 		option_language = strdup(ro_gui_choices_lang);
@@ -533,18 +576,21 @@ void ro_gui_dialog_config_set(void) {
 
 	/* proxy pane */
 	option_http_proxy = ro_gui_choices_http_proxy;
-	free(option_http_proxy_host);
+	if (option_http_proxy_host)
+		free(option_http_proxy_host);
 	option_http_proxy_host = strdup(ro_gui_get_icon_string(
 			dialog_config_prox,
 			ICON_CONFIG_PROX_HTTPHOST));
 	option_http_proxy_port = atoi(ro_gui_get_icon_string(dialog_config_prox,
 			ICON_CONFIG_PROX_HTTPPORT));
 	option_http_proxy_auth = ro_gui_choices_http_proxy_auth;
-	free(option_http_proxy_auth_user);
+	if (option_http_proxy_auth_user)
+		free(option_http_proxy_auth_user);
 	option_http_proxy_auth_user = strdup(ro_gui_get_icon_string(
 			dialog_config_prox,
 			ICON_CONFIG_PROX_AUTHUSER));
-	free(option_http_proxy_auth_pass);
+	if (option_http_proxy_auth_pass)
+		free(option_http_proxy_auth_pass);
 	option_http_proxy_auth_pass = strdup(ro_gui_get_icon_string(
 			dialog_config_prox,
 			ICON_CONFIG_PROX_AUTHPASS));
@@ -558,6 +604,36 @@ void ro_gui_dialog_config_set(void) {
 		option_theme = strdup(theme_choice->filename);
 		ro_gui_theme_apply(theme_choice);
 	}
+
+	/* font pane */
+	option_font_size = ro_gui_choices_font_size;
+	option_font_min_size = ro_gui_choices_font_min_size;
+	if (option_font_sans)
+		free(option_font_sans);
+	option_font_sans = strdup(ro_gui_get_icon_string(dialog_config_font,
+			ICON_CONFIG_FONT_SANS));
+	if (option_font_serif)
+		free(option_font_serif);
+	option_font_serif = strdup(ro_gui_get_icon_string(dialog_config_font,
+			ICON_CONFIG_FONT_SERIF));
+	if (option_font_mono)
+		free(option_font_mono);
+	option_font_mono = strdup(ro_gui_get_icon_string(dialog_config_font,
+			ICON_CONFIG_FONT_MONO));
+	if (option_font_cursive)
+		free(option_font_cursive);
+	option_font_cursive = strdup(ro_gui_get_icon_string(
+			dialog_config_font, ICON_CONFIG_FONT_CURS));
+	if (option_font_fantasy)
+		free(option_font_fantasy);
+	option_font_fantasy = strdup(ro_gui_get_icon_string(
+			dialog_config_font, ICON_CONFIG_FONT_FANT));
+	if (option_font_default)
+		free(option_font_default);
+	option_font_default = strdup(ro_gui_get_icon_string(
+			dialog_config_font, ICON_CONFIG_FONT_DEF));
+	option_font_ufont = ro_gui_get_icon_selected_state(
+			dialog_config_font, ICON_CONFIG_FONT_USE_UFONT);
 }
 
 
@@ -625,6 +701,12 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
 							<< wimp_CHILD_TS_EDGE_SHIFT);
 			break;
+		case ICON_CONFIG_FONT:
+			if (pointer->buttons == wimp_CLICK_ADJUST)
+				ro_gui_set_icon_selected_state(dialog_config,
+						ICON_CONFIG_FONT, true);
+			ro_gui_open_pane(dialog_config, dialog_config_font, 0);
+			break;
 	}
 }
 
@@ -635,6 +717,7 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 
 void ro_gui_save_options(void)
 {
+	nsfont_fill_nametable();
 	/* NCOS doesnt have the fancy Universal Boot vars; so select
 	 * the path to the choices file based on the build options */
 #ifndef NCOS
@@ -655,54 +738,7 @@ void ro_gui_save_options(void)
 
 void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 {
-	int stepping = 1;
-
-	if (pointer->buttons == wimp_CLICK_ADJUST)
-		stepping = -stepping;
-
 	switch (pointer->i) {
-		case ICON_CONFIG_BR_FONTSIZE_DEC:
-			ro_gui_choices_font_size -= stepping;
-			if (ro_gui_choices_font_size < 50)
-				ro_gui_choices_font_size = 50;
-			if (ro_gui_choices_font_size > 1000)
-				ro_gui_choices_font_size = 1000;
-
-			if (ro_gui_choices_font_size <
-					ro_gui_choices_font_min_size)
-				ro_gui_choices_font_min_size =
-						ro_gui_choices_font_size;
-			ro_gui_dialog_update_config_br();
-			break;
-		case ICON_CONFIG_BR_FONTSIZE_INC:
-			ro_gui_choices_font_size += stepping;
-			if (ro_gui_choices_font_size < 50)
-				ro_gui_choices_font_size = 50;
-			if (ro_gui_choices_font_size > 1000)
-				ro_gui_choices_font_size = 1000;
-			ro_gui_dialog_update_config_br();
-			break;
-		case ICON_CONFIG_BR_MINSIZE_DEC:
-			ro_gui_choices_font_min_size -= stepping;
-			if (ro_gui_choices_font_min_size < 10)
-				ro_gui_choices_font_min_size = 10;
-			if (ro_gui_choices_font_min_size > 500)
-				ro_gui_choices_font_min_size = 500;
-			ro_gui_dialog_update_config_br();
-			break;
-		case ICON_CONFIG_BR_MINSIZE_INC:
-			ro_gui_choices_font_min_size += stepping;
-			if (ro_gui_choices_font_min_size < 10)
-				ro_gui_choices_font_min_size = 10;
-			if (ro_gui_choices_font_min_size > 500)
-				ro_gui_choices_font_min_size = 500;
-
-			if (ro_gui_choices_font_size <
-					ro_gui_choices_font_min_size)
-				ro_gui_choices_font_size =
-						ro_gui_choices_font_min_size;
-			ro_gui_dialog_update_config_br();
-			break;
 		case ICON_CONFIG_BR_LANG_PICK:
 			/* drop through */
 		case ICON_CONFIG_BR_ALANG_PICK:
@@ -746,23 +782,6 @@ void ro_gui_dialog_languages_menu_selection(char *lang)
 
 	/* invalidate icon number and update window */
 	config_br_icon = -1;
-	ro_gui_dialog_update_config_br();
-}
-
-
-/**
- * Update font size icons in browser choices pane.
- */
-
-void ro_gui_dialog_update_config_br(void)
-{
-	char s[10];
-	sprintf(s, "%i.%ipt", ro_gui_choices_font_size / 10,
-			ro_gui_choices_font_size % 10);
-	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_FONTSIZE, s);
-	sprintf(s, "%i.%ipt", ro_gui_choices_font_min_size / 10,
-			ro_gui_choices_font_min_size % 10);
-	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_MINSIZE, s);
 }
 
 
@@ -864,10 +883,166 @@ void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer) {
 	  		ro_gui_set_icon_selected_state(dialog_config_th_pane,
 	  			link->icon_number, false);
 	  	}
-		link = link->next; 
+		link = link->next;
 	}
 }
 
+/**
+ * Update font size icons in font choices pane.
+ */
+
+void ro_gui_dialog_update_config_font(void)
+{
+	char s[10];
+	sprintf(s, "%i.%ipt", ro_gui_choices_font_size / 10,
+			ro_gui_choices_font_size % 10);
+	ro_gui_set_icon_string(dialog_config_font,
+			ICON_CONFIG_FONT_FONTSIZE, s);
+	sprintf(s, "%i.%ipt", ro_gui_choices_font_min_size / 10,
+			ro_gui_choices_font_min_size % 10);
+	ro_gui_set_icon_string(dialog_config_font,
+			ICON_CONFIG_FONT_MINSIZE, s);
+}
+
+/**
+ * Handle clicks in the font choices pane
+ */
+void ro_gui_dialog_click_config_font(wimp_pointer *pointer)
+{
+	int stepping = 1;
+
+	if (pointer->buttons == wimp_CLICK_ADJUST)
+		stepping = -stepping;
+
+	switch (pointer->i) {
+		case ICON_CONFIG_FONT_FONTSIZE_DEC:
+			ro_gui_choices_font_size -= stepping;
+			if (ro_gui_choices_font_size < 50)
+				ro_gui_choices_font_size = 50;
+			if (ro_gui_choices_font_size > 1000)
+				ro_gui_choices_font_size = 1000;
+
+			if (ro_gui_choices_font_size <
+					ro_gui_choices_font_min_size)
+				ro_gui_choices_font_min_size =
+						ro_gui_choices_font_size;
+			ro_gui_dialog_update_config_font();
+			break;
+		case ICON_CONFIG_FONT_FONTSIZE_INC:
+			ro_gui_choices_font_size += stepping;
+			if (ro_gui_choices_font_size < 50)
+				ro_gui_choices_font_size = 50;
+			if (ro_gui_choices_font_size > 1000)
+				ro_gui_choices_font_size = 1000;
+			ro_gui_dialog_update_config_font();
+			break;
+		case ICON_CONFIG_FONT_MINSIZE_DEC:
+			ro_gui_choices_font_min_size -= stepping;
+			if (ro_gui_choices_font_min_size < 10)
+				ro_gui_choices_font_min_size = 10;
+			if (ro_gui_choices_font_min_size > 500)
+				ro_gui_choices_font_min_size = 500;
+			ro_gui_dialog_update_config_font();
+			break;
+		case ICON_CONFIG_FONT_MINSIZE_INC:
+			ro_gui_choices_font_min_size += stepping;
+			if (ro_gui_choices_font_min_size < 10)
+				ro_gui_choices_font_min_size = 10;
+			if (ro_gui_choices_font_min_size > 500)
+				ro_gui_choices_font_min_size = 500;
+
+			if (ro_gui_choices_font_size <
+					ro_gui_choices_font_min_size)
+				ro_gui_choices_font_size =
+						ro_gui_choices_font_min_size;
+			ro_gui_dialog_update_config_font();
+			break;
+		case ICON_CONFIG_FONT_SANS_PICK:
+		case ICON_CONFIG_FONT_SERIF_PICK:
+		case ICON_CONFIG_FONT_MONO_PICK:
+		case ICON_CONFIG_FONT_CURS_PICK:
+		case ICON_CONFIG_FONT_FANT_PICK:
+		case ICON_CONFIG_FONT_DEF_PICK:
+			config_font_icon = pointer->i - 1;
+			ro_gui_display_font_menu(ro_gui_get_icon_string(
+				dialog_config_font, pointer->i - 1),
+				dialog_config_font, pointer->i);
+			break;
+	}
+}
+
+/**
+ * Handle font menu selections
+ */
+void ro_gui_dialog_font_menu_selection(char *name)
+{
+	char *n, *fn;
+	int len;
+
+	if (strlen(name) <= 3 || config_font_icon < 0)
+		return;
+
+	n = name + 2; /* \F */
+
+	len = strcspn(n, "\\");
+
+	fn = calloc(len+1, sizeof(char));
+	if (!fn) {
+		LOG(("malloc failed"));
+		return;
+	}
+
+	strncpy(fn, n, len);
+
+	switch (config_font_icon) {
+		case ICON_CONFIG_FONT_SANS:
+			if (option_font_sans)
+				free(option_font_sans);
+			option_font_sans = strdup(fn);
+			ro_gui_set_icon_string(dialog_config_font,
+					config_font_icon, fn);
+			break;
+		case ICON_CONFIG_FONT_SERIF:
+			if (option_font_serif)
+				free(option_font_serif);
+			option_font_serif = strdup(fn);
+			ro_gui_set_icon_string(dialog_config_font,
+					config_font_icon, fn);
+			break;
+		case ICON_CONFIG_FONT_MONO:
+			if (option_font_mono)
+				free(option_font_mono);
+			option_font_mono = strdup(fn);
+			ro_gui_set_icon_string(dialog_config_font,
+					config_font_icon, fn);
+			break;
+		case ICON_CONFIG_FONT_CURS:
+			if (option_font_cursive)
+				free(option_font_cursive);
+			option_font_cursive = strdup(fn);
+			ro_gui_set_icon_string(dialog_config_font,
+					config_font_icon, fn);
+			break;
+		case ICON_CONFIG_FONT_FANT:
+			if (option_font_fantasy)
+				free(option_font_fantasy);
+			option_font_fantasy = strdup(fn);
+			ro_gui_set_icon_string(dialog_config_font,
+					config_font_icon, fn);
+			break;
+		case ICON_CONFIG_FONT_DEF:
+			if (option_font_default)
+				free(option_font_default);
+			option_font_default = strdup(fn);
+			ro_gui_set_icon_string(dialog_config_font,
+					config_font_icon, fn);
+			break;
+	}
+
+	free(fn);
+
+	config_font_icon = -1;
+}
 
 /**
  * Handle clicks in the Scale view dialog.
@@ -1020,14 +1195,14 @@ void ro_gui_dialog_load_themes(void) {
 	wimp_window_state state;
 	int parent_width, nested_y, min_extent, base_extent;
 	int item_height;
- 
+
 	/*	Delete our old list and get/open a new one
 	*/
 	ro_gui_dialog_free_themes();
 	theme_list = ro_gui_theme_get_available();
 	ro_gui_theme_open(theme_list, true);
 	theme_choice = ro_gui_theme_find(option_theme);
-	
+
 	/*	Create toolbars for each theme
 	*/
 	theme_count = 0;
@@ -1056,7 +1231,7 @@ void ro_gui_dialog_load_themes(void) {
 		}
 		descriptor = descriptor->next;
 	}
-	
+
 	/*	Nest the toolbars
 	*/
 	state.w = dialog_config_th_pane;
@@ -1074,7 +1249,7 @@ void ro_gui_dialog_load_themes(void) {
 	extent.x1 = parent_width;
 	link = toolbars;
 	new_icon.w = dialog_config_th_pane;
-	new_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | 
+	new_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED |
 			wimp_ICON_VCENTRED |
 			(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
 			(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) |
@@ -1089,7 +1264,7 @@ void ro_gui_dialog_load_themes(void) {
 		if (link->next) extent.y0 -= 16;
 		if (extent.y0 > min_extent) extent.y0 = min_extent;
 		xwimp_set_extent(dialog_config_th_pane, &extent);
-		
+
 		/*	Create the descriptor icons and separator line
 		*/
 		new_icon.icon.extent.x0 = 8;
@@ -1130,7 +1305,7 @@ void ro_gui_dialog_load_themes(void) {
 					strlen(link->descriptor->filename) + 1;
 			xwimp_create_icon(&new_icon, 0);
 		}
-		
+
 		/*	Nest the toolbar window
 		*/
 		state.w = link->toolbar->toolbar_handle;
@@ -1140,22 +1315,22 @@ void ro_gui_dialog_load_themes(void) {
 		xwimp_open_window_nested((wimp_open *)&state, dialog_config_th_pane,
 				wimp_CHILD_LINKS_PARENT_WORK_AREA
 						<< wimp_CHILD_BS_EDGE_SHIFT |
-				wimp_CHILD_LINKS_PARENT_WORK_AREA 
+				wimp_CHILD_LINKS_PARENT_WORK_AREA
 						<< wimp_CHILD_TS_EDGE_SHIFT);
-						
+
 		/*	Continue processing
 		*/
 		nested_y -= link->toolbar->height + item_height;
 		link = link->next;
 	}
-	
+
 	/*	Set the current theme as selected
 	*/
 	link = toolbars;
 	while (link) {
 	  	ro_gui_set_icon_selected_state(dialog_config_th_pane,
 	  			link->icon_number, (link->descriptor == theme_choice));
-		link = link->next; 
+		link = link->next;
 	}
 	xwimp_force_redraw(dialog_config_th_pane, 0, -16384, 16384, 16384);
 }
@@ -1167,7 +1342,7 @@ void ro_gui_dialog_load_themes(void) {
 void ro_gui_dialog_free_themes(void) {
 	struct toolbar_display *toolbar;
 	struct toolbar_display *next_toolbar;
-	
+
 	/*	Free all our toolbars
 	*/
 	next_toolbar = toolbars;
@@ -1181,7 +1356,7 @@ void ro_gui_dialog_free_themes(void) {
 		free(toolbar);
 	}
 	toolbars = NULL;
-	
+
 	/*	Close all our themes
 	*/
 	if (theme_list) ro_gui_theme_close(theme_list, true);

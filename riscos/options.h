@@ -47,7 +47,14 @@ extern bool option_buffer_animations;
 extern bool option_buffer_everything;
 extern char *option_homepage_url;
 extern bool option_open_browser_at_startup;
-extern bool option_plugins;
+extern bool option_no_plugins;
+extern char *option_font_sans;
+extern char *option_font_serif;
+extern char *option_font_mono;
+extern char *option_font_cursive;
+extern char *option_font_fantasy;
+extern char *option_font_default;
+extern bool option_font_ufont;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -81,7 +88,14 @@ bool option_buffer_animations = true; \
 bool option_buffer_everything = false; \
 char *option_homepage_url = 0; \
 bool option_open_browser_at_startup = false; \
-bool option_plugins = false;
+bool option_no_plugins = true; \
+char *option_font_sans = 0; \
+char *option_font_serif = 0; \
+char *option_font_mono = 0; \
+char *option_font_cursive = 0; \
+char *option_font_fantasy = 0; \
+char *option_font_default = 0; \
+bool option_font_ufont = false;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -115,5 +129,13 @@ bool option_plugins = false;
 { "buffer_everything",      OPTION_BOOL,    &option_buffer_everything }, \
 { "homepage_url",           OPTION_STRING,  &option_homepage_url }, \
 { "open_browser_at_startup",OPTION_BOOL,    &option_open_browser_at_startup }, \
-{ "plugins",                OPTION_BOOL,    &option_plugins }
+{ "no_plugins",             OPTION_BOOL,    &option_no_plugins }, \
+{ "font_sans",              OPTION_STRING,  &option_font_sans }, \
+{ "font_serif",             OPTION_STRING,  &option_font_serif }, \
+{ "font_mono",              OPTION_STRING,  &option_font_mono }, \
+{ "font_cursive",           OPTION_STRING,  &option_font_cursive }, \
+{ "font_fantasy",           OPTION_STRING,  &option_font_fantasy }, \
+{ "font_default",           OPTION_STRING,  &option_font_default }, \
+{ "font_ufont",             OPTION_BOOL,    &option_font_ufont}
+
 #endif

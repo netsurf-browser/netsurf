@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "oslib/font.h"
 #include "oslib/os.h"
 #include "oslib/osgbpb.h"
 #include "oslib/wimp.h"
@@ -55,6 +56,7 @@ static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
 static void ro_gui_menu_object_reload(void);
 static void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning);
 static void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning);
+static void ro_gui_font_menu_selection(wimp_selection *selection);
 
 struct gui_window *current_gui;
 wimp_menu *current_menu;
@@ -401,6 +403,11 @@ wimp_menu *proxyauth_menu = (wimp_menu *) &proxy_menu;
 /*	Languages popup menu (used in browser choices dialog)
 */
 wimp_menu *languages_menu = NULL;
+
+/*	Font popup menu (used in font choices dialog)
+*/
+static wimp_menu *font_menu = NULL;
+static byte *font_menu_data = NULL;
 
 static wimp_menu *browser_page_menu = (wimp_menu *)&page_menu;
 static wimp_menu *browser_export_menu = (wimp_menu *)&export_menu;
@@ -975,6 +982,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 
 	} else if (current_menu == languages_menu) {
 		ro_gui_dialog_languages_menu_selection(languages_menu->entries[selection->items[0]].data.indirected_text.text);
+	} else if (current_menu == font_menu) {
+		ro_gui_font_menu_selection(selection);
 	}
 
 	if (pointer.buttons == wimp_CLICK_ADJUST) {
@@ -1077,8 +1086,10 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 			break;
 
 		case 5: /* Print -> */
+#ifdef WITH_PRINT
 			ro_gui_print_open(current_gui, warning->pos.x,
 					warning->pos.y, true, false);
+#endif
 			break;
 		}
 		break;
@@ -1154,7 +1165,7 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 				view_menu.entries[2].icon_flags &= ~wimp_ICON_SHADED;
 			} else {
 				view_menu.entries[2].icon_flags |= wimp_ICON_SHADED;
-			} 
+			}
 			error = xwimp_create_sub_menu((wimp_menu *) browser_view_menu,
 					warning->pos.x, warning->pos.y);
 			break;
@@ -1193,11 +1204,13 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 						warning->pos.x, warning->pos.y);
 				break;
 			case 2: /* Find text -> */
+#ifdef WITH_SEARCH
 				ro_gui_search_open(current_gui,
 						   warning->pos.x,
 						   warning->pos.y,
 						   true,
 						   false);
+#endif
 				break;
 		}
 		break;
@@ -1791,4 +1804,91 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	gui_form_select_control = control;
 	ro_gui_create_menu(gui_form_select_menu,
 			pointer.pos.x, pointer.pos.y, bw->window);
+}
+
+/**
+ * Create and display a menu listing all fonts present in the system.
+ *
+ * \param tick The name of the currently selected font
+ * \param w    The dialog containing the clicked icon
+ * \param i    The clicked icon.
+ */
+void ro_gui_display_font_menu(const char *tick, wimp_w w, wimp_i i)
+{
+	int size1, size2;
+	os_error *error;
+
+	error = xfont_list_fonts(0, font_RETURN_FONT_MENU | font_GIVEN_TICK,
+			0, 0, 0, tick, 0, &size1, &size2);
+	if (error) {
+		LOG(("xfont_list_fonts: 0x%x: %s",
+			error->errnum, error->errmess));
+		return;
+	}
+
+	/* free previous menu */
+	if (font_menu)
+		free(font_menu);
+	if (font_menu_data)
+		free(font_menu_data);
+
+	font_menu = calloc(size1, sizeof(byte));
+	if (!font_menu) {
+		LOG(("malloc failed"));
+		return;
+	}
+	font_menu_data = calloc(size2, sizeof(byte));
+	if (!font_menu_data) {
+		LOG(("malloc failed"));
+		return;
+	}
+
+	error = xfont_list_fonts((byte*)font_menu,
+			font_RETURN_FONT_MENU | font_GIVEN_TICK,
+			size1, font_menu_data, size2, tick, 0, 0, 0);
+	if (error) {
+		LOG(("xfont_list_fonts: 0x%x: %s",
+			error->errnum, error->errmess));
+		return;
+	}
+
+	ro_gui_popup_menu(font_menu, w, i);
+}
+
+/**
+ * Handle a selection in the font menu
+ *
+ * \param selection The selection block
+ */
+void ro_gui_font_menu_selection(wimp_selection *selection)
+{
+	int buf_size;
+	char *buf;
+	os_error *error;
+
+	error = xfont_decode_menu(0, (byte*)font_menu, (byte*)selection,
+			0, 0, 0, &buf_size);
+	if (error) {
+		LOG(("xfont_decode_menu: 0x%x: %s",
+			error->errnum, error->errmess));
+		return;
+	}
+
+	buf = calloc(buf_size, sizeof(char));
+	if (!buf) {
+		LOG(("malloc failed"));
+		return;
+	}
+
+	error = xfont_decode_menu(0, (byte*)font_menu, (byte*)selection,
+			buf, buf_size, 0, 0);
+	if (error) {
+		LOG(("xfont_decode_menu: 0x%x: %s",
+			error->errnum, error->errmess));
+		return;
+	}
+
+	ro_gui_dialog_font_menu_selection(buf);
+
+	free(buf);
 }

@@ -26,8 +26,9 @@ struct toolbar;
 
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
-	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_config_th_pane,
-	dialog_debug, dialog_folder, dialog_entry, dialog_search, dialog_print;
+	dialog_objinfo, dialog_tooltip, dialog_warning,
+	dialog_config_th_pane, dialog_debug, dialog_folder, dialog_entry,
+	dialog_search, dialog_print, dialog_config_font;
 extern wimp_w history_window;
 extern wimp_w hotlist_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu,
@@ -117,6 +118,7 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning);
 void ro_gui_prepare_navigate(struct gui_window *gui);
 void ro_gui_menu_prepare_scale(void);
 void ro_gui_menu_prepare_pageinfo(void);
+void ro_gui_display_font_menu(const char *tick, wimp_w w, wimp_i i);
 
 /* in dialog.c */
 void ro_gui_dialog_init(void);
@@ -133,6 +135,7 @@ void ro_gui_menu_prepare_hotlist(void);
 void ro_gui_dialog_open_config(void);
 void ro_gui_dialog_proxyauth_menu_selection(int item);
 void ro_gui_dialog_languages_menu_selection(char *lang);
+void ro_gui_dialog_font_menu_selection(char *name);
 
 /* in download.c */
 void ro_gui_download_init(void);
@@ -284,19 +287,16 @@ bool ro_gui_print_keypress(wimp_key *key);
 #define ICON_CONFIG_BROWSER 3
 #define ICON_CONFIG_PROXY 4
 #define ICON_CONFIG_THEME 5
+#define ICON_CONFIG_FONT 7
 
-#define ICON_CONFIG_BR_FONTSIZE 1
-#define ICON_CONFIG_BR_FONTSIZE_DEC 2
-#define ICON_CONFIG_BR_FONTSIZE_INC 3
-#define ICON_CONFIG_BR_MINSIZE 5
-#define ICON_CONFIG_BR_MINSIZE_DEC 6
-#define ICON_CONFIG_BR_MINSIZE_INC 7
-#define ICON_CONFIG_BR_LANG 9
-#define ICON_CONFIG_BR_LANG_PICK 10
-#define ICON_CONFIG_BR_ALANG 13
-#define ICON_CONFIG_BR_ALANG_PICK 14
-#define ICON_CONFIG_BR_HOMEPAGE 16
-#define ICON_CONFIG_BR_OPENBROWSER 17
+#define ICON_CONFIG_BR_LANG 1
+#define ICON_CONFIG_BR_LANG_PICK 2
+#define ICON_CONFIG_BR_ALANG 5
+#define ICON_CONFIG_BR_ALANG_PICK 6
+#define ICON_CONFIG_BR_HOMEPAGE 8
+#define ICON_CONFIG_BR_OPENBROWSER 9
+#define ICON_CONFIG_BR_BLOCKADS 10
+#define ICON_CONFIG_BR_PLUGINS 11
 
 #define ICON_CONFIG_PROX_HTTP 0
 #define ICON_CONFIG_PROX_HTTPHOST 1
@@ -308,6 +308,30 @@ bool ro_gui_print_keypress(wimp_key *key);
 
 #define ICON_CONFIG_TH_GET 0
 #define ICON_CONFIG_TH_MANAGE 1
+
+/* Note: The display icon numbers for font names *must* be ONE less
+ *       than the icon number of the corresponding pick icon.
+ *       This is assumed by ro_gui_dialog_click_font.
+ */
+#define ICON_CONFIG_FONT_SANS 2
+#define ICON_CONFIG_FONT_SANS_PICK 3
+#define ICON_CONFIG_FONT_SERIF 4
+#define ICON_CONFIG_FONT_SERIF_PICK 5
+#define ICON_CONFIG_FONT_MONO 6
+#define ICON_CONFIG_FONT_MONO_PICK 7
+#define ICON_CONFIG_FONT_CURS 8
+#define ICON_CONFIG_FONT_CURS_PICK 9
+#define ICON_CONFIG_FONT_FANT 10
+#define ICON_CONFIG_FONT_FANT_PICK 11
+#define ICON_CONFIG_FONT_DEF 12
+#define ICON_CONFIG_FONT_DEF_PICK 13
+#define ICON_CONFIG_FONT_FONTSIZE 14
+#define ICON_CONFIG_FONT_FONTSIZE_DEC 15
+#define ICON_CONFIG_FONT_FONTSIZE_INC 16
+#define ICON_CONFIG_FONT_MINSIZE 17
+#define ICON_CONFIG_FONT_MINSIZE_DEC 18
+#define ICON_CONFIG_FONT_MINSIZE_INC 19
+#define ICON_CONFIG_FONT_USE_UFONT 20
 
 #define ICON_DOWNLOAD_ICON 0
 #define ICON_DOWNLOAD_URL 1

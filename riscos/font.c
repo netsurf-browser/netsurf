@@ -26,7 +26,9 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
-#define FONT_FAMILIES 5 /* Number of families */
+#define FONT_MAX_NAME 128 /* max length of a font name */
+
+#define FONT_FAMILIES 6 /* Number of families */
 #define FONT_FACES 8    /* Number of faces */
 
 /* Font Variants */
@@ -37,11 +39,12 @@
 #define FONT_SLANTED 1
 
 /* Font families */
-#define FONT_SANS_SERIF (0 * FONT_FACES)
-#define FONT_SERIF      (1 * FONT_FACES)
-#define FONT_MONOSPACE  (2 * FONT_FACES)
-#define FONT_CURSIVE    (3 * FONT_FACES)
-#define FONT_FANTASY    (4 * FONT_FACES)
+#define FONT_DEFAULT    (0 * FONT_FACES)
+#define FONT_SANS_SERIF (1 * FONT_FACES)
+#define FONT_SERIF      (2 * FONT_FACES)
+#define FONT_MONOSPACE  (3 * FONT_FACES)
+#define FONT_CURSIVE    (4 * FONT_FACES)
+#define FONT_FANTASY    (5 * FONT_FACES)
 
 /* a font_set is just a linked list of font_data for each face for now */
 struct font_set {
@@ -55,13 +58,13 @@ static os_error *nsfont_open_standard(const char *fontNameP, const char *fbFontN
  *
  * font id = font family * 8 + smallcaps * 4 + bold * 2 + slanted
  *
- * font family: 0 = sans-serif, 1 = serif, 2 = monospace, 3 = cursive,
- * 4 = fantasy.
+ * font family: 1 = sans-serif, 2 = serif, 3 = monospace, 4 = cursive,
+ * 5 = fantasy.
  * Font family 0 must be available as it is the replacement font when
  * the other font families can not be found.
  */
-static const char * const ufont_table[FONT_FAMILIES * FONT_FACES] = {
-	/* sans-serif */
+static char ufont_table[FONT_FAMILIES * FONT_FACES][FONT_MAX_NAME] = {
+	/* default */
 /*0*/	"Homerton.Medium",
 /*1*/	"Homerton.Medium.Oblique",
 /*2*/	"Homerton.Bold",
@@ -70,44 +73,54 @@ static const char * const ufont_table[FONT_FAMILIES * FONT_FACES] = {
 	"Homerton.Medium.Oblique.SmallCaps",
 	"Homerton.Bold.SmallCaps",
 	"Homerton.Bold.Oblique.SmallCaps",
+	/* sans-serif */
+/*8*/	"Homerton.Medium",
+/*9*/	"Homerton.Medium.Oblique",
+/*10*/	"Homerton.Bold",
+/*11*/	"Homerton.Bold.Oblique",
+	"Homerton.Medium.SmallCaps",
+	"Homerton.Medium.Oblique.SmallCaps",
+	"Homerton.Bold.SmallCaps",
+	"Homerton.Bold.Oblique.SmallCaps",
 	/* serif */
-/*8*/	"Trinity.Medium",
-/*9*/	"Trinity.Medium.Italic",
-/*10*/	"Trinity.Bold",
-/*11*/	"Trinity.Bold.Italic",
+/*16*/	"Trinity.Medium",
+/*17*/	"Trinity.Medium.Italic",
+/*18*/	"Trinity.Bold",
+/*19*/	"Trinity.Bold.Italic",
 	"Trinity.Medium.SmallCaps",
 	"Trinity.Medium.Italic.SmallCaps",
 	"Trinity.Bold.SmallCaps",
 	"Trinity.Bold.Italic.SmallCaps",
 	/* monospace */
-/*16*/	"Corpus.Medium",
-/*17*/	"Corpus.Medium.Oblique",
-/*18*/	"Corpus.Bold",
-/*19*/	"Corpus.Bold.Oblique",
+/*24*/	"Corpus.Medium",
+/*25*/	"Corpus.Medium.Oblique",
+/*26*/	"Corpus.Bold",
+/*27*/	"Corpus.Bold.Oblique",
 	"Corpus.Medium.SmallCaps",
 	"Corpus.Medium.Oblique.SmallCaps",
 	"Corpus.Bold.SmallCaps",
 	"Corpus.Bold.Oblique.SmallCaps",
 	/* cursive */
-/*24*/	"Churchill.Medium",
-/*25*/	"Churchill.Medium.Oblique",
-/*26*/	"Churchill.Bold",
-/*27*/	"Churchill.Bold.Oblique",
+/*32*/	"Churchill.Medium",
+/*33*/	"Churchill.Medium.Oblique",
+/*34*/	"Churchill.Bold",
+/*35*/	"Churchill.Bold.Oblique",
 	"Churchill.Medium.SmallCaps",
 	"Churchill.Medium.Oblique.SmallCaps",
 	"Churchill.Bold.SmallCaps",
 	"Churchill.Bold.Oblique.SmallCaps",
 	/* fantasy */
-/*32*/	"Sassoon.Primary",
-/*33*/	"Sassoon.Primary.Oblique",
-/*34*/	"Sassoon.Primary.Bold",
-/*35*/	"Sassoon.Primary.Bold.Oblique",
+/*40*/	"Sassoon.Primary",
+/*41*/	"Sassoon.Primary.Oblique",
+/*42*/	"Sassoon.Primary.Bold",
+/*43*/	"Sassoon.Primary.Bold.Oblique",
 	"Sassoon.Primary.SmallCaps",
 	"Sassoon.Primary.Oblique.SmallCaps",
 	"Sassoon.Primary.Bold.SmallCaps",
 	"Sassoon.Primary.Bold.Oblique.SmallCaps",
 };
 
+#if 0
 /** Table of Latin1 encoded font names for a pre-UTF-8 capable FontManager.
  *
  * font id = font family * 8 + smallcaps * 4 + bold * 2 + slanted
@@ -164,6 +177,7 @@ static const char * const font_table[FONT_FAMILIES * FONT_FACES] = {
 	"Sassoon.Primary.Bold.SmallCaps\\ELatin1",
 	"Sassoon.Primary.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
 };
+#endif
 
 /**
  * Create an empty font_set.
@@ -279,8 +293,9 @@ struct font_data *nsfont_open(struct font_set *set, struct css_style *style)
 	 * If this still fails, we repeat the previous step but now using
 	 * the Latin 1 encoding.
 	 */
-	if ((error = nsfont_open_ufont(ufont_table[f], ufont_table[f % 4], (int)size, &fhandle, &using_fb)) != NULL) {
-		char fontName1[128], fontName2[128];
+	if (!option_font_ufont || (error = nsfont_open_ufont(ufont_table[f], ufont_table[f % 4], (int)size, &fhandle, &using_fb)) != NULL) {
+		char fontName1[FONT_MAX_NAME+10];
+		char fontName2[FONT_MAX_NAME+10];
 		/* Go for the UTF-8 encoding with standard FontManager */
 		strcpy(fontName1, ufont_table[f]);
 		strcat(fontName1, "\\EUTF8");
@@ -288,7 +303,11 @@ struct font_data *nsfont_open(struct font_set *set, struct css_style *style)
 		strcat(fontName2, "\\EUTF8");
 		if ((error = nsfont_open_standard(fontName1, fontName2, (int)size, &fhandle, &using_fb)) != NULL) {
 			/* All UTF-8 font methods failed, only support Latin 1 */
-			if ((error = nsfont_open_standard(font_table[f], font_table[f % 4], (int)size, &fhandle, &using_fb)) != NULL) {
+			strcpy(fontName1, ufont_table[f]);
+			strcat(fontName1, "\\ELatin1");
+			strcpy(fontName2, ufont_table[f % 4]);
+			strcat(fontName2, "\\ELatin1");
+			if ((error = nsfont_open_standard(fontName1, fontName2, (int)size, &fhandle, &using_fb)) != NULL) {
 				LOG(("(u)font_find_font failed : %s\n", error->errmess));
 				die("(u)font_find_font failed");
 			}
@@ -465,7 +484,7 @@ unsigned long nsfont_width(struct font_data *font, const char *text,
 			break;
 	}
 	if (error != NULL) {
-		LOG(("(u)font_scan_string failed : %s\n", error->errmess));
+		LOG(("(u)font_scan_string failed : %s", error->errmess));
 		die("nsfont_width: (u)font_scan_string failed");
 	}
 
@@ -635,7 +654,7 @@ char *nsfont_split(struct font_data *font, const char *text,
 		die("nsfont_split: (u)font_scan_string failed");
 	}
 
-	assert(split == &text[length] || *split == ' ');
+	assert(split == &text[length] || *split == ' ' || *split == '\t');
 
 	*used_width = *used_width / 2 / 400;
 
@@ -739,6 +758,8 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 		size_t *rolength,
 		size_t *consumed)
 {
+	static char *fontname[FONT_MAX_NAME]; /** /todo: not nice */
+
 	assert(font != NULL && text != NULL && rofontname != NULL && rotext != NULL && rolength != NULL && consumed != NULL);
 
 	*rotext = *rofontname = NULL;
@@ -763,7 +784,6 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 			*width /= 800;
 			break;
 		case FONTTYPE_STANDARD_UTF8ENC: {
-			static char *fontname[128]; /** /todo: not nice */
 			int rowidth;
 			os_error *error;
 
@@ -809,7 +829,9 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 				return;
 			}
 			*rolength = strlen(*rotext);
-			*rofontname = font_table[font->id];
+			strcpy(fontname, ufont_table[font->id]);
+			strcat(fontname, "\\ELatin1");
+			*rofontname = fontname;
 			*consumed = length;
 			*width = (unsigned int)rowidth / 800;
 			break;
@@ -817,5 +839,42 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 		default:
 			assert(0);
 			break;
+	}
+}
+
+/**
+ * Fill in the font_table, based on the user's options
+ */
+void nsfont_fill_nametable(void)
+{
+	int i, j;
+	char *name = NULL;
+
+	for (i = 0; i != FONT_FAMILIES; i++) {
+		switch (i) {
+			case FONT_DEFAULT/FONT_FACES:
+				name = option_font_default;
+				break;
+			case FONT_SANS_SERIF/FONT_FACES:
+				name = option_font_sans;
+				break;
+			case FONT_SERIF/FONT_FACES:
+				name = option_font_serif;
+				break;
+			case FONT_MONOSPACE/FONT_FACES:
+				name = option_font_mono;
+				break;
+			case FONT_CURSIVE/FONT_FACES:
+				name = option_font_cursive;
+				break;
+			case FONT_FANTASY/FONT_FACES:
+				name = option_font_fantasy;
+				break;
+		}
+		for (j = 0; j != FONT_FACES; j++) {
+			/**\todo Bold, italic, smallcaps */
+			strncpy(ufont_table[FONT_FACES*i+j],
+					name, FONT_MAX_NAME);
+		}
 	}
 }
