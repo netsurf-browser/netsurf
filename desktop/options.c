@@ -51,6 +51,8 @@ char *option_accept_language = 0;
 bool option_ssl_verify_certificates = true;
 /** Preferred maximum size of memory cache / bytes. */
 int option_memory_cache_size = 2 * 1024 * 1024;
+/** Whether to block advertisements */
+bool option_block_ads = false;
 
 EXTRA_OPTION_DEFINE
 
@@ -71,6 +73,7 @@ struct {
 	{ "accept_language", OPTION_STRING,  &option_accept_language },
 	{ "ssl_verify_certificates", OPTION_BOOL, &option_ssl_verify_certificates },
 	{ "memory_cache_size", OPTION_INTEGER, &option_memory_cache_size },
+	{ "block_advertisements", OPTION_BOOL, &option_block_ads },
 	EXTRA_OPTION_TABLE
 };
 

@@ -23,6 +23,7 @@
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
 #endif
+#include "netsurf/desktop/options.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/layout.h"
 #include "netsurf/utils/log.h"
@@ -326,30 +327,52 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 {
 	xmlNode *node, *node2;
 	char *rel, *type, *media, *href, *data, *url;
-	unsigned int i = 2;
+	unsigned int i = STYLESHEET_START;
 	unsigned int last_active = 0;
 	union content_msg_data msg_data;
 
-	/* stylesheet 0 is the base style sheet, stylesheet 1 is any <style> elements */
-	c->data.html.stylesheet_content = xcalloc(2, sizeof(*c->data.html.stylesheet_content));
-	c->data.html.stylesheet_content[1] = 0;
-	c->data.html.stylesheet_count = 2;
+	/* stylesheet 0 is the base style sheet,
+	 * stylesheet 1 is the adblocking stylesheet,
+	 * stylesheet 2 is any <style> elements */
+	c->data.html.stylesheet_content = xcalloc(STYLESHEET_START, sizeof(*c->data.html.stylesheet_content));
+	c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] = 0;
+	c->data.html.stylesheet_content[STYLESHEET_STYLE] = 0;
+	c->data.html.stylesheet_count = STYLESHEET_START;
 
 	c->active = 0;
 
-	c->data.html.stylesheet_content[0] = fetchcache(
+	c->data.html.stylesheet_content[STYLESHEET_BASE] = fetchcache(
 #ifdef riscos
 			"file:/<NetSurf$Dir>/Resources/CSS",
 #else
 			"file:///home/james/Projects/netsurf/CSS",
 #endif
-			html_convert_css_callback, c, 0,
-			c->width, c->height, true, 0, 0, false);
-	assert(c->data.html.stylesheet_content[0]);
+			html_convert_css_callback, c,
+			(void *) STYLESHEET_BASE, c->width, c->height,
+			true, 0, 0, false);
+	assert(c->data.html.stylesheet_content[STYLESHEET_BASE]);
 	c->active++;
-	fetchcache_go(c->data.html.stylesheet_content[0], 0,
-			html_convert_css_callback, c, 0,
-			0, 0, false);
+	fetchcache_go(c->data.html.stylesheet_content[STYLESHEET_BASE], 0,
+			html_convert_css_callback, c,
+			(void *) STYLESHEET_BASE, 0, 0, false);
+
+	if (option_block_ads) {
+		c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] = fetchcache(
+#ifdef riscos
+			"file:/<NetSurf$Dir>/Resources/AdBlock",
+#else
+			"file:///home/james/Projects/netsurf/AdBlock",
+#endif
+			html_convert_css_callback, c,
+			(void *) STYLESHEET_ADBLOCK, c->width,
+			c->height, true, 0, 0, false);
+		if (c->data.html.stylesheet_content[STYLESHEET_ADBLOCK]) {
+			c->active++;
+			fetchcache_go(c->data.html.stylesheet_content[STYLESHEET_ADBLOCK],
+				0, html_convert_css_callback, c,
+				(void *) STYLESHEET_ADBLOCK, 0, 0, false);
+		}
+	}
 
 	for (node = head == 0 ? 0 : head->children; node != 0; node = node->next) {
 		if (node->type != XML_ELEMENT_NODE)
@@ -438,15 +461,15 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 
 			/* create stylesheet */
 			LOG(("style element"));
-			if (c->data.html.stylesheet_content[1] == 0) {
+			if (c->data.html.stylesheet_content[STYLESHEET_STYLE] == 0) {
 				const char *params[] = { 0 };
-				c->data.html.stylesheet_content[1] =
+				c->data.html.stylesheet_content[STYLESHEET_STYLE] =
 						content_create(c->data.html.
 						base_url);
-				if (!c->data.html.stylesheet_content[1])
+				if (!c->data.html.stylesheet_content[STYLESHEET_STYLE])
 					return;
 				if (!content_set_type(c->data.html.
-						stylesheet_content[1],
+						stylesheet_content[STYLESHEET_STYLE],
 						CONTENT_CSS, "text/css",
 						params))
 					return;
@@ -457,7 +480,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			for (node2 = node->children; node2 != 0; node2 = node2->next) {
 				data = xmlNodeGetContent(node2);
 				if (!content_process_data(c->data.html.
-						stylesheet_content[1],
+						stylesheet_content[STYLESHEET_STYLE],
 						data, strlen(data))) {
 					xmlFree(data);
 					return;
@@ -469,15 +492,15 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 
 	c->data.html.stylesheet_count = i;
 
-	if (c->data.html.stylesheet_content[1] != 0) {
-		if (css_convert(c->data.html.stylesheet_content[1], c->width,
+	if (c->data.html.stylesheet_content[STYLESHEET_STYLE] != 0) {
+		if (css_convert(c->data.html.stylesheet_content[STYLESHEET_STYLE], c->width,
 				c->height)) {
-			content_add_user(c->data.html.stylesheet_content[1],
+			content_add_user(c->data.html.stylesheet_content[STYLESHEET_STYLE],
 					html_convert_css_callback,
-					c, (void *) 1);
+					c, (void *) STYLESHEET_STYLE);
 		} else {
 			/* conversion failed */
-			c->data.html.stylesheet_content[1] = 0;
+			c->data.html.stylesheet_content[STYLESHEET_STYLE] = 0;
 		}
 	}
 

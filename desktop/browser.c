@@ -432,7 +432,8 @@ void browser_window_reload(struct browser_window *bw, bool all)
 				c->data.html.object[i].content->fresh = false;
 		}
 		/* invalidate stylesheets */
-		for (i=2; i!=c->data.html.stylesheet_count; i++) {
+		for (i=STYLESHEET_START;
+			i!=c->data.html.stylesheet_count; i++) {
 			if (c->data.html.stylesheet_content[i] != 0)
 				c->data.html.stylesheet_content[i]->fresh = false;
 		}

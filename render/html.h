@@ -26,6 +26,12 @@ struct content;
 struct object_params;
 struct imagemap;
 
+/* entries in stylesheet_content */
+#define STYLESHEET_BASE		0	/* base style sheet */
+#define STYLESHEET_ADBLOCK	1	/* adblocking stylesheet */
+#define STYLESHEET_STYLE	2	/* <style> elements (not cached) */
+#define STYLESHEET_START	3	/* start of document stylesheets */
+
 /** Data specific to CONTENT_HTML. */
 struct content_html_data {
 	htmlParserCtxt *parser;  /**< HTML parser context. */
@@ -41,8 +47,7 @@ struct content_html_data {
 
 	/** Number of entries in stylesheet_content. */
 	unsigned int stylesheet_count;
-	/** Stylesheets. Each may be 0. Stylesheet 0 is the base style sheet,
-	 * stylesheet 1 is any <style> elements (not cached). */
+	/** Stylesheets. Each may be 0. */
 	struct content **stylesheet_content;
 	struct css_style *style;  /**< Base style. */
 
