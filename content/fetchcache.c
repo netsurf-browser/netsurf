@@ -171,13 +171,13 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 		case FETCH_DATA:
 			LOG(("FETCH_DATA"));
 			if (c->total_size)
-				sprintf(c->status_message,
+				content_set_status(c,
 						messages_get("RecPercent"),
 						human_friendly_bytesize(c->source_size + size),
 						human_friendly_bytesize(c->total_size),
 						(unsigned int) ((c->source_size + size) * 100.0 / c->total_size));
 			else
-				sprintf(c->status_message,
+				content_set_status(c,
 						messages_get("Received"),
 						human_friendly_bytesize(c->source_size + size));
 			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
@@ -186,9 +186,9 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 
 		case FETCH_FINISHED:
 			LOG(("FETCH_FINISHED"));
-			sprintf(c->status_message, messages_get("Converting"),
-					c->source_size);
 			c->fetch = 0;
+			content_set_status(c, messages_get("Converting"),
+					c->source_size);
 			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 			content_convert(c, c->width, c->height);
 			break;

@@ -185,7 +185,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 
 	/* convert xml tree to box tree */
 	LOG(("XML to box"));
-	sprintf(c->status_message, messages_get("Processing"));
+	content_set_status(c, messages_get("Processing"));
 	content_broadcast(c, CONTENT_MSG_STATUS, data);
 	xml_to_box(html, c);
 	/*box_dump(c->data.html.layout->children, 0);*/
@@ -198,7 +198,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	xmlFreeDoc(document);
 
 	/* layout the box tree */
-	sprintf(c->status_message, messages_get("Formatting"));
+	content_set_status(c, messages_get("Formatting"));
 	content_broadcast(c, CONTENT_MSG_STATUS, data);
 	LOG(("Layout document"));
 	layout_document(c->data.html.layout->children, width,
@@ -210,11 +210,10 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 
 	if (c->active == 0) {
 		c->status = CONTENT_STATUS_DONE;
-		sprintf(c->status_message, messages_get("Done"));
+		content_set_status(c, messages_get("Done"));
 	} else {
 		c->status = CONTENT_STATUS_READY;
-		sprintf(c->status_message, messages_get("FetchObjs"),
-				c->active);
+		content_set_status(c, messages_get("FetchObjs"), c->active);
 	}
 
 	return 0;
@@ -424,7 +423,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 	/* complete the fetches */
 	while (c->active != 0) {
 		if (c->active != last_active) {
-			sprintf(c->status_message, messages_get("FetchStyle"),
+			content_set_status(c, messages_get("FetchStyle"),
 					c->active);
 			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 			last_active = c->active;
@@ -434,7 +433,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 	}
 
 	if (c->error) {
-		sprintf(c->status_message, "Warning: some stylesheets failed to load");
+		content_set_status(c, "Warning: some stylesheets failed to load");
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	}
 }
@@ -457,7 +456,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 				c->data.html.stylesheet_content[i] = 0;
 				c->active--;
 				c->error = 1;
-				sprintf(c->status_message, messages_get("NotCSS"));
+				content_set_status(c, messages_get("NotCSS"));
 				content_broadcast(c, CONTENT_MSG_STATUS, data);
 				content_remove_user(css, html_convert_css_callback, c, (void*)i);
 			}
@@ -478,7 +477,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			break;
 
 		case CONTENT_MSG_STATUS:
-			snprintf(c->status_message, 80, messages_get("FetchStyle2"),
+			content_set_status(c, messages_get("FetchStyle2"),
 					c->active, css->status_message);
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			break;
@@ -585,7 +584,7 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->data.html.object[i].content = 0;
 			c->active--;
 			c->error = 1;
-			sprintf(c->status_message, messages_get("BadObject"));
+			content_set_status(c, messages_get("BadObject"));
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			content_remove_user(object, html_object_callback, c, (void*)i);
 			break;
@@ -606,13 +605,13 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->data.html.object[i].content = 0;
 			c->active--;
 			c->error = 1;
-			snprintf(c->status_message, 80,
-					messages_get("ObjError"), data.error);
+			content_set_status(c, messages_get("ObjError"),
+					data.error);
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			break;
 
 		case CONTENT_MSG_STATUS:
-			snprintf(c->status_message, 80, messages_get("FetchObjs2"),
+			content_set_status(c, messages_get("FetchObjs2"),
 					c->active, object->status_message);
 			/* content_broadcast(c, CONTENT_MSG_STATUS, 0); */
 			break;
@@ -685,12 +684,11 @@ void html_object_callback(content_msg msg, struct content *object,
 		/* all objects have arrived */
 		content_reformat(c, c->available_width, 0);
 		c->status = CONTENT_STATUS_DONE;
-		sprintf(c->status_message, messages_get("Done"));
+		content_set_status(c, messages_get("Done"));
 		content_broadcast(c, CONTENT_MSG_DONE, data);
 	}
 	if (c->status == CONTENT_STATUS_READY)
-		sprintf(c->status_message, messages_get("FetchObjs"),
-				c->active);
+		content_set_status(c, messages_get("FetchObjs"), c->active);
 }
 
 

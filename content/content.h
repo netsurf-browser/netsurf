@@ -169,6 +169,7 @@ content_type content_lookup(const char *mime_type);
 struct content * content_create(char *url);
 void content_set_type(struct content *c, content_type type,
 		const char *mime_type, const char *params[]);
+void content_set_status(struct content *c, const char *status_message, ...);
 void content_process_data(struct content *c, char *data, unsigned long size);
 void content_convert(struct content *c, unsigned long width, unsigned long height);
 void content_revive(struct content *c, unsigned long width, unsigned long height);

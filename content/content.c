@@ -13,8 +13,10 @@
  */
 
 #include <assert.h>
-#include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
@@ -183,7 +185,7 @@ struct content * content_create(char *url)
 	c->source_data = 0;
 	c->source_size = 0;
 	c->mime_type = 0;
-	strcpy(c->status_message, messages_get("Loading"));
+	content_set_status(c, messages_get("Loading"));
 	user_sentinel = xcalloc(1, sizeof(*user_sentinel));
 	user_sentinel->callback = 0;
 	user_sentinel->p1 = user_sentinel->p2 = 0;
@@ -226,6 +228,26 @@ void content_set_type(struct content *c, content_type type,
 	content_broadcast(c, CONTENT_MSG_LOADING, data);
 	/* c may be destroyed at this point as a result of
 	 * CONTENT_MSG_LOADING, so must not be accessed */
+}
+
+
+/**
+ * Updates content with new status.
+ *
+ * The textual status contained in the content is updated with given string.
+ *
+ * \param status_message new textual status
+ */
+void content_set_status(struct content *c, const char *status_message, ...)
+{
+	va_list ap;
+	int len;
+
+	va_start(ap, status_message);
+	if ((len = vsnprintf(c->status_message, sizeof(c->status_message), status_message, ap)) < 0
+			|| len >= sizeof(c->status_message))
+		c->status_message[sizeof(c->status_message) - 1] = '\0';
+	va_end(ap);
 }
 
 
