@@ -36,7 +36,8 @@ struct form {
 struct form_control {
 	enum { GADGET_HIDDEN, GADGET_TEXTBOX, GADGET_RADIO, GADGET_CHECKBOX,
 			GADGET_SELECT, GADGET_TEXTAREA, GADGET_IMAGE,
-			GADGET_PASSWORD, GADGET_SUBMIT, GADGET_RESET } type;
+			GADGET_PASSWORD, GADGET_SUBMIT, GADGET_RESET,
+			GADGET_FILE } type;
 	char *name;
 	char *value;
 	char *initial_value;
@@ -80,6 +81,7 @@ struct form_option {
 
 /** Successful control, as defined by HTML 4.01 17.13. */
 struct form_successful_control {
+        bool file;                              /**< It's a file */
 	char *name;				/**< Control name. */
 	char *value;				/**< Current value. */
 	struct form_successful_control *next;	/**< Next in linked list. */

@@ -196,6 +196,7 @@ void html_redraw_box(struct content *content, struct box * box,
 		case GADGET_PASSWORD:
 		case GADGET_SUBMIT:
 		case GADGET_RESET:
+		case GADGET_FILE:
 		        break;
 		}
 

@@ -654,6 +654,7 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 					break;
 				case GADGET_TEXTBOX:
 				case GADGET_PASSWORD:
+				case GADGET_FILE:
 					browser_window_input_click(bw,
 							(unsigned int)click_boxes[i].actual_x,
 							(unsigned int)click_boxes[i].actual_y,

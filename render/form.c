@@ -11,10 +11,12 @@
  */
 
 #include <assert.h>
+#include <stdio.h>
 #include <string.h>
 #include "curl/curl.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
+#include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -79,6 +81,7 @@ struct form_successful_control *form_successful_controls(struct form *form,
 					option = option->next) {
 				if (option->selected) {
 					success_new = xcalloc(1, sizeof(*success_new));
+					success_new->file = false;
 					success_new->name = xstrdup(control->name);
 					success_new->value = xstrdup(option->value);
 					success_new->next = 0;
@@ -92,6 +95,7 @@ struct form_successful_control *form_successful_controls(struct form *form,
 		/* textarea */
 		if (control->type == GADGET_TEXTAREA) {
 			success_new = xcalloc(1, sizeof(*success_new));
+			success_new->file = false;
 			success_new->name = xstrdup(control->name);
 			success_new->value = form_textarea_value(control);
 			success_new->next = 0;
@@ -105,6 +109,7 @@ struct form_successful_control *form_successful_controls(struct form *form,
 			unsigned int len = strlen(control->name) + 3;
 			/* x */
 			success_new = xcalloc(1, sizeof(*success_new));
+			success_new->file = false;
 			success_new->name = xcalloc(1, len);
 			sprintf(success_new->name, "%s.x", control->name);
 			success_new->value = xcalloc(1, 20);
@@ -114,6 +119,7 @@ struct form_successful_control *form_successful_controls(struct form *form,
 			last_success = success_new;
 			/* y */
 			success_new = xcalloc(1, sizeof(*success_new));
+			success_new->file = false;
 			success_new->name = xcalloc(1, len);
 			sprintf(success_new->name, "%s.y", control->name);
 			success_new->value = xcalloc(1, 20);
@@ -127,9 +133,22 @@ struct form_successful_control *form_successful_controls(struct form *form,
 		if (control->type == GADGET_RESET)
 			continue;
 
+		/* file */
+		if (control->type == GADGET_FILE) {
+		        success_new = xcalloc(1, sizeof(*success_new));
+		        success_new->file = true;
+		        success_new->name = xstrdup(control->name);
+		        success_new->value = xstrdup(control->value);
+		        success_new->next = 0;
+		        last_success->next = success_new;
+		        last_success = success_new;
+		        continue;
+		}
+
 		/* all others added if they have a value */
 		if (control->value) {
 			success_new = xcalloc(1, sizeof(*success_new));
+			success_new->file = false;
 			success_new->name = xstrdup(control->name);
 			success_new->value = xstrdup(control->value);
 			success_new->next = 0;

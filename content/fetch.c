@@ -678,10 +678,18 @@ struct HttpPost *fetch_post_convert(struct form_successful_control *control)
 	struct HttpPost *post = 0, *last = 0;
 
 	for (; control; control = control->next) {
-		curl_formadd(&post, &last,
-				CURLFORM_COPYNAME, control->name,
-				CURLFORM_COPYCONTENTS, control->value,
-				CURLFORM_END);
+	        if (control->file) {
+	                curl_formadd(&post, &last,
+					CURLFORM_COPYNAME, control->name,
+					CURLFORM_FILE, control->value,
+					CURLFORM_END);
+	        }
+	        else {
+	        	curl_formadd(&post, &last,
+		        		CURLFORM_COPYNAME, control->name,
+		                        CURLFORM_COPYCONTENTS, control->value,
+				        CURLFORM_END);
+		}
 	}
 
 	return post;

@@ -74,7 +74,7 @@ static struct result box_select(xmlNode *n, struct status *status,
 static struct result box_input(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct box *box_input_text(xmlNode *n, struct status *status,
-		struct css_style *style, bool password);
+		struct css_style *style, bool password, bool file);
 static struct result box_button(xmlNode *n, struct status *status,
 		struct css_style *style);
 static void add_option(xmlNode* n, struct form_control* current_select, char *text);
@@ -1036,15 +1036,21 @@ struct result box_input(xmlNode *n, struct status *status,
 	/* the default type is "text" */
 	if (type == 0 || stricmp(type, "text") == 0)
 	{
-		box = box_input_text(n, status, style, false);
+		box = box_input_text(n, status, style, false, false);
 		gadget = box->gadget;
 		gadget->box = box;
 	}
 	else if (stricmp(type, "password") == 0)
 	{
-		box = box_input_text(n, status, style, true);
+		box = box_input_text(n, status, style, true, false);
 		gadget = box->gadget;
 		gadget->box = box;
+	}
+	else if (stricmp(type, "file") == 0)
+	{
+	        box = box_input_text(n, status, style, false, true);
+	        gadget = box->gadget;
+	        gadget->box = box;
 	}
 	else if (stricmp(type, "hidden") == 0)
 	{
@@ -1154,7 +1160,7 @@ struct result box_input(xmlNode *n, struct status *status,
 }
 
 struct box *box_input_text(xmlNode *n, struct status *status,
-		struct css_style *style, bool password)
+		struct css_style *style, bool password, bool file)
 {
 	char *s;
 	unsigned int i;
@@ -1191,6 +1197,9 @@ struct box *box_input_text(xmlNode *n, struct status *status,
 		inline_box->text = xcalloc(inline_box->length + 1, 1);
 		for (i = 0; i != inline_box->length; i++)
 			inline_box->text[i] = '*';
+	} else if (file) {
+	        box->gadget->type = GADGET_FILE;
+	        inline_box->text = xcalloc(inline_box->length + 1, 1);
 	} else {
 		box->gadget->type = GADGET_TEXTBOX;
 		inline_box->text = xstrdup(box->gadget->value);
