@@ -46,7 +46,7 @@ static void thumbnail_test(void);
 static struct thumbnail_save_area* thumbnail_switch_output(osspriteop_area *sprite_area,
 					osspriteop_header *sprite_header);
 static void thumbnail_restore_output(struct thumbnail_save_area *save_area);
-  
+
 
 /**
  * Create a thumbnail of a page.
@@ -74,7 +74,7 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 	*/
 	if (option_thumbnail_oversampling < 0) option_thumbnail_oversampling = 0;
 	if (option_thumbnail_oversampling > 4) option_thumbnail_oversampling = 4;
-	
+
 	/*	Get the oversampled sprite holder. We perform oversamling if either we
 		want to oversample, or the output sprite is 8bpp and we can do 32bpp and
 		thus improve the final rendition via dithering.
@@ -86,7 +86,7 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 				height << option_thumbnail_oversampling,
 				(os_mode)0x301680b5);
 	}
-        
+
 	/*	Oversample if we have an oversampled sprite, don't otherwise
 	*/
 	if (oversampled_area != NULL) {
@@ -112,7 +112,7 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 		*/
 		width = width >> option_thumbnail_oversampling;
 		height = height >> option_thumbnail_oversampling;
-        
+
 		/*	Switch output to the final sprite
 		*/
 		save_area = thumbnail_switch_output(area, sprite);
@@ -126,11 +126,11 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 		_swix(Tinct_PlotScaled, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
 				(char *)(oversampled_area + 1), 0, 0, width * 2, height * 2,
 				(1<<1) | (1<<2));
-		
+
 		/*	Restore output
-		*/      	
+		*/
 		thumbnail_restore_output(save_area);
-		
+
 		/*	Free oversampled memory area
 		*/
 		free(oversampled_area);
@@ -138,7 +138,10 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 	} else {
 		/*	Calculate the scale
 		*/
-		scale = (float) width / (float) content->width;
+		if (content->width)
+			scale = (float) width / (float) content->width;
+		else
+			scale = 1.0;
 		LOG(("Scaling to %f and outputting at %ix%i", scale, width, height));
 
 		/*	Switch output and redraw
@@ -173,7 +176,7 @@ osspriteop_area* thumbnail_initialise(int width, int height, os_mode mode) {
 	osspriteop_area *sprite_area;
 	osspriteop_header *sprite_header;
 	char *sprite_image;
-	
+
 	/*	Check if we can use 32bpp sprites if we haven't already. By
 		doing it this way we don't need to allocate lot of memory
 		first which will probably not be available on machines that
@@ -200,14 +203,14 @@ osspriteop_area* thumbnail_initialise(int width, int height, os_mode mode) {
 		LOG(("Insufficient memory to create thumbnail."));
 		return NULL;
 	}
-	
+
 	/*	Initialise the sprite area
 	*/
 	sprite_area->size = area_size;
 	sprite_area->sprite_count = 1;
 	sprite_area->first = 16;
 	sprite_area->used = area_size;
-	
+
 	/*	Initialise the sprite header. We can't trust OS_SpriteOp to
 		set up our palette properly due to insane legacy 8bpp palettes,
 		so we do it all manually.
@@ -222,9 +225,9 @@ osspriteop_area* thumbnail_initialise(int width, int height, os_mode mode) {
 	if (mode == (os_mode)0x301680b5) {
 		sprite_header->right_bit = 31;
 		sprite_header->width = width - 1;
-		sprite_header->image = sizeof(osspriteop_header); 
-		sprite_header->mask = sizeof(osspriteop_header); 
- 	
+		sprite_header->image = sizeof(osspriteop_header);
+		sprite_header->mask = sizeof(osspriteop_header);
+
 		/*	Clear to white, full opacity
 		*/
 		sprite_image = ((char *)sprite_header) + sprite_header->image;
@@ -233,9 +236,9 @@ osspriteop_area* thumbnail_initialise(int width, int height, os_mode mode) {
 	} else {
 		sprite_header->right_bit = ((width << 3) - 1) & 31;
 		sprite_header->width = ((width + 3) >> 2) - 1;
-		sprite_header->image = sizeof(osspriteop_header) + 2048; 
+		sprite_header->image = sizeof(osspriteop_header) + 2048;
 		sprite_header->mask = sizeof(osspriteop_header) + 2048;
-		
+
 		/*	Create the palette. We don't read the necessary size
 			like we really should as we know it's going to have
 			256 entries of 8 bytes = 2048.
@@ -243,7 +246,7 @@ osspriteop_area* thumbnail_initialise(int width, int height, os_mode mode) {
 		xcolourtrans_read_palette((osspriteop_area *)mode, (osspriteop_id)0,
 			(os_palette *)(sprite_header + 1), 2048,
 			(colourtrans_palette_flags)(1 << 1), &remaining_bytes);
- 	
+
 		/*	Clear to white
 		*/
 		sprite_image = ((char *)sprite_header) + sprite_header->image;
@@ -281,14 +284,14 @@ static void thumbnail_test(void) {
 		LOG(("Insufficient memory to perform sprite test."));
 		return;
 	}
-	
+
 	/*	Initialise the sprite area
 	*/
 	sprite_area->size = area_size + 1;
 	sprite_area->sprite_count = 0;
 	sprite_area->first = 16;
 	sprite_area->used = 16;
- 
+
 	/*	Try to create a 32bpp sprite
 	*/
 	if (xosspriteop_create_sprite(osspriteop_NAME, sprite_area,
@@ -297,7 +300,7 @@ static void thumbnail_test(void) {
 	} else {
 		thumbnail_32bpp_available = 1;
 	}
-	
+
 	/*	Free our memory
 	*/
 	free(sprite_area);
@@ -310,12 +313,12 @@ static struct thumbnail_save_area* thumbnail_switch_output(osspriteop_area *spri
 					osspriteop_header *sprite_header) {
 	struct thumbnail_save_area *save_area;
 	int size;
-	
+
 	/*	Create a save area
 	*/
 	save_area = calloc(sizeof(struct thumbnail_save_area), 1);
 	if (save_area == NULL) return NULL;
-	
+
 	/*	Allocate OS_SpriteOp save area
 	*/
 	if (xosspriteop_read_save_area_size(osspriteop_PTR, sprite_area,
@@ -350,7 +353,7 @@ static struct thumbnail_save_area* thumbnail_switch_output(osspriteop_area *spri
 /*	Restores output to the specified context, and destroys it.
 */
 static void thumbnail_restore_output(struct thumbnail_save_area *save_area) {
-  
+
 	/*	We don't care if we err, as there's nothing we can do about it
 	*/
 	xosspriteop_switch_output_to_sprite(osspriteop_PTR,
@@ -358,7 +361,7 @@ static void thumbnail_restore_output(struct thumbnail_save_area *save_area) {
 			(osspriteop_id)save_area->context2,
 			(osspriteop_save_area *)save_area->context3,
 			0, 0, 0, 0);
-	
+
 	/*	Free our workspace
 	*/
 	free(save_area->save_area);
