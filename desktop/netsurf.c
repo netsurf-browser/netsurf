@@ -96,8 +96,9 @@ void netsurf_poll(void)
 
 void netsurf_exit(void)
 {
-	fetch_quit();
 	gui_quit();
+	content_quit();
+	fetch_quit();
 }
 
 

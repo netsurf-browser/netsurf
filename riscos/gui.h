@@ -162,6 +162,7 @@ bool ro_gui_401login_keypress(wimp_key *key);
 #endif
 
 /* in window.c */
+void ro_gui_window_quit(void);
 void ro_gui_window_click(struct gui_window *g, wimp_pointer *mouse);
 void ro_gui_window_open(struct gui_window *g, wimp_open *open);
 void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw);

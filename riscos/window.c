@@ -303,6 +303,17 @@ void gui_window_destroy(struct gui_window *g)
 
 
 /**
+ * Destroy all browser windows.
+ */
+
+void ro_gui_window_quit(void)
+{
+	while (window_list)
+		browser_window_destroy(window_list->bw);
+}
+
+
+/**
  * Set the title of a browser window.
  *
  * \param  g      gui_window to update

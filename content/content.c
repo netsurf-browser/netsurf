@@ -539,7 +539,7 @@ void content_clean(void)
 			content_stop_check(c);
 	}
 
-	/* attempt to shrike the memory cache (unused fresh contents) */
+	/* attempt to shrink the memory cache (unused fresh contents) */
 	size = 0;
 	next = 0;
 	for (c = content_list; c; c = c->next) {
@@ -610,6 +610,37 @@ void content_reset(struct content *c)
 	c->size = sizeof(struct content);
 	free(c->mime_type);
 	c->mime_type = 0;
+}
+
+
+/**
+ * Free all contents in the content_list.
+ */
+
+void content_quit(void)
+{
+	bool progress = true;
+	struct content *c, *next;
+
+	while (content_list && progress) {
+		progress = false;
+		for (c = content_list; c; c = next) {
+			next = c->next;
+
+			if (c->user_list->next &&
+					c->status != CONTENT_STATUS_ERROR)
+				/* content has users */
+				continue;
+
+			/* content can be destroyed */
+			content_destroy(c);
+			progress = true;
+		}
+	}
+
+	if (content_list) {
+		LOG(("bug: some contents could not be destroyed"));
+	}
 }
 
 

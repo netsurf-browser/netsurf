@@ -441,10 +441,11 @@ void gui_init2(void)
 
 void gui_quit(void)
 {
+	ro_gui_window_quit();
   	ro_gui_hotlist_save();
 	ro_gui_history_quit();
 	free(gui_sprites);
-	wimp_close_down(task_handle);
+	xwimp_close_down(task_handle);
 	xhourglass_off();
 }
 
