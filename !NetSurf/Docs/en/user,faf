@@ -1,0 +1,53 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>NetSurf: The open-source web browser for RISC OS</title>
+<link rel="stylesheet" type="text/css" href="netsurf">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+<body>
+<p class="logosmall"><a href="http://netsurf.sourceforge.net/"><img src="images/logosmall" alt="NetSurf"></a></p>
+<h1>User Guide</h1>
+<h2><a name="using">Using NetSurf</a></h2>
+<p>To run <em>NetSurf</em>, simply double click on the NetSurf application.  This will cause the NetSurf icon to appear on the iconbar.  Select clicking on this icon will open a browser window.  It should be noted that as NetSurf is at a very early stage of development, much of the following information is subject to change without warning.</p>
+<p class="screenshot"><img src="images/bwin" alt="Browser Window" height="289" width="331"></p>
+<h3><a name="toolbar">The Toolbar</a></h3>
+<p>The section at the top of the window is called the toolbar.  It allows quick access to various functions and information.</p>
+<p class="screenshot"><img src="images/toolb" alt="Toolbar" height="236" width="592"></p>
+<p><strong>Back:</strong> Clicking on this button, makes NetSurf go back the the previous page in the history list.  If you followed a link from one page to another, this button allows you to get back to the first page.</p>
+<p><strong>Reload:</strong> Clicking on this button causes NetSurf to reload the current page.</p>
+<p><strong>Forward:</strong> Clicking on this button allows you to advance through the history list.</p>
+<p>Buttons that are grayed out indicate that their function is unavailable.  This happens when you open a new browser window.  Since the window will be displaying its first page, there would be no previous page and the back button is grayed out.  Also, as this is the first page, the forward button is also grayed out.</p>
+<p><strong>URL Bar:</strong> This shows the location of the current page.  Here, you can enter the address of the page you want to view next.</p>
+<p><strong>Throbber:</strong> This animates while a page is downloading or rendering.  It indicates that NetSurf is doing something.</p>
+<p><strong>Status Line:</strong> This displays information to the user.  When you move the pointer over a link, this will show the URL that the link points to.  The status line also displays information about NetSurf's progress while retrieving a page.</p>
+<h2><a name="menus">Menus</a></h2>
+<p>NetSurf has two different menus, one is accessed by clicking menu over NetSurf's iconbar icon and the other is opened by clicking menu over a browser window.</p>
+<h3>Iconbar Menu</h3>
+<p>The iconbar menu is home to three options.  These are Info, Configure and Quit.  Info provides a little information about the application, while quit will exit the program, closing all browser windows.  The configure option opens a window for configuring NetSurf.  This is discussed in greater detail in the <a href="#conf">Configuring NetSurf</a> section.</p>
+<p class="screenshot"><img src="images/imenu" alt="Iconbar Menu" height="91" width="103"></p>
+<h3>Browser Window Menu</h3>
+<p>The browser window menu contains options relating to the content of that window.  Many of these options are unavailable at present as this area of NetSurf is not complete.  The following options are currently available:</p>
+<p class="screenshot"><img src="images/bmenu" alt="Browser Menu" height="91" width="98"></p>
+<!-- <p>The selection sub menu relates to selected text in the browser window.</p>
+<p><strong>Selection > Clear</strong> This deselects any highlighted text in the browser window.</p> -->
+<p>The navigate sub menu contains options useful for navigating the web.</p>
+<p class="screenshot"><img src="images/bnmenu" alt="Navigate Submenu" height="135" width="153"></p>
+<p><strong>Navigate > Home</strong> This take you back to the NetSurf homepage.</p>
+<p><strong>Navigate > Back</strong> This has the same function as the back button on the <a href="#toolbar">toolbar</a>.</p>
+<p><strong>Navigate > Forward</strong> This has the same function as the forward button on the <a href="#toolbar">toolbar</a>.</p>
+<h2><a name="conf">Configuring NetSurf</a></h2>
+<p>You can change the way NetSurf looks and behaves, by configuring the program.  The configuration panel is opened by clicking menu over the iconbar icon and selecting Choices.</p>
+<p class="screenshot"><img src="images/conpan" alt="Configuration Panel" height="135" width="228"><br>Note: Screenshot taken on RISC OS Select 3</p>
+<p>The Cancel button will close the window, discarding any changes you've made.  Clicking on OK will save the new settings and close the window.  Clicking on one of the other icons will allow you to configure that aspect of NetSurf.</p>
+<h3>Browser</h3>
+<p>The browser configuration window contains some general configuration options that apply to the main browser window.  Many of these options are unavailable at the moment as NetSurf is still in development.</p>
+<h3>Proxy</h3>
+<p>The proxy configuration window allows you to enable and set an HTTP proxy.  You can enter the  address and port number of the proxy you want to use.</p>
+<p class="screenshot"><img src="images/proxy" alt="Proxy Setup Window" height="134" width="366"><br>Note: Screenshot taken on RISC OS Select 3</p>
+<h3>Theme</h3>
+<p>NetSurf allows you to change the 'look and feel' of its interface.  New themes can be downloaded from the <a href="http://netsurf.sourceforge.net/themes/">NetSurf themes page</a> and you can select your desired theme from this window.</p>
+<p class="screenshot"><img src="images/conthem" alt="Theme Selection Window" height="262" width="347"><br>Note: Screenshot taken on RISC OS Select 3</p>
+<p class="footer">NetSurf is copyright 2003 The NetSurf Developers<br>This page was written by Michael Drake</p>
+</body></html>

@@ -1,0 +1,27 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>NetSurf: The open-source web browser for RISC OS</title>
+<link rel="stylesheet" type="text/css" href="netsurf">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+<body>
+<p class="logosmall"><a href="http://netsurf.sourceforge.net/"><img src="images/logosmall" alt="NetSurf"></a></p>
+<h1>Developer Information</h1>
+<h2><a name="contri">Contribution to the project</a></h2>
+<p>As <em>NetSurf</em> is an open source project, everyone is welcome to contribute.  If you would like to add some functionality to NetSurf then you can <a href="info#devel">contact the other developers</a> via either the #netsurf-develop IRC channel or mailing list.</p>
+<h2><a name="libs">Libraries used</a></h2>
+<p>NetSurf makes use of the following libraries:</p>
+<ul>
+<li><a href="http://curl.haxx.se/libcurl/">libcurl</a>
+<li><a href="http://netsurf.strcprstskrzkrk.co.uk/developer/">IFClib</a>
+<li><a href="http://www.openssl.org/">OpenSSL</a>
+<li><a href="http://ro-oslib.sourceforge.net/">OSLib</a>
+<li><a href="http://www.libpng.org/pub/png/libpng.html">libpng</a>
+<li><a href="http://www.xmlsoft.org/">libxml2</a>
+</ul>
+<h2><a name="further">Further information</a></h2>
+<p>There is further developer information in the <a href="http://cvs.semichrome.net/netsurf/Docs/">Docs section</a> of the NetSurf <a href="http://cvs.semichrome.net/netsurf/">CVS repository</a>.</p>
+<p class="footer">NetSurf is copyright 2003 The NetSurf Developers<br>This page was written by Michael Drake</p>
+</body></html>

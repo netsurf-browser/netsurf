@@ -1,0 +1,62 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>NetSurf: The open-source web browser for RISC OS</title>
+<link rel="stylesheet" type="text/css" href="netsurf">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+<body>
+<p class="logosmall"><a href="http://netsurf.sourceforge.net/"><img src="images/logosmall" alt="NetSurf"></a></p>
+<h1>User Information</h1>
+<h2><a name="downloading">Downloading NetSurf</a></h2>
+<p><em>NetSurf</em> is currently in beta.  The latest version of NetSurf can be obtained from <a href="http://netsurf.strcprstskrzkrk.co.uk/">netsurf.strcprstskrzkrk.co.uk</a>.  As these builds are generated automatically from <a href="http://cvs.semichrome.net/netsurf/">CVS</a>, they are likely to be unstable and may crash your machine.</p>
+<h3><a name="versions">Different Versions</a></h3>
+<p>There are 32-bit and 26-bit NetSurf builds.  The 26-bit versions are suitable for any processor up to StrongARM and the 32-bit versions will work on ARM6 and higher.  Only the 32-bit versions will run on Castle's IYONIX pc.</p>
+<p>The 32-bit builds of NetSurf include https support, although they require more memory.</p>
+<h3><a name="requ">Requirements</a></h3>
+<p>NetSurf requires the <a href="http://www.chocky.org/unix/usage.html">SharedUnixLibrary</a> to run.  Also, you may need to download the <a href="http://sudden.recoil.org/others/">Acorn URI module</a>.</p>
+<h2><a name="devel">Contacting the Developers</a></h2>
+<p>If you want to contribute to the NetSurf project, please see the <a href="dev">Developer Information</a>.  Before submitting a bug report, please check that you have the latest version and check to see if the bug has <a href="#known">already been discovered</a>.  Bug reports and questions about NetSurf can be raised in the following forms.</p>
+<h3>Mailing List</h3>
+<p>The <a href="http://lists.sourceforge.net/lists/listinfo/netsurf-develop">netsurf-develop</a> mailing list is for discussion of NetSurf.  If you are interested in NetSurf's development, please subscribe to this list.</p>
+<h3>IRC Channel</h3>
+<p>The #netsurf-develop IRC channel on the IRCNet network is also for discussion of NetSurf.  Both the ircnet.demon.co.uk and ircnet.easynet.co.uk servers are suitable.</p>
+<h3>Bug Tracker</h3>
+<p>Please submit any bugs to the <a href="http://sourceforge.net/tracker/?group_id=51719&amp;atid=464312">bug tracker</a>.</p>
+<h2><a name="features">Current Features &amp; Limitations</a></h2>
+<p>The following features have been implemented:</p>
+<ul>
+<li>Basic HTML 4, including tables</li>
+<li>Parts of CSS (display, text-align, float, width &amp; height)</li>
+<li>Local and HTTP fetching</li>
+<li>Memory cache</li>
+<li>External CSS files</li>
+<li><em>&lt;style&gt;</em> element</li>
+<li>Encrypted HTTP or https (32-bit builds only)</li>
+<li>Plugin System</li>
+<li>Redirects</li>
+<li>View Source</li>
+<li>Support for Acorn URI Protocol and URI files</li>
+<li>HTML forms, using GET method</li>
+</ul>
+<p>The following is in progress:</p>
+<ul>
+<li>GUI</li>
+<li>PNG Support</li>
+<li>JPEG Support</li>
+<li>GIF Support</li>
+<li>File downloads (eg. zip files)</li>
+<li>HTML forms, using POST method</li>
+<li>Improved Memory handling</li>
+</ul>
+<p>We want to release a stable and fairly complete HTML / CSS browser before considering JavaScript support.  To see what remains to be done in more detail, please see the <a href="http://cvs.semichrome.net/netsurf/Docs/">TODO lists</a>.</p>
+<h2><a name="known">Known Bugs</a></h2>
+<ul>
+<li>No way to re-download a webpage, if it has been updated, without quitting NetSurf.</li>
+<li>PNGs with transparency don't display correctly unless you have Select.</li>
+<li>NetSurf quits when it runs out of memory</li>
+</ul>
+<p class="footer"><em>NetSurf</em> is copyright 2003 The NetSurf Developers<br>This page was written by Michael Drake</p>
+</body>
+</html>
