@@ -32,6 +32,7 @@ extern gui_window *window_list;
 extern bool gui_reformat_pending;
 extern bool gui_redraw_debug;
 extern gui_window *current_gui;
+extern gui_window *ro_gui_current_redraw_gui;
 extern osspriteop_area *gui_pointers;
 
 typedef enum { GUI_BROWSER_WINDOW, GUI_DOWNLOAD_WINDOW } gui_window_type;

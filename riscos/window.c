@@ -35,6 +35,7 @@
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
+gui_window *ro_gui_current_redraw_gui;
 gui_window *window_list = 0;
 static int window_count = 0;
 
@@ -200,10 +201,16 @@ void gui_window_redraw_window(gui_window* g)
 
 void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw) {
 	osbool more;
-	osbool clear_background = false;
+	bool clear_background = false;
 	struct content *c = g->data.browser.bw->current_content;
 	unsigned long background_colour = 0xffffff;
 
+	/*	Set the current redraw gui_window to get options from
+	*/
+	ro_gui_current_redraw_gui = g;
+
+	/*	Perform the update
+	*/
 	if (g->type == GUI_BROWSER_WINDOW && c != NULL) {
 
 		/*	We should clear the background for GIFs and PNGs
@@ -244,6 +251,11 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw) {
       			more = wimp_get_rectangle(redraw);
       		}
       	}
+
+	/*	Reset the current redraw gui_window to prevent thumbnails from
+		retaining options
+	*/
+	ro_gui_current_redraw_gui = NULL;
 }
 
 
@@ -258,7 +270,7 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 {
 	struct content *c = g->data.browser.bw->current_content;
 	osbool more;
-	osbool clear_background = false;
+	bool clear_background = false;
 	unsigned long background_colour = 0xffffff;
 	os_error *error;
 	wimp_draw update;
@@ -274,6 +286,10 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 				error->errnum, error->errmess));
 		return;
 	}
+
+	/*	Set the current redraw gui_window to get options from
+	*/
+	ro_gui_current_redraw_gui = g;
 
 	/*	We should clear the background for content that isn't HTML or plain text
 	*/
@@ -316,9 +332,14 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 		if (error) {
 			LOG(("xwimp_get_rectangle: 0x%x: %s",
 					error->errnum, error->errmess));
-			return;
+//			return;
 		}
 	}
+
+	/*	Reset the current redraw gui_window to prevent thumbnails from
+		retaining options
+	*/
+	ro_gui_current_redraw_gui = NULL;
 }
 
 void gui_window_set_scroll(gui_window* g, unsigned long sx, unsigned long sy)

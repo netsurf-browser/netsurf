@@ -25,6 +25,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/gui.h"
+#include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/jpeg.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/tinct.h"
@@ -234,12 +235,28 @@ void nsjpeg_redraw(struct content *c, long x, long y,
 		   long clip_x0, long clip_y0, long clip_x1, long clip_y1,
 		   float scale)
 {
+	unsigned int tinct_options;
+
+	/*	If we have a gui_window then we work from there, if not we use the global
+		settings as we are drawing a thumbnail.
+	*/
+	if (ro_gui_current_redraw_gui) {
+		tinct_options = (ro_gui_current_redraw_gui->option_filter_sprites?(1<<1):0) |
+				(ro_gui_current_redraw_gui->option_dither_sprites?(1<<2):0);
+	} else {
+		tinct_options = (option_filter_sprites?(1<<1):0) |
+				(option_dither_sprites?(1<<2):0);
+	}
+
+	/*	Tinct currently only handles 32bpp sprites that have an embedded alpha mask. Any
+		sprites not matching the required specifications are ignored. See the Tinct
+		documentation for further information.
+	*/
 	_swix(Tinct_PlotScaled,
 			_IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
 			(char *) c->data.jpeg.sprite_area +
 				c->data.jpeg.sprite_area->first,
 			x, (int) (y - height),
 			width, height,
-			(option_filter_sprites ? (1<<1) : 0) |
-				(option_dither_sprites ? (1<<2) : 0));
+			tinct_options);
 }

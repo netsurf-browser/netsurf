@@ -91,20 +91,40 @@ void nsgif_redraw(struct content *c, long x, long y,
 		float scale) {
 
 	int previous_frame;
-	unsigned int frame;
+	unsigned int frame, current_frame;
+	unsigned int tinct_options;
 
 	/*	Reject no images (paranoia)
 	*/
 	if (c->data.gif.gif->frame_count_partial < 1) return;
 
+	/*	If we have a gui_window then we work from there, if not we use the global
+		settings. We default to the first image if we don't have a GUI as we are
+		drawing a thumbnail unless something has gone very wrong somewhere else.
+	*/
+	if (ro_gui_current_redraw_gui) {
+		tinct_options = (ro_gui_current_redraw_gui->option_filter_sprites?(1<<1):0) |
+				(ro_gui_current_redraw_gui->option_dither_sprites?(1<<2):0);
+		if (ro_gui_current_redraw_gui->option_animate_images) {
+			current_frame = c->data.gif.current_frame;
+		} else {
+		  	current_frame = 0;
+		}
+	} else {
+	  	current_frame = 0;
+		tinct_options = (option_filter_sprites?(1<<1):0) |
+				(option_dither_sprites?(1<<2):0);
+	}
+
 	/*	Decode from the last frame to the current frame
 	*/
-	if (c->data.gif.current_frame < c->data.gif.gif->decoded_frame)
+	if (current_frame < c->data.gif.gif->decoded_frame) {
 		previous_frame = 0;
-	else
+	} else {
 		previous_frame = c->data.gif.gif->decoded_frame + 1;
 
-	for (frame = previous_frame; frame <= c->data.gif.current_frame; frame++) {
+        }
+	for (frame = previous_frame; frame <= current_frame; frame++) {
 		gif_decode_frame(c->data.gif.gif, frame);
 	}
 
@@ -116,7 +136,7 @@ void nsgif_redraw(struct content *c, long x, long y,
 			(char *)c->data.gif.gif->frame_image,
 			x, (int)(y - height),
 			width, height,
-			(option_filter_sprites?(1<<1):0) | (option_dither_sprites?(1<<2):0));
+			tinct_options);
 
 }
 
@@ -145,18 +165,13 @@ void nsgif_animate(void *p)
 	/* at the moment just advance by one frame */
 	c->data.gif.current_frame++;
 	if (c->data.gif.current_frame == c->data.gif.gif->frame_count) {
-/*		if (!c->data.gif.loop_gif) {
-			c->data.gif.current_frame--;
-			c->data.gif.animate_gif = false;
-			return;
-		} else
-*/			c->data.gif.current_frame = 0;
+		c->data.gif.current_frame = 0;
 	}
 
 	schedule(c->data.gif.gif->frames[c->data.gif.current_frame].frame_delay,
 			nsgif_animate, c);
 
-	/* area within gif to redraw (currently whole gif) */
+	/* area within gif to redraw */
 	data.redraw.x = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_x;
 	data.redraw.y = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_y;
 	data.redraw.width = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_width;
