@@ -54,7 +54,7 @@ static struct box * layout_line(struct box *first, int width, int *y,
 		int cx, int cy, struct box *cont, bool indent);
 static int layout_text_indent(struct css_style *style, int width);
 static void layout_float(struct box *b, int width);
-static void place_float_below(struct box *c, int width, int y,
+static void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont);
 static void layout_table(struct box *box, int available_width);
 static void calculate_widths(struct box *box);
@@ -590,6 +590,7 @@ int line_height(struct css_style *style)
  * \param  first   box at start of line
  * \param  width   available width
  * \param  y       coordinate of top of line, updated on exit to bottom
+ * \param  cx      coordinate of left of line relative to cont
  * \param  cy      coordinate of top of line relative to cont
  * \param  cont    ancestor box which defines horizontal space, for floats
  * \param  indent  apply any first-line indent
@@ -750,11 +751,11 @@ struct box * layout_line(struct box *first, int width, int *y,
 			if (b->width < (x1 - x0) - x || (left == 0 && right == 0 && x == 0)) {
 				/* fits next to this line, or this line is empty with no floats */
 				if (b->type == BOX_FLOAT_LEFT) {
-					b->x = x0;
+					b->x = cx + x0;
 					x0 += b->width;
 					left = b;
 				} else {
-					b->x = x1 - b->width;
+					b->x = cx + x1 - b->width;
 					x1 -= b->width;
 					right = b;
 				}
@@ -763,7 +764,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 /* 						b->x, b->y, x0, x1); */
 			} else {
 				/* doesn't fit: place below */
-				place_float_below(b, width, cy + height + 1, cont);
+				place_float_below(b, width, cx, cy + height + 1, cont);
 /* 				fprintf(stderr, "layout_line:     float doesn't fit %li %li\n", b->x, b->y); */
 			}
 			assert(cont->float_children != b);
@@ -946,11 +947,12 @@ void layout_float(struct box *b, int width)
  *
  * \param  c      float box to position
  * \param  width  available width
+ * \param  cx     x coordinate relative to cont to place float right of
  * \param  y      y coordinate relative to cont to place float below
  * \param  cont   ancestor box which defines horizontal space, for floats
  */
 
-void place_float_below(struct box *c, int width, int y,
+void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont)
 {
 	int x0, x1, yy = y;
@@ -958,8 +960,8 @@ void place_float_below(struct box *c, int width, int y,
 	struct box * right;
 	do {
 		y = yy;
-		x0 = 0;
-		x1 = width;
+		x0 = cx;
+		x1 = cx + width;
 		find_sides(cont->float_children, y, y, &x0, &x1, &left, &right);
 		if (left != 0 && right != 0) {
 			yy = (left->y + left->height < right->y + right->height ?
