@@ -13,6 +13,7 @@
 #include "libpng/png.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
+#include "netsurf/desktop/plotters.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/image/png.h"
 #include "netsurf/utils/log.h"
@@ -242,5 +243,14 @@ void nspng_destroy(struct content *c)
 	free(c->title);
 	if (c->bitmap)
 		bitmap_destroy(c->bitmap);
+}
+
+bool nspng_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		float scale, unsigned long background_colour)
+{
+	return plot.bitmap(x, y, width, height,
+			c->bitmap, background_colour);
 }
 #endif
