@@ -35,6 +35,8 @@
 #ifndef _NETSURF_DESKTOP_FETCH_H_
 #define _NETSURF_DESKTOP_FETCH_H_
 
+#include <stdbool.h>
+
 typedef enum {FETCH_TYPE, FETCH_DATA, FETCH_FINISHED, FETCH_ERROR, FETCH_REDIRECT} fetch_msg;
 
 struct content;
@@ -42,7 +44,8 @@ struct fetch;
 
 void fetch_init(void);
 struct fetch * fetch_start(char *url, char *referer,
-                 void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size), void *p);
+                 void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size),
+		 void *p, bool only_2xx);
 void fetch_abort(struct fetch *f);
 void fetch_poll(void);
 void fetch_quit(void);

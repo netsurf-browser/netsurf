@@ -18,27 +18,30 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
 #include <string.h>
 #include <strings.h>
 #include <time.h>
 #include "curl/curl.h"
 #include "libxml/uri.h"
 #include "netsurf/content/fetch.h"
-#include "netsurf/utils/utils.h"
-#include "netsurf/utils/log.h"
-#include "netsurf/desktop/options.h"
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
 #endif
+#include "netsurf/desktop/options.h"
+#include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
+#include "netsurf/utils/utils.h"
 
 struct fetch
 {
 	time_t start_time;
 	CURL * curl_handle;
 	void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size);
-	int had_headers : 1;
-	int in_callback : 1;
-	int aborting : 1;
+	bool had_headers;
+	bool in_callback;
+	bool aborting;
+	bool only_2xx;
 	char *url;
 	char *referer;
 	char error_buffer[CURL_ERROR_SIZE];
@@ -60,7 +63,7 @@ static struct fetch *fetch_list = 0;
 
 static size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f);
 static size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f);
-static int fetch_process_headers(struct fetch *f);
+static bool fetch_process_headers(struct fetch *f);
 
 #ifdef riscos
 extern const char * const NETSURF_DIR;
@@ -115,7 +118,8 @@ void fetch_quit(void)
  */
 
 struct fetch * fetch_start(char *url, char *referer,
-                 void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size), void *p)
+                 void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size),
+		 void *p, bool only_2xx)
 {
 	struct fetch *fetch = xcalloc(1, sizeof(*fetch)), *host_fetch;
 	CURLcode code;
@@ -133,9 +137,10 @@ struct fetch * fetch_start(char *url, char *referer,
 	/* construct a new fetch structure */
 	fetch->start_time = time(0);
 	fetch->callback = callback;
-	fetch->had_headers = 0;
-	fetch->in_callback = 0;
-	fetch->aborting = 0;
+	fetch->had_headers = false;
+	fetch->in_callback = false;
+	fetch->aborting = false;
+	fetch->only_2xx = only_2xx;
 	fetch->url = xstrdup(url);
 	fetch->referer = 0;
 	if (referer != 0)
@@ -223,10 +228,10 @@ struct fetch * fetch_start(char *url, char *referer,
 	/* use proxy if options dictate this */
 	if (OPTIONS.http)
 	{
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXY, OPTIONS.http_proxy);
-	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXYPORT, (long)OPTIONS.http_port);
-	assert(code == CURLE_OK);
+		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXY, OPTIONS.http_proxy);
+		assert(code == CURLE_OK);
+		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXYPORT, (long)OPTIONS.http_port);
+		assert(code == CURLE_OK);
 	}
 
 
@@ -251,7 +256,7 @@ void fetch_abort(struct fetch *f)
 
 	if (f->in_callback) {
 		LOG(("in callback: will abort later"));
-		f->aborting = 1;
+		f->aborting = true;
 		return;
 	}
 
@@ -325,7 +330,8 @@ void fetch_poll(void)
 {
 	CURLcode code;
 	CURLMcode codem;
-	int running, queue, finished;
+	int running, queue;
+	bool finished;
 	CURLMsg * curl_msg;
 	struct fetch *f;
 	void *p;
@@ -349,7 +355,7 @@ void fetch_poll(void)
 				LOG(("CURLMSG_DONE, result %i", curl_msg->data.result));
 
 				/* inform the caller that the fetch is done */
-				finished = 0;
+				finished = false;
 				callback = f->callback;
 				p = f->p;
 				if (curl_msg->data.result == CURLE_OK) {
@@ -357,7 +363,7 @@ void fetch_poll(void)
 					if (!f->had_headers && fetch_process_headers(f))
 						; /* redirect with no body or similar */
 					else
-						finished = 1;
+						finished = true;
 				} else if (curl_msg->data.result != CURLE_WRITE_ERROR) {
 					/* CURLE_WRITE_ERROR occurs when fetch_curl_data
 					 * returns 0, which we use to abort intentionally */
@@ -387,18 +393,20 @@ void fetch_poll(void)
 
 size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 {
-	f->in_callback = 1;
+	f->in_callback = true;
 
 	LOG(("fetch %p, size %u", f, size * nmemb));
 
-	if (!f->had_headers && fetch_process_headers(f))
+	if (!f->had_headers && fetch_process_headers(f)) {
+		f->in_callback = false;
 		return 0;
+	}
 
 	/* send data to the caller */
 	LOG(("FETCH_DATA"));
 	f->callback(FETCH_DATA, f->p, data, size * nmemb);
 
-	f->in_callback = 0;
+	f->in_callback = false;
 	return size * nmemb;
 }
 
@@ -435,28 +443,37 @@ size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f
 
 /**
  * Find the status code and content type and inform the caller.
+ *
+ * Return true if the fetch is being aborted.
  */
 
-int fetch_process_headers(struct fetch *f)
+bool fetch_process_headers(struct fetch *f)
 {
 	long http_code;
 	const char *type;
 	CURLcode code;
 
-	f->had_headers = 1;
+	f->had_headers = true;
 
 	code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE, &http_code);
 	assert(code == CURLE_OK); 
 	LOG(("HTTP status code %li", http_code));
 
+	/* handle HTTP redirects (3xx response codes) */
 	if (300 <= http_code && http_code < 400 && f->location != 0) {
-		/* redirect */
 		LOG(("FETCH_REDIRECT, '%s'", f->location));
 		f->callback(FETCH_REDIRECT, f->p, f->location, 0);
-		f->in_callback = 0;
-		return 1;
+		return true;
 	}
 
+	/* handle HTTP errors (non 2xx response codes) */
+	if (f->only_2xx && strncmp(f->url, "http", 4) == 0 &&
+			(http_code < 200 || 299 < http_code)) {
+		f->callback(FETCH_ERROR, f->p, messages_get("Not2xx"), 0);
+		return true;
+	}
+
+	/* find MIME type from headers or filetype for local files */
 	code = curl_easy_getinfo(f->curl_handle, CURLINFO_CONTENT_TYPE, &type);
 	assert(code == CURLE_OK);
 
@@ -472,12 +489,10 @@ int fetch_process_headers(struct fetch *f)
 
 	LOG(("FETCH_TYPE, '%s'", type));
 	f->callback(FETCH_TYPE, f->p, type, f->content_length);
-	if (f->aborting) {
-		f->in_callback = 0;
-		return 1;
-	}
+	if (f->aborting)
+		return true;
 
-	return 0;
+	return false;
 }
 
 

@@ -25,3 +25,6 @@ Reload:Reload this page
 # Download window
 Downloaded:Download complete, %lu bytes
 
+
+Not2xx:Server returned an error
+

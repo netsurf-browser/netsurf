@@ -5,6 +5,7 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
+#include <stdbool.h>
 #include <string.h>
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/cache.h"
@@ -41,7 +42,7 @@ int main(int argc, char *argv[])
 	while (1) {
 		puts("=== URL:");
 		gets(url);
-		c = fetchcache(url, 0, callback, 0, 0, 100, 1000);
+		c = fetchcache(url, 0, callback, 0, 0, 100, 1000, false);
 		if (c) {
 			done = c->status == CONTENT_STATUS_DONE;
 			while (!done)

@@ -13,6 +13,7 @@
 struct content * fetchcache(const char *url, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
-		void *p1, void *p2, unsigned long width, unsigned long height);
+		void *p1, void *p2, unsigned long width, unsigned long height,
+		bool only_2xx);
 
 #endif
