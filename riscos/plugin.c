@@ -530,7 +530,8 @@ void plugin_destroy(struct content *c)
  * Redraw plugin on page.
  */
 void plugin_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height)
+		unsigned long width, unsigned long height,
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
 {
         struct plugin_list *npl;
 

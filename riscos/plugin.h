@@ -77,7 +77,8 @@ void plugin_revive(struct content *c, unsigned int width, unsigned int height);
 void plugin_reformat(struct content *c, unsigned int width, unsigned int height);
 void plugin_destroy(struct content *c);
 void plugin_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height);
+		unsigned long width, unsigned long height,
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1);
 void plugin_add_instance(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params, void **state);
