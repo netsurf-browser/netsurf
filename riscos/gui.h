@@ -61,7 +61,6 @@ struct gui_window
   enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION } drag_status;
 };
 
-
 /* in gui.c */
 void ro_gui_copy_selection(gui_window* g);
 void ro_gui_open_help_page(void);
@@ -81,6 +80,9 @@ void ro_gui_theme_menu_selection(char *theme);
 
 /* in download.c */
 void ro_gui_download_init(void);
+
+/* in mouseactions.c */
+void ro_gui_mouse_action(gui_window* g);
 
 /* icon numbers */
 #define ICON_CONFIG_SAVE 0

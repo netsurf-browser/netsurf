@@ -45,14 +45,6 @@ const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro";
 const char* HELP_URL = "file:///%3CNetSurf$Dir%3E/Docs/en/index";
 
 struct ro_gui_drag_info;
-typedef enum {
-	mouseaction_NONE,
-	mouseaction_BACK, mouseaction_FORWARD,
-	mouseaction_RELOAD, mouseaction_PARENT,
-	mouseaction_NEWWINDOW_OR_LINKFG, mouseaction_DUPLICATE_OR_LINKBG,
-	mouseaction_TOGGLESIZE, mouseaction_ICONISE, mouseaction_CLOSE
-     } mouseaction;
-
 
 int ro_x_units(unsigned long browser_units);
 int ro_y_units(unsigned long browser_units);
@@ -79,9 +71,6 @@ static void ro_gui_drag_box(wimp_drag* drag, struct ro_gui_drag_info* drag_info)
 static void ro_gui_drag_end(wimp_dragged* drag);
 static void ro_gui_window_mouse_at(wimp_pointer* pointer);
 static void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer);
-static double calculate_angle(double x, double y);
-static int anglesDifferent(double a, double b);
-static mouseaction ro_gui_try_mouse_action(void);
 static void ro_gui_poll_queue(wimp_event_no event, wimp_block* block);
 static void ro_gui_keypress(wimp_key* key);
 static void ro_msg_datasave(wimp_message* block);
@@ -834,204 +823,6 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
 }
 
 
-
-double calculate_angle(double x, double y)
-{
-	double a;
-	if (x == 0.0)
-	{
-		if (y < 0.0)
-			a = 0.0;
-		else
-			a = M_PI;
-	}
-	else
-	{
-		a = atan(y / x);
-		if (x > 0.0)
-			a += M_PI_2;
-		else
-			a -= M_PI_2;
-	}
-
-	return a;
-}
-
-int anglesDifferent(double a, double b)
-{
-	double c;
-	if (a < 0.0)
-		a += M_2_PI;
-	if (b < 0.0)
-		b += M_2_PI;
-	if (a > M_2_PI)
-		a -= M_2_PI;
-	if (b > M_2_PI)
-		b -= M_2_PI;
-	c = a - b;
-	if (c < 0.0)
-		c += M_2_PI;
-	if (c > M_2_PI)
-		c -= M_2_PI;
-	return (c > M_PI / 6.0);
-}
-
-#define STOPPED 2
-#define THRESHOLD 16
-#define DAMPING 1
-
-mouseaction ro_gui_try_mouse_action(void)
-{
-	os_coord start, current, last, offset, moved;
-	double offsetDistance, movedDistance;
-	double angle, oldAngle;
-	bits z;
-	os_coord now;
-	int status;
-	int m;
-	enum {move_NONE, move_LEFT, move_RIGHT, move_UP, move_DOWN} moves[5];
-
-	moves[0] = move_NONE;
-	m = 1;
-
-	os_mouse(&start.x, &start.y, &z, &now);
-	status = 0;
-
-	do
-	{
-		os_mouse(&current.x, &current.y, &z, &now);
-		offset.x = current.x - start.x;
-		offset.y = current.y - start.y;
-		moved.x = current.x - last.x;
-		moved.y = current.y - last.y;
-		offsetDistance = sqrt(offset.x * offset.x + offset.y * offset.y);
-		if (moved.x > 0 || moved.y > 0)
-		movedDistance = sqrt(moved.x * moved.x + moved.y * moved.y);
-		else
-			movedDistance = 0.0;
-		angle = calculate_angle(offset.x, offset.y);
-
-		switch (status)
-		{
-			case 1:
-				if (movedDistance < STOPPED ||
-				    (movedDistance > STOPPED*2.0 && anglesDifferent(angle, oldAngle)))
-				{
-					start.x = current.x;
-					start.y = current.y;
-					status = 0;
-				}
-				break;
-			case 0:
-				if (offsetDistance > THRESHOLD)
-				{
-					if (fabs(offset.x) > fabs(offset.y))
-					{
-						if (fabs(offset.y) < fabs(offset.x) * DAMPING && fabs(offset.x) > THRESHOLD*0.75)
-						{
-							if (offset.x < 0)
-								moves[m] = move_LEFT;
-							else
-								moves[m] = move_RIGHT;
-							if (moves[m] != moves[m-1])
-								m++;
-							start.x = current.x;
-							start.y = current.y;
-							oldAngle = angle;
-							status = 1;
-						}
-					}
-					else if (fabs(offset.y) > fabs(offset.x))
-					{
-						if (fabs(offset.x) < fabs(offset.y) * DAMPING && fabs(offset.y) > THRESHOLD*0.75)
-						{
-							if (offset.y < 0)
-								moves[m] = move_DOWN;
-							else
-								moves[m] = move_UP;
-							if (moves[m] != moves[m-1])
-								m++;
-							start.x = current.x;
-							start.y = current.y;
-							oldAngle = angle;
-							status = 1;
-						}
-					}
-				}
-				break;
-		}
-		last.x = current.x;
-		last.y = current.y;
-		LOG(("m = %d", m));
-
-	} while ((z & 2) != 0 && m < 4);
-
-	LOG(("MOUSEACTIONS: %d %d %d %d\n",moves[0], moves[1], moves[2], moves[3]));
-	if (m == 2)
-	{
-		switch (moves[1])
-		{
-			case move_LEFT:
-				LOG(("mouse action: go back"));
-				return mouseaction_BACK;
-			case move_RIGHT:
-				LOG(("MOUSE ACTION: GO FORWARD"));
-				return mouseaction_FORWARD;
-			case move_DOWN:
-				LOG(("mouse action: create new window // open link in new window, foreground"));
-				return mouseaction_NEWWINDOW_OR_LINKFG;
-		}
-	}
-
-	if (m == 3)
-	{
-		switch (moves[1])
-		{
-			case move_UP:
-				switch (moves[2])
-				{
-					case move_DOWN:
-						LOG(("mouse action: reload"));
-						return mouseaction_RELOAD;
-					case move_RIGHT:
-						LOG(("mouse action: toggle size"));
-						return mouseaction_TOGGLESIZE;
-					case move_LEFT:
-						LOG(("mouse action: parent directroy"));
-						return mouseaction_PARENT;
-				}
-				break;
-
-			case move_DOWN:
-				switch (moves[2])
-				{
-					case move_LEFT:
-						LOG(("mouse action: iconise"));
-						return mouseaction_ICONISE;
-					case move_UP:
-						LOG(("mouse action: duplicate // open link in new window, background"));
-						return mouseaction_DUPLICATE_OR_LINKBG;
-					case move_RIGHT:
-						LOG(("mouse action: close"));
-						return mouseaction_CLOSE;
-				}
-				break;
-		}
-	}
-
-	if (m == 4)
-	{
-		if (moves[1] == move_RIGHT && moves[2] == move_LEFT &&
-		    moves[3] == move_RIGHT)
-		{
-			LOG(("mouse action: close window"));
-			return mouseaction_CLOSE;
-		}
-	}
-
-	return mouseaction_NONE;
-}
-
 void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
 {
   struct browser_action msg;
@@ -1055,36 +846,7 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
     if (pointer->buttons == wimp_CLICK_MENU)
     {
       /* check for mouse gestures */
-	    mouseaction ma = mouseaction_NONE;
-	    if (OPTIONS.use_mouse_gestures)
-		    ma = ro_gui_try_mouse_action();
-
-      if (ma == mouseaction_NONE)
-      {
-	      os_t now;
-	      int z;
-
-	      os_mouse(&x, &y, &z, &now);
-	      ro_gui_create_menu(browser_menu, x - 64, y, g);
-      }
-      else
-      {
-	      fprintf(stderr, "MOUSE GESTURE %d\n", ma);
-	      switch (ma)
-	      {
-		      case mouseaction_BACK:
-    			browser_window_back(g->data.browser.bw);
-			break;
-
-		      case mouseaction_FORWARD:
-    			browser_window_forward(g->data.browser.bw);
-			break;
-
-			case mouseaction_RELOAD:
-    			browser_window_open_location_historical(g->data.browser.bw, g->data.browser.bw->url);
-			break;
-		}
-      }
+      ro_gui_mouse_action(g);
     }
     else if (g->data.browser.bw->current_content != NULL)
     {
