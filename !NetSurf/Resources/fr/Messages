@@ -3,6 +3,8 @@
 # Menus
 NetSurf:NetSurf
 Info:Info
+Open:Open
+OpenURL:Ouvrir l'URL...
 AppHelp:Aide...
 Choices:Préférences...
 Quit:Quitter
@@ -31,7 +33,6 @@ Copy:Copier vers le presse-papier
 SelectAll:Tout sélectionner
 Clear:Effacer la sélection
 Navigate:Navigation
-OpenURL:Ouvrir l'URL...
 Home:Page d'accueil
 Back:Retour
 Forward:Avancer
@@ -89,12 +90,12 @@ ImgStyle2:Tramé
 ImgStyle3:Avec diffusion d'erreur
 
 # Toolbar menus
-URLSuggest:Recent URLs
+URLSuggest:URLs récentes
 Toolbar:Barre d'outils
-EditToolbar:Edit toolbar
+EditToolbar:Barre de configuration
 
 # Font menu
-Fonts:Fonts
+Fonts:Fontes
 
 # Hotlist menus
 Hotlist:Favoris
@@ -232,6 +233,7 @@ ParsingFail:L'analyse syntaxique du document a échoué.
 BadGIF:Erreur de lecture de GIF.
 PNGError:Erreur dans la bibliothèque PNG.
 MNGError:Erreur dans la bibliothèque MNG.
+BadSprite:Invalid or corrupt Sprite data.
 
 DrawTitle:Image Draw (%lux%lu, %lu octets)
 GIFTitle:Image GIF (%lux%lu, %lu octets)
@@ -269,6 +271,8 @@ ThemeInstActive:Un thème est en cours de téléchargement ou d'installation. Veuil
 ThemeInstDown:Veuillez attendre le téléchargement du thème.
 ThemeInvalid:Le thème téléchargé est invalide ou nécessite une version plus récente de NetSurf.
 ThemeInstall:Voulez-vous installer le thème '%s' par %s?
+ThemeInstallErr:An error occurred whilst trying to install the downloaded theme.
+ThemeApplyErr:An error occurred whilst trying to apply the downloaded theme.
 
 # Interactive help
 HelpToolbar0:\Tle bouton de retour.|M\Srevenir d'une page en arrière dans l'historique.|MNe renvoie pas l'information de formulaire.
@@ -284,7 +288,7 @@ HelpToolbar9:\Tle bouton de changement d'échelle.|M\Sredimensionner la page, tex
 HelpToolbar10:\Tle bouton de recherche.|M\Sfind instances of a string of text on the page.
 HelpToolbar11:\Tla barre d'URL.|MTapez l'adresse d'un site à visiter et appuyez sur Return pour y aller.
 HelpToolbar12:\Tle pulseur.|MIl s'anime lorsque cette \w est active.
-HelpToolbar13:\TURL suggestion icon.|M\Sopen a list of recently typed URLs.
+HelpToolbar13:\Tl'icône de suggestion d'URL.|M\Souvrir une liste d'URLs tapées récemment.
 
 HelpStatus0:\Tla glissière de la barre d'état.|MDéplacez-la pour changer la taille de la barre d'état.
 HelpStatus1:\Tla barre d'état.|MElle affiche des informations sur ce que fait la \w de navigateur.
@@ -345,9 +349,9 @@ HelpBrowserMenu4-0:\Rgérer les favoris.
 HelpBrowserMenu4-0-0:\Sajouter la page en cours aux favoris.
 HelpBrowserMenu4-0-1:\Souvrir la \w de gestion des favoris.
 HelpBrowserMenu4-1:\Rview the history options.
-HelpBrowserMenu4-1-0:\Sopen the local history \w.
-HelpBrowserMenu4-1-1:\Sopen the global history \w.
-HelpBrowserMenu4-2:\Rsearch for instances of a string of text on the page.
+HelpBrowserMenu4-1-0:\Souvrir la \w d'historique local.
+HelpBrowserMenu4-1-1:\Souvrir la fenêtre d'historique global.
+HelpBrowserMenu4-2:\Rchercher un fragment de texte sur la page.
 HelpBrowserMenu4-3:\Rcontroler le positionnement de fenêtre par défaut.
 HelpBrowserMenu4-3-0:\Spromouvoir la position de fenêtre courante en celle par défault.
 HelpBrowserMenu4-3-1:\Sdécider si les fenêtres suivantes doivent être ouvertes en décalage à l'écran.
@@ -422,11 +426,11 @@ HelpHotlistMenu1-3:\Sremettre à zéro les statistiques, comme le compteur de visi
 HelpHotlistMenu2:\Ssélectionner tous les items de la liste des favoris.
 HelpHotlistMenu3:\Sdésélectionner la sélection courante.
 
-HelpGHistory:\Tglobal history window.
+HelpGHistory:\Tla fenêtre d'historique global.
 
-HelpGHistoryToolbar0:\Tdelete button.|M\Sdelete the current selection.
-HelpGHistoryToolbar1:\Texpand entries button.|M\Sexpand all addresses in the hotlist.|M\Acollapse all addresses in the hotlist.|MExpanded addresses show additional details, such as a visit counter.
-HelpGHistoryToolbar2:\Topen directories button.|M\Sopen all directories in the hotlist.|M\Aclose all directories in the hotlist.
-HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
+HelpGHistoryToolbar0:\Tle bouton de suppression.|M\Ssupprimer la sélection en cours.
+HelpGHistoryToolbar1:\Tle bouton de déploiement des entrées.|M\Sdéployer toutes les adresses des favoris.|M\Aregrouper toutes les adresses des favoris.|MLes adresses déployées apportent des détails supplémentaires, comme un compteur de visites.
+HelpGHistoryToolbar2:\Tle bouton d'ouverture de répertoires.|M\Souvrir tous les répertoires des favoris.|M\Afermer tous les répertoires des favoris.
+HelpGHistoryToolbar3:\Tle bouton de lancement.|M\Slancer la sélection en cours.
 
 HelpAppInfo:\Tla \w d'information de NetSurf.|MVoir la page "À propos de" pour une liste des contributeurs et les remerciements.

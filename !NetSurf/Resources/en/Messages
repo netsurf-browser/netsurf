@@ -3,6 +3,8 @@
 # Menus
 NetSurf:NetSurf
 Info:Info
+Open:Open
+OpenURL:Open URL
 AppHelp:Help...  F1
 Choices:Choices...
 Quit:Quit
@@ -31,11 +33,10 @@ Copy:Copy to clipboard  ^C
 SelectAll:Select all  ^A
 Clear:Clear selection  ^Z
 Navigate:Navigate
-OpenURL:Open URL...
 Home:Home page
 Back:Back one page
 Forward:Forward one page
-Reload:Reload this page  ^R
+Reload:Reload this page  ^F5
 Stop:Stop loading this page
 View:Display
 ScaleView:Scale view  F11
@@ -232,6 +233,7 @@ ParsingFail:Parsing the document failed.
 BadGIF:Reading GIF failed.
 PNGError:PNG library error.
 MNGError:MNG library error.
+BadSprite:Invalid or corrupt Sprite data.
 
 DrawTitle:Draw image (%lux%lu, %lu bytes)
 GIFTitle:GIF image (%lux%lu, %lu bytes)
@@ -269,6 +271,8 @@ ThemeInstActive:A theme is currently being downloaded or installed. Please wait 
 ThemeInstDown:Please wait for the theme to download.
 ThemeInvalid:The downloaded theme is invalid or requires a newer version of NetSurf.
 ThemeInstall:Would you like to install the theme '%s' by %s?
+ThemeInstallErr:An error occurred whilst trying to install the downloaded theme.
+ThemeApplyErr:An error occurred whilst trying to apply the downloaded theme.
 
 # Interactive help
 HelpToolbar0:\Tback button.|M\Straverse back one page in the history tree.|MDoes not resubmit form information.
