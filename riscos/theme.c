@@ -58,7 +58,7 @@ static struct toolbar_icon *ro_gui_theme_toolbar_get_insert_icon(struct toolbar 
 /*	A basic window for the toolbar and status
 */
 static wimp_window theme_toolbar_window = {
-	{0, 0, 16384, 16384},
+	{0, 0, 1, 1},
 	0,
 	0,
 	wimp_TOP,
@@ -72,7 +72,7 @@ static wimp_window theme_toolbar_window = {
 	wimp_COLOUR_MID_LIGHT_GREY,
 	wimp_COLOUR_CREAM,
 	wimp_WINDOW_NEVER3D | 0x16u /* RISC OS 5.03+ - greyed icons detected for interactive help */,
-	{0, 0, 16384, 16384},
+	{0, 0, 1, 1},
 	0,
 	0,
 	wimpspriteop_AREA,

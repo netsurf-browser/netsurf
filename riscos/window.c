@@ -883,6 +883,9 @@ void ro_gui_window_update_theme(void) {
 	for (g = window_list; g; g = g->next) {
 		if (g->toolbar) {
 			height = ro_gui_theme_toolbar_height(g->toolbar);
+			if (g->toolbar->editor)
+				if (!ro_gui_theme_update_toolbar(NULL, g->toolbar->editor))
+					g->toolbar->editor = NULL;
 			if (!ro_gui_theme_update_toolbar(NULL, g->toolbar)) {
 				ro_gui_theme_destroy_toolbar(g->toolbar);
 				g->toolbar = NULL;
@@ -893,23 +896,33 @@ void ro_gui_window_update_theme(void) {
 					ro_gui_window_update_dimensions(g, height -
 						ro_gui_theme_toolbar_height(g->toolbar));
 			}
+			ro_gui_theme_toolbar_editor_sync(g->toolbar);
 		}
 	}
 	if ((hotlist_tree) && (hotlist_tree->toolbar)) {
+		if (hotlist_tree->toolbar->editor)
+			if (!ro_gui_theme_update_toolbar(NULL, hotlist_tree->toolbar->editor))
+				hotlist_tree->toolbar->editor = NULL;
 		if (!ro_gui_theme_update_toolbar(NULL, hotlist_tree->toolbar)) {
 			ro_gui_theme_destroy_toolbar(hotlist_tree->toolbar);
 			hotlist_tree->toolbar = NULL;
 		}
+		ro_gui_theme_toolbar_editor_sync(hotlist_tree->toolbar);
 		ro_gui_theme_attach_toolbar(hotlist_tree->toolbar,
 				(wimp_w)hotlist_tree->handle);
 		xwimp_force_redraw((wimp_w)hotlist_tree->handle,
 				0, -16384, 16384, 16384);
 	}
 	if ((global_history_tree) && (global_history_tree->toolbar)) {
+		if (global_history_tree->toolbar->editor)
+			if (!ro_gui_theme_update_toolbar(NULL,
+					global_history_tree->toolbar->editor))
+				global_history_tree->toolbar->editor = NULL;
 		if (!ro_gui_theme_update_toolbar(NULL, global_history_tree->toolbar)) {
 			ro_gui_theme_destroy_toolbar(global_history_tree->toolbar);
 			global_history_tree->toolbar = NULL;
 		}
+		ro_gui_theme_toolbar_editor_sync(global_history_tree->toolbar);
 		ro_gui_theme_attach_toolbar(global_history_tree->toolbar,
 				(wimp_w)global_history_tree->handle);
 		xwimp_force_redraw((wimp_w)global_history_tree->handle,
