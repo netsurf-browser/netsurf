@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <swis.h>
+#include "libxml/parserInternals.h"
 #include "oslib/colourtrans.h"
 #include "oslib/dragasprite.h"
 #include "oslib/osfile.h"
@@ -42,8 +43,6 @@
 #define HOTLIST_ICON_WIDTH 36
 #define HOTLIST_LINE_HEIGHT 44
 #define HOTLIST_TEXT_PADDING 16
-
-#define HOTLIST_LOAD_BUFFER 1024
 
 struct hotlist_entry {
 
@@ -200,14 +199,16 @@ bool dialog_folder_add = false;
 bool dialog_entry_add = false;
 bool hotlist_insert = false;
 
-/*	Hotlist loading buffer
+/*	Hotlist loading buffers
 */
-char *load_buf;
+static char *load_title = NULL;
+static char *load_url = NULL;
+
 
 static bool ro_gui_hotlist_initialise_sprite(const char *name, int number);
 static bool ro_gui_hotlist_load(void);
+static void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry);
 static bool ro_gui_hotlist_save_entry(FILE *fp, struct hotlist_entry *entry);
-static bool ro_gui_hotlist_load_entry(FILE *fp, struct hotlist_entry *entry);
 static void ro_gui_hotlist_link_entry(struct hotlist_entry *link, struct hotlist_entry *entry, bool before);
 static void ro_gui_hotlist_delink_entry(struct hotlist_entry *entry);
 static void ro_gui_hotlist_delete_entry(struct hotlist_entry *entry, bool siblings);
@@ -400,67 +401,34 @@ void ro_gui_hotlist_show(void) {
 
 
 bool ro_gui_hotlist_load(void) {
-	FILE *fp;
+  	htmlDocPtr doc;
 	fileswitch_object_type obj_type = 0;
 	struct hotlist_entry *netsurf;
-	struct hotlist_entry *entry;
-	bool success = true;
-	bool found = false;
+	struct hotlist_entry *entry = &root;
 
 	/*	Check if we have an initial hotlist. OS_File does funny things relating to errors,
 		so we use the object type to determine success
 	*/
 	xosfile_read_stamped_no_path("<Choices$Write>.WWW.NetSurf.Hotlist", &obj_type,
-			(bits)0, (bits)0, 0, (fileswitch_attr)0, (bits)0);
-	if (obj_type != 0) {
-		/*	Open our file
+			(bits)0, (bits)0, (int *)0, (fileswitch_attr)0, (bits)0);
+	if (obj_type != 0) {		
+		/*	Read our file
 		*/
-		fp = fopen("<Choices$Write>.WWW.NetSurf.Hotlist", "r");
-		if (!fp) {
+		doc = htmlParseFile("<Choices$Write>.WWW.NetSurf.Hotlist", "UTF-8");
+		if ((!doc) || (!(doc->children))) {
+			xmlFreeDoc(doc);
 			warn_user("HotlistLoadError", 0);
 			return false;
 		}
 
-		/*	Get some memory to work with
+		/*	Perform our recursive load
 		*/
-		load_buf = malloc(HOTLIST_LOAD_BUFFER);
-		if (!load_buf) {
-			warn_user("HotlistLoadError", 0);
-			fclose(fp);
-			return false;
-		}
-
-		/*	Check for the opening <HTML> to vaguely validate our file
+		ro_gui_hotlist_load_entry(doc->children, &root);
+		
+		/*	Exit cleanly
 		*/
-		if ((fgets(load_buf, HOTLIST_LOAD_BUFFER, fp) == NULL) ||
-			(strncmp("<html>", load_buf, 6) != 0)) {
-			warn_user("HotlistLoadError", 0);
-			free(load_buf);
-			fclose(fp);
-			return false;
-		}
-
-		/*	Keep reading until we get to a <ul>
-		*/
-		while (!found && (fgets(load_buf, HOTLIST_LOAD_BUFFER, fp))) {
-			if (strncmp("<ul>", load_buf, 4) == 0) found = true;
-		}
-
-		/*	Start our recursive load
-		*/
-		if (found) success = ro_gui_hotlist_load_entry(fp, &root);
-
-		/*	Tell the user if we had any problems
-		*/
-		if (!success) {
-			warn_user("HotlistLoadError", 0);
-		}
-
-		/*	Close our file and return
-		*/
-		free(load_buf);
-		fclose(fp);
-		return success;
+		xmlFreeDoc(doc);
+		return true;
 	} else {
 		/*	Create a folder
 		*/
@@ -482,11 +450,94 @@ bool ro_gui_hotlist_load(void) {
 }
 
 
+void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry) {
+  	struct hotlist_entry *last_entry = entry;
+  	char *xml_comment = NULL;
+  	char *comment = comment;
+  	int filetype = 0xfaf;
+	int add_date = -1;
+	int last_date = -1;
+	int visits = 0;
+	
+	while (cur) {
+	  	/*	Add any items that have had all the data they can have
+	  	*/
+	  	if ((load_title != NULL) && ((cur->next == NULL) || ((cur->type == XML_ELEMENT_NODE) &&
+		  		((!(strcmp(cur->name, "li"))) || (!(strcmp(cur->name, "h4"))) ||
+		  		(!(strcmp(cur->name, "ul"))))))) {
+	  	
+			/*	Add the entry
+			*/
+			last_entry = ro_gui_hotlist_create_entry(load_title, load_url, filetype, entry);
+			last_entry->add_date = add_date;
+			if (last_entry->url) {
+				last_entry->last_date = last_date;
+				last_entry->visits = visits;
+				last_entry->filetype = filetype;
+			}
+	  		
+	  		/*	Reset our variables
+	  		*/
+	  		if (load_title) xmlFree(load_title);
+	  		load_title = NULL;
+	  		if (load_url) xmlFree(load_url);
+	  		load_url = NULL;
+	  		filetype = 0xfaf;
+			add_date = -1;
+			last_date = -1;
+			visits = 0;
+		}
+		
+	        /*	Gather further information and recurse
+	        */
+	  	if (cur->type == XML_ELEMENT_NODE) {
+			if (!(strcmp(cur->name, "h4"))) {
+				if (!load_title) load_title = xmlNodeGetContent(cur);
+			} else if (!(strcmp(cur->name, "a"))) {
+			  	load_url = (char *)xmlGetProp(cur, (const xmlChar *)"href");
+			}
+			
+			if ((cur->children) && (strcmp(cur->name, "h4"))) {
+				ro_gui_hotlist_load_entry(cur->children, last_entry);
+			}
+			
+		} else {
+		  	/*	Check for comment data
+		  	*/
+		  	if (!(strcmp(cur->name, "comment"))) {
+		  		xml_comment = xmlNodeGetContent(cur);
+		  		comment = xml_comment;
+		  		while (comment[0] == ' ') comment++; 
+				if (strncmp("Added:", comment, 6) == 0) {
+			  		add_date = atoi(comment + 6);
+				} else if (strncmp("LastVisit:", comment, 10) == 0) {
+			  		last_date = atoi(comment + 10);
+				} else if (strncmp("Visits:", comment, 7) == 0) {
+			  		visits = atoi(comment + 7);
+				} else if (strncmp("Type:", comment, 5) == 0) {
+				  	filetype = atoi(comment + 5);
+				}
+		  		xmlFree(xml_comment);
+		  	} else if (!(strcmp(cur->name, "text"))) {
+		  		if ((!(strcmp(cur->parent->name, "li"))) || (!(strcmp(cur->parent->name, "a")))) {
+		  			if (!load_title) load_title = xmlNodeGetContent(cur);
+		  			if ((load_title[0] == 13) || (load_title[0] == 10)) {
+		  				xmlFree(load_title);
+		  				load_title = NULL;
+		  			}
+		  		}
+		  	}
+		}
+		cur = cur->next;
+	}
+}
+
+
 /**
  * Perform a save to the default file
  */
 void ro_gui_hotlist_save(void) {
-
+	return;
 	/*	Don't save if we didn't load
 	*/
 	if (!hotlist_window) return;
@@ -558,9 +609,7 @@ bool ro_gui_hotlist_save_entry(FILE *fp, struct hotlist_entry *entry) {
 		} else {
 			fprintf(fp, "<li>%s\n", entry->title);
 		}
-		fprintf(fp, "<!-- Title:%s -->\n", entry->title);
 		if (entry->url) {
-			fprintf(fp, "<!-- URL:%s -->\n", entry->url);
 			fprintf(fp, "<!-- Type:%i -->\n", entry->filetype);
 		}
 		if (entry->add_date != -1) fprintf(fp, "<!-- Added:%i -->\n", (int)entry->add_date);
@@ -581,95 +630,6 @@ bool ro_gui_hotlist_save_entry(FILE *fp, struct hotlist_entry *entry) {
 	return true;
 }
 
-bool ro_gui_hotlist_load_entry(FILE *fp, struct hotlist_entry *entry) {
-  	struct hotlist_entry *last_entry = NULL;
-	char *title = NULL;
-	char *url = NULL;
-	int add_date = -1;
-	int last_date = -1;
-	int visits = 0;
-	int filetype = 0;
-	int val_length;
-
-	/*	Check we can add to something
-	*/
-	if (entry == NULL) return false;
-
-	/*	Keep reading until we get to a <ul>
-	*/
-	while (fgets(load_buf, HOTLIST_LOAD_BUFFER, fp)) {
-
-	  	/*	Check if we should commit what we have
-	  	*/
-		if ((strncmp("<li>", load_buf, 4) == 0) ||
-				(strncmp("</ul>", load_buf, 5) == 0) ||
-				(strncmp("<ul>", load_buf, 4) == 0)) {
-			if (title != NULL) {
-				/*	Add the entry
-				*/
-				last_entry = ro_gui_hotlist_create_entry(title, url, filetype, entry);
-				last_entry->add_date = add_date;
-				if (last_entry->url) {
-					last_entry->last_date = last_date;
-					last_entry->visits = visits;
-					last_entry->filetype = filetype;
-				}
-
-				/*	Reset for the next entry
-				*/
-				free(title);
-				title = NULL;
-				if (url) {
-					free(url);
-					url = NULL;
-				}
-				add_date = -1;
-				last_date = -1;
-				visits = 0;
-				filetype = 0;
-			}
-		}
-
-		/*	Check if we've reached the end of our run
-		*/
-		if (strncmp("</ul>", load_buf, 5) == 0) return true;
-
-		/*	Check for some data
-		*/
-		if (strncmp("<!-- ", load_buf, 5) == 0) {
-		  	val_length = strlen(load_buf) - 5 - 4;
-		  	load_buf[val_length + 4] = '\0';
-			if (strncmp("Title:", load_buf + 5, 6) == 0) {
-			  	if (title) free(title);
-				title = malloc(val_length);
-				if (!title) return false;
-				strcpy(title, load_buf + 5 + 6);
-			} else if (strncmp("URL:", load_buf + 5, 4) == 0) {
-			 	if (url) free(url);
-				url = malloc(val_length);
-				if (!url) return false;
-				strcpy(url, load_buf + 5 + 4);
-			} else if (strncmp("Added:", load_buf + 5, 6) == 0) {
-			  	add_date = atoi(load_buf + 5 + 6);
-			} else if (strncmp("LastVisit:", load_buf + 5, 10) == 0) {
-			  	last_date = atoi(load_buf + 5 + 10);
-			} else if (strncmp("Visits:", load_buf + 5, 7) == 0) {
-			  	visits = atoi(load_buf + 5 + 7);
-			} else if (strncmp("Type:", load_buf + 5, 5) == 0) {
-			  	filetype = atoi(load_buf + 5 + 5);
-			}
-		}
-
-		/*	Check if we are starting a child
-		*/
-		if (strncmp("<ul>", load_buf, 4) == 0) {
-			if (!ro_gui_hotlist_load_entry(fp, last_entry)) {
-				return false;
-			}
-		}
-	}
-	return true;
-}
 
 /**
  * Adds a hotlist entry to the root of the tree.
