@@ -292,7 +292,7 @@ bool html_redraw_box(struct box *box,
 				current_background_color))
 			return false;
 
-	} else if (box->text && box->font) {
+	} else if (box->text) {
 		/* antialias colour for under/overline */
 		colour = html_redraw_aa(current_background_color,
 				/*print_text_black ? 0 :*/ box->style->color);
@@ -328,7 +328,7 @@ bool html_redraw_box(struct box *box,
 		}
 
 		if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
-				box->font, box->text, box->length,
+				box->style, box->text, box->length,
 				current_background_color,
 				/*print_text_black ? 0 :*/ box->style->color))
 			return false;
@@ -641,13 +641,15 @@ bool html_redraw_file(int x, int y, int width, int height,
 		text = messages_get("Form_Drop");
 	length = strlen(text);
 
-	text_width = nsfont_width(box->font, text, length) * scale;
+	if (!nsfont_width(box->style, text, length, &text_width))
+		return false;
+	text_width *= scale;
 	if (width < text_width + 8)
 		x = x + width - text_width - 4;
 	else
 		x = x + 4;
 
-	return plot.text(x, y + height * 0.75, box->font, text, length,
+	return plot.text(x, y + height * 0.75, box->style, text, length,
 			background_colour,
 			/*print_text_black ? 0 :*/ box->style->color);
 }

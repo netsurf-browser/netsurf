@@ -722,6 +722,7 @@ bool layout_line(struct box *first, int width, int *y,
 	int x0 = 0;
 	int x1 = width;
 	int x, h, x_previous;
+	int space_width;
 	struct box *left;
 	struct box *right;
 	struct box *b;
@@ -781,11 +782,16 @@ bool layout_line(struct box *first, int width, int *y,
 
 			if (b->text) {
 				if (b->width == UNKNOWN_WIDTH)
-					b->width = nsfont_width(b->font,
-							b->text,
-							b->length);
-				x += b->width + b->space ?
-						b->font->space_width : 0;
+					/** \todo handle errors */
+					nsfont_width(b->style, b->text,
+							b->length, &b->width);
+				x += b->width;
+				if (b->space) {
+					/** \todo optimize out */
+					nsfont_width(b->style, " ", 1,
+							&space_width);
+					x += space_width;
+				}
 			} else
 				b->width = 0;
 
@@ -898,9 +904,13 @@ bool layout_line(struct box *first, int width, int *y,
 			space_before = space_after;
 			if (b->object)
 				space_after = 0;
-			else if (b->text)
-				space_after = b->space ? b->font->space_width : 0;
-			else
+			else if (b->text) {
+				space_after = 0;
+				if (b->space)
+					/** \todo handle errors, optimize */
+					nsfont_width(b->style, " ", 1,
+							&space_after);
+			} else
 				space_after = 0;
 			split_box = b;
 			move_y = true;
@@ -961,7 +971,7 @@ bool layout_line(struct box *first, int width, int *y,
 	if (x1 - x0 < x && split_box) {
 		/* the last box went over the end */
 		unsigned int i;
-		unsigned int space = 0;
+		size_t space = 0;
 		int w;
 		struct box * c2;
 
@@ -981,7 +991,9 @@ bool layout_line(struct box *first, int width, int *y,
 		if (space == 0)
 			w = split_box->width;
 		else
-			w = nsfont_width(split_box->font, split_box->text, space);
+			/** \todo handle errors */
+			nsfont_width(split_box->style, split_box->text,
+					space, &w);
 
 		LOG(("splitting: split_box %p, space %u, w %i, left %p, "
 				"right %p, inline_count %u",
@@ -1031,39 +1043,39 @@ bool layout_line(struct box *first, int width, int *y,
 		} else {
 			/* fit as many words as possible */
 			assert(space != 0);
-			space = nsfont_split(split_box->font,
-					split_box->text,
-					split_box->length,
-					x1 - x0 - x - space_before, &w)
-					- split_box->text;
+			/** \todo handle errors */
+			nsfont_split(split_box->style,
+					split_box->text, split_box->length,
+					x1 - x0 - x - space_before, &space, &w);
 			LOG(("'%.*s' %i %u %i", (int) split_box->length,
 					split_box->text, x1 - x0, space, w));
 /* 			assert(space == split_box->length || split_box->text[space] = ' '); */
 			if (space == 0)
 				space = 1;
-			/* \todo use box pool */
-			c2 = pool_alloc(box_pool, sizeof *c2);
-			if (!c2)
-				return false;
-			memcpy(c2, split_box, sizeof *c2);
-			c2->text = strndup(split_box->text + space + 1,
-					split_box->length - (space + 1));
-			if (!c2->text)
-				return false;
-			c2->length = split_box->length - (space + 1);
-			c2->width = UNKNOWN_WIDTH;
-			c2->clone = 1;
-			split_box->length = space;
-			split_box->width = w;
-			split_box->space = 1;
-			c2->next = split_box->next;
-			split_box->next = c2;
-			c2->prev = split_box;
-			if (c2->next)
-				c2->next->prev = c2;
-			else
-				c2->parent->last = c2;
-			b = c2;
+			if (space != split_box->length) {
+				c2 = pool_alloc(box_pool, sizeof *c2);
+				if (!c2)
+					return false;
+				memcpy(c2, split_box, sizeof *c2);
+				c2->text = strndup(split_box->text + space + 1,
+						split_box->length - (space + 1));
+				if (!c2->text)
+					return false;
+				c2->length = split_box->length - (space + 1);
+				c2->width = UNKNOWN_WIDTH;
+				c2->clone = 1;
+				split_box->length = space;
+				split_box->width = w;
+				split_box->space = 1;
+				c2->next = split_box->next;
+				split_box->next = c2;
+				c2->prev = split_box;
+				if (c2->next)
+					c2->next->prev = c2;
+				else
+					c2->parent->last = c2;
+				b = c2;
+			}
 			x += space_before + w;
 /* 			fprintf(stderr, "layout_line:     overflow, fit\n"); */
 		}
@@ -1822,18 +1834,22 @@ void calculate_inline_widths(struct box *box, int *min, int *line_max)
 	int width;
 
 	/* max = all one line */
-	box->width = nsfont_width(box->font, box->text, box->length);
+	/** \todo handle errors */
+	nsfont_width(box->style, box->text, box->length, &box->width);
 	*line_max += box->width;
-	if (box->next && box->space)
-		*line_max += box->font->space_width;
+	if (box->next && box->space) {
+		nsfont_width(box->style, " ", 1, &width);
+		*line_max += width;
+	}
 
 	/* min = widest word */
 	i = 0;
 	do {
 		for (j = i; j != box->length && box->text[j] != ' '; j++)
 			;
-		width = nsfont_width(box->font, box->text + i, j - i);
-		if (*min < width) *min = width;
+		nsfont_width(box->style, box->text + i, j - i, &width);
+		if (*min < width)
+			*min = width;
 		i = j + 1;
 	} while (j != box->length);
 }

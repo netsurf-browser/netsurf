@@ -289,7 +289,6 @@ struct box * box_create(struct css_style * style,
 	box->float_children = NULL;
 	box->next_float = NULL;
 	box->col = NULL;
-	box->font = NULL;
 	box->gadget = NULL;
 	box->usemap = NULL;
 	box->id = id1;
@@ -347,14 +346,8 @@ bool xml_to_box(xmlNode *n, struct content *c)
 	c->data.html.style = css_duplicate_style(&css_base_style);
 	if (!c->data.html.style)
 		return false;
-
 	c->data.html.style->font_size.value.length.value =
 			option_font_size * 0.1;
-	c->data.html.fonts = nsfont_new_set();
-	if (!c->data.html.fonts) {
-		css_free_style(c->data.html.style);
-		return false;
-	}
 
 	c->data.html.object_count = 0;
 	c->data.html.object = 0;
@@ -563,7 +556,6 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
 				box->length = strlen(box->text);
 			}
 		}
-		box->font = nsfont_open(content->data.html.fonts, box->style);
 
 		box_add_child(*inline_container, box);
 		if (box->text[0] == ' ') {
@@ -619,8 +611,6 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
 				goto no_memory;
 			}
 			box->length = strlen(box->text);
-			box->font = nsfont_open(content->data.html.fonts,
-					box->style);
 			box_add_child(*inline_container, box);
 			current[len] = old;
 			current += len;
@@ -1105,7 +1095,6 @@ struct box_result box_image(xmlNode *n, struct box_status *status,
 		if (!box->text)
 			return (struct box_result) {0, false, true};
 		box->length = strlen(box->text);
-		box->font = nsfont_open(status->content->data.html.fonts, style);
 	}
 
 	/* imagemap associated with this image */
@@ -1248,8 +1237,6 @@ struct box_result box_textarea(xmlNode *n, struct box_status *status,
 		inline_box->style_clone = 1;
 		inline_box->text = s;
 		inline_box->length = len;
-		inline_box->font = nsfont_open(status->content->data.html.fonts,
-				style);
 		box_add_child(inline_container, inline_box);
 
 		current += len;
@@ -1372,7 +1359,6 @@ struct box_result box_select(xmlNode *n, struct box_status *status,
 		goto no_memory;
 
 	inline_box->length = strlen(inline_box->text);
-	inline_box->font = nsfont_open(status->content->data.html.fonts, style);
 
 	if (status->current_form)
 		form_add_control(status->current_form, gadget);
@@ -1458,7 +1444,6 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 		if (!gadget)
 			goto no_memory;
 		gadget->box = box;
-		box->font = nsfont_open(status->content->data.html.fonts, style);
 
 	} else if (type && strcasecmp(type, "hidden") == 0) {
 		/* no box for hidden inputs */
@@ -1524,7 +1509,6 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 		if (!inline_box->text)
 			goto no_memory;
 		inline_box->length = strlen(inline_box->text);
-		inline_box->font = nsfont_open(status->content->data.html.fonts, style);
 		box_add_child(inline_container, inline_box);
 		box_add_child(box, inline_container);
 
@@ -1552,7 +1536,6 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 		if (!inline_box->text)
 			goto no_memory;
 		inline_box->length = strlen(inline_box->text);
-		inline_box->font = nsfont_open(status->content->data.html.fonts, style);
 		box_add_child(inline_container, inline_box);
 		box_add_child(box, inline_container);
 
@@ -1679,7 +1662,6 @@ struct box *box_input_text(xmlNode *n, struct box_status *status,
 			return 0;
 		inline_box->length = strlen(inline_box->text);
 	}
-	inline_box->font = nsfont_open(status->content->data.html.fonts, style);
 	box_add_child(inline_container, inline_box);
 	box_add_child(box, inline_container);
 

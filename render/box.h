@@ -82,7 +82,6 @@
 struct box;
 struct column;
 struct css_style;
-struct font_data;
 
 
 /** Type of a struct box. */
@@ -196,8 +195,6 @@ struct box {
 	struct box *next_float;
 
 	struct column *col;  /**< Array of table column data for TABLE only. */
-
-	struct font_data *font;  /**< Font, or 0 if no text. */
 
 	/** Form control data, or 0 if not a form control. */
 	struct form_control* gadget;

@@ -71,8 +71,6 @@ struct content_html_data {
 	struct content **stylesheet_content;
 	struct css_style *style;  /**< Base style. */
 
-	struct font_set *fonts;  /**< Set of fonts. */
-
 	/** Number of entries in object. */
 	unsigned int object_count;
 	/** Objects. Each may be 0. */

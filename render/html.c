@@ -71,7 +71,6 @@ bool html_create(struct content *c, const char *params[])
 	html->stylesheet_count = 0;
 	html->stylesheet_content = 0;
 	html->style = 0;
-	html->fonts = 0;
 	html->object_count = 0;
 	html->object = 0;
 	html->imagemaps = 0;
@@ -1042,9 +1041,6 @@ void html_destroy(struct content *c)
 
 	if (c->data.html.style)
 		css_free_style(c->data.html.style);
-
-	if (c->data.html.fonts)
-		nsfont_free_set(c->data.html.fonts);
 
 	/* Free objects */
 	for (i = 0; i != c->data.html.object_count; i++) {
