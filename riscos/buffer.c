@@ -96,7 +96,7 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	/*	Get the screen depth as we can't use palettes for >8bpp
 	*/
 	xos_read_mode_variable((os_mode)-1, os_MODEVAR_LOG2_BPP, &bpp, 0);
-	palette = (bpp < 4);;
+	palette = (bpp < 4);
 
 	/*	Get our required buffer size
 	*/
@@ -107,11 +107,11 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 			(word_width * sprite_size.y * 4) + palette_size;
 
 	if ((buffer == NULL) || (total_size > buffer->size)) {
-	  	claim_size = (total_size > (option_screen_cache << 10)) ?
-	  			total_size : (option_screen_cache << 10);
-	  	if (buffer)
-	  		free(buffer);
-	  	buffer = (osspriteop_area *)malloc(claim_size);
+		claim_size = (total_size > (option_screen_cache << 10)) ?
+				total_size : (option_screen_cache << 10);
+		if (buffer)
+			free(buffer);
+		buffer = (osspriteop_area *)malloc(claim_size);
 		if (!buffer) {
 			LOG(("Failed to allocate memory"));
 			return;
@@ -119,7 +119,7 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 		buffer->size = claim_size;
 		buffer->first = 16;
 	}
-	
+
 	/*	Set the sprite area details
 	*/
 #ifdef BUFFER_EXCLUSIVE_USER_REDRAW
@@ -128,7 +128,7 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 		ro_gui_buffer_free();
 		return;
 	}
-	
+
 	/*	Create the sprite manually so we don't waste time clearing the
 		background.
 	*/
@@ -145,9 +145,11 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	header->mask = header->image;
 	header->mode = mode;
 	if (palette)
-		xcolourtrans_read_palette((osspriteop_area *)mode, (osspriteop_id)0,
+		xcolourtrans_read_palette((osspriteop_area *)mode,
+			(osspriteop_id)colourtrans_CURRENT_MODE,
 			(os_palette *)(header + 1), palette_size,
-			(colourtrans_palette_flags)(1 << 1), 0);
+			(colourtrans_palette_flags)
+				colourtrans_FLASHING_PALETTE, 0);
 #else
 	/*	Read the current contents of the screen
 	*/
