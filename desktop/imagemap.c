@@ -257,10 +257,10 @@ struct mapentry *imagemap_addtolist(xmlNode *n, struct mapentry *entry) {
         if (!(href = (char*)xmlGetProp(n, (const xmlChar*)"href"))) {
                 return entry;
         }
-        /* no shape -> ignore */
+        /* no shape -> shape is a rectangle */
         if (!(shape = (char*)xmlGetProp(n, (const xmlChar*)"shape"))) {
-                xmlFree(href);
-                return entry;
+                xmlFree(shape);
+                shape = (char*)xmlMemStrdup("rect");
         }
         if (strcasecmp(shape, "default") != 0) {
                 /* no coords -> ignore */
