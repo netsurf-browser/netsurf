@@ -84,7 +84,7 @@ endif
 
 VPATH = content:css:desktop:render:riscos:utils:debug:gtk
 
-WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
+WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
 	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
