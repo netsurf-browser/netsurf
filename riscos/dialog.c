@@ -1159,6 +1159,7 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 {
 	unsigned int scale;
 	int stepping = 10;
+	struct content *c;
 	scale = atoi(ro_gui_get_icon_string(dialog_zoom, ICON_ZOOM_VALUE));
 
 	/*	Adjust moves values the opposite direction
@@ -1169,21 +1170,24 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 	switch (pointer->i) {
 		case ICON_ZOOM_DEC: scale -= stepping; break;
 		case ICON_ZOOM_INC: scale += stepping; break;
-		case ICON_ZOOM_50:  scale = 50;	break;
-		case ICON_ZOOM_80:  scale = 80; break;
+		case ICON_ZOOM_75:  scale = 75;	break;
 		case ICON_ZOOM_100: scale = 100; break;
-		case ICON_ZOOM_120: scale = 120; break;
+		case ICON_ZOOM_150: scale = 150; break;
+		case ICON_ZOOM_200: scale = 200; break;
 	}
 
 	if (scale < 10)
 		scale = 10;
-	else if (1000 < scale)
-		scale = 1000;
+	else if (1600 < scale)
+		scale = 1600;
 	ro_gui_set_icon_integer(dialog_zoom, ICON_ZOOM_VALUE, scale);
 
 	if (pointer->i == ICON_ZOOM_OK) {
 		ro_gui_current_zoom_gui->option.scale = scale * 0.01;
 		ro_gui_current_zoom_gui->reformat_pending = true;
+		c = ro_gui_current_zoom_gui->bw->current_content;
+		if ((c) && (c->type != CONTENT_HTML))
+			gui_window_redraw(ro_gui_current_zoom_gui, 0, 0, 16384, 16384);
 		gui_reformat_pending = true;
 	}
 

@@ -371,10 +371,10 @@ void ro_gui_theme_install_click(wimp_pointer *pointer);
 #define ICON_ZOOM_VALUE 1
 #define ICON_ZOOM_DEC 2
 #define ICON_ZOOM_INC 3
-#define ICON_ZOOM_50 5
-#define ICON_ZOOM_80 6
-#define ICON_ZOOM_100 7
-#define ICON_ZOOM_120 8
+#define ICON_ZOOM_75 5
+#define ICON_ZOOM_100 6
+#define ICON_ZOOM_150 7
+#define ICON_ZOOM_200 8
 #define ICON_ZOOM_CANCEL 9
 #define ICON_ZOOM_OK 10
 

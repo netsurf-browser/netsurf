@@ -52,6 +52,10 @@ struct gui_window *ro_gui_current_redraw_gui;
 /** GUI window which the current zoom window refers to. */
 struct gui_window *ro_gui_current_zoom_gui;
 
+static float scale_snap_to[] = {0.10, 0.125, 0.25, 0.333, 0.5, 0.75,
+				1.0,
+				1.5, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0, 16.0};
+#define SCALE_SNAP_TO_SIZE (sizeof scale_snap_to) / (sizeof(float))
 
 static void ro_gui_window_clone_options(struct browser_window *new_bw,
 		struct browser_window *old_bw);
@@ -333,11 +337,21 @@ void ro_gui_window_quit(void)
 void gui_window_set_title(struct gui_window *g, const char *title)
 {
 	os_error *error;
+	int scale_disp;
 
 	assert(g);
 	assert(title);
-
-	strncpy(g->title, title, sizeof g->title);
+	
+	if (g->option.scale != 1.0) {
+	  	scale_disp = g->option.scale * 100;
+	  	if ((float)scale_disp != g->option.scale * 100)
+			snprintf(g->title, sizeof g->title, "%s (%.1f%%)", title,
+					g->option.scale * 100);
+		else
+			snprintf(g->title, sizeof g->title, "%s (%i%%)", title, scale_disp);
+	} else {
+		strncpy(g->title, title, sizeof g->title);
+	}
 	error = xwimp_force_redraw_title(g->window);
 	if (error) {
 		LOG(("xwimp_force_redraw_title: 0x%x: %s",
@@ -424,6 +438,7 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 {
 	osbool more;
 	bool clear_background = false;
+	float scale = 1;
 	struct content *c = g->bw->current_content;
 	int clip_x0, clip_y0, clip_x1, clip_y1;
 	os_error *error;
@@ -437,8 +452,18 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 
 	/*	We should clear the background, except for HTML.
 	*/
-	if (!c || c->type != CONTENT_HTML)
-		clear_background = true;
+	if (!c) {
+	  	clear_background = true;
+	} else {
+		switch (c->type) {
+			case CONTENT_HTML:
+				break;
+			default:
+				clear_background = true;
+				scale = g->option.scale;
+				break;
+		}
+	}
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
@@ -470,7 +495,7 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 			clip_x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2;
 			clip_y1 = (ro_plot_origin_y - redraw->clip.y0) / 2;
 			content_redraw(c, 0, 0,
-					c->width, c->height,
+					c->width * scale, c->height * scale,
 					clip_x0, clip_y0, clip_x1, clip_y1,
 					g->option.scale,
 					0xFFFFFF);
@@ -1429,6 +1454,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 	os_error *error;
 	wimp_pointer pointer;
 	url_func_result res;
+	float old_scale;
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
@@ -1598,22 +1624,31 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			return true;
 
 		case 17:       /* CTRL+Q (Zoom out) */
-			current_gui = g;
-			if (0.1 < current_gui->option.scale) {
-				current_gui->option.scale -= 0.1;
-				if (current_gui->option.scale < 0.1)
-					current_gui->option.scale = 0.1;
-				current_gui->reformat_pending = true;
-				gui_reformat_pending = true;
-			}
-			return true;
 		case 23:       /* CTRL+W (Zoom in) */
 			current_gui = g;
-			if (current_gui->option.scale < 10.0) {
-				current_gui->option.scale += 0.1;
-				if (10.0 < current_gui->option.scale)
-					current_gui->option.scale = 10.0;
+			old_scale = current_gui->option.scale;
+			if (key == 17) {
+				for (int i = SCALE_SNAP_TO_SIZE - 1; i >= 0; i--)
+					if (scale_snap_to[i] < old_scale) {
+						current_gui->option.scale = scale_snap_to[i];
+						break;
+					}	
+			} else {
+				for (unsigned int i = 0; i < SCALE_SNAP_TO_SIZE; i++)
+					if (scale_snap_to[i] > old_scale) {
+						current_gui->option.scale = scale_snap_to[i];
+						break;
+					}	
+                        }
+			if (current_gui->option.scale < scale_snap_to[0])
+				current_gui->option.scale = scale_snap_to[0];
+			if (current_gui->option.scale > scale_snap_to[SCALE_SNAP_TO_SIZE - 1])
+				current_gui->option.scale =
+						scale_snap_to[SCALE_SNAP_TO_SIZE - 1];
+			if (old_scale != current_gui->option.scale) {
 				current_gui->reformat_pending = true;
+				if ((content) && (content->type != CONTENT_HTML))
+					gui_window_redraw(current_gui, 0, 0, 16384, 16384);
 				gui_reformat_pending = true;
 			}
 			return true;
