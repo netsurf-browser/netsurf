@@ -410,8 +410,8 @@ HelpHotlist6:Release the mouse buttons to complete your selection.
 HelpHotlist7:Release the mouse buttons to move the selection.
 
 HelpHotToolbar0:\Tdelete button.|M\Sdelete the current selection.
-HelpHotToolbar1:\Texpand entries button.|M\Sexpand all entries or entries within the current selection.|M\Acollapse all entries or entries within the current selection.|MExpanded entries show additional details, such as a visit counter.
-HelpHotToolbar2:\Topen directories button.|M\Sopen all directories or directories within the current selection.|M\Aclose all directories or directories within the current selection.
+HelpHotToolbar1:\Texpand entries button.|M\Sexpand all addresses in the hotlist.|M\Acollapse all addresses in the hotlist.|MExpanded addresses show additional details, such as a visit counter.
+HelpHotToolbar2:\Topen directories button.|M\Sopen all directories in the hotlist.|M\Aclose all directories in the hotlist.
 HelpHotToolbar3:\Tlaunch button.|M\Slaunch the current selection.
 HelpHotToolbar4:\Tcreate button.|M\Screate a new directory.
 
