@@ -819,20 +819,67 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 			text_box->width = UNKNOWN_WIDTH;
 			char_offset--;
 		}
-	} else if (key == 28 && char_offset != text_box->length) {
+	} else if (key == 28) {
 	        /* Right cursor -> */
-	        char_offset++;
-	} else if (key == 29 && char_offset != 0) {
+	        if (char_offset == text_box->length &&
+	                                inline_container->next) {
+	                if (inline_container->next->children) {
+	                      /* move to start of next box (if it exists) */
+	                      text_box = inline_container->next->children;
+	                }
+	                char_offset = 0;
+	                inline_container=inline_container->next;
+	        }
+	        else if (char_offset != text_box->length) {
+	                char_offset++;
+	        }
+	        else {
+	                return;
+	        }
+	} else if (key == 29) {
 	        /* Left cursor <- */
-	        char_offset--;
+	        if (char_offset == 0 && inline_container->prev) {
+	                if (inline_container->prev->children) {
+	                        /* move to end of previous box */
+	                        text_box = inline_container->prev->children;
+	                }
+	                inline_container=inline_container->prev;
+	                char_offset = text_box->length;
+	        }
+	        else if (char_offset != 0) {
+	                char_offset--;
+	        }
+	        else {
+	                return;
+	        }
 	} else if (key == 30) {
 	        /* Up Cursor */
-	        /* TODO */
-	        return;
+	        if (inline_container->prev) {
+	                if (inline_container->prev->children) {
+	                        text_box = inline_container->prev->children;
+	                }
+	                inline_container = inline_container->prev;
+	                if (char_offset > text_box->length) {
+	                        char_offset = text_box->length;
+	                }
+	        }
+	        else {
+	                return;
+	        }
 	} else if (key == 31) {
 	        /* Down cursor */
-	        /* TODO */
-	        return;
+                if (inline_container->next) {
+	                if (inline_container->next->children) {
+	                        text_box = inline_container->next->children;
+	                }
+	                inline_container = inline_container->next;
+	                if (char_offset > text_box->length) {
+	                        char_offset = text_box->length;
+	                }
+	        }
+	        else {
+	                return;
+	        }
 	} else {
 		return;
 	}
