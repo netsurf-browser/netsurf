@@ -128,12 +128,12 @@ void nsgif_redraw(struct content *c, long x, long y,
 		sprites not matching the required specifications are ignored. See the Tinct
 		documentation for further information.
 	*/
-	_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
-			((char *) c->data.png.sprite_area + c->data.png.sprite_area->first),
+/*	_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
+			((char *) c->data.gif.sprite_area + c->data.gif.sprite_area->first),
 			x, (int)(y - height),
 			width, height,
 			(option_filter_sprites?(1<<1):0) | (option_dither_sprites?(1<<2):0));
-
+*/
   unsigned int size;
   osspriteop_trans_tab *table;
   os_factors factors;
