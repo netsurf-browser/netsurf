@@ -1,0 +1,29 @@
+Set NetSurf$Dir <Obey$Dir>
+
+Set File$Type_F79 CSS
+
+| Application System Variables
+Set NetSurf$Help <NetSurf$Dir>.Docs.Intro
+Set NetSurf$Version "NC Development Build"
+Set NetSurf$Web "http://netsurf.sf.net/"
+Set NetSurf$Title "NCNetSurf"
+Set NetSurf$Publisher "The NetSurf Developers"
+Set NetSurf$Description "Web Browser"
+
+| NetSurf Sprites
+IconSprites <NetSurf$Dir>.!Sprites
+
+| Acorn URI Protocol
+If "<Alias$Open_URI_http>" = "" Then Set Alias$Open_URI_http <NetSurf$Dir>.URILaunch
+If "<Alias$Open_URI_https>" = "" Then Set Alias$Open_URI_https <NetSurf$Dir>.URILaunch
+If "<Alias$Open_URI_file>" = "" Then Set Alias$Open_URI_file <NetSurf$Dir>.URILaunch
+
+| ANT URI Protocol
+If "" = "<Alias$URLOpen_http>"  Then Set Alias$URLOpen_http  <NetSurf$Dir>.URILaunch %%*0
+If "" = "<Alias$URLOpen_https>" Then Set Alias$URLOpen_https <NetSurf$Dir>.URILaunch %%*0
+If "" = "<Alias$URLOpen_file>"  Then Set Alias$URLOpen_file  <NetSurf$Dir>.URILaunch %%*0
+
+| Claim HTML and URI files
+If "" = "<Alias$@RunType_FAF>" Then Set Alias$@RunType_FAF <NetSurf$Dir>.URILaunch
+If "" = "<Alias$@RunType_B28>" Then Set Alias$@RunType_B28 <NetSurf$Dir>.URILaunch
+If "" = "<FTPc$Dir>" Then If "<Alias$@RunType_F91>" = "" Then Set Alias$@RunType_F91 <NetSurf$Dir>.URILaunch

@@ -1,0 +1,51 @@
+<Obey$Dir>.!Boot
+
+| Can't run more than one copy of NCNetSurf at once.
+If "<NetSurf$Running>" = "yes" Then Error NetSurf is already running
+
+| We need NCOS 1.11
+RMEnsure OSVersion 1.11 Error NCNetSurf needs NCOS 1.11 or later
+
+| Ensure the latest SharedCLibrary is installed
+| http://www.iyonix.com/32bit/
+RMEnsure SharedCLibrary 5.47 RMLoad <NetSurf$Dir>.RMStore.SharedCLib
+
+| Ensure CallASWI is installed
+| http://www.iyonix.com/32bit/
+RMEnsure CallASWI 0.02 RMLoad <NetSurf$Dir>.RMStore.CallASWI
+
+| Ensure DrawFile is installed
+| http://acorn.riscos.com/riscos/releases/drawfile.arc
+RMEnsure DrawFile 1.30 RMLoad <NetSurf$Dir>.RMStore.DrawFile
+
+| Ensure SharedUnixLibrary is installed
+| http://www.chocky.org/unix/usage.html
+RMEnsure SharedUnixLibrary 1.02 RMLoad <NetSurf$Dir>.RMStore.SharedULib
+
+| Ensure AcornURI is installed
+| http://sudden.recoil.org/
+Unset NetSurf$Start_URI_Handler
+RMEnsure AcornURI 0.12 Set NetSurf$Start_URI_Handler 1
+RMEnsure AcornURI 0.12 RMLoad <NetSurf$Dir>.RMStore.URI
+RMEnsure AcornURI 0.12 Unset NetSurf$Start_URI_Handler
+
+| Ensure MimeMap is installed
+If "<InetDBase$Path>" = "" Then Error Inet databases can not be found
+If "<Inet$MimeMappings>" = "" Then Set Inet$MimeMappings <NetSurf$Dir>.Resources.MimeMap
+RMEnsure MimeMap 0.10 RMLoad <NetSurf$Dir>.RMStore.MimeMap
+RMEnsure MimeMap 0.10 Error NetSurf requires MimeMap 0.10 or later
+
+| Ensure Tinct is installed
+RMEnsure Tinct 0.05 RMLoad <NetSurf$Dir>.Resources.Tinct
+RMEnsure Tinct 0.05 Error NetSurf requires Tinct 0.05 or later
+
+| Ensue that the Wimp Scrap directory has been set
+WimpSlot -Min 32k -Max 32k
+If "<Wimp$ScrapDir>" = "" Then SetMacro Wimp$ScrapDir Cache:$.ScrapDir
+If "<Wimp$Scrap>" = "" Then SetMacro Wimp$Scrap <Wimp$ScrapDir>.ScrapFile
+
+| Wimpslot -min 2150k -max 2150k
+Wimpslot -min 8196k
+Set NetSurf$Running yes
+Run <NetSurf$Dir>.!RunImage 2><Wimp$ScrapDir>.NCNetSurf
+UnSet NetSurf$Running
