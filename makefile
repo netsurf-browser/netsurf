@@ -10,7 +10,7 @@ OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
 	box.o form.o html.o layout.o textplain.o \
 	messages.o utils.o translit.o pool.o url.o imagemap.o \
-	jpeg.o
+	jpeg.o save_complete.o
 OBJECTS = $(OBJECTS_COMMON) \
 	browser.o loginlist.o netsurf.o options.o \
 	htmlinstance.o htmlredraw.o \
@@ -20,7 +20,7 @@ OBJECTS = $(OBJECTS_COMMON) \
 	draw.o gif.o plugin.o png.o sprite.o \
 	about.o filetype.o font.o uri.o url_protocol.o history.o \
 	version.o thumbnail.o \
-	save.o save_complete.o save_draw.o save_text.o schedule.o
+	save.o save_draw.o save_text.o schedule.o
 OBJECTS_DEBUG = $(OBJECTS_COMMON) \
 	netsurfd.o \
 	options.o filetyped.o fontd.o

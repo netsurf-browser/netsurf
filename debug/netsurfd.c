@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
 	cache_init();
 	fetchcache_init();
 	url_init();
+	save_complete_init();
 	options_read("options");
 	messages_load("messages");
 
@@ -75,6 +76,7 @@ int main(int argc, char *argv[])
 		cache_dump();
 		if (!destroyed) {
 /* 			content_reformat(c, 1, 1000); */
+			save_complete(c, "save_complete");
 			content_remove_user(c, callback, 0, 0);
 		}
 	}
@@ -227,3 +229,28 @@ void die(const char *error)
 	printf("die: %s\n", error);
 	exit(1);
 }
+
+int ro_content_filetype(int x)
+{
+	return 0;
+}
+
+extern os_error *xosfile_save_stamped (char const *file_name,
+      bits file_type,
+      byte const *data,
+      byte const *end)
+{
+	return 0;
+}
+
+extern os_error *xosfile_set_type (char const *file_name,
+      bits file_type)
+{
+	return 0;
+}
+
+void warn_user(const char *warn)
+{
+	printf("WARNING: %s\n", warn);
+}
+
