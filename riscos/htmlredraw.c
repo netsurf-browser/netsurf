@@ -12,6 +12,7 @@
 #include "oslib/colourtrans.h"
 #include "oslib/draw.h"
 #include "oslib/font.h"
+#include "oslib/os.h"
 #include "swis.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/css/css.h"
@@ -101,6 +102,9 @@ void html_redraw_box(struct content *content, struct box * box,
 	int padding_width, padding_height;
 	int x0, y0, x1, y1;
 	int colour;
+	os_VDU_VAR_LIST(5) vars = { { os_VDUVAR_GWL_COL, os_VDUVAR_GWB_ROW,
+	                      os_VDUVAR_GWR_COL, os_VDUVAR_GWT_ROW, -1 } };
+	os_vdu_var cgw[4];
 
 	x += box->x * 2 * scale;
 	y -= box->y * 2 * scale;
@@ -209,6 +213,9 @@ void html_redraw_box(struct content *content, struct box * box,
 		y1 = clip_y1;
 	}
 
+        /* read current graphics window dimensions */
+        xos_read_vdu_variables((os_vdu_var_list const *) &vars, (int*)&cgw);
+
 	/* background colour */
 	if (box->style != 0 && box->style->background_color != TRANSPARENT) {
 		/* find intersection of clip box and padding box */
@@ -228,6 +235,11 @@ void html_redraw_box(struct content *content, struct box * box,
 
         /* plot background image */
         html_redraw_background(x, y, width, clip_y1-clip_y0, box);
+
+        /* restore previous graphics window, if necessary */
+        if (box->style != 0 && box->style->background_color != TRANSPARENT)
+                /* should probably take account of the eigvalues here... */
+                html_redraw_clip(cgw[0]*2, cgw[1]*2, cgw[2]*2, cgw[3]*2);
 
 	if (box->object) {
 		content_redraw(box->object, x + padding_left, y - padding_top,
@@ -649,13 +661,13 @@ void html_redraw_background(long xi, long yi, int width, int height,
 #ifdef WITH_JPEG
                 case CONTENT_JPEG:
                         _swix(Tinct_Plot, _INR(2,4) | _IN(7),
-                            ((char*) box->background->data.jpeg.sprite_area + box->background->data.jpeg.sprite_area->first), x, -y, tinct_options);
+                            ((char*) box->background->data.jpeg.sprite_area + box->background->data.jpeg.sprite_area->first), x, y, tinct_options);
                         break;
 #endif
 #ifdef WITH_GIF
                 case CONTENT_GIF:
                         _swix(Tinct_PlotAlpha, _INR(2,4) | _IN(7),
-                            (char*) box->background->data.gif.gif->frame_image, x, -y, tinct_options);
+                            (char*) box->background->data.gif.gif->frame_image, x, y, tinct_options);
                         break;
 #endif
         /**\todo Add draw/sprite background support? */
