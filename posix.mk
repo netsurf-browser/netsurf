@@ -1,15 +1,14 @@
 CC = /riscos/bin/gcc
 CC_DEBUG = gcc
 
-PLATFORM_CFLAGS = 
-PLATFORM_CFLAGS_DEBUG = -I/usr/include/libxml2 -I/riscos/include
+PLATFORM_CFLAGS_RISCOS =
+PLATFORM_CFLAGS_DEBUG = -I/usr/include/libxml2 -I/riscos/src/OSLib \
+		-I/riscos/include/libjpeg -D_POSIX_C_SOURCE
 
-LDFLAGS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lcares -lanim -lpng \
-	-loslib -ljpeg
-LDFLAGS_SMALL = -L/riscos/lib -lxml2 -lz -lucurl -lcares -lanim -lpng -loslib -ljpeg
-LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -ljpeg
+LDFLAGS_RISCOS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lcares -lpng \
+		-loslib -ljpeg
+LDFLAGS_SMALL = -L/riscos/lib -lxml2 -lz -lucurl -lcares -lpng -loslib -ljpeg
+LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -lpng \
+		-ljpeg
 
-!NetSurf/!RunImage,ff8 : $(OBJS)
-	$(CC) -o $@ $(LDFLAGS) $^
-
-include depend
+RUNIMAGE = !NetSurf/!RunImage,ff8
