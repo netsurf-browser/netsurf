@@ -19,6 +19,8 @@
 #include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
 #include "netsurf/content/content.h"
+#include "netsurf/desktop/plotters.h"
+#include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/thumbnail.h"
 #include "netsurf/riscos/tinct.h"
@@ -99,13 +101,20 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 		*/
 		scale = (float) width / (float) content->width;
 
+		/*	Set up plotters
+		*/
+		plot = ro_plotters;
+		ro_plot_origin_x = 0;
+		ro_plot_origin_y = height * 2;
+		ro_plot_set_scale(scale);
+
 		/*	Switch output and redraw oversampled
 		*/
 		save_area = thumbnail_switch_output(oversampled_area,
 						(osspriteop_header *)(oversampled_area + 1));
 		if (save_area == NULL) return;
-		content_redraw(content, 0, height * 2, width * 2, height * 2,
-				0, 0, width * 2, height * 2, scale, 0xFFFFFF);
+		content_redraw(content, 0, 0, width, height,
+				0, 0, width, height, scale, 0xFFFFFF);
 		thumbnail_restore_output(save_area);
 
 		/*	Scale back
@@ -142,7 +151,13 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 			scale = (float) width / (float) content->width;
 		else
 			scale = 1.0;
-		LOG(("Scaling to %f and outputting at %ix%i", scale, width, height));
+
+		/*	Set up plotters
+		*/
+		plot = ro_plotters;
+		ro_plot_origin_x = 0;
+		ro_plot_origin_y = height * 2;
+		ro_plot_set_scale(scale);
 
 		/*	Switch output and redraw
 		*/
@@ -151,8 +166,8 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 		colourtrans_set_gcol(os_COLOUR_WHITE, colourtrans_SET_BG,
 				os_ACTION_OVERWRITE, 0);
 		os_clg();
-		content_redraw(content, 0, height * 2, width * 2, height * 2,
-				0, 0, width * 2, height * 2, scale, 0xFFFFFF);
+		content_redraw(content, 0, 0, width, height,
+				0, 0, width, height, scale, 0xFFFFFF);
 		thumbnail_restore_output(save_area);
 	}
 }
