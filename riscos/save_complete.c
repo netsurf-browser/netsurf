@@ -277,7 +277,7 @@ char * rewrite_stylesheet_urls(const char *source, unsigned int size,
 
 	res = malloc(size + imports * 20);
 	if (!res) {
-		warn_user("NoMemory");
+		warn_user("NoMemory", 0);
 		return 0;
 	}
 	*osize = 0;
@@ -317,14 +317,14 @@ char * rewrite_stylesheet_urls(const char *source, unsigned int size,
 
 		url2 = strndup(url, url_len);
 		if (!url2) {
-			warn_user("NoMemory");
+			warn_user("NoMemory", 0);
 			free(res);
 			return 0;
 		}
 		url = url_join(url2, base);
 		free(url2);
 		if (!url) {
-			warn_user("NoMemory");
+			warn_user("NoMemory", 0);
 			free(res);
 			return 0;
                 }

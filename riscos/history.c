@@ -81,7 +81,7 @@ struct history *history_create(void)
 
 	history = malloc(sizeof *history);
 	if (!history) {
-		warn_user("NoMemory");
+		warn_user("NoMemory", 0);
 		return 0;
 	}
 
@@ -119,7 +119,7 @@ void history_add(struct history *history, struct content *content)
 	url = strdup(content->url);
 	title = strdup(content->title ? content->title : url);
 	if (!entry || !url || !title) {
-		warn_user("NoMemory");
+		warn_user("NoMemory", 0);
 		free(entry);
 		free(url);
 		free(title);

@@ -748,7 +748,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 	if (error) {
 		LOG(("xwimp_get_pointer_info: 0x%x: %s\n",
 				error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("WimpError", error->errmess);
 		return false;
 	}
 

@@ -358,7 +358,7 @@ struct toolbar_icon *ro_toolbar_initialise_icon(osspriteop_area *sprite_area,
 	} else if (error) {
 		LOG(("xosspriteop_read_sprite_info: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("TbarError", error->errmess);
 		return NULL;
 	}
 

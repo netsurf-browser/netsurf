@@ -78,6 +78,13 @@ InvalidURL:The address <em>%s</em> could not be understood.
 NoMemory:NetSurf is running out of memory. Please free some memory and try again.
 FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
 FontError:Failed to open font "Homerton.Medium" (%s).
+Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
+PathToURL:An error occurred converting the file path to an URL:
+SaveError:The file could not be saved due to an error:
+MenuError:An error occurred when opening the menu:
+DragError:An error occurred when dragging the icon:
+TbarError:An error occurred when constructing the toolbar:
+WimpError:An unexpected Window Manager error occurred:
 
 # Some general purpose words and phrases
 Bytes: B

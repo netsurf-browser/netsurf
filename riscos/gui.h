@@ -22,7 +22,7 @@
 
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
-	dialog_objinfo, dialog_tooltip;
+	dialog_objinfo, dialog_tooltip, dialog_warning;
 extern wimp_w history_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *theme_menu;
 extern int iconbar_menu_height;
@@ -231,10 +231,9 @@ void schedule_run(void);
 
 #define ICON_CONFIG_PROX_OK 0
 #define ICON_CONFIG_PROX_CANCEL 1
-#define ICON_CONFIG_PROX_DEFAULT 2
-#define ICON_CONFIG_PROX_HTTP 3
-#define ICON_CONFIG_PROX_HTTPHOST 4
-#define ICON_CONFIG_PROX_HTTPPORT 5
+#define ICON_CONFIG_PROX_HTTP 2
+#define ICON_CONFIG_PROX_HTTPHOST 3
+#define ICON_CONFIG_PROX_HTTPPORT 4
 
 #define ICON_CONFIG_TH_OK 0
 #define ICON_CONFIG_TH_CANCEL 1
@@ -283,5 +282,9 @@ void schedule_run(void);
 #define ICON_OBJINFO_TARGET 1
 #define ICON_OBJINFO_TYPE 2
 #define ICON_OBJINFO_ICON 3
+
+#define ICON_WARNING_MESSAGE 0
+#define ICON_WARNING_CONTINUE 1
+#define ICON_WARNING_HELP 2
 
 #endif

@@ -78,6 +78,13 @@ InvalidURL:L'adresse <em>%s</em> est incomprise.
 NoMemory:NetSurf a besoin de plus de mémoire. Veuillez libérer de la mémoire et réessayer.
 FontBadInst:Une erreur s'est produite lors de l'initialisation des fontes à cause de la présence de copies obsolètes de fontes ROM sur disque. NetSurf va sortir et lancer un programme qui va tenter de réparer cela.
 FontError:Échec d'ouverture de la fonte "Homerton.Medium" (%s).
+Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
+PathToURL:An error occurred converting the file path to an URL:
+SaveError:The file could not be saved due to an error:
+MenuError:An error occurred when opening the menu:
+DragError:An error occurred when dragging the icon:
+TbarError:An error occurred when constructing the toolbar:
+WimpError:An unexpected Window Manager error occurred:
 
 Bytes: O
 kBytes: kO

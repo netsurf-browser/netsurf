@@ -683,7 +683,7 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 
 	if (error) {
 		LOG(("0x%x: %s\n", error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("MenuError", error->errmess);
 	}
 }
 
@@ -846,7 +846,7 @@ void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
 			warning->pos.x, warning->pos.y);
 	if (error) {
 		LOG(("0x%x: %s\n", error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("MenuError", error->errmess);
 	}
 }
 
@@ -885,7 +885,7 @@ void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning)
 			warning->pos.x, warning->pos.y);
 	if (error) {
 		LOG(("0x%x: %s\n", error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("MenuError", error->errmess);
 	}
 }
 

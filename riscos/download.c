@@ -271,7 +271,7 @@ void ro_download_datasave_ack(wimp_message *message)
 			data, data_end);
 	if (error) {
 		LOG(("0x%x: %s\n", error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("SaveError", error->errmess);
 		return;
 	}
 

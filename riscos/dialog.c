@@ -31,7 +31,8 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 #ifdef WITH_AUTH
 	dialog_401li,
 #endif
-	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip;
+	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
+	dialog_warning;
 wimp_menu* theme_menu = NULL;
 
 static int font_size;
@@ -45,6 +46,7 @@ static void ro_gui_dialog_click_config_prox(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_th(wimp_pointer *pointer);
 static void ro_gui_dialog_click_zoom(wimp_pointer *pointer);
 static void ro_gui_dialog_reset_zoom(void);
+static void ro_gui_dialog_click_warning(wimp_pointer *pointer);
 static void set_browser_choices(void);
 static void get_browser_choices(void);
 static void set_proxy_choices(void);
@@ -77,6 +79,7 @@ void ro_gui_dialog_init(void)
 	dialog_pageinfo = ro_gui_dialog_create("pageinfo");
 	dialog_objinfo = ro_gui_dialog_create("objectinfo");
 	dialog_tooltip = ro_gui_dialog_create("tooltip");
+	dialog_warning = ro_gui_dialog_create("warning");
 
 	set_browser_choices();
 	set_proxy_choices();
@@ -181,7 +184,9 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 	        ro_gui_401login_click(pointer);
 #endif
 	else if (pointer->w == dialog_zoom)
-	        ro_gui_dialog_click_zoom(pointer);
+		ro_gui_dialog_click_zoom(pointer);
+	else if (pointer->w == dialog_warning)
+		ro_gui_dialog_click_warning(pointer);
 }
 
 
@@ -397,6 +402,17 @@ void ro_gui_dialog_reset_zoom(void) {
   	char scale_buffer[8];
 	sprintf(scale_buffer, "%.0f", current_gui->scale * 100);
 	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
+}
+
+
+/**
+ * Handle clicks in the warning dialog.
+ */
+
+void ro_gui_dialog_click_warning(wimp_pointer *pointer)
+{
+	if (pointer->i == ICON_WARNING_CONTINUE)
+		ro_gui_dialog_close(dialog_warning);
 }
 
 

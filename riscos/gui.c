@@ -48,6 +48,7 @@
 #ifdef WITH_URL
 #include "netsurf/riscos/url_protocol.h"
 #endif
+#include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -124,6 +125,7 @@ static void ro_gui_open_window_request(wimp_open *open);
 static void ro_gui_close_window_request(wimp_close *close);
 static void ro_gui_mouse_click(wimp_pointer *pointer);
 static void ro_gui_icon_bar_click(wimp_pointer* pointer);
+static void ro_gui_check_resolvers(void);
 static void ro_gui_drag_end(wimp_dragged *drag);
 static void ro_gui_keypress(wimp_key* key);
 static void ro_gui_user_message(wimp_event_no event, wimp_message *message);
@@ -203,6 +205,7 @@ void gui_init(int argc, char** argv)
 	wimp_close_template();
 	ro_gui_pointers_init();
 	ro_gui_icon_bar_create();
+	ro_gui_check_resolvers();
 }
 
 
@@ -369,10 +372,9 @@ void ro_gui_check_fonts(void)
 			160, 160, 0, 0, &font, 0, 0);
 	if (error) {
 		if (error->errnum == error_FILE_NOT_FOUND) {
-			warn_user("FontBadInst");
 			xwimp_start_task("TaskWindow -wimpslot 200K -quit "
 					"<NetSurf$Dir>.FixFonts", 0);
-			exit(EXIT_FAILURE);
+			die("FontBadInst");
 		} else {
 			snprintf(s, sizeof s, messages_get("FontError"),
 					error->errmess);
@@ -441,6 +443,17 @@ void ro_gui_icon_bar_create(void)
 				(wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT),
 		{ "!netsurf" } } };
 	wimp_create_icon(&icon);
+}
+
+
+/**
+ * Warn the user if Inet$Resolvers is not set.
+ */
+
+void ro_gui_check_resolvers(void)
+{
+	if (!getenv("Inet$Resolvers"))
+		warn_user("Resolvers", 0);
 }
 
 
@@ -1348,7 +1361,7 @@ char *ro_path_to_url(const char *path)
 	if (error) {
 		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("PathToURL", error->errmess);
 		return 0;
 	}
 
@@ -1356,7 +1369,7 @@ char *ro_path_to_url(const char *path)
 	url = malloc(1 - spare + 10);
 	if (!buffer || !url) {
 		LOG(("malloc failed"));
-		warn_user("NoMemory");
+		warn_user("NoMemory", 0);
 		free(buffer);
 		free(url);
 		return 0;
@@ -1367,7 +1380,7 @@ char *ro_path_to_url(const char *path)
 	if (error) {
 		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("PathToURL", error->errmess);
 		free(buffer);
 		free(url);
 		return 0;
@@ -1421,26 +1434,32 @@ void ro_gui_view_source(struct content *content)
 }
 
 
-static os_error warn_error = { 1, "" };
-
+static char warn_buffer[300];
 
 /**
  * Display a warning for a serious problem (eg memory exhaustion).
  *
  * \param  warning  message key for warning message
+ * \param  detail   additional message, or 0
  */
 
-void warn_user(const char *warning)
+void warn_user(const char *warning, const char *detail)
 {
-	strncpy(warn_error.errmess, messages_get(warning), 252);
-	xwimp_report_error_by_category(&warn_error,
-			wimp_ERROR_BOX_OK_ICON |
-			wimp_ERROR_BOX_GIVEN_CATEGORY |
-			wimp_ERROR_BOX_CATEGORY_ERROR <<
-				wimp_ERROR_BOX_CATEGORY_SHIFT,
-			"NetSurf", "!netsurf",
-			(osspriteop_area *) 1, 0, 0);
+	LOG(("%s %s", warning, detail));
+	snprintf(warn_buffer, sizeof warn_buffer, "%s %s",
+			messages_get(warning),
+			detail ? detail : "");
+	warn_buffer[sizeof warn_buffer - 1] = 0;
+	ro_gui_set_icon_string(dialog_warning, ICON_WARNING_MESSAGE,
+			warn_buffer);
+	xwimp_set_icon_state(dialog_warning, ICON_WARNING_HELP,
+			wimp_ICON_DELETED, wimp_ICON_DELETED);
+	ro_gui_dialog_open(dialog_warning);
+	xos_bell();
 }
+
+
+static os_error warn_error = { 1, "" };
 
 
 /**
@@ -1451,6 +1470,13 @@ void warn_user(const char *warning)
 
 void die(const char *error)
 {
-	warn_user(error);
+	strncpy(warn_error.errmess, messages_get(error), 252);
+	xwimp_report_error_by_category(&warn_error,
+			wimp_ERROR_BOX_OK_ICON |
+			wimp_ERROR_BOX_GIVEN_CATEGORY |
+			wimp_ERROR_BOX_CATEGORY_ERROR <<
+				wimp_ERROR_BOX_CATEGORY_SHIFT,
+			"NetSurf", "!netsurf",
+			(osspriteop_area *) 1, 0, 0);
 	exit(EXIT_FAILURE);
 }

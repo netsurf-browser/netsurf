@@ -95,7 +95,7 @@ void browser_window_create(const char *url, struct browser_window *clone)
 
 	bw = malloc(sizeof *bw);
 	if (!bw) {
-		warn_user("NoMemory");
+		warn_user("NoMemory", 0);
 		return;
 	}
 

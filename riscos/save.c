@@ -81,7 +81,7 @@ void ro_gui_drag_icon(wimp_pointer *pointer)
 	if (error) {
 		LOG(("xdragasprite_start: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("DragError", error->errmess);
 	}
 }
 
@@ -160,7 +160,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			if (error) {
 				LOG(("xosfile_save_stamped: 0x%x: %s",
 						error->errnum, error->errmess));
-				warn_user(error->errmess);
+				warn_user("SaveError", error->errmess);
 				return;
 			}
 			break;
@@ -186,7 +186,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			if (error) {
 				LOG(("xosfile_save_stamped: 0x%x: %s",
 						error->errnum, error->errmess));
-				warn_user(error->errmess);
+				warn_user("SaveError", error->errmess);
 				return;
 			}
 			break;
@@ -219,14 +219,14 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 	if (error) {
 		LOG(("xwimp_send_message_to_window: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("SaveError", error->errmess);
 	}
 
 	error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 	if (error) {
 		LOG(("xwimp_create_menu: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("MenuError", error->errmess);
 	}
 
 	save_content = 0;
@@ -256,7 +256,7 @@ void ro_gui_save_complete(struct content *c, char *path)
 	if (error) {
 		LOG(("xosfile_create_dir: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("SaveError", error->errmess);
 		return;
 	}
 
@@ -265,7 +265,7 @@ void ro_gui_save_complete(struct content *c, char *path)
 	fp = fopen(buf, "w");
 	if (!fp) {
 		LOG(("fopen(): errno = %i", errno));
-		warn_user(strerror(errno));
+		warn_user("SaveError", strerror(errno));
 		return;
 	}
 	fprintf(fp, "Filer_Run <Obey$Dir>.index\n");
@@ -274,61 +274,37 @@ void ro_gui_save_complete(struct content *c, char *path)
 	if (error) {
 		LOG(("xosfile_set_type: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user(error->errmess);
+		warn_user("SaveError", error->errmess);
 		return;
 	}
 
-        /* Create !Sprites */
+	/* Create !Sprites */
 	snprintf(buf, sizeof buf, "%s.!Sprites", path);
 	appname = strrchr(path, '.');
-	if (!appname) {
-	        LOG(("Couldn't get appname"));
-	        warn_user("Failed to acquire dirname");
-	        return;
-	}
+	if (!appname)
+		appname = path;
 
   	area = thumbnail_initialise(34, 34, os_MODE8BPP90X90);
   	if (!area) {
-		LOG(("Iconsprite initialisation failed."));
+		warn_user("NoMemory", 0);
 		return;
 	}
 	sprite_header = (osspriteop_header *)(area + 1);
 	strncpy(sprite_header->name, appname + 1, 12);
 
-	/*	!Paint gets confused with uppercase characters
-	*/
-	for (index = 0; index < 12; index++) {
+	/* Paint gets confused with uppercase characters */
+	for (index = 0; index < 12; index++)
 		sprite_header->name[index] = tolower(sprite_header->name[index]);
-	}
 	thumbnail_create(c, area,
 			(osspriteop_header *) ((char *) area + 16),
 			34, 34);
 	error = xosspriteop_save_sprite_file(osspriteop_NAME, area, buf);
-	if (error) {
-	        LOG(("Failed to save iconsprite"));
-	        warn_user("Failed to save iconsprite");
-	        free(area);
-	        return;
-	}
-
 	free(area);
-
-        /* Create !Boot file */
-	snprintf(buf, sizeof buf, "%s.!Boot", path);
-	fp = fopen(buf, "w");
-	if (!fp) {
-		LOG(("fopen(): errno = %i", errno));
-		warn_user(strerror(errno));
-		return;
-	}
-	fprintf(fp, "IconSprites <Obey$Dir>.!Sprites\n");
-	fclose(fp);
-	error = xosfile_set_type(buf, 0xfeb);
 	if (error) {
-		LOG(("xosfile_set_type: 0x%x: %s",
+		LOG(("xosspriteop_save_sprite_file: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user(error->errmess);
-		return;
+		warn_user("SaveError", error->errmess);
+	        return;
 	}
 
 	save_complete(c, path);
@@ -382,7 +358,7 @@ bool ro_gui_save_link(struct content *c, link_format format, char *path)
         FILE *fp = fopen(path, "w");
 
 	if (!fp) {
-		warn_user(strerror(errno));
+		warn_user("SaveError", strerror(errno));
 		return false;
 	}
 
