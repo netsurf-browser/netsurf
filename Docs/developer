@@ -85,6 +85,16 @@ layout.[ch] -- layout engine
 
 ________________________________________________________________________________
 
+RISC OS specific protocols
+
+Plugin		http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/plugin.html
+		http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/browse-plugins.html
+URI		http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/uri.html
+URL		http://www.vigay.com/inet/inet_url.html
+Nested WIMP	http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/nested.html
+
+________________________________________________________________________________
+
 Specifications
 
 HTML 4.01	http://www.w3.org/TR/html401/
