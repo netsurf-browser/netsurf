@@ -264,7 +264,8 @@ bool html_redraw_box(struct box *box,
 
 	if (box->object) {
 		if (!content_redraw(box->object,
-				x + padding_left, y + padding_top,
+				x_scrolled + padding_left,
+				y_scrolled + padding_top,
 				width, height, x0, y0, x1, y1, scale,
 				current_background_color))
 			return false;
@@ -925,13 +926,25 @@ void box_scrollbar_dimensions(const struct box * const box,
 	*vscroll = box_vscrollbar_present(box);
 	*hscroll = box_hscrollbar_present(box);
 	*well_height = padding_height - w - w;
-	*bar_top = (float) *well_height * (float) box->scroll_y /
-			(float) (box->descendant_y1 - box->descendant_y0);
-	*bar_height = (float) *well_height * (float) box->height /
-			(float) (box->descendant_y1 - box->descendant_y0);
+	*bar_top = 0;
+	*bar_height = *well_height;
+	if (box->descendant_y1 - box->descendant_y0 != 0) {
+		*bar_top = (float) *well_height * (float) box->scroll_y /
+				(float) (box->descendant_y1 -
+				box->descendant_y0);
+		*bar_height = (float) *well_height * (float) box->height /
+				(float) (box->descendant_y1 -
+				box->descendant_y0);
+	}
 	*well_width = padding_width - w - w - (*vscroll ? w : 0);
-	*bar_left = (float) *well_width * (float) box->scroll_x /
-			(float) (box->descendant_x1 - box->descendant_x0);
-	*bar_width = (float) *well_width * (float) box->width /
-			(float) (box->descendant_x1 - box->descendant_x0);
+	*bar_left = 0;
+	*bar_width = *well_width;
+	if (box->descendant_x1 - box->descendant_x0 != 0) {
+		*bar_left = (float) *well_width * (float) box->scroll_x /
+				(float) (box->descendant_x1 -
+				box->descendant_x0);
+		*bar_width = (float) *well_width * (float) box->width /
+				(float) (box->descendant_x1 -
+				box->descendant_x0);
+	}
 }
