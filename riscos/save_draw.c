@@ -113,6 +113,7 @@ const struct plotter_table draw_plotters = {
 };
 
 static int draw_plot_origin_y = 0; /* plot origin, in browser units */
+static int draw_clip_x0, draw_clip_y0, draw_clip_x1, draw_clip_y1;
 
 /**
  * Export a content as a Drawfile.
@@ -159,6 +160,10 @@ bool save_as_draw(struct content *c, const char *path)
 	/* set up plotters */
 	plot = draw_plotters;
 	draw_plot_origin_y = A4PAGEHEIGHT;
+	draw_clip_x0 = 0;
+	draw_clip_y0 = draw_plot_origin_y - c->height;
+	draw_clip_x1 = A4PAGEWIDTH;
+	draw_clip_y1 = draw_plot_origin_y;
 
 	if (!drawbuf_group_begin("page"))
 		goto draw_save_error;
@@ -527,11 +532,8 @@ static bool add_options(void)
  */
 bool draw_plot_clg(colour c)
 {
-	/* we could plot a filled rectangle here.
-	 * we don't, however, because it breaks on drobe ;)
-	 * this does mean that the background colour of pages gets lost.
-	 */
-	return true;
+	return draw_plot_fill(draw_clip_x0, draw_clip_y0,
+			draw_clip_x1, draw_clip_y1, c);
 }
 
 /**
@@ -640,10 +642,22 @@ bool draw_plot_line(int x0, int y0, int x1, int y1, int width, colour c,
 	dro->size = 8 + 60;
 
 	dp = &dro->data.path;
-	dp->bbox.x0 = x0 * 512;
-	dp->bbox.y0 = (draw_plot_origin_y - y1) * 512;
-	dp->bbox.x1 = x1 * 512;
-	dp->bbox.y1 = (draw_plot_origin_y - y0) * 512;
+	if (x0 < x1) {
+		dp->bbox.x0 = x0 * 512;
+		dp->bbox.x1 = x1 * 512;
+	}
+	else {
+		dp->bbox.x0 = x1 * 512;
+		dp->bbox.x1 = x0 * 512;
+	}
+	if (y0 < y1) {
+		dp->bbox.y0 = (draw_plot_origin_y - y1) * 512;
+		dp->bbox.y1 = (draw_plot_origin_y - y0) * 512;
+	}
+	else {
+		dp->bbox.y0 = (draw_plot_origin_y - y0) * 512;
+		dp->bbox.y1 = (draw_plot_origin_y - y1) * 512;
+	}
 
 	dp->fill = 0xFFFFFFFF; /* do not fill */
 	dp->outline = c<<8;
@@ -688,7 +702,8 @@ bool draw_plot_polygon(int *p, unsigned int n, colour fill)
 	drawfile_object *dro;
 	drawfile_path *dp;
 	draw_path_element *dpe;
-	int xmin = 0, ymin = 0, xmax = 0, ymax = 0;
+	int xmin = A4PAGEWIDTH, ymin = draw_plot_origin_y,
+	    xmax = 0, ymax = 0;
 	unsigned int i;
 
 	if ((dro = (drawfile_object *)drawbuf_claim(8 + 36 + n * 12, DrawBuf_eBody)) == NULL)
@@ -703,7 +718,6 @@ bool draw_plot_polygon(int *p, unsigned int n, colour fill)
 
 	dp->fill = fill<<8;
 	dp->outline = 0xFFFFFFFF; /* no outline */
-	dp->width = (xmax - xmin) * 512;
 	dp->style.flags = 0;
 	dp->style.reserved = 0;
 	dp->style.cap_width = 0;
@@ -718,8 +732,10 @@ bool draw_plot_polygon(int *p, unsigned int n, colour fill)
 
 		if (p[i*2+0] < xmin) xmin = p[i*2+0];
 		if (p[i*2+0] > xmax) xmax = p[i*2+0];
-		if (draw_plot_origin_y - p[i*2+1] < ymin) ymin = draw_plot_origin_y - p[i*2+1];
-		if (draw_plot_origin_y - p[i*2+1] > ymax) ymax = draw_plot_origin_y - p[i*2+1];
+		if (draw_plot_origin_y - p[i*2+1] < ymin)
+			ymin = draw_plot_origin_y - p[i*2+1];
+		if (draw_plot_origin_y - p[i*2+1] > ymax)
+			ymax = draw_plot_origin_y - p[i*2+1];
 
 	}
 
@@ -735,6 +751,7 @@ bool draw_plot_polygon(int *p, unsigned int n, colour fill)
 	dp->bbox.y0 = ymin * 512;
 	dp->bbox.x1 = xmax * 512;
 	dp->bbox.y1 = ymax * 512;
+	dp->width = (xmax - xmin) * 512;
 
 	return true;
 }
@@ -809,6 +826,10 @@ bool draw_plot_fill(int x0, int y0, int x1, int y1, colour c)
 
 bool draw_plot_clip(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
 {
+	draw_clip_x0 = clip_x0;
+	draw_clip_y0 = clip_y0;
+	draw_clip_x1 = clip_x1;
+	draw_clip_y1 = clip_y1;
 	return true;
 }
 
@@ -1035,9 +1056,32 @@ bool draw_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y)
 {
-	/* do nothing - background images and drawfiles probably don't
-	 * mix very well
+#if 0
+	/* this doesn't work particularly well (needs clipping support in
+	 * drawfiles)
 	 */
+	int cy, cx;
+
+	if (!drawbuf_group_begin("background"))
+		return false;
+
+	cy = draw_clip_y1;
+	for (; cy >= draw_clip_y0; cy -= height) {
+		cx = (x < draw_clip_x0) ? draw_clip_x0 : x;
+		for (; cx <= draw_clip_x1; cx += width) {
+			if (!draw_plot_bitmap(cx, cy, width, height,
+					bitmap, bg))
+				return false;
+			if (!repeat_x)
+				break;
+		}
+		if (!repeat_y)
+			break;
+	}
+
+	if (!drawbuf_group_end())
+		return false;
+#endif
 	return true;
 }
 #endif
