@@ -674,10 +674,15 @@ void nsfont_paint(struct font_data *data, const char *text,
 	assert(data != NULL);
 	assert(text != NULL);
 
-	/* adjust by the origin */
-	xos_read_vdu_variables((const os_vdu_var_list *)&var_input, (int *)&var_output);
-	xpos += var_output[0];
-	ypos += var_output[1];
+	/* adjust by the origin
+	 * (not if printing as the result is undefined)
+	 */
+	if (!print_active) {
+		xos_read_vdu_variables((const os_vdu_var_list *)&var_input,
+					(int *)&var_output);
+		xpos += var_output[0];
+		ypos += var_output[1];
+	}
 
 
 	switch (data->ftype) {
