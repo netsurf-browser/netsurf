@@ -915,21 +915,21 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 			g->reformat_pending = true;
 			gui_reformat_pending = true;
 		}
+		
 		g->old_width = width;
 		g->old_height = height;
 
 		if (content && width < content->width * 2 * g->option.scale)
 			width = content->width * 2 * g->option.scale;
-		else {
-			os_box extent = { 0, -height, width, toolbar_height };
-			error = xwimp_set_extent(g->window, &extent);
-			if (error) {
-				LOG(("xwimp_set_extent: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("WimpError", error->errmess);
-				return;
-			}
+		os_box extent = { 0, -height, width, toolbar_height };
+		error = xwimp_set_extent(g->window, &extent);
+		if (error) {
+			LOG(("xwimp_set_extent: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
 		}
+
 	}
 
 	error = xwimp_open_window(open);
