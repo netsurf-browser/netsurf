@@ -126,7 +126,6 @@ bool plugin_create(struct content *c, const char *params[])
 	c->data.plugin.reformat_pending = false;
 	c->data.plugin.width = 0;
 	c->data.plugin.height = 0;
-	c->data.plugin.stream_waiting = false;
 	c->data.plugin.file_stream_waiting = false;
 	return true;
 }
@@ -711,7 +710,15 @@ void plugin_stream_new(wimp_message *message)
 
 		if (stream_type == 3) {
 			LOG(("as file"));
-			if (c->source_size == c->total_size)
+			/* received all data => go ahead and stream
+			 * we have to check the content's status too, as
+			 * we could be dealing with a stream of unknown
+			 * length (ie c->total_size == 0). If the status
+			 * is CONTENT_STATUS_DONE, we've received all the
+			 * data anyway, regardless of the total size.
+			 */
+			if (c->source_size == c->total_size ||
+					c->status == CONTENT_STATUS_DONE)
 				plugin_write_stream_as_file(c);
 			else {
 				LOG(("waiting for data"));

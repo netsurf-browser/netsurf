@@ -34,7 +34,6 @@ struct content_plugin_data {
 	unsigned int consumed;		/* size of data consumed by plugin */
 	bool reformat_pending;		/* is a reformat pending? */
 	int width, height;		/* reformat width & height */
-	bool stream_waiting;		/* waiting to stream a datastream */
 	bool file_stream_waiting;	/* waiting to stream as file */
 };
 
