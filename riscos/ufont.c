@@ -20,7 +20,7 @@
 #include "oslib/osfile.h"
 
 #include "ufont.h"
-#include "utils/utils.h" /* \todo: has to go ! */
+#include "netsurf/utils/utils.h" /* \todo: has to go ! */
 
 // #define DEBUG_UFONT
 // #define DEBUG_ACTIVATE_SANITY_CHECK
