@@ -75,7 +75,7 @@ struct content * fetchcache(const char *url,
 	struct content *c;
 	char *url1;
 	char *hash;
-	
+
 	if ((url1 = strdup(url)) == NULL)
 		return NULL;
 
@@ -350,7 +350,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 void fetchcache_init(void)
 {
 	regcomp_wrapper(&re_content_type,
-			"^([-0-9a-zA-Z_.]+/[-0-9a-zA-Z_.]+)[ \t]*"
+			"^([-0-9a-zA-Z_.]+/[-0-9a-zA-Z_.+]+)[ \t]*"
 			"(;[ \t]*([-0-9a-zA-Z_.]+)="
 			"([-0-9a-zA-Z_.]+|\"([^\"]|[\\].)*\")[ \t]*)*$",
 			REG_EXTENDED);

@@ -63,9 +63,12 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_DRAW
 	{"application/drawfile", CONTENT_DRAW},
 	{"application/x-drawfile", CONTENT_DRAW},
+#endif
 #ifdef WITH_THEME_INSTALL
 	{"application/x-netsurf-theme", CONTENT_THEME},
 #endif
+	{"application/xhtml+xml", CONTENT_HTML},
+#ifdef WITH_DRAW
 	{"image/drawfile", CONTENT_DRAW},
 #endif
 #ifdef WITH_GIF
