@@ -275,15 +275,15 @@ ScrollH:Tirez la barre pour la faire défiler horizontalement
 ScrollPRight:Cliquez pour faire défiler d'une page vers la droite
 ScrollRight:Cliquez sur la flèche pour faire défiler vers la droite
 
-Encoding0:from HTTP headers
-Encoding1:detected
-Encoding2:from <meta>
-EncodingUnk:Unknown
+Encoding0:dans les entêtes HTTP
+Encoding1:détecté
+Encoding2:de <meta>
+EncodingUnk:Inconnu
 
-ThemeInstActive:A theme is currently being downloaded or installed. Please wait for it to finish or cancel it before installing more themes.
-ThemeInstDown:Please wait for the theme to download.
-ThemeInvalid:The downloaded theme is invalid or requires a newer version of NetSurf.
-ThemeInstall:Would you like to install the theme '%s' by %s?
+ThemeInstActive:Un thème est en cours de téléchargement ou d'installation. Veuillez attendre que ce soit fini ou annulez l'opération avant d'installer de nouveaux thèmes.
+ThemeInstDown:Veuillez attendre le téléchargement du thème.
+ThemeInvalid:Le thème téléchargé est invalide ou nécessite une version plus récente de NetSurf.
+ThemeInstall:Voulez-vous installer le thème '%s' par %s?
 
 # Interactive help
 HelpToolbar0:\Tle bouton de retour.|M\Srevenir d'une page en arrière dans l'historique.|MNe renvoie pas l'information de formulaire.
