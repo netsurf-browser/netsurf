@@ -608,16 +608,19 @@ void html_redraw_background(long xi, long yi, int width, int height,
 	                tinct_options |= tinct_FILL_VERTICALLY;
 	                break;
 	        case CSS_BACKGROUND_REPEAT_NO_REPEAT:
-	                x = xi;
-	                if (fixed)
-	                        /**\todo fixed background attachments */
-	                        y = yi/*-height*/;
-	                else
-	                        y = yi-height;
 	                break;
 	        default:
 	                break;
 	}
+	
+	/* handle window offset */
+	x = xi;
+	if (fixed) {
+        	/**\todo fixed background attachments */
+                y = yi;
+        } else {
+        	y = yi;
+        }
 
 	/* handle background-position */
 	switch (box->style->background_position.horz.pos) {
