@@ -102,6 +102,7 @@ void html_redraw_box(struct content *content, struct box * box,
 	int padding_left, padding_top;
 	int padding_width, padding_height;
 	int x0, y0, x1, y1;
+	int px0, py0, px1, py1;
 	int colour;
 	os_VDU_VAR_LIST(5) vars = { { os_VDUVAR_GWL_COL, os_VDUVAR_GWB_ROW,
 			      os_VDUVAR_GWR_COL, os_VDUVAR_GWT_ROW, -1 } };
@@ -214,18 +215,14 @@ void html_redraw_box(struct content *content, struct box * box,
 		y1 = clip_y1;
 	}
 
-	/* read current graphics window dimensions */
-	xos_read_vdu_variables((os_vdu_var_list const *) &vars, (int*)&cgw);
+	/* find intersection of clip box and padding box */
+	px0 = x < x0 ? x0 : x;
+	py0 = y - padding_height < y0 ? y0 : y - padding_height;
+	px1 = x + padding_width < x1 ? x + padding_width : x1;
+	py1 = y < y1 ? y : y1;
 
 	/* background colour */
 	if (box->style != 0 && box->style->background_color != TRANSPARENT) {
-		/* find intersection of clip box and padding box */
-		int px0 = x < x0 ? x0 : x;
-		int py0 = y - padding_height < y0 ? y0 : y - padding_height;
-		int px1 = x + padding_width < x1 ? x + padding_width : x1;
-		int py1 = y < y1 ? y : y1;
-		/* clip to it */
-		html_redraw_clip(px0, py0, px1, py1);
 		colourtrans_set_gcol(box->style->background_color << 8,
 				colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		os_plot(os_MOVE_TO, px0, py0);
@@ -234,13 +231,21 @@ void html_redraw_box(struct content *content, struct box * box,
 		current_background_color = box->style->background_color;
 	}
 
-	/* plot background image */
-	html_redraw_background(x, y, width, clip_y1-clip_y0, box, scale);
+	/* read current graphics window dimensions */
+	xos_read_vdu_variables((os_vdu_var_list const *) &vars, (int*)&cgw);
 
-	/* restore previous graphics window, if necessary */
-	if (box->style != 0 && box->style->background_color != TRANSPARENT)
-		/* should probably take account of the eigvalues here... */
-		html_redraw_clip(cgw[0]*2, cgw[1]*2, cgw[2]*2, cgw[3]*2);
+	/* clip to padding box */
+	html_redraw_clip(px0, py0, px1, py1);
+
+	/* plot background image */
+	/* the if statement below causes regression on acornarcade.com
+	 * but fixes some issues with the CSS testsuite background section */
+//	if (box->type != BOX_INLINE && box->background)
+		html_redraw_background(x, y, width, clip_y1-clip_y0, box, scale);
+
+	/* restore previous graphics window */
+	/* should probably take account of the eigvalues here... */
+	html_redraw_clip(cgw[0]*2, cgw[1]*2, cgw[2]*2, cgw[3]*2);
 
 	if (box->object) {
 		content_redraw(box->object, x + padding_left, y - padding_top,
