@@ -6,6 +6,10 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * Redraw of a CONTENT_HTML (RISC OS implementation).
+ */
+
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
@@ -16,29 +20,28 @@
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 #include "netsurf/utils/config.h"
-#include "netsurf/css/css.h"
 #include "netsurf/content/content.h"
+#include "netsurf/css/css.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
-#include "netsurf/riscos/ufont.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/toolbar.h"
+#include "netsurf/riscos/ufont.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 
-static void html_redraw_box(struct content *content, struct box * box,
-		signed long x, signed long y,
+static void html_redraw_box(struct box *box,
+		int x, int y,
 		unsigned long current_background_color,
-		bool *select_on,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale);
-static void html_redraw_clip(long clip_x0, long clip_y0,
-		long clip_x1, long clip_y1);
+static void html_redraw_clip(int clip_x0, int clip_y0,
+		int clip_x1, int clip_y1);
 static void html_redraw_rectangle(int x0, int y0, int width, int height,
 		os_colour colour);
 static void html_redraw_fill(int x0, int y0, int width, int height,
@@ -53,7 +56,7 @@ static void html_redraw_radio(int x, int y, int width, int height,
 		bool selected);
 static void html_redraw_file(int x, int y, int width, int height,
 		struct box *box, float scale);
-static void html_redraw_background(long x, long y, int width, int height,
+static void html_redraw_background(int x, int y, int width, int height,
 		struct box *box, float scale);
 
 bool gui_redraw_debug = false;
@@ -64,12 +67,28 @@ static os_trfm trfm = { {
 		{ 0, 0 } } };
 
 
+/**
+ * Draw a CONTENT_HTML to a RISC OS window.
+ *
+ * \param  c        content of type CONTENT_HTML
+ * \param  x        coordinate for top-left of redraw
+ * \param  y        coordinate for top-left of redraw
+ * \param  width    available width (not used for HTML redraw)
+ * \param  height   available height (not used for HTML redraw)
+ * \param  clip_x0  clip rectangle
+ * \param  clip_y0  clip rectangle
+ * \param  clip_x1  clip rectangle
+ * \param  clip_y1  clip rectangle
+ * \param  scale    scale for redraw
+ *
+ * x, y, clip_[xy][01] are in RISC OS screen absolute OS-units.
+ */
+
 void html_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale)
 {
-	bool select_on = false;
 	unsigned long background_colour = 0xffffff;
 	struct box *box;
 
@@ -87,23 +106,36 @@ void html_redraw(struct content *c, int x, int y,
 
 	trfm.entries[0][0] = trfm.entries[1][1] = 65536 * scale;
 
-	html_redraw_box(c, box, x, y, background_colour,
-			&select_on, clip_x0, clip_y0, clip_x1, clip_y1, scale);
+	html_redraw_box(box, x, y, background_colour,
+			clip_x0, clip_y0, clip_x1, clip_y1, scale);
 }
 
 
+/**
+ * Recursively draw a box to a RISC OS window.
+ *
+ * \param  box      box to draw
+ * \param  x        coordinate of parent box
+ * \param  y        coordinate of parent box
+ * \param  current_background_color  background colour under this box
+ * \param  clip_x0  clip rectangle
+ * \param  clip_y0  clip rectangle
+ * \param  clip_x1  clip rectangle
+ * \param  clip_y1  clip rectangle
+ * \param  scale    scale for redraw
+ *
+ * x, y, clip_[xy][01] are in RISC OS screen absolute OS-units.
+ */
 
-void html_redraw_box(struct content *content, struct box * box,
-		signed long x, signed long y,
+void html_redraw_box(struct box *box,
+		int x, int y,
 		unsigned long current_background_color,
-		bool *select_on,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale)
 {
 	struct box *c;
 	int width, height;
-	int padding_left, padding_top;
-	int padding_width, padding_height;
+	int padding_left, padding_top, padding_width, padding_height;
 	int x0, y0, x1, y1;
 	int colour;
 
@@ -118,16 +150,23 @@ void html_redraw_box(struct content *content, struct box * box,
 	padding_height = (box->padding[TOP] + box->height +
 			box->padding[BOTTOM]) * 2 * scale;
 
-	x0 = x;
-	y1 = y - 1;
-	x1 = x0 + padding_width - 1;
-	y0 = y1 - padding_height + 1;
+	/* calculate clip rectangle for this box */
+	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
+		x0 = x;
+		y0 = y - padding_height;
+		x1 = x + padding_width - 1;
+		y1 = y - 1;
+        } else {
+		x0 = x + box->descendant_x0 * 2 * scale;
+		y0 = y - box->descendant_y1 * 2 * scale;
+		x1 = x + box->descendant_x1 * 2 * scale + 1;
+		y1 = y - box->descendant_y0 * 2 * scale + 1;
+        }
 
 	/* if visibility is hidden render children only */
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
 		for (c = box->children; c; c = c->next)
-			html_redraw_box(content, c, x, y, current_background_color,
-					select_on,
+			html_redraw_box(c, x, y, current_background_color,
 					x0, y0, x1, y1, scale);
 		return;
 	}
@@ -190,11 +229,8 @@ void html_redraw_box(struct content *content, struct box * box,
 				y - padding_height - box->border[BOTTOM] *
 					2 * scale);
 
-	/* return if the box is completely outside the clip rectangle, except
-	 * for table rows which may contain cells spanning into other rows */
-	if (box->type != BOX_TABLE_ROW &&
-			(clip_y1 < y0 || y1 < clip_y0 ||
-			 clip_x1 < x0 || x1 < clip_x0))
+	/* return if the box is completely outside the clip rectangle */
+	if (clip_y1 < y0 || y1 < clip_y0 || clip_x1 < x0 || x1 < clip_x0)
 		return;
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
@@ -227,8 +263,8 @@ void html_redraw_box(struct content *content, struct box * box,
 		if (box->style->background_color != TRANSPARENT) {
 			/* optimisation: skip if fully repeated bg image */
 			if (!box->background ||
-				box->style->background_repeat !=
-				CSS_BACKGROUND_REPEAT_REPEAT) {
+					box->style->background_repeat !=
+					CSS_BACKGROUND_REPEAT_REPEAT) {
 
 				colourtrans_set_gcol(
 					box->style->background_color << 8,
@@ -239,7 +275,7 @@ void html_redraw_box(struct content *content, struct box * box,
 
 				if (px0 < px1 && py0 < py1)
 					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-						px1, py1);
+							px1 - 1, py1 - 1);
 			}
 			/* set current background color for font painting */
 			current_background_color = box->style->background_color;
@@ -257,35 +293,6 @@ void html_redraw_box(struct content *content, struct box * box,
 			html_redraw_clip(x0, y0, x1, y1);
 		}
 	}
-
-	/* handle overflow - horrendously broken atm */
-#if 0
-	if ((box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
-			box->type == BOX_TABLE_CELL || box->object) &&
-			box->style &&
-			box->style->overflow == CSS_OVERFLOW_VISIBLE &&
-			box->descendant_x1 && box->descendant_y1) {
-		LOG(("Box Coords: %d, %d", box->x, box->y));
-		LOG(("Descendants: %d, %d, %d, %d", box->descendant_x0, box->descendant_y0, box->descendant_x1, box->descendant_y1));
-		LOG(("Previous vals: %d, %d, %d, %d", x0, y0, x1, y1));
-		x0 = (box->x + box->descendant_x0) * 2 * scale;
-		y1 = (box->y + box->descendant_y1) * 2 * scale - 1;
-		x1 = (box->x + box->descendant_x1) * 2 * scale - 1;
-		y0 = (box->y + box->descendant_y0) * 2 * scale + 1;
-
-		LOG(("New Coords: %d, %d, %d, %d", x0, y0, x1, y1));
-		LOG(("Clipping:   %ld, %ld, %ld, %ld", clip_x0, clip_y0, clip_x1, clip_y1));
-		/* find intersection of clip rectangle and box */
-		if (x0 < clip_x0) x0 = clip_x0;
-		if (y0 < clip_y0) y0 = clip_y0;
-		if (clip_x1 > x1) x1 = clip_x1;
-		if (clip_y1 > y1) y1 = clip_y1;
-
-		LOG(("Overflow clip: %d, %d, %d, %d", x0, y0, x1, y1));
-		/* clip to it */
-		html_redraw_clip(x0, y0, x1, y1);
-	}
-#endif
 
 	if (box->object) {
 		content_redraw(box->object, x + padding_left, y - padding_top,
@@ -368,15 +375,13 @@ void html_redraw_box(struct content *content, struct box * box,
 	} else {
 		for (c = box->children; c != 0; c = c->next)
 			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-				html_redraw_box(content, c, x,
+				html_redraw_box(c, x,
 						y, current_background_color,
-						select_on,
 						x0, y0, x1, y1, scale);
 
 		for (c = box->float_children; c != 0; c = c->next_float)
-			html_redraw_box(content, c, x,
+			html_redraw_box(c, x,
 					y, current_background_color,
-					select_on,
 					x0, y0, x1, y1, scale);
 	}
 
@@ -386,8 +391,12 @@ void html_redraw_box(struct content *content, struct box * box,
 }
 
 
-void html_redraw_clip(long clip_x0, long clip_y0,
-		long clip_x1, long clip_y1)
+/**
+ * Set the clip rectangle.
+ */
+
+void html_redraw_clip(int clip_x0, int clip_y0,
+		int clip_x1, int clip_y1)
 {
 	os_set_graphics_window();
 	os_writec((char) (clip_x0 & 0xff)); os_writec((char) (clip_x0 >> 8));
@@ -446,6 +455,10 @@ static const draw_line_style line_style = { draw_JOIN_MITRED,
 		0, 0, 0, 0 };
 static const int dash_pattern_dotted[] = { 0, 1, 512 };
 static const int dash_pattern_dashed[] = { 0, 1, 2048 };
+
+/**
+ * Draw a border.
+ */
 
 void html_redraw_border(colour color, int width, css_border_style style,
 		int x0, int y0, int x1, int y1)
@@ -547,12 +560,12 @@ void html_redraw_file(int x, int y, int width, int height,
 /*			y - height / 2 - 17, os_ACTION_OVERWRITE); */
 }
 
-void html_redraw_background(long xi, long yi, int width, int height,
+void html_redraw_background(int xi, int yi, int width, int height,
 	   struct box *box, float scale)
 {
 	unsigned int tinct_options = 0;
-	long x = 0;
-	long y = 0;
+	int x = 0;
+	int y = 0;
 	unsigned int image_width, image_height;
 	os_coord image_size;
 	float multiplier;

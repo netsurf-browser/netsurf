@@ -67,24 +67,7 @@ static void calculate_inline_replaced_widths(struct box *box, int *min,
 		int *max, int *line_max);
 static void calculate_inline_widths(struct box *box, int *min, int *line_max);
 static bool calculate_table_widths(struct box *table);
-
-/**\todo Do we want to split this into a separate function? */
-#define set_descendant_extent(parent, child) do { \
-	if (child->x+child->descendant_x0 < parent->descendant_x0)     \
-		parent->descendant_x0 = child->x+child->descendant_x0; \
-	if (child->x+child->descendant_x1 > parent->descendant_x1)     \
-		parent->descendant_x1 = child->x+child->descendant_x1; \
-	if (child->y+child->descendant_y0 < parent->descendant_y0)     \
-		parent->descendant_y0 = child->y+child->descendant_y0; \
-	if (child->y+child->descendant_y1 > parent->descendant_y1)     \
-		parent->descendant_y1 = child->y+child->descendant_y1; \
-} while (0);
-
-#define invalidate_descendants(box) do { \
-	LOG(("invalidating descendents of %p", box)); \
-	box->descendant_x0 = box->descendant_x1 = 0; \
-	box->descendant_y0 = box->descendant_y1 = 0; \
-} while (0);
+static void layout_calculate_descendant_bboxes(struct box *box);
 
 
 /**
@@ -98,6 +81,8 @@ static bool calculate_table_widths(struct box *table);
 
 bool layout_document(struct box *doc, int width, pool box_pool)
 {
+	bool ret;
+
 	doc->float_children = 0;
 
 	if (!calculate_widths(doc))
@@ -109,8 +94,12 @@ bool layout_document(struct box *doc, int width, pool box_pool)
 	width -= doc->margin[LEFT] + doc->border[LEFT] +
 			doc->border[RIGHT] + doc->margin[RIGHT];
 	doc->width = width;
-	invalidate_descendants(doc);
-	return layout_block_context(doc, box_pool);
+
+	ret = layout_block_context(doc, box_pool);
+
+	layout_calculate_descendant_bboxes(doc);
+
+	return ret;
 }
 
 
@@ -141,8 +130,6 @@ bool layout_block_context(struct box *block, pool box_pool)
 
 	gui_multitask();
 
-	invalidate_descendants(block);
-
 	box = margin_box = block->children;
 	cx = block->padding[LEFT];
 	cy = block->padding[TOP];
@@ -161,8 +148,6 @@ bool layout_block_context(struct box *block, pool box_pool)
 		 * content, and the position is required during layout for
 		 * correct handling of floats.
 		 */
-
-		invalidate_descendants(box);
 
 		if (box->type == BOX_BLOCK)
 			layout_block_find_dimensions(box->parent->width, box);
@@ -252,8 +237,6 @@ bool layout_block_context(struct box *block, pool box_pool)
 				margin_box = box;
 			}
 
-			set_descendant_extent(block, box);
-
 			continue;
 		}
 		if (box->type == BOX_BLOCK && box->height == AUTO)
@@ -270,7 +253,6 @@ bool layout_block_context(struct box *block, pool box_pool)
 				y = box->y + box->padding[TOP] + box->height +
 						box->padding[BOTTOM] +
 						box->border[BOTTOM];
-				set_descendant_extent(box->parent, box);
 				box = box->parent;
 				if (box != block && box->height == AUTO)
 					box->height = y - box->padding[TOP];
@@ -280,7 +262,6 @@ bool layout_block_context(struct box *block, pool box_pool)
 					max_pos_margin = box->margin[BOTTOM];
 				else if (max_neg_margin < -box->margin[BOTTOM])
 					max_neg_margin = -box->margin[BOTTOM];
-				set_descendant_extent(box->parent, box);
 			} while (box != block && !box->next);
 			if (box == block)
 				break;
@@ -291,8 +272,6 @@ bool layout_block_context(struct box *block, pool box_pool)
 		box = box->next;
 		box->y = y;
 		margin_box = box;
-
-		set_descendant_extent(block, box);
 	}
 
 	/* Increase height to contain any floats inside (CSS 2.1 10.6.7). */
@@ -305,8 +284,6 @@ bool layout_block_context(struct box *block, pool box_pool)
 
 	if (block->height == AUTO)
 		block->height = cy - block->padding[TOP];
-
-	LOG(("Block Content: At: (%d, %d), %d, %d Descendants: %d, %d, %d, %d", block->x, block->y, block->width, block->height, block->descendant_x0, block->descendant_y0, block->descendant_x1, block->descendant_y1));
 
 	return true;
 }
@@ -414,6 +391,10 @@ int layout_solve_width(int available_width, int width,
 		margin[LEFT] = margin[RIGHT] = (available_width -
 				(border[LEFT] + padding[LEFT] + width +
 				 padding[RIGHT] + border[RIGHT])) / 2;
+		if (margin[LEFT] < 0) {
+			margin[RIGHT] += margin[LEFT];
+			margin[LEFT] = 0;
+		}
 	} else if (margin[LEFT] == AUTO) {
 		margin[LEFT] = available_width -
 				(border[LEFT] + padding[LEFT] + width +
@@ -637,8 +618,6 @@ bool layout_inline_container(struct box *box, int width,
 	LOG(("box %p, width %i, cont %p, cx %i, cy %i",
 			box, width, cont, cx, cy));
 
-	invalidate_descendants(box);
-
 	for (c = box->children; c; ) {
 		LOG(("c %p", c));
 		if (!layout_line(c, width, &y, cx, cy + y, cont, first_line,
@@ -650,8 +629,6 @@ bool layout_inline_container(struct box *box, int width,
 
 	box->width = width;
 	box->height = y;
-
-	LOG(("Inline container: At: (%d, %d) %d, %d Descendants: %d, %d, %d, %d", box->x, box->y, box->width, box->height, box->descendant_x0, box->descendant_y0, box->descendant_x1, box->descendant_y1));
 
 	return true;
 }
@@ -741,8 +718,6 @@ bool layout_line(struct box *first, int width, int *y,
 				b->type == BOX_FLOAT_LEFT ||
 				b->type == BOX_FLOAT_RIGHT ||
 				b->type == BOX_BR);
-
-		invalidate_descendants(b);
 
 		if (b->type == BOX_INLINE_BLOCK) {
 			if (b->width == UNKNOWN_WIDTH)
@@ -1069,15 +1044,6 @@ bool layout_line(struct box *first, int width, int *y,
 	}
 
 	for (d = first; d != b; d = d->next) {
-		/* BOXes_INLINE contain either text, an object or a form
-		 * field. Therefore the extent of these is known so fill
-		 * in the descendant_* fields. */
-		if (d->type == BOX_INLINE) {
-			d->descendant_x0 = 0;
-			d->descendant_y0 = 0;
-			d->descendant_x1 = d->width;
-			d->descendant_y1 = d->height;
-		}
 		if (d->type == BOX_INLINE || d->type == BOX_INLINE_BLOCK ||
 				d->type == BOX_BR) {
 			d->x += x0;
@@ -1087,13 +1053,6 @@ bool layout_line(struct box *first, int width, int *y,
 			if (used_height < h)
 				used_height = h;
 		}
-
-		/* fill in the parent's descendant_* fields. */
-		if (first->parent) {
-			set_descendant_extent(first->parent, d);
-		}
-
-		LOG(("Inline block: '%s' At: (%d, %d), %d, %d Descendants: %d, %d, %d, %d", d->text?d->text:d->object?d->object->url:d->gadget?"(gadget)":"", d->x, d->y, d->width, d->height, d->descendant_x0, d->descendant_y0, d->descendant_x1, d->descendant_y1));
 	}
 
 	assert(b != first || (move_y && 0 < used_height && (left || right)));
@@ -1136,7 +1095,6 @@ int layout_text_indent(struct css_style *style, int width)
 bool layout_float(struct box *b, int width, pool box_pool)
 {
 	layout_float_find_dimensions(width, b->style, b);
-	invalidate_descendants(b);
 	if (b->type == BOX_TABLE) {
 		if (!layout_table(b, width, box_pool))
 			return false;
@@ -1393,15 +1351,11 @@ bool layout_table(struct box *table, int available_width,
 		row_span_cell[i] = 0;
 	}
 
-	invalidate_descendants(table);
-
 	/* position cells */
 	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
 		int row_group_height = 0;
-		invalidate_descendants(row_group);
 		for (row = row_group->children; row != 0; row = row->next) {
 			int row_height = 0;
-			invalidate_descendants(row);
 			for (c = row->children; c != 0; c = c->next) {
 				assert(c->style != 0);
 				c->width = xs[c->start_column + c->columns] - xs[c->start_column];
@@ -1433,8 +1387,6 @@ bool layout_table(struct box *table, int available_width,
 				}
 				row_span_cell[c->start_column] = c;
 				c->height = 0;
-
-				set_descendant_extent(row, c);
 			}
 			for (i = 0; i != columns; i++)
 				if (row_span[i] != 0)
@@ -1466,18 +1418,12 @@ bool layout_table(struct box *table, int available_width,
 			row->width = table_width;
 			row->height = row_height;
 			row_group_height += row_height;
-
-			set_descendant_extent(row_group, row);
-			LOG(("Table row: At: (%d, %d), %d, %d Descendants: %d, %d, %d, %d", row->x, row->y, row->width, row->height, row->descendant_x0, row->descendant_y0, row->descendant_x1, row->descendant_y1));
 		}
 		row_group->x = 0;
 		row_group->y = table_height;
 		row_group->width = table_width;
 		row_group->height = row_group_height;
 		table_height += row_group_height;
-
-		set_descendant_extent(table, row_group);
-		LOG(("Table row group: At: (%d, %d), %d, %d Descendants: %d, %d, %d, %d", row_group->x, row_group->y, row_group->width, row_group->height, row_group->descendant_x0, row_group->descendant_y0, row_group->descendant_x1, row_group->descendant_y1));
 	}
 
 	free(col);
@@ -1488,8 +1434,6 @@ bool layout_table(struct box *table, int available_width,
 
 	table->width = table_width;
 	table->height = table_height;
-
-	LOG(("Table: At: (%d, %d), %d, %d Descendants: %d, %d, %d, %d", table->x, table->y, table->width, table->height, table->descendant_x0, table->descendant_y0, table->descendant_x1, table->descendant_y1));
 
 	return true;
 }
@@ -1920,4 +1864,57 @@ bool calculate_table_widths(struct box *table)
 	LOG(("min_width %i, max_width %i", min_width, max_width));
 
 	return true;
+}
+
+
+/**
+ * Recursively calculate the descendant_[xy][01] values for a laid-out box tree.
+ *
+ * \param  box  tree of boxes to update
+ */
+
+void layout_calculate_descendant_bboxes(struct box *box)
+{
+	struct box *child;
+
+	box->descendant_x0 = -box->border[LEFT];
+	box->descendant_y0 = -box->border[TOP];
+	box->descendant_x1 = box->padding[LEFT] + box->width +
+			box->padding[RIGHT] + box->border[RIGHT];
+	box->descendant_y1 = box->padding[TOP] + box->height +
+			box->padding[BOTTOM] + box->border[BOTTOM];
+
+	for (child = box->children; child; child = child->next) {
+		if (child->type == BOX_FLOAT_LEFT ||
+				child->type == BOX_FLOAT_RIGHT)
+			continue;
+
+		layout_calculate_descendant_bboxes(child);
+
+		if (child->x + child->descendant_x0 < box->descendant_x0)
+			box->descendant_x0 = child->x + child->descendant_x0;
+		if (box->descendant_x1 < child->x + child->descendant_x1)
+			box->descendant_x1 = child->x + child->descendant_x1;
+		if (child->y + child->descendant_y0 < box->descendant_y0)
+			box->descendant_y0 = child->y + child->descendant_y0;
+		if (box->descendant_y1 < child->y + child->descendant_y1)
+			box->descendant_y1 = child->y + child->descendant_y1;
+	}
+
+	for (child = box->float_children; child; child = child->next_float) {
+		if (child->type != BOX_FLOAT_LEFT &&
+				child->type != BOX_FLOAT_RIGHT)
+			continue;
+
+		layout_calculate_descendant_bboxes(child);
+
+		if (child->x + child->descendant_x0 < box->descendant_x0)
+			box->descendant_x0 = child->x + child->descendant_x0;
+		if (box->descendant_x1 < child->x + child->descendant_x1)
+			box->descendant_x1 = child->x + child->descendant_x1;
+		if (child->y + child->descendant_y0 < box->descendant_y0)
+			box->descendant_y0 = child->y + child->descendant_y0;
+		if (box->descendant_y1 < child->y + child->descendant_y1)
+			box->descendant_y1 = child->y + child->descendant_y1;
+	}
 }

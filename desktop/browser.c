@@ -885,10 +885,12 @@ void browser_window_textarea_click(struct browser_window *bw,
 
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
-	textarea->gadget->caret_box_offset = textarea->gadget->caret_form_offset = char_offset;
+	textarea->gadget->caret_box_offset =
+			textarea->gadget->caret_form_offset = char_offset;
 	textarea->gadget->caret_pixel_offset = pixel_offset;
 	browser_window_place_caret(bw,
-			box_x + text_box->x + pixel_offset,
+			box_x + inline_container->x + text_box->x +
+			pixel_offset,
 			box_y + inline_container->y + text_box->y,
 			text_box->height,
 			browser_window_textarea_callback, textarea);
@@ -1152,10 +1154,12 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
-	textarea->gadget->caret_box_offset = textarea->gadget->caret_form_offset = char_offset;
+	textarea->gadget->caret_box_offset =
+			textarea->gadget->caret_form_offset = char_offset;
 	textarea->gadget->caret_pixel_offset = pixel_offset;
 	browser_window_place_caret(bw,
-			box_x + text_box->x + pixel_offset,
+			box_x + inline_container->x + text_box->x +
+			pixel_offset,
 			box_y + inline_container->y + text_box->y,
 			text_box->height,
 			browser_window_textarea_callback, textarea);
@@ -1227,8 +1231,8 @@ void browser_window_input_click(struct browser_window* bw,
 	input->gadget->caret_form_offset = offset;
 	input->gadget->caret_pixel_offset = pixel_offset;
 	browser_window_place_caret(bw,
-			box_x + text_box->x + pixel_offset,
-			box_y + text_box->y,
+			box_x + input->children->x + text_box->x + pixel_offset,
+			box_y + input->children->y + text_box->y,
 			text_box->height,
 			browser_window_input_callback, input);
 
@@ -1449,14 +1453,15 @@ void browser_window_input_callback(struct browser_window *bw,
 	input->gadget->caret_form_offset = form_offset;
 
 	browser_window_place_caret(bw,
-			box_x + text_box->x + pixel_offset,
-			box_y + text_box->y,
+			box_x + input->children->x + text_box->x + pixel_offset,
+			box_y + input->children->y + text_box->y,
 			text_box->height,
 			browser_window_input_callback, input);
 
 	if (dx || changed)
 		browser_redraw_box(bw->current_content, input);
 }
+
 
 /**
  * Position the caret and assign a callback for key presses.

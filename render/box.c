@@ -1465,7 +1465,7 @@ struct box_result box_button(xmlNode *n, struct box_status *status,
 
 
 /**
- * print a box tree to stderr
+ * Print a box tree to stderr.
  */
 
 void box_dump(struct box * box, unsigned int depth)
@@ -1476,26 +1476,29 @@ void box_dump(struct box * box, unsigned int depth)
 	for (i = 0; i < depth; i++)
 		fprintf(stderr, "  ");
 
-	fprintf(stderr, "%p ", box);
+/* 	fprintf(stderr, "%p ", box); */
 	fprintf(stderr, "x%i y%i w%i h%i ", box->x, box->y, box->width, box->height);
 	if ((unsigned long)box->max_width != UNKNOWN_MAX_WIDTH)
 		fprintf(stderr, "min%i max%i ", box->min_width, box->max_width);
+	fprintf(stderr, "(%i %i %i %i) ",
+			box->descendant_x0, box->descendant_y0,
+			box->descendant_x1, box->descendant_y1);
 
 	switch (box->type) {
-		case BOX_BLOCK:            fprintf(stderr, "BOX_BLOCK "); break;
-		case BOX_INLINE_CONTAINER: fprintf(stderr, "BOX_INLINE_CONTAINER "); break;
-		case BOX_INLINE:           fprintf(stderr, "BOX_INLINE "); break;
-		case BOX_INLINE_BLOCK:     fprintf(stderr, "BOX_INLINE_BLOCK "); break;
-		case BOX_TABLE:            fprintf(stderr, "BOX_TABLE [columns %i] ",
+		case BOX_BLOCK:            fprintf(stderr, "BLOCK "); break;
+		case BOX_INLINE_CONTAINER: fprintf(stderr, "INLINE_CONTAINER "); break;
+		case BOX_INLINE:           fprintf(stderr, "INLINE "); break;
+		case BOX_INLINE_BLOCK:     fprintf(stderr, "INLINE_BLOCK "); break;
+		case BOX_TABLE:            fprintf(stderr, "TABLE [columns %i] ",
 		                                   box->columns); break;
-		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW "); break;
-		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL [columns %i, "
+		case BOX_TABLE_ROW:        fprintf(stderr, "TABLE_ROW "); break;
+		case BOX_TABLE_CELL:       fprintf(stderr, "TABLE_CELL [columns %i, "
 		                                   "start %i, rows %i] ", box->columns,
 		                                   box->start_column, box->rows); break;
-		case BOX_TABLE_ROW_GROUP:  fprintf(stderr, "BOX_TABLE_ROW_GROUP "); break;
-		case BOX_FLOAT_LEFT:       fprintf(stderr, "BOX_FLOAT_LEFT "); break;
-		case BOX_FLOAT_RIGHT:      fprintf(stderr, "BOX_FLOAT_RIGHT "); break;
-		case BOX_BR:               fprintf(stderr, "BOX_BR "); break;
+		case BOX_TABLE_ROW_GROUP:  fprintf(stderr, "TABLE_ROW_GROUP "); break;
+		case BOX_FLOAT_LEFT:       fprintf(stderr, "FLOAT_LEFT "); break;
+		case BOX_FLOAT_RIGHT:      fprintf(stderr, "FLOAT_RIGHT "); break;
+		case BOX_BR:               fprintf(stderr, "BR "); break;
 		default:                   fprintf(stderr, "Unknown box type ");
 	}
 	if (box->text)
