@@ -18,6 +18,7 @@
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
@@ -28,17 +29,24 @@ static struct content *theme_install_content = NULL;
 static struct theme_descriptor theme_install_descriptor;
 wimp_w dialog_theme_install;
 
+
 static void theme_install_close(void);
-void theme_install_callback(content_msg msg, struct content *c,
+static void theme_install_callback(content_msg msg, struct content *c,
 		void *p1, void *p2, union content_msg_data data);
+static bool theme_install_read(char *source_data, unsigned long source_size);
+static void theme_install_install(bool apply);
+
 
 #ifndef NCOS
 #define THEME_LEAFNAME "WWW.NetSurf.Themes"
-#define THEME_PATHNAME "<Choices$Write>"
+#define THEME_PATH_W "<Choices$Write>."
+#define THEME_PATH_R "Choices:"
 #else
 #define THEME_LEAFNAME "NetSurf.Choices.Themes"
-#define THEME_PATHNAME "<User$Path>.Choices"
+#define THEME_PATH_W "<User$Path>.Choices."
+#define THEME_PATH_R THEME_PATH_W
 #endif
+
 
 /**
  * Handle a CONTENT_THEME that has started loading.
@@ -54,6 +62,9 @@ void theme_install_start(struct content *c)
 		/* raise & centre dialog */
 		return;
 	}
+
+	/* stop theme sitting in memory cache */
+	c->fresh = false;
 
 	if (!content_add_user(c, theme_install_callback, 0, 0)) {
 		warn_user("NoMemory", 0);
@@ -77,160 +88,199 @@ void theme_install_start(struct content *c)
 void theme_install_callback(content_msg msg, struct content *c,
 		void *p1, void *p2, union content_msg_data data)
 {
-	char txt_buffer[256];
-	bool error = false;
+	char buffer[256];
 	int author_indent = 0;
 
 	switch (msg) {
-		case CONTENT_MSG_READY:
-			break;
+	case CONTENT_MSG_READY:
+		break;
 
-		case CONTENT_MSG_DONE:
-			theme_install_content = c;
-			if ((c->source_size < sizeof(struct theme_file_header)) ||
-					(!ro_gui_theme_read_file_header(&theme_install_descriptor,
-					(struct theme_file_header *)c->source_data)))
-				error = true;
-			else if (c->source_size - sizeof(struct theme_file_header) !=
-					theme_install_descriptor.compressed_size)
-				error = true;
-			
-			if (error) {
-				warn_user("ThemeInvalid", 0);
-				theme_install_close();
-				break;
-			}
-
-			/* remove '© ' from the start of the data */
-			if (theme_install_descriptor.author[0] == '©')
-				author_indent++;
-			while (theme_install_descriptor.author[author_indent] == ' ')
-				author_indent++;
-			snprintf(txt_buffer, 256, messages_get("ThemeInstall"),
-					theme_install_descriptor.name,
-					&theme_install_descriptor.author[author_indent]);
-			txt_buffer[255] = '\0';
-			ro_gui_set_icon_string(dialog_theme_install,
-					ICON_THEME_INSTALL_MESSAGE,
-					txt_buffer);
-			ro_gui_set_icon_shaded_state(dialog_theme_install,
-					ICON_THEME_INSTALL_INSTALL, false);
-			break;
-
-		case CONTENT_MSG_ERROR:
+	case CONTENT_MSG_DONE:
+		theme_install_content = c;
+		if (!theme_install_read(c->source_data, c->source_size)) {
+			warn_user("ThemeInvalid", 0);
 			theme_install_close();
-			warn_user(data.error, 0);
 			break;
+		}
 
-		case CONTENT_MSG_STATUS:
-			break;
+		/* remove '© ' from the start of the data */
+		if (theme_install_descriptor.author[0] == '©')
+			author_indent++;
+		while (theme_install_descriptor.author[author_indent] == ' ')
+			author_indent++;
+		snprintf(buffer, sizeof buffer, messages_get("ThemeInstall"),
+				theme_install_descriptor.name,
+				&theme_install_descriptor.author[author_indent]);
+		buffer[sizeof buffer - 1] = '\0';
+		ro_gui_set_icon_string(dialog_theme_install,
+				ICON_THEME_INSTALL_MESSAGE,
+				buffer);
+		ro_gui_set_icon_shaded_state(dialog_theme_install,
+				ICON_THEME_INSTALL_INSTALL, false);
+		break;
 
-		case CONTENT_MSG_LOADING:
-		case CONTENT_MSG_REDIRECT:
-		case CONTENT_MSG_REFORMAT:
-		case CONTENT_MSG_REDRAW:
-		case CONTENT_MSG_NEWPTR:
-		case CONTENT_MSG_AUTH:
-		default:
-			assert(0);
-			break;
+	case CONTENT_MSG_ERROR:
+		theme_install_close();
+		warn_user(data.error, 0);
+		break;
+
+	case CONTENT_MSG_STATUS:
+		break;
+
+	case CONTENT_MSG_LOADING:
+	case CONTENT_MSG_REDIRECT:
+	case CONTENT_MSG_REFORMAT:
+	case CONTENT_MSG_REDRAW:
+	case CONTENT_MSG_NEWPTR:
+	case CONTENT_MSG_AUTH:
+	default:
+		assert(0);
+		break;
 	}
 }
 
 
 /**
- * Handle clicks in the theme install window
+ * Fill in theme_install_descriptor from received theme data.
+ *
+ * \param  source_data  received data
+ * \param  source_size  size of data
+ * \return  true if data is a correct theme, false on error
+ *
+ * If the data is a correct theme, theme_install_descriptor is filled in.
  */
-void ro_gui_theme_install_click(wimp_pointer *pointer) {
-	os_error *error;
-  	fileswitch_object_type obj_type;
+
+bool theme_install_read(char *source_data, unsigned long source_size)
+{
+	if (source_size < sizeof(struct theme_file_header))
+		return false;
+	if (!ro_gui_theme_read_file_header(&theme_install_descriptor,
+			(struct theme_file_header *) source_data))
+		return false;
+	if (source_size - sizeof(struct theme_file_header) !=
+			theme_install_descriptor.compressed_size)
+		return false;
+	return true;
+}
+
+
+/**
+ * Handle clicks in the theme install window.
+ */
+
+void ro_gui_theme_install_click(wimp_pointer *pointer)
+{
+	switch (pointer->i) {
+	case ICON_THEME_INSTALL_INSTALL:
+		theme_install_install(pointer->buttons == wimp_CLICK_SELECT);
+		theme_install_close();
+		break;
+	case ICON_THEME_INSTALL_CANCEL:
+		if (pointer->buttons == wimp_CLICK_ADJUST)
+			break;
+		theme_install_close();
+		break;
+	}
+}
+
+
+/**
+ * Install the downloaded theme.
+ *
+ * \param  apply  make the theme the current theme
+ */
+
+void theme_install_install(bool apply)
+{
 	char theme_save[256];
 	char theme_leaf[256];
 	char *theme_file;
 	int theme_number = 1;
 	bool theme_found;
 	struct theme_descriptor *theme_install;
+	fileswitch_object_type obj_type;
+	os_error *error;
 
-	switch (pointer->i) {
-		case ICON_THEME_INSTALL_INSTALL:
-			if (theme_install_content) {
-				if (url_nice(theme_install_descriptor.name, &theme_file) != URL_FUNC_OK) {
-					warn_user("ThemeInstallErr", 0);
-					theme_install_close();
-					return;
-				}
-				theme_found = false;
-				while (!theme_found) {
-				  	if (theme_number == 1)
-						snprintf(theme_leaf, 256,
-								"%s.%s", THEME_LEAFNAME, theme_file);
-				  	else
-						snprintf(theme_leaf, 256,
-								"%s.%s%i", THEME_LEAFNAME, theme_file,
-								theme_number);
-					theme_leaf[255] = '\0';
-					theme_number++;
-					snprintf(theme_save, 256,
-							"%s.%s", THEME_PATHNAME, theme_leaf);
-					theme_save[255] = '\0';
-					error = xosfile_read_stamped(theme_save,
-							&obj_type, 0, 0, 0, 0, 0);
-					if (error) {
-					  	warn_user("ThemeInstallErr", 0);
-						theme_install_close();
-						free(theme_file);
-						return;
-					}
-					theme_found = (obj_type == osfile_NOT_FOUND);
-				}
-				free(theme_file);
-				error = xosfile_save_stamped(theme_save, 0xffd,
-						theme_install_content->source_data,
-						theme_install_content->source_data +
-						theme_install_content->source_size);
-				if (error) {
-					warn_user("ThemeInstallErr", 0);
-					theme_install_close();
-					return;
-				}
-				/* apply theme only on Select clicks */
-				if (pointer->buttons == wimp_CLICK_SELECT) {
-					ro_gui_theme_get_available();
-#ifndef NCOS
-					snprintf(theme_save, 256, "Choices:%s", theme_leaf);
-#else
-					snprintf(theme_save, 256, "%s.%s", THEME_PATHNAME, theme_leaf);
-#endif
-					theme_save[255] = '\0';
-					theme_install = ro_gui_theme_find(theme_save);
-					if ((!theme_install) ||
-							(!ro_gui_theme_apply(theme_install))) {
-						warn_user("ThemeApplyErr", 0);
-					} else {
-					  	theme_file = strdup(theme_save);
-					  	if (!theme_file) {
-					  	  	warn_user("NoMemory", 0);
-					  	} else {
-							free(option_theme);
-							option_theme = theme_file;
-						}
-					}
-				}
-				theme_install_close();
-			}
-			break;
-		case ICON_THEME_INSTALL_CANCEL:
-			if (pointer->buttons == wimp_CLICK_ADJUST)
-				break;
+	assert(theme_install_content);
+
+	if (url_nice(theme_install_descriptor.name, &theme_file) !=
+			URL_FUNC_OK) {
+		warn_user("ThemeInstallErr", 0);
+		theme_install_close();
+		return;
+	}
+
+	theme_found = false;
+	while (!theme_found) {
+		if (theme_number == 1)
+			snprintf(theme_leaf, sizeof theme_leaf, "%s.%s",
+					THEME_LEAFNAME, theme_file);
+		else
+			snprintf(theme_leaf, sizeof theme_leaf, "%s.%s%i",
+					THEME_LEAFNAME, theme_file,
+					theme_number);
+		theme_leaf[sizeof theme_leaf - 1] = '\0';
+		theme_number++;
+		snprintf(theme_save, sizeof theme_save, "%s%s",
+				THEME_PATH_W, theme_leaf);
+		theme_save[sizeof theme_save - 1] = '\0';
+		error = xosfile_read_stamped_no_path(theme_save,
+				&obj_type, 0, 0, 0, 0, 0);
+		if (error) {
+			LOG(("xosfile_read_stamped_no_path: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("ThemeInstallErr", 0);
 			theme_install_close();
-			break;
+			free(theme_file);
+			return;
+		}
+		theme_found = (obj_type == osfile_NOT_FOUND);
+	}
+	free(theme_file);
+
+	error = xosfile_save_stamped(theme_save, 0xffd,
+			theme_install_content->source_data,
+			theme_install_content->source_data +
+			theme_install_content->source_size);
+	if (error) {
+		LOG(("xosfile_save_stamped: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("ThemeInstallErr", 0);
+		theme_install_close();
+		return;
+	}
+
+	if (apply) {
+		ro_gui_theme_get_available();
+		snprintf(theme_save, sizeof theme_save, "%s%s",
+				THEME_PATH_R, theme_leaf);
+		theme_save[sizeof theme_save - 1] = '\0';
+		theme_install = ro_gui_theme_find(theme_save);
+		if (!theme_install || !ro_gui_theme_apply(theme_install)) {
+			warn_user("ThemeApplyErr", 0);
+		} else {
+			theme_file = strdup(theme_save);
+			if (!theme_file) {
+				warn_user("NoMemory", 0);
+			} else {
+				free(option_theme);
+				option_theme = theme_file;
+			}
+		}
 	}
 }
 
-static void theme_install_close(void) {
-  	theme_install_active = false;
+
+/**
+ * Close the theme installer and free resources.
+ */
+
+void theme_install_close(void)
+{
+	theme_install_active = false;
 	if (theme_install_content)
-		content_close(theme_install_content);
+		content_remove_user(theme_install_content,
+				theme_install_callback, 0, 0);
 	theme_install_content = NULL;
 	ro_gui_dialog_close(dialog_theme_install);
 }
