@@ -122,7 +122,6 @@ mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size, mng_uin
 	/*	Get our content back
 	*/
 	c = (struct content *)mng_get_userdata(mng);
-	LOG(("Reading data"));
 	
 	/*	Copy any data we have (maximum of 'size')
 	*/
@@ -132,7 +131,6 @@ mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size, mng_uin
 		memcpy(buffer, c->source_data + c->data.mng.read_size, *bytesread);
 		c->data.mng.read_size += *bytesread;
 	}
-	LOG(("Read data (%i bytes, %i total)", *bytesread, c->data.mng.read_size));
 
 	/*	Return success
 	*/
@@ -193,8 +191,6 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 	if (mng_set_canvasstyle(mng, MNG_CANVAS_RGBA8) != MNG_NOERROR) {
 		LOG(("Error setting canvas style."));
 	}
-	
-	LOG(("Created canvas (%ix%i)", c->width, c->height));
 
 	/*	Return success
 	*/

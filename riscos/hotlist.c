@@ -464,11 +464,11 @@ void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry, bool a
 	int visits = 0;
 	bool add_entry;
 
-	while (cur) {
+	while (true) {
 	  	/*	Add any items that have had all the data they can have
 	  	*/
 	  	if ((allow_add) && (load_title != NULL)) {
-	  		if ((cur->next == NULL) || ((cur->type == XML_ELEMENT_NODE) &&
+	  		if ((cur == NULL) || ((cur->type == XML_ELEMENT_NODE) &&
 		  		((!(strcmp(cur->name, "li"))) || (!(strcmp(cur->name, "h4"))) ||
 		  		(!(strcmp(cur->name, "ul")))))) {
 
@@ -494,6 +494,10 @@ void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry, bool a
 				visits = 0;
 			}
 		}
+		
+		/*	Abort if we've ran out of content
+		*/
+		if (cur == NULL) return;
 
 	        /*	Gather further information and recurse
 	        */
