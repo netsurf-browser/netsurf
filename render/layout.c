@@ -582,7 +582,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy)
 {
 	unsigned int columns = table->columns;  /* total columns */
-	unsigned long table_width, max_width = 0;
+	unsigned long table_width, min_width = 0, max_width = 0;
 	unsigned long x;
 	unsigned long table_height = 0;
 	unsigned long *xs;  /* array of column x positions */
@@ -625,22 +625,24 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 
 	LOG(("width %lu, min %lu, max %lu", table_width, table->min_width, table->max_width));
 
-	/* percentage width columns give an upper bound if possible */
 	for (i = 0; i < table->columns; i++) {
 		if (col[i].type == COLUMN_WIDTH_PERCENT) {
-			col[i].max = width * col[i].width / 100;
-			if (col[i].max < col[i].min)
-				col[i].max = col[i].min;
+			unsigned long width = table_width * col[i].width / 100;
+			if (width < col[i].min)
+				width = col[i].min;
+			col[i].min = col[i].width = col[i].max = width;
+			col[i].type = COLUMN_WIDTH_FIXED;
 		}
+		min_width += col[i].min;
 		max_width += col[i].max;
 	}
 
-	if (table_width <= table->min_width) {
+	if (table_width <= min_width) {
 		/* not enough space: minimise column widths */
 		for (i = 0; i < table->columns; i++) {
 			col[i].width = col[i].min;
 		}
-		table_width = table->min_width;
+		table_width = min_width;
 	} else if (max_width <= table_width) {
 		/* more space than maximum width */
 		if (table->style->width.width == CSS_WIDTH_AUTO) {
@@ -668,8 +670,8 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 		}
 	} else {
 		/* space between min and max: fill it exactly */
-		float scale = (float) (table_width - table->min_width) /
-				(float) (max_width - table->min_width);
+		float scale = (float) (table_width - min_width) /
+				(float) (max_width - min_width);
 /*         	fprintf(stderr, "filling, scale %f\n", scale); */
 		for (i = 0; i < table->columns; i++) {
 			col[i].width = col[i].min +
