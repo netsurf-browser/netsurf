@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.8 2002/12/27 21:09:15 bursa Exp $
+ * $Id: gui.c,v 1.9 2002/12/29 20:02:46 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -480,10 +480,10 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
         break;
   }
 
-  if (x + box->x*2 + box->width*2 /* right edge */ >= clip->x0 &&
-      x + box->x*2 /* left edge */ <= clip->x1 &&
-      y - box->y*2 - box->height*2 - 8 /* bottom edge */ <= clip->y1 &&
-      y - box->y*2 /* top edge */ >= clip->y0)
+  if (x + (signed long) (box->x*2 + box->width*2) /* right edge */ >= clip->x0 &&
+      x + (signed long) (box->x*2) /* left edge */ <= clip->x1 &&
+      y - (signed long) (box->y*2 + box->height*2 + 8) /* bottom edge */ <= clip->y1 &&
+      y - (signed long) (box->y*2) /* top edge */ >= clip->y0)
   {
 
 #ifdef FANCY_LINKS
