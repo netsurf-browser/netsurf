@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.38 2003/05/25 04:09:59 jmb Exp $
+ * $Id: browser.c,v 1.39 2003/06/05 13:17:55 philpem Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -223,7 +223,8 @@ void browser_window_open_location_historical(struct browser_window* bw, const ch
   fetchcache(url, 0, browser_window_callback, bw,
 		  gui_window_get_width(bw->window), 0,
 		  (1 << CONTENT_HTML) | (1 << CONTENT_TEXTPLAIN) |
-		  (1 << CONTENT_JPEG) | (1 << CONTENT_PNG));
+		  (1 << CONTENT_JPEG) | (1 << CONTENT_PNG) |
+		  (1 << CONTENT_GIF));
 
   LOG(("end"));
 }

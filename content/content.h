@@ -1,5 +1,5 @@
 /**
- * $Id: content.h,v 1.10 2003/05/10 11:13:34 bursa Exp $
+ * $Id: content.h,v 1.11 2003/06/05 13:17:55 philpem Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
@@ -7,6 +7,7 @@
 
 #include "libxml/HTMLparser.h"
 #include "libpng/png.h"
+#include "libungif/gif_lib.h"
 #include "oslib/osspriteop.h"
 #include "netsurf/content/cache.h"
 #include "netsurf/css/css.h"
@@ -34,6 +35,7 @@ typedef enum {
 	CONTENT_JPEG,
 	CONTENT_CSS,
 	CONTENT_PNG,
+	CONTENT_GIF,
 	CONTENT_OTHER
 } content_type;
 
@@ -109,6 +111,17 @@ struct content
       char *sprite_image;
       enum { PNG_PALETTE, PNG_DITHER, PNG_DEEP } type;
     } png;
+
+    // Structure for the GIF handler
+    struct
+    {
+      GifFileType *giffile;               // GIF file handler
+      char *data;                         // GIF data
+      unsigned long length;               // Length of GIF data
+      unsigned long buffer_pos;           // Position in the buffer
+      osspriteop_area *sprite_area;       // Sprite area
+      char *sprite_image;                 // Sprite image
+    } gif;
 
   } data;
 

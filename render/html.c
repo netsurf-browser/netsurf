@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.17 2003/05/10 11:13:34 bursa Exp $
+ * $Id: html.c,v 1.18 2003/06/05 13:17:55 philpem Exp $
  */
 
 #include <assert.h>
@@ -119,7 +119,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 
 	if (c->active != 0)
 		c->status = CONTENT_PENDING;
-	
+
 	return 0;
 }
 
@@ -226,7 +226,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 				}
 				xmlFree(media);
 			}
-			
+
 			/* href='...' */
 			if (!(href = (char *) xmlGetProp(node, (const xmlChar *) "href")))
 				continue;
@@ -307,7 +307,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 void html_fetch_image(struct content *c, char *url, struct box *box)
 {
 	struct fetch_data *fetch_data;
-	
+
 	/* add to object list */
 	c->data.html.object = xrealloc(c->data.html.object,
 			(c->data.html.object_count + 1) *
@@ -325,7 +325,8 @@ void html_fetch_image(struct content *c, char *url, struct box *box)
 	fetchcache(url, c->url,
 			html_image_callback,
 			fetch_data, 0, 0,
-			(1 << CONTENT_JPEG) | (1 << CONTENT_PNG));
+			(1 << CONTENT_JPEG) | (1 << CONTENT_PNG) |
+			(1 << CONTENT_GIF));
 }
 
 
@@ -416,7 +417,9 @@ void html_revive(struct content *c, unsigned int width, unsigned int height)
 			fetchcache(c->data.html.object[i].url, c->url,
 					html_image_callback,
 					fetch_data, 0, 0,
-					(1 << CONTENT_JPEG) | (1 << CONTENT_PNG));
+					(1 << CONTENT_JPEG) |
+					(1 << CONTENT_PNG)  |
+					(1 << CONTENT_GIF));
 		}
 	}
 

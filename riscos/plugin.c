@@ -1,5 +1,5 @@
 /**
- * $Id: plugin.c,v 1.2 2003/06/02 21:09:50 jmb Exp $
+ * $Id: plugin.c,v 1.3 2003/06/05 13:17:55 philpem Exp $
  */
 
 #include <assert.h>
@@ -41,7 +41,8 @@ void plugin_fetch(struct content* content, char* url, struct box* box,
 
                 /* OK, we have an image. Let's make the image handler
                    deal with it */
-                if (mime_type == CONTENT_JPEG || mime_type == CONTENT_PNG) {
+                if (mime_type == CONTENT_JPEG || mime_type == CONTENT_PNG ||
+                    mime_type == CONTENT_GIF) {
 
                         xfree(po);
                         LOG(("sending data to image handler"));

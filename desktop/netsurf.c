@@ -1,5 +1,5 @@
 /**
- * $Id: netsurf.c,v 1.9 2003/06/01 23:02:56 monkeyson Exp $
+ * $Id: netsurf.c,v 1.10 2003/06/05 13:17:55 philpem Exp $
  */
 
 #include "netsurf/desktop/options.h"
@@ -34,6 +34,7 @@ void netsurf_init(int argc, char** argv)
   fetch_init();
   cache_init();
   nspng_init();
+  nsgif_init();
 }
 
 

@@ -15,6 +15,8 @@ running <em>RISC OS</em>.</p>
 <ul>
 <li><a href="test1">Test page 1</a></li>
 <li><a href="jpeg">JPEG image</a></li>
+<li><a href="png">PNG image</a></li>
+<li><a href="gif">GIF image</a></li>
 <li><a href="text">Plain text</a></li>
 </ul>
 </div>
@@ -36,6 +38,7 @@ fetching</li>
 <h2>In Progress</h2>
 <ul>
 <li><strong>PNGs <img src="png" alt=""> now partially supported</strong></li>
+<li><strong>GIFs <img src="gif" alt=""> now partially supported</strong></li>
 <li>Improved memory handling (currently exits when memory is exhausted)</li>
 <li>Forms (display but don't submit)</li>
 <li><img style="float: left" src="jpeg" alt="">Images (JPEGs so far)</li>

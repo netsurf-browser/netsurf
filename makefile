@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.29 2003/06/05 11:03:20 bursa Exp $
+# $Id: makefile,v 1.30 2003/06/05 13:17:55 philpem Exp $
 
 CC = riscos-gcc
 OBJECTS = cache.o content.o fetch.o fetchcache.o \
@@ -16,6 +16,7 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 CFLAGS = $(WARNFLAGS) -I.. -I/usr/local/riscoslibs/include \
 	-Dfd_set=long -mpoke-function-name
 LDFLAGS = \
+	/usr/local/riscoslibs/libungif/libungif.ro \
 	/usr/local/riscoslibs/libxml2/libxml2.ro \
 	/usr/local/riscoslibs/OSLib/OSLib32.ro \
 	/usr/local/riscoslibs/curl/libcurl.ro \

@@ -1,5 +1,5 @@
 /**
- * $Id: content.c,v 1.9 2003/05/10 11:13:34 bursa Exp $
+ * $Id: content.c,v 1.10 2003/06/05 13:17:55 philpem Exp $
  */
 
 #include <assert.h>
@@ -11,6 +11,7 @@
 #include "netsurf/render/textplain.h"
 #include "netsurf/riscos/jpeg.h"
 #include "netsurf/riscos/png.h"
+#include "netsurf/riscos/gif.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -20,6 +21,7 @@ struct mime_entry {
 	content_type type;
 };
 static const struct mime_entry mime_map[] = {
+	{"image/gif", CONTENT_GIF},
 	{"image/jpeg", CONTENT_JPEG},
 	{"image/png", CONTENT_PNG},
 	{"text/css", CONTENT_CSS},
@@ -49,6 +51,8 @@ static const struct handler_entry handler_map[] = {
 	{css_create, css_process_data, css_convert, css_revive, css_reformat, css_destroy, 0},
 	{nspng_create, nspng_process_data, nspng_convert, nspng_revive,
 		nspng_reformat, nspng_destroy, nspng_redraw},
+	{nsgif_create, nsgif_process_data, nsgif_convert, nsgif_revive,
+	        nsgif_reformat, nsgif_destroy, nsgif_redraw}
 };
 
 
