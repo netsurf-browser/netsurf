@@ -217,27 +217,28 @@ fail:
 
 	return 0;
 }
-	
-	
 
-char *get_host_from_url (char *url) {
 
-  char *host = xcalloc(strlen(url)+10, sizeof(char));
-  int i;
+/**
+ * Extract the host name from a url.
+ *
+ * \param url an absolute URL
+ * \return a new string, or 0 in case of error
+ */
 
-  i = strspn(url, "abcdefghijklmnopqrstuvwxyz");
-  if (url[i] == ':') {
-    strcpy(host, url);
-    i += 3;
-  }
+char *get_host_from_url(char *url)
+{
+	char *host = 0;
+	uri_t *uri;
 
-  for (; host[i] != 0 && host[i] != '/'; i++)
-    host[i] = tolower(host[i]);
+	uri = uri_alloc(url, strlen(url));
+	if (!uri)
+		return 0;
+	if (uri->host)
+		host = xstrdup(uri->host);
+	uri_free(uri);
 
-  host[i] = '/';
-  host[i+1] = 0;
-
-  return host;
+	return host;
 }
 
 

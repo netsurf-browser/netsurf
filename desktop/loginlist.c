@@ -30,6 +30,8 @@ void login_list_add(char *host, char* logindets) {
   char *temp = get_host_from_url(host);
   char *i;
 
+  assert(temp);
+
   /* Go back to the path base ie strip the document name
    * eg. http://www.blah.com/blah/test.htm becomes
    *     http://www.blah.com/blah/
@@ -77,6 +79,7 @@ struct login *login_list_get(char *host) {
     return NULL;
 
   temphost = get_host_from_url(host);
+  assert(temphost);
   temp = xstrdup(host);
 
   /* Smallest thing to check for is the scheme + host name + trailing '/'
@@ -84,6 +87,7 @@ struct login *login_list_get(char *host) {
    */
   if (strlen(temphost) > strlen(temp)) {
     temp = get_host_from_url(host);
+    assert(temp);
   }
 
   /* Work backwards through the path, directory at at time.
