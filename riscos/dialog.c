@@ -733,14 +733,17 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 	/*	Check that the existing text is not the same as the updated text
 		to stop flicker
 	*/
-	if (!strncmp(ic.icon.data.indirected_text.text, text,
-			(unsigned int)ic.icon.data.indirected_text.size)) return;
+	if (!strcmp(ic.icon.data.indirected_text.text, text))
+		return;
 
 	/*	Copy the text across
 	*/
 	old_len = strlen(ic.icon.data.indirected_text.text);
-	strncpy(ic.icon.data.indirected_text.text, text,
+	if (ic.icon.data.indirected_text.size > 0) {
+		strncpy(ic.icon.data.indirected_text.text, text,
 			(unsigned int)ic.icon.data.indirected_text.size);
+		ic.icon.data.indirected_text.text[ic.icon.data.indirected_text.size - 1] = '\0';
+	}
 
 	/*	Handle the caret being in the icon
 	*/
