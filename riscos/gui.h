@@ -1,5 +1,5 @@
 /**
- * $Id: gui.h,v 1.5 2003/03/08 20:26:31 bursa Exp $
+ * $Id: gui.h,v 1.6 2003/04/15 18:07:25 bursa Exp $
  */
 
 #ifndef _NETSURF_RISCOS_GUI_H_
@@ -38,6 +38,7 @@ struct ro_gui_window
 
   gui_safety redraw_safety;
   enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION } drag_status;
+  int old_width;
 };
 
 #include "netsurf/desktop/browser.h"

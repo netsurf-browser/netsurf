@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.26 2003/04/15 17:53:00 bursa Exp $
+ * $Id: gui.c,v 1.27 2003/04/15 18:07:25 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -984,13 +984,16 @@ void ro_gui_window_open(gui_window* g, wimp_open* open)
   if (g->type == GUI_BROWSER_WINDOW)
   {
     if (g->data.browser.bw->current_content != 0) {
-      if (g->data.browser.bw->current_content->width
-		      < browser_x_units(open->visible.x1 - open->visible.x0))
-        gui_window_set_extent(g, browser_x_units(open->visible.x1 - open->visible.x0),
-			g->data.browser.bw->current_content->height);
-      else
-        gui_window_set_extent(g, g->data.browser.bw->current_content->width,
-			g->data.browser.bw->current_content->height);
+      if (g->old_width != open->visible.x1 - open->visible.x0) {
+        if (g->data.browser.bw->current_content->width
+		        < browser_x_units(open->visible.x1 - open->visible.x0))
+          gui_window_set_extent(g, browser_x_units(open->visible.x1 - open->visible.x0),
+			  g->data.browser.bw->current_content->height);
+        else
+          gui_window_set_extent(g, g->data.browser.bw->current_content->width,
+			  g->data.browser.bw->current_content->height);
+	g->old_width = open->visible.x1 - open->visible.x0;
+      }
     }
     wimp_open_window(open);
 
