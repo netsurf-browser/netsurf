@@ -77,8 +77,8 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
     win_width = 1600;
   win_height = win_width * 3 / 4;
 
-  window.visible.x0 = ((screen_width - win_width) / 2) + (48 * window_count);
-  window.visible.y0 = ((screen_height - win_height) / 2) - (48 * window_count);
+  window.visible.x0 = ((screen_width - win_width) / 2) + (48 * (window_count%5));
+  window.visible.y0 = ((screen_height - win_height) / 2) - (48 * (window_count%5));
   window.visible.x1 = window.visible.x0 + win_width;
   window.visible.y1 = window.visible.y0 + win_height;
   window.xscroll = 0;
