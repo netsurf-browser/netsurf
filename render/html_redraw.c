@@ -769,8 +769,8 @@ bool html_redraw_background(int x, int y,
 
 	/* and plot the image */
 	return plot.bitmap_tile(x, y,
-			box->background->width * scale,
-			box->background->height * scale,
+			ceilf(box->background->width * scale),
+			ceilf(box->background->height * scale),
 			box->background->bitmap,
 			background_colour,
 			repeat_x, repeat_y);
