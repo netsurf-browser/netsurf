@@ -44,9 +44,8 @@ static int rewrite_stylesheet_urls(const char* sheet, int isize, char* buffer,
                             int osize, struct url_entry *head);*/
 static int rewrite_document_urls(xmlDoc *doc, struct url_entry *head, char *fname);
 static int rewrite_urls(xmlNode *n, struct url_entry *head, char *fname);
-static void rewrite_url_data(xmlNode *n, struct url_entry *head, char *fname);
-static void rewrite_url_href(xmlNode *n, struct url_entry *head, char *fname);
-static void rewrite_url_src(xmlNode *n, struct url_entry *head, char *fname);
+static void rewrite_url(xmlNode *n, struct url_entry *head, char *fname,
+                        const char *attr);
 
 /* this is temporary. */
 const char * const SAVE_PATH = "<NetSurf$Dir>.savetest.";
@@ -518,14 +517,14 @@ int rewrite_urls(xmlNode *n, struct url_entry *head, char *fname)
                 LOG(("%s", n->name));
                 /* 1 */
                 if (strcmp(n->name, "object") == 0) {
-                      rewrite_url_data(n, head, fname);
+                      rewrite_url(n, head, fname, "data");
                 }
                 /* 2 */
                 else if (strcmp(n->name, "a") == 0 ||
                          strcmp(n->name, "area") == 0 ||
                          strcmp(n->name, "link") == 0 ||
                          strcmp(n->name, "base") == 0) {
-                      rewrite_url_href(n, head, fname);
+                      rewrite_url(n, head, fname, "href");
                 }
                 /* 3 */
                 else if (strcmp(n->name, "frame") == 0 ||
@@ -533,7 +532,7 @@ int rewrite_urls(xmlNode *n, struct url_entry *head, char *fname)
                          strcmp(n->name, "input") == 0 ||
                          strcmp(n->name, "img") == 0 ||
                          strcmp(n->name, "script") == 0) {
-                      rewrite_url_src(n, head, fname);
+                      rewrite_url(n, head, fname, "src");
                 }
         }
         else {
@@ -548,13 +547,22 @@ int rewrite_urls(xmlNode *n, struct url_entry *head, char *fname)
         return 1;
 }
 
-void rewrite_url_data(xmlNode *n, struct url_entry *head, char *fname)
+/**
+ * Rewrite an URL in a HTML document.
+ *
+ * @param n The node to modify
+ * @param head The head of the list of known URLs
+ * @param fname The name of the file to save as
+ * @param attr The html attribute to modify
+ */
+void rewrite_url(xmlNode *n, struct url_entry *head, char *fname,
+                 const char *attr)
 {
         char *url, *data, *rel;
         struct url_entry *item;
         int len = strlen(fname) + strlen(OBJ_DIR) + 13;
 
-        data = xmlGetProp(n, (const xmlChar*)"data");
+        data = xmlGetProp(n, (const xmlChar*)attr);
 
         if (!data) return;
 
@@ -570,80 +578,19 @@ void rewrite_url_data(xmlNode *n, struct url_entry *head, char *fname)
                         rel = xcalloc(len, sizeof(char));
                         sprintf(rel, "./%s%s/0x%x", fname, OBJ_DIR,
                                                            item->next->ptr);
-                        xmlSetProp(n, (const xmlChar*)"data",
+                        xmlSetProp(n, (const xmlChar*)attr,
                                       (const xmlChar*) rel);
                         xfree(rel);
                         break;
                 }
+        }
+
+        if (item->next == 0) { /* no match found */
+                xmlSetProp(n, (const xmlChar*)attr, (const xmlChar*)url);
         }
 
         xfree(url);
         xmlFree(data);
 }
 
-void rewrite_url_href(xmlNode *n, struct url_entry *head, char *fname)
-{
-        char *url, *href, *rel;
-        struct url_entry *item;
-        int len = strlen(fname) + strlen(OBJ_DIR) + 13;
-
-        href = xmlGetProp(n, (const xmlChar*)"href");
-
-        if (!href) return;
-
-        url = url_join(href, head->next->par);
-        if (!url) {
-                xmlFree(href);
-                return;
-        }
-
-        for (item=head; item->next; item=item->next) {
-
-                if (strcmp(url, item->next->url) == 0) { /* found a match */
-                        rel = xcalloc(len, sizeof(char));
-                        sprintf(rel, "./%s%s/0x%x", fname, OBJ_DIR,
-                                                           item->next->ptr);
-                        xmlSetProp(n, (const xmlChar*)"href",
-                                      (const xmlChar*) rel);
-                        xfree(rel);
-                        break;
-                }
-        }
-
-        xfree(url);
-        xmlFree(href);
-}
-
-void rewrite_url_src(xmlNode *n, struct url_entry *head, char *fname)
-{
-        char *url, *src, *rel;
-        struct url_entry *item;
-        int len = strlen(fname) + strlen(OBJ_DIR) + 13;
-
-        src = xmlGetProp(n, (const xmlChar*)"src");
-
-        if (!src) return;
-
-        url = url_join(src, head->next->par);
-        if (!url) {
-                xmlFree(src);
-                return;
-        }
-
-        for (item=head; item->next; item=item->next) {
-
-                if (strcmp(url, item->next->url) == 0) { /* found a match */
-                        rel = xcalloc(len, sizeof(char));
-                        sprintf(rel, "./%s%s/0x%x", fname, OBJ_DIR,
-                                                           item->next->ptr);
-                        xmlSetProp(n, (const xmlChar*)"src",
-                                      (const xmlChar*) rel);
-                        xfree(rel);
-                        break;
-                }
-        }
-
-        xfree(url);
-        xmlFree(src);
-}
 #endif
