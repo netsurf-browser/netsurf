@@ -72,7 +72,11 @@ struct plugin_params {};
 struct box {
 	box_type type;
 	struct css_style * style;
-	long x, y, width, height;
+	int x;  /**< Coordinate of left padding edge relative to parent box. */
+	int y;  /**< Coordinate of top padding edge relative to parent box. */
+	int width;   /**< Width of content box (excluding padding etc.). */
+	int height;  /**< Height of content box (excluding padding etc.). */
+	int margin[4], padding[4], border[4];
 	long min_width, max_width;
 	char * text;
 	unsigned int space : 1;	/* 1 <=> followed by a space */

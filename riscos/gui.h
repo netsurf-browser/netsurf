@@ -28,6 +28,7 @@ extern int current_menu_x, current_menu_y, iconbar_menu_height;
 extern struct form_control *current_gadget;
 extern gui_window *window_list;
 extern bool gui_reformat_pending;
+extern bool gui_redraw_debug;
 
 struct gui_window
 {

@@ -162,6 +162,7 @@ void box_add_child(struct box * parent, struct box * child)
 struct box * box_create(struct css_style * style,
 		char *href, char *title, pool box_pool)
 {
+	unsigned int i;
 	struct box *box = pool_alloc(box_pool, sizeof (struct box));
 	assert(box);
 	box->type = BOX_INLINE;
@@ -195,6 +196,8 @@ struct box * box_create(struct css_style * style,
 #endif
 	box->x = box->y = 0;
 	box->height = 0;
+	for (i = 0; i != 4; i++)
+		box->margin[i] = box->padding[i] = box->border[i] = 0;
 	return box;
 }
 

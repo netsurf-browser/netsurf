@@ -28,6 +28,10 @@ static void html_redraw_box(struct content *content, struct box * box,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1);
 static void html_redraw_clip(long clip_x0, long clip_y0,
 		long clip_x1, long clip_y1);
+void html_redraw_rectangle(int x0, int y0, int width, int height,
+		os_colour colour);
+
+bool gui_redraw_debug = false;
 
 
 void html_redraw(struct content *c, long x, long y,
@@ -57,12 +61,8 @@ void html_redraw(struct content *c, long x, long y,
 
 
 /* validation strings can't be const */
-static char validation_select[] = "R2";
 static char validation_checkbox_selected[] = "Sopton";
 static char validation_checkbox_unselected[] = "Soptoff";
-
-static char select_text_multiple[] = "<Multiple>";  /* TODO: read from messages */
-static char select_text_none[] = "<None>";
 
 static char empty_text[] = "";
 
@@ -74,29 +74,39 @@ void html_redraw_box(struct content *content, struct box * box,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
 {
 	struct box *c;
-	char *select_text;
-	struct form_option *opt;
 	int width, height, x0, y0, x1, y1, colour;
 
 	x += box->x * 2;
 	y -= box->y * 2;
-	width = box->width * 2;
-	height = box->height * 2;
+	width = (box->padding[LEFT] + box->width + box->padding[RIGHT]) * 2;
+	height = (box->padding[TOP] + box->height + box->padding[BOTTOM]) * 2;
 
 	x0 = x;
 	y1 = y - 1;
 	x1 = x0 + width - 1;
 	y0 = y1 - height + 1;
 
-        /* return if visibility is hidden or inherited visibility is hidden
-         */
-        if (box->style->visibility == CSS_VISIBILITY_HIDDEN) {
-           for (c=box->children;c!=0;c=c->next)
-             html_redraw_box(content, c, x, y, current_background_color,
-  			     gadget_subtract_x, gadget_subtract_y, select_on,
-			     x0, y0, x1, y1);
-           return;
-        }
+	/* if visibility is hidden render children only */
+	if (box->style->visibility == CSS_VISIBILITY_HIDDEN) {
+		for (c = box->children; c; c = c->next)
+			html_redraw_box(content, c, x, y, current_background_color,
+					gadget_subtract_x, gadget_subtract_y, select_on,
+					x0, y0, x1, y1);
+		return;
+	}
+
+	if (gui_redraw_debug) {
+		html_redraw_rectangle(x, y, width, height, os_COLOUR_MAGENTA);
+		html_redraw_rectangle(x + box->padding[LEFT] * 2, y - box->padding[TOP] * 2,
+				box->width * 2, box->height * 2, os_COLOUR_CYAN);
+		html_redraw_rectangle(x - (box->border[LEFT] + box->margin[LEFT]) * 2,
+				y + (box->border[TOP] + box->margin[TOP]) * 2,
+				width + (box->border[LEFT] + box->margin[LEFT] +
+				         box->border[RIGHT] + box->margin[RIGHT]) * 2,
+				height + (box->border[TOP] + box->margin[TOP] +
+				         box->border[BOTTOM] + box->margin[BOTTOM]) * 2,
+				os_COLOUR_YELLOW);
+	}
 
 	/* return if the box is completely outside the clip rectangle, except
 	 * for table rows which may contain cells spanning into other rows */
@@ -124,13 +134,14 @@ void html_redraw_box(struct content *content, struct box * box,
 
 	/* background colour */
 	if (box->style != 0 && box->style->background_color != TRANSPARENT) {
-		colourtrans_set_gcol(box->style->background_color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
+		colourtrans_set_gcol(box->style->background_color << 8,
+				colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		os_plot(os_MOVE_TO, x, y);
 		os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, width, -height);
 		current_background_color = box->style->background_color;
 	}
 
-	if (box->object /*&& box->object->type != CONTENT_HTML*/) {
+	if (box->object) {
 		content_redraw(box->object, x, y, (unsigned int)width,
 		               (unsigned int)height, x0, y0, x1, y1);
 
@@ -145,66 +156,6 @@ void html_redraw_box(struct content *content, struct box * box,
 		icon.extent.y1 = -gadget_subtract_y + y;
 
 		switch (box->gadget->type) {
-		case GADGET_SELECT:
-			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
-			    wimp_ICON_VCENTRED | wimp_ICON_FILLED |
-			    wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
-			    (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-			    (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
-			select_text = 0;
-			opt = box->gadget->data.select.items;
-//			if (box->gadget->data.select.size == 1) {
-			        while (opt != NULL)
-			        {
-				        if (opt->selected)
-				        {
-					        if (select_text == 0)
-						        select_text = opt->text;
-					        else
-						        select_text = select_text_multiple;
-				        }
-				        opt = opt->next;
-			        }
-			        if (select_text == 0)
-				        select_text = select_text_none;
-/*			}
-			else {
-			        while (opt != NULL)
-			        {
-				        if (opt->selected)
-				        {
-					        select_text = opt->text;
-					        opt = opt->next;
-					        break;
-				        }
-				        opt = opt->next;
-			        }
-			        if (select_text == 0) {
-			        // display the first n options
-			                opt = box->gadget->data.select.items;
-			                select_text = opt->text;
-			                opt = opt->next;
-			                for(i = box->gadget->data.select.size-1;
-                                            i != 0; i--, opt=opt->next) {
-                                                strcat(select_text, "\n");
-                                                strcat(select_text, opt->text);
-                                        }
-			        }
-			        else {
-                                        for(i = box->gadget->data.select.size-1;
-                                            i != 0; i--, opt=opt->next) {
-                                                strcat(select_text, "\n");
-                                                strcat(select_text, opt->text);
-                                        }
-			        }
-			}
-*/			icon.data.indirected_text.text = select_text;
-			icon.data.indirected_text.size = strlen(icon.data.indirected_text.text);
-			icon.data.indirected_text.validation = validation_select;
-			LOG(("writing GADGET ACTION"));
-			wimp_plot_icon(&icon);
-			break;
-
 		case GADGET_CHECKBOX:
 			icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
 			    wimp_ICON_VCENTRED | wimp_ICON_HCENTRED | wimp_ICON_INDIRECTED;
@@ -380,3 +331,14 @@ void html_redraw_clip(long clip_x0, long clip_y0,
 	os_writec((char) (clip_y1 & 0xff)); os_writec((char) (clip_y1 >> 8));
 }
 
+
+void html_redraw_rectangle(int x0, int y0, int width, int height,
+		os_colour colour)
+{
+	colourtrans_set_gcol(colour, 0, os_ACTION_OVERWRITE, 0);
+	os_plot(os_MOVE_TO, x0, y0);
+	os_plot(os_PLOT_DOTTED | os_PLOT_BY, width, 0);
+	os_plot(os_PLOT_DOTTED | os_PLOT_BY, 0, -height);
+	os_plot(os_PLOT_DOTTED | os_PLOT_BY, -width, 0);
+	os_plot(os_PLOT_DOTTED | os_PLOT_BY, 0, height);
+}

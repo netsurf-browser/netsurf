@@ -39,6 +39,26 @@ static int parse_length(struct css_length * const length,
 static colour parse_colour(const struct css_node * const v);
 static void parse_background(struct css_style * const s, const struct css_node * v);
 static void parse_background_color(struct css_style * const s, const struct css_node * const v);
+static void parse_border(struct css_style * const s, const struct css_node * v);
+static void parse_border_bottom(struct css_style * const s, const struct css_node * v);
+static void parse_border_bottom_color(struct css_style * const s, const struct css_node * v);
+static void parse_border_bottom_style(struct css_style * const s, const struct css_node * v);
+static void parse_border_bottom_width(struct css_style * const s, const struct css_node * v);
+static void parse_border_color(struct css_style * const s, const struct css_node * v);
+static void parse_border_left(struct css_style * const s, const struct css_node * v);
+static void parse_border_left_color(struct css_style * const s, const struct css_node * v);
+static void parse_border_left_style(struct css_style * const s, const struct css_node * v);
+static void parse_border_left_width(struct css_style * const s, const struct css_node * v);
+static void parse_border_right(struct css_style * const s, const struct css_node * v);
+static void parse_border_right_color(struct css_style * const s, const struct css_node * v);
+static void parse_border_right_style(struct css_style * const s, const struct css_node * v);
+static void parse_border_right_width(struct css_style * const s, const struct css_node * v);
+static void parse_border_style(struct css_style * const s, const struct css_node * v);
+static void parse_border_top(struct css_style * const s, const struct css_node * v);
+static void parse_border_top_color(struct css_style * const s, const struct css_node * v);
+static void parse_border_top_style(struct css_style * const s, const struct css_node * v);
+static void parse_border_top_width(struct css_style * const s, const struct css_node * v);
+static void parse_border_width(struct css_style * const s, const struct css_node * v);
 static void parse_clear(struct css_style * const s, const struct css_node * const v);
 static void parse_color(struct css_style * const s, const struct css_node * const v);
 static void parse_display(struct css_style * const s, const struct css_node * const v);
@@ -51,6 +71,20 @@ static void parse_font_variant(struct css_style * const s, const struct css_node
 static void parse_font_weight(struct css_style * const s, const struct css_node * const v);
 static void parse_height(struct css_style * const s, const struct css_node * const v);
 static void parse_line_height(struct css_style * const s, const struct css_node * const v);
+static void parse_margin(struct css_style * const s, const struct css_node * const v);
+static void parse_margin_bottom(struct css_style * const s, const struct css_node * const v);
+static void parse_margin_left(struct css_style * const s, const struct css_node * const v);
+static void parse_margin_right(struct css_style * const s, const struct css_node * const v);
+static void parse_margin_top(struct css_style * const s, const struct css_node * const v);
+static void parse_margin_side(struct css_style * const s, const struct css_node * const v,
+		unsigned int i);
+static void parse_padding(struct css_style * const s, const struct css_node * const v);
+static void parse_padding_bottom(struct css_style * const s, const struct css_node * const v);
+static void parse_padding_left(struct css_style * const s, const struct css_node * const v);
+static void parse_padding_right(struct css_style * const s, const struct css_node * const v);
+static void parse_padding_top(struct css_style * const s, const struct css_node * const v);
+static void parse_padding_side(struct css_style * const s, const struct css_node * const v,
+		unsigned int i);
 static void parse_text_align(struct css_style * const s, const struct css_node * const v);
 static void parse_text_decoration(struct css_style * const s, const struct css_node * const v);
 static void parse_text_indent(struct css_style * const s, const struct css_node * const v);
@@ -65,6 +99,26 @@ static css_text_decoration css_text_decoration_parse(const char * const s);
 static const struct property_entry property_table[] = {
 	{ "background",       parse_background },
 	{ "background-color", parse_background_color },
+/*	{ "border",           parse_border },
+	{ "border-bottom",    parse_border_bottom },
+	{ "border-bottom-color", parse_border_bottom_color },
+	{ "border-bottom-style", parse_border_bottom_style },
+	{ "border-bottom-width", parse_border_bottom_width },
+	{ "border-color",     parse_border_color },
+	{ "border-left",      parse_border_left },
+	{ "border-left-color", parse_border_left_color },
+	{ "border-left-style", parse_border_left_style },
+	{ "border-left-width", parse_border_left_width },
+	{ "border-right",     parse_border_right },
+	{ "border-right-color", parse_border_right_color },
+	{ "border-right-style", parse_border_right_style },
+	{ "border-right-width", parse_border_right_width },
+	{ "border-style",     parse_border_style },
+	{ "border-top",       parse_border_top },
+	{ "border-top-color", parse_border_top_color },
+	{ "border-top-style", parse_border_top_style },
+	{ "border-top-width", parse_border_top_width },
+	{ "border-width",     parse_border_width },*/
 	{ "clear",            parse_clear },
 	{ "color",            parse_color },
 	{ "display",          parse_display },
@@ -77,6 +131,16 @@ static const struct property_entry property_table[] = {
 	{ "font-weight",      parse_font_weight },
 	{ "height",           parse_height },
 	{ "line-height",      parse_line_height },
+	{ "margin",           parse_margin },
+	{ "margin-bottom",    parse_margin_bottom },
+	{ "margin-left",      parse_margin_left },
+	{ "margin-right",     parse_margin_right },
+	{ "margin-top",       parse_margin_top },
+	{ "padding",          parse_padding },
+	{ "padding-bottom",   parse_padding_bottom },
+	{ "padding-left",     parse_padding_left },
+	{ "padding-right",    parse_padding_right },
+	{ "padding-top",      parse_padding_top },
 	{ "text-align",       parse_text_align },
 	{ "text-decoration",  parse_text_decoration },
 	{ "text-indent",      parse_text_indent },
@@ -274,6 +338,11 @@ int parse_length(struct css_length * const length,
 {
 	css_unit u;
 	float value;
+	if (v->type == CSS_NODE_NUMBER && atof(v->data) == 0) {
+		length->unit = CSS_UNIT_EM;
+		length->value = 0;
+		return 0;
+	}
 	if (v->type != CSS_NODE_DIMENSION)
 		return 1;
 	u = css_unit_parse(v->data + strspn(v->data, "0123456789+-."));
@@ -542,7 +611,8 @@ void parse_height(struct css_style * const s, const struct css_node * const v)
 {
 	if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "auto") == 0)
 		s->height.height = CSS_HEIGHT_AUTO;
-	else if (v->type == CSS_NODE_DIMENSION && parse_length(&s->height.length, v, true) == 0)
+	else if ((v->type == CSS_NODE_DIMENSION || v->type == CSS_NODE_NUMBER) &&
+			parse_length(&s->height.length, v, true) == 0)
 		s->height.height = CSS_HEIGHT_LENGTH;
 }
 
@@ -563,6 +633,186 @@ void parse_line_height(struct css_style * const s, const struct css_node * const
 	}
 }
 
+void parse_margin(struct css_style * const s, const struct css_node * const v)
+{
+	unsigned int count = 0;
+	const struct css_node *w;
+
+	for (w = v; w; w = w->next, count++)
+		if (!((w->type == CSS_NODE_IDENT && (
+				  (strcasecmp(w->data, "inherit") == 0) ||
+				  (strcasecmp(w->data, "auto") == 0))) ||
+				(w->type == CSS_NODE_PERCENTAGE) ||
+				(w->type == CSS_NODE_DIMENSION) ||
+				(w->type == CSS_NODE_NUMBER)))
+			return;
+
+	switch (count) {
+		case 1: /* one value: applies to all sides */
+			parse_margin_side(s, v, 0);
+			parse_margin_side(s, v, 1);
+			parse_margin_side(s, v, 2);
+			parse_margin_side(s, v, 3);
+			break;
+		case 2: /* (top and bottom), (left and right) */
+			parse_margin_side(s, v, 0);
+			parse_margin_side(s, v, 2);
+			v = v->next;
+			parse_margin_side(s, v, 1);
+			parse_margin_side(s, v, 3);
+			break;
+		case 3: /* top, (left and right), bottom */
+			parse_margin_side(s, v, 0);
+			v = v->next;
+			parse_margin_side(s, v, 1);
+			parse_margin_side(s, v, 3);
+			v = v->next;
+			parse_margin_side(s, v, 2);
+			break;
+		case 4: /* top, right, bottom, left */
+			parse_margin_side(s, v, 0);
+			v = v->next;
+			parse_margin_side(s, v, 1);
+			v = v->next;
+			parse_margin_side(s, v, 2);
+			v = v->next;
+			parse_margin_side(s, v, 3);
+			break;
+	}
+}
+
+void parse_margin_top(struct css_style * const s, const struct css_node * const v)
+{
+	if (v->next != 0)
+		return;
+	parse_margin_side(s, v, 0);
+}
+
+void parse_margin_right(struct css_style * const s, const struct css_node * const v)
+{
+	if (v->next != 0)
+		return;
+	parse_margin_side(s, v, 1);
+}
+
+void parse_margin_bottom(struct css_style * const s, const struct css_node * const v)
+{
+	if (v->next != 0)
+		return;
+	parse_margin_side(s, v, 2);
+}
+
+void parse_margin_left(struct css_style * const s, const struct css_node * const v)
+{
+	if (v->next != 0)
+		return;
+	parse_margin_side(s, v, 3);
+}
+
+void parse_margin_side(struct css_style * const s, const struct css_node * const v,
+		unsigned int i)
+{
+	if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "inherit") == 0)
+		s->margin[i].margin = CSS_MARGIN_INHERIT;
+	else if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "auto") == 0)
+		s->margin[i].margin = CSS_MARGIN_AUTO;
+	else if (v->type == CSS_NODE_PERCENTAGE) {
+		s->margin[i].margin = CSS_MARGIN_PERCENT;
+		s->margin[i].value.percent = atof(v->data);
+	} else if ((v->type == CSS_NODE_DIMENSION || v->type == CSS_NODE_NUMBER) &&
+			parse_length(&s->margin[i].value.length, v, false) == 0) {
+		s->margin[i].margin = CSS_MARGIN_LENGTH;
+	}
+}
+
+void parse_padding(struct css_style * const s, const struct css_node * const v)
+{
+	unsigned int count = 0;
+	const struct css_node *w;
+
+	for (w = v; w; w = w->next, count++)
+		if (!((w->type == CSS_NODE_IDENT && strcasecmp(w->data, "inherit") == 0) ||
+				(w->type == CSS_NODE_PERCENTAGE) ||
+				(w->type == CSS_NODE_DIMENSION) ||
+				(w->type == CSS_NODE_NUMBER)))
+			return;
+
+	switch (count) {
+		case 1: /* one value: applies to all sides */
+			parse_padding_side(s, v, 0);
+			parse_padding_side(s, v, 1);
+			parse_padding_side(s, v, 2);
+			parse_padding_side(s, v, 3);
+			break;
+		case 2: /* (top and bottom), (left and right) */
+			parse_padding_side(s, v, 0);
+			parse_padding_side(s, v, 2);
+			v = v->next;
+			parse_padding_side(s, v, 1);
+			parse_padding_side(s, v, 3);
+			break;
+		case 3: /* top, (left and right), bottom */
+			parse_padding_side(s, v, 0);
+			v = v->next;
+			parse_padding_side(s, v, 1);
+			parse_padding_side(s, v, 3);
+			v = v->next;
+			parse_padding_side(s, v, 2);
+			break;
+		case 4: /* top, right, bottom, left */
+			parse_padding_side(s, v, 0);
+			v = v->next;
+			parse_padding_side(s, v, 1);
+			v = v->next;
+			parse_padding_side(s, v, 2);
+			v = v->next;
+			parse_padding_side(s, v, 3);
+			break;
+	}
+}
+
+void parse_padding_top(struct css_style * const s, const struct css_node * const v)
+{
+	if (v->next != 0)
+		return;
+	parse_padding_side(s, v, 0);
+}
+
+void parse_padding_right(struct css_style * const s, const struct css_node * const v)
+{
+	if (v->next != 0)
+		return;
+	parse_padding_side(s, v, 1);
+}
+
+void parse_padding_bottom(struct css_style * const s, const struct css_node * const v)
+{
+	if (v->next != 0)
+		return;
+	parse_padding_side(s, v, 2);
+}
+
+void parse_padding_left(struct css_style * const s, const struct css_node * const v)
+{
+	if (v->next != 0)
+		return;
+	parse_padding_side(s, v, 3);
+}
+
+void parse_padding_side(struct css_style * const s, const struct css_node * const v,
+		unsigned int i)
+{
+	if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "inherit") == 0)
+		s->padding[i].padding = CSS_PADDING_INHERIT;
+	else if (v->type == CSS_NODE_PERCENTAGE) {
+		s->padding[i].padding = CSS_PADDING_PERCENT;
+		s->padding[i].value.percent = atof(v->data);
+	} else if ((v->type == CSS_NODE_DIMENSION || v->type == CSS_NODE_NUMBER) &&
+			parse_length(&s->padding[i].value.length, v, true) == 0) {
+		s->padding[i].padding = CSS_PADDING_LENGTH;
+	}
+}
+
 void parse_text_align(struct css_style * const s, const struct css_node * const v)
 {
 	css_text_align z;
@@ -580,7 +830,8 @@ void parse_text_indent(struct css_style * const s, const struct css_node * const
 	} else if (v->type == CSS_NODE_PERCENTAGE) {
 	        s->text_indent.size = CSS_TEXT_INDENT_PERCENT;
 	        s->text_indent.value.percent = atof(v->data);
-	} else if (v->type == CSS_NODE_DIMENSION && parse_length(&s->text_indent.value.length, v, true) == 0) {
+	} else if ((v->type == CSS_NODE_DIMENSION || v->type == CSS_NODE_NUMBER) &&
+			parse_length(&s->text_indent.value.length, v, true) == 0) {
 	        s->text_indent.size = CSS_TEXT_INDENT_LENGTH;
 	}
 }
@@ -633,7 +884,7 @@ void parse_width(struct css_style * const s, const struct css_node * const v)
 	else if (v->type == CSS_NODE_PERCENTAGE) {
 		s->width.width = CSS_WIDTH_PERCENT;
 		s->width.value.percent = atof(v->data);
-	} else if (v->type == CSS_NODE_DIMENSION &&
+	} else if ((v->type == CSS_NODE_DIMENSION || v->type == CSS_NODE_NUMBER) &&
 			parse_length(&s->width.value.length, v, true) == 0)
 		s->width.width = CSS_WIDTH_LENGTH;
 }

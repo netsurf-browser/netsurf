@@ -726,6 +726,11 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			cache_dump();
 			return true;
 
+		case wimp_KEY_F11:	/* Toggle display of box outlines. */
+			gui_redraw_debug = !gui_redraw_debug;
+			gui_window_redraw_window(g);
+			return true;
+
 		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
 			browser_window_destroy(g->data.browser.bw
 #ifdef WITH_FRAMES

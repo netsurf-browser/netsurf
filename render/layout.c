@@ -26,13 +26,16 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
-/**
- * internal functions
- */
+
+#define AUTO INT_MIN
+
 
 static void layout_node(struct box * box, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy);
-static unsigned long layout_block_children(struct box * box, unsigned long width, struct box * cont,
+static int layout_block_find_dimensions(unsigned long available_width,
+		struct css_style *style,
+		int margin[4], int padding[4], int border[4]);
+static void layout_block_children(struct box *box, struct box *cont,
 		unsigned long cx, unsigned long cy);
 static void find_sides(struct box * fl, unsigned long y0, unsigned long y1,
 		unsigned long * x0, unsigned long * x1, struct box ** left, struct box ** right);
@@ -50,20 +53,17 @@ static void calculate_table_widths(struct box *table);
 
 
 /**
- * layout algorithm
- */
-
-/**
- * layout_document -- calculate positions of boxes in a document
+ * Calculate positions of boxes in a document.
  *
- *	doc	root of document box tree
- *	width	page width
+ * \param doc    root of document box tree
+ * \param width  page width
  */
 
 void layout_document(struct box * doc, unsigned long width)
 {
 	struct box *box;
 	doc->float_children = 0;
+	doc->x = doc->y = 0;
 	layout_node(doc, width, doc, 0, 0);
 	for (box = doc->float_children; box != 0; box = box->next_float)
 		if (doc->height < box->y + box->height)
@@ -71,12 +71,29 @@ void layout_document(struct box * doc, unsigned long width)
 }
 
 
+/**
+ * Layout the children of a box.
+ *
+ * \param box    box to layout
+ * \param width  horizontal space available
+ * \param cont   ancestor box which defines horizontal space, for inlines
+ * \param cx     box position relative to cont
+ * \param cy     box position relative to cont
+ */
+
 void layout_node(struct box * box, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy)
 {
 	LOG(("box %p, width %lu, cont %p, cx %lu, cy %lu", box, width, cont, cx, cy));
 
 	gui_multitask();
+
+	if (box->style) {
+		box->width = layout_block_find_dimensions(width, box->style,
+				box->margin, box->padding, box->border);
+		box->x += box->margin[LEFT] + box->border[LEFT];
+		box->y += box->margin[TOP] + box->border[TOP];
+	}
 
 	switch (box->type) {
 		case BOX_BLOCK:
@@ -96,12 +113,13 @@ void layout_node(struct box * box, unsigned long width, struct box * cont,
 
 
 /**
- * layout_block -- position block and recursively layout children
+ * Layout the children of a block box.
  *
- * 	box	block box to layout
- * 	width	horizontal space available
- * 	cont	ancestor box which defines horizontal space, for inlines
- * 	cx, cy	box position relative to cont
+ * \param box    block box to layout
+ * \param width  horizontal space available
+ * \param cont   ancestor box which defines horizontal space, for inlines
+ * \param cx     box position relative to cont
+ * \param cy     box position relative to cont
  */
 
 void layout_block(struct box * box, unsigned long width, struct box * cont,
@@ -114,20 +132,7 @@ void layout_block(struct box * box, unsigned long width, struct box * cont,
 
 	LOG(("box %p, width %lu, cont %p, cx %lu, cy %lu", box, width, cont, cx, cy));
 
-	switch (style->width.width) {
-		case CSS_WIDTH_LENGTH:
-			box->width = len(&style->width.value.length, style);
-			break;
-		case CSS_WIDTH_PERCENT:
-			box->width = width * style->width.value.percent / 100;
-			break;
-		case CSS_WIDTH_AUTO:
-		default:
-			/* take all available width */
-			box->width = width;
-			break;
-	}
-	box->height = layout_block_children(box, (unsigned int)box->width, cont, cx, cy);
+	layout_block_children(box, cont, cx, cy);
 	switch (style->height.height) {
 		case CSS_HEIGHT_LENGTH:
 			box->height = len(&style->height.length, style);
@@ -141,16 +146,118 @@ void layout_block(struct box * box, unsigned long width, struct box * cont,
 
 
 /**
- * layout_block_children -- recursively layout block children
- *
- * 	(as above)
+ * Compute dimensions of box, margins, paddings, and borders for a block box.
  */
 
-unsigned long layout_block_children(struct box * box, unsigned long width, struct box * cont,
+int layout_block_find_dimensions(unsigned long available_width,
+		struct css_style *style,
+		int margin[4], int padding[4], int border[4])
+{
+	unsigned int i;
+	int width;
+
+	/* calculate box width */
+	switch (style->width.width) {
+		case CSS_WIDTH_LENGTH:
+			width = len(&style->width.value.length, style);
+			break;
+		case CSS_WIDTH_PERCENT:
+			width = available_width * style->width.value.percent / 100;
+			break;
+		case CSS_WIDTH_AUTO:
+		default:
+			width = AUTO;
+			break;
+	}
+
+	/* calculate size of margins, paddings, and borders */
+	for (i = 0; i != 4; i++) {
+		switch (style->margin[i].margin) {
+			case CSS_MARGIN_LENGTH:
+				margin[i] = len(&style->margin[i].value.length, style);
+				break;
+			case CSS_MARGIN_PERCENT:
+				margin[i] = available_width *
+						style->margin[i].value.percent / 100;
+				break;
+			case CSS_MARGIN_AUTO:
+			default:
+				margin[i] = AUTO;
+				break;
+		}
+
+		switch (style->padding[i].padding) {
+			case CSS_MARGIN_PERCENT:
+				padding[i] = available_width *
+						style->padding[i].value.percent / 100;
+				break;
+			case CSS_PADDING_LENGTH:
+			default:
+				padding[i] = len(&style->padding[i].value.length, style);
+				break;
+		}
+
+		if (style->border[i].style == CSS_BORDER_STYLE_NONE ||
+				style->border[i].style == CSS_BORDER_STYLE_HIDDEN)
+			/* spec unclear: following Mozilla */
+			border[i] = 0;
+		else
+			border[i] = len(&style->border[i].width.value, style);
+	}
+
+	/* solve the width constraint as given in CSS 2.1 section 10.3.3 */
+	if (width == AUTO) {
+		/* any other 'auto' become 0 */
+		if (margin[LEFT] == AUTO)
+			margin[LEFT] = 0;
+		if (margin[RIGHT] == AUTO)
+			margin[RIGHT] = 0;
+		width = available_width -
+				(margin[LEFT] + border[LEFT] + padding[LEFT] +
+				 padding[RIGHT] + border[RIGHT] + margin[RIGHT]);
+	} else if (margin[LEFT] == AUTO && margin[RIGHT] == AUTO) {
+		/* make the margins equal, centering the element */
+		margin[LEFT] = margin[RIGHT] = (available_width -
+				(border[LEFT] + padding[LEFT] + width +
+				 padding[RIGHT] + border[RIGHT])) / 2;
+	} else if (margin[LEFT] == AUTO) {
+		margin[LEFT] = available_width -
+				(border[LEFT] + padding[LEFT] + width +
+				 padding[RIGHT] + border[RIGHT] + margin[RIGHT]);
+	} else {
+		/* margin-right auto or "over-constained" */
+		margin[RIGHT] = available_width -
+				(margin[LEFT] + border[LEFT] + padding[LEFT] +
+				 width + padding[RIGHT] + border[RIGHT]);
+	}
+
+	if (margin[TOP] == AUTO)
+		margin[TOP] = 0;
+	if (margin[BOTTOM] == AUTO)
+		margin[BOTTOM] = 0;
+
+	return width;
+}
+
+
+/**
+ * Recursively layout block children.
+ *
+ * \param box     block box to layout
+ * \param cont    ancestor box which defines horizontal space, for inlines
+ * \param cx      box position relative to cont
+ * \param cy      box position relative to cont
+ *
+ * box->width, box->margin, box->padding and box->border must be valid.
+ * box->height is filled in.
+ */
+
+void layout_block_children(struct box *box, struct box *cont,
 		unsigned long cx, unsigned long cy)
 {
-	struct box * c;
-	unsigned long y = 0;
+	struct box *c;
+	int width = box->width;
+	int y = box->padding[TOP];
 
 	assert(box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 	       box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT ||
@@ -179,14 +286,15 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 			         (c->style->clear == CSS_CLEAR_BOTH && (left != 0 || right != 0)));
 		}
 
-		c->x = 0;
+		c->x = box->padding[LEFT];
 		c->y = y;
 		layout_node(c, width, cont, cx, cy + y);
-		y = c->y + c->height;
+		y = c->y + c->height + c->padding[TOP] + c->padding[BOTTOM] +
+				c->border[BOTTOM] + c->margin[BOTTOM];
 		if (box->width < c->width)
 			box->width = c->width;
 	}
-	return y;
+	box->height = y - box->padding[TOP];
 }
 
 
@@ -593,19 +701,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 	calculate_table_widths(table);
 	memcpy(col, table->col, sizeof(col[0]) * columns);
 
-	/* find table width */
-	switch (table->style->width.width) {
-		case CSS_WIDTH_LENGTH:
-			table_width = len(&table->style->width.value.length, table->style);
-			break;
-		case CSS_WIDTH_PERCENT:
-			table_width = width * table->style->width.value.percent / 100;
-			break;
-		case CSS_WIDTH_AUTO:
-		default:
-			table_width = width;
-			break;
-	}
+	table_width = table->width;
 
 	LOG(("width %lu, min %lu, max %lu", table_width, table->min_width, table->max_width));
 
@@ -710,7 +806,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 				assert(c->style != 0);
 				c->width = xs[c->start_column + c->columns] - xs[c->start_column];
 				c->float_children = 0;
-				c->height = layout_block_children(c, (unsigned long)c->width, c, 0, 0);
+				layout_block_children(c, c, 0, 0);
 				if (c->style->height.height == CSS_HEIGHT_LENGTH) {
 					/* some sites use height="1" or similar to attempt
 					 * to make cells as small as possible, so treat

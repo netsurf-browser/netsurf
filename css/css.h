@@ -35,6 +35,10 @@ typedef unsigned long colour;  /* 0xbbggrr */
 #define TRANSPARENT 0x1000000
 #define CSS_COLOR_INHERIT 0x2000000
 #define CSS_COLOR_NONE 0x3000000
+#define TOP 0
+#define RIGHT 1
+#define BOTTOM 2
+#define LEFT 3
 
 /** Representation of a CSS 2 length. */
 struct css_length {
@@ -55,6 +59,17 @@ typedef enum {
 /** Representation of a complete CSS 2 style. */
 struct css_style {
 	colour background_color;
+
+	struct {
+		colour color;
+		struct {
+			enum { CSS_BORDER_WIDTH_INHERIT,
+			       CSS_BORDER_WIDTH_LENGTH } width;
+			struct css_length value;
+		} width;
+		css_border_style style;
+	} border[4];  /**< top, right, bottom, left */
+
 	css_clear clear;
 	colour color;
 	css_display display;
@@ -95,6 +110,27 @@ struct css_style {
 			float percent;
 		} value;
 	} line_height;
+
+	struct {
+		enum { CSS_MARGIN_INHERIT,
+		       CSS_MARGIN_LENGTH,
+		       CSS_MARGIN_PERCENT,
+		       CSS_MARGIN_AUTO } margin;
+		union {
+			struct css_length length;
+			float percent;
+		} value;
+	} margin[4];  /**< top, right, bottom, left */
+
+	struct {
+		enum { CSS_PADDING_INHERIT,
+		       CSS_PADDING_LENGTH,
+		       CSS_PADDING_PERCENT } padding;
+		union {
+			struct css_length length;
+			float percent;
+		} value;
+	} padding[4];  /**< top, right, bottom, left */
 
 	css_text_align text_align;
 	css_text_decoration text_decoration;

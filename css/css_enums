@@ -2,8 +2,7 @@ css_unit em ex px in cm mm pt pc
 css_background_attachment inherit fixed scroll
 css_background_position inherit top center bottom left right length percent
 css_background_repeat inherit repeat repeat_x repeat_y no_repeat
-css_border_width inherit medium thin thick length
-css_border_style inherit none dashed dotted double groove inset outset ridge solid
+css_border_style inherit none hidden dotted dashed solid double groove ridge inset outset
 css_clear inherit none both left right
 css_display inherit inline block list-item run-in inline-block table inline-table table-row-group table-header-group table-footer-group table-row table-column-group table-column table-cell table-caption none
 css_float inherit none left right
@@ -14,7 +13,6 @@ css_font_weight inherit normal bold bolder lighter 100 200 300 400 500 600 700 8
 css_letter_spacing normal length
 css_list_style_position outside inside
 css_list_style_type disc circle square decimal lower_alpha lower_roman upper_alpha upper_roman none
-css_margin auto length percent
 css_text_align inherit left right center justify
 css_text_transform inherit none capitalize lowercase uppercase
 css_vertical_align baseline bottom middle sub super text_bottom text_top top percent

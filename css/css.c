@@ -38,6 +38,14 @@ static bool css_match_rule(struct css_node *rule, xmlNode *element);
 
 const struct css_style css_base_style = {
 	0xffffff,
+	{ { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
+	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
+	  { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
+	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
+	  { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
+	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
+	  { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
+	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE } },
 	CSS_CLEAR_NONE,
 	0x000000,
 	CSS_DISPLAY_BLOCK,
@@ -49,6 +57,14 @@ const struct css_style css_base_style = {
 	CSS_FONT_VARIANT_NORMAL,
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_ABSOLUTE, { 1.3 } },
+	{ { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } } },
+	{ { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } } },
 	CSS_TEXT_ALIGN_LEFT,
 	CSS_TEXT_DECORATION_NONE,
 	{ CSS_TEXT_INDENT_LENGTH, { { 0, CSS_UNIT_EM } } },
@@ -60,6 +76,14 @@ const struct css_style css_base_style = {
 
 const struct css_style css_empty_style = {
 	CSS_COLOR_INHERIT,
+	{ { CSS_COLOR_INHERIT, { CSS_BORDER_WIDTH_INHERIT,
+	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_INHERIT },
+	  { CSS_COLOR_INHERIT, { CSS_BORDER_WIDTH_INHERIT,
+	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_INHERIT },
+	  { CSS_COLOR_INHERIT, { CSS_BORDER_WIDTH_INHERIT,
+	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_INHERIT },
+	  { CSS_COLOR_INHERIT, { CSS_BORDER_WIDTH_INHERIT,
+	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_INHERIT } },
 	CSS_CLEAR_INHERIT,
 	CSS_COLOR_INHERIT,
 	CSS_DISPLAY_INHERIT,
@@ -71,6 +95,14 @@ const struct css_style css_empty_style = {
 	CSS_FONT_VARIANT_INHERIT,
 	{ CSS_HEIGHT_INHERIT, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
+	{ { CSS_MARGIN_INHERIT, { { 0, CSS_UNIT_PX } } },
+	  { CSS_MARGIN_INHERIT, { { 0, CSS_UNIT_PX } } },
+	  { CSS_MARGIN_INHERIT, { { 0, CSS_UNIT_PX } } },
+	  { CSS_MARGIN_INHERIT, { { 0, CSS_UNIT_PX } } } },
+	{ { CSS_PADDING_INHERIT, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_INHERIT, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_INHERIT, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_INHERIT, { { 0, CSS_UNIT_PX } } } },
 	CSS_TEXT_ALIGN_INHERIT,
 	CSS_TEXT_DECORATION_INHERIT,
 	{ CSS_TEXT_INDENT_INHERIT, { { 0, CSS_UNIT_EM } } },
@@ -82,6 +114,14 @@ const struct css_style css_empty_style = {
 
 const struct css_style css_blank_style = {
 	TRANSPARENT,
+	{ { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
+	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
+	  { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
+	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
+	  { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
+	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
+	  { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
+	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE } },
 	CSS_CLEAR_NONE,
 	CSS_COLOR_INHERIT,
 	CSS_DISPLAY_INLINE,
@@ -93,6 +133,14 @@ const struct css_style css_blank_style = {
 	CSS_FONT_VARIANT_INHERIT,
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
+	{ { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_MARGIN_LENGTH, { { 0, CSS_UNIT_PX } } } },
+	{ { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } } },
 	CSS_TEXT_ALIGN_INHERIT,
 	CSS_TEXT_DECORATION_INHERIT,
 	{ CSS_TEXT_INDENT_INHERIT, { { 0, CSS_UNIT_EM } } },
@@ -643,6 +691,7 @@ static void dump_length(const struct css_length * const length)
 
 void css_dump_style(const struct css_style * const style)
 {
+	unsigned int i;
 	fprintf(stderr, "{ ");
 	fprintf(stderr, "background-color: #%lx; ", style->background_color);
 	fprintf(stderr, "clear: %s; ", css_clear_name[style->clear]);
@@ -676,6 +725,29 @@ void css_dump_style(const struct css_style * const style)
 		default:                fprintf(stderr, "UNKNOWN"); break;
 	}
 	fprintf(stderr, "; ");
+	fprintf(stderr, "margin:");
+	for (i = 0; i != 4; i++) {
+		switch (style->margin[i].margin) {
+			case CSS_MARGIN_INHERIT: fprintf(stderr, " inherit"); break;
+			case CSS_MARGIN_LENGTH:  fprintf(stderr, " ");
+				dump_length(&style->margin[i].value.length); break;
+			case CSS_MARGIN_PERCENT: fprintf(stderr, " %g%%", style->margin[i].value.percent);
+			case CSS_MARGIN_AUTO:    fprintf(stderr, " auto"); break;
+			default:                 fprintf(stderr, "UNKNOWN"); break;
+		}
+	}
+	fprintf(stderr, "; ");
+	fprintf(stderr, "padding:");
+	for (i = 0; i != 4; i++) {
+		switch (style->padding[i].padding) {
+			case CSS_PADDING_INHERIT: fprintf(stderr, " inherit"); break;
+			case CSS_PADDING_LENGTH:  fprintf(stderr, " ");
+				dump_length(&style->padding[i].value.length); break;
+			case CSS_PADDING_PERCENT: fprintf(stderr, " %g%%", style->padding[i].value.percent);
+			default:                 fprintf(stderr, "UNKNOWN"); break;
+		}
+	}
+	fprintf(stderr, "; ");
 	fprintf(stderr, "text-align: %s; ", css_text_align_name[style->text_align]);
 	fprintf(stderr, "text-decoration:");
 	switch (style->text_decoration) {
@@ -704,6 +776,7 @@ void css_dump_style(const struct css_style * const style)
 	fprintf(stderr, "visibility: %s; ", css_visibility_name[style->visibility]);
 	fprintf(stderr, "width: ");
 	switch (style->width.width) {
+		case CSS_WIDTH_INHERIT: fprintf(stderr, "inherit"); break;
 		case CSS_WIDTH_AUTO:    fprintf(stderr, "auto"); break;
 		case CSS_WIDTH_LENGTH:  dump_length(&style->width.value.length); break;
 		case CSS_WIDTH_PERCENT: fprintf(stderr, "%g%%", style->width.value.percent); break;
@@ -753,6 +826,7 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 
 void css_cascade(struct css_style * const style, const struct css_style * const apply)
 {
+	unsigned int i;
 	float f;
 
 	/* text-decoration: approximate CSS 2.1 by inheriting into inline elements */
@@ -833,11 +907,28 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 		default:                     /* leave unchanged */
 			break;
 	}
+
+	for (i = 0; i != 4; i++) {
+		if (apply->border[i].color != CSS_COLOR_INHERIT)
+			style->border[i].color = apply->border[i].color;
+		if (apply->border[i].width.width != CSS_BORDER_WIDTH_INHERIT)
+			style->border[i].width = apply->border[i].width;
+		if (apply->border[i].style != CSS_BORDER_STYLE_INHERIT)
+			style->border[i].style = apply->border[i].style;
+
+		if (apply->margin[i].margin != CSS_MARGIN_INHERIT)
+			style->margin[i] = apply->margin[i];
+
+		if (apply->padding[i].padding != CSS_PADDING_INHERIT)
+			style->padding[i] = apply->padding[i];
+	}
 }
 
 
 void css_merge(struct css_style * const style, const struct css_style * const apply)
 {
+	unsigned int i;
+
 	if (apply->background_color != CSS_COLOR_INHERIT)
 		style->background_color = apply->background_color;
 	if (apply->clear != CSS_CLEAR_INHERIT)
@@ -876,6 +967,21 @@ void css_merge(struct css_style * const style, const struct css_style * const ap
 		style->width = apply->width;
 	if (apply->white_space != CSS_WHITE_SPACE_INHERIT)
 		style->white_space = apply->white_space;
+
+	for (i = 0; i != 4; i++) {
+		if (apply->border[i].color != CSS_COLOR_INHERIT)
+			style->border[i].color = apply->border[i].color;
+		if (apply->border[i].width.width != CSS_BORDER_WIDTH_INHERIT)
+			style->border[i].width = apply->border[i].width;
+		if (apply->border[i].style != CSS_BORDER_STYLE_INHERIT)
+			style->border[i].style = apply->border[i].style;
+
+		if (apply->margin[i].margin != CSS_MARGIN_INHERIT)
+			style->margin[i] = apply->margin[i];
+
+		if (apply->padding[i].padding != CSS_PADDING_INHERIT)
+			style->padding[i] = apply->padding[i];
+	}
 }
 
 
