@@ -130,6 +130,9 @@ struct browser_window* create_browser_window(int flags, int width, int height, s
   bw->url = NULL;
   bw->caret_callback = 0;
 
+  bw->parent = NULL;
+
+#if 0
   bw->parent = parent;
 
   if (bw->parent != NULL) {
@@ -142,8 +145,13 @@ struct browser_window* create_browser_window(int flags, int width, int height, s
     bw->window = NULL; /* This is filled in by frame_add_instance */
   }
   else {
+#endif
+
     bw->window = gui_create_browser_window(bw);
+
+#if 0
   }
+#endif
 
   return bw;
 }
@@ -156,10 +164,10 @@ void browser_window_set_status(struct browser_window* bw, const char* text)
 
 void browser_window_destroy(struct browser_window* bw, bool self)
 {
-  unsigned int i;
+  /*unsigned int i;*/
   LOG(("bw = %p", bw));
   assert(bw != 0);
-
+#if 0
   if (bw->no_children == 0 && bw->parent != NULL) { /* leaf node -> delete */
     if (bw->current_content != NULL) {
       if (bw->current_content->status == CONTENT_STATUS_DONE)
@@ -178,6 +186,7 @@ void browser_window_destroy(struct browser_window* bw, bool self)
 
   /* all children killed -> remove this node */
   if (self || bw->parent != NULL) {
+#endif
     if (bw->current_content != NULL) {
       if (bw->current_content->status == CONTENT_STATUS_DONE)
         content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
@@ -190,13 +199,15 @@ void browser_window_destroy(struct browser_window* bw, bool self)
     xfree(bw->url);
 
     gui_window_destroy(bw->window);
-    xfree(bw->children);
+    /*xfree(bw->children);*/
     xfree(bw);
+#if 0
   }
   else {
     bw->no_children = 0;
     xfree(bw->children);
   }
+#endif
   LOG(("end"));
 }
 
@@ -212,8 +223,8 @@ void browser_window_open_location_historical(struct browser_window* bw,
   /* Check window still exists, if not, don't bother going any further */
   if (!gui_window_in_list(bw->window)) return;
 
-  if (bw->url != NULL)
-    browser_window_destroy(bw, false);
+  /*if (bw->url != NULL)
+    browser_window_destroy(bw, false);*/
 
   if ((li = login_list_get(url)) == NULL) {
 
