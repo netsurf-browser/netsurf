@@ -173,21 +173,24 @@ void nsgif_animate(void *p)
 {
 	struct content *c = p;
 	union content_msg_data data;
+	struct gif_animation *gif;
 	int delay;
+	int f;
 	
 	/*	Advance by a frame, updating the loop count accordingly
 	*/
+	gif = c->data.gif.gif;
 	c->data.gif.current_frame++;
-	if (c->data.gif.current_frame == (int)c->data.gif.gif->frame_count_partial) {
+	if (c->data.gif.current_frame == (int)gif->frame_count_partial) {
 		c->data.gif.current_frame = 0;
 
 		/*	A loop count of 0 has a special meaning of infinite
 		*/
 		if (c->data.gif.gif->loop_count != 0) {
-			c->data.gif.gif->loop_count--;
-			if (c->data.gif.gif->loop_count == 0) {
-				c->data.gif.current_frame = c->data.gif.gif->frame_count_partial - 1;
-				c->data.gif.gif->loop_count = -1;
+			gif->loop_count--;
+			if (gif->loop_count == 0) {
+				c->data.gif.current_frame = gif->frame_count_partial - 1;
+				gif->loop_count = -1;
 			}
 		}
 	}
@@ -195,7 +198,7 @@ void nsgif_animate(void *p)
 	/*	Continue animating if we should
 	*/
 	if (c->data.gif.gif->loop_count >= 0) {
-		delay = c->data.gif.gif->frames[c->data.gif.current_frame].frame_delay;
+		delay = gif->frames[c->data.gif.current_frame].frame_delay;
 		if (delay < option_minimum_gif_delay)
 			delay = option_minimum_gif_delay;
 		schedule(delay, nsgif_animate, c);
@@ -205,21 +208,40 @@ void nsgif_animate(void *p)
 		return;
 
 	/* area within gif to redraw */
-	data.redraw.x = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_x;
-	data.redraw.y = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_y;
-	data.redraw.width = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_width;
-	data.redraw.height = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_height;
+	f = c->data.gif.current_frame;
+	data.redraw.x = gif->frames[f].redraw_x;
+	data.redraw.y = gif->frames[f].redraw_y;
+	data.redraw.width = gif->frames[f].redraw_width;
+	data.redraw.height = gif->frames[f].redraw_height;
 
 	/* redraw background (true) or plot on top (false) */
 	if (c->data.gif.current_frame > 0) {
-		data.redraw.full_redraw =
-				c->data.gif.gif->frames[c->data.gif.current_frame - 1].redraw_required;
+		data.redraw.full_redraw = gif->frames[f - 1].redraw_required;
+		/* previous frame needed clearing: expand the redraw area to cover it */
+		if (data.redraw.full_redraw) {
+			if (data.redraw.x > gif->frames[f - 1].redraw_x) {
+				data.redraw.width += data.redraw.x - gif->frames[f - 1].redraw_x;
+				data.redraw.x = gif->frames[f - 1].redraw_x;
+			}
+			if (data.redraw.y > gif->frames[f - 1].redraw_y) {
+				data.redraw.height += (data.redraw.y - gif->frames[f - 1].redraw_y);
+				data.redraw.y = gif->frames[f - 1].redraw_y;
+			}
+			if ((gif->frames[f - 1].redraw_x + gif->frames[f - 1].redraw_width) >
+					(data.redraw.x + data.redraw.width))
+				data.redraw.width = gif->frames[f - 1].redraw_x - data.redraw.x +
+						gif->frames[f - 1].redraw_width;
+			if ((gif->frames[f - 1].redraw_y + gif->frames[f - 1].redraw_height) >
+					(data.redraw.y + data.redraw.height))
+				data.redraw.height = gif->frames[f - 1].redraw_y - data.redraw.y +
+						gif->frames[f - 1].redraw_height;
+		}
 	} else {
 		/* do advanced check */
 		if ((data.redraw.x == 0) && (data.redraw.y == 0) &&
 				(data.redraw.width == c->data.gif.gif->width) &&
 				(data.redraw.height == c->data.gif.gif->height)) {
-			data.redraw.full_redraw = bitmap_get_opaque(c->data.gif.gif->frame_image);
+			data.redraw.full_redraw = !bitmap_get_opaque(c->data.gif.gif->frame_image);
 		} else {	
 			data.redraw.full_redraw = true;
 			data.redraw.x = 0;

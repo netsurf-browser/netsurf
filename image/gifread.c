@@ -108,7 +108,6 @@ int gif_initialise(struct gif_animation *gif) {
 	unsigned char *gif_data;
 	unsigned int index;
 	int return_value;
-	unsigned int frame;
 
 	/*	Check for sufficient data to be a GIF
 	*/
@@ -243,44 +242,6 @@ int gif_initialise(struct gif_animation *gif) {
 	/*	Repeatedly try to decode frames
 	*/
 	while ((return_value = gif_initialise_frame(gif)) == 0);
-
-	/*	Update the redraw areas now we know the full data set
-	*/
-	if (gif->frame_count_partial > 0) {
-		/*	We now work backwards to update the redraw characteristics of frames
-			with clear codes to stop a snowball effect of the redraw areas. It doesn't
-			really make much difference for most images, and will not work as well
-			(ie will not optimise as well as for a single-pass call, but still works)
-			for multiple calls to this routine when decoding progressively.
-		*/
-		for (frame = gif->frame_count_partial - 1; frame > 0; frame--) {
-		  	if (gif->frames[frame - 1].redraw_required) {
-				if (gif->frames[frame].redraw_x > gif->frames[frame - 1].redraw_x) {
-					gif->frames[frame].redraw_width +=
-							(gif->frames[frame].redraw_x - gif->frames[frame - 1].redraw_x);
-					gif->frames[frame].redraw_x = gif->frames[frame - 1].redraw_x;
-				}
-				if (gif->frames[frame].redraw_y > gif->frames[frame - 1].redraw_y) {
-					gif->frames[frame].redraw_height +=
-							(gif->frames[frame].redraw_y - gif->frames[frame - 1].redraw_y);
-					gif->frames[frame].redraw_y = gif->frames[frame - 1].redraw_y;
-				}
-				if ((gif->frames[frame - 1].redraw_x + gif->frames[frame - 1].redraw_width) >
-						(gif->frames[frame].redraw_x + gif->frames[frame].redraw_width)) {
-					gif->frames[frame].redraw_width =
-						(gif->frames[frame - 1].redraw_x + gif->frames[frame - 1].redraw_width) -
-						gif->frames[frame].redraw_x;
-				}
-				if ((gif->frames[frame - 1].redraw_y + gif->frames[frame - 1].redraw_height) >
-					(gif->frames[frame].redraw_y + gif->frames[frame].redraw_height)) {
-					gif->frames[frame].redraw_height =
-						(gif->frames[frame - 1].redraw_y + gif->frames[frame - 1].redraw_height) -
-						gif->frames[frame].redraw_y;
-				}
-			}
-		}
-
-	}
 
 	/*	If there was a memory error tell the caller
 	*/
