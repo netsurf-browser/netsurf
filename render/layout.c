@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 Richard Wilson <info@tinct.net>
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
 
@@ -732,8 +732,8 @@ bool layout_line(struct box *first, int width, int *y,
 	int space_before = 0, space_after = 0;
 	unsigned int inline_count = 0;
 
-	LOG(("first->text '%.*s', width %i, y %i, cy %i",
-			first->length, first->text, width, *y, cy));
+	LOG(("first %p, first->text '%.*s', width %i, y %i, cy %i",
+			first, first->length, first->text, width, *y, cy));
 
 	/* find sides at top of line */
 	x0 += cx;
@@ -1755,6 +1755,8 @@ bool calculate_inline_container_widths(struct box *box)
 				else if (child->text)
 					calculate_inline_widths(child,
 							&min, &line_max);
+				else
+					child->width = 0;
 				break;
 
 			case BOX_INLINE_BLOCK:
