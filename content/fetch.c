@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.c,v 1.6 2003/04/17 21:35:02 bursa Exp $
+ * $Id: fetch.c,v 1.7 2003/04/25 08:03:15 bursa Exp $
  *
  * This module handles fetching of data from any url.
  *
@@ -114,7 +114,9 @@ struct fetch * fetch_start(char *url, char *referer,
 		fetch->referer = xstrdup(referer);
 	fetch->p = p;
 	fetch->headers = 0;
-	fetch->host = xstrdup(uri->server);
+	fetch->host = 0;
+	if (uri->server != 0)
+		fetch->host = xstrdup(uri->server);
 	fetch->queue = 0;
 	fetch->prev = 0;
 	fetch->next = 0;
@@ -122,16 +124,19 @@ struct fetch * fetch_start(char *url, char *referer,
 	xmlFreeURI(uri);
 
 	/* look for a fetch from the same host */
-	for (host_fetch = fetch_list;
-			host_fetch != 0 && strcasecmp(host_fetch->host, fetch->host) != 0;
-			host_fetch = host_fetch->next)
-		;
-	if (host_fetch != 0) {
-		/* fetch from this host in progress: queue the new fetch */
-		LOG(("queueing"));
-		fetch->queue = host_fetch->queue;
-		host_fetch->queue = fetch;
-		return fetch;
+	if (fetch->host != 0) {
+		for (host_fetch = fetch_list;
+				host_fetch != 0 && (host_fetch->host == 0 ||
+					strcasecmp(host_fetch->host, fetch->host) != 0);
+				host_fetch = host_fetch->next)
+			;
+		if (host_fetch != 0) {
+			/* fetch from this host in progress: queue the new fetch */
+			LOG(("queueing"));
+			fetch->queue = host_fetch->queue;
+			host_fetch->queue = fetch;
+			return fetch;
+		}
 	}
 
 	fetch->next = fetch_list;

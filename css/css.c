@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.7 2003/04/15 17:53:00 bursa Exp $
+ * $Id: css.c,v 1.8 2003/04/25 08:03:15 bursa Exp $
  */
 
 #include <assert.h>
@@ -111,7 +111,7 @@ void css_process_data(struct content *c, char *data, unsigned long size)
 	buffer = css__scan_bytes(data, size, c->data.css.css->lexer);
 	while ((token = css_lex(c->data.css.css->lexer))) {
 		css_parser_(c->data.css.css->parser, token,
-				strdup(css_get_text(c->data.css.css->lexer)),
+				xstrdup(css_get_text(c->data.css.css->lexer)),
 				&param);
 	}
 	css__delete_buffer(buffer, c->data.css.css->lexer);
@@ -431,16 +431,16 @@ void css_parse_property_list(struct css_style * style, char * str)
 
 	css_lex_init(&lexer);
 	parser = css_parser_Alloc(malloc);
-	css_parser_(parser, LBRACE, strdup("{"), &param);
+	css_parser_(parser, LBRACE, xstrdup("{"), &param);
 
 	buffer = css__scan_string(str, lexer);
 	while ((token = css_lex(lexer))) {
 		css_parser_(parser, token,
-				strdup(css_get_text(lexer)),
+				xstrdup(css_get_text(lexer)),
 				&param);
 	}
 	css__delete_buffer(buffer, lexer);
-	css_parser_(parser, RBRACE, strdup("}"), &param);
+	css_parser_(parser, RBRACE, xstrdup("}"), &param);
 	css_parser_(parser, 0, 0, &param);
 
 	css_parser_Free(parser, free);

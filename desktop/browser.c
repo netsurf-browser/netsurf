@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.34 2003/04/15 17:53:00 bursa Exp $
+ * $Id: browser.c,v 1.35 2003/04/25 08:03:15 bursa Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -76,7 +76,9 @@ struct history* history_create(char* desc, char* url)
 {
   struct history* h = xcalloc(1, sizeof(struct history));
   LOG(("desc = %s, url = %s", desc, url));
-  h->description = xstrdup(desc);
+  h->description = 0;
+  if (desc != 0)
+	  h->description = xstrdup(desc);
   h->url = xstrdup(url);
   LOG(("return h = %p", h));
   return h;

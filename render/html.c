@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.15 2003/04/15 17:53:00 bursa Exp $
+ * $Id: html.c,v 1.16 2003/04/25 08:03:15 bursa Exp $
  */
 
 #include <assert.h>
@@ -166,7 +166,7 @@ void html_title(struct content *c, xmlNode *head)
 		if (strcmp(node->name, "title") == 0) {
 			title = xmlNodeGetContent(node);
 			c->title = squash_tolat1(title);
-			free(title);
+			xmlFree(title);
 			return;
 		}
 	}
@@ -203,28 +203,28 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			if (!(rel = (char *) xmlGetProp(node, (const xmlChar *) "rel")))
 				continue;
 			if (strcasecmp(rel, "stylesheet") != 0) {
-				free(rel);
+				xmlFree(rel);
 				continue;
 			}
-			free(rel);
+			xmlFree(rel);
 
 			/* type='text/css' or not present */
 			if ((type = (char *) xmlGetProp(node, (const xmlChar *) "type"))) {
 				if (strcmp(type, "text/css") != 0) {
-					free(type);
+					xmlFree(type);
 					continue;
 				}
-				free(type);
+				xmlFree(type);
 			}
 
 			/* media contains 'screen' or 'all' or not present */
 			if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media"))) {
 				if (strstr(media, "screen") == 0 &&
 						strstr(media, "all") == 0) {
-					free(media);
+					xmlFree(media);
 					continue;
 				}
-				free(media);
+				xmlFree(media);
 			}
 			
 			/* href='...' */
@@ -233,7 +233,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 
 			url = url_join(href, c->url);
 			LOG(("linked stylesheet %i '%s'", i, url));
-			free(href);
+			xmlFree(href);
 
 			/* start fetch */
 			c->data.html.stylesheet_content = xrealloc(c->data.html.stylesheet_content,
@@ -252,19 +252,19 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			if (!(type = (char *) xmlGetProp(node, (const xmlChar *) "type")))
 				continue;
 			if (strcmp(type, "text/css") != 0) {
-				free(type);
+				xmlFree(type);
 				continue;
 			}
-			free(type);
+			xmlFree(type);
 
 			/* media contains 'screen' or 'all' or not present */
 			if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media"))) {
 				if (strstr(media, "screen") == 0 &&
 						strstr(media, "all") == 0) {
-					free(media);
+					xmlFree(media);
 					continue;
 				}
-				free(media);
+				xmlFree(media);
 			}
 
 			/* create stylesheet */
@@ -278,7 +278,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 				data = xmlNodeGetContent(node2);
 				content_process_data(c->data.html.stylesheet_content[1],
 						data, strlen(data));
-				free(data);
+				xmlFree(data);
 			}
 		}
 	}
@@ -439,14 +439,18 @@ void html_destroy(struct content *c)
 	unsigned int i;
 	LOG(("content %p", c));
 
+	LOG(("layout %p", c->data.html.layout));
 	if (c->data.html.layout != 0)
 		box_free(c->data.html.layout);
+	LOG(("fonts %p", c->data.html.fonts));
 	if (c->data.html.fonts != 0)
 		font_free_set(c->data.html.fonts);
+	LOG(("title %p", c->title));
 	if (c->title != 0)
 		xfree(c->title);
 
 	for (i = 0; i != c->data.html.object_count; i++) {
+		LOG(("object %i %p", i, c->data.html.object[i].content));
 		if (c->data.html.object[i].content != 0)
 			cache_free(c->data.html.object[i].content);
 		free(c->data.html.object[i].url);

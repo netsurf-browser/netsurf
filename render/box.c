@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.42 2003/04/15 17:53:00 bursa Exp $
+ * $Id: box.c,v 1.43 2003/04/25 08:03:15 bursa Exp $
  */
 
 #include <assert.h>
@@ -223,7 +223,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			current_textarea = box->gadget;
 			add_gadget_element(elements, box->gadget);
 			textarea_addtext(current_textarea, thistext);
-			free(content);
+			xmlFree(content);
 
 		} else if (strcmp((const char *) n->name, "select") == 0) {
 			LOG(("select"));
@@ -237,7 +237,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 					LOG(("option"));
 					current_option = box_option(c, style, current_select);
 					option_addtext(current_option, thistext);
-					free(content);
+					xmlFree(content);
 				}
 			}
 
@@ -437,7 +437,7 @@ struct css_style * box_get_style(struct content ** stylesheet,
 			else if (stricmp(s, "center") == 0) style->text_align = CSS_TEXT_ALIGN_CENTER;
 			else if (stricmp(s, "right") == 0) style->text_align = CSS_TEXT_ALIGN_RIGHT;
 		}
-		free(s);
+		xmlFree(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bgcolor"))) {
@@ -446,14 +446,14 @@ struct css_style * box_get_style(struct content ** stylesheet,
 			style->background_color = (b << 16) | (g << 8) | r;
 		else if (s[0] != '#')
 			style->background_color = named_colour(s);
-		free(s);
+		xmlFree(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "clear"))) {
 		if (stricmp(s, "all") == 0) style->clear = CSS_CLEAR_BOTH;
 		else if (stricmp(s, "left") == 0) style->clear = CSS_CLEAR_LEFT;
 		else if (stricmp(s, "right") == 0) style->clear = CSS_CLEAR_RIGHT;
-		free(s);
+		xmlFree(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "color"))) {
@@ -462,14 +462,14 @@ struct css_style * box_get_style(struct content ** stylesheet,
 			style->color = (b << 16) | (g << 8) | r;
 		else if (s[0] != '#')
 			style->color = named_colour(s);
-		free(s);
+		xmlFree(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "height"))) {
 		style->height.height = CSS_HEIGHT_LENGTH;
 		style->height.length.unit = CSS_UNIT_PX;
 		style->height.length.value = atof(s);
-		free(s);
+		xmlFree(s);
 	}
 
 	if (strcmp((const char *) n->name, "body") == 0) {
@@ -479,7 +479,7 @@ struct css_style * box_get_style(struct content ** stylesheet,
 				style->color = (b << 16) | (g << 8) | r;
 			else if (s[0] != '#')
 				style->color = named_colour(s);
-			free(s);
+			xmlFree(s);
 		}
 	}
 
@@ -492,7 +492,7 @@ struct css_style * box_get_style(struct content ** stylesheet,
 			style->width.value.length.unit = CSS_UNIT_PX;
 			style->width.value.length.value = atof(s);
 		}
-		free(s);
+		xmlFree(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
@@ -501,7 +501,7 @@ struct css_style * box_get_style(struct content ** stylesheet,
 		css_parse_property_list(astyle, s);
 		css_cascade(style, astyle);
 		free(astyle);
-		free(s);
+		xmlFree(s);
 	}
 
 	return style;
@@ -910,43 +910,43 @@ void gadget_free(struct gui_gadget* g)
 	struct formoption* o;
 
 	if (g->name != 0)
-		xfree(g->name);
+		xmlFree(g->name);
 
 	switch (g->type)
 	{
 		case GADGET_HIDDEN:
 			if (g->data.hidden.value != 0)
-				xfree(g->data.hidden.value);
+				xmlFree(g->data.hidden.value);
 			break;
 		case GADGET_RADIO:
 			if (g->data.checkbox.value != 0)
-				xfree(g->data.radio.value);
+				xmlFree(g->data.radio.value);
 			break;
 		case GADGET_CHECKBOX:
 			if (g->data.checkbox.value != 0)
-				xfree(g->data.checkbox.value);
+				xmlFree(g->data.checkbox.value);
 			break;
 		case GADGET_TEXTAREA:
 			if (g->data.textarea.text != 0)
-				xfree(g->data.textarea.text);
+				xmlFree(g->data.textarea.text);
 			break;
 		case GADGET_TEXTBOX:
 			gui_remove_gadget(g);
 			if (g->data.textbox.text != 0)
-				xfree(g->data.textbox.text);
+				xmlFree(g->data.textbox.text);
 			break;
 		case GADGET_ACTIONBUTTON:
 			if (g->data.actionbutt.label != 0)
-				xfree(g->data.actionbutt.label);
+				xmlFree(g->data.actionbutt.label);
 			break;
 		case GADGET_SELECT:
 			o = g->data.select.items;
 			while (o != NULL)
 			{
 				if (o->text != 0)
-					xfree(o->text);
+					xmlFree(o->text);
 				if (o->value != 0)
-					xfree(o->value);
+					xmlFree(o->value);
 				xfree(o);
 				o = o->next;
 			}
@@ -988,9 +988,9 @@ void box_free_box(struct box *box)
 	if (box->href != 0)
 	{
 		if (box->parent == 0)
-			free(box->href);
+			xmlFree(box->href);
 		else if (box->parent->href != box->href)
-			free(box->href);
+			xmlFree(box->href);
 	}
 }
 
@@ -1024,7 +1024,7 @@ struct box* box_image(xmlNode *n, struct content *content,
 
 	url = url_join(s, content->url);
 	LOG(("image '%s'", url));
-	free(s);
+	xmlFree(s);
 
 	/* start fetch */
 	html_fetch_image(content, url, box);
@@ -1052,7 +1052,7 @@ struct box* box_textarea(xmlNode* n, struct css_style* style, struct form* curre
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols")))
 	{
 		box->gadget->data.textarea.cols = atoi(s);
-		free(s);
+		xmlFree(s);
 	}
 	else
 		box->gadget->data.textarea.cols = 40;
@@ -1060,7 +1060,7 @@ struct box* box_textarea(xmlNode* n, struct css_style* style, struct form* curre
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows")))
 	{
 		box->gadget->data.textarea.rows = atoi(s);
-		free(s);
+		xmlFree(s);
 	}
 	else
 		box->gadget->data.textarea.rows = 16;
@@ -1094,7 +1094,7 @@ struct box* box_select(xmlNode * n, struct css_style* style, struct form* curren
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "size")))
 	{
 		box->gadget->data.select.size = atoi(s);
-		free(s);
+		xmlFree(s);
 	}
 	else
 		box->gadget->data.select.size = 1;
@@ -1139,7 +1139,7 @@ struct formoption* box_option(xmlNode* n, struct css_style* style, struct gui_ga
 	/* TO DO: set selected / value here */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "selected"))) {
 		option->selected = -1;
-		free(s);
+		xmlFree(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
@@ -1157,7 +1157,7 @@ void textarea_addtext(struct gui_gadget* textarea, char* text)
 
 	if (textarea->data.textarea.text == 0)
 	{
-		textarea->data.textarea.text = strdup(text);
+		textarea->data.textarea.text = xstrdup(text);
 	}
 	else
 	{
@@ -1174,7 +1174,7 @@ void option_addtext(struct formoption* option, char* text)
 	if (option->text == 0)
 	{
 		LOG(("option->text is 0"));
-		option->text = strdup(text);
+		option->text = xstrdup(text);
 	}
 	else
 	{
@@ -1229,7 +1229,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 					box->gadget->data.checkbox.selected = -1;
 				else
 					box->gadget->data.radio.selected = -1;
-				free(s);
+				xmlFree(s);
 			}
 
 			if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
@@ -1263,7 +1263,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			}
 			else
 			{
-				box->gadget->data.actionbutt.label = strdup(type);
+				box->gadget->data.actionbutt.label = xstrdup(type);
 				box->gadget->data.actionbutt.label[0] = toupper(type[0]);
 			}
 
@@ -1276,7 +1276,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 		if (!(stricmp(type, "text") == 0 || stricmp(type, "password") == 0))
 		{
 			
-		free (type);
+		xmlFree (type);
 		return box;
 		}
 			
@@ -1302,7 +1302,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			if ((s = (char *) xmlGetProp(n, (const xmlChar *) "maxlength"))) {
 //>>>>>> 1.31
 				box->gadget->data.textbox.maxlength = atoi(s);
-				free(s);
+				xmlFree(s);
 			}
 
 #ifdef ARSEMONKEYS
@@ -1314,7 +1314,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			box->gadget->data.textbox.size = box->gadget->data.textbox.maxlength;
 			if ((s = (char *) xmlGetProp(n, (const xmlChar *) "size"))) {
 				box->gadget->data.textbox.size = atoi(s);
-				free(s);
+				xmlFree(s);
 			}
 
 			box->gadget->data.textbox.text = xcalloc(
@@ -1323,7 +1323,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
 				strncpy(box->gadget->data.textbox.text, s,
 					box->gadget->data.textbox.maxlength);
-				free(s);
+				xmlFree(s);
 			}
 
 			if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
@@ -1331,7 +1331,7 @@ struct box* box_input(xmlNode * n, struct css_style* style, struct form* current
 			}
 			add_gadget_element(elements, box->gadget);
 
-		free(type);
+		xmlFree(type);
 	return box;
 }
 
@@ -1350,7 +1350,7 @@ struct form* box_form(xmlNode* n)
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "method"))) {
 		if (stricmp(s, "post") == 0)
 			form->method = method_POST;
-		xfree(s);
+		xmlFree(s);
 	}
 
 	return form;
