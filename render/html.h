@@ -5,12 +5,18 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * Content for text/html (interface).
+ *
+ * These functions should in general be called via the content interface.
+ */
+
 #ifndef _NETSURF_RENDER_HTML_H_
 #define _NETSURF_RENDER_HTML_H_
 
+#include "libxml/HTMLparser.h"
 #include "netsurf/content/content_type.h"
 #include "netsurf/css/css.h"
-#include "netsurf/render/box.h"
 #include "netsurf/utils/pool.h"
 
 struct box;
@@ -27,35 +33,51 @@ struct box_position {
 	int char_offset;
 };
 
+/** Data specific to CONTENT_HTML. */
 struct content_html_data {
-	htmlParserCtxt *parser;
-	char *source;
-	int length;
+	htmlParserCtxt *parser;  /**< HTML parser context. */
+
+	char *source;   /**< Source data. */
+	int length;     /**< Length of source. */
+	xmlCharEncoding encoding;  /**< Encoding of source. */
+
 	char *base_url;	/**< Base URL (may be a copy of content->url). */
-	struct box *layout;
-	colour background_colour;
+
+	struct box *layout;  /**< Box tree, or 0. */
+	colour background_colour;  /**< Document background colour. */
+
+	/** Number of entries in stylesheet_content. */
 	unsigned int stylesheet_count;
+	/** Stylesheets. Each may be 0. Stylesheet 0 is the base style sheet,
+	 * stylesheet 1 is any <style> elements (not cached). */
 	struct content **stylesheet_content;
-	struct css_style *style;
+	struct css_style *style;  /**< Base style. */
+
 	struct {
 		struct box_position start;
 		struct box_position end;
 		enum { alter_UNKNOWN, alter_START, alter_END } altering;
 		int selected;	/* 0 = unselected, 1 = selected */
 	} text_selection;
-	struct font_set *fonts;
-	unsigned int object_count;	/* images etc. */
+
+	struct font_set *fonts;  /**< Set of fonts. */
+
+	/** Number of entries in object. */
+	unsigned int object_count;
+	/** Objects. Each may be 0. */
 	struct {
-		char *url;
-		struct content *content;
-		struct box *box;
+		char *url;  /**< URL of this object. */
+		struct content *content;  /**< Content, or 0. */
+		struct box *box;  /**< Node in box tree containing it. */
 		/** Pointer to array of permitted content_type, terminated by
 		 *  CONTENT_UNKNOWN, or 0 if any type is acceptable. */
 		const content_type *permitted_types;
 	} *object;
+
 	pool box_pool;		/**< Memory pool for box tree. */
 	pool string_pool;	/**< Memory pool for strings. */
 };
+
 
 void html_create(struct content *c, const char *params[]);
 void html_process_data(struct content *c, char *data, unsigned long size);

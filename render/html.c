@@ -2,7 +2,11 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ */
+
+/** \file
+ * Content for text/html (implementation).
  */
 
 #include <assert.h>
@@ -21,6 +25,8 @@
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
 
+#define CHUNK 4096
+
 
 static void html_convert_css_callback(content_msg msg, struct content *css,
 		void *p1, void *p2, const char *error);
@@ -32,36 +38,53 @@ static bool html_object_type_permitted(const content_type type,
 		const content_type *permitted_types);
 
 
+/**
+ * Create a CONTENT_HTML.
+ *
+ * The content_html_data structure is initialized and the HTML parser is
+ * created.
+ */
+
 void html_create(struct content *c, const char *params[])
 {
 	unsigned int i;
-	xmlCharEncoding encoding = XML_CHAR_ENCODING_8859_1;
+	struct content_html_data *html = &c->data.html;
+
+	html->encoding = XML_CHAR_ENCODING_8859_1;
 
 	for (i = 0; params[i]; i += 2) {
 		if (strcasecmp(params[i], "charset") == 0) {
-			encoding = xmlParseCharEncoding(params[i + 1]);
-			if (encoding == XML_CHAR_ENCODING_ERROR)
-				encoding = XML_CHAR_ENCODING_8859_1;
+			html->encoding = xmlParseCharEncoding(params[i + 1]);
+			if (html->encoding == XML_CHAR_ENCODING_ERROR)
+				html->encoding = XML_CHAR_ENCODING_8859_1;
 			break;
 		}
 	}
 
-	c->data.html.parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, encoding);
-	c->data.html.layout = NULL;
-	c->data.html.style = NULL;
-	c->data.html.fonts = NULL;
-	c->data.html.length = 0;
-	c->data.html.source = xcalloc(0, 1);
-	c->data.html.base_url = xstrdup(c->url);
-	c->data.html.background_colour = TRANSPARENT;
-	c->data.html.string_pool = pool_create(8000);
-	assert(c->data.html.string_pool);
-	c->data.html.box_pool = pool_create(sizeof (struct box) * 100);
-	assert(c->data.html.box_pool);
+	html->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, html->encoding);
+	html->source = xcalloc(0, 1);
+	html->length = 0;
+	html->base_url = xstrdup(c->url);
+	html->layout = 0;
+	html->background_colour = TRANSPARENT;
+	html->stylesheet_count = 0;
+	html->stylesheet_content = 0;
+	html->style = 0;
+	html->fonts = 0;
+	html->object_count = 0;
+	html->object = 0;
+	html->string_pool = pool_create(8000);
+	assert(html->string_pool);
+	html->box_pool = pool_create(sizeof (struct box) * 100);
+	assert(html->box_pool);
 }
 
 
-#define CHUNK 4096
+/**
+ * Process data for CONTENT_HTML.
+ *
+ * The data is parsed in chunks of size CHUNK, multitasking in between.
+ */
 
 void html_process_data(struct content *c, char *data, unsigned long size)
 {
@@ -80,9 +103,23 @@ void html_process_data(struct content *c, char *data, unsigned long size)
 }
 
 
+/**
+ * Convert a CONTENT_HTML for display.
+ *
+ * The following steps are carried out in order:
+ *
+ *  - parsing to an XML tree is completed
+ *  - stylesheets are fetched
+ *  - the XML tree is converted to a box tree and object fetches are started
+ *  - the box tree is laid out
+ *
+ * On exit, the content status will be either CONTENT_STATUS_DONE if the
+ * document is completely loaded or CONTENT_STATUS_READY if objects are still
+ * being fetched.
+ */
+
 int html_convert(struct content *c, unsigned int width, unsigned int height)
 {
-	unsigned int i;
 	xmlDoc *document;
 	xmlNode *html, *head;
 
@@ -91,6 +128,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	document = c->data.html.parser->myDoc;
 	/*xmlDebugDumpDocument(stderr, c->data.html.parser->myDoc);*/
 	htmlFreeParserCtxt(c->data.html.parser);
+	c->data.html.parser = 0;
 	if (document == NULL) {
 		LOG(("Parsing failed"));
 		return 1;
@@ -153,78 +191,13 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 }
 
 
-void html_convert_css_callback(content_msg msg, struct content *css,
-		void *p1, void *p2, const char *error)
-{
-	struct content *c = p1;
-	unsigned int i = (unsigned int) p2;
-	switch (msg) {
-		case CONTENT_MSG_LOADING:
-			/* check that the stylesheet is really CSS */
-			if (css->type != CONTENT_CSS) {
-				c->data.html.stylesheet_content[i] = 0;
-				c->active--;
-				c->error = 1;
-				sprintf(c->status_message, "Warning: stylesheet is not CSS");
-				content_broadcast(c, CONTENT_MSG_STATUS, 0);
-				content_remove_user(css, html_convert_css_callback, c, (void*)i);
-			}
-			break;
-
-		case CONTENT_MSG_READY:
-			break;
-
-		case CONTENT_MSG_DONE:
-			LOG(("got stylesheet '%s'", css->url));
-			c->active--;
-			break;
-
-		case CONTENT_MSG_ERROR:
-			c->data.html.stylesheet_content[i] = 0;
-			c->active--;
-			c->error = 1;
-			break;
-
-		case CONTENT_MSG_STATUS:
-			snprintf(c->status_message, 80, "Loading %u stylesheets: %s",
-					c->active, css->status_message);
-			content_broadcast(c, CONTENT_MSG_STATUS, 0);
-			break;
-
-		case CONTENT_MSG_REDIRECT:
-			c->active--;
-			c->data.html.stylesheet_content[i] = fetchcache(
-					error, c->url, html_convert_css_callback,
-					c, (void*)i, css->width, css->height, true
-#ifdef WITH_POST
-					, 0, 0
-#endif
-#ifdef WITH_COOKIES
-					, false
-#endif
-					);
-			if (c->data.html.stylesheet_content[i] != 0 &&
-					c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
-				c->active++;
-			break;
-
-#ifdef WITH_AUTH
-		case CONTENT_MSG_AUTH:
-		        c->data.html.stylesheet_content[i] = 0;
-			c->active--;
-			c->error = 1;
-		        break;
-#endif
-
-		default:
-			assert(0);
-	}
-}
-
-
-
 /**
  * Process elements in <head>.
+ *
+ * \param  c     content structure
+ * \param  head  xml node of head element
+ *
+ * The title and base href are extracted if present.
  */
 
 void html_head(struct content *c, xmlNode *head)
@@ -234,6 +207,9 @@ void html_head(struct content *c, xmlNode *head)
 	c->title = 0;
 
 	for (node = head->children; node != 0; node = node->next) {
+		if (node->type != XML_ELEMENT_NODE)
+			continue;
+
 		if (!c->title && strcmp(node->name, "title") == 0) {
 			xmlChar *title = xmlNodeGetContent(node);
 			c->title = squash_tolat1(title);
@@ -243,14 +219,23 @@ void html_head(struct content *c, xmlNode *head)
 			char *href = (char *) xmlGetProp(node, (const xmlChar *) "href");
 			if (href) {
 				char *url = url_join(href, 0);
-				if (url)
+				if (url) {
+					free(c->data.html.base_url);
 					c->data.html.base_url = url;
+				}
 				xmlFree(href);
 			}
 		}
 	}
 }
 
+
+/**
+ * Process inline stylesheets and fetch linked stylesheets.
+ *
+ * \param  c     content structure
+ * \param  head  xml node of head element, or 0 if none
+ */
 
 void html_find_stylesheets(struct content *c, xmlNode *head)
 {
@@ -288,6 +273,9 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 		c->active++;
 
 	for (node = head == 0 ? 0 : head->children; node != 0; node = node->next) {
+		if (node->type != XML_ELEMENT_NODE)
+			continue;
+
 		if (strcmp(node->name, "link") == 0) {
 			/* rel='stylesheet' */
 			if (!(rel = (char *) xmlGetProp(node, (const xmlChar *) "rel")))
@@ -376,7 +364,8 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 				const char *params[] = { 0 };
 				c->data.html.stylesheet_content[1] =
 						content_create(c->data.html.base_url);
-				content_set_type(c->data.html.stylesheet_content[1], CONTENT_CSS, "text/css", params);
+				content_set_type(c->data.html.stylesheet_content[1],
+						CONTENT_CSS, "text/css", params);
 			}
 
 			/* can't just use xmlNodeGetContent(node), because that won't give
@@ -419,6 +408,89 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 }
 
 
+/**
+ * Callback for fetchcache() for linked stylesheets.
+ */
+
+void html_convert_css_callback(content_msg msg, struct content *css,
+		void *p1, void *p2, const char *error)
+{
+	struct content *c = p1;
+	unsigned int i = (unsigned int) p2;
+	switch (msg) {
+		case CONTENT_MSG_LOADING:
+			/* check that the stylesheet is really CSS */
+			if (css->type != CONTENT_CSS) {
+				c->data.html.stylesheet_content[i] = 0;
+				c->active--;
+				c->error = 1;
+				sprintf(c->status_message, "Warning: stylesheet is not CSS");
+				content_broadcast(c, CONTENT_MSG_STATUS, 0);
+				content_remove_user(css, html_convert_css_callback, c, (void*)i);
+			}
+			break;
+
+		case CONTENT_MSG_READY:
+			break;
+
+		case CONTENT_MSG_DONE:
+			LOG(("got stylesheet '%s'", css->url));
+			c->active--;
+			break;
+
+		case CONTENT_MSG_ERROR:
+			c->data.html.stylesheet_content[i] = 0;
+			c->active--;
+			c->error = 1;
+			break;
+
+		case CONTENT_MSG_STATUS:
+			snprintf(c->status_message, 80, "Loading %u stylesheets: %s",
+					c->active, css->status_message);
+			content_broadcast(c, CONTENT_MSG_STATUS, 0);
+			break;
+
+		case CONTENT_MSG_REDIRECT:
+			c->active--;
+			c->data.html.stylesheet_content[i] = fetchcache(
+					error, c->url, html_convert_css_callback,
+					c, (void*)i, css->width, css->height, true
+#ifdef WITH_POST
+					, 0, 0
+#endif
+#ifdef WITH_COOKIES
+					, false
+#endif
+					);
+			if (c->data.html.stylesheet_content[i] != 0 &&
+					c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
+				c->active++;
+			break;
+
+#ifdef WITH_AUTH
+		case CONTENT_MSG_AUTH:
+		        c->data.html.stylesheet_content[i] = 0;
+			c->active--;
+			c->error = 1;
+		        break;
+#endif
+
+		default:
+			assert(0);
+	}
+}
+
+
+/**
+ * Start a fetch for an object required by a page.
+ *
+ * \param  c    content structure
+ * \param  url  URL of object to fetch
+ * \param  box  box that will contain the object
+ * \param  permitted_types  array of types, terminated by CONTENT_UNKNOWN,
+ *              or 0 if all types except OTHER and UNKNOWN acceptable
+ */
+
 void html_fetch_object(struct content *c, char *url, struct box *box,
 		const content_type *permitted_types)
 {
@@ -455,12 +527,17 @@ void html_fetch_object(struct content *c, char *url, struct box *box,
 }
 
 
+/**
+ * Callback for fetchcache() for objects.
+ */
+
 void html_object_callback(content_msg msg, struct content *object,
 		void *p1, void *p2, const char *error)
 {
 	struct content *c = p1;
 	unsigned int i = (unsigned int) p2;
 	struct box *box = c->data.html.object[i].box;
+	struct box *b;
 
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
@@ -491,24 +568,15 @@ void html_object_callback(content_msg msg, struct content *object,
 				box->style->width.value.length.value = object->width;
 				box->min_width = box->max_width = box->width = object->width;
 			}
-			/* invalidate parent min, max widths */
-			if (box->parent && (unsigned long)box->parent->max_width != UNKNOWN_MAX_WIDTH) {
-				struct box *b = box->parent;
-				b->max_width = UNKNOWN_MAX_WIDTH;
-				for (b = b->parent; b != 0 &&
-						(b->type == BOX_TABLE_ROW_GROUP ||
-						 b->type == BOX_TABLE_ROW ||
-						 (unsigned long)b->max_width != UNKNOWN_MAX_WIDTH);
-						b = b->parent) {
-					b->max_width = UNKNOWN_MAX_WIDTH;
-				}
-			}
 			if (box->style->height.height == CSS_HEIGHT_AUTO) {
 				box->style->height.height = CSS_HEIGHT_LENGTH;
 				box->style->height.length.unit = CSS_UNIT_PX;
 				box->style->height.length.value = object->height;
 				box->height = object->height;
 			}
+			/* invalidate parent min, max widths */
+			for (b = box->parent; b; b = b->parent)
+				b->max_width = UNKNOWN_MAX_WIDTH;
 			/* delete any clones of this box */
 			while (box->next && box->next->clone) {
 				/* box_free_box(box->next); */
@@ -608,6 +676,8 @@ void html_revive(struct content *c, unsigned int width, unsigned int height)
 {
 	unsigned int i;
 
+	assert(0);  /* dead code, do not use as is */
+
 	/* reload objects and fix pointers */
 	for (i = 0; i != c->data.html.object_count; i++) {
 		if (c->data.html.object[i].content != 0) {
@@ -637,6 +707,10 @@ void html_revive(struct content *c, unsigned int width, unsigned int height)
 }
 
 
+/**
+ * Reformat a CONTENT_HTML to a new width.
+ */
+
 void html_reformat(struct content *c, unsigned int width, unsigned int height)
 {
 	layout_document(c->data.html.layout->children, width);
@@ -645,45 +719,53 @@ void html_reformat(struct content *c, unsigned int width, unsigned int height)
 }
 
 
+/**
+ * Destroy a CONTENT_HTML and free all resources it owns.
+ */
+
 void html_destroy(struct content *c)
 {
 	unsigned int i;
 	LOG(("content %p", c));
 
-	/* Remove stylesheets */
-	content_remove_user(c->data.html.stylesheet_content[0],
-			html_convert_css_callback, c, 0);
-	if (c->data.html.stylesheet_content[1] != 0)
-		content_destroy(c->data.html.stylesheet_content[1]);
-	for (i = 2; i != c->data.html.stylesheet_count; i++)
-		if (c->data.html.stylesheet_content[i] != 0)
-			content_remove_user(c->data.html.stylesheet_content[i],
-					html_convert_css_callback, c, (void*)i);
-	xfree(c->data.html.stylesheet_content);
+	free(c->title);
 
-	/* and objects */
+	if (c->data.html.parser)
+		htmlFreeParserCtxt(c->data.html.parser);
+
+	free(c->data.html.source);
+	free(c->data.html.base_url);
+
+	if (c->data.html.layout)
+		box_free(c->data.html.layout);
+
+	/* Free stylesheets */
+	if (c->data.html.stylesheet_count) {
+		content_remove_user(c->data.html.stylesheet_content[0],
+				html_convert_css_callback, c, 0);
+		if (c->data.html.stylesheet_content[1])
+			content_destroy(c->data.html.stylesheet_content[1]);
+		for (i = 2; i != c->data.html.stylesheet_count; i++)
+			if (c->data.html.stylesheet_content[i])
+				content_remove_user(c->data.html.stylesheet_content[i],
+						html_convert_css_callback, c, (void*)i);
+	}
+	free(c->data.html.stylesheet_content);
+	free(c->data.html.style);
+
+	if (c->data.html.fonts)
+		font_free_set(c->data.html.fonts);
+
+	/* Free objects */
 	for (i = 0; i != c->data.html.object_count; i++) {
 		LOG(("object %i %p", i, c->data.html.object[i].content));
-		if (c->data.html.object[i].content != 0)
+		if (c->data.html.object[i].content)
 			content_remove_user(c->data.html.object[i].content,
 					 html_object_callback, c, (void*)i);
 		free(c->data.html.object[i].url);
 	}
 	free(c->data.html.object);
 
-	LOG(("layout %p", c->data.html.layout));
-	if (c->data.html.layout != 0)
-		box_free(c->data.html.layout);
-	LOG(("fonts %p", c->data.html.fonts));
-	if (c->data.html.fonts != 0)
-		font_free_set(c->data.html.fonts);
-	LOG(("title %p", c->title));
-	if (c->title != 0)
-		xfree(c->title);
-	if (c->data.html.source != 0)
-	        xfree(c->data.html.source);
-	free(c->data.html.base_url);
 	pool_destroy(c->data.html.string_pool);
 	pool_destroy(c->data.html.box_pool);
 }
-
