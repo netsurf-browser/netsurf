@@ -505,8 +505,6 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 	}
 
 	assert(n->type == XML_ELEMENT_NODE);
-	assert(CSS_DISPLAY_INLINE < style->display &&
-			style->display < CSS_DISPLAY_NONE);
 
 	/* non-inline box: add to tree and recurse */
 	box_add_child(parent, box);
