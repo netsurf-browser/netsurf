@@ -17,7 +17,7 @@ Draw:Draw  ã^F3
 Text:Texte   ^F3
 SaveURL:Sauver le lieu
 Print:Imprimer...
-NewWindow:New window  ^N
+NewWindow:Nouvelle fenÍtre  ^N
 ViewSrc:Voir le source...  F8
 Object:Objet
 ObjInfo:Info
@@ -36,7 +36,7 @@ Home:Page d'accueil
 Back:Retour
 Forward:Avancer
 Reload:Recharger cette page  ^R
-Stop:Stop loading this page
+Stop:ArrÍter le chargement de la page
 View:Affichage
 ScaleView:Ajuster la vue
 Images:Images
@@ -57,12 +57,12 @@ RenderAll:Buffer all rendering
 OptDefault:DÈfinir par dÈfaut
 Window:FenÍtre
 WindowSave:DÈfinir comme position par dÈfaut
-WindowStagr:Stagger window position
-WindowSize:Maintain window size
+WindowStagr:DÈcaler la position des nouv. fenÍtres
+WindowSize:Garder cette taille de fenÍtre
 WindowReset:RAZ de la position par dÈfaut
-Utilities:Utilities
-HotlistAdd:Add page to hotlist
-HotlistShow:Show hotlist  F6
+Utilities:Utilitaires
+HotlistAdd:Ajouter aux favoris
+HotlistShow:Montrer les favoris  F6
 Help:Aide
 HelpContent:Contenus  F1
 HelpGuide:Guide de l'utilisateur
@@ -73,38 +73,38 @@ HelpAbout:¿ propos de NetSurf
 Themes:ThËmes
 
 # Hotlist menus
-Hotlist:Hotlist
-New:New
-Expand:Expand
-Collapse:Collapse
-All:All
-Folders:Folders
-Folder:Folder
-Links:Addresses
-Link:Address
-SaveSelect:Save
-Launch:Launch
-Edit:Edit
-Delete:Delete
-ResetUsage:Reset statistics
+Hotlist:Favoris
+New:Nouveau
+Expand:DÈployer
+Collapse:Regrouper
+All:Tout
+Folders:Dossiers
+Folder:Dossier
+Links:Adresses
+Link:Adresses
+SaveSelect:Sauver
+Launch:Lancer
+Edit:…diter
+Delete:Supprimer
+ResetUsage:RAZ des statistiques
 
 # Hotlist sub-window titles
-NewLink:Create new address
-NewFolder:Create new folder
-EditLink:Edit address
-EditFolder:Edit folder
+NewLink:CrÈer une nouvelle adresse
+NewFolder:CrÈer un nouveau dossier
+EditLink:…diter l'adresse
+EditFolder:…diter le dossier
 
 # Hotlist window
 HotlistURL:URL: %s
-HotlistAdded:Added: %s
-HotlistLast:Last visited: %s
-HotlistVisits:Visits: %i
+HotlistAdded:AjoutÈe: %s
+HotlistLast:DerniËre visitÈe: %s
+HotlistVisits:Visites: %i
 
 # Download window
-Download:%s of %s  è  %s/s  è  %s remaining
-DownloadU:%s of unknown  è  %s/s  è  %s total
-Downloaded:%s complete  è  average %s/s  è  %s total
-Unwritten:Writing data to file failed.
+Download:%s de %s  è  %s/s  è  %s restants
+DownloadU:%s sur inconnu  è  %s/s  è  %s total
+Downloaded:%s effectuÈs  è  moyenne %s/s  è  %s total
+Unwritten:L'Ècriture de donnÈes dans le fichier a ÈchouÈ.
 
 # Forms
 Form_Submit:Soumettre
@@ -144,13 +144,13 @@ WimpError:Une erreur inattendue du Window Manager s'est produite:
 Template:Un modËle de fenÍtre est absent du fichier Templates. RÈinstallez NetSurf SVP.
 MiscError:Une erreur inattendue s'est produite:
 FileError:Le fichier n'existe pas:
-HotlistSaveError:The hotlist was unable to be correctly saved.
-HotlistLoadError:The hotlist was unable to be correctly loaded.
-NoPathError:To save, drag the icon to a directory display
-NoNameError:Please enter a name
-NoURLError:Please enter a URL
-URIError:NetSurf was unable to parse this URI file due to a syntax error.
-EmptyError:file is empty.
+HotlistSaveError:Les favoris n'ont pas pu Ítre sauvÈs correctement.
+HotlistLoadError:Les favoris n'ont pas pu Ítre chargÈs correctement.
+NoPathError:Pour sauver, l‚cher cette icÙne dans une fenÍtre de Filer
+NoNameError:Entrez un nom SVP
+NoURLError:Entrez une URL SVP
+URIError:NetSurf est incapable de traiter ce fichier URI ‡ cause d'une erreur de syntaxe.
+EmptyError:Le fichier est vide.
 
 # Some general purpose words and phrases
 Bytes: O
