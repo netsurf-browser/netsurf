@@ -391,6 +391,11 @@ char *url_store_match_string(const char *text) {
 void url_store_load(const char *file) { 
 	struct url_content *url;
 	char s[MAXIMUM_URL_LENGTH];
+	struct hostname_data *hostname;
+	struct url_data *result;
+	int urls;
+	int i;
+	int version;
 	FILE *fp;
 
 	fp = fopen(file, "r");
@@ -401,23 +406,66 @@ void url_store_load(const char *file) {
 
 	if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 		return;
-	if (strncmp(s, "100", 3)) {
-		LOG(("Invalid header"));
+	version = atoi(s);
+	if ((version != 100) && (version != 101))
 		return;
-	}
 	
-	while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
-	  	if (s[strlen(s) - 1] == '\n')
-	  		s[strlen(s) - 1] = '\0';
-		url = url_store_find(s);
-		if (!url)
-			break;
-		if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
-			break;
-		url->visits = atoi(s);
-		if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
-			break;
-		url->requests = atoi(s);
+	
+	/* version 100 file is sequences of <url><visits><requests> */
+	if (version == 100) {
+		while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
+			if (s[strlen(s) - 1] == '\n')
+				s[strlen(s) - 1] = '\0';
+			url = url_store_find(s);
+			if (!url)
+				break;
+			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+				break;
+			url->visits = atoi(s);
+			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+				break;
+			url->requests = atoi(s);
+		}
+	} else if (version == 101) {
+		/* version 101 is as 100, but in hostname chunks, pre-sorted in reverse
+		 * alphabetical order */
+		while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
+			if (s[strlen(s) - 1] == '\n')
+				s[strlen(s) - 1] = '\0';
+			hostname = url_store_find_hostname(s);
+			if (!hostname)
+				break;
+			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+				break;
+			urls = atoi(s);
+			for (i = 0; i < urls; i++) {
+				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+					break;
+				if (s[strlen(s) - 1] == '\n')
+					s[strlen(s) - 1] = '\0';
+				result = calloc(sizeof(struct url_data), 1);
+				if (!result)
+					break;
+				result->data.url_length = strlen(s);
+				result->data.url = malloc(result->data.url_length + 1);
+				if (!result->data.url) {
+					free(result);
+					break;
+				}
+				strcpy(result->data.url, s);
+				result->parent = hostname;
+				result->next = hostname->url;
+				if (hostname->url)
+					hostname->url->previous = result;
+				hostname->url = result;
+				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+					break;
+				result->data.visits = atoi(s);
+				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+					break;
+				result->data.requests = atoi(s);
+			}
+		}
 	}
 	fclose(fp);
 }
@@ -431,6 +479,8 @@ void url_store_load(const char *file) {
 void url_store_save(const char *file) { 
 	struct hostname_data *search;
 	struct url_data *url;
+	int url_count;
+	char *normal = NULL;
 	FILE *fp;
 
 	fp = fopen(file, "w");
@@ -440,13 +490,25 @@ void url_store_save(const char *file) {
 	}
 
 	/* file format version number */
-	fprintf(fp, "100\n");
-	for (search = url_store_hostnames; search; search = search->next) {
+	fprintf(fp, "101\n");
+	for (search = url_store_hostnames; search && search->next; search = search->next);
+	for (; search; search = search->previous) {
+		url_count = 0;
 		for (url = search->url; url; url = url->next)
-		  	if ((url->data.requests > 0) &&
-		  			(strlen(url->data.url) < MAXIMUM_URL_LENGTH))
-				fprintf(fp, "%s\n%i\n%i\n", url->data.url,
-						url->data.visits, url->data.requests);
+			if ((url->data.requests > 0) &&
+					(strlen(url->data.url) < MAXIMUM_URL_LENGTH))
+				url_count++;
+		free(normal);
+		normal = url_store_match_string(search->hostname);
+		if ((url_count > 0) && (normal)) {
+			fprintf(fp, "%s\n%i\n", normal, url_count);
+			for (url = search->url; url->next; url = url->next);
+			for (; url; url = url->previous)
+				if ((url->data.requests > 0) &&
+						(strlen(url->data.url) < MAXIMUM_URL_LENGTH))
+					fprintf(fp, "%s\n%i\n%i\n", url->data.url,
+							url->data.visits, url->data.requests);
+		}
 	}
 	fclose(fp);
 }
