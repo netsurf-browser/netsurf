@@ -12,7 +12,7 @@ If "<NetSurf$Desktop>" = "no" Then RMEnsure OSVersion 1.11 Error NCNetSurf needs
 
 | Ensure CallASWI is installed.
 | http://www.iyonix.com/32bit/
-If "<NetSurf$Desktop>" = "no" Then RMLoad <NetSurf$Dir>.RMStore.CallASWI Else RMEnsure UtilityModule 3.70 RMLoad RMLoad System:Modules.CallASWI 
+If "<NetSurf$Desktop>" = "no" Then RMLoad <NetSurf$Dir>.RMStore.CallASWI Else RMEnsure UtilityModule 3.70 RMLoad System:Modules.CallASWI 
 
 | Ensure DrawFile is installed.
 | http://acorn.riscos.com/riscos/releases/drawfile.arc
