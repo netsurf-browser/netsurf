@@ -71,6 +71,19 @@ bool bitmap_test_opaque(struct bitmap *bitmap)
 
 
 /**
+ * Gets whether a bitmap should be plotted opaque
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ */
+bool bitmap_get_opaque(struct bitmap *bitmap)
+{
+	assert(bitmap);
+/* todo: get whether bitmap is opaque */
+	return false;
+}
+
+
+/**
  * Return a pointer to the pixel data in a bitmap.
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()

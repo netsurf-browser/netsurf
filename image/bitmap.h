@@ -28,6 +28,7 @@ struct bitmap;
 struct bitmap *bitmap_create(int width, int height);
 void bitmap_set_opaque(struct bitmap *bitmap, bool opaque);
 bool bitmap_test_opaque(struct bitmap *bitmap);
+bool bitmap_get_opaque(struct bitmap *bitmap);
 char *bitmap_get_buffer(struct bitmap *bitmap);
 size_t bitmap_get_rowstride(struct bitmap *bitmap);
 void bitmap_destroy(struct bitmap *bitmap);
