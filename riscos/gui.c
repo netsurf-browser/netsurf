@@ -19,12 +19,15 @@
 #include "oslib/osgbpb.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+#include "oslib/uri.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
+#include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/theme.h"
+#include "netsurf/riscos/uri.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -137,32 +140,6 @@ int ro_x_units(unsigned long browser_units);
 int ro_y_units(unsigned long browser_units);
 unsigned long browser_x_units(int ro_units);
 unsigned long browser_y_units(int ro_units);
-
-struct ro_gui_window
-{
-  gui_window_type type;
-
-  union {
-    struct {
-      wimp_w window;
-      wimp_w toolbar;
-      int toolbar_width;
-      struct browser_window* bw;
-    } browser;
-  } data;
-
-  char status[256];
-  char title[256];
-  char url[256];
-  gui_window* next;
-
-  int throbber;
-  float throbtime;
-
-  gui_safety redraw_safety;
-  enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION } drag_status;
-  int old_width;
-};
 
 void ro_gui_window_click(gui_window* g, wimp_pointer* mouse);
 //void ro_gui_window_mouse_at(gui_window* g, wimp_pointer* mouse);
@@ -366,7 +343,7 @@ ro_theme* current_theme = NULL;
 const char* BROWSER_VALIDATION = "\0";
 
 const char* task_name = "NetSurf";
-const wimp_MESSAGE_LIST(3) task_messages = { {message_DATA_SAVE, message_DATA_LOAD, 0} };
+const wimp_MESSAGE_LIST(4) task_messages = { {message_DATA_SAVE, message_DATA_LOAD, message_URI_PROCESS, 0} };
 wimp_t task_handle;
 
 wimp_i ro_gui_iconbar_i;
@@ -2007,11 +1984,24 @@ void gui_multitask(void)
     case wimp_USER_MESSAGE            :
     case wimp_USER_MESSAGE_RECORDED   :
     case wimp_USER_MESSAGE_ACKNOWLEDGE:
+
       fprintf(stderr, "MESSAGE %d (%x) HAS ARRIVED\n", block.message.action, block.message.action);
-      if (block.message.action == message_DATA_SAVE)
-	      ro_msg_datasave(&(block.message));
-      else if (block.message.action == message_DATA_LOAD)
-	      ro_msg_dataload(&(block.message));
+
+      switch (block.message.action)
+      {
+        case message_DATA_SAVE        :
+               ro_msg_datasave(&(block.message));
+               break;
+
+        case message_DATA_LOAD         :
+               ro_msg_dataload(&(block.message));
+               break;
+
+        case message_URI_PROCESS       :
+               ro_uri_message_received(&(block.message));
+               break;
+      }
+
       if (block.message.action == message_QUIT)
         netsurf_quit = 1;
       else
@@ -2317,14 +2307,28 @@ void gui_poll(void)
       case wimp_USER_MESSAGE            :
       case wimp_USER_MESSAGE_RECORDED   :
       case wimp_USER_MESSAGE_ACKNOWLEDGE:
+
       fprintf(stderr, "MESSAGE %d (%x) HAS ARRIVED\n", block.message.action, block.message.action);
-        if (block.message.action == message_DATA_SAVE)
-	      ro_msg_datasave(&(block.message));
-        else if (block.message.action == message_DATA_LOAD)
-	      ro_msg_dataload(&(block.message));
-	else if (block.message.action == message_QUIT)
-          netsurf_quit = 1;
-        break;
+
+      switch (block.message.action)
+      {
+        case message_DATA_SAVE        :
+               ro_msg_datasave(&(block.message));
+               break;
+
+        case message_DATA_LOAD         :
+               ro_msg_dataload(&(block.message));
+               break;
+
+        case message_URI_PROCESS       :
+               ro_uri_message_received(&(block.message));
+               break;
+
+        case message_QUIT              :
+               netsurf_quit = 1;
+               break;
+      }
+      break;
     }
   } while (finished == 0);
 

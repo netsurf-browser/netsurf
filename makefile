@@ -13,7 +13,7 @@ OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o other.o \
 OBJECTS = $(OBJECTS_COMMON) \
 	browser.o netsurf.o \
 	gif.o gui.o jpeg.o png.o theme.o plugin.o \
-	options.o filetype.o font.o
+	options.o filetype.o font.o uri.o
 OBJECTS_DEBUG = $(OBJECTS_COMMON) \
 	netsurfd.o \
 	optionsd.o filetyped.o fontd.o

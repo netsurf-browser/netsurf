@@ -1,15 +1,16 @@
 |rafs_flush
 
-Set NetSurf$Dir <Obey$Dir>
-
-IconSprites <NetSurf$Dir>.!Sprites
-Set File$Type_F79 CSS
+If "<NetSurf$Dir>" = "" Then Obey <Obey$Dir>.!Boot
 
 RMensure WindowManager 3.80 Error 0 NetSurf requires the Nested Window Manager.
 RMEnsure UtilityModule 3.70 RMensure CallASWI 0.00 RMload <NetSurf$Dir>.CallASWI
 RMEnsure SharedUnixLibrary 1.00 RMLoad System:Modules.SharedULib
 
+
 | drag the 'next' slot in the task manager to something huge and ridiculous,
 | and/or increase the number below
 Wimpslot -min 2000k
+
+Set NetSurf$running "yes"
 <NetSurf$Dir>.!RunImage 2><NetSurf$Dir>.stderr
+UnSet NetSurf$running

@@ -1,0 +1,17 @@
+Set NetSurf$Dir <Obey$Dir>
+
+IconSprites <NetSurf$Dir>.!Sprites
+Set File$Type_F79 CSS
+
+| Acorn URI protocol
+Set NetSurf$start_uri_handler "no"
+RMEnsure AcornURI 0.10 Set NetSurf$start_uri_handler "yes"
+RMEnsure AcornURI 0.10 RMLoad System:310.Modules.Network.URI
+If "<NetSurf$start_uri_handler>" = "yes" Then Desktop
+
+If "<Alias$Open_URI_http>" = "" Then Set Alias$Open_URI_http <NetSurf$Dir>.URILaunch
+If "<Alias$Open_URI_https>" = "" Then Set Alias$Open_URI_https <NetSurf$Dir>.URILaunch
+If "<Alias$Open_URI_file>" = "" Then Set Alias$Open_URI_file <NetSurf$Dir>.URILaunch
+
+| Claim URI files
+If "<Alias$@RunType_F91>" = "" Then Set Alias$@RunType_F91 <NetSurf$Dir>.URILaunch
