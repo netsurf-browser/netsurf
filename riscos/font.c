@@ -101,7 +101,7 @@ static char font_table[FONT_FAMILIES * FONT_FACES][FONT_MAX_NAME] = {
 /**
  * Create an empty font_set.
  *
- * \return an opaque struct font_set.
+ * \return an opaque struct font_set, or NULL on memory exhaustion
  */
 struct font_set *nsfont_new_set(void)
 {
