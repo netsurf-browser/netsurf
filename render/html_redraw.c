@@ -475,7 +475,7 @@ bool html_redraw_borders(struct box *box, int x, int y,
 			if (!plot.polygon(z, 4, light <= 1 ?
 					html_redraw_lighter(c) :
 					html_redraw_darker(c)))
-				return false;;
+				return false;
 			continue;
 
 		case CSS_BORDER_STYLE_INSET:
@@ -544,11 +544,11 @@ bool html_redraw_borders(struct box *box, int x, int y,
 colour html_redraw_darker(colour c)
 {
   	int modified, channel;
-	channel = (((c & 0xff) * 7) - 0x8) >> 3;
+	channel = ((((int)c & 0xff) * 15) - 256) >> 4;
 	modified = channel > 0 ? channel : 0;
-	channel = (((c & 0xff00) * 7) - 0x800) >> 11;
+	channel = (((((int)c >> 8) & 0xff) * 15) - 256) >> 4;
 	modified |= channel > 0 ? channel << 8 : 0;
-	channel = (((c & 0xff0000) * 7) - 0x80000) >> 19;
+	channel = (((((int)c >> 16) & 0xff) * 15) - 256) >> 4;
 	modified |= channel > 0 ? channel << 16 : 0;
 	return modified;
 }
@@ -564,11 +564,11 @@ colour html_redraw_darker(colour c)
 colour html_redraw_lighter(colour c)
 {
   	int modified, channel;
-	channel = (((c & 0xff) * 9) + 0x8) >> 3;
+	channel = ((((int)c & 0xff) * 17) + 256) >> 4;
 	modified = channel < 255 ? channel : 255;
-	channel = (((c & 0xff00) * 9) + 0x800) >> 11;
+	channel = (((((int)c >> 8) & 0xff) * 17) + 256) >> 4;
 	modified |= channel < 255 ? channel << 8 : 255 << 8;
-	channel = (((c & 0xff0000) * 9) + 0x80000) >> 19;
+	channel = (((((int)c >> 16) & 0xff) * 17) + 256) >> 4;
 	modified |= channel < 255 ? channel << 16 : 255 << 16;
 	return modified;
 }
