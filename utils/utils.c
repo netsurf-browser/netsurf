@@ -1,5 +1,5 @@
 /**
- * $Id: utils.c,v 1.1.1.1 2002/04/22 09:24:34 bursa Exp $
+ * $Id: utils.c,v 1.2 2002/05/21 21:27:29 bursa Exp $
  */
 
 #include <ctype.h>
@@ -73,3 +73,20 @@ char * load(const char * const path)
 	fclose(fp);
 	return buf;
 }
+
+char * squash_whitespace(const char * s)
+{
+	char * c = malloc(strlen(s) + 1);
+	int i = 0, j = 0;
+	if (c == 0) die("Out of memory in squash_whitespace()");
+	do {
+		if (isspace(s[i])) {
+			c[j++] = ' ';
+			while (s[i] != 0 && isspace(s[i]))
+				i++;
+		}
+		c[j++] = s[i++];
+	} while (s[i - 1] != 0);
+	return c;
+}
+
