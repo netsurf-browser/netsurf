@@ -397,6 +397,9 @@ void download_window_callback(content_msg msg, struct content *c,
 
 		case CONTENT_MSG_REFORMAT:
 			break;
+
+		case CONTENT_MSG_AUTH:
+		        break;
 	}
 }
 
@@ -490,9 +493,10 @@ void browser_window_gadget_select(struct browser_window* bw, struct form_control
 	inline_box->width = g->box->width;
 	inline_box->length = strlen(inline_box->text);
 
-        box_coords(g->box, &x, &y);
-	gui_window_redraw(bw->window, x, y,
-			x + g->box->width, y + g->box->height);
+        box_coords(g->box, (unsigned long*)&x, (unsigned long*)&y);
+	gui_window_redraw(bw->window, (unsigned int)x, (unsigned int)y,
+			(unsigned int)(x + g->box->width),
+			(unsigned int)(y + g->box->height));
 }
 
 int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x, unsigned long click_y)
@@ -543,17 +547,17 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 					break;
 				case GADGET_TEXTAREA:
 					browser_window_textarea_click(bw,
-							click_boxes[i].actual_x,
-							click_boxes[i].actual_y,
-							click_x - click_boxes[i].actual_x,
-							click_y - click_boxes[i].actual_y,
+							(unsigned int)click_boxes[i].actual_x,
+							(unsigned int)click_boxes[i].actual_y,
+							(int)(click_x - click_boxes[i].actual_x),
+							(int)(click_y - click_boxes[i].actual_y),
 							click_boxes[i].box);
 					break;
 				case GADGET_TEXTBOX:
 				case GADGET_PASSWORD:
 					browser_window_input_click(bw,
-							click_boxes[i].actual_x,
-							click_boxes[i].actual_y,
+							(unsigned int)click_boxes[i].actual_x,
+							(unsigned int)click_boxes[i].actual_y,
 							click_x - click_boxes[i].actual_x,
 							click_y - click_boxes[i].actual_y,
 							click_boxes[i].box);
@@ -566,6 +570,8 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 				        g->data.image.my = click_y - y;
 				        if (g->form)
 					        browser_form_submit(bw, g->form, g);
+				        break;
+				case GADGET_RESET:
 				        break;
 			}
 
@@ -605,7 +611,8 @@ void browser_window_textarea_click(struct browser_window* bw,
 		assert(text_box->type == BOX_INLINE);
 		assert(text_box->text && text_box->font);
 		font_position_in_string(text_box->text, text_box->font,
-				text_box->length, textarea->width,
+				text_box->length,
+				(unsigned int)textarea->width,
 				&char_offset, &pixel_offset);
 	} else {
 		/* find the relevant text box */
@@ -621,14 +628,16 @@ void browser_window_textarea_click(struct browser_window* bw,
 			assert(text_box->type == BOX_INLINE);
 			assert(text_box->text && text_box->font);
 			font_position_in_string(text_box->text, text_box->font,
-					text_box->length, textarea->width,
+					text_box->length,
+					(unsigned int)textarea->width,
 					&char_offset, &pixel_offset);
 		} else {
 			/* in a text box */
 			assert(text_box->type == BOX_INLINE);
 			assert(text_box->text && text_box->font);
 			font_position_in_string(text_box->text, text_box->font,
-					text_box->length, x - text_box->x,
+					text_box->length,
+					(unsigned int)(x - text_box->x),
 					&char_offset, &pixel_offset);
 		}
 	}
@@ -645,8 +654,9 @@ void browser_window_textarea_click(struct browser_window* bw,
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
 	textarea->gadget->caret_char_offset = char_offset;
-	browser_window_place_caret(bw, actual_x + text_box->x + pixel_offset,
-			actual_y + inline_container->y + text_box->y,
+	browser_window_place_caret(bw,
+	                (int)(actual_x + text_box->x + pixel_offset),
+			(int)(actual_y + inline_container->y + text_box->y),
 			text_box->height,
 			browser_window_textarea_callback, textarea);
 
@@ -671,7 +681,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	int char_offset = textarea->gadget->caret_char_offset;
 	int pixel_offset, dy;
 	unsigned long actual_x, actual_y;
-	unsigned long width, height;
+	unsigned long width=0, height=0;
 	bool reflow = false;
 
         box_coords(textarea, &actual_x, &actual_y);
@@ -813,7 +823,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		reflow = true;
 	} else if (key == 28) {
 	        /* Right cursor -> */
-	        if (char_offset == text_box->length &&
+	        if ((unsigned int)char_offset == text_box->length &&
 	            text_box == inline_container->last &&
 	            inline_container->next) {
 	                /* move to start of next box (if it exists) */
@@ -821,11 +831,11 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	                char_offset = 0;
 	                inline_container=inline_container->next;
 	        }
-	        else if (char_offset == text_box->length && text_box->next) {
+	        else if ((unsigned int)char_offset == text_box->length && text_box->next) {
 	                text_box = text_box->next;
 	                char_offset = 0;
 	        }
-	        else if (char_offset != text_box->length) {
+	        else if ((unsigned int)char_offset != text_box->length) {
 	                char_offset++;
 	        }
 	        else {
@@ -857,13 +867,13 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	            inline_container->prev) {
 	                text_box = inline_container->prev->children;
 	                inline_container = inline_container->prev;
-	                if (char_offset > text_box->length) {
+	                if ((unsigned int)char_offset > text_box->length) {
 	                        char_offset = text_box->length;
 	                }
 	        }
 	        else if (text_box->prev) {
 	                text_box = text_box->prev;
-	                if (char_offset > text_box->length) {
+	                if ((unsigned int)char_offset > text_box->length) {
 	                        char_offset = text_box->length;
 	                }
 	        }
@@ -876,13 +886,13 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
                     inline_container->next) {
 	                text_box = inline_container->next->children;
 	                inline_container = inline_container->next;
-	                if (char_offset > text_box->length) {
+	                if ((unsigned int)char_offset > text_box->length) {
 	                        char_offset = text_box->length;
 	                }
 	        }
 	        else if (text_box->next) {
 	                text_box = text_box->next;
-	                if (char_offset > text_box->length) {
+	                if ((unsigned int)char_offset > text_box->length) {
 	                        char_offset = text_box->length;
 	                }
 	        }
@@ -915,7 +925,8 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		/* reflow textarea preserving width and height */
 		width = textarea->width;
 		height = textarea->height;
-		layout_block(textarea, textarea->parent->width, textarea, 0, 0);
+		layout_block(textarea, (unsigned int)textarea->parent->width,
+		             textarea, 0, 0);
 		textarea->width = width;
 		textarea->height = height;
 	}
@@ -939,12 +950,12 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		}
 	} */
 
-	if (text_box->length < char_offset) {
+	if (text_box->length < (unsigned int)char_offset) {
 		/* the text box has been split and the caret is in the second part */
 		char_offset -= (text_box->length + 1);  /* +1 for the space */
 		text_box = text_box->next;
 		assert(text_box);
-		assert(char_offset <= text_box->length);
+		assert((unsigned int)char_offset <= text_box->length);
 	}
 
 	dy = textarea->height / 2 -
@@ -956,13 +967,15 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	for (ic = textarea->children; ic; ic = ic->next)
 		ic->y += dy;
 
-	pixel_offset = font_width(text_box->font, text_box->text, char_offset);
+	pixel_offset = font_width(text_box->font, text_box->text,
+	                          (unsigned int)char_offset);
 
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
 	textarea->gadget->caret_char_offset = char_offset;
-	browser_window_place_caret(bw, actual_x + text_box->x + pixel_offset,
-			actual_y + inline_container->y + text_box->y,
+	browser_window_place_caret(bw,
+	                (int)(actual_x + text_box->x + pixel_offset),
+			(int)(actual_y + inline_container->y + text_box->y),
 			text_box->height,
 			browser_window_textarea_callback, textarea);
 
@@ -997,8 +1010,9 @@ void browser_window_input_click(struct browser_window* bw,
 			text_box->x = input->width - text_box->width;
 	}
 	input->gadget->caret_char_offset = char_offset;
-	browser_window_place_caret(bw, actual_x + text_box->x + pixel_offset,
-			actual_y + text_box->y,
+	browser_window_place_caret(bw,
+	                (int)(actual_x + text_box->x + pixel_offset),
+			(int)(actual_y + text_box->y),
 			text_box->height,
 			browser_window_input_callback, input);
 
@@ -1064,7 +1078,7 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
 	        /* Tab */
 	        /* TODO: tabbing between inputs */
 	        return;
-	} else if (key == 28 && char_offset != text_box->length) {
+	} else if (key == 28 && (unsigned int)char_offset != text_box->length) {
 	        /* Right cursor -> */
 	        char_offset++;
 	} else if (key == 29 && char_offset != 0) {
@@ -1075,8 +1089,9 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
 	}
 
 	text_box->width = font_width(text_box->font, text_box->text,
-			text_box->length);
-	pixel_offset = font_width(text_box->font, text_box->text, char_offset);
+			(unsigned int)text_box->length);
+	pixel_offset = font_width(text_box->font, text_box->text,
+	                          (unsigned int)char_offset);
 	text_box->x = 0;
 	if ((input->width < text_box->width) && (input->width / 2 < pixel_offset)) {
 		text_box->x = input->width / 2 - pixel_offset;
@@ -1084,8 +1099,9 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
 			text_box->x = input->width - text_box->width;
 	}
 	input->gadget->caret_char_offset = char_offset;
-	browser_window_place_caret(bw, actual_x + text_box->x + pixel_offset,
-			actual_y + text_box->y,
+	browser_window_place_caret(bw,
+	                (int)(actual_x + text_box->x + pixel_offset),
+			(int)(actual_y + text_box->y),
 			text_box->height,
 			browser_window_input_callback, input);
 
