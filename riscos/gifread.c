@@ -353,10 +353,10 @@ static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, 
 
 	/*	Allocate some more memory
 	*/
-	if (gif->frame_image->size != frame_bytes);
 	if ((buffer = (osspriteop_area *)realloc(gif->frame_image, frame_bytes)) == NULL) {
 		return GIF_INSUFFICIENT_MEMORY;
 	}
+	gif->frame_image = buffer;
 
 	/*	Update the sizes
 	*/

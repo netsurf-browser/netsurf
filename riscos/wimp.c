@@ -259,7 +259,7 @@ bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
  */
 void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state) {
 	os_error *error;
-	if (ro_gui_get_icon_selected_state(w, i) == state) return;
+	if (ro_gui_get_icon_shaded_state(w, i) == state) return;
 	error = xwimp_set_icon_state(w, i,
 			(state ? wimp_ICON_SHADED : 0), wimp_ICON_SHADED);
 	if (error) {
