@@ -108,10 +108,14 @@ void nsgif_redraw(struct content *c, long x, long y,
 		if (ro_gui_current_redraw_gui->option_animate_images) {
 			current_frame = c->data.gif.current_frame;
 		} else {
-		  	current_frame = 0;
+			current_frame = 0;
 		}
 	} else {
-	  	current_frame = 0;
+		if (c->data.gif.gif->loop_count == 0) {
+		  	current_frame = 0;
+		} else {
+			current_frame = c->data.gif.gif->frame_count - 1;
+		}
 		tinct_options = (option_filter_sprites?(1<<1):0) |
 				(option_dither_sprites?(1<<2):0);
 	}
