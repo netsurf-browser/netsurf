@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.24 2002/12/27 17:28:19 bursa Exp $
+ * $Id: layout.c,v 1.25 2002/12/27 17:38:47 bursa Exp $
  */
 
 #include <assert.h>
@@ -392,7 +392,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 				c2->text = xstrdup(space + 1);
 				c2->length = c->length - ((space + 1) - c->text);
 				c2->width = UNKNOWN_WIDTH;
-				c->length = space + 1 - c->text;
+				c->length = space - c->text;
 				c->width = w;
 				c->space = 1;
 				c2->next = c->next;
@@ -416,7 +416,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			c2->text = xstrdup(space + 1);
 			c2->length = c->length - ((space + 1) - c->text);
 			c2->width = UNKNOWN_WIDTH;
-			c->length = space + 1 - c->text;
+			c->length = space - c->text;
 			c->width = w;
 			c->space = 1;
 			c2->next = c->next;
