@@ -23,11 +23,9 @@ void ro_uri_message_received(uri_full_message_process* uri_message)
 {
   uri_h uri_handle;
   char* uri_requested;
-  char* temp;
 
   struct browser_window* bw;
   int uri_length;
-  int i;
 
   uri_handle = uri_message->handle;
 
@@ -49,27 +47,12 @@ void ro_uri_message_received(uri_full_message_process* uri_message)
                     uri_message->sender);
 
   xuri_request_uri(0, 0, 0, uri_handle, &uri_length);
-  uri_requested = xcalloc(uri_length, sizeof(char));
+  uri_requested = xcalloc((unsigned int)uri_length, sizeof(char));
 
   if (uri_requested == NULL)
      return;
 
   xuri_request_uri(0, uri_requested, uri_length, uri_handle, NULL);
-
-  /* Kludge for file:/ URLs (changes them into file:/// URLs) */
-  if( (strncasecmp(uri_requested, "file:/", 6) == 0) &&
-      (strncasecmp(uri_requested, "file://", 7) != 0) ) {
-
-        temp = xcalloc(strlen(uri_requested) + 5, sizeof(char));
-        strcpy(temp, "file:///");
-        for(i=6; i!=strlen(uri_requested); i++) {
-
-          temp[i+2] = uri_message->uri[i];
-        }
-        xfree(uri_requested);
-        uri_requested = strdup(temp);
-        xfree(temp);
-  }
 
   bw = create_browser_window(browser_TITLE | browser_TOOLBAR
           | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
