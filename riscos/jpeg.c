@@ -16,7 +16,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <setjmp.h>
 #include <swis.h>
 #define JPEG_INTERNAL_OPTIONS
 #include "libjpeg/jpeglib.h"
