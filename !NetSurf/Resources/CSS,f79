@@ -35,6 +35,10 @@ a:link { color: #00f; text-decoration: underline; }
 th { font-weight: bold; }
 td { text-align: left; }
 
+/* kludge until this gets implemented */
+dl, ul, ol { padding-left: 0.5em; }
+li, dd { padding-left: 1em; margin-bottom: 0.3em; }
+
 hr { background-color: #000; height: 1px; }
 
 center { text-align: center; }
