@@ -1,5 +1,5 @@
 /**
- * $Id: font.c,v 1.1 2002/04/25 15:52:26 bursa Exp $
+ * $Id: font.c,v 1.2 2002/05/11 15:22:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -39,21 +39,31 @@ void font_set_free(struct font_set * font_set)
  * find where to split some text to fit it in width
  */
 
-unsigned long font_split(struct font_set * font_set, font_id id, const char * text,
-		unsigned long width, const char ** end)
+struct font_split font_split(struct font_set * font_set, font_id id, const char * text,
+		unsigned long width, int force)
 {
 	size_t len = strlen(text);
 	unsigned int i;
-	assert(width >= 1);
-	if (len <= width) {
-		*end = text + len;
-		return len;
+	struct font_split split;
+
+	split.height = 30;
+	
+	if (len * 20 <= width) {
+		split.width = len * 20;
+		split.end = text + len;
+	} else {
+		for (i = width / 20; i != 0 && text[i] != ' '; i--)
+			;
+		if (force && i == 0) {
+			i = width / 20;
+			if (i == 0) i = 1;
+		}
+		split.width = i * 20;
+		if (text[i] == ' ') i++;
+		split.end = text + i;
 	}
-	/* invariant: no space in text[i+1..width) */
-	for (i = width - 1; i != 0 && text[i] != ' '; i--)
-		;
-	*end = text + i;
-	return i;
+
+	return split;
 }
 
 

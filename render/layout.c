@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.1 2002/05/04 19:57:18 bursa Exp $
+ * $Id: layout.c,v 1.2 2002/05/11 15:22:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -56,7 +56,7 @@ void layout_block(struct box * box, unsigned long width)
 			box->width = width;
 			break;
 		case CSS_WIDTH_LENGTH:
-			box->width = len(&style->width.value.length, 10);
+			box->width = len(&style->width.value.length, 20);
 			break;
 		case CSS_WIDTH_PERCENT:
 			box->width = width * style->width.value.percent / 100;
@@ -67,7 +67,7 @@ void layout_block(struct box * box, unsigned long width)
 		case CSS_HEIGHT_AUTO:
 			break;
 		case CSS_HEIGHT_LENGTH:
-			box->height = len(&style->height.length, 10);
+			box->height = len(&style->height.length, 20);
 			break;
 	}
 }
@@ -75,27 +75,27 @@ void layout_block(struct box * box, unsigned long width)
 unsigned long layout_block_children(struct box * box, unsigned long width)
 {
 	struct box * c;
-	unsigned long y = 1;
+	unsigned long y = 0;
 	
 	for (c = box->children; c != 0; c = c->next) {
 		switch (c->type) {
 			case BOX_BLOCK:
-				layout_block(c, width-4);
-				c->x = 2;
+				layout_block(c, width);
+				c->x = 0;
 				c->y = y;
-				y += c->height + 1;
+				y += c->height;
 				break;
 			case BOX_INLINE_CONTAINER:
-				layout_inline_container(c, width-4);
-				c->x = 2;
+				layout_inline_container(c, width);
+				c->x = 0;
 				c->y = y;
-				y += c->height + 1;
+				y += c->height;
 				break;
 			case BOX_TABLE:
-				layout_table(c, width-4);
-				c->x = 2;
+				layout_table(c, width);
+				c->x = 0;
 				c->y = y;
-				y += c->height + 1;
+				y += c->height;
 				break;
 			default:
 				die("block child not block, table, or inline container");
@@ -108,45 +108,49 @@ void layout_inline_container(struct box * box, unsigned long width)
 {
 	/* TODO: write this */
 	struct box * c;
-	unsigned long y = 1;
-	unsigned long x = 2;
+	unsigned long y = 0;
+	unsigned long x = 0;
 	const char * end;
-	struct box * new;
+	struct box * c2;
+	struct font_split split;
 
 	for (c = box->children; c != 0; ) {
-		c->width = font_split(0, c->font, c->text, width-2-x, &end)+1;
-		if (*end == 0) {
+		split = font_split(0, c->font, c->text, width - x, x == 0);
+		if (*(split.end) == 0) {
 			/* fits into this line */
 			c->x = x;
 			c->y = y;
-			c->height = 2;
+			c->width = split.width;
+			c->height = split.height;
+			c->length = split.end - c->text;
 			x += c->width;
 			c = c->next;
-			continue;
-		}
-		if (end == c->text) {
+		} else if (split.end == c->text) {
 			/* doesn't fit at all: move down a line */
-			x = 2;
-			y += 3;
-			c->width = font_split(0, c->font, c->text, width-2-x, &end)+1;
+			x = 0;
+			y += 30;
+			/*c->width = font_split(0, c->font, c->text, (width-x)/20+1, &end)*20;
 			if (end == c->text) end = strchr(c->text, ' ');
-			if (end == 0) end = c->text + 1;
+			if (end == 0) end = c->text + 1;*/
+		} else {
+			/* split into two lines */ 
+			c->x = x;
+			c->y = y;
+			c->width = split.width;
+			c->height = split.height;
+			c->length = split.end - c->text;
+			x = 0;
+			y += 30;
+			c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
+			c2->text = split.end;
+			c2->next = c->next;
+			c->next = c2;
+			c = c2;
 		}
-		/* split into two lines */ 
-		c->x = x;
-		c->y = y;
-		c->height = 2;
-		x = 2;
-		y += 3;
-		new = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
-		new->text = end + 1;
-		new->next = c->next;
-		c->next = new;
-		c = new;
 	}
 
 	box->width = width;
-	box->height = y + 3;
+	box->height = y + 30;
 }
 
 /**
@@ -165,7 +169,7 @@ void layout_table(struct box * table, unsigned long width)
 	unsigned long auto_width;  /* width of each auto column (all equal) */
 	unsigned long extra_width = 0;  /* extra width for each column if table is wider than columns */
 	unsigned long x;
-	unsigned long y = 1;
+	unsigned long y = 0;
 	unsigned long * xs;
 	unsigned int i;
 	struct box * c;
@@ -176,7 +180,7 @@ void layout_table(struct box * table, unsigned long width)
 	/* find table width */
 	switch (table->style->width.width) {
 		case CSS_WIDTH_LENGTH:
-			table_width = len(&table->style->width.value.length, 10);
+			table_width = len(&table->style->width.value.length, 20);
 			break;
 		case CSS_WIDTH_PERCENT:
 			table_width = width * table->style->width.value.percent / 100;
@@ -193,7 +197,7 @@ void layout_table(struct box * table, unsigned long width)
 		assert(c->type == BOX_TABLE_CELL);
 		switch (c->style->width.width) {
 			case CSS_WIDTH_LENGTH:
-				used_width += len(&c->style->width.value.length, 10);
+				used_width += len(&c->style->width.value.length, 20);
 				break;
 			case CSS_WIDTH_PERCENT:
 				used_width += table_width * c->style->width.value.percent / 100;
@@ -228,9 +232,9 @@ void layout_table(struct box * table, unsigned long width)
 				break;
 		}
 		xs[i] = x;
-		printf("%i ", x);
+		/*printf("%i ", x);*/
 	}
-	printf("\n");
+	/*printf("\n");*/
 
 	if (auto_columns == 0 && table->style->width.width == CSS_WIDTH_AUTO)
 		table_width = used_width;
@@ -249,14 +253,14 @@ void layout_table(struct box * table, unsigned long width)
 					break;
 			}
 			c->x = xs[i];
-			c->y = 1;
+			c->y = 0;
 			if (c->height > height) height = c->height;
 		}
 		r->x = 0;
 		r->y = y;
 		r->width = table_width;
-		r->height = height + 2;
-		y += height + 3;
+		r->height = height;
+		y += height;
 	}
 
 	free(xs);

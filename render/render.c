@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.8 2002/05/04 21:17:06 bursa Exp $
+ * $Id: render.c,v 1.9 2002/05/11 15:22:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -87,6 +87,38 @@ void render_plain(struct box * box)
 }
 
 
+void render_dump(struct box * box, unsigned long x, unsigned long y)
+{
+	struct box * c;
+	const char * const noname = "";
+	const char * name = noname;
+
+	switch (box->type) {
+		case BOX_TABLE:
+		case BOX_TABLE_ROW:
+		case BOX_TABLE_CELL:
+		case BOX_BLOCK: name = box->node->name;
+				break;
+		case BOX_INLINE:
+		case BOX_INLINE_CONTAINER:
+		default:
+	}
+
+	printf("rect %li %li %li %li \"%s\" \"%.*s\" ", x + box->x, y + box->y,
+			box->width, box->height, name,
+			box->type == BOX_INLINE ? box->length : 0,
+			box->type == BOX_INLINE ? box->text : "");
+	if (name == noname)
+		printf("\"\"\n");
+	else
+		printf("#%.6x\n", 0xffffff - ((name[0] << 16) | (name[1] << 8) | name[0]));
+	fflush(stdout);
+
+	for (c = box->children; c != 0; c = c->next)
+		render_dump(c, x + box->x, y + box->y);
+}
+
+
 int main(int argc, char *argv[])
 {
 	struct css_stylesheet * stylesheet;
@@ -115,11 +147,13 @@ int main(int argc, char *argv[])
 	doc_box->node = c;
 	xml_to_box(c, style, stylesheet, &selector, 0, doc_box, 0);
 	html_box = doc_box->children;
-	box_dump(html_box, 0);
+/*	box_dump(html_box, 0);*/
 
-	layout_block(html_box, 79);
-	box_dump(html_box, 0);
-	render_plain(html_box);
+	layout_block(html_box, 600);
+/*	box_dump(html_box, 0);*/
+/*	render_plain(html_box);*/
+	printf("%li %li\n", html_box->width, html_box->height);
+	render_dump(html_box, 0, 0);
 	
 	return 0;
 }

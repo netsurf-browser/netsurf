@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.2 2002/05/04 21:17:06 bursa Exp $
+ * $Id: box.c,v 1.3 2002/05/11 15:22:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -72,7 +72,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 		memcpy(style, parent_style, sizeof(struct css_style));
 		css_get_style(stylesheet, *selector, depth + 1, style);
 
-		if (s = xmlGetProp(n, "style")) {
+		if ((s = xmlGetProp(n, "style"))) {
 			struct css_style * astyle = xcalloc(1, sizeof(struct css_style));
 			memcpy(astyle, &css_empty_style, sizeof(struct css_style));
 			css_parse_property_list(astyle, s);
