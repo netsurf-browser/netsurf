@@ -6,7 +6,7 @@
  */
 
 /** \file
- * Tinct SWI numbers
+ * Tinct SWI numbers and flags
  */
 
 #ifndef _NETSURF_RISCOS_TINCT_H_
@@ -40,5 +40,15 @@
 /*	Tinct_AvailableFeatures returns the current feature set.
 */
 #define Tinct_AvailableFeatures 0x57245
+
+/*      Flags
+*/
+#define tinct_READ_SCREEN_BASE    0x01
+#define tinct_BILINEAR_FILTER     0x02
+#define tinct_DITHER              0x04
+#define tinct_INVERT_DITHER       0x08
+#define tinct_FILL_HORIZONTALLY   0x10
+#define tinct_FILL_VERTICALLY     0x20
+#define tinct_FORCE_PALETTE_READ  0x40
 
 #endif
