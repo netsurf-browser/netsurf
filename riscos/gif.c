@@ -234,8 +234,12 @@ void nsgif_animate(void *p)
 	data.redraw.height = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_height;
 
 	/* redraw background (true) or plot on top (false) */
-	data.redraw.full_redraw =
-			c->data.gif.gif->frames[c->data.gif.current_frame].redraw_required;
+	if (c->data.gif.current_frame > 0) {
+		data.redraw.full_redraw =
+				c->data.gif.gif->frames[c->data.gif.current_frame - 1].redraw_required;
+	} else {
+		data.redraw.full_redraw = true;
+	}
 
 	/* other data */
 	data.redraw.object = c;

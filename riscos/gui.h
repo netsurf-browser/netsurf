@@ -129,6 +129,9 @@ void ro_gui_save_options(void);
 bool ro_gui_dialog_keypress(wimp_key *key);
 void ro_gui_dialog_close(wimp_w close);
 void ro_gui_redraw_config_th_pane(wimp_draw *redraw);
+void ro_gui_menu_prepare_hotlist(void);
+void ro_gui_dialog_open_config(void);
+void ro_gui_dialog_update_config(wimp_w w);
 
 /* in download.c */
 void ro_gui_download_init(void);

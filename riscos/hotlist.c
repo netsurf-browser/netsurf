@@ -388,6 +388,7 @@ void ro_gui_hotlist_show(void) {
 
 	/*	Open the window at the top of the stack
 	*/
+	ro_gui_menu_prepare_hotlist();
 	state.next = wimp_TOP;
 	error = xwimp_open_window((wimp_open*)&state);
 	if (error) {
@@ -1396,11 +1397,13 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 							false, true);
 					entry->selected = true;
 					hotlist_redraw_entry_title(entry);
+					ro_gui_menu_prepare_hotlist();
 
 				}
 			} else if (buttons == (wimp_CLICK_ADJUST << 8)) {
 				entry->selected = !entry->selected;
 				hotlist_redraw_entry_title(entry);
+				ro_gui_menu_prepare_hotlist();
 			}
 
 			/*	Check if we should open the URL
@@ -1411,6 +1414,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 				if (buttons == wimp_DOUBLE_SELECT) {
 					ro_gui_hotlist_selection_state(root.child_entry,
 							false, true);
+					ro_gui_menu_prepare_hotlist();
 				} else {
 					entry->selected = false;
 					ro_gui_dialog_close_persistant(hotlist_window);
@@ -1477,6 +1481,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 		if (buttons == (wimp_CLICK_SELECT << 8)) {
 			ro_gui_hotlist_selection_state(root.child_entry,
 					false, true);
+			ro_gui_menu_prepare_hotlist();
 		}
 
 		/*	Handle the start of a drag
@@ -1489,6 +1494,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 			if (buttons == (wimp_CLICK_SELECT << 4)) {
 				ro_gui_hotlist_selection_state(root.child_entry,
 						false, true);
+				ro_gui_menu_prepare_hotlist();
 			}
 
 			/*	Start a drag box
@@ -1910,6 +1916,7 @@ void ro_gui_hotlist_selection_drag_end(wimp_dragged *drag) {
 	} else {
 		ro_gui_hotlist_selection_drag(root.child_entry, x0, y0, x1, y1, true, true);
 	}
+	ro_gui_menu_prepare_hotlist();
 }
 
 
@@ -2333,7 +2340,6 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 		ro_gui_hotlist_prepare_entry_dialog(dialog_entry_add);
 	}
 }
-
 
 int ro_gui_hotlist_help(int x, int y) {
 	struct hotlist_entry *entry;

@@ -145,8 +145,7 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "open", ICON_TOOLBAR_OPEN));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "expand", ICON_TOOLBAR_EXPAND));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_create_separator());
-		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "sort", ICON_TOOLBAR_SORT));
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_separator());
+/*		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "sort", ICON_TOOLBAR_SORT)); */
 	}
 
 	/*	Set the sprite area

@@ -245,7 +245,6 @@ int gif_initialise(struct gif_animation *gif) {
 	if (gif->frame_count_partial > 0) {
 		/*	Set the redraw for the first frame to the maximum frame size
 		*/
-		gif->frames[0].redraw_required = 0;
 		gif->frames[0].redraw_x = 0;
 		gif->frames[0].redraw_y = 0;
 		gif->frames[0].redraw_width = gif->width;
@@ -517,7 +516,7 @@ int gif_initialise_frame(struct gif_animation *gif) {
 		/*	if we are clearing the background then we need to redraw enough to cover the previous
 			frame too
 		*/
-		if (((background_action == 2) || (background_action == 3)) && (frame > 0)) {
+		if ((background_action == 2) || (background_action == 3)) {
 			gif->frames[frame].redraw_required = 1;
 		}
 

@@ -52,7 +52,6 @@ static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
 static void ro_gui_menu_object_reload(void);
 static void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning);
 static void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning);
-static void ro_gui_menu_prepare_hotlist(void);
 
 struct gui_window *current_gui;
 wimp_menu *current_menu;
@@ -1434,6 +1433,12 @@ void ro_gui_menu_prepare_hotlist(void) {
 	selection = ro_gui_hotlist_get_selected(false);
 	selection_full = ro_gui_hotlist_get_selected(true);
 
+	if (hotlist_toolbar) {
+		ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
+				ICON_TOOLBAR_DELETE, (selection_full == 0));
+		ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
+				ICON_TOOLBAR_LAUNCH, (selection == 0));
+	}
 	if (selection_full == 0) {
 		hotlist_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
 		hotlist_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
