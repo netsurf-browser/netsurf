@@ -100,8 +100,9 @@ struct form_successful_control {
 struct form_control *form_new_control(form_control_type type);
 void form_add_control(struct form *form, struct form_control *control);
 void form_free_control(struct form_control *control);
-struct form_successful_control *form_successful_controls(struct form *form,
-		struct form_control *submit_button);
+bool form_successful_controls(struct form *form,
+		struct form_control *submit_button,
+		struct form_successful_control **successful_controls);
 char *form_url_encode(struct form_successful_control *control);
 void form_free_successful(struct form_successful_control *control);
 

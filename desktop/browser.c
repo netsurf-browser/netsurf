@@ -1638,12 +1638,20 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 	assert(form);
 	assert(bw->current_content->type == CONTENT_HTML);
 
-	success = form_successful_controls(form, submit_button);
+	if (!form_successful_controls(form, submit_button, &success)) {
+		warn_user("NoMemory", 0);
+		return;
+	}
 	base = bw->current_content->data.html.base_url;
 
 	switch (form->method) {
 		case method_GET:
 			data = form_url_encode(success);
+			if (!data) {
+				form_free_successful(success);
+				warn_user("NoMemory", 0);
+				return;
+			}
 			url = xcalloc(1, strlen(form->action) + strlen(data) + 2);
 			if(form->action[strlen(form->action)-1] == '?') {
 				sprintf(url, "%s%s", form->action, data);
@@ -1659,6 +1667,11 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 
 		case method_POST_URLENC:
 			data = form_url_encode(success);
+			if (!data) {
+				form_free_successful(success);
+				warn_user("NoMemory", 0);
+				return;
+			}
 			url = url_join(form->action, base);
 			if (!url)
 				break;
