@@ -187,6 +187,7 @@ void gui_init(int argc, char** argv)
 	os_error *error;
 	int length;
 	struct theme_descriptor *descriptor = NULL;
+	char *nsdir_temp;
 
 	xhourglass_start(1);
 
@@ -226,7 +227,11 @@ void gui_init(int argc, char** argv)
 
 	url_store_load("Choices:WWW.NetSurf.URL");
 
-	NETSURF_DIR = getenv("NetSurf$Dir");
+	nsdir_temp = getenv("NetSurf$Dir");
+	if (!nsdir_temp)
+		die("Failed to locate NetSurf directory");
+	NETSURF_DIR = strdup(nsdir_temp);
+
 	if ((length = snprintf(path, sizeof(path),
 			"<NetSurf$Dir>.Resources.%s.Messages",
 			option_language)) < 0 || length >= (int)sizeof(path))
