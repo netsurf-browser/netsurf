@@ -3,12 +3,12 @@
 # Menus
 NetSurf:NetSurf
 Info:Info
+AppHelp:Help...  F1
 Choices:Choices...
-Help:Help...
 Quit:Quit
 
 Page:Page
-PageInfo:Info...
+PageInfo:Info
 Save:Save        F3
 SaveComp:Full save  ‹F3
 Export:Export
@@ -28,6 +28,15 @@ Forward:Forward one page
 Reload:Reload this page
 View:View
 ScaleView:Scale view
+Images:Images
+DitherImg:Dither images
+FilterImg:Smooth images
+ViewSrc:Page source...  F8
+Help:Help
+HelpContent:Contents  F1
+HelpGuide:User guide
+HelpInfo:User information
+HelpInter:Interactive help
 
 Themes:Themes
 
