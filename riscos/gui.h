@@ -24,12 +24,6 @@ extern int current_menu_x, current_menu_y, iconbar_menu_height;
 extern struct gui_gadget *current_gadget;
 extern const char *HOME_URL;
 
-extern struct ro_choices choices;
-extern struct browser_choices browser_choices;
-extern struct proxy_choices proxy_choices;
-extern struct theme_choices theme_choices;
-extern int config_open, config_br_open, config_prox_open, config_th_open;
-
 
 struct ro_gui_window
 {
@@ -59,7 +53,6 @@ struct ro_gui_window
 
 /* in gui.c */
 void ro_gui_copy_selection(gui_window* g);
-void ro_gui_theme_menu_selection(char *theme);
 
 /* in menus.c */
 void ro_gui_menus_init(void);
@@ -68,8 +61,11 @@ void ro_gui_menu_selection(wimp_selection* selection);
 
 /* in dialog.c */
 void ro_gui_dialog_init(void);
+void ro_gui_dialog_open(wimp_w w);
 void ro_gui_dialog_click(wimp_pointer *pointer);
 void ro_gui_dialog_close(wimp_w close);
+void ro_gui_redraw_config_th(wimp_draw* redraw);
+void ro_gui_theme_menu_selection(char *theme);
 
 /* icon numbers */
 #define ICON_CONFIG_SAVE 0

@@ -58,6 +58,4 @@ void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, unsigned 
 void gui_edit_textarea(struct browser_window* bw, struct gui_gadget* g);
 void gui_edit_textbox(struct browser_window* bw, struct gui_gadget* g);
 
-void gui_show_choices(void);
-
 #endif

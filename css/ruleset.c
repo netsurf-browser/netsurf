@@ -6,6 +6,7 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #define CSS_INTERNALS
@@ -33,7 +34,8 @@ struct font_size_entry {
 
 
 static int compare_selectors(struct node *n0, struct node *n1);
-static int parse_length(struct css_length * const length, const struct node * const v);
+static int parse_length(struct css_length * const length,
+		const struct node * const v, bool non_negative);
 static colour parse_colour(const struct node * const v);
 static void parse_background_color(struct css_style * const s, const struct node * const v);
 static void parse_clear(struct css_style * const s, const struct node * const v);
@@ -228,16 +230,21 @@ int compare_selectors(struct node *n0, struct node *n1)
 
 /* TODO: consider NODE_NUMBER whenever a value may be '0' */
 
-int parse_length(struct css_length * const length, const struct node * const v)
+int parse_length(struct css_length * const length,
+		const struct node * const v, bool non_negative)
 {
 	css_unit u;
+	float value;
 	if (v->type != NODE_DIMENSION)
 		return 1;
 	u = css_unit_parse(v->data + strspn(v->data, "0123456789+-."));
 	if (u == CSS_UNIT_UNKNOWN)
 		return 1;
+	value = atof(v->data);
+	if (non_negative && value < 0)
+		return 1;
 	length->unit = u;
-	length->value = atof(v->data);
+	length->value = value;
 	return 0;
 }
 
@@ -360,7 +367,7 @@ void parse_font_size(struct css_style * const s, const struct node * const v)
 			break;
 
 		case NODE_DIMENSION:
-			if (parse_length(&s->font_size.value.length, v) == 0)
+			if (parse_length(&s->font_size.value.length, v, true) == 0)
 				s->font_size.size = CSS_FONT_SIZE_LENGTH;
 			break;
 
@@ -392,7 +399,7 @@ void parse_height(struct css_style * const s, const struct node * const v)
 {
 	if (v->type == NODE_IDENT && strcasecmp(v->data, "auto") == 0)
 		s->height.height = CSS_HEIGHT_AUTO;
-	else if (v->type == NODE_DIMENSION && parse_length(&s->height.length, v) == 0)
+	else if (v->type == NODE_DIMENSION && parse_length(&s->height.length, v, true) == 0)
 		s->height.height = CSS_HEIGHT_LENGTH;
 }
 
@@ -405,7 +412,7 @@ void parse_line_height(struct css_style * const s, const struct node * const v)
 		s->line_height.size = CSS_LINE_HEIGHT_PERCENT;
 		s->line_height.value.percent = atof(v->data);
 	} else if (v->type == NODE_DIMENSION &&
-			parse_length(&s->line_height.value.length, v) == 0) {
+			parse_length(&s->line_height.value.length, v, true) == 0) {
 		s->line_height.size = CSS_LINE_HEIGHT_LENGTH;
 	} else if (v->type == NODE_NUMBER) {
 		s->line_height.size = CSS_LINE_HEIGHT_ABSOLUTE;
@@ -431,6 +438,6 @@ void parse_width(struct css_style * const s, const struct node * const v)
 		s->width.width = CSS_WIDTH_PERCENT;
 		s->width.value.percent = atof(v->data);
 	} else if (v->type == NODE_DIMENSION &&
-			parse_length(&s->width.value.length, v) == 0)
+			parse_length(&s->width.value.length, v, true) == 0)
 		s->width.width = CSS_WIDTH_LENGTH;
 }

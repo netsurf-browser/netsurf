@@ -493,13 +493,16 @@ struct css_style * box_get_style(struct content ** stylesheet,
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "height"))) {
-	        if (strrchr(s, '%')) {
+		float value = atof(s);
+		if (value < 0) {
+			/* ignore negative values */
+		} else if (strrchr(s, '%')) {
 	                /*the specification doesn't make clear what
 	                 * percentage heights mean, so ignore them */
 	        } else {
-		style->height.height = CSS_HEIGHT_LENGTH;
-		style->height.length.unit = CSS_UNIT_PX;
-		style->height.length.value = atof(s);
+			style->height.height = CSS_HEIGHT_LENGTH;
+			style->height.length.unit = CSS_UNIT_PX;
+			style->height.length.value = value;
 		}
 		xmlFree(s);
 	}
@@ -516,13 +519,16 @@ struct css_style * box_get_style(struct content ** stylesheet,
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "width"))) {
-		if (strrchr(s, '%')) {
+		float value = atof(s);
+		if (value < 0) {
+			/* ignore negative values */
+		} else if (strrchr(s, '%')) {
 			style->width.width = CSS_WIDTH_PERCENT;
-			style->width.value.percent = atof(s);
+			style->width.value.percent = value;
 		} else {
 			style->width.width = CSS_WIDTH_LENGTH;
 			style->width.value.length.unit = CSS_UNIT_PX;
-			style->width.value.length.value = atof(s);
+			style->width.value.length.value = value;
 		}
 		xmlFree(s);
 	}

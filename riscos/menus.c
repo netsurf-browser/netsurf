@@ -166,7 +166,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						pointer.pos.x, pointer.pos.y, 0);
 				break;
 			case 1: /* Choices */
-				gui_show_choices();
+				ro_gui_dialog_open(dialog_config);
 				break;
 			case 2: /* Quit */
 				netsurf_quit = 1;

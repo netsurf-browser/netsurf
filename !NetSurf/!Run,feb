@@ -15,7 +15,7 @@ RMEnsure UtilityModule 3.70 RMEnsure CallASWI 0.02 Error NetSurf requires the Ca
 | Ensure SharedUnixLibrary is installed
 | http://www.chocky.org/unix/usage.html
 RMEnsure SharedUnixLibrary 1.02 RMLoad System:Modules.SharedULib
-RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.00 or later
+RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.02 or later
 
 | Load AcornURI if it isn't already
 | http://sudden.recoil.org/
