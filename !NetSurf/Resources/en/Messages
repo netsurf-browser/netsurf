@@ -123,7 +123,7 @@ BadGIF:Reading GIF failed.
 PNGError:PNG library error.
 
 DrawTitle:Draw image (%lux%lu, %lu bytes)
-GIFTitle:GIF image (%lux%lu)
+GIFTitle:GIF image (%lux%lu, %lu bytes)
 JPEGTitle:JPEG image (%ux%u, %lu bytes)
 PNGTitle:PNG image (%lux%lu)
 SpriteTitle:Sprite image (%lux%lu, %lu bytes)

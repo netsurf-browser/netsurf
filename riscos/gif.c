@@ -71,16 +71,17 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 	/*	Initialise the GIF
 	*/
 	res = gif_initialise(gif);
-	if (res < 0) {
-		if (res == GIF_INSUFFICIENT_MEMORY) {
+	switch (res) {
+		case GIF_INSUFFICIENT_MEMORY:	
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			warn_user("NoMemory", 0);
-		} else {
+			return false;
+		case GIF_INSUFFICIENT_DATA:
+		case GIF_DATA_ERROR:
 			msg_data.error = messages_get("BadGIF");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		}
-		return false;
+			return false;
 	}
 
 	/*	Abort on bad GIFs
@@ -92,20 +93,19 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 		return false;
 	}
 
-	/*	Store our content width
+	/*	Store our content width and description
 	*/
 	c->width = gif->width;
 	c->height = gif->height;
+	c->title = malloc(100);
+	if (c->title) {
+		snprintf(c->title, 100, messages_get("GIFTitle"), c->width, c->height, c->source_size);
+	}
 
 	/*	Initialise the first frame so if we try to use the image data directly prior to
 		a plot we get some sensible data
 	*/
-	res = gif_decode_frame(c->data.gif.gif, 0);
-	if (res < 0 && res != GIF_INSUFFICIENT_FRAME_DATA) {
-		msg_data.error = messages_get("BadGIF");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;
-	}
+	gif_decode_frame(c->data.gif.gif, 0);
 
 	/*	Schedule the animation if we have one
 	*/
@@ -145,7 +145,11 @@ void nsgif_redraw(struct content *c, int x, int y,
 		if (c->data.gif.gif->loop_count == 0) {
 		  	current_frame = 0;
 		} else {
-			current_frame = c->data.gif.gif->frame_count - 1;
+		  	if (c->data.gif.gif->frame_count > 1) {
+				current_frame = c->data.gif.gif->frame_count - 1;
+			} else {
+				current_frame = 0;
+			}
 		}
 		tinct_options = (option_filter_sprites?tinct_BILINEAR_FILTER:0) |
 				(option_dither_sprites?tinct_DITHER:0);
