@@ -60,7 +60,7 @@
 */
 static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, unsigned int height);
 static int gif_initialise_frame(struct gif_animation *gif);
-static unsigned int gif_interlaced_line(unsigned int height, unsigned int y);
+static unsigned int gif_interlaced_line(int height, int y);
 
 
 
@@ -801,7 +801,7 @@ gif_decode_frame_exit:
 
 }
 
-static unsigned int gif_interlaced_line(unsigned int height, unsigned int y) {
+static unsigned int gif_interlaced_line(int height, int y) {
 	if ((y << 3) < height) return (y << 3);
 	y -= ((height + 7) >> 3);
 	if ((y << 3) < (height - 4)) return (y << 3) + 4;
