@@ -64,9 +64,6 @@ current OS clipping rectangle is used.
 bit 9 of the reason code set. To plot a sprite by name, the sprite should
 first be found by using OS_SpriteOp with reason code 0x18 and using the
 returned sprite address.
- The only error returned by the SWIs is 0x71e (Unrecognised sprite data) that
-comes from supplying Tinct with a sprite that does not fit the required
-characteristics as specified earlier.
 
 Tinct_PlotAlpha (0x57240)
 иииииииииииииииииииииииии
