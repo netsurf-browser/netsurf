@@ -883,7 +883,7 @@ void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigne
 		combo_menu->entries[count].icon_flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_FILLED | wimp_ICON_VCENTRED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT) | (wimp_BUTTON_MENU_ICON << wimp_ICON_BUTTON_TYPE_SHIFT);
 		combo_menu->entries[count].data.indirected_text.text = o->text;
 		combo_menu->entries[count].data.indirected_text.validation = "\0";
-		combo_menu->entries[count].data.indirected_text.size = strlen(o->text);
+		combo_menu->entries[count].data.indirected_text.size = strlen(o->text) + 1;
 	}
 
 	wimp_get_pointer_info(&pointer);
