@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "oslib/colourtrans.h"
+#include "oslib/draw.h"
 #include "oslib/font.h"
 #include "netsurf/css/css.h"
 #include "netsurf/content/content.h"
@@ -29,8 +30,10 @@ static void html_redraw_box(struct content *content, struct box * box,
 		float scale);
 static void html_redraw_clip(long clip_x0, long clip_y0,
 		long clip_x1, long clip_y1);
-void html_redraw_rectangle(int x0, int y0, int width, int height,
+static void html_redraw_rectangle(int x0, int y0, int width, int height,
 		os_colour colour);
+static void html_redraw_border(colour color, int width, css_border_style style,
+		int x0, int y0, int x1, int y1);
 
 bool gui_redraw_debug = false;
 
@@ -118,6 +121,40 @@ void html_redraw_box(struct content *content, struct box * box,
 				         box->border[BOTTOM] + box->margin[BOTTOM]) * 2,
 				os_COLOUR_YELLOW);
 	}
+
+	/* borders */
+	if (box->style && box->border[TOP])
+		html_redraw_border(box->style->border[TOP].color,
+				box->border[TOP] * 2,
+				box->style->border[TOP].style,
+				x - box->border[LEFT] * 2,
+				y + box->border[TOP],
+				x + width + box->border[RIGHT] * 2,
+				y + box->border[TOP]);
+	if (box->style && box->border[RIGHT])
+		html_redraw_border(box->style->border[RIGHT].color,
+				box->border[RIGHT] * 2,
+				box->style->border[RIGHT].style,
+				x + width + box->border[RIGHT],
+				y + box->border[TOP] * 2,
+				x + width + box->border[RIGHT],
+				y - height - box->border[BOTTOM] * 2);
+	if (box->style && box->border[BOTTOM])
+		html_redraw_border(box->style->border[BOTTOM].color,
+				box->border[BOTTOM] * 2,
+				box->style->border[BOTTOM].style,
+				x - box->border[LEFT] * 2,
+				y - height - box->border[BOTTOM],
+				x + width + box->border[RIGHT] * 2,
+				y - height - box->border[BOTTOM]);
+	if (box->style && box->border[LEFT])
+		html_redraw_border(box->style->border[LEFT].color,
+				box->border[LEFT] * 2,
+				box->style->border[LEFT].style,
+				x - box->border[LEFT],
+				y + box->border[TOP] * 2,
+				x - box->border[LEFT],
+				y - height - box->border[BOTTOM] * 2);
 
 	/* return if the box is completely outside the clip rectangle, except
 	 * for table rows which may contain cells spanning into other rows */
@@ -362,4 +399,39 @@ void html_redraw_rectangle(int x0, int y0, int width, int height,
 	os_plot(os_PLOT_DOTTED | os_PLOT_BY, 0, -height);
 	os_plot(os_PLOT_DOTTED | os_PLOT_BY, -width, 0);
 	os_plot(os_PLOT_DOTTED | os_PLOT_BY, 0, height);
+}
+
+
+static int path[] = { draw_MOVE_TO, 0, 0, draw_LINE_TO, 0, 0,
+		draw_END_PATH, 0 };
+static const draw_line_style line_style = { draw_JOIN_MITRED,
+		draw_CAP_BUTT, draw_CAP_BUTT, 0, 0x7fffffff,
+		0, 0, 0, 0 };
+static const int dash_pattern_dotted[] = { 0, 1, 512 };
+static const int dash_pattern_dashed[] = { 0, 1, 2048 };
+
+void html_redraw_border(colour color, int width, css_border_style style,
+		int x0, int y0, int x1, int y1)
+{
+	draw_dash_pattern *dash_pattern = 0;
+	os_error *error;
+
+	if (style == CSS_BORDER_STYLE_DOTTED)
+		dash_pattern = (draw_dash_pattern *) &dash_pattern_dotted;
+	else if (style == CSS_BORDER_STYLE_DASHED)
+		dash_pattern = (draw_dash_pattern *) &dash_pattern_dashed;
+
+	path[1] = x0 * 256;
+	path[2] = y0 * 256;
+	path[4] = x1 * 256;
+	path[5] = y1 * 256;
+	error = xcolourtrans_set_gcol(color << 8, 0, os_ACTION_OVERWRITE, 0, 0);
+	if (error)
+		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+				error->errnum, error->errmess));
+	error = xdraw_stroke((draw_path *) path, 0, 0, 0, width * 256,
+			&line_style, dash_pattern);
+	if (error)
+		LOG(("xdraw_stroke: 0x%x: %s",
+				error->errnum, error->errmess));
 }

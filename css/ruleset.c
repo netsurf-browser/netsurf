@@ -46,6 +46,8 @@ static void parse_border_bottom_color(struct css_style * const s, const struct c
 static void parse_border_bottom_style(struct css_style * const s, const struct css_node * v);
 static void parse_border_bottom_width(struct css_style * const s, const struct css_node * v);
 static void parse_border_color(struct css_style * const s, const struct css_node * v);
+static void parse_border_color_side(struct css_style * const s,
+		const struct css_node * const v, unsigned int i);
 static void parse_border_left(struct css_style * const s, const struct css_node * v);
 static void parse_border_left_color(struct css_style * const s, const struct css_node * v);
 static void parse_border_left_style(struct css_style * const s, const struct css_node * v);
@@ -54,12 +56,18 @@ static void parse_border_right(struct css_style * const s, const struct css_node
 static void parse_border_right_color(struct css_style * const s, const struct css_node * v);
 static void parse_border_right_style(struct css_style * const s, const struct css_node * v);
 static void parse_border_right_width(struct css_style * const s, const struct css_node * v);
+static void parse_border_side(struct css_style * const s,
+		const struct css_node *v, unsigned int i);
 static void parse_border_style(struct css_style * const s, const struct css_node * v);
+static void parse_border_style_side(struct css_style * const s,
+		const struct css_node * const v, unsigned int i);
 static void parse_border_top(struct css_style * const s, const struct css_node * v);
 static void parse_border_top_color(struct css_style * const s, const struct css_node * v);
 static void parse_border_top_style(struct css_style * const s, const struct css_node * v);
 static void parse_border_top_width(struct css_style * const s, const struct css_node * v);
 static void parse_border_width(struct css_style * const s, const struct css_node * v);
+static void parse_border_width_side(struct css_style * const s,
+		const struct css_node * const v, unsigned int i);
 static void parse_clear(struct css_style * const s, const struct css_node * const v);
 static void parse_color(struct css_style * const s, const struct css_node * const v);
 static void parse_display(struct css_style * const s, const struct css_node * const v);
@@ -100,7 +108,7 @@ static css_text_decoration css_text_decoration_parse(const char * const s);
 static const struct property_entry property_table[] = {
 	{ "background",       parse_background },
 	{ "background-color", parse_background_color },
-/*	{ "border",           parse_border },
+	{ "border",           parse_border },
 	{ "border-bottom",    parse_border_bottom },
 	{ "border-bottom-color", parse_border_bottom_color },
 	{ "border-bottom-style", parse_border_bottom_style },
@@ -119,7 +127,7 @@ static const struct property_entry property_table[] = {
 	{ "border-top-color", parse_border_top_color },
 	{ "border-top-style", parse_border_top_style },
 	{ "border-top-width", parse_border_top_width },
-	{ "border-width",     parse_border_width },*/
+	{ "border-width",     parse_border_width },
 	{ "clear",            parse_clear },
 	{ "color",            parse_color },
 	{ "display",          parse_display },
@@ -434,6 +442,286 @@ void parse_background_color(struct css_style * const s, const struct css_node * 
 		s->background_color = c;
 }
 
+void parse_border_width(struct css_style * const s,
+		const struct css_node * const v)
+{
+	unsigned int count = 0;
+	const struct css_node *w;
+
+	for (w = v; w; w = w->next, count++)
+		if (!((w->type == CSS_NODE_IDENT && (
+				  (strcasecmp(w->data, "inherit") == 0) ||
+				  (strcasecmp(w->data, "thin") == 0) ||
+				  (strcasecmp(w->data, "medium") == 0) ||
+				  (strcasecmp(w->data, "thick") == 0))) ||
+				(w->type == CSS_NODE_DIMENSION) ||
+				(w->type == CSS_NODE_NUMBER)))
+			return;
+
+	w = v;
+	switch (count) {
+		case 1: /* one value: applies to all sides */
+			parse_border_width_side(s, w, TOP);
+			parse_border_width_side(s, w, RIGHT);
+			parse_border_width_side(s, w, BOTTOM);
+			parse_border_width_side(s, w, LEFT);
+			break;
+		case 2: /* (top and bottom), (left and right) */
+			parse_border_width_side(s, w, TOP);
+			parse_border_width_side(s, w, BOTTOM);
+			w = w->next;
+			parse_border_width_side(s, w, RIGHT);
+			parse_border_width_side(s, w, LEFT);
+			break;
+		case 3: /* top, (left and right), bottom */
+			parse_border_width_side(s, w, TOP);
+			w = w->next;
+			parse_border_width_side(s, w, RIGHT);
+			parse_border_width_side(s, w, LEFT);
+			w = w->next;
+			parse_border_width_side(s, w, BOTTOM);
+			break;
+		case 4: /* top, right, bottom, left */
+			parse_border_width_side(s, w, TOP);
+			w = w->next;
+			parse_border_width_side(s, w, RIGHT);
+			w = w->next;
+			parse_border_width_side(s, w, BOTTOM);
+			w = w->next;
+			parse_border_width_side(s, w, LEFT);
+			break;
+	}
+}
+
+#define PARSE_BORDER_WIDTH(side, z) \
+void parse_border_ ## side ## _width(struct css_style * const s, \
+		const struct css_node * const v)	\
+{							\
+	if (v->next != 0)				\
+		return;					\
+	parse_border_width_side(s, v, z);		\
+}
+
+PARSE_BORDER_WIDTH(top,    TOP)
+PARSE_BORDER_WIDTH(right,  RIGHT)
+PARSE_BORDER_WIDTH(bottom, BOTTOM)
+PARSE_BORDER_WIDTH(left,   LEFT)
+
+void parse_border_width_side(struct css_style * const s,
+		const struct css_node * const v, unsigned int i)
+{
+	if (v->type == CSS_NODE_IDENT) {
+		if (strcasecmp(v->data, "inherit") == 0)
+			s->border[i].width.width = CSS_BORDER_WIDTH_INHERIT;
+		else if (strcasecmp(v->data, "thin") == 0) {
+			s->border[i].width.width = CSS_BORDER_WIDTH_LENGTH;
+			s->border[i].width.value.value = 1;
+			s->border[i].width.value.unit = CSS_UNIT_PX;
+		} else if (strcasecmp(v->data, "medium") == 0) {
+			s->border[i].width.width = CSS_BORDER_WIDTH_LENGTH;
+			s->border[i].width.value.value = 2;
+			s->border[i].width.value.unit = CSS_UNIT_PX;
+		} else if (strcasecmp(v->data, "thick") == 0) {
+			s->border[i].width.width = CSS_BORDER_WIDTH_LENGTH;
+			s->border[i].width.value.value = 4;
+			s->border[i].width.value.unit = CSS_UNIT_PX;
+		}
+	} else if ((v->type == CSS_NODE_DIMENSION ||
+			v->type == CSS_NODE_NUMBER) &&
+			parse_length(&s->border[i].width.value, v, true) == 0)
+		s->border[i].width.width = CSS_BORDER_WIDTH_LENGTH;
+}
+
+void parse_border_color(struct css_style * const s,
+		const struct css_node * const v)
+{
+	unsigned int count = 0;
+	const struct css_node *w;
+
+	for (w = v; w; w = w->next, count++)
+		if (!(w->type == CSS_NODE_HASH ||
+				w->type == CSS_NODE_FUNCTION ||
+				w->type == CSS_NODE_IDENT))
+			return;
+
+	w = v;
+	switch (count) {
+		case 1: /* one value: applies to all sides */
+			parse_border_color_side(s, w, TOP);
+			parse_border_color_side(s, w, RIGHT);
+			parse_border_color_side(s, w, BOTTOM);
+			parse_border_color_side(s, w, LEFT);
+			break;
+		case 2: /* (top and bottom), (left and right) */
+			parse_border_color_side(s, w, TOP);
+			parse_border_color_side(s, w, BOTTOM);
+			w = w->next;
+			parse_border_color_side(s, w, RIGHT);
+			parse_border_color_side(s, w, LEFT);
+			break;
+		case 3: /* top, (left and right), bottom */
+			parse_border_color_side(s, w, TOP);
+			w = w->next;
+			parse_border_color_side(s, w, RIGHT);
+			parse_border_color_side(s, w, LEFT);
+			w = w->next;
+			parse_border_color_side(s, w, BOTTOM);
+			break;
+		case 4: /* top, right, bottom, left */
+			parse_border_color_side(s, w, TOP);
+			w = w->next;
+			parse_border_color_side(s, w, RIGHT);
+			w = w->next;
+			parse_border_color_side(s, w, BOTTOM);
+			w = w->next;
+			parse_border_color_side(s, w, LEFT);
+			break;
+	}
+}
+
+#define PARSE_BORDER_COLOR(side, z) \
+void parse_border_ ## side ## _color(struct css_style * const s, \
+		const struct css_node * const v)	\
+{							\
+	if (v->next != 0)				\
+		return;					\
+	parse_border_color_side(s, v, z);		\
+}
+
+PARSE_BORDER_COLOR(top,    TOP)
+PARSE_BORDER_COLOR(right,  RIGHT)
+PARSE_BORDER_COLOR(bottom, BOTTOM)
+PARSE_BORDER_COLOR(left,   LEFT)
+
+void parse_border_color_side(struct css_style * const s,
+		const struct css_node * const v, unsigned int i)
+{
+	colour c = parse_colour(v);
+	if (c != CSS_COLOR_NONE)
+		s->border[i].color = c;
+}
+
+void parse_border_style(struct css_style * const s,
+		const struct css_node * const v)
+{
+	unsigned int count = 0;
+	const struct css_node *w;
+
+	for (w = v; w; w = w->next, count++)
+		if (w->type != CSS_NODE_IDENT)
+			return;
+
+	w = v;
+	switch (count) {
+		case 1: /* one value: applies to all sides */
+			parse_border_style_side(s, w, TOP);
+			parse_border_style_side(s, w, RIGHT);
+			parse_border_style_side(s, w, BOTTOM);
+			parse_border_style_side(s, w, LEFT);
+			break;
+		case 2: /* (top and bottom), (left and right) */
+			parse_border_style_side(s, w, TOP);
+			parse_border_style_side(s, w, BOTTOM);
+			w = w->next;
+			parse_border_style_side(s, w, RIGHT);
+			parse_border_style_side(s, w, LEFT);
+			break;
+		case 3: /* top, (left and right), bottom */
+			parse_border_style_side(s, w, TOP);
+			w = w->next;
+			parse_border_style_side(s, w, RIGHT);
+			parse_border_style_side(s, w, LEFT);
+			w = w->next;
+			parse_border_style_side(s, w, BOTTOM);
+			break;
+		case 4: /* top, right, bottom, left */
+			parse_border_style_side(s, w, TOP);
+			w = w->next;
+			parse_border_style_side(s, w, RIGHT);
+			w = w->next;
+			parse_border_style_side(s, w, BOTTOM);
+			w = w->next;
+			parse_border_style_side(s, w, LEFT);
+			break;
+	}
+}
+
+#define PARSE_BORDER_STYLE(side, z) \
+void parse_border_ ## side ## _style(struct css_style * const s, \
+		const struct css_node * const v)	\
+{							\
+	if (v->next != 0 || v->type != CSS_NODE_IDENT)	\
+		return;					\
+	parse_border_style_side(s, v, z);		\
+}
+
+PARSE_BORDER_STYLE(top,    TOP)
+PARSE_BORDER_STYLE(right,  RIGHT)
+PARSE_BORDER_STYLE(bottom, BOTTOM)
+PARSE_BORDER_STYLE(left,   LEFT)
+
+void parse_border_style_side(struct css_style * const s,
+		const struct css_node * const v, unsigned int i)
+{
+	css_border_style z = css_border_style_parse(v->data);
+	if (z != CSS_BORDER_STYLE_UNKNOWN)
+		s->border[i].style = z;
+}
+
+void parse_border(struct css_style * const s,
+		const struct css_node * const v)
+{
+	parse_border_side(s, v, TOP);
+	parse_border_side(s, v, RIGHT);
+	parse_border_side(s, v, BOTTOM);
+	parse_border_side(s, v, LEFT);
+}
+
+#define PARSE_BORDER(side, z) \
+void parse_border_ ## side(struct css_style * const s,	\
+		const struct css_node * const v)	\
+{							\
+	parse_border_side(s, v, z);			\
+}
+
+PARSE_BORDER(top,    TOP)
+PARSE_BORDER(right,  RIGHT)
+PARSE_BORDER(bottom, BOTTOM)
+PARSE_BORDER(left,   LEFT)
+
+void parse_border_side(struct css_style * const s,
+		const struct css_node *v, unsigned int i)
+{
+	colour c;
+	css_border_style z;
+
+	if (!v->next && v->type == CSS_NODE_IDENT &&
+			strcasecmp(v->data, "inherit") == 0) {
+		s->border[i].color = CSS_COLOR_INHERIT;
+		s->border[i].width.width = CSS_BORDER_WIDTH_INHERIT;
+		s->border[i].style = CSS_BORDER_STYLE_INHERIT;
+		return;
+	}
+
+	for (; v; v = v->next) {
+		c = parse_colour(v);
+		if (c != CSS_COLOR_NONE) {
+			s->border[i].color = c;
+			continue;
+		}
+
+		if (v->type == CSS_NODE_IDENT) {
+			z = css_border_style_parse(v->data);
+			if (z != CSS_BORDER_STYLE_UNKNOWN) {
+				s->border[i].style = z;
+				continue;
+			}
+		}
+
+		parse_border_width_side(s, v, i);
+	}
+}
+
 void parse_clear(struct css_style * const s, const struct css_node * const v)
 {
 	css_clear z;
@@ -649,67 +937,54 @@ void parse_margin(struct css_style * const s, const struct css_node * const v)
 				(w->type == CSS_NODE_NUMBER)))
 			return;
 
+	w = v;
 	switch (count) {
 		case 1: /* one value: applies to all sides */
-			parse_margin_side(s, v, 0);
-			parse_margin_side(s, v, 1);
-			parse_margin_side(s, v, 2);
-			parse_margin_side(s, v, 3);
+			parse_margin_side(s, w, TOP);
+			parse_margin_side(s, w, RIGHT);
+			parse_margin_side(s, w, BOTTOM);
+			parse_margin_side(s, w, LEFT);
 			break;
 		case 2: /* (top and bottom), (left and right) */
-			parse_margin_side(s, v, 0);
-			parse_margin_side(s, v, 2);
-			v = v->next;
-			parse_margin_side(s, v, 1);
-			parse_margin_side(s, v, 3);
+			parse_margin_side(s, w, TOP);
+			parse_margin_side(s, w, BOTTOM);
+			w = w->next;
+			parse_margin_side(s, w, RIGHT);
+			parse_margin_side(s, w, LEFT);
 			break;
 		case 3: /* top, (left and right), bottom */
-			parse_margin_side(s, v, 0);
-			v = v->next;
-			parse_margin_side(s, v, 1);
-			parse_margin_side(s, v, 3);
-			v = v->next;
-			parse_margin_side(s, v, 2);
+			parse_margin_side(s, w, TOP);
+			w = w->next;
+			parse_margin_side(s, w, RIGHT);
+			parse_margin_side(s, w, LEFT);
+			w = w->next;
+			parse_margin_side(s, w, BOTTOM);
 			break;
 		case 4: /* top, right, bottom, left */
-			parse_margin_side(s, v, 0);
-			v = v->next;
-			parse_margin_side(s, v, 1);
-			v = v->next;
-			parse_margin_side(s, v, 2);
-			v = v->next;
-			parse_margin_side(s, v, 3);
+			parse_margin_side(s, w, TOP);
+			w = w->next;
+			parse_margin_side(s, w, RIGHT);
+			w = w->next;
+			parse_margin_side(s, w, BOTTOM);
+			w = w->next;
+			parse_margin_side(s, w, LEFT);
 			break;
 	}
 }
 
-void parse_margin_top(struct css_style * const s, const struct css_node * const v)
-{
-	if (v->next != 0)
-		return;
-	parse_margin_side(s, v, 0);
+#define PARSE_MARGIN_(side, z) \
+void parse_margin_ ## side(struct css_style * const s,	\
+		const struct css_node * const v)	\
+{							\
+	if (v->next != 0)				\
+		return;					\
+	parse_margin_side(s, v, z);			\
 }
 
-void parse_margin_right(struct css_style * const s, const struct css_node * const v)
-{
-	if (v->next != 0)
-		return;
-	parse_margin_side(s, v, 1);
-}
-
-void parse_margin_bottom(struct css_style * const s, const struct css_node * const v)
-{
-	if (v->next != 0)
-		return;
-	parse_margin_side(s, v, 2);
-}
-
-void parse_margin_left(struct css_style * const s, const struct css_node * const v)
-{
-	if (v->next != 0)
-		return;
-	parse_margin_side(s, v, 3);
-}
+PARSE_MARGIN_(top,    TOP)
+PARSE_MARGIN_(right,  RIGHT)
+PARSE_MARGIN_(bottom, BOTTOM)
+PARSE_MARGIN_(left,   LEFT)
 
 void parse_margin_side(struct css_style * const s, const struct css_node * const v,
 		unsigned int i)
@@ -739,67 +1014,54 @@ void parse_padding(struct css_style * const s, const struct css_node * const v)
 				(w->type == CSS_NODE_NUMBER)))
 			return;
 
+	w = v;
 	switch (count) {
 		case 1: /* one value: applies to all sides */
-			parse_padding_side(s, v, 0);
-			parse_padding_side(s, v, 1);
-			parse_padding_side(s, v, 2);
-			parse_padding_side(s, v, 3);
+			parse_padding_side(s, w, TOP);
+			parse_padding_side(s, w, RIGHT);
+			parse_padding_side(s, w, BOTTOM);
+			parse_padding_side(s, w, LEFT);
 			break;
 		case 2: /* (top and bottom), (left and right) */
-			parse_padding_side(s, v, 0);
-			parse_padding_side(s, v, 2);
-			v = v->next;
-			parse_padding_side(s, v, 1);
-			parse_padding_side(s, v, 3);
+			parse_padding_side(s, w, TOP);
+			parse_padding_side(s, w, BOTTOM);
+			w = w->next;
+			parse_padding_side(s, w, RIGHT);
+			parse_padding_side(s, w, LEFT);
 			break;
 		case 3: /* top, (left and right), bottom */
-			parse_padding_side(s, v, 0);
-			v = v->next;
-			parse_padding_side(s, v, 1);
-			parse_padding_side(s, v, 3);
-			v = v->next;
-			parse_padding_side(s, v, 2);
+			parse_padding_side(s, w, TOP);
+			w = w->next;
+			parse_padding_side(s, w, RIGHT);
+			parse_padding_side(s, w, LEFT);
+			w = w->next;
+			parse_padding_side(s, w, BOTTOM);
 			break;
 		case 4: /* top, right, bottom, left */
-			parse_padding_side(s, v, 0);
-			v = v->next;
-			parse_padding_side(s, v, 1);
-			v = v->next;
-			parse_padding_side(s, v, 2);
-			v = v->next;
-			parse_padding_side(s, v, 3);
+			parse_padding_side(s, w, TOP);
+			w = w->next;
+			parse_padding_side(s, w, RIGHT);
+			w = w->next;
+			parse_padding_side(s, w, BOTTOM);
+			w = w->next;
+			parse_padding_side(s, w, LEFT);
 			break;
 	}
 }
 
-void parse_padding_top(struct css_style * const s, const struct css_node * const v)
-{
-	if (v->next != 0)
-		return;
-	parse_padding_side(s, v, 0);
+#define PARSE_PADDING_(side, z) \
+void parse_padding_ ## side(struct css_style * const s,	\
+		const struct css_node * const v)	\
+{							\
+	if (v->next != 0)				\
+		return;					\
+	parse_padding_side(s, v, z);			\
 }
 
-void parse_padding_right(struct css_style * const s, const struct css_node * const v)
-{
-	if (v->next != 0)
-		return;
-	parse_padding_side(s, v, 1);
-}
-
-void parse_padding_bottom(struct css_style * const s, const struct css_node * const v)
-{
-	if (v->next != 0)
-		return;
-	parse_padding_side(s, v, 2);
-}
-
-void parse_padding_left(struct css_style * const s, const struct css_node * const v)
-{
-	if (v->next != 0)
-		return;
-	parse_padding_side(s, v, 3);
-}
+PARSE_PADDING_(top,    TOP)
+PARSE_PADDING_(right,  RIGHT)
+PARSE_PADDING_(bottom, BOTTOM)
+PARSE_PADDING_(left,   LEFT)
 
 void parse_padding_side(struct css_style * const s, const struct css_node * const v,
 		unsigned int i)
