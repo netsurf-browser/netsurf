@@ -24,6 +24,7 @@
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
 #endif
+#include "netsurf/desktop/options.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/layout.h"
@@ -550,23 +551,28 @@ void layout_inline_container(struct box *box, int width,
 
 int line_height(struct css_style *style)
 {
+        float font_len;
+
 	assert(style);
 	assert(style->line_height.size == CSS_LINE_HEIGHT_LENGTH ||
 	       style->line_height.size == CSS_LINE_HEIGHT_ABSOLUTE ||
 	       style->line_height.size == CSS_LINE_HEIGHT_PERCENT);
+
+        /* take account of minimum font size option */
+	if ((font_len = len(&style->font_size.value.length, 0)) <
+	    ((float)(option_font_min_size * 9.0 / 72.0)))
+	        font_len = (float)(option_font_min_size * 9.0 / 72.0);
 
 	switch (style->line_height.size) {
 		case CSS_LINE_HEIGHT_LENGTH:
 			return len(&style->line_height.value.length, style);
 
 		case CSS_LINE_HEIGHT_ABSOLUTE:
-			return style->line_height.value.absolute *
-					len(&style->font_size.value.length, 0);
+			return style->line_height.value.absolute * font_len;
 
 		case CSS_LINE_HEIGHT_PERCENT:
 		default:
-			return style->line_height.value.percent *
-					len(&style->font_size.value.length, 0)
+			return style->line_height.value.percent * font_len
 					/ 100.0;
 	}
 }
