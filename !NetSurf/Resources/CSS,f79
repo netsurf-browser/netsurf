@@ -46,7 +46,7 @@ hr { background-color: #000; height: 1px; }
 center { text-align: center; }
 small { font-size: smaller; }
 big { font-size: larger; }
-select, input { background-color: #eeb; color: #000; width: 10em; height: 2em;
+select, input { background-color: #eeb; color: #000; width: 10em; height: 1.5em;
 		text-align: left;}
 textarea { background-color: #eeb; color: #000; text-align: left; }
 input[type=button], input[type=image], input[type=reset], input[type=submit],
