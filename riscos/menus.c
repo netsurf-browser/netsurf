@@ -237,12 +237,13 @@ static wimp_MENU(4) utilities_menu = {
 
 /*	Help submenu
 */
-static wimp_MENU(4) help_menu = {
+static wimp_MENU(5) help_menu = {
   { "Help" }, 7,2,7,0, 300, 44, 0,
   {
     { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "HelpContent" } },
     { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "HelpGuide" } },
     { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "HelpInfo" } },
+    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "HelpAbout" } },
     { wimp_MENU_LAST,     wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "HelpInter" } }
   }
 };
@@ -566,7 +567,11 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 2: /* User information */
 					        ro_gui_open_help_page("info");
 						break;
-					case 3: /* Interactive help */
+					case 3: /* About NetSurf */
+						browser_window_create("file:/"
+						"<NetSurf$Dir>/Docs/about", 0);
+						break;
+					case 4: /* Interactive help */
 						xos_cli("Filer_Run Resources:$.Apps.!Help");
 						ro_gui_menu_prepare_help(true);
 						break;
@@ -850,9 +855,9 @@ void ro_gui_menu_prepare_scale(void) {
  */
 void ro_gui_menu_prepare_help(int forced) {
 	if (ro_gui_interactive_help_available() || (forced)) {
-		browser_help_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
+		browser_help_menu->entries[4].icon_flags |= wimp_ICON_SHADED;
 	} else {
-		browser_help_menu->entries[3].icon_flags &= ~wimp_ICON_SHADED;
+		browser_help_menu->entries[4].icon_flags &= ~wimp_ICON_SHADED;
 	}
 }
 

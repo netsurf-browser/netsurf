@@ -57,6 +57,7 @@ HelpContent:Contents  F1
 HelpGuide:User guide
 HelpInfo:User information
 HelpInter:Interactive help
+HelpAbout:About NetSurf
 
 Themes:Themes
 
@@ -200,7 +201,8 @@ HelpBrowserMenu4:\Rsee the help resources available.
 HelpBrowserMenu4-0:\Sopen the documentation contents page in a new \w.
 HelpBrowserMenu4-1:\Sopen the user guide in a new \w.
 HelpBrowserMenu4-2:\Sopen the user information page in a new \w.
-HelpBrowserMenu4-3:\Srun Help.
+HelpBrowserMenu4-3:\Sopen the NetSurf about page in a new \w.
+HelpBrowserMenu4-4:\Srun Help.
 
 HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.
 

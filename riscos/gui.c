@@ -723,7 +723,7 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 		int length;
 
 		if ((length = snprintf(url, sizeof(url),
-				"file:///%%3CNetSurf$Dir%%3E/Docs/intro_%s",
+				"file:/<NetSurf$Dir>/Docs/intro_%s",
 				option_language)) >= 0 && length < (int)sizeof(url))
 			browser_window_create(url, NULL);
 	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
@@ -1286,7 +1286,7 @@ void ro_gui_open_help_page(const char *page)
 	int length;
 
 	if ((length = snprintf(url, sizeof url,
-			"file:///%%3CNetSurf$Dir%%3E/Docs/%s_%s",
+			"file:/<NetSurf$Dir>/Docs/%s_%s",
 			page, option_language)) >= 0 && length < (int)sizeof(url))
 		browser_window_create(url, NULL);
 }
