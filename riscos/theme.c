@@ -1,3 +1,6 @@
+/**
+ * $Id: theme.c,v 1.5 2003/06/06 02:14:28 jmb Exp $
+ */
 
 #include "netsurf/riscos/theme.h"
 #include "oslib/wimp.h"

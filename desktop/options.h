@@ -1,3 +1,7 @@
+/**
+ * $Id: options.h,v 1.2 2003/06/06 02:14:28 jmb Exp $
+ */
+
 
 #ifndef _NETSURF_DESKTOP_OPTIONS_H_
 #define _NETSURF_DESKTOP_OPTIONS_H_
@@ -12,7 +16,7 @@ struct options
 	int http;
 	char* http_proxy;
 	int http_port;
-	
+
 	/* platform specific options */
 	PLATFORM_OPTIONS
 };

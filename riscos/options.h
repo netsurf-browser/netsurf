@@ -1,3 +1,6 @@
+/**
+ * $ID$
+ */
 
 #ifndef _NETSURF_RISCOS_OPTIONS_H_
 #define _NETSURF_RISCOS_OPTIONS_H_

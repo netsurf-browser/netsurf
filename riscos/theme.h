@@ -1,3 +1,7 @@
+/**
+ * $Id: theme.h,v 1.3 2003/06/06 02:14:28 jmb Exp $
+ */
+
 #ifndef _MIGRATE_RISCOS_THEME_H_
 #define _MIGRATE_RISCOS_THEME_H_
 

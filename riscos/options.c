@@ -1,3 +1,7 @@
+/**
+ * $Id: options.c,v 1.3 2003/06/06 02:14:28 jmb Exp $
+ */
+
 #include "netsurf/desktop/options.h"
 #include <stdio.h>
 #include <string.h>
