@@ -17,7 +17,7 @@
 #include "netsurf/utils/utils.h"
 
 
-void other_create(struct content *c)
+void other_create(struct content *c, char *params[])
 {
 	c->data.other.data = xcalloc(0, 1);
 	c->data.other.length = 0;

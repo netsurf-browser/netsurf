@@ -57,7 +57,7 @@ static const struct mime_entry mime_map[] = {
 
 /** An entry in handler_map. */
 struct handler_entry {
-	void (*create)(struct content *c);
+	void (*create)(struct content *c, const char *params[]);
 	void (*process_data)(struct content *c, char *data, unsigned long size);
 	int (*convert)(struct content *c, unsigned int width, unsigned int height);
 	void (*revive)(struct content *c, unsigned int width, unsigned int height);
@@ -169,9 +169,15 @@ struct content * content_create(char *url)
  * status is changed to CONTENT_STATUS_LOADING. CONTENT_MSG_LOADING is sent to
  * all users. The create function for the type is called to initialise the type
  * specific parts of the content structure.
+ *
+ * \param c content structure
+ * \param type content_type to initialise to
+ * \param mime_type MIME-type string for this content
+ * \param params array of strings, ordered attribute, value, attribute, ..., 0
  */
 
-void content_set_type(struct content *c, content_type type, char* mime_type)
+void content_set_type(struct content *c, content_type type, char* mime_type,
+		const char *params[])
 {
 	assert(c != 0);
 	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
@@ -180,7 +186,7 @@ void content_set_type(struct content *c, content_type type, char* mime_type)
 	c->type = type;
 	c->mime_type = xstrdup(mime_type);
 	c->status = CONTENT_STATUS_LOADING;
-	handler_map[type].create(c);
+	handler_map[type].create(c, params);
 	content_broadcast(c, CONTENT_MSG_LOADING, 0);
 	/* c may be destroyed at this point as a result of
 	 * CONTENT_MSG_LOADING, so must not be accessed */

@@ -10,6 +10,8 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <regex.h>
 #include "libxml/encoding.h"
 
 void die(const char * const error);
@@ -27,5 +29,6 @@ char *squash_tolat1(xmlChar *s);
 char *url_join(char *rel_url, char *base_url);
 char *get_host_from_url(char* url);
 bool is_dir(const char *path);
+void regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
 
 #endif

@@ -13,6 +13,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <uri.h>
+#include <sys/types.h>
+#include <regex.h>
 #include "libxml/encoding.h"
 #include "libxml/uri.h"
 #include "netsurf/utils/log.h"
@@ -256,3 +258,23 @@ bool is_dir(const char *path)
 
 	return S_ISDIR(s.st_mode) ? true : false;
 }
+
+
+/**
+ * Compile a regular expression, handling errors.
+ *
+ * Parameters as for regcomp(), see man regex.
+ */
+
+void regcomp_wrapper(regex_t *preg, const char *regex, int cflags)
+{
+	char errbuf[200];
+	int r;
+	r = regcomp(preg, regex, cflags);
+	if (r) {
+		regerror(r, preg, errbuf, sizeof errbuf);
+		fprintf(stderr, "Failed to compile regexp '%s'\n", regex);
+		die(errbuf);
+	}
+}
+

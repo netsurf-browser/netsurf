@@ -19,7 +19,7 @@
 #include "oslib/jpeg.h"
 
 
-void jpeg_create(struct content *c)
+void jpeg_create(struct content *c, const char *params[])
 {
 	c->data.jpeg.data = xcalloc(0, 1);
 	c->data.jpeg.length = 0;

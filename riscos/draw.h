@@ -16,7 +16,7 @@ struct content_draw_data {
 };
 
 void draw_init(void);
-void draw_create(struct content *c);
+void draw_create(struct content *c, const char *params[]);
 void draw_process_data(struct content *c, char *data, unsigned long size);
 int draw_convert(struct content *c, unsigned int width, unsigned int height);
 void draw_revive(struct content *c, unsigned int width, unsigned int height);

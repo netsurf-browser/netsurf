@@ -15,7 +15,7 @@ struct content_jpeg_data {
 	unsigned long length;
 };
 
-void jpeg_create(struct content *c);
+void jpeg_create(struct content *c, const char *params[]);
 void jpeg_process_data(struct content *c, char *data, unsigned long size);
 int jpeg_convert(struct content *c, unsigned int width, unsigned int height);
 void jpeg_revive(struct content *c, unsigned int width, unsigned int height);

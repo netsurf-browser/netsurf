@@ -15,7 +15,7 @@
 #include "oslib/colourtrans.h"
 #include "oslib/osspriteop.h"
 
-void sprite_create(struct content *c)
+void sprite_create(struct content *c, const char *params[])
 {
 	c->data.sprite.data = xcalloc(4, 1);
 	c->data.sprite.length = 4;

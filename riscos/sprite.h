@@ -18,7 +18,7 @@ struct content_sprite_data {
 };
 
 void sprite_init(void);
-void sprite_create(struct content *c);
+void sprite_create(struct content *c, const char *params[]);
 void sprite_process_data(struct content *c, char *data, unsigned long size);
 int sprite_convert(struct content *c, unsigned int width, unsigned int height);
 void sprite_revive(struct content *c, unsigned int width, unsigned int height);

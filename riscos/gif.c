@@ -26,7 +26,7 @@ void nsgif_init(void)
 {
 }
 
-void nsgif_create(struct content*c)
+void nsgif_create(struct content *c, const char *params[])
 {
   c->data.gif.sprite_area = 0;
   c->data.gif.data = xcalloc(0, 1);

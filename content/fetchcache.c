@@ -15,6 +15,8 @@
 
 #include <assert.h>
 #include <string.h>
+#include <sys/types.h>
+#include <regex.h>
 #include "netsurf/content/cache.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
@@ -23,7 +25,9 @@
 #include "netsurf/utils/utils.h"
 
 
+static regex_t re_content_type;
 static void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size);
+static char *fetchcache_parse_type(char *s, char **params[]);
 
 
 /**
@@ -95,20 +99,21 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 {
 	struct content *c = p;
 	content_type type;
-	char *mime_type;
-	char *semic;
-	char *url;
+	char *mime_type, *url;
+	char **params;
+	unsigned int i;
 
 	switch (msg) {
 		case FETCH_TYPE:
 			c->total_size = size;
-			mime_type = xstrdup(data);
-			if ((semic = strchr(mime_type, ';')) != 0)
-				*semic = 0;	/* remove "; charset=..." */
+			mime_type = fetchcache_parse_type(data, &params);
 			type = content_lookup(mime_type);
 			LOG(("FETCH_TYPE, type %u", type));
-			content_set_type(c, type, mime_type);
+			content_set_type(c, type, mime_type, params);
 			free(mime_type);
+			for (i = 0; params[i]; i++)
+				free(params[i]);
+			free(params);
 			break;
 
 		case FETCH_DATA:
@@ -169,6 +174,62 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 		default:
 			assert(0);
 	}
+}
+
+
+/**
+ * Initialise the fetchcache module.
+ */
+
+void fetchcache_init(void)
+{
+	regcomp_wrapper(&re_content_type,
+			"^([-0-9a-zA-Z_.]+/[-0-9a-zA-Z_.]+)[ \t]*"
+			"(;[ \t]*([-0-9a-zA-Z_.]+)="
+			"([-0-9a-zA-Z_.]+|\"([^\"]|[\\].)*\")[ \t]*)*$",
+			REG_EXTENDED);
+}
+
+
+/**
+ * Parse a Content-Type header.
+ *
+ * \param s a Content-Type header
+ * \param params updated to point to an array of strings, ordered attribute,
+ *   value, attribute, ..., 0
+ * \return a new string containing the MIME-type
+ */
+
+#define MAX_ATTRS 10
+
+char *fetchcache_parse_type(char *s, char **params[])
+{
+	char *type;
+	unsigned int i;
+	int r;
+	regmatch_t pmatch[2 + MAX_ATTRS * 3];
+	*params = xcalloc(MAX_ATTRS * 2 + 2, sizeof (*params)[0]);
+
+	r = regexec(&re_content_type, s, 2 + MAX_ATTRS * 3, pmatch, 0);
+	if (r) {
+		LOG(("failed to parse content-type '%s'", s));
+		return xstrdup(s);
+	}
+
+	type = strndup(s + pmatch[1].rm_so, pmatch[1].rm_eo - pmatch[1].rm_so);
+	assert(type);
+
+	/* parameters */
+	for (i = 0; i != MAX_ATTRS && pmatch[2 + 3 * i].rm_so != -1; i++) {
+		(*params)[2 * i] = strndup(s + pmatch[2 + 3 * i + 1].rm_so,
+				pmatch[2 + 3 * i + 1].rm_eo - pmatch[2 + 3 * i + 1].rm_so);
+		(*params)[2 * i + 1] = strndup(s + pmatch[2 + 3 * i + 2].rm_so,
+				pmatch[2 + 3 * i + 2].rm_eo - pmatch[2 + 3 * i + 2].rm_so);
+		assert((*params)[2 * i] && (*params)[2 * i + 1]);
+	}
+	(*params)[2 * i] = 0;
+
+	return type;
 }
 
 

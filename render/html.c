@@ -29,9 +29,21 @@ static void html_object_callback(content_msg msg, struct content *object,
 		void *p1, void *p2, const char *error);
 
 
-void html_create(struct content *c)
+void html_create(struct content *c, const char *params[])
 {
-	c->data.html.parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, XML_CHAR_ENCODING_8859_1);
+	unsigned int i;
+	xmlCharEncoding encoding = XML_CHAR_ENCODING_8859_1;
+
+	for (i = 0; params[i]; i += 2) {
+		if (strcasecmp(params[i], "charset") == 0) {
+			encoding = xmlParseCharEncoding(params[i + 1]);
+			if (encoding == XML_CHAR_ENCODING_ERROR)
+				encoding = XML_CHAR_ENCODING_8859_1;
+			break;
+		}
+	}
+
+	c->data.html.parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, encoding);
 	c->data.html.layout = NULL;
 	c->data.html.style = NULL;
 	c->data.html.fonts = NULL;
@@ -341,9 +353,10 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			/* create stylesheet */
 			LOG(("style element"));
 			if (c->data.html.stylesheet_content[1] == 0) {
+				const char *params[] = { 0 };
 				c->data.html.stylesheet_content[1] =
 						content_create(c->data.html.base_url);
-				content_set_type(c->data.html.stylesheet_content[1], CONTENT_CSS, "text/css");
+				content_set_type(c->data.html.stylesheet_content[1], CONTENT_CSS, "text/css", params);
 			}
 
 			/* can't just use xmlNodeGetContent(node), because that won't give

@@ -27,7 +27,7 @@ struct content_png_data {
 };
 
 void nspng_init(void);
-void nspng_create(struct content *c);
+void nspng_create(struct content *c, const char *params[]);
 void nspng_process_data(struct content *c, char *data, unsigned long size);
 int nspng_convert(struct content *c, unsigned int width, unsigned int height);
 void nspng_revive(struct content *c, unsigned int width, unsigned int height);

@@ -5,6 +5,21 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * CSS handling (interface).
+ *
+ * This module aims to implement CSS 2.1.
+ *
+ * CSS stylesheets are held in a struct ::content with type CONTENT_CSS.
+ * Creation and parsing should be carried out via the content_* functions.
+ *
+ * Styles are stored in a struct ::css_style, which can be retrieved from a
+ * content using css_get_style().
+ *
+ * css_parse_property_list() constructs a struct ::css_style from a CSS
+ * property list, as found in HTML style attributes.
+ */
+
 #ifndef _NETSURF_CSS_CSS_H_
 #define _NETSURF_CSS_CSS_H_
 
@@ -12,7 +27,7 @@
 #include "libxml/HTMLparser.h"
 #include "css_enum.h"
 
-/**
+/*
  * structures and typedefs
  */
 
@@ -21,6 +36,7 @@ typedef unsigned long colour;  /* 0xbbggrr */
 #define CSS_COLOR_INHERIT 0x2000000
 #define CSS_COLOR_NONE 0x3000000
 
+/** Representation of a CSS 2 length. */
 struct css_length {
 	float value;
 	css_unit unit;
@@ -36,6 +52,7 @@ typedef enum {
 	CSS_TEXT_DECORATION_UNKNOWN = 0x1000
 } css_text_decoration;
 
+/** Representation of a complete CSS 2 style. */
 struct css_style {
 	colour background_color;
 	css_clear clear;
@@ -98,19 +115,14 @@ struct css_style {
 
 struct css_stylesheet;
 
-struct css_selector {
-	const char *element;
-	char *class;
-	char *id;
-};
-
+/** Data specific to CONTENT_CSS. */
 struct content_css_data {
-	struct css_stylesheet *css;
-	unsigned int import_count;
-	char **import_url;
-	struct content **import_content;
-	char *data;
-	unsigned int length;
+	struct css_stylesheet *css;	/**< Opaque stylesheet data. */
+	unsigned int import_count;	/**< Number of entries in import_url. */
+	char **import_url;		/**< Imported stylesheet urls. */
+	struct content **import_content; /**< Imported stylesheet contents. */
+	char *data;			/**< Source data. */
+	unsigned int length;		/**< Current length of data. */
 };
 
 
@@ -191,13 +203,13 @@ struct parse_params {
 
 #endif
 
-/**
+/*
  * interface
  */
 
 struct content;
 
-void css_create(struct content *c);
+void css_create(struct content *c, const char *params[]);
 void css_process_data(struct content *c, char *data, unsigned long size);
 int css_convert(struct content *c, unsigned int width, unsigned int height);
 void css_revive(struct content *c, unsigned int width, unsigned int height);
@@ -218,7 +230,7 @@ void css_add_declarations(struct css_style *style, struct css_node *declaration)
 unsigned int css_hash(const char *s);
 
 void css_parser_Trace(FILE *TraceFILE, char *zTracePrompt);
-void *css_parser_Alloc(void *(*mallocProc)(int));
+void *css_parser_alloc(void *(*mallocProc)(size_t));
 void css_parser_Free(void *p, void (*freeProc)(void*));
 void css_parser_(void *yyp, int yymajor, char* yyminor,
 		struct parse_params *param);

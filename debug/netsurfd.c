@@ -39,6 +39,7 @@ int main(int argc, char *argv[])
 
 	fetch_init();
 	cache_init();
+	fetchcache_init();
 
 	while (1) {
 		puts("=== URL:");
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
 			return 0;
 		url[strlen(url) - 1] = 0;
 		destroyed = 0;
-		c = fetchcache(url, 0, callback, 0, 0, 100, 1000, false, 0, 0);
+		c = fetchcache(url, 0, callback, 0, 0, 100, 1000, false, 0, 0, true);
 		if (c) {
 			done = c->status == CONTENT_STATUS_DONE;
 			while (!done)

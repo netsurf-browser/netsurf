@@ -10,7 +10,7 @@
 
 #include "netsurf/content/content.h"
 
-void textplain_create(struct content *c);
+void textplain_create(struct content *c, const char *params[]);
 void textplain_process_data(struct content *c, char *data, unsigned long size);
 int textplain_convert(struct content *c, unsigned int width, unsigned int height);
 void textplain_revive(struct content *c, unsigned int width, unsigned int height);

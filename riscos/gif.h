@@ -21,7 +21,7 @@ struct content_gif_data {
 };
 
 void nsgif_init(void);
-void nsgif_create(struct content *c);
+void nsgif_create(struct content *c, const char *params[]);
 void nsgif_process_data(struct content *c, char *data, unsigned long size);
 int nsgif_convert(struct content *c, unsigned int width, unsigned int height);
 void nsgif_revive(struct content *c, unsigned int width, unsigned int height);

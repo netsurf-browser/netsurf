@@ -91,7 +91,7 @@ const struct css_style css_blank_style = {
 
 
 
-void css_create(struct content *c)
+void css_create(struct content *c, const char *params[])
 {
 	unsigned int i;
 	LOG(("content %p", c));

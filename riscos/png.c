@@ -64,7 +64,7 @@ void nspng_init(void)
 }
 
 
-void nspng_create(struct content *c)
+void nspng_create(struct content *c, const char *params[])
 {
 #ifndef NO_IFC
 	if (imagefileconvert) {

@@ -14,7 +14,7 @@
 #include "netsurf/utils/log.h"
 #include "oslib/drawfile.h"
 
-void draw_create(struct content *c)
+void draw_create(struct content *c, const char *params[])
 {
 	c->data.draw.data = xcalloc(0, 1);
 	c->data.draw.length = 0;

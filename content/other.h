@@ -24,7 +24,7 @@ struct content_other_data {
 	unsigned long length;	/**< Current length of stored data. */
 };
 
-void other_create(struct content *c);
+void other_create(struct content *c, char *params[]);
 void other_process_data(struct content *c, char *data, unsigned long size);
 int other_convert(struct content *c, unsigned int width, unsigned int height);
 void other_revive(struct content *c, unsigned int width, unsigned int height);

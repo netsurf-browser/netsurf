@@ -51,7 +51,7 @@ struct content_html_data {
 	} *object;
 };
 
-void html_create(struct content *c);
+void html_create(struct content *c, const char *params[]);
 void html_process_data(struct content *c, char *data, unsigned long size);
 int html_convert(struct content *c, unsigned int width, unsigned int height);
 void html_revive(struct content *c, unsigned int width, unsigned int height);

@@ -18,9 +18,9 @@ static const char header[] = "<html><body><pre>";
 static const char footer[] = "</pre></body></html>";
 
 
-void textplain_create(struct content *c)
+void textplain_create(struct content *c, const char *params[])
 {
-	html_create(c);
+	html_create(c, params);
 	htmlParseChunk(c->data.html.parser, header, sizeof(header) - 1, 0);
 }
 

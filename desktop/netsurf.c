@@ -52,6 +52,7 @@ void netsurf_init(int argc, char** argv)
   gui_init(argc, argv);
   fetch_init();
   cache_init();
+  fetchcache_init();
   nspng_init();
   nsgif_init();
 }
