@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.8 2002/12/23 20:29:25 bursa Exp $
+ * $Id: browser.c,v 1.10 2002/12/23 21:19:01 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -404,8 +404,30 @@ void browser_window_open_location_historical(struct browser_window* bw, char* ur
   else
   {
     /* in cache: reformat page and display */
+    struct gui_message gmsg;
+    gui_safety previous_safety;
+
     LOG(("in cache: reformatting"));
+
+    browser_window_start_throbber(bw);
+
+    /* TODO: factor out code shared with browser_window_message(), case msg_FETCH_FINISHED */
+    if (bw->url != NULL)
+      xfree(bw->url);
+    bw->url = xstrdup(url);
+
+    gmsg.type = msg_SET_URL;
+    gmsg.data.set_url.url = bw->url;
+    gui_window_message(bw->window, &gmsg);
+
+    previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
+    if (bw->current_content != NULL)
+      cache_free(bw->current_content);
+    bw->current_content = bw->future_content;
+    bw->future_content = NULL;
     browser_window_reformat(bw);
+    gui_window_set_redraw_safety(bw->window, previous_safety);
+    browser_window_stop_throbber(bw);
   }
 
   LOG(("end"));
