@@ -56,7 +56,7 @@ const char *fetch_filetype(const char *unix_path)
 	LOG(("unix_path = '%s'", unix_path));
 
 	/* convert path to RISC OS format and read file type */
-	r = __riscosify(unix_path, 0, 0, path, len, 0);
+	r = __riscosify(unix_path, 0, __RISCOSIFY_NO_SUFFIX, path, len, 0);
 	if (r == 0) {
 		LOG(("__riscosify failed"));
 		return "application/riscos";
