@@ -1035,7 +1035,9 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		/* reflow textarea preserving width and height */
 		width = textarea->width;
 		height = textarea->height;
-		layout_block_context(textarea);
+		if (!layout_block_context(textarea,
+				bw->current_content->data.html.box_pool))
+			warn_user("NoMemory", 0);
 		textarea->width = width;
 		textarea->height = height;
 	}
