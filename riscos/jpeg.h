@@ -8,20 +8,27 @@
 #ifndef _NETSURF_RISCOS_JPEG_H_
 #define _NETSURF_RISCOS_JPEG_H_
 
+#include <stdbool.h>
+#include "oslib/osspriteop.h"
+
 struct content;
 
 struct content_jpeg_data {
 	void *data;
 	unsigned long length;
+	osspriteop_area *sprite_area;
+	char *sprite_image;
+	bool use_module;
 };
 
-void jpeg_create(struct content *c, const char *params[]);
-void jpeg_process_data(struct content *c, char *data, unsigned long size);
-int jpeg_convert(struct content *c, unsigned int width, unsigned int height);
-void jpeg_revive(struct content *c, unsigned int width, unsigned int height);
-void jpeg_reformat(struct content *c, unsigned int width, unsigned int height);
-void jpeg_destroy(struct content *c);
-void jpeg_redraw(struct content *c, long x, long y,
+void nsjpeg_init(void);
+void nsjpeg_create(struct content *c, const char *params[]);
+void nsjpeg_process_data(struct content *c, char *data, unsigned long size);
+int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height);
+void nsjpeg_revive(struct content *c, unsigned int width, unsigned int height);
+void nsjpeg_reformat(struct content *c, unsigned int width, unsigned int height);
+void nsjpeg_destroy(struct content *c);
+void nsjpeg_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1);
 

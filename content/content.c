@@ -113,8 +113,8 @@ static const struct handler_entry handler_map[] = {
 		css_reformat, css_destroy, 0, 0, 0, 0},
 #ifdef riscos
 #ifdef WITH_JPEG
-	{jpeg_create, jpeg_process_data, jpeg_convert, jpeg_revive,
-		jpeg_reformat, jpeg_destroy, jpeg_redraw, 0, 0, 0},
+	{nsjpeg_create, nsjpeg_process_data, nsjpeg_convert, nsjpeg_revive,
+		nsjpeg_reformat, nsjpeg_destroy, nsjpeg_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_PNG
 	{nspng_create, nspng_process_data, nspng_convert, nspng_revive,

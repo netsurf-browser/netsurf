@@ -39,7 +39,7 @@ CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. \
 	-mpoke-function-name
 CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE $(WARNFLAGS) -I.. -I/usr/include/libxml2 -g
 LDFLAGS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lares -lanim -lpng \
-	-lifc -loslib -luri
+	-lifc -loslib -luri -ljpeg
 LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -luri
 
 OBJDIR = $(shell $(CC) -dumpmachine)
