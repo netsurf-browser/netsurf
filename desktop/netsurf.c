@@ -14,11 +14,6 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
-#ifdef riscos
-     #include "netsurf/riscos/options.h"
-#else
-     #include "netsurf/desktop/options.h"
-#endif
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
@@ -40,26 +35,7 @@ static void lib_init(void);
 
 int main(int argc, char** argv)
 {
-        char url[80];
-       	int length;
-
-  	netsurf_init(argc, argv);
-
-#ifdef WITH_KIOSK_BROWSING
- 	browser_window_create("file:/<NetSurf$Dir>/Docs/Intro_En", NULL);
-#endif
-
-        if (option_open_browser_at_startup == true){
-                   if (!(option_homepage_url == NULL)){
-                         browser_window_create(option_homepage_url, NULL);
-                   }
-                   else {
-		   if ((length = snprintf(url, sizeof(url),
-				"file:/<NetSurf$Dir>/Docs/intro_%s",
-				option_language)) >= 0 && length < (int)sizeof(url))
-				browser_window_create(url, NULL);
-                  }
-        }
+	netsurf_init(argc, argv);
 
 	while (!netsurf_quit)
 		netsurf_poll();
@@ -86,7 +62,7 @@ void netsurf_init(int argc, char** argv)
 
 	LOG(("version '%s'", netsurf_version));
 	if (uname(&utsname) != 0)
-		LOG(("Failed to extract machine information\n"));
+		LOG(("Failed to extract machine information"));
 	else
 		LOG(("NetSurf on <%s>, node <%s>, release <%s>, version <%s>, "
 				"machine <%s>", utsname.sysname,
@@ -99,6 +75,7 @@ void netsurf_init(int argc, char** argv)
 	setlocale(LC_ALL, "");
 	fetch_init();
 	fetchcache_init();
+	gui_init2();
 }
 
 /**

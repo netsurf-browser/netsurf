@@ -78,7 +78,7 @@ bool option_background_images = true; \
 bool option_background_blending = true; \
 bool option_buffer_animations = true; \
 bool option_buffer_everything = false; \
-char *option_homepage_url =0;\
+char *option_homepage_url = 0; \
 bool option_open_browser_at_startup = false;
 
 #define EXTRA_OPTION_TABLE \

@@ -127,7 +127,7 @@ struct ro_gui_poll_block *ro_gui_poll_queued_blocks = 0;
 
 static void ro_gui_choose_language(void);
 static void ro_gui_check_fonts(void);
-static void ro_gui_pointers_init(void);
+static void ro_gui_sprites_init(void);
 static void ro_gui_icon_bar_create(void);
 static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
 static void ro_gui_poll_queue(wimp_event_no event, wimp_block *block);
@@ -183,7 +183,7 @@ void gui_init(int argc, char** argv)
 	messages_load(path);
 	messages_load("<NetSurf$Dir>.Resources.LangNames");
 
-        /* Totally pedantic, but base the taskname on the buid options.
+        /* Totally pedantic, but base the taskname on the build options.
         */
 #ifndef ncos
 	error = xwimp_initialise(wimp_VERSION_RO38, "NetSurf",
@@ -240,7 +240,7 @@ void gui_init(int argc, char** argv)
 #endif
 	ro_gui_history_init();
 	wimp_close_template();
-	ro_gui_pointers_init();
+	ro_gui_sprites_init();
 	ro_gui_hotlist_init();
 
         /* We don't create an Iconbar icon on NCOS */
@@ -339,10 +339,10 @@ void ro_gui_check_fonts(void)
 
 
 /**
- * Initialise pointer sprite area.
+ * Load resource sprites (pointers and misc icons).
  */
 
-void ro_gui_pointers_init(void)
+void ro_gui_sprites_init(void)
 {
 	int len;
 	fileswitch_object_type obj_type;
@@ -407,6 +407,31 @@ void ro_gui_check_resolvers(void)
 		LOG(("Inet$Resolvers not set or empty"));
 		warn_user("Resolvers", 0);
 	}
+}
+
+
+/**
+ * Last-minute gui init, after all other modules have initialised.
+ */
+
+void gui_init2(void)
+{
+#ifdef WITH_KIOSK_BROWSING
+	browser_window_create("file:/<NetSurf$Dir>/Docs/intro_en", NULL);
+#else
+	char url[80];
+
+	if (option_open_browser_at_startup) {
+		if (option_homepage_url && option_homepage_url[0]) {
+			browser_window_create(option_homepage_url, NULL);
+		} else {
+			snprintf(url, sizeof url,
+					"file:/<NetSurf$Dir>/Docs/intro_%s",
+					option_language);
+			browser_window_create(url, NULL);
+		}
+	}
+#endif
 }
 
 
@@ -799,36 +824,28 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 
 void ro_gui_icon_bar_click(wimp_pointer *pointer)
 {
-  	int key_down = 0;
+	char url[80];
+	int key_down = 0;
+
 	if (pointer->buttons == wimp_CLICK_MENU) {
 		ro_gui_create_menu(iconbar_menu, pointer->pos.x,
 				   96 + iconbar_menu_height, NULL);
+
 	} else if (pointer->buttons == wimp_CLICK_SELECT) {
-		char url[80];
-		int length;
-
-                /* Open the homepage based on our the user options. */
-                if (!(option_homepage_url == NULL)){
-                  browser_window_create(option_homepage_url, NULL);
-                }
-                else {
-		  if ((length = snprintf(url, sizeof(url),
-				"file:/<NetSurf$Dir>/Docs/intro_%s",
-				option_language)) >= 0 && length < (int)sizeof(url))
-				browser_window_create(url, NULL);
-                }
-
+		if (option_homepage_url && option_homepage_url[0]) {
+			browser_window_create(option_homepage_url, NULL);
+		} else {
+			snprintf(url, sizeof url,
+					"file:/<NetSurf$Dir>/Docs/intro_%s",
+					option_language);
+			browser_window_create(url, NULL);
+		}
 
 	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
-	  	/*	I've no idea what the correct way to scan for keys is when in the
-	  		desktop, so I've used os_byte to scan directly. This may cause some
-	  		weirdness for very unresponsive desktops due to the clicks being
-	  		buffered and the keypresses not.
-	  	*/
-	  	xosbyte1(osbyte_SCAN_KEYBOARD, 0 ^ 0x80, 0, &key_down);
-	  	if (key_down == 0) {
-	  		ro_gui_hotlist_show();
-	  	} else {
+		xosbyte1(osbyte_SCAN_KEYBOARD, 0 ^ 0x80, 0, &key_down);
+		if (key_down == 0) {
+			ro_gui_hotlist_show();
+		} else {
 			ro_gui_debugwin_open();
 		}
 	}
