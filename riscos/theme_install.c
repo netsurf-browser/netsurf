@@ -107,5 +107,5 @@ void theme_install_callback(content_msg msg, struct content *c,
 
 void ro_gui_theme_install_init(void)
 {
-	dialog_theme_install = ro_gui_dialog_create("themeinstall");
+	dialog_theme_install = ro_gui_dialog_create("theme_inst");
 }
