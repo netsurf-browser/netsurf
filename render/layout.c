@@ -722,7 +722,6 @@ bool layout_line(struct box *first, int width, int *y,
 	int x0 = 0;
 	int x1 = width;
 	int x, h, x_previous;
-	int space_width;
 	struct box *left;
 	struct box *right;
 	struct box *b;
@@ -756,6 +755,8 @@ bool layout_line(struct box *first, int width, int *y,
 				b->type == BOX_FLOAT_RIGHT ||
 				b->type == BOX_BR);
 
+		x += space_after;
+
 		if (b->type == BOX_INLINE_BLOCK) {
 			if (b->width == UNKNOWN_WIDTH)
 				if (!layout_float(b, width, box_pool))
@@ -769,6 +770,7 @@ bool layout_line(struct box *first, int width, int *y,
 					b->padding[LEFT] + b->width +
 					b->padding[RIGHT] + b->border[RIGHT] +
 					b->margin[RIGHT];
+			space_after = 0;
 		}
 
 		if (b->type == BOX_BR)
@@ -793,14 +795,19 @@ bool layout_line(struct box *first, int width, int *y,
 				if (b->space) {
 					/** \todo optimize out */
 					nsfont_width(b->style, " ", 1,
-							&space_width);
-					x += space_width;
+							&space_after);
 				}
-			} else
+				else
+					space_after = 0;
+			} else {
 				b->width = 0;
+				space_after = 0;
+			}
 
 			continue;
 		}
+
+		space_after = 0;
 
 		/* inline replaced, 10.3.2 and 10.6.2 */
 		assert(b->style);
@@ -888,6 +895,8 @@ bool layout_line(struct box *first, int width, int *y,
 
 	if (x1 < x0)
 		x1 = x0;
+
+	space_after = space_before = 0;
 
 	/* pass 2: place boxes in line: loop body executed at least once */
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b; b = b->next) {
