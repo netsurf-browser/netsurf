@@ -28,7 +28,6 @@ typedef enum {
 #ifdef WITH_GIF
 	CONTENT_GIF,
 #endif
-#ifdef riscos
 #ifdef WITH_PNG
 	CONTENT_PNG,
 #endif
@@ -40,7 +39,6 @@ typedef enum {
 #endif
 #ifdef WITH_PLUGIN
 	CONTENT_PLUGIN,
-#endif
 #endif
 	/* these must be the last two */
 	CONTENT_OTHER,
