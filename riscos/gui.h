@@ -27,7 +27,7 @@ extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_debug;
 extern wimp_w history_window;
 extern wimp_w hotlist_window;
-extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu;
+extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu;
 extern int iconbar_menu_height;
 extern struct form_control *current_gadget;
 extern gui_window *window_list;
@@ -177,6 +177,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer);
 
 /* in hotlist.c */
 void ro_gui_hotlist_init(void);
+void ro_gui_hotlist_save(void);
 void ro_gui_hotlist_show(void);
 void ro_gui_hotlist_add(char *title, struct content *content);
 void ro_gui_hotlist_redraw(wimp_draw *redraw);
@@ -184,6 +185,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer);
 void ro_gui_hotlist_selection_drag_end(wimp_dragged *drag);
 void ro_gui_hotlist_move_drag_end(wimp_dragged *drag);
 bool ro_gui_hotlist_keypress(int key);
+void ro_gui_hotlist_menu_closed(void);
 
 /* in save.c */
 void ro_gui_save_click(wimp_pointer *pointer);

@@ -220,7 +220,7 @@ static wimp_MENU(5) view_menu = {
 
 /*	Hotlist submenu
 */
-static wimp_MENU(2) hotlist_menu = {
+static wimp_MENU(2) hotlist_util_menu = {
   { "Hotlist" }, 7,2,7,0, 300, 44, 0,
   {
     { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "HotlistAdd" } },
@@ -234,7 +234,7 @@ static wimp_MENU(2) hotlist_menu = {
 static wimp_MENU(4) utilities_menu = {
   { "Utilities" }, 7,2,7,0, 300, 44, 0,
   {
-    { wimp_MENU_LAST, (wimp_menu *)&hotlist_menu, DEFAULT_FLAGS, { "Hotlist" } },
+    { wimp_MENU_LAST, (wimp_menu *)&hotlist_util_menu, DEFAULT_FLAGS, { "Hotlist" } },
 /*    { 0,		  wimp_NO_SUB_MENU,	      DEFAULT_FLAGS, { "FindText" } },
     { 0,		  wimp_NO_SUB_MENU,	      DEFAULT_FLAGS, { "HistLocal" } },
     { wimp_MENU_LAST,	  wimp_NO_SUB_MENU,	      DEFAULT_FLAGS, { "HistGlobal" } }
@@ -273,6 +273,47 @@ static wimp_MENU(6) menu = {
 wimp_menu *browser_menu = (wimp_menu *) &menu;
 
 
+
+/*	Hotlist file submenu
+*/
+static wimp_MENU(6) hotlist_file = {
+  { "Hotlist" }, 7,2,7,0, 300, 44, 0,
+  {
+    { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Save" } },
+    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Export" } },
+    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "OpenDir" } },
+    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "CloseDir" } },
+    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "OpenLinks" } },
+    { wimp_MENU_LAST,	  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "CloseLinks" } }
+  }
+};
+
+
+/*	Hotlist file submenu
+*/
+static wimp_MENU(3) hotlist_select = {
+  { "Selection" }, 7,2,7,0, 300, 44, 0,
+  {
+    { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Save" } },
+    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Launch" } },
+    { wimp_MENU_LAST,     wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Delete" } },
+  }
+};
+
+
+/*	Hotlist menu
+*/
+static wimp_MENU(2) hotlist_root = {
+  { "Hotlist" }, 7,2,7,0, 200, 44, 0,
+  {
+    { 0,				       (wimp_menu *)&hotlist_file,   DEFAULT_FLAGS, { "Hotlist" } },
+    { wimp_MENU_LAST,			       (wimp_menu *)&hotlist_select, DEFAULT_FLAGS, { "Selection" } },
+  }
+};
+wimp_menu *hotlist_menu = (wimp_menu *)&hotlist_root;
+
+
+
 static wimp_menu *browser_page_menu = (wimp_menu *)&page_menu;
 static wimp_menu *browser_export_menu = (wimp_menu *)&export_menu;
 static wimp_menu *browser_object_menu = (wimp_menu *)&object_menu;
@@ -285,8 +326,10 @@ static wimp_menu *browser_image_menu = (wimp_menu *)&image_menu;
 static wimp_menu *browser_toolbar_menu = (wimp_menu *)&toolbar_menu;
 static wimp_menu *browser_window_menu = (wimp_menu *)&window_menu;
 static wimp_menu *browser_utilities_menu = (wimp_menu *)&utilities_menu;
-static wimp_menu *browser_hotlist_menu = (wimp_menu *)&hotlist_menu;
+static wimp_menu *browser_hotlist_menu = (wimp_menu *)&hotlist_util_menu;
 static wimp_menu *browser_help_menu = (wimp_menu *)&help_menu;
+static wimp_menu *hotlist_file_menu = (wimp_menu *)&hotlist_file;
+static wimp_menu *hotlist_select_menu = (wimp_menu *)&hotlist_select;
 
 
 /**
@@ -297,6 +340,7 @@ void ro_gui_menus_init(void)
 {
 	translate_menu(iconbar_menu);
 	translate_menu(browser_menu);
+	translate_menu(hotlist_menu);
 	translate_menu(browser_page_menu);
 	translate_menu(browser_export_menu);
 	translate_menu(browser_object_menu);
@@ -311,6 +355,8 @@ void ro_gui_menus_init(void)
 	translate_menu(browser_utilities_menu);
 	translate_menu(browser_hotlist_menu);
 	translate_menu(browser_help_menu);
+	translate_menu(hotlist_file_menu);
+	translate_menu(hotlist_select_menu);
 
 	iconbar_menu->entries[0].sub_menu = (wimp_menu *) dialog_info;
 	browser_page_menu->entries[0].sub_menu = (wimp_menu*) dialog_pageinfo;
@@ -651,6 +697,10 @@ void ro_gui_menu_selection(wimp_selection *selection)
 			gui_gadget_combo(current_gui->data.browser.bw, current_gadget, (unsigned int)current_menu_x, (unsigned int)current_menu_y);
 		else
 			ro_gui_create_menu(current_menu, current_menu_x, current_menu_y, current_gui);
+	} else {
+		if (current_menu == hotlist_menu) {
+			ro_gui_hotlist_menu_closed();
+		} 
 	}
 }
 

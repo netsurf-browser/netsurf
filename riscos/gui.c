@@ -71,13 +71,14 @@ static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 osspriteop_area *gui_sprites;      /**< Sprite area containing pointer and hotlist sprites */
 
 /** Accepted wimp user messages. */
-static wimp_MESSAGE_LIST(28) task_messages = { {
+static wimp_MESSAGE_LIST(29) task_messages = { {
   	message_HELP_REQUEST,
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
 	message_DATA_LOAD,
 	message_DATA_OPEN,
 	message_MENU_WARNING,
+	message_MENUS_DELETED,
 #ifdef WITH_URI
 	message_URI_PROCESS,
 	message_URI_RETURN_RESULT,
@@ -386,6 +387,7 @@ void ro_gui_check_resolvers(void)
 
 void gui_quit(void)
 {
+  	ro_gui_hotlist_save();
 	ro_gui_history_quit();
 	free(gui_sprites);
 	wimp_close_down(task_handle);
@@ -833,6 +835,11 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 		case message_MENU_WARNING:
 			ro_gui_menu_warning((wimp_message_menu_warning *)
 					&message->data);
+			break;
+		case message_MENUS_DELETED:
+			if (current_menu == hotlist_menu) {
+				ro_gui_hotlist_menu_closed();
+			}
 			break;
 
 #ifdef WITH_URI

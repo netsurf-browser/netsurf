@@ -128,7 +128,9 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "history", ICON_TOOLBAR_HISTORY));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "scale", ICON_TOOLBAR_SCALE));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_create_separator());
- 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "mark", ICON_TOOLBAR_BOOKMARK));
+		if (hotlist_window) {
+ 			ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "mark", ICON_TOOLBAR_BOOKMARK));
+ 		}
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "save", ICON_TOOLBAR_SAVE));
 /* 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "print", ICON_TOOLBAR_PRINT)); */
 	}
