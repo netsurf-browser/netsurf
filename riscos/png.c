@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 Richard Wilson <not_ginger_matt@hotmail.com>
  */
 
@@ -11,10 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <swis.h>
-#include "ifc.h"
 #include "libpng/png.h"
-#include "oslib/colourtrans.h"
-#include "oslib/os.h"
 #include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
@@ -82,14 +79,12 @@ void nspng_process_data(struct content *c, char *data, unsigned long size)
 
 void info_callback(png_structp png, png_infop info)
 {
-	int i, bit_depth, color_type, interlace;
+	int bit_depth, color_type, interlace;
 	unsigned int rowbytes, sprite_size;
 	unsigned long width, height;
 	struct content *c = png_get_progressive_ptr(png);
 	osspriteop_area *sprite_area;
 	osspriteop_header *sprite;
-	png_color_16 *png_background;
-	png_color_16 default_background = {0, 0xffff, 0xffff, 0xffff, 0xffff};
 
 	/*	Read the PNG details
 	*/
@@ -118,7 +113,7 @@ void info_callback(png_structp png, png_infop info)
 	sprite->left_bit = 0;
 	sprite->right_bit = 31;
 	sprite->mask = sprite->image = sizeof(*sprite);
-	sprite->mode = 0x301680b5;
+	sprite->mode = (os_mode) 0x301680b5;
 
 	/*	Store the sprite area
 	*/
@@ -216,16 +211,6 @@ int nspng_convert(struct content *c, unsigned int width, unsigned int height)
 	sprintf(c->title, messages_get("PNGTitle"), c->width, c->height);
 	c->status = CONTENT_STATUS_DONE;
 	return 0;
-}
-
-
-void nspng_revive(struct content *c, unsigned int width, unsigned int height)
-{
-}
-
-
-void nspng_reformat(struct content *c, unsigned int width, unsigned int height)
-{
 }
 
 

@@ -15,7 +15,6 @@
 #include "oslib/wimp.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/save_draw.h"
-#include "netsurf/riscos/save_html.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -107,22 +106,23 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 void ro_gui_save_datasave_ack(wimp_message *message)
 {
 	char *path = message->data.data_xfer.file_name;
+	struct content *c = current_gui->data.browser.bw->current_content;
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, path);
 
 	switch (gui_current_save_type) {
 		case GUI_SAVE_SOURCE:
-		        if (!current_gui->data.browser.bw->current_content)
+		        if (!c)
 		                return;
-			save_as_html(current_gui->data.browser.bw->
-			                current_content, path);
+	                xosfile_save_stamped(path, ro_content_filetype(c),
+					c->source_data,
+					c->source_data + c->source_size);
 			break;
 
 		case GUI_SAVE_DRAW:
-			if (!current_gui->data.browser.bw->current_content)
+			if (!c)
 				return;
-			save_as_draw(current_gui->data.browser.bw->
-					current_content, path);
+			save_as_draw(c, path);
 			break;
 	}
 

@@ -127,20 +127,8 @@ void nsjpeg_init(void) {
 void nsjpeg_create(struct content *c, const char *params[])
 {
         c->data.jpeg.sprite_area = 0;
-	c->data.jpeg.data = xcalloc(0, 1);
-	c->data.jpeg.length = 0;
 	c->data.jpeg.use_module = true; /* assume the OS can cope */
 }
-
-
-void nsjpeg_process_data(struct content *c, char *data, unsigned long size)
-{
-	c->data.jpeg.data = xrealloc(c->data.jpeg.data, c->data.jpeg.length + size);
-	memcpy((char*)(c->data.jpeg.data) + c->data.jpeg.length, data, size);
-	c->data.jpeg.length += size;
-	c->size += size;
-}
-
 
 
 int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
@@ -158,8 +146,8 @@ int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
         {
           os_error *e;
           int w,h;
-          e = xjpeginfo_dimensions((jpeg_image const*)c->data.jpeg.data,
-	                              (int) c->data.jpeg.length,
+          e = xjpeginfo_dimensions((jpeg_image const*)c->source_data,
+	                              (int) c->source_size,
 			              0, &w, &h, 0, 0, 0);
 
 	  if (!e) {
@@ -167,7 +155,7 @@ int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
 	    c->width = w;
 	    c->height = h;
 	    c->title = xcalloc(100, 1);
-	    sprintf(c->title, messages_get("JPEGTitle"), w, h, c->data.jpeg.length);
+	    sprintf(c->title, messages_get("JPEGTitle"), w, h, c->source_size);
 	    c->status = CONTENT_STATUS_DONE;
 	   return 0;
 	  }
@@ -183,7 +171,7 @@ int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
           return 1;
         }
         jpeg_create_decompress(&cinfo);
-        jpeg_memory_src(&cinfo, c->data.jpeg.data, c->data.jpeg.length);
+        jpeg_memory_src(&cinfo, c->source_data, c->source_size);
         jpeg_read_header(&cinfo, TRUE);
         jpeg_start_decompress(&cinfo);
 
@@ -311,20 +299,9 @@ int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
 }
 
 
-void nsjpeg_revive(struct content *c, unsigned int width, unsigned int height)
-{
-}
-
-
-void nsjpeg_reformat(struct content *c, unsigned int width, unsigned int height)
-{
-}
-
-
 void nsjpeg_destroy(struct content *c)
 {
         xfree(c->data.jpeg.sprite_area);
-	xfree(c->data.jpeg.data);
 	xfree(c->title);
 }
 
@@ -343,9 +320,9 @@ void nsjpeg_redraw(struct content *c, long x, long y,
   factors.ydiv = c->height * 2;
 
   if (c->data.jpeg.use_module) { /* we can use the OS for this one */
-    xjpeg_plot_scaled((jpeg_image *) c->data.jpeg.data,
+    xjpeg_plot_scaled((jpeg_image *) c->source_data,
 			x, (int)(y - height),
-			&factors, (int) c->data.jpeg.length,
+			&factors, (int) c->source_size,
 			jpeg_SCALE_DITHERED);
     return;
   }

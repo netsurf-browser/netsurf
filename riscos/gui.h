@@ -159,6 +159,9 @@ void ro_gui_drag_icon(wimp_pointer *pointer);
 void ro_gui_save_drag_end(wimp_dragged *drag);
 void ro_gui_save_datasave_ack(wimp_message *message);
 
+/* in filetype.c */
+int ro_content_filetype(struct content *content);
+
 /* icon numbers */
 #define ICON_TOOLBAR_THROBBER 1
 #define ICON_TOOLBAR_URL 2

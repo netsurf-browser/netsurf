@@ -169,8 +169,6 @@ struct content_css_data {
 	unsigned int import_count;	/**< Number of entries in import_url. */
 	char **import_url;		/**< Imported stylesheet urls. */
 	struct content **import_content; /**< Imported stylesheet contents. */
-	char *data;			/**< Source data. */
-	unsigned int length;		/**< Current length of data. */
 };
 
 
@@ -258,10 +256,8 @@ struct parse_params {
 struct content;
 
 void css_create(struct content *c, const char *params[]);
-void css_process_data(struct content *c, char *data, unsigned long size);
 int css_convert(struct content *c, unsigned int width, unsigned int height);
 void css_revive(struct content *c, unsigned int width, unsigned int height);
-void css_reformat(struct content *c, unsigned int width, unsigned int height);
 void css_destroy(struct content *c);
 
 #ifdef CSS_INTERNALS

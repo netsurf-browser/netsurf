@@ -17,21 +17,6 @@
 #include "oslib/drawfile.h"
 
 #ifdef WITH_DRAW
-void draw_create(struct content *c, const char *params[])
-{
-	c->data.draw.data = xcalloc(0, 1);
-	c->data.draw.length = 0;
-}
-
-
-void draw_process_data(struct content *c, char *data, unsigned long size)
-{
-	c->data.draw.data = xrealloc(c->data.draw.data, c->data.draw.length + size);
-	memcpy((char*)c->data.draw.data + c->data.draw.length, data, size);
-	c->data.draw.length += size;
-	c->size += size;
-}
-
 
 int draw_convert(struct content *c, unsigned int width, unsigned int height)
 {
@@ -48,8 +33,8 @@ int draw_convert(struct content *c, unsigned int width, unsigned int height)
         matrix->entries[2][1] = 0;
 
         /* BBox contents in Draw units (256*OS unit) */
-	error = xdrawfile_bbox(0, (drawfile_diagram*)(c->data.draw.data),
-	                       (int)c->data.draw.length, matrix, bbox);
+	error = xdrawfile_bbox(0, (drawfile_diagram*)(c->source_data),
+	                       (int)c->source_size, matrix, bbox);
 
         if (error) {
                 LOG(("error: %s", error->errmess));
@@ -66,7 +51,7 @@ int draw_convert(struct content *c, unsigned int width, unsigned int height)
 	c->data.draw.y0 = bbox->y0 / 2;
 	c->title = xcalloc(100, 1);
 	sprintf(c->title, messages_get("DrawTitle"), c->width,
-	                                c->height, c->data.draw.length);
+	                                c->height, c->source_size);
 	c->status = CONTENT_STATUS_DONE;
 	xfree(matrix);
 	xfree(bbox);
@@ -74,19 +59,8 @@ int draw_convert(struct content *c, unsigned int width, unsigned int height)
 }
 
 
-void draw_revive(struct content *c, unsigned int width, unsigned int height)
-{
-}
-
-
-void draw_reformat(struct content *c, unsigned int width, unsigned int height)
-{
-}
-
-
 void draw_destroy(struct content *c)
 {
-	xfree(c->data.draw.data);
 	xfree(c->title);
 }
 
@@ -96,21 +70,19 @@ void draw_redraw(struct content *c, long x, long y,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
 		float scale)
 {
-        os_trfm *matrix = xcalloc(1, sizeof(os_trfm));
+        os_trfm matrix;
 
         /* Scaled image. Transform units (65536*OS units) */
-        matrix->entries[0][0] = ((width*65536) / (c->width*2));
-        matrix->entries[0][1] = 0;
-        matrix->entries[1][0] = 0;
-        matrix->entries[1][1] = ((height*65536) / (c->height*2));
+        matrix.entries[0][0] = ((width*65536) / (c->width*2));
+        matrix.entries[0][1] = 0;
+        matrix.entries[1][0] = 0;
+        matrix.entries[1][1] = ((height*65536) / (c->height*2));
         /* Draw units. (x,y) = bottom left */
-        matrix->entries[2][0] = x * 256 - c->data.draw.x0 * width / c->width;
-        matrix->entries[2][1] = (y - height) * 256 -
+        matrix.entries[2][0] = x * 256 - c->data.draw.x0 * width / c->width;
+        matrix.entries[2][1] = (y - height) * 256 -
         		c->data.draw.y0 * height / c->height;
 
-	xdrawfile_render(0, (drawfile_diagram*)(c->data.draw.data),
-			(int)c->data.draw.length, matrix, 0, 0);
-
-        xfree(matrix);
+	xdrawfile_render(0, (drawfile_diagram*)(c->source_data),
+			(int)c->source_size, &matrix, 0, 0);
 }
 #endif

@@ -167,16 +167,6 @@ void css_create(struct content *c, const char *params[])
 	c->data.css.import_url = xcalloc(0, sizeof(*c->data.css.import_url));
 	c->data.css.import_content = xcalloc(0, sizeof(*c->data.css.import_content));
 	c->active = 0;
-	c->data.css.data = xcalloc(0, 1);
-	c->data.css.length = 0;
-}
-
-
-void css_process_data(struct content *c, char *data, unsigned long size)
-{
-	c->data.css.data = xrealloc(c->data.css.data, c->data.css.length + size + 2);
-	memcpy(c->data.css.data + c->data.css.length, data, size);
-	c->data.css.length += size;
 }
 
 
@@ -186,9 +176,10 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 	YY_BUFFER_STATE buffer;
 	struct parse_params param = {0, c, 0, false};
 
-	c->data.css.data[c->data.css.length] =
-			c->data.css.data[c->data.css.length + 1] = 0;
-	buffer = css__scan_buffer(c->data.css.data, c->data.css.length + 2,
+	c->source_data = xrealloc(c->source_data, c->source_size + 2);
+	c->source_data[c->source_size] = 0;
+	c->source_data[c->source_size + 1] = 0;
+	buffer = css__scan_buffer(c->source_data, c->source_size + 2,
 			c->data.css.css->lexer);
 	assert(buffer);
 	while ((token = css_lex(c->data.css.css->lexer))) {
@@ -250,17 +241,10 @@ void css_revive(struct content *c, unsigned int width, unsigned int height)
 }
 
 
-void css_reformat(struct content *c, unsigned int width, unsigned int height)
-{
-}
-
-
 void css_destroy(struct content *c)
 {
 	unsigned int i;
 	struct css_node *r;
-
-        xfree(c->data.css.data);
 
 	for (i = 0; i != HASH_SIZE; i++) {
 		for (r = c->data.css.css->rule[i]; r != 0; r = r->next)

@@ -30,7 +30,6 @@
 #include "netsurf/content/cache.h"
 #include "netsurf/content/content_type.h"
 #include "netsurf/content/fetch.h"
-#include "netsurf/content/other.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
@@ -123,7 +122,6 @@ struct content {
 		struct content_plugin_data plugin;
 #endif
 #endif
-		struct content_other_data other;
 	} data;
 
 	struct cache_entry *cache;	/**< Used by cache, 0 if not cached. */
@@ -137,7 +135,8 @@ struct content {
 	char status_message[80];	/**< Text for status bar. */
 
 	struct fetch *fetch;		/**< Associated fetch, or 0. */
-	unsigned long fetch_size;	/**< Amount of data fetched so far. */
+	char *source_data;		/**< Source data, as received. */
+	unsigned long source_size;	/**< Amount of data fetched so far. */
 	unsigned long total_size;	/**< Total data size, 0 if unknown. */
 
 	int lock;			/**< Content in use, do not destroy. */

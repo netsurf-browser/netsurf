@@ -6,7 +6,7 @@
 
 CC = /riscos/bin/gcc
 CC_DEBUG = gcc
-OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o other.o \
+OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
 	box.o form.o html.o layout.o textplain.o \
 	messages.o utils.o translit.o pool.o url.o
@@ -19,7 +19,7 @@ OBJECTS = $(OBJECTS_COMMON) \
 	draw.o gif.o jpeg.o plugin.o png.o sprite.o \
 	about.o filetype.o font.o uri.o url_protocol.o history.o \
 	version.o thumbnail.o \
-	save.o save_complete.o save_draw.o save_html.o
+	save.o save_complete.o save_draw.o
 OBJECTS_DEBUG = $(OBJECTS_COMMON) \
 	netsurfd.o \
 	options.o filetyped.o fontd.o

@@ -286,6 +286,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 
 void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 {
+	char icon[20] = "file_xxx";
+	struct content *c = current_gui->data.browser.bw->current_content;
 	os_error *error;
 
 	if (warning->selection.items[0] != 0)
@@ -304,8 +306,11 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 		case -1:
 		default: /* Save */
 			gui_current_save_type = GUI_SAVE_SOURCE;
+			if (c)
+				sprintf(icon, "file_%x",
+						ro_content_filetype(c));
 			ro_gui_set_icon_string(dialog_saveas,
-					ICON_SAVE_ICON, "file_faf");
+					ICON_SAVE_ICON, icon);
 			ro_gui_set_icon_string(dialog_saveas,
 					ICON_SAVE_PATH,
 					messages_get("SaveSource"));

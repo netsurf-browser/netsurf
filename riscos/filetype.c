@@ -2,15 +2,17 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include <stdlib.h>
 #include <string.h>
 #include <unixlib/local.h>
+#include "oslib/mimemap.h"
 #include "oslib/osfile.h"
-#include "netsurf/utils/config.h"
+#include "netsurf/content/content.h"
 #include "netsurf/content/fetch.h"
+#include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -20,26 +22,14 @@ struct type_entry {
 	char mime_type[40];
 };
 static const struct type_entry type_map[] = {
-#ifdef WITH_PLUGIN
         {0x188, "application/x-shockwave-flash"},
-#endif
-#ifdef WITH_GIF
 	{0x695, "image/gif"},
-#endif
-#ifdef WITH_DRAW
 	{0xaff, "image/x-drawfile"},
-#endif
-#ifdef WITH_PNG
 	{0xb60, "image/png"},
-#endif
-#ifdef WITH_JPEG
 	{0xc85, "image/jpeg"},
-#endif
 	{0xf79, "text/css"},
 	{0xfaf, "text/html"},
-#ifdef WITH_SPRITE
 	{0xff9, "image/x-riscos-sprite"},
-#endif
 	{0xfff, "text/plain"},
 };
 #define TYPE_MAP_COUNT (sizeof(type_map) / sizeof(type_map[0]))
@@ -49,7 +39,7 @@ static int cmp_type(const void *x, const void *y);
 
 
 /**
- * filetype -- determine the MIME type of a local file
+ * Determine the MIME type of a local file.
  */
 
 const char *fetch_filetype(const char *unix_path)
@@ -93,3 +83,31 @@ int cmp_type(const void *x, const void *y)
 	return *p < q->file_type ? -1 : (*p == q->file_type ? 0 : +1);
 }
 
+
+/**
+ * Determine the RISC OS filetype for a content.
+ */
+
+int ro_content_filetype(struct content *content)
+{
+	int file_type;
+	os_error *error;
+
+	switch (content->type) {
+		case CONTENT_HTML:	return 0xfaf;
+		case CONTENT_TEXTPLAIN:	return 0xfff;
+		case CONTENT_CSS:	return 0xf79;
+		case CONTENT_JPEG:	return 0xc85;
+		case CONTENT_PNG:	return 0xb60;
+		case CONTENT_GIF:	return 0x695;
+		case CONTENT_SPRITE:	return 0xff9;
+		case CONTENT_DRAW:	return 0xaff;
+		default:		break;
+	}
+
+	error = xmimemaptranslate_mime_type_to_filetype(content->mime_type,
+			&file_type);
+	if (error)
+		return 0xffd;
+	return file_type;
+}

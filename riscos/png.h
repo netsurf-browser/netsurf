@@ -20,18 +20,12 @@ struct content_png_data {
 	int interlace;
 	osspriteop_area *sprite_area;
 	char *sprite_image;
-	enum { PNG_PALETTE, PNG_DITHER, PNG_DEEP } type;
-	/** for ImageFileConvert */
-	char *data;
-	unsigned long length;
 };
 
 void nspng_init(void);
 void nspng_create(struct content *c, const char *params[]);
 void nspng_process_data(struct content *c, char *data, unsigned long size);
 int nspng_convert(struct content *c, unsigned int width, unsigned int height);
-void nspng_revive(struct content *c, unsigned int width, unsigned int height);
-void nspng_reformat(struct content *c, unsigned int width, unsigned int height);
 void nspng_destroy(struct content *c);
 void nspng_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,

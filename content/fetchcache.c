@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -108,7 +108,6 @@ struct content * fetchcache(const char *url, char *referer,
 #endif
 		cache_put(c);
 
-	c->fetch_size = 0;
 	c->width = width;
 	c->height = height;
 	c->no_error_pages = no_error_pages;
@@ -169,17 +168,16 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 
 		case FETCH_DATA:
 			LOG(("FETCH_DATA"));
-			c->fetch_size += size;
 			if (c->total_size)
 				sprintf(c->status_message,
 						messages_get("RecPercent"),
-						c->fetch_size, c->total_size,
-						(unsigned int) (c->fetch_size *
+						c->source_size + size, c->total_size,
+						(unsigned int) ((c->source_size + size) *
 						100.0 / c->total_size));
 			else
 				sprintf(c->status_message,
 						messages_get("Received"),
-						c->fetch_size);
+						c->source_size + size);
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			content_process_data(c, data, size);
 			break;
@@ -187,7 +185,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 		case FETCH_FINISHED:
 			LOG(("FETCH_FINISHED"));
 			sprintf(c->status_message, messages_get("Converting"),
-					c->fetch_size);
+					c->source_size);
 			c->fetch = 0;
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			content_convert(c, c->width, c->height);

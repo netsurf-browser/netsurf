@@ -109,30 +109,30 @@ static const struct handler_entry handler_map[] = {
 	{html_create, html_process_data, html_convert, html_revive,
 		html_reformat, html_destroy, html_redraw,
 		html_add_instance, html_remove_instance, html_reshape_instance},
-	{textplain_create, textplain_process_data, textplain_convert,
-		textplain_revive, textplain_reformat, textplain_destroy, 0, 0, 0, 0},
-	{css_create, css_process_data, css_convert, css_revive,
-		css_reformat, css_destroy, 0, 0, 0, 0},
+	{textplain_create, html_process_data, textplain_convert,
+		0, 0, 0, 0, 0, 0, 0},
+	{css_create, 0, css_convert, css_revive,
+		0, css_destroy, 0, 0, 0, 0},
 #ifdef riscos
 #ifdef WITH_JPEG
-	{nsjpeg_create, nsjpeg_process_data, nsjpeg_convert, nsjpeg_revive,
-		nsjpeg_reformat, nsjpeg_destroy, nsjpeg_redraw, 0, 0, 0},
+	{nsjpeg_create, 0, nsjpeg_convert, 0,
+		0, nsjpeg_destroy, nsjpeg_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_PNG
-	{nspng_create, nspng_process_data, nspng_convert, nspng_revive,
-		nspng_reformat, nspng_destroy, nspng_redraw, 0, 0, 0},
+	{nspng_create, nspng_process_data, nspng_convert, 0,
+		0, nspng_destroy, nspng_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_GIF
-	{nsgif_create, nsgif_process_data, nsgif_convert, nsgif_revive,
-	        nsgif_reformat, nsgif_destroy, nsgif_redraw, 0, 0, 0},
+	{nsgif_create, 0, nsgif_convert, 0,
+	        0, nsgif_destroy, nsgif_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_SPRITE
 	{sprite_create, sprite_process_data, sprite_convert, sprite_revive,
 		sprite_reformat, sprite_destroy, sprite_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_DRAW
-	{draw_create, draw_process_data, draw_convert, draw_revive,
-		draw_reformat, draw_destroy, draw_redraw, 0, 0, 0},
+	{0, 0, draw_convert, 0,
+		0, draw_destroy, draw_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_PLUGIN
 	{plugin_create, plugin_process_data, plugin_convert, plugin_revive,
@@ -141,8 +141,7 @@ static const struct handler_entry handler_map[] = {
 		plugin_reshape_instance},
 #endif
 #endif
-	{other_create, other_process_data, other_convert, other_revive,
-		other_reformat, other_destroy, 0, 0, 0, 0}
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
@@ -190,6 +189,8 @@ struct content * content_create(char *url)
 	c->cache = 0;
 	c->size = sizeof(struct content);
 	c->fetch = 0;
+	c->source_data = 0;
+	c->source_size = 0;
 	c->mime_type = 0;
 	strcpy(c->status_message, messages_get("Loading"));
 	user_sentinel = xcalloc(1, sizeof(*user_sentinel));
@@ -227,7 +228,9 @@ void content_set_type(struct content *c, content_type type, char* mime_type,
 	c->type = type;
 	c->mime_type = xstrdup(mime_type);
 	c->status = CONTENT_STATUS_LOADING;
-	handler_map[type].create(c, params);
+	c->source_data = xcalloc(0, 1);
+	if (handler_map[type].create)
+		handler_map[type].create(c, params);
 	content_broadcast(c, CONTENT_MSG_LOADING, 0);
 	/* c may be destroyed at this point as a result of
 	 * CONTENT_MSG_LOADING, so must not be accessed */
@@ -245,7 +248,12 @@ void content_process_data(struct content *c, char *data, unsigned long size)
 	assert(c != 0);
 	assert(c->status == CONTENT_STATUS_LOADING);
 	LOG(("content %s, size %lu", c->url, size));
-	handler_map[c->type].process_data(c, data, size);
+	c->source_data = xrealloc(c->source_data, c->source_size + size);
+	memcpy(c->source_data + c->source_size, data, size);
+	c->source_size += size;
+	c->size += size;
+	if (handler_map[c->type].process_data)
+		handler_map[c->type].process_data(c, data, size);
 }
 
 
@@ -270,13 +278,18 @@ void content_convert(struct content *c, unsigned long width, unsigned long heigh
 	assert(c->status == CONTENT_STATUS_LOADING);
 	LOG(("content %s", c->url));
 	c->available_width = width;
-	if (handler_map[c->type].convert(c, width, height)) {
-		/* convert failed, destroy content */
-		content_broadcast(c, CONTENT_MSG_ERROR, "Conversion failed");
-		if (c->cache)
-			cache_destroy(c);
-		content_destroy(c);
-		return;
+	if (handler_map[c->type].convert) {
+		if (handler_map[c->type].convert(c, width, height)) {
+			/* convert failed, destroy content */
+			content_broadcast(c, CONTENT_MSG_ERROR,
+					"Conversion failed");
+			if (c->cache)
+				cache_destroy(c);
+			content_destroy(c);
+			return;
+		}
+	} else {
+		c->status = CONTENT_STATUS_DONE;
 	}
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
@@ -295,6 +308,7 @@ void content_convert(struct content *c, unsigned long width, unsigned long heigh
 
 void content_revive(struct content *c, unsigned long width, unsigned long height)
 {
+	assert(0);  /* unmaintained */
 	assert(c != 0);
 	if (c->status != CONTENT_STATUS_DONE)
 		return;
@@ -315,8 +329,10 @@ void content_reformat(struct content *c, unsigned long width, unsigned long heig
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
 	c->available_width = width;
-	handler_map[c->type].reformat(c, width, height);
-	content_broadcast(c, CONTENT_MSG_REFORMAT, 0);
+	if (handler_map[c->type].reformat) {
+		handler_map[c->type].reformat(c, width, height);
+		content_broadcast(c, CONTENT_MSG_REFORMAT, 0);
+	}
 }
 
 
@@ -339,7 +355,7 @@ void content_destroy(struct content *c)
 		return;
 	}
 
-	if (c->type < HANDLER_MAP_COUNT)
+	if (c->type < HANDLER_MAP_COUNT && handler_map[c->type].destroy)
 		handler_map[c->type].destroy(c);
 	for (user = c->user_list; user != 0; user = next) {
 		next = user->next;
@@ -347,6 +363,7 @@ void content_destroy(struct content *c)
 	}
 	free(c->mime_type);
 	xfree(c->url);
+	free(c->source_data);
 	xfree(c);
 }
 
@@ -362,7 +379,7 @@ void content_reset(struct content *c)
 {
 	assert(c != 0);
 	LOG(("content %p %s", c, c->url));
-	if (c->type < HANDLER_MAP_COUNT)
+	if (c->type < HANDLER_MAP_COUNT && handler_map[c->type].destroy)
 		handler_map[c->type].destroy(c);
 	c->type = CONTENT_UNKNOWN;
 	c->status = CONTENT_STATUS_TYPE_UNKNOWN;
@@ -384,7 +401,7 @@ void content_redraw(struct content *c, long x, long y,
 		float scale)
 {
 	assert(c != 0);
-	if (handler_map[c->type].redraw != 0)
+	if (handler_map[c->type].redraw)
 		handler_map[c->type].redraw(c, x, y, width, height,
 		                clip_x0, clip_y0, clip_x1, clip_y1, scale);
 }
@@ -497,7 +514,7 @@ void content_add_instance(struct content *c, struct browser_window *bw,
 	assert(c != 0);
 	assert(c->type < CONTENT_UNKNOWN);
 	LOG(("content %s", c->url));
-	if (handler_map[c->type].add_instance != 0)
+	if (handler_map[c->type].add_instance)
 		handler_map[c->type].add_instance(c, bw, page, box, params, state);
 }
 
@@ -515,7 +532,7 @@ void content_remove_instance(struct content *c, struct browser_window *bw,
 	assert(c != 0);
 	assert(c->type < CONTENT_UNKNOWN);
 	LOG(("content %s", c->url));
-	if (handler_map[c->type].remove_instance != 0)
+	if (handler_map[c->type].remove_instance)
 		handler_map[c->type].remove_instance(c, bw, page, box, params, state);
 }
 
@@ -533,7 +550,7 @@ void content_reshape_instance(struct content *c, struct browser_window *bw,
 	assert(c != 0);
 	assert(c->type < CONTENT_UNKNOWN);
 	LOG(("content %s", c->url));
-	if (handler_map[c->type].reshape_instance != 0)
+	if (handler_map[c->type].reshape_instance)
 		handler_map[c->type].reshape_instance(c, bw, page, box, params, state);
 }
 

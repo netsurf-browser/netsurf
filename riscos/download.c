@@ -180,7 +180,7 @@ void gui_download_window_error(gui_window *g, const char *error)
 void gui_download_window_done(gui_window *g)
 {
 	snprintf(g->status, 256, messages_get("Downloaded"),
-			g->data.download.content->data.other.length);
+			g->data.download.content->source_size);
 	wimp_set_icon_state(g->window,
 			ICON_DOWNLOAD_STATUS, 0, 0);
 
@@ -239,7 +239,7 @@ void ro_download_drag_end(wimp_dragged *drag)
 	message.data.data_xfer.pos.x = pointer.pos.x;
 	message.data.data_xfer.pos.y = pointer.pos.y;
 	message.data.data_xfer.est_size = (int)
-			current_gui->data.download.content->data.other.length;
+			current_gui->data.download.content->source_size;
 	message.data.data_xfer.file_type = current_gui->data.download.file_type;
 	strncpy(message.data.data_xfer.file_name,
 			current_gui->data.download.path, 212);
@@ -263,8 +263,8 @@ void ro_download_datasave_ack(wimp_message *message)
 
 	assert(current_gui->data.download.download_status == download_COMPLETE);
 
-	data = current_gui->data.download.content->data.other.data;
-	data_end = data + current_gui->data.download.content->data.other.length;
+	data = current_gui->data.download.content->source_data;
+	data_end = data + current_gui->data.download.content->source_size;
 
 	error = xosfile_save_stamped(message->data.data_xfer.file_name,
 			current_gui->data.download.file_type,

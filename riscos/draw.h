@@ -11,17 +11,10 @@
 struct content;
 
 struct content_draw_data {
-	void *data;
-	unsigned long length;
 	int x0, y0;
 };
 
-void draw_init(void);
-void draw_create(struct content *c, const char *params[]);
-void draw_process_data(struct content *c, char *data, unsigned long size);
 int draw_convert(struct content *c, unsigned int width, unsigned int height);
-void draw_revive(struct content *c, unsigned int width, unsigned int height);
-void draw_reformat(struct content *c, unsigned int width, unsigned int height);
 void draw_destroy(struct content *c);
 void draw_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,

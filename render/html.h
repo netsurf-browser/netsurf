@@ -37,8 +37,6 @@ struct box_position {
 struct content_html_data {
 	htmlParserCtxt *parser;  /**< HTML parser context. */
 
-	char *source;   /**< Source data. */
-	int length;     /**< Length of source. */
 	xmlCharEncoding encoding;  /**< Encoding of source. */
 	bool getenc; /**< Need to get the encoding from the document, as server is broken. */
 

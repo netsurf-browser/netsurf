@@ -34,18 +34,9 @@ void nsgif_init(void)
 void nsgif_create(struct content *c, const char *params[])
 {
   c->data.gif.sprite_area = 0;
-  c->data.gif.data = xcalloc(0, 1);
-  c->data.gif.length = 0;
   c->data.gif.buffer_pos = 0;
 }
 
-void nsgif_process_data(struct content *c, char *data, unsigned long size)
-{
-  c->data.gif.data = xrealloc(c->data.gif.data, c->data.gif.length + size);
-  memcpy(c->data.gif.data + c->data.gif.length, data, size);
-  c->data.gif.length += size;
-  c->size += size;
-}
 
 int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
 {
@@ -55,7 +46,7 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
   struct osspriteop_header *header;
   struct osspriteop_area *area;
 
-  a = Anim_FromData(c->data.gif.data, c->data.gif.length, NULL, false, false, false);
+  a = Anim_FromData(c->source_data, c->source_size, NULL, false, false, false);
   if (!a) {
 
     LOG(("Error creating anim object"));
@@ -124,14 +115,6 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
   return 0;
 }
 
-void nsgif_revive(struct content *c, unsigned int width, unsigned int height)
-{
-}
-
-
-void nsgif_reformat(struct content *c, unsigned int width, unsigned int height)
-{
-}
 
 void nsgif_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
@@ -192,7 +175,6 @@ void nsgif_destroy(struct content *c)
 {
   xfree(c->title);
   xfree(c->data.gif.sprite_area);
-  xfree(c->data.gif.data);
 }
 
 

@@ -69,8 +69,6 @@ void html_create(struct content *c, const char *params[])
 	}
 
 	html->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, html->encoding);
-	html->source = xcalloc(0, 1);
-	html->length = 0;
 	html->base_url = xstrdup(c->url);
 	html->layout = 0;
 	html->background_colour = TRANSPARENT;
@@ -98,21 +96,16 @@ void html_process_data(struct content *c, char *data, unsigned long size)
 	unsigned long x;
 	LOG(("content %s, size %lu", c->url, size));
 	/*cache_dump();*/
-	c->data.html.source = xrealloc(c->data.html.source, c->data.html.length + size);
-	memcpy(c->data.html.source + c->data.html.length, data, size);
-	c->data.html.length += size;
-	c->size += size;
-	/* First time through, check if we need to get the encoding 
+	/* First time through, check if we need to get the encoding
 	 * if so, get it and reset the parser instance with it.
 	 * if it fails, assume Latin1
 	 */
 	if (c->data.html.getenc) {
-		c->data.html.encoding = xmlDetectCharEncoding(c->data.html.source, c->data.html.length);
-		if (c->data.html.encoding == XML_CHAR_ENCODING_ERROR || 
-		    c->data.html.encoding == XML_CHAR_ENCODING_NONE) {
-				c->data.html.encoding = XML_CHAR_ENCODING_8859_1;
-		}
-		xmlSwitchEncoding((xmlParserCtxtPtr)c->data.html.parser, c->data.html.encoding);
+		c->data.html.encoding = xmlDetectCharEncoding(data, size);
+		if (c->data.html.encoding == XML_CHAR_ENCODING_ERROR ||
+				c->data.html.encoding == XML_CHAR_ENCODING_NONE)
+			c->data.html.encoding = XML_CHAR_ENCODING_8859_1;
+		xmlSwitchEncoding(c->data.html.parser, c->data.html.encoding);
 		c->data.html.getenc = false;
 		LOG(("Encoding: %s", xmlGetCharEncodingName(c->data.html.encoding)));
 	}
@@ -758,7 +751,6 @@ void html_destroy(struct content *c)
 	if (c->data.html.parser)
 		htmlFreeParserCtxt(c->data.html.parser);
 
-	free(c->data.html.source);
 	free(c->data.html.base_url);
 
 	if (c->data.html.layout)
