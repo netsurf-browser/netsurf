@@ -9,4 +9,7 @@ LDFLAGS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lcares -lanim -lpng \
 LDFLAGS_SMALL = -L/riscos/lib -lxml2 -lz -lucurl -lcares -lanim -lpng -loslib -ljpeg
 LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -ljpeg
 
+!NetSurf/!RunImage,ff8 : $(OBJS)
+	$(CC) -o $@ $(LDFLAGS) $^
+
 include depend

@@ -4,13 +4,10 @@
 #                http://www.opensource.org/licenses/gpl-license
 #
 
-OS = $(word 2,$(subst -, ,$(shell $(CC) -dumpmachine)))
+# The 'all' target is presented first so as not to screw up over targets included
+# in the platform specific files
 
-ifeq ($(OS),riscos)
-include riscos.mk
-else
-include posix.mk
-endif
+all: !NetSurf/!RunImage,ff8 $(DOCS)
 
 OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
@@ -40,17 +37,6 @@ OBJECTS_DEBUGRO = $(OBJECTS_COMMON) \
 	version.o \
 	options.o font.o schedule.o
 
-VPATH = content:css:desktop:render:riscos:utils:debug
-
-WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
-	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
-	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
-	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
-
-CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. \
-	$(PLATFORM_CFLAGS) -mpoke-function-name
-CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -Driscos $(WARNFLAGS) -I.. $(PLATFORM_CFLAGS_DEBUG) -g
-
 OBJDIR = $(shell $(CC) -dumpmachine)
 SOURCES=$(OBJECTS:.o=.c)
 OBJS=$(OBJECTS:%.o=$(OBJDIR)/%.o)
@@ -60,10 +46,31 @@ SOURCES_DEBUG=$(OBJECTS_DEBUG:.o=.c)
 OBJS_DEBUG=$(OBJECTS_DEBUG:%.o=$(OBJDIR_DEBUG)/%.o)
 OBJS_DEBUGRO=$(OBJECTS_DEBUGRO:%.o=$(OBJDIR_DEBUG)/%.o)
 
+# Inclusion of platform specific files has to occur after the OBJDIR stuff as that
+# is refered to in the files
+
+OS = $(word 2,$(subst -, ,$(shell $(CC) -dumpmachine)))
+ifeq ($(OS),riscos)
+include riscos.mk
+else
+include posix.mk
+endif
+
+VPATH = content:css:desktop:render:riscos:utils:debug
+
+WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
+	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
+	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
+	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
+
+# CFLAGS have to appear after the inclusion of platform specific files as the
+# PLTFORM_CFLAGS variables are defined in them
+
+CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. \
+	$(PLATFORM_CFLAGS) -mpoke-function-name
+CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE $(WARNFLAGS) -I.. $(PLATFORM_CFLAGS_DEBUG) -g
+
 # targets
-all: !NetSurf/!RunImage,ff8 $(DOCS)
-!NetSurf/!RunImage,ff8 : $(OBJS)
-	$(CC) -o $@ $(LDFLAGS) $^
 u!RunImage,ff8 : $(OBJS)
 	$(CC) -o $@ $(LDFLAGS_SMALL) $^
 netsurf.zip: !NetSurf/!RunImage,ff8 $(DOCS)

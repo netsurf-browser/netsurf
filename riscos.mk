@@ -13,3 +13,6 @@ LDFLAGS_SMALL = NSLibs:lib/libxml2 NSLibs:lib/libz NSLibs:lib/libcurl \
 LDFLAGS_DEBUG = NSLibs:lib/libxml2 NSLibs:lib/libz NSLibs:lib/libcurl \
 	NSLibs:lib/libssl NSLibs:lib/libcrypto NSLibs:lib/libares \
 	NSLibs:lib/libanim NSLibs:lib/libpng NSLibs:lib/libjpeg OSLib:o.oslib32
+
+!NetSurf/!RunImage,ff8 : $(OBJS)
+	$(CC) -o !NetSurf/!RunImage $(LDFLAGS) $^
