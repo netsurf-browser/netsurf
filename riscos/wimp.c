@@ -321,6 +321,11 @@ void ro_gui_set_caret_first(wimp_w w) {
 			return;
 		}
 
+		/*	Ignore if it's shaded
+		*/
+		if (state.icon.flags & wimp_ICON_SHADED)
+			continue;
+
 		/*	Check if it's writable
 		*/
 		button = (state.icon.flags >> wimp_ICON_BUTTON_TYPE_SHIFT) & 0xf;
