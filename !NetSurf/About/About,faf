@@ -27,7 +27,7 @@
 </tr>
 <tr><td colspan="2" bgcolor="#dddddd" height="1"></td></tr>
 <tr valign="top">
-  <td width="30%"><font size="2"><strong><a href="http://www.cryptsoft.com/ssleay/">OpenSSL&nbsp;0.9.7b</a></strong></font><br><img src="file:///%3CNetsurf$Dir%3E/About/openssl" alt="openssl logo"></td>
+  <td width="30%"><font size="2"><strong><a href="http://www.openssl.org/">OpenSSL&nbsp;0.9.7b</a></strong></font><br><img src="file:///%3CNetsurf$Dir%3E/About/openssl" alt="openssl logo"></td>
   <td width="70%"><font size="2">This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (<a href="http://www.openssl.org/">http://www.openssl.org/</a>).
 	    <br>This product includes cryptographic software written by Eric Young (eay@cryptsoft.com).</font></td>
 </tr>
