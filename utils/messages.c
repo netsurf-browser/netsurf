@@ -24,7 +24,7 @@
 #define HASH_SIZE 77
 
 /** Maximum length of a key. */
-#define MAX_KEY_LENGTH 16
+#define MAX_KEY_LENGTH 24
 
 /** Entry in the messages hash table. */
 struct messages_entry {

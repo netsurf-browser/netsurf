@@ -22,14 +22,14 @@
 
 /*	Current prefixes:
 
-	HelpB	Browser window
-	HelpI	Iconbar menu
-	HelpM	Browser window menu
-	HelpT	Toolbar window
-	HelpS	Status window
+	HelpBrowser      Browser window
+	HelpIconMenu     Iconbar menu
+	HelpBrowserMenu  Browser window menu
+	HelpToolbar      Toolbar window
+	HelpStatus       Status window
 
-	The prefixes are followed by either the icon number (eg 'HelpT7'), or a series
-	of numbers representing the menu structure (eg 'HelpM3-1-2').
+	The prefixes are followed by either the icon number (eg 'HelpToolbar7'), or a series
+	of numbers representing the menu structure (eg 'HelpBrowserMenu3-1-2').
 */
 
 static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token);
@@ -69,13 +69,13 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	g = ro_gui_window_lookup(window);
 	if (g) {
 		if (g->window == window) {
-			sprintf(message_token, "HelpB%i", (int)icon);
+			sprintf(message_token, "HelpBrowser%i", (int)icon);
 		} else if ((g->data.browser.toolbar) &&
 					(g->data.browser.toolbar->toolbar_handle == window)) {
-			sprintf(message_token, "HelpT%i", (int)icon);
+			sprintf(message_token, "HelpToolbar%i", (int)icon);
 		} else if ((g->data.browser.toolbar) &&
 					(g->data.browser.toolbar->status_handle == window)) {
-			sprintf(message_token, "HelpS%i", (int)icon);
+			sprintf(message_token, "HelpStatus%i", (int)icon);
 		}
 	}
 
@@ -96,9 +96,9 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	/*	Set the prefix
 	*/
 	if (current_menu == iconbar_menu) {
-	  	sprintf(message_token, "HelpI");
+	  	sprintf(message_token, "HelpIconMenu");
 	} else if (current_menu == browser_menu) {
-	  	sprintf(message_token, "HelpM");
+	  	sprintf(message_token, "HelpBrowserMenu");
 	} else {
 		return;
 	}

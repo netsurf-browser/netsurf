@@ -14,7 +14,7 @@
  * messages_load() to read the file into memory. To lookup a key, use
  * messages_get("key").
  *
- * Only the first MAX_KEY_LENGTH (currently 16) characters of the key are
+ * Only the first MAX_KEY_LENGTH (currently 24) characters of the key are
  * significant.
  */
 
