@@ -13,7 +13,9 @@
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/render/box.h"
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -21,6 +23,9 @@
 #include "netsurf/utils/utils.h"
 
 int done, destroyed;
+bool print_active = false;
+void *hotlist_toolbar = NULL;
+void *hotlist_window = NULL;
 
 void callback(content_msg msg, struct content *c, void *p1,
 		void *p2,  union content_msg_data data)
@@ -106,39 +111,18 @@ int stricmp(char *s0, char *s1)
 }
 #endif
 
-void gui_remove_gadget(void *p)
-{
-}
-
 #ifdef WITH_PLUGIN
 void plugin_decode(void *a, void *b, void *c, void *d)
 {
 }
 #endif
 
-void html_redraw(struct content *c, int x, int y,
+bool html_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int x0, int y0, int x1, int y1,
-		float scale)
+		float scale, unsigned long background_colour)
 {
-}
-
-void html_add_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state)
-{
-}
-
-void html_reshape_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state)
-{
-}
-
-void html_remove_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state)
-{
+	return true;
 }
 
 #ifdef WITH_PLUGIN
@@ -150,28 +134,22 @@ bool plugin_handleable(const char *mime_type)
 
 #ifdef WITH_PLUGIN
 void plugin_msg_parse(wimp_message *message, int ack) {}
-bool plugin_create(struct content *c, const char *params[]) {}
-bool plugin_process_data(struct content *c, char *data, unsigned int size) {}
-bool plugin_convert(struct content *c, int width, int height) {return 0;}
+bool plugin_create(struct content *c, const char *params[]) {return true;}
+bool plugin_convert(struct content *c, int width, int height) {return true;}
 void plugin_reformat(struct content *c, int width, int height) {}
 void plugin_destroy(struct content *c) {}
-void plugin_redraw(struct content *c, int x, int y,
+bool plugin_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale) {}
-void plugin_add_instance(struct content *c, struct browser_window *bw,
+		float scale, unsigned long background_colour) {return true;}
+void plugin_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
-		struct object_params *params, void **state) {}
-void plugin_remove_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state) {}
-void plugin_reshape_instance(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params, void **state) {}
+		struct object_params *params) {}
+void plugin_close(struct content *c) {}
 #endif
 
 #ifdef riscos
-char *NETSURF_DIR = "<NetSurf$Dir>";
+const char *NETSURF_DIR = "<NetSurf$Dir>";
 #endif
 
 void xcolourtrans_generate_table_for_sprite(void)
@@ -201,6 +179,12 @@ bool option_filter_sprites = false;
 bool option_dither_sprites = false;
 int option_minimum_gif_delay = 10;
 #endif
+
+void ro_gui_screen_size(int *width, int *height)
+{
+	*width = 0;
+	*height = 0;
+}
 
 void die(const char *error)
 {
@@ -246,3 +230,16 @@ os_error *xos_read_monotonic_time (os_t *t)
 	*t = clock() / 1000;
 	return 0;
 }
+
+#ifndef riscos
+typedef enum {
+	IMAGE_PLOT_TINCT_ALPHA,
+	IMAGE_PLOT_TINCT_OPAQUE,
+	IMAGE_PLOT_OS
+} image_type;
+
+bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
+		int req_height, int width, int height,
+		unsigned long background_colour,
+		bool repeatx, bool repeaty, image_type type) { return true; }
+#endif
