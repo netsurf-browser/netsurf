@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.13 2003/01/06 00:04:43 bursa Exp $
+ * $Id: gui.c,v 1.14 2003/01/07 23:16:04 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -702,7 +702,7 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
 
       font_paint(box->font->handle, box->text,
         font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
-        x + box->x * 2, y - box->y * 2 - box->height * 2,
+        x + box->x * 2, y - box->y * 2 - box->height * 1.5,
         NULL, NULL,
         box->length);
 
