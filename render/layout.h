@@ -16,7 +16,9 @@
 #ifndef _NETSURF_RENDER_LAYOUT_H_
 #define _NETSURF_RENDER_LAYOUT_H_
 
-void layout_document(struct box *box, int width);
-void layout_block_context(struct box *block);
+#include "netsurf/utils/pool.h"
+
+bool layout_document(struct box *box, int width, pool box_pool);
+bool layout_block_context(struct box *block, pool box_pool);
 
 #endif

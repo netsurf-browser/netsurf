@@ -32,10 +32,12 @@
 #include "netsurf/render/layout.h"
 #define NDEBUG
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/pool.h"
 #include "netsurf/utils/utils.h"
 
 
 #define AUTO INT_MIN
+#define ERROR_OUT_OF_MEMORY 1
 
 
 static void layout_block_find_dimensions(int available_width, struct box *box);
@@ -49,38 +51,42 @@ static void layout_find_dimensions(int available_width,
 static int layout_clear(struct box *fl, css_clear clear);
 static void find_sides(struct box *fl, int y0, int y1,
 		int *x0, int *x1, struct box **left, struct box **right);
-static void layout_inline_container(struct box *box, int width,
-		struct box *cont, int cx, int cy);
+static bool layout_inline_container(struct box *box, int width,
+		struct box *cont, int cx, int cy, pool box_pool);
 static int line_height(struct css_style *style);
-static struct box * layout_line(struct box *first, int width, int *y,
-		int cx, int cy, struct box *cont, bool indent);
+static bool layout_line(struct box *first, int width, int *y,
+		int cx, int cy, struct box *cont, bool indent,
+		pool box_pool, struct box **next_box);
 static int layout_text_indent(struct css_style *style, int width);
-static void layout_float(struct box *b, int width);
+static bool layout_float(struct box *b, int width, pool box_pool);
 static void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont);
-static void layout_table(struct box *box, int available_width);
-static void calculate_widths(struct box *box);
-static void calculate_block_widths(struct box *box, int *min, int *max,
+static bool layout_table(struct box *box, int available_width, pool box_pool);
+static bool calculate_widths(struct box *box);
+static bool calculate_block_widths(struct box *box, int *min, int *max,
 		int *max_sum);
-static void calculate_inline_container_widths(struct box *box);
+static bool calculate_inline_container_widths(struct box *box);
 static void calculate_inline_replaced_widths(struct box *box, int *min,
 		int *max, int *line_max);
 static void calculate_inline_widths(struct box *box, int *min, int *line_max);
-static void calculate_table_widths(struct box *table);
+static bool calculate_table_widths(struct box *table);
 
 
 /**
  * Calculate positions of boxes in a document.
  *
- * \param doc    root of document box tree
- * \param width  available page width
+ * \param  doc       root of document box tree
+ * \param  width     available page width
+ * \param  box_pool  memory pool for any new boxes
+ * \return  true on success, false on memory exhaustion
  */
 
-void layout_document(struct box *doc, int width)
+bool layout_document(struct box *doc, int width, pool box_pool)
 {
 	doc->float_children = 0;
 
-	calculate_widths(doc);
+	if (!calculate_widths(doc))
+		return false;
 
 	layout_block_find_dimensions(width, doc);
 	doc->x = doc->margin[LEFT] + doc->border[LEFT];
@@ -88,7 +94,7 @@ void layout_document(struct box *doc, int width)
 	width -= doc->margin[LEFT] + doc->border[LEFT] +
 			doc->border[RIGHT] + doc->margin[RIGHT];
 	doc->width = width;
-	layout_block_context(doc);
+	return layout_block_context(doc, box_pool);
 }
 
 
@@ -96,12 +102,14 @@ void layout_document(struct box *doc, int width)
  * Layout a block formatting context.
  *
  * \param  block  BLOCK, INLINE_BLOCK, or TABLE_CELL to layout.
+ * \param  box_pool  memory pool for any new boxes
+ * \return  true on success, false on memory exhaustion
  *
  * This function carries out layout of a block and its children, as described
  * in CSS 2.1 9.4.1.
  */
 
-void layout_block_context(struct box *block)
+bool layout_block_context(struct box *block, pool box_pool)
 {
 	struct box *box;
 	int cx;
@@ -139,7 +147,8 @@ void layout_block_context(struct box *block)
 		if (box->type == BOX_BLOCK)
 			layout_block_find_dimensions(box->parent->width, box);
 		else if (box->type == BOX_TABLE) {
-			layout_table(box, box->parent->width);
+			if (!layout_table(box, box->parent->width, box_pool))
+				return false;
 			layout_solve_width(box->parent->width, box->width,
 					box->margin, box->padding, box->border);
 		}
@@ -178,7 +187,9 @@ void layout_block_context(struct box *block)
 		/* Layout (except tables). */
 		if (box->type == BOX_INLINE_CONTAINER) {
 			box->width = box->parent->width;
-			layout_inline_container(box, box->width, block, cx, cy);
+			if (!layout_inline_container(box, box->width, block,
+					cx, cy, box_pool))
+				return false;
 		} else if (box->type == BOX_TABLE) {
 			/* Move down to avoid floats if necessary. */
 			int x0, x1;
@@ -267,6 +278,8 @@ void layout_block_context(struct box *block)
 
 	if (block->height == AUTO)
 		block->height = cy - block->padding[TOP];
+
+	return true;
 }
 
 
@@ -579,13 +592,15 @@ void find_sides(struct box *fl, int y0, int y1,
  * \param  cont   ancestor box which defines horizontal space, for floats
  * \param  cx     box position relative to cont
  * \param  cy     box position relative to cont
+ * \param  box_pool  memory pool for any new boxes
+ * \return  true on success, false on memory exhaustion
  */
 
-void layout_inline_container(struct box *box, int width,
-		struct box *cont, int cx, int cy)
+bool layout_inline_container(struct box *box, int width,
+		struct box *cont, int cx, int cy, pool box_pool)
 {
 	bool first_line = true;
-	struct box *c;
+	struct box *c, *next;
 	int y = 0;
 
 	assert(box->type == BOX_INLINE_CONTAINER);
@@ -595,12 +610,17 @@ void layout_inline_container(struct box *box, int width,
 
 	for (c = box->children; c; ) {
 		LOG(("c %p", c));
-		c = layout_line(c, width, &y, cx, cy + y, cont, first_line);
+		if (!layout_line(c, width, &y, cx, cy + y, cont, first_line,
+				box_pool, &next))
+			return false;
+		c = next;
 		first_line = false;
 	}
 
 	box->width = width;
 	box->height = y;
+
+	return true;
 }
 
 
@@ -647,10 +667,14 @@ int line_height(struct css_style *style)
  * \param  cy      coordinate of top of line relative to cont
  * \param  cont    ancestor box which defines horizontal space, for floats
  * \param  indent  apply any first-line indent
+ * \param  next_box  updated to first box for next line, or 0 at end
+ * \param  box_pool  memory pool for any new boxes
+ * \return  true on success, false on memory exhaustion
  */
 
-struct box * layout_line(struct box *first, int width, int *y,
-		int cx, int cy, struct box *cont, bool indent)
+bool layout_line(struct box *first, int width, int *y,
+		int cx, int cy, struct box *cont, bool indent,
+		pool box_pool, struct box **next_box)
 {
 	int height, used_height;
 	int x0 = 0;
@@ -687,7 +711,8 @@ struct box * layout_line(struct box *first, int width, int *y,
 
 		if (b->type == BOX_INLINE_BLOCK) {
 			if (b->width == UNKNOWN_WIDTH)
-				layout_float(b, width);
+				if (!layout_float(b, width, box_pool))
+					return false;
 			/** \todo  should margin be included? spec unclear */
 			h = b->border[TOP] + b->padding[TOP] + b->height +
 					b->padding[BOTTOM] + b->border[BOTTOM];
@@ -756,23 +781,32 @@ struct box * layout_line(struct box *first, int width, int *y,
 				break;
 		}
 
-		if (b->width == AUTO && b->height == AUTO) {
-			b->width = b->object->width;
-			b->height = b->object->height;
-		} else if (b->width == AUTO) {
-			if (b->object->height)
-				b->width = b->object->width *
-						(float) b->height /
-						b->object->height;
-			else
+		if (b->object) {
+			if (b->width == AUTO && b->height == AUTO) {
 				b->width = b->object->width;
-		} else if (b->height == AUTO) {
-			if (b->object->width)
-				b->height = b->object->height *
-						(float) b->width /
-						b->object->width;
-			else
 				b->height = b->object->height;
+			} else if (b->width == AUTO) {
+				if (b->object->height)
+					b->width = b->object->width *
+							(float) b->height /
+							b->object->height;
+				else
+					b->width = b->object->width;
+			} else if (b->height == AUTO) {
+				if (b->object->width)
+					b->height = b->object->height *
+							(float) b->width /
+							b->object->width;
+				else
+					b->height = b->object->height;
+			}
+		} else {
+			/* form control with no object */
+			if (b->width == AUTO)
+				b->width = 0;
+			if (b->height == AUTO)
+				b->height = line_height(b->style ? b->style :
+						b->parent->parent->style);
 		}
 
 		if (b->object && b->object->type == CONTENT_HTML &&
@@ -843,7 +877,8 @@ struct box * layout_line(struct box *first, int width, int *y,
 			d->float_children = 0;
 /* 			css_dump_style(b->style); */
 
-			layout_float(d, width);
+			if (!layout_float(d, width, box_pool))
+				return false;
 			d->x = d->margin[LEFT] + d->border[LEFT];
 			d->y = d->margin[TOP] + d->border[TOP];
 			b->width = d->margin[LEFT] + d->border[LEFT] +
@@ -920,9 +955,13 @@ struct box * layout_line(struct box *first, int width, int *y,
 			} else {
 				/* cut off first word for this line */
 				/* \todo allocate from box_pool */
-				c2 = memcpy(xcalloc(1, sizeof (struct box)),
-						split_box, sizeof (struct box));
-				c2->text = xstrdup(split_box->text + space + 1);
+				c2 = pool_alloc(box_pool, sizeof *c2);
+				if (!c2)
+					return false;
+				memcpy(c2, split_box, sizeof *c2);
+				c2->text = strdup(split_box->text + space + 1);
+				if (!c2->text)
+					return false;
 				c2->length = split_box->length - (space + 1);
 				c2->width = UNKNOWN_WIDTH;
 				c2->clone = 1;
@@ -958,9 +997,13 @@ struct box * layout_line(struct box *first, int width, int *y,
 			if (space == 0)
 				space = 1;
 			/* \todo use box pool */
-			c2 = memcpy(xcalloc(1, sizeof (struct box)), split_box,
-					sizeof (struct box));
-			c2->text = xstrdup(split_box->text + space + 1);
+			c2 = pool_alloc(box_pool, sizeof *c2);
+			if (!c2)
+				return false;
+			memcpy(c2, split_box, sizeof *c2);
+			c2->text = strdup(split_box->text + space + 1);
+			if (!c2->text)
+				return false;
 			c2->length = split_box->length - (space + 1);
 			c2->width = UNKNOWN_WIDTH;
 			c2->clone = 1;
@@ -1002,7 +1045,8 @@ struct box * layout_line(struct box *first, int width, int *y,
 
 	assert(b != first || (move_y && 0 < used_height && (left || right)));
 	if (move_y) *y += used_height;
-	return b;
+	*next_box = b;
+	return true;
 }
 
 
@@ -1032,19 +1076,23 @@ int layout_text_indent(struct css_style *style, int width)
  *
  * \param  b      float or inline block box
  * \param  width  available width
+ * \param  box_pool  memory pool for any new boxes
+ * \return  true on success, false on memory exhaustion
  */
 
-void layout_float(struct box *b, int width)
+bool layout_float(struct box *b, int width, pool box_pool)
 {
 	layout_float_find_dimensions(width, b->style, b);
 	if (b->type == BOX_TABLE) {
-		layout_table(b, width);
+		if (!layout_table(b, width, box_pool))
+			return false;
 		if (b->margin[LEFT] == AUTO)
 			b->margin[LEFT] = 0;
 		if (b->margin[RIGHT] == AUTO)
 			b->margin[RIGHT] = 0;
 	} else
-		layout_block_context(b);
+		return layout_block_context(b, box_pool);
+	return true;
 }
 
 
@@ -1090,9 +1138,13 @@ void place_float_below(struct box *c, int width, int cx, int y,
 
 /**
  * Layout a table.
+ *
+ * \param  box_pool  memory pool for any new boxes
+ * \return  true on success, false on memory exhaustion
  */
 
-void layout_table(struct box *table, int available_width)
+bool layout_table(struct box *table, int available_width,
+		pool box_pool)
 {
 	unsigned int columns = table->columns;  /* total columns */
 	unsigned int i;
@@ -1110,13 +1162,27 @@ void layout_table(struct box *table, int available_width)
 	struct box *row;
 	struct box *row_group;
 	struct box **row_span_cell;
-        struct column *col = alloca(columns * sizeof(struct column));
+        struct column *col;
 	struct css_style *style = table->style;
 
 	assert(table->type == BOX_TABLE);
 	assert(style);
 	assert(table->children && table->children->children);
 	assert(columns);
+
+	col = malloc(columns * sizeof col[0]);
+	excess_y = malloc(columns * sizeof excess_y[0]);
+	row_span = malloc(columns * sizeof row_span[0]);
+	row_span_cell = malloc(columns * sizeof row_span_cell[0]);
+	xs = malloc((columns + 1) * sizeof xs[0]);
+	if (!col || !xs || !row_span || !excess_y || !row_span_cell) {
+		free(col);
+		free(excess_y);
+		free(row_span);
+		free(row_span_cell);
+		free(xs);
+		return false;
+	}
 
 	memcpy(col, table->col, sizeof(col[0]) * columns);
 
@@ -1261,10 +1327,6 @@ void layout_table(struct box *table, int available_width)
 		table_width = auto_width;
 	}
 
-	xs = xcalloc(columns + 1, sizeof(*xs));
-	row_span = xcalloc(columns, sizeof(row_span[0]));
-	excess_y = xcalloc(columns, sizeof(excess_y[0]));
-	row_span_cell = xcalloc(columns, sizeof(row_span_cell[0]));
 	xs[0] = x = 0;
 	for (i = 0; i != columns; i++) {
 		x += col[i].width;
@@ -1285,7 +1347,14 @@ void layout_table(struct box *table, int available_width)
 				c->float_children = 0;
 
 				c->height = AUTO;
-				layout_block_context(c);
+				if (!layout_block_context(c, box_pool)) {
+					free(col);
+					free(excess_y);
+					free(row_span);
+					free(row_span_cell);
+					free(xs);
+					return false;
+				}
 				if (c->style->height.height == CSS_HEIGHT_LENGTH) {
 					/* some sites use height="1" or similar to attempt
 					 * to make cells as small as possible, so treat
@@ -1342,13 +1411,16 @@ void layout_table(struct box *table, int available_width)
 		table_height += row_group_height;
 	}
 
-	xfree(row_span_cell);
-	xfree(excess_y);
-	xfree(row_span);
-	xfree(xs);
+	free(col);
+	free(excess_y);
+	free(row_span);
+	free(row_span_cell);
+	free(xs);
 
 	table->width = table_width;
 	table->height = table_height;
+
+	return true;
 }
 
 
@@ -1356,11 +1428,12 @@ void layout_table(struct box *table, int available_width)
  * Find min, max widths required by boxes.
  *
  * \param  box  top of tree of boxes
+ * \return  true on success, false on memory exhaustion
  *
  * The min_width and max_width fields of each box in the tree are computed.
  */
 
-void calculate_widths(struct box *box)
+bool calculate_widths(struct box *box)
 {
 	struct box *child;
 	int min = 0, max = 0, extra_fixed = 0;
@@ -1374,17 +1447,20 @@ void calculate_widths(struct box *box)
 
 	/* check if the widths have already been calculated */
 	if (box->max_width != UNKNOWN_MAX_WIDTH)
-		return;
+		return true;
 
 	for (child = box->children; child != 0; child = child->next) {
 		switch (child->type) {
 			case BOX_BLOCK:
 			case BOX_TABLE:
-				calculate_block_widths(child, &min, &max, 0);
+				if (!calculate_block_widths(child, &min, &max,
+						0))
+					return false;
 				break;
 
 			case BOX_INLINE_CONTAINER:
-				calculate_inline_container_widths(child);
+				if (!calculate_inline_container_widths(child))
+					return false;
 				if (min < child->min_width)
 					min = child->min_width;
 				if (max < child->max_width)
@@ -1422,6 +1498,8 @@ void calculate_widths(struct box *box)
 
 	box->min_width = (min + extra_fixed) / (1.0 - extra_frac);
 	box->max_width = (max + extra_fixed) / (1.0 - extra_frac);
+
+	return true;
 }
 
 
@@ -1433,17 +1511,21 @@ void calculate_widths(struct box *box)
  * \param  min      current min, updated to new min
  * \param  max      current max, updated to new max
  * \param  max_sum  sum of maximum widths, updated, or 0 if not required
+ * \return  true on success, false on memory exhaustion
  */
 
-void calculate_block_widths(struct box *box, int *min, int *max,
+bool calculate_block_widths(struct box *box, int *min, int *max,
 		int *max_sum)
 {
 	int width;
 
-	if (box->type == BOX_TABLE)
-		calculate_table_widths(box);
-	else
-		calculate_widths(box);
+	if (box->type == BOX_TABLE) {
+		if (!calculate_table_widths(box))
+			return false;
+	} else {
+		if (!calculate_widths(box))
+			return false;
+	}
 
 	if (box->style->width.width == CSS_WIDTH_LENGTH) {
 		width = len(&box->style->width.value.length, box->style);
@@ -1466,6 +1548,8 @@ void calculate_block_widths(struct box *box, int *min, int *max,
 		if (*max < box->max_width) *max = box->max_width;
 		if (max_sum) *max_sum += box->max_width;
 	}
+
+	return true;
 }
 
 
@@ -1473,7 +1557,7 @@ void calculate_block_widths(struct box *box, int *min, int *max,
  * Find min, max width for an inline container.
  */
 
-void calculate_inline_container_widths(struct box *box)
+bool calculate_inline_container_widths(struct box *box)
 {
 	struct box *child;
 	int min = 0, max = 0, line_max = 0;
@@ -1481,7 +1565,7 @@ void calculate_inline_container_widths(struct box *box)
 	for (child = box->children; child != 0; child = child->next) {
 		switch (child->type) {
 			case BOX_INLINE:
-				if (child->object || child->gadget)
+				if (child->object)
 					calculate_inline_replaced_widths(child,
 							&min, &max, &line_max);
 				else if (child->text)
@@ -1490,14 +1574,16 @@ void calculate_inline_container_widths(struct box *box)
 				break;
 
 			case BOX_INLINE_BLOCK:
-				calculate_block_widths(child, &min, &max,
-						&line_max);
+				if (!calculate_block_widths(child, &min, &max,
+						&line_max))
+					return false;
 				break;
 
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
-				calculate_block_widths(child->children,
-						&min, &max, 0);
+				if (!calculate_block_widths(child->children,
+						&min, &max, 0))
+					return false;
 				break;
 
 			case BOX_BR:
@@ -1522,6 +1608,8 @@ void calculate_inline_container_widths(struct box *box)
 	assert(min <= max);
 	box->min_width = min;
 	box->max_width = max;
+
+	return true;
 }
 
 
@@ -1583,18 +1671,20 @@ void calculate_inline_widths(struct box *box, int *min, int *line_max)
  * Find min, max widths for a table and determine column width types.
  *
  * \param  table  table box to calculate widths
+ * \return  true on success, false on memory exhaustion
  *
- * If table->max_width is not UNKNOWN_MAX_WIDTH, returns with no change to table.
+ * If table->max_width is not UNKNOWN_MAX_WIDTH, returns with no change to
+ * table.
  *
  * If table->col is 0, it is created and filled in completely.
  *
- * If table->col exists, the type and width fields are left unchanged, and the min
- * and max fields are updated.
+ * If table->col exists, the type and width fields are left unchanged, and the
+ * min and max fields are updated.
  *
  * table->min_width and table->max_width are set.
  */
 
-void calculate_table_widths(struct box *table)
+bool calculate_table_widths(struct box *table)
 {
 	unsigned int i, j;
 	struct box *row_group, *row, *cell;
@@ -1605,11 +1695,12 @@ void calculate_table_widths(struct box *table)
 
 	/* check if the widths have already been calculated */
 	if (table->max_width != UNKNOWN_MAX_WIDTH)
-		return;
+		return true;
 
 	if (!table->col) {
 		col = table->col = malloc(table->columns * sizeof *col);
-		assert(col);
+		if (!col)
+			return false;
 		for (i = 0; i != table->columns; i++)
 			col[i].type = COLUMN_WIDTH_UNKNOWN;
 	}
@@ -1632,7 +1723,8 @@ void calculate_table_widths(struct box *table)
 				if (cell->columns != 1)
 					continue;
 
-				calculate_widths(cell);
+				if (!calculate_widths(cell))
+					return false;
 				i = cell->start_column;
 
 				/* update column min, max widths
@@ -1682,7 +1774,8 @@ void calculate_table_widths(struct box *table)
 				if (cell->columns == 1)
 					continue;
 
-				calculate_widths(cell);
+				if (!calculate_widths(cell))
+					return false;
 				i = cell->start_column;
 				cell_min = cell->min_width;
 
@@ -1750,4 +1843,6 @@ void calculate_table_widths(struct box *table)
 	table->max_width = max_width;
 
 	LOG(("min_width %i, max_width %i", min_width, max_width));
+
+	return true;
 }

@@ -135,10 +135,10 @@ struct form_successful_control *form_successful_controls(struct form *form,
 			for (option = control->data.select.items; option;
 					option = option->next) {
 				if (option->selected) {
-					success_new = xcalloc(1, sizeof(*success_new));
+					success_new = calloc(1, sizeof(*success_new));
 					success_new->file = false;
-					success_new->name = xstrdup(control->name);
-					success_new->value = xstrdup(option->value);
+					success_new->name = strdup(control->name);
+					success_new->value = strdup(option->value);
 					success_new->next = 0;
 					last_success->next = success_new;
 					last_success = success_new;
@@ -149,9 +149,9 @@ struct form_successful_control *form_successful_controls(struct form *form,
 
 		/* textarea */
 		if (control->type == GADGET_TEXTAREA) {
-			success_new = xcalloc(1, sizeof(*success_new));
+			success_new = calloc(1, sizeof(*success_new));
 			success_new->file = false;
-			success_new->name = xstrdup(control->name);
+			success_new->name = strdup(control->name);
 			success_new->value = form_textarea_value(control);
 			success_new->next = 0;
 			last_success->next = success_new;
@@ -163,21 +163,21 @@ struct form_successful_control *form_successful_controls(struct form *form,
 		if (control->type == GADGET_IMAGE) {
 			unsigned int len = strlen(control->name) + 3;
 			/* x */
-			success_new = xcalloc(1, sizeof(*success_new));
+			success_new = calloc(1, sizeof(*success_new));
 			success_new->file = false;
-			success_new->name = xcalloc(1, len);
+			success_new->name = calloc(1, len);
 			sprintf(success_new->name, "%s.x", control->name);
-			success_new->value = xcalloc(1, 20);
+			success_new->value = calloc(1, 20);
 			sprintf(success_new->value, "%i", control->data.image.mx);
 			success_new->next = 0;
 			last_success->next = success_new;
 			last_success = success_new;
 			/* y */
-			success_new = xcalloc(1, sizeof(*success_new));
+			success_new = calloc(1, sizeof(*success_new));
 			success_new->file = false;
-			success_new->name = xcalloc(1, len);
+			success_new->name = calloc(1, len);
 			sprintf(success_new->name, "%s.y", control->name);
-			success_new->value = xcalloc(1, 20);
+			success_new->value = calloc(1, 20);
 			sprintf(success_new->value, "%i", control->data.image.my);
 			success_new->next = 0;
 			last_success->next = success_new;
@@ -190,10 +190,10 @@ struct form_successful_control *form_successful_controls(struct form *form,
 
 		/* file */
 		if (control->type == GADGET_FILE && control->value) {
-		        success_new = xcalloc(1, sizeof(*success_new));
+		        success_new = calloc(1, sizeof(*success_new));
 		        success_new->file = true;
-		        success_new->name = xstrdup(control->name);
-		        success_new->value = xstrdup(control->value);
+		        success_new->name = strdup(control->name);
+		        success_new->value = strdup(control->value);
 		        success_new->next = 0;
 		        last_success->next = success_new;
 		        last_success = success_new;
@@ -202,10 +202,10 @@ struct form_successful_control *form_successful_controls(struct form *form,
 
 		/* all others added if they have a value */
 		if (control->value) {
-			success_new = xcalloc(1, sizeof(*success_new));
+			success_new = calloc(1, sizeof(*success_new));
 			success_new->file = false;
-			success_new->name = xstrdup(control->name);
-			success_new->value = xstrdup(control->value);
+			success_new->name = strdup(control->name);
+			success_new->value = strdup(control->value);
 			success_new->next = 0;
 			last_success->next = success_new;
 			last_success = success_new;
@@ -239,7 +239,7 @@ char *form_textarea_value(struct form_control *textarea)
 	}
 
 	/* construct value */
-	s = value = xcalloc(1, len);
+	s = value = calloc(1, len);
 	for (inline_container = textarea->box->children;
 			inline_container;
 			inline_container = inline_container->next) {
@@ -265,14 +265,14 @@ char *form_textarea_value(struct form_control *textarea)
 
 char *form_url_encode(struct form_successful_control *control)
 {
-	char *s = xcalloc(1, 0);
+	char *s = calloc(1, 0);
 	unsigned int len = 0, len1;
 
 	for (; control; control = control->next) {
 		char *name = curl_escape(control->name, 0);
 		char *value = curl_escape(control->value, 0);
 		len1 = len + strlen(name) + strlen(value) + 2;
-		s = xrealloc(s, len1 + 1);
+		s = realloc(s, len1 + 1);
 		sprintf(s + len, "%s=%s&", name, value);
 		len = len1;
                 curl_free(name);

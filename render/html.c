@@ -201,7 +201,8 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	sprintf(c->status_message, messages_get("Formatting"));
 	content_broadcast(c, CONTENT_MSG_STATUS, data);
 	LOG(("Layout document"));
-	layout_document(c->data.html.layout->children, width);
+	layout_document(c->data.html.layout->children, width,
+			c->data.html.box_pool);
 	/*box_dump(c->data.html.layout->children, 0);*/
 
 	c->width = c->data.html.layout->children->width;
@@ -284,7 +285,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 
 	c->data.html.stylesheet_content[0] = fetchcache(
 #ifdef riscos
-			"file:///%3CNetSurf$Dir%3E/Resources/CSS",
+			"file:/<NetSurf$Dir>/Resources/CSS",
 #else
 			"file:///home/james/Projects/netsurf/CSS",
 #endif
@@ -768,7 +769,8 @@ void html_revive(struct content *c, unsigned int width, unsigned int height)
 		}
 	}
 
-	layout_document(c->data.html.layout->children, width);
+	layout_document(c->data.html.layout->children, width,
+			c->data.html.box_pool);
 	c->width = c->data.html.layout->children->width;
 	c->height = c->data.html.layout->children->height;
 
@@ -783,7 +785,8 @@ void html_revive(struct content *c, unsigned int width, unsigned int height)
 
 void html_reformat(struct content *c, unsigned int width, unsigned int height)
 {
-	layout_document(c->data.html.layout->children, width);
+	layout_document(c->data.html.layout->children, width,
+			c->data.html.box_pool);
 	c->width = c->data.html.layout->children->width;
 	c->height = c->data.html.layout->children->height;
 }

@@ -6,8 +6,8 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
-#ifndef _NETSURF_RISCOS_FONT_H_
-#define _NETSURF_RISCOS_FONT_H_
+#ifndef _NETSURF_RENDER_FONT_H_
+#define _NETSURF_RENDER_FONT_H_
 
 #include "netsurf/css/css.h"
 
