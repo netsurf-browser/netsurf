@@ -309,7 +309,8 @@ char *url_join(const char *rel, const char *base)
 	}
 	path_len = i;
 	/* d) */
-	if (buf[path_len - 2] == '/' && buf[path_len - 1] == '.')
+	if (2 <= path_len && buf[path_len - 2] == '/' &&
+			buf[path_len - 1] == '.')
 		path_len--;
 	/* e) and f) */
 	while (1) {
