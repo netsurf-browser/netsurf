@@ -32,8 +32,10 @@ regex_t url_re, url_up_re, url_nice_re;
 void url_init(void)
 {
 	/* regex from RFC 2396 */
-	regcomp_wrapper(&url_re, "^(([a-zA-Z][-a-zA-Z0-9+.]*):)?(//([^/?#]*))?"
-			"([^?#]*)(\\?([^#]*))?(#(.*))?$", REG_EXTENDED);
+	regcomp_wrapper(&url_re, "^[[:space:]]*(([a-zA-Z][-a-zA-Z0-9+.]*):)?"
+			"(//([^/?#[:space:]]*))?([^?#[:space:]]*)"
+			"(\\?([^#[:space:]]*))?(#([^[:space:]]*))?"
+			"[[:space:]]*$", REG_EXTENDED);
 	regcomp_wrapper(&url_up_re,
 			"/(|[^/]|[.][^./]|[^./][.]|[^/][^/][^/]+)/[.][.](/|$)",
 			REG_EXTENDED);
