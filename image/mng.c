@@ -186,6 +186,8 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 	c = (struct content *)mng_get_userdata(mng);
 	assert(c != NULL);
 
+	LOG(("processing header (%p) %d, %d", c, width, height));
+
 	c->bitmap = bitmap_create(width, height);
 	if (!c->bitmap) {
 		msg_data.error = messages_get("NoMemory");
@@ -252,7 +254,13 @@ bool nsmng_convert(struct content *c, int width, int height) {
 
 	assert(c != NULL);
 
-	LOG(("Converting"));
+	LOG(("Converting %p '%s'", c, c->url));
+
+	/* by this point, the png should have been parsed
+	 * and the bitmap created, so ensure that's the case
+	 */
+	if (!c->bitmap)
+		return nsmng_broadcast_error(c);
 
 	/*	Set the title
 	*/
