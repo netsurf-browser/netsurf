@@ -34,17 +34,36 @@
 void thumbnail_create(struct content *content, osspriteop_area *area,
 		osspriteop_header *sprite, int width, int height)
 {
+	int size;
+	int context1, context2, context3;
 	float scale;
+	osspriteop_save_area *save_area;
 	os_error *error;
 
 	scale = (float) width / (float) content->width;
 
+	/* allocate save area */
+	error = xosspriteop_read_save_area_size(osspriteop_PTR, area,
+			(osspriteop_id) sprite, &size);
+	if (error) {
+		LOG(("xosspriteop_read_save_area_size failed: 0x%x: %s",
+				error->errnum, error->errmess));
+		return;
+	}
+	save_area = malloc((unsigned) size);
+	if (!save_area) {
+		LOG(("malloc failed"));
+		return;
+	}
+	save_area->a[0] = 0;
+
 	/* switch output to sprite */
 	error = xosspriteop_switch_output_to_sprite(osspriteop_PTR, area,
-			(osspriteop_id) sprite, 0, 0, 0, 0, 0);
+			(osspriteop_id) sprite, save_area,
+			0, &context1, &context2, &context3);
 	if (error) {
-		LOG(("xosspriteop_switch_output_to_sprite failed: %s",
-				error->errmess));
+		LOG(("xosspriteop_switch_output_to_sprite failed: 0x%x: %s",
+				error->errnum, error->errmess));
 		return;
 	}
 
@@ -58,11 +77,15 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 			0, 0, width * 2, height * 2, scale);
 
 	/* switch output back to screen */
-	error = xosspriteop_switch_output_to_sprite(osspriteop_PTR, area,
-			0, 0, 0, 0, 0, 0);
+	error = xosspriteop_switch_output_to_sprite(osspriteop_PTR,
+			(osspriteop_area *) context1,
+			(osspriteop_id) context2,
+			(osspriteop_save_area *) context3,
+			0, 0, 0, 0);
 	if (error) {
 		LOG(("xosspriteop_switch_output_to_sprite failed: %s",
 				error->errmess));
-		return;
 	}
+
+	free(save_area);
 }
