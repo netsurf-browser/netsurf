@@ -17,11 +17,7 @@ Set NetSurf$Publisher "The NetSurf Developers"
 Set NetSurf$Description "Web browser"
 
 | NetSurf Sprites
-Set NetSurf$Sprites <NetSurf$Dir>.!Sprites
-RMEnsure UtilityModule 5.00 Set NetSurf$Sprites <NetSurf$Dir>.!SpritesA
-RMEnsure UtilityModule 4.37 Set NetSurf$Sprites <NetSurf$Dir>.!Sprites
-IconSprites <NetSurf$Sprites>
-Unset NetSurf$Sprites
+If "<Boot$OSVersion>" < "436" Then IconSprites <Obey$Dir>.!Sprites Else If "<Boot$OSVersion>" < "500" Then IconSprites <Obey$Dir>.ASprites Else IconSprites <Obey$Dir>.5Sprites
 
 | Acorn URI protocol
 If "<Alias$Open_URI_http>" = "" Then Set Alias$Open_URI_http <NetSurf$Dir>.URILaunch
