@@ -20,6 +20,7 @@
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/save_text.h"
+#include "netsurf/image/bitmap.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/save_draw.h"
