@@ -263,9 +263,7 @@ bool nsmng_convert(struct content *c, int width, int height) {
 
 	/*	Optimise the plotting of JNG/PNGs
 	*/
-	if ((c->type == CONTENT_PNG) || (c->type == CONTENT_JNG)) {
-	  	bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
-	}
+	c->data.mng.opaque_test_pending = (c->type == CONTENT_PNG) || (c->type == CONTENT_JNG);
 	return true;
 }
 
@@ -382,6 +380,9 @@ bool nsmng_redraw(struct content *c, int x, int y,
 		float scale, unsigned long background_colour)
 {
 	bool ret;
+	
+	if ((c->bitmap) && (c->data.mng.opaque_test_pending))
+		bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
 
 	ret = plot.bitmap(x, y, width, height,
 			c->bitmap, background_colour);

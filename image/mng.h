@@ -17,6 +17,7 @@
 struct content;
 
 struct content_mng_data {
+  	bool opaque_test_pending;
 	bool read_start;
 	bool read_resume;
 	int read_size;

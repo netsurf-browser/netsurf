@@ -870,6 +870,9 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 	assert(node); 
 
 	while (node) {
+		if (tree->temp_selection == node)
+			tree->temp_selection = NULL;
+
 		next = node->next;
 		if (node->child)
 			tree_delete_node(tree, node->child, true);
