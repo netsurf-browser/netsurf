@@ -74,7 +74,7 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 						char *status_buffer, char *throbber_buffer) {
 	struct toolbar *toolbar;
 	wimp_i icon_handle;
-	
+
 	/*	Create a new toolbar
 	*/
 	toolbar = calloc(1, sizeof(struct toolbar));
@@ -110,7 +110,7 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 	if (sprite_area) {
 		empty_window.sprite_area = sprite_area;
 	} else {
-		empty_window.sprite_area = 1;  
+		empty_window.sprite_area = 1;
 	}
 
 	/*	Create the basic windows
@@ -120,7 +120,7 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 		ro_toolbar_destroy(toolbar);
 		return NULL;
 	}
-	
+
 	empty_window.ymin = 1;
 	if (xwimp_create_window(&empty_window, &toolbar->toolbar_handle)) {
 		ro_toolbar_destroy(toolbar);
@@ -143,7 +143,7 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 		ro_toolbar_destroy(toolbar);
 		return NULL;
 	}
-	
+
 	/*	And finally the status resize icon
 	*/
 	empty_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED |
@@ -162,7 +162,7 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 	/*	Create the icons
 	*/
 	toolbar = ro_toolbar_create_icons(toolbar, sprite_area, url_buffer, throbber_buffer);
-	
+
 	/*	Return the toolbar
 	*/
 	return toolbar;
@@ -197,7 +197,7 @@ static struct toolbar *ro_toolbar_create_icons(struct toolbar *toolbar, ossprite
 	/*	Create all the required icons
 	*/
 	for (index = 0; index < ICON_TOOLBAR_URL; index++) {
-	
+
 		/*	Find an icon with the correct index and get the validation
 		*/
 		empty_icon.icon.data.indirected_text.validation = 0;
@@ -210,7 +210,7 @@ static struct toolbar *ro_toolbar_create_icons(struct toolbar *toolbar, ossprite
 				cur_icon = cur_icon->next_icon;
 			}
 		}
-		
+
 		/*	Create the icon and destroy the toolbar on failure
 		*/
 		if (xwimp_create_icon(&empty_icon, &icon_handle)) {
@@ -248,7 +248,7 @@ static struct toolbar *ro_toolbar_create_icons(struct toolbar *toolbar, ossprite
 		ro_toolbar_destroy(toolbar);
 		return NULL;
 	}
-	
+
 	/*	And finally the status resize icon
 	*/
 	empty_icon.w = toolbar->status_handle;
@@ -263,11 +263,11 @@ static struct toolbar *ro_toolbar_create_icons(struct toolbar *toolbar, ossprite
 		ro_toolbar_destroy(toolbar);
 		return NULL;
 	}
-	
+
 	/*	Success - return what we had
 	*/
 	return toolbar;
-	
+
 }
 
 
@@ -279,7 +279,7 @@ static struct toolbar *ro_toolbar_create_icons(struct toolbar *toolbar, ossprite
 void ro_toolbar_destroy(struct toolbar *toolbar) {
 	struct toolbar_icon *cur_icon;
 	struct toolbar_icon *next_icon;
-	
+
 	/*	Paranoia
 	*/
 	if (toolbar == NULL) return;
@@ -299,7 +299,7 @@ void ro_toolbar_destroy(struct toolbar *toolbar) {
 
 	/*	Destroy ourself
 	*/
-	free(toolbar);	
+	free(toolbar);
 }
 
 
@@ -334,7 +334,7 @@ static struct toolbar_icon *ro_toolbar_create_icon(osspriteop_area *sprite_area,
 			}
 		}
 	}
-	
+
 	/*	No icon found
 	*/
 	return NULL;
@@ -345,12 +345,12 @@ ro_toolbar_create_icon_found:
 	xosspriteop_read_sprite_info(osspriteop_USER_AREA,
 			sprite_area, (osspriteop_id)name,
 			&dimensions.x, &dimensions.y, &mask, &mode);
-	
+
 	/*	Create an icon
 	*/
 	current_icon = (struct toolbar_icon *)calloc(1, sizeof(struct toolbar_icon));
 	if (!current_icon) return NULL;
-	
+
 	/*	Get the validation buffer for 'R5;S<name>,p<name>\0'. We always assume
 		there is a pushed variant as RISC OS happily ignores it if it doesn't
 		exist.
@@ -388,13 +388,13 @@ static struct toolbar_icon *ro_toolbar_create_separator(void) {
 	*/
 	current_icon = (struct toolbar_icon *)calloc(1, sizeof(struct toolbar_icon));
 	if (!current_icon) return NULL;
-	
+
 	/*	Set it as a 8 OS unit separator
 	*/
 	current_icon->icon_number = -1;
 	current_icon->available = true;
 	current_icon->width = 16;
-	
+
 	/*	Return our structure
 	*/
 	return current_icon;
@@ -405,7 +405,7 @@ static struct toolbar_icon *ro_toolbar_create_separator(void) {
  * Removes all associated memory with a toolbar icon
  *
  * \param  icon	    the icon to destroy
- */ 
+ */
 static void ro_toolbar_destroy_icon(struct toolbar_icon *icon) {
   	if (!icon->icon_number >= 0) free(icon->validation);
 	free(icon);
@@ -417,7 +417,7 @@ static void ro_toolbar_destroy_icon(struct toolbar_icon *icon) {
  *
  * \param  toolbar  the toolbar to add to
  * \param  icon	    the icon to add
- */ 
+ */
 static void ro_toolbar_add_icon(struct toolbar *toolbar, struct toolbar_icon *icon) {
 	struct toolbar_icon *cur_icon;
 
@@ -436,10 +436,10 @@ static void ro_toolbar_add_icon(struct toolbar *toolbar, struct toolbar_icon *ic
 			being present
 		*/
 		if (icon->icon_number < 0) return;
-		toolbar->icon = icon; 
+		toolbar->icon = icon;
 	} else {
 		while (cur_icon->next_icon) cur_icon = cur_icon->next_icon;
-		
+
 		/*	Two separators should not follow each other.
 		*/
 		if ((cur_icon->icon_number < 0) && (icon->icon_number < 0)) return;
@@ -460,6 +460,8 @@ static void ro_toolbar_add_icon(struct toolbar *toolbar, struct toolbar_icon *ic
  */
 void ro_toolbar_resize_status(struct toolbar *toolbar, int height) {
 	os_box extent = { 0, 0, 0, 0 };
+	wimp_WINDOW_INFO(3) status_definition;	// Barfs if 2 is used!?!?!
+	wimp_window *status_window;
 
 	/*	Paranoia
 	*/
@@ -467,15 +469,36 @@ void ro_toolbar_resize_status(struct toolbar *toolbar, int height) {
 
 	/*	Check if we need to update
 	*/
-	if (toolbar->status_height != height) {
-		toolbar->status_height = height;
-		xwimp_resize_icon(toolbar->status_handle, ICON_STATUS_TEXT,
-				0, 0, 16384, height - 2);
-		xwimp_force_redraw(toolbar->status_handle, 0, 0, 16384, height);
-		extent.x1 = 16384;
-		extent.y1 = height - 2;
-		xwimp_set_extent(toolbar->status_handle, &extent);
-	}
+	if (toolbar->status_height == height) return;
+	toolbar->status_height = height;
+
+	/*	Get the window info
+	*/
+	status_definition.w = toolbar->status_handle;
+	if (xwimp_get_window_info((wimp_window_info *)&status_definition)) {
+		return;
+        }
+
+	/*	Modify the window
+	*/
+	status_window = (wimp_window *)((char *)(&status_definition) + 4);
+	status_window->ymin = height - 2;
+	status_window->visible.y1 = height - 2;
+	status_window->extent.y1 = height - 2;
+
+	/*	Recreate the window
+	*/
+	xwimp_delete_window(toolbar->status_handle);
+	xwimp_create_window(status_window, &toolbar->status_handle);
+
+	/*	Resize the text icon (resize icon is handled automatically
+	*/
+	xwimp_resize_icon(toolbar->status_handle, ICON_STATUS_TEXT,
+			0, 0, 16384, height - 2);
+	xwimp_force_redraw(toolbar->status_handle, 0, 0, 16384, height);
+	extent.x1 = 16384;
+	extent.y1 = height - 2;
+	xwimp_set_extent(toolbar->status_handle, &extent);
 }
 
 
@@ -504,7 +527,7 @@ int ro_toolbar_reformat(struct toolbar *toolbar, int width) {
 	if (toolbar->standard_buttons) min_width += toolbar->icon_width;
 	if (toolbar->url_bar) min_width += 64;
 	if (width < min_width) width = min_width;
-	
+
 	/*	Check if we need to update the icons
 	*/
 	if (toolbar->update_pending) {
@@ -528,7 +551,7 @@ int ro_toolbar_reformat(struct toolbar *toolbar, int width) {
 					(toolbar->height + toolbar->throbber_height) / 2);
 			right_margin += toolbar->throbber_width + 8;
 		}
-	
+
 		/*	Resize the URL bar
 		*/
 		if (toolbar->url_bar) {
@@ -537,7 +560,7 @@ int ro_toolbar_reformat(struct toolbar *toolbar, int width) {
 					(toolbar->height - 52) / 2,
 					width - right_margin,
 					(toolbar->height + 52) / 2);
-			
+
 			/*	Handle the caret moving
 			*/
 			if (!xwimp_get_caret_position(&caret)) {
@@ -547,12 +570,12 @@ int ro_toolbar_reformat(struct toolbar *toolbar, int width) {
 				}
 			}
 		}
-	
+
 		/*	Force a redraw
 		*/
 		xwimp_force_redraw(toolbar->toolbar_handle, toolbar->icon_width, 0, width, toolbar->height);
 	}
-	
+
 	/*	Move the status resize icon
 	*/
 	if (toolbar->status_window) {
@@ -572,7 +595,7 @@ int ro_toolbar_reformat(struct toolbar *toolbar, int width) {
 					old_width - 12, 0, old_width, toolbar->status_height - 2);
 		}
 	}
-	
+
 	/*	No change in height
 	*/
 	return 0;
@@ -594,11 +617,11 @@ int ro_toolbar_update(struct toolbar *toolbar) {
 	unsigned int toolbar_height = 0;
 	unsigned int icon_left = 4;
 	int return_status;
-	
+
 	/*	Paranoia
 	*/
 	if (toolbar == NULL) return 0;
-	
+
 	/*	Calculate the toolbar height (4 os unit border)
 	*/
 	if (toolbar->url_bar) toolbar_height = 52;
@@ -614,20 +637,20 @@ int ro_toolbar_update(struct toolbar *toolbar) {
 			if ((cur_icon->available) && (toolbar_height < (cur_icon->height + 4))) {
 				toolbar_height = cur_icon->height + 4;
 			}
-			cur_icon = cur_icon->next_icon;	
+			cur_icon = cur_icon->next_icon;
 		}
 	}
-	
+
 	/*	Set our return status
 	*/
 	if (toolbar_height != 0) toolbar_height += 8;
 	return_status = (toolbar_height == toolbar->height);
 	toolbar->height = toolbar_height;
-	
+
 	/*	Move our icons. Icons that are not avaiable are moved off the visible area.
 	*/
 	cur_icon = toolbar->icon;
-	while (cur_icon) {	  	
+	while (cur_icon) {
 		if ((cur_icon->available) && (toolbar->standard_buttons)) {
 			if (cur_icon->icon_number >= 0) {
 				xwimp_resize_icon(toolbar->toolbar_handle, cur_icon->icon_number,
@@ -647,9 +670,9 @@ int ro_toolbar_update(struct toolbar *toolbar) {
 						1024 + toolbar_height + cur_icon->height);
 			}
 		}
-		cur_icon = cur_icon->next_icon;	
+		cur_icon = cur_icon->next_icon;
 	}
-		
+
 	/*	Make a 8 OS unit spacer between icons and URL bar
 	*/
 	if (icon_left != 4) icon_left += 8;
@@ -662,7 +685,7 @@ int ro_toolbar_update(struct toolbar *toolbar) {
 		*/
 		if (!xwimp_get_caret_position(&caret)) {
 			if ((caret.w == toolbar->toolbar_handle) && (caret.i == ICON_TOOLBAR_URL)) {
-				xwimp_set_caret_position(-1, 0, 0, 0, 0, 0);
+				xwimp_set_caret_position((wimp_w)-1, 0, 0, 0, 0, 0);
 			}
 		}
 		xwimp_resize_icon(toolbar->toolbar_handle, ICON_TOOLBAR_URL,
@@ -684,7 +707,7 @@ int ro_toolbar_update(struct toolbar *toolbar) {
 				toolbar->throbber_width,
 				1024 + toolbar_height + toolbar->throbber_height);
 	}
-	
+
 	/*	Redraw the entire window
 	*/
 	ro_toolbar_reformat(toolbar, toolbar->width);
