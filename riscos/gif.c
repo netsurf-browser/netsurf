@@ -103,8 +103,9 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
   osspriteop_area *sprite_area;
   osspriteop_header *sprite;
   // The next three lines are for vars. used by the gif decoding engine
-  int recordtype, extcode, count, got_image_data;
-  int trancol;
+  GifRecordType recordtype;
+  int extcode, count, got_image_data;
+  int trancol = -1;
   GifByteType *extension;
   GifColorType *colormap;
 
@@ -236,7 +237,7 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
     }
   } while (recordtype != TERMINATE_RECORD_TYPE);
 
-  LOG(("creating image transparency mask"));
+  LOG(("creating image transparency mask, trancol %i", trancol));
 
   // This is one evil piece of code. Still, it works...
   for (j=0; j<height; j++)
