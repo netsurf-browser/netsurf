@@ -18,6 +18,7 @@
 #include <string.h>
 #include <time.h>
 #include "netsurf/utils/config.h"
+#include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/css/css.h"
 #ifdef WITH_AUTH
@@ -165,14 +166,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	if (strncmp(url2, "about:", 6) == 0) {
 		c = about_create(url2, browser_window_callback, bw, 0,
 				gui_window_get_width(bw->window), 0);
-	}
-	/* check that we can handle the URL - just http/https/file for now */
-	else if (strncmp(url2, "http:", 5) != 0 && strncmp(url2, "https:", 6) != 0 && 
-		strncmp(url2, "file:", 5) != 0) {
-		gui_launch_url(url2);
-		browser_window_set_status(bw, messages_get("LaunchURL"));
-		free(url2);
-		return;
 	}
 	else {
 		c = fetchcache(url2, 0,
@@ -1375,9 +1368,21 @@ void browser_window_follow_link(struct browser_window *bw,
 				continue;
 
 			if (click_type == 1) {
-				browser_window_go(bw, url);
+			        if (fetch_can_fetch(url)) {
+			        	browser_window_go(bw, url);
+			        }
+			        else {
+			                gui_launch_url(url);
+			                done = 1;
+			        }
 			} else if (click_type == 2) {
-				browser_window_create(url);
+			        if (fetch_can_fetch(url)) {
+			        	browser_window_create(url);
+			        }
+			        else {
+			                gui_launch_url(url);
+			                done = 1;
+			        }
 			} else if (click_type == 0) {
 				browser_window_set_status(bw, url);
 				browser_window_set_pointer(GUI_POINTER_POINT);
@@ -1404,9 +1409,21 @@ void browser_window_follow_link(struct browser_window *bw,
 		                continue;
 
 		        if (click_type == 1) {
-				browser_window_go(bw, url);
+			        if (fetch_can_fetch(url)) {
+			        	browser_window_go(bw, url);
+			        }
+			        else {
+			                gui_launch_url(url);
+			                done = 1;
+			        }
 			} else if (click_type == 2) {
-				browser_window_create(url);
+			        if (fetch_can_fetch(url)) {
+			        	browser_window_create(url);
+			        }
+			        else {
+			                gui_launch_url(url);
+			                done = 1;
+			        }
 			} else if (click_type == 0) {
 				browser_window_set_status(bw, url);
 				browser_window_set_pointer(GUI_POINTER_POINT);

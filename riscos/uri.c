@@ -74,13 +74,13 @@ bool ro_uri_launch(char *uri) {
 	wimp_t handle_task;
 	uri_dispatch_flags returned;
 	os_error *e;
-	
+
 	e = xuri_dispatch(0, uri, task_handle, &returned, &handle_task, &uri_handle);
-	
+
 	if (e || returned & 1) {
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -88,15 +88,15 @@ void ro_uri_bounce(uri_full_message_return_result *message) {
 
 	char uri_buf[512];
 	os_error *e;
-	
+
 	if ((message->flags & 1) == 0) return;
-	
+
 	e = xuri_request_uri(0, uri_buf, sizeof uri_buf, message->handle, 0);
-	
+
 	if (e) return;
-	
+
 	ro_url_load(uri_buf);
-	
+
 	return;
 }
 #endif
