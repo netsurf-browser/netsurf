@@ -15,6 +15,7 @@
 #include <time.h>
 #include <swis.h>
 #include "libxml/HTMLparser.h"
+#include "libxml/HTMLtree.h"
 #include "oslib/colourtrans.h"
 #include "oslib/dragasprite.h"
 #include "oslib/osfile.h"
@@ -68,7 +69,7 @@ struct hotlist_entry {
 	*/
 	int children;
 
-	/**	The title of the hotlist entry/folder
+	/**	The title of the hotlist entry/folder, UTF-8.
 	*/
 	char *title;
 
@@ -202,16 +203,21 @@ bool dialog_folder_add = false;
 bool dialog_entry_add = false;
 bool hotlist_insert = false;
 
-/*	Hotlist loading buffers
-*/
-static char *load_title = NULL;
-static char *load_url = NULL;
-
 
 static bool ro_gui_hotlist_initialise_sprite(const char *name, int number);
 static bool ro_gui_hotlist_load(void);
-static void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry, bool allow_add);
-static bool ro_gui_hotlist_save_entry(FILE *fp, struct hotlist_entry *entry);
+static void ro_gui_hotlist_load_file(const char *filename);
+static void ro_gui_hotlist_load_directory(xmlNode *ul,
+		struct hotlist_entry *directory);
+static void ro_gui_hotlist_load_entry(xmlNode *li,
+		struct hotlist_entry *directory);
+xmlNode *ro_gui_hotlist_find_element(xmlNode *node, const char *name);
+bool ro_gui_hotlist_save_directory(struct hotlist_entry *directory,
+		xmlNode *node);
+bool ro_gui_hotlist_save_entry(struct hotlist_entry *entry,
+		xmlNode *node);
+bool ro_gui_hotlist_save_entry_comment(xmlNode *node,
+		const char *name, int value);
 static void ro_gui_hotlist_link_entry(struct hotlist_entry *link, struct hotlist_entry *entry, bool before);
 static void ro_gui_hotlist_delink_entry(struct hotlist_entry *entry);
 static void ro_gui_hotlist_delete_entry(struct hotlist_entry *entry, bool siblings);
@@ -405,11 +411,9 @@ void ro_gui_hotlist_show(void) {
 
 
 bool ro_gui_hotlist_load(void) {
-  	htmlDocPtr doc;
-  	const char *encoding;
 	fileswitch_object_type obj_type = 0;
 	struct hotlist_entry *netsurf;
-	struct hotlist_entry *entry = &root;
+	struct hotlist_entry *entry;
 
 	/*	Check if we have an initial hotlist. OS_File does funny things relating to errors,
 		so we use the object type to determine success
@@ -417,37 +421,30 @@ bool ro_gui_hotlist_load(void) {
 	xosfile_read_stamped_no_path("Choices:WWW.NetSurf.Hotlist", &obj_type,
 			(bits)0, (bits)0, (int *)0, (fileswitch_attr)0, (bits)0);
 	if (obj_type == fileswitch_IS_FILE) {
-		/*	Read our file
-		*/
-		encoding = xmlGetCharEncodingName(XML_CHAR_ENCODING_8859_1);
-		doc = htmlParseFile("Choices:WWW.NetSurf.Hotlist", encoding);
-		if ((!doc) || (!(doc->children))) {
-			xmlFreeDoc(doc);
-			warn_user("HotlistLoadError", 0);
-			return false;
-		}
-
-		/*	Perform our recursive load
-		*/
-		ro_gui_hotlist_load_entry(doc->children, &root, true);
-
-		/*	Exit cleanly
-		*/
-		xmlFreeDoc(doc);
+		ro_gui_hotlist_load_file("Choices:WWW.NetSurf.Hotlist");
 		return true;
+
 	} else {
 		/*	Create a folder
 		*/
 		netsurf = ro_gui_hotlist_create_entry("NetSurf", NULL, 0, &root);
+		if (!netsurf)
+			return false;
 
 		/*	Add some content
 		*/
-		entry = ro_gui_hotlist_create_entry("NetSurf homepage", "http://netsurf.sourceforge.net/",
+		entry = ro_gui_hotlist_create_entry("NetSurf homepage",
+				"http://netsurf.sourceforge.net/",
 				0xfaf, netsurf);
-		entry->add_date = (time_t)-1;
-		entry = ro_gui_hotlist_create_entry("NetSurf test builds", "http://netsurf.strcprstskrzkrk.co.uk/",
+		if (!entry)
+			return false;
+		entry->add_date = (time_t) -1;
+		entry = ro_gui_hotlist_create_entry("NetSurf test builds",
+				"http://netsurf.strcprstskrzkrk.co.uk/",
 				0xfaf, netsurf);
-		entry->add_date = (time_t)-1;
+		if (!entry)
+			return false;
+		entry->add_date = (time_t) -1;
 
 		/*	We succeeded
 		*/
@@ -456,103 +453,182 @@ bool ro_gui_hotlist_load(void) {
 }
 
 
-void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry, bool allow_add) {
-  	struct hotlist_entry *last_entry = entry;
-  	char *xml_comment = NULL;
-  	char *comment = comment;
+/**
+ * Load the hotlist from file.
+ *
+ * \param  filename  name of file to read
+ */
+
+void ro_gui_hotlist_load_file(const char *filename)
+{
+	xmlDoc *doc;
+	xmlNode *html, *body, *ul;
+
+	doc = htmlParseFile(filename, "iso-8859-1");
+	if (!doc) {
+		warn_user("HotlistLoadError", messages_get("ParsingFail"));
+		return;
+	}
+
+	html = ro_gui_hotlist_find_element((xmlNode *) doc, "html");
+	body = ro_gui_hotlist_find_element(html, "body");
+	ul = ro_gui_hotlist_find_element(body, "ul");
+	if (!ul) {
+		xmlFreeDoc(doc);
+		warn_user("HotlistLoadError",
+				"(<html>...<body>...<ul> not found.)");
+		return;
+	}
+
+	ro_gui_hotlist_load_directory(ul, &root);
+
+	xmlFreeDoc(doc);
+}
+
+
+/**
+ * Parse a directory represented as a ul.
+ *
+ * \param  ul         xmlNode for parsed ul
+ * \param  directory  directory to add this directory to
+ */
+
+void ro_gui_hotlist_load_directory(xmlNode *ul,
+		struct hotlist_entry *directory)
+{
+	char *title;
+	struct hotlist_entry *dir;
+	xmlNode *n;
+
+	for (n = ul->children; n; n = n->next) {
+		/* The ul may contain entries as a li, or directories as
+		 * an h4 followed by a ul. Non-element nodes may be present
+		 * (eg. text, comments), and are ignored. */
+
+		if (n->type != XML_ELEMENT_NODE)
+			continue;
+
+		if (strcmp(n->name, "li") == 0) {
+			/* entry */
+			ro_gui_hotlist_load_entry(n, directory);
+
+		} else if (strcmp(n->name, "h4") == 0) {
+			/* directory */
+			title = (char *) xmlNodeGetContent(n);
+			if (!title) {
+				warn_user("HotlistLoadError", "(Empty <h4> "
+						"or memory exhausted.)");
+				return;
+			}
+
+			for (n = n->next;
+					n && n->type != XML_ELEMENT_NODE;
+					n = n->next)
+				;
+			if (strcmp(n->name, "ul") != 0) {
+				/* next element isn't expected ul */
+				free(title);
+				warn_user("HotlistLoadError", "(Expected "
+						"<ul> not present.)");
+				return;
+			}
+
+			dir = ro_gui_hotlist_create_entry(title, NULL, 0,
+					directory);
+			if (!dir)
+				return;
+			ro_gui_hotlist_load_directory(n, dir);
+		}
+	}
+}
+
+
+/**
+ * Parse an entry represented as a li.
+ *
+ * \param  li         xmlNode for parsed li
+ * \param  directory  directory to add this entry to
+ */
+
+void ro_gui_hotlist_load_entry(xmlNode *li,
+		struct hotlist_entry *directory)
+{
+	char *url = 0;
+	char *title = 0;
   	int filetype = 0xfaf;
 	int add_date = -1;
 	int last_date = -1;
 	int visits = 0;
-	bool add_entry;
+	char *comment;
+	struct hotlist_entry *entry;
+	xmlNode *n;
 
-	while (true) {
-	  	/*	Add any items that have had all the data they can have
-	  	*/
-	  	if ((allow_add) && (load_title != NULL)) {
-	  		if ((cur == NULL) || ((cur->type == XML_ELEMENT_NODE) &&
-		  		((!(strcmp(cur->name, "li"))) || (!(strcmp(cur->name, "h4"))) ||
-		  		(!(strcmp(cur->name, "ul")))))) {
+	for (n = li->children; n; n = n->next) {
+		/* The li must contain an "a" element, and may contain
+		 * some additional data as comments. */
 
-				/*	Add the entry
-				*/
-				last_entry = ro_gui_hotlist_create_entry(load_title, load_url, filetype, entry);
-				last_entry->add_date = add_date;
-				if (last_entry->url) {
-					last_entry->last_date = last_date;
-					last_entry->visits = visits;
-					last_entry->filetype = filetype;
-				}
+		if (n->type == XML_ELEMENT_NODE &&
+				strcmp(n->name, "a") == 0) {
+			url = (char *) xmlGetProp(n, (const xmlChar *) "href");
+			title = (char *) xmlNodeGetContent(n);
 
-		  		/*	Reset our variables
-		  		*/
-		  		if (load_title) xmlFree(load_title);
-		  		load_title = NULL;
-		  		if (load_url) xmlFree(load_url);
-		  		load_url = NULL;
-		  		filetype = 0xfaf;
-				add_date = -1;
-				last_date = -1;
-				visits = 0;
-			}
+		} else if (n->type == XML_COMMENT_NODE) {
+			comment = (char *) xmlNodeGetContent(n);
+			if (!comment)
+				continue;
+			if (strncmp("Type:", comment, 5) == 0)
+			  	filetype = atoi(comment + 5);
+			else if (strncmp("Added:", comment, 6) == 0)
+		  		add_date = atoi(comment + 6);
+			else if (strncmp("LastVisit:", comment, 10) == 0)
+		  		last_date = atoi(comment + 10);
+			else if (strncmp("Visits:", comment, 7) == 0)
+		  		visits = atoi(comment + 7);
 		}
-
-		/*	Abort if we've ran out of content
-		*/
-		if (cur == NULL) return;
-
-	        /*	Gather further information and recurse
-	        */
-	  	if (cur->type == XML_ELEMENT_NODE) {
-	  	  	add_entry = allow_add;
-			if (!(strcmp(cur->name, "h4"))) {
-			  	add_entry = false;
-				if (!load_title) load_title = xmlNodeGetContent(cur);
-			} else if (!(strcmp(cur->name, "a"))) {
-			  	add_entry = false;
-			  	load_url = (char *)xmlGetProp(cur, (const xmlChar *)"href");
-			} else if (!(strcmp(cur->name, "li"))) {
-			  	add_entry = false;
-			}
-
-			if ((cur->children) && (strcmp(cur->name, "h4"))) {
-				ro_gui_hotlist_load_entry(cur->children, last_entry, add_entry);
-			}
-		} else {
-		  	/*	Check for comment data
-		  	*/
-		  	if (!(strcmp(cur->name, "comment"))) {
-		  		xml_comment = xmlNodeGetContent(cur);
-		  		comment = xml_comment;
-		  		while (comment[0] == ' ') comment++;
-				if (strncmp("Added:", comment, 6) == 0) {
-			  		add_date = atoi(comment + 6);
-				} else if (strncmp("LastVisit:", comment, 10) == 0) {
-			  		last_date = atoi(comment + 10);
-				} else if (strncmp("Visits:", comment, 7) == 0) {
-			  		visits = atoi(comment + 7);
-				} else if (strncmp("Type:", comment, 5) == 0) {
-				  	filetype = atoi(comment + 5);
-				}
-		  		xmlFree(xml_comment);
-		  	} else if (!(strcmp(cur->name, "text"))) {
-		  		if ((!(strcmp(cur->parent->name, "li"))) || (!(strcmp(cur->parent->name, "a")))) {
-		  			if (!load_title) load_title = xmlNodeGetContent(cur);
-		  			if ((load_title[0] == 13) || (load_title[0] == 10)) {
-		  				xmlFree(load_title);
-		  				load_title = NULL;
-		  			}
-		  		}
-		  	}
-		}
-		cur = cur->next;
 	}
+
+	if (!url || !title) {
+		warn_user("HotlistLoadError", "(Missing <a> in <li> or "
+				"memory exhausted.)");
+		return;
+	}
+
+	entry = ro_gui_hotlist_create_entry(title, url, filetype, directory);
+	if (!entry)
+		return;
+	entry->add_date = add_date;
+	entry->last_date = last_date;
+	entry->visits = visits;
+}
+
+
+/**
+ * Search the children of an xmlNode for an element.
+ *
+ * \param  node  xmlNode to search children of, or 0
+ * \param  name  name of element to find
+ * \return  first child of node which is an element and matches name, or
+ *          0 if not found or parameter node is 0
+ */
+
+xmlNode *ro_gui_hotlist_find_element(xmlNode *node, const char *name)
+{
+	xmlNode *n;
+	if (!node)
+		return 0;
+	for (n = node->children;
+			n && !(n->type == XML_ELEMENT_NODE &&
+			strcmp(n->name, name) == 0);
+			n = n->next)
+		;
+	return n;
 }
 
 
 /**
  * Perform a save to the default file
  */
+
 void ro_gui_hotlist_save(void) {
 	/*	Don't save if we didn't load
 	*/
@@ -572,71 +648,189 @@ void ro_gui_hotlist_save(void) {
 /**
  * Perform a save to a specified file
  *
- * /param file the file to save to
+ * /param  filename  the file to save to
  */
-void ro_gui_hotlist_save_as(const char *file) {
-	FILE *fp;
 
-	/*	Open our file
-	*/
-	fp = fopen(file, "w");
-	if (!fp) {
-		warn_user("HotlistSaveError", 0);
+void ro_gui_hotlist_save_as(const char *filename)
+{
+	int res;
+	xmlDoc *doc;
+	xmlNode *html, *head, *title, *body;
+
+	/* Unfortunately the Browse Hotlist format is invalid HTML,
+	 * so this is a lie. */
+	doc = htmlNewDoc("http://www.w3.org/TR/html4/strict.dtd",
+			"-//W3C//DTD HTML 4.01//EN");
+	if (!doc) {
+		warn_user("NoMemory", 0);
 		return;
 	}
 
-	/*	HTML header
-	*/
-	fprintf(fp, "<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\">\n");
-	fprintf(fp, "<title>Hotlist</title>\n</head>\n<body>\n");
+	html = xmlNewNode(NULL, "html");
+	if (!html) {
+		warn_user("NoMemory", 0);
+		xmlFreeDoc(doc);
+		return;
+	}
+	xmlDocSetRootElement(doc, html);
 
-	/*	Start our recursive save
-	*/
-	if (!ro_gui_hotlist_save_entry(fp, root.child_entry)) {
-		warn_user("HotlistSaveError", 0);
+	head = xmlNewChild(html, NULL, "head", NULL);
+	if (!head) {
+		warn_user("NoMemory", 0);
+		xmlFreeDoc(doc);
+		return;
 	}
 
-	/*	HTML footer
-	*/
-	fprintf(fp, "</body>\n</html>\n");
+	title  = xmlNewTextChild(head, NULL, "title", "NetSurf Hotlist");
+	if (!title) {
+		warn_user("NoMemory", 0);
+		xmlFreeDoc(doc);
+		return;
+	}
 
-	/*	Close our file
-	*/
-	fclose(fp);
+	body = xmlNewChild(html, NULL, "body", NULL);
+	if (!body) {
+		warn_user("NoMemory", 0);
+		xmlFreeDoc(doc);
+		return;
+	}
 
-	/*	Set the filetype to HTML
-	*/
-	xosfile_set_type(file, 0xfaf);
+	if (!ro_gui_hotlist_save_directory(&root, body)) {
+		warn_user("NoMemory", 0);
+		xmlFreeDoc(doc);
+		return;
+	}
+
+	doc->charset = XML_CHAR_ENCODING_UTF8;
+	res = htmlSaveFileEnc(filename, doc, "iso-8859-1");
+	if (res == -1) {
+		warn_user("HotlistSaveError", 0);
+		xmlFreeDoc(doc);
+		return;
+	}
+
+	xmlFreeDoc(doc);
+
+	xosfile_set_type(filename, 0xfaf);
 }
 
-bool ro_gui_hotlist_save_entry(FILE *fp, struct hotlist_entry *entry) {
-  	if (!entry) return true;
 
-	/*	We're starting a new child
-	*/
-	fprintf(fp, "<ul>\n");
+/**
+ * Add a directory to the HTML tree for saving.
+ *
+ * \param  directory  hotlist directory to add
+ * \param  node       node to add ul to
+ * \return  true on success, false on memory exhaustion
+ */
 
-	/*	Work through the entries
-	*/
-	while (entry) {
-	  	/*	Save this entry
-	  	*/
-	  	if (entry->children >= 0) {
-			fprintf(fp, "<h4>%s</h4>\n", entry->title);
-			if (entry->child_entry) ro_gui_hotlist_save_entry(fp, entry->child_entry);
+bool ro_gui_hotlist_save_directory(struct hotlist_entry *directory,
+		xmlNode *node)
+{
+	struct hotlist_entry *child;
+	xmlNode *ul, *h4;
+
+	ul = xmlNewChild(node, NULL, "ul", NULL);
+	if (!ul)
+		return false;
+
+	for (child = directory->child_entry; child; child = child->next_entry) {
+		if (child->url) {
+			/* entry */
+			if (!ro_gui_hotlist_save_entry(child, ul))
+				return false;
+
 		} else {
-			fprintf(fp, "<li><a href=\"%s\">%s</a>\n", entry->url, entry->title);
-			if (entry->filetype != 0xfaf) fprintf(fp, "<!-- Type:%i -->\n", entry->filetype);
-			if (entry->add_date != -1) fprintf(fp, "<!--Added:%i-->\n", (int)entry->add_date);
-			if (entry->last_date != -1) fprintf(fp, "<!--LastVisit:%i-->\n", (int)entry->last_date);
-			if (entry->visits != 0) fprintf(fp, "<!--Visits:%i-->\n", entry->visits);
+			/* directory */
+			/* invalid HTML */
+			h4 = xmlNewTextChild(ul, NULL, "h4", child->title);
+			if (!h4)
+				return false;
+
+			if (!ro_gui_hotlist_save_directory(child, ul))
+				return false;
 		}
-		entry = entry->next_entry;
 	}
 
-	/*	We're starting a new child
-	*/
-	fprintf(fp, "</ul>\n");
+	return true;
+}
+
+
+/**
+ * Add an entry to the HTML tree for saving.
+ *
+ * \param  entry  hotlist entry to add
+ * \param  node   node to add li to
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool ro_gui_hotlist_save_entry(struct hotlist_entry *entry,
+		xmlNode *node)
+{
+	xmlNode *li, *a;
+	xmlAttr *href;
+
+	li = xmlNewChild(node, NULL, "li", NULL);
+	if (!li)
+		return false;
+
+	a = xmlNewTextChild(li, NULL, "a", entry->title);
+	if (!a)
+		return false;
+
+	href = xmlNewProp(a, "href", entry->url);
+	if (!href)
+		return false;
+
+	if (entry->filetype != 0xfaf)
+		if (!ro_gui_hotlist_save_entry_comment(li,
+				"Type", entry->filetype))
+			return false;
+
+	if (entry->add_date != -1)
+		if (!ro_gui_hotlist_save_entry_comment(li,
+				"Added", entry->add_date))
+			return false;
+
+	if (entry->last_date != -1)
+		if (!ro_gui_hotlist_save_entry_comment(li,
+				"LastVisit", entry->last_date))
+			return false;
+
+	if (entry->visits != 0)
+		if (!ro_gui_hotlist_save_entry_comment(li,
+				"Visits", entry->visits))
+			return false;
+
+	return true;
+}
+
+
+/**
+ * Add a special comment node to the HTML tree for saving.
+ *
+ * \param  node   node to add comment to
+ * \param  name   name of special comment
+ * \param  value  value of special comment
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool ro_gui_hotlist_save_entry_comment(xmlNode *node,
+		const char *name, int value)
+{
+	char s[40];
+	xmlNode *comment;
+
+	snprintf(s, sizeof s, "%s:%i", name, value);
+	s[sizeof s - 1] = 0;
+
+	comment = xmlNewComment(s);
+	if (!comment)
+		return false;
+	if (!xmlAddChild(node, comment)) {
+		xmlFreeNode(comment);
+		return false;
+	}
+
 	return true;
 }
 
@@ -700,11 +894,13 @@ void ro_gui_hotlist_visited_update(struct content *content, struct hotlist_entry
 
 
 /**
- * Adds a hotlist entry to the root of the tree (internal).
+ * Adds a hotlist entry to a folder of the tree.
  *
- * \param title  the entry title
- * \param url	 the entry url (NULL to create a folder)
- * \param folder the folder to add the entry into
+ * \param  title     the entry title (copied)
+ * \param  url	     the entry url (NULL to create a folder) (copied)
+ * \param  filetype  filetype of entry
+ * \param  folder    the folder to add the entry into
+ * \return  the new entry, or NULL on error and error reported
  */
 struct hotlist_entry *ro_gui_hotlist_create_entry(const char *title,
 		const char *url, int filetype,
