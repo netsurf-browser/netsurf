@@ -42,6 +42,23 @@ struct plugin_list {
         struct plugin_list *prev;
 };
 
+struct plugin_param_item {
+
+        int type;
+        int rsize;
+        int nsize;
+        char *name;
+        int npad;
+        int vsize;
+        char *value;
+        int vpad;
+        int msize;
+        char *mime_type;
+        int mpad;
+
+        struct plugin_param_item *next;
+};
+
 /* function definitions */
 bool plugin_handleable(const char *mime_type);
 void plugin_msg_parse(wimp_message *message, int ack);

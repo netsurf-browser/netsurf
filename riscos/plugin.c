@@ -48,7 +48,8 @@
 
 /* parameters file creation */
 void plugin_write_parameters_file(struct object_params *params);
-void plugin_populate_pdata(int rsize, byte *pdata);
+int plugin_calculate_rsize(char* name, char* data, char* mime);
+struct plugin_param_item *plugin_add_item_to_pilist(struct plugin_param_item *pilist, int type, char* name, char* value, char* mime_type);
 
 /* stream handling */
 void plugin_create_stream(struct browser_window *bw,
@@ -132,8 +133,6 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
 {
         char sysvar[40];
         char *varval;
-        int size;
-        os_var_type var;
         os_error *e;
 //        wimp_message *m = xcalloc(256, sizeof(char));
         wimp_message m;
@@ -162,12 +161,7 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
 
         /* Get contents of Alias$@PlugInType_xxx system variable. */
         plugin_create_sysvar(c->mime_type, sysvar);
-        xos_read_var_val_size(sysvar, 0, 0, &size, NULL, &var);
-        if(var != 3)
-                size = ~(size);
-        varval = xcalloc((unsigned int)size, sizeof(char));
-        xos_read_var_val(sysvar, varval, size, 0, var, NULL, NULL, NULL);
-
+        varval = getenv(sysvar);
         LOG(("%s: %s", sysvar, varval));
 
   /* Broadcast Message_PlugIn_Open (&4D540) and listen for response
@@ -202,7 +196,6 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
 //          xfree(m);
           xfree(npm);
        	  xfree(npl);
-       	  xfree(varval);
           return;
         }
 
@@ -230,7 +223,6 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
                 flags = plugin_process_opening(params, temp);
                 plugin_remove_message_from_linked_list(temp->reply);
                 plugin_remove_message_from_linked_list(temp);
-                xfree(varval);
 //                xfree(m);
                 xfree(npm);
         	xfree(npl);
@@ -262,7 +254,6 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
                        plugin_remove_message_from_linked_list(temp->reply);
                        plugin_remove_message_from_linked_list(temp);
 //                       xfree(m);
-                       xfree(varval);
                        xfree(npm);
                        xfree(npl);
                } else {
@@ -271,7 +262,6 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
                        LOG(("No reply to message %p", temp));
                        plugin_remove_message_from_linked_list(temp);
 //                       xfree(m);
-                       xfree(varval);
                        xfree(npm);
                        xfree(npl);
                        return;
@@ -543,16 +533,15 @@ void plugin_redraw(struct content *c, long x, long y,
 /**
  * plugin_write_parameters_file
  * Writes the parameters file.
- * Beware, this function is long and nasty. It appears to work, however.
  */
 void plugin_write_parameters_file(struct object_params *params)
 {
         struct plugin_params* temp;
+        struct plugin_param_item* ppi;
+        struct plugin_param_item* pilist = 0;
         int *time;
-        os_fw pfile;
-        int j, rsize = 0;
         char *tstr;
-        byte pdata[4] = {0, 0, 0, 0};
+        FILE *fp;
 
         /* Create the file */
         xosfile_create_dir("<Wimp$ScrapDir>.WWW", 77);
@@ -569,185 +558,27 @@ void plugin_write_parameters_file(struct object_params *params)
         xfree(tstr);
         LOG(("filename: %s", params->filename));
 
-        xosfind_openoutw(osfind_NO_PATH, params->filename, NULL, &pfile);
-
         /* Write object attributes first */
 
         /* classid is checked first */
         if(params->classid != 0 && params->codetype != 0) {
 
-          /* Record Type */
-          plugin_populate_pdata(1, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata, 4, NULL);
-
-          /* Record size */
-          rsize = 0;
-          rsize += (4 + 7 + 1);
-          rsize += (4 + strlen(params->classid));
-          if((strlen(params->classid)%4) != 0)
-                  rsize += (4-(strlen(params->classid)%4));
-          rsize += (4 + strlen(params->codetype));
-          if((strlen(params->codetype)%4) != 0)
-                  rsize += (4-(strlen(params->codetype)%4));
-
-          plugin_populate_pdata(rsize, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata, 4, NULL);
-
-          /* name */
-          /* size */
-          rsize = strlen("CLASSID");
-          plugin_populate_pdata(rsize, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata, 4, NULL);
-
-          /* name */
-          xosgbpb_writew(pfile, (byte const*)"CLASSID", rsize, NULL);
-
-          /* pad to word boundary */
-          plugin_populate_pdata(0, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata,
-          		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-          /* value */
-          /* size */
-          rsize = strlen(params->classid);
-          plugin_populate_pdata(rsize, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata, 4, NULL);
-
-          /* name */
-          xosgbpb_writew(pfile, (byte const*)params->classid, rsize, NULL);
-
-          /* pad to word boundary */
-          plugin_populate_pdata(0, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata,
-          		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-          /* type */
-          /* size */
-          rsize = strlen(params->codetype);
-          plugin_populate_pdata(rsize, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata, 4, NULL);
-
-          /* name */
-          xosgbpb_writew(pfile, (byte const*)params->codetype, rsize, NULL);
-
-          /* pad to word boundary */
-          plugin_populate_pdata(rsize, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata,
-          		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
+          pilist = plugin_add_item_to_pilist(pilist, 1, "CLASSID",
+                                             params->classid,
+                                             params->codetype);
         }
         /* otherwise, we check the data attribute */
         else if(params->data !=0 && params->type != 0) {
 
-          /* Record Type */
-          plugin_populate_pdata(1, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata, 4, NULL);
-
-          /* Record size */
-          rsize = 0;
-          rsize += (4 + 4);
-          rsize += (4 + strlen(params->data));
-          if((strlen(params->data)%4) != 0)
-                  rsize += (4-(strlen(params->data)%4));
-          rsize += (4 + strlen(params->type));
-          if((strlen(params->type)%4) != 0)
-                  rsize += (4-(strlen(params->type)%4));
-
-          plugin_populate_pdata(rsize, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata, 4, NULL);
-
-          /* name */
-          /* size */
-          rsize = strlen("DATA");
-          plugin_populate_pdata(rsize, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata, 4, NULL);
-
-          /* name */
-          xosgbpb_writew(pfile, (byte const*)"DATA", rsize, NULL);
-
-          /* pad to word boundary */
-          plugin_populate_pdata(0, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata,
-          		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-          /* value */
-          /* size */
-          rsize = strlen(params->data);
-          plugin_populate_pdata(rsize, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata, 4, NULL);
-
-          /* name */
-          xosgbpb_writew(pfile, (byte const*)params->data, rsize, NULL);
-
-          /* pad to word boundary */
-          plugin_populate_pdata(0, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata,
-          		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-          /* type */
-          /* size */
-          rsize = strlen(params->type);
-          plugin_populate_pdata(rsize, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata, 4, NULL);
-
-          /* name */
-          xosgbpb_writew(pfile, (byte const*)params->type, rsize, NULL);
-
-          /* pad to word boundary */
-          plugin_populate_pdata(0, (byte *)&pdata);
-          xosgbpb_writew(pfile, pdata,
-          		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+          pilist = plugin_add_item_to_pilist(pilist, 1, "DATA", params->data,
+                                    params->type);
         }
 
         /* if codebase is specified, write it as well */
         if(params->codebase != 0) {
 
-                /* Record Type */
-                plugin_populate_pdata(1, (byte *)&pdata);
-                xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                /* Record size */
-                rsize = 0;
-                rsize += (4 + 8);
-                rsize += (4 + strlen(params->codebase));
-                if((strlen(params->codebase)%4) != 0)
-                        rsize += (4-(strlen(params->codebase)%4));
-                rsize += 4;
-                plugin_populate_pdata(rsize, (byte *)&pdata);
-                xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                /* name */
-                /* size */
-                rsize = strlen("CODEBASE");
-                plugin_populate_pdata(rsize, (byte *)&pdata);
-                xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                /* name */
-                xosgbpb_writew(pfile, (byte const*)"CODEBASE", rsize, NULL);
-
-                /* pad to word boundary */
-                plugin_populate_pdata(0, (byte *)&pdata);
-                xosgbpb_writew(pfile, pdata,
-                	       (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-                /* value */
-                /* size */
-                rsize = strlen(params->codebase);
-                plugin_populate_pdata(rsize, (byte *)&pdata);
-                xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                /* name */
-                xosgbpb_writew(pfile, (byte const*)params->codebase, rsize, NULL);
-
-                /* pad to word boundary */
-                plugin_populate_pdata(0, (byte *)&pdata);
-                xosgbpb_writew(pfile, pdata,
-                	       (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-                /* type */
-                /* size */
-                plugin_populate_pdata(0, (byte *)&pdata);
-                xosgbpb_writew(pfile, pdata, 4, NULL);
+                pilist = plugin_add_item_to_pilist(pilist, 1, "CODEBASE",
+                                          params->codebase, NULL);
 
         }
 
@@ -762,91 +593,21 @@ void plugin_write_parameters_file(struct object_params *params)
                 LOG(("valuetype: %s", params->params->valuetype));
 
 
-                /* Record Type */
                 if(strcasecmp(params->params->valuetype, "data") == 0)
-                        rsize = 1;
+                        pilist = plugin_add_item_to_pilist(pilist, 1,
+                                                  params->params->name,
+                                                  params->params->value,
+                                                  params->params->type);
                 if(strcasecmp(params->params->valuetype, "ref") == 0)
-                        rsize = 2;
+                        pilist = plugin_add_item_to_pilist(pilist, 2,
+                                                  params->params->name,
+                                                  params->params->value,
+                                                  params->params->type);
                 if(strcasecmp(params->params->valuetype, "object") == 0)
-                        rsize = 3;
-                plugin_populate_pdata(rsize, (byte *)&pdata);
-                xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                /* Record Size */
-                rsize = 0;
-                if(params->params->name != 0) {
-                        rsize += 4;
-                        rsize += strlen(params->params->name);
-                        if((strlen(params->params->name) % 4) != 0)
-                                rsize += (4 - (strlen(params->params->name) % 4));
-                }
-                if(params->params->value != 0) {
-                        rsize += 4;
-                        rsize += strlen(params->params->value);
-                        if((strlen(params->params->value) % 4) != 0)
-                                rsize += 4 - ((strlen(params->params->value) % 4));
-                }
-                if(params->params->type != 0) {
-                        rsize += 4;
-                        rsize += strlen(params->params->type);
-                        if((strlen(params->params->type) % 4) != 0)
-                                rsize += (4 - (strlen(params->params->type) % 4));
-                } else {
-                        rsize += 4;
-                }
-                plugin_populate_pdata(rsize, (byte *)&pdata);
-                xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                /* Record Name */
-                if(params->params->name != 0) {
-
-                        /* Size */
-                        rsize = strlen(params->params->name);
-                        plugin_populate_pdata(rsize, (byte *)&pdata);
-                        xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                        /* Name */
-                        xosgbpb_writew(pfile, (byte const*)params->params->name, rsize, NULL);
-
-                        /* Pad to word boundary */
-                        plugin_populate_pdata(0, (byte *)&pdata);
-                        xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-                }
-
-                /* Record Value */
-                if(params->params->value != 0) {
-
-                        /* Size */
-                        rsize = strlen(params->params->value);
-                        plugin_populate_pdata(rsize, (byte *)&pdata);
-                        xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                        /* Name */
-                        xosgbpb_writew(pfile, (byte const*)params->params->value, rsize, NULL);
-
-                        /* Pad to word boundary */
-                        plugin_populate_pdata(0, (byte *)&pdata);
-                        xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-                }
-
-                /* Record Type */
-                if(params->params->type != 0) {
-
-                        /* Size */
-                        rsize = strlen(params->params->type);
-                        plugin_populate_pdata(rsize, (byte *)&pdata);
-                        xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                        /* Name */
-                        xosgbpb_writew(pfile, (byte const*)params->params->type, rsize, NULL);
-
-                        /* Pad to word boundary */
-                        plugin_populate_pdata(0, (byte *)&pdata);
-                        xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-                } else {
-                        plugin_populate_pdata(0, (byte *)&pdata);
-                        xosgbpb_writew(pfile, pdata, 4, NULL);
-                }
+                        pilist = plugin_add_item_to_pilist(pilist, 3,
+                                                  params->params->name,
+                                                  params->params->value,
+                                                  params->params->type);
 
                 temp = params->params;
                 params->params = params->params->next;
@@ -854,184 +615,115 @@ void plugin_write_parameters_file(struct object_params *params)
          }
 
          /* Now write mandatory special parameters
-          *
-          * Case:     Parameter:
-          *
-          *  0        BASEHREF
-          *  1        USERAGENT
-          *  2        UAVERSION
-          *  3        APIVERSION
-          *  4        BGCOLOR - needs fixing to work properly.
-          *                     Currently, it assumes FFFFFF00 (BBGGRR00)
-          */
-         for(j=0; j!=5; j++) {
 
-                 plugin_populate_pdata(4, (byte *)&pdata);
-                 xosgbpb_writew(pfile, pdata, 4, NULL);
+         /* BASEHREF */
+         pilist = plugin_add_item_to_pilist(pilist, 4, "BASEHREF", params->basehref, NULL);
 
-                 switch(j) {
+         /* USERAGENT */
+         pilist = plugin_add_item_to_pilist(pilist, 4, "USERAGENT", "NetSurf", NULL);
 
-                         case 0: rsize = 0;
-                                 rsize += (4 + 8);
-                                 rsize += (4 + strlen(params->basehref));
-                                 if((strlen(params->basehref)%4) != 0)
-                                   rsize += (4-(strlen(params->basehref)%4));
-                                 rsize += 4;
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+         /* UAVERSION */
+         pilist = plugin_add_item_to_pilist(pilist, 4, "UAVERSION", "0.01", NULL);
 
-                                 rsize = strlen("BASEHREF");
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+         /* APIVERSION */
+         pilist = plugin_add_item_to_pilist(pilist, 4, "APIVERSION", "1.10", NULL);
 
-                                 xosgbpb_writew(pfile, (byte const*)"BASEHREF", rsize, NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+         /* BGCOLOR - needs fixing to work properly.
+          *           Currently, it assumes FFFFFF00 (BBGGRR00) */
+         pilist = plugin_add_item_to_pilist(pilist, 4, "BGCOLOR", "FFFFFF00", NULL);
 
-                                 rsize = strlen(params->basehref);
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+         /* Write file */
+         fp = fopen(params->filename, "wb+");
 
-                                 xosgbpb_writew(pfile, (byte const*)params->basehref, rsize, NULL);
+         while (pilist != 0) {
 
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                 fwrite(&pilist->type, (unsigned int)sizeof(int), 1, fp);
+                 fwrite(&pilist->rsize, (unsigned int)sizeof(int), 1, fp);
 
-                                 break;
+                 fwrite(&pilist->nsize, (unsigned int)sizeof(int), 1, fp);
+                 fwrite(pilist->name, (unsigned int)strlen(pilist->name), 1, fp);
+                 for(; pilist->npad != 0; pilist->npad--)
+                         fputc('\0', fp);
 
-                         case 1: rsize = 0;
-                                 rsize += (4 + 9 + 3);
-                                 rsize += (4 + strlen("NetSurf"));
-                                 if((strlen("NetSurf")%4) != 0)
-                                     rsize += (4-(strlen("NetSurf")%4));
-                                 rsize += 4;
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                 fwrite(&pilist->vsize, (unsigned int)sizeof(int), 1, fp);
+                 fwrite(pilist->value, (unsigned int)strlen(pilist->value), 1, fp);
+                 for(; pilist->vpad != 0; pilist->vpad--)
+                         fputc('\0', fp);
 
-                                 rsize = strlen("USERAGENT");
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                                 xosgbpb_writew(pfile, (byte const*)"USERAGENT", rsize, NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-                                 rsize = strlen("NetSurf");
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                                 xosgbpb_writew(pfile, (byte const*)"NetSurf", rsize, NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-                                 break;
-
-                         case 2: rsize = 0;
-                                 rsize += (4 + 9 + 3);
-                                 rsize += (4 + strlen("0.01"));
-                                 if((strlen("0.01")%4) != 0)
-                                     rsize += (4-(strlen("0.01")%4));
-                                 rsize += 4;
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                                 rsize = strlen("UAVERSION");
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                                 xosgbpb_writew(pfile, (byte const*)"UAVERSION", rsize, NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-                                 rsize = strlen("0.01");
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                                 xosgbpb_writew(pfile, (byte const*)"0.01", rsize, NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-                                 break;
-
-                         case 3: rsize = 0;
-                                 rsize += (4 + 10 + 2);
-                                 rsize += (4 + strlen("1.10"));
-                                 if((strlen("1.10")%4) != 0)
-                                     rsize += (4-(strlen("1.10")%4));
-                                 rsize += 4;
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                                 rsize = strlen("APIVERSION");
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                                 xosgbpb_writew(pfile, (byte const*)"APIVERSION", rsize, NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-                                 rsize = strlen("1.10");
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                                 xosgbpb_writew(pfile, (byte const*)"1.10", rsize, NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-                                 break;
-                         case 4: rsize = 0;
-                                 rsize += (4 + 7 + 1);
-                                 rsize += (4 + strlen("FFFFFF00"));
-                                 if((strlen("FFFFFF00")%4) != 0)
-                                     rsize += (4-(strlen("FFFFFF00")%4));
-                                 rsize += 4;
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                                 rsize = strlen("BGCOLOR");
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                                 xosgbpb_writew(pfile, (byte const*)"BGCOLOR", rsize, NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-
-                                 rsize = strlen("FFFFFF00");
-                                 plugin_populate_pdata(rsize, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-
-                                 xosgbpb_writew(pfile, (byte const*)"FFFFFF00", rsize, NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
-                                 plugin_populate_pdata(0, (byte *)&pdata);
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
-                                 break;
+                 fwrite(&pilist->msize, (unsigned int)sizeof(int), 1, fp);
+                 if(pilist->msize > 0) {
+                         fwrite(pilist->mime_type,
+                                (unsigned int)strlen(pilist->mime_type), 1, fp);
+                         for(; pilist->mpad != 0; pilist->mpad--)
+                                 fputc('\0', fp);
                  }
 
+                 ppi = pilist;
+                 pilist = pilist->next;
+
+                 xfree(ppi);
          }
 
-         /* Write terminator */
-         plugin_populate_pdata(0, (byte *)&pdata);
-         xosgbpb_writew(pfile, pdata, 4, NULL);
-         xosfind_closew(pfile);
+         fwrite("\0", sizeof(char), 4, fp);
+
+         fclose(fp);
 }
 
 /**
- * plugin_populate_pdata
- * helper function for plugin_write_parameters_file
+ * plugin_calculate_rsize
+ * calculates the size of a parameter file record
  */
-void plugin_populate_pdata(int rsize, byte *pdata) {
+int plugin_calculate_rsize(char* name, char* data, char* mime) {
 
-	 pdata[0] = rsize & 0xff;
-         pdata[1] = (rsize >> 0x08) & 0xff;
-         pdata[2] = (rsize >> 0x10) & 0xff;
-         pdata[3] = (rsize >> 0x18) & 0xff;
+	int ret = 0;
+	ret += (4 + strlen(name) + 3) / 4 * 4; /* name */
+	ret += (4 + strlen(data) + 3) / 4 * 4; /* data */
 
+	if (mime != NULL)
+		ret += (4 + strlen(mime) + 3) / 4 * 4; /* mime type */
+	else
+		ret += 4;
+
+	return ret;
+}
+
+/**
+ * plugin_add_item_to_pilist
+ * adds an item to the pilist
+ */
+struct plugin_param_item *plugin_add_item_to_pilist(struct plugin_param_item *pilist, int type, char* name, char* value, char* mime_type) {
+
+        struct plugin_param_item *ppi = xcalloc(1, sizeof(*ppi));
+
+        /* initialise struct */
+        ppi->type = 0;
+        ppi->rsize = 0;
+        ppi->nsize = 0;
+        ppi->name = 0;
+        ppi->npad = 0;
+        ppi->vsize = 0;
+        ppi->value = 0;
+        ppi->vpad = 0;
+        ppi->msize = 0;
+        ppi->mime_type = 0;
+        ppi->mpad = 0;
+
+        ppi->type = type;
+        ppi->rsize = plugin_calculate_rsize(name, value, mime_type);
+        ppi->nsize = strlen(name);
+        ppi->name = xstrdup(name);
+        ppi->npad = 4 - (ppi->nsize%4 == 0 ? 4 : ppi->nsize%4);
+        ppi->vsize = strlen(value);
+        ppi->value = xstrdup(value);
+        ppi->vpad = 4 - (ppi->vsize%4 == 0 ? 4 : ppi->vsize%4);
+        if(mime_type != 0) {
+                ppi->msize = strlen(mime_type);
+                ppi->mime_type = xstrdup(mime_type);
+                ppi->mpad = 4 - (ppi->msize%4 == 0 ? 4 : ppi->msize%4);
+        }
+
+        ppi->next = pilist;
+        return ppi;
 }
 
 /*-------------------------------------------------------------------------*/
