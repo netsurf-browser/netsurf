@@ -125,36 +125,36 @@ void html_redraw_box(struct content *content, struct box * box,
 	/* borders */
 	if (box->style && box->border[TOP])
 		html_redraw_border(box->style->border[TOP].color,
-				box->border[TOP] * 2,
+				box->border[TOP] * 2 * scale,
 				box->style->border[TOP].style,
-				x - box->border[LEFT] * 2,
-				y + box->border[TOP],
-				x + width + box->border[RIGHT] * 2,
-				y + box->border[TOP]);
+				x - box->border[LEFT] * 2 * scale,
+				y + box->border[TOP] * scale,
+				x + width + box->border[RIGHT] * 2 * scale,
+				y + box->border[TOP] * scale);
 	if (box->style && box->border[RIGHT])
 		html_redraw_border(box->style->border[RIGHT].color,
-				box->border[RIGHT] * 2,
+				box->border[RIGHT] * 2 * scale,
 				box->style->border[RIGHT].style,
-				x + width + box->border[RIGHT],
-				y + box->border[TOP] * 2,
-				x + width + box->border[RIGHT],
-				y - height - box->border[BOTTOM] * 2);
+				x + width + box->border[RIGHT] * scale,
+				y + box->border[TOP] * 2 * scale,
+				x + width + box->border[RIGHT] * scale,
+				y - height - box->border[BOTTOM] * 2 * scale);
 	if (box->style && box->border[BOTTOM])
 		html_redraw_border(box->style->border[BOTTOM].color,
-				box->border[BOTTOM] * 2,
+				box->border[BOTTOM] * 2 * scale,
 				box->style->border[BOTTOM].style,
-				x - box->border[LEFT] * 2,
-				y - height - box->border[BOTTOM],
-				x + width + box->border[RIGHT] * 2,
-				y - height - box->border[BOTTOM]);
+				x - box->border[LEFT] * 2 * scale,
+				y - height - box->border[BOTTOM] * scale,
+				x + width + box->border[RIGHT] * 2 * scale,
+				y - height - box->border[BOTTOM] * scale);
 	if (box->style && box->border[LEFT])
 		html_redraw_border(box->style->border[LEFT].color,
-				box->border[LEFT] * 2,
+				box->border[LEFT] * 2 * scale,
 				box->style->border[LEFT].style,
-				x - box->border[LEFT],
-				y + box->border[TOP] * 2,
-				x - box->border[LEFT],
-				y - height - box->border[BOTTOM] * 2);
+				x - box->border[LEFT] * scale,
+				y + box->border[TOP] * 2 * scale,
+				x - box->border[LEFT] * scale,
+				y - height - box->border[BOTTOM] * 2 * scale);
 
 	/* return if the box is completely outside the clip rectangle, except
 	 * for table rows which may contain cells spanning into other rows */
