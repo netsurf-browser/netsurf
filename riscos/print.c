@@ -490,7 +490,7 @@ void print_document(struct gui_window *g, const char *filename)
 	LOG(("Printing page (%d)", print_max_sheets));
 
 	if (c->type == CONTENT_HTML)
-		box = c->data.html.layout->children;
+		box = c->data.html.layout;
 
 	/* Read Printer Driver Features */
 	e = xpdriver_info(0, 0, 0, &features, 0, 0, 0, 0);

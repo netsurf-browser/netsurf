@@ -238,7 +238,7 @@ void do_search(char *string, bool from_top, bool case_sens, bool forwards)
 	if (c->type != CONTENT_HTML)
 		return;
 
-	box = c->data.html.layout->children;
+	box = c->data.html.layout;
 
 	if (!box)
 		return;

@@ -47,6 +47,10 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 		unsigned long background_colour,
 		bool repeatx, bool repeaty,image_type type)
 {
+	req_width *= 2;
+	req_height *= 2;
+	width *= 2;
+	height *= 2;
 	switch (type) {
 		case IMAGE_PLOT_TINCT_ALPHA:
 			return image_redraw_tinct(area, x, y,
@@ -127,7 +131,7 @@ bool image_redraw_tinct(osspriteop_area *area, int x, int y,
 		error = _swix(Tinct_PlotScaled, _INR(2,7),
 				(char*)area + area->first, x, y - req_height,
 				req_width, req_height, tinct_options);
-	} 
+	}
 
 	if (error) {
 		LOG(("xtinct_plotscaled%s: 0x%x: %s", (alpha ? "alpha" : ""),

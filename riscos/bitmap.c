@@ -39,13 +39,17 @@ struct bitmap *bitmap_create(int width, int height)
 	osspriteop_area *sprite_area;
 	osspriteop_header *sprite;
 
-	if ((width == 0) || (height == 0))
+	if (width == 0 || height == 0)
 		return NULL;
 
 	area_size = 16 + 44 + width * height * 4;
 	bitmap = calloc(sizeof(struct bitmap) + area_size, 1);
 	if (!bitmap)
 		return NULL;
+
+	bitmap->width = width;
+	bitmap->height = height;
+	bitmap->opaque = false;
 
 	/* area control block */
 	sprite_area = &bitmap->sprite_area;
@@ -147,22 +151,6 @@ void bitmap_destroy(struct bitmap *bitmap)
 {
 	assert(bitmap);
 	free(bitmap);
-}
-
-
-/**
- * Render a bitmap.
- */
-
-bool bitmap_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour)
-{
-	return image_redraw(&(c->bitmap->sprite_area), x, y, width, height,
-			c->width * 2, c->height * 2, background_colour,
-	                false, false, ((c->bitmap->opaque) ?
-	                IMAGE_PLOT_TINCT_OPAQUE : IMAGE_PLOT_TINCT_ALPHA));
 }
 
 

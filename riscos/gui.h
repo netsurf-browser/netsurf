@@ -23,6 +23,7 @@
 #define THEMES_DIR "<NetSurf$Dir>.Themes"
 
 struct toolbar;
+struct plotter_table;
 
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
@@ -249,6 +250,12 @@ bool ro_gui_search_keypress(wimp_key *key);
 void ro_gui_print_open(struct gui_window *g, int x, int y, bool sub_menu, bool keypress);
 void ro_gui_print_click(wimp_pointer *pointer);
 bool ro_gui_print_keypress(wimp_key *key);
+
+/* in plotters.c */
+extern const struct plotter_table ro_plotters;
+extern int ro_plot_origin_x;
+extern int ro_plot_origin_y;
+void ro_plot_set_scale(float scale);
 
 /* toolbar types */
 #define TOOLBAR_BROWSER 0
