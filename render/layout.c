@@ -50,8 +50,6 @@ static void layout_find_dimensions(int available_width,
 static int layout_clear(struct box *fl, css_clear clear);
 static void find_sides(struct box *fl, int y0, int y1,
 		int *x0, int *x1, struct box **left, struct box **right);
-static bool layout_inline_container(struct box *box, int width,
-		struct box *cont, int cx, int cy, pool box_pool);
 static int line_height(struct css_style *style);
 static bool layout_line(struct box *first, int width, int *y,
 		int cx, int cy, struct box *cont, bool indent,
