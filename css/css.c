@@ -870,6 +870,69 @@ bool css_match_detail(const struct css_selector *detail,
 				match = true;
 			break;
 
+		case CSS_SELECTOR_ATTRIB_PRE:
+			/* matches if the attribute begins with a certain
+			 * value (CSS3) */
+			word = strndup(detail->data, detail->data_length);
+			if (!word) {
+				/** \todo report to user */
+				return false;
+			}
+			s = (char *)xmlGetProp(element,
+					(const xmlChar *) word);
+			free(word);
+			if (s && strncasecmp(detail->data2, s,
+					detail->data2_length) == 0)
+				match = true;
+			break;
+
+		case CSS_SELECTOR_ATTRIB_SUF:
+			/* matches if the attribute ends with a certain
+			 * value (CSS3) */
+			word = strndup(detail->data, detail->data_length);
+			if (!word) {
+				/** \todo report to user */
+				return false;
+			}
+			s = (char *)xmlGetProp(element,
+					(const xmlChar *) word);
+			free(word);
+			if (!s)
+				break;
+			word = s + (strlen(s) - detail->data2_length);
+			if (s && strncasecmp(detail->data2, word,
+					detail->data2_length) == 0)
+				match = true;
+			break;
+
+		case CSS_SELECTOR_ATTRIB_SUB:
+			/* matches if the attribute contains a certain
+			 * value (CSS3) */
+			word = strndup(detail->data, detail->data_length);
+			if (!word) {
+				/** \todo report to user */
+				return false;
+			}
+			s = (char *)xmlGetProp(element,
+					(const xmlChar *) word);
+			free(word);
+			if (!s)
+				break;
+			/* case insensitive strstr follows */
+			/* space -> last possible start position */
+			/* word -> start of string to search */
+			space = s + (strlen(s) - detail->data2_length);
+			word = s;
+			while (word <= space) {
+				if (strncasecmp(detail->data2, word,
+						detail->data2_length) == 0) {
+					match = true;
+					break;
+				}
+				word++;
+			}
+			break;
+
 		case CSS_SELECTOR_PSEUDO:
 			break;
 
@@ -1333,6 +1396,21 @@ void css_dump_selector(const struct css_selector *r)
 				break;
 			case CSS_SELECTOR_ATTRIB_DM:
 				fprintf(stderr, "[%.*s|=%.*s]",
+						m->data_length, m->data,
+						m->data2_length, m->data2);
+				break;
+			case CSS_SELECTOR_ATTRIB_PRE:
+				fprintf(stderr, "[%.*s^=%.*s]",
+						m->data_length, m->data,
+						m->data2_length, m->data2);
+				break;
+			case CSS_SELECTOR_ATTRIB_SUF:
+				fprintf(stderr, "[%.*s$=%.*s]",
+						m->data_length, m->data,
+						m->data2_length, m->data2);
+				break;
+			case CSS_SELECTOR_ATTRIB_SUB:
+				fprintf(stderr, "[%.*s*=%.*s]",
 						m->data_length, m->data,
 						m->data2_length, m->data2);
 				break;

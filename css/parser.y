@@ -185,6 +185,36 @@ detail(A) ::= LBRAC IDENT(B) DASHMATCH STRING(C) RBRAC.
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
 			A->specificity = 0x100; }
 		else param->memory_error = true; }
+detail(A) ::= LBRAC IDENT(B) PREFIX IDENT(C) RBRAC.
+		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_PRE, B.text, B.length);
+		if (A) { A->data2 = C.text; A->data2_length = C.length;
+			A->specificity = 0x100; }
+		else param->memory_error = true; }
+detail(A) ::= LBRAC IDENT(B) PREFIX STRING(C) RBRAC.
+		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_PRE, B.text, B.length);
+		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
+			A->specificity = 0x100; }
+		else param->memory_error = true; }
+detail(A) ::= LBRAC IDENT(B) SUFFIX IDENT(C) RBRAC.
+		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_SUF, B.text, B.length);
+		if (A) { A->data2 = C.text; A->data2_length = C.length;
+			A->specificity = 0x100; }
+		else param->memory_error = true; }
+detail(A) ::= LBRAC IDENT(B) SUFFIX STRING(C) RBRAC.
+		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_SUF, B.text, B.length);
+		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
+			A->specificity = 0x100; }
+		else param->memory_error = true; }
+detail(A) ::= LBRAC IDENT(B) SUBSTR IDENT(C) RBRAC.
+		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_SUB, B.text, B.length);
+		if (A) { A->data2 = C.text; A->data2_length = C.length;
+			A->specificity = 0x100; }
+		else param->memory_error = true; }
+detail(A) ::= LBRAC IDENT(B) SUBSTR STRING(C) RBRAC.
+		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_SUB, B.text, B.length);
+		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
+			A->specificity = 0x100; }
+		else param->memory_error = true; }
 detail(A) ::= COLON IDENT(B).
 		{ if (B.length == 4 && strncasecmp(B.text, "link", 4) == 0) {
 			A = css_new_selector(CSS_SELECTOR_ATTRIB, "href", 4);
@@ -295,6 +325,18 @@ any(A) ::= FUNCTION(B) any_list(C) RPAREN.
 		} }
 any(A) ::= DASHMATCH.
 		{ A = css_new_node(param->stylesheet, CSS_NODE_DASHMATCH,
+		                   0, 0);
+		if (!A) param->memory_error = true; }
+any(A) ::= PREFIX.
+		{ A = css_new_node(param->stylesheet, CSS_NODE_PREFIX,
+		                   0, 0);
+		if (!A) param->memory_error = true; }
+any(A) ::= SUFFIX.
+		{ A = css_new_node(param->stylesheet, CSS_NODE_SUFFIX,
+		                   0, 0);
+		if (!A) param->memory_error = true; }
+any(A) ::= SUBSTR.
+		{ A = css_new_node(param->stylesheet, CSS_NODE_SUBSTR,
 		                   0, 0);
 		if (!A) param->memory_error = true; }
 any(A) ::= COLON.

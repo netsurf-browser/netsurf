@@ -86,6 +86,9 @@ ident "("	{ return FUNCTION; }
 "="		{ return EQUALS; }
 "~="		{ return INCLUDES; }
 "|="		{ return DASHMATCH; }
+"^="		{ return PREFIX; }
+"$="		{ return SUFFIX; }
+"*="		{ return SUBSTR; }
 ":"		{ return COLON; }
 ","		{ return COMMA; }
 "+"		{ return PLUS; }

@@ -2,6 +2,8 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  */
 
+@import url('AdBlock');
+
 /* Elements ordered as in the HTML 4.01 specification. */
 
 html { display: block; }
