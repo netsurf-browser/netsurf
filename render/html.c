@@ -131,10 +131,13 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	c->width = c->data.html.layout->children->width;
 	c->height = c->data.html.layout->children->height;
 
-	if (c->active == 0)
+	if (c->active == 0) {
 		c->status = CONTENT_STATUS_DONE;
-	else
+		sprintf(c->status_message, "Document done");
+	} else {
 		c->status = CONTENT_STATUS_READY;
+		sprintf(c->status_message, "Fetching %u objects", c->active);
+	}
 
 	return 0;
 }

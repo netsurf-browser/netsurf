@@ -152,8 +152,16 @@ void font_close(struct font_data *data)
 char * font_split(struct font_data *data, const char * text, unsigned int length,
 		unsigned int width, unsigned int *used_width)
 {
-	*used_width = width;
+	int i = width / 10;
 
-	return text + (width / 10);
+	if (length < i) {
+		*used_width = length * 10;
+		return text + length;
+	}
+
+	for (; i != 0 && text[i] != ' '; i--)
+		;
+	*used_width = i * 10;
+	return text + i;
 }
 

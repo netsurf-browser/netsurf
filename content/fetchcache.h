@@ -8,6 +8,7 @@
 #ifndef _NETSURF_DESKTOP_FETCHCACHE_H_
 #define _NETSURF_DESKTOP_FETCHCACHE_H_
 
+#include <stdbool.h>
 #include "netsurf/content/content.h"
 
 struct content * fetchcache(const char *url, char *referer,

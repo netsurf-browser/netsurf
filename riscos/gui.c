@@ -330,7 +330,7 @@ void ro_gui_toolbar_redraw(gui_window* g, wimp_draw* redraw)
   wimp_get_icon_state(&throbber);
 
   throbber.icon.flags = wimp_ICON_SPRITE;
-  sprintf(throbber.icon.data.sprite, "throbber%d", g->throbber);
+  snprintf(throbber.icon.data.sprite, 12, "throbber%d", g->throbber);
 
   more = wimp_redraw_window(redraw);
   while (more)
@@ -1172,8 +1172,8 @@ void ro_gui_poll_queue(wimp_event_no event, wimp_block* block)
   struct ro_gui_poll_block* q = xcalloc(1, sizeof(struct ro_gui_poll_block));
 
   q->event = event;
-  q->block = xcalloc(1, sizeof(block));
-  memcpy(q->block, block, sizeof(block));
+  q->block = xcalloc(1, sizeof(*block));
+  memcpy(q->block, block, sizeof(*block));
   q->next = NULL;
 
   if (ro_gui_poll_queued_blocks == NULL)
@@ -1213,21 +1213,24 @@ void gui_multitask(void)
       break;
 
     case wimp_REDRAW_WINDOW_REQUEST   :
-      if (block.redraw.w == dialog_config_th)
-	      ro_gui_redraw_config_th(&block.redraw);
-      else
-      {
-      g = ro_lookup_gui_from_w(block.redraw.w);
-      if (g != NULL)
-        ro_gui_window_redraw(g, &(block.redraw));
-      else
-      {
-        g = ro_lookup_gui_toolbar_from_w(block.redraw.w);
-        if (g != NULL)
-          ro_gui_toolbar_redraw(g, &(block.redraw));
-      }
-      }
-      break;
+	if (block.redraw.w == dialog_config_th)
+		ro_gui_redraw_config_th(&block.redraw);
+	else {
+		g = ro_lookup_gui_from_w(block.redraw.w);
+		if (g)
+			ro_gui_window_redraw(g, &(block.redraw));
+		else {
+			g = ro_lookup_gui_toolbar_from_w(block.redraw.w);
+			if (g)
+				ro_gui_toolbar_redraw(g, &(block.redraw));
+			else {
+				osbool more = wimp_redraw_window(&block.redraw);
+				while (more)
+					more = wimp_get_rectangle(&block.redraw);
+			}
+		}
+	}
+	break;
 
     case wimp_OPEN_WINDOW_REQUEST     :
       g = ro_lookup_gui_from_w(block.open.w);
@@ -1475,21 +1478,24 @@ void gui_poll(void)
         break;
 
       case wimp_REDRAW_WINDOW_REQUEST   :
-      if (block.redraw.w == dialog_config_th)
-	      ro_gui_redraw_config_th(&block.redraw);
-      else
-      {
-        g = ro_lookup_gui_from_w(block.redraw.w);
-        if (g != NULL)
-          ro_gui_window_redraw(g, &(block.redraw));
-        else
-        {
-          g = ro_lookup_gui_toolbar_from_w(block.redraw.w);
-          if (g != NULL)
-            ro_gui_toolbar_redraw(g, &(block.redraw));
-        }
-      }
-        break;
+	if (block.redraw.w == dialog_config_th)
+		ro_gui_redraw_config_th(&block.redraw);
+	else {
+		g = ro_lookup_gui_from_w(block.redraw.w);
+		if (g != NULL)
+			ro_gui_window_redraw(g, &(block.redraw));
+		else {
+			g = ro_lookup_gui_toolbar_from_w(block.redraw.w);
+			if (g != NULL) {
+				ro_gui_toolbar_redraw(g, &(block.redraw));
+			} else {
+				osbool more = wimp_redraw_window(&block.redraw);
+				while (more)
+					more = wimp_get_rectangle(&block.redraw);
+			}
+		}
+	}
+	break;
 
       case wimp_OPEN_WINDOW_REQUEST     :
         g = ro_lookup_gui_from_w(block.open.w);
