@@ -1,5 +1,5 @@
 /**
- * $Id: content.c,v 1.7 2003/04/15 17:53:00 bursa Exp $
+ * $Id: content.c,v 1.8 2003/04/17 21:35:02 bursa Exp $
  */
 
 #include <assert.h>
@@ -121,7 +121,8 @@ void content_revive(struct content *c, unsigned long width, unsigned long height
 {
 	assert(c != 0);
 	assert(c->type < CONTENT_OTHER);
-	assert(c->status == CONTENT_DONE);
+	if (c->status != CONTENT_DONE)
+		return;
 	c->available_width = width;
 	handler_map[c->type].revive(c, width, height);
 }

@@ -1,11 +1,22 @@
 /**
- * $Id: fetch.c,v 1.5 2003/04/15 17:53:00 bursa Exp $
+ * $Id: fetch.c,v 1.6 2003/04/17 21:35:02 bursa Exp $
+ *
+ * This module handles fetching of data from any url.
+ *
+ * Implementation:
+ * This implementation uses libcurl's 'multi' interface.
+ *
+ * Active fetches are held in the linked list fetch_list. There may be at most
+ * one fetch from each host. Any further fetches are queued until the previous
+ * one ends.
  */
 
 #include <assert.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 #include "curl/curl.h"
+#include "libxml/uri.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
@@ -19,13 +30,19 @@ struct fetch
 	int in_callback : 1;
 	int aborting : 1;
 	char *url;
+	char *referer;
 	char error_buffer[CURL_ERROR_SIZE];
 	void *p;
 	struct curl_slist *headers;
+	char *host;
+	struct fetch *queue;
+	struct fetch *prev;
+	struct fetch *next;
 };
 
 static const char * const user_agent = "NetSurf";
 static CURLM * curl_multi;
+static struct fetch *fetch_list = 0;
 
 static size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f);
 static size_t fetch_curl_header(void *data, size_t size, size_t nmemb, struct fetch *f);
@@ -75,19 +92,52 @@ void fetch_quit(void)
 struct fetch * fetch_start(char *url, char *referer,
                  void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size), void *p)
 {
-	struct fetch* fetch = (struct fetch*) xcalloc(1, sizeof(struct fetch));
+	struct fetch *fetch = xcalloc(1, sizeof(*fetch)), *host_fetch;
 	CURLcode code;
 	CURLMcode codem;
+	xmlURI *uri;
 
 	LOG(("fetch %p, url '%s'", fetch, url));
-  
-	fetch->start_time = time(&fetch->start_time);
+
+	uri = xmlParseURI(url);
+	assert(uri != 0);
+
+	/* construct a new fetch structure */
+	fetch->start_time = time(0);
 	fetch->callback = callback;
 	fetch->had_headers = 0;
 	fetch->in_callback = 0;
 	fetch->aborting = 0;
 	fetch->url = xstrdup(url);
+	fetch->referer = 0;
+	if (referer != 0)
+		fetch->referer = xstrdup(referer);
 	fetch->p = p;
+	fetch->headers = 0;
+	fetch->host = xstrdup(uri->server);
+	fetch->queue = 0;
+	fetch->prev = 0;
+	fetch->next = 0;
+
+	xmlFreeURI(uri);
+
+	/* look for a fetch from the same host */
+	for (host_fetch = fetch_list;
+			host_fetch != 0 && strcasecmp(host_fetch->host, fetch->host) != 0;
+			host_fetch = host_fetch->next)
+		;
+	if (host_fetch != 0) {
+		/* fetch from this host in progress: queue the new fetch */
+		LOG(("queueing"));
+		fetch->queue = host_fetch->queue;
+		host_fetch->queue = fetch;
+		return fetch;
+	}
+
+	fetch->next = fetch_list;
+	if (fetch_list != 0)
+		fetch_list->prev = fetch;
+	fetch_list = fetch;
 
 	/* create the curl easy handle */
 	fetch->curl_handle = curl_easy_init();
@@ -147,14 +197,60 @@ void fetch_abort(struct fetch *f)
 		f->aborting = 1;
 		return;
 	}
-  
-	/* remove from curl */
+
+	/* remove from list of fetches */
+	if (f->prev == 0)
+		fetch_list = f->next;
+	else
+		f->prev->next = f->next;
+	if (f->next != 0)
+		f->next->prev = f->prev;
+
+	/* remove from curl multi handle */
 	codem = curl_multi_remove_handle(curl_multi, f->curl_handle);
 	assert(codem == CURLM_OK);
-	curl_easy_cleanup(f->curl_handle);
-	curl_slist_free_all(f->headers);
+
+	if (f->queue != 0) {
+		/* start a queued fetch for this host, reusing the handle for this host */
+		struct fetch *fetch = f->queue;
+		CURLcode code;
+		CURLMcode codem;
+
+		LOG(("starting queued %p '%s'", fetch, fetch->url));
+
+		fetch->prev = 0;
+		fetch->next = fetch_list;
+		if (fetch_list != 0)
+			fetch_list->prev = fetch;
+		fetch_list = fetch;
+
+		fetch->curl_handle = f->curl_handle;
+		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_URL, fetch->url);
+		assert(code == CURLE_OK);
+		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PRIVATE, fetch);
+		assert(code == CURLE_OK);
+		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_ERRORBUFFER, fetch->error_buffer);
+		assert(code == CURLE_OK);
+		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEDATA, fetch);
+		assert(code == CURLE_OK);
+		/* TODO: remove referer header if fetch->referer == 0 */
+		if (fetch->referer != 0) {
+			code = curl_easy_setopt(fetch->curl_handle, CURLOPT_REFERER, fetch->referer);
+			assert(code == CURLE_OK);
+		}
+
+		/* add to the global curl multi handle */
+		codem = curl_multi_add_handle(curl_multi, fetch->curl_handle);
+		assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
+
+	} else {
+		curl_easy_cleanup(f->curl_handle);
+		curl_slist_free_all(f->headers);
+	}
 
 	xfree(f->url);
+	xfree(f->host);
+	xfree(f->referer);
 	xfree(f);
 }
 
@@ -169,9 +265,10 @@ void fetch_poll(void)
 {
 	CURLcode code;
 	CURLMcode codem;
-	int running, queue;
+	int running, queue, finished;
 	CURLMsg * curl_msg;
 	struct fetch *f;
+	void *p;
 
 	/* do any possible work on the current fetches */
 	do {
@@ -191,8 +288,10 @@ void fetch_poll(void)
 				LOG(("CURLMSG_DONE, result %i", curl_msg->data.result));
 
 				/* inform the caller that the fetch is done */
+				finished = 0;
+				p = f->p;
 				if (curl_msg->data.result == CURLE_OK && f->had_headers)
-					f->callback(FETCH_FINISHED, f->p, 0, 0);
+					finished = 1;
 				else if (curl_msg->data.result == CURLE_OK)
 					f->callback(FETCH_ERROR, f->p, "No data received", 0);
 				else if (curl_msg->data.result != CURLE_WRITE_ERROR)
@@ -200,6 +299,10 @@ void fetch_poll(void)
 
 				/* clean up fetch */
 				fetch_abort(f);
+
+				/* postponed until after abort so that queue fetches are started */
+				if (finished)
+					f->callback(FETCH_FINISHED, p, 0, 0);
 
 				break;
 
