@@ -833,8 +833,8 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 	if (!toolbar) {
 		int c = key;
 		/* Munge cursor keys into unused control chars */
-		/* We can't map on to any of: 3,8,10,13,21,22 or 24
-		 * That leaves 1,2,4-7,11,12,14-20,23,25-31 and 129-159
+		/* We can't map on to any of: 3,8,10,13,17,21,22,23 or 24
+		 * That leaves 1,2,4-7,11,12,14-16,18-20,25-31 and 129-159
 		 */
 		if (c == 394) c = 9;	       /* Tab */
 		else if (c == 410) c = 11;     /* Shift+Tab */
@@ -941,6 +941,23 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 				free(url);
 			}
 			return true;
+
+		case 17:       /* CTRL+Q (Zoom out) */
+		        current_gui = g;
+		        if (current_gui->scale > 0.1) {
+		                current_gui->scale -= 0.1;
+		                current_gui->data.browser.reformat_pending = true;
+		                gui_reformat_pending = true;
+		        }
+		        return true;
+		case 23:       /* CTRL+W (Zoom in) */
+		        current_gui = g;
+		        if (current_gui->scale < 5) {
+		                current_gui->scale += 0.1;
+		                current_gui->data.browser.reformat_pending = true;
+		                gui_reformat_pending = true;
+		        }
+		        return true;
 
 		case wimp_KEY_UP:
 		case wimp_KEY_DOWN:
