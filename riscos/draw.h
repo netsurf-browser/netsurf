@@ -13,6 +13,7 @@ struct content;
 struct content_draw_data {
 	void *data;
 	unsigned long length;
+	int x0, y0;
 };
 
 void draw_init(void);

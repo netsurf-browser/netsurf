@@ -61,6 +61,8 @@ int draw_convert(struct content *c, unsigned int width, unsigned int height)
            => divide by 512 to convert from draw units */
 	c->width = ((bbox->x1 - bbox->x0) / 512);
 	c->height = ((bbox->y1 - bbox->y0) / 512);
+	c->data.draw.x0 = bbox->x0 / 2;
+	c->data.draw.y0 = bbox->y0 / 2;
 	c->title = xcalloc(100, 1);
 	sprintf(c->title, "Draw image (%lux%lu, %lu bytes)", c->width,
 	                                c->height, c->data.draw.length);
@@ -100,8 +102,9 @@ void draw_redraw(struct content *c, long x, long y,
         matrix->entries[1][0] = 0;
         matrix->entries[1][1] = ((height*65536) / (c->height*2));
         /* Draw units. (x,y) = bottom left */
-        matrix->entries[2][0] = x * 256;
-        matrix->entries[2][1] = (y-height) * 256;
+        matrix->entries[2][0] = x * 256 - c->data.draw.x0 * width / c->width;
+        matrix->entries[2][1] = (y - height) * 256 -
+        		c->data.draw.y0 * height / c->height;
 
 	xdrawfile_render(0, (drawfile_diagram*)(c->data.draw.data),
 			(int)c->data.draw.length, matrix, 0, 0);
