@@ -186,15 +186,27 @@ static wimp_MENU(4) toolbar_menu = {
 };
 
 
+/*	Window submenu
+*/
+static wimp_MENU(2) window_menu = {
+  { "Window" }, 7,2,7,0, 300, 44, 0,
+  {
+    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "WindowSave" } },
+    { wimp_MENU_LAST,     wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "WindowReset" } }
+  }
+};
+
+
 /*	View submenu
 */
-static wimp_MENU(4) view_menu = {
+static wimp_MENU(5) view_menu = {
   { "View" }, 7,2,7,0, 300, 44, 0,
   {
-    { wimp_MENU_GIVE_WARNING,                      (wimp_menu *)1,             DEFAULT_FLAGS, { "ScaleView" } },
-    { wimp_MENU_GIVE_WARNING,                      (wimp_menu *)&image_menu,   DEFAULT_FLAGS, { "Images" } },
-    { wimp_MENU_SEPARATE | wimp_MENU_GIVE_WARNING, (wimp_menu *)&toolbar_menu, DEFAULT_FLAGS, { "Toolbars" } },
-    { wimp_MENU_LAST,                              wimp_NO_SUB_MENU,           DEFAULT_FLAGS, { "OptDefault" } }
+    { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,             DEFAULT_FLAGS, { "ScaleView" } },
+    { wimp_MENU_GIVE_WARNING, (wimp_menu *)&image_menu,   DEFAULT_FLAGS, { "Images" } },
+    { wimp_MENU_GIVE_WARNING, (wimp_menu *)&toolbar_menu, DEFAULT_FLAGS, { "Toolbars" } },
+    { wimp_MENU_SEPARATE,     (wimp_menu *)&window_menu,  DEFAULT_FLAGS | wimp_ICON_SHADED, { "Window" } },
+    { wimp_MENU_LAST,         wimp_NO_SUB_MENU,           DEFAULT_FLAGS, { "OptDefault" } }
   }
 };
 
@@ -263,6 +275,7 @@ static wimp_menu *browser_navigate_menu = (wimp_menu *)&navigate_menu;
 static wimp_menu *browser_view_menu = (wimp_menu *)&view_menu;
 static wimp_menu *browser_image_menu = (wimp_menu *)&image_menu;
 static wimp_menu *browser_toolbar_menu = (wimp_menu *)&toolbar_menu;
+static wimp_menu *browser_window_menu = (wimp_menu *)&window_menu;
 static wimp_menu *browser_utilities_menu = (wimp_menu *)&utilities_menu;
 static wimp_menu *browser_hotlist_menu = (wimp_menu *)&hotlist_menu;
 static wimp_menu *browser_help_menu = (wimp_menu *)&help_menu;
@@ -286,6 +299,7 @@ void ro_gui_menus_init(void)
 	translate_menu(browser_view_menu);
 	translate_menu(browser_image_menu);
 	translate_menu(browser_toolbar_menu);
+	translate_menu(browser_window_menu);
 	translate_menu(browser_utilities_menu);
 	translate_menu(browser_hotlist_menu);
 	translate_menu(browser_help_menu);
@@ -531,7 +545,9 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						}
 						ro_gui_menu_prepare_toolbars();
 						break;
-					case 3: /* Make default */
+					case 3: /* Window -> */
+						break;
+					case 4: /* Make default */
 						gui_window_default_options(current_gui->data.browser.bw);
 						break;
 				}

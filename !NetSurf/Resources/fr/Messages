@@ -49,6 +49,9 @@ ToolAddress:Barre d'adresse
 ToolThrob:Throbber
 ToolStatus:Status bar
 OptDefault:Définir par défaut
+Window:Window
+WindowSave:Set as default position
+WindowReset:Reset default position
 Help:Aide
 HelpContent:Contenus  F1
 HelpGuide:Guide de l'utilisateur

@@ -4,6 +4,7 @@
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  */
 
 /** \file
@@ -32,6 +33,13 @@ extern bool option_toolbar_show_buttons;
 extern bool option_toolbar_show_address;
 extern bool option_toolbar_show_throbber;
 extern bool option_animate_images;
+extern int option_window_x;
+extern int option_window_y;
+extern int option_window_width;
+extern int option_window_height;
+extern int option_window_screen_width;
+extern int option_window_screen_height;
+
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -51,6 +59,12 @@ bool option_toolbar_show_buttons = true; \
 bool option_toolbar_show_address = true; \
 bool option_toolbar_show_throbber = true; \
 bool option_animate_images = true;
+int option_window_x = 0;
+int option_window_y = 0;
+int option_window_width = 0;
+int option_window_height = 0;
+int option_window_screen_width = 0;
+int option_window_screen_height = 0;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -69,6 +83,12 @@ bool option_animate_images = true;
 { "toolbar_show_buttons",   OPTION_BOOL,    &option_toolbar_show_buttons }, \
 { "toolbar_show_address",   OPTION_BOOL,    &option_toolbar_show_address }, \
 { "toolbar_show_throbber",  OPTION_BOOL,    &option_toolbar_show_throbber }, \
-{ "animate_images",         OPTION_BOOL,    &option_animate_images }
+{ "animate_images",         OPTION_BOOL,    &option_animate_images }, \
+{ "window_x",               OPTION_INTEGER, &option_window_x }, \
+{ "window_y",               OPTION_INTEGER, &option_window_y }, \
+{ "window_width",           OPTION_INTEGER, &option_window_width }, \
+{ "window_height",          OPTION_INTEGER, &option_window_height }, \
+{ "window_screen_width",    OPTION_INTEGER, &option_window_screen_width }, \
+{ "window_screen_height",   OPTION_INTEGER, &option_window_screen_height }
 
 #endif

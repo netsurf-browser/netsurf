@@ -35,7 +35,7 @@ Home:Home page
 Back:Back one page
 Forward:Forward one page
 Reload:Reload this page
-View:View
+View:Display
 ScaleView:Scale view
 Images:Images
 ForeImg:Foreground images
@@ -49,6 +49,9 @@ ToolAddress:Address bar
 ToolThrob:Throbber
 ToolStatus:Status bar
 OptDefault:Set as default
+Window:Window
+WindowSave:Set as default position
+WindowReset:Reset default position
 Help:Help
 HelpContent:Contents  F1
 HelpGuide:User guide
@@ -186,7 +189,10 @@ HelpBrowserMenu3-2-0:\Stoggle the display of the toolbar buttons.|MURL bar uses 
 HelpBrowserMenu3-2-1:\Stoggle the display of the address (URL) bar.
 HelpBrowserMenu3-2-2:\Stoggle the display of the throbber.|MURL bar uses the remaining space.
 HelpBrowserMenu3-2-3:\Stoggle the display of the status bar.|MHorizontal scroll bar uses the remaining width.
-HelpBrowserMenu3-3:\Smake your local display options the default options for NetSurf.
+HelpBrowserMenu3-3:\Rcontrol the default window positioning.
+HelpBrowserMenu3-3-0:\Sto make the current window position the default.
+HelpBrowserMenu3-3-1:\Sto return to the default window positioning.
+HelpBrowserMenu3-4:\Smake your local display options the default options for NetSurf.
 HelpBrowserMenu4:\Rsee the help resources available.
 HelpBrowserMenu4-0:\Sopen the documentation contents page in a new \w.
 HelpBrowserMenu4-1:\Sopen the user guide in a new \w.
@@ -202,6 +208,7 @@ HelpSaveAs1:This is the filename under which this document will be saved.
 HelpSaveAs2:\Ssave the file with the current filename.|MIf a full path is not set, you must drag the icon to a directory.
 HelpSaveAs3:\Sclose this \w without saving.
 
+HelpScaleView:Use this window to change the scale the page is displayed at.
 HelpScaleView1:Enter the scale you wish the page to be displayed at.
 HelpScaleView2:\Sreduce the scale, 10% at a time.
 HelpScaleView3:\Sincrease the scale, 10% at a time.

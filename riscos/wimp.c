@@ -26,12 +26,12 @@
 */
 static wimpextend_furniture_sizes furniture_sizes;
 
+
 /**
  * Gets the default horzontal scrollbar height
  */
 int ro_get_hscroll_height(wimp_w w) {
 	wimp_version_no version;
-
 
   	/*	Read the hscroll height
   	*/
@@ -53,6 +53,25 @@ int ro_get_hscroll_height(wimp_w w) {
 	*/
 	return furniture_sizes.border_widths.y0;
 }
+
+
+/**
+ * Gets the default horzontal scrollbar height
+ */
+int ro_get_vscroll_width(wimp_w w) {
+	wimp_version_no version;
+
+  	/*	Read the hscroll height
+  	*/
+  	furniture_sizes.w = w;
+	furniture_sizes.border_widths.x1 = 38;
+	xwimpextend_get_furniture_sizes(&furniture_sizes);
+
+	/*	Return the standard (unhacked) size
+	*/
+	return furniture_sizes.border_widths.x1;
+}
+
 
 /**
  * Reads a modes EIG factors.

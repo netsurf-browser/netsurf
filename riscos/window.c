@@ -63,22 +63,23 @@ bool gui_window_in_list(gui_window *g) {
 
 gui_window *gui_create_browser_window(struct browser_window *bw, struct browser_window *clone)
 {
-  int screen_width, screen_height, win_width, win_height;
+  int screen_width, screen_height, win_width, win_height, scroll_width;
   wimp_window window;
   wimp_window_state state;
 
-  gui_window* g = (gui_window*) xcalloc(1, sizeof(gui_window));
+  gui_window* g = (gui_window*)calloc(1, sizeof(gui_window));
+  if (!g) return NULL;
   g->type = GUI_BROWSER_WINDOW;
   g->data.browser.bw = bw;
 
   ro_gui_screen_size(&screen_width, &screen_height);
 
-  win_width = screen_width * 3 / 4;
+  win_width = screen_width * 5 / 8;
   if (1600 < win_width)
     win_width = 1600;
-  win_height = win_width * 3 / 4;
+  win_height = win_width * 5 / 8;
 
-  window.visible.x0 = ((screen_width - win_width) / 2) + (48 * (window_count%5));
+  window.visible.x0 = (screen_width - win_width) / 2;
   window.visible.y0 = ((screen_height - win_height) / 2) - (48 * (window_count%5));
   window.visible.x1 = window.visible.x0 + win_width;
   window.visible.y1 = window.visible.y0 + win_height;
@@ -131,10 +132,14 @@ gui_window *gui_create_browser_window(struct browser_window *bw, struct browser_
   	bw->window = g;
   	gui_window_clone_options(bw, clone);
 
-  state.w = g->window;
-  wimp_get_window_state(&state);
-  state.next = wimp_TOP;
-  ro_gui_window_open(g, (wimp_open*)&state);
+	/*	Open the window
+	*/
+	state.w = g->window;
+	wimp_get_window_state(&state);
+	scroll_width = ro_get_vscroll_width(g->window);
+	state.visible.x0 -= scroll_width;
+	state.next = wimp_TOP;
+	ro_gui_window_open(g, (wimp_open*)&state);
 
 	/*	Set the caret position to the URL bar
 	*/
