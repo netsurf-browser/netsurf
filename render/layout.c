@@ -838,7 +838,6 @@ void calculate_inline_container_widths(struct box *box)
 {
 	struct box *child;
 	unsigned long min = 0, max = 0, width;
-	char *word, *space;
 	int i, j;
 
 	for (child = box->children; child != 0; child = child->next) {
@@ -906,6 +905,11 @@ void calculate_inline_container_widths(struct box *box)
 				assert(0);
 		}
         }
+
+	if (box->parent && box->parent->style &&
+			(box->parent->style->white_space == CSS_WHITE_SPACE_PRE ||
+			 box->parent->style->white_space == CSS_WHITE_SPACE_NOWRAP))
+		min = max;
 
 	assert(min <= max);
 	box->min_width = min;

@@ -256,7 +256,6 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 	struct css_style * style = 0;
 	xmlNode * c;
 	char * s;
-	char * text = 0;
 	xmlChar * title0;
 	char * title = 0;
 	int convert_children = 1;
@@ -320,7 +319,20 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		box->type = box_map[style->display];
 
 	} else if (n->type == XML_TEXT_NODE) {
-		text = squash_tolat1(n->content);
+		/* text node: added to inline container below */
+
+	} else {
+		/* not an element or text node: ignore it (eg. comment) */
+		LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
+		goto end;
+	}
+
+	content->size += sizeof(struct box) + sizeof(struct css_style);
+
+	if (n->type == XML_TEXT_NODE &&
+			(parent_style->white_space == CSS_WHITE_SPACE_NORMAL ||
+			 parent_style->white_space == CSS_WHITE_SPACE_NOWRAP)) {
+		char *text = squash_tolat1(n->content);
 
 		/* if the text is just a space, combine it with the preceding
 		 * text node, if any */
@@ -330,32 +342,79 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 				inline_container->last->space = 1;
 			}
 			xfree(text);
-			LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
 			goto end;
 		}
 
-		/* text nodes are converted to inline boxes */
+		if (inline_container == 0) {
+			/* this is the first inline node: make a container */
+			inline_container = box_create(0, 0, 0);
+			inline_container->type = BOX_INLINE_CONTAINER;
+			box_add_child(parent, inline_container);
+		}
+
 		box = box_create(parent_style, status.href, title);
+		box->text = text; 
 		box->style_clone = 1;
 		box->length = strlen(text);
 		if (text[box->length - 1] == ' ') {
 			box->space = 1;
 			box->length--;
 		}
-		box->text = text;
+		if (parent_style->white_space == CSS_WHITE_SPACE_NOWRAP) {
+			int i;
+			for (i = 0; i != box->length; i++)
+				if (text[i] == ' ')
+					text[i] = 160;
+		}
 		box->font = font_open(content->data.html.fonts, box->style);
 
-	} else {
-		/* not an element or text node: ignore it (eg. comment) */
-		LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
+		box_add_child(inline_container, box);
+		if (text[0] == ' ') {
+			box->length--;
+			memmove(text, text + 1, box->length);
+			if (box->prev != 0)
+				box->prev->space = 1;
+		}
 		goto end;
-	}
 
-	content->size += sizeof(struct box) + sizeof(struct css_style);
-	assert(box != 0);
+	} else if (n->type == XML_TEXT_NODE) {
+		/* white-space: pre */
+		char *text = tolat1_pre(n->content);
+		char *current;
+		bool first = true;
+		assert(parent_style->white_space == CSS_WHITE_SPACE_PRE);
+		for (current = text; *current; current++)
+			if (*current == ' ' || *current == '\t')
+				*current = 160;
+		current = text;
+		do {
+			size_t len = strcspn(current, "\r\n");
+			char old = current[len];
+			current[len] = 0;
+			if (!first || !inline_container) {
+				inline_container = box_create(0, 0, 0);
+				inline_container->type = BOX_INLINE_CONTAINER;
+			}
+			first = false;
+			box = box_create(parent_style, status.href, title);
+			box->type = BOX_INLINE;
+			box->style_clone = 1;
+			box->text = xstrdup(current);
+			box->length = strlen(box->text);
+			box->font = font_open(content->data.html.fonts, box->style);
+			box_add_child(inline_container, box);
+			box_add_child(parent, inline_container);
+			current[len] = old;
+			current += len;
+			if (current[0] == '\r' && current[1] == '\n')
+				current += 2;
+			else if (current[0] == '\n')
+				current++;
+		} while (*current);
+		xfree(text);
+		goto end;
 
-	if (text != 0 ||
-			box->type == BOX_INLINE ||
+	} else if (box->type == BOX_INLINE ||
 			box->type == BOX_INLINE_BLOCK ||
 			style->float_ == CSS_FLOAT_LEFT ||
 			style->float_ == CSS_FLOAT_RIGHT) {
@@ -367,18 +426,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			box_add_child(parent, inline_container);
 		}
 
-		if (text != 0) {
-			/* text box */
-			box_add_child(inline_container, box);
-			if (text[0] == ' ') {
-				box->length--;
-				memmove(text, text + 1, box->length);
-				if (box->prev != 0)
-					box->prev->space = 1;
-			}
-			LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
-			goto end;
-		} else if (box->type == BOX_INLINE) {
+		if (box->type == BOX_INLINE) {
 			/* inline box: add to tree and recurse */
 			box_add_child(inline_container, box);
 			if (convert_children) {
@@ -711,7 +759,10 @@ struct result box_textarea(xmlNode *n, struct status *status,
 		box_add_child(box, inline_container);
 		current[len] = old;
 		current += len;
-		current += strspn(current, "\r\n");
+		if (current[0] == '\r' && current[1] == '\n')
+			current += 2;
+		else if (current[0] == '\n')
+			current++;
 	} while (*current);
 	xmlFree(content);
 

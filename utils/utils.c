@@ -129,6 +129,31 @@ char * tolat1(xmlChar * s)
 	return d0;
 }
 
+char * tolat1_pre(xmlChar * s)
+{
+	unsigned int length = strlen((char*) s);
+	char *d = xcalloc(length + 1, sizeof(char));
+	char *d0 = d;
+	int u, chars;
+
+	while (*s != 0) {
+		chars = length;
+		u = xmlGetUTF8Char((unsigned char *) s, &chars);
+		s += chars;
+		length -= chars;
+		if (u == 0x09 || u == 0x0a || u == 0x0d ||
+				(0x20 <= u && u <= 0x7f) ||
+				(0xa0 <= u && u <= 0xff))
+			*d = u;
+		else
+			*d = '?';
+		d++;
+	}
+	*d = 0;
+
+	return d0;
+}
+
 char *squash_tolat1(xmlChar *s)
 {
 	/* TODO: optimize */

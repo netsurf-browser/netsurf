@@ -21,6 +21,7 @@ char * xstrdup(const char * const s);
 char * load(const char * const path);
 char * squash_whitespace(const char * s);
 char * tolat1(xmlChar * s);
+char * tolat1_pre(xmlChar * s);
 char *squash_tolat1(xmlChar *s);
 char *url_join(const char* new, const char* base);
 
