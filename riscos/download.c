@@ -110,6 +110,7 @@ void ro_gui_download_leaf(const char *url, char *leaf)
 {
 	char *slash;
 	size_t len;
+	int i;
 
 	/* take url from last / to first non-RISC OS character, eg. '.' */
 	slash = strrchr(url, '/');
@@ -117,12 +118,19 @@ void ro_gui_download_leaf(const char *url, char *leaf)
 		strcpy(leaf, "download");
 		return;
 	}
-	len = strspn(slash + 1, "0123456789" "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-			"abcdefghijklmnopqrstuvwxyz");  /* over-paranoid */
+	/*len = strspn(slash + 1, "0123456789" "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			"abcdefghijklmnopqrstuvwxyz");*/  /* over-paranoid */
+	len = strlen(slash+1);
 	if (40 < len)
 		len = 40;
 	strncpy(leaf, slash + 1, len);
 	leaf[len] = 0;
+        /* swap "." for "/" */
+	for (i=0; i!=len; i++) {
+	        if (leaf[i] == '.') {
+	                leaf[i] = '/';
+	        }
+	}
 }
 
 
