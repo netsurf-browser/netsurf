@@ -161,18 +161,19 @@ void nsgif_animate(void *p)
 {
 	struct content *c = p;
 	union content_msg_data data;
-	
+
 	/*	Advance by a frame, updating the loop count accordingly
 	*/
 	c->data.gif.current_frame++;
 	if (c->data.gif.current_frame == c->data.gif.gif->frame_count) {
 		c->data.gif.current_frame = 0;
-		
+
 		/*	A loop count of 0 has a special meaning of infinite
 		*/
 		if (c->data.gif.gif->loop_count != 0) {
 			c->data.gif.gif->loop_count--;
 			if (c->data.gif.gif->loop_count == 0) {
+				c->data.gif.current_frame = c->data.gif.gif->frame_count - 1;
 				c->data.gif.gif->loop_count = -1;
 			}
 		}
