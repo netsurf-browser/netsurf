@@ -112,7 +112,7 @@ typedef enum {
 	CSS_VERTICAL_ALIGN_PERCENT,
 	CSS_VERTICAL_ALIGN_NOT_SET
 } css_vertical_align_type;
-  	
+
 struct css_counter {
   	const char *name;
   	css_list_style_type style;
@@ -560,6 +560,8 @@ const char *css_parser_TokenName(int tokenType);
 #endif
 
 void css_get_style(struct content *c, xmlNode *n, struct css_style * style);
+struct css_style *css_duplicate_style(const struct css_style * const style);
+void css_free_style(struct css_style *style);
 void css_cascade(struct css_style * const style,
 		const struct css_style * const apply);
 void css_merge(struct css_style * const style,

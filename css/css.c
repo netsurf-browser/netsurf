@@ -467,6 +467,73 @@ void css_destroy(struct content *c)
 	free(c->data.css.import_content);
 }
 
+/**
+ * Duplicate a CSS style struct
+ *
+ * \param style The style to duplicate
+ * \return The duplicate style, or NULL if out of memory.
+ */
+struct css_style *css_duplicate_style(const struct css_style * const style)
+{
+	struct css_style *dup;
+
+	assert(style);
+
+	/* create duplicated style */
+	dup = calloc(1, sizeof(struct css_style));
+	if (!dup)
+		return NULL;
+
+	/* copy all style information into duplicate style */
+	memcpy(dup, style, sizeof(struct css_style));
+
+	/* duplicate strings, if in use */
+
+	/* background_image */
+	if (dup->background_image.type == CSS_BACKGROUND_IMAGE_URI) {
+		dup->background_image.uri = NULL;
+		dup->background_image.uri =
+				strdup(style->background_image.uri);
+		if (!dup->background_image.uri) {
+			free(dup);
+			return NULL;
+		}
+	}
+
+	/* list_style_image */
+	if (dup->list_style_image.type == CSS_LIST_STYLE_IMAGE_URI) {
+		dup->list_style_image.uri = NULL;
+		dup->list_style_image.uri =
+				strdup(style->list_style_image.uri);
+		if (!dup->list_style_image.uri) {
+			if (dup->background_image.type ==
+					CSS_BACKGROUND_IMAGE_URI)
+				free(dup->background_image.uri);
+			free(dup);
+			return NULL;
+		}
+	}
+
+	return dup;
+}
+
+/**
+ * Free a CSS style
+ *
+ * \param style The style to free
+ */
+void css_free_style(struct css_style *style)
+{
+	assert(style);
+
+	if (style->background_image.type == CSS_BACKGROUND_IMAGE_URI)
+		free(style->background_image.uri);
+
+	if (style->list_style_image.type == CSS_LIST_STYLE_IMAGE_URI)
+		free(style->list_style_image.uri);
+
+	free(style);
+}
 
 /**
  * Create a new struct css_node.

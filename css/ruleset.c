@@ -483,13 +483,12 @@ void css_add_ruleset(struct content *c,
 		if (!found) {
 			/* not present: construct a new struct css_style */
 			LOG(("constructing new style"));
-			style = malloc(sizeof *style);
+			style = css_duplicate_style(&css_empty_style);
 			if (!style) {
 				/** \todo report to user */
 				css_free_selector(sel);
 				return;
 			}
-			memcpy(style, &css_empty_style, sizeof(*style));
 			sel->style = style;
 			sel->next = n;
 			if (prev)

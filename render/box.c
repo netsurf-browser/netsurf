@@ -344,15 +344,15 @@ bool xml_to_box(xmlNode *n, struct content *c)
 	root.float_children = NULL;
 	root.next_float = NULL;
 
-	c->data.html.style = malloc(sizeof (struct css_style));
+	c->data.html.style = css_duplicate_style(&css_base_style);
 	if (!c->data.html.style)
 		return false;
-	memcpy(c->data.html.style, &css_base_style, sizeof(struct css_style));
+
 	c->data.html.style->font_size.value.length.value =
 			option_font_size * 0.1;
 	c->data.html.fonts = nsfont_new_set();
 	if (!c->data.html.fonts) {
-		free(c->data.html.style);
+		css_free_style(c->data.html.style);
 		return false;
 	}
 
@@ -433,8 +433,10 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
 		gui_multitask();
 
 		style = box_get_style(content, parent_style, n);
+		if (!style)
+			goto no_memory;
 		if (style->display == CSS_DISPLAY_NONE) {
-			free(style);
+			css_free_style(style);
 			goto end;
 		}
 		/* floats are treated as blocks */
@@ -474,7 +476,7 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
 			if (!box) {
 				/* no box for this element */
 				assert(!convert_children);
-				free(style);
+				css_free_style(style);
 				goto end;
 			}
 		} else {
@@ -745,7 +747,7 @@ no_memory:
 	if (!href_in)
 		xmlFree(status.href);
 	if (style && !box)
-		free(style);
+		css_free_style(style);
 
 	return false;
 }
@@ -774,23 +776,30 @@ struct css_style * box_get_style(struct content *c,
 	unsigned int stylesheet_count = c->data.html.stylesheet_count;
 	struct content **stylesheet = c->data.html.stylesheet_content;
 	struct css_style *style;
-	struct css_style style_new;
+	struct css_style *style_new;
 	char *url;
 	url_func_result res;
 
-	style = malloc(sizeof (struct css_style));
+	style = css_duplicate_style(parent_style);
 	if (!style)
 		return 0;
 
-	memcpy(style, parent_style, sizeof(struct css_style));
-	memcpy(&style_new, &css_blank_style, sizeof(struct css_style));
+	style_new = css_duplicate_style(&css_blank_style);
+	if (!style_new) {
+		css_free_style(style);
+		return 0;
+	}
+
 	for (i = 0; i != stylesheet_count; i++) {
 		if (stylesheet[i]) {
 			assert(stylesheet[i]->type == CONTENT_CSS);
-			css_get_style(stylesheet[i], n, &style_new);
+			css_get_style(stylesheet[i], n, style_new);
 		}
 	}
-	css_cascade(style, &style_new);
+	css_cascade(style, style_new);
+
+	/* style_new isn't needed past this point */
+	css_free_style(style_new);
 
 	/* This property only applies to the body element, if you believe
 	 * the spec. Many browsers seem to allow it on other elements too,
@@ -798,7 +807,7 @@ struct css_style * box_get_style(struct content *c,
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "background"))) {
 		res = url_join(s, c->data.html.base_url, &url);
 		if (res == URL_FUNC_NOMEM) {
-			free(style);
+			css_free_style(style);
 			return 0;
 		} else if (res == URL_FUNC_OK) {
 			/* if url is equivalent to the parent's url,
@@ -935,10 +944,16 @@ struct css_style * box_get_style(struct content *c,
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style")) != NULL) {
-		struct css_style astyle;
-		memcpy(&astyle, &css_empty_style, sizeof(struct css_style));
-		css_parse_property_list(c, &astyle, s);
-		css_cascade(style, &astyle);
+		struct css_style *astyle;
+		astyle = css_duplicate_style(&css_empty_style);
+		if (!astyle) {
+			xmlFree(s);
+			css_free_style(style);
+			return 0;
+		}
+		css_parse_property_list(c, astyle, s);
+		css_cascade(style, astyle);
+		css_free_style(astyle);
 		xmlFree(s);
 	}
 
@@ -1843,14 +1858,13 @@ bool box_normalise_block(struct box *block, pool box_pool)
 			case BOX_TABLE_ROW:
 			case BOX_TABLE_CELL:
 				/* insert implied table */
-				style = malloc(sizeof *style);
+				style = css_duplicate_style(block->style);
 				if (!style)
 					return false;
-				memcpy(style, block->style, sizeof *style);
 				css_cascade(style, &css_blank_style);
 				table = box_create(style, block->href, 0, 0, box_pool);
 				if (!table) {
-					free(style);
+					css_free_style(style);
 					return false;
 				}
 				table->type = BOX_TABLE;
@@ -1982,19 +1996,18 @@ bool box_normalise_table(struct box *table, pool box_pool)
 			case BOX_TABLE_ROW:
 			case BOX_TABLE_CELL:
 				/* insert implied table row group */
-				style = malloc(sizeof *style);
+				assert(table->style != NULL);
+				style = css_duplicate_style(table->style);
 				if (!style) {
 					free(col_info.spans);
 					return false;
 				}
-				assert(table->style != NULL);
-				memcpy(style, table->style, sizeof *style);
 				css_cascade(style, &css_blank_style);
 				row_group = box_create(style, table->href, 0,
 						0, box_pool);
 				if (!row_group) {
 					free(col_info.spans);
-					free(style);
+					css_free_style(style);
 					return false;
 				}
 				row_group->type = BOX_TABLE_ROW_GROUP;
@@ -2091,16 +2104,15 @@ bool box_normalise_table_row_group(struct box *row_group,
 			case BOX_TABLE_ROW_GROUP:
 			case BOX_TABLE_CELL:
 				/* insert implied table row */
-				style = malloc(sizeof *style);
+				assert(row_group->style != NULL);
+				style = css_duplicate_style(row_group->style);
 				if (!style)
 					return false;
-				assert(row_group->style != NULL);
-				memcpy(style, row_group->style, sizeof *style);
 				css_cascade(style, &css_blank_style);
 				row = box_create(style, row_group->href, 0,
 						0, box_pool);
 				if (!row) {
-					free(style);
+					css_free_style(style);
 					return false;
 				}
 				row->type = BOX_TABLE_ROW;
@@ -2263,16 +2275,15 @@ bool box_normalise_table_row(struct box *row,
 			case BOX_TABLE_ROW_GROUP:
 			case BOX_TABLE_ROW:
 				/* insert implied table cell */
-				style = malloc(sizeof *style);
+				assert(row->style != NULL);
+				style = css_duplicate_style(row->style);
 				if (!style)
 					return false;
-				assert(row->style != NULL);
-				memcpy(style, row->style, sizeof *style);
 				css_cascade(style, &css_blank_style);
 				cell = box_create(style, row->href, 0, 0,
 						box_pool);
 				if (!cell) {
-					free(style);
+					css_free_style(style);
 					return false;
 				}
 				cell->type = BOX_TABLE_CELL;
@@ -2448,7 +2459,7 @@ void box_free_box(struct box *box)
 		free(box->title);
 		free(box->col);
 		if (!box->style_clone)
-			free(box->style);
+			css_free_style(box->style);
 	}
 
 	free(box->usemap);
@@ -3035,14 +3046,13 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 	/* create the frameset table */
 	c = n->children;
 	for (row = 0; c && row != rows; row++) {
-		row_style = malloc(sizeof (struct css_style));
+		row_style = css_duplicate_style(style);
 		if (!row_style) {
 			box_free(box);
 			free(row_height);
 			free(col_width);
 			return (struct box_result) {0, false, true};
 		}
-		memcpy(row_style, style, sizeof (struct css_style));
 		object_height = 1000;  /** \todo  get available height */
 	/*	if (row_height) {
 			row_style->height.height = CSS_HEIGHT_LENGTH;
@@ -3080,14 +3090,13 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 			if (col_width && col_width[col].type == LENGTH_PX)
 				object_width = col_width[col].value;
 
-			cell_style = malloc(sizeof (struct css_style));
+			cell_style = css_duplicate_style(style);
 			if (!cell_style) {
 				box_free(box);
 				free(row_height);
 				free(col_width);
 				return (struct box_result) {0, false, true};
 			}
-			memcpy(cell_style, style, sizeof (struct css_style));
 			css_cascade(cell_style, &css_blank_style);
 			cell_style->overflow = CSS_OVERFLOW_AUTO;
 
@@ -3115,14 +3124,13 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 				continue;
 			}
 
-			object_style = malloc(sizeof (struct css_style));
+			object_style = css_duplicate_style(style);
 			if (!object_style) {
 				box_free(box);
 				free(row_height);
 				free(col_width);
 				return (struct box_result) {0, false, true};
 			}
-			memcpy(object_style, style, sizeof (struct css_style));
 			if (col_width && col_width[col].type == LENGTH_PX) {
 				object_style->width.width = CSS_WIDTH_LENGTH;
 				object_style->width.value.length.unit =
