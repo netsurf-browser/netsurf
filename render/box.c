@@ -1264,6 +1264,16 @@ void box_normalise_inline_container(struct box *cont)
 					default:
 						assert(0);
 				}
+				if (child->children == 0) {
+					/* the child has destroyed itself: remove float */
+					if (child->prev == 0)
+						child->parent->children = child->next;
+					else
+						child->prev->next = child->next;
+					if (child->next != 0)
+						child->next->prev = child->prev;
+					box_free_box(child);
+				}
 				break;
 			case BOX_BLOCK:
 			case BOX_INLINE_CONTAINER:
