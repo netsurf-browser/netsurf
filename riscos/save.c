@@ -15,11 +15,13 @@
 #include <string.h>
 #include "oslib/dragasprite.h"
 #include "oslib/osfile.h"
+#include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/save_text.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/save_draw.h"
+#include "netsurf/riscos/thumbnail.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -178,12 +180,19 @@ void ro_gui_save_datasave_ack(wimp_message *message)
  * Prepare an application directory and save_complete() to it.
  */
 
+#define WIDTH 64
+#define HEIGHT 64
+#define SPRITE_SIZE (16 + 44 + ((WIDTH / 2 + 3) & ~3) * HEIGHT / 2)
+
 void ro_gui_save_complete(struct content *c, char *path)
 {
-	char buf[256];
+	char buf[256], spritename[12];
 	FILE *fp;
 	os_error *error;
+	osspriteop_area *area;
+	char *appname;
 
+        /* Create dir */
 	error = xosfile_create_dir(path, 0);
 	if (error) {
 		LOG(("xosfile_create_dir: 0x%x: %s",
@@ -192,6 +201,7 @@ void ro_gui_save_complete(struct content *c, char *path)
 		return;
 	}
 
+        /* Save !Run file */
 	snprintf(buf, sizeof buf, "%s.!Run", path);
 	fp = fopen(buf, "w");
 	if (!fp) {
@@ -200,6 +210,65 @@ void ro_gui_save_complete(struct content *c, char *path)
 		return;
 	}
 	fprintf(fp, "Filer_Run <Obey$Dir>.index\n");
+	fclose(fp);
+	error = xosfile_set_type(buf, 0xfeb);
+	if (error) {
+		LOG(("xosfile_set_type: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user(error->errmess);
+		return;
+	}
+
+        /* Create !Sprites */
+	snprintf(buf, sizeof buf, "%s.!Sprites", path);
+	appname = strrchr(path, '.');
+	if (!appname) {
+	        LOG(("Couldn't get appname"));
+	        warn_user("Failed to acquire dirname");
+	        return;
+	}
+	snprintf(spritename, sizeof spritename, "%s", appname+1);
+	area = xcalloc(SPRITE_SIZE, sizeof(char));
+	if (!area) {
+	        LOG(("xcalloc failed"));
+	        warn_user("No memory for sprite");
+	        return;
+	}
+	area->size = SPRITE_SIZE;
+	area->sprite_count = 0;
+	area->first = 16;
+	area->used = 16;
+	error = xosspriteop_create_sprite(osspriteop_NAME, area,
+	                    spritename, false,
+	                    WIDTH / 2, HEIGHT / 2, os_MODE8BPP90X90);
+	if (error) {
+	        LOG(("Failed to create sprite"));
+	        warn_user("Failed to create iconsprite");
+	        xfree(area);
+	        return;
+	}
+	thumbnail_create(c, area,
+			(osspriteop_header *) ((char *) area + 16),
+			WIDTH / 2, HEIGHT / 2);
+	error = xosspriteop_save_sprite_file(osspriteop_NAME, area, buf);
+	if (error) {
+	        LOG(("Failed to save iconsprite"));
+	        warn_user("Failed to save iconsprite");
+	        xfree(area);
+	        return;
+	}
+
+	xfree(area);
+
+        /* Create !Boot file */
+	snprintf(buf, sizeof buf, "%s.!Boot", path);
+	fp = fopen(buf, "w");
+	if (!fp) {
+		LOG(("fopen(): errno = %i", errno));
+		warn_user(strerror(errno));
+		return;
+	}
+	fprintf(fp, "IconSprites <Obey$Dir>.!Sprites\n");
 	fclose(fp);
 	error = xosfile_set_type(buf, 0xfeb);
 	if (error) {
