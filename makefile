@@ -167,6 +167,6 @@ clean :
 		depend css/css_enum.c css/css_enum.h \
 		css/parser.c css/parser.h css/scanner.c css/scanner.h
 
-ifneq ($(OS),riscos)
-include depend
-endif
+#ifneq ($(OS),riscos)
+#include depend
+#endif
