@@ -20,14 +20,17 @@ struct box;
 struct form_control;
 struct form_option;
 
+/** Form submit method. */
+typedef enum {
+	method_GET,		/**< GET, always url encoded. */
+	method_POST_URLENC,	/**< POST, url encoded. */
+	method_POST_MULTIPART	/**< POST, multipart/form-data. */
+} form_method;
+
 /** HTML form. */
 struct form {
-	char *action;				/**< Url to submit to. */
-	enum {
-		method_GET,		/**< GET, always url encoded. */
-		method_POST_URLENC,	/**< POST, url encoded. */
-		method_POST_MULTIPART	/**< POST, multipart/form-data. */
-	} method;				/**< Method and enctype. */
+	char *action;				/**< URL to submit to. */
+	form_method method;			/**< Method and enctype. */
 	struct form_control *controls;		/**< Linked list of controls. */
 	struct form_control *last_control;	/**< Last control in list. */
 };
@@ -84,8 +87,8 @@ struct form_control {
 struct form_option {
 	bool selected;
 	bool initial_selected;
-	char* value;
-	char* text; /**< NUL terminated. */
+	char *value;
+	char *text; /**< NUL terminated. */
 	struct form_option* next;
 };
 
@@ -97,9 +100,12 @@ struct form_successful_control {
 	struct form_successful_control *next;	/**< Next in linked list. */
 };
 
+struct form *form_new(char *action, form_method method);
 struct form_control *form_new_control(form_control_type type);
 void form_add_control(struct form *form, struct form_control *control);
 void form_free_control(struct form_control *control);
+bool form_add_option(struct form_control *control, char *value, char *text,
+		bool selected);
 bool form_successful_controls(struct form *form,
 		struct form_control *submit_button,
 		struct form_successful_control **successful_controls);

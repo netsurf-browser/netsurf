@@ -24,6 +24,29 @@ static char *form_textarea_value(struct form_control *textarea);
 
 
 /**
+ * Create a struct form.
+ *
+ * \param  action  URL to submit form to, used directly (not copied)
+ * \param  method  method and enctype
+ * \return  a new structure, or 0 on memory exhaustion
+ */
+
+struct form *form_new(char *action, form_method method)
+{
+	struct form *form;
+
+	form = malloc(sizeof *form);
+	if (!form)
+		return 0;
+	form->action = action;
+	form->method = method;
+	form->controls = 0;
+	form->last_control = 0;
+	return form;
+}
+
+
+/**
  * Create a struct form_control.
  *
  * \param  type  control type
@@ -95,6 +118,53 @@ void form_free_control(struct form_control *control)
 		}
 	}
 	free(control);
+}
+
+
+/**
+ * Add an option to a form select control.
+ *
+ * \param  control   form control of type GADGET_SELECT
+ * \param  value     value of option, used directly (not copied)
+ * \param  text      text for option, used directly (not copied)
+ * \param  selected  this option is selected
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool form_add_option(struct form_control *control, char *value, char *text,
+		bool selected)
+{
+	struct form_option *option;
+
+	assert(control);
+	assert(control->type == GADGET_SELECT);
+
+	option = malloc(sizeof *option);
+	if (!option)
+		return false;
+	option->selected = option->initial_selected = false;
+	option->value = value;
+	option->text = text;
+	option->next = 0;
+
+	/* add to linked list */
+	if (control->data.select.items == 0)
+		control->data.select.items = option;
+	else
+		control->data.select.last_item->next = option;
+	control->data.select.last_item = option;
+
+	/* set selected */
+	if (selected && (control->data.select.num_selected == 0 ||
+			control->data.select.multiple)) {
+		option->selected = option->initial_selected = true;
+		control->data.select.num_selected++;
+		control->data.select.current = option;
+	}
+
+	control->data.select.num_items++;
+
+	return true;
 }
 
 
