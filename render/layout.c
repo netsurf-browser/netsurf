@@ -911,10 +911,19 @@ void calculate_table_widths(struct box *table)
 	unsigned int i, pass;
 	struct box *row_group, *row, *cell;
 	unsigned long width, min_width = 0, max_width = 0;
-	struct column *col = xcalloc(table->columns, sizeof(*col));
+	struct column *col;
 
 	LOG(("table %p, columns %u", table, table->columns));
 
+	/* check if the widths have already been calculated */
+	if (table->max_width != UNKNOWN_MAX_WIDTH)
+		return;
+
+	if (table->col)
+		col = table->col;
+	else
+		col = xcalloc(table->columns, sizeof(*col));
+	
 	assert(table->children != 0 && table->children->children != 0);
 	for (pass = 0; pass != 2; pass++) {
 	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
@@ -949,6 +958,8 @@ void calculate_table_widths(struct box *table)
 						cell->columns == 1) {
 					width = len(&cell->style->width.value.length,
 							cell->style);
+					if (width < cell->min_width)
+						width = cell->min_width;
 					col[i].type = COLUMN_WIDTH_FIXED;
 					if (min < width)
 						/* specified width greater than min => use it */
@@ -981,6 +992,8 @@ void calculate_table_widths(struct box *table)
 						max = 0;
 						for (j = 0; j != cell->columns; j++) {
 							col[i + j].min += extra;
+							if (col[i + j].width < col[i + j].min)
+								col[i + j].width = col[i + j].min;
 							if (col[i + j].max < col[i + j].min)
 								col[i + j].max = col[i + j].min;
 							max += col[i + j].max;
