@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.36 2003/06/24 23:22:00 bursa Exp $
+# $Id: makefile,v 1.37 2003/06/24 23:32:39 bursa Exp $
 
 CC = riscos-gcc
 CC_DEBUG = gcc
@@ -30,8 +30,8 @@ LDFLAGS = \
 	/usr/local/riscoslibs/curl/libcurl.ro \
 	/usr/local/riscoslibs/libpng/libpng.ro \
 	/usr/local/riscoslibs/zlib/libz.ro \
-	/usr/local/riscoslibs/openssl/lib/libssl.a \
-	/usr/local/riscoslibs/openssl/lib/libcrypto.a
+	/usr/local/riscoslibs/openssl/libssl.a \
+	/usr/local/riscoslibs/openssl/libcrypto.a
 LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl
 
 OBJDIR = $(shell $(CC) -dumpmachine)
