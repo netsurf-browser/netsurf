@@ -272,6 +272,8 @@ void fetch_abort(struct fetch *f)
 		assert(code == CURLE_OK);
 		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEDATA, fetch);
 		assert(code == CURLE_OK);
+		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEHEADER, fetch);
+		assert(code == CURLE_OK);
 		/* TODO: remove referer header if fetch->referer == 0 */
 		if (fetch->referer != 0) {
 			code = curl_easy_setopt(fetch->curl_handle, CURLOPT_REFERER, fetch->referer);
