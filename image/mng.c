@@ -19,6 +19,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/plotters.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/image/mng.h"
 #include "netsurf/utils/log.h"
@@ -258,7 +259,7 @@ bool nsmng_convert(struct content *c, int width, int height) {
 		LOG(("Unable to start display (%i)", status));
 		return nsmng_broadcast_error(c);
 	}
-	
+
 	/*	Optimise the plotting of JNG/PNGs
 	*/
 	if ((c->type == CONTENT_PNG) || (c->type == CONTENT_JNG)) {
@@ -381,9 +382,8 @@ bool nsmng_redraw(struct content *c, int x, int y,
 {
 	bool ret;
 
-	ret = bitmap_redraw(c, x, y, width, height,
-			clip_x0, clip_y0, clip_x1, clip_y1,
-			scale, background_colour);
+	ret = plot.bitmap(x, y, width, height,
+			c->bitmap, background_colour);
 
 	/*	Check if we need to restart the animation
 	*/

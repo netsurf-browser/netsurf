@@ -14,6 +14,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/desktop/plotters.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/image/gif.h"
 #include "netsurf/image/gifread.h"
@@ -161,9 +162,8 @@ bool nsgif_redraw(struct content *c, int x, int y,
 	}
 	c->bitmap = c->data.gif.gif->frame_image;
 
-	return bitmap_redraw(c, x, y, width, height,
-			clip_x0, clip_y0, clip_x1, clip_y1,
-			scale, background_colour);
+	return plot.bitmap(x, y, width, height,
+			c->bitmap, background_colour);
 }
 
 

@@ -31,10 +31,6 @@ bool bitmap_test_opaque(struct bitmap *bitmap);
 char *bitmap_get_buffer(struct bitmap *bitmap);
 size_t bitmap_get_rowstride(struct bitmap *bitmap);
 void bitmap_destroy(struct bitmap *bitmap);
-bool bitmap_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		float scale, unsigned long background_colour);
 bool bitmap_save(struct bitmap *bitmap, const char *path);
 
 #endif

@@ -20,6 +20,10 @@ struct content_jpeg_data {
 };
 
 bool nsjpeg_convert(struct content *c, int width, int height);
+bool nsjpeg_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		float scale, unsigned long background_colour);
 void nsjpeg_destroy(struct content *c);
 
 #endif

@@ -170,7 +170,7 @@ static const struct handler_entry handler_map[] = {
 	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0, false},
 #ifdef WITH_JPEG
 	{0, 0, nsjpeg_convert,
-		0, nsjpeg_destroy, 0, bitmap_redraw, 0, 0, false},
+		0, nsjpeg_destroy, 0, nsjpeg_redraw, 0, 0, false},
 #endif
 #ifdef WITH_GIF
 	{nsgif_create, 0, nsgif_convert,

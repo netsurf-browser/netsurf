@@ -21,6 +21,7 @@
 #include "libjpeg/jpeglib.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
+#include "netsurf/desktop/plotters.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/image/jpeg.h"
 #include "netsurf/utils/log.h"
@@ -204,6 +205,20 @@ void nsjpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
 
 void nsjpeg_term_source(j_decompress_ptr cinfo)
 {
+}
+
+
+/**
+ * Redraw a CONTENT_JPEG.
+ */
+
+bool nsjpeg_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		float scale, unsigned long background_colour)
+{
+	return plot.bitmap(x, y, width, height,
+			c->bitmap, background_colour);
 }
 
 
