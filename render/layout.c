@@ -126,7 +126,7 @@ void layout_block(struct box * box, unsigned long width, struct box * cont,
 			box->width = width;
 			break;
 	}
-	box->height = layout_block_children(box, box->width, cont, cx, cy);
+	box->height = layout_block_children(box, (unsigned int)box->width, cont, cx, cy);
 	switch (style->height.height) {
 		case CSS_HEIGHT_LENGTH:
 			box->height = len(&style->height.length, style);
@@ -171,7 +171,7 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 					y = left->y + left->height - cy + 1;
 				if ((c->style->clear == CSS_CLEAR_RIGHT || c->style->clear == CSS_CLEAR_BOTH)
 						&& right != 0)
-					if (cy + y < right->y + right->height + 1)
+					if (cy + y < (unsigned long)(right->y + right->height + 1))
 						y = right->y + right->height - cy + 1;
 			} while ((c->style->clear == CSS_CLEAR_LEFT && left != 0) ||
 			         (c->style->clear == CSS_CLEAR_RIGHT && right != 0) ||
@@ -205,11 +205,12 @@ void find_sides(struct box * fl, unsigned long y0, unsigned long y1,
 /* 	fprintf(stderr, "find_sides: y0 %li y1 %li x0 %li x1 %li => ", y0, y1, *x0, *x1); */
 	*left = *right = 0;
 	for (; fl; fl = fl->next_float) {
-		if (y0 <= fl->y + fl->height && fl->y <= y1) {
-			if (fl->type == BOX_FLOAT_LEFT && *x0 < fl->x + fl->width) {
+		if (y0 <= (unsigned long)(fl->y + fl->height) &&
+		          (unsigned long)fl->y <= y1) {
+			if (fl->type == BOX_FLOAT_LEFT && *x0 < (unsigned long)(fl->x + fl->width)) {
 				*x0 = fl->x + fl->width;
 				*left = fl;
-			} else if (fl->type == BOX_FLOAT_RIGHT && fl->x < *x1) {
+			} else if (fl->type == BOX_FLOAT_RIGHT && (unsigned long)fl->x < *x1) {
 				*x1 = fl->x;
 				*right = fl;
 			}
@@ -273,7 +274,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	struct box * left;
 	struct box * right;
 	struct box * b;
-	struct box * c;
+	struct box * c = NULL;
 	struct box * d;
 	struct box * fl;
 	int move_y = 0;
@@ -305,7 +306,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			else if ((b->object || b->gadget) && b->style && b->style->width.width == CSS_WIDTH_PERCENT)
 				b->width = width * b->style->width.value.percent / 100;
 			else if (b->text) {
-				if (b->width == UNKNOWN_WIDTH)
+				if ((unsigned long)b->width == UNKNOWN_WIDTH)
 					b->width = font_width(b->font, b->text, b->length);
 			} else
 				b->width = 0;
@@ -329,7 +330,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 				unsigned long w = width;
 				if (b->style->width.width == CSS_WIDTH_AUTO) {
 					calculate_widths(b);
-					if (b->max_width < width)
+					if ((unsigned long)b->max_width < width)
 						w = b->max_width;
 					else
 						w = b->min_width;
@@ -364,7 +365,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 				/* either a float with no width specified (contravenes standard)
 				 * or we don't know the width for some reason, eg. image not loaded */
 				calculate_widths(b);
-				if (d->max_width < width)
+				if ((unsigned long)d->max_width < width)
 					w = d->max_width;
 				else
 					w = d->min_width;
@@ -377,7 +378,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			d->x = d->y = 0;
 			b->width = d->width;
 			b->height = d->height;
-			if (b->width < (x1 - x0) - x || (left == 0 && right == 0 && x == 0)) {
+			if ((unsigned long)b->width < (x1 - x0) - x || (left == 0 && right == 0 && x == 0)) {
 				/* fits next to this line, or this line is empty with no floats */
 				if (b->type == BOX_FLOAT_LEFT) {
 					b->x = x0;
@@ -494,7 +495,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		if (d->type == BOX_INLINE || d->type == BOX_INLINE_BLOCK) {
 			d->x += x0;
 			d->y = *y;
-			if (used_height < d->height)
+			if (used_height < (unsigned long)d->height)
 				used_height = d->height;
 		}
 	}
@@ -523,7 +524,7 @@ void place_float_below(struct box * c, unsigned long width, unsigned long y, str
 		} else if (left != 0 && right == 0) {
 			yy = left->y + left->height + 1;
 		}
-	} while (!((left == 0 && right == 0) || (c->width < x1 - x0)));
+	} while (!((left == 0 && right == 0) || ((unsigned long)c->width < x1 - x0)));
 
 	if (c->type == BOX_FLOAT_LEFT) {
 		c->x = x0;
@@ -687,13 +688,13 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 				assert(c->style != 0);
 				c->width = xs[c->start_column + c->columns] - xs[c->start_column];
 				c->float_children = 0;
-				c->height = layout_block_children(c, c->width, c, 0, 0);
+				c->height = layout_block_children(c, (unsigned long)c->width, c, 0, 0);
 				if (c->style->height.height == CSS_HEIGHT_LENGTH) {
 					/* some sites use height="1" or similar to attempt
 					 * to make cells as small as possible, so treat
 					 * it as a minimum */
 					unsigned long h = len(&c->style->height.length, c->style);
-					if (c->height < h)
+					if ((unsigned long)c->height < h)
 						c->height = h;
 				}
 				/* increase height to contain any floats inside */
@@ -797,7 +798,7 @@ void calculate_widths(struct box *box)
 	       box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT);
 
 	/* check if the widths have already been calculated */
-	if (box->max_width != UNKNOWN_MAX_WIDTH)
+	if ((unsigned long)box->max_width != UNKNOWN_MAX_WIDTH)
 		return;
 
 	for (child = box->children; child != 0; child = child->next) {
@@ -814,15 +815,15 @@ void calculate_widths(struct box *box)
 						calculate_table_widths(child);
 					else
 						calculate_widths(child);
-					if (min < child->min_width) min = child->min_width;
-					if (max < child->max_width) max = child->max_width;
+					if (min < (unsigned long)child->min_width) min = child->min_width;
+					if (max < (unsigned long)child->max_width) max = child->max_width;
 				}
 				break;
 
 			case BOX_INLINE_CONTAINER:
 				calculate_inline_container_widths(child);
-				if (min < child->min_width) min = child->min_width;
-				if (max < child->max_width) max = child->max_width;
+				if (min < (unsigned long)child->min_width) min = child->min_width;
+				if (max < (unsigned long)child->max_width) max = child->max_width;
 				break;
 
 			default:
@@ -850,7 +851,7 @@ void calculate_inline_container_widths(struct box *box)
 						child->width = len(&child->style->width.value.length,
 								child->style);
 						max += child->width;
-						if (min < child->width)
+						if (min < (unsigned long)child->width)
 							min = child->width;
 					}
 
@@ -865,12 +866,12 @@ void calculate_inline_container_widths(struct box *box)
 					/* min = widest word */
 					i = 0;
 					do {
-						for (j = i; j != child->length && child->text[j] != ' '; j++)
+						for (j = i; (unsigned long)j != child->length && child->text[j] != ' '; j++)
 							;
-						width = font_width(child->font, child->text + i, j - i);
+						width = font_width(child->font, child->text + i, (unsigned long)(j - i));
 						if (min < width) min = width;
 						i = j + 1;
-					} while (j != child->length);
+					} while ((unsigned long)j != child->length);
 				}
 				break;
 
@@ -883,7 +884,7 @@ void calculate_inline_container_widths(struct box *box)
 					max += width;
 				} else {
 					calculate_widths(child);
-					if (min < child->min_width) min = child->min_width;
+					if (min < (unsigned long)child->min_width) min = child->min_width;
 					max += child->max_width;
 				}
 				break;
@@ -898,8 +899,8 @@ void calculate_inline_container_widths(struct box *box)
 					if (max < width) max = width;
 				} else {
 					calculate_widths(child);
-					if (min < child->min_width) min = child->min_width;
-					if (max < child->max_width) max = child->max_width;
+					if (min < (unsigned long)child->min_width) min = child->min_width;
+					if (max < (unsigned long)child->max_width) max = child->max_width;
 				}
 				break;
 
@@ -930,7 +931,7 @@ void calculate_table_widths(struct box *table)
 	LOG(("table %p, columns %u", table, table->columns));
 
 	/* check if the widths have already been calculated */
-	if (table->max_width != UNKNOWN_MAX_WIDTH)
+	if ((unsigned long)table->max_width != UNKNOWN_MAX_WIDTH)
 		return;
 
 	free(table->col);
@@ -954,15 +955,15 @@ void calculate_table_widths(struct box *table)
 				i = cell->start_column;
 
 				if (col[i].type == COLUMN_WIDTH_FIXED) {
-					if (col[i].width < cell->min_width)
+					if (col[i].width < (unsigned long)cell->min_width)
 						col[i].min = col[i].width = col[i].max = cell->min_width;
 					continue;
 				}
 
 				/* update column min, max widths using cell widths */
-				if (col[i].min < cell->min_width)
+				if (col[i].min < (unsigned long)cell->min_width)
 					col[i].min = cell->min_width;
-				if (col[i].max < cell->max_width)
+				if (col[i].max < (unsigned long)cell->max_width)
 					col[i].max = cell->max_width;
 
 				if (col[i].type != COLUMN_WIDTH_FIXED &&
@@ -1020,7 +1021,7 @@ void calculate_table_widths(struct box *table)
 					 * columns which aren't fixed width yet */
 					width = len(&cell->style->width.value.length,
 							cell->style);
-					if (width < cell->min_width)
+					if (width < (unsigned long)cell->min_width)
 						width = cell->min_width;
 					extra = width - fixed_width;
 					for (j = 0; j != cell->columns; j++)
@@ -1041,7 +1042,7 @@ void calculate_table_widths(struct box *table)
 				}
 
 				/* distribute extra min, max to spanned columns */
-				if (min < cell->min_width) {
+				if (min < (unsigned long)cell->min_width) {
 					if (flexible_columns == 0) {
 						extra = 1 + (cell->min_width - min)
 								/ cell->columns;
@@ -1062,7 +1063,7 @@ void calculate_table_widths(struct box *table)
 						}
 					}
 				}
-				if (max < cell->max_width && flexible_columns != 0) {
+				if (max < (unsigned long)cell->max_width && flexible_columns != 0) {
 					extra = 1 + (cell->max_width - max)
 							/ flexible_columns;
 					for (j = 0; j != cell->columns; j++)

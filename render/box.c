@@ -364,7 +364,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			box->length--;
 		}
 		if (parent_style->white_space == CSS_WHITE_SPACE_NOWRAP) {
-			int i;
+			unsigned int i;
 			for (i = 0; i != box->length; i++)
 				if (text[i] == ' ')
 					text[i] = 160;
@@ -1136,7 +1136,7 @@ void box_dump(struct box * box, unsigned int depth)
 		fprintf(stderr, "  ");
 
 	fprintf(stderr, "x%li y%li w%li h%li ", box->x, box->y, box->width, box->height);
-	if (box->max_width != UNKNOWN_MAX_WIDTH)
+	if ((unsigned long)box->max_width != UNKNOWN_MAX_WIDTH)
 		fprintf(stderr, "min%lu max%lu ", box->min_width, box->max_width);
 
 	switch (box->type) {
@@ -1422,7 +1422,7 @@ void box_normalise_table_row(struct box *row,
 	struct box *next_child;
 	struct box *cell;
 	struct css_style *style;
-	unsigned int columns = 0, i, min;
+	unsigned int columns = 0, i;
 
 	assert(row != 0);
 	assert(row->type == BOX_TABLE_ROW);
@@ -1660,7 +1660,7 @@ struct result box_object(xmlNode *n, struct status *status,
 	struct box *box;
 	struct object_params *po;
 	struct plugin_params* pp;
-	char *s, *url;
+	char *s, *url = NULL;
 	xmlNode *c;
 
 	box = box_create(style, status->href, 0);
@@ -1788,7 +1788,7 @@ struct result box_embed(xmlNode *n, struct status *status,
 	struct box *box;
 	struct object_params *po;
 	struct plugin_params *pp;
-	char *s, *url;
+	char *s, *url = NULL;
 	xmlAttr *a;
 
 	box = box_create(style, status->href, 0);
@@ -1858,7 +1858,7 @@ struct result box_applet(xmlNode *n, struct status *status,
 	struct box *box;
 	struct object_params *po;
 	struct plugin_params *pp;
-	char *s, *url;
+	char *s, *url = NULL;
 	xmlNode *c;
 
 	box = box_create(style, status->href, 0);
@@ -1962,7 +1962,7 @@ struct result box_iframe(xmlNode *n, struct status *status,
 {
         struct box *box;
 	struct object_params *po;
-	char *s, *url;
+	char *s, *url = NULL;
 
 	box = box_create(style, status->href, 0);
 

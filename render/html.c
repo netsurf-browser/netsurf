@@ -119,7 +119,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	for (i = 2; i != c->data.html.stylesheet_count; i++)
 		if (c->data.html.stylesheet_content[i] != 0)
 			content_remove_user(c->data.html.stylesheet_content[i],
-					html_convert_css_callback, c, i);
+					html_convert_css_callback, c, (void*)i);
 	xfree(c->data.html.stylesheet_content);
 
 	/* layout the box tree */
@@ -158,7 +158,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 				c->error = 1;
 				sprintf(c->status_message, "Warning: stylesheet is not CSS");
 				content_broadcast(c, CONTENT_MSG_STATUS, 0);
-				content_remove_user(css, html_convert_css_callback, c, i);
+				content_remove_user(css, html_convert_css_callback, c, (void*)i);
 			}
 			break;
 
@@ -186,7 +186,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			c->active--;
 			c->data.html.stylesheet_content[i] = fetchcache(
 					error, c->url, html_convert_css_callback,
-					c, i, css->width, css->height, true, 0, 0, false);
+					c, (void*)i, css->width, css->height, true, 0, 0, false);
 			if (c->data.html.stylesheet_content[i] != 0 &&
 					c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
 				c->active++;
@@ -310,7 +310,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			c->data.html.stylesheet_content = xrealloc(c->data.html.stylesheet_content,
 					(i + 1) * sizeof(*c->data.html.stylesheet_content));
 			c->data.html.stylesheet_content[i] = fetchcache(url, c->url,
-					html_convert_css_callback, c, i,
+					html_convert_css_callback, c, (void*)i,
 					c->width, c->height, true, 0, 0, false);
 			if (c->data.html.stylesheet_content[i] &&
 					c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
@@ -399,7 +399,7 @@ void html_fetch_object(struct content *c, char *url, struct box *box)
 	/* start fetch */
 	c->data.html.object[i].content = fetchcache(url, c->url,
 			html_object_callback,
-			c, i, c->width, c->height,
+			c, (void*)i, c->width, c->height,
 			true, 0, 0, false);	/* we don't know the object's
 						  dimensions yet; use
 						  parent's as an estimate */
@@ -407,7 +407,7 @@ void html_fetch_object(struct content *c, char *url, struct box *box)
 		c->active++;
 		if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
 			html_object_callback(CONTENT_MSG_DONE,
-					c->data.html.object[i].content, c, i, 0);
+					c->data.html.object[i].content, c, (void*)i, 0);
 	}
 	c->data.html.object_count++;
 }
@@ -427,7 +427,7 @@ void html_object_callback(content_msg msg, struct content *object,
 				c->error = 1;
 				sprintf(c->status_message, "Warning: bad object type");
 				content_broadcast(c, CONTENT_MSG_STATUS, 0);
-				content_remove_user(object, html_object_callback, c, i);
+				content_remove_user(object, html_object_callback, c, (void*)i);
 			}
 			break;
 
@@ -445,13 +445,13 @@ void html_object_callback(content_msg msg, struct content *object,
 				box->min_width = box->max_width = box->width = object->width;
 			}
 			/* invalidate parent min, max widths */
-			if (box->parent && box->parent->max_width != UNKNOWN_MAX_WIDTH) {
+			if (box->parent && (unsigned long)box->parent->max_width != UNKNOWN_MAX_WIDTH) {
 				struct box *b = box->parent;
 				b->max_width = UNKNOWN_MAX_WIDTH;
 				for (b = b->parent; b != 0 &&
 						(b->type == BOX_TABLE_ROW_GROUP ||
 						 b->type == BOX_TABLE_ROW ||
-						 b->max_width != UNKNOWN_MAX_WIDTH);
+						 (unsigned long)b->max_width != UNKNOWN_MAX_WIDTH);
 						b = b->parent) {
 					b->max_width = UNKNOWN_MAX_WIDTH;
 				}
@@ -490,12 +490,12 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->data.html.object[i].url = xstrdup(error);
 			c->data.html.object[i].content = fetchcache(
 					error, c->url, html_object_callback,
-					c, i, 0, 0, true, 0, 0, false);
+					c, (void*)i, 0, 0, true, 0, 0, false);
 			if (c->data.html.object[i].content) {
 				c->active++;
 				if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
 					html_object_callback(CONTENT_MSG_DONE,
-							c->data.html.object[i].content, c, i, 0);
+							c->data.html.object[i].content, c, (void*)i, 0);
 			}
 			break;
 
@@ -535,7 +535,7 @@ void html_revive(struct content *c, unsigned int width, unsigned int height)
 			c->data.html.object[i].content = fetchcache(
 					c->data.html.object[i].url, c->url,
 					html_object_callback,
-					c, i, 0, 0, true, 0, 0, false);
+					c, (void*)i, 0, 0, true, 0, 0, false);
 			if (c->data.html.object[i].content &&
 					c->data.html.object[i].content->status != CONTENT_STATUS_DONE)
 				c->active++;
@@ -568,7 +568,7 @@ void html_destroy(struct content *c)
 		LOG(("object %i %p", i, c->data.html.object[i].content));
 		if (c->data.html.object[i].content != 0)
 			content_remove_user(c->data.html.object[i].content,
-					 html_object_callback, c, i);
+					 html_object_callback, c, (void*)i);
 		free(c->data.html.object[i].url);
 	}
 	free(c->data.html.object);
