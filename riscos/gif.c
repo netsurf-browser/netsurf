@@ -54,7 +54,8 @@
 
 #ifdef WITH_GIF
 
-
+static bool nsgif_decompress_frame(struct content *c, anim *p_gif_animation,
+		unsigned int cur_frame);
 static void CompressSpriteLine( pixel *dest, const pixel *src, int n, int bpp );
 static void CompressMaskLine( pixel *dest, const pixel *src, int n, int bpp );
 
