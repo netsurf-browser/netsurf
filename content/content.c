@@ -1,5 +1,5 @@
 /**
- * $Id: content.c,v 1.6 2003/04/06 18:09:34 bursa Exp $
+ * $Id: content.c,v 1.7 2003/04/15 17:53:00 bursa Exp $
  */
 
 #include <assert.h>
@@ -75,6 +75,7 @@ struct content * content_create(content_type type, char *url)
 	c->status = CONTENT_LOADING;
 	c->size = sizeof(struct content);
 	c->status_callback = 0;
+	strcpy(c->status_message, "Loading");
 	handler_map[type].create(c);
 	return c;
 }
@@ -102,9 +103,11 @@ int content_convert(struct content *c, unsigned long width, unsigned long height
 	assert(c != 0);
 	assert(c->type < CONTENT_OTHER);
 	assert(c->status == CONTENT_LOADING);
+	c->available_width = width;
 	if (handler_map[c->type].convert(c, width, height))
 		return 1;
-	c->status = CONTENT_READY;
+	if (c->status == CONTENT_LOADING)
+		c->status = CONTENT_DONE;
 	return 0;
 }
 
@@ -118,7 +121,8 @@ void content_revive(struct content *c, unsigned long width, unsigned long height
 {
 	assert(c != 0);
 	assert(c->type < CONTENT_OTHER);
-	assert(c->status == CONTENT_READY);
+	assert(c->status == CONTENT_DONE);
+	c->available_width = width;
 	handler_map[c->type].revive(c, width, height);
 }
 
@@ -131,7 +135,8 @@ void content_reformat(struct content *c, unsigned long width, unsigned long heig
 {
 	assert(c != 0);
 	assert(c->type < CONTENT_OTHER);
-	assert(c->status == CONTENT_READY);
+	assert(c->status != CONTENT_LOADING);
+	c->available_width = width;
 	handler_map[c->type].reformat(c, width, height);
 }
 

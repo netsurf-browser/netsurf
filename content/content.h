@@ -1,5 +1,5 @@
 /**
- * $Id: content.h,v 1.8 2003/04/13 12:50:10 bursa Exp $
+ * $Id: content.h,v 1.9 2003/04/15 17:53:00 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
@@ -49,8 +49,15 @@ struct content
 {
   char *url;
   content_type type;
-  enum {CONTENT_LOADING, CONTENT_READY} status;
+  enum {
+	  CONTENT_LOADING,  /* content is being fetched or converted
+			       and is not safe to display */
+	  CONTENT_PENDING,  /* some parts of content still being
+			       loaded, but can be displayed */
+	  CONTENT_DONE      /* all finished */
+  } status;
   unsigned long width, height;
+  unsigned long available_width;
 
   union
   {
@@ -69,6 +76,12 @@ struct content
       } text_selection;
       struct font_set* fonts;
       struct page_elements elements;
+      unsigned int object_count;  /* images etc. */
+      struct {
+        char *url;
+        struct content *content;
+	struct box *box;
+      } *object;
     } html;
 
     struct
@@ -94,6 +107,7 @@ struct content
   int error;
   void (*status_callback)(void *p, const char *status);
   void *status_p;
+  char status_message[80];
 };
 
 

@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.39 2003/04/13 12:50:10 bursa Exp $
+ * $Id: layout.c,v 1.40 2003/04/15 17:53:00 bursa Exp $
  */
 
 #include <assert.h>
@@ -77,8 +77,12 @@ signed long len(struct css_length * length, struct css_style * style)
 
 void layout_document(struct box * doc, unsigned long width)
 {
+	struct box *box;
 	doc->float_children = 0;
 	layout_node(doc, width, doc, 0, 0);
+	for (box = doc->float_children; box != 0; box = box->next)
+		if (doc->height < box->y + box->height)
+			doc->height = box->y + box->height;
 }
 
 
@@ -159,6 +163,7 @@ int gadget_height(struct gui_gadget* gadget)
 	}
 	return 0;
 }
+
 /**
  * layout_block -- position block and recursively layout children
  *
@@ -353,11 +358,10 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 				h = line_height(b->style ? b->style : b->parent->parent->style);
 			else if (b->gadget != 0)
 				h = gadget_height(b->gadget);
-			else {
-				assert(b->style != 0);
-				assert(b->style->height.height == CSS_HEIGHT_LENGTH);
+			else if (b->style != 0 && b->style->height.height == CSS_HEIGHT_LENGTH)
 				h = len(&b->style->height.length, b->style);
-			}
+			else
+				h = 0;
 			b->height = h;
 
 			if (h > height) height = h;
@@ -367,17 +371,12 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 					b->width = font_width(b->font, b->text, b->length);
 				else if (b->gadget != 0)
 					b->width = gadget_width(b->gadget);
-				else {
-					assert(b->style != 0);
-					assert(b->style->width.width == CSS_WIDTH_LENGTH ||
-						b->style->width.width == CSS_WIDTH_PERCENT);
-					if (b->style->width.width == CSS_WIDTH_LENGTH)
-						b->width = len(&b->style->width.value.length,
-								b->style);
-					else
-						b->width = width * b->style->width.value.percent
-								/ 100;
-				}
+				else if (b->style != 0 && b->style->width.width == CSS_WIDTH_LENGTH)
+					b->width = len(&b->style->width.value.length, b->style);
+				else if (b->style != 0 && b->style->width.width == CSS_WIDTH_PERCENT)
+					b->width = width * b->style->width.value.percent / 100;
+				else
+					b->width = 0;
 			}
 
 			if (b->text != 0)
@@ -417,10 +416,9 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 				/* either a float with no width specified (contravenes standard)
 				 * or we don't know the width for some reason, eg. image not loaded */
 				calculate_widths(b);
-				w = width / 2;
-				if (d->max_width < w)
+				if (d->max_width < width)
 					w = d->max_width;
-				else if (w < d->min_width)
+				else
 					w = d->min_width;
 			}
 			layout_node(d, w, d, 0, 0);

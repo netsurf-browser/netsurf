@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.25 2003/04/11 21:06:51 bursa Exp $
+ * $Id: gui.c,v 1.26 2003/04/15 17:53:00 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -326,7 +326,8 @@ gui_window* create_gui_browser_window(struct browser_window* bw)
   window.flags =
       wimp_WINDOW_MOVEABLE | wimp_WINDOW_NEW_FORMAT | wimp_WINDOW_BACK_ICON |
       wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_TITLE_ICON | wimp_WINDOW_VSCROLL |
-      wimp_WINDOW_SIZE_ICON | wimp_WINDOW_TOGGLE_ICON;
+      wimp_WINDOW_HSCROLL | wimp_WINDOW_SIZE_ICON | wimp_WINDOW_TOGGLE_ICON |
+      wimp_WINDOW_IGNORE_XEXTENT;
   window.title_fg = wimp_COLOUR_BLACK;
   window.title_bg = wimp_COLOUR_LIGHT_GREY;
   window.work_fg = wimp_COLOUR_LIGHT_GREY;
@@ -578,12 +579,20 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
       current_background_color = box->style->background_color;
     }
 
-    if (box->img != 0)
+    if (box->object != 0)
+    {
+      if (box->object->type == CONTENT_JPEG) {
+	xjpeg_plot_scaled((jpeg_image *) box->object->data.jpeg.data,
+			(int) x + (int) box->x * 2, (int) y - (int) box->y * 2 - (int) box->height * 2,
+			0, (int) box->object->data.jpeg.length, jpeg_SCALE_DITHERED);
+      }
+    }
+/*    if (box->img != 0)
     {
       colourtrans_set_gcol(os_COLOUR_LIGHT_GREY, 0, os_ACTION_OVERWRITE, 0);
       os_plot(os_MOVE_TO, (int) x + (int) box->x * 2, (int) y - (int) box->y * 2);
       os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, (int) box->width * 2, - (int) box->height * 2);
-    }
+    }*/
     else if (box->gadget != 0)
     {
 	wimp_icon icon;
@@ -855,7 +864,7 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
           xjpeg_plot_scaled((jpeg_image *) c->data.jpeg.data,
             (int) redraw->box.x0 - (int) redraw->xscroll,
             (int) redraw->box.y1 - (int) redraw->yscroll - (int) c->height * 2,
-            0, (int) c->data.jpeg.length, 0);
+            0, (int) c->data.jpeg.length, jpeg_SCALE_DITHERED);
           break;
 	
         default:
@@ -905,7 +914,7 @@ void gui_window_set_extent(gui_window* g, unsigned long width, unsigned long hei
   extent.y0 = ro_y_units(height);
   if (extent.y0 > -960)
     extent.y0 = -960;
-  extent.x1 = 8192; //ro_x_units(width);
+  extent.x1 = ro_x_units(width);
   if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
   {
     extent.y1 = ro_theme_toolbar_height(current_theme);
@@ -972,10 +981,19 @@ fprintf(stderr, "Set URL '%s'\n", msg->data.set_url.url);
 
 void ro_gui_window_open(gui_window* g, wimp_open* open)
 {
-  wimp_open_window(open);
-
   if (g->type == GUI_BROWSER_WINDOW)
   {
+    if (g->data.browser.bw->current_content != 0) {
+      if (g->data.browser.bw->current_content->width
+		      < browser_x_units(open->visible.x1 - open->visible.x0))
+        gui_window_set_extent(g, browser_x_units(open->visible.x1 - open->visible.x0),
+			g->data.browser.bw->current_content->height);
+      else
+        gui_window_set_extent(g, g->data.browser.bw->current_content->width,
+			g->data.browser.bw->current_content->height);
+    }
+    wimp_open_window(open);
+
     if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
     {
       wimp_outline outline;
@@ -1011,6 +1029,8 @@ void ro_gui_window_open(gui_window* g, wimp_open* open)
       }
 
     }
+  } else {
+    wimp_open_window(open);
   }
 }
 
@@ -1024,7 +1044,7 @@ void ro_gui_icon_bar_click(wimp_pointer* pointer)
   {
     struct browser_window* bw;
     bw = create_browser_window(browser_TITLE | browser_TOOLBAR
-      | browser_SCROLL_X_NONE | browser_SCROLL_Y_ALWAYS, 640, 480);
+      | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480);
     gui_window_show(bw->window);
     browser_window_open_location(bw, HOME_URL);
     wimp_set_caret_position(bw->window->data.browser.toolbar,
@@ -1077,6 +1097,19 @@ void ro_gui_throb(void)
   {
     if (g->type == GUI_BROWSER_WINDOW)
     {
+      if (g->data.browser.bw->current_content->status == CONTENT_PENDING) {
+        /* images still loading */
+        gui_window_set_status(g, g->data.browser.bw->current_content->status_message);
+        if (g->data.browser.bw->current_content->active == 0) {
+          /* any image fetches have finished */
+	  browser_window_reformat(g->data.browser.bw);
+	  browser_window_stop_throbber(g->data.browser.bw);
+	  /* TODO: move this elsewhere: can't just move it to the image loader,
+	   * because then this if would be triggered when an old content is
+	   * present */
+          g->data.browser.bw->current_content->status = CONTENT_DONE;
+	}
+      }
       if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
       {
         if (g->data.browser.bw->throbbing != 0)
@@ -1281,7 +1314,7 @@ void ro_gui_w_click(wimp_pointer* pointer)
     {
       struct browser_window* bw;
       bw = create_browser_window(browser_TITLE | browser_TOOLBAR
-        | browser_SCROLL_X_NONE | browser_SCROLL_Y_ALWAYS, 640, 480);
+        | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480);
       gui_window_show(bw->window);
       browser_window_open_location(bw, "http://sourceforge.net/projects/netsurf/");
       wimp_set_caret_position(bw->window->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_URL"),
@@ -1904,6 +1937,7 @@ void gui_poll(void)
     switch (event)
     {
       case wimp_NULL_REASON_CODE        :
+        ro_gui_throb();
         if (over_window != NULL
             || current_drag.type == draginfo_BROWSER_TEXT_SELECTION)
         {

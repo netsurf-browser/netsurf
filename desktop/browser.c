@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.33 2003/04/12 12:38:32 andrew Exp $
+ * $Id: browser.c,v 1.34 2003/04/15 17:53:00 bursa Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -19,8 +19,6 @@
 #include <ctype.h>
 
 static void browser_window_start_throbber(struct browser_window* bw);
-static void browser_window_stop_throbber(struct browser_window* bw);
-static void browser_window_reformat(struct browser_window* bw);
 static void browser_window_text_selection(struct browser_window* bw,
 		unsigned long click_x, unsigned long click_y, int click_type);
 static void browser_window_clear_text_selection(struct browser_window* bw);
@@ -214,6 +212,7 @@ void browser_window_open_location_historical(struct browser_window* bw, const ch
   assert(bw != 0 && url != 0);
 
   browser_window_set_status(bw, "Opening page...");
+  browser_window_start_throbber(bw);
   bw->time0 = clock();
   fetchcache(url, 0, browser_window_callback, bw,
 		  gui_window_get_width(bw->window), 0,
@@ -276,9 +275,13 @@ void browser_window_callback(fetchcache_msg msg, struct content *c,
         bw->current_content = c;
         browser_window_reformat(bw);
         gui_window_set_redraw_safety(bw->window, previous_safety);
-        sprintf(status, "Page complete (%gs)", ((float) (clock() - bw->time0)) / CLOCKS_PER_SEC);
-        browser_window_set_status(bw, status);
-        browser_window_stop_throbber(bw);
+	if (bw->current_content->status == CONTENT_DONE) {
+          sprintf(status, "Page complete (%gs)", ((float) (clock() - bw->time0)) / CLOCKS_PER_SEC);
+          browser_window_set_status(bw, status);
+          browser_window_stop_throbber(bw);
+	} else {
+          browser_window_set_status(bw, bw->current_content->status_message);
+	}
       }
       break;
 

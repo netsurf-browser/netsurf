@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.23 2003/04/10 21:44:45 bursa Exp $
+ * $Id: box.h,v 1.24 2003/04/15 17:53:00 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -74,11 +74,6 @@ struct gui_gadget {
 	} data;
 };
 
-struct img {
-	char* alt;
-	char* src;
-};
-
 struct box {
 	box_type type;
 	struct css_style * style;
@@ -99,7 +94,7 @@ struct box {
 	struct column *col;
 	struct font_data *font;
 	struct gui_gadget* gadget;
-	struct img* img;
+	struct content* object;  /* usually an image */
 };
 
 struct form
@@ -132,14 +127,7 @@ struct page_elements
  * interface
  */
 
-void xml_to_box(xmlNode * n, struct css_style * parent_style,
-		struct content ** stylesheet, unsigned int stylesheet_count,
-		struct css_selector ** selector, unsigned int depth,
-		struct box * parent, struct box * inline_container,
-		char *href, struct font_set *fonts,
-		struct gui_gadget* current_select, struct formoption* current_option,
-		struct gui_gadget* current_textarea, struct form* current_form,
-		struct page_elements* elements);
+void xml_to_box(xmlNode *n, struct content *c);
 void box_dump(struct box * box, unsigned int depth);
 void box_free(struct box *box);
 

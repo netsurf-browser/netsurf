@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.c,v 1.4 2003/04/09 21:57:09 bursa Exp $
+ * $Id: fetch.c,v 1.5 2003/04/15 17:53:00 bursa Exp $
  */
 
 #include <assert.h>
@@ -191,8 +191,10 @@ void fetch_poll(void)
 				LOG(("CURLMSG_DONE, result %i", curl_msg->data.result));
 
 				/* inform the caller that the fetch is done */
-				if (curl_msg->data.result == CURLE_OK)
+				if (curl_msg->data.result == CURLE_OK && f->had_headers)
 					f->callback(FETCH_FINISHED, f->p, 0, 0);
+				else if (curl_msg->data.result == CURLE_OK)
+					f->callback(FETCH_ERROR, f->p, "No data received", 0);
 				else if (curl_msg->data.result != CURLE_WRITE_ERROR)
 					f->callback(FETCH_ERROR, f->p, f->error_buffer, 0);
 

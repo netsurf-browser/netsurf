@@ -1,5 +1,5 @@
 /**
- * $Id: browser.h,v 1.11 2003/03/04 11:59:35 bursa Exp $
+ * $Id: browser.h,v 1.12 2003/04/15 17:53:00 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
@@ -110,5 +110,8 @@ int box_position_eq(struct box_position* x, struct box_position* y);
 int box_position_distance(struct box_position* x, struct box_position* y);
 
 void gui_redraw_gadget(struct browser_window* bw, struct gui_gadget* g);
+
+void browser_window_stop_throbber(struct browser_window* bw);
+void browser_window_reformat(struct browser_window* bw);
 
 #endif

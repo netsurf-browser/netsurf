@@ -1,5 +1,5 @@
 /**
- * $Id: cache.c,v 1.2 2003/03/04 11:59:35 bursa Exp $
+ * $Id: cache.c,v 1.3 2003/04/15 17:53:00 bursa Exp $
  */
 
 #include <assert.h>
@@ -108,7 +108,7 @@ struct content * cache_get(const char * const url)
 void cache_put(struct content * content)
 {
 	struct cache_entry * e;
-	LOG(("content %p, url '%s'", content, content->url));
+	LOG(("content %p, url '%s', size %lu", content, content->url, content->size));
 
 	current_size += content->size;
 	/* clear old data from the usused_list until the size drops below max_size */

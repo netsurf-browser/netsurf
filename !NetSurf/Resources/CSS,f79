@@ -36,3 +36,4 @@ td { text-align: left; }
 hr { background-color: #000; height: 1px; }
 
 center { text-align: center; }
+small { font-size: smaller; }

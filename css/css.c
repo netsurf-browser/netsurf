@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.6 2003/04/09 21:57:09 bursa Exp $
+ * $Id: css.c,v 1.7 2003/04/15 17:53:00 bursa Exp $
  */
 
 #include <assert.h>
@@ -61,7 +61,7 @@ const struct css_style css_empty_style = {
 	{ CSS_FONT_SIZE_INHERIT, { { 1, CSS_UNIT_EM } } },
 	CSS_FONT_WEIGHT_INHERIT,
 	CSS_FONT_STYLE_INHERIT,
-	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
+	{ CSS_HEIGHT_INHERIT, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.2 } },
 	CSS_TEXT_ALIGN_INHERIT,
 	{ CSS_WIDTH_INHERIT, { { 1, CSS_UNIT_EM } } }
@@ -131,6 +131,7 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 
 	/* complete fetch of any imported stylesheets */
 	while (c->active != 0) {
+		LOG(("importing %i from '%s'", c->active, c->url));
 		fetch_poll();
 		gui_multitask();
 	}

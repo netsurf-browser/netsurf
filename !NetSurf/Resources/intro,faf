@@ -37,7 +37,7 @@ fetching</li>
 <ul>
 <li>Improved memory handling (currently exits when memory is exhausted)</li>
 <li>Forms (display but don't submit)</li>
-<li>Images (stand-alone JPEGs so far)</li>
+<li><img style="float: left" src="jpeg" alt="">Images (JPEGs so far)</li>
 </ul>
 
 <hr>
@@ -60,7 +60,7 @@ spotted.</p>
 <p>NetSurf currently uses the following libraries:</p>
 <table>
 <tr><td><a href='http://xmlsoft.org/'>libxml</a></td>
-<td>(XML and HTML parser)</td></tr>		
+<td>(XML and HTML parser)</td></tr>
 <tr><td><a href='http://curl.haxx.se/libcurl/'>libcurl</a></td>
 <td>(HTTP, etc.)</td></tr>
 <tr><td><a href='http://ro-oslib.sourceforge.net/'>OSLib</a></td>
