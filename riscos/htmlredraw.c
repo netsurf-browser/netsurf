@@ -93,9 +93,11 @@ void html_redraw_box(struct content *content, struct box * box,
 
         /* return if visibility is hidden or inherited visibility is hidden
          */
-        if (box->style->visibility == CSS_VISIBILITY_HIDDEN ||
-            (box->style->visibility == CSS_VISIBILITY_INHERIT &&
-            box->parent->style->visibility == CSS_VISIBILITY_HIDDEN)) {
+        if (box->style->visibility == CSS_VISIBILITY_HIDDEN) {
+           for (c=box->children;c!=0;c=c->next)
+             html_redraw_box(content, c, x, y, current_background_color,
+  			     gadget_subtract_x, gadget_subtract_y, select_on,
+			     x0, y0, x1, y1);
            return;
         }
 
