@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.10 2002/12/29 22:27:35 monkeyson Exp $
+ * $Id: gui.c,v 1.11 2002/12/30 02:06:03 monkeyson Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -506,7 +506,13 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
       current_background_color = box->style->background_color;
     }
 
-    if (box->gadget != 0)
+    if (box->img != 0)
+    {
+      colourtrans_set_gcol(os_COLOUR_LIGHT_GREY, 0, os_ACTION_OVERWRITE, 0);
+      os_plot(os_MOVE_TO, x + box->x * 2, y - box->y * 2);
+      os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, box->width * 2, -box->height * 2);
+    }
+    else if (box->gadget != 0)
     {
 	wimp_icon icon;
 	fprintf(stderr, "writing GADGET\n");
@@ -543,6 +549,20 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
 			fprintf(stderr, "writing GADGET ACTION\n");
 			wimp_plot_icon(&icon);
 			break;
+
+		case GADGET_SELECT:
+			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER | 
+				wimp_ICON_VCENTRED | wimp_ICON_FILLED | 
+				wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
+				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
+				(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
+			icon.data.indirected_text.text = box->gadget->data.select.items->text;
+			icon.data.indirected_text.size = strlen(box->gadget->data.select.items->text);
+			icon.data.indirected_text.validation = "R2";
+			fprintf(stderr, "writing GADGET ACTION\n");
+			wimp_plot_icon(&icon);
+			break;
+
 	}
     }
 

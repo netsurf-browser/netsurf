@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.13 2002/12/29 22:27:35 monkeyson Exp $
+ * $Id: box.h,v 1.14 2002/12/30 02:06:03 monkeyson Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -27,9 +27,16 @@ struct column {
 	unsigned long min, max, width;
 };
 
+struct formoption {
+	int selected;
+	char* value;
+	char* text;
+	struct formoption* next;
+};
+
 struct gui_gadget {
 	enum { GADGET_HIDDEN = 0, GADGET_TEXTBOX, GADGET_RADIO, GADGET_OPTION,
-		GADGET_COMBO, GADGET_LIST, GADGET_TEXTAREA, GADGET_ACTIONBUTTON } type;
+		GADGET_SELECT, GADGET_TEXTAREA, GADGET_ACTIONBUTTON } type;
         union {
 		struct {
 			int maxlength;
@@ -39,7 +46,20 @@ struct gui_gadget {
 		struct {
 			char* label;
 		} actionbutt;
+		struct {
+			int numitems;
+			struct formoption* items;
+			int size;
+			int multiple;
+		} select;
 	} data;
+};
+
+struct img {
+	int width;
+	int height;
+	char* alt;
+	char* src;
 };
 
 struct box {
@@ -62,6 +82,7 @@ struct box {
 	struct column *col;
 	struct font_data *font;
 	struct gui_gadget* gadget;
+	struct img* img;
 };
 
 #define UNKNOWN_WIDTH ULONG_MAX
@@ -74,7 +95,8 @@ struct box {
 void xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
-		const char *href, struct font_set *fonts);
+		const char *href, struct font_set *fonts,
+		struct gui_gadget* current_select, struct formoption* current_option);
 void box_dump(struct box * box, unsigned int depth);
 void box_free(struct box *box);
 

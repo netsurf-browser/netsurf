@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.28 2002/12/29 22:27:35 monkeyson Exp $
+ * $Id: layout.c,v 1.29 2002/12/30 02:06:03 monkeyson Exp $
  */
 
 #include <assert.h>
@@ -109,14 +109,38 @@ void layout_node(struct box * box, unsigned long width, struct box * cont,
 
 
 
+int img_width(struct img* img)
+{
+	return img->width;
+}
+
+int img_height(struct img* img)
+{
+	return img->height;
+}
+
 int gadget_width(struct gui_gadget* gadget)
 {
+	struct formoption* current;
+	int max;
+
+	/* should use wimp_textop via a gui wraper for these */
 	switch (gadget->type)
 	{
 		case GADGET_TEXTBOX:
 			return gadget->data.textbox.size * 8;
 		case GADGET_ACTIONBUTTON:
 			return strlen(gadget->data.actionbutt.label) * 8 + 16;
+		case GADGET_SELECT:
+			current = gadget->data.select.items;
+			max = 32;
+			while (current != NULL)
+			{
+				if (strlen(current->text) * 8 + 16 > max)
+					max = strlen(current->text) * 8 + 16;
+				current = current->next;
+			}
+			return max;
 		default:
 			assert(0);
 	}
@@ -130,6 +154,8 @@ int gadget_height(struct gui_gadget* gadget)
 		case GADGET_TEXTBOX:
 			return 28;
 		case GADGET_ACTIONBUTTON:
+			return 28;
+		case GADGET_SELECT:
 			return 28;
 		default:
 			assert(0);
@@ -331,6 +357,8 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	/* get minimum line height from containing block */
 	if (first->text != 0)
 		height = line_height(first->parent->parent->style);
+	else if (first->img != 0)
+		height = img_height(first->img);
 	else if (first->gadget != 0)
 		height = gadget_height(first->gadget);
 
@@ -340,6 +368,8 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		if (b->type == BOX_INLINE) {
 			if (b->text != 0)
 				h = line_height(b->style ? b->style : b->parent->parent->style);
+			else if (b->img != 0)
+				h = img_height(b->img);
 			else if (b->gadget != 0)
 				h = gadget_height(b->gadget);
 
@@ -347,12 +377,14 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			if (h > height) height = h;
 			if (b->width == UNKNOWN_WIDTH && b->font != 0)
 				b->width = font_width(b->font, b->text, b->length);
+			else if (b->width == UNKNOWN_WIDTH && b->img != 0)
+				b->width = img_width(b->img);
 			else if (b->width == UNKNOWN_WIDTH && b->gadget != 0)
 				b->width = gadget_width(b->gadget);
 
 			if (b->font != 0)
 				x += b->width + b->space ? b->font->space_width : 0;
-			else if (b->gadget != 0)
+			else if (b->gadget != 0 || b->img != 0)
 				x += b->width;
 		}
 	}
@@ -425,6 +457,8 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			w = c->width;
 		else if (c->font != 0)
 			w = font_width(c->font, c->text, space - c->text);
+		else if (c->img != 0)
+			w = img_width(c->img);
 		else if (c->gadget != 0)
 			w = gadget_width(c->gadget);
 
@@ -733,6 +767,13 @@ void calculate_inline_container_widths(struct box *box)
 				width = font_width(child->font, word, strlen(word));
 				if (min < width) min = width;
 				}
+				else if (child->img != 0)
+				{
+					child->width = img_width(child->img);
+					max += child->width;
+					if (min < child->width)
+						min = child->width;
+				}
 				else if (child->gadget != 0)
 				{
 					child->width = gadget_width(child->gadget);
@@ -777,6 +818,10 @@ void calculate_table_widths(struct box *table)
 
 	#define WIDTH_FIXED ULONG_MAX
 
+	if (table->children == 0)
+		return;
+	if (table->children->children == 0)
+		return;
 	assert(table->children != 0 && table->children->children != 0);
 	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
 		assert(row_group->type == BOX_TABLE_ROW_GROUP);

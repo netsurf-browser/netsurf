@@ -19,7 +19,7 @@ col             { display: table-column }
 colgroup        { display: table-column-group }
 td, th          { display: table-cell }
 caption         { display: table-caption }
-img { display:none}
+img { display:inline}
 
 h1 { font-size: xx-large; font-weight: bold; }
 h2 { font-size: x-large; }
