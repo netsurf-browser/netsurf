@@ -64,6 +64,7 @@ static const struct mime_entry mime_map[] = {
 #endif
 #ifdef WITH_JPEG
 	{"image/jpeg", CONTENT_JPEG},
+	{"image/pjpeg", CONTENT_JPEG},
 #endif
 #ifdef WITH_PNG
 	{"image/png", CONTENT_PNG},
