@@ -671,6 +671,41 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		char_offset++;
 	} else if (key == 10 || key == 13) {
 		/* paragraph break */
+		struct box *new_container = box_create(0, 0, 0);
+		struct box *new_text = xcalloc(1, sizeof(*new_text));
+		struct box *t;
+		new_container->type = BOX_INLINE_CONTAINER;
+		new_container->parent = textarea;
+		new_container->next = inline_container->next;
+		inline_container->next = new_container;
+		new_container->prev = inline_container;
+		new_container->last = inline_container->last;
+		if (new_container->next)
+			new_container->next->prev = new_container;
+		else
+			textarea->last = new_container;
+		memcpy(new_text, text_box, sizeof(*new_text));
+		new_text->clone = 1;
+		new_text->text = xcalloc(text_box->length + 1, 1);
+		memcpy(new_text->text, text_box->text + char_offset,
+				text_box->length - char_offset);
+		new_text->length = text_box->length - char_offset;
+		text_box->length = char_offset;
+		new_text->prev = 0;
+		new_text->next = text_box->next;
+		text_box->next = 0;
+		if (new_text->next)
+			new_text->next->prev = new_text;
+		else
+			new_container->last = new_text;
+		text_box->width = new_text->width = UNKNOWN_WIDTH;
+		inline_container->last = text_box;
+		new_container->children = new_text;
+		for (t = new_container->children; t; t = t->next)
+			t->parent = new_container;
+		inline_container = new_container;
+		text_box = inline_container->children;
+		char_offset = 0;
 	} else if (key == 8 || key == 127) {
 		/* delete to left */
 		if (char_offset == 0) {
@@ -1573,4 +1608,3 @@ void browser_form_get_append(char **s, int *length, char sep, char *name, char *
 	curl_free(name);
 	curl_free(value);
 }
-
