@@ -537,7 +537,6 @@ void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry) {
  * Perform a save to the default file
  */
 void ro_gui_hotlist_save(void) {
-	return;
 	/*	Don't save if we didn't load
 	*/
 	if (!hotlist_window) return;

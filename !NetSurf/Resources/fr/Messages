@@ -190,7 +190,7 @@ HelpToolbar3:\Treload button.|M\Sreload this page.|M\Areload this page and any o
 HelpToolbar5:\Thistory button.|M\Sopen the local history \w.
 HelpToolbar6:\Tsave button.|M\Ssave the current document.
 #HelpToolbar7:\Tprint button.|M\Sprint this page.|MOpens a print dialogue box.
-HelpToolbar8:\Thotlist button.|M\Sadd this address to the hotlist.|M\Aopen the hotlist management \w.
+HelpToolbar8:\Thotlist button.|M\Sopen the hotlist management \w.\Aadd this address to the hotlist.|M
 HelpToolbar9:\Tscale view button.|M\Sscale the page, affecting both text and images.
 #HelpToolbar10:\Tsearch button.
 #HelpToolbar11:\Tup button.|M\Smove up the directory structure.
@@ -234,7 +234,7 @@ HelpBrowserMenu2:\Rsee the navigation options.
 HelpBrowserMenu2-1:\Sgo back a page in the local history.|MForm information is not resubmitted.
 HelpBrowserMenu2-2:\Sstep forward a page in the local history.|MForm information is not resubmitted.
 HelpBrowserMenu2-3:\Sfetch the current page again.
-HelpBrowserMenu2-3:\Sstop NetSurf from continuing to load this page.
+HelpBrowserMenu2-4:\Sstop NetSurf from continuing to load this page.
 HelpBrowserMenu3:\Rset the local display options.
 HelpBrowserMenu3-0:\Rscale the page, affecting both text and images.
 HelpBrowserMenu3-1:\Rset the local image options.
@@ -248,11 +248,11 @@ HelpBrowserMenu3-2-0:\Stoggle the display of the toolbar buttons.|MURL bar uses 
 HelpBrowserMenu3-2-1:\Stoggle the display of the address (URL) bar.
 HelpBrowserMenu3-2-2:\Stoggle the display of the throbber.|MURL bar uses the remaining space.
 HelpBrowserMenu3-2-3:\Stoggle the display of the status bar.|MHorizontal scroll bar uses the remaining width.
-HelpBrowserMenu3-3:\Rcontrol the default window positioning.
-HelpBrowserMenu3-3-0:\Sto make the current window position the default.
-HelpBrowserMenu3-3-3:\Sto return to the default window positioning.
-HelpBrowserMenu3-4:\Smake your local display options the default options for NetSurf.
+HelpBrowserMenu3-3:\Smake your local display options the default options for NetSurf.
 HelpBrowserMenu4:\Rto access NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and setup options.
+HelpBrowserMenu4-1:\Rcontrol the default window positioning.
+HelpBrowserMenu4-1-0:\Sto make the current window position the default.
+HelpBrowserMenu4-1-3:\Sto return to the default window positioning.
 HelpBrowserMenu5:\Rsee the help resources available.
 HelpBrowserMenu5-0:\Sopen the documentation contents page in a new \w.
 HelpBrowserMenu5-1:\Sopen the user guide in a new \w.
