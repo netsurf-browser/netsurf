@@ -2,8 +2,14 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
+ */
+
+/** \file
+ * Content for image/jpeg (implementation).
+ *
+ * This implementation uses the IJG JPEG library.
  */
 
 #include <assert.h>
@@ -11,348 +17,229 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
+#include <swis.h>
+#define JPEG_INTERNAL_OPTIONS
 #include "libjpeg/jpeglib.h"
 #include "oslib/colourtrans.h"
-#include "oslib/jpeg.h"
-#include "oslib/osbyte.h"
-#include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/jpeg.h"
+#include "netsurf/riscos/options.h"
+#include "netsurf/riscos/tinct.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
-/**
- *      screen mode		image			result
- *      8bpp or less		8, 16 or 24bpp		dither to 8bpp
- *      16 or 24bpp		8, 16 or 24bpp		24bpp sprite
- */
 
-#ifdef WITH_JPEG
-/**
- * Input source initalisation routine
- * Does nothing.
- */
-static void init_source(j_decompress_ptr cinfo) {
-}
+/* We require a the library to be configured with these options to save
+ * copying data during decoding. */
+#if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
+#error JPEG library incorrectly configured.
+#endif
 
-/**
- * Routine to fill the input buffer.
- * Filling buffer is not possible => return false.
- */
-static boolean fill_input_buffer(j_decompress_ptr cinfo) {
-    return FALSE;
-}
 
-static void skip_input_data(j_decompress_ptr cinfo, long num_bytes) {
-    if ((int)num_bytes > (int)cinfo->src->bytes_in_buffer) {
-        cinfo->src->next_input_byte = NULL;
-        cinfo->src->bytes_in_buffer = 0;
-    } else {
-        cinfo->src->next_input_byte += (int) num_bytes;
-        cinfo->src->bytes_in_buffer -= (int) num_bytes;
-    }
-}
-
-/**
- * Input source termination routine
- * Does nothing
- */
-static void term_source(j_decompress_ptr cinfo) {
-}
-
-/**
- * Input source manager.
- * Sets up jpeglib appropriately
- */
-static void jpeg_memory_src(j_decompress_ptr cinfo, char *ptr, unsigned long length) {
-
-  struct jpeg_source_mgr *src;
-  src = cinfo->src = (struct jpeg_source_mgr *)
-                     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo,
-                                                 JPOOL_IMAGE,
-                                                 sizeof(*src));
-  src->init_source = init_source;
-  src->fill_input_buffer = fill_input_buffer;
-  src->skip_input_data = skip_input_data;
-  src->resync_to_restart = jpeg_resync_to_restart;
-  src->term_source = term_source;
-  src->next_input_byte = ptr;
-  src->bytes_in_buffer = length;
-}
-
-/* Error handling stuff.
-   This prevents jpeglib calling exit() on a fatal error */
 struct nsjpeg_error_mgr {
-  struct jpeg_error_mgr pub;
-  jmp_buf setjmp_buffer;
+	struct jpeg_error_mgr pub;
+	jmp_buf setjmp_buffer;
 };
 
-typedef struct nsjpeg_error_mgr * nsjpeg_err_ptr;
 
-METHODDEF (void) nsjpeg_error_exit (j_common_ptr cinfo) {
+static void nsjpeg_error_exit(j_common_ptr cinfo);
+static void nsjpeg_init_source(j_decompress_ptr cinfo);
+static boolean nsjpeg_fill_input_buffer(j_decompress_ptr cinfo);
+static void nsjpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes);
+static void nsjpeg_term_source(j_decompress_ptr cinfo);
 
-  nsjpeg_err_ptr myerr = (nsjpeg_err_ptr)cinfo->err;
-
-  (*cinfo->err->output_message) (cinfo);
-
-  longjmp(myerr->setjmp_buffer, 1);
-}
-
-/** maps colours to 256 mode colour numbers */
-static os_colour_number colour_table[4096];
 
 /**
- * Initialises the jpeg loader.
- * Currently creates the 8bpp lookup table
+ * Create a CONTENT_JPEG.
  */
-void nsjpeg_init(void) {
-
-        unsigned int red, green, blue;
-        /* generate colour lookup table for reducing to 8bpp */
-	for (red = 0; red != 0x10; red++)
-		for (green = 0; green != 0x10; green++)
-			for (blue = 0; blue != 0x10; blue++)
-				colour_table[red << 8 | green << 4 | blue] =
-					colourtrans_return_colour_number_for_mode(
-						blue << 28 | blue << 24 |
-						green << 20 | green << 16 |
-						red << 12 | red << 8,
-						(os_mode)21, 0);
-}
 
 void nsjpeg_create(struct content *c, const char *params[])
 {
-        c->data.jpeg.sprite_area = 0;
-	c->data.jpeg.use_module = true; /* assume the OS can cope */
+	c->data.jpeg.sprite_area = 0;
 }
 
 
-int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
+/**
+ * Convert a CONTENT_JPEG for display.
+ */
+
+int nsjpeg_convert(struct content *c, unsigned int w, unsigned int h)
 {
-        struct jpeg_decompress_struct cinfo;
-        struct nsjpeg_error_mgr jerr;
-        unsigned int line_size;
-        unsigned char *dstcur;
-        os_mode_block curr_mode;
+	struct jpeg_decompress_struct cinfo;
+	struct nsjpeg_error_mgr jerr;
+	struct jpeg_source_mgr source_mgr = { 0, 0,
+			nsjpeg_init_source, nsjpeg_fill_input_buffer,
+			nsjpeg_skip_input_data, jpeg_resync_to_restart,
+			nsjpeg_term_source };
+	unsigned int height;
+	unsigned int width;
+	unsigned int area_size;
+	osspriteop_area *sprite_area = 0;
+	osspriteop_header *sprite;
 
-        /* get screenmode (RO3.1 compliant) */
-        xos_byte(osbyte_SCREEN_CHAR, 0, 0, 0, (int*)&curr_mode);
+	cinfo.err = jpeg_std_error(&jerr.pub);
+	jerr.pub.error_exit = nsjpeg_error_exit;
+	if (setjmp(jerr.setjmp_buffer)) {
+		jpeg_destroy_decompress(&cinfo);
+		free(sprite_area);
+		return 1;
+	}
+	jpeg_create_decompress(&cinfo);
+	source_mgr.next_input_byte = c->source_data;
+	source_mgr.bytes_in_buffer = c->source_size;
+	cinfo.src = &source_mgr;
+	jpeg_read_header(&cinfo, TRUE);
+	cinfo.out_color_space = JCS_RGB;
+	cinfo.dct_method = JDCT_ISLOW;
+	jpeg_start_decompress(&cinfo);
 
-        /* Try to use OS routines */
-        {
-          os_error *e;
-          int w,h;
-          e = xjpeginfo_dimensions((jpeg_image const*)c->source_data,
-	                              (int) c->source_size,
-			              0, &w, &h, 0, 0, 0);
+	width = cinfo.output_width;
+	height = cinfo.output_height;
 
-	  if (!e) {
-	    LOG(("Using inbuilt OS routines"));
-	    c->width = w;
-	    c->height = h;
-	    c->title = xcalloc(100, 1);
-	    sprintf(c->title, messages_get("JPEGTitle"), w, h, c->source_size);
-	    c->status = CONTENT_STATUS_DONE;
-	   return 0;
-	  }
-	  /* failed, for whatever reason -> use jpeglib */
-	  c->data.jpeg.use_module = false;
-        }
+	area_size = 16 + 44 + width * height * 4;
+	sprite_area = malloc(area_size);
+	if (!sprite_area) {
+		LOG(("malloc failed"));
+		return 1;
+	}
 
-        LOG(("beginning conversion"));
-        cinfo.err = jpeg_std_error(&jerr.pub);
-        jerr.pub.error_exit = nsjpeg_error_exit;
-        if (setjmp(jerr.setjmp_buffer)) {
-          jpeg_destroy_decompress(&cinfo);
-          return 1;
-        }
-        jpeg_create_decompress(&cinfo);
-        jpeg_memory_src(&cinfo, c->source_data, c->source_size);
-        jpeg_read_header(&cinfo, TRUE);
-        jpeg_start_decompress(&cinfo);
+	/* area control block */
+	sprite_area->size = area_size;
+	sprite_area->sprite_count = 1;
+	sprite_area->first = 16;
+	sprite_area->used = area_size;
 
-        c->width = cinfo.output_width;
-        c->height = cinfo.output_height;
-        line_size = cinfo.output_width*cinfo.output_components;
+	/* sprite control block */
+	sprite = (osspriteop_header *) (sprite_area + 1);
+	sprite->size = area_size - 16;
+	strncpy(sprite->name, "jpeg", 12);
+	sprite->width = width - 1;
+	sprite->height = height - 1;
+	sprite->left_bit = 0;
+	sprite->right_bit = 31;
+	sprite->image = sprite->mask = 44;
+	sprite->mode = (os_mode) 0x301680b5;
 
-        LOG(("creating sprite area"));
-        {
-          struct osspriteop_header *spr;
-          unsigned int abw;
-          unsigned int nBytes;
+	do {
+		JSAMPROW scanlines[1];
+		scanlines[0] = (JSAMPROW) ((char *) sprite + 44 +
+				width * cinfo.output_scanline * 4);
+		jpeg_read_scanlines(&cinfo, scanlines, 1);
+	} while (cinfo.output_scanline != cinfo.output_height);
 
-          if ((curr_mode.size < 256 && curr_mode.size >= 0) ||
-              curr_mode.log2_bpp <= 3 /*256*/) {
-            abw = ((c->width + 3) &~ 3u) * c->height; /* sprite */
-            nBytes = abw + 44 + 16;
-          }
-          else {
-            abw = ((c->width + 3) &~ 3u) * 4 * c->height; /* sprite */
-            nBytes = abw + 44 + 16;
-          }
-          /* nBytes = spr + spr ctrl blk + area ctrl blk */
+	jpeg_finish_decompress(&cinfo);
+	jpeg_destroy_decompress(&cinfo);
 
-          c->data.jpeg.sprite_area = xcalloc(1, nBytes);
-          spr = (osspriteop_header*) (c->data.jpeg.sprite_area + 1);
+	/*xosspriteop_save_sprite_file(osspriteop_USER_AREA,
+			sprite_area, "jpeg");*/
 
-          /* area control block */
-          c->data.jpeg.sprite_area->size = nBytes;
-          c->data.jpeg.sprite_area->sprite_count = 1;
-          c->data.jpeg.sprite_area->first = sizeof(*c->data.jpeg.sprite_area);
-          c->data.jpeg.sprite_area->used = nBytes;
-
-          /* sprite control block */
-          spr->size = nBytes-sizeof(*c->data.jpeg.sprite_area);
-          strncpy(spr->name, "jpeg", 12);
-
-          if ((curr_mode.size < 256 && curr_mode.size >= 0) ||
-              curr_mode.log2_bpp <= 3 /*256*/) {
-             spr->width = ((c->width+3)>>2)-1; /* in words-1 */
-          }
-          else {
-             spr->width = c->width - 1;
-          }
-
-          spr->height = c->height-1;        /* in scanlines-1 */
-          spr->left_bit = 0;
-          spr->right_bit = ((c->width & 3) * 8 - 1) & 31;
-          spr->image = sizeof(*spr);
-          spr->mask = sizeof(*spr);
-
-          if ((curr_mode.size < 256 && curr_mode.size >= 0) ||
-              curr_mode.log2_bpp <= 3 /*256*/) {
-            spr->mode = os_MODE8BPP90X90; /* 28 */
-          }
-          else {
-            spr->mode = (os_mode)((osspriteop_TYPE32BPP<<27) | (90<<14) | (90<<1) | 1);
-          }
-
-          c->data.jpeg.sprite_image = ((char*)spr) + spr->image;
-
-          LOG(("done"));
-        }
-
-        LOG(("processing image: %ldx%ld,%d", c->width, c->height, cinfo.actual_number_of_colors));
-
-        if ((curr_mode.size < 256 && curr_mode.size >= 0) ||
-            curr_mode.log2_bpp <= 3 /*256*/) {
-          JSAMPARRAY buf = (*cinfo.mem->alloc_sarray)
-                           ((j_common_ptr)&cinfo, JPOOL_IMAGE, line_size, 1);
-          unsigned int col;
-          JSAMPROW row;
-
-          gui_multitask(); /* this takes some time so poll the wimp */
-          while (cinfo.output_scanline < cinfo.output_height) {
-
-            jpeg_read_scanlines(&cinfo, buf, 1);
-
-            row = buf[0];
-            dstcur = c->data.jpeg.sprite_image +
-                     cinfo.output_scanline * ((c->width +3) & ~3u);
-            for (col = 0; col != cinfo.output_width; col++) {
-              dstcur[col] = colour_table[((GETJSAMPLE(row[0])>>4)<<8) /* R */
-                        | ((GETJSAMPLE(row[1])>>4)<<4)                /* G */
-                        | (GETJSAMPLE(row[2])>>4)];                   /* B */
-              row += 3;
-            }
-          }
-        }
-        else {
-          JSAMPARRAY buf = (*cinfo.mem->alloc_sarray)
-                           ((j_common_ptr)&cinfo, JPOOL_IMAGE, line_size, 1);
-          unsigned int col;
-          JSAMPROW row;
-
-          gui_multitask(); /* this takes some time so poll the wimp */
-	  dstcur = c->data.jpeg.sprite_image;
-          while (cinfo.output_scanline < cinfo.output_height) {
-
-            jpeg_read_scanlines(&cinfo, buf, 1);
-
-            row = buf[0];
-            for (col = 0; col != cinfo.output_width; col++) {
-              dstcur[0] = GETJSAMPLE(row[0]); /* R */
-              dstcur[1] = GETJSAMPLE(row[1]); /* G */
-              dstcur[2] = GETJSAMPLE(row[2]); /* B */
-              dstcur[3] = 0;                  /* A */
-              row += 3; dstcur += 4;
-            }
-          }
-        }
-
-        jpeg_finish_decompress(&cinfo);
-        jpeg_destroy_decompress(&cinfo);
-        LOG(("image decompressed"));
-
-        /*{
-          os_error *e;
-          e = xosspriteop_save_sprite_file(osspriteop_USER_AREA,
-                               c->data.jpeg.sprite_area, "jpeg");
-        }*/
-
-        c->status = CONTENT_STATUS_DONE;
-        return 0;
+	c->width = width;
+	c->height = height;
+	c->data.jpeg.sprite_area = sprite_area;
+	c->title = malloc(100);
+	if (c->title)
+		sprintf(c->title, messages_get("JPEGTitle"),
+				width, height, c->source_size);
+	c->status = CONTENT_STATUS_DONE;
+	return 0;
 }
 
+
+/**
+ * Fatal error handler for JPEG library.
+ *
+ * This prevents jpeglib calling exit() on a fatal error.
+ */
+
+void nsjpeg_error_exit(j_common_ptr cinfo)
+{
+	struct nsjpeg_error_mgr *err = (struct nsjpeg_error_mgr *) cinfo->err;
+	(*cinfo->err->output_message) (cinfo);
+	longjmp(err->setjmp_buffer, 1);
+}
+
+
+/**
+ * JPEG data source manager: initialize source.
+ */
+
+void nsjpeg_init_source(j_decompress_ptr cinfo)
+{
+}
+
+
+static char nsjpeg_eoi[] = { 0xff, JPEG_EOI };
+
+/**
+ * JPEG data source manager: fill the input buffer.
+ *
+ * This can only occur if the JPEG data was truncated or corrupted. Insert a
+ * fake EOI marker to allow the decompressor to output as much as possible.
+ */
+
+boolean nsjpeg_fill_input_buffer(j_decompress_ptr cinfo)
+{
+	cinfo->src->next_input_byte = nsjpeg_eoi;
+	cinfo->src->bytes_in_buffer = 2;
+ 	return TRUE;
+}
+
+
+/**
+ * JPEG data source manager: skip num_bytes worth of data.
+ */
+
+void nsjpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
+{
+	if ((long) cinfo->src->bytes_in_buffer < num_bytes) {
+		cinfo->src->next_input_byte = 0;
+		cinfo->src->bytes_in_buffer = 0;
+	} else {
+		cinfo->src->next_input_byte += num_bytes;
+		cinfo->src->bytes_in_buffer -= num_bytes;
+	}
+}
+
+
+/**
+ * JPEG data source manager: terminate source.
+ */
+
+void nsjpeg_term_source(j_decompress_ptr cinfo)
+{
+}
+
+
+/**
+ * Destroy a CONTENT_JPEG and free all resources it owns.
+ */
 
 void nsjpeg_destroy(struct content *c)
 {
-        xfree(c->data.jpeg.sprite_area);
-	xfree(c->title);
+	free(c->data.jpeg.sprite_area);
+	free(c->title);
 }
+
+
+/**
+ * Redraw a CONTENT_JPEG.
+ */
 
 void nsjpeg_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
-		float scale)
+		   unsigned long width, unsigned long height,
+		   long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+		   float scale)
 {
-  unsigned int size;
-  osspriteop_trans_tab *table;
-  os_factors factors;
-
-  factors.xmul = width;
-  factors.ymul = height;
-  factors.xdiv = c->width * 2;
-  factors.ydiv = c->height * 2;
-
-  if (c->data.jpeg.use_module) { /* we can use the OS for this one */
-    xjpeg_plot_scaled((jpeg_image *) c->source_data,
-			x, (int)(y - height),
-			&factors, (int) c->source_size,
-			jpeg_SCALE_DITHERED);
-    return;
-  }
-
-  xcolourtrans_generate_table_for_sprite(c->data.jpeg.sprite_area,
-		(osspriteop_id) ((char*)c->data.jpeg.sprite_area +
-		                 c->data.jpeg.sprite_area->first),
-		colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
-		0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
-
-  table = xcalloc(size, 1);
-
-  xcolourtrans_generate_table_for_sprite(c->data.jpeg.sprite_area,
-		(osspriteop_id) ((char*)c->data.jpeg.sprite_area +
-		                 c->data.jpeg.sprite_area->first),
-		colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
-		table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
-
-  xosspriteop_put_sprite_scaled(osspriteop_PTR,
-		c->data.jpeg.sprite_area,
-		(osspriteop_id) ((char*)c->data.jpeg.sprite_area +
-		                 c->data.jpeg.sprite_area->first),
-		x, (int)(y - height),
-		/* osspriteop_USE_PALETTE is RO 3.5+ only.
-		 * behaviour on RO < 3.5 is unknown...
-		 */
-		(osspriteop_action)(osspriteop_USE_MASK |
-		                    osspriteop_USE_PALETTE),
-		&factors, table);
-
-  xfree(table);
+	_swix(Tinct_PlotScaled,
+			_IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
+			(char *) c->data.jpeg.sprite_area +
+				c->data.jpeg.sprite_area->first,
+			x, (int) (y - height),
+			width, height,
+			(option_filter_sprites ? (1<<1) : 0) |
+				(option_dither_sprites ? (1<<2) : 0));
 }
-#endif

@@ -41,8 +41,6 @@ static void add_objects(struct content *content, struct box *box,
                         unsigned long cbc, long x, long y);
 static void add_graphic(struct content *content, struct box *box,
                         unsigned long cbc, long x, long y);
-static void add_jpeg(struct content *content, struct box *box,
-                        unsigned long cbc, long x, long y);
 static void add_rect(struct content *content, struct box *box,
                         unsigned long cbc, long x, long y, bool bg);
 static void add_line(struct content *content, struct box *box,
@@ -319,12 +317,7 @@ void add_graphic(struct content *content, struct box *box,
         /* cast-tastic... */
         switch (content->type) {
           case CONTENT_JPEG:
-               if (content->data.jpeg.use_module) {
-                 sprite_length = -1;
-               }
-               else {
-                 sprite_length = ((osspriteop_header*)((char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first))->size;
-               }
+               sprite_length = ((osspriteop_header*)((char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first))->size;
                break;
           case CONTENT_PNG:
                sprite_length = ((osspriteop_header*)((char*)content->data.png.sprite_area+content->data.png.sprite_area->first))->size;
@@ -337,11 +330,6 @@ void add_graphic(struct content *content, struct box *box,
                break;
           default:
                break;
-        }
-
-        if (sprite_length == -1 && content->type == CONTENT_JPEG) {
-          add_jpeg(content, box, cbc, x, y);
-          return;
         }
 
         dro = xcalloc((unsigned)8 + 16 + sprite_length, sizeof(char));
@@ -387,54 +375,6 @@ void add_graphic(struct content *content, struct box *box,
         xfree(dro);
 }
 
-/**
- * Add jpeg objects which the OS can cope with.
- * Jpegs the OS doesn't understand are added as sprites
- * This may still be a little buggy.
- */
-void add_jpeg(struct content *content, struct box *box,
-                        unsigned long cbc, long x, long y) {
-
-        drawfile_object *dro = xcalloc(8+60+((content->source_size+3)/4*4), sizeof(char));
-        drawfile_jpeg *dj = xcalloc(60+((content->source_size+3)/4*4), sizeof(char));
-        int flags;
-
-        dj->bbox.x0 = x+(box->padding[LEFT]*512);
-        dj->bbox.y0 = y-((box->padding[TOP] + box->height)*512);
-        dj->bbox.x1 = x+((box->padding[LEFT] + box->width)*512);
-        dj->bbox.y1 = y-(box->padding[TOP]*512);
-
-        xjpeginfo_dimensions((jpeg_image const*)content->source_data,
-                              (int)content->source_size,
-                              &flags, &dj->width, &dj->height,
-                              &dj->xdpi, &dj->ydpi, 0);
-        dj->width *= 512;
-        dj->height *= 512;
-        if (flags & 4) { /* pixel density is a ratio */
-           dj->ydpi = 90 * (dj->ydpi / dj->xdpi);
-           dj->xdpi = 90;
-        }
-        dj->trfm.entries[0][0] = (dj->width*256) / ((dj->bbox.x1-dj->bbox.x0)/256);
-        dj->trfm.entries[0][1] = 0;
-        dj->trfm.entries[1][0] = 0;
-        dj->trfm.entries[1][1] = (dj->height*256) / ((dj->bbox.y1-dj->bbox.y0)/256);
-        dj->trfm.entries[2][0] = dj->bbox.x0;
-        dj->trfm.entries[2][1] = dj->bbox.y0;
-        dj->len = content->source_size;
-        memcpy((char*)&dj->image, content->source_data, (unsigned)dj->len);
-
-        dro->type = drawfile_TYPE_JPEG;
-        dro->size = 8 + 60 + ((dj->len+3)/4*4);
-        memcpy((char*)&dro->data.jpeg, dj, (unsigned)dro->size-8);
-
-        d = xrealloc(d, length+dro->size);
-        memcpy((char*)d+length, dro, (unsigned)dro->size);
-
-        length += dro->size;
-
-        xfree(dj);
-        xfree(dro);
-}
 
 /**
  * Add a filled, borderless rectangle to the diagram
