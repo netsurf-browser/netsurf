@@ -22,17 +22,15 @@
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/css/css.h"
+#include "netsurf/image/bitmap.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/textplain.h"
 #ifdef WITH_JPEG
-#include "netsurf/riscos/jpeg.h"
-#endif
-#ifdef WITH_PNG
-#include "netsurf/riscos/png.h"
+#include "netsurf/image/jpeg.h"
 #endif
 #ifdef WITH_MNG
-#include "netsurf/riscos/mng.h"
+#include "netsurf/image/mng.h"
 #endif
 #ifdef WITH_GIF
 #include "netsurf/riscos/gif.h"
@@ -82,7 +80,7 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_JPEG
 	{"image/pjpeg", CONTENT_JPEG},
 #endif
-#ifdef WITH_PNG
+#ifdef WITH_MNG
 	{"image/png", CONTENT_PNG},
 #endif
 #ifdef WITH_DRAW
@@ -115,10 +113,8 @@ const char *content_type_name[] = {
 #ifdef WITH_GIF
 	"GIF",
 #endif
-#ifdef WITH_PNG
-	"PNG",
-#endif
 #ifdef WITH_MNG
+	"PNG",
 	"JNG",
 	"MNG",
 #endif
@@ -173,18 +169,16 @@ static const struct handler_entry handler_map[] = {
 		0, 0, 0, 0, 0, 0, true},
 	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0, false},
 #ifdef WITH_JPEG
-	{nsjpeg_create, 0, nsjpeg_convert,
-		0, nsjpeg_destroy, 0, nsjpeg_redraw, 0, 0, false},
+	{0, 0, nsjpeg_convert,
+		0, nsjpeg_destroy, 0, bitmap_redraw, 0, 0, false},
 #endif
 #ifdef WITH_GIF
 	{nsgif_create, 0, nsgif_convert,
 	        0, nsgif_destroy, 0, nsgif_redraw, 0, 0, false},
 #endif
-#ifdef WITH_PNG
+#ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
 		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, false},
-#endif
-#ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
 		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, false},
 	{nsmng_create, nsmng_process_data, nsmng_convert,
@@ -270,6 +264,7 @@ struct content * content_create(const char *url)
 	c->width = 0;
 	c->height = 0;
 	c->available_width = 0;
+	c->bitmap = 0;
 	c->fresh = false;
 	c->size = sizeof(struct content);
 	c->title = 0;

@@ -430,18 +430,18 @@ void ro_gui_save_object_native(struct content *c, char *path)
 	switch (c->type) {
 #ifdef WITH_JPEG
 		case CONTENT_JPEG:
-			error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.jpeg.sprite_area, path);
+			bitmap_save(c->bitmap, path);
 			break;
 #endif
 #ifdef WITH_PNG
 		case CONTENT_PNG:
-			error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.png.sprite_area, path);
-			break;
+/*			error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.png.sprite_area, path);
+			break;*/
 #endif
 #ifdef WITH_MNG
 		case CONTENT_JNG:
 		case CONTENT_MNG:
-			error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.mng.sprite_area, path);
+			bitmap_save(c->bitmap, path);
 			break;
 #endif
 #ifdef WITH_GIF

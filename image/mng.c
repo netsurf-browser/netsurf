@@ -5,20 +5,22 @@
  * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  */
 
+/** \file
+ * Content for image/mng, image/png, and image/jng (implementation).
+ */
+
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
-#include "libmng/libmng.h"
-#include "oslib/os.h"
-#include "oslib/osspriteop.h"
+#include <sys/time.h>
+#include <time.h>
+#include "libmng.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/image.h"
-#include "netsurf/riscos/mng.h"
-#include "netsurf/riscos/options.h"
-#include "netsurf/riscos/wimp.h"
+#include "netsurf/desktop/browser.h"
+#include "netsurf/image/bitmap.h"
+#include "netsurf/image/mng.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -44,13 +46,21 @@ static mng_bool nsmng_trace(mng_handle mng, mng_int32 iFunNr, mng_int32 iFuncseq
 static mng_bool nsmng_errorproc(mng_handle mng, mng_int32 code,
 	mng_int8 severity, mng_chunkid chunktype, mng_uint32 chunkseq,
 	mng_int32 extra1, mng_int32 extra2, mng_pchar text);
+#ifndef MNG_INTERNAL_MEMMNGMT
+static mng_ptr nsmng_alloc(mng_size_t n);
+static void nsmng_free(mng_ptr p, mng_size_t n);
+#endif
+
 
 bool nsmng_create(struct content *c, const char *params[]) {
 
-	/*	Initialise the library (libmng is compiled with MNG_INTERNAL_MEMMNGMT)
+	/*	Initialise the library
 	*/
-	c->data.mng.sprite_area = NULL;
+#ifdef MNG_INTERNAL_MEMMNGMT
 	c->data.mng.handle = mng_initialize(c, MNG_NULL, MNG_NULL, MNG_NULL);
+#else
+	c->data.mng.handle = mng_initialize(c, nsmng_alloc, nsmng_free, MNG_NULL);
+#endif
 	if (c->data.mng.handle == MNG_NULL) {
 		LOG(("Unable to initialise MNG library."));
 		return nsmng_broadcast_error(c);
@@ -155,18 +165,14 @@ mng_bool nsmng_closestream(mng_handle mng) {
 
 mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height) {
 	struct content *c;
-	int sprite_size;
-	osspriteop_area *sprite_area;
-	osspriteop_header *sprite_header;
 	union content_msg_data msg_data;
 
 	/*	This function is called when the header has been read and we know
 		the dimensions of the canvas.
 	*/
 	c = (struct content *)mng_get_userdata(mng);
-	sprite_size = width * height * 4 + sizeof(osspriteop_header) + sizeof(osspriteop_area);
-	c->data.mng.sprite_area = (osspriteop_area *)malloc(sprite_size);
-	if (!(c->data.mng.sprite_area)) {
+	c->bitmap = bitmap_create(width, height);
+	if (!c->bitmap) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		LOG(("Insufficient memory to create canvas."));
@@ -177,27 +183,6 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 	*/
 	c->width = width;
 	c->height = height;
-
-	/*	Initialise the sprite area
-	*/
-	sprite_area = c->data.mng.sprite_area;
-	sprite_area->size = sprite_size;
-	sprite_area->sprite_count = 1;
-	sprite_area->first = sizeof(osspriteop_area);
-	sprite_area->used = sprite_size;
-
-	/*	Initialise the sprite header
-	*/
-	sprite_header = (osspriteop_header *)(sprite_area + 1);
-	sprite_header->size = sprite_size - sizeof(osspriteop_area);
-	memset(sprite_header->name, 0x00, 12);
-	strcpy(sprite_header->name, "mng");
-	sprite_header->width = width - 1;
-	sprite_header->height = height - 1;
-	sprite_header->left_bit = 0;
-	sprite_header->right_bit = 31;
-	sprite_header->mask = sprite_header->image = sizeof(osspriteop_header);
-	sprite_header->mode = (os_mode) 0x301680b5;
 
 	/*	Set the canvas style
 	*/
@@ -262,7 +247,7 @@ bool nsmng_convert(struct content *c, int width, int height) {
 					c->width, c->height, c->source_size);
 		}
 	}
-	c->size += (c->width * c->height * 4) + sizeof(osspriteop_header) + sizeof(osspriteop_area) + 100;
+	c->size += c->width * c->height * 4 + 100;
 	c->status = CONTENT_STATUS_DONE;
 
 
@@ -282,7 +267,6 @@ bool nsmng_convert(struct content *c, int width, int height) {
 
 
 mng_ptr nsmng_getcanvasline(mng_handle mng, mng_uint32 line) {
-  	char *base;
 	struct content *c;
 
 	/*	Get our content back
@@ -291,20 +275,30 @@ mng_ptr nsmng_getcanvasline(mng_handle mng, mng_uint32 line) {
 
 	/*	Calculate the address
 	*/
-	base = ((char *) c->data.mng.sprite_area + c->data.mng.sprite_area->first);
-	base += sizeof(osspriteop_header);
-	return base + (c->width * 4) * line;
+	return bitmap_get_buffer(c->bitmap) +
+			bitmap_get_rowstride(c->bitmap) * line;
 }
 
+
+/**
+ * Get the wall-clock time in milliseconds since some fixed time.
+ */
 
 mng_uint32 nsmng_gettickcount(mng_handle mng) {
-	os_t time;
+	static bool start = true;
+	static time_t t0;
+	struct timeval tv;
+	struct timezone tz;
 
-	/*	Get the time in centiseconds and return in milliseconds
-	*/
-	xos_read_monotonic_time(&time);
-	return (time * 10);
+	gettimeofday(&tv, &tz);
+	if (start) {
+		t0 = tv.tv_sec;
+		start = false;
+	}
+
+	return (tv.tv_sec - t0) * 1000 + tv.tv_usec / 1000;
 }
+
 
 mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_uint32 w, mng_uint32 h) {
 	union content_msg_data data;
@@ -368,10 +362,8 @@ void nsmng_destroy(struct content *c) {
 	*/
 	schedule_remove(nsmng_animate, c);
 	mng_cleanup(&c->data.mng.handle);
-	if (c->data.mng.sprite_area) {
-		free(c->data.mng.sprite_area);
-		c->data.mng.sprite_area = NULL;
-	}
+	if (c->bitmap)
+		bitmap_destroy(c->bitmap);
 	free(c->title);
 }
 
@@ -383,9 +375,9 @@ bool nsmng_redraw(struct content *c, int x, int y,
 {
 	bool ret;
 
-	ret = image_redraw(c->data.mng.sprite_area, x, y, width, height,
-			c->width * 2, c->height * 2, background_colour,
-			false, false, IMAGE_PLOT_TINCT_ALPHA);
+	ret = bitmap_redraw(c, x, y, width, height,
+			clip_x0, clip_y0, clip_x1, clip_y1,
+			scale, background_colour);
 
 	/*	Check if we need to restart the animation
 	*/
@@ -460,4 +452,29 @@ mng_bool nsmng_errorproc(mng_handle mng, mng_int32 code,
 
     return (0);
 }
+
+
+#ifndef MNG_INTERNAL_MEMMNGMT
+
+/**
+ * Memory allocation callback for libmng.
+ */
+
+mng_ptr nsmng_alloc(mng_size_t n)
+{
+	return calloc(1, n);
+}
+
+
+/**
+ * Memory free callback for libmng.
+ */
+
+void nsmng_free(mng_ptr p, mng_size_t n)
+{
+	free(p);
+}
+
+#endif
+
 #endif

@@ -13,27 +13,25 @@
  */
 
 #include <assert.h>
+#include <setjmp.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #define JPEG_INTERNAL_OPTIONS
 #include "libjpeg/jpeglib.h"
-#include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/image.h"
-#include "netsurf/riscos/jpeg.h"
-#include "netsurf/riscos/options.h"
+#include "netsurf/image/bitmap.h"
+#include "netsurf/image/jpeg.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 
-/* We require a the library to be configured with these options to save
+/* We prefer the library to be configured with these options to save
  * copying data during decoding. */
 #if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
-#error JPEG library incorrectly configured.
+#warning JPEG library not optimally configured. Decoding will be slower.
 #endif
 
 
@@ -54,17 +52,6 @@ static void nsjpeg_term_source(j_decompress_ptr cinfo);
 
 
 /**
- * Create a CONTENT_JPEG.
- */
-
-bool nsjpeg_create(struct content *c, const char *params[])
-{
-	c->data.jpeg.sprite_area = 0;
-	return true;
-}
-
-
-/**
  * Convert a CONTENT_JPEG for display.
  */
 
@@ -78,16 +65,17 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 			nsjpeg_term_source };
 	unsigned int height;
 	unsigned int width;
-	unsigned int area_size;
-	osspriteop_area *sprite_area = 0;
-	osspriteop_header *sprite;
+	struct bitmap *bitmap = NULL;
+	char *pixels;
+	size_t rowstride;
 	union content_msg_data msg_data;
 
 	cinfo.err = jpeg_std_error(&jerr.pub);
 	jerr.pub.error_exit = nsjpeg_error_exit;
 	if (setjmp(jerr.setjmp_buffer)) {
 		jpeg_destroy_decompress(&cinfo);
-		free(sprite_area);
+		if (bitmap)
+			bitmap_destroy(bitmap);
 
 		msg_data.error = nsjpeg_error_buffer;
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -105,10 +93,8 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 	width = cinfo.output_width;
 	height = cinfo.output_height;
 
-	area_size = 16 + 44 + width * height * 4;
-	sprite_area = malloc(area_size);
-	if (!sprite_area) {
-		LOG(("malloc failed"));
+	bitmap = bitmap_create(width, height);
+	if (!bitmap) {
 		jpeg_destroy_decompress(&cinfo);
 
 		msg_data.error = messages_get("NoMemory");
@@ -117,45 +103,40 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 		return false;
 	}
 
-	/* area control block */
-	sprite_area->size = area_size;
-	sprite_area->sprite_count = 1;
-	sprite_area->first = 16;
-	sprite_area->used = area_size;
-
-	/* sprite control block */
-	sprite = (osspriteop_header *) (sprite_area + 1);
-	sprite->size = area_size - 16;
-	memset(sprite->name, 0x00, 12);
-	strncpy(sprite->name, "jpeg", 12);
-	sprite->width = width - 1;
-	sprite->height = height - 1;
-	sprite->left_bit = 0;
-	sprite->right_bit = 31;
-	sprite->image = sprite->mask = 44;
-	sprite->mode = (os_mode) 0x301680b5;
-
+	pixels = bitmap_get_buffer(bitmap);
+	rowstride = bitmap_get_rowstride(bitmap);
 	do {
 		JSAMPROW scanlines[1];
-		scanlines[0] = (JSAMPROW) ((char *) sprite + 44 +
-				width * cinfo.output_scanline * 4);
+		scanlines[0] = (JSAMPROW) (pixels +
+				rowstride * cinfo.output_scanline);
 		jpeg_read_scanlines(&cinfo, scanlines, 1);
+
+#if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
+		/* expand to RGBA */
+		for (int i = width - 1; 0 <= i; i--) {
+			int r = scanlines[0][i * RGB_PIXELSIZE + RGB_RED];
+			int g = scanlines[0][i * RGB_PIXELSIZE + RGB_GREEN];
+			int b = scanlines[0][i * RGB_PIXELSIZE + RGB_BLUE];
+			scanlines[0][i * 4 + 0] = r;
+			scanlines[0][i * 4 + 1] = g;
+			scanlines[0][i * 4 + 2] = b;
+			scanlines[0][i * 4 + 3] = 0xff;
+		}
+
+#endif
 	} while (cinfo.output_scanline != cinfo.output_height);
 
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);
 
-	/*xosspriteop_save_sprite_file(osspriteop_USER_AREA,
-			sprite_area, "jpeg");*/
-
 	c->width = width;
 	c->height = height;
-	c->data.jpeg.sprite_area = sprite_area;
+	c->bitmap = bitmap;
 	c->title = malloc(100);
 	if (c->title)
 		snprintf(c->title, 100, messages_get("JPEGTitle"),
 				width, height, c->source_size);
-	c->size += area_size + 100;
+	c->size += height * rowstride + 100;
 	c->status = CONTENT_STATUS_DONE;
 	return true;
 }
@@ -232,21 +213,7 @@ void nsjpeg_term_source(j_decompress_ptr cinfo)
 
 void nsjpeg_destroy(struct content *c)
 {
-	free(c->data.jpeg.sprite_area);
+	if (c->bitmap)
+		bitmap_destroy(c->bitmap);
 	free(c->title);
-}
-
-
-/**
- * Redraw a CONTENT_JPEG.
- */
-
-bool nsjpeg_redraw(struct content *c, int x, int y,
-		   int width, int height,
-		   int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-		   float scale, unsigned long background_colour)
-{
-	return image_redraw(c->data.jpeg.sprite_area, x, y, width, height,
-			c->width * 2, c->height *2, background_colour,
-			false, false, IMAGE_PLOT_TINCT_OPAQUE);
 }

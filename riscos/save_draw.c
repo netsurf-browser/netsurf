@@ -703,17 +703,18 @@ static bool add_graphic(struct content *content, struct box *box,
 	/* cast-tastic... */
 	switch (content->type) {
 		case CONTENT_JPEG:
-			sprite_length = ((osspriteop_header*)((char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first))->size;
+			return true;
+			/*sprite_length = ((osspriteop_header*)((char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first))->size;*/
 			break;
 #ifdef WITH_PNG
 		case CONTENT_PNG:
-			sprite_length = ((osspriteop_header*)((char*)content->data.png.sprite_area+content->data.png.sprite_area->first))->size;
+			/*sprite_length = ((osspriteop_header*)((char*)content->data.png.sprite_area+content->data.png.sprite_area->first))->size;*/
 			break;
 #endif
 #ifdef WITH_MNG
 		case CONTENT_JNG:
 		case CONTENT_MNG:
-			sprite_length = ((osspriteop_header*)((char*)content->data.mng.sprite_area+content->data.mng.sprite_area->first))->size;
+			/*sprite_length = ((osspriteop_header*)((char*)content->data.mng.sprite_area+content->data.mng.sprite_area->first))->size;*/
 			break;
 #endif
 		case CONTENT_GIF:
@@ -742,17 +743,17 @@ static bool add_graphic(struct content *content, struct box *box,
 
 	switch (content->type) {
 		case CONTENT_JPEG:
-			memcpy((char*)ds+16, (char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first, (unsigned)sprite_length);
+			/*memcpy((char*)ds+16, (char*)content->data.jpeg.sprite_area+content->data.jpeg.sprite_area->first, (unsigned)sprite_length);*/
 			break;
 #ifdef WITH_PNG
 		case CONTENT_PNG:
-			memcpy((char*)ds+16, (char*)content->data.png.sprite_area+content->data.png.sprite_area->first, (unsigned)sprite_length);
+			/*memcpy((char*)ds+16, (char*)content->data.png.sprite_area+content->data.png.sprite_area->first, (unsigned)sprite_length);*/
 			break;
 #endif
 #ifdef WITH_MNG
 		case CONTENT_JNG:
 		case CONTENT_MNG:
-			memcpy((char*)ds+16, (char*)content->data.mng.sprite_area+content->data.mng.sprite_area->first, (unsigned)sprite_length);
+			/*memcpy((char*)ds+16, (char*)content->data.mng.sprite_area+content->data.mng.sprite_area->first, (unsigned)sprite_length);*/
 			break;
 #endif
 		case CONTENT_GIF:

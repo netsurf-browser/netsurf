@@ -5,11 +5,14 @@
  * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  */
 
-#ifndef _NETSURF_RISCOS_MNG_H_
-#define _NETSURF_RISCOS_MNG_H_
+/** \file
+ * Content for image/mng, image/png, and image/jng (interface).
+ */
 
-#include "libmng/libmng.h"
-#include "oslib/osspriteop.h"
+#ifndef _NETSURF_IMAGE_MNG_H_
+#define _NETSURF_IMAGE_MNG_H_
+
+#include "libmng.h"
 
 struct content;
 
@@ -19,7 +22,6 @@ struct content_mng_data {
 	int read_size;
 	bool waiting;
 	mng_handle handle;
-	osspriteop_area *sprite_area;
 };
 
 bool nsmng_create(struct content *c, const char *params[]);

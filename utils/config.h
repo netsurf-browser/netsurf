@@ -23,11 +23,11 @@
 #define WITH_COOKIES
 
 /* Image renderering modules */
+#define WITH_JPEG
+#define WITH_MNG
+#define WITH_PNG
 #if defined(riscos) || defined(ncos) || defined(debug)
     #define WITH_GIF
-    #define WITH_JPEG
-    #define WITH_PNG
-    #define WITH_MNG
 #endif
 #if defined(riscos) || defined(ncos)
     #define WITH_DRAW

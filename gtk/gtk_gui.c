@@ -121,3 +121,7 @@ void history_forward(struct browser_window *bw, struct history *history) {}
 
 void gui_401login_open(struct browser_window *bw, struct content *c,
                        char *realm) {}
+
+void schedule(int t, void (*callback)(void *p), void *p) {}
+void schedule_remove(void (*callback)(void *p), void *p) {}
+void schedule_run(void) {}

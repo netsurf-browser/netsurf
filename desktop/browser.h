@@ -100,4 +100,9 @@ void history_forward(struct browser_window *bw, struct history *history);
 bool history_back_available(struct history *history);
 bool history_forward_available(struct history *history);
 
+/* In platform specific schedule.c. */
+void schedule(int t, void (*callback)(void *p), void *p);
+void schedule_remove(void (*callback)(void *p), void *p);
+void schedule_run(void);
+
 #endif

@@ -230,9 +230,6 @@ int ro_content_filetype(struct content *content);
 /* in schedule.c */
 extern bool sched_active;
 extern os_t sched_time;
-void schedule(int t, void (*callback)(void *p), void *p);
-void schedule_remove(void (*callback)(void *p), void *p);
-void schedule_run(void);
 
 /* in debugwin.c */
 void ro_gui_debugwin_open(void);

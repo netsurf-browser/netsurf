@@ -23,12 +23,14 @@ OBJECTS_COMMON += box.o form.o html.o layout.o textplain.o	# render/
 OBJECTS_COMMON += messages.o pool.o translit.o url.o utils.o	# utils/
 OBJECTS_COMMON += imagemap.o loginlist.o options.o		# desktop/
 
-OBJECTS_RISCOS = $(OBJECTS_COMMON)
+OBJECTS_IMAGE = jpeg.o mng.o					# image/
+
+OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_RISCOS += browser.o netsurf.o version.o			# desktop/
-OBJECTS_RISCOS += 401login.o debugwin.o \
+OBJECTS_RISCOS += 401login.o bitmap.o debugwin.o \
 	buffer.o dialog.o download.o draw.o filetype.o font.o gif.o \
 	gifread.o gui.o help.o history.o hotlist.o htmlredraw.o image.o \
-	jpeg.o menus.o mng.o mouseactions.o plugin.o print.o \
+	menus.o mouseactions.o plugin.o print.o \
 	save.o save_complete.o save_draw.o save_text.o \
 	schedule.o search.o sprite.o textselection.o theme.o thumbnail.o \
 	ufont.o uri.o url_protocol.o wimp.o window.o	# riscos/
@@ -36,22 +38,22 @@ OBJECTS_RISCOS += 401login.o debugwin.o \
 
 OBJECTS_NCOS = $(OBJECTS_RISCOS)
 
-OBJECTS_DEBUG = $(OBJECTS_COMMON)
-OBJECTS_DEBUG += filetyped.o fontd.o netsurfd.o			# debug/
-OBJECTS_DEBUG += gif.o gifread.o jpeg.o mng.o save_complete.o \
+OBJECTS_DEBUG = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
+OBJECTS_DEBUG += debug_bitmap.o filetyped.o fontd.o netsurfd.o	# debug/
+OBJECTS_DEBUG += gif.o gifread.o save_complete.o \
 	schedule.o						# riscos/
 
-OBJECTS_DEBUGRO = $(OBJECTS_COMMON)
+OBJECTS_DEBUGRO = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_DEBUGRO += netsurfd.o					# debug/
 OBJECTS_DEBUGRO += version.o					# desktop/
-OBJECTS_DEBUGRO += draw.o filetype.o font.o \
-	gif.o gifread.o image.o jpeg.o mng.o save_complete.o \
+OBJECTS_DEBUGRO += bitmap.o draw.o filetype.o font.o \
+	gif.o gifread.o image.o jpeg.o save_complete.o \
 	schedule.o sprite.o ufont.o				# riscos/
 
-OBJECTS_GTK = $(OBJECTS_COMMON)
+OBJECTS_GTK = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_GTK += filetyped.o					# debug/
 OBJECTS_GTK += browser.o netsurf.o version.o			# desktop/
-OBJECTS_GTK += font_pango.o gtk_gui.o gtk_window.o		# gtk/
+OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o gtk_window.o	# gtk/
 
 
 OBJDIR_RISCOS = $(shell $(CC) -dumpmachine)
@@ -82,7 +84,7 @@ else
 include posix.mk
 endif
 
-VPATH = content:css:desktop:render:riscos:utils:debug:gtk
+VPATH = content:css:desktop:image:render:riscos:utils:debug:gtk
 
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \

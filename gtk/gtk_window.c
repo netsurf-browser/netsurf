@@ -34,8 +34,8 @@ struct gui_window {
 	struct browser_window *bw;
 };
 static GtkWidget *current_widget;
-static GdkDrawable *current_drawable;
-static GdkGC *current_gc;
+GdkDrawable *current_drawable;
+GdkGC *current_gc;
 
 
 static gboolean gui_window_expose_event(GtkWidget *widget,

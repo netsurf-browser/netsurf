@@ -102,7 +102,7 @@
 #include "netsurf/css/css.h"
 #include "netsurf/render/html.h"
 #ifdef WITH_JPEG
-#include "netsurf/riscos/jpeg.h"
+#include "netsurf/image/jpeg.h"
 #endif
 #ifdef WITH_GIF
 #include "netsurf/riscos/gif.h"
@@ -110,11 +110,8 @@
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
 #endif
-#ifdef WITH_PNG
-#include "netsurf/riscos/png.h"
-#endif
 #ifdef WITH_MNG
-#include "netsurf/riscos/mng.h"
+#include "netsurf/image/mng.h"
 #endif
 #ifdef WITH_SPRITE
 #include "netsurf/riscos/sprite.h"
@@ -124,6 +121,7 @@
 #endif
 
 
+struct bitmap;
 struct box;
 struct browser_window;
 struct content;
@@ -208,9 +206,6 @@ struct content {
 #ifdef WITH_GIF
 		struct content_gif_data gif;
 #endif
-#ifdef WITH_PNG
-		struct content_png_data png;
-#endif
 #ifdef WITH_MNG
 		struct content_mng_data mng;
 #endif
@@ -224,6 +219,9 @@ struct content {
 		struct content_plugin_data plugin;
 #endif
 	} data;
+
+	/** Bitmap, for various image contents. */
+	struct bitmap *bitmap;
 
 	/** This content may be given to new users. Indicates that the content
 	 *  was fetched using a simple GET, has not expired, and may be
