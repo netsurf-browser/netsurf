@@ -658,8 +658,7 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
 
     if (pointer->buttons == wimp_CLICK_MENU)
     {
-      /* check for mouse gestures */
-      ro_gui_mouse_action(g);
+      ro_gui_create_menu(browser_menu, pointer->pos.x - 64, pointer->pos.y, g);
     }
     else if (g->data.browser.bw->current_content != NULL)
     {
