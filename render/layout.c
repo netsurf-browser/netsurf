@@ -2080,6 +2080,14 @@ void layout_calculate_descendant_bboxes(struct box *box)
 {
 	struct box *child;
 
+	if (box->width == UNKNOWN_WIDTH) {
+		LOG(("%p UNKNOWN_WIDTH", box));
+		while (box->parent)
+			box = box->parent;
+		box_dump(box, 0);
+		assert(0);
+	}
+
 	box->descendant_x0 = -box->border[LEFT];
 	box->descendant_y0 = -box->border[TOP];
 	box->descendant_x1 = box->padding[LEFT] + box->width +
