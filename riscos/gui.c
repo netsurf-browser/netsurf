@@ -253,8 +253,10 @@ void gui_poll(bool active)
 
       case wimp_CLOSE_WINDOW_REQUEST    :
         g = ro_lookup_gui_from_w(block.close.w);
-        if (g != NULL)
+        if (g != NULL) {
           browser_window_destroy(g->data.browser.bw, true);
+          clean_cookiejar();
+        }
         else
           ro_gui_dialog_close((wimp_w)(&(block.close.w)));
         break;

@@ -16,6 +16,7 @@
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 
 bool netsurf_quit = false;
 
@@ -78,5 +79,6 @@ void netsurf_exit(void)
 {
   cache_quit();
   fetch_quit();
+  clean_cookiejar();
   gui_quit();
 }
