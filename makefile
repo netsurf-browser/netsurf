@@ -40,7 +40,8 @@ CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. \
 	-mpoke-function-name
 CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE $(WARNFLAGS) -I.. -I/usr/include/libxml2 -g
 LDFLAGS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lares -lanim -lpng \
-	-lifc -loslib -ljpeg
+	-loslib -ljpeg
+LDFLAGS_SMALL = -L/riscos/lib -lxml2 -lz -lucurl -lares -lanim -lpng -loslib -ljpeg
 LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl
 
 OBJDIR = $(shell $(CC) -dumpmachine)
@@ -55,6 +56,8 @@ OBJS_DEBUGRO=$(OBJECTS_DEBUGRO:%.o=$(OBJDIR)/%.o)
 all: !NetSurf/!RunImage,ff8 $(DOCS)
 !NetSurf/!RunImage,ff8 : $(OBJS)
 	$(CC) -o $@ $(LDFLAGS) $^
+u!RunImage,ff8 : $(OBJS)
+	$(CC) -o $@ $(LDFLAGS_SMALL) $^
 netsurf.zip: !NetSurf/!RunImage,ff8 $(DOCS)
 	rm netsurf.zip; riscos-zip -9vr, netsurf.zip !NetSurf
 
