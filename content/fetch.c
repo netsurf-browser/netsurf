@@ -25,6 +25,9 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
+#ifdef riscos
+#include <unixlib/local.h>
+#endif
 #include "curl/curl.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
@@ -677,16 +680,27 @@ struct HttpPost *fetch_post_convert(struct form_successful_control *control)
 {
 	struct HttpPost *post = 0, *last = 0;
 	char *mimetype = 0;
+	char *leafname = 0, *temp = 0;
 
 	for (; control; control = control->next) {
 	        if (control->file) {
 	                mimetype = fetch_mimetype(control->value);
+#ifdef riscos
+	                temp = strrchr(control->value, '.') + 1;
+	                leafname = xcalloc(strlen(temp), sizeof(char));
+	                __unixify_std(temp, leafname, strlen(temp), 0xfff);
+#else
+                        leafname = strrchr(control->value, '/') + 1;
+#endif
 	                curl_formadd(&post, &last,
 					CURLFORM_COPYNAME, control->name,
-					CURLFORM_FILE, control->value,
+					CURLFORM_FILE, leafname,
 					CURLFORM_CONTENTTYPE,
 					(mimetype != 0 ? mimetype : "text/plain"),
 					CURLFORM_END);
+#ifdef riscos
+			xfree(leafname);
+#endif
 			xfree(mimetype);
 	        }
 	        else {
