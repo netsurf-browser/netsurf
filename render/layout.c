@@ -459,7 +459,9 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 					x1 - x0 - x - space_before, &w);
 			LOG(("'%.*s' %lu %u (%c) %u", (int) c->length, c->text,
 					(unsigned long) (x1 - x0), space - c->text, *space, w));
-			assert(space != c->text);
+/* 			assert(space != c->text); */
+			if (space == c->text)
+				space = c->text + 1;
 			c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
 			c2->text = xstrdup(space + 1);
 			c2->length = c->length - ((space + 1) - c->text);
@@ -1030,7 +1032,7 @@ void calculate_table_widths(struct box *table)
 						extra = 0;
 					for (j = 0; j != cell->columns; j++) {
 						if (col[i + j].type != COLUMN_WIDTH_FIXED) {
-							col[i + j].width = col[i + j].max = 
+							col[i + j].width = col[i + j].max =
 								col[i + j].min += extra;
 							col[i + j].type = COLUMN_WIDTH_FIXED;
 						}
