@@ -45,8 +45,8 @@ OBJECTS_DEBUGRO = $(OBJECTS_COMMON)
 OBJECTS_DEBUGRO += netsurfd.o					# debug/
 OBJECTS_DEBUGRO += version.o					# desktop/
 OBJECTS_DEBUGRO += draw.o filetype.o font.o \
-	gif.o gifread.o jpeg.o png.o save_complete.o schedule.o \
-	sprite.o theme.o toolbar.o wimp.o			# riscos/
+	gif.o gifread.o jpeg.o mng.o png.o save_complete.o \
+	schedule.o sprite.o ufont.o				# riscos/
 
 OBJECTS_GTK = $(OBJECTS_COMMON)
 OBJECTS_GTK += filetyped.o					# debug/
