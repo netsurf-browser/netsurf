@@ -475,7 +475,8 @@ void html_add_instance(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params, void **state)
 {
-	for (unsigned int i = 0; i != c->data.html.object_count; i++) {
+	unsigned int i;
+	for (i = 0; i != c->data.html.object_count; i++) {
 		if (c->data.html.object[i].content == 0)
 			continue;
 		content_add_instance(c->data.html.object[i].content,
@@ -491,7 +492,8 @@ void html_remove_instance(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params, void **state)
 {
-	for (unsigned int i = 0; i != c->data.html.object_count; i++) {
+	unsigned int i;
+	for (i = 0; i != c->data.html.object_count; i++) {
 		if (c->data.html.object[i].content == 0)
 			continue;
 		content_remove_instance(c->data.html.object[i].content,
