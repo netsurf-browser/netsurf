@@ -68,6 +68,9 @@ int __riscosify_control = __RISCOSIFY_NO_SUFFIX |
 
 char *NETSURF_DIR;
 
+char *default_stylesheet_url;
+char *adblock_stylesheet_url;
+
 /** The pointer is over a window which is tracking mouse movement. */
 static bool gui_track = false;
 /** Handle of window which the pointer is over. */
@@ -195,6 +198,9 @@ void gui_init(int argc, char** argv)
 		die("Failed to locate Messages resource.");
 	messages_load(path);
 	messages_load("<NetSurf$Dir>.Resources.LangNames");
+
+	default_stylesheet_url = strdup("file:/<NetSurf$Dir>/Resources/CSS");
+	adblock_stylesheet_url = strdup("file:/<NetSurf$Dir>/Resources/AdBlock");
 
         /* Totally pedantic, but base the taskname on the build options.
         */
@@ -516,6 +522,8 @@ void gui_quit(void)
 	ro_gui_history_quit();
 	free(gui_sprites);
 	xwimp_close_down(task_handle);
+	free(default_stylesheet_url);
+	free(adblock_stylesheet_url);
 	xhourglass_off();
 }
 
@@ -1484,6 +1492,11 @@ void ro_gui_open_help_page(const char *page)
 
 void ro_gui_view_source(struct content *content)
 {
+	if (!content || !content->source_data) {
+		warn_user("MiscError", "No document source");
+		return;
+	}
+
 	xosfile_save_stamped("<Wimp$Scrap>", 0xfff,
 			content->source_data,
 			content->source_data + content->source_size);

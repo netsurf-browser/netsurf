@@ -16,19 +16,43 @@
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
+#include "netsurf/desktop/options.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
+#include "netsurf/render/html.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 
 bool gui_in_multitask = false;
 
+char *default_stylesheet_url;
+char *adblock_stylesheet_url;
+
 
 void gui_init(int argc, char** argv)
 {
+	char *home;
+	char buf[1024];
+
+	/* All our resources are stored in ~/.netsurf/ */
+	home = getenv("HOME");
+	if (!home)
+		die("Couldn't find HOME");
+
 	gtk_init(&argc, &argv);
-	messages_load("messages");
+
+	snprintf(buf, sizeof buf, "%s/.netsurf/Choices", home);
+	options_read(buf);
+
+	snprintf(buf, sizeof buf, "%s/.netsurf/messages", home);
+	messages_load(buf);
+
+	/* set up stylesheet urls */
+	snprintf(buf, sizeof buf, "file:///%s/.netsurf/Default.css", home);
+	default_stylesheet_url = strdup(buf);
+	snprintf(buf, sizeof buf, "file:///%s/.netsurf/AdBlock.css", home);
+	adblock_stylesheet_url = strdup(buf);
 }
 
 
@@ -55,6 +79,8 @@ void gui_multitask(void)
 
 void gui_quit(void)
 {
+	free(default_stylesheet_url);
+	free(adblock_stylesheet_url);
 }
 
 

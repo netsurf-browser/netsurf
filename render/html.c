@@ -20,9 +20,7 @@
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/desktop/imagemap.h"
-#ifdef riscos
 #include "netsurf/desktop/gui.h"
-#endif
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
@@ -337,11 +335,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 	c->active = 0;
 
 	c->data.html.stylesheet_content[STYLESHEET_BASE] = fetchcache(
-#ifdef riscos
-			"file:/<NetSurf$Dir>/Resources/CSS",
-#else
-			"file:///home/james/Projects/netsurf/CSS",
-#endif
+			default_stylesheet_url,
 			html_convert_css_callback, c,
 			(void *) STYLESHEET_BASE, c->width, c->height,
 			true, 0, 0, false);
@@ -353,11 +347,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 
 	if (option_block_ads) {
 		c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] = fetchcache(
-#ifdef riscos
-			"file:/<NetSurf$Dir>/Resources/AdBlock",
-#else
-			"file:///home/james/Projects/netsurf/AdBlock",
-#endif
+			adblock_stylesheet_url,
 			html_convert_css_callback, c,
 			(void *) STYLESHEET_ADBLOCK, c->width,
 			c->height, true, 0, 0, false);

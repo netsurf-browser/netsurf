@@ -33,6 +33,9 @@ struct plotters;
 #define STYLESHEET_STYLE	2	/* <style> elements (not cached) */
 #define STYLESHEET_START	3	/* start of document stylesheets */
 
+extern char *default_stylesheet_url;
+extern char *adblock_stylesheet_url;
+
 /** Data specific to CONTENT_HTML. */
 struct content_html_data {
 	htmlParserCtxt *parser;  /**< HTML parser context. */
