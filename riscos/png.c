@@ -79,7 +79,8 @@ void nspng_process_data(struct content *c, char *data, unsigned long size)
 
 void info_callback(png_structp png, png_infop info)
 {
-	int bit_depth, color_type, interlace;
+	int bit_depth, color_type, interlace, intent;
+	double gamma;
 	unsigned int rowbytes, sprite_size;
 	unsigned long width, height;
 	struct content *c = png_get_progressive_ptr(png);
@@ -134,6 +135,19 @@ void info_callback(png_structp png, png_infop info)
 		png_set_gray_to_rgb(png);
 	if (!(color_type & PNG_COLOR_MASK_ALPHA))
 		png_set_filler(png, 0xff, PNG_FILLER_AFTER);
+	/* gamma correction - we use 2.2 as our screen gamma
+	 * this appears to be correct (at least in respect to !Browse)
+	 * see http://www.w3.org/Graphics/PNG/all_seven.html for a test case
+	 */
+	if (png_get_sRGB(png, info, &intent))
+	        png_set_gamma(png, 2.2, 0.45455);
+	else {
+	        if (png_get_gAMA(png, info, &gamma))
+	                png_set_gamma(png, 2.2, gamma);
+	        else
+	                png_set_gamma(png, 2.2, 0.45455);
+	}
+
 
 	png_read_update_info(png, info);
 
