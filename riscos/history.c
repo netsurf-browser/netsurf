@@ -106,7 +106,7 @@ void history_add(struct history *history, struct content *content)
 	char *split;
 	int width;
 	osspriteop_area *area;
-	os_error *error;
+//	os_error *error;
 
 	if (!history)
 		return;
@@ -153,7 +153,7 @@ void history_add(struct history *history, struct content *content)
 	}
 	history->current = entry;
 
-	area = malloc(SPRITE_SIZE);
+/*	area = malloc(SPRITE_SIZE);
 	if (!area) {
 		LOG(("malloc failed"));
 		return;
@@ -171,7 +171,12 @@ void history_add(struct history *history, struct content *content)
 		LOG(("0x%x: %s", error->errnum, error->errmess));
 		return;
 	}
-
+  */
+  	area = thumbnail_initialise(WIDTH / 2, HEIGHT / 2, (os_mode)0x301680b5);
+  	if (!area) { 
+		LOG(("Thumbnail initialisation failed."));
+		return;
+	}
 	thumbnail_create(content, area,
 			(osspriteop_header *) (area + 1),
 			WIDTH / 2, HEIGHT / 2);
@@ -410,6 +415,7 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 					area, (osspriteop_id)header,
 					colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 					0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
+			LOG(("Table size of %i", size));
 			table = xcalloc(size, 1);
 			xcolourtrans_generate_table_for_sprite(
 					area, (osspriteop_id)header,

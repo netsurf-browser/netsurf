@@ -9,6 +9,7 @@
  * Save dialog and drag and drop saving (implementation).
  */
 
+#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -186,11 +187,13 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 
 void ro_gui_save_complete(struct content *c, char *path)
 {
-	char buf[256], spritename[13];
+	char buf[256];
 	FILE *fp;
 	os_error *error;
 	osspriteop_area *area;
+	osspriteop_header *sprite_header;
 	char *appname;
+	unsigned int index;
 
         /* Create dir */
 	error = xosfile_create_dir(path, 0);
@@ -227,7 +230,7 @@ void ro_gui_save_complete(struct content *c, char *path)
 	        warn_user("Failed to acquire dirname");
 	        return;
 	}
-	snprintf(spritename, sizeof spritename, "%s", appname+1);
+/*	snprintf(spritename, sizeof spritename, "%s", appname+1);
 	area = malloc(SPRITE_SIZE);
 	if (!area) {
 	        LOG(("malloc failed"));
@@ -247,9 +250,23 @@ void ro_gui_save_complete(struct content *c, char *path)
 	        free(area);
 	        return;
 	}
+*/
+  	area = thumbnail_initialise(34, 34, os_MODE8BPP90X90);
+  	if (!area) { 
+		LOG(("Iconsprite initialisation failed."));
+		return;
+	}
+	sprite_header = (osspriteop_header *)(area + 1);
+	strncpy(sprite_header->name, appname + 1, 12);
+
+	/*	!Paint gets confused with uppercase characters
+	*/
+	for (int index = 0; index < 12; index++) {
+		sprite_header->name[index] = tolower(sprite_header->name[index]);
+	}
 	thumbnail_create(c, area,
 			(osspriteop_header *) ((char *) area + 16),
-			WIDTH / 2, HEIGHT / 2);
+			34, 34);
 	error = xosspriteop_save_sprite_file(osspriteop_NAME, area, buf);
 	if (error) {
 	        LOG(("Failed to save iconsprite"));
