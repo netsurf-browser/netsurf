@@ -1128,10 +1128,11 @@ struct box_result box_select(xmlNode *n, struct box_status *status,
 	return (struct box_result) {box, false, false};
 }
 
+
 void add_option(xmlNode* n, struct form_control* current_select, const char *text)
 {
 	struct form_option *option = xcalloc(1, sizeof(struct form_option));
-	const char *s;
+	char *s;
 
 	if ((text = squash_whitespace(text)) == NULL) {
 		free(option);
@@ -1159,7 +1160,7 @@ void add_option(xmlNode* n, struct form_control* current_select, const char *tex
 	if (*s == ' ') {
 		const char *org_text = text;
 		text = cnv_space2nbsp(org_text);
-		free(org_text);
+		free((void *)org_text);
 	}
 
 	option->selected = option->initial_selected = false;
@@ -1175,6 +1176,7 @@ void add_option(xmlNode* n, struct form_control* current_select, const char *tex
 		}
 	}
 }
+
 
 struct box_result box_input(xmlNode *n, struct box_status *status,
 		struct css_style *style)
