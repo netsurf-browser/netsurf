@@ -1,5 +1,5 @@
 /**
- * $Id: plugin.c,v 1.1 2003/05/31 18:47:00 jmb Exp $
+ * $Id: plugin.c,v 1.2 2003/06/02 21:09:50 jmb Exp $
  */
 
 #include <assert.h>
@@ -13,6 +13,8 @@
 #include "netsurf/riscos/plugin.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
+
+#include "oslib/mimemap.h"
 
 char* create_mime_from_ext(char* data);
 
@@ -64,24 +66,17 @@ void plugin_fetch(struct content* content, char* url, struct box* box,
 char* create_mime_from_ext(char* data){
 
         char* ret;
+        os_error *e;
 
         ret = strrchr(data, '.');
-        LOG(("ret = %s", ++ret));
+        LOG(("Extension = %s", ret));
 
-        if ((stricmp(ret,"jpg")) == 0 || (stricmp(ret,"jpeg")) == 0) {
-                strcpy(ret,"image/jpeg");
-                LOG(("jpeg image"));
+        /* Let's make the mime map module do the work for us */
+        e = xmimemaptranslate_extension_to_mime_type((const char*)ret,
+                                                      ret);
+        LOG(("Mime Type = %s", ret));
 
-        } else if ((stricmp(ret,"png")) == 0) {
-                strcpy(ret,"image/png");
-                LOG(("png image"));
-
-        } /*else if ((stricmp(ret, "gif")) == 0) {
-                ret = "image/gif";
-        }*/ else {
-
-                ret = NULL;
-        }
+        if(e != NULL) ret = NULL;
 
         return ret;
 }
