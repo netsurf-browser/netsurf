@@ -26,7 +26,7 @@ h4 { font-size: medium; font-weight: bold; }
 h5 { font-size: medium; font-style: italic; }
 h6 { font-size: medium; font-style: italic; }
 b, strong { font-weight: bold; }
-i, em { font-style: italic; }
+i, cite, dfn, em, var, address { font-style: italic; }
 u { text-decoration: underline; }
 s { text-decoration: line-through; }
 ins { color: green; }
@@ -70,7 +70,8 @@ font[size="-1"] { font-size: smaller; }
 font[size="+1"] { font-size: larger; }
 
 td[nowrap], th[nowrap] { white-space: nowrap; }
-pre { white-space: pre; }
 
-cite, dfn, code, samp, 
-kbd, var, abbr, acronym { font-family: monospace; text-align: center; }
+code, kbd, pre, samp, tt { font-family: monospace; }
+abbr, acronym { font-variant: small-caps; }
+
+pre { white-space: pre; }
