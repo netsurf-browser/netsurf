@@ -59,6 +59,9 @@ struct browser_window
   gui_window* window;
 
   int throbbing;
+
+  void (*caret_callback)(struct browser_window *bw, char key, void *p);
+  void *caret_p;
 };
 
 
@@ -115,5 +118,7 @@ void gui_redraw_gadget(struct browser_window* bw, struct gui_gadget* g);
 
 void browser_window_stop_throbber(struct browser_window* bw);
 void browser_window_reformat(struct browser_window* bw, int scroll_to_top);
+
+void browser_window_key_press(struct browser_window *bw, char key);
 
 #endif

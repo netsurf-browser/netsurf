@@ -13,5 +13,7 @@
  */
 
 void layout_document(struct box * box, unsigned long width);
+void layout_block(struct box * box, unsigned long width, struct box * cont,
+		unsigned long cx, unsigned long cy);
 
 #endif

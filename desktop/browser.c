@@ -45,6 +45,13 @@ static int browser_window_gadget_click(struct browser_window* bw, unsigned long 
 static void browser_form_submit(struct browser_window *bw, struct form *form);
 static char* browser_form_construct_get(struct page_elements *elements, struct formsubmit* fs);
 static void browser_form_get_append(char **s, int *length, char sep, char *name, char *value);
+static void browser_window_textarea_click(struct browser_window* bw,
+		unsigned long actual_x, unsigned long actual_y,
+		unsigned long x, unsigned long y,
+		struct box *box);
+static void browser_window_textarea_callback(struct browser_window *bw, char key, void *p);
+static void browser_window_place_caret(struct browser_window *bw, int x, int y,
+		int height, void (*callback)(struct browser_window *bw, char key, void *p), void *p);
 
 
 void browser_window_start_throbber(struct browser_window* bw)
@@ -167,6 +174,7 @@ struct browser_window* create_browser_window(int flags, int width, int height)
   bw->history = NULL;
 
   bw->url = NULL;
+  bw->caret_callback = 0;
 
   bw->window = gui_create_browser_window(bw);
 
@@ -323,6 +331,7 @@ void browser_window_callback(content_msg msg, struct content *c,
         }
         bw->current_content = c;
         bw->loading_content = 0;
+        bw->caret_callback = 0;
       }
       gui_window_set_redraw_safety(bw->window, previous_safety);
       if (bw->current_content->status == CONTENT_STATUS_DONE) {
@@ -493,7 +502,7 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 
 	for (i = found - 1; i >= 0; i--)
 	{
-		if (click_boxes[i].box->type == BOX_INLINE && click_boxes[i].box->gadget != 0)
+		if (click_boxes[i].box->gadget)
 		{
 			struct gui_gadget* g = click_boxes[i].box->gadget;
 
@@ -522,7 +531,12 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 					gui_redraw_gadget(bw,g);
 					break;
 				case GADGET_TEXTAREA:
-					gui_edit_textarea(bw, g);
+					browser_window_textarea_click(bw,
+							click_boxes[i].actual_x,
+							click_boxes[i].actual_y,
+							click_x - click_boxes[i].actual_x,
+							click_y - click_boxes[i].actual_y,
+							click_boxes[i].box);
 					break;
 				case GADGET_TEXTBOX:
 					gui_edit_textbox(bw, g);
@@ -547,6 +561,156 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 
 	return 0;
 }
+
+
+/**
+ * Handle clicks in a text area by placing the caret.
+ */
+
+void browser_window_textarea_click(struct browser_window* bw,
+		unsigned long actual_x, unsigned long actual_y,
+		unsigned long x, unsigned long y,
+		struct box *textarea)
+{
+	/* a textarea contains one or more inline containers, which contain
+	 * the formatted paragraphs of text as inline boxes */
+
+	int char_offset, pixel_offset;
+	struct box *inline_container, *text_box;
+
+	for (inline_container = textarea->children;
+			inline_container && inline_container->y + inline_container->height < y;
+			inline_container = inline_container->next)
+		;
+	if (!inline_container) {
+		/* below the bottom of the textarea: place caret at end */
+		inline_container = textarea->last;
+		text_box = inline_container->last;
+		assert(text_box->type == BOX_INLINE);
+		assert(text_box->text && text_box->font);
+		font_position_in_string(text_box->text, text_box->font,
+				text_box->length, textarea->width,
+				&char_offset, &pixel_offset);
+	} else {
+		/* find the relevant text box */
+		y -= inline_container->y;
+		for (text_box = inline_container->children;
+				text_box && (text_box->y + text_box->height < y ||
+					text_box->x + text_box->width < x);
+				text_box = text_box->next)
+			;
+		if (!text_box) {
+			/* past last text box */
+			text_box = inline_container->last;
+			assert(text_box->type == BOX_INLINE);
+			assert(text_box->text && text_box->font);
+			font_position_in_string(text_box->text, text_box->font,
+					text_box->length, textarea->width,
+					&char_offset, &pixel_offset);
+		} else {
+			/* in a text box */
+			assert(text_box->type == BOX_INLINE);
+			assert(text_box->text && text_box->font);
+			font_position_in_string(text_box->text, text_box->font,
+					text_box->length, x - text_box->x,
+					&char_offset, &pixel_offset);
+		}
+	}
+	textarea->gadget->data.textarea.caret_inline_container = inline_container;
+	textarea->gadget->data.textarea.caret_text_box = text_box;
+	textarea->gadget->data.textarea.caret_char_offset = char_offset;
+	browser_window_place_caret(bw, actual_x + text_box->x + pixel_offset,
+			actual_y + inline_container->y + text_box->y,
+			text_box->height,
+			browser_window_textarea_callback, textarea);
+}
+
+
+/**
+ * Key press callback for text areas.
+ */
+
+void browser_window_textarea_callback(struct browser_window *bw, char key, void *p)
+{
+	struct box *textarea = p;
+	struct box *inline_container = textarea->gadget->data.textarea.caret_inline_container;
+	struct box *text_box = textarea->gadget->data.textarea.caret_text_box;
+	int char_offset = textarea->gadget->data.textarea.caret_char_offset;
+	int pixel_offset;
+	unsigned long actual_x, actual_y;
+	unsigned long width, height;
+
+        box_coords(textarea, &actual_x, &actual_y);
+
+	if (32 <= key && key != 127) {
+		/* normal character insertion */
+		text_box->text = xrealloc(text_box->text, text_box->length + 2);
+		memmove(text_box->text + char_offset + 1,
+				text_box->text + char_offset,
+				text_box->length - char_offset);
+		text_box->text[char_offset] = key;
+		text_box->length++;
+		text_box->text[text_box->length] = 0;
+		text_box->width = UNKNOWN_WIDTH;
+		char_offset++;
+	} else {
+		return;
+	}
+
+	/* reflow textarea preserving width and height */
+	width = textarea->width;
+	height = textarea->height;
+	layout_block(textarea, textarea->parent->width, textarea, 0, 0);
+	textarea->width = width;
+	textarea->height = height;
+
+	if (text_box->length < char_offset) {
+		/* the text box has been split and the caret is in the second part */
+		char_offset -= text_box->length;
+		text_box = text_box->next;
+	}
+
+	pixel_offset = font_width(text_box->font, text_box->text, char_offset);
+
+	textarea->gadget->data.textarea.caret_text_box = text_box;
+	textarea->gadget->data.textarea.caret_char_offset = char_offset;
+	browser_window_place_caret(bw, actual_x + text_box->x + pixel_offset,
+			actual_y + inline_container->y + text_box->y,
+			text_box->height,
+			browser_window_textarea_callback, textarea);
+
+	gui_window_redraw(bw->window,
+			actual_x,
+			actual_y + inline_container->y,
+			actual_x + width,
+			actual_y + height);
+}
+
+
+/**
+ * Position the caret and assign a callback for key presses.
+ */
+
+void browser_window_place_caret(struct browser_window *bw, int x, int y,
+		int height, void (*callback)(struct browser_window *bw, char key, void *p), void *p)
+{
+	gui_window_place_caret(bw->window, x, y, height);
+	bw->caret_callback = callback;
+	bw->caret_p = p;
+}
+
+
+/**
+ * Handle key presses in a browser window.
+ */
+
+void browser_window_key_press(struct browser_window *bw, char key)
+{
+	if (!bw->caret_callback)
+		return;
+	bw->caret_callback(bw, key, bw->caret_p);
+}
+
 
 int browser_window_action(struct browser_window* bw, struct browser_action* act)
 {
@@ -1062,7 +1226,7 @@ char* browser_form_construct_get(struct page_elements *elements, struct formsubm
                                   opt = opt->next;
                                 }
                                 break;
-          case GADGET_TEXTAREA: value = elements->gadgets[i]->data.textarea.text;
+          case GADGET_TEXTAREA: /* TODO */
                                 break;
           case GADGET_IMAGE:    sprintf(elements->gadgets[i]->data.image.name,
                                         "%s.x",

@@ -31,8 +31,6 @@
 
 static void layout_node(struct box * box, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy);
-static void layout_block(struct box * box, unsigned long width, struct box * cont,
-		unsigned long cx, unsigned long cy);
 static unsigned long layout_block_children(struct box * box, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy);
 static void find_sides(struct box * fl, unsigned long y0, unsigned long y1,

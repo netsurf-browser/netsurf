@@ -61,7 +61,7 @@ unsigned long font_width(struct font_data *font, const char * text, unsigned int
 			0, &width, 0, 0);
 	if (error != 0) {
 		fprintf(stderr, "%s\n", error->errmess);
-		die("font_scan_string failed");
+		die("font_width: font_scan_string failed");
 	}
 
 	return width / 800;
@@ -212,7 +212,7 @@ char * font_split(struct font_data *data, const char * text, unsigned int length
 			used_width, 0, 0);
 	if (error != 0) {
 		fprintf(stderr, "%s\n", error->errmess);
-		die("font_scan_string failed");
+		die("font_split: font_scan_string failed");
 	}
 
 	*used_width = browser_x_units(*used_width / 400);

@@ -1368,8 +1368,13 @@ void ro_gui_keypress(wimp_key* key)
 {
   gui_window* g;
 
-  if (key == NULL)
-    return;
+  if (key->i == -1 && key->c < 256) {
+	  g = ro_lookup_gui_from_w(key->w);
+	  if (g) {
+		  browser_window_key_press(g->data.browser.bw, (char) key->c);
+		  return;
+	  }
+  }
 
   g = ro_lookup_gui_toolbar_from_w(key->w);
   if (g != NULL)
@@ -1686,20 +1691,10 @@ void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, unsigned 
         ro_gui_create_menu(combo_menu, pointer.pos.x - 64, pointer.pos.y, bw->window);
 }
 
-void gui_edit_textarea(struct browser_window* bw, struct gui_gadget* g)
+void gui_window_place_caret(gui_window *g, int x, int y, int height)
 {
-	FILE* file;
-
-	xosfile_create_dir("<Wimp$ScrapDir>.WWW", 77);
-	xosfile_create_dir("<Wimp$ScrapDir>.WWW.NetSurf", 77);
-	file = fopen("<Wimp$ScrapDir>/WWW/NetSurf/TextArea", "w");
-	if (g->data.textarea.text != 0)
-	  fprintf(file, "%s", g->data.textarea.text);
-	fprintf(stderr, "closing file.\n");
-	fclose(file);
-
-	xosfile_set_type("<Wimp$ScrapDir>.WWW.NetSurf.TextArea", osfile_TYPE_TEXT);
-	xos_cli("filer_run <Wimp$ScrapDir>.WWW.NetSurf.TextArea");
+	wimp_set_caret_position(g->data.browser.window, -1,
+			x * 2, -(y + height) * 2, height * 2, -1);
 }
 
 void ro_msg_datasave(wimp_message* block)
@@ -1799,10 +1794,7 @@ void ro_msg_dataload(wimp_message* block)
 			if (click_boxes[i].box->gadget->type == GADGET_TEXTAREA && data->file_type == 0xFFF)
 			{
 				/* load the text in! */
-				if (click_boxes[i].box->gadget->data.textarea.text != 0)
-					xfree(click_boxes[i].box->gadget->data.textarea.text);
-				click_boxes[i].box->gadget->data.textarea.text = load(data->file_name);
-				gui_redraw_gadget(bw, click_boxes[i].box->gadget);
+				/* TODO */
 			}
 		}
 	}

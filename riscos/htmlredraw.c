@@ -137,19 +137,6 @@ void html_redraw_box(struct content *content, struct box * box,
 		icon.extent.y1 = -gadget_subtract_y + y;
 
 		switch (box->gadget->type) {
-		case GADGET_TEXTAREA:
-			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
-			    wimp_ICON_VCENTRED | wimp_ICON_FILLED |
-			    wimp_ICON_INDIRECTED |
-			    (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-			    (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
-			icon.data.indirected_text.text = box->gadget->data.textarea.text;
-			icon.data.indirected_text.size = strlen(box->gadget->data.textarea.text);
-			icon.data.indirected_text.validation = validation_textarea;
-			LOG(("writing GADGET TEXTAREA"));
-			wimp_plot_icon(&icon);
-			break;
-
 		case GADGET_TEXTBOX:
 			colourtrans_set_font_colours(box->font->handle, current_background_color << 8,
 					     box->style->color << 8, 14, 0, 0, 0);

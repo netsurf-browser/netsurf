@@ -39,6 +39,8 @@ struct formoption {
 	struct formoption* next;
 };
 
+struct box;
+
 struct gui_gadget {
 	enum { GADGET_HIDDEN = 0, GADGET_TEXTBOX, GADGET_RADIO, GADGET_CHECKBOX,
 		GADGET_SELECT, GADGET_TEXTAREA, GADGET_ACTIONBUTTON,
@@ -86,9 +88,9 @@ struct gui_gadget {
 			char* value;
 		} radio;
 		struct {
-			int cols;
-			int rows;
-			char* text;
+			struct box *caret_inline_container;
+			struct box *caret_text_box;
+			int caret_char_offset;
 		} textarea;
 	} data;
 };

@@ -709,8 +709,7 @@ struct result box_textarea(xmlNode *n, struct status *status,
 	/* split the content at newlines and make an inline container with an
 	 * inline box for each line */
 	current = content = xmlNodeGetContent(n);
-	current += strspn(current, "\r\n");  /* skip any initial CR, LF */
-	while (*current) {
+	do {
 		size_t len = strcspn(current, "\r\n");
 		char old = current[len];
 		current[len] = 0;
@@ -727,7 +726,7 @@ struct result box_textarea(xmlNode *n, struct status *status,
 		current[len] = old;
 		current += len;
 		current += strspn(current, "\r\n");
-	}
+	} while (*current);
 	xmlFree(content);
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name")))
@@ -1444,8 +1443,6 @@ void gadget_free(struct gui_gadget* g)
 				xmlFree(g->data.checkbox.value);
 			break;
 		case GADGET_TEXTAREA:
-			if (g->data.textarea.text != 0)
-				xmlFree(g->data.textarea.text);
 			break;
 		case GADGET_TEXTBOX:
 			gui_remove_gadget(g);
