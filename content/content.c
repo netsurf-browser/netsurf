@@ -195,7 +195,7 @@ static const struct handler_entry handler_map[] = {
 		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, false},
 #endif
 #ifdef WITH_SPRITE
-	{sprite_create, sprite_process_data, sprite_convert,
+	{sprite_create, 0, sprite_convert,
 		0, sprite_destroy, 0, sprite_redraw, 0, 0, false},
 #endif
 #ifdef WITH_DRAW
@@ -290,6 +290,7 @@ struct content * content_create(const char *url)
 	c->fetch = 0;
 	c->source_data = 0;
 	c->source_size = 0;
+	c->source_allocated = 0;
 	c->total_size = 0;
 	c->no_error_pages = false;
 	c->download = false;
@@ -475,29 +476,36 @@ bool content_process_data(struct content *c, const char *data,
 {
 	char *source_data;
 	union content_msg_data msg_data;
+	unsigned int extra_space;
 
 	assert(c);
 	assert(c->type < HANDLER_MAP_COUNT);
 	assert(c->status == CONTENT_STATUS_LOADING);
 	LOG(("content %s, size %u", c->url, size));
 
-	source_data = talloc_realloc(c, c->source_data, char,
-			c->source_size + size);
-	if (!source_data) {
-		c->status = CONTENT_STATUS_ERROR;
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
-		return false;
+	if ((c->source_size + size) > c->source_allocated) {
+		extra_space = (c->source_size + size) / 4;
+		if (extra_space < 65536)
+			extra_space = 65536;
+		source_data = talloc_realloc(c, c->source_data, char,
+				c->source_size + size + extra_space);
+		if (!source_data) {
+			c->status = CONTENT_STATUS_ERROR;
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			warn_user("NoMemory", 0);
+			return false;
+		}
+		c->source_data = source_data;
+		c->source_allocated = c->source_size + size + extra_space;
 	}
-	c->source_data = source_data;
 	memcpy(c->source_data + c->source_size, data, size);
 	c->source_size += size;
 	c->size += size;
 
 	if (handler_map[c->type].process_data) {
 		if (!handler_map[c->type].process_data(c,
-				source_data + c->source_size - size, size)) {
+				c->source_data + c->source_size - size, size)) {
 			c->status = CONTENT_STATUS_ERROR;
 			return false;
 		}
@@ -523,11 +531,21 @@ bool content_process_data(struct content *c, const char *data,
 void content_convert(struct content *c, int width, int height)
 {
 	union content_msg_data msg_data;
+	char *source_data;
 
 	assert(c);
 	assert(c->type < HANDLER_MAP_COUNT);
 	assert(c->status == CONTENT_STATUS_LOADING);
 	LOG(("content %s", c->url));
+
+	if (c->source_allocated != c->source_size) {
+		source_data = talloc_realloc(c, c->source_data, char,
+				c->source_size);
+		if (source_data) {
+			c->source_data = source_data;
+			c->source_allocated = c->source_size;
+		}
+	}
 
 	c->available_width = width;
 	if (handler_map[c->type].convert) {

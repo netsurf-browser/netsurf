@@ -53,34 +53,6 @@ bool sprite_create(struct content *c, const char *params[])
 
 
 /**
- * Process data for a CONTENT_SPRITE.
- *
- * The data is just copied into the sprite area.
- */
-
-bool sprite_process_data(struct content *c, char *data, unsigned int size)
-{
-	char *sprite_data;
-	union content_msg_data msg_data;
-
-	sprite_data = realloc(c->data.sprite.data,
-			c->data.sprite.length + size);
-	if (!sprite_data) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
-		return false;
-	}
-	c->data.sprite.data = sprite_data;
-	memcpy((char*)(c->data.sprite.data) + c->data.sprite.length,
-			data, size);
-	c->data.sprite.length += size;
-	c->size += size;
-	return true;
-}
-
-
-/**
  * Convert a CONTENT_SPRITE for display.
  *
  * No conversion is necessary. We merely read the sprite dimensions.
@@ -91,13 +63,14 @@ bool sprite_convert(struct content *c, int width, int height)
 	os_error *error;
 	int w, h;
 	union content_msg_data msg_data;
-	osspriteop_area *area = (osspriteop_area*)c->data.sprite.data;
-
-	/* fill in the size (first word) of the area */
-	area->size = c->data.sprite.length;
+	char *source_data;
+	
+	source_data = ((char *)c->source_data) - 4;
+	osspriteop_area *area = (osspriteop_area*)source_data;
+	c->data.sprite.data = area;
 
 	error = xosspriteop_read_sprite_info(osspriteop_PTR,
-			area,
+			(osspriteop_area *)0x100,
 			(osspriteop_id) ((char *) area + area->first),
 			&w, &h, NULL, NULL);
 	if (error) {
@@ -125,7 +98,8 @@ bool sprite_convert(struct content *c, int width, int height)
 
 void sprite_destroy(struct content *c)
 {
-	free(c->data.sprite.data);
+	/* do not free c->data.sprite.data at it is simply a pointer to
+	 * 4 bytes before the c->data.source_data. */
 	free(c->title);
 }
 

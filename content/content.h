@@ -239,6 +239,7 @@ struct content {
 	struct fetch *fetch;		/**< Associated fetch, or 0. */
 	char *source_data;		/**< Source data, as received. */
 	unsigned long source_size;	/**< Amount of data fetched so far. */
+	unsigned long source_allocated;	/**< Amount of space allocated so far. */
 	unsigned long total_size;	/**< Total data size, 0 if unknown. */
 
 	bool no_error_pages;		/**< Used by fetchcache(). */
