@@ -85,6 +85,29 @@ ImgStyle1:Direct to screen
 ImgStyle2:Dithered
 ImgStyle3:Error diffused
 
+# Toolbar menus
+Toolbar:Toolbar
+Icons:Buttons
+IconBack:Back
+IconForward:Forward
+IconStop:Stop
+IconReload:Reload
+IconHome:Home
+IconSearch:Search
+IconHistory:History
+IconScale:Scale view
+IconHotlist:Hotlist
+IconSave:Save
+IconPrint:Print
+IconCreate:Create entry
+IconDelete:Delete entry
+IconLaunch:Launch
+IconOpen:Open directories
+IconExpand:Expand entries
+AddGap:Add separator
+DeleteGap:Remove separator
+LockToolbar:Lock toolbar
+
 # Hotlist menus
 Hotlist:Hotlist
 New:Neu
