@@ -1,5 +1,5 @@
 /**
- * $Id: parser.y,v 1.4 2003/04/04 15:19:31 bursa Exp $
+ * $Id: parser.y,v 1.5 2003/04/05 16:24:43 bursa Exp $
  */
 
 /*
@@ -46,12 +46,15 @@ block_body ::= block_body ATKEYWORD.
 block_body ::= block_body SEMI.
 
 ruleset ::= selector_list(A) LBRACE declaration_list(B) RBRACE.
-		{ css_add_ruleset(stylesheet, A, B);
+		{ css_add_ruleset(param->stylesheet, A, B);
 		css_free_node(B); }
 ruleset ::= any_list_1(A) LBRACE declaration_list(B) RBRACE.
 		{ css_free_node(A); css_free_node(B); } /* not CSS2 */
-ruleset ::= LBRACE declaration_list RBRACE.
-		/* this form of ruleset not used in CSS2 */
+ruleset ::= LBRACE declaration_list(A) RBRACE.
+		/* this form of ruleset not used in CSS2
+		   used to parse style attributes (ruleset_only = 1) */
+		{ if (param->ruleset_only) param->declaration = A;
+		  else css_free_node(A); }
 
 selector_list(A) ::= selector(B).
 		{ A = B; }
@@ -156,7 +159,7 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 
 /* lemon directives */
 
-%extra_argument { struct css_stylesheet *stylesheet }
+%extra_argument { struct parse_params *param }
 %include {
 #define CSS_INTERNALS
 #include "netsurf/css/scanner.h"

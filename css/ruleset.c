@@ -1,5 +1,5 @@
 /**
- * $Id: ruleset.c,v 1.2 2003/04/05 15:35:55 bursa Exp $
+ * $Id: ruleset.c,v 1.3 2003/04/05 16:24:43 bursa Exp $
  */
 
 #include <assert.h>
@@ -130,16 +130,23 @@ void css_add_ruleset(struct css_stylesheet *stylesheet,
 		}
 
 		/* fill in the declarations */
-		for (n = declaration; n != 0; n = n->next) {
-			struct property_entry *p;
-			assert(n->type == NODE_DECLARATION && n->data != 0 && n->left != 0);
-			p = bsearch(n->data, property_table,
-					sizeof(property_table) / sizeof(property_table[0]),
-					sizeof(property_table[0]), strcasecmp);
-			if (p == 0)
-				continue;
-			p->parse(style, n->left);
-		}
+		css_add_declarations(style, declaration);
+	}
+}
+
+
+void css_add_declarations(struct css_style *style, struct node *declaration)
+{
+	struct node *n;
+	for (n = declaration; n != 0; n = n->next) {
+		struct property_entry *p;
+		assert(n->type == NODE_DECLARATION && n->data != 0 && n->left != 0);
+		p = bsearch(n->data, property_table,
+				sizeof(property_table) / sizeof(property_table[0]),
+				sizeof(property_table[0]), strcasecmp);
+		if (p == 0)
+			continue;
+		p->parse(style, n->left);
 	}
 }
 

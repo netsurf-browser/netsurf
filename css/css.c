@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.2 2003/04/05 15:35:55 bursa Exp $
+ * $Id: css.c,v 1.3 2003/04/05 16:24:43 bursa Exp $
  */
 
 #include <assert.h>
@@ -9,6 +9,7 @@
 #define CSS_INTERNALS
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
+#include "netsurf/css/parser.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -88,6 +89,7 @@ void css_process_data(struct content *c, char *data, unsigned long size)
 {
 	int token;
 	YY_BUFFER_STATE buffer;
+	struct parse_params param = {0, c->data.css, 0};
 
 	LOG(("content %p, size %lu", c, size));
 
@@ -95,7 +97,7 @@ void css_process_data(struct content *c, char *data, unsigned long size)
 	while ((token = css_lex(c->data.css->lexer))) {
 		css_parser_(c->data.css->parser, token,
 				strdup(css_get_text(c->data.css->lexer)),
-				c->data.css);
+				&param);
 	}
 	css__delete_buffer(buffer, c->data.css->lexer);
 }
@@ -103,9 +105,11 @@ void css_process_data(struct content *c, char *data, unsigned long size)
 
 int css_convert(struct content *c, unsigned int width, unsigned int height)
 {
+	struct parse_params param = {0, c->data.css, 0};
+
 	LOG(("content %p", c));
 
-	css_parser_(c->data.css->parser, 0, 0, c->data.css);
+	css_parser_(c->data.css->parser, 0, 0, &param);
 
 	css_parser_Free(c->data.css->parser, free);
 	css_lex_destroy(c->data.css->lexer);
@@ -230,6 +234,32 @@ not_matched:
 
 void css_parse_property_list(struct css_style * style, char * str)
 {
+	yyscan_t lexer;
+	void *parser;
+	YY_BUFFER_STATE buffer;
+	int token;
+	struct parse_params param = {1, 0, 0};
+
+	css_lex_init(&lexer);
+	parser = css_parser_Alloc(malloc);
+	css_parser_(parser, LBRACE, strdup("{"), &param);
+
+	buffer = css__scan_string(str, lexer);
+	while ((token = css_lex(lexer))) {
+		css_parser_(parser, token,
+				strdup(css_get_text(lexer)),
+				&param);
+	}
+	css__delete_buffer(buffer, lexer);
+	css_parser_(parser, RBRACE, strdup("}"), &param);
+	css_parser_(parser, 0, 0, &param);
+
+	css_parser_Free(parser, free);
+	css_lex_destroy(lexer);
+
+	css_add_declarations(style, param.declaration);
+
+	css_free_node(param.declaration);
 }
 
 

@@ -1,5 +1,5 @@
 /**
- * $Id: css.h,v 1.2 2003/04/05 15:35:55 bursa Exp $
+ * $Id: css.h,v 1.3 2003/04/05 16:24:43 bursa Exp $
  */
 
 #ifndef _NETSURF_CSS_CSS_H_
@@ -144,6 +144,12 @@ struct css_stylesheet {
 	struct node *rule[HASH_SIZE];
 };
 
+struct parse_params {
+	int ruleset_only;
+	struct css_stylesheet *stylesheet;
+	struct node *declaration;
+};
+
 #endif
 
 /**
@@ -167,12 +173,14 @@ void css_free_node(struct node *node);
 void css_add_ruleset(struct css_stylesheet *stylesheet,
 		struct node *selector,
 		struct node *declaration);
+void css_add_declarations(struct css_style *style, struct node *declaration);
 unsigned int css_hash(const char *s);
 
 void css_parser_Trace(FILE *TraceFILE, char *zTracePrompt);
 void *css_parser_Alloc(void *(*mallocProc)(int));
 void css_parser_Free(void *p, void (*freeProc)(void*));
-void css_parser_(void *yyp, int yymajor, char* yyminor, struct css_stylesheet *stylesheet);
+void css_parser_(void *yyp, int yymajor, char* yyminor,
+		struct parse_params *param);
 
 #endif
 
