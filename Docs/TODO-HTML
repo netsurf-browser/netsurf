@@ -1,4 +1,4 @@
-$Id: TODO-HTML,v 1.2 2003/06/01 01:02:29 jmb Exp $
+$Id: TODO-HTML,v 1.3 2003/07/07 22:10:51 jmb Exp $
 
 TODO-HTML file for NetSurf. 
 
@@ -15,13 +15,13 @@ Text Formatting:
 	<VAR>, <ABBR> and <ACRONYM> tags
 	<Q> tag
 	
-Lists
+Lists:
 	<LI>
 	<OL>,<UL>
 	
 Tables: 
 	Borders, 
-	row spanning
+	row spanning (only rowspan=0 needs implementing)
 	column spanning (only colspan=0 needs implementing)    
 	
 Images: 

@@ -48,6 +48,7 @@ typedef enum {
 #ifdef riscos
 	CONTENT_PNG,
 	CONTENT_GIF,
+	CONTENT_PLUGIN,
 #endif
 	CONTENT_OTHER,
 	CONTENT_UNKNOWN  /* content-type not received yet */
@@ -85,6 +86,7 @@ struct content
 {
   char *url;
   content_type type;
+  char *mime_type;
   enum {
 	  CONTENT_STATUS_TYPE_UNKNOWN,  /* type not yet known */
 	  CONTENT_STATUS_LOADING,  /* content is being fetched or converted
@@ -156,6 +158,14 @@ struct content
       osspriteop_area *sprite_area;       // Sprite area
       char *sprite_image;                 // Sprite image
     } gif;
+
+    /* Structure for plugin */
+    struct
+    {
+      char *data;                         /* object data */
+      unsigned long length;               /* object length */
+      char* sysvar;                       /* system variable set by plugin */
+    } plugin;
 #endif
     /* downloads */
     struct
@@ -180,7 +190,7 @@ struct content
 
 content_type content_lookup(const char *mime_type);
 struct content * content_create(char *url);
-void content_set_type(struct content *c, content_type type);
+void content_set_type(struct content *c, content_type type, char *mime_type);
 void content_process_data(struct content *c, char *data, unsigned long size);
 void content_convert(struct content *c, unsigned long width, unsigned long height);
 void content_revive(struct content *c, unsigned long width, unsigned long height);

@@ -16,17 +16,22 @@
 #include "netsurf/riscos/jpeg.h"
 #include "netsurf/riscos/png.h"
 #include "netsurf/riscos/gif.h"
+#include "netsurf/riscos/plugin.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
 
 /* mime_map must be in sorted order by mime_type */
 struct mime_entry {
-	char mime_type[16];
+	char mime_type[40];
 	content_type type;
 };
 static const struct mime_entry mime_map[] = {
 #ifdef riscos
+        {"application/java-vm", CONTENT_PLUGIN},
+        {"application/x-shockwave-flash", CONTENT_PLUGIN},
+        {"audio/midi", CONTENT_PLUGIN},
+        {"audio/x-midi", CONTENT_PLUGIN},
 	{"image/gif", CONTENT_GIF},
 	{"image/jpeg", CONTENT_JPEG},
 	{"image/png", CONTENT_PNG},
@@ -63,6 +68,8 @@ static const struct handler_entry handler_map[] = {
 		nspng_reformat, nspng_destroy, nspng_redraw},
 	{nsgif_create, nsgif_process_data, nsgif_convert, nsgif_revive,
 	        nsgif_reformat, nsgif_destroy, nsgif_redraw},
+	{plugin_create, plugin_process_data, plugin_convert, plugin_revive,
+	        plugin_reformat, plugin_destroy, plugin_redraw},
 #endif
 	{other_create, other_process_data, other_convert, other_revive,
 		other_reformat, other_destroy, 0}
@@ -114,12 +121,13 @@ struct content * content_create(char *url)
  * content_set_type -- initialise the content for the specified mime type
  */
 
-void content_set_type(struct content *c, content_type type)
+void content_set_type(struct content *c, content_type type, char* mime_type)
 {
 	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
 	assert(type < CONTENT_UNKNOWN);
 	LOG(("content %s, type %i", c->url, type));
 	c->type = type;
+	c->mime_type = mime_type;
 	c->status = CONTENT_STATUS_LOADING;
 	content_broadcast(c, CONTENT_MSG_LOADING, 0);
 	handler_map[type].create(c);

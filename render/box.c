@@ -75,12 +75,12 @@ void box_normalise_table_row(struct box *row,
 static void box_normalise_inline_container(struct box *cont);
 static void gadget_free(struct gui_gadget* g);
 static void box_free_box(struct box *box);
-static struct box* box_object(xmlNode *n, struct content *content,
-		struct css_style *style, char *href);
-static struct box* box_embed(xmlNode *n, struct content *content,
-		struct css_style *style, char *href);
-static struct box* box_applet(xmlNode *n, struct content *content,
-		struct css_style *style, char *href);
+static struct result box_object(xmlNode *n, struct status *status,
+		struct css_style *style);
+static struct result box_embed(xmlNode *n, struct status *status,
+		struct css_style *style);
+static struct result box_applet(xmlNode *n, struct status *status,
+		struct css_style *style);
 static struct form* create_form(xmlNode* n);
 static void add_form_element(struct page_elements* pe, struct form* f);
 static void add_gadget_element(struct page_elements* pe, struct gui_gadget* g);
@@ -93,9 +93,12 @@ struct element_entry {
 };
 static const struct element_entry element_table[] = {
 	{"a", box_a},
+//	{"applet", box_applet},
+        {"embed", box_embed},
 	{"form", box_form},
 	{"img", box_image},
 	{"input", box_input},
+	{"object", box_object},
 	{"select", box_select},
 	{"textarea", box_textarea}
 };
@@ -1385,48 +1388,33 @@ void add_gadget_element(struct page_elements* pe, struct gui_gadget* g)
 /**
  * add an object to the box tree
  */
-
-/*		} else if (strcmp((const char*) n->name, "object") == 0) {		               LOG(("object"));
-		       box = box_object(n, content, style, href);
-*/		       /* TODO - param data structure
-
-		       for (c = n->children; c != 0; c = c->next) {
-
-		         if (strcmp((const char*) c->name, "param") == 0) {
-
-		           LOG(("param"));
-		           current_param = box_param(c, style, current_object);
-		         }
-		       }  */
-/*
-		} else if (strcmp((const char*) n->name, "embed") == 0) {		               LOG(("embed"));
-		       box = box_embed(n, content, style, href);
-
-		} else if (strcmp((const char*) n->name, "applet") == 0) {		               LOG(("applet"));
-		       box = box_applet(n, content, style, href);
-
-		}
-*/
-
-
-struct box* box_object(xmlNode *n, struct content *content,
-		struct css_style *style, char *href)
+struct result box_object(xmlNode *n, struct status *status,
+		struct css_style *style)
 {
 	struct box *box;
 	struct plugin_object *po;
 	char *s, *url;
-	xmlChar *s2;
 
-	box = box_create(style, href, 0);
+	box = box_create(style, status->href, 0);
 
-        po = xcalloc(1,sizeof(*po));
+        po = xcalloc(1, sizeof(*po));
 
-	/* object data */
+        /* initialise po struct */
+        po->data = 0;
+        po->type = 0;
+        po->codetype = 0;
+        po->codebase = 0;
+        po->classid = 0;
+        po->paramds = 0;
+        po->width = 0;
+        po->height = 0;
+
+        /* object data */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "data"))) {
 
                 po->data = strdup(s);
-	        url = url_join(strdup(s), content->url);
-	        LOG(("object '%s'", url));
+	        url = url_join(strdup(s), status->content->url);
+	        LOG(("object '%s'", po->data));
 	        xmlFree(s);
 	}
 
@@ -1434,7 +1422,7 @@ struct box* box_object(xmlNode *n, struct content *content,
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "type"))) {
 
                 po->type = strdup(s);
-                LOG(("type: %s", po->type));
+                LOG(("type: %s", s));
                 xmlFree(s);
         }
 
@@ -1442,7 +1430,7 @@ struct box* box_object(xmlNode *n, struct content *content,
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codetype"))) {
 
                 po->codetype = strdup(s);
-                LOG(("codetype: %s", po->codetype));
+                LOG(("codetype: %s", s));
                 xmlFree(s);
         }
 
@@ -1450,7 +1438,7 @@ struct box* box_object(xmlNode *n, struct content *content,
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codebase"))) {
 
                 po->codebase = strdup(s);
-                LOG(("codebase: %s", po->codebase));
+                LOG(("codebase: %s", s));
                 xmlFree(s);
         }
 
@@ -1458,7 +1446,7 @@ struct box* box_object(xmlNode *n, struct content *content,
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "classid"))) {
 
                 po->classid = strdup(s);
-                LOG(("classid: %s", po->classid));
+                LOG(("classid: %s", s));
                 xmlFree(s);
         }
 
@@ -1466,7 +1454,7 @@ struct box* box_object(xmlNode *n, struct content *content,
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "width"))) {
 
           po->width = (unsigned int)atoi(s);
-          LOG(("width: %u", po->width));
+          LOG(("width: %u", (unsigned int)atoi(s)));
           xmlFree(s);
         }
 
@@ -1474,45 +1462,54 @@ struct box* box_object(xmlNode *n, struct content *content,
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "height"))) {
 
           po->height = (unsigned int)atoi(s);
-          LOG(("height: %u",  po->height));
+          LOG(("height: %u",  (unsigned int)atoi(s)));
           xmlFree(s);
         }
 
 	/* start fetch */
-	plugin_decode(content, url, box, po);
+	plugin_decode(status->content, url, box, po);
 
-	return box;
+	return (struct result) {box, 0};
 }
 
 /**
  * add an embed to the box tree
  */
 
-struct box* box_embed(xmlNode *n, struct content *content,
-		struct css_style *style, char *href)
+struct result box_embed(xmlNode *n, struct status *status,
+		struct css_style *style)
 {
 	struct box *box;
 	struct plugin_object *po;
 	char *s, *url;
-	xmlChar *s2;
 
-	box = box_create(style, href, 0);
+	box = box_create(style, status->href, 0);
 
 	po = xcalloc(1, sizeof(*po));
+
+	/* initialise po struct */
+        po->data = 0;
+        po->type = 0;
+        po->codetype = 0;
+        po->codebase = 0;
+        po->classid = 0;
+        po->paramds = 0;
+        po->width = 0;
+        po->height = 0;
 
 	/* embed src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
 
                 po->data = strdup(s);
-	        url = url_join(strdup(s), content->url);
+	        url = url_join(strdup(s), status->content->url);
 	        LOG(("embed '%s'", url));
 	        xmlFree(s);
         }
 
         /* start fetch */
-	plugin_decode(content, url, box, po);
+	plugin_decode(status->content, url, box, po);
 
-	return box;
+	return (struct result) {box,0};
 }
 
 /**
@@ -1520,29 +1517,24 @@ struct box* box_embed(xmlNode *n, struct content *content,
  * add an applet to the box tree
  */
 
-struct box* box_applet(xmlNode *n, struct content *content,
-		struct css_style *style, char *href)
+struct result box_applet(xmlNode *n, struct status *status,
+		struct css_style *style)
 {
 	struct box *box;
-	struct plugin_object *po;
 	char *s, *url;
-	xmlChar *s2;
 
-	/* box type is decided by caller, BOX_INLINE is just a default */
-	box = box_create(style, href, 0);
-
-        po = xcalloc(1,sizeof(struct plugin_object));
+	box = box_create(style, status->href, 0);
 
 	/* object without data is an error */
 	if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "data")))
-		return box;
+		return (struct result) {box,0};
 
-	url = url_join(strdup(s), content->url);
+	url = url_join(strdup(s), status->content->url);
 	LOG(("object '%s'", url));
 	xmlFree(s);
 
 	/* start fetch */
 	//plugin_decode(content, url, box, po);
 
-	return box;
+	return (struct result) {box,0};
 }

@@ -19,268 +19,275 @@
 
 #include "oslib/mimemap.h"
 
-char* create_mime_from_ext(char* data);
-char* create_sysvar(char* mime);
-void plugin_fetch(struct plugin_object* po,
-                  char* alias_sysvar/* vars here */);
+bool plugin_handleable(struct content* c);
 
 /**
  * plugin_decode
- * Processes the contents of the plugin_object struct (defined in plugin.h)
- * in order to work out if NetSurf can handle the object.
- * For more information, read
- * http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/browse-plugins.html
- * as this code is based heavily on that description.
+ * This function checks that the contents of the plugin_object struct
+ * are valid. If they are, it initiates the fetch process. If they are
+ * not, it exits, leaving the box structure as it was on entry. This is
+ * necessary as there are multiple ways of declaring an object's attributes.
+ *
+ * TODO: alt html
+ *       params - create parameters file and put the filename string
+ *                somewhere such that it is accessible from plugin_create.
  */
 void plugin_decode(struct content* content, char* url, struct box* box,
-                  struct plugin_object* po) {
+                  struct plugin_object* po)
+{
+  os_error *e;
+  unsigned int *fv;
 
+  /* Check if the codebase attribute is defined.
+   * If it is not, set it to the codebase of the current document.
+   */
+   if(po->codebase == 0)
+           po->codebase = strdup(content->url);
+   else
+           po->codebase = url_join(po->codebase, content->url);
 
-        content_type mime_type;
-        bool can_handle = TRUE;
-        char* alias_sysvar;
+  /* Check that we have some data specified.
+   * First, check the data attribute.
+   * Second, check the classid attribute.
+   * The data attribute takes precedence.
+   * If neither are specified or if classid begins "clsid:",
+   * we can't handle this object.
+   */
+   if(po->data == 0 && po->classid == 0) {
+           xfree(po);
+           return;
+   }
+   if(po->data == 0 && po->classid != 0) {
+           if(strnicmp(po->classid, "clsid:", 6) == 0) {
+                   LOG(("ActiveX object - n0"));
+                   xfree(po);
+                   return;
+           }
+           else {
+                   url = url_join(po->classid, po->codebase);
+           }
+   }
+   else {
+           url = url_join(po->data, po->codebase);
+   }
 
+   /* Check if the declared mime type is understandable.
+    * ie. is it referenced in the mimemap file?
+    * Checks type and codetype attributes.
+    */
+    if(po->type != 0) {
+          e = xmimemaptranslate_mime_type_to_filetype((const char*)po->type,
+                                                      (unsigned int*)&fv);
+          LOG(("fv: &%x", (int) fv));
+          if(e != NULL) {
+                  xfree(po);
+                  return;
+          }
+          /* If a filetype of &ffd (Data) is returned,
+           * one of the following mime types is possible :
+           * application/octet-stream
+           * multipart/x-mixed-replace
+           * unknown mime type (* / *)
+           * we assume it to be the last one as the other two
+           * are unlikely to occur in an <object> definition.
+           */
+          if((int)fv == 0xffd) {
+                  xfree(po);
+                  return;
+          }
+          /* TODO: implement GUI for iframes/frames
+           * For now, we just discard the data and
+           * render the alternative html
+           */
+          if((int)fv == 0xfaf) {
+                  xfree(po);
+                  return;
+          }
+    }
+    if(po->codetype != 0) {
+      e = xmimemaptranslate_mime_type_to_filetype((const char*)po->codetype,
+                                                  (unsigned int*)&fv);
+          if(e != NULL) {
+                  xfree(po);
+                  return;
+          }
+          /* If a filetype of &ffd (Data) is returned,
+           * one of the following mime types is possible :
+           * application/octet-stream
+           * multipart/x-mixed-replace
+           * unknown mime type (* / *)
+           * we assume it to be the last one as the other two
+           * are unlikely to occur in an <object> definition.
+           */
+          if((int)fv == 0xffd) {
+                  xfree(po);
+                  return;
+          }
+          /* TODO: implement GUI for iframes/frames
+           * For now, we just discard the data and
+           * render the alternative html
+           */
+          if((int)fv == 0xfaf) {
+                  xfree(po);
+                  return;
+          }
+    }
 
-        if (po->data != NULL) {
-
-                if (po->type != NULL) {
-
-                        /* acquire NS mime type from actual mime type */
-                        mime_type = content_lookup((const char*)po->type);
-                }
-                else {
-
-                        /* create actual mime type - if we're wrong,
-                         * it doesn't matter as the HTTP content-type
-                         * header should override whatever we think.
-                         * however, checking the header hasn't been
-                         * implemented yet so it will just b0rk :(
-                         */
-                        po->type = strdup(create_mime_from_ext(po->data));
-
-                        if (po->type != NULL)
-                          mime_type = content_lookup((const char*)po->type);
-
-                        else {
-
-                          /* failed to create mime type, clean up and exit */
-                          xfree(po);
-                          can_handle = FALSE;
-                        }
-
-                }
-        }
-        else {
-
-                /* no data so try using classid instead */
-
-                if (po->classid != NULL) {
-
-                        po->data = strdup(po->classid);
-
-                        if (strnicmp(po->data,"clsid:",6) == 0) {
-
-                                /* We can't handle ActiveX objects */
-                                LOG(("Can't Handle ActiveX"));
-                                xfree(po);
-                                can_handle = FALSE;
-                        }
-                        else {
-
-                                if (po->codetype != NULL) {
-
-                                /* use codetype instead of type if we can */
-                                        po->type = strdup(po->codetype);
-                                        mime_type = content_lookup(
-                                                 (const char*)po->codetype);
-                                }
-                                else {
-
-                                /* try ye olde file extension munging */
-                                        po->codetype = strdup(
-                                            create_mime_from_ext(po->data));
-
-                                        if (po->codetype != NULL) {
-
-                                        /* well, it appeared to work... */
-                                                mime_type = content_lookup(
-                                                 (const char*)po->codetype);
-                                                 po->type = strdup(
-                                                              po->codetype);
-                                        }
-                                        else {
-
-                                                  /* arse, failed. oh well */
-                                                  xfree(po);
-                                                  can_handle = FALSE;
-                                        }
-                                }
-                        }
-                }
-                else {
-
-                        /* we don't have sufficient data to handle this
-                         * object :(
-                         * TODO: start fetch anyway and check header.
-                         *       if we can handle the content, continue
-                         *       fetch and carry on as if the proper HTML
-                         *       was written.
-                         *       if we can't handle the content, stop fetch
-                         *       and clean up.
-                         */
-                        xfree(po);
-                        can_handle = FALSE;
-                }
-        }
-
-
-        /* so, you think you can handle it do you? */
-        if (can_handle == TRUE) {
-
-                /* We think we can handle this object. Now check that
-                 * we can.
-                 * 1) Is it an image? Yes - send to image handler
-                 *                    No - continue checking
-                 * 2) Is a suitable Alias$... System Variable set?
-                 *    Yes - invoke plugin
-                 *    No - we can't handle it. Display alternative HTML
-                 */
-
-
-                /* TODO: There must be a better way than this...
-                 *       Perhaps checking if the mime type begins "image/"
-                 *       would be better?
-                 */
-                if (mime_type == CONTENT_JPEG || mime_type == CONTENT_PNG
-                   || mime_type == CONTENT_GIF) {
-
-                    /* OK, we have an image. Let's make the image handler
-                     * deal with it.
-                     */
-                        xfree(po);
-                        LOG(("sending data to image handler"));
-                        html_fetch_object(content, url, box);
-                        return;
-                }
-                else {  /* not an image; is sys var set? */
-
-                        /* Create Alias variable */
-                        alias_sysvar = create_sysvar(po->type);
-                        if (alias_sysvar == NULL) {
-
-                                /* oh dear, you can't handle it */
-                                xfree(po);
-                                xfree(alias_sysvar);
-                                can_handle = FALSE;
-                        }
-                        else {
-
-                                /* Right, we have a variable.
-                                 * Does it actually exist?
-                                 */
-                                 int used;
-                                 xos_read_var_val_size(
-                                              (const char*)alias_sysvar,
-                                              0, os_VARTYPE_STRING,
-                                              &used, 0, os_VARTYPE_STRING);
-
-                                if (used == 0) {
-
-                                        /* no, doesn't exist */
-                                        xfree(po);
-                                        xfree(alias_sysvar);
-                                        can_handle = FALSE;
-                                }
-                                else {
-                                        /* yes, it exists */
-                                        LOG(("%s exists", alias_sysvar));
-                                        plugin_fetch(po, alias_sysvar/* insert vars here */);
-                                }
-                        }
-                }
-        }
-
-        if (can_handle == FALSE) {
-
-                /* Get alternative HTML as we can't handle the object */
-                return;
-        }
+  /* If we've got to here, the object declaration has provided us with
+   * enough data to enable us to have a go at downloading and displaying it.
+   */
+   xfree(po);
+   html_fetch_object(content, url, box);
 }
 
 /**
- * create_mime_from_ext
- * attempts to create a mime type from the filename extension.
- * returns NULL if it fails.
+ * plugin_create
+ * initialises plugin system in readiness for recieving object data
+ *
+ * TODO: implement aborting the fetch
+ *       get parameter filename from wherever it was put by plugin_decode
+ *       launch plugin system
  */
+void plugin_create(struct content *c)
+{
+  bool can_handle = TRUE; /* we assume we can handle all types */
 
-char* create_mime_from_ext(char* data){
+  LOG(("mime type: %s", c->mime_type));
 
-        char* ret;
-        os_error *e;
+  /* check if we can handle this type */
+  can_handle = plugin_handleable(c);
+  LOG(("can_handle = %s", can_handle ? "TRUE" : "FALSE"));
+  LOG(("sysvar: %s", can_handle ? c->data.plugin.sysvar : "not set"));
 
-        LOG(("Creating Mime Type from File Extension"));
+  if(!can_handle) {
+          /* TODO: need to find a way of stopping the fetch
+           * if we can't handle this type
+           */
+  }
 
-        ret = xcalloc(90, sizeof(char));
-        ret = strrchr(data, '.');
-        LOG(("Extension = %s", ret));
+  /* ok, it looks like we can handle this object.
+   * Broadcast Message_PlugIn_Open (&4D540) and listen for response
+   * Message_PlugIn_Opening (&4D541). If no response, try to launch
+   * plugin by Wimp_StartTask(sysvar). Then re-broadcast Message_PlugIn_Open
+   * and listen for response. If there is still no response, give up and set
+   * can_handle to FALSE.
+   * NB: For the bounding box in Message_PlugIn_Open, we choose arbitrary
+   *     values outside the area displayed. This is corrected when
+   *     plugin_redraw is called.
+   */
 
-        /* Let's make the mime map module do the work for us */
-        e = xmimemaptranslate_extension_to_mime_type((const char*)ret,
-                                                      ret);
-        LOG(("Mime Type = %s", ret));
 
-        if (e != NULL) ret = NULL;
 
-        return ret;
+  /* Recheck if can_handle is false. If it is, stop fetch and exit .*/
+  if(!can_handle) {
+          /* TODO: need to find a way of stopping the fetch
+           * if we can't handle this type
+           */
+  }
+
+}
+
+static const char * const ALIAS_PREFIX = "Alias$@PlugInType_";
+
+/**
+ * plugin_handleable
+ * Tests whether we can handle an object using a browser plugin
+ * returns TRUE if we can handle it, FALSE if we can't.
+ */
+bool plugin_handleable(struct content* c)
+{
+  bool ret = TRUE;
+  char *sysvar;
+  unsigned int *fv;
+  int used;
+  os_error *e;
+
+  /* prefix + 3 for file type + 1 for terminating \0 */
+  sysvar = xcalloc(strlen(ALIAS_PREFIX)+4, sizeof(char));
+
+  e = xmimemaptranslate_mime_type_to_filetype((const char*)c->mime_type,
+                                               (unsigned int*)&fv);
+
+  sprintf(sysvar, "%s%x", ALIAS_PREFIX, e == NULL ? (int)fv : 0 );
+
+  xos_read_var_val_size((const char*)sysvar,0, os_VARTYPE_STRING,
+                                            &used, 0, os_VARTYPE_STRING);
+
+  if(used == 0)
+          /* No system variable set => no plugin available */
+          ret = FALSE;
+
+  if(ret)
+          c->data.plugin.sysvar = strdup(sysvar);
+
+  xfree(sysvar);
+
+  return ret;
 }
 
 /**
- * create_sysvar
- * attempts to create a system variable of the form Alias$@PlugInType_XXX
- * where XXX is the filetype.
- * returns NULL if unsuccessful.
+ * plugin_process_data
+ * processes data retrieved by the fetch process
+ *
+ * TODO: plugin stream protocol
+ *
  */
+void plugin_process_data(struct content *c, char *data, unsigned long size)
+{
 
-char* create_sysvar(char* mime) {
+  /* If the plugin requests, we send the data to it via the
+   * plugin stream protocol.
+   * Also, we should listen for Message_PlugIn_URL_Access (&4D54D)
+   * as the plugin may need us to retrieve URLs for it.
+   * We should also listen for Message_PlugIn_Closed (&4D543).
+   * If this occurs, the plugin has exited with an error.
+   * Therefore, we need to stop the fetch and exit.
+   */
 
-        char* ret;
-        char* ft;
-        unsigned int* fv;
-        os_error *e;
-
-        LOG(("Creating System Variable from Mime Type"));
-
-        ret = xcalloc(22, sizeof(char));
-        ft = xcalloc(10, sizeof(char));
-        strcpy(ret, "Alias$@PlugInType_");
-
-        LOG(("Mime Type: %s", mime));
-
-        e = xmimemaptranslate_mime_type_to_filetype((const char*)mime,
-                                                     (unsigned int*)&fv);
-        if (e != NULL) ret = NULL;
-
-        else {
-
-                sprintf(ft, "%x", (int)fv);
-                strcat(ret, ft);
-                LOG(("Alias Var: %s", ret));
-        }
-
-        xfree(ft);
-        return ret;
 }
 
 /**
- * plugin_fetch
- * attempts to negotiate with the plugin.
- * also fetches the object for the plugin to handle.
+ * plugin_convert
+ * This isn't needed by the plugin system as all the data processing is done
+ * externally. Therefore, just tell NetSurf that everything's OK.
  */
-void plugin_fetch (struct plugin_object* po,
-                   char* alias_sysvar/* insert vars here */) {
+int plugin_convert(struct content *c, unsigned int width, unsigned int height)
+{
+  c->status=CONTENT_STATUS_DONE;
+  return 0;
+}
 
-        LOG(("Entering plugin_fetch"));
-        xfree(po);
-        xfree(alias_sysvar);
-        return;
+void plugin_revive(struct content *c, unsigned int width, unsigned int height)
+{
+}
+
+void plugin_reformat(struct content *c, unsigned int width, unsigned int height)
+{
+}
+
+/**
+ * plugin_destroy
+ * we've finished with this data, destroy it. Also, shutdown plugin.
+ *
+ * TODO: clean up
+ */
+void plugin_destroy(struct content *c)
+{
+}
+
+/**
+ * plugin_redraw
+ * redraw plugin on page.
+ *
+ * TODO: Message_PlugIn_Reshape
+ */
+void plugin_redraw(struct content *c, long x, long y,
+		unsigned long width, unsigned long height)
+{
+
+  /* By now, we've got the plugin up and running in a nested window
+   * off the viewable page area. Now we want to display it in its place.
+   * Therefore, broadcast a Message_PlugIn_Reshape (&4D544) with the values
+   * given to us.
+   */
 }

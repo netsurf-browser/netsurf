@@ -64,9 +64,9 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			if ((semic = strchr(mime_type, ';')) != 0)
 				*semic = 0;	/* remove "; charset=..." */
 			type = content_lookup(mime_type);
-			free(mime_type);
 			LOG(("FETCH_TYPE, type %u", type));
-			content_set_type(c, type);
+			content_set_type(c, type, mime_type);
+			free(mime_type);
 			break;
 
 		case FETCH_DATA:

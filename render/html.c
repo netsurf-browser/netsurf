@@ -176,7 +176,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 					c, i, css->width, css->height);
 			if (c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
 				c->active++;
-			break;	
+			break;
 
 		default:
 			assert(0);
@@ -305,7 +305,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			LOG(("style element"));
 			if (c->data.html.stylesheet_content[1] == 0) {
 				c->data.html.stylesheet_content[1] = content_create(c->url);
-				content_set_type(c->data.html.stylesheet_content[1], CONTENT_CSS);
+				content_set_type(c->data.html.stylesheet_content[1], CONTENT_CSS, "text/css");
 			}
 
 			/* can't just use xmlNodeGetContent(node), because that won't give
@@ -450,7 +450,7 @@ void html_object_callback(content_msg msg, struct content *object,
 					c, i, 0, 0);
 			if (c->data.html.object[i].content->status != CONTENT_STATUS_DONE)
 				c->active++;
-			break;	
+			break;
 
 		default:
 			assert(0);

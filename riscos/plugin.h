@@ -8,6 +8,8 @@
 #ifndef _NETSURF_RISCOS_PLUGIN_H_
 #define _NETSURF_RISCOS_PLUGIN_H_
 
+#include "netsurf/content/content.h"
+
 struct plugin_object {
 
         char* data;
@@ -21,8 +23,16 @@ struct plugin_object {
 
 };
 
-
+/* function definitions */
 void plugin_decode(struct content* content, char* url, struct box* box,
                   struct plugin_object* po);
+void plugin_create(struct content *c);
+void plugin_process_data(struct content *c, char *data, unsigned long size);
+int plugin_convert(struct content *c, unsigned int width, unsigned int height);
+void plugin_revive(struct content *c, unsigned int width, unsigned int height);
+void plugin_reformat(struct content *c, unsigned int width, unsigned int height);
+void plugin_destroy(struct content *c);
+void plugin_redraw(struct content *c, long x, long y,
+		unsigned long width, unsigned long height);
 
 #endif

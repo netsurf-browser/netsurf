@@ -1,11 +1,10 @@
-$Id: TODO-General,v 1.3 2003/06/01 21:56:27 jmb Exp $
+$Id: TODO-General,v 1.4 2003/07/07 22:10:51 jmb Exp $
 
 TODO-General for NetSurf.
 
 This file documents general things which need doing.
 
 
-Browser Redirect
 Disk Cache
 Saving
 Printing
