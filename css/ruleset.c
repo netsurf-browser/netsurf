@@ -59,6 +59,7 @@ static void parse_border_bottom(struct css_style * const s, const struct css_nod
 static void parse_border_bottom_color(struct css_style * const s, const struct css_node * v);
 static void parse_border_bottom_style(struct css_style * const s, const struct css_node * v);
 static void parse_border_bottom_width(struct css_style * const s, const struct css_node * v);
+static void parse_border_collapse(struct css_style * const s, const struct css_node * v);
 static void parse_border_color(struct css_style * const s, const struct css_node * v);
 static void parse_border_color_side(struct css_style * const s,
 		const struct css_node * const v, unsigned int i);
@@ -72,6 +73,7 @@ static void parse_border_right_style(struct css_style * const s, const struct cs
 static void parse_border_right_width(struct css_style * const s, const struct css_node * v);
 static void parse_border_side(struct css_style * const s,
 		const struct css_node *v, unsigned int i);
+static void parse_border_spacing(struct css_style * const s, const struct css_node * v);
 static void parse_border_style(struct css_style * const s, const struct css_node * v);
 static void parse_border_style_side(struct css_style * const s,
 		const struct css_node * const v, unsigned int i);
@@ -82,10 +84,15 @@ static void parse_border_top_width(struct css_style * const s, const struct css_
 static void parse_border_width(struct css_style * const s, const struct css_node * v);
 static void parse_border_width_side(struct css_style * const s,
 		const struct css_node * const v, unsigned int i);
+static void parse_bottom(struct css_style * const s, const struct css_node * v);
+static void parse_caption_side(struct css_style * const s, const struct css_node * v);
 static void parse_clear(struct css_style * const s, const struct css_node * const v);
+static void parse_clip(struct css_style * const s, const struct css_node * v);
 static void parse_color(struct css_style * const s, const struct css_node * const v);
 static void parse_cursor(struct css_style * const s, const struct css_node * v);
+static void parse_direction(struct css_style * const s, const struct css_node * v);
 static void parse_display(struct css_style * const s, const struct css_node * const v);
+static void parse_empty_cells(struct css_style * const s, const struct css_node * v);
 static void parse_float(struct css_style * const s, const struct css_node * const v);
 static void parse_font(struct css_style * const s, const struct css_node * v);
 static void parse_font_family(struct css_style * const s, const struct css_node * v);
@@ -94,7 +101,15 @@ static void parse_font_style(struct css_style * const s, const struct css_node *
 static void parse_font_variant(struct css_style * const s, const struct css_node * const v);
 static void parse_font_weight(struct css_style * const s, const struct css_node * const v);
 static void parse_height(struct css_style * const s, const struct css_node * const v);
+static void parse_left(struct css_style * const s, const struct css_node * v);
+static void parse_letter_spacing(struct css_style * const s, const struct css_node * v);
 static void parse_line_height(struct css_style * const s, const struct css_node * const v);
+static void parse_list_style(struct css_style * const s, const struct css_node * v);
+static void parse_list_style_image(struct css_style * const s, const struct css_node * v);
+static bool css_list_style_image_parse(const struct css_node *v,
+		css_list_style_image_type *type, char **uri);
+static void parse_list_style_position(struct css_style * const s, const struct css_node * v);
+static void parse_list_style_type(struct css_style * const s, const struct css_node * v);
 static void parse_margin(struct css_style * const s, const struct css_node * const v);
 static void parse_margin_bottom(struct css_style * const s, const struct css_node * const v);
 static void parse_margin_left(struct css_style * const s, const struct css_node * const v);
@@ -102,6 +117,16 @@ static void parse_margin_right(struct css_style * const s, const struct css_node
 static void parse_margin_top(struct css_style * const s, const struct css_node * const v);
 static void parse_margin_side(struct css_style * const s, const struct css_node * const v,
 		unsigned int i);
+static void parse_max_height(struct css_style *const s, const struct css_node * v);
+static void parse_max_width(struct css_style *const s, const struct css_node * v);
+static void parse_min_height(struct css_style *const s, const struct css_node * v);
+static void parse_min_width(struct css_style *const s, const struct css_node * v);
+static void parse_orphans(struct css_style * const s, const struct css_node * const v);
+static void parse_outline(struct css_style * const s, const struct css_node * v);
+static void parse_outline_color(struct css_style * const s, const struct css_node * const v);
+static void parse_outline_style(struct css_style * const s, const struct css_node * const v);
+static void parse_outline_width(struct css_style * const s, const struct css_node * const v);
+static bool css_outline_width_parse(const struct css_node * v, struct css_border_width * w);
 static void parse_overflow(struct css_style * const s, const struct css_node * const v);
 static void parse_padding(struct css_style * const s, const struct css_node * const v);
 static void parse_padding_bottom(struct css_style * const s, const struct css_node * const v);
@@ -110,13 +135,25 @@ static void parse_padding_right(struct css_style * const s, const struct css_nod
 static void parse_padding_top(struct css_style * const s, const struct css_node * const v);
 static void parse_padding_side(struct css_style * const s, const struct css_node * const v,
 		unsigned int i);
+static void parse_page_break_after(struct css_style * const s, const struct css_node * v);
+static void parse_page_break_before(struct css_style * const s, const struct css_node * v);
+static void parse_page_break_inside(struct css_style * const s, const struct css_node * v);
+static void parse_position(struct css_style * const s, const struct css_node * v);
+static void parse_right(struct css_style * const s, const struct css_node * v);
+static void parse_table_layout(struct css_style * const s, const struct css_node * v);
 static void parse_text_align(struct css_style * const s, const struct css_node * const v);
 static void parse_text_decoration(struct css_style * const s, const struct css_node * const v);
 static void parse_text_indent(struct css_style * const s, const struct css_node * const v);
 static void parse_text_transform(struct css_style * const s, const struct css_node * const v);
+static void parse_top(struct css_style * const s, const struct css_node * v);
+static void parse_unicode_bidi(struct css_style * const s, const struct css_node * const v);
+static void parse_vertical_align(struct css_style * const s, const struct css_node * v);
 static void parse_visibility(struct css_style * const s, const struct css_node * const v);
+static void parse_widows(struct css_style * const s, const struct css_node * const v);
 static void parse_width(struct css_style * const s, const struct css_node * const v);
 static void parse_white_space(struct css_style * const s, const struct css_node * const v);
+static void parse_word_spacing(struct css_style * const s, const struct css_node * v);
+static void parse_z_index(struct css_style * const s, const struct css_node * const v);
 static css_text_decoration css_text_decoration_parse(const char * const s,
 		int length);
 
@@ -141,6 +178,7 @@ static const struct css_property_entry css_property_table[] = {
 	{ "border-bottom-color",	parse_border_bottom_color },
 	{ "border-bottom-style",	parse_border_bottom_style },
 	{ "border-bottom-width",	parse_border_bottom_width },
+	{ "border-collapse",		parse_border_collapse },
 	{ "border-color",		parse_border_color },
 	{ "border-left",		parse_border_left },
 	{ "border-left-color",		parse_border_left_color },
@@ -150,16 +188,22 @@ static const struct css_property_entry css_property_table[] = {
 	{ "border-right-color",		parse_border_right_color },
 	{ "border-right-style",		parse_border_right_style },
 	{ "border-right-width",		parse_border_right_width },
+	{ "border-spacing",		parse_border_spacing },
 	{ "border-style",		parse_border_style },
 	{ "border-top",			parse_border_top },
 	{ "border-top-color",		parse_border_top_color },
 	{ "border-top-style",		parse_border_top_style },
 	{ "border-top-width",		parse_border_top_width },
 	{ "border-width",		parse_border_width },
+	{ "bottom",			parse_bottom },
+	{ "caption-side",		parse_caption_side },
 	{ "clear",			parse_clear },
+	{ "clip",			parse_clip },
 	{ "color",			parse_color },
 	{ "cursor",			parse_cursor },
+	{ "direction",			parse_direction },
 	{ "display",			parse_display },
+	{ "empty-cells",		parse_empty_cells },
 	{ "float",			parse_float },
 	{ "font",			parse_font },
 	{ "font-family",		parse_font_family },
@@ -168,25 +212,52 @@ static const struct css_property_entry css_property_table[] = {
 	{ "font-variant",		parse_font_variant },
 	{ "font-weight",		parse_font_weight },
 	{ "height",			parse_height },
+	{ "left",			parse_left },
+	{ "letter-spacing",		parse_letter_spacing },
 	{ "line-height",		parse_line_height },
+	{ "list-style",			parse_list_style },
+	{ "list-style-image",		parse_list_style_image },
+	{ "list-style-position",	parse_list_style_position },
+	{ "list-style-type",		parse_list_style_type },
 	{ "margin",			parse_margin },
 	{ "margin-bottom",		parse_margin_bottom },
 	{ "margin-left",		parse_margin_left },
 	{ "margin-right",		parse_margin_right },
 	{ "margin-top",			parse_margin_top },
+	{ "max-height",			parse_max_height },
+	{ "max-width",			parse_max_width },
+	{ "min-height",			parse_min_height },
+	{ "min-width",			parse_min_width },
+	{ "orphans",			parse_orphans },
+	{ "outline",			parse_outline },
+	{ "outline-color",		parse_outline_color },
+	{ "outline-style",		parse_outline_style },
+	{ "outline-width",		parse_outline_width },
 	{ "overflow",			parse_overflow },
 	{ "padding",			parse_padding },
 	{ "padding-bottom",		parse_padding_bottom },
 	{ "padding-left",		parse_padding_left },
 	{ "padding-right",		parse_padding_right },
 	{ "padding-top",		parse_padding_top },
+	{ "page-break-after",		parse_page_break_after },
+	{ "page-break-before",		parse_page_break_before },
+	{ "page-break-inside",		parse_page_break_inside },
+	{ "position",			parse_position },
+	{ "right",			parse_right },
+	{ "table-layout",		parse_table_layout },
 	{ "text-align",			parse_text_align },
 	{ "text-decoration",		parse_text_decoration },
 	{ "text-indent",		parse_text_indent },
 	{ "text-transform",		parse_text_transform },
+	{ "top",			parse_top },
+	{ "unicode-bidi",		parse_unicode_bidi },
+	{ "vertical-align",		parse_vertical_align },
 	{ "visibility",			parse_visibility },
 	{ "white-space",		parse_white_space },
+	{ "widows",			parse_widows },
 	{ "width",			parse_width },
+	{ "word-spacing",		parse_word_spacing },
+	{ "z-index",			parse_z_index }
 };
 
 
@@ -1245,6 +1316,83 @@ void parse_border_side(struct css_style * const s,
 	}
 }
 
+void parse_border_collapse(struct css_style * const s, const struct css_node * v)
+{
+	css_border_collapse z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_border_collapse_parse(v->data, v->data_length);
+	if (z != CSS_BORDER_COLLAPSE_UNKNOWN)
+		s->border_collapse = z;
+}
+
+void parse_border_spacing(struct css_style * const s, const struct css_node * v)
+{
+	if (v->next && v->next->next)
+		/* more than two nodes */
+		return;
+
+	if (!v->next) {
+		/* one node */
+		if (v->type == CSS_NODE_IDENT && v->data_length == 7 &&
+		    strncasecmp(v->data, "inherit", 7) == 0)
+			s->border_spacing.border_spacing = CSS_BORDER_SPACING_INHERIT;
+		else if (v->type == CSS_NODE_DIMENSION ||
+					v->type == CSS_NODE_NUMBER) {
+			if (parse_length(&s->border_spacing.horz, v, true) == 0 && parse_length(&s->border_spacing.vert, v, true == 0))
+				s->border_spacing.border_spacing = CSS_BORDER_SPACING_LENGTH;
+		}
+	}
+	else {
+		/* two nodes */
+		if ((v->type == CSS_NODE_DIMENSION ||
+			v->type == CSS_NODE_NUMBER) &&
+			(v->next->type == CSS_NODE_DIMENSION ||
+				v->next->type == CSS_NODE_NUMBER)) {
+			if (parse_length(&s->border_spacing.horz, v, true) == 0 && parse_length(&s->border_spacing.vert, v->next, true == 0))
+				s->border_spacing.border_spacing = CSS_BORDER_SPACING_LENGTH;
+		}
+	}
+}
+
+void parse_bottom(struct css_style * const s, const struct css_node * v)
+{
+	if (v->next != 0)
+		return;
+
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->bottom.bottom = CSS_BOTTOM_INHERIT;
+			else if (v->data_length == 4 &&
+			         strncasecmp(v->data, "auto", 4) == 0)
+				s->bottom.bottom = CSS_BOTTOM_AUTO;
+			break;
+		case CSS_NODE_DIMENSION:
+		case CSS_NODE_NUMBER:
+			if (parse_length(&s->bottom.value.length, v, false) == 0)
+				s->bottom.bottom = CSS_BOTTOM_LENGTH;
+			break;
+		case CSS_NODE_PERCENTAGE:
+			s->bottom.bottom = CSS_BOTTOM_PERCENT;
+			s->bottom.value.percent = atof(v->data);
+			break;
+		default:
+			break;
+	}
+}
+
+void parse_caption_side(struct css_style * const s, const struct css_node * v)
+{
+	css_caption_side z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_caption_side_parse(v->data, v->data_length);
+	if (z != CSS_CAPTION_SIDE_UNKNOWN)
+		s->caption_side = z;
+}
+
 void parse_clear(struct css_style * const s, const struct css_node * const v)
 {
 	css_clear z;
@@ -1253,6 +1401,67 @@ void parse_clear(struct css_style * const s, const struct css_node * const v)
 	z = css_clear_parse(v->data, v->data_length);
 	if (z != CSS_CLEAR_UNKNOWN)
 		s->clear = z;
+}
+
+void parse_clip(struct css_style * const s, const struct css_node * v)
+{
+	int i;
+	struct css_node *t;
+
+	if (v->next != 0)
+		return;
+
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->clip.clip = CSS_CLIP_INHERIT;
+			else if (v->data_length == 4 &&
+				strncasecmp(v->data, "auto", 4) == 0)
+				s->clip.clip = CSS_CLIP_AUTO;
+			break;
+		case CSS_NODE_FUNCTION:
+			/* must be rect(X,X,X,X) */
+			if (v->data_length == 5 &&
+			    strncasecmp(v->data, "rect", 4) == 0) {
+				t = v->value;
+				for (i = 0; i != 4; i++) {
+					switch (t->type) {
+						case CSS_NODE_IDENT:
+							if (t->data_length == 4 && strncasecmp(t->data, "auto", 4) == 0) {
+								s->clip.rect[i].rect = CSS_CLIP_AUTO;
+							}
+							else
+								return;
+							break;
+						case CSS_NODE_DIMENSION:
+						case CSS_NODE_NUMBER:
+							if (parse_length(&s->clip.rect[i].value, t, false) != 0)
+								return;
+							s->clip.rect[i].rect = CSS_CLIP_RECT_LENGTH;
+							break;
+						default:
+							return;
+					}
+					t = t->next;
+
+					if (i == 3) {
+						if (t)
+							return;
+					}
+					else {
+						if (!t || t->type != CSS_NODE_COMMA)
+							return;
+					}
+
+					t = t->next;
+				}
+				s->clip.clip = CSS_CLIP_RECT;
+			}
+			break;
+		default:
+			break;
+	}
 }
 
 void parse_color(struct css_style * const s, const struct css_node * const v)
@@ -1283,6 +1492,16 @@ void parse_cursor(struct css_style * const s, const struct css_node * v)
 	}
 }
 
+void parse_direction(struct css_style * const s, const struct css_node * v)
+{
+	css_direction z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_direction_parse(v->data, v->data_length);
+	if (z != CSS_DIRECTION_UNKNOWN)
+		s->direction = z;
+}
+
 void parse_display(struct css_style * const s, const struct css_node * const v)
 {
 	css_display z;
@@ -1291,6 +1510,16 @@ void parse_display(struct css_style * const s, const struct css_node * const v)
 	z = css_display_parse(v->data, v->data_length);
 	if (z != CSS_DISPLAY_UNKNOWN)
 		s->display = z;
+}
+
+void parse_empty_cells(struct css_style * const s, const struct css_node * v)
+{
+	css_empty_cells z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_empty_cells_parse(v->data, v->data_length);
+	if (z != CSS_EMPTY_CELLS_UNKNOWN)
+		s->empty_cells = z;
 }
 
 void parse_float(struct css_style * const s, const struct css_node * const v)
@@ -1466,6 +1695,58 @@ void parse_height(struct css_style * const s, const struct css_node * const v)
 		s->height.height = CSS_HEIGHT_LENGTH;
 }
 
+void parse_left(struct css_style * const s, const struct css_node * v)
+{
+	if (v->next != 0)
+		return;
+
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->left.left = CSS_LEFT_INHERIT;
+			else if (v->data_length == 4 &&
+			         strncasecmp(v->data, "auto", 4) == 0)
+				s->left.left = CSS_LEFT_AUTO;
+			break;
+		case CSS_NODE_DIMENSION:
+		case CSS_NODE_NUMBER:
+			if (parse_length(&s->left.value.length, v, false) == 0)
+				s->left.left = CSS_LEFT_LENGTH;
+			break;
+		case CSS_NODE_PERCENTAGE:
+			s->left.left = CSS_LEFT_PERCENT;
+			s->left.value.percent = atof(v->data);
+			break;
+		default:
+			break;
+	}
+}
+
+void parse_letter_spacing(struct css_style * const s, const struct css_node * v)
+{
+	if (v->next != 0)
+		return;
+
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->letter_spacing.letter_spacing = CSS_LETTER_SPACING_INHERIT;
+			else if (v->data_length == 6 &&
+				strncasecmp(v->data, "normal", 6) == 0)
+				s->letter_spacing.letter_spacing = CSS_LETTER_SPACING_NORMAL;
+			break;
+		case CSS_NODE_DIMENSION:
+		case CSS_NODE_NUMBER:
+			if (parse_length(&s->letter_spacing.length, v, false) == 0)
+				s->letter_spacing.letter_spacing = CSS_LETTER_SPACING_LENGTH;
+			break;
+		default:
+			break;
+	}
+}
+
 void parse_line_height(struct css_style * const s, const struct css_node * const v)
 {
 	if (v->type == CSS_NODE_IDENT && v->data_length == 6 &&
@@ -1482,6 +1763,161 @@ void parse_line_height(struct css_style * const s, const struct css_node * const
 		s->line_height.size = CSS_LINE_HEIGHT_ABSOLUTE;
 		s->line_height.value.absolute = atof(v->data);
 	}
+}
+
+void parse_list_style(struct css_style * const s, const struct css_node * v)
+{
+	css_list_style_type t = CSS_LIST_STYLE_TYPE_DISC, t2;
+	css_list_style_position p = CSS_LIST_STYLE_POSITION_OUTSIDE, p2;
+	css_list_style_image_type i = CSS_LIST_STYLE_IMAGE_NONE, i2;
+	char *lsi_uri = 0;
+
+	while (v) {
+		switch (v->type) {
+			case CSS_NODE_IDENT:
+				t2 = css_list_style_type_parse(v->data, v->data_length);
+				if (t2 != CSS_LIST_STYLE_TYPE_UNKNOWN) {
+					t = t2;
+					v = v->next;
+					break;
+				}
+
+				p2 = css_list_style_position_parse(v->data, v->data_length);
+				if (p2 != CSS_LIST_STYLE_POSITION_UNKNOWN) {
+					p = p2;
+					v = v->next;
+					break;
+				}
+
+				/* drop through */
+			case CSS_NODE_STRING:
+			case CSS_NODE_URI:
+				if (!css_list_style_image_parse(v, &i2, &lsi_uri))
+					return;
+				i = i2;
+				v = v->next;
+				break;
+			default:
+				return;
+		}
+	}
+
+	s->list_style_type = t;
+	s->list_style_position = p;
+	s->list_style_image.type = i;
+	s->list_style_image.uri = lsi_uri;
+}
+
+void parse_list_style_image(struct css_style * const s, const struct css_node * v)
+{
+	css_list_style_image_type type;
+	char *uri;
+
+	if (v->next != 0)
+		return;
+	if (!css_list_style_image_parse(v, &type, &uri))
+		return;
+
+	s->list_style_image.type = type;
+	s->list_style_image.uri = uri;
+}
+
+/**
+ * Parse a list-style-image property.
+ *
+ * \param  node  node to parse
+ * \param  type  updated to list-style-image type
+ * \param  uri   updated to image uri, if type is
+ *               CSS_LIST_STYLE_IMAGE_URI
+ * \return  true on success, false on parse failure
+ */
+
+bool css_list_style_image_parse(const struct css_node *v,
+		css_list_style_image_type *type, char **uri)
+{
+	bool string = false;
+	const char *u;
+	char *t, *url;
+
+	switch (v->type) {
+		case CSS_NODE_URI:
+			for (u = v->data + 4;
+					*u == ' ' || *u == '\t' || *u == '\r' ||
+					*u == '\n' || *u == '\f';
+					u++)
+				;
+			if (*u == '\'' || *u == '"') {
+				string = true;
+				u++;
+			}
+			url = strndup(u, v->data_length - (u - v->data));
+			if (!url)
+				return false;
+			for (t = url + strlen(url) - 2;
+					*t == ' ' || *t == '\t' || *t == '\r' ||
+					*t == '\n' || *t == '\f';
+					t--)
+				;
+			if (string)
+				*t = 0;
+			else
+				*(t + 1) = 0;
+
+			/* for inline style attributes, the stylesheet
+			 * content is the parent HTML content
+			 */
+			if (v->stylesheet->type == CONTENT_HTML)
+				*uri = url_join(url, v->stylesheet->data.html.base_url);
+			else
+				*uri = url_join(url, v->stylesheet->url);
+			free(url);
+			if (!*uri)
+				return false;
+			*type = CSS_LIST_STYLE_IMAGE_URI;
+			break;
+		case CSS_NODE_STRING:
+			url = strndup(v->data, v->data_length);
+			if (!url)
+				return false;
+
+			*uri = url_join(url, v->stylesheet->url);
+			free(url);
+			if (!*uri)
+				return false;
+			*type = CSS_LIST_STYLE_IMAGE_URI;
+			break;
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+					strncasecmp(v->data, "inherit", 7) == 0)
+				*type = CSS_LIST_STYLE_IMAGE_INHERIT;
+			else if (v->data_length == 4 &&
+					strncasecmp(v->data, "none", 4) == 0)
+				*type = CSS_LIST_STYLE_IMAGE_NONE;
+			break;
+		default:
+			return false;
+	}
+	return true;
+}
+
+void parse_list_style_position(struct css_style * const s, const struct css_node * v)
+{
+	css_list_style_position z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_list_style_position_parse(v->data, v->data_length);
+	if (z != CSS_LIST_STYLE_POSITION_UNKNOWN)
+		s->list_style_position = z;
+}
+
+void parse_list_style_type(struct css_style * const s, const struct css_node * v)
+{
+	css_list_style_type z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_list_style_type_parse(v->data, v->data_length);
+	if (z != CSS_LIST_STYLE_TYPE_UNKNOWN)
+		s->list_style_type = z;
 }
 
 void parse_margin(struct css_style * const s, const struct css_node * const v)
@@ -1565,6 +2001,267 @@ void parse_margin_side(struct css_style * const s, const struct css_node * const
 			parse_length(&s->margin[i].value.length, v, false) == 0) {
 		s->margin[i].margin = CSS_MARGIN_LENGTH;
 	}
+}
+
+void parse_max_height(struct css_style *const s, const struct css_node * v)
+{
+	if (v->next != 0)
+		return;
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->max_height.max_height = CSS_MAX_HEIGHT_INHERIT;
+			else if (v->data_length == 4 &&
+				strncasecmp(v->data, "none", 4) == 0)
+				s->max_height.max_height = CSS_MAX_HEIGHT_NONE;
+			break;
+		case CSS_NODE_DIMENSION:
+		case CSS_NODE_NUMBER:
+			if (!parse_length(&s->max_height.value.length, v, true))
+				s->max_height.max_height = CSS_MAX_HEIGHT_LENGTH;
+			break;
+		case CSS_NODE_PERCENTAGE:
+			s->max_height.value.percent = atof(v->data);
+			s->max_height.max_height = CSS_MAX_HEIGHT_PERCENT;
+			break;
+		default:
+			break;
+	}
+}
+
+void parse_max_width(struct css_style *const s, const struct css_node * v)
+{
+	if (v->next != 0)
+		return;
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->max_width.max_width = CSS_MAX_WIDTH_INHERIT;
+			else if (v->data_length == 4 &&
+				strncasecmp(v->data, "none", 4) == 0)
+				s->max_width.max_width = CSS_MAX_WIDTH_NONE;
+			break;
+		case CSS_NODE_DIMENSION:
+		case CSS_NODE_NUMBER:
+			if (!parse_length(&s->max_width.value.length, v, true))
+				s->max_width.max_width = CSS_MAX_WIDTH_LENGTH;
+			break;
+		case CSS_NODE_PERCENTAGE:
+			s->max_width.value.percent = atof(v->data);
+			s->max_width.max_width = CSS_MAX_WIDTH_PERCENT;
+			break;
+		default:
+			break;
+	}
+}
+
+void parse_min_height(struct css_style *const s, const struct css_node * v)
+{
+	if (v->next != 0)
+		return;
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->min_height.min_height = CSS_MIN_HEIGHT_INHERIT;
+			break;
+		case CSS_NODE_DIMENSION:
+		case CSS_NODE_NUMBER:
+			if (!parse_length(&s->min_height.value.length, v, true))
+				s->min_height.min_height = CSS_MIN_HEIGHT_LENGTH;
+			break;
+		case CSS_NODE_PERCENTAGE:
+			s->min_height.value.percent = atof(v->data);
+			s->min_height.min_height = CSS_MIN_HEIGHT_PERCENT;
+			break;
+		default:
+			break;
+	}
+}
+
+void parse_min_width(struct css_style *const s, const struct css_node * v)
+{
+	if (v->next != 0)
+		return;
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->min_width.min_width = CSS_MIN_WIDTH_INHERIT;
+			break;
+		case CSS_NODE_DIMENSION:
+		case CSS_NODE_NUMBER:
+			if (!parse_length(&s->min_width.value.length, v, true))
+				s->min_width.min_width = CSS_MIN_WIDTH_LENGTH;
+			break;
+		case CSS_NODE_PERCENTAGE:
+			s->min_width.value.percent = atof(v->data);
+			s->min_width.min_width = CSS_MIN_WIDTH_PERCENT;
+			break;
+		default:
+			break;
+	}
+}
+
+void parse_orphans(struct css_style * const s, const struct css_node * const v)
+{
+	if (v->next != 0)
+		return;
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->orphans.orphans = CSS_ORPHANS_INHERIT;
+			break;
+		case CSS_NODE_NUMBER:
+			s->orphans.value = atoi(v->data);
+			s->orphans.orphans = CSS_ORPHANS_INTEGER;
+			break;
+		default:
+			break;
+	}
+}
+
+void parse_outline(struct css_style * const s, const struct css_node * v)
+{
+	css_outline_color_type c = CSS_OUTLINE_COLOR_INVERT;
+	colour col = 0, col2;
+	css_border_style b = CSS_BORDER_STYLE_NONE, b2;
+	struct css_border_width w = { CSS_BORDER_WIDTH_LENGTH, { 2, CSS_UNIT_PX } };
+	struct css_border_width w2;
+
+	while (v) {
+		switch (v->type) {
+			case CSS_NODE_HASH:
+			case CSS_NODE_FUNCTION:
+			case CSS_NODE_IDENT:
+				col2 = parse_colour(v);
+				if (col2 != CSS_COLOR_NONE) {
+					col = col2;
+					c = CSS_OUTLINE_COLOR_COLOR;
+					v = v->next;
+					break;
+				}
+				if (v->type == CSS_NODE_HASH ||
+				    v->type == CSS_NODE_FUNCTION)
+					return;
+
+				/* could be inherit */
+				if (v->data_length == 7 &&
+				   strncasecmp(v->data, "inherit", 7) == 0) {
+					c = CSS_OUTLINE_COLOR_INHERIT;
+					v = v->next;
+					break;
+				}
+
+				b2 = css_border_style_parse(v->data, v->data_length);
+				if (b2 != CSS_BORDER_STYLE_UNKNOWN) {
+					b = b2;
+					v = v->next;
+					break;
+				}
+
+				/* fall through */
+			case CSS_NODE_DIMENSION:
+			case CSS_NODE_NUMBER:
+				if (css_outline_width_parse(v, &w2)) {
+					w = w2;
+					v = v->next;
+					break;
+				}
+
+				/* fall through */
+			default:
+				return;
+		}
+	}
+
+	s->outline.color.color = c;
+	s->outline.color.value = col;
+	s->outline.width = w;
+	s->outline.style = b;
+}
+
+void parse_outline_color(struct css_style * const s, const struct css_node * const v)
+{
+	colour c;
+
+	if (v->next != 0)
+		return;
+
+	c = parse_colour(v);
+	if (c == CSS_COLOR_NONE && v->type == CSS_NODE_IDENT) {
+		if (v->data_length == 7 &&
+		    strncasecmp(v->data, "inherit", 7) == 0)
+			s->outline.color.color = CSS_OUTLINE_COLOR_INHERIT;
+		else if (v->data_length == 6 &&
+			strncasecmp(v->data, "invert", 6) == 0)
+			s->outline.color.color = CSS_OUTLINE_COLOR_INVERT;
+	}
+	else {
+		s->outline.color.value = c;
+		s->outline.color.color = CSS_OUTLINE_COLOR_COLOR;
+	}
+}
+
+void parse_outline_style(struct css_style * const s, const struct css_node * const v)
+{
+	css_border_style z;
+
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_border_style_parse(v->data, v->data_length);
+	if (z != CSS_BORDER_STYLE_UNKNOWN)
+		s->outline.style = z;
+}
+
+void parse_outline_width(struct css_style * const s, const struct css_node * const v)
+{
+	struct css_border_width w;
+	if (v->next != 0)
+		return;
+	if (!css_outline_width_parse(v, &w))
+		return;
+	s->outline.width = w;
+}
+
+
+bool css_outline_width_parse(const struct css_node * v, struct css_border_width * w)
+{
+	if (v->type == CSS_NODE_IDENT) {
+		if (v->data_length == 7 &&
+				strncasecmp(v->data, "inherit", 7) == 0) {
+			w->width = CSS_BORDER_WIDTH_INHERIT;
+			return true;
+		} else if (v->data_length == 4 &&
+				strncasecmp(v->data, "thin", 4) == 0) {
+			w->width = CSS_BORDER_WIDTH_LENGTH;
+			w->value.value = 1;
+			w->value.unit = CSS_UNIT_PX;
+			return true;
+		} else if (v->data_length == 6 &&
+				strncasecmp(v->data, "medium", 6) == 0) {
+			w->width = CSS_BORDER_WIDTH_LENGTH;
+			w->value.value = 2;
+			w->value.unit = CSS_UNIT_PX;
+			return true;
+		} else if (v->data_length == 5 &&
+				strncasecmp(v->data, "thick", 5) == 0) {
+			w->width = CSS_BORDER_WIDTH_LENGTH;
+			w->value.value = 4;
+			w->value.unit = CSS_UNIT_PX;
+			return true;
+		}
+	} else if ((v->type == CSS_NODE_DIMENSION ||
+			v->type == CSS_NODE_NUMBER) &&
+			parse_length(&w->value, v, true) == 0) {
+		w->width = CSS_BORDER_WIDTH_LENGTH;
+		return true;
+	}
+
+	return false;
 }
 
 void parse_overflow(struct css_style * const s, const struct css_node * const v)
@@ -1654,6 +2351,84 @@ void parse_padding_side(struct css_style * const s, const struct css_node * cons
 	}
 }
 
+void parse_page_break_after(struct css_style * const s, const struct css_node * v)
+{
+	css_page_break_after z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_page_break_after_parse(v->data, v->data_length);
+	if (z != CSS_PAGE_BREAK_AFTER_UNKNOWN)
+		s->page_break_after = z;
+}
+
+void parse_page_break_before(struct css_style * const s, const struct css_node * v)
+{
+	css_page_break_before z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_page_break_before_parse(v->data, v->data_length);
+	if (z != CSS_PAGE_BREAK_BEFORE_UNKNOWN)
+		s->page_break_before = z;
+}
+
+void parse_page_break_inside(struct css_style * const s, const struct css_node * v)
+{
+	css_page_break_inside z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_page_break_inside_parse(v->data, v->data_length);
+	if (z != CSS_PAGE_BREAK_INSIDE_UNKNOWN)
+		s->page_break_inside = z;
+}
+
+void parse_position(struct css_style * const s, const struct css_node * v)
+{
+	css_position z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_position_parse(v->data, v->data_length);
+	if (z != CSS_POSITION_UNKNOWN)
+		s->position = z;
+}
+
+void parse_right(struct css_style * const s, const struct css_node * v)
+{
+	if (v->next != 0)
+		return;
+
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->right.right = CSS_RIGHT_INHERIT;
+			else if (v->data_length == 4 &&
+			         strncasecmp(v->data, "auto", 4) == 0)
+				s->right.right = CSS_RIGHT_AUTO;
+			break;
+		case CSS_NODE_DIMENSION:
+		case CSS_NODE_NUMBER:
+			if (parse_length(&s->right.value.length, v, false) == 0)
+				s->right.right = CSS_RIGHT_LENGTH;
+			break;
+		case CSS_NODE_PERCENTAGE:
+			s->right.right = CSS_RIGHT_PERCENT;
+			s->right.value.percent = atof(v->data);
+			break;
+		default:
+			break;
+	}
+}
+
+void parse_table_layout(struct css_style * const s, const struct css_node * v)
+{
+	css_table_layout z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_table_layout_parse(v->data, v->data_length);
+	if (z != CSS_TABLE_LAYOUT_UNKNOWN)
+		s->table_layout = z;
+}
+
 void parse_text_align(struct css_style * const s, const struct css_node * const v)
 {
 	css_text_align z;
@@ -1708,6 +2483,92 @@ void parse_text_transform(struct css_style * const s, const struct css_node * co
 		s->text_transform = z;
 }
 
+void parse_top(struct css_style * const s, const struct css_node * v)
+{
+	if (v->next != 0)
+		return;
+
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->top.top = CSS_TOP_INHERIT;
+			else if (v->data_length == 4 &&
+			         strncasecmp(v->data, "auto", 4) == 0)
+				s->top.top = CSS_TOP_AUTO;
+			break;
+		case CSS_NODE_DIMENSION:
+		case CSS_NODE_NUMBER:
+			if (parse_length(&s->top.value.length, v, false) == 0)
+				s->top.top = CSS_TOP_LENGTH;
+			break;
+		case CSS_NODE_PERCENTAGE:
+			s->top.top = CSS_TOP_PERCENT;
+			s->top.value.percent = atof(v->data);
+			break;
+		default:
+			break;
+	}
+}
+
+void parse_unicode_bidi(struct css_style * const s, const struct css_node * const v)
+{
+	css_unicode_bidi z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_unicode_bidi_parse(v->data, v->data_length);
+	if (z != CSS_UNICODE_BIDI_UNKNOWN)
+		s->unicode_bidi = z;
+}
+
+void parse_vertical_align(struct css_style * const s, const struct css_node * v)
+{
+	if (v->next != 0)
+		return;
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->vertical_align.type = CSS_VERTICAL_ALIGN_INHERIT;
+			else if (v->data_length == 8 &&
+				strncasecmp(v->data, "baseline", 8) == 0)
+				s->vertical_align.type = CSS_VERTICAL_ALIGN_BASELINE;
+			else if (v->data_length == 3 &&
+				strncasecmp(v->data, "sub", 3) == 0)
+				s->vertical_align.type = CSS_VERTICAL_ALIGN_SUB;
+			else if (v->data_length == 5 &&
+				strncasecmp(v->data, "super", 5) == 0)
+				s->vertical_align.type = CSS_VERTICAL_ALIGN_SUPER;
+			else if (v->data_length == 3 &&
+				strncasecmp(v->data, "top", 3) == 0)
+				s->vertical_align.type = CSS_VERTICAL_ALIGN_TOP;
+			else if (v->data_length == 8 &&
+				strncasecmp(v->data, "text-top", 8) == 0)
+				s->vertical_align.type = CSS_VERTICAL_ALIGN_TEXT_TOP;
+			else if (v->data_length == 6 &&
+				strncasecmp(v->data, "middle", 6) == 0)
+				s->vertical_align.type = CSS_VERTICAL_ALIGN_MIDDLE;
+			else if (v->data_length == 6 &&
+				strncasecmp(v->data, "bottom", 6) == 0)
+				s->vertical_align.type = CSS_VERTICAL_ALIGN_BOTTOM;
+			else if (v->data_length == 11 &&
+				strncasecmp(v->data, "text-bottom", 11) == 0)
+				s->vertical_align.type = CSS_VERTICAL_ALIGN_TEXT_BOTTOM;
+			break;
+		case CSS_NODE_DIMENSION:
+		case CSS_NODE_NUMBER:
+			if (parse_length(&s->vertical_align.value.length, v, false) == 0)
+				s->vertical_align.type = CSS_VERTICAL_ALIGN_LENGTH;
+			break;
+		case CSS_NODE_PERCENTAGE:
+			s->vertical_align.value.percent = atof(v->data);
+			s->vertical_align.type = CSS_VERTICAL_ALIGN_PERCENT;
+			break;
+		default:
+			break;
+	}
+}
+
 void parse_visibility(struct css_style * const s, const struct css_node * const v)
 {
 	css_visibility z;
@@ -1716,6 +2577,25 @@ void parse_visibility(struct css_style * const s, const struct css_node * const 
 	z = css_visibility_parse(v->data, v->data_length);
 	if (z != CSS_VISIBILITY_UNKNOWN)
 		s->visibility = z;
+}
+
+void parse_widows(struct css_style * const s, const struct css_node * const v)
+{
+	if (v->next != 0)
+		return;
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->widows.widows = CSS_WIDOWS_INHERIT;
+			break;
+		case CSS_NODE_NUMBER:
+			s->widows.value = atoi(v->data);
+			s->widows.widows = CSS_WIDOWS_INTEGER;
+			break;
+		default:
+			break;
+	}
 }
 
 void parse_width(struct css_style * const s, const struct css_node * const v)
@@ -1739,6 +2619,52 @@ void parse_white_space(struct css_style * const s, const struct css_node * const
 	z = css_white_space_parse(v->data, v->data_length);
 	if (z != CSS_WHITE_SPACE_UNKNOWN)
 		s->white_space = z;
+}
+
+void parse_word_spacing(struct css_style * const s, const struct css_node * v)
+{
+	if (v->next != 0)
+		return;
+
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->word_spacing.word_spacing = CSS_WORD_SPACING_INHERIT;
+			else if (v->data_length == 6 &&
+				strncasecmp(v->data, "normal", 6) == 0)
+				s->word_spacing.word_spacing = CSS_WORD_SPACING_NORMAL;
+			break;
+		case CSS_NODE_DIMENSION:
+		case CSS_NODE_NUMBER:
+			if (parse_length(&s->word_spacing.length, v, false) == 0)
+				s->word_spacing.word_spacing = CSS_WORD_SPACING_LENGTH;
+			break;
+		default:
+			break;
+	}
+}
+
+void parse_z_index(struct css_style * const s, const struct css_node * const v)
+{
+	if (v->next != 0)
+		return;
+	switch (v->type) {
+		case CSS_NODE_IDENT:
+			if (v->data_length == 7 &&
+			    strncasecmp(v->data, "inherit", 7) == 0)
+				s->z_index.z_index = CSS_Z_INDEX_INHERIT;
+			else if (v->data_length == 4 &&
+				strncasecmp(v->data, "auto", 4) == 0)
+				s->z_index.z_index = CSS_Z_INDEX_AUTO;
+			break;
+		case CSS_NODE_NUMBER:
+			s->z_index.value = atoi(v->data);
+			s->z_index.z_index = CSS_Z_INDEX_INTEGER;
+			break;
+		default:
+			break;
+	}
 }
 
 css_text_decoration css_text_decoration_parse(const char * const s,

@@ -72,41 +72,105 @@ struct css_background_position {
 	} value;
 };
 
+struct css_border_width {
+	enum { CSS_BORDER_WIDTH_INHERIT,
+	       CSS_BORDER_WIDTH_LENGTH } width;
+	struct css_length value;
+};
+
+typedef enum {
+	CSS_LIST_STYLE_IMAGE_INHERIT,
+	CSS_LIST_STYLE_IMAGE_NONE,
+	CSS_LIST_STYLE_IMAGE_URI
+} css_list_style_image_type;
+
+typedef enum {
+	CSS_OUTLINE_COLOR_INHERIT,
+	CSS_OUTLINE_COLOR_COLOR,
+	CSS_OUTLINE_COLOR_INVERT
+} css_outline_color_type;
+
+typedef enum {
+	CSS_VERTICAL_ALIGN_INHERIT,
+	CSS_VERTICAL_ALIGN_BASELINE,
+	CSS_VERTICAL_ALIGN_SUB,
+	CSS_VERTICAL_ALIGN_SUPER,
+	CSS_VERTICAL_ALIGN_TOP,
+	CSS_VERTICAL_ALIGN_TEXT_TOP,
+	CSS_VERTICAL_ALIGN_MIDDLE,
+	CSS_VERTICAL_ALIGN_BOTTOM,
+	CSS_VERTICAL_ALIGN_TEXT_BOTTOM,
+	CSS_VERTICAL_ALIGN_LENGTH,
+	CSS_VERTICAL_ALIGN_PERCENT
+} css_vertical_align_type;
+
 
 /** Representation of a complete CSS 2 style. */
 struct css_style {
-	colour background_color;
-
+	/* background properties */
 	css_background_attachment background_attachment;
-
+	colour background_color;
 	struct {
 		css_background_image_type type;
 		char *uri;
 	} background_image;
-
 	struct {
 		struct css_background_position horz;
 		struct css_background_position vert;
 	} background_position;
-
 	css_background_repeat background_repeat;
 
+	/* borders */
 	struct {
 		colour color;
-		struct {
-			enum { CSS_BORDER_WIDTH_INHERIT,
-			       CSS_BORDER_WIDTH_LENGTH } width;
-			struct css_length value;
-		} width;
+		struct css_border_width width;
 		css_border_style style;
 	} border[4];  /**< top, right, bottom, left */
+	css_border_collapse border_collapse;
+	struct {
+		enum { CSS_BORDER_SPACING_INHERIT,
+		       CSS_BORDER_SPACING_LENGTH } border_spacing;
+		struct css_length horz;
+		struct css_length vert;
+	} border_spacing;
 
+	struct {
+		enum { CSS_BOTTOM_INHERIT,
+		       CSS_BOTTOM_AUTO,
+		       CSS_BOTTOM_PERCENT,
+		       CSS_BOTTOM_LENGTH } bottom;
+		union {
+			struct css_length length;
+			float percent;
+		} value;
+	} bottom;
+
+	css_caption_side caption_side;
 	css_clear clear;
+
+	struct {
+		enum { CSS_CLIP_INHERIT,
+		       CSS_CLIP_AUTO,
+		       CSS_CLIP_RECT } clip;
+		struct {
+			enum { CSS_CLIP_RECT_AUTO,
+			       CSS_CLIP_RECT_LENGTH } rect;
+			struct css_length value;
+		} rect[4]; /**< top, right, bottom, left */
+	} clip;
+
 	colour color;
+
+	/** \todo content and counters */
+
 	css_cursor cursor;
+	css_direction direction;
 	css_display display;
+	css_empty_cells empty_cells;
 	css_float float_;
 
+	/* font properties */
+	css_font_family font_family;
 	struct {
 		enum { CSS_FONT_SIZE_INHERIT,
 		       CSS_FONT_SIZE_ABSOLUTE,
@@ -118,11 +182,9 @@ struct css_style {
 			float percent;
 		} value;
 	} font_size;
-
-	css_font_family font_family;
-	css_font_weight font_weight;
 	css_font_style font_style;
 	css_font_variant font_variant;
+	css_font_weight font_weight;
 
 	struct {
 		enum { CSS_HEIGHT_INHERIT,
@@ -130,6 +192,24 @@ struct css_style {
 		       CSS_HEIGHT_LENGTH } height;
 		struct css_length length;
 	} height;
+
+	struct {
+		enum { CSS_LEFT_INHERIT,
+		       CSS_LEFT_AUTO,
+		       CSS_LEFT_PERCENT,
+		       CSS_LEFT_LENGTH } left;
+		union {
+			struct css_length length;
+			float percent;
+		} value;
+	} left;
+
+	struct {
+		enum { CSS_LETTER_SPACING_INHERIT,
+		       CSS_LETTER_SPACING_NORMAL,
+		       CSS_LETTER_SPACING_LENGTH } letter_spacing;
+		struct css_length length;
+	} letter_spacing;
 
 	struct {
 		enum { CSS_LINE_HEIGHT_INHERIT,
@@ -143,6 +223,15 @@ struct css_style {
 		} value;
 	} line_height;
 
+	/* list properties */
+	struct {
+		css_list_style_image_type type;
+		char *uri;
+	} list_style_image;
+	css_list_style_position list_style_position;
+	css_list_style_type list_style_type;
+
+	/* margins */
 	struct {
 		enum { CSS_MARGIN_INHERIT,
 		       CSS_MARGIN_LENGTH,
@@ -154,8 +243,64 @@ struct css_style {
 		} value;
 	} margin[4];  /**< top, right, bottom, left */
 
+	/* min/max width/height */
+	struct {
+		enum { CSS_MAX_HEIGHT_INHERIT,
+		       CSS_MAX_HEIGHT_NONE,
+		       CSS_MAX_HEIGHT_LENGTH,
+		       CSS_MAX_HEIGHT_PERCENT } max_height;
+		union {
+			struct css_length length;
+			float percent;
+		} value;
+	} max_height;
+	struct {
+		enum { CSS_MAX_WIDTH_INHERIT,
+		       CSS_MAX_WIDTH_NONE,
+		       CSS_MAX_WIDTH_LENGTH,
+		       CSS_MAX_WIDTH_PERCENT } max_width;
+		union {
+			struct css_length length;
+			float percent;
+		} value;
+	} max_width;
+	struct {
+		enum { CSS_MIN_HEIGHT_INHERIT,
+		       CSS_MIN_HEIGHT_LENGTH,
+		       CSS_MIN_HEIGHT_PERCENT } min_height;
+		union {
+			struct css_length length;
+			float percent;
+		} value;
+	} min_height;
+	struct {
+		enum { CSS_MIN_WIDTH_INHERIT,
+		       CSS_MIN_WIDTH_LENGTH,
+		       CSS_MIN_WIDTH_PERCENT } min_width;
+		union {
+			struct css_length length;
+			float percent;
+		} value;
+	} min_width;
+
+	struct {
+		enum { CSS_ORPHANS_INHERIT,
+		       CSS_ORPHANS_INTEGER } orphans;
+		int value;
+	} orphans;
+
+	struct {
+		struct {
+			css_outline_color_type color;
+			colour value;
+		} color;
+		struct css_border_width width;
+		css_border_style style;
+	} outline;
+
 	css_overflow overflow;
 
+	/* padding */
 	struct {
 		enum { CSS_PADDING_INHERIT,
 		       CSS_PADDING_LENGTH,
@@ -166,6 +311,28 @@ struct css_style {
 		} value;
 	} padding[4];  /**< top, right, bottom, left */
 
+	css_page_break_after page_break_after;
+	css_page_break_before page_break_before;
+	css_page_break_inside page_break_inside;
+
+	css_position position;
+
+	/** \todo quotes */
+
+	struct {
+		enum { CSS_RIGHT_INHERIT,
+		       CSS_RIGHT_AUTO,
+		       CSS_RIGHT_PERCENT,
+		       CSS_RIGHT_LENGTH } right;
+		union {
+			struct css_length length;
+			float percent;
+		} value;
+	} right;
+
+	css_table_layout table_layout;
+
+	/* text properties */
 	css_text_align text_align;
 	css_text_decoration text_decoration;
 	struct {
@@ -179,7 +346,36 @@ struct css_style {
 	} text_indent;
 	css_text_transform text_transform;
 
+	struct {
+		enum { CSS_TOP_INHERIT,
+		       CSS_TOP_AUTO,
+		       CSS_TOP_PERCENT,
+		       CSS_TOP_LENGTH } top;
+		union {
+			struct css_length length;
+			float percent;
+		} value;
+	} top;
+
+	css_unicode_bidi unicode_bidi;
+
+	struct {
+		css_vertical_align_type type;
+		union {
+			struct css_length length;
+			float percent;
+		} value;
+	} vertical_align;
+
 	css_visibility visibility;
+
+	css_white_space white_space;
+
+	struct {
+		enum { CSS_WIDOWS_INHERIT,
+		       CSS_WIDOWS_INTEGER } widows;
+		int value;
+	} widows;
 
 	struct {
 		enum { CSS_WIDTH_INHERIT,
@@ -192,7 +388,19 @@ struct css_style {
 		} value;
 	} width;
 
-	css_white_space white_space;
+	struct {
+		enum { CSS_WORD_SPACING_INHERIT,
+		       CSS_WORD_SPACING_NORMAL,
+		       CSS_WORD_SPACING_LENGTH } word_spacing;
+		struct css_length length;
+	} word_spacing;
+
+	struct {
+		enum { CSS_Z_INDEX_INHERIT,
+		       CSS_Z_INDEX_AUTO,
+		       CSS_Z_INDEX_INTEGER } z_index;
+		int value;
+	} z_index;
 };
 
 struct css_stylesheet;
