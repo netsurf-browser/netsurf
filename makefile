@@ -9,7 +9,7 @@ CC_DEBUG = gcc
 OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o other.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
 	box.o form.o html.o layout.o textplain.o \
-	messages.o utils.o translit.c
+	messages.o utils.o translit.o
 OBJECTS = $(OBJECTS_COMMON) \
 	browser.o loginlist.o netsurf.o \
 	htmlinstance.o htmlredraw.o \
