@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.26 2003/06/01 23:44:38 jmb Exp $
+# $Id: makefile,v 1.27 2003/06/04 21:59:01 jmb Exp $
 
 CC = riscos-gcc
 OBJECTS = cache.o content.o fetch.o fetchcache.o \
@@ -7,6 +7,7 @@ OBJECTS = cache.o content.o fetch.o fetchcache.o \
 	box.o html.o layout.o textplain.o \
 	filetype.o font.o gui.o jpeg.o png.o theme.o \
 	utils.o plugin.o options.o
+DOCUMENTS = Themes.html	
 VPATH = content:css:desktop:render:riscos:utils
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wconversion -Wstrict-prototypes \
@@ -24,10 +25,14 @@ LDFLAGS = \
 OBJDIR = $(shell $(CC) -dumpmachine)
 SOURCES=$(OBJECTS:.o=.c)
 OBJS=$(OBJECTS:%.o=$(OBJDIR)/%.o)
+DOCDIR = !NetSurf/Docs
+DOCS=$(DOCUMENTS:%.html=$(DOCDIR/%.html)
 
 # targets
+all: !NetSurf/!RunImage,ff8 Docs
 !NetSurf/!RunImage,ff8 : $(OBJS)
 	$(CC) -o $@ $(LDFLAGS) $^
+Docs: $(DOCS)	
 netsurf.zip: !NetSurf/!RunImage,ff8
 	rm netsurf.zip; riscos-zip -9vr, netsurf.zip !NetSurf
 
@@ -42,6 +47,12 @@ css/parser.c: css/parser.y
 	-cd css; lemon parser.y
 css/scanner.c css/scanner.h: css/scanner.l
 	cd css; flex scanner.l
+	
+# create documentation
+$(DOCDIR)/%.html: documentation/%.xml
+	# syntax: xsltproc [options] -o <output file> <XSL stylesheet> <input file>
+	# --nonet prevents connection to the web to find the stylesheet
+	xsltproc --nonet -o $@ http://www.movspclr.co.uk/dtd/100/prm-html.xsl $<
 
 # generate dependencies
 depend : $(SOURCES)

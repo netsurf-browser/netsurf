@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<!DOCTYPE riscos-prm PUBLIC "-//JMB//DTS PRM documentation 1.00//EN"
+			    "http://www.movspclr.co.uk/dtd/100/prm.dtd">
+			    
+<riscos-prm doc-group="NetSurf User's Manual">
+<chapter title="NetSurf Themes">
+ <section title="Introduction and Overview">
+  <p>NetSurf has inbuilt support for themed icons and status bar tools.<br/>
+  This document details how to create your own themes for NetSurf</p>
+ </section>
+
+ <section title="Tools Required">
+  <p>In order to create a new theme, you will require the following tools:
+  <list type="unordered">
+   <item><p> A template editor </p></item>
+   <item><p> A sprite file editor </p></item>
+   <item><p> A text editor </p></item>
+  </list>
+  </p> 
+ </section>
+ 
+ <section title="Creating Templates">
+  <p>The best way to go about creating a new theme is to take the templates for the default theme and edit them with a template editor.</p>
+  
+  <p>The templates file must contain two templates. One is "toolbar", the other is "theme_info".</p>
+  
+  <subsection title="Toolbar">
+   <p>The toolbar template must contain the following icons:
+   <list type="unordered">
+    <item><p> Back Button </p></item>   
+    <item><p> Refresh Button </p></item>
+    <item><p> Forwards Button </p></item>
+    <item><p> Throbber </p></item>
+    <item><p> URL entry bar </p></item>
+    <item><p> Status bar </p></item>
+   </list></p>
+  </subsection>
+  
+  <subsection title="Theme Info">
+   <p>The theme_info template details the theme in a graphical manner. It is similar to a program info dialogue box and should be treated as such. Again, the Default theme is a good source of reference.</p>
+  </subsection>
+ </section>
+ 
+ <section title="Sprites">
+  <p>Sprites should be contained in a single file named "Sprites".</p>
+  
+  <p>Throbber sprites should display the various stages of progress and should be named "throbberN", where N is a numerical suffix (eg throbber0, throbber 23 etc).</p>
+  
+  <p>Button sprites can be called whatever you like. The only limitation is that two sprites are provided per button - one unpressed, the other pressed. Also, the template validation strings for each button should contain the sprite names (eg Sbackl,backp)</p>
+  
+  <subsection title="Optional Preview Sprite">
+   <p>You may optionally provide a preview sprite for display in the theme configuration dialogue box. The sprite must be in a file called "Preview" and the sprite itself must be called "preview".</p>
+  </subsection>
+ </section>
+
+ <section title="Text Files">
+  <p>There are two text files which also make up the theme.</p>
+  
+  <subsection title="Icon Names">
+   <p>The IconNames text file provides the link between the template and the program. Each icon has a name defined internally by NetSurf (eg TOOLBAR_BACK). It is necessary to map these internal names to the icon numbers in the template. See the default theme for reference. All icons should be defined.</p>
+  </subsection>
+  
+  <subsection title="Icon Sizes">
+   <p>The IconSizes text file is best left alone. Simply copy the one from the default theme into your theme.</p>
+  </subsection>
+ </section>
+ 
+ <section title="Packaging your Theme">
+  <p>The default packaging for NetSurf themes is simply a folder named the same as your theme name (eg "Clear" for the Clear theme). Simply place all the files for your theme into a single directory, name the directory appropriately and create a Zip archive containing your theme.</p>
+ </section>
+ 
+ <section title="Submitting your Theme">
+  <p>Themes may be uploaded to the central NetSurf theme repository at <reference type="link" href="http://netsurf.sourceforge.net/themes/">http://netsurf.sourceforge.net/themes/</reference></p>
+ </section>
+ 
+</chapter>
+
+<meta>
+ <maintainer>
+  <email name="NetSurf Development Team" address="netsurf-develop@lists.sourceforge.net" />
+ </maintainer>
+ 
+ <history>
+  <revision number="0.01" date="03/06/03" author="JMB" title="Initial version" />
+  <revision number="0.02" date="03/06/03" author="JMB" title="Various changes for clarity" />
+ </history>
+</meta>
+</riscos-prm>			    
