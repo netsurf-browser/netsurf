@@ -434,13 +434,15 @@ char *imagemap_get(struct content *c, const char *key, unsigned long x,
         unsigned long cx, cy;
 
         assert(c->type == CONTENT_HTML);
+        if (key == NULL) return NULL;
 
         slot = imagemap_hash(key);
 
         for (map = c->data.html.imagemaps[slot];
-             map != 0 && strcasecmp(map->key, key) != 0;
-             map = map->next)
-                ;
+             map != 0; map = map->next) {
+                if (map->key != 0 && strcasecmp(map->key, key) == 0)
+                        break;
+        }
 
         if (map == 0) return NULL;
 
