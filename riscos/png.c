@@ -19,6 +19,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/png.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 #ifdef WITH_PNG
@@ -346,7 +347,7 @@ int nspng_convert(struct content *c, unsigned int width, unsigned int height)
 		png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
 
 	c->title = xcalloc(100, 1);
-	sprintf(c->title, "PNG image (%lux%lu)", c->width, c->height);
+	sprintf(c->title, messages_get("PNGTitle"), c->width, c->height);
 	c->status = CONTENT_STATUS_DONE;
 	return 0;
 }

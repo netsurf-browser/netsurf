@@ -22,6 +22,7 @@
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/jpeg.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 /**
@@ -166,7 +167,7 @@ int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
 	    c->width = w;
 	    c->height = h;
 	    c->title = xcalloc(100, 1);
-	    sprintf(c->title, "JPEG image (%ux%u, %lu bytes)", w, h, c->data.jpeg.length);
+	    sprintf(c->title, messages_get("JPEGTitle"), w, h, c->data.jpeg.length);
 	    c->status = CONTENT_STATUS_DONE;
 	   return 0;
 	  }

@@ -19,6 +19,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/gif.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 #ifdef WITH_GIF
@@ -113,7 +114,7 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
       memset(mask, 255, (unsigned int)(header->mask - header->image));
 
   c->title = xcalloc(100, sizeof(char));
-  sprintf(c->title, "GIF image (%lux%lu)", c->width, c->height);
+  sprintf(c->title, messages_get("GIFTitle"), c->width, c->height);
   c->status = CONTENT_STATUS_DONE;
 
 /*  xosspriteop_save_sprite_file(osspriteop_USER_AREA,

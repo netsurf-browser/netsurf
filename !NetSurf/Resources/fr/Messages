@@ -1,5 +1,4 @@
 # French messages for NetSurf
-#Version:0.01
 
 # Menus
 NetSurf:NetSurf
@@ -48,3 +47,33 @@ ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/T
 InvalidURL:L'adresse <em>%s</em> est incomprise.
 
 NoMemory:NetSurf a besoin de plus de mémoire. Veuillez libérer de la mémoire et réessayer.
+
+Loading:Opening page...
+RecPercent:Received %lu of %lu bytes (%u%%)
+Received:Received %lu bytes
+Converting:Converting %lu bytes
+BadRedirect:Bad redirect URL
+FetchFailed:Unable to fetch document
+Complete:Page complete (%gs)
+Redirecting:Redirecting...
+Processing:Processing document
+Formatting:Formatting document
+FetchObjs:Loading %u objects
+FetchObjs2:Loading %u objects: %s
+Done:Document done
+FetchStyle:Loading %u stylesheets
+FetchStyle2:Loading %u stylesheets: %s
+NotCSS:Warning: stylesheet is not CSS
+BadObject:Warning: bad object type
+ObjError:Error loading object: %s
+
+DrawTitle:Draw image (%lux%lu, %lu bytes)
+GIFTitle:GIF image (%lux%lu)
+JPEGTitle:JPEG image (%ux%u, %lu bytes)
+PNGImage:PNG image (%lux%lu)
+SpriteTitle:Sprite image (%lux%lu, %lu bytes)
+
+SelectMenu:Select
+
+SaveSource:Source
+SaveDraw:Webpage

@@ -297,7 +297,8 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 			ro_gui_set_icon_string(dialog_saveas,
 					ICON_SAVE_ICON, "file_aff");
 			ro_gui_set_icon_string(dialog_saveas,
-					ICON_SAVE_PATH, "Webpage");
+					ICON_SAVE_PATH,
+					messages_get("SaveDraw"));
 			break;
 
 		case -1:
@@ -306,7 +307,8 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 			ro_gui_set_icon_string(dialog_saveas,
 					ICON_SAVE_ICON, "file_faf");
 			ro_gui_set_icon_string(dialog_saveas,
-					ICON_SAVE_PATH, "Source");
+					ICON_SAVE_PATH,
+					messages_get("SaveSource"));
 			break;
 	}
 

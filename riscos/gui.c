@@ -708,7 +708,8 @@ void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigne
 
 	combo_menu = xcalloc(1, wimp_SIZEOF_MENU(count));
 
-	combo_menu->title_data.indirected_text.text = "Select";
+	combo_menu->title_data.indirected_text.text =
+			messages_get("SelectMenu");
 	combo_menu->title_fg = wimp_COLOUR_BLACK;
 	combo_menu->title_bg = wimp_COLOUR_LIGHT_GREY;
 	combo_menu->work_fg = wimp_COLOUR_BLACK;

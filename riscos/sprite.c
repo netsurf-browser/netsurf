@@ -8,13 +8,14 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include "oslib/colourtrans.h"
+#include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/sprite.h"
-#include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
-#include "oslib/colourtrans.h"
-#include "oslib/osspriteop.h"
+#include "netsurf/utils/messages.h"
+#include "netsurf/utils/utils.h"
 
 #ifdef WITH_SPRITE
 
@@ -56,7 +57,7 @@ int sprite_convert(struct content *c, unsigned int width, unsigned int height)
 	c->width = w;
 	c->height = h;
 	c->title = xcalloc(100, 1);
-	sprintf(c->title, "Sprite image (%lux%lu, %lu bytes)", c->width,
+	sprintf(c->title, messages_get("SpriteTitle"), c->width,
 	                                c->height, c->data.sprite.length);
 	c->status = CONTENT_STATUS_DONE;
 	return 0;

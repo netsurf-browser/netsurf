@@ -23,6 +23,7 @@
 #include "netsurf/render/html.h"
 #include "netsurf/render/layout.h"
 #include "netsurf/utils/utils.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/log.h"
 
 #define CHUNK 4096
@@ -161,7 +162,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 
 	/* convert xml tree to box tree */
 	LOG(("XML to box"));
-	sprintf(c->status_message, "Processing document");
+	sprintf(c->status_message, messages_get("Processing"));
 	content_broadcast(c, CONTENT_MSG_STATUS, 0);
 	xml_to_box(html, c);
 	/*box_dump(c->data.html.layout->children, 0);*/
@@ -170,7 +171,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	xmlFreeDoc(document);
 
 	/* layout the box tree */
-	sprintf(c->status_message, "Formatting document");
+	sprintf(c->status_message, messages_get("Formatting"));
 	content_broadcast(c, CONTENT_MSG_STATUS, 0);
 	LOG(("Layout document"));
 	layout_document(c->data.html.layout->children, width);
@@ -181,10 +182,11 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 
 	if (c->active == 0) {
 		c->status = CONTENT_STATUS_DONE;
-		sprintf(c->status_message, "Document done");
+		sprintf(c->status_message, messages_get("Done"));
 	} else {
 		c->status = CONTENT_STATUS_READY;
-		sprintf(c->status_message, "Fetching %u objects", c->active);
+		sprintf(c->status_message, messages_get("FetchObjs"),
+				c->active);
 	}
 
 	return 0;
@@ -393,7 +395,8 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 	/* complete the fetches */
 	while (c->active != 0) {
 		if (c->active != last_active) {
-			sprintf(c->status_message, "Loading %u stylesheets", c->active);
+			sprintf(c->status_message, messages_get("FetchStyle"),
+					c->active);
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			last_active = c->active;
 		}
@@ -424,7 +427,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 				c->data.html.stylesheet_content[i] = 0;
 				c->active--;
 				c->error = 1;
-				sprintf(c->status_message, "Warning: stylesheet is not CSS");
+				sprintf(c->status_message, messages_get("NotCSS"));
 				content_broadcast(c, CONTENT_MSG_STATUS, 0);
 				content_remove_user(css, html_convert_css_callback, c, (void*)i);
 			}
@@ -445,7 +448,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			break;
 
 		case CONTENT_MSG_STATUS:
-			snprintf(c->status_message, 80, "Loading %u stylesheets: %s",
+			snprintf(c->status_message, 80, messages_get("FetchStyle2"),
 					c->active, css->status_message);
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			break;
@@ -550,7 +553,7 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->data.html.object[i].content = 0;
 			c->active--;
 			c->error = 1;
-			sprintf(c->status_message, "Warning: bad object type");
+			sprintf(c->status_message, messages_get("BadObject"));
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			content_remove_user(object, html_object_callback, c, (void*)i);
 			break;
@@ -589,12 +592,13 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->data.html.object[i].content = 0;
 			c->active--;
 			c->error = 1;
-			snprintf(c->status_message, 80, "Image error: %s", error);
+			snprintf(c->status_message, 80,
+					messages_get("ObjError"), error);
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			break;
 
 		case CONTENT_MSG_STATUS:
-			snprintf(c->status_message, 80, "Loading %i objects: %s",
+			snprintf(c->status_message, 80, messages_get("FetchObjs2"),
 					c->active, object->status_message);
 			/* content_broadcast(c, CONTENT_MSG_STATUS, 0); */
 			break;
@@ -641,11 +645,12 @@ void html_object_callback(content_msg msg, struct content *object,
 		/* all objects have arrived */
 		content_reformat(c, c->available_width, 0);
 		c->status = CONTENT_STATUS_DONE;
-		sprintf(c->status_message, "Document done");
+		sprintf(c->status_message, messages_get("Done"));
 		content_broadcast(c, CONTENT_MSG_DONE, 0);
 	}
 	if (c->status == CONTENT_STATUS_READY)
-		sprintf(c->status_message, "Loading %i objects", c->active);
+		sprintf(c->status_message, messages_get("FetchObjs"),
+				c->active);
 }
 
 

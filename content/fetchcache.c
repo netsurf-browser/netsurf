@@ -170,18 +170,23 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			LOG(("FETCH_DATA"));
 			c->fetch_size += size;
 			if (c->total_size)
-				sprintf(c->status_message, "Received %lu of %lu bytes (%u%%)",
+				sprintf(c->status_message,
+						messages_get("RecPercent"),
 						c->fetch_size, c->total_size,
-						(unsigned int) (c->fetch_size * 100.0 / c->total_size));
+						(unsigned int) (c->fetch_size *
+						100.0 / c->total_size));
 			else
-				sprintf(c->status_message, "Received %lu bytes", c->fetch_size);
+				sprintf(c->status_message,
+						messages_get("Received"),
+						c->fetch_size);
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			content_process_data(c, data, size);
 			break;
 
 		case FETCH_FINISHED:
 			LOG(("FETCH_FINISHED"));
-			sprintf(c->status_message, "Converting %lu bytes", c->fetch_size);
+			sprintf(c->status_message, messages_get("Converting"),
+					c->fetch_size);
 			c->fetch = 0;
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			content_convert(c, c->width, c->height);
@@ -211,7 +216,8 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 				content_broadcast(c, CONTENT_MSG_REDIRECT, url);
 				xfree(url);
 			} else {
-				content_broadcast(c, CONTENT_MSG_ERROR, "Bad redirect");
+				content_broadcast(c, CONTENT_MSG_ERROR,
+						messages_get("BadRedirect"));
 			}
 			if (c->cache)
 				cache_destroy(c);

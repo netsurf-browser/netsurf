@@ -42,6 +42,7 @@
 #endif
 #endif
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -190,7 +191,7 @@ struct content * content_create(char *url)
 	c->size = sizeof(struct content);
 	c->fetch = 0;
 	c->mime_type = 0;
-	strcpy(c->status_message, "Loading");
+	strcpy(c->status_message, messages_get("Loading"));
 	user_sentinel = xcalloc(1, sizeof(*user_sentinel));
 	user_sentinel->callback = 0;
 	user_sentinel->p1 = user_sentinel->p2 = 0;

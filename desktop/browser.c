@@ -149,7 +149,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 
 	browser_window_stop(bw);
 
-	browser_window_set_status(bw, "Opening page...");
+	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
 	bw->time0 = clock();
 	c = fetchcache(url, 0,
@@ -159,7 +159,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 			post_urlenc, post_multipart,
 			true);
 	if (!c) {
-		browser_window_set_status(bw, "Unable to fetch document");
+		browser_window_set_status(bw, messages_get("FetchFailed"));
 		return;
 	}
 	bw->loading_content = c;
@@ -230,7 +230,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			browser_window_update(bw, false);
 			content_reshape_instance(c, bw, 0, 0, 0,
 					&bw->current_content_state);
-			sprintf(status, "Page complete (%gs)",
+			sprintf(status, messages_get("Complete"),
 					((float) (clock() - bw->time0)) /
 					CLOCKS_PER_SEC);
 			browser_window_set_status(bw, status);
@@ -253,7 +253,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 
 		case CONTENT_MSG_REDIRECT:
 			bw->loading_content = 0;
-			browser_window_set_status(bw, "Redirecting");
+			browser_window_set_status(bw,
+					messages_get("Redirecting"));
 			/* error actually holds the new URL */
 			browser_window_go(bw, error);
 			break;

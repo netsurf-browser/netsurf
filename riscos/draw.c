@@ -12,6 +12,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/draw.h"
 #include "netsurf/utils/utils.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/log.h"
 #include "oslib/drawfile.h"
 
@@ -64,7 +65,7 @@ int draw_convert(struct content *c, unsigned int width, unsigned int height)
 	c->data.draw.x0 = bbox->x0 / 2;
 	c->data.draw.y0 = bbox->y0 / 2;
 	c->title = xcalloc(100, 1);
-	sprintf(c->title, "Draw image (%lux%lu, %lu bytes)", c->width,
+	sprintf(c->title, messages_get("DrawTitle"), c->width,
 	                                c->height, c->data.draw.length);
 	c->status = CONTENT_STATUS_DONE;
 	xfree(matrix);
