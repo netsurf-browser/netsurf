@@ -1445,11 +1445,13 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		case wimp_KEY_F2:
 			if (!g->toolbar)
 				return false;
+			ro_gui_url_complete_close(NULL, 0);
 			ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_URL, "www.");
 			xwimp_set_caret_position(g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_URL, 0, 0, -1, 4);
 			ro_gui_url_complete_start(g);
+			ro_gui_url_complete_keypress(g, wimp_KEY_DOWN);
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
