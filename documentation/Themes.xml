@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <!DOCTYPE riscos-prm PUBLIC "-//JMB//DTS PRM documentation 1.00//EN"
 			    "http://www.movspclr.co.uk/dtd/100/prm.dtd">
+
+<!-- $Id: Themes.xml,v 1.2 2003/06/05 00:59:04 jmb Exp $ -->
 			    
 <riscos-prm doc-group="NetSurf User's Manual">
 <chapter title="NetSurf Themes">
