@@ -1216,7 +1216,7 @@ bool layout_table(struct box *table, int available_width,
 	int *excess_y;
 	int table_width, min_width = 0, max_width = 0;
 	int required_width = 0;
-	int x, cp;
+	int x, cp, remainder = 0, count = 0;
 	int table_height = 0;
 	int *xs;  /* array of column x positions */
 	int auto_width;
@@ -1296,8 +1296,8 @@ bool layout_table(struct box *table, int available_width,
 		auto_width = table_width;
 		break;
 	case CSS_WIDTH_PERCENT:
-		table_width = available_width *
-				style->width.value.percent / 100;
+		table_width = ceil(available_width *
+				style->width.value.percent / 100);
 		auto_width = table_width;
 		break;
 	case CSS_WIDTH_AUTO:
@@ -1383,9 +1383,9 @@ bool layout_table(struct box *table, int available_width,
 			spare_width = 0;
 		for (i = 0; i != columns; i++) {
 			if (col[i].type == COLUMN_WIDTH_RELATIVE) {
-				col[i].min = col[i].max = (float) spare_width
+				col[i].min = ceil(col[i].max = (float) spare_width
 						* (float) col[i].width
-						/ relative_sum;
+						/ relative_sum);
 				min_width += col[i].min;
 				max_width += col[i].max;
 			}
@@ -1416,13 +1416,28 @@ bool layout_table(struct box *table, int available_width,
 					flexible_columns++;
 			if (flexible_columns == 0) {
 				int extra = (table_width - max_width) / columns;
-				for (i = 0; i != columns; i++)
+				remainder = (table_width - max_width) - (extra * columns);
+				for (i = 0; i != columns; i++) {
 					col[i].width = col[i].max + extra;
+					count -= remainder;
+					if (count < 0) {
+						col[i].width++;
+						count += columns;
+					}
+				}
+
 			} else {
 				int extra = (table_width - max_width) / flexible_columns;
+				remainder = (table_width - max_width) - (extra * flexible_columns);
 				for (i = 0; i != columns; i++)
-					if (col[i].type != COLUMN_WIDTH_FIXED)
+					if (col[i].type != COLUMN_WIDTH_FIXED) {
 						col[i].width = col[i].max + extra;
+						count -= remainder;
+						if (count < 0) {
+							col[i].width++;
+							count += flexible_columns;
+						}
+					}
 			}
 		}
 	} else {
