@@ -2351,7 +2351,6 @@ struct result box_frameset(xmlNode *n, struct status *status,
 
 			html_fetch_object(status->content, url, cell_box, 0);
 			xmlFree(s);
-			free(url);
 
 			c = c->next;
 		}
