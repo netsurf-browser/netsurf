@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/content.h"
@@ -79,6 +80,8 @@ int main(int argc, char *argv[])
 				css_dump_stylesheet(c->data.css.css);
 			else if (c->type == CONTENT_GIF)
 				gif_decode_frame(c->data.gif.gif, 0);
+			/*else if (c->type == CONTENT_MNG)
+				nsmng_animate(c);*/
 			content_remove_user(c, callback, 0, 0);
 			c = 0;
 		}
@@ -237,3 +240,9 @@ void warn_user(const char *warning, const char *detail)
 }
 
 void *ro_gui_current_redraw_gui = 0;
+
+os_error *xos_read_monotonic_time (os_t *t)
+{
+	*t = clock() / 1000;
+	return 0;
+}
