@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.6 2002/08/11 23:01:02 bursa Exp $
+ * $Id: box.h,v 1.7 2002/08/18 16:46:45 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -15,6 +15,7 @@
 typedef enum {
 	BOX_BLOCK, BOX_INLINE_CONTAINER, BOX_INLINE,
 	BOX_TABLE, BOX_TABLE_ROW, BOX_TABLE_CELL,
+	BOX_TABLE_ROW_GROUP,
 	BOX_FLOAT_LEFT, BOX_FLOAT_RIGHT
 } box_type;
 
@@ -39,7 +40,7 @@ struct box {
  * interface
  */
 
-struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesheet * stylesheet,
+void xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
 		const char *href);

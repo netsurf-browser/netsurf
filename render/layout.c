@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.12 2002/08/05 20:34:45 bursa Exp $
+ * $Id: layout.c,v 1.13 2002/08/18 16:46:45 bursa Exp $
  */
 
 #include <assert.h>
@@ -14,7 +14,7 @@
 #include "netsurf/render/utils.h"
 #include "netsurf/render/layout.h"
 
-#define DEBUG_LAYOUT
+/* #define DEBUG_LAYOUT */
 
 /**
  * internal functions
@@ -116,6 +116,7 @@ void layout_block(struct box * box, unsigned long width, struct box * cont,
 	struct css_style * style = box->style;
 
 	assert(box->type == BOX_BLOCK);
+	assert(style != 0);
 
 #ifdef DEBUG_LAYOUT
 	fprintf(stderr, "layout_block(%p, %lu, %p, %lu, %lu)\n",
@@ -168,7 +169,7 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 #endif
 
 	for (c = box->children; c != 0; c = c->next) {
-		if (c->style && c->style->clear != CSS_CLEAR_NONE) {
+		if (c->style != 0 && c->style->clear != CSS_CLEAR_NONE) {
 			unsigned long x0, x1;
 			struct box * left, * right;
 			do {
@@ -260,6 +261,7 @@ void layout_inline_container(struct box * box, unsigned long width, struct box *
 
 signed long line_height(struct css_style * style)
 {
+	assert(style != 0);
 	assert(style->line_height.size == CSS_LINE_HEIGHT_LENGTH ||
 	       style->line_height.size == CSS_LINE_HEIGHT_ABSOLUTE);
 
@@ -472,14 +474,16 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 	unsigned long auto_width;  /* width of each auto column (all equal) */
 	unsigned long extra_width = 0;  /* extra width for each column if table is wider than columns */
 	unsigned long x;
-	unsigned long y = 0;
-	unsigned long * xs;
+	unsigned long table_height = 0;
+	unsigned long *xs;  /* array of column x positions */
 	unsigned int i;
 	unsigned int subcol;
-	struct box * c;
-	struct box * r;
+	struct box *c;
+	struct box *row;
+	struct box *row_group;
 
 	assert(table->type == BOX_TABLE);
+	assert(table->style != 0);
 
 #ifdef DEBUG_LAYOUT
 	fprintf(stderr, "layout_table(%p, %lu, %p, %lu, %lu)\n",
@@ -503,8 +507,10 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 /* 	fprintf(stderr, "table width %lu\n", table_width); */
 
 	/* calculate number of columns and width used by fixed columns */
-	for (c = table->children->children; c != 0; c = c->next) {
+	assert(table->children != 0 && table->children->children != 0);
+	for (c = table->children->children->children; c != 0; c = c->next) {
 		assert(c->type == BOX_TABLE_CELL);
+		assert(c->style != 0);
 		switch (c->style->width.width) {
 			case CSS_WIDTH_LENGTH:
 				used_width += len(&c->style->width.value.length, c->style);
@@ -516,13 +522,14 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 			default:
 				break;
 		}
+		assert(c->colspan != 0);
 		columns += c->colspan;
 	}
 	assert(columns != 0);
 
 	/* percentages are relative to remaining width */
 	percent_width = used_width < table_width ? table_width - used_width : 0;
-	for (c = table->children->children; c != 0; c = c->next)
+	for (c = table->children->children->children; c != 0; c = c->next)
 		if (c->style->width.width == CSS_WIDTH_PERCENT)
 			used_width += percent_width * c->style->width.value.percent / 100;
 
@@ -542,7 +549,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 	/* find column widths */
 	xs = xcalloc(columns + 1, sizeof(*xs));
 	xs[0] = x = 0;
-	for (i = 1, c = table->children->children, subcol = 1; c != 0; i++) {
+	for (i = 1, c = table->children->children->children, subcol = 1; c != 0; i++) {
 		switch (c->style->width.width) {
 			case CSS_WIDTH_LENGTH:
 				assert(c->colspan != 0);
@@ -558,11 +565,12 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 				x += auto_width;
 				break;
 		}
+		assert(i < columns + 1);
 		xs[i] = x;
-		if (subcol == c->colspan)
-			c = c->next,
+		if (subcol == c->colspan) {
+			c = c->next;
 			subcol = 1;
-		else
+		} else
 			subcol++;
 /* 		fprintf(stderr, "%i\n", x); */
 	}
@@ -574,33 +582,37 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 /* 	fprintf(stderr, "table width %lu\n", table_width); */
 
 	/* position cells */
-	for (r = table->children; r != 0; r = r->next) {
-		unsigned long height = 0;
-		for (i = 0, c = r->children; c != 0; i += c->colspan, c = c->next) {
-			c->width = xs[i + c->colspan] - xs[i];
-			c->float_children = 0;
-			c->height = layout_block_children(c, c->width, c, 0, 0);
-			switch (c->style->height.height) {
-				case CSS_HEIGHT_AUTO:
-					break;
-				case CSS_HEIGHT_LENGTH:
+	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
+		unsigned long row_group_height = 0;
+		for (row = row_group->children; row != 0; row = row->next) {
+			unsigned long row_height = 0;
+			for (i = 0, c = row->children; c != 0; i += c->colspan, c = c->next) {
+				assert(c->style != 0);
+				c->width = xs[i + c->colspan] - xs[i];
+				c->float_children = 0;
+				c->height = layout_block_children(c, c->width, c, 0, 0);
+				if (c->style->height.height == CSS_HEIGHT_LENGTH)
 					c->height = len(&c->style->height.length, c->style);
-					break;
+				c->x = xs[i];
+				c->y = 0;
+				if (c->height > row_height) row_height = c->height;
 			}
-			c->x = xs[i];
-			c->y = 0;
-			if (c->height > height) height = c->height;
+			row->x = 0;
+			row->y = row_group_height;
+			row->width = table_width;
+			row->height = row_height;
+			row_group_height += row_height;
 		}
-		r->x = 0;
-		r->y = y;
-		r->width = table_width;
-		r->height = height;
-		y += height;
+		row_group->x = 0;
+		row_group->y = table_height;
+		row_group->width = table_width;
+		row_group->height = row_group_height;
+		table_height += row_group_height;
 	}
 
 	free(xs);
 
 	table->width = table_width;
-	table->height = y;
+	table->height = table_height;
 }
 

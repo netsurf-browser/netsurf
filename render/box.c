@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.10 2002/08/11 23:00:24 bursa Exp $
+ * $Id: box.c,v 1.11 2002/08/18 16:46:45 bursa Exp $
  */
 
 #include <assert.h>
@@ -8,10 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libxml/HTMLparser.h"
-#include "css.h"
-#include "font.h"
-#include "box.h"
-#include "utils.h"
+#include "netsurf/render/css.h"
+#include "netsurf/render/font.h"
+#include "netsurf/render/box.h"
+#include "netsurf/render/utils.h"
 
 /**
  * internal functions
@@ -20,8 +20,18 @@
 void box_add_child(struct box * parent, struct box * child);
 struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
 		const char *href);
+struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
+		struct css_stylesheet * stylesheet,
+		struct css_selector ** selector, unsigned int depth,
+		struct box * parent, struct box * inline_container,
+		const char *href);
 struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_style * parent_style,
 		xmlNode * n, struct css_selector * selector, unsigned int depth);
+void box_normalise_block(struct box *block);
+void box_normalise_table(struct box *table);
+void box_normalise_table_row_group(struct box *row_group);
+void box_normalise_table_row(struct box *row);
+void box_normalise_inline_container(struct box *cont);
 
 
 /**
@@ -30,7 +40,7 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 
 void box_add_child(struct box * parent, struct box * child)
 {
-	if (parent->children)	/* has children already */
+	if (parent->children != 0)	/* has children already */
 		parent->last->next = child;
 	else			/* this is the first child */
 		parent->children = child;
@@ -47,11 +57,19 @@ struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
 		const char *href)
 {
 	struct box * box = xcalloc(1, sizeof(struct box));
-	box->node = node;
 	box->type = type;
+	box->node = node;
 	box->style = style;
 	box->text = 0;
 	box->href = href;
+	box->length = 0;
+	box->colspan = 1;
+	box->next = 0;
+	box->children = 0;
+	box->last = 0;
+	box->parent = 0;
+	box->float_children = 0;
+	box->next_float = 0;
 	return box;
 }
 
@@ -71,7 +89,20 @@ struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
  * 	updated current inline container
  */
 
-struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesheet * stylesheet,
+void xml_to_box(xmlNode * n, struct css_style * parent_style,
+		struct css_stylesheet * stylesheet,
+		struct css_selector ** selector, unsigned int depth,
+		struct box * parent, struct box * inline_container,
+		const char *href)
+{
+	convert_xml_to_box(n, parent_style, stylesheet,
+			selector, depth, parent, inline_container, href);
+	box_normalise_block(parent->children);
+}
+
+
+struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
+		struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
 		const char *href)
@@ -110,34 +141,6 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 		if (inline_container == 0) {  /* this is the first inline node: make a container */
 			inline_container = xcalloc(1, sizeof(struct box));
 			inline_container->type = BOX_INLINE_CONTAINER;
-			switch (parent->type) {
-				case BOX_TABLE:
-					/* insert implied table row and cell */
-					style2 = xcalloc(1, sizeof(struct css_style));
-					memcpy(style2, parent_style, sizeof(struct css_style));
-					css_cascade(style2, &css_blank_style);
-					box = box_create(0, BOX_TABLE_ROW, style2, href);
-					box_add_child(parent, box);
-					parent = box;
-					/* fall through */
-				case BOX_TABLE_ROW:
-					/* insert implied table cell */
-					style2 = xcalloc(1, sizeof(struct css_style));
-					memcpy(style2, parent_style, sizeof(struct css_style));
-					css_cascade(style2, &css_blank_style);
-					box = box_create(0, BOX_TABLE_CELL, style2, href);
-					box->colspan = 1;
-					box_add_child(parent, box);
-					parent = box;
-					break;
-				case BOX_BLOCK:
-				case BOX_TABLE_CELL:
-				case BOX_FLOAT_LEFT:
-				case BOX_FLOAT_RIGHT:
-					break;
-				default:
-					assert(0);
-			}
 			box_add_child(parent, inline_container);
 		}
 		if (n->type == XML_TEXT_NODE) {
@@ -159,46 +162,18 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 	if (n->type == XML_ELEMENT_NODE) {
 		switch (style->display) {
 			case CSS_DISPLAY_BLOCK:  /* blocks get a node in the box tree */
-				switch (parent->type) {
-					case BOX_TABLE:
-						/* insert implied table row and cell */
-						style2 = xcalloc(1, sizeof(struct css_style));
-						memcpy(style2, parent_style, sizeof(struct css_style));
-						css_cascade(style2, &css_blank_style);
-						box = box_create(0, BOX_TABLE_ROW, style2, href);
-						box_add_child(parent, box);
-						parent = box;
-						/* fall through */
-					case BOX_TABLE_ROW:
-						/* insert implied table cell */
-						style2 = xcalloc(1, sizeof(struct css_style));
-						memcpy(style2, parent_style, sizeof(struct css_style));
-						css_cascade(style2, &css_blank_style);
-						box = box_create(0, BOX_TABLE_CELL, style2, href);
-						box->colspan = 1;
-						box_add_child(parent, box);
-						parent = box;
-						break;
-					case BOX_BLOCK:
-					case BOX_TABLE_CELL:
-					case BOX_FLOAT_LEFT:
-					case BOX_FLOAT_RIGHT:
-						break;
-					default:
-						assert(0);
-				}
 				box = box_create(n, BOX_BLOCK, style, href);
 				box_add_child(parent, box);
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
-					inline_container_c = xml_to_box(c, style, stylesheet,
+					inline_container_c = convert_xml_to_box(c, style, stylesheet,
 							selector, depth + 1, box, inline_container_c,
 							href);
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_INLINE:  /* inline elements get no box, but their children do */
 				for (c = n->children; c != 0; c = c->next)
-					inline_container = xml_to_box(c, style, stylesheet,
+					inline_container = convert_xml_to_box(c, style, stylesheet,
 							selector, depth + 1, parent, inline_container,
 							href);
 				break;
@@ -206,32 +181,33 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 				box = box_create(n, BOX_TABLE, style, href);
 				box_add_child(parent, box);
 				for (c = n->children; c != 0; c = c->next)
-					xml_to_box(c, style, stylesheet,
+					convert_xml_to_box(c, style, stylesheet,
 							selector, depth + 1, box, 0,
 							href);
 				inline_container = 0;
 				break;
+			case CSS_DISPLAY_TABLE_ROW_GROUP:
+			case CSS_DISPLAY_TABLE_HEADER_GROUP:
+			case CSS_DISPLAY_TABLE_FOOTER_GROUP:
+				box = box_create(n, BOX_TABLE_ROW_GROUP, style, href);
+				box_add_child(parent, box);
+				inline_container_c = 0;
+				for (c = n->children; c != 0; c = c->next)
+					inline_container_c = convert_xml_to_box(c, style, stylesheet,
+							selector, depth + 1, box, inline_container_c,
+							href);
+				inline_container = 0;
+				break;
 			case CSS_DISPLAY_TABLE_ROW:
-				if (parent->type != BOX_TABLE) {
-					/* insert implied table */
-					style2 = xcalloc(1, sizeof(struct css_style));
-					memcpy(style2, parent_style, sizeof(struct css_style));
-					css_cascade(style2, &css_blank_style);
-					box = box_create(0, BOX_TABLE, style2, href);
-					box_add_child(parent, box);
-					parent = box;
-				}
-				assert(parent->type == BOX_TABLE);
 				box = box_create(n, BOX_TABLE_ROW, style, href);
 				box_add_child(parent, box);
 				for (c = n->children; c != 0; c = c->next)
-					xml_to_box(c, style, stylesheet,
+					convert_xml_to_box(c, style, stylesheet,
 							selector, depth + 1, box, 0,
 							href);
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_TABLE_CELL:
-				assert(parent->type == BOX_TABLE_ROW);
 				box = box_create(n, BOX_TABLE_CELL, style, href);
 				if ((s = (char *) xmlGetProp(n, (xmlChar *) "colspan"))) {
 					if ((box->colspan = strtol(s, 0, 10)) == 0)
@@ -241,7 +217,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 				box_add_child(parent, box);
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
-					inline_container_c = xml_to_box(c, style, stylesheet,
+					inline_container_c = convert_xml_to_box(c, style, stylesheet,
 							selector, depth + 1, box, inline_container_c,
 							href);
 				inline_container = 0;
@@ -335,6 +311,7 @@ void box_dump(struct box * box, unsigned int depth)
 		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW "); break;
 		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL [colspan %i] ",
 		                                   box->colspan); break;
+		case BOX_TABLE_ROW_GROUP:  fprintf(stderr, "BOX_TABLE_ROW_GROUP "); break;
 		case BOX_FLOAT_LEFT:       fprintf(stderr, "BOX_FLOAT_LEFT "); break;
 		case BOX_FLOAT_RIGHT:      fprintf(stderr, "BOX_FLOAT_RIGHT "); break;
 		default:                   fprintf(stderr, "Unknown box type ");
@@ -351,3 +328,282 @@ void box_dump(struct box * box, unsigned int depth)
 		box_dump(c, depth + 1);
 }
 
+
+/*
+ *  ensure the box tree is correctly nested
+ */
+
+void box_normalise_block(struct box *block)
+{
+	struct box *child;
+	struct box *prev_child = 0;
+	struct box *table;
+	struct css_style *style;
+
+	assert(block->type == BOX_BLOCK || block->type == BOX_TABLE_CELL);
+
+	for (child = block->children; child != 0; prev_child = child, child = child->next) {
+		switch (child->type) {
+			case BOX_BLOCK:
+				/* ok */
+				box_normalise_block(child);
+				break;
+			case BOX_INLINE_CONTAINER:
+				box_normalise_inline_container(child);
+				break;
+			case BOX_TABLE:
+				box_normalise_table(child);
+				break;
+			case BOX_INLINE:
+			case BOX_FLOAT_LEFT:
+			case BOX_FLOAT_RIGHT:
+				/* should have been wrapped in inline
+				   container by convert_xml_to_box() */
+				assert(0);
+				break;
+			case BOX_TABLE_ROW_GROUP:
+			case BOX_TABLE_ROW:
+			case BOX_TABLE_CELL:
+				/* insert implied table */
+				style = xcalloc(1, sizeof(struct css_style));
+				memcpy(style, block->style, sizeof(struct css_style));
+				css_cascade(style, &css_blank_style);
+				table = box_create(0, BOX_TABLE, style, block->href);
+				if (prev_child == 0)
+					block->children = table;
+				else
+					prev_child->next = table;
+				while (child != 0 && (
+						child->type == BOX_TABLE_ROW_GROUP ||
+						child->type == BOX_TABLE_ROW ||
+						child->type == BOX_TABLE_CELL)) {
+					box_add_child(table, child);
+					prev_child = child;
+					child = child->next;
+				}
+				prev_child->next = 0;
+				table->next = child;
+				box_normalise_table(table);
+				child = table;
+				break;
+			default:
+				assert(0);
+		}
+	}
+}
+
+
+void box_normalise_table(struct box *table)
+{
+	struct box *child;
+	struct box *prev_child = 0;
+	struct box *row_group;
+	struct css_style *style;
+
+	assert(table->type == BOX_TABLE);
+
+	for (child = table->children; child != 0; prev_child = child, child = child->next) {
+		switch (child->type) {
+			case BOX_TABLE_ROW_GROUP:
+				/* ok */
+				box_normalise_table_row_group(child);
+				break;
+			case BOX_BLOCK:
+			case BOX_INLINE_CONTAINER:
+			case BOX_TABLE:
+			case BOX_TABLE_ROW:
+			case BOX_TABLE_CELL:
+				/* insert implied table row group */
+				fprintf(stderr, "inserting implied table row group\n");
+				style = xcalloc(1, sizeof(struct css_style));
+				memcpy(style, table->style, sizeof(struct css_style));
+				css_cascade(style, &css_blank_style);
+				row_group = box_create(0, BOX_TABLE_ROW_GROUP, style, table->href);
+				if (prev_child == 0)
+					table->children = row_group;
+				else
+					prev_child->next = row_group;
+				while (child != 0 && (
+						child->type == BOX_BLOCK ||
+						child->type == BOX_INLINE_CONTAINER ||
+						child->type == BOX_TABLE ||
+						child->type == BOX_TABLE_ROW ||
+						child->type == BOX_TABLE_CELL)) {
+					box_add_child(row_group, child);
+					prev_child = child;
+					child = child->next;
+				}
+				prev_child->next = 0;
+				row_group->next = child;
+				box_normalise_table_row_group(row_group);
+				child = row_group;
+				break;
+			case BOX_INLINE:
+			case BOX_FLOAT_LEFT:
+			case BOX_FLOAT_RIGHT:
+				/* should have been wrapped in inline
+				   container by convert_xml_to_box() */
+				assert(0);
+				break;
+			default:
+				fprintf(stderr, "%i\n", child->type);
+				assert(0);
+		}
+	}
+}
+
+
+void box_normalise_table_row_group(struct box *row_group)
+{
+	struct box *child;
+	struct box *prev_child = 0;
+	struct box *row;
+	struct css_style *style;
+
+	assert(row_group->type == BOX_TABLE_ROW_GROUP);
+
+	for (child = row_group->children; child != 0; prev_child = child, child = child->next) {
+		switch (child->type) {
+			case BOX_TABLE_ROW:
+				/* ok */
+				box_normalise_table_row(child);
+				break;
+			case BOX_BLOCK:
+			case BOX_INLINE_CONTAINER:
+			case BOX_TABLE:
+			case BOX_TABLE_ROW_GROUP:
+			case BOX_TABLE_CELL:
+				/* insert implied table row */
+				style = xcalloc(1, sizeof(struct css_style));
+				memcpy(style, row_group->style, sizeof(struct css_style));
+				css_cascade(style, &css_blank_style);
+				row = box_create(0, BOX_TABLE_ROW, style, row_group->href);
+				if (prev_child == 0)
+					row_group->children = row;
+				else
+					prev_child->next = row;
+				while (child != 0 && (
+						child->type == BOX_BLOCK ||
+						child->type == BOX_INLINE_CONTAINER ||
+						child->type == BOX_TABLE ||
+						child->type == BOX_TABLE_ROW_GROUP ||
+						child->type == BOX_TABLE_CELL)) {
+					box_add_child(row, child);
+					prev_child = child;
+					child = child->next;
+				}
+				prev_child->next = 0;
+				row->next = child;
+				box_normalise_table_row(row);
+				child = row;
+				break;
+			case BOX_INLINE:
+			case BOX_FLOAT_LEFT:
+			case BOX_FLOAT_RIGHT:
+				/* should have been wrapped in inline
+				   container by convert_xml_to_box() */
+				assert(0);
+				break;
+			default:
+				assert(0);
+		}
+	}
+}
+
+
+void box_normalise_table_row(struct box *row)
+{
+	struct box *child;
+	struct box *prev_child = 0;
+	struct box *cell;
+	struct css_style *style;
+
+	assert(row->type == BOX_TABLE_ROW);
+
+	for (child = row->children; child != 0; prev_child = child, child = child->next) {
+		switch (child->type) {
+			case BOX_TABLE_CELL:
+				/* ok */
+				box_normalise_block(child);
+				break;
+			case BOX_BLOCK:
+			case BOX_INLINE_CONTAINER:
+			case BOX_TABLE:
+			case BOX_TABLE_ROW_GROUP:
+			case BOX_TABLE_ROW:
+				/* insert implied table cell */
+				style = xcalloc(1, sizeof(struct css_style));
+				memcpy(style, row->style, sizeof(struct css_style));
+				css_cascade(style, &css_blank_style);
+				cell = box_create(0, BOX_TABLE_CELL, style, row->href);
+				if (prev_child == 0)
+					row->children = cell;
+				else
+					prev_child->next = cell;
+				while (child != 0 && (
+						child->type == BOX_BLOCK ||
+						child->type == BOX_INLINE_CONTAINER ||
+						child->type == BOX_TABLE ||
+						child->type == BOX_TABLE_ROW_GROUP ||
+						child->type == BOX_TABLE_ROW)) {
+					box_add_child(cell, child);
+					prev_child = child;
+					child = child->next;
+				}
+				prev_child->next = 0;
+				cell->next = child;
+				box_normalise_block(cell);
+				child = cell;
+				break;
+			case BOX_INLINE:
+			case BOX_FLOAT_LEFT:
+			case BOX_FLOAT_RIGHT:
+				/* should have been wrapped in inline
+				   container by convert_xml_to_box() */
+				assert(0);
+				break;
+			default:
+				assert(0);
+		}
+	}
+}
+
+
+void box_normalise_inline_container(struct box *cont)
+{
+	struct box *child;
+	struct box *prev_child = 0;
+
+	assert(cont->type == BOX_INLINE_CONTAINER);
+
+	for (child = cont->children; child != 0; prev_child = child, child = child->next) {
+		switch (child->type) {
+			case BOX_INLINE:
+				/* ok */
+				break;
+			case BOX_FLOAT_LEFT:
+			case BOX_FLOAT_RIGHT:
+				/* ok */
+				assert(child->children != 0);
+				switch (child->children->type) {
+					case BOX_BLOCK:
+						box_normalise_block(child->children);
+						break;
+					case BOX_TABLE:
+						box_normalise_table(child->children);
+						break;
+					default:
+						assert(0);
+				}
+				break;
+			case BOX_BLOCK:
+			case BOX_INLINE_CONTAINER:
+			case BOX_TABLE:
+			case BOX_TABLE_ROW_GROUP:
+			case BOX_TABLE_ROW:
+			case BOX_TABLE_CELL:
+			default:
+				assert(0);
+		}
+	}
+}
