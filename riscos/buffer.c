@@ -100,7 +100,7 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	}
 	/*	Fill in the sprite area details
 	*/
-	buffer->size = buffer_size + 1;
+	buffer->size = buffer_size - sizeof(osspriteop_area);
 	buffer->sprite_count = 0;
 	buffer->first = 16;
 	buffer->used = 16;

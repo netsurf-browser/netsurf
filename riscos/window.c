@@ -411,7 +411,7 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 	}
 	while (more) {
 		if (ro_gui_current_redraw_gui->option.buffer_everything) {
-//			ro_gui_buffer_open(redraw);
+			ro_gui_buffer_open(redraw);
 		}
 		if (clear_background) {
 			error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
@@ -438,13 +438,21 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 					g->option.scale);
 		}
 		if (ro_gui_current_redraw_gui->option.buffer_everything) {
-//			ro_gui_buffer_close();
+			ro_gui_buffer_close();
 		}
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
-			LOG(("xwimp_get_rectangle: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
+		  	/*	RISC OS 3.7 returns the following error is enough buffer
+		  		is claimed to cause a new dynamic area to be created. It
+		  		doesn't actually stop anything working, so we mask it out
+		  		for now until a better fix is found.
+		  	*/
+			if ((!ro_gui_current_redraw_gui->option.buffer_everything) || 
+					(error->errnum != 0x286)) {
+				LOG(("xwimp_get_rectangle: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
 			ro_gui_current_redraw_gui = NULL;
 			return;
 		}
