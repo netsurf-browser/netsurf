@@ -1164,7 +1164,7 @@ void ro_msg_dataload(wimp_message *message)
 		return;
 
 	if (g)
-		browser_window_go(g->bw, url);
+		browser_window_go(g->bw, url, false);
 	else
 		browser_window_create(url, 0);
 

@@ -762,6 +762,20 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 	}
 }
 
+/**
+ * Get the contents of a window's address bar.
+ *
+ * \param  g	gui_window to update
+ * \return The url in the address bar or NULL
+ */
+char *gui_window_get_url(struct gui_window *g)
+{
+	if (!g->toolbar)
+		return NULL;
+
+	return ro_gui_get_icon_string(g->toolbar->toolbar_handle,
+			ICON_TOOLBAR_URL);
+}
 
 /**
  * Forces all windows to be set to the current theme
@@ -818,7 +832,7 @@ void ro_gui_window_update_dimensions(struct gui_window *g, int yscroll) {
 		return;
 	}
 	state.yscroll -= yscroll;
-	g->old_height = -1; 
+	g->old_height = -1;
 	ro_gui_window_open(g, (wimp_open *)&state);
 /*	gui_window_redraw_window(g); */
 }
@@ -1085,7 +1099,7 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 			if (option_homepage_url && option_homepage_url[0]) {
 				if (pointer->buttons == wimp_CLICK_SELECT) {
 					browser_window_go_post(g->bw, option_homepage_url,
-							0, 0, true);
+							0, 0, true, false);
 				} else {
 					browser_window_create(option_homepage_url, NULL);
 				}
@@ -1094,7 +1108,7 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 						"file:/<NetSurf$Dir>/Docs/intro_%s",
 						option_language);
 				if (pointer->buttons == wimp_CLICK_SELECT) {
-					browser_window_go_post(g->bw, url, 0, 0, true);
+					browser_window_go_post(g->bw, url, 0, 0, true, false);
 				} else {
 					browser_window_create(url, NULL);
 				}
@@ -1447,7 +1461,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			res = url_normalize(toolbar_url, &url);
 			if (res == URL_FUNC_OK) {
 				gui_window_set_url(g, url);
-				browser_window_go(g->bw, url);
+				browser_window_go(g->bw, url, false);
 				free(url);
 			}
 			return true;

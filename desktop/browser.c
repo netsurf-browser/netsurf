@@ -82,7 +82,8 @@ static void browser_form_submit(struct browser_window *bw, struct form *form,
 /**
  * Create and open a new browser window with the given page.
  *
- * \param  url  URL to start fetching in the new window (copied)
+ * \param  url   URL to start fetching in the new window (copied)
+ * \param  clone The browser window to clone
  */
 
 void browser_window_create(const char *url, struct browser_window *clone)
@@ -105,22 +106,24 @@ void browser_window_create(const char *url, struct browser_window *clone)
 		free(bw);
 		return;
 	}
-	browser_window_go(bw, url);
+	browser_window_go(bw, url, false);
 }
 
 
 /**
  * Start fetching a page in a browser window.
  *
- * \param  bw   browser window
- * \param  url  URL to start fetching (copied)
+ * \param  bw      browser window
+ * \param  url     URL to start fetching (copied)
+ * \param  referer whether to send the referer header
  *
  * Any existing fetches in the window are aborted.
  */
 
-void browser_window_go(struct browser_window *bw, const char *url)
+void browser_window_go(struct browser_window *bw, const char *url,
+		bool referer)
 {
-	browser_window_go_post(bw, url, 0, 0, true);
+	browser_window_go_post(bw, url, 0, 0, true, referer);
 }
 
 
@@ -144,7 +147,7 @@ void browser_window_go(struct browser_window *bw, const char *url)
 void browser_window_go_post(struct browser_window *bw, const char *url,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
-		bool history_add)
+		bool history_add, bool referer)
 {
 	struct content *c;
 	char *url2;
@@ -188,7 +191,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	bw->loading_content = c;
 	browser_window_start_throbber(bw);
 
-	fetchcache_go(c, 0, browser_window_callback, bw, 0,
+	fetchcache_go(c, referer ? gui_window_get_url(bw->window) : 0,
+			browser_window_callback, bw, 0,
 			post_urlenc, post_multipart, true);
 }
 
@@ -273,7 +277,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 			bw->loading_content = 0;
 			browser_window_set_status(bw,
 					messages_get("Redirecting"));
-			browser_window_go(bw, data.redirect);
+			/* hmm, should we do send the referrer here? */
+			browser_window_go(bw, data.redirect, false);
 			break;
 
 		case CONTENT_MSG_REFORMAT:
@@ -469,7 +474,7 @@ void browser_window_reload(struct browser_window *bw, bool all)
 		}
 	}
 	bw->current_content->fresh = false;
-	browser_window_go_post(bw, bw->current_content->url, 0, 0, false);
+	browser_window_go_post(bw, bw->current_content->url, 0, 0, false, false);
 }
 
 
@@ -783,7 +788,7 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 				click == BROWSER_MOUSE_CLICK_2) {
 			if (fetch_can_fetch(url)) {
 				if (click == BROWSER_MOUSE_CLICK_1)
-					browser_window_go(bw, url);
+					browser_window_go(bw, url, true);
 				else
 					browser_window_create(url, bw);
 			} else {
@@ -1721,7 +1726,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			res = url_join(url, base, &url1);
 			if (res != URL_FUNC_OK)
 				break;
-			browser_window_go(bw, url1);
+			browser_window_go(bw, url1, true);
 			break;
 
 		case method_POST_URLENC:
@@ -1734,14 +1739,14 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			res = url_join(form->action, base, &url);
 			if (res != URL_FUNC_OK)
 				break;
-			browser_window_go_post(bw, url, data, 0, true);
+			browser_window_go_post(bw, url, data, 0, true, true);
 			break;
 
 		case method_POST_MULTIPART:
 			res = url_join(form->action, base, &url);
 			if (res != URL_FUNC_OK)
 				break;
-			browser_window_go_post(bw, url, 0, success, true);
+			browser_window_go_post(bw, url, 0, success, true, true);
 			break;
 
 		default:

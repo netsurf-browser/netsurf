@@ -188,7 +188,7 @@ gboolean gui_window_url_key_press_event(GtkWidget *widget,
 	if (event->keyval != GDK_Return)
 		return FALSE;
 
-	browser_window_go(g->bw, gtk_entry_get_text(GTK_ENTRY(g->url_bar)));
+	browser_window_go(g->bw, gtk_entry_get_text(GTK_ENTRY(g->url_bar)), false);
 
 	return TRUE;
 }
@@ -305,6 +305,10 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 	gtk_entry_set_text(GTK_ENTRY(g->url_bar), url);
 }
 
+char *gui_window_get_url(struct gui_window *g)
+{
+	return gtk_entry_get_text(GTK_ENTRY(g->url_bar));
+}
 
 void gui_window_start_throbber(struct gui_window* g)
 {

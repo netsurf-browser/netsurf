@@ -730,7 +730,7 @@ void plugin_url_access(wimp_message *message)
 			    strcasecmp(window, "_parent") == 0 ||
 			    strcasecmp(window, "_top") == 0 ||
 			    strcasecmp(window, "") == 0) {
-				browser_window_go(c->data.plugin.bw, url);
+				browser_window_go(c->data.plugin.bw, url, false);
 			}
 			else if (strcasecmp(window, "_blank") == 0) {
 				browser_window_create(url, NULL);

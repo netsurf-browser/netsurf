@@ -45,6 +45,7 @@ void gui_window_set_extent(struct gui_window *g, int width, int height);
 void gui_window_set_status(struct gui_window *g, const char *text);
 void gui_window_set_pointer(gui_pointer_shape shape);
 void gui_window_set_url(struct gui_window *g, const char *url);
+char *gui_window_get_url(struct gui_window *g);
 void gui_window_start_throbber(struct gui_window *g);
 void gui_window_stop_throbber(struct gui_window *g);
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height);
