@@ -265,6 +265,7 @@ void browser_window_open_location_historical(struct browser_window* bw,
   browser_window_set_status(bw, "Opening page...");
   browser_window_start_throbber(bw);
   bw->time0 = clock();
+  bw->history_add = false;
   bw->loading_content = fetchcache(url, 0, browser_window_callback, bw, 0,
 		  gui_window_get_width(bw->window), 0, false,
 		  post_urlenc, post_multipart);
@@ -294,6 +295,7 @@ void browser_window_open_location_post(struct browser_window* bw,
   assert(bw != 0 && url0 != 0);
   url = url_join(url0, bw->url);
   browser_window_open_location_historical(bw, url, post_urlenc, post_multipart);
+  bw->history_add = true;
   /* TODO: move this to somewhere below CONTENT_MSG_READY below */
   if (bw->history == NULL)
     bw->history = history_create(NULL, url);
@@ -359,6 +361,10 @@ void browser_window_callback(content_msg msg, struct content *c,
         bw->current_content = c;
         bw->loading_content = 0;
         bw->caret_callback = 0;
+	if (bw->history_add)
+          bw->history_entry = history_add(bw->history_entry, bw->url,
+			bw->current_content->title);
+	bw->history_add = false;
       }
       gui_window_set_redraw_safety(bw->window, previous_safety);
       if (bw->current_content->status == CONTENT_STATUS_DONE) {

@@ -132,6 +132,7 @@ void gui_init(int argc, char** argv)
 	ro_gui_download_init();
 	ro_gui_menus_init();
 	ro_gui_401login_init();
+	ro_gui_history_init();
 	wimp_close_template();
 	ro_gui_icon_bar_create();
 }
@@ -159,6 +160,7 @@ void ro_gui_icon_bar_create(void)
 
 void gui_quit(void)
 {
+	ro_gui_history_quit();
 	wimp_close_down(task_handle);
 }
 
@@ -222,6 +224,8 @@ void gui_poll(bool active)
       case wimp_REDRAW_WINDOW_REQUEST   :
 	if (block.redraw.w == dialog_config_th)
 		ro_gui_redraw_config_th(&block.redraw);
+	else if (block.redraw.w == history_window)
+		ro_gui_history_redraw(&block.redraw);
 	else {
 		g = ro_lookup_gui_from_w(block.redraw.w);
 		if (g != NULL)
@@ -268,6 +272,8 @@ void gui_poll(bool active)
       case wimp_MOUSE_CLICK             :
         if (block.pointer.w == wimp_ICON_BAR)
           ro_gui_icon_bar_click(&(block.pointer));
+	else if (block.pointer.w == history_window)
+	  ro_gui_history_click(&(block.pointer));
         else
         {
           g = ro_lookup_gui_from_w(block.pointer.w);
@@ -398,6 +404,8 @@ void gui_multitask(void)
     case wimp_REDRAW_WINDOW_REQUEST   :
 	if (block.redraw.w == dialog_config_th)
 		ro_gui_redraw_config_th(&block.redraw);
+	else if (block.redraw.w == history_window)
+		ro_gui_history_redraw(&block.redraw);
 	else {
 		g = ro_lookup_gui_from_w(block.redraw.w);
 		if (g)

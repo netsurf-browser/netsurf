@@ -19,6 +19,7 @@
 
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th;
+extern wimp_w history_window;
 extern wimp_menu *current_menu, *iconbar_menu, *browser_menu,
 	*combo_menu, *theme_menu;
 extern int current_menu_x, current_menu_y, iconbar_menu_height;
@@ -101,6 +102,7 @@ void ro_gui_menu_selection(wimp_selection* selection);
 
 /* in dialog.c */
 void ro_gui_dialog_init(void);
+wimp_w ro_gui_dialog_create(const char *template_name);
 void ro_gui_dialog_open(wimp_w w);
 void ro_gui_dialog_click(wimp_pointer *pointer);
 void ro_gui_dialog_close(wimp_w close);
@@ -137,6 +139,14 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer);
 void ro_gui_throb(void);
 gui_window* ro_lookup_gui_from_w(wimp_w window);
 gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window);
+
+/* in history.c */
+void ro_gui_history_init(void);
+void ro_gui_history_quit(void);
+void ro_gui_history_open(struct browser_window *bw,
+		struct history_entry *entry, int wx, int wy);
+void ro_gui_history_redraw(wimp_draw *redraw);
+void ro_gui_history_click(wimp_pointer *pointer);
 
 /* icon numbers */
 #define ICON_CONFIG_SAVE 0

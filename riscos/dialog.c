@@ -36,7 +36,6 @@ static struct proxy_choices proxy_choices;
 static struct theme_choices theme_choices;
 
 
-static wimp_w ro_gui_dialog_create(const char *template_name);
 static void ro_gui_dialog_click_config(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_br(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_prox(wimp_pointer *pointer);

@@ -9,6 +9,7 @@
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
 #define _NETSURF_DESKTOP_BROWSER_H_
 
+#include <stdbool.h>
 #include <time.h>
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/gui.h"
@@ -40,6 +41,7 @@ struct history
 struct history* history_create(char* desc, char* url);
 void history_remember(struct history* current, char* desc, char* url);
 
+struct history_entry;
 
 struct browser_window
 {
@@ -51,6 +53,8 @@ struct browser_window
   void *current_content_state;
   struct content* loading_content;
   struct history* history;
+  struct history_entry *history_entry;
+  bool history_add;
   clock_t time0;
 
   char* url;
@@ -122,5 +126,8 @@ void browser_window_stop_throbber(struct browser_window* bw);
 void browser_window_reformat(struct browser_window* bw, int scroll_to_top);
 
 void browser_window_key_press(struct browser_window *bw, char key);
+
+struct history_entry * history_add(struct history_entry *current,
+		char *url, char *title);
 
 #endif

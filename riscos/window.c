@@ -499,11 +499,13 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
 {
   if (pointer->i == ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_BACK"))
   {
-    browser_window_back(g->data.browser.bw);
+    ro_gui_history_open(g->data.browser.bw, g->data.browser.bw->history_entry,
+		    pointer->pos.x - 200, pointer->pos.y + 100);
   }
   else if (pointer->i == ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_FORWARD"))
   {
-    browser_window_forward(g->data.browser.bw);
+    ro_gui_history_open(g->data.browser.bw, g->data.browser.bw->history_entry,
+		    pointer->pos.x - 200, pointer->pos.y + 100);
   }
   else if (pointer->i == ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_RELOAD"))
   {
