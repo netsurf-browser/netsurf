@@ -68,13 +68,16 @@ static unsigned int gif_interlaced_line(unsigned int height, unsigned int y);
 */
 static int gif_next_LZW(struct gif_animation *gif);
 static int gif_next_code(struct gif_animation *gif, int code_size);
-static int gif_next_block(struct gif_animation *gif, unsigned char *buf);
 #define gif_read_LZW(gif) ((stack_pointer > stack) ? *--stack_pointer : gif_next_LZW(gif))
 
 /*	General LZW values. They are shared for all GIFs being decoded, and
 	thus we can't handle progressive decoding efficiently without having
 	the data for each image which would use an extra 10Kb or so per GIF.
 */
+static unsigned char buf[280];
+static int maskTbl[16] = {0x0000, 0x0001, 0x0003, 0x0007, 0x000f, 0x001f, 0x003f, 0x007f,
+			  0x00ff, 0x01ff, 0x03ff, 0x07ff, 0x0fff, 0x1fff, 0x3fff, 0x7fff};
+static int table[2][(1<< GIF_MAX_LZW)];
 static int stack[(1 << GIF_MAX_LZW) * 2];
 static int *stack_pointer;
 static int code_size, set_code_size;
@@ -135,8 +138,8 @@ int gif_initialise(struct gif_animation *gif) {
 		/*	Check we are a GIF
 		*/
 		if (strncmp(gif_data, "GIF", 3) != 0) {
-//		  	LOG(("Invalid GIF header - should be 'GIF'"));
-		  	return GIF_DATA_ERROR;
+//			LOG(("Invalid GIF header - should be 'GIF'"));
+			return GIF_DATA_ERROR;
 		}
 		gif_data += 3;
 		
@@ -262,43 +265,43 @@ int gif_initialise(struct gif_animation *gif) {
 		0 for success
 */
 static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, unsigned int height) {
-  	struct osspriteop_header *buffer;
-  	unsigned int max_width;
-  	unsigned int max_height;
-  	unsigned int frame_bytes;
+	struct osspriteop_header *buffer;
+	unsigned int max_width;
+	unsigned int max_height;
+	unsigned int frame_bytes;
 
-  	/*	Check if we've changed
-  	*/
-  	if ((width <= gif->width) && (height <= gif->height)) return 0;
+	/*	Check if we've changed
+	*/
+	if ((width <= gif->width) && (height <= gif->height)) return 0;
 
 	/*	Get our maximum values
 	*/  	
-  	max_width = (width > gif->width) ? width : gif->width;
-  	max_height = (height > gif->height) ? height : gif->height;
+	max_width = (width > gif->width) ? width : gif->width;
+	max_height = (height > gif->height) ? height : gif->height;
 	frame_bytes = max_width * max_height * 4 + sizeof(osspriteop_header);
   
-  	/*	Allocate some more memory
-  	*/
-  	if ((buffer = (osspriteop_header *)realloc(gif->frame_image, frame_bytes)) == NULL) {
-  		return GIF_INSUFFICIENT_MEMORY;
-  	}
-  	gif->frame_image = buffer;
+	/*	Allocate some more memory
+	*/
+	if ((buffer = (osspriteop_header *)realloc(gif->frame_image, frame_bytes)) == NULL) {
+		return GIF_INSUFFICIENT_MEMORY;
+	}
+	gif->frame_image = buffer;
 
 	/*	Update the sizes
 	*/
 	gif->width = max_width;
 	gif->height = max_height;
 	
-  	/*	Update our sprite image
-  	*/
-  	buffer->size = frame_bytes;
+	/*	Update our sprite image
+	*/
+	buffer->size = frame_bytes;
 	buffer->width = max_width - 1;
 	buffer->height = max_height - 1;
 
-  	/*	Invalidate our currently decoded image
-  	*/
-  	gif->decoded_frame = 0xffffffff;
-  	return 0;
+	/*	Invalidate our currently decoded image
+	*/
+	gif->decoded_frame = 0xffffffff;
+	return 0;
 }
 
 
@@ -382,10 +385,10 @@ int gif_initialise_frame(struct gif_animation *gif) {
 	  
 		/*	Ensure we have some data
 		*/
-	  	if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;
+		if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;
 	  	
-	  	/*	Decode the extensions
-	  	*/
+		/*	Decode the extensions
+		*/
 		background_action = 0;
 		while (gif_data[0] == 0x21) {
 			/*	Get the extension size
@@ -407,10 +410,10 @@ int gif_initialise_frame(struct gif_animation *gif) {
 			*/
 			} else if ((gif_data[1] == 0xff) &&
 					(gif_data[2] == 0x0b) &&
-			  		(strncmp(gif_data + 3, "NETSCAPE2.0", 11) == 0) &&
-			  		(gif_data[14] == 0x03) &&
-			  		(gif_data[15] == 0x01)) {
-			  	gif->loop_count = gif_data[16] | (gif_data[17] << 8);
+					(strncmp(gif_data + 3, "NETSCAPE2.0", 11) == 0) &&
+					(gif_data[14] == 0x03) &&
+					(gif_data[15] == 0x01)) {
+				gif->loop_count = gif_data[16] | (gif_data[17] << 8);
 			}
 			
 			/*	Move to the first sub-block
@@ -437,32 +440,32 @@ int gif_initialise_frame(struct gif_animation *gif) {
 		width = gif_data[5] | (gif_data[6] << 8);
 		height = gif_data[7] | (gif_data[8] << 8);
         
-        	/*	Set up the redraw characteristics. We have to check for extending the area
-        		due to multi-image frames.
-        	*/
-	  	if ((background_action == 2) || (background_action == 3)) gif->frames[frame].redraw_required = 1;
-	  	if (first_image == 0) {
- 			if (gif->frames[frame].redraw_x > offset_x) {
-	  		  	gif->frames[frame].redraw_width += (gif->frames[frame].redraw_x - offset_x);
-	  			gif->frames[frame].redraw_x = offset_x;
-	  		}
-	  		if (gif->frames[frame].redraw_y > offset_y) {
-	  		  	gif->frames[frame].redraw_height += (gif->frames[frame].redraw_y - offset_y);
-	  			gif->frames[frame].redraw_y = offset_y;
-	  		}
-	  		increment = (offset_x + width) -
-	  				(gif->frames[frame].redraw_x + gif->frames[frame].redraw_width);
-	  		if (increment > 0) gif->frames[frame].redraw_width += increment;
-	  		increment = (offset_y + height) -
-	  				(gif->frames[frame].redraw_y + gif->frames[frame].redraw_height);
-	  		if (increment > 0) gif->frames[frame].redraw_height += increment;
-	  	} else {
-	  		first_image = 0;
-	  		gif->frames[frame].redraw_x = offset_x;
-	  		gif->frames[frame].redraw_y = offset_y;
-	  		gif->frames[frame].redraw_width = width;
-	  		gif->frames[frame].redraw_height = height;
-	  	}
+		/*	Set up the redraw characteristics. We have to check for extending the area
+			due to multi-image frames.
+		*/
+		if ((background_action == 2) || (background_action == 3)) gif->frames[frame].redraw_required = 1;
+		if (first_image == 0) {
+			if (gif->frames[frame].redraw_x > offset_x) {
+				gif->frames[frame].redraw_width += (gif->frames[frame].redraw_x - offset_x);
+				gif->frames[frame].redraw_x = offset_x;
+			}
+			if (gif->frames[frame].redraw_y > offset_y) {
+				gif->frames[frame].redraw_height += (gif->frames[frame].redraw_y - offset_y);
+				gif->frames[frame].redraw_y = offset_y;
+			}
+			increment = (offset_x + width) -
+					(gif->frames[frame].redraw_x + gif->frames[frame].redraw_width);
+			if (increment > 0) gif->frames[frame].redraw_width += increment;
+			increment = (offset_y + height) -
+					(gif->frames[frame].redraw_y + gif->frames[frame].redraw_height);
+			if (increment > 0) gif->frames[frame].redraw_height += increment;
+		} else {
+			first_image = 0;
+			gif->frames[frame].redraw_x = offset_x;
+			gif->frames[frame].redraw_y = offset_y;
+			gif->frames[frame].redraw_width = width;
+			gif->frames[frame].redraw_height = height;
+		}
 
 		/*	Boundary checking - shouldn't ever happen except with junk data
 		*/
@@ -516,7 +519,7 @@ int gif_initialise_frame(struct gif_animation *gif) {
 	/*	Check if we've finished
 	*/
 	if (gif_bytes < 1) {
-	  	return GIF_INSUFFICIENT_FRAME_DATA;
+		return GIF_INSUFFICIENT_FRAME_DATA;
 	} else {
 		gif->buffer_position = gif_data - gif->gif_data;
 		gif->frame_count = frame + 1;	
@@ -535,7 +538,7 @@ int gif_initialise_frame(struct gif_animation *gif) {
 		0 for successful decoding
 */
 int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
-  	unsigned int index = 0;
+	unsigned int index = 0;
 	unsigned char *gif_data;
 	unsigned char *gif_end;
 	int gif_bytes;
@@ -549,9 +552,9 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 	int transparency_index = -1;
 	unsigned int save_buffer_position;
 	unsigned int return_value = 0;
-	unsigned int x, y, decode_y;
+	unsigned int x, y, decode_y, burst_bytes;
 	unsigned int block_size;
-	int colour;
+	register int colour;
 	unsigned int more_images;
 
 	/*	Ensure we have a frame to decode
@@ -606,10 +609,10 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		/*	Ensure we have some data
 		*/
 		gif_data = gif->gif_data + gif->buffer_position;
-	  	if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;
+		if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;
 	  	
-	  	/*	Decode the extensions
-	  	*/
+		/*	Decode the extensions
+		*/
 		while (gif_data[0] == 0x21) {
 
 			/*	Get the extension size
@@ -679,7 +682,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 					gif_data += 3;
 				}
 			} else {
-			  	gif_data += 3 * colour_table_size;
+				gif_data += 3 * colour_table_size;
 			}
 			gif_bytes = (int)(gif_end - gif_data);
 		} else {
@@ -689,11 +692,11 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		/*	If we are clearing the image we just clear, if not decode
 		*/
 		if (!clear_image) {
-		  	/*	Set our dirty status
-		  	*/
-		  	if ((background_action == 2) || (background_action == 3)) {
-		  		gif->dirty_frame = frame;
-		  	}
+			/*	Set our dirty status
+			*/
+			if ((background_action == 2) || (background_action == 3)) {
+				gif->dirty_frame = frame;
+			}
 		  
 			/*	Initialise the LZW decoding
 			*/
@@ -705,7 +708,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			code_size = set_code_size + 1;
 			clear_code = (1 << set_code_size);
 			end_code = clear_code + 1;
-			max_code_size = 2 * clear_code;
+			max_code_size = clear_code << 1;
 			max_code = clear_code + 2;
 			curbit = lastbit = 0;
 			last_byte = 2;
@@ -719,29 +722,47 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 				if (interlace) {
 					decode_y = gif_interlaced_line(height, y) + offset_y;
 				} else {
-			  		decode_y = y + offset_y;
-			  	}
-			  	frame_scanline = frame_data + offset_x + (decode_y * gif->width);
-			  	for (x = 0; x < width; x++) {
-			  	  	if ((colour = gif_read_LZW(gif)) >= 0) {
-			  	  	  	if (colour == transparency_index) {
-			  	  	  	  	*frame_scanline++;
-			  	  	  	} else {
-			  	  	  		*frame_scanline++ = colour_table[colour];
-			  	  	  	}
+					decode_y = y + offset_y;
+				}
+				frame_scanline = frame_data + offset_x + (decode_y * gif->width);
+			  	
+				/*	Rather than decoding pixel by pixel, we try to burst out streams
+					of data to remove the need for end-of data checks every pixel.
+				*/
+				x = width;
+				while (x-- > 0) {
+					/*	Do the first pixel to get the stack of some sort
+					*/
+					if ((colour = gif_read_LZW(gif)) >= 0) {
+						if (colour != transparency_index) {
+							*frame_scanline = colour_table[colour];
+						}
+						frame_scanline++;
 					} else {
 						return_value = GIF_INSUFFICIENT_FRAME_DATA;
 						goto gif_decode_frame_exit;
 					}	
+
+					/*	Try to burst some bytes out
+					*/
+					burst_bytes = (stack_pointer - stack);
+					if (burst_bytes > x) burst_bytes = x;
+					x -= burst_bytes;
+					while (burst_bytes-- > 0) {
+						if ((colour = *--stack_pointer) != transparency_index) {
+							  *frame_scanline = colour_table[colour];
+						}
+						frame_scanline++;
+					}
 				}
 			}
 		} else {
-		  	/*	Clear our frame
-		  	*/
-		  	if ((background_action == 2) || (background_action == 3)) {
+			/*	Clear our frame
+			*/
+			if ((background_action == 2) || (background_action == 3)) {
 				for (y = 0; y < height; y++) {
-				  	frame_scanline = frame_data + offset_x + ((offset_y + y) * gif->width);
-				  	memset(frame_scanline, 0x00, width * 4);
+					frame_scanline = frame_data + offset_x + ((offset_y + y) * gif->width);
+					memset(frame_scanline, 0x00, width * 4);
 				}
 			}
 			
@@ -807,7 +828,6 @@ void gif_finalise(struct gif_animation *gif) {
 
 
 static int gif_next_LZW(struct gif_animation *gif) {
-	static int table[2][(1<< GIF_MAX_LZW)];
 	static int firstcode, oldcode;
 	int code, incode;
 	unsigned int i, block_size;
@@ -820,18 +840,15 @@ static int gif_next_LZW(struct gif_animation *gif) {
                         
 			/*	Initialise our table
 			*/
+			memset(table, 0x00, (1 << GIF_MAX_LZW) * 8);
 			for (i = 0; i < (unsigned int)clear_code; ++i) {
-				table[0][i] = 0;
 				table[1][i] = i;
-			}
-			for (; i < (1 << GIF_MAX_LZW); ++i) {
-				table[0][i] = table[1][i] = 0;
 			}
 		
 			/*	Update our LZW parameters
 			*/
 			code_size = set_code_size + 1;
-			max_code_size = 2 * clear_code;
+			max_code_size = clear_code << 1;
 			max_code = clear_code + 2;
 			stack_pointer = stack;
 			do {
@@ -841,8 +858,8 @@ static int gif_next_LZW(struct gif_animation *gif) {
 		}
 
 		if (code == end_code) {
-		  	/*	Skip to the end of our data so multi-image GIFs work
-		  	*/
+			/*	Skip to the end of our data so multi-image GIFs work
+			*/
 			if (zero_data_block) return -2;
 			block_size = 0;
 			while (block_size != 1) {
@@ -875,7 +892,7 @@ static int gif_next_LZW(struct gif_animation *gif) {
 			table[1][code] = firstcode;
 			++max_code;
 			if ((max_code >= max_code_size) && (max_code_size < (1 << GIF_MAX_LZW))) {
-				max_code_size *= 2;
+				max_code_size = max_code_size << 1;
 				++code_size;
 			}
 		}	
@@ -887,12 +904,11 @@ static int gif_next_LZW(struct gif_animation *gif) {
 	return code;
 }
 
+
 static int gif_next_code(struct gif_animation *gif, int code_size) {
-	static unsigned char buf[280];
-  	static int maskTbl[16] = {0x0000, 0x0001, 0x0003, 0x0007, 0x000f, 0x001f, 0x003f, 0x007f,
-    		0x00ff, 0x01ff, 0x03ff, 0x07ff, 0x0fff, 0x1fff, 0x3fff, 0x7fff};
-	int i, j, end;
+	int i, j, end, count;
 	long ret;
+	unsigned char *gif_data;
 
 	if (return_clear) {
 		return_clear = 0;
@@ -901,20 +917,32 @@ static int gif_next_code(struct gif_animation *gif, int code_size) {
 
 	end = curbit + code_size;
 	if (end >= lastbit) {
-		int	count;
 		if (get_done) return -1;
 		buf[0] = buf[last_byte - 2];
 		buf[1] = buf[last_byte - 1];
-		if ((count = gif_next_block(gif, &buf[2])) == 0) get_done = 1;
-		if (count < 0) return -1;
+		
+		/*	Get the next block
+		*/
+		gif_data = gif->gif_data + gif->buffer_position;
+		zero_data_block = ((count = gif_data[0]) == 0);
+		if ((gif->buffer_position + count) >= gif->buffer_size) return -1;
+		if (count == 0) {
+			get_done = 1;
+		} else {
+			memcpy(&buf[2], gif_data + 1, count);
+		}
+		gif->buffer_position += count + 1;
+		
+		/*	Update our variables
+		*/
 		last_byte = 2 + count;
 		curbit = (curbit - lastbit) + 16;
-		lastbit = (2 + count) * 8;
+		lastbit = (2 + count) << 3;
 		end = curbit + code_size;
 	}
 	
-	j = end / 8;
-	i = curbit / 8;
+	j = end >> 3;
+	i = curbit >> 3;
 	if (i == j) {
 		ret = (long)buf[i];
 	} else if (i + 1 == j) {
@@ -926,20 +954,4 @@ static int gif_next_code(struct gif_animation *gif, int code_size) {
 	ret = (ret >> (curbit % 8)) & maskTbl[code_size];
 	curbit += code_size;
 	return (int)ret;
-}
-
-static int gif_next_block(struct gif_animation *gif, unsigned char *buf) {
-	unsigned int block_size;
-	unsigned char *gif_data;
-	
-	gif_data = gif->gif_data + gif->buffer_position;
-	zero_data_block = ((block_size = gif_data[0]) == 0);
-
-	if ((gif->buffer_position + block_size) >= gif->buffer_size) {
-//		LOG(("Insufficient data to read %i bytes", block_size));
-		return -1;
-	}
-	if (block_size > 0) memcpy(buf, gif_data + 1, block_size);
-	gif->buffer_position += block_size + 1;
-	return((int)block_size);
 }
