@@ -32,4 +32,6 @@ i, em { font-style: italic; }
 a { color: #00f; }
 th { font-weight: bold; }
 
+hr { background-color: #000; height: 1px; }
+
 center { text-align: center; }
