@@ -185,7 +185,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		return;
 	}
 
-	gui_window_set_url(bw->window, c->url);
 	bw->loading_content = c;
 	browser_window_start_throbber(bw);
 
@@ -210,6 +209,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 
 			if (c->type == CONTENT_OTHER)
 				browser_window_convert_to_download(bw);
+			else
+				gui_window_set_url(bw->window, c->url);
 			break;
 
 		case CONTENT_MSG_READY:
@@ -818,6 +819,10 @@ void browser_radio_set(struct content *content,
 		struct form_control *radio)
 {
 	struct form_control *control;
+
+	/* some sanity checking */
+	if (content == NULL || radio == NULL || radio->form == NULL)
+		return;
 
 	if (radio->selected)
 		return;
