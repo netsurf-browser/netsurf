@@ -348,7 +348,8 @@ void css_cascade(struct css_style * const style,
 		const struct css_style * const apply);
 void css_merge(struct css_style * const style,
 		const struct css_style * const apply);
-void css_parse_property_list(struct css_style * style, char * str);
+void css_parse_property_list(struct content *c, struct css_style * style,
+                            char * str);
 colour named_colour(const char *name);
 void css_dump_style(const struct css_style * const style);
 void css_dump_stylesheet(const struct css_stylesheet * stylesheet);

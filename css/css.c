@@ -883,11 +883,13 @@ bool css_match_detail(const struct css_selector *detail,
 /**
  * Parse a stand-alone CSS property list.
  *
+ * \param  c      parent content
  * \param  style  css_style to update
  * \param  str    property list, as found in HTML style attributes
  */
 
-void css_parse_property_list(struct css_style * style, char * str)
+void css_parse_property_list(struct content *c, struct css_style * style,
+                            char * str)
 {
 	unsigned char *source_data;
 	unsigned char *current, *end, *token_text;
@@ -895,7 +897,7 @@ void css_parse_property_list(struct css_style * style, char * str)
 	unsigned int i;
 	int token;
 	void *parser;
-	struct css_parser_params param = {true, 0, 0, false, false};
+	struct css_parser_params param = {true, c, 0, false, false};
 	struct css_parser_token token_data;
 	const struct css_parser_token token_start = { "{", 1 };
 	const struct css_parser_token token_end = { "}", 1 };

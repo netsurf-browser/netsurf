@@ -734,7 +734,7 @@ struct css_style * box_get_style(struct content *c,
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
 		struct css_style astyle;
 		memcpy(&astyle, &css_empty_style, sizeof(struct css_style));
-		css_parse_property_list(&astyle, s);
+		css_parse_property_list(c, &astyle, s);
 		css_cascade(style, &astyle);
 		xmlFree(s);
 	}

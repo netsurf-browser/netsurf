@@ -539,7 +539,13 @@ void parse_background_image(struct css_style * const s, const struct css_node * 
 			else
 				*(t + 1) = 0;
 
-			s->background_image.uri = url_join(url, v->stylesheet->url);
+                        /* for inline style attributes, the stylesheet
+                         * content is the parent HTML content
+                         */
+                        if (v->stylesheet->type == CONTENT_HTML)
+		        	s->background_image.uri = url_join(url, v->stylesheet->data.html.base_url);
+		        else
+		                s->background_image.uri = url_join(url, v->stylesheet->url);
 			free(url);
 			if (!s->background_image.uri) return;
 			s->background_image.type = CSS_BACKGROUND_IMAGE_URI;
