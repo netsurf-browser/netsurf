@@ -818,11 +818,38 @@ void ro_msg_dataload(wimp_message *message)
 			message->data.data_xfer.file_type != 0xaff &&
 			message->data.data_xfer.file_type != 0xb60 &&
 			message->data.data_xfer.file_type != 0xc85 &&
+			message->data.data_xfer.file_type != 0xf91 &&
 			message->data.data_xfer.file_type != 0xff9 &&
 			message->data.data_xfer.file_type != 0xfff &&
 			message->data.data_xfer.file_type != 0xb28)
 		return;
 
+	/* uri file */
+	if (message->data.data_xfer.file_type == 0xf91) {
+		char *temp;
+		int i=0;
+		FILE *fp = fopen(message->data.data_xfer.file_name, "r");
+
+		if (!fp) return;
+
+		url = xcalloc(256, sizeof(char)); /* fixed size != good */
+
+		while (i != 2) {
+			temp = fgets(url, 256, fp);
+			if (!temp) {
+				xfree(url);
+				return;
+			}
+			
+			temp = xstrdup(strip(url));
+			xfree(url);
+			url = temp;
+			if (url[0] != '#') { /* not a comment */
+				i++;
+			}
+		}
+	}
+	
         /* url file */
         if (message->data.data_xfer.file_type == 0xb28) {
 	        char *temp;
@@ -852,7 +879,8 @@ void ro_msg_dataload(wimp_message *message)
 	wimp_send_message(wimp_USER_MESSAGE, message, message->sender);
 
 	/* create a new window with the file */
-	if (message->data.data_xfer.file_type != 0xb28) {
+	if (message->data.data_xfer.file_type != 0xb28 &&
+		message->data.data_xfer.file_type != 0xf91) {
 	        url = ro_path_to_url(message->data.data_xfer.file_name);
 	}
 	if (url) {
