@@ -68,31 +68,33 @@ void login_list_add(char *host, char* logindets) {
 /**
  * Retrieves an element from the login list
  */
-struct login *login_list_get(char *host) {
+struct login *login_list_get(char *url) {
 
   struct login *nli;
-  char *temp, *temphost;
+  char *temp, *host;
   char *i;
   int reached_scheme = 0;
 
-  if (host == NULL)
+  if (url == NULL)
     return NULL;
 
-  if ((strncasecmp(host, "http://", 7) != 0) &&
-                        (strncasecmp(host, "https://", 8) != 0))
+  if ((strncasecmp(url, "http://", 7) != 0) &&
+                        (strncasecmp(url, "https://", 8) != 0))
     return NULL;
 
-  temphost = url_host(host);
-  assert(temphost);
-  temp = xstrdup(host);
+  host = url_host(url);
+  assert(host != 0);
+  temp = xstrdup(url);
 
   /* Smallest thing to check for is the scheme + host name + trailing '/'
    * So make sure we've got that at least
    */
-  if (strlen(temphost) > strlen(temp)) {
-    temp = url_host(host);
-    assert(temp);
+  if (strlen(host) > strlen(temp)) {
+    xfree(temp);
+    temp = url_host(url);
+    assert(temp != 0);
   }
+  xfree(host);
 
   /* Work backwards through the path, directory at at time.
    * Finds the closest match.
@@ -111,7 +113,7 @@ struct login *login_list_get(char *host) {
 
     if (nli != loginlist) {
       LOG(("Got %s", nli->host));
-      xfree(temphost);
+      xfree(temp);
       return nli;
     }
     else {
@@ -130,7 +132,7 @@ struct login *login_list_get(char *host) {
     }
   } while (reached_scheme == 0);
 
-  xfree(temphost);
+  xfree(temp);
   return NULL;
 }
 
