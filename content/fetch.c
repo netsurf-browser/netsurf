@@ -47,6 +47,7 @@ struct fetch
 	char *host;
 	int status_code;
 	char *location;
+	unsigned long content_length;
 	struct fetch *queue;
 	struct fetch *prev;
 	struct fetch *next;
@@ -145,6 +146,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	if (uri->server != 0)
 		fetch->host = xstrdup(uri->server);
 	fetch->status_code = 0;
+	fetch->content_length = 0;
 	fetch->queue = 0;
 	fetch->prev = 0;
 	fetch->next = 0;
@@ -420,6 +422,12 @@ size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f
 				f->location[i] == '\r' ||
 				f->location[i] == '\n'; i--)
 			f->location[i] = '\0';
+	} else if (15 < size && strncasecmp(data, "Content-Length:", 15) == 0) {
+		/* extract Content-Length header */
+		for (i = 15; data[i] == ' ' || data[i] == '\t'; i++)
+			;
+		if ('0' <= data[i] && data[i] <= '9')
+			f->content_length = atol(data + i);
 	}
 	return size;
 }
@@ -463,7 +471,7 @@ int fetch_process_headers(struct fetch *f)
 	}
 
 	LOG(("FETCH_TYPE, '%s'", type));
-	f->callback(FETCH_TYPE, f->p, type, 0);
+	f->callback(FETCH_TYPE, f->p, type, f->content_length);
 	if (f->aborting) {
 		f->in_callback = 0;
 		return 1;

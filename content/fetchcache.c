@@ -66,6 +66,7 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 
 	switch (msg) {
 		case FETCH_TYPE:
+			c->total_size = size;
 			mime_type = xstrdup(data);
 			if ((semic = strchr(mime_type, ';')) != 0)
 				*semic = 0;	/* remove "; charset=..." */
@@ -78,7 +79,12 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 		case FETCH_DATA:
 			LOG(("FETCH_DATA"));
 			c->fetch_size += size;
-			sprintf(c->status_message, "Received %lu bytes", c->fetch_size);
+			if (c->total_size)
+				sprintf(c->status_message, "Received %lu of %lu bytes (%u%%)",
+						c->fetch_size, c->total_size,
+						(unsigned int) (c->fetch_size * 100.0 / c->total_size));
+			else
+				sprintf(c->status_message, "Received %lu bytes", c->fetch_size);
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			content_process_data(c, data, size);
 			break;

@@ -182,7 +182,7 @@ struct content
   struct content_user *user_list;
   char status_message[80];
   struct fetch *fetch;
-  unsigned long fetch_size;
+  unsigned long fetch_size, total_size;
 };
 
 
