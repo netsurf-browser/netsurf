@@ -13,4 +13,4 @@ RO_SHOW_TOOLBAR:Y
 RO_SHOW_PRINT:N
 
 # Theme
-RO_THEME:Clear
+RO_THEME:Default
