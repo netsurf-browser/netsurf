@@ -558,7 +558,6 @@ struct result box_a(xmlNode *n, struct status *status,
 {
 	struct box *box;
 	char *s;
-	box = box_create(style, status->href, status->title);
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "href")))
 		status->href = s;
 	box = box_create(style, status->href, status->title);
