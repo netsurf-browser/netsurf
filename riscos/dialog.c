@@ -21,6 +21,7 @@
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -54,9 +55,6 @@ static void load_theme_preview(char* thname);
 /*static void ro_gui_destroy_theme_menu(void);*/
 static void ro_gui_build_theme_menu(void);
 static int file_exists(const char* base, const char* dir, const char* leaf, bits ftype);
-static void set_icon_state(wimp_w w, wimp_i i, int state);
-static int get_icon_state(wimp_w w, wimp_i i);
-static void set_icon_string_i(wimp_w w, wimp_i i, int num);
 static const char *language_name(const char *code);
 
 
@@ -339,7 +337,7 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 			os_cli("Filer_OpenDir " THEMES_DIR);
 			break;
 		case ICON_CONFIG_TH_GET:
-			browser_window_create(THEMES_URL);
+			browser_window_create(THEMES_URL, NULL);
 			break;
 	}
 }
@@ -372,7 +370,7 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 		scale = 10;
 	else if (500 < scale)
 		scale = 500;
-	set_icon_string_i(dialog_zoom, ICON_ZOOM_VALUE, scale);
+	ro_gui_set_icon_integer(dialog_zoom, ICON_ZOOM_VALUE, scale);
 
 	if (pointer->i == ICON_ZOOM_OK) {
 		current_gui->scale = scale * 0.01;
@@ -415,8 +413,7 @@ void ro_gui_dialog_close(wimp_w close)
  * Update the browser choices dialog with the current options.
  */
 
-void set_browser_choices(void)
-{
+void set_browser_choices(void) {
 	font_size = option_font_size;
 	font_min_size = option_font_min_size;
 	ro_gui_dialog_update_config_br();
@@ -433,8 +430,7 @@ void set_browser_choices(void)
  * Set the current options to the settings in the browser choices dialog.
  */
 
-void get_browser_choices(void)
-{
+void get_browser_choices(void) {
 	option_font_size = font_size;
 	option_font_min_size = font_min_size;
 }
@@ -446,11 +442,11 @@ void get_browser_choices(void)
 
 void set_proxy_choices(void)
 {
-	set_icon_state(dialog_config_prox, ICON_CONFIG_PROX_HTTP,
+	ro_gui_set_icon_selected_state(dialog_config_prox, ICON_CONFIG_PROX_HTTP,
 			option_http_proxy);
 	ro_gui_set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST,
 			option_http_proxy_host ? option_http_proxy_host : "");
-	set_icon_string_i(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT,
+	ro_gui_set_icon_integer(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT,
 			option_http_proxy_port);
 }
 
@@ -461,7 +457,7 @@ void set_proxy_choices(void)
 
 void get_proxy_choices(void)
 {
-	option_http_proxy = get_icon_state(dialog_config_prox,
+	option_http_proxy = ro_gui_get_icon_selected_state(dialog_config_prox,
 			ICON_CONFIG_PROX_HTTP);
 	free(option_http_proxy_host);
 	option_http_proxy_host = strdup(ro_gui_get_icon_string(dialog_config_prox,
@@ -692,99 +688,6 @@ int file_exists(const char* base, const char* dir, const char* leaf, bits ftype)
 
 	return 0;
 }
-
-void set_icon_state(wimp_w w, wimp_i i, int state)
-{
-	if (state)
-		wimp_set_icon_state(w,i, wimp_ICON_SELECTED, wimp_ICON_SELECTED);
-	else
-		wimp_set_icon_state(w,i, 0, wimp_ICON_SELECTED);
-}
-
-int get_icon_state(wimp_w w, wimp_i i)
-{
-	wimp_icon_state ic;
-	ic.w = w;
-	ic.i = i;
-	wimp_get_icon_state(&ic);
-	return (ic.icon.flags & wimp_ICON_SELECTED) != 0;
-}
-
-
-/**
- * Set the contents of an icon to a string.
- *
- * \param  w     window handle
- * \param  i     icon handle
- * \param  text  string (copied)
- */
-
-void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
-  	wimp_caret caret;
-	wimp_icon_state ic;
-	unsigned int old_len, len;
-
-	/*	Get the icon data
-	*/
-	ic.w = w;
-	ic.i = i;
-	wimp_get_icon_state(&ic);
-
-	/*	Check that the existing text is not the same as the updated text
-		to stop flicker
-	*/
-	if (!strcmp(ic.icon.data.indirected_text.text, text))
-		return;
-
-	/*	Copy the text across
-	*/
-	old_len = strlen(ic.icon.data.indirected_text.text);
-	if (ic.icon.data.indirected_text.size > 0) {
-		strncpy(ic.icon.data.indirected_text.text, text,
-			(unsigned int)ic.icon.data.indirected_text.size);
-		ic.icon.data.indirected_text.text[ic.icon.data.indirected_text.size - 1] = '\0';
-	}
-
-	/*	Handle the caret being in the icon
-	*/
-	if (!xwimp_get_caret_position(&caret)) {
-		if ((caret.w == w) && (caret.i == i)) {
-		  	len = strlen(text);
-		  	if ((caret.index > len) || (caret.index == old_len)) caret.index = len;
-			xwimp_set_caret_position(w, i, caret.pos.x, caret.pos.y, -1, caret.index);
-		}
-	}
-
-	/*	Redraw the icon
-	*/
-	wimp_set_icon_state(w, i, 0, 0);
-}
-
-
-/**
- * Read the contents of an icon.
- *
- * \param  w  window handle
- * \param  i  icon handle
- * \return string in icon
- */
-
-char *ro_gui_get_icon_string(wimp_w w, wimp_i i)
-{
-	wimp_icon_state ic;
-	ic.w = w;
-	ic.i = i;
-	wimp_get_icon_state(&ic);
-	return ic.icon.data.indirected_text.text;
-}
-
-void set_icon_string_i(wimp_w w, wimp_i i, int num)
-{
-	char buffer[255];
-	sprintf(buffer, "%d", num);
-	ro_gui_set_icon_string(w, i, buffer);
-}
-
 
 /**
  * Convert a 2-letter ISO language code to the language name.

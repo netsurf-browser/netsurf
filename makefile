@@ -14,9 +14,9 @@ OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o \
 OBJECTS = $(OBJECTS_COMMON) \
 	browser.o netsurf.o options.o \
 	htmlinstance.o htmlredraw.o \
-	401login.o constdata.o dialog.o download.o frames.o gui.o \
+	401login.o constdata.o dialog.o download.o frames.o wimp.o gui.o \
 	menus.o mouseactions.o \
-	textselection.o theme.o window.o \
+	textselection.o toolbar.o theme.o window.o \
 	draw.o plugin.o png.o sprite.o \
 	about.o filetype.o font.o uri.o url_protocol.o history.o \
 	version.o thumbnail.o \

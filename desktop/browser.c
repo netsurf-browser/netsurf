@@ -25,6 +25,7 @@
 #include "netsurf/desktop/401login.h"
 #endif
 #include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/imagemap.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
@@ -88,14 +89,14 @@ static gui_pointer_shape get_pointer_shape(css_cursor cursor);
  * \param  url  URL to start fetching in the new window (copied)
  */
 
-void browser_window_create(const char *url)
+void browser_window_create(const char *url, struct browser_window *clone)
 {
 	struct browser_window *bw;
 
 	bw = malloc(sizeof *bw);
 	if (!bw) {
 		warn_user("NoMemory");
-		return;
+		return NULL;
 	}
 
 	bw->current_content = 0;
@@ -103,12 +104,11 @@ void browser_window_create(const char *url)
 	bw->history = history_create();
 	bw->throbbing = false;
 	bw->caret_callback = 0;
-	bw->window = gui_create_browser_window(bw);
+	bw->window = gui_create_browser_window(bw, clone);
 	if (!bw->window) {
 		free(bw);
-		return;
+		return NULL;
 	}
-
 	browser_window_go(bw, url);
 }
 
@@ -1451,6 +1451,7 @@ void browser_window_follow_link(struct browser_window *bw,
 	int done = 0;
 	struct css_style *style;
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	struct browser_window *new_bw;
 
 	found = 0;
 	click_boxes = NULL;
@@ -1489,7 +1490,7 @@ void browser_window_follow_link(struct browser_window *bw,
 			        }
 			} else if (click_type == 2) {
 			        if (fetch_can_fetch(url)) {
-			        	browser_window_create(url);
+			        	browser_window_create(url, bw);
 			        }
 			        else {
 			                gui_launch_url(url);
@@ -1530,7 +1531,7 @@ void browser_window_follow_link(struct browser_window *bw,
 			        }
 			} else if (click_type == 2) {
 			        if (fetch_can_fetch(url)) {
-			        	browser_window_create(url);
+			        	browser_window_create(url, NULL);
 			        }
 			        else {
 			                gui_launch_url(url);

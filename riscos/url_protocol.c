@@ -99,7 +99,7 @@ void ro_url_message_received(wimp_message* message)
                      message->sender);
 
   /* create new browser window */
-  browser_window_create(uri_requested);
+  browser_window_create(uri_requested, NULL);
 
 #if 0
   if (post) {

@@ -1290,7 +1290,7 @@ void plugin_url_access(wimp_message *message) {
                                  browser_window_go(npl->bw, url);
                          }
                          else if (strcasecmp(window, "_blank") == 0) {
-                         	browser_window_create(url);
+                         	browser_window_create(url, NULL);
                          }
                  }
                  else { /* POST request */

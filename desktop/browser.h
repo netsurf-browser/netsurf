@@ -89,7 +89,7 @@ struct box_selection
 };
 
 
-void browser_window_create(const char *url);
+void browser_window_create(const char *url, struct browser_window *clone);
 void browser_window_go(struct browser_window *bw, const char *url);
 void browser_window_go_post(struct browser_window *bw, const char *url,
 		char *post_urlenc,

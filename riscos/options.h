@@ -25,6 +25,13 @@ extern bool option_filter_sprites;
 extern bool option_thumbnail_32bpp;
 extern int option_thumbnail_oversampling;
 extern bool option_history_tooltip;
+extern int option_scale;
+extern int option_toolbar_status_width;
+extern bool option_toolbar_show_status;
+extern bool option_toolbar_show_buttons;
+extern bool option_toolbar_show_address;
+extern bool option_toolbar_show_throbber;
+extern bool option_animate_images;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -36,7 +43,14 @@ bool option_dither_sprites = true;\
 bool option_filter_sprites = false;\
 bool option_thumbnail_32bpp = true;\
 int option_thumbnail_oversampling = 0;\
-bool option_history_tooltip = true;
+bool option_history_tooltip = true; \
+int option_scale = 100; \
+int option_toolbar_status_width = 640; \
+bool option_toolbar_show_status = true; \
+bool option_toolbar_show_buttons = true; \
+bool option_toolbar_show_address = true; \
+bool option_toolbar_show_throbber = true; \
+bool option_animate_images = true;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -48,6 +62,13 @@ bool option_history_tooltip = true;
 { "filter_sprites",         OPTION_BOOL,    &option_filter_sprites },\
 { "thumbnail_32bpp",        OPTION_BOOL,    &option_thumbnail_32bpp },\
 { "thumbnail_oversampling", OPTION_INTEGER, &option_thumbnail_oversampling },\
-{ "history_tooltip",        OPTION_BOOL,    &option_history_tooltip }
+{ "history_tooltip",        OPTION_BOOL,    &option_history_tooltip }, \
+{ "scale",                  OPTION_INTEGER, &option_scale }, \
+{ "toolbar_show_status",    OPTION_BOOL,    &option_toolbar_show_status }, \
+{ "toolbar_status_width",   OPTION_INTEGER, &option_toolbar_status_width }, \
+{ "toolbar_show_buttons",   OPTION_BOOL,    &option_toolbar_show_buttons }, \
+{ "toolbar_show_address",   OPTION_BOOL,    &option_toolbar_show_address }, \
+{ "toolbar_show_throbber",  OPTION_BOOL,    &option_toolbar_show_throbber }, \
+{ "animate_images",         OPTION_BOOL,    &option_animate_images }
 
 #endif

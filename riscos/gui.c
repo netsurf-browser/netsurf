@@ -207,6 +207,100 @@ void gui_init(int argc, char** argv)
 
 
 /**
+ * Clones a browser window's options.
+ *
+ * \param new_bw the new browser window
+ * \param old_bw the browser window to clone from, or NULL for default
+ */
+void gui_window_clone_options(struct browser_window *new_bw, struct browser_window *old_bw) {
+	gui_window *old_gui = NULL;
+	gui_window *new_gui;
+	
+	/*	Abort on bad input
+	*/
+	if (new_bw == NULL) return;
+
+	/*	Get our GUIs
+	*/
+	new_gui = new_bw->window;
+
+	/*	Abort on bad input
+	*/
+	if (!new_gui) return;
+	if (old_bw) old_gui = old_bw->window;
+
+	/*	Clone the basic options
+	*/
+	if (!old_gui) {
+		new_gui->scale = ((float)option_scale) / 100;
+		new_gui->option_dither_sprites = option_dither_sprites;
+		new_gui->option_filter_sprites = option_filter_sprites;
+		new_gui->option_animate_images = option_animate_images;
+	} else {
+		new_gui->scale = old_gui->scale;
+		new_gui->option_dither_sprites = old_gui->option_dither_sprites;
+		new_gui->option_filter_sprites = old_gui->option_filter_sprites;	  
+		new_gui->option_animate_images = old_gui->option_animate_images;
+	}
+	
+	/*	Set up the toolbar
+	*/
+	if (new_gui->data.browser.toolbar) {
+	  	if ((old_gui) && (old_gui->data.browser.toolbar)) {
+			new_gui->data.browser.toolbar->status_width = old_gui->data.browser.toolbar->status_width;
+			new_gui->data.browser.toolbar->status_window = old_gui->data.browser.toolbar->status_window;
+			new_gui->data.browser.toolbar->standard_buttons = old_gui->data.browser.toolbar->standard_buttons;
+			new_gui->data.browser.toolbar->url_bar = old_gui->data.browser.toolbar->url_bar;
+			new_gui->data.browser.toolbar->throbber = old_gui->data.browser.toolbar->throbber;
+	  	} else {
+			new_gui->data.browser.toolbar->status_width = option_toolbar_status_width;
+			new_gui->data.browser.toolbar->status_window = option_toolbar_show_status;
+			new_gui->data.browser.toolbar->standard_buttons = option_toolbar_show_buttons;
+			new_gui->data.browser.toolbar->url_bar = option_toolbar_show_address;
+			new_gui->data.browser.toolbar->throbber = option_toolbar_show_throbber;
+		}
+		ro_theme_update_toolbar(new_gui);
+	}
+}
+
+
+/**
+ * Makes a browser window's options the default.
+ *
+ * \param bw the browser window to read options from
+ */
+void gui_window_default_options(struct browser_window *bw) {
+	gui_window *gui;
+	
+	/*	Abort on bad input
+	*/
+	if (bw == NULL) return;
+
+	/*	Get our GUI
+	*/
+	gui = bw->window;
+	if (!gui) return;
+
+	/*	Save the basic options
+	*/
+	option_scale = gui->scale * 100;
+	option_dither_sprites = gui->option_dither_sprites;
+	option_filter_sprites = gui->option_filter_sprites;
+	option_animate_images = gui->option_animate_images;
+	
+	/*	Set up the toolbar
+	*/
+	if (gui->data.browser.toolbar) {
+		option_toolbar_status_width = gui->data.browser.toolbar->status_width;
+		option_toolbar_show_status = gui->data.browser.toolbar->status_window;
+		option_toolbar_show_buttons = gui->data.browser.toolbar->standard_buttons;
+		option_toolbar_show_address = gui->data.browser.toolbar->url_bar;
+		option_toolbar_show_throbber = gui->data.browser.toolbar->throbber;
+	}
+}
+
+
+/**
  * Determine the language to use.
  *
  * RISC OS has no standard way of determining which language the user prefers.
@@ -588,7 +682,7 @@ void gui_window_set_pointer(gui_pointer_shape shape)
                         break;
                 case GUI_POINTER_CARET:
                         xosspriteop_set_pointer_shape(0x100, pointers,
-                                 (osspriteop_id)"ptr_caret", 1, 5, 10, 0, 0);
+                                 (osspriteop_id)"ptr_caret", 1, 5, 0, 0, 0);
                         break;
                 case GUI_POINTER_MENU:
                         xosspriteop_set_pointer_shape(0x100, pointers,
@@ -662,15 +756,24 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
  * Handle Open_Window_Request events.
  */
 
-void ro_gui_open_window_request(wimp_open *open)
-{
+void ro_gui_open_window_request(wimp_open *open) {
+	struct toolbar *toolbar;
 	gui_window *g;
 
 	g = ro_lookup_gui_from_w(open->w);
-	if (g)
+	if (g) {
 		ro_gui_window_open(g, open);
-	else
+	} else {
 		wimp_open_window(open);
+		g = ro_lookup_gui_status_from_w(open->w);
+		if (g) {
+			toolbar = g->data.browser.toolbar;
+			if (toolbar) {
+			  	toolbar->resize_status = 1; 	
+		  		ro_theme_resize_toolbar(g);
+		  	}
+		}
+	}
 }
 
 
@@ -710,8 +813,11 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 	else if (g && g->type == GUI_BROWSER_WINDOW && g->window == pointer->w)
 		ro_gui_window_click(g, pointer);
 	else if (g && g->type == GUI_BROWSER_WINDOW &&
-			g->data.browser.toolbar == pointer->w)
+			g->data.browser.toolbar->toolbar_handle == pointer->w)
 		ro_gui_toolbar_click(g, pointer);
+	else if (g && g->type == GUI_BROWSER_WINDOW &&
+			g->data.browser.toolbar->status_handle == pointer->w)
+		ro_gui_status_click(g, pointer);
 	else if (g && g->type == GUI_DOWNLOAD_WINDOW)
 		ro_download_window_click(g, pointer);
 	else if (pointer->w == dialog_saveas)
@@ -734,7 +840,7 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 		char url[80];
 		sprintf(url, "file:///%%3CNetSurf$Dir%%3E/Docs/intro_%s",
 				option_language);
-		browser_window_create(url);
+		browser_window_create(url, NULL);
 	}
 }
 
@@ -756,6 +862,10 @@ void ro_gui_drag_end(wimp_dragged *drag)
 
 		case GUI_DRAG_SAVE:
 			ro_gui_save_drag_end(drag);
+			break;
+
+		case GUI_DRAG_STATUS_RESIZE:
+//			ro_gui_save_drag_end(drag);
 			break;
 	}
 }
@@ -780,7 +890,7 @@ void ro_gui_keypress(wimp_key *key)
 	switch (g->type) {
 		case GUI_BROWSER_WINDOW:
 			handled = ro_gui_window_keypress(g, key->c,
-					(bool) (g->data.browser.toolbar == key->w));
+					(bool) (g->data.browser.toolbar->toolbar_handle == key->w));
 			break;
 
 		case GUI_DOWNLOAD_WINDOW:
@@ -1092,7 +1202,7 @@ void ro_msg_dataload(wimp_message *message)
 	        browser_window_go(gui->data.browser.bw, url);
 	}
 	else {
-		browser_window_create(url);
+		browser_window_create(url, NULL);
 	}
 
 	free(url);
@@ -1214,7 +1324,7 @@ void ro_msg_dataopen(wimp_message *message)
 	        url = ro_path_to_url(message->data.data_xfer.file_name);
 	}
 	if (url) {
-		browser_window_create(url);
+		browser_window_create(url, NULL);
 		free(url);
 	}
 }
@@ -1293,7 +1403,7 @@ void ro_gui_open_help_page(void)
 	char url[80];
 	sprintf(url, "file:///%%3CNetSurf$Dir%%3E/Docs/docs_%s",
 			option_language);
-        browser_window_create(url);
+        browser_window_create(url, NULL);
 }
 
 

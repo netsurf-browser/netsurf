@@ -16,6 +16,7 @@
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/riscos/toolbar.h"
 
 #define THEMES_DIR "<NetSurf$Dir>.Themes"
 
@@ -36,7 +37,7 @@ typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT,
 		GUI_SAVE_COMPLETE } gui_save_type;
 extern gui_save_type gui_current_save_type;
 typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
-		GUI_DRAG_SAVE } gui_drag_type;
+		GUI_DRAG_SAVE, GUI_DRAG_STATUS_RESIZE } gui_drag_type;
 extern gui_drag_type gui_current_drag_type;
 
 struct gui_window
@@ -47,7 +48,7 @@ struct gui_window
 
   union {
     struct {
-      wimp_w toolbar;
+      struct toolbar *toolbar;
       int toolbar_width;
       struct browser_window* bw;
       bool reformat_pending;
@@ -78,7 +79,17 @@ struct gui_window
 
   enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION } drag_status;
 
-  float scale;
+	/*	Options
+	*/
+	float scale;
+	bool option_dither_sprites;
+	bool option_filter_sprites;
+	int option_toolbar_status_width;
+	bool option_toolbar_show_status;
+	bool option_toolbar_show_buttons;
+	bool option_toolbar_show_address;
+	bool option_toolbar_show_throbber;
+	bool option_animate_images;
 };
 
 
@@ -96,6 +107,7 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
 void ro_gui_menu_selection(wimp_selection* selection);
 void ro_gui_menu_warning(wimp_message_menu_warning *warning);
 void ro_gui_menu_prepare_save(struct content *c);
+void ro_gui_menu_prepare_scale(void);
 
 /* in dialog.c */
 void ro_gui_dialog_init(void);
@@ -106,8 +118,6 @@ bool ro_gui_dialog_keypress(wimp_key *key);
 void ro_gui_dialog_close(wimp_w close);
 void ro_gui_redraw_config_th(wimp_draw* redraw);
 void ro_gui_theme_menu_selection(char *theme);
-void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text);
-char *ro_gui_get_icon_string(wimp_w w, wimp_i i);
 
 /* in download.c */
 void ro_gui_download_init(void);
@@ -139,12 +149,16 @@ void ro_gui_window_open(gui_window* g, wimp_open* open);
 void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw);
 void ro_gui_window_mouse_at(wimp_pointer* pointer);
 void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer);
+void ro_gui_status_click(gui_window* g, wimp_pointer* pointer);
 void ro_gui_throb(void);
 gui_window* ro_lookup_gui_from_w(wimp_w window);
 gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window);
+gui_window* ro_lookup_gui_status_from_w(wimp_w window);
 gui_window *ro_gui_window_lookup(wimp_w w);
 bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar);
 void ro_gui_scroll_request(wimp_scroll *scroll);
+//#define window_x_units(x, state) (x - (state->visible.x0 - state->xscroll))
+//#define window_y_units(y, state) (y - (state->visible.y1 - state->yscroll))
 int window_x_units(int x, wimp_window_state *state);
 int window_y_units(int y, wimp_window_state *state);
 bool ro_gui_window_dataload(gui_window *g, wimp_message *message);
@@ -175,18 +189,23 @@ void schedule_remove(void (*callback)(void *p), void *p);
 void schedule_run(void);
 
 /* icon numbers */
-#define ICON_TOOLBAR_THROBBER 1
-#define ICON_TOOLBAR_URL 2
-#define ICON_TOOLBAR_STATUS 3
-#define ICON_TOOLBAR_HISTORY 4
-#define ICON_TOOLBAR_RELOAD 5
-#define ICON_TOOLBAR_STOP 6
-#define ICON_TOOLBAR_BACK 7
-#define ICON_TOOLBAR_FORWARD 8
-#define ICON_TOOLBAR_BOOKMARK 9
-#define ICON_TOOLBAR_SAVE 10
-#define ICON_TOOLBAR_PRINT 11
-#define ICON_TOOLBAR_HOME 12
+#define ICON_TOOLBAR_BACK 0
+#define ICON_TOOLBAR_FORWARD 1
+#define ICON_TOOLBAR_STOP 2
+#define ICON_TOOLBAR_RELOAD 3
+#define ICON_TOOLBAR_HOME 4
+#define ICON_TOOLBAR_HISTORY 5
+#define ICON_TOOLBAR_SAVE 6
+#define ICON_TOOLBAR_PRINT 7
+#define ICON_TOOLBAR_BOOKMARK 8
+#define ICON_TOOLBAR_SCALE 9
+#define ICON_TOOLBAR_SEARCH 10
+#define ICON_TOOLBAR_UP 11
+#define ICON_TOOLBAR_URL 12  // Must be after highest toolbar icon
+#define ICON_TOOLBAR_THROBBER 13
+
+#define ICON_STATUS_TEXT 0
+#define ICON_STATUS_RESIZE 1
 
 #define ICON_CONFIG_SAVE 0
 #define ICON_CONFIG_CANCEL 1
