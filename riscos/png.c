@@ -110,7 +110,7 @@ void info_callback(png_structp png, png_infop info)
 	png_get_PLTE(png, info, &png_palette, &palette_size);
 
 	if (interlace == PNG_INTERLACE_ADAM7)
-		png_set_interlace_handling(png);
+		; /*png_set_interlace_handling(png);*/
 
 	if (png_get_bKGD(png, info, &png_background))
 		png_set_background(png, png_background,
@@ -205,6 +205,7 @@ void info_callback(png_structp png, png_infop info)
 	png_read_update_info(png, info);
 
 	c->data.png.rowbytes = rowbytes = png_get_rowbytes(png, info);
+	c->data.png.interlace = (interlace == PNG_INTERLACE_ADAM7);
 	c->data.png.sprite_image = ((char *) sprite) + sprite->image;
 	c->width = width;
 	c->height = height;
@@ -214,11 +215,17 @@ void info_callback(png_structp png, png_infop info)
 }
 
 
+static unsigned int interlace_start[8] = {0, 4, 0, 2, 0, 1, 0};
+static unsigned int interlace_step[8] = {8, 8, 4, 4, 2, 2, 1};
+static unsigned int interlace_row_start[8] = {0, 0, 4, 0, 2, 0, 1};
+static unsigned int interlace_row_step[8] = {8, 8, 8, 4, 4, 2, 2};
+
 void row_callback(png_structp png, png_bytep new_row,
 		png_uint_32 row_num, int pass)
 {
 	struct content *c = png_get_progressive_ptr(png);
-	unsigned long i, rowbytes = c->data.png.rowbytes;
+	unsigned long i, j, rowbytes = c->data.png.rowbytes;
+	unsigned int start = 0, step = 1;
 	int red, green, blue, alpha;
 	char *row = c->data.png.sprite_image + row_num * ((c->width + 3) & ~3u);
 	os_colour_number col;
@@ -229,14 +236,23 @@ void row_callback(png_structp png, png_bytep new_row,
 	if (new_row == 0)
 		return;
 
+	if (c->data.png.interlace) {
+		start = interlace_start[pass];
+ 		step = interlace_step[pass];
+		row_num = interlace_row_start[pass] +
+			interlace_row_step[pass] * row_num;
+		row = c->data.png.sprite_image + row_num * ((c->width + 3) & ~3u);
+	}
+
 	if (c->data.png.type == PNG_PALETTE)
-		png_progressive_combine_row(png, row, new_row);
+		for (j = 0, i = start; i < rowbytes; i += step)
+			row[i] = new_row[j++];
 
 	else if (c->data.png.type == PNG_DITHER) {
-		for (i = 0; i * 3 != rowbytes; i++) {
-			red = new_row[i * 3];
-			green = new_row[i * 3 + 1];
-			blue = new_row[i * 3 + 2];
+		for (j = 0, i = start; i * 3 < rowbytes; i += step) {
+			red = new_row[j++];
+			green = new_row[j++];
+			blue = new_row[j++];
 			row[i] = colour_table[(red >> 4) << 8 |
 					(green >> 4) << 4 |
 					(blue >> 4)];
