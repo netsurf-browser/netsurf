@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.30 2003/01/07 23:15:23 bursa Exp $
+ * $Id: box.c,v 1.31 2003/01/07 23:24:43 bursa Exp $
  */
 
 #include <assert.h>
@@ -421,18 +421,21 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 		unsigned int r, g, b;
 		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 			style->background_color = (b << 16) | (g << 8) | r;
+		free(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "clear"))) {
 		if (stricmp(s, "all") == 0) style->clear = CSS_CLEAR_BOTH;
 		else if (stricmp(s, "left") == 0) style->clear = CSS_CLEAR_LEFT;
 		else if (stricmp(s, "right") == 0) style->clear = CSS_CLEAR_RIGHT;
+		free(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "color"))) {
 		unsigned int r, g, b;
 		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 			style->color = (b << 16) | (g << 8) | r;
+		free(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "height"))) {
@@ -440,6 +443,15 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 		style->height.length.unit = CSS_UNIT_PX;
 		style->height.length.value = atof(s);
 		free(s);
+	}
+
+	if (strcmp((const char *) n->name, "body") == 0) {
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "text"))) {
+			unsigned int r, g, b;
+			if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
+				style->color = (b << 16) | (g << 8) | r;
+			free(s);
+		}
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "width"))) {
