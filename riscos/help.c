@@ -281,11 +281,11 @@ int ro_gui_interactive_help_available() {
 	char *end;
 	os_t time;
 
-	/*	Check if we've received a help request in the last 0.5s to test for generic
+	/*	Check if we've received a help request in the last 1.0s to test for generic
 		interactive help applications
 	*/
 	xos_read_monotonic_time(&time);
-	if ((help_time + 50) > time) return true;
+	if ((help_time + 100) > time) return true;
 
 	/*	Attempt to find the task 'Help'
 	*/
@@ -297,6 +297,8 @@ int ro_gui_interactive_help_available() {
 		*/
 		if (strncmp(task.name, "Help", 4) == 0) {
 			if (task.name[4] < 32) return true;
+		} else if (strncmp(task.name, "Floating Help", 13) == 0) {
+			if (task.name[13] < 32) return true;
 		}
 	} while (context >= 0);
 
