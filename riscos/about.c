@@ -154,11 +154,9 @@ void about_create(void) {
       /* count files which match <Plugin$About_i>.About* */
       sprintf(buf, "%s.About*", val);
       xosfscontrol_count(buf,0,0,0,0,0,0,&nofiles);
-      xfree(buf);
 
       for (j=0; j!=nofiles; j++) {
         /* get plugin details */
-        buf = xcalloc(strlen(val) + 20, sizeof(char));
         if (j == 0) {
           sprintf(buf, "%s.About", val);
         }
@@ -200,7 +198,6 @@ void about_create(void) {
             LOG(("furl: %s", furl));
             abt->plugd = new_plugin(abt->plugd, furl);
             xfree(pdetails);
-            xfree(buf);
             continue;
           }
           else {
@@ -229,12 +226,12 @@ void about_create(void) {
             sprintf(fname, "file://%s", furl);
             xfree(furl);
 
+            LOG(("furl: %s", fname));
             furl = xcalloc(strlen(paboutpl3) + strlen(ptype) + strlen(fname) + strlen(pdetails) + 10, sizeof(char));
             sprintf(furl, paboutpl3, ptype, fname, ptype, w, h, pdetails);
             abt->plugd = new_plugin(abt->plugd, furl);
             xfree(fname);
             xfree(pdetails);
-            xfree(buf);
             continue;
           }
         }
@@ -252,7 +249,6 @@ void about_create(void) {
           abt->plugd = new_plugin(abt->plugd, furl);
           xfree(fname);
           xfree(pdetails);
-          xfree(buf);
         }
       }
       if (buf != 0) {
