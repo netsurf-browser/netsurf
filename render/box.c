@@ -826,7 +826,7 @@ struct css_style * box_get_style(struct content *c,
 					style->border_spacing.horz.unit =
 					style->border_spacing.vert.unit =
 							CSS_UNIT_PX;
-					style->border_spacing.vert.value =
+					style->border_spacing.horz.value =
 					style->border_spacing.vert.value =
 							value;
 				}
