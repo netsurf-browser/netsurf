@@ -101,32 +101,37 @@ void css_create(struct content *c)
 	c->data.css.import_url = xcalloc(0, sizeof(*c->data.css.import_url));
 	c->data.css.import_content = xcalloc(0, sizeof(*c->data.css.import_content));
 	c->active = 0;
+	c->data.css.data = xcalloc(0, 1);
+	c->data.css.length = 0;
 }
 
 
 void css_process_data(struct content *c, char *data, unsigned long size)
 {
+	c->data.css.data = xrealloc(c->data.css.data, c->data.css.length + size + 2);
+	memcpy(c->data.css.data + c->data.css.length, data, size);
+	c->data.css.length += size;
+}
+
+
+int css_convert(struct content *c, unsigned int width, unsigned int height)
+{
 	int token;
 	YY_BUFFER_STATE buffer;
 	struct parse_params param = {0, c, 0};
 
-	LOG(("content %p, size %lu", c, size));
-
-	buffer = css__scan_bytes(data, size, c->data.css.css->lexer);
+	c->data.css.data[c->data.css.length] =
+			c->data.css.data[c->data.css.length + 1] = 0;
+	buffer = css__scan_buffer(c->data.css.data, c->data.css.length + 2,
+			c->data.css.css->lexer);
+	assert(buffer);
 	while ((token = css_lex(c->data.css.css->lexer))) {
 		css_parser_(c->data.css.css->parser, token,
 				xstrdup(css_get_text(c->data.css.css->lexer)),
 				&param);
 	}
 	css__delete_buffer(buffer, c->data.css.css->lexer);
-}
-
-
-int css_convert(struct content *c, unsigned int width, unsigned int height)
-{
-	struct parse_params param = {0, c, 0};
-
-	LOG(("content %p", c));
+	free(c->data.css.data);
 
 	css_parser_(c->data.css.css->parser, 0, 0, &param);
 
@@ -616,7 +621,7 @@ void css_dump_style(const struct css_style * const style)
 	}
 	fprintf(stderr, "; ");
 	fprintf(stderr, "text-align: %s; ", css_text_align_name[style->text_align]);
-	fprintf(stderr, "visibility: %s", css_visibility_name[style->visibility]);
+	fprintf(stderr, "visibility: %s; ", css_visibility_name[style->visibility]);
 	fprintf(stderr, "width: ");
 	switch (style->width.width) {
 		case CSS_WIDTH_AUTO:    fprintf(stderr, "auto"); break;
@@ -635,7 +640,7 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 	unsigned int i;
 	struct css_node *r, *n, *m;
 	for (i = 0; i != HASH_SIZE; i++) {
-		fprintf(stderr, "hash %i:\n", i);
+		/*fprintf(stderr, "hash %i:\n", i);*/
 		for (r = stylesheet->rule[i]; r != 0; r = r->next) {
 			for (n = r; n != 0; n = n->right) {
 				if (n->data != 0)

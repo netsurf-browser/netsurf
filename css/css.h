@@ -97,6 +97,8 @@ struct content_css_data {
 	unsigned int import_count;
 	char **import_url;
 	struct content **import_content;
+	char *data;
+	unsigned int length;
 };
 
 
