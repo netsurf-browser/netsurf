@@ -431,7 +431,9 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 				c2->next = c->next;
 				c->next = c2;
 				c2->prev = c;
-				if (!c2->next)
+				if (c2->next)
+					c2->next->prev = c2;
+				else
 					c2->parent->last = c2;
 				b = c2;
 			}
@@ -460,7 +462,9 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			c2->next = c->next;
 			c->next = c2;
 			c2->prev = c;
-			if (!c2->next)
+			if (c2->next)
+				c2->next->prev = c2;
+			else
 				c2->parent->last = c2;
 			b = c2;
 			x += space_before + w;

@@ -643,6 +643,9 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 
         box_coords(textarea, &actual_x, &actual_y);
 
+	/* box_dump(textarea, 0); */
+	LOG(("key %i at %i in '%.*s'", key, char_offset, (int) text_box->length, text_box->text));
+
 	if (32 <= key && key != 127) {
 		/* normal character insertion */
 		text_box->text = xrealloc(text_box->text, text_box->length + 2);
@@ -666,6 +669,9 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 			} else if (inline_container->prev) {
 				/* merge with previous paragraph */
 				struct box *prev_container = inline_container->prev;
+				struct box *t;
+				for (t = inline_container->children; t; t = t->next)
+					t->parent = prev_container;
 				prev_container->last->next = inline_container->children;
 				inline_container->children->prev = prev_container->last;
 				prev_container->last = inline_container->last;
@@ -745,7 +751,22 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		return;
 	}
 
-	box_dump(textarea, 0);
+	/* for (struct box *ic = textarea->children; ic; ic = ic->next) {
+		assert(ic->type == BOX_INLINE_CONTAINER);
+		assert(ic->parent == textarea);
+		if (ic->next) assert(ic->next->prev == ic);
+		if (ic->prev) assert(ic->prev->next == ic);
+		if (!ic->next) assert(textarea->last == ic);
+		for (struct box *t = ic->children; t; t = t->next) {
+			assert(t->type == BOX_INLINE);
+			assert(t->text);
+			assert(t->font);
+			assert(t->parent == ic);
+			if (t->next) assert(t->next->prev == t);
+			if (t->prev) assert(t->prev->next == t);
+			if (!t->next) assert(ic->last == t);
+		}
+	} */
 
 	/* reflow textarea preserving width and height */
 	width = textarea->width;
@@ -754,6 +775,25 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	textarea->width = width;
 	textarea->height = height;
 
+	/* box_dump(textarea, 0); */
+
+	/* for (struct box *ic = textarea->children; ic; ic = ic->next) {
+		assert(ic->type == BOX_INLINE_CONTAINER);
+		assert(ic->parent == textarea);
+		if (ic->next) assert(ic->next->prev == ic);
+		if (ic->prev) assert(ic->prev->next == ic);
+		if (!ic->next) assert(textarea->last == ic);
+		for (struct box *t = ic->children; t; t = t->next) {
+			assert(t->type == BOX_INLINE);
+			assert(t->text);
+			assert(t->font);
+			assert(t->parent == ic);
+			if (t->next) assert(t->next->prev == t);
+			if (t->prev) assert(t->prev->next == t);
+			if (!t->next) assert(ic->last == t);
+		}
+	} */
+	
 	if (text_box->length < char_offset) {
 		/* the text box has been split and the caret is in the second part */
 		char_offset -= (text_box->length + 1);  /* +1 for the space */
