@@ -133,6 +133,7 @@ struct box * box_create(struct css_style * style,
 	box->href = href;
 	box->title = title;
 	box->columns = 1;
+	box->rows = 1;
 #ifndef riscos
 	/* under RISC OS, xcalloc makes these unnecessary */
 	box->text = 0;
@@ -292,6 +293,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			/* general element */
 			box = box_create(style, status.href, title);
 		}
+		box->type = box_map[style->display];
 
 	} else if (n->type == XML_TEXT_NODE) {
 		text = squash_tolat1(n->content);
@@ -328,7 +330,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 	assert(box != 0);
 
 	if (text != 0 ||
-			style->display == CSS_DISPLAY_INLINE ||
+			box->type == BOX_INLINE ||
 			style->float_ == CSS_FLOAT_LEFT ||
 			style->float_ == CSS_FLOAT_RIGHT) {
 		/* this is an inline box */
@@ -371,8 +373,8 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			else
 				parent->type = BOX_FLOAT_RIGHT;
 			box_add_child(inline_container, parent);
-			if (style->display == CSS_DISPLAY_INLINE)
-				style->display = CSS_DISPLAY_BLOCK;
+			if (box->type == BOX_INLINE)
+				box->type = BOX_BLOCK;
 		}
 	}
 
@@ -381,7 +383,6 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			style->display < CSS_DISPLAY_NONE);
 
 	/* non-inline box: add to tree and recurse */
-	box->type = box_map[style->display];
 	box_add_child(parent, box);
 	if (convert_children) {
 		inline_container_c = 0;
@@ -397,6 +398,11 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "colspan"))) {
 		if ((box->columns = strtol(s, 0, 10)) == 0)
 			box->columns = 1;
+		xmlFree(s);
+	}
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rowspan"))) {
+		if ((box->rows = strtol(s, 0, 10)) == 0)
+			box->rows = 1;
 		xmlFree(s);
 	}
 

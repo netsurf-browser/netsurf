@@ -92,6 +92,7 @@ struct box {
 	char * title;
 	unsigned int length;
 	unsigned int columns;
+	unsigned int rows;
 	struct box * next;
 	struct box * prev;
 	struct box * children;
