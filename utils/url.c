@@ -37,7 +37,7 @@ void url_init(void)
 			"(\\?([^#[:space:]]*))?(#([^[:space:]]*))?"
 			"[[:space:]]*$", REG_EXTENDED);
 	regcomp_wrapper(&url_up_re,
-			"/(|[^/]|[.][^./]|[^./][.]|[^/][^/][^/]+)/[.][.](/|$)",
+			"/([^/]|[.][^./]|[^./][.]|[^/][^/][^/]+)/[.][.](/|$)",
 			REG_EXTENDED);
 	regcomp_wrapper(&url_nice_re,
 			"^([^.]{0,4}[.])?([^.][^.][.])?([^/?&;.=]*)"
@@ -92,8 +92,8 @@ url_func_result url_normalize(const char *url, char **result)
 		len += sizeof("http://")-1;
 	} else {
 		if ((*result = malloc(len + 6)) == NULL) {
-			LOG(("strdup failed"));
-			return URL_FUNC_FAILED;
+			LOG(("malloc failed"));
+			return URL_FUNC_NOMEM;
 		}
 		strcpy(*result, url);
 	}
