@@ -129,7 +129,7 @@ static wimp_MENU(4) help_menu = {
 static wimp_menu *browser_help_menu = (wimp_menu *) &help_menu;
 
 
-wimp_menu *browser_menu = (wimp_menu *) & (wimp_MENU(5)) {
+static wimp_MENU(5) menu = {
   { "NetSurf" }, 7,2,7,0, 200, 44, 0,
   {
     { 0,                              (wimp_menu *) &page_menu,      DEFAULT_FLAGS,                    { "Page" } },
@@ -139,6 +139,7 @@ wimp_menu *browser_menu = (wimp_menu *) & (wimp_MENU(5)) {
     { wimp_MENU_LAST,                 (wimp_menu *) &help_menu,      DEFAULT_FLAGS,                    { "Help" } }
   }
 };
+wimp_menu *browser_menu = (wimp_menu *) &menu;
 
 
 /**
