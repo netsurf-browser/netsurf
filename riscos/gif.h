@@ -20,10 +20,6 @@ struct content_gif_data {
 	*/
 	osspriteop_area *sprite_area;
 	
-	/*	The sprite image of the current 8bpp frame
-	*/
-	char *sprite_image;
-	
 	/*	The sprite header of the current 32bpp image.
 	*/
 	osspriteop_header *buffer_header;
@@ -69,4 +65,6 @@ void nsgif_redraw(struct content *c, long x, long y,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
 		float scale);
 osspriteop_header *nsgif_get_sprite_address(struct content *c, unsigned int frame);
+bool nsgif_decompress_frame(struct content *c, anim *p_gif_animation, unsigned int cur_frame);
+
 #endif
