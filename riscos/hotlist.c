@@ -420,9 +420,12 @@ void ro_gui_hotlist_update_entry_size(struct hotlist_entry *entry) {
 		xwimptextop_string_width(entry->url,
 				strlen(entry->url) > 256 ? 256 : strlen(entry->url),
 				&width);
+		width += 32 + 36 + 8;
 		if (width < entry->collapsed_width) width = entry->collapsed_width;
+		entry->expanded_width = width;
+	} else {
+		entry->expanded_width = width + 32 + 36 + 8;
 	}
-	entry->expanded_width = width + 32 + 36 + 8;
 	
 	/*	All entries are 44 units high
 	*/
@@ -434,6 +437,7 @@ void ro_gui_hotlist_update_entry_size(struct hotlist_entry *entry) {
  * Redraws a section of the hotlist window
  */
 void ro_gui_hotlist_redraw(wimp_draw *redraw) {
+	wimp_window_state state;
 	osbool more;
 	unsigned int size;
 	os_box extent = {0, 0, 0, 0};;
@@ -485,6 +489,9 @@ void ro_gui_hotlist_redraw(wimp_draw *redraw) {
 	  	extent.x1 = max_width;
 	  	extent.y0 = max_height;
 		xwimp_set_extent(hotlist_window, &extent);
+		state.w = hotlist_window;
+		wimp_get_window_state(&state);
+		wimp_open_window((wimp_open *) &state);
 		reformat_pending = false;
 	}
 }
@@ -513,16 +520,19 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 		} else {
 			entry->width = entry->collapsed_width;
 		}
-		if ((x0 + entry->width) > (max_width + origin_x))
-				max_width = x0 + entry->width - origin_x;
-		if ((y0 - 44) < (max_height + origin_y))
-				max_height = y0 - 44 - origin_y;
   	 
 		/*	Redraw the item
 		*/
 		height = ro_gui_hotlist_redraw_item(entry, level, x0 + 32, y0);
 		box_y0 = y0;
 		cumulative += height;
+
+		/*	Get the maximum extents
+		*/
+		if ((x0 + entry->width) > (max_width + origin_x))
+				max_width = x0 + entry->width - origin_x;
+		if ((y0 - height) < (max_height + origin_y))
+				max_height = y0 - height - origin_y;
 
 		/*	Draw the vertical links
 		*/
@@ -715,6 +725,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 		x_offset = x - entry->x0;
 		if ((x_offset < 32) || (buttons == wimp_DOUBLE_SELECT)) {
 			entry->expanded = !entry->expanded;
+			reformat_pending = true;
 			xwimp_force_redraw(hotlist_window, 0, -16384, 16384, 0);
 		} else {
 		  
