@@ -289,7 +289,6 @@ void html_redraw_box(struct content *content, struct box * box,
 			end = &(content->data.html.text_selection.end);
 
 			if (start->box == box) {
-				fprintf(stderr, "THE START OFFSET IS %d\n", start->pixel_offset * 2);
 				if (end->box == box) {
 					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
 					os_plot(os_MOVE_TO,
@@ -483,13 +482,15 @@ static const int dash_pattern_dashed[] = { 0, 1, 2048 };
 void html_redraw_border(colour color, int width, css_border_style style,
 		int x0, int y0, int x1, int y1)
 {
-	draw_dash_pattern *dash_pattern = 0;
+	const draw_dash_pattern *dash_pattern;
 	os_error *error;
 
 	if (style == CSS_BORDER_STYLE_DOTTED)
-		dash_pattern = (draw_dash_pattern *) &dash_pattern_dotted;
+		dash_pattern = (const draw_dash_pattern *) &dash_pattern_dotted;
 	else if (style == CSS_BORDER_STYLE_DASHED)
-		dash_pattern = (draw_dash_pattern *) &dash_pattern_dashed;
+		dash_pattern = (const draw_dash_pattern *) &dash_pattern_dashed;
+	else
+		dash_pattern = NULL;
 
 	path[1] = x0 * 256;
 	path[2] = y0 * 256;
