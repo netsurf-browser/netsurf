@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.18 2002/10/08 09:38:29 bursa Exp $
+ * $Id: box.c,v 1.19 2002/10/08 11:15:29 bursa Exp $
  */
 
 #include <assert.h>
@@ -22,6 +22,7 @@
 void box_add_child(struct box * parent, struct box * child);
 struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
 		const char *href);
+char * tolat1(const xmlChar * s);
 struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
@@ -140,7 +141,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 {
 	struct box * box;
 	struct box * inline_container_c;
-	struct css_style * style, * style2;
+	struct css_style * style;
 	xmlNode * c;
 	char * s;
 
@@ -183,7 +184,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		if (n->type == XML_TEXT_NODE) {
 			LOG(("text node"));
 			box = box_create(n, BOX_INLINE, parent_style, href);
-			box->text = squash_whitespace(n->content);
+			box->text = squash_whitespace(tolat1(n->content));
 			box->length = strlen(box->text);
 			LOG(("text node 2"));
 			box->font = font_open(fonts, box->style);
@@ -632,7 +633,7 @@ void box_normalise_inline_container(struct box *cont)
 	struct box *child;
 	struct box *prev_child = 0;
 
-	LOG(("cont %p"));
+	LOG(("cont %p", cont));
 	assert(cont->type == BOX_INLINE_CONTAINER);
 
 	for (child = cont->children; child != 0; prev_child = child, child = child->next) {

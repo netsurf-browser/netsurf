@@ -1,5 +1,5 @@
 /**
- * $Id: font.c,v 1.4 2002/10/05 17:50:21 bursa Exp $
+ * $Id: font.c,v 1.5 2002/10/08 11:15:29 bursa Exp $
  */
 
 #include <assert.h>
@@ -13,35 +13,16 @@
 #include "oslib/font.h"
 
 /**
- * RISC OS fonts are 8-bit, so Unicode is displayed by combining many
- * font manager fonts. Each font manager font must have 128 characters of
- * Unicode in order, starting at character 128.
- */
-
-/**
  * font id = font family * 4 + bold * 2 + slanted
  * font family: 0 = sans-serif, 1 = serif, ...
  */
 
-const char * const font_table[FONT_FAMILIES * 4][FONT_CHUNKS] = {
+const char * const font_table[FONT_FAMILIES * 4] = {
 	/* sans-serif */
-	{ "Homerton.Medium\\EU0000",
-	"Homerton.Medium\\EU0080",
-	"Homerton.Medium\\EU0100" },
-	{ "Homerton.Medium.Oblique\\EU0000",
-	"Homerton.Medium.Oblique\\EU0080",
-	"Homerton.Medium.Oblique\\EU0100" },
-	{ "Homerton.Bold\\EU0000",
-	"Homerton.Bold\\EU0080",
-	"Homerton.Bold\\EU0100" },
-	{ "Homerton.Bold.Oblique\\EU0000",
-	"Homerton.Bold.Oblique\\EU0080",
-	"Homerton.Bold.Oblique\\EU0100" },
-};
-
-/* a font_set is just a linked list of font_data for each face for now */
-struct font_set {
-	struct font_data *font[FONT_FAMILIES * 4];
+	"Homerton.Medium\\ELatin1",
+	"Homerton.Medium.Oblique\\ELatin1",
+	"Homerton.Bold\\ELatin1",
+	"Homerton.Bold.Oblique\\ELatin1",
 };
 
 void font_close(struct font_data *data);
@@ -54,7 +35,6 @@ unsigned long font_width(struct font_data *font, const char * text, unsigned int
 {
 	font_scan_block block;
 	os_error * error;
-	char *text2;
 
 	assert(font != 0 && text != 0);
 
@@ -65,12 +45,11 @@ unsigned long font_width(struct font_data *font, const char * text, unsigned int
 	block.letter.x = block.letter.y = 0;
 	block.split_char = -1;
 
-	text2 = font_utf8_to_string(font, text, length);
-	error = xfont_scan_string(font->handle[0], text2,
-			font_GIVEN_BLOCK | font_GIVEN_FONT | font_KERN | font_RETURN_BBOX,
+	error = xfont_scan_string(font->handle, text,
+			font_GIVEN_BLOCK | font_GIVEN_FONT | font_KERN | font_RETURN_BBOX | font_GIVEN_LENGTH,
 			0x7fffffff, 0x7fffffff,
 			&block,
-			0, 0,
+			0, length,
 			0, 0, 0, 0);
 	if (error != 0) {
 		fprintf(stderr, "%s\n", error->errmess);
@@ -79,7 +58,6 @@ unsigned long font_width(struct font_data *font, const char * text, unsigned int
 
 /* 	fprintf(stderr, "font_width: '%.*s' => '%s' => %i %i %i %i\n", length, text, text2, */
 /* 			block.bbox.x0, block.bbox.y0, block.bbox.x1, block.bbox.y1); */
-	free(text2);
 
 	if (length < 0x7fffffff)
 	{
@@ -109,7 +87,6 @@ void font_position_in_string(const char* text, struct font_data* font,
   font_scan_block block;
   char* split_point;
   int x_out, y_out, length_out;
-  char *text2;
 
   assert(font != 0 && text != 0);
 
@@ -117,14 +94,12 @@ void font_position_in_string(const char* text, struct font_data* font,
   block.letter.x = block.letter.y = 0;
   block.split_char = -1;
 
-  text2 = font_utf8_to_string(font, text, length);
-  xfont_scan_string(font, text2,
-    font_GIVEN_BLOCK | font_GIVEN_FONT | font_KERN | font_RETURN_CARET_POS,
+  xfont_scan_string(font, text,
+    font_GIVEN_BLOCK | font_GIVEN_FONT | font_KERN | font_RETURN_CARET_POS | font_GIVEN_LENGTH,
     ro_x_units(x) * 400,
     0x7fffffff,
-    &block, 0, 0,
+    &block, 0, length,
     &split_point, &x_out, &y_out, &length_out);
-  free(text2);
 
   *char_offset = (int)(split_point - text);
   *pixel_offset = browser_x_units(x_out / 400);
@@ -148,7 +123,6 @@ struct font_set *font_new_set()
 struct font_data *font_open(struct font_set *set, struct css_style *style)
 {
 	struct font_data *data;
-	unsigned int i;
 	unsigned int size = 16 * 11;
 	unsigned int f = 0;
 
@@ -184,17 +158,17 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 
 	data = xcalloc(1, sizeof(*data));
 
-	for (i = 0; i < FONT_CHUNKS; i++) {
+	{
 		font_f handle;
 		os_error *error;
 
-		LOG(("font_find_font '%s' %i", font_table[f][i], size));
-		error = xfont_find_font(font_table[f][i], size, size, 0, 0, &handle, 0, 0);
+		LOG(("font_find_font '%s' %i", font_table[f], size));
+		error = xfont_find_font(font_table[f], size, size, 0, 0, &handle, 0, 0);
 		if (error != 0) {
 			fprintf(stderr, "%s\n", error->errmess);
 			die("font_find_font failed");
 		}
-		data->handle[i] = handle;
+		data->handle = handle;
 	}
 	data->size = size;
 
@@ -225,50 +199,8 @@ void font_free_set(struct font_set *set)
 
 void font_close(struct font_data *data)
 {
-	unsigned int i;
-
-	for (i = 0; i < FONT_CHUNKS; i++)
-		font_lose_font(data->handle[i]);
+	font_lose_font(data->handle);
 
 	free(data);
-}
-
-#define BUFFER_CHUNK 100
-
-char *font_utf8_to_string(struct font_data *font, const char *s, unsigned int length)
-{
-	unsigned long buffer_len = BUFFER_CHUNK;
-	char *d = xcalloc(buffer_len, sizeof(char));
-	unsigned int chunk0 = 0, chunk1;
-	unsigned int u, chars, i = 0, j = 0;
-
-	assert(font != 0 && s != 0);
-
-/* 	fprintf(stderr, "font_utf8_to_string: '%s'", s); */
-
-	while (j < length && s[j] != 0) {
-		u = sgetu8(s + j, &chars);
-		j += chars;
-		if (buffer_len < i + 5) {
-			buffer_len += BUFFER_CHUNK;
-			d = xrealloc(d, buffer_len * sizeof(char));
-		}
-		chunk1 = u / 0x80;
-		if (FONT_CHUNKS <= chunk1 || (u < 0x20 || (0x80 <= u && u <= 0x9f))) {
-			d[i++] = '?';
-		} else {
-			if (chunk0 != chunk1) {
-				d[i++] = font_COMMAND_FONT;
-				d[i++] = font->handle[chunk1];
-				chunk0 = chunk1;
-			}
-			d[i++] = 0x80 + (u % 0x80);
-		}
-	}
-	d[i] = 0;
-
-/* 	fprintf(stderr, " => '%s'\n", d); */
-
-	return d;
 }
 

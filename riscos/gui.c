@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.2 2002/09/26 21:38:33 bursa Exp $
+ * $Id: gui.c,v 1.3 2002/10/08 11:15:29 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -357,13 +357,11 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
       }
 }
 
-      text = font_utf8_to_string(box->font, box->text, box->length);
-      font_paint(box->font->handle[0], text,
-        font_OS_UNITS | font_GIVEN_FONT | font_KERN,
+      font_paint(box->font->handle, box->text,
+        font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
         x + box->x * 2, y - box->y * 2 - box->height * 2,
         NULL, NULL,
-        0);
-      free(text);
+        box->length);
 
     }
   }

@@ -1,6 +1,6 @@
-# $Id: makefile,v 1.4 2002/10/08 09:38:29 bursa Exp $
+# $Id: makefile,v 1.5 2002/10/08 11:15:29 bursa Exp $
 
-all: netsurf,ff8
+all: !NetSurf/!RunImage,ff8
 clean:
 	rm */objs-riscos/*
 
@@ -23,8 +23,8 @@ HEADERS = render/box.h render/css.h render/css_enum.h \
 LIBS = ../../Tools/libxml2/libxml.ro ../../Tools/oslib/oslib.o \
  ../../Tools/curl/libcurl.ro ../../Tools/libutf-8/libutf-8.ro
 
-netsurf,ff8: $(OBJECTS)
-	$(CC) $(FLAGS) -o netsurf,ff8 $(OBJECTS) $(LIBS)
+!NetSurf/!RunImage,ff8: $(OBJECTS)
+	$(CC) $(FLAGS) -o !NetSurf/!RunImage,ff8 $(OBJECTS) $(LIBS)
 
 render/css_enum.c render/css_enum.h: render/css_enums render/makeenum
 	cd ..; netsurf/render/makeenum netsurf/render/css_enum < netsurf/render/css_enums
