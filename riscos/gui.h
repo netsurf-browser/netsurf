@@ -8,7 +8,6 @@
 #ifndef _NETSURF_RISCOS_GUI_H_
 #define _NETSURF_RISCOS_GUI_H_
 
-#include "oslib/os.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/netsurf.h"
@@ -25,7 +24,6 @@ extern int current_menu_x, current_menu_y, iconbar_menu_height;
 extern struct gui_gadget *current_gadget;
 extern const char *HOME_URL;
 extern gui_window *window_list;
-extern os_box *clip;
 
 
 struct gui_window

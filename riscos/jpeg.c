@@ -70,7 +70,8 @@ void jpeg_destroy(struct content *c)
 
 
 void jpeg_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height)
+		unsigned long width, unsigned long height,
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
 {
 	os_factors factors;
 	factors.xmul = width;

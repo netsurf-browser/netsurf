@@ -57,7 +57,8 @@ struct handler_entry {
 	void (*reformat)(struct content *c, unsigned int width, unsigned int height);
 	void (*destroy)(struct content *c);
 	void (*redraw)(struct content *c, long x, long y,
-			unsigned long width, unsigned long height);
+			unsigned long width, unsigned long height,
+			long clip_x0, long clip_y0, long clip_x1, long clip_y1);
 	void (*add_instance)(struct content *c, struct browser_window *bw,
 			struct content *page, struct box *box,
 			struct object_params *params, void **state);
@@ -288,11 +289,13 @@ void content_destroy(struct content *c)
  */
 
 void content_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height)
+		unsigned long width, unsigned long height,
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
 {
 	assert(c != 0);
 	if (handler_map[c->type].redraw != 0)
-		handler_map[c->type].redraw(c, x, y, width, height);
+		handler_map[c->type].redraw(c, x, y, width, height,
+				clip_x0, clip_y0, clip_x1, clip_y1);
 }
 
 

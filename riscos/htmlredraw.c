@@ -17,13 +17,15 @@
 #include "netsurf/utils/log.h"
 
 static void html_redraw_box(struct content *content, struct box * box,
-		signed long x, signed long y, os_box* clip,
+		signed long x, signed long y,
 		unsigned long current_background_color,
 		signed long gadget_subtract_x, signed long gadget_subtract_y,
-		bool *select_on);
+		bool *select_on,
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1);
 
 void html_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height)
+		unsigned long width, unsigned long height,
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
 {
 	bool select_on = false;
 	unsigned long background_colour = 0xffffff;
@@ -42,8 +44,8 @@ void html_redraw(struct content *c, long x, long y,
 		background_colour = c->data.html.background_colour;
 	}
 
-	html_redraw_box(c, box, x, y, clip, background_colour, x, y,
-			&select_on);
+	html_redraw_box(c, box, x, y, background_colour, x, y,
+			&select_on, clip_x0, clip_y0, clip_x1, clip_y1);
 }
 
 
@@ -65,19 +67,20 @@ static char select_text_none[] = "<None>";
 static char empty_text[] = "";
 
 void html_redraw_box(struct content *content, struct box * box,
-		signed long x, signed long y, os_box* clip,
+		signed long x, signed long y,
 		unsigned long current_background_color,
 		signed long gadget_subtract_x, signed long gadget_subtract_y,
-		bool *select_on)
+		bool *select_on,
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
 {
 	struct box *c;
 	char *select_text;
 	struct formoption *opt;
 
-	if (x + (signed long) (box->x * 2 + box->width * 2) /* right edge */ < clip->x0 ||
-	    x + (signed long) (box->x * 2) /* left edge */ > clip->x1 ||
-	    y - (signed long) (box->y * 2 + box->height * 2 + 8) /* bottom edge */ > clip->y1 ||
-	    y - (signed long) (box->y * 2) /* top edge */ < clip->y0)
+	if (x + (signed long) (box->x * 2 + box->width * 2) /* right edge */ < clip_x0 ||
+	    x + (signed long) (box->x * 2) /* left edge */ > clip_x1 ||
+	    y - (signed long) (box->y * 2 + box->height * 2 + 8) /* bottom edge */ > clip_y1 ||
+	    y - (signed long) (box->y * 2) /* top edge */ < clip_y0)
 		return;
 
 	if (box->style != 0 && box->style->background_color != TRANSPARENT) {
@@ -88,10 +91,35 @@ void html_redraw_box(struct content *content, struct box * box,
 	}
 
 	if (box->object) {
+		long x0 = x + box->x * 2;
+		long y1 = y - box->y * 2 - 1;
+		long x1 = x0 + box->width * 2 - 1;
+		long y0 = y1 - box->height * 2 + 1;
+
+		LOG(("%s %li %li %li %li", box->object->url, x0, y0, x1, y1));
+
+		if (x0 < clip_x0) x0 = clip_x0;
+		if (y0 < clip_y0) y0 = clip_y0;
+		if (clip_x1 < x1) x1 = clip_x1;
+		if (clip_y1 < y1) y1 = clip_y1;
+
+		os_set_graphics_window();
+		os_writec((char) (x0 & 0xff)); os_writec((char) (x0 >> 8));
+		os_writec((char) (y0 & 0xff)); os_writec((char) (y0 >> 8));
+		os_writec((char) (x1 & 0xff)); os_writec((char) (x1 >> 8));
+		os_writec((char) (y1 & 0xff)); os_writec((char) (y1 >> 8));
+
 		content_redraw(box->object,
 				(int) x + (int) box->x * 2,
 				(int) y - (int) box->y * 2,
-				box->width * 2, box->height * 2);
+				box->width * 2, box->height * 2,
+				x0, y0, x1, y1);
+
+		os_set_graphics_window();
+		os_writec((char) (clip_x0 & 0xff)); os_writec((char) (clip_x0 >> 8));
+		os_writec((char) (clip_y0 & 0xff)); os_writec((char) (clip_y0 >> 8));
+		os_writec((char) (clip_x1 & 0xff)); os_writec((char) (clip_x1 >> 8));
+		os_writec((char) (clip_y1 & 0xff)); os_writec((char) (clip_y1 >> 8));
 
 	} else if (box->gadget) {
 		wimp_icon icon;
@@ -312,13 +340,15 @@ void html_redraw_box(struct content *content, struct box * box,
 		for (c = box->children; c != 0; c = c->next)
 			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
 				html_redraw_box(content, c, (int) x + (int) box->x * 2,
-						(int) y - (int) box->y * 2, clip, current_background_color,
-						gadget_subtract_x, gadget_subtract_y, select_on);
+						(int) y - (int) box->y * 2, current_background_color,
+						gadget_subtract_x, gadget_subtract_y, select_on,
+						clip_x0, clip_y0, clip_x1, clip_y1);
 
 		for (c = box->float_children; c != 0; c = c->next_float)
 			html_redraw_box(content, c, (int) x + (int) box->x * 2,
-					(int) y - (int) box->y * 2, clip, current_background_color,
-					gadget_subtract_x, gadget_subtract_y, select_on);
+					(int) y - (int) box->y * 2, current_background_color,
+					gadget_subtract_x, gadget_subtract_y, select_on,
+					clip_x0, clip_y0, clip_x1, clip_y1);
 	}
 
 /*	} else {

@@ -39,7 +39,6 @@ static char password_v[] = "D*";
 
 char *NETSURF_DIR;
 gui_window *window_list = 0;
-os_box *clip;
 
 int gadget_subtract_x;
 int gadget_subtract_y;
@@ -71,11 +70,6 @@ void gui_remove_gadget(struct gui_gadget* g);
 
 static int window_x_units(int scr_units, wimp_window_state* win);
 static int window_y_units(int scr_units, wimp_window_state* win);
-static void ro_gui_window_redraw_box(struct content *content, struct box * box,
-		signed long x, signed long y, os_box* clip,
-		unsigned long current_background_color,
-		signed long gadget_subtract_x, signed long gadget_subtract_y,
-		bool *select_on);
 static void ro_gui_toolbar_redraw(gui_window* g, wimp_draw* redraw);
 static void gui_disable_icon(wimp_w w, wimp_i i);
 static void gui_enable_icon(wimp_w w, wimp_i i);
@@ -357,11 +351,12 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
 
     while (more)
     {
-      clip = &redraw->clip;
       content_redraw(c,
           (int) redraw->box.x0 - (int) redraw->xscroll,
           (int) redraw->box.y1 - (int) redraw->yscroll,
-          c->width * 2, c->height * 2);
+          c->width * 2, c->height * 2,
+	  redraw->clip.x0, redraw->clip.y0,
+	  redraw->clip.x1 - 1, redraw->clip.y1 - 1);
       more = wimp_get_rectangle(redraw);
     }
   }

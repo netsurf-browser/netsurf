@@ -138,7 +138,8 @@ void content_revive(struct content *c, unsigned long width, unsigned long height
 void content_reformat(struct content *c, unsigned long width, unsigned long height);
 void content_destroy(struct content *c);
 void content_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height);
+		unsigned long width, unsigned long height,
+		long clip_x0, long clip_y0, long clip_x1, long clip_y1);
 void content_add_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
