@@ -41,7 +41,7 @@ struct save_complete_entry {
 /** List of urls seen and saved so far. */
 static struct save_complete_entry *save_complete_list;
 
-static void save_complete_internal(struct content *c, const char *path,
+static void save_complete_html(struct content *c, const char *path,
                 bool index);
 static void save_imported_sheets(struct content *c, const char *path);
 static char * rewrite_stylesheet_urls(const char *source, unsigned int size,
@@ -62,7 +62,9 @@ static int save_complete_find_url(const char *url);
 
 void save_complete(struct content *c, const char *path)
 {
-        save_complete_internal(c, path, true);
+      	save_complete_list = 0;
+
+        save_complete_html(c, path, true);
 
        	/* free save_complete_list */
 	while (save_complete_list) {
@@ -80,7 +82,7 @@ void save_complete(struct content *c, const char *path)
  * \param  path  directory to save to (must exist)
  */
 
-void save_complete_internal(struct content *c, const char *path, bool index)
+void save_complete_html(struct content *c, const char *path, bool index)
 {
 	char spath[256];
 	unsigned int i;
@@ -88,8 +90,6 @@ void save_complete_internal(struct content *c, const char *path, bool index)
 
 	if (c->type != CONTENT_HTML)
 		return;
-
-	save_complete_list = 0;
 
         /* save stylesheets, ignoring the base sheet */
         for (i = 1; i != c->data.html.stylesheet_count; i++) {
@@ -128,7 +128,7 @@ void save_complete_internal(struct content *c, const char *path, bool index)
 		save_complete_add_url(obj->url, (int) obj);
 
                 if (obj->type == CONTENT_HTML) {
-                        save_complete_internal(obj, path, false);
+                        save_complete_html(obj, path, false);
                 }
                 else {
 		        snprintf(spath, sizeof spath, "%s.%x", path,
