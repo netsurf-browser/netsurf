@@ -46,6 +46,8 @@
     #define WITH_KEYBOARD_NAVIGATION
     /* Free text search */
     #define WITH_SEARCH
+    /* Printing support */
+    #define WITH_PRINT
 #endif
 #ifdef ncos
     /* Kiosk style browsing support */
