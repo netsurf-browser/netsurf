@@ -140,7 +140,7 @@ static struct hotlist_entry *ro_gui_hotlist_create(char *title, char *url,
 		struct hotlist_entry *folder);
 static void ro_gui_hotlist_update_entry_size(struct hotlist_entry *entry);
 static struct hotlist_entry *ro_gui_hotlist_find_entry(int x, int y, struct hotlist_entry *entry);
-
+static int ro_gui_hotlist_selection_state(struct hotlist_entry *entry, bool selected, bool redraw);
 
 void ro_gui_hotlist_init(void) {
 	os_error *error;
@@ -236,6 +236,10 @@ void ro_gui_hotlist_show(void) {
 		open in the centre of the screen.
 	*/
 	if (!(state.flags & wimp_WINDOW_OPEN)) {
+	  	/*	Clear the selection state
+	  	*/
+	  	ro_gui_hotlist_selection_state(root.child_entry, false, false);
+
 		/*	Get the current screen size
 		*/
 		ro_gui_screen_size(&screen_width, &screen_height);
@@ -412,7 +416,7 @@ void ro_gui_hotlist_update_entry_size(struct hotlist_entry *entry) {
 	xwimptextop_string_width(entry->title,
 			strlen(entry->title) > 256 ? 256 : strlen(entry->title),
 			&width);
-	entry->collapsed_width = width + 32 + 36 + 8;
+	entry->collapsed_width = width + 32 + 36 + 16;
 	
 	/*	Get the width of the URL
 	*/
@@ -420,11 +424,11 @@ void ro_gui_hotlist_update_entry_size(struct hotlist_entry *entry) {
 		xwimptextop_string_width(entry->url,
 				strlen(entry->url) > 256 ? 256 : strlen(entry->url),
 				&width);
-		width += 32 + 36 + 8;
+		width += 32 + 36 + 16;
 		if (width < entry->collapsed_width) width = entry->collapsed_width;
 		entry->expanded_width = width;
 	} else {
-		entry->expanded_width = width + 32 + 36 + 8;
+		entry->expanded_width = width + 32 + 36 + 16;
 	}
 	
 	/*	All entries are 44 units high
@@ -482,12 +486,12 @@ void ro_gui_hotlist_redraw(wimp_draw *redraw) {
 	/*	Check if we should reformat
 	*/
 	if (reformat_pending) {
-	  	max_width += 8;
-	  	max_height -= 4;
-	  	if (max_width < 600) max_width = 600;
-	  	if (max_height > -800) max_height = -800;
-	  	extent.x1 = max_width;
-	  	extent.y0 = max_height;
+		max_width += 8;
+		max_height -= 4;
+		if (max_width < 600) max_width = 600;
+		if (max_height > -800) max_height = -800;
+		extent.x1 = max_width;
+		extent.y0 = max_height;
 		xwimp_set_extent(hotlist_window, &extent);
 		state.w = hotlist_window;
 		wimp_get_window_state(&state);
@@ -511,21 +515,27 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 	/*	Repeatedly draw our entries
 	*/
 	while (entry) {
-		/*	Update the entry position
-		*/
-		entry->x0 = x0 - origin_x;
-		entry->y0 = y0 - 44 - origin_y; 
-		if (entry->expanded) {
-			entry->width = entry->expanded_width;
-		} else {
-			entry->width = entry->collapsed_width;
-		}
   	 
 		/*	Redraw the item
 		*/
 		height = ro_gui_hotlist_redraw_item(entry, level, x0 + 32, y0);
 		box_y0 = y0;
 		cumulative += height;
+
+		/*	Update the entry position
+		*/
+		if (entry->children == -1) {
+			entry->height = height;
+		} else {
+			entry->height = 44;
+		}
+		entry->x0 = x0 - origin_x;
+		entry->y0 = y0 - origin_y - entry->height;
+		if (entry->expanded) {
+			entry->width = entry->expanded_width;
+		} else {
+			entry->width = entry->collapsed_width;
+		}
 
 		/*	Get the maximum extents
 		*/
@@ -622,6 +632,7 @@ int ro_gui_hotlist_redraw_item(struct hotlist_entry *entry, int level, int x0, i
 	if (entry->selected) {
 		sprite_icon.flags |= wimp_ICON_SELECTED;
 		text_icon.flags |= wimp_ICON_SELECTED;
+		text_icon.flags |= wimp_ICON_FILLED;
 	}
 
 	/*	Draw our icon type
@@ -631,7 +642,7 @@ int ro_gui_hotlist_redraw_item(struct hotlist_entry *entry, int level, int x0, i
 	sprite_icon.extent.y0 = y0 - origin_y - 44;
 	sprite_icon.extent.y1 = y0 - origin_y;
 	if (entry->children != -1) {
-		if (entry->selected) {
+		if ((entry->expanded) && (entry->children > 0)) {
 			sprite_icon.data.indirected_sprite.id = (osspriteop_id)"small_diro";  
 		} else {
 			sprite_icon.data.indirected_sprite.id = (osspriteop_id)"small_dir";
@@ -645,7 +656,7 @@ int ro_gui_hotlist_redraw_item(struct hotlist_entry *entry, int level, int x0, i
 	*/
 	text_icon.data.indirected_text.text = entry->title;
 	text_icon.extent.x0 = x0 - origin_x + 36;
-	text_icon.extent.x1 = x0 - origin_x + 1024;
+	text_icon.extent.x1 = x0 - origin_x + entry->collapsed_width - 32;
 	text_icon.extent.y0 = y0 - origin_y - 44;
 	text_icon.extent.y1 = y0 - origin_y;
 	xwimp_plot_icon(&text_icon);
@@ -655,28 +666,30 @@ int ro_gui_hotlist_redraw_item(struct hotlist_entry *entry, int level, int x0, i
 	if (entry->selected) {
 		sprite_icon.flags &= ~wimp_ICON_SELECTED;
 		text_icon.flags &= ~wimp_ICON_SELECTED;
+		text_icon.flags &= ~wimp_ICON_FILLED;
 	}
 
 	/*	Draw our further information if expanded
 	*/
 	if ((entry->children == -1) && (entry->expanded) && (entry->url)) {
-	  	/*	Draw the line
-	  	*/
-	  	y0 -= 44;
+		/*	Draw the line
+		*/
+		y0 -= 44;
 		xosspriteop_put_sprite_scaled(osspriteop_PTR,
 				gui_sprites, sprite[HOTLIST_TLINE],
-				x0 + 16, y0 - 24,
+				x0 + 16, y0 - 22,
 				osspriteop_USE_MASK | osspriteop_USE_PALETTE,
 				0, pixel_table);
 		xosspriteop_put_sprite_scaled(osspriteop_PTR,
 				gui_sprites, sprite[HOTLIST_ENTRY],
-				x0 + 8, y0 - 31,
+				x0 + 8, y0 - 29,
 				osspriteop_USE_MASK | osspriteop_USE_PALETTE,
 				0, pixel_table);
 
 		/*	Plot the text
 		*/
 		text_icon.data.indirected_text.text = entry->url;
+		text_icon.extent.x1 = x0 - origin_x + 4096;
 		text_icon.extent.y0 -= 44;
 		text_icon.extent.y1 -= 44;
 		xwimp_plot_icon(&text_icon);
@@ -723,19 +736,59 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 		/*	Check if we clicked on the expanding bit
 		*/
 		x_offset = x - entry->x0;
-		if ((x_offset < 32) || 
-			((entry->children != -1) && (buttons == wimp_DOUBLE_SELECT))) {
+		if ((x_offset < 32) || ((entry->children != -1) &&
+			((buttons == wimp_DOUBLE_SELECT) || (buttons == wimp_DOUBLE_ADJUST)))) {
 			entry->expanded = !entry->expanded;
+			if (x_offset >= 32) entry->selected = false;
 			reformat_pending = true;
 			xwimp_force_redraw(hotlist_window, 0, -16384, 16384, 0);
 		} else {
-		  	if ((buttons == wimp_DOUBLE_SELECT) || 
-		  			(buttons == wimp_DOUBLE_ADJUST)) {
+			/*	Check for selection
+			*/
+			if (buttons == (wimp_CLICK_SELECT << 8)) {
+				if (entry->selected) {
+					entry->selected = false;
+					ro_gui_hotlist_selection_state(root.child_entry,
+							false, true);
+					entry->selected = true;
+				} else {
+					ro_gui_hotlist_selection_state(root.child_entry,
+							false, true);
+					entry->selected = true;
+					xwimp_force_redraw(hotlist_window,
+						entry->x0, entry->y0,
+						entry->x0 + entry->width,
+						entry->y0 + entry->height);	 
+				}
+			} else if (buttons == (wimp_CLICK_ADJUST << 8)) {
+				entry->selected = !entry->selected;
+				xwimp_force_redraw(hotlist_window,
+					entry->x0, entry->y0,
+					entry->x0 + entry->width,
+					entry->y0 + entry->height);	 
+		  		 
+			}
+		  
+			/*	Check if we should open the URL
+			*/
+			if (((buttons == wimp_DOUBLE_SELECT) || (buttons == wimp_DOUBLE_ADJUST)) &&
+					(entry->children == -1)) {
 				browser_window_create(entry->url, NULL);
-				if (buttons == wimp_DOUBLE_ADJUST) {
+				if (buttons == wimp_DOUBLE_SELECT) {
+					ro_gui_hotlist_selection_state(root.child_entry,
+							false, true);
+				} else {
+					entry->selected = false;
 					xwimp_close_window(hotlist_window);
 				}
-		  	}
+			}
+		}
+	} else {
+	  	/*	Deselect everything if we click nowhere
+	  	*/
+		if (buttons == (wimp_CLICK_SELECT << 8)) {
+			ro_gui_hotlist_selection_state(root.child_entry,
+					false, true);
 		}
 	}
 	
@@ -745,27 +798,66 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 struct hotlist_entry *ro_gui_hotlist_find_entry(int x, int y, struct hotlist_entry *entry) {
 	struct hotlist_entry *find_entry;
 	
-	/*	Check we have an entry (only applies if we have an empty hotlist
+	/*	Check we have an entry (only applies if we have an empty hotlist)
 	*/
 	if (!entry) return NULL;
 
 	/*	Get the first child entry
 	*/
 	while (entry) {
-	  	/*	Check this entry
-	  	*/
-	  	if ((x > entry->x0) && (y > entry->y0) && (x < (entry->x0 + entry->width)) &&
-	  			(y < (entry->y0 + entry->height))) {
-	  		return entry;	 
-	  	}
+		/*	Check this entry
+		*/
+		if ((x > entry->x0) && (y > entry->y0) && (x < (entry->x0 + entry->width)) &&
+				(y < (entry->y0 + entry->height))) {
+			return entry;	 
+		}
 	  
-	  	/*	Continue onwards
-	  	*/
-	  	if ((entry->child_entry) && (entry->expanded)) {
-	  		find_entry = ro_gui_hotlist_find_entry(x, y, entry->child_entry);
-	  		if (find_entry) return find_entry;
-	  	}
+		/*	Continue onwards
+		*/
+		if ((entry->child_entry) && (entry->expanded)) {
+			find_entry = ro_gui_hotlist_find_entry(x, y, entry->child_entry);
+			if (find_entry) return find_entry;
+		}
 		entry = entry->next_entry;
 	}
 	return NULL;
+}
+
+int ro_gui_hotlist_selection_state(struct hotlist_entry *entry, bool selected, bool redraw) {
+	int changes = 0;
+
+	/*	Check we have an entry (only applies if we have an empty hotlist)
+	*/
+	if (!entry) return 0;
+
+	/*	Get the first child entry
+	*/
+	while (entry) {
+		/*	Check this entry
+		*/
+		if (entry->selected != selected) {
+			/*	Update the selection state
+			*/
+			entry->selected = selected;
+			changes++;
+	  		
+			/*	Redraw the entry
+			*/
+			if (redraw) {
+				xwimp_force_redraw(hotlist_window,
+						entry->x0, entry->y0,
+						entry->x0 + entry->width,
+						entry->y0 + entry->height);
+			}
+		}
+	  
+		/*	Continue onwards
+		*/
+		if (entry->child_entry) {
+			changes += ro_gui_hotlist_selection_state(entry->child_entry,
+					selected & (entry->expanded), redraw);
+		}
+		entry = entry->next_entry;
+	}
+	return changes;
 }
