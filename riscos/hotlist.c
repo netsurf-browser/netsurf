@@ -2086,10 +2086,10 @@ void ro_gui_hotlist_toolbar_click(wimp_pointer* pointer) {
 	  		hotlist_insert = false;
 	  		if (pointer->buttons == wimp_CLICK_SELECT) {
 	  			ro_gui_hotlist_prepare_folder_dialog(false);
-	  			ro_gui_dialog_open_persistant(hotlist_window, dialog_folder);
+	  			ro_gui_dialog_open_persistant(hotlist_window, dialog_folder, true);
 	  		} else {
 	  			ro_gui_hotlist_prepare_entry_dialog(false);
-	  			ro_gui_dialog_open_persistant(hotlist_window, dialog_entry);
+	  			ro_gui_dialog_open_persistant(hotlist_window, dialog_entry, true);
 	  		}
 	  		break;
 	  	case ICON_TOOLBAR_OPEN:
