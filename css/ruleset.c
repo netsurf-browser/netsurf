@@ -367,11 +367,23 @@ int parse_length(struct css_length * const length,
 colour named_colour(const char *name)
 {
 	struct colour_entry *col;
+	unsigned int r, g, b;
+
 	col = bsearch(name, colour_table,
 			sizeof(colour_table) / sizeof(colour_table[0]),
 			sizeof(colour_table[0]), (void*)strcasecmp);
-	if (col == 0)
-		return TRANSPARENT;
+	if (col == 0) {
+	        /* A common error is the omission of the '#' from the
+	         * start of a colour specified in #rrggbb format.
+	         * This attempts to detect and recover from this.
+	         */
+	        if (strlen(name) == 6 &&
+	            sscanf(name, "%2x%2x%2x", &r, &g, &b) == 3) {
+	                return (b << 16) | (g << 8) | r;
+	        }
+	        else
+		        return TRANSPARENT;
+	}
 	return col->col;
 }
 
