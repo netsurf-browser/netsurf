@@ -334,6 +334,10 @@ void gui_multitask(void)
 
 	switch (event) {
 		case wimp_CLOSE_WINDOW_REQUEST:
+			/* \todo close the window, and destroy content
+			 * or abort loading of content */
+			break;
+
 		case wimp_KEY_PRESSED:
 		case wimp_MENU_SELECTION:
 		case wimp_USER_MESSAGE:
@@ -444,6 +448,7 @@ void ro_gui_close_window_request(wimp_close *close)
 	gui_window *g;
 
 	g = ro_lookup_gui_from_w(close->w);
+
 	if (g) {
 		browser_window_destroy(g->data.browser.bw
 #ifdef WITH_FRAMES
