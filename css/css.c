@@ -799,7 +799,8 @@ bool css_merge_rule_lists_internal(struct css_selector *l1, struct css_selector 
 			/** \todo warn user? */
 			return false;
 
-		if (a->specificity < b->specificity) {
+		if ((a && b && a->specificity < b->specificity) ||
+		    (a && !b)) {
 			entry = memcpy(entry, a, sizeof(*entry));
 			a = a->next;
 		}
