@@ -251,14 +251,23 @@ bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
 
 
 /**
- * Set the selected state of an icon.
+ * Set the shaded state of an icon.
  *
  * \param  w     window handle
  * \param  i     icon handle
  * \param  state selected state
  */
-#define ro_gui_set_icon_shaded_state(w, i, state) \
-		xwimp_set_icon_state(w, i, (state ? wimp_ICON_SHADED : 0), wimp_ICON_SHADED)
+void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state) {
+	os_error *error;
+	if (ro_gui_get_icon_selected_state(w, i) == state) return;
+	error = xwimp_set_icon_state(w, i,
+			(state ? wimp_ICON_SHADED : 0), wimp_ICON_SHADED);
+	if (error) {
+		LOG(("xwimp_get_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+}
 
 
 /**
