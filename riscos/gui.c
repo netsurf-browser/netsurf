@@ -666,6 +666,10 @@ void ro_gui_close_window_request(wimp_close *close)
 {
 	gui_window *g;
 	struct gui_download_window *dw;
+	
+	/*	Check for children
+	*/
+	ro_gui_dialog_close_persistant(close->w);
 
 	if (close->w == dialog_debug)
 		ro_gui_debugwin_close();

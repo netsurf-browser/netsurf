@@ -111,12 +111,15 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning);
 void ro_gui_prepare_navigate(gui_window *gui);
 void ro_gui_menu_prepare_save(struct content *c);
 void ro_gui_menu_prepare_scale(void);
+void ro_gui_menu_prepare_pageinfo(void);
 
 /* in dialog.c */
 void ro_gui_dialog_init(void);
 wimp_w ro_gui_dialog_create(const char *template_name);
 wimp_window * ro_gui_dialog_load_template(const char *template_name);
 void ro_gui_dialog_open(wimp_w w);
+void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w);
+void ro_gui_dialog_close_persistant(wimp_w parent);
 void ro_gui_dialog_click(wimp_pointer *pointer);
 void ro_gui_save_options(void);
 bool ro_gui_dialog_keypress(wimp_key *key);

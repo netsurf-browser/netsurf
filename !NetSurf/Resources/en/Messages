@@ -132,6 +132,7 @@ MiscError:An unexpected error occurred:
 FileError:File does not exist:
 HotlistSaveError:The hotlist was unable to be correctly saved.
 HotlistLoadError:The hotlist was unable to be correctly loaded.
+NoPathError:To save, drag the icon to a directory display
 
 # Some general purpose words and phrases
 Bytes: B

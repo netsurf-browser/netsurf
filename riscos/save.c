@@ -47,6 +47,17 @@ static bool ro_gui_save_link(struct content *c, link_format format, char *path);
 void ro_gui_save_click(wimp_pointer *pointer)
 {
 	switch (pointer->i) {
+	  	case ICON_SAVE_OK:
+	  		/*	Todo: Try save, and report error NoPathError if needed */
+	  		break; 
+	  	case ICON_SAVE_CANCEL:
+	  		if (pointer->buttons == wimp_CLICK_SELECT) {
+	  		  	xwimp_close_window(pointer->w);
+	  		  	xwimp_create_menu((wimp_menu *)-1, 0, 0);
+	  		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
+	  			ro_gui_menu_prepare_save(save_content);
+	  		}
+	  		break;
 		case ICON_SAVE_ICON:
 			if (pointer->buttons == wimp_DRAG_SELECT) {
 				gui_current_drag_type = GUI_DRAG_SAVE;

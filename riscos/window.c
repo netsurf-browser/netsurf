@@ -949,6 +949,11 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 	}
 
 	switch (key) {
+		case wimp_KEY_CONTROL + wimp_KEY_F1:
+			current_gui = g;
+			ro_gui_menu_prepare_pageinfo();
+			ro_gui_dialog_open_persistant(g->window, dialog_pageinfo);
+			return true;
 		case wimp_KEY_F1:	/* Help. */
 			ro_gui_open_help_page("docs");
 			return true;
@@ -996,33 +1001,28 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			current_gui = g;
 			gui_current_save_type = GUI_SAVE_SOURCE;
 			ro_gui_menu_prepare_save(content);
-			/** \todo  make save window persistent */
-			xwimp_create_menu((wimp_menu *) dialog_saveas,
-					pointer.pos.x, pointer.pos.y);
+			ro_gui_dialog_open_persistant(g->window, dialog_saveas);
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_F3:
 			current_gui = g;
 			gui_current_save_type = GUI_SAVE_TEXT;
 			ro_gui_menu_prepare_save(content);
-			xwimp_create_menu((wimp_menu *) dialog_saveas,
-					pointer.pos.x, pointer.pos.y);
+			ro_gui_dialog_open_persistant(g->window, dialog_saveas);
 			return true;
 
 		case wimp_KEY_SHIFT + wimp_KEY_F3:
 			current_gui = g;
 			gui_current_save_type = GUI_SAVE_COMPLETE;
 			ro_gui_menu_prepare_save(content);
-			xwimp_create_menu((wimp_menu *) dialog_saveas,
-					pointer.pos.x, pointer.pos.y);
+			ro_gui_dialog_open_persistant(g->window, dialog_saveas);
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F3:
 			current_gui = g;
 			gui_current_save_type = GUI_SAVE_DRAW;
 			ro_gui_menu_prepare_save(content);
-			xwimp_create_menu((wimp_menu *) dialog_saveas,
-					pointer.pos.x, pointer.pos.y);
+			ro_gui_dialog_open_persistant(g->window, dialog_saveas);
 			return true;
 
 		case wimp_KEY_RETURN:

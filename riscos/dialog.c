@@ -26,6 +26,10 @@
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
+/*	The maximum number of persistant dialogues
+*/
+#define MAX_PERSISTANT 8
+
 wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, download_template,
 #ifdef WITH_AUTH
@@ -40,6 +44,9 @@ static char *theme_choice = 0;
 static struct theme_entry *theme_list = 0;
 static unsigned int theme_list_entries = 0;
 
+/*	A simple mapping of parent and child
+*/
+static wimp_w persistant_dialog[MAX_PERSISTANT][1];
 
 static void ro_gui_dialog_click_config(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_br(wimp_pointer *pointer);
@@ -183,7 +190,6 @@ wimp_window * ro_gui_dialog_load_template(const char *template_name)
 /**
  * Open a dialog box, centered on the screen.
  */
-
 void ro_gui_dialog_open(wimp_w w)
 {
 	int screen_x, screen_y, dx, dy;
@@ -206,6 +212,79 @@ void ro_gui_dialog_open(wimp_w w)
 	open.next = wimp_TOP;
 	wimp_open_window((wimp_open *) &open);
 }
+
+
+/**
+ * Open a persistant dialog box relative to the pointer.
+ *
+ * \param parent the owning window (NULL for no owner)
+ * \param w      the dialog window
+ */
+void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w) {
+	int dx, dy, i;
+	wimp_pointer pointer;
+	wimp_window_state open;
+	os_error *error;
+	
+	/*	Get the pointer position
+	*/
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info: 0x%x: %s\n",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	/*	Move and open
+	*/
+	open.w = w;
+	wimp_get_window_state(&open);
+	dx = (open.visible.x1 - open.visible.x0);
+	dy = (open.visible.y1 - open.visible.y0);
+	open.visible.x0 = pointer.pos.x - 64;
+	open.visible.x1 = pointer.pos.x - 64 + dx;
+	open.visible.y0 = pointer.pos.y - dy;
+	open.visible.y1 = pointer.pos.y;
+	open.next = wimp_TOP;
+	wimp_open_window((wimp_open *) &open);
+	
+	/*	Add a mapping
+	*/
+	if (parent == NULL) return;
+	for (i = 0; i < MAX_PERSISTANT; i++) {
+		if ((persistant_dialog[i][0] == NULL) || (persistant_dialog[i][0] == w)) {
+			persistant_dialog[i][0] = w;
+			persistant_dialog[i][1] = parent;
+			return;
+		}
+	}
+
+	/*	Log that we failed to create a mapping
+	*/	
+	LOG(("Unable to map persistant dialog to parent."));
+}
+
+
+/**
+ * Open a persistant dialog box relative to the pointer.
+ *
+ * \param parent the window to close children of
+ */
+void ro_gui_dialog_close_persistant(wimp_w parent) {
+  	int i;
+	
+	/*	Check our mappings
+	*/
+	if (parent == NULL) return;
+	for (i = 0; i < MAX_PERSISTANT; i++) {
+		if (persistant_dialog[i][1] == parent) {
+		  	xwimp_close_window(persistant_dialog[i][0]);
+		  	persistant_dialog[i][0] = NULL;
+		}
+	}
+}
+
 
 /**
  * Handle key presses in one of the dialog boxes.

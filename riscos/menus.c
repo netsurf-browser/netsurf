@@ -45,7 +45,6 @@ static void ro_gui_menu_prepare_images(void);
 static void ro_gui_menu_prepare_window(void);
 static void ro_gui_menu_prepare_toolbars(void);
 static void ro_gui_menu_prepare_help(int forced);
-static void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning);
 static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
 static struct box *ro_gui_menu_find_object_box(void);
 static void ro_gui_menu_object_reload(void);
@@ -867,7 +866,13 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 
 
 				case 0: /* Page info */
-					ro_gui_menu_pageinfo(warning);
+					ro_gui_menu_prepare_pageinfo();
+					error = xwimp_create_sub_menu((wimp_menu *) dialog_pageinfo,
+							warning->pos.x, warning->pos.y);
+					if (error) {
+						LOG(("0x%x: %s\n", error->errnum, error->errmess));
+						warn_user("MenuError", error->errmess);
+					}
 					return;
 
 				case 1:
@@ -1336,10 +1341,9 @@ void ro_gui_menu_prepare_help(int forced) {
 	}
 }
 
-void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
+void ro_gui_menu_prepare_pageinfo(void)
 {
 	struct content *c = current_gui->data.browser.bw->current_content;
-	os_error *error;
 	char icon_buf[20] = "file_xxx";
 	const char *icon = icon_buf;
 	const char *title = "-";
@@ -1353,6 +1357,12 @@ void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
 
 	sprintf(icon_buf, "file_%x", ro_content_filetype(c));
 
+	/*	Ensure the correct icon exists
+	*/
+	if (xwimpspriteop_read_sprite_info(icon_buf, 0, 0, 0, 0)) {
+		sprintf(icon_buf, "file_xxx");
+	}
+
 	if (c->type == CONTENT_HTML && c->data.html.encoding != NULL) {
 		enc = c->data.html.encoding;
 	}
@@ -1362,13 +1372,6 @@ void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_URL, url);
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ENC, enc);
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TYPE, mime);
-
-	error = xwimp_create_sub_menu((wimp_menu *) dialog_pageinfo,
-			warning->pos.x, warning->pos.y);
-	if (error) {
-		LOG(("0x%x: %s\n", error->errnum, error->errmess));
-		warn_user("MenuError", error->errmess);
-	}
 }
 
 void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning)
