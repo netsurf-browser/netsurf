@@ -46,7 +46,7 @@ struct fetch {
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
 	char *url;		/**< URL. */
 	char *referer;		/**< URL for Referer header. */
-	char error_buffer[CURL_ERROR_SIZE];	/**< Error buffer for cURL. */
+	char error_buffer[CURL_ERROR_SIZE + 10];	/**< Error buffer for cURL. */
 	void *p;		/**< Private data for callback. */
 	struct curl_slist *headers;	/**< List of request headers. */
 	char *host;		/**< Host part of URL. */
