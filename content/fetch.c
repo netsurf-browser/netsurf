@@ -151,7 +151,7 @@ void fetch_quit(void)
 struct fetch * fetch_start(char *url, char *referer,
 		void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size),
 		void *p, bool only_2xx, char *post_urlenc,
-		struct form_successful_control *post_multipart)
+		struct form_successful_control *post_multipart, bool cookies)
 {
 	struct fetch *fetch = xcalloc(1, sizeof(*fetch)), *host_fetch;
 	CURLcode code;
@@ -295,6 +295,16 @@ struct fetch * fetch_start(char *url, char *referer,
 	} else if (fetch->post_multipart) {
 		code = curl_easy_setopt(fetch->curl_handle,
 				CURLOPT_HTTPPOST, fetch->post_multipart);
+		assert(code == CURLE_OK);
+	}
+
+	/* Cookies */
+	if (cookies) {
+		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_COOKIEFILE,
+				messages_get("cookiefile"));
+		assert(code == CURLE_OK);
+		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_COOKIEJAR,
+				messages_get("cookiejar"));
 		assert(code == CURLE_OK);
 	}
 

@@ -169,7 +169,7 @@ void css_revive(struct content *c, unsigned int width, unsigned int height)
 		c->data.css.import_content[i] = fetchcache(
 				c->data.css.import_url[i], c->url,
 				css_atimport_callback, c, i,
-				c->width, c->height, true, 0, 0);
+				c->width, c->height, true, 0, 0, false);
 		if (c->data.css.import_content[i] == 0)
 			continue;
 		if (c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
@@ -335,7 +335,7 @@ void css_atimport(struct content *c, struct css_node *node)
 	c->data.css.import_url[i] = url1;
 	c->data.css.import_content[i] = fetchcache(
 			c->data.css.import_url[i], c->url, css_atimport_callback,
-			c, i, c->width, c->height, true, 0, 0);
+			c, i, c->width, c->height, true, 0, 0, false);
 	if (c->data.css.import_content[i] &&
 			c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
 		c->active++;
@@ -383,7 +383,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 			c->data.css.import_url[i] = xstrdup(error);
 			c->data.css.import_content[i] = fetchcache(
 					c->data.css.import_url[i], c->url, css_atimport_callback,
-					c, i, css->width, css->height, true, 0, 0);
+					c, i, css->width, css->height, true, 0, 0, false);
 			if (c->data.css.import_content[i] &&
 					c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
 				c->active++;
