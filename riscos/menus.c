@@ -609,7 +609,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				  	case 0: /* Hotlist -> */
 				  		switch (selection->items[2]) {
 				  			case 0:	/* Add to hotlist */
-				  				ro_gui_hotlist_add(current_gui->title, current_gui->url);
+				  				ro_gui_hotlist_add(current_gui->title,
+				  						current_gui->data.browser.bw->current_content);
 				  				break;
 				  			case 1: /* Show hotlist */
 				  				ro_gui_hotlist_show();

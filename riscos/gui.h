@@ -177,7 +177,8 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer);
 /* in hotlist.c */
 void ro_gui_hotlist_init(void);
 void ro_gui_hotlist_show(void);
-void ro_gui_hotlist_add(char *title, char *url);
+void ro_gui_hotlist_add(char *title, struct content *content);
+void ro_gui_hotlist_visited(struct content *content);
 void ro_gui_hotlist_redraw(wimp_draw *redraw);
 void ro_gui_hotlist_click(wimp_pointer *pointer);
 

@@ -740,7 +740,7 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
 			break;
 		case ICON_TOOLBAR_BOOKMARK:
 			if (pointer->buttons == wimp_CLICK_SELECT) {
-				ro_gui_hotlist_add(g->title, g->url);
+				ro_gui_hotlist_add(g->title, g->data.browser.bw->current_content);
 			} else {
 				ro_gui_hotlist_show();
 			}
@@ -891,6 +891,7 @@ void gui_window_start_throbber(struct gui_window* g) {
 
 void gui_window_stop_throbber(gui_window* g) {
 	ro_gui_prepare_navigate(g);
+	ro_gui_hotlist_visited(g->data.browser.bw->current_content);
 	g->throbber = 0;
 	sprintf(g->throb_buf, "throbber%u", g->throbber);
 	ro_gui_redraw_icon(g->data.browser.toolbar->toolbar_handle, ICON_TOOLBAR_THROBBER);
