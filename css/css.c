@@ -90,6 +90,7 @@
 #endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/talloc.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
@@ -384,7 +385,8 @@ bool css_convert(struct content *c, int width, int height)
 
 	c->data.css.css = malloc(sizeof *c->data.css.css);
 	parser = css_parser_Alloc(malloc);
-	source_data = realloc(c->source_data, c->source_size + 10);
+	source_data = talloc_realloc(c, c->source_data, char,
+			c->source_size + 10);
 
 	if (!c->data.css.css || !parser || !source_data) {
 		free(c->data.css.css);
