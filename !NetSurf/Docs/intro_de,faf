@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>NetSurf | Open Source Web Browser für RISC OS</title>
+<link rel="stylesheet" type="text/css" href="netsurf">
+</head>
+
+<body>
+<h1 class="banner"><img src="netsurf_png" alt="NetSurf"></h1>
+<p class="languages">Deutsch · <a href="intro_en">English</a> · <a href="intro_fr">français</a></p>
+
+<div>
+
+<p><em>NetSurf</em> ist ein Open-Source Web-Browser für RISC OS. Ziel dieses Projektes ist
+es, die Standards HTML&nbsp;4 und CSS auf der RISC OS Plattform zur Verfügung zu stellen. Für weitere Informationen über NetSurf bitte die <a href="docs_de">Dokumentation</a> lesen.</p>
+
+<h2>Aktueller Status</h2>
+<p>NetSurf ist zur Zeit inkomplett und viele Funktionen sind noch nicht oder nicht vollständig implementiert. Um einen Überblick über NetSurf's Entwicklungzustand zu erhalten, lesen Sie bitte die Seite <a href="progress_de">'Stand der Entwicklung'</a>. Sollte es beim Benutzen zu Abstürzen oder unerwartetem Verhalten kommen, wäre es nett, wenn Sie das Problem mit einer genauen Fehlerbeschreibung an die <a href="info_de#Devel">Entwickler</a> melden würden.</p>
+
+<h2>NetSurf Links</h2>
+
+<dl>
+<dt><a href="http://netsurf.sourceforge.net/">NetSurf Homepage</a></dt>
+<dd>Die NetSurf Webseite</dd>
+
+<dt><a href="http://sourceforge.net/projects/netsurf/">SourceForge Projekt Seite</a></dt>
+<dd>SourceForge stellt die Mailing-Liste, den Bug-Tracker und andere Dienste zur Vefügung</dd>
+
+<dt><a href="http://netsurf.strcprstskrzkrk.co.uk/">Test Versionen</a></dt>
+<dd>Werden regelmäßig aus dem aktuellen Sourcecode erzeugt</dd>
+
+<dt><a href="http://sourceforge.net/tracker/?atid=464312&amp;group_id=51719">Bug-Tracker</a></dt>
+<dd>Fehler bitte an den Bug-Tracker übermitteln oder über die Mailing-Liste mitteilen</dd>
+
+<dt><a href="http://lists.sourceforge.net/lists/listinfo/netsurf-develop">Entwickler Mailing-Liste</a></dt>
+<dd>Bitte hier anmelden, um als Tester oder Entwickler mitzuarbeiten</dd>
+
+<dt><a href="http://cvs.semichrome.net/netsurf/">CVS web interface</a></dt>
+<dd>Den Sourcecode ansehen</dd>
+</dl>
+
+</div>
+
+<div class="links">
+<h3>Netzsuche</h3>
+
+<form method="get" action="http://www.google.com/search"><p><a href="http://www.google.com/">Google</a> Suche:<br><input type="text" size="15" name="q" maxlength="255"><input type="submit" value="starten" name="btnG"></p></form>
+
+<h3>Web Standards</h3>
+<ul>
+<li><a href="http://www.w3.org/">World Wide Web Consortium</a></li>
+</ul>
+
+<h3>RISC OS Links</h3>
+<ul>
+<li><a href="http://www.drobe.co.uk/">Drobe Launch Pad</a></li>
+<li><a href="http://www.iconbar.com/">The Icon Bar</a></li>
+<li><a href="http://www.arcsite.de/">ArcSite</a> (deutsch)</li>
+</ul>
+
+<h3>Andere Links</h3>
+<ul>
+<li><a href="http://slashdot.org/">Slashdot</a></li>
+<li><a href="http://www.theregister.co.uk/">The&nbsp;Register</a></li>
+</ul>
+
+</div>
+
+<p class="footer"><em>NetSurf</em> is copyright 2003 - 2004 The NetSurf
+Developers</p>
+
+</body>
+</html>
+
