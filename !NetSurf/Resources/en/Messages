@@ -70,6 +70,8 @@ HelpInfo:User information
 HelpInter:Interactive help
 HelpAbout:About NetSurf
 
+Languages:Language
+
 ProxyAuth:Authentication
 ProxyNone:None
 ProxyBasic:Basic

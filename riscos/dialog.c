@@ -47,6 +47,9 @@ static int ro_gui_choices_http_proxy_auth;
 static char *theme_choice = 0;
 static struct theme_entry *theme_list = 0;
 static unsigned int theme_list_entries = 0;
+static int config_br_icon = -1;
+static const char *ro_gui_choices_lang = 0;
+static const char *ro_gui_choices_alang = 0;
 
 static const char *ro_gui_proxy_auth_name[] = {
 	"ProxyNone", "ProxyBasic", "ProxyNTLM"
@@ -483,6 +486,16 @@ void ro_gui_dialog_config_set(void)
 	option_open_browser_at_startup = ro_gui_get_icon_selected_state(
 			dialog_config_br,
 			ICON_CONFIG_BR_OPENBROWSER);
+	if (ro_gui_choices_lang) {
+		free(option_language);
+		option_language = strdup(ro_gui_choices_lang);
+		ro_gui_choices_lang = 0;
+	}
+	if (ro_gui_choices_alang) {
+		free(option_accept_language);
+		option_accept_language = strdup(ro_gui_choices_alang);
+		ro_gui_choices_alang = 0;
+	}
 
 	/* proxy pane */
 	option_http_proxy = ro_gui_choices_http_proxy;
@@ -584,11 +597,19 @@ void ro_gui_save_options(void)
 
 void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 {
+	int stepping = 1;
+
+	if (pointer->buttons == wimp_CLICK_ADJUST)
+		stepping = -stepping;
+
 	switch (pointer->i) {
 		case ICON_CONFIG_BR_FONTSIZE_DEC:
-			if (ro_gui_choices_font_size == 50)
-				break;
-			ro_gui_choices_font_size--;
+			ro_gui_choices_font_size -= stepping;
+			if (ro_gui_choices_font_size < 50)
+				ro_gui_choices_font_size = 50;
+			if (ro_gui_choices_font_size > 1000)
+				ro_gui_choices_font_size = 1000;
+
 			if (ro_gui_choices_font_size <
 					ro_gui_choices_font_min_size)
 				ro_gui_choices_font_min_size =
@@ -596,28 +617,78 @@ void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 			ro_gui_dialog_update_config_br();
 			break;
 		case ICON_CONFIG_BR_FONTSIZE_INC:
-			if (ro_gui_choices_font_size == 1000)
-				break;
-			ro_gui_choices_font_size++;
+			ro_gui_choices_font_size += stepping;
+			if (ro_gui_choices_font_size < 50)
+				ro_gui_choices_font_size = 50;
+			if (ro_gui_choices_font_size > 1000)
+				ro_gui_choices_font_size = 1000;
 			ro_gui_dialog_update_config_br();
 			break;
 		case ICON_CONFIG_BR_MINSIZE_DEC:
-			if (ro_gui_choices_font_min_size == 10)
-				break;
-			ro_gui_choices_font_min_size--;
+			ro_gui_choices_font_min_size -= stepping;
+			if (ro_gui_choices_font_min_size < 10)
+				ro_gui_choices_font_min_size = 10;
+			if (ro_gui_choices_font_min_size > 500)
+				ro_gui_choices_font_min_size = 500;
 			ro_gui_dialog_update_config_br();
 			break;
 		case ICON_CONFIG_BR_MINSIZE_INC:
-			if (ro_gui_choices_font_min_size == 500)
-				break;
-			ro_gui_choices_font_min_size++;
+			ro_gui_choices_font_min_size += stepping;
+			if (ro_gui_choices_font_min_size < 10)
+				ro_gui_choices_font_min_size = 10;
+			if (ro_gui_choices_font_min_size > 500)
+				ro_gui_choices_font_min_size = 500;
+
 			if (ro_gui_choices_font_size <
 					ro_gui_choices_font_min_size)
 				ro_gui_choices_font_size =
 						ro_gui_choices_font_min_size;
 			ro_gui_dialog_update_config_br();
 			break;
+		case ICON_CONFIG_BR_LANG_PICK:
+			/* drop through */
+		case ICON_CONFIG_BR_ALANG_PICK:
+			config_br_icon = pointer->i;
+			ro_gui_popup_menu(languages_menu, dialog_config_br, pointer->i);
+			break;
 	}
+}
+
+/**
+ * Handle a selection from the language selection popup menu.
+ *
+ * \param lang The language name (as returned by messages_get)
+ */
+
+void ro_gui_dialog_languages_menu_selection(char *lang)
+{
+	int offset = strlen("lang_");
+
+	const char *temp = messages_get_key(lang);
+	if (temp == NULL) {
+		warn_user("MiscError", "Failed to retrieve message key");
+		config_br_icon = -1;
+		return;
+	}
+
+	switch (config_br_icon) {
+		case ICON_CONFIG_BR_LANG_PICK:
+			ro_gui_choices_lang = temp + offset;
+			ro_gui_set_icon_string(dialog_config_br,
+						ICON_CONFIG_BR_LANG,
+						lang);
+			break;
+		case ICON_CONFIG_BR_ALANG_PICK:
+			ro_gui_choices_alang = temp + offset;
+			ro_gui_set_icon_string(dialog_config_br,
+						ICON_CONFIG_BR_ALANG,
+						lang);
+			break;
+	}
+
+	/* invalidate icon number and update window */
+	config_br_icon = -1;
+	ro_gui_dialog_update_config_br();
 }
 
 

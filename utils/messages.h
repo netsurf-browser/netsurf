@@ -23,6 +23,7 @@
 
 void messages_load(const char *path);
 const char *messages_get(const char *key);
+const char *messages_get_key(const char *value);
 void messages_dump(void);
 
 #endif

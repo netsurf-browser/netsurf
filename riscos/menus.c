@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "oslib/os.h"
+#include "oslib/osgbpb.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/desktop/gui.h"
@@ -43,6 +44,7 @@
 #define MENU_HELP	5
 
 static void translate_menu(wimp_menu *menu);
+static void build_languages_menu(void);
 static void ro_gui_menu_prepare_images(void);
 static void ro_gui_menu_prepare_window(void);
 static void ro_gui_menu_prepare_toolbars(void);
@@ -383,7 +385,7 @@ static wimp_MENU(4) hotlist_root = {
 wimp_menu *hotlist_menu = (wimp_menu *)&hotlist_root;
 
 
-/*	Proxy auth popup menu (used in proxy Choices dialog
+/*	Proxy auth popup menu (used in proxy Choices dialog)
 */
 static wimp_MENU(3) proxy_menu = {
   { "ProxyAuth" }, 7,2,7,0, 200, 44, 0,
@@ -395,6 +397,9 @@ static wimp_MENU(3) proxy_menu = {
 };
 wimp_menu *proxyauth_menu = (wimp_menu *) &proxy_menu;
 
+/*	Languages popup menu (used in browser choices dialog)
+*/
+wimp_menu *languages_menu = NULL;
 
 static wimp_menu *browser_page_menu = (wimp_menu *)&page_menu;
 static wimp_menu *browser_export_menu = (wimp_menu *)&export_menu;
@@ -455,6 +460,8 @@ void ro_gui_menus_init(void)
 
 	translate_menu(proxyauth_menu);
 
+	build_languages_menu();
+
 	iconbar_menu->entries[0].sub_menu = (wimp_menu *) dialog_info;
 	browser_page_menu->entries[0].sub_menu = (wimp_menu*) dialog_pageinfo;
 	browser_object_menu->entries[0].sub_menu = (wimp_menu*) dialog_objinfo;
@@ -500,6 +507,67 @@ void translate_menu(wimp_menu *menu)
 	} while ((menu->entries[i - 1].menu_flags & wimp_MENU_LAST) == 0);
 }
 
+/**
+ * Builds the languages menu based on available translations
+ */
+void build_languages_menu(void)
+{
+	int context = 0, read_count, entries = 0;
+	os_error *e;
+	osgbpb_INFO(100) info;
+	char lang[8] = {0};
+	char *lang_name;
+	void *temp;
+
+	languages_menu = calloc(1, wimp_SIZEOF_MENU(1));
+	if (!languages_menu) {
+		LOG(("No memory for languages menu"));
+		die("Insufficient memory for languages menu");
+	}
+	languages_menu->title_data.indirected_text.text = messages_get("Languages");
+	languages_menu->title_fg = wimp_COLOUR_BLACK;
+	languages_menu->title_bg = wimp_COLOUR_LIGHT_GREY;
+	languages_menu->work_fg = wimp_COLOUR_BLACK;
+	languages_menu->work_bg = wimp_COLOUR_WHITE;
+	languages_menu->width = 300;
+	languages_menu->height = 44;
+	languages_menu->gap = 0;
+
+	while (context != -1) {
+		e = xosgbpb_dir_entries_info("<NetSurf$Dir>.Resources", (osgbpb_info_list*)&info, 1, context, sizeof(info), 0, &read_count, &context);
+
+		if (e)
+			die(e->errmess);
+
+		if (read_count == 0)
+			continue;
+
+		if (info.obj_type != fileswitch_IS_DIR)
+			continue;
+
+		snprintf(lang, sizeof lang, "lang_%2s", info.name);
+		if ((lang_name = messages_get(lang)) == NULL ||
+		    strlen(info.name) != 2)
+			continue;
+
+		temp = realloc(languages_menu, wimp_SIZEOF_MENU(entries+1));
+		if (!temp)
+			die("Insufficient memory for languages menu");
+
+		languages_menu = temp;
+		languages_menu->entries[entries].menu_flags = 0;
+		languages_menu->entries[entries].sub_menu = wimp_NO_SUB_MENU;
+		languages_menu->entries[entries].icon_flags = wimp_ICON_TEXT | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
+		languages_menu->entries[entries].data.indirected_text.text = lang_name;
+		languages_menu->entries[entries].data.indirected_text.validation = (char *)-1;
+		languages_menu->entries[entries].data.indirected_text.size = strlen(lang_name) + 1;
+
+		entries++;
+	}
+
+	languages_menu->entries[0].menu_flags |= wimp_MENU_TITLE_INDIRECTED;
+	languages_menu->entries[entries-1].menu_flags |= wimp_MENU_LAST;
+}
 
 /**
  * Display a menu.
@@ -904,6 +972,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	} else if (current_menu == proxyauth_menu) {
 		ro_gui_dialog_proxyauth_menu_selection(selection->items[0]);
 
+	} else if (current_menu == languages_menu) {
+		ro_gui_dialog_languages_menu_selection(languages_menu->entries[selection->items[0]].data.indirected_text.text);
 	}
 
 	if (pointer.buttons == wimp_CLICK_ADJUST) {

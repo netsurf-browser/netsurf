@@ -121,6 +121,23 @@ const char *messages_get(const char *key)
 	return entry->value;
 }
 
+/**
+ * Retrieve the key associated with a value
+ *
+ * \param value The value as returned by messages_get
+ * \return The key associated with the value or NULL if not found
+ */
+const char *messages_get_key(const char *value)
+{
+	const char *key = value - MAX_KEY_LENGTH;
+	const char *temp_value = messages_get(key);
+
+	if (strcmp(value, temp_value) == 0)
+		return key;
+
+	return NULL;
+}
+
 
 /**
  * Hash function for keys.
