@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.13 2002/09/11 14:24:02 monkeyson Exp $
+ * $Id: box.c,v 1.14 2002/09/11 21:19:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libxml/HTMLparser.h"
+#include "utf-8.h"
 #include "netsurf/render/css.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/box.h"
@@ -71,6 +72,24 @@ struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
 	box->float_children = 0;
 	box->next_float = 0;
 	return box;
+}
+
+
+char * tolat1(const xmlChar * s)
+{
+	char *d = xcalloc(strlen(s) + 1, sizeof(char));
+	char *d0 = d;
+	unsigned int u, chars;
+
+	while (*s != 0) {
+		u = sgetu8(s, &chars);
+		s += chars;
+		*d = u < 0x100 ? u : '?';
+		d++;
+	}
+	*d = 0;
+
+	return d0;
 }
 
 /**
@@ -147,7 +166,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		}
 		if (n->type == XML_TEXT_NODE) {
 			box = box_create(n, BOX_INLINE, parent_style, href);
-			box->text = squash_whitespace((char *) n->content);
+			box->text = squash_whitespace(tolat1(n->content));
 			box->length = strlen(box->text);
 			box_add_child(inline_container, box);
 		} else {

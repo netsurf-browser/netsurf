@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.2 2002/09/11 14:24:02 monkeyson Exp $
+# $Id: makefile,v 1.3 2002/09/11 21:19:24 bursa Exp $
 
 all: netsurf,ff8
 clean:
@@ -8,7 +8,8 @@ FLAGS = -g -Wall -W -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
  -Wcast-align -Wwrite-strings -Wconversion -Wstrict-prototypes -Wmissing-prototypes \
  -Wmissing-declarations -Wredundant-decls -Wnested-externs -Winline -std=c9x \
  -I.. -I../../Tools/libxml2/include -I../../Tools/oslib \
- -I../../Tools/curl/include -Dfd_set=long -mpoke-function-name
+ -I../../Tools/curl/include -I../../Tools/libutf-8 \
+ -Dfd_set=long -mpoke-function-name
 CC = riscos-gcc
 OBJECTS = render/objs-riscos/utils.o render/objs-riscos/css.o \
  render/objs-riscos/css_enum.o render/objs-riscos/box.o \
@@ -19,13 +20,14 @@ OBJECTS = render/objs-riscos/utils.o render/objs-riscos/css.o \
 HEADERS = render/box.h render/css.h render/css_enum.h \
  render/layout.h render/utils.h riscos/font.h riscos/gui.h \
  desktop/browser.h desktop/fetch.h desktop/gui.h desktop/netsurf.h
-LIBS = ../../Tools/libxml2/libxml.ro ../../Tools/oslib/oslib.o ../../Tools/curl/libcurl.ro
+LIBS = ../../Tools/libxml2/libxml.ro ../../Tools/oslib/oslib.o \
+ ../../Tools/curl/libcurl.ro ../../Tools/libutf-8/libutf-8.ro
 
 netsurf,ff8: $(OBJECTS)
 	$(CC) $(FLAGS) -o netsurf,ff8 $(OBJECTS) $(LIBS)
 
 render/css_enum.c render/css_enum.h: render/css_enums render/makeenum
-	render/makeenum render/css_enum < render/css_enums
+	cd ..; netsurf/render/makeenum netsurf/render/css_enum < netsurf/render/css_enums
 
 render/objs-riscos/%.o: render/%.c $(HEADERS)
 	$(CC) $(FLAGS) -o $@ -c $<
