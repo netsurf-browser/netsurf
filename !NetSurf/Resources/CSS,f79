@@ -56,3 +56,5 @@ br[clear=all] { clear: both; }
 br[clear=left] { clear: left; }
 br[clear=right] { clear: right; }
 
+td[nowrap], th[nowrap] { white-space: nowrap; }
+pre { white-space: pre; }
