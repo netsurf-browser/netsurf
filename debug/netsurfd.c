@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 			return 0;
 		url[strlen(url) - 1] = 0;
 		destroyed = 0;
-		c = fetchcache(url, 0, callback, 0, 0, 100, 1000, false);
+		c = fetchcache(url, 0, callback, 0, 0, 100, 1000, false, 0, 0);
 		if (c) {
 			done = c->status == CONTENT_STATUS_DONE;
 			while (!done)

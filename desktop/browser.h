@@ -99,7 +99,9 @@ struct box_selection
 struct browser_window* create_browser_window(int flags, int width, int height);
 void browser_window_destroy(struct browser_window* bw);
 void browser_window_open_location(struct browser_window* bw, const char* url);
-void browser_window_open_location_historical(struct browser_window* bw, const char* url);
+void browser_window_open_location_historical(struct browser_window* bw,
+		const char* url, char *post_urlenc,
+		struct form_successful_control *post_multipart);
 int browser_window_action(struct browser_window* bw, struct browser_action* act);
 void browser_window_set_status(struct browser_window* bw, const char* text);
 

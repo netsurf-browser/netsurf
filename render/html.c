@@ -185,7 +185,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			c->active--;
 			c->data.html.stylesheet_content[i] = fetchcache(
 					error, c->url, html_convert_css_callback,
-					c, i, css->width, css->height, true);
+					c, i, css->width, css->height, true, 0, 0);
 			if (c->data.html.stylesheet_content[i] != 0 &&
 					c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
 				c->active++;
@@ -238,7 +238,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 #endif
 			c->url,
 			html_convert_css_callback,
-			c, 0, c->width, c->height, true);
+			c, 0, c->width, c->height, true, 0, 0);
 	assert(c->data.html.stylesheet_content[0] != 0);
 	if (c->data.html.stylesheet_content[0]->status != CONTENT_STATUS_DONE)
 		c->active++;
@@ -289,7 +289,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 					(i + 1) * sizeof(*c->data.html.stylesheet_content));
 			c->data.html.stylesheet_content[i] = fetchcache(url, c->url,
 					html_convert_css_callback, c, i,
-					c->width, c->height, true);
+					c->width, c->height, true, 0, 0);
 			if (c->data.html.stylesheet_content[i] &&
 					c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
 				c->active++;
@@ -376,8 +376,8 @@ void html_fetch_object(struct content *c, char *url, struct box *box)
 	/* start fetch */
 	c->data.html.object[i].content = fetchcache(url, c->url,
 			html_object_callback,
-			c, i,
-			c->width, c->height, true);  /* we don't know the object's
+			c, i, c->width, c->height,
+			true, 0, 0);		/* we don't know the object's
 						  dimensions yet; use
 						  parent's as an estimate */
 	if (c->data.html.object[i].content) {
@@ -467,7 +467,7 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->data.html.object[i].url = xstrdup(error);
 			c->data.html.object[i].content = fetchcache(
 					error, c->url, html_object_callback,
-					c, i, 0, 0, true);
+					c, i, 0, 0, true, 0, 0);
 			if (c->data.html.object[i].content) {
 				c->active++;
 				if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
@@ -556,7 +556,7 @@ void html_revive(struct content *c, unsigned int width, unsigned int height)
 			c->data.html.object[i].content = fetchcache(
 					c->data.html.object[i].url, c->url,
 					html_object_callback,
-					c, i, 0, 0, true);
+					c, i, 0, 0, true, 0, 0);
 			if (c->data.html.object[i].content &&
 					c->data.html.object[i].content->status != CONTENT_STATUS_DONE)
 				c->active++;

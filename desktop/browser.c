@@ -38,6 +38,9 @@ static int redraw_box_list(struct browser_window* bw, struct box* current,
 static void browser_window_redraw_boxes(struct browser_window* bw, struct box_position* start, struct box_position* end);
 static void browser_window_follow_link(struct browser_window* bw,
 		unsigned long click_x, unsigned long click_y, int click_type);
+static void browser_window_open_location_post(struct browser_window* bw,
+		const char* url0, char *post_urlenc,
+		struct form_successful_control *post_multipart);
 static void browser_window_callback(content_msg msg, struct content *c,
 		void *p1, void *p2, const char *error);
 static void download_window_callback(content_msg msg, struct content *c,
@@ -117,7 +120,7 @@ void browser_window_back(struct browser_window* bw)
     if (bw->history->earlier != NULL)
     {
       bw->history = bw->history->earlier;
-      browser_window_open_location_historical(bw, bw->history->url);
+      browser_window_open_location_historical(bw, bw->history->url, 0, 0);
     }
   }
 }
@@ -129,7 +132,7 @@ void browser_window_forward(struct browser_window* bw)
     if (bw->history->later != NULL)
     {
       bw->history = bw->history->later;
-      browser_window_open_location_historical(bw, bw->history->url);
+      browser_window_open_location_historical(bw, bw->history->url, 0, 0);
     }
   }
 }
@@ -241,7 +244,9 @@ void browser_window_destroy(struct browser_window* bw)
   LOG(("end"));
 }
 
-void browser_window_open_location_historical(struct browser_window* bw, const char* url)
+void browser_window_open_location_historical(struct browser_window* bw,
+		const char* url, char *post_urlenc,
+		struct form_successful_control *post_multipart)
 {
   LOG(("bw = %p, url = %s", bw, url));
 
@@ -251,7 +256,8 @@ void browser_window_open_location_historical(struct browser_window* bw, const ch
   browser_window_start_throbber(bw);
   bw->time0 = clock();
   bw->loading_content = fetchcache(url, 0, browser_window_callback, bw, 0,
-		  gui_window_get_width(bw->window), 0, false);
+		  gui_window_get_width(bw->window), 0, false,
+		  post_urlenc, post_multipart);
   if (bw->loading_content == 0) {
     browser_window_set_status(bw, "Unable to fetch document");
     return;
@@ -266,11 +272,18 @@ void browser_window_open_location_historical(struct browser_window* bw, const ch
 
 void browser_window_open_location(struct browser_window* bw, const char* url0)
 {
+	browser_window_open_location_post(bw, url0, 0, 0);
+}
+
+void browser_window_open_location_post(struct browser_window* bw,
+		const char* url0, char *post_urlenc,
+		struct form_successful_control *post_multipart)
+{
   char *url;
   LOG(("bw = %p, url0 = %s", bw, url0));
   assert(bw != 0 && url0 != 0);
   url = url_join(url0, bw->url);
-  browser_window_open_location_historical(bw, url);
+  browser_window_open_location_historical(bw, url, post_urlenc, post_multipart);
   /* TODO: move this to somewhere below CONTENT_MSG_READY below */
   if (bw->history == NULL)
     bw->history = history_create(NULL, url);
@@ -1569,36 +1582,41 @@ void browser_window_redraw_boxes(struct browser_window* bw, struct box_position*
 }
 
 
+/**
+ * Collect controls and submit a form.
+ */
+
 void browser_form_submit(struct browser_window *bw, struct form *form,
 		struct form_control *submit_button)
 {
+	char *data, *url;
 	struct form_successful_control *success;
 
 	success = form_successful_controls(form, submit_button);
 
-	if (form->method == method_GET) {
-		/*GET request*/
-		/*GET basically munges the entire form data
-		into one URL. */
+	switch (form->method) {
+		case method_GET:
+			data = form_url_encode(success);
+			url = xcalloc(1, strlen(form->action) + strlen(data) + 2);
+			sprintf(url, "%s?%s", form->action, data);
+			free(data);
+			browser_window_open_location(bw, url);
+                	free(url);
+                	break;
 
-		char *data = form_url_encode(success);
-		char *url = xcalloc(1, strlen(form->action) + strlen(data) + 2);
-		sprintf(url, "%s?%s", form->action, data);
-		free(data);
-		browser_window_open_location(bw, url);
-                xfree(url);
+                case method_POST_URLENC:
+			data = form_url_encode(success);
+			browser_window_open_location_post(bw, form->action, data, 0);
+			free(data);
+                	break;
 
-        } else {
-		/*POST request*/
-		assert(form->method == method_POST);
+                case method_POST_MULTIPART:
+			browser_window_open_location_post(bw, form->action, 0, success);
+                	break;
 
-		LOG(("POST request - not implemented yet"));
-
-		/*POST is a standard HTTP method.
-		Basically, it creates a new request
-		and sends the form data as the request
-		body.*/
-	}
+                default:
+                	assert(0);
+        }
 
 	form_free_successful(success);
 }

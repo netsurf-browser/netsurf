@@ -42,7 +42,8 @@ struct content * fetchcache(const char *url0, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
 		void *p1, void *p2, unsigned long width, unsigned long height,
-		bool only_2xx)
+		bool only_2xx, char *post_urlenc,
+		struct form_successful_control *post_multipart)
 {
 	struct content *c;
 	char *url = xstrdup(url0);
@@ -67,7 +68,8 @@ struct content * fetchcache(const char *url0, char *referer,
 	c->fetch_size = 0;
 	c->width = width;
 	c->height = height;
-	c->fetch = fetch_start(url, referer, fetchcache_callback, c, only_2xx);
+	c->fetch = fetch_start(url, referer, fetchcache_callback, c, only_2xx,
+			post_urlenc, post_multipart);
 	free(url);
 	if (c->fetch == 0) {
 		LOG(("warning: fetch_start failed"));

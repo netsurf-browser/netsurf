@@ -136,5 +136,5 @@ void do_thing() {
       break;
   }
   if (gw != NULL)
-    browser_window_open_location_historical(gw->data.browser.bw, url);
+    browser_window_open_location_historical(gw->data.browser.bw, url, 0, 0);
 }

@@ -732,7 +732,8 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
   }
   else if (pointer->i == ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_RELOAD"))
   {
-    browser_window_open_location_historical(g->data.browser.bw, g->data.browser.bw->url);
+    browser_window_open_location_historical(g->data.browser.bw,
+    		g->data.browser.bw->url, 0, 0);
   }
 }
 

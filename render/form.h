@@ -14,15 +14,19 @@
 #define _NETSURF_RENDER_FORM_H_
 
 #include <stdbool.h>
-#include "netsurf/render/box.h"
 
+struct box;
 struct form_control;
 struct form_option;
 
 /** HTML form. */
 struct form {
-	char *action; /* url */
-	enum {method_GET, method_POST} method;
+	char *action;				/**< Url to submit to. */
+	enum {
+		method_GET,		/**< GET, always url encoded. */
+		method_POST_URLENC,	/**< POST, url encoded. */
+		method_POST_MULTIPART	/**< POST, multipart/form-data. */
+	} method;				/**< Method and enctype. */
 	struct form_control *controls;		/**< Linked list of controls. */
 	struct form_control *last_control;	/**< Last control in list. */
 };

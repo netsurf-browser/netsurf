@@ -29,6 +29,7 @@
 #endif
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/401login.h"
+#include "netsurf/render/form.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -52,6 +53,7 @@ struct fetch {
 	char *location;		/**< Response Location header, or 0. */
 	unsigned long content_length;	/**< Response Content-Length, or 0. */
 	char *realm;            /**< HTTP Auth Realm */
+	char *post_urlenc;	/**< Url encoded POST string, or 0. */
 	struct fetch *queue;	/**< Next fetch for this host. */
 	struct fetch *prev;	/**< Previous active fetch in ::fetch_list. */
 	struct fetch *next;	/**< Next active fetch in ::fetch_list. */
@@ -138,8 +140,9 @@ void fetch_quit(void)
  */
 
 struct fetch * fetch_start(char *url, char *referer,
-                 void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size),
-		 void *p, bool only_2xx)
+		void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size),
+		void *p, bool only_2xx, char *post_urlenc,
+		struct form_successful_control *post_multipart)
 {
 	struct fetch *fetch = xcalloc(1, sizeof(*fetch)), *host_fetch;
 	CURLcode code;
@@ -170,6 +173,9 @@ struct fetch * fetch_start(char *url, char *referer,
 	if (uri->server != 0)
 		fetch->host = xstrdup(uri->server);
 	fetch->content_length = 0;
+	fetch->post_urlenc = 0;
+	if (post_urlenc)
+		fetch->post_urlenc = xstrdup(post_urlenc);
 	fetch->queue = 0;
 	fetch->prev = 0;
 	fetch->next = 0;
@@ -257,10 +263,19 @@ struct fetch * fetch_start(char *url, char *referer,
         code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_BASIC);
         assert(code == CURLE_OK);
 
+#ifdef riscos
         if (LOGIN.string != NULL) {
                 code = curl_easy_setopt(fetch->curl_handle, CURLOPT_USERPWD, LOGIN.string);
                 assert(code == CURLE_OK);
         }
+#endif
+
+	/* POST */
+	if (fetch->post_urlenc) {
+		code = curl_easy_setopt(fetch->curl_handle,
+				CURLOPT_POSTFIELDS, fetch->post_urlenc);
+		assert(code == CURLE_OK);
+	}
 
 	/* add to the global curl multi handle */
 	codem = curl_multi_add_handle(curl_multi, fetch->curl_handle);
@@ -327,8 +342,15 @@ void fetch_abort(struct fetch *f)
 		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_WRITEHEADER, fetch);
 		assert(code == CURLE_OK);
 		/* TODO: remove referer header if fetch->referer == 0 */
-		if (fetch->referer != 0) {
+		/*if (fetch->referer != 0)*/ {
 			code = curl_easy_setopt(fetch->curl_handle, CURLOPT_REFERER, fetch->referer);
+			assert(code == CURLE_OK);
+		}
+
+		/* POST */
+		if (fetch->post_urlenc) {
+			code = curl_easy_setopt(fetch->curl_handle,
+					CURLOPT_POSTFIELDS, fetch->post_urlenc);
 			assert(code == CURLE_OK);
 		}
 
@@ -346,6 +368,7 @@ void fetch_abort(struct fetch *f)
 	free(f->referer);
 	free(f->location);
 	free(f->realm);
+	free(f->post_urlenc);
 	xfree(f);
 }
 
@@ -502,6 +525,7 @@ bool fetch_process_headers(struct fetch *f)
 		return true;
 	}
 
+#ifdef riscos
         /* handle HTTP 401 (Authentication errors) */
         if (http_code == 401) {
                 /* this shouldn't be here... */
@@ -510,6 +534,7 @@ bool fetch_process_headers(struct fetch *f)
                 f->callback(FETCH_ERROR, f->p, "",0);
                 return true;
         }
+#endif
 
 	/* handle HTTP errors (non 2xx response codes) */
 	if (f->only_2xx && strncmp(f->url, "http", 4) == 0 &&

@@ -56,7 +56,7 @@ void ro_gui_mouse_action(gui_window *g) {
 
       case mouseaction_RELOAD:
            browser_window_open_location_historical(g->data.browser.bw,
-	                                           g->data.browser.bw->url);
+           		g->data.browser.bw->url, 0, 0);
            break;
     }
   }

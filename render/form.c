@@ -74,7 +74,7 @@ struct form_successful_control *form_successful_controls(struct form *form,
 		if (control->type == GADGET_SELECT) {
 			for (option = control->data.select.items; option;
 					option = option->next) {
-				if (option->selected && option->value) {
+				if (option->selected) {
 					success_new = xcalloc(1, sizeof(*success_new));
 					success_new->name = xstrdup(control->name);
 					success_new->value = xstrdup(option->value);

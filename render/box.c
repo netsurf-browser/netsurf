@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libxml/HTMLparser.h"
-#include "netsurf/content/fetchcache.h"
+#include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
@@ -737,22 +737,31 @@ struct result box_image(xmlNode *n, struct status *status,
 struct result box_form(xmlNode *n, struct status *status,
 		struct css_style *style)
 {
-	char* s;
+	char *s, *s2;
 	struct box *box;
 	struct form *form;
 
 	box = box_create(style, status->href, status->title);
 
-	status->current_form = form = xcalloc(1, sizeof(*form));
-
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "action"))) {
-		form->action = s;
+	s = (char *) xmlGetProp(n, (const xmlChar *) "action");
+	if (!s) {
+		/* the action attribute is required */
+		return (struct result) {box, 1};
 	}
+
+	status->current_form = form = xcalloc(1, sizeof(*form));
+	form->action = s;
 
 	form->method = method_GET;
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "method"))) {
-		if (stricmp(s, "post") == 0)
-			form->method = method_POST;
+		if (strcasecmp(s, "post") == 0) {
+			form->method = method_POST_URLENC;
+			if ((s2 = (char *) xmlGetProp(n, (const xmlChar *) "enctype"))) {
+				if (strcasecmp(s2, "multipart/form-data") == 0)
+					form->method = method_POST_MULTIPART;
+				xmlFree(s2);
+			}
+		}
 		xmlFree(s);
 	}
 
@@ -913,13 +922,18 @@ void add_option(xmlNode* n, struct form_control* current_select, char *text)
 		current_select->data.select.last_item->next = option;
 	current_select->data.select.last_item = option;
 
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
+		option->value = s;
+	} else {
+		option->value = xstrdup(text);
+	}
+
 	for (c = text; *c; c++)
 		if (*c == ' ')
 			*c = 160;
 
 	option->selected = option->initial_selected = false;
 	option->text = text;
-	option->value = 0;
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "selected"))) {
 		xmlFree(s);
@@ -929,10 +943,6 @@ void add_option(xmlNode* n, struct form_control* current_select, char *text)
 			current_select->data.select.num_selected++;
 			current_select->data.select.current = option;
 		}
-	}
-
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
-		option->value = s;
 	}
 }
 
