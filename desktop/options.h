@@ -24,6 +24,8 @@
 #ifndef _NETSURF_DESKTOP_OPTIONS_H_
 #define _NETSURF_DESKTOP_OPTIONS_H_
 
+#include "netsurf/desktop/tree.h"
+
 enum { OPTION_HTTP_PROXY_AUTH_NONE = 0, OPTION_HTTP_PROXY_AUTH_BASIC = 1,
 		OPTION_HTTP_PROXY_AUTH_NTLM = 2 };
 
@@ -41,8 +43,12 @@ extern int option_memory_cache_size;
 extern bool option_block_ads;
 extern int option_minimum_gif_delay;
 extern bool option_send_referer;
+extern bool option_animate_images;
 
 void options_read(const char *path);
 void options_write(const char *path);
+
+struct tree *options_load_hotlist(const char *filename);
+bool options_save_hotlist(struct tree *tree, const char *filename);
 
 #endif

@@ -27,9 +27,9 @@ static void get_unamepwd(void);
 static wimp_window *dialog_401_template;
 extern wimp_w dialog_401li;
 
-static char *uname;
+static char uname[256];
 static char *url;
-static char *pwd;
+static char pwd[256];
 static struct browser_window *bwin;
 
 
@@ -66,8 +66,6 @@ void gui_401login_open(struct browser_window *bw, struct content *c, char *realm
 void ro_gui_401login_open(wimp_w parent, char *host, char* realm, char *fetchurl)
 {
 	url = xstrdup(fetchurl);
-	uname = xcalloc(1, 256);
-	pwd = xcalloc(1, 256);
 	uname[0] = pwd[0] = 0;
 
 	/* fill in download window icons */
@@ -128,9 +126,12 @@ void ro_gui_401login_click(wimp_pointer *pointer)
 
 void get_unamepwd(void)
 {
-	char *lidets = xcalloc(strlen(uname)+strlen(pwd)+2, sizeof(char));
-	if (lidets == NULL)
+	char *lidets = calloc(strlen(uname)+strlen(pwd)+2, sizeof(char));
+	if (!lidets) {
+	  	LOG(("Insufficient memory for calloc"));
+	  	warn_user("NoMemory", 0);
 		return;
+	}
 
 	sprintf(lidets, "%s:%s", uname, pwd);
 

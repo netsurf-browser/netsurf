@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
@@ -36,6 +36,7 @@
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/desktop/tree.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
@@ -49,6 +50,7 @@
 #endif
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/theme.h"
+#include "netsurf/riscos/treeview.h"
 #ifdef WITH_URI
 #include "netsurf/riscos/uri.h"
 #endif
@@ -61,7 +63,7 @@
 #include "netsurf/utils/utils.h"
 
 const char *__dynamic_da_name = "NetSurf";	/**< For UnixLib. */
-int __feature_imagefs_is_file = 1;              /**< For UnixLib. */
+int __feature_imagefs_is_file = 1;		/**< For UnixLib. */
 /* default filename handling */
 int __riscosify_control = __RISCOSIFY_NO_SUFFIX |
 			__RISCOSIFY_NO_REVERSE_SUFFIX;
@@ -84,11 +86,11 @@ bool gui_reformat_pending = false;
 gui_drag_type gui_current_drag_type;
 wimp_t task_handle;	/**< RISC OS wimp task handle. */
 static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
-osspriteop_area *gui_sprites;      /**< Sprite area containing pointer and hotlist sprites */
+osspriteop_area *gui_sprites;	   /**< Sprite area containing pointer and hotlist sprites */
 
 /** Accepted wimp user messages. */
 static wimp_MESSAGE_LIST(34) task_messages = { {
-  	message_HELP_REQUEST,
+	message_HELP_REQUEST,
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
 	message_DATA_LOAD,
@@ -184,7 +186,7 @@ void gui_init(int argc, char** argv)
 	save_complete_init();
 #endif
 
-        /* We don't have the universal boot sequence on NCOS */
+	/* We don't have the universal boot sequence on NCOS */
 #ifndef ncos
 	options_read("Choices:WWW.NetSurf.Choices");
 #else
@@ -203,8 +205,8 @@ void gui_init(int argc, char** argv)
 	default_stylesheet_url = strdup("file:/<NetSurf$Dir>/Resources/CSS");
 	adblock_stylesheet_url = strdup("file:/<NetSurf$Dir>/Resources/AdBlock");
 
-        /* Totally pedantic, but base the taskname on the build options.
-        */
+	/* Totally pedantic, but base the taskname on the build options.
+	*/
 #ifndef ncos
 	error = xwimp_initialise(wimp_VERSION_RO38, "NetSurf",
 			(const wimp_message_list *) &task_messages, 0,
@@ -220,7 +222,7 @@ void gui_init(int argc, char** argv)
 		die(error->errmess);
 	}
 
-        /* We don't need to check the fonts on NCOS */
+	/* We don't need to check the fonts on NCOS */
 #ifndef ncos
 	ro_gui_check_fonts();
 #endif
@@ -231,11 +233,11 @@ void gui_init(int argc, char** argv)
 		xwimp_start_task("Desktop", 0);
 
 	/*	Load our chosen theme
-  	*/
-  	ro_gui_theme_initialise();
-  	descriptor = ro_gui_theme_find(option_theme);
-  	if (!descriptor) descriptor = ro_gui_theme_find("NetSurf");
-  	ro_gui_theme_apply(descriptor);
+	*/
+	ro_gui_theme_initialise();
+	descriptor = ro_gui_theme_find(option_theme);
+	if (!descriptor) descriptor = ro_gui_theme_find("NetSurf");
+	ro_gui_theme_apply(descriptor);
 
 	/*	Open the templates
 	*/
@@ -258,9 +260,10 @@ void gui_init(int argc, char** argv)
 	ro_gui_history_init();
 	wimp_close_template();
 	ro_gui_sprites_init();
-	ro_gui_hotlist_init();
+	ro_gui_tree_initialise(); /* must be done after sprite loading */
+	ro_gui_hotlist_initialise();
 
-        /* We don't create an Iconbar icon on NCOS */
+	/* We don't create an Iconbar icon on NCOS */
 #ifndef ncos
 	ro_gui_icon_bar_create();
 #endif
@@ -519,7 +522,7 @@ void gui_init2(int argc, char** argv)
 void gui_quit(void)
 {
 	ro_gui_window_quit();
-  	ro_gui_hotlist_save();
+	ro_gui_hotlist_save();
 	ro_gui_history_quit();
 	free(gui_sprites);
 	xwimp_close_down(task_handle);
@@ -686,10 +689,21 @@ void gui_multitask(void)
 void ro_gui_poll_queue(wimp_event_no event, wimp_block *block)
 {
 	struct ro_gui_poll_block *q =
-			xcalloc(1, sizeof(struct ro_gui_poll_block));
+			calloc(1, sizeof(struct ro_gui_poll_block));
+	if (!q) {
+		LOG(("Insufficient memory for calloc"));
+		warn_user("NoMemory", 0);
+		return;
+	}
 
 	q->event = event;
-	q->block = xcalloc(1, sizeof(*block));
+	q->block = calloc(1, sizeof(*block));
+	if (!q->block) {
+	  	free(q);
+		LOG(("Insufficient memory for calloc"));
+		warn_user("NoMemory", 0);
+		return;
+	}
 	memcpy(q->block, block, sizeof(*block));
 	q->next = NULL;
 
@@ -746,8 +760,8 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 
 	if (redraw->w == history_window)
 		ro_gui_history_redraw(redraw);
-	else if (redraw->w == hotlist_window)
-		ro_gui_hotlist_redraw(redraw);
+	else if ((hotlist_tree) && (redraw->w == (wimp_w)hotlist_tree->handle))
+		ro_gui_tree_redraw(redraw, hotlist_tree);
 	else if ((hotlist_toolbar) && (hotlist_toolbar->toolbar_handle == redraw->w))
 		ro_gui_theme_redraw(hotlist_toolbar, redraw);
 	else if (redraw->w == dialog_debug)
@@ -757,7 +771,7 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 	else if ((g = ro_gui_toolbar_lookup(redraw->w)) != NULL)
 		ro_gui_theme_redraw(g->toolbar, redraw);
 	else {
-	  	ro_gui_dialog_redraw(redraw);
+		ro_gui_dialog_redraw(redraw);
 	}
 }
 
@@ -774,6 +788,8 @@ void ro_gui_open_window_request(wimp_open *open)
 	g = ro_gui_window_lookup(open->w);
 	if (g) {
 		ro_gui_window_open(g, open);
+	} else if ((hotlist_tree) && (open->w == (wimp_w)hotlist_tree->handle)){
+		ro_gui_tree_open(open, hotlist_tree);
 	} else {
 		error = xwimp_open_window(open);
 		if (error) {
@@ -861,7 +877,7 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 		ro_gui_icon_bar_click(pointer);
 	else if (pointer->w == history_window)
 		ro_gui_history_click(pointer);
-	else if (pointer->w == hotlist_window)
+	else if ((hotlist_tree) && (pointer->w == (wimp_w)hotlist_tree->handle))
 		ro_gui_hotlist_click(pointer);
 	else if (pointer->w == dialog_saveas)
 		ro_gui_save_click(pointer);
@@ -937,12 +953,12 @@ void ro_gui_drag_end(wimp_dragged *drag)
 		case GUI_DRAG_STATUS_RESIZE:
 			break;
 
-		case GUI_DRAG_HOTLIST_SELECT:
-			ro_gui_hotlist_selection_drag_end(drag);
+		case GUI_DRAG_TREE_SELECT:
+			ro_gui_tree_selection_drag_end(drag);
 			break;
 
-		case GUI_DRAG_HOTLIST_MOVE:
-			ro_gui_hotlist_move_drag_end(drag);
+		case GUI_DRAG_TREE_MOVE:
+			ro_gui_tree_move_drag_end(drag);
 			break;
 	}
 }
@@ -958,13 +974,13 @@ void ro_gui_keypress(wimp_key *key)
 	struct gui_window *g;
 	os_error *error;
 
-	if (key->w == hotlist_window)
+	if ((hotlist_tree) && (key->w == (wimp_w)hotlist_tree->handle)) {
 		handled = ro_gui_hotlist_keypress(key->c);
-	else if ((g = ro_gui_window_lookup(key->w)) != NULL)
+	} else if ((g = ro_gui_window_lookup(key->w)) != NULL)
 		handled = ro_gui_window_keypress(g, key->c, false);
 	else if ((g = ro_gui_toolbar_lookup(key->w)) != NULL)
 		handled = ro_gui_window_keypress(g, key->c, true);
-        else
+	else
 		handled = ro_gui_dialog_keypress(key);
 
 	if (!handled) {
@@ -1021,9 +1037,10 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 					&message->data);
 			break;
 		case message_MENUS_DELETED:
-			if (current_menu == hotlist_menu) {
+			if ((current_menu == hotlist_menu) && (hotlist_tree))
 				ro_gui_hotlist_menu_closed();
-			}
+			current_menu = NULL;
+			current_gui = NULL;
 			break;
 		case message_MODE_CHANGE:
 			ro_gui_history_mode_change();
@@ -1127,10 +1144,13 @@ void ro_msg_dataload(wimp_message *message)
 	int file_type = message->data.data_xfer.file_type;
 	char *url = 0;
 	struct gui_window *g;
+	struct node *node;
+	struct node *link;
 	os_error *error;
+	int x, y;
+	bool before;
 
 	g = ro_gui_window_lookup(message->data.data_xfer.w);
-
 	if (g && ro_gui_window_dataload(g, message))
 		return;
 
@@ -1152,6 +1172,35 @@ void ro_msg_dataload(wimp_message *message)
 	else
 		return;
 
+
+	if (!url)
+		/* error has already been reported by one of the three
+		 * functions called above */
+		return;
+
+	if (g) {
+		browser_window_go(g->bw, url, 0);
+	} else {
+		if ((hotlist_tree) && ((wimp_w)hotlist_tree->handle ==
+				message->data.data_xfer.w)) {
+			ro_gui_tree_get_tree_coordinates(hotlist_tree,
+					message->data.data_xfer.pos.x,
+					message->data.data_xfer.pos.y,
+					&x, &y);
+			link = tree_get_link_details(hotlist_tree, x, y, &before);
+			node = tree_create_URL_node(NULL,
+					messages_get("TreeImport"), url, file_type,
+					time(NULL), -1, 0);
+			tree_link_node(link, node, before);
+			tree_handle_node_changed(hotlist_tree, node, false, true);
+			tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP, 0,
+					NODE_INSTEP, 16384);
+			ro_gui_tree_start_edit(hotlist_tree, &node->data, NULL);
+		} else {
+			browser_window_create(url, 0, 0);
+		}
+	}
+
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
 	message->your_ref = message->my_ref;
@@ -1162,16 +1211,6 @@ void ro_msg_dataload(wimp_message *message)
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-
-	if (!url)
-		/* error has already been reported by one of the three
-		 * functions called above */
-		return;
-
-	if (g)
-		browser_window_go(g->bw, url, 0);
-	else
-		browser_window_create(url, 0, 0);
 
 	free(url);
 }

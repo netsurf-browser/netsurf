@@ -15,7 +15,6 @@ struct content;
 struct content_gif_data {
 	struct gif_animation *gif;	/**< GIF animation data */
 	int current_frame;		/**< current frame to display [0...(max-1)] */
-	bool frame_drawn;		/**< set when current frame has been used */
 };
 
 bool nsgif_create(struct content *c, const char *params[]);

@@ -119,7 +119,7 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		sprintf(message_token, "HelpHotFolder%i", (int)icon);
 	} else if (window == dialog_entry) {
 		sprintf(message_token, "HelpHotEntry%i", (int)icon);
-	} else if (window == hotlist_window) {
+	} else if ((hotlist_tree) && (window == (wimp_w)hotlist_tree->handle)) {
 		sprintf(message_token, "HelpHotlist%i",
 				ro_gui_hotlist_help(message_data->pos.x,
 						message_data->pos.y));

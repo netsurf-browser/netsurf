@@ -41,15 +41,15 @@ static void nsgif_get_frame(struct content *c);
 
 bool nsgif_create(struct content *c, const char *params[]) {
 	union content_msg_data msg_data;
-  	/*	Initialise our data structure
-  	*/
-  	c->data.gif.gif = calloc(sizeof(gif_animation), 1);
-  	if (!c->data.gif.gif) {
+	/*	Initialise our data structure
+	*/
+	c->data.gif.gif = calloc(sizeof(gif_animation), 1);
+	if (!c->data.gif.gif) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		warn_user("NoMemory", 0);
-  		return false;
-  	}
+		return false;
+	}
 	c->data.gif.current_frame = 0;
 	return true;
 }
@@ -109,9 +109,8 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 
 	/*	Schedule the animation if we have one
 	*/
-	if (gif->frame_count > 1) {
+	if (gif->frame_count_partial > 1)
 		schedule(gif->frames[0].frame_delay, nsgif_animate, c);
-	}
 
 	/*	Exit as a success
 	*/
@@ -126,11 +125,10 @@ bool nsgif_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour) {
 
-	nsgif_get_frame(c);
+	if (c->data.gif.current_frame != c->data.gif.gif->decoded_frame)
+		nsgif_get_frame(c);
 	c->bitmap = c->data.gif.gif->frame_image;
-
-	return (c->data.gif.frame_drawn = plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour));
+	return plot.bitmap(x, y, width, height,	c->bitmap, background_colour);
 }
 
 
@@ -151,14 +149,16 @@ void nsgif_destroy(struct content *c)
  * \param c  the content to update
  */
 void nsgif_get_frame(struct content *c) {
- 	int previous_frame, current_frame, frame;
+	int previous_frame, current_frame, frame;
 
 	current_frame = c->data.gif.current_frame;
-	if (current_frame < c->data.gif.gif->decoded_frame) {
+	if (!option_animate_images)
+		current_frame = 0;
+	if (current_frame < c->data.gif.gif->decoded_frame)
 		previous_frame = 0;
-	} else {
+	else
 		previous_frame = c->data.gif.gif->decoded_frame + 1;
-        }
+
 	for (frame = previous_frame; frame <= current_frame; frame++)
 		gif_decode_frame(c->data.gif.gif, frame);
 
@@ -174,11 +174,11 @@ void nsgif_animate(void *p)
 	struct content *c = p;
 	union content_msg_data data;
 	int delay;
-
+	
 	/*	Advance by a frame, updating the loop count accordingly
 	*/
 	c->data.gif.current_frame++;
-	if (c->data.gif.current_frame == (int)c->data.gif.gif->frame_count) {
+	if (c->data.gif.current_frame == (int)c->data.gif.gif->frame_count_partial) {
 		c->data.gif.current_frame = 0;
 
 		/*	A loop count of 0 has a special meaning of infinite
@@ -186,28 +186,23 @@ void nsgif_animate(void *p)
 		if (c->data.gif.gif->loop_count != 0) {
 			c->data.gif.gif->loop_count--;
 			if (c->data.gif.gif->loop_count == 0) {
-				c->data.gif.current_frame = c->data.gif.gif->frame_count - 1;
+				c->data.gif.current_frame = c->data.gif.gif->frame_count_partial - 1;
 				c->data.gif.gif->loop_count = -1;
 			}
 		}
-	}
-
-	/*	Animate onwards if the previous frame was used (ie it's onscreen), if not
-		then we let the animation be performed by the redraw loop. By doing this
-		it minimises the delay in the plot cycle, resulting in less flicker.
-	*/
-	if (c->data.gif.frame_drawn) {
-		nsgif_get_frame(c);
-		c->data.gif.frame_drawn = false;
 	}
 
 	/*	Continue animating if we should
 	*/
 	if (c->data.gif.gif->loop_count >= 0) {
 		delay = c->data.gif.gif->frames[c->data.gif.current_frame].frame_delay;
-		if (delay < option_minimum_gif_delay) delay = option_minimum_gif_delay;
+		if (delay < option_minimum_gif_delay)
+			delay = option_minimum_gif_delay;
 		schedule(delay, nsgif_animate, c);
 	}
+
+	if (!option_animate_images)
+		return;
 
 	/* area within gif to redraw */
 	data.redraw.x = c->data.gif.gif->frames[c->data.gif.current_frame].redraw_x;

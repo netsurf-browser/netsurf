@@ -31,7 +31,6 @@ extern bool option_toolbar_show_status;
 extern bool option_toolbar_show_buttons;
 extern bool option_toolbar_show_address;
 extern bool option_toolbar_show_throbber;
-extern bool option_animate_images;
 extern int option_window_x;
 extern int option_window_y;
 extern int option_window_width;
@@ -88,7 +87,6 @@ bool option_toolbar_show_status = true; \
 bool option_toolbar_show_buttons = true; \
 bool option_toolbar_show_address = true; \
 bool option_toolbar_show_throbber = true; \
-bool option_animate_images = true; \
 int option_window_x = 0; \
 int option_window_y = 0; \
 int option_window_width = 0; \
@@ -145,7 +143,6 @@ bool option_font_ufont = false;
 { "toolbar_show_buttons",   OPTION_BOOL,    &option_toolbar_show_buttons }, \
 { "toolbar_show_address",   OPTION_BOOL,    &option_toolbar_show_address }, \
 { "toolbar_show_throbber",  OPTION_BOOL,    &option_toolbar_show_throbber }, \
-{ "animate_images",         OPTION_BOOL,    &option_animate_images }, \
 { "window_x",               OPTION_INTEGER, &option_window_x }, \
 { "window_y",               OPTION_INTEGER, &option_window_y }, \
 { "window_width",           OPTION_INTEGER, &option_window_width }, \

@@ -19,6 +19,7 @@
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/desktop/tree.h"
 
 #define THEMES_DIR "<NetSurf$Dir>.Themes"
 
@@ -31,7 +32,6 @@ extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_th_pane, dialog_debug, dialog_folder, dialog_entry,
 	dialog_search, dialog_print, dialog_config_font;
 extern wimp_w history_window;
-extern wimp_w hotlist_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu,
 		*proxyauth_menu, *languages_menu, *toolbar_menu,
 		*image_quality_menu;
@@ -44,6 +44,7 @@ extern osspriteop_area *gui_sprites;
 extern struct toolbar *hotlist_toolbar;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
 extern bool print_active, print_text_black;
+extern struct tree *hotlist_tree;
 
 typedef enum {
 	GUI_SAVE_SOURCE,
@@ -60,7 +61,7 @@ typedef enum {
 
 typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_SAVE, GUI_DRAG_STATUS_RESIZE,
-		GUI_DRAG_HOTLIST_SELECT, GUI_DRAG_HOTLIST_MOVE } gui_drag_type;
+		GUI_DRAG_TREE_SELECT, GUI_DRAG_TREE_MOVE } gui_drag_type;
 extern gui_drag_type gui_current_drag_type;
 
 
@@ -86,7 +87,6 @@ struct gui_window {
 	/** Options. */
 	struct {
 		float scale;		/**< Scale, 1.0 = 100%. */
-		bool animate_images;	/**< Animations should run. */
 		bool background_images;	/**< Display background images. */
 		bool background_blending;	/**< Perform background blending on text. */
 		bool buffer_animations;	/**< Use screen buffering for animations. */
@@ -203,26 +203,16 @@ void ro_gui_history_click(wimp_pointer *pointer);
 void ro_gui_history_mouse_at(wimp_pointer *pointer);
 
 /* in hotlist.c */
-void ro_gui_hotlist_init(void);
+void ro_gui_hotlist_initialise(void);
 void ro_gui_hotlist_save(void);
 void ro_gui_hotlist_show(void);
-void ro_gui_hotlist_add(char *title, struct content *content);
-void ro_gui_hotlist_redraw(wimp_draw *redraw);
 void ro_gui_hotlist_click(wimp_pointer *pointer);
-void ro_gui_hotlist_selection_drag_end(wimp_dragged *drag);
-void ro_gui_hotlist_move_drag_end(wimp_dragged *drag);
 bool ro_gui_hotlist_keypress(int key);
-void ro_gui_hotlist_menu_closed(void);
 void ro_gui_hotlist_toolbar_click(wimp_pointer* pointer);
-int ro_gui_hotlist_get_selected(bool folders);
-void ro_gui_hotlist_reset_statistics(void);
-void ro_gui_hotlist_set_selected(bool selected);
-void ro_gui_hotlist_set_expanded(bool expand, bool folders, bool links);
-void ro_gui_hotlist_delete_selected(void);
-void ro_gui_hotlist_save_as(const char *file);
-void ro_gui_hotlist_prepare_folder_dialog(bool selected);
-void ro_gui_hotlist_prepare_entry_dialog(bool selected);
+void ro_gui_hotlist_prepare_folder_dialog(struct node *node);
+void ro_gui_hotlist_prepare_entry_dialog(struct node *node);
 void ro_gui_hotlist_dialog_click(wimp_pointer *pointer);
+void ro_gui_hotlist_menu_closed(void);
 int ro_gui_hotlist_help(int x, int y);
 
 /* in save.c */

@@ -119,9 +119,9 @@ Folder:Verzeichnis
 Links:Einträge
 Link:Eintrag
 SaveSelect:Sichern
-Launch:Öffnen
+Launch:Öffnen  RETURN
 Edit:Bearbeiten
-Delete:Löschen
+Delete:Löschen  ^X
 ResetUsage:Statistik zurücksetzen
 
 # Hotlist sub-window titles
@@ -130,11 +130,17 @@ NewFolder:Verzeichnis anlegen
 EditLink:Eintrag bearbeiten
 EditFolder:Verzeichnis umbenennen
 
-# Hotlist window
-HotlistURL:URL: %s
-HotlistAdded:eingetragen am: %s
-HotlistLast:letzter Besuch: %s
-HotlistVisits:Besuche gesamt: %i
+# Default hotlist
+HotlistHomepage:NetSurf homepage
+HotlistTestBuild:NetSurf test builds
+
+# Tree URL text
+TreeAdded:eingetragen am: %s
+TreeLast:letzter Besuch: %s
+TreeVisits:Besuche gesamt: %i
+TreeUnknown:Unknown
+TreeImport:Imported URL
+TreeNewFolder:New directory
 
 # Download window
 Download:%s von %s  %s/s  noch %s
@@ -372,7 +378,7 @@ HelpHotlist5:Klicken mit AUSWAHL markiert diesen Eintrag.|MDoppelklicken öffnet 
 HelpHotlist6:Maustasten loslassen, um die Auswahl abzuschließen.
 HelpHotlist7:Maustasten loslassen, um das Verschieben auszuführen.
 
-HelpHotToolbar0:Erzeugt neue Einträge oder Verzeichnisse.|MKlicken mit AUSWAHL erstellt ein neues Verzeichnis.|MKlicken mit SPEZIAL erstellt einen neuen Eintrag.
+HelpHotToolbar0:Erzeugt neue Einträge oder Verzeichnisse.|MKlicken mit AUSWAHL erstellt ein neues Verzeichnis.
 HelpHotToolbar1:Löscht die markierten Einträge und Verzeichnisse.
 HelpHotToolbar2:Expandiert Einträge.|MKlicken mit AUSWAHL expandiert alle / alle markierten Einträge.|MKlicken mit SPEZIAL faltet alle / alle markierten Einträge zusammen.|MBei expandierten Einträgen werden zusätzliche Informationen angezeigt.
 HelpHotToolbar3:Öffnet Verzeichnisse.|MKlicken mit AUSWAHL öffnet alle / alle markierten Verzeichnisse.|MKlicken mit SPEZIAL schließt alle / alle markierten Verzeichnisse.

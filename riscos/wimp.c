@@ -311,6 +311,16 @@ void ro_gui_set_window_title(wimp_w w, const char *text) {
 	strncpy(window.title_data.indirected_text.text, text,
 			(unsigned int)window.title_data.indirected_text.size - 1);
 	window.title_data.indirected_text.text[window.title_data.indirected_text.size - 1] = '\0';
+
+	/*	Redraw accordingly
+	*/
+	error = xwimp_force_redraw_title(w);
+	if (error) {
+		LOG(("xwimp_force_redraw_title: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}	
 }
 
 
@@ -430,7 +440,7 @@ void ro_gui_open_window_centre(wimp_w parent, wimp_w child) {
 	/*	Move to the centre of the parent at the top of the stack
 	*/
 	dimension = state.visible.x1 - state.visible.x0;
-	scroll_width = ro_get_vscroll_width(hotlist_window);
+	scroll_width = ro_get_vscroll_width(history_window);
 	state.visible.x0 = mid_x - (dimension + scroll_width) / 2;
 	state.visible.x1 = state.visible.x0 + dimension;
 	dimension = state.visible.y1 - state.visible.y0;

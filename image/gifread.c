@@ -758,7 +758,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			*/
 			if ((background_action == 2) || (background_action == 3)) {
 				gif->dirty_frame = frame;
-				LOG(("Dirty frame %i", gif->dirty_frame));
+//				LOG(("Dirty frame %i", gif->dirty_frame));
 			}
 
 			/*	Initialise the LZW decoding

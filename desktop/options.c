@@ -5,6 +5,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  */
 
 /** \file
@@ -14,11 +15,16 @@
  * value is "0" or "1".
  */
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include "libxml/HTMLparser.h"
+#include "libxml/HTMLtree.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/desktop/tree.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 #ifdef riscos
@@ -57,6 +63,9 @@ bool option_block_ads = false;
 int option_minimum_gif_delay = 10;
 /** Whether to send the referer HTTP header */
 bool option_send_referer = true;
+/** Whether to animate images */
+bool option_animate_images = true;
+
 
 EXTRA_OPTION_DEFINE
 
@@ -80,10 +89,19 @@ struct {
 	{ "block_advertisements", OPTION_BOOL, &option_block_ads },
 	{ "minimum_gif_delay",      OPTION_INTEGER, &option_minimum_gif_delay },
 	{ "send_referer",    OPTION_BOOL,    &option_send_referer },
+	{ "animate_images",  OPTION_BOOL,    &option_animate_images }, \
 	EXTRA_OPTION_TABLE
 };
 
 #define option_table_entries (sizeof option_table / sizeof option_table[0])
+
+
+static void options_load_hotlist_directory(xmlNode *ul, struct node *directory);
+static void options_load_hotlist_entry(xmlNode *li, struct node *directory);
+xmlNode *options_find_hotlist_element(xmlNode *node, const char *name);
+bool options_save_hotlist_directory(struct node *directory, xmlNode *node);
+bool options_save_hotlist_entry(struct node *entry, xmlNode *node);
+bool options_save_hotlist_entry_comment(xmlNode *node, const char *name, int value);
 
 
 /**
@@ -200,4 +218,362 @@ void options_write(const char *path)
         }
 
 	fclose(fp);
+}
+
+
+/**
+ * Loads a hotlist as a tree from a specified file.
+ *
+ * \param  filename  name of file to read
+ * \return the hotlist file represented as a tree, or NULL on failure
+ */
+struct tree *options_load_hotlist(const char *filename) {
+	xmlDoc *doc;
+	xmlNode *html, *body, *ul;
+	struct tree *tree;
+
+	doc = htmlParseFile(filename, "iso-8859-1");
+	if (!doc) {
+		warn_user("HotlistLoadError", messages_get("ParsingFail"));
+		return NULL;
+	}
+	
+	html = options_find_hotlist_element((xmlNode *) doc, "html");
+	body = options_find_hotlist_element(html, "body");
+	ul = options_find_hotlist_element(body, "ul");
+	if (!ul) {
+		xmlFreeDoc(doc);
+		warn_user("HotlistLoadError",
+				"(<html>...<body>...<ul> not found.)");
+		return NULL;
+	}
+
+	tree = calloc(sizeof(struct tree), 1);
+	if (!tree) {
+		xmlFreeDoc(doc);
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+	tree->root = tree_create_folder_node(NULL, "Root");
+	if (!tree->root) return NULL;
+
+	options_load_hotlist_directory(ul, tree->root);
+	tree->root->expanded = true;
+	tree_initialise(tree);
+
+	xmlFreeDoc(doc);
+	return tree;
+}
+
+
+/**
+ * Parse a directory represented as a ul.
+ *
+ * \param  ul         xmlNode for parsed ul
+ * \param  directory  directory to add this directory to
+ */
+void options_load_hotlist_directory(xmlNode *ul, struct node *directory) {
+	char *title;
+	struct node *dir;
+	xmlNode *n;
+	
+	assert(ul);
+	assert(directory);
+
+	for (n = ul->children; n; n = n->next) {
+		/* The ul may contain entries as a li, or directories as
+		 * an h4 followed by a ul. Non-element nodes may be present
+		 * (eg. text, comments), and are ignored. */
+
+		if (n->type != XML_ELEMENT_NODE)
+			continue;
+
+		if (strcmp(n->name, "li") == 0) {
+			/* entry */
+			options_load_hotlist_entry(n, directory);
+
+		} else if (strcmp(n->name, "h4") == 0) {
+			/* directory */
+			title = (char *) xmlNodeGetContent(n);
+			if (!title) {
+				warn_user("HotlistLoadError", "(Empty <h4> "
+						"or memory exhausted.)");
+				return;
+			}
+
+			for (n = n->next;
+					n && n->type != XML_ELEMENT_NODE;
+					n = n->next)
+				;
+			if (!n || strcmp(n->name, "ul") != 0) {
+				/* next element isn't expected ul */
+				free(title);
+				warn_user("HotlistLoadError", "(Expected "
+						"<ul> not present.)");
+				return;
+			}
+
+			dir = tree_create_folder_node(directory, title);
+			if (!dir)
+				return;
+			options_load_hotlist_directory(n, dir);
+		}
+	}
+}
+
+
+/**
+ * Parse an entry represented as a li.
+ *
+ * \param  li         xmlNode for parsed li
+ * \param  directory  directory to add this entry to
+ */
+void options_load_hotlist_entry(xmlNode *li, struct node *directory) {
+	char *url = 0;
+	char *title = 0;
+  	int filetype = 0xfaf;
+	int add_date = -1;
+	int last_date = -1;
+	int visits = 0;
+	char *comment;
+	struct node *entry;
+	xmlNode *n;
+
+	for (n = li->children; n; n = n->next) {
+		/* The li must contain an "a" element, and may contain
+		 * some additional data as comments. */
+
+		if (n->type == XML_ELEMENT_NODE &&
+				strcmp(n->name, "a") == 0) {
+			url = (char *) xmlGetProp(n, (const xmlChar *) "href");
+			title = (char *) xmlNodeGetContent(n);
+
+		} else if (n->type == XML_COMMENT_NODE) {
+			comment = (char *) xmlNodeGetContent(n);
+			if (!comment)
+				continue;
+			if (strncmp("Type:", comment, 5) == 0)
+			  	filetype = atoi(comment + 5);
+			else if (strncmp("Added:", comment, 6) == 0)
+		  		add_date = atoi(comment + 6);
+			else if (strncmp("LastVisit:", comment, 10) == 0)
+		  		last_date = atoi(comment + 10);
+			else if (strncmp("Visits:", comment, 7) == 0)
+		  		visits = atoi(comment + 7);
+		}
+	}
+
+	if (!url || !title) {
+		warn_user("HotlistLoadError", "(Missing <a> in <li> or "
+				"memory exhausted.)");
+		return;
+	}
+
+	entry = tree_create_URL_node(directory, title, url, filetype, add_date,
+			last_date, visits);
+}
+
+
+/**
+ * Search the children of an xmlNode for an element.
+ *
+ * \param  node  xmlNode to search children of, or 0
+ * \param  name  name of element to find
+ * \return  first child of node which is an element and matches name, or
+ *          0 if not found or parameter node is 0
+ */
+xmlNode *options_find_hotlist_element(xmlNode *node, const char *name) {
+	xmlNode *n;
+	if (!node)
+		return 0;
+	for (n = node->children;
+			n && !(n->type == XML_ELEMENT_NODE &&
+			strcmp(n->name, name) == 0);
+			n = n->next)
+		;
+	return n;
+}
+
+
+/**
+ * Perform a save to a specified file
+ *
+ * /param  filename  the file to save to
+ */
+bool options_save_hotlist(struct tree *tree, const char *filename) {
+	int res;
+	xmlDoc *doc;
+	xmlNode *html, *head, *title, *body;
+
+	/* Unfortunately the Browse Hotlist format is invalid HTML,
+	 * so this is a lie. */
+	doc = htmlNewDoc("http://www.w3.org/TR/html4/strict.dtd",
+			"-//W3C//DTD HTML 4.01//EN");
+	if (!doc) {
+		warn_user("NoMemory", 0);
+		return false;
+	}
+
+	html = xmlNewNode(NULL, "html");
+	if (!html) {
+		warn_user("NoMemory", 0);
+		xmlFreeDoc(doc);
+		return false;
+	}
+	xmlDocSetRootElement(doc, html);
+
+	head = xmlNewChild(html, NULL, "head", NULL);
+	if (!head) {
+		warn_user("NoMemory", 0);
+		xmlFreeDoc(doc);
+		return false;
+	}
+
+	title  = xmlNewTextChild(head, NULL, "title", "NetSurf Hotlist");
+	if (!title) {
+		warn_user("NoMemory", 0);
+		xmlFreeDoc(doc);
+		return false;
+	}
+
+	body = xmlNewChild(html, NULL, "body", NULL);
+	if (!body) {
+		warn_user("NoMemory", 0);
+		xmlFreeDoc(doc);
+		return false;
+	}
+
+	if (!options_save_hotlist_directory(tree->root, body)) {
+		warn_user("NoMemory", 0);
+		xmlFreeDoc(doc);
+		return false;
+	}
+
+	doc->charset = XML_CHAR_ENCODING_UTF8;
+	res = htmlSaveFileEnc(filename, doc, "iso-8859-1");
+	if (res == -1) {
+		warn_user("HotlistSaveError", 0);
+		xmlFreeDoc(doc);
+		return false;
+	}
+
+	xmlFreeDoc(doc);
+	return true;
+}
+
+
+/**
+ * Add a directory to the HTML tree for saving.
+ *
+ * \param  directory  hotlist directory to add
+ * \param  node       node to add ul to
+ * \return  true on success, false on memory exhaustion
+ */
+bool options_save_hotlist_directory(struct node *directory, xmlNode *node) {
+	struct node *child;
+	xmlNode *ul, *h4;
+
+	ul = xmlNewChild(node, NULL, "ul", NULL);
+	if (!ul)
+		return false;
+
+	for (child = directory->child; child; child = child->next) {
+		if (!child->folder) {
+			/* entry */
+			if (!options_save_hotlist_entry(child, ul))
+				return false;
+		} else {
+			/* directory */
+			/* invalid HTML */
+			h4 = xmlNewTextChild(ul, NULL, "h4", child->data.text);
+			if (!h4)
+				return false;
+
+			if (!options_save_hotlist_directory(child, ul))
+				return false;
+		}	}
+
+	return true;
+}
+
+
+/**
+ * Add an entry to the HTML tree for saving.
+ *
+ * The node must contain a sequence of node_elements in the following order:
+ *
+ * \param  entry  hotlist entry to add
+ * \param  node   node to add li to
+ * \return  true on success, false on memory exhaustion
+ */
+bool options_save_hotlist_entry(struct node *entry, xmlNode *node) {
+	xmlNode *li, *a;
+	xmlAttr *href;
+	struct node_element *element;
+
+	li = xmlNewChild(node, NULL, "li", NULL);
+	if (!li)
+		return false;
+
+	a = xmlNewTextChild(li, NULL, "a", entry->data.text);
+	if (!a)
+		return false;
+
+	element = tree_find_element(entry, TREE_ELEMENT_URL);
+	if (!element)
+		return false;
+	href = xmlNewProp(a, "href", element->text);
+	if (!href)
+		return false;
+
+	if (element->user_data != 0xfaf)
+		if (!options_save_hotlist_entry_comment(li,
+				"Type", element->user_data))
+			return false;
+
+	element = tree_find_element(entry, TREE_ELEMENT_ADDED);
+	if ((element) && (element->user_data != -1))
+		if (!options_save_hotlist_entry_comment(li,
+  				"Added", element->user_data))
+			return false;
+
+	element = tree_find_element(entry, TREE_ELEMENT_LAST_VISIT);
+	if ((element) && (element->user_data != -1))
+		if (!options_save_hotlist_entry_comment(li,
+				"LastVisit", element->user_data))
+			return false;
+
+	element = tree_find_element(entry, TREE_ELEMENT_VISITS);
+	if ((element) && (element->user_data != 0))
+		if (!options_save_hotlist_entry_comment(li,
+				"Visits", element->user_data))
+			return false;
+	return true;
+}
+
+
+/**
+ * Add a special comment node to the HTML tree for saving.
+ *
+ * \param  node   node to add comment to
+ * \param  name   name of special comment
+ * \param  value  value of special comment
+ * \return  true on success, false on memory exhaustion
+ */
+bool options_save_hotlist_entry_comment(xmlNode *node, const char *name, int value) {
+	char s[40];
+	xmlNode *comment;
+
+	snprintf(s, sizeof s, "%s:%i", name, value);
+	s[sizeof s - 1] = 0;
+
+	comment = xmlNewComment(s);
+	if (!comment)
+		return false;
+	if (!xmlAddChild(node, comment)) {
+		xmlFreeNode(comment);
+		return false;
+	}
+
+	return true;
 }

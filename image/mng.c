@@ -19,6 +19,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/options.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/image/mng.h"
@@ -387,7 +388,8 @@ bool nsmng_redraw(struct content *c, int x, int y,
 
 	/*	Check if we need to restart the animation
 	*/
-	if (c->data.mng.waiting) nsmng_animate(c);
+	if ((c->data.mng.waiting) && (option_animate_images))
+		nsmng_animate(c);
 
 	return ret;
 }

@@ -119,9 +119,9 @@ Folder:Dossier
 Links:Adresses
 Link:Adresses
 SaveSelect:Sauver
-Launch:Lancer
+Launch:Lancer  RETURN
 Edit:Éditer
-Delete:Supprimer
+Delete:Supprimer  ^X
 ResetUsage:RAZ des statistiques
 
 # Hotlist sub-window titles
@@ -130,11 +130,17 @@ NewFolder:Créer un nouveau dossier
 EditLink:Éditer l'adresse
 EditFolder:Éditer le dossier
 
-# Hotlist window
-HotlistURL:URL: %s
-HotlistAdded:Ajoutée: %s
-HotlistLast:Dernière visitée: %s
-HotlistVisits:Visites: %i
+# Default hotlist
+HotlistHomepage:NetSurf homepage
+HotlistTestBuild:NetSurf test builds
+
+# Tree URL text
+TreeAdded:Ajoutée: %s
+TreeLast:Dernière visitée: %s
+TreeVisits:Visites: %i
+TreeUnknown:Unknown
+TreeImport:Imported URL
+TreeNewFolder:New directory
 
 # Download window
 Download:%s de %s    %s/s    %s restants
@@ -372,7 +378,7 @@ HelpHotlist5:\Ssélectionner cette entrée.|MDouble-cliquer \s pour lancer cette U
 HelpHotlist6:Lâcher les boutons de souris pour terminer votre sélection.
 HelpHotlist7:Lâcher les boutons de souris pour déplacer votre sélection.
 
-HelpHotToolbar0:\Tle bouton Créer.|M\Scréer un nouveau répertoire.|M\Acréer une nouvelle entrée.
+HelpHotToolbar0:\Tle bouton Créer.|M\Scréer un nouveau répertoire.
 HelpHotToolbar1:\Tle bouton Supprimer.|M\Ssupprimer la sélection courante.
 HelpHotToolbar2:\Tle bouton de déploiement des entrées.|M\Sdéployer toutes les entrées ou seulement celle de la sélection courante.|M\ARegrouper toutes les entrées ou seulement celles de la sélection courante.|MLes entrées déployées affichent des infos supplémentaires, comme un compteur de visite.
 HelpHotToolbar3:\Tle bouton d'ouverture de répertoires.|M\Souvrir tous les répertoires ou seulement ceux de la sélection courante.|M\Afermer tous les répertoires ou seulement ceux de la sélection courante.

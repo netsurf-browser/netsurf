@@ -22,7 +22,7 @@ OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
 OBJECTS_COMMON += box.o form.o html.o html_redraw.o layout.o \
 	textplain.o						# render/
 OBJECTS_COMMON += messages.o pool.o translit.o url.o utils.o	# utils/
-OBJECTS_COMMON += imagemap.o loginlist.o options.o		# desktop/
+OBJECTS_COMMON += imagemap.o loginlist.o options.o tree.o	# desktop/
 
 OBJECTS_IMAGE = jpeg.o mng.o gif.o gifread.o			# image/
 
@@ -33,8 +33,9 @@ OBJECTS_RISCOS += 401login.o bitmap.o buffer.o debugwin.o \
 	gui.o help.o history.o hotlist.o image.o \
 	menus.o mouseactions.o plotters.o plugin.o print.o \
 	save.o save_complete.o save_draw.o save_text.o \
-	schedule.o search.o sprite.o textselection.o theme.o thumbnail.o \
-	ufont.o uri.o url_protocol.o wimp.o window.o		# riscos/
+	schedule.o search.o sprite.o textselection.o theme.o \
+	thumbnail.o treeview.o ufont.o uri.o url_protocol.o \
+	wimp.o window.o						# riscos/
 # OBJECTS_RISCOS += memdebug.o
 
 OBJECTS_NCOS = $(OBJECTS_RISCOS)
@@ -54,7 +55,7 @@ OBJECTS_GTK = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_GTK += filetyped.o					# debug/
 OBJECTS_GTK += browser.o netsurf.o version.o			# desktop/
 OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o \
-	gtk_plotters.o gtk_window.o				# gtk/
+	gtk_plotters.o gtk_treeview.o gtk_window.o		# gtk/
 
 
 OBJDIR_RISCOS = arm-riscos-aof
@@ -162,7 +163,7 @@ utils/translit.c: transtab
 # available), remove */*.[ch] from the line below.
 # Under RISC OS, you may require *Set UnixFS$sfix "", if perl gives
 # "No such file or directory" errors.
-depend: */*.[ch]
+depend: 
 	@echo "--> modified files $?"
 	@echo "--> updating dependencies"
 	@-mkdir -p $(OBJDIR_RISCOS) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)

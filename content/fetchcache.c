@@ -85,6 +85,11 @@ struct content * fetchcache(const char *url,
 		if ((c = content_get(url1)) != NULL) {
 			free(url1);
 			content_add_user(c, callback, p1, p2);
+			/* resize HTML content to the required size */
+			if (c->type == CONTENT_HTML) {
+				c->width = width;
+				c->height = height;
+			}
 			return c;
 		}
 	}

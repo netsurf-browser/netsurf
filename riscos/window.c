@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
+#include <time.h>
 #include <string.h>
 #include "oslib/colourtrans.h"
 #include "oslib/osspriteop.h"
@@ -32,10 +33,12 @@
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/thumbnail.h"
+#include "netsurf/riscos/treeview.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
+#include "netsurf/utils/messages.h"
 
 
 /** List of all browser windows. */
@@ -537,7 +540,7 @@ void gui_window_update_box(struct gui_window *g,
 	/*	Set the current redraw gui_window to get options from
 	*/
 	ro_gui_current_redraw_gui = g;
-/* 	if (data->redraw.full_redraw) */
+/*	if (data->redraw.full_redraw) */
 		use_buffer = use_buffer || g->option.buffer_animations;
 
 	plot = ro_plotters;
@@ -807,10 +810,10 @@ char *gui_window_get_url(struct gui_window *g)
 /**
  * Forces all windows to be set to the current theme
  *
- * /param g        the gui window to update
+ * /param g	   the gui window to update
  */
 void ro_gui_window_update_theme(void) {
-  	int height;
+	int height;
 	struct gui_window *g;
 	for (g = window_list; g; g = g->next) {
 		if (g->toolbar) {
@@ -821,7 +824,7 @@ void ro_gui_window_update_theme(void) {
 				if (height != 0)
 					ro_gui_window_update_dimensions(g, height);
 			} else {
-			  	if (height != g->toolbar->height)
+				if (height != g->toolbar->height)
 					ro_gui_window_update_dimensions(g, height -
 						g->toolbar->height);
 			}
@@ -833,21 +836,25 @@ void ro_gui_window_update_theme(void) {
 			ro_gui_theme_destroy_toolbar(hotlist_toolbar);
 			hotlist_toolbar = NULL;
 		}
-		ro_gui_theme_attach_toolbar(hotlist_toolbar, hotlist_window);
-		xwimp_force_redraw(hotlist_window, 0, -16384, 16384, 16384);
+		if (hotlist_tree) {
+			ro_gui_theme_attach_toolbar(hotlist_toolbar,
+					(wimp_w)hotlist_tree->handle);
+			hotlist_tree->offset_y = hotlist_toolbar->height;
+			xwimp_force_redraw((wimp_w)hotlist_tree->handle,
+					0, -16384, 16384, 16384);
+		}
 	}
-
 }
 
 
 /**
  * Forces the windows extent to be updated
  *
- * /param g        the gui window to update
+ * /param g	   the gui window to update
  * /param yscroll  an amount to scroll the vertical scroll bar by
  */
 void ro_gui_window_update_dimensions(struct gui_window *g, int yscroll) {
- 	os_error *error;
+	os_error *error;
 	wimp_window_state state;
 	if (!g) return;
 	state.w = g->window;
@@ -1089,6 +1096,7 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 
 void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 {
+	struct node *node;
 	char url[80];
 
 	/*	Store the toolbar
@@ -1160,11 +1168,17 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 			break;
 
 		case ICON_TOOLBAR_BOOKMARK:
-			if (pointer->buttons == wimp_CLICK_ADJUST) {
-				if (g->bw->current_content)
-					ro_gui_hotlist_add(g->title,
-							g->bw->current_content);
-			} else {
+			if ((pointer->buttons == wimp_CLICK_ADJUST) && (hotlist_tree)) {
+				node = tree_create_URL_node(hotlist_tree->root,
+						messages_get(g->title),
+						g->bw->current_content->url,
+						ro_content_filetype(g->bw->current_content),
+						time(NULL), -1, 0);
+				tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP, 0,
+						NODE_INSTEP, 16384);
+				tree_handle_node_changed(hotlist_tree, node, false, true);
+				ro_gui_tree_scroll_visible(hotlist_tree, &node->data);
+			} else if (hotlist_tree) {
 				ro_gui_hotlist_show();
 			}
 			break;
@@ -1790,7 +1804,6 @@ void ro_gui_window_clone_options(struct browser_window *new_bw,
 	*/
 	if (!old_gui) {
 		new_gui->option.scale = ((float)option_scale) / 100;
-		new_gui->option.animate_images = option_animate_images;
 		new_gui->option.background_images = option_background_images;
 		new_gui->option.background_blending = option_background_blending;
 		new_gui->option.buffer_animations = option_buffer_animations;
@@ -1840,7 +1853,6 @@ void ro_gui_window_default_options(struct browser_window *bw) {
 	/*	Save the basic options
 	*/
 	option_scale = gui->option.scale * 100;
-	option_animate_images = gui->option.animate_images;
 	option_background_blending = gui->option.background_blending;
 	option_buffer_animations = gui->option.buffer_animations;
 	option_buffer_everything = gui->option.buffer_everything;

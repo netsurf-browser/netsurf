@@ -309,7 +309,12 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 				return;
 			break;
 		case GUI_SAVE_HOTLIST_EXPORT_HTML:
-			ro_gui_hotlist_save_as(path);
+			if (!options_save_hotlist(hotlist_tree, path))
+				return;
+			error = xosfile_set_type(path, 0xfaf);
+			if (error)
+				LOG(("xosfile_set_type: 0x%x: %s",
+						error->errnum, error->errmess));
 			break;
 	}
 

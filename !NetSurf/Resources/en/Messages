@@ -116,25 +116,31 @@ Collapse:Collapse
 All:All
 Folders:Directories
 Folder:Directory
-Links:Entries
-Link:Entry
+Links:Addresses
+Link:Address
 SaveSelect:Save
-Launch:Launch
+Launch:Launch  RETURN
 Edit:Edit
-Delete:Delete
+Delete:Delete  ^X
 ResetUsage:Reset statistics
 
 # Hotlist sub-window titles
 NewLink:Create new address
 NewFolder:Create new directory
-EditLink:Edit entry
+EditLink:Edit address
 EditFolder:Rename directory
 
-# Hotlist window
-HotlistURL:URL: %s
-HotlistAdded:Added: %s
-HotlistLast:Last visited: %s
-HotlistVisits:Visits: %i
+# Default hotlist
+HotlistHomepage:NetSurf homepage
+HotlistTestBuild:NetSurf test builds
+
+# Tree URL text
+TreeAdded:Added: %s
+TreeLast:Last visited: %s
+TreeVisits:Visits: %i
+TreeUnknown:Unknown
+TreeImport:Imported URL
+TreeNewFolder:New directory
 
 # Download window
 Download:%s of %s  è  %s/s  è  %s remaining
@@ -372,7 +378,7 @@ HelpHotlist5:\Sselect this entry.|MDouble-click \s to launch this URL.
 HelpHotlist6:Release the mouse buttons to complete your selection.
 HelpHotlist7:Release the mouse buttons to move the selection.
 
-HelpHotToolbar0:\Tcreate button.|M\Screate a new directory.|M\Acreate a new entry.
+HelpHotToolbar0:\Tcreate button.|M\Screate a new directory.
 HelpHotToolbar1:\Tdelete button.|M\Sdelete the current selection.
 HelpHotToolbar2:\Texpand entries button.|M\Sexpand all entries or entries within the current selection.|M\Acollapse all entries or entries within the current selection.|MExpanded entries show additional details, such as a visit counter.
 HelpHotToolbar3:\Topen directories button.|M\Sopen all directories or directories within the current selection.|M\Aclose all directories or directories within the current selection.
