@@ -481,7 +481,9 @@ bool rewrite_urls(xmlNode *n, const char *base)
 	 * 1)   data         <object>
 	 * 2)   href         <a> <area> <link> <base>
 	 * 3)   src          <script> <input> <frame> <iframe> <img>
-	 * 4)   n/a          <style>
+ 	 * 4)   n/a          <style>
+	 * 5)   background   any (except those above)
+
 	 */
 	/* 1 */
 	if (strcmp(n->name, "object") == 0) {
@@ -535,6 +537,11 @@ bool rewrite_urls(xmlNode *n, const char *base)
 		}
 
 		return true;
+	}
+	/* 5 */
+	else {
+	        if (!rewrite_url(n, "background", base))
+	                return false;
 	}
 
 	/* now recurse */
