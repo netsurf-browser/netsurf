@@ -14,6 +14,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/riscos/save_complete.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
@@ -22,17 +23,18 @@
 int done, destroyed;
 
 void callback(content_msg msg, struct content *c, void *p1,
-		void *p2, const char *error)
+		void *p2,  union content_msg_data data)
 {
 	LOG(("content %s, message %i", c->url, msg));
 	if (msg == CONTENT_MSG_DONE)
 		done = 1;
-	else if (msg == CONTENT_MSG_ERROR)
+	else if (msg == CONTENT_MSG_ERROR) {
+		printf("=== ERROR: %s\n", data.error);
 		done = destroyed = 1;
-	else if (msg == CONTENT_MSG_STATUS)
+	} else if (msg == CONTENT_MSG_STATUS)
 		printf("=== STATUS: %s\n", c->status_message);
 	else if (msg == CONTENT_MSG_REDIRECT) {
-		printf("=== REDIRECT to '%s'\n", error);
+		printf("=== REDIRECT to '%s'\n", data.redirect);
 		done = destroyed = 1;
 	}
 }
@@ -56,15 +58,10 @@ int main(int argc, char *argv[])
 			break;
 		url[strlen(url) - 1] = 0;
 		destroyed = 0;
-		c = fetchcache(url, 0, callback, 0, 0, 1000, 1000, false
-#ifdef WITH_POST
-		, 0, 0
-#endif
-#ifdef WITH_COOKIES
-		, true
-#endif
-		);
+		c = fetchcache(url, callback, 0, 0, 1000, 1000, false,
+				0, 0, true);
 		if (c) {
+			fetchcache_go(c, 0, callback, 0, 0, 0, 0, true);
 			done = c->status == CONTENT_STATUS_DONE;
 			while (!done)
 				fetch_poll();
@@ -153,15 +150,14 @@ bool plugin_handleable(const char *mime_type)
 
 #ifdef WITH_PLUGIN
 void plugin_msg_parse(wimp_message *message, int ack) {}
-void plugin_create(struct content *c, const char *params[]) {}
-void plugin_process_data(struct content *c, char *data, unsigned long size) {}
-int plugin_convert(struct content *c, unsigned int width, unsigned int height) {return 0;}
-void plugin_revive(struct content *c, unsigned int width, unsigned int height) {}
-void plugin_reformat(struct content *c, unsigned int width, unsigned int height) {}
+bool plugin_create(struct content *c, const char *params[]) {}
+bool plugin_process_data(struct content *c, char *data, unsigned int size) {}
+bool plugin_convert(struct content *c, int width, int height) {return 0;}
+void plugin_reformat(struct content *c, int width, int height) {}
 void plugin_destroy(struct content *c) {}
-void plugin_redraw(struct content *c, long x, long y,
-		unsigned long width, unsigned long height,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
+void plugin_redraw(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale) {}
 void plugin_add_instance(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
@@ -178,18 +174,6 @@ void plugin_reshape_instance(struct content *c, struct browser_window *bw,
 char *NETSURF_DIR = "<NetSurf$Dir>";
 #endif
 
-int colourtrans_return_colour_number_for_mode(int colour, int mode,
-		int *dest_palette)
-{
-	assert(!dest_palette);
-	return colour;
-}
-
-int *xjpeginfo_dimensions(void)
-{
-	return 1;
-}
-
 void xcolourtrans_generate_table_for_sprite(void)
 {
 	assert(0);
@@ -203,18 +187,6 @@ os_error *xosspriteop_put_sprite_scaled (osspriteop_flags flags,
       osspriteop_action action,
       os_factors const *factors,
       osspriteop_trans_tab const *trans_tab)
-{
-	assert(0);
-}
-
-os_error *xos_byte(byte op, int r1, int r2, int *r1_out, int *r2_out)
-{
-	assert(op == 0x87);
-	*r2_out = 28;
-	return 0;
-}
-
-void xjpeg_plot_scaled(void)
 {
 	assert(0);
 }
