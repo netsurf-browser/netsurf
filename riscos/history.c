@@ -497,12 +497,9 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer)
 	he = ro_gui_history_click_find(history_current->start, x, y);
 	if (he) {
 	        /* get width of string */
-                xfont_scan_string(history_font, he->url,
-                        font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
-			0x7fffffff, 0x7fffffff,
-			0,
-			0, strlen(he->url) > 256 ? 256 : strlen(he->url),
-			0, (int*)&width, 0, 0);
+                xwimptextop_string_width(he->url,
+                             strlen(he->url) > 256 ? 256 : strlen(he->url),
+                             (int*)&width);
 
                 ro_gui_set_icon_string(dialog_tooltip, 0, he->url);
 
@@ -512,20 +509,20 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer)
                 wimp_get_icon_state(&ic);
                 wimp_resize_icon(dialog_tooltip, 0,
                                  ic.icon.extent.x0, ic.icon.extent.y0,
-                                 width/200, ic.icon.extent.y1);
+                                 width + 16, ic.icon.extent.y1);
 
 	        state.w = dialog_tooltip;
 	        wimp_get_window_state(&state);
 
 	        /* update window extent */
-	        box.x1 = width/200;
+	        box.x1 = width + 16;
 		box.y0 = -36;
 		xwimp_set_extent(dialog_tooltip, &box);
 
 		/* set visible area */
                 state.visible.x0 = pointer->pos.x + 24;
 	        state.visible.y0 = pointer->pos.y - 22 - 36;
-	        state.visible.x1 = pointer->pos.x + width/200;
+	        state.visible.x1 = pointer->pos.x + 24 + width + 16;
 	        state.visible.y1 = pointer->pos.y - 22;
 	        state.next = wimp_TOP;
 	        /* open window */
