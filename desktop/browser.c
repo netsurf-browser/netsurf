@@ -197,7 +197,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		 */
 		if (bw->current_content &&
 				strncasecmp(bw->current_content->url,
-						url2, hash - url2) == 0) {
+						url2, hash - url2) == 0 &&
+				strlen(bw->current_content->url) ==
+					(unsigned int)(hash - url2)) {
 			free(url2);
 			browser_window_update(bw, false);
 			return;
