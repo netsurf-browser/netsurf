@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include "libxml/HTMLparser.h"
@@ -20,8 +21,8 @@
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/font.h"
-#endif
 #include "netsurf/riscos/plugin.h"
+#endif
 #define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
@@ -159,7 +160,7 @@ struct box * box_create(struct css_style * style,
 	box->gadget = 0;
 	box->object = 0;
 	box->object_params = 0;
-	box->plugin_state = 0;
+	box->object_state = 0;
 #endif
 	return box;
 }
@@ -1349,7 +1350,7 @@ void box_free_box(struct box *box)
 			xmlFree(box->href);
 	}
 
-	/* TODO: free object_params and plugin_state */
+	/* TODO: free object_params */
 }
 
 
@@ -1414,8 +1415,6 @@ struct result box_object(xmlNode *n, struct status *status,
         po->codebase = 0;
         po->classid = 0;
         po->paramds = 0;
-        po->width = 0;
-        po->height = 0;
 
         /* object data */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "data"))) {
@@ -1458,14 +1457,6 @@ struct result box_object(xmlNode *n, struct status *status,
                 xmlFree(s);
         }
 
-        /* object width */
-	if (style->width.width == CSS_WIDTH_LENGTH)
-		po->width = len(&style->width.value.length, style);
-
-        /* object height */
-	if (style->height.height == CSS_HEIGHT_LENGTH)
-		po->height = len(&style->height.length, style);
-
 	/* TODO: go through children looking for <param>, and add
 	 * somewhere in po */
 
@@ -1500,8 +1491,6 @@ struct result box_embed(xmlNode *n, struct status *status,
         po->codebase = 0;
         po->classid = 0;
         po->paramds = 0;
-        po->width = 0;
-        po->height = 0;
 
 	/* embed src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
@@ -1564,9 +1553,6 @@ struct result box_applet(xmlNode *n, struct status *status,
 bool plugin_decode(struct content* content, char* url, struct box* box,
                   struct object_params* po)
 {
-  os_error *e;
-  unsigned int *fv;
-
   /* Check if the codebase attribute is defined.
    * If it is not, set it to the codebase of the current document.
    */
@@ -1583,12 +1569,12 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
    * we can't handle this object.
    */
    if(po->data == 0 && po->classid == 0) {
-           return FALSE;
+           return false;
    }
    if(po->data == 0 && po->classid != 0) {
-           if(strnicmp(po->classid, "clsid:", 6) == 0) {
+           if(strncasecmp(po->classid, "clsid:", 6) == 0) {
                    LOG(("ActiveX object - n0"));
-                   return FALSE;
+                   return false;
            }
            else {
                    url = url_join(po->classid, po->codebase);
@@ -1603,11 +1589,11 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
     */
     if(po->type != 0) {
            if (content_lookup(po->type) == CONTENT_OTHER)
-                  return FALSE;
+                  return false;
     }
     if(po->codetype != 0) {
            if (content_lookup(po->codetype) == CONTENT_OTHER)
-                  return FALSE;
+                  return false;
     }
 
   /* If we've got to here, the object declaration has provided us with
@@ -1619,6 +1605,6 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
    */
    html_fetch_object(content, url, box);
 
-   return TRUE;
+   return true;
 }
 

@@ -17,5 +17,11 @@ void html_revive(struct content *c, unsigned int width, unsigned int height);
 void html_reformat(struct content *c, unsigned int width, unsigned int height);
 void html_destroy(struct content *c);
 void html_fetch_object(struct content *c, char *url, struct box *box);
+void html_add_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state);
+void html_remove_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state);
 
 #endif

@@ -8,6 +8,7 @@
 #ifndef _NETSURF_RISCOS_GUI_H_
 #define _NETSURF_RISCOS_GUI_H_
 
+#include "netsurf/render/box.h"
 #include "oslib/wimp.h"
 
 extern char *NETSURF_DIR;

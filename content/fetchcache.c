@@ -21,8 +21,7 @@ static void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned lon
 struct content * fetchcache(const char *url0, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
-		void *p1, void *p2, unsigned long width, unsigned long height,
-		struct object_params *object_params)
+		void *p1, void *p2, unsigned long width, unsigned long height)
 {
 	struct content *c;
 	char *url = xstrdup(url0);
@@ -36,12 +35,12 @@ struct content * fetchcache(const char *url0, char *referer,
 
 	c = cache_get(url);
 	if (c != 0) {
-		content_add_user(c, callback, p1, p2, object_params);
+		content_add_user(c, callback, p1, p2);
 		return c;
 	}
 
 	c = content_create(url);
-	content_add_user(c, callback, p1, p2, object_params);
+	content_add_user(c, callback, p1, p2);
 	cache_put(c);
 	c->fetch_size = 0;
 	c->width = width;

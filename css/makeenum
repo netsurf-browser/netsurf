@@ -11,6 +11,7 @@ $out = shift or die "usage: makeenum leafname";
 open H, ">$out.h" or die "open 'enum.h' failed";
 open C, ">$out.c" or die "open 'enum.c' failed";
 
+print C "#include <string.h>\n";
 print C "#include \"$out.h\"\n\n";
 
 while (<>) {

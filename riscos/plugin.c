@@ -28,21 +28,28 @@
  */
 void plugin_create(struct content *c)
 {
+	c->data.plugin.data = xcalloc(0, 1);
+	c->data.plugin.length = 0;
 	/* we can't create the plugin here, because this is only called
 	 * once, even if the object appears several times */
 }
 
 
 /**
- * plugin_add_user
+ * plugin_add_instance
  *
  * The content has been added to a page somewhere: launch the plugin.
  * This may be called anytime after plugin_create any number of times.
  * Each must launch a new plugin.
+ *
+ * bw is the window which the plugin is in
+ * page, box, params are 0 if the object is standalone
+ * state may be used to store a pointer to state data
  */
-void plugin_add_user(struct content *c, struct object_params *params)
+void plugin_add_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state)
 {
-	assert(params != 0);
   /* ok, it looks like we can handle this object.
    * Broadcast Message_PlugIn_Open (&4D540) and listen for response
    * Message_PlugIn_Opening (&4D541). If no response, try to launch
@@ -57,16 +64,36 @@ void plugin_add_user(struct content *c, struct object_params *params)
 
 
 /**
- * plugin_remove_user
+ * plugin_remove_instance
  *
  * A plugin is no longer required, eg. the page containing it has
  * been closed.
+ *
+ * Any storage associated with state must be freed.
  */
-void plugin_remove_user(struct content *c, struct object_params *params)
+void plugin_remove_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state)
 {
-	assert(params != 0);
 }
 
+
+/**
+ * plugin_reshape_instance
+ *
+ * The box containing the plugin has moved or resized,
+ * or the window containing the plugin has resized if standalone.
+ */
+void plugin_reshape_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state)
+{
+  /* By now, we've got the plugin up and running in a nested window
+   * off the viewable page area. Now we want to display it in its place.
+   * Therefore, broadcast a Message_PlugIn_Reshape (&4D544) with the values
+   * given to us.
+   */
+}
 
 
 static const char * const ALIAS_PREFIX = "Alias$@PlugInType_";
@@ -78,16 +105,17 @@ static const char * const ALIAS_PREFIX = "Alias$@PlugInType_";
  */
 bool plugin_handleable(const char *mime_type)
 {
-  char *sysvar;
+  char sysvar[40];  /* must be sufficient for ALIAS_PREFIX and a hex number */
   unsigned int *fv;
   os_error *e;
 
-  /* prefix + 3 for file type + 1 for terminating \0 */
-  sysvar = xcalloc(strlen(ALIAS_PREFIX)+4, sizeof(char));
-
   e = xmimemaptranslate_mime_type_to_filetype(mime_type, (bits *) &fv);
+  if (e) {
+    LOG(("xmimemaptranslate_mime_type_to_filetype failed: %s", e->errmess));
+    return FALSE;
+  }
 
-  sprintf(sysvar, "%s%x", ALIAS_PREFIX, e == NULL ? fv : 0 );
+  sprintf(sysvar, "%s%x", ALIAS_PREFIX, fv);
   if (getenv(sysvar) == 0)
 	  return FALSE;
   return TRUE;
@@ -114,6 +142,11 @@ void plugin_process_data(struct content *c, char *data, unsigned long size)
 
   /* I think we should just buffer the data here, in case the
    * plugin requests it sometime in the future. - James */
+
+	c->data.plugin.data = xrealloc(c->data.plugin.data, c->data.plugin.length + size);
+	memcpy(c->data.plugin.data + c->data.plugin.length, data, size);
+	c->data.plugin.length += size;
+	c->size += size;
 }
 
 /**
@@ -155,9 +188,4 @@ void plugin_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height)
 {
 
-  /* By now, we've got the plugin up and running in a nested window
-   * off the viewable page area. Now we want to display it in its place.
-   * Therefore, broadcast a Message_PlugIn_Reshape (&4D544) with the values
-   * given to us.
-   */
 }

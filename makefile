@@ -23,9 +23,9 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wconversion -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
 	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
-CFLAGS = -O $(WARNFLAGS) -I.. -I/usr/local/riscoslibs/include \
+CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. -I/usr/local/riscoslibs/include \
 	-Dfd_set=long -mpoke-function-name
-CFLAGS_DEBUG = -O $(WARNFLAGS) -I.. -I/usr/include/libxml2 \
+CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -O $(WARNFLAGS) -I.. -I/usr/include/libxml2 \
 	-Dfd_set=long -g
 LDFLAGS = \
 	/usr/local/riscoslibs/libungif/libungif.ro \

@@ -13,10 +13,12 @@
 #include "netsurf/css/css.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/textplain.h"
+#ifdef riscos
 #include "netsurf/riscos/jpeg.h"
 #include "netsurf/riscos/png.h"
 #include "netsurf/riscos/gif.h"
 #include "netsurf/riscos/plugin.h"
+#endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -48,31 +50,40 @@ struct handler_entry {
 	void (*destroy)(struct content *c);
 	void (*redraw)(struct content *c, long x, long y,
 			unsigned long width, unsigned long height);
-	void (*add_user)(struct content *c, struct object_params *params);
-	void (*remove_user)(struct content *c, struct object_params *params);
+	void (*add_instance)(struct content *c, struct browser_window *bw,
+			struct content *page, struct box *box,
+			struct object_params *params, void **state);
+	void (*remove_instance)(struct content *c, struct browser_window *bw,
+			struct content *page, struct box *box,
+			struct object_params *params, void **state);
+	void (*reshape_instance)(struct content *c, struct browser_window *bw,
+			struct content *page, struct box *box,
+			struct object_params *params, void **state);
 };
 static const struct handler_entry handler_map[] = {
 	{html_create, html_process_data, html_convert, html_revive,
-		html_reformat, html_destroy, 0, 0, 0},
+		html_reformat, html_destroy, 0,
+		html_add_instance, html_remove_instance, 0},
 	{textplain_create, textplain_process_data, textplain_convert,
-		textplain_revive, textplain_reformat, textplain_destroy, 0, 0, 0},
+		textplain_revive, textplain_reformat, textplain_destroy, 0, 0, 0, 0},
 #ifdef riscos
 	{jpeg_create, jpeg_process_data, jpeg_convert, jpeg_revive,
-		jpeg_reformat, jpeg_destroy, jpeg_redraw, 0, 0},
+		jpeg_reformat, jpeg_destroy, jpeg_redraw, 0, 0, 0},
 #endif
 	{css_create, css_process_data, css_convert, css_revive,
-		css_reformat, css_destroy, 0, 0, 0},
+		css_reformat, css_destroy, 0, 0, 0, 0},
 #ifdef riscos
 	{nspng_create, nspng_process_data, nspng_convert, nspng_revive,
-		nspng_reformat, nspng_destroy, nspng_redraw, 0, 0},
+		nspng_reformat, nspng_destroy, nspng_redraw, 0, 0, 0},
 	{nsgif_create, nsgif_process_data, nsgif_convert, nsgif_revive,
-	        nsgif_reformat, nsgif_destroy, nsgif_redraw, 0, 0},
+	        nsgif_reformat, nsgif_destroy, nsgif_redraw, 0, 0, 0},
 	{plugin_create, plugin_process_data, plugin_convert, plugin_revive,
 	        plugin_reformat, plugin_destroy, plugin_redraw,
-		plugin_add_user, plugin_remove_user},
+		plugin_add_instance, plugin_remove_instance,
+		plugin_reshape_instance},
 #endif
 	{other_create, other_process_data, other_convert, other_revive,
-		other_reformat, other_destroy, 0, 0, 0}
+		other_reformat, other_destroy, 0, 0, 0, 0}
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
@@ -87,8 +98,10 @@ content_type content_lookup(const char *mime_type)
 	m = bsearch(mime_type, mime_map, MIME_MAP_COUNT, sizeof(mime_map[0]),
 			(int (*)(const void *, const void *)) strcmp);
 	if (m == 0) {
+#ifdef riscos
 		if (plugin_handleable(mime_type))
 			return CONTENT_PLUGIN;
+#endif
 		return CONTENT_OTHER;
 	}
 	return m->type;
@@ -126,10 +139,10 @@ struct content * content_create(char *url)
 
 void content_set_type(struct content *c, content_type type, char* mime_type)
 {
+	assert(c != 0);
 	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
 	assert(type < CONTENT_UNKNOWN);
 	LOG(("content %s, type %i", c->url, type));
-	/* TODO: call add_user on each existing user */
 	c->type = type;
 	c->mime_type = mime_type;
 	c->status = CONTENT_STATUS_LOADING;
@@ -245,7 +258,7 @@ void content_redraw(struct content *c, long x, long y,
 void content_add_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
-		void *p1, void *p2, struct object_params *params)
+		void *p1, void *p2)
 {
 	struct content_user *user;
 	LOG(("content %s, user %p %p %p", c->url, callback, p1, p2));
@@ -255,8 +268,6 @@ void content_add_user(struct content *c,
 	user->p2 = p2;
 	user->next = c->user_list->next;
 	c->user_list->next = user;
-	if (c->type != CONTENT_UNKNOWN && handler_map[c->type].add_user != 0)
-		handler_map[c->type].add_user(c, params);
 }
 
 
@@ -267,13 +278,10 @@ void content_add_user(struct content *c,
 void content_remove_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
-		void *p1, void *p2, struct object_params *params)
+		void *p1, void *p2)
 {
 	struct content_user *user, *next;
 	LOG(("content %s, user %p %p %p", c->url, callback, p1, p2));
-
-	if (c->type != CONTENT_UNKNOWN && handler_map[c->type].remove_user != 0)
-		handler_map[c->type].remove_user(c, params);
 
 	/* user_list starts with a sentinel */
 	for (user = c->user_list; user->next != 0 &&
@@ -318,5 +326,41 @@ void content_broadcast(struct content *c, content_msg msg, char *error)
 		if (user->callback != 0)
 			user->callback(msg, c, user->p1, user->p2, error);
 	}
+}
+
+
+void content_add_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state)
+{
+	assert(c != 0);
+	assert(c->type < CONTENT_UNKNOWN);
+	LOG(("content %s", c->url));
+	if (handler_map[c->type].add_instance != 0)
+		handler_map[c->type].add_instance(c, bw, page, box, params, state);
+}
+
+
+void content_remove_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state)
+{
+	assert(c != 0);
+	assert(c->type < CONTENT_UNKNOWN);
+	LOG(("content %s", c->url));
+	if (handler_map[c->type].remove_instance != 0)
+		handler_map[c->type].remove_instance(c, bw, page, box, params, state);
+}
+
+
+void content_reshape_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state)
+{
+	assert(c != 0);
+	assert(c->type < CONTENT_UNKNOWN);
+	LOG(("content %s", c->url));
+	if (handler_map[c->type].reshape_instance != 0)
+		handler_map[c->type].reshape_instance(c, bw, page, box, params, state);
 }
 

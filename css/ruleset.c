@@ -8,10 +8,10 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #define CSS_INTERNALS
 #define NDEBUG
 #include "netsurf/css/css.h"
+#include "netsurf/content/content.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 

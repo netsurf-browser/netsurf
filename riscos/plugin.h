@@ -8,6 +8,7 @@
 #ifndef _NETSURF_RISCOS_PLUGIN_H_
 #define _NETSURF_RISCOS_PLUGIN_H_
 
+#include <stdbool.h>
 #include "netsurf/content/content.h"
 #include "netsurf/render/box.h"
 
@@ -25,7 +26,15 @@ void plugin_reformat(struct content *c, unsigned int width, unsigned int height)
 void plugin_destroy(struct content *c);
 void plugin_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height);
-void plugin_add_user(struct content *c, struct object_params *params);
-void plugin_remove_user(struct content *c, struct object_params *params);
+void plugin_add_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state);
+void plugin_remove_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state);
+void plugin_reshape_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state);
+
 
 #endif

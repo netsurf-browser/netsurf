@@ -146,7 +146,7 @@ void css_revive(struct content *c, unsigned int width, unsigned int height)
 		c->data.css.import_content[i] = fetchcache(
 				c->data.css.import_url[i], c->url,
 				css_atimport_callback, c, i,
-				c->width, c->height, 0);
+				c->width, c->height);
 		if (c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
 			c->active++;
 	}
@@ -179,7 +179,7 @@ void css_destroy(struct content *c)
 		if (c->data.css.import_content[i] != 0) {
 			free(c->data.css.import_url[i]);
 			content_remove_user(c->data.css.import_content[i],
-					css_atimport_callback, c, i, 0);
+					css_atimport_callback, c, i);
 		}
 	xfree(c->data.css.import_url);
 	xfree(c->data.css.import_content);
@@ -295,7 +295,7 @@ void css_atimport(struct content *c, struct node *node)
 	c->data.css.import_url[i] = url_join(url, c->url);
 	c->data.css.import_content[i] = fetchcache(
 			c->data.css.import_url[i], c->url, css_atimport_callback,
-			c, i, c->width, c->height, 0);
+			c, i, c->width, c->height);
 	if (c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
 		c->active++;
 
@@ -311,7 +311,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
 			if (css->type != CONTENT_CSS) {
-				content_remove_user(css, css_atimport_callback, c, i, 0);
+				content_remove_user(css, css_atimport_callback, c, i);
 				c->data.css.import_content[i] = 0;
 				c->active--;
 				c->error = 1;
@@ -342,7 +342,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 			c->data.css.import_url[i] = xstrdup(error);
 			c->data.css.import_content[i] = fetchcache(
 					c->data.css.import_url[i], c->url, css_atimport_callback,
-					c, i, css->width, css->height, 0);
+					c, i, css->width, css->height);
 			if (c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
 				c->active++;
 			break;

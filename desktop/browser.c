@@ -60,7 +60,7 @@ void browser_window_stop_throbber(struct browser_window* bw)
 }
 
 
-void browser_window_reformat(struct browser_window* bw)
+void browser_window_reformat(struct browser_window* bw, int scroll_to_top)
 {
   LOG(("bw = %p", bw));
 
@@ -73,7 +73,8 @@ void browser_window_reformat(struct browser_window* bw)
   else
     gui_window_set_title(bw->window, bw->current_content->title);
   gui_window_set_extent(bw->window, bw->current_content->width, bw->current_content->height);
-  gui_window_set_scroll(bw->window, 0, 0);
+  if (scroll_to_top)
+    gui_window_set_scroll(bw->window, 0, 0);
   gui_window_redraw_window(bw->window);
 
   LOG(("done"));
@@ -182,8 +183,10 @@ void browser_window_destroy(struct browser_window* bw)
   LOG(("bw = %p", bw));
   assert(bw != 0);
 
-  if (bw->current_content != NULL)
-    content_remove_user(bw->current_content, browser_window_callback, bw, 0, 0);
+  if (bw->current_content != NULL) {
+    content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
+    content_remove_user(bw->current_content, browser_window_callback, bw, 0);
+  }
 
   if (bw->history != NULL)
   {
@@ -226,7 +229,7 @@ void browser_window_open_location_historical(struct browser_window* bw, const ch
   browser_window_start_throbber(bw);
   bw->time0 = clock();
   bw->loading_content = fetchcache(url, 0, browser_window_callback, bw, 0,
-		  gui_window_get_width(bw->window), 0, 0);
+		  gui_window_get_width(bw->window), 0);
   if (bw->loading_content->status == CONTENT_STATUS_READY)
     browser_window_callback(CONTENT_MSG_READY, bw->loading_content, bw, 0, 0);
   else if (bw->loading_content->status == CONTENT_STATUS_DONE)
@@ -294,18 +297,21 @@ void browser_window_callback(content_msg msg, struct content *c,
               gui_remove_gadget(bw->current_content->data.html.elements.gadgets[gc]);
             }
           }
-          content_remove_user(bw->current_content, browser_window_callback, bw, 0, 0);
+          content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
+          content_remove_user(bw->current_content, browser_window_callback, bw, 0);
         }
         bw->current_content = c;
         bw->loading_content = 0;
       }
-      browser_window_reformat(bw);
       gui_window_set_redraw_safety(bw->window, previous_safety);
       if (bw->current_content->status == CONTENT_STATUS_DONE) {
+        content_add_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
+        browser_window_reformat(bw, 0);
         sprintf(status, "Page complete (%gs)", ((float) (clock() - bw->time0)) / CLOCKS_PER_SEC);
         browser_window_set_status(bw, status);
         browser_window_stop_throbber(bw);
       } else {
+        browser_window_reformat(bw, 1);
         browser_window_set_status(bw, c->status_message);
       }
       break;

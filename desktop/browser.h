@@ -52,6 +52,7 @@ struct browser_window
   struct { int mult; int div; } scale;
 
   struct content* current_content;
+  void *current_content_state;
   struct content* loading_content;
   struct history* history;
   clock_t time0;
@@ -117,6 +118,6 @@ int box_position_distance(struct box_position* x, struct box_position* y);
 void gui_redraw_gadget(struct browser_window* bw, struct gui_gadget* g);
 
 void browser_window_stop_throbber(struct browser_window* bw);
-void browser_window_reformat(struct browser_window* bw);
+void browser_window_reformat(struct browser_window* bw, int scroll_to_top);
 
 #endif

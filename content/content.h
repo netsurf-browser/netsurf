@@ -188,6 +188,9 @@ struct content
 };
 
 
+struct browser_window;
+
+
 content_type content_lookup(const char *mime_type);
 struct content * content_create(char *url);
 void content_set_type(struct content *c, content_type type, char *mime_type);
@@ -201,11 +204,20 @@ void content_redraw(struct content *c, long x, long y,
 void content_add_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
-		void *p1, void *p2, struct object_params *params);
+		void *p1, void *p2);
 void content_remove_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
-		void *p1, void *p2, struct object_params *params);
+		void *p1, void *p2);
 void content_broadcast(struct content *c, content_msg msg, char *error);
+void content_add_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state);
+void content_remove_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state);
+void content_reshape_instance(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params, void **state);
 
 #endif

@@ -159,7 +159,7 @@ struct parse_params {
  * interface
  */
 
-#include "netsurf/content/content.h"
+struct content;
 
 void css_create(struct content *c);
 void css_process_data(struct content *c, char *data, unsigned long size);
