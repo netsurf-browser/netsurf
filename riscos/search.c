@@ -14,7 +14,7 @@
 #include "oslib/wimp.h"
 
 #include "netsurf/utils/config.h"
-#include "netsurf/content/content_type.h"
+#include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/render/box.h"
@@ -39,7 +39,7 @@ static char *search_string = 0;
 static struct list_entry search_head = { 0, 0, 0 };
 static struct list_entry *search_found = &search_head;
 static struct list_entry *search_current = 0;
-static struct gui_window *search_w = 0;
+static struct content *search_content = 0;
 static bool search_prev_from_top = false;
 static bool search_prev_case_sens = false;
 
@@ -199,7 +199,7 @@ void end_search(void)
 
 	search_current = 0;
 
-	search_w = 0;
+	search_content = 0;
 
 	search_prev_from_top = false;
 	search_prev_case_sens = false;
@@ -231,6 +231,9 @@ void do_search(char *string, bool from_top, bool case_sens, bool forwards)
 
 	c = search_current_window->bw->current_content;
 
+	if (!c)
+		return;
+
 	/* only handle html contents */
 	if (c->type != CONTENT_HTML)
 		return;
@@ -240,12 +243,11 @@ void do_search(char *string, bool from_top, bool case_sens, bool forwards)
 	if (!box)
 		return;
 
-//	LOG(("'%s' - '%s' (%p, %p) %p (%d, %d) (%d, %d) %d", search_string, string, w, g, found->next, prev_from_top, from_top, prev_case_sens, case_sens, forwards));
+//	LOG(("'%s' - '%s' (%p, %p) %p (%d, %d) (%d, %d) %d", search_string, string, search_content, c, search_found->next, search_prev_from_top, from_top, search_prev_case_sens, case_sens, forwards));
 
 	/* check if we need to start a new search or continue an old one */
-	if (!search_string || !search_w ||
-	    search_current_window != search_w || !search_found->next ||
-	    search_prev_from_top != from_top ||
+	if (!search_string || c != search_content ||
+	    !search_found->next || search_prev_from_top != from_top ||
 	    search_prev_case_sens != case_sens ||
 	    (case_sens && strcmp(string, search_string) != 0) ||
 	    (!case_sens && strcasecmp(string, search_string) != 0)) {
@@ -269,12 +271,12 @@ void do_search(char *string, bool from_top, bool case_sens, bool forwards)
 			return;
 		}
 		new = true;
-		search_w = search_current_window;
+		search_content = c;
 		search_prev_from_top = from_top;
 		search_prev_case_sens = case_sens;
 	}
 
-//	LOG(("%d %p %p (%p, %p)", new, found->next, current, current->prev, current->next));
+//	LOG(("%d %p %p (%p, %p)", new, search_found->next, search_current, search_current->prev, search_current->next));
 
 	if (!search_found->next)
 		return;
@@ -327,7 +329,7 @@ void do_search(char *string, bool from_top, bool case_sens, bool forwards)
 
 	/* get box position and jump to it */
 	box_coords(search_current->box, &x, &y);
-//	LOG(("%p (%d, %d)", current, x, y));
+//	LOG(("%p (%d, %d)", search_current, x, y));
 	gui_window_set_scroll(search_current_window, x, y);
 
 }
