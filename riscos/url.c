@@ -18,38 +18,76 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
+/* Define this to allow posting of data to an URL */
+#undef ALLOW_POST
+
+static char *read_string_value(os_string_value string, char *msg);
+
 void ro_url_message_received(wimp_message* message)
 {
   char* uri_requested = NULL;
+#ifdef ALLOW_POST
+  char* filename = NULL, *mimetype = NULL;
+  bool post=false;
+#endif
   struct browser_window* bw;
   inetsuite_message_open_url *url_message = (inetsuite_message_open_url*)&message->data;
 
-  if (strlen(url_message->url) > 0) {
+  /* If the url_message->indirect.tag is non-zero,
+   * then the message data is contained within the message block.
+   */
+  if (url_message->indirect.tag != 0) {
     uri_requested = xstrdup(url_message->url);
     LOG(("%s", url_message->url));
   }
   else {
-
-    /* TODO - handle indirected message data */
-    return;
-#if 0
-    if (url_message->indirect.url.offset == 0 ||
-        url_message->indirect.url.offset > 256) {
-       /* pointer to shared memory */
-       LOG(("shared: %x", url_message->indirect.url.pointer));
-       uri_requested = xstrdup(url_message->indirect.url.pointer);
+    /* Get URL */
+    if (read_string_value(url_message->indirect.url,
+                          (char*)url_message) != 0) {
+      uri_requested = xstrdup(read_string_value(url_message->indirect.url,
+                                                (char*)url_message));
     }
-    else { /* offset into message block */
-       LOG(("in message"));
-       uri_requested = xstrdup((char*)&url_message[url_message->indirect.url.offset]);
+    else {
+      return;
     }
     LOG(("%s", uri_requested));
+
+#ifdef ALLOW_POST
+    /* Get filename */
+    if (read_string_value(url_message->indirect.body_file,
+                          (char*)url_message) != 0) {
+      filename = xstrdup(read_string_value(url_message->indirect.body_file,
+                                           (char*)url_message));
+    }
+    /* We ignore the target window. Just open a new window. */
+    /* Get mimetype */
+    if (url_message->indirect.flags & inetsuite_USE_MIME_TYPE) {
+      if (read_string_value(url_message->indirect.body_mimetype,
+                            (char*)url_message) != 0) {
+        mimetype = xstrdup(read_string_value(url_message->indirect.body_mimetype,
+                                             (char*)url_message));
+      }
+      else {
+        mimetype = xstrdup("application/x-www-form-urlencoded");
+      }
+    }
+    else {
+      mimetype = xstrdup("application/x-www-form-urlencoded");
+    }
+
+    /* Indicate a post request */
+    if (filename && message->size > 28)
+      post = true;
 #endif
   }
 
   if ( (strspn(uri_requested, "http://") != strlen("http://")) &&
        (strspn(uri_requested, "https://") != strlen("https://")) &&
        (strspn(uri_requested, "file:/")  != strlen("file:/")) ) {
+#ifdef ALLOW_POST
+            xfree(filename);
+            xfree(mimetype);
+#endif
             xfree(uri_requested);
             return;
   }
@@ -64,13 +102,34 @@ void ro_url_message_received(wimp_message* message)
           | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
 
   gui_window_show(bw->window);
-  browser_window_open_location(bw, uri_requested);
+
+#ifdef ALLOW_POST
+  if (post) {
+    /* TODO - create urlencoded data from file contents.
+     *        Delete the file when finished with it.
+     */
+    browser_window_open_location_historical(bw, uri_requested, /*data*/0, 0);
+  }
+  else
+#endif
+    browser_window_open_location(bw, uri_requested);
 
   wimp_set_caret_position(bw->window->data.browser.toolbar,
                ICON_TOOLBAR_URL,
                0,0,-1, (int) strlen(bw->window->url) - 1);
 
+#ifdef ALLOW_POST
+  xfree(filename);
+  xfree(mimetype);
+#endif
   xfree(uri_requested);
 
   return;
+}
+
+char *read_string_value(os_string_value string, char *msg) {
+
+        if(string.offset == 0)  return NULL;
+        if(string.offset > 256) return string.pointer;
+        return &msg[string.offset];
 }
