@@ -195,46 +195,51 @@ void box_add_child(struct box * parent, struct box * child)
  */
 
 struct box * box_create(struct css_style * style,
-		char *href, char *title, char *id, pool box_pool)
+		const char *href, const char *title, const char *id,
+		pool box_pool)
 {
 	unsigned int i;
-	struct box *box = pool_alloc(box_pool, sizeof (struct box));
-	assert(box);
+	struct box *box;
+
+	if ((box = pool_alloc(box_pool, sizeof (struct box))) == NULL)
+		return NULL;
 	box->type = BOX_INLINE;
 	box->style = style;
+	box->x = box->y = 0;
 	box->width = UNKNOWN_WIDTH;
+	box->height = 0;
+	box->descendant_x0 = box->descendant_y0 = 0;
+	box->descendant_x1 = box->descendant_y1 = 0;
+	for (i = 0; i != 4; i++)
+		box->margin[i] = box->padding[i] = box->border[i] = 0;
+	box->min_width = 0;
 	box->max_width = UNKNOWN_MAX_WIDTH;
-	box->href = href ? xstrdup(href) : 0;
-	box->title = title ? xstrdup(title) : 0;
-	box->columns = 1;
-	box->rows = 1;
-	box->text = 0;
+	box->text = NULL;
+	box->length = 0;
 	box->space = 0;
 	box->clone = 0;
 	box->style_clone = 0;
-	box->length = 0;
+	box->href = href ? xstrdup(href) : NULL;
+	box->title = title ? xstrdup(title) : NULL;
+	box->columns = 1;
+	box->rows = 1;
 	box->start_column = 0;
-	box->next = 0;
-	box->prev = 0;
-	box->children = 0;
-	box->last = 0;
-	box->parent = 0;
-	box->float_children = 0;
-	box->next_float = 0;
-	box->col = 0;
-	box->font = 0;
-	box->gadget = 0;
-	box->usemap = 0;
-	box->id = id ? xstrdup(id) : 0;
-	box->background = 0;
-	box->object = 0;
-	box->object_params = 0;
-	box->x = box->y = 0;
-	box->height = 0;
-	for (i = 0; i != 4; i++)
-		box->margin[i] = box->padding[i] = box->border[i] = 0;
-	box->descendant_x0 = box->descendant_y0 = 0;
-	box->descendant_x1 = box->descendant_y1 = 0;
+	box->next = NULL;
+	box->prev = NULL;
+	box->children = NULL;
+	box->last = NULL;
+	box->parent = NULL;
+	box->float_children = NULL;
+	box->next_float = NULL;
+	box->col = NULL;
+	box->font = NULL;
+	box->gadget = NULL;
+	box->usemap = NULL;
+	box->id = id ? xstrdup(id) : NULL;
+	box->background = NULL;
+	box->object = NULL;
+	box->object_params = NULL;
+
 	return box;
 }
 

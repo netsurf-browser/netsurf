@@ -749,7 +749,8 @@ bool layout_line(struct box *first, int width, int *y,
 
 			if (b->text) {
 				if (b->width == UNKNOWN_WIDTH)
-					b->width = nsfont_width(b->font, b->text,
+					b->width = nsfont_width(b->font,
+							b->text,
 							b->length);
 				x += b->width + b->space ?
 						b->font->space_width : 0;
@@ -998,7 +999,8 @@ bool layout_line(struct box *first, int width, int *y,
 		} else {
 			/* fit as many words as possible */
 			assert(space != 0);
-			space = nsfont_split(split_box->font, split_box->text,
+			space = nsfont_split(split_box->font,
+					split_box->text,
 					split_box->length,
 					x1 - x0 - x - space_before, &w)
 					- split_box->text;

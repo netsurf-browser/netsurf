@@ -36,7 +36,7 @@ struct imagemap;
 struct content_html_data {
 	htmlParserCtxt *parser;  /**< HTML parser context. */
 
-	xmlChar *encoding;  /**< Encoding of source. */
+	const char *encoding;  /**< Encoding of source. */
 	bool getenc; /**< Need to get the encoding from the document, as it
 	              * wasn't specified in the Content-Type header. */
 

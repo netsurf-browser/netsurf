@@ -90,11 +90,11 @@ bool html_create(struct content *c, const char *params[])
 				html->getenc = false;
 			} else {
 				LOG(("xmlSwitchToEncoding failed for <%s>\n", encStr));
-				free(encStr);
+				free((void *)encStr);
 			}
 		} else {
 			LOG(("xmlFindCharEncodingHandler() failed for <%s>\n", encStr));
-			free(encStr);
+			free((void *)encStr);
 		}
 	}
 	html->base_url = xstrdup(c->url);

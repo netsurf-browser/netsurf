@@ -10,6 +10,7 @@
 #ifndef _NETSURF_RENDER_FONT_H_
 #define _NETSURF_RENDER_FONT_H_
 
+#include <stddef.h>
 #include "netsurf/css/css.h"
 
 typedef enum {
@@ -31,21 +32,21 @@ struct font_set *nsfont_new_set(void);
 struct font_data *nsfont_open(struct font_set *set, struct css_style *style);
 void nsfont_free_set(struct font_set *set);
 unsigned long nsfont_width(struct font_data *font, const char *text,
-		unsigned int length);
+		size_t length);
 void nsfont_position_in_string(struct font_data *font, const char *text,
-		unsigned int length, unsigned long x, int *char_offset,
+		size_t length, unsigned long x, int *char_offset,
 		int *pixel_offset);
 char *nsfont_split(struct font_data *font, const char *text,
-		unsigned int length,
+		size_t length,
 		unsigned int width, unsigned int *used_width);
 void nsfont_paint(struct font_data *font, const char *str,
-		int xpos, int ypos, void *trfm, int length);
+		size_t length, int xpos, int ypos, void *trfm);
 void nsfont_txtenum(struct font_data *font, const char *text,
-		unsigned int length,
+		size_t length,
 		unsigned int *width,
 		const char **rofontname,
 		const char **rotext,
-		unsigned int *rolength,
-		unsigned int *consumed);
+		size_t *rolength,
+		size_t *consumed);
 
 #endif

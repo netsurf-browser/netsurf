@@ -700,8 +700,8 @@ bool print_find_fonts(struct box *box, struct print_font **print_fonts, int *num
 {
 	struct box *a;
 	const char *txt;
-	int txt_len;
-	unsigned int width, rolength, consumed;
+	size_t txt_len;
+	size_t width, rolength, consumed;
 	const char *rofontname, *rotext;
 	int i;
 

@@ -70,7 +70,7 @@ struct font_data *nsfont_open(struct font_set *set, struct css_style *style)
 
 	data->id = fontdesc;
 	data->size = size;
-	data->space_width = nsfont_width(data, " ", 1);
+	data->space_width = nsfont_width(data, " ", sizeof(" ")-1);
 
 	return data;
 }
@@ -82,7 +82,7 @@ void nsfont_free_set(struct font_set *set)
 
 
 unsigned long nsfont_width(struct font_data *font, const char *text,
-		unsigned int length)
+		size_t length)
 {
 	int width;
 	PangoContext *context;
@@ -108,7 +108,7 @@ unsigned long nsfont_width(struct font_data *font, const char *text,
 
 
 void nsfont_position_in_string(struct font_data *font, const char *text,
-		unsigned int length, unsigned long x, int *char_offset,
+		size_t length, unsigned long x, int *char_offset,
 		int *pixel_offset)
 {
 	int index;
@@ -134,8 +134,8 @@ void nsfont_position_in_string(struct font_data *font, const char *text,
 }
 
 
-char *nsfont_split(struct font_data *font, const char *text, unsigned int length,
-		unsigned int width, unsigned int *used_width)
+char *nsfont_split(struct font_data *font, const char *text,
+		size_t length, unsigned int width, unsigned int *used_width)
 {
 	int index = length;
 	int x_pos;

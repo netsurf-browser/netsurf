@@ -28,7 +28,8 @@ static void font_close(struct font_data *data);
  * functions
  */
 
-unsigned long nsfont_width(struct font_data *font, const char * text, unsigned int length)
+unsigned long nsfont_width(struct font_data *font, const char * text,
+		size_t length)
 {
 	int width;
 
@@ -41,7 +42,7 @@ unsigned long nsfont_width(struct font_data *font, const char * text, unsigned i
 }
 
 void nsfont_position_in_string(struct font_data* font, const char* text,
-		unsigned int length, unsigned long x, int* char_offset, int* pixel_offset)
+		size_t length, unsigned long x, int* char_offset, int* pixel_offset)
 {
   assert(font != 0 && text != 0);
 
@@ -137,8 +138,8 @@ void font_close(struct font_data *data)
 }
 
 
-char *nsfont_split(struct font_data *data, const char * text, unsigned int length,
-		unsigned int width, unsigned int *used_width)
+char *nsfont_split(struct font_data *data, const char * text,
+		size_t length, unsigned int width, unsigned int *used_width)
 {
 	int i = width / 10;
 
@@ -155,7 +156,7 @@ char *nsfont_split(struct font_data *data, const char * text, unsigned int lengt
 
 
 void nsfont_paint(struct font_data *data, const char *text,
-		int xpos, int ypos, void *trfm, int length)
+		size_t length, int xpos, int ypos, void *trfm)
 {
 	assert(data != NULL);
 	assert(text != NULL);

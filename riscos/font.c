@@ -414,7 +414,7 @@ void nsfont_free_set(struct font_set *set)
  * \return width of text in pixels
  */
 unsigned long nsfont_width(struct font_data *font, const char *text,
-		unsigned int length)
+		size_t length)
 {
 	int width;
 	os_error *error;
@@ -487,7 +487,7 @@ unsigned long nsfont_width(struct font_data *font, const char *text,
  * \param pixel_offset updated to give the coordinate of the character in pixels
  */
 void nsfont_position_in_string(struct font_data *font, const char *text,
-		unsigned int length, unsigned long x,
+		size_t length, unsigned long x,
 		int *char_offset, int *pixel_offset)
 {
 	os_error *error;
@@ -568,8 +568,7 @@ void nsfont_position_in_string(struct font_data *font, const char *text,
  * \return pointer to character which does not fit
  */
 char *nsfont_split(struct font_data *font, const char *text,
-		unsigned int length,
-		unsigned int width, unsigned int *used_width)
+		size_t length, unsigned int width, unsigned int *used_width)
 {
 	os_error *error;
 	font_scan_block block;
@@ -645,7 +644,7 @@ char *nsfont_split(struct font_data *font, const char *text,
 
 
 void nsfont_paint(struct font_data *data, const char *text,
-		int xpos, int ypos, void *trfm, int length)
+		size_t length, int xpos, int ypos, void *trfm)
 {
 	os_error *error;
 	unsigned int flags;
@@ -679,7 +678,7 @@ void nsfont_paint(struct font_data *data, const char *text,
 	xos_read_vdu_variables((const os_vdu_var_list *)&var_input, (int *)&var_output);
 	xpos += var_output[0];
 	ypos += var_output[1];
-	
+
 
 	switch (data->ftype) {
 		case FONTTYPE_UFONT:
@@ -728,12 +727,12 @@ void nsfont_paint(struct font_data *data, const char *text,
  * \param consumed number of bytes of the given text which can be set with one RISC OS font. If 0, then error happened or initial text length was 0.
  */
 void nsfont_txtenum(struct font_data *font, const char *text,
-		unsigned int length,
+		size_t length,
 		unsigned int *width,
 		const char **rofontname,
 		const char **rotext,
-		unsigned int *rolength,
-		unsigned int *consumed)
+		size_t *rolength,
+		size_t *consumed)
 {
 	assert(font != NULL && text != NULL && rofontname != NULL && rotext != NULL && rolength != NULL && consumed != NULL);
 

@@ -11,6 +11,7 @@
 #define _NETSURF_RISCOS_GUI_H_
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "netsurf/utils/config.h"

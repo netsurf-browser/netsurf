@@ -1021,7 +1021,7 @@ static bool add_text(struct box *box, os_colour cbc, os_colour fc,
 	size_t txt_len = box->length;
 
 	while (txt_len != 0) {
-		unsigned int width, rolength, consumed;
+		size_t width, rolength, consumed;
 		const char *rofontname, *rotext;
 		byte fontIndex;
 		drawfile_object *dro;

@@ -530,13 +530,13 @@ bool html_redraw_box(struct box *box,
 		}
 
 		if (scale == 1)
-			nsfont_paint(box->font, box->text,
+			nsfont_paint(box->font, box->text, box->length,
 					x, y - (int) (box->height * 1.5),
-					NULL, (int) box->length);
+					NULL);
 		else
-			nsfont_paint(box->font, box->text,
+			nsfont_paint(box->font, box->text, box->length,
 					x, y - (int) (box->height * 1.5 * scale),
-					&trfm, (int) box->length);
+					&trfm);
 
 
 	} else {
@@ -832,7 +832,7 @@ bool html_redraw_file(int x, int y, int width, int height,
 	int text_width;
 	const char *text;
 	const char *sprite;
-	int length;
+	size_t length;
 
 	if (box->gadget->value) {
 		text = box->gadget->value;
@@ -849,8 +849,7 @@ bool html_redraw_file(int x, int y, int width, int height,
 	else
 		x = x + 4;
 
-	nsfont_paint(box->font, text,
-			x, y - height * 0.75, &trfm, length);
+	nsfont_paint(box->font, text, length, x, y - height * 0.75, &trfm);
 
 /*	xwimpspriteop_put_sprite_user_coords(sprite, x + 4, */
 /*			y - height / 2 - 17, os_ACTION_OVERWRITE); */

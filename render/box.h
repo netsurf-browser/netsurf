@@ -159,8 +159,8 @@ struct box {
 	int min_width;
 	int max_width;  /**< Width that would be taken with no line breaks. */
 
-	char *text;           /**< Text, or 0 if none. Unterminated. */
-	unsigned int length;  /**< Length of text. */
+	char *text;     /**< Text, or 0 if none. Unterminated. */
+	size_t length;  /**< Length of text. */
 
 	/** Text is followed by a space. */
 	unsigned int space : 1;
@@ -234,7 +234,8 @@ struct column {
 void xml_to_box(xmlNode *n, struct content *c);
 void box_dump(struct box * box, unsigned int depth);
 struct box * box_create(struct css_style * style,
-		char *href, char *title, char *id, pool box_pool);
+		const char *href, const char *title,
+		const char *id, pool box_pool);
 void box_add_child(struct box * parent, struct box * child);
 void box_insert_sibling(struct box *box, struct box *new_box);
 void box_free(struct box *box);

@@ -383,7 +383,7 @@ void browser_window_update(struct browser_window *bw,
 	if (bw->current_content->title != NULL
 	    && (title_local_enc = cnv_str_local_enc(bw->current_content->title)) != NULL) {
 		gui_window_set_title(bw->window, title_local_enc);
-		free(title_local_enc);
+		free((void *)title_local_enc);
 	} else
 		gui_window_set_title(bw->window, bw->current_content->url);
 
@@ -936,6 +936,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 	struct box *text_box = textarea->gadget->caret_text_box;
 	struct box *new_br, *new_text, *t;
 	struct box *prev;
+	/** \todo: consider changing the following 2 types in size_t */
 	int char_offset = textarea->gadget->caret_box_offset;
 	int pixel_offset = textarea->gadget->caret_pixel_offset;
 	int dy;
@@ -1154,7 +1155,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		textarea->height = height;
 	}
 
-	if (text_box->length < (unsigned int)char_offset) {
+	if (text_box->length < (size_t)char_offset) {
 		/* the text box has been split and the caret is in the
 		 * second part */
 		char_offset -= (text_box->length + 1);  /* +1 for the space */
@@ -1327,8 +1328,8 @@ void browser_window_input_callback(struct browser_window *bw,
 		box_offset += utf8keySize;
 		free((void *)utf8key);
 
-		text_box->width = nsfont_width(text_box->font, text_box->text,
-				(unsigned int)text_box->length);
+		text_box->width = nsfont_width(text_box->font,
+				text_box->text, text_box->length);
 		changed = true;
 
 	} else if (key == 8 || key == 127) {
@@ -1362,8 +1363,8 @@ void browser_window_input_callback(struct browser_window *bw,
 		text_box->length -= prev_offset - box_offset;
 		text_box->text[text_box->length] = 0;
 
-		text_box->width = nsfont_width(text_box->font, text_box->text,
-				(unsigned int)text_box->length);
+		text_box->width = nsfont_width(text_box->font,
+				text_box->text, text_box->length);
 
 		changed = true;
 
@@ -1462,7 +1463,7 @@ void browser_window_input_callback(struct browser_window *bw,
 	}
 
 	pixel_offset = nsfont_width(text_box->font, text_box->text,
-			(unsigned int)box_offset);
+			box_offset);
 	dx = text_box->x;
 	text_box->x = 0;
 	if (input->width < text_box->width && input->width / 2 < pixel_offset) {
