@@ -9,18 +9,24 @@
  * Save dialog and drag and drop saving (implementation).
  */
 
+#include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "oslib/dragasprite.h"
+#include "oslib/osfile.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/save_text.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/save_draw.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 gui_save_type gui_current_save_type;
+
+void ro_gui_save_complete(struct content *c, char *path);
 
 
 /**
@@ -62,7 +68,8 @@ void ro_gui_drag_icon(wimp_pointer *pointer)
 			dragasprite_DROP_SHADOW,
 			(osspriteop_area *) 1, sprite, &box, 0);
 	if (error) {
-		LOG(("0x%x: %s", error->errnum, error->errmess));
+		LOG(("xdragasprite_start: 0x%x: %s",
+				error->errnum, error->errmess));
 		warn_user(error->errmess);
 	}
 }
@@ -74,10 +81,17 @@ void ro_gui_drag_icon(wimp_pointer *pointer)
 
 void ro_gui_save_drag_end(wimp_dragged *drag)
 {
+	char *name;
+	char *dot;
 	wimp_pointer pointer;
 	wimp_message message;
 
 	wimp_get_pointer_info(&pointer);
+
+	name = ro_gui_get_icon_string(dialog_saveas, ICON_SAVE_PATH);
+	dot = strrchr(name, '.');
+	if (dot)
+		name = dot + 1;
 
 	message.your_ref = 0;
 	message.action = message_DATA_SAVE;
@@ -89,9 +103,18 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 	message.data.data_xfer.file_type = 0xfaf;
 	if (gui_current_save_type == GUI_SAVE_DRAW)
 		message.data.data_xfer.file_type = 0xaff;
-	strncpy(message.data.data_xfer.file_name,
-			ro_gui_get_icon_string(dialog_saveas, ICON_SAVE_PATH),
-			212);
+	if (gui_current_save_type == GUI_SAVE_COMPLETE) {
+		message.data.data_xfer.file_type = 0x2000;
+		if (name[0] != '!') {
+			message.data.data_xfer.file_name[0] = '!';
+			strncpy(message.data.data_xfer.file_name + 1, name,
+					211);
+		} else {
+			strncpy(message.data.data_xfer.file_name, name, 212);
+		}
+	} else
+		strncpy(message.data.data_xfer.file_name, name, 212);
+	message.data.data_xfer.file_name[211] = 0;
 	message.size = 44 + ((strlen(message.data.data_xfer.file_name) + 4) &
 			(~3u));
 
@@ -108,6 +131,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 {
 	char *path = message->data.data_xfer.file_name;
 	struct content *c = current_gui->data.browser.bw->current_content;
+	os_error *error;
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, path);
 
@@ -115,9 +139,21 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 		case GUI_SAVE_SOURCE:
 		        if (!c)
 		                return;
-	                xosfile_save_stamped(path, ro_content_filetype(c),
+	                error = xosfile_save_stamped(path,
+	                		ro_content_filetype(c),
 					c->source_data,
 					c->source_data + c->source_size);
+			if (error) {
+				LOG(("xosfile_save_stamped: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user(error->errmess);
+			}
+			break;
+
+		case GUI_SAVE_COMPLETE:
+			if (!c)
+				return;
+			ro_gui_save_complete(c, path);
 			break;
 
 		case GUI_SAVE_DRAW:
@@ -134,4 +170,43 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 	}
 
 	wimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+}
+
+
+/**
+ * Prepare an application directory and save_complete() to it.
+ */
+
+void ro_gui_save_complete(struct content *c, char *path)
+{
+	char buf[256];
+	FILE *fp;
+	os_error *error;
+
+	error = xosfile_create_dir(path, 0);
+	if (error) {
+		LOG(("xosfile_create_dir: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user(error->errmess);
+		return;
+	}
+
+	snprintf(buf, sizeof buf, "%s.!Run", path);
+	fp = fopen(buf, "w");
+	if (!fp) {
+		LOG(("fopen(): errno = %i", errno));
+		warn_user(strerror(errno));
+		return;
+	}
+	fprintf(fp, "Filer_Run <Obey$Dir>.index\n");
+	fclose(fp);
+	error = xosfile_set_type(buf, 0xfeb);
+	if (error) {
+		LOG(("xosfile_set_type: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user(error->errmess);
+		return;
+	}
+
+	save_complete(c, path);
 }
