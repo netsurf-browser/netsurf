@@ -107,6 +107,7 @@ extern struct gui_window *ro_gui_current_zoom_gui;
 
 
 /* in gui.c */
+void ro_gui_open_window_request(wimp_open *open);
 void ro_gui_open_help_page(const char *page);
 void ro_gui_screen_size(int *width, int *height);
 void ro_gui_view_source(struct content *content);
@@ -287,6 +288,11 @@ void ro_gui_theme_install_click(wimp_pointer *pointer);
 #define ICON_TOOLBAR_HISTORY_LAST 4
 #define ICON_TOOLBAR_CREATE 4 // must be after last history icon
 #define ICON_TOOLBAR_HOTLIST_LAST 5
+
+/* editing toolbar separator number */
+#define ICON_TOOLBAR_SEPARATOR_BROWSER 11
+#define ICON_TOOLBAR_SEPARATOR_HOTLIST 5
+#define ICON_TOOLBAR_SEPARATOR_HISTORY 4
 
 /* icon numbers for toolbar status window */
 #define ICON_STATUS_RESIZE 0
