@@ -1125,6 +1125,10 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 						g->bw->current_content,
 						false, 0, 0, g->window, false);
 			break;
+		case ICON_TOOLBAR_PRINT:
+			current_gui = g;
+			ro_gui_print_open(g, 0, 0, false, false);
+			break;
 	}
 }
 

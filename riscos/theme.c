@@ -66,8 +66,8 @@ static wimp_window theme_toolbar_window = {
 	12,
 	1,
 	{""},
-	0,
-	{ }
+	0/*,
+	{ } */
 };
 
 
@@ -1073,6 +1073,10 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 		*/
 		toolbar->toolbar_current = width;
 		if ((toolbar->reformat_buttons) && (parent) && (old_height != toolbar->height)) {
+		  	extent.x1 = 16384;
+		  	extent.y0 = 0;
+		  	extent.y1 = toolbar->height;
+		  	xwimp_set_extent(toolbar->toolbar_handle, &extent);
 			ro_gui_theme_attach_toolbar(toolbar, parent);
 		}
 		toolbar->reformat_buttons = false;

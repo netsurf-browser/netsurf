@@ -1077,7 +1077,7 @@ void ro_gui_dialog_load_themes(void) {
 			wimp_ICON_VCENTRED |
 			(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
 			(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) |
-			(wimp_BUTTON_RADIO << wimp_ICON_BUTTON_TYPE_SHIFT) |
+			(wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT) |
 			(1 << wimp_ICON_ESG_SHIFT);
 	new_icon.icon.data.indirected_text_and_sprite.validation =
 			theme_radio_validation;
@@ -1103,19 +1103,12 @@ void ro_gui_dialog_load_themes(void) {
 		/*	Nest the toolbar window
 		*/
 		state.w = link->toolbar->toolbar_handle;
+		state.yscroll = 0;
 		state.visible.y1 = nested_y + base_extent;
 		state.visible.y0 = state.visible.y1 - link->toolbar->height + 2;
 		xwimp_open_window_nested((wimp_open *)&state, dialog_config_th_pane,
 				wimp_CHILD_LINKS_PARENT_WORK_AREA
-						<< wimp_CHILD_XORIGIN_SHIFT |
-				wimp_CHILD_LINKS_PARENT_WORK_AREA
-						<< wimp_CHILD_YORIGIN_SHIFT |
-				wimp_CHILD_LINKS_PARENT_WORK_AREA
-						<< wimp_CHILD_LS_EDGE_SHIFT |
-				wimp_CHILD_LINKS_PARENT_WORK_AREA
 						<< wimp_CHILD_BS_EDGE_SHIFT |
-				wimp_CHILD_LINKS_PARENT_WORK_AREA
-						<< wimp_CHILD_RS_EDGE_SHIFT |
 				wimp_CHILD_LINKS_PARENT_WORK_AREA 
 						<< wimp_CHILD_TS_EDGE_SHIFT);
 						
@@ -1129,13 +1122,11 @@ void ro_gui_dialog_load_themes(void) {
 	*/
 	link = toolbars;
 	while (link) {
-	  	if (link->descriptor == theme_choice) {
-	  		ro_gui_set_icon_selected_state(dialog_config_th_pane,
-	  			link->icon_number, true);
-	  		break;
-	  	}
+	  	ro_gui_set_icon_selected_state(dialog_config_th_pane,
+	  			link->icon_number, (link->descriptor == theme_choice));
 		link = link->next; 
 	}
+	xwimp_force_redraw(dialog_config_th_pane, 0, -16384, 16384, 16384);
 }
 
 

@@ -37,7 +37,7 @@ void ro_convert_pixels_to_os_units(os_coord *pixels, os_mode mode);
 char *ro_gui_get_icon_string(wimp_w w, wimp_i i);
 void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text);
 void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value);
-#define ro_gui_set_icon_selected_state(w, i, state) xwimp_set_icon_state(w, i, (state ? wimp_ICON_SELECTED : 0), wimp_ICON_SELECTED)
+void ro_gui_set_icon_selected_state(wimp_w w, wimp_i i, bool state);
 bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i);
 #define ro_gui_set_icon_shaded_state(w, i, state) xwimp_set_icon_state(w, i, (state ? wimp_ICON_SHADED : 0), wimp_ICON_SHADED)
 bool ro_gui_get_icon_shaded_state(wimp_w w, wimp_i i);

@@ -216,9 +216,17 @@ void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value) {
  * \param  i     icon handle
  * \param  state selected state
  */
-#define ro_gui_set_icon_selected_state(w, i, state) \
-		xwimp_set_icon_state(w, i, (state ? wimp_ICON_SELECTED : 0), wimp_ICON_SELECTED)
-
+void ro_gui_set_icon_selected_state(wimp_w w, wimp_i i, bool state) {
+	os_error *error;
+	if (ro_gui_get_icon_selected_state(w, i) == state) return;
+	error = xwimp_set_icon_state(w, i,
+			(state ? wimp_ICON_SELECTED : 0), wimp_ICON_SELECTED);
+	if (error) {
+		LOG(("xwimp_get_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+}
 
 /**
  * Gets the selected state of an icon.
@@ -227,11 +235,18 @@ void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value) {
  * \param  i     icon handle
  */
 bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
+	os_error *error;
 	wimp_icon_state ic;
 	ic.w = w;
 	ic.i = i;
-	xwimp_get_icon_state(&ic);
-	return (ic.icon.flags & wimp_ICON_SELECTED) != 0;
+	error = xwimp_get_icon_state(&ic);
+	if (error) {
+		LOG(("xwimp_get_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+	return ((ic.icon.flags & wimp_ICON_SELECTED) != 0);
 }
 
 
