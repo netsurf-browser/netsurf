@@ -724,7 +724,7 @@ struct result box_image(xmlNode *n, struct status *status,
 		struct css_style *style)
 {
 	struct box *box;
-	char *s, *url;
+	char *s, *url, *s1;
 	xmlChar *s2;
 
 	box = box_create(style, status->href, status->title,
@@ -742,10 +742,10 @@ struct result box_image(xmlNode *n, struct status *status,
 	if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "src")))
 		return (struct result) {box, 0};
 
-        /* remove leading and trailing whitespace */
-        s = strip(s);
+	/* remove leading and trailing whitespace */
+	s1 = strip(s);
 
-	url = url_join(s, status->content->data.html.base_url);
+	url = url_join(s1, status->content->data.html.base_url);
 	if (!url)
 		return (struct result) {box, 0};
 
