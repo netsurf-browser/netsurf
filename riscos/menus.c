@@ -2008,6 +2008,9 @@ void ro_gui_menu_prepare_hotlist(void) {
 	bool selection = false;
 	struct node *single = NULL;
 
+	if (!hotlist_tree)
+		return;
+
 	if (hotlist_tree->root->child) {
 		single = tree_get_selected_node(hotlist_tree->root->child);
 		selection = tree_has_selection(hotlist_tree->root->child);
@@ -2067,6 +2070,9 @@ void ro_gui_menu_prepare_global_history(void) {
   	os_error *error;
   	bool reopen = false;
 	bool selection = false;
+
+	if (!global_history_tree)
+		return;
 
 	if (global_history_tree->root->child) {
 		selection = tree_has_selection(global_history_tree->root->child);
