@@ -735,9 +735,9 @@ struct curl_httppost *fetch_post_convert(struct form_successful_control *control
 				temp = control->value; /* already leafname */
 			else
 				temp += 1;
-			leafname = malloc(strlen(temp));
+			leafname = calloc(strlen(temp)+5, sizeof(char));
 			if (!leafname) {
-				LOG(("malloc failed"));
+				LOG(("calloc failed"));
 				free(mimetype);
 				continue;
 			}
@@ -751,7 +751,8 @@ struct curl_httppost *fetch_post_convert(struct form_successful_control *control
 #endif
 			curl_formadd(&post, &last,
 					CURLFORM_COPYNAME, control->name,
-					CURLFORM_FILE, leafname,
+					CURLFORM_FILE, control->value,
+					CURLFORM_FILENAME, leafname,
 					CURLFORM_CONTENTTYPE,
 					(mimetype != 0 ? mimetype : "text/plain"),
 					CURLFORM_END);
@@ -798,6 +799,7 @@ bool fetch_can_fetch(const char *url)
 		if (strlen(data->protocols[i]) == len &&
 				strncasecmp(url, data->protocols[i], len) == 0)
 			return true;
+
 	return false;
 }
 
