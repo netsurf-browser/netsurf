@@ -61,7 +61,7 @@
  * \code
  * parent               permitted child nodes
  * BLOCK, INLINE_BLOCK  BLOCK, INLINE_CONTAINER, TABLE
- * INLINE_CONTAINER     INLINE, INLINE_BLOCK, FLOAT_LEFT, FLOAT_RIGHT
+ * INLINE_CONTAINER     INLINE, INLINE_BLOCK, FLOAT_LEFT, FLOAT_RIGHT, BR
  * INLINE               none
  * TABLE                at least 1 TABLE_ROW_GROUP
  * TABLE_ROW_GROUP      at least 1 TABLE_ROW
@@ -87,7 +87,7 @@ typedef enum {
 	BOX_TABLE, BOX_TABLE_ROW, BOX_TABLE_CELL,
 	BOX_TABLE_ROW_GROUP,
 	BOX_FLOAT_LEFT, BOX_FLOAT_RIGHT,
-	BOX_INLINE_BLOCK
+	BOX_INLINE_BLOCK, BOX_BR
 } box_type;
 
 struct column {

@@ -607,7 +607,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 	struct box *b;
 	struct box *split_box = 0;
 	struct box *d;
-	int move_y = 0;
+	bool move_y = false;
 	int space_before = 0, space_after = 0;
 	unsigned int inline_count = 0;
 
@@ -628,7 +628,8 @@ struct box * layout_line(struct box *first, int width, int *y,
 	for (x = 0, b = first; x < x1 - x0 && b != 0; b = b->next) {
 		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_FLOAT_LEFT ||
-				b->type == BOX_FLOAT_RIGHT);
+				b->type == BOX_FLOAT_RIGHT ||
+				b->type == BOX_BR);
 
 		if (b->type == BOX_INLINE_BLOCK) {
 			if (b->width == UNKNOWN_WIDTH)
@@ -643,6 +644,9 @@ struct box * layout_line(struct box *first, int width, int *y,
 					b->padding[RIGHT] + b->border[RIGHT] +
 					b->margin[RIGHT];
 		}
+
+		if (b->type == BOX_BR)
+			break;
 
 		if (b->type != BOX_INLINE)
 			continue;
@@ -715,9 +719,17 @@ struct box * layout_line(struct box *first, int width, int *y,
 			else
 				space_after = 0;
 			split_box = b;
-			move_y = 1;
+			move_y = true;
 			inline_count++;
 /* 			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x); */
+		} else if (b->type == BOX_BR) {
+			b->x = x;
+			b->width = 0;
+			b = b->next;
+			split_box = 0;
+			move_y = true;
+			break;
+
 		} else {
 			/* float */
 			d = b->children;
@@ -859,7 +871,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 			x += space_before + w;
 /* 			fprintf(stderr, "layout_line:     overflow, fit\n"); */
 		}
-		move_y = 1;
+		move_y = true;
 	}
 
 	/* set positions */
@@ -870,7 +882,8 @@ struct box * layout_line(struct box *first, int width, int *y,
 	}
 
 	for (d = first; d != b; d = d->next) {
-		if (d->type == BOX_INLINE || d->type == BOX_INLINE_BLOCK) {
+		if (d->type == BOX_INLINE || d->type == BOX_INLINE_BLOCK ||
+				d->type == BOX_BR) {
 			d->x += x0;
 			d->y = *y + d->border[TOP];
 			h = d->border[TOP] + d->padding[TOP] + d->height +
@@ -1287,7 +1300,7 @@ void calculate_widths(struct box *box)
 void calculate_inline_container_widths(struct box *box)
 {
 	struct box *child;
-	int min = 0, max = 0, width;
+	int min = 0, max = 0, line_max = 0, width;
 	unsigned int i, j;
 
 	for (child = box->children; child != 0; child = child->next) {
@@ -1297,7 +1310,7 @@ void calculate_inline_container_widths(struct box *box)
 					if (child->style->width.width == CSS_WIDTH_LENGTH) {
 						child->width = len(&child->style->width.value.length,
 								child->style);
-						max += child->width;
+						line_max += child->width;
 						if (min < child->width)
 							min = child->width;
 					}
@@ -1306,9 +1319,9 @@ void calculate_inline_container_widths(struct box *box)
 					/* max = all one line */
 					child->width = font_width(child->font,
 							child->text, child->length);
-					max += child->width;
+					line_max += child->width;
 					if (child->next && child->space)
-						max += child->font->space_width;
+						line_max += child->font->space_width;
 
 					/* min = widest word */
 					i = 0;
@@ -1329,10 +1342,10 @@ void calculate_inline_container_widths(struct box *box)
 					width = len(&child->style->width.value.length,
 							child->style);
 					if (min < width) min = width;
-					max += width;
+					line_max += width;
 				} else {
 					if (min < child->min_width) min = child->min_width;
-					max += child->max_width;
+					line_max += child->max_width;
 				}
 				break;
 
@@ -1351,10 +1364,19 @@ void calculate_inline_container_widths(struct box *box)
 				}
 				break;
 
+			case BOX_BR:
+				if (max < line_max)
+					max = line_max;
+				line_max = 0;
+				break;
+
 			default:
 				assert(0);
 		}
         }
+
+	if (max < line_max)
+		max = line_max;
 
 	if (box->parent && box->parent->style &&
 			(box->parent->style->white_space == CSS_WHITE_SPACE_PRE ||

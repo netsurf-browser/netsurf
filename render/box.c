@@ -63,6 +63,8 @@ static struct result box_a(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_body(xmlNode *n, struct status *status,
 		struct css_style *style);
+static struct result box_br(xmlNode *n, struct status *status,
+		struct css_style *style);
 static struct result box_image(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_form(xmlNode *n, struct status *status,
@@ -112,6 +114,7 @@ static const struct element_entry element_table[] = {
 	{"a", box_a},
 	{"applet", box_applet},
 	{"body", box_body},
+	{"br", box_br},
 	{"button", box_button},
 	{"embed", box_embed},
 	{"form", box_form},
@@ -337,7 +340,9 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			box = box_create(style, status.href, title,
 					content->data.html.box_pool);
 		}
-		box->type = box_map[style->display];
+		/* set box type from style if it has not been set already */
+		if (box->type == BOX_INLINE)
+			box->type = box_map[style->display];
 
 	} else if (n->type == XML_TEXT_NODE) {
 		/* text node: added to inline container below */
@@ -449,7 +454,8 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 	} else if (box->type == BOX_INLINE ||
 			box->type == BOX_INLINE_BLOCK ||
 			style->float_ == CSS_FLOAT_LEFT ||
-			style->float_ == CSS_FLOAT_RIGHT) {
+			style->float_ == CSS_FLOAT_RIGHT ||
+			box->type == BOX_BR) {
 		/* this is an inline box */
 		if (inline_container == 0) {
 			/* this is the first inline node: make a container */
@@ -459,7 +465,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			box_add_child(parent, inline_container);
 		}
 
-		if (box->type == BOX_INLINE) {
+		if (box->type == BOX_INLINE || box->type == BOX_BR) {
 			/* inline box: add to tree and recurse */
 			box_add_child(inline_container, box);
 			if (convert_children) {
@@ -750,6 +756,16 @@ struct result box_body(xmlNode *n, struct status *status,
 	return (struct result) {box, 1};
 }
 
+struct result box_br(xmlNode *n, struct status *status,
+		struct css_style *style)
+{
+	struct box *box;
+	box = box_create(style, status->href, status->title,
+			status->content->data.html.box_pool);
+	box->type = BOX_BR;
+	return (struct result) {box, 0};
+}
+
 static const content_type image_types[] = {
 #ifdef riscos
 	CONTENT_JPEG, CONTENT_PNG, CONTENT_GIF,	CONTENT_SPRITE, CONTENT_DRAW,
@@ -853,6 +869,7 @@ struct result box_textarea(xmlNode *n, struct status *status,
 
 	box = box_create(style, NULL, 0,
 			status->content->data.html.box_pool);
+	box->type = BOX_INLINE_BLOCK;
 	box->gadget = xcalloc(1, sizeof(struct form_control));
 	box->gadget->box = box;
 	box->gadget->type = GADGET_TEXTAREA;
@@ -860,7 +877,6 @@ struct result box_textarea(xmlNode *n, struct status *status,
 		form_add_control(status->current_form, box->gadget);
 	else
 		box->gadget->form = 0;
-	style->display = CSS_DISPLAY_INLINE_BLOCK;
 
 	/* split the content at newlines and make an inline container with an
 	 * inline box for each line */
@@ -954,9 +970,9 @@ struct result box_select(xmlNode *n, struct status *status,
 	}
 
 	box = box_create(style, NULL, 0, status->content->data.html.box_pool);
+	box->type = BOX_INLINE_BLOCK;
 	box->gadget = gadget;
 	gadget->box = box;
-	style->display = CSS_DISPLAY_INLINE_BLOCK;
 
 	inline_container = box_create(0, 0, 0,
 			status->content->data.html.box_pool);
@@ -1169,7 +1185,7 @@ struct box *box_input_text(xmlNode *n, struct status *status,
 	struct box *box = box_create(style, 0, 0,
 			status->content->data.html.box_pool);
 	struct box *inline_container, *inline_box;
-	style->display = CSS_DISPLAY_INLINE_BLOCK;
+	box->type = BOX_INLINE_BLOCK;
 
 	box->gadget = xcalloc(1, sizeof(struct form_control));
 	box->gadget->box = box;
@@ -1223,7 +1239,7 @@ struct result box_button(xmlNode *n, struct status *status,
 	char *type = (char *) xmlGetProp(n, (const xmlChar *) "type");
 	struct box *box = box_create(style, 0, 0,
 			status->content->data.html.box_pool);
-	style->display = CSS_DISPLAY_INLINE_BLOCK;
+	box->type = BOX_INLINE_BLOCK;
 
 	if (!type || strcasecmp(type, "submit") == 0) {
 		box->gadget = xcalloc(1, sizeof(struct form_control));
@@ -1264,6 +1280,7 @@ void box_dump(struct box * box, unsigned int depth)
 	for (i = 0; i < depth; i++)
 		fprintf(stderr, "  ");
 
+	fprintf(stderr, "%p ", box);
 	fprintf(stderr, "x%i y%i w%i h%i ", box->x, box->y, box->width, box->height);
 	if ((unsigned long)box->max_width != UNKNOWN_MAX_WIDTH)
 		fprintf(stderr, "min%i max%i ", box->min_width, box->max_width);
@@ -1280,6 +1297,7 @@ void box_dump(struct box * box, unsigned int depth)
 		case BOX_TABLE_ROW_GROUP:  fprintf(stderr, "BOX_TABLE_ROW_GROUP "); break;
 		case BOX_FLOAT_LEFT:       fprintf(stderr, "BOX_FLOAT_LEFT "); break;
 		case BOX_FLOAT_RIGHT:      fprintf(stderr, "BOX_FLOAT_RIGHT "); break;
+		case BOX_BR:               fprintf(stderr, "BOX_BR "); break;
 		default:                   fprintf(stderr, "Unknown box type ");
 	}
 	if (box->text)
@@ -1306,7 +1324,7 @@ void box_dump(struct box * box, unsigned int depth)
  *
  * parent		permitted child nodes
  * BLOCK, INLINE_BLOCK	BLOCK, INLINE_CONTAINER, TABLE
- * INLINE_CONTAINER	INLINE, INLINE_BLOCK, FLOAT_LEFT, FLOAT_RIGHT
+ * INLINE_CONTAINER	INLINE, INLINE_BLOCK, FLOAT_LEFT, FLOAT_RIGHT, BR
  * INLINE		none
  * TABLE		at least 1 TABLE_ROW_GROUP
  * TABLE_ROW_GROUP	at least 1 TABLE_ROW
@@ -1346,6 +1364,7 @@ void box_normalise_block(struct box *block, pool box_pool)
 			case BOX_INLINE_BLOCK:
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
+			case BOX_BR:
 				/* should have been wrapped in inline
 				   container by convert_xml_to_box() */
 				assert(0);
@@ -1369,10 +1388,14 @@ void box_normalise_block(struct box *block, pool box_pool)
 						child->type == BOX_TABLE_ROW ||
 						child->type == BOX_TABLE_CELL)) {
 					box_add_child(table, child);
-					child = child->next;
+					next_child = child->next;
+					child->next = 0;
+					child = next_child;
 				}
 				table->last->next = 0;
 				table->next = next_child = child;
+				if (table->next)
+					table->next->prev = table;
 				table->parent = block;
 				box_normalise_table(table, box_pool);
 				break;
@@ -1430,10 +1453,14 @@ void box_normalise_table(struct box *table, pool box_pool)
 						child->type == BOX_TABLE_ROW ||
 						child->type == BOX_TABLE_CELL)) {
 					box_add_child(row_group, child);
-					child = child->next;
+					next_child = child->next;
+					child->next = 0;
+					child = next_child;
 				}
 				row_group->last->next = 0;
 				row_group->next = next_child = child;
+				if (row_group->next)
+					row_group->next->prev = row_group;
 				row_group->parent = table;
 				box_normalise_table_row_group(row_group, &row_span,
 						&table_columns, box_pool);
@@ -1442,6 +1469,7 @@ void box_normalise_table(struct box *table, pool box_pool)
 			case BOX_INLINE_BLOCK:
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
+			case BOX_BR:
 				/* should have been wrapped in inline
 				   container by convert_xml_to_box() */
 				assert(0);
@@ -1515,10 +1543,14 @@ void box_normalise_table_row_group(struct box *row_group,
 						child->type == BOX_TABLE_ROW_GROUP ||
 						child->type == BOX_TABLE_CELL)) {
 					box_add_child(row, child);
-					child = child->next;
+					next_child = child->next;
+					child->next = 0;
+					child = next_child;
 				}
 				row->last->next = 0;
 				row->next = next_child = child;
+				if (row->next)
+					row->next->prev = row;
 				row->parent = row_group;
 				box_normalise_table_row(row, row_span,
 						table_columns, box_pool);
@@ -1527,6 +1559,7 @@ void box_normalise_table_row_group(struct box *row_group,
 			case BOX_INLINE_BLOCK:
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
+			case BOX_BR:
 				/* should have been wrapped in inline
 				   container by convert_xml_to_box() */
 				assert(0);
@@ -1596,10 +1629,14 @@ void box_normalise_table_row(struct box *row,
 						child->type == BOX_TABLE_ROW_GROUP ||
 						child->type == BOX_TABLE_ROW)) {
 					box_add_child(cell, child);
-					child = child->next;
+					next_child = child->next;
+					child->next = 0;
+					child = next_child;
 				}
 				cell->last->next = 0;
 				cell->next = next_child = child;
+				if (cell->next)
+					cell->next->prev = cell;
 				cell->parent = row;
 				box_normalise_block(cell, box_pool);
 				break;
@@ -1607,6 +1644,7 @@ void box_normalise_table_row(struct box *row,
 			case BOX_INLINE_BLOCK:
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
+			case BOX_BR:
 				/* should have been wrapped in inline
 				   container by convert_xml_to_box() */
 				assert(0);
@@ -1663,6 +1701,7 @@ void box_normalise_inline_container(struct box *cont, pool box_pool)
 		next_child = child->next;
 		switch (child->type) {
 			case BOX_INLINE:
+			case BOX_BR:
 				/* ok */
 				break;
 			case BOX_INLINE_BLOCK:
@@ -2275,7 +2314,6 @@ struct result box_frameset(xmlNode *n, struct status *status,
 	box = box_create(style, 0, status->title,
 			status->content->data.html.box_pool);
 	box->type = BOX_TABLE;
-	style->display = CSS_DISPLAY_TABLE;
 
 	/* count rows and columns */
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows"))) {
