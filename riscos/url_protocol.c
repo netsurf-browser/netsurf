@@ -15,6 +15,7 @@
 #include "netsurf/riscos/theme.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/uri.h"
 #include "netsurf/riscos/url_protocol.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
@@ -124,4 +125,58 @@ char *read_string_value(os_string_value string, char *msg) {
         if(string.offset == 0)  return NULL;
         if(string.offset > 256) return string.pointer;
         return &msg[string.offset];
+}
+
+bool ro_url_broadcast(char *url) {
+
+	inetsuite_full_message_open_url_direct message;
+	os_error *e;
+	int len = (strlen(url)>235) ? 235 : strlen(url);
+	
+	message.size = (((20+len-1)+3) & ~3);
+	message.your_ref = 0;
+	message.action = message_INET_SUITE_OPEN_URL;
+	
+	*message.url = 0;
+	strncat(message.url, url, 235);
+	e = xwimp_send_message(wimp_USER_MESSAGE_RECORDED, 
+				(wimp_message*)&message, 0);
+	if (e) {
+		return false;
+	}
+	
+	return true;
+}
+
+bool ro_url_load(char *url) {
+
+	char url_buf[512];
+	char *colon;
+	os_error *e;
+	
+	colon = strchr(url, ':');
+	if (!colon) return false;
+	
+	strcpy(url_buf, "Alias$URLOpen_");
+	strncat(url_buf, url, colon-url);
+	if (!getenv(url_buf)) return false;
+	
+	strcat(url_buf, " ");
+	strncat(url_buf, url, 512-strlen(url_buf)-1);
+	
+	e = xwimp_start_task(url_buf+5, 0);
+	
+	if (e) {
+		return false;
+	}
+	
+	return true;
+}
+
+void ro_url_bounce(wimp_message *message) {
+
+	inetsuite_message_open_url *url_message = (inetsuite_message_open_url*)&message->data;
+	
+	/* ant broadcast bounced -> try uri broadcast / load */
+	ro_uri_launch(url_message->url);
 }

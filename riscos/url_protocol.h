@@ -11,5 +11,8 @@
 #include "oslib/wimp.h"
 
 void ro_url_message_received(wimp_message *message);
+bool ro_url_broadcast(char *url);
+bool ro_url_load(char *url);
+void ro_url_bounce(wimp_message *message);
 
 #endif

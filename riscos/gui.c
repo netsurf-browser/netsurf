@@ -61,7 +61,7 @@ gui_window *over_window = 0;	/**< Window which the pointer is over. */
 bool gui_reformat_pending = false;	/**< Some windows have been resized,
 						and should be reformatted. */
 gui_drag_type gui_current_drag_type;
-static wimp_t task_handle;	/**< RISC OS wimp task handle. */
+wimp_t task_handle;	/**< RISC OS wimp task handle. */
 static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 osspriteop_area *pointers;      /**< Sprite area containing pointer data */
 gui_pointer_shape curr_pointer; /**< Current shape of the pointer */
@@ -74,6 +74,7 @@ static const wimp_MESSAGE_LIST(26) task_messages = { {
 	message_MENU_WARNING,
 #ifdef WITH_URI
 	message_URI_PROCESS,
+	message_URI_RETURN_RESULT,
 #endif
 #ifdef WITH_URL
 	message_INET_SUITE_OPEN_URL,
@@ -544,6 +545,15 @@ void gui_window_set_pointer(gui_pointer_shape shape)
         curr_pointer = shape;
 }
 
+void gui_launch_url(char *url) {
+	/* Try ant broadcast first */
+	if (!ro_url_broadcast(url))
+		/* then uri */
+		if (!ro_uri_launch(url))
+			/* then ant load */
+			ro_url_load(url);
+}
+
 
 /**
  * Handle Redraw_Window_Request events.
@@ -734,12 +744,22 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 
 #ifdef WITH_URI
 		case message_URI_PROCESS:
-			ro_uri_message_received(message);
+			if (event != wimp_USER_MESSAGE_ACKNOWLEDGE)
+				ro_uri_message_received(message);
+			break;
+		case message_URI_RETURN_RESULT:
+			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE)
+				ro_uri_bounce(message);
 			break;
 #endif
 #ifdef WITH_URL
 		case message_INET_SUITE_OPEN_URL:
-			ro_url_message_received(message);
+			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE) {
+				ro_url_bounce(message);
+			}
+			else {
+				ro_url_message_received(message);
+			}
 			break;
 #endif
 #ifdef WITH_PLUGIN

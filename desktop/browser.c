@@ -162,16 +162,26 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
 	bw->time0 = clock();
-	if (strncmp(url2, "about:", 6) == 0)
+	if (strncmp(url2, "about:", 6) == 0) {
 		c = about_create(url2, browser_window_callback, bw, 0,
 				gui_window_get_width(bw->window), 0);
-	else
+	}
+	/* check that we can handle the URL - just http/https/file for now */
+	else if (strncmp(url2, "http:", 5) != 0 && strncmp(url2, "https:", 6) != 0 && 
+		strncmp(url2, "file:", 5) != 0) {
+		gui_launch_url(url2);
+		browser_window_set_status(bw, messages_get("LaunchURL"));
+		free(url2);
+		return;
+	}
+	else {
 		c = fetchcache(url2, 0,
 				browser_window_callback, bw, 0,
 				gui_window_get_width(bw->window), 0,
 				false,
 				post_urlenc, post_multipart,
 				true);
+	}
 	free(url2);
 	if (!c) {
 		browser_window_set_status(bw, messages_get("FetchFailed"));
