@@ -123,6 +123,8 @@ struct content * fetchcache(const char *url,
  *                   the new content
  * \param  p1 user   parameter for callback
  * \param  p2 user   parameter for callback
+ * \param  width     available space
+ * \param  height    available space
  * \param  post_urlenc     url encoded post data, or 0 if none
  * \param  post_multipart  multipart post data, or 0 if none
  * \param  cookies   send and accept cookies
@@ -134,6 +136,7 @@ void fetchcache_go(struct content *content, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, union content_msg_data data),
 		void *p1, void *p2,
+		int width, int height,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
 		bool cookies)
@@ -182,6 +185,8 @@ void fetchcache_go(struct content *content, char *referer,
 
 	} else if (content->status == CONTENT_STATUS_DONE) {
 		callback(CONTENT_MSG_LOADING, content, p1, p2, msg_data);
+		if (content->available_width != width)
+			content_reformat(content, width, height);
 		if (content_find_user(content, callback, p1, p2))
 			callback(CONTENT_MSG_READY, content, p1, p2, msg_data);
 		if (content_find_user(content, callback, p1, p2))

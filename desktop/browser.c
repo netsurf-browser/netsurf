@@ -220,6 +220,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 
 	fetchcache_go(c, option_send_referer ? referer : 0,
 			browser_window_callback, bw, 0,
+			gui_window_get_width(bw->window), 0,
 			post_urlenc, post_multipart, true);
 }
 

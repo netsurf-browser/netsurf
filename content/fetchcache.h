@@ -35,6 +35,7 @@ void fetchcache_go(struct content *content, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, union content_msg_data data),
 		void *p1, void *p2,
+		int width, int height,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,
 		bool cookies);

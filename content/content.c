@@ -414,7 +414,9 @@ bool content_set_type(struct content *c, content_type type,
 			}
 			content_remove_user(c, callback, p1, p2);
 			content_broadcast(clone, CONTENT_MSG_NEWPTR, msg_data);
-			fetchcache_go(clone, 0, callback, p1, p2, 0, 0, false);
+			fetchcache_go(clone, 0, callback, p1, p2,
+					clone->width, clone->height,
+					0, 0, false);
 		}
 	}
 
