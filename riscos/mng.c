@@ -52,14 +52,14 @@ bool nsmng_create(struct content *c, const char *params[]) {
 		LOG(("Unable to initialise MNG library."));
 		return nsmng_broadcast_error(c);
 	}
-	
+
 	/*	We need to decode in suspension mode
 	*/
 	if (mng_set_suspensionmode(c->data.mng.handle, MNG_TRUE) != MNG_NOERROR) {
 		LOG(("Unable to set suspension mode."));
 		return nsmng_broadcast_error(c);
 	}
-	
+
 	/*	We need to register our callbacks
 	*/
 	if (mng_setcb_openstream(c->data.mng.handle, nsmng_openstream) != MNG_NOERROR) {
@@ -97,7 +97,7 @@ bool nsmng_create(struct content *c, const char *params[]) {
 		LOG(("Unable to set settimer callback."));
 		return nsmng_broadcast_error(c);
 	}
-	
+
 	/*	Initialise the reading
 	*/
 	c->data.mng.read_start = true;
@@ -118,11 +118,11 @@ mng_bool nsmng_openstream(mng_handle mng) {
 
 mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size, mng_uint32 *bytesread) {
 	struct content *c;
-	
+
 	/*	Get our content back
 	*/
 	c = (struct content *)mng_get_userdata(mng);
-	
+
 	/*	Copy any data we have (maximum of 'size')
 	*/
 	*bytesread = ((c->source_size - c->data.mng.read_size) < size) ?
@@ -160,12 +160,12 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 		LOG(("Insufficient memory to create canvas."));
 		return MNG_FALSE;
 	}
-	
+
 	/*	Initialise the content size
 	*/
 	c->width = width;
 	c->height = height;
-	
+
 	/*	Initialise the sprite area
 	*/
 	sprite_area = c->data.mng.sprite_area;
@@ -208,7 +208,7 @@ bool nsmng_process_data(struct content *c, char *data, unsigned int size) {
   	/*	We only need to do any processing if we're starting/resuming reading.
   	*/
 	if ((!c->data.mng.read_resume) && (!c->data.mng.read_start)) return true;
-	
+
 	/*	Try to start processing, or process some more data
 	*/
 	if (c->data.mng.read_start) {
@@ -224,7 +224,7 @@ bool nsmng_process_data(struct content *c, char *data, unsigned int size) {
 	}
 
 	/*	Continue onwards
-	*/	
+	*/
 	return true;
 }
 
@@ -251,8 +251,8 @@ bool nsmng_convert(struct content *c, int width, int height) {
 	}
 	c->size += (c->width * c->height * 4) + sizeof(osspriteop_header) + sizeof(osspriteop_area) + 100;
 	c->status = CONTENT_STATUS_DONE;
-	
-	
+
+
 	/*	Start displaying
 	*/
 	status = mng_display(c->data.mng.handle);
@@ -271,11 +271,11 @@ bool nsmng_convert(struct content *c, int width, int height) {
 mng_ptr nsmng_getcanvasline(mng_handle mng, mng_uint32 line) {
   	char *base;
 	struct content *c;
-	
+
 	/*	Get our content back
 	*/
 	c = (struct content *)mng_get_userdata(mng);
-	
+
 	/*	Calculate the address
 	*/
 	base = ((char *) c->data.mng.sprite_area + c->data.mng.sprite_area->first);
@@ -286,7 +286,7 @@ mng_ptr nsmng_getcanvasline(mng_handle mng, mng_uint32 line) {
 
 mng_uint32 nsmng_gettickcount(mng_handle mng) {
 	os_t time;
-	
+
 	/*	Get the time in centiseconds and return in milliseconds
 	*/
 	xos_read_monotonic_time(&time);
@@ -296,7 +296,7 @@ mng_uint32 nsmng_gettickcount(mng_handle mng) {
 mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_uint32 w, mng_uint32 h) {
 	union content_msg_data data;
 	struct content *c;
-	
+
 	/*	Get our content back
 	*/
 	c = (struct content *)mng_get_userdata(mng);
@@ -329,20 +329,20 @@ mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_uint32 w,
 	data.redraw.object_height = c->height;
 
 	content_broadcast(c, CONTENT_MSG_REDRAW, data);
-	return MNG_TRUE; 
+	return MNG_TRUE;
 }
 
 mng_bool nsmng_settimer(mng_handle mng, mng_uint32 msecs) {
 	struct content *c;
-	
+
 	/*	Get our content back
 	*/
 	c = (struct content *)mng_get_userdata(mng);
-	
+
 	/*	Perform the scheduling
 	*/
 	schedule(msecs / 10, nsmng_animate, c);
-	return MNG_TRUE; 
+	return MNG_TRUE;
 }
 
 
@@ -359,6 +359,7 @@ void nsmng_destroy(struct content *c) {
 		free(c->data.mng.sprite_area);
 		c->data.mng.sprite_area = NULL;
 	}
+	free(c->title);
 }
 
 
@@ -388,7 +389,7 @@ void nsmng_redraw(struct content *c, int x, int y,
 			x, y - height,
 			width, height,
 			tinct_options);
-	
+
 	/*	Check if we need to restart the animation
 	*/
 	if (c->data.mng.waiting) nsmng_animate(c);
@@ -399,7 +400,7 @@ void nsmng_redraw(struct content *c, int x, int y,
  */
 void nsmng_animate(void *p) {
  	struct content *c = p;
- 	
+
  	/*	If we used the last animation we advance, if not we try again later
  	*/
  	if (c->user_list->next == NULL) {
@@ -429,6 +430,6 @@ bool nsmng_broadcast_error(struct content *c) {
 	}
 	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 	return false;
- 
+
 }
 #endif

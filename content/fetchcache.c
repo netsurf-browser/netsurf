@@ -92,10 +92,9 @@ struct content * fetchcache(const char *url,
 	}
 
 	c = content_create(url1);
-	if (!c) {
-		free(url1);
+	free(url1);
+	if (!c)
 		return 0;
-	}
 	content_add_user(c, callback, p1, p2);
 
 	if (!post_urlenc && !post_multipart)
