@@ -59,8 +59,6 @@ void gui_window_start_throbber(gui_window* g);
 void gui_window_stop_throbber(gui_window* g);
 
 void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, unsigned long mx, unsigned long my);
-void gui_edit_textarea(struct browser_window* bw, struct gui_gadget* g);
-void gui_edit_password(struct browser_window* bw, struct gui_gadget* g);
 
 void gui_window_place_caret(gui_window *g, int x, int y, int height);
 

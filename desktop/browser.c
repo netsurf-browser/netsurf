@@ -51,6 +51,11 @@ static void browser_window_textarea_click(struct browser_window* bw,
 		unsigned long x, unsigned long y,
 		struct box *box);
 static void browser_window_textarea_callback(struct browser_window *bw, char key, void *p);
+static void browser_window_input_click(struct browser_window* bw,
+		unsigned long actual_x, unsigned long actual_y,
+		unsigned long x, unsigned long y,
+		struct box *input);
+static void browser_window_input_callback(struct browser_window *bw, char key, void *p);
 static void browser_window_place_caret(struct browser_window *bw, int x, int y,
 		int height, void (*callback)(struct browser_window *bw, char key, void *p), void *p);
 
@@ -318,14 +323,6 @@ void browser_window_callback(content_msg msg, struct content *c,
 
         if (bw->current_content != NULL)
         {
-          if (bw->current_content->type == CONTENT_HTML)
-          {
-            int gc;
-            for (gc = 0; gc < bw->current_content->data.html.elements.numGadgets; gc++)
-            {
-              gui_remove_gadget(bw->current_content->data.html.elements.gadgets[gc]);
-            }
-          }
 	  if (bw->current_content->status == CONTENT_STATUS_DONE)
             content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
           content_remove_user(bw->current_content, browser_window_callback, bw, 0);
@@ -534,10 +531,14 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 							click_boxes[i].box);
 					break;
 				case GADGET_TEXTBOX:
-					gui_edit_textbox(bw, g);
-					break;
 				case GADGET_PASSWORD:
-				        gui_edit_password(bw, g);
+					browser_window_input_click(bw,
+							click_boxes[i].actual_x,
+							click_boxes[i].actual_y,
+							click_x - click_boxes[i].actual_x,
+							click_y - click_boxes[i].actual_y,
+							click_boxes[i].box);
+					break;
 				case GADGET_HIDDEN:
 					break;
 				case GADGET_IMAGE:
@@ -611,9 +612,9 @@ void browser_window_textarea_click(struct browser_window* bw,
 					&char_offset, &pixel_offset);
 		}
 	}
-	textarea->gadget->data.textarea.caret_inline_container = inline_container;
-	textarea->gadget->data.textarea.caret_text_box = text_box;
-	textarea->gadget->data.textarea.caret_char_offset = char_offset;
+	textarea->gadget->caret_inline_container = inline_container;
+	textarea->gadget->caret_text_box = text_box;
+	textarea->gadget->caret_char_offset = char_offset;
 	browser_window_place_caret(bw, actual_x + text_box->x + pixel_offset,
 			actual_y + inline_container->y + text_box->y,
 			text_box->height,
@@ -628,9 +629,9 @@ void browser_window_textarea_click(struct browser_window* bw,
 void browser_window_textarea_callback(struct browser_window *bw, char key, void *p)
 {
 	struct box *textarea = p;
-	struct box *inline_container = textarea->gadget->data.textarea.caret_inline_container;
-	struct box *text_box = textarea->gadget->data.textarea.caret_text_box;
-	int char_offset = textarea->gadget->data.textarea.caret_char_offset;
+	struct box *inline_container = textarea->gadget->caret_inline_container;
+	struct box *text_box = textarea->gadget->caret_text_box;
+	int char_offset = textarea->gadget->caret_char_offset;
 	int pixel_offset;
 	unsigned long actual_x, actual_y;
 	unsigned long width, height;
@@ -798,9 +799,9 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 
 	pixel_offset = font_width(text_box->font, text_box->text, char_offset);
 
-	textarea->gadget->data.textarea.caret_inline_container = inline_container;
-	textarea->gadget->data.textarea.caret_text_box = text_box;
-	textarea->gadget->data.textarea.caret_char_offset = char_offset;
+	textarea->gadget->caret_inline_container = inline_container;
+	textarea->gadget->caret_text_box = text_box;
+	textarea->gadget->caret_char_offset = char_offset;
 	browser_window_place_caret(bw, actual_x + text_box->x + pixel_offset,
 			actual_y + inline_container->y + text_box->y,
 			text_box->height,
@@ -811,6 +812,113 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 			actual_y + inline_container->y,
 			actual_x + width,
 			actual_y + height);
+}
+
+
+/**
+ * Handle clicks in a text or password input box by placing the caret.
+ */
+
+void browser_window_input_click(struct browser_window* bw,
+		unsigned long actual_x, unsigned long actual_y,
+		unsigned long x, unsigned long y,
+		struct box *input)
+{
+	int char_offset, pixel_offset;
+	struct box *text_box = input->children->children;
+
+	font_position_in_string(text_box->text, text_box->font,
+			text_box->length, x - text_box->x,
+			&char_offset, &pixel_offset);
+
+	text_box->x = 0;
+	if ((input->width < text_box->width) && (input->width / 2 < pixel_offset)) {
+		text_box->x = input->width / 2 - pixel_offset;
+		if (text_box->x < input->width - text_box->width)
+			text_box->x = input->width - text_box->width;
+	}
+	input->gadget->caret_char_offset = char_offset;
+	browser_window_place_caret(bw, actual_x + text_box->x + pixel_offset,
+			actual_y + text_box->y,
+			text_box->height,
+			browser_window_input_callback, input);
+
+	gui_window_redraw(bw->window,
+			actual_x,
+			actual_y,
+			actual_x + input->width,
+			actual_y + input->height);
+}
+
+
+/**
+ * Key press callback for text or password input boxes.
+ */
+
+void browser_window_input_callback(struct browser_window *bw, char key, void *p)
+{
+	struct box *input = p;
+	struct box *text_box = input->children->children;
+	int char_offset = input->gadget->caret_char_offset;
+	int pixel_offset;
+	unsigned long actual_x, actual_y;
+
+	box_coords(input, &actual_x, &actual_y);
+
+	if ((32 <= key && key != 127) && text_box->length < input->gadget->maxlength) {
+		/* normal character insertion */
+		text_box->text = xrealloc(text_box->text, text_box->length + 2);
+		input->gadget->value = xrealloc(input->gadget->value, text_box->length + 2);
+		memmove(text_box->text + char_offset + 1,
+				text_box->text + char_offset,
+				text_box->length - char_offset);
+		memmove(input->gadget->value + char_offset + 1,
+				input->gadget->value + char_offset,
+				text_box->length - char_offset);
+		if (input->gadget->type == GADGET_PASSWORD)
+			text_box->text[char_offset] = '*';
+		else
+			text_box->text[char_offset] = key == ' ' ? 160 : key;
+		input->gadget->value[char_offset] = key;
+		text_box->length++;
+		text_box->text[text_box->length] = 0;
+		input->gadget->value[text_box->length] = 0;
+		char_offset++;
+	} else if ((key == 8 || key == 127) && char_offset != 0) {
+		/* delete to left */
+		memmove(text_box->text + char_offset - 1,
+				text_box->text + char_offset,
+				text_box->length - char_offset);
+		memmove(input->gadget->value + char_offset - 1,
+				input->gadget->value + char_offset,
+				text_box->length - char_offset);
+		text_box->length--;
+		input->gadget->value[text_box->length] = 0;
+		char_offset--;
+	} else {
+		return;
+	}
+
+	text_box->width = font_width(text_box->font, text_box->text,
+			text_box->length);
+	pixel_offset = font_width(text_box->font, text_box->text, char_offset);
+	text_box->x = 0;
+	if ((input->width < text_box->width) && (input->width / 2 < pixel_offset)) {
+		text_box->x = input->width / 2 - pixel_offset;
+		if (text_box->x < input->width - text_box->width)
+			text_box->x = input->width - text_box->width;
+	}
+	input->gadget->caret_char_offset = char_offset;
+	browser_window_place_caret(bw, actual_x + text_box->x + pixel_offset,
+			actual_y + text_box->y,
+			text_box->height,
+			browser_window_input_callback, input);
+
+	gui_window_redraw(bw->window,
+			actual_x,
+			actual_y,
+			actual_x + input->width,
+			actual_y + input->height);
 }
 
 
@@ -1333,9 +1441,9 @@ char* browser_form_construct_get(struct page_elements *elements, struct formsubm
 
           case GADGET_HIDDEN:   value = elements->gadgets[i]->data.hidden.value;
                                 break;
-          case GADGET_TEXTBOX:  value = elements->gadgets[i]->data.textbox.text;
+          case GADGET_TEXTBOX:  value = elements->gadgets[i]->value;
                                 break;
-          case GADGET_PASSWORD:  value = elements->gadgets[i]->data.password.text;
+          case GADGET_PASSWORD:  value = elements->gadgets[i]->value;
                                 break;
           case GADGET_RADIO:    if(elements->gadgets[i]->data.radio.selected == -1)
                                   value = elements->gadgets[i]->data.radio.value;

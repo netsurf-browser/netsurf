@@ -49,20 +49,14 @@ struct gui_gadget {
 	char *value;
 	char *initial_value;
 	struct form* form;
-        union {
+	struct box *caret_inline_container;
+	struct box *caret_text_box;
+	int caret_char_offset;
+	unsigned int maxlength;
+	union {
 		struct {
 			char* value;
 		} hidden;
-		struct {
-			unsigned int maxlength;
-			char* text;
-			int size;
-		} textbox;
-		struct {
-			unsigned int maxlength;
-			char* text;
-			int size;
-		} password;
 		struct {
                         char* name;
                         char* value;
@@ -84,11 +78,6 @@ struct gui_gadget {
 			int selected;
 			char* value;
 		} radio;
-		struct {
-			struct box *caret_inline_container;
-			struct box *caret_text_box;
-			int caret_char_offset;
-		} textarea;
 	} data;
 };
 
@@ -122,7 +111,8 @@ struct plugin_params {
 struct box {
 	box_type type;
 	struct css_style * style;
-	unsigned long x, y, width, height;
+	long x, y;
+	unsigned long width, height;
 	unsigned long min_width, max_width;
 	char * text;
 	unsigned int space : 1;	/* 1 <=> followed by a space */

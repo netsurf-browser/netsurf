@@ -126,11 +126,10 @@ void html_redraw_box(struct content *content, struct box * box,
 		content_redraw(box->object, x, y, width, height, x0, y0, x1, y1);
 
 	} else if (box->gadget &&
-			box->gadget->type != GADGET_TEXTAREA &&
-			box->gadget->type != GADGET_SUBMIT &&
-			box->gadget->type != GADGET_RESET) {
+			(box->gadget->type == GADGET_SELECT ||
+			box->gadget->type == GADGET_CHECKBOX ||
+			box->gadget->type == GADGET_RADIO)) {
 		wimp_icon icon;
-		LOG(("writing GADGET"));
 
 		icon.extent.x0 = -gadget_subtract_x + x;
 		icon.extent.y0 = -gadget_subtract_y + y - height;
@@ -138,28 +137,6 @@ void html_redraw_box(struct content *content, struct box * box,
 		icon.extent.y1 = -gadget_subtract_y + y;
 
 		switch (box->gadget->type) {
-		case GADGET_TEXTBOX:
-			colourtrans_set_font_colours(box->font->handle, current_background_color << 8,
-					     box->style->color << 8, 14, 0, 0, 0);
-			font_paint(box->font->handle, box->gadget->data.textbox.text,
-					font_OS_UNITS | font_GIVEN_FONT | font_KERN,
-					x, y - (int) (box->height * 1.5),
-					NULL, NULL, 0);
-			break;
-
-                case GADGET_PASSWORD:
-			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
-				wimp_ICON_VCENTRED | wimp_ICON_FILLED |
-				wimp_ICON_INDIRECTED |
-				(wimp_COLOUR_DARK_GREY << wimp_ICON_FG_COLOUR_SHIFT) |
-				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
-			icon.data.indirected_text.text = box->gadget->data.password.text;
-			icon.data.indirected_text.size = box->gadget->data.password.maxlength + 1;
-			icon.data.indirected_text.validation = validation_password;
-			LOG(("writing GADGET PASSWORD"));
-			wimp_plot_icon(&icon);
-      			break;
-
 		case GADGET_SELECT:
 			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
 			    wimp_ICON_VCENTRED | wimp_ICON_FILLED |
@@ -242,12 +219,7 @@ void html_redraw_box(struct content *content, struct box * box,
 			LOG(("writing GADGET RADIO"));
 			wimp_plot_icon(&icon);
 			break;
-
-		case GADGET_HIDDEN:
-		case GADGET_IMAGE:
-			break;
 		}
-		LOG(("gadgets finished"));
 	
 	} else if (box->text && box->font) {
 

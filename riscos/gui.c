@@ -41,8 +41,6 @@ static char password_v[] = "D*";
 char *NETSURF_DIR;
 gui_window *window_list = 0;
 
-int gadget_subtract_x;
-int gadget_subtract_y;
 const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro";
 const char* HELP_URL = "file:///%3CNetSurf$Dir%3E/Docs/en/index";
 
@@ -66,8 +64,6 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* mouse);
 void ro_gui_window_open(gui_window* g, wimp_open* open);
 void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw);
 //void ro_gui_window_keypress(gui_window* g, wimp_key* key);
-void gui_remove_gadget(struct gui_gadget* g);
-
 
 
 static int window_x_units(int scr_units, wimp_window_state* win);
@@ -90,7 +86,6 @@ static void ro_gui_poll_queue(wimp_event_no event, wimp_block* block);
 static void ro_gui_keypress(wimp_key* key);
 static void ro_msg_datasave(wimp_message* block);
 static void ro_msg_dataload(wimp_message* block);
-static void gui_set_gadget_extent(struct box* box, int x, int y, os_box* extent, struct gui_gadget* g);
 static void ro_gui_screen_size(int *width, int *height);
 
 
@@ -1802,146 +1797,6 @@ void ro_msg_dataload(wimp_message* block)
 
 	xfree(click_boxes);
 
-}
-
-static struct browser_window* current_textbox_bw;
-static struct gui_gadget* current_textbox = 0;
-static wimp_w current_textbox_w;
-static wimp_i current_textbox_i;
-
-void gui_set_gadget_extent(struct box* box, int x, int y, os_box* extent, struct gui_gadget* g)
-{
-	struct box* c;
-	if (box->gadget == g)
-	{
-		extent->x0 = x + box->x * 2;
-		extent->y0 = y - box->y * 2 - box->height * 2;
-		extent->x1 = x + box->x * 2 + box->width * 2;
-		extent->y1 = y - box->y * 2;
-		return;
-	}
-  for (c = box->children; c != 0; c = c->next)
-    if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-      gui_set_gadget_extent(c, x + box->x * 2, y - box->y * 2, extent, g);
-
-  for (c = box->float_children; c != 0; c = c->next_float)
-      gui_set_gadget_extent(c, x + box->x * 2, y - box->y * 2, extent, g);
-}
-
-void gui_edit_textbox(struct browser_window* bw, struct gui_gadget* g)
-{
-	wimp_icon_create icon;
-	wimp_pointer pointer;
-	wimp_window_state state;
-	int pointer_x;
-	int letter_x;
-	int textbox_x;
-	int offset;
-
-	wimp_get_pointer_info(&pointer);
-
-	if (current_textbox != 0)
-	{
-		wimp_delete_icon(current_textbox_w, current_textbox_i);
-		gui_redraw_gadget(current_textbox_bw, current_textbox);
-	}
-
-	current_textbox_bw = bw;
-	current_textbox_w = bw->window->data.browser.window;
-
-	icon.w = current_textbox_w;
-	gui_set_gadget_extent(bw->current_content->data.html.layout->children, 0, 0, &icon.icon.extent, g);
-	fprintf(stderr, "ICON EXTENT %d %d %d %d\n", icon.icon.extent.x0, icon.icon.extent.y0, icon.icon.extent.x1, icon.icon.extent.y1);
-	icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
-			wimp_ICON_VCENTRED | wimp_ICON_FILLED |
-			wimp_ICON_INDIRECTED |
-			(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-			(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT) |
-			(wimp_BUTTON_WRITABLE << wimp_ICON_BUTTON_TYPE_SHIFT);
-	icon.icon.data.indirected_text.text = g->data.textbox.text;
-	icon.icon.data.indirected_text.size = g->data.textbox.maxlength + 1;
-	icon.icon.data.indirected_text.validation = empty_text;
-	current_textbox_i = wimp_create_icon(&icon);
-	current_textbox = g;
-	gui_redraw_gadget(bw, current_textbox);
-
-	state.w = current_textbox_w;
-	wimp_get_window_state(&state);
-    	pointer_x = window_x_units(pointer.pos.x, &state);
-	textbox_x = icon.icon.extent.x0;
-	offset = strlen(g->data.textbox.text);
-	while (offset > 0)
-	{
-		letter_x = wimptextop_string_width(g->data.textbox.text, offset);
-		if (letter_x < pointer_x - textbox_x)
-			break;
-		offset--;
-	}
-
-	wimp_set_caret_position(current_textbox_w, current_textbox_i, 0,0,-1, offset);
-}
-
-void gui_edit_password(struct browser_window* bw, struct gui_gadget* g)
-{
-	wimp_icon_create icon;
-	wimp_pointer pointer;
-	wimp_window_state state;
-	int pointer_x;
-	int letter_x;
-	int textbox_x;
-	int offset;
-
-	wimp_get_pointer_info(&pointer);
-
-	if (current_textbox != 0)
-	{
-		wimp_delete_icon(current_textbox_w, current_textbox_i);
-		gui_redraw_gadget(current_textbox_bw, current_textbox);
-	}
-
-	current_textbox_bw = bw;
-	current_textbox_w = bw->window->data.browser.window;
-
-	icon.w = current_textbox_w;
-	gui_set_gadget_extent(bw->current_content->data.html.layout->children, 0, 0, &icon.icon.extent, g);
-	fprintf(stderr, "ICON EXTENT %d %d %d %d\n", icon.icon.extent.x0, icon.icon.extent.y0, icon.icon.extent.x1, icon.icon.extent.y1);
-	icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
-			wimp_ICON_VCENTRED | wimp_ICON_FILLED |
-			wimp_ICON_INDIRECTED |
-			(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-			(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT) |
-			(wimp_BUTTON_WRITABLE << wimp_ICON_BUTTON_TYPE_SHIFT);
-	icon.icon.data.indirected_text.text = g->data.password.text;
-	icon.icon.data.indirected_text.size = g->data.password.maxlength + 1;
-	icon.icon.data.indirected_text.validation = password_v;
-	current_textbox_i = wimp_create_icon(&icon);
-	current_textbox = g;
-	gui_redraw_gadget(bw, current_textbox);
-
-	state.w = current_textbox_w;
-	wimp_get_window_state(&state);
-    	pointer_x = window_x_units(pointer.pos.x, &state);
-	textbox_x = icon.icon.extent.x0;
-	offset = strlen(g->data.password.text);
-	while (offset > 0)
-	{
-		letter_x = wimptextop_string_width(g->data.password.text, offset);
-		if (letter_x < pointer_x - textbox_x)
-			break;
-		offset--;
-	}
-
-	wimp_set_caret_position(current_textbox_w, current_textbox_i, 0,0,-1, offset);
-}
-
-void gui_remove_gadget(struct gui_gadget* g)
-{
-	if (g == current_textbox && g != 0)
-	{
-		wimp_delete_icon(current_textbox_w, current_textbox_i);
-		gui_redraw_gadget(current_textbox_bw, current_textbox);
-		current_textbox = 0;
-	}
 }
 
 

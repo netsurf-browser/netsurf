@@ -67,6 +67,8 @@ static struct result box_select(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_input(xmlNode *n, struct status *status,
 		struct css_style *style);
+static struct box *box_input_text(xmlNode *n, struct status *status,
+		struct css_style *style, bool password);
 static struct result box_button(xmlNode *n, struct status *status,
 		struct css_style *style);
 static void add_option(xmlNode* n, struct gui_gadget* current_select, char *text);
@@ -812,61 +814,13 @@ struct result box_input(xmlNode *n, struct status *status,
 	/* the default type is "text" */
 	if (type == 0 || stricmp(type, "text") == 0)
 	{
-		box = box_create(style, NULL, 0);
-		box->font = font_open(status->content->data.html.fonts, style);
-		box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
-		gadget->type = GADGET_TEXTBOX;
-
-		gadget->data.textbox.maxlength = 32;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "maxlength"))) {
-			gadget->data.textbox.maxlength = atoi(s);
-			xmlFree(s);
-		}
-
-		gadget->data.textbox.size = box->gadget->data.textbox.maxlength;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "size"))) {
-			gadget->data.textbox.size = atoi(s);
-			xmlFree(s);
-		}
-
-		gadget->data.textbox.text = xcalloc(
-				gadget->data.textbox.maxlength + 2, sizeof(char));
-
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
-			strncpy(gadget->data.textbox.text, s,
-				gadget->data.textbox.maxlength);
-			xmlFree(s);
-		}
-
+		box = box_input_text(n, status, style, false);
+		gadget = box->gadget;
 	}
 	else if (stricmp(type, "password") == 0)
 	{
-		box = box_create(style, NULL, 0);
-		box->font = font_open(status->content->data.html.fonts, style);
-		box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
-		gadget->type = GADGET_PASSWORD;
-
-		gadget->data.password.maxlength = 32;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "maxlength"))) {
-			gadget->data.password.maxlength = atoi(s);
-			xmlFree(s);
-		}
-
-		gadget->data.password.size = box->gadget->data.password.maxlength;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "size"))) {
-			gadget->data.password.size = atoi(s);
-			xmlFree(s);
-		}
-
-		gadget->data.password.text = xcalloc(
-				gadget->data.password.maxlength + 2, sizeof(char));
-
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
-			strncpy(gadget->data.password.text, s,
-				gadget->data.password.maxlength);
-			xmlFree(s);
-		}
-
+		box = box_input_text(n, status, style, true);
+		gadget = box->gadget;
 	}
 	else if (stricmp(type, "hidden") == 0)
 	{
@@ -956,6 +910,55 @@ struct result box_input(xmlNode *n, struct status *status,
 	}
 
 	return (struct result) {box, 0};
+}
+
+struct box *box_input_text(xmlNode *n, struct status *status,
+		struct css_style *style, bool password)
+{
+	char *s;
+	unsigned int i;
+	struct box *box = box_create(style, 0, 0);
+	struct box *inline_container, *inline_box;
+	style->display = CSS_DISPLAY_INLINE_BLOCK;
+
+	box->gadget = xcalloc(1, sizeof(struct gui_gadget));
+
+	box->gadget->maxlength = 100;
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "maxlength"))) {
+		box->gadget->maxlength = atoi(s);
+		xmlFree(s);
+	}
+
+	s = (char *) xmlGetProp(n, (const xmlChar *) "value");
+	box->gadget->value = s ? tolat1(s) : xstrdup("");
+	box->gadget->initial_value = xstrdup(box->gadget->value);
+	if (s)
+		xmlFree(s);
+
+	inline_container = box_create(0, 0, 0);
+	inline_container->type = BOX_INLINE_CONTAINER;
+	inline_box = box_create(style, 0, 0);
+	inline_box->type = BOX_INLINE;
+	inline_box->style_clone = 1;
+	inline_box->length = strlen(box->gadget->value);
+	if (password) {
+		box->gadget->type = GADGET_PASSWORD;
+		inline_box->text = xcalloc(inline_box->length + 1, 1);
+		for (i = 0; i != inline_box->length; i++)
+			inline_box->text[i] = '*';
+	} else {
+		box->gadget->type = GADGET_TEXTBOX;
+		inline_box->text = xstrdup(box->gadget->value);
+		/* replace spaces with hard spaces to prevent line wrapping */
+		for (i = 0; i != inline_box->length; i++)
+			if (inline_box->text[i] == ' ')
+				inline_box->text[i] = 160;
+	}
+	inline_box->font = font_open(status->content->data.html.fonts, style);
+	box_add_child(inline_container, inline_box);
+	box_add_child(box, inline_container);
+
+	return box;
 }
 
 struct result box_button(xmlNode *n, struct status *status,
@@ -1458,18 +1461,6 @@ void gadget_free(struct gui_gadget* g)
 		case GADGET_CHECKBOX:
 			if (g->data.checkbox.value != 0)
 				xmlFree(g->data.checkbox.value);
-			break;
-		case GADGET_TEXTAREA:
-			break;
-		case GADGET_TEXTBOX:
-			gui_remove_gadget(g);
-			if (g->data.textbox.text != 0)
-				xmlFree(g->data.textbox.text);
-			break;
-                case GADGET_PASSWORD:
-			gui_remove_gadget(g);
-			if (g->data.password.text != 0)
-				xmlFree(g->data.password.text);
 			break;
 		case GADGET_IMAGE:
 		        if (g->data.image.n != 0)
