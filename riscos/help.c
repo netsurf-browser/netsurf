@@ -94,7 +94,7 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	} else if (window == dialog_zoom) {
 		sprintf(message_token, "HelpScaleView%i", (int)icon);
 	} else {
-	
+
 		/*	Check if we have a browser window, toolbar window or status window
 		*/
 		g = ro_gui_window_lookup(window);
@@ -105,7 +105,7 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 						(g->data.browser.toolbar->toolbar_handle == window))	{
 				sprintf(message_token, "HelpToolbar%i", (int)icon);
 			} else if ((g->data.browser.toolbar) &&
-						(g->data.browser.toolbar->status_handle == window)) {	
+						(g->data.browser.toolbar->status_handle == window)) {
 				sprintf(message_token, "HelpStatus%i", (int)icon);
 			}
 		}
@@ -168,14 +168,14 @@ void ro_gui_interactive_help_request(wimp_message *message) {
  */
 static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token) {
 	char *translated_token;
-	char *base_token;
 	help_full_message_reply *reply;
 
 	/*	Check if the message exists
 	*/
 	translated_token = (char *)messages_get(token);
 	if (translated_token == token) {
-		
+		char *base_token;
+
 		/*	Find the key from the token.
 		*/
 		base_token = translated_token;
@@ -184,16 +184,16 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token
 					((base_token[0] >= '0') && (base_token[0] <= '9'))) {
 				base_token[0] = 0x00;
 			} else {
-				*base_token++;
+				++base_token;
 			}
 		}
-		
+
 		/*	Check if the base key exists
 		*/
 		translated_token = (char *)messages_get(token);
 		if (translated_token == token) return;
 	}
-	
+
 	/*	Copy our message string
 	*/
 	reply = (help_full_message_reply *)message;
@@ -218,20 +218,20 @@ int ro_gui_interactive_help_available() {
 	taskmanager_task task;
 	int context = 0;
 	char *end;
- 
+
 	/*	Attempt to find 'Help'
-	*/     
+	*/
 	do {
 		if (xtaskmanager_enumerate_tasks(context, &task, sizeof(taskmanager_task),
 					&context, &end)) return 0;
-		
+
 		/*	We can't just use strcmp due to string termination issues.
 		*/
 		if (strncmp(task.name, "Help", 4) == 0) {
 		  	if (task.name[4] < 32) return (int)task.task;
 		}
-	} while (context >= 0);	
-  
+	} while (context >= 0);
+
 	/*	Return failure
 	*/
 	return 0;
