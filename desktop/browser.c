@@ -185,7 +185,8 @@ void browser_window_destroy(struct browser_window* bw)
   assert(bw != 0);
 
   if (bw->current_content != NULL) {
-    content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
+    if (bw->current_content->status == CONTENT_STATUS_DONE)
+      content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
     content_remove_user(bw->current_content, browser_window_callback, bw, 0);
   }
   if (bw->loading_content != NULL) {
@@ -316,7 +317,8 @@ void browser_window_callback(content_msg msg, struct content *c,
               gui_remove_gadget(bw->current_content->data.html.elements.gadgets[gc]);
             }
           }
-          content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
+	  if (bw->current_content->status == CONTENT_STATUS_DONE)
+            content_remove_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
           content_remove_user(bw->current_content, browser_window_callback, bw, 0);
         }
         bw->current_content = c;
