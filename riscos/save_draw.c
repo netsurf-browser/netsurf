@@ -22,11 +22,6 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
-/**
- * \todo fix jpegs
- *       GUI
- */
-
 #ifdef WITH_DRAW_EXPORT
 
 /* in browser units = OS/2 = draw/512 */
@@ -48,7 +43,6 @@ static void add_line(struct content *content, struct box *box,
 static void add_circle(struct content *content, struct box *box,
                         unsigned long cbc, long x, long y);
 
-/** \todo this will probably want to take a filename/path too... */
 void save_as_draw(struct content *c, char *path)
 {
 	struct box *box;
