@@ -135,7 +135,7 @@ const struct css_style css_base_style = {
 	0x000000,
 	{ CSS_CONTENT_NORMAL, 0 },
 	{ CSS_COUNTER_RESET_NONE, 0 },
-	{ CSS_COUNTER_INCREMENT_NONE, 0 },	
+	{ CSS_COUNTER_INCREMENT_NONE, 0 },
 	CSS_CURSOR_AUTO,
 	CSS_DIRECTION_LTR,
 	CSS_DISPLAY_BLOCK,
@@ -220,7 +220,7 @@ const struct css_style css_empty_style = {
 	CSS_COLOR_NOT_SET,
 	{ CSS_CONTENT_NOT_SET, 0 },
 	{ CSS_COUNTER_RESET_NOT_SET, 0 },
-	{ CSS_COUNTER_INCREMENT_NOT_SET, 0 },	
+	{ CSS_COUNTER_INCREMENT_NOT_SET, 0 },
 	CSS_CURSOR_NOT_SET,
 	CSS_DIRECTION_NOT_SET,
 	CSS_DISPLAY_NOT_SET,
@@ -306,7 +306,7 @@ const struct css_style css_blank_style = {
 	CSS_COLOR_INHERIT,
 	{ CSS_CONTENT_NORMAL, 0 },
 	{ CSS_COUNTER_RESET_NONE, 0 },
-	{ CSS_COUNTER_INCREMENT_NONE, 0 },	
+	{ CSS_COUNTER_INCREMENT_NONE, 0 },
 	CSS_CURSOR_INHERIT,
 	CSS_DIRECTION_INHERIT,
 	CSS_DISPLAY_INLINE,
@@ -2843,7 +2843,8 @@ unsigned int css_hash(const char *s, int length)
  * Convert a struct css_length to pixels.
  */
 
-float css_len2px(struct css_length * length, struct css_style * style)
+float css_len2px(const struct css_length *length,
+		const struct css_style *style)
 {
 	assert(!((length->unit == CSS_UNIT_EM || length->unit == CSS_UNIT_EX) && style == 0));
 	switch (length->unit) {

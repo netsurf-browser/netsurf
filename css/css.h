@@ -129,7 +129,7 @@ struct css_counter_control {
 	int value;
 	struct css_counter_control *next;
 };
-  
+
 struct css_counter {
   	char *name;
   	css_list_style_type style;
@@ -203,7 +203,7 @@ struct css_style {
 			CSS_CONTENT_NOT_SET } type;
 		struct css_content *content;
 	} content;
-	
+
 	/* counter controls */
 	struct {
 		enum {
@@ -605,7 +605,7 @@ int css_tokenise(unsigned char **buffer, unsigned char *end,
 		unsigned char **token_text);
 
 void css_parser_Trace(FILE *TraceFILE, char *zTracePrompt);
-void *css_parser_Alloc(void *(*mallocProc)(/*size_t*/ int));
+void *css_parser_Alloc(void *(*mallocProc)(size_t));
 void css_parser_Free(void *p, void (*freeProc)(void*));
 void css_parser_(void *yyp, int yymajor, struct css_parser_token yyminor,
 		struct css_parser_params *param);
@@ -628,6 +628,7 @@ colour named_colour(const char *name);
 void css_dump_style(const struct css_style * const style);
 void css_dump_stylesheet(const struct css_stylesheet * stylesheet);
 
-float css_len2px(struct css_length * length, struct css_style * style);
+float css_len2px(const struct css_length *length,
+		const struct css_style *style);
 
 #endif
