@@ -304,10 +304,11 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 
 	assert(n != 0 && parent_style != 0 && parent != 0);
 	LOG(("node %p, node type %i", n, n->type));
-	gui_multitask();
 
 	if (n->type == XML_ELEMENT_NODE) {
 		struct element_entry *element;
+
+		gui_multitask();
 
 		style = box_get_style(content->data.html.stylesheet_content,
 				content->data.html.stylesheet_count, parent_style, n);

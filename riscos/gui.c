@@ -60,6 +60,7 @@ bool gui_reformat_pending = false;	/**< Some windows have been resized,
 						and should be reformatted. */
 gui_drag_type gui_current_drag_type;
 static wimp_t task_handle;	/**< RISC OS wimp task handle. */
+static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 /** Accepted wimp user messages. */
 static const wimp_MESSAGE_LIST(26) task_messages = { {
 	message_DATA_SAVE,
@@ -321,6 +322,7 @@ void gui_poll(bool active)
 		event = wimp_poll(wimp_MASK_NULL | mask, &block, 0);
 	}
 	xhourglass_on();
+	gui_last_poll = clock();
 	ro_gui_handle_event(event, &block);
 	schedule_run();
 
@@ -412,9 +414,13 @@ void gui_multitask(void)
 	wimp_event_no event;
 	wimp_block block;
 
+	if (clock() < gui_last_poll + 10)
+		return;
+
 	xhourglass_off();
 	event = wimp_poll(wimp_MASK_LOSE | wimp_MASK_GAIN, &block, 0);
 	xhourglass_on();
+	gui_last_poll = clock();
 
 	switch (event) {
 		case wimp_CLOSE_WINDOW_REQUEST:
