@@ -735,9 +735,6 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			, true
 #endif
 			);
-#ifdef WITH_COOKIES
-			clean_cookiejar();
-#endif
 			return true;
 #ifdef WITH_SAVE_COMPLETE
                 case wimp_KEY_SHIFT + wimp_KEY_F3:

@@ -87,8 +87,5 @@ void netsurf_exit(void)
 {
   cache_quit();
   fetch_quit();
-#ifdef WITH_COOKIES
-  clean_cookiejar();
-#endif
   gui_quit();
 }

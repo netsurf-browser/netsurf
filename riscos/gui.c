@@ -525,9 +525,6 @@ void ro_gui_close_window_request(wimp_close *close)
 				, true
 #endif
 				);
-#ifdef WITH_COOKIES
-	clean_cookiejar();
-#endif
 	} else
 		ro_gui_dialog_close(close->w);
 }
