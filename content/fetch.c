@@ -201,6 +201,14 @@ struct fetch * fetch_start(char *url, char *referer,
 	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_CAINFO, ca_bundle);
 	assert(code == CURLE_OK);
 #endif
+	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_LOW_SPEED_LIMIT, 1L);
+	assert(code == CURLE_OK);
+	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_LOW_SPEED_TIME, 60L);
+	assert(code == CURLE_OK);
+	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_NOSIGNAL, 1L);
+	assert(code == CURLE_OK);
+	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_CONNECTTIMEOUT, 60L);
+	assert(code == CURLE_OK);
 
 	/* custom request headers */
 	fetch->headers = 0;
