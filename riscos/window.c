@@ -59,6 +59,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
   wimp_window window;
   wimp_window_state state;
   wimp_outline outline;
+  os_error *error;
 
   gui_window* g = (gui_window*) xcalloc(1, sizeof(gui_window));
   g->type = GUI_BROWSER_WINDOW;
@@ -157,6 +158,12 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
 					<< wimp_CHILD_RS_EDGE_SHIFT |
 			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
 					<< wimp_CHILD_TS_EDGE_SHIFT);
+
+	error = xwimp_set_caret_position(g->data.browser.toolbar,
+			ICON_TOOLBAR_URL, -1, -1, -1, 0);
+	if (error)
+		LOG(("xwimp_set_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
 
   return g;
 }
