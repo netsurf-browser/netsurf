@@ -210,6 +210,14 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 		case FETCH_TYPE:
 			c->total_size = size;
 			mime_type = fetchcache_parse_type(data, &params);
+			if (!mime_type) {
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(c, CONTENT_MSG_ERROR,
+						msg_data);
+				fetch_abort(c->fetch);
+				c->fetch = 0;
+				return;
+			}
 			type = content_lookup(mime_type);
 			LOG(("FETCH_TYPE, type %u", type));
 			res = content_set_type(c, type, mime_type, params);
@@ -330,42 +338,64 @@ void fetchcache_init(void)
 /**
  * Parse a Content-Type header.
  *
- * \param s a Content-Type header
- * \param params updated to point to an array of strings, ordered attribute,
- *   value, attribute, ..., 0
- * \return a new string containing the MIME-type
+ * \param  s       a Content-Type header
+ * \param  params  updated to point to an array of strings, ordered attribute,
+ *                 value, attribute, ..., 0
+ * \return  a new string containing the MIME-type, or 0 on memory exhaustion
  */
 
 #define MAX_ATTRS 10
 
 char *fetchcache_parse_type(const char *s, char **params[])
 {
-	char *type;
+	char *type = 0;
 	unsigned int i;
 	int r;
 	regmatch_t pmatch[2 + MAX_ATTRS * 3];
-	*params = xcalloc(MAX_ATTRS * 2 + 2, sizeof (*params)[0]);
+
+	*params = malloc((MAX_ATTRS * 2 + 2) * sizeof (*params)[0]);
+	if (!*params)
+		goto no_memory;
+	for (i = 0; i != MAX_ATTRS * 2 + 2; i++)
+		(*params)[i] = 0;
 
 	r = regexec(&re_content_type, s, 2 + MAX_ATTRS * 3, pmatch, 0);
 	if (r) {
 		LOG(("failed to parse content-type '%s'", s));
-		return xstrdup(s);
+		type = strdup(s);
+		if (!type)
+			goto no_memory;
+		return type;
 	}
 
 	type = strndup(s + pmatch[1].rm_so, pmatch[1].rm_eo - pmatch[1].rm_so);
-	assert(type);
+	if (!type) {
+		free(*params);
+		return 0;
+	}
 
 	/* parameters */
 	for (i = 0; i != MAX_ATTRS && pmatch[2 + 3 * i].rm_so != -1; i++) {
 		(*params)[2 * i] = strndup(s + pmatch[2 + 3 * i + 1].rm_so,
-				pmatch[2 + 3 * i + 1].rm_eo - pmatch[2 + 3 * i + 1].rm_so);
+				pmatch[2 + 3 * i + 1].rm_eo -
+				pmatch[2 + 3 * i + 1].rm_so);
 		(*params)[2 * i + 1] = strndup(s + pmatch[2 + 3 * i + 2].rm_so,
-				pmatch[2 + 3 * i + 2].rm_eo - pmatch[2 + 3 * i + 2].rm_so);
-		assert((*params)[2 * i] && (*params)[2 * i + 1]);
+				pmatch[2 + 3 * i + 2].rm_eo -
+				pmatch[2 + 3 * i + 2].rm_so);
+		if (!(*params)[2 * i] || !(*params)[2 * i + 1])
+			goto no_memory;
 	}
 	(*params)[2 * i] = 0;
 
 	return type;
+
+no_memory:
+	for (i = 0; i != MAX_ATTRS * 2 + 2; i++)
+		free((*params)[i]);
+	free(*params);
+	free(type);
+
+	return 0;
 }
 
 
