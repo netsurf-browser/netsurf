@@ -32,6 +32,13 @@ static void theme_install_close(void);
 void theme_install_callback(content_msg msg, struct content *c,
 		void *p1, void *p2, union content_msg_data data);
 
+#ifndef NCOS
+#define THEME_LEAFNAME "WWW.NetSurf.Themes"
+#define THEME_PATHNAME "<Choices$Write>"
+#else
+#define THEME_LEAFNAME "NetSurf.Choices.Themes"
+#define THEME_PATHNAME "<User$Path>.Choices"
+#endif
 
 /**
  * Handle a CONTENT_THEME that has started loading.
@@ -156,17 +163,15 @@ void ro_gui_theme_install_click(wimp_pointer *pointer) {
 				while (!theme_found) {
 				  	if (theme_number == 1)
 						snprintf(theme_leaf, 256,
-								"WWW.NetSurf.Themes.%s",
-								theme_file);
+								"%s.%s", THEME_LEAFNAME, theme_file);
 				  	else
 						snprintf(theme_leaf, 256,
-								"WWW.NetSurf.Themes.%s%i",
-								theme_file, theme_number);
+								"%s.%s%i", THEME_LEAFNAME, theme_file,
+								theme_number);
 					theme_leaf[255] = '\0';
 					theme_number++;
 					snprintf(theme_save, 256,
-							"<Choices$Write>.%s",
-							theme_leaf);
+							"%s.%s", THEME_PATHNAME, theme_leaf);
 					theme_save[255] = '\0';
 					error = xosfile_read_stamped(theme_save,
 							&obj_type, 0, 0, 0, 0, 0);
@@ -191,7 +196,11 @@ void ro_gui_theme_install_click(wimp_pointer *pointer) {
 				/* apply theme only on Select clicks */
 				if (pointer->buttons == wimp_CLICK_SELECT) {
 					ro_gui_theme_get_available();
+#ifndef NCOS
 					snprintf(theme_save, 256, "Choices:%s", theme_leaf);
+#else
+					snprintf(theme_save, 256, "%s.%s", THEME_PATHNAME, theme_leaf);
+#endif
 					theme_save[255] = '\0';
 					theme_install = ro_gui_theme_find(theme_save);
 					if ((!theme_install) ||
