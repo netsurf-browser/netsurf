@@ -1115,6 +1115,9 @@ struct result box_input(xmlNode *n, struct status *status,
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
 		        inline_box->text = s;
 		}
+		else {
+		        inline_box->text = xstrdup("Button");
+		}
 		inline_box->length = strlen(inline_box->text);
 		inline_box->font = font_open(status->content->data.html.fonts, style);
 		box_add_child(inline_container, inline_box);
