@@ -267,7 +267,7 @@ static bool drawbuf_save_file(const char *drawfilename)
 {
 	size_t index;
 	os_fw *handle = NULL;
-	os_error *error;
+	os_error *error = NULL;
 
 	/* create font table (if needed). */
 	if (oDrawBuf.numFonts > 0) {
@@ -415,6 +415,9 @@ bool add_box(struct box *box, unsigned long cbc, long x, long y)
 			case CONTENT_HTML:
 				c = box->object->data.html.layout->children;
 				return add_box(c, cbc, x, y);
+
+			default:
+				break;
 		}
 
 	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
@@ -683,7 +686,7 @@ bool add_line(struct box *box, unsigned long cbc, long x, long y)
  */
 bool add_circle(struct box *box, unsigned long cbc, long x, long y)
 {
-	double radius, kappa;
+	double radius = 0., kappa;
 	double cx, cy;
 	drawfile_object *dro;
 	drawfile_path *dp;
@@ -852,9 +855,9 @@ static bool add_text(struct box *box, unsigned long cbc, long x, long y)
 		dt->base.x = x;
 		dt->base.y = y - box->height*512 + 1536;
 		strncpy(dt->text, rotext, rolength);
-		dt->text[rolength] = 0;
-		for (++rolength; rolength % 4; ++rolength)
-			dt->text[rolength] = 0;
+		do {
+			dt->text[rolength++] = 0;
+		} while (rolength % 4);
 
 		free(rotext);
 
