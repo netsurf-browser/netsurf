@@ -141,18 +141,19 @@ static struct box_result box_button(xmlNode *n, struct box_status *status,
 static struct box_result box_frameset(xmlNode *n, struct box_status *status,
 		struct css_style *style);
 static bool box_select_add_option(struct form_control *control, xmlNode *n);
-static void box_normalise_block(struct box *block, pool box_pool);
-static void box_normalise_table(struct box *table, pool box_pool);
+static bool box_normalise_block(struct box *block, pool box_pool);
+static bool box_normalise_table(struct box *table, pool box_pool);
 static void box_normalise_table_spans( struct box *table );
-static void box_normalise_table_row_group(struct box *row_group,
+static bool box_normalise_table_row_group(struct box *row_group,
 		struct columns *col_info,
 		pool box_pool);
-static void box_normalise_table_row(struct box *row,
+static bool box_normalise_table_row(struct box *row,
 		struct columns *col_info,
 		pool box_pool);
-static unsigned int calculate_table_row( struct columns *col_info,
-		unsigned int col_span, unsigned int row_span );
-static void box_normalise_inline_container(struct box *cont, pool box_pool);
+static bool calculate_table_row(struct columns *col_info,
+		unsigned int col_span, unsigned int row_span,
+		unsigned int *start_column);
+static bool box_normalise_inline_container(struct box *cont, pool box_pool);
 static void box_free_box(struct box *box);
 static struct box_result box_object(xmlNode *n, struct box_status *status,
 		struct css_style *style);
@@ -360,7 +361,8 @@ bool xml_to_box(xmlNode *n, struct content *c)
 	if (!convert_xml_to_box(n, c, c->data.html.style, &root,
 			&inline_container, status))
 		return false;
-	box_normalise_block(&root, c->data.html.box_pool);
+	if (!box_normalise_block(&root, c->data.html.box_pool))
+		return false;
 
 	c->data.html.layout = root.children;
 	c->data.html.layout->parent = NULL;
@@ -1780,6 +1782,8 @@ void box_dump(struct box * box, unsigned int depth)
 /**
  * ensure the box tree is correctly nested
  *
+ * \return  true on success, false on memory exhaustion
+ *
  * parent		permitted child nodes
  * BLOCK, INLINE_BLOCK	BLOCK, INLINE_CONTAINER, TABLE
  * INLINE_CONTAINER	INLINE, INLINE_BLOCK, FLOAT_LEFT, FLOAT_RIGHT, BR
@@ -1791,7 +1795,7 @@ void box_dump(struct box * box, unsigned int depth)
  * FLOAT_(LEFT|RIGHT)	exactly 1 BLOCK or TABLE
  */
 
-void box_normalise_block(struct box *block, pool box_pool)
+bool box_normalise_block(struct box *block, pool box_pool)
 {
 	struct box *child;
 	struct box *next_child;
@@ -1810,13 +1814,17 @@ void box_normalise_block(struct box *block, pool box_pool)
 		switch (child->type) {
 			case BOX_BLOCK:
 				/* ok */
-				box_normalise_block(child, box_pool);
+				if (!box_normalise_block(child, box_pool))
+					return false;
 				break;
 			case BOX_INLINE_CONTAINER:
-				box_normalise_inline_container(child, box_pool);
+				if (!box_normalise_inline_container(child,
+						box_pool))
+					return false;
 				break;
 			case BOX_TABLE:
-				box_normalise_table(child, box_pool);
+				if (!box_normalise_table(child, box_pool))
+					return false;
 				break;
 			case BOX_INLINE:
 			case BOX_INLINE_BLOCK:
@@ -1831,11 +1839,16 @@ void box_normalise_block(struct box *block, pool box_pool)
 			case BOX_TABLE_ROW:
 			case BOX_TABLE_CELL:
 				/* insert implied table */
-				style = xcalloc(1, sizeof(struct css_style));
-				assert(block->style != NULL);
-				memcpy(style, block->style, sizeof(struct css_style));
+				style = malloc(sizeof *style);
+				if (!style)
+					return false;
+				memcpy(style, block->style, sizeof *style);
 				css_cascade(style, &css_blank_style);
 				table = box_create(style, block->href, 0, 0, box_pool);
+				if (!table) {
+					free(style);
+					return false;
+				}
 				table->type = BOX_TABLE;
 				if (child->prev == 0)
 					block->children = table;
@@ -1856,13 +1869,15 @@ void box_normalise_block(struct box *block, pool box_pool)
 				if (table->next)
 					table->next->prev = table;
 				table->parent = block;
-				box_normalise_table(table, box_pool);
+				if (!box_normalise_table(table, box_pool))
+					return false;
 				break;
 			default:
 				assert(0);
 		}
 	}
-	LOG(("block %p done", block));
+
+	return true;
 }
 
 
@@ -1924,22 +1939,22 @@ void box_normalise_table_spans( struct box *table )
 	table->columns +=  max_extra;
 }
 
-void box_normalise_table(struct box *table, pool box_pool)
+bool box_normalise_table(struct box *table, pool box_pool)
 {
 	struct box *child;
 	struct box *next_child;
 	struct box *row_group;
 	struct css_style *style;
 	struct columns col_info;
-/*	struct span_info *span_info = xcalloc(2, sizeof(span_info[0]));
-	unsigned int table_columns = 1;*/
 
 	assert(table != 0);
 	assert(table->type == BOX_TABLE);
 	LOG(("table %p", table));
 	col_info.num_columns = 1;
 	col_info.current_column = 0;
-	col_info.spans = xcalloc( 2, sizeof( *col_info.spans));
+	col_info.spans = malloc(2 * sizeof *col_info.spans);
+	if (!col_info.spans)
+		return false;
 	col_info.spans[0].row_span = col_info.spans[1].row_span = 0;
 	col_info.spans[0].auto_row = col_info.spans[0].auto_column =
 		col_info.spans[1].auto_row = col_info.spans[1].auto_column = false;
@@ -1951,7 +1966,11 @@ void box_normalise_table(struct box *table, pool box_pool)
 		switch (child->type) {
 			case BOX_TABLE_ROW_GROUP:
 				/* ok */
-				box_normalise_table_row_group(child, &col_info, box_pool);
+				if (!box_normalise_table_row_group(child,
+						&col_info, box_pool)) {
+					free(col_info.spans);
+					return false;
+				}
 				break;
 			case BOX_BLOCK:
 			case BOX_INLINE_CONTAINER:
@@ -1959,12 +1978,21 @@ void box_normalise_table(struct box *table, pool box_pool)
 			case BOX_TABLE_ROW:
 			case BOX_TABLE_CELL:
 				/* insert implied table row group */
-				style = xcalloc(1, sizeof(struct css_style));
+				style = malloc(sizeof *style);
+				if (!style) {
+					free(col_info.spans);
+					return false;
+				}
 				assert(table->style != NULL);
-				memcpy(style, table->style, sizeof(struct css_style));
+				memcpy(style, table->style, sizeof *style);
 				css_cascade(style, &css_blank_style);
 				row_group = box_create(style, table->href, 0,
 						0, box_pool);
+				if (!row_group) {
+					free(col_info.spans);
+					free(style);
+					return false;
+				}
 				row_group->type = BOX_TABLE_ROW_GROUP;
 				if (child->prev == 0)
 					table->children = row_group;
@@ -1987,7 +2015,11 @@ void box_normalise_table(struct box *table, pool box_pool)
 				if (row_group->next)
 					row_group->next->prev = row_group;
 				row_group->parent = table;
-				box_normalise_table_row_group(row_group, &col_info, box_pool);
+				if (!box_normalise_table_row_group(row_group,
+						&col_info, box_pool)) {
+					free(col_info.spans);
+					return false;
+				}
 				break;
 			case BOX_INLINE:
 			case BOX_INLINE_BLOCK:
@@ -2022,10 +2054,12 @@ void box_normalise_table(struct box *table, pool box_pool)
 	}
 
 	LOG(("table %p done", table));
+
+	return true;
 }
 
 
-static void box_normalise_table_row_group(struct box *row_group,
+bool box_normalise_table_row_group(struct box *row_group,
 		struct columns *col_info,
 		pool box_pool)
 {
@@ -2043,8 +2077,9 @@ static void box_normalise_table_row_group(struct box *row_group,
 		switch (child->type) {
 			case BOX_TABLE_ROW:
 				/* ok */
-				box_normalise_table_row(child, col_info,
-						box_pool);
+				if (!box_normalise_table_row(child, col_info,
+						box_pool))
+					return false;
 				break;
 			case BOX_BLOCK:
 			case BOX_INLINE_CONTAINER:
@@ -2052,12 +2087,18 @@ static void box_normalise_table_row_group(struct box *row_group,
 			case BOX_TABLE_ROW_GROUP:
 			case BOX_TABLE_CELL:
 				/* insert implied table row */
-				style = xcalloc(1, sizeof(struct css_style));
+				style = malloc(sizeof *style);
+				if (!style)
+					return false;
 				assert(row_group->style != NULL);
-				memcpy(style, row_group->style, sizeof(struct css_style));
+				memcpy(style, row_group->style, sizeof *style);
 				css_cascade(style, &css_blank_style);
 				row = box_create(style, row_group->href, 0,
 						0, box_pool);
+				if (!row) {
+					free(style);
+					return false;
+				}
 				row->type = BOX_TABLE_ROW;
 				if (child->prev == 0)
 					row_group->children = row;
@@ -2080,8 +2121,9 @@ static void box_normalise_table_row_group(struct box *row_group,
 				if (row->next)
 					row->next->prev = row;
 				row->parent = row_group;
-				box_normalise_table_row(row, col_info,
-						box_pool);
+				if (!box_normalise_table_row(row, col_info,
+						box_pool))
+					return false;
 				break;
 			case BOX_INLINE:
 			case BOX_INLINE_BLOCK:
@@ -2109,14 +2151,22 @@ static void box_normalise_table_row_group(struct box *row_group,
 	}
 
 	LOG(("row_group %p done", row_group));
+
+	return true;
 }
 
-static unsigned int calculate_table_row( struct columns *col_info,
-		unsigned int col_span, unsigned int row_span )
+/**
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool calculate_table_row(struct columns *col_info,
+		unsigned int col_span, unsigned int row_span,
+		unsigned int *start_column)
 {
 	unsigned int cell_start_col;
 	unsigned int cell_end_col;
 	unsigned int i;
+	struct span_info *spans;
 
 	if ( !col_info->extra ) {
 		/* skip columns with cells spanning from above */
@@ -2144,8 +2194,11 @@ static unsigned int calculate_table_row( struct columns *col_info,
 		cell_end_col = cell_start_col + (( 0 == col_span ) ? 1 : col_span );
 
 		if ( col_info->num_columns < cell_end_col ) {
-			col_info->spans = xrealloc( col_info->spans,
-					sizeof( *col_info->spans ) * ( cell_end_col + 1 ));
+			spans = realloc(col_info->spans,
+					sizeof *spans * (cell_end_col + 1));
+			if (!spans)
+				return false;
+			col_info->spans = spans;
 			col_info->num_columns = cell_end_col;
 
 			/* Mark new final column as sentinal */
@@ -2173,10 +2226,11 @@ static unsigned int calculate_table_row( struct columns *col_info,
 		col_info->current_column = cell_end_col;
 	}
 
-	return cell_start_col;
+	*start_column = cell_start_col;
+	return true;
 }
 
-static void box_normalise_table_row(struct box *row,
+bool box_normalise_table_row(struct box *row,
 		struct columns *col_info,
 		pool box_pool)
 {
@@ -2195,7 +2249,8 @@ static void box_normalise_table_row(struct box *row,
 		switch (child->type) {
 			case BOX_TABLE_CELL:
 				/* ok */
-				box_normalise_block(child, box_pool);
+				if (!box_normalise_block(child, box_pool))
+					return false;
 				cell = child;
 				break;
 			case BOX_BLOCK:
@@ -2204,11 +2259,18 @@ static void box_normalise_table_row(struct box *row,
 			case BOX_TABLE_ROW_GROUP:
 			case BOX_TABLE_ROW:
 				/* insert implied table cell */
-				style = xcalloc(1, sizeof(struct css_style));
+				style = malloc(sizeof *style);
+				if (!style)
+					return false;
 				assert(row->style != NULL);
-				memcpy(style, row->style, sizeof(struct css_style));
+				memcpy(style, row->style, sizeof *style);
 				css_cascade(style, &css_blank_style);
-				cell = box_create(style, row->href, 0, 0, box_pool);
+				cell = box_create(style, row->href, 0, 0,
+						box_pool);
+				if (!cell) {
+					free(style);
+					return false;
+				}
 				cell->type = BOX_TABLE_CELL;
 				if (child->prev == 0)
 					row->children = cell;
@@ -2231,7 +2293,8 @@ static void box_normalise_table_row(struct box *row,
 				if (cell->next)
 					cell->next->prev = cell;
 				cell->parent = row;
-				box_normalise_block(cell, box_pool);
+				if (!box_normalise_block(cell, box_pool))
+					return false;
 				break;
 			case BOX_INLINE:
 			case BOX_INLINE_BLOCK:
@@ -2246,7 +2309,9 @@ static void box_normalise_table_row(struct box *row,
 				assert(0);
 		}
 
-		cell->start_column = calculate_table_row( col_info, cell->columns, cell->rows );
+		if (!calculate_table_row(col_info, cell->columns, cell->rows,
+				&cell->start_column))
+			return false;
 	}
 
 	for ( i = 0; i < col_info->num_columns; i++ ) {
@@ -2274,10 +2339,12 @@ static void box_normalise_table_row(struct box *row,
 	}
 
 	LOG(("row %p done", row));
+
+	return true;
 }
 
 
-void box_normalise_inline_container(struct box *cont, pool box_pool)
+bool box_normalise_inline_container(struct box *cont, pool box_pool)
 {
 	struct box *child;
 	struct box *next_child;
@@ -2295,7 +2362,8 @@ void box_normalise_inline_container(struct box *cont, pool box_pool)
 				break;
 			case BOX_INLINE_BLOCK:
 				/* ok */
-				box_normalise_block(child, box_pool);
+				if (!box_normalise_block(child, box_pool))
+					return false;
 				break;
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
@@ -2303,12 +2371,16 @@ void box_normalise_inline_container(struct box *cont, pool box_pool)
 				assert(child->children != 0);
 				switch (child->children->type) {
 					case BOX_BLOCK:
-						box_normalise_block(child->children,
-								box_pool);
+						if (!box_normalise_block(
+								child->children,
+								box_pool))
+							return false;
 						break;
 					case BOX_TABLE:
-						box_normalise_table(child->children,
-								box_pool);
+						if (!box_normalise_table(
+								child->children,
+								box_pool))
+							return false;
 						break;
 					default:
 						assert(0);
@@ -2335,6 +2407,8 @@ void box_normalise_inline_container(struct box *cont, pool box_pool)
 		}
 	}
 	LOG(("cont %p done", cont));
+
+	return true;
 }
 
 
@@ -2393,10 +2467,14 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
 	xmlNode *c;
 	url_func_result res;
 
+	po = malloc(sizeof *po);
+	if (!po)
+		return (struct box_result) {0, false, true};
+
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
-
-	po = xcalloc(1, sizeof(*po));
+	if (!box)
+		return (struct box_result) {0, false, true};
 
 	/* initialise po struct */
 	po->data = 0;
@@ -2425,8 +2503,10 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
 
 	/* imagemap associated with this object */
 	if ((map = xmlGetProp(n, (const xmlChar *) "usemap")) != NULL) {
-		box->usemap = (map[0] == '#') ? xstrdup(map+1) : xstrdup(map);
+		box->usemap = (map[0] == '#') ? strdup(map+1) : strdup(map);
 		xmlFree(map);
+		if (!box->usemap)
+			return (struct box_result) {0, false, true};
 	}
 
 	/* object type */
@@ -2464,7 +2544,9 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
 	 */
 	for (c = n->children; c != NULL; c = c->next) {
 		if (strcmp((const char *) c->name, "param") == 0) {
-			pp = xcalloc(1, sizeof(*pp));
+			pp = malloc(sizeof *pp);
+			if (!pp)
+				return (struct box_result) {0, false, true};
 
 			/* initialise pp struct */
 			pp->name = 0;
@@ -2527,10 +2609,14 @@ struct box_result box_embed(xmlNode *n, struct box_status *status,
 	xmlAttr *a;
 	url_func_result res;
 
+	po = malloc(sizeof *po);
+	if (!po)
+		return (struct box_result) {0, false, true};
+
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
-
-	po = xcalloc(1, sizeof(*po));
+	if (!box)
+		return (struct box_result) {0, false, true};
 
 	/* initialise po struct */
 	po->data = 0;
@@ -2561,7 +2647,9 @@ struct box_result box_embed(xmlNode *n, struct box_status *status,
 	 * we munge all other attributes into a plugin_parameter structure
 	 */
 	for (a=n->properties; a != NULL; a=a->next) {
-		pp = xcalloc(1, sizeof(*pp));
+		pp = malloc(sizeof *pp);
+		if (!pp)
+			return (struct box_result) {0, false, true};
 
 		/* initialise pp struct */
 		pp->name = 0;
@@ -2601,10 +2689,14 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 	xmlNode *c;
 	url_func_result res;
 
+	po = malloc(sizeof *po);
+	if (!po)
+		return (struct box_result) {0, false, true};
+
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
-
-	po = xcalloc(1, sizeof(*po));
+	if (!box)
+		return (struct box_result) {0, false, true};
 
 	/* initialise po struct */
 	po->data = 0;
@@ -2645,7 +2737,9 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 	 */
 	for (c = n->children; c != 0; c = c->next) {
 		if (strcmp((const char *) c->name, "param") == 0) {
-			pp = xcalloc(1, sizeof(*pp));
+			pp = malloc(sizeof *pp);
+			if (!pp)
+				return (struct box_result) {0, false, true};
 
 			/* initialise pp struct */
 			pp->name = 0;
@@ -2707,10 +2801,14 @@ struct box_result box_iframe(xmlNode *n, struct box_status *status,
 	char *s, *url = NULL;
 	url_func_result res;
 
+	po = malloc(sizeof *po);
+	if (!po)
+		return (struct box_result) {0, false, true};
+
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
-
-	po = xcalloc(1, sizeof(*po));
+	if (!box)
+		return (struct box_result) {0, false, true};
 
 	/* initialise po struct */
 	po->data = 0;
@@ -2871,6 +2969,8 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 
 	box = box_create(style, 0, status->title, status->id,
 			status->content->data.html.box_pool);
+	if (!box)
+		return (struct box_result) {0, false, true};
 	box->type = BOX_TABLE;
 
 	/* parse rows and columns */
@@ -2955,6 +3055,9 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 		}*/
 		row_box = box_create(row_style, 0, 0, 0,
 				status->content->data.html.box_pool);
+		if (!row_box)
+			return (struct box_result) {0, false, true};
+
 		row_box->type = BOX_TABLE_ROW;
 		box_add_child(box, row_box);
 
@@ -2985,6 +3088,8 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 
 			cell_box = box_create(cell_style, 0, 0, 0,
 					status->content->data.html.box_pool);
+			if (!cell_box)
+				return (struct box_result) {0, false, true};
 			cell_box->type = BOX_TABLE_CELL;
 			box_add_child(row_box, cell_box);
 
@@ -3023,6 +3128,8 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 
 			object_box = box_create(object_style, 0, 0, 0,
 					status->content->data.html.box_pool);
+			if (!object_box)
+				return (struct box_result) {0, false, true};
 			object_box->type = BOX_BLOCK;
 			box_add_child(cell_box, object_box);
 
