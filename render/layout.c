@@ -190,6 +190,8 @@ void layout_block_context(struct box *block)
 			}
 			continue;
 		}
+		if (box->type == BOX_BLOCK && box->height == AUTO)
+			box->height = 0;
 		cy += box->height + box->padding[BOTTOM] + box->border[BOTTOM];
 		max_pos_margin = max_neg_margin = 0;
 		if (max_pos_margin < box->margin[BOTTOM])
@@ -197,13 +199,13 @@ void layout_block_context(struct box *block)
 		else if (max_neg_margin < -box->margin[BOTTOM])
 			max_neg_margin = -box->margin[BOTTOM];
 		if (!box->next) {
-			while (box != block && !box->next) {
+			do {
 				cx -= box->x;
 				y = box->y + box->padding[TOP] + box->height +
 						box->padding[BOTTOM] +
 						box->border[BOTTOM];
 				box = box->parent;
-/* 				if (box->height == AUTO) */
+				if (box->height == AUTO)
 					box->height = y - box->padding[TOP];
 				cy += box->padding[BOTTOM] +
 						box->border[BOTTOM];
@@ -211,7 +213,7 @@ void layout_block_context(struct box *block)
 					max_pos_margin = box->margin[BOTTOM];
 				else if (max_neg_margin < -box->margin[BOTTOM])
 					max_neg_margin = -box->margin[BOTTOM];
-			}
+			} while (box != block && !box->next);
 			if (box == block)
 				break;
 		}
@@ -256,6 +258,17 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 
 	box->width = layout_solve_width(available_width, width, margin,
 			padding, border);
+
+	/* height */
+	switch (style->height.height) {
+		case CSS_HEIGHT_LENGTH:
+			box->height = len(&style->height.length, style);
+			break;
+		case CSS_HEIGHT_AUTO:
+		default:
+			box->height = AUTO;
+			break;
+	}
 
 	if (margin[TOP] == AUTO)
 		margin[TOP] = 0;
@@ -339,6 +352,22 @@ void layout_float_find_dimensions(int available_width,
 				box->width = box->max_width;
 			break;
 	}
+
+	/* height */
+	switch (style->height.height) {
+		case CSS_HEIGHT_LENGTH:
+			box->height = len(&style->height.length, style);
+			break;
+		case CSS_HEIGHT_AUTO:
+		default:
+			box->height = AUTO;
+			break;
+	}
+
+	if (box->margin[TOP] == AUTO)
+		box->margin[TOP] = 0;
+	if (box->margin[BOTTOM] == AUTO)
+		box->margin[BOTTOM] = 0;
 }
 
 
@@ -1067,13 +1096,15 @@ void layout_table(struct box *table, int available_width)
 				assert(c->style != 0);
 				c->width = xs[c->start_column + c->columns] - xs[c->start_column];
 				c->float_children = 0;
+
+				c->height = AUTO;
 				layout_block_context(c);
 				if (c->style->height.height == CSS_HEIGHT_LENGTH) {
 					/* some sites use height="1" or similar to attempt
 					 * to make cells as small as possible, so treat
 					 * it as a minimum */
 					int h = len(&c->style->height.length, c->style);
-/* 					if (c->height < h) */
+					if (c->height < h)
 						c->height = h;
 				}
 				/* increase height to contain any floats inside */
