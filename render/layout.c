@@ -674,7 +674,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 		excess_y[i] = 0;
 		row_span_cell[i] = 0;
 	}
-	
+
 	/* position cells */
 	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
 		unsigned long row_group_height = 0;
@@ -717,13 +717,14 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 				if (row_span[i] == 0 && row_height < excess_y[i])
 					row_height = excess_y[i];
 			for (i = 0; i != columns; i++) {
-				excess_y[i] -= row_height;
+				if (row_height < excess_y[i])
+					excess_y[i] -= row_height;
+				else
+					excess_y[i] = 0;
 				if (row_span_cell[i] != 0)
 					row_span_cell[i]->height += row_height;
 			}
 
-			/*for (c = row->children; c != 0; c = c->next)
-				c->height = row_height;*/
 			row->x = 0;
 			row->y = row_group_height;
 			row->width = table_width;
