@@ -1035,7 +1035,9 @@ void html_destroy(struct content *c)
 		}
 	}
 	free(c->data.html.stylesheet_content);
-	css_free_style(c->data.html.style);
+
+	if (c->data.html.style)
+		css_free_style(c->data.html.style);
 
 	if (c->data.html.fonts)
 		nsfont_free_set(c->data.html.fonts);
