@@ -41,7 +41,10 @@ int main(int argc, char *argv[])
 
 	while (1) {
 		puts("=== URL:");
-		gets(url);
+		if (!fgets(url, 1000, stdin))
+			return 0;
+		url[strlen(url) - 1] = 0;
+		destroyed = 0;
 		c = fetchcache(url, 0, callback, 0, 0, 100, 1000, false);
 		if (c) {
 			done = c->status == CONTENT_STATUS_DONE;
@@ -49,6 +52,7 @@ int main(int argc, char *argv[])
 				fetch_poll();
 			puts("=== SUCCESS, dumping cache");
 		} else {
+			destroyed = 1;
 			puts("=== FAILURE, dumping cache");
 		}
 		cache_dump();
