@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.25 2002/12/27 17:38:47 bursa Exp $
+ * $Id: layout.c,v 1.26 2002/12/27 18:58:03 bursa Exp $
  */
 
 #include <assert.h>
@@ -729,11 +729,29 @@ void calculate_table_widths(struct box *table)
 					col[i].type = COLUMN_WIDTH_FIXED;
 					col[i].min = col[i].max = col[i].width = width;
 				} else {
+					unsigned int j;
+					unsigned long min = 0, max = 0, extra;
+
 					calculate_widths(cell);
-					if (col[i].min < cell->min_width)
-						col[i].min = cell->min_width;
-					if (col[i].max < cell->max_width)
-						col[i].max = cell->max_width;
+
+					/* distribute extra width to spanned columns */
+					for (j = 0; j != cell->columns; j++) {
+						min += col[i].min;
+						max += col[i].max;
+					}
+					if (min < cell->min_width) {
+						extra = 1 + (cell->min_width - min)
+								/ cell->columns;
+						for (j = 0; j != cell->columns; j++)
+							col[i].min += extra;
+					}
+					if (max < cell->max_width) {
+						extra = 1 + (cell->max_width - max)
+								/ cell->columns;
+						for (j = 0; j != cell->columns; j++)
+							col[i].max += extra;
+					}
+
 					if (col[i].type != COLUMN_WIDTH_UNKNOWN)
 						continue;
 					if (cell->style->width.width == CSS_WIDTH_PERCENT) {
