@@ -48,7 +48,7 @@ void ro_uri_message_received(uri_full_message_process* uri_message)
                     uri_message->sender);
 
   xuri_request_uri(0, 0, 0, uri_handle, &uri_length);
-  uri_requested = xcalloc((unsigned int)uri_length, sizeof(char));
+  uri_requested = calloc((unsigned int)uri_length, sizeof(char));
 
   if (uri_requested == NULL)
      return;

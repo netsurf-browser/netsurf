@@ -49,11 +49,16 @@ const char *fetch_filetype(const char *unix_path)
 {
 	struct type_entry *t;
 	unsigned int len = strlen(unix_path) + 100;
-	char *path = xcalloc(len, 1);
+	char *path = calloc(len, 1);
 	char *r;
 	os_error *error;
 	bits file_type;
 
+	if (!path) {
+	  	LOG(("Insuficient memory for calloc"));
+	  	warn_user("NoMemory", 0);
+	  	return "application/riscos";
+	}
 	LOG(("unix_path = '%s'", unix_path));
 
 	/* convert path to RISC OS format and read file type */
@@ -84,7 +89,13 @@ char *fetch_mimetype(const char *ro_path) {
         os_error *e;
         bits filetype = 0, load;
         int objtype;
-        char *mime = xcalloc(256, sizeof(char));
+        char *mime = calloc(256, sizeof(char));
+
+	if (!mime) {
+	  	LOG(("Insuficient memory for calloc"));
+	  	warn_user("NoMemory", 0);
+	  	return 0;
+	}
 
         e = xosfile_read_no_path(ro_path, &objtype, &load, 0, 0, 0);
         if (e) return 0;
