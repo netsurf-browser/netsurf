@@ -12,19 +12,21 @@
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/utils/log.h"
 
-int done;
+int done, destroyed;
 
 void callback(content_msg msg, struct content *c, void *p1,
 		void *p2, const char *error)
 {
 	LOG(("content %s, message %i", c->url, msg));
-	if (msg == CONTENT_MSG_DONE || msg == CONTENT_MSG_ERROR)
+	if (msg == CONTENT_MSG_DONE)
 		done = 1;
+	else if (msg == CONTENT_MSG_ERROR)
+		done = destroyed = 1;
 	else if (msg == CONTENT_MSG_STATUS)
 		printf("=== STATUS: %s\n", c->status_message);
 	else if (msg == CONTENT_MSG_REDIRECT) {
 		printf("=== REDIRECT to '%s'\n", error);
-		done = 1;
+		done = destroyed = 1;
 	}
 }
 
@@ -49,7 +51,8 @@ int main(int argc, char *argv[])
 			puts("=== FAILURE, dumping cache");
 		}
 		cache_dump();
-		content_remove_user(c, callback, 0, 0);
+		if (!destroyed)
+			content_remove_user(c, callback, 0, 0);
 	}
 
 	cache_quit();

@@ -59,6 +59,7 @@ static struct fetch *fetch_list = 0;
 
 static size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f);
 static size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f);
+static int fetch_process_headers(struct fetch *f);
 
 #ifdef riscos
 extern const char * const NETSURF_DIR;
@@ -341,12 +342,17 @@ void fetch_poll(void)
 				finished = 0;
 				callback = f->callback;
 				p = f->p;
-				if (curl_msg->data.result == CURLE_OK && f->had_headers)
-					finished = 1;
-				else if (curl_msg->data.result == CURLE_OK)
-					callback(FETCH_ERROR, f->p, "No data received", 0);
-				else if (curl_msg->data.result != CURLE_WRITE_ERROR)
+				if (curl_msg->data.result == CURLE_OK) {
+					/* fetch completed normally */
+					if (!f->had_headers && fetch_process_headers(f))
+						; /* redirect with no body or similar */
+					else
+						finished = 1;
+				} else if (curl_msg->data.result != CURLE_WRITE_ERROR) {
+					/* CURLE_WRITE_ERROR occurs when fetch_curl_data
+					 * returns 0, which we use to abort intentionally */
 					callback(FETCH_ERROR, f->p, f->error_buffer, 0);
+				}
 
 				/* clean up fetch */
 				fetch_abort(f);
@@ -375,46 +381,8 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 
 	LOG(("fetch %p, size %u", f, size * nmemb));
 
-	if (!f->had_headers) {
-		/* find the status code and content type and inform the caller */
-		long http_code;
-		const char *type;
-		CURLcode code;
-
-		code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE, &http_code);
-		assert(code == CURLE_OK); 
-		LOG(("HTTP status code %li", http_code));
-
-		if (300 <= http_code && http_code < 400 && f->location != 0) {
-			/* redirect */
-			LOG(("FETCH_REDIRECT, '%s'", f->location));
-			f->callback(FETCH_REDIRECT, f->p, f->location, 0);
-			f->in_callback = 0;
-			return 0;
-		}
-
-		code = curl_easy_getinfo(f->curl_handle, CURLINFO_CONTENT_TYPE, &type);
-		assert(code == CURLE_OK);
-
-		if (type == 0) {
-			type = "text/html";
-			if (strncmp(f->url, "file:///", 8) == 0) {
-				char *url_path;
-				url_path = curl_unescape(f->url + 8, (int) strlen(f->url) - 8);
-				type = fetch_filetype(url_path);
-				free(url_path);
-			}
-		}
-
-		LOG(("FETCH_TYPE, '%s'", type));
-		f->callback(FETCH_TYPE, f->p, type, 0);
-		if (f->aborting) {
-			f->in_callback = 0;
-			return 0;
-		}
-
-		f->had_headers = 1;
-	}
+	if (!f->had_headers && fetch_process_headers(f))
+		return 0;
 
 	/* send data to the caller */
 	LOG(("FETCH_DATA"));
@@ -448,6 +416,53 @@ size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f
 	return size;
 }
 
+
+/**
+ * Find the status code and content type and inform the caller.
+ */
+
+int fetch_process_headers(struct fetch *f)
+{
+	long http_code;
+	const char *type;
+	CURLcode code;
+
+	f->had_headers = 1;
+
+	code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE, &http_code);
+	assert(code == CURLE_OK); 
+	LOG(("HTTP status code %li", http_code));
+
+	if (300 <= http_code && http_code < 400 && f->location != 0) {
+		/* redirect */
+		LOG(("FETCH_REDIRECT, '%s'", f->location));
+		f->callback(FETCH_REDIRECT, f->p, f->location, 0);
+		f->in_callback = 0;
+		return 1;
+	}
+
+	code = curl_easy_getinfo(f->curl_handle, CURLINFO_CONTENT_TYPE, &type);
+	assert(code == CURLE_OK);
+
+	if (type == 0) {
+		type = "text/html";
+		if (strncmp(f->url, "file:///", 8) == 0) {
+			char *url_path;
+			url_path = curl_unescape(f->url + 8, (int) strlen(f->url) - 8);
+			type = fetch_filetype(url_path);
+			free(url_path);
+		}
+	}
+
+	LOG(("FETCH_TYPE, '%s'", type));
+	f->callback(FETCH_TYPE, f->p, type, 0);
+	if (f->aborting) {
+		f->in_callback = 0;
+		return 1;
+	}
+
+	return 0;
+}
 
 
 /**
