@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "libxml/encoding.h"
 #include "libxml/uri.h"
 #include "netsurf/utils/log.h"
@@ -274,4 +275,19 @@ char *get_host_from_url (char *url) {
   host[i+1] = 0;
 
   return host;
+}
+
+
+/**
+ * Check if a directory exists.
+ */
+
+bool is_dir(const char *path)
+{
+	struct stat s;
+
+	if (stat(path, &s))
+		return false;
+
+	return S_ISDIR(s.st_mode) ? true : false;
 }

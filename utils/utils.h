@@ -8,6 +8,7 @@
 #ifndef _NETSURF_UTILS_UTILS_H_
 #define _NETSURF_UTILS_UTILS_H_
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include "libxml/encoding.h"
 
@@ -25,5 +26,6 @@ char * tolat1_pre(xmlChar * s);
 char *squash_tolat1(xmlChar *s);
 char *url_join(const char* new, const char* base);
 char *get_host_from_url(char* url);
+bool is_dir(const char *path);
 
 #endif
