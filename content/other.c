@@ -49,5 +49,5 @@ void other_reformat(struct content *c, unsigned int width, unsigned int height)
 
 void other_destroy(struct content *c)
 {
-	assert(0);
+	free(c->data.other.data);
 }
