@@ -70,7 +70,7 @@ ObjError:Error loading object: %s
 DrawTitle:Draw image (%lux%lu, %lu bytes)
 GIFTitle:GIF image (%lux%lu)
 JPEGTitle:JPEG image (%ux%u, %lu bytes)
-PNGImage:PNG image (%lux%lu)
+PNGTitle:PNG image (%lux%lu)
 SpriteTitle:Sprite image (%lux%lu, %lu bytes)
 
 SelectMenu:Select

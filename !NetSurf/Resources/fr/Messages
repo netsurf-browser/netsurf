@@ -70,8 +70,8 @@ ObjError:Erreur lors du chargement de: %s
 DrawTitle:Image Draw (%lux%lu, %lu octès)
 GIFTitle:Image GIF (%lux%lu)
 JPEGTitle:Image JPEG (%ux%u, %lu octès)
-PNGImage:Image PNG (%lux%lu)
-SpriteTitle:Image Sprite(%lux%lu, %lu octès)
+PNGTitle:Image PNG (%lux%lu)
+SpriteTitle:Image Sprite (%lux%lu, %lu octès)
 
 SelectMenu:Sélection
 
