@@ -49,4 +49,8 @@ osspriteop_area *ro_gui_load_sprite_file(const char *pathname);
 bool ro_gui_wimp_sprite_exists(const char *sprite);
 void ro_gui_open_pane(wimp_w parent, wimp_w pane, int offset);
 
+
+wimp_w ro_gui_set_window_background_colour(wimp_w window, wimp_colour background);
+void ro_gui_set_icon_colours(wimp_w window, wimp_i icon,
+		wimp_colour foreground, wimp_colour background);
 #endif

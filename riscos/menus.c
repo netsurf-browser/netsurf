@@ -25,7 +25,6 @@
 #include "netsurf/riscos/help.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
-#include "netsurf/riscos/toolbar.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -657,6 +656,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	wimp_pointer pointer;
 	wimp_window_state state;
 	os_error *error;
+	int height;
 
 	wimp_get_pointer_info(&pointer);
 
@@ -757,7 +757,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 5: /* Print */
 						break;
 					case 6: /* New window */
-						browser_window_create(current_gui->url, current_gui->bw);
+						browser_window_create(current_gui->bw->current_content->url, current_gui->bw);
 						break;
 					case 7: /* Page source */
 						ro_gui_view_source(c);
@@ -851,29 +851,27 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 2: /* Toolbars -> */
 						switch (selection->items[2]) {
 							case 0:
-								current_gui->toolbar->standard_buttons =
-										!current_gui->toolbar->standard_buttons;
+								current_gui->toolbar->display_buttons =
+										!current_gui->toolbar->display_buttons;
 								break;
 							case 1:
-								current_gui->toolbar->url_bar =
-										!current_gui->toolbar->url_bar;
+								current_gui->toolbar->display_url =
+										!current_gui->toolbar->display_url;
 								break;
 							case 2:
-								current_gui->toolbar->throbber =
-										!current_gui->toolbar->throbber;
+								current_gui->toolbar->display_throbber =
+										!current_gui->toolbar->display_throbber;
 								break;
 							case 3:
-								current_gui->toolbar->status_window =
-										!current_gui->toolbar->status_window;
+								current_gui->toolbar->display_status =
+										!current_gui->toolbar->display_status;
 						}
-						if (ro_theme_update_toolbar(current_gui->toolbar,
-								current_gui->window) || true) {
-							wimp_window_state state;
-							state.w = current_gui->window;
-							wimp_get_window_state(&state);
-							current_gui->old_height = 0xffffffff;
-							ro_gui_window_open(current_gui, (wimp_open *)&state);
-						}
+						current_gui->toolbar->reformat_buttons = true;
+						height = current_gui->toolbar->height;
+						ro_gui_theme_process_toolbar(current_gui->toolbar, -1);
+						if (height != current_gui->toolbar->height)
+							ro_gui_window_update_dimensions(current_gui,
+								height - current_gui->toolbar->height);
 						ro_gui_menu_prepare_toolbars();
 						break;
 					case 3: /* Render -> */
@@ -1497,10 +1495,10 @@ static void ro_gui_menu_prepare_toolbars(void) {
 			browser_toolbar_menu->entries[index].icon_flags &= ~wimp_ICON_SHADED;
 			browser_toolbar_menu->entries[index].menu_flags &= ~wimp_MENU_TICKED;
 		}
-		if (toolbar->standard_buttons) browser_toolbar_menu->entries[0].menu_flags |= wimp_MENU_TICKED;
-		if (toolbar->url_bar) browser_toolbar_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
-		if (toolbar->throbber) browser_toolbar_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
-		if (toolbar->status_window) browser_toolbar_menu->entries[3].menu_flags |= wimp_MENU_TICKED;
+		if (toolbar->display_buttons) browser_toolbar_menu->entries[0].menu_flags |= wimp_MENU_TICKED;
+		if (toolbar->display_url) browser_toolbar_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
+		if (toolbar->display_throbber) browser_toolbar_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
+		if (toolbar->display_status) browser_toolbar_menu->entries[3].menu_flags |= wimp_MENU_TICKED;
 	} else {
 		for (index = 0; index < 4; index++) {
 			browser_toolbar_menu->entries[index].icon_flags |= wimp_ICON_SHADED;

@@ -30,7 +30,6 @@
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/thumbnail.h"
-#include "netsurf/riscos/toolbar.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/url.h"
@@ -79,11 +78,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->reformat_pending = false;
 	g->old_width = 0;
 	g->old_height = 0;
-	strcpy(g->status, "");
 	strcpy(g->title, "NetSurf");
-	strcpy(g->url, "");
 	g->throbber = 0;
-	strcpy(g->throb_buf, "throbber0");
 	g->throbtime = 0;
 
 	/*	Set the window position
@@ -202,6 +198,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window.title_data.indirected_text.validation = (char *) -1;
 	window.title_data.indirected_text.size = 255;
 	window.icon_count = 0;
+	if (open_centred) {
+		scroll_width = ro_get_vscroll_width(g->window);
+		window.visible.x0 -= scroll_width;
+	}
 
 	error = xwimp_create_window(&window, &g->window);
 	if (error) {
@@ -212,8 +212,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return 0;
 	}
 
-	ro_theme_create_browser_toolbar(g);
-
 	g->prev = 0;
 	g->next = window_list;
 	if (window_list)
@@ -221,10 +219,16 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window_list = g;
 	window_count++;
 
+	/*	Add in a toolbar
+	*/
+	g->toolbar = ro_gui_theme_create_toolbar(NULL, THEME_BROWSER_TOOLBAR);
+	ro_gui_theme_attach_toolbar(g->toolbar, g->window);
+
 	/*	Set the window options
 	*/
 	bw->window = g;
 	ro_gui_window_clone_options(bw, clone);
+	ro_gui_prepare_navigate(g);
 
 	/*	Open the window
 	*/
@@ -237,22 +241,15 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return g;
 	}
 
-	/*	Only fix the centralisation if we've opened the window centred
-	*/
-	if (open_centred) {
-		scroll_width = ro_get_vscroll_width(g->window);
-		state.visible.x0 -= scroll_width;
-	}
-
 	/*	Open the window at the top of the stack
 	*/
 	state.next = wimp_TOP;
 	ro_gui_window_open(g, (wimp_open*)&state);
-	ro_gui_prepare_navigate(g);
+
 
 	/*	Set the caret position to the URL bar
 	*/
-	if (g->toolbar && g->toolbar->url_bar)
+	if (g->toolbar && g->toolbar->display_url)
 		error = xwimp_set_caret_position(
 				g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL, -1, -1, -1, 0);
@@ -291,7 +288,7 @@ void gui_window_destroy(struct gui_window *g)
 	if (g->next)
 		g->next->prev = g->prev;
 
-	ro_toolbar_destroy(g->toolbar);
+	ro_gui_theme_destroy_toolbar(g->toolbar);
 
 	/* delete window */
 	error = xwimp_delete_window(g->window);
@@ -715,9 +712,8 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
-	if (!g->toolbar)
+	if ((!g->toolbar) || (!g->toolbar->status_handle))
 		return;
-
 	ro_gui_set_icon_string(g->toolbar->status_handle,
 			ICON_STATUS_TEXT, text);
 }
@@ -734,6 +730,7 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	wimp_caret caret;
 	os_error *error;
+	char *toolbar_url;
 
 	if (!g->toolbar)
 		return;
@@ -754,8 +751,10 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 			caret.i == ICON_TOOLBAR_URL))
 		return;
 
+	toolbar_url = ro_gui_get_icon_string(g->toolbar->toolbar_handle,
+			ICON_TOOLBAR_URL);
 	error = xwimp_set_caret_position(g->toolbar->toolbar_handle,
-			ICON_TOOLBAR_URL, 0, 0, -1, (int) strlen(g->url));
+			ICON_TOOLBAR_URL, 0, 0, -1, (int)strlen(toolbar_url));
 	if (error) {
 		LOG(("xwimp_set_caret_position: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -763,6 +762,65 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 	}
 }
 
+
+/**
+ * Forces all windows to be set to the current theme
+ *
+ * /param g        the gui window to update
+ */
+void ro_gui_window_update_theme(void) {
+  	int height;
+	struct gui_window *g;
+	for (g = window_list; g; g = g->next) {
+		if (g->toolbar) {
+			height = g->toolbar->height;
+			if (!ro_gui_theme_update_toolbar(NULL, g->toolbar)) {
+				ro_gui_theme_destroy_toolbar(g->toolbar);
+				g->toolbar = NULL;
+				if (height != 0)
+					ro_gui_window_update_dimensions(g, height);
+			} else {
+			  	if (height != g->toolbar->height)
+					ro_gui_window_update_dimensions(g, height -
+						g->toolbar->height);
+			}
+			ro_gui_prepare_navigate(g);
+		}
+	}
+	if (hotlist_toolbar) {
+		if (!ro_gui_theme_update_toolbar(NULL, hotlist_toolbar)) {
+			ro_gui_theme_destroy_toolbar(hotlist_toolbar);
+			hotlist_toolbar = NULL;
+		}
+		xwimp_force_redraw(hotlist_window, 0, -16384, 16384, 16384);
+	}
+
+}
+
+
+/**
+ * Forces the windows extent to be updated
+ *
+ * /param g        the gui window to update
+ * /param yscroll  an amount to scroll the vertical scroll bar by
+ */
+void ro_gui_window_update_dimensions(struct gui_window *g, int yscroll) {
+ 	os_error *error;
+	wimp_window_state state;
+	if (!g) return;
+	state.w = g->window;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	state.yscroll -= yscroll;
+	g->old_height = -1; 
+	ro_gui_window_open(g, (wimp_open *)&state);
+/*	gui_window_redraw_window(g); */
+}
 
 /**
  * Open a window using the given wimp_open, handling toolbars and resizing.
@@ -866,7 +924,7 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 	}
 
 	if (g->toolbar)
-		ro_theme_resize_toolbar(g->toolbar, g->window);
+		ro_gui_theme_process_toolbar(g->toolbar, -1);
 }
 
 
@@ -878,21 +936,21 @@ void ro_gui_throb(void)
 {
 	os_t t;
 	struct gui_window *g;
+	char throb_buf[12];
 
 	xos_read_monotonic_time(&t);
 
 	for (g = window_list; g; g = g->next) {
-		if (!g->bw->throbbing || !g->toolbar || (g->toolbar->throbber_frames == 0))
-			continue;
-		if (t < g->throbtime + 10)
+		if (!g->bw->throbbing || !g->toolbar || !g->toolbar->display_throbber ||
+				!g->toolbar->theme || (t < g->throbtime + 10))
 			continue;
 		g->throbtime = t;
 		g->throbber++;
-		if (g->toolbar->throbber_frames < g->throbber)
-			g->throbber = 0;
-		sprintf(g->throb_buf, "throbber%i", g->throbber);
-		ro_gui_redraw_icon(g->toolbar->toolbar_handle,
-				ICON_TOOLBAR_THROBBER);
+		if (g->toolbar->theme->throbber_frames < g->throbber)
+			g->throbber = 1;
+		sprintf(throb_buf, "throbber%i", g->throbber);
+		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
+				ICON_TOOLBAR_THROBBER, throb_buf);
 	}
 }
 
@@ -1174,10 +1232,14 @@ void gui_window_start_throbber(struct gui_window *g)
 
 void gui_window_stop_throbber(struct gui_window *g)
 {
+	char throb_buf[12];
 	ro_gui_prepare_navigate(g);
 	g->throbber = 0;
-	strcpy(g->throb_buf, "throbber0");
-	ro_gui_redraw_icon(g->toolbar->toolbar_handle, ICON_TOOLBAR_THROBBER);
+	if (g->toolbar) {
+		strcpy(throb_buf, "throbber0");
+		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
+				ICON_TOOLBAR_THROBBER, throb_buf);
+	}
 }
 
 
@@ -1240,6 +1302,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 	wimp_window_state state;
 	int y;
 	char *url;
+	char *toolbar_url;
 	os_error *error;
 	wimp_pointer pointer;
 	url_func_result res;
@@ -1369,7 +1432,9 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		case wimp_KEY_RETURN:
 			if (!toolbar)
 				break;
-			res = url_normalize(g->url, &url);
+			toolbar_url = ro_gui_get_icon_string(g->toolbar->toolbar_handle,
+					ICON_TOOLBAR_URL);
+			res = url_normalize(toolbar_url, &url);
 			if (res == URL_FUNC_OK) {
 				gui_window_set_url(g, url);
 				browser_window_go(g->bw, url);
@@ -1383,7 +1448,8 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 
 		case 14:	/* CTRL+N */
 			current_gui = g;
-			browser_window_create(g->url, g->bw);
+			browser_window_create(current_gui->bw->current_content->url,
+					current_gui->bw);
 			return true;
 		case 18:	/* CTRL+R */
 			browser_window_reload(g->bw, false);
@@ -1680,18 +1746,19 @@ void ro_gui_window_clone_options(struct browser_window *new_bw,
 	if (new_gui->toolbar) {
 		if ((old_gui) && (old_gui->toolbar)) {
 			new_gui->toolbar->status_width = old_gui->toolbar->status_width;
-			new_gui->toolbar->status_window = old_gui->toolbar->status_window;
-			new_gui->toolbar->standard_buttons = old_gui->toolbar->standard_buttons;
-			new_gui->toolbar->url_bar = old_gui->toolbar->url_bar;
-			new_gui->toolbar->throbber = old_gui->toolbar->throbber;
+			new_gui->toolbar->display_status = old_gui->toolbar->display_status;
+			new_gui->toolbar->display_buttons = old_gui->toolbar->display_buttons;
+			new_gui->toolbar->display_url = old_gui->toolbar->display_url;
+			new_gui->toolbar->display_throbber = old_gui->toolbar->display_throbber;
 		} else {
 			new_gui->toolbar->status_width = option_toolbar_status_width;
-			new_gui->toolbar->status_window = option_toolbar_show_status;
-			new_gui->toolbar->standard_buttons = option_toolbar_show_buttons;
-			new_gui->toolbar->url_bar = option_toolbar_show_address;
-			new_gui->toolbar->throbber = option_toolbar_show_throbber;
+			new_gui->toolbar->display_status = option_toolbar_show_status;
+			new_gui->toolbar->display_buttons = option_toolbar_show_buttons;
+			new_gui->toolbar->display_url = option_toolbar_show_address;
+			new_gui->toolbar->display_throbber = option_toolbar_show_throbber;
 		}
-		ro_theme_update_toolbar(new_gui->toolbar, new_gui->window);
+		new_gui->toolbar->reformat_buttons = true;
+		ro_gui_theme_process_toolbar(new_gui->toolbar, -1);
 	}
 }
 
@@ -1726,10 +1793,10 @@ void ro_gui_window_default_options(struct browser_window *bw) {
 	*/
 	if (gui->toolbar) {
 		option_toolbar_status_width = gui->toolbar->status_width;
-		option_toolbar_show_status = gui->toolbar->status_window;
-		option_toolbar_show_buttons = gui->toolbar->standard_buttons;
-		option_toolbar_show_address = gui->toolbar->url_bar;
-		option_toolbar_show_throbber = gui->toolbar->throbber;
+		option_toolbar_show_status = gui->toolbar->display_status;
+		option_toolbar_show_buttons = gui->toolbar->display_buttons;
+		option_toolbar_show_address = gui->toolbar->display_url;
+		option_toolbar_show_throbber = gui->toolbar->display_throbber;
 	}
 }
 

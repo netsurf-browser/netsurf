@@ -25,7 +25,6 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/tinct.h"
-#include "netsurf/riscos/toolbar.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -303,7 +302,8 @@ void ro_gui_hotlist_init(void) {
 
 	/*	Create our toolbar
 	*/
-	ro_theme_create_hotlist_toolbar();
+	hotlist_toolbar = ro_gui_theme_create_toolbar(NULL, THEME_HOTLIST_TOOLBAR);
+	ro_gui_theme_attach_toolbar(hotlist_toolbar, hotlist_window);
 
 	/*	Update the extent
 	*/

@@ -32,6 +32,8 @@
 */
 #define MAX_PERSISTANT 8
 
+
+
 wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, download_template,
 #ifdef WITH_AUTH
@@ -45,16 +47,29 @@ static int ro_gui_choices_font_size;
 static int ro_gui_choices_font_min_size;
 static bool ro_gui_choices_http_proxy;
 static int ro_gui_choices_http_proxy_auth;
-static char *theme_choice = 0;
-static struct theme_entry *theme_list = 0;
-static unsigned int theme_list_entries = 0;
 static int config_br_icon = -1;
 static const char *ro_gui_choices_lang = 0;
 static const char *ro_gui_choices_alang = 0;
 
+
+struct toolbar_display {
+	struct toolbar *toolbar;
+	struct theme_descriptor *descriptor;
+	int icon_number;
+	struct toolbar_display *next;
+};
+
+static struct theme_descriptor *theme_choice = NULL;
+static struct theme_descriptor *theme_list = NULL;
+static int theme_count = 0;
+static struct toolbar_display *toolbars = NULL;
+static char theme_radio_validation[] = "Sradiooff,radioon\0";
+
+
 static const char *ro_gui_proxy_auth_name[] = {
 	"ProxyNone", "ProxyBasic", "ProxyNTLM"
 };
+
 
 /*	A simple mapping of parent and child
 */
@@ -72,12 +87,14 @@ static void ro_gui_dialog_click_config_prox(wimp_pointer *pointer);
 static void ro_gui_dialog_config_proxy_update(void);
 static void ro_gui_dialog_click_config_th(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer);
-static void ro_gui_redraw_config_th_pane_plot(wimp_draw *redraw);
 static void ro_gui_dialog_click_zoom(wimp_pointer *pointer);
 static void ro_gui_dialog_reset_zoom(void);
 static void ro_gui_dialog_click_warning(wimp_pointer *pointer);
 static const char *language_name(const char *code);
-static struct theme_entry *ro_gui_theme_entry(int index);
+
+static void ro_gui_dialog_load_themes(void);
+static void ro_gui_dialog_free_themes(void);
+
 
 /**
  * Load and create dialogs from template file.
@@ -483,13 +500,8 @@ void ro_gui_dialog_config_prepare(void)
 	ro_gui_dialog_config_proxy_update();
 
 	/* themes pane */
-	free(theme_choice);
-	theme_choice = 0;
-	if (option_theme)
-		theme_choice = strdup(option_theme);
-	if (theme_list)
-		ro_theme_free(theme_list);
-	theme_list = ro_theme_list(&theme_list_entries);
+	ro_gui_dialog_load_themes();
+	theme_choice = ro_gui_theme_find(option_theme);
 }
 
 
@@ -497,8 +509,7 @@ void ro_gui_dialog_config_prepare(void)
  * Set the current options to the settings in the choices panes.
  */
 
-void ro_gui_dialog_config_set(void)
-{
+void ro_gui_dialog_config_set(void) {
 	/* browser pane */
 	option_font_size = ro_gui_choices_font_size;
 	option_font_min_size = ro_gui_choices_font_min_size;
@@ -537,8 +548,14 @@ void ro_gui_dialog_config_set(void)
 			ICON_CONFIG_PROX_AUTHPASS));
 
 	/* theme pane */
-	free(option_theme);
-	option_theme = strdup(theme_choice);
+	if (option_theme) {
+		free(option_theme);
+		option_theme = NULL;
+	}
+	if (theme_choice) {
+		option_theme = strdup(theme_choice->filename);
+		ro_gui_theme_apply(theme_choice);
+	}
 }
 
 
@@ -554,16 +571,16 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 			ro_gui_save_options();
 			if (pointer->buttons == wimp_CLICK_SELECT) {
 				ro_gui_dialog_close(dialog_config);
-				if (theme_list) {
-					ro_theme_free(theme_list);
-					theme_list = 0;
-				}
+				ro_gui_dialog_free_themes();
 			}
 			break;
 		case ICON_CONFIG_CANCEL:
-			if (pointer->buttons == wimp_CLICK_SELECT)
+			if (pointer->buttons == wimp_CLICK_SELECT) {
 				ro_gui_dialog_close(dialog_config);
-			ro_gui_dialog_config_prepare();
+				ro_gui_dialog_free_themes();
+			} else {
+				ro_gui_dialog_config_prepare();
+			}
 			break;
 		case ICON_CONFIG_BROWSER:
 			/* set selected state of radio icon to prevent
@@ -809,172 +826,24 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 /**
  * Handle clicks in the scrolling Theme Choices list pane.
  */
+void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer) {
+	struct toolbar_display *link;
+  	int i = pointer->i;
+  	if (i < 0) return;
 
-void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer)
-{
-	unsigned int i, y;
-	wimp_window_state state;
-	os_error *error;
-
-	state.w = dialog_config_th_pane;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-
-	y = -(pointer->pos.y - (state.visible.y1 - state.yscroll)) /
-			THEME_HEIGHT;
-
-	if (!theme_list || theme_list_entries <= y)
-		return;
-
-	if (theme_choice && strcmp(theme_choice, ro_gui_theme_entry(y)->name) == 0)
-		return;
-
-	if (theme_choice) {
-		for (i = 0; i != theme_list_entries &&
-				strcmp(theme_choice, ro_gui_theme_entry(i)->name); i++)
-			;
-		if (i != theme_list_entries) {
-			error = xwimp_force_redraw(dialog_config_th_pane,
-					0, -i * THEME_HEIGHT - THEME_HEIGHT - 2,
-					THEME_WIDTH, -i * THEME_HEIGHT + 2);
-			if (error) {
-				LOG(("xwimp_force_redraw: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("WimpError", error->errmess);
-				return;
-			}
-		}
-	}
-
-	free(theme_choice);
-	theme_choice = strdup(ro_gui_theme_entry(y)->name);
-
-	error = xwimp_force_redraw(dialog_config_th_pane,
-			0, -y * THEME_HEIGHT - THEME_HEIGHT - 2,
-			THEME_WIDTH, -y * THEME_HEIGHT + 2);
-	if (error) {
-		LOG(("xwimp_force_redraw: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-}
-
-struct theme_entry *ro_gui_theme_entry(int index) {
-	struct theme_entry *entry = theme_list;
-	for (int i = 0; i < index; i++) entry = entry->next;
-	return entry;
-}
-
-/**
- * Redraw the scrolling Theme Choices list pane.
- */
-
-void ro_gui_redraw_config_th_pane(wimp_draw *redraw)
-{
-	osbool more;
-	os_error *error;
-
-	error = xwimp_redraw_window(redraw, &more);
-	if (error) {
-		LOG(("xwimp_redraw_window: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-	while (more) {
-		ro_gui_redraw_config_th_pane_plot(redraw);
-		error = xwimp_get_rectangle(redraw, &more);
-		if (error) {
-			LOG(("xwimp_get_rectangle: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-	}
-}
-
-
-/**
- * Redraw the scrolling Theme Choices list pane.
- */
-
-void ro_gui_redraw_config_th_pane_plot(wimp_draw *redraw)
-{
-	unsigned int i, j;
-	int x0 = redraw->box.x0 - redraw->xscroll;
-	int y0 = redraw->box.y1 - redraw->yscroll;
-	int x;
-	static char sprite[][10] = { "back", "forward", "stop", "reload",
-			"history", "scale", "save" };
-	wimp_icon icon;
-	os_error *error = 0;
-
-	icon.flags = wimp_ICON_SPRITE | wimp_ICON_HCENTRED |
-			wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED;
-
-	for (i = 0; i != theme_list_entries; i++) {
-		error = xwimptextop_set_colour(os_COLOUR_BLACK,
-				os_COLOUR_VERY_LIGHT_GREY);
-		if (error)
-			break;
-
-		/* plot background for selected theme */
-		if (theme_choice &&
-				strcmp(ro_gui_theme_entry(i)->name, theme_choice) == 0) {
-			error = xcolourtrans_set_gcol(os_COLOUR_LIGHT_GREY,
-					0, os_ACTION_OVERWRITE, 0, 0);
-			if (error)
-				break;
-			error = xos_plot(os_MOVE_TO, x0, y0 - i * THEME_HEIGHT);
-			if (error)
-				break;
-			error = xos_plot(os_PLOT_RECTANGLE | os_PLOT_BY,
-					THEME_WIDTH, -THEME_HEIGHT);
-			if (error)
-				break;
-			error = xwimptextop_set_colour(os_COLOUR_BLACK,
-					os_COLOUR_LIGHT_GREY);
-			if (error)
-				break;
-		}
-
-		/* icons */
-		if (ro_gui_theme_entry(i)->sprite_area) {
-			icon.extent.y0 = -i * THEME_HEIGHT - THEME_HEIGHT;
-			icon.extent.y1 = -i * THEME_HEIGHT;
-			icon.data.indirected_sprite.area = ro_gui_theme_entry(i)->sprite_area;
-			icon.data.indirected_sprite.size = 12;
-			for (j = 0, x = 0; j != sizeof sprite / sizeof sprite[0]; j++) {
-				icon.extent.x0 = x;
-				icon.extent.x1 = x + 50;
-				icon.data.indirected_sprite.id =
-						(osspriteop_id) sprite[j];
-				error = xwimp_plot_icon(&icon);
-				if (error)
-					break;
-				x += 50;
-			}
-		}
-		if (error)
-			break;
-
-		/* theme name */
-		error = xwimptextop_paint(0, ro_gui_theme_entry(i)->name,
-				x0 + 400,
-				y0 - i * THEME_HEIGHT - THEME_HEIGHT / 2);
-		if (error)
-			break;
-	}
-
-	if (error) {
-		LOG(("0x%x: %s", error->errnum, error->errmess));
-		warn_user("MiscError", error->errmess);
+	/*	Set the clicked theme as selected
+	*/
+	link = toolbars;
+	while (link) {
+	  	if (link->icon_number == i) {
+	  	  	theme_choice = link->descriptor;
+	  		ro_gui_set_icon_selected_state(dialog_config_th_pane,
+	  			link->icon_number, true);
+	  	} else {
+	  		ro_gui_set_icon_selected_state(dialog_config_th_pane,
+	  			link->icon_number, false);
+	  	}
+		link = link->next; 
 	}
 }
 
@@ -1114,3 +983,166 @@ const char *language_name(const char *code)
 	key[6] = code[1];
 	return messages_get(key);
 }
+
+
+/**
+ * Loads and nests all available themes in the theme pane.
+ */
+void ro_gui_dialog_load_themes(void) {
+	os_error *error;
+	os_box extent = { 0, 0, 0, 0 };
+	struct theme_descriptor *descriptor;
+	struct toolbar_display *link;
+	struct toolbar_display *toolbar_display;
+	struct toolbar *toolbar;
+	wimp_icon_create new_icon;
+	wimp_window_state state;
+	int parent_width, nested_y, min_extent, base_extent;
+ 
+	/*	Delete our old list and get/open a new one
+	*/
+	ro_gui_dialog_free_themes();
+	theme_list = ro_gui_theme_get_available();
+	ro_gui_theme_open(theme_list, true);
+	theme_choice = ro_gui_theme_find(option_theme);
+	
+	/*	Create toolbars for each theme
+	*/
+	theme_count = 0;
+	descriptor = theme_list;
+	while (descriptor) {
+		/*	Try to create a toolbar
+		*/
+		toolbar = ro_gui_theme_create_toolbar(descriptor, THEME_BROWSER_TOOLBAR);
+		if (toolbar) {
+			toolbar_display = calloc(sizeof(struct toolbar_display), 1);
+			if (!toolbar_display) {
+				LOG(("No memory for calloc()"));
+				warn_user("NoMemory", 0);
+				return;
+			}
+			toolbar_display->toolbar = toolbar;
+			toolbar_display->descriptor = descriptor;
+			if (!toolbars) {
+				toolbars = toolbar_display;
+			} else {
+				link = toolbars;
+				while (link->next) link = link->next;
+				link->next = toolbar_display;
+			}
+			theme_count++;
+		}
+		descriptor = descriptor->next;
+	}
+	
+	/*	Nest the toolbars
+	*/
+	state.w = dialog_config_th_pane;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+			error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	parent_width = state.visible.x1 - state.visible.x0;
+	min_extent = state.visible.y0 - state.visible.y1;
+	nested_y = 0;
+	base_extent = state.visible.y1;
+	extent.x1 = parent_width;
+	link = toolbars;
+	new_icon.w = dialog_config_th_pane;
+	new_icon.icon.extent.x0 = 0;
+	new_icon.icon.extent.x1 = parent_width;
+	new_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE | wimp_ICON_INDIRECTED |
+			wimp_ICON_VCENTRED |
+			(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
+			(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) |
+			(wimp_BUTTON_RADIO << wimp_ICON_BUTTON_TYPE_SHIFT) |
+			(1 << wimp_ICON_ESG_SHIFT);
+	new_icon.icon.data.indirected_text_and_sprite.validation =
+			theme_radio_validation;
+	while (link) {
+		/*	Update the toolbar and extent
+		*/
+		ro_gui_theme_process_toolbar(link->toolbar, parent_width);
+		extent.y0 = nested_y - link->toolbar->height - 48;
+		if (link->next) extent.y0 -= 16;
+		if (extent.y0 > min_extent) extent.y0 = min_extent;
+		xwimp_set_extent(dialog_config_th_pane, &extent);
+		
+		/*	Create the descriptor icon
+		*/
+		new_icon.icon.extent.y1 = nested_y - link->toolbar->height;
+		new_icon.icon.extent.y0 = nested_y - link->toolbar->height - 48;
+		new_icon.icon.data.indirected_text_and_sprite.text =
+			link->descriptor->filename;
+		new_icon.icon.data.indirected_text_and_sprite.size =
+			strlen(link->descriptor->filename) + 1;
+		xwimp_create_icon(&new_icon, &link->icon_number);
+		
+		/*	Nest the toolbar window
+		*/
+		state.w = link->toolbar->toolbar_handle;
+		state.visible.y1 = nested_y + base_extent;
+		state.visible.y0 = state.visible.y1 - link->toolbar->height + 2;
+		xwimp_open_window_nested((wimp_open *)&state, dialog_config_th_pane,
+				wimp_CHILD_LINKS_PARENT_WORK_AREA
+						<< wimp_CHILD_XORIGIN_SHIFT |
+				wimp_CHILD_LINKS_PARENT_WORK_AREA
+						<< wimp_CHILD_YORIGIN_SHIFT |
+				wimp_CHILD_LINKS_PARENT_WORK_AREA
+						<< wimp_CHILD_LS_EDGE_SHIFT |
+				wimp_CHILD_LINKS_PARENT_WORK_AREA
+						<< wimp_CHILD_BS_EDGE_SHIFT |
+				wimp_CHILD_LINKS_PARENT_WORK_AREA
+						<< wimp_CHILD_RS_EDGE_SHIFT |
+				wimp_CHILD_LINKS_PARENT_WORK_AREA 
+						<< wimp_CHILD_TS_EDGE_SHIFT);
+						
+		/*	Continue processing
+		*/
+		nested_y -= link->toolbar->height + 48 + 16;
+		link = link->next;
+	}
+	
+	/*	Set the current theme as selected
+	*/
+	link = toolbars;
+	while (link) {
+	  	if (link->descriptor == theme_choice) {
+	  		ro_gui_set_icon_selected_state(dialog_config_th_pane,
+	  			link->icon_number, true);
+	  		break;
+	  	}
+		link = link->next; 
+	}
+}
+
+
+/**
+ * Removes and closes all themes in the theme pane.
+ */
+void ro_gui_dialog_free_themes(void) {
+	struct toolbar_display *toolbar;
+	struct toolbar_display *next_toolbar;
+	
+	/*	Free all our toolbars
+	*/
+	next_toolbar = toolbars;
+	while ((toolbar = next_toolbar) != NULL) {
+		xwimp_delete_icon(dialog_config_th_pane, toolbar->icon_number);
+		ro_gui_theme_destroy_toolbar(toolbar->toolbar);
+		next_toolbar = toolbar->next;
+		free(toolbar);
+	}
+	toolbars = NULL;
+	
+	/*	Close all our themes
+	*/
+	if (theme_list) ro_gui_theme_close(theme_list, true);
+	theme_list = NULL;
+	theme_count = 0;
+	theme_choice = NULL;
+}
+

@@ -28,7 +28,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/image.h"
 #include "netsurf/riscos/options.h"
-#include "netsurf/riscos/toolbar.h"
+#include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/ufont.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"

@@ -75,12 +75,9 @@ struct gui_window {
 	int old_width;		/**< Width when last opened / os units. */
 	int old_height;		/**< Height when last opened / os units. */
 
-	char status[256];	/**< Buffer for status bar. */
 	char title[256];	/**< Buffer for window title. */
-	char url[256];		/**< Buffer for url entry field. */
 
 	int throbber;		/**< Current frame of throbber animation. */
-	char throb_buf[12];	/**< Buffer for throbber sprite name. */
 	int throbtime;		/**< Time of last throbber frame. */
 
 	/** Options. */
@@ -132,7 +129,6 @@ void ro_gui_dialog_click(wimp_pointer *pointer);
 void ro_gui_save_options(void);
 bool ro_gui_dialog_keypress(wimp_key *key);
 void ro_gui_dialog_close(wimp_w close);
-void ro_gui_redraw_config_th_pane(wimp_draw *redraw);
 void ro_gui_menu_prepare_hotlist(void);
 void ro_gui_dialog_open_config(void);
 void ro_gui_dialog_proxyauth_menu_selection(int item);
@@ -167,6 +163,8 @@ bool ro_gui_401login_keypress(wimp_key *key);
 /* in window.c */
 void ro_gui_window_quit(void);
 void ro_gui_window_click(struct gui_window *g, wimp_pointer *mouse);
+void ro_gui_window_update_theme(void);
+void ro_gui_window_update_dimensions(struct gui_window *g, int yscroll);
 void ro_gui_window_open(struct gui_window *g, wimp_open *open);
 void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw);
 void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer);
@@ -281,8 +279,8 @@ bool ro_gui_print_keypress(wimp_key *key);
 #define ICON_TOOLBAR_HOTLIST_LAST 6
 
 /* icon numbers for toolbar status window */
-#define ICON_STATUS_TEXT 0
-#define ICON_STATUS_RESIZE 1
+#define ICON_STATUS_RESIZE 0
+#define ICON_STATUS_TEXT 1
 
 #define ICON_CONFIG_SAVE 0
 #define ICON_CONFIG_CANCEL 1

@@ -31,7 +31,7 @@ OBJECTS_RISCOS += 401login.o debugwin.o \
 	jpeg.o menus.o mng.o mouseactions.o plugin.o print.o \
 	save.o save_complete.o save_draw.o save_text.o \
 	schedule.o search.o sprite.o textselection.o theme.o thumbnail.o \
-	toolbar.o ufont.o uri.o url_protocol.o wimp.o window.o	# riscos/
+	ufont.o uri.o url_protocol.o wimp.o window.o	# riscos/
 # OBJECTS_RISCOS += memdebug.o
 
 OBJECTS_NCOS = $(OBJECTS_RISCOS)

@@ -39,6 +39,7 @@ int ro_get_hscroll_height(wimp_w w) {
 
   	/*	Read the hscroll height
   	*/
+  	if (!w) w = dialog_debug;
   	furniture_sizes.w = w;
 	furniture_sizes.border_widths.y0 = 38;
 	xwimpextend_get_furniture_sizes(&furniture_sizes);
@@ -66,6 +67,7 @@ int ro_get_vscroll_width(wimp_w w) {
 
   	/*	Read the hscroll height
   	*/
+  	if (!w) w = dialog_debug;
   	furniture_sizes.w = w;
 	furniture_sizes.border_widths.x1 = 38;
 	xwimpextend_get_furniture_sizes(&furniture_sizes);
@@ -214,7 +216,8 @@ void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value) {
  * \param  i     icon handle
  * \param  state selected state
  */
-#define ro_gui_set_icon_selected_state(w, i, state) xwimp_set_icon_state(w, i, (state ? wimp_ICON_SELECTED : 0), wimp_ICON_SELECTED)
+#define ro_gui_set_icon_selected_state(w, i, state) \
+		xwimp_set_icon_state(w, i, (state ? wimp_ICON_SELECTED : 0), wimp_ICON_SELECTED)
 
 
 /**
@@ -239,7 +242,8 @@ bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
  * \param  i     icon handle
  * \param  state selected state
  */
-#define ro_gui_set_icon_shaded_state(w, i, state) xwimp_set_icon_state(w, i, (state ? wimp_ICON_SHADED : 0), wimp_ICON_SHADED)
+#define ro_gui_set_icon_shaded_state(w, i, state) \
+		xwimp_set_icon_state(w, i, (state ? wimp_ICON_SHADED : 0), wimp_ICON_SHADED)
 
 
 /**
@@ -331,7 +335,13 @@ void ro_gui_set_caret_first(wimp_w w) {
 		button = (state.icon.flags >> wimp_ICON_BUTTON_TYPE_SHIFT) & 0xf;
 		if ((button == wimp_BUTTON_WRITE_CLICK_DRAG) ||
 				(button == wimp_BUTTON_WRITABLE)) {
-			xwimp_set_caret_position(w, icon, 0, 0, -1, strlen(state.icon.data.indirected_text.text));
+			error = xwimp_set_caret_position(w, icon, 0, 0, -1,
+					strlen(state.icon.data.indirected_text.text));
+			if (error) {
+				LOG(("xwimp_set_caret_position: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
 			return;
 		}
 	}
@@ -475,7 +485,7 @@ bool ro_gui_wimp_sprite_exists(const char *sprite)
  *
  * \param  parent  parent window
  * \param  pane    pane to open in parent window
- * \param  offset  offset of top-left of pane from top-left of parent
+ * \param  offset  inset of pane from parent
  */
 
 void ro_gui_open_pane(wimp_w parent, wimp_w pane, int offset)
@@ -493,6 +503,8 @@ void ro_gui_open_pane(wimp_w parent, wimp_w pane, int offset)
 	}
 	state.w = pane;
 	state.visible.x0 += offset;
+	state.visible.x1 -= offset;
+	state.visible.y0 += offset;
 	state.visible.y1 -= offset;
 	state.xscroll = 0;
 	state.yscroll = 0;
@@ -503,7 +515,7 @@ void ro_gui_open_pane(wimp_w parent, wimp_w pane, int offset)
 			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
 					<< wimp_CHILD_YORIGIN_SHIFT |
 			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-				<< wimp_CHILD_LS_EDGE_SHIFT |
+					<< wimp_CHILD_LS_EDGE_SHIFT |
 			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
 					<< wimp_CHILD_BS_EDGE_SHIFT |
 			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT

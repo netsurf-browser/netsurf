@@ -60,7 +60,7 @@ bool option_thumbnail_32bpp = true;\
 int option_thumbnail_oversampling = 0;\
 bool option_history_tooltip = true; \
 int option_scale = 100; \
-int option_toolbar_status_width = 640; \
+int option_toolbar_status_width = 5000; \
 bool option_toolbar_show_status = true; \
 bool option_toolbar_show_buttons = true; \
 bool option_toolbar_show_address = true; \
@@ -95,7 +95,7 @@ bool option_plugins = false;
 { "history_tooltip",        OPTION_BOOL,    &option_history_tooltip }, \
 { "scale",                  OPTION_INTEGER, &option_scale }, \
 { "toolbar_show_status",    OPTION_BOOL,    &option_toolbar_show_status }, \
-{ "toolbar_status_width",   OPTION_INTEGER, &option_toolbar_status_width }, \
+{ "toolbar_status_size",    OPTION_INTEGER, &option_toolbar_status_width }, \
 { "toolbar_show_buttons",   OPTION_BOOL,    &option_toolbar_show_buttons }, \
 { "toolbar_show_address",   OPTION_BOOL,    &option_toolbar_show_address }, \
 { "toolbar_show_throbber",  OPTION_BOOL,    &option_toolbar_show_throbber }, \

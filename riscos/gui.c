@@ -49,7 +49,6 @@
 #endif
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/theme.h"
-#include "netsurf/riscos/toolbar.h"
 #ifdef WITH_URI
 #include "netsurf/riscos/uri.h"
 #endif
@@ -60,7 +59,6 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
-
 
 const char *__dynamic_da_name = "NetSurf";	/**< For UnixLib. */
 int __feature_imagefs_is_file = 1;              /**< For UnixLib. */
@@ -172,10 +170,9 @@ static char *ro_path_to_url(const char *path);
 void gui_init(int argc, char** argv)
 {
 	char path[40];
-	char theme_fname[256];
 	os_error *error;
 	int length;
-	struct theme_entry *theme;
+	struct theme_descriptor *descriptor = NULL;
 
 	xhourglass_start(1);
 
@@ -222,23 +219,15 @@ void gui_init(int argc, char** argv)
 	if (getenv("NetSurf$Start_URI_Handler"))
 		xwimp_start_task("Desktop", 0);
 
-	if (option_theme != NULL) {
-		if ((length = snprintf(theme_fname, sizeof(theme_fname),
-				"<NetSurf$Dir>.Themes.%s", option_theme)) >= 0
-				&& length < (int)sizeof(theme_fname)
-		/* check if theme directory exists */
-				&& !is_dir(theme_fname)) {
-			free(option_theme);
-			option_theme = NULL;
-		}
-	}
-	if (option_theme == NULL)
-		strcpy(theme_fname, "<NetSurf$Dir>.Themes.Default");
-	theme = ro_theme_load(theme_fname);
-	if (theme == NULL)
-		LOG(("Unable to load default theme"));
-	ro_theme_apply(theme);
+	/*	Load our chosen theme
+  	*/
+  	ro_gui_theme_initialise();
+  	descriptor = ro_gui_theme_find(option_theme);
+  	if (!descriptor) descriptor = ro_gui_theme_find("Default");
+  	ro_gui_theme_apply(descriptor);
 
+	/*	Open the templates
+	*/
 	if ((length = snprintf(path, sizeof(path),
 			"<NetSurf$Dir>.Resources.%s.Templates",
 			option_language)) < 0 || length >= (int)sizeof(path))
@@ -684,9 +673,7 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 	osbool more;
 	os_error *error;
 
-	if (redraw->w == dialog_config_th_pane)
-		ro_gui_redraw_config_th_pane(redraw);
-	else if (redraw->w == history_window)
+	if (redraw->w == history_window)
 		ro_gui_history_redraw(redraw);
 	else if (redraw->w == hotlist_window)
 		ro_gui_hotlist_redraw(redraw);
@@ -737,10 +724,8 @@ void ro_gui_open_window_request(wimp_open *open)
 		}
 
 		g = ro_gui_status_lookup(open->w);
-		if (g && g->toolbar) {
-			g->toolbar->resize_status = 1;
-			ro_theme_resize_toolbar(g->toolbar, g->window);
-		}
+		if (g && g->toolbar)
+			ro_gui_theme_resize_toolbar_status(g->toolbar);
 	}
 }
 

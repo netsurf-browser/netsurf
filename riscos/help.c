@@ -18,7 +18,7 @@
 #include "oslib/wimp.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
-#include "netsurf/riscos/toolbar.h"
+#include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/log.h"
