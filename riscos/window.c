@@ -52,6 +52,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 	wimp_window window;
 	wimp_window_state state;
 	os_error *error;
+	bool open_centred = true;
 
 	gui_window *g = malloc(sizeof *g);
 	if (!g) {
@@ -70,18 +71,53 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->throbber = 0;
 	g->throbtime = 0;
 
-	ro_gui_screen_size(&screen_width, &screen_height);
+	/*	Set the window position
+	*/
+	if (clone && clone->window) {
+		state.w = clone->window->window;
+		error = xwimp_get_window_state(&state);
+		if (error) {
+			LOG(("xwimp_get_window_state: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+		window.visible.x0 = state.visible.x0;
+		window.visible.x1 = state.visible.x1;
+		window.visible.y0 = state.visible.y0 - 48;
+		window.visible.y1 = state.visible.y1 - 48;
+		open_centred = false;
+	} else {
+		ro_gui_screen_size(&screen_width, &screen_height);
+		
+		/*	Check if we have a preferred position
+		*/
+		if ((option_window_screen_width != 0) && (option_window_screen_height != 0)) {
+			win_width = (option_window_width * screen_width) / option_window_screen_width;
+			win_height = (option_window_height * screen_height) / option_window_screen_height;
+			window.visible.x0 = (option_window_x * screen_width) / option_window_screen_width;
+			window.visible.y0 = (option_window_y * screen_height) / option_window_screen_height;
+			if (option_window_stagger) {
+				window.visible.y0 += 96 - (48 * (window_count % 5));
+			}
+			open_centred = false;
+			if (100 < win_width) win_width = 100;
+			if (100 < win_height) win_height = 100;
+		} else {
+			win_width = screen_width * 3 / 4;
+			if (1600 < win_width)
+				win_width = 1600;
+			win_height = win_width * 3 / 4;
 
-	win_width = screen_width * 3 / 4;
-	if (1600 < win_width)
-		win_width = 1600;
-	win_height = win_width * 3 / 4;
-
-	window.visible.x0 = (screen_width - win_width) / 2;
-	window.visible.y0 = ((screen_height - win_height) / 2) + 96 -
-			(48 * (window_count % 5));
-	window.visible.x1 = window.visible.x0 + win_width;
-	window.visible.y1 = window.visible.y0 + win_height;
+			window.visible.x0 = (screen_width - win_width) / 2;
+			window.visible.y0 = ((screen_height - win_height) / 2) + 96 -
+					(48 * (window_count % 5));
+		}
+		window.visible.x1 = window.visible.x0 + win_width;
+		window.visible.y1 = window.visible.y0 + win_height;
+	}
+	
+	/*	Set the general window characteristics
+	*/
 	window.xscroll = 0;
 	window.yscroll = 0;
 	window.next = wimp_TOP;
@@ -106,8 +142,8 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 	window.highlight_bg = wimp_COLOUR_CREAM;
 	window.extra_flags = 0;
 	window.extent.x0 = 0;
-	window.extent.y0 = win_height;
-	window.extent.x1 = win_width;
+	window.extent.y0 = window.visible.y1 - window.visible.y0;
+	window.extent.x1 = window.visible.x1 - window.visible.x0;
 	window.extent.y1 = 0;
 	window.title_flags = wimp_ICON_TEXT |
 			wimp_ICON_INDIRECTED |
@@ -152,8 +188,16 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 		warn_user("WimpError", error->errmess);
 		return g;
 	}
-	scroll_width = ro_get_vscroll_width(g->window);
-	state.visible.x0 -= scroll_width;
+	
+	/*	Only fix the centralisation if we've opened the window centred
+	*/
+	if (open_centred) {
+		scroll_width = ro_get_vscroll_width(g->window);
+		state.visible.x0 -= scroll_width;
+	}
+	
+	/*	Open the window at the top of the stack
+	*/
 	state.next = wimp_TOP;
 	ro_gui_window_open(g, (wimp_open*)&state);
 
@@ -460,6 +504,8 @@ void ro_gui_window_open(gui_window *g, wimp_open *open) {
 	int toolbar_height = 0;
 	struct content *content;
 	wimp_window_state state;
+	bool toggle_hack = false;
+	int screen_height, screen_width;
 
 	if (g->type != GUI_BROWSER_WINDOW) {
 		wimp_open_window(open);
@@ -468,15 +514,21 @@ void ro_gui_window_open(gui_window *g, wimp_open *open) {
 
 	content = g->data.browser.bw->current_content;
 
-	/* check for toggle to full size */
+	/* check for toggle to full size - NOW FEATURING "TEMPORARY HACK" */
 	state.w = g->window;
 	wimp_get_window_state(&state);
 	if ((state.flags & wimp_WINDOW_TOGGLED) &&
 			(state.flags & wimp_WINDOW_BOUNDED_ONCE) &&
 			!(state.flags & wimp_WINDOW_FULL_SIZE)) {
-		open->visible.y0 = 0;
-		open->visible.y1 = 0x1000;
-		height = 0x1000;
+		/*	Check if we need to perform our hack
+		*/
+		ro_gui_screen_size(&screen_width, &screen_height);
+		if ((content->height * 2 * g->scale) < screen_height) {
+			open->visible.y0 = 0;
+			open->visible.y1 = 0x1000;
+			height = 0x1000;
+			toggle_hack = true;
+		}
 	}
 
 	/* account for toolbar height, if present */
@@ -511,9 +563,7 @@ void ro_gui_window_open(gui_window *g, wimp_open *open) {
 	wimp_open_window(open);
 
 	/* update extent to actual size if toggled */
-	if ((state.flags & wimp_WINDOW_TOGGLED) &&
-			(state.flags & wimp_WINDOW_BOUNDED_ONCE) &&
-			!(state.flags & wimp_WINDOW_FULL_SIZE)) {
+	if (toggle_hack) {
 		width = open->visible.x1 - open->visible.x0;
 		height = open->visible.y1 - open->visible.y0 - toolbar_height;
 		if (content && (unsigned int)height <

@@ -39,6 +39,7 @@ extern int option_window_width;
 extern int option_window_height;
 extern int option_window_screen_width;
 extern int option_window_screen_height;
+extern bool option_window_stagger;
 extern int option_minimum_gif_delay;
 extern bool option_background_images;
 extern bool option_background_blending;
@@ -67,6 +68,7 @@ int option_window_width = 0; \
 int option_window_height = 0; \
 int option_window_screen_width = 0; \
 int option_window_screen_height = 0; \
+bool option_window_stagger = true; \
 int option_minimum_gif_delay = 10; \
 bool option_background_images = true; \
 bool option_background_blending = false;
@@ -95,6 +97,7 @@ bool option_background_blending = false;
 { "window_height",          OPTION_INTEGER, &option_window_height }, \
 { "window_screen_width",    OPTION_INTEGER, &option_window_screen_width }, \
 { "window_screen_height",   OPTION_INTEGER, &option_window_screen_height }, \
+{ "window_stagger",         OPTION_BOOL,    &option_window_stagger }, \
 { "minimum_gif_delay",      OPTION_INTEGER, &option_minimum_gif_delay }, \
 { "background_images",      OPTION_BOOL,    &option_background_images }, \
 { "background_blending",    OPTION_BOOL,    &option_background_blending }

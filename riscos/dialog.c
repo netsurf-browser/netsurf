@@ -261,9 +261,7 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 			get_browser_choices();
 			get_proxy_choices();
 			get_theme_choices();
-			xosfile_create_dir("<Choices$Write>.WWW", 0);
-			xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
-			options_write("<Choices$Write>.WWW.NetSurf.Choices");
+			ro_gui_save_options();
 			if (pointer->buttons == wimp_CLICK_SELECT) {
 				ro_gui_dialog_close(dialog_config_br);
 				ro_gui_dialog_close(dialog_config_prox);
@@ -294,6 +292,14 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 	}
 }
 
+/**
+ * Save the current options
+ */
+void ro_gui_save_options(void) {
+	xosfile_create_dir("<Choices$Write>.WWW", 0);
+	xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
+	options_write("<Choices$Write>.WWW.NetSurf.Choices");
+}
 
 /**
  * Handle clicks in the Browser Choices dialog.

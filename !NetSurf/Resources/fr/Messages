@@ -17,6 +17,7 @@ Draw:Draw  ‹^F3
 Text:Texte   ^F3
 SaveURL:Sauver le lieu
 Print:Imprimer...
+NewWindow:New window
 ViewSrc:Voir le source...  F8
 Object:Objet
 ObjInfo:Info
@@ -52,6 +53,7 @@ ToolStatus:Barre d'état
 OptDefault:Définir par défaut
 Window:Fenêtre
 WindowSave:Définir comme position par défaut
+WindowStagr:Stagger window position
 WindowReset:RAZ de la position par défaut
 Help:Aide
 HelpContent:Contenus  F1
@@ -171,7 +173,7 @@ HelpBrowserMenu0-4-0:\Rsave the current address in Acorn URI format.
 HelpBrowserMenu0-4-1:\Rsave the current address in Ant URL format.
 HelpBrowserMenu0-4-2:\Rsave the current address as plain text.
 #HelpBrowserMenu0-5:\Sopen the print dialogue box.
-HelpBrowserMenu0-6:\Sview the source code of the current page in a text editor.
+HelpBrowserMenu0-7:\Sview the source code of the current page in a text editor.
 HelpBrowserMenu1:\Rsee the options relating to the current item.
 HelpBrowserMenu1-0:\Rsee information about the current item.
 HelpBrowserMenu1-1:\Rsave the current item.
@@ -201,7 +203,7 @@ HelpBrowserMenu3-2-2:\Stoggle the display of the throbber.|MURL bar uses the rem
 HelpBrowserMenu3-2-3:\Stoggle the display of the status bar.|MHorizontal scroll bar uses the remaining width.
 HelpBrowserMenu3-3:\Rcontrol the default window positioning.
 HelpBrowserMenu3-3-0:\Sto make the current window position the default.
-HelpBrowserMenu3-3-1:\Sto return to the default window positioning.
+HelpBrowserMenu3-3-2:\Sto return to the default window positioning.
 HelpBrowserMenu3-4:\Smake your local display options the default options for NetSurf.
 HelpBrowserMenu4:\Rsee the help resources available.
 HelpBrowserMenu4-0:\Sopen the documentation contents page in a new \w.

@@ -125,6 +125,7 @@ wimp_w ro_gui_dialog_create(const char *template_name);
 wimp_window * ro_gui_dialog_load_template(const char *template_name);
 void ro_gui_dialog_open(wimp_w w);
 void ro_gui_dialog_click(wimp_pointer *pointer);
+void ro_gui_save_options(void);
 bool ro_gui_dialog_keypress(wimp_key *key);
 void ro_gui_dialog_close(wimp_w close);
 void ro_gui_redraw_config_th_pane(wimp_draw *redraw);
