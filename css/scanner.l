@@ -1,0 +1,69 @@
+/**
+ * $Id: scanner.l,v 1.1 2003/03/25 21:03:14 bursa Exp $
+ */
+
+%{
+#include "parser.h"
+%}
+
+%option 8bit
+%option batch
+%option case-insensitive
+%option header-file="scanner.h"
+%option outfile="scanner.c"
+%option prefix="css_"
+%option reentrant
+%option never-interactive
+%option noyywrap
+
+/* see CSS2 Specification, chapter 4
+   http://www.w3.org/TR/REC-CSS2/syndata.html,
+   and errata
+   http://www.w3.org/Style/css2-updates/REC-CSS2-19980512-errata */
+
+ident		{nmstart}{nmchar}*
+name		{nmchar}+
+nmstart		[a-zA-Z_]|{nonascii}|{escape}
+nonascii	[\200-\377]
+unicode		\\[0-9a-f]{1,6}[ \n\r\t\f]?
+escape		{unicode}|\\[ -~\200-\377]
+nmchar		[-a-zA-Z0-9_]|{nonascii}|{escape}
+num		[+-]?[0-9]+|[0-9]*\.[0-9]+
+string		{string1}|{string2}
+string1		\"([\t !#$%&(-~]|\\{nl}|\'|{nonascii}|{escape})*\"
+string2		\'([\t !#$%&(-~]|\\{nl}|\"|{nonascii}|{escape})*\'
+nl		\n|\r\n|\r|\f
+w		[ \t\r\n\f]*
+
+%%
+
+{ident}		{ return IDENT; }
+@{ident}	{ return ATKEYWORD; }
+{string}	{ return STRING; }
+#{name}		{ return HASH; }
+{num}		{ return NUMBER; }
+{num}%		{ return PERCENTAGE; }
+{num}{ident}	{ return DIMENSION; }
+url\({w}{string}{w}\)|url\({w}([!#$%&*-~]|{nonascii}|{escape})*{w}\)	{
+		  return URI; }
+U\+[0-9A-F?]{1,6}(-[0-9A-F]{1,6})?	{
+		  return UNICODE_RANGE; }
+"<!--"		/* ignore CDO */
+"-->"		/* ignore CDC */
+;		{ return SEMI; }
+\{		{ return LBRACE; }
+\}		{ return RBRACE; }
+\(		{ return LPAREN; }
+\)		{ return RPAREN; }
+\[		{ return LBRAC; }
+\]		{ return RBRAC; }
+[ \t\r\n\f]+	/* ignore whitespace */
+\/\*[^*]*\*+([^/][^*]*\*+)*\/	/* ignore comments */
+{ident}\(	{ return FUNCTION; }
+~=		{ return INCLUDES; }
+"|="		{ return DASHMATCH; }
+:		{ return COLON; /* missed out in spec */ }
+.		{ return DELIM; }
+
+%%
+
