@@ -54,7 +54,6 @@ void gui_multitask(void);
 void gui_poll(void);
 
 gui_safety gui_window_set_redraw_safety(gui_window* g, gui_safety s);
-int gui_file_to_filename(char* location, char* actual_filename, int size);
 
 void gui_window_start_throbber(gui_window* g);
 void gui_window_stop_throbber(gui_window* g);
