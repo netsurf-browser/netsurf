@@ -32,6 +32,7 @@
 #include "netsurf/utils/utils.h"
 
 gui_window *window_list = 0;
+static int window_count = 0;
 
 /**
  * Checks if a window still exists.
@@ -76,8 +77,8 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
     win_width = 1600;
   win_height = win_width * 3 / 4;
 
-  window.visible.x0 = (screen_width - win_width) / 2;
-  window.visible.y0 = (screen_height - win_height) / 2;
+  window.visible.x0 = ((screen_width - win_width) / 2) + (48 * window_count);
+  window.visible.y0 = ((screen_height - win_height) / 2) - (48 * window_count);
   window.visible.x1 = window.visible.x0 + win_width;
   window.visible.y1 = window.visible.y0 + win_height;
   window.xscroll = 0;
@@ -129,6 +130,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
 
   g->next = window_list;
   window_list = g;
+  window_count++;
 
   state.w = g->window;
   wimp_get_window_state(&state);
@@ -193,6 +195,8 @@ void gui_window_destroy(gui_window* g)
     assert(gg->next != NULL);
     gg->next = g->next;
   }
+
+  window_count--;
 
   xwimp_delete_window(g->window);
   if (g->data.browser.toolbar)
