@@ -83,7 +83,7 @@ struct content * fetchcache(const char *url,
 
 	LOG(("url %s", url1));
 
-	if (!post_urlenc && !post_multipart) {
+	if (!post_urlenc && !post_multipart && !download) {
 		if ((c = content_get(url1)) != NULL) {
 			free(url1);
 			if (!content_add_user(c, callback, p1, p2))
@@ -101,7 +101,7 @@ struct content * fetchcache(const char *url,
 		return NULL;
 	}
 
-	if (!post_urlenc && !post_multipart)
+	if (!post_urlenc && !post_multipart && !download)
 		c->fresh = true;
 
 	c->width = width;
