@@ -142,6 +142,9 @@ static bool plugin_decode(struct content* content, char* url, struct box* box,
 static struct box_multi_length *box_parse_multi_lengths(const char *s,
 		unsigned int *count);
 
+#define box_is_float(box) (box->type == BOX_FLOAT_LEFT || \
+		box->type == BOX_FLOAT_RIGHT)
+
 /* element_table must be sorted by name */
 struct element_entry {
 	char name[10];   /* element type */
@@ -2723,8 +2726,7 @@ void box_coords(struct box *box, int *x, int *y)
 	*x = box->x;
 	*y = box->y;
 	while (box->parent) {
-		if (box->type == BOX_FLOAT_LEFT ||
-				box->type == BOX_FLOAT_RIGHT) {
+		if (box_is_float(box)) {
 			do {
 				box = box->parent;
 			} while (!box->float_children);
@@ -2766,7 +2768,8 @@ struct box *box_at_point(struct box *box, int x, int y,
 		int *box_x, int *box_y,
 		struct content **content)
 {
-	struct box *child;
+	int bx = *box_x, by = *box_y;
+	struct box *child, *sibling;
 
 	assert(box);
 
@@ -2777,16 +2780,16 @@ struct box *box_at_point(struct box *box, int x, int y,
 			*content = box->object;
 			box = box->object->data.html.layout;
 		} else {
-			return 0;
+			goto siblings;
 		}
 	}
 
 	/* consider floats first, since they will often overlap other boxes */
 	for (child = box->float_children; child; child = child->next_float) {
-		if (*box_x + child->x <= x &&
-				x < *box_x + child->x + child->width &&
-				*box_y + child->y <= y &&
-				y < *box_y + child->y + child->height) {
+		if (bx + child->x + child->descendant_x0 <= x &&
+				x < bx + child->x + child->descendant_x1 &&
+				by + child->y + child->descendant_y0 <= y &&
+				y < by + child->y + child->descendant_y1) {
 			*box_x += child->x;
 			*box_y += child->y;
 			return child;
@@ -2795,16 +2798,63 @@ struct box *box_at_point(struct box *box, int x, int y,
 
 	/* non-float children */
 	for (child = box->children; child; child = child->next) {
-		if (child->type == BOX_FLOAT_LEFT ||
-				child->type == BOX_FLOAT_RIGHT)
+		if (box_is_float(child))
 			continue;
-		if (*box_x + child->x <= x &&
-				x < *box_x + child->x + child->width &&
-				*box_y + child->y <= y &&
-				y < *box_y + child->y + child->height) {
+		if (bx + child->x + child->descendant_x0 <= x &&
+				x < bx + child->x + child->descendant_x1 &&
+				by + child->y + child->descendant_y0 <= y &&
+				y < by + child->y + child->descendant_y1) {
 			*box_x += child->x;
 			*box_y += child->y;
 			return child;
+		}
+	}
+
+siblings:
+	/* siblings and siblings of ancestors */
+	while (box) {
+		if (!box_is_float(box)) {
+			bx -= box->x;
+			by -= box->y;
+			for (sibling = box->next; sibling;
+					sibling = sibling->next) {
+				if (box_is_float(sibling))
+					continue;
+				if (bx + sibling->x +
+						sibling->descendant_x0 <= x &&
+						x < bx + sibling->x +
+						sibling->descendant_x1 &&
+						by + sibling->y +
+						sibling->descendant_y0 <= y &&
+						y < by + sibling->y +
+						sibling->descendant_y1) {
+					*box_x = bx + sibling->x;
+					*box_y = by + sibling->y;
+					return sibling;
+				}
+			}
+			box = box->parent;
+		} else {
+			bx -= box->x;
+			by -= box->y;
+			for (sibling = box->next_float; sibling;
+					sibling = sibling->next_float) {
+				if (bx + sibling->x +
+						sibling->descendant_x0 <= x &&
+						x < bx + sibling->x +
+						sibling->descendant_x1 &&
+						by + sibling->y +
+						sibling->descendant_y0 <= y &&
+						y < by + sibling->y +
+						sibling->descendant_y1) {
+					*box_x = bx + sibling->x;
+					*box_y = by + sibling->y;
+					return sibling;
+				}
+			}
+			do {
+				box = box->parent;
+			} while (!box->float_children);
 		}
 	}
 
