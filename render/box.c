@@ -964,7 +964,7 @@ void box_normalise_table(struct box *table)
 	struct box *row_group;
 	struct css_style *style;
 	unsigned int *row_span = xcalloc(2, sizeof(row_span[0]));
-	unsigned int table_columns = 0;
+	unsigned int table_columns = 1;
 
 	assert(table != 0);
 	assert(table->type == BOX_TABLE);
