@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <setjmp.h>
 #include "libjpeg/jpeglib.h"
 #include "oslib/colourtrans.h"
 #include "oslib/jpeg.h"
@@ -83,6 +84,24 @@ static void jpeg_memory_src(j_decompress_ptr cinfo, char *ptr, unsigned long len
   src->bytes_in_buffer = length;
 }
 
+/* Error handling stuff.
+   This prevents jpeglib calling exit() on a fatal error */
+struct nsjpeg_error_mgr {
+  struct jpeg_error_mgr pub;
+  jmp_buf setjmp_buffer;
+};
+
+typedef struct nsjpeg_error_mgr * nsjpeg_err_ptr;
+
+METHODDEF (void) nsjpeg_error_exit (j_common_ptr cinfo) {
+
+  nsjpeg_err_ptr myerr = (nsjpeg_err_ptr)cinfo->err;
+
+  (*cinfo->err->output_message) (cinfo);
+
+  longjmp(myerr->setjmp_buffer, 1);
+}
+
 /** maps colours to 256 mode colour numbers */
 static os_colour_number colour_table[4096];
 
@@ -127,7 +146,7 @@ void nsjpeg_process_data(struct content *c, char *data, unsigned long size)
 int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
 {
         struct jpeg_decompress_struct cinfo;
-        struct jpeg_error_mgr jerr;
+        struct nsjpeg_error_mgr jerr;
         unsigned int line_size;
         unsigned char *dstcur;
 
@@ -153,9 +172,12 @@ int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
         }
 
         LOG(("beginning conversion"));
-        /* TODO - provide our own error handling.
-           jpeglib calls exit() on fatal error, which is a bit moose */
-        cinfo.err = jpeg_std_error(&jerr);
+        cinfo.err = jpeg_std_error(&jerr.pub);
+        jerr.pub.error_exit = nsjpeg_error_exit;
+        if (setjmp(jerr.setjmp_buffer)) {
+          jpeg_destroy_decompress(&cinfo);
+          return 1;
+        }
         jpeg_create_decompress(&cinfo);
         jpeg_memory_src(&cinfo, c->data.jpeg.data, c->data.jpeg.length);
         jpeg_read_header(&cinfo, TRUE);
