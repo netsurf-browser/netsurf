@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
  */
@@ -918,6 +918,8 @@ void parse_background(struct css_style * const s,
 
 	s->background_color = c;
 	s->background_image.type = bi;
+	if (s->background_image.type == CSS_BACKGROUND_IMAGE_URI)
+		free(s->background_image.uri);
 	s->background_image.uri = bi_uri;
 	s->background_repeat = br;
 	s->background_attachment = ba;
@@ -961,6 +963,8 @@ void parse_background_image(struct css_style * const s,
 	if (!css_background_image_parse(v, &type, &uri))
 		return;
 
+	if (s->background_image.type == CSS_BACKGROUND_IMAGE_URI)
+		free(s->background_image.uri);
 	s->background_image.type = type;
 	s->background_image.uri = uri;
 }
@@ -972,8 +976,8 @@ void parse_background_image(struct css_style * const s,
  *
  * \param  node  node to parse
  * \param  type  updated to background image type
- * \param  uri   updated to background image uri, if type is
- *               CSS_BACKGROUND_IMAGE_URI
+ * \param  uri	 updated to background image uri, if type is
+ *		 CSS_BACKGROUND_IMAGE_URI
  * \return  true on success, false on parse failure
  */
 
@@ -1013,9 +1017,9 @@ struct css_background_entry {
 
 /** Lookup table for parsing background-postion. */
 struct css_background_entry css_background_table[] = {
-	{ "left",   4,   0,  true, false },
+	{ "left",   4,	 0,  true, false },
 	{ "right",  5, 100,  true, false },
-	{ "top",    3,   0, false, true  },
+	{ "top",    3,	 0, false, true  },
 	{ "bottom", 6, 100, false, true  },
 	{ "center", 6,  50, false, false }  /* true, true would be more
 			logical, but this actually simplifies the code */
@@ -1262,7 +1266,7 @@ void parse_border_ ## side ## _width(struct css_style * const s, \
 	parse_border_width_side(s, v, z);		\
 }
 
-PARSE_BORDER_WIDTH(top,    TOP)
+PARSE_BORDER_WIDTH(top,	   TOP)
 PARSE_BORDER_WIDTH(right,  RIGHT)
 PARSE_BORDER_WIDTH(bottom, BOTTOM)
 PARSE_BORDER_WIDTH(left,   LEFT)
@@ -1352,7 +1356,7 @@ void parse_border_ ## side ## _color(struct css_style * const s, \
 	parse_border_color_side(s, v, z);		\
 }
 
-PARSE_BORDER_COLOR(top,    TOP)
+PARSE_BORDER_COLOR(top,	   TOP)
 PARSE_BORDER_COLOR(right,  RIGHT)
 PARSE_BORDER_COLOR(bottom, BOTTOM)
 PARSE_BORDER_COLOR(left,   LEFT)
@@ -1419,7 +1423,7 @@ void parse_border_ ## side ## _style(struct css_style * const s, \
 	parse_border_style_side(s, v, z);		\
 }
 
-PARSE_BORDER_STYLE(top,    TOP)
+PARSE_BORDER_STYLE(top,	   TOP)
 PARSE_BORDER_STYLE(right,  RIGHT)
 PARSE_BORDER_STYLE(bottom, BOTTOM)
 PARSE_BORDER_STYLE(left,   LEFT)
@@ -1702,7 +1706,7 @@ void parse_content(struct css_style * const s, const struct css_node * v)
 						content->data.string = strndup(t->data, t->data_length);
 						if (!content->data.string) {
 							css_deep_free_content(new_content);
-						  	return;
+							return;
 						}
 					} else {
 						css_deep_free_content(new_content);
@@ -1740,8 +1744,8 @@ struct css_content *parse_content_new(struct css_content **current, css_content_
 	
 	content = (struct css_content *)calloc(1, sizeof(struct css_content));
 	if (!content) {
-	  	css_deep_free_content(*current);
-	  	return NULL;
+		css_deep_free_content(*current);
+		return NULL;
 	}
 
 	content->type = generated;
@@ -1767,9 +1771,9 @@ bool parse_content_counter(struct css_content **current, struct css_node *t, boo
 	t = t->next;
 	
 	if (counters) {
-	  	if ((!t) || (t->type != CSS_NODE_STRING)) {
-	  	  	css_deep_free_content(*current);
-		  	return false;
+		if ((!t) || (t->type != CSS_NODE_STRING)) {
+			css_deep_free_content(*current);
+			return false;
 		}
 		content->data.counter.separator = strndup(t->data, t->data_length);
 		t = t->next;
@@ -1779,7 +1783,7 @@ bool parse_content_counter(struct css_content **current, struct css_node *t, boo
 		return true;
 
 	if ((t->type != CSS_NODE_IDENT) || (t->next)) {
-  	  	css_deep_free_content(*current);
+		css_deep_free_content(*current);
 		return false;
 	}
 	z = css_list_style_type_parse(t->data, t->data_length);
@@ -1852,8 +1856,8 @@ struct css_counter_control *parse_counter_control_new(struct css_counter_control
 	
 	counter = (struct css_counter_control *)calloc(1, sizeof(struct css_counter_control));
 	if (!counter) {
-	  	css_deep_free_counter_control(*current);
-	  	return NULL;
+		css_deep_free_counter_control(*current);
+		return NULL;
 	}
 
 	if (!*current) {
@@ -2181,6 +2185,8 @@ void parse_list_style_image(struct css_style * const s, const struct css_node * 
 	if (!css_list_style_image_parse(v, &type, &uri))
 		return;
 
+	if (s->list_style_image.type == CSS_LIST_STYLE_IMAGE_URI)
+		free(s->list_style_image.uri);
 	s->list_style_image.type = type;
 	s->list_style_image.uri = uri;
 }
@@ -2190,8 +2196,8 @@ void parse_list_style_image(struct css_style * const s, const struct css_node * 
  *
  * \param  node  node to parse
  * \param  type  updated to list-style-image type
- * \param  uri   updated to image uri, if type is
- *               CSS_LIST_STYLE_IMAGE_URI
+ * \param  uri	 updated to image uri, if type is
+ *		 CSS_LIST_STYLE_IMAGE_URI
  * \return  true on success, false on parse failure
  */
 
@@ -2707,10 +2713,10 @@ void parse_ ## side(struct css_style * const s,	\
 	parse_pos(s, v, z);			\
 }
 
-PARSE_POS(top,    TOP)
+PARSE_POS(top,	  TOP)
 PARSE_POS(right,  RIGHT)
 PARSE_POS(bottom, BOTTOM)
-PARSE_POS(left,   LEFT)
+PARSE_POS(left,	  LEFT)
 
 void parse_pos(struct css_style * const s, const struct css_node * v, unsigned int i)
 {
@@ -2723,7 +2729,7 @@ void parse_pos(struct css_style * const s, const struct css_node * v, unsigned i
 			    strncasecmp(v->data, "inherit", 7) == 0)
 				s->pos[i].pos = CSS_POS_INHERIT;
 			else if (v->data_length == 4 &&
-			         strncasecmp(v->data, "auto", 4) == 0)
+				 strncasecmp(v->data, "auto", 4) == 0)
 				s->pos[i].pos = CSS_POS_AUTO;
 			break;
 		case CSS_NODE_DIMENSION:
