@@ -565,6 +565,7 @@ void ro_gui_dialog_config_set(void) {
 
 void ro_gui_dialog_click_config(wimp_pointer *pointer)
 {
+	wimp_window_state state;
 	switch (pointer->i) {
 		case ICON_CONFIG_SAVE:
 			ro_gui_dialog_config_set();
@@ -601,8 +602,26 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 				ro_gui_set_icon_selected_state(dialog_config,
 						ICON_CONFIG_THEME, true);
 			ro_gui_open_pane(dialog_config, dialog_config_th, 0);
-			ro_gui_open_pane(dialog_config_th,
-					dialog_config_th_pane, 12);
+			state.w = dialog_config_th;
+			xwimp_get_window_state(&state);
+			state.w = dialog_config_th_pane;
+			state.visible.x0 += 12;
+			state.visible.x1 -= 12;
+			state.visible.y0 += 128;
+			state.visible.y1 -= 12;
+			xwimp_open_window_nested((wimp_open *) &state, dialog_config_th,
+					wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+							<< wimp_CHILD_XORIGIN_SHIFT |
+					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+							<< wimp_CHILD_YORIGIN_SHIFT |
+					wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+							<< wimp_CHILD_LS_EDGE_SHIFT |
+					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+							<< wimp_CHILD_BS_EDGE_SHIFT |
+					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+							<< wimp_CHILD_RS_EDGE_SHIFT |
+					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+							<< wimp_CHILD_TS_EDGE_SHIFT);
 			break;
 	}
 }

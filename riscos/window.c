@@ -792,6 +792,7 @@ void ro_gui_window_update_theme(void) {
 			ro_gui_theme_destroy_toolbar(hotlist_toolbar);
 			hotlist_toolbar = NULL;
 		}
+		ro_gui_theme_attach_toolbar(hotlist_toolbar, hotlist_window);
 		xwimp_force_redraw(hotlist_window, 0, -16384, 16384, 16384);
 	}
 

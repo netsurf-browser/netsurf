@@ -587,6 +587,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	os_error *error;
 	osspriteop_area *sprite_area;
 	struct toolbar_icon *toolbar_icon;
+	int width;
 	if (!toolbar) return false;
 	
 	/*	Set the theme and window sprite area
@@ -785,9 +786,11 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	
 	/*	Force a re-processing of the toolbar
 	*/
+	width = toolbar->toolbar_current;
 	toolbar->reformat_buttons = true;
+	toolbar->toolbar_current = -1;
 	toolbar->status_current = -1;
-	ro_gui_theme_process_toolbar(toolbar, toolbar->toolbar_current);
+	ro_gui_theme_process_toolbar(toolbar, width);
 	return true;
 }
 
@@ -951,14 +954,13 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 
 		/*	Get the minimum height of the icons
 		*/
+		bottom_edge = left_edge;
 		if (toolbar->display_buttons) {
 			toolbar_icon = toolbar->icon;
 			while (toolbar_icon) {
 				if (toolbar_icon->display) {
-					if (!toolbar->reformat_buttons) {
-						left_edge += toolbar_icon->width;
-						visible_icon = true;
-					}	
+					bottom_edge += toolbar_icon->width;
+					visible_icon = true;
 					if ((toolbar_icon->height != 0) && 
 						(toolbar->height < toolbar_icon->height + 8)) {
 						toolbar->height = toolbar_icon->height + 8;
@@ -966,13 +968,13 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 				}
 				toolbar_icon = toolbar_icon->next;
 			}
-			if (visible_icon) left_edge += 8;
+			if (visible_icon) bottom_edge += 8;
 		}
 		
 		/*	Check for minimum widths
 		*/
 		if (toolbar->type == THEME_BROWSER_TOOLBAR) {
-		  	bottom_edge = left_edge;
+			if (!toolbar->reformat_buttons) left_edge = bottom_edge;
 			if (toolbar->display_url) bottom_edge += 32;
 			if (bottom_edge > right_edge) right_edge = bottom_edge;
 			if ((toolbar->theme) && (toolbar->display_throbber) &&

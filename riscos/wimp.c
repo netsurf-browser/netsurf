@@ -295,10 +295,23 @@ void ro_gui_set_window_title(wimp_w w, const char *text) {
  */
 void ro_gui_set_caret_first(wimp_w w) {
   	int icon, button;
+	wimp_window_state win_state;
 	wimp_window_info_base window;
 	wimp_icon_state state;
 	os_error *error;
 
+	/*	Check the window is open
+	*/
+	win_state.w = w;
+	error = xwimp_get_window_state(&win_state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	if (!(win_state.flags & wimp_WINDOW_OPEN)) return;
+	
 	/*	Get the window details
 	*/
 	window.w = w;
@@ -319,7 +332,7 @@ void ro_gui_set_caret_first(wimp_w w) {
 		state.i = icon;
 		error = xwimp_get_icon_state(&state);
 		if (error) {
-			LOG(("xwimp_get_window_info: 0x%x: %s",
+			LOG(("xwimp_get_icon_state: 0x%x: %s",
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
 			return;
