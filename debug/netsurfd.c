@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
 			fetch_poll();
 		puts("=== SUCCESS, dumping cache");
 		cache_dump();
+		content_remove_user(c, callback, 0, 0);
 	}
 
 	cache_quit();
@@ -71,4 +72,7 @@ void plugin_decode(void *a, void *b, void *c, void *d)
 {
 }
 
-
+void html_redraw(struct content *c, long x, long y,
+		unsigned long width, unsigned long height)
+{
+}
