@@ -199,6 +199,10 @@ bool html_redraw_box(struct box *box,
 		if (y0 < clip_y0) y0 = clip_y0;
 		if (clip_x1 < x1) x1 = clip_x1;
 		if (clip_y1 < y1) y1 = clip_y1;
+		/* no point trying to draw 0-width/height boxes */
+		if (x0 == x1 || y0 == y1)
+			/* not an error, so return true */
+			return true;
 		/* clip to it */
 		if (!plot.clip(x0, y0, x1, y1))
 			return false;
