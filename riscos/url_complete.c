@@ -117,7 +117,7 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 	}
 
 	/* check if we should ignore text changes */
-	if (url_complete_keypress_selection >= 0)
+	if ((url_complete_keypress_selection >= 0) && (url_complete_matches))
 		ignore_changes = !strcmp(url,
 				url_complete_matches[url_complete_keypress_selection]);
 
@@ -129,8 +129,9 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 		lines = MAXIMUM_VISIBLE_LINES;
 		if (lines > url_complete_matches_available)
 			lines = url_complete_matches_available;
-		for (i = 0; i < MAXIMUM_VISIBLE_LINES; i++)
-			url_complete_redraw[i] = url_complete_matches[i];
+		if (url_complete_matches)
+			for (i = 0; i < MAXIMUM_VISIBLE_LINES; i++)
+				url_complete_redraw[i] = url_complete_matches[i];
 
 		/* our selection gets wiped */
 		error = xwimp_force_redraw(dialog_url_complete,
