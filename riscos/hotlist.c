@@ -2296,9 +2296,17 @@ bool ro_gui_hotlist_keypress(int key) {
 void ro_gui_hotlist_toolbar_click(wimp_pointer* pointer) {
   	int selection;
 
-	/*	Reject Menu clicks
+	/*	Store the toolbar
 	*/
-	if (pointer->buttons == wimp_CLICK_MENU) return;
+	current_toolbar = hotlist_toolbar;
+	
+	/*	Handle Menu clicks
+	*/
+	if (pointer->buttons == wimp_CLICK_MENU) {
+		ro_gui_create_menu(toolbar_menu, pointer->pos.x,
+				pointer->pos.y, NULL);
+		return;
+	}
 
 	/*	Handle the buttons appropriately
 	*/

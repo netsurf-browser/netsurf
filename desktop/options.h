@@ -39,6 +39,7 @@ extern char *option_accept_language;
 extern bool option_ssl_verify_certificates;
 extern int option_memory_cache_size;
 extern bool option_block_ads;
+extern int option_minimum_gif_delay;
 extern bool option_send_referer;
 
 void options_read(const char *path);

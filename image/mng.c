@@ -258,6 +258,12 @@ bool nsmng_convert(struct content *c, int width, int height) {
 		LOG(("Unable to start display (%i)", status));
 		return nsmng_broadcast_error(c);
 	}
+	
+	/*	Optimise the plotting of JNG/PNGs
+	*/
+	if ((c->type == CONTENT_PNG) || (c->type == CONTENT_JNG)) {
+	  	bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
+	}
 	return true;
 }
 

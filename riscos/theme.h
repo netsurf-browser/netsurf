@@ -19,7 +19,17 @@ typedef enum {
   	THEME_HOTLIST_TOOLBAR
 } toolbar_type;
 
-struct toolbar_icon;
+struct toolbar_icon {
+	int icon_number;			/**< wimp icon number */
+	bool display;				/**< whether to display the icon */
+	int x;					/**< icon x position (valid only when displayed) */
+	int y;					/**< icon y position (valid only when displayed) */
+	int width;				/**< icon width */
+	int height;				/**< icon height */
+	char name[12];				/**< icon name */
+	char validation[40];			/**< validation string */
+	struct toolbar_icon *next;		/**< next toolbar icon, or NULL for no more */
+};
 
 struct theme {
 	osspriteop_area *sprite_area;		/**< sprite area for theme */
@@ -48,6 +58,7 @@ struct toolbar {
 	struct toolbar_icon *icon;		/**< first toolbar icon (read only) */
   	struct theme_descriptor *descriptor;	/**< theme descriptor (read only) */
 	toolbar_type type;			/**< toolbar type (read only) */
+	bool locked;				/**< toolbar is locked from editing */
 };
 
 struct theme_descriptor {
@@ -82,5 +93,7 @@ void ro_gui_theme_resize_toolbar_status(struct toolbar *toolbar);
 bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width);
 void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar);
 
+struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar, int x, int y);
+bool ro_gui_theme_toolbar_separator_following(struct toolbar_icon *icon);
 
 #endif

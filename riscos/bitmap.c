@@ -39,8 +39,11 @@ struct bitmap *bitmap_create(int width, int height)
 	osspriteop_area *sprite_area;
 	osspriteop_header *sprite;
 
+	if ((width == 0) || (height == 0))
+		return NULL;
+
 	area_size = 16 + 44 + width * height * 4;
-	bitmap = calloc(area_size, 1);
+	bitmap = calloc(sizeof(struct bitmap) + area_size, 1);
 	if (!bitmap)
 		return NULL;
 
@@ -54,7 +57,7 @@ struct bitmap *bitmap_create(int width, int height)
 	/* sprite control block */
 	sprite = (osspriteop_header *) (sprite_area + 1);
 	sprite->size = area_size - 16;
-	memset(sprite->name, 0x00, 12);
+/*	memset(sprite->name, 0x00, 12); */
 	strncpy(sprite->name, "bitmap", 12);
 	sprite->width = width - 1;
 	sprite->height = height - 1;
@@ -66,6 +69,40 @@ struct bitmap *bitmap_create(int width, int height)
 	return bitmap;
 }
 
+
+/**
+ * Sets whether a bitmap should be plotted opaque
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  opaque  whether the bitmap should be plotted opaque
+ */
+void bitmap_set_opaque(struct bitmap *bitmap, bool opaque)
+{
+	assert(bitmap);
+	bitmap->opaque = opaque;
+}
+
+
+/**
+ * Tests whether a bitmap has an opaque alpha channel
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \return whether the bitmap is opaque
+ */
+bool bitmap_test_opaque(struct bitmap *bitmap)
+{
+	assert(bitmap);
+	char *sprite = bitmap_get_buffer(bitmap);
+	unsigned int width = bitmap_get_rowstride(bitmap);
+	osspriteop_header *sprite_header =
+		(osspriteop_header *) (&(bitmap->sprite_area) + 1);
+	unsigned int height = (sprite_header->height + 1);
+	unsigned int size = width * height;
+	for (unsigned int i = 3; i < size; i += 4)
+		if (sprite[i] != 0xff)
+			return false;
+	return true;
+}
 
 /**
  * Return a pointer to the pixel data in a bitmap.
@@ -80,7 +117,7 @@ struct bitmap *bitmap_create(int width, int height)
 char *bitmap_get_buffer(struct bitmap *bitmap)
 {
 	assert(bitmap);
-	return ((char *) bitmap) + 16 + 44;
+	return ((char *) (&(bitmap->sprite_area))) + 16 + 44;
 }
 
 
@@ -124,7 +161,8 @@ bool bitmap_redraw(struct content *c, int x, int y,
 {
 	return image_redraw(&(c->bitmap->sprite_area), x, y, width, height,
 			c->width * 2, c->height * 2, background_colour,
-                        false, false, IMAGE_PLOT_TINCT_ALPHA);
+	                false, false, ((c->bitmap->opaque) ?
+	                IMAGE_PLOT_TINCT_OPAQUE : IMAGE_PLOT_TINCT_ALPHA));
 }
 
 

@@ -32,7 +32,7 @@ extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 extern wimp_w history_window;
 extern wimp_w hotlist_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu,
-		*proxyauth_menu, *languages_menu;
+		*proxyauth_menu, *languages_menu, *toolbar_menu;
 extern int iconbar_menu_height;
 extern struct form_control *current_gadget;
 extern bool gui_reformat_pending;
@@ -98,6 +98,7 @@ struct gui_window {
 };
 
 
+extern struct toolbar *current_toolbar;
 extern struct gui_window *current_gui;
 extern struct gui_window *ro_gui_current_redraw_gui;
 extern struct gui_window *ro_gui_current_zoom_gui;
@@ -265,9 +266,8 @@ bool ro_gui_print_keypress(wimp_key *key);
 #define ICON_TOOLBAR_BOOKMARK 8
 #define ICON_TOOLBAR_SCALE 9
 #define ICON_TOOLBAR_SEARCH 10
-#define ICON_TOOLBAR_UP 11
-#define ICON_TOOLBAR_URL 12  // Must be after highest toolbar icon
-#define ICON_TOOLBAR_THROBBER 13
+#define ICON_TOOLBAR_URL 11  // Must be after highest toolbar icon
+#define ICON_TOOLBAR_THROBBER 12
 
 /* icon numbers for hotlist toolbars */
 #define ICON_TOOLBAR_CREATE 0
@@ -275,8 +275,7 @@ bool ro_gui_print_keypress(wimp_key *key);
 #define ICON_TOOLBAR_EXPAND 2
 #define ICON_TOOLBAR_OPEN 3
 #define ICON_TOOLBAR_LAUNCH 4
-#define ICON_TOOLBAR_SORT 5
-#define ICON_TOOLBAR_HOTLIST_LAST 6
+#define ICON_TOOLBAR_HOTLIST_LAST 5
 
 /* icon numbers for toolbar status window */
 #define ICON_STATUS_RESIZE 0

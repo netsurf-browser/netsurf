@@ -44,6 +44,33 @@ struct bitmap *bitmap_create(int width, int height)
 
 
 /**
+ * Sets whether a bitmap should be plotted opaque
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \param  opaque  whether the bitmap should be plotted opaque
+ */
+void bitmap_set_opaque(struct bitmap *bitmap, bool opaque)
+{
+	assert(bitmap);
+/* todo: set bitmap as opaque */
+}
+
+
+/**
+ * Tests whether a bitmap has an opaque alpha channel
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ * \return whether the bitmap is opaque
+ */
+bool bitmap_test_opaque(struct bitmap *bitmap)
+{
+	assert(bitmap);
+/* todo: test if bitmap as opaque */
+	return false;
+}
+
+
+/**
  * Return a pointer to the pixel data in a bitmap.
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()

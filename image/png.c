@@ -156,6 +156,7 @@ void info_callback(png_structp png, png_infop info)
 	c->data.png.interlace = (interlace == PNG_INTERLACE_ADAM7);
 	c->width = width;
 	c->height = height;
+	bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
 
 	LOG(("size %li * %li, bpp %i, rowbytes %u", width,
 				height, bit_depth, rowbytes));

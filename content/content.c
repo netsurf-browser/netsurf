@@ -33,7 +33,7 @@
 #include "netsurf/image/mng.h"
 #endif
 #ifdef WITH_GIF
-#include "netsurf/riscos/gif.h"
+#include "netsurf/image/gif.h"
 #endif
 #ifdef WITH_SPRITE
 #include "netsurf/riscos/sprite.h"

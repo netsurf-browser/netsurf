@@ -11,6 +11,7 @@
 struct osspriteop_area;
 
 struct bitmap {
+  	bool opaque;
 	osspriteop_area sprite_area;
 };
 

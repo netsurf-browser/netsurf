@@ -2,14 +2,16 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 Richard Wilson <not_ginger_matt@sourceforge.net>
+ * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  */
 
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "gifread.h"
+#include "netsurf/image/bitmap.h"
 #include "netsurf/utils/log.h"
 #include "oslib/osspriteop.h"
 #include "oslib/osfile.h"
@@ -110,7 +112,6 @@ int gif_initialise(struct gif_animation *gif) {
 	unsigned int index;
 	int return_value;
 	unsigned int frame;
-	osspriteop_header *header;
 
 	/*	Check for sufficient data to be a GIF
 	*/
@@ -173,9 +174,11 @@ int gif_initialise(struct gif_animation *gif) {
 		if (((gif->width == 640) && (gif->width == 480)) ||
 				((gif->width == 640) && (gif->width == 512)) ||
 				((gif->width == 800) && (gif->width == 600)) ||
-				((gif->width == 1280) && (gif->width == 1024))) {
-			gif->width = 0;
-			gif->height = 0;
+				((gif->width == 1024) && (gif->width == 768)) ||
+				((gif->width == 1280) && (gif->width == 1024)) ||
+				((gif->width == 1600) && (gif->width == 1200))) {
+			gif->width = 1;
+			gif->height = 1;
 		}
 
 		/*	Allocate some data irrespective of whether we've got any colour tables. We
@@ -204,28 +207,10 @@ int gif_initialise(struct gif_animation *gif) {
 
 		/*	Initialise the sprite header
 		*/
-		if ((gif->frame_image = (osspriteop_area *)malloc(sizeof(osspriteop_area) +
-				sizeof(osspriteop_header) + (gif->width * gif->height * 4))) == NULL) {
+		if ((gif->frame_image = bitmap_create(gif->width, gif->height)) == NULL) {
 			gif_finalise(gif);
 			return GIF_INSUFFICIENT_MEMORY;
 		}
-		gif->frame_image->size = sizeof(osspriteop_area) + sizeof(osspriteop_header) +
-				(gif->width * gif->height * 4);
-		gif->frame_image->sprite_count = 1;
-		gif->frame_image->first = 16;
-		gif->frame_image->used = gif->frame_image->size;
-		header = (osspriteop_header*)((char*)gif->frame_image +
-						gif->frame_image->first);
-		header->size = sizeof(osspriteop_header) + (gif->width * gif->height * 4);
-		memset(header->name, 0x00, 12);
-		strcpy(header->name, "gif");
-		header->left_bit = 0;
-		header->right_bit = 31;
-		header->width = gif->width - 1;
-		header->height = gif->height - 1;
-		header->image = sizeof(osspriteop_header);
-		header->mask = sizeof(osspriteop_header);
-		header->mode = (os_mode) 0x301680b5;
 
 		/*	Remember we've done this now
 		*/
@@ -334,11 +319,9 @@ int gif_initialise(struct gif_animation *gif) {
 		0 for success
 */
 static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, unsigned int height) {
-	struct osspriteop_area *buffer;
-	struct osspriteop_header *header;
 	unsigned int max_width;
 	unsigned int max_height;
-	unsigned int frame_bytes;
+	struct bitmap *buffer;
 
 	/*	Check if we've changed
 	*/
@@ -348,30 +331,14 @@ static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, 
 	*/
 	max_width = (width > gif->width) ? width : gif->width;
 	max_height = (height > gif->height) ? height : gif->height;
-	frame_bytes = max_width * max_height * 4 +
-			sizeof(osspriteop_header) + sizeof(osspriteop_area);
 
 	/*	Allocate some more memory
 	*/
-	if ((buffer = (osspriteop_area *)realloc(gif->frame_image, frame_bytes)) == NULL) {
+	if ((buffer = bitmap_create(max_width, max_height)) == NULL) {
 		return GIF_INSUFFICIENT_MEMORY;
 	}
+	bitmap_destroy(gif->frame_image);
 	gif->frame_image = buffer;
-
-	/*	Update the sizes
-	*/
-	gif->width = max_width;
-	gif->height = max_height;
-
-	/*	Update our sprite image
-	*/
-	buffer->size = frame_bytes;
-	buffer->used = frame_bytes;
-	header = (osspriteop_header*)((char*)gif->frame_image +
-						gif->frame_image->first);
-	header->size = frame_bytes - sizeof(osspriteop_area);
-	header->width = max_width - 1;
-	header->height = max_height - 1;
 
 	/*	Invalidate our currently decoded image
 	*/
@@ -443,6 +410,7 @@ int gif_initialise_frame(struct gif_animation *gif) {
 		start off with one frame allocated so we can always use realloc.
 	*/
 	gif->frames[frame].frame_pointer = gif->buffer_position;
+	gif->frames[frame].virgin = true;
 	gif->frames[frame].frame_delay = 100;	// Paranoia
 	gif->frames[frame].redraw_required = 0;	// Paranoia
 
@@ -668,7 +636,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		sprite and clear what we need as some frames have multiple images which would
 		produce errors.
 	*/
-	frame_data = (unsigned int*)((char *)gif->frame_image + gif->frame_image->first + sizeof(osspriteop_header));
+	frame_data = (unsigned int *)bitmap_get_buffer(gif->frame_image);
 	if (!clear_image) {
 		if ((frame == 0) || (gif->decoded_frame == 0xffffffff)) {
 			memset((char*)frame_data, 0x00, gif->width * gif->height * sizeof(int));
@@ -871,6 +839,14 @@ gif_decode_frame_exit:
 		if ((gif_bytes < 1) || (gif_data[0] == 0x3b)) more_images = 0;
 		gif->buffer_position++;
 	}
+	
+	/*	Check if we should test for optimisation
+	*/
+	if (gif->frames[frame].virgin) {
+		gif->frames[frame].opaque = bitmap_test_opaque(gif->frame_image);
+		gif->frames[frame].virgin = false;
+	}
+	bitmap_set_opaque(gif->frame_image, gif->frames[frame].opaque);
 
 	/*	Restore the buffer position
 	*/

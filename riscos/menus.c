@@ -48,6 +48,7 @@ static void translate_menu(wimp_menu *menu);
 static void build_languages_menu(void);
 static void ro_gui_menu_prepare_images(void);
 static void ro_gui_menu_prepare_window(void);
+static void ro_gui_menu_prepare_theme(void);
 static void ro_gui_menu_prepare_toolbars(void);
 static void ro_gui_menu_prepare_render(void);
 static void ro_gui_menu_prepare_help(int forced);
@@ -196,7 +197,7 @@ static wimp_MENU(5) image_menu = {
 
 /*	Toolbar submenu
 */
-static wimp_MENU(4) toolbar_menu = {
+static wimp_MENU(4) show_toolbar_menu = {
   { "Toolbars" }, 7,2,7,0, 300, 44, 0,
   {
     { 0,		  wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ToolButtons" } },
@@ -321,7 +322,7 @@ static wimp_MENU(3) hotlist_expand = {
   {
     { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "All" } },
     { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Folders" } },
-    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Links" } },
+    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Links" } }
   }
 };
 
@@ -332,7 +333,7 @@ static wimp_MENU(3) hotlist_collapse = {
   {
     { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "All" } },
     { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Folders" } },
-    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Links" } },
+    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Links" } }
   }
 };
 
@@ -342,7 +343,7 @@ static wimp_MENU(3) hotlist_save = {
   {
     { wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "URI" } },
     { wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "URL" } },
-    { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "HTML" } },
+    { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "HTML" } }
   }
 };
 
@@ -355,7 +356,7 @@ static wimp_MENU(5) hotlist_file = {
     { wimp_MENU_GIVE_WARNING,			   wimp_NO_SUB_MENU,		   DEFAULT_FLAGS, { "Save" } },
     { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE, (wimp_menu *)1,		   DEFAULT_FLAGS, { "Export" } },
     { 0,					   (wimp_menu *)&hotlist_expand,   DEFAULT_FLAGS, { "Expand" } },
-    { wimp_MENU_LAST,				   (wimp_menu *)&hotlist_collapse, DEFAULT_FLAGS, { "Collapse" } },
+    { wimp_MENU_LAST,				   (wimp_menu *)&hotlist_collapse, DEFAULT_FLAGS, { "Collapse" } }
   }
 };
 
@@ -369,7 +370,7 @@ static wimp_MENU(5) hotlist_select = {
     { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,		  DEFAULT_FLAGS, { "Edit" } },
     { 0,		      wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "Launch" } },
     { 0,		      wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "Delete" } },
-    { wimp_MENU_LAST,	      wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "ResetUsage" } },
+    { wimp_MENU_LAST,	      wimp_NO_SUB_MENU,		  DEFAULT_FLAGS, { "ResetUsage" } }
   }
 };
 
@@ -382,7 +383,7 @@ static wimp_MENU(4) hotlist_root = {
     { 0,		      (wimp_menu *)&hotlist_file,   DEFAULT_FLAGS, { "Hotlist" } },
     { wimp_MENU_GIVE_WARNING, (wimp_menu *)&hotlist_select, DEFAULT_FLAGS, { "Selection" } },
     { 0,		      wimp_NO_SUB_MENU,		    DEFAULT_FLAGS, { "SelectAll" } },
-    { wimp_MENU_LAST,	      wimp_NO_SUB_MENU,		    DEFAULT_FLAGS, { "Clear" } },
+    { wimp_MENU_LAST,	      wimp_NO_SUB_MENU,		    DEFAULT_FLAGS, { "Clear" } }
   }
 };
 wimp_menu *hotlist_menu = (wimp_menu *)&hotlist_root;
@@ -393,16 +394,74 @@ wimp_menu *hotlist_menu = (wimp_menu *)&hotlist_root;
 static wimp_MENU(3) proxy_menu = {
   { "ProxyAuth" }, 7,2,7,0, 200, 44, 0,
   {
-    { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ProxyNone" } },
-    { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ProxyBasic" } },
-    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ProxyNTLM" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ProxyNone" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ProxyBasic" } },
+    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ProxyNTLM" } }
   }
 };
 wimp_menu *proxyauth_menu = (wimp_menu *) &proxy_menu;
 
+
+/*	Toolbar icon submenus.
+	The index of the name must be identical to the toolbar icon number.
+*/
+static wimp_MENU(11) toolbar_browser = {
+  { "Icons" }, 7,2,7,0, 200, 44, 0,
+  {
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconBack" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconForward" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconStop" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconReload" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconHome" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconHistory" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconSave" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconPrint" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconHotlist" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconScale" } },
+    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconSearch" } }
+  }
+};
+wimp_menu *toolbar_browser_menu = (wimp_menu *)&toolbar_browser;
+
+static wimp_MENU(5) toolbar_hotlist = {
+  { "Icons" }, 7,2,7,0, 200, 44, 0,
+  {
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconCreate" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconDelete" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconExpand" } },
+    { 0,	      wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconOpen" } },
+    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "IconLaunch" } }
+  }
+};
+wimp_menu *toolbar_hotlist_menu = (wimp_menu *)&toolbar_hotlist;
+
+/*	Toolbar icon menu
+*/
+static wimp_MENU(5) toolbar = {
+  { "Toolbar" }, 7,2,7,0, 200, 44, 0,
+  {
+    { 0,		  (wimp_menu *)&toolbar_browser,   DEFAULT_FLAGS, { "Icons" } },
+    { 0,		  (wimp_menu *)&show_toolbar_menu, DEFAULT_FLAGS, { "Toolbars" } },
+    { 0,		  wimp_NO_SUB_MENU,		   DEFAULT_FLAGS, { "AddGap" } },
+    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU,		   DEFAULT_FLAGS, { "DeleteGap" } },
+    { wimp_MENU_LAST,	  wimp_NO_SUB_MENU,		   DEFAULT_FLAGS, { "LockToolbar" } }
+  }
+};
+wimp_menu *toolbar_menu = (wimp_menu *)&toolbar;
+
+
+/*	Current toolbar
+*/	
+struct toolbar *current_toolbar;
+static struct toolbar_icon *current_toolbar_icon;
+
 /*	Languages popup menu (used in browser choices dialog)
 */
 wimp_menu *languages_menu = NULL;
+
+/*	Toolbar menu
+*/
+wimp_menu *toolbar_icon_menu = NULL;
 
 /*	Font popup menu (used in font choices dialog)
 */
@@ -418,7 +477,7 @@ static wimp_menu *browser_selection_menu = (wimp_menu *)&selection_menu;
 static wimp_menu *browser_navigate_menu = (wimp_menu *)&navigate_menu;
 static wimp_menu *browser_view_menu = (wimp_menu *)&view_menu;
 static wimp_menu *browser_image_menu = (wimp_menu *)&image_menu;
-static wimp_menu *browser_toolbar_menu = (wimp_menu *)&toolbar_menu;
+static wimp_menu *browser_toolbar_menu = (wimp_menu *)&show_toolbar_menu;
 static wimp_menu *browser_render_menu = (wimp_menu *)&render_menu;
 static wimp_menu *browser_window_menu = (wimp_menu *)&window_menu;
 static wimp_menu *browser_utilities_menu = (wimp_menu *)&utilities_menu;
@@ -466,6 +525,10 @@ void ro_gui_menus_init(void)
 	translate_menu(hotlist_save_menu);
 	translate_menu(hotlist_select_menu);
 
+	translate_menu(toolbar_menu);
+	translate_menu(toolbar_browser_menu);
+	translate_menu(toolbar_hotlist_menu);
+	
 	translate_menu(proxyauth_menu);
 
 	build_languages_menu();
@@ -565,7 +628,7 @@ void build_languages_menu(void)
 		languages_menu = temp;
 		languages_menu->entries[entries].menu_flags = 0;
 		languages_menu->entries[entries].sub_menu = wimp_NO_SUB_MENU;
-		languages_menu->entries[entries].icon_flags = wimp_ICON_TEXT | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
+		languages_menu->entries[entries].icon_flags = DEFAULT_FLAGS | wimp_ICON_INDIRECTED;
 		languages_menu->entries[entries].data.indirected_text.text = lang_name;
 		languages_menu->entries[entries].data.indirected_text.validation = (char *)-1;
 		languages_menu->entries[entries].data.indirected_text.size = strlen(lang_name) + 1;
@@ -622,11 +685,25 @@ void ro_gui_create_menu(wimp_menu *menu, int x, int y, struct gui_window *g)
 		else
 			menu->entries[1].icon_flags |= wimp_ICON_SHADED;
 		if ((current_gui->bw) && (current_gui->bw->current_content)) {
-		  	menu->entries[0].icon_flags &= ~wimp_ICON_SHADED;
+			menu->entries[0].icon_flags &= ~wimp_ICON_SHADED;
 		} else {
-		  	menu->entries[0].icon_flags |= wimp_ICON_SHADED;
+			menu->entries[0].icon_flags |= wimp_ICON_SHADED;
 		}
 
+	} else if (menu == toolbar_menu) {
+		state.w = current_toolbar->toolbar_handle;
+		error = xwimp_get_window_state(&state);
+		if (error) {
+			LOG(("xwimp_get_window_state: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+
+		current_toolbar_icon = ro_gui_theme_toolbar_get_icon(current_toolbar,
+				x - state.visible.x0, y - state.visible.y0);
+		LOG(("Toolbar (%i,%i)", x - state.visible.x0, y - state.visible.y0));
+		ro_gui_menu_prepare_theme();
 	} else if (menu == hotlist_menu) {
 		ro_gui_menu_prepare_hotlist();
 	}
@@ -665,7 +742,9 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 
 void ro_gui_menu_selection(wimp_selection *selection)
 {
-        char url[80];
+	struct toolbar_icon *icon;
+	struct toolbar_icon *next;
+	char url[80];
 	wimp_pointer pointer;
 	wimp_window_state state;
 	os_error *error;
@@ -695,6 +774,66 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				break;
 		}
 
+	} else if (current_menu == toolbar_menu) {
+		switch (selection->items[0]) {
+			case 0:	/* Icons-> */
+				if (selection->items[1] == -1) break;
+				next = current_toolbar->icon;
+				while ((icon = next) != NULL) {
+					next = icon->next;
+					if (icon->icon_number == selection->items[1]) {
+						icon->display = !icon->display;
+					}
+				}
+				current_toolbar->reformat_buttons = true;
+				height = current_toolbar->height;
+				ro_gui_theme_process_toolbar(current_toolbar, -1);
+				if ((height != current_toolbar->height) && (current_gui))
+					ro_gui_window_update_dimensions(current_gui,
+						height - current_toolbar->height);
+				if ((height != current_toolbar->height) &&
+						(current_toolbar == hotlist_toolbar)) {
+					xwimp_force_redraw(hotlist_window, 0, -16384, 16384, 16384);		  
+				}
+				ro_gui_menu_prepare_theme();
+				
+				break;
+			case 1:	/* Toolbars-> */
+				switch (selection->items[1]) {
+					case 0:
+						current_toolbar->display_buttons =
+								!current_toolbar->display_buttons;
+						break;
+					case 1:
+						current_toolbar->display_url =
+								!current_toolbar->display_url;
+						break;
+					case 2:
+						current_toolbar->display_throbber =
+								!current_toolbar->display_throbber;
+						break;
+					case 3:
+						current_toolbar->display_status =
+								!current_toolbar->display_status;
+						break;
+				}
+				current_toolbar->reformat_buttons = true;
+				height = current_toolbar->height;
+				ro_gui_theme_process_toolbar(current_toolbar, -1);
+				if ((height != current_toolbar->height) && (current_gui))
+					ro_gui_window_update_dimensions(current_gui,
+						height - current_toolbar->height);
+				ro_gui_menu_prepare_theme();
+				break;
+			case 2:	/* Add separator */
+				break;
+			case 3:	/* Remove separator */
+				break;
+			case 4:	/* Lock toolbar */
+				current_toolbar->locked = !current_toolbar->locked;
+				ro_gui_menu_prepare_theme();
+				break;
+		}
 	} else if (current_menu == hotlist_menu) {
 		switch (selection->items[0]) {
 			case 0:	/* Hotlist-> */
@@ -1398,7 +1537,7 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 	/*	Set the scale view icon
 	*/
 	if (c) {
-	  	if (update_menu) menu.entries[0].icon_flags &= ~wimp_ICON_SHADED;
+		if (update_menu) menu.entries[0].icon_flags &= ~wimp_ICON_SHADED;
 		if (t) {
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SEARCH, false);
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SCALE, false);
@@ -1406,7 +1545,7 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_PRINT, false);
 		}
 	} else {
-	  	if (update_menu) menu.entries[0].icon_flags |= wimp_ICON_SHADED;
+		if (update_menu) menu.entries[0].icon_flags |= wimp_ICON_SHADED;
 		if (t) {
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SEARCH, true);
 			ro_gui_set_icon_shaded_state(t->toolbar_handle, ICON_TOOLBAR_SCALE, true);
@@ -1529,13 +1668,82 @@ static void ro_gui_menu_prepare_window(void) {
 /**
  * Update toolbar menu status
  */
+static void ro_gui_menu_prepare_theme(void) {
+	struct toolbar_icon *icon;
+	struct toolbar_icon *next;
+	wimp_menu *sub_menu;
+  	
+	if (!current_toolbar) return;
+  
+	/*	Set the icon states
+	*/
+	if (current_toolbar->display_buttons) {
+		toolbar_menu->entries[0].icon_flags &= ~wimp_ICON_SHADED;
+		toolbar_menu->entries[2].icon_flags &= ~wimp_ICON_SHADED;
+		toolbar_menu->entries[3].icon_flags &= ~wimp_ICON_SHADED;
+		if (current_toolbar->type == THEME_BROWSER_TOOLBAR) {
+			toolbar_menu->entries[0].sub_menu = toolbar_browser_menu;
+		} else if (current_toolbar->type == THEME_HOTLIST_TOOLBAR) {
+			toolbar_menu->entries[0].sub_menu = toolbar_hotlist_menu;
+		} else {
+			LOG(("Unknown toolbar type"));
+			return;	/* unknown toolbar type */
+		}
+		sub_menu = toolbar_menu->entries[0].sub_menu;
+		next = current_toolbar->icon;
+		while ((icon = next) != NULL) {
+			next = icon->next;
+			if (icon->icon_number >= 0) {
+				if (icon->width == 0) {
+					sub_menu->entries[icon->icon_number].icon_flags |=
+							wimp_ICON_SHADED;
+					sub_menu->entries[icon->icon_number].menu_flags &=
+							~wimp_MENU_TICKED;
+				} else {
+				  	if (icon->display) {
+						sub_menu->entries[icon->icon_number].menu_flags |=
+							wimp_MENU_TICKED;
+				  	} else {
+						sub_menu->entries[icon->icon_number].menu_flags &=
+							~wimp_MENU_TICKED;
+				  	}
+				}
+			}
+		}
+	} else {
+		toolbar_menu->entries[0].icon_flags |= wimp_ICON_SHADED;
+		toolbar_menu->entries[2].icon_flags |= wimp_ICON_SHADED;
+		toolbar_menu->entries[3].icon_flags |= wimp_ICON_SHADED;
+	}
+ 	
+	/*	Set the toolbars submenu state
+	*/
+	if (current_gui) {
+		toolbar_menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
+		ro_gui_menu_prepare_toolbars();
+	} else {
+		toolbar_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
+	}
+
+	/*	Set the locked state
+	*/
+	if (current_toolbar->locked) {
+		toolbar_menu->entries[4].menu_flags |= wimp_MENU_TICKED;
+	} else {
+		toolbar_menu->entries[4].menu_flags &= ~wimp_MENU_TICKED;
+	}
+}
+
+/**
+ * Update toolbar menu status
+ */
 static void ro_gui_menu_prepare_toolbars(void) {
 	int index;
 	struct toolbar *toolbar;
-	if (current_menu != browser_menu) return;
 
 	/*	Check we have a toolbar
 	*/
+	if (!current_gui) return;
 	toolbar = current_gui->toolbar;
 
 	/*	Set our ticks, or shade everything if there's no toolbar
@@ -1545,7 +1753,7 @@ static void ro_gui_menu_prepare_toolbars(void) {
 			browser_toolbar_menu->entries[index].icon_flags &= ~wimp_ICON_SHADED;
 			browser_toolbar_menu->entries[index].menu_flags &= ~wimp_MENU_TICKED;
 		}
-	  	if ((toolbar->descriptor) && (toolbar->descriptor->theme)) {
+		if ((toolbar->descriptor) && (toolbar->descriptor->theme)) {
 			if (toolbar->display_buttons) browser_toolbar_menu->entries[0].menu_flags |= wimp_MENU_TICKED;
 			if (toolbar->display_throbber) browser_toolbar_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
 		} else {
@@ -1720,7 +1928,7 @@ void ro_gui_menu_object_reload(void)
 /**
  * Display a menu of options for a form select control.
  *
- * \param  bw       browser window containing form control
+ * \param  bw	    browser window containing form control
  * \param  control  form control of type GADGET_SELECT
  */
 

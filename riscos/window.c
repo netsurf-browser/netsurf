@@ -1064,10 +1064,17 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 {
 	char url[80];
 
-	/*	Reject Menu clicks
+	/*	Store the toolbar
 	*/
-	if (pointer->buttons == wimp_CLICK_MENU)
+	current_toolbar = g->toolbar;
+	
+	/*	Handle Menu clicks
+	*/
+	if (pointer->buttons == wimp_CLICK_MENU) {
+		ro_gui_create_menu(toolbar_menu, pointer->pos.x,
+				pointer->pos.y, g);
 		return;
+	}
 
 	/*	Handle the buttons appropriately
 	*/

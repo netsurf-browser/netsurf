@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
- * Copyright 2004 Richard Wilson <not_ginger_matt@sourceforge.net>
+ * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  */
 
 #include <assert.h>
@@ -14,11 +14,11 @@
 #include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
-#include "netsurf/riscos/gif.h"
-#include "netsurf/riscos/gifread.h"
-#include "netsurf/riscos/gui.h"
-#include "netsurf/riscos/image.h"
-#include "netsurf/riscos/options.h"
+#include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/options.h"
+#include "netsurf/image/bitmap.h"
+#include "netsurf/image/gif.h"
+#include "netsurf/image/gifread.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -115,6 +115,7 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 
 	/*	Exit as a success
 	*/
+	c->bitmap = gif->frame_image;
 	c->status = CONTENT_STATUS_DONE;
 	return true;
 }
@@ -132,10 +133,10 @@ bool nsgif_redraw(struct content *c, int x, int y,
 		settings. We default to the first image if we don't have a GUI as we are
 		drawing a thumbnail unless something has gone very wrong somewhere else.
 	*/
-	if (ro_gui_current_redraw_gui) {
+/*	if (ro_gui_current_redraw_gui) {
 		if (ro_gui_current_redraw_gui->option.animate_images) {
-			current_frame = c->data.gif.current_frame;
-		} else {
+*/			current_frame = c->data.gif.current_frame;
+/*		} else {
 			current_frame = 0;
 		}
 	} else {
@@ -149,23 +150,22 @@ bool nsgif_redraw(struct content *c, int x, int y,
 			}
 		}
 	}
-
+*/
 	/*	Decode from the last frame to the current frame
 	*/
 	if (current_frame < c->data.gif.gif->decoded_frame) {
 		previous_frame = 0;
 	} else {
 		previous_frame = c->data.gif.gif->decoded_frame + 1;
-
         }
 	for (frame = previous_frame; frame <= current_frame; frame++) {
 		gif_decode_frame(c->data.gif.gif, frame);
 	}
+	c->bitmap = c->data.gif.gif->frame_image;
 
-	return image_redraw(c->data.gif.gif->frame_image, x, y, width,
-			height, c->width * 2, c->height * 2,
-			background_colour, false, false,
-			IMAGE_PLOT_TINCT_ALPHA);
+	return bitmap_redraw(c, x, y, width, height,
+			clip_x0, clip_y0, clip_x1, clip_y1,
+			scale, background_colour);
 }
 
 

@@ -23,13 +23,13 @@ OBJECTS_COMMON += box.o form.o html.o layout.o textplain.o	# render/
 OBJECTS_COMMON += messages.o pool.o translit.o url.o utils.o	# utils/
 OBJECTS_COMMON += imagemap.o loginlist.o options.o		# desktop/
 
-OBJECTS_IMAGE = jpeg.o mng.o					# image/
+OBJECTS_IMAGE = jpeg.o mng.o gif.o gifread.o			# image/
 
 OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_RISCOS += browser.o netsurf.o version.o			# desktop/
 OBJECTS_RISCOS += 401login.o bitmap.o debugwin.o \
-	buffer.o dialog.o download.o draw.o filetype.o font.o gif.o \
-	gifread.o gui.o help.o history.o hotlist.o htmlredraw.o image.o \
+	buffer.o dialog.o download.o draw.o filetype.o font.o \
+	gui.o help.o history.o hotlist.o htmlredraw.o image.o \
 	menus.o mouseactions.o plugin.o print.o \
 	save.o save_complete.o save_draw.o save_text.o \
 	schedule.o search.o sprite.o textselection.o theme.o thumbnail.o \

@@ -105,7 +105,7 @@
 #include "netsurf/image/jpeg.h"
 #endif
 #ifdef WITH_GIF
-#include "netsurf/riscos/gif.h"
+#include "netsurf/image/gif.h"
 #endif
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"

@@ -35,16 +35,6 @@
 #define THEME_THROBBER_MEMORY 12
 #define THEME_STATUS_MEMORY 256
 
-struct toolbar_icon {
-	int icon_number;			/**< wimp icon number */
-	bool display;				/**< whether to display the icon */
-	int width;				/**< icon width */
-	int height;				/**< icon height */
-	char name[12];				/**< icon name */
-	char validation[40];			/**< validation string */
-	struct toolbar_icon *next;		/**< next toolbar icon, or NULL for no more */
-};
-
 struct theme_file_header {
 	unsigned int magic_value;
 	unsigned int parser_version;
@@ -96,8 +86,8 @@ static wimp_window theme_toolbar_window = {
 	12,
 	1,
 	{""},
-	0/*,
-	{ } */
+	0,
+	{ }
 };
 
 
@@ -763,7 +753,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	new_icon.icon.data.indirected_text.size = 1;
 	new_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE | wimp_ICON_INDIRECTED |
 					wimp_ICON_HCENTRED | wimp_ICON_VCENTRED |
-					(wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT);
+					(wimp_BUTTON_RELEASE_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT);
 	if (toolbar->descriptor) {
 		new_icon.icon.flags |= (toolbar->descriptor->browser_background
 				 << wimp_ICON_BG_COLOUR_SHIFT);
@@ -1024,7 +1014,29 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 	int old_height = toolbar->height;
 	int old_width = toolbar->toolbar_current;
 	struct toolbar_icon *toolbar_icon;
+	struct toolbar_icon *last_icon = NULL;
 	bool visible_icon = false;
+  	
+  	/*	Disable lone separators
+  	*/
+  	if (toolbar->reformat_buttons) {
+	  	visible_icon = false;
+  		toolbar_icon = toolbar->icon;
+  		while (toolbar_icon) {
+  		  	if (toolbar_icon->icon_number < 0) {
+  		  		toolbar_icon->display = visible_icon;
+  		  		visible_icon = false;
+  		  	} else if (toolbar_icon->width > 0) {
+  		  	  	visible_icon |= toolbar_icon->display;
+  		  	}
+  		  	if (toolbar_icon->display) last_icon = toolbar_icon;
+  		  	toolbar_icon = toolbar_icon->next;
+  		}
+  		if ((last_icon) && (last_icon->icon_number < 0)) {
+  			last_icon->display = false;
+  		}
+  		visible_icon = false;
+  	}
   	
 	/*	Find the parent window handle if we need to process the status window,
 		or the caller has requested we calculate the width ourself.
@@ -1129,6 +1141,8 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 				  	visible_icon = true;
 					bottom_edge = (toolbar->height -
 							toolbar_icon->height) / 2;
+					toolbar_icon->x = left_edge;
+					toolbar_icon->y = bottom_edge;
 					xwimp_resize_icon(toolbar->toolbar_handle,
 							toolbar_icon->icon_number,
 							left_edge, bottom_edge,
@@ -1313,6 +1327,14 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar) {
 	free(toolbar);
 }
 
+
+/**
+ * Adds a toolbar icon to the end of a toolbar
+ *
+ * \param toolbar      the toolbar to add the icon to the end of
+ * \param name         the icon name, or NULL for a separator
+ * \param icon_number  the RISC OS Wimp icon number for the icon (not used for separators)
+ */
 void ro_gui_theme_add_toolbar_icon(struct toolbar *toolbar, const char *name, int icon_number) {
 	if (!toolbar) return;
 	struct toolbar_icon *toolbar_icon;
@@ -1320,7 +1342,10 @@ void ro_gui_theme_add_toolbar_icon(struct toolbar *toolbar, const char *name, in
 
 	/*	Separators are really a sprite called "separator"
 	*/
-	if (name == NULL) name = "separator";
+	if (name == NULL) {
+		name = "separator";
+		icon_number = -1;
+	}
 
 	/*	Create a new toolbar
 	*/
@@ -1404,4 +1429,34 @@ void ro_gui_theme_update_toolbar_icon(struct toolbar *toolbar, struct toolbar_ic
  */
 void ro_gui_theme_destroy_toolbar_icon(struct toolbar_icon *icon) {
 	free(icon);
+}
+
+
+/**
+ * Returns the toolbar icon at a specified position
+ *
+ * \param toolbar  the toolbar to examine
+ * \param x        the x co-ordinate to check
+ * \param y        the y co-ordinate to check
+ * \return the toolbar icon at the specified position, or NULL for no icon
+ */
+struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar, int x, int y) {
+ 	struct toolbar_icon *icon;
+ 	icon = toolbar->icon;
+/* FINISH ME */
+	return NULL;
+}
+
+/**
+ * Returns whether a separator can follow the specified icon
+ *
+ * \param icon  the icon to check
+ * \return whether a separator can follow
+ */
+bool ro_gui_theme_toolbar_separator_following(struct toolbar_icon *icon) {
+	while (icon) {
+		if (icon->display) return (icon->width > 0);
+                icon = icon->next;	
+	}
+	return false; 
 }

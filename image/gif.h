@@ -2,26 +2,19 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 Philip Pemberton <philpem@users.sourceforge.net>
- * Copyright 2004 Richard Wilson <not_ginger_matt@sourceforge.net>
+ * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  */
 
-#ifndef _NETSURF_RISCOS_GIF_H_
-#define _NETSURF_RISCOS_GIF_H_
+#ifndef _NETSURF_IMAGE_GIF_H_
+#define _NETSURF_IMAGE_GIF_H_
 
-#include "netsurf/riscos/gifread.h"
+#include "netsurf/image/gifread.h"
 
 struct content;
 
 struct content_gif_data {
-
-        /*	The GIF data
-	*/
-	struct gif_animation *gif;
-
-	/**	The current frame number of the GIF to display, [0...(max-1)]
-	*/
-	unsigned int current_frame;
+	struct gif_animation *gif;	/**< GIF animation data */
+	unsigned int current_frame;	/**< current frame to display [0...(max-1)] */
 };
 
 bool nsgif_create(struct content *c, const char *params[]);
