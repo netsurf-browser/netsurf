@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.29 2003/06/01 23:02:56 monkeyson Exp $
+ * $Id: gui.c,v 1.30 2003/06/04 18:42:13 jmb Exp $
  */
 
 #include "netsurf/desktop/options.h"
@@ -28,7 +28,7 @@ int gadget_subtract_y;
 #define browser_menu_flags (wimp_ICON_TEXT | wimp_ICON_FILLED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT))
 const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro";
 const char* GESTURES_URL = "file:///%3CNetSurf$Dir%3E/Resources/gestures";
-const char* THEMES_URL = "http://netsurf.sf.net/themes";
+const char* THEMES_URL = "http://netsurf.sourceforge.net/themes/";
 
 wimp_MENU(3) netsurf_iconbar_menu =
   {
@@ -1357,7 +1357,7 @@ void ro_gui_w_click(wimp_pointer* pointer)
     if (pointer->i == ro_gui_icon("INFO_URL"))
     {
       struct browser_window* bw;
-      bw = create_browser_window(browser_TITLE | browser_TOOLBAR 
+      bw = create_browser_window(browser_TITLE | browser_TOOLBAR
         | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480);
       gui_window_show(bw->window);
       browser_window_open_location(bw, "http://sourceforge.net/projects/netsurf/");
@@ -1469,7 +1469,7 @@ void ro_gui_w_click(wimp_pointer* pointer)
 	  else if (pointer->i == ro_gui_icon("CONFIG_TH_PICK"))
 	  {
 		  ro_gui_build_theme_menu();
-		ro_gui_create_menu(theme_menu, pointer->pos.x - 64, pointer->pos.y, NULL);  
+		ro_gui_create_menu(theme_menu, pointer->pos.x - 64, pointer->pos.y, NULL);
 	  }
 	  else if (pointer->i == ro_gui_icon("CONFIG_TH_MANAGE"))
 	  {
@@ -1617,7 +1617,7 @@ mouseaction ro_gui_try_mouse_action(void)
 		LOG(("m = %d", m));
 
 	} while ((z & 2) != 0 && m < 4);
-	
+
 	LOG(("MOUSEACTIONS: %d %d %d %d\n",moves[0], moves[1], moves[2], moves[3]));
 	if (m == 2)
 	{
@@ -1653,7 +1653,7 @@ mouseaction ro_gui_try_mouse_action(void)
 						return mouseaction_PARENT;
 				}
 				break;
-				
+
 			case move_DOWN:
 				switch (moves[2])
 				{
@@ -2685,7 +2685,7 @@ int size;
   osspriteop_clear_sprites(osspriteop_USER_AREA, theme_preview);
   osspriteop_load_sprite_file(osspriteop_USER_AREA, theme_preview, filename);
 
- 
+
 	}
 }
 
@@ -2823,7 +2823,7 @@ void ro_gui_build_theme_menu()
 		context = osgbpb_dir_entries_system_info(THEME_DIR, buffer, 1, context, 256, 0, &count);
 	}
 	LOG(("mallocing"));
-	
+
 	m = malloc(sizeof(wimp_menu_base) + (num*2) * sizeof(wimp_menu_entry));
 	strcpy(m->title_data.text, "Themes");
 	m->title_fg = wimp_COLOUR_BLACK;
@@ -2833,7 +2833,7 @@ void ro_gui_build_theme_menu()
 	m->width = 256;
 	m->height = 44;
 	m->gap = 0;
-	
+
 	LOG(("building entries"));
 	for (i = 0; i < num; i++)
 	{
@@ -2895,7 +2895,7 @@ void ro_gui_redraw_config_th(wimp_draw* redraw)
   xfree(trans_tab);
   }
   else
- { 
+ {
 	 preview.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
 	 preview.icon.data.indirected_text.text = "No preview available";
 	 preview.icon.data.indirected_text.size = 21;
