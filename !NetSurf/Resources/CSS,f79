@@ -8,7 +8,7 @@ html { display: block; }
 
 head { display: none; }
 
-body { display: block; margin: 5px; }
+body { display: block; padding: 5px; }
 
 div { display: block; }
 div[align=left] > * { margin-right: auto; }
@@ -71,16 +71,16 @@ table[align=right] { float: right; text-align: left; }
 
 caption { display: table-caption; }
 
-thead { display: table-header-group; }
-tfoot { display: table-footer-group; }
-tbody { display: table-row-group; }
+thead { display: table-header-group; vertical-align: middle; }
+tfoot { display: table-footer-group; vertical-align: middle; }
+tbody { display: table-row-group; vertical-align: middle; }
 
 colgroup { display: table-column-group; }
 col { display: table-column; }
 
-tr { display: table-row; }
-th { display: table-cell; font-weight: bold; }
-td { display: table-cell; text-align: left; }
+tr { display: table-row; vertical-align: middle; }
+th { display: table-cell; font-weight: bold; vertical-align: middle;}
+td { display: table-cell; text-align: left; vertical-align: middle;}
 th[nowrap], td[nowrap] { white-space: nowrap; }
 
 a:link { color: #00f; text-decoration: underline; }
@@ -164,3 +164,15 @@ fieldset { display: block; border: thin solid #888; }
 [align=left] { text-align: left; }
 [align=center] { text-align: center; }
 [align=right] { text-align: right; }
+
+col[valign=top], colgroup[valign=top], tbody[valign=top], td[valign=top], tfoot[valign=top], th[valign=top], thead[valign=top], tr[valign=top] { vertical-align: top; }
+col[valign=middle], colgroup[valign=middle], tbody[valign=middle], td[valign=middle], tfoot[valign=middle], th[valign=middle], thead[valign=middle], tr[valign=middle] { vertical-align: middle; }
+col[valign=bottom], colgroup[valign=bottom], tbody[valign=bottom], td[valign=bottom], tfoot[valign=bottom], th[valign=bottom], thead[valign=bottom], tr[valign=bottom] { vertical-align: bottom; }
+
+tr[align=left] > td, th { text-align: left }
+tr[align=center] > td, th { text-align: center }
+tr[align=right] > td, th { text-align: right }
+
+tr[valign=top] > td, th { vertical-align: top; }
+tr[valign=middle] > td, th { vertical-align: middle; }
+tr[valign=bottom] > td, th { vertical-align: bottom; }

@@ -2,6 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
@@ -59,6 +60,7 @@ static bool layout_float(struct box *b, int width, pool box_pool);
 static void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont);
 static bool layout_table(struct box *box, int available_width, pool box_pool);
+static void layout_move_children(struct box *box, int x, int y);
 static bool calculate_widths(struct box *box);
 static bool calculate_block_widths(struct box *box, int *min, int *max,
 		int *max_sum);
@@ -1204,6 +1206,7 @@ bool layout_table(struct box *table, int available_width,
 	int spare_width;
 	int relative_sum = 0;
 	int border_spacing_h = 0, border_spacing_v = 0;
+	int spare_height;
 	struct box *c;
 	struct box *row;
 	struct box *row_group;
@@ -1448,6 +1451,9 @@ bool layout_table(struct box *table, int available_width,
 					free(xs);
 					return false;
 				}
+				/* preserve c->padding[BOTTOM] in c->descendant_y1 which is not used at this
+				 * point in time. */
+				c->descendant_y1 = c->padding[BOTTOM];
 				if (c->style->height.height ==
 						CSS_HEIGHT_LENGTH) {
 					/* some sites use height="1" or similar
@@ -1471,10 +1477,10 @@ bool layout_table(struct box *table, int available_width,
 					row_span_cell[c->start_column + i] = 0;
 				}
 				row_span_cell[c->start_column] = c;
-				c->height = -border_spacing_v -
+				c->padding[BOTTOM] = -border_spacing_v -
 						c->border[TOP] -
 						c->padding[TOP] -
-						c->padding[BOTTOM] -
+						c->height -
 						c->border[BOTTOM];
 			}
 			for (i = 0; i != columns; i++)
@@ -1501,7 +1507,7 @@ bool layout_table(struct box *table, int available_width,
 				else
 					excess_y[i] = 0;
 				if (row_span_cell[i] != 0)
-					row_span_cell[i]->height += row_height +
+					row_span_cell[i]->padding[BOTTOM] += row_height +
 							border_spacing_v;
 			}
 
@@ -1518,6 +1524,41 @@ bool layout_table(struct box *table, int available_width,
 		table_height += row_group_height;
 	}
 
+	/* perform vertical alignment */
+	for (row_group = table->children; row_group; row_group = row_group->next) {
+		for (row = row_group->children; row; row = row->next) {
+			for (c = row->children; c; c = c->next) {
+				/* unextended bottom padding is in c->descendant_y1 */
+			  	spare_height = c->padding[BOTTOM] - c->descendant_y1;
+				switch (c->style->vertical_align.type) {
+					case CSS_VERTICAL_ALIGN_SUB:
+					case CSS_VERTICAL_ALIGN_SUPER:
+					case CSS_VERTICAL_ALIGN_TEXT_TOP:
+					case CSS_VERTICAL_ALIGN_TEXT_BOTTOM:
+					case CSS_VERTICAL_ALIGN_LENGTH:
+					case CSS_VERTICAL_ALIGN_PERCENT:
+					case CSS_VERTICAL_ALIGN_BASELINE:
+						/* todo: baseline alignment, for now just use ALIGN_TOP */
+					case CSS_VERTICAL_ALIGN_TOP:
+						break;
+					case CSS_VERTICAL_ALIGN_MIDDLE:
+						c->padding[TOP] += spare_height / 2;
+						c->padding[BOTTOM] -= spare_height / 2;
+						layout_move_children(c, 0, spare_height / 2);
+						break;
+					case CSS_VERTICAL_ALIGN_BOTTOM:
+						c->padding[TOP] += spare_height;
+						c->padding[BOTTOM] -= spare_height;
+						layout_move_children(c, 0, spare_height);
+						break;
+					case CSS_VERTICAL_ALIGN_INHERIT:
+						assert(0);
+						break;
+				}
+			}
+		}
+	}
+
 	free(col);
 	free(excess_y);
 	free(row_span);
@@ -1528,6 +1569,24 @@ bool layout_table(struct box *table, int available_width,
 	table->height = table_height;
 
 	return true;
+}
+
+
+/**
+ * Moves the children of a box by a specified amount
+ *
+ * \param  box  top of tree of boxes
+ * \param  x    the amount to move children by horizontally
+ * \param  y    the amount to move children by vertically
+ */
+
+void layout_move_children(struct box *box, int x, int y) {
+	assert(box);
+
+	for (box = box->children; box; box = box->next) {
+		box->x += x;
+		box->y += y;
+	}
 }
 
 
