@@ -92,11 +92,14 @@
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
-
 static void css_atimport_callback(content_msg msg, struct content *css,
 		void *p1, void *p2, union content_msg_data data);
+static struct css_selector *css_merge_rule_lists(struct css_selector *l1, struct css_selector *l2);
+static bool css_merge_rule_lists_internal(struct css_selector *l1, struct css_selector *l2, struct css_selector **result);
 static bool css_match_rule(struct css_selector *rule, xmlNode *element);
 static bool css_match_detail(const struct css_selector *detail,
+		xmlNode *element);
+static bool css_match_first_child(const struct css_selector *detail,
 		xmlNode *element);
 static void css_dump_length(const struct css_length * const length);
 static void css_dump_selector(const struct css_selector *r);
@@ -752,6 +755,69 @@ void css_atimport_callback(content_msg msg, struct content *css,
 	}
 }
 
+/**
+ * Merge two sorted lists of CSS selectors
+ *
+ * \param l1 the first list
+ * \param l2 the second list
+ * \return the merged list, or NULL on error.
+ * It is left to the caller to free the list when they've finished with it
+ */
+struct css_selector *css_merge_rule_lists(struct css_selector *l1, struct css_selector *l2)
+{
+	struct css_selector *merged = calloc(1, sizeof(*merged));
+	struct css_selector *a, *b;
+
+	if (css_merge_rule_lists_internal(l1, l2, &merged))
+		return merged;
+
+	for (a = merged->next; a; a = b) {
+		b = a->next;
+		free(a);
+	}
+
+	free(merged);
+
+	return NULL;
+}
+
+/**
+ * Actually perform the merge
+ *
+ * \param l1 the first list
+ * \param l2 the second list
+ * \param result pointer to the head of the resultant list
+ */
+bool css_merge_rule_lists_internal(struct css_selector *l1, struct css_selector *l2, struct css_selector **result)
+{
+	struct css_selector *a, *b;
+	struct css_selector *entry, *prev = (*result);
+
+	for (a = l1, b = l2; a || b; ) {
+		entry = calloc(1, sizeof(*entry));
+		if (!entry)
+			/** \todo warn user? */
+			return false;
+
+		if (a->specificity < b->specificity) {
+			entry = memcpy(entry, a, sizeof(*entry));
+			a = a->next;
+		}
+		else {
+			entry = memcpy(entry, b, sizeof(*entry));
+			b = b->next;
+		}
+		entry->next = 0;
+		if (!prev)
+			(*result)->next = entry;
+		else
+			prev->next = entry;
+		prev = entry;
+	}
+
+	return true;
+}
+
 
 /**
  * Find the style which applies to an element.
@@ -767,7 +833,7 @@ void css_get_style(struct content *css, xmlNode *element,
 		struct css_style *style)
 {
 	struct css_stylesheet *stylesheet = css->data.css.css;
-	struct css_selector *rule;
+	struct css_selector *rules, *a, *b;
 	unsigned int hash, i;
 
 	/* imported stylesheets */
@@ -776,17 +842,28 @@ void css_get_style(struct content *css, xmlNode *element,
 			css_get_style(css->data.css.import_content[i],
 					element, style);
 
-	/* match rules which end with the same element */
 	hash = css_hash((const char *) element->name,
 			strlen((const char *) element->name));
-	for (rule = stylesheet->rule[hash]; rule; rule = rule->next)
-		if (css_match_rule(rule, element))
-			css_merge(style, rule->style);
 
-	/* match rules which apply to all elements */
-	for (rule = stylesheet->rule[0]; rule; rule = rule->next)
-		if (css_match_rule(rule, element))
-			css_merge(style, rule->style);
+	/* merge element and global rules */
+	rules = css_merge_rule_lists(stylesheet->rule[hash],
+					stylesheet->rule[0]);
+
+	if (!rules)
+		return;
+
+	/* match applicable rules */
+	for (a = rules->next; a; a = a->next)
+		if (css_match_rule(a, element))
+			css_merge(style, a->style);
+
+	/* free rules list */
+	for (a = rules->next; a; a = b) {
+		b = a->next;
+		free(a);
+	}
+
+	free(rules);
 }
 
 
@@ -890,7 +967,7 @@ bool css_match_detail(const struct css_selector *detail,
 				else
 					length = strlen(word);
 				if (length == detail->data_length &&
-		   				strncasecmp(word, detail->data,
+						strncasecmp(word, detail->data,
 						length) == 0) {
 					match = true;
 					break;
@@ -1043,6 +1120,12 @@ bool css_match_detail(const struct css_selector *detail,
 			break;
 
 		case CSS_SELECTOR_PSEUDO:
+			if (detail->data_length == 11 &&
+				strncasecmp(detail->data,
+						"first-child", 11) == 0) {
+				match = css_match_first_child(detail,
+								element);
+			}
 			break;
 
 		default:
@@ -1055,6 +1138,27 @@ bool css_match_detail(const struct css_selector *detail,
 	return match;
 }
 
+/**
+ * Handle :first-child pseudo-class
+ *
+ * \param  detail   a css_selector of type other than CSS_SELECTOR_ELEMENT
+ * \param  element  element in xml tree to match
+ * \return  true if the selector matches the element
+ */
+bool css_match_first_child(const struct css_selector *detail,
+		xmlNode *element)
+{
+	xmlNode *prev;
+
+	for (prev = element->prev; prev && prev->type != XML_ELEMENT_NODE;
+						prev = prev->prev)
+		;
+
+	if (!prev)
+		return true;
+
+	return false;
+}
 
 /**
  * Parse a stand-alone CSS property list.
