@@ -141,8 +141,10 @@ MBytes: MB
 GBytes: GB
 
 # Progress
+Progress:%s of %s
+ProgressU:%s
 Loading:Opening page...
-RecPercent:Received %s of %s (%u%%)
+RecPercent:Received %s (%u%%)
 Received:Received %s
 Converting:Converting %lu bytes
 BadRedirect:Bad redirect URL

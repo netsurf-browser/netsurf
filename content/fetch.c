@@ -79,11 +79,14 @@ static CURLM *curl_multi;		/**< Global cURL multi handle. */
 static CURL *fetch_blank_curl;
 static struct fetch *fetch_list = 0;	/**< List of active fetches. */
 static char fetch_error_buffer[CURL_ERROR_SIZE]; /**< Error buffer for cURL. */
+static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
 
 static CURLcode fetch_set_options(struct fetch *f);
 static void fetch_free(struct fetch *f);
 static void fetch_stop(struct fetch *f);
 static void fetch_done(CURL *curl_handle, CURLcode result);
+static int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
+		double ultotal, double ulnow);
 static size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
 		struct fetch *f);
 static size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
@@ -142,6 +145,8 @@ void fetch_init(void)
 	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
 	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
 	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
+	SETOPT(CURLOPT_PROGRESSFUNCTION, fetch_curl_progress);
+	SETOPT(CURLOPT_NOPROGRESS, 0);
 	SETOPT(CURLOPT_USERAGENT, user_agent);
 	SETOPT(CURLOPT_ENCODING, "gzip");
 	SETOPT(CURLOPT_LOW_SPEED_LIMIT, 1L);
@@ -357,6 +362,7 @@ CURLcode fetch_set_options(struct fetch *f)
 	SETOPT(CURLOPT_PRIVATE, f);
 	SETOPT(CURLOPT_WRITEDATA, f);
 	SETOPT(CURLOPT_WRITEHEADER, f);
+	SETOPT(CURLOPT_PROGRESSDATA, f);
 	SETOPT(CURLOPT_REFERER, f->referer);
 	SETOPT(CURLOPT_HTTPHEADER, f->headers);
 	if (f->post_urlenc) {
@@ -576,6 +582,35 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 		callback(FETCH_FINISHED, p, 0, 0);
 	else if (error)
 		callback(FETCH_ERROR, p, fetch_error_buffer, 0);
+}
+
+
+/**
+ * Callback function for fetch progress
+ */
+int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
+		double ultotal, double ulnow)
+{
+	struct fetch *f = (struct fetch *)clientp;
+	double percent;
+
+	if (dltotal > 0) {
+		percent = dlnow * 100.0f / dltotal;
+		snprintf(fetch_progress_buffer, 255,
+			messages_get("Progress"),
+				human_friendly_bytesize(dlnow),
+				human_friendly_bytesize(dltotal));
+		f->callback(FETCH_PROGRESS, f->p, fetch_progress_buffer,
+			(unsigned long)percent);
+	}
+	else {
+		snprintf(fetch_progress_buffer, 255,
+			messages_get("ProgressU"),
+				human_friendly_bytesize(dlnow));
+		f->callback(FETCH_PROGRESS, f->p, fetch_progress_buffer, 0);
+	}
+
+	return 0;
 }
 
 

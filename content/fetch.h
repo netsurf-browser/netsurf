@@ -17,6 +17,7 @@
 
 typedef enum {
               FETCH_TYPE,
+              FETCH_PROGRESS,
               FETCH_DATA,
               FETCH_FINISHED,
               FETCH_ERROR,

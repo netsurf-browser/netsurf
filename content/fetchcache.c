@@ -225,9 +225,21 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			}
 			break;
 
+		case FETCH_PROGRESS:
+			if (size)
+				content_set_status(c,
+						messages_get("RecPercent"),
+						data, (unsigned int)size);
+			else
+				content_set_status(c,
+						messages_get("Received"),
+						data);
+			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
+			break;
+
 		case FETCH_DATA:
 			LOG(("FETCH_DATA"));
-			if (c->total_size)
+/*			if (c->total_size)
 				content_set_status(c,
 						messages_get("RecPercent"),
 						human_friendly_bytesize(c->source_size + size),
@@ -238,7 +250,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 						messages_get("Received"),
 						human_friendly_bytesize(c->source_size + size));
 			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
-			if (!content_process_data(c, data, size)) {
+*/			if (!content_process_data(c, data, size)) {
 				fetch_abort(c->fetch);
 				c->fetch = 0;
 			}

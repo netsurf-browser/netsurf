@@ -507,6 +507,8 @@ void download_window_callback(fetch_msg msg, void *p, const char *data,
 	struct gui_download_window *download_window = p;
 
 	switch (msg) {
+		case FETCH_PROGRESS:
+			break;
 		case FETCH_DATA:
 			gui_download_window_data(download_window, data, size);
 			break;

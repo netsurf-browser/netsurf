@@ -141,8 +141,10 @@ MBytes: MO
 GBytes: GO
 
 # Progress
+Progress:%s reçus de %s
+ProgressU:%s
 Loading:Ouverture de la page...
-RecPercent:%s reçus de %s (%u%%)
+RecPercent:%s (%u%%)
 Received:%s reçus
 Converting:Conversion de %lu octets
 BadRedirect:Mauvais URL de redirection
