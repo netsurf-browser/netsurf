@@ -1001,24 +1001,47 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 #endif
 #ifdef WITH_PLUGIN
 		case message_PLUG_IN_OPENING:
+			plugin_opening(message);
+			break;
 		case message_PLUG_IN_CLOSED:
+			plugin_closed(message);
+			break;
 		case message_PLUG_IN_RESHAPE_REQUEST:
+			plugin_reshape_request(message);
+			break;
 		case message_PLUG_IN_FOCUS:
+			break;
 		case message_PLUG_IN_URL_ACCESS:
+			plugin_url_access(message);
+			break;
 		case message_PLUG_IN_STATUS:
+			plugin_status(message);
+			break;
 		case message_PLUG_IN_BUSY:
+			break;
 		case message_PLUG_IN_STREAM_NEW:
+			plugin_stream_new(message);
+			break;
 		case message_PLUG_IN_STREAM_WRITE:
+			break;
 		case message_PLUG_IN_STREAM_WRITTEN:
+			plugin_stream_written(message);
+			break;
 		case message_PLUG_IN_STREAM_DESTROY:
+			break;
 		case message_PLUG_IN_OPEN:
+			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE)
+				plugin_open_msg(message);
+			break;
 		case message_PLUG_IN_CLOSE:
+			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE)
+				plugin_close_msg(message);
+			break;
 		case message_PLUG_IN_RESHAPE:
 		case message_PLUG_IN_STREAM_AS_FILE:
 		case message_PLUG_IN_NOTIFY:
 		case message_PLUG_IN_ABORT:
 		case message_PLUG_IN_ACTION:
-			plugin_msg_parse(message, event == wimp_USER_MESSAGE_ACKNOWLEDGE);
 			break;
 #endif
 #ifdef WITH_PRINT

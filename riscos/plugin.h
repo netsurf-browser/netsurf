@@ -18,60 +18,30 @@ struct content;
 struct object_params;
 
 struct content_plugin_data {
-	char *data;		/* object data */
-	unsigned long length;	/* object length */
-	char *sysvar;		/* system variable set by plugin */
-};
-
-struct plugin_state {
-	int dummy;
-};
-
-struct plugin_message {
-
-        int poll;
-        plugin_b browser;
-        plugin_p plugin;
-        wimp_message *m;
-        struct plugin_message *reply;
-        struct plugin_message *next;
-        struct plugin_message *prev;
-};
-
-struct plugin_list {
-
-        struct content *c;
-        struct browser_window *bw;
-        struct content *page;
-        struct box *box;
-        struct object_params *params;
-        void **state;
-        struct plugin_list *next;
-        struct plugin_list *prev;
-};
-
-struct plugin_param_item {
-
-        int type;
-        int rsize;
-        int nsize;
-        char *name;
-        int npad;
-        int vsize;
-        char *value;
-        int vpad;
-        int msize;
-        char *mime_type;
-        int mpad;
-
-        struct plugin_param_item *next;
+	struct browser_window *bw;	/* window containing this content */
+	struct content *page;		/* parent content */
+	struct box *box;		/* box containing this content */
+	char *taskname;			/* plugin task to launch */
+	char *filename;			/* filename of parameters file */
+	char *datafile;			/* filename of filestreamed file */
+	bool opened;			/* has this plugin been opened? */
+	int repeated;			/* indication of opening state */
+	unsigned int browser;		/* browser handle */
+	unsigned int plugin;		/* plugin handle */
+	unsigned int browser_stream;	/* browser stream handle */
+	unsigned int plugin_stream;	/* plugin stream handle */
+	unsigned int plugin_task;	/* plugin task handle */
+	unsigned int consumed;		/* size of data consumed by plugin */
+	bool reformat_pending;		/* is a reformat pending? */
+	int width, height;		/* reformat width & height */
+	bool stream_waiting;		/* waiting to stream a datastream */
+	bool file_stream_waiting;	/* waiting to stream as file */
 };
 
 /* function definitions */
 bool plugin_handleable(const char *mime_type);
 void plugin_msg_parse(wimp_message *message, int ack);
 bool plugin_create(struct content *c, const char *params[]);
-bool plugin_process_data(struct content *c, char *data, unsigned int size);
 bool plugin_convert(struct content *c, int width, int height);
 void plugin_reformat(struct content *c, int width, int height);
 void plugin_destroy(struct content *c);
@@ -83,6 +53,18 @@ void plugin_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params);
 void plugin_close(struct content *c);
+
+/* message handlers */
+void plugin_open_msg(wimp_message *message);
+void plugin_opening(wimp_message *message);
+void plugin_close_msg(wimp_message *message);
+void plugin_closed(wimp_message *message);
+void plugin_reshape_request(wimp_message *message);
+void plugin_status(wimp_message *message);
+void plugin_stream_new(wimp_message *message);
+void plugin_stream_written(wimp_message *message);
+void plugin_url_access(wimp_message *message);
+
 
 
 #endif

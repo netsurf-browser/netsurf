@@ -200,7 +200,7 @@ static const struct handler_entry handler_map[] = {
 #endif
 #ifdef WITH_PLUGIN
 	{plugin_create, 0, plugin_convert,
-		0, plugin_destroy, 0, plugin_redraw,
+		plugin_reformat, plugin_destroy, 0, plugin_redraw,
 		plugin_open, plugin_close,
 		true},
 #endif

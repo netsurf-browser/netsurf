@@ -102,16 +102,9 @@ struct object_params {
 	char* codebase;
 	char* classid;
 	struct plugin_params* params;
-	/* not a parameter, but stored here for convenience */
+	/* not a parameter but stored here for convenience */
 	char* basehref;
-	char* filename;
-	bool repeated;
-	unsigned int browser;
-	unsigned int plugin;
-	unsigned int browser_stream;
-	unsigned int plugin_stream;
-	unsigned int plugin_task;
-	unsigned int consumed;
+
 };
 
 struct plugin_params {

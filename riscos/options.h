@@ -47,6 +47,7 @@ extern bool option_buffer_animations;
 extern bool option_buffer_everything;
 extern char *option_homepage_url;
 extern bool option_open_browser_at_startup;
+extern bool option_plugins;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -79,7 +80,8 @@ bool option_background_blending = true; \
 bool option_buffer_animations = true; \
 bool option_buffer_everything = false; \
 char *option_homepage_url = 0; \
-bool option_open_browser_at_startup = false;
+bool option_open_browser_at_startup = false; \
+bool option_plugins = false;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -112,5 +114,6 @@ bool option_open_browser_at_startup = false;
 { "buffer_animations",      OPTION_BOOL,    &option_buffer_animations }, \
 { "buffer_everything",      OPTION_BOOL,    &option_buffer_everything }, \
 { "homepage_url",           OPTION_STRING,  &option_homepage_url }, \
-{ "open_browser_at_startup",OPTION_BOOL,    &option_open_browser_at_startup }
+{ "open_browser_at_startup",OPTION_BOOL,    &option_open_browser_at_startup }, \
+{ "plugins",                OPTION_BOOL,    &option_plugins }
 #endif
