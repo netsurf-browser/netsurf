@@ -80,6 +80,7 @@ static CURL *fetch_blank_curl;
 static struct fetch *fetch_list = 0;	/**< List of active fetches. */
 static char fetch_error_buffer[CURL_ERROR_SIZE]; /**< Error buffer for cURL. */
 static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
+static char fetch_proxy_userpwd[100];	/**< Proxy authentication details. */
 
 static CURLcode fetch_set_options(struct fetch *f);
 static void fetch_free(struct fetch *f);
@@ -387,7 +388,6 @@ CURLcode fetch_set_options(struct fetch *f)
 {
 	CURLcode code;
 	struct login *li;
-	char proxy_userpwd[100];
 
 #undef SETOPT
 #define SETOPT(option, value) \
@@ -431,10 +431,12 @@ CURLcode fetch_set_options(struct fetch *f)
 					OPTION_HTTP_PROXY_AUTH_BASIC ?
 					(long) CURLAUTH_BASIC :
 					(long) CURLAUTH_NTLM);
-			snprintf(proxy_userpwd, sizeof proxy_userpwd, "%s:%s",
+			snprintf(fetch_proxy_userpwd,
+					sizeof fetch_proxy_userpwd,
+					"%s:%s",
 					option_http_proxy_auth_user,
 					option_http_proxy_auth_pass);
-			SETOPT(CURLOPT_PROXYUSERPWD, proxy_userpwd);
+			SETOPT(CURLOPT_PROXYUSERPWD, fetch_proxy_userpwd);
 		}
 	}
 
