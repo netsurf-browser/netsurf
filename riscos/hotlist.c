@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <time.h>
 #include "oslib/colourtrans.h"
 #include "oslib/osword.h"
 #include "oslib/wimp.h"
@@ -30,56 +31,56 @@
 #define HOTLIST_BLINE 5
 
 struct hotlist_entry {
-  
+
 	/**	The next hotlist entry at this level, or NULL for no more
 	*/
 	struct hotlist_entry *next_entry;
-	
+
 	/**	The child hotlist entry (NULL for no children).
 		The children value must be set for this value to take effect.
 	*/
 	struct hotlist_entry *child_entry;
-	
+
 	/**	The number of children (-1 for non-folders, >=0 for folders)
 	*/
 	int children;
-	
+
 	/**	The title of the hotlist entry/folder
 	*/
 	char *title;
-	
+
 	/**	The URL of the hotlist entry (NULL for folders)
 	*/
 	char *url;
-	
+
 	/**	Whether this entry is expanded
 	*/
 	bool expanded;
-	
+
 	/**	Whether this entry is selected
 	*/
 	bool selected;
-	
+
 	/**	The content filetype (not for folders)
 	*/
 	int filetype;
-	
+
 	/**	The number of visits
 	*/
 	int visits;
-	
-	/**	Add/last visit dates
+
+	/**	Add/last visit dates (-1 if invalid)
 	*/
-	os_bcd_date_and_time add_date;
-	os_bcd_date_and_time last_date;
-	
+	time_t add_date;
+	time_t last_date;
+
 	/**	Position on last reformat (relative to window origin)
 	*/
 	int x0;
 	int y0;
 	int width;
 	int height;
-	
+
 	/**	Cached values
 	*/
 	int collapsed_width;
@@ -165,10 +166,11 @@ static struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char
 static void ro_gui_hotlist_update_entry_size(struct hotlist_entry *entry);
 static struct hotlist_entry *ro_gui_hotlist_find_entry(int x, int y, struct hotlist_entry *entry);
 static int ro_gui_hotlist_selection_state(struct hotlist_entry *entry, bool selected, bool redraw);
+static char *last_visit_to_string(time_t last_visit);
 
 void ro_gui_hotlist_init(void) {
 	os_error *error;
- 
+
 	/*	Get our sprite ids for faster plotting. This could be done in a
 		far more elegant manner, but it's late and my girlfriend will
 		kill me if I don't go to bed soon. Sorry.
@@ -200,7 +202,7 @@ void ro_gui_hotlist_init(void) {
 		warn_user("MiscError", error->errmess);
 		return;
 	}
- 	
+
 	/*	Update our text icon
 	*/
 	text_icon.data.indirected_text.validation = null_text_string;
@@ -211,7 +213,7 @@ void ro_gui_hotlist_init(void) {
 			  (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
 	sprite_icon.data.indirected_sprite.area = wimpspriteop_AREA;
 	sprite_icon.data.indirected_text.size = 12;
- 
+
 	/*	Create our window
 	*/
 	error = xwimp_create_window(&hotlist_window_definition, &hotlist_window);
@@ -219,14 +221,14 @@ void ro_gui_hotlist_init(void) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-  	
+
 	/*	Set the root options
 	*/
 	root.next_entry = NULL;
 	root.child_entry = NULL;
 	root.children = 0;
 	root.expanded = true;
-	
+
 	/*	Load the hotlist
 	*/
 	ro_gui_hotlist_load();
@@ -235,7 +237,7 @@ void ro_gui_hotlist_init(void) {
 
 /**
  * Shows the hotlist window.
- */ 
+ */
 void ro_gui_hotlist_show(void) {
 	os_error *error;
 	int screen_width, screen_height;
@@ -267,7 +269,7 @@ void ro_gui_hotlist_show(void) {
 		/*	Get the current screen size
 		*/
 		ro_gui_screen_size(&screen_width, &screen_height);
-		
+
 		/*	Move to the centre
 		*/
 		dimension = state.visible.x1 - state.visible.x0;
@@ -292,23 +294,23 @@ void ro_gui_hotlist_show(void) {
 void ro_gui_hotlist_load(void) {
 	struct hotlist_entry *netsurf;
 	struct hotlist_entry *entry;
-	
+
 	/*	Create a folder
 	*/
 	netsurf = ro_gui_hotlist_create("NetSurf", NULL, 0, &root);
 	netsurf->expanded = true;
-	
+
 	/*	Add some content
 	*/
 	entry = ro_gui_hotlist_create("NetSurf homepage", "http://netsurf.sf.net",
 			0xfaf, netsurf);
-	entry->add_date.year = 0;
+	entry->add_date = -1;
 	entry = ro_gui_hotlist_create("NetSurf test builds", "http://netsurf.strcprstskrzkrk.co.uk",
 			0xfaf, netsurf);
-	entry->add_date.year = 0;
+	entry->add_date = -1;
 }
 
-void ro_gui_hotlist_save(void) {  
+void ro_gui_hotlist_save(void) {
 }
 
 
@@ -317,7 +319,7 @@ void ro_gui_hotlist_save(void) {
  *
  * \param title   the entry title
  * \param content the content to add
- */ 
+ */
 void ro_gui_hotlist_add(char *title, struct content *content) {
 	ro_gui_hotlist_create(title, content->url, ro_content_filetype(content), &root);
 }
@@ -330,7 +332,7 @@ void ro_gui_hotlist_add(char *title, struct content *content) {
  */
 void ro_gui_hotlist_visited(struct content *content) {
 	if ((!content) || (!content->url)) return;
-	ro_gui_hotlist_visited_update(content, root.child_entry);	  
+	ro_gui_hotlist_visited_update(content, root.child_entry);
 }
 
 
@@ -341,19 +343,21 @@ void ro_gui_hotlist_visited(struct content *content) {
  * \param entry   the entry to check siblings and children of
  */
 void ro_gui_hotlist_visited_update(struct content *content, struct hotlist_entry *entry) {
-	oswordreadclock_local_bcd_block bcd;
 	char *url;
-	
+
 	/*	Update the hotlist
 	*/
 	url = content->url;
 	while (entry) {
 		if (entry->url) {
 			if (strcmp(url, entry->url) == 0) {
+				char *temp = last_visit_to_string(entry->last_date);
+				if (temp != NULL) {
+					LOG(("previous visit to '%s': '%s'", url, temp));
+					free(temp);
+				}
 				entry->visits++;
-				bcd.op = oswordreadclock_OP_LOCAL_BCD;
-				xoswordreadclock_local_bcd(&bcd);
-				entry->last_date = bcd.date_and_time;
+				entry->last_date = time(NULL);
 				ro_gui_hotlist_update_entry_size(entry);
 				if (entry->expanded) {
 					xwimp_force_redraw(hotlist_window,
@@ -364,7 +368,7 @@ void ro_gui_hotlist_visited_update(struct content *content, struct hotlist_entry
 			}
 		}
 		if (entry->child_entry) {
-			ro_gui_hotlist_visited_update(content, entry->child_entry);	
+			ro_gui_hotlist_visited_update(content, entry->child_entry);
 		}
 		entry = entry->next_entry;
 	}
@@ -377,12 +381,11 @@ void ro_gui_hotlist_visited_update(struct content *content, struct hotlist_entry
  * \param title  the entry title
  * \param url	 the entry url (NULL to create a folder)
  * \param folder the folder to add the entry into
- */ 
+ */
 struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char *url,
 		int filetype, struct hotlist_entry *folder) {
 	struct hotlist_entry *entry;
-	oswordreadclock_local_bcd_block bcd;
-	
+
 	/*	Check we have a title or a URL
 	*/
 	if (!title && !url) return NULL;
@@ -394,7 +397,7 @@ struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char *url,
 		warn_user("NoMemory", 0);
 		return NULL;
 	}
-	
+
 	/*	And enough for the url/title
 	*/
 	if (url) {
@@ -402,7 +405,7 @@ struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char *url,
 		if (!entry->url) {
 			warn_user("NoMemory", 0);
 			free(entry);
-			return NULL;		  
+			return NULL;
 		}
 		strcpy(entry->url, url);
 	}
@@ -415,45 +418,43 @@ struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char *url,
 			warn_user("NoMemory", 0);
 			free(entry->url);
 			free(entry);
-			return NULL;		  
+			return NULL;
 		}
 		strcpy(entry->title, title);
 	} else {
-		entry->title = entry->url; 
+		entry->title = entry->url;
 	}
-	
+
 	/*	Set the children count
 	*/
 	if (url) {
-		entry->children = -1; 
+		entry->children = -1;
 	} else {
 		entry->children = 0;
 	}
-	
+
 	/*	Set the filetype
 	*/
 	entry->filetype = filetype;
-	
+
 	/*	Set the default values
 	*/
 	entry->visits = 0;
-	
+
 	/*	Get our dates
 	*/
-	bcd.op = oswordreadclock_OP_LOCAL_BCD;
-	xoswordreadclock_local_bcd(&bcd);
-	entry->add_date = bcd.date_and_time;
-	entry->last_date.year = 0;
-	
+	entry->add_date = time(NULL);
+	entry->last_date = -1;
+
 	/*	Set the expanded/selected state
 	*/
 	entry->expanded = false;
 	entry->selected = false;
-	
+
 	/*	Set the width
 	*/
 	ro_gui_hotlist_update_entry_size(entry);
-	
+
 	/*	Link in as the last entry in root
 	*/
 	ro_gui_hotlist_link_entry(folder, entry);
@@ -466,16 +467,16 @@ struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char *url,
  *
  * \param parent  the parent entry to link under
  * \param entry	  the entry to link
- */ 
+ */
 void ro_gui_hotlist_link_entry(struct hotlist_entry *parent, struct hotlist_entry *entry) {
 	struct hotlist_entry *link_entry;
 
 	if (!parent || !entry) return;
-	
+
 	/*	Ensure the parent is a folder
 	*/
 	if (parent->children == -1) return;
-	
+
 	/*	Get the first child entry
 	*/
 	link_entry = parent->child_entry;
@@ -485,7 +486,7 @@ void ro_gui_hotlist_link_entry(struct hotlist_entry *parent, struct hotlist_entr
 		while (link_entry->next_entry) link_entry = link_entry->next_entry;
 		link_entry->next_entry = entry;
 	}
-	
+
 	/*	Increment the number of children
 	*/
 	parent->children += 1;
@@ -502,14 +503,14 @@ void ro_gui_hotlist_link_entry(struct hotlist_entry *parent, struct hotlist_entr
  */
 void ro_gui_hotlist_update_entry_size(struct hotlist_entry *entry) {
 	int width;
-	
+
 	/*	Get the width of the title
-	*/	
+	*/
 	xwimptextop_string_width(entry->title,
 			strlen(entry->title) > 256 ? 256 : strlen(entry->title),
 			&width);
 	entry->collapsed_width = width + 32 + 36 + 16;
-	
+
 	/*	Get the width of the URL
 	*/
 	if (entry->url) {
@@ -527,7 +528,7 @@ void ro_gui_hotlist_update_entry_size(struct hotlist_entry *entry) {
 
 /**
  * Redraws a section of the hotlist window
- * 
+ *
  * \param redraw the area to redraw
  */
 void ro_gui_hotlist_redraw(wimp_draw *redraw) {
@@ -535,12 +536,12 @@ void ro_gui_hotlist_redraw(wimp_draw *redraw) {
 	osbool more;
 	unsigned int size;
 	os_box extent = {0, 0, 0, 0};;
-	
+
 	/*	Reset our min/max sizes
 	*/
 	max_width = 0;
 	max_height = 0;
-	
+
 	/*	Get a pixel translation table for the sprites. We only
 		get one for all the sprites, so they must all have the
 		same characteristics.
@@ -549,7 +550,7 @@ void ro_gui_hotlist_redraw(wimp_draw *redraw) {
 			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
 	pixel_table = malloc(size);
-	if (pixel_table) { 
+	if (pixel_table) {
 		xcolourtrans_generate_table_for_sprite(gui_sprites, sprite[HOTLIST_EXPAND],
 				colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 				pixel_table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
@@ -571,12 +572,12 @@ void ro_gui_hotlist_redraw(wimp_draw *redraw) {
 				origin_x + 8, origin_y - 4);
 		more = wimp_get_rectangle(redraw);
 	}
-	
+
 	/*	Free our memory
 	*/
 	if (pixel_table) free(pixel_table);
 	pixel_table = NULL;
-	
+
 	/*	Check if we should reformat
 	*/
 	if (reformat_pending) {
@@ -609,13 +610,13 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 	int cumulative = 0;
 	int height = 0;
 	int box_y0;
-  
+
 	if (!entry) return 0;
-  
+
 	/*	Repeatedly draw our entries
 	*/
 	while (entry) {
-  	 
+
 		/*	Redraw the item
 		*/
 		height = ro_gui_hotlist_redraw_item(entry, level, x0 + 32, y0);
@@ -658,7 +659,7 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 				y0 -= 44;
 				height -= 44;
 			}
-			
+
 			/*	Draw the rest of the lines
 			*/
 			while (height > 0) {
@@ -670,7 +671,7 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 				y0 -= 44;
 				height -= 44;
 			}
-			
+
 		} else {
 			/*	Draw a half-line for the last entry
 			*/
@@ -699,17 +700,17 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 						gui_sprites, sprite[HOTLIST_COLLAPSE],
 						x0, box_y0 - 31,
 						osspriteop_USE_MASK | osspriteop_USE_PALETTE,
-						0, pixel_table);		  
+						0, pixel_table);
 			} else {
 				xosspriteop_put_sprite_scaled(osspriteop_PTR,
 						gui_sprites, sprite[HOTLIST_EXPAND],
 						x0, box_y0 - 31,
 						osspriteop_USE_MASK | osspriteop_USE_PALETTE,
 						0, pixel_table);
-		  
-			  
+
+
 			}
-		  
+
 		}
 
 		/*	Move to the next entry
@@ -717,7 +718,7 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 		entry = entry->next_entry;
 		first = false;
 	}
-	
+
 	/*	Return our height
 	*/
 	return cumulative;
@@ -736,19 +737,19 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 int ro_gui_hotlist_redraw_item(struct hotlist_entry *entry, int level, int x0, int y0) {
 	int height = 44;
 	int index;
-	
+
 	/*	Set the correct height
 	*/
 	if ((entry->children == -1) && (entry->expanded)) {
 		if (entry->url) height += 44;
 	}
-	
+
 	/*	Check whether we need to redraw
 	*/
 	if ((x0 < clip_x1) && (y0 > clip_y0) && ((x0 + entry->width) > clip_x0) &&
 			((y0 - height) < clip_y1)) {
-	
-	
+
+
 		/*	Update the selection state
 		*/
 		text_icon.flags = wimp_ICON_TEXT | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
@@ -783,11 +784,11 @@ int ro_gui_hotlist_redraw_item(struct hotlist_entry *entry, int level, int x0, i
 			/*	Get the icon sprite
 			*/
 			sprintf(icon_name, "small_%x", entry->filetype);
-			
+
 			/*	Check it exists
 			*/
 			if (xwimpspriteop_read_sprite_info(icon_name, 0, 0, 0, 0)) {
-				sprintf(icon_name, "small_xxx"); 
+				sprintf(icon_name, "small_xxx");
 			}
 		}
 		xwimp_plot_icon(&sprite_icon);
@@ -883,7 +884,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 	x = (pointer->pos.x - (state.visible.x0 - state.xscroll));
 	y = (pointer->pos.y - (state.visible.y1 - state.yscroll));
 
-	
+
 	/*	Find our entry
 	*/
 	entry = ro_gui_hotlist_find_entry(x, y, root.child_entry);
@@ -914,17 +915,17 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 					xwimp_force_redraw(hotlist_window,
 						entry->x0, entry->y0,
 						entry->x0 + entry->width,
-						entry->y0 + entry->height);	 
+						entry->y0 + entry->height);
 				}
 			} else if (buttons == (wimp_CLICK_ADJUST << 8)) {
 				entry->selected = !entry->selected;
 				xwimp_force_redraw(hotlist_window,
 					entry->x0, entry->y0,
 					entry->x0 + entry->width,
-					entry->y0 + entry->height);	 
-		  		 
+					entry->y0 + entry->height);
+
 			}
-		  
+
 			/*	Check if we should open the URL
 			*/
 			if (((buttons == wimp_DOUBLE_SELECT) || (buttons == wimp_DOUBLE_ADJUST)) &&
@@ -944,8 +945,8 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 	} else {
 		no_entry = true;
 	}
-	
-	
+
+
 	/*	Handle a click without an entry
 	*/
 	if (no_entry) {
@@ -956,7 +957,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 					false, true);
 		}
 	}
-	
+
 }
 
 
@@ -974,7 +975,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
  */
 struct hotlist_entry *ro_gui_hotlist_find_entry(int x, int y, struct hotlist_entry *entry) {
 	struct hotlist_entry *find_entry;
-	
+
 	/*	Check we have an entry (only applies if we have an empty hotlist)
 	*/
 	if (!entry) return NULL;
@@ -990,9 +991,9 @@ struct hotlist_entry *ro_gui_hotlist_find_entry(int x, int y, struct hotlist_ent
 			*/
 			if ((y - (entry->y0 + entry->height)) > -44) return entry;
 			if ((x - entry->x0) > (32 + 36)) return entry;
-			return NULL;	 
+			return NULL;
 		}
-	  
+
 		/*	Continue onwards
 		*/
 		if ((entry->child_entry) && (entry->expanded)) {
@@ -1030,7 +1031,7 @@ int ro_gui_hotlist_selection_state(struct hotlist_entry *entry, bool selected, b
 			*/
 			entry->selected = selected;
 			changes++;
-	  		
+
 			/*	Redraw the entry
 			*/
 			if (redraw) {
@@ -1040,7 +1041,7 @@ int ro_gui_hotlist_selection_state(struct hotlist_entry *entry, bool selected, b
 						entry->y0 + entry->height);
 			}
 		}
-	  
+
 		/*	Continue onwards
 		*/
 		if (entry->child_entry) {
@@ -1050,4 +1051,87 @@ int ro_gui_hotlist_selection_state(struct hotlist_entry *entry, bool selected, b
 		entry = entry->next_entry;
 	}
 	return changes;
+}
+
+/**
+ * Convert the time of the last visit into a human friendly string
+ *
+ * \param last_visit The time of the last visit
+ * \return The string, or NULL on failure
+ */
+char *last_visit_to_string(time_t last_visit)
+{
+	char *buffer, temp[12];
+	time_t now = time(NULL);
+	time_t difference = now - last_visit;
+	int years=0, weeks=0, days=0, hours=0, minutes=0, seconds=0;
+	int len=0;
+
+	if (last_visit < 0) return NULL;
+
+	LOG(("now: %ld last_visit: %ld difference: %ld", now, last_visit, difference));
+
+	years = difference / 31557600; /* seconds in a year */
+	difference -= years * 31557600;
+
+	/* months are a pain so we take the easy option and do weeks ;) */
+	weeks = difference / 604800; /* seconds in a week */
+	difference -= weeks * 604800;
+
+	days = difference / 86400; /* seconds in a day */
+	difference -= days * 86400;
+
+	hours = difference / 3600; /* seconds in an hour */
+	difference -= hours * 3600;
+
+	minutes = difference / 60; /* seconds in a minute */
+	difference -= minutes * 60;
+
+	seconds = difference;
+
+	if (years > 0)   len += 8;                      /* '99 years' */
+	if (weeks > 0)   len += 8  + (len > 0 ? 1 : 0); /* '51 weeks' */
+	if (days > 0)    len += 6  + (len > 0 ? 1 : 0); /*  '6 days'  */
+	if (hours > 0)   len += 8  + (len > 0 ? 1 : 0); /* '23 hours' */
+	if (minutes > 0) len += 10 + (len > 0 ? 1 : 0); /* '59 minutes' */
+	if (seconds > 0) len += 10 + (len > 0 ? 1 : 0); /* '59 seconds' */
+	len += 4;
+
+	if (years > 99) return NULL;
+
+	buffer = calloc(len+1, sizeof(char));
+	if (!buffer) {
+		warn_user("NoMemory", NULL);
+		return NULL;
+	}
+
+	/* Populate result buffer */
+	if (years > 0) {
+		sprintf(temp, "%d years", years);
+		buffer = strncat(buffer, temp, 8);
+	}
+	if (weeks > 0) {
+		sprintf(temp, "%s%d weeks", years > 0 ? " " : "", weeks);
+		buffer = strncat(buffer, temp, years > 0 ? 9 : 8);
+	}
+	if (days > 0) {
+		sprintf(temp, "%s%d days", weeks > 0 ? " " : "", days);
+		buffer = strncat(buffer, temp, weeks > 0 ? 7 : 6);
+	}
+	if (hours > 0) {
+		sprintf(temp, "%s%d hours", days > 0 ? " " : "", hours);
+		buffer = strncat(buffer, temp, days > 0 ? 9 : 8);
+	}
+	if (minutes > 0) {
+		sprintf(temp, "%s%d minutes", hours > 0 ? " " : "", minutes);
+		buffer = strncat(buffer, temp, hours > 0 ? 11 : 10);
+	}
+	if (seconds > 0) {
+		sprintf(temp, "%s%d seconds", minutes > 0 ? " " : "", seconds);
+		buffer = strncat(buffer, temp, minutes > 0 ? 11 : 10);
+	}
+
+	buffer = strncat(buffer, " ago", 4);
+
+	return buffer;
 }
