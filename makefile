@@ -30,7 +30,7 @@ OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_RISCOS += browser.o netsurf.o version.o			# desktop/
 OBJECTS_RISCOS += 401login.o bitmap.o buffer.o debugwin.o \
 	dialog.o download.o draw.o filetype.o font.o \
-	gui.o help.o history.o hotlist.o image.o \
+	global_history.o gui.o help.o history.o hotlist.o image.o \
 	menus.o mouseactions.o plotters.o plugin.o print.o \
 	save.o save_complete.o save_draw.o save_text.o \
 	schedule.o search.o sprite.o textselection.o theme.o \
