@@ -183,7 +183,7 @@ HelpBrowserMenu3:\Rset the local display options.
 HelpBrowserMenu3-0:\Rscale the page, affecting both text and images.
 HelpBrowserMenu3-1:\Rset the local image options.
 #HelpBrowserMenu3-1-0:\Stoggle the display of foreground images.
-#HelpBrowserMenu3-1-1:\Stoggle the display of background images.
+HelpBrowserMenu3-1-1:\Stoggle the display of background images.
 HelpBrowserMenu3-1-2:\Stoggle the display of animations.|MIf turned off, the first frame is displayed.
 HelpBrowserMenu3-1-3:\Stoggle dithering of images.|MImproves display in sub true colour screen modes.
 #HelpBrowserMenu3-1-4:\Stoggle smoothing of scaled images.|MUses bi-linear filtering to enhance display of scaled images.
