@@ -381,7 +381,6 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		/* white-space: pre */
 		char *text = tolat1_pre(n->content);
 		char *current;
-		bool first = true;
 		assert(parent_style->white_space == CSS_WHITE_SPACE_PRE);
 		for (current = text; *current; current++)
 			if (*current == ' ' || *current == '\t')
@@ -391,11 +390,11 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			size_t len = strcspn(current, "\r\n");
 			char old = current[len];
 			current[len] = 0;
-			if (!first || !inline_container) {
+			if (!inline_container) {
 				inline_container = box_create(0, 0, 0);
 				inline_container->type = BOX_INLINE_CONTAINER;
+				box_add_child(parent, inline_container);
 			}
-			first = false;
 			box = box_create(parent_style, status.href, title);
 			box->type = BOX_INLINE;
 			box->style_clone = 1;
@@ -403,13 +402,15 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			box->length = strlen(box->text);
 			box->font = font_open(content->data.html.fonts, box->style);
 			box_add_child(inline_container, box);
-			box_add_child(parent, inline_container);
 			current[len] = old;
 			current += len;
-			if (current[0] == '\r' && current[1] == '\n')
+			if (current[0] == '\r' && current[1] == '\n') {
 				current += 2;
-			else if (current[0] == '\n')
+				inline_container = 0;
+			} else if (current[0] != 0) {
 				current++;
+				inline_container = 0;
+			}
 		} while (*current);
 		xfree(text);
 		goto end;
