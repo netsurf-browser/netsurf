@@ -105,6 +105,7 @@ void browser_window_create(const char *url, struct browser_window *clone,
 	bw->caret_callback = NULL;
 	bw->frag_id = NULL;
 	bw->scrolling_box = NULL;
+	bw->referer = NULL;
 	if ((bw->window = gui_create_browser_window(bw, clone)) == NULL) {
 		free(bw);
 		return;
@@ -195,6 +196,11 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	bw->loading_content = c;
 	browser_window_start_throbber(bw);
 
+	if (referer && referer != bw->referer) {
+		free(bw->referer);
+		bw->referer = strdup(referer);
+	}
+
 	fetchcache_go(c, option_send_referer ? referer : 0,
 			browser_window_callback, bw, 0,
 			post_urlenc, post_multipart, true);
@@ -258,6 +264,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 			browser_window_stop_throbber(bw);
 			history_update(bw->history, c);
 			hotlist_visited(c);
+			free (bw->referer);
+			bw->referer = 0;
 			break;
 
 		case CONTENT_MSG_ERROR:
@@ -271,6 +279,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 				bw->scrolling_box = NULL;
 			}
 			browser_window_stop_throbber(bw);
+			free (bw->referer);
+			bw->referer = 0;
 			break;
 
 		case CONTENT_MSG_STATUS:
@@ -281,27 +291,10 @@ void browser_window_callback(content_msg msg, struct content *c,
 			bw->loading_content = 0;
 			browser_window_set_status(bw,
 					messages_get("Redirecting"));
-			/** \todo Send referer on redirect.
-			 * We can't simply grab bw->current_content->url
-			 * because:
-			 *	a) This would leak data if the referer
-			 *	   wasn't sent by the initial call
-			 *	b) We may have started this fetch via
-			 *	   browser_window_create. Therefore,
-			 *	   there'd be no current_content to
-			 *	   read the referer from.
-			 *
-			 * Therefore, we either need a way of extracting
-			 * the referer information from the fetch struct
-			 * or we store the information at a higher level
-			 * (such as in the browser_window struct). I'm
-			 * not entirely sure of the best solution here,
-			 * so I've left it for now.
-			 */
 			/* the spec says nothing about referrers and
 			 * redirects => follow Mozilla and preserve the
-			 * referrer across the redirect */
-			browser_window_go(bw, data.redirect, 0);
+			 * referer across the redirect */
+			browser_window_go(bw, data.redirect, bw->referer);
 			break;
 
 		case CONTENT_MSG_REFORMAT:
@@ -327,6 +320,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 				bw->scrolling_box = NULL;
 			}
 			browser_window_stop_throbber(bw);
+			free (bw->referer);
+			bw->referer = 0;
 			break;
 #endif
 

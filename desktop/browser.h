@@ -59,6 +59,9 @@ struct browser_window
 	/** Mouse position last scroll movement. */
 	int scrolling_last_x;
 	int scrolling_last_y;
+
+	/** Referer for current fetch, or 0. */
+	char *referer;
 };
 
 
