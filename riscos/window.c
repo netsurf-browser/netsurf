@@ -1278,7 +1278,7 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 		case ICON_TOOLBAR_BOOKMARK:
 			if ((pointer->buttons == wimp_CLICK_ADJUST) && (hotlist_tree)) {
 				node = tree_create_URL_node(hotlist_tree->root,
-						g->title,
+						g->bw->current_content->title,
 						g->bw->current_content->url,
 						ro_content_filetype(g->bw->current_content),
 						time(NULL), -1, 0);

@@ -393,7 +393,7 @@ void global_history_add(struct gui_window *g) {
   	if ((!g->bw->current_content) || (!global_history_tree))
   		return;
   	
-  	ro_gui_global_history_add(g->title, g->bw->current_content->url, time(NULL),
+  	ro_gui_global_history_add(g->bw->current_content->title, g->bw->current_content->url, time(NULL),
   			ro_content_filetype(g->bw->current_content));
 }
 
