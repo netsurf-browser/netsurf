@@ -19,6 +19,7 @@
 #include "oslib/os.h"
 #include "oslib/osbyte.h"
 #include "oslib/osfile.h"
+#include "oslib/osfscontrol.h"
 #include "oslib/plugin.h"
 #include "oslib/wimp.h"
 #include "oslib/uri.h"
@@ -793,8 +794,41 @@ void ro_msg_datasave(wimp_message* block)
 	xfree(click_boxes);
 }
 
-void ro_msg_dataload(wimp_message* block)
+
+/**
+ * Handle Message_DataLoad (file dragged in).
+ */
+
+void ro_msg_dataload(wimp_message *message)
 {
+	char *url;
+
+	if (message->data.data_xfer.w != wimp_ICON_BAR)
+		return;
+
+	if (message->data.data_xfer.file_type != 0xfaf &&
+			message->data.data_xfer.file_type != 0x695 &&
+			message->data.data_xfer.file_type != 0xaff &&
+			message->data.data_xfer.file_type != 0xb60 &&
+			message->data.data_xfer.file_type != 0xc85 &&
+			message->data.data_xfer.file_type != 0xff9 &&
+			message->data.data_xfer.file_type != 0xfff)
+		return;
+
+	/* send DataLoadAck */
+	message->action = message_DATA_LOAD_ACK;
+	message->your_ref = message->my_ref;
+	wimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+
+	/* create a new window with the file */
+	url = ro_path_to_url(message->data.data_xfer.file_name);
+	if (url) {
+		browser_window_create(url);
+		free(url);
+	}
+
+
+#if 0
 	gui_window* gui;
 	struct browser_window* bw;
 	wimp_message_data_xfer* data;
@@ -841,7 +875,7 @@ void ro_msg_dataload(wimp_message* block)
 	}
 
 	xfree(click_boxes);
-
+#endif
 }
 
 
@@ -885,21 +919,60 @@ void ro_msg_dataopen(wimp_message *message)
 
 	/* create a new window with the file */
 	url = ro_path_to_url(message->data.data_xfer.file_name);
-	browser_window_create(url);
-	free(url);
+	if (url) {
+		browser_window_create(url);
+		free(url);
+	}
 }
 
 
 /**
  * Convert a RISC OS pathname to a file: URL.
+ *
+ * \param  path  RISC OS pathname
+ * \return  URL, allocated on heap, or 0 on failure
  */
 
 char *ro_path_to_url(const char *path)
 {
-	unsigned int len = 20 + strlen(path);
-	char *url = xcalloc(len, 1);
-	strcpy(url, "file://");
-	__unixify(path, __RISCOSIFY_NO_REVERSE_SUFFIX, url + 7, len - 7, 0);
+	int spare;
+	char *buffer = 0;
+	char *url = 0;
+	os_error *error;
+
+	error = xosfscontrol_canonicalise_path(path, 0, 0, 0, 0, &spare);
+	if (error) {
+		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user(error->errmess);
+		return 0;
+	}
+
+	buffer = malloc(1 - spare);
+	url = malloc(1 - spare + 10);
+	if (!buffer || !url) {
+		LOG(("malloc failed"));
+		warn_user("NoMemory");
+		free(buffer);
+		free(url);
+		return 0;
+	}
+
+	error = xosfscontrol_canonicalise_path(path, buffer, 0, 0, 1 - spare,
+			0);
+	if (error) {
+		LOG(("xosfscontrol_canonicalise_path failed: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user(error->errmess);
+		free(buffer);
+		free(url);
+		return 0;
+	}
+
+	strcpy(url, "file:");
+	__unixify(buffer, __RISCOSIFY_NO_REVERSE_SUFFIX, url + 5,
+			1 - spare + 5, 0);
+	free(buffer);
 	return url;
 }
 
