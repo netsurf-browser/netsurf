@@ -25,7 +25,6 @@
 #include "oslib/wimpspriteop.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
-#include "netsurf/content/url_store.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/render/box.h"
