@@ -1025,6 +1025,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			return true;
 
 		case 14:	/* CTRL+N */
+			current_gui = g;
 			browser_window_create(g->url, g->data.browser.bw);
 			return true;
 		case 18:	/* CTRL+R */
