@@ -1238,11 +1238,12 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 					throbber_x, 0,
 					throbber_x + toolbar->descriptor->theme->throbber_width,
 					toolbar->height);
-				if (toolbar->descriptor->throbber_right) 
+				if (toolbar->descriptor->throbber_right) {
 					xwimp_force_redraw(toolbar->toolbar_handle,
 						old_width - width + throbber_x, 0, 16384, 16384);
 					xwimp_force_redraw(toolbar->toolbar_handle,
 						throbber_x, 0, 16384, 16384);
+				}
 
 			} else {
 				xwimp_resize_icon(toolbar->toolbar_handle, ICON_TOOLBAR_THROBBER,
