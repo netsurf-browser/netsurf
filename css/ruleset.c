@@ -621,6 +621,7 @@ bool parse_uri(const struct css_node *v, char **uri)
 	bool string = false;
 	const char *u;
 	char *t, *url;
+	url_func_result res;
 
 	switch (v->type) {
 		case CSS_NODE_URI:
@@ -650,11 +651,11 @@ bool parse_uri(const struct css_node *v, char **uri)
 			 * content is the parent HTML content
 			 */
 			if (v->stylesheet->type == CONTENT_HTML)
-				*uri = url_join(url, v->stylesheet->data.html.base_url);
+				res = url_join(url, v->stylesheet->data.html.base_url, uri);
 			else
-				*uri = url_join(url, v->stylesheet->url);
+				res = url_join(url, v->stylesheet->url, uri);
 			free(url);
-			if (!*uri)
+			if (res != URL_FUNC_OK)
 				return false;
 			break;
 		case CSS_NODE_STRING:
@@ -663,11 +664,11 @@ bool parse_uri(const struct css_node *v, char **uri)
 				return false;
 
 			if (v->stylesheet->type == CONTENT_HTML)
-				*uri = url_join(url, v->stylesheet->data.html.base_url);
+				res = url_join(url, v->stylesheet->data.html.base_url, uri);
 			else
-				*uri = url_join(url, v->stylesheet->url);
+				res = url_join(url, v->stylesheet->url, uri);
 			free(url);
-			if (!*uri)
+			if (res != URL_FUNC_OK)
 				return false;
 			break;
 		default:

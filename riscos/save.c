@@ -84,6 +84,7 @@ void ro_gui_save_open(gui_save_type save_type, struct content *c,
 	const char *name = "";
 	const char *nice;
 	os_error *error;
+	url_func_result res;
 
 	assert(save_type == GUI_SAVE_HOTLIST_EXPORT_HTML || c);
 
@@ -102,7 +103,7 @@ void ro_gui_save_open(gui_save_type save_type, struct content *c,
 	/* filename */
 	name = gui_save_table[save_type].name;
 	if (c) {
-		if ((nice = url_nice(c->url)))
+		if ((res = url_nice(c->url, &nice)) == URL_FUNC_OK)
 			name = nice;
         }
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);

@@ -1235,6 +1235,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 	char *url;
 	os_error *error;
 	wimp_pointer pointer;
+	url_func_result res;
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
@@ -1361,8 +1362,8 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		case wimp_KEY_RETURN:
 			if (!toolbar)
 				break;
-			url = url_normalize(g->url);
-			if (url) {
+			res = url_normalize(g->url, &url);
+			if (res == URL_FUNC_OK) {
 				gui_window_set_url(g, url);
 				browser_window_go(g->bw, url);
 				free(url);

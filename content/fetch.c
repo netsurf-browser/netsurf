@@ -227,12 +227,16 @@ struct fetch * fetch_start(char *url, char *referer,
 	CURLcode code;
 	CURLMcode codem;
 	struct curl_slist *slist;
+	url_func_result res;
 
 	fetch = malloc(sizeof (*fetch));
 	if (!fetch)
 		return 0;
 
-	host = url_host(url);
+	res = url_host(url, &host);
+	/* we only fail memory exhaustion */
+	if (res == URL_FUNC_NOMEM)
+		goto failed;
 
 	LOG(("fetch %p, url '%s'", fetch, url));
 

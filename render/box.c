@@ -640,6 +640,7 @@ struct css_style * box_get_style(struct content *c,
 	struct css_style style_new;
 	char * s;
 	unsigned int i;
+	url_func_result res;
 
 	memcpy(style, parent_style, sizeof(struct css_style));
 	memcpy(&style_new, &css_blank_style, sizeof(struct css_style));
@@ -658,12 +659,12 @@ struct css_style * box_get_style(struct content *c,
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "background"))) {
 		style->background_image.type = CSS_BACKGROUND_IMAGE_URI;
 		/**\todo This will leak memory. */
-		style->background_image.uri = url_join(s, c->data.html.base_url);
+		res = url_join(s, c->data.html.base_url, &style->background_image.uri);
 		/* if url is equivalent to the parent's url,
 		 * we've got infinite inclusion. stop it here.
 		 * also bail if url_join failed.
 		 */
-		if (!style->background_image.uri ||
+		if (res != URL_FUNC_OK ||
 		    strcasecmp(style->background_image.uri, c->data.html.base_url) == 0)
 			style->background_image.type = CSS_BACKGROUND_IMAGE_NONE;
 		xmlFree(s);
@@ -897,6 +898,7 @@ struct box_result box_image(xmlNode *n, struct box_status *status,
 	struct box *box;
 	char *s, *url, *s1, *map;
 	xmlChar *s2;
+	url_func_result res;
 
 	box = box_create(style, status->href, status->title, status->id,
 			status->content->data.html.box_pool);
@@ -926,12 +928,12 @@ struct box_result box_image(xmlNode *n, struct box_status *status,
 
 	/* remove leading and trailing whitespace */
 	s1 = strip(s);
-	url = url_join(s1, status->content->data.html.base_url);
+	res = url_join(s1, status->content->data.html.base_url, &url);
 	/* if url is equivalent to the parent's url,
 	 * we've got infinite inclusion. stop it here.
 	 * also bail if url_join failed.
 	 */
-	if (!url ||
+	if (res != URL_FUNC_OK ||
 	    strcasecmp(url, status->content->data.html.base_url) == 0) {
 		xmlFree(s);
 		return (struct box_result) {box, false, false};
@@ -1224,6 +1226,7 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 	struct box* box = NULL;
 	struct form_control *gadget = NULL;
 	char *s, *type, *url;
+	url_func_result res;
 
 	type = (char *) xmlGetProp(n, (const xmlChar *) "type");
 
@@ -1356,12 +1359,13 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 		gadget->box = box;
 		gadget->type = GADGET_IMAGE;
 		if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src"))) {
-			url = url_join(s, status->content->data.html.base_url);
+			res = url_join(s, status->content->data.html.base_url, &url);
 			/* if url is equivalent to the parent's url,
 			 * we've got infinite inclusion. stop it here.
 			 * also bail if url_join failed.
 			 */
-			if (url && strcasecmp(url, status->content->data.html.base_url) != 0)
+			if (res == URL_FUNC_OK &&
+					strcasecmp(url, status->content->data.html.base_url) != 0)
 				html_fetch_object(status->content, url, box,
 						image_types,
 						status->content->available_width,
@@ -2049,6 +2053,7 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
 	struct plugin_params* pp;
 	char *s, *url = NULL, *map;
 	xmlNode *c;
+	url_func_result res;
 
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
@@ -2065,12 +2070,12 @@ struct box_result box_object(xmlNode *n, struct box_status *status,
 
         /* object data */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "data"))) {
-		url = url_join(s, status->content->data.html.base_url);
+		res = url_join(s, status->content->data.html.base_url, &url);
 		/* if url is equivalent to the parent's url,
 		 * we've got infinite inclusion. stop it here.
 		 * also bail if url_join failed.
 		 */
-		if (!url || strcasecmp(url, status->content->data.html.base_url) == 0) {
+		if (res != URL_FUNC_OK || strcasecmp(url, status->content->data.html.base_url) == 0) {
 			free(po);
 			xmlFree(s);
 			return (struct box_result) {box, true, true};
@@ -2193,6 +2198,7 @@ struct box_result box_embed(xmlNode *n, struct box_status *status,
 	struct plugin_params *pp;
 	char *s, *url = NULL;
 	xmlAttr *a;
+	url_func_result res;
 
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
@@ -2209,12 +2215,12 @@ struct box_result box_embed(xmlNode *n, struct box_status *status,
 
 	/* embed src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
-		url = url_join(s, status->content->data.html.base_url);
+		res = url_join(s, status->content->data.html.base_url, &url);
 		/* if url is equivalent to the parent's url,
 		 * we've got infinite inclusion. stop it here.
 		 * also bail if url_join failed.
 		 */
-		if (!url || strcasecmp(url, status->content->data.html.base_url) == 0) {
+		if (res != URL_FUNC_OK || strcasecmp(url, status->content->data.html.base_url) == 0) {
 			free(po);
 			xmlFree(s);
 			return (struct box_result) {box, false, true};
@@ -2268,6 +2274,7 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 	struct plugin_params *pp;
 	char *s, *url = NULL;
 	xmlNode *c;
+	url_func_result res;
 
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
@@ -2284,12 +2291,12 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 
 	/* code */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "code"))) {
-		url = url_join(s, status->content->data.html.base_url);
+		res = url_join(s, status->content->data.html.base_url, &url);
 		/* if url is equivalent to the parent's url,
 		 * we've got infinite inclusion. stop it here.
 		 * also bail if url_join failed.
 		 */
-		if (!url || strcasecmp(url, status->content->data.html.base_url) == 0) {
+		if (res != URL_FUNC_OK || strcasecmp(url, status->content->data.html.base_url) == 0) {
 			free(po);
 			xmlFree(s);
 			return (struct box_result) {box, true, false};
@@ -2376,6 +2383,7 @@ struct box_result box_iframe(xmlNode *n, struct box_status *status,
         struct box *box;
 	struct object_params *po;
 	char *s, *url = NULL;
+	url_func_result res;
 
 	box = box_create(style, status->href, 0, status->id,
 			status->content->data.html.box_pool);
@@ -2392,12 +2400,12 @@ struct box_result box_iframe(xmlNode *n, struct box_status *status,
 
 	/* iframe src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
-		url = url_join(s, status->content->data.html.base_url);
+		res = url_join(s, status->content->data.html.base_url, &url);
 		/* if url is equivalent to the parent's url,
 		 * we've got infinite inclusion. stop it here.
 		 * also bail if url_join failed.
 		 */
-		if (!url || strcasecmp(url, status->content->data.html.base_url) == 0) {
+		if (res != URL_FUNC_OK || strcasecmp(url, status->content->data.html.base_url) == 0) {
 			free(po);
 			xmlFree(s);
 			return (struct box_result) {box, false, true};
@@ -2430,16 +2438,17 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
                   struct object_params* po)
 {
   struct plugin_params * pp;
+  url_func_result res;
 
   /* Check if the codebase attribute is defined.
    * If it is not, set it to the codebase of the current document.
    */
    if(po->codebase == 0)
-           po->codebase = url_join("./", content->data.html.base_url);
+           res = url_join("./", content->data.html.base_url, &po->codebase);
    else
-           po->codebase = url_join(po->codebase, content->data.html.base_url);
+           res = url_join(po->codebase, content->data.html.base_url, &po->codebase);
 
-  if (!po->codebase)
+  if (res != URL_FUNC_OK)
     return false;
 
   /* Set basehref */
@@ -2464,13 +2473,14 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
                                pp = pp->next);
                            if(pp == 0)
                            	   return false;
-                           url = url_join(pp->value, po->basehref);
-                           if (!url)
+                           res = url_join(pp->value, po->basehref, &url);
+                           if (res != URL_FUNC_OK)
                            	   return false;
                            /* munge the codebase */
-                           po->codebase = url_join("./",
-					   content->data.html.base_url);
-                           if (!po->codebase)
+                           res = url_join("./",
+					   content->data.html.base_url,
+					   &po->codebase);
+                           if (res != URL_FUNC_OK)
                            	   return false;
                    }
                    else {
@@ -2479,8 +2489,8 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
                    }
            }
            else {
-                   url = url_join(po->classid, po->codebase);
-                   if (!url)
+                   res = url_join(po->classid, po->codebase, &url);
+                   if (res != URL_FUNC_OK)
                    	   return false;
 
                    /* The java plugin doesn't need the .class extension
@@ -2492,8 +2502,8 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
            }
    }
    else {
-           url = url_join(po->data, po->codebase);
-           if (!url)
+           res = url_join(po->data, po->codebase, &url);
+           if (res != URL_FUNC_OK)
            	return false;
    }
 
@@ -2537,6 +2547,7 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 	struct box_result r;
 	struct box_multi_length *row_height = 0, *col_width = 0;
 	xmlNode *c;
+	url_func_result res;
 
 	box = box_create(style, 0, status->title, status->id,
 			status->content->data.html.box_pool);
@@ -2676,12 +2687,12 @@ struct box_result box_frameset(xmlNode *n, struct box_status *status,
 			}
 
 			s1 = strip(s);
-			url = url_join(s1, status->content->data.html.base_url);
+			res = url_join(s1, status->content->data.html.base_url, &url);
 			/* if url is equivalent to the parent's url,
 			 * we've got infinite inclusion. stop it here.
 			 * also bail if url_join failed.
 			 */
-			if (!url || strcasecmp(url, status->content->data.html.base_url) == 0) {
+			if (res != URL_FUNC_OK || strcasecmp(url, status->content->data.html.base_url) == 0) {
 				xmlFree(s);
 				c = c->next;
 				continue;

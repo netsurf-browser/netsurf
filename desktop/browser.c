@@ -149,11 +149,12 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	struct content *c;
 	char *url2;
 	char *hash;
+	url_func_result res;
 
 	LOG(("bw %p, url %s", bw, url));
 
-	url2 = url_normalize(url);
-	if (!url2) {
+	res = url_normalize(url, &url2);
+	if (res != URL_FUNC_OK) {
 		LOG(("failed to normalize url %s", url));
 		return;
 	}
@@ -602,6 +603,7 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 	struct content *content = c;
 	struct content *gadget_content = c;
 	struct form_control *gadget = 0;
+	url_func_result res;
 
 	/* search the box tree for a link, imagemap, or form control */
 	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
@@ -664,10 +666,10 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 			/* drop through */
 		case GADGET_SUBMIT:
 			if (gadget->form) {
-				url = url_join(gadget->form->action, base_url);
+				res = url_join(gadget->form->action, base_url, &url);
 				snprintf(status_buffer, sizeof status_buffer,
 						messages_get("FormSubmit"),
-						url ? url :
+						(res == URL_FUNC_OK) ? url :
 						gadget->form->action);
 				status = status_buffer;
 				pointer = GUI_POINTER_POINT;
@@ -713,8 +715,8 @@ void browser_window_mouse_click_html(struct browser_window *bw,
 		}
 
 	} else if (href) {
-		url = url_join(href, base_url);
-		if (!url)
+		res = url_join(href, base_url, &url);
+		if (res != URL_FUNC_OK)
 			return;
 
 		if (title) {
@@ -1634,6 +1636,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 {
 	char *data = 0, *url = 0, *url1 = 0, *base;
 	struct form_successful_control *success;
+	url_func_result res;
 
 	assert(form);
 	assert(bw->current_content->type == CONTENT_HTML);
@@ -1659,8 +1662,8 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			else {
 				sprintf(url, "%s?%s", form->action, data);
 			}
-			url1 = url_join(url, base);
-			if (!url1)
+			res = url_join(url, base, &url1);
+			if (res != URL_FUNC_OK)
 				break;
 			browser_window_go(bw, url1);
 			break;
@@ -1672,15 +1675,15 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 				warn_user("NoMemory", 0);
 				return;
 			}
-			url = url_join(form->action, base);
-			if (!url)
+			res = url_join(form->action, base, &url);
+			if (res != URL_FUNC_OK)
 				break;
 			browser_window_go_post(bw, url, data, 0, true);
 			break;
 
 		case method_POST_MULTIPART:
-			url = url_join(form->action, base);
-			if (!url)
+			res = url_join(form->action, base, &url);
+			if (res != URL_FUNC_OK)
 				break;
 			browser_window_go_post(bw, url, 0, success, true);
 			break;

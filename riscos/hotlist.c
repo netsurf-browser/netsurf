@@ -906,6 +906,7 @@ struct hotlist_entry *ro_gui_hotlist_create_entry(const char *title,
 		const char *url, int filetype,
 		struct hotlist_entry *folder) {
 	struct hotlist_entry *entry;
+	url_func_result res;
 
 	/*	Check we have a title or a URL
 	*/
@@ -923,7 +924,8 @@ struct hotlist_entry *ro_gui_hotlist_create_entry(const char *title,
 		use the URL instead
 	*/
 	entry->url = 0;
-	if ((url) && ((entry->url = url_normalize(url)) == 0)) {
+	if ((url) && ((res = url_normalize(url, &entry->url)) != URL_FUNC_OK)) {
+		/** \todo use correct error message */
 		warn_user("NoMemory", 0);
 		free(entry->url);
 		free(entry);
@@ -2443,6 +2445,7 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 	int close_icon, ok_icon;
 	bool folder;
 	bool add;
+	url_func_result res;
 
 	/*	Get our data
 	*/
@@ -2502,8 +2505,9 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 		if (entry == NULL) return;
 		if (url) {
 			old_value = entry->url;
-			entry->url = url_normalize(url);
-			if (!entry->url) {
+			res = url_normalize(url, &entry->url);
+			if (res != URL_FUNC_OK) {
+				/** \todo use correct error message */
 				warn_user("NoMemory", 0);
 				entry->url = old_value;
 				return;

@@ -46,10 +46,11 @@ void ro_gui_401login_init(void)
 void gui_401login_open(struct browser_window *bw, struct content *c, char *realm)
 {
 	char *murl, *host;
+	url_func_result res;
 
 	murl = c->url;
-	host = url_host(murl);
-	assert(host);
+	res = url_host(murl, &host);
+	assert(res == URL_FUNC_OK);
 	bwin = bw;
 
 	ro_gui_401login_open(bw->window->window, host, realm, murl);

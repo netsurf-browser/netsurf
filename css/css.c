@@ -579,6 +579,7 @@ void css_atimport(struct content *c, struct css_node *node)
 	unsigned int i;
 	char **import_url;
 	struct content **import_content;
+	url_func_result res;
 
 	LOG(("@import rule"));
 
@@ -666,8 +667,8 @@ void css_atimport(struct content *c, struct css_node *node)
 		return;
 	}
 
-	url1 = url_join(url, c->url);
-	if (!url1) {
+	res = url_join(url, c->url, &url1);
+	if (res != URL_FUNC_OK) {
 		free(url);
 		return;
 	}

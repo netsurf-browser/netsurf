@@ -57,20 +57,21 @@ void url_init(void)
  * replaced with "/". Characters are unescaped if safe.
  */
 
-char *url_normalize(const char *url)
+url_func_result url_normalize(const char *url, char **result)
 {
 	char c;
-	char *res = 0;
 	int m;
 	int i;
 	int len;
 	bool http = false;
 	regmatch_t match[10];
 
+	(*result) = 0;
+
 	m = regexec(&url_re, url, 10, match, 0);
 	if (m) {
 		LOG(("url '%s' failed to match regex", url));
-		return 0;
+		return URL_FUNC_FAILED;
 	}
 
 	len = strlen(url);
@@ -78,27 +79,27 @@ char *url_normalize(const char *url)
 	if (match[1].rm_so == -1) {
 		/* scheme missing: add http:// and reparse */
 		LOG(("scheme missing: using http"));
-		res = malloc(strlen(url) + 13);
-		if (!res) {
+		(*result) = malloc(strlen(url) + 13);
+		if (!(*result)) {
 			LOG(("malloc failed"));
-			return 0;
+			return URL_FUNC_NOMEM;
 		}
-		strcpy(res, "http://");
-		strcpy(res + 7, url);
-		m = regexec(&url_re, res, 10, match, 0);
+		strcpy((*result), "http://");
+		strcpy((*result) + 7, url);
+		m = regexec(&url_re, (*result), 10, match, 0);
 		if (m) {
-			LOG(("url '%s' failed to match regex", res));
-			free(res);
-			return 0;
+			LOG(("url '%s' failed to match regex", (*result)));
+			free((*result));
+			return URL_FUNC_FAILED;
 		}
 		len += 7;
 	} else {
-		res = malloc(len + 6);
-		if (!res) {
+		(*result) = malloc(len + 6);
+		if (!(*result)) {
 			LOG(("strdup failed"));
-			return 0;
+			return URL_FUNC_FAILED;
 		}
-		strcpy(res, url);
+		strcpy((*result), url);
 	}
 
 	/*for (unsigned int i = 0; i != 10; i++) {
@@ -113,55 +114,59 @@ char *url_normalize(const char *url)
 	/* make scheme lower-case */
 	if (match[2].rm_so != -1) {
 		for (i = match[2].rm_so; i != match[2].rm_eo; i++)
-			res[i] = tolower(res[i]);
-		if (match[2].rm_eo == 4 && res[0] == 'h' && res[1] == 't' &&
-				res[2] == 't' && res[3] == 'p')
+			(*result)[i] = tolower((*result)[i]);
+		if (match[2].rm_eo == 4 && (*result)[0] == 'h' &&
+				(*result)[1] == 't' && (*result)[2] == 't' &&
+				(*result)[3] == 'p')
 			http = true;
 	}
 
 	/* make empty path into "/" */
 	if (match[5].rm_so != -1 && match[5].rm_so == match[5].rm_eo) {
-		memmove(res + match[5].rm_so + 1, res + match[5].rm_so,
+		memmove((*result) + match[5].rm_so + 1,
+				(*result) + match[5].rm_so,
 				len - match[5].rm_so + 1);
-		res[match[5].rm_so] = '/';
+		(*result)[match[5].rm_so] = '/';
 		len++;
 	}
 
 	/* make host lower-case */
 	if (match[4].rm_so != -1) {
 		for (i = match[4].rm_so; i != match[4].rm_eo; i++) {
-			if (res[i] == ':') {
-				if (http && res[i + 1] == '8' &&
-						res[i + 2] == '0' &&
+			if ((*result)[i] == ':') {
+				if (http && (*result)[i + 1] == '8' &&
+						(*result)[i + 2] == '0' &&
 						i + 3 == match[4].rm_eo) {
-					memmove(res + i, res + i + 3,
+					memmove((*result) + i,
+							(*result) + i + 3,
 							len - match[4].rm_eo);
 					len -= 3;
-					res[len] = '\0';
+					(*result)[len] = '\0';
 				} else if (i + 1 == match[4].rm_eo) {
-					memmove(res + i, res + i + 1,
+					memmove((*result) + i,
+							(*result) + i + 1,
 							len - match[4].rm_eo);
 					len--;
-					res[len] = '\0';
+					(*result)[len] = '\0';
 				}
 				break;
 			}
-			res[i] = tolower(res[i]);
+			(*result)[i] = tolower((*result)[i]);
 		}
 	}
 
 	/* unescape non-"reserved" escaped characters */
 	for (i = 0; i != len; i++) {
-		if (res[i] != '%')
+		if ((*result)[i] != '%')
 			continue;
-		c = tolower(res[i + 1]);
+		c = tolower((*result)[i + 1]);
 		if ('0' <= c && c <= '9')
 			m = 16 * (c - '0');
 		else if ('a' <= c && c <= 'f')
 			m = 16 * (c - 'a' + 10);
 		else
 			continue;
-		c = tolower(res[i + 2]);
+		c = tolower((*result)[i + 2]);
 		if ('0' <= c && c <= '9')
 			m += c - '0';
 		else if ('a' <= c && c <= 'f')
@@ -175,12 +180,12 @@ char *url_normalize(const char *url)
 			continue;
 		}
 
-		res[i] = m;
-		memmove(res + i + 1, res + i + 3, len - i - 2);
+		(*result)[i] = m;
+		memmove((*result) + i + 1, (*result) + i + 3, len - i - 2);
 		len -= 2;
 	}
 
-	return res;
+	return URL_FUNC_OK;
 }
 
 
@@ -192,12 +197,11 @@ char *url_normalize(const char *url)
  * \return  an absolute URL, allocated on the heap, or 0 on failure
  */
 
-char *url_join(const char *rel, const char *base)
+url_func_result url_join(const char *rel, const char *base, char **result)
 {
 	int m;
 	int i, j;
 	char *buf = 0;
-	char *res;
 	const char *scheme = 0, *authority = 0, *path = 0, *query = 0,
 			*fragment = 0;
 	int scheme_len = 0, authority_len = 0, path_len = 0, query_len = 0,
@@ -206,11 +210,13 @@ char *url_join(const char *rel, const char *base)
 	regmatch_t rel_match[10];
 	regmatch_t up_match[3];
 
+	(*result) = 0;
+
 	/* see RFC 2396 section 5.2 */
 	m = regexec(&url_re, base, 10, base_match, 0);
 	if (m) {
 		LOG(("base url '%s' failed to match regex", base));
-		return 0;
+		return URL_FUNC_FAILED;
 	}
 	/*for (unsigned int i = 0; i != 10; i++) {
 		if (base_match[i].rm_so == -1)
@@ -221,7 +227,7 @@ char *url_join(const char *rel, const char *base)
 	}*/
 	if (base_match[2].rm_so == -1) {
 		LOG(("base url '%s' is not absolute", base));
-		return 0;
+		return URL_FUNC_FAILED;
 	}
 	scheme = base + base_match[2].rm_so;
 	scheme_len = base_match[2].rm_eo - base_match[2].rm_so;
@@ -236,7 +242,7 @@ char *url_join(const char *rel, const char *base)
 	m = regexec(&url_re, rel, 10, rel_match, 0);
 	if (m) {
 		LOG(("relative url '%s' failed to match regex", rel));
-		return 0;
+		return URL_FUNC_FAILED;
 	}
 
 	/* 2) */
@@ -292,7 +298,7 @@ char *url_join(const char *rel, const char *base)
 	buf = malloc(path_len + rel_match[5].rm_eo + 10);
 	if (!buf) {
 		LOG(("malloc failed"));
-		return 0;
+		return URL_FUNC_NOMEM;
 	}
 	/* a) */
 	strncpy(buf, path, path_len);
@@ -334,44 +340,44 @@ char *url_join(const char *rel, const char *base)
         path = buf;
 
 step7:	/* 7) */
-	res = malloc(scheme_len + 1 + 2 + authority_len + path_len + 1 + 1 +
+	(*result) = malloc(scheme_len + 1 + 2 + authority_len + path_len + 1 + 1 +
 			query_len + 1 + fragment_len + 1);
-	if (!res) {
+	if (!(*result)) {
 		LOG(("malloc failed"));
 		free(buf);
-		return 0;
+		return URL_FUNC_NOMEM;
 	}
 
-	strncpy(res, scheme, scheme_len);
-	res[scheme_len] = ':';
+	strncpy((*result), scheme, scheme_len);
+	(*result)[scheme_len] = ':';
 	i = scheme_len + 1;
 	if (authority) {
-		res[i++] = '/';
-		res[i++] = '/';
-		strncpy(res + i, authority, authority_len);
+		(*result)[i++] = '/';
+		(*result)[i++] = '/';
+		strncpy((*result) + i, authority, authority_len);
 		i += authority_len;
 	}
 	if (path_len) {
-		strncpy(res + i, path, path_len);
+		strncpy((*result) + i, path, path_len);
 		i += path_len;
 	} else {
-		res[i++] = '/';
+		(*result)[i++] = '/';
 	}
 	if (query) {
-		res[i++] = '?';
-		strncpy(res + i, query, query_len);
+		(*result)[i++] = '?';
+		strncpy((*result) + i, query, query_len);
 		i += query_len;
 	}
 	if (fragment) {
-		res[i++] = '#';
-		strncpy(res + i, fragment, fragment_len);
+		(*result)[i++] = '#';
+		strncpy((*result) + i, fragment, fragment_len);
 		i += fragment_len;
 	}
-	res[i] = 0;
+	(*result)[i] = 0;
 
 	free(buf);
 
-	return res;
+	return URL_FUNC_OK;
 }
 
 
@@ -382,29 +388,30 @@ step7:	/* 7) */
  * \returns  host name allocated on heap, or 0 on failure
  */
 
-char *url_host(const char *url)
+url_func_result url_host(const char *url, char **result)
 {
 	int m;
-	char *host;
 	regmatch_t match[10];
+
+	(*result) = 0;
 
 	m = regexec(&url_re, url, 10, match, 0);
 	if (m) {
 		LOG(("url '%s' failed to match regex", url));
-		return 0;
+		return URL_FUNC_FAILED;
 	}
 	if (match[4].rm_so == -1)
-		return 0;
+		return URL_FUNC_FAILED;
 
-	host = malloc(match[4].rm_eo - match[4].rm_so + 1);
-	if (!host) {
+	(*result) = malloc(match[4].rm_eo - match[4].rm_so + 1);
+	if (!(*result)) {
 		LOG(("malloc failed"));
-		return 0;
+		return URL_FUNC_NOMEM;
 	}
-	strncpy(host, url + match[4].rm_so, match[4].rm_eo - match[4].rm_so);
-	host[match[4].rm_eo - match[4].rm_so] = 0;
+	strncpy((*result), url + match[4].rm_so, match[4].rm_eo - match[4].rm_so);
+	(*result)[match[4].rm_eo - match[4].rm_so] = 0;
 
-	return host;
+	return URL_FUNC_OK;
 }
 
 
@@ -415,27 +422,29 @@ char *url_host(const char *url)
  * \returns  filename allocated on heap, or 0 on memory exhaustion
  */
 
-char *url_nice(const char *url)
+url_func_result url_nice(const char *url, char **result)
 {
 	unsigned int i, j, k = 0, so;
 	unsigned int len;
 	const char *colon;
 	char buf[40];
-	char *result;
 	char *rurl;
 	int m;
 	regmatch_t match[10];
 
-	result = malloc(40);
-	if (!result)
-		return 0;
+	/* just in case */
+	(*result) = 0;
+
+	(*result) = malloc(40);
+	if (!(*result))
+		return URL_FUNC_NOMEM;
 
 	len = strlen(url);
 	assert(len != 0);
 	rurl = malloc(len + 1);
 	if (!rurl) {
-		free(result);
-		return 0;
+		free((*result));
+		return URL_FUNC_NOMEM;
 	}
 
 	/* reverse url into rurl */
@@ -447,11 +456,11 @@ char *url_nice(const char *url)
 	colon = strchr(url, ':');
 	if (colon)
 		url = colon + 1;
-	strncpy(result, url, 15);
-	result[15] = 0;
-	for (i = 0; result[i]; i++)
-		if (!isalnum(result[i]))
-			result[i] = '_';
+	strncpy((*result), url, 15);
+	(*result)[15] = 0;
+	for (i = 0; (*result)[i]; i++)
+		if (!isalnum((*result)[i]))
+			(*result)[i] = '_';
 
 	/* append nice pieces */
 	j = 0;
@@ -481,19 +490,21 @@ char *url_nice(const char *url)
 
 	if (k == 0) {
 		free(rurl);
-		return result;
+		return URL_FUNC_OK;
 	}
 
 	/* reverse back */
 	for (i = 0, j = k - 1; i != k; i++, j--)
-		result[i] = buf[j];
-	result[k] = 0;
+		(*result)[i] = buf[j];
+	(*result)[k] = 0;
 
 	for (i = 0; i != k; i++)
-		if (result[i] != (char) 0xa0 && !isalnum(result[i]))
-			result[i] = '_';
+		if ((*result)[i] != (char) 0xa0 && !isalnum((*result)[i]))
+			(*result)[i] = '_';
 
-	return result;
+	free(rurl);
+
+	return URL_FUNC_OK;
 }
 
 
@@ -503,26 +514,35 @@ char *url_nice(const char *url)
 int main(int argc, char *argv[])
 {
 	int i;
+	url_func_result res;
 	char *s;
 	url_init();
-	for (i = 1; i != argc; i++) {
+/*	for (i = 1; i != argc; i++) {
+		printf("==> '%s'\n", argv[i]);
+		res = url_normalize(argv[i], &s);
+		if (res == URL_FUNC_OK) {
+			printf("<== '%s'\n", s);
+			free(s);
+		}*/
 /*		printf("==> '%s'\n", argv[i]);
-		s = url_normalize(argv[i]);
-		if (s)
-			printf("<== '%s'\n", s);*/
-/*		printf("==> '%s'\n", argv[i]);
-		s = url_host(argv[i]);
-		if (s)
-			printf("<== '%s'\n", s);*/
+		res = url_host(argv[i], &s);
+		if (res == URL_FUNC_OK) {
+			printf("<== '%s'\n", s);
+			free(s);
+		}*/
 /*		if (1 != i) {
-			s = url_join(argv[i], argv[1]);
-			if (s)
+			res = url_join(argv[i], argv[1], &s);
+			if (res == URL_FUNC_OK) {
 				printf("'%s' + '%s' \t= '%s'\n", argv[1],
 						argv[i], s);
+				free(s);
+			}
 		}*/
-		s = url_nice(argv[i]);
-		if (s)
+		res = url_nice(argv[i], &s);
+		if (res == URL_FUNC_OK) {
 			printf("'%s'\n", s);
+			free(s);
+		}
 	}
 	return 0;
 }

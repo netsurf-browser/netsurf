@@ -128,6 +128,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	char temp_name[40];
 	struct gui_download_window *dw;
 	os_error *error;
+	url_func_result res;
 
 	dw = malloc(sizeof *dw);
 	if (!dw) {
@@ -188,7 +189,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 			(osspriteop_id) dw->sprite_name;
 
 	strcpy(dw->path, messages_get("SaveObject"));
-	if ((nice = url_nice(url))) {
+	if ((res = url_nice(url, &nice)) == URL_FUNC_OK) {
 		strcpy(dw->path, nice);
 		free(nice);
 	}

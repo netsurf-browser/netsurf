@@ -31,10 +31,13 @@ static struct login *loginlist = &login;
 void login_list_add(char *host, char* logindets) {
 
   struct login *nli = xcalloc(1, sizeof(*nli));
-  char *temp = url_host(host);
+  char *temp;
   char *i;
+  url_func_result res;
 
-  assert(temp);
+  res = url_host(host, &temp);
+
+  assert(res == URL_FUNC_OK);
 
   /* Go back to the path base ie strip the document name
    * eg. http://www.blah.com/blah/test.htm becomes
@@ -75,6 +78,7 @@ struct login *login_list_get(char *url) {
   char *temp, *host;
   char *i;
   int reached_scheme = 0;
+  url_func_result res;
 
   if (url == NULL)
     return NULL;
@@ -83,8 +87,8 @@ struct login *login_list_get(char *url) {
                         (strncasecmp(url, "https://", 8) != 0))
     return NULL;
 
-  host = url_host(url);
-  if (host == 0 || strlen(host) == 0) return NULL;
+  res = url_host(url, &host);
+  if (res != URL_FUNC_OK || strlen(host) == 0) return NULL;
 
   temp = xstrdup(url);
 
@@ -93,8 +97,8 @@ struct login *login_list_get(char *url) {
    */
   if (strlen(host) > strlen(temp)) {
     xfree(temp);
-    temp = url_host(url);
-    if (temp == 0 || strlen(temp) == 0) {
+    res = url_host(url, &temp);
+    if (res != URL_FUNC_OK || strlen(temp) == 0) {
       xfree(host);
       return NULL;
     }

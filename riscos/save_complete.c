@@ -342,6 +342,7 @@ char * rewrite_stylesheet_urls(const char *source, unsigned int size,
 	unsigned int i;
 	unsigned int imports = 0;
 	regmatch_t match[11];
+	url_func_result result;
 
 	/* count number occurences of @import to (over)estimate result size */
 	/* can't use strstr because source is not 0-terminated string */
@@ -399,9 +400,9 @@ char * rewrite_stylesheet_urls(const char *source, unsigned int size,
 			free(res);
 			return 0;
 		}
-		url = url_join(url2, base);
+		result = url_join(url2, base, (char**)&url);
 		free(url2);
-		if (!url) {
+		if (result == URL_FUNC_NOMEM) {
 			free(res);
 			return 0;
 		}
@@ -410,17 +411,25 @@ char * rewrite_stylesheet_urls(const char *source, unsigned int size,
 		memcpy(res + *osize, source + offset, match[0].rm_so);
 		*osize += match[0].rm_so;
 
-		content = save_complete_list_find(url);
-		if (content) {
-			/* replace import */
-			snprintf(buf, sizeof buf, "@import '%x'",
-					(unsigned int) content);
-			memcpy(res + *osize, buf, strlen(buf));
-			*osize += strlen(buf);
-		} else {
+		if (result == URL_FUNC_OK) {
+			content = save_complete_list_find(url);
+			if (content) {
+				/* replace import */
+				snprintf(buf, sizeof buf, "@import '%x'",
+						(unsigned int) content);
+				memcpy(res + *osize, buf, strlen(buf));
+				*osize += strlen(buf);
+			} else {
+				/* copy import */
+				memcpy(res + *osize, source + offset + match[0].rm_so,
+					match[0].rm_eo - match[0].rm_so);
+				*osize += match[0].rm_eo - match[0].rm_so;
+			}
+		}
+		else {
 			/* copy import */
 			memcpy(res + *osize, source + offset + match[0].rm_so,
-					match[0].rm_eo - match[0].rm_so);
+				match[0].rm_eo - match[0].rm_so);
 			*osize += match[0].rm_eo - match[0].rm_so;
 		}
 
@@ -570,6 +579,7 @@ bool rewrite_url(xmlNode *n, const char *attr, const char *base)
 	char *url, *data;
 	char rel[20];
 	struct content *content;
+	url_func_result res;
 
 	if (!xmlHasProp(n, (const xmlChar *) attr))
 		return true;
@@ -578,25 +588,29 @@ bool rewrite_url(xmlNode *n, const char *attr, const char *base)
 	if (!data)
 		return false;
 
-	url = url_join(data, base);
+	res = url_join(data, base, &url);
 	xmlFree(data);
-	if (!url)
+	if (res == URL_FUNC_NOMEM)
 		return false;
-
-	content = save_complete_list_find(url);
-	if (content) {
-		/* found a match */
-		free(url);
-		snprintf(rel, sizeof rel, "%x", (unsigned int) content);
-		if (!xmlSetProp(n, (const xmlChar *) attr, (xmlChar *) rel))
-			return false;
-	} else {
-		/* no match found */
-		if (!xmlSetProp(n, (const xmlChar *) attr, (xmlChar *) url)) {
+	else if (res == URL_FUNC_OK) {
+		content = save_complete_list_find(url);
+		if (content) {
+			/* found a match */
 			free(url);
-			return false;
+			snprintf(rel, sizeof rel, "%x",
+						(unsigned int) content);
+			if (!xmlSetProp(n, (const xmlChar *) attr,
+							(xmlChar *) rel))
+				return false;
+		} else {
+			/* no match found */
+			if (!xmlSetProp(n, (const xmlChar *) attr,
+							(xmlChar *) url)) {
+				free(url);
+				return false;
+			}
+			free(url);
 		}
-		free(url);
 	}
 
 	return true;

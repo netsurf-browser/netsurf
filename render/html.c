@@ -304,8 +304,10 @@ void html_head(struct content *c, xmlNode *head)
 		} else if (strcmp(node->name, "base") == 0) {
 			char *href = (char *) xmlGetProp(node, (const xmlChar *) "href");
 			if (href) {
-				char *url = url_normalize(href);
-				if (url) {
+				char *url;
+				url_func_result res;
+				res = url_normalize(href, &url);
+				if (res == URL_FUNC_OK) {
 					free(c->data.html.base_url);
 					c->data.html.base_url = url;
 				}
@@ -330,6 +332,7 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 	unsigned int i = STYLESHEET_START;
 	unsigned int last_active = 0;
 	union content_msg_data msg_data;
+	url_func_result res;
 
 	/* stylesheet 0 is the base style sheet,
 	 * stylesheet 1 is the adblocking stylesheet,
@@ -414,9 +417,9 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			/* TODO: only the first preferred stylesheets (ie. those with a
 			 * title attribute) should be loaded (see HTML4 14.3) */
 
-			url = url_join(href, c->data.html.base_url);
+			res = url_join(href, c->data.html.base_url, &url);
 			xmlFree(href);
-			if (!url)
+			if (res != URL_FUNC_OK)
 				continue;
 
 			LOG(("linked stylesheet %i '%s'", i, url));

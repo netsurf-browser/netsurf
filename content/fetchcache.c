@@ -206,6 +206,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 	char **params;
 	unsigned int i;
 	union content_msg_data msg_data;
+	url_func_result result;
 
 	switch (msg) {
 		case FETCH_TYPE:
@@ -283,8 +284,8 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			c->fetch = 0;
 			/* redirect URLs must be absolute by HTTP/1.1, but many sites send
 			 * relative ones: treat them as relative to requested URL */
-			url = url_join(data, c->url);
-			if (url) {
+			result = url_join(data, c->url, &url);
+			if (result == URL_FUNC_OK) {
 				msg_data.redirect = url;
 				content_broadcast(c, CONTENT_MSG_REDIRECT, msg_data);
 				free(url);
