@@ -10,7 +10,7 @@
  *   Add better error handling
  *      - especially where bad GIFs are concerned.
  *
- * $Id: gif.c,v 1.5 2003/06/06 09:19:54 philpem Exp $
+ * $Id: gif.c,v 1.6 2003/06/07 13:07:48 philpem Exp $
  */
 
 #include <assert.h>
@@ -47,8 +47,6 @@ void nsgif_create(struct content *c)
   // yet)
   c->data.gif.length = 0;
   c->data.gif.buffer_pos = 0;
-
-  LOG(("gif object created"));
 }
 
 // Called when Netsurf has got some more data for us
@@ -85,25 +83,24 @@ int nsgif_input_callback(GifFileType *giffile, GifByteType *data, int length)
   }
 
   // Well, we've got enough data. Give libungif as much as it wants.
-  memcpy(data, &c->data.gif.data[c->data.gif.buffer_pos], length);
+  memcpy(data, &c->data.gif.data[c->data.gif.buffer_pos], (unsigned int) length);
   c->data.gif.buffer_pos += length;
 
   return length;
 }
 
 // Called when Netsurf wants us to convert the image
-int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
+int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
 {
-  char *row, **row_pointers;
-  int i, j, bit_depth, color_type, log2bpp, interlace;
-  unsigned int rowbytes, sprite_size;
+  unsigned long i, j;
+  unsigned int sprite_size;
   unsigned long width, height, left, top;
-  os_palette *palette;
   os_sprite_palette *sprite_palette;
   osspriteop_area *sprite_area;
   osspriteop_header *sprite;
   // The next three lines are for vars. used by the gif decoding engine
-  int recordtype, cur_row, extcode, count, got_image_data;
+  int recordtype, extcode, count, got_image_data;
+  int trancol;
   GifByteType *extension;
   GifColorType *colormap;
 
@@ -123,14 +120,14 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
   width = c->data.gif.giffile->SWidth;
   height = c->data.gif.giffile->SHeight;
 
-  LOG(("gif image width = %d, height = %d", width, height));
+  LOG(("gif image width = %lu, height = %lu", width, height));
 
   sprite_size = sizeof(*sprite_area) + sizeof(*sprite);
 
   // GIFs can't be more than 256 colours (8 bits).
-  sprite_size += 8 * 256 + height * ((width + 3) & ~3u);
+  sprite_size += (8 * 256) + (height * ((width + 3) & ~3u) * 2);
 
-  sprite_area = xcalloc(sprite_size + 1000, 1);
+  sprite_area = xcalloc((sprite_size) + 1000, 1);
   sprite_area->size = sprite_size;
   sprite_area->sprite_count = 1;
   sprite_area->first = sizeof(*sprite_area);
@@ -143,7 +140,9 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
   sprite->width = ((width + 3) & ~3u) / 4 - 1;
   sprite->left_bit = 0;
   sprite->right_bit = (8 * (((width - 1) % 4) + 1)) -1;
-  sprite->mask = sprite->image = sizeof(*sprite) + 8 * 256;
+  sprite->image = sizeof(*sprite) + 8 * 256;
+  sprite->mask = sizeof(*sprite) + (8 * 256) + (height * ((width + 3) & ~3u));
+  LOG(("image = %d, mask = %d", sprite->image, sprite->mask));
   sprite->mode = (os_mode) 21;
   sprite_palette = (os_sprite_palette *) (sprite + 1);
   c->data.gif.sprite_image = ((char *) sprite) + sprite->image;
@@ -182,9 +181,8 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
               LOG(("Interlaced GIF file"));
               for (j=(top+InterlacedOffset[i]); j < (top+c->data.gif.giffile->Image.Height); j += InterlacedJumps[i])
               {
-                LOG(("gif line %d", count));
                 count++;
-                assert (DGifGetLine(c->data.gif.giffile, c->data.gif.sprite_image + (j * ((c->width + 3) & ~3u)) + left, width) != GIF_ERROR);
+                assert (DGifGetLine(c->data.gif.giffile, c->data.gif.sprite_image + (j * ((c->width + 3) & ~3u)) + left, (int)width) != GIF_ERROR);
                 // TODO: ^^^ better error checking
               }
             }
@@ -194,29 +192,38 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
             LOG(("running DGifGetLine"));
             for (i=top; i<(height+top); i++)
             {
-  //            assert(DGifGetLine(c->data.gif.giffile, c->data.gif.sprite_image + i * ((c->width + 3) & ~3u), width) != GIF_ERROR);
-              if (DGifGetLine(c->data.gif.giffile, c->data.gif.sprite_image + (i * ((c->width + 3) & ~3u))+left, width) == GIF_ERROR)
+              if (DGifGetLine(c->data.gif.giffile, c->data.gif.sprite_image + (i * ((c->width + 3) & ~3u))+left, (int) width) == GIF_ERROR)
               {
-                LOG(("error: gif line %d - error %d", i, GifLastError()));
-                LOG(("exp height = %d, width = %d", height, width));
+                LOG(("error: gif line %lu - error %d", i, GifLastError()));
+                LOG(("exp height = %lu, width = %lu", height, width));
                 return 1;
               }
               // TODO: ^^^ better error checking
-              LOG(("gif line %d", i));
             }
           }
           got_image_data = -1;
         } else recordtype = TERMINATE_RECORD_TYPE;
         break;
       case EXTENSION_RECORD_TYPE:
-        // Skip any extension blocks in the file
         assert (DGifGetExtension(c->data.gif.giffile, &extcode, &extension) != GIF_ERROR);
-        // TODO: ^^^ better error checking
-        while (extension != NULL)
+
+        if (extension == NULL)
+          break;
+
+        do
         {
+          // Is the extension block a Graphics Rendering Info block?
+          if (extcode == GRAPHICS_EXT_FUNC_CODE)
+          {
+            // Yep. Grab the transparency data
+            if ((extension[1] & 1) == 1)
+              trancol = extension[4];
+            else
+              trancol = -1;
+          }
+
           DGifGetExtensionNext(c->data.gif.giffile, &extension);
-          // TODO: ^^^ better error checking
-        }
+        } while (extension != NULL);
         break;
       case TERMINATE_RECORD_TYPE:
         break;
@@ -225,7 +232,20 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
     }
   } while (recordtype != TERMINATE_RECORD_TYPE);
 
-  LOG(("all done"));
+  LOG(("creating image transparency mask"));
+
+  // This is one evil piece of code. Still, it works...
+  for (j=0; j<height; j++)
+    for (i=0; i<width; i++)
+    {
+      unsigned char *x = ((char *)sprite) + sprite->mask;
+      unsigned int pixofs = (j * ((c->width + 3) & ~3u)) + i;
+
+      if (c->data.gif.sprite_image[pixofs] == trancol)
+        x[pixofs] = 0x00;
+      else
+        x[pixofs] = 0xFF;
+    }
 
 /*
    And now for the obligatory quote from "The Matrix"
@@ -253,8 +273,9 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
   c->height = height;
 
   c->title = xcalloc(100, 1);
-  sprintf(c->title, "GIF image (%ux%u)", c->width, c->height);
+  sprintf(c->title, "GIF image (%lux%lu)", c->width, c->height);
 
+// Enable this if you want to debug the GIF loader
 //  xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.gif.sprite_area,
 //          "gif");
   return 0;
@@ -283,12 +304,14 @@ void nsgif_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height)
 {
 	/* TODO: scale to width, height */
-	int size;
+	unsigned int size;
 	osspriteop_trans_tab *table;
 
 /* JMB - lose this, it's filling my error log up too quickly ;)
 
   LOG(("Redraw fired"));
+
+  philpem - Oops. Sorry about that!
 */
 
 	xcolourtrans_generate_table_for_sprite(c->data.gif.sprite_area,
@@ -304,7 +327,7 @@ void nsgif_redraw(struct content *c, long x, long y,
 	xosspriteop_put_sprite_scaled(osspriteop_PTR,
 			c->data.gif.sprite_area,
 			(osspriteop_id) (c->data.gif.sprite_area + 1),
-			x, y, 0, 0, table);
+			x, y, 8, 0, table);
 
 	xfree(table);
 }
