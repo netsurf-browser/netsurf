@@ -8,13 +8,10 @@
 /*
  * TODO:
  *       - Reshaping plugin by request [Plugin_Reshape_Request (&4d545)]
- *       - Finish off stream protocol implementation
- *             [Plugin_Stream_Write (&4d54a), Plugin_Stream_Written (&4d54b)]
+ *       - Finish off stream protocol implementation (data from plugin)
  *       - Parse and act upon the rest of the Plugin_Opening flags
- *       - Handle death of Plugin Task
  *       - Implement remaining messages [Plugin_URL_Access, Plugin_Focus,
- *              Plugin_Notify, Plugin_Busy, Plugin_Action, Plugin_Abort,
- *              Plugin_Inform(ed)?]
+ *              Plugin_Busy, Plugin_Action, Plugin_Abort, Plugin_Inform(ed)?]
  *       - Handle standalone objects
  */
 
@@ -53,6 +50,7 @@ struct plugin_param_item *plugin_add_item_to_pilist(struct plugin_param_item *pi
 /* stream handling */
 void plugin_create_stream(struct browser_window *bw,
                           struct object_params *params, struct content *c);
+void plugin_write_stream(struct browser_window *bw, struct object_params *params, struct content *c);
 void plugin_write_stream_as_file(struct browser_window *bw,
                                  struct object_params *params,
                                  struct content *c);
@@ -81,6 +79,8 @@ void plugin_close(wimp_message *message);
 void plugin_closed(wimp_message *message);
 void plugin_reshape_request(wimp_message *message);
 void plugin_stream_new(wimp_message *message);
+void plugin_stream_written(wimp_message *message);
+void plugin_url_access(wimp_message *message);
 void plugin_status(wimp_message *message);
 char *plugin_get_string_value(os_string_value string, char *msg);
 
@@ -140,15 +140,17 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
         struct plugin_message *npm = xcalloc(1, sizeof(*npm));
         struct plugin_message *temp;
         struct plugin_list *npl = xcalloc(1, sizeof(*npl));
-        int offset;
-        unsigned char *pchar = (unsigned char*)&m.data;
         int flags = 0;
 
 	if (params == 0) {
-        	fprintf(stderr,
-        	        "Cannot handle standalone objects at this time");
+	        /* create object_params struct */
+/*	        struct object_params *nparams = xcalloc(1, sizeof(*nparams));
+	        params = nparams;
+	        params->basehref = xstrdup(c->url);
+*/        	fprintf(stderr,
+        	        "Cannot handle standalone objects\n");
         	gui_window_set_status(bw->window,
-        	"Plugin Error: Cannot handle standalone objects at this time");
+        	"Plugin Error: Cannot handle standalone objects");
         	xfree(npm);
         	xfree(npl);
         	return;
@@ -335,12 +337,14 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
         wimp_message m;
         plugin_message_close *pmc;
         struct plugin_message *temp;
-        char *p, *filename = strdup(params->filename);
+        char *p, *filename;
 
 	if (params == 0) {
 
 	        return;
 	}
+
+        filename = strdup(params->filename);
 
 	pmc = (plugin_message_close*)&m.data;
 	pmc->flags = 0;
@@ -399,6 +403,10 @@ void plugin_reshape_instance(struct content *c, struct browser_window *bw,
         plugin_message_reshape *pmr;
         os_box bbox;
         unsigned long x, y;
+
+        if (params == 0) {
+                return;
+        }
 
         box_coords(box, (unsigned long*)&x, (unsigned long*)&y);
         bbox.x0 = ((int)x << 1);
@@ -752,11 +760,9 @@ void plugin_create_stream(struct browser_window *bw, struct object_params *param
         wimp_message m;
         plugin_message_stream_new *pmsn;
         struct plugin_message *temp;
-        int offset = 0;
-        unsigned char *pchar = (unsigned char*)&m.data;
 
         pmsn = (plugin_message_stream_new*)&m.data;
-        pmsn->flags = 2;
+        pmsn->flags = 0;
         pmsn->plugin = (plugin_p)params->plugin;
         pmsn->browser = (plugin_b)params->browser;
         pmsn->stream = (plugin_s)0;
@@ -788,7 +794,10 @@ void plugin_create_stream(struct browser_window *bw, struct object_params *param
         params->browser_stream = params->browser;
         params->plugin_stream = (int)pmsn->stream;
 
-        if((pmsn->flags & 0x02) | (pmsn->flags & 0x03)) {
+        if((pmsn->flags == 0) || (pmsn->flags == 1) || (pmsn->flags == 2)) {
+                plugin_write_stream(bw, params, c);
+        }
+        else if((pmsn->flags == 3)) {
                 plugin_write_stream_as_file(bw, params, c);
         }
 
@@ -798,15 +807,74 @@ void plugin_create_stream(struct browser_window *bw, struct object_params *param
 }
 
 /**
+ * Writes to an open stream
+ */
+void plugin_write_stream(struct browser_window *bw, struct object_params *params, struct content *c) {
+
+        wimp_message m;
+        plugin_message_stream_write *pmsw;
+        plugin_message_stream_written *pmswt;
+        struct plugin_message *temp;
+        int consumed = 0;
+
+        pmsw = (plugin_message_stream_write*)&m.data;
+
+        pmsw->flags = 0;
+        pmsw->plugin = (plugin_p)params->plugin;
+        pmsw->browser = (plugin_b)params->browser;
+        pmsw->stream = (plugin_s)params->plugin_stream;
+        pmsw->browser_stream = (plugin_bs)params->browser_stream;
+        pmsw->url.pointer = c->url;
+        pmsw->end = c->data.plugin.length;
+        pmsw->last_modified_date = 0;
+        pmsw->notify_data = 0;
+        pmsw->offset = 0;
+        pmsw->length = c->data.plugin.length;
+        pmsw->data = (byte*)c->data.plugin.data;
+
+        m.size = 68;
+        m.your_ref = 0;
+        m.action = message_PLUG_IN_STREAM_WRITE;
+
+        while (consumed < c->data.plugin.length) {
+
+                pmsw->length = c->data.plugin.length;
+
+                temp = plugin_add_message_to_linked_list(pmsw->browser, pmsw->plugin, &m, 0);
+
+                LOG(("Sending message &4D54A"));
+                xwimp_send_message(wimp_USER_MESSAGE_RECORDED, &m, (wimp_t)params->plugin_task);
+
+                /* wait for wimp poll
+                   TODO - we should probably give up after a short time
+                          otherwise we'll be stuck in this loop forever
+                 */
+                while(temp->poll == 0)
+                        gui_poll();
+
+                pmswt = (plugin_message_stream_written*)&temp->reply->m->data;
+                if(pmswt->length > 0) {
+                        consumed += pmswt->length;
+                        pmsw->offset += pmswt->length + 1;
+                        plugin_remove_message_from_linked_list(temp->reply);
+                        plugin_remove_message_from_linked_list(temp);
+                }
+                else {
+                        plugin_remove_message_from_linked_list(temp->reply);
+                        plugin_remove_message_from_linked_list(temp);
+                        return;
+                }
+        }
+}
+
+/**
  * Writes a stream as a file
  */
 void plugin_write_stream_as_file(struct browser_window *bw, struct object_params *params, struct content *c) {
 
         wimp_message m;
         plugin_message_stream_as_file *pmsaf;
-        int offset = 0;
         unsigned int filetype;
-        unsigned char *pchar = (unsigned char*)&m.data;
         char *filename = strdup(params->filename), *p;
 
         pmsaf = (plugin_message_stream_as_file*)&m.data;
@@ -843,8 +911,6 @@ void plugin_destroy_stream(struct browser_window *bw, struct object_params *para
 
         wimp_message m;
         plugin_message_stream_destroy *pmsd;
-        int offset = 0;
-        unsigned char *pchar = (unsigned char*)&m.data;
 
         pmsd = (plugin_message_stream_destroy*)&m.data;
 
@@ -1007,7 +1073,7 @@ void plugin_msg_parse(wimp_message *message, int ack)
                    //       plugin_focus();
                           break;
                  case message_PLUG_IN_URL_ACCESS:
-                   //       plugin_url_access();
+                          plugin_url_access(message);
                           break;
                  case message_PLUG_IN_STATUS:
                           plugin_status(message);
@@ -1028,7 +1094,7 @@ void plugin_msg_parse(wimp_message *message, int ack)
                    //       plugin_stream_write();
                           break;
                  case message_PLUG_IN_STREAM_WRITTEN:
-                   //       plugin_stream_written();
+                          plugin_stream_written(message);
                           break;
                  case message_PLUG_IN_STREAM_DESTROY:
                    //       plugin_stream_destroy();
@@ -1123,8 +1189,6 @@ void plugin_closed(wimp_message *message) {
          }
          /* This is not the result of a plugin_open message */
          else {
-               LOG(("Plugin Closed without asking"));
-               LOG(("pmc->flags: %d", pmc->flags));
                if(pmc->flags & 0x2) {
                        LOG(("Err Mess: %s", pmc->error_text));
                        gui_window_set_status(npl->bw->window,
@@ -1177,6 +1241,104 @@ void plugin_stream_new(wimp_message *message) {
                npm->poll = 1;
                npm->plugin = pmsn->plugin;
                npm->reply = reply;
+         }
+}
+
+/**
+ * Handles receipt of plugin_stream_written messages
+ */
+void plugin_stream_written(wimp_message *message) {
+
+         struct plugin_message *npm = plugin_get_message_from_linked_list(message->your_ref);
+         struct plugin_message *reply;
+         plugin_message_stream_written *pmswt = (plugin_message_stream_written*)&message->data;
+
+         /* add this message to linked list */
+         reply = plugin_add_message_to_linked_list(pmswt->browser, pmswt->plugin, message, 0);
+
+         /* notify plugin_open message entry in list */
+         if(npm != NULL) {
+
+               npm->poll = 1;
+               npm->plugin = pmswt->plugin;
+               npm->reply = reply;
+         }
+}
+
+/**
+ * Handles plugin_url_access messages
+ */
+void plugin_url_access(wimp_message *message) {
+
+         wimp_message m;
+         struct plugin_list *npl;
+         plugin_message_url_access *pmua = (plugin_message_url_access*)&message->data;
+         plugin_message_notify *pmn = (plugin_message_notify*)&m.data;
+         int notify = 0, post = 0, file = 0;
+         char *url = plugin_get_string_value(pmua->url, (char*)pmua);
+         char *window;
+
+         npl = plugin_get_instance_from_list(pmua->browser, pmua->plugin);
+
+         if (pmua->flags & 0x01) notify = 1;
+         if (pmua->flags & 0x02) post = 1;
+         if (pmua->flags & 0x04) file = 1;
+
+         /* fetch url to window */
+         if (pmua->target_window.offset != 0 &&
+             pmua->target_window.pointer != 0) {
+                 window = plugin_get_string_value(pmua->target_window,
+                                                  (char*)pmua);
+                 LOG(("flags: %d, url: %s, window: %s", pmua->flags, url, window));
+                 /* TODO: proper _parent and _self support (needs frames)
+                  *       other window names
+                  */
+                 if (!post) { /* GET request */
+                         if (strcasecmp(window, "_self") == 0 ||
+                             strcasecmp(window, "_parent") == 0 ||
+                             strcasecmp(window, "_top") == 0 ||
+                             strcasecmp(window, "") == 0) {
+                                 browser_window_open_location(npl->bw, url);
+                         }
+                         else if (strcasecmp(window, "_blank") == 0) {
+                                 struct browser_window *bwnew;
+                                 bwnew = create_browser_window(browser_TITLE
+                                  | browser_TOOLBAR | browser_SCROLL_X_ALWAYS
+                                  | browser_SCROLL_Y_ALWAYS, 640, 480);
+                                 gui_window_show(bwnew->window);
+                                 bwnew->url = xstrdup(url);
+                                 browser_window_open_location(bwnew, url);
+                         }
+                 }
+                 else { /* POST request */
+                         /* fetch URL */
+                 }
+         }
+         /* fetch data and stream to plugin */
+         else {
+                 if (!post) { /* GET request */
+                         /* fetch URL */
+                 }
+                 else { /* POST request */
+                         /* fetch URL */
+                 }
+
+                 /* stream data to plugin */
+         }
+
+         if (notify) {
+                 /* send message_plugin_notify to plugin task */
+                 pmn->flags = 0;
+                 pmn->plugin = pmua->plugin;
+                 pmn->browser = pmua->browser;
+                 pmn->url.pointer = url;
+                 pmn->reason = (plugin_notify_reason)0;
+                 pmn->notify_data = pmua->notify_data;
+
+                 m.size = 44;
+                 m.your_ref = message->my_ref;
+                 m.action = message_PLUG_IN_NOTIFY;
+                 xwimp_send_message(wimp_USER_MESSAGE, &m, message->sender);
          }
 }
 

@@ -1860,6 +1860,8 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
                            if(pp != 0)
                                    url = url_join(pp->value, po->basehref);
                            else return false;
+                           /* munge the codebase */
+                           po->codebase = url_join("./", content->url);
                    }
                    else {
                            LOG(("ActiveX object - n0"));
