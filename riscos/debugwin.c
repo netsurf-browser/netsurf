@@ -124,9 +124,9 @@ void ro_gui_debugwin_redraw_plot(wimp_draw *redraw)
 	xwimptextop_paint(0, "url", x0 + 4, y0 - 20);
 	xwimptextop_paint(0, "type", x0 + 600, y0 - 20);
 	xwimptextop_paint(0, "fresh", x0 + 680, y0 - 20);
-	xwimptextop_paint(0, "mime_type", x0 + 750, y0 - 20);
-	xwimptextop_paint(0, "users", x0 + 880, y0 - 20);
-	xwimptextop_paint(0, "status", x0 + 950, y0 - 20);
+	xwimptextop_paint(0, "mime_type", x0 + 760, y0 - 20);
+	xwimptextop_paint(0, "users", x0 + 910, y0 - 20);
+	xwimptextop_paint(0, "status", x0 + 990, y0 - 20);
 	xwimptextop_paint(0, "size", x0 + 1100, y0 - 20);
 
 	xwimp_set_font_colours(wimp_COLOUR_BLACK, wimp_COLOUR_WHITE);
@@ -140,14 +140,14 @@ void ro_gui_debugwin_redraw_plot(wimp_draw *redraw)
 				x0 + 710, y);
 		if (content->mime_type)
 			xwimptextop_paint(0, content->mime_type,
-					x0 + 750, y);
+					x0 + 760, y);
 		users = 0;
 		for (user = content->user_list->next; user; user = user->next)
 			users++;
 		snprintf(s, sizeof s, "%u", users);
-		xwimptextop_paint(wimptextop_RJUSTIFY, s, x0 + 930, y);
+		xwimptextop_paint(wimptextop_RJUSTIFY, s, x0 + 960, y);
 		xwimptextop_paint(0, content_status_name[content->status],
-				x0 + 950, y);
+				x0 + 990, y);
 		snprintf(s, sizeof s, "%u", content->size);
 		xwimptextop_paint(wimptextop_RJUSTIFY, s, x0 + 1190, y);
 		size += content->size;
