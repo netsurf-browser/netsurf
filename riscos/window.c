@@ -325,9 +325,9 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 	if ((state.flags & wimp_WINDOW_TOGGLED) &&
 			(state.flags & wimp_WINDOW_BOUNDED_ONCE) &&
 			!(state.flags & wimp_WINDOW_FULL_SIZE)) {
-		open->visible.x0 = open->visible.y0 = 0;
-		open->visible.x1 = open->visible.y1 = 0x1000;
-		width = height = 0x1000;
+		open->visible.y0 = 0;
+		open->visible.y1 = 0x1000;
+		height = 0x1000;
 	}
 
 	/* account for toolbar height, if present */
@@ -343,7 +343,7 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 	/* change extent if necessary */
 	if (g->data.browser.old_width != width ||
 			g->data.browser.old_height != height) {
-		if (g->data.browser.old_width != width) {
+		if (content && g->data.browser.old_width != width) {
 			g->data.browser.reformat_pending = true;
 			gui_reformat_pending = true;
 		}
