@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.c,v 1.8 2003/06/01 23:02:56 monkeyson Exp $
+ * $Id: fetch.c,v 1.9 2003/06/02 01:09:50 jmb Exp $
  *
  * This module handles fetching of data from any url.
  *
@@ -184,7 +184,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	{
 	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXY, OPTIONS.http_proxy);
 	assert(code == CURLE_OK);
-	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXYPORT, (long)OPTIONS.http_proxy);
+	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXYPORT, (long)OPTIONS.http_port);
 	assert(code == CURLE_OK);
 	}
 
@@ -207,7 +207,7 @@ void fetch_abort(struct fetch *f)
 
 	assert(f != 0);
 	LOG(("fetch %p, url '%s'", f, f->url));
-  
+
 	if (f->in_callback) {
 		LOG(("in callback: will abort later"));
 		f->aborting = 1;
