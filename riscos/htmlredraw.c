@@ -1018,7 +1018,8 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 					box->background->height * 2,
 					background_colour,
 					repeat_x, repeat_y,
-					IMAGE_PLOT_TINCT_ALPHA);
+					((box->background->bitmap->opaque) ?
+	                		IMAGE_PLOT_TINCT_OPAQUE : IMAGE_PLOT_TINCT_ALPHA));
                    break;
 #endif
 #ifdef WITH_MNG
@@ -1030,7 +1031,8 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 					box->background->height * 2,
 					background_colour,
 					repeat_x, repeat_y,
-					IMAGE_PLOT_TINCT_ALPHA);
+					((box->background->bitmap->opaque) ?
+	                		IMAGE_PLOT_TINCT_OPAQUE : IMAGE_PLOT_TINCT_ALPHA));
 			break;
 #endif
 #ifdef WITH_JPEG
@@ -1046,13 +1048,14 @@ bool html_redraw_background(int xi, int yi, int width, int height,
 #endif
 #ifdef WITH_GIF
 		case CONTENT_GIF:
-			image_redraw(box->background->data.gif.gif->frame_image,
+			image_redraw(&box->background->bitmap->sprite_area,
 					x, y, image_width, image_height,
 					box->background->width * 2,
 					box->background->height * 2,
 					background_colour,
 					repeat_x, repeat_y,
-					IMAGE_PLOT_TINCT_ALPHA);
+					((box->background->bitmap->opaque) ?
+	                		IMAGE_PLOT_TINCT_OPAQUE : IMAGE_PLOT_TINCT_ALPHA));
 			break;
 #endif
 	/**\todo Add draw/sprite background support? */

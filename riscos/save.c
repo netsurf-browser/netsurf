@@ -426,7 +426,6 @@ bool ro_gui_save_complete(struct content *c, char *path)
 
 void ro_gui_save_object_native(struct content *c, char *path)
 {
-	os_error *error;
 
 	switch (c->type) {
 #ifdef WITH_JPEG
@@ -447,7 +446,7 @@ void ro_gui_save_object_native(struct content *c, char *path)
 #endif
 #ifdef WITH_GIF
 		case CONTENT_GIF:
-			error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.gif.gif->frame_image, path);
+			bitmap_save(c->bitmap, path);
 			break;
 #endif
 		default:
