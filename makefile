@@ -30,7 +30,7 @@ OBJECTS_DEBUGRO = $(OBJECTS_COMMON) \
 	about.o filetype.o \
 	version.o \
 	optionsd.o fontd.o
-DOCUMENTS = Themes.html	
+DOCUMENTS = Themes.html,faf	
 VPATH = content:css:desktop:render:riscos:utils:debug
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wconversion -Wstrict-prototypes \
@@ -51,7 +51,7 @@ SOURCES_DEBUG=$(OBJECTS_DEBUG:.o=.c)
 OBJS_DEBUG=$(OBJECTS_DEBUG:%.o=$(OBJDIR_DEBUG)/%.o)
 OBJS_DEBUGRO=$(OBJECTS_DEBUGRO:%.o=$(OBJDIR)/%.o)
 DOCDIR = !NetSurf/Docs
-DOCS=$(DOCUMENTS:%.html=$(DOCDIR)/%.html)
+DOCS=$(DOCUMENTS:%.html,faf=$(DOCDIR)/%.html,faf)
 
 # targets
 all: !NetSurf/!RunImage,ff8 $(DOCS)
@@ -85,7 +85,7 @@ utils/translit.c: transtab
 	cd utils; ./tt2code < transtab > translit.c
 	
 # create documentation
-$(DOCDIR)/%.html: documentation/%.xml
+$(DOCDIR)/%.html,faf: documentation/%.xml
 	# syntax: xsltproc [options] -o <output file> <XSL stylesheet> <input file>
 	# --nonet prevents connection to the web to find the stylesheet
 	xsltproc -o $@ http://www.movspclr.co.uk/dtd/100/prm-html.xsl $<
