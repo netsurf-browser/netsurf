@@ -19,12 +19,10 @@
 #include "netsurf/utils/utils.h"
 
 
-static bool image_redraw_tinct_alpha(osspriteop_area *area, int x, int y,
+static bool image_redraw_tinct(osspriteop_area *area, int x, int y,
 		int req_width, int req_height, int width, int height,
-		unsigned long background_colour, bool repeatx, bool repeaty);
-static bool image_redraw_tinct_opaque(osspriteop_area *area, int x, int y,
-		int req_width, int req_height, int width, int height,
-		unsigned long background_colour, bool repeatx, bool repeaty);
+		unsigned long background_colour, bool repeatx, bool repeaty,
+		bool alpha);
 static bool image_redraw_os(osspriteop_area *area, int x, int y,
 		int req_width, int req_height, int width, int height);
 
@@ -51,17 +49,17 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 {
 	switch (type) {
 		case IMAGE_PLOT_TINCT_ALPHA:
-			return image_redraw_tinct_alpha(area, x, y,
+			return image_redraw_tinct(area, x, y,
 						req_width, req_height,
 						width, height,
 						background_colour,
-						repeatx, repeaty);
+						repeatx, repeaty, true);
 		case IMAGE_PLOT_TINCT_OPAQUE:
-			return image_redraw_tinct_opaque(area, x, y,
+			return image_redraw_tinct(area, x, y,
 						req_width, req_height,
 						width, height,
 						background_colour,
-						repeatx, repeaty);
+						repeatx, repeaty, false);
 		case IMAGE_PLOT_OS:
 			return image_redraw_os(area, x, y, req_width,
 						req_height, width, height);
@@ -73,7 +71,7 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 }
 
 /**
- * Plot an alpha channel image at the given coordinates using tinct
+ * Plot an image at the given coordinates using tinct
  *
  * \param area              The sprite area containing the sprite
  * \param x                 Left edge of sprite
@@ -83,11 +81,15 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
  * \param width             The actual width of the sprite
  * \param height            The actual height of the sprite
  * \param background_colour The background colour to blend to
+ * \param repeatx           Repeat the image in the x direction
+ * \param repeaty           Repeat the image in the y direction
+ * \param alpha             Use the alpha channel
  * \return true on success, false otherwise
  */
-bool image_redraw_tinct_alpha(osspriteop_area *area, int x, int y,
+bool image_redraw_tinct(osspriteop_area *area, int x, int y,
 		int req_width, int req_height, int width, int height,
-		unsigned long background_colour, bool repeatx, bool repeaty)
+		unsigned long background_colour, bool repeatx, bool repeaty,
+		bool alpha)
 {
 	unsigned int tinct_options;
 	_kernel_oserror *error;
@@ -117,74 +119,25 @@ bool image_redraw_tinct_alpha(osspriteop_area *area, int x, int y,
 	if (repeaty)
 		tinct_options |= tinct_FILL_VERTICALLY;
 
-	error = _swix(Tinct_PlotScaledAlpha, _INR(2,7),
-			(char*)area + area->first, x, y - req_height,
-			req_width, req_height, tinct_options);
-	if (error) {
-		LOG(("xtinct_plotscaledalpha: 0x%x: %s",
-				error->errnum, error->errmess));
-		return false;
-	}
-
-	return true;
-}
-
-/**
- * Plot an opaque image at the given coordinates using tinct
- *
- * \param area              The sprite area containing the sprite
- * \param x                 Left edge of sprite
- * \param y                 Top edge of sprite
- * \param req_width         The requested width of the sprite
- * \param req_height        The requested height of the sprite
- * \param width             The actual width of the sprite
- * \param height            The actual height of the sprite
- * \param background_colour The background colour to blend to
- * \return true on success, false otherwise
- */
-bool image_redraw_tinct_opaque(osspriteop_area *area, int x, int y,
-		int req_width, int req_height, int width, int height,
-		unsigned long background_colour, bool repeatx, bool repeaty)
-{
-	unsigned int tinct_options;
-	_kernel_oserror *error;
-
-	if (ro_gui_current_redraw_gui) {
-		tinct_options =
-			(ro_gui_current_redraw_gui->option.filter_sprites ?
-						tinct_BILINEAR_FILTER : 0)
-			|
-			(ro_gui_current_redraw_gui->option.dither_sprites ?
-						tinct_DITHER : 0);
+	if (alpha) {
+		error = _swix(Tinct_PlotScaledAlpha, _INR(2,7),
+				(char*)area + area->first, x, y - req_height,
+				req_width, req_height, tinct_options);
 	} else {
-		tinct_options =
-			(option_filter_sprites ? tinct_BILINEAR_FILTER : 0)
-			|
-			(option_dither_sprites ? tinct_DITHER : 0);
-	}
+		error = _swix(Tinct_PlotScaled, _INR(2,7),
+				(char*)area + area->first, x, y - req_height,
+				req_width, req_height, tinct_options);
+	} 
 
-	if (print_active) {
-		tinct_options |= tinct_USE_OS_SPRITE_OP |
-				background_colour << tinct_BACKGROUND_SHIFT;
-	}
-
-	if (repeatx)
-		tinct_options |= tinct_FILL_HORIZONTALLY;
-
-	if (repeaty)
-		tinct_options |= tinct_FILL_VERTICALLY;
-
-	error = _swix(Tinct_PlotScaled, _INR(2,7),
-			(char*)area + area->first, x, y - req_height,
-			req_width, req_height, tinct_options);
 	if (error) {
-		LOG(("xtinct_plotscaled: 0x%x: %s",
+		LOG(("xtinct_plotscaled%s: 0x%x: %s", (alpha ? "alpha" : ""),
 				error->errnum, error->errmess));
 		return false;
 	}
 
 	return true;
 }
+
 
 /**
  * Plot an image at the given coordinates using os_spriteop
@@ -236,13 +189,13 @@ bool image_redraw_os(osspriteop_area *area, int x, int y, int req_width,
 
 	f.xmul = req_width;
 	f.ymul = req_height;
-	f.xdiv = width * 2;
-	f.ydiv = height * 2;
+	f.xdiv = width;
+	f.ydiv = height;
 
 	error = xosspriteop_put_sprite_scaled(osspriteop_PTR,
 			area, (osspriteop_id)((char*) area + area->first),
 			x, (int)(y - req_height),
-			0, &f, table);
+			8, &f, table);
 	if (error) {
 		LOG(("xosspriteop_put_sprite_scaled: 0x%x: %s", error->errnum, error->errmess));
 		free(table);
