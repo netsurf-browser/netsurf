@@ -1,5 +1,5 @@
 /**
- * $Id: font.h,v 1.6 2003/03/03 22:40:39 bursa Exp $
+ * $Id: font.h,v 1.7 2003/04/04 15:19:32 bursa Exp $
  */
 
 #ifndef _NETSURF_RISCOS_FONT_H_
@@ -9,7 +9,7 @@
  * structures and typedefs
  */
 
-#include "netsurf/render/css.h"
+#include "netsurf/css/css.h"
 #include "oslib/font.h"
 
 typedef unsigned int font_id;

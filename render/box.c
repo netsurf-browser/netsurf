@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.35 2003/03/25 21:51:29 bursa Exp $
+ * $Id: box.c,v 1.36 2003/04/04 15:19:31 bursa Exp $
  */
 
 #include <assert.h>
@@ -9,7 +9,7 @@
 #include <string.h>
 #include "libxml/HTMLparser.h"
 #include "libutf-8/utf-8.h"
-#include "netsurf/render/css.h"
+#include "netsurf/css/css.h"
 #include "netsurf/riscos/font.h"
 #include "netsurf/render/box.h"
 #include "netsurf/utils/utils.h"

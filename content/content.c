@@ -1,11 +1,12 @@
 /**
- * $Id: content.c,v 1.3 2003/02/28 11:49:13 bursa Exp $
+ * $Id: content.c,v 1.4 2003/04/04 15:19:31 bursa Exp $
  */
 
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include "netsurf/content/content.h"
+#include "netsurf/css/css.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/textplain.h"
 #include "netsurf/riscos/jpeg.h"
@@ -19,8 +20,8 @@ struct mime_entry {
 };
 static const struct mime_entry mime_map[] = {
 	{"image/jpeg", CONTENT_JPEG},
-/*	{"image/png", CONTENT_PNG},
-	{"text/css", CONTENT_CSS},*/
+/*	{"image/png", CONTENT_PNG},*/
+	{"text/css", CONTENT_CSS},
 	{"text/html", CONTENT_HTML},
 	{"text/plain", CONTENT_TEXTPLAIN},
 };
@@ -40,8 +41,8 @@ static const struct handler_entry handler_map[] = {
 	{textplain_create, textplain_process_data, textplain_convert,
 		textplain_revive, textplain_reformat, textplain_destroy},
 	{jpeg_create, jpeg_process_data, jpeg_convert, jpeg_revive, jpeg_reformat, jpeg_destroy},
-/*	{css_create, css_process_data, css_convert, css_revive, css_destroy},
-	{png_create, png_process_data, png_convert, png_revive, png_destroy},*/
+	{css_create, css_process_data, css_convert, css_revive, css_destroy},
+/*	{png_create, png_process_data, png_convert, png_revive, png_destroy},*/
 };
 
 

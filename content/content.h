@@ -1,5 +1,5 @@
 /**
- * $Id: content.h,v 1.2 2003/02/25 21:00:27 bursa Exp $
+ * $Id: content.h,v 1.3 2003/04/04 15:19:31 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
@@ -7,7 +7,7 @@
 
 #include "libxml/HTMLparser.h"
 #include "netsurf/content/cache.h"
-#include "netsurf/render/css.h"
+#include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
 #include "netsurf/riscos/font.h"
 
@@ -66,22 +66,21 @@ struct content
       struct page_elements elements;
     } html;
 
-    struct
-    {
-      struct css_stylesheet * stylesheet;
-    } css;
+    struct css_stylesheet *css;
 
     struct
     {
       char * data;
       unsigned long length;
     } jpeg;
-  
+
   } data;
 
   struct cache_entry *cache;
   unsigned long size;
   char *title;
+  unsigned int active;
+  int error;
 };
 
 

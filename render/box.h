@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.20 2003/03/04 11:59:35 bursa Exp $
+ * $Id: box.h,v 1.21 2003/04/04 15:19:31 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -7,7 +7,7 @@
 
 #include <limits.h>
 #include "libxml/HTMLparser.h"
-#include "netsurf/render/css.h"
+#include "netsurf/css/css.h"
 #include "netsurf/riscos/font.h"
 
 /**

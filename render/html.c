@@ -1,10 +1,12 @@
 /**
- * $Id: html.c,v 1.6 2003/03/25 21:51:29 bursa Exp $
+ * $Id: html.c,v 1.7 2003/04/04 15:19:31 bursa Exp $
  */
 
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include "netsurf/content/fetch.h"
+#include "netsurf/content/fetchcache.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/layout.h"
@@ -12,6 +14,8 @@
 #include "netsurf/utils/log.h"
 
 
+static void html_convert_callback(fetchcache_msg msg, struct content *css,
+		void *p, const char *error);
 static void html_title(struct content *c);
 
 
@@ -42,8 +46,7 @@ void html_process_data(struct content *c, char *data, unsigned long size)
 
 int html_convert(struct content *c, unsigned int width, unsigned int height)
 {
-  char* file;
-  struct css_selector* selector = xcalloc(1, sizeof(struct css_selector));
+	struct css_selector* selector = xcalloc(1, sizeof(struct css_selector));
 
 	htmlParseChunk(c->data.html.parser, "", 0, 1);
 	c->data.html.document = c->data.html.parser->myDoc;
@@ -70,16 +73,26 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	
 	html_title(c);
 
-	/* TODO: rewrite stylesheet handling */
-  LOG(("Loading CSS"));
-  file = load("<NetSurf$Dir>.Resources.CSS");  /*!!! not portable! !!!*/
-  c->data.html.stylesheet = css_new_stylesheet();
-  LOG(("Parsing stylesheet"));
-  css_parse_stylesheet(c->data.html.stylesheet, file);
+	c->error = 0;
+	c->active = 0;
 
-  LOG(("Copying base style"));
-  c->data.html.style = xcalloc(1, sizeof(struct css_style));
-  memcpy(c->data.html.style, &css_base_style, sizeof(struct css_style));
+	fetchcache("file:///%3CNetSurf$Dir%3E/Resources/CSS", 0,
+			html_convert_callback, c, width, height);
+	c->active++;
+
+	while (c->active != 0) {
+		fetch_poll();
+		gui_multitask();
+	}
+
+	if (c->error) {
+		/* TODO: clean up */
+		return 1;
+	}
+	
+	LOG(("Copying base style"));
+	c->data.html.style = xcalloc(1, sizeof(struct css_style));
+	memcpy(c->data.html.style, &css_base_style, sizeof(struct css_style));
 
 	LOG(("Creating box"));
 	c->data.html.layout = xcalloc(1, sizeof(struct box));
@@ -102,6 +115,31 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	c->height = c->data.html.layout->children->height;
 	
 	return 0;
+}
+
+
+void html_convert_callback(fetchcache_msg msg, struct content *css,
+		void *p, const char *error)
+{
+	struct content *c = p;
+	switch (msg) {
+		case FETCHCACHE_OK:
+			/* TODO: store struct content *css somewhere in c */
+			c->data.html.stylesheet = css->data.css;
+			c->active--;
+			break;
+		case FETCHCACHE_BADTYPE:
+		case FETCHCACHE_ERROR:
+			c->active--;
+			c->error = 1;
+			break;
+		case FETCHCACHE_STATUS:
+			/* TODO: need to add a way of sending status to the
+			 * owning window */
+			break;
+		default:
+			assert(0);
+	}
 }
 
 

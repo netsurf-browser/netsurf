@@ -1,5 +1,5 @@
 /**
- * $Id: parser.y,v 1.3 2003/04/01 21:33:08 bursa Exp $
+ * $Id: parser.y,v 1.4 2003/04/04 15:19:31 bursa Exp $
  */
 
 /*
@@ -47,7 +47,7 @@ block_body ::= block_body SEMI.
 
 ruleset ::= selector_list(A) LBRACE declaration_list(B) RBRACE.
 		{ css_add_ruleset(stylesheet, A, B);
-		css_free_node(A); css_free_node(B); }
+		css_free_node(B); }
 ruleset ::= any_list_1(A) LBRACE declaration_list(B) RBRACE.
 		{ css_free_node(A); css_free_node(B); } /* not CSS2 */
 ruleset ::= LBRACE declaration_list RBRACE.
@@ -61,14 +61,14 @@ selector_list(A) ::= selector_list(B) COMMA selector(C).
 selector(A) ::= simple_selector(B).
 		{ A = B; }
 selector(A) ::= selector(B) combinator(C) simple_selector(D).
-		{ B->right = D; A->data = C; A = B; }
+		{ D->right = B; D->comb = C; A = D; }
 
 combinator(A) ::= .
-		{ A = 0; }
-combinator(A) ::= PLUS(B).
-		{ A = B; }
-combinator(A) ::= GT(B).
-		{ A = B; }
+		{ A = COMB_ANCESTOR; }
+combinator(A) ::= PLUS.
+		{ A = COMB_PRECEDED; }
+combinator(A) ::= GT.
+		{ A = COMB_PARENT; }
 
 simple_selector(A) ::= element_name(B) detail_list(C).
 		{ A = css_new_node(NODE_SELECTOR, B, C, 0); }
@@ -159,6 +159,7 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 %extra_argument { struct css_stylesheet *stylesheet }
 %include {
 #define CSS_INTERNALS
+#include "netsurf/css/scanner.h"
 #include "netsurf/css/css.h"
 #include "netsurf/utils/utils.h" }
 %name css_parser_
@@ -168,7 +169,7 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 
 %type selector_list { struct node * }
 %type selector { struct node * }
-%type combinator { struct node * }
+%type combinator { combinator }
 %type simple_selector { struct node * }
 %type detail_list { struct node * }
 %type declaration_list { struct node * }
@@ -178,7 +179,9 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 %type any_list_1 { struct node * }
 %type any { struct node * }
 
+%destructor selector_list { css_free_node($$); }
 %destructor selector { css_free_node($$); }
+%destructor simple_selector { css_free_node($$); }
 %destructor declaration_list { css_free_node($$); }
 %destructor declaration { css_free_node($$); }
 %destructor value { css_free_node($$); }

@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.36 2003/03/25 21:51:29 bursa Exp $
+ * $Id: layout.c,v 1.37 2003/04/04 15:19:31 bursa Exp $
  */
 
 #include <assert.h>
@@ -10,7 +10,7 @@
 #include "libxml/HTMLparser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/render/box.h"
-#include "netsurf/render/css.h"
+#include "netsurf/css/css.h"
 #include "netsurf/render/layout.h"
 #include "netsurf/riscos/font.h"
 #include "netsurf/utils/utils.h"
