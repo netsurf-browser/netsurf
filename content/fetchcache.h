@@ -5,6 +5,13 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * High-level fetching, caching and conversion (interface).
+ *
+ * The fetchcache() function retrieves a URL from the cache, or fetches,
+ * converts, and caches it if not cached.
+ */
+
 #ifndef _NETSURF_DESKTOP_FETCHCACHE_H_
 #define _NETSURF_DESKTOP_FETCHCACHE_H_
 

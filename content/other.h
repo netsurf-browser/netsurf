@@ -5,14 +5,23 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * Content for unknown types (interface).
+ *
+ * This handles ::content structures of type CONTENT_OTHER. It is used as a
+ * fallback when the MIME type of a URL is not recognised. The data is simply
+ * stored as it is received.
+ */
+
 #ifndef _NETSURF_RISCOS_OTHER_H_
 #define _NETSURF_RISCOS_OTHER_H_
 
 struct content;
 
+/** Data specific to CONTENT_OTHER. */
 struct content_other_data {
-	char *data;
-	unsigned long length;
+	char *data;		/**< Stored data. */
+	unsigned long length;	/**< Current length of stored data. */
 };
 
 void other_create(struct content *c);

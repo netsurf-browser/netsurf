@@ -5,6 +5,14 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * High-level fetching, caching and conversion (implementation).
+ *
+ * The implementation checks the cache for the requested URL. If it is not
+ * present, a content is created and a fetch is initiated. As the status of the
+ * fetch changes and data is received, the content is updated appropriately.
+ */
+
 #include <assert.h>
 #include <string.h>
 #include "netsurf/content/cache.h"
@@ -17,6 +25,18 @@
 
 static void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size);
 
+
+/**
+ * Retrieve a URL or fetch, convert, and cache it.
+ *
+ * The referer may be 0.
+ *
+ * The caller must supply a callback function which is called when anything
+ * interesting happens to the content which is returned. See content.h.
+ *
+ * If an error occurs immediately, 0 may be returned. Later errors will be
+ * reported via the callback.
+ */
 
 struct content * fetchcache(const char *url0, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
@@ -56,6 +76,12 @@ struct content * fetchcache(const char *url0, char *referer,
 	return c;
 }
 
+
+/**
+ * Callback function for fetch.
+ *
+ * This is called when the status of a fetch changes.
+ */
 
 void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 {

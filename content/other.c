@@ -5,6 +5,10 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * Content for unknown types (implementation).
+ */
+
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
