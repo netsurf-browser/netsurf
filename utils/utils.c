@@ -160,6 +160,11 @@ char * tolat1_pre(xmlChar * s)
 	while (*s != 0) {
 		chars = length;
 		u = xmlGetUTF8Char((unsigned char *) s, &chars);
+		if (chars <= 0) {
+		        s += 1;
+		        length -= 1;
+		        continue;
+		}
 		s += chars;
 		length -= chars;
 		if (u == 0x09 || u == 0x0a || u == 0x0d ||
