@@ -40,6 +40,7 @@
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
 #endif
+#include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/theme.h"
 #ifdef WITH_URI
 #include "netsurf/riscos/uri.h"
@@ -144,6 +145,8 @@ void gui_init(int argc, char** argv)
 	os_error *error;
 
 	xhourglass_start(1);
+
+        save_complete_init();
 
 	options_read("Choices:WWW.NetSurf.Choices");
 

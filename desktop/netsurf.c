@@ -26,8 +26,6 @@ bool netsurf_quit = false;
 static void netsurf_init(int argc, char** argv);
 static void netsurf_poll(void);
 static void netsurf_exit(void);
-extern void save_complete_init(void);
-
 
 /**
  * Gui NetSurf main().
@@ -65,7 +63,6 @@ void netsurf_init(int argc, char** argv)
   nsgif_init();
 #endif
   url_init();
-  save_complete_init();
 }
 
 
