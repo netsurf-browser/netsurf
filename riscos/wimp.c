@@ -271,6 +271,53 @@ void ro_gui_set_window_title(wimp_w w, const char *text) {
 
 
 /**
+ * Places the caret in the first available icon
+ */
+void ro_gui_set_caret_first(wimp_w w) {
+  	int icon, button;
+	wimp_window_info_base window;
+	wimp_icon_state state;
+	os_error *error;
+
+	/*	Get the window details
+	*/
+	window.w = w;
+	error = xwimp_get_window_info_header_only((wimp_window_info *)&window);
+	if (error) {
+		LOG(("xwimp_get_window_info: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	/*	Work through our icons
+	*/
+	state.w = w;
+	for (icon = 0; icon < window.icon_count; icon++) {
+	  	/*	Get the icon state
+	  	*/
+		state.i = icon;
+		error = xwimp_get_icon_state(&state);
+		if (error) {
+			LOG(("xwimp_get_window_info: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+		
+		/*	Check if it's writable
+		*/
+		button = (state.icon.flags >> wimp_ICON_BUTTON_TYPE_SHIFT) & 0xf;
+		if ((button == wimp_BUTTON_WRITE_CLICK_DRAG) || 
+				(button == wimp_BUTTON_WRITABLE)) {
+			xwimp_set_caret_position(w, icon, 0, 0, -1, strlen(state.icon.data.indirected_text.text));
+			return;		  
+		}
+	}
+}
+
+
+/**
  * Load a sprite file into memory.
  *
  * \param  pathname  file to load

@@ -214,6 +214,10 @@ void ro_gui_dialog_open(wimp_w w)
 	open.visible.y1 = screen_y + dy;
 	open.next = wimp_TOP;
 	wimp_open_window((wimp_open *) &open);
+	
+	/*	Set the caret position
+	*/
+	ro_gui_set_caret_first(w);
 }
 
 
@@ -251,6 +255,10 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w) {
 	open.visible.y1 = pointer.pos.y;
 	open.next = wimp_TOP;
 	wimp_open_window((wimp_open *) &open);
+	
+	/*	Set the caret position
+	*/
+	ro_gui_set_caret_first(w);
 	
 	/*	Add a mapping
 	*/
@@ -295,6 +303,12 @@ void ro_gui_dialog_close_persistant(wimp_w parent) {
 
 bool ro_gui_dialog_keypress(wimp_key *key)
 {
+
+	if (key->c == wimp_KEY_ESCAPE) {
+		ro_gui_dialog_close(key->w);
+		return true;
+	}
+  
 #ifdef WITH_AUTH
 	if (key->w == dialog_401li)
 	        return ro_gui_401login_keypress(key);

@@ -739,7 +739,7 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
 					pointer->pos.x, pointer->pos.y);
 			break;
 		case ICON_TOOLBAR_BOOKMARK:
-			if (pointer->buttons == wimp_CLICK_SELECT) {
+			if (pointer->buttons == wimp_CLICK_ADJUST) {
 				ro_gui_hotlist_add(g->title, g->data.browser.bw->current_content);
 			} else {
 				ro_gui_hotlist_show();
