@@ -20,7 +20,8 @@
 #define THEMES_DIR "<NetSurf$Dir>.Themes"
 
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
-	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo;
+	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
+	dialog_tooltip;
 extern wimp_w history_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *theme_menu;
 extern int iconbar_menu_height;
@@ -154,6 +155,7 @@ void ro_gui_history_open(struct browser_window *bw,
 		struct history *history, int wx, int wy);
 void ro_gui_history_redraw(wimp_draw *redraw);
 void ro_gui_history_click(wimp_pointer *pointer);
+void ro_gui_history_mouse_at(wimp_pointer *pointer);
 
 /* in save.c */
 void ro_gui_save_click(wimp_pointer *pointer);

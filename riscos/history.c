@@ -56,6 +56,8 @@ struct history {
 
 static struct browser_window *history_bw;
 static struct history *history_current = 0;
+/* Position of mouse in window */
+static int mouse_x = 0, mouse_y = 0;
 wimp_w history_window;
 font_f history_font;
 
@@ -173,7 +175,7 @@ void history_add(struct history *history, struct content *content)
 	}
   */
   	area = thumbnail_initialise(WIDTH / 2, HEIGHT / 2, (os_mode)0x301680b5);
-  	if (!area) { 
+  	if (!area) {
 		LOG(("Thumbnail initialisation failed."));
 		return;
 	}
@@ -465,6 +467,75 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 	}
 }
 
+/**
+ * Handle mouse movements over the history window.
+ */
+void ro_gui_history_mouse_at(wimp_pointer *pointer)
+{
+        int x, y;
+        long width;
+	struct history_entry *he;
+	wimp_window_state state;
+	wimp_icon_state ic;
+	os_box box = {0, 0, 0, 0};
+
+        /* If the mouse hasn't moved, or if we don't want tooltips, exit */
+        if ((mouse_x == pointer->pos.x && mouse_y == pointer->pos.y) ||
+            !option_history_tooltip)
+                return;
+
+        /* Update mouse position */
+	mouse_x = pointer->pos.x;
+	mouse_y = pointer->pos.y;
+
+        /* Find history tree entry under mouse */
+	state.w = history_window;
+	wimp_get_window_state(&state);
+
+	x = (pointer->pos.x - (state.visible.x0 - state.xscroll)) / FULL_WIDTH;
+	y = -(pointer->pos.y - (state.visible.y1 - state.yscroll)) / FULL_HEIGHT;
+	he = ro_gui_history_click_find(history_current->start, x, y);
+	if (he) {
+	        /* get width of string */
+                xfont_scan_string(history_font, he->url,
+                        font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
+			0x7fffffff, 0x7fffffff,
+			0,
+			0, strlen(he->url) > 256 ? 256 : strlen(he->url),
+			0, (int*)&width, 0, 0);
+
+                ro_gui_set_icon_string(dialog_tooltip, 0, he->url);
+
+                /* resize icon appropriately */
+                ic.w = dialog_tooltip;
+                ic.i = 0;
+                wimp_get_icon_state(&ic);
+                wimp_resize_icon(dialog_tooltip, 0,
+                                 ic.icon.extent.x0, ic.icon.extent.y0,
+                                 width/200, ic.icon.extent.y1);
+
+	        state.w = dialog_tooltip;
+	        wimp_get_window_state(&state);
+
+	        /* update window extent */
+	        box.x1 = width/200;
+		box.y0 = -36;
+		xwimp_set_extent(dialog_tooltip, &box);
+
+		/* set visible area */
+                state.visible.x0 = pointer->pos.x + 24;
+	        state.visible.y0 = pointer->pos.y - 22 - 36;
+	        state.visible.x1 = pointer->pos.x + width/200;
+	        state.visible.y1 = pointer->pos.y - 22;
+	        state.next = wimp_TOP;
+	        /* open window */
+	        wimp_open_window((wimp_open *) &state);
+	}
+	else {
+	        /* not over a tree entry => close tooltip window. */
+	        wimp_close_window(dialog_tooltip);
+	}
+}
 
 /**
  * Handle mouse clicks in the history window.

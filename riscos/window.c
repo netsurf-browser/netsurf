@@ -575,6 +575,11 @@ void ro_gui_window_mouse_at(wimp_pointer* pointer)
   wimp_window_state state;
   gui_window* g;
 
+  if (pointer->w == history_window) {
+          ro_gui_history_mouse_at(pointer);
+          return;
+  }
+
   g = ro_lookup_gui_from_w(pointer->w);
 
   if (g == NULL)

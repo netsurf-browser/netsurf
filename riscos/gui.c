@@ -447,12 +447,16 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 			break;
 
 		case wimp_POINTER_LEAVING_WINDOW:
+		        if (over_window == history_window)
+		                wimp_close_window(dialog_tooltip);
 			over_window = 0;
 			gui_window_set_pointer(GUI_POINTER_DEFAULT);
 			break;
 
 		case wimp_POINTER_ENTERING_WINDOW:
 			over_window = ro_lookup_gui_from_w(block->entering.w);
+			if (over_window == 0 && block->entering.w == history_window)
+			        over_window = history_window;
 			break;
 
 		case wimp_MOUSE_CLICK:

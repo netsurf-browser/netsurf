@@ -24,6 +24,7 @@ extern bool option_dither_sprites;
 extern bool option_filter_sprites;
 extern bool option_thumbnail_32bpp;
 extern int option_thumbnail_oversampling;
+extern bool option_history_tooltip;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -34,7 +35,8 @@ char *option_language = 0;\
 bool option_dither_sprites = true;\
 bool option_filter_sprites = false;\
 bool option_thumbnail_32bpp = true;\
-int option_thumbnail_oversampling = 0;
+int option_thumbnail_oversampling = 0;\
+bool option_history_tooltip = true;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -45,6 +47,7 @@ int option_thumbnail_oversampling = 0;
 { "dither_sprites",         OPTION_BOOL,    &option_dither_sprites },\
 { "filter_sprites",         OPTION_BOOL,    &option_filter_sprites },\
 { "thumbnail_32bpp",        OPTION_BOOL,    &option_thumbnail_32bpp },\
-{ "thumbnail_oversampling", OPTION_INTEGER, &option_thumbnail_oversampling }
+{ "thumbnail_oversampling", OPTION_INTEGER, &option_thumbnail_oversampling },\
+{ "history_tooltip",        OPTION_BOOL,    &option_history_tooltip }
 
 #endif
