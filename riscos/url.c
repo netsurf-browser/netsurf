@@ -121,7 +121,7 @@ void ro_url_message_received(wimp_message* message)
 
   wimp_set_caret_position(bw->window->data.browser.toolbar,
                ICON_TOOLBAR_URL,
-               0,0,-1, (int) strlen(bw->window->url) - 1);
+               0,0,-1, (int) strlen(bw->window->url));
 
 #ifdef ALLOW_POST
   xfree(filename);

@@ -509,7 +509,7 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 		wimp_set_caret_position(bw->window->data.browser.toolbar,
 					ICON_TOOLBAR_URL,
 					0, 0, -1,
-					(int) strlen(bw->window->url) - 1);
+					(int) strlen(bw->window->url));
 	}
 }
 
@@ -895,7 +895,7 @@ void ro_gui_open_help_page (void)
         browser_window_open_location(bw, HELP_URL);
         wimp_set_caret_position(bw->window->data.browser.toolbar,
                                 ICON_TOOLBAR_URL,
-                                0,0,-1, (int) strlen(bw->window->url) - 1);
+                                0,0,-1, (int) strlen(bw->window->url));
 }
 
 

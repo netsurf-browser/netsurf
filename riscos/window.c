@@ -334,7 +334,7 @@ void gui_window_set_url(gui_window *g, char *url)
         if (c.w == g->window || c.w == g->data.browser.toolbar) {
 	        wimp_set_caret_position(g->data.browser.toolbar,
                                         ICON_TOOLBAR_URL,
-                                        0,0,-1, (int) strlen(g->url) - 1);
+                                        0,0,-1, (int) strlen(g->url));
         }
 }
 
