@@ -19,8 +19,6 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
-static void tree_recalculate_node(struct node *node, bool recalculate_sizes);
-static void tree_recalculate_node_positions(struct node *root);
 static void tree_draw_node(struct tree *tree, struct node *node, int clip_x, int clip_y,
 		int clip_width, int clip_height);
 static struct node_element *tree_create_node_element(struct node *parent, int user_type);
@@ -463,10 +461,17 @@ struct node_element *tree_find_element(struct node *node, int user_type) {
  */
 void tree_move_selected_nodes(struct tree *tree, struct node *destination, bool before) {
 	struct node *link;
+	struct node *test;
+	bool error;
 
 	tree_clear_processing(tree->root);
 	tree_selected_to_processing(tree->root);
-	if (destination->processing) {
+	
+	/* the destination node cannot be a child of any node with the processing flag set */
+	error = destination->processing;
+	for (test = destination; test; test = test->parent)
+		error |= test->processing;
+	if (error) {
 		tree_clear_processing(tree->root);
 		return;
 	}
@@ -778,7 +783,7 @@ void tree_link_node(struct node *link, struct node *node, bool before) {
   
 	assert(link);
 	assert(node);
-  
+
 	if ((!link->folder) || (before)) {
 		node->parent = link->parent;
 		if (before) {
@@ -808,6 +813,7 @@ void tree_link_node(struct node *link, struct node *node, bool before) {
 		node->parent = link;
 		node->next = NULL;
 	}
+	node->deleted = false;
 }
 
 
@@ -876,21 +882,25 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 		next = node->next;
 		if (node->child)
 			tree_delete_node(tree, node->child, true);
+		node->child = NULL;
 		parent = node->parent;
 		tree_delink_node(node);
-		for (element = &node->data; element; element = element->next) {
-			if (element->text)
-				free(element->text);
-			if (element->sprite)
-				free(element->sprite);	/* \todo platform specific bits */
+		if (!node->retain_in_memory) {
+			for (element = &node->data; element; element = element->next) {
+				if (element->text)
+					free(element->text);
+				if (element->sprite)
+					free(element->sprite);	/* \todo platform specific bits */
+			}
+			while (node->data.next) {
+				element = node->data.next->next;
+				free(node->data.next);
+				node->data.next = element;
+			}
+			free(node);
+		} else {
+		  	node->deleted = true;
 		}
-		while (node->data.next) {
-			element = node->data.next->next;
-			free(node->data.next);
-			node->data.next = element;
-		}
-		free(node);
-	
 		if (!siblings)
 			node = NULL;
 		else
@@ -998,6 +1008,51 @@ struct node *tree_create_URL_node(struct node *parent, const char *title,
 	if (element) {
 		element->type = NODE_ELEMENT_TEXT;
 		element->user_data = visits;
+	}
+	
+	tree_update_URL_node(node);
+
+	node->expanded = true;
+	tree_recalculate_node(node, true);
+	node->expanded = false;
+
+	return node;
+}
+
+
+/**
+ * Creates a tree entry for a URL, and links it into the tree.
+ *
+ * \param parent      the node to link to
+ * \param title	      the node title
+ * \param url	      the node URL
+ * \param filetype    the node filetype
+ * \param visit_date  the date visited
+ * \return the node created, or NULL for failure
+ */
+struct node *tree_create_URL_node_brief(struct node *parent, const char *title,
+		const char *url, int filetype, int visit_date) {
+	struct node *node;
+	struct node_element *element;
+	
+	assert(title);
+	assert(url);
+	
+	node = tree_create_leaf_node(parent, title);
+	if (!node)
+		return NULL;
+	node->editable = false;
+
+	element = tree_create_node_element(node, TREE_ELEMENT_URL);
+	if (element) {
+		element->user_data = filetype;
+		element->type = NODE_ELEMENT_TEXT;
+		element->text = squash_whitespace(url);
+	}
+	element = tree_create_node_element(node, TREE_ELEMENT_VISITED);
+	if (element) {
+		element->type = NODE_ELEMENT_TEXT;
+		element->user_data = visit_date;
 	}
 	
 	tree_update_URL_node(node);

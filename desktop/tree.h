@@ -18,6 +18,7 @@
 #define TREE_ELEMENT_ADDED 2
 #define TREE_ELEMENT_LAST_VISIT 3
 #define TREE_ELEMENT_VISITS 4
+#define TREE_ELEMENT_VISITED 5
 
 #define NODE_INSTEP 40
 
@@ -55,6 +56,8 @@ struct node {
   	bool expanded;			/* <-- Whether the node is expanded */
   	bool folder;			/* <-- Whether the node is a folder */
   	bool editable;			/* <-- Whether the node is editable */
+	bool retain_in_memory;		/* <-- Whether the node remains in memory after deletion */
+	bool deleted;			/* <-- Whether the node is currently deleted */
 	bool processing;		/* <-- Internal flag used when moving */
 	struct node_element_box box;	/* <-- Bounding box of all elements */
 	struct node_element data;	/* <-- Data to display */
@@ -89,6 +92,8 @@ void tree_handle_node_changed(struct tree *tree, struct node *node,
 		bool recalculate_sizes, bool expansion);
 void tree_handle_node_element_changed(struct tree *tree, 
 		struct node_element *element);
+void tree_recalculate_node(struct node *node, bool recalculate_sizes);
+void tree_recalculate_node_positions(struct node *root);
 struct node *tree_get_node_at(struct node *root, int x, int y, bool *furniture);
 struct node_element *tree_get_node_element_at(struct node *node, int x, int y,
 		bool *furniture);
@@ -107,6 +112,8 @@ void tree_set_node_sprite(struct node *node, const char *sprite,
 struct node *tree_create_URL_node(struct node *parent, const char *title,
 		const char *url, int filetype, int add_date, int last_date,
 		int visits);
+struct node *tree_create_URL_node_brief(struct node *parent, const char *title,
+		const char *url, int filetype, int visit_date);
 void tree_reset_URL_nodes(struct tree *tree, struct node *node, bool selected);
 void tree_set_node_expanded(struct node *node, bool expanded);
 void tree_set_node_selected(struct tree *tree, struct node *node,

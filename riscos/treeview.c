@@ -466,6 +466,22 @@ void tree_update_URL_node(struct node *node) {
 		element->text = strdup(buffer);
 	}
 
+	element = tree_find_element(node, TREE_ELEMENT_VISITED);
+	if (element) {
+		if (element->text) {
+			free(element->text);
+			element->text = NULL;
+		}
+		if (element->user_data > 0) {
+			snprintf(buffer, 256, messages_get("TreeVisited"),
+					ctime((time_t *)&element->user_data));
+		} else {
+			snprintf(buffer, 256, messages_get("TreeVisited"),
+					messages_get("TreeUnknown"));
+		}
+		element->text = strdup(buffer);
+	}
+
 	element = tree_find_element(node, TREE_ELEMENT_VISITS);
 	if (element) {
 		if (element->text) {
@@ -1213,10 +1229,13 @@ void ro_gui_tree_get_tree_coordinates(struct tree *tree, int x, int y,
  * \param drag  the drag box information
  */
 void ro_gui_tree_move_drag_end(wimp_dragged *drag) {
+	struct gui_window *g;
 	wimp_pointer pointer;
 	wimp_auto_scroll_info scroll;
 	os_error *error;
 	struct node *node;
+	struct node *single;
+	struct node_element *element;
 	bool before;
 	int x, y;
 
@@ -1232,11 +1251,24 @@ void ro_gui_tree_move_drag_end(wimp_dragged *drag) {
 		return;
 	}
 
-	/* todo: handle export */
-	if (pointer.w != (wimp_w)ro_gui_tree_current_drag_tree->handle)
+	if (pointer.w != (wimp_w)ro_gui_tree_current_drag_tree->handle) {
+	  	/* try to drop into a browser window */
+		single = tree_get_selected_node(ro_gui_tree_current_drag_tree->root->child);
+	  	element = tree_find_element(single, TREE_ELEMENT_URL);
+		if ((single) && (element)) {
+			g = ro_gui_window_lookup(pointer.w);
+			if (g)
+				browser_window_go(g->bw, element->text, 0);
+			return;
+
+		}
+		/* todo: handle export */
 		return;
+	}
 
 	/* internal drag */
+	if (!ro_gui_tree_current_drag_tree->movable)
+		return;
 	ro_gui_tree_get_tree_coordinates(ro_gui_tree_current_drag_tree,
 			drag->final.x0 + 34, drag->final.y0 + 34, &x, &y);
 	node = tree_get_link_details(ro_gui_tree_current_drag_tree, x, y, &before);
