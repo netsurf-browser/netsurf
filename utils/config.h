@@ -28,17 +28,11 @@
 #define WITH_SPRITE
 #endif
 
-/* Frames */
-#undef WITH_FRAMES
-
 /* HTTP Auth */
 #define WITH_AUTH
 
 /* Cookies */
 #define WITH_COOKIES
-
-/* About page */
-#define WITH_ABOUT
 
 #ifdef riscos
 /* Plugin module */

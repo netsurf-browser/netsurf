@@ -36,7 +36,6 @@
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
-#include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
 #include "netsurf/riscos/options.h"
@@ -670,11 +669,7 @@ void ro_gui_close_window_request(wimp_close *close)
 	g = ro_lookup_gui_from_w(close->w);
 
 	if (g) {
-		browser_window_destroy(g->data.browser.bw
-#ifdef WITH_FRAMES
-				, true
-#endif
-				);
+		browser_window_destroy(g->data.browser.bw);
 	} else
 		ro_gui_dialog_close(close->w);
 }

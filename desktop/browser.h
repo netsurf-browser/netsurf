@@ -50,13 +50,6 @@ struct browser_window
 	bool history_add;
 	/** Start time of fetching loading_content. */
 	clock_t time0;
-
-
-#ifdef WITH_FRAMES
-  struct browser_window *parent;
-  unsigned int no_children;
-  struct browser_window **children;
-#endif
 };
 
 

@@ -18,7 +18,6 @@
 #include "oslib/wimp.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/netsurf.h"
-#include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
@@ -440,7 +439,9 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 			os_cli("Filer_OpenDir " THEMES_DIR);
 			break;
 		case ICON_CONFIG_TH_GET:
-			browser_window_create(THEMES_URL, NULL);
+			browser_window_create(
+					"http://netsurf.sourceforge.net/themes/",
+					NULL);
 			break;
 	}
 }

@@ -22,7 +22,6 @@
 #include "oslib/wimpspriteop.h"
 #include "netsurf/css/css.h"
 #include "netsurf/utils/config.h"
-#include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
@@ -900,11 +899,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
-			browser_window_destroy(g->data.browser.bw
-#ifdef WITH_FRAMES
-			, true
-#endif
-			);
+			browser_window_destroy(g->data.browser.bw);
 			return true;
 
 		case wimp_KEY_F3:

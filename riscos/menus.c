@@ -17,7 +17,6 @@
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/gui.h"
-#include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
 #include "netsurf/riscos/theme.h"
