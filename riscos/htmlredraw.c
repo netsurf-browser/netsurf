@@ -70,80 +70,65 @@ void html_redraw_box(struct content *content, struct box * box,
 		signed long gadget_subtract_x, signed long gadget_subtract_y,
 		bool *select_on)
 {
-  struct box * c;
-  char* select_text;
-  struct formoption* opt;
-  int i;
+	struct box *c;
+	char *select_text;
+	struct formoption *opt;
 
-  if (x + (signed long) (box->x*2 + box->width*2) /* right edge */ >= clip->x0 &&
-      x + (signed long) (box->x*2) /* left edge */ <= clip->x1 &&
-      y - (signed long) (box->y*2 + box->height*2 + 8) /* bottom edge */ <= clip->y1 &&
-      y - (signed long) (box->y*2) /* top edge */ >= clip->y0)
-  {
+	if (x + (signed long) (box->x * 2 + box->width * 2) /* right edge */ < clip->x0 ||
+	    x + (signed long) (box->x * 2) /* left edge */ > clip->x1 ||
+	    y - (signed long) (box->y * 2 + box->height * 2 + 8) /* bottom edge */ > clip->y1 ||
+	    y - (signed long) (box->y * 2) /* top edge */ < clip->y0)
+		return;
 
-#ifdef FANCY_LINKS
-    if (box == g->link_box)
-    {
-      colourtrans_set_gcol(os_COLOUR_BLACK, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-      os_plot(os_MOVE_TO, x + box->x * 2, y - box->y * 2 - box->height * 2 - 4);
-      os_plot(os_PLOT_SOLID | os_PLOT_BY, box->width * 2, 0);
-    }
-#endif
+	if (box->style != 0 && box->style->background_color != TRANSPARENT) {
+		colourtrans_set_gcol(box->style->background_color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
+		os_plot(os_MOVE_TO, (int) x + (int) box->x * 2, (int) y - (int) box->y * 2);
+		os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, (int) box->width * 2, -(int) box->height * 2);
+		current_background_color = box->style->background_color;
+	}
 
-    if (box->style != 0 && box->style->background_color != TRANSPARENT)
-    {
-      colourtrans_set_gcol(box->style->background_color << 8, colourtrans_USE_ECFS,
-          os_ACTION_OVERWRITE, 0);
-      os_plot(os_MOVE_TO, (int) x + (int) box->x * 2, (int) y - (int) box->y * 2);
-      os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, (int) box->width * 2, - (int) box->height * 2);
-      current_background_color = box->style->background_color;
-    }
+	if (box->object) {
+		content_redraw(box->object,
+				(int) x + (int) box->x * 2,
+				(int) y - (int) box->y * 2,
+				box->width * 2, box->height * 2);
 
-    if (box->object != 0)
-    {
-      content_redraw(box->object,
-                      (int) x + (int) box->x * 2,
-                      (int) y - (int) box->y * 2,
-                      box->width * 2, box->height * 2);
-    }
-    else if (box->gadget != 0)
-    {
-	wimp_icon icon;
-	LOG(("writing GADGET"));
+	} else if (box->gadget) {
+		wimp_icon icon;
+		LOG(("writing GADGET"));
 
-	icon.extent.x0 = -gadget_subtract_x + x + box->x * 2;
-	icon.extent.y0 = -gadget_subtract_y + y - box->y * 2 - box->height * 2;
-	icon.extent.x1 = -gadget_subtract_x + x + box->x * 2 + box->width * 2;
-	icon.extent.y1 = -gadget_subtract_y + y - box->y * 2;
+		icon.extent.x0 = -gadget_subtract_x + x + box->x * 2;
+		icon.extent.y0 = -gadget_subtract_y + y - box->y * 2 - box->height * 2;
+		icon.extent.x1 = -gadget_subtract_x + x + box->x * 2 + box->width * 2;
+		icon.extent.y1 = -gadget_subtract_y + y - box->y * 2;
 
-	switch (box->gadget->type)
-	{
+		switch (box->gadget->type) {
 		case GADGET_TEXTAREA:
 			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
-				wimp_ICON_VCENTRED | wimp_ICON_FILLED |
-				wimp_ICON_INDIRECTED |
-				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
+			    wimp_ICON_VCENTRED | wimp_ICON_FILLED |
+			    wimp_ICON_INDIRECTED |
+			    (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
+			    (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
 			icon.data.indirected_text.text = box->gadget->data.textarea.text;
 			icon.data.indirected_text.size = strlen(box->gadget->data.textarea.text);
 			icon.data.indirected_text.validation = validation_textarea;
 			LOG(("writing GADGET TEXTAREA"));
 			wimp_plot_icon(&icon);
-      			break;
+			break;
 
 
 		case GADGET_TEXTBOX:
 			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
-				wimp_ICON_VCENTRED | wimp_ICON_FILLED |
-				wimp_ICON_INDIRECTED |
-				(wimp_COLOUR_DARK_GREY << wimp_ICON_FG_COLOUR_SHIFT) |
-				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
+			    wimp_ICON_VCENTRED | wimp_ICON_FILLED |
+			    wimp_ICON_INDIRECTED |
+			    (wimp_COLOUR_DARK_GREY << wimp_ICON_FG_COLOUR_SHIFT) |
+			    (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
 			icon.data.indirected_text.text = box->gadget->data.textbox.text;
 			icon.data.indirected_text.size = box->gadget->data.textbox.maxlength + 1;
 			icon.data.indirected_text.validation = validation_textbox;
 			LOG(("writing GADGET TEXTBOX"));
 			wimp_plot_icon(&icon);
-      			break;
+			break;
 
                 case GADGET_PASSWORD:
 			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
@@ -160,20 +145,18 @@ void html_redraw_box(struct content *content, struct box * box,
 
 		case GADGET_ACTIONBUTTON:
 			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
-				wimp_ICON_VCENTRED | wimp_ICON_FILLED |
-				wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
-				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT);
+			    wimp_ICON_VCENTRED | wimp_ICON_FILLED |
+			    wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
+			    (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT);
 			icon.data.indirected_text.text = box->gadget->data.actionbutt.label;
 			icon.data.indirected_text.size = strlen(box->gadget->data.actionbutt.label);
-			if (box->gadget->data.actionbutt.pressed)
-			{
-			  icon.data.indirected_text.validation = validation_actionbutton_pressed;
-			  icon.flags |= (wimp_COLOUR_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) | wimp_ICON_SELECTED;
-			}
-			else
-			{
-			  icon.data.indirected_text.validation = validation_actionbutton;
-			  icon.flags |= (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
+			if (box->gadget->data.actionbutt.pressed) {
+				icon.data.indirected_text.validation = validation_actionbutton_pressed;
+				icon.flags |=
+				    (wimp_COLOUR_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) | wimp_ICON_SELECTED;
+			} else {
+				icon.data.indirected_text.validation = validation_actionbutton;
+				icon.flags |= (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
 			}
 			LOG(("writing GADGET ACTION"));
 			wimp_plot_icon(&icon);
@@ -181,10 +164,10 @@ void html_redraw_box(struct content *content, struct box * box,
 
 		case GADGET_SELECT:
 			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
-				wimp_ICON_VCENTRED | wimp_ICON_FILLED |
-				wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
-				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-				(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
+			    wimp_ICON_VCENTRED | wimp_ICON_FILLED |
+			    wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
+			    (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
+			    (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
 			select_text = 0;
 			opt = box->gadget->data.select.items;
 //			if (box->gadget->data.select.size == 1) {
@@ -241,21 +224,19 @@ void html_redraw_box(struct content *content, struct box * box,
 
 		case GADGET_CHECKBOX:
 			icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
-				wimp_ICON_VCENTRED | wimp_ICON_HCENTRED |
-				wimp_ICON_INDIRECTED;
+			    wimp_ICON_VCENTRED | wimp_ICON_HCENTRED | wimp_ICON_INDIRECTED;
 			icon.data.indirected_text_and_sprite.text = empty_text;
 			if (box->gadget->data.checkbox.selected)
-			  icon.data.indirected_text_and_sprite.validation = validation_checkbox_selected;
+				icon.data.indirected_text_and_sprite.validation = validation_checkbox_selected;
 			else
-			  icon.data.indirected_text_and_sprite.validation = validation_checkbox_unselected;
+				icon.data.indirected_text_and_sprite.validation = validation_checkbox_unselected;
 			icon.data.indirected_text_and_sprite.size = 1;
 			LOG(("writing GADGET CHECKBOX"));
 			wimp_plot_icon(&icon);
 			break;
 
 		case GADGET_RADIO:
-			icon.flags = wimp_ICON_SPRITE |
-				wimp_ICON_VCENTRED | wimp_ICON_HCENTRED;
+			icon.flags = wimp_ICON_SPRITE | wimp_ICON_VCENTRED | wimp_ICON_HCENTRED;
 			if (box->gadget->data.radio.selected)
 				strcpy(icon.data.sprite, "radioon");
 			else
@@ -267,109 +248,92 @@ void html_redraw_box(struct content *content, struct box * box,
 		case GADGET_HIDDEN:
 		case GADGET_IMAGE:
 			break;
+		}
+		LOG(("gadgets finished"));
+	
+	} else if (box->text && box->font) {
+
+		if (content->data.html.text_selection.selected == 1) {
+			struct box_position *start;
+			struct box_position *end;
+
+			start = &(content->data.html.text_selection.start);
+			end = &(content->data.html.text_selection.end);
+
+			if (start->box == box) {
+				fprintf(stderr, "THE START OFFSET IS %d\n", start->pixel_offset * 2);
+				if (end->box == box) {
+					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
+					os_plot(os_MOVE_TO,
+						(int) x + (int) box->x * 2 + start->pixel_offset * 2,
+						(int) y - (int) box->y * 2 - (int) box->height * 2);
+					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
+						(int) x + (int) box->x * 2 + end->pixel_offset * 2 - 2,
+						(int) y - (int) box->y * 2 - 2);
+				} else {
+					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
+					os_plot(os_MOVE_TO,
+						(int) x + (int) box->x * 2 + start->pixel_offset * 2,
+						(int) y - (int) box->y * 2 - (int) box->height * 2);
+					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
+						(int) x + (int) box->x * 2 + (int) box->width * 2 - 2,
+						(int) y - (int) box->y * 2 - 2);
+					*select_on = true;
+				}
+			} else if (*select_on) {
+				if (end->box != box) {
+					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
+					os_plot(os_MOVE_TO, (int) x + (int) box->x * 2,
+						(int) y - (int) box->y * 2 - (int) box->height * 2);
+					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
+						(int) x + (int) box->x * 2 + (int) box->width * 2 - 2,
+						(int) y - (int) box->y * 2 - 2);
+				} else {
+					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
+					os_plot(os_MOVE_TO, (int) x + (int) box->x * 2,
+						(int) y - (int) box->y * 2 - (int) box->height * 2);
+					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
+						(int) x + (int) box->x * 2 + end->pixel_offset * 2 - 2,
+						(int) y - (int) box->y * 2 - 2);
+					*select_on = false;
+				}
+			}
+		}
+
+		colourtrans_set_font_colours(box->font->handle, current_background_color << 8,
+					     box->style->color << 8, 14, 0, 0, 0);
+
+		font_paint(box->font->handle, box->text,
+			   font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
+			   (int) x + (int) box->x * 2, (int) y - (int) box->y * 2 - (int) (box->height * 1.5),
+			   NULL, NULL, (int) box->length);
+
+	} else {
+		for (c = box->children; c != 0; c = c->next)
+			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
+				html_redraw_box(content, c, (int) x + (int) box->x * 2,
+						(int) y - (int) box->y * 2, clip, current_background_color,
+						gadget_subtract_x, gadget_subtract_y, select_on);
+
+		for (c = box->float_children; c != 0; c = c->next_float)
+			html_redraw_box(content, c, (int) x + (int) box->x * 2,
+					(int) y - (int) box->y * 2, clip, current_background_color,
+					gadget_subtract_x, gadget_subtract_y, select_on);
 	}
-	LOG(("gadgets finished"));
-    }
 
-    if (box->type == BOX_INLINE && box->font != 0)
-    {
+/*	} else {
+		if (content->data.html.text_selection.selected == 1) {
+			struct box_position *start;
+			struct box_position *end;
 
-if (content->data.html.text_selection.selected == 1)
-{
-      struct box_position* start;
-      struct box_position* end;
+			start = &(content->data.html.text_selection.start);
+			end = &(content->data.html.text_selection.end);
 
-      start = &(content->data.html.text_selection.start);
-      end = &(content->data.html.text_selection.end);
-
-      if (start->box == box)
-      {
-	      fprintf(stderr, "THE START OFFSET IS %d\n", start->pixel_offset * 2);
-        if (end->box == box)
-        {
-          colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
-          os_plot(os_MOVE_TO,
-            (int) x + (int) box->x * 2 + start->pixel_offset * 2,
-            (int) y - (int) box->y * 2 - (int) box->height * 2);
-          os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-            (int) x + (int) box->x * 2 + end->pixel_offset * 2 - 2,
-            (int) y - (int) box->y * 2 - 2);
-        }
-        else
-        {
-          colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
-          os_plot(os_MOVE_TO,
-            (int) x + (int) box->x * 2 + start->pixel_offset * 2,
-            (int) y - (int) box->y * 2 - (int) box->height * 2);
-          os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-            (int) x + (int) box->x * 2 + (int) box->width * 2 - 2,
-            (int) y - (int) box->y * 2 - 2);
-          *select_on = true;
-        }
-      }
-      else if (*select_on)
-      {
-        if (end->box != box)
-        {
-          colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
-          os_plot(os_MOVE_TO,
-            (int) x + (int) box->x * 2,
-            (int) y - (int) box->y * 2 - (int) box->height * 2);
-          os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-            (int) x + (int) box->x * 2 + (int) box->width * 2 - 2,
-            (int) y - (int) box->y * 2 - 2);
-        }
-        else
-        {
-          colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
-          os_plot(os_MOVE_TO,
-            (int) x + (int) box->x * 2,
-            (int) y - (int) box->y * 2 - (int) box->height * 2);
-          os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-            (int) x + (int) box->x * 2 + end->pixel_offset * 2 - 2,
-            (int) y - (int) box->y * 2 - 2);
-          *select_on = false;
-        }
-      }
-}
-
-      colourtrans_set_font_colours(box->font->handle, current_background_color << 8, box->style->color << 8,
-        14, 0, 0, 0);
-
-      font_paint(box->font->handle, box->text,
-        font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
-        (int) x + (int) box->x * 2, (int) y - (int) box->y * 2 - (int) (box->height * 1.5),
-        NULL, NULL,
-        (int) box->length);
-
-    }
-  }
-  else
-  {
-    if (content->data.html.text_selection.selected == 1)
-    {
-      struct box_position* start;
-      struct box_position* end;
-
-      start = &(content->data.html.text_selection.start);
-      end = &(content->data.html.text_selection.end);
-
-      if (start->box == box && end->box != box)
-        *select_on = true;
-      else if (*select_on && end->box == box)
-        *select_on = false;
-    }
-  }
-
-  for (c = box->children; c != 0; c = c->next)
-    if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-      html_redraw_box(content, c, (int) x + (int) box->x * 2,
-		      (int) y - (int) box->y * 2, clip, current_background_color,
-		      gadget_subtract_x, gadget_subtract_y, select_on);
-
-  for (c = box->float_children; c != 0; c = c->next_float)
-    html_redraw_box(content, c, (int) x + (int) box->x * 2,
-		    (int) y - (int) box->y * 2, clip, current_background_color,
-		    gadget_subtract_x, gadget_subtract_y, select_on);
+			if (start->box == box && end->box != box)
+				*select_on = true;
+			else if (*select_on && end->box == box)
+				*select_on = false;
+		}
+	}*/
 }
 

@@ -354,30 +354,29 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	for (x = 0, b = first; x < x1 - x0 && b != 0; b = b->next) {
 		assert(b->type == BOX_INLINE || b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT);
 		if (b->type == BOX_INLINE) {
-			if (b->text != 0)
+			if (b->object && b->style && b->style->height.height == CSS_HEIGHT_LENGTH)
+				h = len(&b->style->height.length, b->style);
+			else if (b->text)
 				h = line_height(b->style ? b->style : b->parent->parent->style);
 			else if (b->gadget != 0)
 				h = gadget_height(b->gadget);
-			else if (b->style != 0 && b->style->height.height == CSS_HEIGHT_LENGTH)
-				h = len(&b->style->height.length, b->style);
 			else
 				h = 0;
 			b->height = h;
 
 			if (h > height) height = h;
 
-			if (b->width == UNKNOWN_WIDTH) {
-				if (b->text != 0)
+			if (b->object && b->style && b->style->width.width == CSS_WIDTH_LENGTH)
+				b->width = len(&b->style->width.value.length, b->style);
+			else if (b->object && b->style && b->style->width.width == CSS_WIDTH_PERCENT)
+				b->width = width * b->style->width.value.percent / 100;
+			else if (b->text) {
+				if (b->width == UNKNOWN_WIDTH)
 					b->width = font_width(b->font, b->text, b->length);
-				else if (b->gadget != 0)
-					b->width = gadget_width(b->gadget);
-				else if (b->style != 0 && b->style->width.width == CSS_WIDTH_LENGTH)
-					b->width = len(&b->style->width.value.length, b->style);
-				else if (b->style != 0 && b->style->width.width == CSS_WIDTH_PERCENT)
-					b->width = width * b->style->width.value.percent / 100;
-				else
-					b->width = 0;
-			}
+			} else if (b->gadget != 0)
+				b->width = gadget_width(b->gadget);
+			else
+				b->width = 0;
 
 			if (b->text != 0)
 				x += b->width + b->space ? b->font->space_width : 0;
@@ -399,7 +398,9 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			b->x = x;
 			x += b->width;
 			space_before = space_after;
-			if (b->text != 0)
+			if (b->object)
+				space_after = 0;
+			else if (b->text)
 				space_after = b->space ? b->font->space_width : 0;
 			else
 				space_after = 0;
@@ -461,7 +462,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 
 		x = x_previous;
 
-		if (c->text != 0)
+		if (!c->object && c->text)
 			space = strchr(c->text, ' ');
 		if (space != 0 && c->length <= (unsigned int) (space - c->text))
 			/* space after end of string */
@@ -485,6 +486,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 				c2->text = xstrdup(space + 1);
 				c2->length = c->length - ((space + 1) - c->text);
 				c2->width = UNKNOWN_WIDTH;
+				c2->clone = 1;
 				c->length = space - c->text;
 				c->width = w;
 				c->space = 1;
@@ -510,6 +512,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			c2->text = xstrdup(space + 1);
 			c2->length = c->length - ((space + 1) - c->text);
 			c2->width = UNKNOWN_WIDTH;
+			c2->clone = 1;
 			c->length = space - c->text;
 			c->width = w;
 			c->space = 1;
@@ -852,8 +855,16 @@ void calculate_inline_container_widths(struct box *box)
 	for (child = box->children; child != 0; child = child->next) {
 		switch (child->type) {
 			case BOX_INLINE:
-				if (child->text != 0)
-				{
+				if (child->object) {
+					if (child->style->width.width == CSS_WIDTH_LENGTH) {
+						child->width = len(&child->style->width.value.length,
+								child->style);
+						max += child->width;
+						if (min < child->width)
+							min = child->width;
+					}
+
+				} else if (child->text) {
 					/* max = all one line */
 					child->width = font_width(child->font,
 							child->text, child->length);
@@ -872,18 +883,9 @@ void calculate_inline_container_widths(struct box *box)
 					}
 					width = font_width(child->font, word, strlen(word));
 					if (min < width) min = width;
-				}
-				else if (child->gadget != 0)
-				{
+
+				} else if (child->gadget) {
 					child->width = gadget_width(child->gadget);
-					max += child->width;
-					if (min < child->width)
-						min = child->width;
-				}
-				else if (child->style->width.width == CSS_WIDTH_LENGTH)
-				{
-					child->width = len(&child->style->width.value.length,
-							child->style);
 					max += child->width;
 					if (min < child->width)
 						min = child->width;

@@ -412,37 +412,33 @@ void html_object_callback(content_msg msg, struct content *object,
 				box->style->width.value.length.unit = CSS_UNIT_PX;
 				box->style->width.value.length.value = object->width;
 				box->min_width = box->max_width = box->width = object->width;
-				/* invalidate parent min, max widths */
-				if (box->parent->max_width != UNKNOWN_MAX_WIDTH) {
-					struct box *b = box->parent;
-					if (b->min_width < object->width)
-						b->min_width = object->width;
-					if (b->max_width < object->width)
-						b->max_width = object->width;
-					for (b = b->parent; b != 0 &&
-							(b->type == BOX_TABLE_ROW_GROUP ||
-							 b->type == BOX_TABLE_ROW ||
-							 b->max_width != UNKNOWN_MAX_WIDTH);
-							b = b->parent)
-						b->max_width = UNKNOWN_MAX_WIDTH;
+			}
+			/* invalidate parent min, max widths */
+			if (box->parent->max_width != UNKNOWN_MAX_WIDTH) {
+				struct box *b = box->parent;
+				if (b->min_width < object->width)
+					b->min_width = object->width;
+				if (b->max_width < object->width)
+					b->max_width = object->width;
+				for (b = b->parent; b != 0 &&
+						(b->type == BOX_TABLE_ROW_GROUP ||
+						 b->type == BOX_TABLE_ROW ||
+						 b->max_width != UNKNOWN_MAX_WIDTH);
+						b = b->parent) {
+					b->max_width = UNKNOWN_MAX_WIDTH;
 				}
 			}
 			if (box->style->height.height == CSS_HEIGHT_AUTO) {
 				box->style->height.height = CSS_HEIGHT_LENGTH;
 				box->style->height.length.unit = CSS_UNIT_PX;
 				box->style->height.length.value = object->height;
+				box->height = object->height;
 			}
-			/* remove alt text */
-			if (box->text != 0) {
-				free(box->text);
-				box->text = 0;
-				box->length = 0;
+			/* delete any clones of this box */
+			while (box->next && box->next->clone) {
+				/* box_free_box(box->next); */
+				box->next = box->next->next;
 			}
-			/*if (box->children != 0) {
-				box_free(box->children);
-				box->children = 0;
-			}*/
-			/* TODO: recalculate min, max width */
 			c->active--;
 			break;
 

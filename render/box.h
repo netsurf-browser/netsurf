@@ -126,6 +126,7 @@ struct box {
 	unsigned long min_width, max_width;
 	char * text;
 	unsigned int space : 1;	/* 1 <=> followed by a space */
+	unsigned int clone : 1;
 	char * href;
 	char * title;
 	unsigned int length;

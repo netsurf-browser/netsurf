@@ -152,6 +152,7 @@ struct box * box_create(struct css_style * style,
 	/* under RISC OS, xcalloc makes these unnecessary */
 	box->text = 0;
 	box->space = 0;
+	box->clone = 0;
 	box->length = 0;
 	box->start_column = 0;
 	box->next = 0;
@@ -590,17 +591,17 @@ struct result box_image(xmlNode *n, struct status *status,
 {
 	struct box *box;
 	char *s, *url;
-	/*xmlChar *s2;*/
+	xmlChar *s2;
 
 	box = box_create(style, status->href, status->title);
 
 	/* handle alt text */
-	/*if ((s2 = xmlGetProp(n, (const xmlChar *) "alt"))) {
+	if ((s2 = xmlGetProp(n, (const xmlChar *) "alt"))) {
 		box->text = squash_tolat1(s2);
 		box->length = strlen(box->text);
-		box->font = font_open(content->data.html.fonts, style);
+		box->font = font_open(status->content->data.html.fonts, style);
 		free(s2);
-	}*/
+	}
 
 	/* img without src is an error */
 	if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "src")))
@@ -919,12 +920,7 @@ void box_dump(struct box * box, unsigned int depth)
 	switch (box->type) {
 		case BOX_BLOCK:            fprintf(stderr, "BOX_BLOCK "); break;
 		case BOX_INLINE_CONTAINER: fprintf(stderr, "BOX_INLINE_CONTAINER "); break;
-		case BOX_INLINE:           if (box->text != 0)
-		                                   fprintf(stderr, "BOX_INLINE '%.*s' ",
-		                                           (int) box->length, box->text);
-		                           else
-		                                   fprintf(stderr, "BOX_INLINE (special) ");
-		                           break;
+		case BOX_INLINE:           fprintf(stderr, "BOX_INLINE "); break;
 		case BOX_TABLE:            fprintf(stderr, "BOX_TABLE "); break;
 		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW "); break;
 		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL [columns %i] ",
@@ -934,12 +930,16 @@ void box_dump(struct box * box, unsigned int depth)
 		case BOX_FLOAT_RIGHT:      fprintf(stderr, "BOX_FLOAT_RIGHT "); break;
 		default:                   fprintf(stderr, "Unknown box type ");
 	}
+	if (box->text)
+		fprintf(stderr, "'%.*s' ", (int) box->length, box->text);
+	if (box->object)
+		fprintf(stderr, "(object '%s') ", box->object->url);
 	if (box->style)
 		css_dump_style(box->style);
 	if (box->href != 0)
-		fprintf(stderr, " -> '%s'", box->href);
+		fprintf(stderr, " -> '%s' ", box->href);
 	if (box->title != 0)
-		fprintf(stderr, " [%s]", box->title);
+		fprintf(stderr, "[%s]", box->title);
 	fprintf(stderr, "\n");
 
 	for (c = box->children; c != 0; c = c->next)
