@@ -5,6 +5,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  */
 
 /** \file
@@ -13,12 +14,12 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "libxml/encoding.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/theme.h"
+#include "netsurf/riscos/options.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
@@ -26,7 +27,9 @@
 
 
 static void translate_menu(wimp_menu *menu);
+static void ro_gui_menu_prepare_images(void);
 static void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning);
+
 
 static wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
@@ -43,8 +46,8 @@ wimp_menu *iconbar_menu = (wimp_menu *) & (wimp_MENU(4)) {
   { "NetSurf" }, 7,2,7,0, 200, 44, 0,
   {
     { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Info" } },
+    { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "AppHelp" } },
     { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Choices" } },
-    { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Help" } },
     { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Quit" } }
   }
 };
@@ -63,7 +66,7 @@ static wimp_menu *browser_export_menu = (wimp_menu *) &export_menu;
 static wimp_MENU(5) page_menu = {
   { "Page" }, 7,2,7,0, 200, 44, 0,
   {
-    { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS,            { "Info" } },
+    { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS,            { "PageInfo" } },
     { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS,            { "Save" } },
     { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS,            { "SaveComp" } },
     { 0,              (wimp_menu *) &export_menu, DEFAULT_FLAGS,          { "Export" } },
@@ -94,21 +97,46 @@ static wimp_MENU(5) navigate_menu = {
 };
 static wimp_menu *browser_navigate_menu = (wimp_menu *) &navigate_menu;
 
-static wimp_MENU(1) view_menu = {
+static wimp_MENU(2) image_menu = {
+  { "Images" }, 7,2,7,0, 300, 44, 0,
+  {
+    { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "DitherImg" } },
+    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "FilterImg" } }
+  }
+};
+static wimp_menu *browser_image_menu = (wimp_menu *) &image_menu;
+
+static wimp_MENU(3) view_menu = {
   { "View" }, 7,2,7,0, 300, 44, 0,
   {
-    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "ScaleView" } }
+    { 0,                                           wimp_NO_SUB_MENU,          DEFAULT_FLAGS, { "ScaleView" } },
+    { wimp_MENU_SEPARATE | wimp_MENU_GIVE_WARNING, (wimp_menu *) &image_menu, DEFAULT_FLAGS, { "Images" } },
+    { wimp_MENU_LAST,                              wimp_NO_SUB_MENU,          DEFAULT_FLAGS, { "ViewSrc" } }
   }
 };
 static wimp_menu *browser_view_menu = (wimp_menu *) &view_menu;
 
-wimp_menu *browser_menu = (wimp_menu *) & (wimp_MENU(4)) {
+
+static wimp_MENU(4) help_menu = {
+  { "Help" }, 7,2,7,0, 300, 44, 0,
+  {
+    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "HelpContent" } },
+    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "HelpGuide" } },
+    { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "HelpInfo" } },
+    { wimp_MENU_LAST,     wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "HelpInter" } }
+  }
+};
+static wimp_menu *browser_help_menu = (wimp_menu *) &help_menu;
+
+
+wimp_menu *browser_menu = (wimp_menu *) & (wimp_MENU(5)) {
   { "NetSurf" }, 7,2,7,0, 200, 44, 0,
   {
-    { 0,              (wimp_menu *) &page_menu,      DEFAULT_FLAGS, { "Page" } },
-    { 0,              (wimp_menu *) &selection_menu, DEFAULT_FLAGS, { "Selection" } },
-    { 0,              (wimp_menu *) &navigate_menu,  DEFAULT_FLAGS, { "Navigate" } },
-    { wimp_MENU_LAST, (wimp_menu *) &view_menu,      DEFAULT_FLAGS, { "View" } }
+    { 0,                              (wimp_menu *) &page_menu,      DEFAULT_FLAGS,                    { "Page" } },
+    { wimp_MENU_SUB_MENU_WHEN_SHADED, (wimp_menu *) &selection_menu, DEFAULT_FLAGS | wimp_ICON_SHADED, { "Selection" } },
+    { 0,                              (wimp_menu *) &navigate_menu,  DEFAULT_FLAGS,                    { "Navigate" } },
+    { 0,                              (wimp_menu *) &view_menu,      DEFAULT_FLAGS,                    { "View" } },
+    { wimp_MENU_LAST,                 (wimp_menu *) &help_menu,      DEFAULT_FLAGS,                    { "Help" } }
   }
 };
 
@@ -126,6 +154,8 @@ void ro_gui_menus_init(void)
 	translate_menu(browser_selection_menu);
 	translate_menu(browser_navigate_menu);
 	translate_menu(browser_view_menu);
+	translate_menu(browser_image_menu);
+	translate_menu(browser_help_menu);
 
 	iconbar_menu->entries[0].sub_menu = (wimp_menu *) dialog_info;
 	browser_page_menu->entries[0].sub_menu = (wimp_menu*) dialog_pageinfo;
@@ -144,19 +174,29 @@ void ro_gui_menus_init(void)
 void translate_menu(wimp_menu *menu)
 {
 	unsigned int i = 0;
+	char *indirected_text;
 
-	/* title */
-	menu->title_data.indirected_text.text = messages_get(menu->title_data.text);
-	menu->entries[0].menu_flags |= wimp_MENU_TITLE_INDIRECTED;
+	/*	We can't just blindly set something as indirected as if we use
+		the fallback messages text (ie the pointer we gave), we overwrite
+		this data when setting the pointer to the indirected text we
+		already had.
+	*/
+	indirected_text = (char *)messages_get(menu->title_data.text);
+	if (indirected_text != menu->title_data.text) {
+		menu->title_data.indirected_text.text = indirected_text;
+		menu->entries[0].menu_flags |= wimp_MENU_TITLE_INDIRECTED;
 
+        }
+        
 	/* items */
 	do {
-		menu->entries[i].icon_flags |= wimp_ICON_INDIRECTED;
-		menu->entries[i].data.indirected_text.text =
-			messages_get(menu->entries[i].data.text);
-		menu->entries[i].data.indirected_text.validation = 0;
-		menu->entries[i].data.indirected_text.size =
-			strlen(menu->entries[i].data.indirected_text.text) + 1;
+	  	indirected_text = (char *)messages_get(menu->entries[i].data.text);
+	  	if (indirected_text != menu->entries[i].data.text) {
+			menu->entries[i].icon_flags |= wimp_ICON_INDIRECTED;
+			menu->entries[i].data.indirected_text.text = indirected_text;
+			menu->entries[i].data.indirected_text.validation = 0;
+			menu->entries[i].data.indirected_text.size = strlen(indirected_text) + 1;
+		}
 		i++;
 	} while ((menu->entries[i - 1].menu_flags & wimp_MENU_LAST) == 0);
 }
@@ -217,18 +257,19 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				ro_gui_create_menu((wimp_menu *) dialog_info,
 						pointer.pos.x, pointer.pos.y, 0);
 				break;
-			case 1: /* Choices */
-				ro_gui_dialog_open(dialog_config);
-				break;
-			case 2: /* Help */
+			case 1: /* Help */
 			        ro_gui_open_help_page();
 			        break;
+			case 2: /* Choices */
+				ro_gui_dialog_open(dialog_config);
+				break;
 			case 3: /* Quit */
 				netsurf_quit = true;
 				break;
 		}
 
 	} else if (current_menu == browser_menu) {
+		struct content *c = current_gui->data.browser.bw->current_content;
 		switch (selection->items[0]) {
 			case 0: /* Page -> */
 				switch (selection->items[1]) {
@@ -275,6 +316,38 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						break;
 				}
 				break;
+			case 3: /* View -> */
+				switch (selection->items[1]) {
+					case 0: /* Scale view */
+						break;
+					case 1: /* Images -> */
+						if (selection->items[2] == 0) option_dither_sprites = !option_dither_sprites;
+						if (selection->items[2] == 1) option_filter_sprites = !option_filter_sprites;
+						if (selection->items[2] >= 0) {
+							ro_gui_menu_prepare_images();
+							content_broadcast(c, CONTENT_MSG_REDRAW, 0);
+
+						}
+						break;
+					case 2: /* Page source */
+						ro_gui_view_source(c);
+						break;
+				}
+				break;
+			case 4: /* Help -> */
+				switch (selection->items[1]) {
+				  	case -1: /* No sub-item */
+					case 0: /* Contents */
+					        ro_gui_open_help_page();
+					        break;
+					case 1: /* User guide -> */
+						break;
+					case 2: /* User information */
+						break;
+					case 3: /* Interactive help */
+						break;
+				}
+				break;
 		}
 
 	} else if (current_menu == theme_menu && theme_menu != NULL) {
@@ -291,48 +364,62 @@ void ro_gui_menu_selection(wimp_selection *selection)
 
 
 /**
- * Handle Message_MenuWarning
+ * Handle Message_MenuWarning by opening the save dialog.
  */
 
 void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 {
 	struct content *c = current_gui->data.browser.bw->current_content;
-	os_error *error;
+	os_error *error = NULL; // No warnings
 
-	if (warning->selection.items[0] != 0)
-		return;
+//	if ((warning->selection.items[0] != 0) && (warning->selection.items[0] != 3))
+//		return;
+	
+	switch (warning->selection.items[0]) {
+		case 0: /* Page -> */
+			switch (warning->selection.items[1]) {
+				case 3: /* Export as -> */
+					switch (warning->selection.items[2]) {
+						case 0: /* Draw */
+							gui_current_save_type = GUI_SAVE_DRAW;
+							break;
 
-	switch (warning->selection.items[1]) {
-		case 3: /* Export as -> */
-			switch (warning->selection.items[2]) {
-				case 0: /* Draw */
-					gui_current_save_type = GUI_SAVE_DRAW;
+				                case 1: /* Text */
+							gui_current_save_type = GUI_SAVE_TEXT;
+							break;
+					}
 					break;
 
-		                case 1: /* Text */
-					gui_current_save_type = GUI_SAVE_TEXT;
+				case 2: /* Save complete */
+					gui_current_save_type = GUI_SAVE_COMPLETE;
+					break;
+		
+
+       	         		case 0: /* Page info */
+       	                 		ro_gui_menu_pageinfo(warning);
+	                        	return;
+
+				case 1:
+				default: /* Save */
+					gui_current_save_type = GUI_SAVE_SOURCE;
+					break;
+			}
+			ro_gui_menu_prepare_save(c);
+			error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
+					warning->pos.x, warning->pos.y);
+			break;
+		case 3: /* View -> */
+			switch (warning->selection.items[1]) {
+				case 1: /* Images -> */
+					ro_gui_menu_prepare_images();
+					error = xwimp_create_sub_menu(browser_image_menu,
+							warning->pos.x, warning->pos.y);
 					break;
 			}
 			break;
-
-		case 2: /* Save complete */
-			gui_current_save_type = GUI_SAVE_COMPLETE;
-			break;
-
-                case 0: /* Page info */
-                        ro_gui_menu_pageinfo(warning);
-                        return;
-
-		case 1:
-		default: /* Save */
-			gui_current_save_type = GUI_SAVE_SOURCE;
-			break;
 	}
 
-	ro_gui_menu_prepare_save(c);
 
-	error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
-			warning->pos.x, warning->pos.y);
 	if (error) {
 		LOG(("0x%x: %s\n", error->errnum, error->errmess));
 		warn_user(error->errmess);
@@ -383,6 +470,24 @@ void ro_gui_menu_prepare_save(struct content *c)
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_ICON, icon);
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);
+}
+
+/**
+ * Update image menu status
+ */
+
+static void ro_gui_menu_prepare_images(void) {
+	if (current_menu != browser_menu) return;
+	
+	/*	We don't currently have any local options so we update from the global ones
+	*/
+	browser_image_menu->entries[0].menu_flags &= ~wimp_MENU_TICKED;
+	if (option_dither_sprites) browser_image_menu->entries[0].menu_flags |= wimp_MENU_TICKED;
+	browser_image_menu->entries[1].menu_flags &= ~wimp_MENU_TICKED;
+	if (option_filter_sprites) browser_image_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
+
+
+//	content_broadcast(c, CONTENT_MSG_REDRAW, 0);
 }
 
 void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
