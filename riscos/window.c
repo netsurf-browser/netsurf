@@ -12,6 +12,7 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
 #include <string.h>
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
@@ -24,6 +25,21 @@
 
 gui_window *window_list = 0;
 
+/**
+ * Checks if a window still exists.
+ */
+bool gui_window_in_list(gui_window *g) {
+
+  gui_window *temp;
+
+  if (g == window_list) return true;
+
+  for(temp=window_list; temp->next != g && temp->next!=0; temp=temp->next) ;
+
+  if (temp->next == NULL) return false;
+
+  return true;
+}
 
 /**
  * Create and open a new browser window.

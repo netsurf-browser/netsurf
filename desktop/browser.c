@@ -209,6 +209,9 @@ void browser_window_open_location_historical(struct browser_window* bw,
 
   assert(bw != 0 && url != 0);
 
+  /* Check window still exists, if not, don't bother going any further */
+  if (!gui_window_in_list(bw->window)) return;
+
   if (bw->url != NULL)
     browser_window_destroy(bw, false);
 
