@@ -826,7 +826,6 @@ bool css_merge_rule_lists_internal(struct css_selector *l1, struct css_selector 
 	return true;
 }
 
-
 /**
  * Find the style which applies to an element.
  *
@@ -956,8 +955,9 @@ bool css_match_detail(const struct css_selector *detail,
 		case CSS_SELECTOR_ID:
 			s = (char *) xmlGetProp(element,
 					(const xmlChar *) "id");
+			/* case sensitive, according to HTML4.01 */
 			if (s && strlen(s) == detail->data_length &&
-					strncasecmp(detail->data, s,
+					strncmp(detail->data, s,
 					detail->data_length) == 0)
 				match = true;
 			break;
@@ -974,8 +974,9 @@ bool css_match_detail(const struct css_selector *detail,
 					length = space - word;
 				else
 					length = strlen(word);
+				/* case sensitive, according to HTML4.01 */
 				if (length == detail->data_length &&
-						strncasecmp(word, detail->data,
+						strncmp(word, detail->data,
 						length) == 0) {
 					match = true;
 					break;
