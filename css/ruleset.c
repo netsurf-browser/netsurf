@@ -1255,7 +1255,10 @@ void parse_clear(struct css_style * const s, const struct css_node * const v)
 
 void parse_color(struct css_style * const s, const struct css_node * const v)
 {
-	colour c = parse_colour(v);
+	colour c;
+	if (v->next)
+		return;
+	c = parse_colour(v);
 	if (c != CSS_COLOR_NONE)
 		s->color = c;
 }
