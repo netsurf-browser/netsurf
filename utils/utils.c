@@ -22,11 +22,6 @@
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
-void die(const char * const error)
-{
-	fprintf(stderr, "Fatal: %s\n", error);
-	exit(EXIT_FAILURE);
-}
 
 char * strip(char * const s)
 {

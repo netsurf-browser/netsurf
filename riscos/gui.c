@@ -182,8 +182,7 @@ void gui_init(int argc, char** argv)
 	if (error) {
 		LOG(("xwimp_open_template failed: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user(error->errmess);
-		exit(EXIT_FAILURE);
+		die(error->errmess);
 	}
 	ro_gui_dialog_init();
 	ro_gui_download_init();
@@ -1138,11 +1137,24 @@ static os_error warn_error = { 1, "" };
 void warn_user(const char *warning)
 {
 	strncpy(warn_error.errmess, messages_get(warning), 252);
-	/** \todo  get rid of cancel button, appears for unknown reason */
 	xwimp_report_error_by_category(&warn_error,
 			wimp_ERROR_BOX_OK_ICON |
 			wimp_ERROR_BOX_GIVEN_CATEGORY |
-			wimp_ERROR_BOX_CATEGORY_PROGRAM,
+			wimp_ERROR_BOX_CATEGORY_ERROR <<
+				wimp_ERROR_BOX_CATEGORY_SHIFT,
 			"NetSurf", "!netsurf",
 			(osspriteop_area *) 1, 0, 0);
+}
+
+
+/**
+ * Display an error and exit.
+ *
+ * Should only be used during initialisation.
+ */
+
+void die(const char *error)
+{
+	warn_user(error);
+	exit(EXIT_FAILURE);
 }
