@@ -15,7 +15,7 @@
 
 struct gui_window;
 struct gui_download_window;
-typedef struct gui_window gui_window;
+
 typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
                GUI_POINTER_MENU, GUI_POINTER_UD, GUI_POINTER_LR,
                GUI_POINTER_LD, GUI_POINTER_RD, GUI_POINTER_CROSS,
@@ -25,20 +25,20 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 
-gui_window *gui_create_browser_window(struct browser_window *bw,
+struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone);
-void gui_window_destroy(gui_window* g);
-void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
-		unsigned long x1, unsigned long y1);
-void gui_window_redraw_window(gui_window* g);
-void gui_window_update_box(gui_window *g, const union content_msg_data *data);
-void gui_window_set_scroll(gui_window* g, unsigned long sx, unsigned long sy);
-unsigned long gui_window_get_width(gui_window* g);
-void gui_window_set_extent(gui_window* g, unsigned long width, unsigned long height);
-void gui_window_set_status(gui_window* g, const char* text);
+void gui_window_destroy(struct gui_window *g);
+void gui_window_set_title(struct gui_window *g, const char *title);
+void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1);
+void gui_window_redraw_window(struct gui_window *g);
+void gui_window_update_box(struct gui_window *g,
+		const union content_msg_data *data);
+void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
+int gui_window_get_width(struct gui_window *g);
+void gui_window_set_extent(struct gui_window *g, int width, int height);
+void gui_window_set_status(struct gui_window *g, const char *text);
 void gui_window_set_pointer(gui_pointer_shape shape);
-void gui_window_set_title(gui_window* g, char* title);
-void gui_window_set_url(gui_window *g, char *url);
+void gui_window_set_url(struct gui_window *g, const char *url);
 
 struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,
@@ -50,21 +50,19 @@ void gui_download_window_error(struct gui_download_window *dw,
 void gui_download_window_done(struct gui_download_window *dw);
 
 void gui_init(int argc, char** argv);
-void gui_window_clone_options(struct browser_window *new_bw, struct browser_window *old_bw);
-void gui_window_default_options(struct browser_window *bw);
 void gui_multitask(void);
 void gui_poll(bool active);
 void gui_quit(void);
 
-void gui_window_start_throbber(gui_window* g);
-void gui_window_stop_throbber(gui_window* g);
+void gui_window_start_throbber(struct gui_window *g);
+void gui_window_stop_throbber(struct gui_window *g);
 
 void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigned long mx, unsigned long my);
 
-void gui_window_place_caret(gui_window *g, int x, int y, int height);
+void gui_window_place_caret(struct gui_window *g, int x, int y, int height);
 
 void gui_launch_url(const char *url);
 
-void gui_window_new_content(gui_window *g);
+void gui_window_new_content(struct gui_window *g);
 
 #endif

@@ -26,14 +26,23 @@
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/thumbnail.h"
+#include "netsurf/riscos/toolbar.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/render/form.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
-gui_window *ro_gui_current_redraw_gui;
-gui_window *window_list = 0;
+
+/** List of all browser windows. */
+static struct gui_window *window_list = 0;
+/** Browser window which is being redrawn. Valid only during redraw. */
+struct gui_window *ro_gui_current_redraw_gui;
+
+
+static void ro_gui_window_clone_options(struct browser_window *new_bw,
+		struct browser_window *old_bw);
+
 
 
 /**
@@ -44,7 +53,7 @@ gui_window *window_list = 0;
  * \return  gui_window, or 0 on error and error reported
  */
 
-gui_window *gui_create_browser_window(struct browser_window *bw,
+struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone)
 {
 	int screen_width, screen_height, win_width, win_height, scroll_width;
@@ -53,22 +62,23 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 	wimp_window_state state;
 	os_error *error;
 	bool open_centred = true;
+	struct gui_window *g;
 
-	gui_window *g = malloc(sizeof *g);
+	g = malloc(sizeof *g);
 	if (!g) {
 		warn_user("NoMemory", 0);
 		return 0;
 	}
-	g->type = GUI_BROWSER_WINDOW;
-	g->data.browser.bw = bw;
-	g->data.browser.toolbar = 0;
-	g->data.browser.reformat_pending = false;
-	g->data.browser.old_width = 0;
+	g->bw = bw;
+	g->toolbar = 0;
+	g->reformat_pending = false;
+	g->old_width = 0;
+	g->old_height = 0;
 	strcpy(g->status, "");
 	strcpy(g->title, "NetSurf");
 	strcpy(g->url, "");
-	strcpy(g->throb_buf, "throbber0");
 	g->throbber = 0;
+	strcpy(g->throb_buf, "throbber0");
 	g->throbtime = 0;
 
 	/*	Set the window position
@@ -91,17 +101,25 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 
 		/*	Check if we have a preferred position
 		*/
-		if ((option_window_screen_width != 0) && (option_window_screen_height != 0)) {
-			win_width = (option_window_width * screen_width) / option_window_screen_width;
-			win_height = (option_window_height * screen_height) / option_window_screen_height;
-			window.visible.x0 = (option_window_x * screen_width) / option_window_screen_width;
-			window.visible.y0 = (option_window_y * screen_height) / option_window_screen_height;
+		if ((option_window_screen_width != 0) &&
+				(option_window_screen_height != 0)) {
+			win_width = (option_window_width * screen_width) /
+					option_window_screen_width;
+			win_height = (option_window_height * screen_height) /
+					option_window_screen_height;
+			window.visible.x0 = (option_window_x * screen_width) /
+					option_window_screen_width;
+			window.visible.y0 = (option_window_y * screen_height) /
+					option_window_screen_height;
 			if (option_window_stagger) {
-				window.visible.y0 += 96 - (48 * (window_count % 5));
+				window.visible.y0 += 96 -
+						(48 * (window_count % 5));
 			}
 			open_centred = false;
-			if (win_width < 100) win_width = 100;
-			if (win_height < 100) win_height = 100;
+			if (win_width < 100)
+				win_width = 100;
+			if (win_height < 100)
+				win_height = 100;
 		} else {
 			win_width = screen_width * 3 / 4;
 			if (1600 < win_width)
@@ -109,8 +127,8 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 			win_height = win_width * 3 / 4;
 
 			window.visible.x0 = (screen_width - win_width) / 2;
-			window.visible.y0 = ((screen_height - win_height) / 2) + 96 -
-					(48 * (window_count % 5));
+			window.visible.y0 = ((screen_height - win_height) / 2) +
+					96 - (48 * (window_count % 5));
 		}
 		window.visible.x1 = window.visible.x0 + win_width;
 		window.visible.y1 = window.visible.y0 + win_height;
@@ -169,6 +187,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	ro_theme_create_browser_toolbar(g);
 
+	g->prev = 0;
 	g->next = window_list;
 	window_list = g;
 	window_count++;
@@ -176,7 +195,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 	/*	Set the window options
 	*/
 	bw->window = g;
-	gui_window_clone_options(bw, clone);
+	ro_gui_window_clone_options(bw, clone);
 
 	/*	Open the window
 	*/
@@ -203,9 +222,9 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	/*	Set the caret position to the URL bar
 	*/
-	if (g->data.browser.toolbar && g->data.browser.toolbar->url_bar)
+	if (g->toolbar && g->toolbar->url_bar)
 		error = xwimp_set_caret_position(
-				g->data.browser.toolbar->toolbar_handle,
+				g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL, -1, -1, -1, 0);
 	else
 		error = xwimp_set_caret_position(g->window,
@@ -222,107 +241,182 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 }
 
 
-void gui_window_set_title(gui_window* g, char* title) {
-	strncpy(g->title, title, 255);
-	wimp_force_redraw_title(g->window);
-}
+/**
+ * Close a browser window and free any related resources.
+ *
+ * \param  g  gui_window to destroy
+ */
 
-
-void gui_window_destroy(gui_window* g)
+void gui_window_destroy(struct gui_window *g)
 {
-  assert(g != 0);
+	os_error *error;
 
-  if (g == window_list)
-    window_list = g->next;
-  else
-  {
-    gui_window* gg;
-    assert(window_list != NULL);
-    gg = window_list;
-    while (gg->next != g && gg->next != NULL)
-      gg = gg->next;
-    assert(gg->next != NULL);
-    gg->next = g->next;
-  }
+	assert(g);
 
-  ro_toolbar_destroy(g->data.browser.toolbar);
-  xwimp_delete_window(g->window);
+	/* remove from list */
+	if (g->prev)
+		g->prev->next = g->next;
+	else
+		window_list = g->next;
+	if (g->next)
+		g->next->prev = g->prev;
 
-  free(g);
+	ro_toolbar_destroy(g->toolbar);
+
+	/* delete window */
+	error = xwimp_delete_window(g->window);
+	if (error) {
+		LOG(("xwimp_delete_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+
+	free(g);
 }
 
-void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
-		unsigned long x1, unsigned long y1)
+
+/**
+ * Set the title of a browser window.
+ *
+ * \param  g      gui_window to update
+ * \param  title  new window title, copied
+ */
+
+void gui_window_set_title(struct gui_window *g, const char *title)
 {
-  if (g == NULL)
-    return;
+	os_error *error;
 
-  wimp_force_redraw(g->window, x0 * 2, -y1 * 2, x1 * 2, -y0 * 2);
+	assert(g);
+	assert(title);
+
+	strncpy(g->title, title, sizeof g->title);
+	error = xwimp_force_redraw_title(g->window);
+	if (error) {
+		LOG(("xwimp_force_redraw_title: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
 }
 
-void gui_window_redraw_window(gui_window* g)
+
+/**
+ * Force a redraw of part of the contents of a browser window.
+ *
+ * \param  g   gui_window to redraw
+ * \param  x0  rectangle to redraw
+ * \param  y0  rectangle to redraw
+ * \param  x1  rectangle to redraw
+ * \param  y1  rectangle to redraw
+ */
+
+void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
-  wimp_window_info info;
-  if (g == NULL)
-    return;
-  info.w = g->window;
-  wimp_get_window_info_header_only(&info);
-  wimp_force_redraw(g->window, info.extent.x0, info.extent.y0, info.extent.x1, info.extent.y1);
+	os_error *error;
+
+	assert(g);
+
+	error = xwimp_force_redraw(g->window, x0 * 2, -y1 * 2, x1 * 2, -y0 * 2);
+	if (error) {
+		LOG(("xwimp_force_redraw: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
 }
 
 
-void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw) {
+/**
+ * Force a redraw of the entire contents of a browser window.
+ *
+ * \param  g   gui_window to redraw
+ */
+
+void gui_window_redraw_window(struct gui_window *g)
+{
+	wimp_window_info info;
+	os_error *error;
+
+	assert(g);
+
+	info.w = g->window;
+	error = xwimp_get_window_info_header_only(&info);
+	if (error) {
+		LOG(("xwimp_get_window_info_header_only: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	error = xwimp_force_redraw(g->window, info.extent.x0, info.extent.y0,
+			info.extent.x1, info.extent.y1);
+	if (error) {
+		LOG(("xwimp_force_redraw: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+}
+
+
+/**
+ * Handle a Redraw_Window_Request for a browser window.
+ */
+
+void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
+{
 	osbool more;
 	bool clear_background = false;
-	struct content *c = g->data.browser.bw->current_content;
-	unsigned long background_colour = 0xffffff;
+	struct content *c = g->bw->current_content;
+	os_error *error;
 
 	/*	Set the current redraw gui_window to get options from
 	*/
 	ro_gui_current_redraw_gui = g;
 
-	/*	Perform the update
+	/*	We should clear the background, except for HTML.
 	*/
-	if (g->type == GUI_BROWSER_WINDOW && c != NULL) {
+	if (!c || c->type != CONTENT_HTML)
+		clear_background = true;
 
-		/*	We should clear the background for GIFs and PNGs
-		*/
-		if ((c->type != CONTENT_HTML) &&
-				(c->type != CONTENT_TEXTPLAIN)) {
-		        clear_background = true;
+	error = xwimp_redraw_window(redraw, &more);
+	if (error) {
+		LOG(("xwimp_redraw_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	while (more) {
+		if (clear_background) {
+			error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
+					colourtrans_SET_BG,
+					os_ACTION_OVERWRITE, 0, 0);
+			if (error) {
+				LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("MiscError", error->errmess);
+			}
+			os_clg();
 		}
 
-		more = wimp_redraw_window(redraw);
-		wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_BLACK);
+		if (c) {
+			content_redraw(c,
+					redraw->box.x0 - redraw->xscroll,
+					redraw->box.y1 - redraw->yscroll,
+					c->width * 2,
+					c->height * 2,
+					redraw->clip.x0,
+					redraw->clip.y0,
+					redraw->clip.x1 - 1,
+					redraw->clip.y1 - 1,
+					g->option.scale);
+		}
 
-    		while (more) {
-			if (clear_background) {
-				colourtrans_set_gcol(background_colour << 8,
-					colourtrans_SET_BG | colourtrans_USE_ECFS,
-					os_ACTION_OVERWRITE, 0);
-				os_clg();
-			}
-		      	content_redraw(c,
-				(int) redraw->box.x0 - (int) redraw->xscroll,
-			  	(int) redraw->box.y1 - (int) redraw->yscroll,
-			  	c->width * 2, c->height * 2,
-			  	redraw->clip.x0, redraw->clip.y0,
-			  	redraw->clip.x1 - 1, redraw->clip.y1 - 1,
-			  	g->scale);
-      			more = wimp_get_rectangle(redraw);
-    		}
- 	} else {
-    		more = wimp_redraw_window(redraw);
-    		while (more) {
-			if (g->type == GUI_BROWSER_WINDOW && c == NULL) {
-				colourtrans_set_gcol(background_colour << 8,
-					colourtrans_SET_BG | colourtrans_USE_ECFS,
-					os_ACTION_OVERWRITE, 0);
-				os_clg();
-			}
-      			more = wimp_get_rectangle(redraw);
-      		}
-      	}
+		error = xwimp_get_rectangle(redraw, &more);
+		if (error) {
+			LOG(("xwimp_get_rectangle: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+	}
 
 	/*	Reset the current redraw gui_window to prevent thumbnails from
 		retaining options
@@ -338,27 +432,28 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw) {
  * \param  data  content_msg_data union with filled in redraw data
  */
 
-void gui_window_update_box(gui_window *g, const union content_msg_data *data)
+void gui_window_update_box(struct gui_window *g,
+		const union content_msg_data *data)
 {
-	struct content *c = g->data.browser.bw->current_content;
+	struct content *c = g->bw->current_content;
 	osbool more;
 	bool clear_background = false;
-	unsigned long background_colour = 0xffffff;
-	os_error *error;
 	wimp_draw update;
+	os_error *error;
 
 	update.w = g->window;
-	update.box.x0 = floorf(data->redraw.x * 2 * g->scale);
+	update.box.x0 = floorf(data->redraw.x * 2 * g->option.scale);
 	update.box.y0 = -ceilf((data->redraw.y + data->redraw.height) * 2 *
-			g->scale);
+			g->option.scale);
 	update.box.x1 = ceilf((data->redraw.x + data->redraw.width) * 2 *
-			g->scale) + 1;
-	update.box.y1 = -floorf(data->redraw.y * 2 * g->scale) + 1;
+			g->option.scale) + 1;
+	update.box.y1 = -floorf(data->redraw.y * 2 * g->option.scale) + 1;
 
 	error = xwimp_update_window(&update, &more);
 	if (error) {
 		LOG(("xwimp_update_window: 0x%x: %s",
 				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
 		return;
 	}
 
@@ -366,50 +461,58 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 	*/
 	ro_gui_current_redraw_gui = g;
 
-	/*	We should clear the background for content that isn't HTML or plain text
+	/*	We should clear the background, except for HTML.
 	*/
-	if ((c->type != CONTENT_HTML) &&
-			(c->type != CONTENT_TEXTPLAIN)) {
-	        clear_background = true;
-	}
+	if (c->type != CONTENT_HTML)
+		clear_background = true;
 
 	while (more) {
 		if (data->redraw.full_redraw) {
 			if (clear_background) {
-				colourtrans_set_gcol(background_colour << 8,
-					colourtrans_SET_BG | colourtrans_USE_ECFS,
-					os_ACTION_OVERWRITE, 0);
+				error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
+						colourtrans_SET_BG,
+						os_ACTION_OVERWRITE, 0, 0);
+				if (error) {
+					LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+							error->errnum,
+							error->errmess));
+					warn_user("MiscError", error->errmess);
+				}
 				os_clg();
 			}
+
 			content_redraw(c,
 					update.box.x0 - update.xscroll,
 					update.box.y1 - update.yscroll,
 					c->width * 2, c->height * 2,
 					update.clip.x0, update.clip.y0,
 					update.clip.x1 - 1, update.clip.y1 - 1,
-					g->scale);
-		} else {
+					g->option.scale);
 
+		} else {
 			assert(data->redraw.object);
 			content_redraw(data->redraw.object,
 					update.box.x0 - update.xscroll +
 					floorf(data->redraw.object_x * 2 *
-						g->scale),
+						g->option.scale),
 					update.box.y1 - update.yscroll -
 					ceilf(data->redraw.object_y * 2 *
-						g->scale),
-					data->redraw.object_width * 2 * g->scale,
-					data->redraw.object_height * 2 * g->scale,
+						g->option.scale),
+					data->redraw.object_width * 2 *
+						g->option.scale,
+					data->redraw.object_height * 2 *
+						g->option.scale,
 					update.clip.x0, update.clip.y0,
 					update.clip.x1 - 1, update.clip.y1 - 1,
-					g->scale);
+					g->option.scale);
 		}
 
 		error = xwimp_get_rectangle(&update, &more);
 		if (error) {
 			LOG(("xwimp_get_rectangle: 0x%x: %s",
 					error->errnum, error->errmess));
-//			return;
+			warn_user("WimpError", error->errmess);
+			return;
 		}
 	}
 
@@ -419,77 +522,173 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 	ro_gui_current_redraw_gui = NULL;
 }
 
-void gui_window_set_scroll(gui_window* g, unsigned long sx, unsigned long sy)
+
+/**
+ * Set the scroll position of a browser window.
+ *
+ * \param  g   gui_window to scroll
+ * \param  sx  point to place at top-left of window
+ * \param  sy  point to place at top-left of window
+ */
+
+void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
-  wimp_window_state state;
-  if (g == NULL)
-    return;
-  state.w = g->window;
-  wimp_get_window_state(&state);
-  state.xscroll = sx * 2;
-  state.yscroll = -sy * 2;
-  state.yscroll += g->data.browser.toolbar->height;
-  ro_gui_window_open(g, (wimp_open*)&state);
+	wimp_window_state state;
+	os_error *error;
+
+	assert(g);
+
+	state.w = g->window;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	state.xscroll = sx * 2;
+	state.yscroll = -sy * 2;
+	if (g->toolbar)
+		state.yscroll += g->toolbar->height;
+	ro_gui_window_open(g, (wimp_open *) &state);
 }
 
-unsigned long gui_window_get_width(gui_window* g) {
-  wimp_window_state state;
-  state.w = g->window;
-  wimp_get_window_state(&state);
-  return (state.visible.x1 - state.visible.x0) / 2;
+
+/**
+ * Find the current width of a browser window.
+ *
+ * \param  g  gui_window to measure
+ * \return  width of window
+ */
+
+int gui_window_get_width(struct gui_window *g)
+{
+	wimp_window_state state;
+	os_error *error;
+
+	state.w = g->window;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return 800;
+	}
+	return (state.visible.x1 - state.visible.x0) / 2;
 }
 
 
-void gui_window_set_extent(gui_window *g, unsigned long width, unsigned long height) {
+/**
+ * Set the extent of the inside of a browser window.
+ *
+ * \param  g       gui_window to resize
+ * \param  width   new extent
+ * \param  height  new extent
+ */
+
+void gui_window_set_extent(struct gui_window *g, int width, int height)
+{
 	os_box extent = { 0, 0, 0, 0 };
 	wimp_window_state state;
 	int toolbar_height = 0;
+	os_error *error;
 
-	width *= 2 * g->scale;
-	height *= 2 * g->scale;
+	width *= 2 * g->option.scale;
+	height *= 2 * g->option.scale;
 
 	state.w = g->window;
-	wimp_get_window_state(&state);
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
 
 	/* account for toolbar height, if present */
-	if (g->data.browser.toolbar) toolbar_height = g->data.browser.toolbar->height;
+	if (g->toolbar)
+		toolbar_height = g->toolbar->height;
 
-	if (width < (unsigned int)(state.visible.x1 - state.visible.x0))
+	if (width < state.visible.x1 - state.visible.x0)
 		width = state.visible.x1 - state.visible.x0;
-	if (height < (unsigned int)(state.visible.y1 - state.visible.y0 - toolbar_height))
+	if (height < state.visible.y1 - state.visible.y0 - toolbar_height)
 		height = state.visible.y1 - state.visible.y0 - toolbar_height;
 
 	extent.y0 = -height;
 	extent.x1 = width;
 	extent.y1 = toolbar_height;
-	wimp_set_extent(g->window, &extent);
-	wimp_open_window((wimp_open *) &state);
-}
+	error = xwimp_set_extent(g->window, &extent);
+	if (error) {
+		LOG(("xwimp_set_extent: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
 
-
-void gui_window_set_status(gui_window* g, const char* text) {
-	if (g->data.browser.toolbar) {
-		ro_gui_set_icon_string(g->data.browser.toolbar->status_handle, ICON_STATUS_TEXT, text);
+	error = xwimp_open_window((wimp_open *) &state);
+	if (error) {
+		LOG(("xwimp_open_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
 	}
 }
 
+
 /**
- * Set the contents of a window's address bar.
+ * Set the status bar of a browser window.
+ *
+ * \param  g     gui_window to update
+ * \param  text  new status text
  */
 
-void gui_window_set_url(gui_window *g, char *url) {
-	wimp_caret c;
-	if (g->data.browser.toolbar) {
-		ro_gui_set_icon_string(g->data.browser.toolbar->toolbar_handle, ICON_TOOLBAR_URL, url);
+void gui_window_set_status(struct gui_window *g, const char *text)
+{
+	if (!g->toolbar)
+		return;
 
-		/*	Move the caret to the URL bar
-		*/
-		if (!xwimp_get_caret_position(&c)) {
-			if (c.w == g->window || c.w == g->data.browser.toolbar->toolbar_handle) {
-				xwimp_set_caret_position(g->data.browser.toolbar->toolbar_handle,
-						    ICON_TOOLBAR_URL, 0, 0, -1, (int)strlen(g->url));
-			}
-		}
+	ro_gui_set_icon_string(g->toolbar->status_handle,
+			ICON_STATUS_TEXT, text);
+}
+
+
+/**
+ * Set the contents of a window's address bar.
+ *
+ * \param  g    gui_window to update
+ * \param  url  new url for address bar
+ */
+
+void gui_window_set_url(struct gui_window *g, const char *url)
+{
+	wimp_caret caret;
+	os_error *error;
+
+	if (!g->toolbar)
+		return;
+
+	ro_gui_set_icon_string(g->toolbar->toolbar_handle,
+			ICON_TOOLBAR_URL, url);
+
+	/* if the caret is in the address bar, move it to the end */
+	error = xwimp_get_caret_position(&caret);
+	if (error) {
+		LOG(("xwimp_get_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	if (!(caret.w == g->toolbar->toolbar_handle &&
+			caret.i == ICON_TOOLBAR_URL))
+		return;
+
+	error = xwimp_set_caret_position(g->toolbar->toolbar_handle,
+			ICON_TOOLBAR_URL, 0, 0, -1, (int) strlen(g->url));
+	if (error) {
+		LOG(("xwimp_set_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
 	}
 }
 
@@ -498,7 +697,8 @@ void gui_window_set_url(gui_window *g, char *url) {
  * Open a window using the given wimp_open, handling toolbars and resizing.
  */
 
-void ro_gui_window_open(gui_window *g, wimp_open *open) {
+void ro_gui_window_open(struct gui_window *g, wimp_open *open)
+{
 	int width = open->visible.x1 - open->visible.x0;
 	int height = open->visible.y1 - open->visible.y0;
 	int toolbar_height = 0;
@@ -506,24 +706,26 @@ void ro_gui_window_open(gui_window *g, wimp_open *open) {
 	wimp_window_state state;
 	bool toggle_hack = false;
 	int screen_height, screen_width;
+	os_error *error;
 
-	if (g->type != GUI_BROWSER_WINDOW) {
-		wimp_open_window(open);
-		return;
-	}
-
-	content = g->data.browser.bw->current_content;
+	content = g->bw->current_content;
 
 	/* check for toggle to full size - NOW FEATURING "TEMPORARY HACK" */
 	state.w = g->window;
-	wimp_get_window_state(&state);
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
 	if ((state.flags & wimp_WINDOW_TOGGLED) &&
 			(state.flags & wimp_WINDOW_BOUNDED_ONCE) &&
 			!(state.flags & wimp_WINDOW_FULL_SIZE)) {
 		/*	Check if we need to perform our hack
 		*/
 		ro_gui_screen_size(&screen_width, &screen_height);
-		if ((content->height * 2 * g->scale) < screen_height) {
+		if ((content->height * 2 * g->option.scale) < screen_height) {
 			open->visible.y0 = 0;
 			open->visible.y1 = 0x1000;
 			height = 0x1000;
@@ -532,165 +734,188 @@ void ro_gui_window_open(gui_window *g, wimp_open *open) {
 	}
 
 	/* account for toolbar height, if present */
-	if (g->data.browser.toolbar) toolbar_height = g->data.browser.toolbar->height;
+	if (g->toolbar)
+		toolbar_height = g->toolbar->height;
 	height -= toolbar_height;
 
 	/*	The height should be no less than the content height
 	*/
-	if (content && (unsigned int)height < content->height * 2 * g->scale) {
-		height = content->height * 2 * g->scale;
-	}
+	if (content && height < content->height * 2 * g->option.scale)
+		height = content->height * 2 * g->option.scale;
 
 	/* change extent if necessary */
-	if (g->data.browser.old_width != width ||
-			g->data.browser.old_height != height) {
-		if (content && g->data.browser.old_width != width) {
-			g->data.browser.reformat_pending = true;
+	if (g->old_width != width || g->old_height != height) {
+		if (content && g->old_width != width) {
+			g->reformat_pending = true;
 			gui_reformat_pending = true;
 		}
-		g->data.browser.old_width = width;
-		g->data.browser.old_height = height;
+		g->old_width = width;
+		g->old_height = height;
 
-		if (content && (unsigned int)width <
-				content->width * 2 * g->scale)
-			width = content->width * 2 * g->scale;
+		if (content && width < content->width * 2 * g->option.scale)
+			width = content->width * 2 * g->option.scale;
 		else {
 			os_box extent = { 0, -height, width, toolbar_height };
-			wimp_set_extent(g->window, &extent);
+			error = xwimp_set_extent(g->window, &extent);
+			if (error) {
+				LOG(("xwimp_set_extent: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+				return;
+			}
 		}
 	}
 
-	wimp_open_window(open);
+	error = xwimp_open_window(open);
+	if (error) {
+		LOG(("xwimp_open_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
 
 	/* update extent to actual size if toggled */
 	if (toggle_hack) {
 		width = open->visible.x1 - open->visible.x0;
 		height = open->visible.y1 - open->visible.y0 - toolbar_height;
-		if (content && (unsigned int)height <
-				content->height * 2 * g->scale)
-			height = content->height * 2 * g->scale;
+		if (content && height < content->height * 2 * g->option.scale)
+			height = content->height * 2 * g->option.scale;
 		{
 			os_box extent = { 0, -height, width, toolbar_height };
-			wimp_set_extent(g->window, &extent);
-		}
-		g->data.browser.old_width = width;
-		g->data.browser.old_height = height;
-	}
-
-	ro_theme_resize_toolbar(g->data.browser.toolbar, g->window);
-}
-
-
-void ro_gui_throb(void) {
-	gui_window* g;
-
-	/*	Abort on no throbs
-	*/
-	if (theme_throbs == 0) return;
-
-	/*	Animate
-	*/
-	float nowtime = (float) (clock() / (CLOCKS_PER_SEC/(15*23/theme_throbs)));
-	for (g = window_list; g != NULL; g = g->next) {
-		if ((g->type == GUI_BROWSER_WINDOW) && (g->data.browser.bw->throbbing)) {
-			if (nowtime > g->throbtime + 0.2) {
-				g->throbtime = nowtime;
-				g->throbber++;
-				if (g->throbber > theme_throbs) g->throbber = 0;
-				sprintf(g->throb_buf, "throbber%i", g->throbber);
-				ro_gui_redraw_icon(g->data.browser.toolbar->toolbar_handle, ICON_TOOLBAR_THROBBER);
+			error = xwimp_set_extent(g->window, &extent);
+			if (error) {
+				LOG(("xwimp_set_extent: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+				return;
 			}
 		}
+		g->old_width = width;
+		g->old_height = height;
 	}
-}
 
-gui_window *ro_lookup_gui_from_w(wimp_w window) {
-	gui_window* g;
-	for (g = window_list; g != NULL; g = g->next) {
-		if ((g->type == GUI_BROWSER_WINDOW) && (g->window == window)) return g;
-	}
-	return NULL;
-}
-
-gui_window *ro_lookup_gui_toolbar_from_w(wimp_w window) {
-	gui_window* g;
-	for (g = window_list; g != NULL; g = g->next) {
-		if ((g->type == GUI_BROWSER_WINDOW) && (g->data.browser.toolbar) &&
-				(g->data.browser.toolbar->toolbar_handle == window)) return g;
-	}
-	return NULL;
-}
-
-gui_window *ro_lookup_gui_status_from_w(wimp_w window) {
-	gui_window* g;
-	for (g = window_list; g != NULL; g = g->next) {
-		if ((g->type == GUI_BROWSER_WINDOW) && (g->data.browser.toolbar) &&
-				(g->data.browser.toolbar->status_handle == window)) return g;
-	}
-	return NULL;
+	if (g->toolbar)
+		ro_theme_resize_toolbar(g->toolbar, g->window);
 }
 
 
 /**
- * Convert a wimp window handle to the owning gui_window structure.
+ * Animate the "throbbers" of all browser windows.
  */
-gui_window *ro_gui_window_lookup(wimp_w w) {
-	gui_window *g;
+
+void ro_gui_throb(void)
+{
+	os_t t;
+	struct gui_window *g;
+
+	if (theme_throbs == 0)
+		return;
+
+	xos_read_monotonic_time(&t);
+
 	for (g = window_list; g; g = g->next) {
-		if (g->window == w) {
-			return g;
-		} else if (g->type == GUI_BROWSER_WINDOW) {
-			if ((g->data.browser.toolbar) &&
-					((g->data.browser.toolbar->toolbar_handle == w) ||
-					(g->data.browser.toolbar->status_handle == w))) return g;
-		}
+		if (!g->bw->throbbing || !g->toolbar)
+			continue;
+		if (t < g->throbtime + 10)
+			continue;
+
+		g->throbtime = t;
+		g->throbber++;
+		if (theme_throbs < g->throbber)
+			g->throbber = 0;
+		sprintf(g->throb_buf, "throbber%i", g->throbber);
+		ro_gui_redraw_icon(g->toolbar->toolbar_handle,
+				ICON_TOOLBAR_THROBBER);
 	}
-	return NULL;
 }
 
 
-void ro_gui_window_mouse_at(wimp_pointer* pointer)
+/**
+ * Convert a RISC OS window handle to a gui_window.
+ *
+ * \param  w  RISC OS window handle
+ * \return  pointer to a structure if found, 0 otherwise
+ */
+
+struct gui_window *ro_gui_window_lookup(wimp_w window)
 {
-  int x, y;
-  wimp_window_state state;
-  gui_window* g;
+	struct gui_window *g;
+	for (g = window_list; g; g = g->next)
+		if (g->window == window)
+			return g;
+	return 0;
+}
 
-  if (pointer->w == history_window) {
-	  ro_gui_history_mouse_at(pointer);
-	  return;
-  }
 
-  g = ro_lookup_gui_from_w(pointer->w);
+/**
+ * Convert a toolbar RISC OS window handle to a gui_window.
+ *
+ * \param  w  RISC OS window handle of a toolbar
+ * \return  pointer to a structure if found, 0 otherwise
+ */
 
-  if (g == NULL)
-    return;
+struct gui_window *ro_gui_toolbar_lookup(wimp_w window)
+{
+	struct gui_window *g;
+	for (g = window_list; g; g = g->next)
+		if (g->toolbar && g->toolbar->toolbar_handle == window)
+			return g;
+	return 0;
+}
 
-  state.w = pointer->w;
-  wimp_get_window_state(&state);
 
-  x = window_x_units(pointer->pos.x, &state) / 2 / g->scale;
-  y = -window_y_units(pointer->pos.y, &state) / 2 / g->scale;
+/**
+ * Convert a status bar RISC OS window handle to a gui_window.
+ *
+ * \param  w  RISC OS window handle of a status bar
+ * \return  pointer to a structure if found, 0 otherwise
+ */
 
-  if (g->drag_status == drag_BROWSER_TEXT_SELECTION)
-  {
-    struct browser_action msg;
-    msg.type = act_ALTER_SELECTION;
-    msg.data.mouse.x = x;
-    msg.data.mouse.y = y;
-    browser_window_action(g->data.browser.bw, &msg);
-  }
+struct gui_window *ro_gui_status_lookup(wimp_w window)
+{
+	struct gui_window *g;
+	for (g = window_list; g; g = g->next)
+		if (g->toolbar && g->toolbar->status_handle == window)
+			return g;
+	return 0;
+}
 
-  if (g->type == GUI_BROWSER_WINDOW)
-  {
-    if (g->data.browser.bw->current_content != NULL)
+
+/**
+ * Handle pointer movements in a browser window.
+ *
+ * \param  g        browser window that the pointer is in
+ * \param  pointer  new mouse position
+ */
+
+void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
+{
+	int x, y;
+	wimp_window_state state;
+	os_error *error;
+
+	assert(g);
+
+	state.w = pointer->w;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	x = window_x_units(pointer->pos.x, &state) / 2 / g->option.scale;
+	y = -window_y_units(pointer->pos.y, &state) / 2 / g->option.scale;
+
+    if (g->bw->current_content != NULL)
     {
       struct browser_action msg;
       msg.type = act_MOUSE_AT;
       msg.data.mouse.x = x;
       msg.data.mouse.y = y;
-      browser_window_action(g->data.browser.bw, &msg);
+      browser_window_action(g->bw, &msg);
     }
-  }
 }
 
 
@@ -698,36 +923,39 @@ void ro_gui_window_mouse_at(wimp_pointer* pointer)
  * Process Mouse_Click events in a toolbar.
  */
 
-void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
+void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
+{
+	os_error *error;
 
 	/*	Reject Menu clicks
 	*/
-	if (pointer->buttons == wimp_CLICK_MENU) return;
+	if (pointer->buttons == wimp_CLICK_MENU)
+		return;
 
 	/*	Handle the buttons appropriately
 	*/
 	switch (pointer->i) {
 		case ICON_TOOLBAR_BACK:
-			history_back(g->data.browser.bw, g->data.browser.bw->history);
+			history_back(g->bw, g->bw->history);
 			break;
 		case ICON_TOOLBAR_FORWARD:
-			history_forward(g->data.browser.bw, g->data.browser.bw->history);
+			history_forward(g->bw, g->bw->history);
 			break;
 
 		case ICON_TOOLBAR_STOP:
-			browser_window_stop(g->data.browser.bw);
+			browser_window_stop(g->bw);
 			break;
 
 		case ICON_TOOLBAR_RELOAD:
 			if (pointer->buttons == wimp_CLICK_SELECT)
-				browser_window_reload(g->data.browser.bw, false);
+				browser_window_reload(g->bw, false);
 			else if (pointer->buttons == wimp_CLICK_ADJUST)
-				browser_window_reload(g->data.browser.bw, true);
+				browser_window_reload(g->bw, true);
 			break;
 
 		case ICON_TOOLBAR_HISTORY:
-			ro_gui_history_open(g->data.browser.bw,
-					g->data.browser.bw->history,
+			ro_gui_history_open(g->bw,
+					g->bw->history,
 					pointer->pos.x, pointer->pos.y);
 			break;
 
@@ -735,12 +963,21 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
 			current_gui = g;
 			ro_gui_menu_prepare_scale();
 			/** \todo  make scale window persistent */
-			xwimp_create_menu((wimp_menu *) dialog_zoom,
+			error = xwimp_create_menu((wimp_menu *) dialog_zoom,
 					pointer->pos.x, pointer->pos.y);
+			if (error) {
+				LOG(("xwimp_create_menu: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+				return;
+			}
 			break;
+
 		case ICON_TOOLBAR_BOOKMARK:
 			if (pointer->buttons == wimp_CLICK_ADJUST) {
-				ro_gui_hotlist_add(g->title, g->data.browser.bw->current_content);
+				if (g->bw->current_content)
+					ro_gui_hotlist_add(g->title,
+							g->bw->current_content);
 			} else {
 				ro_gui_hotlist_show();
 			}
@@ -748,43 +985,61 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
 
 		case ICON_TOOLBAR_SAVE:
 			current_gui = g;
-			ro_gui_save_open(GUI_SAVE_SOURCE,
-					g->data.browser.bw->current_content,
-					false, 0, 0, g->window, false);
+			if (g->bw->current_content)
+				ro_gui_save_open(GUI_SAVE_SOURCE,
+						g->bw->current_content,
+						false, 0, 0, g->window, false);
 			break;
 	}
 }
 
 
-void ro_gui_status_click(gui_window* g, wimp_pointer* pointer) {
+/**
+ * Handle Mouse_Click events in the status bar.
+ *
+ * \param  g        browser window that owns the status bar
+ * \param  pointer  details of mouse click
+ */
+
+void ro_gui_status_click(struct gui_window *g, wimp_pointer *pointer)
+{
 	wimp_drag drag;
 	os_error *error;
 	switch (pointer->i) {
 		case ICON_STATUS_RESIZE:
 			gui_current_drag_type = GUI_DRAG_STATUS_RESIZE;
-		        drag.w = g->data.browser.toolbar->status_handle;
-		        drag.type = wimp_DRAG_SYSTEM_SIZE;
-		        drag.initial.x0 = pointer->pos.x;
-		        drag.initial.x1 = pointer->pos.x;
-		        drag.initial.y0 = pointer->pos.y;
-		        drag.initial.y1 = pointer->pos.y;
-		        error = xwimp_drag_box(&drag);
+			drag.w = g->toolbar->status_handle;
+			drag.type = wimp_DRAG_SYSTEM_SIZE;
+			drag.initial.x0 = pointer->pos.x;
+			drag.initial.x1 = pointer->pos.x;
+			drag.initial.y0 = pointer->pos.y;
+			drag.initial.y1 = pointer->pos.y;
+			error = xwimp_drag_box(&drag);
+			if (error) {
+				LOG(("xwimp_drag_box: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
 			break;
 	}
 }
 
 
-void ro_gui_window_click(gui_window* g, wimp_pointer* pointer) {
+/**
+ * Handle Mouse_Click events in a browser window.
+ *
+ * \param  g        browser window
+ * \param  pointer  details of mouse click
+ */
+
+void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
+{
 	struct browser_action msg;
-	int x,y;
+	int x, y;
 	wimp_window_state state;
-	wimp_caret caret;
 	os_error *error;
 
-	assert(g != NULL);
-	assert(pointer != NULL);
-
-	if (g->type != GUI_BROWSER_WINDOW) return;
+	assert(g);
 
 	state.w = pointer->w;
 	error = xwimp_get_window_state(&state);
@@ -795,26 +1050,17 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer) {
 		return;
 	}
 
-	x = window_x_units(pointer->pos.x, &state) / 2 / g->scale;
-	y = -window_y_units(pointer->pos.y, &state) / 2 / g->scale;
+	x = window_x_units(pointer->pos.x, &state) / 2 / g->option.scale;
+	y = -window_y_units(pointer->pos.y, &state) / 2 / g->option.scale;
 
 	/* set input focus */
-	error = xwimp_get_caret_position(&caret);
-	if (error) {
-		LOG(("xwimp_get_caret_position: 0x%x: %s", error->errnum,
-							   error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-
-	if (((pointer->buttons == wimp_CLICK_SELECT) ||
-			(pointer->buttons == wimp_CLICK_ADJUST)) &&
-		 	(caret.w != state.w)) {
-		error = xwimp_set_caret_position(state.w, -1, -100,
-						-100, 32, -1);
+	if (pointer->buttons == wimp_CLICK_SELECT ||
+			pointer->buttons == wimp_CLICK_ADJUST) {
+		error = xwimp_set_caret_position(state.w, -1,
+				-100, -100, 32, -1);
 		if (error) {
 			LOG(("xwimp_set_caret_position: 0x%x: %s",
-				error->errnum, error->errmess));
+					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
 			return;
 		}
@@ -823,82 +1069,85 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer) {
 	if (pointer->buttons == wimp_CLICK_MENU) {
 		ro_gui_create_menu(browser_menu, pointer->pos.x - 64,
 				pointer->pos.y, g);
+		return;
 	}
-	else {
-		if (g->data.browser.bw != NULL &&
-			g->data.browser.bw->current_content != NULL &&
-			g->data.browser.bw->current_content->type == CONTENT_HTML) {
-			if (pointer->buttons == wimp_CLICK_SELECT) {
-				msg.type = act_MOUSE_CLICK;
-				msg.data.mouse.x = x;
-				msg.data.mouse.y = y;
-				if (browser_window_action(
-					g->data.browser.bw, &msg) == 1)
-					return;
-				msg.type = act_UNKNOWN;
-			}
-			if (pointer->buttons == wimp_CLICK_SELECT && g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
-				msg.type = act_CLEAR_SELECTION;
 
-			else if (pointer->buttons == wimp_CLICK_ADJUST && g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
-				msg.type = act_ALTER_SELECTION;
+	if (pointer->buttons == wimp_CLICK_SELECT) {
+		msg.type = act_MOUSE_CLICK;
+		msg.data.mouse.x = x;
+		msg.data.mouse.y = y;
+		if (browser_window_action(
+					g->bw, &msg) == 1)
+			return;
+		msg.type = act_UNKNOWN;
+	}
 
-			else if (pointer->buttons == wimp_DRAG_SELECT ||
-				pointer->buttons == wimp_DRAG_ADJUST) {
-				msg.type = act_START_NEW_SELECTION;
+	if (pointer->buttons == wimp_CLICK_SELECT
+		|| pointer->buttons == wimp_CLICK_ADJUST) {
 
-				if (pointer->buttons == wimp_DRAG_ADJUST && g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
-					msg.type = act_ALTER_SELECTION;
-
-				ro_gui_start_selection(pointer, &state, g);
-				g->drag_status = drag_BROWSER_TEXT_SELECTION;
-			}
-			msg.data.mouse.x = x;
-			msg.data.mouse.y = y;
-			if (msg.type != act_UNKNOWN)
-				browser_window_action(g->data.browser.bw, &msg);
-
-			if (pointer->buttons == wimp_CLICK_ADJUST &&
-				g->data.browser.bw->current_content->data.html.text_selection.selected == 1 &&
-				current_gui != NULL &&
-				current_gui->data.browser.bw != NULL &&
-				current_gui->data.browser.bw->current_content != NULL) {
-				current_gui->data.browser.bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
-			}
-
-			if (pointer->buttons == wimp_CLICK_SELECT
-				|| pointer->buttons == wimp_CLICK_ADJUST) {
-
-				if (pointer->buttons == wimp_CLICK_SELECT)
-					msg.type = act_FOLLOW_LINK;
-				else
-					msg.type = act_FOLLOW_LINK_NEW_WINDOW;
-				msg.data.mouse.x = x;
-				msg.data.mouse.y = y;
-				browser_window_action(g->data.browser.bw, &msg);
-			}
-		}
+		if (pointer->buttons == wimp_CLICK_SELECT)
+			msg.type = act_FOLLOW_LINK;
+		else
+			msg.type = act_FOLLOW_LINK_NEW_WINDOW;
+		msg.data.mouse.x = x;
+		msg.data.mouse.y = y;
+		browser_window_action(g->bw, &msg);
 	}
 }
 
 
-void gui_window_start_throbber(struct gui_window* g) {
+/**
+ * Update the interface to reflect start of page loading.
+ *
+ * \param  g  window with start of load
+ */
+
+void gui_window_start_throbber(struct gui_window *g)
+{
 	ro_gui_prepare_navigate(g);
-	if (theme_throbs == 0) return;
-	g->throbtime = (float) (clock() + 0) / CLOCKS_PER_SEC;  /* workaround compiler warning */
+	if (theme_throbs == 0)
+		return;
+	xos_read_monotonic_time(&g->throbtime);
 	g->throbber = 0;
 }
 
-void gui_window_stop_throbber(gui_window* g) {
+
+
+/**
+ * Update the interface to reflect page loading stopped.
+ *
+ * \param  g  window with start of load
+ */
+
+void gui_window_stop_throbber(struct gui_window *g)
+{
 	ro_gui_prepare_navigate(g);
 	g->throbber = 0;
-	sprintf(g->throb_buf, "throbber%u", g->throbber);
-	ro_gui_redraw_icon(g->data.browser.toolbar->toolbar_handle, ICON_TOOLBAR_THROBBER);
+	strcpy(g->throb_buf, "throbber0");
+	ro_gui_redraw_icon(g->toolbar->toolbar_handle, ICON_TOOLBAR_THROBBER);
 }
 
-void gui_window_place_caret(gui_window *g, int x, int y, int height) {
-	wimp_set_caret_position(g->window, -1,
+
+/**
+ * Place the caret in a browser window.
+ *
+ * \param  g       window with caret
+ * \param  x       coordinates of caret
+ * \param  y       coordinates of caret
+ * \param  height  height of caret
+ */
+
+void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
+{
+	os_error *error;
+
+	error = xwimp_set_caret_position(g->window, -1,
 			x * 2, -(y + height) * 2, height * 2, -1);
+	if (error) {
+		LOG(("xwimp_set_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
 }
 
 
@@ -906,9 +1155,9 @@ void gui_window_place_caret(gui_window *g, int x, int y, int height) {
  * Process Key_Pressed events in a browser window.
  */
 
-bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
+bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 {
-	struct content *content = g->data.browser.bw->current_content;
+	struct content *content = g->bw->current_content;
 	wimp_window_state state;
 	int y;
 	char *url;
@@ -922,8 +1171,6 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 		warn_user("WimpError", error->errmess);
 		return false;
 	}
-
-	assert(g->type == GUI_BROWSER_WINDOW);
 
 	/* First send the key to the browser window, eg. form fields. */
 	if (!toolbar) {
@@ -941,7 +1188,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 		else if (c == 398) c = 31;     /* Down */
 		else if (c == 399) c = 30;     /* Up */
 		if (c < 256)
-			if (browser_window_key_press(g->data.browser.bw,
+			if (browser_window_key_press(g->bw,
 					(char) c))
 				return true;
 	}
@@ -983,16 +1230,16 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			return true;
 
 		case wimp_KEY_F2:
-			if (!g->data.browser.toolbar)
+			if (!g->toolbar)
 				return false;
-			ro_gui_set_icon_string(g->data.browser.toolbar->toolbar_handle,
+			ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_URL, "www.");
-			xwimp_set_caret_position(g->data.browser.toolbar->toolbar_handle,
+			xwimp_set_caret_position(g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_URL, 0, 0, -1, 4);
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
-			browser_window_destroy(g->data.browser.bw);
+			browser_window_destroy(g->bw);
 			return true;
 
 		case wimp_KEY_F3:
@@ -1025,40 +1272,40 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			url = url_normalize(g->url);
 			if (url) {
 				gui_window_set_url(g, url);
-				browser_window_go(g->data.browser.bw, url);
+				browser_window_go(g->bw, url);
 				free(url);
 			}
 			return true;
 
 		case wimp_KEY_ESCAPE:
-			browser_window_stop(g->data.browser.bw);
+			browser_window_stop(g->bw);
 			return true;
 
 		case 14:	/* CTRL+N */
 			current_gui = g;
-			browser_window_create(g->url, g->data.browser.bw);
+			browser_window_create(g->url, g->bw);
 			return true;
 		case 18:	/* CTRL+R */
-			browser_window_reload(g->data.browser.bw, false);
+			browser_window_reload(g->bw, false);
 			return true;
 
 		case 17:       /* CTRL+Q (Zoom out) */
 		        current_gui = g;
-		        if (0.1 < current_gui->scale) {
-		                current_gui->scale -= 0.1;
-		                if (current_gui->scale < 0.1)
-		                	current_gui->scale = 0.1;
-		                current_gui->data.browser.reformat_pending = true;
+		        if (0.1 < current_gui->option.scale) {
+		                current_gui->option.scale -= 0.1;
+		                if (current_gui->option.scale < 0.1)
+		                	current_gui->option.scale = 0.1;
+		                current_gui->reformat_pending = true;
 		                gui_reformat_pending = true;
 		        }
 		        return true;
 		case 23:       /* CTRL+W (Zoom in) */
 		        current_gui = g;
-		        if (current_gui->scale < 10.0) {
-		                current_gui->scale += 0.1;
-		                if (10.0 < current_gui->scale)
-		                	current_gui->scale = 10.0;
-		                current_gui->data.browser.reformat_pending = true;
+		        if (current_gui->option.scale < 10.0) {
+		                current_gui->option.scale += 0.1;
+		                if (10.0 < current_gui->option.scale)
+		                	current_gui->option.scale = 10.0;
+		                current_gui->reformat_pending = true;
 		                gui_reformat_pending = true;
 		        }
 		        return true;
@@ -1078,7 +1325,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 	state.w = g->window;
 	wimp_get_window_state(&state);
 	y = state.visible.y1 - state.visible.y0 - 32;
-	y -= g->data.browser.toolbar->height;
+	y -= g->toolbar->height;
 
 	switch (key) {
 		case wimp_KEY_UP:
@@ -1112,14 +1359,14 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 void ro_gui_scroll_request(wimp_scroll *scroll)
 {
 	int x, y;
-	gui_window *g = ro_gui_window_lookup(scroll->w);
+	struct gui_window *g = ro_gui_window_lookup(scroll->w);
 
-	if (!g || g->type != GUI_BROWSER_WINDOW)
+	if (!g)
 		return;
 
 	x = scroll->visible.x1 - scroll->visible.x0 - 32;
 	y = scroll->visible.y1 - scroll->visible.y0 - 32;
-	y -= g->data.browser.toolbar->height;
+	y -= g->toolbar->height;
 
 	switch (scroll->xmin) {
 		case wimp_SCROLL_PAGE_LEFT:
@@ -1195,9 +1442,9 @@ int window_y_units(int y, wimp_window_state *state) {
  * If the file was dragged into a form file input, it is used as the value.
  */
 
-bool ro_gui_window_dataload(gui_window *g, wimp_message *message)
+bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 {
-	struct browser_window *bw = g->data.browser.bw;
+	struct browser_window *bw = g->bw;
 	struct box_selection *click_boxes = 0;
 	int x, y;
 	int i;
@@ -1256,63 +1503,75 @@ bool ro_gui_window_dataload(gui_window *g, wimp_message *message)
 
 
 /**
+ * Process pending reformats
+ */
+
+void ro_gui_window_process_reformats(void)
+{
+	struct gui_window *g;
+
+	for (g = window_list; g; g = g->next) {
+		if (!g->reformat_pending)
+			continue;
+		content_reformat(g->bw->current_content,
+				g->old_width / 2 / g->option.scale,
+				1000);
+		g->reformat_pending = false;
+	}
+	gui_reformat_pending = false;
+}
+
+
+/**
  * Clones a browser window's options.
  *
  * \param  new_bw  the new browser window
  * \param  old_bw  the browser window to clone from, or NULL for default
  */
 
-void gui_window_clone_options(struct browser_window *new_bw,
+void ro_gui_window_clone_options(struct browser_window *new_bw,
 		struct browser_window *old_bw) {
-	gui_window *old_gui = NULL;
-	gui_window *new_gui;
+	struct gui_window *old_gui = NULL;
+	struct gui_window *new_gui;
 
-	/*	Abort on bad input
-	*/
-	if (new_bw == NULL) return;
+	assert(new_bw);
 
 	/*	Get our GUIs
 	*/
 	new_gui = new_bw->window;
 
-	/*	Abort on bad input
-	*/
-	if (!new_gui) return;
-	if (old_bw) old_gui = old_bw->window;
+	if (old_bw)
+		old_gui = old_bw->window;
 
 	/*	Clone the basic options
 	*/
 	if (!old_gui) {
-		new_gui->scale = ((float)option_scale) / 100;
-		new_gui->option_dither_sprites = option_dither_sprites;
-		new_gui->option_filter_sprites = option_filter_sprites;
-		new_gui->option_animate_images = option_animate_images;
-		new_gui->option_background_images = option_background_images;
+		new_gui->option.scale = ((float)option_scale) / 100;
+		new_gui->option.dither_sprites = option_dither_sprites;
+		new_gui->option.filter_sprites = option_filter_sprites;
+		new_gui->option.animate_images = option_animate_images;
+		new_gui->option.background_images = option_background_images;
 	} else {
-		new_gui->scale = old_gui->scale;
-		new_gui->option_dither_sprites = old_gui->option_dither_sprites;
-		new_gui->option_filter_sprites = old_gui->option_filter_sprites;
-		new_gui->option_animate_images = old_gui->option_animate_images;
-		new_gui->option_background_images = old_gui->option_background_images;
+		new_gui->option = old_gui->option;
 	}
 
 	/*	Set up the toolbar
 	*/
-	if (new_gui->data.browser.toolbar) {
-	  	if ((old_gui) && (old_gui->data.browser.toolbar)) {
-			new_gui->data.browser.toolbar->status_width = old_gui->data.browser.toolbar->status_width;
-			new_gui->data.browser.toolbar->status_window = old_gui->data.browser.toolbar->status_window;
-			new_gui->data.browser.toolbar->standard_buttons = old_gui->data.browser.toolbar->standard_buttons;
-			new_gui->data.browser.toolbar->url_bar = old_gui->data.browser.toolbar->url_bar;
-			new_gui->data.browser.toolbar->throbber = old_gui->data.browser.toolbar->throbber;
+	if (new_gui->toolbar) {
+	  	if ((old_gui) && (old_gui->toolbar)) {
+			new_gui->toolbar->status_width = old_gui->toolbar->status_width;
+			new_gui->toolbar->status_window = old_gui->toolbar->status_window;
+			new_gui->toolbar->standard_buttons = old_gui->toolbar->standard_buttons;
+			new_gui->toolbar->url_bar = old_gui->toolbar->url_bar;
+			new_gui->toolbar->throbber = old_gui->toolbar->throbber;
 	  	} else {
-			new_gui->data.browser.toolbar->status_width = option_toolbar_status_width;
-			new_gui->data.browser.toolbar->status_window = option_toolbar_show_status;
-			new_gui->data.browser.toolbar->standard_buttons = option_toolbar_show_buttons;
-			new_gui->data.browser.toolbar->url_bar = option_toolbar_show_address;
-			new_gui->data.browser.toolbar->throbber = option_toolbar_show_throbber;
+			new_gui->toolbar->status_width = option_toolbar_status_width;
+			new_gui->toolbar->status_window = option_toolbar_show_status;
+			new_gui->toolbar->standard_buttons = option_toolbar_show_buttons;
+			new_gui->toolbar->url_bar = option_toolbar_show_address;
+			new_gui->toolbar->throbber = option_toolbar_show_throbber;
 		}
-		ro_theme_update_toolbar(new_gui->data.browser.toolbar, new_gui->window);
+		ro_theme_update_toolbar(new_gui->toolbar, new_gui->window);
 	}
 }
 
@@ -1323,12 +1582,10 @@ void gui_window_clone_options(struct browser_window *new_bw,
  * \param  bw  the browser window to read options from
  */
 
-void gui_window_default_options(struct browser_window *bw) {
-	gui_window *gui;
+void ro_gui_window_default_options(struct browser_window *bw) {
+	struct gui_window *gui;
 
-	/*	Abort on bad input
-	*/
-	if (bw == NULL) return;
+	assert(bw);
 
 	/*	Get our GUI
 	*/
@@ -1337,19 +1594,19 @@ void gui_window_default_options(struct browser_window *bw) {
 
 	/*	Save the basic options
 	*/
-	option_scale = gui->scale * 100;
-	option_dither_sprites = gui->option_dither_sprites;
-	option_filter_sprites = gui->option_filter_sprites;
-	option_animate_images = gui->option_animate_images;
+	option_scale = gui->option.scale * 100;
+	option_dither_sprites = gui->option.dither_sprites;
+	option_filter_sprites = gui->option.filter_sprites;
+	option_animate_images = gui->option.animate_images;
 
 	/*	Set up the toolbar
 	*/
-	if (gui->data.browser.toolbar) {
-		option_toolbar_status_width = gui->data.browser.toolbar->status_width;
-		option_toolbar_show_status = gui->data.browser.toolbar->status_window;
-		option_toolbar_show_buttons = gui->data.browser.toolbar->standard_buttons;
-		option_toolbar_show_address = gui->data.browser.toolbar->url_bar;
-		option_toolbar_show_throbber = gui->data.browser.toolbar->throbber;
+	if (gui->toolbar) {
+		option_toolbar_status_width = gui->toolbar->status_width;
+		option_toolbar_show_status = gui->toolbar->status_window;
+		option_toolbar_show_buttons = gui->toolbar->standard_buttons;
+		option_toolbar_show_address = gui->toolbar->url_bar;
+		option_toolbar_show_throbber = gui->toolbar->throbber;
 	}
 }
 
@@ -1418,4 +1675,16 @@ void gui_window_set_pointer(gui_pointer_shape shape)
 	}
 
 	curr_pointer = shape;
+}
+
+
+/**
+ * Called when the gui_window has new content.
+ *
+ * \param  g  the gui_window that has new content
+ */
+
+void gui_window_new_content(struct gui_window *g)
+{
+	ro_gui_dialog_close_persistant(g->window);
 }

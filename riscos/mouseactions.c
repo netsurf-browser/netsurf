@@ -27,7 +27,7 @@ static int anglesDifferent(double a, double b);
 static mouseaction ro_gui_try_mouse_action(void);
 
 
-void ro_gui_mouse_action(gui_window *g) {
+void ro_gui_mouse_action(struct gui_window *g) {
 
   int x, y;
   mouseaction ma = mouseaction_NONE;

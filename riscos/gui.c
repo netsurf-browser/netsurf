@@ -9,6 +9,7 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -44,6 +45,7 @@
 #endif
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/theme.h"
+#include "netsurf/riscos/toolbar.h"
 #ifdef WITH_URI
 #include "netsurf/riscos/uri.h"
 #endif
@@ -62,9 +64,17 @@ int __feature_imagefs_is_file = 1;              /**< For UnixLib. */
 char *NETSURF_DIR;
 wimp_menu *combo_menu;
 struct form_control *current_gadget;
-gui_window *over_window = 0;	/**< Window which the pointer is over. */
-bool gui_reformat_pending = false;	/**< Some windows have been resized,
-						and should be reformatted. */
+
+/** The pointer is over a window which is tracking mouse movement. */
+static bool gui_track = false;
+/** Handle of window which the pointer is over. */
+static wimp_w gui_track_wimp_w;
+/** Browser window which the pointer is over, or 0 if none. */
+static struct gui_window *gui_track_gui_window;
+
+/** Some windows have been resized, and should be reformatted. */
+bool gui_reformat_pending = false;
+
 gui_drag_type gui_current_drag_type;
 wimp_t task_handle;	/**< RISC OS wimp task handle. */
 static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
@@ -122,21 +132,25 @@ static void ro_gui_check_fonts(void);
 static void ro_gui_pointers_init(void);
 static void ro_gui_icon_bar_create(void);
 static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
-static void ro_gui_poll_queue(wimp_event_no event, wimp_block* block);
+static void ro_gui_poll_queue(wimp_event_no event, wimp_block *block);
 static void ro_gui_null_reason_code(void);
 static void ro_gui_redraw_window_request(wimp_draw *redraw);
 static void ro_gui_open_window_request(wimp_open *open);
 static void ro_gui_close_window_request(wimp_close *close);
+static void ro_gui_pointer_leaving_window(wimp_leaving *leaving);
+static void ro_gui_pointer_entering_window(wimp_entering *entering);
 static void ro_gui_mouse_click(wimp_pointer *pointer);
-static void ro_gui_icon_bar_click(wimp_pointer* pointer);
+static void ro_gui_icon_bar_click(wimp_pointer *pointer);
 static void ro_gui_check_resolvers(void);
 static void ro_gui_drag_end(wimp_dragged *drag);
-static void ro_gui_keypress(wimp_key* key);
+static void ro_gui_keypress(wimp_key *key);
 static void ro_gui_user_message(wimp_event_no event, wimp_message *message);
-static void ro_msg_datasave(wimp_message* block);
-static void ro_msg_dataload(wimp_message* block);
-static void ro_msg_datasave_ack(wimp_message* message);
-static void ro_msg_dataopen(wimp_message* block);
+static void ro_msg_dataload(wimp_message *block);
+static char *ro_gui_uri_file_parse(const char *file_name);
+static bool ro_gui_uri_file_parse_line(FILE *fp, char *b);
+static char *ro_gui_url_file_parse(const char *file_name);
+static void ro_msg_datasave_ack(wimp_message *message);
+static void ro_msg_dataopen(wimp_message *block);
 static char *ro_path_to_url(const char *path);
 
 
@@ -406,7 +420,6 @@ void gui_poll(bool active)
 	wimp_event_no event;
 	wimp_block block;
 	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN;
-	gui_window *g;
 
 	/* Process queued events. */
 	while (ro_gui_poll_queued_blocks) {
@@ -423,14 +436,14 @@ void gui_poll(bool active)
 	xhourglass_off();
 	if (active) {
 		event = wimp_poll(mask, &block, 0);
-	} else if (sched_active && (over_window || gui_reformat_pending)) {
+	} else if (sched_active && (gui_track || gui_reformat_pending)) {
 		os_t t = os_read_monotonic_time() + 10;
 		if (sched_time < t)
 			t = sched_time;
 		event = wimp_poll_idle(mask, &block, t, 0);
 	} else if (sched_active) {
 		event = wimp_poll_idle(mask, &block, sched_time, 0);
-	} else if (over_window || gui_reformat_pending) {
+	} else if (gui_track || gui_reformat_pending) {
 		os_t t = os_read_monotonic_time();
 		event = wimp_poll_idle(mask, &block, t + 10, 0);
 	} else {
@@ -441,17 +454,8 @@ void gui_poll(bool active)
 	ro_gui_handle_event(event, &block);
 	schedule_run();
 
-	if (gui_reformat_pending && event == wimp_NULL_REASON_CODE) {
-		for (g = window_list; g; g = g->next) {
-			if (g->type == GUI_BROWSER_WINDOW && g->data.browser.reformat_pending) {
-				content_reformat(g->data.browser.bw->current_content,
-						g->data.browser.old_width / 2 / g->scale,
-						1000);
-				g->data.browser.reformat_pending = false;
-			}
-		}
-		gui_reformat_pending = false;
-	}
+	if (gui_reformat_pending && event == wimp_NULL_REASON_CODE)
+		ro_gui_window_process_reformats();
 }
 
 
@@ -482,16 +486,11 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 			break;
 
 		case wimp_POINTER_LEAVING_WINDOW:
-			if (over_window == (gui_window*)history_window)
-				wimp_close_window(dialog_tooltip);
-			over_window = 0;
-			gui_window_set_pointer(GUI_POINTER_DEFAULT);
+			ro_gui_pointer_leaving_window(&block->leaving);
 			break;
 
 		case wimp_POINTER_ENTERING_WINDOW:
-			over_window = ro_lookup_gui_from_w(block->entering.w);
-			if (over_window == 0 && block->entering.w == history_window)
-				over_window = (gui_window*)history_window;
+			ro_gui_pointer_entering_window(&block->entering);
 			break;
 
 		case wimp_MOUSE_CLICK:
@@ -594,12 +593,26 @@ void ro_gui_poll_queue(wimp_event_no event, wimp_block *block)
 
 void ro_gui_null_reason_code(void)
 {
+	wimp_pointer pointer;
+	os_error *error;
+
 	ro_gui_throb();
-	if (over_window) {
-		wimp_pointer pointer;
-		wimp_get_pointer_info(&pointer);
-		ro_gui_window_mouse_at(&pointer);
+
+	if (!gui_track)
+		return;
+
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
 	}
+
+	if (gui_track_wimp_w == history_window)
+		ro_gui_history_mouse_at(&pointer);
+	else if (gui_track_gui_window)
+		ro_gui_window_mouse_at(gui_track_gui_window, &pointer);
 }
 
 
@@ -609,7 +622,9 @@ void ro_gui_null_reason_code(void)
 
 void ro_gui_redraw_window_request(wimp_draw *redraw)
 {
-	gui_window *g;
+	struct gui_window *g;
+	osbool more;
+	os_error *error;
 
 	if (redraw->w == dialog_config_th_pane)
 		ro_gui_redraw_config_th_pane(redraw);
@@ -619,14 +634,24 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 		ro_gui_hotlist_redraw(redraw);
 	else if (redraw->w == dialog_debug)
 		ro_gui_debugwin_redraw(redraw);
+	else if ((g = ro_gui_window_lookup(redraw->w)))
+		ro_gui_window_redraw(g, redraw);
 	else {
-		g = ro_lookup_gui_from_w(redraw->w);
-		if (g != NULL)
-			ro_gui_window_redraw(g, redraw);
-		else {
-			osbool more = wimp_redraw_window(redraw);
-			while (more)
-				more = wimp_get_rectangle(redraw);
+		error = xwimp_redraw_window(redraw, &more);
+		if (error) {
+			LOG(("xwimp_redraw_window: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+		while (more) {
+			error = xwimp_get_rectangle(redraw, &more);
+			if (error) {
+				LOG(("xwimp_get_rectangle: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+				return;
+			}
 		}
 	}
 }
@@ -638,21 +663,25 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 
 void ro_gui_open_window_request(wimp_open *open)
 {
-	struct toolbar *toolbar;
-	gui_window *g;
+	struct gui_window *g;
+	os_error *error;
 
-	g = ro_lookup_gui_from_w(open->w);
+	g = ro_gui_window_lookup(open->w);
 	if (g) {
 		ro_gui_window_open(g, open);
 	} else {
-		wimp_open_window(open);
-		g = ro_lookup_gui_status_from_w(open->w);
-		if (g) {
-			toolbar = g->data.browser.toolbar;
-			if (toolbar) {
-				toolbar->resize_status = 1;
-				ro_theme_resize_toolbar(g->data.browser.toolbar, g->window);
-			}
+		error = xwimp_open_window(open);
+		if (error) {
+			LOG(("xwimp_open_window: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+
+		g = ro_gui_status_lookup(open->w);
+		if (g && g->toolbar) {
+			g->toolbar->resize_status = 1;
+			ro_theme_resize_toolbar(g->toolbar, g->window);
 		}
 	}
 }
@@ -664,9 +693,9 @@ void ro_gui_open_window_request(wimp_open *open)
 
 void ro_gui_close_window_request(wimp_close *close)
 {
-	gui_window *g;
+	struct gui_window *g;
 	struct gui_download_window *dw;
-	
+
 	/*	Check for children
 	*/
 	ro_gui_dialog_close_persistant(close->w);
@@ -674,11 +703,45 @@ void ro_gui_close_window_request(wimp_close *close)
 	if (close->w == dialog_debug)
 		ro_gui_debugwin_close();
 	else if ((g = ro_gui_window_lookup(close->w)))
-		browser_window_destroy(g->data.browser.bw);
+		browser_window_destroy(g->bw);
 	else if ((dw = ro_gui_download_window_lookup(close->w)))
 		ro_gui_download_window_destroy(dw);
 	else
 		ro_gui_dialog_close(close->w);
+}
+
+
+/**
+ * Handle Pointer_Leaving_Window events.
+ */
+
+void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
+{
+	os_error *error;
+
+	if (gui_track_wimp_w == history_window) {
+		error = xwimp_close_window(dialog_tooltip);
+		if (error) {
+			LOG(("xwimp_close_window: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
+
+	gui_track = false;
+	gui_window_set_pointer(GUI_POINTER_DEFAULT);
+}
+
+
+/**
+ * Handle Pointer_Entering_Window events.
+ */
+
+void ro_gui_pointer_entering_window(wimp_entering *entering)
+{
+	gui_track_wimp_w = entering->w;
+	gui_track_gui_window = ro_gui_window_lookup(entering->w);
+	gui_track = gui_track_gui_window || gui_track_wimp_w == history_window;
 }
 
 
@@ -688,7 +751,7 @@ void ro_gui_close_window_request(wimp_close *close)
 
 void ro_gui_mouse_click(wimp_pointer *pointer)
 {
-	gui_window *g = ro_gui_window_lookup(pointer->w);
+	struct gui_window *g;
 	struct gui_download_window *dw;
 
 	if (pointer->w == wimp_ICON_BAR)
@@ -697,20 +760,19 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 		ro_gui_history_click(pointer);
 	else if (pointer->w == hotlist_window)
 		ro_gui_hotlist_click(pointer);
-	else if (g && g->type == GUI_BROWSER_WINDOW && g->window == pointer->w)
-		ro_gui_window_click(g, pointer);
-	else if (g && g->type == GUI_BROWSER_WINDOW &&
-			g->data.browser.toolbar->toolbar_handle == pointer->w)
-		ro_gui_toolbar_click(g, pointer);
-	else if (hotlist_toolbar && hotlist_toolbar->toolbar_handle == pointer->w)
+	else if (pointer->w == dialog_saveas)
+		ro_gui_save_click(pointer);
+	else if (hotlist_toolbar &&
+			hotlist_toolbar->toolbar_handle == pointer->w)
 		ro_gui_hotlist_toolbar_click(pointer);
-	else if (g && g->type == GUI_BROWSER_WINDOW &&
-			g->data.browser.toolbar->status_handle == pointer->w)
+	else if ((g = ro_gui_window_lookup(pointer->w)))
+		ro_gui_window_click(g, pointer);
+	else if ((g = ro_gui_toolbar_lookup(pointer->w)))
+		ro_gui_toolbar_click(g, pointer);
+	else if ((g = ro_gui_status_lookup(pointer->w)))
 		ro_gui_status_click(g, pointer);
 	else if ((dw = ro_gui_download_window_lookup(pointer->w)))
 		ro_gui_download_window_click(dw, pointer);
-	else if (pointer->w == dialog_saveas)
-		ro_gui_save_click(pointer);
 	else
 		ro_gui_dialog_click(pointer);
 }
@@ -790,35 +852,26 @@ void ro_gui_drag_end(wimp_dragged *drag)
 void ro_gui_keypress(wimp_key *key)
 {
 	bool handled = false;
-	
-	/*	Check for hotlist windows
-	*/
-	if (key->w == hotlist_window) {
+	struct gui_window *g;
+	os_error *error;
+
+	if (key->w == hotlist_window)
 		handled = ro_gui_hotlist_keypress(key->c);
-		if (!handled) wimp_process_key(key->c);
-		return;
-	}
-	
-	/*	Handle the rest
-	*/
-	gui_window *g = ro_gui_window_lookup(key->w);
-
-	if (!g) {
+	else if ((g = ro_gui_window_lookup(key->w)))
+		handled = ro_gui_window_keypress(g, key->c, false);
+	else if ((g = ro_gui_toolbar_lookup(key->w)))
+		handled = ro_gui_window_keypress(g, key->c, true);
+        else
 		handled = ro_gui_dialog_keypress(key);
-		if (!handled)
-			wimp_process_key(key->c);
-		return;
-	}
 
-	switch (g->type) {
-		case GUI_BROWSER_WINDOW:
-			handled = ro_gui_window_keypress(g, key->c,
-					(bool) (g->data.browser.toolbar->toolbar_handle == key->w));
-			break;
+	if (!handled) {
+		error = xwimp_process_key(key->c);
+		if (error) {
+			LOG(("xwimp_process_key: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
 	}
-
-	if (!handled)
-		wimp_process_key(key->c);
 }
 
 
@@ -831,10 +884,6 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 	switch (message->action) {
 		case message_HELP_REQUEST:
 			ro_gui_interactive_help_request(message);
-			break;
-
-		case message_DATA_SAVE:
-			ro_msg_datasave(message);
 			break;
 
 		case message_DATA_SAVE_ACK:
@@ -955,62 +1004,6 @@ void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigne
 	ro_gui_create_menu(combo_menu, pointer.pos.x - 64, pointer.pos.y, bw->window);
 }
 
-void ro_msg_datasave(wimp_message* block)
-{
-	gui_window* gui;
-	struct browser_window* bw;
-	wimp_message_data_xfer* data;
-	int x,y;
-	struct box_selection* click_boxes;
-	int found, plot_index;
-	int i;
-	wimp_window_state state;
-
-	data = &block->data.data_xfer;
-
-	gui = ro_lookup_gui_from_w(data->w);
-	if (gui == NULL)
-		return;
-
-	bw = gui->data.browser.bw;
-
-	state.w = data->w;
-	wimp_get_window_state(&state);
-	x = window_x_units(data->pos.x, &state) / 2;
-	y = -window_y_units(data->pos.y, &state) / 2;
-
-	found = 0;
-	click_boxes = NULL;
-	plot_index = 0;
-
-	box_under_area(bw->current_content,
-		 bw->current_content->data.html.layout->children,
-		 (unsigned int)x, (unsigned int)y, 0, 0, &click_boxes,
-		 &found, &plot_index);
-
-	if (found == 0)
-		return;
-
-	for (i = found - 1; i >= 0; i--)
-	{
-		if (click_boxes[i].box->gadget != NULL)
-		{
-			if (click_boxes[i].box->gadget->type == GADGET_TEXTAREA && data->file_type == 0xFFF)
-			{
-				/* load the text in! */
-				fprintf(stderr, "REPLYING TO MESSAGE MATE\n");
-				block->action = message_DATA_SAVE_ACK;
-				block->your_ref = block->my_ref;
-				block->my_ref = 0;
-				strcpy(block->data.data_xfer.file_name, "<Wimp$Scrap>");
-				wimp_send_message(wimp_USER_MESSAGE, block, block->sender);
-			}
-		}
-	}
-
-	xfree(click_boxes);
-}
-
 
 /**
  * Handle Message_DataLoad (file dragged in).
@@ -1018,160 +1011,200 @@ void ro_msg_datasave(wimp_message* block)
 
 void ro_msg_dataload(wimp_message *message)
 {
+	int file_type = message->data.data_xfer.file_type;
 	char *url = 0;
-	gui_window *gui;
+	struct gui_window *g;
+	os_error *error;
 
-	gui = ro_lookup_gui_from_w(message->data.data_xfer.w);
+	g = ro_gui_window_lookup(message->data.data_xfer.w);
 
-	if (gui) {
-		if (ro_gui_window_dataload(gui, message))
-			return;
-	}
-
-	if (message->data.data_xfer.file_type != 0xfaf &&
-			message->data.data_xfer.file_type != 0x695 &&
-			message->data.data_xfer.file_type != 0xaff &&
-			message->data.data_xfer.file_type != 0xb60 &&
-			message->data.data_xfer.file_type != 0xc85 &&
-			message->data.data_xfer.file_type != 0xff9 &&
-			message->data.data_xfer.file_type != 0xfff &&
-			message->data.data_xfer.file_type != 0xf91 &&
-			message->data.data_xfer.file_type != 0xb28)
+	if (g && ro_gui_window_dataload(g, message))
 		return;
 
-	/* uri file
-	 * Format: Each "line" is separated by a tab.
-	 *         Comments are prefixed by a "#"
-	 *
-	 * Line:        Content:
-	 *      1       URI
-	 *      2       100 (version of file format * 100)
-	 *      3       An URL (eg http;//www.google.com/)
-	 *      4       Title associated with URL (eg Google)
-	 */
-	if (message->data.data_xfer.file_type == 0xf91) {
-		char *buf, *temp;
-		int lineno=0;
-		buf = load(message->data.data_xfer.file_name);
-		temp = strtok(buf, "\t");
-
-		if (!temp) {
-			xfree(buf);
-			return;
-		}
-
-		if (temp[0] != '#') lineno = 1;
-
-		while (temp && lineno<=2) {
-			temp = strtok('\0', "\t");
-			if (!temp) break;
-			if (temp[0] == '#') continue; /* ignore commented lines */
-			lineno++;
-		}
-
-		if (!temp) {
-			xfree(buf);
-			return;
-		}
-
-		url = xstrdup(temp);
-
-		xfree(buf);
-	}
-
-	/* url file */
-	if (message->data.data_xfer.file_type == 0xb28) {
-		char *temp;
-		FILE *fp = fopen(message->data.data_xfer.file_name, "r");
-
-		if (!fp) return;
-
-		url = xcalloc(256, sizeof(char));
-
-		temp = fgets(url, 256, fp);
-
-		fclose(fp);
-
-		if (!temp) return;
-
-		if (url[strlen(url)-1] == '\n') {
-			url[strlen(url)-1] = '\0';
-		}
-	}
+	if (file_type == 0xf91)			/* Acorn URI file */
+		url = ro_gui_uri_file_parse(message->data.data_xfer.file_name);
+	else if (file_type == 0xb28)		/* ANT URL file */
+		url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
+	else if (file_type == 0xfaf ||
+			file_type == 0x695 ||
+			file_type == 0xaff ||
+			file_type == 0xb60 ||
+			file_type == 0xc85 ||
+			file_type == 0xff9 ||
+			file_type == 0xfff)	/* display the actual file */
+		url = ro_path_to_url(message->data.data_xfer.file_name);
+	else
+		return;
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
 	message->your_ref = message->my_ref;
-	wimp_send_message(wimp_USER_MESSAGE, message, message->sender);
-
-	/* create a new window with the file */
-	if (message->data.data_xfer.file_type != 0xb28 &&
-	    message->data.data_xfer.file_type != 0xf91) {
-		url = ro_path_to_url(message->data.data_xfer.file_name);
+	error = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+	if (error) {
+		LOG(("xwimp_send_message: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
 	}
+
 	if (!url)
+		/* error has already been reported by one of the three
+		 * functions called above */
 		return;
 
-	if (gui) {
-		gui_window_set_url(gui, url);
-		browser_window_go(gui->data.browser.bw, url);
-	}
-	else {
-		browser_window_create(url, NULL);
-	}
+	if (g)
+		browser_window_go(g->bw, url);
+	else
+		browser_window_create(url, 0);
 
 	free(url);
+}
 
 
-#if 0
-	gui_window* gui;
-	struct browser_window* bw;
-	wimp_message_data_xfer* data;
-	int x,y;
-	struct box_selection* click_boxes;
-	int found, plot_index;
-	int i;
-	wimp_window_state state;
+/**
+ * Parse an Acorn URI file.
+ *
+ * \param  file_name  file to read
+ * \return  URL from file, or 0 on error and error reported
+ */
 
-	data = &block->data.data_xfer;
+char *ro_gui_uri_file_parse(const char *file_name)
+{
+	/* See the "Acorn URI Handler Functional Specification" for the
+	 * definition of the URI file format. */
+	char line[400];
+	char *url;
+	FILE *fp;
 
-	gui = ro_lookup_gui_from_w(data->w);
-	if (gui == NULL)
-		return;
-
-	bw = gui->data.browser.bw;
-
-	state.w = data->w;
-	wimp_get_window_state(&state);
-	x = window_x_units(data->pos.x, &state) / 2;
-	y = -window_y_units(data->pos.y, &state) / 2;
-
-	found = 0;
-	click_boxes = NULL;
-	plot_index = 0;
-
-	box_under_area(bw->current_content,
-		 bw->current_content->data.html.layout->children,
-		 (unsigned int)x, (unsigned int)y, 0, 0, &click_boxes,
-		 &found, &plot_index);
-
-	if (found == 0)
-		return;
-
-	for (i = found - 1; i >= 0; i--)
-	{
-		if (click_boxes[i].box->gadget != NULL)
-		{
-			if (click_boxes[i].box->gadget->type == GADGET_TEXTAREA && data->file_type == 0xFFF)
-			{
-				/* load the text in! */
-				/* TODO */
-			}
-		}
+	fp = fopen(file_name, "rb");
+	if (!fp) {
+		LOG(("fopen(\"%s\", \"rb\"): %i: %s",
+				file_name, errno, strerror(errno)));
+		warn_user("LoadError", strerror(errno));
+		return 0;
 	}
 
-	xfree(click_boxes);
-#endif
+	/* "URI" */
+	if (!ro_gui_uri_file_parse_line(fp, line) || strcmp(line, "URI") != 0)
+		goto uri_syntax_error;
+
+	/* version */
+	if (!ro_gui_uri_file_parse_line(fp, line) ||
+			strspn(line, "0123456789") != strlen(line))
+		goto uri_syntax_error;
+
+	/* URI */
+	if (!ro_gui_uri_file_parse_line(fp, line))
+		goto uri_syntax_error;
+
+	fclose(fp);
+
+	url = strdup(line);
+	if (!url) {
+		warn_user("NoMemory", 0);
+		return 0;
+	}
+
+	return url;
+
+uri_syntax_error:
+	fclose(fp);
+	warn_user("URIError", 0);
+	return 0;
+}
+
+
+/**
+ * Read a "line" from an Acorn URI file.
+ *
+ * \param  fp  file pointer to read from
+ * \param  b   buffer for line, size 400 bytes
+ * \return  true on success, false on EOF
+ */
+
+bool ro_gui_uri_file_parse_line(FILE *fp, char *b)
+{
+	int c;
+	unsigned int i = 0;
+
+	c = getc(fp);
+	if (c == EOF)
+		return false;
+
+	/* skip comment lines */
+	while (c == '#') {
+		do { c = getc(fp); } while (c != EOF && 32 <= c);
+		if (c == EOF)
+			return false;
+		do { c = getc(fp); } while (c != EOF && c < 32);
+		if (c == EOF)
+			return false;
+	}
+
+	/* read "line" */
+	do {
+		if (i == 399)
+			return false;
+		b[i++] = c;
+		c = getc(fp);
+	} while (c != EOF && 32 <= c);
+
+	/* skip line ending control characters */
+	while (c != EOF && c < 32)
+		c = getc(fp);
+
+	if (c != EOF)
+		ungetc(c, fp);
+
+	b[i] = 0;
+	return true;
+}
+
+
+/**
+ * Parse an ANT URL file.
+ *
+ * \param  file_name  file to read
+ * \return  URL from file, or 0 on error and error reported
+ */
+
+char *ro_gui_url_file_parse(const char *file_name)
+{
+	char line[400];
+	char *url;
+	FILE *fp;
+
+	fp = fopen(file_name, "r");
+	if (!fp) {
+		LOG(("fopen(\"%s\", \"r\"): %i: %s",
+				file_name, errno, strerror(errno)));
+		warn_user("LoadError", strerror(errno));
+		return 0;
+	}
+
+	if (!fgets(line, sizeof line, fp)) {
+		if (ferror(fp)) {
+			LOG(("fgets: %i: %s",
+					errno, strerror(errno)));
+			warn_user("LoadError", strerror(errno));
+		} else
+			warn_user("LoadError", messages_get("EmptyError"));
+		fclose(fp);
+		return 0;
+	}
+
+	fclose(fp);
+
+	if (line[strlen(line) - 1] == '\n')
+		line[strlen(line) - 1] = '\0';
+
+	url = strdup(line);
+	if (!url) {
+		warn_user("NoMemory", 0);
+		return 0;
+	}
+
+	return url;
 }
 
 
@@ -1351,16 +1384,6 @@ void gui_launch_url(const char *url)
 {
 	/* Try ant broadcast first */
 	ro_url_broadcast(url);
-}
-
-
-/**
- * Called when the gui_window has new content
- *
- * \g the gui_window that has new content
- */
-void gui_window_new_content(gui_window *g) {
-	ro_gui_dialog_close_persistant(g->window);
 }
 
 

@@ -18,6 +18,7 @@
 #include "oslib/wimp.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
+#include "netsurf/riscos/toolbar.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/log.h"
 
@@ -49,7 +50,7 @@
 	of numbers representing the menu structure (eg 'HelpBrowserMenu3-1-2').
 	If '<key><identifier>' is not available, then simply '<key>' is then used. For example
 	if 'HelpToolbar7' is not available then 'HelpToolbar' is then tried.
-	
+
 	For items marked with an asterisk [*] a call must be made to determine the required
 	help text as the window does not contain any icons. An example of this is the hotlist
 	window where ro_gui_hotlist_help() is called.
@@ -70,7 +71,7 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	help_full_message_request *message_data;
 	wimp_w window;
 	wimp_i icon;
-	gui_window *g;
+	struct gui_window *g;
 	unsigned int index;
 
 	/*	Ensure we have a help request
@@ -113,25 +114,17 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		sprintf(message_token, "HelpHotEntry%i", (int)icon);
 	} else if (window == hotlist_window) {
 		sprintf(message_token, "HelpHotlist%i",
-				ro_gui_hotlist_help(message_data->pos.x, message_data->pos.y));
-	} else if ((hotlist_toolbar) && (window == hotlist_toolbar->toolbar_handle)) {
+				ro_gui_hotlist_help(message_data->pos.x,
+						message_data->pos.y));
+	} else if (hotlist_toolbar &&
+			window == hotlist_toolbar->toolbar_handle) {
 		sprintf(message_token, "HelpHotToolbar%i", (int)icon);
-	} else {
-
-		/*	Check if we have a browser window, toolbar window or status window
-		*/
-		g = ro_gui_window_lookup(window);
-		if (g) {
-			if (g->window == window) {
-				sprintf(message_token, "HelpBrowser%i", (int)icon);
-			} else if ((g->data.browser.toolbar) &&
-						(g->data.browser.toolbar->toolbar_handle == window))	{
-				sprintf(message_token, "HelpToolbar%i", (int)icon);
-			} else if ((g->data.browser.toolbar) &&
-						(g->data.browser.toolbar->status_handle == window)) {
-				sprintf(message_token, "HelpStatus%i", (int)icon);
-			}
-		}
+	} else if ((g = ro_gui_window_lookup(window))) {
+		sprintf(message_token, "HelpBrowser%i", (int)icon);
+	} else if ((g = ro_gui_toolbar_lookup(window))) {
+		sprintf(message_token, "HelpToolbar%i", (int)icon);
+	} else if ((g = ro_gui_status_lookup(window))) {
+		sprintf(message_token, "HelpStatus%i", (int)icon);
 	}
 
 	/*	If we've managed to find something so far then we broadcast it

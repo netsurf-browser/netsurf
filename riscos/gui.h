@@ -17,9 +17,10 @@
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/options.h"
-#include "netsurf/riscos/toolbar.h"
 
 #define THEMES_DIR "<NetSurf$Dir>.Themes"
+
+struct toolbar;
 
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
@@ -30,17 +31,12 @@ extern wimp_w hotlist_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu;
 extern int iconbar_menu_height;
 extern struct form_control *current_gadget;
-extern gui_window *window_list;
 extern bool gui_reformat_pending;
 extern bool gui_redraw_debug;
 extern wimp_menu *current_menu;
-extern gui_window *current_gui;
-extern gui_window *ro_gui_current_redraw_gui;
 extern osspriteop_area *gui_sprites;
 extern struct toolbar *hotlist_toolbar;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
-
-typedef enum { GUI_BROWSER_WINDOW } gui_window_type;
 
 typedef enum {
 	GUI_SAVE_SOURCE,
@@ -60,51 +56,48 @@ typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_HOTLIST_SELECT, GUI_DRAG_HOTLIST_MOVE } gui_drag_type;
 extern gui_drag_type gui_current_drag_type;
 
+
+/** RISC OS data for a browser window. */
 struct gui_window {
-	gui_window_type type;
+	/** Associated platform-independent browser window data. */
+	struct browser_window *bw;
 
-	wimp_w window;
+	struct toolbar *toolbar;	/**< Toolbar, or 0 if not present. */
 
-	union {
-		struct {
-			struct toolbar *toolbar;
-			int toolbar_width;
-			struct browser_window* bw;
-			bool reformat_pending;
-			int old_width;
-			int old_height;
-		} browser;
-	} data;
+	wimp_w window;		/**< RISC OS window handle. */
 
-	char status[256];
-	char title[256];
-	char url[256];
-	gui_window *next;
+	/** Window has been resized, and content needs reformatting. */
+	bool reformat_pending;
+	int old_width;		/**< Width when last opened / os units. */
+	int old_height;		/**< Height when last opened / os units. */
 
-	int throbber;
-	char throb_buf[12];
-	float throbtime;
+	char status[256];	/**< Buffer for status bar. */
+	char title[256];	/**< Buffer for window title. */
+	char url[256];		/**< Buffer for url entry field. */
 
-	enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION }
-			drag_status;
+	int throbber;		/**< Current frame of throbber animation. */
+	char throb_buf[12];	/**< Buffer for throbber sprite name. */
+	int throbtime;		/**< Time of last throbber frame. */
 
-	/*	Options
-	*/
-	float scale;
-	bool option_dither_sprites;
-	bool option_filter_sprites;
-	int option_toolbar_status_width;
-	bool option_toolbar_show_status;
-	bool option_toolbar_show_buttons;
-	bool option_toolbar_show_address;
-	bool option_toolbar_show_throbber;
-	bool option_animate_images;
-	bool option_background_images;
+	/** Options. */
+	struct {
+		float scale;		/**< Scale, 1.0 = 100%. */
+		bool dither_sprites;	/**< Images should be dithered. */
+		bool filter_sprites;	/**< Images should be smoothed. */
+		bool animate_images;	/**< Animations should run. */
+		bool background_images;	/**< Display background images. */
+	} option;
+
+	struct gui_window *prev;	/**< Previous in linked list. */
+	struct gui_window *next;	/**< Next in linked list. */
 };
 
 
+extern struct gui_window *current_gui;
+extern struct gui_window *ro_gui_current_redraw_gui;
+
+
 /* in gui.c */
-void ro_gui_copy_selection(gui_window* g);
 void ro_gui_open_help_page(const char *page);
 void ro_gui_screen_size(int *width, int *height);
 void ro_gui_view_source(struct content *content);
@@ -112,11 +105,11 @@ void ro_gui_drag_box_start(wimp_pointer *pointer);
 
 /* in menus.c */
 void ro_gui_menus_init(void);
-void ro_gui_create_menu(wimp_menu* menu, int x, int y, gui_window* g);
+void ro_gui_create_menu(wimp_menu* menu, int x, int y, struct gui_window *g);
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
 void ro_gui_menu_selection(wimp_selection* selection);
 void ro_gui_menu_warning(wimp_message_menu_warning *warning);
-void ro_gui_prepare_navigate(gui_window *gui);
+void ro_gui_prepare_navigate(struct gui_window *gui);
 void ro_gui_menu_prepare_scale(void);
 void ro_gui_menu_prepare_pageinfo(void);
 
@@ -143,12 +136,13 @@ void ro_gui_download_datasave_ack(wimp_message *message);
 void ro_gui_download_window_destroy(struct gui_download_window *dw);
 
 /* in mouseactions.c */
-void ro_gui_mouse_action(gui_window* g);
+void ro_gui_mouse_action(struct gui_window *g);
 
 /* in textselection.c */
 void ro_gui_start_selection(wimp_pointer *pointer, wimp_window_state *state,
-		gui_window *g);
+		struct gui_window *g);
 void ro_gui_selection_drag_end(wimp_dragged *drag);
+void ro_gui_copy_selection(struct gui_window *g);
 
 /* in 401login.c */
 #ifdef WITH_AUTH
@@ -159,24 +153,25 @@ bool ro_gui_401login_keypress(wimp_key *key);
 #endif
 
 /* in window.c */
-void ro_gui_window_click(gui_window* g, wimp_pointer* mouse);
-void ro_gui_window_open(gui_window* g, wimp_open* open);
-void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw);
-void ro_gui_window_mouse_at(wimp_pointer* pointer);
-void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer);
-void ro_gui_status_click(gui_window* g, wimp_pointer* pointer);
+void ro_gui_window_click(struct gui_window *g, wimp_pointer *mouse);
+void ro_gui_window_open(struct gui_window *g, wimp_open *open);
+void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw);
+void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer);
+void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer);
+void ro_gui_status_click(struct gui_window *g, wimp_pointer *pointer);
 void ro_gui_throb(void);
-gui_window* ro_lookup_gui_from_w(wimp_w window);
-gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window);
-gui_window* ro_lookup_gui_status_from_w(wimp_w window);
-gui_window *ro_gui_window_lookup(wimp_w w);
-bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar);
+struct gui_window *ro_gui_window_lookup(wimp_w window);
+struct gui_window *ro_gui_toolbar_lookup(wimp_w window);
+struct gui_window *ro_gui_status_lookup(wimp_w window);
+bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar);
 void ro_gui_scroll_request(wimp_scroll *scroll);
 //#define window_x_units(x, state) (x - (state->visible.x0 - state->xscroll))
 //#define window_y_units(y, state) (y - (state->visible.y1 - state->yscroll))
 int window_x_units(int x, wimp_window_state *state);
 int window_y_units(int y, wimp_window_state *state);
-bool ro_gui_window_dataload(gui_window *g, wimp_message *message);
+bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message);
+void ro_gui_window_process_reformats(void);
+void ro_gui_window_default_options(struct browser_window *bw);
 
 /* in history.c */
 void ro_gui_history_init(void);

@@ -214,7 +214,7 @@ void ro_gui_dialog_open(wimp_w w)
 	open.visible.y1 = screen_y + dy;
 	open.next = wimp_TOP;
 	wimp_open_window((wimp_open *) &open);
-	
+
 	/*	Set the caret position
 	*/
 	ro_gui_set_caret_first(w);
@@ -233,7 +233,7 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 	wimp_pointer ptr;
 	wimp_window_state open;
 	os_error *error;
-	
+
 	/*	Get the pointer position
 	*/
 	error = xwimp_get_pointer_info(&ptr);
@@ -260,11 +260,11 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 	} else {
 		ro_gui_open_window_centre(parent, w);
 	}
-	
+
 	/*	Set the caret position
 	*/
 	ro_gui_set_caret_first(w);
-	
+
 	/*	Add a mapping
 	*/
 	if (parent == NULL) return;
@@ -277,7 +277,7 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 	}
 
 	/*	Log that we failed to create a mapping
-	*/	
+	*/
 	LOG(("Unable to map persistant dialog to parent."));
 }
 
@@ -289,7 +289,7 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
  */
 void ro_gui_dialog_close_persistant(wimp_w parent) {
   	int i;
-	
+
 	/*	Check our mappings
 	*/
 	if (parent == NULL) return;
@@ -318,9 +318,9 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 		  	pointer.w = key->w;
 		  	pointer.i = (key->w == dialog_folder) ? 3 : 5;
 			pointer.buttons = wimp_CLICK_SELECT;
-			ro_gui_hotlist_dialog_click(&pointer);	  
+			ro_gui_hotlist_dialog_click(&pointer);
 			return true;
-		} 
+		}
   	}
 #ifdef WITH_AUTH
 	if (key->w == dialog_401li)
@@ -403,14 +403,18 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 	}
 }
 
+
 /**
  * Save the current options
  */
-void ro_gui_save_options(void) {
+
+void ro_gui_save_options(void)
+{
 	xosfile_create_dir("<Choices$Write>.WWW", 0);
 	xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
 	options_write("<Choices$Write>.WWW.NetSurf.Choices");
 }
+
 
 /**
  * Handle clicks in the Browser Choices dialog.
@@ -763,8 +767,8 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 	ro_gui_set_icon_integer(dialog_zoom, ICON_ZOOM_VALUE, scale);
 
 	if (pointer->i == ICON_ZOOM_OK) {
-		current_gui->scale = scale * 0.01;
-		current_gui->data.browser.reformat_pending = true;
+		current_gui->option.scale = scale * 0.01;
+		current_gui->reformat_pending = true;
 		gui_reformat_pending = true;
 	}
 
@@ -785,7 +789,7 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 
 void ro_gui_dialog_reset_zoom(void) {
 	char scale_buffer[8];
-	sprintf(scale_buffer, "%.0f", current_gui->scale * 100);
+	sprintf(scale_buffer, "%.0f", current_gui->option.scale * 100);
 	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
 }
 
@@ -817,7 +821,7 @@ void ro_gui_dialog_close(wimp_w close)
 	*/
 	if (!xwimp_get_caret_position(&caret)) {
 		if (caret.w == close) {
-	  
+
 			/*	Check if we are a persistant window
 			*/
 			for (i = 0; i < MAX_PERSISTANT; i++) {

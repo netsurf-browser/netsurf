@@ -135,9 +135,9 @@ void nsgif_redraw(struct content *c, int x, int y,
 		drawing a thumbnail unless something has gone very wrong somewhere else.
 	*/
 	if (ro_gui_current_redraw_gui) {
-		tinct_options = (ro_gui_current_redraw_gui->option_filter_sprites?tinct_BILINEAR_FILTER:0) |
-				(ro_gui_current_redraw_gui->option_dither_sprites?tinct_DITHER:0);
-		if (ro_gui_current_redraw_gui->option_animate_images) {
+		tinct_options = (ro_gui_current_redraw_gui->option.filter_sprites?tinct_BILINEAR_FILTER:0) |
+				(ro_gui_current_redraw_gui->option.dither_sprites?tinct_DITHER:0);
+		if (ro_gui_current_redraw_gui->option.animate_images) {
 			current_frame = c->data.gif.current_frame;
 		} else {
 			current_frame = 0;

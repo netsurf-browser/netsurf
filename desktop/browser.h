@@ -17,11 +17,11 @@
 #include <time.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
-#include "netsurf/desktop/gui.h"
 
 struct box;
-struct history;
 struct form_successful_control;
+struct gui_window;
+struct history;
 
 /** Browser window data. */
 struct browser_window
@@ -41,8 +41,8 @@ struct browser_window
 	/** User parameter for caret_callback. */
 	void *caret_p;
 
-	/** Platform specific window handle. */
-	gui_window *window;
+	/** Platform specific window data. */
+	struct gui_window *window;
 
 	/** Busy indicator is active. */
 	bool throbbing;

@@ -13,7 +13,7 @@
 
 
 void ro_gui_start_selection(wimp_pointer *pointer, wimp_window_state *state,
-		gui_window *g)
+		struct gui_window *g)
 {
 	wimp_drag drag;
 
@@ -48,24 +48,22 @@ void ro_gui_selection_drag_end(wimp_dragged *drag)
     msg.data.mouse.x = final_x0;
     msg.data.mouse.y = final_y0;
     msg.type = act_ALTER_SELECTION;
-    browser_window_action(current_gui->data.browser.bw, &msg);
+    browser_window_action(current_gui->bw, &msg);
 
-    if (box_position_eq(&(current_gui->data.browser.bw->current_content->data.html.text_selection.start),
-                        &(current_gui->data.browser.bw->current_content->data.html.text_selection.end)))
+    if (box_position_eq(&(current_gui->bw->current_content->data.html.text_selection.start),
+                        &(current_gui->bw->current_content->data.html.text_selection.end)))
     {
       msg.type = act_CLEAR_SELECTION;
-      browser_window_action(current_gui->data.browser.bw, &msg);
+      browser_window_action(current_gui->bw, &msg);
     }
-    current_gui->drag_status = drag_NONE;
-    current_gui->data.browser.bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
+    current_gui->bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
 }
 
 
-void ro_gui_copy_selection(gui_window* g)
+void ro_gui_copy_selection(struct gui_window* g)
 {
-  if (g->type == GUI_BROWSER_WINDOW)
   {
-//    if (g->data.browser.bw->text_selection->selected == 1)
+//    if (g->bw->text_selection->selected == 1)
 //    {
 //    }
   }

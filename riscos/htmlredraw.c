@@ -639,9 +639,10 @@ void html_redraw_background(long xi, long yi, int width, int height,
 		}
 
 		/* Set the plot options */
-		if (!ro_gui_current_redraw_gui->option_background_images) return;
-		tinct_options = (ro_gui_current_redraw_gui->option_filter_sprites?tinct_BILINEAR_FILTER:0) |
-				(ro_gui_current_redraw_gui->option_dither_sprites?tinct_DITHER:0);
+		if (!ro_gui_current_redraw_gui->option.background_images)
+			return;
+		tinct_options = (ro_gui_current_redraw_gui->option.filter_sprites?tinct_BILINEAR_FILTER:0) |
+				(ro_gui_current_redraw_gui->option.dither_sprites?tinct_DITHER:0);
 	} else {
 		if (!option_background_images) return;
 		tinct_options = (option_filter_sprites?tinct_BILINEAR_FILTER:0) |
@@ -688,8 +689,9 @@ void html_redraw_background(long xi, long yi, int width, int height,
 
 		/* get toolbar height */
 		if (ro_gui_current_redraw_gui &&
-			ro_gui_current_redraw_gui->data.browser.toolbar)
-			toolbar_height = ro_gui_current_redraw_gui->data.browser.toolbar->height;
+				ro_gui_current_redraw_gui->toolbar)
+			toolbar_height = ro_gui_current_redraw_gui->
+					toolbar->height;
 
 		/* top left of viewport, taking account of toolbar height */
 		x = state.visible.x0;

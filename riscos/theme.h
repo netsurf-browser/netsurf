@@ -30,7 +30,7 @@ struct theme_entry {
 extern int theme_throbs;
 
 void ro_theme_load(char *pathname);
-void ro_theme_create_browser_toolbar(gui_window *g);
+void ro_theme_create_browser_toolbar(struct gui_window *g);
 void ro_theme_create_hotlist_toolbar(void);
 int ro_theme_update_toolbar(struct toolbar *toolbar, wimp_w window);
 int ro_theme_resize_toolbar(struct toolbar *toolbar, wimp_w window);

@@ -20,8 +20,9 @@
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
-#include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/theme.h"
+#include "netsurf/riscos/toolbar.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -52,9 +53,9 @@ static void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning);
 static void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning);
 static void ro_gui_menu_prepare_hotlist(void);
 
+struct gui_window *current_gui;
 wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
-gui_window *current_gui;
 
 /*	Default menu item flags
 */
@@ -467,7 +468,7 @@ void translate_menu(wimp_menu *menu)
  * Display a menu.
  */
 
-void ro_gui_create_menu(wimp_menu *menu, int x, int y, gui_window *g)
+void ro_gui_create_menu(wimp_menu *menu, int x, int y, struct gui_window *g)
 {
 	current_menu = menu;
 	current_menu_x = x;
@@ -522,7 +523,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 		msg.type = act_GADGET_SELECT;
 		msg.data.gadget_select.g = current_gadget;
 		msg.data.gadget_select.item = selection->items[0];
-		browser_window_action(current_gui->data.browser.bw, &msg);
+		browser_window_action(current_gui->bw, &msg);
 
 	} else if (current_menu == iconbar_menu) {
 		switch (selection->items[0]) {
@@ -591,7 +592,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				break;
 		}
 	} else if (current_menu == browser_menu) {
-		struct content *c = current_gui->data.browser.bw->current_content;
+		struct content *c = current_gui->bw->current_content;
 		switch (selection->items[0]) {
 			case MENU_PAGE:
 				switch (selection->items[1]) {
@@ -616,7 +617,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 5: /* Print */
 						break;
 					case 6: /* New window */
-						browser_window_create(current_gui->url, current_gui->data.browser.bw);
+						browser_window_create(current_gui->url, current_gui->bw);
 						break;
 					case 7: /* Page source */
 						ro_gui_view_source(c);
@@ -655,7 +656,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						break;
 					case 2: /* Clear */
 						msg.type = act_CLEAR_SELECTION;
-						browser_window_action(current_gui->data.browser.bw, &msg);
+						browser_window_action(current_gui->bw, &msg);
 						break;
 				}
 				break;
@@ -664,20 +665,20 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 0: /* Home */
 						break;
 					case 1: /* Back */
-						history_back(current_gui->data.browser.bw,
-								current_gui->data.browser.bw->history);
+						history_back(current_gui->bw,
+								current_gui->bw->history);
 						ro_gui_prepare_navigate(current_gui);
 						break;
 					case 2: /* Forward */
-						history_forward(current_gui->data.browser.bw,
-								current_gui->data.browser.bw->history);
+						history_forward(current_gui->bw,
+								current_gui->bw->history);
 						ro_gui_prepare_navigate(current_gui);
 						break;
 					case 3: /* Reload */
-						browser_window_reload(current_gui->data.browser.bw, false);
+						browser_window_reload(current_gui->bw, false);
 						break;
 					case 4: /* Stop */
-						browser_window_stop(current_gui->data.browser.bw);
+						browser_window_stop(current_gui->bw);
 						break;
 				}
 				break;
@@ -686,14 +687,14 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 0: /* Scale view */
 						break;
 					case 1: /* Images -> */
-						if (selection->items[2] == 1) current_gui->option_background_images =
-								!current_gui->option_background_images;
-						if (selection->items[2] == 2) current_gui->option_animate_images =
-								!current_gui->option_animate_images;
-						if (selection->items[2] == 3) current_gui->option_dither_sprites =
-								!current_gui->option_dither_sprites;
-						if (selection->items[2] == 4) current_gui->option_filter_sprites =
-								!current_gui->option_filter_sprites;
+						if (selection->items[2] == 1) current_gui->option.background_images =
+								!current_gui->option.background_images;
+						if (selection->items[2] == 2) current_gui->option.animate_images =
+								!current_gui->option.animate_images;
+						if (selection->items[2] == 3) current_gui->option.dither_sprites =
+								!current_gui->option.dither_sprites;
+						if (selection->items[2] == 4) current_gui->option.filter_sprites =
+								!current_gui->option.filter_sprites;
 						if (selection->items[2] >= 1) {
 							ro_gui_menu_prepare_images();
 							gui_window_redraw_window(current_gui);
@@ -703,33 +704,33 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 2: /* Toolbars -> */
 						switch (selection->items[2]) {
 							case 0:
-								current_gui->data.browser.toolbar->standard_buttons =
-										!current_gui->data.browser.toolbar->standard_buttons;
+								current_gui->toolbar->standard_buttons =
+										!current_gui->toolbar->standard_buttons;
 								break;
 							case 1:
-								current_gui->data.browser.toolbar->url_bar =
-										!current_gui->data.browser.toolbar->url_bar;
+								current_gui->toolbar->url_bar =
+										!current_gui->toolbar->url_bar;
 								break;
 							case 2:
-								current_gui->data.browser.toolbar->throbber =
-										!current_gui->data.browser.toolbar->throbber;
+								current_gui->toolbar->throbber =
+										!current_gui->toolbar->throbber;
 								break;
 							case 3:
-								current_gui->data.browser.toolbar->status_window =
-										!current_gui->data.browser.toolbar->status_window;
+								current_gui->toolbar->status_window =
+										!current_gui->toolbar->status_window;
 						}
-						if (ro_theme_update_toolbar(current_gui->data.browser.toolbar,
+						if (ro_theme_update_toolbar(current_gui->toolbar,
 								current_gui->window) || true) {
 							wimp_window_state state;
 							state.w = current_gui->window;
 							wimp_get_window_state(&state);
-							current_gui->data.browser.old_height = 0xffffffff;
+							current_gui->old_height = 0xffffffff;
 							ro_gui_window_open(current_gui, (wimp_open *)&state);
 						}
 						ro_gui_menu_prepare_toolbars();
 						break;
 					case 3: /* Make default */
-						gui_window_default_options(current_gui->data.browser.bw);
+						ro_gui_window_default_options(current_gui->bw);
 						ro_gui_save_options();
 						break;
 				}
@@ -740,7 +741,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						switch (selection->items[2]) {
 							case 0:	/* Add to hotlist */
 								ro_gui_hotlist_add(current_gui->title,
-										current_gui->data.browser.bw->current_content);
+										current_gui->bw->current_content);
 								break;
 							case 1: /* Show hotlist */
 								ro_gui_hotlist_show();
@@ -751,7 +752,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 						switch (selection->items[2]) {
 							case 0:
 								ro_gui_screen_size(&option_window_screen_width, &option_window_screen_height);
-								state.w = current_gui->data.browser.bw->window->window;
+								state.w = current_gui->bw->window->window;
 								error = xwimp_get_window_state(&state);
 								if (error) {
 									LOG(("xwimp_get_window_state: 0x%x: %s",
@@ -807,7 +808,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 
 	if (pointer.buttons == wimp_CLICK_ADJUST) {
 		if (current_menu == combo_menu)
-			gui_gadget_combo(current_gui->data.browser.bw, current_gadget, (unsigned int)current_menu_x, (unsigned int)current_menu_y);
+			gui_gadget_combo(current_gui->bw, current_gadget, (unsigned int)current_menu_x, (unsigned int)current_menu_y);
 		else
 			ro_gui_create_menu(current_menu, current_menu_x, current_menu_y, current_gui);
 	} else {
@@ -841,7 +842,7 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 	struct box *box;
 	os_error *error = 0;
 
-	c = current_gui->data.browser.bw->current_content;
+	c = current_gui->bw->current_content;
 
 	switch (warning->selection.items[0]) {
 	case MENU_PAGE: /* Page -> */
@@ -1086,7 +1087,7 @@ void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning)
  *
  * /param gui_window	the gui_window to update
  */
-void ro_gui_prepare_navigate(gui_window *gui) {
+void ro_gui_prepare_navigate(struct gui_window *gui) {
 	struct browser_window *bw;
 	struct history *h;
 	struct content *c;
@@ -1103,10 +1104,10 @@ void ro_gui_prepare_navigate(gui_window *gui) {
 
 	/*	Get the data we need to work with
 	*/
-	bw = gui->data.browser.bw;
+	bw = gui->bw;
 	h = bw->history;
 	c = bw->current_content;
-	t = gui->data.browser.toolbar;
+	t = gui->toolbar;
 
 	/*	Get the initial menu state to check for changes
 	*/
@@ -1200,13 +1201,13 @@ static void ro_gui_menu_prepare_images(void) {
 	/*	We don't currently have any local options so we update from the global ones
 	*/
 	browser_image_menu->entries[1].menu_flags &= ~wimp_MENU_TICKED;
-	if (current_gui->option_background_images) browser_image_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
+	if (current_gui->option.background_images) browser_image_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
 	browser_image_menu->entries[2].menu_flags &= ~wimp_MENU_TICKED;
-	if (current_gui->option_animate_images) browser_image_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
+	if (current_gui->option.animate_images) browser_image_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
 	browser_image_menu->entries[3].menu_flags &= ~wimp_MENU_TICKED;
-	if (current_gui->option_dither_sprites) browser_image_menu->entries[3].menu_flags |= wimp_MENU_TICKED;
+	if (current_gui->option.dither_sprites) browser_image_menu->entries[3].menu_flags |= wimp_MENU_TICKED;
 	browser_image_menu->entries[4].menu_flags &= ~wimp_MENU_TICKED;
-	if (current_gui->option_filter_sprites) browser_image_menu->entries[4].menu_flags |= wimp_MENU_TICKED;
+	if (current_gui->option.filter_sprites) browser_image_menu->entries[4].menu_flags |= wimp_MENU_TICKED;
 }
 
 
@@ -1255,7 +1256,7 @@ static void ro_gui_menu_prepare_toolbars(void) {
 
 	/*	Check we have a toolbar
 	*/
-	toolbar = current_gui->data.browser.toolbar;
+	toolbar = current_gui->toolbar;
 
 	/*	Set our ticks, or shade everything if there's no toolbar
 	*/
@@ -1283,7 +1284,7 @@ static void ro_gui_menu_prepare_toolbars(void) {
 void ro_gui_menu_prepare_scale(void) {
 	char scale_buffer[8];
 	if (current_menu != browser_menu) return;
-	sprintf(scale_buffer, "%.0f", current_gui->scale * 100);
+	sprintf(scale_buffer, "%.0f", current_gui->option.scale * 100);
 	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
 }
 
@@ -1339,7 +1340,7 @@ void ro_gui_menu_prepare_help(int forced) {
 
 void ro_gui_menu_prepare_pageinfo(void)
 {
-	struct content *c = current_gui->data.browser.bw->current_content;
+	struct content *c = current_gui->bw->current_content;
 	char icon_buf[20] = "file_xxx";
 	const char *icon = icon_buf;
 	const char *title = "-";
@@ -1372,7 +1373,7 @@ void ro_gui_menu_prepare_pageinfo(void)
 
 void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning)
 {
-	struct content *c = current_gui->data.browser.bw->current_content;
+	struct content *c = current_gui->bw->current_content;
 	struct box *box;
 	os_error *error;
 	char icon_buf[20] = "file_xxx";
@@ -1412,7 +1413,7 @@ void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning)
 
 struct box *ro_gui_menu_find_object_box(void)
 {
-	struct content *c = current_gui->data.browser.bw->current_content;
+	struct content *c = current_gui->bw->current_content;
 	struct box_selection *boxes = NULL;
 	struct box *box = NULL;
 	int found = 0, plot_index = 0, i, x, y;
@@ -1424,8 +1425,8 @@ struct box *ro_gui_menu_find_object_box(void)
 	/* The menu is initially created 64 units to the left
 	 * of the mouse position. Therefore, we negate the offset here
 	 */
-	x = window_x_units(current_menu_x+64, &state) / 2 / current_gui->scale;
-	y = -window_y_units(current_menu_y, &state) / 2 / current_gui->scale;
+	x = window_x_units(current_menu_x+64, &state) / 2 / current_gui->option.scale;
+	y = -window_y_units(current_menu_y, &state) / 2 / current_gui->option.scale;
 
 	if (c->type == CONTENT_HTML) {
 
@@ -1453,7 +1454,7 @@ void ro_gui_menu_object_reload(void)
 
 	if (box) {
 		box->object->fresh = false;
-		browser_window_reload(current_gui->data.browser.bw, false);
+		browser_window_reload(current_gui->bw, false);
 	}
 }
 

@@ -123,14 +123,14 @@ void ro_theme_load(char *pathname) {
  * The buffers url_buffer and status_buffer must be at least 256 bytes each,
  * throbber_buffer at least 12 bytes;
  */
-void ro_theme_create_browser_toolbar(gui_window *g) {
+void ro_theme_create_browser_toolbar(struct gui_window *g) {
   	struct toolbar *toolbar;
 
 	/*	Destroy any previous toolbar (paranoia)
 	*/
-	if (g->data.browser.toolbar) {
-		ro_toolbar_destroy(g->data.browser.toolbar);
-		g->data.browser.toolbar = NULL;
+	if (g->toolbar) {
+		ro_toolbar_destroy(g->toolbar);
+		g->toolbar = NULL;
 	}
   	/*	Create a toolbar
   	*/
@@ -146,7 +146,7 @@ void ro_theme_create_browser_toolbar(gui_window *g) {
 
   	/*	Store our toolbar
   	*/
-  	g->data.browser.toolbar = toolbar;
+  	g->toolbar = toolbar;
 
   	/*	Update the toolbar
   	*/
@@ -179,7 +179,7 @@ void ro_theme_create_hotlist_toolbar(void) {
   	/*	Store our toolbar
   	*/
   	hotlist_toolbar = toolbar;
- 
+
   	/*	Update the toolbar
   	*/
   	ro_theme_update_toolbar(toolbar, hotlist_window);

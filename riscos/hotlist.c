@@ -24,6 +24,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/tinct.h"
+#include "netsurf/riscos/toolbar.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -58,7 +59,7 @@ struct hotlist_entry {
 	/**	The hotlist entry that has this entry as its next entry
 	*/
 	struct hotlist_entry *previous_entry;
-	
+
 	/**	The hotlist entry that this is a child of
 	*/
 	struct hotlist_entry *parent_entry;
@@ -111,7 +112,7 @@ struct hotlist_entry {
 	/**	The width of the various lines sub-text
 	*/
 	int widths[4];
-	
+
 	/**	Whether the item is awaiting processing
 	*/
 	bool process;
@@ -261,13 +262,13 @@ void ro_gui_hotlist_init(void) {
 	/*	Get our sprite ids for faster plotting.
 	*/
 	if (ro_gui_hotlist_initialise_sprite("expand", HOTLIST_EXPAND) ||
-			ro_gui_hotlist_initialise_sprite("collapse", HOTLIST_COLLAPSE) || 
-			ro_gui_hotlist_initialise_sprite("entry", HOTLIST_ENTRY) || 
-			ro_gui_hotlist_initialise_sprite("line", HOTLIST_LINE) || 
-			ro_gui_hotlist_initialise_sprite("halflinet", HOTLIST_TLINE) || 
+			ro_gui_hotlist_initialise_sprite("collapse", HOTLIST_COLLAPSE) ||
+			ro_gui_hotlist_initialise_sprite("entry", HOTLIST_ENTRY) ||
+			ro_gui_hotlist_initialise_sprite("line", HOTLIST_LINE) ||
+			ro_gui_hotlist_initialise_sprite("halflinet", HOTLIST_TLINE) ||
 			ro_gui_hotlist_initialise_sprite("halflineb", HOTLIST_BLINE)) {
 		return;
-        } 
+        }
 
 	/*	Update our text icon
 	*/
@@ -297,7 +298,7 @@ void ro_gui_hotlist_init(void) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	
+
 	/*	Create our toolbar
 	*/
 	ro_theme_create_hotlist_toolbar();
@@ -393,7 +394,7 @@ void ro_gui_hotlist_show(void) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	
+
 	/*	Set the caret position
 	*/
 	xwimp_set_caret_position(state.w, -1, -100,
@@ -413,7 +414,7 @@ bool ro_gui_hotlist_load(void) {
 	*/
 	xosfile_read_stamped_no_path("<Choices$Write>.WWW.NetSurf.Hotlist", &obj_type,
 			(bits)0, (bits)0, (int *)0, (fileswitch_attr)0, (bits)0);
-	if (obj_type != 0) {		
+	if (obj_type != 0) {
 		/*	Read our file
 		*/
 		encoding = xmlGetCharEncodingName(XML_CHAR_ENCODING_8859_1);
@@ -427,7 +428,7 @@ bool ro_gui_hotlist_load(void) {
 		/*	Perform our recursive load
 		*/
 		ro_gui_hotlist_load_entry(doc->children, &root);
-		
+
 		/*	Exit cleanly
 		*/
 		xmlFreeDoc(doc);
@@ -461,14 +462,14 @@ void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry) {
 	int add_date = -1;
 	int last_date = -1;
 	int visits = 0;
-	
+
 	while (cur) {
 	  	/*	Add any items that have had all the data they can have
 	  	*/
 	  	if ((load_title != NULL) && ((cur->next == NULL) || ((cur->type == XML_ELEMENT_NODE) &&
 		  		((!(strcmp(cur->name, "li"))) || (!(strcmp(cur->name, "h4"))) ||
 		  		(!(strcmp(cur->name, "ul"))))))) {
-	  	
+
 			/*	Add the entry
 			*/
 			last_entry = ro_gui_hotlist_create_entry(load_title, load_url, filetype, entry);
@@ -478,7 +479,7 @@ void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry) {
 				last_entry->visits = visits;
 				last_entry->filetype = filetype;
 			}
-	  		
+
 	  		/*	Reset our variables
 	  		*/
 	  		if (load_title) xmlFree(load_title);
@@ -490,7 +491,7 @@ void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry) {
 			last_date = -1;
 			visits = 0;
 		}
-		
+
 	        /*	Gather further information and recurse
 	        */
 	  	if (cur->type == XML_ELEMENT_NODE) {
@@ -499,18 +500,18 @@ void ro_gui_hotlist_load_entry(xmlNode *cur, struct hotlist_entry *entry) {
 			} else if (!(strcmp(cur->name, "a"))) {
 			  	load_url = (char *)xmlGetProp(cur, (const xmlChar *)"href");
 			}
-			
+
 			if ((cur->children) && (strcmp(cur->name, "h4"))) {
 				ro_gui_hotlist_load_entry(cur->children, last_entry);
 			}
-			
+
 		} else {
 		  	/*	Check for comment data
 		  	*/
 		  	if (!(strcmp(cur->name, "comment"))) {
 		  		xml_comment = xmlNodeGetContent(cur);
 		  		comment = xml_comment;
-		  		while (comment[0] == ' ') comment++; 
+		  		while (comment[0] == ' ') comment++;
 				if (strncmp("Added:", comment, 6) == 0) {
 			  		add_date = atoi(comment + 6);
 				} else if (strncmp("LastVisit:", comment, 10) == 0) {
@@ -828,7 +829,7 @@ void ro_gui_hotlist_delink_entry(struct hotlist_entry *entry) {
 		}
 		entry->parent_entry = NULL;
 	}
-	
+
 	/*	Remove the entry from siblings
 	*/
 	if (entry->previous_entry) {
@@ -857,11 +858,11 @@ void ro_gui_hotlist_delink_entry(struct hotlist_entry *entry) {
 void ro_gui_hotlist_delete_entry(struct hotlist_entry *entry, bool siblings) {
   	struct hotlist_entry *next_entry = NULL;
 	while (entry) {
-	  
+
 		/*	Recurse to children first
 		*/
 		if (entry->child_entry) ro_gui_hotlist_delete_entry(entry->child_entry, true);
-		
+
 		/*	Free our memory
 		*/
 		if (entry->url) {
@@ -872,11 +873,11 @@ void ro_gui_hotlist_delete_entry(struct hotlist_entry *entry, bool siblings) {
 			free(entry->title);
 			entry->title = NULL;
 		}
-		
+
 		/*	Get the next entry before we de-link and delete
 		*/
 		if (siblings) next_entry = entry->next_entry;
-		
+
 		/*	Delink and delete our entry and move on
 		*/
 		ro_gui_hotlist_delink_entry(entry);
@@ -1405,7 +1406,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 					xwimp_close_window(hotlist_window);
 				}
 			}
-			
+
 			/*	Check if we should start a drag
 			*/
 			if ((buttons == (wimp_CLICK_SELECT <<4)) || (buttons == (wimp_CLICK_ADJUST << 4))) {
@@ -1707,7 +1708,7 @@ void ro_gui_hotlist_selection_to_process(struct hotlist_entry *entry) {
 void ro_gui_hotlist_update_expansion(struct hotlist_entry *entry, bool only_selected,
 		bool folders, bool links, bool expand, bool contract) {
 	bool current;
-	
+
 	/*	Set a reformat to be pending
 	*/
 	reformat_pending = true;
@@ -1857,7 +1858,7 @@ void ro_gui_hotlist_selection_drag_end(wimp_dragged *drag) {
 	wimp_window_state state;
 	int x0, y0, x1, y1;
 	int toolbar_height = 0;
-	
+
 	/*	Reset our dragging state
 	*/
 	dragging = false;
@@ -1914,7 +1915,7 @@ void ro_gui_hotlist_move_drag_end(wimp_dragged *drag) {
 	struct hotlist_entry *entry;
 	int x, y, x0, y0, x1, y1;
 	bool before = false;
-	
+
 	/*	Reset our dragging state
 	*/
 	dragging = false;
@@ -1931,7 +1932,7 @@ void ro_gui_hotlist_move_drag_end(wimp_dragged *drag) {
   	/*	Set the process flag for all selected items
   	*/
   	ro_gui_hotlist_selection_to_process(root.child_entry);
-  	
+
 	/*	Get the window state to make everything relative
 	*/
 	state.w = hotlist_window;
@@ -1950,7 +1951,7 @@ void ro_gui_hotlist_move_drag_end(wimp_dragged *drag) {
 	*/
 	entry = ro_gui_hotlist_find_entry(x, y, root.child_entry);
 	if (!entry) entry = &root;
-	
+
 	/*	No parent of the destination can be processed
 	*/
 	test_entry = entry;
@@ -1962,7 +1963,7 @@ void ro_gui_hotlist_move_drag_end(wimp_dragged *drag) {
 	/*	Check for before/after
 	*/
 	before = ((y - (entry->y0 + entry->height)) > (-HOTLIST_LINE_HEIGHT / 2));
-	
+
 	/*	Start our recursive moving
 	*/
 	while (ro_gui_hotlist_move_processing(root.child_entry, entry, before));
@@ -2117,7 +2118,7 @@ void ro_gui_hotlist_toolbar_click(wimp_pointer* pointer) {
 void ro_gui_hotlist_prepare_folder_dialog(bool selected) {
 	struct hotlist_entry *entry = NULL;
 	if (selected) entry = ro_gui_hotlist_first_selection(root.child_entry);
-	
+
 	/*	Update the title
 	*/
 	dialog_folder_add = selected;
@@ -2126,7 +2127,7 @@ void ro_gui_hotlist_prepare_folder_dialog(bool selected) {
 	} else {
 		ro_gui_set_window_title(dialog_folder, messages_get("NewFolder"));
 	}
-	
+
 	/*	Update the icons
 	*/
 	if (entry == NULL) {
@@ -2139,7 +2140,7 @@ void ro_gui_hotlist_prepare_folder_dialog(bool selected) {
 void ro_gui_hotlist_prepare_entry_dialog(bool selected) {
 	struct hotlist_entry *entry = NULL;
 	if (selected) entry = ro_gui_hotlist_first_selection(root.child_entry);
-	
+
 	/*	Update the title
 	*/
 	dialog_entry_add = selected;
@@ -2148,7 +2149,7 @@ void ro_gui_hotlist_prepare_entry_dialog(bool selected) {
 	} else {
 		ro_gui_set_window_title(dialog_entry, messages_get("NewLink"));
 	}
-	
+
 	/*	Update the icons
 	*/
 	if (entry == NULL) {
@@ -2156,7 +2157,7 @@ void ro_gui_hotlist_prepare_entry_dialog(bool selected) {
 		ro_gui_set_icon_string(dialog_entry, 3, "");
 	} else {
 		ro_gui_set_icon_string(dialog_entry, 1, entry->title);
-		ro_gui_set_icon_string(dialog_entry, 3, entry->url);	  
+		ro_gui_set_icon_string(dialog_entry, 3, entry->url);
 	}
 }
 
@@ -2224,7 +2225,7 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 	int close_icon, ok_icon;
 	bool folder;
 	bool add;
-	
+
 	/*	Get our data
 	*/
 	if (pointer->w == dialog_entry) {
@@ -2240,7 +2241,7 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 		ok_icon = 3;
 		folder = true;
 		add = !dialog_folder_add;
-	}	
+	}
 
 	/*	Check for cancelling
 	*/
@@ -2255,7 +2256,7 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 		} else {
 			ro_gui_hotlist_prepare_entry_dialog(dialog_entry_add);
 		}
-		return; 
+		return;
 	}
 
 	/*	Check for ok
@@ -2272,7 +2273,7 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 		warn_user("NoURLError", 0);
 		return;
 	}
-	
+
 	/*	Update/insert our data
 	*/
 	if (add) {
@@ -2304,7 +2305,7 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 		}
 		ro_gui_hotlist_update_entry_size(entry);
 	}
-	
+
 	/*	Close if we should
 	*/
 	if (pointer->buttons == wimp_CLICK_SELECT) {
@@ -2312,7 +2313,7 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 		ro_gui_dialog_close(pointer->w);
 		return;
 	}
-	
+
 	/*	Update our display
 	*/
 	if (folder) {
