@@ -20,10 +20,10 @@
 #include "oslib/osfile.h"
 
 #include "ufont.h"
-#include "netsurf/utils/utils.h" /* \todo: has to go ! */
 
 // #define DEBUG_UFONT
 // #define DEBUG_ACTIVATE_SANITY_CHECK
+// #define DEBUG_DUMP_INTERNALS
 
 #ifdef DEBUG_UFONT
 #  define dbg_fprintf fprintf
@@ -82,8 +82,8 @@ static const ufont_map_t *oMapCollectionP;
 
 struct ufont_font
   {
-  const ufont_map_t *mapP;
-  int virtual_handles_used; /* Number of filled virtual_font_index[] elements */
+  ufont_map_t *mapP;
+  unsigned int virtual_handles_used; /* Number of filled virtual_font_index[] elements */
   size_t virtual_font_index[256]; /* Index in the oVirtualFHArrayP */
   };
 
@@ -110,7 +110,9 @@ static os_error *activate_virtual_fh(virtual_fh_t *virFHP);
 static os_error *remove_usage_chain_elem(usage_chain_t *usageElemP);
 static void repos_usage_chain_elem(usage_chain_t *usageElemP);
 static const char *get_rofontname(font_f rofhandle);
+#ifdef DEBUG_DUMP_INTERNALS
 static void dump_internals(void);
+#endif
 static int sanity_check(const char *testMsgP);
 
 /* UFont error messages :
@@ -251,7 +253,7 @@ return NULL;
 os_error *
 xufont_lose_font(ufont_f fontP)
 {
-  size_t index;
+  unsigned int index;
   os_error *theErrorP;
 
 theErrorP = (fontP->mapP != NULL) ? delete_map(fontP->mapP) : NULL;
@@ -923,24 +925,26 @@ return NULL;
 }
 
 
-/* Deref virtual_fh_t element in oVirtualFHArrayP array.
+/**
+ * Deref virtual_fh_t element in oVirtualFHArrayP array.
  */
 static os_error *deref_virtual_fonthandle(size_t offset)
 {
-assert(offset >= 0 && offset < oCurVirtualFHArrayElems);
-assert(oVirtualFHArrayP[offset].refCount > 0);
+	assert(/* offset >= 0 && */ offset < oCurVirtualFHArrayElems);
+	assert(oVirtualFHArrayP[offset].refCount > 0);
 
-/* When the refCount reaches 0, it will be reused by preference when a
- * new usageChain element is needed in addref_virtual_fonthandle().
- */
---oVirtualFHArrayP[offset].refCount;
+	/* When the refCount reaches 0, it will be reused by preference when a
+	 * new usageChain element is needed in addref_virtual_fonthandle().
+	 */
+	--oVirtualFHArrayP[offset].refCount;
 
-do_sanity_check("deref_virtual_fonthandle()");
-return NULL;
+	do_sanity_check("deref_virtual_fonthandle()");
+	return NULL;
 }
 
 
-/* Virtual font handle <virFHP> needs to have a RISC OS font handle
+/**
+ * Virtual font handle <virFHP> needs to have a RISC OS font handle
  * associated via virFHP->usageP.  For this we can throw out all other
  * usage chain elements which have a chainTimer different from oChainTimer.
  * However, we may not have more than kMaxUsageChainElems chain elements
@@ -951,196 +955,195 @@ return NULL;
  */
 static os_error *activate_virtual_fh(virtual_fh_t *virFHP)
 {
-  usage_chain_t *usageP;
+	usage_chain_t *usageP;
 
-dbg_fprintf(stderr, "+++ activate_virtual_fh(virFHP %p, usageP ? %p)\n", virFHP, virFHP->usageP);
-do_sanity_check("activate_virtual_fh() : begin");
+	dbg_fprintf(stderr, "+++ activate_virtual_fh(virFHP %p, usageP ? %p)\n", virFHP, virFHP->usageP);
+	do_sanity_check("activate_virtual_fh() : begin");
 
-/* The easiest case : we already have a RISC OS font handle :
- */
-if ((usageP = virFHP->usageP) != NULL)
-  {
-  usageP->chainTimer = oChainTimer;
-  assert(usageP->ro_fhandle != 0);
-  assert(usageP->virFHP == virFHP);
-  do_sanity_check("activate_virtual_fh() : case 1");
-  dbg_fprintf(stderr, "--- done, activate_virtual_fh(), case 1\n");
-  return NULL;
-  }
+	/* The easiest case : we already have a RISC OS font handle :
+	 */
+	if ((usageP = virFHP->usageP) != NULL) {
+		usageP->chainTimer = oChainTimer;
+		assert(usageP->ro_fhandle != 0);
+		assert(usageP->virFHP == virFHP);
+		do_sanity_check("activate_virtual_fh() : case 1");
+		dbg_fprintf(stderr, "--- done, activate_virtual_fh(), case 1\n");
+		return NULL;
+		}
 
-/* The second easiest case : we're still allowed to create an extra
- * chain element :
- */
-if (oCurUsageChainElems < kMaxUsageChainElems)
-  {
-    os_error *errorP;
+	/* The second easiest case : we're still allowed to create an extra
+	 * chain element :
+	 */
+	if (oCurUsageChainElems < kMaxUsageChainElems) {
+		os_error *errorP;
 
-  if ((usageP = (usage_chain_t *)malloc(sizeof(usage_chain_t))) == NULL)
-    return &error_memory;
-  usageP->chainTimer = oChainTimer;
+		if ((usageP = (usage_chain_t *)malloc(sizeof(usage_chain_t))) == NULL)
+			return &error_memory;
+		usageP->chainTimer = oChainTimer;
 
-  if ((errorP = xfont_find_font(virFHP->fontNameP,
-                                virFHP->xsize, virFHP->ysize,
-                                virFHP->xres, virFHP->yres,
-                                &usageP->ro_fhandle,
-                                &virFHP->xres, &virFHP->yres)) != NULL)
-    {
-    free((void *)usageP);
-    return errorP;
-    }
-  usageP->virFHP = virFHP;
-  virFHP->usageP = usageP;
-  ++oCurUsageChainElems;
+		if ((errorP = xfont_find_font(virFHP->fontNameP,
+		                              virFHP->xsize, virFHP->ysize,
+		                              virFHP->xres, virFHP->yres,
+		                              &usageP->ro_fhandle,
+		                              &virFHP->xres, &virFHP->yres)) != NULL) {
+			free((void *)usageP);
+			return errorP;
+			}
+		usageP->virFHP = virFHP;
+		virFHP->usageP = usageP;
+		++oCurUsageChainElems;
 
-  /* Make sure oUsageChain nextP and prevP point to at least something (is
-   * only executed once and should probably better be done in a global
-   * init routine).
-   */
-  if (oUsageChain.nextP == NULL)
-    oUsageChain.nextP = oUsageChain.prevP = &oUsageChain;
-  }
-else
-  {
-    os_error *errorP;
+		/* Make sure oUsageChain nextP and prevP point to at least something (is
+		 * only executed once and should probably better be done in a global
+		 * init routine).
+		 */
+		if (oUsageChain.nextP == NULL)
+			oUsageChain.nextP = oUsageChain.prevP = &oUsageChain;
+		}
+	else {
+		os_error *errorP;
 
-  /* The more difficult one : we need to reuse a usage chain element.
-   * Take the last one because that is least used but skip the onces
-   * with chainTimer equal to the current oChainTimer because those
-   * RISC OS font handles are still used in the font string we're
-   * currently processing.
-   */
-  for (usageP = oUsageChain.prevP;
-       usageP != &oUsageChain && usageP->chainTimer == oChainTimer;
-       usageP = usageP->prevP)
-    /* no body */;
-  if (usageP == &oUsageChain)
-    {
-    /* Painful : all usage chain elements are in use and we already have the
-     * maximum of chain elements reached.
-     */
-    return &error_toomany_handles;
-    }
+		/* The more difficult one : we need to reuse a usage chain element.
+		 * Take the last one because that is least used but skip the onces
+		 * with chainTimer equal to the current oChainTimer because those
+		 * RISC OS font handles are still used in the font string we're
+		 * currently processing.
+		 */
+		for (usageP = oUsageChain.prevP;
+		     usageP != &oUsageChain && usageP->chainTimer == oChainTimer;
+		     usageP = usageP->prevP)
+		  /* no body */;
+		if (usageP == &oUsageChain) {
+			/* Painful : all usage chain elements are in use and we already have the
+			 * maximum of chain elements reached.
+			 */
+			return &error_toomany_handles;
+			}
 
-  usageP->chainTimer = oChainTimer;
-  /* The virtual font handle currently in usageP->virFHP no longer has a real
-   * RISC OS font handle anymore.
-   */
-  usageP->virFHP->usageP = NULL;
-  if ((errorP = xfont_lose_font(usageP->ro_fhandle)) != NULL)
-    return errorP;
-  if ((errorP = xfont_find_font(virFHP->fontNameP,
-                                virFHP->xsize, virFHP->ysize,
-                                virFHP->xres, virFHP->yres,
-                                &usageP->ro_fhandle,
-                                &virFHP->xres, &virFHP->yres)) != NULL)
-    return errorP;
-  usageP->virFHP = virFHP;
-  virFHP->usageP = usageP;
+		usageP->chainTimer = oChainTimer;
+		/* The virtual font handle currently in usageP->virFHP no longer has a real
+		 * RISC OS font handle anymore.
+		 */
+		usageP->virFHP->usageP = NULL;
+		if ((errorP = xfont_lose_font(usageP->ro_fhandle)) != NULL)
+			return errorP;
+		if ((errorP = xfont_find_font(virFHP->fontNameP,
+		                              virFHP->xsize, virFHP->ysize,
+		                              virFHP->xres, virFHP->yres,
+		                              &usageP->ro_fhandle,
+		                              &virFHP->xres, &virFHP->yres)) != NULL)
+			return errorP;
+		usageP->virFHP = virFHP;
+		virFHP->usageP = usageP;
 
-  /* Delink :
-   */
-  usageP->prevP->nextP = usageP->nextP;
-  usageP->nextP->prevP = usageP->prevP;
-  }
+		/* Delink :
+		 */
+		usageP->prevP->nextP = usageP->nextP;
+		usageP->nextP->prevP = usageP->prevP;
+		}
 
-/* Link usageP in the oUsageChain based on its current virFHP->usage value :
- */
-  {
-    const unsigned int usage = virFHP->usage;
-    usage_chain_t *runUsageP;
+	/* Link usageP in the oUsageChain based on its current virFHP->usage value :
+	 */
+		{
+		const unsigned int usage = virFHP->usage;
+		usage_chain_t *runUsageP;
 
-  for (runUsageP = &oUsageChain;
-       runUsageP != oUsageChain.nextP && runUsageP->prevP->virFHP->usage <= usage;
-       runUsageP = runUsageP->prevP)
-    /* no body */;
+		for (runUsageP = &oUsageChain;
+		     runUsageP != oUsageChain.nextP && runUsageP->prevP->virFHP->usage <= usage;
+		     runUsageP = runUsageP->prevP)
+			/* no body */;
 
-  /* We have to link usageP between runUsageP and runUsageP->prevP
-   * because runUsageP->prevP has higher usage than the one we need to
-   * link in -or- we're at the end/start.
-   */
-  usageP->nextP = runUsageP;
-  usageP->prevP = runUsageP->prevP;
-  runUsageP->prevP->nextP = usageP;
-  runUsageP->prevP = usageP;
-  }
-do_sanity_check("activate_virtual_fh() : case 2");
-dbg_fprintf(stderr, "--- done, activate_virtual_fh(), case 2\n");
+		/* We have to link usageP between runUsageP and runUsageP->prevP
+		 * because runUsageP->prevP has higher usage than the one we need to
+		 * link in -or- we're at the end/start.
+		 */
+		usageP->nextP = runUsageP;
+		usageP->prevP = runUsageP->prevP;
+		runUsageP->prevP->nextP = usageP;
+		runUsageP->prevP = usageP;
+		}
+	do_sanity_check("activate_virtual_fh() : case 2");
+	dbg_fprintf(stderr, "--- done, activate_virtual_fh(), case 2\n");
 
-return NULL;
+	return NULL;
 }
 
 
-/* Remove this element from the usage chain :
+/**
+ * Remove the usage_chaint_t element from the usage chain
  */
 static os_error *remove_usage_chain_elem(usage_chain_t *usageP)
 {
-  os_error *errorP;
+	os_error *errorP;
 
-assert(usageP != NULL);
-assert(oCurUsageChainElems > 0);
-assert(usageP->ro_fhandle != 0);
-assert(usageP->virFHP != NULL);
+	assert(usageP != NULL);
+	assert(oCurUsageChainElems > 0);
+	assert(usageP->ro_fhandle != 0);
+	assert(usageP->virFHP != NULL);
 
-if ((errorP = xfont_lose_font(usageP->ro_fhandle)) != NULL)
-  return errorP;
+	if ((errorP = xfont_lose_font(usageP->ro_fhandle)) != NULL)
+		return errorP;
 
-usageP->virFHP->usageP = NULL;
+	usageP->virFHP->usageP = NULL;
 
-/* Delink it :
- */
-usageP->prevP->nextP = usageP->nextP;
-usageP->nextP->prevP = usageP->prevP;
+	/* Delink it :
+	 */
+	usageP->prevP->nextP = usageP->nextP;
+	usageP->nextP->prevP = usageP->prevP;
 
---oCurUsageChainElems;
-free((void *)usageP);
+	--oCurUsageChainElems;
+	free((void *)usageP);
 
-do_sanity_check("remove_usage_chain_elem() : end");
-return NULL;
+	do_sanity_check("remove_usage_chain_elem() : end");
+	return NULL;
 }
 
 
-/* usageP is no longer in the right place in the chain because its
+/***
+ * Should be called when the usage_chain_t element is no longer in the right
+ * place in the chain based on its virFHP->usage value.
+ *
+ * usageP is no longer in the right place in the chain because its
  * ->virFHP->usage value increased.  Reposition it towards prev
  * direction.
  */
 static void repos_usage_chain_elem(usage_chain_t *usageP)
 {
-  usage_chain_t *prev1P, *prev2P;
-  const unsigned int curUsage = usageP->virFHP->usage;
+	usage_chain_t *prev1P, *prev2P;
+	const unsigned int curUsage = usageP->virFHP->usage;
 
-dbg_fprintf(stderr, "+++ repos_usage_chain_elem(%p)\n", usageP);
+	dbg_fprintf(stderr, "+++ repos_usage_chain_elem(%p)\n", usageP);
 
-/* If this assert goes off, then it means that this routine shouldn't
- * have been called.
- */
-assert(curUsage > usageP->prevP->virFHP->usage);
+	/* If this assert goes off, then it means that this routine shouldn't
+	 * have been called.
+	 */
+	assert(curUsage > usageP->prevP->virFHP->usage);
 
-/* Delink :
- */
-usageP->prevP->nextP = usageP->nextP;
-usageP->nextP->prevP = usageP->prevP;
+	/* Delink :
+	 */
+	usageP->prevP->nextP = usageP->nextP;
+	usageP->nextP->prevP = usageP->prevP;
 
-/* Place usageElemP between prev1P and prev2P.
- */
-for (prev1P = usageP->prevP, prev2P = prev1P->prevP;
-     prev2P != &oUsageChain && curUsage > prev2P->virFHP->usage;
-     prev1P = prev2P, prev2P = prev2P->prevP)
-  {
-  dbg_fprintf(stderr, "> prev1P %p (%d), usageElemP %p (%d), prev2P %p (%d), dummy %p\n", prev1P, prev1P->virFHP->usage, usageP, usageP->virFHP->usage, prev2P, prev2P->virFHP->usage, &oUsageChain);
-  assert(prev1P->virFHP->usage <= prev2P->virFHP->usage);
-  }
+	/* Place usageElemP between prev1P and prev2P.
+	 */
+	for (prev1P = usageP->prevP, prev2P = prev1P->prevP;
+	     prev2P != &oUsageChain && curUsage > prev2P->virFHP->usage;
+	     prev1P = prev2P, prev2P = prev2P->prevP) {
+		dbg_fprintf(stderr, "> prev1P %p (%d), usageElemP %p (%d), prev2P %p (%d), dummy %p\n", prev1P, prev1P->virFHP->usage, usageP, usageP->virFHP->usage, prev2P, prev2P->virFHP->usage, &oUsageChain);
+		assert(prev1P->virFHP->usage <= prev2P->virFHP->usage);
+		}
 
-dbg_fprintf(stderr, "prev1P %p (%d), usageElemP %p (%d), prev2P %p (%d), dummy %p\n", prev1P, prev1P->virFHP->usage, usageP, usageP->virFHP->usage, prev2P, prev2P->virFHP->usage, &oUsageChain);
+	dbg_fprintf(stderr, "prev1P %p (%d), usageElemP %p (%d), prev2P %p (%d), dummy %p\n", prev1P, prev1P->virFHP->usage, usageP, usageP->virFHP->usage, prev2P, prev2P->virFHP->usage, &oUsageChain);
 
-/* Relink between prev1P and prev2P :
- */
-prev1P->prevP = usageP;
-usageP->prevP = prev2P;
-prev2P->nextP = usageP;
-usageP->nextP = prev1P;
+	/* Relink between prev1P and prev2P :
+	 */
+	prev1P->prevP = usageP;
+	usageP->prevP = prev2P;
+	prev2P->nextP = usageP;
+	usageP->nextP = prev1P;
 
-do_sanity_check("repos_usage_chain_elem() : end");
-dbg_fprintf(stderr, "--- done, repos_usage_chain_elem()\n");
+	do_sanity_check("repos_usage_chain_elem() : end");
+	dbg_fprintf(stderr, "--- done, repos_usage_chain_elem()\n");
 }
 
 
@@ -1164,118 +1167,114 @@ static const char *get_rofontname(font_f rofhandle)
 }
 
 
+#ifdef DEBUG_DUMP_INTERNALS
+/**
+ * Prints to stderr the complete internal state of UFont.
+ */
 static void dump_internals(void)
 {
-fprintf(stderr, "Dump UFont internals:\n  - Virtual font handle array at %p (length %d, max length %d)\n  - Usage chain elements %d\n  - Chain timer is %d\n  Dump usage chain (first dummy at %p):\n", oVirtualFHArrayP, oCurVirtualFHArrayElems, oMaxVirtualFHArrayElems, oCurUsageChainElems, oChainTimer, &oUsageChain);
-if (oUsageChain.prevP == NULL || oUsageChain.nextP == NULL)
-  {
-  fprintf(stderr, "  Empty usage chain\n");
-  if (oUsageChain.prevP != oUsageChain.nextP)
-    fprintf(stderr, "  *** Corrupted empty usage chain: next %p, prev %p\n", oUsageChain.nextP, oUsageChain.prevP);
-  if (oCurUsageChainElems != 0)
-    fprintf(stderr, "  *** Current usage chain length is wrong\n");
-  }
-else
-  {
-    size_t usageCount;
-    const usage_chain_t *usageP;
+	fprintf(stderr, "Dump UFont internals:\n  - Virtual font handle array at %p (length %d, max length %d)\n  - Usage chain elements %d\n  - Chain timer is %d\n  Dump usage chain (first dummy at %p):\n", oVirtualFHArrayP, oCurVirtualFHArrayElems, oMaxVirtualFHArrayElems, oCurUsageChainElems, oChainTimer, &oUsageChain);
+	if (oUsageChain.prevP == NULL || oUsageChain.nextP == NULL) {
+		fprintf(stderr, "  Empty usage chain\n");
+		if (oUsageChain.prevP != oUsageChain.nextP)
+			fprintf(stderr, "  *** Corrupted empty usage chain: next %p, prev %p\n", oUsageChain.nextP, oUsageChain.prevP);
+		if (oCurUsageChainElems != 0)
+			fprintf(stderr, "  *** Current usage chain length is wrong\n");
+		}
+	else {
+		size_t usageCount;
+		const usage_chain_t *usageP;
 
-  for (usageCount = 0, usageP = oUsageChain.nextP; usageP != &oUsageChain; ++usageCount, usageP = usageP->nextP)
-    {
-    fprintf(stderr, "  -%d- : cur %p, next %p, prev %p, timer %d, RISC OS font handle %d, virtual font %p (%d, %s), usage %d\n", usageCount, usageP, usageP->nextP, usageP->prevP, usageP->chainTimer, usageP->ro_fhandle, usageP->virFHP, usageP->virFHP - oVirtualFHArrayP, usageP->virFHP->fontNameP, usageP->virFHP->usage);
-    if (usageP->nextP->prevP != usageP)
-      fprintf(stderr, "  *** Bad usageP->nextP->prevP != usageP\n");
-    if (usageP->prevP->nextP != usageP)
-      fprintf(stderr, "  *** Bad usageP->prevP->nextP != usageP\n");
-    if (usageP->virFHP < oVirtualFHArrayP || usageP->virFHP >= &oVirtualFHArrayP[oCurVirtualFHArrayElems])
-      fprintf(stderr, "  *** Bad virtual font handle\n");
-    }
-  if (usageCount != oCurUsageChainElems)
-    fprintf(stderr, "  *** Current usage chain length is wrong\n");
-  if (usageCount > kMaxUsageChainElems)
-    fprintf(stderr, "  *** Current usage chain is too long\n");
-  }
+		for (usageCount = 0, usageP = oUsageChain.nextP; usageP != &oUsageChain; ++usageCount, usageP = usageP->nextP) {
+			fprintf(stderr, "  -%d- : cur %p, next %p, prev %p, timer %d, RISC OS font handle %d, virtual font %p (%d, %s), usage %d\n", usageCount, usageP, usageP->nextP, usageP->prevP, usageP->chainTimer, usageP->ro_fhandle, usageP->virFHP, usageP->virFHP - oVirtualFHArrayP, usageP->virFHP->fontNameP, usageP->virFHP->usage);
+			if (usageP->nextP->prevP != usageP)
+				fprintf(stderr, "  *** Bad usageP->nextP->prevP != usageP\n");
+			if (usageP->prevP->nextP != usageP)
+				fprintf(stderr, "  *** Bad usageP->prevP->nextP != usageP\n");
+			if (usageP->virFHP < oVirtualFHArrayP || usageP->virFHP >= &oVirtualFHArrayP[oCurVirtualFHArrayElems])
+				fprintf(stderr, "  *** Bad virtual font handle\n");
+			}
+		if (usageCount != oCurUsageChainElems)
+			fprintf(stderr, "  *** Current usage chain length is wrong\n");
+		if (usageCount > kMaxUsageChainElems)
+			fprintf(stderr, "  *** Current usage chain is too long\n");
+	}
 
-if (oVirtualFHArrayP != NULL)
-  {
-    size_t fhIndex;
+	if (oVirtualFHArrayP != NULL) {
+		size_t fhIndex;
 
-  fprintf(stderr, "  Dump virtual font handles:\n");
-  for (fhIndex = 0; fhIndex < oCurVirtualFHArrayElems; ++fhIndex)
-    {
-      const virtual_fh_t *virFHP = &oVirtualFHArrayP[fhIndex];
+		fprintf(stderr, "  Dump virtual font handles:\n");
+		for (fhIndex = 0; fhIndex < oCurVirtualFHArrayElems; ++fhIndex) {
+			const virtual_fh_t *virFHP = &oVirtualFHArrayP[fhIndex];
 
-    fprintf(stderr, "  -%d (%p)- : <%s>, size %d,%d, res %d,%d, usage %d, ref count %d, usage chain ptr %p\n", fhIndex, virFHP, virFHP->fontNameP, virFHP->xsize, virFHP->ysize, virFHP->xres, virFHP->yres, virFHP->usage, virFHP->refCount, virFHP->usageP);
-    if (virFHP->usageP != NULL)
-      {
-        const usage_chain_t *usageP;
+			fprintf(stderr, "  -%d (%p)- : <%s>, size %d,%d, res %d,%d, usage %d, ref count %d, usage chain ptr %p\n", fhIndex, virFHP, virFHP->fontNameP, virFHP->xsize, virFHP->ysize, virFHP->xres, virFHP->yres, virFHP->usage, virFHP->refCount, virFHP->usageP);
+			if (virFHP->usageP != NULL) {
+				const usage_chain_t *usageP;
 
-      for (usageP = oUsageChain.nextP;
-           usageP != virFHP->usageP && usageP != &oUsageChain;
-           usageP = usageP->nextP)
-        /* no body */;
-      if (usageP != virFHP->usageP)
-        fprintf(stderr, "  *** Usage chain ptr could not be found in usage chain\n");
-      }
-    }
-  }
+				for (usageP = oUsageChain.nextP;
+				     usageP != virFHP->usageP && usageP != &oUsageChain;
+				     usageP = usageP->nextP)
+				  /* no body */;
+				if (usageP != virFHP->usageP)
+					fprintf(stderr, "  *** Usage chain ptr could not be found in usage chain\n");
+			}
+		}
+	}
 }
+#endif
 
 
+/**
+ * Does do a full sanity check of UFont internal datastructures.
+ * Will assert() when something odd if found.
+ */
 static int sanity_check(const char *testMsgP)
 {
-dbg_fprintf(stderr, "Sanity check <%s>\n", testMsgP);
-if (oUsageChain.prevP == NULL || oUsageChain.nextP == NULL)
-  {
-  assert(oUsageChain.prevP == oUsageChain.nextP);
-  assert(oCurUsageChainElems == 0);
-  }
-else
-  {
-    size_t usageCount;
-    const usage_chain_t *usageP;
+	dbg_fprintf(stderr, "Sanity check <%s>\n", testMsgP);
+	if (oUsageChain.prevP == NULL || oUsageChain.nextP == NULL) {
+		assert(oUsageChain.prevP == oUsageChain.nextP);
+		assert(oCurUsageChainElems == 0);
+		}
+	else {
+		 size_t usageCount;
+		 const usage_chain_t *usageP;
 
-  /* We should see equal or decreasing usage values.
-   */
-  for (usageCount = 0, usageP = oUsageChain.nextP; usageP != &oUsageChain; ++usageCount, usageP = usageP->nextP)
-    {
-    assert(usageP->nextP->prevP == usageP);
-    assert(usageP->prevP->nextP == usageP);
-    assert(usageP->chainTimer <= oChainTimer);
-    assert(usageP->ro_fhandle != 0);
-    assert(oVirtualFHArrayP != NULL);
-    assert(usageP->virFHP >= oVirtualFHArrayP && usageP->virFHP < &oVirtualFHArrayP[oCurVirtualFHArrayElems]);
-    assert(usageP->virFHP->usageP == usageP);
-//    dbg_fprintf(stderr, "%d: usageP %p (oUsageChain.prevP %p), timer %d, usage %d, next usage %d\n", usageCount, usageP, oUsageChain.prevP, usageP->chainTimer, usageP->virFHP->usage, usageP->nextP->virFHP->usage);
-    assert(usageP == oUsageChain.prevP || usageP->virFHP->usage >= usageP->nextP->virFHP->usage);
-    }
-  assert(usageCount == oCurUsageChainElems);
-  assert(usageCount <= kMaxUsageChainElems);
-  }
+		/* We should see equal or decreasing usage values.
+		 */
+		for (usageCount = 0, usageP = oUsageChain.nextP; usageP != &oUsageChain; ++usageCount, usageP = usageP->nextP) {
+			assert(usageP->nextP->prevP == usageP);
+			assert(usageP->prevP->nextP == usageP);
+			assert(usageP->chainTimer <= oChainTimer);
+			assert(usageP->ro_fhandle != 0);
+			assert(oVirtualFHArrayP != NULL);
+			assert(usageP->virFHP >= oVirtualFHArrayP && usageP->virFHP < &oVirtualFHArrayP[oCurVirtualFHArrayElems]);
+			assert(usageP->virFHP->usageP == usageP);
+			assert(usageP == oUsageChain.prevP || usageP->virFHP->usage >= usageP->nextP->virFHP->usage);
+			}
+		assert(usageCount == oCurUsageChainElems);
+		assert(usageCount <= kMaxUsageChainElems);
+		}
 
-if (oVirtualFHArrayP != NULL)
-  {
-    size_t fhIndex;
+	if (oVirtualFHArrayP != NULL) {
+		size_t fhIndex;
 
-  for (fhIndex = 0; fhIndex < oCurVirtualFHArrayElems; ++fhIndex)
-    {
-      const virtual_fh_t *virFHP = &oVirtualFHArrayP[fhIndex];
+		for (fhIndex = 0; fhIndex < oCurVirtualFHArrayElems; ++fhIndex) {
+			const virtual_fh_t *virFHP = &oVirtualFHArrayP[fhIndex];
 
-    if (virFHP->usageP != NULL)
-      {
-        const usage_chain_t *usageP;
+			if (virFHP->usageP != NULL) {
+				const usage_chain_t *usageP;
 
-      assert(virFHP->fontNameP != NULL);
-      assert(virFHP->xsize > 0 && virFHP->ysize > 0);
-      assert(virFHP->xres > 0 && virFHP->yres > 0);
-      for (usageP = oUsageChain.nextP;
-           usageP != virFHP->usageP && usageP != &oUsageChain;
-           usageP = usageP->nextP)
-        /* no body */;
-      assert(usageP == virFHP->usageP);
-      }
-    }
-  }
+				assert(virFHP->fontNameP != NULL);
+				assert(virFHP->xsize > 0 && virFHP->ysize > 0);
+				assert(virFHP->xres > 0 && virFHP->yres > 0);
+				for (usageP = oUsageChain.nextP;
+				     usageP != virFHP->usageP && usageP != &oUsageChain;
+				     usageP = usageP->nextP)
+					/* no body */;
+				assert(usageP == virFHP->usageP);
+				}
+			}
+		}
 
-return 0;
+	return 0;
 }
