@@ -826,24 +826,24 @@ void ro_msg_dataload(wimp_message *message)
 
 	/* uri file */
 	if (message->data.data_xfer.file_type == 0xf91) {
-		char *temp;
+		char *temp, *url1;
 		int i=0;
 		FILE *fp = fopen(message->data.data_xfer.file_name, "r");
 
 		if (!fp) return;
 
-		url = xcalloc(256, sizeof(char)); /* fixed size != good */
+		url1 = xcalloc(256, sizeof(char)); /* fixed size != good */
 
 		while (i != 2) {
-			temp = fgets(url, 256, fp);
+			temp = fgets(url1, 256, fp);
 			if (!temp) {
-				xfree(url);
+				xfree(url1);
 				return;
 			}
 			
-			temp = xstrdup(strip(url));
-			xfree(url);
-			url = temp;
+			temp = strip(url1);
+			url = xstrdup(temp);
+			xfree(url1);
 			if (url[0] != '#') { /* not a comment */
 				i++;
 			}
