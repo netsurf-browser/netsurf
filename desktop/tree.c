@@ -980,8 +980,9 @@ struct node *tree_create_URL_node(struct node *parent, const char *title,
 	struct node *node;
 	struct node_element *element;
 	
-	assert(title);
 	assert(url);
+	if (!title)
+		title = url;
 	
 	node = tree_create_leaf_node(parent, title);
 	if (!node)
@@ -1035,8 +1036,9 @@ struct node *tree_create_URL_node_brief(struct node *parent, const char *title,
 	struct node *node;
 	struct node_element *element;
 	
-	assert(title);
 	assert(url);
+	if (!title)
+		title = url;
 	
 	node = tree_create_leaf_node(parent, title);
 	if (!node)
