@@ -356,7 +356,6 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 
 void html_fetch_object(struct content *c, char *url, struct box *box)
 {
-	struct fetch_data *fetch_data;
 	unsigned int i = c->data.html.object_count;
 
 	/* add to object list */
@@ -414,7 +413,7 @@ void html_object_callback(content_msg msg, struct content *object,
 				box->min_width = box->max_width = box->width = object->width;
 			}
 			/* invalidate parent min, max widths */
-			if (box->parent->max_width != UNKNOWN_MAX_WIDTH) {
+			if (box->parent && box->parent->max_width != UNKNOWN_MAX_WIDTH) {
 				struct box *b = box->parent;
 				if (b->min_width < object->width)
 					b->min_width = object->width;
