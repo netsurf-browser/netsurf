@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.26 2003/02/25 21:00:27 bursa Exp $
+ * $Id: browser.c,v 1.27 2003/02/26 18:22:24 bursa Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -503,7 +503,9 @@ void browser_window_follow_link(struct browser_window* bw,
   click_boxes = NULL;
   plot_index = 0;
 
-  assert(bw->current_content->type == CONTENT_HTML);
+  if (bw->current_content->type != CONTENT_HTML)
+    return;
+
   box_under_area(bw->current_content->data.html.layout->children,
                  click_x, click_y, 0, 0, &click_boxes, &found, &plot_index);
 

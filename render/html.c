@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.2 2003/02/25 21:00:27 bursa Exp $
+ * $Id: html.c,v 1.3 2003/02/26 18:22:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -32,10 +32,11 @@ void html_create(struct content *c)
 void html_process_data(struct content *c, char *data, unsigned long size)
 {
 	unsigned long x;
-	for (x = 0; x < size; x += CHUNK) {
+	for (x = 0; x + CHUNK <= size; x += CHUNK) {
 		htmlParseChunk(c->data.html.parser, data + x, CHUNK, 0);
 		gui_multitask();
 	}
+	htmlParseChunk(c->data.html.parser, data + x, size - x, 0);
 }
 
 
