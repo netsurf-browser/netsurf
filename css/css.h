@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
 /** \file
@@ -134,17 +135,6 @@ struct css_style {
 		struct css_length vert;
 	} border_spacing;
 
-	struct {
-		enum { CSS_BOTTOM_INHERIT,
-		       CSS_BOTTOM_AUTO,
-		       CSS_BOTTOM_PERCENT,
-		       CSS_BOTTOM_LENGTH } bottom;
-		union {
-			struct css_length length;
-			float percent;
-		} value;
-	} bottom;
-
 	css_caption_side caption_side;
 	css_clear clear;
 
@@ -192,17 +182,6 @@ struct css_style {
 		       CSS_HEIGHT_LENGTH } height;
 		struct css_length length;
 	} height;
-
-	struct {
-		enum { CSS_LEFT_INHERIT,
-		       CSS_LEFT_AUTO,
-		       CSS_LEFT_PERCENT,
-		       CSS_LEFT_LENGTH } left;
-		union {
-			struct css_length length;
-			float percent;
-		} value;
-	} left;
 
 	struct {
 		enum { CSS_LETTER_SPACING_INHERIT,
@@ -315,20 +294,20 @@ struct css_style {
 	css_page_break_before page_break_before;
 	css_page_break_inside page_break_inside;
 
-	css_position position;
-
-	/** \todo quotes */
-
 	struct {
-		enum { CSS_RIGHT_INHERIT,
-		       CSS_RIGHT_AUTO,
-		       CSS_RIGHT_PERCENT,
-		       CSS_RIGHT_LENGTH } right;
+		enum { CSS_POS_INHERIT,
+		       CSS_POS_AUTO,
+		       CSS_POS_PERCENT,
+		       CSS_POS_LENGTH } pos;
 		union {
 			struct css_length length;
 			float percent;
 		} value;
-	} right;
+	} pos[4]; /**< top, right, bottom, left */
+
+	css_position position;
+
+	/** \todo quotes */
 
 	css_table_layout table_layout;
 
@@ -345,17 +324,6 @@ struct css_style {
 		} value ;
 	} text_indent;
 	css_text_transform text_transform;
-
-	struct {
-		enum { CSS_TOP_INHERIT,
-		       CSS_TOP_AUTO,
-		       CSS_TOP_PERCENT,
-		       CSS_TOP_LENGTH } top;
-		union {
-			struct css_length length;
-			float percent;
-		} value;
-	} top;
 
 	css_unicode_bidi unicode_bidi;
 

@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
 /** \file
@@ -120,7 +121,6 @@ const struct css_style css_base_style = {
 	CSS_BORDER_COLLAPSE_SEPARATE,
 	{ CSS_BORDER_SPACING_LENGTH,
 	  { 0, CSS_UNIT_PX }, { 0, CSS_UNIT_PX } },
-	{ CSS_BOTTOM_AUTO, { { 0, CSS_UNIT_PX } } },
 	CSS_CAPTION_SIDE_TOP,
 	CSS_CLEAR_NONE,
 	{ CSS_CLIP_AUTO, { { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } },
@@ -139,7 +139,6 @@ const struct css_style css_base_style = {
 	CSS_FONT_VARIANT_NORMAL,
 	CSS_FONT_WEIGHT_NORMAL,
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
-	{ CSS_LEFT_AUTO, { { 0, CSS_UNIT_PX } } },
 	{ CSS_LETTER_SPACING_NORMAL, { 0, CSS_UNIT_PX } },
 	{ CSS_LINE_HEIGHT_ABSOLUTE, { 1.3 } },
 	{ CSS_LIST_STYLE_IMAGE_NONE, 0 },
@@ -165,14 +164,16 @@ const struct css_style css_base_style = {
 	CSS_PAGE_BREAK_AFTER_AUTO,
 	CSS_PAGE_BREAK_BEFORE_AUTO,
 	CSS_PAGE_BREAK_INSIDE_AUTO,
+	{ { CSS_POS_AUTO, { { 0, CSS_UNIT_PX } } },
+	  { CSS_POS_AUTO, { { 0, CSS_UNIT_PX } } },
+	  { CSS_POS_AUTO, { { 0, CSS_UNIT_PX } } },
+	  { CSS_POS_AUTO, { { 0, CSS_UNIT_PX } } } },
 	CSS_POSITION_STATIC,
-	{ CSS_RIGHT_AUTO, { { 0, CSS_UNIT_PX } } },
 	CSS_TABLE_LAYOUT_AUTO,
 	CSS_TEXT_ALIGN_LEFT,
 	CSS_TEXT_DECORATION_NONE,
 	{ CSS_TEXT_INDENT_LENGTH, { { 0, CSS_UNIT_EM } } },
 	CSS_TEXT_TRANSFORM_NONE,
-	{ CSS_TOP_AUTO, { { 0, CSS_UNIT_PX } } },
 	CSS_UNICODE_BIDI_NORMAL,
 	{ CSS_VERTICAL_ALIGN_BASELINE, { { 0, CSS_UNIT_PX } } },
 	CSS_VISIBILITY_VISIBLE,
@@ -202,7 +203,6 @@ const struct css_style css_empty_style = {
 	CSS_BORDER_COLLAPSE_INHERIT,
 	{ CSS_BORDER_SPACING_INHERIT,
 	  { 0, CSS_UNIT_PX }, { 0, CSS_UNIT_PX } },
-	{ CSS_BOTTOM_INHERIT, { { 0, CSS_UNIT_PX } } },
 	CSS_CAPTION_SIDE_INHERIT,
 	CSS_CLEAR_INHERIT,
 	{ CSS_CLIP_INHERIT, { { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } },
@@ -221,7 +221,6 @@ const struct css_style css_empty_style = {
 	CSS_FONT_VARIANT_INHERIT,
 	CSS_FONT_WEIGHT_INHERIT,
 	{ CSS_HEIGHT_INHERIT, { 1, CSS_UNIT_EM } },
-	{ CSS_LEFT_INHERIT, { { 0, CSS_UNIT_PX } } },
 	{ CSS_LETTER_SPACING_INHERIT, { 0, CSS_UNIT_PX } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
 	{ CSS_LIST_STYLE_IMAGE_INHERIT, 0 },
@@ -247,14 +246,16 @@ const struct css_style css_empty_style = {
 	CSS_PAGE_BREAK_AFTER_INHERIT,
 	CSS_PAGE_BREAK_BEFORE_INHERIT,
 	CSS_PAGE_BREAK_INSIDE_INHERIT,
+	{ { CSS_POS_INHERIT, { { 0, CSS_UNIT_PX } } },
+	  { CSS_POS_INHERIT, { { 0, CSS_UNIT_PX } } },
+	  { CSS_POS_INHERIT, { { 0, CSS_UNIT_PX } } },
+	  { CSS_POS_INHERIT, { { 0, CSS_UNIT_PX } } } },
 	CSS_POSITION_INHERIT,
-	{ CSS_RIGHT_INHERIT, { { 0, CSS_UNIT_PX } } },
 	CSS_TABLE_LAYOUT_INHERIT,
 	CSS_TEXT_ALIGN_INHERIT,
 	CSS_TEXT_DECORATION_INHERIT,
 	{ CSS_TEXT_INDENT_INHERIT, { { 0, CSS_UNIT_EM } } },
 	CSS_TEXT_TRANSFORM_INHERIT,
-	{ CSS_TOP_INHERIT, { { 0, CSS_UNIT_PX } } },
 	CSS_UNICODE_BIDI_INHERIT,
 	{ CSS_VERTICAL_ALIGN_INHERIT, { { 0, CSS_UNIT_PX } } },
 	CSS_VISIBILITY_INHERIT,
@@ -285,7 +286,6 @@ const struct css_style css_blank_style = {
 	CSS_BORDER_COLLAPSE_INHERIT,
 	{ CSS_BORDER_SPACING_INHERIT,
 	  { 0, CSS_UNIT_PX }, { 0, CSS_UNIT_PX } },
-	{ CSS_BOTTOM_AUTO, { { 0, CSS_UNIT_PX } } },
 	CSS_CAPTION_SIDE_INHERIT,
 	CSS_CLEAR_NONE,
 	{ CSS_CLIP_AUTO, { { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } },
@@ -304,7 +304,6 @@ const struct css_style css_blank_style = {
 	CSS_FONT_VARIANT_INHERIT,
 	CSS_FONT_WEIGHT_INHERIT,
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
-	{ CSS_LEFT_AUTO, { { 0, CSS_UNIT_PX } } },
 	{ CSS_LETTER_SPACING_INHERIT, { 0, CSS_UNIT_PX } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
 	{ CSS_LIST_STYLE_IMAGE_INHERIT, 0 },
@@ -330,14 +329,16 @@ const struct css_style css_blank_style = {
 	CSS_PAGE_BREAK_AFTER_AUTO,
 	CSS_PAGE_BREAK_BEFORE_AUTO,
 	CSS_PAGE_BREAK_INSIDE_INHERIT,
+	{ { CSS_POS_AUTO, { { 0, CSS_UNIT_PX } } },
+	  { CSS_POS_AUTO, { { 0, CSS_UNIT_PX } } },
+	  { CSS_POS_AUTO, { { 0, CSS_UNIT_PX } } },
+	  { CSS_POS_AUTO, { { 0, CSS_UNIT_PX } } } },
 	CSS_POSITION_STATIC,
-	{ CSS_RIGHT_AUTO, { { 0, CSS_UNIT_PX } } },
 	CSS_TABLE_LAYOUT_AUTO,
 	CSS_TEXT_ALIGN_INHERIT,
 	CSS_TEXT_DECORATION_INHERIT,
 	{ CSS_TEXT_INDENT_INHERIT, { { 0, CSS_UNIT_EM } } },
 	CSS_TEXT_TRANSFORM_INHERIT,
-	{ CSS_TOP_AUTO, { { 0, CSS_UNIT_PX } } },
 	CSS_UNICODE_BIDI_NORMAL,
 	{ CSS_VERTICAL_ALIGN_BASELINE, { { 0, CSS_UNIT_PX } } },
 	CSS_VISIBILITY_INHERIT,
@@ -1271,25 +1272,7 @@ void css_dump_style(const struct css_style * const style)
 		css_dump_length(&style->border_spacing.vert);
 		fprintf(stderr, "; ");
 	}
-	if (style->bottom.bottom != css_empty_style.bottom.bottom) {
-		fprintf(stderr, "bottom: ");
-		switch (style->bottom.bottom) {
-			case CSS_BOTTOM_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_BOTTOM_AUTO:
-				fprintf(stderr, "auto");
-				break;
-			case CSS_BOTTOM_PERCENT:
-				fprintf(stderr, "%g%%",
-						style->bottom.value.percent);
-				break;
-			case CSS_BOTTOM_LENGTH:
-				css_dump_length(&style->bottom.value.length);
-				break;
-		}
-		fprintf(stderr, "; ");
-	}
+
 	DUMP_KEYWORD(caption_side, "caption-side", css_caption_side_name);
 	DUMP_KEYWORD(clear, "clear", css_clear_name);
 
@@ -1394,26 +1377,6 @@ void css_dump_style(const struct css_style * const style)
 				css_dump_length(&style->height.length); break;
 			default:
 				fprintf(stderr, "UNKNOWN"); break;
-		}
-		fprintf(stderr, "; ");
-	}
-
-	if (style->left.left != css_empty_style.left.left) {
-		fprintf(stderr, "left: ");
-		switch (style->left.left) {
-			case CSS_LEFT_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_LEFT_AUTO:
-				fprintf(stderr, "auto");
-				break;
-			case CSS_LEFT_PERCENT:
-				fprintf(stderr, "%g%%",
-						style->left.value.percent);
-				break;
-			case CSS_LEFT_LENGTH:
-				css_dump_length(&style->left.value.length);
-				break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -1639,27 +1602,42 @@ void css_dump_style(const struct css_style * const style)
 	DUMP_KEYWORD(page_break_after, "page-break-after", css_page_break_after_name);
 	DUMP_KEYWORD(page_break_before, "page-break-before", css_page_break_before_name);
 	DUMP_KEYWORD(page_break_inside, "page-break-inside", css_page_break_inside_name);
-	DUMP_KEYWORD(position, "position", css_position_name);
 
-	if (style->right.right != css_empty_style.right.right) {
-		fprintf(stderr, "right: ");
-		switch (style->right.right) {
-			case CSS_RIGHT_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_RIGHT_AUTO:
-				fprintf(stderr, "auto");
-				break;
-			case CSS_RIGHT_PERCENT:
-				fprintf(stderr, "%g%%",
-						style->right.value.percent);
-				break;
-			case CSS_RIGHT_LENGTH:
-				css_dump_length(&style->right.value.length);
-				break;
+	for (i = 0; i != 4; i++) {
+		if (style->pos[i].pos != css_empty_style.pos[i].pos) {
+			switch (i) {
+				case TOP:
+					fprintf(stderr, "top: ");
+					break;
+				case RIGHT:
+					fprintf(stderr, "right: ");
+					break;
+				case BOTTOM:
+					fprintf(stderr, "bottom: ");
+					break;
+				case LEFT:
+					fprintf(stderr, "left: ");
+					break;
+			}
+			switch (style->pos[i].pos) {
+				case CSS_POS_INHERIT:
+					fprintf(stderr, "inherit");
+					break;
+				case CSS_POS_AUTO:
+					fprintf(stderr, "auto");
+					break;
+				case CSS_POS_PERCENT:
+					fprintf(stderr, "%g%%",
+							style->pos[i].value.percent);
+					break;
+				case CSS_POS_LENGTH:
+					css_dump_length(&style->pos[i].value.length);
+					break;
+			}
+			fprintf(stderr, "; ");
 		}
-		fprintf(stderr, "; ");
 	}
+	DUMP_KEYWORD(position, "position", css_position_name);
 
 	DUMP_KEYWORD(table_layout, "table-layout", css_table_layout_name);
 	DUMP_KEYWORD(text_align, "text-align", css_text_align_name);
@@ -1702,26 +1680,6 @@ void css_dump_style(const struct css_style * const style)
 	}
 
 	DUMP_KEYWORD(text_transform, "text-transform", css_text_transform_name);
-
-	if (style->top.top != css_empty_style.top.top) {
-		fprintf(stderr, "top: ");
-		switch (style->top.top) {
-			case CSS_TOP_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_TOP_AUTO:
-				fprintf(stderr, "auto");
-				break;
-			case CSS_TOP_PERCENT:
-				fprintf(stderr, "%g%%",
-						style->top.value.percent);
-				break;
-			case CSS_TOP_LENGTH:
-				css_dump_length(&style->top.value.length);
-				break;
-		}
-		fprintf(stderr, "; ");
-	}
 
 	DUMP_KEYWORD(unicode_bidi, "unicode-bidi", css_unicode_bidi_name);
 
@@ -1980,8 +1938,6 @@ void css_cascade(struct css_style * const style,
 		style->border_collapse = apply->border_collapse;
 	if (apply->border_spacing.border_spacing != CSS_BORDER_SPACING_INHERIT)
 		style->border_spacing = apply->border_spacing;
-	if (apply->bottom.bottom != CSS_BOTTOM_INHERIT)
-		style->bottom = apply->bottom;
 	if (apply->caption_side != CSS_CAPTION_SIDE_INHERIT)
 		style->caption_side = apply->caption_side;
 	if (apply->clear != CSS_CLEAR_INHERIT)
@@ -2008,8 +1964,6 @@ void css_cascade(struct css_style * const style,
 		style->font_weight = apply->font_weight;
 	if (apply->height.height != CSS_HEIGHT_INHERIT)
 		style->height = apply->height;
-	if (apply->left.left != CSS_LEFT_INHERIT)
-		style->left = apply->left;
 	if (apply->letter_spacing.letter_spacing != CSS_LETTER_SPACING_INHERIT)
 		style->letter_spacing = apply->letter_spacing;
 	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT)
@@ -2040,8 +1994,6 @@ void css_cascade(struct css_style * const style,
 		style->page_break_inside = apply->page_break_inside;
 	if (apply->position != CSS_POSITION_INHERIT)
 		style->position = apply->position;
-	if (apply->right.right != CSS_RIGHT_INHERIT)
-		style->right = apply->right;
 	if (apply->table_layout != CSS_TABLE_LAYOUT_INHERIT)
 		style->table_layout = apply->table_layout;
 	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
@@ -2053,8 +2005,6 @@ void css_cascade(struct css_style * const style,
 		style->text_indent = apply->text_indent;
 	if (apply->text_transform != CSS_TEXT_TRANSFORM_INHERIT)
 		style->text_transform = apply->text_transform;
-	if (apply->top.top != CSS_TOP_INHERIT)
-		style->top = apply->top;
 	if (apply->unicode_bidi != CSS_UNICODE_BIDI_INHERIT)
 		style->unicode_bidi = apply->unicode_bidi;
 	if (apply->vertical_align.type != CSS_VERTICAL_ALIGN_INHERIT)
@@ -2135,7 +2085,7 @@ void css_cascade(struct css_style * const style,
 	if (apply->outline.style != CSS_BORDER_STYLE_INHERIT)
 		style->outline.style = apply->outline.style;
 
-	/* borders, margins and padding */
+	/* borders, margins, padding and box position */
 	for (i = 0; i != 4; i++) {
 		if (apply->border[i].color != CSS_COLOR_INHERIT)
 			style->border[i].color = apply->border[i].color;
@@ -2149,6 +2099,9 @@ void css_cascade(struct css_style * const style,
 
 		if (apply->padding[i].padding != CSS_PADDING_INHERIT)
 			style->padding[i] = apply->padding[i];
+
+		if (apply->pos[i].pos != CSS_POS_INHERIT)
+				style->pos[i] = apply->pos[i];
 	}
 }
 
@@ -2180,8 +2133,6 @@ void css_merge(struct css_style * const style,
 		style->border_collapse = apply->border_collapse;
 	if (apply->border_spacing.border_spacing != CSS_BORDER_SPACING_INHERIT)
 		style->border_spacing = apply->border_spacing;
-	if (apply->bottom.bottom != CSS_BOTTOM_INHERIT)
-		style->bottom = apply->bottom;
 	if (apply->caption_side != CSS_CAPTION_SIDE_INHERIT)
 		style->caption_side = apply->caption_side;
 	if (apply->clear != CSS_CLEAR_INHERIT)
@@ -2210,8 +2161,6 @@ void css_merge(struct css_style * const style,
 		style->font_weight = apply->font_weight;
 	if (apply->height.height != CSS_HEIGHT_INHERIT)
 		style->height = apply->height;
-	if (apply->left.left != CSS_LEFT_INHERIT)
-		style->left = apply->left;
 	if (apply->letter_spacing.letter_spacing != CSS_LETTER_SPACING_INHERIT)
 		style->letter_spacing = apply->letter_spacing;
 	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT)
@@ -2242,8 +2191,6 @@ void css_merge(struct css_style * const style,
 		style->page_break_inside = apply->page_break_inside;
 	if (apply->position != CSS_POSITION_INHERIT)
 		style->position = apply->position;
-	if (apply->right.right != CSS_RIGHT_INHERIT)
-		style->right = apply->right;
 	if (apply->table_layout != CSS_TABLE_LAYOUT_INHERIT)
 		style->table_layout = apply->table_layout;
 	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
@@ -2255,8 +2202,6 @@ void css_merge(struct css_style * const style,
 		style->text_indent = apply->text_indent;
 	if (apply->text_transform != CSS_TEXT_TRANSFORM_INHERIT)
 		style->text_transform = apply->text_transform;
-	if (apply->top.top != CSS_TOP_INHERIT)
-		style->top = apply->top;
 	if (apply->unicode_bidi != CSS_UNICODE_BIDI_INHERIT)
 		style->unicode_bidi = apply->unicode_bidi;
 	if (apply->vertical_align.type != CSS_VERTICAL_ALIGN_INHERIT)
@@ -2298,7 +2243,7 @@ void css_merge(struct css_style * const style,
 	if (apply->outline.style != CSS_BORDER_STYLE_INHERIT)
 		style->outline.style = apply->outline.style;
 
-	/* borders, margins and padding */
+	/* borders, margins, padding and box position */
 	for (i = 0; i != 4; i++) {
 		if (apply->border[i].color != CSS_COLOR_INHERIT)
 			style->border[i].color = apply->border[i].color;
@@ -2312,6 +2257,9 @@ void css_merge(struct css_style * const style,
 
 		if (apply->padding[i].padding != CSS_PADDING_INHERIT)
 			style->padding[i] = apply->padding[i];
+
+		if (apply->pos[i].pos != CSS_POS_INHERIT)
+			style->pos[i] = apply->pos[i];
 	}
 }
 

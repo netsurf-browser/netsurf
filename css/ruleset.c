@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
 /** \file
@@ -138,6 +139,7 @@ static void parse_padding_side(struct css_style * const s, const struct css_node
 static void parse_page_break_after(struct css_style * const s, const struct css_node * v);
 static void parse_page_break_before(struct css_style * const s, const struct css_node * v);
 static void parse_page_break_inside(struct css_style * const s, const struct css_node * v);
+static void parse_pos(struct css_style * const s, const struct css_node * v, unsigned int i);
 static void parse_position(struct css_style * const s, const struct css_node * v);
 static void parse_right(struct css_style * const s, const struct css_node * v);
 static void parse_table_layout(struct css_style * const s, const struct css_node * v);
@@ -1355,34 +1357,6 @@ void parse_border_spacing(struct css_style * const s, const struct css_node * v)
 	}
 }
 
-void parse_bottom(struct css_style * const s, const struct css_node * v)
-{
-	if (v->next != 0)
-		return;
-
-	switch (v->type) {
-		case CSS_NODE_IDENT:
-			if (v->data_length == 7 &&
-			    strncasecmp(v->data, "inherit", 7) == 0)
-				s->bottom.bottom = CSS_BOTTOM_INHERIT;
-			else if (v->data_length == 4 &&
-			         strncasecmp(v->data, "auto", 4) == 0)
-				s->bottom.bottom = CSS_BOTTOM_AUTO;
-			break;
-		case CSS_NODE_DIMENSION:
-		case CSS_NODE_NUMBER:
-			if (parse_length(&s->bottom.value.length, v, false) == 0)
-				s->bottom.bottom = CSS_BOTTOM_LENGTH;
-			break;
-		case CSS_NODE_PERCENTAGE:
-			s->bottom.bottom = CSS_BOTTOM_PERCENT;
-			s->bottom.value.percent = atof(v->data);
-			break;
-		default:
-			break;
-	}
-}
-
 void parse_caption_side(struct css_style * const s, const struct css_node * v)
 {
 	css_caption_side z;
@@ -1693,34 +1667,6 @@ void parse_height(struct css_style * const s, const struct css_node * const v)
 	else if ((v->type == CSS_NODE_DIMENSION || v->type == CSS_NODE_NUMBER) &&
 			parse_length(&s->height.length, v, true) == 0)
 		s->height.height = CSS_HEIGHT_LENGTH;
-}
-
-void parse_left(struct css_style * const s, const struct css_node * v)
-{
-	if (v->next != 0)
-		return;
-
-	switch (v->type) {
-		case CSS_NODE_IDENT:
-			if (v->data_length == 7 &&
-			    strncasecmp(v->data, "inherit", 7) == 0)
-				s->left.left = CSS_LEFT_INHERIT;
-			else if (v->data_length == 4 &&
-			         strncasecmp(v->data, "auto", 4) == 0)
-				s->left.left = CSS_LEFT_AUTO;
-			break;
-		case CSS_NODE_DIMENSION:
-		case CSS_NODE_NUMBER:
-			if (parse_length(&s->left.value.length, v, false) == 0)
-				s->left.left = CSS_LEFT_LENGTH;
-			break;
-		case CSS_NODE_PERCENTAGE:
-			s->left.left = CSS_LEFT_PERCENT;
-			s->left.value.percent = atof(v->data);
-			break;
-		default:
-			break;
-	}
 }
 
 void parse_letter_spacing(struct css_style * const s, const struct css_node * v)
@@ -2381,17 +2327,19 @@ void parse_page_break_inside(struct css_style * const s, const struct css_node *
 		s->page_break_inside = z;
 }
 
-void parse_position(struct css_style * const s, const struct css_node * v)
-{
-	css_position z;
-	if (v->type != CSS_NODE_IDENT || v->next != 0)
-		return;
-	z = css_position_parse(v->data, v->data_length);
-	if (z != CSS_POSITION_UNKNOWN)
-		s->position = z;
+#define PARSE_POS(side, z) \
+void parse_ ## side(struct css_style * const s,	\
+		const struct css_node * const v)	\
+{							\
+	parse_pos(s, v, z);			\
 }
 
-void parse_right(struct css_style * const s, const struct css_node * v)
+PARSE_POS(top,    TOP)
+PARSE_POS(right,  RIGHT)
+PARSE_POS(bottom, BOTTOM)
+PARSE_POS(left,   LEFT)
+
+void parse_pos(struct css_style * const s, const struct css_node * v, unsigned int i)
 {
 	if (v->next != 0)
 		return;
@@ -2400,23 +2348,33 @@ void parse_right(struct css_style * const s, const struct css_node * v)
 		case CSS_NODE_IDENT:
 			if (v->data_length == 7 &&
 			    strncasecmp(v->data, "inherit", 7) == 0)
-				s->right.right = CSS_RIGHT_INHERIT;
+				s->pos[i].pos = CSS_POS_INHERIT;
 			else if (v->data_length == 4 &&
 			         strncasecmp(v->data, "auto", 4) == 0)
-				s->right.right = CSS_RIGHT_AUTO;
+				s->pos[i].pos = CSS_POS_AUTO;
 			break;
 		case CSS_NODE_DIMENSION:
 		case CSS_NODE_NUMBER:
-			if (parse_length(&s->right.value.length, v, false) == 0)
-				s->right.right = CSS_RIGHT_LENGTH;
+			if (parse_length(&s->pos[i].value.length, v, false) == 0)
+				s->pos[i].pos = CSS_POS_LENGTH;
 			break;
 		case CSS_NODE_PERCENTAGE:
-			s->right.right = CSS_RIGHT_PERCENT;
-			s->right.value.percent = atof(v->data);
+			s->pos[i].pos = CSS_POS_PERCENT;
+			s->pos[i].value.percent = atof(v->data);
 			break;
 		default:
 			break;
 	}
+}
+
+void parse_position(struct css_style * const s, const struct css_node * v)
+{
+	css_position z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_position_parse(v->data, v->data_length);
+	if (z != CSS_POSITION_UNKNOWN)
+		s->position = z;
 }
 
 void parse_table_layout(struct css_style * const s, const struct css_node * v)
@@ -2481,34 +2439,6 @@ void parse_text_transform(struct css_style * const s, const struct css_node * co
 	z = css_text_transform_parse(v->data, v->data_length);
 	if (z != CSS_TEXT_TRANSFORM_UNKNOWN)
 		s->text_transform = z;
-}
-
-void parse_top(struct css_style * const s, const struct css_node * v)
-{
-	if (v->next != 0)
-		return;
-
-	switch (v->type) {
-		case CSS_NODE_IDENT:
-			if (v->data_length == 7 &&
-			    strncasecmp(v->data, "inherit", 7) == 0)
-				s->top.top = CSS_TOP_INHERIT;
-			else if (v->data_length == 4 &&
-			         strncasecmp(v->data, "auto", 4) == 0)
-				s->top.top = CSS_TOP_AUTO;
-			break;
-		case CSS_NODE_DIMENSION:
-		case CSS_NODE_NUMBER:
-			if (parse_length(&s->top.value.length, v, false) == 0)
-				s->top.top = CSS_TOP_LENGTH;
-			break;
-		case CSS_NODE_PERCENTAGE:
-			s->top.top = CSS_TOP_PERCENT;
-			s->top.value.percent = atof(v->data);
-			break;
-		default:
-			break;
-	}
 }
 
 void parse_unicode_bidi(struct css_style * const s, const struct css_node * const v)
