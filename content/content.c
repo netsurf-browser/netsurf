@@ -304,6 +304,7 @@ bool content_set_type(struct content *c, content_type type,
 
 	if (handler_map[type].create) {
 		if (!handler_map[type].create(c, params)) {
+			c->type = CONTENT_UNKNOWN;
 			c->status = CONTENT_STATUS_ERROR;
 			return false;
 		}

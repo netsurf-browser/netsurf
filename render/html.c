@@ -313,19 +313,13 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 #else
 			"file:///home/james/Projects/netsurf/CSS",
 #endif
-			c->url,
-			html_convert_css_callback,
-			c, 0, c->width, c->height, true
-#ifdef WITH_POST
-			, 0, 0
-#endif
-#ifdef WITH_COOKIES
-			, false
-#endif
-			);
-	assert(c->data.html.stylesheet_content[0] != 0);
-	if (c->data.html.stylesheet_content[0]->status != CONTENT_STATUS_DONE)
-		c->active++;
+			html_convert_css_callback, c, 0,
+			c->width, c->height, true, 0, 0, false);
+	assert(c->data.html.stylesheet_content[0]);
+	c->active++;
+	fetchcache_go(c->data.html.stylesheet_content[0], 0,
+			html_convert_css_callback, c, 0,
+			0, 0, false);
 
 	for (node = head == 0 ? 0 : head->children; node != 0; node = node->next) {
 		if (node->type != XML_ELEMENT_NODE)
@@ -377,19 +371,18 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			/* start fetch */
 			c->data.html.stylesheet_content = xrealloc(c->data.html.stylesheet_content,
 					(i + 1) * sizeof(*c->data.html.stylesheet_content));
-			c->data.html.stylesheet_content[i] = fetchcache(url, c->url,
-					html_convert_css_callback, c, (void*)i,
-					c->width, c->height, true
-#ifdef WITH_POST
-					, 0, 0
-#endif
-#ifdef WITH_COOKIES
-					, false
-#endif
-					);
-			if (c->data.html.stylesheet_content[i] &&
-					c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
+			c->data.html.stylesheet_content[i] = fetchcache(url,
+					html_convert_css_callback,
+					c, (void *) i, c->width, c->height,
+					true, 0, 0, false);
+			if (c->data.html.stylesheet_content[i]) {
 				c->active++;
+				fetchcache_go(c->data.html.stylesheet_content[i],
+						c->url,
+						html_convert_css_callback,
+						c, (void *) i,
+						0, 0, false);
+			}
 			free(url);
 			i++;
 
@@ -418,19 +411,27 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			if (c->data.html.stylesheet_content[1] == 0) {
 				const char *params[] = { 0 };
 				c->data.html.stylesheet_content[1] =
-						content_create(c->data.html.base_url);
+						content_create(c->data.html.
+						base_url);
 				if (!c->data.html.stylesheet_content[1])
-					return;
-				content_set_type(c->data.html.stylesheet_content[1],
-						CONTENT_CSS, "text/css", params);
+					return false;
+				if (!content_set_type(c->data.html.
+						stylesheet_content[1],
+						CONTENT_CSS, "text/css",
+						params))
+					return false;
 			}
 
 			/* can't just use xmlNodeGetContent(node), because that won't give
 			 * the content of comments which may be used to 'hide' the content */
 			for (node2 = node->children; node2 != 0; node2 = node2->next) {
 				data = xmlNodeGetContent(node2);
-				content_process_data(c->data.html.stylesheet_content[1],
-						data, strlen(data));
+				if (!content_process_data(c->data.html.
+						stylesheet_content[1],
+						data, strlen(data))) {
+					xmlFree(data);
+					return false;
+				}
 				xmlFree(data);
 			}
 		}
@@ -441,8 +442,11 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 	if (c->data.html.stylesheet_content[1] != 0) {
 		if (css_convert(c->data.html.stylesheet_content[1], c->width,
 				c->height)) {
+			content_add_user(c->data.html.stylesheet_content[1],
+					html_convert_css_callback,
+					c, (void *) 1);
+		} else {
 			/* conversion failed */
-			content_destroy(c->data.html.stylesheet_content[1]);
 			c->data.html.stylesheet_content[1] = 0;
 		}
 	}
@@ -512,19 +516,18 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 		case CONTENT_MSG_REDIRECT:
 			c->active--;
 			c->data.html.stylesheet_content[i] = fetchcache(
-					data.redirect, c->url,
+					data.redirect,
 					html_convert_css_callback,
-					c, (void*)i, css->width, css->height, true
-#ifdef WITH_POST
-					, 0, 0
-#endif
-#ifdef WITH_COOKIES
-					, false
-#endif
-					);
-			if (c->data.html.stylesheet_content[i] != 0 &&
-					c->data.html.stylesheet_content[i]->status != CONTENT_STATUS_DONE)
+					c, (void *) i, css->width, css->height,
+					true, 0, 0, false);
+			if (c->data.html.stylesheet_content[i]) {
 				c->active++;
+				fetchcache_go(c->data.html.stylesheet_content[i],
+						c->url,
+						html_convert_css_callback,
+						c, (void *) i,
+						0, 0, false);
+			}
 			break;
 
 #ifdef WITH_AUTH
@@ -560,7 +563,6 @@ void html_fetch_object(struct content *c, char *url, struct box *box,
 		bool background)
 {
 	unsigned int i = c->data.html.object_count;
-	union content_msg_data data;
 
 	/* add to object list */
 	c->data.html.object = xrealloc(c->data.html.object,
@@ -571,23 +573,14 @@ void html_fetch_object(struct content *c, char *url, struct box *box,
        	c->data.html.object[i].background = background;
 
 	/* start fetch */
-	c->data.html.object[i].content = fetchcache(url, c->url,
-			html_object_callback,
-			c, (void*)i, available_width, available_height,
-			true
-#ifdef WITH_POST
-			, 0, 0
-#endif
-#ifdef WITH_COOKIES
-			, false
-#endif
-			);
-
+	c->data.html.object[i].content = fetchcache(url, html_object_callback,
+			c, (void *) i, available_width, available_height,
+			true, 0, 0, false);
 	if (c->data.html.object[i].content) {
 		c->active++;
-		if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
-			html_object_callback(CONTENT_MSG_DONE,
-					c->data.html.object[i].content, c, (void*)i, data);
+		fetchcache_go(c->data.html.object[i].content, c->url,
+				html_object_callback, c, (void *) i,
+				0, 0, false);
 	}
 	c->data.html.object_count++;
 }
@@ -623,8 +616,13 @@ void html_object_callback(content_msg msg, struct content *object,
 
 		case CONTENT_MSG_READY:
 			if (object->type == CONTENT_HTML) {
-				html_object_done(box, object, c->data.html.object[i].background);
-				content_reformat(c, c->available_width, 0);
+				html_object_done(box, object,
+					c->data.html.object[i].background);
+				if (c->status == CONTENT_STATUS_READY ||
+						c->status ==
+						CONTENT_STATUS_DONE)
+					content_reformat(c,
+							c->available_width, 0);
 			}
 			break;
 
@@ -653,21 +651,15 @@ void html_object_callback(content_msg msg, struct content *object,
 			free(c->data.html.object[i].url);
 			c->data.html.object[i].url = xstrdup(data.redirect);
 			c->data.html.object[i].content = fetchcache(
-					data.redirect, c->url,
-					html_object_callback,
-					c, (void*)i, 0, 0, true
-#ifdef WITH_POST
-					, 0, 0
-#endif
-#ifdef WITH_COOKIES
-					, false
-#endif
-					);
+					data.redirect, html_object_callback,
+					c, (void * ) i, 0, 0, true, 0, 0,
+					false);
 			if (c->data.html.object[i].content) {
 				c->active++;
-				if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
-					html_object_callback(CONTENT_MSG_DONE,
-							c->data.html.object[i].content, c, (void*)i, data);
+				fetchcache_go(c->data.html.object[i].content,
+						c->url, html_object_callback,
+						c, (void * ) i,
+						0, 0, false);
 			}
 			break;
 

@@ -302,12 +302,6 @@ struct fetch * fetch_start(char *url, char *referer,
 		}
 	}
 
-	fetch->next = fetch_list;
-	if (fetch_list != 0)
-		fetch_list->prev = fetch;
-	fetch_list = fetch;
-	fetch_active = true;
-
 	/* create the curl easy handle */
 	fetch->curl_handle = curl_easy_duphandle(fetch_blank_curl);
 	if (!fetch->curl_handle)
@@ -320,6 +314,12 @@ struct fetch * fetch_start(char *url, char *referer,
 	/* add to the global curl multi handle */
 	codem = curl_multi_add_handle(curl_multi, fetch->curl_handle);
 	assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
+
+	fetch->next = fetch_list;
+	if (fetch_list != 0)
+		fetch_list->prev = fetch;
+	fetch_list = fetch;
+	fetch_active = true;
 
 	return fetch;
 

@@ -152,7 +152,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 {
 	struct content *c;
 	char *url2;
-	union content_msg_data data;
+
+	LOG(("bw %p, url %s", bw, url));
 
 	url2 = url_normalize(url);
 	if (!url2) {
@@ -165,36 +166,21 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
 	bw->time0 = clock();
-	if (strncmp(url2, "about:", 6) == 0) {
-		c = about_create(url2, browser_window_callback, bw, 0,
-				gui_window_get_width(bw->window), 0);
-	}
-	else {
-		c = fetchcache(url2, 0,
-				browser_window_callback, bw, 0,
-				gui_window_get_width(bw->window), 0,
-				false,
-				post_urlenc, post_multipart,
-				true);
-	}
+	c = fetchcache(url2, browser_window_callback, bw, 0,
+			gui_window_get_width(bw->window), 0,
+			false,
+			post_urlenc, post_multipart, true);
 	free(url2);
 	if (!c) {
-		browser_window_set_status(bw, messages_get("FetchFailed"));
+		browser_window_set_status(bw, messages_get("NoMemory"));
+		warn_user("NoMemory", 0);
 		return;
 	}
 	bw->loading_content = c;
 	browser_window_start_throbber(bw);
 
-	if (c->status == CONTENT_STATUS_READY) {
-		browser_window_callback(CONTENT_MSG_READY, c, bw, 0, data);
-
-	} else if (c->status == CONTENT_STATUS_DONE) {
-		browser_window_callback(CONTENT_MSG_READY, c, bw, 0, data);
-		if (c->type == CONTENT_OTHER)
-			download_window_callback(CONTENT_MSG_DONE, c, bw, 0, data);
-		else
-			browser_window_callback(CONTENT_MSG_DONE, c, bw, 0, data);
-	}
+	fetchcache_go(c, 0, browser_window_callback, bw, 0,
+			post_urlenc, post_multipart, true);
 }
 
 

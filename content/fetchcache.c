@@ -36,50 +36,41 @@ static void fetchcache_error_page(struct content *c, const char *error);
 
 
 /**
- * Retrieve a URL or fetch, convert, and cache it.
- *
- * The referer may be 0.
+ * Retrieve a URL or prepare to fetch, convert, and cache it.
  *
  * The caller must supply a callback function which is called when anything
  * interesting happens to the content which is returned. See content.h.
  *
- * If an error occurs immediately, 0 may be returned. Later errors will be
- * reported via the callback.
+ * \param  url       address to fetch
+ * \param  callback  function to call when anything interesting happens to
+ *                   the new content
+ * \param  p1 user   parameter for callback
+ * \param  p2 user   parameter for callback
+ * \param  width     available space
+ * \param  height    available space
+ * \param  no_error_pages if an error occurs, send CONTENT_MSG_ERROR instead
+ *                   of generating an error page
+ * \param  post_urlenc     url encoded post data, or 0 if none
+ * \param  post_multipart  multipart post data, or 0 if none
+ * \param  cookies   send and accept cookies
+ * \return  a new content, or 0 on memory exhaustion
  *
- * \param url address to fetch
- * \param referer url of referring page, or 0 if none
- * \param callback function to call when anything interesting happens to
- *              the new content
- * \param p1 user parameter for callback
- * \param p2 user parameter for callback
- * \param width available space
- * \param height available space
- * \param no_error_pages if an error occurs, send CONTENT_MSG_ERROR instead
- *              of generating an error page
- * \param post_urlenc url encoded post data, or 0 if none
- * \param post_multipart multipart post data, or 0 if none
- * \param cookies send and accept cookies
- * \return a new content, or 0 if an error occurred
+ * On success, call fetchcache_go() to start work on the new content.
  */
 
-struct content * fetchcache(const char *url, char *referer,
+struct content * fetchcache(const char *url,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, union content_msg_data data),
-		void *p1, void *p2, unsigned long width, unsigned long height,
-		bool no_error_pages
-#ifdef WITH_POST
-		, char *post_urlenc,
-		struct form_successful_control *post_multipart
-#endif
-#ifdef WITH_COOKIES
-		,bool cookies
-#endif
-		)
+		void *p1, void *p2,
+		int width, int height,
+		bool no_error_pages,
+		char *post_urlenc,
+		struct form_successful_control *post_multipart,
+		bool cookies)
 {
 	struct content *c;
 	char *url1;
 	char *hash;
-	char error_message[500];
 
 	url1 = strdup(url);
 	if (!url1)
@@ -91,12 +82,9 @@ struct content * fetchcache(const char *url, char *referer,
 
 	LOG(("url %s", url1));
 
-#ifdef WITH_POST
-	if (!post_urlenc && !post_multipart)
-#endif
-	{
+	if (!post_urlenc && !post_multipart) {
 		c = cache_get(url1);
-		if (c != 0) {
+		if (c) {
 			free(url1);
 			content_add_user(c, callback, p1, p2);
 			return c;
@@ -110,35 +98,93 @@ struct content * fetchcache(const char *url, char *referer,
 	}
 	content_add_user(c, callback, p1, p2);
 
-#ifdef WITH_POST
 	if (!post_urlenc && !post_multipart)
-#endif
 		cache_put(c);
 
 	c->width = width;
 	c->height = height;
 	c->no_error_pages = no_error_pages;
-	c->fetch = fetch_start(url1, referer, fetchcache_callback, c, no_error_pages
-#ifdef WITH_POST
-			,post_urlenc, post_multipart
-#endif
-#ifdef WITH_COOKIES
-			,cookies
-#endif
-			);
-	if (!c->fetch) {
-		LOG(("warning: fetch_start failed"));
-		c->status = CONTENT_STATUS_ERROR;
-		if (no_error_pages) {
-			free(url1);
-			return 0;
-		}
-		snprintf(error_message, sizeof error_message,
-				messages_get("InvalidURL"), url1);
-		fetchcache_error_page(c, error_message);
-	}
-	free(url1);
+
 	return c;
+}
+
+
+/**
+ * Start fetching and converting a content.
+ *
+ * \param  url       address to fetch
+ * \param  referer   referring URL, or 0
+ * \param  callback  function to call when anything interesting happens to
+ *                   the new content
+ * \param  p1 user   parameter for callback
+ * \param  p2 user   parameter for callback
+ * \param  post_urlenc     url encoded post data, or 0 if none
+ * \param  post_multipart  multipart post data, or 0 if none
+ * \param  cookies   send and accept cookies
+ *
+ * Errors will be sent back through the callback.
+ */
+
+void fetchcache_go(struct content *content, char *referer,
+		void (*callback)(content_msg msg, struct content *c, void *p1,
+			void *p2, union content_msg_data data),
+		void *p1, void *p2,
+		char *post_urlenc,
+		struct form_successful_control *post_multipart,
+		bool cookies)
+{
+	char error_message[500];
+	union content_msg_data msg_data;
+
+	LOG(("url %s, status %s", content->url,
+			content_status_name[content->status]));
+
+	if (content->status == CONTENT_STATUS_TYPE_UNKNOWN && content->fetch) {
+		/* fetching, but not yet received any response:
+		 * no action required */
+
+        } else if (content->status == CONTENT_STATUS_TYPE_UNKNOWN) {
+        	/* brand new content: start fetch */
+		content->fetch = fetch_start(content->url, referer,
+				fetchcache_callback, content,
+				content->no_error_pages,
+				post_urlenc, post_multipart, cookies);
+		if (!content->fetch) {
+			LOG(("warning: fetch_start failed"));
+			snprintf(error_message, sizeof error_message,
+					messages_get("InvalidURL"),
+					content->url);
+			if (content->no_error_pages) {
+				content->status = CONTENT_STATUS_ERROR;
+				msg_data.error = error_message;
+				content_broadcast(content, CONTENT_MSG_ERROR,
+						msg_data);
+			} else {
+				fetchcache_error_page(content, error_message);
+			}
+		}
+
+	/* in these remaining cases, we have to 'catch up' with the content's
+	 * status, ie. send the same messages as if the content was
+	 * gradually getting to the current status from TYPE_UNKNOWN */
+	} else if (content->status == CONTENT_STATUS_LOADING) {
+		callback(CONTENT_MSG_LOADING, content, p1, p2, msg_data);
+
+	} else if (content->status == CONTENT_STATUS_READY) {
+		callback(CONTENT_MSG_LOADING, content, p1, p2, msg_data);
+		callback(CONTENT_MSG_READY, content, p1, p2, msg_data);
+
+	} else if (content->status == CONTENT_STATUS_DONE) {
+		callback(CONTENT_MSG_LOADING, content, p1, p2, msg_data);
+		callback(CONTENT_MSG_READY, content, p1, p2, msg_data);
+		callback(CONTENT_MSG_DONE, content, p1, p2, msg_data);
+
+	} else if (content->status == CONTENT_STATUS_ERROR) {
+		/* shouldn't usually occur */
+		msg_data.error = messages_get("MiscError");
+		callback(CONTENT_MSG_ERROR, content, p1, p2, msg_data);
+
+	}
 }
 
 
@@ -327,8 +373,10 @@ void fetchcache_error_page(struct content *c, const char *error)
 	if ((length = snprintf(error_page, sizeof(error_page),
 			messages_get("ErrorPage"), error)) < 0)
 		length = 0;
-	content_set_type(c, CONTENT_HTML, "text/html", params);
-	content_process_data(c, error_page, length);
+	if (!content_set_type(c, CONTENT_HTML, "text/html", params))
+		return;
+	if (!content_process_data(c, error_page, length))
+		return;
 	content_convert(c, c->width, c->height);
 }
 
