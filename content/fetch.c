@@ -772,6 +772,36 @@ struct curl_httppost *fetch_post_convert(struct form_successful_control *control
 }
 #endif
 
+
+/**
+ * Check if a URL's scheme can be fetched.
+ *
+ * \param  url  URL to check
+ * \return  true if the scheme is supported
+ */
+
+bool fetch_can_fetch(const char *url)
+{
+	unsigned int i;
+	const char *semi;
+	unsigned int len;
+	curl_version_info_data *data;
+
+	semi = strchr(url, ':');
+	if (!semi)
+		return false;
+	len = semi - url;
+
+	data = curl_version_info(CURLVERSION_NOW);
+
+	for (i = 0; data->protocols[i]; i++)
+		if (strlen(data->protocols[i]) == len &&
+				strncasecmp(url, data->protocols[i], len) == 0)
+			return true;
+	return false;
+}
+
+
 /**
  * testing framework
  */
