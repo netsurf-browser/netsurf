@@ -687,10 +687,12 @@ struct HttpPost *fetch_post_convert(struct form_successful_control *control)
 	                mimetype = fetch_mimetype(control->value);
 #ifdef riscos
 	                temp = strrchr(control->value, '.') + 1;
+	                assert(temp);
 	                leafname = xcalloc(strlen(temp), sizeof(char));
 	                __unixify_std(temp, leafname, strlen(temp), 0xfff);
 #else
                         leafname = strrchr(control->value, '/') + 1;
+                        assert(leafname);
 #endif
 	                curl_formadd(&post, &last,
 					CURLFORM_COPYNAME, control->name,
