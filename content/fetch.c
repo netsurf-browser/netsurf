@@ -57,6 +57,7 @@ struct fetch {
 	bool had_headers;	/**< Headers have been processed. */
 	int locked;		/**< Lock count. */
 	bool aborting;		/**< Abort requested in callback. */
+	bool stopped;		/**< Download stopped on purpose. */
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
 	bool cookies;		/**< Send & accept cookies. */
 	char *url;		/**< URL. */
@@ -228,6 +229,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->had_headers = false;
 	fetch->locked = 0;
 	fetch->aborting = false;
+	fetch->stopped = false;
 	fetch->only_2xx = only_2xx;
 	fetch->cookies = cookies;
 	fetch->url = strdup(url);
@@ -548,7 +550,7 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 			; /* redirect with no body or similar */
 		else
 			finished = true;
-	} else if (result == CURLE_WRITE_ERROR)
+	} else if (result == CURLE_WRITE_ERROR && f->stopped)
 		/* CURLE_WRITE_ERROR occurs when fetch_curl_data
 		 * returns 0, which we use to abort intentionally */
 		;
@@ -578,6 +580,7 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 
 	if (!f->had_headers && fetch_process_headers(f)) {
 		f->locked--;
+		f->stopped = true;
 		return 0;
 	}
 
