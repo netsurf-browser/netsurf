@@ -45,7 +45,7 @@ struct box_status {
 	struct content *content;
 	char *href;
 	char *title;
-	struct form* current_form;
+	struct form *current_form;
 	char *id;
 };
 
@@ -169,6 +169,7 @@ static bool plugin_decode(struct content* content, char* url, struct box* box,
 		struct object_params* po);
 static struct box_multi_length *box_parse_multi_lengths(const char *s,
 		unsigned int *count);
+static bool box_contains_point(struct box *box, int x, int y);
 
 #define box_is_float(box) (box->type == BOX_FLOAT_LEFT || \
 		box->type == BOX_FLOAT_RIGHT)
@@ -295,27 +296,35 @@ void box_insert_sibling(struct box *box, struct box *new_box)
 
 void xml_to_box(xmlNode *n, struct content *c)
 {
+	struct box root;
 	struct box_status status = {c, 0, 0, 0, 0};
 
-	LOG(("node %p", n));
 	assert(c->type == CONTENT_HTML);
 
-	c->data.html.layout = box_create(0, 0, 0, 0, c->data.html.box_pool);
-	c->data.html.layout->type = BOX_BLOCK;
+	root.type = BOX_BLOCK;
+	root.style = NULL;
+	root.next = NULL;
+	root.prev = NULL;
+	root.children = NULL;
+	root.last = NULL;
+	root.parent = NULL;
+	root.float_children = NULL;
+	root.next_float = NULL;
 
 	c->data.html.style = xcalloc(1, sizeof(struct css_style));
 	memcpy(c->data.html.style, &css_base_style, sizeof(struct css_style));
-	c->data.html.style->font_size.value.length.value = option_font_size * 0.1;
+	c->data.html.style->font_size.value.length.value =
+			option_font_size * 0.1;
 	c->data.html.fonts = nsfont_new_set();
 
 	c->data.html.object_count = 0;
 	c->data.html.object = xcalloc(0, sizeof(*c->data.html.object));
 
-	convert_xml_to_box(n, c, c->data.html.style,
-			c->data.html.layout, 0, status);
-	LOG(("normalising"));
-	box_normalise_block(c->data.html.layout->children,
-			c->data.html.box_pool);
+	convert_xml_to_box(n, c, c->data.html.style, &root, 0, status);
+	box_normalise_block(&root, c->data.html.box_pool);
+
+	c->data.html.layout = root.children;
+	c->data.html.layout->parent = NULL;
 }
 
 
@@ -1554,7 +1563,7 @@ void box_dump(struct box * box, unsigned int depth)
 	for (i = 0; i < depth; i++)
 		fprintf(stderr, "  ");
 
-/* 	fprintf(stderr, "%p ", box); */
+	fprintf(stderr, "%p ", box);
 	fprintf(stderr, "x%i y%i w%i h%i ", box->x, box->y, box->width, box->height);
 	if ((unsigned long)box->max_width != UNKNOWN_MAX_WIDTH)
 		fprintf(stderr, "min%i max%i ", box->min_width, box->max_width);
@@ -1593,6 +1602,10 @@ void box_dump(struct box * box, unsigned int depth)
 		fprintf(stderr, " [%s]", box->title);
 	if (box->id != 0)
 		fprintf(stderr, " <%s>", box->id);
+	if (box->float_children)
+		fprintf(stderr, " float_children %p", box->float_children);
+	if (box->next_float)
+		fprintf(stderr, " next_float %p", box->next_float);
 	fprintf(stderr, "\n");
 
 	for (c = box->children; c != 0; c = c->next)
@@ -1740,7 +1753,7 @@ void box_normalise_table_spans( struct box *table )
 					assert( 0 != table_cell->rows );
 					last_column = table_cell->start_column + 1;
 				}
-			}           
+			}
 			rows_left--;
 		}
 	}
@@ -1970,7 +1983,7 @@ static unsigned int calculate_table_row( struct columns *col_info,
 			col_info->spans = xrealloc( col_info->spans,
 					sizeof( *col_info->spans ) * ( cell_end_col + 1 ));
 			col_info->num_columns = cell_end_col;
-        	
+
 			/* Mark new final column as sentinal */
 			col_info->spans[ cell_end_col ].row_span = 0;
 			col_info->spans[ cell_end_col ].auto_row =
@@ -2078,7 +2091,7 @@ static void box_normalise_table_row(struct box *row,
 			if (( col_info->spans[i].auto_column ) && ( 0 == col_info->spans[i].row_span )) {
 				col_info->spans[i].auto_column = false;
 			}
-		} 
+		}
 	}
 	col_info->current_column = 0;
 	col_info->extra = false;
@@ -2922,8 +2935,8 @@ void box_coords(struct box *box, int *x, int *y)
 			} while (!box->float_children);
 		} else
 			box = box->parent;
-		*x += box->x;
-		*y += box->y;
+		*x += box->x - box->scroll_x;
+		*y += box->y - box->scroll_y;
 	}
 }
 
@@ -2932,7 +2945,7 @@ void box_coords(struct box *box, int *x, int *y)
  * Find the boxes at a point.
  *
  * \param  box      box to search children of
- * \param  x	point to find, in global document coordinates
+ * \param  x        point to find, in global document coordinates
  * \param  y        point to find, in global document coordinates
  * \param  box_x    position of box, in global document coordinates, updated
  *                  to position of returned box, if any
@@ -2976,12 +2989,9 @@ struct box *box_at_point(struct box *box, int x, int y,
 
 	/* consider floats first, since they will often overlap other boxes */
 	for (child = box->float_children; child; child = child->next_float) {
-		if (bx + child->x + child->descendant_x0 <= x &&
-				x < bx + child->x + child->descendant_x1 &&
-				by + child->y + child->descendant_y0 <= y &&
-				y < by + child->y + child->descendant_y1) {
-			*box_x += child->x;
-			*box_y += child->y;
+		if (box_contains_point(child, x - bx, y - by)) {
+			*box_x += child->x - child->scroll_x;
+			*box_y += child->y - child->scroll_y;
 			return child;
 		}
 	}
@@ -2990,12 +3000,9 @@ struct box *box_at_point(struct box *box, int x, int y,
 	for (child = box->children; child; child = child->next) {
 		if (box_is_float(child))
 			continue;
-		if (bx + child->x + child->descendant_x0 <= x &&
-				x < bx + child->x + child->descendant_x1 &&
-				by + child->y + child->descendant_y0 <= y &&
-				y < by + child->y + child->descendant_y1) {
-			*box_x += child->x;
-			*box_y += child->y;
+		if (box_contains_point(child, x - bx, y - by)) {
+			*box_x += child->x - child->scroll_x;
+			*box_y += child->y - child->scroll_y;
 			return child;
 		}
 	}
@@ -3004,41 +3011,33 @@ siblings:
 	/* siblings and siblings of ancestors */
 	while (box) {
 		if (!box_is_float(box)) {
-			bx -= box->x;
-			by -= box->y;
+			bx -= box->x - box->scroll_x;
+			by -= box->y - box->scroll_y;
 			for (sibling = box->next; sibling;
 					sibling = sibling->next) {
 				if (box_is_float(sibling))
 					continue;
-				if (bx + sibling->x +
-						sibling->descendant_x0 <= x &&
-						x < bx + sibling->x +
-						sibling->descendant_x1 &&
-						by + sibling->y +
-						sibling->descendant_y0 <= y &&
-						y < by + sibling->y +
-						sibling->descendant_y1) {
-					*box_x = bx + sibling->x;
-					*box_y = by + sibling->y;
+				if (box_contains_point(sibling,
+						x - bx, y - by)) {
+					*box_x = bx + sibling->x -
+							sibling->scroll_x;
+					*box_y = by + sibling->y -
+							sibling->scroll_y;
 					return sibling;
 				}
 			}
 			box = box->parent;
 		} else {
-			bx -= box->x;
-			by -= box->y;
+			bx -= box->x - box->scroll_x;
+			by -= box->y - box->scroll_y;
 			for (sibling = box->next_float; sibling;
 					sibling = sibling->next_float) {
-				if (bx + sibling->x +
-						sibling->descendant_x0 <= x &&
-						x < bx + sibling->x +
-						sibling->descendant_x1 &&
-						by + sibling->y +
-						sibling->descendant_y0 <= y &&
-						y < by + sibling->y +
-						sibling->descendant_y1) {
-					*box_x = bx + sibling->x;
-					*box_y = by + sibling->y;
+				if (box_contains_point(sibling,
+						x - bx, y - by)) {
+					*box_x = bx + sibling->x -
+							sibling->scroll_x;
+					*box_y = by + sibling->y -
+							sibling->scroll_y;
 					return sibling;
 				}
 			}
@@ -3049,6 +3048,39 @@ siblings:
 	}
 
 	return 0;
+}
+
+
+/**
+ * Determine if a point lies within a box.
+ *
+ * \param  box  box to consider
+ * \param  x    coordinate relative to box parent
+ * \param  y    coordinate relative to box parent
+ * \return  true if the point is within the box or a descendant box
+ *
+ * This is a helper function for box_at_point().
+ */
+
+bool box_contains_point(struct box *box, int x, int y)
+{
+	if (box->style && (box->style->overflow == CSS_OVERFLOW_HIDDEN ||
+			box->style->overflow == CSS_OVERFLOW_SCROLL)) {
+		if (box->x <= x &&
+				x < box->x + box->padding[LEFT] + box->width +
+				box->padding[RIGHT] &&
+				box->y <= y &&
+				y < box->y + box->padding[TOP] + box->height +
+				box->padding[BOTTOM])
+			return true;
+	} else {
+		if (box->x + box->descendant_x0 <= x &&
+				x < box->x + box->descendant_x1 &&
+				box->y + box->descendant_y0 <= y &&
+				y < box->y + box->descendant_y1)
+			return true;
+	}
+	return false;
 }
 
 

@@ -23,8 +23,9 @@
 struct box;
 struct browser_window;
 struct content;
-struct object_params;
 struct imagemap;
+struct object_params;
+struct plotters;
 
 /* entries in stylesheet_content */
 #define STYLESHEET_BASE		0	/* base style sheet */
@@ -75,6 +76,9 @@ struct content_html_data {
 	struct browser_window *bw;
 };
 
+/** Render padding and margin box outlines in html_redraw(). */
+extern bool html_redraw_debug;
+
 
 bool html_create(struct content *c, const char *params[]);
 bool html_process_data(struct content *c, char *data, unsigned int size);
@@ -91,7 +95,7 @@ void html_open(struct content *c, struct browser_window *bw,
 		struct object_params *params);
 void html_close(struct content *c);
 
-/* in riscos/htmlredraw.c */
+/* in render/html_redraw.c */
 bool html_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,

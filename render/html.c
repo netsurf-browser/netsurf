@@ -185,7 +185,6 @@ bool html_convert(struct content *c, int width, int height)
 	xmlDoc *document;
 	xmlNode *html, *head;
 	union content_msg_data msg_data;
-	int descendant_width;
 
 	/* finish parsing */
 	htmlParseChunk(c->data.html.parser, "", 0, 1);
@@ -252,21 +251,11 @@ bool html_convert(struct content *c, int width, int height)
 	content_set_status(c, messages_get("Formatting"));
 	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	LOG(("Layout document"));
-	layout_document(c->data.html.layout->children, width,
+	layout_document(c->data.html.layout, width,
 			c->data.html.box_pool);
 	/*box_dump(c->data.html.layout->children, 0);*/
-
-	descendant_width = c->data.html.layout->children->descendant_x1 -
-			   c->data.html.layout->children->descendant_x0;
-
-	LOG(("Available width: %d, Returned Width: %d, Required width: %d", width, c->data.html.layout->children->width, descendant_width));
-
-	if (descendant_width > c->data.html.layout->children->width)
-		c->width = descendant_width;
-	else
-		c->width = c->data.html.layout->children->width;
-
-	c->height = c->data.html.layout->children->height;
+	c->width = c->data.html.layout->descendant_x1;
+	c->height = c->data.html.layout->descendant_y1;
 
 	if (c->active == 0) {
 		c->status = CONTENT_STATUS_DONE;
@@ -881,22 +870,10 @@ void html_stop(struct content *c)
 
 void html_reformat(struct content *c, int width, int height)
 {
-	int descendant_width;
-
-	layout_document(c->data.html.layout->children, width,
+	layout_document(c->data.html.layout, width,
 			c->data.html.box_pool);
-
-	descendant_width = c->data.html.layout->children->descendant_x1 -
-			   c->data.html.layout->children->descendant_x0;
-
-	LOG(("Available width: %d, Returned Width: %d, Required width: %d", width, c->data.html.layout->children->width, descendant_width));
-
-	if (descendant_width > c->data.html.layout->children->width)
-		c->width = descendant_width;
-	else
-		c->width = c->data.html.layout->children->width;
-
-	c->height = c->data.html.layout->children->height;
+	c->width = c->data.html.layout->descendant_x1;
+	c->height = c->data.html.layout->descendant_y1;
 }
 
 
