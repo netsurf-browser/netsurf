@@ -1,5 +1,5 @@
-#!/usr/bin/perl -W
-# $Id: makeenum,v 1.1 2003/04/04 15:19:31 bursa Exp $
+#!/usr/bin/perl
+# $Id: makeenum,v 1.2 2003/06/05 14:33:18 philpem Exp $
 
 $out = shift or die "usage: makeenum leafname";
 
