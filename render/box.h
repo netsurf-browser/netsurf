@@ -2,12 +2,12 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
 
 /** \file
- * Conversion of XML tree to box tree (interface).
+ * Box tree construction and manipulation (interface).
  *
  * This stage of rendering converts a tree of xmlNodes (produced by libxml2)
  * to a tree of struct box. The box tree represents the structure of the
@@ -231,20 +231,21 @@ struct column {
 #define UNKNOWN_MAX_WIDTH INT_MAX
 
 
-bool xml_to_box(xmlNode *n, struct content *c);
-void box_dump(struct box *box, unsigned int depth);
 struct box * box_create(struct css_style *style,
 		const char *href, const char *title,
 		const char *id, pool box_pool);
-void box_add_child(struct box * parent, struct box *child);
+void box_add_child(struct box *parent, struct box *child);
 void box_insert_sibling(struct box *box, struct box *new_box);
 void box_free(struct box *box);
+void box_free_box(struct box *box);
+void box_free_object_params(struct object_params *op);
 void box_coords(struct box *box, int *x, int *y);
 struct box *box_at_point(struct box *box, int x, int y,
 		int *box_x, int *box_y,
 		struct content **content);
 struct box *box_object_at_point(struct content *c, int x, int y);
 struct box *box_find_by_id(struct box *box, const char *id);
+void box_dump(struct box *box, unsigned int depth);
 
 bool box_vscrollbar_present(const struct box *box);
 bool box_hscrollbar_present(const struct box *box);
@@ -255,5 +256,9 @@ void box_scrollbar_dimensions(const struct box *box,
 		int *bar_top, int *bar_height,
 		int *well_width,
 		int *bar_left, int *bar_width);
+
+bool xml_to_box(xmlNode *n, struct content *c);
+
+bool box_normalise_block(struct box *block, pool box_pool);
 
 #endif
