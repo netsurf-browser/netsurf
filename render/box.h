@@ -140,6 +140,25 @@ struct box {
 	int width;   /**< Width of content box (excluding padding etc.). */
 	int height;  /**< Height of content box (excluding padding etc.). */
 
+	/* These four variables determine the maximum extent of a box's
+	 * descendants. They are relative to the x,y coordinates of the box.
+	 *
+	 * Their use depends on the overflow CSS property:
+	 *
+	 * Overflow:	Usage:
+	 * visible	The content of the box is displayed within these
+	 *		dimensions.
+	 * hidden	These are ignored. Content is plotted within the box
+	 *		dimensions.
+	 * scroll	These are used to determine the extent of the
+	 *		scrollable area.
+	 * auto		As "scroll".
+	 */
+	int descendant_x0;  /**< left edge of descendants */
+	int descendant_y0;  /**< top edge of descendants */
+	int descendant_x1;  /**< right edge of descendants */
+	int descendant_y1;  /**< bottom edge of descendants */
+
 	int margin[4];   /**< Margin: TOP, RIGHT, BOTTOM, LEFT. */
 	int padding[4];  /**< Padding: TOP, RIGHT, BOTTOM, LEFT. */
 	int border[4];   /**< Border width: TOP, RIGHT, BOTTOM, LEFT. */

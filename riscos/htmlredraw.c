@@ -258,6 +258,35 @@ void html_redraw_box(struct content *content, struct box * box,
 		}
 	}
 
+	/* handle overflow - horrendously broken atm */
+#if 0
+	if ((box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
+			box->type == BOX_TABLE_CELL || box->object) &&
+			box->style &&
+			box->style->overflow == CSS_OVERFLOW_VISIBLE &&
+			box->descendant_x1 && box->descendant_y1) {
+		LOG(("Box Coords: %d, %d", box->x, box->y));
+		LOG(("Descendants: %d, %d, %d, %d", box->descendant_x0, box->descendant_y0, box->descendant_x1, box->descendant_y1));
+		LOG(("Previous vals: %d, %d, %d, %d", x0, y0, x1, y1));
+		x0 = (box->x + box->descendant_x0) * 2 * scale;
+		y1 = (box->y + box->descendant_y1) * 2 * scale - 1;
+		x1 = (box->x + box->descendant_x1) * 2 * scale - 1;
+		y0 = (box->y + box->descendant_y0) * 2 * scale + 1;
+
+		LOG(("New Coords: %d, %d, %d, %d", x0, y0, x1, y1));
+		LOG(("Clipping:   %ld, %ld, %ld, %ld", clip_x0, clip_y0, clip_x1, clip_y1));
+		/* find intersection of clip rectangle and box */
+		if (x0 < clip_x0) x0 = clip_x0;
+		if (y0 < clip_y0) y0 = clip_y0;
+		if (clip_x1 > x1) x1 = clip_x1;
+		if (clip_y1 > y1) y1 = clip_y1;
+
+		LOG(("Overflow clip: %d, %d, %d, %d", x0, y0, x1, y1));
+		/* clip to it */
+		html_redraw_clip(x0, y0, x1, y1);
+	}
+#endif
+
 	if (box->object) {
 		content_redraw(box->object, x + padding_left, y - padding_top,
 				width, height, x0, y0, x1, y1, scale);

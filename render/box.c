@@ -225,6 +225,8 @@ struct box * box_create(struct css_style * style,
 	box->height = 0;
 	for (i = 0; i != 4; i++)
 		box->margin[i] = box->padding[i] = box->border[i] = 0;
+	box->descendant_x0 = box->descendant_y0 = 0;
+	box->descendant_x1 = box->descendant_y1 = 0;
 	return box;
 }
 
