@@ -58,12 +58,12 @@ bool option_toolbar_show_status = true; \
 bool option_toolbar_show_buttons = true; \
 bool option_toolbar_show_address = true; \
 bool option_toolbar_show_throbber = true; \
-bool option_animate_images = true;
-int option_window_x = 0;
-int option_window_y = 0;
-int option_window_width = 0;
-int option_window_height = 0;
-int option_window_screen_width = 0;
+bool option_animate_images = true; \
+int option_window_x = 0; \
+int option_window_y = 0; \
+int option_window_width = 0; \
+int option_window_height = 0; \
+int option_window_screen_width = 0; \
 int option_window_screen_height = 0;
 
 #define EXTRA_OPTION_TABLE \
