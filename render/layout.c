@@ -749,7 +749,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 			}
 			x += space_before + w;
 /* 			fprintf(stderr, "layout_line:     overflow, forcing\n"); */
-		} else if (x1 - x0 <= x + space_before + w) {
+		} else if (x1 - x0 <= x + space_before + w || space == 0) {
 			/* first word doesn't fit, but full width not available so leave for later */
 			b = split_box;
 			assert(used_height);
@@ -766,6 +766,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 /* 			assert(space != split_box->text); */
 			if (space == 0)
 				space = 1;
+			/* \todo use box pool */
 			c2 = memcpy(xcalloc(1, sizeof (struct box)), split_box,
 					sizeof (struct box));
 			c2->text = xstrdup(split_box->text + space + 1);
