@@ -657,6 +657,7 @@ void css_dump_style(const struct css_style * const style)
 		case CSS_LINE_HEIGHT_INHERIT:  fprintf(stderr, "inherit"); break;
 		default:                       fprintf(stderr, "UNKNOWN"); break;
 	}
+	fprintf(stderr, " %s", css_font_family_name[style->font_family]);
 	fprintf(stderr, "; ");
 	fprintf(stderr, "height: ");
 	switch (style->height.height) {
