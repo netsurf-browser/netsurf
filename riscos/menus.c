@@ -715,7 +715,8 @@ void ro_gui_menu_selection(wimp_selection *selection)
 								current_gui->data.browser.toolbar->status_window =
 										!current_gui->data.browser.toolbar->status_window;
 						}
-						if (ro_theme_update_toolbar(current_gui) || true) {
+						if (ro_theme_update_toolbar(current_gui->data.browser.toolbar,
+								current_gui->window) || true) {
 							wimp_window_state state;
 							state.w = current_gui->window;
 							wimp_get_window_state(&state);
