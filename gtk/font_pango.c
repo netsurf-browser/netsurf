@@ -70,7 +70,7 @@ struct font_data *nsfont_open(struct font_set *set, struct css_style *style)
 
 	data->id = fontdesc;
 	data->size = size;
-	data->space_width = font_width(data, " ", 1);
+	data->space_width = nsfont_width(data, " ", 1);
 
 	return data;
 }

@@ -13,6 +13,7 @@
 #include <gtk/gtk.h>
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
@@ -42,14 +43,18 @@ static gboolean gui_window_url_key_press_event(GtkWidget *widget,
 		GdkEventKey *event, gpointer data);
 static gboolean gui_window_configure_event(GtkWidget *widget,
 		GdkEventConfigure *event, gpointer data);
+static gboolean gui_window_motion_notify_event(GtkWidget *widget,
+		GdkEventMotion *event, gpointer data);
+static gboolean gui_window_button_press_event(GtkWidget *widget,
+		GdkEventButton *event, gpointer data);
 static void html_redraw_box(struct content *content, struct box *box,
 		int x, int y);
 
 
-gui_window *gui_create_browser_window(struct browser_window *bw,
+struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone)
 {
-	gui_window *g;
+	struct gui_window *g;
 	GtkWidget *window;
 	GtkWidget *vbox;
 	GtkWidget *toolbar;
@@ -110,6 +115,11 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_widget_show(scrolled);
 
 	drawing_area = gtk_drawing_area_new();
+	gtk_widget_set_events(drawing_area,
+			GDK_EXPOSURE_MASK |
+			GDK_LEAVE_NOTIFY_MASK |
+			GDK_BUTTON_PRESS_MASK |
+			GDK_POINTER_MOTION_MASK);
 	gtk_widget_modify_bg(drawing_area, GTK_STATE_NORMAL,
 			&((GdkColor) { 0, 0xffff, 0xffff, 0xffff }));
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled),
@@ -132,6 +142,10 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 			G_CALLBACK(gui_window_expose_event), g);
 	g_signal_connect(G_OBJECT(drawing_area), "configure_event",
 			G_CALLBACK(gui_window_configure_event), g);
+	g_signal_connect(G_OBJECT(drawing_area), "motion_notify_event",
+			G_CALLBACK(gui_window_motion_notify_event), g);
+	g_signal_connect(G_OBJECT(drawing_area), "button_press_event",
+			G_CALLBACK(gui_window_button_press_event), g);
 
 	return g;
 }
@@ -140,7 +154,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 gboolean gui_window_expose_event(GtkWidget *widget,
 		GdkEventExpose *event, gpointer data)
 {
-	gui_window *g = data;
+	struct gui_window *g = data;
 	struct content *c = g->bw->current_content;
 
 	if (!c)
@@ -168,7 +182,7 @@ gboolean gui_window_expose_event(GtkWidget *widget,
 gboolean gui_window_url_key_press_event(GtkWidget *widget,
 		GdkEventKey *event, gpointer data)
 {
-	gui_window *g = data;
+	struct gui_window *g = data;
 
 	if (event->keyval != GDK_Return)
 		return FALSE;
@@ -182,7 +196,7 @@ gboolean gui_window_url_key_press_event(GtkWidget *widget,
 gboolean gui_window_configure_event(GtkWidget *widget,
 		GdkEventConfigure *event, gpointer data)
 {
-	gui_window *g = data;
+	struct gui_window *g = data;
 
 	if (gui_in_multitask)
 		return FALSE;
@@ -200,47 +214,76 @@ gboolean gui_window_configure_event(GtkWidget *widget,
 }
 
 
-void gui_window_destroy(gui_window* g)
+gboolean gui_window_motion_notify_event(GtkWidget *widget,
+		GdkEventMotion *event, gpointer data)
+{
+	struct gui_window *g = data;
+
+	browser_window_mouse_click(g->bw, BROWSER_MOUSE_HOVER,
+			event->x, event->y);
+
+	return TRUE;
+}
+
+
+gboolean gui_window_button_press_event(GtkWidget *widget,
+		GdkEventButton *event, gpointer data)
+{
+	struct gui_window *g = data;
+
+	browser_window_mouse_click(g->bw, BROWSER_MOUSE_CLICK_1,
+			event->x, event->y);
+
+	return TRUE;
+}
+
+
+void gui_window_destroy(struct gui_window *g)
 {
 }
 
 
-void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
-		unsigned long x1, unsigned long y1)
+void gui_window_set_title(struct gui_window *g, const char *title)
+{
+	gtk_window_set_title(GTK_WINDOW(g->window), title);
+}
+
+
+void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
 }
 
 
-void gui_window_redraw_window(gui_window* g)
+void gui_window_redraw_window(struct gui_window* g)
 {
 	gtk_widget_queue_draw(g->drawing_area);
 }
 
 
-void gui_window_update_box(gui_window *g, const union content_msg_data *data)
+void gui_window_update_box(struct gui_window *g,
+		const union content_msg_data *data)
 {
 }
 
 
-void gui_window_set_scroll(gui_window* g, unsigned long sx, unsigned long sy)
+void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 }
 
 
-unsigned long gui_window_get_width(gui_window* g)
+int gui_window_get_width(struct gui_window* g)
 {
 	return g->drawing_area->allocation.width;
 }
 
 
-void gui_window_set_extent(gui_window* g, unsigned long width,
-		unsigned long height)
+void gui_window_set_extent(struct gui_window *g, int width, int height)
 {
 	gtk_widget_set_size_request(g->drawing_area, width, height);
 }
 
 
-void gui_window_set_status(gui_window *g, const char *text)
+void gui_window_set_status(struct gui_window *g, const char *text)
 {
 	guint context_id;
 
@@ -256,45 +299,33 @@ void gui_window_set_pointer(gui_pointer_shape shape)
 }
 
 
-void gui_window_set_title(gui_window *g, char *title)
-{
-	gtk_window_set_title(GTK_WINDOW(g->window), title);
-}
-
-
-void gui_window_set_url(gui_window *g, char *url)
+void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	gtk_entry_set_text(GTK_ENTRY(g->url_bar), url);
 }
 
 
-void gui_window_clone_options(struct browser_window *new_bw,
-		struct browser_window *old_bw)
+void gui_window_start_throbber(struct gui_window* g)
 {
 }
 
 
-void gui_window_default_options(struct browser_window *bw)
+void gui_window_stop_throbber(struct gui_window* g)
 {
 }
 
 
-void gui_window_start_throbber(gui_window* g)
-{
-}
-
-
-void gui_window_stop_throbber(gui_window* g)
-{
-}
-
-
-void gui_window_place_caret(gui_window *g, int x, int y, int height)
+void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 {
 }
 
 
 void gui_window_remove_caret(struct gui_window *g)
+{
+}
+
+
+void gui_window_new_content(struct gui_window *g)
 {
 }
 

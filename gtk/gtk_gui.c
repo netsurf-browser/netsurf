@@ -13,6 +13,7 @@
 #include <gtk/gtk.h>
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
@@ -34,7 +35,7 @@ void gui_init(int argc, char** argv)
 void gui_poll(bool active)
 {
 	if (gui_start) {
-		browser_window_create("", 0);
+		browser_window_create("http://netsurf.sourceforge.net/", 0);
 		gui_start = false;
 	}
 
@@ -57,30 +58,33 @@ void gui_quit(void)
 
 
 
-
-gui_window *gui_create_download_window(struct content *content)
+struct gui_download_window *gui_download_window_create(const char *url,
+		const char *mime_type, struct fetch *fetch,
+		unsigned int total_size)
 {
 	return 0;
 }
 
 
-void gui_download_window_update_status(gui_window *g)
+void gui_download_window_data(struct gui_download_window *dw, const char *data,
+		unsigned int size)
 {
 }
 
 
-void gui_download_window_done(gui_window *g)
+void gui_download_window_error(struct gui_download_window *dw,
+		const char *error_msg)
 {
 }
 
 
-void gui_download_window_error(gui_window *g, const char *error)
+void gui_download_window_done(struct gui_download_window *dw)
 {
 }
 
 
-void gui_gadget_combo(struct browser_window* bw, struct form_control* g,
-		unsigned long mx, unsigned long my)
+void gui_create_form_select_menu(struct browser_window *bw,
+		struct form_control *control)
 {
 }
 
@@ -93,9 +97,6 @@ void gui_launch_url(const char *url)
 void warn_user(const char *warning, const char *detail)
 {
 }
-
-
-
 
 
 void html_add_instance(struct content *c, struct browser_window *bw,
@@ -116,18 +117,17 @@ void die(const char * const error)
 }
 
 
+void hotlist_visited(struct content *content)
+{
+}
+
+
 struct history *history_create(void) { return 0; }
 void history_add(struct history *history, struct content *content) {}
 void history_update(struct history *history, struct content *content) {}
 void history_destroy(struct history *history) {}
 void history_back(struct browser_window *bw, struct history *history) {}
 void history_forward(struct browser_window *bw, struct history *history) {}
-
-struct content *about_create(const char *url,
-		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, const char *error),
-		void *p1, void *p2, unsigned long width, unsigned long height)
-{ return 0; }
 
 void gui_401login_open(struct browser_window *bw, struct content *c,
                        char *realm) {}
