@@ -550,8 +550,7 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
 		case ICON_TOOLBAR_HISTORY:
 			ro_gui_history_open(g->data.browser.bw,
 					g->data.browser.bw->history,
-					pointer->pos.x - 200,
-					pointer->pos.y + 100);
+					pointer->pos.x, pointer->pos.y);
 			break;
 		case ICON_TOOLBAR_RELOAD:
 /*			browser_window_open_location_historical(g->data.browser.bw,

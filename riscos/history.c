@@ -52,7 +52,7 @@ struct history {
 };
 
 static struct browser_window *history_bw;
-static struct history *history_current;
+static struct history *history_current = 0;
 wimp_w history_window;
 font_f history_font;
 
@@ -208,6 +208,10 @@ void history_destroy(struct history *history)
 {
 	if (!history)
 		return;
+	if (history_current == history) {
+		wimp_close_window(history_window);
+		history_current = 0;
+	}
 	history_free_entry(history->start);
 	free(history);
 }
@@ -237,7 +241,7 @@ void history_free_entry(struct history_entry *entry)
 void ro_gui_history_init(void)
 {
 	history_window = ro_gui_dialog_create("history");
-	history_font = font_find_font("Homerton.Medium", 128, 128, 0, 0, 0, 0);
+	history_font = font_find_font("Homerton.Medium", 112, 128, 0, 0, 0, 0);
 }
 
 
@@ -261,9 +265,11 @@ void ro_gui_history_open(struct browser_window *bw,
 	bool done = false;
 	unsigned int i, j, max_y = 0;
 	int x;
+	int width, height;
 	struct history_entry *row[SIZE], *row2[SIZE];
 	struct history_entry *he;
 	os_box box = {0, 0, 0, 0};
+	wimp_window_state state;
 
 	if (!history || !history->start)
 		return;
@@ -313,10 +319,19 @@ void ro_gui_history_open(struct browser_window *bw,
 		}
 	}
 
-	box.x1 = FULL_WIDTH * (x - 1);
-	box.y0 = -(FULL_HEIGHT * (max_y + 1));
+	width = FULL_WIDTH * (x - 1);
+	height = FULL_HEIGHT * (max_y + 1);
+
+	box.x1 = width;
+	box.y0 = -height;
 	wimp_set_extent(history_window, &box);
-	wimp_create_menu((wimp_menu *) history_window, wx, wy);
+	state.w = history_window;
+	wimp_get_window_state(&state);
+	state.visible.x0 = wx - width / 2;
+	state.visible.y0 = wy - height / 2;
+	state.visible.x1 = wx + width / 2;
+	state.visible.y1 = wy + height / 2;
+	wimp_open_window((wimp_open *) &state);
 }
 
 
@@ -329,7 +344,6 @@ void ro_gui_history_redraw(wimp_draw *redraw)
 	osbool more;
 
 	more = wimp_redraw_window(redraw);
-	colourtrans_set_gcol(os_COLOUR_WHITE, 0, os_ACTION_OVERWRITE, 0);
 
 	while (more) {
 		ro_gui_history_redraw_tree(history_current->start,
@@ -349,9 +363,22 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 {
 	struct history_entry *c;
 
-	os_plot(os_MOVE_TO, x0 + he->x * FULL_WIDTH + MARGIN,
+/*	os_plot(os_MOVE_TO, x0 + he->x * FULL_WIDTH + MARGIN,
 			y0 - he->y * FULL_HEIGHT - MARGIN);
-	os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, WIDTH, -HEIGHT);
+	os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, WIDTH, -HEIGHT);*/
+
+	if (he == history_current->current)
+		colourtrans_set_gcol(os_COLOUR_RED, 0, os_ACTION_OVERWRITE, 0);
+	else
+		colourtrans_set_gcol(os_COLOUR_MID_DARK_GREY, 0,
+				os_ACTION_OVERWRITE, 0);
+
+	os_plot(os_MOVE_TO, x0 + he->x * FULL_WIDTH + MARGIN - 1,
+			y0 - he->y * FULL_HEIGHT - MARGIN);
+	os_plot(os_PLOT_SOLID | os_PLOT_BY, WIDTH + 1, 0);
+	os_plot(os_PLOT_SOLID | os_PLOT_BY, 0, -HEIGHT - 1);
+	os_plot(os_PLOT_SOLID | os_PLOT_BY, -WIDTH - 1, 0);
+	os_plot(os_PLOT_SOLID | os_PLOT_BY, 0, HEIGHT + 1);
 
 	if (he->sprite_area) {
 	        unsigned int size;
@@ -386,6 +413,7 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 		xfree(table);
 	}
 
+/*
 	if (he == history_current->current)
 		wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_RED);
 	else
@@ -396,6 +424,10 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 			x0 + he->x * FULL_WIDTH + (FULL_WIDTH - he->width) / 2,
 			y0 - he->y * FULL_HEIGHT - MARGIN - 24,
 			0, 0, 0);
+*/
+
+	colourtrans_set_gcol(os_COLOUR_MID_DARK_GREY, 0,
+			os_ACTION_OVERWRITE, 0);
 
 	for (c = he->forward; c; c = c->next) {
 		if (c->x == -1)
@@ -429,7 +461,8 @@ void ro_gui_history_click(wimp_pointer *pointer)
 	he = ro_gui_history_click_find(history_current->start, x, y);
 	if (he) {
 		history_current->current = he;
-		wimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+		wimp_close_window(history_window);
+		history_current = 0;
 		browser_window_go_post(history_bw, he->url, 0, 0, false);
 	}
 }
