@@ -31,7 +31,10 @@ void die(const char * const error)
 char * strip(char * const s)
 {
 	size_t i;
-	for (i = strlen(s); i != 0 && isspace(s[i-1]); i--)
+	for (i = strlen(s);
+			i != 0 && (s[i - 1] == ' ' || s[i - 1] == '\n' ||
+			s[i - 1] == '\r' || s[i - 1] == '\t');
+			i--)
 		;
 	s[i] = 0;
 	return s + strspn(s, " \t\r\n");
@@ -102,9 +105,11 @@ char * squash_whitespace(const char * s)
 	int i = 0, j = 0;
 	if (c == 0) die("Out of memory in squash_whitespace()");
 	do {
-		if (isspace(s[i])) {
+		if (s[i] == ' ' || s[i] == '\n' || s[i] == '\r' ||
+				s[i] == '\t') {
 			c[j++] = ' ';
-			while (s[i] != 0 && isspace(s[i]))
+			while (s[i] == ' ' || s[i] == '\n' || s[i] == '\r' ||
+					s[i] == '\t')
 				i++;
 		}
 		c[j++] = s[i++];
