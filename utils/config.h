@@ -26,9 +26,7 @@
 #define WITH_JPEG
 #define WITH_MNG
 #define WITH_PNG
-#if defined(riscos) || defined(ncos) || defined(debug)
-    #define WITH_GIF
-#endif
+#define WITH_GIF
 #if defined(riscos) || defined(ncos)
     #define WITH_DRAW
     #define WITH_SPRITE

@@ -13,9 +13,6 @@
 #include "gifread.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/utils/log.h"
-#include "oslib/osspriteop.h"
-#include "oslib/osfile.h"
-
 
 /*	READING GIF FILES
 	=================
@@ -87,11 +84,11 @@ static int max_code, max_code_size;
 static int clear_code, end_code;
 static int curbit, lastbit, get_done, last_byte;
 static int return_clear;
-static int zero_data_block = FALSE;
+static bool zero_data_block = false;
 
 /*	Whether to clear the decoded image rather than plot
 */
-static int clear_image = FALSE;
+static bool clear_image = false;
 
 
 /*	Initialises any workspace held by the animation and attempts to decode
@@ -166,7 +163,7 @@ int gif_initialise(struct gif_animation *gif) {
 		gif->dirty_frame = -1;
 		gif->loop_count = 1;
 		gif_data += 7;
-		
+
 		/*	Some broken GIFs report the size as the screen size they were created in. As
 			such, we detect for the common cases and set the sizes as 0 if they are found
 			which results in the GIF being the maximum size of the frames.
@@ -615,9 +612,9 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 	*/
 	if (!clear_image) {
 		if (gif->decoded_frame == gif->dirty_frame) {
-			clear_image = TRUE;
+			clear_image = true;
 			if (frame != 0) gif_decode_frame(gif, gif->dirty_frame);
-			clear_image = FALSE;
+			clear_image = false;
 		}
 		gif->dirty_frame = -1;
 	}
@@ -839,7 +836,7 @@ gif_decode_frame_exit:
 		if ((gif_bytes < 1) || (gif_data[0] == 0x3b)) more_images = 0;
 		gif->buffer_position++;
 	}
-	
+
 	/*	Check if we should test for optimisation
 	*/
 	if (gif->frames[frame].virgin) {

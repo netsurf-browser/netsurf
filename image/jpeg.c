@@ -121,7 +121,7 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 			scanlines[0][i * 4 + 0] = r;
 			scanlines[0][i * 4 + 1] = g;
 			scanlines[0][i * 4 + 2] = b;
-/*			scanlines[0][i * 4 + 3] = 0xff; */
+			scanlines[0][i * 4 + 3] = 0xff;
 		}
 #endif
 	} while (cinfo.output_scanline != cinfo.output_height);

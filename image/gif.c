@@ -10,8 +10,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "oslib/osfile.h"
-#include "oslib/osspriteop.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
