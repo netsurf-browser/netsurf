@@ -5,13 +5,13 @@
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
+//#define NDEBUG
+
 #include <assert.h>
 #include <string.h>
 #include "netsurf/desktop/401login.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
-
-#define NDEBUG
 
 void login_list_dump(void);
 
@@ -27,7 +27,7 @@ static struct login *loginlist = &login;
 void login_list_add(char *host, char* logindets) {
 
   struct login *nli = xcalloc(1, sizeof(*nli));
-  char *temp = xstrdup(host);
+  char *temp = get_host_from_url(host);
   char *i;
 
   /* Go back to the path base ie strip the document name
@@ -35,9 +35,14 @@ void login_list_add(char *host, char* logindets) {
    *     http://www.blah.com/blah/
    * This does, however, mean that directories MUST have a '/' at the end
    */
-  if (temp[strlen(temp)-1] != '/') {
-    i = strrchr(temp, '/');
-    temp[(i-temp)+1] = 0;
+  if (strlen(temp) < strlen(host)) {
+
+    xfree(temp);
+    temp = xstrdup(host);
+    if (temp[strlen(temp)-1] != '/') {
+      i = strrchr(temp, '/');
+      temp[(i-temp)+1] = 0;
+    }
   }
 
   nli->host = xstrdup(temp);
@@ -47,7 +52,7 @@ void login_list_add(char *host, char* logindets) {
   loginlist->prev->next = nli;
   loginlist->prev = nli;
 
-  LOG(("Adding %s : %s", temp, logindets));
+  LOG(("Adding %s", temp));
 #ifndef NDEBUG
   login_list_dump();
 #endif
@@ -61,13 +66,18 @@ struct login *login_list_get(char *host) {
 
   struct login *nli;
   char *temp, *temphost;
-  char* i;
+  char *i;
 
   if (host == NULL)
     return NULL;
 
   temphost = get_host_from_url(host);
   temp = xstrdup(host);
+
+  if (strlen(temphost) > strlen(temp)) {
+    LOG(("here"));
+    temp = get_host_from_url(host);
+  }
 
   /* Work backwards through the path, directory at at time.
    * Finds the closest match.
@@ -76,7 +86,7 @@ struct login *login_list_get(char *host) {
    * This allows multiple realms (and login details) per host.
    * Only one set of login details per realm are allowed.
    */
-  while (strcasecmp(temp, temphost) != 0) {
+   do {
 
     LOG(("%s, %d", temp, strlen(temp)));
 
@@ -90,14 +100,19 @@ struct login *login_list_get(char *host) {
 
     i = strrchr(temp, '/');
 
-    temp[(i-temp)+1] = 0;
+    if (temp[(i-temp)-1] != '/') /* reached the scheme? */
+      temp[(i-temp)+1] = 0;
+    else {
+      xfree(temphost);
+      return NULL;
+    }
 
     if (nli != loginlist) {
       LOG(("Got %s", nli->host));
       xfree(temphost);
       return nli;
     }
-  }
+  } while (strcasecmp(temp, temphost) != 0);
 
   xfree(temphost);
   return NULL;
