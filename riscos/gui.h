@@ -40,7 +40,7 @@ extern wimp_menu *current_menu;
 extern osspriteop_area *gui_sprites;
 extern struct toolbar *hotlist_toolbar;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
-extern bool print_active;
+extern bool print_active, print_text_black;
 
 typedef enum {
 	GUI_SAVE_SOURCE,
@@ -382,5 +382,6 @@ bool ro_gui_print_keypress(wimp_key *key);
 #define ICON_PRINT_COPIES_UP 14
 #define ICON_PRINT_CANCEL 15
 #define ICON_PRINT_PRINT 16
+#define ICON_PRINT_TEXT_BLACK 20
 
 #endif

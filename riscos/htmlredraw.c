@@ -363,7 +363,9 @@ bool html_redraw_box(struct box *box,
 	} else if (box->gadget && box->gadget->type == GADGET_FILE) {
 		error = xcolourtrans_set_font_colours(box->font->handle,
 				current_background_color << 8,
-				box->style->color << 8, 14, 0, 0, 0);
+				print_text_black ? os_COLOUR_BLACK :
+						   box->style->color << 8,
+				14, 0, 0, 0);
 		if (error) {
 			LOG(("xcolourtrans_set_font_colours: 0x%x: %s",
 					error->errnum, error->errmess));
@@ -377,7 +379,9 @@ bool html_redraw_box(struct box *box,
 
 		error = xcolourtrans_set_font_colours(box->font->handle,
 				current_background_color << 8,
-				box->style->color << 8, 14, 0, 0, 0);
+				print_text_black ? os_COLOUR_BLACK :
+						   box->style->color << 8,
+				14, 0, 0, 0);
 		if (error) {
 			LOG(("xcolourtrans_set_font_colours: 0x%x: %s",
 					error->errnum, error->errmess));
@@ -385,7 +389,7 @@ bool html_redraw_box(struct box *box,
 		}
 
 		/* antialias colour for under/overline */
-		colour = box->style->color;
+		colour = print_text_black ? os_COLOUR_BLACK : box->style->color;
 		colour = ((((colour >> 16) + (current_background_color >> 16)) / 2) << 16)
 				| (((((colour >> 8) & 0xff) +
 				     ((current_background_color >> 8) & 0xff)) / 2) << 8)

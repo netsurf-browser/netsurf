@@ -40,6 +40,7 @@
 /* extern globals */
 struct gui_window *print_current_window = 0;
 bool print_active = false;
+bool print_text_black = false;
 
 /* static globals */
 static int print_prev_message = 0;
@@ -107,6 +108,8 @@ void ro_gui_print_open(struct gui_window *g, int x, int y, bool sub_menu, bool k
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_UPRIGHT, true);
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_SIDEWAYS, false);
 
+	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_TEXT_BLACK, false);
+
 	ro_gui_set_icon_integer(dialog_print, ICON_PRINT_COPIES, 1);
 
 	if (!printers_exists) {
@@ -169,6 +172,7 @@ void ro_gui_print_click(wimp_pointer *pointer)
 			break;
 		case ICON_PRINT_PRINT:
 			print_in_background = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_IN_BACKGROUND);
+			print_text_black = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_TEXT_BLACK);
 			print_num_copies = copies;
 			if (ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_SHEETS))
 				print_max_sheets = sheets;
@@ -213,6 +217,7 @@ bool ro_gui_print_keypress(wimp_key *key)
 				return true;
 
 			print_in_background = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_IN_BACKGROUND);
+			print_text_black = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_TEXT_BLACK);
 			print_num_copies = atoi(ro_gui_get_icon_string(dialog_print, ICON_PRINT_COPIES));
 			if (ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_SHEETS))
 				print_max_sheets = atoi(ro_gui_get_icon_string(dialog_print, ICON_PRINT_SHEETS_VALUE));
@@ -454,6 +459,7 @@ void print_cleanup(void)
 		print_current_window->option.background_images =
 							print_bg_images;
 	print_current_window = 0;
+	print_text_black = false;
 	print_prev_message = 0;
 	print_max_sheets = -1;
 	xwimp_create_menu((wimp_menu *)-1, 0, 0);
