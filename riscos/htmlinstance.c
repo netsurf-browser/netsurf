@@ -10,7 +10,6 @@
 #include "netsurf/desktop/browser.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/html.h"
-#include "netsurf/riscos/frames.h"
 #include "netsurf/utils/log.h"
 
 void html_add_instance(struct content *c, struct browser_window *bw,
@@ -21,16 +20,7 @@ void html_add_instance(struct content *c, struct browser_window *bw,
 	for (i = 0; i != c->data.html.object_count; i++) {
 		if (c->data.html.object[i].content == 0)
 			continue;
-#ifdef WITH_FRAMES
-		if (c->data.html.object[i].content->type == CONTENT_HTML)
-		        frame_add_instance(c->data.html.object[i].content,
-				bw, c,
-				c->data.html.object[i].box,
-				c->data.html.object[i].box->object_params,
-				&c->data.html.object[i].box->object_state);
-		else
-#endif
-                	content_add_instance(c->data.html.object[i].content,
+               	content_add_instance(c->data.html.object[i].content,
 				bw, c,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params,
@@ -47,16 +37,7 @@ void html_reshape_instance(struct content *c, struct browser_window *bw,
 	for (i = 0; i != c->data.html.object_count; i++) {
 		if (c->data.html.object[i].content == 0)
 			continue;
-#ifdef WITH_FRAMES
-		if (c->data.html.object[i].content->type == CONTENT_HTML)
-		        frame_reshape_instance(c->data.html.object[i].content,
-				bw, c,
-				c->data.html.object[i].box,
-				c->data.html.object[i].box->object_params,
-				&c->data.html.object[i].box->object_state);
-		else
-#endif
-		        content_reshape_instance(c->data.html.object[i].content,
+	        content_reshape_instance(c->data.html.object[i].content,
 				bw, c,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params,
@@ -72,16 +53,7 @@ void html_remove_instance(struct content *c, struct browser_window *bw,
 	for (i = 0; i != c->data.html.object_count; i++) {
 		if (c->data.html.object[i].content == 0)
 			continue;
-#ifdef WITH_FRAMES
-		if (c->data.html.object[i].content->type == CONTENT_HTML)
-		        frame_remove_instance(c->data.html.object[i].content,
-				bw, c,
-				c->data.html.object[i].box,
-				c->data.html.object[i].box->object_params,
-				&c->data.html.object[i].box->object_state);
-		else
-#endif
-                	content_remove_instance(c->data.html.object[i].content,
+               	content_remove_instance(c->data.html.object[i].content,
 				bw, c,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params,
