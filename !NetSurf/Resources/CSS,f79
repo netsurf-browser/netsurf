@@ -79,17 +79,17 @@ colgroup { display: table-column-group; }
 col { display: table-column; }
 
 tr { display: table-row; vertical-align: middle; }
-th { display: table-cell; font-weight: bold; vertical-align: middle;}
-td { display: table-cell; text-align: left; vertical-align: middle;}
+th { display: table-cell; font-weight: bold; vertical-align: middle; }
+td { display: table-cell; text-align: left; vertical-align: middle; }
 th[nowrap], td[nowrap] { white-space: nowrap; }
 
 col[valign=top], colgroup[valign=top], tbody[valign=top], td[valign=top], tfoot[valign=top], th[valign=top], thead[valign=top], tr[valign=top] { vertical-align: top; }
 col[valign=middle], colgroup[valign=middle], tbody[valign=middle], td[valign=middle], tfoot[valign=middle], th[valign=middle], thead[valign=middle], tr[valign=middle] { vertical-align: middle; }
 col[valign=bottom], colgroup[valign=bottom], tbody[valign=bottom], td[valign=bottom], tfoot[valign=bottom], th[valign=bottom], thead[valign=bottom], tr[valign=bottom] { vertical-align: bottom; }
 
-tr[align=left] > td, tr[align=left] > th { text-align: left }
-tr[align=center] > td, tr[align=center] > th { text-align: center }
-tr[align=right] > td, tr[align=right] > th { text-align: right }
+tr[align=left] > td, tr[align=left] > th { text-align: left; }
+tr[align=center] > td, tr[align=center] > th { text-align: center; }
+tr[align=right] > td, tr[align=right] > th { text-align: right; }
 
 tr[valign=top] > td, tr[valign=top] > th { vertical-align: top; }
 tr[valign=middle] > td, tr[valign=middle] > th { vertical-align: middle; }
