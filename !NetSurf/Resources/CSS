@@ -1,0 +1,34 @@
+html { font-size: medium }
+
+address, blockquote, body, br, dd, div, 
+dl, dt, fieldset, form,
+h1, h2, h3, h4, h5, h6, html,
+object, ol, p, ul,
+hr, menu, pre   { display: block }
+/* a, abbr, acronym, b, code,
+em, i, q, s, strong, u, font, span,
+var             { display: inline } */
+li              { display: /* list-item */ block }
+head            { display: none }
+table           { display: table }
+tr              { display: table-row }
+thead           { display: table-header-group }
+tbody           { display: table-row-group }
+tfoot           { display: table-footer-group }
+col             { display: table-column }
+colgroup        { display: table-column-group }
+td, th          { display: table-cell }
+caption         { display: table-caption }
+img { display:none}
+
+h1 { font-size: xx-large; font-weight: bold; }
+h2 { font-size: x-large; }
+h3 { font-size: large; font-weight: bold; }
+h4 { font-size: medium; font-weight: bold; }
+h5 { font-size: medium; font-style: italic; }
+h6 { font-size: medium; font-style: italic; }
+b { font-weight: bold; }
+i { font-style: italic; }
+a { font-weight: bold; font-style: italic; }
+
+center { text-align: center; }
