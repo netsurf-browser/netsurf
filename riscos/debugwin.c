@@ -26,6 +26,7 @@ void ro_gui_debugwin_open(void)
 {
 	ro_gui_debugwin_resize();
 	ro_gui_dialog_open(dialog_debug);
+	schedule_remove(ro_gui_debugwin_update, 0);
 	schedule(DEBUGWIN_UPDATE, ro_gui_debugwin_update, 0);
 }
 
