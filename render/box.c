@@ -948,7 +948,7 @@ struct box_result box_select(xmlNode *n, struct box_status *status,
 	xmlNode *c, *c2;
 
 	gadget = form_new_control(GADGET_SELECT);
-	if (gadget)
+	if (!gadget)
 		return (struct box_result) {0, false, true};
 
 	if (status->current_form)
@@ -1050,7 +1050,8 @@ void add_option(xmlNode* n, struct form_control* current_select, char *text)
 	current_select->data.select.last_item = option;
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
-		option->value = s;
+		option->value = xstrdup(s);
+		xmlFree(s);
 	} else {
 		option->value = xstrdup(text);
 	}
