@@ -736,6 +736,9 @@ struct result box_image(xmlNode *n, struct status *status,
 	if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "src")))
 		return (struct result) {box, 0};
 
+        /* remove leading and trailing whitespace */
+        s = strip(s);
+
 	url = url_join(s, status->content->data.html.base_url);
 	if (!url)
 		return (struct result) {box, 0};
