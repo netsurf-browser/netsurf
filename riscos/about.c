@@ -88,8 +88,8 @@ void about_create(void) {
   abt->plugd = 0;
 
   /* Page header */
-  buf = xcalloc(strlen(pabouthdr) + 20, sizeof(char));
-  sprintf(buf, pabouthdr, netsurf_version);
+  buf = xcalloc(strlen(pabouthdr) + 40, sizeof(char));
+  snprintf(buf, strlen(pabouthdr) + 40, pabouthdr, netsurf_version);
   abt->header = xstrdup(buf);
   xfree(buf);
 
