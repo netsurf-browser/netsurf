@@ -15,6 +15,7 @@
 #include "oslib/wimp.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/save_draw.h"
+#include "netsurf/riscos/save_html.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -111,8 +112,11 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 
 	switch (gui_current_save_type) {
 		case GUI_SAVE_SOURCE:
-			warn_user("Not implemented yet!");
-			return;
+		        if (!current_gui->data.browser.bw->current_content)
+		                return;
+			save_as_html(current_gui->data.browser.bw->
+			                current_content, path);
+			break;
 
 		case GUI_SAVE_DRAW:
 			if (!current_gui->data.browser.bw->current_content)
