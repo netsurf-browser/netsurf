@@ -2572,6 +2572,8 @@ struct box_multi_length *box_parse_multi_lengths(const char *s,
 		return 0;
 
 	for (i = 0; i != n; i++) {
+		while (isspace(*s))
+			s++;
 		length[i].value = strtof(s, &end);
 		if (length[i].value <= 0)
 			length[i].value = 1;
