@@ -1,4 +1,4 @@
-$Id: TODO-HTML,v 1.3 2003/07/07 22:10:51 jmb Exp $
+$Id: TODO-HTML,v 1.4 2003/09/03 21:58:54 jmb Exp $
 
 TODO-HTML file for NetSurf. 
 
@@ -41,3 +41,6 @@ Forms:
 Frames:
 	Actually support them. NetSurf passes the test suite's 
 	single test for non-frames-supporting browsers.
+	
+General:
+	height="some%" - 13.7.1

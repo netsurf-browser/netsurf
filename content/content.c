@@ -63,7 +63,7 @@ struct handler_entry {
 static const struct handler_entry handler_map[] = {
 	{html_create, html_process_data, html_convert, html_revive,
 		html_reformat, html_destroy, html_redraw,
-		html_add_instance, html_remove_instance, 0},
+		html_add_instance, html_remove_instance, html_reshape_instance},
 	{textplain_create, textplain_process_data, textplain_convert,
 		textplain_revive, textplain_reformat, textplain_destroy, 0, 0, 0, 0},
 #ifdef riscos

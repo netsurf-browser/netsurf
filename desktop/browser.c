@@ -326,6 +326,7 @@ void browser_window_callback(content_msg msg, struct content *c,
       if (bw->current_content->status == CONTENT_STATUS_DONE) {
         content_add_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
         browser_window_reformat(bw, 0);
+        content_reshape_instance(bw->current_content, bw, 0, 0, 0, &bw->current_content_state);
         sprintf(status, "Page complete (%gs)", ((float) (clock() - bw->time0)) / CLOCKS_PER_SEC);
         browser_window_set_status(bw, status);
         browser_window_stop_throbber(bw);

@@ -7,8 +7,7 @@
 
 /*
  * TODO:
- *       - Reshaping plugin (ie. call plugin_reshape_instance from somewhere)
- *                 [Plugin_Reshape (&4d544), Plugin_Reshape_Request (&4d545)]
+ *       - Reshaping plugin by request [Plugin_Reshape_Request (&4d545)]
  *       - Finish off stream protocol implementation
  *             [Plugin_Stream_Write (&4d54a), Plugin_Stream_Written (&4d54b)]
  *       - Parse and act upon the rest of the Plugin_Opening flags
@@ -19,7 +18,7 @@
  *       - Handle standalone objects
  */
 
-#define NDEBUG
+#undef NDEBUG
 
 #include <assert.h>
 #include <ctype.h>
@@ -134,7 +133,6 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
         char sysvar[40];
         char *varval;
         os_error *e;
-//        wimp_message *m = xcalloc(256, sizeof(char));
         wimp_message m;
         plugin_message_open *pmo;
         os_box b;
@@ -150,7 +148,6 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
         	        "Cannot handle standalone objects at this time");
         	gui_window_set_status(bw->window,
         	"Plugin Error: Cannot handle standalone objects at this time");
-//        	xfree(m);
         	xfree(npm);
         	xfree(npl);
         	return;
@@ -193,7 +190,6 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
         offset = offset + strlen(params->filename) + 1;
         if (offset > 235) {
           LOG(("filename too long"));
-//          xfree(m);
           xfree(npm);
        	  xfree(npl);
           return;
@@ -223,7 +219,6 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
                 flags = plugin_process_opening(params, temp);
                 plugin_remove_message_from_linked_list(temp->reply);
                 plugin_remove_message_from_linked_list(temp);
-//                xfree(m);
                 xfree(npm);
         	xfree(npl);
         } else {
@@ -253,7 +248,6 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
                        flags = plugin_process_opening(params, temp);
                        plugin_remove_message_from_linked_list(temp->reply);
                        plugin_remove_message_from_linked_list(temp);
-//                       xfree(m);
                        xfree(npm);
                        xfree(npl);
                } else {
@@ -261,7 +255,6 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
                        /* no reply so give up */
                        LOG(("No reply to message %p", temp));
                        plugin_remove_message_from_linked_list(temp);
-//                       xfree(m);
                        xfree(npm);
                        xfree(npl);
                        return;
@@ -327,7 +320,6 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
                    struct content *page, struct box *box,
                    struct object_params *params, void **state)
 {
-//        wimp_message *m = xcalloc(256, sizeof(char));
         wimp_message m;
         plugin_message_close *pmc;
         struct plugin_message *temp;
@@ -335,7 +327,6 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
 
 	if (params == 0) {
 
-//	        xfree(m);
 	        return;
 	}
 
@@ -352,7 +343,6 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
 	xwimp_send_message(wimp_USER_MESSAGE_RECORDED, &m,
 	                   (wimp_t)params->plugin_task);
 
-//	xfree(m);
 
 	while (temp == 0)
 	        gui_poll();
@@ -392,15 +382,19 @@ void plugin_reshape_instance(struct content *c, struct browser_window *bw,
    * Therefore, broadcast a Message_PlugIn_Reshape (&4D544) with the values
    * given to us.
    */
-//        wimp_message *m = xcalloc(256, sizeof(char));
         wimp_message m;
         plugin_message_reshape *pmr;
         os_box bbox;
+        unsigned long x, y;
 
-        bbox.x0 = box->x;
-        bbox.y0 = box->y;
-        bbox.x1 = (box->x + box->width);
-        bbox.y1 = (box->y + box->height);
+        box_coords(box, (unsigned long*)&x, (unsigned long*)&y);
+        bbox.x0 = ((int)x << 1);
+        bbox.y1 = -(((int)y << 1));
+        bbox.x1 = (bbox.x0 + (box->width << 1));
+        bbox.y0 = (bbox.y1 - (box->height << 1));
+
+        LOG(("Box w, h: %ld %ld", box->width, box->height));
+        LOG(("BBox: [(%d,%d),(%d,%d)]", bbox.x0, bbox.y0, bbox.x1, bbox.y1));
 
         pmr = (plugin_message_reshape*)&m.data;
         pmr->flags = 0;
@@ -409,16 +403,13 @@ void plugin_reshape_instance(struct content *c, struct browser_window *bw,
         pmr->parent_window = (wimp_w) bw->window->data.browser.window;
         pmr->bbox = bbox;
 
-        m.size = 36;
+        m.size = 52;
         m.your_ref = 0;
         m.action = message_PLUG_IN_RESHAPE;
 
         LOG(("Sending Message &4D544"));
         xwimp_send_message(wimp_USER_MESSAGE, &m, (wimp_t)params->plugin_task);
 
-//        xfree(m);
-
-        LOG(("plugin_reshape_instance"));
 }
 
 
@@ -570,15 +561,17 @@ void plugin_write_parameters_file(struct object_params *params)
         /* otherwise, we check the data attribute */
         else if(params->data !=0 && params->type != 0) {
 
-          pilist = plugin_add_item_to_pilist(pilist, 1, "DATA", params->data,
-                                    params->type);
+          pilist = plugin_add_item_to_pilist(pilist, 1, "DATA",
+                                             params->data,
+                                             params->type);
         }
 
         /* if codebase is specified, write it as well */
         if(params->codebase != 0) {
 
-                pilist = plugin_add_item_to_pilist(pilist, 1, "CODEBASE",
-                                          params->codebase, NULL);
+                pilist = plugin_add_item_to_pilist(pilist, 1,
+                                                   "CODEBASE",
+                                                   params->codebase, NULL);
 
         }
 
@@ -614,23 +607,28 @@ void plugin_write_parameters_file(struct object_params *params)
                 xfree(temp);
          }
 
-         /* Now write mandatory special parameters
+         /* Now write mandatory special parameters */
 
          /* BASEHREF */
-         pilist = plugin_add_item_to_pilist(pilist, 4, "BASEHREF", params->basehref, NULL);
+         pilist = plugin_add_item_to_pilist(pilist, 4, "BASEHREF",
+                                            params->basehref, NULL);
 
          /* USERAGENT */
-         pilist = plugin_add_item_to_pilist(pilist, 4, "USERAGENT", "NetSurf", NULL);
+         pilist = plugin_add_item_to_pilist(pilist, 4, "USERAGENT",
+                                            "NetSurf", NULL);
 
          /* UAVERSION */
-         pilist = plugin_add_item_to_pilist(pilist, 4, "UAVERSION", "0.01", NULL);
+         pilist = plugin_add_item_to_pilist(pilist, 4, "UAVERSION",
+                                            "0.01", NULL);
 
          /* APIVERSION */
-         pilist = plugin_add_item_to_pilist(pilist, 4, "APIVERSION", "1.10", NULL);
+         pilist = plugin_add_item_to_pilist(pilist, 4, "APIVERSION",
+                                            "1.10", NULL);
 
          /* BGCOLOR - needs fixing to work properly.
           *           Currently, it assumes FFFFFF00 (BBGGRR00) */
-         pilist = plugin_add_item_to_pilist(pilist, 4, "BGCOLOR", "FFFFFF00", NULL);
+         pilist = plugin_add_item_to_pilist(pilist, 4, "BGCOLOR",
+                                            "FFFFFF00", NULL);
 
          /* Write file */
          fp = fopen(params->filename, "wb+");
@@ -736,7 +734,6 @@ struct plugin_param_item *plugin_add_item_to_pilist(struct plugin_param_item *pi
  */
 void plugin_create_stream(struct browser_window *bw, struct object_params *params, struct content *c) {
 
-//        wimp_message *m = xcalloc(256, sizeof(char));
         wimp_message m;
         plugin_message_stream_new *pmsn;
         struct plugin_message *temp;
@@ -758,7 +755,6 @@ void plugin_create_stream(struct browser_window *bw, struct object_params *param
         offset = offset + strlen(c->url) + 1;
         if (offset > 235) {
           LOG(("URL too long"));
-//          xfree(m);
           return;
         }
 
@@ -768,7 +764,6 @@ void plugin_create_stream(struct browser_window *bw, struct object_params *param
         offset = offset + strlen(c->mime_type) + 1;
         if (offset > 235) {
           LOG(("mime_type too long"));
-//          xfree(m);
           return;
         }
         pmsn->target_window.offset = 0;
@@ -798,7 +793,6 @@ void plugin_create_stream(struct browser_window *bw, struct object_params *param
         /* clean up */
         plugin_remove_message_from_linked_list(temp->reply);
         plugin_remove_message_from_linked_list(temp);
-//        xfree(m);
 }
 
 /**
@@ -807,7 +801,6 @@ void plugin_create_stream(struct browser_window *bw, struct object_params *param
  */
 void plugin_write_stream_as_file(struct browser_window *bw, struct object_params *params, struct content *c) {
 
-//        wimp_message *m = xcalloc(256, sizeof(char));
         wimp_message m;
         plugin_message_stream_as_file *pmsaf;
         int offset = 0;
@@ -832,7 +825,6 @@ void plugin_write_stream_as_file(struct browser_window *bw, struct object_params
         offset = offset + strlen(c->url) + 1;
         if (offset > 235) {
           LOG(("URL too long"));
-//          xfree(m);
           return;
         }
 
@@ -844,7 +836,6 @@ void plugin_write_stream_as_file(struct browser_window *bw, struct object_params
         offset = offset + strlen(filename) + 1;
         if (offset > 235) {
           LOG(("filename too long"));
-//          xfree(m);
           return;
         }
 
@@ -859,7 +850,6 @@ void plugin_write_stream_as_file(struct browser_window *bw, struct object_params
 
         LOG(("Sending message &4D54C"));
         xwimp_send_message(wimp_USER_MESSAGE, &m, (wimp_t)params->plugin_task);
-//        xfree(m);
 }
 
 /**
@@ -868,7 +858,6 @@ void plugin_write_stream_as_file(struct browser_window *bw, struct object_params
  */
 void plugin_destroy_stream(struct browser_window *bw, struct object_params *params, struct content *c) {
 
-//        wimp_message *m = xcalloc(256, sizeof(char));
         wimp_message m;
         plugin_message_stream_destroy *pmsd;
         int offset = 0;
@@ -892,7 +881,6 @@ void plugin_destroy_stream(struct browser_window *bw, struct object_params *para
         offset = offset + strlen(c->url) + 1;
         if (offset > 235) {
           LOG(("URL too long"));
-//          xfree(m);
           return;
         }
 
@@ -902,7 +890,6 @@ void plugin_destroy_stream(struct browser_window *bw, struct object_params *para
 
         LOG(("Sending message &4D549"));
         xwimp_send_message(wimp_USER_MESSAGE, &m, (wimp_t)params->plugin_task);
-//        xfree(m);
 }
 
 /*-------------------------------------------------------------------------*/
