@@ -3443,11 +3443,11 @@ bool box_contains_point(struct box *box, int x, int y)
 {
 	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
 		if (box->x <= x &&
-				x < box->x + box->padding[LEFT] + box->width +
-				box->padding[RIGHT] &&
+				x < box->x + box->padding[LEFT] + box->border[LEFT] +box->width +
+				box->border[RIGHT] + box->padding[RIGHT] &&
 				box->y <= y &&
-				y < box->y + box->padding[TOP] + box->height +
-				box->padding[BOTTOM])
+				y < box->y + box->padding[TOP] + box->border[TOP] + box->height +
+				box->border[BOTTOM] + box->padding[BOTTOM])
 			return true;
 	} else {
 		if (box->x + box->descendant_x0 <= x &&
