@@ -433,6 +433,9 @@ colour parse_colour(const struct css_node * const v)
 	unsigned int r, g, b;
 	struct css_colour_entry *col;
 	char colour_name[12];
+	const char *u;
+	char sb[5];
+	int i;
 
 	switch (v->type) {
 		case CSS_NODE_HASH:
@@ -446,7 +449,57 @@ colour parse_colour(const struct css_node * const v)
 			break;
 
 		case CSS_NODE_FUNCTION:
-			/* TODO: rgb(r, g, b) */
+			for (u = v->data+4;
+			        *u == ' ' || *u == '\t' || *u == '\r' ||
+				*u == '\n' || *u == '\f';
+				u++)
+				;
+			/* extract r */
+			for (i=0; *u != ',' && i != 4; i++) {
+			        sb[i] = *u++;
+			}
+			sb[i] = 0;
+			u++;
+
+			if (sb[i-1] == '%') {
+			        sb[i-1] = 0;
+			        r = (int)((float)(atoi(sb) / 100.0) * 255);
+			}
+			else
+		        	r = atoi(sb);
+
+                        /* extract g */
+			for (i=0; *u != ',' && i != 4; i++) {
+			        sb[i] = *u++;
+			}
+			sb[i] = 0;
+			u++;
+
+			if (sb[i-1] == '%') {
+			        sb[i-1] = 0;
+			        g = (int)((float)(atoi(sb) / 100.0) * 255);
+			}
+			else
+		        	g = atoi(sb);
+
+                        /* extract b */
+			for (i=0; *u != ')' && i != 4; i++) {
+			        sb[i] = *u++;
+			}
+			sb[i] = 0;
+
+			if (sb[i-1] == '%') {
+			        sb[i-1] = 0;
+			        b = (int)((float)(atoi(sb) / 100.0) * 255);
+			}
+			else
+		        	b = atoi(sb);
+
+                        /* calculate c, ensuring that r,g,b are in range */
+			c = ((b > 255 ? 255 : b) << 16) |
+			    ((g > 255 ? 255 : g) <<  8) |
+			     (r > 255 ? 255 : r);
+
 			break;
 
 		case CSS_NODE_IDENT:
