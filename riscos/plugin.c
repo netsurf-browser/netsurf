@@ -206,10 +206,7 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
           return;
         }
 
-        /* wait for wimp poll
-           TODO - we should probably give up after a short time
-                  otherwise we'll be stuck in this loop forever
-         */
+        /* wait for wimp poll */
         while(temp->poll == 0)
                 gui_poll(true);
 
@@ -251,10 +248,7 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
                  return;
                }
 
-               /* wait for wimp poll
-                  TODO - we should probably give up after a short time
-                         otherwise we'll be stuck in this loop forever
-                */
+               /* wait for wimp poll */
                while(temp->poll == 0)
                        gui_poll(true);
 
@@ -365,10 +359,7 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
 	xwimp_send_message(wimp_USER_MESSAGE_RECORDED, &m,
 	                   (wimp_t)params->plugin_task);
 
-        /* wait for wimp poll
-           TODO - we should probably give up after a short time
-                  otherwise we'll be stuck in this loop forever
-         */
+        /* wait for wimp poll */
 	while (temp == 0)
 	        gui_poll(true);
 
@@ -784,10 +775,7 @@ void plugin_create_stream(struct browser_window *bw, struct object_params *param
         LOG(("Sending message &4D548"));
         xwimp_send_message(wimp_USER_MESSAGE_RECORDED, &m, (wimp_t)params->plugin_task);
 
-        /* wait for wimp poll
-           TODO - we should probably give up after a short time
-                  otherwise we'll be stuck in this loop forever
-         */
+        /* wait for wimp poll */
         while(temp->poll == 0)
                 gui_poll(true);
 
@@ -846,10 +834,7 @@ void plugin_write_stream(struct browser_window *bw, struct object_params *params
                 LOG(("Sending message &4D54A"));
                 xwimp_send_message(wimp_USER_MESSAGE_RECORDED, &m, (wimp_t)params->plugin_task);
 
-                /* wait for wimp poll
-                   TODO - we should probably give up after a short time
-                          otherwise we'll be stuck in this loop forever
-                 */
+                /* wait for wimp poll */
                 while(temp->poll == 0)
                         gui_poll(true);
 

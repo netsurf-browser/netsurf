@@ -68,18 +68,21 @@ char *populate_version(void) {
   char *mon;
   char *year;
   char *temp = xcalloc(12, sizeof(char));
-  char *ret = xcalloc(20, sizeof(char));
+  char *ret = xcalloc(30, sizeof(char));
 
   sprintf(temp, "%s", __DATE__);
   p = strchr(temp, ' ');
   *p = 0;
   mon = strdup(temp);
-  day = p+1;
+  if (strchr(p+1, ' ') == p+1)
+    day = p+2;
+  else
+    day = p+1;
   p = strchr(day, ' ');
   *p = 0;
   year = p+1;
 
-  sprintf(ret, version, messages_get("Version"), day, mon, year);
+  sprintf(ret, version, messages_get("Version:CVS Test Build"), day, mon, year);
 
   xfree(temp);
 

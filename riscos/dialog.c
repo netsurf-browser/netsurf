@@ -17,6 +17,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -64,6 +65,8 @@ static void set_icon_string_i(wimp_w w, wimp_i i, int num);
 void ro_gui_dialog_init(void)
 {
 	dialog_info = ro_gui_dialog_create("info");
+	/* fill in about box version info */
+	set_icon_string(dialog_info, 4, messages_get("Version:CVS Test Build"));
 	dialog_saveas = ro_gui_dialog_create("saveas");
 	dialog_config = ro_gui_dialog_create("config");
 	dialog_config_br = ro_gui_dialog_create("config_br");
