@@ -17,7 +17,6 @@
 
 
 struct bitmap;
-struct font_data;
 
 
 /** Set of target specific plotting functions. */
@@ -30,7 +29,7 @@ struct plotter_table {
 	bool (*polygon)(int *p, unsigned int n, colour fill);
 	bool (*fill)(int x0, int y0, int x1, int y1, colour c);
 	bool (*clip)(int x0, int y0, int x1, int y1);
-	bool (*text)(int x, int y, struct font_data *font, const char *text,
+	bool (*text)(int x, int y, struct css_style *style, const char *text,
 			size_t length, colour bg, colour c);
 	bool (*disc)(int x, int y, int radius, colour c);
 	bool (*bitmap)(int x, int y, int width, int height,

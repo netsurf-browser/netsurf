@@ -34,7 +34,7 @@ OBJECTS_RISCOS += 401login.o bitmap.o buffer.o debugwin.o \
 	menus.o mouseactions.o plotters.o plugin.o print.o \
 	save.o save_complete.o save_draw.o save_text.o \
 	schedule.o search.o sprite.o textselection.o theme.o \
-	theme_install.o thumbnail.o treeview.o ufont.o uri.o \
+	theme_install.o thumbnail.o treeview.o uri.o \
 	url_complete.o url_protocol.o wimp.o window.o		# riscos/
 # OBJECTS_RISCOS += memdebug.o
 

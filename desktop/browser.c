@@ -1140,10 +1140,11 @@ void browser_window_textarea_click(struct browser_window *bw,
 		/* below the bottom of the textarea: place caret at end */
 		text_box = inline_container->last;
 		assert(text_box->type == BOX_INLINE);
-		assert(text_box->text && text_box->font);
-		nsfont_position_in_string(text_box->font, text_box->text,
+		assert(text_box->text);
+		/** \todo handle errors */
+		nsfont_position_in_string(text_box->style, text_box->text,
 				text_box->length,
-				(unsigned int)textarea->width,
+				textarea->width,
 				&char_offset, &pixel_offset);
 	} else {
 		/* find the relevant text box */
@@ -1161,11 +1162,11 @@ void browser_window_textarea_click(struct browser_window *bw,
 			/* past last text box */
 			text_box = inline_container->last;
 			assert(text_box->type == BOX_INLINE);
-			assert(text_box->text && text_box->font);
-			nsfont_position_in_string(text_box->font,
+			assert(text_box->text);
+			nsfont_position_in_string(text_box->style,
 					text_box->text,
 					text_box->length,
-					(unsigned int)textarea->width,
+					textarea->width,
 					&char_offset, &pixel_offset);
 		} else {
 			/* in a text box */
@@ -1174,8 +1175,8 @@ void browser_window_textarea_click(struct browser_window *bw,
 			else if (y < text_box->y && text_box->prev)
 				text_box = text_box->prev;
 			assert(text_box->type == BOX_INLINE);
-			assert(text_box->text && text_box->font);
-			nsfont_position_in_string(text_box->font,
+			assert(text_box->text);
+			nsfont_position_in_string(text_box->style,
 					text_box->text,
 					text_box->length,
 					(unsigned int)(x - text_box->x),
@@ -1463,8 +1464,8 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		new_scroll_y = 0;
 	box_y += textarea->scroll_y - new_scroll_y;
 
-	pixel_offset = nsfont_width(text_box->font, text_box->text,
-			char_offset);
+	nsfont_width(text_box->style, text_box->text,
+			char_offset, &pixel_offset);
 
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
@@ -1506,7 +1507,7 @@ void browser_window_input_click(struct browser_window* bw,
 	int uchars;
 	unsigned int offset;
 
-	nsfont_position_in_string(text_box->font, text_box->text,
+	nsfont_position_in_string(text_box->style, text_box->text,
 			text_box->length, x - text_box->x,
 			&char_offset, &pixel_offset);
 	assert(char_offset <= text_box->length);
@@ -1636,8 +1637,8 @@ void browser_window_input_callback(struct browser_window *bw,
 		box_offset += utf8keySize;
 		free(utf8key);
 
-		text_box->width = nsfont_width(text_box->font,
-				text_box->text, text_box->length);
+		nsfont_width(text_box->style, text_box->text, text_box->length,
+				&text_box->width);
 		changed = true;
 
 	} else if (key == 8 || key == 127) {
@@ -1671,8 +1672,8 @@ void browser_window_input_callback(struct browser_window *bw,
 		text_box->length -= prev_offset - box_offset;
 		text_box->text[text_box->length] = 0;
 
-		text_box->width = nsfont_width(text_box->font,
-				text_box->text, text_box->length);
+		nsfont_width(text_box->style, text_box->text, text_box->length,
+				&text_box->width);
 
 		changed = true;
 
@@ -1770,8 +1771,8 @@ void browser_window_input_callback(struct browser_window *bw,
 		return;
 	}
 
-	pixel_offset = nsfont_width(text_box->font, text_box->text,
-			box_offset);
+	nsfont_width(text_box->style, text_box->text, box_offset,
+			&pixel_offset);
 	dx = text_box->x;
 	text_box->x = 0;
 	if (input->width < text_box->width && input->width / 2 < pixel_offset) {
