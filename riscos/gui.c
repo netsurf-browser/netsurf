@@ -596,7 +596,9 @@ void ro_gui_keypress(wimp_key *key)
 	gui_window *g = ro_gui_window_lookup(key->w);
 
 	if (!g) {
-		wimp_process_key(key->c);
+	        handled = ro_gui_dialog_keypress(key);
+	        if (!handled)
+		        wimp_process_key(key->c);
 		return;
 	}
 

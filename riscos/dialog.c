@@ -144,6 +144,16 @@ void ro_gui_dialog_open(wimp_w w)
 	wimp_open_window((wimp_open *) &open);
 }
 
+/**
+ * Handle key presses in one of the dialog boxes.
+ */
+
+bool ro_gui_dialog_keypress(wimp_key *key)
+{
+	if (key->w == dialog_401li)
+	        return ro_gui_401login_keypress(key);
+	return false;
+}
 
 /**
  * Handle clicks in one of the dialog boxes.

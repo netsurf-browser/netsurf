@@ -110,6 +110,7 @@ void ro_gui_dialog_init(void);
 wimp_w ro_gui_dialog_create(const char *template_name);
 void ro_gui_dialog_open(wimp_w w);
 void ro_gui_dialog_click(wimp_pointer *pointer);
+bool ro_gui_dialog_keypress(wimp_key *key);
 void ro_gui_dialog_close(wimp_w close);
 void ro_gui_redraw_config_th(wimp_draw* redraw);
 void ro_gui_theme_menu_selection(char *theme);
@@ -133,6 +134,7 @@ void ro_gui_drag_end(wimp_dragged* drag);
 void ro_gui_401login_init(void);
 void ro_gui_401login_open(char* host, char * realm, char* fetchurl);
 void ro_gui_401login_click(wimp_pointer *pointer);
+bool ro_gui_401login_keypress(wimp_key *key);
 
 /* in window.c */
 void ro_gui_window_click(gui_window* g, wimp_pointer* mouse);

@@ -104,6 +104,18 @@ void ro_gui_401login_open(char *host, char* realm, char *fetchurl)
 			-1, -1, -1, 0);
 }
 
+bool ro_gui_401login_keypress(wimp_key *key) {
+
+  if (key->c == wimp_KEY_RETURN) {
+          get_unamepwd();
+          ro_gui_dialog_close(dialog_401li);
+          browser_window_open_location(bwin, url);
+          return true;
+  }
+
+  return false;
+}
+
 /* Login Clicked -> create a new fetch request, specifying uname & pwd
  *                  CURLOPT_USERPWD takes a string "username:password"
  */
