@@ -20,7 +20,7 @@
 
 static void get_unamepwd(void);
 
-static wimp_window *dialog_401;
+static wimp_window *dialog_401_template;
 extern wimp_w dialog_401li;
 
 struct login LOGIN;
@@ -45,18 +45,17 @@ void ro_gui_401login_init(void)
 			name, 0, &window_size, &data_size);
 	assert(context != 0);
 
-	dialog_401 = xcalloc((unsigned int) window_size, 1);
+	dialog_401_template = xcalloc((unsigned int) window_size, 1);
 	data = xcalloc((unsigned int) data_size, 1);
 
 	/* load */
-	wimp_load_template(dialog_401, data, data + data_size,
+	wimp_load_template(dialog_401_template, data, data + data_size,
 			wimp_NO_FONTS, name, 0, 0, 0);
 }
 
 void gui_401login_open(struct browser_window *bw, struct content *c, char *realm) {
 
   char *murl, *host;
-  int i;
 
   murl = c->url;
   host = get_host_from_url(murl);
@@ -75,27 +74,33 @@ void gui_401login_open(struct browser_window *bw, struct content *c, char *realm
 void ro_gui_401login_open(char *host, char* realm, char *fetchurl)
 {
 	url = xstrdup(fetchurl);
-	uname = xstrdup("");
-	pwd = xstrdup("");
+	uname = xcalloc(1, 256);
+	pwd = xcalloc(1, 256);
+	uname[0] = pwd[0] = 0;
 
 	/* fill in download window icons */
-	dialog_401->icons[ICON_401LOGIN_HOST].data.indirected_text.text =
+	dialog_401_template->icons[ICON_401LOGIN_HOST].data.indirected_text.text =
 		xstrdup(host);
-	dialog_401->icons[ICON_401LOGIN_HOST].data.indirected_text.size =
+	dialog_401_template->icons[ICON_401LOGIN_HOST].data.indirected_text.size =
 		strlen(host) + 1;
-	dialog_401->icons[ICON_401LOGIN_REALM].data.indirected_text.text =
+	dialog_401_template->icons[ICON_401LOGIN_REALM].data.indirected_text.text =
 		xstrdup(realm);
-	dialog_401->icons[ICON_401LOGIN_REALM].data.indirected_text.size =
+	dialog_401_template->icons[ICON_401LOGIN_REALM].data.indirected_text.size =
 		strlen(realm) + 1;
-	dialog_401->icons[ICON_401LOGIN_USERNAME].data.indirected_text.text =
+	dialog_401_template->icons[ICON_401LOGIN_USERNAME].data.indirected_text.text =
 		uname;
-	dialog_401->icons[ICON_401LOGIN_PASSWORD].data.indirected_text.text =
+	dialog_401_template->icons[ICON_401LOGIN_USERNAME].data.indirected_text.size =
+		256;
+	dialog_401_template->icons[ICON_401LOGIN_PASSWORD].data.indirected_text.text =
 		pwd;
+	dialog_401_template->icons[ICON_401LOGIN_PASSWORD].data.indirected_text.size =
+		256;
 
 	/* create and open the window */
-	dialog_401li = wimp_create_window(dialog_401);
+	dialog_401li = wimp_create_window(dialog_401_template);
 	ro_gui_dialog_open(dialog_401li);
-	wimp_set_caret_position(dialog_401li, ICON_401LOGIN_USERNAME,0,0,0,0);
+	wimp_set_caret_position(dialog_401li, ICON_401LOGIN_USERNAME,
+			-1, -1, -1, 0);
 }
 
 /* Login Clicked -> create a new fetch request, specifying uname & pwd
