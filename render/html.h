@@ -29,6 +29,7 @@ struct content_html_data {
 	htmlParserCtxt *parser;
 	char *source;
 	int length;
+	char *base_url;	/**< Base URL (may be a copy of content->url). */
 	struct box *layout;
 	colour background_colour;
 	unsigned int stylesheet_count;

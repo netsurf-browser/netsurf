@@ -24,7 +24,7 @@ char * squash_whitespace(const char * s);
 char * tolat1(xmlChar * s);
 char * tolat1_pre(xmlChar * s);
 char *squash_tolat1(xmlChar *s);
-char *url_join(const char* new, const char* base);
+char *url_join(char *rel_url, char *base_url);
 char *get_host_from_url(char* url);
 bool is_dir(const char *path);
 

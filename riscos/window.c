@@ -299,21 +299,14 @@ void gui_window_set_status(gui_window* g, const char* text)
 }
 
 
-void gui_window_message(gui_window* g, gui_message* msg)
-{
-  if (g == NULL || msg == NULL)
-    return;
+/**
+ * Set the contents of a window's address bar.
+ */
 
-  switch (msg->type)
-  {
-    case msg_SET_URL:
-      fprintf(stderr, "Set URL '%s'\n", msg->data.set_url.url);
-      strncpy(g->url, msg->data.set_url.url, 255);
-      wimp_set_icon_state(g->data.browser.toolbar, ICON_TOOLBAR_URL, 0, 0);
-      break;
-    default:
-      break;
-  }
+void gui_window_set_url(gui_window *g, char *url)
+{
+	strncpy(g->url, url, 255);
+	wimp_set_icon_state(g->data.browser.toolbar, ICON_TOOLBAR_URL, 0, 0);
 }
 
 
@@ -712,7 +705,21 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 				browser_window_open_location(g->data.browser.bw,
 						"file:///%3CWimp$ScrapDir%3E/WWW/NetSurf/About");
 			} else {
-				browser_window_open_location(g->data.browser.bw, g->url);
+				char *url = xcalloc(1, 10 + strlen(g->url));
+				char *url2;
+				if (g->url[strspn(g->url, "abcdefghijklmnopqrstuvwxyz")] != ':') {
+					strcpy(url, "http://");
+					strcpy(url + 7, g->url);
+				} else {
+					strcpy(url, g->url);
+				}
+				url2 = url_join(url, 0);
+				free(url);
+				if (url2) {
+					gui_window_set_url(g, url2);
+					browser_window_open_location(g->data.browser.bw, url2);
+					free(url2);
+				}
 			}
 			return true;
 

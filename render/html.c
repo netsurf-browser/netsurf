@@ -23,7 +23,7 @@
 
 static void html_convert_css_callback(content_msg msg, struct content *css,
 		void *p1, void *p2, const char *error);
-static void html_title(struct content *c, xmlNode *head);
+static void html_head(struct content *c, xmlNode *head);
 static void html_find_stylesheets(struct content *c, xmlNode *head);
 static void html_object_callback(content_msg msg, struct content *object,
 		void *p1, void *p2, const char *error);
@@ -37,6 +37,7 @@ void html_create(struct content *c)
 	c->data.html.fonts = NULL;
 	c->data.html.length = 0;
 	c->data.html.source = xcalloc(0, 1);
+	c->data.html.base_url = xstrdup(c->url);
 	c->data.html.background_colour = TRANSPARENT;
 }
 
@@ -96,7 +97,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	}
 
 	if (head != 0)
-		html_title(c, head);
+		html_head(c, head);
 
 	/* get stylesheets */
 	html_find_stylesheets(c, head);
@@ -203,19 +204,31 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 }
 
 
-void html_title(struct content *c, xmlNode *head)
+
+/**
+ * Process elements in <head>.
+ */
+
+void html_head(struct content *c, xmlNode *head)
 {
 	xmlNode *node;
-	xmlChar *title;
 
 	c->title = 0;
 
 	for (node = head->children; node != 0; node = node->next) {
-		if (strcmp(node->name, "title") == 0) {
-			title = xmlNodeGetContent(node);
+		if (!c->title && strcmp(node->name, "title") == 0) {
+			xmlChar *title = xmlNodeGetContent(node);
 			c->title = squash_tolat1(title);
 			xmlFree(title);
-			return;
+
+		} else if (strcmp(node->name, "base") == 0) {
+			char *href = (char *) xmlGetProp(node, (const xmlChar *) "href");
+			if (href) {
+				char *url = url_join(href, 0);
+				if (url)
+					c->data.html.base_url = url;
+				xmlFree(href);
+			}
 		}
 	}
 }
@@ -286,9 +299,12 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			/* TODO: only the first preferred stylesheets (ie. those with a
 			 * title attribute) should be loaded (see HTML4 14.3) */
 
-			url = url_join(href, c->url);
-			LOG(("linked stylesheet %i '%s'", i, url));
+			url = url_join(href, c->data.html.base_url);
 			xmlFree(href);
+			if (!url)
+				continue;
+
+			LOG(("linked stylesheet %i '%s'", i, url));
 
 			/* start fetch */
 			c->data.html.stylesheet_content = xrealloc(c->data.html.stylesheet_content,
@@ -325,7 +341,8 @@ void html_find_stylesheets(struct content *c, xmlNode *head)
 			/* create stylesheet */
 			LOG(("style element"));
 			if (c->data.html.stylesheet_content[1] == 0) {
-				c->data.html.stylesheet_content[1] = content_create(c->url);
+				c->data.html.stylesheet_content[1] =
+						content_create(c->data.html.base_url);
 				content_set_type(c->data.html.stylesheet_content[1], CONTENT_CSS, "text/css");
 			}
 
@@ -567,5 +584,6 @@ void html_destroy(struct content *c)
 		xfree(c->title);
 	if (c->data.html.source != 0)
 	        xfree(c->data.html.source);
+	free(c->data.html.base_url);
 }
 

@@ -129,29 +129,25 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 	buffer = css__scan_buffer(c->data.css.data, c->data.css.length + 2,
 			c->data.css.css->lexer);
 	assert(buffer);
-	while ((token = css_lex(c->data.css.css->lexer)) &&
-			!param.syntax_error) {
+	while (token = css_lex(c->data.css.css->lexer)) {
 		css_parser_(c->data.css.css->parser, token,
 				xstrdup(css_get_text(c->data.css.css->lexer)),
 				&param);
+		if (param.syntax_error) {
+			int line = css_get_lineno(c->data.css.css->lexer);
+			LOG(("syntax error near line %i", line));
+			param.syntax_error = false;
+		}
 	}
 	css__delete_buffer(buffer, c->data.css.css->lexer);
 	free(c->data.css.data);
 
-	if (!param.syntax_error)
-		css_parser_(c->data.css.css->parser, 0, 0, &param);
+	css_parser_(c->data.css.css->parser, 0, 0, &param);
 	css_parser_Free(c->data.css.css->parser, free);
 
-	if (param.syntax_error) {
-		int line = css_get_lineno(c->data.css.css->lexer);
-		css_lex_destroy(c->data.css.css->lexer);
-		LOG(("syntax error near line %i", line));
-		/*css_destroy(c);*/
-		return 1;
-	}
 	css_lex_destroy(c->data.css.css->lexer);
 
-	css_dump_stylesheet(c->data.css.css);
+	/*css_dump_stylesheet(c->data.css.css);*/
 
 	/* complete fetch of any imported stylesheets */
 	while (c->active != 0) {
@@ -261,7 +257,7 @@ char *css_unquote(char *s)
 
 void css_atimport(struct content *c, struct css_node *node)
 {
-	char *s, *url;
+	char *s, *url, *url1;
 	int string = 0, screen = 1;
 	unsigned int i;
 
@@ -322,6 +318,12 @@ void css_atimport(struct content *c, struct css_node *node)
 		return;
 	}
 
+	url1 = url_join(url, c->url);
+	if (!url1) {
+		free(url);
+		return;
+	}
+
 	/* start the fetch */
 	c->data.css.import_count++;
 	c->data.css.import_url = xrealloc(c->data.css.import_url,
@@ -330,7 +332,7 @@ void css_atimport(struct content *c, struct css_node *node)
 			c->data.css.import_count * sizeof(*c->data.css.import_content));
 
 	i = c->data.css.import_count - 1;
-	c->data.css.import_url[i] = url_join(url, c->url);
+	c->data.css.import_url[i] = url1;
 	c->data.css.import_content[i] = fetchcache(
 			c->data.css.import_url[i], c->url, css_atimport_callback,
 			c, i, c->width, c->height, true, 0, 0);

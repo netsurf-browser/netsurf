@@ -706,7 +706,10 @@ struct result box_image(xmlNode *n, struct status *status,
 	if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "src")))
 		return (struct result) {box, 0};
 
-	url = url_join(s, status->content->url);
+	url = url_join(s, status->content->data.html.base_url);
+	if (!url)
+		return (struct result) {box, 0};
+
 	LOG(("image '%s'", url));
 	xmlFree(s);
 
@@ -1014,8 +1017,9 @@ struct result box_input(xmlNode *n, struct status *status,
 		gadget->box = box;
 	        gadget->type = GADGET_IMAGE;
 	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src"))) {
-	                url = url_join(s, status->content->url);
-	                html_fetch_object(status->content, url, box);
+	                url = url_join(s, status->content->data.html.base_url);
+	                if (url)
+		                html_fetch_object(status->content, url, box);
 	                xmlFree(s);
 	        }
 	}
@@ -1673,9 +1677,13 @@ struct result box_object(xmlNode *n, struct status *status,
 
         /* object data */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "data"))) {
-
+	        url = url_join(s, status->content->data.html.base_url);
+	        if (!url) {
+	        	free(po);
+		        xmlFree(s);
+	        	return (struct result) {box, 1};
+	        }
                 po->data = strdup(s);
-	        url = url_join(strdup(s), status->content->url);
 	        LOG(("object '%s'", po->data));
 	        xmlFree(s);
 	}
@@ -1797,10 +1805,14 @@ struct result box_embed(xmlNode *n, struct status *status,
 
 	/* embed src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
-
-                po->data = strdup(s);
-	        url = url_join(strdup(s), status->content->url);
+	        url = url_join(s, status->content->data.html.base_url);
+	        if (!url) {
+	        	free(po);
+		        xmlFree(s);
+	        	return (struct result) {box, 0};
+	        }
 	        LOG(("embed '%s'", url));
+                po->data = strdup(s);
 	        xmlFree(s);
         }
 
@@ -1861,14 +1873,18 @@ struct result box_applet(xmlNode *n, struct status *status,
         po->classid = 0;
         po->params = 0;
 
-        /* code */
+	/* code */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "code"))) {
-
-                po->classid = strdup(s);
-                url = url_join(strdup(s), status->content->url);
-                LOG(("applet '%s'", url));
-                xmlFree(s);
-        }
+		url = url_join(s, status->content->data.html.base_url);
+		if (!url) {
+			free(po);
+			xmlFree(s);
+			return (struct result) {box, 1};
+		}
+		LOG(("applet '%s'", url));
+		po->classid = strdup(s);
+		xmlFree(s);
+	}
 
         /* object codebase */
         if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codebase"))) {
@@ -1962,12 +1978,16 @@ struct result box_iframe(xmlNode *n, struct status *status,
 
 	/* iframe src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
-
-                po->data = strdup(s);
-	        url = url_join(strdup(s), status->content->url);
-	        LOG(("embed '%s'", url));
-	        xmlFree(s);
-        }
+		url = url_join(s, status->content->data.html.base_url);
+		if (!url) {
+			free(po);
+			xmlFree(s);
+			return (struct result) {box, 0};
+		}
+		LOG(("embed '%s'", url));
+		po->data = strdup(s);
+		xmlFree(s);
+	}
 
 	box->object_params = po;
 
@@ -1985,22 +2005,27 @@ struct result box_iframe(xmlNode *n, struct status *status,
  * necessary as there are multiple ways of declaring an object's attributes.
  *
  * Returns false if the object could not be handled.
+ *
+ * TODO: reformat, plug failure leaks
  */
 bool plugin_decode(struct content* content, char* url, struct box* box,
                   struct object_params* po)
 {
   struct plugin_params * pp;
 
-  /* Set basehref */
-  po->basehref = strdup(content->url);
-
   /* Check if the codebase attribute is defined.
    * If it is not, set it to the codebase of the current document.
    */
    if(po->codebase == 0)
-           po->codebase = url_join("./", content->url);
+           po->codebase = url_join("./", content->data.html.base_url);
    else
-           po->codebase = url_join(po->codebase, content->url);
+           po->codebase = url_join(po->codebase, content->data.html.base_url);
+
+  if (!po->codebase)
+    return false;
+
+  /* Set basehref */
+  po->basehref = strdup(content->data.html.base_url);
 
   /* Check that we have some data specified.
    * First, check the data attribute.
@@ -2019,11 +2044,16 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
                            for(pp = po->params; pp != 0 &&
                                (strcasecmp(pp->name, "movie") != 0);
                                pp = pp->next);
-                           if(pp != 0)
-                                   url = url_join(pp->value, po->basehref);
-                           else return false;
+                           if(pp == 0)
+                           	   return false;
+                           url = url_join(pp->value, po->basehref);
+                           if (!url)
+                           	   return false;
                            /* munge the codebase */
-                           po->codebase = url_join("./", content->url);
+                           po->codebase = url_join("./",
+					   content->data.html.base_url);
+                           if (!po->codebase)
+                           	   return false;
                    }
                    else {
                            LOG(("ActiveX object - n0"));
@@ -2032,6 +2062,8 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
            }
            else {
                    url = url_join(po->classid, po->codebase);
+                   if (!url)
+                   	   return false;
 
                    /* The java plugin doesn't need the .class extension
                     * so we strip it.
@@ -2043,6 +2075,8 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
    }
    else {
            url = url_join(po->data, po->codebase);
+           if (!url)
+           	return false;
    }
 
    /* Check if the declared mime type is understandable.

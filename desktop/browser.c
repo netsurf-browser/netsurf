@@ -251,6 +251,8 @@ void browser_window_open_location_post(struct browser_window* bw,
   LOG(("bw = %p, url = %s", bw, url));
   assert(bw != 0 && url != 0);
   url1 = url_join(url, 0);
+  if (!url1)
+    return;
   browser_window_open_location_historical(bw, url1, post_urlenc, post_multipart);
   bw->history_add = true;
   free(url1);
@@ -292,14 +294,11 @@ void browser_window_callback(content_msg msg, struct content *c,
 
       previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
       if (bw->loading_content == c) {
-        struct gui_message gmsg;
         if (bw->url != 0)
           xfree(bw->url);
         bw->url = xstrdup(c->url);
 
-        gmsg.type = msg_SET_URL;
-        gmsg.data.set_url.url = bw->url;
-        gui_window_message(bw->window, &gmsg);
+        gui_window_set_url(bw->window, bw->url);
 
         if (bw->current_content != NULL)
         {
@@ -1215,26 +1214,28 @@ void browser_window_follow_link(struct browser_window* bw,
       continue;
     if (click_boxes[i].box->href != NULL)
     {
+      char *url = url_join((char*) click_boxes[i].box->href,
+		      bw->current_content->data.html.base_url);
+      if (!url)
+        continue;
+
       if (click_type == 1) {
-        char *url = url_join((char*) click_boxes[i].box->href, bw->url);
         browser_window_open_location(bw, url);
-        free(url);
       }
       else if (click_type == 2)
       {
-        char *url = url_join((char*) click_boxes[i].box->href, bw->url);
         struct browser_window* bw_new;
         bw_new = create_browser_window(browser_TITLE | browser_TOOLBAR
           | browser_SCROLL_X_ALWAYS | browser_SCROLL_Y_ALWAYS, 640, 480, NULL);
         gui_window_show(bw_new->window);
         browser_window_open_location(bw_new, url);
-        free(url);
       }
       else if (click_type == 0)
       {
-        browser_window_set_status(bw, (char*) click_boxes[i].box->href);
+        browser_window_set_status(bw, url);
         done = 1;
       }
+      free(url);
       break;
     }
     if (click_type == 0 && click_boxes[i].box->title != NULL)
@@ -1572,37 +1573,37 @@ void browser_window_redraw_boxes(struct browser_window* bw, struct box_position*
 void browser_form_submit(struct browser_window *bw, struct form *form,
 		struct form_control *submit_button)
 {
-	char *data, *url, *url1;
+	char *data = 0, *url = 0, *url1 = 0, *base;
 	struct form_successful_control *success;
 
 	assert(form);
+	assert(bw->current_content->type == CONTENT_HTML);
 
 	success = form_successful_controls(form, submit_button);
+	base = bw->current_content->data.html.base_url;
 
 	switch (form->method) {
 		case method_GET:
 			data = form_url_encode(success);
 			url = xcalloc(1, strlen(form->action) + strlen(data) + 2);
 			sprintf(url, "%s?%s", form->action, data);
-			url1 = url_join(url, bw->url);
-			free(data);
-                	free(url);
+			url1 = url_join(url, base);
+			if (!url1)
+				break;
 			browser_window_open_location(bw, url1);
-                	free(url1);
                 	break;
 
                 case method_POST_URLENC:
 			data = form_url_encode(success);
-			url = url_join(form->action, bw->url);
+			url = url_join(form->action, base);
+			if (!url)
+				break;
 			browser_window_open_location_post(bw, url, data, 0);
-			free(url);
-			free(data);
                 	break;
 
                 case method_POST_MULTIPART:
-			url = url_join(form->action, bw->url);
+			url = url_join(form->action, base);
 			browser_window_open_location_post(bw, url, 0, success);
-			free(url);
                 	break;
 
                 default:
@@ -1610,4 +1611,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
         }
 
 	form_free_successful(success);
+	free(data);
+	free(url);
+	free(url1);
 }

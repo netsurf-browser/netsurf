@@ -602,6 +602,11 @@ bool fetch_process_headers(struct fetch *f)
 			url_path = curl_unescape(f->url + 8, (int) strlen(f->url) - 8);
 			type = fetch_filetype(url_path);
 			curl_free(url_path);
+		} else if (strncmp(f->url, "file:/", 6) == 0) {
+			char *url_path;
+			url_path = curl_unescape(f->url + 6, (int) strlen(f->url) - 6);
+			type = fetch_filetype(url_path);
+			curl_free(url_path);
 		}
 	}
 

@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <uri.h>
 #include "libxml/encoding.h"
 #include "libxml/uri.h"
 #include "netsurf/utils/log.h"
@@ -165,98 +166,59 @@ char *squash_tolat1(xmlChar *s)
 	return squash;
 }
 
-char *url_join(const char* new, const char* base)
+
+/**
+ * Calculate a URL from a relative and base URL.
+ *
+ * base may be 0 for a new URL, in which case the URL is cannonicalized and
+ * returned. Returns 0 in case of error.
+ */
+
+char *url_join(char *rel_url, char *base_url)
 {
-  char* ret, *nn;
-  int i,j,k;
+	char *res;
+	uri_t *base = 0, *rel = 0, *abs;
 
-  LOG(("new = %s, base = %s", new, base));
+	LOG(("rel_url = %s, base_url = %s", rel_url, base_url));
 
-  /* deal with spaces and quotation marks in URLs etc.
-     also removes spaces from end of links.
-     There's definitely a better way to do this */
-  nn = xcalloc(strlen(new) * 3 + 40, sizeof(char));
-  j=0;
-  for(i=0;i<strlen(new);i++){
+	if (!base_url) {
+		res = uri_cannonicalize_string(rel_url, strlen(rel_url),
+				URI_STRING_URI_STYLE);
+		LOG(("res = %s", res));
+		if (res)
+			return xstrdup(res);
+		return 0;
+	}
 
-    if(new[i] == ' '){  /* space */
+	base = uri_alloc(base_url, strlen(base_url));
+	rel = uri_alloc(rel_url, strlen(rel_url));
+	if (!base || !rel)
+		goto fail;
+	if (!base->scheme)
+		goto fail;
 
-      nn[j] = '%';
-      nn[j+1] = '2';
-      nn[j+2] = '0';
-      j+=2;
-    }
-    else if(new[i] == '"'){   /* quotes */
+	abs = uri_abs_1(base, rel);
+	
+	res = xstrdup(uri_uri(abs));
 
-      nn[j] = '%';
-      nn[j+1] = '2';
-      nn[j+2] = '2';
-      j+=2;
-      k = j;
-    }
-    else{
+	uri_free(base);
+	uri_free(rel);
+	
+	LOG(("res = %s", res));
+	return res;
 
-      nn[j] = new[i];
-      k = j;
-    }
+fail:
+	if (base)
+		uri_free(base);
+	if (rel)
+		uri_free(rel);
 
-    j++;
-  }
-  if(k < j){
-    nn[k+1] = '\0';
-    LOG(("before: %s after: %s", new, nn));
-  }
+	LOG(("error"));
 
-  new = nn;
-
-  if (base == 0)
-  {
-    /* no base, so make an absolute URL */
-    ret = xcalloc(strlen(new) + 10, sizeof(char));
-
-    /* check if a scheme is present */
-    i = strspn(new, "abcdefghijklmnopqrstuvwxyz");
-    if (new[i] == ':')
-    {
-      strcpy(ret, new);
-      i += 3;
-    }
-    else
-    {
-      strcpy(ret, "http://");
-      strcat(ret, new);
-      i = 7;
-    }
-
-    /* make server name lower case */
-    for (; ret[i] != 0 && ret[i] != '/'; i++)
-      ret[i] = tolower(ret[i]);
-
-    xmlNormalizeURIPath(ret + i);
-
-    /* http://www.example.com -> http://www.example.com/ */
-    if (ret[i] == 0)
-    {
-      ret[i] = '/';
-      ret[i+1] = 0;
-    }
-  }
-  else
-  {
-    /* relative url */
-    ret = xmlBuildURI(new, base);
-  }
-
-  LOG(("ret = %s", ret));
-  if (ret == NULL)
-  {
-    ret = xcalloc(strlen(new) + 10, sizeof(char));
-    strcpy(ret, new);
-  }
-
-  xfree(nn);
-  return ret;
+	return 0;
 }
+	
+	
 
 char *get_host_from_url (char *url) {
 
