@@ -92,9 +92,18 @@ static bool convert_xml_to_box(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		struct box_status status);
-struct css_style * box_get_style(struct content *c,
+bool box_construct_element(xmlNode *n, struct content *content,
+		struct css_style *parent_style,
+		struct box *parent, struct box **inline_container,
+		struct box_status status);
+bool box_construct_text(xmlNode *n, struct content *content,
+		struct css_style *parent_style,
+		struct box *parent, struct box **inline_container,
+		struct box_status status);
+static struct css_style * box_get_style(struct content *c,
 		struct css_style *parent_style,
 		xmlNode *n);
+static void box_solve_display(struct css_style *style, bool root);
 static void box_text_transform(char *s, unsigned int len,
 		css_text_transform tt);
 static struct box_result box_a(xmlNode *n, struct box_status *status,
@@ -246,6 +255,38 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
 		struct box *parent, struct box **inline_container,
 		struct box_status status)
 {
+	switch (n->type) {
+	case XML_ELEMENT_NODE:
+		return box_construct_element(n, content, parent_style, parent,
+				inline_container, status);
+	case XML_TEXT_NODE:
+		return box_construct_text(n, content, parent_style, parent,
+				inline_container, status);
+	default:
+		/* not an element or text node: ignore it (eg. comment) */
+		return true;
+	}
+}
+
+
+/**
+ * Construct the box tree for an XML element.
+ *
+ * \param  n             XML node of type XML_ELEMENT_NODE
+ * \param  content       content of type CONTENT_HTML that is being processed
+ * \param  parent_style  style at this point in xml tree
+ * \param  parent        parent in box tree
+ * \param  inline_container  current inline container box, or 0, updated to
+ *                       new current inline container on exit
+ * \param  status        status for forms etc.
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool box_construct_element(xmlNode *n, struct content *content,
+		struct css_style *parent_style,
+		struct box *parent, struct box **inline_container,
+		struct box_status status)
+{
 	struct box *box = 0;
 	struct box *inline_container_c;
 	struct css_style *style = 0;
@@ -255,218 +296,71 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
 	char *title = 0, *id = 0;
 	bool convert_children = true;
 	char *href_in = status.href;
+	struct element_entry *element;
 
 	assert(n);
+	assert(n->type == XML_ELEMENT_NODE);
 	assert(parent_style);
 	assert(parent);
 	assert(inline_container);
 
-	if (n->type == XML_ELEMENT_NODE) {
-		struct element_entry *element;
+	gui_multitask();
 
-		gui_multitask();
-
-		style = box_get_style(content, parent_style, n);
-		if (!style)
-			goto no_memory;
-		if (style->display == CSS_DISPLAY_NONE) {
-			css_free_style(style);
-			goto end;
-		}
-		/* floats are treated as blocks */
-		if (style->float_ == CSS_FLOAT_LEFT ||
-				style->float_ == CSS_FLOAT_RIGHT)
-			if (style->display == CSS_DISPLAY_INLINE)
-				style->display = CSS_DISPLAY_BLOCK;
-
-		/* extract title attribute, if present */
-		if ((title0 = xmlGetProp(n, (const xmlChar *) "title"))) {
-			status.title = title = squash_whitespace(title0);
-			xmlFree(title0);
-			if (!title)
-				goto no_memory;
-		}
-
-		/* extract id attribute, if present */
-		if ((id0 = xmlGetProp(n, (const xmlChar *) "id"))) {
-			status.id = id = squash_whitespace(id0);
-			xmlFree(id0);
-			if (!id)
-				goto no_memory;
-		}
-
-		/* special elements */
-		element = bsearch((const char *) n->name, element_table,
-				ELEMENT_TABLE_COUNT, sizeof(element_table[0]),
-				(int (*)(const void *, const void *)) strcmp);
-		if (element) {
-			/* a special convert function exists for this element */
-			struct box_result res =
-					element->convert(n, &status, style);
-			box = res.box;
-			convert_children = res.convert_children;
-			if (res.memory_error)
-				goto no_memory;
-			if (!box) {
-				/* no box for this element */
-				assert(!convert_children);
-				css_free_style(style);
-				goto end;
-			}
-		} else {
-			/* general element */
-			box = box_create(style, status.href, title, id,
-					content->data.html.box_pool);
-			if (!box)
-				goto no_memory;
-		}
-		/* set box type from style if it has not been set already */
-		if (box->type == BOX_INLINE)
-			box->type = box_map[style->display];
-
-	} else if (n->type == XML_TEXT_NODE) {
-		/* text node: added to inline container below */
-
-	} else {
-		/* not an element or text node: ignore it (eg. comment) */
+	style = box_get_style(content, parent_style, n);
+	if (!style)
+		goto no_memory;
+	if (style->display == CSS_DISPLAY_NONE) {
+		css_free_style(style);
 		goto end;
 	}
 
-	content->size += sizeof(struct box) + sizeof(struct css_style);
-
-	if (n->type == XML_TEXT_NODE &&
-			(parent_style->white_space == CSS_WHITE_SPACE_NORMAL ||
-			 parent_style->white_space == CSS_WHITE_SPACE_NOWRAP)) {
-		char *text = squash_whitespace(n->content);
-		if (!text)
+	/* extract title attribute, if present */
+	if ((title0 = xmlGetProp(n, (const xmlChar *) "title"))) {
+		status.title = title = squash_whitespace(title0);
+		xmlFree(title0);
+		if (!title)
 			goto no_memory;
+	}
 
-		/* if the text is just a space, combine it with the preceding
-		 * text node, if any */
-		if (text[0] == ' ' && text[1] == 0) {
-			if (*inline_container) {
-				assert((*inline_container)->last != 0);
-				(*inline_container)->last->space = 1;
-			}
-			free(text);
+	/* extract id attribute, if present */
+	if ((id0 = xmlGetProp(n, (const xmlChar *) "id"))) {
+		status.id = id = squash_whitespace(id0);
+		xmlFree(id0);
+		if (!id)
+			goto no_memory;
+	}
+
+	/* special elements */
+	element = bsearch((const char *) n->name, element_table,
+			ELEMENT_TABLE_COUNT, sizeof(element_table[0]),
+			(int (*)(const void *, const void *)) strcmp);
+	if (element) {
+		/* a special convert function exists for this element */
+		struct box_result res = element->convert(n, &status, style);
+		box = res.box;
+		convert_children = res.convert_children;
+		if (res.memory_error)
+			goto no_memory;
+		if (!box) {
+			/* no box for this element */
+			assert(!convert_children);
+			css_free_style(style);
 			goto end;
 		}
-
-		if (!*inline_container) {
-			/* this is the first inline node: make a container */
-			*inline_container = box_create(0, 0, 0, 0,
-					content->data.html.box_pool);
-			if (!*inline_container)	{
-				free(text);
-				goto no_memory;
-			}
-			(*inline_container)->type = BOX_INLINE_CONTAINER;
-			box_add_child(parent, *inline_container);
-		}
-
-		box = box_create(parent_style, status.href, title, id,
+	} else {
+		/* general element */
+		box = box_create(style, status.href, title, id,
 				content->data.html.box_pool);
-		if (!box) {
-			free(text);
+		if (!box)
 			goto no_memory;
-		}
-		box->text = text;
-		box->style_clone = 1;
-		box->length = strlen(text);
-		/* strip ending space char off */
-		if (box->length > 1 && text[box->length - 1] == ' ') {
-			box->space = 1;
-			box->length--;
-		}
-		if (parent_style->text_transform != CSS_TEXT_TRANSFORM_NONE)
-			box_text_transform(box->text, box->length,
-					parent_style->text_transform);
-		if (parent_style->white_space == CSS_WHITE_SPACE_NOWRAP) {
-			unsigned int i;
-			for (i = 0; i != box->length && text[i] != ' '; ++i)
-				; /* no body */
-			if (i != box->length) {
-				/* there is a space in text block and we
-				 * want all spaces to be converted to NBSP
-				 */
-				box->text = cnv_space2nbsp(text);
-				if (!box->text) {
-					free(text);
-					goto no_memory;
-				}
-				box->length = strlen(box->text);
-			}
-		}
+	}
+	/* set box type from style if it has not been set already */
+	if (box->type == BOX_INLINE)
+		box->type = box_map[style->display];
 
-		box_add_child(*inline_container, box);
-		if (box->text[0] == ' ') {
-			box->length--;
-			memmove(box->text, &box->text[1], box->length);
-			if (box->prev != NULL)
-				box->prev->space = 1;
-		}
-		goto end;
+	content->size += sizeof(struct box) + sizeof(struct css_style);
 
-	} else if (n->type == XML_TEXT_NODE) {
-		/* white-space: pre */
-		char *text = cnv_space2nbsp(n->content);
-		char *current;
-		/* note: pre-wrap/pre-line are unimplemented */
-		assert(parent_style->white_space == CSS_WHITE_SPACE_PRE ||
-			parent_style->white_space ==
-						CSS_WHITE_SPACE_PRE_LINE ||
-			parent_style->white_space ==
-						CSS_WHITE_SPACE_PRE_WRAP);
-		if (!text)
-			goto no_memory;
-		if (parent_style->text_transform != CSS_TEXT_TRANSFORM_NONE)
-			box_text_transform(text, strlen(text),
-					parent_style->text_transform);
-		current = text;
-		do {
-			size_t len = strcspn(current, "\r\n");
-			char old = current[len];
-			current[len] = 0;
-			if (!*inline_container) {
-				*inline_container = box_create(0, 0, 0, 0,
-						content->data.html.box_pool);
-				if (!*inline_container) {
-					free(text);
-					goto no_memory;
-				}
-				(*inline_container)->type =
-						BOX_INLINE_CONTAINER;
-				box_add_child(parent, *inline_container);
-			}
-			box = box_create(parent_style, status.href, title,
-					id, content->data.html.box_pool);
-			if (!box) {
-				free(text);
-				goto no_memory;
-			}
-			box->type = BOX_INLINE;
-			box->style_clone = 1;
-			box->text = strdup(current);
-			if (!box->text) {
-				free(text);
-				goto no_memory;
-			}
-			box->length = strlen(box->text);
-			box_add_child(*inline_container, box);
-			current[len] = old;
-			current += len;
-			if (current[0] == '\r' && current[1] == '\n') {
-				current += 2;
-				*inline_container = 0;
-			} else if (current[0] != 0) {
-				current++;
-				*inline_container = 0;
-			}
-		} while (*current);
-		free(text);
-		goto end;
-
-	} else if (box->type == BOX_INLINE ||
+	if (box->type == BOX_INLINE ||
 			box->type == BOX_INLINE_BLOCK ||
 			style->float_ == CSS_FLOAT_LEFT ||
 			style->float_ == CSS_FLOAT_RIGHT ||
@@ -527,8 +421,6 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
 		}
 	}
 
-	assert(n->type == XML_ELEMENT_NODE);
-
 	/* non-inline box: add to tree and recurse */
 	box_add_child(parent, box);
 	if (convert_children) {
@@ -583,6 +475,174 @@ no_memory:
 	if (style && !box)
 		css_free_style(style);
 
+	return false;
+}
+
+
+/**
+ * Construct the box tree for an XML text node.
+ *
+ * \param  n             XML node of type XML_TEXT_NODE
+ * \param  content       content of type CONTENT_HTML that is being processed
+ * \param  parent_style  style at this point in xml tree
+ * \param  parent        parent in box tree
+ * \param  inline_container  current inline container box, or 0, updated to
+ *                       new current inline container on exit
+ * \param  status        status for forms etc.
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool box_construct_text(xmlNode *n, struct content *content,
+		struct css_style *parent_style,
+		struct box *parent, struct box **inline_container,
+		struct box_status status)
+{
+	struct box *box = 0;
+
+	assert(n);
+	assert(n->type == XML_TEXT_NODE);
+	assert(parent_style);
+	assert(parent);
+	assert(inline_container);
+
+	content->size += sizeof(struct box) + sizeof(struct css_style);
+
+	if (parent_style->white_space == CSS_WHITE_SPACE_NORMAL ||
+			 parent_style->white_space == CSS_WHITE_SPACE_NOWRAP) {
+		char *text = squash_whitespace(n->content);
+		if (!text)
+			goto no_memory;
+
+		/* if the text is just a space, combine it with the preceding
+		 * text node, if any */
+		if (text[0] == ' ' && text[1] == 0) {
+			if (*inline_container) {
+				assert((*inline_container)->last != 0);
+				(*inline_container)->last->space = 1;
+			}
+			free(text);
+			goto end;
+		}
+
+		if (!*inline_container) {
+			/* this is the first inline node: make a container */
+			*inline_container = box_create(0, 0, 0, 0,
+					content->data.html.box_pool);
+			if (!*inline_container)	{
+				free(text);
+				goto no_memory;
+			}
+			(*inline_container)->type = BOX_INLINE_CONTAINER;
+			box_add_child(parent, *inline_container);
+		}
+
+		box = box_create(parent_style, status.href, 0, 0,
+				content->data.html.box_pool);
+		if (!box) {
+			free(text);
+			goto no_memory;
+		}
+		box->text = text;
+		box->style_clone = 1;
+		box->length = strlen(text);
+		/* strip ending space char off */
+		if (box->length > 1 && text[box->length - 1] == ' ') {
+			box->space = 1;
+			box->length--;
+		}
+		if (parent_style->text_transform != CSS_TEXT_TRANSFORM_NONE)
+			box_text_transform(box->text, box->length,
+					parent_style->text_transform);
+		if (parent_style->white_space == CSS_WHITE_SPACE_NOWRAP) {
+			unsigned int i;
+			for (i = 0; i != box->length && text[i] != ' '; ++i)
+				; /* no body */
+			if (i != box->length) {
+				/* there is a space in text block and we
+				 * want all spaces to be converted to NBSP
+				 */
+				box->text = cnv_space2nbsp(text);
+				if (!box->text) {
+					free(text);
+					goto no_memory;
+				}
+				box->length = strlen(box->text);
+			}
+		}
+
+		box_add_child(*inline_container, box);
+		if (box->text[0] == ' ') {
+			box->length--;
+			memmove(box->text, &box->text[1], box->length);
+			if (box->prev != NULL)
+				box->prev->space = 1;
+		}
+		goto end;
+
+	} else {
+		/* white-space: pre */
+		char *text = cnv_space2nbsp(n->content);
+		char *current;
+		/* note: pre-wrap/pre-line are unimplemented */
+		assert(parent_style->white_space == CSS_WHITE_SPACE_PRE ||
+			parent_style->white_space ==
+						CSS_WHITE_SPACE_PRE_LINE ||
+			parent_style->white_space ==
+						CSS_WHITE_SPACE_PRE_WRAP);
+		if (!text)
+			goto no_memory;
+		if (parent_style->text_transform != CSS_TEXT_TRANSFORM_NONE)
+			box_text_transform(text, strlen(text),
+					parent_style->text_transform);
+		current = text;
+		do {
+			size_t len = strcspn(current, "\r\n");
+			char old = current[len];
+			current[len] = 0;
+			if (!*inline_container) {
+				*inline_container = box_create(0, 0, 0, 0,
+						content->data.html.box_pool);
+				if (!*inline_container) {
+					free(text);
+					goto no_memory;
+				}
+				(*inline_container)->type =
+						BOX_INLINE_CONTAINER;
+				box_add_child(parent, *inline_container);
+			}
+			box = box_create(parent_style, status.href, 0,
+					0, content->data.html.box_pool);
+			if (!box) {
+				free(text);
+				goto no_memory;
+			}
+			box->type = BOX_INLINE;
+			box->style_clone = 1;
+			box->text = strdup(current);
+			if (!box->text) {
+				free(text);
+				goto no_memory;
+			}
+			box->length = strlen(box->text);
+			box_add_child(*inline_container, box);
+			current[len] = old;
+			current += len;
+			if (current[0] == '\r' && current[1] == '\n') {
+				current += 2;
+				*inline_container = 0;
+			} else if (current[0] != 0) {
+				current++;
+				*inline_container = 0;
+			}
+		} while (*current);
+		free(text);
+		goto end;
+	}
+
+end:
+	return true;
+
+no_memory:
 	return false;
 }
 
@@ -806,7 +866,42 @@ struct css_style * box_get_style(struct content *c,
 		xmlFree(s);
 	}
 
+	box_solve_display(style, !n->parent);
+
 	return style;
+}
+
+
+/**
+ * Calculate 'display' based on 'display', 'position', and 'float', as given
+ * by CSS 2.1 9.7.
+ *
+ * \param  style  style to update
+ * \param  root   this is the root element
+ */
+
+void box_solve_display(struct css_style *style, bool root)
+{
+	if (style->display == CSS_DISPLAY_NONE)		/* 1. */
+		return;
+	else if (style->position == CSS_POSITION_ABSOLUTE ||
+			style->position == CSS_POSITION_FIXED)	/* 2. */
+		style->float_ = CSS_FLOAT_NONE;
+	else if (style->float_ != CSS_FLOAT_NONE)		/* 3. */
+		;
+	else if (root)						/* 4. */
+		;
+	else							/* 5. */
+		return;
+
+	/* map specified value to computed value using table given in 9.7 */
+	if (style->display == CSS_DISPLAY_INLINE_TABLE)
+		style->display = CSS_DISPLAY_TABLE;
+	else if (style->display == CSS_DISPLAY_LIST_ITEM ||
+			style->display == CSS_DISPLAY_TABLE)
+		; /* same as specified */
+	else
+		style->display = CSS_DISPLAY_BLOCK;
 }
 
 
