@@ -152,7 +152,7 @@ bool plugin_handleable(const char *mime_type)
 void plugin_msg_parse(wimp_message *message, int ack) {}
 void plugin_create(struct content *c, const char *params[]) {}
 void plugin_process_data(struct content *c, char *data, unsigned long size) {}
-int plugin_convert(struct content *c, unsigned int width, unsigned int height) {}
+int plugin_convert(struct content *c, unsigned int width, unsigned int height) {return 0;}
 void plugin_revive(struct content *c, unsigned int width, unsigned int height) {}
 void plugin_reformat(struct content *c, unsigned int width, unsigned int height) {}
 void plugin_destroy(struct content *c) {}
