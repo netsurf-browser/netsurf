@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.14 2002/06/21 18:16:24 bursa Exp $
+ * $Id: render.c,v 1.15 2002/06/26 12:19:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -49,13 +49,16 @@ void render_plain_element(char * g, struct box * box, unsigned long x, unsigned 
 		case BOX_TABLE_ROW:
 		case BOX_TABLE_CELL:
 		case BOX_BLOCK: strncpy(g + 80 * (y + box->y) + x + box->x,
-						box->node->name, strlen(box->node->name));
+						(const char *) box->node->name,
+						strlen((const char *) box->node->name));
 				break;
 		case BOX_INLINE: strncpy(g + 80 * (y + box->y) + x + box->x,
-						box->node->parent->name, strlen(box->node->parent->name));
+						(const char *) box->node->parent->name,
+						strlen((const char *) box->node->parent->name));
 				break;
 		case BOX_INLINE_CONTAINER:
 		default:
+				break;
 	}
 
 	if (box->type == BOX_INLINE && box->node->content) {
@@ -99,11 +102,12 @@ void render_dump(struct box * box, unsigned long x, unsigned long y)
 		case BOX_TABLE_ROW:
 		case BOX_TABLE_CELL:
 		case BOX_FLOAT:
-		case BOX_BLOCK: name = box->node->name;
+		case BOX_BLOCK: name = (const char *) box->node->name;
 				break;
 		case BOX_INLINE:
 		case BOX_INLINE_CONTAINER:
 		default:
+				break;
 	}
 
 	printf("rect %li %li %li %li \"%s\" \"", x + box->x, y + box->y,
@@ -153,7 +157,7 @@ int main(int argc, char *argv[])
 	for (c = doc->children; c != 0 && c->type != XML_ELEMENT_NODE; c = c->next)
 		;
 	if (c == 0) die("no element in document");
-	if (strcmp(c->name, "html")) die("document is not html");
+	if (strcmp((const char *) c->name, "html")) die("document is not html");
 
 	fprintf(stderr, "Parsing css...\n");
 	f = load(argv[2]);

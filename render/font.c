@@ -1,5 +1,5 @@
 /**
- * $Id: font.c,v 1.3 2002/06/18 21:24:21 bursa Exp $
+ * $Id: font.c,v 1.4 2002/06/26 12:19:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -15,6 +15,7 @@
 
 struct font_set {
 	/* a set of font handles */
+	int stop_lcc_complaining;
 };
 
 /**
@@ -25,7 +26,7 @@ struct font_set * font_set_create(void)
 {
 	return 0;
 }
-	
+
 font_id font_add(struct font_set * font_set, const char * name, unsigned int weight,
 		unsigned int size)
 {
@@ -48,7 +49,7 @@ struct font_split font_split(struct font_set * font_set, font_id id, const char 
 	struct font_split split;
 
 	split.height = 30;
-	
+
 	if (len * 20 <= width) {
 		split.width = len * 20;
 		split.end = text + len;

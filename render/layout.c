@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.8 2002/06/21 18:16:24 bursa Exp $
+ * $Id: layout.c,v 1.9 2002/06/26 12:19:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -51,7 +51,7 @@ signed long len(struct css_length * length, struct css_style * style)
 		case CSS_UNIT_MM: return length->value * 3.5;
 		case CSS_UNIT_PT: return length->value * 90.0 / 72.0;
 		case CSS_UNIT_PC: return length->value * 90.0 / 6.0;
-		default: return 0;
+		default: break;
 	}
 	return 0;
 }
@@ -170,8 +170,8 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 				break;
 			default:
 				fprintf(stderr, "%s -> %s\n",
-						box->node ? box->node->name : "()",
-						c->node ? c->node->name : "()");
+						box->node ? (const char *) box->node->name : "()",
+						c->node ? (const char *) c->node->name : "()");
 				die("block child not block, table, or inline container");
 		}
 	}
@@ -382,7 +382,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	switch (first->parent->parent->style->text_align) {
 		case CSS_TEXT_ALIGN_RIGHT:  x0 = x1 - x; break;
 		case CSS_TEXT_ALIGN_CENTER: x0 = (x0 + (x1 - x)) / 2; break;
-		default:                    /* leave on left */
+		default:                    break; /* leave on left */
 	}
 	for (d = first; d != b; d = d->next) {
 		if (d->type == BOX_INLINE) {

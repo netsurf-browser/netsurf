@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.6 2002/06/21 18:16:24 bursa Exp $
+ * $Id: css.c,v 1.7 2002/06/26 12:19:24 bursa Exp $
  */
 
 #include <string.h>
@@ -579,6 +579,7 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 			break;
 		case CSS_FONT_SIZE_INHERIT:
 		default:                     /* leave unchanged */
+			break;
 	}
 }
 

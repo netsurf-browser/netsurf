@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.6 2002/06/21 18:16:24 bursa Exp $
+ * $Id: box.c,v 1.7 2002/06/26 12:19:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -67,10 +67,10 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 	if (n->type == XML_ELEMENT_NODE) {
 		/* work out the style for this element */
 		*selector = xrealloc(*selector, (depth + 1) * sizeof(struct css_selector));
-		(*selector)[depth].element = n->name;
+		(*selector)[depth].element = (const char *) n->name;
 		(*selector)[depth].class = (*selector)[depth].id = 0;
-		if ((s = xmlGetProp(n, "class")))
-			(*selector)[depth].class = s;
+		if ((s = xmlGetProp(n, (xmlChar *) "class")))
+			(*selector)[depth].class = (char *) s;
 		style = box_get_style(stylesheet, parent_style, n, *selector, depth + 1);
 	}
 
@@ -88,7 +88,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 		box_add_child(inline_container, box);
 		if (n->type == XML_TEXT_NODE) {
 			box->type = BOX_INLINE;
-			box->text = squash_whitespace(n->content);
+			box->text = squash_whitespace((char *) n->content);
 			box->length = strlen(box->text);
 		} else {
 			box->type = BOX_FLOAT;
@@ -156,6 +156,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 				break;
 			case CSS_DISPLAY_NONE:
 			default:
+				break;
 		}
 	}
 
@@ -171,18 +172,18 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 		xmlNode * n, struct css_selector * selector, unsigned int depth)
 {
 	struct css_style * style = xcalloc(1, sizeof(struct css_style));
-	xmlChar * s;
+	char * s;
 
 	memcpy(style, parent_style, sizeof(struct css_style));
 	css_get_style(stylesheet, selector, depth, style);
 
-	if ((s = xmlGetProp(n, "clear"))) {
+	if ((s = (char *) xmlGetProp(n, (xmlChar *) "clear"))) {
 		if (strcmp(s, "all") == 0) style->clear = CSS_CLEAR_BOTH;
 		else if (strcmp(s, "left") == 0) style->clear = CSS_CLEAR_LEFT;
 		else if (strcmp(s, "right") == 0) style->clear = CSS_CLEAR_RIGHT;
 	}
 
-	if ((s = xmlGetProp(n, "width"))) {
+	if ((s = (char *) xmlGetProp(n, (xmlChar *) "width"))) {
 		if (strrchr(s, '%'))
 			style->width.width = CSS_WIDTH_PERCENT,
 			style->width.value.percent = atof(s);
@@ -192,7 +193,7 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 			style->width.value.length.value = atof(s);
 	}
 
-	if ((s = xmlGetProp(n, "style"))) {
+	if ((s = (char *) xmlGetProp(n, (xmlChar *) "style"))) {
 		struct css_style * astyle = xcalloc(1, sizeof(struct css_style));
 		memcpy(astyle, &css_empty_style, sizeof(struct css_style));
 		css_parse_property_list(astyle, s);
