@@ -4,7 +4,7 @@
 NetSurf:NetSurf
 Info:Info
 AppHelp:Aide...
-Choices:Paramètres...
+Choices:Préférences...
 Quit:Quitter
 
 Page:Page
@@ -50,10 +50,10 @@ ToolButtons:Boutons
 ToolAddress:Barre d'adresse
 ToolThrob:Pulseur
 ToolStatus:Barre d'état
-Render:Render
-RenderText:Blend text to background
-RenderAnims:Buffer animations
-RenderAll:Buffer all rendering
+Render:Rendu
+RenderText:Panachage du texte sur le fond
+RenderAnims:Tamponner les animations
+RenderAll:Tamponner tous les rendus
 OptDefault:Définir par défaut
 Window:Fenêtre
 WindowSave:Définir comme position par défaut
@@ -63,7 +63,7 @@ WindowReset:RAZ de la position par défaut
 Utilities:Utilitaires
 HotlistAdd:Ajouter aux favoris
 HotlistShow:Montrer les favoris  F6
-FindText:Find text  F4
+FindText:Recherche de texte  F4
 Help:Aide
 HelpContent:Contenus  F1
 HelpGuide:Guide de l'utilisateur
@@ -71,11 +71,11 @@ HelpInfo:Information utilisateur
 HelpInter:Aide interactive
 HelpAbout:À propos de NetSurf
 
-Languages:Language
+Languages:Langue
 
-ProxyAuth:Authentication
-ProxyNone:None
-ProxyBasic:Basic
+ProxyAuth:Authentification
+ProxyNone:Aucune
+ProxyBasic:Basique
 ProxyNTLM:NTLM
 
 # Hotlist menus
@@ -118,15 +118,15 @@ Form_Reset:Effacer
 Form_None:
 Form_Many:(Plusieurs)
 Form_Drop:Déposer les fichiers ici
-FormSelect:Click to choose a form item
-FormCheckbox:Click to check this option
-FormRadio:Click to choose this option
-FormSubmit:Send form to %s
-FormBadSubmit:Warning: form can not be submitted
-FormTextarea:Click to edit the text
-FormTextbox:Click to edit this field
-FormReset:Reset form (not implemented)
-FormFile:Drop a file here to upload it
+FormSelect:Cliquer pour choisir un item de formulaire
+FormCheckbox:Cliquer pour cocher cette option
+FormRadio:Cliquer pour choisir cette option
+FormSubmit:Envoyer le formulaire à %s
+FormBadSubmit:Alerte: le formulaire n'a pas pu être envoyé
+FormTextarea:Cliquer pour éditer ce texte
+FormTextbox:Cliquer pour éditer ce champ
+FormReset:RAZ du formulaire (non implémenté)
+FormFile:Déposer un fichier ici pour le télésauver
 
 Not2xx:Le serveur a renvoyé une erreur
 
@@ -142,7 +142,7 @@ FontError:Échec d'ouverture de la fonte "Homerton.Medium" (%s).
 Resolvers:Aucun nom de domaine n'étant configuré, seul la consultation de fichiers locaux est possible. Utilisez Configure pour définir les serveurs de noms.
 PathToURL:Une erreur s'est produite en convertissant le chemin du fichier en une URL:
 SaveError:Le fichier n'a pas pu être sauvé suite à une erreur:
-LoadError:The file could not be loaded due to an error:
+LoadError:Le fichier n'a pas pu être chargé à cause d'une erreur:
 MenuError:Une erreur s'est produite lors de l'ouverture du menu:
 DragError:Une erreur s'est produite lors du déplacement d'icône:
 TbarError:Une erreur s'est produite lors de la construction de la barre d'outils:
@@ -157,8 +157,8 @@ NoNameError:Entrez un nom SVP
 NoURLError:Entrez une URL SVP
 URIError:NetSurf est incapable de traiter ce fichier URI à cause d'une erreur de syntaxe.
 EmptyError:Le fichier est vide.
-PrintError:An error occurred when printing:
-PrintErrorRO2:It appears that the printer is busy.
+PrintError:Une erreur s'est produite lors de l'impression:
+PrintErrorRO2:Il semble que l'imprimante soit occupée.
 
 # Some general purpose words and phrases
 Bytes: O
@@ -209,156 +209,156 @@ SaveObject:Objet
 SaveLink:Lien
 
 # Interactive help
-HelpToolbar0:\Tback button.|M\Straverse back one page in the history tree.|MDoes not resubmit form information.
-HelpToolbar1:\Tforward button.|M\Straverse forward one page in the history tree.|MDoes not resubmit form information.
-HelpToolbar2:\Tstop button.|M\Sstop loading this page.
-HelpToolbar3:\Treload button.|M\Sreload this page.|M\Areload this page and any objects it contains.
-HelpToolbar4:\Thome button.|M\Sgo to your home page.
-HelpToolbar5:\Thistory button.|M\Sopen the local history \w.
-HelpToolbar6:\Tsave button.|M\Ssave the current document.
-#HelpToolbar7:\Tprint button.|M\Sprint this page.|MOpens a print dialogue box.
-HelpToolbar8:\Thotlist button.|M\Sopen the hotlist management \w.|M\Aadd this address to the hotlist.
-HelpToolbar9:\Tscale view button.|M\Sscale the page, affecting both text and images.
-HelpToolbar10:\Tsearch button.|M\Sfind instances of a string of text on the page.
-#HelpToolbar11:\Tup button.|M\Smove up the directory structure.
-HelpToolbar12:\TURL bar.|MType in the address of a site to visit and press Return to go there.
-HelpToolbar13:\Tthrobber.|MIt animates while this \w is active.
+HelpToolbar0:\Tle bouton de retour.|M\Srevenir d'une page en arrière dans l'historique.|MNe renvoie pas l'information de formulaire.
+HelpToolbar1:\Tle bouton d'avance.|M\Savancer d'une page dans l'historique.|MNe renvoie pas l'information de formulaire.
+HelpToolbar2:\Tle bouton Stop.|M\Sarrêter le chargement de la page.
+HelpToolbar3:\Tle bouton de recharge.|M\Srecharger cette page.|M\Arecharger cette page et tous les objets qu'elle contient.
+#HelpToolbar4:\Tle bouton Accueil.|M\Saller à votre page d'accueil.
+HelpToolbar5:\Tle bouton d'historique.|M\Souvrir la \w d'historique locale.
+HelpToolbar6:\Tle bouton de sauvegarde.|M\Ssauver le document en cours.
+#HelpToolbar7:\Tle bouton d'impression.|M\Simprimer cette page.|MOuvre une boîte de dialogue pour l'impression.
+HelpToolbar8:\Tle bouton de favoris.|M\Souvrir la \w de gestion des favoris.|M\Aajouter cette adresse aux favoris.
+HelpToolbar9:\Tle bouton de changement d'échelle.|M\Sredimensionner la page, texte et images comprises.
+#HelpToolbar10:\Tle bouton de recherche.
+#HelpToolbar11:\Tle bouton Remonter.|M\Sremonter dans l'arborescence du système de fichiers.
+HelpToolbar12:\Tla barre d'URL.|MTapez l'adresse d'un site à visiter et appuyez sur Return pour y aller.
+HelpToolbar13:\Tle pulseur.|MIl s'anime lorsque cette \w est active.
 
-HelpStatus0:\Tstatus bar.|MIt displays information on what the browser \w is doing.
-HelpStatus1:\Tstatus bar resizer.|MDrag to alter the size of the status bar.
+HelpStatus0:\Tla barre d'état.|MElle affiche des informations sur ce que fait la \w de navigateur.
+HelpStatus1:\Tla glissière de la barre d'état.|MDéplacez-la pour changer la taille de la barre d'état.
 
-HelpIconMenu0:\Rview information about this software.
-HelpIconMenu1:\Sview NetSurf's documentation.
-HelpIconMenu2:\Sopen the Choices dialogue box.
-HelpIconMenu3:\Squit NetSurf.
+HelpIconMenu0:\Rvoir des informations sur ce logiciel.
+HelpIconMenu1:\Svoir la documentation de NetSurf.
+HelpIconMenu2:\Souvrir la boîte de dialogue des Préférences.
+HelpIconMenu3:\Squitter NetSurf.
 
-HelpBrowserMenu0:\Rsee the options relating to the current page.
-HelpBrowserMenu0-0:\Rsee information about the current page.
-HelpBrowserMenu0-1:\Rsave the current page as an HTML file.
-HelpBrowserMenu0-2:\Rsave the current page including all the images and style sheets used.
-HelpBrowserMenu0-3:\Rsee the export options.
-HelpBrowserMenu0-3-0:\Rexport the current page as a Drawfile.
-HelpBrowserMenu0-3-1:\Rexport the current page as a plain text file.
-HelpBrowserMenu0-4:\Rsave the address of the current page.
-HelpBrowserMenu0-4-0:\Rsave the current address in Acorn URI format.
-HelpBrowserMenu0-4-1:\Rsave the current address in Ant URL format.
-HelpBrowserMenu0-4-2:\Rsave the current address as plain text.
-#HelpBrowserMenu0-5:\Sopen the print dialogue box.
-HelpBrowserMenu0-6:\Sopen the current page in a new window.
-HelpBrowserMenu0-7:\Sview the source code of the current page in a text editor.
-HelpBrowserMenu1:\Rsee the options relating to the current item.
-HelpBrowserMenu1-0:\Rsee information about the current item.
-HelpBrowserMenu1-1:\Rsave the current item.
-HelpBrowserMenu1-2:\Rsee the export options.
-HelpBrowserMenu1-2-0:\Rsave the image as a Sprite.
-HelpBrowserMenu1-3:\Rsave the address of the current item.
-HelpBrowserMenu1-3-0:\Rsave the current item's address in Acorn URI format.
-HelpBrowserMenu1-3-1:\Rsave the current item's address in Ant URL format.
-HelpBrowserMenu1-3-2:\Rsave the current item's address as plain text.
-HelpBrowserMenu1-4:\Sreload all the items on this page.
-HelpBrowserMenu2:\Rsee the navigation options.
-#HelpBrowserMenu2-0:\Sreturn to the configured home page.
-HelpBrowserMenu2-1:\Sgo back a page in the local history.|MForm information is not resubmitted.
-HelpBrowserMenu2-2:\Sstep forward a page in the local history.|MForm information is not resubmitted.
-HelpBrowserMenu2-3:\Sfetch the current page again.
-HelpBrowserMenu2-4:\Sstop NetSurf from continuing to load this page.
-HelpBrowserMenu3:\Rset the local display options.
-HelpBrowserMenu3-0:\Rscale the page, affecting both text and images.
-HelpBrowserMenu3-1:\Rset the local image options.
-#HelpBrowserMenu3-1-0:\Stoggle the display of foreground images.
-HelpBrowserMenu3-1-1:\Stoggle the display of background images.
-HelpBrowserMenu3-1-2:\Stoggle the display of animations.|MIf turned off, the first frame is displayed.
-HelpBrowserMenu3-1-3:\Stoggle dithering of images.|MImproves display in sub true colour screen modes.
-#HelpBrowserMenu3-1-4:\Stoggle smoothing of scaled images.|MUses bi-linear filtering to enhance display of scaled images.
-HelpBrowserMenu3-2:\Rcontrol the display of NetSurf's toolbars.
-HelpBrowserMenu3-2-0:\Stoggle the display of the toolbar buttons.|MURL bar uses the remaining space.
-HelpBrowserMenu3-2-1:\Stoggle the display of the address (URL) bar.
-HelpBrowserMenu3-2-2:\Stoggle the display of the throbber.|MURL bar uses the remaining space.
-HelpBrowserMenu3-2-3:\Stoggle the display of the status bar.|MHorizontal scroll bar uses the remaining width.
-HelpBrowserMenu3-3:\Scontrol the manner the display is rendered.
-HelpBrowserMenu3-3-0:\Stoggle whether text is blended to the background.
-HelpBrowserMenu3-3-1:\Stoggle whether animations are not displayed until all calculations are complete.
-HelpBrowserMenu3-3-2:\Stoggle whether everything is not displayed until all calculations are complete.
-HelpBrowserMenu3-4:\Smake your local display options the default options for NetSurf.
-HelpBrowserMenu4:\Rto access NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and various setup options.
-HelpBrowserMenu4-0:\Rmanage the hotlist.
-HelpBrowserMenu4-0-0:\Sadd the current page to the hotlist.
-HelpBrowserMenu4-0-1:\Sopen the hotlist management \w.
-HelpBrowserMenu4-1:\Rcontrol the default window positioning.
-HelpBrowserMenu4-1-0:\Sto make the current \w position the default.
-HelpBrowserMenu4-1-1:\Sto toggle whether subsequent windows are staggered down the screen.
-HelpBrowserMenu4-1-2:\Sto toggle whether child windows are opened at the size of the parent.
-HelpBrowserMenu4-1-3:\Sto return to the default window positioning.
-HelpBrowserMenu5:\Rsee the help resources available.
-HelpBrowserMenu5-0:\Sopen the documentation contents page in a new \w.
-HelpBrowserMenu5-1:\Sopen the user guide in a new \w.
-HelpBrowserMenu5-2:\Sopen the user information page in a new \w.
-HelpBrowserMenu5-3:\Sopen the NetSurf about page in a new \w.
-HelpBrowserMenu5-4:\Srun Help.
+HelpBrowserMenu0:\Rvoir les options en rapport avec la page en cours.
+HelpBrowserMenu0-0:\Rvoir les informations concernant la page en cours.
+HelpBrowserMenu0-1:\Rsauver la page courante en fichier HTML.
+HelpBrowserMenu0-2:\Rsauver la page courante y compris toutes les images et les feuilles de style utilisées.
+HelpBrowserMenu0-3:\Rvoir les options d'exportation.
+HelpBrowserMenu0-3-0:\Rexporter la page courante en Drawfile.
+HelpBrowserMenu0-3-1:\Rexporter la page courante en simple fichier texte.
+HelpBrowserMenu0-4:\Rsauver l'adresse de la page courante.
+HelpBrowserMenu0-4-0:\Rsauver l'adresse en cours au format Acorn URI.
+HelpBrowserMenu0-4-1:\Rsauver l'adresse en cours au format Ant URL.
+HelpBrowserMenu0-4-2:\Rsauver l'adresse courante en simple texte.
+HelpBrowserMenu0-5:\Souvrir la boîte de dialogue d'impression.
+HelpBrowserMenu0-6:\Souvrir la page courante dans une nouvelle fenêtre.
+HelpBrowserMenu0-7:\Svoir le code source de la page courante dans un éditeur de texte.
+HelpBrowserMenu1:\Rvoir les options correspondant à l'objet courant.
+HelpBrowserMenu1-0:\Rvoir les informations sur l'objet en cours.
+HelpBrowserMenu1-1:\Rsauver l'objet courant.
+HelpBrowserMenu1-2:\Rvoir les options d'exportation.
+HelpBrowserMenu1-2-0:\Rsauver l'image au format Sprite.
+HelpBrowserMenu1-3:\Rsauver l'adresse de l'objet courant.
+HelpBrowserMenu1-3-0:\Rsauver l'adresse de l'objet courant au format Acorn URI.
+HelpBrowserMenu1-3-1:\Rsauver l'adresse de l'objet courant au format Ant URL.
+HelpBrowserMenu1-3-2:\Rsauver l'adresse de l'objet courant en texte simple.
+HelpBrowserMenu1-4:\Srecharger tous les objets de cete page.
+HelpBrowserMenu2:\Rvoir les options de navigation.
+#HelpBrowserMenu2-0:\Srevenir à la page d'accueil configurée.
+HelpBrowserMenu2-1:\Sreculer d'une page dans l'historique local.|ML'information du formlaire n'est pas réenvoyée.
+HelpBrowserMenu2-2:\Savancer d'une page dans l'historique local.|ML'information du formlaire n'est pas réenvoyée.
+HelpBrowserMenu2-3:\Srecommencer le chargement de la page courante.
+HelpBrowserMenu2-4:\Sarrêter le chargement de la page par NetSurf.
+HelpBrowserMenu3:\Rdéfinir les options d'affichage locales.
+HelpBrowserMenu3-0:\Rredimensionner la page, y compris texte et images.
+HelpBrowserMenu3-1:\Rdéfinir les options d'images locales.
+#HelpBrowserMenu3-1-0:\Safficher ou pas des images d'avant-plan.
+HelpBrowserMenu3-1-1:\Safficher ou pas des images de fond.
+HelpBrowserMenu3-1-2:\Safficher ou pas des animations.|MSi les animations ne sont pas montrées, seule la première image est affichée.
+HelpBrowserMenu3-1-3:\Sdiffuser l'erreur ou pas.|MAméliore l'affichage dans les modes écrans inférieurs à 16M de couleurs.
+#HelpBrowserMenu3-1-4:\Sadoucit les images redimensionnées.|MUtilise un filtrage bilinéaire pour améliorer ces images.
+HelpBrowserMenu3-2:\Rcontroler l'affichage des barres d'outils de NetSurf.
+HelpBrowserMenu3-2-0:\Safficher ou pas les boutons de la barre d'outil.|MLa barre d'URL utilise l'espace restant.
+HelpBrowserMenu3-2-1:\Safficher ou pas la barre d'adresse (URL).
+HelpBrowserMenu3-2-2:\Safficher le pulseur ou pas.|MLa barre d'URL utilise l'espace restant.
+HelpBrowserMenu3-2-3:\Safficher la barre d'état ou pas.|MLa barre de défilement horizontal utilise la largeur restante.
+HelpBrowserMenu3-3:\Scontroler la façon d'afficher.
+HelpBrowserMenu3-3-0:\Safficher le texte panaché avec le fond (text blend) ou pas.
+HelpBrowserMenu3-3-1:\Sdécider si les animations sont affichées quand tous les calculs sont terminés (ou avant).
+HelpBrowserMenu3-3-2:\Sdécider si tout doit être affiché quand tous les calculs sont terminés (ou avant).
+HelpBrowserMenu3-4:\Spromouvoir vos options d'affichage locales en options par défaut pour NetSurf.
+HelpBrowserMenu4:\Raccéder aux utilitaires intégrés à NetSurf.|MLes utilitaires sont des outils comme les favoris, l'historique arborescent et diverses options de configuration.
+HelpBrowserMenu4-0:\Rgérer les favoris.
+HelpBrowserMenu4-0-0:\Sajouter la page en cours aux favoris.
+HelpBrowserMenu4-0-1:\Souvrir la \w de gestion des favoris.
+HelpBrowserMenu4-1:\Rcontroler le positionnement de fenêtre par défaut.
+HelpBrowserMenu4-1-0:\Spromouvoir la position de fenêtre courante en celle par défault.
+HelpBrowserMenu4-1-1:\Sdécider si les fenêtres suivantes doivent être ouvertes en décalage à l'écran.
+HelpBrowserMenu4-1-2:\Sdécider si les fenêtres-filles doivent être ouvertes à la même taille que celle de leurs parents.
+HelpBrowserMenu4-1-3:\Srevenir au positionnement de fenêtre par défaut.
+HelpBrowserMenu5:\Rvoir l'aide disponible.
+HelpBrowserMenu5-0:\Souvrir la page de documentation dans une nouvelle fenêtre.
+HelpBrowserMenu5-1:\Souvrir le guide de l'utilisateur dans une nouvelle fenêtre.
+HelpBrowserMenu5-2:\Souvrir la page d'information de l'utilisateur dans une nouvelle fenêtre.
+HelpBrowserMenu5-3:\Souvrir la page "À propos de" de NetSurf dans une nouvelle fenêtre.
+HelpBrowserMenu5-4:\Slancer Help.
 
-HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.
+HelpBrowser-1:Cliquer \s sur un lien pour le suivre.|MCliquer \a sur un lien pour l'ouvrir dans une nouvelle \w.
 
-HelpIconbar:\TNetSurf icon.|M\Sopen a new browser \w.|M\Aopen the hotlist management \w.
-HelpHistory:Use this \w to navigate around the local history tree.|M\Son a thumbnail to return to that page.
+HelpIconbar:\Tl'icône de NetSurf.|M\Souvrir une nouvelle \w de navigateur.|M\Aouvrir la fenêtre de gestion des favoris.
+HelpHistory:Utiliser cette \w pour naviguer dans l'historique arborescent local.|M\Ssur une vignette pour revenir à cette page.
 
-HelpSaveAs0:Drag SELECT this icon to the directory in which you want to save the file.
-HelpSaveAs1:This is the filename under which this document will be saved.
-HelpSaveAs2:\Ssave the file with the current filename.|MIf a full path is not set, you must drag the icon to a directory.
-HelpSaveAs3:\Sclose this \w without saving.
+HelpSaveAs0:Déposer cette icône dans le repertoire où vous voulez sauver le fichier.
+HelpSaveAs1:Ceci est le nom de fichier sous lequel le document sera sauvé.
+HelpSaveAs2:\Ssauver le fichier avec le nom de fichier en cours.|MSi le nom de chemin n'est pas complet, il vous faudra déposer l'icône dans un répertoire.
+HelpSaveAs3:\Sfermer cette \w sans sauvegarder.
 
-HelpScaleView:Use this \w to change the scale the page is displayed at.
-HelpScaleView1:Enter the scale you wish the page to be displayed at.
-HelpScaleView2:\Sreduce the scale, 10% at a time.
-HelpScaleView3:\Sincrease the scale, 10% at a time.
-HelpScaleView5:\Sautomatically choose a scale of 50%.
-HelpScaleView6:\Sautomatically choose a scale of 80%.
-HelpScaleView7:\Sautomatically choose a scale of 100%.
-HelpScaleView8:\Sautomatically choose a scale of 120%.
-HelpScaleView9:\Scancel changes.|MThe current scale will not be changed.
-HelpScaleView10:\Schange the view to the scale you have chosen.
+HelpScaleView:Utiliser cette \w pour changer l'échelle d'affichage.
+HelpScaleView1:Saisissez l'échelle à laquelle vous voulez afficher cette page.
+HelpScaleView2:\Sréduire l'échelle, par pas de 10%.
+HelpScaleView3:\Saugmenter l'échelle, par pas de 10%.
+HelpScaleView5:\Sdirectement choisir une échelle de 50%.
+HelpScaleView6:\Sdirectement choisir une échelle de 80%.
+HelpScaleView7:\Sdirectement choisir une échelle de 100%.
+HelpScaleView8:\Sdirectement choisir une échelle de 120%.
+HelpScaleView9:\Sannuler les changements.|ML'échelle en cours ne sera pas modifiée.
+HelpScaleView10:\Svalider le changement d'échelle.
 
-HelpHotFolder:Use this \w to set the directory name.
-HelpHotEntry:Use this \w to set the entry details.
-HelpHotlist:\Thotlist management window.
-HelpHotlist0:\Sopen this directory.
-HelpHotlist1:\Sclose this directory.
-HelpHotlist2:\Sshow the entry details.
-HelpHotlist3:\Shide the entry details.
-HelpHotlist4:\Sselect this directory.|MDouble-click \s to open this directory.
-HelpHotlist5:\Sselect this entry.|MDouble-click \s to launch this URL.
-HelpHotlist6:Release the mouse buttons to complete your selection.
-HelpHotlist7:Release the mouse buttons to move the selection.
+HelpHotFolder:Utiliser cette \w pour définir le nom de répertoire.
+HelpHotEntry:Utiliser cette \w pour définir les détails de cette entrée.
+HelpHotlist:\Tla fenêtre de gestion des favoris.
+HelpHotlist0:\Souvrir ce répertoire.
+HelpHotlist1:\Sfermer ce répertoire.
+HelpHotlist2:\Smontrer les détails de cette entrée.
+HelpHotlist3:\Scacher les détails de cette entrée.
+HelpHotlist4:\Ssélectionner ce répertoire.|MDouble-cliquer \s pour ouvrir ce répertoire.
+HelpHotlist5:\Ssélectionner cette entrée.|MDouble-cliquer \s pour lancer cette URL.
+HelpHotlist6:Lâcher les boutons de souris pour terminer votre sélection.
+HelpHotlist7:Lâcher les boutons de souris pour déplacer votre sélection.
 
-HelpHotToolbar0:\Tcreate button.|M\Screate a new directory.|M\Acreate a new entry.
-HelpHotToolbar1:\Tdelete button.|M\Sdelete the current selection.
-HelpHotToolbar2:\Texpand entries button.|M\Sexpand all entries or entries within the current selection.|M\Acollapse all entries or entries within the current selection.|MExpanded entries show additional details, such as a visit counter.
-HelpHotToolbar3:\Topen directories button.|M\Sopen all directories or directories within the current selection.|M\Aclose all directories or directories within the current selection.
-HelpHotToolbar4:\Tlaunch button.|M\Slaunch the current selection.
+HelpHotToolbar0:\Tle bouton Créer.|M\Scréer un nouveau répertoire.|M\Acréer une nouvelle entrée.
+HelpHotToolbar1:\Tle bouton Supprimer.|M\Ssupprimer la sélection courante.
+HelpHotToolbar2:\Tle bouton de déploiement des entrées.|M\Sdéployer toutes les entrées ou seulement celle de la sélection courante.|M\ARegrouper toutes les entrées ou seulement celles de la sélection courante.|MLes entrées déployées affichent des infos supplémentaires, comme un compteur de visite.
+HelpHotToolbar3:\Tle bouton d'ouverture de répertoires.|M\Souvrir tous les répertoires ou seulement ceux de la sélection courante.|M\Afermer tous les répertoires ou seulement ceux de la sélection courante.
+HelpHotToolbar4:\Tle bouton de lancement.|M\Slancer (ouvrir) la sélection en cours.
 
-HelpHotlistMenu0:\Rperform an operation on the hotlist.
-HelpHotlistMenu0-0:\Rcreate a new item.
-HelpHotlistMenu0-0-0:\Rcreate a new directory.
-HelpHotlistMenu0-0-1:\Rcreate a new address.
-HelpHotlistMenu0-1:\Ssave any changes made to the hotlist.
-HelpHotlistMenu0-2:\Rexport the hotlist as an HTML file.
-HelpHotlistMenu0-3:\Rexpand items within the hotlist.
-HelpHotlistMenu0-3-0:\Sopen all directories and show all entry details.
-HelpHotlistMenu0-3-1:\Sopen all directories.
-HelpHotlistMenu0-3-2:\Sshow all entry details.
-HelpHotlistMenu0-4:\Rcollapse items within the hotlist.
-HelpHotlistMenu0-4-0:\Sclose all directories and hide all entry details.
-HelpHotlistMenu0-4-1:\Sclose all directories.
-HelpHotlistMenu0-4-2:\Shide all entry details.
-HelpHotlistMenu1:\Roperate on the current selection.
-HelpHotlistMenu1-0:\Rsave the current selection.
-HelpHotlistMenu1-0-0:\Rto save the current address in Acorn URI format.
-HelpHotlistMenu1-0-1:\Rto save the current address in Ant URL format.
-HelpHotlistMenu1-0-2:\Rto save the current selection as HTML.
-HelpHotlistMenu1-1:\Redit the current item.
-HelpHotlistMenu1-2:\Slaunch the current selection.
-HelpHotlistMenu1-3:\Sdelete the current selection from the hotlist.
-HelpHotlistMenu1-4:\Sreset statistics, such as visit count, for selected items.
-HelpHotlistMenu2:\Sselect all the items in the hotlist.
-HelpHotlistMenu3:\Sdeselect all selected items.
+HelpHotlistMenu0:\Raccomplir une opération sur les favoris.
+HelpHotlistMenu0-0:\Rcréer un nouvel item.
+HelpHotlistMenu0-0-0:\Rcréer un nouveau répertoire.
+HelpHotlistMenu0-0-1:\Rcréer une nouvelle adresse.
+HelpHotlistMenu0-1:\Ssauver tout changement fait sur les favoris.
+HelpHotlistMenu0-2:\Rexporter les favoris en fichier HTML.
+HelpHotlistMenu0-3:\Rdéployer les items dans la liste des favoris.
+HelpHotlistMenu0-3-0:\Souvrir tous les répertoires et afficher tous les détails connus sur les entrées.
+HelpHotlistMenu0-3-1:\Souvrir tous les répertoires.
+HelpHotlistMenu0-3-2:\Smontrer tous les détails sur les entrées.
+HelpHotlistMenu0-4:\Rregrouper les items dans la liste des favoris.
+HelpHotlistMenu0-4-0:\Sfermer tous les répertoires et cacher les détails sur les entrées.
+HelpHotlistMenu0-4-1:\Sfermer tous les répertoires.
+HelpHotlistMenu0-4-2:\Scacher tous les détails sur les entrées.
+HelpHotlistMenu1:\Ragir sur la sélection en cours.
+HelpHotlistMenu1-0:\Rsauver la sélection courante.
+HelpHotlistMenu1-0-0:\Rsauver l'adresse en cours au format Acorn URI.
+HelpHotlistMenu1-0-1:\Rsauver l'adresse en cours au format Ant URL.
+HelpHotlistMenu1-0-2:\Rsauver la sélection courante en HTML.
+HelpHotlistMenu1-1:\Rééditer l'item en cours.
+HelpHotlistMenu1-2:\Slancer la sélection courante.
+HelpHotlistMenu1-3:\Ssupprimer la sélection courante de la liste des favoris.
+HelpHotlistMenu1-4:\Sremettre à zéro les statistiques, comme le compteur de visite, pour les items sélectionnés.
+HelpHotlistMenu2:\Ssélectionner tous les items de la liste des favoris.
+HelpHotlistMenu3:\Sdésélectionner la sélection courante.
 
-HelpAppInfo:\TNetSurf information \w.|MSee the about page for the contributor list and credits.
+HelpAppInfo:\Tla \w d'information de NetSurf.|MVoir la page "À propos de" pour une liste des contributeurs et les remerciements.
