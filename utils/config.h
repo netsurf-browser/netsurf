@@ -29,7 +29,7 @@
     #define WITH_PNG
     #define WITH_MNG
 #endif
-#ifdef defined(riscos) || defined(ncos)
+#if defined(riscos) || defined(ncos)
     #define WITH_DRAW
     #define WITH_SPRITE
 #endif
