@@ -195,7 +195,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		/* if we're simply moving to another ID on the same page,
 		 * don't bother to fetch, just update the window
 		 */
-		if (strncasecmp(bw->current_content->url,
+		if (bw->current_content &&
+				strncasecmp(bw->current_content->url,
 						url2, hash - url2) == 0) {
 			free(url2);
 			browser_window_update(bw, false);
