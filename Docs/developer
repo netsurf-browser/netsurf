@@ -12,6 +12,7 @@ The source is split at top level as follows:
 - Non-platform specific front-end (desktop/)
 - RISC OS specific code (riscos/)
 - Unix debug build specific code (debug/)
+- GTK specific code (gtk/)
 - Misc. useful functions (utils/)
 
 \section content Fetching, caching, and converting content (content/)
@@ -102,7 +103,7 @@ http://netsurf.strcprstskrzkrk.co.uk/developer/
 - libxml (XML and HTML parser)		http://www.xmlsoft.org/
 - libcurl (HTTP, FTP, etc)		http://curl.haxx.se/libcurl/
 - OSLib (C interface to RISC OS SWIs)	http://ro-oslib.sourceforge.net/
-- libpng (PNG support)			http://www.libpng.org/pub/png/libpng.html
+- libmng (PNG, JNG, MNG support)	http://www.libmng.com/
 - libjpeg (JPEG support)		http://www.ijg.org/
 - zlib					http://www.gzip.org/zlib/
 - OpenSSL (HTTPS support)		http://www.openssl.org/
