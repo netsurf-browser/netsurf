@@ -638,6 +638,7 @@ void css_dump_style(const struct css_style * const style)
 	}
 	fprintf(stderr, "; ");
 	fprintf(stderr, "text-align: %s; ", css_text_align_name[style->text_align]);
+        fprintf(stderr, "text-decoration: %s; ", css_text_decoration_name[style->text_decoration]);
 	fprintf(stderr, "visibility: %s; ", css_visibility_name[style->visibility]);
 	fprintf(stderr, "width: ");
 	switch (style->width.width) {

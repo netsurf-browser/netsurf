@@ -283,14 +283,15 @@ void html_redraw_box(struct content *content, struct box * box,
 
 		colourtrans_set_font_colours(box->font->handle, current_background_color << 8,
 					     box->style->color << 8, 14, 0, 0, 0);
+
                 if (box->style->text_decoration == CSS_TEXT_DECORATION_NONE ||
 		    box->style->text_decoration == CSS_TEXT_DECORATION_BLINK) {
-		       font_paint(box->font->handle, box->text,
-			   font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
-			   x, y - (int) (box->height * 1.5),
-			   NULL, NULL, (int) box->length);
+	               font_paint(box->font->handle, box->text,
+		           font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
+		           x, y - (int) (box->height * 1.5),
+		           NULL, NULL, (int) box->length);
 		}
-                if (box->style->text_decoration == CSS_TEXT_DECORATION_UNDERLINE) {
+                if (box->style->text_decoration == CSS_TEXT_DECORATION_UNDERLINE || (box->parent->parent->style->text_decoration == CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK)) {
                         char ulctrl[3];
                         char *temp = xcalloc(strlen(box->text)+4,
                                              sizeof(char));
@@ -303,7 +304,7 @@ void html_redraw_box(struct content *content, struct box * box,
 			   NULL, NULL, (int) box->length + 3);
 		        xfree(temp);
 		}
-                if (box->style->text_decoration == CSS_TEXT_DECORATION_LINE_THROUGH){
+                if (box->style->text_decoration == CSS_TEXT_DECORATION_LINE_THROUGH || (box->parent->parent->style->text_decoration == CSS_TEXT_DECORATION_LINE_THROUGH && box->parent->parent->type == BOX_BLOCK)) {
                         char ulctrl[3];
                         char *temp = xcalloc(strlen(box->text)+4,
                                              sizeof(char));
@@ -316,7 +317,7 @@ void html_redraw_box(struct content *content, struct box * box,
 			   NULL, NULL, (int) box->length + 3);
 		        xfree(temp);
 		}
-		if (box->style->text_decoration == CSS_TEXT_DECORATION_OVERLINE) {
+		if (box->style->text_decoration == CSS_TEXT_DECORATION_OVERLINE || (box->parent->parent->style->text_decoration == CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK)) {
                         char ulctrl[3];
                         char *temp = xcalloc(strlen(box->text)+4,
                                              sizeof(char));
