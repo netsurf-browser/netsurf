@@ -469,35 +469,16 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 
 void ro_gui_dialog_redraw(wimp_draw *redraw)
 {
-	os_error *error;
-	osbool more;
 	struct toolbar_display *display;
 
-	for (display = toolbars; display; display = display->next) {
+	for (display = toolbars; display; display = display->next)
 		if ((display->toolbar) && (display->toolbar->toolbar_handle ==
 				redraw->w)) {
 			ro_gui_theme_redraw(display->toolbar, redraw);
 			return;
 		}
-	}
 
-	error = xwimp_redraw_window(redraw, &more);
-	if (error) {
-		LOG(("xwimp_redraw_window: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-	while (more) {
-		error = xwimp_get_rectangle(redraw, &more);
-		if (error) {
-			LOG(("xwimp_get_rectangle: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-	}
-
+	ro_gui_user_redraw(redraw, false, (os_gcol)0);
 }
 
 

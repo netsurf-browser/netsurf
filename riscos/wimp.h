@@ -55,5 +55,5 @@ void ro_gui_open_pane(wimp_w parent, wimp_w pane, int offset);
 wimp_w ro_gui_set_window_background_colour(wimp_w window, wimp_colour background);
 void ro_gui_set_icon_colours(wimp_w window, wimp_i icon,
 		wimp_colour foreground, wimp_colour background);
-
+void ro_gui_user_redraw(wimp_draw *redraw, bool user_fill, os_colour user_colour);
 #endif

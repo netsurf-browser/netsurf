@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "oslib/colourtrans.h"
 #include "oslib/os.h"
 #include "oslib/osfile.h"
 #include "oslib/wimp.h"
@@ -624,5 +625,47 @@ void ro_gui_open_pane(wimp_w parent, wimp_w pane, int offset)
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 		return;
+	}
+}
+
+
+/**
+ * Performs simple user redraw for a window.
+ *
+ * \param  user_fill    whether to fill the redraw area
+ * \param  user_colour  the colour to use when filling
+ */
+
+void ro_gui_user_redraw(wimp_draw *redraw, bool user_fill, os_colour user_colour)
+{
+	os_error *error;
+	osbool more;
+
+	error = xwimp_redraw_window(redraw, &more);
+	if (error) {
+		LOG(("xwimp_redraw_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	while (more) {
+	  	if (user_fill) {
+			error = xcolourtrans_set_gcol(user_colour,
+					colourtrans_SET_BG,
+					os_ACTION_OVERWRITE, 0, 0);
+			if (error) {
+				LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("MiscError", error->errmess);
+			}
+			os_clg();
+	  	}
+		error = xwimp_get_rectangle(redraw, &more);
+		if (error) {
+			LOG(("xwimp_get_rectangle: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
 	}
 }

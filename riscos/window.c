@@ -438,31 +438,62 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 {
 	osbool more;
 	bool clear_background = false;
+	bool clear_partial = false;
 	float scale = 1;
 	struct content *c = g->bw->current_content;
 	int clip_x0, clip_y0, clip_x1, clip_y1;
+	int content_y1, content_x1;
 	os_error *error;
+	osspriteop_area *area;
+	osspriteop_header *header;
+
+	/*	Handle no content quickly
+	*/
+	if (!c) {
+	  	ro_gui_user_redraw(redraw, true, os_COLOUR_WHITE);
+	  	return;
+	}
 
 	plot = ro_plotters;
 	ro_plot_set_scale(g->option.scale);
-
-	/*	Set the current redraw gui_window to get options from
-	*/
 	ro_gui_current_redraw_gui = g;
 
 	/*	We should clear the background, except for HTML.
 	*/
-	if (!c) {
-	  	clear_background = true;
-	} else {
-		switch (c->type) {
-			case CONTENT_HTML:
-				break;
-			default:
-				clear_background = true;
-				scale = g->option.scale;
-				break;
-		}
+	switch (c->type) {
+		case CONTENT_HTML:
+			break;
+		case CONTENT_CSS:
+		case CONTENT_TEXTPLAIN:
+#ifdef WITH_JPEG
+		case CONTENT_JPEG:
+#endif
+			clear_partial = true;
+			clear_background = true;
+			scale = g->option.scale;
+			break;
+		
+
+#ifdef WITH_SPRITE
+		case CONTENT_SPRITE:
+			area = (osspriteop_area *)c->data.sprite.data;
+			header = (osspriteop_header *)((char*)area + area->first);
+			clear_partial = (header->image) == (header->mask);
+#endif
+#ifdef WITH_GIF
+		case CONTENT_GIF:
+#endif
+#ifdef WITH_MNG
+		case CONTENT_JNG:
+		case CONTENT_MNG:
+		case CONTENT_PNG:
+#endif
+			if (c->bitmap)
+				clear_partial = bitmap_get_opaque(c->bitmap);
+		default:
+			clear_background = true;
+			scale = g->option.scale;
+			break;
 	}
 
 	error = xwimp_redraw_window(redraw, &more);
@@ -473,8 +504,16 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 		return;
 	}
 	while (more) {
+		ro_plot_origin_x = redraw->box.x0 - redraw->xscroll;
+		ro_plot_origin_y = redraw->box.y1 - redraw->yscroll;
+		clip_x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2;
+		clip_y0 = (ro_plot_origin_y - redraw->clip.y1) / 2;
+		clip_x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2;
+		clip_y1 = (ro_plot_origin_y - redraw->clip.y0) / 2;
+
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
+
 		if (clear_background) {
 			error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
 					colourtrans_SET_BG,
@@ -484,24 +523,39 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 						error->errnum, error->errmess));
 				warn_user("MiscError", error->errmess);
 			}
-			os_clg();
+			if (clear_partial) {
+			  	content_x1 = ro_plot_origin_x + c->width * 2 * scale;
+			  	content_y1 = ro_plot_origin_y - c->height * 2 * scale;
+			  	if (content_y1 > redraw->clip.y0) {
+					xos_plot(os_MOVE_TO,
+							ro_plot_origin_x,
+							content_y1);
+					xos_plot(os_PLOT_BG_TO | os_PLOT_RECTANGLE,
+							redraw->clip.x1,
+							redraw->clip.y0);
+				}
+			  	if (content_x1 < redraw->clip.x1) {
+					xos_plot(os_MOVE_TO,
+							content_x1,
+							ro_plot_origin_y);
+					xos_plot(os_PLOT_BG_TO | os_PLOT_RECTANGLE,
+							redraw->clip.x1,
+							content_y1);
+				}
+			} else {
+				os_clg();
+			}
 		}
 
-		if (c) {
-			ro_plot_origin_x = redraw->box.x0 - redraw->xscroll;
-			ro_plot_origin_y = redraw->box.y1 - redraw->yscroll;
-			clip_x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2;
-			clip_y0 = (ro_plot_origin_y - redraw->clip.y1) / 2;
-			clip_x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2;
-			clip_y1 = (ro_plot_origin_y - redraw->clip.y0) / 2;
-			content_redraw(c, 0, 0,
-					c->width * scale, c->height * scale,
-					clip_x0, clip_y0, clip_x1, clip_y1,
-					g->option.scale,
-					0xFFFFFF);
-		}
+		content_redraw(c, 0, 0,
+				c->width * scale, c->height * scale,
+				clip_x0, clip_y0, clip_x1, clip_y1,
+				g->option.scale,
+				0xFFFFFF);
+
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_close();
+
 		error = xwimp_get_rectangle(redraw, &more);
 		/* RISC OS 3.7 returns an error here if enough buffer was
 		   claimed to cause a new dynamic area to be created. It
@@ -518,10 +572,6 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 			return;
 		}
 	}
-
-	/*	Reset the current redraw gui_window to prevent thumbnails from
-		retaining options
-	*/
 	ro_gui_current_redraw_gui = NULL;
 }
 
