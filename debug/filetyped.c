@@ -25,6 +25,10 @@ const char *fetch_filetype(const char *unix_path)
 		return "image/jpeg";
 	if (3 < l && strcasecmp(unix_path + l - 4, "jpeg") == 0)
 		return "image/jpeg";
+	if (2 < l && strcasecmp(unix_path + l - 3, "gif") == 0)
+		return "image/gif";
+	if (2 < l && strcasecmp(unix_path + l - 3, "png") == 0)
+		return "image/png";
 	return "text/html";
 }
 
