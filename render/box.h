@@ -191,14 +191,14 @@ struct box {
 
 	struct font_data *font;  /**< Font, or 0 if no text. */
 
-	/**< Form control data, or 0 if not a form control. */
+	/** Form control data, or 0 if not a form control. */
 	struct form_control* gadget;
 
-	/**< Object in this box (usually an image), or 0 if none. */
+	/** Object in this box (usually an image), or 0 if none. */
 	struct content* object;
-	/**< Parameters for the object, or 0. */
+	/** Parameters for the object, or 0. */
 	struct object_params *object_params;
-	/**< State of object, or 0. */
+	/** State of object, or 0. */
 	void *object_state;
 };
 
