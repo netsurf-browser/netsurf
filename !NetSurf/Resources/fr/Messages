@@ -1,0 +1,50 @@
+# French messages for NetSurf
+#Version:0.01
+
+# Menus
+NetSurf:NetSurf
+Info:Info
+Choices:Paramêtres...
+Help:Aide...
+Quit:Quitter
+
+Page:Page
+PageInfo:Info...
+Save:Sauver
+Export:Exporter
+ExportAs:Exporter sous
+Draw:Draw
+Print:Imprimer...
+Selection:Sélection
+Copy:Copier vers le presse papier
+SelectAll:Tout sélectionner
+Clear:Effacer la sélection
+Navigate:Naviguer
+OpenURL:Ouvril URL...
+Home:Page d'accueil
+Back:Retour
+Forward:Avancer
+Reload:Recharger cette page
+View:Affichage
+ScaleView:Ajuster la vue
+
+Themes:Thèmes
+
+# Download window
+Downloaded:Téléchargement terminé, %lu octès
+
+# Forms
+Form_Submit:Soumettre
+Form_Reset:Effacer
+Form_None:
+Form_Many:(Plusieurs)
+
+Not2xx:Le serveur a renvoyé une erreur
+
+cookiefile:Choices:WWW.NetSurf.Cookies
+cookiejar:<Choices$Write>.WWW.NetSurf.Cookies
+
+ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><title>Erreur</title></head><body><h1>Désolé, NetSurf n'a pas pu afficher cette page</h1><p><strong>%s</strong></p></body></html>
+InvalidURL:L'adresse <em>%s</em> est incomprise.
+
+NoMemory:NetSurf a besoin de plus de mémoire. Veuillez libérer de la mémoire et réessayer.
