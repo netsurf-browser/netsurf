@@ -702,7 +702,7 @@ bool layout_line(struct box *first, int width, int *y,
 	used_height = height = line_height(first->parent->parent->style);
 
 	/* pass 1: find height of line assuming sides at top of line */
-	for (x = 0, b = first; x < x1 - x0 && b != 0; b = b->next) {
+	for (x = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
 		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_FLOAT_LEFT ||
 				b->type == BOX_FLOAT_RIGHT ||
@@ -1783,12 +1783,17 @@ bool calculate_table_widths(struct box *table)
 				/* find min, max width so far of
 				 * spanned columns */
 				for (j = 0; j != cell->columns; j++) {
-					min += col[i + j].min;
 					max += col[i + j].max;
-					if (col[i + j].type == COLUMN_WIDTH_FIXED)
+					if (col[i + j].type == COLUMN_WIDTH_FIXED) {
+						if (col[i + j].min < col[i + j].width)
+							min += col[i + j].width;
+						else
+							min += col[i + j].min;
 						fixed_width += col[i + j].width;
-					else
+					} else {
+						min += col[i + j].min;
 						flexible_columns++;
+					}
 				}
 
 				if (cell->style->width.width == CSS_WIDTH_LENGTH) {
