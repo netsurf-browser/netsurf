@@ -216,11 +216,17 @@ void nsgif_animate(void *p)
 				c->data.gif.gif->frames[c->data.gif.current_frame - 1].redraw_required;
 	} else {
 		/* do advanced check */
-		data.redraw.full_redraw = !((c->data.gif.current_frame == 0) &&
-				(bitmap_get_opaque(c->data.gif.gif->frame_image)) &&
-				(data.redraw.x == 0) && (data.redraw.y == 0) &&
-				(data.redraw.width = c->data.gif.gif->width) &&
-				(data.redraw.height = c->data.gif.gif->height));
+		if ((data.redraw.x == 0) && (data.redraw.y == 0) &&
+				(data.redraw.width == c->data.gif.gif->width) &&
+				(data.redraw.height == c->data.gif.gif->height)) {
+			data.redraw.full_redraw = bitmap_get_opaque(c->data.gif.gif->frame_image);
+		} else {	
+			data.redraw.full_redraw = true;
+			data.redraw.x = 0;
+			data.redraw.y = 0;
+			data.redraw.width = c->data.gif.gif->width;
+			data.redraw.height = c->data.gif.gif->height;
+		}
 	}
 
 	/* other data */

@@ -247,13 +247,6 @@ int gif_initialise(struct gif_animation *gif) {
 	/*	Update the redraw areas now we know the full data set
 	*/
 	if (gif->frame_count_partial > 0) {
-		/*	Set the redraw for the first frame to the maximum frame size
-		*/
-		gif->frames[0].redraw_x = 0;
-		gif->frames[0].redraw_y = 0;
-		gif->frames[0].redraw_width = gif->width;
-		gif->frames[0].redraw_height = gif->height;
-
 		/*	We now work backwards to update the redraw characteristics of frames
 			with clear codes to stop a snowball effect of the redraw areas. It doesn't
 			really make much difference for most images, and will not work as well
@@ -261,7 +254,7 @@ int gif_initialise(struct gif_animation *gif) {
 			for multiple calls to this routine when decoding progressively.
 		*/
 		for (frame = gif->frame_count_partial - 1; frame > 0; frame--) {
-		  	if (gif->frames[frame].redraw_required) {
+		  	if (gif->frames[frame - 1].redraw_required) {
 				if (gif->frames[frame].redraw_x > gif->frames[frame - 1].redraw_x) {
 					gif->frames[frame].redraw_width +=
 							(gif->frames[frame].redraw_x - gif->frames[frame - 1].redraw_x);
@@ -408,8 +401,8 @@ int gif_initialise_frame(struct gif_animation *gif) {
 	*/
 	gif->frames[frame].frame_pointer = gif->buffer_position;
 	gif->frames[frame].virgin = true;
-	gif->frames[frame].frame_delay = 100;	// Paranoia
-	gif->frames[frame].redraw_required = 0;	// Paranoia
+	gif->frames[frame].frame_delay = 100;
+	gif->frames[frame].redraw_required = false;
 
 	/*	Invalidate any previous decoding we have of this frame
 	*/
@@ -509,9 +502,7 @@ int gif_initialise_frame(struct gif_animation *gif) {
 		/*	if we are clearing the background then we need to redraw enough to cover the previous
 			frame too
 		*/
-		if ((background_action == 2) || (background_action == 3)) {
-			gif->frames[frame].redraw_required = 1;
-		}
+		gif->frames[frame].redraw_required = ((background_action == 2) || (background_action == 3));
 
 		/*	Boundary checking - shouldn't ever happen except with junk data
 		*/
@@ -611,6 +602,8 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 	/*	If the previous frame was dirty, remove it
 	*/
 	if (!clear_image) {
+	  	if (frame == 0)
+	  		gif->dirty_frame = -1;
 		if (gif->decoded_frame == gif->dirty_frame) {
 			clear_image = true;
 			if (frame != 0) gif_decode_frame(gif, gif->dirty_frame);
@@ -635,9 +628,8 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 	*/
 	frame_data = (unsigned int *)bitmap_get_buffer(gif->frame_image);
 	if (!clear_image) {
-		if ((frame == 0) || (gif->decoded_frame == -1)) {
+		if ((frame == 0) || (gif->decoded_frame == -1))
 			memset((char*)frame_data, 0x00, gif->width * gif->height * sizeof(int));
-		}
 		gif->decoded_frame = frame;
 	}
 
