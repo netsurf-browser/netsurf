@@ -55,7 +55,7 @@ struct fetch {
 	void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size);
 				/**< Callback function. */
 	bool had_headers;	/**< Headers have been processed. */
-	bool in_callback;	/**< Waiting for return from callback. */
+	int locked;		/**< Lock count. */
 	bool aborting;		/**< Abort requested in callback. */
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
 	bool cookies;		/**< Send & accept cookies. */
@@ -226,7 +226,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->curl_handle = 0;
 	fetch->callback = callback;
 	fetch->had_headers = false;
-	fetch->in_callback = false;
+	fetch->locked = 0;
 	fetch->aborting = false;
 	fetch->only_2xx = only_2xx;
 	fetch->cookies = cookies;
@@ -393,8 +393,8 @@ void fetch_abort(struct fetch *f)
 	assert(f != 0);
 	LOG(("fetch %p, url '%s'", f, f->url));
 
-	if (f->in_callback) {
-		LOG(("in callback: will abort later"));
+	if (f->locked) {
+		LOG(("locked: will abort later"));
 		f->aborting = true;
 		return;
 	}
@@ -439,8 +439,10 @@ void fetch_abort(struct fetch *f)
 		} else {
 			/* destroy all queued fetches for this host */
 			do {
+				fetch->locked++;
 				fetch->callback(FETCH_ERROR, fetch->p,
 						messages_get("FetchError"), 0);
+				fetch->locked--;
 				next_fetch = fetch->queue_next;
 				fetch_free(fetch);
 				fetch = next_fetch;
@@ -570,12 +572,12 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 
 size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 {
-	f->in_callback = true;
+	f->locked++;
 
 	LOG(("fetch %p, size %u", f, size * nmemb));
 
 	if (!f->had_headers && fetch_process_headers(f)) {
-		f->in_callback = false;
+		f->locked--;
 		return 0;
 	}
 
@@ -583,7 +585,7 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 	LOG(("FETCH_DATA"));
 	f->callback(FETCH_DATA, f->p, data, size * nmemb);
 
-	f->in_callback = false;
+	f->locked--;
 	return size * nmemb;
 }
 
@@ -649,6 +651,7 @@ bool fetch_process_headers(struct fetch *f)
 	const char *type;
 	CURLcode code;
 
+	f->locked++;
 	f->had_headers = true;
 
 	code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE, &http_code);
@@ -659,6 +662,7 @@ bool fetch_process_headers(struct fetch *f)
 	if (300 <= http_code && http_code < 400 && f->location != 0) {
 		LOG(("FETCH_REDIRECT, '%s'", f->location));
 		f->callback(FETCH_REDIRECT, f->p, f->location, 0);
+		f->locked--;
 		return true;
 	}
 
@@ -666,6 +670,7 @@ bool fetch_process_headers(struct fetch *f)
 #ifdef WITH_AUTH
 	if (http_code == 401) {
 		f->callback(FETCH_AUTH, f->p, f->realm,0);
+		f->locked--;
 		return true;
 	}
 #endif
@@ -674,6 +679,7 @@ bool fetch_process_headers(struct fetch *f)
 	if (f->only_2xx && strncmp(f->url, "http", 4) == 0 &&
 			(http_code < 200 || 299 < http_code)) {
 		f->callback(FETCH_ERROR, f->p, messages_get("Not2xx"), 0);
+		f->locked--;
 		return true;
 	}
 
@@ -698,6 +704,7 @@ bool fetch_process_headers(struct fetch *f)
 
 	LOG(("FETCH_TYPE, '%s'", type));
 	f->callback(FETCH_TYPE, f->p, type, f->content_length);
+	f->locked--;
 	if (f->aborting)
 		return true;
 
