@@ -15,6 +15,7 @@
 #include <time.h>
 #include <unixlib/features.h>
 #include <unixlib/local.h>
+#include "oslib/font.h"
 #include "oslib/hourglass.h"
 #include "oslib/inetsuite.h"
 #include "oslib/os.h"
@@ -111,7 +112,8 @@ struct ro_gui_poll_block *ro_gui_poll_queued_blocks = 0;
 
 
 static void ro_gui_choose_language(void);
-static void ro_gui_pointers_init(const char *filename);
+static void ro_gui_check_fonts(void);
+static void ro_gui_pointers_init(void);
 static void ro_gui_icon_bar_create(void);
 static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
 static void ro_gui_poll_queue(wimp_event_no event, wimp_block* block);
@@ -143,19 +145,14 @@ void gui_init(int argc, char** argv)
 
 	xhourglass_start(1);
 
-	LOG(("reading choices"));
 	options_read("Choices:WWW.NetSurf.Choices");
 
-	LOG(("choosing language"));
 	ro_gui_choose_language();
 
 	NETSURF_DIR = getenv("NetSurf$Dir");
 	sprintf(path, "<NetSurf$Dir>.Resources.%s.Messages", option_language);
-	LOG(("Loading messages from '%s'", path));
 	messages_load(path);
 	messages_load("<NetSurf$Dir>.Resources.LangNames");
-
-	LOG(("done"));
 
 	error = xwimp_initialise(wimp_VERSION_RO38, "NetSurf",
   			(wimp_message_list*) &task_messages, 0,
@@ -165,6 +162,8 @@ void gui_init(int argc, char** argv)
 				error->errnum, error->errmess));
 		exit(EXIT_FAILURE);
   	}
+
+	ro_gui_check_fonts();
 
 	/* Issue a *Desktop to poke AcornURI into life */
 	if (getenv("NetSurf$Start_URI_Handler"))
@@ -199,7 +198,7 @@ void gui_init(int argc, char** argv)
 #endif
 	ro_gui_history_init();
 	wimp_close_template();
-	ro_gui_pointers_init("<NetSurf$Dir>.Resources.Pointers");
+	ro_gui_pointers_init();
 	ro_gui_icon_bar_create();
 }
 
@@ -258,21 +257,64 @@ void ro_gui_choose_language(void)
 		option_accept_language = strdup(option_language);
 }
 
+
 /**
- * Initialise pointer sprite area
+ * Check that at least Homerton.Medium is available.
  */
-void ro_gui_pointers_init(const char *filename)
+
+void ro_gui_check_fonts(void)
 {
-        FILE *fp;
-        unsigned int len;
+	char s[252];
+	font_f font;
+	os_error *error;
+
+	error = xfont_find_font("Homerton.Medium\\ELatin1",
+			160, 160, 0, 0, &font, 0, 0);
+	if (error) {
+		if (error->errnum == error_FILE_NOT_FOUND) {
+			warn_user("FontBadInst");
+			xwimp_start_task("TaskWindow -wimpslot 200K -quit "
+					"<NetSurf$Dir>.FixFonts", 0);
+			exit(EXIT_FAILURE);
+		} else {
+			snprintf(s, sizeof s, messages_get("FontError"),
+					error->errmess);
+			die(s);
+		}
+	}
+
+	error = xfont_lose_font(font);
+	if (error) {
+		snprintf(s, sizeof s, messages_get("FontError"),
+				error->errmess);
+		die(s);
+	}
+}
+
+
+/**
+ * Initialise pointer sprite area.
+ */
+
+void ro_gui_pointers_init(void)
+{
+        int len;
+        fileswitch_object_type obj_type;
         os_error *e;
 
-        fp = fopen(filename, "rb");
-        if (!fp) return;
-        fseek(fp, 0, SEEK_END);
-        len = ftell(fp);
-        fclose(fp);
-        pointers = xcalloc(len+4, sizeof(char));
+	e = xosfile_read_stamped_no_path("<NetSurf$Dir>.Resources.Pointers",
+			&obj_type, 0, 0, &len, 0, 0);
+	if (e) {
+		LOG(("xosfile_read_stamped_no_path: 0x%x: %s",
+				e->errnum, e->errmess));
+		die(e->errmess);
+	}
+	if (obj_type != fileswitch_IS_FILE)
+		die("<NetSurf$Dir>.Resources.Pointers missing.");
+
+        pointers = malloc(len + 4);
+        if (!pointers)
+        	die("NoMemory");
 
         pointers->size = len+4;
         pointers->sprite_count = 0;
@@ -280,9 +322,14 @@ void ro_gui_pointers_init(const char *filename)
         pointers->used = 16;
 
         e = xosspriteop_load_sprite_file(osspriteop_USER_AREA,
-                                         pointers, filename);
-        if (e) xfree(pointers);
+			pointers, "<NetSurf$Dir>.Resources.Pointers");
+        if (e) {
+		LOG(("xosspriteop_load_sprite_file: 0x%x: %s",
+				e->errnum, e->errmess));
+		die(e->errmess);
+        }
 }
+
 
 /**
  * Create an iconbar icon.
@@ -307,7 +354,7 @@ void ro_gui_icon_bar_create(void)
 void gui_quit(void)
 {
 	ro_gui_history_quit();
-	xfree(pointers);
+	free(pointers);
 	wimp_close_down(task_handle);
 	xhourglass_off();
 }

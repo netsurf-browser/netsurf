@@ -49,6 +49,8 @@ ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/T
 InvalidURL:The address <em>%s</em> could not be understood.
 
 NoMemory:NetSurf is running out of memory. Please free some memory and try again.
+FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
+FontError:Failed to open font "Homerton.Medium" (%s).
 
 Loading:Opening page...
 RecPercent:Received %lu of %lu bytes (%u%%)
