@@ -1187,7 +1187,7 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 		ro_gui_current_zoom_gui->reformat_pending = true;
 		c = ro_gui_current_zoom_gui->bw->current_content;
 		if ((c) && (c->type != CONTENT_HTML))
-			gui_window_redraw(ro_gui_current_zoom_gui, 0, 0, 16384, 16384);
+			browser_window_update(ro_gui_current_zoom_gui->bw, false);
 		gui_reformat_pending = true;
 	}
 

@@ -97,6 +97,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);
 void browser_window_destroy(struct browser_window *bw);
+void browser_window_update(struct browser_window *bw, bool scroll_to_top);
 
 void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_click click, int x, int y);

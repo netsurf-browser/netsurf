@@ -46,8 +46,6 @@ static void browser_window_callback(content_msg msg, struct content *c,
 static void browser_window_convert_to_download(struct browser_window *bw);
 static void browser_window_start_throbber(struct browser_window *bw);
 static void browser_window_stop_throbber(struct browser_window *bw);
-static void browser_window_update(struct browser_window *bw,
-		bool scroll_to_top);
 static void browser_window_set_status(struct browser_window *bw,
 		const char *text);
 static void browser_window_set_pointer(gui_pointer_shape shape);

@@ -1648,7 +1648,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			if (old_scale != current_gui->option.scale) {
 				current_gui->reformat_pending = true;
 				if ((content) && (content->type != CONTENT_HTML))
-					gui_window_redraw(current_gui, 0, 0, 16384, 16384);
+					browser_window_update(current_gui->bw, false);
 				gui_reformat_pending = true;
 			}
 			return true;
