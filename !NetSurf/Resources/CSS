@@ -29,6 +29,6 @@ h5 { font-size: medium; font-style: italic; }
 h6 { font-size: medium; font-style: italic; }
 b { font-weight: bold; }
 i { font-style: italic; }
-a { font-weight: bold; font-style: italic; }
+a { color: #00f; }
 
 center { text-align: center; }
