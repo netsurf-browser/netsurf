@@ -27,7 +27,6 @@
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/plotters.h"
-#include "netsurf/dom/dom.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/riscos/buffer.h"
