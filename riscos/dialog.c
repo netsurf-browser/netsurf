@@ -38,7 +38,7 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 #endif
 	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
 	dialog_warning, dialog_config_th_pane, dialog_debug,
-	dialog_folder, dialog_entry;
+	dialog_folder, dialog_entry, dialog_search;
 
 static int ro_gui_choices_font_size;
 static int ro_gui_choices_font_min_size;
@@ -102,6 +102,7 @@ void ro_gui_dialog_init(void)
 	dialog_debug = ro_gui_dialog_create("debug");
 	dialog_folder = ro_gui_dialog_create("new_folder");
 	dialog_entry = ro_gui_dialog_create("new_entry");
+	dialog_search = ro_gui_dialog_create("search");
 }
 
 
@@ -345,6 +346,8 @@ void ro_gui_dialog_close_persistant(wimp_w parent) {
 bool ro_gui_dialog_keypress(wimp_key *key)
 {
 	wimp_pointer pointer;
+	int i;
+
 	if (key->c == wimp_KEY_ESCAPE) {
 		ro_gui_dialog_close(key->w);
 		return true;
@@ -356,6 +359,20 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 			pointer.i = (key->w == dialog_folder) ? 3 : 5;
 			pointer.buttons = wimp_CLICK_SELECT;
 			ro_gui_hotlist_dialog_click(&pointer);
+			return true;
+		}
+		else if (key->w == dialog_search) {
+			pointer.w = key->w;
+			pointer.i = ICON_SEARCH_FIND;
+			pointer.buttons = wimp_CLICK_SELECT;
+			for (i = 0; i < MAX_PERSISTANT; i++) {
+				if (persistant_dialog[i].dialog ==
+							dialog_search) {
+					ro_gui_search_click(&pointer,
+						persistant_dialog[i].parent);
+					break;
+				}
+			}
 			return true;
 		}
 	}
@@ -373,6 +390,8 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 
 void ro_gui_dialog_click(wimp_pointer *pointer)
 {
+	int i;
+
 	if (pointer->buttons == wimp_CLICK_MENU)
 		return;
 
@@ -396,6 +415,15 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 		ro_gui_dialog_click_warning(pointer);
 	else if ((pointer->w == dialog_folder) || (pointer->w == dialog_entry))
 		ro_gui_hotlist_dialog_click(pointer);
+	else if (pointer->w == dialog_search) {
+		for (i = 0; i < MAX_PERSISTANT; i++) {
+			if (persistant_dialog[i].dialog == dialog_search) {
+				ro_gui_search_click(pointer,
+						persistant_dialog[i].parent);
+				break;
+			}
+		}
+	}
 }
 
 

@@ -44,6 +44,8 @@
     #define WITH_URL
     /* Keyboard navigation support */
     #define WITH_KEYBOARD_NAVIGATION
+    /* Free text search */
+    #define WITH_SEARCH
 #endif
 #ifdef ncos
     /* Kiosk style browsing support */

@@ -521,7 +521,7 @@ void gui_window_update_box(struct gui_window *g,
 		clear_background = true;
 
 	while (more) {
-		
+
 		if (use_buffer)	ro_gui_buffer_open(&update);
 		if (data->redraw.full_redraw) {
 			if (clear_background) {
@@ -1263,6 +1263,11 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			return true;
 		case wimp_KEY_F1:	/* Help. */
 			ro_gui_open_help_page("docs");
+			return true;
+
+		case wimp_KEY_F4:	/* Search */
+			ro_gui_search_prepare();
+			ro_gui_dialog_open_persistant(g->window, dialog_search, false);
 			return true;
 
                 case wimp_KEY_F5:       /* Refresh. */

@@ -26,7 +26,7 @@ struct toolbar;
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
 	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_config_th_pane,
-	dialog_debug, dialog_folder, dialog_entry;
+	dialog_debug, dialog_folder, dialog_entry, dialog_search;
 extern wimp_w history_window;
 extern wimp_w hotlist_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu,
@@ -238,6 +238,10 @@ void ro_gui_debugwin_open(void);
 void ro_gui_debugwin_close(void);
 void ro_gui_debugwin_redraw(wimp_draw *redraw);
 
+/* in search.c */
+void ro_gui_search_click(wimp_pointer *pointer, wimp_w parent);
+void ro_gui_search_prepare(void);
+
 /* toolbar types */
 #define TOOLBAR_BROWSER 0
 #define TOOLBAR_HOTLIST 1
@@ -344,5 +348,14 @@ void ro_gui_debugwin_redraw(wimp_draw *redraw);
 #define ICON_WARNING_MESSAGE 0
 #define ICON_WARNING_CONTINUE 1
 #define ICON_WARNING_HELP 2
+
+#define ICON_SEARCH_TEXT 0
+#define ICON_SEARCH_START 1
+#define ICON_SEARCH_CASE_SENSITIVE 2
+#define ICON_SEARCH_FORWARDS 3
+#define ICON_SEARCH_BACKWARDS 4
+#define ICON_SEARCH_CANCEL 5
+#define ICON_SEARCH_FIND 6
+
 
 #endif
