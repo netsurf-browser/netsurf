@@ -1583,12 +1583,12 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
    * we can't handle this object.
    */
    if(po->data == 0 && po->classid == 0) {
-           return false;
+           return FALSE;
    }
    if(po->data == 0 && po->classid != 0) {
            if(strnicmp(po->classid, "clsid:", 6) == 0) {
                    LOG(("ActiveX object - n0"));
-                   return false;
+                   return FALSE;
            }
            else {
                    url = url_join(po->classid, po->codebase);
@@ -1603,11 +1603,11 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
     */
     if(po->type != 0) {
            if (content_lookup(po->type) == CONTENT_OTHER)
-                  return false;
+                  return FALSE;
     }
     if(po->codetype != 0) {
            if (content_lookup(po->codetype) == CONTENT_OTHER)
-                  return false;
+                  return FALSE;
     }
 
   /* If we've got to here, the object declaration has provided us with
@@ -1619,6 +1619,6 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
    */
    html_fetch_object(content, url, box);
 
-   return true;
+   return TRUE;
 }
 

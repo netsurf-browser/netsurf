@@ -8,7 +8,6 @@
 #ifndef _NETSURF_RISCOS_PLUGIN_H_
 #define _NETSURF_RISCOS_PLUGIN_H_
 
-#include <stdbool.h>
 #include "netsurf/content/content.h"
 #include "netsurf/render/box.h"
 

@@ -89,8 +89,8 @@ bool plugin_handleable(const char *mime_type)
 
   sprintf(sysvar, "%s%x", ALIAS_PREFIX, e == NULL ? fv : 0 );
   if (getenv(sysvar) == 0)
-	  return false;
-  return true;
+	  return FALSE;
+  return TRUE;
 }
 
 /**
