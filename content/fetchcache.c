@@ -18,12 +18,18 @@
 static void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size);
 
 
-struct content * fetchcache(const char *url, char *referer,
+struct content * fetchcache(const char *url0, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
 		void *p1, void *p2, unsigned long width, unsigned long height)
 {
 	struct content *c;
+	char *url = xstrdup(url0);
+	char *hash = strchr(url, '#');
+
+	/* strip fragment identifier */
+	if (hash != 0)
+		*hash = 0;
 
 	LOG(("url %s", url));
 
