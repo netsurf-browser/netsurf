@@ -17,7 +17,13 @@
 #ifndef _NETSURF_RISCOS_THEME_H_
 #define _NETSURF_RISCOS_THEME_H_
 
-#include "oslib/wimp.h"
+#include "oslib/osspriteop.h"
+#include "netsurf/desktop/gui.h"
+
+struct theme_entry {
+	char *name;
+	osspriteop_area *sprite_area;
+};
 
 extern int theme_throbs;
 
@@ -25,5 +31,7 @@ void ro_theme_load(char *pathname);
 void ro_theme_create_toolbar(gui_window *g);
 int ro_theme_update_toolbar(gui_window *g);
 int ro_theme_resize_toolbar(gui_window *g);
+struct theme_entry *ro_theme_list(unsigned int *entries);
+void ro_theme_list_free(struct theme_entry *list, unsigned int entries);
 
 #endif

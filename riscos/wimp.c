@@ -14,9 +14,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "oslib/os.h"
+#include "oslib/osfile.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpextend.h"
 #include "oslib/wimpreadsysinfo.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 
@@ -29,14 +31,14 @@ static wimpextend_furniture_sizes furniture_sizes;
  */
 int ro_get_hscroll_height(wimp_w w) {
 	wimp_version_no version;
-	
-	
+
+
   	/*	Read the hscroll height
   	*/
   	furniture_sizes.w = w;
 	furniture_sizes.border_widths.y0 = 38;
 	xwimpextend_get_furniture_sizes(&furniture_sizes);
-	
+
 	/*	There is a quirk with the returned size as it differs between versions of the
 		WindowManager module. The incorrect height is returned by the version distributed
 		with the universal boot sequence (3.98) and presumably any previous version.
@@ -216,3 +218,55 @@ int ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
  * \param  state selected state
  */
 #define ro_gui_set_icon_shaded_state(w, i, state) xwimp_set_icon_state(w, i, (state ? wimp_ICON_SHADED : 0), wimp_ICON_SHADED)
+
+
+/**
+ * Load a sprite file into memory.
+ *
+ * \param  pathname  file to load
+ * \return  sprite area, or 0 on memory exhaustion or error and error reported
+ */
+
+osspriteop_area *ro_gui_load_sprite_file(const char *pathname)
+{
+	int len;
+	fileswitch_object_type obj_type;
+	osspriteop_area *area;
+	os_error *error;
+
+	error = xosfile_read_stamped_no_path(pathname,
+			&obj_type, 0, 0, &len, 0, 0);
+	if (error) {
+		LOG(("xosfile_read_stamped_no_path: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MiscError", error->errmess);
+		return 0;
+	}
+	if (obj_type != fileswitch_IS_FILE) {
+		warn_user("FileError", pathname);
+		return 0;
+	}
+
+	area = malloc(len + 4);
+	if (!area) {
+		warn_user("NoMemory", 0);
+		return 0;
+	}
+
+	area->size = len + 4;
+	area->sprite_count = 0;
+	area->first = 16;
+	area->used = 16;
+
+	error = xosspriteop_load_sprite_file(osspriteop_USER_AREA,
+			area, pathname);
+	if (error) {
+		LOG(("xosspriteop_load_sprite_file: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MiscError", error->errmess);
+		free(area);
+		return 0;
+	}
+
+	return area;
+}

@@ -556,8 +556,6 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				break;
 		}
 
-	} else if (current_menu == theme_menu && theme_menu != NULL) {
-		ro_gui_theme_menu_selection(theme_menu->entries[selection->items[0]].data.indirected_text.text);
 	}
 
 	if (pointer.buttons == wimp_CLICK_ADJUST) {

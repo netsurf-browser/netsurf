@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "oslib/os.h"
+#include "oslib/osgbpb.h"
 #include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
@@ -303,4 +304,113 @@ int ro_theme_resize_toolbar(gui_window *g) {
 		return ro_toolbar_reformat(toolbar, width);
 	}
 	return return_value;
+}
+
+
+/**
+ * Make a list of available themes.
+ *
+ * \param  entries  updated to number of themes
+ * \return  array of struct theme_entry, or 0 on error, and error reported
+ */
+
+struct theme_entry *ro_theme_list(unsigned int *entries)
+{
+	char pathname[256];
+	unsigned int i = 0, n = 0;
+	int context = 0;
+	int read_count;
+	struct theme_entry *list = 0, *list1;
+	fileswitch_object_type obj_type;
+	int file_type;
+	osgbpb_INFO(100) info;
+	os_error *error;
+
+	/* invariant: list[0..n) are valid */
+	while (context != -1) {
+		error = xosgbpb_dir_entries_info(THEMES_DIR,
+				(osgbpb_info_list *) &info, 1, context,
+				sizeof(info), 0, &read_count, &context);
+		if (error) {
+			LOG(("xosgbpb_dir_entries_info: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("MiscError", error->errmess);
+			ro_theme_list_free(list, n);
+			return 0;
+		}
+
+		if (read_count == 0)
+			continue;
+		if (info.obj_type != fileswitch_IS_DIR)
+			continue;
+
+		/* check for presence of Sprites in directory */
+		snprintf(pathname, sizeof pathname, "%s.%s.%s",
+				THEMES_DIR, info.name, "Sprites");
+		pathname[sizeof pathname - 1] = 0;
+		error = xosfile_read_stamped_no_path(pathname,
+				&obj_type, 0, 0, 0, 0, &file_type);
+		if (error) {
+			LOG(("xosfile_read_stamped_no_path: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("MiscError", error->errmess);
+			ro_theme_list_free(list, n);
+			return 0;
+		}
+		if (obj_type != fileswitch_IS_FILE ||
+				file_type != osfile_TYPE_SPRITE)
+			continue;
+
+		/* expand list */
+		list1 = realloc(list, sizeof *list * (i + 1));
+		if (!list1) {
+			warn_user("NoMemory", 0);
+			ro_theme_list_free(list, n);
+			return 0;
+		}
+		list = list1;
+
+		/* update invariant */
+		list[i].name = 0;
+		list[i].sprite_area = 0;
+		n = i + 1;
+
+		/* copy name */
+		list[i].name = strdup(info.name);
+		if (!list[i].name) {
+			warn_user("NoMemory", 0);
+			ro_theme_list_free(list, n);
+			return 0;
+		}
+
+		/* load sprites */
+		list[i].sprite_area = ro_gui_load_sprite_file(pathname);
+		if (!list[i].sprite_area) {
+			ro_theme_list_free(list, n);
+			return 0;
+		}
+
+		i++;
+	}
+
+	*entries = n;
+	return list;
+}
+
+
+/**
+ * Free an array of themes, as returned by ro_theme_list().
+ *
+ * \param  list     array of struct theme_entry
+ * \param  entries  size of array
+ */
+
+void ro_theme_list_free(struct theme_entry *list, unsigned int entries)
+{
+	unsigned int i;
+	for (i = 0; i != entries; i++) {
+		free(list[i].name);
+		free(list[i].sprite_area);
+	}
+	free(list);
 }

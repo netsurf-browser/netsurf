@@ -86,6 +86,8 @@ DragError:An error occurred when dragging the icon:
 TbarError:An error occurred when constructing the toolbar:
 WimpError:An unexpected Window Manager error occurred:
 Template:A window template is missing from the Templates file. Please reinstall NetSurf.
+MiscError:An unexpected error occurred:
+FileError:File does not exist:
 
 Bytes: O
 kBytes: kO

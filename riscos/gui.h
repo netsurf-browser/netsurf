@@ -23,9 +23,9 @@
 
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
-	dialog_objinfo, dialog_tooltip, dialog_warning;
+	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_config_th_pane;
 extern wimp_w history_window;
-extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *theme_menu;
+extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu;
 extern int iconbar_menu_height;
 extern struct form_control *current_gadget;
 extern gui_window *window_list;
@@ -124,8 +124,7 @@ void ro_gui_dialog_open(wimp_w w);
 void ro_gui_dialog_click(wimp_pointer *pointer);
 bool ro_gui_dialog_keypress(wimp_key *key);
 void ro_gui_dialog_close(wimp_w close);
-void ro_gui_redraw_config_th(wimp_draw* redraw);
-void ro_gui_theme_menu_selection(char *theme);
+void ro_gui_redraw_config_th_pane(wimp_draw *redraw);
 
 /* in download.c */
 void ro_gui_download_init(void);
@@ -242,12 +241,8 @@ void schedule_run(void);
 
 #define ICON_CONFIG_TH_OK 0
 #define ICON_CONFIG_TH_CANCEL 1
-#define ICON_CONFIG_TH_DEFAULT 2
-#define ICON_CONFIG_TH_NAME 4
-#define ICON_CONFIG_TH_PICK 5
-#define ICON_CONFIG_TH_PREVIEW 7
-#define ICON_CONFIG_TH_GET 8
-#define ICON_CONFIG_TH_MANAGE 9
+#define ICON_CONFIG_TH_GET 2
+#define ICON_CONFIG_TH_MANAGE 3
 
 #define ICON_DOWNLOAD_URL 0
 #define ICON_DOWNLOAD_STATUS 1

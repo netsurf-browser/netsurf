@@ -21,6 +21,7 @@
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -32,18 +33,23 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_401li,
 #endif
 	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
-	dialog_warning;
-wimp_menu* theme_menu = NULL;
+	dialog_warning, dialog_config_th_pane;
 
 static int font_size;
 static int font_min_size;
+static char *theme_choice = 0;
+static struct theme_entry *theme_list = 0;
+static unsigned int theme_list_entries = 0;
 
 
 static void ro_gui_dialog_click_config(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_br(wimp_pointer *pointer);
 static void ro_gui_dialog_update_config_br(void);
 static void ro_gui_dialog_click_config_prox(wimp_pointer *pointer);
+static void ro_gui_dialog_open_config_th(void);
 static void ro_gui_dialog_click_config_th(wimp_pointer *pointer);
+static void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer);
+static void ro_gui_redraw_config_th_pane_plot(wimp_draw *redraw);
 static void ro_gui_dialog_click_zoom(wimp_pointer *pointer);
 static void ro_gui_dialog_reset_zoom(void);
 static void ro_gui_dialog_click_warning(wimp_pointer *pointer);
@@ -53,10 +59,6 @@ static void set_proxy_choices(void);
 static void get_proxy_choices(void);
 static void set_theme_choices(void);
 static void get_theme_choices(void);
-static void load_theme_preview(char* thname);
-/*static void ro_gui_destroy_theme_menu(void);*/
-static void ro_gui_build_theme_menu(void);
-static int file_exists(const char* base, const char* dir, const char* leaf, bits ftype);
 static const char *language_name(const char *code);
 
 
@@ -75,6 +77,7 @@ void ro_gui_dialog_init(void)
 	dialog_config_br = ro_gui_dialog_create("config_br");
 	dialog_config_prox = ro_gui_dialog_create("config_prox");
 	dialog_config_th = ro_gui_dialog_create("config_th");
+	dialog_config_th_pane = ro_gui_dialog_create("config_th_pa");
 	dialog_zoom = ro_gui_dialog_create("zoom");
 	dialog_pageinfo = ro_gui_dialog_create("pageinfo");
 	dialog_objinfo = ro_gui_dialog_create("objectinfo");
@@ -184,7 +187,7 @@ wimp_window * ro_gui_dialog_load_template(const char *template_name)
 void ro_gui_dialog_open(wimp_w w)
 {
 	int screen_x, screen_y, dx, dy;
-  	wimp_window_state open;
+	wimp_window_state open;
 
 	/* find screen centre in os units */
 	ro_gui_screen_size(&screen_x, &screen_y);
@@ -234,6 +237,8 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 		ro_gui_dialog_click_config_prox(pointer);
 	else if (pointer->w == dialog_config_th)
 		ro_gui_dialog_click_config_th(pointer);
+	else if (pointer->w == dialog_config_th_pane)
+		ro_gui_dialog_click_config_th_pane(pointer);
 #ifdef WITH_AUTH
 	else if (pointer->w == dialog_401li)
 	        ro_gui_401login_click(pointer);
@@ -256,7 +261,7 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 			get_browser_choices();
 			get_proxy_choices();
 			get_theme_choices();
-		        xosfile_create_dir("<Choices$Write>.WWW", 0);
+			xosfile_create_dir("<Choices$Write>.WWW", 0);
 			xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
 			options_write("<Choices$Write>.WWW.NetSurf.Choices");
 			if (pointer->buttons == wimp_CLICK_SELECT) {
@@ -284,7 +289,7 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 			ro_gui_dialog_open(dialog_config_prox);
 			break;
 		case ICON_CONFIG_THEME:
-			ro_gui_dialog_open(dialog_config_th);
+			ro_gui_dialog_open_config_th();
 			break;
 	}
 }
@@ -373,6 +378,24 @@ void ro_gui_dialog_click_config_prox(wimp_pointer *pointer)
 
 
 /**
+ * Prepare and open the Theme Choices dialog.
+ */
+
+void ro_gui_dialog_open_config_th(void)
+{
+	if (theme_list)
+		ro_theme_list_free(theme_list, theme_list_entries);
+
+	theme_list = ro_theme_list(&theme_list_entries);
+	if (!theme_list)
+		return;
+
+	ro_gui_dialog_open(dialog_config_th);
+	ro_gui_dialog_open(dialog_config_th_pane);
+}
+
+
+/**
  * Handle clicks in the Theme Choices dialog.
  */
 
@@ -388,18 +411,180 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 				ro_gui_dialog_close(dialog_config_th);
 			set_theme_choices();
 			break;
-		case ICON_CONFIG_TH_NAME:
-		case ICON_CONFIG_TH_PICK:
-			ro_gui_build_theme_menu();
-			ro_gui_popup_menu(theme_menu, dialog_config_th,
-					ICON_CONFIG_TH_PICK);
-			break;
 		case ICON_CONFIG_TH_MANAGE:
 			os_cli("Filer_OpenDir " THEMES_DIR);
 			break;
 		case ICON_CONFIG_TH_GET:
 			browser_window_create(THEMES_URL, NULL);
 			break;
+	}
+}
+
+
+#define THEME_HEIGHT 80
+
+/**
+ * Handle clicks in the scrolling Theme Choices list pane.
+ */
+
+void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer)
+{
+	unsigned int i, y;
+	wimp_window_state state;
+	os_error *error;
+
+	state.w = dialog_config_th_pane;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	y = -(pointer->pos.y - (state.visible.y1 - state.yscroll)) /
+			THEME_HEIGHT;
+
+	if (!theme_list || theme_list_entries <= y)
+		return;
+
+	if (theme_choice && strcmp(theme_choice, theme_list[y].name) == 0)
+		return;
+
+	if (theme_choice) {
+		for (i = 0; i != theme_list_entries &&
+				strcmp(theme_choice, theme_list[i].name); i++)
+			;
+		if (i != theme_list_entries) {
+			error = xwimp_force_redraw(dialog_config_th_pane,
+					0, -i * THEME_HEIGHT - THEME_HEIGHT - 2,
+					600, -i * THEME_HEIGHT + 2);
+			if (error) {
+				LOG(("xwimp_force_redraw: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+				return;
+			}
+		}
+	}
+
+	free(theme_choice);
+	theme_choice = strdup(theme_list[y].name);
+
+	error = xwimp_force_redraw(dialog_config_th_pane,
+			0, -y * THEME_HEIGHT - THEME_HEIGHT - 2,
+			600, -y * THEME_HEIGHT + 2);
+	if (error) {
+		LOG(("xwimp_force_redraw: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+}
+
+
+/**
+ * Redraw the scrolling Theme Choices list pane.
+ */
+
+void ro_gui_redraw_config_th_pane(wimp_draw *redraw)
+{
+	osbool more;
+	os_error *error;
+
+	error = xwimp_redraw_window(redraw, &more);
+	if (error) {
+		LOG(("xwimp_redraw_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	while (more) {
+		ro_gui_redraw_config_th_pane_plot(redraw);
+		error = xwimp_get_rectangle(redraw, &more);
+		if (error) {
+			LOG(("xwimp_get_rectangle: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+	}
+}
+
+
+/**
+ * Redraw the scrolling Theme Choices list pane.
+ */
+
+void ro_gui_redraw_config_th_pane_plot(wimp_draw *redraw)
+{
+	unsigned int i, j;
+	int x0 = redraw->box.x0 - redraw->xscroll;
+	int y0 = redraw->box.y1 - redraw->yscroll;
+	int x;
+	static char sprite[][10] = { "back", "forward", "stop", "reload",
+			"history", "scale", "save" };
+	wimp_icon icon;
+	os_error *error = 0;
+
+	icon.flags = wimp_ICON_SPRITE | wimp_ICON_HCENTRED |
+			wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED;
+
+	for (i = 0; i != theme_list_entries; i++) {
+		error = xwimptextop_set_colour(os_COLOUR_BLACK,
+				os_COLOUR_VERY_LIGHT_GREY);
+		if (error)
+			break;
+
+		/* plot background for selected theme */
+		if (theme_choice &&
+				strcmp(theme_list[i].name, theme_choice) == 0) {
+			error = xcolourtrans_set_gcol(os_COLOUR_LIGHT_GREY,
+					0, os_ACTION_OVERWRITE, 0, 0);
+			if (error)
+				break;
+			error = xos_plot(os_MOVE_TO, x0, y0 - i * THEME_HEIGHT);
+			if (error)
+				break;
+			error = xos_plot(os_PLOT_RECTANGLE | os_PLOT_BY,
+					600, -THEME_HEIGHT);
+			if (error)
+				break;
+			error = xwimptextop_set_colour(os_COLOUR_BLACK,
+					os_COLOUR_LIGHT_GREY);
+			if (error)
+				break;
+		}
+
+		/* icons */
+		icon.extent.y0 = -i * THEME_HEIGHT - THEME_HEIGHT;
+		icon.extent.y1 = -i * THEME_HEIGHT;
+		icon.data.indirected_sprite.area = theme_list[i].sprite_area;
+		icon.data.indirected_sprite.size = 12;
+		for (j = 0, x = 0; j != sizeof sprite / sizeof sprite[0]; j++) {
+			icon.extent.x0 = x;
+			icon.extent.x1 = x + 50;
+			icon.data.indirected_sprite.id =
+					(osspriteop_id) sprite[j];
+			error = xwimp_plot_icon(&icon);
+			if (error)
+				break;
+			x += 50;
+		}
+		if (error)
+			break;
+
+		/* theme name */
+		error = xwimptextop_paint(0, theme_list[i].name,
+				x0 + 400,
+				y0 - i * THEME_HEIGHT - THEME_HEIGHT / 2);
+		if (error)
+			break;
+	}
+
+	if (error) {
+		LOG(("0x%x: %s", error->errnum, error->errmess));
+		warn_user("MiscError", error->errmess);
 	}
 }
 
@@ -450,11 +635,12 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 }
 
 
-/*
- * Resets the Scale view dialog
+/**
+ * Resets the Scale view dialog.
  */
+
 void ro_gui_dialog_reset_zoom(void) {
-  	char scale_buffer[8];
+	char scale_buffer[8];
 	sprintf(scale_buffer, "%.0f", current_gui->scale * 100);
 	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
 }
@@ -477,7 +663,31 @@ void ro_gui_dialog_click_warning(wimp_pointer *pointer)
 
 void ro_gui_dialog_close(wimp_w close)
 {
-	wimp_close_window(close);
+	os_error *error;
+
+	error = xwimp_close_window(close);
+	if (error) {
+		LOG(("xwimp_close_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	if (close == dialog_config_th) {
+		error = xwimp_close_window(dialog_config_th_pane);
+
+		if (theme_list) {
+			ro_theme_list_free(theme_list, theme_list_entries);
+			theme_list = 0;
+		}
+
+		if (error) {
+			LOG(("xwimp_close_window: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+	}
 }
 
 
@@ -545,9 +755,10 @@ void get_proxy_choices(void)
 
 void set_theme_choices(void)
 {
-	ro_gui_set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME,
-			option_theme ? option_theme : "Default");
-	load_theme_preview(option_theme ? option_theme : "Default");
+	free(theme_choice);
+	theme_choice = 0;
+	if (option_theme)
+		theme_choice = strdup(option_theme);
 }
 
 
@@ -558,219 +769,9 @@ void set_theme_choices(void)
 void get_theme_choices(void)
 {
 	free(option_theme);
-	option_theme = strdup(ro_gui_get_icon_string(dialog_config_th,
-			ICON_CONFIG_TH_NAME));
+	option_theme = strdup(theme_choice);
 }
 
-
-osspriteop_area* theme_preview = NULL;
-
-void load_theme_preview(char* thname)
-{
-if (theme_preview != NULL)
-	xfree(theme_preview);
-
-theme_preview = NULL;
-
-	if (file_exists(THEMES_DIR, thname, "Preview", 0xff9))
-	{
-char filename[256];
-FILE* fp;
-int size;
-
-
-  sprintf(filename, "%s.%s.Preview", THEMES_DIR, thname);
-  fp = fopen(filename, "rb");
-  if (fp == 0) return;
-  if (fseek(fp, 0, SEEK_END) != 0) die("fseek() failed");
-  if ((size = (int) ftell(fp)) == -1) die("ftell() failed");
-  fclose(fp);
-
-  theme_preview = xcalloc((unsigned int)(size + 16), 1);
-  if (theme_preview == NULL)
-	  return;
-
-  theme_preview->size = size + 16;
-  theme_preview->sprite_count = 0;
-  theme_preview->first = 16;
-  theme_preview->used = 16;
-  osspriteop_clear_sprites(osspriteop_USER_AREA, theme_preview);
-  osspriteop_load_sprite_file(osspriteop_USER_AREA, theme_preview, filename);
-
-
-	}
-}
-
-void ro_gui_redraw_config_th(wimp_draw* redraw)
-{
-	int x, y, size;
-  osbool more;
-  wimp_icon_state preview;
-  wimp_window_state win;
-  osspriteop_trans_tab* trans_tab;
-
-  win.w = dialog_config_th;
-  wimp_get_window_state(&win);
-
-  preview.w = dialog_config_th;
-  preview.i = ICON_CONFIG_TH_PREVIEW;
-  wimp_get_icon_state(&preview);
-
-  if (theme_preview != NULL)
-  {
-  x = preview.icon.extent.x0 + win.visible.x0 + 4;
-  y = preview.icon.extent.y0 + win.visible.y1 + 4;
-
-  xcolourtrans_generate_table_for_sprite(theme_preview,
-                                         (osspriteop_id)"preview",
-                                         (os_mode)-1,
-                                         (os_palette const*)-1,
-                                         0, 0, 0, 0, &size);
-  trans_tab = malloc((unsigned int)(size + 32));
-  xcolourtrans_generate_table_for_sprite(theme_preview,
-                                         (osspriteop_id)"preview",
-                                         (os_mode)-1,
-                                         (os_palette const*)-1,
-                                         trans_tab, 0, 0, 0, &size);
-
-  more = wimp_redraw_window(redraw);
-  while (more)
-  {
-    xosspriteop_put_sprite_scaled(osspriteop_NAME, theme_preview,
-                                  (osspriteop_id)"preview", x, y,
-                                  (osspriteop_action)osspriteop_USE_MASK |
-                                                     osspriteop_USE_PALETTE,
-                                  0, trans_tab);
-    more = wimp_get_rectangle(redraw);
-  }
-
-  xfree(trans_tab);
-  }
-  else
- {
-	 preview.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
-	 preview.icon.data.indirected_text.text = "No preview available";
-	 preview.icon.data.indirected_text.size = 21;
-
-  more = wimp_redraw_window(redraw);
-  while (more)
-  {
-	  wimp_plot_icon(&preview.icon);
-    more = wimp_get_rectangle(redraw);
-  }
-
-  }
-  return;
-
-}
-
-
-/**
- * Construct or update theme_menu by scanning THEMES_DIR.
- */
-
-void ro_gui_build_theme_menu(void)
-{
-	unsigned int i;
-	static unsigned int entries = 0;
-	int context = 0;
-	int read_count;
-	osgbpb_INFO(100) info;
-
-	if (theme_menu) {
-		/* free entry text buffers */
-		for (i = 0; i != entries; i++)
-			free(theme_menu->entries[i].data.indirected_text.text);
-	} else {
-		theme_menu = xcalloc(1, wimp_SIZEOF_MENU(1));
-		theme_menu->title_data.indirected_text.text =
-				messages_get("Themes");
-		theme_menu->title_fg = wimp_COLOUR_BLACK;
-		theme_menu->title_bg = wimp_COLOUR_LIGHT_GREY;
-		theme_menu->work_fg = wimp_COLOUR_BLACK;
-		theme_menu->work_bg = wimp_COLOUR_WHITE;
-		theme_menu->width = 256;
-		theme_menu->height = 44;
-		theme_menu->gap = 0;
-	}
-
-	i = 0;
-	while (context != -1) {
-		context = osgbpb_dir_entries_info(THEMES_DIR,
-				(osgbpb_info_list *) &info, 1, context,
-				sizeof(info), 0, &read_count);
-		if (read_count == 0)
-			continue;
-		if (info.obj_type != fileswitch_IS_DIR)
-			continue;
-		if (!file_exists(THEMES_DIR, info.name, "Sprites", 0xff9))
-			continue;
-
-		theme_menu = xrealloc(theme_menu, wimp_SIZEOF_MENU(i + 1));
-
-		theme_menu->entries[i].menu_flags = 0;
-		if (option_theme && strcmp(info.name, option_theme) == 0)
-			theme_menu->entries[i].menu_flags |= wimp_MENU_TICKED;
-		theme_menu->entries[i].sub_menu = wimp_NO_SUB_MENU;
-		theme_menu->entries[i].icon_flags = wimp_ICON_TEXT |
-				wimp_ICON_FILLED | wimp_ICON_INDIRECTED |
-				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
-		theme_menu->entries[i].data.indirected_text.text =
-				xstrdup(info.name);
- 		theme_menu->entries[i].data.indirected_text.validation = (char*)-1;
-		theme_menu->entries[i].data.indirected_text.size =
-				strlen(info.name) + 1;
-
-		i++;
-	}
-	if (i == 0) {
-		theme_menu->entries[0].menu_flags = 0;
-		theme_menu->entries[0].sub_menu = wimp_NO_SUB_MENU;
-		theme_menu->entries[0].icon_flags = wimp_ICON_TEXT |
-				wimp_ICON_FILLED | wimp_ICON_INDIRECTED |
-				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT) |
-				wimp_ICON_SHADED;
-		theme_menu->entries[0].data.indirected_text.text = xstrdup("-");
- 		theme_menu->entries[0].data.indirected_text.validation = (char*)-1;
-		theme_menu->entries[0].data.indirected_text.size = 2;
-		i = 1;
-	}
-	entries = i;
-
-	theme_menu->entries[0].menu_flags |= wimp_MENU_TITLE_INDIRECTED;
-	theme_menu->entries[i - 1].menu_flags |= wimp_MENU_LAST;
-}
-
-
-
-
-void ro_gui_theme_menu_selection(char *theme)
-{
-	ro_gui_set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME, theme);
-	load_theme_preview(theme);
-	wimp_set_icon_state(dialog_config_th, ICON_CONFIG_TH_PREVIEW, 0, 0);
-}
-
-int file_exists(const char* base, const char* dir, const char* leaf, bits ftype)
-{
-	char buffer[256];
-	fileswitch_object_type type;
-	bits load, exec;
-	int size;
-	fileswitch_attr attr;
-	bits file_type;
-
-	snprintf(buffer, 255, "%s.%s.%s", base, dir, leaf);
-	LOG(("checking %s", buffer));
-	if (xosfile_read_stamped_no_path(buffer, &type, &load, &exec, &size, &attr, &file_type) == NULL)
-	{
-		return (type == 1 && ftype == file_type);
-	}
-
-	return 0;
-}
 
 /**
  * Convert a 2-letter ISO language code to the language name.

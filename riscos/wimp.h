@@ -39,4 +39,6 @@ void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value);
 int ro_gui_get_icon_selected_state(wimp_w w, wimp_i i);
 #define ro_gui_set_icon_shaded_state(w, i, state) xwimp_set_icon_state(w, i, (state ? wimp_ICON_SHADED : 0), wimp_ICON_SHADED)
 
+osspriteop_area *ro_gui_load_sprite_file(const char *pathname);
+
 #endif

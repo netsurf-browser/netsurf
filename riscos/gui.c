@@ -596,8 +596,8 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 {
 	gui_window *g;
 
-	if (redraw->w == dialog_config_th)
-		ro_gui_redraw_config_th(redraw);
+	if (redraw->w == dialog_config_th_pane)
+		ro_gui_redraw_config_th_pane(redraw);
 	else if (redraw->w == history_window)
 		ro_gui_history_redraw(redraw);
 	else {
