@@ -722,6 +722,7 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 
 void ro_gui_icon_bar_click(wimp_pointer *pointer)
 {
+  	int key_down = 0;
 	if (pointer->buttons == wimp_CLICK_MENU) {
 		ro_gui_create_menu(iconbar_menu, pointer->pos.x - 64,
 				   96 + iconbar_menu_height, NULL);
@@ -734,7 +735,17 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 				option_language)) >= 0 && length < (int)sizeof(url))
 			browser_window_create(url, NULL);
 	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
-		ro_gui_debugwin_open();
+	  	/*	I've no idea what the correct way to scan for keys is when in the
+	  		desktop, so I've used os_byte to scan directly. This may cause some
+	  		weirdness for very unresponsive desktops due to the clicks being
+	  		buffered and the keypresses not.
+	  	*/
+	  	xosbyte1(osbyte_SCAN_KEYBOARD, 0 ^ 0x80, 0, &key_down);
+	  	if (key_down == 0) {
+	  		ro_gui_hotlist_show();
+	  	} else {
+			ro_gui_debugwin_open();
+		}
 	}
 }
 
