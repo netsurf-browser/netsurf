@@ -32,12 +32,24 @@ struct form {
 	struct form_control *last_control;	/**< Last control in list. */
 };
 
+/** Type of a struct form_control. */
+typedef enum {
+	GADGET_HIDDEN,
+	GADGET_TEXTBOX,
+	GADGET_RADIO,
+	GADGET_CHECKBOX,
+	GADGET_SELECT,
+	GADGET_TEXTAREA,
+	GADGET_IMAGE,
+	GADGET_PASSWORD,
+	GADGET_SUBMIT,
+	GADGET_RESET,
+	GADGET_FILE
+} form_control_type;
+
 /** Form control. */
 struct form_control {
-	enum { GADGET_HIDDEN, GADGET_TEXTBOX, GADGET_RADIO, GADGET_CHECKBOX,
-			GADGET_SELECT, GADGET_TEXTAREA, GADGET_IMAGE,
-			GADGET_PASSWORD, GADGET_SUBMIT, GADGET_RESET,
-			GADGET_FILE } type;
+	form_control_type type;
 	char *name;
 	char *value;
 	char *initial_value;
@@ -88,7 +100,9 @@ struct form_successful_control {
 	struct form_successful_control *next;	/**< Next in linked list. */
 };
 
+struct form_control *form_new_control(form_control_type type);
 void form_add_control(struct form *form, struct form_control *control);
+void form_free_control(struct form_control *control);
 struct form_successful_control *form_successful_controls(struct form *form,
 		struct form_control *submit_button);
 char *form_url_encode(struct form_successful_control *control);

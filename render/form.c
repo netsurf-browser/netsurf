@@ -21,6 +21,34 @@
 
 static char *form_textarea_value(struct form_control *textarea);
 
+
+/**
+ * Create a struct form_control.
+ *
+ * \param  type  control type
+ * \return  a new structure, or 0 on memory exhaustion
+ */
+
+struct form_control *form_new_control(form_control_type type)
+{
+	struct form_control *control;
+
+	control = malloc(sizeof *control);
+	if (!control)
+		return 0;
+	control->type = type;
+	control->name = 0;
+	control->value = 0;
+	control->initial_value = 0;
+	control->disabled = false;
+	control->form = 0;
+	control->box = 0;
+	control->prev = 0;
+	control->next = 0;
+	return control;
+}
+
+
 /**
  * Add a control to the list of controls in a form.
  */
@@ -37,6 +65,31 @@ void form_add_control(struct form *form, struct form_control *control)
 	} else {
 		form->controls = form->last_control = control;
 	}
+}
+
+
+/**
+ * Free a struct form_control.
+ *
+ * \param  control  structure to free
+ */
+
+void form_free_control(struct form_control *control)
+{
+	free(control->name);
+	free(control->value);
+	free(control->initial_value);
+	if (control->type == GADGET_SELECT) {
+		struct form_option *option, *next;
+		for (option = control->data.select.items; option;
+				option = next) {
+			next = option->next;
+			free(option->text);
+			free(option->value);
+			free(option);
+		}
+	}
+	free(control);
 }
 
 
