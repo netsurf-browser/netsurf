@@ -76,7 +76,8 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight)
   }
   c->data.gif.sprite_area = area;
 
-  header = (osspriteop_header*)(c->data.gif.sprite_area + 1);
+  header = (osspriteop_header*)((char*)c->data.gif.sprite_area +
+                                 c->data.gif.sprite_area->first);
   f = a->pFrames + 0;
   img = (pixel*)header + header->image;
   mask = (pixel*)header + header->mask;
@@ -140,14 +141,16 @@ void nsgif_redraw(struct content *c, long x, long y,
 
 
   xcolourtrans_generate_table_for_sprite(c->data.gif.sprite_area,
-		(osspriteop_id) (c->data.gif.sprite_area + 1),
+		(osspriteop_id) ((char*)c->data.gif.sprite_area +
+		                 c->data.gif.sprite_area->first),
 		colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 		0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
 
   table = xcalloc(size, 1);
 
   xcolourtrans_generate_table_for_sprite(c->data.gif.sprite_area,
-		(osspriteop_id) (c->data.gif.sprite_area + 1),
+		(osspriteop_id) ((char*)c->data.gif.sprite_area +
+		                 c->data.gif.sprite_area->first),
 		colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 		table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
 
@@ -158,7 +161,8 @@ void nsgif_redraw(struct content *c, long x, long y,
 
   xosspriteop_put_sprite_scaled(osspriteop_PTR,
 		c->data.gif.sprite_area,
-		(osspriteop_id) (c->data.gif.sprite_area + 1),
+		(osspriteop_id) ((char*)c->data.gif.sprite_area +
+		                 c->data.gif.sprite_area->first),
 		x, (int)(y - height),
 		/* osspriteop_USE_PALETTE is RO 3.5+ only.
 		 * behaviour on RO < 3.5 is unknown...

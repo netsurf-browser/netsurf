@@ -349,20 +349,23 @@ void nsjpeg_redraw(struct content *c, long x, long y,
   }
 
   xcolourtrans_generate_table_for_sprite(c->data.jpeg.sprite_area,
-		(osspriteop_id) (c->data.jpeg.sprite_area + 1),
+		(osspriteop_id) ((char*)c->data.jpeg.sprite_area +
+		                 c->data.jpeg.sprite_area->first),
 		colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 		0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
 
   table = xcalloc(size, 1);
 
   xcolourtrans_generate_table_for_sprite(c->data.jpeg.sprite_area,
-		(osspriteop_id) (c->data.jpeg.sprite_area + 1),
+		(osspriteop_id) ((char*)c->data.jpeg.sprite_area +
+		                 c->data.jpeg.sprite_area->first),
 		colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
 		table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
 
   xosspriteop_put_sprite_scaled(osspriteop_PTR,
 		c->data.jpeg.sprite_area,
-		(osspriteop_id) (c->data.jpeg.sprite_area + 1),
+		(osspriteop_id) ((char*)c->data.jpeg.sprite_area +
+		                 c->data.jpeg.sprite_area->first),
 		x, (int)(y - height),
 		/* osspriteop_USE_PALETTE is RO 3.5+ only.
 		 * behaviour on RO < 3.5 is unknown...
