@@ -548,6 +548,7 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 {
 	bool finished = false;
 	bool error = false;
+	bool abort;
 	struct fetch *f;
 	void *p;
 	void (*callback)(fetch_msg msg, void *p, const char *data,
@@ -558,6 +559,7 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 	code = curl_easy_getinfo(curl_handle, CURLINFO_PRIVATE, &f);
 	assert(code == CURLE_OK);
 
+	abort = f->abort;
 	callback = f->callback;
 	p = f->p;
 
@@ -578,7 +580,9 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 	fetch_stop(f);
 
 	/* postponed until after stop so that queue fetches are started */
-	if (finished)
+	if (abort)
+		; /* fetch was aborted: no callback */
+	else if (finished)
 		callback(FETCH_FINISHED, p, 0, 0);
 	else if (error)
 		callback(FETCH_ERROR, p, fetch_error_buffer, 0);
@@ -586,26 +590,29 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 
 
 /**
- * Callback function for fetch progress
+ * Callback function for fetch progress.
  */
+
 int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
 		double ultotal, double ulnow)
 {
-	struct fetch *f = (struct fetch *)clientp;
+	struct fetch *f = (struct fetch *) clientp;
 	double percent;
+
+	if (f->abort)
+		return 0;
 
 	if (dltotal > 0) {
 		percent = dlnow * 100.0f / dltotal;
 		snprintf(fetch_progress_buffer, 255,
-			messages_get("Progress"),
+				messages_get("Progress"),
 				human_friendly_bytesize(dlnow),
 				human_friendly_bytesize(dltotal));
 		f->callback(FETCH_PROGRESS, f->p, fetch_progress_buffer,
-			(unsigned long)percent);
-	}
-	else {
+				(unsigned long) percent);
+	} else {
 		snprintf(fetch_progress_buffer, 255,
-			messages_get("ProgressU"),
+				messages_get("ProgressU"),
 				human_friendly_bytesize(dlnow));
 		f->callback(FETCH_PROGRESS, f->p, fetch_progress_buffer, 0);
 	}
