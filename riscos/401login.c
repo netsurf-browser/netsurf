@@ -36,14 +36,12 @@ static struct browser_window *bwin;
 
 void ro_gui_401login_init(void)
 {
-	char name[20];
+	char name[20] = "login";
 	int context, window_size, data_size;
 	char *data;
 	os_error *e;
 
-        strncpy(name, "dialog_401li", 20);
-
-	/* find required buffer sizes */
+        /* find required buffer sizes */
 	e = xwimp_load_template(wimp_GET_SIZE, 0, 0, wimp_NO_FONTS,
 			name, 0, &window_size, &data_size, &context);
 	if (e) {

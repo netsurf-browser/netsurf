@@ -28,6 +28,7 @@
 #include "oslib/osfile.h"
 #include "oslib/osfind.h"
 #include "oslib/osfscontrol.h"
+#include "oslib/osgbpb.h"
 
 static const char *pabouthdr = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/transitional.dtd\"><html><head><title>%s</title></head><body bgcolor=\"#f3f3ff\"><!-- About header --><table border=\"0\" width=\"100%%\" bgcolor=\"#94adff\" cellspacing=\"2\"><tr><td><a href=\"http://netsurf.sf.net\"><img src=\"file:///%%3CNetSurf$Dir%%3E/About/nslogo\" alt=\"Netsurf logo\"></a><td><table bgcolor=\"#94adff\" border=\"0\"><tr><td>&nbsp;<tr><td align=\"center\"><h2>NetSurf %s</h2><tr><td align=\"center\"><h5>Copyright &copy; 2002, 2003 NetSurf Developers.</h5><tr><td>&nbsp;</table></table><hr>"; /**< About page header */
 static const char *pabtplghd = "<!-- Plugin information --><strong><i>The following plugins are installed on your system:</i></strong><br>&nbsp;<br><table border=\"0\" cellspacing=\"2\" width=\"100%\">"; /**< Plugin table header */
@@ -80,8 +81,8 @@ void about_create(void) {
   struct about_page *abt;
   struct plugd *temp;
   FILE *fp;
-  char *buf, *val, var[20], *ptype, *pdetails, *fname, *furl, *p, *leafname;
-  int i, nofiles, j, w, h, size, pneeded;
+  char *buf, *val, var[20], *ptype, *pdetails, *fname, *furl;
+  int i, nofiles, j, w, h, size;
   fileswitch_object_type fot;
   os_error *e;
 
@@ -177,40 +178,38 @@ void about_create(void) {
             /* get actual file name */
             sprintf(var, "%2.2d*", j);
             LOG(("var: %s", var));
-            sprintf(buf, "%s.", val);
-            LOG(("buf: %s", buf));
-            e = xosfscontrol_canonicalise_path(var, 0, 0, buf, 0, &pneeded);
+
+            void *name = (void*)xcalloc((unsigned int)20, sizeof(char));
+
+            e = xosgbpb_dir_entries(val, (osgbpb_string_list*)name,
+                                    1, 0, 255, var, NULL, NULL);
             if (e) {
               LOG(("%s", e->errmess));
-              return;
+              xfree(name);
+              xfree(pdetails);
+              continue;
             }
-            fname = xcalloc((unsigned int)(10-pneeded), sizeof(char));
-            e = xosfscontrol_canonicalise_path(var, fname, 0, buf,
-                                                          (10-pneeded), 0);
-            if (e) {
-              LOG(("%s", e->errmess));
-              return;
-            }
-            LOG(("fname: %s", fname));
-            furl = xcalloc(strlen(fname) + 20, sizeof(char));
+            LOG(("fname: %s", (char*)name));
+            sprintf(buf, "%s.%s", val, (char*)name);
+            furl = xcalloc(strlen(buf) + 20, sizeof(char));
 
             /* grab leafname and get width and height */
-            p = strrchr(fname, '.');
-            leafname = xstrdup(p);
-            h = atoi(leafname+7);
-            leafname[7] = 0;
-            w = atoi(leafname+3);
+            h = atoi((char*)name+6);
+            ((char*)name)[6] = 0;
+            w = atoi((char*)name+2);
+
+            xfree(name);
 
             /* convert to URL */
-            __unixify(fname, 0, furl, strlen(fname)+20, 0);
-            sprintf(fname, "file://%s", furl);
+            __unixify(buf, 0, furl, strlen(buf)+20, 0);
+            sprintf(buf, "file://%s", furl);
             xfree(furl);
 
-            LOG(("furl: %s", fname));
-            furl = xcalloc(strlen(paboutpl3) + strlen(ptype) + strlen(fname) + strlen(pdetails) + 10, sizeof(char));
-            sprintf(furl, paboutpl3, ptype, fname, ptype, w, h, pdetails);
+            LOG(("furl: %s", buf));
+            furl = xcalloc(strlen(paboutpl3) + strlen(ptype) + strlen(buf) +
+                           strlen(pdetails) + 10, sizeof(char));
+            sprintf(furl, paboutpl3, ptype, buf, ptype, w, h, pdetails);
             abt->plugd = new_plugin(abt->plugd, furl);
-            xfree(fname);
             xfree(pdetails);
             continue;
           }
