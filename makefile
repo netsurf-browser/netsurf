@@ -67,7 +67,7 @@ OBJS_GTK=$(OBJECTS_GTK:%.o=$(OBJDIR_GTK)/%.o)
 # Inclusion of platform specific files has to occur after the OBJDIR stuff as
 # that is refered to in the files
 
-OS = $(word 2,$(subst -, ,$(shell $(CC) -dumpmachine)))
+OS = $(word 2,$(subst -, ,$(shell gcc -dumpmachine)))
 ifeq ($(OS),riscos)
 include riscos.mk
 else
