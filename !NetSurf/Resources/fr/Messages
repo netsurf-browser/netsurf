@@ -374,10 +374,10 @@ HelpScaleView:Utiliser cette \w pour changer l'échelle d'affichage.
 HelpScaleView1:Saisissez l'échelle à laquelle vous voulez afficher cette page.
 HelpScaleView2:\Sréduire l'échelle, par pas de 10%.
 HelpScaleView3:\Saugmenter l'échelle, par pas de 10%.
-HelpScaleView5:\Sdirectement choisir une échelle de 50%.
-HelpScaleView6:\Sdirectement choisir une échelle de 80%.
-HelpScaleView7:\Sdirectement choisir une échelle de 100%.
-HelpScaleView8:\Sdirectement choisir une échelle de 120%.
+HelpScaleView5:\Sdirectement choisir une échelle de 75%.
+HelpScaleView6:\Sdirectement choisir une échelle de 100%.
+HelpScaleView7:\Sdirectement choisir une échelle de 150%.
+HelpScaleView8:\Sdirectement choisir une échelle de 200%.
 HelpScaleView9:\Sannuler les changements.|ML'échelle en cours ne sera pas modifiée.
 HelpScaleView10:\Svalider le changement d'échelle.
 
@@ -412,6 +412,8 @@ HelpHotlistMenu0-3:\Rregrouper les items dans la liste des favoris.
 HelpHotlistMenu0-3-0:\Sfermer tous les répertoires et cacher les détails sur les entrées.
 HelpHotlistMenu0-3-1:\Sfermer tous les répertoires.
 HelpHotlistMenu0-3-2:\Scacher tous les détails sur les entrées.
+HelpHotlistMenu0-4:\Rcontrol the display of NetSurf's toolbars.
+HelpHotlistMenu0-4-0:\Stoggle the display of the toolbar buttons.
 HelpHotlistMenu1:\Ragir sur la sélection en cours.
 HelpHotlistMenu1-0:\Rééditer l'item en cours.
 HelpHotlistMenu1-1:\Slancer la sélection courante.
@@ -419,5 +421,12 @@ HelpHotlistMenu1-2:\Ssupprimer la sélection courante de la liste des favoris.
 HelpHotlistMenu1-3:\Sremettre à zéro les statistiques, comme le compteur de visite, pour les items sélectionnés.
 HelpHotlistMenu2:\Ssélectionner tous les items de la liste des favoris.
 HelpHotlistMenu3:\Sdésélectionner la sélection courante.
+
+HelpGHistory:\Tglobal history window.
+
+HelpGHistoryToolbar0:\Tdelete button.|M\Sdelete the current selection.
+HelpGHistoryToolbar1:\Texpand entries button.|M\Sexpand all addresses in the hotlist.|M\Acollapse all addresses in the hotlist.|MExpanded addresses show additional details, such as a visit counter.
+HelpGHistoryToolbar2:\Topen directories button.|M\Sopen all directories in the hotlist.|M\Aclose all directories in the hotlist.
+HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
 
 HelpAppInfo:\Tla \w d'information de NetSurf.|MVoir la page "À propos de" pour une liste des contributeurs et les remerciements.

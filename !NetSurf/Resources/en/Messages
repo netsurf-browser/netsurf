@@ -374,10 +374,10 @@ HelpScaleView:Use this \w to change the scale the page is displayed at.
 HelpScaleView1:Enter the scale you wish the page to be displayed at.
 HelpScaleView2:\Sreduce the scale, 10% at a time.
 HelpScaleView3:\Sincrease the scale, 10% at a time.
-HelpScaleView5:\Sautomatically choose a scale of 50%.
-HelpScaleView6:\Sautomatically choose a scale of 80%.
-HelpScaleView7:\Sautomatically choose a scale of 100%.
-HelpScaleView8:\Sautomatically choose a scale of 120%.
+HelpScaleView5:\Sautomatically choose a scale of 75%.
+HelpScaleView6:\Sautomatically choose a scale of 100%.
+HelpScaleView7:\Sautomatically choose a scale of 150%.
+HelpScaleView8:\Sautomatically choose a scale of 200%.
 HelpScaleView9:\Scancel changes.|MThe current scale will not be changed.
 HelpScaleView10:\Schange the view to the scale you have chosen.
 
@@ -412,6 +412,8 @@ HelpHotlistMenu0-3:\Rcollapse items within the hotlist.
 HelpHotlistMenu0-3-0:\Sclose all directories and hide all entry details.
 HelpHotlistMenu0-3-1:\Sclose all directories.
 HelpHotlistMenu0-3-2:\Shide all entry details.
+HelpHotlistMenu0-4:\Rcontrol the display of NetSurf's toolbars.
+HelpHotlistMenu0-4-0:\Stoggle the display of the toolbar buttons.
 HelpHotlistMenu1:\Roperate on the current selection.
 HelpHotlistMenu1-0:\Redit the current item.
 HelpHotlistMenu1-1:\Slaunch the current selection.
@@ -419,5 +421,12 @@ HelpHotlistMenu1-2:\Sdelete the current selection from the hotlist.
 HelpHotlistMenu1-3:\Sreset statistics, such as visit count, for selected items.
 HelpHotlistMenu2:\Sselect all the items in the hotlist.
 HelpHotlistMenu3:\Sdeselect all selected items.
+
+HelpGHistory:\Tglobal history window.
+
+HelpGHistoryToolbar0:\Tdelete button.|M\Sdelete the current selection.
+HelpGHistoryToolbar1:\Texpand entries button.|M\Sexpand all addresses in the hotlist.|M\Acollapse all addresses in the hotlist.|MExpanded addresses show additional details, such as a visit counter.
+HelpGHistoryToolbar2:\Topen directories button.|M\Sopen all directories in the hotlist.|M\Aclose all directories in the hotlist.
+HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
 
 HelpAppInfo:\TNetSurf information \w.|MSee the about page for the contributor list and credits.

@@ -374,10 +374,10 @@ HelpScaleView:Mit diesem Dialog kann die Darstellung der Seite vergrößert oder v
 HelpScaleView1:Gewünschte Skalierung hier eingeben.
 HelpScaleView2:Klicken mit AUSWAHL um die Skalierung um 10% zu verringern.
 HelpScaleView3:Klicken mit AUSWAHL um die Skalierung um 10% zu erhöhen.
-HelpScaleView5:Stellt einen Skalierungswert von 50% ein.
-HelpScaleView6:Stellt einen Skalierungswert von 80% ein.
-HelpScaleView7:Stellt einen Skalierungswert von 100% ein.
-HelpScaleView8:Stellt einen Skalierungswert von 120% ein.
+HelpScaleView5:Stellt einen Skalierungswert von 75% ein.
+HelpScaleView6:Stellt einen Skalierungswert von 100% ein.
+HelpScaleView7:Stellt einen Skalierungswert von 150% ein.
+HelpScaleView8:Stellt einen Skalierungswert von 200% ein.
 HelpScaleView9:Klicken mit AUSWAHL um die Skalierung nicht durchzuführen.|MDas Dialogfenster wird geschlossen.|MDie Darstellung der Seite wird unverändert beibehalten.
 HelpScaleView10:Klicken mit AUSWAHL um die Seite skaliert darzustellen.|MDie Seite wird in der gewählten Vergrößerung angezeigt.
 
@@ -412,6 +412,8 @@ HelpHotlistMenu0-3:Schließen von Verzeichnissen und Ausblenden der Zusatzinforma
 HelpHotlistMenu0-3-0:Schließt alle Verzeichnisse und versteckt die Zusatzinformationen bei Einträgen.
 HelpHotlistMenu0-3-1:Schließt alle Verzeichnisse.
 HelpHotlistMenu0-3-2:Versteckt die Zusatzinformationen der Einträge.
+HelpHotlistMenu0-4:\Rcontrol the display of NetSurf's toolbars.
+HelpHotlistMenu0-4-0:\Stoggle the display of the toolbar buttons.
 HelpHotlistMenu1:Untermenü Auswahl. Bearbeiten der markierten Hotlist Elemente.
 HelpHotlistMenu1-0:Ändern des markierten Elementes in der Hotlist.
 HelpHotlistMenu1-1:Öffnet markierte Einträge in je einem neuen Browserfenster.
@@ -419,5 +421,12 @@ HelpHotlistMenu1-2:Löscht markierte Elemente aus der Hotlist.|MAchtung: Verzeich
 HelpHotlistMenu1-3:Setzt für die markierten Einträge die Statistik, z.B. Anzahl der Seitenbesuche, zurück.
 HelpHotlistMenu2:Markiert alle Elemente der Hotlist.
 HelpHotlistMenu3:Deselektiert alle markierten Elemente.
+
+HelpGHistory:\Tglobal history window.
+
+HelpGHistoryToolbar0:\Tdelete button.|M\Sdelete the current selection.
+HelpGHistoryToolbar1:\Texpand entries button.|M\Sexpand all addresses in the hotlist.|M\Acollapse all addresses in the hotlist.|MExpanded addresses show additional details, such as a visit counter.
+HelpGHistoryToolbar2:\Topen directories button.|M\Sopen all directories in the hotlist.|M\Aclose all directories in the hotlist.
+HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
 
 HelpAppInfo:Das ist das Info-Fenster zu NetSurf.|MGenauere Angaben zu Autoren und Entwicklerteam, zu genutzten Libraries etc. gibt es bei "Über NetSurf" im Untermenü Hilfe eines Browserfensters.
