@@ -351,7 +351,7 @@ void parse_font_size(struct css_style * const s, const struct node * const v)
 			if (fs != 0) {
 				s->font_size.size = CSS_FONT_SIZE_LENGTH;
 				s->font_size.value.length.unit = CSS_UNIT_PT;
-				s->font_size.value.length.value = fs->size * 12;
+				s->font_size.value.length.value = fs->size * 10;
 			} else if (strcasecmp(v->data, "larger") == 0) {
 				s->font_size.size = CSS_FONT_SIZE_PERCENT;
 				s->font_size.value.percent = SIZE_FACTOR * 100;
