@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.c,v 1.1 2003/02/09 12:58:14 bursa Exp $
+ * $Id: fetch.c,v 1.2 2003/02/25 21:00:27 bursa Exp $
  */
 
 #include <assert.h>
@@ -8,11 +8,6 @@
 #include "netsurf/content/fetch.h"
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
-
-#ifndef TEST
-#else
-#include <unistd.h>
-#endif
 
 struct fetch
 {
@@ -94,6 +89,8 @@ struct fetch * fetch_start(char *url, char *referer,
 	/* create the curl easy handle */
 	fetch->curl_handle = curl_easy_init();
 	assert(fetch->curl_handle != 0);  /* TODO: handle curl errors */
+	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_VERBOSE, 1);
+	assert(code == CURLE_OK);
 	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_URL, fetch->url);
 	assert(code == CURLE_OK);
 	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PRIVATE, fetch);
@@ -211,7 +208,7 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 {
 	f->in_callback = 1;
 
-	LOG(("fetch %p, size %lu", f, size * nmemb));
+	LOG(("fetch %p, size %u", f, size * nmemb));
 
 	if (!f->had_headers) {
 		/* find the content type and inform the caller */
@@ -248,6 +245,8 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
  */
 
 #ifdef TEST
+#include <unistd.h>
+
 struct test {char *url; struct fetch *f;};
 
 void callback(fetch_msg msg, struct test *t, char *data, unsigned long size)
@@ -273,8 +272,11 @@ void callback(fetch_msg msg, struct test *t, char *data, unsigned long size)
 }
 
 struct test test[] = {
+	{"http://127.0.0.1/", 0},
+	{"http://netsurf.strcprstskrzkrk.co.uk/", 0},
 	{"http://www.oxfordstudent.com/", 0},
 	{"http://www.google.co.uk/", 0},
+	{"http://news.bbc.co.uk/", 0},
 	{"http://doesnt.exist/", 0},
 	{"blah://blah", 0},
 };

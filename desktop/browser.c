@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.25 2003/02/09 19:33:32 bursa Exp $
+ * $Id: browser.c,v 1.26 2003/02/25 21:00:27 bursa Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -67,7 +67,7 @@ void browser_window_reformat(struct browser_window* bw)
         gui_window_set_title(bw->window, bw->current_content->title);
       time1 = clock();
       LOG(("Setting extent"));
-      gui_window_set_extent(bw->window, bw->current_content->data.html.layout->children->width, bw->current_content->data.html.layout->children->height);
+      gui_window_set_extent(bw->window, bw->current_content->width, bw->current_content->height);
       LOG(("Setting scroll"));
       gui_window_set_scroll(bw->window, 0, 0);
       LOG(("Redraw window"));
@@ -267,7 +267,7 @@ void browser_window_callback(fetchcache_msg msg, struct content *c,
         gui_window_message(bw->window, &gmsg);
 
         previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
-        if (bw->current_content != NULL)
+        if (bw->current_content != NULL && bw->current_content->type == CONTENT_HTML)
 	{
 	  int gc;
 	  for (gc = 0; gc < bw->current_content->data.html.elements.numGadgets; gc++)
@@ -344,6 +344,7 @@ void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct gui_g
 
 void gui_redraw_gadget(struct browser_window* bw, struct gui_gadget* g)
 {
+	assert(bw->current_content->type == CONTENT_HTML);
 	gui_redraw_gadget2(bw, bw->current_content->data.html.layout->children, g, 0, 0);
 }
 
@@ -377,6 +378,7 @@ int browser_window_gadget_click(struct browser_window* bw, int click_x, int clic
 	click_boxes = NULL;
 	plot_index = 0;
 
+	assert(bw->current_content->type == CONTENT_HTML);
 	box_under_area(bw->current_content->data.html.layout->children,
 			click_x, click_y, 0, 0, &click_boxes, &found, &plot_index);
 
@@ -501,6 +503,7 @@ void browser_window_follow_link(struct browser_window* bw,
   click_boxes = NULL;
   plot_index = 0;
 
+  assert(bw->current_content->type == CONTENT_HTML);
   box_under_area(bw->current_content->data.html.layout->children,
                  click_x, click_y, 0, 0, &click_boxes, &found, &plot_index);
 
@@ -557,6 +560,7 @@ void browser_window_text_selection(struct browser_window* bw,
   click_boxes = NULL;
   plot_index = 0;
 
+  assert(bw->current_content->type == CONTENT_HTML);
   box_under_area(bw->current_content->data.html.layout->children,
                  click_x, click_y, 0, 0, &click_boxes, &found, &plot_index);
 
@@ -700,6 +704,7 @@ void browser_window_clear_text_selection(struct browser_window* bw)
   struct box_position* old_start;
   struct box_position* old_end;
 
+  assert(bw->current_content->type == CONTENT_HTML);
   old_start = &(bw->current_content->data.html.text_selection.start);
   old_end = &(bw->current_content->data.html.text_selection.end);
 
@@ -718,6 +723,7 @@ void browser_window_change_text_selection(struct browser_window* bw,
   struct box_position start;
   struct box_position end;
 
+  assert(bw->current_content->type == CONTENT_HTML);
   memcpy(&start, &(bw->current_content->data.html.text_selection.start), sizeof(struct box_position));
   memcpy(&end, &(bw->current_content->data.html.text_selection.end), sizeof(struct box_position));
 
@@ -827,6 +833,7 @@ void browser_window_redraw_boxes(struct browser_window* bw, struct box_position*
 {
   int plot = 0;
 
+  assert(bw->current_content->type == CONTENT_HTML);
   if (box_position_eq(start, end))
     return;
 

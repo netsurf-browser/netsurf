@@ -1,5 +1,5 @@
 /**
- * $Id: content.h,v 1.1 2003/02/09 12:58:14 bursa Exp $
+ * $Id: content.h,v 1.2 2003/02/25 21:00:27 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
@@ -26,7 +26,7 @@
  * the content may be removed from the memory cache.
  */
 
-typedef enum {CONTENT_HTML, CONTENT_TEXTPLAIN, CONTENT_CSS,
+typedef enum {CONTENT_HTML, CONTENT_TEXTPLAIN, CONTENT_JPEG, CONTENT_CSS,
 	CONTENT_PNG, CONTENT_OTHER} content_type;
 
 struct box_position
@@ -44,6 +44,7 @@ struct content
   char *url;
   content_type type;
   enum {CONTENT_LOADING, CONTENT_READY} status;
+  unsigned long width, height;
 
   union
   {
@@ -72,9 +73,9 @@ struct content
 
     struct
     {
-      unsigned long width, height;
-      char * sprite;
-    } image;
+      char * data;
+      unsigned long length;
+    } jpeg;
   
   } data;
 

@@ -1,5 +1,5 @@
 /**
- * $Id: textplain.c,v 1.1 2003/02/09 12:58:15 bursa Exp $
+ * $Id: textplain.c,v 1.2 2003/02/25 21:00:27 bursa Exp $
  */
 
 #include <assert.h>
@@ -30,23 +30,24 @@ void textplain_process_data(struct content *c, char *data, unsigned long size)
 int textplain_convert(struct content *c, unsigned int width, unsigned int height)
 {
 	htmlParseChunk(c->data.html.parser, footer, sizeof(footer), 0);
+	c->type = CONTENT_HTML;
 	return html_convert(c, width, height);
 }
 
 
 void textplain_revive(struct content *c, unsigned int width, unsigned int height)
 {
-	html_revive(c, width, height);
+	assert(0);
 }
 
 
 void textplain_reformat(struct content *c, unsigned int width, unsigned int height)
 {
-	html_reformat(c, width, height);
+	assert(0);
 }
 
 
 void textplain_destroy(struct content *c)
 {
-	html_destroy(c);
+	assert(0);
 }

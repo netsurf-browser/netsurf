@@ -1,5 +1,5 @@
 /**
- * $Id: fetchcache.c,v 1.1 2003/02/09 12:58:14 bursa Exp $
+ * $Id: fetchcache.c,v 1.2 2003/02/25 21:00:27 bursa Exp $
  */
 
 #include <assert.h>
@@ -59,9 +59,15 @@ void fetchcache_free(struct fetchcache *fc)
 void fetchcache_callback(fetch_msg msg, struct fetchcache *fc, char *data, unsigned long size)
 {
 	content_type type;
+	char *mime_type;
+	char *semic;
 	switch (msg) {
 		case FETCH_TYPE:
-			type = content_lookup(data);
+			mime_type = strdup(data);
+			if ((semic = strchr(mime_type, ';')) != 0)
+				*semic = 0;	/* remove "; charset=..." */
+			type = content_lookup(mime_type);
+			free(mime_type);
 			LOG(("FETCH_TYPE, type %u", type));
 			if (type == CONTENT_OTHER) {
 				fetch_abort(fc->f);

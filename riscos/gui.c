@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.17 2003/02/09 12:58:15 bursa Exp $
+ * $Id: gui.c,v 1.18 2003/02/25 21:00:27 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -10,8 +10,10 @@
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 #include "oslib/colourtrans.h"
+#include "oslib/jpeg.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/utils/log.h"
+#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -772,36 +774,45 @@ void ro_gui_toolbar_redraw(gui_window* g, wimp_draw* redraw)
 void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
 {
   osbool more;
+  struct content *c = g->data.browser.bw->current_content;
 
-  if (g->redraw_safety == SAFE && g->type == GUI_BROWSER_WINDOW)
+  if (g->redraw_safety == SAFE && g->type == GUI_BROWSER_WINDOW && c != NULL)
   {
-    if (g->data.browser.bw->current_content != NULL)
+    more = wimp_redraw_window(redraw);
+    wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_BLACK);
+
+    select_on = 0;
+
+    while (more)
     {
-      if (g->data.browser.bw->current_content->data.html.layout != NULL)
+      switch (c->type)
       {
-        more = wimp_redraw_window(redraw);
-        wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_BLACK);
-
-        select_on = 0;
-
-        while (more)
-        {
-		gadget_subtract_x = redraw->box.x0 - redraw->xscroll;
-		gadget_subtract_y = redraw->box.y1 - redraw->yscroll;
+        case CONTENT_HTML:
+          gadget_subtract_x = redraw->box.x0 - redraw->xscroll;
+          gadget_subtract_y = redraw->box.y1 - redraw->yscroll;
+          assert(c->data.html.layout != NULL);
           ro_gui_window_redraw_box(g,
-            g->data.browser.bw->current_content->data.html.layout->children,
+            c->data.html.layout->children,
             redraw->box.x0 - redraw->xscroll, redraw->box.y1 - redraw->yscroll,
             &redraw->clip, 0xffffff);
-          more = wimp_get_rectangle(redraw);
-        }
-        return;
+          break;
+
+        case CONTENT_JPEG:
+          xjpeg_plot_scaled(c->data.jpeg.data,
+            redraw->box.x0 - redraw->xscroll,
+            redraw->box.y1 - redraw->yscroll - c->height * 2,
+            0, c->data.jpeg.length, 0);
+          break;
       }
+      more = wimp_get_rectangle(redraw);
     }
   }
-
-  more = wimp_redraw_window(redraw);
-  while (more)
-    more = wimp_get_rectangle(redraw);
+  else
+  {
+    more = wimp_redraw_window(redraw);
+    while (more)
+      more = wimp_get_rectangle(redraw);
+  }
 }
 
 void gui_window_set_scroll(gui_window* g, int sx, int sy)

@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.1 2003/02/09 12:58:15 bursa Exp $
+ * $Id: html.c,v 1.2 2003/02/25 21:00:27 bursa Exp $
  */
 
 #include <assert.h>
@@ -97,6 +97,9 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	layout_document(c->data.html.layout->children, width);
 	box_dump(c->data.html.layout->children, 0);
 
+	c->width = c->data.html.layout->children->width;
+	c->height = c->data.html.layout->children->height;
+	
 	return 0;
 }
 
@@ -131,12 +134,16 @@ void html_revive(struct content *c, unsigned int width, unsigned int height)
 {
 	/* TODO: reload stylesheets and images and fix any pointers to them */
 	layout_document(c->data.html.layout->children, width);
+	c->width = c->data.html.layout->children->width;
+	c->height = c->data.html.layout->children->height;
 }
 
 
 void html_reformat(struct content *c, unsigned int width, unsigned int height)
 {
 	layout_document(c->data.html.layout->children, width);
+	c->width = c->data.html.layout->children->width;
+	c->height = c->data.html.layout->children->height;
 }
 
 
