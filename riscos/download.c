@@ -12,6 +12,7 @@
 #include "oslib/osfile.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+#include "netsurf/content/fetch.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
