@@ -253,7 +253,9 @@ bool layout_block_context(struct box *block, pool box_pool)
 						box->padding[BOTTOM] +
 						box->border[BOTTOM];
 				box = box->parent;
-				if (box != block && box->height == AUTO)
+				if (box == block)
+					break;
+				if (box->height == AUTO)
 					box->height = y - box->padding[TOP];
 				cy += box->padding[BOTTOM] +
 						box->border[BOTTOM];
@@ -501,6 +503,12 @@ void layout_float_find_dimensions(int available_width,
 
 /**
  * Calculate size of margins, paddings, and borders.
+ *
+ * \param  available_width  width of containing block
+ * \param  style            style giving margins, paddings, and borders
+ * \param  margin[4]        filled with margins, may be NULL
+ * \param  padding[4]       filled with paddings
+ * \param  border[4]        filled with border widths
  */
 
 void layout_find_dimensions(int available_width,
@@ -509,37 +517,42 @@ void layout_find_dimensions(int available_width,
 {
 	unsigned int i;
 	for (i = 0; i != 4; i++) {
-		switch (style->margin[i].margin) {
+		if (margin) {
+			switch (style->margin[i].margin) {
 			case CSS_MARGIN_LENGTH:
-				margin[i] = (int)css_len2px(&style->margin[i].value.length, style);
+				margin[i] = (int) css_len2px(&style->margin[i].
+						value.length, style);
 				break;
 			case CSS_MARGIN_PERCENT:
 				margin[i] = available_width *
-						style->margin[i].value.percent / 100;
+					style->margin[i].value.percent / 100;
 				break;
 			case CSS_MARGIN_AUTO:
 			default:
 				margin[i] = AUTO;
 				break;
+			}
 		}
 
 		switch (style->padding[i].padding) {
-			case CSS_PADDING_PERCENT:
-				padding[i] = available_width *
-						style->padding[i].value.percent / 100;
-				break;
-			case CSS_PADDING_LENGTH:
-			default:
-				padding[i] = (int)css_len2px(&style->padding[i].value.length, style);
-				break;
+		case CSS_PADDING_PERCENT:
+			padding[i] = available_width *
+					style->padding[i].value.percent / 100;
+			break;
+		case CSS_PADDING_LENGTH:
+		default:
+			padding[i] = (int) css_len2px(&style->padding[i].
+					value.length, style);
+			break;
 		}
 
-		if (style->border[i].style == CSS_BORDER_STYLE_NONE ||
-				style->border[i].style == CSS_BORDER_STYLE_HIDDEN)
+		if (style->border[i].style == CSS_BORDER_STYLE_HIDDEN ||
+				style->border[i].style == CSS_BORDER_STYLE_NONE)
 			/* spec unclear: following Mozilla */
 			border[i] = 0;
 		else
-			border[i] = (int)css_len2px(&style->border[i].width.value, style);
+			border[i] = (int) css_len2px(&style->border[i].
+					width.value, style);
 	}
 }
 
@@ -1169,7 +1182,9 @@ void place_float_below(struct box *c, int width, int cx, int y,
 /**
  * Layout a table.
  *
- * \param  box_pool  memory pool for any new boxes
+ * \param  table            table to layout
+ * \param  available_width  width of containing block
+ * \param  box_pool         memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  */
 
@@ -1188,6 +1203,7 @@ bool layout_table(struct box *table, int available_width,
 	int auto_width;
 	int spare_width;
 	int relative_sum = 0;
+	int border_spacing_h = 0, border_spacing_v = 0;
 	struct box *c;
 	struct box *row;
 	struct box *row_group;
@@ -1200,6 +1216,7 @@ bool layout_table(struct box *table, int available_width,
 	assert(table->children && table->children->children);
 	assert(columns);
 
+	/* allocate working buffers */
 	col = malloc(columns * sizeof col[0]);
 	excess_y = malloc(columns * sizeof excess_y[0]);
 	row_span = malloc(columns * sizeof row_span[0]);
@@ -1216,34 +1233,57 @@ bool layout_table(struct box *table, int available_width,
 
 	memcpy(col, table->col, sizeof(col[0]) * columns);
 
+	/* find margins, paddings, and borders for table and cells */
 	layout_find_dimensions(available_width, style, table->margin,
 			table->padding, table->border);
-
-	switch (style->width.width) {
-		case CSS_WIDTH_LENGTH:
-			table_width = (int)css_len2px(&style->width.value.length, style);
-			auto_width = table_width;
-			break;
-		case CSS_WIDTH_PERCENT:
-			table_width = available_width *
-					style->width.value.percent / 100;
-			auto_width = table_width;
-			break;
-		case CSS_WIDTH_AUTO:
-		default:
-			table_width = AUTO;
-			auto_width = available_width -
-					((table->margin[LEFT] == AUTO ?
-						0 : table->margin[LEFT]) +
-					 table->border[LEFT] +
-					 table->padding[LEFT] +
-					 table->padding[RIGHT] +
-					 table->border[RIGHT] +
-					 (table->margin[RIGHT] == AUTO ?
-					 	0 : table->margin[RIGHT]));
-			break;
+	for (row_group = table->children; row_group;
+			row_group = row_group->next) {
+		for (row = row_group->children; row; row = row->next) {
+			for (c = row->children; c; c = c->next) {
+				assert(c->style);
+				layout_find_dimensions(available_width,
+						c->style, 0,
+						c->padding, c->border);
+			}
+		}
 	}
 
+	/* border-spacing is used in the separated borders model */
+	if (style->border_collapse == CSS_BORDER_COLLAPSE_SEPARATE) {
+		border_spacing_h = (int) css_len2px(&style->border_spacing.horz,
+				style);
+		border_spacing_v = (int) css_len2px(&style->border_spacing.vert,
+				style);
+	}
+
+	/* find specified table width, or available width if auto-width */
+	switch (style->width.width) {
+	case CSS_WIDTH_LENGTH:
+		table_width = (int) css_len2px(&style->width.value.length,
+				style);
+		auto_width = table_width;
+		break;
+	case CSS_WIDTH_PERCENT:
+		table_width = available_width *
+				style->width.value.percent / 100;
+		auto_width = table_width;
+		break;
+	case CSS_WIDTH_AUTO:
+	default:
+		table_width = AUTO;
+		auto_width = available_width -
+				((table->margin[LEFT] == AUTO ? 0 :
+						table->margin[LEFT]) +
+				 table->border[LEFT] +
+				 table->padding[LEFT] +
+				 table->padding[RIGHT] +
+				 table->border[RIGHT] +
+				 (table->margin[RIGHT] == AUTO ? 0 :
+				 		table->margin[RIGHT]));
+		break;
+	}
+
+	/* calculate width required by cells */
 	for (i = 0; i != columns; i++) {
 		if (col[i].type == COLUMN_WIDTH_FIXED) {
 			if (col[i].width < col[i].min)
@@ -1253,10 +1293,12 @@ bool layout_table(struct box *table, int available_width,
 			required_width += col[i].width;
 		} else if (col[i].type == COLUMN_WIDTH_PERCENT) {
 			int width = col[i].width * auto_width / 100;
-			required_width += col[i].min < width ? width : col[i].min;
+			required_width += col[i].min < width ? width :
+					col[i].min;
 		} else
 			required_width += col[i].min;
 	}
+	required_width += (columns + 1) * border_spacing_h;
 
 	LOG(("width %i, min %i, max %i, auto %i, required %i",
 			table_width, table->min_width, table->max_width,
@@ -1303,6 +1345,7 @@ bool layout_table(struct box *table, int available_width,
 		else
 			spare_width -= col[i].min;
 	}
+	spare_width -= (columns + 1) * border_spacing_h;
 	if (relative_sum != 0) {
 		if (spare_width < 0)
 			spare_width = 0;
@@ -1316,6 +1359,8 @@ bool layout_table(struct box *table, int available_width,
 			}
 		}
 	}
+	min_width += (columns + 1) * border_spacing_h;
+	max_width += (columns + 1) * border_spacing_h;
 
 	if (auto_width <= min_width) {
 		/* not enough space: minimise column widths */
@@ -1360,9 +1405,9 @@ bool layout_table(struct box *table, int available_width,
 		table_width = auto_width;
 	}
 
-	xs[0] = x = 0;
+	xs[0] = x = border_spacing_h;
 	for (i = 0; i != columns; i++) {
-		x += col[i].width;
+		x += col[i].width + border_spacing_h;
 		xs[i + 1] = x;
 		row_span[i] = 0;
 		excess_y[i] = 0;
@@ -1370,13 +1415,21 @@ bool layout_table(struct box *table, int available_width,
 	}
 
 	/* position cells */
-	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
+	table_height = border_spacing_v;
+	for (row_group = table->children; row_group;
+			row_group = row_group->next) {
 		int row_group_height = 0;
-		for (row = row_group->children; row != 0; row = row->next) {
+		for (row = row_group->children; row; row = row->next) {
 			int row_height = 0;
-			for (c = row->children; c != 0; c = c->next) {
-				assert(c->style != 0);
-				c->width = xs[c->start_column + c->columns] - xs[c->start_column];
+			for (c = row->children; c; c = c->next) {
+				assert(c->style);
+				c->width = xs[c->start_column + c->columns] -
+						xs[c->start_column] -
+						border_spacing_h -
+						c->border[LEFT] -
+						c->padding[LEFT] -
+						c->padding[RIGHT] -
+						c->border[RIGHT];
 				c->float_children = 0;
 
 				c->height = AUTO;
@@ -1388,23 +1441,34 @@ bool layout_table(struct box *table, int available_width,
 					free(xs);
 					return false;
 				}
-				if (c->style->height.height == CSS_HEIGHT_LENGTH) {
-					/* some sites use height="1" or similar to attempt
-					 * to make cells as small as possible, so treat
-					 * it as a minimum */
-					int h = (int)css_len2px(&c->style->height.length, c->style);
+				if (c->style->height.height ==
+						CSS_HEIGHT_LENGTH) {
+					/* some sites use height="1" or similar
+					 * to attempt to make cells as small as
+					 * possible, so treat it as a minimum */
+					int h = (int) css_len2px(&c->style->
+						height.length, c->style);
 					if (c->height < h)
 						c->height = h;
 				}
-				c->x = xs[c->start_column];
-				c->y = 0;
+				c->x = xs[c->start_column] + c->border[LEFT];
+				c->y = c->border[TOP];
 				for (i = 0; i != c->columns; i++) {
 					row_span[c->start_column + i] = c->rows;
-					excess_y[c->start_column + i] = c->height;
+					excess_y[c->start_column + i] =
+							c->border[TOP] +
+							c->padding[TOP] +
+							c->height +
+							c->padding[BOTTOM] +
+							c->border[BOTTOM];
 					row_span_cell[c->start_column + i] = 0;
 				}
 				row_span_cell[c->start_column] = c;
-				c->height = 0;
+				c->height = -border_spacing_v -
+						c->border[TOP] -
+						c->padding[TOP] -
+						c->padding[BOTTOM] -
+						c->border[BOTTOM];
 			}
 			for (i = 0; i != columns; i++)
 				if (row_span[i] != 0)
@@ -1412,9 +1476,11 @@ bool layout_table(struct box *table, int available_width,
 				else
 					row_span_cell[i] = 0;
 			if (row->next || row_group->next) {
-				/* row height is greatest excess of a cell which ends in this row */
+				/* row height is greatest excess of a cell
+				 * which ends in this row */
 				for (i = 0; i != columns; i++)
-					if (row_span[i] == 0 && row_height < excess_y[i])
+					if (row_span[i] == 0 && row_height <
+							excess_y[i])
 						row_height = excess_y[i];
 			} else {
 				/* except in the last row */
@@ -1428,14 +1494,15 @@ bool layout_table(struct box *table, int available_width,
 				else
 					excess_y[i] = 0;
 				if (row_span_cell[i] != 0)
-					row_span_cell[i]->height += row_height;
+					row_span_cell[i]->height += row_height +
+							border_spacing_v;
 			}
 
 			row->x = 0;
 			row->y = row_group_height;
 			row->width = table_width;
 			row->height = row_height;
-			row_group_height += row_height;
+			row_group_height += row_height + border_spacing_v;
 		}
 		row_group->x = 0;
 		row_group->y = table_height;

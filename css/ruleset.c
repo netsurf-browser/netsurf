@@ -1363,22 +1363,30 @@ void parse_border_spacing(struct css_style * const s, const struct css_node * v)
 	if (!v->next) {
 		/* one node */
 		if (v->type == CSS_NODE_IDENT && v->data_length == 7 &&
-		    strncasecmp(v->data, "inherit", 7) == 0)
-			s->border_spacing.border_spacing = CSS_BORDER_SPACING_INHERIT;
+				strncasecmp(v->data, "inherit", 7) == 0)
+			s->border_spacing.border_spacing =
+					CSS_BORDER_SPACING_INHERIT;
 		else if (v->type == CSS_NODE_DIMENSION ||
 					v->type == CSS_NODE_NUMBER) {
-			if (parse_length(&s->border_spacing.horz, v, true) == 0 && parse_length(&s->border_spacing.vert, v, true == 0))
-				s->border_spacing.border_spacing = CSS_BORDER_SPACING_LENGTH;
+			if (parse_length(&s->border_spacing.horz,
+					v, true) == 0 &&
+					parse_length(&s->border_spacing.vert,
+					v, true) == 0)
+				s->border_spacing.border_spacing =
+						CSS_BORDER_SPACING_LENGTH;
 		}
-	}
-	else {
+	} else {
 		/* two nodes */
 		if ((v->type == CSS_NODE_DIMENSION ||
-			v->type == CSS_NODE_NUMBER) &&
-			(v->next->type == CSS_NODE_DIMENSION ||
+				v->type == CSS_NODE_NUMBER) &&
+				(v->next->type == CSS_NODE_DIMENSION ||
 				v->next->type == CSS_NODE_NUMBER)) {
-			if (parse_length(&s->border_spacing.horz, v, true) == 0 && parse_length(&s->border_spacing.vert, v->next, true == 0))
-				s->border_spacing.border_spacing = CSS_BORDER_SPACING_LENGTH;
+			if (parse_length(&s->border_spacing.horz,
+					v, true) == 0 &&
+					parse_length(&s->border_spacing.vert,
+					v->next, true) == 0)
+				s->border_spacing.border_spacing =
+						CSS_BORDER_SPACING_LENGTH;
 		}
 	}
 }
