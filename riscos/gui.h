@@ -26,7 +26,6 @@ extern struct gui_gadget *current_gadget;
 extern const char *HOME_URL;
 extern gui_window *window_list;
 
-
 struct gui_window
 {
   gui_window_type type;
@@ -46,6 +45,11 @@ struct gui_window
       bits file_type;
       char sprite_name[20];
       char path[256];
+      enum {
+        download_COMPLETE,
+        download_INCOMPLETE,
+        download_ERROR
+      } download_status;
     } download;
   } data;
 
@@ -63,13 +67,18 @@ struct gui_window
 
 struct ro_gui_drag_info
 {
-  enum { draginfo_UNKNOWN, draginfo_NONE, draginfo_BROWSER_TEXT_SELECTION } type;
+  enum { draginfo_UNKNOWN, draginfo_NONE, draginfo_BROWSER_TEXT_SELECTION, draginfo_DOWNLOAD_SAVE } type;
   union
   {
     struct
     {
       gui_window* gui;
     } selection;
+
+    struct
+    {
+      gui_window* gui;
+    } download;
   } data;
 };
 
@@ -98,6 +107,9 @@ void ro_gui_theme_menu_selection(char *theme);
 
 /* in download.c */
 void ro_gui_download_init(void);
+void ro_download_window_close(struct gui_window *g);
+struct gui_window * ro_lookup_download_window_from_w(wimp_w window);
+void ro_download_window_click(struct gui_window *g, wimp_pointer *pointer);
 
 /* in mouseactions.c */
 void ro_gui_mouse_action(gui_window* g);

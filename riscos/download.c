@@ -94,6 +94,8 @@ gui_window *gui_create_download_window(struct content *content)
 	g->data.download.window = wimp_create_window(download_template);
 	ro_gui_dialog_open(g->data.download.window);
 
+	g->data.download.download_status = download_INCOMPLETE;
+
 	g->next = window_list;
 	window_list = g;
 	return g;
@@ -156,6 +158,8 @@ void gui_download_window_error(gui_window *g, const char *error)
 			ICON_DOWNLOAD_ICON, wimp_ICON_SHADED, 0);
 	wimp_set_icon_state(g->data.download.window,
 			ICON_DOWNLOAD_PATH, wimp_ICON_SHADED, 0);
+
+	g->data.download.download_status = download_ERROR;
 }
 
 
@@ -169,5 +173,60 @@ void gui_download_window_done(gui_window *g)
 			g->data.download.content->data.other.length);
 	wimp_set_icon_state(g->data.download.window,
 			ICON_DOWNLOAD_STATUS, 0, 0);
+
+        // clear shaded path and icon icons
+	wimp_set_icon_state(g->data.download.window,
+			ICON_DOWNLOAD_ICON, 0, wimp_ICON_SHADED);
+	wimp_set_icon_state(g->data.download.window,
+			ICON_DOWNLOAD_PATH, 0, wimp_ICON_SHADED);
+
+        g->data.download.download_status = download_COMPLETE;
 }
 
+void ro_download_window_click(struct gui_window *g, wimp_pointer *pointer)
+{
+  /* Handle clicks on download windows */
+
+  switch (pointer->i)
+  {
+    case ICON_DOWNLOAD_ABORT : if (g->data.download.download_status ==
+                                                         download_INCOMPLETE)
+                                  fetch_abort(g->data.download.content->fetch);
+
+                               ro_download_window_close(g);
+                               break;
+
+    case ICON_DOWNLOAD_ICON  : if (g->data.download.download_status ==
+                                                         download_COMPLETE)
+                               {
+                                  current_drag.type = draginfo_DOWNLOAD_SAVE;
+                                  current_drag.data.download.gui = g;
+                                  ro_gui_drag_box_start(pointer);
+                               }
+
+                               break;
+  }
+}
+
+struct gui_window * ro_lookup_download_window_from_w(wimp_w window)
+{
+  gui_window* g;
+  for (g = window_list; g != NULL; g = g->next)
+  {
+    if (g->type == GUI_DOWNLOAD_WINDOW)
+    {
+      if (g->data.browser.window == window)
+      {
+        return g;
+      }
+    }
+  }
+  return NULL;
+}
+
+void ro_download_window_close(struct gui_window *g)
+{
+  // free contexts etc???
+
+  wimp_close_window(g->data.download.window);
+}

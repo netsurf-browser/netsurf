@@ -896,7 +896,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		dy = -textarea->children->y;
 	for (ic = textarea->children; ic; ic = ic->next)
 		ic->y += dy;
-	
+
 	pixel_offset = font_width(text_box->font, text_box->text, char_offset);
 
 	textarea->gadget->caret_inline_container = inline_container;

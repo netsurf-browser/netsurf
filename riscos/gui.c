@@ -64,7 +64,9 @@ static void ro_gui_poll_queue(wimp_event_no event, wimp_block* block);
 static void ro_gui_keypress(wimp_key* key);
 static void ro_msg_datasave(wimp_message* block);
 static void ro_msg_dataload(wimp_message* block);
+static void ro_msg_datasave_ack(wimp_message* message);
 static void ro_gui_screen_size(int *width, int *height);
+int ro_save_data(void *data, unsigned long length, char *file_name, bits file_type);
 
 
 
@@ -79,8 +81,9 @@ ro_theme* current_theme = NULL;
 const char* BROWSER_VALIDATION = "\0";
 
 const char* task_name = "NetSurf";
-const wimp_MESSAGE_LIST(22) task_messages = {
+const wimp_MESSAGE_LIST(23) task_messages = {
                   {message_DATA_SAVE,
+                   message_DATA_SAVE_ACK,
                    message_DATA_LOAD,
                    message_URI_PROCESS,
                    message_PLUG_IN_OPENING,
@@ -949,6 +952,10 @@ void gui_multitask(void)
                ro_msg_datasave(&(block.message));
                break;
 
+        case message_DATA_SAVE_ACK     :
+               ro_msg_datasave_ack(&(block.message));
+               break;
+
         case message_DATA_LOAD         :
                ro_msg_dataload(&(block.message));
                break;
@@ -1175,7 +1182,14 @@ void gui_poll(void)
               ro_gui_toolbar_click(g, &(block.pointer));
             }
             else
-              ro_gui_dialog_click(&(block.pointer));
+            {
+              g = ro_lookup_download_window_from_w(block.pointer.w);
+              if (g != NULL)
+              {
+                ro_download_window_click(g, &(block.pointer));
+              }
+
+              else ro_gui_dialog_click(&(block.pointer));
           }
         }
         break;
@@ -1207,6 +1221,10 @@ void gui_poll(void)
       {
         case message_DATA_SAVE        :
                ro_msg_datasave(&(block.message));
+               break;
+
+        case message_DATA_SAVE_ACK     :
+               ro_msg_datasave_ack(&(block.message));
                break;
 
         case message_DATA_LOAD         :
@@ -1245,12 +1263,13 @@ void gui_poll(void)
       }
       break;
     }
+    }
   } while (finished == 0);
 
   return;
 }
 
-void gui_window_start_throbber(gui_window* g)
+void gui_window_start_throbber(struct gui_window* g)
 {
   g->throbtime = (float) (clock() + 0) / CLOCKS_PER_SEC;  /* workaround compiler warning */
   g->throbber = 0;
@@ -1459,3 +1478,103 @@ void ro_gui_open_help_page (void)
                                 0,0,-1, (int) strlen(bw->window->url) - 1);
 }
 
+void ro_gui_drag_box_start(wimp_pointer *pointer)
+{
+  wimp_drag *drag_box;
+  wimp_window_state *icon_window;
+  wimp_icon_state *icon_icon;
+  int x0, y0;
+
+  /* TODO: support drag_a_sprite */
+
+  icon_window = xcalloc(1, sizeof(*icon_window));
+  icon_icon = xcalloc(1, sizeof(*icon_icon));
+  drag_box = xcalloc(1, sizeof(*drag_box));
+
+  drag_box->w = pointer->i;
+  drag_box->type = wimp_DRAG_USER_FIXED;
+
+  icon_window->w = pointer->w;
+  wimp_get_window_state(icon_window);
+
+  x0 = icon_window->visible.x0 - icon_window->xscroll;
+  y0 = icon_window->visible.y1 - icon_window->yscroll;
+
+  icon_icon->w = pointer->w;
+  icon_icon->i = pointer->i;
+  wimp_get_icon_state(icon_icon);
+
+  drag_box->initial.x0 =   x0 + icon_icon->icon.extent.x0;
+  drag_box->initial.y0 =   y0 + icon_icon->icon.extent.y0;
+  drag_box->initial.x1 =   x0 + icon_icon->icon.extent.x1;
+  drag_box->initial.y1 =   y0 + icon_icon->icon.extent.y1;
+
+  drag_box->bbox.x0 = 0x80000000;
+  drag_box->bbox.y0 = 0x80000000;
+  drag_box->bbox.x1 = 0x7FFFFFFF;       // CHANGE
+  drag_box->bbox.y1 = 0x7FFFFFFF;
+
+        /*if(USE_DRAGASPRITE == DRAGASPRITE_AVAILABLE)
+          xdragasprite_start((dragasprite_HPOS_CENTRE ^
+                              dragasprite_VPOS_CENTRE ^
+                              dragasprite_NO_BOUND ^
+                              dragasprite_BOUND_POINTER),
+                                    (osspriteop_area*) 1,
+                                    "file_fff",
+                                    (os_box*)&drag_box->initial,0);*/
+
+  wimp_drag_box(drag_box);
+
+  xfree(drag_box);
+  xfree(icon_window);
+  xfree(icon_icon);
+
+}
+
+void ro_msg_datasave_ack(wimp_message *message)
+{
+  int save_status = 0;
+
+  LOG(("ACK Message: filename = %s", message->data.data_xfer.file_name));
+
+  if (current_drag.type == draginfo_DOWNLOAD_SAVE)
+  {
+    assert(current_drag.data.download.gui->data.download.download_status ==
+                   download_COMPLETE);
+
+
+    save_status = ro_save_data(current_drag.data.download.gui->data.download.content->data.other.data,
+                 current_drag.data.download.gui->data.download.content->data.other.length,
+                 message->data.data_xfer.file_name,
+                 current_drag.data.download.gui->data.download.file_type);
+
+
+    if (save_status != 1)
+    {
+      LOG(("Could not save download data"));
+      //Report_Error
+    }
+    else
+    {
+      ro_download_window_close(current_drag.data.download.gui);
+      current_drag.type = draginfo_NONE;
+    }
+  }
+}
+
+int ro_save_data(void *data, unsigned long length, char *file_name, bits file_type)
+{
+  os_error *written = NULL;
+
+  void *end_data = (int)data + length;
+
+  written = xosfile_save_stamped(file_name, file_type, data, end_data);
+
+  if (written != NULL)
+  {
+    LOG(("Unable to create stamped file"));
+    return 0;
+  }
+
+  return 1;
+}

@@ -7,6 +7,9 @@
 
 #include "oslib/wimp.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
+
 
 struct ro_gui_drag_info current_drag;
 
@@ -71,9 +74,69 @@ void ro_gui_drag_end(wimp_dragged* drag)
     }
     current_drag.data.selection.gui->drag_status = drag_NONE;
     current_drag.data.selection.gui->data.browser.bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
+
+    current_drag.type = draginfo_NONE;
   }
 
-  current_drag.type = draginfo_NONE;
+  else if (current_drag.type == draginfo_DOWNLOAD_SAVE)
+  {
+    wimp_pointer *pointer_dropped;
+    wimp_message *send_message;
+    //wimp_icon_state *icon_state;
+
+    LOG(("Download icon dropped"));
+
+    pointer_dropped = xcalloc(1, sizeof(*pointer_dropped));
+    wimp_get_pointer_info(pointer_dropped);
+
+    //Send message, saying "please save this data!"
+    send_message = xcalloc(1, sizeof(*send_message));
+
+    send_message->size = sizeof(*send_message);
+    send_message->your_ref = 0;
+    send_message->action = message_DATA_SAVE;
+    send_message->data.data_xfer.w = pointer_dropped->w;
+    send_message->data.data_xfer.i = pointer_dropped->i;
+
+    send_message->data.data_xfer.pos.x = pointer_dropped->pos.x;
+    send_message->data.data_xfer.pos.y = pointer_dropped->pos.y;
+
+    send_message->data.data_xfer.est_size = (int)
+          current_drag.data.download.gui->data.download.content->data.other.length;
+
+    send_message->data.data_xfer.file_type =
+                  current_drag.data.download.gui->data.download.file_type;
+
+    /*icon_state = xcalloc(1, sizeof(icon_state));
+
+    icon_state->w = pointer_dropped->w;
+    icon_state->i = ICON_DOWNLOAD_PATH;
+    wimp_get_icon_state(icon_state);
+
+    LOG(("Getting indirected text"));
+
+    strncpy(send_message->data.data_xfer.file_name,
+            icon_state->icon.data.indirected_text.text,
+            icon_state->icon.data.indirected_text.size);*/
+
+    strcpy(send_message->data.data_xfer.file_name,
+                 current_drag.data.download.gui->data.download.path);
+
+    LOG(("Sending message to window owner, filename = %s, length = %lu",
+                          send_message->data.data_xfer.file_name,
+                          send_message->data.data_xfer.est_size));
+
+    LOG(("Sending....."));
+
+    wimp_send_message_to_window(wimp_USER_MESSAGE, send_message,
+                                     pointer_dropped->w, pointer_dropped->i);
+
+    LOG(("Sent."));
+
+    //xfree(icon_state);
+    xfree(send_message);
+    xfree(pointer_dropped);
+  }
 }
 
 void ro_gui_copy_selection(gui_window* g)
