@@ -490,6 +490,7 @@ void gui_window_update_box(struct gui_window *g,
 	struct content *c = g->bw->current_content;
 	osbool more;
 	bool clear_background = false;
+	bool use_buffer = g->option.buffer_everything;
 	wimp_draw update;
 	os_error *error;
 
@@ -512,6 +513,7 @@ void gui_window_update_box(struct gui_window *g,
 	/*	Set the current redraw gui_window to get options from
 	*/
 	ro_gui_current_redraw_gui = g;
+	if (data->redraw.full_redraw) use_buffer |= g->option.buffer_animations;
 
 	/*	We should clear the background, except for HTML.
 	*/
@@ -519,12 +521,9 @@ void gui_window_update_box(struct gui_window *g,
 		clear_background = true;
 
 	while (more) {
-		if (ro_gui_current_redraw_gui->option.buffer_everything)
-				ro_gui_buffer_open(&update);
+		
+		if (use_buffer)	ro_gui_buffer_open(&update);
 		if (data->redraw.full_redraw) {
-		  	if ((ro_gui_current_redraw_gui->option.buffer_animations) &&
-		  			(!ro_gui_current_redraw_gui->option.buffer_everything))
-		  		ro_gui_buffer_open(&update);
 			if (clear_background) {
 				error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
 						colourtrans_SET_BG,
@@ -563,9 +562,7 @@ void gui_window_update_box(struct gui_window *g,
 					g->option.scale);
 		}
 
-	  	if ((ro_gui_current_redraw_gui->option.buffer_animations) ||
-	  			(ro_gui_current_redraw_gui->option.buffer_everything))
-	  		ro_gui_buffer_close();
+	  	if (use_buffer) ro_gui_buffer_close();
 		error = xwimp_get_rectangle(&update, &more);
 
 		if (error) {
@@ -574,8 +571,7 @@ void gui_window_update_box(struct gui_window *g,
 		  		doesn't actually stop anything working, so we mask it out
 		  		for now until a better fix is found.
 		  	*/
-			if ((!ro_gui_current_redraw_gui->option.buffer_everything) ||
-					(error->errnum != 0x286)) {
+			if ((!use_buffer) || (error->errnum != 0x286)) {
 				LOG(("xwimp_get_rectangle: 0x%x: %s",
 						error->errnum, error->errmess));
 				warn_user("WimpError", error->errmess);
@@ -1206,7 +1202,7 @@ void gui_window_remove_caret(struct gui_window *g)
 {
 	os_error *error;
 
-	error = xwimp_set_caret_position(-1, -1,
+	error = xwimp_set_caret_position((wimp_w)-1, (wimp_i)-1,
 			0,
 			0,
 			0, -1);

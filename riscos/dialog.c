@@ -1040,10 +1040,7 @@ void ro_gui_dialog_close(wimp_w close)
 		LOG(("xwimp_get_caret_position: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
-		return;
-	}
-
-	if (caret.w == close) {
+	} else if (caret.w == close) {
 		/*	Check if we are a persistant window
 		*/
 		for (i = 0; i < MAX_PERSISTANT; i++) {
@@ -1059,7 +1056,6 @@ void ro_gui_dialog_close(wimp_w close)
 							error->errnum,
 							error->errmess));
 					warn_user("WimpError", error->errmess);
-					return;
 				}
 				break;
 			}
@@ -1071,7 +1067,6 @@ void ro_gui_dialog_close(wimp_w close)
 		LOG(("xwimp_close_window: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
-		return;
 	}
 }
 

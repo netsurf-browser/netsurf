@@ -1576,6 +1576,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 				if (x_offset >= HOTLIST_LEAF_INSET) entry->selected = false;
 				reformat_pending = true;
 				hotlist_redraw_entry(entry, true);
+				ro_gui_menu_prepare_hotlist();
 			}
 		} else if (x_offset >= HOTLIST_LEAF_INSET) {
 
