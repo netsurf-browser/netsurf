@@ -443,7 +443,9 @@ void ro_gui_redraw_config_th(wimp_draw* redraw)
   {
     xosspriteop_put_sprite_scaled(osspriteop_NAME, theme_preview,
                                   (osspriteop_id)"preview", x, y,
-                                  (osspriteop_action)0, 0, trans_tab);
+                                  (osspriteop_action)osspriteop_USE_MASK |
+                                                     osspriteop_USE_PALETTE,
+                                  0, trans_tab);
     more = wimp_get_rectangle(redraw);
   }
 
