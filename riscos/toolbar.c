@@ -21,6 +21,31 @@
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 
+
+struct toolbar_icon {
+	/*	The desired WIMP icon number (-1 for separator)
+	*/
+	int icon_number;
+
+	/*	Set to non-zero to display the icon
+	*/
+  	unsigned int available;
+
+  	/*	Icon dimensions (OS units)
+  	*/
+	unsigned int width;
+	unsigned int height;
+
+	/*	Icon validation string
+	*/
+	char validation[40];
+
+	/*	The next icon (linked list)
+	*/
+	struct toolbar_icon *next_icon;	// Next toolbar icon
+};
+
+
 /*	A basic window for the toolbar and status
 */
 static wimp_window empty_window = {
@@ -53,14 +78,15 @@ static wimp_icon_create empty_icon;
 
 /*	Shared URL validation
 */
-static char *url_validation = "Pptr_write\0";
-static char *resize_validation = "R1;Pptr_lr,8,6\0";
-static char *null_text_string = "\0";
+static char url_validation[] = "Pptr_write\0";
+static char resize_validation[] = "R1;Pptr_lr,8,6\0";
+static char null_text_string[] = "\0";
 
 
 static struct toolbar *ro_toolbar_create_icons(struct toolbar *toolbar, osspriteop_area *sprite_area,
 							char *url_buffer, char *throbber_buffer);
-static struct toolbar_icon *ro_toolbar_create_icon(osspriteop_area *sprite_area, char *sprite, unsigned int icon);
+static struct toolbar_icon *ro_toolbar_initialise_icon(osspriteop_area *sprite_area,
+		const char *sprite, unsigned int icon);
 static struct toolbar_icon *ro_toolbar_create_separator(void);
 static void ro_toolbar_destroy_icon(struct toolbar_icon *icon);
 static void ro_toolbar_add_icon(struct toolbar *toolbar, struct toolbar_icon *icon);
@@ -89,20 +115,20 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 	/*	Load the toolbar icons
 	*/
 	if (sprite_area) {
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_icon(sprite_area, "back", ICON_TOOLBAR_BACK));
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_icon(sprite_area, "forward", ICON_TOOLBAR_FORWARD));
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_icon(sprite_area, "stop", ICON_TOOLBAR_STOP));
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_icon(sprite_area, "reload", ICON_TOOLBAR_RELOAD));
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "back", ICON_TOOLBAR_BACK));
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "forward", ICON_TOOLBAR_FORWARD));
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "stop", ICON_TOOLBAR_STOP));
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "reload", ICON_TOOLBAR_RELOAD));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_create_separator());
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_icon(sprite_area, "home", ICON_TOOLBAR_HOME));
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_icon(sprite_area, "up", ICON_TOOLBAR_UP));
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_icon(sprite_area, "search", ICON_TOOLBAR_SEARCH));
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_icon(sprite_area, "history", ICON_TOOLBAR_HISTORY));
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_icon(sprite_area, "scale", ICON_TOOLBAR_SCALE));
+/* 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "home", ICON_TOOLBAR_HOME)); */
+/* 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "up", ICON_TOOLBAR_UP)); */
+/* 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "search", ICON_TOOLBAR_SEARCH)); */
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "history", ICON_TOOLBAR_HISTORY));
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "scale", ICON_TOOLBAR_SCALE));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_create_separator());
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_icon(sprite_area, "mark", ICON_TOOLBAR_BOOKMARK));
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_icon(sprite_area, "save", ICON_TOOLBAR_SAVE));
-		ro_toolbar_add_icon(toolbar, ro_toolbar_create_icon(sprite_area, "print", ICON_TOOLBAR_PRINT));
+/* 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "mark", ICON_TOOLBAR_BOOKMARK)); */
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "save", ICON_TOOLBAR_SAVE));
+/* 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "print", ICON_TOOLBAR_PRINT)); */
 	}
 
 	/*	Set the sprite area
@@ -110,7 +136,7 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 	if (sprite_area) {
 		empty_window.sprite_area = sprite_area;
 	} else {
-		empty_window.sprite_area = 1;
+		empty_window.sprite_area = (osspriteop_area *) 1;
 	}
 
 	/*	Create the basic windows
@@ -241,7 +267,7 @@ static struct toolbar *ro_toolbar_create_icons(struct toolbar *toolbar, ossprite
 	if (sprite_area) {
 		empty_icon.icon.data.indirected_sprite.area = sprite_area;
 	} else {
-		empty_icon.icon.data.indirected_sprite.area = 1;
+		empty_icon.icon.data.indirected_sprite.area = (osspriteop_area *) 1;
 	}
 	empty_icon.icon.data.indirected_sprite.size = 12;
 	if (xwimp_create_icon(&empty_icon, &icon_handle)) {
@@ -310,41 +336,31 @@ void ro_toolbar_destroy(struct toolbar *toolbar) {
  * \param  sprite	the requested sprite
  * \param  icon		the icon number
  */
-static struct toolbar_icon *ro_toolbar_create_icon(osspriteop_area *sprite_area, char *sprite, unsigned int icon) {
+struct toolbar_icon *ro_toolbar_initialise_icon(osspriteop_area *sprite_area,
+		const char *sprite, unsigned int icon) {
 	struct toolbar_icon *current_icon;
-	int i;
-	int sprite_name_size = 0;
 	os_coord dimensions;
 	char name[16];
 	osbool mask;
 	os_mode mode;
-	unsigned int validation_length;
+	os_error *error;
 
-	/*	Check if the sprite exists
-	*/
-	for (i = 1; i <= sprite_area->sprite_count; i++) {
-		if (!xosspriteop_return_name(osspriteop_USER_AREA,
-				sprite_area, name, 16, i, &sprite_name_size)) {
-			name[sprite_name_size] = '\0';
-			if (strncmp(name, sprite, sprite_name_size + 1) == 0) {
-
-				/*	Yes, a while loop would be better...
-				*/
-				goto ro_toolbar_create_icon_found;
-			}
-		}
-	}
-
-	/*	No icon found
-	*/
-	return NULL;
-ro_toolbar_create_icon_found:
+	strcpy(name, sprite);
 
 	/*	Get the sprite details
 	*/
-	xosspriteop_read_sprite_info(osspriteop_USER_AREA,
-			sprite_area, (osspriteop_id)name,
+	error = xosspriteop_read_sprite_info(osspriteop_USER_AREA,
+			sprite_area, (osspriteop_id) name,
 			&dimensions.x, &dimensions.y, &mask, &mode);
+	if (error && error->errnum == error_SPRITE_OP_DOESNT_EXIST) {
+		/** \todo  inform user */
+		return NULL;
+	} else if (error) {
+		LOG(("xosspriteop_read_sprite_info: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user(error->errmess);
+		return NULL;
+	}
 
 	/*	Create an icon
 	*/
@@ -355,12 +371,6 @@ ro_toolbar_create_icon_found:
 		there is a pushed variant as RISC OS happily ignores it if it doesn't
 		exist.
 	*/
-	validation_length = sprite_name_size * 2 + 8;
-	current_icon->validation = malloc(validation_length);
-	if (!current_icon->validation) {
-	 	free(current_icon);
-		return NULL;
-	}
 	sprintf(current_icon->validation, "R5;S%s,p%s", name, name);
 
 	/*	We want eig factors rather than pixels
@@ -407,7 +417,6 @@ static struct toolbar_icon *ro_toolbar_create_separator(void) {
  * \param  icon	    the icon to destroy
  */
 static void ro_toolbar_destroy_icon(struct toolbar_icon *icon) {
-  	if (!icon->icon_number >= 0) free(icon->validation);
 	free(icon);
 }
 

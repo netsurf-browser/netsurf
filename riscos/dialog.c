@@ -632,8 +632,7 @@ void ro_gui_build_theme_menu(void)
 			continue;
 		if (info.obj_type != fileswitch_IS_DIR)
 			continue;
-		if (!(file_exists(THEMES_DIR, info.name, "Templates", 0xfec) &&
-		      file_exists(THEMES_DIR, info.name, "Sprites", 0xff9)))
+		if (!file_exists(THEMES_DIR, info.name, "Sprites", 0xff9))
 			continue;
 
 		theme_menu = xrealloc(theme_menu, wimp_SIZEOF_MENU(i + 1));
@@ -654,7 +653,19 @@ void ro_gui_build_theme_menu(void)
 
 		i++;
 	}
-	assert(i != 0);
+	if (i == 0) {
+		theme_menu->entries[0].menu_flags = 0;
+		theme_menu->entries[0].sub_menu = wimp_NO_SUB_MENU;
+		theme_menu->entries[0].icon_flags = wimp_ICON_TEXT |
+				wimp_ICON_FILLED | wimp_ICON_INDIRECTED |
+				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
+				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT) |
+				wimp_ICON_SHADED;
+		theme_menu->entries[0].data.indirected_text.text = xstrdup("-");
+ 		theme_menu->entries[0].data.indirected_text.validation = (char*)-1;
+		theme_menu->entries[0].data.indirected_text.size = 2;
+		i = 1;
+	}
 	entries = i;
 
 	theme_menu->entries[0].menu_flags |= wimp_MENU_TITLE_INDIRECTED;

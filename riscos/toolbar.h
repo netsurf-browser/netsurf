@@ -15,29 +15,7 @@
 #include "oslib/wimp.h"
 
 
-struct toolbar_icon {
-	/*	The desired WIMP icon number (-1 for separator)
-	*/
-	int icon_number;
-	
-	/*	Set to non-zero to display the icon
-	*/
-  	unsigned int available;
-  	
-  	/*	Icon dimensions (OS units)
-  	*/
-	unsigned int width;
-	unsigned int height;
-	
-	/*	Icon validation, or NULL if this icon is unavailable
-	*/
-	unsigned char* validation;
-	
-	/*	The next icon (linked list)
-	*/
-	struct toolbar_icon *next_icon;	// Next toolbar icon
-};
-
+struct toolbar_icon;
 
 struct toolbar {
 
@@ -51,7 +29,7 @@ struct toolbar {
 	int status_old_width;	// Old status width
   	int width;	// Toolbar width on last reformat
 	unsigned int height;	// Toolbar height on last reformat
-	
+
 	/*	General options
 	*/
 	unsigned int throbber_width;	// Throbber width (0 = unavaiable)
@@ -61,11 +39,11 @@ struct toolbar {
 	unsigned int url_bar;	// Show URL bar?
 	unsigned int throbber;	// Show Throbber?
 	unsigned int status_width;	// Width of status window
-	
+
 	/*	The first toolbar icon
 	*/
 	struct toolbar_icon *icon;
-	
+
 	/*	Window handles
 	*/
 	wimp_w toolbar_handle;

@@ -43,7 +43,7 @@ static void ro_gui_menu_prepare_images(void);
 static void ro_gui_menu_prepare_toolbars(void);
 static void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning);
 static void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning);
-static struct box *find_object_box(void);
+static struct box *ro_gui_menu_find_object_box(void);
 
 static wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
@@ -343,15 +343,11 @@ void ro_gui_create_menu(wimp_menu *menu, int x, int y, gui_window *g)
 	current_menu_x = x;
 	current_menu_y = y;
 	current_gui = g;
-	if (menu != iconbar_menu) {
-        	if (find_object_box() == NULL && menu == browser_menu) {
-                	menu->entries[1].sub_menu = (wimp_menu*)1;
-        	        menu->entries[1].icon_flags |= wimp_ICON_SHADED;
-	        }
-	        else if (menu == browser_menu) {
-        	        menu->entries[1].sub_menu = (wimp_menu*)&object_menu;
-        	        menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
-        	}
+	if (menu == browser_menu) {
+		if (ro_gui_menu_find_object_box())
+			menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
+		else
+			menu->entries[1].icon_flags |= wimp_ICON_SHADED;
 	}
 	wimp_create_menu(menu, x, y);
 }
@@ -656,7 +652,7 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 			                }
 			                break;
 		        }
-		        struct box *box = find_object_box();
+		        struct box *box = ro_gui_menu_find_object_box();
 		        if (box) {
 		                ro_gui_menu_prepare_save(box->object);
 			        error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
@@ -865,7 +861,7 @@ void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning)
         const char *target = "-";
         const char *mime = "-";
 
-        box = find_object_box();
+        box = ro_gui_menu_find_object_box();
         if (box) {
                 sprintf(icon_buf, "file_%x", ro_content_filetype(box->object));
                 if (box->object->url) url = box->object->url;
@@ -893,7 +889,7 @@ void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning)
 	}
 }
 
-struct box *find_object_box(void)
+struct box *ro_gui_menu_find_object_box(void)
 {
         struct content *c = current_gui->data.browser.bw->current_content;
         struct box_selection *boxes = NULL;

@@ -775,6 +775,15 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			gui_window_redraw_window(g);
 			return true;
 
+		case wimp_KEY_F2:
+			if (!g->data.browser.toolbar)
+				return false;
+			ro_gui_set_icon_string(g->data.browser.toolbar->toolbar_handle,
+					ICON_TOOLBAR_URL, "www.");
+			xwimp_set_caret_position(g->data.browser.toolbar->toolbar_handle,
+					ICON_TOOLBAR_URL, 0, 0, -1, 4);
+			return true;
+
 		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
 			browser_window_destroy(g->data.browser.bw
 #ifdef WITH_FRAMES
