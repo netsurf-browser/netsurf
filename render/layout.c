@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.26 2002/12/27 18:58:03 bursa Exp $
+ * $Id: layout.c,v 1.27 2002/12/27 22:29:45 bursa Exp $
  */
 
 #include <assert.h>
@@ -537,11 +537,20 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 		}
 		table_width = table->min_width;
 	} else if (max_width <= table_width) {
-		/* more space than maximum width: maximise widths */
-		for (i = 0; i < table->columns; i++) {
-			table->col[i].width = table->col[i].max;
+		/* more space than maximum width */
+		if (table->style->width.width == CSS_WIDTH_AUTO) {
+			/* for auto-width tables, make columns max width */
+			for (i = 0; i < table->columns; i++) {
+				table->col[i].width = table->col[i].max;
+			}
+			table_width = max_width;
+		} else {
+			/* for fixed-width tables, distribute the extra space too */
+			unsigned long extra = (table_width - max_width) / table->columns;
+			for (i = 0; i < table->columns; i++) {
+				table->col[i].width = table->col[i].max + extra;
+			}
 		}
-		table_width = max_width;
         } else {
         	/* space between min and max: fill it exactly */
         	float scale = (float) (table_width - table->min_width) /
