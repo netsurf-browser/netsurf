@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.6 2002/12/27 20:08:18 bursa Exp $
+ * $Id: gui.c,v 1.7 2002/12/27 20:35:32 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -495,6 +495,13 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
     }
 #endif
 
+    if (box->style->background_color != TRANSPARENT)
+    {
+      colourtrans_set_gcol(box->style->background_color << 8, 0, os_ACTION_OVERWRITE, 0);
+      os_plot(os_MOVE_TO, x + box->x * 2, y - box->y * 2);
+      os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, box->width * 2, -box->height * 2);
+    }
+
     if (box->type == BOX_INLINE)
     {
 
@@ -556,7 +563,7 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
       }
 }
 
-      xcolourtrans_set_font_colours(box->font->handle, 0xffffff, box->style->color << 8,
+      colourtrans_set_font_colours(box->font->handle, 0xffffff, box->style->color << 8,
         14, 0, 0, 0);
 
       font_paint(box->font->handle, box->text,

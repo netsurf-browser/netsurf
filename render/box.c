@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.21 2002/12/27 17:28:19 bursa Exp $
+ * $Id: box.c,v 1.22 2002/12/27 20:35:32 bursa Exp $
  */
 
 #include <assert.h>
@@ -305,10 +305,22 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 		free(s);
 	}
 
+	if ((s = (char *) xmlGetProp(n, (xmlChar *) "bgcolor"))) {
+		unsigned int r, g, b;
+		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
+			style->background_color = (b << 16) | (g << 8) | r;
+	}
+
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "clear"))) {
 		if (strcmp(s, "all") == 0) style->clear = CSS_CLEAR_BOTH;
 		else if (strcmp(s, "left") == 0) style->clear = CSS_CLEAR_LEFT;
 		else if (strcmp(s, "right") == 0) style->clear = CSS_CLEAR_RIGHT;
+	}
+
+	if ((s = (char *) xmlGetProp(n, (xmlChar *) "color"))) {
+		unsigned int r, g, b;
+		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
+			style->color = (b << 16) | (g << 8) | r;
 	}
 
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "width"))) {
