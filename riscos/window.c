@@ -1139,7 +1139,9 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 	os_error *error;
 
 	error = xwimp_set_caret_position(g->window, -1,
-			x * 2, -(y + height) * 2, height * 2, -1);
+			x * 2 * g->option.scale,
+			-(y + height) * 2 * g->option.scale,
+			height * 2 * g->option.scale, -1);
 	if (error) {
 		LOG(("xwimp_set_caret_position: 0x%x: %s",
 				error->errnum, error->errmess));
