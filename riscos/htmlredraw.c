@@ -204,15 +204,16 @@ void html_redraw_box(struct content *content, struct box * box,
 
 	/* background colour */
 	if (box->style != 0 && box->style->background_color != TRANSPARENT) {
+		/* find intersection of clip box and padding box */
+		int px0 = x < x0 ? x0 : x;
+		int py0 = y - padding_height < y0 ? y0 : y - padding_height;
+		int px1 = x + padding_width < x1 ? x + padding_width : x1;
+		int py1 = y < y1 ? y : y1;
 		colourtrans_set_gcol(box->style->background_color << 8,
 				colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-		os_plot(os_MOVE_TO,
-				x < x0 ? x0 : x,
-				y < y1 ? y : y1);
-		os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-				x + padding_width < x1 ? x + padding_width : x1,
-				y - padding_height < y0 ? y0 :
-					y - padding_height);
+		os_plot(os_MOVE_TO, px0, py0);
+		if (px0 < px1 && py0 < py1)
+			os_plot(os_PLOT_RECTANGLE | os_PLOT_TO, px1, py1);
 		current_background_color = box->style->background_color;
 	}
 
