@@ -35,6 +35,12 @@ bool option_http_proxy = false;
 char *option_http_proxy_host = 0;
 /** Proxy port. */
 int option_http_proxy_port = 8080;
+/** Proxy authentication method. */
+int option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
+/** Proxy authentication user name */
+char *option_http_proxy_auth_user = 0;
+/** Proxy authentication password */
+char *option_http_proxy_auth_pass = 0;
 /** Default font size / 0.1pt. */
 int option_font_size = 100;
 /** Minimum font size. */
@@ -57,6 +63,9 @@ struct {
 	{ "http_proxy",      OPTION_BOOL,    &option_http_proxy },
 	{ "http_proxy_host", OPTION_STRING,  &option_http_proxy_host },
 	{ "http_proxy_port", OPTION_INTEGER, &option_http_proxy_port },
+	{ "http_proxy_auth", OPTION_BOOL,    &option_http_proxy_auth },
+	{ "http_proxy_auth_user", OPTION_STRING, &option_http_proxy_auth_user },
+	{ "http_proxy_auth_pass", OPTION_STRING, &option_http_proxy_auth_pass },
 	{ "font_size",       OPTION_INTEGER, &option_font_size },
 	{ "font_min_size",   OPTION_INTEGER, &option_font_min_size },
 	{ "accept_language", OPTION_STRING,  &option_accept_language },

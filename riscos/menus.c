@@ -383,6 +383,18 @@ static wimp_MENU(4) hotlist_root = {
 wimp_menu *hotlist_menu = (wimp_menu *)&hotlist_root;
 
 
+/*	Proxy auth popup menu (used in proxy Choices dialog
+*/
+static wimp_MENU(3) proxy_menu = {
+  { "ProxyAuth" }, 7,2,7,0, 200, 44, 0,
+  {
+    { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ProxyNone" } },
+    { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ProxyBasic" } },
+    { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "ProxyNTLM" } },
+  }
+};
+wimp_menu *proxyauth_menu = (wimp_menu *) &proxy_menu;
+
 
 static wimp_menu *browser_page_menu = (wimp_menu *)&page_menu;
 static wimp_menu *browser_export_menu = (wimp_menu *)&export_menu;
@@ -440,6 +452,8 @@ void ro_gui_menus_init(void)
 	translate_menu(hotlist_file_menu);
 	translate_menu(hotlist_save_menu);
 	translate_menu(hotlist_select_menu);
+
+	translate_menu(proxyauth_menu);
 
 	iconbar_menu->entries[0].sub_menu = (wimp_menu *) dialog_info;
 	browser_page_menu->entries[0].sub_menu = (wimp_menu*) dialog_pageinfo;
@@ -593,7 +607,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				ro_gui_open_help_page("docs");
 				break;
 			case 2: /* Choices */
-			     ro_gui_dialog_open_config();
+				ro_gui_dialog_open_config();
 				break;
 			case 3: /* Quit */
 				netsurf_quit = true;
@@ -886,6 +900,9 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				}
 				break;
 		}
+
+	} else if (current_menu == proxyauth_menu) {
+		ro_gui_dialog_proxyauth_menu_selection(selection->items[0]);
 
 	}
 

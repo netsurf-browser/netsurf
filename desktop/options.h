@@ -24,9 +24,15 @@
 #ifndef _NETSURF_DESKTOP_OPTIONS_H_
 #define _NETSURF_DESKTOP_OPTIONS_H_
 
+enum { OPTION_HTTP_PROXY_AUTH_NONE = 0, OPTION_HTTP_PROXY_AUTH_BASIC = 1,
+		OPTION_HTTP_PROXY_AUTH_NTLM = 2 };
+
 extern bool option_http_proxy;
 extern char *option_http_proxy_host;
 extern int option_http_proxy_port;
+extern int option_http_proxy_auth;
+extern char *option_http_proxy_auth_user;
+extern char *option_http_proxy_auth_pass;
 extern int option_font_size;
 extern int option_font_min_size;
 extern char *option_accept_language;

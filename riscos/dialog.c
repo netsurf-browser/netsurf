@@ -40,33 +40,38 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_warning, dialog_config_th_pane, dialog_debug,
 	dialog_folder, dialog_entry;
 
-static int font_size;
-static int font_min_size;
+static int ro_gui_choices_font_size;
+static int ro_gui_choices_font_min_size;
+static bool ro_gui_choices_http_proxy;
+static int ro_gui_choices_http_proxy_auth;
 static char *theme_choice = 0;
 static struct theme_entry *theme_list = 0;
 static unsigned int theme_list_entries = 0;
 
+static const char *ro_gui_proxy_auth_name[] = {
+	"ProxyNone", "ProxyBasic", "ProxyNTLM"
+};
+
 /*	A simple mapping of parent and child
 */
-static wimp_w persistant_dialog[MAX_PERSISTANT][1];
+static struct {
+	wimp_w dialog;
+	wimp_w parent;
+} persistant_dialog[MAX_PERSISTANT];
 
+static void ro_gui_dialog_config_prepare(void);
+static void ro_gui_dialog_config_set(void);
 static void ro_gui_dialog_click_config(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_br(wimp_pointer *pointer);
 static void ro_gui_dialog_update_config_br(void);
 static void ro_gui_dialog_click_config_prox(wimp_pointer *pointer);
-static void ro_gui_dialog_open_config_th(void);
+static void ro_gui_dialog_config_proxy_update(void);
 static void ro_gui_dialog_click_config_th(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer);
 static void ro_gui_redraw_config_th_pane_plot(wimp_draw *redraw);
 static void ro_gui_dialog_click_zoom(wimp_pointer *pointer);
 static void ro_gui_dialog_reset_zoom(void);
 static void ro_gui_dialog_click_warning(wimp_pointer *pointer);
-static void set_browser_choices(void);
-static void get_browser_choices(void);
-static void set_proxy_choices(void);
-static void get_proxy_choices(void);
-static void set_theme_choices(void);
-static void get_theme_choices(void);
 static const char *language_name(const char *code);
 
 
@@ -94,10 +99,6 @@ void ro_gui_dialog_init(void)
 	dialog_debug = ro_gui_dialog_create("debug");
 	dialog_folder = ro_gui_dialog_create("new_folder");
 	dialog_entry = ro_gui_dialog_create("new_entry");
-
-	set_browser_choices();
-	set_proxy_choices();
-	set_theme_choices();
 }
 
 
@@ -194,10 +195,12 @@ wimp_window * ro_gui_dialog_load_template(const char *template_name)
 /**
  * Open a dialog box, centered on the screen.
  */
+
 void ro_gui_dialog_open(wimp_w w)
 {
 	int screen_x, screen_y, dx, dy;
 	wimp_window_state open;
+	os_error *error;
 
 	/* find screen centre in os units */
 	ro_gui_screen_size(&screen_x, &screen_y);
@@ -206,7 +209,13 @@ void ro_gui_dialog_open(wimp_w w)
 
 	/* centre and open */
 	open.w = w;
-	wimp_get_window_state(&open);
+	error = xwimp_get_window_state(&open);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
 	dx = (open.visible.x1 - open.visible.x0) / 2;
 	dy = (open.visible.y1 - open.visible.y0) / 2;
 	open.visible.x0 = screen_x - dx;
@@ -214,7 +223,13 @@ void ro_gui_dialog_open(wimp_w w)
 	open.visible.y0 = screen_y - dy;
 	open.visible.y1 = screen_y + dy;
 	open.next = wimp_TOP;
-	wimp_open_window((wimp_open *) &open);
+	error = xwimp_open_window((wimp_open *) &open);
+	if (error) {
+		LOG(("xwimp_open_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
 
 	/*	Set the caret position
 	*/
@@ -225,10 +240,12 @@ void ro_gui_dialog_open(wimp_w w)
 /**
  * Open a persistant dialog box relative to the pointer.
  *
- * \param parent  the owning window (NULL for no owner)
- * \param w       the dialog window
- * \param pointer open the window at the pointer (centre of the parent otherwise)
+ * \param  parent   the owning window (NULL for no owner)
+ * \param  w        the dialog window
+ * \param  pointer  open the window at the pointer (centre of the parent
+ *                  otherwise)
  */
+
 void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 	int dx, dy, i;
 	wimp_pointer ptr;
@@ -239,7 +256,7 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 	*/
 	error = xwimp_get_pointer_info(&ptr);
 	if (error) {
-		LOG(("xwimp_get_pointer_info: 0x%x: %s\n",
+		LOG(("xwimp_get_pointer_info: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 		return;
@@ -249,7 +266,13 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 	*/
 	if (pointer) {
 		open.w = w;
-		wimp_get_window_state(&open);
+		error = xwimp_get_window_state(&open);
+		if (error) {
+			LOG(("xwimp_get_window_state: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
 		dx = (open.visible.x1 - open.visible.x0);
 		dy = (open.visible.y1 - open.visible.y0);
 		open.visible.x0 = ptr.pos.x - 64;
@@ -257,7 +280,13 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 		open.visible.y0 = ptr.pos.y - dy;
 		open.visible.y1 = ptr.pos.y;
 		open.next = wimp_TOP;
-		wimp_open_window((wimp_open *) &open);
+		error = xwimp_open_window((wimp_open *) &open);
+		if (error) {
+			LOG(("xwimp_open_window: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
 	} else {
 		ro_gui_open_window_centre(parent, w);
 	}
@@ -268,11 +297,13 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 
 	/*	Add a mapping
 	*/
-	if (parent == NULL) return;
+	if (parent == NULL)
+		return;
 	for (i = 0; i < MAX_PERSISTANT; i++) {
-		if ((persistant_dialog[i][0] == NULL) || (persistant_dialog[i][0] == w)) {
-			persistant_dialog[i][0] = w;
-			persistant_dialog[i][1] = parent;
+		if (persistant_dialog[i].dialog == NULL ||
+				persistant_dialog[i].dialog == w) {
+			persistant_dialog[i].dialog = w;
+			persistant_dialog[i].parent = parent;
 			return;
 		}
 	}
@@ -284,20 +315,21 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 
 
 /**
- * Open a persistant dialog box relative to the pointer.
+ * Close persistent dialogs associated with a window.
  *
- * \param parent the window to close children of
+ * \param  parent  the window to close children of
  */
+
 void ro_gui_dialog_close_persistant(wimp_w parent) {
-  	int i;
+	int i;
 
 	/*	Check our mappings
 	*/
-	if (parent == NULL) return;
 	for (i = 0; i < MAX_PERSISTANT; i++) {
-		if ((persistant_dialog[i][1] == parent) && (persistant_dialog[i][0] != NULL)) {
-		  	ro_gui_dialog_close(persistant_dialog[i][0]);
-		  	persistant_dialog[i][0] = NULL;
+		if (persistant_dialog[i].parent == parent &&
+				persistant_dialog[i].dialog != NULL) {
+			ro_gui_dialog_close(persistant_dialog[i].dialog);
+			persistant_dialog[i].dialog = NULL;
 		}
 	}
 }
@@ -314,21 +346,23 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 		ro_gui_dialog_close(key->w);
 		return true;
 	}
-	if (key->c == wimp_KEY_RETURN) {
+	else if (key->c == wimp_KEY_RETURN) {
 		if ((key->w == dialog_folder) || (key->w == dialog_entry)) {
-		  	pointer.w = key->w;
-		  	pointer.i = (key->w == dialog_folder) ? 3 : 5;
+			pointer.w = key->w;
+			/** \todo  replace magic numbers with defines */
+			pointer.i = (key->w == dialog_folder) ? 3 : 5;
 			pointer.buttons = wimp_CLICK_SELECT;
 			ro_gui_hotlist_dialog_click(&pointer);
 			return true;
 		}
-  	}
+	}
 #ifdef WITH_AUTH
 	if (key->w == dialog_401li)
-	        return ro_gui_401login_keypress(key);
+		return ro_gui_401login_keypress(key);
 #endif
 	return false;
 }
+
 
 /**
  * Handle clicks in one of the dialog boxes.
@@ -363,6 +397,118 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 
 
 /**
+ * Prepare and open the Choices dialog.
+ */
+
+void ro_gui_dialog_open_config(void)
+{
+	ro_gui_dialog_config_prepare();
+	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_BROWSER,
+			true);
+	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_PROXY,
+			false);
+	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_THEME,
+			false);
+	ro_gui_dialog_open(dialog_config);
+	ro_gui_open_pane(dialog_config, dialog_config_br, 0);
+}
+
+
+/**
+ * Set the choices panes with the current options.
+ */
+
+void ro_gui_dialog_config_prepare(void)
+{
+	/* browser pane */
+	ro_gui_choices_font_size = option_font_size;
+	ro_gui_choices_font_min_size = option_font_min_size;
+	ro_gui_dialog_update_config_br();
+	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_LANG,
+			language_name(option_language ?
+					option_language : "en"));
+	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_ALANG,
+			language_name(option_accept_language ?
+					option_accept_language : "en"));
+	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_HOMEPAGE,
+			option_homepage_url ? option_homepage_url : "");
+	ro_gui_set_icon_selected_state(dialog_config_br,
+			ICON_CONFIG_BR_OPENBROWSER,
+			option_open_browser_at_startup);
+
+	/* proxy pane */
+	ro_gui_choices_http_proxy = option_http_proxy;
+	ro_gui_set_icon_selected_state(dialog_config_prox,
+			ICON_CONFIG_PROX_HTTP,
+			option_http_proxy);
+	ro_gui_set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST,
+			option_http_proxy_host ? option_http_proxy_host : "");
+	ro_gui_set_icon_integer(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT,
+			option_http_proxy_port);
+	ro_gui_choices_http_proxy_auth = option_http_proxy_auth;
+	ro_gui_set_icon_string(dialog_config_prox,
+			ICON_CONFIG_PROX_AUTHTYPE,
+			messages_get(ro_gui_proxy_auth_name[
+			ro_gui_choices_http_proxy_auth]));
+	ro_gui_set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_AUTHUSER,
+			option_http_proxy_auth_user ?
+			option_http_proxy_auth_user : "");
+	ro_gui_set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_AUTHPASS,
+			option_http_proxy_auth_pass ?
+			option_http_proxy_auth_pass : "");
+	ro_gui_dialog_config_proxy_update();
+
+	/* themes pane */
+	free(theme_choice);
+	theme_choice = 0;
+	if (option_theme)
+		theme_choice = strdup(option_theme);
+	if (theme_list)
+		ro_theme_list_free(theme_list, theme_list_entries);
+	theme_list = ro_theme_list(&theme_list_entries);
+}
+
+
+/**
+ * Set the current options to the settings in the choices panes.
+ */
+
+void ro_gui_dialog_config_set(void)
+{
+	/* browser pane */
+	option_font_size = ro_gui_choices_font_size;
+	option_font_min_size = ro_gui_choices_font_min_size;
+	option_homepage_url = strdup(ro_gui_get_icon_string(dialog_config_br,
+			ICON_CONFIG_BR_HOMEPAGE));
+	option_open_browser_at_startup = ro_gui_get_icon_selected_state(
+			dialog_config_br,
+			ICON_CONFIG_BR_OPENBROWSER);
+
+	/* proxy pane */
+	option_http_proxy = ro_gui_choices_http_proxy;
+	free(option_http_proxy_host);
+	option_http_proxy_host = strdup(ro_gui_get_icon_string(
+			dialog_config_prox,
+			ICON_CONFIG_PROX_HTTPHOST));
+	option_http_proxy_port = atoi(ro_gui_get_icon_string(dialog_config_prox,
+			ICON_CONFIG_PROX_HTTPPORT));
+	option_http_proxy_auth = ro_gui_choices_http_proxy_auth;
+	free(option_http_proxy_auth_user);
+	option_http_proxy_auth_user = strdup(ro_gui_get_icon_string(
+			dialog_config_prox,
+			ICON_CONFIG_PROX_AUTHUSER));
+	free(option_http_proxy_auth_pass);
+	option_http_proxy_auth_pass = strdup(ro_gui_get_icon_string(
+			dialog_config_prox,
+			ICON_CONFIG_PROX_AUTHPASS));
+
+	/* theme pane */
+	free(option_theme);
+	option_theme = strdup(theme_choice);
+}
+
+
+/**
  * Handle clicks in the main Choices dialog.
  */
 
@@ -370,110 +516,105 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 {
 	switch (pointer->i) {
 		case ICON_CONFIG_SAVE:
-			get_browser_choices();
-			get_proxy_choices();
-			get_theme_choices();
+			ro_gui_dialog_config_set();
 			ro_gui_save_options();
 			if (pointer->buttons == wimp_CLICK_SELECT) {
-				ro_gui_dialog_close(dialog_config_br);
-				ro_gui_dialog_close(dialog_config_prox);
-				ro_gui_dialog_close(dialog_config_th);
 				ro_gui_dialog_close(dialog_config);
+				if (theme_list) {
+					ro_theme_list_free(theme_list,
+							theme_list_entries);
+					theme_list = 0;
+				}
 			}
 			break;
 		case ICON_CONFIG_CANCEL:
-			if (pointer->buttons == wimp_CLICK_SELECT) {
-				ro_gui_dialog_close(dialog_config_br);
-				ro_gui_dialog_close(dialog_config_prox);
-				ro_gui_dialog_close(dialog_config_th);
+			if (pointer->buttons == wimp_CLICK_SELECT)
 				ro_gui_dialog_close(dialog_config);
-			}
-			set_browser_choices();
-			set_proxy_choices();
-			set_theme_choices();
+			ro_gui_dialog_config_prepare();
 			break;
 		case ICON_CONFIG_BROWSER:
 			/* set selected state of radio icon to prevent
 			 * de-selection of all radio icons */
 			if (pointer->buttons == wimp_CLICK_ADJUST)
-				ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_BROWSER, true);
-			ro_gui_dialog_update_config(dialog_config_br);
+				ro_gui_set_icon_selected_state(dialog_config,
+						ICON_CONFIG_BROWSER, true);
+			ro_gui_open_pane(dialog_config, dialog_config_br, 0);
 			break;
 		case ICON_CONFIG_PROXY:
 			if (pointer->buttons == wimp_CLICK_ADJUST)
-				ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_PROXY, true);
-			ro_gui_dialog_update_config(dialog_config_prox);
+				ro_gui_set_icon_selected_state(dialog_config,
+						ICON_CONFIG_PROXY, true);
+			ro_gui_open_pane(dialog_config, dialog_config_prox, 0);
 			break;
 		case ICON_CONFIG_THEME:
 			if (pointer->buttons == wimp_CLICK_ADJUST)
-				ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_THEME, true);
-			ro_gui_dialog_open_config_th();
+				ro_gui_set_icon_selected_state(dialog_config,
+						ICON_CONFIG_THEME, true);
+			ro_gui_open_pane(dialog_config, dialog_config_th, 0);
+			ro_gui_open_pane(dialog_config_th,
+					dialog_config_th_pane, 12);
 			break;
 	}
 }
 
 
 /**
- * Save the current options
+ * Save the current options.
  */
 
 void ro_gui_save_options(void)
 {
-     /* NCOS doesnt have the fancy Universal Boot vars; so select
-      * the path to the choices file based on the build options */
-     #ifndef NCOS
+	/* NCOS doesnt have the fancy Universal Boot vars; so select
+	 * the path to the choices file based on the build options */
+#ifndef NCOS
 	xosfile_create_dir("<Choices$Write>.WWW", 0);
 	xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
 	options_write("<Choices$Write>.WWW.NetSurf.Choices");
-     #else
+#else
 	xosfile_create_dir("<User$Path>.Choices.NetSurf", 0);
 	xosfile_create_dir("<User$Path>.Choices.NetSurf.Choices", 0);
 	options_write("<User$Path>.Choices.NetSurf.Choices");
-     #endif
+#endif
 }
 
+
 /**
- * Handle clicks in the Browser Choices dialog.
+ * Handle clicks in the Browser Choices pane.
  */
 
 void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 {
 	switch (pointer->i) {
-		case ICON_CONFIG_BR_OK:
-			if (pointer->buttons == wimp_CLICK_SELECT)
-				ro_gui_dialog_close(dialog_config_br);
-			break;
-		case ICON_CONFIG_BR_CANCEL:
-			if (pointer->buttons == wimp_CLICK_SELECT)
-				ro_gui_dialog_close(dialog_config_br);
-			set_browser_choices();
-			break;
 		case ICON_CONFIG_BR_FONTSIZE_DEC:
-			if (font_size == 50)
+			if (ro_gui_choices_font_size == 50)
 				break;
-			font_size--;
-			if (font_size < font_min_size)
-				font_min_size = font_size;
+			ro_gui_choices_font_size--;
+			if (ro_gui_choices_font_size <
+					ro_gui_choices_font_min_size)
+				ro_gui_choices_font_min_size =
+						ro_gui_choices_font_size;
 			ro_gui_dialog_update_config_br();
 			break;
 		case ICON_CONFIG_BR_FONTSIZE_INC:
-			if (font_size == 1000)
+			if (ro_gui_choices_font_size == 1000)
 				break;
-			font_size++;
+			ro_gui_choices_font_size++;
 			ro_gui_dialog_update_config_br();
 			break;
 		case ICON_CONFIG_BR_MINSIZE_DEC:
-			if (font_min_size == 10)
+			if (ro_gui_choices_font_min_size == 10)
 				break;
-			font_min_size--;
+			ro_gui_choices_font_min_size--;
 			ro_gui_dialog_update_config_br();
 			break;
 		case ICON_CONFIG_BR_MINSIZE_INC:
-			if (font_min_size == 500)
+			if (ro_gui_choices_font_min_size == 500)
 				break;
-			font_min_size++;
-			if (font_size < font_min_size)
-				font_size = font_min_size;
+			ro_gui_choices_font_min_size++;
+			if (ro_gui_choices_font_size <
+					ro_gui_choices_font_min_size)
+				ro_gui_choices_font_size =
+						ro_gui_choices_font_min_size;
 			ro_gui_dialog_update_config_br();
 			break;
 	}
@@ -481,171 +622,84 @@ void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 
 
 /**
- * Update font size icons in browser choices dialog.
+ * Update font size icons in browser choices pane.
  */
 
 void ro_gui_dialog_update_config_br(void)
 {
 	char s[10];
-	sprintf(s, "%i.%ipt", font_size / 10, font_size % 10);
+	sprintf(s, "%i.%ipt", ro_gui_choices_font_size / 10,
+			ro_gui_choices_font_size % 10);
 	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_FONTSIZE, s);
-	sprintf(s, "%i.%ipt", font_min_size / 10, font_min_size % 10);
+	sprintf(s, "%i.%ipt", ro_gui_choices_font_min_size / 10,
+			ro_gui_choices_font_min_size % 10);
 	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_MINSIZE, s);
 }
 
 
 /**
- * Handle clicks in the Proxy Choices dialog.
+ * Handle clicks in the Proxy Choices pane.
  */
 
 void ro_gui_dialog_click_config_prox(wimp_pointer *pointer)
 {
 	switch (pointer->i) {
-		case ICON_CONFIG_PROX_OK:
-			if (pointer->buttons == wimp_CLICK_SELECT)
-				ro_gui_dialog_close(dialog_config_prox);
+		case ICON_CONFIG_PROX_HTTP:
+			ro_gui_choices_http_proxy = !ro_gui_choices_http_proxy;
+			ro_gui_dialog_config_proxy_update();
 			break;
-		case ICON_CONFIG_PROX_CANCEL:
-			if (pointer->buttons == wimp_CLICK_SELECT)
-				ro_gui_dialog_close(dialog_config_prox);
-			set_proxy_choices();
+		case ICON_CONFIG_PROX_AUTHTYPE_PICK:
+			ro_gui_popup_menu(proxyauth_menu, dialog_config_prox,
+					ICON_CONFIG_PROX_AUTHTYPE_PICK);
 			break;
 	}
 }
 
-/**
- * Prepare and open the Choices dialog.
- */
-
-void ro_gui_dialog_open_config(void)
-{
-	wimp_window_state state;
-
-	ro_gui_dialog_open(dialog_config);
-
-	state.w = dialog_config;
-	xwimp_get_window_state(&state);
-	state.w = dialog_config_prox;
-	state.visible.x0 += 0;
-	state.visible.y1 -= 0;
-	state.xscroll = 0;
-	state.yscroll = 0;
-	state.next = wimp_TOP;
-	if (xwimp_open_window_nested((wimp_open *)&state, dialog_config,
-			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-					<< wimp_CHILD_XORIGIN_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_YORIGIN_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-				<< wimp_CHILD_LS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_BS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_RS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT									<< wimp_CHILD_TS_EDGE_SHIFT)) {
-		LOG(("Unable to open config proxy pane window"));
-	}
-
-	/* Always reset the selected panes to the default option */
-	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_PROXY,
-			true);
-	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_BROWSER,
-			false);
-	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_THEME,
-			false);
-	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_MISC,
-			false);
-}
 
 /**
- * Update the pane in the Choices dialog.
+ * Handle a selection from the proxy auth method popup menu.
  */
 
-void ro_gui_dialog_update_config(wimp_w w)
+void ro_gui_dialog_proxyauth_menu_selection(int item)
 {
-	wimp_window_state state;
-
-	state.w = dialog_config;
-	xwimp_get_window_state(&state);
-	state.w = w;
-	state.visible.x0 += 0;
-	state.visible.y1 -= 0;
-	state.xscroll = 0;
-	state.yscroll = 0;
-	state.next = wimp_TOP;
-	if (xwimp_open_window_nested((wimp_open *)&state, dialog_config,
-			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-					<< wimp_CHILD_XORIGIN_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_YORIGIN_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-				<< wimp_CHILD_LS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_BS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_RS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT									<< wimp_CHILD_TS_EDGE_SHIFT)) {
-		LOG(("Unable to update config pane window"));
-	}
-}
-
-/**
- * Prepare and open the Theme Choices dialog.
- */
-
-void ro_gui_dialog_open_config_th(void)
-{
-	wimp_window_state state;
-	if (theme_list)
-		ro_theme_list_free(theme_list, theme_list_entries);
-
-	theme_list = ro_theme_list(&theme_list_entries);
-	if (!theme_list)
-		return;
-
-        ro_gui_dialog_update_config(dialog_config_th);
-
-	state.w = dialog_config_th;
-	xwimp_get_window_state(&state);
-	state.w = dialog_config_th_pane;
-	state.visible.x0 += 12;
-	state.visible.y1 -= 12;
-	state.xscroll = 0;
-	state.yscroll = 0;
-	state.next = wimp_TOP;
-	if (xwimp_open_window_nested((wimp_open *)&state, dialog_config_th,
-			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-					<< wimp_CHILD_XORIGIN_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_YORIGIN_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-				<< wimp_CHILD_LS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_BS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-					<< wimp_CHILD_RS_EDGE_SHIFT |
-			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT									<< wimp_CHILD_TS_EDGE_SHIFT)) {
-		LOG(("Unable to open theme pane window"));
-	}
+	ro_gui_choices_http_proxy_auth = item;
+	ro_gui_set_icon_string(dialog_config_prox,
+			ICON_CONFIG_PROX_AUTHTYPE,
+			messages_get(ro_gui_proxy_auth_name[
+			ro_gui_choices_http_proxy_auth]));
+	ro_gui_dialog_config_proxy_update();
 }
 
 
 /**
- * Handle clicks in the Theme Choices dialog.
+ * Update greying of icons in the proxy choices pane.
+ */
+
+void ro_gui_dialog_config_proxy_update(void)
+{
+	int icon;
+	for (icon = ICON_CONFIG_PROX_HTTPHOST;
+			icon <= ICON_CONFIG_PROX_AUTHTYPE_PICK;
+			icon++)
+		ro_gui_set_icon_shaded_state(dialog_config_prox,
+				icon, !ro_gui_choices_http_proxy);
+	for (icon = ICON_CONFIG_PROX_AUTHTYPE_PICK + 1;
+			icon <= ICON_CONFIG_PROX_AUTHPASS;
+			icon++)
+		ro_gui_set_icon_shaded_state(dialog_config_prox,
+				icon, !ro_gui_choices_http_proxy ||
+				ro_gui_choices_http_proxy_auth ==
+				OPTION_HTTP_PROXY_AUTH_NONE);
+}
+
+
+/**
+ * Handle clicks in the Theme Choices pane.
  */
 
 void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 {
 	switch (pointer->i) {
-		case ICON_CONFIG_TH_OK:
-			if (pointer->buttons == wimp_CLICK_SELECT)
-				ro_gui_dialog_close(dialog_config_th);
-			break;
-		case ICON_CONFIG_TH_CANCEL:
-			if (pointer->buttons == wimp_CLICK_SELECT)
-				ro_gui_dialog_close(dialog_config_th);
-			set_theme_choices();
-			break;
 		case ICON_CONFIG_TH_MANAGE:
 			os_cli("Filer_OpenDir " THEMES_DIR);
 			break;
@@ -863,9 +917,9 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 		gui_reformat_pending = true;
 	}
 
-	if ((pointer->buttons == wimp_CLICK_ADJUST) && (pointer->i == ICON_ZOOM_CANCEL)) {
-	  	ro_gui_dialog_reset_zoom();
-	}
+	if (pointer->buttons == wimp_CLICK_ADJUST &&
+			pointer->i == ICON_ZOOM_CANCEL)
+		ro_gui_dialog_reset_zoom();
 
 	if (pointer->buttons == wimp_CLICK_SELECT &&
 			(pointer->i == ICON_ZOOM_CANCEL ||
@@ -902,31 +956,42 @@ void ro_gui_dialog_click_warning(wimp_pointer *pointer)
 
 void ro_gui_dialog_close(wimp_w close)
 {
-  	int i;
+	int i;
 	wimp_caret caret;
-	os_error *error = NULL;
+	os_error *error;
 
-	/*	Give the caret back to the parent window. This code relies on the fact that
-		only hotlist windows and browser windows open persistant dialogues, as the caret
-		gets placed to no icon.
+	/*	Give the caret back to the parent window. This code relies on
+		the fact that only hotlist windows and browser windows open
+		persistant dialogues, as the caret gets placed to no icon.
 	*/
-	if (!xwimp_get_caret_position(&caret)) {
-		if (caret.w == close) {
+	error = xwimp_get_caret_position(&caret);
+	if (error) {
+		LOG(("xwimp_get_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
 
-			/*	Check if we are a persistant window
-			*/
-			for (i = 0; i < MAX_PERSISTANT; i++) {
-				if (persistant_dialog[i][0] == close) {
-				  	persistant_dialog[i][0] = NULL;
-					error = xwimp_set_caret_position(persistant_dialog[i][1],
-							wimp_ICON_WINDOW, -100, -100, 32, -1);
+	if (caret.w == close) {
+		/*	Check if we are a persistant window
+		*/
+		for (i = 0; i < MAX_PERSISTANT; i++) {
+			if (persistant_dialog[i].dialog == close) {
+				persistant_dialog[i].dialog = NULL;
+				error = xwimp_set_caret_position(
+						persistant_dialog[i].parent,
+						wimp_ICON_WINDOW, -100, -100,
+						32, -1);
+				if (error) {
+					LOG(("xwimp_set_caret_position: "
+							"0x%x: %s",
+							error->errnum,
+							error->errmess));
+					warn_user("WimpError", error->errmess);
+					return;
 				}
+				break;
 			}
-		}
-		if (error) {
-			LOG(("xwimp_set_caret_position: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
 		}
 	}
 
@@ -937,115 +1002,6 @@ void ro_gui_dialog_close(wimp_w close)
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-
-	if (close == dialog_config_th) {
-		error = xwimp_close_window(dialog_config_th_pane);
-
-		if (theme_list) {
-			ro_theme_list_free(theme_list, theme_list_entries);
-			theme_list = 0;
-		}
-
-		if (error) {
-			LOG(("xwimp_close_window: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-	}
-
-}
-
-
-/**
- * Update the browser choices dialog with the current options.
- */
-
-void set_browser_choices(void) {
-	font_size = option_font_size;
-	font_min_size = option_font_min_size;
-	ro_gui_dialog_update_config_br();
-	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_LANG,
-			language_name(option_language ?
-					option_language : "en"));
-	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_ALANG,
-			language_name(option_accept_language ?
-					option_accept_language : "en"));
-	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_HOMEPAGE_URL,
-	                              option_homepage_url ? option_homepage_url : "");
-
-        ro_gui_set_icon_selected_state(dialog_config_br, ICON_CONFIG_BR_OPENBROWSER,
-			option_open_browser_at_startup);
-
-}
-
-
-/**
- * Set the current options to the settings in the browser choices dialog.
- */
-
-void get_browser_choices(void) {
-	option_font_size = font_size;
-	option_font_min_size = font_min_size;
-        option_homepage_url = ro_gui_get_icon_string(dialog_config_br,
-			ICON_CONFIG_BR_HOMEPAGE_URL);
-        option_open_browser_at_startup = ro_gui_get_icon_selected_state(dialog_config_br,
-			ICON_CONFIG_BR_OPENBROWSER);
-}
-
-
-/**
- * Update the proxy choices dialog with the current options.
- */
-
-void set_proxy_choices(void)
-{
-	ro_gui_set_icon_selected_state(dialog_config_prox, ICON_CONFIG_PROX_HTTP,
-			option_http_proxy);
-	ro_gui_set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST,
-			option_http_proxy_host ? option_http_proxy_host : "");
-	ro_gui_set_icon_integer(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT,
-			option_http_proxy_port);
-}
-
-
-/**
- * Set the current options to the settings in the proxy choices dialog.
- */
-
-void get_proxy_choices(void)
-{
-	option_http_proxy = ro_gui_get_icon_selected_state(dialog_config_prox,
-			ICON_CONFIG_PROX_HTTP);
-	free(option_http_proxy_host);
-	option_http_proxy_host = strdup(ro_gui_get_icon_string(dialog_config_prox,
-			ICON_CONFIG_PROX_HTTPHOST));
-	option_http_proxy_port = atoi(ro_gui_get_icon_string(dialog_config_prox,
-			ICON_CONFIG_PROX_HTTPPORT));
-}
-
-
-/**
- * Update the theme choices dialog with the current options.
- */
-
-void set_theme_choices(void)
-{
-	free(theme_choice);
-	theme_choice = 0;
-	if (option_theme)
-		theme_choice = strdup(option_theme);
-}
-
-
-/**
- * Set the current options to the settings in the theme choices dialog.
- */
-
-void get_theme_choices(void)
-{
-	free(option_theme);
-	option_theme = strdup(theme_choice);
 }
 
 

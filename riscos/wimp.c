@@ -320,14 +320,14 @@ void ro_gui_set_caret_first(wimp_w w) {
 			warn_user("WimpError", error->errmess);
 			return;
 		}
-		
+
 		/*	Check if it's writable
 		*/
 		button = (state.icon.flags >> wimp_ICON_BUTTON_TYPE_SHIFT) & 0xf;
-		if ((button == wimp_BUTTON_WRITE_CLICK_DRAG) || 
+		if ((button == wimp_BUTTON_WRITE_CLICK_DRAG) ||
 				(button == wimp_BUTTON_WRITABLE)) {
 			xwimp_set_caret_position(w, icon, 0, 0, -1, strlen(state.icon.data.indirected_text.text));
-			return;		  
+			return;
 		}
 	}
 }
@@ -355,7 +355,7 @@ void ro_gui_open_window_centre(wimp_w parent, wimp_w child) {
 			return;
 		}
 		scroll_width = ro_get_vscroll_width(parent);
-	
+
 		/*	Get the centre of the parent
 		*/
 		mid_x = (state.visible.x0 + state.visible.x1 + scroll_width) / 2;
@@ -462,4 +462,53 @@ bool ro_gui_wimp_sprite_exists(const char *sprite)
 		return false;
 	}
 	return true;
+}
+
+
+/**
+ * Open a window as a pane in another window.
+ *
+ * \param  parent  parent window
+ * \param  pane    pane to open in parent window
+ * \param  offset  offset of top-left of pane from top-left of parent
+ */
+
+void ro_gui_open_pane(wimp_w parent, wimp_w pane, int offset)
+{
+	wimp_window_state state;
+	os_error *error;
+
+	state.w = parent;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	state.w = pane;
+	state.visible.x0 += offset;
+	state.visible.y1 -= offset;
+	state.xscroll = 0;
+	state.yscroll = 0;
+	state.next = wimp_TOP;
+	error = xwimp_open_window_nested((wimp_open *) &state, parent,
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+					<< wimp_CHILD_XORIGIN_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_YORIGIN_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
+				<< wimp_CHILD_LS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_BS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_RS_EDGE_SHIFT |
+			wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
+					<< wimp_CHILD_TS_EDGE_SHIFT);
+	if (error) {
+		LOG(("xwimp_open_window_nested: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
 }

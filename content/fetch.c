@@ -351,6 +351,7 @@ CURLcode fetch_set_options(struct fetch *f)
 {
 	CURLcode code;
 	struct login *li;
+	char proxy_userpwd[100];
 
 #undef SETOPT
 #define SETOPT(option, value) \
@@ -388,6 +389,17 @@ CURLcode fetch_set_options(struct fetch *f)
 	if (option_http_proxy && option_http_proxy_host) {
 		SETOPT(CURLOPT_PROXY, option_http_proxy_host);
 		SETOPT(CURLOPT_PROXYPORT, (long) option_http_proxy_port);
+		if (option_http_proxy_auth != OPTION_HTTP_PROXY_AUTH_NONE) {
+			SETOPT(CURLOPT_PROXYAUTH,
+					option_http_proxy_auth ==
+					OPTION_HTTP_PROXY_AUTH_BASIC ?
+					(long) CURLAUTH_BASIC :
+					(long) CURLAUTH_NTLM);
+			snprintf(proxy_userpwd, sizeof proxy_userpwd, "%s:%s",
+					option_http_proxy_auth_user,
+					option_http_proxy_auth_pass);
+			SETOPT(CURLOPT_PROXYUSERPWD, proxy_userpwd);
+		}
 	}
 
 	return CURLE_OK;

@@ -70,7 +70,10 @@ HelpInfo:User information
 HelpInter:Interactive help
 HelpAbout:About NetSurf
 
-Themes:Themes
+ProxyAuth:Authentication
+ProxyNone:None
+ProxyBasic:Basic
+ProxyNTLM:NTLM
 
 # Hotlist menus
 Hotlist:Hotlist

@@ -29,7 +29,8 @@ extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_debug, dialog_folder, dialog_entry;
 extern wimp_w history_window;
 extern wimp_w hotlist_window;
-extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu;
+extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu,
+		*proxyauth_menu;
 extern int iconbar_menu_height;
 extern struct form_control *current_gadget;
 extern bool gui_reformat_pending;
@@ -131,7 +132,7 @@ void ro_gui_dialog_close(wimp_w close);
 void ro_gui_redraw_config_th_pane(wimp_draw *redraw);
 void ro_gui_menu_prepare_hotlist(void);
 void ro_gui_dialog_open_config(void);
-void ro_gui_dialog_update_config(wimp_w w);
+void ro_gui_dialog_proxyauth_menu_selection(int item);
 
 /* in download.c */
 void ro_gui_download_init(void);
@@ -270,39 +271,33 @@ void ro_gui_debugwin_redraw(wimp_draw *redraw);
 
 #define ICON_CONFIG_SAVE 0
 #define ICON_CONFIG_CANCEL 1
-#define ICON_CONFIG_BROWSER 7
-#define ICON_CONFIG_PROXY 6
-#define ICON_CONFIG_THEME 8
-#define ICON_CONFIG_MISC 9
+#define ICON_CONFIG_BROWSER 3
+#define ICON_CONFIG_PROXY 4
+#define ICON_CONFIG_THEME 5
 
-#define ICON_CONFIG_BR_OK 0
-#define ICON_CONFIG_BR_CANCEL 1
-#define ICON_CONFIG_BR_FONTSIZE 3
-#define ICON_CONFIG_BR_FONTSIZE_DEC 4
-#define ICON_CONFIG_BR_FONTSIZE_INC 5
-#define ICON_CONFIG_BR_MINSIZE 7
-#define ICON_CONFIG_BR_MINSIZE_DEC 8
-#define ICON_CONFIG_BR_MINSIZE_INC 9
-#define ICON_CONFIG_BR_LANG 11
-#define ICON_CONFIG_BR_LANG_PICK 12
-#define ICON_CONFIG_BR_ALANG 15
-#define ICON_CONFIG_BR_ALANG_PICK 16
-#define ICON_CONFIG_BR_HOMEPAGE_URL 20
-#define ICON_CONFIG_BR_HOMEPAGE_CURRENT 21
-#define ICON_CONFIG_BR_HOMEPAGE_DEFAULT 22
-#define ICON_CONFIG_BR_HOMEPAGE_BLANK 23
-#define ICON_CONFIG_BR_OPENBROWSER 24
+#define ICON_CONFIG_BR_FONTSIZE 1
+#define ICON_CONFIG_BR_FONTSIZE_DEC 2
+#define ICON_CONFIG_BR_FONTSIZE_INC 3
+#define ICON_CONFIG_BR_MINSIZE 5
+#define ICON_CONFIG_BR_MINSIZE_DEC 6
+#define ICON_CONFIG_BR_MINSIZE_INC 7
+#define ICON_CONFIG_BR_LANG 9
+#define ICON_CONFIG_BR_LANG_PICK 10
+#define ICON_CONFIG_BR_ALANG 13
+#define ICON_CONFIG_BR_ALANG_PICK 14
+#define ICON_CONFIG_BR_HOMEPAGE 16
+#define ICON_CONFIG_BR_OPENBROWSER 17
 
-#define ICON_CONFIG_PROX_OK 0
-#define ICON_CONFIG_PROX_CANCEL 1
-#define ICON_CONFIG_PROX_HTTP 2
-#define ICON_CONFIG_PROX_HTTPHOST 3
-#define ICON_CONFIG_PROX_HTTPPORT 4
+#define ICON_CONFIG_PROX_HTTP 0
+#define ICON_CONFIG_PROX_HTTPHOST 1
+#define ICON_CONFIG_PROX_HTTPPORT 3
+#define ICON_CONFIG_PROX_AUTHTYPE 5
+#define ICON_CONFIG_PROX_AUTHTYPE_PICK 6
+#define ICON_CONFIG_PROX_AUTHUSER 8
+#define ICON_CONFIG_PROX_AUTHPASS 10
 
-#define ICON_CONFIG_TH_OK 0
-#define ICON_CONFIG_TH_CANCEL 1
-#define ICON_CONFIG_TH_GET 2
-#define ICON_CONFIG_TH_MANAGE 3
+#define ICON_CONFIG_TH_GET 0
+#define ICON_CONFIG_TH_MANAGE 1
 
 #define ICON_DOWNLOAD_ICON 0
 #define ICON_DOWNLOAD_URL 1
