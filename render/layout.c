@@ -708,7 +708,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 			for (i = 0; i != split_box->length &&
 					split_box->text[i] != ' '; i++)
 				;
-			if (split_box->text[i] == ' ')
+			if (i != split_box->length)
 				space = i;
 		}
 
