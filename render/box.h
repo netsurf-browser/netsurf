@@ -10,6 +10,7 @@
 #define _NETSURF_RENDER_BOX_H_
 
 #include <limits.h>
+#include <stdbool.h>
 #include "libxml/HTMLparser.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/font.h"
@@ -33,7 +34,8 @@ struct column {
 };
 
 struct formoption {
-	int selected;
+	bool selected;
+	bool initial_selected;
 	char* value;
 	char* text;
 	struct formoption* next;
@@ -48,7 +50,8 @@ struct gui_gadget {
 	char *name;
 	char *value;
 	char *initial_value;
-	struct form* form;
+	struct form *form;
+	struct box *box;
 	struct box *caret_inline_container;
 	struct box *caret_text_box;
 	int caret_char_offset;
@@ -65,10 +68,12 @@ struct gui_gadget {
                         int mx, my;
 		} image;
 		struct {
-			int numitems;
-			struct formoption* items;
-			int size;
-			int multiple;
+			int num_items;
+			struct formoption *items, *last_item;
+			bool multiple;
+			int num_selected;
+			/** Currently selected item, if num_selected == 1. */
+			struct formoption *current;
 		} select;
 		struct {
 			int selected;

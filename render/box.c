@@ -687,6 +687,7 @@ struct result box_textarea(xmlNode *n, struct status *status,
 
 	box = box_create(style, NULL, 0);
 	box->gadget = xcalloc(1, sizeof(struct gui_gadget));
+	box->gadget->box = box;
 	box->gadget->type = GADGET_TEXTAREA;
 	box->gadget->form = status->current_form;
 	style->display = CSS_DISPLAY_INLINE_BLOCK;
@@ -727,74 +728,119 @@ struct result box_textarea(xmlNode *n, struct status *status,
 struct result box_select(xmlNode *n, struct status *status,
 		struct css_style *style)
 {
-	struct box* box = 0;
+	struct box *box;
+	struct box *inline_container;
+	struct box *inline_box;
+	struct gui_gadget *gadget = xcalloc(1, sizeof(struct gui_gadget));
 	char* s;
-	xmlNode *c;
+	xmlNode *c, *c2;
 
-	box = box_create(style, NULL, 0);
-	box->gadget = xcalloc(1, sizeof(struct gui_gadget));
-	box->gadget->type = GADGET_SELECT;
-	box->gadget->form = status->current_form;
+	gadget->type = GADGET_SELECT;
+	gadget->form = status->current_form;
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "size")))
-	{
-		box->gadget->data.select.size = atoi(s);
+	gadget->data.select.multiple = false;
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "multiple"))) {
+		gadget->data.select.multiple = true;
 		xmlFree(s);
 	}
-	else
-		box->gadget->data.select.size = 1;
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "multiple"))) {
-		box->gadget->data.select.multiple = 1;
-	}
-
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
-		box->gadget->name = s;
-	}
-
-	box->gadget->data.select.items = NULL;
-	box->gadget->data.select.numitems = 0;
-	/* TODO: multiple */
+	gadget->data.select.items = NULL;
+	gadget->data.select.last_item = NULL;
+	gadget->data.select.num_items = 0;
+	gadget->data.select.num_selected = 0;
 
 	for (c = n->children; c != 0; c = c->next) {
 		if (strcmp((const char *) c->name, "option") == 0) {
 			xmlChar *content = xmlNodeGetContent(c);
-			add_option(c, box->gadget, squash_tolat1(content));
+			add_option(c, gadget, squash_tolat1(content));
 			xmlFree(content);
+			gadget->data.select.num_items++;
+		} else if (strcmp((const char *) c->name, "optgroup") == 0) {
+			for (c2 = c->children; c2; c2 = c2->next) {
+				if (strcmp((const char *) c2->name, "option") == 0) {
+					xmlChar *content = xmlNodeGetContent(c2);
+					add_option(c2, gadget, squash_tolat1(content));
+					xmlFree(content);
+					gadget->data.select.num_items++;
+				}
+			}
 		}
 	}
-	add_gadget_element(status->elements, box->gadget);
+
+	if (gadget->data.select.num_items == 0) {
+		/* no options: ignore entire select */
+		xfree(gadget);
+		return (struct result) {0, 0};
+	}
+
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
+		gadget->name = s;
+	}
+
+	box = box_create(style, NULL, 0);
+	box->gadget = gadget;
+	gadget->box = box;
+	style->display = CSS_DISPLAY_INLINE_BLOCK;
+
+	inline_container = box_create(0, 0, 0);
+	inline_container->type = BOX_INLINE_CONTAINER;
+	inline_box = box_create(style, 0, 0);
+	inline_box->type = BOX_INLINE;
+	inline_box->style_clone = 1;
+	box_add_child(inline_container, inline_box);
+	box_add_child(box, inline_container);
+
+	if (!gadget->data.select.multiple &&
+			gadget->data.select.num_selected == 0) {
+		gadget->data.select.current = gadget->data.select.items;
+		gadget->data.select.current->selected = true;
+		gadget->data.select.num_selected = 1;
+	}
+
+	if (gadget->data.select.num_selected == 0)
+		inline_box->text = xstrdup(messages_get("Form_None"));
+	else if (gadget->data.select.num_selected == 1)
+		inline_box->text = xstrdup(gadget->data.select.current->text);
+	else
+		inline_box->text = xstrdup(messages_get("Form_Many"));
+
+	inline_box->length = strlen(inline_box->text);
+	inline_box->font = font_open(status->content->data.html.fonts, style);
+
+	add_gadget_element(status->elements, gadget);
 
 	return (struct result) {box, 0};
 }
 
 void add_option(xmlNode* n, struct gui_gadget* current_select, char *text)
 {
-	struct formoption* option;
-	char* s;
+	struct formoption *option = xcalloc(1, sizeof(struct formoption));
+	char *s, *c;
+
 	assert(current_select != 0);
 
 	if (current_select->data.select.items == 0)
-	{
-		option = xcalloc(1, sizeof(struct formoption));
 		current_select->data.select.items = option;
-	}
 	else
-	{
-		struct formoption* current;
-		option = xcalloc(1, sizeof(struct formoption));
-		current = current_select->data.select.items;
-		/* TODO: make appending constant time */
-		while (current->next != 0)
-			current = current->next;
-		current->next = option;
-	}
+		current_select->data.select.last_item->next = option;
+	current_select->data.select.last_item = option;
 
+	for (c = text; *c; c++)
+		if (*c == ' ')
+			*c = 160;
+
+	option->selected = option->initial_selected = false;
 	option->text = text;
+	option->value = 0;
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "selected"))) {
-		option->selected = -1;
 		xmlFree(s);
+		if (current_select->data.select.num_selected == 0 ||
+				current_select->data.select.multiple) {
+			option->selected = option->initial_selected = true;
+			current_select->data.select.num_selected++;
+			current_select->data.select.current = option;
+		}
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
@@ -816,11 +862,13 @@ struct result box_input(xmlNode *n, struct status *status,
 	{
 		box = box_input_text(n, status, style, false);
 		gadget = box->gadget;
+		gadget->box = box;
 	}
 	else if (stricmp(type, "password") == 0)
 	{
 		box = box_input_text(n, status, style, true);
 		gadget = box->gadget;
+		gadget->box = box;
 	}
 	else if (stricmp(type, "hidden") == 0)
 	{
@@ -835,6 +883,7 @@ struct result box_input(xmlNode *n, struct status *status,
 	{
 		box = box_create(style, NULL, 0);
 		box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
+		gadget->box = box;
 		if (type[0] == 'c' || type[0] == 'C')
 			gadget->type = GADGET_CHECKBOX;
 		else
@@ -880,6 +929,7 @@ struct result box_input(xmlNode *n, struct status *status,
 	{
 	        box = box_create(style, NULL, 0);
 	        box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
+		gadget->box = box;
 	        gadget->type = GADGET_IMAGE;
 	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "name"))) {
 	                gadget->data.image.n = s;
@@ -922,6 +972,7 @@ struct box *box_input_text(xmlNode *n, struct status *status,
 	style->display = CSS_DISPLAY_INLINE_BLOCK;
 
 	box->gadget = xcalloc(1, sizeof(struct gui_gadget));
+	box->gadget->box = box;
 
 	box->gadget->maxlength = 100;
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "maxlength"))) {
@@ -984,6 +1035,7 @@ struct result box_button(xmlNode *n, struct status *status,
 		xmlFree(type);
 
 	box->gadget->form = status->current_form;
+	box->gadget->box = box;
 	box->gadget->name = (char *) xmlGetProp(n, (const xmlChar *) "name");
 	box->gadget->value = (char *) xmlGetProp(n, (const xmlChar *) "value");
 

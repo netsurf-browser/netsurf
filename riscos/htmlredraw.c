@@ -126,8 +126,7 @@ void html_redraw_box(struct content *content, struct box * box,
 		content_redraw(box->object, x, y, width, height, x0, y0, x1, y1);
 
 	} else if (box->gadget &&
-			(box->gadget->type == GADGET_SELECT ||
-			box->gadget->type == GADGET_CHECKBOX ||
+			(box->gadget->type == GADGET_CHECKBOX ||
 			box->gadget->type == GADGET_RADIO)) {
 		wimp_icon icon;
 

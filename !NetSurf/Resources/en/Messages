@@ -30,5 +30,7 @@ Downloaded:Download complete, %lu bytes
 # Forms
 Form_Submit:Submit
 Form_Reset:Reset
+Form_None:
+Form_Many:(Many)
 
 Not2xx:Server returned an error

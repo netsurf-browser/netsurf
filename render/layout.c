@@ -874,6 +874,19 @@ void calculate_inline_container_widths(struct box *box)
 				break;
 
 			case BOX_INLINE_BLOCK:
+				if (child->style != 0 &&
+						child->style->width.width == CSS_WIDTH_LENGTH) {
+					width = len(&child->style->width.value.length,
+							child->style);
+					if (min < width) min = width;
+					max += width;
+				} else {
+					calculate_widths(child);
+					if (min < child->min_width) min = child->min_width;
+					max += child->max_width;
+				}
+				break;
+
 			case BOX_FLOAT_LEFT:
 			case BOX_FLOAT_RIGHT:
 				if (child->style != 0 &&

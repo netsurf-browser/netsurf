@@ -21,6 +21,7 @@
 #include "netsurf/render/font.h"
 #include "netsurf/render/layout.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 static void browser_window_start_throbber(struct browser_window* bw);
@@ -464,20 +465,44 @@ void browser_window_gadget_select(struct browser_window* bw, struct gui_gadget* 
 {
 	struct formoption* o;
 	int count;
+	struct box *inline_box = g->box->children->children;
+	int x, y;
 
-	count = 0;
-	o = g->data.select.items;
-	while (o != NULL)
-	{
-		if (g->data.select.multiple == 0)
-			o->selected = 0;
-		if (count == item)
-			o->selected = !(o->selected);
-		o = o->next;
-		count++;
+	for (count = 0, o = g->data.select.items;
+			o != NULL;
+			count++, o = o->next) {
+		if (!g->data.select.multiple)
+			o->selected = false;
+		if (count == item) {
+			if (g->data.select.multiple) {
+				if (o->selected) {
+					o->selected = false;
+					g->data.select.num_selected--;
+				} else {
+					o->selected = true;
+					g->data.select.num_selected++;
+				}
+			} else {
+				o->selected = true;
+			}
+		}
+		if (o->selected)
+			g->data.select.current = o;
 	}
 
-	gui_redraw_gadget(bw, g);
+	xfree(inline_box->text);
+	if (g->data.select.num_selected == 0)
+		inline_box->text = xstrdup(messages_get("Form_None"));
+	else if (g->data.select.num_selected == 1)
+		inline_box->text = xstrdup(g->data.select.current->text);
+	else
+		inline_box->text = xstrdup(messages_get("Form_Many"));
+	inline_box->width = g->box->width;
+	inline_box->length = strlen(inline_box->text);
+
+        box_coords(g->box, &x, &y);
+	gui_window_redraw(bw->window, x, y,
+			x + g->box->width, y + g->box->height);
 }
 
 int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x, unsigned long click_y)
