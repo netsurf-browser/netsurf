@@ -190,3 +190,7 @@ HelpBrowserMenu4-0:\Sopen the documentation contents page in a new \w.
 #HelpBrowserMenu4-1:\Sopen the user guide in a new \w.
 #HelpBrowserMenu4-2:\Sopen the user information page in a new \w.
 #HelpBrowserMenu4-3:\Stoggle interactive help.
+
+HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.
+
+HelpIconbar:\TNetSurf icon.|M\Sopen a new browser window.
