@@ -199,6 +199,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 	     void *p1, void *p2, const char *error)
 {
 	struct browser_window *bw = p1;
+	struct box *box;
 	char status[40];
 
 	if (c->type == CONTENT_OTHER) {
@@ -277,7 +278,16 @@ void browser_window_callback(content_msg msg, struct content *c,
 			break;
 
 		case CONTENT_MSG_REDRAW:
-			gui_window_redraw_window(bw->window);
+			/* error actually holds the box */
+			box = (struct box *) error;
+			if (box) {
+				int x, y;
+				box_coords(box, &x, &y);
+				gui_window_update_box(bw->window, x, y,
+						x + box->width,
+						y + box->height);
+			} else
+				gui_window_redraw_window(bw->window);
 			break;
 
 #ifdef WITH_AUTH

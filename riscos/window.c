@@ -254,6 +254,55 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
   }
 }
 
+
+/**
+ * Redraw an area of a window.
+ *
+ * \param  g   gui_window
+ * \param  x0  minimum x
+ * \param  y0  minimum y
+ * \param  x1  maximum x
+ * \param  y1  maximum y
+ */
+
+void gui_window_update_box(gui_window *g, int x0, int y0, int x1, int y1)
+{
+	struct content *c = g->data.browser.bw->current_content;
+	osbool more;
+	os_error *error;
+	wimp_draw update;
+
+	update.w = g->window;
+	update.box.x0 = x0 * 2;
+	update.box.y0 = -y1 * 2;
+	update.box.x1 = x1 * 2;
+	update.box.y1 = -y0 * 2;
+	error = xwimp_update_window(&update, &more);
+	if (error) {
+		LOG(("xwimp_update_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		return;
+	}
+
+	while (more) {
+		content_redraw(c,
+				update.box.x0 - update.xscroll,
+				update.box.y1 - update.yscroll,
+				c->width * 2, c->height * 2,
+				update.clip.x0, update.clip.y0,
+				update.clip.x1 - 1, update.clip.y1 - 1,
+				g->scale);
+
+		error = xwimp_get_rectangle(&update, &more);
+		if (error) {
+			LOG(("xwimp_get_rectangle: 0x%x: %s",
+					error->errnum, error->errmess));
+			return;
+		}
+	}
+}
+
+
 void gui_window_set_scroll(gui_window* g, unsigned long sx, unsigned long sy)
 {
   wimp_window_state state;

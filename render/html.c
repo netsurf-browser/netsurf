@@ -642,8 +642,7 @@ void html_object_callback(content_msg msg, struct content *object,
 			break;
 
 		case CONTENT_MSG_REDRAW:
-			/** \todo  send up box coordinates */
-			content_broadcast(c, CONTENT_MSG_REDRAW, 0);
+			content_broadcast(c, CONTENT_MSG_REDRAW, box);
 			break;
 
 #ifdef WITH_AUTH
