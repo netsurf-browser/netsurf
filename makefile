@@ -4,7 +4,7 @@
 #                http://www.opensource.org/licenses/gpl-license
 #
 
-CC = riscos-gcc
+CC = /riscos/bin/gcc
 CC_DEBUG = gcc
 OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o other.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
@@ -26,21 +26,10 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wconversion -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
 	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
-CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. -I/usr/local/riscoslibs/include \
-	-Dfd_set=long -mpoke-function-name
-CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -O $(WARNFLAGS) -I.. -I/usr/include/libxml2 \
-	-Dfd_set=long -g
-LDFLAGS = \
-	/usr/local/riscoslibs/animlib/animlib.ro \
-	/usr/local/riscoslibs/libxml2/libxml2.ro \
-	/usr/local/riscoslibs/OSLib/OSLib32.ro \
-	/usr/local/riscoslibs/curl/libcurl.ro \
-	/usr/local/riscoslibs/curl/ares/libares.a \
-	/usr/local/riscoslibs/libpng/libpng.ro \
-	/usr/local/riscoslibs/zlib/libz.ro \
-	/usr/local/riscoslibs/openssl/libssl.a \
-	/usr/local/riscoslibs/openssl/libcrypto.a \
-	/usr/local/riscoslibs/IFCLib/ifc.o
+CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. \
+	-mpoke-function-name
+CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE $(WARNFLAGS) -I.. -I/usr/include/libxml2 -g
+LDFLAGS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lares -lanim -lpng -lifc -loslib
 LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl
 
 OBJDIR = $(shell $(CC) -dumpmachine)
