@@ -239,8 +239,9 @@ void ro_gui_debugwin_close(void);
 void ro_gui_debugwin_redraw(wimp_draw *redraw);
 
 /* in search.c */
-void ro_gui_search_click(wimp_pointer *pointer, wimp_w parent);
-void ro_gui_search_prepare(void);
+void ro_gui_search_open(struct gui_window *g, int x, int y, bool sub_menu, bool keypress);
+void ro_gui_search_click(wimp_pointer *pointer);
+bool ro_gui_search_keypress(wimp_key *key);
 
 /* toolbar types */
 #define TOOLBAR_BROWSER 0

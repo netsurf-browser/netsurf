@@ -346,8 +346,11 @@ void ro_gui_dialog_close_persistant(wimp_w parent) {
 bool ro_gui_dialog_keypress(wimp_key *key)
 {
 	wimp_pointer pointer;
-	int i;
 
+#ifdef WITH_SEARCH
+	if (key->w == dialog_search)
+		return ro_gui_search_keypress(key);
+#endif
 	if (key->c == wimp_KEY_ESCAPE) {
 		ro_gui_dialog_close(key->w);
 		return true;
@@ -361,25 +364,12 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 			ro_gui_hotlist_dialog_click(&pointer);
 			return true;
 		}
-		else if (key->w == dialog_search) {
-			pointer.w = key->w;
-			pointer.i = ICON_SEARCH_FIND;
-			pointer.buttons = wimp_CLICK_SELECT;
-			for (i = 0; i < MAX_PERSISTANT; i++) {
-				if (persistant_dialog[i].dialog ==
-							dialog_search) {
-					ro_gui_search_click(&pointer,
-						persistant_dialog[i].parent);
-					break;
-				}
-			}
-			return true;
-		}
 	}
 #ifdef WITH_AUTH
 	if (key->w == dialog_401li)
 		return ro_gui_401login_keypress(key);
 #endif
+
 	return false;
 }
 
@@ -390,8 +380,6 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 
 void ro_gui_dialog_click(wimp_pointer *pointer)
 {
-	int i;
-
 	if (pointer->buttons == wimp_CLICK_MENU)
 		return;
 
@@ -415,15 +403,8 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 		ro_gui_dialog_click_warning(pointer);
 	else if ((pointer->w == dialog_folder) || (pointer->w == dialog_entry))
 		ro_gui_hotlist_dialog_click(pointer);
-	else if (pointer->w == dialog_search) {
-		for (i = 0; i < MAX_PERSISTANT; i++) {
-			if (persistant_dialog[i].dialog == dialog_search) {
-				ro_gui_search_click(pointer,
-						persistant_dialog[i].parent);
-				break;
-			}
-		}
-	}
+	else if (pointer->w == dialog_search)
+		ro_gui_search_click(pointer);
 }
 
 

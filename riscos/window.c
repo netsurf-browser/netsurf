@@ -1266,8 +1266,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			return true;
 
 		case wimp_KEY_F4:	/* Search */
-			ro_gui_search_prepare();
-			ro_gui_dialog_open_persistant(g->window, dialog_search, false);
+			ro_gui_search_open(g, 0, 0, false, true);
 			return true;
 
                 case wimp_KEY_F5:       /* Refresh. */
