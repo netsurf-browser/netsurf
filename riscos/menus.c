@@ -120,14 +120,14 @@ static wimp_MENU(2) object_export_menu = {
 
 /*	Object submenu
 */
-static wimp_MENU(5) object_menu = {
+static wimp_MENU(4) object_menu = {
   { "Object" }, 7,2,7,0, 300, 44, 0,
   {
     { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,                   DEFAULT_FLAGS, { "ObjInfo" } },
     { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,                   DEFAULT_FLAGS, { "ObjSave" } },
     { 0,                      (wimp_menu *)&object_export_menu, DEFAULT_FLAGS, { "Export" } },
-    { wimp_MENU_SEPARATE, (wimp_menu *)&link_menu,              DEFAULT_FLAGS, { "SaveURL" } },
-    { wimp_MENU_LAST,         wimp_NO_SUB_MENU,                 DEFAULT_FLAGS, { "ObjReload" } }
+    { wimp_MENU_LAST /*wimp_MENU_SEPARATE*/, (wimp_menu *)&link_menu,              DEFAULT_FLAGS, { "SaveURL" } },
+//    { wimp_MENU_LAST,         wimp_NO_SUB_MENU,                 DEFAULT_FLAGS, { "ObjReload" } }
   }
 };
 
@@ -344,6 +344,16 @@ void ro_gui_create_menu(wimp_menu *menu, int x, int y, gui_window *g)
 	current_menu_x = x;
 	current_menu_y = y;
 	current_gui = g;
+	if (menu != iconbar_menu) {
+        	if (find_object_box() == NULL && menu == browser_menu) {
+                	menu->entries[1].sub_menu = (wimp_menu*)1;
+        	        menu->entries[1].icon_flags |= wimp_ICON_SHADED;
+	        }
+	        else if (menu == browser_menu) {
+        	        menu->entries[1].sub_menu = (wimp_menu*)&object_menu;
+        	        menu->entries[1].icon_flags &= ~wimp_ICON_SHADED;
+        	}
+	}
 	wimp_create_menu(menu, x, y);
 }
 
@@ -654,8 +664,9 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 		                ro_gui_menu_prepare_save(box->object);
 			        error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
 					warning->pos.x, warning->pos.y);
-				if (!error && box->href)
-				        save_link = url_join(box->href, c->url);
+				if (!error/* && box->href*/)
+				        save_link = xstrdup(box->object->url);
+//				        save_link = url_join(box->href, c->url);
 			}
 		        break;
 		case MENU_VIEW: /* View -> */
