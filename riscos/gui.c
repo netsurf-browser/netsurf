@@ -837,17 +837,19 @@ void ro_msg_dataload(wimp_message *message)
 		while (i != 2) {
 			temp = fgets(url1, 256, fp);
 			if (!temp) {
-				xfree(url1);
-				return;
+				i = 2;
+				break;
 			}
 			
 			temp = strip(url1);
 			url = xstrdup(temp);
-			xfree(url1);
 			if (url[0] != '#') { /* not a comment */
 				i++;
 			}
 		}
+
+		xfree(url1);
+		if (!temp) return;
 	}
 	
         /* url file */
