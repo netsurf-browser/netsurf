@@ -1,11 +1,11 @@
-# $Id: makefile,v 1.30 2003/06/05 13:17:55 philpem Exp $
+# $Id: makefile,v 1.31 2003/06/05 14:01:37 bursa Exp $
 
 CC = riscos-gcc
 OBJECTS = cache.o content.o fetch.o fetchcache.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
 	browser.o netsurf.o \
 	box.o html.o layout.o textplain.o \
-	filetype.o font.o gui.o jpeg.o png.o theme.o \
+	filetype.o font.o gif.o gui.o jpeg.o png.o theme.o \
 	utils.o plugin.o options.o
 DOCUMENTS = Themes.html	
 VPATH = content:css:desktop:render:riscos:utils
