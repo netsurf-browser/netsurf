@@ -468,6 +468,9 @@ void html_object_callback(content_msg msg, struct content *object,
 				c->active++;
 			break;
 
+		case CONTENT_MSG_REFORMAT:
+			break;
+
 		default:
 			assert(0);
 	}

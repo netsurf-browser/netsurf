@@ -89,8 +89,7 @@ static void ro_gui_keypress(wimp_key* key);
 static void ro_msg_datasave(wimp_message* block);
 static void ro_msg_dataload(wimp_message* block);
 static void gui_set_gadget_extent(struct box* box, int x, int y, os_box* extent, struct gui_gadget* g);
-
-
+static void ro_gui_screen_size(int *width, int *height);
 
 
 
@@ -232,6 +231,8 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
   }
 
   g->redraw_safety = SAFE;
+  g->data.browser.reformat_pending = false;
+  g->data.browser.old_width = 0;
 
   g->next = window_list;
   window_list = g;
@@ -470,16 +471,26 @@ void ro_gui_window_open(gui_window* g, wimp_open* open)
 {
   if (g->type == GUI_BROWSER_WINDOW)
   {
+    wimp_window_state state;
+    state.w = g->data.browser.window;
+    wimp_get_window_state(&state);
+    if (state.flags & wimp_WINDOW_TOGGLED) {
+	    open->visible.x0 = open->visible.y0 = 0;
+	    ro_gui_screen_size(&open->visible.x1, &open->visible.y1);
+    }
+
     if (g->data.browser.bw->current_content != 0) {
-      if (g->old_width != open->visible.x1 - open->visible.x0) {
-        if (g->data.browser.bw->current_content->width
-		        < browser_x_units(open->visible.x1 - open->visible.x0))
-          gui_window_set_extent(g, browser_x_units(open->visible.x1 - open->visible.x0),
+      int width = open->visible.x1 - open->visible.x0;
+      if (g->data.browser.old_width != width) {
+	if (g->data.browser.bw->current_content->width
+		        < browser_x_units(width))
+          gui_window_set_extent(g, browser_x_units(width),
 			  g->data.browser.bw->current_content->height);
         else
           gui_window_set_extent(g, g->data.browser.bw->current_content->width,
 			  g->data.browser.bw->current_content->height);
-	g->old_width = open->visible.x1 - open->visible.x0;
+	g->data.browser.old_width = width;
+	g->data.browser.reformat_pending = true;
       }
     }
     wimp_open_window(open);
@@ -1446,6 +1457,13 @@ void gui_poll(void)
           wimp_get_pointer_info(&pointer);
           ro_gui_window_mouse_at(&pointer);
         }
+	for (g = window_list; g; g = g->next) {
+		if (g->type == GUI_BROWSER_WINDOW && g->data.browser.reformat_pending) {
+			content_reformat(g->data.browser.bw->current_content,
+					browser_x_units(g->data.browser.old_width), 1000);
+			g->data.browser.reformat_pending = false;
+		}
+	}
         break;
 
       case wimp_REDRAW_WINDOW_REQUEST   :
@@ -1917,5 +1935,22 @@ void gui_remove_gadget(struct gui_gadget* g)
 		gui_redraw_gadget(current_textbox_bw, current_textbox);
 		current_textbox = 0;
 	}
+}
+
+
+/**
+ * Find screen size in OS units.
+ */
+
+void ro_gui_screen_size(int *width, int *height)
+{
+	int xeig_factor, yeig_factor, xwind_limit, ywind_limit;
+
+	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_XEIG_FACTOR, &xeig_factor);
+	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_YEIG_FACTOR, &yeig_factor);
+	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_XWIND_LIMIT, &xwind_limit);
+	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_YWIND_LIMIT, &ywind_limit);
+	*width = (xwind_limit + 1) << xeig_factor;
+	*height = (ywind_limit + 1) << yeig_factor;
 }
 

@@ -8,6 +8,7 @@
 #ifndef _NETSURF_RISCOS_GUI_H_
 #define _NETSURF_RISCOS_GUI_H_
 
+#include <stdbool.h>
 #include "oslib/wimp.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/netsurf.h"
@@ -36,6 +37,8 @@ struct gui_window
       wimp_w toolbar;
       int toolbar_width;
       struct browser_window* bw;
+      bool reformat_pending;
+      int old_width;
     } browser;
     struct {
       wimp_w window;
@@ -56,7 +59,6 @@ struct gui_window
 
   gui_safety redraw_safety;
   enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION } drag_status;
-  int old_width;
 };
 
 

@@ -257,6 +257,7 @@ void content_reformat(struct content *c, unsigned long width, unsigned long heig
 			c->status == CONTENT_STATUS_DONE);
 	c->available_width = width;
 	handler_map[c->type].reformat(c, width, height);
+	content_broadcast(c, CONTENT_MSG_REFORMAT, 0);
 }
 
 

@@ -356,6 +356,11 @@ void browser_window_callback(content_msg msg, struct content *c,
       browser_window_open_location(bw, error);
       break;
 
+    case CONTENT_MSG_REFORMAT:
+      if (bw->current_content->status == CONTENT_STATUS_DONE)
+	      browser_window_reformat(bw, 0);
+      break;
+
     default:
       assert(0);
   }
@@ -388,6 +393,9 @@ void download_window_callback(content_msg msg, struct content *c,
 		case CONTENT_MSG_REDIRECT:
 			/* not possible at this point, handled above */
 			assert(0);
+			break;
+
+		case CONTENT_MSG_REFORMAT:
 			break;
 	}
 }
