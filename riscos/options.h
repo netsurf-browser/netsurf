@@ -44,6 +44,7 @@ int option_thumbnail_oversampling = 0;
 { "language",               OPTION_STRING,  &option_language },\
 { "dither_sprites",         OPTION_BOOL,    &option_dither_sprites },\
 { "filter_sprites",         OPTION_BOOL,    &option_filter_sprites },\
+{ "thumbnail_32bpp",        OPTION_BOOL,    &option_thumbnail_32bpp },\
 { "thumbnail_oversampling", OPTION_INTEGER, &option_thumbnail_oversampling }
 
 #endif
