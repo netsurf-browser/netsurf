@@ -832,8 +832,8 @@ void ro_gui_menu_pageinfo(wimp_message_menu_warning *warning)
 
         sprintf(icon_buf, "file_%x", ro_content_filetype(c));
 
-        if (c->type == CONTENT_HTML && c->data.html.encoding != 0) {
-                enc = xmlGetCharEncodingName(c->data.html.encoding);
+        if (c->type == CONTENT_HTML && c->data.html.encoding != NULL) {
+                enc = c->data.html.encoding;
         }
 
         ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ICON, icon);

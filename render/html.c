@@ -53,23 +53,25 @@ void html_create(struct content *c, const char *params[])
 {
 	unsigned int i;
 	struct content_html_data *html = &c->data.html;
+	xmlCharEncoding encoding = XML_CHAR_ENCODING_NONE;
 
-	html->encoding = XML_CHAR_ENCODING_NONE;
+	html->encoding = NULL;
 	html->getenc = true;
 
 	for (i = 0; params[i]; i += 2) {
 		if (strcasecmp(params[i], "charset") == 0) {
-			html->encoding = xmlParseCharEncoding(params[i + 1]);
-			html->getenc = false; /* encoding specified - trust the server... */
-			if (html->encoding == XML_CHAR_ENCODING_ERROR) {
-				html->encoding = XML_CHAR_ENCODING_NONE;
-				html->getenc = true;
+			encoding = xmlParseCharEncoding(params[i + 1]);
+			if (encoding != XML_CHAR_ENCODING_ERROR
+					&& encoding != XML_CHAR_ENCODING_NONE) {
+				/* encoding specified - trust the server... */
+				html->encoding = xstrdup(xmlGetCharEncodingName(encoding));
+				html->getenc = false;
 			}
 			break;
 		}
 	}
 
-	html->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, html->encoding);
+	html->parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, encoding);
 	html->base_url = xstrdup(c->url);
 	html->layout = 0;
 	html->background_colour = TRANSPARENT;
@@ -98,13 +100,14 @@ void html_process_data(struct content *c, char *data, unsigned long size)
 
 	/* First time through, check if we need to detect the encoding
 	 * if so, detect it and reset the parser instance with it.
+	 * Do this detection only once.
 	 */
 	if (c->data.html.getenc) {
 		xmlCharEncoding encoding = xmlDetectCharEncoding(data, size);
 		if (encoding != XML_CHAR_ENCODING_ERROR &&
 				encoding != XML_CHAR_ENCODING_NONE) {
 			xmlSwitchEncoding(c->data.html.parser, encoding);
-			c->data.html.encoding = encoding;
+			c->data.html.encoding = xstrdup(xmlGetCharEncodingName(encoding));
 		}
 		c->data.html.getenc = false;
 	}
@@ -148,6 +151,11 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 		LOG(("Parsing failed"));
 		return 1;
 	}
+	/* Last change to pick the Content-Type charset information if the
+	 * server didn't send it (or we're reading the HTML from disk)
+	 */
+	if (c->data.html.encoding == NULL && document->encoding != NULL)
+		c->data.html.encoding = xstrdup(document->encoding);
 
 	/* locate html and head elements */
 	for (html = document->children;
@@ -804,6 +812,8 @@ void html_destroy(struct content *c)
 
 	if (c->data.html.parser)
 		htmlFreeParserCtxt(c->data.html.parser);
+
+	free(c->data.html.encoding);
 
 	free(c->data.html.base_url);
 
