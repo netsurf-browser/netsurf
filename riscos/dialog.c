@@ -1397,10 +1397,11 @@ void ro_gui_dialog_load_themes(void) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
+	
 	parent_width = state.visible.x1 - state.visible.x0;
 	min_extent = state.visible.y0 - state.visible.y1;
 	nested_y = 0;
-	base_extent = state.visible.y1;
+	base_extent = state.visible.y1 - state.yscroll;
 	extent.x1 = parent_width;
 	link = toolbars;
 	new_icon.w = dialog_config_th_pane;
