@@ -15,7 +15,13 @@ Export:Exporter
 ExportAs:Exporter sous
 Draw:Draw  ‹^F3
 Text:Text   ^F3
+SaveURL:Save location
 Print:Imprimer...
+ViewSrc:View source...  F8
+Object:Object
+ObjInfo:Info
+ObjSave:Save
+ObjReload:Reload
 Selection:Sélection
 Copy:Copier vers le presse papier
 SelectAll:Tout sélectionner
@@ -28,6 +34,23 @@ Forward:Avancer
 Reload:Recharger cette page
 View:Affichage
 ScaleView:Ajuster la vue
+Images:Images
+ForeImg:Foreground images
+BackImg:Background images
+AnimImg:Animations
+DitherImg:Dither images
+FilterImg:Smooth images
+Toolbars:Toolbars
+ToolButtons:Buttons
+ToolAddress:Address bar
+ToolThrob:Throbber
+ToolStatus:Status bar
+OptDefault:Set as default
+Help:Help
+HelpContent:Contents  F1
+HelpGuide:User guide
+HelpInfo:User information
+HelpInter:Interactive help
 
 Themes:Thèmes
 

@@ -8,18 +8,24 @@ Choices:Choices...
 Quit:Quit
 
 Page:Page
-PageInfo:Info
-Save:Save        F3
+PageInfo:Info  ^F1
+Save:Save  F3
 SaveComp:Full save  ‹F3
 Export:Export
 ExportAs:Export as
 Draw:Draw  ‹^F3
-Text:Text   ^F3
+Text:Text  ^F3
+SaveURL:Save location
 Print:Print...
+ViewSrc:View source...  F8
+Object:Object
+ObjInfo:Info
+ObjSave:Save
+ObjReload:Reload
 Selection:Selection
-Copy:Copy to clipboard
-SelectAll:Select all
-Clear:Clear selection
+Copy:Copy to clipboard  ^C
+SelectAll:Select all  ^A
+Clear:Clear selection  ^Z
 Navigate:Navigate
 OpenURL:Open URL...
 Home:Home page
@@ -29,9 +35,17 @@ Reload:Reload this page
 View:View
 ScaleView:Scale view
 Images:Images
+ForeImg:Foreground images
+BackImg:Background images
+AnimImg:Animations
 DitherImg:Dither images
 FilterImg:Smooth images
-ViewSrc:Page source...  F8
+Toolbars:Toolbars
+ToolButtons:Buttons
+ToolAddress:Address bar
+ToolThrob:Throbber
+ToolStatus:Status bar
+OptDefault:Set as default
 Help:Help
 HelpContent:Contents  F1
 HelpGuide:User guide
@@ -98,4 +112,4 @@ SelectMenu:Select
 
 SaveSource:Source
 SaveDraw:Webpage
-SaveText:Webpage
+SaveText:PageWeb
