@@ -455,7 +455,7 @@ void html_object_callback(content_msg msg, struct content *object,
 		case CONTENT_MSG_STATUS:
 			snprintf(c->status_message, 80, "Loading %i objects: %s",
 					c->active, object->status_message);
-			content_broadcast(c, CONTENT_MSG_STATUS, 0);
+			/* content_broadcast(c, CONTENT_MSG_STATUS, 0); */
 			break;
 
 		case CONTENT_MSG_REDIRECT:
