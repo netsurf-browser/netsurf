@@ -16,7 +16,7 @@
 # "riscos", "riscos_small", and "riscos_debug" can be compiled under RISC OS,
 # or cross-compiled using gccsdk.
 
-OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o		# content/
+OBJECTS_COMMON = content.o fetch.o fetchcache.o			# content/
 OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
 OBJECTS_COMMON += box.o form.o html.o layout.o textplain.o	# render/
 OBJECTS_COMMON += messages.o pool.o translit.o url.o utils.o	# utils/
@@ -24,7 +24,7 @@ OBJECTS_COMMON += imagemap.o loginlist.o options.o		# desktop/
 
 OBJECTS_RISCOS = $(OBJECTS_COMMON)
 OBJECTS_RISCOS += browser.o netsurf.o version.o			# desktop/
-OBJECTS_RISCOS += 401login.o about.o constdata.o debugwin.o \
+OBJECTS_RISCOS += 401login.o constdata.o debugwin.o \
 	dialog.o download.o draw.o filetype.o font.o gif.o \
 	gifread.o gui.o help.o history.o htmlinstance.o \
 	htmlredraw.o jpeg.o menus.o mouseactions.o plugin.o \
@@ -40,7 +40,7 @@ OBJECTS_DEBUG += gif.o gifread.o jpeg.o png.o save_complete.o schedule.o \
 OBJECTS_DEBUGRO = $(OBJECTS_COMMON)
 OBJECTS_DEBUGRO += netsurfd.o					# debug/
 OBJECTS_DEBUGRO += version.o					# desktop/
-OBJECTS_DEBUGRO += about.o constdata.o draw.o filetype.o font.o \
+OBJECTS_DEBUGRO += constdata.o draw.o filetype.o font.o \
 	gif.o gifread.o jpeg.o png.o save_complete.o schedule.o \
 	sprite.o theme.o toolbar.o wimp.o			# riscos/
 

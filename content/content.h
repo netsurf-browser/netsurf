@@ -92,11 +92,8 @@
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
 #define _NETSURF_DESKTOP_CONTENT_H_
 
-#include "libxml/HTMLparser.h"
 #include "netsurf/utils/config.h"
-#include "netsurf/content/cache.h"
 #include "netsurf/content/content_type.h"
-#include "netsurf/content/fetch.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
@@ -119,6 +116,9 @@
 #ifdef WITH_DRAW
 #include "netsurf/riscos/draw.h"
 #endif
+
+
+struct fetch;
 
 
 /** Used in callbacks to indicate what has occurred. */
@@ -211,8 +211,12 @@ struct content {
 #endif
 	} data;
 
-	struct cache_entry *cache;	/**< Used by cache, 0 if not cached. */
-	unsigned long size;		/**< Estimated size of all data
+	/** This content may be given to new users. Indicates that the content
+	 *  was fetched using a simple GET, has not expired, and may be
+	 *  shared between users. */
+	bool fresh;
+
+	unsigned int size;		/**< Estimated size of all data
 					  associated with this content. */
 	char *title;			/**< Title for browser window. */
 	unsigned int active;		/**< Number of child fetches or
@@ -225,8 +229,6 @@ struct content {
 	unsigned long source_size;	/**< Amount of data fetched so far. */
 	unsigned long total_size;	/**< Total data size, 0 if unknown. */
 
-	int lock;			/**< Content in use, do not destroy. */
-	bool destroy_pending;		/**< Destroy when lock returns to 0. */
 	bool no_error_pages;		/**< Used by fetchcache(). */
 
 	/** Array of first n rendering errors or warnings. */
@@ -250,6 +252,7 @@ struct browser_window;
 
 content_type content_lookup(const char *mime_type);
 struct content * content_create(const char *url);
+struct content * content_get(const char *url);
 bool content_set_type(struct content *c, content_type type,
 		const char *mime_type, const char *params[]);
 void content_set_status(struct content *c, const char *status_message, ...);
@@ -257,7 +260,6 @@ bool content_process_data(struct content *c, char *data, unsigned int size);
 void content_convert(struct content *c, int width, int height);
 void content_reformat(struct content *c, int width, int height);
 void content_clean(void);
-void content_destroy(struct content *c);
 void content_reset(struct content *c);
 void content_redraw(struct content *c, int x, int y,
 		int width, int height,

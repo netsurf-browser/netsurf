@@ -41,8 +41,10 @@ int option_font_size = 100;
 int option_font_min_size = 70;
 /** Accept-Language header. */
 char *option_accept_language = 0;
-/** Strict verification of SSL sertificates */
+/** Enable verification of SSL certificates. */
 bool option_ssl_verify_certificates = true;
+/** Preferred maximum size of memory cache / bytes. */
+int option_memory_cache_size = 2 * 1024 * 1024;
 
 EXTRA_OPTION_DEFINE
 
@@ -59,6 +61,7 @@ struct {
 	{ "font_min_size",   OPTION_INTEGER, &option_font_min_size },
 	{ "accept_language", OPTION_STRING,  &option_accept_language },
 	{ "ssl_verify_certificates", OPTION_BOOL, &option_ssl_verify_certificates },
+	{ "memory_cache_size", OPTION_STRING, &option_memory_cache_size },
 	EXTRA_OPTION_TABLE
 };
 
@@ -133,6 +136,9 @@ void options_read(const char *path)
 		option_font_min_size = 10;
 	if (500 < option_font_min_size)
 		option_font_min_size = 500;
+
+	if (option_memory_cache_size < 0)
+		option_memory_cache_size = 0;
 }
 
 

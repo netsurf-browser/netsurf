@@ -885,10 +885,6 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			}
 			return true;
 
-		case wimp_KEY_F10:	/* Dump cache for debugging. */
-			cache_dump();
-			return true;
-
 		case wimp_KEY_F11:	/* Toggle display of box outlines. */
 			gui_redraw_debug = !gui_redraw_debug;
 			gui_window_redraw_window(g);

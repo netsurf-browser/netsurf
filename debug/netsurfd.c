@@ -10,7 +10,6 @@
 #include <string.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
-#include "netsurf/content/cache.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/desktop/options.h"
@@ -45,7 +44,6 @@ int main(int argc, char *argv[])
 	struct content *c;
 
 	fetch_init();
-	cache_init();
 	fetchcache_init();
 	url_init();
 	save_complete_init();
@@ -70,7 +68,6 @@ int main(int argc, char *argv[])
 			destroyed = 1;
 			puts("=== FAILURE, dumping cache");
 		}
-		cache_dump();
 		if (!destroyed) {
 			/*while (1)
 				schedule_run();*/
@@ -85,10 +82,10 @@ int main(int argc, char *argv[])
 			content_remove_user(c, callback, 0, 0);
 			c = 0;
 		}
+		content_clean();
 	}
 
 /* 	options_write("options"); */
-	cache_quit();
 	fetch_quit();
 
 	return 0;

@@ -21,6 +21,7 @@
 
 struct box;
 struct history;
+struct form_successful_control;
 
 /** Browser window data. */
 struct browser_window

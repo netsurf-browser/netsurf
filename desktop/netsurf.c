@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <sys/utsname.h>
 #include "netsurf/utils/config.h"
-#include "netsurf/content/cache.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/desktop/options.h"
@@ -72,7 +71,6 @@ void netsurf_init(int argc, char** argv)
 	gui_init(argc, argv);
 	setlocale(LC_ALL, "");
 	fetch_init();
-	cache_init();
 	fetchcache_init();
 	url_init();
 }
@@ -96,7 +94,6 @@ void netsurf_poll(void)
 
 void netsurf_exit(void)
 {
-	cache_quit();
 	fetch_quit();
 	gui_quit();
 }

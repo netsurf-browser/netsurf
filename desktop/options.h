@@ -31,6 +31,7 @@ extern int option_font_size;
 extern int option_font_min_size;
 extern char *option_accept_language;
 extern bool option_ssl_verify_certificates;
+extern int option_memory_cache_size;
 
 void options_read(const char *path);
 void options_write(const char *path);

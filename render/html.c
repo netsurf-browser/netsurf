@@ -840,14 +840,13 @@ void html_destroy(struct content *c)
 
 	/* Free stylesheets */
 	if (c->data.html.stylesheet_count) {
-		content_remove_user(c->data.html.stylesheet_content[0],
-				html_convert_css_callback, c, 0);
-		if (c->data.html.stylesheet_content[1])
-			content_destroy(c->data.html.stylesheet_content[1]);
-		for (i = 2; i != c->data.html.stylesheet_count; i++)
+		for (i = 0; i != c->data.html.stylesheet_count; i++) {
 			if (c->data.html.stylesheet_content[i])
-				content_remove_user(c->data.html.stylesheet_content[i],
-						html_convert_css_callback, c, (void*)i);
+				content_remove_user(c->data.html.
+						stylesheet_content[i],
+						html_convert_css_callback,
+						c, (void *) i);
+		}
 	}
 	free(c->data.html.stylesheet_content);
 	free(c->data.html.style);

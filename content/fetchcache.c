@@ -18,7 +18,6 @@
 #include <sys/types.h>
 #include <regex.h>
 #include "netsurf/utils/config.h"
-#include "netsurf/content/cache.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/content/fetch.h"
@@ -83,7 +82,7 @@ struct content * fetchcache(const char *url,
 	LOG(("url %s", url1));
 
 	if (!post_urlenc && !post_multipart) {
-		c = cache_get(url1);
+		c = content_get(url1);
 		if (c) {
 			free(url1);
 			content_add_user(c, callback, p1, p2);
@@ -99,7 +98,7 @@ struct content * fetchcache(const char *url,
 	content_add_user(c, callback, p1, p2);
 
 	if (!post_urlenc && !post_multipart)
-		cache_put(c);
+		c->fresh = true;
 
 	c->width = width;
 	c->height = height;
@@ -112,7 +111,7 @@ struct content * fetchcache(const char *url,
 /**
  * Start fetching and converting a content.
  *
- * \param  url       address to fetch
+ * \param  content   content to fetch, as returned by fetchcache()
  * \param  referer   referring URL, or 0
  * \param  callback  function to call when anything interesting happens to
  *                   the new content
@@ -204,8 +203,6 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 	unsigned int i;
 	union content_msg_data msg_data;
 
-	c->lock++;
-
 	switch (msg) {
 		case FETCH_TYPE:
 			c->total_size = size;
@@ -217,10 +214,10 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			for (i = 0; params[i]; i++)
 				free(params[i]);
 			free(params);
-			if (!res)
+			if (!res) {
 				fetch_abort(c->fetch);
-			if (c->cache && c->type == CONTENT_OTHER)
-				cache_destroy(c);
+				c->fetch = 0;
+			}
 			break;
 
 		case FETCH_DATA:
@@ -236,8 +233,10 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 						messages_get("Received"),
 						human_friendly_bytesize(c->source_size + size));
 			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
-			if (!content_process_data(c, data, size))
+			if (!content_process_data(c, data, size)) {
 				fetch_abort(c->fetch);
+				c->fetch = 0;
+			}
 			break;
 
 		case FETCH_FINISHED:
@@ -252,8 +251,6 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 		case FETCH_ERROR:
 			LOG(("FETCH_ERROR, '%s'", data));
 			c->fetch = 0;
-			if (c->cache)
-				cache_destroy(c);
 			if (c->no_error_pages) {
 				c->status = CONTENT_STATUS_ERROR;
 				msg_data.error = data;
@@ -279,9 +276,6 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 				msg_data.error = messages_get("BadRedirect");
 				content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			}
-			if (c->cache)
-				cache_destroy(c);
-			content_destroy(c);
 			break;
 #ifdef WITH_AUTH
 		case FETCH_AUTH:
@@ -290,15 +284,11 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			c->fetch = 0;
 			msg_data.auth_realm = data;
 			content_broadcast(c, CONTENT_MSG_AUTH, msg_data);
-			if (c->cache)
-				cache_destroy(c);
 			break;
 #endif
 		default:
 			assert(0);
 	}
-
-	c->lock--;
 }
 
 

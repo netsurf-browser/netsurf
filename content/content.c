@@ -19,7 +19,9 @@
 #include <string.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
+#include "netsurf/content/fetch.h"
 #include "netsurf/css/css.h"
+#include "netsurf/desktop/options.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/textplain.h"
 #ifdef WITH_JPEG
@@ -179,6 +181,7 @@ static const struct handler_entry handler_map[] = {
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
 
+static void content_destroy(struct content *c);
 static void content_stop_check(struct content *c);
 
 
@@ -239,7 +242,7 @@ struct content * content_create(const char *url)
 	c->width = 0;
 	c->height = 0;
 	c->available_width = 0;
-	c->cache = 0;
+	c->fresh = false;
 	c->size = sizeof(struct content);
 	c->title = 0;
 	c->active = 0;
@@ -252,8 +255,6 @@ struct content * content_create(const char *url)
 	c->source_data = 0;
 	c->source_size = 0;
 	c->total_size = 0;
-	c->lock = 0;
-	c->destroy_pending = false;
 	c->no_error_pages = false;
 	c->error_count = 0;
 
@@ -264,6 +265,29 @@ struct content * content_create(const char *url)
 	content_list = c;
 
 	return c;
+}
+
+
+/**
+ * Get a content from the memory cache.
+ *
+ * \param  url  URL of content
+ * \return  content if found, or 0
+ *
+ * Searches the list of contents for one corresponding to the given url, and
+ * which is fresh.
+ */
+
+struct content * content_get(const char *url)
+{
+	struct content *c;
+
+	for (c = content_list; c; c = c->next) {
+		if (c->fresh && strcmp(c->url, url) == 0)
+			return c;
+	}
+
+	return 0;
 }
 
 
@@ -326,6 +350,7 @@ bool content_set_type(struct content *c, content_type type,
  *
  * \param status_message new textual status
  */
+
 void content_set_status(struct content *c, const char *status_message, ...)
 {
 	va_list ap;
@@ -446,24 +471,56 @@ void content_reformat(struct content *c, int width, int height)
 
 
 /**
+ * Clean unused contents from the content_list.
+ *
  * Destroys any contents in the content_list with no users or in
- * CONTENT_STATUS_ERROR, and not with an active fetch or cached.
+ * CONTENT_STATUS_ERROR. Fresh contents in CONTENT_STATUS_DONE may be kept even
+ * with no users.
+ *
+ * Each content is also checked for stop requests.
  */
 
 void content_clean(void)
 {
-	struct content *c, *next;
+	unsigned int size;
+	struct content *c, *next, *prev;
 
+	/* destroy unused stale contents and contents with errors */
 	for (c = content_list; c; c = next) {
 		next = c->next;
-		if (((!c->user_list->next && !c->cache) ||
-				c->status == CONTENT_STATUS_ERROR) &&
-				!c->fetch) {
-			LOG(("%p %s", c, c->url));
-			if (c->cache)
-				cache_destroy(c);
-			content_destroy(c);
-		}
+
+		if (c->user_list->next && c->status != CONTENT_STATUS_ERROR)
+			/* content has users */
+			continue;
+
+		if (c->fresh && c->status == CONTENT_STATUS_DONE)
+			/* content is fresh */
+			continue;
+
+		/* content can be destroyed */
+		content_destroy(c);
+	}
+
+	/* check for pending stops */
+	for (c = content_list; c; c = c->next) {
+		if (c->status == CONTENT_STATUS_READY)
+			content_stop_check(c);
+	}
+
+	/* attempt to shrike the memory cache (unused fresh contents) */
+	size = 0;
+	next = 0;
+	for (c = content_list; c; c = c->next) {
+		next = c;
+		size += c->size;
+	}
+	for (c = next; c && (unsigned int) option_memory_cache_size < size;
+			c = prev) {
+		prev = c->prev;
+		if (c->user_list->next)
+			continue;
+		size -= c->size;
+		content_destroy(c);
 	}
 }
 
@@ -479,13 +536,9 @@ void content_destroy(struct content *c)
 	struct content_user *user, *next;
 	assert(c);
 	LOG(("content %p %s", c, c->url));
-	assert(!c->fetch);
-	assert(!c->cache);
 
-	if (c->lock) {
-		c->destroy_pending = true;
-		return;
-	}
+	if (c->fetch)
+		fetch_abort(c->fetch);
 
 	if (c->next)
 		c->next->prev = c->prev;
@@ -599,28 +652,6 @@ void content_remove_user(struct content *c,
 	next = user->next;
 	user->next = next->next;
 	free(next);
-
-	/* if there are now no users, stop any loading in progress
-	 * and destroy content structure if not in state READY or DONE */
-	if (c->user_list->next == 0) {
-		LOG(("no users for %p %s", c, c->url));
-		if (c->fetch != 0) {
-			fetch_abort(c->fetch);
-			c->fetch = 0;
-		}
-		if (c->status < CONTENT_STATUS_READY) {
-			if (c->cache)
-				cache_destroy(c);
-			content_destroy(c);
-		} else {
-			if (c->cache)
-				cache_freeable(c);
-			else
-				content_destroy(c);
-		}
-	} else if (c->status == CONTENT_STATUS_READY) {
-		content_stop_check(c);
-	}
 }
 
 
@@ -632,14 +663,11 @@ void content_broadcast(struct content *c, content_msg msg,
 		union content_msg_data data)
 {
 	struct content_user *user, *next;
-	c->lock++;
 	for (user = c->user_list->next; user != 0; user = next) {
 		next = user->next;  /* user may be destroyed during callback */
 		if (user->callback != 0)
 			user->callback(msg, c, user->p1, user->p2, data);
 	}
-	if (--(c->lock) == 0 && c->destroy_pending)
-		content_destroy(c);
 }
 
 
@@ -672,9 +700,8 @@ void content_stop(struct content *c,
 	}
 	user = user->next;
 
+	LOG(("%p %s: stop user %p %p %p", c, c->url, callback, p1, p2));
 	user->stop = true;
-
-	content_stop_check(c);
 }
 
 
@@ -693,6 +720,8 @@ void content_stop_check(struct content *c)
 	for (user = c->user_list->next; user; user = user->next)
 		if (!user->stop)
 			return;
+
+	LOG(("%p %s", c, c->url));
 
 	/* all users have requested stop */
 	assert(handler_map[c->type].stop);
