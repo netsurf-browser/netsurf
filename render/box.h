@@ -127,6 +127,7 @@ struct box {
 	char * text;
 	unsigned int space : 1;	/* 1 <=> followed by a space */
 	unsigned int clone : 1;
+	unsigned int style_clone : 1;
 	char * href;
 	char * title;
 	unsigned int length;

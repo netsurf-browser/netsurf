@@ -144,8 +144,8 @@ struct box * box_create(struct css_style * style,
 	box->style = style;
 	box->width = UNKNOWN_WIDTH;
 	box->max_width = UNKNOWN_MAX_WIDTH;
-	box->href = href;
-	box->title = title;
+	box->href = href ? xstrdup(href) : 0;
+	box->title = title ? xstrdup(title) : 0;
 	box->columns = 1;
 	box->rows = 1;
 #ifndef riscos
@@ -153,6 +153,7 @@ struct box * box_create(struct css_style * style,
 	box->text = 0;
 	box->space = 0;
 	box->clone = 0;
+	box->style_clone = 0;
 	box->length = 0;
 	box->start_column = 0;
 	box->next = 0;
@@ -185,7 +186,7 @@ void xml_to_box(xmlNode *n, struct content *c)
 	LOG(("node %p", n));
 	assert(c->type == CONTENT_HTML);
 
-	c->data.html.layout = xcalloc(1, sizeof(struct box));
+	c->data.html.layout = box_create(0, 0, 0);
 	c->data.html.layout->type = BOX_BLOCK;
 
 	c->data.html.style = xcalloc(1, sizeof(struct css_style));
@@ -256,6 +257,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 	xmlChar * title0;
 	char * title = 0;
 	int convert_children = 1;
+	char *href_in = status.href;
 
 	assert(n != 0 && parent_style != 0 && selector != 0 && parent != 0);
 	LOG(("depth %i, node %p, node type %i", depth, n, n->type));
@@ -269,7 +271,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		(*selector)[depth].element = (const char *) n->name;
 		(*selector)[depth].class = (*selector)[depth].id = 0;
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "class")))
-			(*selector)[depth].class = s;  /* TODO: free this later */
+			(*selector)[depth].class = s;
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "id")))
 			(*selector)[depth].id = s;
 		style = box_get_style(content->data.html.stylesheet_content,
@@ -279,7 +281,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		if (style->display == CSS_DISPLAY_NONE) {
 			free(style);
 			LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
-			return inline_container;
+			goto end;
 		}
 		/* floats are treated as blocks */
 		if (style->float_ == CSS_FLOAT_LEFT || style->float_ == CSS_FLOAT_RIGHT)
@@ -288,7 +290,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 
 		/* extract title attribute, if present */
 		if ((title0 = xmlGetProp(n, (const xmlChar *) "title"))) {
-			title = squash_tolat1(title0);
+			status.title = title = squash_tolat1(title0);
 			xfree(title0);
 		}
 
@@ -304,8 +306,9 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			if (box == 0) {
 				/* no box for this element */
 				assert(convert_children == 0);
+				free(style);
 				LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
-				return inline_container;
+				goto end;
 			}
 		} else {
 			/* general element */
@@ -325,11 +328,12 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			}
 			xfree(text);
 			LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
-			return inline_container;
+			goto end;
 		}
 
 		/* text nodes are converted to inline boxes */
 		box = box_create(parent_style, status.href, title);
+		box->style_clone = 1;
 		box->length = strlen(text);
 		if (text[box->length - 1] == ' ') {
 			box->space = 1;
@@ -341,7 +345,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 	} else {
 		/* not an element or text node: ignore it (eg. comment) */
 		LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
-		return inline_container;
+		goto end;
 	}
 
 	content->size += sizeof(struct box) + sizeof(struct css_style);
@@ -354,7 +358,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		/* this is an inline box */
 		if (inline_container == 0) {
 			/* this is the first inline node: make a container */
-			inline_container = xcalloc(1, sizeof(struct box));
+			inline_container = box_create(0, 0, 0);
 			inline_container->type = BOX_INLINE_CONTAINER;
 			box_add_child(parent, inline_container);
 		}
@@ -369,7 +373,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 					box->prev->space = 1;
 			}
 			LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
-			return inline_container;
+			goto end;
 		} else if (style->float_ == CSS_FLOAT_NONE) {
 			/* inline box: add to tree and recurse */
 			box_add_child(inline_container, box);
@@ -380,7 +384,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 							status);
 			}
 			LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
-			return inline_container;
+			goto end;
 		} else {
 			/* float: insert a float box between the parent and current node */
 			assert(style->float_ == CSS_FLOAT_LEFT || style->float_ == CSS_FLOAT_RIGHT);
@@ -422,6 +426,15 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		if ((box->rows = strtol(s, 0, 10)) == 0)
 			box->rows = 1;
 		xmlFree(s);
+	}
+
+end:
+	free(title);
+	if (!href_in)
+		xmlFree(status.href);
+	if (n->type == XML_ELEMENT_NODE) {
+		free((*selector)[depth].class);
+		free((*selector)[depth].id);
 	}
 
 	LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
@@ -1105,7 +1118,7 @@ void box_normalise_table(struct box *table)
 			table->prev->next = table->next;
 		if (table->next != 0)
 			table->next->prev = table->prev;
-		box_free_box(table);
+		box_free(table);
 	}
 
 	LOG(("table %p done", table));
@@ -1181,7 +1194,7 @@ void box_normalise_table_row_group(struct box *row_group,
 			row_group->prev->next = row_group->next;
 		if (row_group->next != 0)
 			row_group->next->prev = row_group->prev;
-		box_free_box(row_group);
+		box_free(row_group);
 	}
 
 	LOG(("row_group %p done", row_group));
@@ -1278,7 +1291,7 @@ void box_normalise_table_row(struct box *row,
 			row->prev->next = row->next;
 		if (row->next != 0)
 			row->next->prev = row->prev;
-		box_free_box(row);
+		box_free(row);
 	}
 
 	LOG(("row %p done", row));
@@ -1322,7 +1335,7 @@ void box_normalise_inline_container(struct box *cont)
 						child->prev->next = child->next;
 					if (child->next != 0)
 						child->next->prev = child->prev;
-					box_free_box(child);
+					box_free(child);
 				}
 				break;
 			case BOX_BLOCK:
@@ -1408,13 +1421,13 @@ void gadget_free(struct gui_gadget* g)
 
 void box_free(struct box *box)
 {
-	/* free children first */
-	if (box->children != 0)
-		box_free(box->children);
+	struct box *child, *next;
 
-	/* then siblings */
-	if (box->next != 0)
-		box_free(box->next);
+	/* free children first */
+	for (child = box->children; child; child = next) {
+		next = child->next;
+		box_free(child);
+	}
 
 	/* last this box */
 	box_free_box(box);
@@ -1422,27 +1435,19 @@ void box_free(struct box *box)
 
 void box_free_box(struct box *box)
 {
-//	if (box->style != 0)
-//		free(box->style);
-	if (box->gadget != 0)
-	{
-		gadget_free(box->gadget);
-		free(box->gadget);
+	if (!box->clone) {
+		if (box->gadget) {
+			gadget_free(box->gadget);
+			free(box->gadget);
+		}
+		free(box->href);
+		free(box->title);
+		free(box->col);
+		if (!box->style_clone)
+			free(box->style);
 	}
 
 	free(box->text);
-	xmlFree(box->title);
-	free(box->col);
-
-	/* only free href if we're the top most user */
-	/*if (box->href != 0)
-	{
-		if (box->parent == 0)
-			xmlFree(box->href);
-		else if (box->parent->href != box->href)
-			xmlFree(box->href);
-	}*/
-
 	/* TODO: free object_params */
 }
 
