@@ -211,7 +211,7 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
                   otherwise we'll be stuck in this loop forever
          */
         while(temp->poll == 0)
-                gui_poll();
+                gui_poll(true);
 
         if(temp->plugin != 0 && temp->reply != 0) {
 
@@ -256,7 +256,7 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
                          otherwise we'll be stuck in this loop forever
                 */
                while(temp->poll == 0)
-                       gui_poll();
+                       gui_poll(true);
 
                if(temp->plugin != 0 && temp->reply != 0) {
 
@@ -370,7 +370,7 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
                   otherwise we'll be stuck in this loop forever
          */
 	while (temp == 0)
-	        gui_poll();
+	        gui_poll(true);
 
         if (temp->reply != 0){
 
@@ -789,7 +789,7 @@ void plugin_create_stream(struct browser_window *bw, struct object_params *param
                   otherwise we'll be stuck in this loop forever
          */
         while(temp->poll == 0)
-                gui_poll();
+                gui_poll(true);
 
         pmsn = (plugin_message_stream_new*)&temp->reply->m->data;
         params->browser_stream = params->browser;
@@ -851,7 +851,7 @@ void plugin_write_stream(struct browser_window *bw, struct object_params *params
                           otherwise we'll be stuck in this loop forever
                  */
                 while(temp->poll == 0)
-                        gui_poll();
+                        gui_poll(true);
 
                 pmswt = (plugin_message_stream_written*)&temp->reply->m->data;
                 if(pmswt->length > 0) {

@@ -8,9 +8,9 @@
 #ifndef _NETSURF_DESKTOP_NETSURF_H_
 #define _NETSURF_DESKTOP_NETSURF_H_
 
-extern int netsurf_quit;
+#include <stdbool.h>
 
-void netsurf_poll(void);
+extern bool netsurf_quit;
 
 #endif
 

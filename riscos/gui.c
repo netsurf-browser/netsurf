@@ -112,6 +112,7 @@ wimp_t task_handle;
 wimp_i ro_gui_iconbar_i;
 
 gui_window* over_window = NULL;
+bool gui_reformat_pending = false;
 
 int ro_x_units(unsigned long browser_units)
 {
@@ -470,6 +471,7 @@ void ro_gui_window_open(gui_window* g, wimp_open* open)
 			  g->data.browser.bw->current_content->height);
 	g->data.browser.old_width = width;
 	g->data.browser.reformat_pending = true;
+        gui_reformat_pending = true;
       }
     }
     wimp_open_window(open);
@@ -990,7 +992,7 @@ void gui_multitask(void)
                break;
 
         case message_QUIT              :
-               netsurf_quit = 1;
+               netsurf_quit = true;
                break;
 
 	default:
@@ -1072,7 +1074,7 @@ void ro_gui_keypress(wimp_key* key)
   return;
 }
 
-void gui_poll(void)
+void gui_poll(bool active)
 {
   wimp_event_no event;
   wimp_block block;
@@ -1083,7 +1085,15 @@ void gui_poll(void)
   {
     if (ro_gui_poll_queued_blocks == NULL)
     {
-      event = wimp_poll(wimp_MASK_LOSE | wimp_MASK_GAIN, &block, 0);
+      const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN;
+      if (active) {
+        event = wimp_poll(mask, &block, 0);
+      } else if (over_window || gui_reformat_pending) {
+        os_t t = os_read_monotonic_time();
+        event = wimp_poll_idle(mask, &block, t + 10, 0);
+      } else {
+        event = wimp_poll(wimp_MASK_NULL | mask, &block, 0);
+      }
       finished = 1;
     }
     else
@@ -1108,12 +1118,15 @@ void gui_poll(void)
           wimp_get_pointer_info(&pointer);
           ro_gui_window_mouse_at(&pointer);
         }
-	for (g = window_list; g; g = g->next) {
-		if (g->type == GUI_BROWSER_WINDOW && g->data.browser.reformat_pending) {
-			content_reformat(g->data.browser.bw->current_content,
-					browser_x_units(g->data.browser.old_width), 1000);
-			g->data.browser.reformat_pending = false;
+        if (gui_reformat_pending) {
+		for (g = window_list; g; g = g->next) {
+			if (g->type == GUI_BROWSER_WINDOW && g->data.browser.reformat_pending) {
+				content_reformat(g->data.browser.bw->current_content,
+						browser_x_units(g->data.browser.old_width), 1000);
+				g->data.browser.reformat_pending = false;
+			}
 		}
+		gui_reformat_pending = false;
 	}
         break;
 
@@ -1156,15 +1169,11 @@ void gui_poll(void)
         break;
 
       case wimp_POINTER_LEAVING_WINDOW  :
-        g = ro_lookup_gui_from_w(block.leaving.w);
-        if (g == over_window)
-          over_window = NULL;
+        over_window = NULL;
         break;
 
       case wimp_POINTER_ENTERING_WINDOW :
-        g = ro_lookup_gui_from_w(block.entering.w);
-        if (g != NULL)
-          over_window = g;
+        over_window = ro_lookup_gui_from_w(block.entering.w);
         break;
 
       case wimp_MOUSE_CLICK             :
@@ -1261,7 +1270,7 @@ void gui_poll(void)
                break;
 
         case message_QUIT              :
-               netsurf_quit = 1;
+               netsurf_quit = true;
                break;
       }
       break;

@@ -20,6 +20,8 @@ struct content;
 struct fetch;
 struct form_successful_control;
 
+extern bool fetch_active;
+
 void fetch_init(void);
 struct fetch * fetch_start(char *url, char *referer,
                  void (*callback)(fetch_msg msg, void *p, char *data, unsigned long size),

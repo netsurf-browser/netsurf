@@ -6,6 +6,8 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
+#include <stdbool.h>
+#include <stdlib.h>
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/browser.h"
@@ -13,20 +15,34 @@
 #include "netsurf/content/cache.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/utils/log.h"
-#include <stdlib.h>
 
-int netsurf_quit = 0;
+bool netsurf_quit = false;
 
 static void netsurf_init(int argc, char** argv);
+static void netsurf_poll(void);
 static void netsurf_exit(void);
 
 
-void netsurf_poll(void)
+/**
+ * Gui NetSurf main().
+ */
+
+int main(int argc, char** argv)
 {
-  gui_poll();
-  fetch_poll();
+  netsurf_init(argc, argv);
+
+  while (!netsurf_quit)
+    netsurf_poll();
+
+  netsurf_exit();
+
+  return EXIT_SUCCESS;
 }
 
+
+/**
+ * Initialise components used by gui NetSurf.
+ */
 
 void netsurf_init(int argc, char** argv)
 {
@@ -41,24 +57,23 @@ void netsurf_init(int argc, char** argv)
 }
 
 
+/**
+ * Poll components which require it.
+ */
+
+void netsurf_poll(void)
+{
+  gui_poll(fetch_active);
+  fetch_poll();
+}
+
+
+/**
+ * Clean up components used by gui NetSurf.
+ */
+
 void netsurf_exit(void)
 {
   cache_quit();
   fetch_quit();
 }
-
-
-int main(int argc, char** argv)
-{
-  netsurf_init(argc, argv);
-
-  while (netsurf_quit == 0)
-    netsurf_poll();
-
-  LOG(("Netsurf quit!"));
-  netsurf_exit();
-
-  return 0;
-}
-
-

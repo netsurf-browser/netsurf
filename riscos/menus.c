@@ -173,7 +173,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 			        ro_gui_open_help_page();
 			        break;
 			case 3: /* Quit */
-				netsurf_quit = 1;
+				netsurf_quit = true;
 				break;
 		}
 

@@ -15,6 +15,7 @@ typedef enum { SAFE, UNSAFE } gui_safety;
 struct gui_window;
 typedef struct gui_window gui_window;
 
+#include <stdbool.h>
 #include "netsurf/desktop/browser.h"
 
 struct gui_message
@@ -51,7 +52,7 @@ void gui_download_window_error(gui_window *g, const char *error);
 
 void gui_init(int argc, char** argv);
 void gui_multitask(void);
-void gui_poll(void);
+void gui_poll(bool active);
 
 gui_safety gui_window_set_redraw_safety(gui_window* g, gui_safety s);
 

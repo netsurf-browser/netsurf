@@ -35,6 +35,8 @@
 #include "netsurf/utils/utils.h"
 
 
+bool fetch_active;	/**< Fetches in progress, please call fetch_poll(). */
+
 /** Information for a single fetch. */
 struct fetch {
 	CURL * curl_handle;	/**< cURL handle if being fetched, or 0. */
@@ -209,6 +211,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	if (fetch_list != 0)
 		fetch_list->prev = fetch;
 	fetch_list = fetch;
+	fetch_active = true;
 
 	/* create the curl easy handle */
 	fetch->curl_handle = curl_easy_init();
@@ -468,6 +471,9 @@ void fetch_poll(void)
 		}
 		curl_msg = curl_multi_info_read(curl_multi, &queue);
 	}
+
+	if (!fetch_list)
+		fetch_active = false;
 }
 
 
