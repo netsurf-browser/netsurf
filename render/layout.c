@@ -712,10 +712,17 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 					row_span[i]--;
 				else
 					row_span_cell[i] = 0;
-			/* row height is greatest excess of a cell which ends in this row */
-			for (i = 0; i != columns; i++)
-				if (row_span[i] == 0 && row_height < excess_y[i])
-					row_height = excess_y[i];
+			if (row->next || row_group->next) {
+				/* row height is greatest excess of a cell which ends in this row */
+				for (i = 0; i != columns; i++)
+					if (row_span[i] == 0 && row_height < excess_y[i])
+						row_height = excess_y[i];
+			} else {
+				/* except in the last row */
+				for (i = 0; i != columns; i++)
+					if (row_height < excess_y[i])
+						row_height = excess_y[i];
+			}
 			for (i = 0; i != columns; i++) {
 				if (row_height < excess_y[i])
 					excess_y[i] -= row_height;
