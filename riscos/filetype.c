@@ -15,9 +15,10 @@
 /* type_map must be in sorted order by file_type */
 struct type_entry {
 	bits file_type;
-	char mime_type[16];
+	char mime_type[40];
 };
 static const struct type_entry type_map[] = {
+        {0x188, "application/x-shockwave-flash"},
 	{0x695, "image/gif"},
 	{0xb60, "image/png"},
 	{0xc85, "image/jpeg"},

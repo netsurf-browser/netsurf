@@ -5,6 +5,20 @@
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
+/*
+ * TODO:
+ *       - Reshaping plugin (ie. call plugin_reshape_instance from somewhere)
+ *                 [Plugin_Reshape (&4d544), Plugin_Reshape_Request (&4d545)]
+ *       - Finish off stream protocol implementation
+ *             [Plugin_Stream_Write (&4d54a), Plugin_Stream_Written (&4d54b)]
+ *       - Parse and act upon the rest of the Plugin_Opening flags
+ *       - Handle death of Plugin Task
+ *       - Implement remaining messages [Plugin_URL_Access, Plugin_Focus,
+ *              Plugin_Notify, Plugin_Busy, Plugin_Action, Plugin_Abort,
+ *              Plugin_Inform(ed)?]
+ *       - Handle standalone objects
+ */
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
@@ -13,18 +27,81 @@
 #include <string.h>
 
 #include "netsurf/content/content.h"
+#include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/box.h"
+#include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/plugin.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
 #include "oslib/mimemap.h"
+#include "oslib/os.h"
 #include "oslib/osfile.h"
 #include "oslib/osfind.h"
 #include "oslib/osgbpb.h"
+#include "oslib/plugin.h"
+#include "oslib/wimp.h"
 
+#define NDEBUG
+
+/* parameters file creation */
 void plugin_write_parameters_file(struct object_params *params);
+byte const *plugin_populate_pdata(int rsize);
+
+/* stream handling */
+void plugin_create_stream(struct browser_window *bw,
+                          struct object_params *params, struct content *c);
+void plugin_write_stream_as_file(struct browser_window *bw,
+                                 struct object_params *params,
+                                 struct content *c);
+void plugin_destroy_stream(struct browser_window *bw,
+                           struct object_params *params, struct content *c);
+
+/* linked list handling */
+struct plugin_message *plugin_add_message_to_linked_list(plugin_b browser,
+                                                         plugin_p plugin,
+                                                         wimp_message *m,
+                                               struct plugin_message *reply);
+void plugin_remove_message_from_linked_list(struct plugin_message* m);
+struct plugin_message *plugin_get_message_from_linked_list(int ref);
+void plugin_add_instance_to_list(struct content *c,
+                                 struct browser_window *bw,
+                                 struct content *page, struct box *box,
+                                 struct object_params *params, void **state);
+void plugin_remove_instance_from_list(struct object_params *params);
+struct plugin_list *plugin_get_instance_from_list(plugin_b browser,
+                                                  plugin_p plugin);
+
+/* message handling */
+void plugin_open(wimp_message *message);
+void plugin_opening(wimp_message *message);
+void plugin_close(wimp_message *message);
+void plugin_closed(wimp_message *message);
+void plugin_reshape_request(wimp_message *message);
+void plugin_stream_new(wimp_message *message);
+void plugin_status(wimp_message *message);
+char *plugin_get_string_value(os_string_value string, char *msg);
+
+/* others */
+void plugin_create_sysvar(const char *mime_type, char *sysvar);
+int plugin_process_opening(struct object_params *params,
+                           struct plugin_message *message);
+
+/*-------------------------------------------------------------------------*/
+/* Linked List pointers                                                    */
+/*-------------------------------------------------------------------------*/
+
+static struct plugin_message pm = {0, 0, 0, 0, 0, &pm, &pm};
+static struct plugin_message *pmlist = &pm;
+
+static struct plugin_list pl = {0, 0, 0, 0, 0, 0, &pl, &pl};
+static struct plugin_list *plist = &pl;
+
+/*-------------------------------------------------------------------------*/
+/* Externally visible functions                                            */
+/*-------------------------------------------------------------------------*/
 
 /**
  * plugin_create
@@ -37,7 +114,6 @@ void plugin_create(struct content *c)
 	/* we can't create the plugin here, because this is only called
 	 * once, even if the object appears several times */
 }
-
 
 /**
  * plugin_add_instance
@@ -55,27 +131,197 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
                 struct object_params *params, void **state)
 {
         char sysvar[40];
+        char *varval;
+        int size;
+        os_var_type var;
+        os_error *e;
+        wimp_message *m = xcalloc(256, sizeof(char));
+        plugin_message_open *pmo;
+        os_box b;
+        struct plugin_message *npm = xcalloc(1, sizeof(*npm));
+        struct plugin_message *temp;
+        struct plugin_list *npl = xcalloc(1, sizeof(*npl));
+        int offset;
+        unsigned char *pchar = (unsigned char*)&m->data;
+        int flags = 0;
 
-	assert(params != 0);
+	if (params == 0) {
+        	fprintf(stderr,
+        	        "Cannot handle standalone objects at this time");
+        	gui_window_set_status(bw->window,
+        	"Plugin Error: Cannot handle standalone objects at this time");
+        	xfree(m);
+        	xfree(npm);
+        	xfree(npl);
+        	return;
+        }
 
         /* write parameters file */
         plugin_write_parameters_file(params);
 
-        plugin_create_sysvar(c->mime_type, &sysvar);
+        /* Get contents of Alias$@PlugInType_xxx system variable. */
+        plugin_create_sysvar(c->mime_type, sysvar);
+        xos_read_var_val_size(sysvar, 0, 0, &size, NULL, &var);
+        if(var != 3)
+                size = ~(size);
+        varval = xcalloc((unsigned int)size, sizeof(char));
+        xos_read_var_val(sysvar, varval, size, 0, var, NULL, NULL, NULL);
 
+        LOG(("%s: %s", sysvar, varval));
 
   /* Broadcast Message_PlugIn_Open (&4D540) and listen for response
    * Message_PlugIn_Opening (&4D541). If no response, try to launch
    * plugin by Wimp_StartTask(sysvar). Then re-broadcast Message_PlugIn_Open
-   * and listen for response. If there is still no response, give up and set
-   * can_handle to FALSE.
+   * and listen for response. If there is still no response, give up.
    * NB: For the bounding box in Message_PlugIn_Open, we choose arbitrary
    *     values outside the area displayed. This is corrected when
    *     plugin_redraw is called.
    */
+        /* Initialise bounding box */
+        b.x0 = 100;
+        b.x1 = 1000;
+        b.y0 = 100;
+        b.y1 = 1000;
+
+        /* populate plugin_message_open struct */
+        pmo = (plugin_message_open*)&m->data;
+        pmo->flags = 0;
+        pmo->reserved = 0;
+        pmo->browser = (plugin_b)params->browser;
+        pmo->parent_window = bw->window->data.browser.window;
+        pmo->bbox = b;
+        xmimemaptranslate_mime_type_to_filetype(c->mime_type, &pmo->file_type);
+
+        offset = 56;
+        pmo->filename.offset = offset;
+        strncpy((char*)&pchar[offset], params->filename, 236-offset);
+        offset = offset + strlen(params->filename) + 1;
+        if (offset > 235) {
+          LOG(("filename too long"));
+          xfree(m);
+          xfree(npm);
+       	  xfree(npl);
+       	  xfree(varval);
+          return;
+        }
+
+        m->size = ((20 + offset + 3) / 4) * 4;
+        m->your_ref = 0;
+        m->action = message_PLUG_IN_OPEN;
+
+        /* add message to list */
+        temp = plugin_add_message_to_linked_list((plugin_b)params->browser, (plugin_p)0, m, (struct plugin_message*)0);
+
+        LOG(("Sending Message: &4D540"));
+        LOG(("Message Size: %d", m->size));
+        e = xwimp_send_message(wimp_USER_MESSAGE_RECORDED, m, wimp_BROADCAST);
+
+        if(e) LOG(("Error: %s", e->errmess));
+
+        /* wait for wimp poll */
+        while(temp->poll == 0)
+                gui_poll();
+
+        if(temp->plugin != 0 && temp->reply != 0) {
+
+                /* ok, we got a reply */
+                LOG(("Reply to message %p: %p", temp, temp->reply));
+                flags = plugin_process_opening(params, temp);
+                plugin_remove_message_from_linked_list(temp->reply);
+                plugin_remove_message_from_linked_list(temp);
+                xfree(varval);
+                xfree(m);
+                xfree(npm);
+        	xfree(npl);
+        } else {
+
+               /* no reply so issue Wimp_StartTask(varval) */
+               LOG(("No reply to message %p", temp));
+               plugin_remove_message_from_linked_list(temp);
+
+               LOG(("Starting task: %s", varval));
+               e = xwimp_start_task((char const*)varval, NULL);
+
+               if(e) LOG(("Error: %s", e->errmess));
+
+               /* hmm, deja-vu */
+               temp = plugin_add_message_to_linked_list((plugin_b)params->browser, (plugin_p)0, m, (struct plugin_message*)0);
+               xwimp_send_message(wimp_USER_MESSAGE_RECORDED, m,
+                                  wimp_BROADCAST);
+
+               while(temp->poll == 0)
+                       gui_poll();
+
+               if(temp->plugin != 0 && temp->reply != 0) {
+
+                       /* ok, we got a reply */
+                       LOG(("Reply to message %p: %p", temp, temp->reply));
+                       flags = plugin_process_opening(params, temp);
+                       plugin_remove_message_from_linked_list(temp->reply);
+                       plugin_remove_message_from_linked_list(temp);
+                       xfree(m);
+                       xfree(varval);
+                       xfree(npm);
+                       xfree(npl);
+               } else {
+
+                       /* no reply so give up */
+                       LOG(("No reply to message %p", temp));
+                       plugin_remove_message_from_linked_list(temp);
+                       xfree(m);
+                       xfree(varval);
+                       xfree(npm);
+                       xfree(npl);
+                       return;
+               }
+        }
+
+        /* At this point, it's certain that we can handle this object so
+         * add it to the list of plugin instances.
+         */
+        plugin_add_instance_to_list(c, bw, page, box, params, state);
+
+        /* TODO - handle other flags (see below) */
+        if(flags & 0x4)
+               plugin_create_stream(bw, params, c);
+
+        plugin_destroy_stream(bw, params, c);
 
 }
 
+/**
+ * plugin_process_opening
+ * process plugin_opening message flags
+ * NB: this is NOT externally visible.
+ *     it's just here because it's referred to in the TODO above
+ */
+int plugin_process_opening(struct object_params *params,
+                            struct plugin_message *message) {
+
+        plugin_message_opening *pmo;
+
+        params->plugin = (int)message->reply->plugin;
+        params->plugin_task = (unsigned int)message->reply->m->sender;
+
+        pmo = (plugin_message_opening*)&message->reply->m->data;
+/*        LOG(("pmo->flags = %x", pmo->flags));
+        if(pmo->flags & 0x1)
+                LOG(("accepts input focus"));
+        if(pmo->flags & 0x2)
+                LOG(("wants code fetching"));
+        if(pmo->flags & 0x4)
+                LOG(("wants data fetching"));
+        if(pmo->flags & 0x8)
+                LOG(("will delete parameters"));
+        if(pmo->flags & 0x10)
+                LOG(("still busy"));
+        if(pmo->flags & 0x20)
+                LOG(("supports extended actions"));
+        if(pmo->flags & 0x40)
+                LOG(("has helper window"));
+*/
+        return (int)pmo->flags;
+}
 
 /**
  * plugin_remove_instance
@@ -89,10 +335,53 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
                    struct content *page, struct box *box,
                    struct object_params *params, void **state)
 {
-	assert(params != 0);
+        wimp_message *m = xcalloc(256, sizeof(char));
+        plugin_message_close *pmc;
+        struct plugin_message *temp;
+        char *p, *filename = strdup(params->filename);
+
+	if (params == 0) {
+
+	        xfree(m);
+	        return;
+	}
+
+	pmc = (plugin_message_close*)&m->data;
+	pmc->flags = 0;
+	pmc->plugin = (plugin_p)params->plugin;
+	pmc->browser = (plugin_b)params->browser;
+	m->size = 32;
+	m->your_ref = 0;
+	m->action = message_PLUG_IN_CLOSE;
+
+        temp = plugin_add_message_to_linked_list(pmc->browser, pmc->plugin, m, 0);
+
+	xwimp_send_message(wimp_USER_MESSAGE_RECORDED, m,
+	                   (wimp_t)params->plugin_task);
+
+	xfree(m);
+
+	while (temp == 0)
+	        gui_poll();
+
+        if (temp->reply != 0){
+
+                plugin_remove_message_from_linked_list(temp->reply);
+                plugin_remove_message_from_linked_list(temp);
+        }
+        else {
+                LOG(("message_PLUG_IN_CLOSE bounced"));
+                plugin_remove_message_from_linked_list(temp);
+        }
 
         /* delete parameters file */
 	xosfile_delete((char const*)params->filename, NULL, NULL, NULL, NULL, NULL);
+	p = strrchr((const char*)filename, 'p');
+	filename[(p-filename)] = 'd';
+	xosfile_delete((char const*)filename, NULL, NULL, NULL, NULL, NULL);
+
+	/* delete instance from list */
+	plugin_remove_instance_from_list(params);
 }
 
 /**
@@ -110,6 +399,31 @@ void plugin_reshape_instance(struct content *c, struct browser_window *bw,
    * Therefore, broadcast a Message_PlugIn_Reshape (&4D544) with the values
    * given to us.
    */
+        wimp_message *m = xcalloc(256, sizeof(char));
+        plugin_message_reshape *pmr;
+        os_box bbox;
+
+        bbox.x0 = box->x;
+        bbox.y0 = box->y;
+        bbox.x1 = (box->x + box->width);
+        bbox.y1 = (box->y + box->height);
+
+        pmr = (plugin_message_reshape*)&m->data;
+        pmr->flags = 0;
+        pmr->plugin = (plugin_p) params->plugin;
+        pmr->browser = (plugin_b) params->browser;
+        pmr->parent_window = (wimp_w) bw->window->data.browser.window;
+        pmr->bbox = bbox;
+
+        m->size = 36;
+        m->your_ref = 0;
+        m->action = message_PLUG_IN_RESHAPE;
+
+        xwimp_send_message(wimp_USER_MESSAGE, m, (wimp_t)params->plugin_task);
+
+        xfree(m);
+
+        LOG(("plugin_reshape_instance"));
 }
 
 
@@ -118,6 +432,8 @@ static const char * const ALIAS_PREFIX = "Alias$@PlugInType_";
 /**
  * plugin_create_sysvar
  * creates system variable from mime type
+ * NB: this is NOT externally visible
+ *     it just makes sense to keep it with the ALIAS_PREFIX definition above.
  */
 void plugin_create_sysvar(const char *mime_type, char* sysvar)
 {
@@ -155,9 +471,6 @@ bool plugin_handleable(const char *mime_type)
 /**
  * plugin_process_data
  * processes data retrieved by the fetch process
- *
- * TODO: plugin stream protocol
- *
  */
 void plugin_process_data(struct content *c, char *data, unsigned long size)
 {
@@ -201,23 +514,25 @@ void plugin_reformat(struct content *c, unsigned int width, unsigned int height)
 
 /**
  * plugin_destroy
- * we've finished with this data, destroy it. Also, shutdown plugin.
  */
 void plugin_destroy(struct content *c)
 {
+        /* simply free buffered data */
+        xfree(c->data.plugin.data);
 }
 
 /**
  * plugin_redraw
  * redraw plugin on page.
- *
- * TODO: Message_PlugIn_Reshape
  */
 void plugin_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height)
 {
 }
 
+/*-------------------------------------------------------------------------*/
+/* Parameters file handling functions                                      */
+/*-------------------------------------------------------------------------*/
 
 /**
  * plugin_write_parameters_file
@@ -228,20 +543,22 @@ void plugin_write_parameters_file(struct object_params *params)
 {
         struct plugin_params* temp;
         int *time;
-        byte pdata[4] = {0, 0, 0, 0};
         os_fw pfile;
-        int i, j, rsize;
+        int j, rsize = 0;
         char *tstr;
 
         /* Create the file */
         xosfile_create_dir("<Wimp$ScrapDir>.WWW", 77);
         xosfile_create_dir("<Wimp$ScrapDir>.WWW.NetSurf", 77);
         /* path + filename + terminating NUL */
-        params->filename = xcalloc(23+10+1 , sizeof(char));
+        params->filename = xcalloc(strlen(getenv("Wimp$ScrapDir"))+13+10+1,
+                                   sizeof(char));
         xos_read_monotonic_time((int*)&time);
         tstr = xcalloc(40, sizeof(char));
         sprintf(tstr, "%01u", (unsigned int)time<<8);
-        sprintf(params->filename, "<Wimp$ScrapDir>.WWW.NetSurf.p%1.9s", tstr);
+        sprintf(params->filename, "%s.WWW.NetSurf.p%1.9s",
+                                  getenv("Wimp$ScrapDir"), tstr);
+        params->browser = (unsigned int)time<<8;
         xfree(tstr);
         LOG(("filename: %s", params->filename));
 
@@ -253,8 +570,7 @@ void plugin_write_parameters_file(struct object_params *params)
         if(params->classid != 0 && params->codetype != 0) {
 
           /* Record Type */
-          pdata[0] = 1;
-          xosgbpb_writew(pfile, pdata, 4, NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(1)), 4, NULL);
 
           /* Record size */
           rsize = 0;
@@ -266,70 +582,50 @@ void plugin_write_parameters_file(struct object_params *params)
           if((strlen(params->codetype)%4) != 0)
                   rsize += (4-(strlen(params->codetype)%4));
 
-          pdata[0] = rsize & 0xff;
-          pdata[1] = (rsize >> 0x08) & 0xff;
-          pdata[2] = (rsize >> 0x10) & 0xff;
-          pdata[3] = (rsize >> 0x18) & 0xff;
-          xosgbpb_writew(pfile, pdata, 4, NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
           /* name */
           /* size */
           rsize = strlen("CLASSID");
-          pdata[0] = rsize & 0xff;
-          pdata[1] = (rsize >> 0x08) & 0xff;
-          pdata[2] = (rsize >> 0x10) & 0xff;
-          pdata[3] = (rsize >> 0x18) & 0xff;
-          xosgbpb_writew(pfile, pdata, 4, NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
           /* name */
           xosgbpb_writew(pfile, (byte const*)"CLASSID", rsize, NULL);
 
           /* pad to word boundary */
-          for(i=0; i!=4; i++)
-                  pdata[i] = 0;
-          xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+          		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
           /* value */
           /* size */
           rsize = strlen(params->classid);
-          pdata[0] = rsize & 0xff;
-          pdata[1] = (rsize >> 0x08) & 0xff;
-          pdata[2] = (rsize >> 0x10) & 0xff;
-          pdata[3] = (rsize >> 0x18) & 0xff;
-          xosgbpb_writew(pfile, pdata, 4, NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
           /* name */
           xosgbpb_writew(pfile, (byte const*)params->classid, rsize, NULL);
 
           /* pad to word boundary */
-          for(i=0; i!=4; i++)
-                  pdata[i] = 0;
-          xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+          		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
           /* type */
           /* size */
           rsize = strlen(params->codetype);
-          pdata[0] = rsize & 0xff;
-          pdata[1] = (rsize >> 0x08) & 0xff;
-          pdata[2] = (rsize >> 0x10) & 0xff;
-          pdata[3] = (rsize >> 0x18) & 0xff;
-          xosgbpb_writew(pfile, pdata, 4, NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
           /* name */
           xosgbpb_writew(pfile, (byte const*)params->codetype, rsize, NULL);
 
           /* pad to word boundary */
-          for(i=0; i!=4; i++)
-                  pdata[i] = 0;
-          xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+          		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
         }
         /* otherwise, we check the data attribute */
         else if(params->data !=0 && params->type != 0) {
 
           /* Record Type */
-          pdata[0] = 1;
-          xosgbpb_writew(pfile, pdata, 4, NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(1)), 4, NULL);
 
           /* Record size */
           rsize = 0;
@@ -340,116 +636,87 @@ void plugin_write_parameters_file(struct object_params *params)
           rsize += (4 + strlen(params->type));
           if((strlen(params->type)%4) != 0)
                   rsize += (4-(strlen(params->type)%4));
-          pdata[0] = rsize & 0xff;
-          pdata[1] = (rsize >> 0x08) & 0xff;
-          pdata[2] = (rsize >> 0x10) & 0xff;
-          pdata[3] = (rsize >> 0x18) & 0xff;
-          xosgbpb_writew(pfile, pdata, 4, NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
           /* name */
           /* size */
           rsize = strlen("DATA");
-          pdata[0] = rsize & 0xff;
-          pdata[1] = (rsize >> 0x08) & 0xff;
-          pdata[2] = (rsize >> 0x10) & 0xff;
-          pdata[3] = (rsize >> 0x18) & 0xff;
-          xosgbpb_writew(pfile, pdata, 4, NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
           /* name */
           xosgbpb_writew(pfile, (byte const*)"DATA", rsize, NULL);
 
           /* pad to word boundary */
-          for(i=0; i!=4; i++)
-                  pdata[i] = 0;
-          xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+          		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
           /* value */
           /* size */
           rsize = strlen(params->data);
-          pdata[0] = rsize & 0xff;
-          pdata[1] = (rsize >> 0x08) & 0xff;
-          pdata[2] = (rsize >> 0x10) & 0xff;
-          pdata[3] = (rsize >> 0x18) & 0xff;
-          xosgbpb_writew(pfile, pdata, 4, NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
           /* name */
           xosgbpb_writew(pfile, (byte const*)params->data, rsize, NULL);
 
           /* pad to word boundary */
-          for(i=0; i!=4; i++)
-                  pdata[i] = 0;
-          xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+          		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
           /* type */
           /* size */
           rsize = strlen(params->type);
-          pdata[0] = rsize & 0xff;
-          pdata[1] = (rsize >> 0x08) & 0xff;
-          pdata[2] = (rsize >> 0x10) & 0xff;
-          pdata[3] = (rsize >> 0x18) & 0xff;
-          xosgbpb_writew(pfile, pdata, 4, NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
           /* name */
           xosgbpb_writew(pfile, (byte const*)params->type, rsize, NULL);
 
           /* pad to word boundary */
-          for(i=0; i!=4; i++)
-                  pdata[i] = 0;
-          xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+          xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+          		 (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
         }
 
         /* if codebase is specified, write it as well */
         if(params->codebase != 0) {
 
                 /* Record Type */
-                pdata[0] = 1;
-                xosgbpb_writew(pfile, pdata, 4, NULL);
+                xosgbpb_writew(pfile, (plugin_populate_pdata(1)), 4, NULL);
 
                 /* Record size */
                 rsize = 0;
-                rsize += (4 + 8 + 1);
+                rsize += (4 + 8);
                 rsize += (4 + strlen(params->codebase));
                 if((strlen(params->codebase)%4) != 0)
                         rsize += (4-(strlen(params->codebase)%4));
-                pdata[0] = rsize & 0xff;
-                pdata[1] = (rsize >> 0x08) & 0xff;
-                pdata[2] = (rsize >> 0x10) & 0xff;
-                pdata[3] = (rsize >> 0x18) & 0xff;
-                xosgbpb_writew(pfile, pdata, 4, NULL);
+                rsize += 4;
+                xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                 /* name */
                 /* size */
                 rsize = strlen("CODEBASE");
-                pdata[0] = rsize & 0xff;
-                pdata[1] = (rsize >> 0x08) & 0xff;
-                pdata[2] = (rsize >> 0x10) & 0xff;
-                pdata[3] = (rsize >> 0x18) & 0xff;
-                xosgbpb_writew(pfile, pdata, 4, NULL);
+                xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                 /* name */
                 xosgbpb_writew(pfile, (byte const*)"CODEBASE", rsize, NULL);
 
                 /* pad to word boundary */
-                for(i=0; i!=4; i++)
-                        pdata[i] = 0;
-                xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+                	       (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                 /* value */
                 /* size */
                 rsize = strlen(params->codebase);
-                pdata[0] = rsize & 0xff;
-                pdata[1] = (rsize >> 0x08) & 0xff;
-                pdata[2] = (rsize >> 0x10) & 0xff;
-                pdata[3] = (rsize >> 0x18) & 0xff;
-                xosgbpb_writew(pfile, pdata, 4, NULL);
+                xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                 /* name */
                 xosgbpb_writew(pfile, (byte const*)params->codebase, rsize, NULL);
 
                 /* pad to word boundary */
-                for(i=0; i!=4; i++)
-                        pdata[i] = 0;
-                xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                xosgbpb_writew(pfile, (plugin_populate_pdata(0)),
+                	       (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+
+                /* type */
+                /* size */
+                xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
 
         }
 
@@ -466,12 +733,12 @@ void plugin_write_parameters_file(struct object_params *params)
 
                 /* Record Type */
                 if(strcasecmp(params->params->valuetype, "data") == 0)
-                        pdata[0] = 1;
+                        rsize = 1;
                 if(strcasecmp(params->params->valuetype, "ref") == 0)
-                        pdata[0] = 2;
+                        rsize = 2;
                 if(strcasecmp(params->params->valuetype, "object") == 0)
-                        pdata[0] = 3;
-                xosgbpb_writew(pfile, pdata, 4, NULL);
+                        rsize = 3;
+                xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                 /* Record Size */
                 rsize = 0;
@@ -492,32 +759,23 @@ void plugin_write_parameters_file(struct object_params *params)
                         rsize += strlen(params->params->type);
                         if((strlen(params->params->type) % 4) != 0)
                                 rsize += (4 - (strlen(params->params->type) % 4));
+                } else {
+                        rsize += 4;
                 }
-                pdata[0] = rsize & 0xff;
-                pdata[1] = (rsize >> 0x08) & 0xff;
-                pdata[2] = (rsize >> 0x10) & 0xff;
-                pdata[3] = (rsize >> 0x18) & 0xff;
-                xosgbpb_writew(pfile, pdata, 4, NULL);
+                xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                 /* Record Name */
                 if(params->params->name != 0) {
 
                         /* Size */
                         rsize = strlen(params->params->name);
-                        pdata[0] = rsize & 0xff;
-                        pdata[1] = (rsize >> 0x08) & 0xff;
-                        pdata[2] = (rsize >> 0x10) & 0xff;
-                        pdata[3] = (rsize >> 0x18) & 0xff;
-                        xosgbpb_writew(pfile, pdata, 4, NULL);
+                        xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                         /* Name */
                         xosgbpb_writew(pfile, (byte const*)params->params->name, rsize, NULL);
 
                         /* Pad to word boundary */
-                        for(i=0; i!=4; i++)
-                                pdata[i] = 0;
-
-                        xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                        xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
                 }
 
                 /* Record Value */
@@ -525,20 +783,13 @@ void plugin_write_parameters_file(struct object_params *params)
 
                         /* Size */
                         rsize = strlen(params->params->value);
-                        pdata[0] = rsize & 0xff;
-                        pdata[1] = (rsize >> 0x08) & 0xff;
-                        pdata[2] = (rsize >> 0x10) & 0xff;
-                        pdata[3] = (rsize >> 0x18) & 0xff;
-                        xosgbpb_writew(pfile, pdata, 4, NULL);
+                        xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                         /* Name */
                         xosgbpb_writew(pfile, (byte const*)params->params->value, rsize, NULL);
 
                         /* Pad to word boundary */
-                        for(i=0; i!=4; i++)
-                                pdata[i] = 0;
-
-                        xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                        xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
                 }
 
                 /* Record Type */
@@ -546,20 +797,15 @@ void plugin_write_parameters_file(struct object_params *params)
 
                         /* Size */
                         rsize = strlen(params->params->type);
-                        pdata[0] = rsize & 0xff;
-                        pdata[1] = (rsize >> 0x08) & 0xff;
-                        pdata[2] = (rsize >> 0x10) & 0xff;
-                        pdata[3] = (rsize >> 0x18) & 0xff;
-                        xosgbpb_writew(pfile, pdata, 4, NULL);
+                        xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                         /* Name */
                         xosgbpb_writew(pfile, (byte const*)params->params->type, rsize, NULL);
 
                         /* Pad to word boundary */
-                        for(i=0; i!=4; i++)
-                                pdata[i] = 0;
-
-                        xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                        xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                } else {
+                        xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
                 }
 
                 temp = params->params;
@@ -580,8 +826,7 @@ void plugin_write_parameters_file(struct object_params *params)
           */
          for(j=0; j!=5; j++) {
 
-                 pdata[0] = 4;
-                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                 xosgbpb_writew(pfile, (plugin_populate_pdata(4)), 4, NULL);
 
                  switch(j) {
 
@@ -590,37 +835,25 @@ void plugin_write_parameters_file(struct object_params *params)
                                  rsize += (4 + strlen(params->basehref));
                                  if((strlen(params->basehref)%4) != 0)
                                    rsize += (4-(strlen(params->basehref)%4));
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 rsize += 4;
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  rsize = strlen("BASEHREF");
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"BASEHREF", rsize, NULL);
 
-                                 for(i=0; i!=4; i++)
-                                         pdata[i] = 0;
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                                  rsize = strlen(params->basehref);
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)params->basehref, rsize, NULL);
 
-                                 for(i=0; i!=4; i++)
-                                         pdata[i] = 0;
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
+
                                  break;
 
                          case 1: rsize = 0;
@@ -628,37 +861,24 @@ void plugin_write_parameters_file(struct object_params *params)
                                  rsize += (4 + strlen("NetSurf"));
                                  if((strlen("NetSurf")%4) != 0)
                                      rsize += (4-(strlen("NetSurf")%4));
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 rsize += 4;
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  rsize = strlen("USERAGENT");
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"USERAGENT", rsize, NULL);
 
-                                 for(i=0; i!=4; i++)
-                                         pdata[i] = 0;
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                                  rsize = strlen("NetSurf");
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"NetSurf", rsize, NULL);
 
-                                 for(i=0; i!=4; i++)
-                                         pdata[i] = 0;
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
                                  break;
 
                          case 2: rsize = 0;
@@ -666,37 +886,24 @@ void plugin_write_parameters_file(struct object_params *params)
                                  rsize += (4 + strlen("0.01"));
                                  if((strlen("0.01")%4) != 0)
                                      rsize += (4-(strlen("0.01")%4));
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 rsize += 4;
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  rsize = strlen("UAVERSION");
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"UAVERSION", rsize, NULL);
 
-                                 for(i=0; i!=4; i++)
-                                         pdata[i] = 0;
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                                  rsize = strlen("0.01");
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"0.01", rsize, NULL);
 
-                                 for(i=0; i!=4; i++)
-                                         pdata[i] = 0;
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
                                  break;
 
                          case 3: rsize = 0;
@@ -704,83 +911,573 @@ void plugin_write_parameters_file(struct object_params *params)
                                  rsize += (4 + strlen("1.10"));
                                  if((strlen("1.10")%4) != 0)
                                      rsize += (4-(strlen("1.10")%4));
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 rsize += 4;
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  rsize = strlen("APIVERSION");
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"APIVERSION", rsize, NULL);
 
-                                 for(i=0; i!=4; i++)
-                                         pdata[i] = 0;
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                                  rsize = strlen("1.10");
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"1.10", rsize, NULL);
 
-                                 for(i=0; i!=4; i++)
-                                         pdata[i] = 0;
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
                                  break;
                          case 4: rsize = 0;
                                  rsize += (4 + 7 + 1);
                                  rsize += (4 + strlen("FFFFFF00"));
                                  if((strlen("FFFFFF00")%4) != 0)
                                      rsize += (4-(strlen("FFFFFF00")%4));
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 rsize += 4;
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  rsize = strlen("BGCOLOR");
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"BGCOLOR", rsize, NULL);
 
-                                 for(i=0; i!=4; i++)
-                                         pdata[i] = 0;
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
 
                                  rsize = strlen("FFFFFF00");
-                                 pdata[0] = rsize & 0xff;
-                                 pdata[1] = (rsize >> 0x08) & 0xff;
-                                 pdata[2] = (rsize >> 0x10) & 0xff;
-                                 pdata[3] = (rsize >> 0x18) & 0xff;
-                                 xosgbpb_writew(pfile, pdata, 4, NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(rsize)), 4, NULL);
 
                                  xosgbpb_writew(pfile, (byte const*)"FFFFFF00", rsize, NULL);
 
-                                 for(i=0; i!=4; i++)
-                                         pdata[i] = 0;
-                                 xosgbpb_writew(pfile, pdata, (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), (4 - ((rsize%4) == 0 ? 4 : (rsize%4))), NULL);
+
+                                 xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
                                  break;
                  }
 
          }
 
          /* Write terminator */
-         for(i=0; i!=4; i++)
-                 pdata[i] = 0;
-
-         xosgbpb_writew(pfile, pdata, 4, NULL);
+         xosgbpb_writew(pfile, (plugin_populate_pdata(0)), 4, NULL);
          xosfind_closew(pfile);
+}
+
+/**
+ * plugin_populate_pdata
+ * helper function for plugin_write_parameters_file
+ */
+byte const *plugin_populate_pdata(int rsize) {
+
+	 byte pdata[4] = {0, 0, 0, 0};
+
+	 pdata[0] = rsize & 0xff;
+         pdata[1] = (rsize >> 0x08) & 0xff;
+         pdata[2] = (rsize >> 0x10) & 0xff;
+         pdata[3] = (rsize >> 0x18) & 0xff;
+
+         return (byte const*)&pdata;
+}
+
+/*-------------------------------------------------------------------------*/
+/* Plugin Stream handling functions                                        */
+/*-------------------------------------------------------------------------*/
+
+/**
+ * plugin_create_stream
+ * creates a plugin stream
+ */
+void plugin_create_stream(struct browser_window *bw, struct object_params *params, struct content *c) {
+
+        wimp_message *m = xcalloc(256, sizeof(char));
+        plugin_message_stream_new *pmsn;
+        struct plugin_message *temp;
+        int offset = 0;
+        unsigned char *pchar = (unsigned char*)&m->data;
+
+        pmsn = (plugin_message_stream_new*)&m->data;
+        pmsn->flags = 2;
+        pmsn->plugin = (plugin_p)params->plugin;
+        pmsn->browser = (plugin_b)params->browser;
+        pmsn->browser_stream = (plugin_bs)params->browser;
+        pmsn->end = c->data.plugin.length;
+        pmsn->last_modified_date = 0;
+        pmsn->notify_data = 0;
+
+        offset = 64;
+        pmsn->url.offset = offset;
+        strncpy((char*)&pchar[offset], c->url, (unsigned int)236-offset);
+        offset = offset + strlen(c->url) + 1;
+        if (offset > 235) {
+          LOG(("URL too long"));
+          xfree(m);
+          return;
+        }
+
+        offset = (offset + 3) / 4 * 4;
+        pmsn->mime_type.offset = offset;
+        strncpy((char*)&pchar[offset], c->mime_type, (unsigned int)236-offset);
+        offset = offset + strlen(c->mime_type) + 1;
+        if (offset > 235) {
+          LOG(("mime_type too long"));
+          xfree(m);
+          return;
+        }
+        pmsn->target_window.offset = 0;
+
+        m->size = (20 + offset + 3) / 4 * 4;
+        m->your_ref = 0;
+        m->action = message_PLUG_IN_STREAM_NEW;
+
+        temp = plugin_add_message_to_linked_list(pmsn->browser, pmsn->plugin, m, 0);
+
+        LOG(("message length = %d", m->size));
+#ifndef NDEBUG
+        xosfile_save_stamped("<NetSurf$Dir>.msgblock", 0xffd, (byte const*)m, (byte const*)(m + 256));
+#endif
+
+        xwimp_send_message(wimp_USER_MESSAGE_RECORDED, m, (wimp_t)params->plugin_task);
+
+        while(temp->poll == 0)
+                gui_poll();
+
+        pmsn = (plugin_message_stream_new*)&temp->reply->m->data;
+        params->browser_stream = params->browser;
+        params->plugin_stream = (int)pmsn->stream;
+        LOG(("%d, %d, %d", (int)pmsn->stream, params->plugin_stream, params->browser_stream));
+        if((pmsn->flags & 0x02) | (pmsn->flags & 0x03)) {
+                plugin_write_stream_as_file(bw, params, c);
+        }
+
+        /* clean up */
+        plugin_remove_message_from_linked_list(temp->reply);
+        plugin_remove_message_from_linked_list(temp);
+        xfree(m);
+}
+
+/**
+ * plugin_write_stream_as_file
+ * writes a stream as a file
+ */
+void plugin_write_stream_as_file(struct browser_window *bw, struct object_params *params, struct content *c) {
+
+        wimp_message *m = xcalloc(256, sizeof(char));
+        plugin_message_stream_as_file *pmsaf;
+        int offset = 0;
+        unsigned int filetype;
+        unsigned char *pchar = (unsigned char*)&m->data;
+        char *filename = strdup(params->filename), *p;
+
+        pmsaf = (plugin_message_stream_as_file*)&m->data;
+
+        pmsaf->flags = 0;
+        pmsaf->plugin = (plugin_p)params->plugin;
+        pmsaf->browser = (plugin_b)params->browser;
+        pmsaf->stream = (plugin_s)params->plugin_stream;
+        pmsaf->browser_stream = (plugin_bs)params->browser_stream;
+        pmsaf->end = 0;
+        pmsaf->last_modified_date = 0;
+        pmsaf->notify_data = 0;
+
+        offset = 60;
+        pmsaf->url.offset = offset;
+        strncpy((char*)&pchar[offset], c->url, (unsigned int)236-offset);
+        offset = offset + strlen(c->url) + 1;
+        if (offset > 235) {
+          LOG(("URL too long"));
+          xfree(m);
+          return;
+        }
+
+        offset = (offset + 3) / 4 * 4;
+        pmsaf->filename.offset = offset;
+        p = strrchr((const char*)filename, 'p');
+        filename[(p-filename)] = 'd';
+        strncpy((char*)&pchar[offset], filename, (unsigned int)236-offset);
+        offset = offset + strlen(filename) + 1;
+        if (offset > 235) {
+          LOG(("filename too long"));
+          xfree(m);
+          return;
+        }
+
+        m->size = (20 + offset + 3) / 4 * 4;
+        m->your_ref = 0;
+        m->action = message_PLUG_IN_STREAM_AS_FILE;
+
+        xmimemaptranslate_mime_type_to_filetype(c->mime_type, (bits *) &filetype);
+        xosfile_save_stamped((char const*)filename, filetype, c->data.plugin.data, c->data.plugin.data + c->data.plugin.length);
+
+        LOG(("message length = %d", m->size));
+
+        xwimp_send_message(wimp_USER_MESSAGE, m, (wimp_t)params->plugin_task);
+        xfree(m);
+}
+
+/**
+ * plugin_destroy_stream
+ * destroys a plugin stream
+ */
+void plugin_destroy_stream(struct browser_window *bw, struct object_params *params, struct content *c) {
+
+        wimp_message *m = xcalloc(256, sizeof(char));
+        plugin_message_stream_destroy *pmsd;
+        int offset = 0;
+        unsigned char *pchar = (unsigned char*)&m->data;
+
+        pmsd = (plugin_message_stream_destroy*)&m->data;
+
+        pmsd->flags = 0;
+        pmsd->plugin = (plugin_p)params->plugin;
+        pmsd->browser = (plugin_b)params->browser;
+        pmsd->stream = (plugin_s)params->plugin_stream;
+        pmsd->browser_stream = (plugin_bs)params->browser_stream;
+        pmsd->end = 0;
+        pmsd->last_modified_date = 0;
+        pmsd->notify_data = 0;
+        pmsd->reason = plugin_STREAM_DESTROY_FINISHED;
+
+        offset = 60;
+        pmsd->url.offset = offset;
+        strncpy((char*)&pchar[offset], c->url, (unsigned int)236-offset);
+        offset = offset + strlen(c->url) + 1;
+        if (offset > 235) {
+          LOG(("URL too long"));
+          xfree(m);
+          return;
+        }
+
+        m->size = (20 + offset + 3) / 4 * 4;
+        m->your_ref = 0;
+        m->action = message_PLUG_IN_STREAM_DESTROY;
+
+        xwimp_send_message(wimp_USER_MESSAGE, m, (wimp_t)params->plugin_task);
+        xfree(m);
+}
+
+/*-------------------------------------------------------------------------*/
+/* Linked List handling functions                                          */
+/*-------------------------------------------------------------------------*/
+
+/**
+ * plugin_add_message_to_linked_list
+ * adds a message to the list
+ */
+struct plugin_message *plugin_add_message_to_linked_list(plugin_b browser, plugin_p plugin, wimp_message *m, struct plugin_message *reply) {
+
+         struct plugin_message *npm = xcalloc(1, sizeof(*npm));
+
+         npm->poll = 0;
+         npm->browser = browser;
+         npm->plugin = plugin;
+         npm->m = m;
+         npm->reply = reply;
+         npm->prev = pmlist->prev;
+         npm->next = pmlist;
+         pmlist->prev->next = npm;
+         pmlist->prev = npm;
+
+         return pmlist->prev;
+}
+
+/**
+ * plugin_remove_message_from_linked_list
+ * removes a message from the list
+ */
+void plugin_remove_message_from_linked_list(struct plugin_message* m) {
+
+         m->prev->next = m->next;
+         m->next->prev = m->prev;
+         xfree(m);
+}
+
+/**
+ * plugin_get_message_from_linked_list
+ * retrieves a message from the list
+ * returns NULL if no message is found
+ */
+struct plugin_message *plugin_get_message_from_linked_list(int ref) {
+
+         struct plugin_message *npm;
+
+         for(npm = pmlist->next; npm != pmlist && npm->m->my_ref != ref;
+             npm = npm->next)
+                ;
+
+         if(npm != pmlist)
+                 return npm;
+
+         return NULL;
+}
+
+/**
+ * plugin_add_instance_to_list
+ * Adds a plugin instance to the list of plugin instances.
+ */
+void plugin_add_instance_to_list(struct content *c, struct browser_window *bw, struct content *page, struct box *box, struct object_params *params, void **state) {
+
+         struct plugin_list *npl = xcalloc(1, sizeof(*npl));
+
+         npl->c = c;
+         npl->bw = bw;
+         npl->page = page;
+         npl->box = box;
+         npl->params = params;
+         npl->state = state;
+         npl->prev = plist->prev;
+         npl->next = plist;
+         plist->prev->next = npl;
+         plist->prev = npl;
+}
+
+/**
+ * plugin_remove_instance_from_list
+ * Removes a plugin instance from the list
+ */
+void plugin_remove_instance_from_list(struct object_params *params) {
+
+         struct plugin_list *temp =
+                plugin_get_instance_from_list((plugin_b)params->browser,
+                                              (plugin_p)params->plugin);
+         if(temp != NULL) {
+
+                 temp->prev->next = temp->next;
+                 temp->next->prev = temp->prev;
+                 xfree(temp);
+         }
+}
+
+/**
+ * plugin_get_instance_from_list
+ * retrieves an instance of a plugin from the list
+ * returns NULL if no instance is found
+ */
+struct plugin_list *plugin_get_instance_from_list(plugin_b browser, plugin_p plugin) {
+
+         struct plugin_list *npl;
+
+         for(npl = plist->next; (npl != plist)
+                             && (((plugin_b)npl->params->browser != browser)
+                             && ((plugin_p)npl->params->plugin != plugin));
+             npl = npl->next)
+                ;
+
+         if(npl != plist)
+                 return npl;
+
+         return NULL;
+}
+
+/*-------------------------------------------------------------------------*/
+/* WIMP Message processing functions                                       */
+/*-------------------------------------------------------------------------*/
+
+/**
+ * plugin_msg_parse
+ * parses wimp messages
+ */
+void plugin_msg_parse(wimp_message *message, int ack)
+{
+         switch(message->action) {
+
+                 case message_PLUG_IN_OPENING:
+                          plugin_opening(message);
+                          break;
+                 case message_PLUG_IN_CLOSED:
+                          plugin_closed(message);
+                          break;
+                 case message_PLUG_IN_RESHAPE_REQUEST:
+                          plugin_reshape_request(message);
+                          break;
+                 case message_PLUG_IN_FOCUS:
+                   //       plugin_focus();
+                          break;
+                 case message_PLUG_IN_URL_ACCESS:
+                   //       plugin_url_access();
+                          break;
+                 case message_PLUG_IN_STATUS:
+                          plugin_status(message);
+                          break;
+                 case message_PLUG_IN_BUSY:
+                   //       plugin_busy();
+                          break;
+                 /* OSLib doesn't provide this, as it's
+                  * reasonably new and not obviously documented.
+                  * We ignore it for now.
+
+                 case message_PLUG_IN_INFORMED:
+                  */
+                 case message_PLUG_IN_STREAM_NEW:
+                          plugin_stream_new(message);
+                          break;
+                 case message_PLUG_IN_STREAM_WRITE:
+                   //       plugin_stream_write();
+                          break;
+                 case message_PLUG_IN_STREAM_WRITTEN:
+                   //       plugin_stream_written();
+                          break;
+                 case message_PLUG_IN_STREAM_DESTROY:
+                   //       plugin_stream_destroy();
+                          break;
+
+                 /* These cases occur when a message is bounced
+                  * For simplicity, we do nothing unless the message came in
+                  * a wimp_USER_MESSAGE_ACKNOWLEDGE (ie ack = 1)
+                  */
+                 case message_PLUG_IN_OPEN:
+                          if(ack)
+                                  plugin_open(message);
+                          break;
+                 case message_PLUG_IN_CLOSE:
+                          if(ack)
+                                  plugin_close(message);
+                          break;
+                 case message_PLUG_IN_RESHAPE:
+                 case message_PLUG_IN_STREAM_AS_FILE:
+                 case message_PLUG_IN_NOTIFY:
+                 case message_PLUG_IN_ABORT:
+                 case message_PLUG_IN_ACTION:
+                 default:
+                          break;
+         }
+}
+
+/**
+ * plugin_open
+ * handles receipt of plugin_open messages
+ */
+void plugin_open(wimp_message *message) {
+
+         struct plugin_message *npm = plugin_get_message_from_linked_list(message->my_ref);
+
+         /* notify plugin_open message entry in list */
+         if (npm != NULL)
+               npm->poll = 1;
+}
+
+/**
+ * plugin_opening
+ * handles receipt of plugin_open messages
+ */
+void plugin_opening(wimp_message *message) {
+
+         struct plugin_message *npm = plugin_get_message_from_linked_list(message->your_ref);
+         struct plugin_message *reply;
+         plugin_message_opening *pmo = (plugin_message_opening*)&message->data;
+
+         /* add this message to linked list */
+         reply = plugin_add_message_to_linked_list(pmo->browser, pmo->plugin, message, 0);
+
+         /* notify plugin_open message entry in list */
+         if (npm != NULL) {
+
+               npm->poll = 1;
+               npm->plugin = pmo->plugin;
+               npm->reply = reply;
+         }
+}
+
+/**
+ * plugin_close
+ * handles receipt of plugin_close messages
+ */
+void plugin_close(wimp_message *message) {
+
+         struct plugin_message *npm = plugin_get_message_from_linked_list(message->my_ref);
+
+         /* notify plugin_open message entry in list */
+         if (npm != NULL)
+               npm->poll = 1;
+}
+
+/**
+ * plugin_closed
+ * handles receipt of plugin_closed messages
+ */
+void plugin_closed(wimp_message *message) {
+
+         struct plugin_message *npm = plugin_get_message_from_linked_list(message->your_ref);
+         struct plugin_message *reply;
+         plugin_message_closed *pmc = (plugin_message_closed*)&message->data;
+
+         /* add this message to linked list */
+         reply = plugin_add_message_to_linked_list(pmc->browser, pmc->plugin, message, 0);
+
+         /* notify plugin_open message entry in list */
+         if (npm != NULL) {
+
+               npm->poll = 1;
+               npm->reply = reply;
+         }
+}
+
+/**
+ * plugin_reshape_request
+ * handles receipt of plugin_reshape_request messages
+ */
+void plugin_reshape_request(wimp_message *message) {
+
+         struct plugin_message *npm;
+         struct plugin_list *npl;
+         plugin_message_reshape_request *pmrr = (plugin_message_reshape_request*)&message->data;
+
+         /* add this message to linked list */
+         npm = plugin_add_message_to_linked_list(pmrr->browser, pmrr->plugin, message, 0);
+
+         /* TODO - need to find a way of forcing the browser to resize the
+          *        box containing this object. Then issue a Plugin_Reshape.
+          */
+         npl = plugin_get_instance_from_list(pmrr->browser, pmrr->plugin);
+         plugin_remove_message_from_linked_list(npm); /* lose this later */
+
+         LOG(("requested (width, height): (%d, %d)", pmrr->size.x, pmrr->size.y));
+}
+
+/**
+ * plugin_stream_new
+ * handles receipt of plugin_stream_new messages
+ */
+void plugin_stream_new(wimp_message *message) {
+
+         struct plugin_message *npm = plugin_get_message_from_linked_list(message->your_ref);
+         struct plugin_message *reply;
+         plugin_message_stream_new *pmsn = (plugin_message_stream_new*)&message->data;
+
+         /* add this message to linked list */
+         reply = plugin_add_message_to_linked_list(pmsn->browser, pmsn->plugin, message, 0);
+
+         /* notify plugin_open message entry in list */
+         if(npm != NULL) {
+
+               npm->poll = 1;
+               npm->plugin = pmsn->plugin;
+               npm->reply = reply;
+         }
+
+}
+
+/**
+ * plugin_status
+ * handles receipt of plugin_status messages
+ */
+void plugin_status(wimp_message *message) {
+
+         plugin_message_status *pms = (plugin_message_status*)&message->data;
+         struct plugin_list *npl = plugin_get_instance_from_list(pms->browser, pms->plugin);
+
+         gui_window_set_status(npl->bw->window,
+                        (const char*)plugin_get_string_value(pms->message,
+                                                             (char*)pms));
+}
+
+/**
+ * plugin_get_string_value
+ * utility function to grab string data from plugin message blocks
+ */
+char *plugin_get_string_value(os_string_value string, char *msg) {
+
+         if(string.offset == 0 || string.offset > 256) {
+                 return string.pointer;
+         }
+         return &msg[string.offset];
 }

@@ -12,12 +12,39 @@
 #include "netsurf/content/content.h"
 #include "netsurf/render/box.h"
 
+#include "oslib/plugin.h"
+#include "oslib/wimp.h"
+
 struct plugin_state {
 	int dummy;
 };
 
+struct plugin_message {
+
+        int poll;
+        plugin_b browser;
+        plugin_p plugin;
+        wimp_message *m;
+        struct plugin_message *reply;
+        struct plugin_message *next;
+        struct plugin_message *prev;
+};
+
+struct plugin_list {
+
+        struct content *c;
+        struct browser_window *bw;
+        struct content *page;
+        struct box *box;
+        struct object_params *params;
+        void **state;
+        struct plugin_list *next;
+        struct plugin_list *prev;
+};
+
 /* function definitions */
 bool plugin_handleable(const char *mime_type);
+void plugin_msg_parse(wimp_message *message, int ack);
 void plugin_create(struct content *c);
 void plugin_process_data(struct content *c, char *data, unsigned long size);
 int plugin_convert(struct content *c, unsigned int width, unsigned int height);

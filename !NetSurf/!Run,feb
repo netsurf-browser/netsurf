@@ -1,11 +1,35 @@
-|rafs_flush
+<Obey$Dir>.!Boot
 
-If "<NetSurf$Dir>" = "" Then Obey <Obey$Dir>.!Boot
+| We need RISC OS  3
+RMEnsure UtilityModule 3.00 Error NetSurf needs RISC OS 3 or later
 
-RMensure WindowManager 3.80 Error 0 NetSurf requires the Nested Window Manager.
-RMEnsure UtilityModule 3.70 RMensure CallASWI 0.00 RMload <NetSurf$Dir>.CallASWI
-RMEnsure SharedUnixLibrary 1.00 RMLoad System:Modules.SharedULib
+| Ensure Nested WIMP is installed
+| http://acorn.riscos.com (in the universal boot archive)
+RMEnsure WindowManager 3.80 Error 0 NetSurf requires the Nested Window Manager.
 
+| Ensure CallASWI is installed
+| http://www.iyonix.com/32bit/
+RMEnsure UtilityModule 3.70 RMEnsure CallASWI 0.02 RMLoad System:Modules.CallASWI
+RMEnsure UtilityModule 3.70 RMEnsure CallASWI 0.02 Error NetSurf requires the CallASWI module
+
+| Ensure SharedUnixLibrary is installed
+| http://www.chocky.org/unix/usage.html
+RMEnsure SharedUnixLibrary 1.02 RMLoad System:Modules.SharedULib
+RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.00 or later
+
+| Load AcornURI if it isn't already
+| http://sudden.recoil.org/
+Set NetSurf$Start_URI_Handler "no"
+RMEnsure AcornURI 0.12 Set NetSurf$Start_URI_Handler "yes"
+RMEnsure AcornURI 0.12 RMLoad System:Modules.Network.URI
+RMEnsure AcornURI 0.12 Error NetSurf requires AcornURI 0.12 or later
+RMEnsure AcornURI 0.12 Set NetSurf$Start_URI_Handler "no"
+
+| Check for mime map module
+If "<InetDBase$Path>" = "" Then Error Inet databases can not be found
+If "<Inet$MimeMappings>" = "" Then Set Inet$MimeMappings InetDBase:MimeMap
+RMEnsure MimeMap 0.10 RMLoad System:Modules.Network.MimeMap
+RMEnsure MimeMap 0.10 Error NetSurf requires MimeMap 0.10 or later
 
 | drag the 'next' slot in the task manager to something huge and ridiculous,
 | and/or increase the number below

@@ -82,6 +82,8 @@ static struct result box_embed(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_applet(xmlNode *n, struct status *status,
 		struct css_style *style);
+static struct result box_iframe(xmlNode *n, struct status *status,
+		struct css_style *style);
 static struct form* create_form(xmlNode* n);
 static void add_form_element(struct page_elements* pe, struct form* f);
 static void add_gadget_element(struct page_elements* pe, struct gui_gadget* g);
@@ -99,6 +101,7 @@ static const struct element_entry element_table[] = {
 	{"applet", box_applet},
         {"embed", box_embed},
 	{"form", box_form},
+	{"iframe", box_iframe},
 	{"img", box_image},
 	{"input", box_input},
 	{"object", box_object},
@@ -1478,6 +1481,7 @@ struct result box_object(xmlNode *n, struct status *status,
                /* initialise pp struct */
                pp->name = 0;
                pp->value = 0;
+               pp->valuetype = 0;
                pp->type = 0;
                pp->next = 0;
 
@@ -1531,7 +1535,9 @@ struct result box_embed(xmlNode *n, struct status *status,
 {
 	struct box *box;
 	struct object_params *po;
+	struct plugin_params *pp;
 	char *s, *url;
+	xmlAttr *a;
 
 	box = box_create(style, status->href, 0);
 
@@ -1553,6 +1559,30 @@ struct result box_embed(xmlNode *n, struct status *status,
 	        LOG(("embed '%s'", url));
 	        xmlFree(s);
         }
+
+        /**
+         * we munge all other attributes into a plugin_parameter structure
+         */
+         for(a=n->properties; a!=0; a=a->next) {
+
+                pp = xcalloc(1, sizeof(*pp));
+
+                /* initialise pp struct */
+                pp->name = 0;
+                pp->value = 0;
+                pp->valuetype = 0;
+                pp->type = 0;
+                pp->next = 0;
+
+                if(strcasecmp((char*)a->name, "src") != 0) {
+                        pp->name = strdup((char*)a->name);
+                        pp->value = strdup((char*)a->children->content);
+                        pp->valuetype = strdup("data");
+
+                        pp->next = po->params;
+                        po->params = pp;
+                }
+         }
 
 	box->object_params = po;
 
@@ -1617,6 +1647,7 @@ struct result box_applet(xmlNode *n, struct status *status,
                /* initialise pp struct */
                pp->name = 0;
                pp->value = 0;
+               pp->valuetype = 0;
                pp->type = 0;
                pp->next = 0;
 
@@ -1659,6 +1690,46 @@ struct result box_applet(xmlNode *n, struct status *status,
         return (struct result) {box,1};
 }
 
+/**
+ * box_iframe
+ * add an iframe to the box tree
+ * TODO - implement GUI nested wimp stuff 'cos this looks naff atm. (16_5)
+ */
+struct result box_iframe(xmlNode *n, struct status *status,
+		struct css_style *style)
+{
+        struct box *box;
+	struct object_params *po;
+	char *s, *url;
+
+	box = box_create(style, status->href, 0);
+
+	po = xcalloc(1, sizeof(*po));
+
+	/* initialise po struct */
+        po->data = 0;
+        po->type = 0;
+        po->codetype = 0;
+        po->codebase = 0;
+        po->classid = 0;
+        po->params = 0;
+
+	/* iframe src */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
+
+                po->data = strdup(s);
+	        url = url_join(strdup(s), status->content->url);
+	        LOG(("embed '%s'", url));
+	        xmlFree(s);
+        }
+
+	box->object_params = po;
+
+        /* start fetch */
+	plugin_decode(status->content, url, box, po);
+
+	return (struct result) {box,0};
+}
 
 /**
  * plugin_decode

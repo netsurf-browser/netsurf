@@ -17,6 +17,7 @@
 #include "oslib/os.h"
 #include "oslib/osfile.h"
 #include "oslib/osgbpb.h"
+#include "oslib/plugin.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "oslib/uri.h"
@@ -26,6 +27,7 @@
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/plugin.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/uri.h"
 #include "netsurf/utils/log.h"
@@ -221,7 +223,30 @@ ro_theme* current_theme = NULL;
 const char* BROWSER_VALIDATION = "\0";
 
 const char* task_name = "NetSurf";
-const wimp_MESSAGE_LIST(4) task_messages = { {message_DATA_SAVE, message_DATA_LOAD, message_URI_PROCESS, 0} };
+const wimp_MESSAGE_LIST(22) task_messages = {
+                  {message_DATA_SAVE,
+                   message_DATA_LOAD,
+                   message_URI_PROCESS,
+                   message_PLUG_IN_OPENING,
+                   message_PLUG_IN_CLOSED,
+                   message_PLUG_IN_RESHAPE_REQUEST,
+                   message_PLUG_IN_FOCUS,
+                   message_PLUG_IN_URL_ACCESS,
+                   message_PLUG_IN_STATUS,
+                   message_PLUG_IN_BUSY,
+                   message_PLUG_IN_STREAM_NEW,
+                   message_PLUG_IN_STREAM_WRITE,
+                   message_PLUG_IN_STREAM_WRITTEN,
+                   message_PLUG_IN_STREAM_DESTROY,
+                   message_PLUG_IN_OPEN,
+                   message_PLUG_IN_CLOSE,
+                   message_PLUG_IN_RESHAPE,
+                   message_PLUG_IN_STREAM_AS_FILE,
+                   message_PLUG_IN_NOTIFY,
+                   message_PLUG_IN_ABORT,
+                   message_PLUG_IN_ACTION,
+                   /* message_PLUG_IN_INFORMED, (not provided by oslib) */
+                   0}                       };
 wimp_t task_handle;
 
 wimp_i ro_gui_iconbar_i;
@@ -904,7 +929,7 @@ void gui_window_message(gui_window* g, gui_message* msg)
   switch (msg->type)
   {
     case msg_SET_URL:
-fprintf(stderr, "Set URL '%s'\n", msg->data.set_url.url);
+      fprintf(stderr, "Set URL '%s'\n", msg->data.set_url.url);
       strncpy(g->url, msg->data.set_url.url, 255);
       wimp_set_icon_state(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_URL"), 0, 0);
       if (g->data.browser.bw->history != NULL)
@@ -1030,6 +1055,11 @@ void gui_init(int argc, char** argv)
 /*   __riscosify_control = __RISCOSIFY_NO_PROCESS; */
 
   task_handle = wimp_initialise(wimp_VERSION_RO38, task_name, (wimp_message_list*) &task_messages, &version);
+
+  /* Issue a *Desktop to poke AcornURI into life */
+  if(strcasecmp(getenv("NetSurf$Start_URI_Handler"), "yes") == 0)
+  xwimp_start_task("Desktop", NULL);
+  xos_cli("UnSet NetSurf$Start_Uri_Handler");
 
   iconbar.w = wimp_ICON_BAR_RIGHT;
   iconbar.icon.extent.x0 = 0;
@@ -1879,10 +1909,33 @@ void gui_multitask(void)
         case message_URI_PROCESS       :
                ro_uri_message_received(&(block.message));
                break;
+
+        case message_PLUG_IN_OPENING:
+        case message_PLUG_IN_CLOSED:
+        case message_PLUG_IN_RESHAPE_REQUEST:
+        case message_PLUG_IN_FOCUS:
+        case message_PLUG_IN_URL_ACCESS:
+        case message_PLUG_IN_STATUS:
+        case message_PLUG_IN_BUSY:
+        case message_PLUG_IN_STREAM_NEW:
+        case message_PLUG_IN_STREAM_WRITE:
+        case message_PLUG_IN_STREAM_WRITTEN:
+        case message_PLUG_IN_STREAM_DESTROY:
+        case message_PLUG_IN_OPEN:
+        case message_PLUG_IN_CLOSE:
+        case message_PLUG_IN_RESHAPE:
+        case message_PLUG_IN_STREAM_AS_FILE:
+        case message_PLUG_IN_NOTIFY:
+        case message_PLUG_IN_ABORT:
+        case message_PLUG_IN_ACTION:
+               plugin_msg_parse(&(block.message),
+                          (event == wimp_USER_MESSAGE_ACKNOWLEDGE ? 1 : 0));
+               break;
       }
 
-      if (block.message.action == message_QUIT)
+      if (block.message.action == message_QUIT){
         netsurf_quit = 1;
+      }
       else
         ro_gui_poll_queue(event, &block);
       break;
@@ -1954,6 +2007,10 @@ void ro_gui_keypress(wimp_key* key)
     else if (key->c == wimp_KEY_F10)
     {
       cache_dump();
+    }
+    else if (key->c == (wimp_KEY_CONTROL + wimp_KEY_F2))
+    {
+      browser_window_destroy(g->data.browser.bw);
     }
   }
   wimp_process_key(key->c);
@@ -2114,6 +2171,28 @@ void gui_poll(void)
 
         case message_URI_PROCESS       :
                ro_uri_message_received(&(block.message));
+               break;
+
+        case message_PLUG_IN_OPENING:
+        case message_PLUG_IN_CLOSED:
+        case message_PLUG_IN_RESHAPE_REQUEST:
+        case message_PLUG_IN_FOCUS:
+        case message_PLUG_IN_URL_ACCESS:
+        case message_PLUG_IN_STATUS:
+        case message_PLUG_IN_BUSY:
+        case message_PLUG_IN_STREAM_NEW:
+        case message_PLUG_IN_STREAM_WRITE:
+        case message_PLUG_IN_STREAM_WRITTEN:
+        case message_PLUG_IN_STREAM_DESTROY:
+        case message_PLUG_IN_OPEN:
+        case message_PLUG_IN_CLOSE:
+        case message_PLUG_IN_RESHAPE:
+        case message_PLUG_IN_STREAM_AS_FILE:
+        case message_PLUG_IN_NOTIFY:
+        case message_PLUG_IN_ABORT:
+        case message_PLUG_IN_ACTION:
+               plugin_msg_parse(&(block.message),
+                          (event == wimp_USER_MESSAGE_ACKNOWLEDGE ? 1 : 0));
                break;
 
         case message_QUIT              :
