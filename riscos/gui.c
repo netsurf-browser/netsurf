@@ -32,11 +32,12 @@
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/uri.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 const char *__dynamic_da_name = "NetSurf";
-static char empty_text[] = "";
-static char password_v[] = "D*";
+//static char empty_text[] = "";
+//static char password_v[] = "D*";
 
 char *NETSURF_DIR;
 gui_window *window_list = 0;
@@ -44,22 +45,12 @@ gui_window *window_list = 0;
 const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro";
 const char* HELP_URL = "file:///%3CNetSurf$Dir%3E/Docs/en/index";
 
-struct ro_gui_drag_info;
-
-int ro_x_units(unsigned long browser_units);
-int ro_y_units(unsigned long browser_units);
-unsigned long browser_x_units(int ro_units);
-unsigned long browser_y_units(int ro_units);
-
 void ro_gui_window_click(gui_window* g, wimp_pointer* mouse);
 //void ro_gui_window_mouse_at(gui_window* g, wimp_pointer* mouse);
 void ro_gui_window_open(gui_window* g, wimp_open* open);
 void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw);
 //void ro_gui_window_keypress(gui_window* g, wimp_key* key);
 
-
-static int window_x_units(int scr_units, wimp_window_state* win);
-static int window_y_units(int scr_units, wimp_window_state* win);
 static void ro_gui_toolbar_redraw(gui_window* g, wimp_draw* redraw);
 static void gui_disable_icon(wimp_w w, wimp_i i);
 static void gui_enable_icon(wimp_w w, wimp_i i);
@@ -67,8 +58,6 @@ static void ro_gui_icon_bar_click(wimp_pointer* pointer);
 static void ro_gui_throb(void);
 static gui_window* ro_lookup_gui_from_w(wimp_w window);
 static gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window);
-static void ro_gui_drag_box(wimp_drag* drag, struct ro_gui_drag_info* drag_info);
-static void ro_gui_drag_end(wimp_dragged* drag);
 static void ro_gui_window_mouse_at(wimp_pointer* pointer);
 static void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer);
 static void ro_gui_poll_queue(wimp_event_no event, wimp_block* block);
@@ -589,6 +578,7 @@ void gui_init(int argc, char** argv)
         /* get real value of <netsurf$dir> */
         e = xos_read_var_val ("NetSurf$Dir", var, (~(int)varsize), 0,
                               os_VARTYPE_STRING, NULL, NULL, NULL);
+
         strcat(var, ".Themes.");
         /* check if theme directory exists */
         e = xosfile_read_stamped_path ((const char*)OPTIONS.theme,
@@ -622,7 +612,6 @@ void gui_init(int argc, char** argv)
 void ro_gui_throb(void)
 {
   gui_window* g;
-  //float nowtime = (float) (clock() + 0) / CLOCKS_PER_SEC;  /* workaround compiler warning */
   float nowtime = (float) clock() / CLOCKS_PER_SEC;
 
   for (g = window_list; g != NULL; g = g->next)
@@ -635,35 +624,12 @@ void ro_gui_throb(void)
         {
           if (nowtime > g->throbtime + 0.2)
           {
-//            wimp_icon_state throbber;
-//            wimp_draw redraw;
-//            osbool more;
-//
             g->throbtime = nowtime;
             g->throbber++;
             if (g->throbber > current_theme->throbs)
               g->throbber = 0;
-//
-//            throbber.w = g->data.browser.toolbar;
-//            throbber.i = ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_THROBBER");
-//            wimp_get_icon_state(&throbber);
-//
-//            redraw.w = throbber.w;
-//            redraw.box.x0 = throbber.icon.extent.x0;
-//            redraw.box.y0 = throbber.icon.extent.y0;
-//            redraw.box.x1 = throbber.icon.extent.x1;
-//            redraw.box.y1 = throbber.icon.extent.y1;
-//
-//            throbber.icon.flags = wimp_ICON_SPRITE;
-//            sprintf(throbber.icon.data.sprite, "throbber%d", g->throbber);
 
             wimp_set_icon_state(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_THROBBER"), 0, 0);
-//            more = wimp_update_window(&redraw);
-//            while (more)
-//            {
-//              wimp_plot_icon(&throbber.icon);
-//              more = wimp_get_rectangle(&redraw);
-//            }
           }
         }
       }
@@ -702,63 +668,6 @@ gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window)
     }
   }
   return NULL;
-}
-
-
-struct ro_gui_drag_info
-{
-  enum { draginfo_UNKNOWN, draginfo_NONE, draginfo_BROWSER_TEXT_SELECTION } type;
-  union
-  {
-    struct
-    {
-      gui_window* gui;
-    } selection;
-  } data;
-};
-
-static struct ro_gui_drag_info current_drag;
-
-void ro_gui_drag_box(wimp_drag* drag, struct ro_gui_drag_info* drag_info)
-{
-  wimp_drag_box(drag);
-
-  if (drag_info != NULL)
-    memcpy(&current_drag, drag_info, sizeof(struct ro_gui_drag_info));
-  else
-    current_drag.type = draginfo_NONE;
-}
-
-void ro_gui_drag_end(wimp_dragged* drag)
-{
-  if (current_drag.type == draginfo_BROWSER_TEXT_SELECTION)
-  {
-    struct browser_action msg;
-    int final_x0, final_y0;
-    wimp_window_state state;
-
-    state.w = current_drag.data.selection.gui->data.browser.window;
-    wimp_get_window_state(&state);
-
-    final_x0 = browser_x_units(window_x_units(drag->final.x0, &state));
-    final_y0 = browser_y_units(window_y_units(drag->final.y0, &state));
-
-    msg.data.mouse.x = final_x0;
-    msg.data.mouse.y = final_y0;
-    msg.type = act_ALTER_SELECTION;
-    browser_window_action(current_drag.data.selection.gui->data.browser.bw, &msg);
-
-    if (box_position_eq(&(current_drag.data.selection.gui->data.browser.bw->current_content->data.html.text_selection.start),
-                        &(current_drag.data.selection.gui->data.browser.bw->current_content->data.html.text_selection.end)))
-    {
-      msg.type = act_CLEAR_SELECTION;
-      browser_window_action(current_drag.data.selection.gui->data.browser.bw, &msg);
-    }
-    current_drag.data.selection.gui->drag_status = drag_NONE;
-    current_drag.data.selection.gui->data.browser.bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
-  }
-
-  current_drag.type = draginfo_NONE;
 }
 
 void ro_gui_window_mouse_at(wimp_pointer* pointer)
@@ -869,25 +778,11 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
         else if (pointer->buttons == wimp_DRAG_SELECT ||
                  pointer->buttons == wimp_DRAG_ADJUST)
         {
-          wimp_drag drag;
-          struct ro_gui_drag_info drag_info;
-
           msg.type = act_START_NEW_SELECTION;
           if (pointer->buttons == wimp_DRAG_ADJUST && g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
             msg.type = act_ALTER_SELECTION;
 
-          drag.type = wimp_DRAG_USER_POINT;
-          drag.initial.x0 = pointer->pos.x;
-          drag.initial.y0 = pointer->pos.y;
-          drag.initial.x1 = pointer->pos.x;
-          drag.initial.y1 = pointer->pos.y;
-          drag.bbox.x0 = state.visible.x0;
-          drag.bbox.y0 = state.visible.y0;
-          drag.bbox.x1 = state.visible.x1;
-          drag.bbox.y1 = state.visible.y1;
-          drag_info.type = draginfo_BROWSER_TEXT_SELECTION;
-          drag_info.data.selection.gui = g;
-          ro_gui_drag_box(&drag, &drag_info);
+          ro_gui_start_selection(pointer, &state, g);
           g->drag_status = drag_BROWSER_TEXT_SELECTION;
         }
         msg.data.mouse.x = x;
@@ -1100,28 +995,6 @@ void gui_multitask(void)
 
 }
 
-/*
-void ro_gui_keypress(wimp_key* key)
-{
-  gui_window* g;
-
-  if (key == NULL)
-    return;
-
-  g = ro_lookup_gui_toolbar_from_w(key->w);
-  if (g != NULL)
-      if (block.message.action == message_QUIT)
-        netsurf_quit = 1;
-      else
-        ro_gui_poll_queue(event, &block);
-      break;
-    default:
-      break;
-  }
-
-}
-*/
-
 void ro_gui_keypress(wimp_key* key)
 {
   gui_window* g;
@@ -1188,17 +1061,6 @@ void ro_gui_keypress(wimp_key* key)
   wimp_process_key(key->c);
   return;
 }
-
-void ro_gui_copy_selection(gui_window* g)
-{
-  if (g->type == GUI_BROWSER_WINDOW)
-  {
-//    if (g->data.browser.bw->text_selection->selected == 1)
-//    {
-//    }
-  }
-}
-
 
 void gui_poll(void)
 {

@@ -61,7 +61,25 @@ struct gui_window
   enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION } drag_status;
 };
 
+struct ro_gui_drag_info
+{
+  enum { draginfo_UNKNOWN, draginfo_NONE, draginfo_BROWSER_TEXT_SELECTION } type;
+  union
+  {
+    struct
+    {
+      gui_window* gui;
+    } selection;
+  } data;
+};
+
 /* in gui.c */
+int ro_x_units(unsigned long browser_units);
+int ro_y_units(unsigned long browser_units);
+unsigned long browser_x_units(int ro_units);
+unsigned long browser_y_units(int ro_units);
+int window_x_units(int scr_units, wimp_window_state* win);
+int window_y_units(int scr_units, wimp_window_state* win);
 void ro_gui_copy_selection(gui_window* g);
 void ro_gui_open_help_page(void);
 
@@ -83,6 +101,12 @@ void ro_gui_download_init(void);
 
 /* in mouseactions.c */
 void ro_gui_mouse_action(gui_window* g);
+
+/* in textselection.c */
+extern struct ro_gui_drag_info current_drag;
+void ro_gui_start_selection(wimp_pointer *pointer, wimp_window_state *state,
+                            gui_window *g);
+void ro_gui_drag_end(wimp_dragged* drag);
 
 /* icon numbers */
 #define ICON_CONFIG_SAVE 0
