@@ -1,7 +1,13 @@
 Set NetSurf$Dir <Obey$Dir>
 
-IconSprites <NetSurf$Dir>.!Sprites
 Set File$Type_F79 CSS
+
+|NetSurf Sprites
+Set NetSurf$Sprites <NetSurf$Dir>.!Sprites
+RMEnsure UtilityModule 5.00 Set NetSurf$Sprites <NetSurf$Dir>.!SpritesA
+RMEnsure UtilityModule 4.37 Set NetSurf$Sprites <NetSurf$Dir>.!Sprites
+IconSprites <NetSurf$Sprites>
+Unset NetSurf$Sprites
 
 | Acorn URI protocol
 If "<Alias$Open_URI_http>" = "" Then Set Alias$Open_URI_http <NetSurf$Dir>.URILaunch
