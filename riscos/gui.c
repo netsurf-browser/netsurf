@@ -27,6 +27,7 @@
 #include "oslib/osfile.h"
 #include "oslib/osfscontrol.h"
 #include "oslib/osspriteop.h"
+#include "oslib/pdriver.h"
 #include "oslib/plugin.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
@@ -42,6 +43,9 @@
 #include "netsurf/riscos/options.h"
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
+#endif
+#ifdef WITH_PRINT
+#include "netsurf/riscos/print.h"
 #endif
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/theme.h"
@@ -82,11 +86,12 @@ static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 osspriteop_area *gui_sprites;      /**< Sprite area containing pointer and hotlist sprites */
 
 /** Accepted wimp user messages. */
-static wimp_MESSAGE_LIST(29) task_messages = { {
+static wimp_MESSAGE_LIST(33) task_messages = { {
   	message_HELP_REQUEST,
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
 	message_DATA_LOAD,
+	message_DATA_LOAD_ACK,
 	message_DATA_OPEN,
 	message_MENU_WARNING,
 	message_MENUS_DELETED,
@@ -117,6 +122,11 @@ static wimp_MESSAGE_LIST(29) task_messages = { {
 	message_PLUG_IN_ABORT,
 	message_PLUG_IN_ACTION,
 	/* message_PLUG_IN_INFORMED, (not provided by oslib) */
+#endif
+#ifdef WITH_PRINT
+	message_PRINT_SAVE,
+	message_PRINT_ERROR,
+	message_PRINT_TYPE_ODD,
 #endif
 	0
 } };
@@ -939,7 +949,20 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			break;
 
 		case message_DATA_LOAD:
-			ro_msg_dataload(message);
+			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE) {
+#ifdef WITH_PRINT
+				if (print_current_window)
+					print_dataload_bounce(message);
+#endif
+			}
+			else
+				ro_msg_dataload(message);
+			break;
+
+		case message_DATA_LOAD_ACK:
+#ifdef WITH_PRINT
+			print_cleanup();
+#endif
 			break;
 
 		case message_DATA_OPEN:
@@ -996,6 +1019,18 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 		case message_PLUG_IN_ACTION:
 			plugin_msg_parse(message,
 					event == wimp_USER_MESSAGE_ACKNOWLEDGE);
+			break;
+#endif
+#ifdef WITH_PRINT
+		case message_PRINT_SAVE:
+			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE)
+				print_save_bounce(message);
+			break;
+		case message_PRINT_ERROR:
+			print_error(message);
+			break;
+		case message_PRINT_TYPE_ODD:
+			print_type_odd(message);
 			break;
 #endif
 
@@ -1218,6 +1253,13 @@ char *ro_gui_url_file_parse(const char *file_name)
 
 void ro_msg_datasave_ack(wimp_message *message)
 {
+#ifdef WITH_PRINT
+	if (print_current_window) {
+		print_ack(message);
+		return;
+	}
+#endif
+
 	switch (gui_current_drag_type) {
 		case GUI_DRAG_DOWNLOAD_SAVE:
 			ro_gui_download_datasave_ack(message);

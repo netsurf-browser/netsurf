@@ -16,7 +16,7 @@ ExportAs:Export as
 Draw:Draw  ‹^F3
 Text:Text  ^F3
 SaveURL:Save location
-Print:Print...
+Print:Print  PRINT
 NewWindow:New window  ^N
 ViewSrc:View source...  F8
 Object:Object
@@ -157,6 +157,8 @@ NoNameError:Please enter a name
 NoURLError:Please enter a URL
 URIError:NetSurf was unable to parse this URI file due to a syntax error.
 EmptyError:file is empty.
+PrintError:An error occurred when printing:
+PrintErrorRO2:It appears that the printer is busy.
 
 # Some general purpose words and phrases
 Bytes: B

@@ -39,7 +39,7 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 #endif
 	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
 	dialog_warning, dialog_config_th_pane, dialog_debug,
-	dialog_folder, dialog_entry, dialog_search;
+	dialog_folder, dialog_entry, dialog_search, dialog_print;
 
 static int ro_gui_choices_font_size;
 static int ro_gui_choices_font_min_size;
@@ -105,6 +105,7 @@ void ro_gui_dialog_init(void)
 	dialog_folder = ro_gui_dialog_create("new_folder");
 	dialog_entry = ro_gui_dialog_create("new_entry");
 	dialog_search = ro_gui_dialog_create("search");
+	dialog_print = ro_gui_dialog_create("print");
 }
 
 
@@ -353,6 +354,10 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 	if (key->w == dialog_search)
 		return ro_gui_search_keypress(key);
 #endif
+#ifdef WITH_PRINT
+	if (key->w == dialog_print)
+		return ro_gui_print_keypress(key);
+#endif
 	if (key->c == wimp_KEY_ESCAPE) {
 		ro_gui_dialog_close(key->w);
 		return true;
@@ -405,8 +410,14 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 		ro_gui_dialog_click_warning(pointer);
 	else if ((pointer->w == dialog_folder) || (pointer->w == dialog_entry))
 		ro_gui_hotlist_dialog_click(pointer);
+#ifdef WITH_SEARCH
 	else if (pointer->w == dialog_search)
 		ro_gui_search_click(pointer);
+#endif
+#ifdef WITH_PRINT
+	else if (pointer->w == dialog_print)
+		ro_gui_print_click(pointer);
+#endif
 }
 
 
@@ -857,7 +868,7 @@ void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer)
 
 struct theme_entry *ro_gui_theme_entry(int index) {
 	struct theme_entry *entry = theme_list;
-	for (int i = 0; i < index; i++) entry = entry->next;	
+	for (int i = 0; i < index; i++) entry = entry->next;
 	return entry;
 }
 

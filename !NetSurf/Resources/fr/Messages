@@ -16,7 +16,7 @@ ExportAs:Exporter sous
 Draw:Draw  ‹^F3
 Text:Texte   ^F3
 SaveURL:Sauver le lieu
-Print:Imprimer...
+Print:Imprimer  PRINT
 NewWindow:Nouvelle fenêtre  ^N
 ViewSrc:Voir le source...  F8
 Object:Objet
@@ -157,6 +157,8 @@ NoNameError:Entrez un nom SVP
 NoURLError:Entrez une URL SVP
 URIError:NetSurf est incapable de traiter ce fichier URI à cause d'une erreur de syntaxe.
 EmptyError:Le fichier est vide.
+PrintError:An error occurred when printing:
+PrintErrorRO2:It appears that the printer is busy.
 
 # Some general purpose words and phrases
 Bytes: O

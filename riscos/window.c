@@ -1402,6 +1402,10 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			}
 			return true;
 
+		case wimp_KEY_PRINT:
+			ro_gui_print_open(g, 0, 0, false, true);
+			return true;
+
 		case wimp_KEY_UP:
 		case wimp_KEY_DOWN:
 		case wimp_KEY_PAGE_UP:

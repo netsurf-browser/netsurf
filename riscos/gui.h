@@ -26,7 +26,7 @@ struct toolbar;
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
 	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_config_th_pane,
-	dialog_debug, dialog_folder, dialog_entry, dialog_search;
+	dialog_debug, dialog_folder, dialog_entry, dialog_search, dialog_print;
 extern wimp_w history_window;
 extern wimp_w hotlist_window;
 extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu,
@@ -244,6 +244,11 @@ void ro_gui_search_open(struct gui_window *g, int x, int y, bool sub_menu, bool 
 void ro_gui_search_click(wimp_pointer *pointer);
 bool ro_gui_search_keypress(wimp_key *key);
 
+/* in print.c */
+void ro_gui_print_open(struct gui_window *g, int x, int y, bool sub_menu, bool keypress);
+void ro_gui_print_click(wimp_pointer *pointer);
+bool ro_gui_print_keypress(wimp_key *key);
+
 /* toolbar types */
 #define TOOLBAR_BROWSER 0
 #define TOOLBAR_HOTLIST 1
@@ -359,5 +364,21 @@ bool ro_gui_search_keypress(wimp_key *key);
 #define ICON_SEARCH_CANCEL 5
 #define ICON_SEARCH_FIND 6
 
+#define ICON_PRINT_TO_BOTTOM 1
+#define ICON_PRINT_SHEETS 2
+#define ICON_PRINT_SHEETS_VALUE 3
+#define ICON_PRINT_SHEETS_DOWN 4
+#define ICON_PRINT_SHEETS_UP 5
+#define ICON_PRINT_SHEETS_TEXT 6
+#define ICON_PRINT_FG_IMAGES 7
+#define ICON_PRINT_BG_IMAGES 8
+#define ICON_PRINT_IN_BACKGROUND 9
+#define ICON_PRINT_UPRIGHT 10
+#define ICON_PRINT_SIDEWAYS 11
+#define ICON_PRINT_COPIES 12
+#define ICON_PRINT_COPIES_DOWN 13
+#define ICON_PRINT_COPIES_UP 14
+#define ICON_PRINT_CANCEL 15
+#define ICON_PRINT_PRINT 16
 
 #endif

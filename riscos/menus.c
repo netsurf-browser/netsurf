@@ -120,7 +120,7 @@ static wimp_MENU(8) page_menu = {
     { wimp_MENU_GIVE_WARNING, (wimp_menu *)1,		 DEFAULT_FLAGS,			   { "SaveComp" } },
     { 0,		      (wimp_menu *)&export_menu, DEFAULT_FLAGS,			   { "Export" } },
     { 0,		      (wimp_menu *)&link_menu,	 DEFAULT_FLAGS,			   { "SaveURL" } },
-    { wimp_MENU_SEPARATE,     wimp_NO_SUB_MENU,		 DEFAULT_FLAGS | wimp_ICON_SHADED, { "Print" } },
+    { wimp_MENU_GIVE_WARNING | wimp_MENU_SEPARATE,     (wimp_menu *)1,		 DEFAULT_FLAGS,			   { "Print" } },
     { 0,		      wimp_NO_SUB_MENU,		 DEFAULT_FLAGS,			   { "NewWindow" } },
     { wimp_MENU_LAST,	      wimp_NO_SUB_MENU,		 DEFAULT_FLAGS,			   { "ViewSrc" } }
   }
@@ -1070,6 +1070,11 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 						0, false);
 				break;
 			}
+			break;
+
+		case 5: /* Print -> */
+			ro_gui_print_open(current_gui, warning->pos.x,
+					warning->pos.y, true, false);
 			break;
 		}
 		break;
