@@ -25,6 +25,7 @@
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/font.h"
+#include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/about.h"
 #include "netsurf/riscos/gui.h"
@@ -71,7 +72,7 @@ int ro_save_data(void *data, unsigned long length, char *file_name, bits file_ty
 
 
 wimp_menu* combo_menu;
-struct gui_gadget* current_gadget;
+struct form_control* current_gadget;
 
 
 int TOOLBAR_HEIGHT = 128;
@@ -1282,10 +1283,10 @@ void gui_window_stop_throbber(gui_window* g)
   wimp_set_icon_state(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_THROBBER"), 0, 0);
 }
 
-void gui_gadget_combo(struct browser_window* bw, struct gui_gadget* g, unsigned long mx, unsigned long my)
+void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigned long mx, unsigned long my)
 {
 	int count = 0;
-	struct formoption* o;
+	struct form_option* o;
 	wimp_pointer pointer;
 
 	if (combo_menu != NULL)

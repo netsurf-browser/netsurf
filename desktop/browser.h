@@ -80,7 +80,7 @@ struct browser_action
       action_buttons buttons;
     } mouse;
     struct {
-      struct gui_gadget* g;
+      struct form_control* g;
       int item;
     } gadget_select;
   } data;
@@ -114,7 +114,7 @@ int box_position_gt(struct box_position* x, struct box_position* y);
 int box_position_eq(struct box_position* x, struct box_position* y);
 int box_position_distance(struct box_position* x, struct box_position* y);
 
-void gui_redraw_gadget(struct browser_window* bw, struct gui_gadget* g);
+void gui_redraw_gadget(struct browser_window* bw, struct form_control* g);
 
 void browser_window_stop_throbber(struct browser_window* bw);
 void browser_window_reformat(struct browser_window* bw, int scroll_to_top);

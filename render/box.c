@@ -18,6 +18,7 @@
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
+#include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
@@ -70,7 +71,7 @@ static struct box *box_input_text(xmlNode *n, struct status *status,
 		struct css_style *style, bool password);
 static struct result box_button(xmlNode *n, struct status *status,
 		struct css_style *style);
-static void add_option(xmlNode* n, struct gui_gadget* current_select, char *text);
+static void add_option(xmlNode* n, struct form_control* current_select, char *text);
 static void box_normalise_block(struct box *block);
 static void box_normalise_table(struct box *table);
 void box_normalise_table_row_group(struct box *row_group,
@@ -78,7 +79,7 @@ void box_normalise_table_row_group(struct box *row_group,
 void box_normalise_table_row(struct box *row,
 		unsigned int **row_span, unsigned int *table_columns);
 static void box_normalise_inline_container(struct box *cont);
-static void gadget_free(struct gui_gadget* g);
+static void gadget_free(struct form_control* g);
 static void box_free_box(struct box *box);
 static struct result box_object(xmlNode *n, struct status *status,
 		struct css_style *style);
@@ -88,9 +89,8 @@ static struct result box_applet(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_iframe(xmlNode *n, struct status *status,
 		struct css_style *style);
-static struct form* create_form(xmlNode* n);
 static void add_form_element(struct page_elements* pe, struct form* f);
-static void add_gadget_element(struct page_elements* pe, struct gui_gadget* g);
+static void add_gadget_element(struct page_elements* pe, struct form_control* g);
 static bool plugin_decode(struct content* content, char* url, struct box* box,
                   struct object_params* po);
 
@@ -370,7 +370,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		}
 
 		box = box_create(parent_style, status.href, title);
-		box->text = text; 
+		box->text = text;
 		box->style_clone = 1;
 		box->length = strlen(text);
 		if (text[box->length - 1] == ' ') {
@@ -653,7 +653,7 @@ struct css_style * box_get_style(struct content ** stylesheet,
 			xmlFree(s);
 		}
 	}
-	
+
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
 		struct css_style * astyle = xcalloc(1, sizeof(struct css_style));
 		memcpy(astyle, &css_empty_style, sizeof(struct css_style));
@@ -737,9 +737,27 @@ struct result box_image(xmlNode *n, struct status *status,
 struct result box_form(xmlNode *n, struct status *status,
 		struct css_style *style)
 {
+	char* s;
 	struct box *box;
+	struct form *form;
+
 	box = box_create(style, status->href, status->title);
-	status->current_form = create_form(n);
+
+	status->current_form = form = xcalloc(1, sizeof(*form));
+
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "action"))) {
+		form->action = s;
+	}
+
+	form->method = method_GET;
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "method"))) {
+		if (stricmp(s, "post") == 0)
+			form->method = method_POST;
+		xmlFree(s);
+	}
+
+	form->controls = form->last_control = 0;
+
 	add_form_element(status->elements, status->current_form);
 	return (struct result) {box, 1};
 }
@@ -752,10 +770,10 @@ struct result box_textarea(xmlNode *n, struct status *status,
 	char* s;
 
 	box = box_create(style, NULL, 0);
-	box->gadget = xcalloc(1, sizeof(struct gui_gadget));
+	box->gadget = xcalloc(1, sizeof(struct form_control));
 	box->gadget->box = box;
 	box->gadget->type = GADGET_TEXTAREA;
-	box->gadget->form = status->current_form;
+	form_add_control(status->current_form, box->gadget);
 	style->display = CSS_DISPLAY_INLINE_BLOCK;
 
 	/* split the content at newlines and make an inline container with an
@@ -800,12 +818,12 @@ struct result box_select(xmlNode *n, struct status *status,
 	struct box *box;
 	struct box *inline_container;
 	struct box *inline_box;
-	struct gui_gadget *gadget = xcalloc(1, sizeof(struct gui_gadget));
+	struct form_control *gadget = xcalloc(1, sizeof(struct form_control));
 	char* s;
 	xmlNode *c, *c2;
 
 	gadget->type = GADGET_SELECT;
-	gadget->form = status->current_form;
+	form_add_control(status->current_form, gadget);
 
 	gadget->data.select.multiple = false;
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "multiple"))) {
@@ -882,9 +900,9 @@ struct result box_select(xmlNode *n, struct status *status,
 	return (struct result) {box, 0};
 }
 
-void add_option(xmlNode* n, struct gui_gadget* current_select, char *text)
+void add_option(xmlNode* n, struct form_control* current_select, char *text)
 {
-	struct formoption *option = xcalloc(1, sizeof(struct formoption));
+	struct form_option *option = xcalloc(1, sizeof(struct form_option));
 	char *s, *c;
 
 	assert(current_select != 0);
@@ -922,7 +940,7 @@ struct result box_input(xmlNode *n, struct status *status,
 		struct css_style *style)
 {
 	struct box* box = 0;
-	struct gui_gadget *gadget = 0;
+	struct form_control *gadget = 0;
 	char *s, *type, *url;
 
 	type = (char *) xmlGetProp(n, (const xmlChar *) "type");
@@ -943,16 +961,16 @@ struct result box_input(xmlNode *n, struct status *status,
 	else if (stricmp(type, "hidden") == 0)
 	{
 		/* no box for hidden inputs */
-		gadget = xcalloc(1, sizeof(struct gui_gadget));
+		gadget = xcalloc(1, sizeof(struct form_control));
 		gadget->type = GADGET_HIDDEN;
 
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")))
-			gadget->data.hidden.value = s;
+			gadget->value = s;
 	}
 	else if (stricmp(type, "checkbox") == 0 || stricmp(type, "radio") == 0)
 	{
 		box = box_create(style, NULL, 0);
-		box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
+		box->gadget = gadget = xcalloc(1, sizeof(struct form_control));
 		gadget->box = box;
 		if (type[0] == 'c' || type[0] == 'C')
 			gadget->type = GADGET_CHECKBOX;
@@ -967,12 +985,8 @@ struct result box_input(xmlNode *n, struct status *status,
 			xmlFree(s);
 		}
 
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
-			if (gadget->type == GADGET_CHECKBOX)
-				gadget->data.checkbox.value = s;
-			else
-				gadget->data.radio.value = s;
-		}
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")))
+			gadget->value = s;
 	}
 	else if (stricmp(type, "submit") == 0 || stricmp(type, "reset") == 0)
 	{
@@ -998,33 +1012,21 @@ struct result box_input(xmlNode *n, struct status *status,
 	else if (stricmp(type, "image") == 0)
 	{
 	        box = box_create(style, NULL, 0);
-	        box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
+	        box->gadget = gadget = xcalloc(1, sizeof(struct form_control));
 		gadget->box = box;
 	        gadget->type = GADGET_IMAGE;
-	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "name"))) {
-	                gadget->data.image.n = s;
-	        }
-	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "width"))) {
-	                gadget->data.image.width = (atoi(s));
-	        }
-	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "height"))) {
-                        gadget->data.image.height = (atoi(s));
-	        }
 	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src"))) {
-	                url = url_join(strdup(s), status->content->url);
+	                url = url_join(s, status->content->url);
 	                html_fetch_object(status->content, url, box);
+	                xmlFree(s);
 	        }
-	        gadget->data.image.name =
-	               xcalloc(strlen(gadget->data.image.n) + 5, sizeof(char));
-	        gadget->data.image.value =
-                       xcalloc(strlen(gadget->data.image.n) + 20, sizeof(char));
 	}
 
 	if (type != 0)
 		xmlFree(type);
 
 	if (gadget != 0) {
-		gadget->form = status->current_form;
+		form_add_control(status->current_form, gadget);
 		gadget->name = (char *) xmlGetProp(n, (const xmlChar *) "name");
 		add_gadget_element(status->elements, gadget);
 	}
@@ -1041,7 +1043,7 @@ struct box *box_input_text(xmlNode *n, struct status *status,
 	struct box *inline_container, *inline_box;
 	style->display = CSS_DISPLAY_INLINE_BLOCK;
 
-	box->gadget = xcalloc(1, sizeof(struct gui_gadget));
+	box->gadget = xcalloc(1, sizeof(struct form_control));
 	box->gadget->box = box;
 
 	box->gadget->maxlength = 100;
@@ -1090,10 +1092,10 @@ struct result box_button(xmlNode *n, struct status *status,
 	style->display = CSS_DISPLAY_INLINE_BLOCK;
 
 	if (!type || strcasecmp(type, "submit") == 0) {
-		box->gadget = xcalloc(1, sizeof(struct gui_gadget));
+		box->gadget = xcalloc(1, sizeof(struct form_control));
 		box->gadget->type = GADGET_SUBMIT;
 	} else if (strcasecmp(type, "reset") == 0) {
-		box->gadget = xcalloc(1, sizeof(struct gui_gadget));
+		box->gadget = xcalloc(1, sizeof(struct form_control));
 		box->gadget->type = GADGET_RESET;
 	} else {
 		/* type="button" or unknown: just render the contents */
@@ -1104,7 +1106,7 @@ struct result box_button(xmlNode *n, struct status *status,
 	if (type)
 		xmlFree(type);
 
-	box->gadget->form = status->current_form;
+	form_add_control(status->current_form, box->gadget);
 	box->gadget->box = box;
 	box->gadget->name = (char *) xmlGetProp(n, (const xmlChar *) "name");
 	box->gadget->value = (char *) xmlGetProp(n, (const xmlChar *) "value");
@@ -1561,50 +1563,27 @@ void box_normalise_inline_container(struct box *cont)
 }
 
 
-void gadget_free(struct gui_gadget* g)
+void gadget_free(struct form_control* g)
 {
-	struct formoption *o, *o1;
+	struct form_option *o, *o1;
 
 	if (g->name != 0)
 		xmlFree(g->name);
 	free(g->value);
 	free(g->initial_value);
 
-	switch (g->type)
-	{
-		case GADGET_HIDDEN:
-			if (g->data.hidden.value != 0)
-				xmlFree(g->data.hidden.value);
-			break;
-		case GADGET_RADIO:
-			if (g->data.checkbox.value != 0)
-				xmlFree(g->data.radio.value);
-			break;
-		case GADGET_CHECKBOX:
-			if (g->data.checkbox.value != 0)
-				xmlFree(g->data.checkbox.value);
-			break;
-		case GADGET_IMAGE:
-		        if (g->data.image.n != 0)
-		                xmlFree(g->data.image.n);
-		        if (g->data.image.name != 0)
-                                xfree(g->data.image.name);
-                        if (g->data.image.value != 0)
-                                xfree(g->data.image.value);
-		        break;
-		case GADGET_SELECT:
-			o = g->data.select.items;
-			while (o != NULL)
-			{
-				if (o->text != 0)
-					xmlFree(o->text);
-				if (o->value != 0)
-					xmlFree(o->value);
-				o1 = o->next;
-				xfree(o);
-				o = o1;
-			}
-			break;
+	if (g->type == GADGET_SELECT) {
+		o = g->data.select.items;
+		while (o != NULL)
+		{
+			if (o->text != 0)
+				xmlFree(o->text);
+			if (o->value != 0)
+				xmlFree(o->value);
+			o1 = o->next;
+			xfree(o);
+			o = o1;
+		}
 	}
 }
 
@@ -1649,27 +1628,6 @@ void box_free_box(struct box *box)
  * form helper functions
  */
 
-struct form* create_form(xmlNode* n)
-{
-	struct form* form;
-	char* s;
-
-	form = xcalloc(1, sizeof(*form));
-
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "action"))) {
-		form->action = s;
-	}
-
-	form->method = method_GET;
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "method"))) {
-		if (stricmp(s, "post") == 0)
-			form->method = method_POST;
-		xmlFree(s);
-	}
-
-	return form;
-}
-
 void add_form_element(struct page_elements* pe, struct form* f)
 {
 	pe->forms = xrealloc(pe->forms, (pe->numForms + 1) * sizeof(struct form*));
@@ -1677,9 +1635,9 @@ void add_form_element(struct page_elements* pe, struct form* f)
 	pe->numForms++;
 }
 
-void add_gadget_element(struct page_elements* pe, struct gui_gadget* g)
+void add_gadget_element(struct page_elements* pe, struct form_control* g)
 {
-	pe->gadgets = xrealloc(pe->gadgets, (pe->numGadgets + 1) * sizeof(struct gui_gadget*));
+	pe->gadgets = xrealloc(pe->gadgets, (pe->numGadgets + 1) * sizeof(struct form_control*));
 	pe->gadgets[pe->numGadgets] = g;
 	pe->numGadgets++;
 }

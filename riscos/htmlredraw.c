@@ -13,6 +13,7 @@
 #include "oslib/font.h"
 #include "netsurf/css/css.h"
 #include "netsurf/content/content.h"
+#include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
@@ -56,14 +57,9 @@ void html_redraw(struct content *c, long x, long y,
 
 
 /* validation strings can't be const */
-static char validation_textarea[] = "R7;L";
-static char validation_textbox[] = "";
-static char validation_password[] = "D*";
 static char validation_select[] = "R2";
 static char validation_checkbox_selected[] = "Sopton";
 static char validation_checkbox_unselected[] = "Soptoff";
-static char validation_radio_selected[] = "Sradioon";
-static char validation_radio_unselected[] = "Sradiooff";
 
 static char select_text_multiple[] = "<Multiple>";  /* TODO: read from messages */
 static char select_text_none[] = "<None>";
@@ -79,7 +75,7 @@ void html_redraw_box(struct content *content, struct box * box,
 {
 	struct box *c;
 	char *select_text;
-	struct formoption *opt;
+	struct form_option *opt;
 	int width, height, x0, y0, x1, y1;
 
 	x += box->x * 2;

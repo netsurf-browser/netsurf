@@ -22,7 +22,7 @@ extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 extern wimp_menu *current_menu, *iconbar_menu, *browser_menu,
 	*combo_menu, *theme_menu;
 extern int current_menu_x, current_menu_y, iconbar_menu_height;
-extern struct gui_gadget *current_gadget;
+extern struct form_control *current_gadget;
 extern const char *HOME_URL;
 extern gui_window *window_list;
 

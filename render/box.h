@@ -33,58 +33,7 @@ struct column {
 	unsigned long min, max, width;
 };
 
-struct formoption {
-	bool selected;
-	bool initial_selected;
-	char* value;
-	char* text;
-	struct formoption* next;
-};
-
 struct box;
-
-struct gui_gadget {
-	enum { GADGET_HIDDEN = 0, GADGET_TEXTBOX, GADGET_RADIO, GADGET_CHECKBOX,
-		GADGET_SELECT, GADGET_TEXTAREA,
-		GADGET_IMAGE, GADGET_PASSWORD, GADGET_SUBMIT, GADGET_RESET } type;
-	char *name;
-	char *value;
-	char *initial_value;
-	struct form *form;
-	struct box *box;
-	struct box *caret_inline_container;
-	struct box *caret_text_box;
-	int caret_char_offset;
-	unsigned int maxlength;
-	union {
-		struct {
-			char* value;
-		} hidden;
-		struct {
-                        char* name;
-                        char* value;
-                        char* n;
-                        int width, height;
-                        int mx, my;
-		} image;
-		struct {
-			int num_items;
-			struct formoption *items, *last_item;
-			bool multiple;
-			int num_selected;
-			/** Currently selected item, if num_selected == 1. */
-			struct formoption *current;
-		} select;
-		struct {
-			int selected;
-			char* value;
-		} checkbox;
-		struct {
-			int selected;
-			char* value;
-		} radio;
-	} data;
-};
 
 /* parameters for <object> and related elements */
 struct object_params {
@@ -137,28 +86,22 @@ struct box {
 	struct box * next_float;
 	struct column *col;
 	struct font_data *font;
-	struct gui_gadget* gadget;
+	struct form_control* gadget;
 	struct content* object;  /* usually an image */
 	struct object_params *object_params;
 	void* object_state; /* state of any object */
 };
 
-struct form
-{
-	char* action; /* url */
-	enum {method_GET, method_POST} method;
-};
-
 struct formsubmit
 {
 	struct form* form;
-	struct gui_gadget* items;
+	struct form_control* items;
 };
 
 struct page_elements
 {
 	struct form** forms;
-	struct gui_gadget** gadgets;
+	struct form_control** gadgets;
 	struct img** images;
 	int numForms;
 	int numGadgets;
