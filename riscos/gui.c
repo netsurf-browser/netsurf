@@ -7,24 +7,26 @@
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
-#include "netsurf/desktop/options.h"
-#include "netsurf/riscos/font.h"
-#include "netsurf/desktop/gui.h"
-#include "netsurf/utils/utils.h"
-#include "netsurf/desktop/netsurf.h"
-#include "oslib/osfile.h"
-#include "oslib/os.h"
-#include "oslib/wimp.h"
+#include <assert.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #include "oslib/colourtrans.h"
-#include "oslib/wimpspriteop.h"
+#include "oslib/os.h"
+#include "oslib/osfile.h"
 #include "oslib/osgbpb.h"
+#include "oslib/wimp.h"
+#include "oslib/wimpspriteop.h"
+#include "netsurf/desktop/gui.h"
+#include "netsurf/desktop/netsurf.h"
+#include "netsurf/desktop/options.h"
+#include "netsurf/render/html.h"
+#include "netsurf/riscos/font.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/utils/log.h"
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
-#include <time.h>
-#include <math.h>
+#include "netsurf/utils/utils.h"
 
 const char *__dynamic_da_name = "NetSurf";
 
@@ -155,8 +157,11 @@ static void ro_gui_transform_menus(void);
 static void ro_gui_create_menu(wimp_menu* menu, int x, int y, gui_window* g);
 static int window_x_units(int scr_units, wimp_window_state* win);
 static int window_y_units(int scr_units, wimp_window_state* win);
-static void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
-		signed long y, os_box* clip, unsigned long current_background_color);
+static void ro_gui_window_redraw_box(struct content *content, struct box * box,
+		signed long x, signed long y, os_box* clip,
+		unsigned long current_background_color,
+		signed long gadget_subtract_x, signed long gadget_subtract_y,
+		bool *select_on);
 static void ro_gui_toolbar_redraw(gui_window* g, wimp_draw* redraw);
 static void gui_disable_icon(wimp_w w, wimp_i i);
 static void gui_enable_icon(wimp_w w, wimp_i i);
@@ -581,6 +586,19 @@ gui_safety gui_window_set_redraw_safety(gui_window* g, gui_safety s)
   return old;
 }
 
+
+os_box *clip;
+
+void html_redraw(struct content *c, long x, long y,
+		unsigned long width, unsigned long height)
+{
+	bool select_on = false;
+	assert(c->data.html.layout != NULL);
+	ro_gui_window_redraw_box(c, c->data.html.layout->children,
+			x, y, clip, 0xffffff, x, y, &select_on);
+}
+
+
 int select_on = 0;
 
 /* validation strings can't be const */
@@ -599,8 +617,11 @@ static char select_text_none[] = "<None>";
 
 static char empty_text[] = "";
 
-void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
-		signed long y, os_box* clip, unsigned long current_background_color)
+void ro_gui_window_redraw_box(struct content *content, struct box * box,
+		signed long x, signed long y, os_box* clip,
+		unsigned long current_background_color,
+		signed long gadget_subtract_x, signed long gadget_subtract_y,
+		bool *select_on)
 {
   struct box * c;
   char* select_text;
@@ -634,7 +655,7 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
     {
       content_redraw(box->object,
                       (int) x + (int) box->x * 2,
-                      (int) y - (int) box->y * 2 - (int) box->height * 2,
+                      (int) y - (int) box->y * 2,
                       box->width * 2, box->height * 2);
     }
 /*    if (box->img != 0)
@@ -765,13 +786,13 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x,
     if (box->type == BOX_INLINE && box->font != 0)
     {
 
-if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
+if (content->data.html.text_selection.selected == 1)
 {
       struct box_position* start;
       struct box_position* end;
 
-      start = &(g->data.browser.bw->current_content->data.html.text_selection.start);
-      end = &(g->data.browser.bw->current_content->data.html.text_selection.end);
+      start = &(content->data.html.text_selection.start);
+      end = &(content->data.html.text_selection.end);
 
       if (start->box == box)
       {
@@ -795,10 +816,10 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
           os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
             (int) x + (int) box->x * 2 + (int) box->width * 2 - 2,
             (int) y - (int) box->y * 2 - 2);
-          select_on = 1;
+          *select_on = true;
         }
       }
-      else if (select_on == 1)
+      else if (*select_on)
       {
         if (end->box != box)
         {
@@ -819,7 +840,7 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
           os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
             (int) x + (int) box->x * 2 + end->pixel_offset * 2 - 2,
             (int) y - (int) box->y * 2 - 2);
-          select_on = 0;
+          *select_on = false;
         }
       }
 }
@@ -837,29 +858,31 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
   }
   else
   {
-    if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
+    if (content->data.html.text_selection.selected == 1)
     {
       struct box_position* start;
       struct box_position* end;
 
-      start = &(g->data.browser.bw->current_content->data.html.text_selection.start);
-      end = &(g->data.browser.bw->current_content->data.html.text_selection.end);
+      start = &(content->data.html.text_selection.start);
+      end = &(content->data.html.text_selection.end);
 
       if (start->box == box && end->box != box)
-        select_on = 1;
-      else if (select_on == 1 && end->box == box)
-        select_on = 0;
+        *select_on = true;
+      else if (*select_on && end->box == box)
+        *select_on = false;
     }
   }
 
   for (c = box->children; c != 0; c = c->next)
     if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-      ro_gui_window_redraw_box(g, c, (int) x + (int) box->x * 2,
-		      (int) y - (int) box->y * 2, clip, current_background_color);
+      ro_gui_window_redraw_box(content, c, (int) x + (int) box->x * 2,
+		      (int) y - (int) box->y * 2, clip, current_background_color,
+		      gadget_subtract_x, gadget_subtract_y, select_on);
 
   for (c = box->float_children; c != 0; c = c->next_float)
-    ro_gui_window_redraw_box(g, c, (int) x + (int) box->x * 2,
-		    (int) y - (int) box->y * 2, clip, current_background_color);
+    ro_gui_window_redraw_box(content, c, (int) x + (int) box->x * 2,
+		    (int) y - (int) box->y * 2, clip, current_background_color,
+		    gadget_subtract_x, gadget_subtract_y, select_on);
 }
 
 
@@ -894,25 +917,13 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
     more = wimp_redraw_window(redraw);
     wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_BLACK);
 
-    select_on = 0;
-
     while (more)
     {
-      if (c->type == CONTENT_HTML) {
-          gadget_subtract_x = redraw->box.x0 - redraw->xscroll;
-          gadget_subtract_y = redraw->box.y1 - redraw->yscroll;
-          assert(c->data.html.layout != NULL);
-          ro_gui_window_redraw_box(g,
-            c->data.html.layout->children,
-            redraw->box.x0 - redraw->xscroll, redraw->box.y1 - redraw->yscroll,
-            &redraw->clip, 0xffffff);
-
-      } else {
-        content_redraw(c,
-            (int) redraw->box.x0 - (int) redraw->xscroll,
-            (int) redraw->box.y1 - (int) redraw->yscroll - (int) c->height * 2,
-            c->width * 2, c->height * 2);
-      }
+      clip = &redraw->clip;
+      content_redraw(c,
+          (int) redraw->box.x0 - (int) redraw->xscroll,
+          (int) redraw->box.y1 - (int) redraw->yscroll,
+          c->width * 2, c->height * 2);
       more = wimp_get_rectangle(redraw);
     }
   }

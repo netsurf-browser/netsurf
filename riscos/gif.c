@@ -333,7 +333,7 @@ void nsgif_redraw(struct content *c, long x, long y,
 	xosspriteop_put_sprite_scaled(osspriteop_PTR,
 			c->data.gif.sprite_area,
 			(osspriteop_id) (c->data.gif.sprite_area + 1),
-			x, y, 8, 0, table);
+			x, y - c->height * 2, 8, 0, table);
 
 	xfree(table);
 }

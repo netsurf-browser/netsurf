@@ -358,7 +358,10 @@ void html_fetch_object(struct content *c, char *url, struct box *box)
 	/* start fetch */
 	c->data.html.object[i].content = fetchcache(url, c->url,
 			html_object_callback,
-			c, i, 0, 0);
+			c, i,
+			c->width, c->height);  /* we don't know the object's
+						  dimensions yet; use
+						  parent's as an estimate */
 	c->active++;
 	if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
 		html_object_callback(CONTENT_MSG_DONE,

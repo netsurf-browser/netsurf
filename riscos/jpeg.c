@@ -79,7 +79,8 @@ void jpeg_redraw(struct content *c, long x, long y,
 	factors.ydiv = c->height * 2;
 
 	xjpeg_plot_scaled((jpeg_image *) c->data.jpeg.data,
-			x, y, &factors, (int) c->data.jpeg.length,
+			x, y - c->height * 2,
+			&factors, (int) c->data.jpeg.length,
 			jpeg_SCALE_DITHERED);
 }
 
