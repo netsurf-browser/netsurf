@@ -317,7 +317,7 @@ void add_graphic(struct content *content, struct box *box,
                sprite_length = ((osspriteop_header*)((char*)content->data.png.sprite_area+content->data.png.sprite_area->first))->size;
                break;
           case CONTENT_GIF:
-               sprite_length = ((osspriteop_header*)((char*)content->data.gif.sprite_area+content->data.gif.sprite_area->first))->size;
+               sprite_length = content->data.gif.gif->frame_image->size;
                break;
           case CONTENT_SPRITE:
                sprite_length = ((osspriteop_header*)((char*)content->data.sprite.data+(((osspriteop_area*)content->data.sprite.data)->first)))->size;
@@ -345,7 +345,7 @@ void add_graphic(struct content *content, struct box *box,
                        (unsigned)sprite_length);
                break;
           case CONTENT_GIF:
-               memcpy((char*)ds+16, (char*)content->data.gif.sprite_area+content->data.gif.sprite_area->first,
+               memcpy((char*)ds+16, (char*)content->data.gif.gif->frame_image,
                        (unsigned)sprite_length);
                break;
           case CONTENT_SPRITE:
