@@ -582,10 +582,12 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				}
 				break;
 			case 2: /* Select all */
-				ro_gui_hotlist_keypress(1);	/* CTRL+A */
+				ro_gui_hotlist_set_selected(true);
+				ro_gui_menu_prepare_hotlist();
 				break;
 			case 3: /* Clear */
-				ro_gui_hotlist_keypress(26);	/* CTRL+Z */
+				ro_gui_hotlist_set_selected(false);
+				ro_gui_menu_prepare_hotlist();
 				break;
 		}
 	} else if (current_menu == browser_menu) {
@@ -1387,6 +1389,7 @@ void ro_gui_menu_objectinfo(wimp_message_menu_warning *warning)
 		if (box->object->mime_type) mime = box->object->mime_type;
 	}
 	else if (c->type == CONTENT_JPEG || c->type == CONTENT_PNG ||
+		 c->type == CONTENT_JNG || c->type == CONTENT_MNG ||
 		 c->type == CONTENT_GIF || c->type == CONTENT_SPRITE ||
 		 c->type == CONTENT_DRAW) {
 		sprintf(icon_buf, "file_%x", ro_content_filetype(c));

@@ -110,6 +110,9 @@
 #ifdef WITH_PNG
 #include "netsurf/riscos/png.h"
 #endif
+#ifdef WITH_MNG
+#include "netsurf/riscos/mng.h"
+#endif
 #ifdef WITH_SPRITE
 #include "netsurf/riscos/sprite.h"
 #endif
@@ -199,6 +202,9 @@ struct content {
 #endif
 #ifdef WITH_PNG
 		struct content_png_data png;
+#endif
+#ifdef WITH_MNG
+		struct content_mng_data mng;
 #endif
 #ifdef WITH_SPRITE
 		struct content_sprite_data sprite;

@@ -26,6 +26,8 @@ static const struct type_entry type_map[] = {
 	{0x695, "image/gif"},
 	{0xaff, "image/x-drawfile"},
 	{0xb60, "image/png"},
+	{0x251, "image/jng"},	/* currently in user space */
+	{0x252, "image/mng"},	/* currently in user space */
 	{0xc85, "image/jpeg"},
 	{0xf79, "text/css"},
 	{0xfaf, "text/html"},
@@ -125,6 +127,8 @@ int ro_content_filetype(struct content *content)
 		case CONTENT_CSS:	return 0xf79;
 		case CONTENT_JPEG:	return 0xc85;
 		case CONTENT_PNG:	return 0xb60;
+		case CONTENT_JNG:	return 0x251;	/* currently in user space */
+		case CONTENT_MNG:	return 0x252;	/* currently in user space */
 		case CONTENT_GIF:	return 0x695;
 		case CONTENT_SPRITE:	return 0xff9;
 		case CONTENT_DRAW:	return 0xaff;

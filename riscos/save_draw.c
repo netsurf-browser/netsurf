@@ -597,6 +597,10 @@ static bool add_box(struct box *box, colour cbc, int x, int y)
 #ifdef WITH_PNG
 			case CONTENT_PNG:
 #endif
+#ifdef WITH_MNG
+			case CONTENT_JNG:
+			case CONTENT_MNG:
+#endif
 			case CONTENT_GIF:
 #ifdef WITH_SPRITE
 			case CONTENT_SPRITE:
@@ -704,6 +708,12 @@ static bool add_graphic(struct content *content, struct box *box,
 			sprite_length = ((osspriteop_header*)((char*)content->data.png.sprite_area+content->data.png.sprite_area->first))->size;
 			break;
 #endif
+#ifdef WITH_MNG
+		case CONTENT_JNG:
+		case CONTENT_MNG:
+			sprite_length = ((osspriteop_header*)((char*)content->data.mng.sprite_area+content->data.mng.sprite_area->first))->size;
+			break;
+#endif
 		case CONTENT_GIF:
 			sprite_length = content->data.gif.gif->frame_image->size;
 			break;
@@ -735,6 +745,12 @@ static bool add_graphic(struct content *content, struct box *box,
 #ifdef WITH_PNG
 		case CONTENT_PNG:
 			memcpy((char*)ds+16, (char*)content->data.png.sprite_area+content->data.png.sprite_area->first, (unsigned)sprite_length);
+			break;
+#endif
+#ifdef WITH_MNG
+		case CONTENT_JNG:
+		case CONTENT_MNG:
+			memcpy((char*)ds+16, (char*)content->data.mng.sprite_area+content->data.mng.sprite_area->first, (unsigned)sprite_length);
 			break;
 #endif
 		case CONTENT_GIF:

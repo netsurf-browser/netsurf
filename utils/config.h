@@ -22,6 +22,7 @@
 #define WITH_GIF
 #define WITH_JPEG
 #define WITH_PNG
+#define WITH_MNG
 #endif
 #ifdef riscos
 #define WITH_DRAW

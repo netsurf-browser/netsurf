@@ -70,6 +70,10 @@ static const content_type image_types[] = {
 #ifdef WITH_PNG
 	CONTENT_PNG,
 #endif
+#ifdef WITH_MNG
+	CONTENT_JNG,
+	CONTENT_MNG,
+#endif
 #ifdef WITH_SPRITE
 	CONTENT_SPRITE,
 #endif
