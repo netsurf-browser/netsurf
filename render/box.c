@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.9 2002/06/28 20:14:04 bursa Exp $
+ * $Id: box.c,v 1.10 2002/08/11 23:00:24 bursa Exp $
  */
 
 #include <assert.h>
@@ -18,7 +18,8 @@
  */
 
 void box_add_child(struct box * parent, struct box * child);
-struct box * box_create(xmlNode * node, box_type type, struct css_style * style);
+struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
+		const char *href);
 struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_style * parent_style,
 		xmlNode * n, struct css_selector * selector, unsigned int depth);
 
@@ -42,12 +43,15 @@ void box_add_child(struct box * parent, struct box * child)
  * create a box tree node
  */
 
-struct box * box_create(xmlNode * node, box_type type, struct css_style * style)
+struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
+		const char *href)
 {
 	struct box * box = xcalloc(1, sizeof(struct box));
 	box->node = node;
 	box->type = type;
 	box->style = style;
+	box->text = 0;
+	box->href = href;
 	return box;
 }
 
@@ -69,7 +73,8 @@ struct box * box_create(xmlNode * node, box_type type, struct css_style * style)
 
 struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
-		struct box * parent, struct box * inline_container)
+		struct box * parent, struct box * inline_container,
+		const char *href)
 {
 	struct box * box;
 	struct box * inline_container_c;
@@ -82,11 +87,20 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 		*selector = xrealloc(*selector, (depth + 1) * sizeof(struct css_selector));
 		(*selector)[depth].element = (const char *) n->name;
 		(*selector)[depth].class = (*selector)[depth].id = 0;
-		if ((s = (char *) xmlGetProp(n, (xmlChar *) "class")))
+		if ((s = (char *) xmlGetProp(n, (xmlChar *) "class"))) {
 			(*selector)[depth].class = s;
+			free(s);
+		}
 		style = box_get_style(stylesheet, parent_style, n, *selector, depth + 1);
 		if (style->display == CSS_DISPLAY_NONE)
 			return inline_container;
+
+		if (strcmp((const char *) n->name, "a") == 0) {
+			if ((s = (char *) xmlGetProp(n, (xmlChar *) "href"))) {
+				href = strdup(s);
+				free(s);
+			}
+		}
 	}
 
 	if (n->type == XML_TEXT_NODE ||
@@ -102,7 +116,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 					style2 = xcalloc(1, sizeof(struct css_style));
 					memcpy(style2, parent_style, sizeof(struct css_style));
 					css_cascade(style2, &css_blank_style);
-					box = box_create(0, BOX_TABLE_ROW, style2);
+					box = box_create(0, BOX_TABLE_ROW, style2, href);
 					box_add_child(parent, box);
 					parent = box;
 					/* fall through */
@@ -111,7 +125,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 					style2 = xcalloc(1, sizeof(struct css_style));
 					memcpy(style2, parent_style, sizeof(struct css_style));
 					css_cascade(style2, &css_blank_style);
-					box = box_create(0, BOX_TABLE_CELL, style2);
+					box = box_create(0, BOX_TABLE_CELL, style2, href);
 					box->colspan = 1;
 					box_add_child(parent, box);
 					parent = box;
@@ -127,12 +141,12 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 			box_add_child(parent, inline_container);
 		}
 		if (n->type == XML_TEXT_NODE) {
-			box = box_create(n, BOX_INLINE, 0);
+			box = box_create(n, BOX_INLINE, parent_style, href);
 			box->text = squash_whitespace((char *) n->content);
 			box->length = strlen(box->text);
 			box_add_child(inline_container, box);
 		} else {
-			box = box_create(0, BOX_FLOAT_LEFT, 0);
+			box = box_create(0, BOX_FLOAT_LEFT, 0, href);
 			if (style->float_ == CSS_FLOAT_RIGHT) box->type = BOX_FLOAT_RIGHT;
 			box_add_child(inline_container, box);
 			style->float_ = CSS_FLOAT_NONE;
@@ -151,7 +165,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 						style2 = xcalloc(1, sizeof(struct css_style));
 						memcpy(style2, parent_style, sizeof(struct css_style));
 						css_cascade(style2, &css_blank_style);
-						box = box_create(0, BOX_TABLE_ROW, style2);
+						box = box_create(0, BOX_TABLE_ROW, style2, href);
 						box_add_child(parent, box);
 						parent = box;
 						/* fall through */
@@ -160,7 +174,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 						style2 = xcalloc(1, sizeof(struct css_style));
 						memcpy(style2, parent_style, sizeof(struct css_style));
 						css_cascade(style2, &css_blank_style);
-						box = box_create(0, BOX_TABLE_CELL, style2);
+						box = box_create(0, BOX_TABLE_CELL, style2, href);
 						box->colspan = 1;
 						box_add_child(parent, box);
 						parent = box;
@@ -173,25 +187,28 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 					default:
 						assert(0);
 				}
-				box = box_create(n, BOX_BLOCK, style);
+				box = box_create(n, BOX_BLOCK, style, href);
 				box_add_child(parent, box);
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
 					inline_container_c = xml_to_box(c, style, stylesheet,
-							selector, depth + 1, box, inline_container_c);
+							selector, depth + 1, box, inline_container_c,
+							href);
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_INLINE:  /* inline elements get no box, but their children do */
 				for (c = n->children; c != 0; c = c->next)
 					inline_container = xml_to_box(c, style, stylesheet,
-							selector, depth + 1, parent, inline_container);
+							selector, depth + 1, parent, inline_container,
+							href);
 				break;
 			case CSS_DISPLAY_TABLE:
-				box = box_create(n, BOX_TABLE, style);
+				box = box_create(n, BOX_TABLE, style, href);
 				box_add_child(parent, box);
 				for (c = n->children; c != 0; c = c->next)
 					xml_to_box(c, style, stylesheet,
-							selector, depth + 1, box, 0);
+							selector, depth + 1, box, 0,
+							href);
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_TABLE_ROW:
@@ -200,21 +217,22 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 					style2 = xcalloc(1, sizeof(struct css_style));
 					memcpy(style2, parent_style, sizeof(struct css_style));
 					css_cascade(style2, &css_blank_style);
-					box = box_create(0, BOX_TABLE, style2);
+					box = box_create(0, BOX_TABLE, style2, href);
 					box_add_child(parent, box);
 					parent = box;
 				}
 				assert(parent->type == BOX_TABLE);
-				box = box_create(n, BOX_TABLE_ROW, style);
+				box = box_create(n, BOX_TABLE_ROW, style, href);
 				box_add_child(parent, box);
 				for (c = n->children; c != 0; c = c->next)
 					xml_to_box(c, style, stylesheet,
-							selector, depth + 1, box, 0);
+							selector, depth + 1, box, 0,
+							href);
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_TABLE_CELL:
 				assert(parent->type == BOX_TABLE_ROW);
-				box = box_create(n, BOX_TABLE_CELL, style);
+				box = box_create(n, BOX_TABLE_CELL, style, href);
 				if ((s = (char *) xmlGetProp(n, (xmlChar *) "colspan"))) {
 					if ((box->colspan = strtol(s, 0, 10)) == 0)
 						box->colspan = 1;
@@ -224,7 +242,8 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
 					inline_container_c = xml_to_box(c, style, stylesheet,
-							selector, depth + 1, box, inline_container_c);
+							selector, depth + 1, box, inline_container_c,
+							href);
 				inline_container = 0;
 				break;
 			default:
@@ -259,6 +278,7 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 			else if (strcmp(s, "center") == 0) style->text_align = CSS_TEXT_ALIGN_CENTER;
 			else if (strcmp(s, "right") == 0) style->text_align = CSS_TEXT_ALIGN_RIGHT;
 		}
+		free(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "clear"))) {
@@ -268,13 +288,15 @@ struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_
 	}
 
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "width"))) {
-		if (strrchr(s, '%'))
-			style->width.width = CSS_WIDTH_PERCENT,
+		if (strrchr(s, '%')) {
+			style->width.width = CSS_WIDTH_PERCENT;
 			style->width.value.percent = atof(s);
-		else
-			style->width.width = CSS_WIDTH_LENGTH,
-			style->width.value.length.unit = CSS_UNIT_PX,
+		} else {
+			style->width.width = CSS_WIDTH_LENGTH;
+			style->width.value.length.unit = CSS_UNIT_PX;
 			style->width.value.length.value = atof(s);
+		}
+		free(s);
 	}
 
 	if ((s = (char *) xmlGetProp(n, (xmlChar *) "style"))) {
@@ -321,6 +343,8 @@ void box_dump(struct box * box, unsigned int depth)
 		fprintf(stderr, "<%s> ", box->node->name);
 	if (box->style)
 		css_dump_style(box->style);
+	if (box->href != 0)
+		fprintf(stderr, " -> '%s'", box->href);
 	fprintf(stderr, "\n");
 
 	for (c = box->children; c != 0; c = c->next)

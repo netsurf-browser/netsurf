@@ -1,6 +1,12 @@
 /**
- * $Id: box.h,v 1.5 2002/06/28 20:14:04 bursa Exp $
+ * $Id: box.h,v 1.6 2002/08/11 23:01:02 bursa Exp $
  */
+
+#ifndef _NETSURF_RENDER_BOX_H_
+#define _NETSURF_RENDER_BOX_H_
+
+#include "libxml/HTMLparser.h"
+#include "netsurf/render/css.h"
 
 /**
  * structures
@@ -18,6 +24,7 @@ struct box {
 	struct css_style * style;
 	unsigned long x, y, width, height;
 	const char * text;
+	const char * href;
 	unsigned int length;
 	unsigned int colspan;
 	struct box * next;
@@ -34,6 +41,8 @@ struct box {
 
 struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
-		struct box * parent, struct box * inline_container);
+		struct box * parent, struct box * inline_container,
+		const char *href);
 void box_dump(struct box * box, unsigned int depth);
 
+#endif
