@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.9 2002/08/11 23:02:25 bursa Exp $
+ * $Id: css.c,v 1.10 2002/12/27 20:08:18 bursa Exp $
  */
 
 #include <string.h>
@@ -31,7 +31,10 @@ struct css_stylesheet {
 };
 
 static int parse_length(struct css_length * const length, const char *s);
+static colour parse_colour(const char *s);
+static void parse_background_color(struct css_style * const style, const char * const value);
 static void parse_clear(struct css_style * const style, const char * const value);
+static void parse_color(struct css_style * const style, const char * const value);
 static void parse_display(struct css_style * const style, const char * const value);
 static void parse_float(struct css_style * const style, const char * const value);
 static void parse_font_size(struct css_style * const style, const char * const value);
@@ -104,9 +107,47 @@ static int parse_length(struct css_length * const length, const char *s)
 	return 0;
 }
 
+static colour parse_colour(const char *s)
+{
+	int len = strlen(s);
+	colour c = TRANSPARENT;
+	unsigned int r, g, b;
+
+	if (s[0] == '#' && len == 4) {
+		if (sscanf(s + 1, "%1lx%1lx%1lx", &r, &g, &b) == 3)
+			c = (b << 20) | (b << 16) | (g << 12) | (g << 8) | (r << 4) | r;
+
+	} else if (s[0] == '#' && len == 7) {
+		if (sscanf(s + 1, "%2lx%2lx%2lx", &r, &g, &b) == 3)
+			c = (b << 16) | (g << 8) | r;
+
+	} else if (sscanf(s, "rgb(%u, %u, %u)", &r, &g, &b) == 3) {
+		c = (b << 16) | (g << 8) | r;
+
+	} else if (sscanf(s, "rgb(%u%%, %u%%, %u%%)", &r, &g, &b) == 3) {
+		c = (b * 2.55 << 16) | (g * 2.55 << 8) | r * 2.55;
+	}
+
+	return c;
+}
+
+static void parse_background_color(struct css_style * const style, const char * const value)
+{
+	if (strcmp(value, "transparent") == 0) {
+		style->background_color = TRANSPARENT;
+	} else {
+		style->background_color = parse_colour(value);
+	}
+}
+
 static void parse_clear(struct css_style * const style, const char * const value)
 {
 	style->clear = css_clear_parse(value);
+}
+
+static void parse_color(struct css_style * const style, const char * const value)
+{
+	style->color = parse_colour(value);
 }
 
 static void parse_display(struct css_style * const style, const char * const value)
@@ -210,7 +251,9 @@ static struct property {
 	const char * const name;
 	void (*parse) (struct css_style * const s, const char * const value);
 } const property[] = {
+	{ "background-color", parse_background_color },
 	{ "clear", parse_clear },
+	{ "color", parse_color },
 	{ "display", parse_display },
 	{ "float", parse_float },
 	{ "font-weight", parse_font_weight },
@@ -499,7 +542,9 @@ static void dump_length(const struct css_length * const length)
 void css_dump_style(const struct css_style * const style)
 {
 	fprintf(stderr, "{ ");
+	fprintf(stderr, "background-color: #%lx; ", style->background_color);
 	fprintf(stderr, "clear: %s; ", css_clear_name[style->clear]);
+	fprintf(stderr, "color: #%lx; ", style->color);
 	fprintf(stderr, "display: %s; ", css_display_name[style->display]);
 	fprintf(stderr, "float: %s; ", css_float_name[style->float_]);
 	fprintf(stderr, "font-size: ");
@@ -576,8 +621,10 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 {
 	float f;
 
+	style->background_color = apply->background_color;
 	if (apply->clear != CSS_CLEAR_INHERIT)
 		style->clear = apply->clear;
+	style->color = apply->color;
 	if (apply->display != CSS_DISPLAY_INHERIT)
 		style->display = apply->display;
 	if (apply->float_ != CSS_FLOAT_INHERIT)

@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.5 2002/12/27 17:27:24 bursa Exp $
+ * $Id: gui.c,v 1.6 2002/12/27 20:08:18 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -555,6 +555,9 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
         }
       }
 }
+
+      xcolourtrans_set_font_colours(box->font->handle, 0xffffff, box->style->color << 8,
+        14, 0, 0, 0);
 
       font_paint(box->font->handle, box->text,
         font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
