@@ -16,8 +16,9 @@
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpextend.h"
+#include "oslib/wimpreadsysinfo.h"
 #include "netsurf/riscos/wimp.h"
-
+#include "netsurf/utils/log.h"
 
 /*	Wimp_Extend,11 block
 */
@@ -27,9 +28,27 @@ static wimpextend_furniture_sizes furniture_sizes;
  * Gets the default horzontal scrollbar height
  */
 int ro_get_hscroll_height(wimp_w w) {
+	wimp_version_no version;
+	
+	
+  	/*	Read the hscroll height
+  	*/
   	furniture_sizes.w = w;
 	furniture_sizes.border_widths.y0 = 38;
 	xwimpextend_get_furniture_sizes(&furniture_sizes);
+	
+	/*	There is a quirk with the returned size as it differs between versions of the
+		WindowManager module. The incorrect height is returned by the version distributed
+		with the universal boot sequence (3.98) and presumably any previous version.
+	*/
+	if (!xwimpreadsysinfo_version(&version)) {
+		if ((int)version <= 398) {
+			return furniture_sizes.border_widths.y0 + 2;
+		}
+	}
+
+	/*	Return the standard (unhacked) size
+	*/
 	return furniture_sizes.border_widths.y0;
 }
 
