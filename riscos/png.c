@@ -18,6 +18,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/png.h"
+#include "netsurf/riscos/tinct.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -380,6 +381,17 @@ void nspng_redraw(struct content *c, long x, long y,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
 		float scale)
 {
+
+	/*	Tinct currently only handles 32bpp sprites that have an embedded alpha mask. Any
+		sprites not matching the required specifications are ignored. See the Tinct
+		documentation for further information.
+	*/
+/*	_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
+			((char *) c->data.png.sprite_area + c->data.png.sprite_area->first),
+			x, (int)(y - height),
+			width, height,
+			(options_filter_sprites?0:(1<<1)) | (options_dither_sprites?0:(1<<2)));
+*/
 	int size;
 	osspriteop_trans_tab *table;
 	os_factors factors;
