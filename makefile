@@ -28,21 +28,20 @@ OBJECTS_IMAGE = jpeg.o mng.o gif.o gifread.o			# image/
 
 OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_RISCOS += browser.o netsurf.o version.o			# desktop/
-OBJECTS_RISCOS += 401login.o bitmap.o debugwin.o \
-	buffer.o dialog.o download.o draw.o filetype.o font.o \
-	gifread.o gui.o help.o history.o hotlist.o image.o \
+OBJECTS_RISCOS += 401login.o bitmap.o buffer.o debugwin.o \
+	dialog.o download.o draw.o filetype.o font.o \
+	gui.o help.o history.o hotlist.o image.o \
 	menus.o mouseactions.o plotters.o plugin.o print.o \
 	save.o save_complete.o save_draw.o save_text.o \
 	schedule.o search.o sprite.o textselection.o theme.o thumbnail.o \
-	ufont.o uri.o url_protocol.o wimp.o window.o	# riscos/
+	ufont.o uri.o url_protocol.o wimp.o window.o		# riscos/
 # OBJECTS_RISCOS += memdebug.o
 
 OBJECTS_NCOS = $(OBJECTS_RISCOS)
 
 OBJECTS_DEBUG = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_DEBUG += debug_bitmap.o filetyped.o fontd.o netsurfd.o	# debug/
-OBJECTS_DEBUG += gif.o gifread.o save_complete.o \
-	schedule.o						# riscos/
+OBJECTS_DEBUG += gif.o gifread.o save_complete.o schedule.o	# riscos/
 
 OBJECTS_DEBUGRO = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_DEBUGRO += netsurfd.o					# debug/
