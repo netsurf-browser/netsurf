@@ -2,33 +2,53 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ */
+
+/** \file
+ * Localised message support (implementation).
+ *
+ * Native language messages are loaded from a file and stored hashed by key for
+ * fast access.
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
-/* We store the messages in a fixed-size hash table. */
-
+/** We store the messages in a fixed-size hash table. */
 #define HASH_SIZE 77
 
-struct entry {
-	const char *key;
-	const char *value;
-	struct entry *next;  /* next in this hash chain */
+/** Maximum length of a key. */
+#define MAX_KEY_LENGTH 16
+
+/** Entry in the messages hash table. */
+struct messages_entry {
+	struct messages_entry *next;  /**< Next entry in this hash chain. */
+	char key[MAX_KEY_LENGTH];
+	char value[1];
 };
 
-static struct entry *table[HASH_SIZE];
+/** Localised messages hash table. */
+static struct messages_entry *messages_table[HASH_SIZE];
+
 
 static unsigned int messages_hash(const char *s);
 
 
 /**
- * messages_load -- read a messages file into the hash table
+ * Read keys and values from messages file.
+ *
+ * \param  path  pathname of messages file
+ *
+ * The messages are merged with any previously loaded messages. Any keys which
+ * are present already are replaced with the new value.
+ *
+ * Exits through die() in case of error.
  */
 
 void messages_load(const char *path)
@@ -37,30 +57,44 @@ void messages_load(const char *path)
 	FILE *fp;
 
 	fp = fopen(path, "r");
-	if (fp == 0) {
-		LOG(("failed to open file '%s'", path));
-		return;
+	if (!fp) {
+		snprintf(s, sizeof s, "Unable to open messages file "
+				"\"%.100s\": %s", path, strerror(errno));
+		s[sizeof s - 1] = 0;
+		LOG(("%s", s));
+		die(s);
 	}
 
-	while (fgets(s, 300, fp) != 0) {
-		char *colon;
+	while (fgets(s, sizeof s, fp)) {
+		char *colon, *value;
 		unsigned int slot;
-		struct entry *entry;
+		struct messages_entry *entry;
+		size_t length;
 
 		if (s[0] == 0 || s[0] == '#')
 			continue;
-		colon = strchr(s, ':');
-		if (colon == 0)
-			continue;
-		s[strlen(s) - 1] = 0;  /* remove \n at end */
-		*colon = 0;  /* terminate key */
 
-		entry = xcalloc(1, sizeof(*entry));
-		entry->key = xstrdup(s);
-		entry->value = xstrdup(colon + 1);
+		s[strlen(s) - 1] = 0;  /* remove \n at end */
+		colon = strchr(s, ':');
+		if (!colon)
+			continue;
+		*colon = 0;  /* terminate key */
+		value = colon + 1;
+		length = strlen(value);
+
+		entry = malloc(sizeof *entry + length + 1);
+		if (!entry) {
+			snprintf(s, sizeof s, "Not enough memory to load "
+					"messages file \"%.100s\".", path);
+			s[sizeof s - 1] = 0;
+			LOG(("%s", s));
+			die(s);
+		}
+		strncpy(entry->key, s, MAX_KEY_LENGTH);
+		strcpy(entry->value, value);
 		slot = messages_hash(entry->key);
-		entry->next = table[slot];
-		table[slot] = entry;
+		entry->next = messages_table[slot];
+		messages_table[slot] = entry;
 	}
 
 	fclose(fp);
@@ -68,67 +102,51 @@ void messages_load(const char *path)
 
 
 /**
- * messages_get -- fast lookup of a message by key
+ * Fast lookup of a message by key.
+ *
+ * \param  key  key of message
+ * \return  value of message, or key if not found
  */
 
 const char *messages_get(const char *key)
 {
-	char *colon;
-	const char *value = key;
-	char key2[40];
-	unsigned int slot, len;
-	struct entry *entry;
+	struct messages_entry *entry;
 
-	colon = strchr(key, ':');
-	if (colon != 0) {
-		/* fallback appended to key */
-		value = colon + 1;
-		len = colon - key;
-		if (39 < len)
-			len = 39;
-		strncpy(key2, key, len);
-		key2[len] = 0;
-		key = key2;
-	}
-
-	slot = messages_hash(key);
-	for (entry = table[slot];
-			entry != 0 && strcasecmp(entry->key, key) != 0;
+	for (entry = messages_table[messages_hash(key)];
+			entry && strcasecmp(entry->key, key) != 0;
 			entry = entry->next)
 		;
-	if (entry == 0) {
-		LOG(("using fallback for key '%s'", key));
-		return value;
-	}
+	if (!entry)
+		return key;
 	return entry->value;
 }
 
 
 /**
- * messages_hash -- hash function for keys
+ * Hash function for keys.
  */
 
 unsigned int messages_hash(const char *s)
 {
-	unsigned int z = 0;
-	if (s == 0)
+	unsigned int i, z = 0;
+	if (!s)
 		return 0;
-	for (; *s != 0; s++)
-		z += *s & 0x1f;  /* lower 5 bits, case insensitive */
-	return (z % (HASH_SIZE - 1)) + 1;
+	for (i = 0; i != MAX_KEY_LENGTH && s[i]; i++)
+		z += s[i] & 0x1f;  /* lower 5 bits, case insensitive */
+	return z % HASH_SIZE;
 }
 
 
 /**
- * messages_dump -- dump contents of hash table
+ * Dump set of loaded messages.
  */
 
 void messages_dump(void)
 {
 	unsigned int i;
 	for (i = 0; i != HASH_SIZE; i++) {
-		struct entry *entry;
-		for (entry = table[i]; entry != 0; entry = entry->next)
-			printf("%s:%s\n", entry->key, entry->value);
+		struct messages_entry *entry;
+		for (entry = messages_table[i]; entry; entry = entry->next)
+			printf("%.20s:%s\n", entry->key, entry->value);
 	}
 }
