@@ -204,14 +204,14 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw) {
 	unsigned long background_colour = 0xffffff;
 
 	if (g->type == GUI_BROWSER_WINDOW && c != NULL) {
-	
+
 		/*	We should clear the background for GIFs and PNGs
 		*/
 		if ((c->type != CONTENT_HTML) &&
 				(c->type != CONTENT_TEXTPLAIN)) {
 		        clear_background = true;
 		}
-	
+
 		more = wimp_redraw_window(redraw);
 		wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_BLACK);
 
@@ -643,6 +643,7 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer) {
 	struct browser_action msg;
 	int x,y;
 	wimp_window_state state;
+	wimp_caret caret;
 
 	if (g->type != GUI_BROWSER_WINDOW) return;
 
@@ -651,6 +652,12 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer) {
 
 	x = window_x_units(pointer->pos.x, &state) / 2 / g->scale;
 	y = -window_y_units(pointer->pos.y, &state) / 2 / g->scale;
+
+        /* set input focus */
+        wimp_get_caret_position(&caret);
+        if (caret.w != state.w) {
+                wimp_set_caret_position(state.w, -1, -100, -100, 32, -1);
+        }
 
     if (pointer->buttons == wimp_CLICK_MENU) {
       ro_gui_create_menu(browser_menu, pointer->pos.x - 64, pointer->pos.y, g);
