@@ -33,9 +33,6 @@ static void netsurf_poll(void);
 static void netsurf_exit(void);
 static void lib_init(void);
 
-#ifndef curl_memdebug
-        extern void curl_memdebug(const char *logname);
-#endif
 
 /**
  * Gui NetSurf main().
@@ -82,14 +79,17 @@ void netsurf_init(int argc, char** argv)
 	struct utsname utsname;
 
 	stdout = stderr;
-	curl_memdebug("memdump");
+
+#ifdef _MEMDEBUG_H_
+	memdebug_memdebug("memdump");
+#endif
 
 	LOG(("version '%s'", netsurf_version));
 	if (uname(&utsname) != 0)
 		LOG(("Failed to extract machine information\n"));
 	else
 		LOG(("NetSurf on <%s>, node <%s>, release <%s>, version <%s>, "
-				"machine <%s>\n", utsname.sysname,
+				"machine <%s>", utsname.sysname,
 				utsname.nodename, utsname.release,
 				utsname.version, utsname.machine));
 
