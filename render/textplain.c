@@ -1,5 +1,5 @@
 /**
- * $Id: textplain.c,v 1.2 2003/02/25 21:00:27 bursa Exp $
+ * $Id: textplain.c,v 1.3 2003/03/15 15:53:20 bursa Exp $
  */
 
 #include <assert.h>
@@ -8,6 +8,7 @@
 #include "libxml/HTMLparser.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/textplain.h"
+#include "netsurf/utils/log.h"
 
 
 static const char header[] = "<html><body><pre>";
@@ -17,7 +18,7 @@ static const char footer[] = "</pre></body></html>";
 void textplain_create(struct content *c)
 {
 	html_create(c);
-	htmlParseChunk(c->data.html.parser, header, sizeof(header), 0);
+	htmlParseChunk(c->data.html.parser, header, sizeof(header) - 1, 0);
 }
 
 
@@ -29,7 +30,7 @@ void textplain_process_data(struct content *c, char *data, unsigned long size)
 
 int textplain_convert(struct content *c, unsigned int width, unsigned int height)
 {
-	htmlParseChunk(c->data.html.parser, footer, sizeof(footer), 0);
+	htmlParseChunk(c->data.html.parser, footer, sizeof(footer) - 1, 0);
 	c->type = CONTENT_HTML;
 	return html_convert(c, width, height);
 }

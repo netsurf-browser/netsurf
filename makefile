@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.14 2003/02/25 21:00:27 bursa Exp $
+# $Id: makefile,v 1.15 2003/03/15 15:53:20 bursa Exp $
 
 all: !NetSurf/!RunImage,ff8
 clean:
@@ -24,7 +24,7 @@ OBJECTS = \
  render/arm-riscos-aof/layout.o render/arm-riscos-aof/textplain.o \
  riscos/arm-riscos-aof/font.o  riscos/arm-riscos-aof/gui.o \
  riscos/arm-riscos-aof/theme.o riscos/arm-riscos-aof/jpeg.o \
- utils/arm-riscos-aof/utils.o
+ riscos/arm-riscos-aof/filetype.o utils/arm-riscos-aof/utils.o
 HEADERS = \
  content/cache.h    content/content.h  content/fetch.h    content/fetchcache.h \
  desktop/browser.h  desktop/gui.h      desktop/netsurf.h  render/box.h \

@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.h,v 1.1 2003/02/09 12:58:14 bursa Exp $
+ * $Id: fetch.h,v 1.2 2003/03/15 15:53:20 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_FETCH_H_
@@ -16,5 +16,6 @@ struct fetch * fetch_start(char *url, char *referer,
 void fetch_abort(struct fetch *f);
 void fetch_poll(void);
 void fetch_quit(void);
+const char *fetch_filetype(const char *unix_path);
 
 #endif

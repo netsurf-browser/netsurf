@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.21 2003/03/08 20:26:31 bursa Exp $
+ * $Id: gui.c,v 1.22 2003/03/15 15:53:20 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -23,7 +23,7 @@
 int gadget_subtract_x;
 int gadget_subtract_y;
 #define browser_menu_flags (wimp_ICON_TEXT | wimp_ICON_FILLED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT))
-const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro.html\0";
+const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro";
 
 wimp_MENU(2) netsurf_iconbar_menu =
   {
@@ -1085,7 +1085,8 @@ void gui_init(int argc, char** argv)
 void ro_gui_throb(void)
 {
   gui_window* g = netsurf_gui_windows;
-  float nowtime = (float) (clock() + 0) / CLOCKS_PER_SEC;  /* workaround compiler warning */
+  //float nowtime = (float) (clock() + 0) / CLOCKS_PER_SEC;  /* workaround compiler warning */
+  float nowtime = (float) clock() / CLOCKS_PER_SEC;
 
   while (g != NULL)
   {

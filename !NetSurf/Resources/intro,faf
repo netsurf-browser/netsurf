@@ -1,0 +1,70 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head><title>Welcome to NetSurf</title></head>
+
+<body>
+
+<h1 style="color: #f00; text-align: center">NetSurf - the RISC OS web
+browser</h1>
+<p><em style="color: #f00">NetSurf</em> is a new web browser for computers
+running <em>RISC OS</em>.</p>
+
+<div style='float: right; width: 25%; background-color: #ccc'>
+<h2>Test Pages</h2>
+<ul>
+<li><a href="test1">Test page 1</a></li>
+<li><a href="jpeg">JPEG image</a></li>
+<li><a href="text">Plain text</a></li>
+</ul>
+</div>
+
+<h2>Currently Implemented</h2>
+<ul>
+<li>Basic <a href='http://www.w3.org/TR/html401/'>HTML 4</a>, including
+tables</li>
+<li>Parts of <a href='http://www.w3.org/TR/REC-CSS2/'>CSS</a> (display,
+text-align, float, width &amp; height)</li>
+<li>Local and
+<a href='http://www.w3.org/Protocols/rfc2616/rfc2616.html'>HTTP</a>
+fetching</li>
+<li>Memory cache</li>
+</ul>
+
+<h2>In Progress</h2>
+<ul>
+<li>Improved memory handling (currently exits when memory is exhausted)</li>
+<li>Forms (display but don't submit)</li>
+<li>Images (stand-alone JPEGs so far)</li>
+<li>External CSS files</li>
+</ul>
+
+<hr>
+
+<h2>Links</h2>
+<ul>
+<li><a href="http://sourceforge.net/projects/netsurf/">SourceForge development
+area</a></li>
+<li><a href="http://netsurf.strcprstskrzkrk.co.uk/">Latest builds</a></li>
+<li><a href="http://cvs.semichrome.net/netsurf/">Browse CVS</a></li>
+</ul>
+
+<h2>Mailing List</h2>
+<p>There is a <a href="http://sourceforge.net/mail/?group_id=51719">mailing
+list</a> where you can discuss development (from a user's
+perspective as well as a programmer's) or point out any bugs you have
+spotted.</p>
+
+<h2>Libraries</h2>
+<p>NetSurf currently uses the following libraries:</p>
+<table>
+<tr><td><a href='http://xmlsoft.org/'>libxml</a></td>
+<td>(XML and HTML parser)</td></tr>		
+<tr><td><a href='http://curl.haxx.se/libcurl/'>libcurl</a></td>
+<td>(HTTP, etc.)</td></tr>
+<tr><td><a href='http://ro-oslib.sourceforge.net/'>OSLib</a></td>
+<td>(C interface to RISC OS SWIs)</td>
+</table>
+
+</body>
+</html>

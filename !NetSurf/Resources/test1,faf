@@ -1,0 +1,23 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head><title>Test 1</title></head>
+
+<body>
+
+<h1>Heading 1</h1>
+<h2>Heading 2</h2>
+<h3>Heading 3</h3>
+<h4>Heading 4</h4>
+<h5>Heading 5</h5>
+<h6>Heading 6</h6>
+
+<p style='text-align: left'>Left aligned paragraph. Left aligned paragraph. Left aligned paragraph. Left aligned paragraph. Left aligned paragraph. Left aligned paragraph. Left aligned paragraph. Left aligned paragraph. Left aligned paragraph. Left aligned paragraph.</p>
+
+<p style='text-align: center'>Centered paragraph. Centered paragraph. Centered paragraph. Centered paragraph. Centered paragraph. Centered paragraph. Centered paragraph. Centered paragraph. Centered paragraph.</p>
+
+<p style='text-align: right'>Right aligned paragraph. Right aligned paragraph. Right aligned paragraph. Right aligned paragraph. Right aligned paragraph. Right aligned paragraph. Right aligned paragraph. Right aligned paragraph. Right aligned paragraph. Right aligned paragraph.</p>
+
+</body>
+</html>
+

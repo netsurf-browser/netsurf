@@ -1,8 +1,9 @@
 /**
- * $Id: fetch.c,v 1.2 2003/02/25 21:00:27 bursa Exp $
+ * $Id: fetch.c,v 1.3 2003/03/15 15:53:20 bursa Exp $
  */
 
 #include <assert.h>
+#include <string.h>
 #include <time.h>
 #include "curl/curl.h"
 #include "netsurf/content/fetch.h"
@@ -112,13 +113,6 @@ struct fetch * fetch_start(char *url, char *referer,
 	codem = curl_multi_add_handle(curl_multi, fetch->curl_handle);
 	assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
 
-	/* do any possible work on the fetch */
-	while (codem == CURLM_CALL_MULTI_PERFORM) {
-		int running;
-		codem = curl_multi_perform(curl_multi, &running);
-		assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
-	}
-
 	return fetch;
 }
 
@@ -212,14 +206,21 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 
 	if (!f->had_headers) {
 		/* find the content type and inform the caller */
-		char *type;
+		const char *type;
 		CURLcode code;
 
 		code = curl_easy_getinfo(f->curl_handle, CURLINFO_CONTENT_TYPE, &type);
 		assert(code == CURLE_OK);
 
-		if (type == 0)
-			type = "text/html";  /* TODO: find type of file: urls */
+		if (type == 0) {
+			type = "text/html";
+			if (strncmp(f->url, "file:///", 8) == 0) {
+				char *url_path;
+				url_path = curl_unescape(f->url + 8, (int) strlen(f->url) - 8);
+				type = fetch_filetype(url_path);
+				free(url_path);
+			}
+		}
 
 		LOG(("FETCH_TYPE, '%s'", type));
 		f->callback(FETCH_TYPE, f->p, type, 0);
