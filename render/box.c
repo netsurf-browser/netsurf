@@ -357,8 +357,9 @@ bool xml_to_box(xmlNode *n, struct content *c)
 	c->data.html.object_count = 0;
 	c->data.html.object = 0;
 
-	convert_xml_to_box(n, c, c->data.html.style, &root, &inline_container,
-			status);
+	if (!convert_xml_to_box(n, c, c->data.html.style, &root,
+			&inline_container, status))
+		return false;
 	box_normalise_block(&root, c->data.html.box_pool);
 
 	c->data.html.layout = root.children;
@@ -554,6 +555,7 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
 					free(text);
 					goto no_memory;
 				}
+				box->length = strlen(box->text);
 			}
 		}
 		box->font = nsfont_open(content->data.html.fonts, box->style);
@@ -1416,38 +1418,34 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 
 	if (type && strcasecmp(type, "password") == 0) {
 		box = box_input_text(n, status, style, true);
+		if (!box)
+			goto no_memory;
 		gadget = box->gadget;
 		gadget->box = box;
 
 	} else if (type && strcasecmp(type, "file") == 0) {
 		box = box_create(style, NULL, 0, status->id,
 				status->content->data.html.box_pool);
+		if (!box)
+			goto no_memory;
 		box->type = BOX_INLINE_BLOCK;
 		box->gadget = gadget = form_new_control(GADGET_FILE);
-		if (!gadget) {
-			box_free_box(box);
-			xmlFree(type);
-			return (struct box_result) {0, false, true};
-		}
+		if (!gadget)
+			goto no_memory;
 		gadget->box = box;
 		box->font = nsfont_open(status->content->data.html.fonts, style);
 
 	} else if (type && strcasecmp(type, "hidden") == 0) {
 		/* no box for hidden inputs */
 		gadget = form_new_control(GADGET_HIDDEN);
-		if (!gadget) {
-			xmlFree(type);
-			return (struct box_result) {0, false, true};
-		}
+		if (!gadget)
+			goto no_memory;
 
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")) != NULL) {
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
 			gadget->value = strdup(s);
 			xmlFree(s);
-			if (!gadget->value) {
-				form_free_control(gadget);
-				xmlFree(type);
-				return (struct box_result) {0, false, true};
-			}
+			if (!gadget->value)
+				goto no_memory;
 			gadget->length = strlen(gadget->value);
 		}
 
@@ -1455,27 +1453,22 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 			strcasecmp(type, "radio") == 0)) {
 		box = box_create(style, NULL, 0, status->id,
 				status->content->data.html.box_pool);
-		box->gadget = gadget = form_new_control((type[0] == 'c' || type[0] == 'C') ? GADGET_CHECKBOX : GADGET_RADIO);
-		if (!gadget) {
-			box_free_box(box);
-			xmlFree(type);
-			return (struct box_result) {0, false, true};
-		}
+		if (!box)
+			goto no_memory;
+		box->gadget = gadget = form_new_control(type[0] == 'c' ||
+				type[0] == 'C' ? GADGET_CHECKBOX :
+				GADGET_RADIO);
+		if (!gadget)
+			goto no_memory;
 		gadget->box = box;
 
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "checked")) != NULL) {
-			gadget->selected = true;
-			xmlFree(s);
-		}
+		gadget->selected = xmlHasProp(n, (const xmlChar *) "checked");
 
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")) != NULL) {
 			gadget->value = strdup(s);
 			xmlFree(s);
-			if (!gadget->value) {
-				box_free_box(box);
-				xmlFree(type);
-				return (struct box_result) {0, false, true};
-			}
+			if (!gadget->value)
+				goto no_memory;
 			gadget->length = strlen(gadget->value);
 		}
 
@@ -1483,12 +1476,18 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 			strcasecmp(type, "reset") == 0)) {
 		struct box_result result = box_button(n, status, style);
 		struct box *inline_container, *inline_box;
+		if (result.memory_error)
+			goto no_memory;
 		box = result.box;
 		inline_container = box_create(0, 0, 0, 0,
 				status->content->data.html.box_pool);
+		if (!inline_container)
+			goto no_memory;
 		inline_container->type = BOX_INLINE_CONTAINER;
 		inline_box = box_create(style, 0, 0, 0,
 				status->content->data.html.box_pool);
+		if (!inline_box)
+			goto no_memory;
 		inline_box->type = BOX_INLINE;
 		inline_box->style_clone = 1;
 		if (box->gadget->value != NULL)
@@ -1497,13 +1496,8 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 			inline_box->text = strdup(messages_get("Form_Submit"));
 		else
 			inline_box->text = strdup(messages_get("Form_Reset"));
-		if (inline_box->text == NULL) {
-			box_free(inline_box);
-			box_free(inline_container);
-			box_free(box);
-			xmlFree(type);
-			return (struct box_result) {NULL, false, false};
-		}
+		if (!inline_box->text)
+			goto no_memory;
 		inline_box->length = strlen(inline_box->text);
 		inline_box->font = nsfont_open(status->content->data.html.fonts, style);
 		box_add_child(inline_container, inline_box);
@@ -1512,20 +1506,26 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 	} else if (type && strcasecmp(type, "button") == 0) {
 		struct box_result result = box_button(n, status, style);
 		struct box *inline_container, *inline_box;
+		if (result.memory_error)
+			goto no_memory;
 		box = result.box;
 		inline_container = box_create(0, 0, 0, 0,
 				status->content->data.html.box_pool);
+		if (!inline_container)
+			goto no_memory;
 		inline_container->type = BOX_INLINE_CONTAINER;
 		inline_box = box_create(style, 0, 0, 0,
 				status->content->data.html.box_pool);
+		if (!inline_box)
+			goto no_memory;
 		inline_box->type = BOX_INLINE;
 		inline_box->style_clone = 1;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")) != NULL) {
-			inline_box->text = s;
-		}
-		else {
-			inline_box->text = xstrdup("Button");
-		}
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")))
+			inline_box->text = strdup(s);
+		else
+			inline_box->text = strdup("Button");
+		if (!inline_box->text)
+			goto no_memory;
 		inline_box->length = strlen(inline_box->text);
 		inline_box->font = nsfont_open(status->content->data.html.fonts, style);
 		box_add_child(inline_container, inline_box);
@@ -1534,12 +1534,11 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 	} else if (type && strcasecmp(type, "image") == 0) {
 		box = box_create(style, NULL, 0, status->id,
 				status->content->data.html.box_pool);
+		if (!box)
+			goto no_memory;
 		box->gadget = gadget = form_new_control(GADGET_IMAGE);
-		if (!gadget) {
-			box_free_box(box);
-			xmlFree(type);
-			return (struct box_result) {0, false, true};
-		}
+		if (!gadget)
+			goto no_memory;
 		gadget->box = box;
 		gadget->type = GADGET_IMAGE;
 		if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src")) != NULL) {
@@ -1560,6 +1559,8 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 	} else {
 		/* the default type is "text" */
 		box = box_input_text(n, status, style, false);
+		if (!box)
+			goto no_memory;
 		gadget = box->gadget;
 		gadget->box = box;
 	}
@@ -1576,14 +1577,20 @@ struct box_result box_input(xmlNode *n, struct box_status *status,
 		if (s) {
 			gadget->name = strdup(s);
 			xmlFree(s);
-			if (!gadget->name) {
-				box_free_box(box);
-				return (struct box_result) {0, false, true};
-			}
+			if (!gadget->name)
+				goto no_memory;
 		}
 	}
 
 	return (struct box_result) {box, false, false};
+
+no_memory:
+	if (type)
+		xmlFree(type);
+	if (gadget)
+		form_free_control(gadget);
+
+	return (struct box_result) {0, false, true};
 }
 
 struct box *box_input_text(xmlNode *n, struct box_status *status,
@@ -1593,9 +1600,15 @@ struct box *box_input_text(xmlNode *n, struct box_status *status,
 	struct box *box = box_create(style, 0, 0, status->id,
 			status->content->data.html.box_pool);
 	struct box *inline_container, *inline_box;
+
+	if (!box)
+		return 0;
+
 	box->type = BOX_INLINE_BLOCK;
 
 	box->gadget = form_new_control((password) ? GADGET_PASSWORD : GADGET_TEXTBOX);
+	if (!box->gadget)
+		return 0;
 	box->gadget->box = box;
 
 	box->gadget->maxlength = 100;
@@ -1617,19 +1630,27 @@ struct box *box_input_text(xmlNode *n, struct box_status *status,
 
 	inline_container = box_create(0, 0, 0, 0,
 			status->content->data.html.box_pool);
+	if (!inline_container)
+		return 0;
 	inline_container->type = BOX_INLINE_CONTAINER;
 	inline_box = box_create(style, 0, 0, 0,
 			status->content->data.html.box_pool);
+	if (!inline_box)
+		return 0;
 	inline_box->type = BOX_INLINE;
 	inline_box->style_clone = 1;
 	if (password) {
 		inline_box->length = strlen(box->gadget->value);
 		inline_box->text = malloc(inline_box->length + 1);
+		if (!inline_box->text)
+			return 0;
 		memset(inline_box->text, '*', inline_box->length);
 		inline_box->text[inline_box->length] = '\0';
 	} else {
 		/* replace spaces/TABs with hard spaces to prevent line wrapping */
 		inline_box->text = cnv_space2nbsp(box->gadget->value);
+		if (!inline_box->text)
+			return 0;
 		inline_box->length = strlen(inline_box->text);
 	}
 	inline_box->font = nsfont_open(status->content->data.html.fonts, style);
@@ -1646,6 +1667,8 @@ struct box_result box_button(xmlNode *n, struct box_status *status,
 	char *type = (char *) xmlGetProp(n, (const xmlChar *) "type");
 	struct box *box = box_create(style, 0, 0, status->id,
 			status->content->data.html.box_pool);
+	if (!box)
+		return (struct box_result) {0, false, true};
 	box->type = BOX_INLINE_BLOCK;
 
 	if (!type || strcasecmp(type, "submit") == 0) {

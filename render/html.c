@@ -194,7 +194,6 @@ bool html_convert(struct content *c, int width, int height)
 		LOG(("Parsing failed"));
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("ParsingFail", 0);
 		return false;
 	}
 	/* Last change to pick the Content-Type charset information if the
@@ -213,7 +212,6 @@ bool html_convert(struct content *c, int width, int height)
 		xmlFreeDoc(document);
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("ParsingFail", 0);
 		return false;
 	}
 	for (head = html->children;
@@ -235,7 +233,11 @@ bool html_convert(struct content *c, int width, int height)
 	LOG(("XML to box"));
 	content_set_status(c, messages_get("Processing"));
 	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
-	xml_to_box(html, c);
+	if (!xml_to_box(html, c)) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
 	/*box_dump(c->data.html.layout->children, 0);*/
 
 	/* extract image maps - can't do this sensibly in xml_to_box */
@@ -243,7 +245,6 @@ bool html_convert(struct content *c, int width, int height)
 		LOG(("imagemap extraction failed"));
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		warn_user("NoMemory", 0);
 		return false;
 	}
 	/*imagemap_dump(c);*/
