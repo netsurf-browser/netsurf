@@ -5,11 +5,11 @@ PLATFORM_CFLAGS_RISCOS =
 PLATFORM_CFLAGS_DEBUG = -I/usr/include/libxml2 -I/riscos/src/OSLib \
 		-I/riscos/include/libjpeg -D_POSIX_C_SOURCE
 
-LDFLAGS_RISCOS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lcares -lpng \
+LDFLAGS_RISCOS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lcares -lmng \
 		-loslib -ljpeg
-LDFLAGS_SMALL = -L/riscos/lib -lxml2 -lz -lucurl -lcares -lpng -loslib -ljpeg
-LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -lpng \
-		-ljpeg
+LDFLAGS_SMALL = -L/riscos/lib -lxml2 -lz -lucurl -lcares -lmng -loslib -ljpeg
+LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -lmng \
+		-ljpeg -llcms
 
 RUNIMAGE = !NetSurf/!RunImage,ff8
 NCRUNIMAGE = !NCNetSurf/!RunImage,ff8
