@@ -1410,10 +1410,12 @@ void box_dump(struct box * box, unsigned int depth)
 		case BOX_INLINE_CONTAINER: fprintf(stderr, "BOX_INLINE_CONTAINER "); break;
 		case BOX_INLINE:           fprintf(stderr, "BOX_INLINE "); break;
 		case BOX_INLINE_BLOCK:     fprintf(stderr, "BOX_INLINE_BLOCK "); break;
-		case BOX_TABLE:            fprintf(stderr, "BOX_TABLE "); break;
-		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW "); break;
-		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL [columns %i] ",
+		case BOX_TABLE:            fprintf(stderr, "BOX_TABLE [columns %i] ",
 		                                   box->columns); break;
+		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW "); break;
+		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL [columns %i, "
+		                                   "start %i, rows %i] ", box->columns,
+		                                   box->start_column, box->rows); break;
 		case BOX_TABLE_ROW_GROUP:  fprintf(stderr, "BOX_TABLE_ROW_GROUP "); break;
 		case BOX_FLOAT_LEFT:       fprintf(stderr, "BOX_FLOAT_LEFT "); break;
 		case BOX_FLOAT_RIGHT:      fprintf(stderr, "BOX_FLOAT_RIGHT "); break;

@@ -164,7 +164,7 @@ struct box {
 	char *href;   /**< Link, or 0. */
 	char *title;  /**< Title, or 0. */
 
-	unsigned int columns;  /**< Number of columns for TABLE only. */
+	unsigned int columns;  /**< Number of columns for TABLE / TABLE_CELL. */
 	unsigned int rows;     /**< Number of rows for TABLE only. */
 	unsigned int start_column;  /**< Start column for TABLE_CELL only. */
 
