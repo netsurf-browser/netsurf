@@ -272,9 +272,15 @@ void ro_download_datasave_ack(wimp_message *message)
 	if (error) {
 		LOG(("0x%x: %s\n", error->errnum, error->errmess));
 		warn_user(error->errmess);
-	} else {
-		ro_download_window_close(current_gui);
+		return;
 	}
+
+	/* Ack successful save with message_DATA_LOAD */
+	message->action = message_DATA_LOAD;
+	message->your_ref = message->my_ref;
+	wimp_send_message_to_window(wimp_USER_MESSAGE, message, message->data.data_xfer.w, message->data.data_xfer.i);
+
+	ro_download_window_close(current_gui);
 }
 
 
