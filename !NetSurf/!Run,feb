@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.34 $ )
+| Run file for NetSurf. ( $Revision: 1.35 $ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -13,7 +13,7 @@ UnSet NetSurf$ForceVars
 RMEnsure UtilityModule 3.00 Error NetSurf needs RISC OS 3 or later
 
 | Ensure Nested WIMP is installed
-| http://acorn.riscos.com (in the universal boot archive)
+| http://acorn.riscos.com/ (in the universal boot archive)
 RMEnsure WindowManager 3.80 Error NetSurf requires the Nested Window Manager. This can be obtained by downloading the Universal Boot sequence from http://acorn.riscos.com/
 
 | Ensure the System resource exists - can't do much if it doesn't
@@ -35,9 +35,9 @@ RMEnsure DrawFile 1.30 NetSurfRMLoad System:Modules.DrawFile
 RMEnsure DrawFile 1.30 Error NetSurf requires the DrawFile module. An old verson of this can be downloaded from http://acorn.riscos.com/riscos/releases/drawfile.arc
 
 | Ensure SharedUnixLibrary is installed
-| http://www.chocky.org/unix/usage.html
+| http://www.riscos.info/unix/usage.html
 RMEnsure SharedUnixLibrary 1.02 NetSurfRMLoad System:Modules.SharedULib
-RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.02 or later. This can be downloaded from http://www.chocky.org/unix/usage.html
+RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.02 or later. This can be downloaded from http://www.riscos.info/unix/usage.html
 
 | Load AcornURI if it isn't already
 | http://sudden.recoil.org/
@@ -54,9 +54,9 @@ RMEnsure MimeMap 0.10 NetSurfRMLoad System:Modules.Network.MimeMap
 RMEnsure MimeMap 0.10 Error NetSurf requires MimeMap 0.10 or later
 
 | Ensure Tinct is loaded
-| http://www.tinct.net
+| http://www.tinct.net/
 RMEnsure Tinct 0.09 NetSurfRMLoad System:Modules.Tinct
-RMEnsure Tinct 0.09 Error NetSurf requires Tinct 0.09 or later. This can be downloaded from http://www.tinct.net
+RMEnsure Tinct 0.09 Error NetSurf requires Tinct 0.09 or later. This can be downloaded from http://www.tinct.net/
 
 | Ensure Iconv
 | http://moose.mine.nu:6888/iconv_latest.zip
@@ -74,5 +74,5 @@ Unset NetSurf$LoadIconv
 | No longer need this alias
 Unset Alias$NetSurfRMLoad
 
-WimpSlot -min 2240k -max 2240k
+WimpSlot -min 2307k -max 2307k
 Run <NetSurf$Dir>.!RunImage %*0 2><NetSurf$Dir>.stderr
