@@ -243,6 +243,12 @@ bool ro_plot_clip(int clip_x0, int clip_y0,
 	clip_x1 = ro_plot_origin_x + clip_x1 * 2 - 1;
 	clip_y1 = ro_plot_origin_y - clip_y1 * 2;
 
+	if (clip_x1 < clip_x0 || clip_y0 < clip_y1) {
+		LOG(("bad clip rectangle %i %i %i %i",
+				clip_x0, clip_y0, clip_x1, clip_y1));
+		return false;
+	}
+
 	error = xos_set_graphics_window();
 	if (error) {
 		LOG(("xos_set_graphics_window: 0x%x: %s", error->errnum,
