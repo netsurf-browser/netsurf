@@ -5,7 +5,7 @@ PLATFORM_CFLAGS_RISCOS = -INSLibs:include -IOSLib:
 PLATFORM_CFLAGS_DEBUG = -INSLibs:include -IOSLib:
 
 LDFLAGS_RISCOS = NSLibs:lib/libxml2 NSLibs:lib/libz NSLibs:lib/libcurl \
-	NSLibs:lib/libssl NSLibs:lib/libcrypto NSLibs:lib/libares \
+	NSLibs:lib/libssl NSLibs:lib/libcrypto NSLibs:lib/libcares \
 	NSLibs:lib/libmng NSLibs:lib/libjpeg OSLib:o.oslib32
 LDFLAGS_SMALL = NSLibs:lib/libxml2 NSLibs:lib/libz NSLibs:lib/libcurl \
 	NSLibs:lib/libares NSLibs:lib/libmng \
