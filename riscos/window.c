@@ -445,8 +445,9 @@ void ro_gui_throb(void)
           {
             g->throbtime = nowtime;
             g->throbber++;
-            if (theme_throbs <= (unsigned int)g->throbber)
+            if ((unsigned int)g->throbber > theme_throbs)
               g->throbber = 0;
+	    LOG(("g->throbber: %d", g->throbber));
             sprintf(g->throb_buf, "throbber%u", g->throbber);
             wimp_set_icon_state(g->data.browser.toolbar,
                 ICON_TOOLBAR_THROBBER, 0, 0);

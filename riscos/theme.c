@@ -99,6 +99,7 @@ void ro_theme_load(char *pathname)
 				theme_throbs = n;
 		}
 	}
+	LOG(("theme_throbs: %d", theme_throbs));
 }
 
 
