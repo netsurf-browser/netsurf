@@ -166,6 +166,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			if (!c)
 				return;
 			save_as_text(c, path);
+			xosfile_set_type(path, 0xfff);
 			break;
 	}
 
