@@ -11,18 +11,17 @@
  * Browser window handling (implementation).
  */
 
+#include <assert.h>
 #include <string.h>
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
+#include "netsurf/riscos/about.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
 gui_window *window_list = 0;
-
-static void gui_disable_icon(wimp_w w, wimp_i i);
-static void gui_enable_icon(wimp_w w, wimp_i i);
 
 
 /**
@@ -31,7 +30,7 @@ static void gui_enable_icon(wimp_w w, wimp_i i);
 
 gui_window *gui_create_browser_window(struct browser_window *bw)
 {
-  int width, height;
+  int screen_width, screen_height, win_width, win_height;
   wimp_window window;
   wimp_window_state state;
 
@@ -39,12 +38,17 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
   g->type = GUI_BROWSER_WINDOW;
   g->data.browser.bw = bw;
 
-  ro_gui_screen_size(&width, &height);
+  ro_gui_screen_size(&screen_width, &screen_height);
 
-  window.visible.x0 = width / 8;
-  window.visible.y0 = height / 8;
-  window.visible.x1 = width * 7 / 8;
-  window.visible.y1 = height * 7 / 8;
+  win_width = screen_width * 3 / 4;
+  if (1600 < win_width)
+    win_width = 1600;
+  win_height = win_width * 3 / 4;
+
+  window.visible.x0 = (screen_width - win_width) / 2;
+  window.visible.y0 = (screen_height - win_height) / 2;
+  window.visible.x1 = window.visible.x0 + win_width;
+  window.visible.y1 = window.visible.y0 + win_height;
   window.xscroll = 0;
   window.yscroll = 0;
   window.next = wimp_TOP;
@@ -62,8 +66,8 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
   window.highlight_bg = wimp_COLOUR_CREAM;
   window.extra_flags = 0;
   window.extent.x0 = 0;
-  window.extent.y0 = height * 3 / 4;
-  window.extent.x1 = width * 3 / 4;
+  window.extent.y0 = win_height;
+  window.extent.x1 = win_width;
   if ((bw->flags & browser_TOOLBAR) != 0)
   {
     window.extent.y1 = ro_theme_toolbar_height();
@@ -270,16 +274,6 @@ void gui_window_set_status(gui_window* g, const char* text)
   }
 }
 
-
-void gui_disable_icon(wimp_w w, wimp_i i)
-{
-  wimp_set_icon_state(w, i, wimp_ICON_SHADED, wimp_ICON_SHADED);
-}
-
-void gui_enable_icon(wimp_w w, wimp_i i)
-{
-  wimp_set_icon_state(w, i, 0, wimp_ICON_SHADED);
-}
 
 void gui_window_message(gui_window* g, gui_message* msg)
 {
