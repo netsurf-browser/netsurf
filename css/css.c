@@ -31,11 +31,8 @@ struct decl {
 	struct rule * rule;
 };
 
-void css_atimport_callback(content_msg msg, struct content *css,
+static void css_atimport_callback(content_msg msg, struct content *css,
 		void *p1, void *p2, const char *error);
-void css_dump_style(const struct css_style * const style);
-
-
 	
 const struct css_style css_base_style = {
 	0xffffff,
