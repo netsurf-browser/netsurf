@@ -389,6 +389,33 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			box->space = 1;
 			box->length--;
 		}
+		switch (parent_style->text_transform) {
+		        /* perform text-transform */
+		        unsigned int ch;
+		        case CSS_TEXT_TRANSFORM_UPPERCASE:
+		                for (ch=0; ch!=box->length; ch++) {
+	                            box->text[ch] = toupper(box->text[ch]);
+		                }
+		                break;
+		        case CSS_TEXT_TRANSFORM_LOWERCASE:
+		                for (ch=0; ch!=box->length; ch++) {
+	                            box->text[ch] = tolower(box->text[ch]);
+		                }
+		                break;
+		        case CSS_TEXT_TRANSFORM_CAPITALIZE:
+		                for (ch=0; ch!=box->length; ch++) {
+		                    if (ch == 0) {
+		                      box->text[ch] = toupper(box->text[ch]);
+		                    }
+		                    else if (!((box->text[ch-1] > 64 && box->text[ch-1] < 91) ||
+		                             (box->text[ch-1] > 96 && box->text[ch-1] < 123))) {
+	                              box->text[ch] = toupper(box->text[ch]);
+	                            }
+		                }
+		                break;
+		        default:
+		                break;
+		}
 		if (parent_style->white_space == CSS_WHITE_SPACE_NOWRAP) {
 			unsigned int i;
 			for (i = 0; i != box->length; i++)
@@ -431,6 +458,37 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			box->style_clone = 1;
 			box->text = xstrdup(current);
 			box->length = strlen(box->text);
+			switch (parent_style->text_transform) {
+		                /* perform text-transform */
+		                unsigned int ch;
+		                case CSS_TEXT_TRANSFORM_UPPERCASE:
+		                        for (ch=0; ch!=box->length; ch++) {
+	                                     box->text[ch] =
+	                                              toupper(box->text[ch]);
+		                        }
+		                        break;
+		                case CSS_TEXT_TRANSFORM_LOWERCASE:
+		                        for (ch=0; ch!=box->length; ch++) {
+	                                     box->text[ch] =
+	                                              tolower(box->text[ch]);
+		                        }
+		                        break;
+		                case CSS_TEXT_TRANSFORM_CAPITALIZE:
+		                        for (ch=0; ch!=box->length; ch++) {
+		                             if (ch == 0) {
+		                                 box->text[ch] =
+		                                      toupper(box->text[ch]);
+		                             }
+		                             else if (!((box->text[ch-1] > 64 && box->text[ch-1] < 91) ||
+		                                      (box->text[ch-1] > 96 && box->text[ch-1] < 123))) {
+	                                         box->text[ch] =
+	                                              toupper(box->text[ch]);
+	                                     }
+		                        }
+		                        break;
+		                default:
+		                        break;
+		        }
 			box->font = font_open(content->data.html.fonts, box->style);
 			box_add_child(inline_container, box);
 			current[len] = old;

@@ -98,6 +98,7 @@ struct css_style {
 
 	css_text_align text_align;
 	css_text_decoration text_decoration;
+	css_text_transform text_transform;
 
 	css_visibility visibility;
 
