@@ -10,7 +10,7 @@
  *   Add better error handling
  *      - especially where bad GIFs are concerned.
  *
- * $Id: gif.c,v 1.1 2003/06/05 13:24:28 philpem Exp $
+ * $Id: gif.c,v 1.2 2003/06/05 14:49:48 philpem Exp $
  */
 
 #include <assert.h>
@@ -261,7 +261,7 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
               c->data.gif.giffile->Image.ColorMap->Colors :
               c->data.gif.giffile->SColorMap->Colors);
 
-  for (i=0; i != 255; i++)
+  for (i=0; i < 256; i++)
     sprite_palette->entries[i].on =
     sprite_palette->entries[i].off =
       (colormap[i].Blue << 24) |
