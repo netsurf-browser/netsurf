@@ -12,9 +12,10 @@ css_font_variant inherit normal small-caps
 css_font_weight inherit normal bold bolder lighter 100 200 300 400 500 600 700 800 900
 css_letter_spacing normal length
 css_list_style_position outside inside
-css_list_style_type disc circle square decimal lower_alpha lower_roman upper_alpha upper_roman none
+css_list_style_type disc circle square decimal lower-alpha lower-roman upper-alpha upper-roman none
+css_overflow inherit visible hidden scroll auto
 css_text_align inherit left right center justify
 css_text_transform inherit none capitalize lowercase uppercase
-css_vertical_align baseline bottom middle sub super text_bottom text_top top percent
+css_vertical_align baseline bottom middle sub super text-bottom text-top top percent
 css_visibility inherit visible hidden
 css_white_space inherit normal nowrap pre
