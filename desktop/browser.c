@@ -316,26 +316,29 @@ void browser_window_callback(content_msg msg, struct content *c,
   switch (msg)
   {
     case CONTENT_MSG_LOADING:
+    case CONTENT_MSG_READY:
+    case CONTENT_MSG_DONE:
       if (c->type == CONTENT_OTHER) {
         gui_window *download_window;
-        /* TODO: implement downloads */
-        /* we probably want to open a new window with a save icon and progress bar,
-         * and transfer content_loading to it */
         assert(bw->loading_content == c);
 
         /* create download window and add content to it */
         download_window = gui_create_download_window(c);
         content_add_user(c, download_window_callback, download_window, 0);
+        if (msg == CONTENT_MSG_DONE)
+          download_window_callback(CONTENT_MSG_DONE, c, download_window, 0, 0);
 
         /* remove content from browser window */
         bw->loading_content = 0;
         content_remove_user(c, browser_window_callback, bw, 0);
         browser_window_stop_throbber(bw);
-      }
-      break;
 
-    case CONTENT_MSG_READY:
-    case CONTENT_MSG_DONE:
+        break;
+      }
+
+      if (msg == CONTENT_MSG_LOADING)
+        break;
+
       previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
       if (bw->loading_content == c) {
         struct gui_message gmsg;
