@@ -5,6 +5,20 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * Caching of converted contents (implementation).
+ *
+ * The current implementation is a memory cache only. The content structures
+ * are stored in two linked lists.
+ * - inuse_list contains non-freeable contents
+ * - unused_list contains freeable contents
+ *
+ * The cache has a suggested maximum size. If the sum of the size attribute of
+ * the contents exceeds the maximum, contents from the freeable list are
+ * destroyed until the size drops below the maximum, if possible. Freeing is
+ * attempted only when cache_put is used.
+ */
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,7 +40,7 @@ void content_destroy(struct content *c);
 #endif
 
 
-/**
+/*
  * internal structures and declarations
  */
 
@@ -46,11 +60,16 @@ static struct cache_entry unused_list_sentinel = {0, &unused_list_sentinel, &unu
 static struct cache_entry *inuse_list  = &inuse_list_sentinel;
 static struct cache_entry *unused_list = &unused_list_sentinel;
 
+/** Suggested maximum size of cache (bytes). */
 static unsigned long max_size = 1024*1024;	/* TODO: make this configurable */
 
 
 /**
- * cache_init -- initialise the cache manager
+ * Initialise the cache manager.
+ *
+ * Must be called before using any other cache functions.
+ *
+ * Currently does nothing.
  */
 
 void cache_init(void)
@@ -59,7 +78,11 @@ void cache_init(void)
 
 
 /**
- * cache_quit -- terminate the cache manager
+ * Terminate the cache manager.
+ *
+ * Must be called before the program exits.
+ *
+ * Currently does nothing.
  */
 
 void cache_quit(void)
@@ -68,7 +91,10 @@ void cache_quit(void)
 
 
 /**
- * cache_get -- retrieve url from memory cache or disc cache
+ * Retrieve a content from the memory cache or disc cache.
+ *
+ * Returns the content and sets it to non-freeable on success. Returns 0 if
+ * the URL is not present in the cache.
  */
 
 struct content * cache_get(const char * const url)
@@ -107,7 +133,9 @@ struct content * cache_get(const char * const url)
 
 
 /**
- * cache_put -- place content in the memory cache
+ * Add a content to the memory cache.
+ *
+ * The content is set to non-freeable.
  */
 
 void cache_put(struct content * content)
@@ -129,7 +157,9 @@ void cache_put(struct content * content)
 
 
 /**
- * cache_freeable -- inform cache that the content has no users
+ * Inform cache that the content has no users.
+ *
+ * The content is set to freeable, and may be destroyed in the future.
  */
 
 void cache_freeable(struct content * content)
@@ -150,7 +180,12 @@ void cache_freeable(struct content * content)
 
 
 /**
- * cache_destroy -- remove a content immediately
+ * Remove a content from the cache immediately.
+ *
+ * Informs the cache that a content is about to be destroyed, and must be
+ * removed from the cache. This should be called when an error occurs when
+ * loading an url and the content is destroyed. The content must be
+ * non-freeable.
  */
 
 void cache_destroy(struct content * content)
@@ -163,7 +198,7 @@ void cache_destroy(struct content * content)
 
 
 /**
- * cache_shrink -- attempt to reduce cache size below max_size
+ * Attempt to reduce cache size below max_size.
  */
 
 void cache_shrink(void)
@@ -187,7 +222,7 @@ void cache_shrink(void)
 
 
 /**
- * cache_size -- current size of the cache
+ * Return current size of the cache.
  */
 
 unsigned long cache_size(void)
@@ -203,7 +238,7 @@ unsigned long cache_size(void)
 
 
 /**
- * cache_dump -- dump contents of cache
+ * Dump contents of cache.
  */
 
 void cache_dump(void) {

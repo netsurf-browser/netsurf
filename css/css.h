@@ -86,6 +86,13 @@ struct css_selector {
 	char *id;
 };
 
+struct content_css_data {
+	struct css_stylesheet *css;
+	unsigned int import_count;
+	char **import_url;
+	struct content **import_content;
+};
+
 
 extern const struct css_style css_base_style;
 extern const struct css_style css_empty_style;

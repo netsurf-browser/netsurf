@@ -8,7 +8,47 @@
 #ifndef _NETSURF_RENDER_HTML_H_
 #define _NETSURF_RENDER_HTML_H_
 
-#include "netsurf/content/content.h"
+#include "netsurf/css/css.h"
+#include "netsurf/render/box.h"
+
+struct box;
+struct browser_window;
+struct content;
+struct object_params;
+
+struct box_position {
+	struct box *box;
+	int actual_box_x;
+	int actual_box_y;
+	int plot_index;
+	int pixel_offset;
+	int char_offset;
+};
+
+struct content_html_data {
+	htmlParserCtxt *parser;
+	char *source;
+	int length;
+	struct box *layout;
+	colour background_colour;
+	unsigned int stylesheet_count;
+	struct content **stylesheet_content;
+	struct css_style *style;
+	struct {
+		struct box_position start;
+		struct box_position end;
+		enum { alter_UNKNOWN, alter_START, alter_END } altering;
+		int selected;	/* 0 = unselected, 1 = selected */
+	} text_selection;
+	struct font_set *fonts;
+	struct page_elements elements;
+	unsigned int object_count;	/* images etc. */
+	struct {
+		char *url;
+		struct content *content;
+		struct box *box;
+	} *object;
+};
 
 void html_create(struct content *c);
 void html_process_data(struct content *c, char *data, unsigned long size);

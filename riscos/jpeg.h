@@ -8,7 +8,12 @@
 #ifndef _NETSURF_RISCOS_JPEG_H_
 #define _NETSURF_RISCOS_JPEG_H_
 
-#include "netsurf/content/content.h"
+struct content;
+
+struct content_jpeg_data {
+	char *data;
+	unsigned long length;
+};
 
 void jpeg_create(struct content *c);
 void jpeg_process_data(struct content *c, char *data, unsigned long size);

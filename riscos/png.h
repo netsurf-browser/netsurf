@@ -8,7 +8,20 @@
 #ifndef _NETSURF_RISCOS_PNG_H_
 #define _NETSURF_RISCOS_PNG_H_
 
-#include "netsurf/content/content.h"
+#include "libpng/png.h"
+#include "oslib/osspriteop.h"
+
+struct content;
+
+struct content_png_data {
+	png_structp png;
+	png_infop info;
+	unsigned long rowbytes;
+	int interlace;
+	osspriteop_area *sprite_area;
+	char *sprite_image;
+	enum { PNG_PALETTE, PNG_DITHER, PNG_DEEP } type;
+};
 
 void nspng_init(void);
 void nspng_create(struct content *c);

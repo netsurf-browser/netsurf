@@ -8,7 +8,17 @@
 #ifndef _NETSURF_RISCOS_GIF_H_
 #define _NETSURF_RISCOS_GIF_H_
 
-#include "netsurf/content/content.h"
+#include "oslib/osspriteop.h"
+
+struct content;
+
+struct content_gif_data {
+	char *data;
+	unsigned long length;
+	unsigned long buffer_pos;
+	osspriteop_area *sprite_area;
+	char *sprite_image;
+};
 
 void nsgif_init(void);
 void nsgif_create(struct content *c);

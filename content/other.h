@@ -8,7 +8,12 @@
 #ifndef _NETSURF_RISCOS_OTHER_H_
 #define _NETSURF_RISCOS_OTHER_H_
 
-#include "netsurf/content/content.h"
+struct content;
+
+struct content_other_data {
+	char *data;
+	unsigned long length;
+};
 
 void other_create(struct content *c);
 void other_process_data(struct content *c, char *data, unsigned long size);

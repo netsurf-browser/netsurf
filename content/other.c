@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include "netsurf/content/content.h"
 #include "netsurf/content/other.h"
 #include "netsurf/utils/utils.h"
 

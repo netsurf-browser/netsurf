@@ -5,6 +5,13 @@
  * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * Content handling (implementation).
+ * 
+ * This implementation is based on the ::handler_map array, which maps
+ * ::content_type to the functions which implement that type.
+ */
+
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
@@ -23,11 +30,12 @@
 #include "netsurf/utils/utils.h"
 
 
-/* mime_map must be in sorted order by mime_type */
+/** An entry in mime_map. */
 struct mime_entry {
 	char mime_type[40];
 	content_type type;
 };
+/** A map from MIME type to ::content_type. Must be sorted by mime_type. */
 static const struct mime_entry mime_map[] = {
 #ifdef riscos
 	{"image/gif", CONTENT_GIF},
@@ -40,7 +48,7 @@ static const struct mime_entry mime_map[] = {
 };
 #define MIME_MAP_COUNT (sizeof(mime_map) / sizeof(mime_map[0]))
 
-/* handler_map must be ordered as enum content_type */
+/** An entry in handler_map. */
 struct handler_entry {
 	void (*create)(struct content *c);
 	void (*process_data)(struct content *c, char *data, unsigned long size);
@@ -60,6 +68,8 @@ struct handler_entry {
 			struct content *page, struct box *box,
 			struct object_params *params, void **state);
 };
+/** A table of handler functions, indexed by ::content_type.
+ * Must be ordered as enum ::content_type. */
 static const struct handler_entry handler_map[] = {
 	{html_create, html_process_data, html_convert, html_revive,
 		html_reformat, html_destroy, html_redraw,
@@ -89,7 +99,9 @@ static const struct handler_entry handler_map[] = {
 
 
 /**
- * content_lookup -- look up mime type
+ * Convert a MIME type to a content_type.
+ *
+ * The returned ::content_type will always be suitable for content_set_type().
  */
 
 content_type content_lookup(const char *mime_type)
@@ -109,7 +121,10 @@ content_type content_lookup(const char *mime_type)
 
 
 /**
- * content_create -- create a content structure
+ * Create a new content structure.
+ *
+ * The type is initialised to CONTENT_UNKNOWN, and the status to
+ * CONTENT_STATUS_TYPE_UNKNOWN.
  */
 
 struct content * content_create(char *url)
@@ -124,6 +139,7 @@ struct content * content_create(char *url)
 	c->cache = 0;
 	c->size = sizeof(struct content);
 	c->fetch = 0;
+	c->mime_type = 0;
 	strcpy(c->status_message, "Loading");
 	user_sentinel = xcalloc(1, sizeof(*user_sentinel));
 	user_sentinel->callback = 0;
@@ -135,7 +151,12 @@ struct content * content_create(char *url)
 
 
 /**
- * content_set_type -- initialise the content for the specified mime type
+ * Initialise the content for the specified type.
+ *
+ * The type is updated to the given type, and a copy of mime_type is taken. The
+ * status is changed to CONTENT_STATUS_LOADING. CONTENT_MSG_LOADING is sent to
+ * all users. The create function for the type is called to initialise the type
+ * specific parts of the content structure.
  */
 
 void content_set_type(struct content *c, content_type type, char* mime_type)
@@ -153,7 +174,9 @@ void content_set_type(struct content *c, content_type type, char* mime_type)
 
 
 /**
- * content_process_data -- process a block source data
+ * Process a block of source data.
+ *
+ * Calls the process_data function for the content.
  */
 
 void content_process_data(struct content *c, char *data, unsigned long size)
@@ -166,7 +189,17 @@ void content_process_data(struct content *c, char *data, unsigned long size)
 
 
 /**
- * content_convert -- all data has arrived, complete the conversion
+ * All data has arrived, convert for display.
+ *
+ * Calls the convert function for the content.
+ *
+ * - If the conversion succeeds, but there is still some processing required
+ *   (eg. loading images), the content gets status CONTENT_STATUS_READY, and a
+ *   CONTENT_MSG_READY is sent to all users.
+ * - If the conversion succeeds and is complete, the content gets status
+ *   CONTENT_STATUS_DONE, and CONTENT_MSG_DONE is sent.
+ * - If the conversion fails, CONTENT_MSG_ERROR is sent. The content is then
+ *   destroyed and must no longer be used.
  */
 
 void content_convert(struct content *c, unsigned long width, unsigned long height)
@@ -194,8 +227,10 @@ void content_convert(struct content *c, unsigned long width, unsigned long heigh
 
 
 /**
- * content_revive -- fix content that has been loaded from the cache
- *   eg. load dependencies, reformat to current width
+ * Fix content that has been loaded from the cache.
+ *
+ * Calls the revive function for the content. The content will be processed for
+ * display, for example dependencies loaded or reformated to current width.
  */
 
 void content_revive(struct content *c, unsigned long width, unsigned long height)
@@ -209,7 +244,9 @@ void content_revive(struct content *c, unsigned long width, unsigned long height
 
 
 /**
- * content_reformat -- reformat to new size
+ * Reformat to new size.
+ *
+ * Calls the reformat function for the content.
  */
 
 void content_reformat(struct content *c, unsigned long width, unsigned long height)
@@ -223,7 +260,9 @@ void content_reformat(struct content *c, unsigned long width, unsigned long heig
 
 
 /**
- * content_destroy -- free content
+ * Destroy and free a content.
+ *
+ * Calls the destroy function for the content, and frees the structure.
  */
 
 void content_destroy(struct content *c)
@@ -237,12 +276,15 @@ void content_destroy(struct content *c)
 		next = user->next;
 		xfree(user);
 	}
+	free(c->mime_type);
 	xfree(c);
 }
 
 
 /**
- * content_redraw -- display content on screen
+ * Display content on screen.
+ *
+ * Calls the redraw function for the content, if it exists.
  */
 
 void content_redraw(struct content *c, long x, long y,
@@ -255,7 +297,10 @@ void content_redraw(struct content *c, long x, long y,
 
 
 /**
- * content_add_user -- register a user for callbacks
+ * Register a user for callbacks.
+ *
+ * The callback will be called with p1 and p2 when content_broadcast() is
+ * called with the content.
  */
 
 void content_add_user(struct content *c,
@@ -275,7 +320,10 @@ void content_add_user(struct content *c,
 
 
 /**
- * content_remove_user -- remove a callback user
+ * Remove a callback user.
+ *
+ * The callback function, p1, and p2 must be identical to those passed to
+ * content_add_user().
  */
 
 void content_remove_user(struct content *c,
@@ -320,7 +368,7 @@ void content_remove_user(struct content *c,
 
 
 /**
- * content_broadcast -- send a message to all users
+ * Send a message to all users.
  */
 
 void content_broadcast(struct content *c, content_msg msg, char *error)
@@ -335,6 +383,12 @@ void content_broadcast(struct content *c, content_msg msg, char *error)
 }
 
 
+/**
+ * Add an instance to a content.
+ *
+ * Calls the add_instance function for the content.
+ */
+
 void content_add_instance(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params, void **state)
@@ -347,6 +401,12 @@ void content_add_instance(struct content *c, struct browser_window *bw,
 }
 
 
+/**
+ * Remove an instance from a content.
+ *
+ * Calls the remove_instance function for the content.
+ */
+
 void content_remove_instance(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params, void **state)
@@ -358,6 +418,12 @@ void content_remove_instance(struct content *c, struct browser_window *bw,
 		handler_map[c->type].remove_instance(c, bw, page, box, params, state);
 }
 
+
+/**
+ * Reshape an instance of a content.
+ *
+ * Calls the reshape_instance function for the content.
+ */
 
 void content_reshape_instance(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,

@@ -9,11 +9,19 @@
 #define _NETSURF_RISCOS_PLUGIN_H_
 
 #include <stdbool.h>
-#include "netsurf/content/content.h"
-#include "netsurf/render/box.h"
-
 #include "oslib/plugin.h"
 #include "oslib/wimp.h"
+
+struct box;
+struct browser_window;
+struct content;
+struct object_params;
+
+struct content_plugin_data {
+	char *data;		/* object data */
+	unsigned long length;	/* object length */
+	char *sysvar;		/* system variable set by plugin */
+};
 
 struct plugin_state {
 	int dummy;

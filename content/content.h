@@ -6,35 +6,42 @@
  * Copyright 2003 Philip Pemberton <philpem@users.sourceforge.net>
  */
 
+/** \file
+ * Content handling (interface).
+ *
+ * The content functions manipulate struct contents, which correspond to URLs.
+ *
+ * Each content has a type. The type is used to call a specific implementation
+ * of functions such as content_process_data().
+ *
+ * Contents have an associated set of users, which are informed by a callback
+ * when the state of the content changes or something interesting happens.
+ *
+ * Optionally, contents may have instances (depending on type). Instances
+ * represent copies of the same URL, for example if a page is open in two
+ * windows, or a page contains the same image twice.
+ */
+
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
 #define _NETSURF_DESKTOP_CONTENT_H_
 
 #include "libxml/HTMLparser.h"
-#ifdef riscos
-#include "libpng/png.h"
-#include "oslib/osspriteop.h"
-#endif
 #include "netsurf/content/cache.h"
 #include "netsurf/content/fetch.h"
+#include "netsurf/content/other.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
+#include "netsurf/render/html.h"
+#ifdef riscos
+#include "netsurf/riscos/gif.h"
+#include "netsurf/riscos/jpeg.h"
+#include "netsurf/riscos/plugin.h"
+#include "netsurf/riscos/png.h"
+#endif
 
 
-/**
- * A struct content corresponds to a single url.
- *
- * It is in one of the following states:
- *   CONTENT_FETCHING - the data is being fetched and/or converted
- *                      for use by the browser
- *   CONTENT_READY - the content has been processed and is ready
- *                      to display
- *
- * The converted data is stored in the cache, not the source data.
- * Users of the structure are counted in use_count; when use_count = 0
- * the content may be removed from the memory cache.
- */
-
+/** The type of a content. */
 typedef enum {
 	CONTENT_HTML,
 	CONTENT_TEXTPLAIN,
@@ -48,28 +55,21 @@ typedef enum {
 	CONTENT_PLUGIN,
 #endif
 	CONTENT_OTHER,
-	CONTENT_UNKNOWN  /* content-type not received yet */
+	CONTENT_UNKNOWN  /**< content-type not received yet */
 } content_type;
 
-struct box_position
-{
-  struct box* box;
-  int actual_box_x;
-  int actual_box_y;
-  int plot_index;
-  int pixel_offset;
-  int char_offset;
-};
 
+/** Used in callbacks to indicate what has occurred. */
 typedef enum {
-	CONTENT_MSG_LOADING,   /* fetching or converting */
-	CONTENT_MSG_READY,     /* may be displayed */
-	CONTENT_MSG_DONE,      /* finished */
-	CONTENT_MSG_ERROR,     /* error occurred */
-	CONTENT_MSG_STATUS,    /* new status string */
-	CONTENT_MSG_REDIRECT   /* replacement URL */
+	CONTENT_MSG_LOADING,   /**< fetching or converting */
+	CONTENT_MSG_READY,     /**< may be displayed */
+	CONTENT_MSG_DONE,      /**< finished */
+	CONTENT_MSG_ERROR,     /**< error occurred */
+	CONTENT_MSG_STATUS,    /**< new status string */
+	CONTENT_MSG_REDIRECT   /**< replacement URL */
 } content_msg;
 
+/** Linked list of users of a content. */
 struct content_user
 {
 	void (*callback)(content_msg msg, struct content *c, void *p1,
@@ -79,111 +79,50 @@ struct content_user
 	struct content_user *next;
 };
 
-struct content
-{
-  char *url;
-  content_type type;
-  char *mime_type;
-  enum {
-	  CONTENT_STATUS_TYPE_UNKNOWN,  /* type not yet known */
-	  CONTENT_STATUS_LOADING,  /* content is being fetched or converted
-			              and is not safe to display */
-	  CONTENT_STATUS_READY,    /* some parts of content still being
-			              loaded, but can be displayed */
-	  CONTENT_STATUS_DONE      /* all finished */
-  } status;
-  unsigned long width, height;
-  unsigned long available_width;
+/** Corresponds to a single URL. */
+struct content {
+	char *url;		/**< URL, in standard form as from url_join. */
+	content_type type;	/**< Type of content. */
+	char *mime_type;	/**< Original MIME type of data, or 0. */
 
-  union
-  {
-    struct
-    {
-      htmlParserCtxt* parser;
-      char* source;
-      int length;
-      struct box* layout;
-      colour background_colour;
-      unsigned int stylesheet_count;
-      struct content **stylesheet_content;
-      struct css_style* style;
-      struct {
-        struct box_position start;
-        struct box_position end;
-        enum {alter_UNKNOWN, alter_START, alter_END} altering;
-        int selected; /* 0 = unselected, 1 = selected */
-      } text_selection;
-      struct font_set* fonts;
-      struct page_elements elements;
-      unsigned int object_count;  /* images etc. */
-      struct {
-        char *url;
-        struct content *content;
-	struct box *box;
-      } *object;
-    } html;
+	enum {
+		CONTENT_STATUS_TYPE_UNKNOWN,	/**< Type not yet known. */
+		CONTENT_STATUS_LOADING,	/**< Content is being fetched or
+					  converted and is not safe to display. */
+		CONTENT_STATUS_READY,	/**< Some parts of content still being
+					  loaded, but can be displayed. */
+		CONTENT_STATUS_DONE	/**< All finished. */
+	} status;		/**< Current status. */
 
-    struct
-    {
-      struct css_stylesheet *css;
-      unsigned int import_count;
-      char **import_url;
-      struct content **import_content;
-    } css;
+	unsigned long width, height;	/**< Dimensions, if applicable. */
+	unsigned long available_width;	/**< Available width (eg window width). */
+
+	/** Data dependent on type. */
+	union {
+		struct content_html_data html;
+		struct content_css_data css;
 #ifdef riscos
-    struct
-    {
-      char * data;
-      unsigned long length;
-    } jpeg;
-
-    struct
-    {
-      png_structp png;
-      png_infop info;
-      unsigned long rowbytes;
-      int interlace;
-      osspriteop_area *sprite_area;
-      char *sprite_image;
-      enum { PNG_PALETTE, PNG_DITHER, PNG_DEEP } type;
-    } png;
-
-    // Structure for the GIF handler
-    struct
-    {
-      char *data;                         // GIF data
-      unsigned long length;               // Length of GIF data
-      unsigned long buffer_pos;           // Position in the buffer
-      osspriteop_area *sprite_area;       // Sprite area
-      char *sprite_image;                 // Sprite image
-    } gif;
-
-    /* Structure for plugin */
-    struct
-    {
-      char *data;                         /* object data */
-      unsigned long length;               /* object length */
-      char* sysvar;                       /* system variable set by plugin */
-    } plugin;
+		struct content_jpeg_data jpeg;
+		struct content_png_data png;
+		struct content_gif_data gif;
+		struct content_plugin_data plugin;
 #endif
-    /* downloads */
-    struct
-    {
-      char *data;
-      unsigned long length;
-    } other;
+		struct content_other_data other;
+	} data;
 
-  } data;
+	struct cache_entry *cache;	/**< Used by cache, 0 if not cached. */
+	unsigned long size;		/**< Estimated size of all data
+					  associated with this content. */
+	char *title;			/**< Title for browser window. */
+	unsigned int active;		/**< Number of child fetches or
+					  conversions currently in progress. */
+	int error;			/**< Non-0 if an error has occurred. */
+	struct content_user *user_list;	/**< List of users. */
+	char status_message[80];	/**< Text for status bar. */
 
-  struct cache_entry *cache;
-  unsigned long size;
-  char *title;
-  unsigned int active;
-  int error;
-  struct content_user *user_list;
-  char status_message[80];
-  struct fetch *fetch;
-  unsigned long fetch_size, total_size;
+	struct fetch *fetch;		/**< Associated fetch, or 0. */
+	unsigned long fetch_size;	/**< Amount of data fetched so far. */
+	unsigned long total_size;	/**< Total data size, 0 if unknown. */
 };
 
 
