@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.32 2003/01/11 17:36:40 monkeyson Exp $
+ * $Id: box.c,v 1.33 2003/02/09 12:58:15 bursa Exp $
  */
 
 #include <assert.h>
@@ -12,7 +12,7 @@
 #include "netsurf/render/css.h"
 #include "netsurf/riscos/font.h"
 #include "netsurf/render/box.h"
-#include "netsurf/render/utils.h"
+#include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/desktop/gui.h"
 
@@ -24,13 +24,13 @@ struct box* input(xmlNode * n, struct css_style* style, struct form* current_for
 
 void box_add_child(struct box * parent, struct box * child);
 struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
-		const char *href);
-char * tolat1(const xmlChar * s);
+		char *href);
+char * tolat1(xmlChar * s);
 struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
-		const char *href, struct font_set *fonts,
+		char *href, struct font_set *fonts,
 		struct gui_gadget* current_select, struct formoption* current_option,
 		struct gui_gadget* current_textarea, struct form* current_form,
 		struct page_elements* elements);
@@ -43,7 +43,7 @@ void box_normalise_table_row(struct box *row);
 void box_normalise_inline_container(struct box *cont);
 void gadget_free(struct gui_gadget* g);
 void box_free_box(struct box *box);
-struct box* box_image(xmlNode * n, struct css_style* style, const char* href);
+struct box* box_image(xmlNode * n, struct css_style* style, char* href);
 struct box* box_textarea(xmlNode* n, struct css_style* style, struct form* current_form);
 struct box* box_select(xmlNode * n, struct css_style* style, struct form* current_form);
 struct formoption* box_option(xmlNode* n, struct css_style* style, struct gui_gadget* current_select);
@@ -79,7 +79,7 @@ void box_add_child(struct box * parent, struct box * child)
  */
 
 struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
-		const char *href)
+		char *href)
 {
 	struct box * box = xcalloc(1, sizeof(struct box));
 	box->type = type;
@@ -106,14 +106,14 @@ struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
 }
 
 
-char * tolat1(const xmlChar * s)
+char * tolat1(xmlChar * s)
 {
-	char *d = xcalloc(strlen((const char*)s) + 1, sizeof(char));
+	char *d = xcalloc(strlen((char*) s) + 1, sizeof(char));
 	char *d0 = d;
 	unsigned int u, chars;
 
 	while (*s != 0) {
-		u = sgetu8((const unsigned char*)s, (int*) &chars);
+		u = sgetu8((unsigned char*) s, (int*) &chars);
 		s += chars;
 		if (u == 0x09 || u == 0x0a || u == 0x0d)
 			*d = ' ';
@@ -148,7 +148,7 @@ void xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
-		const char *href, struct font_set *fonts,
+		char *href, struct font_set *fonts,
 		struct gui_gadget* current_select, struct formoption* current_option,
 		struct gui_gadget* current_textarea, struct form* current_form,
 		struct page_elements* elements)
@@ -165,7 +165,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
-		const char *href, struct font_set *fonts,
+		char *href, struct font_set *fonts,
 		struct gui_gadget* current_select, struct formoption* current_option,
 		struct gui_gadget* current_textarea, struct form* current_form,
 		struct page_elements* elements)
@@ -972,7 +972,7 @@ void box_free_box(struct box *box)
 	}
 }
 
-struct box* box_image(xmlNode * n, struct css_style* style, const char* href)
+struct box* box_image(xmlNode * n, struct css_style* style, char* href)
 {
 	struct box* box = 0;
 	char* s;

@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.32 2003/01/06 23:53:40 bursa Exp $
+ * $Id: layout.c,v 1.33 2003/02/09 12:58:15 bursa Exp $
  */
 
 #include <assert.h>
@@ -8,11 +8,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libxml/HTMLparser.h"
-#include "netsurf/render/css.h"
-#include "netsurf/riscos/font.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/render/box.h"
-#include "netsurf/render/utils.h"
+#include "netsurf/render/css.h"
 #include "netsurf/render/layout.h"
+#include "netsurf/riscos/font.h"
+#include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
 
 #define DEBUG_LAYOUT
@@ -441,14 +442,14 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	if (x1 - x0 < x) {
 		/* the last box went over the end */
 		char * space = 0;
-		unsigned long w;
+		unsigned int w;
 		struct box * c2;
 
 		x = x_previous;
 
 		if (c->text != 0)
 			space = strchr(c->text, ' ');
-		if (space != 0 && c->length <= space - c->text)
+		if (space != 0 && c->length <= (unsigned int) (space - c->text))
 			/* space after end of string */
 			space = 0;
 
@@ -457,7 +458,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		if (space == 0)
 			w = c->width;
 		else
-			w = font_width(c->font, c->text, space - c->text);
+			w = font_width(c->font, c->text, (unsigned int) (space - c->text));
 
 		if (x1 - x0 < x + space_before + w && left == 0 && right == 0 && c == first) {
 			/* first word doesn't fit, but no floats and first on line so force in */
@@ -488,8 +489,8 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			assert(space != 0);
 			space = font_split(c->font, c->text, c->length,
 					x1 - x0 - x - space_before, &w);
-			LOG(("'%.*s' %lu %lu (%c) %lu", c->length, c->text,
-					x1 - x0, space - c->text, *space, w));
+			LOG(("'%.*s' %lu %u (%c) %u", (int) c->length, c->text,
+					(unsigned long) (x1 - x0), space - c->text, *space, w));
 			c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
 			c2->text = xstrdup(space + 1);
 			c2->length = c->length - ((space + 1) - c->text);
@@ -759,7 +760,7 @@ void calculate_inline_container_widths(struct box *box)
 							word = space + 1,
 							space = strchr(word, ' ')) {
 						width = font_width(child->font, word,
-								space - word);
+								(unsigned int) (space - word));
 						if (min < width) min = width;
 					}
 					width = font_width(child->font, word, strlen(word));

@@ -1,12 +1,12 @@
 /**
- * $Id: css.c,v 1.12 2002/12/27 20:42:31 bursa Exp $
+ * $Id: css.c,v 1.13 2003/02/09 12:58:15 bursa Exp $
  */
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "css.h"
-#include "utils.h"
+#include "netsurf/render/css.h"
+#include "netsurf/utils/utils.h"
 
 /**
  * internal structures
@@ -704,9 +704,9 @@ int main(int argv, char *argc[])
 	css_parse_stylesheet(s, argc[1]);
 	css_dump_stylesheet(s);
 
-/* 	r->selectors = 1; */
-/* 	css_stylesheet_add_rule(s, r); */
-/*	puts("********** finding h1:");
+ 	r->selectors = 1;
+ 	css_stylesheet_add_rule(s, r);
+	puts("********** finding h1:");
 	r = find_rule(s, &sel, 1);
 	if (r)
 		dump_rule(r);
@@ -719,9 +719,9 @@ int main(int argv, char *argc[])
 		css_dump_style(style);
 	}
 
-/* 	fprintf(stderr, "%x %x\n", r, r2); */
+ 	fprintf(stderr, "%x %x\n", r, r2); 
 
-/*	struct css_style *s;
+	struct css_style *s;
 	struct css_selector *sel;
 
 	s = parse_property_list(argc[1]);

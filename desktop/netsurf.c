@@ -1,23 +1,23 @@
 /**
- * $Id: netsurf.c,v 1.5 2002/12/29 22:27:35 monkeyson Exp $
+ * $Id: netsurf.c,v 1.6 2003/02/09 12:58:15 bursa Exp $
  */
 
 #include "netsurf/desktop/netsurf.h"
-#include "netsurf/desktop/fetch.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/cache.h"
+#include "netsurf/content/cache.h"
+#include "netsurf/content/fetch.h"
+#include "netsurf/utils/log.h"
 #include <stdlib.h>
 
 int netsurf_quit = 0;
 gui_window* netsurf_gui_windows = NULL;
-struct fetch* netsurf_fetches = NULL;
 
 
 void netsurf_poll(void)
 {
   gui_poll();
-  netsurf_fetches = fetch_poll(netsurf_fetches);
+  fetch_poll();
 }
 
 
@@ -25,6 +25,7 @@ void netsurf_init(int argc, char** argv)
 {
   stdout = stderr;
   gui_init(argc, argv);
+  fetch_init();
   cache_init();
 }
 
@@ -32,6 +33,7 @@ void netsurf_init(int argc, char** argv)
 void netsurf_exit(void)
 {
   cache_quit();
+  fetch_quit();
 }
 
 
@@ -42,21 +44,10 @@ int main(int argc, char** argv)
   while (netsurf_quit == 0)
     netsurf_poll();
 
-  fprintf(stderr, "Netsurf quit!\n");
+  LOG(("Netsurf quit!"));
   netsurf_exit();
 
   return 0;
 }
 
 
-void Log(char* func, char* msg)
-{
-#ifdef NETSURF_DUMP_MONKEYS
-  FILE* logfile = NULL;
-  logfile = fopen("logfile","a");
-  if (logfile == NULL)
-    die("can't open logfile");
-  fprintf(logfile, "%s: %s\n", func, msg);
-  fclose(logfile);
-#endif
-}

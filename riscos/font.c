@@ -1,5 +1,5 @@
 /**
- * $Id: font.c,v 1.9 2002/12/29 22:27:35 monkeyson Exp $
+ * $Id: font.c,v 1.10 2003/02/09 12:58:15 bursa Exp $
  */
 
 #include <assert.h>
@@ -7,7 +7,7 @@
 #include "libutf-8/utf-8.h"
 #include "netsurf/render/css.h"
 #include "netsurf/riscos/font.h"
-#include "netsurf/render/utils.h"
+#include "netsurf/utils/utils.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/utils/log.h"
 #include "oslib/font.h"

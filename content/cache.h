@@ -1,5 +1,5 @@
 /**
- * $Id: cache.h,v 1.1 2002/11/02 22:28:05 bursa Exp $
+ * $Id: cache.h,v 1.1 2003/02/09 12:58:14 bursa Exp $
  */
 
 /**
@@ -10,7 +10,7 @@
  *     c = cache_get(url);
  *     if (c == 0) {
  *         ... (create c) ...
- *         cache_put(url, c, size);
+ *         cache_put(c);
  *     }
  *     ...
  *     cache_free(c);
@@ -22,11 +22,17 @@
  * cache_free for each cache_get or cache_put.
  */
 
-#include "netsurf/desktop/browser.h"
+#ifndef _NETSURF_DESKTOP_CACHE_H_
+#define _NETSURF_DESKTOP_CACHE_H_
+
+struct content;
+struct cache_entry;
 
 void cache_init(void);
 void cache_quit(void);
 struct content * cache_get(char * const url);
-void cache_put(char * const url, struct content * content, unsigned long size);
+void cache_put(struct content * content);
 void cache_free(struct content * content);
+void cache_dump(void);
 
+#endif

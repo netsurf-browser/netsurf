@@ -1,12 +1,12 @@
 /**
- * $Id: utils.c,v 1.5 2002/09/11 14:24:02 monkeyson Exp $
+ * $Id: utils.c,v 1.6 2003/02/09 12:58:15 bursa Exp $
  */
 
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "utils.h"
+#include "netsurf/utils/utils.h"
 
 void die(const char * const error)
 {

@@ -1,15 +1,13 @@
 /**
- * $Id: browser.h,v 1.6 2003/01/12 17:48:44 bursa Exp $
+ * $Id: browser.h,v 1.7 2003/02/09 12:58:14 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
 #define _NETSURF_DESKTOP_BROWSER_H_
 
-#include "libxml/HTMLparser.h"
-#include "netsurf/render/css.h"
-#include "netsurf/render/box.h"
+#include "netsurf/content/content.h"
 #include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/fetch.h"
+#include "netsurf/render/box.h"
 #include "netsurf/riscos/font.h"
 
 typedef int browser_window_flags;
@@ -28,45 +26,6 @@ typedef int action_buttons;
 #define act_BUTTON_CONTEXT_MENU  ((action_buttons) 2)
 
 
-
-struct box_position
-{
-  struct box* box;
-  int actual_box_x;
-  int actual_box_y;
-  int plot_index;
-  int pixel_offset;
-  int char_offset;
-};
-
-struct content
-{
-  enum {CONTENT_UNKNOWN, CONTENT_HTML, CONTENT_IMAGE} type;
-
-  union
-  {
-    struct
-    {
-      htmlParserCtxt* parser;
-      xmlDoc* document;
-      xmlNode* markup;
-      struct box* layout;
-      struct css_stylesheet* stylesheet;
-      struct css_style* style;
-      struct {
-        struct box_position start;
-        struct box_position end;
-        enum {alter_UNKNOWN, alter_START, alter_END} altering;
-        int selected; /* 0 = unselected, 1 = selected */
-      } text_selection;
-      struct font_set* fonts;
-      struct page_elements elements;
-    } html;
-  } data;
-  struct fetch* main_fetch;
-  unsigned int ref_count;
-  char *title;
-};
 
 
 struct history
@@ -88,7 +47,6 @@ struct browser_window
   struct { int mult; int div; } scale;
 
   struct content* current_content;
-  struct content* future_content;
   struct history* history;
 
   char* url;
@@ -98,26 +56,6 @@ struct browser_window
   gui_window* window;
 
   int throbbing;
-};
-
-
-struct browser_message
-{
-  enum { msg_UNKNOWN,
-         msg_FETCH_SENDING, msg_FETCH_WAITING, msg_FETCH_ABORT,
-         msg_FETCH_FETCH_INFO, msg_FETCH_DATA, msg_FETCH_FINISHED
-       } type;
-  struct fetch* f;
-  union {
-    struct {
-      enum { type_UNKNOWN, type_HTML } type; /* should be a MIME type ? */
-      int total_size; /* -1 == unknown size */
-    } fetch_info;
-    struct {
-      char* block;
-      int block_size;
-    } fetch_data;
-  } data;
 };
 
 
@@ -156,7 +94,6 @@ struct browser_window* create_browser_window(int flags, int width, int height);
 void browser_window_destroy(struct browser_window* bw);
 void browser_window_open_location(struct browser_window* bw, char* url);
 void browser_window_open_location_historical(struct browser_window* bw, char* url);
-int browser_window_message(struct browser_window* bw, struct browser_message* msg);
 int browser_window_action(struct browser_window* bw, struct browser_action* act);
 void browser_window_set_status(struct browser_window* bw, char* text);
 

@@ -1,9 +1,9 @@
 /**
- * $Id: utils.h,v 1.4 2003/01/07 23:15:23 bursa Exp $
+ * $Id: utils.h,v 1.5 2003/02/09 12:58:15 bursa Exp $
  */
 
-#ifndef _NETSURF_RENDER_UTILS_H_
-#define _NETSURF_RENDER_UTILS_H_
+#ifndef _NETSURF_UTILS_UTILS_H_
+#define _NETSURF_UTILS_UTILS_H_
 
 #include <stdlib.h>
 

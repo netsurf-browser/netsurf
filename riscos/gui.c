@@ -1,10 +1,10 @@
 /**
- * $Id: gui.c,v 1.16 2003/01/12 17:48:44 bursa Exp $
+ * $Id: gui.c,v 1.17 2003/02/09 12:58:15 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
 #include "netsurf/desktop/gui.h"
-#include "netsurf/render/utils.h"
+#include "netsurf/utils/utils.h"
 #include "netsurf/desktop/netsurf.h"
 #include "oslib/osfile.h"
 #include "oslib/os.h"
@@ -14,6 +14,7 @@
 #include "netsurf/utils/log.h"
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include <math.h>
 
 int gadget_subtract_x;

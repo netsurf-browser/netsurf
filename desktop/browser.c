@@ -1,15 +1,14 @@
 /**
- * $Id: browser.c,v 1.22 2003/01/12 17:48:44 bursa Exp $
+ * $Id: browser.c,v 1.23 2003/02/09 12:58:14 bursa Exp $
  */
 
+#include "netsurf/content/cache.h"
+#include "netsurf/content/fetchcache.h"
+#include "netsurf/desktop/browser.h"
 #include "netsurf/riscos/font.h"
 #include "netsurf/render/box.h"
-#include "netsurf/render/layout.h"
-#include "netsurf/render/css.h"
-#include "netsurf/desktop/browser.h"
-#include "netsurf/render/utils.h"
-#include "netsurf/desktop/cache.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 #include "libxml/uri.h"
 #include "libxml/debugXML.h"
 #include <string.h>
@@ -25,8 +24,10 @@ void browser_window_change_text_selection(struct browser_window* bw, struct box_
 void browser_window_redraw_boxes(struct browser_window* bw, struct box_position* start, struct box_position* end);
 void browser_window_follow_link(struct browser_window* bw,
   int click_x, int click_y, int click_type);
-
+void browser_window_callback(fetchcache_msg msg, struct content *c,
+		struct browser_window* bw, char *error);
 void box_under_area(struct box* box, int x, int y, int ox, int oy, struct box_selection** found, int* count, int* plot_index);
+
 
 void browser_window_start_throbber(struct browser_window* bw)
 {
@@ -41,180 +42,6 @@ void browser_window_stop_throbber(struct browser_window* bw)
   gui_window_stop_throbber(bw->window);
 }
 
-void content_destroy(struct content* c)
-{
-  if (c == NULL)
-    return;
-
-  switch (c->type)
-  {
-    case CONTENT_HTML:
-      /* free other memory here */
-//      xmlFreeParserCtxt(c->data.html.parser);
-      LOG(("free parser"));
-//      htmlFreeParserCtxt(c->data.html.parser);
-      LOG(("free sheet"));
-//      xfree(c->data.html.stylesheet);
-      LOG(("free style"));
-//      xfree(c->data.html.style);
-      if (c->data.html.layout != NULL)
-      {
-        LOG(("box_free box"));
-//        box_free(c->data.html.layout);
-        LOG(("free box"));
-//        xfree(c->data.html.layout);
-      }
-      LOG(("free font"));
-      font_free_set(c->data.html.fonts);
-      break;
-    default:
-      break;
-  }
-
-  c->main_fetch = fetch_cancel(c->main_fetch);
-  xfree(c);
-
-  return;
-}
-
-size_t content_html_receive_data(struct content* c, void* data, size_t size, size_t nmemb)
-{
-  size_t amount = nmemb;
-  int offset = 0;
-  size_t numInChunk = 2048 / size;  /* process in 2k chunks */
-
-  if (numInChunk > nmemb)
-    numInChunk = nmemb;
-  else if (numInChunk <= (size_t)0)
-    numInChunk = 1;
-
-  while (amount > 0)
-  {
-    htmlParseChunk(c->data.html.parser, (char*)data + (offset * size), numInChunk, 0);
-    offset += numInChunk;
-    amount -= numInChunk;
-    if (amount < numInChunk)
-      numInChunk = amount;
-    gui_multitask();
-  }
-
-  return size * nmemb;
-}
-
-void set_content_html(struct content* c)
-{
-  c->type = CONTENT_HTML;
-  c->data.html.parser = htmlCreatePushParserCtxt(0, 0, "", 0, 0, XML_CHAR_ENCODING_8859_1);
-  c->data.html.document = NULL;
-  c->data.html.markup = NULL;
-  c->data.html.layout = NULL;
-  c->data.html.stylesheet = NULL;
-  c->data.html.style = NULL;
-  return;
-}
-
-
-void content_html_title(struct content *c)
-{
-  xmlNode *node = c->data.html.markup;
-
-  c->title = 0;
-
-  while (node != 0) {
-    if (node->type == XML_ELEMENT_NODE) {
-      if (stricmp(node->name, "html") == 0) {
-        node = node->children;
-        continue;
-      }
-      if (stricmp(node->name, "head") == 0) {
-        node = node->children;
-        continue;
-      }
-      if (stricmp(node->name, "title") == 0) {
-        c->title = xmlNodeGetContent(node);
-	return;
-      }
-    }
-    node = node->next;
-  }
-}
-
-
-void content_html_reformat(struct content* c, int width)
-{
-  char* file;
-  struct css_selector* selector = xcalloc(1, sizeof(struct css_selector));
-
-  LOG(("Starting stuff"));
-
-  if (c->data.html.layout != NULL)
-  {
-    /* TODO: skip if width is unchanged */
-    layout_document(c->data.html.layout->children, (unsigned long)width);
-    return;
-  }
-
-  LOG(("Setting document to myDoc"));
-  c->data.html.document = c->data.html.parser->myDoc;
-  //xmlDebugDumpDocument(stderr, c->data.html.parser->myDoc);
-
-  /* skip to start of html */
-  LOG(("Skipping to html"));
-  if (c->data.html.document == NULL)
-  {
-    LOG(("There is no document!"));
-    return;
-  }
-  for (c->data.html.markup = c->data.html.document->children;
-       c->data.html.markup != 0 &&
-         c->data.html.markup->type != XML_ELEMENT_NODE;
-       c->data.html.markup = c->data.html.markup->next)
-    ;
-
-  if (c->data.html.markup == 0)
-  {
-    LOG(("No markup"));
-    return;
-  }
-  if (strcmp((const char *) c->data.html.markup->name, "html"))
-  {
-    LOG(("Not html"));
-    return;
-  }
-
-//  xfree(c->data.html.stylesheet);
-//  xfree(c->data.html.style);
-
-  content_html_title(c);
-  
-  LOG(("Loading CSS"));
-  file = load("<NetSurf$Dir>.Resources.CSS");  /*!!! not portable! !!!*/
-  c->data.html.stylesheet = css_new_stylesheet();
-  LOG(("Parsing stylesheet"));
-  css_parse_stylesheet(c->data.html.stylesheet, file);
-
-  LOG(("Copying base style"));
-  c->data.html.style = xcalloc(1, sizeof(struct css_style));
-  memcpy(c->data.html.style, &css_base_style, sizeof(struct css_style));
-
-  LOG(("Creating box"));
-  c->data.html.layout = xcalloc(1, sizeof(struct box));
-  c->data.html.layout->type = BOX_BLOCK;
-  c->data.html.layout->node = c->data.html.markup;
-
-  c->data.html.fonts = font_new_set();
-
-  LOG(("XML to box"));
-  xml_to_box(c->data.html.markup, c->data.html.style, c->data.html.stylesheet, &selector, 0, c->data.html.layout, 0, 0, c->data.html.fonts, 0, 0, 0, 0, &c->data.html.elements);
-  box_dump(c->data.html.layout->children, 0);
-  LOG(("Layout document"));
-  layout_document(c->data.html.layout->children, (unsigned long)width);
-  box_dump(c->data.html.layout->children, 0);
-
-  /* can tidy up memory here? */
-
-  return;
-}
 
 void browser_window_reformat(struct browser_window* bw)
 {
@@ -222,8 +49,7 @@ void browser_window_reformat(struct browser_window* bw)
   clock_t time0, time1;
 
   LOG(("Entering..."));
-  if (bw == NULL)
-    return;
+  assert(bw != 0);
   if (bw->current_content == NULL)
     return;
 
@@ -231,34 +57,21 @@ void browser_window_reformat(struct browser_window* bw)
   {
     case CONTENT_HTML:
       LOG(("HTML content."));
-      browser_window_set_status(bw, "Formatting page...");
       time0 = clock();
-      content_html_reformat(bw->current_content, gui_window_get_width(bw->window));
-      if (bw->current_content == 0)
+      if (bw->current_content->title == 0)
         gui_window_set_title(bw->window, bw->url);
       else
         gui_window_set_title(bw->window, bw->current_content->title);
       time1 = clock();
-      LOG(("Content reformatted"));
-      if (bw->current_content->data.html.layout != NULL)
-      {
-        LOG(("Setting extent"));
-        gui_window_set_extent(bw->window, bw->current_content->data.html.layout->children->width, bw->current_content->data.html.layout->children->height);
-        LOG(("Setting scroll"));
-        gui_window_set_scroll(bw->window, 0, 0);
-        LOG(("Redraw window"));
-        gui_window_redraw_window(bw->window);
-        LOG(("Complete"));
-        sprintf(status, "Format complete (%gs).", ((float) time1 - time0) / CLOCKS_PER_SEC);
-        browser_window_set_status(bw, status);
-      }
-      else
-      {
-        LOG(("This isn't html"));
-        browser_window_set_status(bw, "This is not HTML!");
-        cache_free(bw->current_content);
-        bw->current_content = NULL;
-      }
+      LOG(("Setting extent"));
+      gui_window_set_extent(bw->window, bw->current_content->data.html.layout->children->width, bw->current_content->data.html.layout->children->height);
+      LOG(("Setting scroll"));
+      gui_window_set_scroll(bw->window, 0, 0);
+      LOG(("Redraw window"));
+      gui_window_redraw_window(bw->window);
+      LOG(("Complete"));
+      sprintf(status, "Format complete (%gs).", ((float) time1 - time0) / CLOCKS_PER_SEC);
+      browser_window_set_status(bw, status);
       break;
     default:
         LOG(("Unknown content type"));
@@ -346,7 +159,6 @@ struct browser_window* create_browser_window(int flags, int width, int height)
   bw->scale.div = 1;
 
   bw->current_content = NULL;
-  bw->future_content = NULL;
   bw->history = NULL;
 
   bw->url = NULL;
@@ -370,8 +182,6 @@ void browser_window_destroy(struct browser_window* bw)
 
   if (bw->current_content != NULL)
     cache_free(bw->current_content);
-  if (bw->future_content != NULL)
-    cache_free(bw->future_content);
 
   if (bw->history != NULL)
   {
@@ -411,60 +221,9 @@ void browser_window_open_location_historical(struct browser_window* bw, char* ur
 
   assert(bw != 0 && url != 0);
 
-  if (bw->future_content != NULL)
-    cache_free(bw->future_content);
-
-  bw->future_content = cache_get(url);
-  if (bw->future_content == 0)
-  {
-    /* not in cache: start fetch */
-    struct fetch_request* req;
-
-    LOG(("not in cache: starting fetch"));
-
-    req = xcalloc(1, sizeof(struct fetch_request));
-    req->type = REQUEST_FROM_BROWSER;
-    req->requestor.browser = bw;
-
-    bw->future_content = (struct content*) xcalloc(1, sizeof(struct content));
-    bw->future_content->main_fetch = create_fetch(url, bw->url, 0, req);
-
-    cache_put(url, bw->future_content, 1000);
-
-    browser_window_start_throbber(bw);
-  }
-  else
-  {
-    /* in cache: reformat page and display */
-    struct gui_message gmsg;
-    gui_safety previous_safety;
-
-    LOG(("in cache: reformatting"));
-
-    browser_window_start_throbber(bw);
-
-    /* TODO: factor out code shared with browser_window_message(), case msg_FETCH_FINISHED */
-    if (url != bw->url)  /* reload <=> url == bw->url */
-    {
-      if (bw->url != NULL)
-        xfree(bw->url);
-      bw->url = xstrdup(url);
-    }
-
-    gmsg.type = msg_SET_URL;
-    gmsg.data.set_url.url = bw->url;
-    gui_window_message(bw->window, &gmsg);
-
-    previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
-    if (bw->current_content != NULL)
-      cache_free(bw->current_content);
-    bw->current_content = bw->future_content;
-    bw->future_content = NULL;
-    browser_window_reformat(bw);
-    gui_window_set_redraw_safety(bw->window, previous_safety);
-    browser_window_stop_throbber(bw);
-  }
-
+  browser_window_set_status(bw, "Opening page...");
+  fetchcache(url, 0, browser_window_callback, bw, gui_window_get_width(bw->window), 0);
+  
   LOG(("end"));
 }
 
@@ -485,68 +244,25 @@ void browser_window_open_location(struct browser_window* bw, char* url)
   LOG(("end"));
 }
 
-int browser_window_message(struct browser_window* bw, struct browser_message* msg)
+void browser_window_callback(fetchcache_msg msg, struct content *c,
+		struct browser_window* bw, char *error)
 {
   gui_safety previous_safety;
 
-  switch (msg->type)
+  switch (msg)
   {
-    case msg_FETCH_SENDING:
-      browser_window_set_status(bw, "Sending request...");
-      break;
-
-    case msg_FETCH_WAITING:
-      browser_window_set_status(bw, "Waiting for reply...");
-      break;
-
-    case msg_FETCH_FETCH_INFO:
-      browser_window_set_status(bw, "Request received...");
-      if (msg->f == bw->future_content->main_fetch)
-      {
-        switch (msg->data.fetch_info.type)
-        {
-          case type_HTML:
-            set_content_html(bw->future_content);
-            break;
-          default:
-            browser_window_stop_throbber(bw);
-            return 1;
-        }
-      }
-      break;
-
-    case msg_FETCH_DATA:
-      browser_window_set_status(bw, "Data received...");
-      if (msg->f == bw->future_content->main_fetch)
-        content_html_receive_data(bw->future_content, msg->data.fetch_data.block, sizeof(char), msg->data.fetch_data.block_size);
-      break;
-
-    case msg_FETCH_ABORT:
-      browser_window_set_status(bw, "Request failed.");
-      if (msg->f == bw->future_content->main_fetch)
-      {
-        browser_window_stop_throbber(bw);
-        bw->future_content->main_fetch = NULL;
-        cache_free(bw->future_content);
-        bw->future_content = NULL;
-      }
-      break;
-
-    case msg_FETCH_FINISHED:
+    case FETCHCACHE_OK:
       browser_window_set_status(bw, "Request complete.");
-      if (msg->f == bw->future_content->main_fetch)
       {
         struct gui_message gmsg;
-        if (bw->future_content->main_fetch->location != NULL)
+        if (bw->url != 0)
           xfree(bw->url);
-        bw->url = xstrdup(bw->future_content->main_fetch->location);
+        bw->url = xstrdup(c->url);
 
         gmsg.type = msg_SET_URL;
         gmsg.data.set_url.url = bw->url;
         gui_window_message(bw->window, &gmsg);
 
-        htmlParseChunk(bw->future_content->data.html.parser, "", 0, 1);
-        bw->future_content->main_fetch = NULL;
         previous_safety = gui_window_set_redraw_safety(bw->window, UNSAFE);
         if (bw->current_content != NULL)
 	{
@@ -557,20 +273,26 @@ int browser_window_message(struct browser_window* bw, struct browser_message* ms
 	  }
           cache_free(bw->current_content);
 	}
-        bw->current_content = bw->future_content;
-        bw->future_content = NULL;
+        bw->current_content = c;
         browser_window_reformat(bw);
         gui_window_set_redraw_safety(bw->window, previous_safety);
         browser_window_stop_throbber(bw);
       }
       break;
 
-    default:
-      browser_window_set_status(bw, "???");
+    case FETCHCACHE_ERROR:
+      browser_window_set_status(bw, error);
+      browser_window_stop_throbber(bw);
       break;
-  }
 
-  return 0;
+    case FETCHCACHE_BADTYPE:
+      browser_window_set_status(bw, "Unknown type");
+      browser_window_stop_throbber(bw);
+      break;
+
+    default:
+      assert(0);
+  }
 }
 
 void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct gui_gadget* group)

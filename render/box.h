@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.18 2003/01/11 17:36:40 monkeyson Exp $
+ * $Id: box.h,v 1.19 2003/02/09 12:58:15 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -85,9 +85,9 @@ struct box {
 	struct css_style * style;
 	unsigned long x, y, width, height;
 	unsigned long min_width, max_width;
-	const char * text;
+	char * text;
 	unsigned int space : 1;	/* 1 <=> followed by a space */
-	const char * href;
+	char * href;
 	unsigned int length;
 	unsigned int columns;
 	struct box * next;
@@ -136,7 +136,7 @@ struct page_elements
 void xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
-		const char *href, struct font_set *fonts,
+		char *href, struct font_set *fonts,
 		struct gui_gadget* current_select, struct formoption* current_option,
 		struct gui_gadget* current_textarea, struct form* current_form,
 		struct page_elements* elements);

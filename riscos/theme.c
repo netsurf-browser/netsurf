@@ -4,7 +4,7 @@
 #include "oslib/messagetrans.h"
 #include "oslib/osspriteop.h"
 #include "string.h"
-#include "netsurf/render/utils.h"
+#include "netsurf/utils/utils.h"
 #include "stdio.h"
 
 void ro_theme_preload_template(ro_theme* theme, char* template_name,

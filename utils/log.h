@@ -1,5 +1,5 @@
 /**
- * $Id: log.h,v 1.1 2002/10/08 09:38:29 bursa Exp $
+ * $Id: log.h,v 1.2 2003/02/09 12:58:15 bursa Exp $
  */
 
 #include <stdio.h>
@@ -14,7 +14,7 @@
 #else
 
 #ifdef __GNUC__
-#define LOG(x) (printf(__FILE__ " " __PRETTY_FUNCTION__ " %i: ", __LINE__), printf x, printf("\n"))
+#define LOG(x) (printf(__FILE__ " %s %i: ", __PRETTY_FUNCTION__, __LINE__), printf x, printf("\n"))
 #else
 #define LOG(x) (printf(__FILE__ " %i: ", __LINE__), printf x, printf("\n"))
 #endif
