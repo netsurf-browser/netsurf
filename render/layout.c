@@ -8,6 +8,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,7 +66,7 @@ void layout_document(struct box * doc, unsigned long width)
 	struct box *box;
 	doc->float_children = 0;
 	layout_node(doc, width, doc, 0, 0);
-	for (box = doc->float_children; box != 0; box = box->next)
+	for (box = doc->float_children; box != 0; box = box->next_float)
 		if (doc->height < box->y + box->height)
 			doc->height = box->y + box->height;
 }
@@ -232,10 +233,10 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 			         (c->style->clear == CSS_CLEAR_BOTH && (left != 0 || right != 0)));
 		}
 
-		layout_node(c, width, cont, cx, cy + y);
 		c->x = 0;
 		c->y = y;
-		y += c->height;
+		layout_node(c, width, cont, cx, cy + y);
+		y = c->y + c->height;
 	}
 	return y;
 }
@@ -324,6 +325,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	struct box * b;
 	struct box * c;
 	struct box * d;
+	struct box * fl;
 	int move_y = 0;
 	unsigned int space_before = 0, space_after = 0;
 
@@ -407,6 +409,10 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 					w = d->min_width;
 			}
 			layout_node(d, w, d, 0, 0);
+			/* increase height to contain any floats inside */
+			for (fl = d->float_children; fl != 0; fl = fl->next_float)
+				if (d->height < fl->y + fl->height)
+					d->height = fl->y + fl->height;
 			d->x = d->y = 0;
 			b->width = d->width;
 			b->height = d->height;
@@ -566,10 +572,15 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 	unsigned long *xs;  /* array of column x positions */
 	unsigned int i;
 	unsigned int *row_span, *excess_y, min;
+	unsigned long x0;
+	unsigned long x1;
+	struct box *left;
+	struct box *right;
 	struct box *c;
 	struct box *row;
 	struct box *row_group;
 	struct box **row_span_cell;
+	struct box *fl;
 
 	assert(table->type == BOX_TABLE);
 	assert(table->style != 0);
@@ -678,6 +689,10 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 					if (c->height < h)
 						c->height = h;
 				}
+				/* increase height to contain any floats inside */
+				for (fl = c->float_children; fl != 0; fl = fl->next_float)
+					if (c->height < fl->y + fl->height)
+						c->height = fl->y + fl->height;
 				c->x = xs[c->start_column];
 				c->y = 0;
 				for (i = 0; i != c->columns; i++) {
@@ -733,6 +748,29 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 
 	table->width = table_width;
 	table->height = table_height;
+
+	/* find sides and move table down if it doesn't fit in available width */
+	while (1) {
+		x0 = 0;
+		x1 = width;
+		find_sides(cont->float_children, cy, cy + table_height,
+				&x0, &x1, &left, &right);
+		if (table_width <= x1 - x0)
+			break;
+		if (left == 0 && right == 0)
+			break;
+		/* move down to the next place where the space may increase */
+		if (left == 0)
+			cy = right->y + right->height + 1;
+		else if (right == 0)
+			cy = left->y + left->height + 1;
+		else if (left->y + left->height < right->y + right->height)
+			cy = left->y + left->height + 1;
+		else
+			cy = right->y + right->height + 1;
+	}
+	table->x = x0;
+	table->y = cy;
 }
 
 
