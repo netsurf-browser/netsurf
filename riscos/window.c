@@ -25,6 +25,7 @@
 #include "oslib/wimpspriteop.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
+#include "netsurf/content/url_store.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/render/box.h"
@@ -510,7 +511,7 @@ void gui_window_update_box(struct gui_window *g,
 	struct content *c = g->bw->current_content;
 	osbool more;
 	bool clear_background = false;
-	bool use_buffer = g->option.buffer_everything;
+	bool use_buffer;
 	wimp_draw update;
 	int clip_x0, clip_y0, clip_x1, clip_y1;
 	os_error *error;
@@ -539,8 +540,8 @@ void gui_window_update_box(struct gui_window *g,
 	/*	Set the current redraw gui_window to get options from
 	*/
 	ro_gui_current_redraw_gui = g;
-/*	if (data->redraw.full_redraw) */
-		use_buffer = use_buffer || g->option.buffer_animations;
+	use_buffer = (data->redraw.full_redraw) &&
+			(g->option.buffer_everything || g->option.buffer_animations);
 
 	plot = ro_plotters;
 	ro_plot_origin_x = update.box.x0 - update.xscroll;
