@@ -9,7 +9,7 @@ css_display inherit inline block list-item run-in inline-block table inline-tabl
 css_float inherit none left right
 css_font_family inherit sans-serif serif monospace cursive fantasy
 css_font_style inherit normal italic oblique
-css_font_variant normal smallcaps
+css_font_variant inherit normal small-caps
 css_font_weight inherit normal bold bolder lighter 100 200 300 400 500 600 700 800 900
 css_letter_spacing normal length
 css_list_style_position outside inside

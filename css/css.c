@@ -46,6 +46,7 @@ const struct css_style css_base_style = {
 	CSS_FONT_FAMILY_SANS_SERIF,
 	CSS_FONT_WEIGHT_NORMAL,
 	CSS_FONT_STYLE_NORMAL,
+	CSS_FONT_VARIANT_NORMAL,
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_ABSOLUTE, { 1.3 } },
 	CSS_TEXT_ALIGN_LEFT,
@@ -65,6 +66,7 @@ const struct css_style css_empty_style = {
 	CSS_FONT_FAMILY_INHERIT,
 	CSS_FONT_WEIGHT_INHERIT,
 	CSS_FONT_STYLE_INHERIT,
+	CSS_FONT_VARIANT_INHERIT,
 	{ CSS_HEIGHT_INHERIT, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
 	CSS_TEXT_ALIGN_INHERIT,
@@ -84,6 +86,7 @@ const struct css_style css_blank_style = {
 	CSS_FONT_FAMILY_INHERIT,
 	CSS_FONT_WEIGHT_INHERIT,
 	CSS_FONT_STYLE_INHERIT,
+	CSS_FONT_VARIANT_INHERIT,
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
 	CSS_TEXT_ALIGN_INHERIT,
@@ -658,6 +661,7 @@ void css_dump_style(const struct css_style * const style)
 		default:                       fprintf(stderr, "UNKNOWN"); break;
 	}
 	fprintf(stderr, " %s", css_font_family_name[style->font_family]);
+	fprintf(stderr, " %s", css_font_variant_name[style->font_variant]);
 	fprintf(stderr, "; ");
 	fprintf(stderr, "height: ");
 	switch (style->height.height) {
@@ -758,6 +762,8 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 		style->font_style = apply->font_style;
 	if (apply->font_weight != CSS_FONT_WEIGHT_INHERIT)
 		style->font_weight = apply->font_weight;
+        if (apply->font_variant != CSS_FONT_VARIANT_INHERIT)
+		style->font_variant = apply->font_variant;
 	if (apply->height.height != CSS_HEIGHT_INHERIT)
 		style->height = apply->height;
 	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT)
@@ -831,6 +837,8 @@ void css_merge(struct css_style * const style, const struct css_style * const ap
 		style->font_style = apply->font_style;
 	if (apply->font_weight != CSS_FONT_WEIGHT_INHERIT)
 		style->font_weight = apply->font_weight;
+	if (apply->font_variant != CSS_FONT_VARIANT_INHERIT)
+		style->font_variant = apply->font_variant;
 	if (apply->height.height != CSS_HEIGHT_INHERIT)
 		style->height = apply->height;
 	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT)

@@ -1,4 +1,4 @@
-$Id: TODO-CSS,v 1.5 2004/01/28 21:48:10 jmb Exp $
+$Id: TODO-CSS,v 1.6 2004/01/30 22:28:32 jmb Exp $
 
 TODO-CSS file for NetSurf.
 
@@ -37,13 +37,13 @@ See TODO-HTML for HTML related TODOs.
 + display
 - empty-cells
 + float
-= font (style, weight, size, line-spacing)
-= font-family
+= font (style, weight, size, line-spacing, family, variant)
++ font-family
 + font-size
 - font-size-adjust
 - font-stretch
 + font-style
-- font-variant
++ font-variant
 + font-weight
 + height
 - left

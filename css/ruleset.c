@@ -47,6 +47,7 @@ static void parse_font(struct css_style * const s, const struct css_node * v);
 static void parse_font_family(struct css_style * const s, const struct css_node * v);
 static void parse_font_size(struct css_style * const s, const struct css_node * const v);
 static void parse_font_style(struct css_style * const s, const struct css_node * const v);
+static void parse_font_variant(struct css_style * const s, const struct css_node * const v);
 static void parse_font_weight(struct css_style * const s, const struct css_node * const v);
 static void parse_height(struct css_style * const s, const struct css_node * const v);
 static void parse_line_height(struct css_style * const s, const struct css_node * const v);
@@ -70,6 +71,7 @@ static const struct property_entry property_table[] = {
 	{ "font-family",      parse_font_family },
 	{ "font-size",        parse_font_size },
 	{ "font-style",       parse_font_style },
+	{ "font-variant",     parse_font_variant },
 	{ "font-weight",      parse_font_weight },
 	{ "height",           parse_height },
 	{ "line-height",      parse_line_height },
@@ -399,6 +401,7 @@ void parse_font(struct css_style * const s, const struct css_node * v)
 {
 	css_font_family ff;
 	css_font_style fs;
+	css_font_variant fv;
 	css_font_weight fw;
 	s->font_family = CSS_FONT_FAMILY_SANS_SERIF;
 	s->font_style = CSS_FONT_STYLE_NORMAL;
@@ -414,12 +417,16 @@ void parse_font(struct css_style * const s, const struct css_node * v)
 			                s->font_family = ff;
 			                break;
 			        }
-
 				/* font-style, font-variant, or font-weight */
 				fs = css_font_style_parse(v->data);
 				if (fs != CSS_FONT_STYLE_UNKNOWN) {
 					s->font_style = fs;
 					break;
+				}
+				fv = css_font_variant_parse(v->data);
+				if (fv != CSS_FONT_VARIANT_UNKNOWN) {
+				        s->font_variant = fv;
+				        break;
 				}
 				fw = css_font_weight_parse(v->data);
 				if (fw != CSS_FONT_WEIGHT_UNKNOWN) {
@@ -507,6 +514,16 @@ void parse_font_style(struct css_style * const s, const struct css_node * const 
 		s->font_style = z;
 }
 
+void parse_font_variant(struct css_style * const s, const struct css_node * const v)
+{
+	css_font_variant z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_font_variant_parse(v->data);
+	if (z != CSS_FONT_VARIANT_UNKNOWN)
+		s->font_variant = z;
+}
+
 void parse_font_weight(struct css_style * const s, const struct css_node * const v)
 {
 	css_font_weight z;
@@ -516,6 +533,7 @@ void parse_font_weight(struct css_style * const s, const struct css_node * const
 	if (z != CSS_FONT_WEIGHT_UNKNOWN)
 		s->font_weight = z;
 }
+
 void parse_height(struct css_style * const s, const struct css_node * const v)
 {
 	if (v->type == CSS_NODE_IDENT && strcasecmp(v->data, "auto") == 0)

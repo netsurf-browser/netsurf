@@ -23,57 +23,81 @@
 #include "netsurf/utils/utils.h"
 
 #define FONT_FAMILIES 5 /* Number of families */
+#define FONT_FACES 8    /* Number of faces */
+
+/* Font Variants */
+#define FONT_SMALLCAPS 4
 
 /* Font Styles */
 #define FONT_BOLD 2
 #define FONT_SLANTED 1
 
 /* Font families */
-#define FONT_SANS_SERIF  0
-#define FONT_SERIF       4
-#define FONT_MONOSPACE   8
-#define FONT_CURSIVE    12
-#define FONT_FANTASY    16
+#define FONT_SANS_SERIF (0 * FONT_FACES)
+#define FONT_SERIF      (1 * FONT_FACES)
+#define FONT_MONOSPACE  (2 * FONT_FACES)
+#define FONT_CURSIVE    (3 * FONT_FACES)
+#define FONT_FANTASY    (4 * FONT_FACES)
 
 /* a font_set is just a linked list of font_data for each face for now */
 struct font_set {
-	struct font_data *font[FONT_FAMILIES * 4];
+	struct font_data *font[FONT_FAMILIES * FONT_FACES];
 };
 
 /** Table of font names.
  *
- * font id = font family * 4 + bold * 2 + slanted
+ * font id = font family * 8 + smallcaps * 4 + bold * 2 + slanted
  *
  * font family: 0 = sans-serif, 1 = serif, 2 = monospace, 3 = cursive
  *              4 = fantasy
  */
 
-const char * const font_table[FONT_FAMILIES * 4] = {
+const char * const font_table[FONT_FAMILIES * FONT_FACES] = {
 	/* sans-serif */
 /*0*/	"Homerton.Medium\\ELatin1",
 /*1*/	"Homerton.Medium.Oblique\\ELatin1",
 /*2*/	"Homerton.Bold\\ELatin1",
 /*3*/	"Homerton.Bold.Oblique\\ELatin1",
+        "Homerton.Medium.SmallCaps\\ELatin1",
+        "Homerton.Medium.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
+        "Homerton.Bold.SmallCaps\\ELatin1",
+        "Homerton.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
 	/* serif */
-/*4*/	"Trinity.Medium\\ELatin1",
-/*5*/	"Trinity.Medium.Italic\\ELatin1",
-/*6*/	"Trinity.Bold\\ELatin1",
-/*7*/	"Trinity.Bold.Italic\\ELatin1",
+/*8*/	"Trinity.Medium\\ELatin1",
+/*9*/	"Trinity.Medium.Italic\\ELatin1",
+/*10*/	"Trinity.Bold\\ELatin1",
+/*11*/	"Trinity.Bold.Italic\\ELatin1",
+        "Trinity.Medium.SmallCaps\\ELatin1",
+        "Trinity.Medium.Italic.SmallCaps\\ELatin1",
+        "Trinity.Bold.SmallCaps\\ELatin1",
+        "Trinity.Bold.Italic.SmallCaps\\ELatin1",
 	/* monospace */
-/*8*/	"Corpus.Medium\\ELatin1",
-/*9*/	"Corpus.Medium.Oblique\\ELatin1",
-/*10*/	"Corpus.Bold\\ELatin1",
-/*11*/	"Corpus.Bold.Oblique\\ELatin1",
+/*16*/	"Corpus.Medium\\ELatin1",
+/*17*/	"Corpus.Medium.Oblique\\ELatin1",
+/*18*/	"Corpus.Bold\\ELatin1",
+/*19*/	"Corpus.Bold.Oblique\\ELatin1",
+        "Corpus.Medium.SmallCaps\\ELatin1",
+        "Corpus.Medium.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
+        "Corpus.Bold.SmallCaps\\ELatin1",
+        "Corpus.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
 	/* cursive */
-/*12*/	"Churchill.Medium\\ELatin1",
-/*13*/	"Churchill.Medium\\ELatin1\\M65536 0 13930 65536 0 0",
-/*14*/	"Churchill.Bold\\ELatin1",
-/*15*/	"Churchill.Bold\\ELatin1\\M65536 0 13930 65536 0 0",
+/*24*/	"Churchill.Medium\\ELatin1",
+/*25*/	"Churchill.Medium\\ELatin1\\M65536 0 13930 65536 0 0",
+/*26*/	"Churchill.Bold\\ELatin1",
+/*27*/	"Churchill.Bold\\ELatin1\\M65536 0 13930 65536 0 0",
+        "Churchill.Medium.SmallCaps\\ELatin1",
+        "Churchill.Medium.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
+        "Churchill.Bold.SmallCaps\\ELatin1",
+        "Churchill.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
         /* fantasy */
-/*16*/	"Sassoon.Primary\\ELatin1",
-/*17*/	"Sassoon.Primary\\ELatin1\\M65536 0 13930 65536 0 0",
-/*18*/	"Sassoon.Primary.Bold\\ELatin1",
-/*19*/	"Sassoon.Primary.Bold\\ELatin1\\M65536 0 13930 65536 0 0",
+/*32*/	"Sassoon.Primary\\ELatin1",
+/*33*/	"Sassoon.Primary\\ELatin1\\M65536 0 13930 65536 0 0",
+/*34*/	"Sassoon.Primary.Bold\\ELatin1",
+/*35*/	"Sassoon.Primary.Bold\\ELatin1\\M65536 0 13930 65536 0 0",
+        "Sassoon.Primary.SmallCaps\\ELatin1",
+        "Sassoon.Primary.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
+        "Sassoon.Primary.Bold.SmallCaps\\ELatin1",
+        "Sassoon.Primary.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
 };
 
 
@@ -88,7 +112,7 @@ struct font_set *font_new_set()
 	struct font_set *set = xcalloc(1, sizeof(*set));
 	unsigned int i;
 
-	for (i = 0; i < FONT_FAMILIES * 4; i++)
+	for (i = 0; i < FONT_FAMILIES * FONT_FACES; i++)
 		set->font[i] = 0;
 
 	return set;
@@ -139,6 +163,14 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 	                break;
 	}
 
+	switch (style->font_variant) {
+	       case CSS_FONT_VARIANT_SMALL_CAPS:
+	                f += FONT_SMALLCAPS;
+	                break;
+	       default:
+	                break;
+	}
+
 	switch (style->font_weight) {
 		case CSS_FONT_WEIGHT_BOLD:
 		case CSS_FONT_WEIGHT_600:
@@ -171,7 +203,8 @@ struct font_data *font_open(struct font_set *set, struct css_style *style)
 
 	if (error) { /* fall back to Homerton */
 	        LOG(("font_find_font failed; falling back to Homerton"));
-	        error = xfont_find_font(font_table[f % 4], (int)size, (int)size,
+	        error = xfont_find_font(font_table[f % 4],
+	                                (int)size, (int)size,
 	                                0, 0, &handle, 0, 0);
 	        if (error) {
 		        LOG(("%i: %s\n", error->errnum, error->errmess));
@@ -203,7 +236,7 @@ void font_free_set(struct font_set *set)
 
 	assert(set != 0);
 
-	for (i = 0; i < FONT_FAMILIES * 4; i++) {
+	for (i = 0; i < FONT_FAMILIES * FONT_FACES; i++) {
 		for (data = set->font[i]; data != 0; data = next) {
 			next = data->next;
 			font_lose_font((font_f)(data->handle));

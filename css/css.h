@@ -75,6 +75,7 @@ struct css_style {
         css_font_family font_family;
 	css_font_weight font_weight;
 	css_font_style font_style;
+	css_font_variant font_variant;
 
 	struct {
 		enum { CSS_HEIGHT_INHERIT,
