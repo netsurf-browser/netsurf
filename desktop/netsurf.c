@@ -18,6 +18,9 @@
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
+#ifdef riscos
+#include "netsurf/riscos/buffer.h"
+#endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
@@ -28,6 +31,7 @@ static void netsurf_init(int argc, char** argv);
 static void netsurf_poll(void);
 static void netsurf_exit(void);
 static void lib_init(void);
+static void netsurf_cleanup(void);
 
 
 /**
@@ -71,6 +75,7 @@ void netsurf_init(int argc, char** argv)
 				utsname.nodename, utsname.release,
 				utsname.version, utsname.machine));
 
+	atexit(netsurf_cleanup);
 	lib_init();
 	url_init();
 	gui_init(argc, argv);
@@ -114,4 +119,14 @@ static void lib_init(void)
 	 */
 	if (xmlAddEncodingAlias(xmlGetCharEncodingName(XML_CHAR_ENCODING_SHIFT_JIS), "X-SJIS") != 0)
 		die("Failed to add encoding alias");
+}
+
+/**
+ * Ensures NetSurf exits cleanly.
+ */
+static void netsurf_cleanup(void)
+{
+#ifdef riscos
+	ro_gui_buffer_close();
+#endif
 }
