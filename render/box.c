@@ -47,12 +47,11 @@ struct result {
 
 static struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		struct css_style * parent_style,
-		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box *inline_container,
 		struct status status);
 static struct css_style * box_get_style(struct content ** stylesheet,
 		unsigned int stylesheet_count, struct css_style * parent_style,
-		xmlNode * n, struct css_selector * selector, unsigned int depth);
+		xmlNode * n);
 static struct result box_a(xmlNode *n, struct status *status,
 		struct css_style *style);
 static struct result box_body(xmlNode *n, struct status *status,
@@ -201,7 +200,6 @@ void box_insert_sibling(struct box *box, struct box *new_box)
 
 void xml_to_box(xmlNode *n, struct content *c)
 {
-	struct css_selector* selector = xcalloc(1, sizeof(struct css_selector));
 	struct status status = {c, 0, 0, 0, &c->data.html.elements};
 
 	LOG(("node %p", n));
@@ -218,7 +216,7 @@ void xml_to_box(xmlNode *n, struct content *c)
 	c->data.html.object = xcalloc(0, sizeof(*c->data.html.object));
 
 	convert_xml_to_box(n, c, c->data.html.style,
-			&selector, 0, c->data.html.layout, 0, status);
+			c->data.html.layout, 0, status);
 	LOG(("normalising"));
 	box_normalise_block(c->data.html.layout->children);
 }
@@ -231,8 +229,6 @@ void xml_to_box(xmlNode *n, struct content *c)
  * 	n		xml tree
  * 	content		content structure
  * 	parent_style	style at this point in xml tree
- * 	selector	element selector hierachy to this point
- * 	depth		depth in xml tree
  * 	parent		parent in box tree
  * 	inline_container	current inline container box, or 0
  * 	status		status for forms etc.
@@ -264,7 +260,6 @@ static box_type box_map[] = {
 
 struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		struct css_style * parent_style,
-		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box *inline_container,
 		struct status status)
 {
@@ -278,28 +273,19 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 	int convert_children = 1;
 	char *href_in = status.href;
 
-	assert(n != 0 && parent_style != 0 && selector != 0 && parent != 0);
-	LOG(("depth %i, node %p, node type %i", depth, n, n->type));
+	assert(n != 0 && parent_style != 0 && parent != 0);
+	LOG(("node %p, node type %i", n, n->type));
 	gui_multitask();
 
 	if (n->type == XML_ELEMENT_NODE) {
 		struct element_entry *element;
 
-		/* work out the style for this element */
-		*selector = xrealloc(*selector, (depth + 1) * sizeof(struct css_selector));
-		(*selector)[depth].element = (const char *) n->name;
-		(*selector)[depth].class = (*selector)[depth].id = 0;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "class")))
-			(*selector)[depth].class = s;
-		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "id")))
-			(*selector)[depth].id = s;
 		style = box_get_style(content->data.html.stylesheet_content,
-				content->data.html.stylesheet_count, parent_style, n,
-				*selector, depth + 1);
+				content->data.html.stylesheet_count, parent_style, n);
 		LOG(("display: %s", css_display_name[style->display]));
 		if (style->display == CSS_DISPLAY_NONE) {
 			free(style);
-			LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
+			LOG(("node %p, node type %i END", n, n->type));
 			goto end;
 		}
 		/* floats are treated as blocks */
@@ -326,7 +312,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 				/* no box for this element */
 				assert(convert_children == 0);
 				free(style);
-				LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
+				LOG(("node %p, node type %i END", n, n->type));
 				goto end;
 			}
 		} else {
@@ -340,7 +326,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 
 	} else {
 		/* not an element or text node: ignore it (eg. comment) */
-		LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
+		LOG(("node %p, node type %i END", n, n->type));
 		goto end;
 	}
 
@@ -450,10 +436,10 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 			if (convert_children) {
 				for (c = n->children; c != 0; c = c->next)
 					inline_container = convert_xml_to_box(c, content, style,
-							selector, depth + 1, parent, inline_container,
+							parent, inline_container,
 							status);
 			}
-			LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
+			LOG(("node %p, node type %i END", n, n->type));
 			goto end;
 		} else if (box->type == BOX_INLINE_BLOCK) {
 			/* inline block box: add to tree and recurse */
@@ -462,10 +448,10 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
 					inline_container_c = convert_xml_to_box(c, content, style,
-							selector, depth + 1, box, inline_container_c,
+							box, inline_container_c,
 							status);
 			}
-			LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
+			LOG(("node %p, node type %i END", n, n->type));
 			goto end;
 		} else {
 			/* float: insert a float box between the parent and current node */
@@ -492,7 +478,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		inline_container_c = 0;
 		for (c = n->children; c != 0; c = c->next)
 			inline_container_c = convert_xml_to_box(c, content, style,
-					selector, depth + 1, box, inline_container_c,
+					box, inline_container_c,
 					status);
 	}
 	if (style->float_ == CSS_FLOAT_NONE)
@@ -514,12 +500,8 @@ end:
 	free(title);
 	if (!href_in)
 		xmlFree(status.href);
-	if (n->type == XML_ELEMENT_NODE) {
-		free((*selector)[depth].class);
-		free((*selector)[depth].id);
-	}
 
-	LOG(("depth %i, node %p, node type %i END", depth, n, n->type));
+	LOG(("node %p, node type %i END", n, n->type));
 	return inline_container;
 }
 
@@ -535,7 +517,7 @@ end:
 
 struct css_style * box_get_style(struct content ** stylesheet,
 		unsigned int stylesheet_count, struct css_style * parent_style,
-		xmlNode * n, struct css_selector * selector, unsigned int depth)
+		xmlNode * n)
 {
 	struct css_style * style = xcalloc(1, sizeof(struct css_style));
 	struct css_style * style_new = xcalloc(1, sizeof(struct css_style));
