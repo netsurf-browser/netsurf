@@ -873,8 +873,9 @@ void nsfont_fill_nametable(void)
 		}
 		for (j = 0; j != FONT_FACES; j++) {
 			/**\todo Bold, italic, smallcaps */
-			strncpy(ufont_table[FONT_FACES*i+j],
-					name, FONT_MAX_NAME);
+			if (name)
+				strncpy(ufont_table[FONT_FACES*i+j],
+						name, FONT_MAX_NAME);
 		}
 	}
 }
