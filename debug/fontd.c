@@ -158,7 +158,7 @@ const char *enumerate_fonts(struct font_set *set, int *handle)
 {
         assert(handle);
 
-	if (!handle) {
+	if (*handle == 0) {
 		*handle = 1;
 		return "Homerton.Medium";
 	}
