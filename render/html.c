@@ -357,8 +357,10 @@ void html_fetch_object(struct content *c, char *url, struct box *box)
 	c->data.html.object[i].content = fetchcache(url, c->url,
 			html_object_callback,
 			c, i, 0, 0);
-	if (c->data.html.object[i].content->status != CONTENT_STATUS_DONE)
-		c->active++;
+	c->active++;
+	if (c->data.html.object[i].content->status == CONTENT_STATUS_DONE)
+		html_object_callback(CONTENT_MSG_DONE,
+				c->data.html.object[i].content, c, i, 0);
 	c->data.html.object_count++;
 }
 
@@ -436,6 +438,7 @@ void html_object_callback(content_msg msg, struct content *object,
 		case CONTENT_MSG_STATUS:
 			sprintf(c->status_message, "Loading %i objects: %s",
 					c->active, object->status_message);
+			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			break;
 
 		case CONTENT_MSG_REDIRECT:
@@ -454,15 +457,14 @@ void html_object_callback(content_msg msg, struct content *object,
 	}
 
 	LOG(("%i active", c->active));
-	if (c->active == 0) {
+	if (c->status == CONTENT_STATUS_READY && c->active == 0) {
 		/* all objects have arrived */
 		content_reformat(c, c->available_width, 0);
 		c->status = CONTENT_STATUS_DONE;
+		sprintf(c->status_message, "Document done");
 		content_broadcast(c, CONTENT_MSG_DONE, 0);
 	}
-	if (c->active == 0)
-		sprintf(c->status_message, "Document done");
-	else
+	if (c->status == CONTENT_STATUS_READY)
 		sprintf(c->status_message, "Loading %i objects", c->active);
 }
 
