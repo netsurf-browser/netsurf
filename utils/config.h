@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2003,4 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
 #ifndef _NETSURF_UTILS_CONFIG_H_

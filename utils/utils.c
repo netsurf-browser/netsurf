@@ -189,7 +189,7 @@ char *squash_tolat1(xmlChar *s)
 
 
 /**
- * Calculate a URL from a relative and base URL.
+ * Calculate an URL from a relative and base URL.
  *
  * base may be 0 for a new URL, in which case the URL is canonicalized and
  * returned. Returns 0 in case of error.
