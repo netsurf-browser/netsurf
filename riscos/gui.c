@@ -160,7 +160,6 @@ void gui_init(int argc, char** argv)
 {
 	char path[40];
 	char theme_fname[256];
-	char url[80];
 	os_error *error;
 	int length;
 
@@ -168,7 +167,7 @@ void gui_init(int argc, char** argv)
 
 	save_complete_init();
 
-        /* We dont have the universal boot sequence on NCOS */
+        /* We don't have the universal boot sequence on NCOS */
 #ifndef ncos
 	options_read("Choices:WWW.NetSurf.Choices");
 #else
@@ -201,7 +200,7 @@ void gui_init(int argc, char** argv)
 		die(error->errmess);
 	}
 
-        /* We dont need to check the fonts on NCOS */
+        /* We don't need to check the fonts on NCOS */
 #ifndef ncos
 	ro_gui_check_fonts();
 #endif
@@ -244,7 +243,7 @@ void gui_init(int argc, char** argv)
 	ro_gui_pointers_init();
 	ro_gui_hotlist_init();
 
-        /* We dont create an Iconbar icon on NCOS */
+        /* We don't create an Iconbar icon on NCOS */
 #ifndef ncos
 	ro_gui_icon_bar_create();
 #endif
