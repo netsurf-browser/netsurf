@@ -53,5 +53,5 @@ dd { margin-bottom: 0.5em; }
 
 a:link { color: #0000ff}
 a:visited { color: #6678ff}
-a:hover { color: #7070ff}
+a:link:hover { color: #7070ff}
 a:active {text-decoration: none; color: #7070ff}
