@@ -37,7 +37,7 @@ extern gui_window *current_gui;
 extern gui_window *ro_gui_current_redraw_gui;
 extern osspriteop_area *gui_pointers;
 
-typedef enum { GUI_BROWSER_WINDOW, GUI_DOWNLOAD_WINDOW } gui_window_type;
+typedef enum { GUI_BROWSER_WINDOW } gui_window_type;
 typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT,
 		GUI_SAVE_COMPLETE,
 		GUI_SAVE_OBJECT_ORIG, GUI_SAVE_OBJECT_NATIVE,
@@ -48,44 +48,33 @@ typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_SAVE, GUI_DRAG_STATUS_RESIZE } gui_drag_type;
 extern gui_drag_type gui_current_drag_type;
 
-struct gui_window
-{
-  gui_window_type type;
+struct gui_window {
+	gui_window_type type;
 
-  wimp_w window;
+	wimp_w window;
 
-  union {
-    struct {
-      struct toolbar *toolbar;
-      int toolbar_width;
-      struct browser_window* bw;
-      bool reformat_pending;
-      int old_width;
-      int old_height;
-    } browser;
-    struct {
-      struct content *content;
-      bits file_type;
-      char sprite_name[20];
-      char path[256];
-      enum {
-        download_COMPLETE,
-        download_INCOMPLETE,
-        download_ERROR
-      } download_status;
-    } download;
-  } data;
+	union {
+		struct {
+			struct toolbar *toolbar;
+			int toolbar_width;
+			struct browser_window* bw;
+			bool reformat_pending;
+			int old_width;
+			int old_height;
+		} browser;
+	} data;
 
-  char status[256];
-  char title[256];
-  char url[256];
-  gui_window* next;
+	char status[256];
+	char title[256];
+	char url[256];
+	gui_window *next;
 
-  int throbber;
-  char throb_buf[12];
-  float throbtime;
+	int throbber;
+	char throb_buf[12];
+	float throbtime;
 
-  enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION } drag_status;
+	enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION }
+			drag_status;
 
 	/*	Options
 	*/
@@ -132,11 +121,12 @@ void ro_gui_redraw_config_th_pane(wimp_draw *redraw);
 
 /* in download.c */
 void ro_gui_download_init(void);
-void ro_download_window_close(struct gui_window *g);
-struct gui_window * ro_lookup_download_window_from_w(wimp_w window);
-void ro_download_window_click(struct gui_window *g, wimp_pointer *pointer);
-void ro_download_drag_end(wimp_dragged *drag);
-void ro_download_datasave_ack(wimp_message *message);
+struct gui_download_window * ro_gui_download_window_lookup(wimp_w w);
+void ro_gui_download_window_click(struct gui_download_window *dw,
+		wimp_pointer *pointer);
+void ro_gui_download_drag_end(wimp_dragged *drag);
+void ro_gui_download_datasave_ack(wimp_message *message);
+void ro_gui_download_window_destroy(struct gui_download_window *dw);
 
 /* in mouseactions.c */
 void ro_gui_mouse_action(gui_window* g);
@@ -253,11 +243,12 @@ void ro_gui_debugwin_redraw(wimp_draw *redraw);
 #define ICON_CONFIG_TH_GET 2
 #define ICON_CONFIG_TH_MANAGE 3
 
-#define ICON_DOWNLOAD_URL 0
-#define ICON_DOWNLOAD_STATUS 1
-#define ICON_DOWNLOAD_ICON 2
-#define ICON_DOWNLOAD_PATH 3
-#define ICON_DOWNLOAD_ABORT 4
+#define ICON_DOWNLOAD_ICON 0
+#define ICON_DOWNLOAD_URL 1
+#define ICON_DOWNLOAD_PATH 2
+#define ICON_DOWNLOAD_DESTINATION 3
+#define ICON_DOWNLOAD_PROGRESS 5
+#define ICON_DOWNLOAD_STATUS 6
 
 #define ICON_401LOGIN_LOGIN 0
 #define ICON_401LOGIN_CANCEL 1

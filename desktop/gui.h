@@ -14,6 +14,7 @@
 #define _NETSURF_DESKTOP_GUI_H_
 
 struct gui_window;
+struct gui_download_window;
 typedef struct gui_window gui_window;
 typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
                GUI_POINTER_MENU, GUI_POINTER_UD, GUI_POINTER_LR,
@@ -26,7 +27,6 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 
 gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone);
-gui_window *gui_create_download_window(struct content *content);
 void gui_window_destroy(gui_window* g);
 void gui_window_redraw(gui_window* g, unsigned long x0, unsigned long y0,
 		unsigned long x1, unsigned long y1);
@@ -40,9 +40,14 @@ void gui_window_set_pointer(gui_pointer_shape shape);
 void gui_window_set_title(gui_window* g, char* title);
 void gui_window_set_url(gui_window *g, char *url);
 
-void gui_download_window_update_status(gui_window *g);
-void gui_download_window_done(gui_window *g);
-void gui_download_window_error(gui_window *g, const char *error);
+struct gui_download_window *gui_download_window_create(const char *url,
+		const char *mime_type, struct fetch *fetch,
+		unsigned int total_size);
+void gui_download_window_data(struct gui_download_window *dw, const char *data,
+		unsigned int size);
+void gui_download_window_error(struct gui_download_window *dw,
+		const char *error_msg);
+void gui_download_window_done(struct gui_download_window *dw);
 
 void gui_init(int argc, char** argv);
 void gui_window_clone_options(struct browser_window *new_bw, struct browser_window *old_bw);

@@ -660,17 +660,15 @@ void ro_gui_open_window_request(wimp_open *open)
 void ro_gui_close_window_request(wimp_close *close)
 {
 	gui_window *g;
+	struct gui_download_window *dw;
 
-	if (close->w == dialog_debug) {
+	if (close->w == dialog_debug)
 		ro_gui_debugwin_close();
-		return;
-	}
-
-	g = ro_lookup_gui_from_w(close->w);
-
-	if (g) {
+	else if ((g = ro_gui_window_lookup(close->w)))
 		browser_window_destroy(g->data.browser.bw);
-	} else
+	else if ((dw = ro_gui_download_window_lookup(close->w)))
+		ro_gui_download_window_destroy(dw);
+	else
 		ro_gui_dialog_close(close->w);
 }
 
@@ -682,6 +680,7 @@ void ro_gui_close_window_request(wimp_close *close)
 void ro_gui_mouse_click(wimp_pointer *pointer)
 {
 	gui_window *g = ro_gui_window_lookup(pointer->w);
+	struct gui_download_window *dw;
 
 	if (pointer->w == wimp_ICON_BAR)
 		ro_gui_icon_bar_click(pointer);
@@ -695,8 +694,8 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 	else if (g && g->type == GUI_BROWSER_WINDOW &&
 			g->data.browser.toolbar->status_handle == pointer->w)
 		ro_gui_status_click(g, pointer);
-	else if (g && g->type == GUI_DOWNLOAD_WINDOW)
-		ro_download_window_click(g, pointer);
+	else if ((dw = ro_gui_download_window_lookup(pointer->w)))
+		ro_gui_download_window_click(dw, pointer);
 	else if (pointer->w == dialog_saveas)
 		ro_gui_save_click(pointer);
 	else
@@ -739,7 +738,7 @@ void ro_gui_drag_end(wimp_dragged *drag)
 			break;
 
 		case GUI_DRAG_DOWNLOAD_SAVE:
-			ro_download_drag_end(drag);
+			ro_gui_download_drag_end(drag);
 			break;
 
 		case GUI_DRAG_SAVE:
@@ -773,9 +772,6 @@ void ro_gui_keypress(wimp_key *key)
 		case GUI_BROWSER_WINDOW:
 			handled = ro_gui_window_keypress(g, key->c,
 					(bool) (g->data.browser.toolbar->toolbar_handle == key->w));
-			break;
-
-		case GUI_DOWNLOAD_WINDOW:
 			break;
 	}
 
@@ -1140,7 +1136,7 @@ void ro_msg_datasave_ack(wimp_message *message)
 {
 	switch (gui_current_drag_type) {
 		case GUI_DRAG_DOWNLOAD_SAVE:
-			ro_download_datasave_ack(message);
+			ro_gui_download_datasave_ack(message);
 			break;
 
 		case GUI_DRAG_SAVE:

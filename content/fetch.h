@@ -53,5 +53,9 @@ void fetch_quit(void);
 const char *fetch_filetype(const char *unix_path);
 char *fetch_mimetype(const char *ro_path);
 bool fetch_can_fetch(const char *url);
+void fetch_change_callback(struct fetch *fetch,
+		void (*callback)(fetch_msg msg, void *p, const char *data,
+				unsigned long size),
+		void *p);
 
 #endif

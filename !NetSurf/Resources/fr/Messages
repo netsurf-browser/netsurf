@@ -65,7 +65,10 @@ HelpAbout:¿ propos de NetSurf
 Themes:ThËmes
 
 # Download window
-Downloaded:TÈlÈchargement terminÈ, %s
+Download:%s of %s  è  %s/s  è  %s remaining
+DownloadU:%s of unknown  è  %s/s  è  %s total
+Downloaded:%s complete  è  average %s/s  è  %s total
+Unwritten:Writing data to file failed.
 
 # Forms
 Form_Submit:Soumettre

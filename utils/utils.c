@@ -308,7 +308,7 @@ void clean_cookiejar(void) {
 
 /**
   * Does a simple conversion which assumes the user speaks English.  The buffer
-  * returned is one of two static ones so may change each time this call is
+  * returned is one of three static ones so may change each time this call is
   * made.  Don't store the buffer for later use.  It's done this way for
   * convenience and to fight possible memory leaks, it is not necessarily pretty.
  **/
@@ -316,12 +316,15 @@ void clean_cookiejar(void) {
 char *human_friendly_bytesize(unsigned long bsize) {
 	static char buffer1[BYTESIZE_BUFFER_SIZE];
 	static char buffer2[BYTESIZE_BUFFER_SIZE];
-	static char *curbuffer = buffer2;
+	static char buffer3[BYTESIZE_BUFFER_SIZE];
+	static char *curbuffer = buffer3;
 
         float bytesize = (float)bsize;
 
 	if (curbuffer == buffer1)
 		curbuffer = buffer2;
+	else if (curbuffer == buffer2)
+		curbuffer = buffer3;
 	else
 		curbuffer = buffer1;
 

@@ -825,6 +825,21 @@ bool fetch_can_fetch(const char *url)
 
 
 /**
+ * Change the callback function for a fetch.
+ */
+
+void fetch_change_callback(struct fetch *fetch,
+		void (*callback)(fetch_msg msg, void *p, const char *data,
+				unsigned long size),
+		void *p)
+{
+	assert(fetch);
+	fetch->callback = callback;
+	fetch->p = p;
+}
+
+
+/**
  * testing framework
  */
 

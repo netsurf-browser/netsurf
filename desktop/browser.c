@@ -39,8 +39,7 @@
 
 static void browser_window_callback(content_msg msg, struct content *c,
 		void *p1, void *p2, union content_msg_data data);
-static void browser_window_convert_to_download(struct browser_window *bw,
-		content_msg msg);
+static void browser_window_convert_to_download(struct browser_window *bw);
 static void browser_window_start_throbber(struct browser_window *bw);
 static void browser_window_stop_throbber(struct browser_window *bw);
 static void browser_window_update(struct browser_window *bw,
@@ -48,8 +47,8 @@ static void browser_window_update(struct browser_window *bw,
 static void browser_window_set_status(struct browser_window *bw,
 		const char *text);
 static void browser_window_set_pointer(gui_pointer_shape shape);
-static void download_window_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, union content_msg_data data);
+static void download_window_callback(fetch_msg msg, void *p, const char *data,
+		unsigned long size);
 
 static void browser_window_text_selection(struct browser_window* bw,
 		unsigned long click_x, unsigned long click_y, int click_type);
@@ -194,13 +193,12 @@ void browser_window_callback(content_msg msg, struct content *c,
 	struct browser_window *bw = p1;
 	char status[40];
 
-	if (c->type == CONTENT_OTHER) {
-		browser_window_convert_to_download(bw, msg);
-		return;
-	}
-
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
+			assert(bw->loading_content == c);
+
+			if (c->type == CONTENT_OTHER)
+				browser_window_convert_to_download(bw);
 			break;
 
 		case CONTENT_MSG_READY:
@@ -294,21 +292,32 @@ void browser_window_callback(content_msg msg, struct content *c,
  * Transfer the loading_content to a new download window.
  */
 
-void browser_window_convert_to_download(struct browser_window *bw,
-		content_msg msg)
+void browser_window_convert_to_download(struct browser_window *bw)
 {
-	gui_window *download_window;
+	struct gui_download_window *download_window;
 	struct content *c = bw->loading_content;
-	union content_msg_data data;
+	struct fetch *fetch;
+
 	assert(c);
 
-	/* create download window and add content to it */
-	download_window = gui_create_download_window(c);
-	content_add_user(c, download_window_callback, download_window, 0);
+	fetch = c->fetch;
 
-	if (msg == CONTENT_MSG_DONE)
-		download_window_callback(CONTENT_MSG_DONE, c, download_window,
-				0, data);
+	if (fetch) {
+		/* create download window */
+		download_window = gui_download_window_create(c->url,
+				c->mime_type, fetch, c->total_size);
+
+		if (download_window) {
+			/* extract fetch from content */
+			c->fetch = 0;
+			c->fresh = false;
+			fetch_change_callback(fetch, download_window_callback,
+					download_window);
+		}
+	} else {
+		/* must already be a download window for this fetch */
+		/** \todo  open it at top of stack */
+	}
 
 	/* remove content from browser window */
 	bw->loading_content = 0;
@@ -466,49 +475,37 @@ void browser_window_destroy(struct browser_window *bw)
 
 
 /**
- * Callback for fetchcache() for download window fetches.
+ * Callback for fetch for download window fetches.
  */
 
-void download_window_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, union content_msg_data data)
+void download_window_callback(fetch_msg msg, void *p, const char *data,
+		unsigned long size)
 {
-	gui_window *download_window = p1;
+	struct gui_download_window *download_window = p;
 
 	switch (msg) {
-		case CONTENT_MSG_STATUS:
-			gui_download_window_update_status(download_window);
+		case FETCH_DATA:
+			gui_download_window_data(download_window, data, size);
 			break;
 
-		case CONTENT_MSG_DONE:
+		case FETCH_FINISHED:
 			gui_download_window_done(download_window);
 			break;
 
-		case CONTENT_MSG_ERROR:
-			gui_download_window_error(download_window, data.error);
+		case FETCH_ERROR:
+			gui_download_window_error(download_window, data);
 			break;
 
-		case CONTENT_MSG_READY:
-			break;
-
-		case CONTENT_MSG_LOADING:
-		case CONTENT_MSG_REDIRECT:
-			/* not possible at this point, handled in
-			   browser_window_callback() */
+		case FETCH_TYPE:
+		case FETCH_REDIRECT:
+		case FETCH_AUTH:
+		default:
+			/* not possible */
 			assert(0);
 			break;
-
-		case CONTENT_MSG_REFORMAT:
-			break;
-
-		case CONTENT_MSG_REDRAW:
-			break;
-
-#ifdef WITH_AUTH
-		case CONTENT_MSG_AUTH:
-		        break;
-#endif
-	}
+        }
 }
+
 
 void clear_radio_gadgets(struct browser_window *bw, struct box *box,
 			 struct form_control *group)
