@@ -164,7 +164,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			break;
 
 		case CONTENT_MSG_STATUS:
-			sprintf(c->status_message, "Loading %u stylesheets: %s",
+			snprintf(c->status_message, 80, "Loading %u stylesheets: %s",
 					c->active, css->status_message);
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			break;
@@ -431,12 +431,12 @@ void html_object_callback(content_msg msg, struct content *object,
 			c->data.html.object[i].content = 0;
 			c->active--;
 			c->error = 1;
-			sprintf(c->status_message, "Image error: %s", error);
+			snprintf(c->status_message, 80, "Image error: %s", error);
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			break;
 
 		case CONTENT_MSG_STATUS:
-			sprintf(c->status_message, "Loading %i objects: %s",
+			snprintf(c->status_message, 80, "Loading %i objects: %s",
 					c->active, object->status_message);
 			content_broadcast(c, CONTENT_MSG_STATUS, 0);
 			break;
