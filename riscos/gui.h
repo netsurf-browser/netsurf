@@ -25,14 +25,16 @@ extern int current_menu_x, current_menu_y, iconbar_menu_height;
 extern struct form_control *current_gadget;
 extern const char *HOME_URL;
 extern gui_window *window_list;
+extern bool gui_reformat_pending;
 
 struct gui_window
 {
   gui_window_type type;
 
+  wimp_w window;
+
   union {
     struct {
-      wimp_w window;
       wimp_w toolbar;
       int toolbar_width;
       struct browser_window* bw;
@@ -40,7 +42,6 @@ struct gui_window
       int old_width;
     } browser;
     struct {
-      wimp_w window;
       struct content *content;
       bits file_type;
       char sprite_name[20];
@@ -91,6 +92,7 @@ int window_x_units(int scr_units, wimp_window_state* win);
 int window_y_units(int scr_units, wimp_window_state* win);
 void ro_gui_copy_selection(gui_window* g);
 void ro_gui_open_help_page(void);
+void ro_gui_screen_size(int *width, int *height);
 
 /* in menus.c */
 void ro_gui_menus_init(void);
@@ -124,6 +126,17 @@ void ro_gui_drag_end(wimp_dragged* drag);
 void ro_gui_401login_init(void);
 void ro_gui_401login_open(char* host, char * realm, char* fetchurl);
 void ro_gui_401login_click(wimp_pointer *pointer);
+
+/* in window.c */
+void ro_gui_window_click(gui_window* g, wimp_pointer* mouse);
+void ro_gui_window_open(gui_window* g, wimp_open* open);
+void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw);
+void ro_gui_window_mouse_at(wimp_pointer* pointer);
+void ro_gui_toolbar_redraw(gui_window* g, wimp_draw* redraw);
+void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer);
+void ro_gui_throb(void);
+gui_window* ro_lookup_gui_from_w(wimp_w window);
+gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window);
 
 /* icon numbers */
 #define ICON_CONFIG_SAVE 0

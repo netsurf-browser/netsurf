@@ -53,6 +53,7 @@ void gui_download_window_error(gui_window *g, const char *error);
 void gui_init(int argc, char** argv);
 void gui_multitask(void);
 void gui_poll(bool active);
+void gui_quit(void);
 
 gui_safety gui_window_set_redraw_safety(gui_window* g, gui_safety s);
 

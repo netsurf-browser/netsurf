@@ -13,6 +13,8 @@
 #include "netsurf/utils/utils.h"
 #include <stdio.h>
 
+ro_theme* current_theme = NULL;
+
 void ro_theme_preload_template(ro_theme* theme, char* template_name,
     int* total_winicon, int* total_indirected)
 {

@@ -183,7 +183,7 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
         pmo->flags = 0;
         pmo->reserved = 0;
         pmo->browser = (plugin_b)params->browser;
-        pmo->parent_window = bw->window->data.browser.window;
+        pmo->parent_window = bw->window->window;
         pmo->bbox = b;
         xmimemaptranslate_mime_type_to_filetype(c->mime_type, &pmo->file_type);
         pmo->filename.pointer = params->filename;
@@ -421,7 +421,7 @@ void plugin_reshape_instance(struct content *c, struct browser_window *bw,
         pmr->flags = 0;
         pmr->plugin = (plugin_p) params->plugin;
         pmr->browser = (plugin_b) params->browser;
-        pmr->parent_window = (wimp_w) bw->window->data.browser.window;
+        pmr->parent_window = (wimp_w) bw->window->window;
         pmr->bbox = bbox;
 
         m.size = 52;

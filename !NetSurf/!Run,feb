@@ -25,11 +25,11 @@ RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.02 or
 
 | Load AcornURI if it isn't already
 | http://sudden.recoil.org/
-Set NetSurf$Start_URI_Handler "no"
-RMEnsure AcornURI 0.12 Set NetSurf$Start_URI_Handler "yes"
+Unset NetSurf$Start_URI_Handler
+RMEnsure AcornURI 0.12 Set NetSurf$Start_URI_Handler 1
 RMEnsure AcornURI 0.12 RMLoad System:Modules.Network.URI
 RMEnsure AcornURI 0.12 Error NetSurf requires AcornURI 0.12 or later. A version of this can be found at http://sudden.recoil.org/others/
-RMEnsure AcornURI 0.12 Set NetSurf$Start_URI_Handler "no"
+RMEnsure AcornURI 0.12 Unset NetSurf$Start_URI_Handler
 
 | Check for mime map module
 If "<InetDBase$Path>" = "" Then Error Inet databases can not be found

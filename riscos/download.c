@@ -91,8 +91,8 @@ gui_window *gui_create_download_window(struct content *content)
 		256;
 
 	/* create and open the download window */
-	g->data.download.window = wimp_create_window(download_template);
-	ro_gui_dialog_open(g->data.download.window);
+	g->window = wimp_create_window(download_template);
+	ro_gui_dialog_open(g->window);
 
 	g->data.download.download_status = download_INCOMPLETE;
 
@@ -141,7 +141,7 @@ void ro_gui_download_leaf(const char *url, char *leaf)
 void gui_download_window_update_status(gui_window *g)
 {
 	strncpy(g->status, g->data.download.content->status_message, 256);
-	wimp_set_icon_state(g->data.download.window,
+	wimp_set_icon_state(g->window,
 			ICON_DOWNLOAD_STATUS, 0, 0);
 }
 
@@ -156,15 +156,15 @@ void gui_download_window_error(gui_window *g, const char *error)
 
 	/* place error message in status icon in red */
 	strncpy(g->status, error, 256);
-	wimp_set_icon_state(g->data.download.window,
+	wimp_set_icon_state(g->window,
 			ICON_DOWNLOAD_STATUS,
 			wimp_COLOUR_RED << wimp_ICON_FG_COLOUR_SHIFT,
 			wimp_ICON_FG_COLOUR);
 
 	/* grey out file and pathname icons */
-	wimp_set_icon_state(g->data.download.window,
+	wimp_set_icon_state(g->window,
 			ICON_DOWNLOAD_ICON, wimp_ICON_SHADED, 0);
-	wimp_set_icon_state(g->data.download.window,
+	wimp_set_icon_state(g->window,
 			ICON_DOWNLOAD_PATH, wimp_ICON_SHADED, 0);
 
 	g->data.download.download_status = download_ERROR;
@@ -179,13 +179,13 @@ void gui_download_window_done(gui_window *g)
 {
 	snprintf(g->status, 256, messages_get("Downloaded"),
 			g->data.download.content->data.other.length);
-	wimp_set_icon_state(g->data.download.window,
+	wimp_set_icon_state(g->window,
 			ICON_DOWNLOAD_STATUS, 0, 0);
 
         // clear shaded path and icon icons
-	wimp_set_icon_state(g->data.download.window,
+	wimp_set_icon_state(g->window,
 			ICON_DOWNLOAD_ICON, 0, wimp_ICON_SHADED);
-	wimp_set_icon_state(g->data.download.window,
+	wimp_set_icon_state(g->window,
 			ICON_DOWNLOAD_PATH, 0, wimp_ICON_SHADED);
 
         g->data.download.download_status = download_COMPLETE;
@@ -223,7 +223,7 @@ struct gui_window * ro_lookup_download_window_from_w(wimp_w window)
   {
     if (g->type == GUI_DOWNLOAD_WINDOW)
     {
-      if (g->data.browser.window == window)
+      if (g->window == window)
       {
         return g;
       }
@@ -236,5 +236,5 @@ void ro_download_window_close(struct gui_window *g)
 {
   // free contexts etc???
 
-  wimp_close_window(g->data.download.window);
+  wimp_close_window(g->window);
 }

@@ -76,4 +76,5 @@ void netsurf_exit(void)
 {
   cache_quit();
   fetch_quit();
+  gui_quit();
 }

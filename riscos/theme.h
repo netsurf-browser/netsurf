@@ -63,6 +63,8 @@ struct ro_theme_window
 typedef struct ro_theme_window ro_theme_window;
 typedef struct ro_theme ro_theme;
 
+extern ro_theme *current_theme;
+
 typedef enum {theme_TOOLBAR_UNKNOWN,
               theme_TOOLBAR_BACK, theme_TOOLBAR_FORWARD, theme_TOOLBAR_RELOAD,
               theme_TOOLBAR_URL, theme_TOOLBAR_STATUS} theme_gadget;

@@ -14,7 +14,7 @@ OBJECTS = $(OBJECTS_COMMON) \
 	browser.o loginlist.o netsurf.o \
 	htmlredraw.o \
 	401login.o dialog.o download.o gui.o menus.o mouseactions.o \
-	options.o textselection.o theme.o \
+	options.o textselection.o theme.o window.o \
 	draw.o gif.o jpeg.o plugin.o png.o sprite.o \
 	about.o filetype.o font.o uri.o
 OBJECTS_DEBUG = $(OBJECTS_COMMON) \

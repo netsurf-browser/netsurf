@@ -118,17 +118,13 @@ wimp_w ro_gui_dialog_create(const char *template_name)
 
 void ro_gui_dialog_open(wimp_w w)
 {
-	int xeig_factor, yeig_factor, xwind_limit, ywind_limit,
-		screen_x, screen_y, dx, dy;
+	int screen_x, screen_y, dx, dy;
   	wimp_window_state open;
 
 	/* find screen centre in os units */
-	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_XEIG_FACTOR, &xeig_factor);
-	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_YEIG_FACTOR, &yeig_factor);
-	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_XWIND_LIMIT, &xwind_limit);
-	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_YWIND_LIMIT, &ywind_limit);
-	screen_x = (xwind_limit + 1) << (xeig_factor - 1);
-	screen_y = (ywind_limit + 1) << (yeig_factor - 1);
+	ro_gui_screen_size(&screen_x, &screen_y);
+	screen_x /= 2;
+	screen_y /= 2;
 
 	/* centre and open */
 	open.w = w;

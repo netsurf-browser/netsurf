@@ -9,4 +9,4 @@ If "<Alias$Open_URI_https>" = "" Then Set Alias$Open_URI_https <NetSurf$Dir>.URI
 If "<Alias$Open_URI_file>" = "" Then Set Alias$Open_URI_file <NetSurf$Dir>.URILaunch
 
 | Claim URI files
-If "<Alias$@RunType_F91>" = "" Then Set Alias$@RunType_F91 <NetSurf$Dir>.URILaunch
+|If "<Alias$@RunType_F91>" = "" Then Set Alias$@RunType_F91 <NetSurf$Dir>.URILaunch
