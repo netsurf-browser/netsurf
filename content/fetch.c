@@ -149,6 +149,14 @@ void fetch_init(void)
 	SETOPT(CURLOPT_CAINFO, ca_bundle);
 #endif
 
+	if (!option_ssl_verify_certificates) {
+        	/* disable verification of SSL certificates.
+	         * security? we've heard of it...
+	         */
+        	SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
+	        SETOPT(CURLOPT_SSL_VERIFYHOST, 0L);
+	}
+
 	return;
 
 curl_easy_setopt_failed:
@@ -601,7 +609,7 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 
 size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f)
 {
-	unsigned int i;
+	int i;
 	size *= nmemb;
 	if (12 < size && strncasecmp(data, "Location:", 9) == 0) {
 		/* extract Location header */
@@ -611,7 +619,7 @@ size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f
 			LOG(("malloc failed"));
 			return size;
 		}
-		for (i = 9; i < size && (data[i] == ' ' || data[i] == '\t'); i++)
+		for (i = 9; i < (int)size && (data[i] == ' ' || data[i] == '\t'); i++)
 			/* */;
 		strncpy(f->location, data + i, size - i);
 		f->location[size - i] = '\0';
@@ -623,7 +631,7 @@ size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f
 			f->location[i] = '\0';
 	} else if (15 < size && strncasecmp(data, "Content-Length:", 15) == 0) {
 		/* extract Content-Length header */
-		for (i = 15; i < size && (data[i] == ' ' || data[i] == '\t'); i++)
+		for (i = 15; i < (int)size && (data[i] == ' ' || data[i] == '\t'); i++)
 			/* */;
 		if ('0' <= data[i] && data[i] <= '9')
 			f->content_length = atol(data + i);
@@ -636,9 +644,9 @@ size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f
 			LOG(("malloc failed"));
 			return size;
 		}
-		for (i = 16; i < size && data[i] != '='; i++)
+		for (i = 16; i < (int)size && data[i] != '='; i++)
 			/* */;
-		while (i < size && data[++i] == '"')
+		while (i < (int)size && data[++i] == '"')
 			/* */;
 		strncpy(f->realm, data + i, size - i);
 		f->realm[size - i] = '\0';

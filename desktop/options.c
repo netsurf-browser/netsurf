@@ -41,6 +41,8 @@ int option_font_size = 100;
 int option_font_min_size = 70;
 /** Accept-Language header. */
 char *option_accept_language = 0;
+/** Strict verification of SSL sertificates */
+bool option_ssl_verify_certificates = true;
 
 EXTRA_OPTION_DEFINE
 
@@ -56,6 +58,7 @@ struct {
 	{ "font_size",       OPTION_INTEGER, &option_font_size },
 	{ "font_min_size",   OPTION_INTEGER, &option_font_min_size },
 	{ "accept_language", OPTION_STRING,  &option_accept_language },
+	{ "ssl_verify_certificates", OPTION_BOOL, &option_ssl_verify_certificates },
 	EXTRA_OPTION_TABLE
 };
 
