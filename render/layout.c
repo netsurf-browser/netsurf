@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.30 2002/12/30 22:56:30 monkeyson Exp $
+ * $Id: layout.c,v 1.31 2003/01/03 22:19:39 bursa Exp $
  */
 
 #include <assert.h>
@@ -85,10 +85,7 @@ void layout_document(struct box * doc, unsigned long width)
 void layout_node(struct box * box, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy)
 {
-#ifdef DEBUG_LAYOUT
-	fprintf(stderr, "layout_node(%p, %lu, %p, %lu, %lu)\n",
-			box, width, cont, cx, cy);
-#endif
+	LOG(("box %p, width %lu, cont %p, cx %lu, cy %lu", box, width, cont, cx, cy));
 
 	gui_multitask();
 
@@ -189,10 +186,7 @@ void layout_block(struct box * box, unsigned long width, struct box * cont,
 	assert(box->type == BOX_BLOCK);
 	assert(style != 0);
 
-#ifdef DEBUG_LAYOUT
-	fprintf(stderr, "layout_block(%p, %lu, %p, %lu, %lu)\n",
-			box, width, cont, cx, cy);
-#endif
+	LOG(("box %p, width %lu, cont %p, cx %lu, cy %lu", box, width, cont, cx, cy));
 
 	switch (style->width.width) {
 		case CSS_WIDTH_LENGTH:
@@ -235,10 +229,7 @@ unsigned long layout_block_children(struct box * box, unsigned long width, struc
 	assert(box->type == BOX_BLOCK || box->type == BOX_FLOAT_LEFT ||
 	       box->type == BOX_FLOAT_RIGHT || box->type == BOX_TABLE_CELL);
 
-#ifdef DEBUG_LAYOUT
-	fprintf(stderr, "layout_block_children(%p, %lu, %p, %lu, %lu)\n",
-			box, width, cont, cx, cy);
-#endif
+	LOG(("box %p, width %lu, cont %p, cx %lu, cy %lu", box, width, cont, cx, cy));
 
 	for (c = box->children; c != 0; c = c->next) {
 		if (c->style != 0 && c->style->clear != CSS_CLEAR_NONE) {
@@ -317,10 +308,7 @@ void layout_inline_container(struct box * box, unsigned long width, struct box *
 
 	assert(box->type == BOX_INLINE_CONTAINER);
 
-#ifdef DEBUG_LAYOUT
-	fprintf(stderr, "layout_inline_container(%p, %lu, %p, %lu, %lu)\n",
-			box, width, cont, cx, cy);
-#endif
+	LOG(("box %p, width %lu, cont %p, cx %lu, cy %lu", box, width, cont, cx, cy));
 
 	for (c = box->children; c != 0; ) {
 		c = layout_line(c, width, &y, cy + y, cont);
@@ -587,11 +575,9 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 
 	assert(table->type == BOX_TABLE);
 	assert(table->style != 0);
+	assert(table->children != 0 && table->children->children != 0);
 
-#ifdef DEBUG_LAYOUT
-	fprintf(stderr, "layout_table(%p, %lu, %p, %lu, %lu)\n",
-			table, width, cont, cx, cy);
-#endif
+	LOG(("table %p, width %lu, cont %p, cx %lu, cy %lu", table, width, cont, cx, cy));
 
 	calculate_table_widths(table);
 
@@ -609,7 +595,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 			break;
 	}
 
-/* 	fprintf(stderr, "table width %lu, min %lu, max %lu\n", table_width, table->min_width, table->max_width); */
+	LOG(("width %lu, min %lu, max %lu", table_width, table->min_width, table->max_width));
 
 	/* percentage width columns give an upper bound if possible */
 	for (i = 0; i < table->columns; i++) {
@@ -642,16 +628,16 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 				table->col[i].width = table->col[i].max + extra;
 			}
 		}
-        } else {
-        	/* space between min and max: fill it exactly */
-        	float scale = (float) (table_width - table->min_width) /
-        			(float) (max_width - table->min_width);
+	} else {
+		/* space between min and max: fill it exactly */
+		float scale = (float) (table_width - table->min_width) /
+				(float) (max_width - table->min_width);
 /*         	fprintf(stderr, "filling, scale %f\n", scale); */
 		for (i = 0; i < table->columns; i++) {
 			table->col[i].width = table->col[i].min +
 					(table->col[i].max - table->col[i].min) * scale;
 		}
-        }
+	}
 
 	xs = xcalloc(columns + 1, sizeof(*xs));
 	xs[0] = x = 0;
@@ -826,12 +812,8 @@ void calculate_table_widths(struct box *table)
 	unsigned long width, min_width = 0, max_width = 0;
 	struct column *col = xcalloc(table->columns, sizeof(*col));
 
-	#define WIDTH_FIXED ULONG_MAX
+	LOG(("table %p, columns %u", table, table->columns));
 
-	if (table->children == 0)
-		return;
-	if (table->children->children == 0)
-		return;
 	assert(table->children != 0 && table->children->children != 0);
 	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
 		assert(row_group->type == BOX_TABLE_ROW_GROUP);
@@ -839,43 +821,78 @@ void calculate_table_widths(struct box *table)
 			assert(row->type == BOX_TABLE_ROW);
 			for (i = 0, cell = row->children; cell != 0;
 					i += cell->columns, cell = cell->next) {
+				unsigned int j, flexible_columns = 0;
+				unsigned long min = 0, max = 0, extra;
+
 				assert(cell->type == BOX_TABLE_CELL);
 				assert(cell->style != 0);
-				if (col[i].type == COLUMN_WIDTH_FIXED)
-					continue;
-				/* ignore specified width if colspan > 1 */
-				if (cell->style->width.width == CSS_WIDTH_LENGTH &&
+
+				calculate_widths(cell);
+
+				/* find min, max width so far of spanned columns */
+				for (j = 0; j != cell->columns; j++) {
+					min += col[i + j].min;
+					max += col[i + j].max;
+					if (col[i + j].type != COLUMN_WIDTH_FIXED)
+						flexible_columns++;
+				}
+				/* distribute extra width to spanned columns */
+				if (min < cell->min_width) {
+					if (flexible_columns == 0) {
+						extra = 1 + (cell->min_width - min)
+								/ cell->columns;
+						max = 0;
+						for (j = 0; j != cell->columns; j++) {
+							col[i + j].min += extra;
+							if (col[i + j].max < col[i + j].min)
+								col[i + j].max = col[i + j].min;
+							max += col[i + j].max;
+						}
+					} else {
+						extra = 1 + (cell->min_width - min)
+								/ flexible_columns;
+						max = 0;
+						for (j = 0; j != cell->columns; j++) {
+							if (col[i + j].type != COLUMN_WIDTH_FIXED) {
+								col[i + j].min += extra;
+								if (col[i + j].max < col[i + j].min)
+									col[i + j].max = col[i + j].min;
+								max += col[i + j].max;
+							}
+						}
+					}
+				}
+				if (max < cell->max_width) {
+					if (flexible_columns == 0) {
+						extra = 1 + (cell->max_width - max)
+								/ cell->columns;
+						for (j = 0; j != cell->columns; j++)
+							col[i + j].max += extra;
+					} else {
+						extra = 1 + (cell->max_width - max)
+								/ flexible_columns;
+						for (j = 0; j != cell->columns; j++)
+							if (col[i + j].type != COLUMN_WIDTH_FIXED)
+								col[i + j].max += extra;
+					}
+				}
+
+				/* use specified width if colspan == 1 */
+				if (col[i].type != COLUMN_WIDTH_FIXED &&
+						cell->style->width.width == CSS_WIDTH_LENGTH &&
 						cell->columns == 1) {
 					width = len(&cell->style->width.value.length,
 							cell->style);
 					col[i].type = COLUMN_WIDTH_FIXED;
-					col[i].min = col[i].max = col[i].width = width;
-				} else {
-					unsigned int j;
-					unsigned long min = 0, max = 0, extra;
+					if (min < width)
+						/* specified width greater than min => use it */
+						col[i].width = col[i].max = col[i].min = width;
+					else
+						/* specified width not big enough => use min */
+						col[i].width = col[i].max = min;
+				}
 
-					calculate_widths(cell);
-
-					/* distribute extra width to spanned columns */
-					for (j = 0; j != cell->columns; j++) {
-						min += col[i].min;
-						max += col[i].max;
-					}
-					if (min < cell->min_width) {
-						extra = 1 + (cell->min_width - min)
-								/ cell->columns;
-						for (j = 0; j != cell->columns; j++)
-							col[i].min += extra;
-					}
-					if (max < cell->max_width) {
-						extra = 1 + (cell->max_width - max)
-								/ cell->columns;
-						for (j = 0; j != cell->columns; j++)
-							col[i].max += extra;
-					}
-
-					if (col[i].type != COLUMN_WIDTH_UNKNOWN)
-						continue;
+				else if (col[i].type == COLUMN_WIDTH_UNKNOWN) {
 					if (cell->style->width.width == CSS_WIDTH_PERCENT) {
 						col[i].type = COLUMN_WIDTH_PERCENT;
 						col[i].width = cell->style->width.value.percent;
@@ -888,11 +905,15 @@ void calculate_table_widths(struct box *table)
 	}
 
 	for (i = 0; i < table->columns; i++) {
+		assert(col[i].min <= col[i].max);
 		min_width += col[i].min;
 		max_width += col[i].max;
-/* 		fprintf(stderr, "col %u, min %lu, max %lu\n", i, col[i].min, col[i].max); */
+		LOG(("col %u, type %i, min %lu, max %lu, width %lu",
+				i, col[i].type, col[i].min, col[i].max, col[i].width));
 	}
 	table->min_width = min_width;
 	table->max_width = max_width;
 	table->col = col;
+
+	LOG(("min_width %lu, max_width %lu", min_width, max_width));
 }

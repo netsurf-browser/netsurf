@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.26 2003/01/02 13:26:43 bursa Exp $
+ * $Id: box.c,v 1.27 2003/01/03 22:19:39 bursa Exp $
  */
 
 #include <assert.h>
@@ -227,6 +227,10 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			box_add_child(parent, inline_container);
 		}
 		if (ignore) {
+			if (inline_container != 0) {
+				assert(inline_container->last != 0);
+				inline_container->last->space = 1;
+			}
 			xfree(text);
 		} else if (n->type == XML_TEXT_NODE) {
 			LOG2("TEXT NODE");
@@ -247,16 +251,22 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			{
 			LOG2(("text node"));
 			box = box_create(n, BOX_INLINE, parent_style, href);
-			box->text = text;
-			box->length = strlen(box->text);
-			if (box->text[box->length - 1] == ' ') {
+			box_add_child(inline_container, box);
+			box->length = strlen(text);
+			if (text[0] == ' ') {
+				box->length--;
+				memmove(text, text + 1, box->length);
+				if (box->prev != 0)
+					box->prev->space = 1;
+			}
+			if (text[box->length - 1] == ' ') {
 				box->space = 1;
 				box->length--;
 			} else {
 				box->space = 0;
 			}
+			box->text = text;
 			box->font = font_open(fonts, box->style);
-			box_add_child(inline_container, box);
 			}
 		} else if (strcmp((const char *) n->name, "img") == 0) {
 			LOG2(("image"));
