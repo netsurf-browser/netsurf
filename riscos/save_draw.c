@@ -400,7 +400,7 @@ static bool drawbuf_group_begin(const char *name)
 	dro->type = drawfile_TYPE_GROUP;
 	dro->size = 8 + sizeof(drawfile_group_base); /* will be correctly filled in during drawbuf_group_end() */
 
-	dgb = &dro->data.group;
+	dgb = (drawfile_group_base *)&dro->data.group;
 	dgb->bbox.x0 = dgb->bbox.y0 = dgb->bbox.x1 = dgb->bbox.y1 = 0; /* will be filled in during drawbuf_group_end() */
 	nameLen = strlen(name);
 	if (nameLen >= sizeof(dgb->name))
@@ -772,8 +772,9 @@ static bool add_graphic(struct content *content, struct box *box,
 /**
  * Add a filled, borderless rectangle to the diagram
  *
- * \param x,y topleft coord of the rectangle.
- * \param cbc rectangle colour Draw format
+ * \param x,y top-left coord of the rectangle.
+ * \param width,height width,height of the rectangle
+ * \param col rectangle colour Draw format
  * \return  true on success, false on error (error got reported)
  */
 static bool add_rect(int x, int y, int width, int height, os_colour col)
