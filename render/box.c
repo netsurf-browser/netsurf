@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.36 2003/04/04 15:19:31 bursa Exp $
+ * $Id: box.c,v 1.37 2003/04/05 21:38:06 bursa Exp $
  */
 
 #include <assert.h>
@@ -26,14 +26,15 @@ static struct box * box_create(xmlNode * node, box_type type, struct css_style *
 		char *href);
 static char * tolat1(xmlChar * s);
 static struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
-		struct css_stylesheet * stylesheet,
+		struct content ** stylesheet, unsigned int stylesheet_count,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
 		char *href, struct font_set *fonts,
 		struct gui_gadget* current_select, struct formoption* current_option,
 		struct gui_gadget* current_textarea, struct form* current_form,
 		struct page_elements* elements);
-static struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_style * parent_style,
+static struct css_style * box_get_style(struct content ** stylesheet,
+		unsigned int stylesheet_count, struct css_style * parent_style,
 		xmlNode * n, struct css_selector * selector, unsigned int depth);
 static void box_normalise_block(struct box *block);
 static void box_normalise_table(struct box *table);
@@ -144,7 +145,7 @@ char * tolat1(xmlChar * s)
  */
 
 void xml_to_box(xmlNode * n, struct css_style * parent_style,
-		struct css_stylesheet * stylesheet,
+		struct content ** stylesheet, unsigned int stylesheet_count,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
 		char *href, struct font_set *fonts,
@@ -153,7 +154,7 @@ void xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct page_elements* elements)
 {
 	LOG(("node %p", n));
-	convert_xml_to_box(n, parent_style, stylesheet,
+	convert_xml_to_box(n, parent_style, stylesheet, stylesheet_count,
 			selector, depth, parent, inline_container, href, fonts, current_select, current_option,
 			current_textarea, current_form, elements);
 	LOG(("normalising"));
@@ -161,7 +162,7 @@ void xml_to_box(xmlNode * n, struct css_style * parent_style,
 }
 
 struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
-		struct css_stylesheet * stylesheet,
+		struct content ** stylesheet, unsigned int stylesheet_count,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
 		char *href, struct font_set *fonts,
@@ -188,9 +189,10 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		(*selector)[depth].class = (*selector)[depth].id = 0;
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "class"))) {
 			(*selector)[depth].class = s;
-			free(s);
+			/*free(s);*/
 		}
-		style = box_get_style(stylesheet, parent_style, n, *selector, depth + 1);
+		style = box_get_style(stylesheet, stylesheet_count, parent_style, n,
+				*selector, depth + 1);
 		LOG(("display: %s", css_display_name[style->display]));
 		if (style->display == CSS_DISPLAY_NONE)
 			return inline_container;
@@ -326,7 +328,8 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				box_add_child(parent, box);
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
-					inline_container_c = convert_xml_to_box(c, style, stylesheet,
+					inline_container_c = convert_xml_to_box(c, style,
+							stylesheet, stylesheet_count,
 							selector, depth + 1, box, inline_container_c,
 							href, fonts, current_select, current_option,
 							current_textarea, current_form, elements);
@@ -336,7 +339,8 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				assert(box == 0);  /* special inline elements have already been
 							added to the inline container above */
 				for (c = n->children; c != 0; c = c->next)
-					inline_container = convert_xml_to_box(c, style, stylesheet,
+					inline_container = convert_xml_to_box(c, style,
+							stylesheet, stylesheet_count,
 							selector, depth + 1, parent, inline_container,
 							href, fonts, current_select, current_option,
 							current_textarea, current_form, elements);
@@ -345,7 +349,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				box = box_create(n, BOX_TABLE, style, href);
 				box_add_child(parent, box);
 				for (c = n->children; c != 0; c = c->next)
-					convert_xml_to_box(c, style, stylesheet,
+					convert_xml_to_box(c, style, stylesheet, stylesheet_count,
 							selector, depth + 1, box, 0,
 							href, fonts, current_select, current_option,
 							current_textarea, current_form, elements);
@@ -358,7 +362,8 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				box_add_child(parent, box);
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
-					inline_container_c = convert_xml_to_box(c, style, stylesheet,
+					inline_container_c = convert_xml_to_box(c, style,
+							stylesheet, stylesheet_count,
 							selector, depth + 1, box, inline_container_c,
 							href, fonts, current_select, current_option,
 							current_textarea, current_form, elements);
@@ -368,7 +373,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				box = box_create(n, BOX_TABLE_ROW, style, href);
 				box_add_child(parent, box);
 				for (c = n->children; c != 0; c = c->next)
-					convert_xml_to_box(c, style, stylesheet,
+					convert_xml_to_box(c, style, stylesheet, stylesheet_count,
 							selector, depth + 1, box, 0,
 							href, fonts, current_select, current_option,
 							current_textarea, current_form, elements);
@@ -384,7 +389,8 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				box_add_child(parent, box);
 				inline_container_c = 0;
 				for (c = n->children; c != 0; c = c->next)
-					inline_container_c = convert_xml_to_box(c, style, stylesheet,
+					inline_container_c = convert_xml_to_box(c, style,
+							stylesheet, stylesheet_count,
 							selector, depth + 1, box, inline_container_c,
 							href, fonts, current_select, current_option,
 							current_textarea, current_form, elements);
@@ -404,14 +410,25 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
  * get the style for an element
  */
 
-struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_style * parent_style,
+struct css_style * box_get_style(struct content ** stylesheet,
+		unsigned int stylesheet_count, struct css_style * parent_style,
 		xmlNode * n, struct css_selector * selector, unsigned int depth)
 {
 	struct css_style * style = xcalloc(1, sizeof(struct css_style));
+	struct css_style * style_new = xcalloc(1, sizeof(struct css_style));
 	char * s;
+	unsigned int i;
 
 	memcpy(style, parent_style, sizeof(struct css_style));
-	css_get_style(stylesheet, selector, depth, style);
+	memcpy(style_new, &css_blank_style, sizeof(struct css_style));
+	for (i = 0; i != stylesheet_count; i++) {
+		if (stylesheet[i] != 0) {
+			assert(stylesheet[i]->type == CONTENT_CSS);
+			css_get_style(stylesheet[i]->data.css, selector, depth, style_new);
+		}
+	}
+	css_cascade(style, style_new);
+	free(style_new);
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "align"))) {
 		if (strcmp((const char *) n->name, "table") == 0 ||

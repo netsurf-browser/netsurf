@@ -1,5 +1,5 @@
 /**
- * $Id: ruleset.c,v 1.3 2003/04/05 16:24:43 bursa Exp $
+ * $Id: ruleset.c,v 1.4 2003/04/05 21:38:06 bursa Exp $
  */
 
 #include <assert.h>
@@ -117,13 +117,15 @@ void css_add_ruleset(struct css_stylesheet *stylesheet,
 				break;
 		if (n == 0) {
 			/* not present: construct a new struct css_style */
+			LOG(("constructing new style"));
 			style = xcalloc(1, sizeof(*style));
-			memcpy(style, &css_blank_style, sizeof(*style));
+			memcpy(style, &css_empty_style, sizeof(*style));
 			sel->style = style;
 			sel->next = stylesheet->rule[hash];
 			stylesheet->rule[hash] = sel;
 		} else {
 			/* already exists: augument existing style */
+			LOG(("augumenting existing style"));
 			style = n->style;
 			sel->next = 0;
 			css_free_node(sel);
@@ -154,11 +156,11 @@ void css_add_declarations(struct css_style *style, struct node *declaration)
 int compare_selectors(struct node *n0, struct node *n1)
 {
 	struct node *m0, *m1;
-	unsigned int count0, count1;
+	unsigned int count0 = 0, count1 = 0;
 	
 	/* compare element name */
 	if (!((n0->data == 0 && n1->data == 0) ||
-	      (n0->data != 0 && n1->data != 0 && strcasecmp(n0->data, n1->data) == 0)))
+	      (n0->data != 0 && n1->data != 0 && strcmp(n0->data, n1->data) == 0)))
 		return 0;
 
 	if (n0->comb != n1->comb)

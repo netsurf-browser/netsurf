@@ -1,5 +1,5 @@
 /**
- * $Id: utils.h,v 1.5 2003/02/09 12:58:15 bursa Exp $
+ * $Id: utils.h,v 1.6 2003/04/05 21:38:06 bursa Exp $
  */
 
 #ifndef _NETSURF_UTILS_UTILS_H_
@@ -16,5 +16,6 @@ void xfree(void* p);
 char * xstrdup(const char * const s);
 char * load(const char * const path);
 char * squash_whitespace(const char * s);
+char *url_join(const char* new, const char* base);
 
 #endif

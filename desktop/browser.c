@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.30 2003/03/04 11:59:35 bursa Exp $
+ * $Id: browser.c,v 1.31 2003/04/05 21:38:06 bursa Exp $
  */
 
 #include "netsurf/content/cache.h"
@@ -38,7 +38,6 @@ static void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struc
 		unsigned long x, unsigned long y);
 static void browser_window_gadget_select(struct browser_window* bw, struct gui_gadget* g, int item);
 static int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x, unsigned long click_y);
-static char *url_join(const char* new, const char* base);
 
 
 void browser_window_start_throbber(struct browser_window* bw)
@@ -858,56 +857,4 @@ void browser_window_redraw_boxes(struct browser_window* bw, struct box_position*
       redraw_max_x, redraw_max_y);
 }
 
-char *url_join(const char* new, const char* base)
-{
-  char* ret;
-  int i;
 
-  LOG(("new = %s, base = %s", new, base));
-
-  if (base == 0)
-  {
-    /* no base, so make an absolute URL */
-    ret = xcalloc(strlen(new) + 10, sizeof(char));
-
-    /* check if a scheme is present */
-    i = strspn(new, "abcdefghijklmnopqrstuvwxyz");
-    if (new[i] == ':')
-    {
-      strcpy(ret, new);
-      i += 3;
-    }
-    else
-    {
-      strcpy(ret, "http://");
-      strcat(ret, new);
-      i = 7;
-    }
-
-    /* make server name lower case */
-    for (; ret[i] != 0 && ret[i] != '/'; i++)
-      ret[i] = tolower(ret[i]);
-
-    xmlNormalizeURIPath(ret + i);
-
-    /* http://www.example.com -> http://www.example.com/ */
-    if (ret[i] == 0)
-    {
-      ret[i] = '/';
-      ret[i+1] = 0;
-    }
-  }
-  else
-  {
-    /* relative url */
-    ret = xmlBuildURI(new, base);
-  }
-
-  LOG(("ret = %s", ret));
-  if (ret == NULL)
-  {
-    ret = xcalloc(strlen(new) + 10, sizeof(char));
-    strcpy(ret, new);
-  }
-  return ret;
-}

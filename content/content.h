@@ -1,5 +1,5 @@
 /**
- * $Id: content.h,v 1.3 2003/04/04 15:19:31 bursa Exp $
+ * $Id: content.h,v 1.4 2003/04/05 21:38:06 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
@@ -54,6 +54,9 @@ struct content
       xmlDoc* document;
       xmlNode* markup;
       struct box* layout;
+      unsigned int stylesheet_count;
+      char **stylesheet_url;
+      struct content **stylesheet_content;
       struct css_stylesheet* stylesheet;
       struct css_style* style;
       struct {

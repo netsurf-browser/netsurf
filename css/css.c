@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.3 2003/04/05 16:24:43 bursa Exp $
+ * $Id: css.c,v 1.4 2003/04/05 21:38:06 bursa Exp $
  */
 
 #include <assert.h>
@@ -7,6 +7,7 @@
 #include <string.h>
 #include <strings.h>
 #define CSS_INTERNALS
+#define NDEBUG
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
 #include "netsurf/css/parser.h"
@@ -173,17 +174,24 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 		unsigned int selectors, struct css_style * style)
 {
 	struct node *r, *n, *m;
-	unsigned int hash, i;
+	unsigned int hash, i, done_empty = 0;
 
 	LOG(("stylesheet %p, selectors %u", stylesheet, selectors));
 
 	hash = css_hash(selector[selectors - 1].element);
-	for (r = stylesheet->rule[hash]; r != 0; r = r->next) {
+	for (r = stylesheet->rule[hash]; ; r = r->next) {
+		if (r == 0 && !done_empty) {
+			r = stylesheet->rule[0];
+			done_empty = 1;
+		}
+		if (r == 0)
+			return;
 		i = selectors - 1;
 		n = r;
 		/* compare element */
-		if (strcasecmp(selector[i].element, n->data) != 0)
-			goto not_matched;
+		if (n->data != 0)
+			if (strcasecmp(selector[i].element, n->data) != 0)
+				goto not_matched;
 		LOG(("top element '%s' matched", selector[i].element));
 		while (1) {
 			/* class and id */
@@ -194,6 +202,7 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 						goto not_matched;
 				} else if (m->type == NODE_CLASS) {
 					/* TODO: check if case sensitive */
+					LOG(("comparing class '%s' against '%s'", selector[i].class, m->data));
 					if (strcmp(selector[i].class, m->data) != 0)
 						goto not_matched;
 				} else {
@@ -208,6 +217,8 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 				/* search for ancestor */
 				assert(n->right != 0);
 				n = n->right;
+				if (n->data == 0)
+					goto not_matched;  /* TODO: handle this case */
 				LOG(("searching for ancestor '%s'", n->data));
 				while (i != 0 && strcasecmp(selector[i - 1].element, n->data) != 0)
 					i--;
@@ -224,7 +235,7 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 matched:
 		/* TODO: sort by specificity */
 		LOG(("matched rule %p", r));
-		css_cascade(style, r->style);
+		css_merge(style, r->style);
 
 not_matched:
 
@@ -268,81 +279,84 @@ void css_parse_property_list(struct css_style * style, char * str)
  * dump a style
  */
 
-#define DUMP_LENGTH(pre, len, post) LOG((pre "%g%s" post, (len)->value, css_unit_name[(len)->unit]));
+static void dump_length(const struct css_length * const length)
+{
+	fprintf(stderr, "%g%s", length->value,
+	               css_unit_name[length->unit]);
+}
 
 void css_dump_style(const struct css_style * const style)
 {
-	LOG(("{ "));
-	LOG(("background-color: #%lx;", style->background_color));
-	LOG(("clear: %s;", css_clear_name[style->clear]));
-	LOG(("color: #%lx;", style->color));
-	LOG(("display: %s;", css_display_name[style->display]));
-	LOG(("float: %s;", css_float_name[style->float_]));
+	fprintf(stderr, "{ ");
+	fprintf(stderr, "background-color: #%lx; ", style->background_color);
+	fprintf(stderr, "clear: %s; ", css_clear_name[style->clear]);
+	fprintf(stderr, "color: #%lx; ", style->color);
+	fprintf(stderr, "display: %s; ", css_display_name[style->display]);
+	fprintf(stderr, "float: %s; ", css_float_name[style->float_]);
+	fprintf(stderr, "font-size: ");
 	switch (style->font_size.size) {
-		case CSS_FONT_SIZE_ABSOLUTE:
-			LOG(("font-size: [%g];", style->font_size.value.absolute)); break;
-		case CSS_FONT_SIZE_LENGTH:
-			DUMP_LENGTH("font-size: ", &style->font_size.value.length, ";"); break;
-		case CSS_FONT_SIZE_PERCENT:
-			LOG(("font-size: %g%%;", style->font_size.value.percent)); break;
-		case CSS_FONT_SIZE_INHERIT:  LOG(("font-size: inherit;")); break;
-		default:                     LOG(("font-size: UNKNOWN;")); break;
+		case CSS_FONT_SIZE_ABSOLUTE: fprintf(stderr, "[%g]", style->font_size.value.absolute); break;
+		case CSS_FONT_SIZE_LENGTH:   dump_length(&style->font_size.value.length); break;
+		case CSS_FONT_SIZE_PERCENT:  fprintf(stderr, "%g%%", style->font_size.value.percent); break;
+		case CSS_FONT_SIZE_INHERIT:  fprintf(stderr, "inherit"); break;
+		default:                     fprintf(stderr, "UNKNOWN"); break;
 	}
+	fprintf(stderr, "; ");
+	fprintf(stderr, "height: ");
 	switch (style->height.height) {
-		case CSS_HEIGHT_AUTO:   LOG(("height: auto;")); break;
-		case CSS_HEIGHT_LENGTH: DUMP_LENGTH("height: ", &style->height.length, ";"); break;
-		default:                LOG(("height: UNKNOWN;")); break;
+		case CSS_HEIGHT_AUTO:   fprintf(stderr, "auto"); break;
+		case CSS_HEIGHT_LENGTH: dump_length(&style->height.length); break;
+		default:                fprintf(stderr, "UNKNOWN"); break;
 	}
+	fprintf(stderr, "; ");
+	fprintf(stderr, "line-height: ");
 	switch (style->line_height.size) {
-		case CSS_LINE_HEIGHT_ABSOLUTE:
-			LOG(("line-height: [%g];", style->line_height.value.absolute)); break;
-		case CSS_LINE_HEIGHT_LENGTH:
-			DUMP_LENGTH("line-height: ", &style->line_height.value.length, ";"); break;
-		case CSS_LINE_HEIGHT_PERCENT:
-			LOG(("line-height: %g%%;", style->line_height.value.percent)); break;
-		case CSS_LINE_HEIGHT_INHERIT:  LOG(("line-height: inherit;")); break;
-		default:                       LOG(("line-height: UNKNOWN;")); break;
+		case CSS_LINE_HEIGHT_ABSOLUTE: fprintf(stderr, "[%g]", style->line_height.value.absolute); break;
+		case CSS_LINE_HEIGHT_LENGTH:   dump_length(&style->line_height.value.length); break;
+		case CSS_LINE_HEIGHT_PERCENT:  fprintf(stderr, "%g%%", style->line_height.value.percent); break;
+		case CSS_LINE_HEIGHT_INHERIT:  fprintf(stderr, "inherit"); break;
+		default:                       fprintf(stderr, "UNKNOWN"); break;
 	}
-	LOG(("text-align: %s;", css_text_align_name[style->text_align]));
+	fprintf(stderr, "; ");
+	fprintf(stderr, "text-align: %s; ", css_text_align_name[style->text_align]);
+	fprintf(stderr, "width: ");
 	switch (style->width.width) {
-		case CSS_WIDTH_AUTO:    LOG(("width: auto;")); break;
-		case CSS_WIDTH_LENGTH:
-			DUMP_LENGTH("width: ", &style->width.value.length, ";"); break;
-		case CSS_WIDTH_PERCENT: LOG(("width: %g%%;", style->width.value.percent)); break;
-		default:                LOG(("width: UNKNOWN;")); break;
+		case CSS_WIDTH_AUTO:    fprintf(stderr, "auto"); break;
+		case CSS_WIDTH_LENGTH:  dump_length(&style->width.value.length); break;
+		case CSS_WIDTH_PERCENT: fprintf(stderr, "%g%%", style->width.value.percent); break;
+		default:                fprintf(stderr, "UNKNOWN"); break;
 	}
-	LOG(("}"));
-}
-#if 0
-static void dump_selector(const struct css_selector * const sel)
-{
-	if (sel->class != 0)
-		LOG(("'%s'.'%s' ", sel->element, sel->class);
-	else if (sel->id != 0)
-		LOG(("'%s'#'%s' ", sel->element, sel->id);
-	else
-		LOG(("'%s' ", sel->element);
+	fprintf(stderr, "; ");
+	fprintf(stderr, "}");
 }
 
-static void dump_rule(const struct rule * rule)
-{
-	unsigned int i;
-	for (i = 0; i < rule->selectors; i++)
-		dump_selector(&rule->selector[i]);
-	css_dump_style(rule->style);
-}
 
 void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 {
 	unsigned int i;
-	for (i = 0; i < HASH_SIZE; i++) {
-		struct rule * rule;
-		LOG(("hash %i:\n", i);
-		for (rule = stylesheet->hash[i]; rule != 0; rule = rule->next)
-			dump_rule(rule);
+	struct node *r, *n, *m;
+	for (i = 0; i != HASH_SIZE; i++) {
+		fprintf(stderr, "hash %i:\n", i);
+		for (r = stylesheet->rule[i]; r != 0; r = r->next) {
+			for (n = r; n != 0; n = n->right) {
+				if (n->data != 0)
+					fprintf(stderr, "%s", n->data);
+				for (m = n->left; m != 0; m = m->next) {
+					switch (m->type) {
+						case NODE_ID: fprintf(stderr, "%s", m->data); break;
+						case NODE_CLASS: fprintf(stderr, ".%s", m->data); break;
+						default: fprintf(stderr, "unexpected node");
+					}
+				}
+				fprintf(stderr, " ");
+			}
+			css_dump_style(r->style);
+			fprintf(stderr, "\n");
+		}
 	}
 }
-#endif
+
+
 /**
  * cascade styles
  */
@@ -412,12 +426,42 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 }
 
 
+void css_merge(struct css_style * const style, const struct css_style * const apply)
+{
+	if (apply->background_color != CSS_COLOR_INHERIT)
+		style->background_color = apply->background_color;
+	if (apply->clear != CSS_CLEAR_INHERIT)
+		style->clear = apply->clear;
+	if (apply->color != CSS_COLOR_INHERIT)
+		style->color = apply->color;
+	if (apply->display != CSS_DISPLAY_INHERIT)
+		style->display = apply->display;
+	if (apply->float_ != CSS_FLOAT_INHERIT)
+		style->float_ = apply->float_;
+	if (apply->height.height != CSS_HEIGHT_INHERIT)
+		style->height = apply->height;
+	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
+		style->text_align = apply->text_align;
+	if (apply->width.width != CSS_WIDTH_INHERIT)
+		style->width = apply->width;
+	if (apply->font_weight != CSS_FONT_WEIGHT_INHERIT)
+		style->font_weight = apply->font_weight;
+	if (apply->font_style != CSS_FONT_STYLE_INHERIT)
+		style->font_style = apply->font_style;
+	if (apply->font_size.size != CSS_FONT_SIZE_INHERIT)
+		style->font_size = apply->font_size;
+}
+
+
+
 unsigned int css_hash(const char *s)
 {
 	unsigned int z = 0;
+	if (s == 0)
+		return 0;
 	for (; *s != 0; s++)
 		z += *s;
-	return z % HASH_SIZE;
+	return (z % (HASH_SIZE - 1)) + 1;
 }
 
 

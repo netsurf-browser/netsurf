@@ -1,9 +1,10 @@
 /**
- * $Id: html.c,v 1.7 2003/04/04 15:19:31 bursa Exp $
+ * $Id: html.c,v 1.8 2003/04/05 21:38:06 bursa Exp $
  */
 
 #include <assert.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
@@ -14,9 +15,16 @@
 #include "netsurf/utils/log.h"
 
 
-static void html_convert_callback(fetchcache_msg msg, struct content *css,
+struct fetch_data {
+	struct content *c;
+	unsigned int i;
+};
+
+
+static void html_convert_css_callback(fetchcache_msg msg, struct content *css,
 		void *p, const char *error);
 static void html_title(struct content *c);
+static void html_find_stylesheets(struct content *c);
 
 
 void html_create(struct content *c)
@@ -47,6 +55,8 @@ void html_process_data(struct content *c, char *data, unsigned long size)
 int html_convert(struct content *c, unsigned int width, unsigned int height)
 {
 	struct css_selector* selector = xcalloc(1, sizeof(struct css_selector));
+	struct fetch_data *fetch_data;
+	unsigned int i;
 
 	htmlParseChunk(c->data.html.parser, "", 0, 1);
 	c->data.html.document = c->data.html.parser->myDoc;
@@ -66,19 +76,29 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 		LOG(("No markup"));
 		return 1;
 	}
-	if (stricmp((const char *) c->data.html.markup->name, "html")) {
+	if (strcmp((const char *) c->data.html.markup->name, "html")) {
 		LOG(("Not html"));
 		return 1;
 	}
 	
 	html_title(c);
 
+	/* get stylesheets */
+	html_find_stylesheets(c);
+	c->data.html.stylesheet_content = xcalloc(c->data.html.stylesheet_count,
+			sizeof(*c->data.html.stylesheet_content));
+
 	c->error = 0;
 	c->active = 0;
 
-	fetchcache("file:///%3CNetSurf$Dir%3E/Resources/CSS", 0,
-			html_convert_callback, c, width, height);
-	c->active++;
+	for (i = 0; i != c->data.html.stylesheet_count; i++) {
+		fetch_data = xcalloc(1, sizeof(*fetch_data));
+		fetch_data->c = c;
+		fetch_data->i = i;
+		c->active++;
+		fetchcache(c->data.html.stylesheet_url[i], c->url, html_convert_css_callback,
+				fetch_data, width, height);
+	}
 
 	while (c->active != 0) {
 		fetch_poll();
@@ -89,6 +109,8 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 		/* TODO: clean up */
 		return 1;
 	}
+
+	c->data.html.stylesheet = c->data.html.stylesheet_content[0]->data.css;
 	
 	LOG(("Copying base style"));
 	c->data.html.style = xcalloc(1, sizeof(struct css_style));
@@ -102,7 +124,8 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	c->data.html.fonts = font_new_set();
 
 	LOG(("XML to box"));
-	xml_to_box(c->data.html.markup, c->data.html.style, c->data.html.stylesheet,
+	xml_to_box(c->data.html.markup, c->data.html.style,
+			c->data.html.stylesheet_content, c->data.html.stylesheet_count,
 			&selector, 0, c->data.html.layout, 0, 0, c->data.html.fonts,
 			0, 0, 0, 0, &c->data.html.elements);
 	/*box_dump(c->data.html.layout->children, 0);*/
@@ -118,18 +141,24 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 }
 
 
-void html_convert_callback(fetchcache_msg msg, struct content *css,
+void html_convert_css_callback(fetchcache_msg msg, struct content *css,
 		void *p, const char *error)
 {
-	struct content *c = p;
+	struct fetch_data *data = p;
+	struct content *c = data->c;
+	unsigned int i = data->i;
 	switch (msg) {
 		case FETCHCACHE_OK:
-			/* TODO: store struct content *css somewhere in c */
-			c->data.html.stylesheet = css->data.css;
+			free(data);
+			LOG(("got stylesheet '%s'", c->data.html.stylesheet_url[i]));
+			c->data.html.stylesheet_content[i] = css;
+			/*css_dump_stylesheet(css->data.css);*/
 			c->active--;
 			break;
 		case FETCHCACHE_BADTYPE:
 		case FETCHCACHE_ERROR:
+			free(data);
+			c->data.html.stylesheet_content[i] = 0;
 			c->active--;
 			c->error = 1;
 			break;
@@ -145,27 +174,77 @@ void html_convert_callback(fetchcache_msg msg, struct content *css,
 
 void html_title(struct content *c)
 {
-	xmlNode *node = c->data.html.markup;
+	xmlNode *head = c->data.html.markup->children;
+	xmlNode *node;
 
 	c->title = 0;
 
-	while (node != 0) {
-		if (node->type == XML_ELEMENT_NODE) {
-			if (stricmp(node->name, "html") == 0) {
-				node = node->children;
-				continue;
-			}
-			if (stricmp(node->name, "head") == 0) {
-				node = node->children;
-				continue;
-			}
-			if (stricmp(node->name, "title") == 0) {
-				c->title = xmlNodeGetContent(node);
-				return;
-			}
+	if (strcmp(head->name, "head") != 0)
+		return;
+	for (node = head->children; node != 0; node = node->next) {
+		if (strcmp(node->name, "title") == 0) {
+			c->title = xmlNodeGetContent(node);
+			return;
 		}
-		node = node->next;
 	}
+}
+
+
+void html_find_stylesheets(struct content *c)
+{
+	xmlNode *head = c->data.html.markup->children;
+	xmlNode *node;
+	char *rel, *type, *media, *href;
+	unsigned int count = 1;
+
+	c->data.html.stylesheet_url = xcalloc(1, sizeof(*c->data.html.stylesheet_url));
+	c->data.html.stylesheet_url[0] = "file:///%3CNetSurf$Dir%3E/Resources/CSS";
+
+	if (strcmp(head->name, "head") != 0)
+		return;
+	for (node = head->children; node != 0; node = node->next) {
+		if (strcmp(node->name, "link") == 0) {
+			/* rel='stylesheet' */
+			if (!(rel = (char *) xmlGetProp(node, (const xmlChar *) "rel")))
+				continue;
+			if (strcasecmp(rel, "stylesheet") != 0) {
+				free(rel);
+				continue;
+			}
+			free(rel);
+
+			/* type='text/css' */
+			if (!(type = (char *) xmlGetProp(node, (const xmlChar *) "type")))
+				continue;
+			if (strcmp(type, "text/css") != 0) {
+				free(type);
+				continue;
+			}
+			free(type);
+
+			/* media='screen' or not present */
+			if ((media = (char *) xmlGetProp(node, (const xmlChar *) "media"))) {
+				if (strcasecmp(media, "screen") != 0) {
+					free(media);
+					continue;
+				}
+				free(media);
+			}
+			
+			/* href='...' */
+			if (!(href = (char *) xmlGetProp(node, (const xmlChar *) "href")))
+				continue;
+
+			count++;
+			c->data.html.stylesheet_url = xrealloc(c->data.html.stylesheet_url,
+					count * sizeof(*c->data.html.stylesheet_url));
+			c->data.html.stylesheet_url[count - 1] = url_join(href, c->url);
+			LOG(("linked stylesheet '%s'", c->data.html.stylesheet_url[count - 1]));
+			free(href);			
+		}
+	}
+
+	c->data.html.stylesheet_count = count;
 }
 
 

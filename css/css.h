@@ -1,5 +1,5 @@
 /**
- * $Id: css.h,v 1.3 2003/04/05 16:24:43 bursa Exp $
+ * $Id: css.h,v 1.4 2003/04/05 21:38:06 bursa Exp $
  */
 
 #ifndef _NETSURF_CSS_CSS_H_
@@ -136,7 +136,7 @@ struct node {
 
 #include "netsurf/css/scanner.h"
 
-#define HASH_SIZE 47
+#define HASH_SIZE (47 + 1)
 
 struct css_stylesheet {
 	yyscan_t lexer;
@@ -187,6 +187,7 @@ void css_parser_(void *yyp, int yymajor, char* yyminor,
 void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * selector,
 			unsigned int selectors, struct css_style * style);
 void css_cascade(struct css_style * const style, const struct css_style * const apply);
+void css_merge(struct css_style * const style, const struct css_style * const apply);
 void css_parse_property_list(struct css_style * style, char * str);
 
 #endif

@@ -1,11 +1,13 @@
 /**
- * $Id: utils.c,v 1.6 2003/02/09 12:58:15 bursa Exp $
+ * $Id: utils.c,v 1.7 2003/04/05 21:38:06 bursa Exp $
  */
 
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "libxml/uri.h"
+#include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
 void die(const char * const error)
@@ -94,5 +96,59 @@ char * squash_whitespace(const char * s)
 		c[j++] = s[i++];
 	} while (s[i - 1] != 0);
 	return c;
+}
+
+char *url_join(const char* new, const char* base)
+{
+  char* ret;
+  int i;
+
+  LOG(("new = %s, base = %s", new, base));
+
+  if (base == 0)
+  {
+    /* no base, so make an absolute URL */
+    ret = xcalloc(strlen(new) + 10, sizeof(char));
+
+    /* check if a scheme is present */
+    i = strspn(new, "abcdefghijklmnopqrstuvwxyz");
+    if (new[i] == ':')
+    {
+      strcpy(ret, new);
+      i += 3;
+    }
+    else
+    {
+      strcpy(ret, "http://");
+      strcat(ret, new);
+      i = 7;
+    }
+
+    /* make server name lower case */
+    for (; ret[i] != 0 && ret[i] != '/'; i++)
+      ret[i] = tolower(ret[i]);
+
+    xmlNormalizeURIPath(ret + i);
+
+    /* http://www.example.com -> http://www.example.com/ */
+    if (ret[i] == 0)
+    {
+      ret[i] = '/';
+      ret[i+1] = 0;
+    }
+  }
+  else
+  {
+    /* relative url */
+    ret = xmlBuildURI(new, base);
+  }
+
+  LOG(("ret = %s", ret));
+  if (ret == NULL)
+  {
+    ret = xcalloc(strlen(new) + 10, sizeof(char));
+    strcpy(ret, new);
+  }
+  return ret;
 }
 

@@ -1,5 +1,5 @@
 /**
- * $Id: content.c,v 1.4 2003/04/04 15:19:31 bursa Exp $
+ * $Id: content.c,v 1.5 2003/04/05 21:38:06 bursa Exp $
  */
 
 #include <assert.h>
@@ -41,7 +41,7 @@ static const struct handler_entry handler_map[] = {
 	{textplain_create, textplain_process_data, textplain_convert,
 		textplain_revive, textplain_reformat, textplain_destroy},
 	{jpeg_create, jpeg_process_data, jpeg_convert, jpeg_revive, jpeg_reformat, jpeg_destroy},
-	{css_create, css_process_data, css_convert, css_revive, css_destroy},
+	{css_create, css_process_data, css_convert, css_revive, css_reformat, css_destroy},
 /*	{png_create, png_process_data, png_convert, png_revive, png_destroy},*/
 };
 

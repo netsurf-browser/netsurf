@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.21 2003/04/04 15:19:31 bursa Exp $
+ * $Id: box.h,v 1.22 2003/04/05 21:38:06 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -133,7 +133,8 @@ struct page_elements
  * interface
  */
 
-void xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesheet * stylesheet,
+void xml_to_box(xmlNode * n, struct css_style * parent_style,
+		struct content ** stylesheet, unsigned int stylesheet_count,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
 		char *href, struct font_set *fonts,
