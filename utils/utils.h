@@ -23,7 +23,6 @@ void * xcalloc(const size_t n, const size_t size);
 void * xrealloc(void * p, const size_t size);
 void xfree(void* p);
 char * xstrdup(const char * const s);
-char * load(const char * const path);
 char * squash_whitespace(const char * s);
 char *cnv_space2nbsp(const char *s);
 char *cnv_local_enc_str(const char *s, size_t length);

@@ -79,26 +79,6 @@ char * xstrdup(const char * const s)
 	return c;
 }
 
-char * load(const char * const path)
-{
-	FILE * fp = fopen(path, "rb");
-	char * buf;
-	long size, read;
-
-	if (fp == 0) die("Failed to open file");
-	if (fseek(fp, 0, SEEK_END) != 0) die("fseek() failed");
-	if ((size = ftell(fp)) == -1) die("ftell() failed");
-	buf = xcalloc((size_t) size, 1);
-
-	if (fseek(fp, 0, SEEK_SET) != 0) die("fseek() failed");
-	read = fread(buf, 1, (size_t) size, fp);
-	if (read < size) die("fread() failed");
-
-	fclose(fp);
-
-	return buf;
-}
-
 char * squash_whitespace(const char * s)
 {
 	char * c = malloc(strlen(s) + 1);
@@ -330,7 +310,12 @@ void clean_cookiejar(void) {
         len = ftell(fp);
         fseek(fp, 0, SEEK_SET);
 
-        cookies = xcalloc((unsigned int)len, sizeof(char));
+        cookies = calloc((unsigned int)len, sizeof(char));
+        if ( NULL == cookies ) {
+                warn_user( "NoMemory", 0);
+                return;
+        }
+
         fread(cookies, (unsigned int)len, sizeof(char), fp);
         fclose(fp);
 
