@@ -145,13 +145,18 @@ bool html_redraw_box(struct box *box,
 
 	/* if visibility is hidden render children only */
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
+		if (!plot.group_start("hidden box"))
+			return false;
 		for (c = box->children; c; c = c->next)
 			if (!html_redraw_box(c, x_scrolled, y_scrolled,
 					x0, y0, x1, y1,
 					scale, current_background_color))
 				return false;
-		return true;
+		return plot.group_end();
 	}
+
+	if (!plot.group_start("vis box"))
+		return false;
 
 	/* dotted debug outlines */
 	if (html_redraw_debug) {
@@ -184,7 +189,7 @@ bool html_redraw_box(struct box *box,
 
 	/* return if the box is completely outside the clip rectangle */
 	if (clip_y1 < y0 || y1 < clip_y0 || clip_x1 < x0 || x1 < clip_x0)
-		return true;
+		return plot.group_end();
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object) {
@@ -350,7 +355,7 @@ bool html_redraw_box(struct box *box,
 		if (!plot.clip(clip_x0, clip_y0, clip_x1, clip_y1))
 			return false;
 
-	return true;
+	return plot.group_end();
 }
 
 

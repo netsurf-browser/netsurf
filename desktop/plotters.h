@@ -38,6 +38,8 @@ struct plotter_table {
 	bool (*bitmap_tile)(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg,
 			bool repeat_x, bool repeat_y);
+	bool (*group_start)(const char *name);
+	bool (*group_end)(void);
 };
 
 /** Current plotters, must be assigned before use. */

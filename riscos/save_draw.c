@@ -109,7 +109,9 @@ const struct plotter_table draw_plotters = {
 	draw_plot_text,
 	draw_plot_disc,
 	draw_plot_bitmap,
-	draw_plot_bitmap_tile
+	draw_plot_bitmap_tile,
+	drawbuf_group_begin,
+	drawbuf_group_end
 };
 
 static int draw_plot_origin_y = 0; /* plot origin, in browser units */

@@ -37,6 +37,8 @@ static bool ro_plot_bitmap(int x, int y, int width, int height,
 static bool ro_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y);
+static bool ro_plot_group_start(const char *name);
+static bool ro_plot_group_end(void);
 
 
 struct plotter_table plot;
@@ -51,7 +53,9 @@ const struct plotter_table ro_plotters = {
 	ro_plot_text,
 	ro_plot_disc,
 	ro_plot_bitmap,
-	ro_plot_bitmap_tile
+	ro_plot_bitmap_tile,
+	ro_plot_group_start,
+	ro_plot_group_end
 };
 
 int ro_plot_origin_x = 0;
@@ -376,6 +380,15 @@ bool ro_plot_bitmap_tile(int x, int y, int width, int height,
 			IMAGE_PLOT_TINCT_ALPHA);
 }
 
+bool ro_plot_group_start(const char *name)
+{
+	return true;
+}
+
+bool ro_plot_group_end(void)
+{
+	return true;
+}
 
 /**
  * Set the scale for subsequent text plotting.

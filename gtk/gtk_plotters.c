@@ -38,7 +38,10 @@ static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 static bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y);
+static bool nsgtk_plot_group_start(const char *name);
+static bool nsgtk_plot_group_end(void);
 static void nsgtk_set_colour(colour c);
+
 
 
 struct plotter_table plot;
@@ -53,7 +56,9 @@ const struct plotter_table nsgtk_plotters = {
 	nsgtk_plot_text,
 	nsgtk_plot_disc,
 	nsgtk_plot_bitmap,
-	nsgtk_plot_bitmap_tile
+	nsgtk_plot_bitmap_tile,
+	nsgtk_plot_group_start,
+	nsgtk_plot_group_end
 };
 
 
@@ -194,6 +199,15 @@ bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 	return true;
 }
 
+bool nsgtk_plot_group_start(const char *name)
+{
+	return true;
+}
+
+bool nsgtk_plot_group_end(void)
+{
+	return true;
+}
 
 void nsgtk_set_colour(colour c)
 {
