@@ -206,7 +206,9 @@ void ro_gui_hotlist_init(void) {
 	text_icon.data.indirected_text.validation = null_text_string;
 	text_icon.data.indirected_text.size = 256;
 	sprite_icon.flags = wimp_ICON_SPRITE | wimp_ICON_INDIRECTED |
-			 wimp_ICON_HCENTRED | wimp_ICON_VCENTRED;
+			 wimp_ICON_HCENTRED | wimp_ICON_VCENTRED |
+			  (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
+			  (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
 	sprite_icon.data.indirected_sprite.area = wimpspriteop_AREA;
 	sprite_icon.data.indirected_text.size = 12;
  
@@ -353,10 +355,12 @@ void ro_gui_hotlist_visited_update(struct content *content, struct hotlist_entry
 				xoswordreadclock_local_bcd(&bcd);
 				entry->last_date = bcd.date_and_time;
 				ro_gui_hotlist_update_entry_size(entry);
-				xwimp_force_redraw(hotlist_window,
-						entry->x0, entry->y0,
-						entry->x0 + entry->width,
-						entry->y0 + entry->height);
+				if (entry->expanded) {
+					xwimp_force_redraw(hotlist_window,
+							entry->x0, entry->y0,
+							entry->x0 + entry->width,
+							entry->y0 + entry->height);
+				}
 			}
 		}
 		if (entry->child_entry) {
@@ -748,6 +752,7 @@ int ro_gui_hotlist_redraw_item(struct hotlist_entry *entry, int level, int x0, i
 		/*	Update the selection state
 		*/
 		text_icon.flags = wimp_ICON_TEXT | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
+				 (wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) |
 				wimp_ICON_INDIRECTED | wimp_ICON_VCENTRED;
 		if (entry->selected) {
 			sprite_icon.flags |= wimp_ICON_SELECTED;
@@ -765,6 +770,12 @@ int ro_gui_hotlist_redraw_item(struct hotlist_entry *entry, int level, int x0, i
 		if (entry->children != -1) {
 			if ((entry->expanded) && (entry->children > 0)) {
 				sprintf(icon_name, "small_diro");
+
+				/*	Check it exists (pre-OS3.5)
+				*/
+				if (xwimpspriteop_read_sprite_info(icon_name, 0, 0, 0, 0)) {
+					sprintf(icon_name, "small_dir"); 
+				}
 			} else {
 				sprintf(icon_name, "small_dir");
 			}
