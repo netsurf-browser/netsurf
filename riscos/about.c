@@ -177,12 +177,14 @@ void about_create(void) {
             continue;
           }
           else {
+            void *name;
+
             /* Type 3: image file with name xxwwwwhhhh */
             /* get actual file name */
             sprintf(var, "%2.2d*", j);
             LOG(("var: %s", var));
 
-            void *name = (void*)xcalloc((unsigned int)20, sizeof(char));
+            name = (void*)xcalloc((unsigned int)20, sizeof(char));
 
             e = xosgbpb_dir_entries(val, (osgbpb_string_list*)name,
                                     1, 0, 255, var, NULL, NULL);

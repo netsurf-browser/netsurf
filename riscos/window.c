@@ -736,20 +736,22 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 		case wimp_KEY_RETURN:
 			if (!toolbar)
 				break;
-			char *url = xcalloc(1, 10 + strlen(g->url));
-			char *url2;
-			if (g->url[strspn(g->url, "abcdefghijklmnopqrstuvwxyz")] != ':') {
-				strcpy(url, "http://");
-				strcpy(url + 7, g->url);
-			} else {
-				strcpy(url, g->url);
-			}
-			url2 = url_join(url, 0);
-			free(url);
-			if (url2) {
-				gui_window_set_url(g, url2);
-				browser_window_open_location(g->data.browser.bw, url2);
-				free(url2);
+			else {
+			  char *url = xcalloc(1, 10 + strlen(g->url));
+			  char *url2;
+			  if (g->url[strspn(g->url, "abcdefghijklmnopqrstuvwxyz")] != ':') {
+			    	  strcpy(url, "http://");
+				  strcpy(url + 7, g->url);
+			  } else {
+				  strcpy(url, g->url);
+			  }
+			  url2 = url_join(url, 0);
+			  free(url);
+			  if (url2) {
+				  gui_window_set_url(g, url2);
+				  browser_window_open_location(g->data.browser.bw, url2);
+				  free(url2);
+			  }
 			}
 			return true;
 

@@ -189,12 +189,12 @@ int nsjpeg_convert(struct content *c, unsigned int width, unsigned int height)
 
         LOG(("creating sprite area"));
         {
+          struct osspriteop_header *spr;
           unsigned int abw = ((c->width + 3) &~ 3u) * c->height; /* sprite */
           /* nBytes = spr + msk + spr ctrl blk + area ctrl blk + palette */
           unsigned int nBytes = abw*2 + 44 + 16 /*+ 256*8*/; /* 8bpp */
           c->data.jpeg.sprite_area = xcalloc(1, nBytes);
-          struct osspriteop_header *spr = (osspriteop_header*)
-                                            (c->data.jpeg.sprite_area + 1);
+          spr = (osspriteop_header*) (c->data.jpeg.sprite_area + 1);
 
           /* area control block */
           c->data.jpeg.sprite_area->size = nBytes;
