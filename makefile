@@ -32,7 +32,7 @@ OBJECTS_DEBUGRO = $(OBJECTS_COMMON) \
 	options.o font.o
 VPATH = content:css:desktop:render:riscos:utils:debug
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
-	-Wcast-align -Wwrite-strings -Wconversion -Wstrict-prototypes \
+	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
 	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
 CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. \
