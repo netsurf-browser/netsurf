@@ -1149,9 +1149,13 @@ void layout_table(struct box *table, int available_width)
 	}
 
 	for (i = 0; i != columns; i++) {
-		if (col[i].type == COLUMN_WIDTH_FIXED)
+		if (col[i].type == COLUMN_WIDTH_FIXED) {
+			if (col[i].width < col[i].min)
+				col[i].width = col[i].max = col[i].min;
+			else
+				col[i].min = col[i].max = col[i].width;
 			required_width += col[i].width;
-		else if (col[i].type == COLUMN_WIDTH_PERCENT) {
+		} else if (col[i].type == COLUMN_WIDTH_PERCENT) {
 			int width = col[i].width * auto_width / 100;
 			required_width += col[i].min < width ? width : col[i].min;
 		} else
@@ -1574,6 +1578,17 @@ void calculate_inline_widths(struct box *box, int *min, int *line_max)
 
 /**
  * Find min, max widths for a table and determine column width types.
+ *
+ * \param  table  table box to calculate widths
+ *
+ * If table->max_width is not UNKNOWN_MAX_WIDTH, returns with no change to table.
+ *
+ * If table->col is 0, it is created and filled in completely.
+ *
+ * If table->col exists, the type and width fields are left unchanged, and the min
+ * and max fields are updated.
+ *
+ * table->min_width and table->max_width are set.
  */
 
 void calculate_table_widths(struct box *table)
@@ -1589,20 +1604,27 @@ void calculate_table_widths(struct box *table)
 	if (table->max_width != UNKNOWN_MAX_WIDTH)
 		return;
 
-	if (!table->col)
-		table->col = xcalloc(table->columns, sizeof(*col));
+	if (!table->col) {
+		col = table->col = malloc(table->columns * sizeof *col);
+		assert(col);
+		for (i = 0; i != table->columns; i++)
+			col[i].type = COLUMN_WIDTH_UNKNOWN;
+	}
 	col = table->col;
+	for (i = 0; i != table->columns; i++)
+		col[i].min = col[i].max = 0;
 
-	assert(table->children != 0 && table->children->children != 0);
+	assert(table->children && table->children->children);
 
 	/* 1st pass: consider cells with colspan 1 only */
-	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
+	for (row_group = table->children; row_group;
+			row_group = row_group->next) {
 		assert(row_group->type == BOX_TABLE_ROW_GROUP);
-		for (row = row_group->children; row != 0; row = row->next) {
+		for (row = row_group->children; row; row = row->next) {
 			assert(row->type == BOX_TABLE_ROW);
-			for (cell = row->children; cell != 0; cell = cell->next) {
+			for (cell = row->children; cell; cell = cell->next) {
 				assert(cell->type == BOX_TABLE_CELL);
-				assert(cell->style != 0);
+				assert(cell->style);
 
 				if (cell->columns != 1)
 					continue;
@@ -1610,48 +1632,48 @@ void calculate_table_widths(struct box *table)
 				calculate_widths(cell);
 				i = cell->start_column;
 
-				if (col[i].type == COLUMN_WIDTH_FIXED) {
-					if (col[i].width < cell->min_width)
-						col[i].min = col[i].width = col[i].max = cell->min_width;
-					continue;
-				}
-
-				/* update column min, max widths using cell widths */
+				/* update column min, max widths
+				 * using cell widths */
 				if (col[i].min < cell->min_width)
 					col[i].min = cell->min_width;
 				if (col[i].max < cell->max_width)
 					col[i].max = cell->max_width;
 
+				/* fixed width takes priority over any
+				 * other width type */
 				if (col[i].type != COLUMN_WIDTH_FIXED &&
-						cell->style->width.width == CSS_WIDTH_LENGTH) {
-					/* fixed width cell => fixed width column */
+						cell->style->width.width ==
+						CSS_WIDTH_LENGTH) {
 					col[i].type = COLUMN_WIDTH_FIXED;
-					width = len(&cell->style->width.value.length,
+					col[i].width = len(&cell->style->
+							width.value.length,
 							cell->style);
-					if (width < col[i].min)
-						/* if the given width is too small, give
-						 * the column its minimum width */
-						width = col[i].min;
-					col[i].min = col[i].width = col[i].max = width;
+					continue;
+				}
 
-				} else if (col[i].type == COLUMN_WIDTH_UNKNOWN) {
-					if (cell->style->width.width == CSS_WIDTH_PERCENT) {
-						col[i].type = COLUMN_WIDTH_PERCENT;
-						col[i].width = cell->style->width.value.percent;
-					} else if (cell->style->width.width == CSS_WIDTH_AUTO) {
-						col[i].type = COLUMN_WIDTH_AUTO;
-					}
+				if (col[i].type != COLUMN_WIDTH_UNKNOWN)
+					continue;
+
+				if (cell->style->width.width ==
+						CSS_WIDTH_PERCENT) {
+					col[i].type = COLUMN_WIDTH_PERCENT;
+					col[i].width = cell->style->
+							width.value.percent;
+				} else if (cell->style->width.width ==
+						CSS_WIDTH_AUTO) {
+					col[i].type = COLUMN_WIDTH_AUTO;
 				}
 			}
 		}
 	}
 
 	/* 2nd pass: cells which span multiple columns */
-	for (row_group = table->children; row_group != 0; row_group = row_group->next) {
-		for (row = row_group->children; row != 0; row = row->next) {
-			for (cell = row->children; cell != 0; cell = cell->next) {
+	for (row_group = table->children; row_group;
+			row_group = row_group->next) {
+		for (row = row_group->children; row; row = row->next) {
+			for (cell = row->children; cell; cell = cell->next) {
 				unsigned int flexible_columns = 0;
-				int min = 0, max = 0, fixed_width = 0;
+				int min = 0, max = 0, fixed_width = 0, cell_min;
 				signed long extra;
 
 				if (cell->columns == 1)
@@ -1659,8 +1681,10 @@ void calculate_table_widths(struct box *table)
 
 				calculate_widths(cell);
 				i = cell->start_column;
+				cell_min = cell->min_width;
 
-				/* find min, max width so far of spanned columns */
+				/* find min, max width so far of
+				 * spanned columns */
 				for (j = 0; j != cell->columns; j++) {
 					min += col[i + j].min;
 					max += col[i + j].max;
@@ -1670,43 +1694,25 @@ void calculate_table_widths(struct box *table)
 						flexible_columns++;
 				}
 
-				if (cell->style->width.width == CSS_WIDTH_LENGTH &&
-						flexible_columns) {
-					/* cell is fixed width, and not all the spanned columns
-					 * are fixed width, so split difference between spanned
-					 * columns which aren't fixed width yet */
+				if (cell->style->width.width == CSS_WIDTH_LENGTH) {
 					width = len(&cell->style->width.value.length,
 							cell->style);
-					if (width < cell->min_width)
-						width = cell->min_width;
-					extra = width - fixed_width;
-					for (j = 0; j != cell->columns; j++)
-						if (col[i + j].type != COLUMN_WIDTH_FIXED)
-							extra -= col[i + j].min;
-					if (0 < extra)
-						extra = 1 + extra / flexible_columns;
-					else
-						extra = 0;
-					for (j = 0; j != cell->columns; j++) {
-						if (col[i + j].type != COLUMN_WIDTH_FIXED) {
-							col[i + j].width = col[i + j].max =
-								col[i + j].min += extra;
-							col[i + j].type = COLUMN_WIDTH_FIXED;
-						}
-					}
-					continue;
+					if (cell_min < width)
+						cell_min = width;
 				}
 
 				/* distribute extra min, max to spanned columns */
-				if (min < cell->min_width) {
+				if (min < cell_min) {
 					if (flexible_columns == 0) {
-						extra = 1 + (cell->min_width - min)
+						extra = 1 + (cell_min - min)
 								/ cell->columns;
-						for (j = 0; j != cell->columns; j++)
-							col[i + j].min = col[i + j].width =
-								col[i + j].max += extra;
+						for (j = 0; j != cell->columns; j++) {
+							col[i + j].min += extra;
+							if (col[i + j].max < col[i + j].min)
+								col[i + j].max = col[i + j].min;
+						}
 					} else {
-						extra = 1 + (cell->min_width - min)
+						extra = 1 + (cell_min - min)
 								/ flexible_columns;
 						max = 0;
 						for (j = 0; j != cell->columns; j++) {
@@ -1714,8 +1720,8 @@ void calculate_table_widths(struct box *table)
 								col[i + j].min += extra;
 								if (col[i + j].max < col[i + j].min)
 									col[i + j].max = col[i + j].min;
-								max += col[i + j].max;
 							}
+							max += col[i + j].max;
 						}
 					}
 				}

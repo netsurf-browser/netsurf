@@ -82,6 +82,11 @@
 #include "netsurf/utils/pool.h"
 
 
+struct box;
+struct column;
+
+
+/** Type of a struct box. */
 typedef enum {
 	BOX_BLOCK, BOX_INLINE_CONTAINER, BOX_INLINE,
 	BOX_TABLE, BOX_TABLE_ROW, BOX_TABLE_CELL,
@@ -89,15 +94,6 @@ typedef enum {
 	BOX_FLOAT_LEFT, BOX_FLOAT_RIGHT,
 	BOX_INLINE_BLOCK, BOX_BR
 } box_type;
-
-struct column {
-	enum { COLUMN_WIDTH_UNKNOWN = 0, COLUMN_WIDTH_FIXED,
-	       COLUMN_WIDTH_AUTO, COLUMN_WIDTH_PERCENT,
-	       COLUMN_WIDTH_RELATIVE } type;
-	int min, max, width;
-};
-
-struct box;
 
 /* parameters for <object> and related elements */
 struct object_params {
@@ -184,7 +180,7 @@ struct box {
 	/** Next sibling float box. */
 	struct box *next_float;
 
-	struct column *col;  /**< Table column data for TABLE only. */
+	struct column *col;  /**< Array of table column data for TABLE only. */
 
 	struct font_data *font;  /**< Font, or 0 if no text. */
 
@@ -199,6 +195,21 @@ struct box {
 	struct object_params *object_params;
 	/** State of object, or 0. */
 	void *object_state;
+};
+
+/** Table column data. */
+struct column {
+	/** Type of column. */
+	enum { COLUMN_WIDTH_UNKNOWN, COLUMN_WIDTH_FIXED,
+	       COLUMN_WIDTH_AUTO, COLUMN_WIDTH_PERCENT,
+	       COLUMN_WIDTH_RELATIVE } type;
+	/** Preferred width of column. Pixels for FIXED, percentage for PERCENT,
+	 *  relative units for RELATIVE, unused for AUTO. */
+	int width;
+	/** Minimum width of content. */
+	int min;
+	/** Maximum width of content. */
+	int max;
 };
 
 
