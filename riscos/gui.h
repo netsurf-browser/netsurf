@@ -273,6 +273,7 @@ void ro_gui_theme_install_click(wimp_pointer *pointer);
 #define ICON_TOOLBAR_SEARCH 10
 #define ICON_TOOLBAR_URL 11  // Must be after highest toolbar icon
 #define ICON_TOOLBAR_THROBBER 12
+#define ICON_TOOLBAR_SUGGEST 13
 
 /* icon numbers for hotlist toolbars */
 #define ICON_TOOLBAR_CREATE 0

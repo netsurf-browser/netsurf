@@ -41,6 +41,25 @@ static wimp_icon url_complete_icon;
 static int mouse_x;
 static int mouse_y;
 
+/**
+ * Should be called when the caret is placed into a URL completion icon.
+ *
+ * \param g    the gui_window to initialise URL completion for
+ */
+void ro_gui_url_complete_start(struct gui_window *g) {
+  	char *url;
+  	
+	if ((!g->toolbar) || (!g->toolbar->display_url) ||
+			(g->window == url_complete_parent))
+		return;
+
+	ro_gui_url_complete_close(NULL, 0);
+	url = ro_gui_get_icon_string(g->toolbar->toolbar_handle, ICON_TOOLBAR_URL);
+	url_complete_matched_string = url_store_match_string(url);
+	if (url_complete_matched_string)
+		url_complete_parent = g->window;
+}
+
 
 /**
  * Handles a keypress for URL completion
@@ -69,13 +88,25 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 	}
 
 	/* if we are currently active elsewhere, remove the previous window */
-	currently_open = g->window == url_complete_parent;
-	if (g->window != url_complete_parent) {
+	currently_open = ((g->window == url_complete_parent) &&
+			(url_complete_matches_available > 0));
+	if (g->window != url_complete_parent)
 		ro_gui_url_complete_close(NULL, 0);
-		url_complete_parent = g->window;
+
+	/* forcibly open on down keys */
+	if ((!currently_open) && (url_complete_matched_string)) {
+		switch (key) {
+			case wimp_KEY_DOWN:
+			case wimp_KEY_PAGE_DOWN:
+			case wimp_KEY_CONTROL | wimp_KEY_DOWN:
+				free(url_complete_matched_string);
+				url_complete_matched_string = NULL;
+		}
 	}
+		
 
 	/* get the text to match */
+	url_complete_parent = g->window;
 	url = ro_gui_get_icon_string(g->toolbar->toolbar_handle, ICON_TOOLBAR_URL);
 	match_url = url_store_match_string(url);
 	if (!match_url) {
@@ -349,9 +380,9 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
 	state.visible.x1 = open->visible.x0 - 2 + url_state.icon.extent.x1 - scroll_v;
 	state.visible.y1 = open->visible.y1 - url_state.icon.extent.y1 + 2;
 	state.visible.y0 = state.visible.y1 - (lines * 44);
-	if (state.visible.x1 > toolbar_state.visible.x1)
-		state.visible.x1 = toolbar_state.visible.x1;
-	if (state.visible.x1 - state.visible.x0 - scroll_v < 0) {
+	if (state.visible.x1 + scroll_v > toolbar_state.visible.x1)
+		state.visible.x1 = toolbar_state.visible.x1 - scroll_v;
+	if (state.visible.x1 - state.visible.x0 < 0) {
 		error = xwimp_close_window(dialog_url_complete);
 		if (error) {
 			LOG(("xwimp_close_window: 0x%x: %s",
@@ -380,9 +411,13 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
  */
 bool ro_gui_url_complete_close(struct gui_window *g, wimp_i i) {
 	os_error *error;
+	bool currently_open;
 
 	if ((g && (i == ICON_TOOLBAR_URL) && (g->window == url_complete_parent)))
 		return false;
+
+	currently_open = ((url_complete_parent) &&
+			(url_complete_matches_available > 0));
 
 	free(url_complete_matches);
 	free(url_complete_matched_string);
@@ -402,7 +437,7 @@ bool ro_gui_url_complete_close(struct gui_window *g, wimp_i i) {
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
-	return true;
+	return currently_open;
 }
 
 

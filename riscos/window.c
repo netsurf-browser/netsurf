@@ -257,11 +257,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	/*	Set the caret position to the URL bar
 	*/
-	if (g->toolbar && g->toolbar->display_url)
+	if (g->toolbar && g->toolbar->display_url) {
 		error = xwimp_set_caret_position(
 				g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL, -1, -1, -1, 0);
-	else
+		ro_gui_url_complete_start(g);
+	} else
 		error = xwimp_set_caret_position(g->window,
 				wimp_ICON_WINDOW, -100, -100, 32, -1);
 
@@ -791,6 +792,7 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
+	ro_gui_url_complete_start(g);
 }
 
 
@@ -1193,6 +1195,8 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 			current_gui = g;
 			ro_gui_print_open(g, 0, 0, false, false);
 			break;
+		case ICON_TOOLBAR_URL:
+			ro_gui_url_complete_start(g);
 	}
 }
 
@@ -1445,6 +1449,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 					ICON_TOOLBAR_URL, "www.");
 			xwimp_set_caret_position(g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_URL, 0, 0, -1, 4);
+			ro_gui_url_complete_start(g);
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
@@ -1543,8 +1548,10 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			return true;
 
 		case wimp_KEY_ESCAPE:
-			if (ro_gui_url_complete_close(0, 0))
+			if (ro_gui_url_complete_close(0, 0)) {
+			  	ro_gui_url_complete_start(g);
 				return true;
+			}
 			browser_window_stop(g->bw);
 			return true;
 

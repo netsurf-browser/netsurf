@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include "netsurf/riscos/gui.h"
 
+void ro_gui_url_complete_start(struct gui_window *g);
 bool ro_gui_url_complete_keypress(struct gui_window *g, int key);
 void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open);
 bool ro_gui_url_complete_close(struct gui_window *g, wimp_i i);
