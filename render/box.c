@@ -785,7 +785,7 @@ struct result box_input(xmlNode *n, struct status *status,
 		}
 
 	}
-	if (stricmp(type, "password") == 0)
+	else if (stricmp(type, "password") == 0)
 	{
 		box = box_create(style, NULL, 0);
 		box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
