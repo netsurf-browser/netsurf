@@ -12,11 +12,14 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <swis.h>
 #include "oslib/colourtrans.h"
 #include "oslib/font.h"
 #include "oslib/wimp.h"
+#include "netsurf/riscos/options.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/thumbnail.h"
+#include "netsurf/riscos/tinct.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -170,7 +173,7 @@ void history_add(struct history *history, struct content *content)
 	}
 
 	thumbnail_create(content, area,
-			(osspriteop_header *) ((char *) area + 16),
+			(osspriteop_header *) (area + 1),
 			WIDTH / 2, HEIGHT / 2);
 /*	xosspriteop_save_sprite_file(osspriteop_NAME,
 			area, "thumbnail");*/
@@ -193,7 +196,7 @@ void history_update(struct history *history, struct content *content)
 
 	thumbnail_create(content, history->current->sprite_area,
 			(osspriteop_header *)
-				((char *) history->current->sprite_area + 16),
+				(history->current->sprite_area + 1),
 			WIDTH / 2, HEIGHT / 2);
 }
 
@@ -382,39 +385,53 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 	os_plot(os_PLOT_SOLID | os_PLOT_BY, 0, HEIGHT + 1);
 
 	if (he->sprite_area) {
-	        unsigned int size;
 		osspriteop_area *area = he->sprite_area;
+		osspriteop_header *header = (osspriteop_header *)(area + 1);
 		osspriteop_trans_tab *table;
-		os_factors factors;
 
-		xcolourtrans_generate_table_for_sprite(
-				area,
-				(char *) area + 16,
-				colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
-				0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
-		table = xcalloc(size, 1);
-		xcolourtrans_generate_table_for_sprite(
-				area,
-				(char *) area + 16,
-				colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
-				table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
-
-		factors.xmul = 1;
-		factors.ymul = 1;
-		factors.xdiv = 1;
-		factors.ydiv = 1;
-
-		xosspriteop_put_sprite_scaled(osspriteop_PTR,
-				area,
-				(char *) area + 16,
+		/* 	Because we're supporting people with OS3.1 we need to check if the
+			sprite we have is a legacy 256 colour one
+		*/
+		if (header->mode == (os_mode)0x301680b5) {
+			
+			/*	We plot with no mask and no scaling as any EIG factors are
+				handled internally by Tinct
+			*/
+			_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+				(char *)(header),
 				x0 + he->x * FULL_WIDTH + MARGIN,
 				y0 - he->y * FULL_HEIGHT - FULL_HEIGHT + MARGIN,
-				osspriteop_USE_MASK | osspriteop_USE_PALETTE, &factors, table);
+				(option_filter_sprites?(1<<1):0) | (option_dither_sprites?(1<<2):0));
+		} else {
+		        unsigned int size;
+			os_factors factors;
 
-		xfree(table);
+			xcolourtrans_generate_table_for_sprite(
+					area, (osspriteop_id)header,
+					colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
+					0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
+			table = xcalloc(size, 1);
+			xcolourtrans_generate_table_for_sprite(
+					area, (osspriteop_id)header,
+					colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
+					table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
+
+			factors.xmul = 1;
+			factors.ymul = 1;
+			factors.xdiv = 1;
+			factors.ydiv = 1;
+
+			xosspriteop_put_sprite_scaled(osspriteop_PTR,
+					area, (osspriteop_id)header,
+					x0 + he->x * FULL_WIDTH + MARGIN,
+					y0 - he->y * FULL_HEIGHT - FULL_HEIGHT + MARGIN,
+					osspriteop_USE_MASK | osspriteop_USE_PALETTE, &factors, table);
+
+			xfree(table);
+		}
 	}
 
-
+/*
 	if (he == history_current->current)
 		wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_RED);
 	else
@@ -423,9 +440,9 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 	font_paint(history_font, he->title,
 			font_OS_UNITS | font_GIVEN_FONT | font_KERN,
 			x0 + he->x * FULL_WIDTH + (FULL_WIDTH - he->width) / 2,
-			y0 - he->y * FULL_HEIGHT - HEIGHT - MARGIN - 24,
+			y0 - he->y * FULL_HEIGHT - MARGIN - 24,
 			0, 0, 0);
-
+*/
 
 	colourtrans_set_gcol(os_COLOUR_MID_DARK_GREY, 0,
 			os_ACTION_OVERWRITE, 0);
