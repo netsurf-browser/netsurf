@@ -10,9 +10,9 @@ OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
 	box.o form.o html.o layout.o textplain.o \
 	messages.o utils.o translit.o pool.o url.o imagemap.o \
-	jpeg.o save_complete.o
+	jpeg.o save_complete.o loginlist.o
 OBJECTS = $(OBJECTS_COMMON) \
-	browser.o loginlist.o netsurf.o options.o \
+	browser.o netsurf.o options.o \
 	htmlinstance.o htmlredraw.o \
 	401login.o constdata.o dialog.o download.o frames.o gui.o \
 	menus.o mouseactions.o \
@@ -31,7 +31,7 @@ OBJECTS_DEBUGRO = $(OBJECTS_COMMON) \
 	draw.o gif.o png.o sprite.o \
 	about.o filetype.o \
 	version.o \
-	options.o font.o
+	options.o font.o schedule.o
 VPATH = content:css:desktop:render:riscos:utils:debug
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \

@@ -135,13 +135,6 @@ void html_remove_instance(struct content *c, struct browser_window *bw,
 {
 }
 
-#ifdef WITH_AUTH
-void *login_list_get(char *url)
-{
-	return 0;
-}
-#endif
-
 #ifdef WITH_PLUGIN
 bool plugin_handleable(const char *mime_type)
 {
@@ -221,8 +214,10 @@ void _swix(void)
 	assert(0);
 }
 
+#ifndef riscos
 bool option_filter_sprites = false;
 bool option_dither_sprites = false;
+#endif
 
 void die(const char *error)
 {
@@ -230,6 +225,7 @@ void die(const char *error)
 	exit(1);
 }
 
+#ifndef riscos
 int ro_content_filetype(int x)
 {
 	return 0;
@@ -248,6 +244,7 @@ extern os_error *xosfile_set_type (char const *file_name,
 {
 	return 0;
 }
+#endif
 
 void warn_user(const char *warn)
 {
