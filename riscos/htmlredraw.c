@@ -294,7 +294,7 @@ void html_redraw_box(struct content *content, struct box * box,
 				     ((current_background_color >> 8) & 0xff)) / 2) << 8)
 				| ((((colour & 0xff) +
 				     (current_background_color & 0xff)) / 2) << 0);
-		colourtrans_set_gcol(colour << 8, colourtrans_USE_ECFS,
+		colourtrans_set_gcol((unsigned int)colour << 8, colourtrans_USE_ECFS,
 				os_ACTION_OVERWRITE, 0);
 
 		if (box->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE || (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK)) {

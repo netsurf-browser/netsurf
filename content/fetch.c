@@ -555,7 +555,7 @@ size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f
 	} else if (16 < size && strncasecmp(data, "WWW-Authenticate",16) == 0) {
 	        /* extract Realm from WWW-Authenticate header */
 	        f->realm = xcalloc(size, 1);
-	        for (i=16;i!=strlen(data);i++)
+	        for (i=16;(unsigned int)i!=strlen(data);i++)
 	               if(data[i]=='=')break;
 	        strncpy(f->realm, data+i+2, size-i-5);
 	}
