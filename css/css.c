@@ -578,6 +578,8 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 		style->float_ = apply->float_;
 	if (apply->height.height != CSS_HEIGHT_INHERIT)
 		style->height = apply->height;
+	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT)
+		style->line_height = apply->line_height;
 	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
 		style->text_align = apply->text_align;
 	if (apply->width.width != CSS_WIDTH_INHERIT)
@@ -641,6 +643,8 @@ void css_merge(struct css_style * const style, const struct css_style * const ap
 		style->float_ = apply->float_;
 	if (apply->height.height != CSS_HEIGHT_INHERIT)
 		style->height = apply->height;
+	if (apply->line_height.size != CSS_LINE_HEIGHT_INHERIT)
+		style->line_height = apply->line_height;
 	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
 		style->text_align = apply->text_align;
 	if (apply->width.width != CSS_WIDTH_INHERIT)
