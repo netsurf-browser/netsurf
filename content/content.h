@@ -34,12 +34,12 @@
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
+#ifdef WITH_JPEG
+#include "netsurf/riscos/jpeg.h"
+#endif
 #ifdef riscos
 #ifdef WITH_GIF
 #include "netsurf/riscos/gif.h"
-#endif
-#ifdef WITH_JPEG
-#include "netsurf/riscos/jpeg.h"
 #endif
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
@@ -103,10 +103,10 @@ struct content {
 	union {
 		struct content_html_data html;
 		struct content_css_data css;
-#ifdef riscos
 #ifdef WITH_JPEG
 		struct content_jpeg_data jpeg;
 #endif
+#ifdef riscos
 #ifdef WITH_PNG
 		struct content_png_data png;
 #endif

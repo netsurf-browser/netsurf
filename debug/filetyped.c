@@ -21,6 +21,10 @@ const char *fetch_filetype(const char *unix_path)
 	l = strlen(unix_path);
 	if (2 < l && strcasecmp(unix_path + l - 3, "css") == 0)
 		return "text/css";
+	if (2 < l && strcasecmp(unix_path + l - 3, "jpg") == 0)
+		return "image/jpeg";
+	if (3 < l && strcasecmp(unix_path + l - 4, "jpeg") == 0)
+		return "image/jpeg";
 	return "text/html";
 }
 

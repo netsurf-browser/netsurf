@@ -22,10 +22,10 @@ typedef enum {
 	CONTENT_HTML,
 	CONTENT_TEXTPLAIN,
 	CONTENT_CSS,
-#ifdef riscos
 #ifdef WITH_JPEG
 	CONTENT_JPEG,
 #endif
+#ifdef riscos
 #ifdef WITH_PNG
 	CONTENT_PNG,
 #endif

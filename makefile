@@ -9,14 +9,15 @@ CC_DEBUG = gcc
 OBJECTS_COMMON = cache.o content.o fetch.o fetchcache.o \
 	css.o css_enum.o parser.o ruleset.o scanner.o \
 	box.o form.o html.o layout.o textplain.o \
-	messages.o utils.o translit.o pool.o url.o
+	messages.o utils.o translit.o pool.o url.o imagemap.o \
+	jpeg.o
 OBJECTS = $(OBJECTS_COMMON) \
 	browser.o loginlist.o netsurf.o options.o \
-	htmlinstance.o htmlredraw.o imagemap.o \
+	htmlinstance.o htmlredraw.o \
 	401login.o constdata.o dialog.o download.o frames.o gui.o \
 	menus.o mouseactions.o \
 	textselection.o theme.o window.o \
-	draw.o gif.o jpeg.o plugin.o png.o sprite.o \
+	draw.o gif.o plugin.o png.o sprite.o \
 	about.o filetype.o font.o uri.o url_protocol.o history.o \
 	version.o thumbnail.o \
 	save.o save_complete.o save_draw.o save_text.o schedule.o
@@ -27,7 +28,7 @@ OBJECTS_DEBUGRO = $(OBJECTS_COMMON) \
 	netsurfd.o \
 	constdata.o \
 	theme.o \
-	draw.o gif.o jpeg.o png.o sprite.o \
+	draw.o gif.o png.o sprite.o \
 	about.o filetype.o \
 	version.o \
 	options.o font.o
@@ -38,11 +39,12 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
 CFLAGS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O $(WARNFLAGS) -I.. \
 	-mpoke-function-name
-CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE $(WARNFLAGS) -I.. -I/usr/include/libxml2 -g
+CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE $(WARNFLAGS) -I.. -I/usr/include/libxml2 -g \
+	-I/riscos/include
 LDFLAGS = -L/riscos/lib -lxml2 -lz -lcurl -lssl -lcrypto -lares -lanim -lpng \
 	-loslib -ljpeg
 LDFLAGS_SMALL = -L/riscos/lib -lxml2 -lz -lucurl -lares -lanim -lpng -loslib -ljpeg
-LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl
+LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -ljpeg
 
 OBJDIR = $(shell $(CC) -dumpmachine)
 SOURCES=$(OBJECTS:.o=.c)

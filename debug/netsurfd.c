@@ -5,6 +5,7 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
+#include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 #include "netsurf/utils/config.h"
@@ -14,6 +15,8 @@
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 int done, destroyed;
@@ -42,7 +45,9 @@ int main(int argc, char *argv[])
 	fetch_init();
 	cache_init();
 	fetchcache_init();
+	url_init();
 	options_read("options");
+	messages_load("messages");
 
 	while (1) {
 		puts("=== URL:");
@@ -68,8 +73,10 @@ int main(int argc, char *argv[])
 			puts("=== FAILURE, dumping cache");
 		}
 		cache_dump();
-		if (!destroyed)
+		if (!destroyed) {
+/* 			content_reformat(c, 1, 1000); */
 			content_remove_user(c, callback, 0, 0);
+		}
 	}
 
 	options_write("options");
@@ -81,7 +88,7 @@ int main(int argc, char *argv[])
 
 void gui_multitask(void)
 {
-	LOG(("-"));
+/* 	putchar('-'); */
 }
 
 #ifndef riscos
@@ -166,3 +173,57 @@ void plugin_reshape_instance(struct content *c, struct browser_window *bw,
 char *NETSURF_DIR = "<NetSurf$Dir>";
 #endif
 
+int colourtrans_return_colour_number_for_mode(int colour, int mode,
+		int *dest_palette)
+{
+	assert(!dest_palette);
+	return colour;
+}
+
+int *xjpeginfo_dimensions(void)
+{
+	return 1;
+}
+
+void xcolourtrans_generate_table_for_sprite(void)
+{
+	assert(0);
+}
+
+os_error *xosspriteop_put_sprite_scaled (osspriteop_flags flags,
+      osspriteop_area const *area,
+      osspriteop_id id,
+      int x,
+      int y,
+      osspriteop_action action,
+      os_factors const *factors,
+      osspriteop_trans_tab const *trans_tab)
+{
+	assert(0);
+}
+
+os_error *xos_byte(byte op, int r1, int r2, int *r1_out, int *r2_out)
+{
+	assert(op == 0x87);
+	*r2_out = 28;
+	return 0;
+}
+
+void xjpeg_plot_scaled(void)
+{
+	assert(0);
+}
+
+void _swix(void)
+{
+	assert(0);
+}
+
+bool option_filter_sprites = false;
+bool option_dither_sprites = false;
+
+void die(const char *error)
+{
+	printf("die: %s\n", error);
+	exit(1);
+}

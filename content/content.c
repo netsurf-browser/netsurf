@@ -21,10 +21,10 @@
 #include "netsurf/css/css.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/textplain.h"
-#ifdef riscos
 #ifdef WITH_JPEG
 #include "netsurf/riscos/jpeg.h"
 #endif
+#ifdef riscos
 #ifdef WITH_PNG
 #include "netsurf/riscos/png.h"
 #endif
@@ -62,10 +62,12 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_GIF
 	{"image/gif", CONTENT_GIF},
 #endif
+#endif
 #ifdef WITH_JPEG
 	{"image/jpeg", CONTENT_JPEG},
 	{"image/pjpeg", CONTENT_JPEG},
 #endif
+#ifdef riscos
 #ifdef WITH_PNG
 	{"image/png", CONTENT_PNG},
 #endif
@@ -114,11 +116,11 @@ static const struct handler_entry handler_map[] = {
 		0, 0, 0, 0, 0, 0, 0},
 	{css_create, 0, css_convert, css_revive,
 		0, css_destroy, 0, 0, 0, 0},
-#ifdef riscos
 #ifdef WITH_JPEG
 	{nsjpeg_create, 0, nsjpeg_convert, 0,
 		0, nsjpeg_destroy, nsjpeg_redraw, 0, 0, 0},
 #endif
+#ifdef riscos
 #ifdef WITH_PNG
 	{nspng_create, nspng_process_data, nspng_convert, 0,
 		0, nspng_destroy, nspng_redraw, 0, 0, 0},
