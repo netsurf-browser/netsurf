@@ -68,6 +68,7 @@ struct css_style {
 	} line_height;
 
 	css_text_align text_align;
+	css_text_decoration text_decoration;
 
 	css_visibility visibility;
 

@@ -39,7 +39,7 @@ RMEnsure MimeMap 0.10 Error NetSurf requires MimeMap 0.10 or later
 
 | drag the 'next' slot in the task manager to something huge and ridiculous,
 | and/or increase the number below
-Wimpslot -min 2000k
+Wimpslot -min 2750k -max 2750k
 
 Set NetSurf$running "yes"
 <NetSurf$Dir>.!RunImage 2><NetSurf$Dir>.stderr

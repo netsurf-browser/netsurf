@@ -16,6 +16,7 @@
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 
 
 static void html_redraw_box(struct content *content, struct box * box,
@@ -282,12 +283,52 @@ void html_redraw_box(struct content *content, struct box * box,
 
 		colourtrans_set_font_colours(box->font->handle, current_background_color << 8,
 					     box->style->color << 8, 14, 0, 0, 0);
-
-		font_paint(box->font->handle, box->text,
+                if (box->style->text_decoration == CSS_TEXT_DECORATION_NONE) {
+		       font_paint(box->font->handle, box->text,
 			   font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
 			   x, y - (int) (box->height * 1.5),
 			   NULL, NULL, (int) box->length);
-
+		}
+                else if (box->style->text_decoration == CSS_TEXT_DECORATION_UNDERLINE) {
+                        char ulctrl[3];
+                        char *temp = xcalloc(strlen(box->text)+4,
+                                             sizeof(char));
+                        sprintf(ulctrl, "%c%c%c", (char)25, (char)230,
+                                                                  (char)10);
+                        sprintf(temp, "%s%s", ulctrl, box->text);
+                        font_paint(box->font->handle, temp,
+			   font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
+			   x, y - (int) (box->height * 1.5),
+			   NULL, NULL, (int) box->length + 4);
+		        xfree(temp);
+		}
+                else if (box->style->text_decoration == CSS_TEXT_DECORATION_LINE_THROUGH){
+                        char ulctrl[3];
+                        char *temp = xcalloc(strlen(box->text)+4,
+                                             sizeof(char));
+                        sprintf(ulctrl, "%c%c%c", (char)25, (char)95,
+                                                                  (char)10);
+                        sprintf(temp, "%s%s", ulctrl, box->text);
+                        font_paint(box->font->handle, temp,
+			   font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
+			   x, y - (int) (box->height * 1.5),
+			   NULL, NULL, (int) box->length + 4);
+		        xfree(temp);
+		        LOG(("line-through"));
+		}
+		else {
+                        char ulctrl[3];
+                        char *temp = xcalloc(strlen(box->text)+4,
+                                             sizeof(char));
+                        sprintf(ulctrl, "%c%c%c", (char)25, (char)127,
+                                                                  (char)10);
+                        sprintf(temp, "%s%s", ulctrl, box->text);
+                        font_paint(box->font->handle, temp,
+			   font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
+			   x, y - (int) (box->height * 1.5),
+			   NULL, NULL, (int) box->length + 4);
+		        xfree(temp);
+		}
 	} else {
 		for (c = box->children; c != 0; c = c->next)
 			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)

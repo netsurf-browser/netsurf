@@ -47,6 +47,7 @@ const struct css_style css_base_style = {
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_ABSOLUTE, { 1.3 } },
 	CSS_TEXT_ALIGN_LEFT,
+	CSS_TEXT_DECORATION_NONE,
 	CSS_VISIBILITY_VISIBLE,
 	{ CSS_WIDTH_AUTO, { { 1, CSS_UNIT_EM } } },
 	CSS_WHITE_SPACE_NORMAL
@@ -64,6 +65,7 @@ const struct css_style css_empty_style = {
 	{ CSS_HEIGHT_INHERIT, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
 	CSS_TEXT_ALIGN_INHERIT,
+	CSS_TEXT_DECORATION_INHERIT,
 	CSS_VISIBILITY_INHERIT,
 	{ CSS_WIDTH_INHERIT, { { 1, CSS_UNIT_EM } } },
 	CSS_WHITE_SPACE_INHERIT
@@ -81,6 +83,7 @@ const struct css_style css_blank_style = {
 	{ CSS_HEIGHT_AUTO, { 1, CSS_UNIT_EM } },
 	{ CSS_LINE_HEIGHT_INHERIT, { 1.3 } },
 	CSS_TEXT_ALIGN_INHERIT,
+	CSS_TEXT_DECORATION_NONE,
 	CSS_VISIBILITY_INHERIT,
 	{ CSS_WIDTH_AUTO, { { 1, CSS_UNIT_EM } } },
 	CSS_WHITE_SPACE_INHERIT
@@ -709,6 +712,8 @@ void css_cascade(struct css_style * const style, const struct css_style * const 
 		style->line_height = apply->line_height;
 	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
 		style->text_align = apply->text_align;
+        if (apply->text_decoration != CSS_TEXT_DECORATION_INHERIT)
+		style->text_decoration = apply->text_decoration;
 	if (apply->visibility != CSS_VISIBILITY_INHERIT)
 	        style->visibility = apply->visibility;
 	if (apply->width.width != CSS_WIDTH_INHERIT)
@@ -780,6 +785,8 @@ void css_merge(struct css_style * const style, const struct css_style * const ap
 		style->line_height = apply->line_height;
 	if (apply->text_align != CSS_TEXT_ALIGN_INHERIT)
 		style->text_align = apply->text_align;
+        if (apply->text_decoration != CSS_TEXT_DECORATION_INHERIT)
+		style->text_decoration = apply->text_decoration;
         if (apply->visibility != CSS_VISIBILITY_INHERIT)
 		style->visibility = apply->visibility;
 	if (apply->width.width != CSS_WIDTH_INHERIT)

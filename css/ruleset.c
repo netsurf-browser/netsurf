@@ -50,6 +50,7 @@ static void parse_font_weight(struct css_style * const s, const struct css_node 
 static void parse_height(struct css_style * const s, const struct css_node * const v);
 static void parse_line_height(struct css_style * const s, const struct css_node * const v);
 static void parse_text_align(struct css_style * const s, const struct css_node * const v);
+static void parse_text_decoration(struct css_style * const s, const struct css_node * const v);
 static void parse_visibility(struct css_style * const s, const struct css_node * const v);
 static void parse_width(struct css_style * const s, const struct css_node * const v);
 static void parse_white_space(struct css_style * const s, const struct css_node * const v);
@@ -70,6 +71,7 @@ static const struct property_entry property_table[] = {
 	{ "height",           parse_height },
 	{ "line-height",      parse_line_height },
 	{ "text-align",       parse_text_align },
+	{ "text-decoration",  parse_text_decoration },
 	{ "visibility",       parse_visibility },
 	{ "white-space",      parse_white_space },
 	{ "width",            parse_width },
@@ -516,6 +518,16 @@ void parse_text_align(struct css_style * const s, const struct css_node * const 
 	z = css_text_align_parse(v->data);
 	if (z != CSS_TEXT_ALIGN_UNKNOWN)
 		s->text_align = z;
+}
+
+void parse_text_decoration(struct css_style * const s, const struct css_node * const v)
+{
+	css_text_decoration z;
+	if (v->type != CSS_NODE_IDENT || v->next != 0)
+		return;
+	z = css_text_decoration_parse(v->data);
+	if (z != CSS_TEXT_DECORATION_UNKNOWN)
+		s->text_decoration = z;
 }
 
 void parse_visibility(struct css_style * const s, const struct css_node * const v)

@@ -1,4 +1,4 @@
-$Id: TODO-CSS,v 1.3 2003/10/09 15:46:30 bursa Exp $
+$Id: TODO-CSS,v 1.4 2003/10/17 23:47:13 jmb Exp $
 
 TODO-CSS file for NetSurf.
 
@@ -77,14 +77,14 @@ See TODO-HTML for HTML related TODOs.
 - size
 - table-layout
 + text-align
-- text-decoration
+= text-decoration (not blink. overline needs positioning right)
 - text-indent
 - text-shadow
 - text-transform
 - top
 - unicode-bidi
 - vertical-align
-- visibility
+= visibility (not collapse)
 = white-space
 - widows
 + width
