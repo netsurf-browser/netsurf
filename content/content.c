@@ -23,7 +23,6 @@
 #ifdef WITH_JPEG
 #include "netsurf/riscos/jpeg.h"
 #endif
-#ifdef riscos
 #ifdef WITH_PNG
 #include "netsurf/riscos/png.h"
 #endif
@@ -39,7 +38,6 @@
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
 #endif
-#endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -52,12 +50,10 @@ struct mime_entry {
 };
 /** A map from MIME type to ::content_type. Must be sorted by mime_type. */
 static const struct mime_entry mime_map[] = {
-#ifdef riscos
 #ifdef WITH_DRAW
         {"application/drawfile", CONTENT_DRAW},
         {"application/x-drawfile", CONTENT_DRAW},
         {"image/drawfile", CONTENT_DRAW},
-#endif
 #endif
 #ifdef WITH_GIF
 	{"image/gif", CONTENT_GIF},
@@ -66,7 +62,6 @@ static const struct mime_entry mime_map[] = {
 	{"image/jpeg", CONTENT_JPEG},
 	{"image/pjpeg", CONTENT_JPEG},
 #endif
-#ifdef riscos
 #ifdef WITH_PNG
 	{"image/png", CONTENT_PNG},
 #endif
@@ -75,7 +70,6 @@ static const struct mime_entry mime_map[] = {
 #endif
 #ifdef WITH_SPRITE
 	{"image/x-riscos-sprite", CONTENT_SPRITE},
-#endif
 #endif
 	{"text/css", CONTENT_CSS},
 	{"text/html", CONTENT_HTML},
@@ -122,7 +116,6 @@ static const struct handler_entry handler_map[] = {
 	{nsgif_create, 0, nsgif_convert, 0,
 	        0, nsgif_destroy, nsgif_redraw, 0, 0, 0},
 #endif
-#ifdef riscos
 #ifdef WITH_PNG
 	{nspng_create, nspng_process_data, nspng_convert, 0,
 		0, nspng_destroy, nspng_redraw, 0, 0, 0},
@@ -141,7 +134,6 @@ static const struct handler_entry handler_map[] = {
 		plugin_add_instance, plugin_remove_instance,
 		plugin_reshape_instance},
 #endif
-#endif
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
@@ -159,11 +151,9 @@ content_type content_lookup(const char *mime_type)
 	m = bsearch(mime_type, mime_map, MIME_MAP_COUNT, sizeof(mime_map[0]),
 			(int (*)(const void *, const void *)) strcasecmp);
 	if (m == 0) {
-#ifdef riscos
 #ifdef WITH_PLUGIN
 		if (plugin_handleable(mime_type))
 			return CONTENT_PLUGIN;
-#endif
 #endif
 		return CONTENT_OTHER;
 	}
@@ -363,12 +353,12 @@ void content_destroy(struct content *c)
 		handler_map[c->type].destroy(c);
 	for (user = c->user_list; user != 0; user = next) {
 		next = user->next;
-		xfree(user);
+		free(user);
 	}
 	free(c->mime_type);
-	xfree(c->url);
+	free(c->url);
 	free(c->source_data);
-	xfree(c);
+	free(c);
 }
 
 
@@ -462,7 +452,7 @@ void content_remove_user(struct content *c,
 	}
 	next = user->next;
 	user->next = next->next;
-	xfree(next);
+	free(next);
 
 	/* if there are now no users, stop any loading in progress
 	 * and destroy content structure if not in state READY or DONE */
