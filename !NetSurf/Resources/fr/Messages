@@ -3,34 +3,34 @@
 # Menus
 NetSurf:NetSurf
 Info:Info
-Choices:Paramêtres...
-Help:Aide...
+AppHelp:Aide...
+Choices:Paramètres...
 Quit:Quitter
 
 Page:Page
 PageInfo:Info...
 Save:Sauver      F3
-SaveComp:Full save  ‹F3
+SaveComp:Sauvegarde Complète	‹F3
 Export:Exporter
 ExportAs:Exporter sous
 Draw:Draw  ‹^F3
-Text:Text   ^F3
-SaveURL:Save location
+Text:Texte   ^F3
+SaveURL:Savuver le lieu
 Print:Imprimer...
-ViewSrc:View source...  F8
-Object:Object
+ViewSrc:Voir le source...  F8
+Object:Objet
 ObjInfo:Info
-ObjSave:Save
-ObjReload:Reload
+ObjSave:Sauver
+ObjReload:Recharger
 URI:Acorn URI
 URL:ANT URL
-LinkText:Text
+LinkText:Texte
 Selection:Sélection
-Copy:Copier vers le presse papier
+Copy:Copier vers le presse-papier
 SelectAll:Tout sélectionner
 Clear:Effacer la sélection
-Navigate:Naviguation
-OpenURL:Ouvril URL...
+Navigate:Navigation
+OpenURL:Ouvrir l'URL...
 Home:Page d'accueil
 Back:Retour
 Forward:Avancer
@@ -38,22 +38,22 @@ Reload:Recharger cette page
 View:Affichage
 ScaleView:Ajuster la vue
 Images:Images
-ForeImg:Foreground images
-BackImg:Background images
+ForeImg:Images d'avant-plan
+BackImg:Images de fond
 AnimImg:Animations
 DitherImg:Dither images
-FilterImg:Smooth images
-Toolbars:Toolbars
-ToolButtons:Buttons
-ToolAddress:Address bar
+FilterImg:Adoucir les images
+Toolbars:Barre d'outils
+ToolButtons:Boutons
+ToolAddress:Barre d'adresse
 ToolThrob:Throbber
 ToolStatus:Status bar
-OptDefault:Set as default
-Help:Help
-HelpContent:Contents  F1
-HelpGuide:User guide
-HelpInfo:User information
-HelpInter:Interactive help
+OptDefault:Définir par défaut
+Help:Aide
+HelpContent:Contenus  F1
+HelpGuide:Guide de l'utilisateur
+HelpInfo:Information utilisateur
+HelpInter:Aide interactive
 
 Themes:Thèmes
 
@@ -65,7 +65,7 @@ Form_Submit:Soumettre
 Form_Reset:Effacer
 Form_None:
 Form_Many:(Plusieurs)
-Form_Drop:Drop file here
+Form_Drop:Déposer les fichiers ici
 
 Not2xx:Le serveur a renvoyé une erreur
 
@@ -76,8 +76,8 @@ ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/T
 InvalidURL:L'adresse <em>%s</em> est incomprise.
 
 NoMemory:NetSurf a besoin de plus de mémoire. Veuillez libérer de la mémoire et réessayer.
-FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
-FontError:Failed to open font "Homerton.Medium" (%s).
+FontBadInst:Une erreur s'est produite lors de l'initialisation des fontes à cause de la présence de copies obsolètes de fontes ROM sur disque. NetSurf va sortir et lancer un programme qui va tenter de réparer cela.
+FontError:Échec d'ouverture de la fonte "Homerton.Medium" (%s).
 
 Bytes: O
 kBytes: kO
@@ -87,13 +87,13 @@ GBytes: GO
 Loading:Ouverture de la page...
 RecPercent:%s reçus de %s (%u%%)
 Received:%s reçus
-Converting:Convertion de %lu octès
+Converting:Conversion de %lu octets
 BadRedirect:Mauvais URL de redirection
 FetchFailed:Récupération du fichier impossible
 Complete:Page terminée (%gs)
 Redirecting:Redirection en cours...
 Processing:Traitement du document
-Formatting:Formattage du document
+Formatting:Formatage du document
 FetchObjs:Chargement de %u objets
 FetchObjs2:Chargement de %u objets: %s
 Done:Document terminé
@@ -103,16 +103,16 @@ NotCSS:Attention: feuille de style non CSS
 BadObject:Attention: mauvais type d'objet
 ObjError:Erreur lors du chargement de: %s
 
-DrawTitle:Image Draw (%lux%lu, %lu octès)
+DrawTitle:Image Draw (%lux%lu, %lu octets)
 GIFTitle:Image GIF (%lux%lu)
-JPEGTitle:Image JPEG (%ux%u, %lu octès)
+JPEGTitle:Image JPEG (%ux%u, %lu octets)
 PNGTitle:Image PNG (%lux%lu)
-SpriteTitle:Image Sprite (%lux%lu, %lu octès)
+SpriteTitle:Image Sprite (%lux%lu, %lu octets)
 
 SelectMenu:Sélection
 
 SaveSource:Source
 SaveDraw:PageWeb
 SaveText:PageWeb
-SaveObject:Object
-SaveLink:Link
+SaveObject:Objet
+SaveLink:Lien
