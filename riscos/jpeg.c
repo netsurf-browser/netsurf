@@ -157,6 +157,7 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 	if (c->title)
 		snprintf(c->title, 100, messages_get("JPEGTitle"),
 				width, height, c->source_size);
+	c->size += area_size + 100;
 	c->status = CONTENT_STATUS_DONE;
 	return true;
 }

@@ -253,6 +253,7 @@ bool nspng_convert(struct content *c, int width, int height)
 	if (c->title)
 		snprintf(c->title, 100, messages_get("PNGTitle"),
 				c->width, c->height, c->source_size);
+	c->size += (c->width * c->height * 4) + 16 + 44 + 100;
 	c->status = CONTENT_STATUS_DONE;
 	return true;
 }

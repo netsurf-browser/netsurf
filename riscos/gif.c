@@ -72,7 +72,7 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 	*/
 	res = gif_initialise(gif);
 	switch (res) {
-		case GIF_INSUFFICIENT_MEMORY:	
+		case GIF_INSUFFICIENT_MEMORY:
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			warn_user("NoMemory", 0);
@@ -101,6 +101,7 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 	if (c->title) {
 		snprintf(c->title, 100, messages_get("GIFTitle"), c->width, c->height, c->source_size);
 	}
+	c->size += (gif->width * gif->height * 4) + 16 + 44 + 100;
 
 	/*	Initialise the first frame so if we try to use the image data directly prior to
 		a plot we get some sensible data
