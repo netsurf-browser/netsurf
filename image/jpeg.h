@@ -12,6 +12,8 @@
 #ifndef _NETSURF_IMAGE_JPEG_H_
 #define _NETSURF_IMAGE_JPEG_H_
 
+#include <stdbool.h>
+
 struct bitmap;
 struct content;
 
