@@ -68,7 +68,7 @@ int __feature_imagefs_is_file = 1;		/**< For UnixLib. */
 int __riscosify_control = __RISCOSIFY_NO_SUFFIX |
 			__RISCOSIFY_NO_REVERSE_SUFFIX;
 
-char *NETSURF_DIR;
+const char * NETSURF_DIR;
 
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
@@ -175,6 +175,7 @@ static char *ro_path_to_url(const char *path);
 
 void gui_init(int argc, char** argv)
 {
+	char theme_path[256];
 	char path[40];
 	os_error *error;
 	int length;
@@ -232,13 +233,6 @@ void gui_init(int argc, char** argv)
 	if (getenv("NetSurf$Start_URI_Handler"))
 		xwimp_start_task("Desktop", 0);
 
-	/*	Load our chosen theme
-	*/
-	ro_gui_theme_initialise();
-	descriptor = ro_gui_theme_find(option_theme);
-	if (!descriptor) descriptor = ro_gui_theme_find("NetSurf");
-	ro_gui_theme_apply(descriptor);
-
 	/*	Open the templates
 	*/
 	if ((length = snprintf(path, sizeof(path),
@@ -258,11 +252,21 @@ void gui_init(int argc, char** argv)
 	ro_gui_401login_init();
 #endif
 	ro_gui_history_init();
-	ro_gui_theme_install_init();
 	wimp_close_template();
 	ro_gui_sprites_init();
 	ro_gui_tree_initialise(); /* must be done after sprite loading */
 	ro_gui_hotlist_initialise();
+
+	/*	Load our chosen theme
+	*/
+	ro_gui_theme_initialise();
+	descriptor = ro_gui_theme_find(option_theme);
+	if (!descriptor) {
+		snprintf(theme_path, 256, "%s.Resources.Theme", NETSURF_DIR);
+		theme_path[255] = '\0';
+		descriptor = ro_gui_theme_find(theme_path);
+	}
+	ro_gui_theme_apply(descriptor);
 
 	/* We don't create an Iconbar icon on NCOS */
 #ifndef ncos

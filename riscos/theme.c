@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -30,32 +30,14 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
-
 #define THEME_URL_MEMORY 256
 #define THEME_THROBBER_MEMORY 12
 #define THEME_STATUS_MEMORY 256
 
-struct theme_file_header {
-	unsigned int magic_value;
-	unsigned int parser_version;
-	char name[32];
-	char author[64];
-	char browser_bg;
-	char hotlist_bg;
-	char status_bg;
-	char status_fg;
-	char throbber_left;
-	char future_expansion_1;
-	char future_expansion_2;
-	char future_expansion_3;
-	unsigned int compressed_sprite_size;
-	unsigned int decompressed_sprite_size;
-};
-
-
 static struct theme_descriptor *theme_current = NULL;
 static struct theme_descriptor *theme_descriptors = NULL;
 
+static void ro_gui_theme_get_available_in_dir(const char *directory);
 static void ro_gui_theme_free(struct theme_descriptor *descriptor, bool list);
 static void ro_gui_theme_add_toolbar_icon(struct toolbar *toolbar, const char *name, int icon_number);
 static void ro_gui_theme_update_toolbar_icon(struct toolbar *toolbar, struct toolbar_icon *icon);
@@ -104,6 +86,9 @@ static char theme_separator_name[] = "separator\0";
 void ro_gui_theme_initialise(void) {
 	/*	Get an initial theme list
 	*/
+	xosfile_create_dir("<Choices$Write>.WWW", 0);
+	xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
+	xosfile_create_dir("<Choices$Write>.WWW.NetSurf.Themes", 0);
 	theme_descriptors = ro_gui_theme_get_available();
 }
 
@@ -153,121 +138,24 @@ struct theme_descriptor *ro_gui_theme_find(const char *filename) {
  * \return the requested theme_descriptor, or NULL if not found
  */
 struct theme_descriptor *ro_gui_theme_get_available(void) {
-  	struct theme_file_header file_header;
 	struct theme_descriptor *current;
 	struct theme_descriptor *test;
 	char pathname[256];
-	int context = 0;
-	int read_count;
-	osgbpb_INFO(100) info;
-	int output_left;
-	os_fw file_handle;
-	os_error *error;
 
 	/*	Close any descriptors we've got so far
 	*/
 	ro_gui_theme_free(theme_descriptors, true);
 
-	/*	Create a new set
+	/*	Open a variety of directories
 	*/
-	while (context != -1) {
-		/*	Get the next entry
-		*/
-		error = xosgbpb_dir_entries_info(THEMES_DIR,
-				(osgbpb_info_list *) &info, 1, context,
-				sizeof(info), 0, &read_count, &context);
-		if (error) {
-			LOG(("xosgbpb_dir_entries_info: 0x%x: %s",
-				error->errnum, error->errmess));
-			warn_user("MiscError", error->errmess);
-			break;
-		}
-
-		/*	Check if we've read anything
-		*/
-		if (read_count == 0)
-			continue;
-
-		/*	Only process files
-		*/
-		if ((info.obj_type == fileswitch_IS_FILE) && (!ro_gui_theme_find(info.name))) {
-
-			/*	Get our full filename
-			*/
-			snprintf(pathname, sizeof pathname, "%s.%s",
-					THEMES_DIR, info.name);
-			pathname[sizeof pathname - 1] = 0;
-
-			/*	Get the header
-			*/
-			error = xosfind_openinw(osfind_NO_PATH, pathname, 0, &file_handle);
-			if (error) {
-				LOG(("xosfind_openinw: 0x%x: %s",
-					error->errnum, error->errmess));
-				warn_user("FileError", error->errmess);
-				continue;
-			}
-			if (file_handle == 0)
-				continue;
-			error = xosgbpb_read_atw(file_handle, (char *)&file_header,
-					sizeof (struct theme_file_header),
-					0, &output_left);
-			xosfind_closew(file_handle);
-			if (error) {
-				LOG(("xosbgpb_read_atw: 0x%x: %s",
-					error->errnum, error->errmess));
-				warn_user("FileError", error->errmess);
-				continue;
-			}
-			if (output_left > 0)
-				continue;	/* should try to read more? */
-
-			/*	Check we are a valid theme
-			*/
-			if ((file_header.magic_value != 0x4d54534e) ||
-					(file_header.parser_version > 1))
-				continue;
-
-			/*	Create a new theme descriptor
-			*/
-			current = (struct theme_descriptor *)calloc(1,
-					sizeof(struct theme_descriptor));
-			if (!current) {
-				LOG(("calloc failed"));
-				warn_user("NoMemory", 0);
-				return theme_descriptors;
-			}
-			current->filename = malloc(strlen(info.name) + 1);
-			if (!current->filename) {
-				LOG(("malloc failed"));
-				warn_user("NoMemory", 0);
-				free(current);
-				return theme_descriptors;
-			}
-			strcpy(current->filename, info.name);
-			strcpy(current->name, file_header.name);
-			strcpy(current->author, file_header.author);
-			current->browser_background = file_header.browser_bg;
-			current->hotlist_background = file_header.hotlist_bg;
-			current->status_background = file_header.status_bg;
-			current->status_foreground = file_header.status_fg;
-			current->throbber_right = (file_header.throbber_left == 0x00);
-			current->decompressed_size = file_header.decompressed_sprite_size;
-			current->compressed_size = file_header.compressed_sprite_size;
-
-			/*	Link in our new descriptor alphabetically
-			*/
-			if (theme_descriptors) {
-				current->next = theme_descriptors;
-				theme_descriptors->previous = current;
-			}
-			theme_descriptors = current;
-		}
-	}
+	snprintf(pathname, 256, "%s.Resources", NETSURF_DIR);
+	pathname[255] = '\0';
+	ro_gui_theme_get_available_in_dir(pathname);
+	ro_gui_theme_get_available_in_dir("Choices:WWW.NetSurf.Themes");
 
 	/*	Sort alphabetically in a very rubbish way
 	*/
-	if (theme_descriptors->next) {
+	if ((theme_descriptors) && (theme_descriptors->next)) {
 		current = theme_descriptors;
 		while ((test = current->next)) {
 			if (strcmp(current->name, test->name) > 0) {
@@ -294,6 +182,148 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 
 
 /**
+ * Adds the themes in a directory to the global cache.
+ *
+ * \param directory  the directory to scan
+ */
+static void ro_gui_theme_get_available_in_dir(const char *directory) {
+	struct theme_file_header file_header;
+	struct theme_descriptor *current;
+	char pathname[256];
+	int context = 0;
+	int read_count;
+	osgbpb_INFO(100) info;
+	int output_left;
+	os_fw file_handle;
+	os_error *error;
+
+	/*	Create a new set
+	*/
+	while (context != -1) {
+		/*	Get the next entry
+		*/
+		error = xosgbpb_dir_entries_info(directory,
+				(osgbpb_info_list *) &info, 1, context,
+				sizeof(info), 0, &read_count, &context);
+		if (error) {
+			LOG(("xosgbpb_dir_entries_info: 0x%x: %s",
+				error->errnum, error->errmess));
+			if (error->errnum == 0xd6)	/* no such dir */
+				return;
+			warn_user("MiscError", error->errmess);
+			break;
+		}
+
+		/*	Check if we've read anything
+		*/
+		if (read_count == 0)
+			continue;
+
+		/*	Get our full filename
+		*/
+		snprintf(pathname, sizeof pathname, "%s.%s",
+				directory, info.name);
+		pathname[sizeof pathname - 1] = 0;
+
+		/*	Only process files
+		*/
+		if ((info.obj_type == fileswitch_IS_FILE) && (!ro_gui_theme_find(pathname))) {
+
+			/*	Get the header
+			*/
+			error = xosfind_openinw(osfind_NO_PATH, pathname, 0, &file_handle);
+			if (error) {
+				LOG(("xosfind_openinw: 0x%x: %s",
+					error->errnum, error->errmess));
+				warn_user("FileError", error->errmess);
+				continue;
+			}
+			if (file_handle == 0)
+				continue;
+			error = xosgbpb_read_atw(file_handle, (char *)&file_header,
+					sizeof (struct theme_file_header),
+					0, &output_left);
+			xosfind_closew(file_handle);
+			if (error) {
+				LOG(("xosbgpb_read_atw: 0x%x: %s",
+					error->errnum, error->errmess));
+				warn_user("FileError", error->errmess);
+				continue;
+			}
+			if (output_left > 0)
+				continue;	/* should try to read more? */
+
+			/*	Create a new theme descriptor
+			*/
+			current = (struct theme_descriptor *)calloc(1,
+					sizeof(struct theme_descriptor));
+			if (!current) {
+				LOG(("calloc failed"));
+				warn_user("NoMemory", 0);
+				return;
+			}
+
+			if (!ro_gui_theme_read_file_header(current, &file_header)) {
+				free(current);
+				continue;
+			}
+
+			current->filename = malloc(strlen(pathname) + 1);
+			if (!current->filename) {
+				LOG(("malloc failed"));
+				warn_user("NoMemory", 0);
+				free(current);
+				return;
+			}
+			strcpy(current->filename, pathname);
+
+			/*	Link in our new descriptor
+			*/
+			if (theme_descriptors) {
+				current->next = theme_descriptors;
+				theme_descriptors->previous = current;
+			}
+			theme_descriptors = current;
+		}
+	}
+}
+
+
+/**
+ * Fills in the basic details for a descriptor from a file header.
+ * The filename string is not set.
+ *
+ * \param descriptor   the descriptor to set up
+ * \param file_header  the header to read from
+ * \return false for a badly formed theme, true otherwise
+ */
+bool ro_gui_theme_read_file_header(struct theme_descriptor *descriptor,
+		struct theme_file_header *file_header) {
+
+	if ((file_header->magic_value != 0x4d54534e) ||
+			(file_header->parser_version > 2))
+		return false;
+
+	strcpy(descriptor->name, file_header->name);
+	strcpy(descriptor->author, file_header->author);
+	descriptor->browser_background = file_header->browser_bg;
+	descriptor->hotlist_background = file_header->hotlist_bg;
+	descriptor->status_background = file_header->status_bg;
+	descriptor->status_foreground = file_header->status_fg;
+	descriptor->decompressed_size = file_header->decompressed_sprite_size;
+	descriptor->compressed_size = file_header->compressed_sprite_size;
+	if (file_header->parser_version >= 2) {
+		descriptor->throbber_right = !(file_header->theme_flags & (1 << 0));
+		descriptor->throbber_redraw = file_header->theme_flags & (1 << 1);
+	} else {
+		descriptor->throbber_right = (file_header->theme_flags == 0x00);
+		descriptor->throbber_redraw = true;	  
+	}
+	return true;
+}
+
+
+/**
  * Opens a theme ready for use.
  *
  * \param descriptor  the theme_descriptor to open
@@ -306,17 +336,17 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 	os_coord dimensions;
 	os_mode mode;
 	os_error *error;
-	char pathname[256];
+	char sprite_name[16];
 	bool result = true;
 	int i, n;
 	int workspace_size, file_size;
 	char *raw_data, *workspace;
 	osspriteop_area *decompressed;
-
+	
 	/*	If we are freeing the whole of the list then we need to
 		start at the first descriptor.
 	*/
-	if (list) {
+	if (list && descriptor) {
 		while (descriptor->previous) descriptor = descriptor->previous;
 	}
 
@@ -338,17 +368,11 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 			}
 			descriptor->theme->users = 1;
 
-			/*	Get our full filename
-			*/
-			snprintf(pathname, sizeof pathname, "%s.%s",
-					THEMES_DIR, descriptor->filename);
-			pathname[sizeof pathname - 1] = 0;
-
 			/*	Load the file. We use a goto to exit from here on in as using
 				a continue leaves us in an infinite loop - it's nasty, and really
 				should be rewritten properly.
 			*/
-			error = xosfile_read_stamped_no_path(pathname,
+			error = xosfile_read_stamped_no_path(descriptor->filename,
 					&obj_type, 0, 0, &file_size, 0, 0);
 			if (error) {
 				LOG(("xosfile_read_stamped_no_path: 0x%x: %s",
@@ -364,7 +388,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 				warn_user("NoMemory", 0);
 				return false;
 			}
-			error = xosfile_load_stamped_no_path(pathname, (byte *)raw_data,
+			error = xosfile_load_stamped_no_path(descriptor->filename, (byte *)raw_data,
 					0, 0, 0, 0, 0);
 			if (error) {
 				free(raw_data);
@@ -410,7 +434,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 				goto ro_gui_theme_open_continue;
 			}
 			if (status != 0) {
-			  	free(decompressed);
+				free(decompressed);
 				goto ro_gui_theme_open_continue;
 			}
 			descriptor->theme->sprite_area = decompressed;
@@ -419,14 +443,14 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 				maximum dimensions for all 'thobber%i' icons.
 			*/
 			for (i = 1; i <= descriptor->theme->sprite_area->sprite_count; i++) {
-				osspriteop_return_name(osspriteop_USER_AREA,
-						descriptor->theme->sprite_area, pathname, 12, i);
-				if (strncmp(pathname, "throbber", 8) == 0) {
+				xosspriteop_return_name(osspriteop_USER_AREA,
+						descriptor->theme->sprite_area, sprite_name, 16, i, 0);
+				if (strncmp(sprite_name, "throbber", 8) == 0) {
 					/*	Get the max sprite width/height
 					*/
 					xosspriteop_read_sprite_info(osspriteop_USER_AREA,
 						descriptor->theme->sprite_area,
-						(osspriteop_id)pathname,
+						(osspriteop_id)sprite_name,
 						&dimensions.x, &dimensions.y,
 						(osbool *)0, &mode);
 					ro_convert_pixels_to_os_units(&dimensions, mode);
@@ -437,22 +461,21 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 
 					/*	Get the throbber number
 					*/
-					n = atoi(pathname + 8);
+					n = atoi(sprite_name + 8);
 					if (descriptor->theme->throbber_frames < n)
 						descriptor->theme->throbber_frames = n;
 				}
-	  		}
+			}
 		}
-
 ro_gui_theme_open_continue:
+		
 		/*	Loop or return depending on whether the entire list
 			is to be processed.
 		*/
-		if (list) {
+		if (list && descriptor)
 			descriptor = descriptor->next;
-		} else {
+		else
 			return result;
-		}
 	}
 	return result;
 }
@@ -569,16 +592,14 @@ void ro_gui_theme_redraw(struct toolbar *toolbar, wimp_draw *redraw) {
 	perform_redraw &= toolbar->display_buttons;
 
 	while (more) {
-	  	if (perform_redraw) {
-	  	  	for (icon = toolbar->icon; icon; icon = icon->next) {
-	  	  		if ((icon->icon_number == -1) && (icon->display))  {
+		if (perform_redraw) {
+			for (icon = toolbar->icon; icon; icon = icon->next) {
+				if ((icon->icon_number == -1) && (icon->display))  {
 					separator_icon.extent.x0 = icon->x;
 					separator_icon.extent.x1 = icon->x + icon->width;
 					wimp_plot_icon(&separator_icon);
 				}
 			}
-
-
 	  	}
 		more = wimp_get_rectangle(redraw);
 	}
@@ -602,22 +623,17 @@ void ro_gui_theme_free(struct theme_descriptor *descriptor, bool list) {
 	/*	If we are freeing the whole of the list then we need to
 		start at the first descriptor.
 	*/
-	if (list) {
-		while (descriptor->previous) descriptor = descriptor->previous;
-	}
+	while ((list) && (descriptor->previous))
+		descriptor = descriptor->previous;
 
 	/*	Close the themes
 	*/
 	while (descriptor) {
-		/*	Remember where we are going next
-		*/
 		next_descriptor = descriptor->next;
 
 		/*	If we have no loaded theme then we can kill the descriptor
 		*/
 		if (!descriptor->theme) {
-			/*	De-link the descriptor
-			*/
 			if (descriptor->previous)
 					descriptor->previous->next = descriptor->next;
 			if (descriptor->next)
@@ -627,20 +643,17 @@ void ro_gui_theme_free(struct theme_descriptor *descriptor, bool list) {
 			*/
 			if (theme_descriptors == descriptor)
 					theme_descriptors = next_descriptor;
+
 			/*	Release any memory
 			*/
 			free(descriptor->filename);
 			free(descriptor);
 		}
 
-		/*	Loop or return depending on whether the entire list
-			is to be processed.
-		*/
-		if (list) {
+		if (list)
 			descriptor = next_descriptor;
-		} else {
+		else
 			return;
-		}
 	}
 }
 
@@ -741,36 +754,31 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	os_error *error;
 	osspriteop_area *sprite_area;
 	struct toolbar_icon *toolbar_icon;
-	int width;
+	int width, max_icon;
 	if (!toolbar) return false;
 
 	/*	Set the theme and window sprite area
 	*/
 	if (!descriptor) descriptor = theme_current;
 	toolbar->descriptor = descriptor;
-	if ((toolbar->descriptor) && (toolbar->descriptor->theme)) {
+	if ((toolbar->descriptor) && (toolbar->descriptor->theme))
 		sprite_area = toolbar->descriptor->theme->sprite_area;
-	} else {
+	else
 		sprite_area = (osspriteop_area *)1;
-	}
 	theme_toolbar_window.sprite_area = sprite_area;
 
 	/*	Update the icon sizes
 	*/
-	toolbar_icon = toolbar->icon;
-	while (toolbar_icon) {
+	for (toolbar_icon = toolbar->icon; toolbar_icon; toolbar_icon = toolbar_icon->next)
 		ro_gui_theme_update_toolbar_icon(toolbar, toolbar_icon);
-		toolbar_icon = toolbar_icon->next;
-	}
 
 	/*	Recreate the toolbar window
 	*/
 	if (toolbar->descriptor) {
-		if (toolbar->type == THEME_BROWSER_TOOLBAR) {
+		if (toolbar->type == THEME_BROWSER_TOOLBAR)
 			theme_toolbar_window.work_bg = toolbar->descriptor->browser_background;
-		} else {
+		else
 			theme_toolbar_window.work_bg = toolbar->descriptor->hotlist_background;
-		}
 	} else {
 		theme_toolbar_window.work_bg = wimp_COLOUR_VERY_LIGHT_GREY;
 	}
@@ -780,8 +788,12 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	theme_toolbar_window.ymin = 1;
 	theme_toolbar_window.extent.x1 = 16384;
 	theme_toolbar_window.extent.y1 = 16384;
+	theme_toolbar_window.sprite_area = sprite_area;
 	if (toolbar->toolbar_handle) {
-		xwimp_delete_window(toolbar->toolbar_handle);
+		error = xwimp_delete_window(toolbar->toolbar_handle);
+		if (error)
+			LOG(("xwimp_delete_window: 0x%x: %s",
+					error->errnum, error->errmess));
 		toolbar->toolbar_handle = NULL;
 	}
 	error = xwimp_create_window(&theme_toolbar_window, &toolbar->toolbar_handle);
@@ -793,22 +805,24 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	}
 
 	/*	Create the basic icons
-	*/
-	int max_icon = ICON_TOOLBAR_URL;
-	if (toolbar->type == THEME_HOTLIST_TOOLBAR) max_icon = ICON_TOOLBAR_HOTLIST_LAST;
+	*/	
+	if (toolbar->type == THEME_HOTLIST_TOOLBAR)
+		max_icon = ICON_TOOLBAR_HOTLIST_LAST;
+	else
+		max_icon = ICON_TOOLBAR_URL;
 	new_icon.w = toolbar->toolbar_handle;
 	new_icon.icon.data.indirected_text.size = 1;
 	new_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
 			wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
 			wimp_ICON_VCENTRED |
 			(wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT);
-	if (toolbar->descriptor) {
+	if (toolbar->descriptor)
 		new_icon.icon.flags |= (toolbar->descriptor->browser_background
 				 << wimp_ICON_BG_COLOUR_SHIFT);
-	} else {
+	else
 		new_icon.icon.flags |= (wimp_COLOUR_VERY_LIGHT_GREY
 				 << wimp_ICON_BG_COLOUR_SHIFT);
-	}
+				 
 	for (int i = 0; i < max_icon; i++) {
 		new_icon.icon.data.indirected_text.text = theme_null_text_string;
 		toolbar_icon = toolbar->icon;
@@ -876,11 +890,10 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 			xwimp_delete_window(toolbar->status_handle);
 			toolbar->status_handle = NULL;
 		}
-		if (toolbar->descriptor) {
+		if (toolbar->descriptor)
 			theme_toolbar_window.work_bg = toolbar->descriptor->status_background;
-		} else {
+		else
 			theme_toolbar_window.work_bg = wimp_COLOUR_VERY_LIGHT_GREY;
-		}
 		theme_toolbar_window.flags &= ~wimp_WINDOW_NO_BOUNDS;
 		theme_toolbar_window.flags |= wimp_WINDOW_AUTO_REDRAW;
 		theme_toolbar_window.xmin = 12;
@@ -915,15 +928,14 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 		/*	And finally our status display icon
 		*/
 		new_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_VCENTRED;
-		if (toolbar->descriptor) {
+		if (toolbar->descriptor)
 			new_icon.icon.flags |=
 				(toolbar->descriptor->status_foreground << wimp_ICON_FG_COLOUR_SHIFT) |
 				(toolbar->descriptor->status_background << wimp_ICON_BG_COLOUR_SHIFT);
-		} else {
+		else
 			new_icon.icon.flags |=
 				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
 				(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
-		}
 		new_icon.icon.data.indirected_text.text = toolbar->status_buffer;
 		new_icon.icon.data.indirected_text.validation = theme_null_text_string;
 		new_icon.icon.data.indirected_text.size = THEME_STATUS_MEMORY;
@@ -1187,7 +1199,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 			while (toolbar_icon) {
 				if ((toolbar->display_buttons) && (toolbar_icon->display)
 					&& (toolbar_icon->width > 0)) {
-				  	visible_icon = true;
+					visible_icon = true;
 					bottom_edge = (toolbar->height -
 							toolbar_icon->height) / 2;
 					toolbar_icon->x = left_edge;
@@ -1256,11 +1268,11 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 		*/
 		toolbar->toolbar_current = width;
 		if (toolbar->reformat_buttons) {
-		  	extent.x1 = 16384;
-		  	extent.y0 = 0;
-		  	extent.y1 = toolbar->height;
-		  	xwimp_set_extent(toolbar->toolbar_handle, &extent);
-		  	if ((parent) && (old_height != toolbar->height)) {
+			extent.x1 = 16384;
+			extent.y0 = 0;
+			extent.y1 = toolbar->height;
+			xwimp_set_extent(toolbar->toolbar_handle, &extent);
+			if ((parent) && (old_height != toolbar->height)) {
 				ro_gui_theme_attach_toolbar(toolbar, parent);
 			}
 		}
@@ -1384,7 +1396,7 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar) {
  * Adds a toolbar icon to the end of a toolbar
  *
  * \param toolbar      the toolbar to add the icon to the end of
- * \param name         the icon name, or NULL for a separator
+ * \param name	       the icon name, or NULL for a separator
  * \param icon_number  the RISC OS Wimp icon number for the icon (not used for separators)
  */
 void ro_gui_theme_add_toolbar_icon(struct toolbar *toolbar, const char *name, int icon_number) {
@@ -1488,13 +1500,13 @@ void ro_gui_theme_destroy_toolbar_icon(struct toolbar_icon *icon) {
  * Returns the toolbar icon at a specified position
  *
  * \param toolbar  the toolbar to examine
- * \param x        the x co-ordinate to check
- * \param y        the y co-ordinate to check
+ * \param x	   the x co-ordinate to check
+ * \param y	   the y co-ordinate to check
  * \return the toolbar icon at the specified position, or NULL for no icon
  */
 struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar, int x, int y) {
- 	struct toolbar_icon *icon;
- 	icon = toolbar->icon;
+	struct toolbar_icon *icon;
+	icon = toolbar->icon;
 /* FINISH ME */
 	return NULL;
 }

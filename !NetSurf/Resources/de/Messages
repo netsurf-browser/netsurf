@@ -266,6 +266,8 @@ EncodingUnk:Unknown
 
 ThemeInstActive:A theme is currently being downloaded or installed. Please wait for it to finish or cancel it before installing more themes.
 ThemeInstDown:Please wait for the theme to download.
+ThemeInvalid:The downloaded theme is invalid or requires a newer version of NetSurf.
+ThemeInstall:Would you like to install the theme '%s' by %s?
 
 # Interactive help
 HelpToolbar0:Schaltet zurück auf die zuvor dargestellte Seite.|MDer Inhalt wird dabei nicht aktualisiert.

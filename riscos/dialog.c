@@ -139,6 +139,7 @@ void ro_gui_dialog_init(void)
 	dialog_print = ro_gui_dialog_create("print");
 	dialog_config_font = ro_gui_dialog_create("config_font");
 	dialog_config_image = ro_gui_dialog_create("config_img");
+	dialog_theme_install = ro_gui_dialog_create("theme_inst");
 }
 
 
@@ -455,6 +456,8 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 #endif
 	else if (pointer->w == dialog_config_font)
 		ro_gui_dialog_click_config_font(pointer);
+	else if (pointer->w == dialog_theme_install)
+		ro_gui_theme_install_click(pointer);
 }
 
 /**
@@ -1004,7 +1007,7 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 {
 	switch (pointer->i) {
 		case ICON_CONFIG_TH_MANAGE:
-			os_cli("Filer_OpenDir " THEMES_DIR);
+			os_cli("Filer_OpenDir Choices:WWW.NetSurf.Themes");
 			break;
 		case ICON_CONFIG_TH_GET:
 			browser_window_create(
@@ -1419,6 +1422,8 @@ void ro_gui_dialog_load_themes(void) {
 		if (link->next) extent.y0 -= 16;
 		if (extent.y0 > min_extent) extent.y0 = min_extent;
 		xwimp_set_extent(dialog_config_th_pane, &extent);
+		ro_gui_set_icon_button_type(link->toolbar->toolbar_handle,
+				ICON_TOOLBAR_URL, wimp_BUTTON_NEVER);
 
 		/*	Create the descriptor icons and separator line
 		*/

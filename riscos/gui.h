@@ -21,7 +21,7 @@
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/tree.h"
 
-#define THEMES_DIR "<NetSurf$Dir>.Themes"
+extern const char * NETSURF_DIR;
 
 struct toolbar;
 struct plotter_table;
@@ -252,7 +252,7 @@ extern int ro_plot_origin_y;
 void ro_plot_set_scale(float scale);
 
 /* in theme_install.c */
-void ro_gui_theme_install_init(void);
+void ro_gui_theme_install_click(wimp_pointer *pointer);
 
 /* toolbar types */
 #define TOOLBAR_BROWSER 0

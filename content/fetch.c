@@ -38,6 +38,9 @@
 #ifdef WITH_POST
 #include "netsurf/render/form.h"
 #endif
+#ifdef riscos
+#include "netsurf/riscos/gui.h"
+#endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
@@ -99,7 +102,6 @@ static struct curl_httppost *fetch_post_convert(struct form_successful_control *
 
 #ifdef riscos
 static char * ca_bundle;	/**< SSL certificate bundle filename. */
-extern const char * const NETSURF_DIR;
 #endif
 
 

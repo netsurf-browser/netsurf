@@ -19,6 +19,23 @@ typedef enum {
   	THEME_HOTLIST_TOOLBAR
 } toolbar_type;
 
+struct theme_file_header {
+	unsigned int magic_value;
+	unsigned int parser_version;
+	char name[32];
+	char author[64];
+	char browser_bg;
+	char hotlist_bg;
+	char status_bg;
+	char status_fg;
+	char theme_flags;
+	char future_expansion_1;
+	char future_expansion_2;
+	char future_expansion_3;
+	unsigned int compressed_sprite_size;
+	unsigned int decompressed_sprite_size;
+};
+
 struct toolbar_icon {
 	int icon_number;			/**< wimp icon number */
 	bool display;				/**< whether to display the icon */
@@ -70,6 +87,7 @@ struct theme_descriptor {
 	int status_background;			/**< background colour of status window */
 	int status_foreground;			/**< colour of status window text */
 	bool throbber_right;			/**< throbber is on the right (left otherwise) */
+	bool throbber_redraw;			/**< throbber requires forcible updating */
 	unsigned int decompressed_size;		/**< decompressed sprite size */
 	unsigned int compressed_size;		/**< compressed sprite size */
 	struct theme *theme;			/**< corresponding theme (must be opened) */
@@ -81,6 +99,8 @@ void ro_gui_theme_initialise(void);
 void ro_gui_theme_finalise(void);
 struct theme_descriptor *ro_gui_theme_find(const char *filename);
 struct theme_descriptor *ro_gui_theme_get_available(void);
+bool ro_gui_theme_read_file_header(struct theme_descriptor *descriptor,
+		struct theme_file_header *file_header);
 
 bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list);
 bool ro_gui_theme_apply(struct theme_descriptor *descriptor);

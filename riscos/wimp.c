@@ -128,6 +128,37 @@ void ro_convert_pixels_to_os_units(os_coord *pixels, os_mode mode) {
 
 
 /**
+ * Forces an icon to be redrawn entirely (ie not just updated).
+ *
+ * \param  w  window handle
+ * \param  i  icon handle
+ */
+void ro_gui_force_redraw_icon(wimp_w w, wimp_i i) {
+	wimp_icon_state ic;
+	os_error *error;
+
+	/*	Get the icon data
+	*/
+	ic.w = w;
+	ic.i = i;
+	error = xwimp_get_icon_state(&ic);
+	if (error) {
+		LOG(("xwimp_get_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	error = xwimp_force_redraw(w, ic.icon.extent.x0, ic.icon.extent.y0,
+			ic.icon.extent.x1, ic.icon.extent.y1);
+	if (error) {
+		LOG(("xwimp_force_redraw: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+}
+
+
+/**
  * Read the contents of an icon.
  *
  * \param  w  window handle
@@ -222,7 +253,7 @@ void ro_gui_set_icon_selected_state(wimp_w w, wimp_i i, bool state) {
 	error = xwimp_set_icon_state(w, i,
 			(state ? wimp_ICON_SELECTED : 0), wimp_ICON_SELECTED);
 	if (error) {
-		LOG(("xwimp_get_icon_state: 0x%x: %s",
+		LOG(("xwimp_set_icon_state: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
@@ -282,6 +313,25 @@ bool ro_gui_get_icon_shaded_state(wimp_w w, wimp_i i) {
 	ic.i = i;
 	xwimp_get_icon_state(&ic);
 	return (ic.icon.flags & wimp_ICON_SHADED) != 0;
+}
+
+
+/**
+ * Set the button type of an icon.
+ *
+ * \param  w    window handle
+ * \param  i    icon handle
+ * \param  type button type
+ */
+void ro_gui_set_icon_button_type(wimp_w w, wimp_i i, int type) {
+	os_error *error;
+	error = xwimp_set_icon_state(w, i, wimp_ICON_BUTTON_TYPE,
+			(type << wimp_ICON_BUTTON_TYPE_SHIFT));
+	if (error) {
+		LOG(("xwimp_set_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}  
 }
 
 

@@ -444,9 +444,8 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 		return;
 	}
 	while (more) {
-		if (ro_gui_current_redraw_gui->option.buffer_everything) {
+		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
-		}
 		if (clear_background) {
 			error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
 					colourtrans_SET_BG,
@@ -472,9 +471,8 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 					g->option.scale,
 					0xFFFFFF);
 		}
-		if (ro_gui_current_redraw_gui->option.buffer_everything) {
+		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_close();
-		}
 		error = xwimp_get_rectangle(redraw, &more);
 		/* RISC OS 3.7 returns an error here if enough buffer was
 		   claimed to cause a new dynamic area to be created. It
@@ -1002,6 +1000,9 @@ void ro_gui_throb(void)
 		sprintf(throb_buf, "throbber%i", g->throbber);
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_THROBBER, throb_buf);
+		if (g->toolbar->descriptor->throbber_redraw)
+			ro_gui_force_redraw_icon(g->toolbar->toolbar_handle,
+					ICON_TOOLBAR_THROBBER);
 	}
 }
 
@@ -1316,6 +1317,9 @@ void gui_window_stop_throbber(struct gui_window *g)
 		strcpy(throb_buf, "throbber0");
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_THROBBER, throb_buf);
+		if ((g->toolbar->descriptor) && (g->toolbar->descriptor->throbber_redraw))
+			ro_gui_force_redraw_icon(g->toolbar->toolbar_handle,
+					ICON_TOOLBAR_THROBBER);
 	}
 }
 

@@ -34,6 +34,7 @@ void ro_convert_os_units_to_pixels(os_coord *os_units, os_mode mode);
 void ro_convert_pixels_to_os_units(os_coord *pixels, os_mode mode);
 
 #define ro_gui_redraw_icon(w, i) xwimp_set_icon_state(w, i, 0, 0)
+void ro_gui_force_redraw_icon(wimp_w w, wimp_i i);
 char *ro_gui_get_icon_string(wimp_w w, wimp_i i);
 void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text);
 void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value);
@@ -41,6 +42,7 @@ void ro_gui_set_icon_selected_state(wimp_w w, wimp_i i, bool state);
 bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i);
 void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state);
 bool ro_gui_get_icon_shaded_state(wimp_w w, wimp_i i);
+void ro_gui_set_icon_button_type(wimp_w w, wimp_i i, int type);
 void ro_gui_set_window_title(wimp_w w, const char *title);
 void ro_gui_set_caret_first(wimp_w w);
 void ro_gui_open_window_centre(wimp_w parent, wimp_w child);
