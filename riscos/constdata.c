@@ -17,5 +17,4 @@ const char * const COOKIE_URL = "file:///%3CWimp$ScrapDir%3E/WWW/NetSurf/Cookies
 #endif
 #endif
 
-const char * const GESTURES_URL = "file:///%3CNetSurf$Dir%3E/Resources/gestures";
 const char * const THEMES_URL = "http://netsurf.sourceforge.net/themes/";

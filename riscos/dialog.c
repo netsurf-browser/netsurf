@@ -246,9 +246,6 @@ void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 				ro_gui_dialog_close(dialog_config_br);
 			set_browser_choices();
 			break;
-		case ICON_CONFIG_BR_EXPLAIN:
-			browser_window_create(GESTURES_URL);
-			break;
 		case ICON_CONFIG_BR_FONTSIZE_DEC:
 			if (font_size == 50)
 				break;
@@ -400,12 +397,6 @@ void ro_gui_dialog_close(wimp_w close)
 
 void set_browser_choices(void)
 {
-	set_icon_state(dialog_config_br, ICON_CONFIG_BR_GESTURES,
-			option_use_mouse_gestures);
-	set_icon_state(dialog_config_br, ICON_CONFIG_BR_TEXT,
-			option_allow_text_selection);
-	set_icon_state(dialog_config_br, ICON_CONFIG_BR_TOOLBAR,
-			option_show_toolbar);
 	font_size = option_font_size;
 	font_min_size = option_font_min_size;
 	ro_gui_dialog_update_config_br();
@@ -424,12 +415,6 @@ void set_browser_choices(void)
 
 void get_browser_choices(void)
 {
-	option_use_mouse_gestures = get_icon_state(dialog_config_br,
-			ICON_CONFIG_BR_GESTURES);
-	option_allow_text_selection = get_icon_state(dialog_config_br,
-			ICON_CONFIG_BR_TEXT);
-	option_show_toolbar = get_icon_state(dialog_config_br,
-			ICON_CONFIG_BR_TOOLBAR);
 	option_font_size = font_size;
 	option_font_min_size = font_min_size;
 }
