@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.15 2002/09/18 19:36:28 bursa Exp $
+ * $Id: box.c,v 1.16 2002/09/19 19:54:43 bursa Exp $
  */
 
 #include <assert.h>
@@ -61,6 +61,7 @@ struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
 	box->type = type;
 	box->node = node;
 	box->style = style;
+	box->width = UNKNOWN_WIDTH;
 	box->max_width = UNKNOWN_MAX_WIDTH;
 	box->text = 0;
 	box->href = href;

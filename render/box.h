@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.9 2002/09/18 19:36:28 bursa Exp $
+ * $Id: box.h,v 1.10 2002/09/19 19:54:43 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -45,6 +45,7 @@ struct box {
 	struct column *col;
 };
 
+#define UNKNOWN_WIDTH ULONG_MAX
 #define UNKNOWN_MAX_WIDTH ULONG_MAX
 
 /**

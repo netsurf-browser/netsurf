@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.17 2002/09/18 19:36:28 bursa Exp $
+ * $Id: layout.c,v 1.18 2002/09/19 19:54:43 bursa Exp $
  */
 
 #include <assert.h>
@@ -307,7 +307,9 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			h = line_height(b->style ? b->style : b->parent->parent->style);
 			b->height = h;
 			if (h > height) height = h;
-			x += font_width(b->style, b->text, b->length);
+			if (b->width == UNKNOWN_WIDTH)
+				b->width = font_width(b->style, b->text, b->length);
+			x += b->width;
 		}
 	}
 
@@ -321,7 +323,6 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		if (b->type == BOX_INLINE) {
 			b->x = x;
 			xp = x;
-			b->width = font_width(b->style, b->text, b->length);
 			x += b->width;
 			c = b;
 			move_y = 1;
@@ -366,7 +367,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		struct box * c2;
 
 		if (space == 0)
-			wp = w = font_width(c->style, c->text, c->length);
+			wp = w = c->width;
 		else
 			wp = w = font_width(c->style, c->text, space - c->text);
 
@@ -378,6 +379,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 				c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
 				c2->text = xstrdup(space + 1);
 				c2->length = c->length - ((space + 1) - c->text);
+				c2->width = UNKNOWN_WIDTH;
 				c->length = space - c->text;
 				c2->next = c->next;
 				c->next = c2;
@@ -402,6 +404,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
 			c2->text = xstrdup(space + 1);
 			c2->length = c->length - ((space + 1) - c->text);
+			c2->width = UNKNOWN_WIDTH;
 			c->length = space - c->text;
 			c2->next = c->next;
 			c->next = c2;
@@ -473,7 +476,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy)
 {
 	unsigned int columns = table->columns;  /* total columns */
-	unsigned long table_width;
+	unsigned long table_width, max_width = 0;
 	unsigned long x;
 	unsigned long table_height = 0;
 	unsigned long *xs;  /* array of column x positions */
@@ -508,22 +511,32 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 
 	fprintf(stderr, "table width %lu, min %lu, max %lu\n", table_width, table->min_width, table->max_width);
 
+	/* percentage width columns give an upper bound if possible */
+	for (i = 0; i < table->columns; i++) {
+		if (table->col[i].type == COLUMN_WIDTH_PERCENT) {
+			table->col[i].max = width * table->col[i].width / 100;
+			if (table->col[i].max < table->col[i].min)
+				table->col[i].max = table->col[i].min;
+		}
+		max_width += table->col[i].max;
+	}
+
 	if (table_width <= table->min_width) {
 		/* not enough space: minimise column widths */
 		for (i = 0; i < table->columns; i++) {
 			table->col[i].width = table->col[i].min;
 		}
 		table_width = table->min_width;
-	} else if (table->max_width <= table_width) {
+	} else if (max_width <= table_width) {
 		/* more space than maximum width: maximise widths */
 		for (i = 0; i < table->columns; i++) {
 			table->col[i].width = table->col[i].max;
 		}
-		table_width = table->max_width;
+		table_width = max_width;
         } else {
         	/* space between min and max: fill it exactly */
         	float scale = (float) (table_width - table->min_width) /
-        			(float) (table->max_width - table->min_width);
+        			(float) (max_width - table->min_width);
         	fprintf(stderr, "filling, scale %f\n", scale);
 		for (i = 0; i < table->columns; i++) {
 			table->col[i].width = table->col[i].min +
@@ -638,8 +651,9 @@ void calculate_inline_container_widths(struct box *box)
 		switch (child->type) {
 			case BOX_INLINE:
 				/* max = all one line */
-				width = font_width(child->style, child->text, child->length);
-				max += width;
+				child->width = font_width(child->style,
+						child->text, child->length);
+				max += child->width;
 
 				/* min = widest word */
 				for (word = child->text, space = strchr(child->text, ' ');
