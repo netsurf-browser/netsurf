@@ -415,9 +415,6 @@ void gui_multitask(void)
 
 		case wimp_KEY_PRESSED:
 		case wimp_MENU_SELECTION:
-		case wimp_USER_MESSAGE:
-		case wimp_USER_MESSAGE_RECORDED:
-		case wimp_USER_MESSAGE_ACKNOWLEDGE:
 			ro_gui_poll_queue(event, &block);
 			break;
 
