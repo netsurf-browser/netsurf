@@ -184,6 +184,7 @@ static char *sprite[6];
 
 /*	The drag buttons
 */
+bool dragging;
 wimp_mouse_state drag_buttons;
 
 /*	Whether the current selection was from a menu click
@@ -402,6 +403,7 @@ void ro_gui_hotlist_show(void) {
 
 bool ro_gui_hotlist_load(void) {
   	htmlDocPtr doc;
+  	const char *encoding;
 	fileswitch_object_type obj_type = 0;
 	struct hotlist_entry *netsurf;
 	struct hotlist_entry *entry = &root;
@@ -414,7 +416,8 @@ bool ro_gui_hotlist_load(void) {
 	if (obj_type != 0) {		
 		/*	Read our file
 		*/
-		doc = htmlParseFile("<Choices$Write>.WWW.NetSurf.Hotlist", "UTF-8");
+		encoding = xmlGetCharEncodingName(XML_CHAR_ENCODING_8859_1);
+		doc = htmlParseFile("<Choices$Write>.WWW.NetSurf.Hotlist", encoding);
 		if ((!doc) || (!(doc->children))) {
 			xmlFreeDoc(doc);
 			warn_user("HotlistLoadError", 0);
@@ -570,7 +573,8 @@ void ro_gui_hotlist_save_as(const char *file) {
 
 	/*	HTML header
 	*/
-	fprintf(fp, "<html>\n<head>\n<title>Hotlist</title>\n</head>\n<body>\n");
+	fprintf(fp, "<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\">\n");
+	fprintf(fp, "<title>Hotlist</title>\n</head>\n<body>\n");
 
 	/*	Start our recursive save
 	*/
@@ -603,22 +607,15 @@ bool ro_gui_hotlist_save_entry(FILE *fp, struct hotlist_entry *entry) {
 	while (entry) {
 	  	/*	Save this entry
 	  	*/
-	  	if (entry->url) {
-			fprintf(fp, "<li><a href=\"%s\">%s</a>\n", entry->url, entry->title);
+	  	if (entry->children >= 0) {
+			fprintf(fp, "<h4>%s</h4>\n", entry->title);
+			if (entry->child_entry) ro_gui_hotlist_save_entry(fp, entry->child_entry);
 		} else {
-			fprintf(fp, "<li>%s\n", entry->title);
-		}
-		if (entry->url) {
-			fprintf(fp, "<!-- Type:%i -->\n", entry->filetype);
-		}
-		if (entry->add_date != -1) fprintf(fp, "<!-- Added:%i -->\n", (int)entry->add_date);
-		if (entry->last_date != -1) fprintf(fp, "<!-- LastVisit:%i -->\n", (int)entry->last_date);
-		if (entry->visits != 0) fprintf(fp, "<!-- Visits:%i -->\n", entry->visits);
-
-		/*	Continue onwards
-		*/
-		if (entry->child_entry) {
-			ro_gui_hotlist_save_entry(fp, entry->child_entry);
+			fprintf(fp, "<li><a href=\"%s\">%s</a>\n", entry->url, entry->title);
+			if (entry->filetype != 0xfaf) fprintf(fp, "<!-- Type:%i -->\n", entry->filetype);
+			if (entry->add_date != -1) fprintf(fp, "<!--Added:%i-->\n", (int)entry->add_date);
+			if (entry->last_date != -1) fprintf(fp, "<!--LastVisit:%i-->\n", (int)entry->last_date);
+			if (entry->visits != 0) fprintf(fp, "<!--Visits:%i-->\n", entry->visits);
 		}
 		entry = entry->next_entry;
 	}
@@ -1435,6 +1432,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 							dragasprite_BOUND_POINTER |
 							dragasprite_DROP_SHADOW,
 							(osspriteop_area *) 1, drag_name, &box, 0);
+					dragging = true;
 				}
 			}
 		} else {
@@ -1497,6 +1495,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 			drag.bbox.y1 = state.visible.y1;
 			if (hotlist_toolbar) drag.bbox.y1 -= hotlist_toolbar->height;
 			xwimp_drag_box(&drag);
+			dragging = true;
 		}
 	}
 }
@@ -1858,6 +1857,10 @@ void ro_gui_hotlist_selection_drag_end(wimp_dragged *drag) {
 	wimp_window_state state;
 	int x0, y0, x1, y1;
 	int toolbar_height = 0;
+	
+	/*	Reset our dragging state
+	*/
+	dragging = false;
 
 	/*	Get the toolbar height
 	*/
@@ -1911,11 +1914,15 @@ void ro_gui_hotlist_move_drag_end(wimp_dragged *drag) {
 	struct hotlist_entry *entry;
 	int x, y, x0, y0, x1, y1;
 	bool before = false;
+	
+	/*	Reset our dragging state
+	*/
+	dragging = false;
 
-
+	/*	Check we dropped to our window
+	*/
 	xwimp_get_pointer_info(&pointer);
 	if (pointer.w != hotlist_window) return;
-
 
 	/*	Get the toolbar height
 	*/
@@ -2301,8 +2308,8 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 	/*	Close if we should
 	*/
 	if (pointer->buttons == wimp_CLICK_SELECT) {
-		ro_gui_dialog_close(pointer->w);
 	  	xwimp_create_menu((wimp_menu *)-1, 0, 0);
+		ro_gui_dialog_close(pointer->w);
 		return;
 	}
 	
@@ -2313,4 +2320,49 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 	} else {
 		ro_gui_hotlist_prepare_entry_dialog(dialog_entry_add);
 	}
+}
+
+
+int ro_gui_hotlist_help(int x, int y) {
+	struct hotlist_entry *entry;
+	wimp_window_state state;
+	int toolbar_height = 0;
+	int x_offset, y_offset;
+
+	/*	Return the dragging codes
+	*/
+	if (dragging) {
+		if (gui_current_drag_type == GUI_DRAG_HOTLIST_SELECT) return 6;
+		if (gui_current_drag_type == GUI_DRAG_HOTLIST_MOVE) return 7;
+		return -1;
+	}
+
+	/*	Get the toolbar height
+	*/
+	if (hotlist_toolbar) toolbar_height = hotlist_toolbar->height * 2;
+
+	/*	Get the window state to make everything relative
+	*/
+	state.w = hotlist_window;
+	wimp_get_window_state(&state);
+
+	/*	Create the relative positions
+	*/
+	x = x - state.visible.x0 - state.xscroll;
+	y = y - state.visible.y1 - state.yscroll + toolbar_height;
+
+	/*	Get the current entry
+	*/
+	entry = ro_gui_hotlist_find_entry(x, y, root.child_entry);
+	if (entry == NULL) return -1;
+
+	/*	Return the relevant code
+	*/
+	x_offset = x - entry->x0;
+	y_offset = y - (entry->y0 + entry->height);
+	if ((x_offset < HOTLIST_LEAF_INSET) && (y_offset > -HOTLIST_LINE_HEIGHT)) {
+		if (entry->children == 0) return -1;
+		return (((entry->children == -1) ? 2 : 0) + ((entry->expanded) ? 1 : 0));
+	}
+	return ((entry->children == -1) ? 5 : 4);
 }

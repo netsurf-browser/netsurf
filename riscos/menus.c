@@ -853,12 +853,12 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 
 		case 1: /* Save */
 			ro_gui_save_open(GUI_SAVE_SOURCE, c, true,
-					warning->pos.x, warning->pos.y, 0);
+					warning->pos.x, warning->pos.y, 0, false);
 			break;
 
 		case 2: /* Save complete */
 			ro_gui_save_open(GUI_SAVE_COMPLETE, c, true,
-					warning->pos.x, warning->pos.y, 0);
+					warning->pos.x, warning->pos.y, 0, false);
 			break;
 
 		case 3: /* Export as -> */
@@ -866,13 +866,13 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 			case 0: /* Draw */
 				ro_gui_save_open(GUI_SAVE_DRAW, c, true,
 						warning->pos.x, warning->pos.y,
-						0);
+						0, false);
 				break;
 
 			case 1: /* Text */
 				ro_gui_save_open(GUI_SAVE_TEXT, c, true,
 						warning->pos.x, warning->pos.y,
-						0);
+						0, false);
 				break;
 			}
 			break;
@@ -882,19 +882,19 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 			case 0: /* URI */
 				ro_gui_save_open(GUI_SAVE_LINK_URI, c, true,
 						warning->pos.x, warning->pos.y,
-						0);
+						0, false);
 				break;
 
 			case 1: /* URL */
 				ro_gui_save_open(GUI_SAVE_LINK_URL, c, true,
 						warning->pos.x, warning->pos.y,
-						0);
+						0, false);
 				break;
 
 			case 2: /* Text */
 				ro_gui_save_open(GUI_SAVE_LINK_TEXT, c, true,
 						warning->pos.x, warning->pos.y,
-						0);
+						0, false);
 				break;
 			}
 			break;
@@ -917,7 +917,7 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 		case 1: /* Save */
 			ro_gui_save_open(GUI_SAVE_OBJECT_ORIG, box->object,
 					true,
-					warning->pos.x, warning->pos.y, 0);
+					warning->pos.x, warning->pos.y, 0, false);
 			break;
 
 		case 2: /* Export */
@@ -926,7 +926,7 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 				ro_gui_save_open(GUI_SAVE_OBJECT_NATIVE,
 						box->object, true,
 						warning->pos.x, warning->pos.y,
-						0);
+						0, false);
 				break;
 			}
 			break;
@@ -937,21 +937,21 @@ void ro_gui_menu_browser_warning(wimp_message_menu_warning *warning)
 				ro_gui_save_open(GUI_SAVE_LINK_URI,
 						box->object, true,
 						warning->pos.x, warning->pos.y,
-						0);
+						0, false);
 				break;
 
 			case 1: /* URL */
 				ro_gui_save_open(GUI_SAVE_LINK_URL,
 						box->object, true,
 						warning->pos.x, warning->pos.y,
-						0);
+						0, false);
 				break;
 
 			case 2: /* Text */
 				ro_gui_save_open(GUI_SAVE_LINK_TEXT,
 						box->object, true,
 						warning->pos.x, warning->pos.y,
-						0);
+						0, false);
 				break;
 			}
 			break;
@@ -1040,7 +1040,7 @@ void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning)
 			break;
 		case 2: /* Export-> */
 			ro_gui_save_open(GUI_SAVE_HOTLIST_EXPORT_HTML, 0, true,
-					warning->pos.x, warning->pos.y, 0);
+					warning->pos.x, warning->pos.y, 0, false);
 			break;
 		}
 		break;

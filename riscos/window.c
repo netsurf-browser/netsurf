@@ -750,7 +750,7 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
 			current_gui = g;
 			ro_gui_save_open(GUI_SAVE_SOURCE,
 					g->data.browser.bw->current_content,
-					false, 0, 0, g->window);
+					false, 0, 0, g->window, false);
 			break;
 	}
 }
@@ -950,7 +950,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 		case wimp_KEY_CONTROL + wimp_KEY_F1:
 			current_gui = g;
 			ro_gui_menu_prepare_pageinfo();
-			ro_gui_dialog_open_persistant(g->window, dialog_pageinfo);
+			ro_gui_dialog_open_persistant(g->window, dialog_pageinfo, false);
 			return true;
 		case wimp_KEY_F1:	/* Help. */
 			ro_gui_open_help_page("docs");
@@ -998,25 +998,25 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 		case wimp_KEY_F3:
 			current_gui = g;
 			ro_gui_save_open(GUI_SAVE_SOURCE, content,
-					false, 0, 0, g->window);
+					false, 0, 0, g->window, true);
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_F3:
 			current_gui = g;
 			ro_gui_save_open(GUI_SAVE_TEXT, content,
-					false, 0, 0, g->window);
+					false, 0, 0, g->window, true);
 			return true;
 
 		case wimp_KEY_SHIFT + wimp_KEY_F3:
 			current_gui = g;
 			ro_gui_save_open(GUI_SAVE_COMPLETE, content,
-					false, 0, 0, g->window);
+					false, 0, 0, g->window, true);
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F3:
 			current_gui = g;
 			ro_gui_save_open(GUI_SAVE_DRAW, content,
-					false, 0, 0, g->window);
+					false, 0, 0, g->window, true);
 			return true;
 
 		case wimp_KEY_RETURN:

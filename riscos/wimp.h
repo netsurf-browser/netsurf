@@ -41,6 +41,7 @@ int ro_gui_get_icon_selected_state(wimp_w w, wimp_i i);
 #define ro_gui_set_icon_shaded_state(w, i, state) xwimp_set_icon_state(w, i, (state ? wimp_ICON_SHADED : 0), wimp_ICON_SHADED)
 void ro_gui_set_window_title(wimp_w w, const char *title);
 void ro_gui_set_caret_first(wimp_w w);
+void ro_gui_open_window_centre(wimp_w parent, wimp_w child);
 
 osspriteop_area *ro_gui_load_sprite_file(const char *pathname);
 bool ro_gui_wimp_sprite_exists(const char *sprite);

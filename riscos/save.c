@@ -77,7 +77,7 @@ struct gui_save_table_entry gui_save_table[] = {
  */
 
 void ro_gui_save_open(gui_save_type save_type, struct content *c,
-		bool sub_menu, int x, int y, wimp_w parent)
+		bool sub_menu, int x, int y, wimp_w parent, bool keypress)
 {
 	char icon_buf[20];
 	const char *icon = icon_buf;
@@ -117,7 +117,7 @@ void ro_gui_save_open(gui_save_type save_type, struct content *c,
 			warn_user("MenuError", error->errmess);
 		}
 	} else {
-		ro_gui_dialog_open_persistant(parent, dialog_saveas);
+		ro_gui_dialog_open_persistant(parent, dialog_saveas, !keypress);
 	}
 }
 
@@ -134,8 +134,8 @@ void ro_gui_save_click(wimp_pointer *pointer)
 	  		break;
 	  	case ICON_SAVE_CANCEL:
 	  		if (pointer->buttons == wimp_CLICK_SELECT) {
-	  		  	ro_gui_dialog_close(pointer->w);
 	  		  	xwimp_create_menu((wimp_menu *)-1, 0, 0);
+	  		  	ro_gui_dialog_close(pointer->w);
 	  		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
 /* 	  			ro_gui_menu_prepare_save(gui_save_content); */
 	  		}

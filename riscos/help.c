@@ -28,22 +28,31 @@
 	HelpIconbar	 Iconbar (no icon suffix is used)
 
 	HelpAppInfo	 Application info window
-	HelpBrowser	 Browser window
-	HelpHistory	 History window
+	HelpBrowser	 Browser window [*]
+	HelpHistory	 History window [*]
 	HelpObjInfo	 Object info window
 	HelpPageInfo	 Page info window
 	HelpSaveAs	 Save as window
 	HelpScaleView	 Scale view window
 	HelpStatus	 Status window
 	HelpToolbar	 Toolbar window
+	HelpHotlist	 Hotlist window [*]
+	HelpHotToolbar	 Hotlist window toolbar
+	HelpHotEntry	 Hotlist entry window
+	HelpHotFolder	 Hotlist entry window
 
 	HelpIconMenu	 Iconbar menu
 	HelpBrowserMenu  Browser window menu
+	HelpHotlistMenu  Hotlist window menu
 
 	The prefixes are followed by either the icon number (eg 'HelpToolbar7'), or a series
 	of numbers representing the menu structure (eg 'HelpBrowserMenu3-1-2').
 	If '<key><identifier>' is not available, then simply '<key>' is then used. For example
 	if 'HelpToolbar7' is not available then 'HelpToolbar' is then tried.
+	
+	For items marked with an asterisk [*] a call must be made to determine the required
+	help text as the window does not contain any icons. An example of this is the hotlist
+	window where ro_gui_hotlist_help() is called.
 */
 
 static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token);
@@ -98,6 +107,15 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		sprintf(message_token, "HelpSaveAs%i", (int)icon);
 	} else if (window == dialog_zoom) {
 		sprintf(message_token, "HelpScaleView%i", (int)icon);
+	} else if (window == dialog_folder) {
+		sprintf(message_token, "HelpHotFolder%i", (int)icon);
+	} else if (window == dialog_entry) {
+		sprintf(message_token, "HelpHotEntry%i", (int)icon);
+	} else if (window == hotlist_window) {
+		sprintf(message_token, "HelpHotlist%i",
+				ro_gui_hotlist_help(message_data->pos.x, message_data->pos.y));
+	} else if ((hotlist_toolbar) && (window == hotlist_toolbar->toolbar_handle)) {
+		sprintf(message_token, "HelpHotToolbar%i", (int)icon);
 	} else {
 
 		/*	Check if we have a browser window, toolbar window or status window
@@ -142,6 +160,8 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		sprintf(message_token, "HelpIconMenu");
 	} else if (current_menu == browser_menu) {
 		sprintf(message_token, "HelpBrowserMenu");
+	} else if (current_menu == hotlist_menu) {
+		sprintf(message_token, "HelpHotlistMenu");
 	} else {
 		return;
 	}
@@ -240,7 +260,7 @@ int ro_gui_interactive_help_available() {
 		/*	We can't just use strcmp due to string termination issues.
 		*/
 		if (strncmp(task.name, "Help", 4) == 0) {
-		  	if (task.name[4] < 32) return true;
+			if (task.name[4] < 32) return true;
 		}
 	} while (context >= 0);
 

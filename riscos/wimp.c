@@ -21,6 +21,7 @@
 #include "oslib/wimpreadsysinfo.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/desktop/gui.h"
+#include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
@@ -314,6 +315,62 @@ void ro_gui_set_caret_first(wimp_w w) {
 			return;		  
 		}
 	}
+}
+
+
+/**
+ * Opens a window at the centre of either another window or the screen
+ *
+ * /param parent the parent window (NULL for centre of screen)
+ * /param child the child window
+ */
+void ro_gui_open_window_centre(wimp_w parent, wimp_w child) {
+	os_error *error;
+	wimp_window_state state;
+	int mid_x, mid_y;
+	int dimension, scroll_width;
+
+	/*	Get the parent window state
+	*/
+	if (parent) {
+		state.w = parent;
+		error = xwimp_get_window_state(&state);
+		if (error) {
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+		scroll_width = ro_get_vscroll_width(parent);
+	
+		/*	Get the centre of the parent
+		*/
+		mid_x = (state.visible.x0 + state.visible.x1 + scroll_width) / 2;
+ 		mid_y = (state.visible.y0 + state.visible.y1) / 2;
+ 	} else {
+		ro_gui_screen_size(&mid_x, &mid_y);
+		mid_x /= 2;
+		mid_y /= 2;
+ 	}
+
+	/*	Get the child window state
+	*/
+	state.w = child;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	/*	Move to the centre of the parent at the top of the stack
+	*/
+	dimension = state.visible.x1 - state.visible.x0;
+	scroll_width = ro_get_vscroll_width(hotlist_window);
+	state.visible.x0 = mid_x - (dimension + scroll_width) / 2;
+	state.visible.x1 = state.visible.x0 + dimension;
+	dimension = state.visible.y1 - state.visible.y0;
+	state.visible.y0 = mid_y - dimension / 2;
+	state.visible.y1 = state.visible.y0 + dimension;
+	state.next = wimp_TOP;
+	wimp_open_window((wimp_open *) &state);
 }
 
 

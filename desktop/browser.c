@@ -220,6 +220,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			bw->current_content = c;
 			bw->loading_content = 0;
 			bw->caret_callback = 0;
+			gui_window_new_content(bw->window);
 			gui_window_set_url(bw->window, c->url);
 			browser_window_update(bw, true);
 			browser_window_set_status(bw, c->status_message);

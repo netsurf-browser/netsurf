@@ -280,3 +280,21 @@ HelpScaleView7:\Sautomatically choose a scale of 100%.
 HelpScaleView8:\Sautomatically choose a scale of 120%.
 HelpScaleView9:\Scancel changes.|MThe current scale will not be changed.
 HelpScaleView10:\Schange the view to the scale you have chosen.
+
+HelpHotFolder:Use this \w to set the folder name.
+HelpHotEntry:Use this \w to set the entry details.
+HelpHotlist:Use this window to view and modify your hotlists.
+HelpHotlist0:\Sto expand this folder.
+HelpHotlist1:\Sto collapse this folder.
+HelpHotlist2:\Sto show the entry details.
+HelpHotlist3:\Sto hide the entry details.
+HelpHotlist4:\Sto select this folder.
+HelpHotlist5:\Sto select this entry.
+HelpHotlist6:Release the mouse buttons to complete your selection.
+HelpHotlist7:Release the mouse buttons to move the selection.
+
+HelpHotToolbar0:\Tcreate button.|M\Screate a new folder.|M\Acreate a new entry.
+HelpHotToolbar1:\Tdelete button.|M\Sdelete the current selection.
+HelpHotToolbar2:\Tlaunch button.|M\Slaunch the current selection.
+HelpHotToolbar3:\Texpand folders button.|M\Sexpand all folders.|M\Acollapse all folders.|M
+HelpHotToolbar4:\Texpand entries button.|M\Sexpand all entries.|M\Acollapse all entries.|M

@@ -52,7 +52,7 @@ void gui_401login_open(struct browser_window *bw, struct content *c, char *realm
 	assert(host);
 	bwin = bw;
 
-	ro_gui_401login_open(host, realm, murl);
+	ro_gui_401login_open(bw->window->window, host, realm, murl);
 
 	xfree(host);
 }
@@ -62,7 +62,7 @@ void gui_401login_open(struct browser_window *bw, struct content *c, char *realm
  * Open a 401 login window.
  */
 
-void ro_gui_401login_open(char *host, char* realm, char *fetchurl)
+void ro_gui_401login_open(wimp_w parent, char *host, char* realm, char *fetchurl)
 {
 	url = xstrdup(fetchurl);
 	uname = xcalloc(1, 256);
@@ -89,9 +89,7 @@ void ro_gui_401login_open(char *host, char* realm, char *fetchurl)
 
 	/* create and open the window */
 	dialog_401li = wimp_create_window(dialog_401_template);
-	ro_gui_dialog_open(dialog_401li);
-	wimp_set_caret_position(dialog_401li, ICON_401LOGIN_USERNAME,
-			-1, -1, -1, 0);
+	ro_gui_dialog_open_persistant(parent, dialog_401li, false);
 }
 
 bool ro_gui_401login_keypress(wimp_key *key)
@@ -101,9 +99,6 @@ bool ro_gui_401login_keypress(wimp_key *key)
 			get_unamepwd();
 			ro_gui_dialog_close(dialog_401li);
 			browser_window_go(bwin, url);
-			return true;
-		case wimp_KEY_ESCAPE:
-			ro_gui_dialog_close(dialog_401li);
 			return true;
 	}
 

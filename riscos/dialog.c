@@ -224,18 +224,19 @@ void ro_gui_dialog_open(wimp_w w)
 /**
  * Open a persistant dialog box relative to the pointer.
  *
- * \param parent the owning window (NULL for no owner)
- * \param w      the dialog window
+ * \param parent  the owning window (NULL for no owner)
+ * \param w       the dialog window
+ * \param pointer open the window at the pointer (centre of the parent otherwise)
  */
-void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w) {
+void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 	int dx, dy, i;
-	wimp_pointer pointer;
+	wimp_pointer ptr;
 	wimp_window_state open;
 	os_error *error;
 	
 	/*	Get the pointer position
 	*/
-	error = xwimp_get_pointer_info(&pointer);
+	error = xwimp_get_pointer_info(&ptr);
 	if (error) {
 		LOG(("xwimp_get_pointer_info: 0x%x: %s\n",
 				error->errnum, error->errmess));
@@ -245,16 +246,20 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w) {
 
 	/*	Move and open
 	*/
-	open.w = w;
-	wimp_get_window_state(&open);
-	dx = (open.visible.x1 - open.visible.x0);
-	dy = (open.visible.y1 - open.visible.y0);
-	open.visible.x0 = pointer.pos.x - 64;
-	open.visible.x1 = pointer.pos.x - 64 + dx;
-	open.visible.y0 = pointer.pos.y - dy;
-	open.visible.y1 = pointer.pos.y;
-	open.next = wimp_TOP;
-	wimp_open_window((wimp_open *) &open);
+	if (pointer) {
+		open.w = w;
+		wimp_get_window_state(&open);
+		dx = (open.visible.x1 - open.visible.x0);
+		dy = (open.visible.y1 - open.visible.y0);
+		open.visible.x0 = ptr.pos.x - 64;
+		open.visible.x1 = ptr.pos.x - 64 + dx;
+		open.visible.y0 = ptr.pos.y - dy;
+		open.visible.y1 = ptr.pos.y;
+		open.next = wimp_TOP;
+		wimp_open_window((wimp_open *) &open);
+	} else {
+		ro_gui_open_window_centre(parent, w);
+	}
 	
 	/*	Set the caret position
 	*/

@@ -1354,6 +1354,16 @@ void gui_launch_url(const char *url)
 }
 
 
+/**
+ * Called when the gui_window has new content
+ *
+ * \g the gui_window that has new content
+ */
+void gui_window_new_content(gui_window *g) {
+	ro_gui_dialog_close_persistant(g->window);
+}
+
+
 static char warn_buffer[300];
 
 /**

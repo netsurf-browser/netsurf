@@ -65,4 +65,6 @@ void gui_window_place_caret(gui_window *g, int x, int y, int height);
 
 void gui_launch_url(const char *url);
 
+void gui_window_new_content(gui_window *g);
+
 #endif
