@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.33 2003/06/17 19:24:21 bursa Exp $
+ * $Id: gui.c,v 1.34 2003/06/24 23:22:00 bursa Exp $
  */
 
 #include "netsurf/desktop/options.h"
@@ -22,6 +22,8 @@
 #include <math.h>
 
 const char *__dynamic_da_name = "NetSurf";
+
+char *NETSURF_DIR;
 
 int gadget_subtract_x;
 int gadget_subtract_y;
@@ -1108,6 +1110,8 @@ void gui_init(int argc, char** argv)
   char *var;
   os_error *e;
   fileswitch_object_type *ot;
+
+  NETSURF_DIR = getenv("NetSurf$Dir");
 
 /*   __riscosify_control = __RISCOSIFY_NO_PROCESS; */
 

@@ -1,5 +1,5 @@
 /**
- * $Id: cache.c,v 1.4 2003/06/17 19:24:20 bursa Exp $
+ * $Id: cache.c,v 1.5 2003/06/24 23:22:00 bursa Exp $
  */
 
 #include <assert.h>
@@ -27,21 +27,23 @@ void content_destroy(struct content *c);
  * internal structures and declarations
  */
 
+static void cache_shrink(void);
+static unsigned long cache_size(void);
+
 struct cache_entry {
 	struct content *content;
-	time_t t;
 	struct cache_entry *next, *prev;
 };
 
 /* doubly-linked lists using a sentinel */
 /* TODO: replace with a structure which can be searched faster */
-static struct cache_entry inuse_list_sentinel  = {0, 0, &inuse_list_sentinel,  &inuse_list_sentinel};
-static struct cache_entry unused_list_sentinel = {0, 0, &unused_list_sentinel, &unused_list_sentinel};
+/* unused list is ordered from most recently to least recently used */
+static struct cache_entry inuse_list_sentinel  = {0, &inuse_list_sentinel,  &inuse_list_sentinel};
+static struct cache_entry unused_list_sentinel = {0, &unused_list_sentinel, &unused_list_sentinel};
 static struct cache_entry *inuse_list  = &inuse_list_sentinel;
 static struct cache_entry *unused_list = &unused_list_sentinel;
 
 static unsigned long max_size = 1024*1024;	/* TODO: make this configurable */
-static unsigned long current_size = 0;
 
 
 /**
@@ -110,19 +112,7 @@ void cache_put(struct content * content)
 	struct cache_entry * e;
 	LOG(("content %p, url '%s', size %lu", content, content->url, content->size));
 
-	/* TODO: contents will grow in size as they load */
-	current_size += content->size;
-	/* clear old data from the usused_list until the size drops below max_size */
-	while (max_size < current_size && unused_list->next != unused_list) {
-		e = unused_list->next;
-		LOG(("size %lu, removing %p '%s'", current_size, e->content, e->content->url));
-		/* TODO: move to disc cache */
-		current_size -= e->content->size;
-		content_destroy(e->content);
-		unused_list->next = e->next;
-		e->next->prev = e->prev;
-		xfree(e);
-	}
+	cache_shrink();
 
 	/* add the new content to the inuse_list */
 	e = xcalloc(1, sizeof(struct cache_entry));
@@ -146,32 +136,66 @@ void cache_freeable(struct content * content)
 	assert(e != 0);
 	LOG(("content %p, url '%s'", content, content->url));
 
-	/* move to unused_list or destroy if insufficient space */
-	e->t = time(0);
+	/* move to unused_list */
 	e->prev->next = e->next;
 	e->next->prev = e->prev;
-	if (max_size < current_size) {
-		LOG(("size %lu, removing", current_size));
-		/* TODO: move to disc cache */
-		current_size -= e->content->size;
-		content_destroy(e->content);
-		xfree(e);
-	} else {
-		LOG(("size %lu, moving to unused_list", current_size));
-		e->prev = unused_list->prev;
-		e->next = unused_list;
-		unused_list->prev->next = e;
-		unused_list->prev = e;
-	}
+	e->prev = unused_list;
+	e->next = unused_list->next;
+	unused_list->next->prev = e;
+	unused_list->next = e;
 }
 
+
+/**
+ * cache_destroy -- remove a content immediately
+ */
 
 void cache_destroy(struct content * content)
 {
 	struct cache_entry * e = content->cache;
 	e->prev->next = e->next;
 	e->next->prev = e->prev;
-	current_size -= content->size;
+	xfree(e);
+}
+
+
+/**
+ * cache_shrink -- attempt to reduce cache size below max_size
+ */
+
+void cache_shrink(void)
+{
+	struct cache_entry * e;
+	unsigned long size = cache_size();
+
+	/* clear old data from the usused_list until the size drops below max_size */
+	while (max_size < size && unused_list->next != unused_list) {
+		e = unused_list->prev;
+		LOG(("size %lu, removing %p '%s'", size, e->content, e->content->url));
+		/* TODO: move to disc cache */
+		size -= e->content->size;
+		content_destroy(e->content);
+		unused_list->prev = e->prev;
+		e->prev->next = unused_list;
+		xfree(e);
+	}
+	LOG(("size %lu", size));
+}
+
+
+/**
+ * cache_size -- current size of the cache
+ */
+
+unsigned long cache_size(void)
+{
+	struct cache_entry * e;
+	unsigned long size = 0;
+	for (e = inuse_list->next; e != inuse_list; e = e->next)
+		size += e->content->size;
+	for (e = unused_list->next; e != unused_list; e = e->next)
+		size += e->content->size;
+	return size;
 }
 
 
@@ -181,15 +205,15 @@ void cache_destroy(struct content * content)
 
 void cache_dump(void) {
 	struct cache_entry * e;
-	LOG(("size %lu", current_size));
+	LOG(("size %lu", cache_size()));
 	LOG(("inuse_list:"));
 	for (e = inuse_list->next; e != inuse_list; e = e->next)
 		LOG(("  content %p, size %lu, url '%s'", e->content,
 					e->content->size, e->content->url));
 	LOG(("unused_list (time now %lu):", time(0)));
 	for (e = unused_list->next; e != unused_list; e = e->next)
-		LOG(("  content %p, size %lu, url '%s', t %lu", e->content,
-					e->content->size, e->content->url, e->t));
+		LOG(("  content %p, size %lu, url '%s'", e->content,
+					e->content->size, e->content->url));
 	LOG(("end"));
 }
 

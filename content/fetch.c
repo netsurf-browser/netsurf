@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.c,v 1.10 2003/06/17 19:24:20 bursa Exp $
+ * $Id: fetch.c,v 1.11 2003/06/24 23:22:00 bursa Exp $
  *
  * This module handles fetching of data from any url.
  *
@@ -21,6 +21,9 @@
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/desktop/options.h"
+#ifdef riscos
+#include "netsurf/desktop/gui.h"
+#endif
 
 struct fetch
 {
@@ -42,6 +45,7 @@ struct fetch
 };
 
 static const char * const user_agent = "NetSurf";
+static char * ca_bundle;
 static CURLM * curl_multi;
 static struct fetch *fetch_list = 0;
 
@@ -64,6 +68,12 @@ void fetch_init(void)
 	curl_multi = curl_multi_init();
 	if (curl_multi == 0)
 		die("curl_multi_init failed");
+
+#ifdef riscos
+	ca_bundle = xcalloc(strlen(NETSURF_DIR) + 100, 1);
+	sprintf(ca_bundle, "%s.Resources.ca-bundle", NETSURF_DIR);
+	LOG(("ca_bundle '%s'", ca_bundle));
+#endif
 }
 
 
@@ -170,6 +180,10 @@ struct fetch * fetch_start(char *url, char *referer,
 		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_REFERER, referer);
 		assert(code == CURLE_OK);
 	}
+#ifdef riscos
+	code = curl_easy_setopt(fetch->curl_handle, CURLOPT_CAINFO, ca_bundle);
+	assert(code == CURLE_OK);
+#endif
 
 	/* custom request headers */
 	fetch->headers = 0;

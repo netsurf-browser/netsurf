@@ -1,11 +1,13 @@
 /**
- * $Id: gui.h,v 1.6 2003/04/15 18:07:25 bursa Exp $
+ * $Id: gui.h,v 1.7 2003/06/24 23:22:00 bursa Exp $
  */
 
 #ifndef _NETSURF_RISCOS_GUI_H_
 #define _NETSURF_RISCOS_GUI_H_
 
 #include "oslib/wimp.h"
+
+extern char *NETSURF_DIR;
 
 struct ro_gui_window;
 typedef struct ro_gui_window gui_window;
