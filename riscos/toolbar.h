@@ -12,6 +12,7 @@
 #ifndef _NETSURF_RISCOS_TOOLBAR_H_
 #define _NETSURF_RISCOS_TOOLBAR_H_
 
+#include "netsurf/riscos/theme.h"
 #include "oslib/wimp.h"
 
 
@@ -34,6 +35,7 @@ struct toolbar {
 	*/
 	unsigned int throbber_width;	// Throbber width (0 = unavaiable)
 	unsigned int throbber_height;	// Throbber height (0 = unavaiable)
+	int throbber_frames;		// Throbber frames (0 = unavaiable)
 	unsigned int status_window;	// Show status window?
 	unsigned int standard_buttons;	// Show standard buttons?
 	unsigned int url_bar;	// Show URL bar?
@@ -55,7 +57,7 @@ struct toolbar {
 };
 
 
-struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer,
+struct toolbar *ro_toolbar_create(struct theme_entry *theme, char *url_buffer,
 		char *status_buffer, char *throbber_buffer, int toolbar_type);
 void ro_toolbar_destroy(struct toolbar *toolbar);
 void ro_toolbar_resize_status(struct toolbar *toolbar, int height);

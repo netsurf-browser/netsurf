@@ -165,6 +165,7 @@ void gui_init(int argc, char** argv)
 	char theme_fname[256];
 	os_error *error;
 	int length;
+	struct theme_entry *theme;
 
 	xhourglass_start(1);
 
@@ -223,7 +224,10 @@ void gui_init(int argc, char** argv)
 	}
 	if (option_theme == NULL)
 		strcpy(theme_fname, "<NetSurf$Dir>.Themes.Default");
-	ro_theme_load(theme_fname);
+	theme = ro_theme_load(theme_fname);
+	if (theme == NULL)
+		LOG(("Unable to load default theme"));
+	ro_theme_apply(theme);
 
 	if ((length = snprintf(path, sizeof(path),
 			"<NetSurf$Dir>.Resources.%s.Templates",

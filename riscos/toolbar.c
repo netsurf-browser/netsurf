@@ -17,6 +17,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/toolbar.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
@@ -98,13 +99,19 @@ static void ro_toolbar_add_icon(struct toolbar *toolbar, struct toolbar_icon *ic
 /**
  * Creates a toolbar with a complete set of icons
  *
- * \param  sprite_area  the sprite area to read from
+ * \param  theme  the theme to use settings from
  */
-struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer,
+struct toolbar *ro_toolbar_create(struct theme_entry *theme, char *url_buffer,
 						char *status_buffer, char *throbber_buffer,
 						int toolbar_type) {
+	osspriteop_area *sprite_area;
 	struct toolbar *toolbar;
 	wimp_i icon_handle;
+
+	/*	Get our sprite area from the theme
+	*/
+	if (!theme) return NULL;
+	sprite_area = theme->sprite_area;
 
 	/*	Create a new toolbar
 	*/
@@ -117,6 +124,13 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 	toolbar->status_window = (toolbar_type == TOOLBAR_BROWSER);
 	toolbar->status_old_width = 0xffffffff;
 	toolbar->type = toolbar_type;
+
+	/*	Get the throbber details. These are held by the theme so we don't need
+		to query the sprite file each time.
+	*/
+	toolbar->throbber_width = theme->throbber_width;
+	toolbar->throbber_height = theme->throbber_height;
+	toolbar->throbber_frames = theme->throbber_frames;
 
 	/*	Load the toolbar icons
 	*/
@@ -160,12 +174,18 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 	*/
 	if (toolbar_type == TOOLBAR_BROWSER) {
 		empty_window.ymin = 36;
+		empty_window.work_bg = theme->status_background;
 		if (xwimp_create_window(&empty_window, &toolbar->status_handle)) {
 			ro_toolbar_destroy(toolbar);
 			return NULL;
 		}
 	}
 	empty_window.ymin = 1;
+	if (toolbar_type == TOOLBAR_BROWSER) {
+		empty_window.work_bg = theme->browser_background;
+	} else {
+		empty_window.work_bg = theme->hotlist_background;
+	}
 	if (xwimp_create_window(&empty_window, &toolbar->toolbar_handle)) {
 		ro_toolbar_destroy(toolbar);
 		return NULL;
@@ -179,8 +199,9 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 		empty_icon.icon.extent.y0 = 0;
 		empty_icon.icon.extent.x1 = 16384;
 		empty_icon.icon.extent.y1 = 36;
-		empty_icon.icon.flags = wimp_ICON_TEXT | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-				wimp_ICON_INDIRECTED | wimp_ICON_VCENTRED;
+		empty_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_VCENTRED |
+				(theme->status_foreground << wimp_ICON_FG_COLOUR_SHIFT) |
+			 	(theme->status_background << wimp_ICON_BG_COLOUR_SHIFT);
 		empty_icon.icon.data.indirected_text.text = status_buffer;
 		empty_icon.icon.data.indirected_text.validation = 0;
 		empty_icon.icon.data.indirected_text.size = 256;

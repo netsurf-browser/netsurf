@@ -875,20 +875,16 @@ void ro_gui_throb(void)
 	os_t t;
 	struct gui_window *g;
 
-	if (theme_throbs == 0)
-		return;
-
 	xos_read_monotonic_time(&t);
 
 	for (g = window_list; g; g = g->next) {
-		if (!g->bw->throbbing || !g->toolbar)
+		if (!g->bw->throbbing || !g->toolbar || (g->toolbar->throbber_frames == 0))
 			continue;
 		if (t < g->throbtime + 10)
 			continue;
-
 		g->throbtime = t;
 		g->throbber++;
-		if (theme_throbs < g->throbber)
+		if (g->toolbar->throbber_frames < g->throbber)
 			g->throbber = 0;
 		sprintf(g->throb_buf, "throbber%i", g->throbber);
 		ro_gui_redraw_icon(g->toolbar->toolbar_handle,
@@ -1157,8 +1153,6 @@ void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 void gui_window_start_throbber(struct gui_window *g)
 {
 	ro_gui_prepare_navigate(g);
-	if (theme_throbs == 0)
-		return;
 	xos_read_monotonic_time(&g->throbtime);
 	g->throbber = 0;
 }

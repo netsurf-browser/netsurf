@@ -23,18 +23,28 @@
 struct toolbar;
 
 struct theme_entry {
-	char *name;
-	osspriteop_area *sprite_area;
+	char *name;			/**< theme name */
+	char *author;			/**< theme author */
+	osspriteop_area *sprite_area;	/**< sprite area for theme */
+	int throbber_width;		/**< width of the throbber */
+	int throbber_height;		/**< height of the throbber */
+	int throbber_frames;		/**< frames of animation for the throbber */
+	int browser_background;		/**< background colour of browser toolbar */
+	int hotlist_background;		/**< background colour of hotlist toolbar */
+	int status_background;		/**< background colour of status window */
+	int status_foreground;		/**< colour of status window text */
+	bool default_settings;		/**< no theme was loaded, defaults used */
+	struct theme_entry *next;	/**< next entry in theme list */
+
 };
 
-extern int theme_throbs;
-
-void ro_theme_load(char *pathname);
+void ro_theme_apply(struct theme_entry *theme);
+struct theme_entry *ro_theme_load(char *pathname);
 void ro_theme_create_browser_toolbar(struct gui_window *g);
 void ro_theme_create_hotlist_toolbar(void);
 int ro_theme_update_toolbar(struct toolbar *toolbar, wimp_w window);
 int ro_theme_resize_toolbar(struct toolbar *toolbar, wimp_w window);
 struct theme_entry *ro_theme_list(unsigned int *entries);
-void ro_theme_list_free(struct theme_entry *list, unsigned int entries);
+void ro_theme_free(struct theme_entry *theme);
 
 #endif

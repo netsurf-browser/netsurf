@@ -29,48 +29,28 @@
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
 
-/*	Current sprite area
+/*	Current theme
 */
-static osspriteop_area *theme_sprite_area = 0;
-
-/*	Throbber details
-*/
-int theme_throbs;
-static int throbber_width;
-static int throbber_height;
+static struct theme_entry *ro_theme_current = NULL;
 
 
 /**
- * Load a theme from a directory.
+ * Apply the current theme
  *
- * The directory must contain a Templates file containing the toolbar template,
- * and a Sprites file containing icons.
+ * /param  theme  the theme to apply
  */
-
-void ro_theme_load(char *pathname) {
-	osbool mask;
-	os_mode mode;
- 	os_coord dimensions;
-	int size, i, n;
-	char *filename = alloca(strlen(pathname) + 16);
+void ro_theme_apply(struct theme_entry *theme) {
+#ifdef WITH_KIOSK_THEMES
 	char *kioskfilename = alloca(strlen(pathname) + 16);
-	fileswitch_object_type obj_type;
+#endif
 
-	/*	Release previous sprite are
+	/*	Release any previous theme
 	*/
-	free(theme_sprite_area);
-	theme_sprite_area = NULL;
-
-	/*	Reset the throbber variables
+	if (ro_theme_current) ro_theme_free(ro_theme_current);
+  
+	/*	Set the current theme
 	*/
-	theme_throbs = 0;
-	throbber_height = 0;
-	throbber_width = 0;
-
-	/*	Load the sprites
-	*/
-	sprintf(filename, "%s.Sprites", pathname);
-	xosfile_read_no_path(filename, &obj_type, 0, 0, &size, 0);
+	ro_theme_current = theme;
 
        /*       Load the window furniture if using Kiosk Themes
         *
@@ -81,51 +61,114 @@ void ro_theme_load(char *pathname) {
 #ifdef WITH_KIOSK_THEMES
         sprintf(kioskfilename, "%s.!SetTheme", pathname);
         xos_cli(kioskfilename);
-
 #endif
+	
+	/* todo: update all current windows */
+}
+
+
+/**
+ * Load a theme from a directory.
+ *
+ * Ideally, the directory should contain a Sprite file and a Text options file.
+ * If the path is invalid, or neither of these are present then a default theme
+ * is returned with no icons present.
+ */
+
+struct theme_entry *ro_theme_load(char *pathname) {
+	osbool mask;
+	os_mode mode;
+ 	os_coord dimensions;
+	int size, i, n;
+	char *filename = alloca(strlen(pathname) + 16);
+	fileswitch_object_type obj_type;
+	struct theme_entry *theme;
+	os_error *error;
+	
+	/*	Get some memory for the theme
+	*/
+	theme = (struct theme_entry *)calloc(1, sizeof(struct theme_entry));
+	if (!theme) {
+	  	LOG(("Failed to claim memory to hold theme."));
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+	theme->default_settings = true;
+
+	/*	Load the sprites
+	*/
+	sprintf(filename, "%s.Sprites", pathname);
+	xosfile_read_no_path(filename, &obj_type, 0, 0, &size, 0);
+
 	/*	Claim memory for a sprite file if we have one
 	*/
-	if (obj_type & fileswitch_IS_FILE) theme_sprite_area = malloc(size + 16);
+	if (obj_type & fileswitch_IS_FILE) theme->sprite_area = malloc(size + 16);
 
 	/*	Load the sprite file if we have any memory
 	*/
-	if (theme_sprite_area) {
+	if (theme->sprite_area) {
 
 	  	/*	Initialise then load
 	  	*/
-		theme_sprite_area->size = size + 16;
-		theme_sprite_area->sprite_count = 0;
-		theme_sprite_area->first = 16;
-		theme_sprite_area->used = 16;
-		xosspriteop_clear_sprites(osspriteop_USER_AREA, theme_sprite_area);
-		xosspriteop_load_sprite_file(osspriteop_USER_AREA, theme_sprite_area,
+		theme->sprite_area->size = size + 16;
+		theme->sprite_area->sprite_count = 0;
+		theme->sprite_area->first = 16;
+		theme->sprite_area->used = 16;
+		xosspriteop_clear_sprites(osspriteop_USER_AREA, theme->sprite_area);
+		error = xosspriteop_load_sprite_file(osspriteop_USER_AREA, theme->sprite_area,
 				filename);
+		if (error) {
+			free(theme->sprite_area);
+			theme->sprite_area = NULL;
+		}
+	}
+	
+	/*	Get the throbber details
+	*/
+	if (theme->sprite_area) {
+	  	/*	We aren't default
+	  	*/
+	  	theme->default_settings = false;
 
 		/*	Find the highest sprite called 'throbber%i', and get the maximum
 			dimensions for all 'thobber%i' icons. We use the filename buffer
 			as the temporary spritename buffer as it is guaranteed to be at
 			least 12 bytes (max sprite name size).
 		*/
-		for (i = 1; i <= theme_sprite_area->sprite_count; i++) {
+		for (i = 1; i <= theme->sprite_area->sprite_count; i++) {
 			osspriteop_return_name(osspriteop_USER_AREA,
-					theme_sprite_area, filename, 12, i);
+					theme->sprite_area, filename, 12, i);
 			if (strncmp(filename, "throbber", 8) == 0) {
 			  	/*	Get the max sprite width/height
 			  	*/
 				xosspriteop_read_sprite_info(osspriteop_USER_AREA,
-					theme_sprite_area, (osspriteop_id)filename,
+					theme->sprite_area, (osspriteop_id)filename,
 					&dimensions.x, &dimensions.y, &mask, &mode);
 				ro_convert_pixels_to_os_units(&dimensions, mode);
-				if (dimensions.x > throbber_width) throbber_width = dimensions.x;
-				if (dimensions.y > throbber_height) throbber_height = dimensions.y;
+				if (dimensions.x > theme->throbber_width)
+						theme->throbber_width = dimensions.x;
+				if (dimensions.y > theme->throbber_height)
+						theme->throbber_height = dimensions.y;
 
 				/*	Get the throbber number
 				*/
 				n = atoi(filename + 8);
-				if (theme_throbs < n) theme_throbs = n;
+				if (theme->throbber_frames < n) theme->throbber_frames = n;
 			}
 		}
 	}
+	
+	/*	Load the options
+	*/
+	theme->browser_background = wimp_COLOUR_VERY_LIGHT_GREY;
+	theme->hotlist_background = wimp_COLOUR_VERY_LIGHT_GREY;
+	theme->status_background = wimp_COLOUR_VERY_LIGHT_GREY;
+	theme->status_foreground = wimp_COLOUR_BLACK;
+	/* todo: impement option loading */
+	
+	/*	Return our new theme
+	*/
+	return theme;
 }
 
 
@@ -146,14 +189,12 @@ void ro_theme_create_browser_toolbar(struct gui_window *g) {
 	}
   	/*	Create a toolbar
   	*/
-  	toolbar = ro_toolbar_create(theme_sprite_area, g->url, g->status,
+  	toolbar = ro_toolbar_create(ro_theme_current, g->url, g->status,
   			g->throb_buf, TOOLBAR_BROWSER);
   	if (toolbar == NULL) return;
 
-  	/*	Set up the throbber
+  	/*	Set up the default status width
   	*/
-  	toolbar->throbber_width = throbber_width;
-  	toolbar->throbber_height = throbber_height;
   	toolbar->status_width = 640;
 
   	/*	Store our toolbar
@@ -184,7 +225,7 @@ void ro_theme_create_hotlist_toolbar(void) {
 
   	/*	Create a toolbar
   	*/
-  	toolbar = ro_toolbar_create(theme_sprite_area, NULL, NULL,
+  	toolbar = ro_toolbar_create(ro_theme_current, NULL, NULL,
   			NULL, TOOLBAR_HOTLIST);
   	if (toolbar == NULL) return;
 
@@ -351,23 +392,20 @@ int ro_theme_resize_toolbar(struct toolbar *toolbar, wimp_w window) {
 /**
  * Make a list of available themes.
  *
- * \param  entries  updated to number of themes
- * \return  array of struct theme_entry, or 0 on error, and error reported
+ * \return a forwardly link list of available themes
  */
 
-struct theme_entry *ro_theme_list(unsigned int *entries)
-{
+struct theme_entry *ro_theme_list(unsigned int *entries) {
 	char pathname[256];
-	unsigned int i = 0, n = 0;
 	int context = 0;
 	int read_count;
-	struct theme_entry *list = 0, *list1;
-	fileswitch_object_type obj_type;
-	int file_type;
+	struct theme_entry *first = NULL;
+	struct theme_entry *last = NULL;
+	struct theme_entry *theme = NULL;
 	osgbpb_INFO(100) info;
 	os_error *error;
 
-	/* invariant: list[0..n) are valid */
+	*entries = 0;
 	while (context != -1) {
 		error = xosgbpb_dir_entries_info(THEMES_DIR,
 				(osgbpb_info_list *) &info, 1, context,
@@ -376,82 +414,64 @@ struct theme_entry *ro_theme_list(unsigned int *entries)
 			LOG(("xosgbpb_dir_entries_info: 0x%x: %s",
 				error->errnum, error->errmess));
 			warn_user("MiscError", error->errmess);
-			ro_theme_list_free(list, n);
-			return 0;
+			ro_theme_free(first);
+			*entries = 0;
+			return NULL;
 		}
 
 		if (read_count == 0)
 			continue;
-		if (info.obj_type != fileswitch_IS_DIR)
-			continue;
 
-		/* check for presence of Sprites in directory */
-		snprintf(pathname, sizeof pathname, "%s.%s.%s",
-				THEMES_DIR, info.name, "Sprites");
+		/*	Get our directory name
+		*/
+		snprintf(pathname, sizeof pathname, "%s.%s",
+				THEMES_DIR, info.name);
 		pathname[sizeof pathname - 1] = 0;
-		error = xosfile_read_stamped_no_path(pathname,
-				&obj_type, 0, 0, 0, 0, &file_type);
-		if (error) {
-			LOG(("xosfile_read_stamped_no_path: 0x%x: %s",
-				error->errnum, error->errmess));
-			warn_user("MiscError", error->errmess);
-			ro_theme_list_free(list, n);
-			return 0;
+		
+		/*	Load the theme and link it in
+		*/
+		theme = ro_theme_load(pathname);
+		if (theme && !(theme->default_settings)) {
+			if (first) {
+				last->next = theme;
+			} else {
+				first = theme;
+			}
+			last = theme;
+			*entries = *entries + 1;
+
+			/*	Copy name. This should be done when loading.
+			*/
+			theme->name = strdup(info.name);
+			if (!theme->name) {
+				warn_user("NoMemory", 0);
+				ro_theme_free(first);
+				*entries = 0;
+				return NULL;
+			}
+		} else {
+			if (theme) ro_theme_free(theme);
 		}
-		if (obj_type != fileswitch_IS_FILE ||
-				file_type != osfile_TYPE_SPRITE)
-			continue;
-
-		/* expand list */
-		list1 = realloc(list, sizeof *list * (i + 1));
-		if (!list1) {
-			warn_user("NoMemory", 0);
-			ro_theme_list_free(list, n);
-			return 0;
-		}
-		list = list1;
-
-		/* update invariant */
-		list[i].name = 0;
-		list[i].sprite_area = 0;
-		n = i + 1;
-
-		/* copy name */
-		list[i].name = strdup(info.name);
-		if (!list[i].name) {
-			warn_user("NoMemory", 0);
-			ro_theme_list_free(list, n);
-			return 0;
-		}
-
-		/* load sprites */
-		list[i].sprite_area = ro_gui_load_sprite_file(pathname);
-		if (!list[i].sprite_area) {
-			ro_theme_list_free(list, n);
-			return 0;
-		}
-
-		i++;
 	}
-
-	*entries = n;
-	return list;
+	return first;
 }
 
 
 /**
- * Free an array of themes, as returned by ro_theme_list().
+ * Free a linked list of themes.
  *
- * \param  list     array of struct theme_entry
- * \param  entries  size of array
+ * \param  theme  the list of themes to free
  */
 
-void ro_theme_list_free(struct theme_entry *list, unsigned int entries)
-{
-	unsigned int i;
-	for (i = 0; i != entries; i++) {
-		free(list[i].name);
-		free(list[i].sprite_area);
+void ro_theme_free(struct theme_entry *theme) {
+  	struct theme_entry *next;
+	while (theme) {
+		free(theme->name);
+		free(theme->author);
+		free(theme->sprite_area);
+		next = theme->next;
+		free(theme);
+		theme = next;
 	}
-	free(list);
 }
+

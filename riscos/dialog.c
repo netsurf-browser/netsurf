@@ -78,7 +78,7 @@ static void ro_gui_dialog_click_zoom(wimp_pointer *pointer);
 static void ro_gui_dialog_reset_zoom(void);
 static void ro_gui_dialog_click_warning(wimp_pointer *pointer);
 static const char *language_name(const char *code);
-
+static struct theme_entry *ro_gui_theme_entry(int index);
 
 /**
  * Load and create dialogs from template file.
@@ -478,7 +478,7 @@ void ro_gui_dialog_config_prepare(void)
 	if (option_theme)
 		theme_choice = strdup(option_theme);
 	if (theme_list)
-		ro_theme_list_free(theme_list, theme_list_entries);
+		ro_theme_free(theme_list);
 	theme_list = ro_theme_list(&theme_list_entries);
 }
 
@@ -545,8 +545,7 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 			if (pointer->buttons == wimp_CLICK_SELECT) {
 				ro_gui_dialog_close(dialog_config);
 				if (theme_list) {
-					ro_theme_list_free(theme_list,
-							theme_list_entries);
+					ro_theme_free(theme_list);
 					theme_list = 0;
 				}
 			}
@@ -822,12 +821,12 @@ void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer)
 	if (!theme_list || theme_list_entries <= y)
 		return;
 
-	if (theme_choice && strcmp(theme_choice, theme_list[y].name) == 0)
+	if (theme_choice && strcmp(theme_choice, ro_gui_theme_entry(y)->name) == 0)
 		return;
 
 	if (theme_choice) {
 		for (i = 0; i != theme_list_entries &&
-				strcmp(theme_choice, theme_list[i].name); i++)
+				strcmp(theme_choice, ro_gui_theme_entry(i)->name); i++)
 			;
 		if (i != theme_list_entries) {
 			error = xwimp_force_redraw(dialog_config_th_pane,
@@ -843,7 +842,7 @@ void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer)
 	}
 
 	free(theme_choice);
-	theme_choice = strdup(theme_list[y].name);
+	theme_choice = strdup(ro_gui_theme_entry(y)->name);
 
 	error = xwimp_force_redraw(dialog_config_th_pane,
 			0, -y * THEME_HEIGHT - THEME_HEIGHT - 2,
@@ -856,6 +855,11 @@ void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer)
 	}
 }
 
+struct theme_entry *ro_gui_theme_entry(int index) {
+	struct theme_entry *entry = theme_list;
+	for (int i = 0; i < index; i++) entry = entry->next;	
+	return entry;
+}
 
 /**
  * Redraw the scrolling Theme Choices list pane.
@@ -912,7 +916,7 @@ void ro_gui_redraw_config_th_pane_plot(wimp_draw *redraw)
 
 		/* plot background for selected theme */
 		if (theme_choice &&
-				strcmp(theme_list[i].name, theme_choice) == 0) {
+				strcmp(ro_gui_theme_entry(i)->name, theme_choice) == 0) {
 			error = xcolourtrans_set_gcol(os_COLOUR_LIGHT_GREY,
 					0, os_ACTION_OVERWRITE, 0, 0);
 			if (error)
@@ -931,25 +935,27 @@ void ro_gui_redraw_config_th_pane_plot(wimp_draw *redraw)
 		}
 
 		/* icons */
-		icon.extent.y0 = -i * THEME_HEIGHT - THEME_HEIGHT;
-		icon.extent.y1 = -i * THEME_HEIGHT;
-		icon.data.indirected_sprite.area = theme_list[i].sprite_area;
-		icon.data.indirected_sprite.size = 12;
-		for (j = 0, x = 0; j != sizeof sprite / sizeof sprite[0]; j++) {
-			icon.extent.x0 = x;
-			icon.extent.x1 = x + 50;
-			icon.data.indirected_sprite.id =
-					(osspriteop_id) sprite[j];
-			error = xwimp_plot_icon(&icon);
-			if (error)
-				break;
-			x += 50;
+		if (ro_gui_theme_entry(i)->sprite_area) {
+			icon.extent.y0 = -i * THEME_HEIGHT - THEME_HEIGHT;
+			icon.extent.y1 = -i * THEME_HEIGHT;
+			icon.data.indirected_sprite.area = ro_gui_theme_entry(i)->sprite_area;
+			icon.data.indirected_sprite.size = 12;
+			for (j = 0, x = 0; j != sizeof sprite / sizeof sprite[0]; j++) {
+				icon.extent.x0 = x;
+				icon.extent.x1 = x + 50;
+				icon.data.indirected_sprite.id =
+						(osspriteop_id) sprite[j];
+				error = xwimp_plot_icon(&icon);
+				if (error)
+					break;
+				x += 50;
+			}
 		}
 		if (error)
 			break;
 
 		/* theme name */
-		error = xwimptextop_paint(0, theme_list[i].name,
+		error = xwimptextop_paint(0, ro_gui_theme_entry(i)->name,
 				x0 + 400,
 				y0 - i * THEME_HEIGHT - THEME_HEIGHT / 2);
 		if (error)
