@@ -53,9 +53,17 @@ static void add_circle(struct content *content, struct box *box,
 /** \todo this will probably want to take a filename/path too... */
 void save_as_draw(struct content *c) {
 
-	struct box *box = c->data.html.layout->children;
-	int temp = c->width;
-	unsigned long bc = 0xffffff;
+	struct box *box;
+	int temp;
+	unsigned long bc;
+
+	if (c->type != CONTENT_HTML) {
+	        return;
+	}
+
+	box = c->data.html.layout->children;
+	temp = c->width;
+        bc = 0xffffff;
 
 	d = xcalloc(40, sizeof(char));
 
