@@ -1,27 +1,22 @@
-Documentation for Developers
+/** \mainpage NetSurf Documentation for Developers
 
 This document contains an overview of the code for NetSurf, and any other
 information useful to developers.
 
-________________________________________________________________________________
-
-Source Code Overview
+\section overview Source Code Overview
 
 The source is split at top level as follows:
+- \ref content
+- \ref css
+- \ref render
+- Non-platform specific front-end (desktop/)
+- RISC OS specific code (riscos/)
+- Unix debug build specific code (debug/)
+- Misc. useful functions (utils/)
 
-content -- fetching, caching, and converting content
-css -- CSS parser and interfaces
-debug -- defines functions which allow debugging under *nix 
-desktop -- non-platform specific front-end
-render -- HTML processing and layout
-riscos -- RISC OS specific code
-utils -- misc. useful functions
+\section content Fetching, caching, and converting content (content/)
 
-________________________________________________________________________________
-
-content -- fetching, caching, and converting content
-
-Each URL is stored in a struct content. This structure contains a union with
+Each URL is stored in a struct ::content. This structure contains a union with
 fields for each type of data (HTML, CSS, images).
 
 The content_* functions provide a general interface for handling these
@@ -38,11 +33,7 @@ Code should not usually use the fetch_* and cache_* functions directly.
 Instead use fetchcache(), which checks the cache for a url and
 fetches, converts, and caches it if not present.
 
-See content/overview for more information.
-
-________________________________________________________________________________
-
-css -- CSS parser and interfaces
+\section css CSS parser and interfaces (css/)
 
 CSS is tokenised by a flex-generated scanner (scanner.l), and then parsed into a
 memory representation by a lemon-generated parser (parser.y, ruleset.c).
@@ -50,12 +41,10 @@ memory representation by a lemon-generated parser (parser.y, ruleset.c).
 Styles are retrieved using css_get_style(). They can be cascaded by
 css_cascade().
 
-http://lex.sourceforge.net/
-http://www.hwaci.com/sw/lemon/
+- http://lex.sourceforge.net/
+- http://www.hwaci.com/sw/lemon/
 
-________________________________________________________________________________
-
-render -- HTML processing and layout
+\section render HTML processing and layout (render/)
 
 This is the process to render an HTML document:
 
@@ -82,41 +71,30 @@ parent node.
 
 The box tree can then be rendered using each node's coordinates.
 
-box.[ch] -- definition of the box tree, conversion from xml tree, normalising
-html.[ch] -- interface to HTML processing
-layout.[ch] -- layout engine
+\section links Other Documentation
 
-________________________________________________________________________________
-
-RISC OS specific protocols
-
-Plugin		http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/funcspec.html
+RISC OS specific protocols:
+- Plugin	http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/funcspec.html
 		http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/browse-plugins.html
-URI		http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/uri.html
-URL		http://www.vigay.com/inet/inet_url.html
-Nested WIMP	http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/nested.html
+- URI		http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/uri.html
+- URL		http://www.vigay.com/inet/inet_url.html
+- Nested WIMP	http://www.ecs.soton.ac.uk/~jmb202/riscos/acorn/nested.html
 
-________________________________________________________________________________
+Specifications:
+- HTML 4.01	http://www.w3.org/TR/html401/
+- XHTML 1.0	http://www.w3.org/TR/xhtml1/
+- CSS 2.1	http://www.w3.org/TR/CSS21/
+- HTTP/1.1	http://www.w3.org/Protocols/rfc2616/rfc2616.html
+- PNG		http://www.w3.org/Graphics/PNG/
 
-Specifications
-
-HTML 4.01	http://www.w3.org/TR/html401/
-XHTML 1.0	http://www.w3.org/TR/xhtml1/
-CSS2		http://www.w3.org/TR/REC-CSS2/
-HTTP/1.1	http://www.w3.org/Protocols/rfc2616/rfc2616.html
-PNG		http://www.w3.org/Graphics/PNG/
-
-________________________________________________________________________________
-
-Libraries
+\section libs Libraries
 
 Get these compiled for RISC OS with headers from
 http://netsurf.strcprstskrzkrk.co.uk/developer/
+- libxml (XML and HTML parser)		http://xmlsoft.org/
+- libcurl (HTTP, FTP, etc)		http://curl.haxx.se/libcurl/
+- OSLib (C interface to RISC OS SWIs)	http://ro-oslib.sourceforge.net/
+- libpng (PNG support)			http://www.libpng.org/pub/png/libpng.html
+- zlib					http://www.gzip.org/zlib/
 
-libxml (XML and HTML parser)		http://xmlsoft.org/
-libcurl (HTTP, FTP, etc)		http://curl.haxx.se/libcurl/
-OSLib (C interface to RISC OS SWIs)	http://ro-oslib.sourceforge.net/
-libpng (PNG support)			http://www.libpng.org/pub/png/libpng.html
-zlib					http://www.gzip.org/zlib/
-
-________________________________________________________________________________
+*/
