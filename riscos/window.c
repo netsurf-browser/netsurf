@@ -648,18 +648,30 @@ void ro_gui_window_mouse_at(wimp_pointer* pointer)
   }
 }
 
-void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
-	unsigned int history_move_back;
+
+/**
+ * Process Mouse_Click events in a toolbar.
+ */
+
+void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
+{
+	bool back;
 	switch (pointer->i) {
 		case ICON_TOOLBAR_BACK:
 		case ICON_TOOLBAR_FORWARD:
-			history_move_back = (pointer->i == ICON_TOOLBAR_BACK);
-			if (pointer->buttons == wimp_CLICK_ADJUST) history_move_back = !history_move_back;
-			if (history_move_back) {
-				history_back(g->data.browser.bw, g->data.browser.bw->history);
-			} else {
-				history_forward(g->data.browser.bw, g->data.browser.bw->history);
-			}
+			back = (pointer->i == ICON_TOOLBAR_BACK);
+			if (pointer->buttons == wimp_CLICK_ADJUST)
+				back = !back;
+			if (back)
+				history_back(g->data.browser.bw,
+						g->data.browser.bw->history);
+			else
+				history_forward(g->data.browser.bw,
+						g->data.browser.bw->history);
+			break;
+
+		case ICON_TOOLBAR_STOP:
+			browser_window_stop(g->data.browser.bw);
 			break;
 
 		case ICON_TOOLBAR_HISTORY:
@@ -695,6 +707,7 @@ void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer) {
 			break;
 	}
 }
+
 
 void ro_gui_status_click(gui_window* g, wimp_pointer* pointer) {
 	wimp_drag drag;
@@ -905,7 +918,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			/** \todo  make save window persistent */
 			xwimp_create_menu((wimp_menu *) dialog_saveas,
 					pointer.pos.x, pointer.pos.y);
-			break;
+			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_F3:
 			current_gui = g;
@@ -913,7 +926,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			ro_gui_menu_prepare_save(content);
 			xwimp_create_menu((wimp_menu *) dialog_saveas,
 					pointer.pos.x, pointer.pos.y);
-			break;
+			return true;
 
 		case wimp_KEY_SHIFT + wimp_KEY_F3:
 			current_gui = g;
@@ -921,7 +934,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			ro_gui_menu_prepare_save(content);
 			xwimp_create_menu((wimp_menu *) dialog_saveas,
 					pointer.pos.x, pointer.pos.y);
-			break;
+			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F3:
 			current_gui = g;
@@ -929,7 +942,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 			ro_gui_menu_prepare_save(content);
 			xwimp_create_menu((wimp_menu *) dialog_saveas,
 					pointer.pos.x, pointer.pos.y);
-			break;
+			return true;
 
 		case wimp_KEY_RETURN:
 			if (!toolbar)
@@ -940,6 +953,10 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 				browser_window_go(g->data.browser.bw, url);
 				free(url);
 			}
+			return true;
+
+		case wimp_KEY_ESCAPE:
+			browser_window_stop(g->data.browser.bw);
 			return true;
 
 		case 17:       /* CTRL+Q (Zoom out) */
