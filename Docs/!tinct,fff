@@ -52,7 +52,7 @@ If an incorrect sprite is attempted to be used, Tinct currently always returns
 error number 0x700 (SBadSpriteFile) rather than the specific cause of the
 problem (eg. BadDPI, BadMSFlags or BadPixelDepth) as OS_SpriteOp would do.
 There are several technical reasons for this behaviour, and future versions of
-Tinct may return different error numbers.
+Tinct may return more descriptive errors depending on the cause.
 
 
 SWIs provided
@@ -146,7 +146,9 @@ particular characteristic of the plotting:
 	3  Invert dither pattern
 	4  Horizontally fill the current graphics window with the sprite
 	5  Vertically fill the current graphics window with the sprite
-	6+ Reserved (must be 0)
+	6  Forcibly read the palette (only use if changing palette outside of
+	   the WIMP)
+	7+ Reserved (must be 0)
 
 If a bit is set in the flag word that cannot be honoured by the current
 version of Tinct then it is ignored. Tinct_AvailableFeatures can be used
