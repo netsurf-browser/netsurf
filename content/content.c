@@ -110,6 +110,7 @@ const char *content_type_name[] = {
 	"PNG",
 #endif
 #ifdef WITH_MNG
+	"JNG",
 	"MNG",
 #endif
 #ifdef WITH_SPRITE
@@ -177,6 +178,8 @@ static const struct handler_entry handler_map[] = {
 		0, nspng_destroy, 0, nspng_redraw, 0, 0, 0},
 #endif
 #ifdef WITH_MNG
+	{nsmng_create, nsmng_process_data, nsmng_convert,
+		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, 0},
 	{nsmng_create, nsmng_process_data, nsmng_convert,
 		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, 0},
 #endif
