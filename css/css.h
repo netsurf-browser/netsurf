@@ -26,7 +26,7 @@
 
 #include <stdbool.h>
 #include "libxml/HTMLparser.h"
-#include "css_enum.h"
+#include "netsurf/css/css_enum.h"
 
 
 typedef unsigned long colour;  /* 0xbbggrr */
