@@ -276,7 +276,7 @@ HelpToolbar1:\Tle bouton d'avance.|M\Savancer d'une page dans l'historique.|MNe 
 HelpToolbar2:\Tle bouton Stop.|M\Sarrêter le chargement de la page.
 HelpToolbar3:\Tle bouton de recharge.|M\Srecharger cette page.|M\Arecharger cette page et tous les objets qu'elle contient.
 HelpToolbar4:\Tle bouton Accueil.|M\Saller à votre page d'accueil.
-HelpToolbar5:\Tle bouton d'historique.|M\Souvrir la \w d'historique locale.
+HelpToolbar5:\Tle bouton d'historique.|M\Souvrir la \w d'historique locale.|M\Aopen the global history \w.
 HelpToolbar6:\Tle bouton de sauvegarde.|M\Ssauver le document en cours.
 HelpToolbar7:\Tle bouton d'impression.|M\Simprimer cette page.|MOuvre une boîte de dialogue pour l'impression.
 HelpToolbar8:\Tle bouton de favoris.|M\Souvrir la \w de gestion des favoris.|M\Aajouter cette adresse aux favoris.

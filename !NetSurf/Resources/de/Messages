@@ -276,7 +276,7 @@ HelpToolbar1:Schaltet vorwärts auf die nächste Seite.|MDer Inhalt wird dabei nic
 HelpToolbar2:Das ist der Stop Schaltknopf.|MUnterbricht den Ladvorgang.
 HelpToolbar3:Aktualisiert den Seiteninhalt.|MKlicken mit AUSWAHL lädt die Seite neu.|MKlicken mit SPEZIAL lädt die Seite und alle zugehörigen Objekte neu.
 HelpToolbar4:Lädt die Homepage.
-HelpToolbar5:Öffnet die lokale History.
+HelpToolbar5:Öffnet die lokale History.|M\Aopen the global history \w.
 HelpToolbar6:Speichert das aktuelle Dokument als HTML Datei.
 HelpToolbar7:Drucken der aktuellen Seite.|MAnklicken öffnet den 'Drucken' Dialog.
 HelpToolbar8:Das ist der Hotlist Schaltknopf.|MKlicken mit AUSWAHL öffnet die Hotlist.|MKlicken mit SPEZIAL trägt die aktuelle Seite in die Hotlist ein.
