@@ -64,7 +64,7 @@ input[type=button], input[type=reset], input[type=submit], button {
 input[type=image] { background-color: #ddd; color: #000; width: auto;
 	height: auto; }
 input[type=checkbox], input[type=radio] { background-color: transparent;
-	width: 22px; height: 22px; }
+	padding: 0 0.1em; border: 0; width: 1em; height: 1em; }
 
 [align=left] { text-align: left; }
 [align=center] { text-align: center; }
