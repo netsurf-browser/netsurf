@@ -108,8 +108,7 @@ static int need_reformat = 0;
 /*-------------------------------------------------------------------------*/
 
 /**
- * plugin_create
- * initialises plugin system in readiness for receiving object data
+ * Initialises plugin system in readiness for receiving object data
  */
 void plugin_create(struct content *c)
 {
@@ -120,8 +119,6 @@ void plugin_create(struct content *c)
 }
 
 /**
- * plugin_add_instance
- *
  * The content has been added to a page somewhere: launch the plugin.
  * This may be called anytime after plugin_create any number of times.
  * Each must launch a new plugin.
@@ -171,13 +168,13 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
    * and listen for response. If there is still no response, give up.
    * NB: For the bounding box in Message_PlugIn_Open, we choose arbitrary
    *     values outside the area displayed. This is corrected when
-   *     plugin_redraw is called.
+   *     plugin_reshape_instance is called.
    */
         /* Initialise bounding box */
-        b.x0 = 100;
-        b.x1 = 1000;
-        b.y0 = 100;
-        b.y1 = 1000;
+        b.x0 = -100;
+        b.x1 = 0;
+        b.y0 = 0;
+        b.y1 = 100;
 
         /* populate plugin_message_open struct */
         pmo = (plugin_message_open*)&m.data;
@@ -197,12 +194,20 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
         temp = plugin_add_message_to_linked_list((plugin_b)params->browser, (plugin_p)0, &m, (struct plugin_message*)0);
 
         LOG(("Sending Message: &4D540"));
-        LOG(("Message Size: %d", m.size));
         e = xwimp_send_message(wimp_USER_MESSAGE_RECORDED, &m, wimp_BROADCAST);
 
-        if(e) LOG(("Error: %s", e->errmess));
+        if (e) {
+          LOG(("Error: %s", e->errmess));
+          plugin_remove_message_from_linked_list(temp);
+          xfree(npm);
+          xfree(npl);
+          return;
+        }
 
-        /* wait for wimp poll */
+        /* wait for wimp poll
+           TODO - we should probably give up after a short time
+                  otherwise we'll be stuck in this loop forever
+         */
         while(temp->poll == 0)
                 gui_poll();
 
@@ -224,14 +229,30 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
                LOG(("Starting task: %s", varval));
                e = xwimp_start_task((char const*)varval, NULL);
 
-               if(e) LOG(("Error: %s", e->errmess));
+               if (e) {
+                 LOG(("Error: %s", e->errmess));
+                 xfree(npm);
+                 xfree(npl);
+                 return;
+               }
 
                /* hmm, deja-vu */
                temp = plugin_add_message_to_linked_list((plugin_b)params->browser, (plugin_p)0, &m, (struct plugin_message*)0);
                LOG(("Re-Sending Message &4D540"));
-               xwimp_send_message(wimp_USER_MESSAGE_RECORDED, &m,
-                                  wimp_BROADCAST);
+               e = xwimp_send_message(wimp_USER_MESSAGE_RECORDED, &m,
+                                      wimp_BROADCAST);
 
+               if (e) {
+                 LOG(("Error: %s", e->errmess));
+                 xfree(npm);
+                 xfree(npl);
+                 return;
+               }
+
+               /* wait for wimp poll
+                  TODO - we should probably give up after a short time
+                         otherwise we'll be stuck in this loop forever
+                */
                while(temp->poll == 0)
                        gui_poll();
 
@@ -269,8 +290,7 @@ void plugin_add_instance(struct content *c, struct browser_window *bw,
 }
 
 /**
- * plugin_process_opening
- * process plugin_opening message flags
+ * Process plugin_opening message flags
  * NB: this is NOT externally visible.
  *     it's just here because it's referred to in the TODO above
  */
@@ -303,8 +323,6 @@ int plugin_process_opening(struct object_params *params,
 }
 
 /**
- * plugin_remove_instance
- *
  * A plugin is no longer required, eg. the page containing it has
  * been closed.
  *
@@ -337,7 +355,10 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
 	xwimp_send_message(wimp_USER_MESSAGE_RECORDED, &m,
 	                   (wimp_t)params->plugin_task);
 
-
+        /* wait for wimp poll
+           TODO - we should probably give up after a short time
+                  otherwise we'll be stuck in this loop forever
+         */
 	while (temp == 0)
 	        gui_poll();
 
@@ -362,8 +383,6 @@ void plugin_remove_instance(struct content *c, struct browser_window *bw,
 }
 
 /**
- * plugin_reshape_instance
- *
  * The box containing the plugin has moved or resized,
  * or the window containing the plugin has resized if standalone.
  */
@@ -410,8 +429,7 @@ void plugin_reshape_instance(struct content *c, struct browser_window *bw,
 static const char * const ALIAS_PREFIX = "Alias$@PlugInType_";
 
 /**
- * plugin_create_sysvar
- * creates system variable from mime type
+ * Creates system variable from mime type
  * NB: this is NOT externally visible
  *     it just makes sense to keep it with the ALIAS_PREFIX definition above.
  */
@@ -426,7 +444,6 @@ void plugin_create_sysvar(const char *mime_type, char* sysvar)
 }
 
 /**
- * plugin_handleable
  * Tests whether we can handle an object using a browser plugin
  * returns true if we can handle it, false if we can't.
  */
@@ -450,7 +467,6 @@ bool plugin_handleable(const char *mime_type)
 }
 
 /**
- * plugin_process_data
  * processes data retrieved by the fetch process
  */
 void plugin_process_data(struct content *c, char *data, unsigned long size)
@@ -475,7 +491,6 @@ void plugin_process_data(struct content *c, char *data, unsigned long size)
 }
 
 /**
- * plugin_convert
  * This isn't needed by the plugin system as all the data processing is done
  * externally. Therefore, just tell NetSurf that everything's OK.
  */
@@ -494,7 +509,8 @@ void plugin_reformat(struct content *c, unsigned int width, unsigned int height)
 }
 
 /**
- * plugin_destroy
+ * Called when completely finished with an object.
+ * Simply frees buffered data
  */
 void plugin_destroy(struct content *c)
 {
@@ -503,8 +519,7 @@ void plugin_destroy(struct content *c)
 }
 
 /**
- * plugin_redraw
- * redraw plugin on page.
+ * Redraw plugin on page.
  */
 void plugin_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height)
@@ -526,7 +541,6 @@ void plugin_redraw(struct content *c, long x, long y,
 /*-------------------------------------------------------------------------*/
 
 /**
- * plugin_write_parameters_file
  * Writes the parameters file.
  */
 void plugin_write_parameters_file(struct object_params *params)
@@ -672,8 +686,7 @@ void plugin_write_parameters_file(struct object_params *params)
 }
 
 /**
- * plugin_calculate_rsize
- * calculates the size of a parameter file record
+ * Calculates the size of a parameter file record
  */
 int plugin_calculate_rsize(char* name, char* data, char* mime) {
 
@@ -690,8 +703,7 @@ int plugin_calculate_rsize(char* name, char* data, char* mime) {
 }
 
 /**
- * plugin_add_item_to_pilist
- * adds an item to the pilist
+ * Adds an item to the list of parameter file records
  */
 struct plugin_param_item *plugin_add_item_to_pilist(struct plugin_param_item *pilist, int type, char* name, char* value, char* mime_type) {
 
@@ -733,8 +745,7 @@ struct plugin_param_item *plugin_add_item_to_pilist(struct plugin_param_item *pi
 /*-------------------------------------------------------------------------*/
 
 /**
- * plugin_create_stream
- * creates a plugin stream
+ * Creates a plugin stream
  */
 void plugin_create_stream(struct browser_window *bw, struct object_params *params, struct content *c) {
 
@@ -763,18 +774,20 @@ void plugin_create_stream(struct browser_window *bw, struct object_params *param
 
         temp = plugin_add_message_to_linked_list(pmsn->browser, pmsn->plugin, &m, 0);
 
-        LOG(("message length = %d", m.size));
-
         LOG(("Sending message &4D548"));
         xwimp_send_message(wimp_USER_MESSAGE_RECORDED, &m, (wimp_t)params->plugin_task);
 
+        /* wait for wimp poll
+           TODO - we should probably give up after a short time
+                  otherwise we'll be stuck in this loop forever
+         */
         while(temp->poll == 0)
                 gui_poll();
 
         pmsn = (plugin_message_stream_new*)&temp->reply->m->data;
         params->browser_stream = params->browser;
         params->plugin_stream = (int)pmsn->stream;
-        LOG(("%d, %d, %d", (int)pmsn->stream, params->plugin_stream, params->browser_stream));
+
         if((pmsn->flags & 0x02) | (pmsn->flags & 0x03)) {
                 plugin_write_stream_as_file(bw, params, c);
         }
@@ -785,8 +798,7 @@ void plugin_create_stream(struct browser_window *bw, struct object_params *param
 }
 
 /**
- * plugin_write_stream_as_file
- * writes a stream as a file
+ * Writes a stream as a file
  */
 void plugin_write_stream_as_file(struct browser_window *bw, struct object_params *params, struct content *c) {
 
@@ -820,15 +832,12 @@ void plugin_write_stream_as_file(struct browser_window *bw, struct object_params
         xmimemaptranslate_mime_type_to_filetype(c->mime_type, (bits *) &filetype);
         xosfile_save_stamped((char const*)filename, filetype, c->data.plugin.data, c->data.plugin.data + c->data.plugin.length);
 
-        LOG(("message length = %d", m.size));
-
         LOG(("Sending message &4D54C"));
         xwimp_send_message(wimp_USER_MESSAGE, &m, (wimp_t)params->plugin_task);
 }
 
 /**
- * plugin_destroy_stream
- * destroys a plugin stream
+ * Destroys a plugin stream
  */
 void plugin_destroy_stream(struct browser_window *bw, struct object_params *params, struct content *c) {
 
@@ -863,8 +872,7 @@ void plugin_destroy_stream(struct browser_window *bw, struct object_params *para
 /*-------------------------------------------------------------------------*/
 
 /**
- * plugin_add_message_to_linked_list
- * adds a message to the list
+ * Adds a message to the list of pending messages
  */
 struct plugin_message *plugin_add_message_to_linked_list(plugin_b browser, plugin_p plugin, wimp_message *m, struct plugin_message *reply) {
 
@@ -886,8 +894,7 @@ struct plugin_message *plugin_add_message_to_linked_list(plugin_b browser, plugi
 }
 
 /**
- * plugin_remove_message_from_linked_list
- * removes a message from the list
+ * Removes a message from the list of pending messages
  */
 void plugin_remove_message_from_linked_list(struct plugin_message* m) {
 
@@ -898,19 +905,20 @@ void plugin_remove_message_from_linked_list(struct plugin_message* m) {
 }
 
 /**
- * plugin_get_message_from_linked_list
- * retrieves a message from the list
+ * Retrieves a message from the list of pending messages
  * returns NULL if no message is found
  */
 struct plugin_message *plugin_get_message_from_linked_list(int ref) {
 
          struct plugin_message *npm;
 
+         if(ref == 0)
+                 return NULL;
+
          for(npm = pmlist->next; npm != pmlist && npm->m->my_ref != ref;
              npm = npm->next)
-                LOG(("my_ref: %d, ref: %d", npm->m->my_ref, ref));
+                ;
 
-         LOG(("my_ref: %d, ref: %d", npm->m->my_ref, ref));
          if(npm != pmlist) {
                  LOG(("Got message: %p", npm));
                  return npm;
@@ -920,7 +928,6 @@ struct plugin_message *plugin_get_message_from_linked_list(int ref) {
 }
 
 /**
- * plugin_add_instance_to_list
  * Adds a plugin instance to the list of plugin instances.
  */
 void plugin_add_instance_to_list(struct content *c, struct browser_window *bw, struct content *page, struct box *box, struct object_params *params, void **state) {
@@ -940,8 +947,7 @@ void plugin_add_instance_to_list(struct content *c, struct browser_window *bw, s
 }
 
 /**
- * plugin_remove_instance_from_list
- * Removes a plugin instance from the list
+ * Removes a plugin instance from the list of plugin instances
  */
 void plugin_remove_instance_from_list(struct object_params *params) {
 
@@ -957,8 +963,7 @@ void plugin_remove_instance_from_list(struct object_params *params) {
 }
 
 /**
- * plugin_get_instance_from_list
- * retrieves an instance of a plugin from the list
+ * Retrieves an instance of a plugin from the list of plugin instances
  * returns NULL if no instance is found
  */
 struct plugin_list *plugin_get_instance_from_list(plugin_b browser, plugin_p plugin) {
@@ -982,8 +987,7 @@ struct plugin_list *plugin_get_instance_from_list(plugin_b browser, plugin_p plu
 /*-------------------------------------------------------------------------*/
 
 /**
- * plugin_msg_parse
- * parses wimp messages
+ * Parses wimp messages
  */
 void plugin_msg_parse(wimp_message *message, int ack)
 {
@@ -1053,8 +1057,7 @@ void plugin_msg_parse(wimp_message *message, int ack)
 }
 
 /**
- * plugin_open
- * handles receipt of plugin_open messages
+ * Handles receipt of plugin_open messages
  */
 void plugin_open(wimp_message *message) {
 
@@ -1067,8 +1070,7 @@ void plugin_open(wimp_message *message) {
 }
 
 /**
- * plugin_opening
- * handles receipt of plugin_open messages
+ * Handles receipt of plugin_open messages
  */
 void plugin_opening(wimp_message *message) {
 
@@ -1089,8 +1091,7 @@ void plugin_opening(wimp_message *message) {
 }
 
 /**
- * plugin_close
- * handles receipt of plugin_close messages
+ * Handles receipt of plugin_close messages
  */
 void plugin_close(wimp_message *message) {
 
@@ -1102,14 +1103,14 @@ void plugin_close(wimp_message *message) {
 }
 
 /**
- * plugin_closed
- * handles receipt of plugin_closed messages
+ * Handles receipt of plugin_closed messages
  */
 void plugin_closed(wimp_message *message) {
 
          struct plugin_message *npm = plugin_get_message_from_linked_list(message->your_ref);
          struct plugin_message *reply;
          plugin_message_closed *pmc = (plugin_message_closed*)&message->data;
+         struct plugin_list *npl = plugin_get_instance_from_list(pmc->browser, pmc->plugin);
 
          /* add this message to linked list */
          reply = plugin_add_message_to_linked_list(pmc->browser, pmc->plugin, message, 0);
@@ -1120,11 +1121,21 @@ void plugin_closed(wimp_message *message) {
                npm->poll = 1;
                npm->reply = reply;
          }
+         /* This is not the result of a plugin_open message */
+         else {
+               LOG(("Plugin Closed without asking"));
+               LOG(("pmc->flags: %d", pmc->flags));
+               if(pmc->flags & 0x2) {
+                       LOG(("Err Mess: %s", pmc->error_text));
+                       gui_window_set_status(npl->bw->window,
+                        (const char*)pmc->error_text);
+               }
+               plugin_remove_message_from_linked_list(reply);
+         }
 }
 
 /**
- * plugin_reshape_request
- * handles receipt of plugin_reshape_request messages
+ * Handles receipt of plugin_reshape_request messages
  */
 void plugin_reshape_request(wimp_message *message) {
 
@@ -1149,8 +1160,7 @@ void plugin_reshape_request(wimp_message *message) {
 }
 
 /**
- * plugin_stream_new
- * handles receipt of plugin_stream_new messages
+ * Handles receipt of plugin_stream_new messages
  */
 void plugin_stream_new(wimp_message *message) {
 
@@ -1168,12 +1178,10 @@ void plugin_stream_new(wimp_message *message) {
                npm->plugin = pmsn->plugin;
                npm->reply = reply;
          }
-
 }
 
 /**
- * plugin_status
- * handles receipt of plugin_status messages
+ * Handles receipt of plugin_status messages
  */
 void plugin_status(wimp_message *message) {
 
@@ -1186,8 +1194,7 @@ void plugin_status(wimp_message *message) {
 }
 
 /**
- * plugin_get_string_value
- * utility function to grab string data from plugin message blocks
+ * Utility function to grab string data from plugin message blocks
  */
 char *plugin_get_string_value(os_string_value string, char *msg) {
 
@@ -1217,6 +1224,6 @@ void plugin_force_redraw(struct content *object, struct content *c,
 
         need_reformat = 1;
 	/* We don't call content_reformat here
-	   beacuse doing so breaks things :-)
+	   because doing so breaks things :-)
 	 */
 }
