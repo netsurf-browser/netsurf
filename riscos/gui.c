@@ -148,12 +148,12 @@ struct ro_gui_poll_block {
 };
 struct ro_gui_poll_block *ro_gui_poll_queued_blocks = 0;
 
-static void gui_signal(int sig);
-static void ro_gui_cleanup(void);
 static void ro_gui_choose_language(void);
 static void ro_gui_check_fonts(void);
 static void ro_gui_sprites_init(void);
 static void ro_gui_icon_bar_create(void);
+static void ro_gui_signal(int sig);
+static void ro_gui_cleanup(void);
 static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
 static void ro_gui_poll_queue(wimp_event_no event, wimp_block *block);
 static void ro_gui_null_reason_code(void);
@@ -188,19 +188,20 @@ void gui_init(int argc, char** argv)
 	os_error *error;
 	int length;
 	struct theme_descriptor *descriptor = NULL;
+	rufl_code code;
 
 	xhourglass_start(1);
 
 	atexit(ro_gui_cleanup);
-	signal(SIGABRT, gui_signal);
-	signal(SIGFPE, gui_signal);
-	signal(SIGILL, gui_signal);
-	signal(SIGINT, gui_signal);
-	signal(SIGSEGV, gui_signal);
-	signal(SIGTERM, gui_signal);
+	signal(SIGABRT, ro_gui_signal);
+	signal(SIGFPE, ro_gui_signal);
+	signal(SIGILL, ro_gui_signal);
+	signal(SIGINT, ro_gui_signal);
+	signal(SIGSEGV, ro_gui_signal);
+	signal(SIGTERM, ro_gui_signal);
 
 	/* create our choices directories */
-#ifndef NCOS
+#ifndef ncos
 	xosfile_create_dir("<Choices$Write>.WWW", 0);
 	xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
 	xosfile_create_dir("<Choices$Write>.WWW.NetSurf.Themes", 0);
@@ -237,9 +238,6 @@ void gui_init(int argc, char** argv)
 
 	default_stylesheet_url = strdup("file:/<NetSurf$Dir>/Resources/CSS");
 	adblock_stylesheet_url = strdup("file:/<NetSurf$Dir>/Resources/AdBlock");
-
-	/* Totally pedantic, but base the taskname on the build options.
-	*/
 #ifndef ncos
 	error = xwimp_initialise(wimp_VERSION_RO38, "NetSurf",
 			(const wimp_message_list *) &task_messages, 0,
@@ -250,18 +248,27 @@ void gui_init(int argc, char** argv)
 			&task_handle);
 #endif
 	if (error) {
-		LOG(("xwimp_initialise failed: 0x%x: %s",
+		LOG(("xwimp_initialise: 0x%x: %s",
 				error->errnum, error->errmess));
 		die(error->errmess);
 	}
 
-	/* We don't need to check the fonts on NCOS */
 #ifndef ncos
+	/* We don't need to check the fonts on NCOS */
 	ro_gui_check_fonts();
 #endif
 
-	/** \todo handle errors */
-	rufl_init();
+	code = rufl_init();
+	if (code != rufl_OK) {
+		if (code == rufl_FONT_MANAGER_ERROR)
+			LOG(("rufl_init: rufl_FONT_MANAGER_ERROR: 0x%x: %s",
+					rufl_fm_error->errnum,
+					rufl_fm_error->errmess));
+		else
+			LOG(("rufl_init: 0x%x", code));
+		die("The Unicode font library could not be initialized. "
+				"Please report this to the developers.");
+	}
 
 	/* Issue a *Desktop to poke AcornURI into life */
 	if (getenv("NetSurf$Start_URI_Handler"))
@@ -575,7 +582,9 @@ void gui_quit(void)
 /**
  * Handles a signal
  */
-static void gui_signal(int sig) {
+
+void ro_gui_signal(int sig)
+{
 	ro_gui_cleanup();
 	raise(sig);
 }
@@ -584,7 +593,9 @@ static void gui_signal(int sig) {
 /**
  * Ensures the gui exits cleanly.
  */
-void ro_gui_cleanup(void) {
+
+void ro_gui_cleanup(void)
+{
 	ro_gui_buffer_close();
 	xhourglass_off();
 }
