@@ -9,23 +9,22 @@
 
 CSS parser using the lemon parser generator.
 
-see CSS2 Specification, chapter 4
-http://www.w3.org/TR/REC-CSS2/syndata.html,
-and errata
-http://www.w3.org/Style/css2-updates/REC-CSS2-19980512-errata
+see CSS2.1 Specification, chapter 4
+http://www.w3.org/TR/CSS21/syndata.html
 
 stylesheet  : [ CDO | CDC | S | statement ]*;
 statement   : ruleset | at-rule;
 at-rule     : ATKEYWORD S* any* [ block | ';' S* ];
-block       : '{' S* [ any | block | ATKEYWORD S* | ';' ]* '}' S*;
+block       : '{' S* [ any | block | ATKEYWORD S* | ';' S* ]* '}' S*;
 ruleset     : selector? '{' S* declaration? [ ';' S* declaration? ]* '}' S*;
 selector    : any+;
-declaration : property ':' S* value;
-property    : IDENT S*;
+declaration : DELIM? property S* ':' S* value;
+property    : IDENT;
 value       : [ any | block | ATKEYWORD S* ]+;
 any         : [ IDENT | NUMBER | PERCENTAGE | DIMENSION | STRING
               | DELIM | URI | HASH | UNICODE-RANGE | INCLUDES
-              | FUNCTION | DASHMATCH | '(' any* ')' | '[' any* ']' ] S*;
+              | DASHMATCH | FUNCTION S* any* ')'
+              | '(' S* any* ')' | '[' S* any* ']' ] S*;
 
 Note: S, CDO, CDC will be stripped out by the scanner
 */
@@ -285,10 +284,15 @@ any(A) ::= INCLUDES.
 		{ A = css_new_node(param->stylesheet, CSS_NODE_INCLUDES,
 		                   0, 0);
 		if (!A) param->memory_error = true; }
-any(A) ::= FUNCTION(B).
-		{ A = css_new_node(param->stylesheet, CSS_NODE_FUNCTION,
-		                   B.text, B.length);
-		if (!A) param->memory_error = true; }
+any(A) ::= FUNCTION(B) any_list(C) RPAREN.
+		{ if ((A = css_new_node(param->stylesheet, CSS_NODE_FUNCTION,
+		                        B.text, B.length)))
+			A->value = C;
+		else {
+			param->memory_error = true;
+			css_free_node(C);
+			A = 0;
+		} }
 any(A) ::= DASHMATCH.
 		{ A = css_new_node(param->stylesheet, CSS_NODE_DASHMATCH,
 		                   0, 0);
