@@ -2398,15 +2398,16 @@ void gui_edit_textarea(struct browser_window* bw, struct gui_gadget* g)
 {
 	FILE* file;
 
-	xosfile_create_dir("<Wimp$ScrapDir>.NetSurf", 77);
-	file = fopen("<Wimp$ScrapDir>/NetSurf/TextArea", "w");
+	xosfile_create_dir("<Wimp$ScrapDir>.WWW", 77);
+	xosfile_create_dir("<Wimp$ScrapDir>.WWW.NetSurf", 77);
+	file = fopen("<Wimp$ScrapDir>/WWW/NetSurf/TextArea", "w");
 	if (g->data.textarea.text != 0)
 	  fprintf(file, "%s", g->data.textarea.text);
 	fprintf(stderr, "closing file.\n");
 	fclose(file);
 
-	xosfile_set_type("<Wimp$ScrapDir>.NetSurf.TextArea", osfile_TYPE_TEXT);
-	xos_cli("filer_run <Wimp$ScrapDir>.NetSurf.TextArea");
+	xosfile_set_type("<Wimp$ScrapDir>.WWW.NetSurf.TextArea", osfile_TYPE_TEXT);
+	xos_cli("filer_run <Wimp$ScrapDir>.WWW.NetSurf.TextArea");
 }
 
 void ro_msg_datasave(wimp_message* block)

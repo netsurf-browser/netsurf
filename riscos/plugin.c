@@ -230,13 +230,18 @@ void plugin_write_parameters_file(struct object_params *params)
         byte pdata[4] = {0, 0, 0, 0};
         os_fw *pfile;
         int i, j, rsize;
+        char *tstr;
 
         /* Create the file */
-        xosfile_create_dir("<Wimp$ScrapDir>.NetSurf", 77);
+        xosfile_create_dir("<Wimp$ScrapDir>.WWW", 77);
+        xosfile_create_dir("<Wimp$ScrapDir>.WWW.NetSurf", 77);
         /* path + filename + terminating NUL */
         params->filename = xcalloc(23+10+1 , sizeof(char));
         xos_read_monotonic_time((int*)&time);
-        sprintf(params->filename, "<Wimp$ScrapDir>.NetSurf.p%7d", (int)time<<8);
+        tstr = xcalloc(40, sizeof(char));
+        sprintf(tstr, "%01u", (unsigned int)time<<8);
+        sprintf(params->filename, "<Wimp$ScrapDir>.WWW.NetSurf.p%1.9s", tstr);
+        xfree(tstr);
         LOG(("filename: %s", params->filename));
 
         xosfind_openoutw(osfind_NO_PATH, params->filename, NULL, &pfile);
