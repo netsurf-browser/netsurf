@@ -35,13 +35,13 @@ fetches, converts, and caches it if not present.
 
 \section css CSS parser and interfaces (css/)
 
-CSS is tokenised by a flex-generated scanner (scanner.l), and then parsed into a
+CSS is tokenised by a re2c-generated scanner (scanner.l), and then parsed into a
 memory representation by a lemon-generated parser (parser.y, ruleset.c).
 
 Styles are retrieved using css_get_style(). They can be cascaded by
 css_cascade().
 
-- http://lex.sourceforge.net/
+- http://re2c.sourceforge.net/
 - http://www.hwaci.com/sw/lemon/
 
 \section render HTML processing and layout (render/)
@@ -103,8 +103,9 @@ http://netsurf.strcprstskrzkrk.co.uk/developer/
 - libcurl (HTTP, FTP, etc)		http://curl.haxx.se/libcurl/
 - OSLib (C interface to RISC OS SWIs)	http://ro-oslib.sourceforge.net/
 - libpng (PNG support)			http://www.libpng.org/pub/png/libpng.html
+- libjpeg (JPEG support)		http://www.ijg.org/
 - zlib					http://www.gzip.org/zlib/
-- uri					http://www.nongnu.org/uri/
+- OpenSSL (HTTPS support)		http://www.openssl.org/
 
 \section addcss Implementing a new CSS property
 
