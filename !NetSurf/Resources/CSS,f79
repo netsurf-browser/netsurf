@@ -167,7 +167,9 @@ textarea { background-color: #fff; color: #000; text-align: left;
 
 fieldset { display: block; border: thin solid #888; }
 
-
 [align=left] { text-align: left; }
 [align=center] { text-align: center; }
 [align=right] { text-align: right; }
+
+/* Temporary hack to distinguish list items */
+li { margin-left: 0; padding-left: 14px; background: url(file:/<NetSurf$Dir>/Resources/b) no-repeat top left; }
