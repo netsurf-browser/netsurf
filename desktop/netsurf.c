@@ -8,12 +8,13 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include "netsurf/content/cache.h"
+#include "netsurf/content/fetch.h"
+#include "netsurf/content/fetchcache.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
-#include "netsurf/content/cache.h"
-#include "netsurf/content/fetch.h"
 #include "netsurf/utils/log.h"
 
 bool netsurf_quit = false;
