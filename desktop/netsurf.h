@@ -11,6 +11,7 @@
 #include <stdbool.h>
 
 extern bool netsurf_quit;
+extern const char * const netsurf_version;
 
 #endif
 

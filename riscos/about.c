@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <unixlib/local.h> /* for __unixify */
 
+#include "netsurf/desktop/netsurf.h"
 #include "netsurf/riscos/about.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -88,7 +89,7 @@ void about_create(void) {
 
   /* Page header */
   buf = xcalloc(strlen(pabouthdr) + 20, sizeof(char));
-  sprintf(buf, pabouthdr, populate_version());
+  sprintf(buf, pabouthdr, netsurf_version);
   abt->header = xstrdup(buf);
   xfree(buf);
 

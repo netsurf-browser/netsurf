@@ -15,6 +15,7 @@
 #include "oslib/osgbpb.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
+#include "netsurf/desktop/netsurf.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/utils/log.h"
@@ -68,9 +69,7 @@ void ro_gui_dialog_init(void)
 
 	dialog_info = ro_gui_dialog_create("info");
 	/* fill in about box version info */
-	ver = populate_version();
-	set_icon_string(dialog_info, 4, ver);
-	xfree(ver);
+	set_icon_string(dialog_info, 4, netsurf_version);
 
 	dialog_saveas = ro_gui_dialog_create("saveas");
 	dialog_config = ro_gui_dialog_create("config");
