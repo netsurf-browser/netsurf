@@ -89,6 +89,7 @@ struct box {
 	char * text;
 	unsigned int space : 1;	/* 1 <=> followed by a space */
 	char * href;
+	char * title;
 	unsigned int length;
 	unsigned int columns;
 	struct box * next;

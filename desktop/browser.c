@@ -578,7 +578,13 @@ void browser_window_follow_link(struct browser_window* bw,
         browser_window_set_status(bw, (char*) click_boxes[i].box->href);
         done = 1;
       }
-      i = -1;
+      break;
+    }
+    if (click_type == 0 && click_boxes[i].box->title != NULL)
+    {
+      browser_window_set_status(bw, click_boxes[i].box->title);
+      done = 1;
+      break;
     }
   }
 
