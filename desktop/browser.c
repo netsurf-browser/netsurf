@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -677,6 +678,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	int pixel_offset, dy;
 	unsigned long actual_x, actual_y;
 	unsigned long width, height;
+	bool reflow = false;
 
         box_coords(textarea, &actual_x, &actual_y);
 
@@ -694,21 +696,14 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		text_box->text[text_box->length] = 0;
 		text_box->width = UNKNOWN_WIDTH;
 		char_offset++;
+		reflow = true;
 	} else if (key == 10 || key == 13) {
 		/* paragraph break */
 		struct box *new_container = box_create(0, 0, 0);
 		struct box *new_text = xcalloc(1, sizeof(*new_text));
 		struct box *t;
 		new_container->type = BOX_INLINE_CONTAINER;
-		new_container->parent = textarea;
-		new_container->next = inline_container->next;
-		inline_container->next = new_container;
-		new_container->prev = inline_container;
-		new_container->last = inline_container->last;
-		if (new_container->next)
-			new_container->next->prev = new_container;
-		else
-			textarea->last = new_container;
+		box_insert_sibling(inline_container, new_container);
 		memcpy(new_text, text_box, sizeof(*new_text));
 		new_text->clone = 1;
 		new_text->text = xcalloc(text_box->length + 1, 1);
@@ -724,6 +719,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		else
 			new_container->last = new_text;
 		text_box->width = new_text->width = UNKNOWN_WIDTH;
+		new_container->last = inline_container->last;
 		inline_container->last = text_box;
 		new_container->children = new_text;
 		for (t = new_container->children; t; t = t->next)
@@ -731,6 +727,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		inline_container = new_container;
 		text_box = inline_container->children;
 		char_offset = 0;
+		reflow = true;
 	} else if (key == 8 || key == 127) {
 		/* delete to left */
 		if (char_offset == 0) {
@@ -819,6 +816,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 			text_box->width = UNKNOWN_WIDTH;
 			char_offset--;
 		}
+		reflow = true;
 	} else if (key == 28) {
 	        /* Right cursor -> */
 	        if (char_offset == text_box->length &&
@@ -901,6 +899,7 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		return;
 	}
 
+	box_dump(textarea, 0);
 	/* for (struct box *ic = textarea->children; ic; ic = ic->next) {
 		assert(ic->type == BOX_INLINE_CONTAINER);
 		assert(ic->parent == textarea);
@@ -918,12 +917,14 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		}
 	} */
 
-	/* reflow textarea preserving width and height */
-	width = textarea->width;
-	height = textarea->height;
-	layout_block(textarea, textarea->parent->width, textarea, 0, 0);
-	textarea->width = width;
-	textarea->height = height;
+	if (reflow) {
+		/* reflow textarea preserving width and height */
+		width = textarea->width;
+		height = textarea->height;
+		layout_block(textarea, textarea->parent->width, textarea, 0, 0);
+		textarea->width = width;
+		textarea->height = height;
+	}
 
 	/* box_dump(textarea, 0); */
 
