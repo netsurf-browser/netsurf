@@ -272,7 +272,7 @@ void ro_gui_hotlist_load(void) {
 	/*	Add some content
 	*/
 	ro_gui_hotlist_create("NetSurf homepage", "http://netsurf.sf.net", netsurf);
-	ro_gui_hotlist_create("NetSurf test builds", "http://netsurf.strcpstskrzkrk.net", netsurf);
+	ro_gui_hotlist_create("NetSurf test builds", "http://netsurf.strcprstskrzkrk.co.uk", netsurf);
 
 }
 
@@ -723,12 +723,19 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 		/*	Check if we clicked on the expanding bit
 		*/
 		x_offset = x - entry->x0;
-		if ((x_offset < 32) || (buttons == wimp_DOUBLE_SELECT)) {
+		if ((x_offset < 32) || 
+			((entry->children != -1) && (buttons == wimp_DOUBLE_SELECT))) {
 			entry->expanded = !entry->expanded;
 			reformat_pending = true;
 			xwimp_force_redraw(hotlist_window, 0, -16384, 16384, 0);
 		} else {
-		  
+		  	if ((buttons == wimp_DOUBLE_SELECT) || 
+		  			(buttons == wimp_DOUBLE_ADJUST)) {
+				browser_window_create(entry->url, NULL);
+				if (buttons == wimp_DOUBLE_ADJUST) {
+					xwimp_close_window(hotlist_window);
+				}
+		  	}
 		}
 	}
 	
