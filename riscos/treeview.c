@@ -820,6 +820,7 @@ void ro_gui_tree_menu_closed(struct tree *tree) {
  */
 void ro_gui_tree_toolbar_click(wimp_pointer* pointer, struct tree *tree) {
 	struct node *node;
+	bool refresh = true;
 
 	current_toolbar = tree->toolbar;
 	ro_gui_tree_stop_edit(tree);
@@ -860,6 +861,16 @@ void ro_gui_tree_toolbar_click(wimp_pointer* pointer, struct tree *tree) {
 			break;
 		case ICON_TOOLBAR_LAUNCH:
 			ro_gui_tree_launch_selected(tree);
+			break;
+	}
+	switch (tree->toolbar->type) {
+		case THEME_HOTLIST_TOOLBAR:
+			ro_gui_menu_prepare_hotlist();
+			break; 
+		case THEME_HISTORY_TOOLBAR:
+			ro_gui_menu_prepare_global_history();
+			break; 	  
+		default:
 			break;
 	}
 }
