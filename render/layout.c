@@ -805,7 +805,7 @@ struct box * layout_line(struct box *first, int width, int *y,
 		}
 	}
 
-	if (move_y) *y += used_height + 1;
+	if (move_y) *y += used_height;
 	return b;
 }
 
