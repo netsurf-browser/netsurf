@@ -22,12 +22,14 @@
 
 /* libpng uses names starting png_, so use nspng_ here to avoid clashes */
 
+#ifndef NO_IFC
 #define ImageFileConvert_ConverterInfo 0x56842
 #define PNG_TO_SPRITE 0x0b600ff9
+static bool imagefileconvert;
+#endif
 
 /** maps colours to 256 mode colour numbers */
 static os_colour_number colour_table[4096];
-static bool imagefileconvert;
 
 static void info_callback(png_structp png, png_infop info);
 static void row_callback(png_structp png, png_bytep new_row,
@@ -40,12 +42,14 @@ void nspng_init(void)
 	_kernel_oserror *error;
 	unsigned int red, green, blue;
 
+#ifndef NO_IFC
 	/* check if ImageFileConvert is available */
 	error = _swix(ImageFileConvert_ConverterInfo, _IN(0) | _IN(1),
 			0, PNG_TO_SPRITE);
 	imagefileconvert = !error;
 	if (imagefileconvert)
 		return;
+#endif
 
 	/* generate colour lookup table for reducing to 8bpp */
 	for (red = 0; red != 0x10; red++)
@@ -61,11 +65,13 @@ void nspng_init(void)
 
 void nspng_create(struct content *c)
 {
+#ifndef NO_IFC
 	if (imagefileconvert) {
 		c->data.other.data = xcalloc(0, 1);
 		c->data.other.length = 0;
 		return;
 	}
+#endif
 
 	c->data.png.sprite_area = 0;
 	c->data.png.png = png_create_read_struct(PNG_LIBPNG_VER_STRING,
@@ -87,6 +93,7 @@ void nspng_create(struct content *c)
 
 void nspng_process_data(struct content *c, char *data, unsigned long size)
 {
+#ifndef NO_IFC
 	if (imagefileconvert) {
 		c->data.png.data = xrealloc(c->data.png.data,
 				c->data.png.length + size);
@@ -95,6 +102,7 @@ void nspng_process_data(struct content *c, char *data, unsigned long size)
 		c->size += size;		
 		return;
 	}
+#endif
 
 	if (setjmp(png_jmpbuf(c->data.png.png))) {
 		png_destroy_read_struct(&c->data.png.png,
@@ -306,6 +314,7 @@ void end_callback(png_structp png, png_infop info)
 
 int nspng_convert(struct content *c, unsigned int width, unsigned int height)
 {
+#ifndef NO_IFC
 	if (imagefileconvert) {
 		_kernel_oserror *kerror;
 		size_t dest_len;
@@ -332,9 +341,9 @@ int nspng_convert(struct content *c, unsigned int width, unsigned int height)
 		c->width = w;
 		c->height = h;
 
-	} else {
+	} else
+#endif
 		png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
-	}
 
 	c->title = xcalloc(100, 1);
 	sprintf(c->title, "PNG image (%lux%lu)", c->width, c->height);
