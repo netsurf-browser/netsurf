@@ -223,7 +223,7 @@ void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value) {
  * \param  w     window handle
  * \param  i     icon handle
  */
-int ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
+bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
 	wimp_icon_state ic;
 	ic.w = w;
 	ic.i = i;
@@ -240,6 +240,21 @@ int ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
  * \param  state selected state
  */
 #define ro_gui_set_icon_shaded_state(w, i, state) xwimp_set_icon_state(w, i, (state ? wimp_ICON_SHADED : 0), wimp_ICON_SHADED)
+
+
+/**
+ * Gets the shaded state of an icon.
+ *
+ * \param  w     window handle
+ * \param  i     icon handle
+ */
+bool ro_gui_get_icon_shaded_state(wimp_w w, wimp_i i) {
+	wimp_icon_state ic;
+	ic.w = w;
+	ic.i = i;
+	xwimp_get_icon_state(&ic);
+	return (ic.icon.flags & wimp_ICON_SHADED) != 0;
+}
 
 
 /**

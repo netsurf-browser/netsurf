@@ -62,7 +62,7 @@ static wimp_window empty_window = {
 	wimp_COLOUR_DARK_GREY,
 	wimp_COLOUR_MID_LIGHT_GREY,
 	wimp_COLOUR_CREAM,
-	wimp_WINDOW_NEVER3D,
+	wimp_WINDOW_NEVER3D | 0x16u /* RISC OS 5.03+ - greyed icons detected for interactive help */,
 	{0, 0, 16384, 16384},
 	0,
 	0,

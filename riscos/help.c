@@ -19,6 +19,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
 #include "netsurf/riscos/toolbar.h"
+#include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/log.h"
 
@@ -50,6 +51,10 @@
 	of numbers representing the menu structure (eg 'HelpBrowserMenu3-1-2').
 	If '<key><identifier>' is not available, then simply '<key>' is then used. For example
 	if 'HelpToolbar7' is not available then 'HelpToolbar' is then tried.
+	
+	If an item is greyed out then a suffix of 'g' is added (eg 'HelpToolbar7g'). For this to
+	work, windows must have bit 4 of the window flag byte set and the user must be running
+	RISC OS 5.03 or greater.
 
 	For items marked with an asterisk [*] a call must be made to determine the required
 	help text as the window does not contain any icons. An example of this is the hotlist
@@ -73,6 +78,8 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	wimp_i icon;
 	struct gui_window *g;
 	unsigned int index;
+	bool greyed = false;
+	wimp_menu *test_menu;
 
 	/*	Ensure we have a help request
 	*/
@@ -130,6 +137,14 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	/*	If we've managed to find something so far then we broadcast it
 	*/
 	if (message_token[0] != 0x00) {
+		/*	Check to see if we are greyed out
+		*/
+		if ((icon >= 0) && (ro_gui_get_icon_shaded_state(window, icon))) {
+			strcat(message_token, "g");
+		}
+		
+		/*	Broadcast out message
+		*/
 		ro_gui_interactive_help_broadcast(message, &message_token[0]);
 		return;
 	}
@@ -162,7 +177,15 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	/*	Decode the menu
 	*/
 	index = 0;
+	test_menu = current_menu;
 	while (menu_tree.items[index] != -1) {
+		/*	Check if we're greyed out
+		*/
+		greyed |= test_menu->entries[menu_tree.items[index]].icon_flags & wimp_ICON_SHADED;
+		test_menu = test_menu->entries[menu_tree.items[index]].sub_menu;
+	  	
+		/*	Continue adding the entries
+		*/
 		if (index == 0) {
 			sprintf(menu_buffer, "%i", menu_tree.items[index]);
 		} else {
@@ -171,6 +194,7 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		strcat(message_token, menu_buffer);
 		index++;
 	}
+	if (greyed) strcat(message_token, "g");
 
 	/*	Finally, broadcast the menu help
 	*/
@@ -185,31 +209,36 @@ void ro_gui_interactive_help_request(wimp_message *message) {
  * \param  token the token to look up
  */
 static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token) {
-	char *translated_token;
+	const char *translated_token;
 	help_full_message_reply *reply;
+	char *base_token;
 
 	/*	Check if the message exists
 	*/
-	translated_token = (char *)messages_get(token);
+	translated_token = messages_get(token);
 	if (translated_token == token) {
-		char *base_token;
-
-		/*	Find the key from the token.
+		/*	We must never provide default help for a 'g' suffix.
 		*/
-		base_token = translated_token;
-		while (base_token[0] != 0x00) {
-			if ((base_token[0] == '-') ||
-					((base_token[0] >= '0') && (base_token[0] <= '9'))) {
-				base_token[0] = 0x00;
-			} else {
-				++base_token;
+		if (token[strlen(token) - 1] == 'g') {
+			token[0] = '\0';
+		} else {
+			/*	Find the key from the token.
+			*/
+			base_token = token;
+			while (base_token[0] != 0x00) {
+				if ((base_token[0] == '-') ||
+						((base_token[0] >= '0') && (base_token[0] <= '9'))) {	
+					base_token[0] = 0x00;
+				} else {
+					++base_token;
+				}
 			}
-		}
 
-		/*	Check if the base key exists
-		*/
-		translated_token = (char *)messages_get(token);
-		if (translated_token == token) return;
+			/*	Check if the base key exists and use an empty string if not
+			*/
+			translated_token = messages_get(token);
+			if (translated_token == token) token[0] = '\0';
+		}
 	}
 
 	/*	Copy our message string

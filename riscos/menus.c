@@ -333,13 +333,12 @@ static wimp_MENU(3) hotlist_collapse = {
 };
 
 
-static wimp_MENU(4) hotlist_save = {
+static wimp_MENU(3) hotlist_save = {
   { "SaveSelect" }, 7,2,7,0, 200, 44, 0,
   {
     { wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "URI" } },
     { wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "URL" } },
-    { wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "HTML" } },
-    { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "LinkText" } }
+    { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING, (wimp_menu*)1, DEFAULT_FLAGS, { "HTML" } },
   }
 };
 
@@ -1133,6 +1132,19 @@ void ro_gui_menu_hotlist_warning(wimp_message_menu_warning *warning)
 					warning->pos.x, warning->pos.y);
 			break;
 		case 0: /* Save-> */
+			switch (warning->selection.items[2]) {
+			case -1: /* No sub-menu */
+				ro_gui_menu_prepare_hotlist();
+				error = xwimp_create_sub_menu(hotlist_save_menu,
+						warning->pos.x, warning->pos.y);
+				break;
+			case 1: /* URI */
+				break;
+			case 2: /* URL */
+				break;
+			case 3: /* HTML */
+				break;
+			}
 			break;
 		case 1: /* Edit-> */
 			hotlist_insert = true;
