@@ -426,8 +426,8 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 	}
 
 	/* the height should be no less than the content height */
-	if (content && (unsigned int)height < content->height * 2)
-		height = content->height * 2;
+	if (content && (unsigned int)height < content->height * 2 * g->scale)
+		height = content->height * 2 * g->scale;
 
 	/* change extent if necessary */
 	if (g->data.browser.old_width != width ||
@@ -439,8 +439,9 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 		g->data.browser.old_width = width;
 		g->data.browser.old_height = height;
 
-		if (content && (unsigned int)width < content->width * 2)
-			width = content->width * 2;
+		if (content && (unsigned int)width <
+				content->width * 2 * g->scale)
+			width = content->width * 2 * g->scale;
 		else {
 			os_box extent = { 0, -height, width, toolbar_height };
 			wimp_set_extent(g->window, &extent);
@@ -455,8 +456,9 @@ void ro_gui_window_open(gui_window *g, wimp_open *open)
 			!(state.flags & wimp_WINDOW_FULL_SIZE)) {
 		width = open->visible.x1 - open->visible.x0;
 		height = open->visible.y1 - open->visible.y0 - toolbar_height;
-		if (content && (unsigned int)height < content->height * 2)
-			height = content->height * 2;
+		if (content && (unsigned int)height <
+				content->height * 2 * g->scale)
+			height = content->height * 2 * g->scale;
 		{
 			os_box extent = { 0, -height, width, toolbar_height };
 			wimp_set_extent(g->window, &extent);
