@@ -20,11 +20,6 @@
 </tr>
 <tr><td colspan="2" bgcolor="#dddddd" height="1"></td></tr>
 <tr valign="top">
-  <td width="30%"><font size="2"><strong><a href="http://utter.chaos.org/~pdh/software/intergif.htm">animlib</a></strong></font><br><img src="file:///%3CNetsurf$Dir%3E/About/animlib" alt="animlib logo"></td>
-  <td width="70%"><font size="2">Copyright &copy; 1997-2000 Peter Hartley.</font></td>
-</tr>
-<tr><td colspan="2" bgcolor="#dddddd" height="1"></td></tr>
-<tr valign="top">
   <td width="30%"><font size="2"><strong><a href="http://curl.haxx.se/libcurl/">libcurl</a></strong></font><br><img src="file:///%3CNetsurf$Dir%3E/About/libcurl" alt="libcurl logo"></td>
   <td width="70%"><font size="2">Copyright &copy; 1998-2003 Daniel Stenberg.</font></td>
 </tr>
