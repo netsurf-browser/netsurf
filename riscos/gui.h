@@ -139,6 +139,7 @@ void ro_gui_dialog_proxyauth_menu_selection(int item);
 void ro_gui_dialog_image_menu_selection(int item);
 void ro_gui_dialog_languages_menu_selection(char *lang);
 void ro_gui_dialog_font_menu_selection(char *name);
+void ro_gui_dialog_redraw(wimp_draw *redraw);
 
 /* in download.c */
 void ro_gui_download_init(void);

@@ -69,8 +69,7 @@ static wimp_window theme_toolbar_window = {
 	0,
 	0,
 	wimp_TOP,
-	wimp_WINDOW_NEW_FORMAT | wimp_WINDOW_MOVEABLE | wimp_WINDOW_AUTO_REDRAW |
-			wimp_WINDOW_FURNITURE_WINDOW,
+	wimp_WINDOW_NEW_FORMAT | wimp_WINDOW_MOVEABLE | wimp_WINDOW_FURNITURE_WINDOW,
 	wimp_COLOUR_BLACK,
 	wimp_COLOUR_LIGHT_GREY,
 	wimp_COLOUR_LIGHT_GREY,
@@ -96,6 +95,7 @@ static wimp_window theme_toolbar_window = {
 static char theme_url_validation[] = "Pptr_write\0";
 static char theme_resize_validation[] = "R1;Pptr_lr,8,6\0";
 static char theme_null_text_string[] = "\0";
+static char theme_separator_name[] = "separator\0";
 
 
 /**
@@ -539,6 +539,51 @@ void ro_gui_theme_close(struct theme_descriptor *descriptor, bool list) {
 
 
 /**
+ * Performs the redraw for a toolbar
+ *
+ * \param redraw   the redraw area
+ * \param toolbar  the toolbar to redraw
+ */
+void ro_gui_theme_redraw(struct toolbar *toolbar, wimp_draw *redraw) {
+	assert(toolbar);
+
+	struct toolbar_icon *icon;
+	osbool more = wimp_redraw_window(redraw);
+	wimp_icon separator_icon;
+	bool perform_redraw = false;
+	
+	/*	Set up the icon
+	*/
+	if ((toolbar->descriptor) && (toolbar->descriptor->theme) &&
+			(toolbar->descriptor->theme->sprite_area)) {
+		separator_icon.flags = wimp_ICON_SPRITE | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
+				wimp_ICON_VCENTRED;
+		separator_icon.data.indirected_sprite.id = (osspriteop_id)theme_separator_name;
+		separator_icon.data.indirected_sprite.area =
+				toolbar->descriptor->theme->sprite_area;
+		separator_icon.data.indirected_sprite.size = 12;
+		separator_icon.extent.y0 = 0;
+		separator_icon.extent.y1 = toolbar->height;
+		perform_redraw = true;
+	}
+	while (more) {
+	  	if (perform_redraw) {
+	  	  	for (icon = toolbar->icon; icon; icon = icon->next) {
+	  	  		if (icon->icon_number == -1) {
+					separator_icon.extent.x0 = icon->x;
+					separator_icon.extent.x1 = icon->x + icon->width;
+					wimp_plot_icon(&separator_icon);
+				}
+			}
+
+	  	  
+	  	}
+		more = wimp_get_rectangle(redraw);
+	}
+}
+
+
+/**
  * Frees any unused theme descriptors.
  *
  * \param descriptor  the theme_descriptor to free
@@ -727,6 +772,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 	} else {
 		theme_toolbar_window.work_bg = wimp_COLOUR_VERY_LIGHT_GREY;
 	}
+	theme_toolbar_window.flags &= ~wimp_WINDOW_AUTO_REDRAW;
 	theme_toolbar_window.flags |= wimp_WINDOW_NO_BOUNDS;
 	theme_toolbar_window.xmin = 1;
 	theme_toolbar_window.ymin = 1;
@@ -743,7 +789,6 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 		warn_user("WimpError", error->errmess);
 		return false;
 	}
-	LOG(("Created window 1"));
 	
 	/*	Create the basic icons
 	*/	
@@ -834,6 +879,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 			theme_toolbar_window.work_bg = wimp_COLOUR_VERY_LIGHT_GREY;
 		}
 		theme_toolbar_window.flags &= ~wimp_WINDOW_NO_BOUNDS;
+		theme_toolbar_window.flags |= wimp_WINDOW_AUTO_REDRAW;
 		theme_toolbar_window.xmin = 12;
 		theme_toolbar_window.ymin = ro_get_hscroll_height((wimp_w)0) - 4;
 		theme_toolbar_window.extent.y1 = theme_toolbar_window.ymin;

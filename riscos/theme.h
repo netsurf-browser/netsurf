@@ -85,6 +85,7 @@ struct theme_descriptor *ro_gui_theme_get_available(void);
 bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list);
 bool ro_gui_theme_apply(struct theme_descriptor *descriptor);
 void ro_gui_theme_close(struct theme_descriptor *descriptor, bool list);
+void ro_gui_theme_redraw(struct toolbar *toolbar, wimp_draw *redraw);
 
 struct toolbar *ro_gui_theme_create_toolbar(struct theme_descriptor *descriptor, toolbar_type type);
 bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct toolbar *toolbar);

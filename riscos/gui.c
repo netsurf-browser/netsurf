@@ -743,34 +743,21 @@ void ro_gui_null_reason_code(void)
 void ro_gui_redraw_window_request(wimp_draw *redraw)
 {
 	struct gui_window *g;
-	osbool more;
-	os_error *error;
 
 	if (redraw->w == history_window)
 		ro_gui_history_redraw(redraw);
 	else if (redraw->w == hotlist_window)
 		ro_gui_hotlist_redraw(redraw);
+	else if ((hotlist_toolbar) && (hotlist_toolbar->toolbar_handle == redraw->w))
+		ro_gui_theme_redraw(hotlist_toolbar, redraw);
 	else if (redraw->w == dialog_debug)
 		ro_gui_debugwin_redraw(redraw);
 	else if ((g = ro_gui_window_lookup(redraw->w)) != NULL)
 		ro_gui_window_redraw(g, redraw);
+	else if ((g = ro_gui_toolbar_lookup(redraw->w)) != NULL)
+		ro_gui_theme_redraw(g->toolbar, redraw);
 	else {
-		error = xwimp_redraw_window(redraw, &more);
-		if (error) {
-			LOG(("xwimp_redraw_window: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-		while (more) {
-			error = xwimp_get_rectangle(redraw, &more);
-			if (error) {
-				LOG(("xwimp_get_rectangle: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("WimpError", error->errmess);
-				return;
-			}
-		}
+	  	ro_gui_dialog_redraw(redraw);
 	}
 }
 
