@@ -14,24 +14,10 @@
 
 #include <stdbool.h>
 
-struct list_counter {
-  	char *name;				/** Counter name */
-  	struct list_counter_state *first;	/** First counter state */
-  	struct list_counter_state *state;	/** Current counter state */
-	struct list_counter *next;		/** Next counter */
-};
-
-struct list_counter_state {
-	int count;				/** Current count */
-	struct list_counter_state *parent;	/** Parent counter, or NULL */
-	struct list_counter_state *next;	/** Next counter, or NULL */
-};
-
-
 void render_list_destroy_counters(void);
-bool render_list_counter_reset(const char *name, int value);
-bool render_list_counter_increment(const char *name, int value);
-bool render_list_counter_end_scope(const char *name);
+bool render_list_counter_reset(char *name, int value);
+bool render_list_counter_increment(char *name, int value);
+bool render_list_counter_end_scope(char *name);
 char *render_list_counter(struct css_counter *css_counter);
 
 void render_list_test(void);

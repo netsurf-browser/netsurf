@@ -85,6 +85,17 @@ struct css_border_width {
 };
 
 typedef enum {
+	CSS_CONTENT_STRING,
+	CSS_CONTENT_URI,
+	CSS_CONTENT_COUNTER,
+	CSS_CONTENT_ATTR,
+	CSS_CONTENT_OPEN_QUOTE,
+	CSS_CONTENT_CLOSE_QUOTE,
+	CSS_CONTENT_NO_OPEN_QUOTE,
+	CSS_CONTENT_NO_CLOSE_QUOTE
+} css_content_type_generated;
+
+typedef enum {
 	CSS_LIST_STYLE_IMAGE_INHERIT,
 	CSS_LIST_STYLE_IMAGE_NONE,
 	CSS_LIST_STYLE_IMAGE_URI,
@@ -113,10 +124,27 @@ typedef enum {
 	CSS_VERTICAL_ALIGN_NOT_SET
 } css_vertical_align_type;
 
+struct css_counter_control {
+	char *name;
+	int value;
+	struct css_counter_control *next;
+};
+  
 struct css_counter {
-  	const char *name;
+  	char *name;
   	css_list_style_type style;
-  	const char *separator; /** NULL for counter() */
+  	char *separator; /** NULL for counter() */
+};
+
+struct css_content {
+  	css_content_type_generated type;
+  	union {
+  	  	char *string;
+  	  	char *uri;
+  		struct css_counter counter;
+  		char *attr;
+  	} data;
+  	struct css_content *next;
 };
 
 /** Representation of a complete CSS 2 style. */
@@ -166,7 +194,33 @@ struct css_style {
 
 	colour color;
 
-	/** \todo content and counters */
+	/* generated content */
+	struct {
+		enum {
+ 		 	CSS_CONTENT_NORMAL,
+			CSS_CONTENT_INHERIT,
+			CSS_CONTENT_INTERPRET,
+			CSS_CONTENT_NOT_SET } type;
+		struct css_content *content;
+	} content;
+	
+	/* counter controls */
+	struct {
+		enum {
+			CSS_COUNTER_RESET_NONE,
+			CSS_COUNTER_RESET_INHERIT,
+			CSS_COUNTER_RESET_INTERPRET,
+			CSS_COUNTER_RESET_NOT_SET } type;
+		struct css_counter_control *data;
+	} counter_reset;
+	struct {
+		enum {
+			CSS_COUNTER_INCREMENT_NONE,
+			CSS_COUNTER_INCREMENT_INHERIT,
+			CSS_COUNTER_INCREMENT_INTERPRET,
+			CSS_COUNTER_INCREMENT_NOT_SET } type;
+		struct css_counter_control *data;
+	} counter_increment;
 
 	css_cursor cursor;
 	css_direction direction;
@@ -562,6 +616,8 @@ const char *css_parser_TokenName(int tokenType);
 void css_get_style(struct content *c, xmlNode *n, struct css_style * style);
 struct css_style *css_duplicate_style(const struct css_style * const style);
 void css_free_style(struct css_style *style);
+void css_deep_free_content(struct css_content *content);
+void css_deep_free_counter_control(struct css_counter_control *control);
 void css_cascade(struct css_style * const style,
 		const struct css_style * const apply);
 void css_merge(struct css_style * const style,

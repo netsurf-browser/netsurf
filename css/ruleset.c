@@ -40,6 +40,11 @@ static int parse_length(struct css_length * const length,
 static colour parse_colour(const struct css_node * const v);
 static colour css_parse_rgb(struct css_node *v);
 static bool parse_uri(const struct css_node *v, char **uri);
+static struct css_content *parse_content_new(struct css_content **current, css_content_type_generated generated);
+static bool parse_content_counter(struct css_content **current, struct css_node *t, bool counters);
+bool parse_counter_control_data(struct css_counter_control **current, const struct css_node * v, int empty);
+struct css_counter_control *parse_counter_control_new(struct css_counter_control **current);
+
 static void parse_background(struct css_style * const s,
 		const struct css_node * v);
 static void parse_background_attachment(struct css_style * const s, const struct css_node * const v);
@@ -91,6 +96,9 @@ static void parse_caption_side(struct css_style * const s, const struct css_node
 static void parse_clear(struct css_style * const s, const struct css_node * const v);
 static void parse_clip(struct css_style * const s, const struct css_node * v);
 static void parse_color(struct css_style * const s, const struct css_node * const v);
+static void parse_content(struct css_style * const s, const struct css_node * v);
+static void parse_counter_increment(struct css_style * const s, const struct css_node * v);
+static void parse_counter_reset(struct css_style * const s, const struct css_node * v);
 static void parse_cursor(struct css_style * const s, const struct css_node * v);
 static void parse_direction(struct css_style * const s, const struct css_node * v);
 static void parse_display(struct css_style * const s, const struct css_node * const v);
@@ -203,6 +211,9 @@ static const struct css_property_entry css_property_table[] = {
 	{ "clear",			parse_clear },
 	{ "clip",			parse_clip },
 	{ "color",			parse_color },
+	{ "content",			parse_content },
+	{ "counter-increment",		parse_counter_increment },
+	{ "counter-reset",		parse_counter_reset },
 	{ "cursor",			parse_cursor },
 	{ "direction",			parse_direction },
 	{ "display",			parse_display },
@@ -1612,6 +1623,246 @@ void parse_color(struct css_style * const s, const struct css_node * const v)
 	c = parse_colour(v);
 	if (c != CSS_COLOR_NONE)
 		s->color = c;
+}
+
+void parse_content(struct css_style * const s, const struct css_node * v)
+{
+	struct css_content *new_content = NULL;
+	struct css_content *content;
+	struct css_node *t;
+	bool first = true;
+	
+	for (; v; v = v->next) {
+		switch (v->type) {
+			case CSS_NODE_STRING:
+				content = parse_content_new(&new_content, CSS_CONTENT_STRING);
+				if (!content)
+					return;
+				content->data.string = strndup(v->data, v->data_length);
+				if (!content->data.string) {
+					css_deep_free_content(new_content);
+					return;
+				}
+				break;
+			case CSS_NODE_URI:
+				content = parse_content_new(&new_content, CSS_CONTENT_URI);
+				if (!content)
+					return;
+				if (!parse_uri(v, &content->data.uri)) {
+					css_deep_free_content(new_content);
+					return;
+				}
+				break;
+			case CSS_NODE_IDENT:
+				if (v->data_length == 7 &&
+						strncasecmp(v->data, "inherit", 7) == 0) {
+					if ((!first) || (v->next))
+						return;
+					css_deep_free_content(s->content.content);
+					s->content.content = NULL;
+					s->content.type = CSS_CONTENT_INHERIT;
+					return;
+				} else if (v->data_length == 6 &&
+						strncasecmp(v->data, "normal", 6) == 0) {
+					if ((!first) || (v->next))
+						return;
+					css_deep_free_content(s->content.content);
+					s->content.content = NULL;
+					s->content.type = CSS_CONTENT_NORMAL;
+					return;
+				} else if (v->data_length == 10 &&
+						strncasecmp(v->data, "open-quote", 10) == 0) {
+					if (!parse_content_new(&new_content, CSS_CONTENT_OPEN_QUOTE))
+						return;
+				} else if (v->data_length == 11 &&
+						strncasecmp(v->data, "close-quote", 11) == 0) {
+					if (!parse_content_new(&new_content, CSS_CONTENT_CLOSE_QUOTE))
+						return;
+				} else if (v->data_length == 13 &&
+						strncasecmp(v->data, "no-open-quote", 13) == 0) {
+					if (!parse_content_new(&new_content, CSS_CONTENT_NO_OPEN_QUOTE))
+						return;
+				} else if (v->data_length == 14 &&
+						strncasecmp(v->data, "no-close-quote", 14) == 0) {
+					if (!parse_content_new(&new_content, CSS_CONTENT_NO_CLOSE_QUOTE))
+						return;
+				} else {
+					css_deep_free_content(new_content);
+					return;
+				}
+				break;
+			case CSS_NODE_FUNCTION:
+				if (v->data_length == 5 &&
+						strncasecmp(v->data, "attr", 4) == 0) {
+					content = parse_content_new(&new_content, CSS_CONTENT_URI);
+					if (!content)
+						return;
+					t = v->value;
+					if ((t->type == CSS_NODE_STRING) && (!t->next)) {
+						content->data.string = strndup(t->data, t->data_length);
+						if (!content->data.string) {
+							css_deep_free_content(new_content);
+						  	return;
+						}
+					} else {
+						css_deep_free_content(new_content);
+						return;
+					}
+				} else if (v->data_length == 8 &&
+						strncasecmp(v->data, "counter", 7) == 0) {
+					if (!parse_content_counter(&new_content, v->value, false))
+						return;
+				} else if (v->data_length == 9 &&
+						strncasecmp(v->data, "counters", 8) == 0) {
+					if (!parse_content_counter(&new_content, v->value, true))
+						return;
+				} else {
+					css_deep_free_content(new_content);
+					return;
+				}
+			default:
+				css_deep_free_content(new_content);
+				return;
+		}
+		first = false;
+	}
+	
+	if (new_content) {
+		css_deep_free_content(s->content.content);
+		s->content.type = CSS_CONTENT_INTERPRET;
+		s->content.content = new_content; 
+	}
+}
+
+struct css_content *parse_content_new(struct css_content **current, css_content_type_generated generated) {
+	struct css_content *content;
+	struct css_content *link;
+	
+	content = (struct css_content *)calloc(1, sizeof(struct css_content));
+	if (!content) {
+	  	css_deep_free_content(*current);
+	  	return NULL;
+	}
+
+	content->type = generated;
+	if (!*current) {
+		*current = content;
+	} else {
+		for (link = *current; link->next; link = link->next);
+		link->next = content;
+	}
+	return content;
+}
+
+bool parse_content_counter(struct css_content **current, struct css_node *t, bool counters) {
+	struct css_content *content;
+	css_list_style_type z;
+	
+	content = parse_content_new(current, CSS_CONTENT_COUNTER);
+	if ((!content) || (t->type != CSS_NODE_IDENT))
+		return false;
+	
+	content->data.counter.name = strndup(t->data, t->data_length);
+	content->data.counter.style = CSS_LIST_STYLE_TYPE_DECIMAL;
+	t = t->next;
+	
+	if (counters) {
+	  	if ((!t) || (t->type != CSS_NODE_STRING)) {
+	  	  	css_deep_free_content(*current);
+		  	return false;
+		}
+		content->data.counter.separator = strndup(t->data, t->data_length);
+		t = t->next;
+	}
+	
+	if (!t)
+		return true;
+
+	if ((t->type != CSS_NODE_IDENT) || (t->next)) {
+  	  	css_deep_free_content(*current);
+		return false;
+	}
+	z = css_list_style_type_parse(t->data, t->data_length);
+	if (z != CSS_LIST_STYLE_TYPE_UNKNOWN)
+		content->data.counter.style = z;
+	return true;
+}
+
+void parse_counter_reset(struct css_style * const s, const struct css_node * v) {
+	struct css_counter_control *counter = NULL;
+
+	if (!parse_counter_control_data(&counter, v, 0))
+		return;
+
+	if (counter) {
+		css_deep_free_counter_control(s->counter_reset.data);
+		s->counter_reset.type = CSS_COUNTER_RESET_INTERPRET;
+		s->counter_reset.data = counter;
+	}	
+}
+
+void parse_counter_increment(struct css_style * const s, const struct css_node * v) {
+	struct css_counter_control *counter = NULL;
+
+	if (!parse_counter_control_data(&counter, v, 1))
+		return;
+
+	if (counter) {
+		css_deep_free_counter_control(s->counter_increment.data);
+		s->counter_increment.type = CSS_COUNTER_INCREMENT_INTERPRET;
+		s->counter_increment.data = counter;
+	}
+}
+
+bool parse_counter_control_data(struct css_counter_control **current, const struct css_node * v, int empty) {
+	struct css_counter_control *open = NULL;
+  
+	for (; v; v = v->next) {
+		switch (v->type) {
+			case CSS_NODE_IDENT:
+				open = parse_counter_control_new(current);
+				if (!open)
+					return false;
+				open->name = strndup(v->data, v->data_length);
+				open->value = empty;
+				if (!open->name) {
+					css_deep_free_counter_control(*current);
+					return false;
+				}
+				break;
+			case CSS_NODE_NUMBER:
+				if (!open) {
+					css_deep_free_counter_control(*current);
+					return false;
+				}
+				open->value = atoi(v->data);
+				open = NULL;
+				break;
+			default:
+				css_deep_free_counter_control(*current);
+				return false;
+		}
+	}
+	return true;
+}
+
+struct css_counter_control *parse_counter_control_new(struct css_counter_control **current) {
+	struct css_counter_control *counter;
+	struct css_counter_control *link;
+	
+	counter = (struct css_counter_control *)calloc(1, sizeof(struct css_counter_control));
+	if (!counter) {
+	  	css_deep_free_counter_control(*current);
+	  	return NULL;
+	}
+
+	if (!*current) {
+		*current = counter;
+	} else {
+		for (link = *current; link->next; link = link->next);
+		link->next = counter;
+	}
+	return counter;
 }
 
 void parse_cursor(struct css_style * const s, const struct css_node * v)

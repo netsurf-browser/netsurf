@@ -16,6 +16,20 @@
 #include "netsurf/render/list.h"
 #include "netsurf/utils/log.h"
 
+
+struct list_counter {
+  	char *name;				/** Counter name */
+  	struct list_counter_state *first;	/** First counter state */
+  	struct list_counter_state *state;	/** Current counter state */
+	struct list_counter *next;		/** Next counter */
+};
+
+struct list_counter_state {
+	int count;				/** Current count */
+	struct list_counter_state *parent;	/** Parent counter, or NULL */
+	struct list_counter_state *next;	/** Next counter, or NULL */
+};
+
 static struct list_counter *list_counter_pool = NULL;
 static char list_counter_workspace[16];
 
@@ -31,13 +45,14 @@ static const int list_counter_decimal[] = {    1,   4,   5,   9,
 		/ sizeof(list_counter_decimal[0]))
 
 
-static struct list_counter *render_list_find_counter(const char *name);
+static struct list_counter *render_list_find_counter(char *name);
 static char *render_list_encode_counter(struct list_counter_state *state,
 		css_list_style_type style);
 static char *render_list_encode_roman(int value);
 
-static void render_list_counter_output(const char *name);
-
+/*
+static void render_list_counter_output(char *name);
+*/
 
 /**
  * Finds a counter from the current pool, or adds a new one.
@@ -45,13 +60,13 @@ static void render_list_counter_output(const char *name);
  * \param name  the name of the counter to find
  * \return the counter, or NULL if it couldn't be found/created.
  */
-static struct list_counter *render_list_find_counter(const char *name) {
+static struct list_counter *render_list_find_counter(char *name) {
 	struct list_counter *counter;
 
 	assert(name);
 	/* find a current counter */
 	for (counter = list_counter_pool; counter; counter = counter->next)
-		if (!strcmp(name, counter->name))
+		if (!strcasecmp(name, counter->name))
 			return counter;
 
 	/* create a new counter */
@@ -104,7 +119,7 @@ void render_list_destroy_counters(void) {
  * \param value  the value to reset the counter to
  * \return true on success, false on failure.
  */
-bool render_list_counter_reset(const char *name, int value) {
+bool render_list_counter_reset(char *name, int value) {
 	struct list_counter *counter;
 	struct list_counter_state *state;
 	struct list_counter_state *link;
@@ -139,7 +154,7 @@ bool render_list_counter_reset(const char *name, int value) {
  * \param value  the value to increment the counter by
  * \return true on success, false on failure.
  */
-bool render_list_counter_increment(const char *name, int value) {
+bool render_list_counter_increment(char *name, int value) {
 	struct list_counter *counter;
 	
 	assert(name);
@@ -169,7 +184,7 @@ bool render_list_counter_increment(const char *name, int value) {
  * \param name	 the name of the counter to end the scope for
  * \return true on success, false on failure.
  */
-bool render_list_counter_end_scope(const char *name) {
+bool render_list_counter_end_scope(char *name) {
 	struct list_counter *counter;
 	
 	assert(name);
@@ -387,7 +402,7 @@ static char *render_list_encode_roman(int value) {
 
 void render_list_test(void) {
   	/* example given in CSS2.1/12.4.1 */
-	render_list_counter_reset("item", 0);
+/*	render_list_counter_reset("item", 0);
 	render_list_counter_increment("item", 1);
 	render_list_counter_increment("item", 1);
 	render_list_counter_reset("item", 0);
@@ -409,9 +424,10 @@ void render_list_test(void) {
 	render_list_counter_increment("item", 1);
 	render_list_counter_increment("item", 1);
 	render_list_counter_end_scope("item");
+*/
 }
-
-static void render_list_counter_output(const char *name) {
+/*
+static void render_list_counter_output(char *name) {
 	struct list_counter *counter;
 	char *result;
 	struct css_counter css_counter;
@@ -442,3 +458,4 @@ static void render_list_counter_output(const char *name) {
 		free(result);
 	}
 }
+*/

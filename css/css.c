@@ -133,6 +133,9 @@ const struct css_style css_base_style = {
 	  { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } },
 	  { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } } } },
 	0x000000,
+	{ CSS_CONTENT_NORMAL, 0 },
+	{ CSS_COUNTER_RESET_NONE, 0 },
+	{ CSS_COUNTER_INCREMENT_NONE, 0 },	
 	CSS_CURSOR_AUTO,
 	CSS_DIRECTION_LTR,
 	CSS_DISPLAY_BLOCK,
@@ -215,6 +218,9 @@ const struct css_style css_empty_style = {
 	  { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } },
 	  { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } } } },
 	CSS_COLOR_NOT_SET,
+	{ CSS_CONTENT_NOT_SET, 0 },
+	{ CSS_COUNTER_RESET_NOT_SET, 0 },
+	{ CSS_COUNTER_INCREMENT_NOT_SET, 0 },	
 	CSS_CURSOR_NOT_SET,
 	CSS_DIRECTION_NOT_SET,
 	CSS_DISPLAY_NOT_SET,
@@ -298,6 +304,9 @@ const struct css_style css_blank_style = {
 	  { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } },
 	  { CSS_CLIP_RECT_AUTO, { 0, CSS_UNIT_PX } } } },
 	CSS_COLOR_INHERIT,
+	{ CSS_CONTENT_NORMAL, 0 },
+	{ CSS_COUNTER_RESET_NONE, 0 },
+	{ CSS_COUNTER_INCREMENT_NONE, 0 },	
 	CSS_CURSOR_INHERIT,
 	CSS_DIRECTION_INHERIT,
 	CSS_DISPLAY_INLINE,
@@ -516,7 +525,67 @@ void css_deep_free_style(struct css_style *style)
 	if (style->list_style_image.type == CSS_LIST_STYLE_IMAGE_URI)
 		free(style->list_style_image.uri);
 
+	if (style->content.type == CSS_CONTENT_INTERPRET)
+		css_deep_free_content(style->content.content);
+
+	if (style->counter_reset.type == CSS_COUNTER_RESET_INTERPRET)
+		css_deep_free_counter_control(style->counter_reset.data);
+
+	if (style->counter_increment.type == CSS_COUNTER_INCREMENT_INTERPRET)
+		css_deep_free_counter_control(style->counter_increment.data);
+
 	free(style);
+}
+
+/**
+ * Free all auto-generated content data
+ *
+ * \param content  the auto-generated content data to free
+ */
+void css_deep_free_content(struct css_content *content) {
+	struct css_content *next;
+
+	while (content) {
+		next = content->next;
+		switch (content->type) {
+			case CSS_CONTENT_STRING:
+				free(content->data.string);
+				break;
+			case CSS_CONTENT_URI:
+				free(content->data.uri);
+				break;
+			case CSS_CONTENT_COUNTER:
+				free(content->data.counter.name);
+				free(content->data.counter.separator);
+				break;
+			case CSS_CONTENT_ATTR:
+				free(content->data.attr);
+				break;
+			case CSS_CONTENT_OPEN_QUOTE:
+			case CSS_CONTENT_CLOSE_QUOTE:
+			case CSS_CONTENT_NO_OPEN_QUOTE:
+			case CSS_CONTENT_NO_CLOSE_QUOTE:
+				break;
+		}
+		free(content);
+		content = next;
+	}
+}
+
+/**
+ * Free all counter control data
+ *
+ * \param counter  the counter control data to free
+ */
+void css_deep_free_counter_control(struct css_counter_control *control) {
+	struct css_counter_control *next;
+
+	while (control) {
+		next = control->next;
+		free(control->name);
+		free(control);
+		control = next;
+	}
 }
 
 /**
@@ -2340,6 +2409,15 @@ void css_cascade(struct css_style * const style,
 	if (apply->color != CSS_COLOR_INHERIT &&
 			apply->color != CSS_COLOR_NOT_SET)
 		style->color = apply->color;
+	if (apply->content.type != CSS_CONTENT_INHERIT &&
+			apply->content.type != CSS_CONTENT_NOT_SET)
+		style->content = apply->content;
+	if (apply->counter_reset.type != CSS_COUNTER_RESET_INHERIT &&
+			apply->counter_reset.type != CSS_COUNTER_RESET_NOT_SET)
+		style->counter_reset = apply->counter_reset;
+	if (apply->counter_increment.type != CSS_COUNTER_INCREMENT_INHERIT &&
+			apply->counter_increment.type != CSS_COUNTER_INCREMENT_NOT_SET)
+		style->counter_increment = apply->counter_increment;
 	if (apply->cursor != CSS_CURSOR_INHERIT &&
 			apply->cursor != CSS_CURSOR_NOT_SET)
 		style->cursor = apply->cursor;
@@ -2606,6 +2684,12 @@ void css_merge(struct css_style * const style,
 		style->clear = apply->clear;
 	if (apply->color != CSS_COLOR_NOT_SET)
 		style->color = apply->color;
+	if (apply->content.type != CSS_CONTENT_NOT_SET)
+		style->content = apply->content;
+	if (apply->counter_reset.type != CSS_COUNTER_RESET_NOT_SET)
+		style->counter_reset = apply->counter_reset;
+	if (apply->counter_increment.type != CSS_COUNTER_INCREMENT_NOT_SET)
+		style->counter_increment = apply->counter_increment;
 	if (apply->cursor != CSS_CURSOR_NOT_SET)
 		style->cursor = apply->cursor;
 	if (apply->direction != CSS_DIRECTION_NOT_SET)
