@@ -18,6 +18,7 @@
 typedef unsigned long colour;  /* 0xbbggrr */
 #define TRANSPARENT 0x1000000
 #define CSS_COLOR_INHERIT 0x2000000
+#define CSS_COLOR_NONE 0x3000000
 
 struct css_length {
 	float value;

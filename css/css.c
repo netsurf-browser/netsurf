@@ -577,7 +577,8 @@ void css_dump_style(const struct css_style * const style)
 	fprintf(stderr, "color: #%lx; ", style->color);
 	fprintf(stderr, "display: %s; ", css_display_name[style->display]);
 	fprintf(stderr, "float: %s; ", css_float_name[style->float_]);
-	fprintf(stderr, "font-size: ");
+	fprintf(stderr, "font: %s %s ", css_font_style_name[style->font_style],
+			css_font_weight_name[style->font_weight]);
 	switch (style->font_size.size) {
 		case CSS_FONT_SIZE_ABSOLUTE: fprintf(stderr, "[%g]", style->font_size.value.absolute); break;
 		case CSS_FONT_SIZE_LENGTH:   dump_length(&style->font_size.value.length); break;
@@ -585,21 +586,20 @@ void css_dump_style(const struct css_style * const style)
 		case CSS_FONT_SIZE_INHERIT:  fprintf(stderr, "inherit"); break;
 		default:                     fprintf(stderr, "UNKNOWN"); break;
 	}
-	fprintf(stderr, "; ");
-	fprintf(stderr, "height: ");
-	switch (style->height.height) {
-		case CSS_HEIGHT_AUTO:   fprintf(stderr, "auto"); break;
-		case CSS_HEIGHT_LENGTH: dump_length(&style->height.length); break;
-		default:                fprintf(stderr, "UNKNOWN"); break;
-	}
-	fprintf(stderr, "; ");
-	fprintf(stderr, "line-height: ");
+	fprintf(stderr, "/");
 	switch (style->line_height.size) {
 		case CSS_LINE_HEIGHT_ABSOLUTE: fprintf(stderr, "[%g]", style->line_height.value.absolute); break;
 		case CSS_LINE_HEIGHT_LENGTH:   dump_length(&style->line_height.value.length); break;
 		case CSS_LINE_HEIGHT_PERCENT:  fprintf(stderr, "%g%%", style->line_height.value.percent); break;
 		case CSS_LINE_HEIGHT_INHERIT:  fprintf(stderr, "inherit"); break;
 		default:                       fprintf(stderr, "UNKNOWN"); break;
+	}
+	fprintf(stderr, "; ");
+	fprintf(stderr, "height: ");
+	switch (style->height.height) {
+		case CSS_HEIGHT_AUTO:   fprintf(stderr, "auto"); break;
+		case CSS_HEIGHT_LENGTH: dump_length(&style->height.length); break;
+		default:                fprintf(stderr, "UNKNOWN"); break;
 	}
 	fprintf(stderr, "; ");
 	fprintf(stderr, "text-align: %s; ", css_text_align_name[style->text_align]);
