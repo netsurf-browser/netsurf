@@ -1559,7 +1559,7 @@ void browser_window_follow_link(struct browser_window *bw,
 		                done = 1;
 		                break;
 		        }
-		        else if (click_boxes[i].box->gadget->type == GADGET_SUBMIT) {
+		        else if (click_boxes[i].box->gadget->type == GADGET_SUBMIT || click_boxes[i].box->gadget->type == GADGET_IMAGE) {
 		        	struct form *form;
 		        	char *url, *href;
 		        	form = click_boxes[i].box->gadget->form;
