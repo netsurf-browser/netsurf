@@ -23,19 +23,19 @@
 #define WITH_COOKIES
 
 /* Image renderering modules */
-#if defined(riscos) || defined(debug)
+#if defined(riscos) || defined(ncos) || defined(debug)
     #define WITH_GIF
     #define WITH_JPEG
     #define WITH_PNG
     #define WITH_MNG
 #endif
-#ifdef riscos
+#ifdef defined (riscos) || defined(ncos)
     #define WITH_DRAW
     #define WITH_SPRITE
 #endif
 
 /* Platform specific features */
-#ifdef riscos
+#if defined (riscos) || defined(ncos)
     /* Plugin module */
     #define WITH_PLUGIN
     /* Acorn URI protocol support */
@@ -52,7 +52,7 @@
     #define WITH_KEYBOARD_NAVIGATION
 #endif
 
-#if defined(riscos) || defined(debug)
+#if defined(riscos) || defined(ncos) || defined(debug)
     /* Export modules */
     #define WITH_SAVE_COMPLETE
     #define WITH_DRAW_EXPORT
