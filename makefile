@@ -17,7 +17,7 @@ OBJECTS = $(OBJECTS_COMMON) \
 	401login.o constdata.o dialog.o download.o frames.o gui.o \
 	menus.o mouseactions.o \
 	textselection.o theme.o window.o \
-	draw.o gif.o plugin.o png.o sprite.o \
+	draw.o gif.o gifread.o plugin.o png.o sprite.o \
 	about.o filetype.o font.o uri.o url_protocol.o history.o \
 	version.o thumbnail.o \
 	save.o save_draw.o save_text.o schedule.o
