@@ -3,20 +3,24 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ */
+
+/** \file
+ * Save HTML document with dependencies (implementation).
  */
 
 #include <assert.h>
+#include <ctype.h>
 #include <string.h>
-#include <unixlib/local.h> /* for __riscosify */
-
+#include <sys/types.h>
+#include <regex.h>
 #include "libxml/HTMLtree.h"
-
 #include "oslib/osfile.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
-#include "netsurf/render/form.h"
-#include "netsurf/render/layout.h"
+#include "netsurf/render/box.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/utils/log.h"
@@ -30,84 +34,68 @@
  *        GUI
  */
 
-struct url_entry {
+regex_t save_complete_import_re;
+
+/** An entry in save_complete_list. */
+struct save_complete_entry {
         char *url;   /**< Fully qualified URL, as per url_join output */
-        char *par;   /**< Base URL of parent object */
-        int  ptr;    /**< Pointer to object's location in memory */
-        struct url_entry *next; /**< Next entry in list */
+        int ptr;    /**< Pointer to object's location in memory */
+        struct save_complete_entry *next; /**< Next entry in list */
 };
+/** List of urls seen and saved so far. */
+static struct save_complete_entry *save_complete_list;
 
-static void save_imported_sheets(struct content *c, char *p, char* fn,
-                          struct url_entry *imports);
-/*static char *leafname(const char *url);
-static int rewrite_stylesheet_urls(const char* sheet, int isize, char* buffer,
-                            int osize, struct url_entry *head);*/
-static int rewrite_document_urls(xmlDoc *doc, struct url_entry *head, char *fname);
-static int rewrite_urls(xmlNode *n, struct url_entry *head, char *fname);
-static void rewrite_url(xmlNode *n, struct url_entry *head, char *fname,
-                        const char *attr);
 
-/* this is temporary. */
-const char * const SAVE_PATH = "<NetSurf$Dir>.savetest.";
-const char * const OBJ_DIR = "_files";
+static void save_imported_sheets(struct content *c, const char *path);
+static char * rewrite_stylesheet_urls(const char *source, unsigned int size,
+		int *osize, const char *base);
+static int rewrite_document_urls(xmlDoc *doc, const char *base);
+static int rewrite_urls(xmlNode *n, const char *base);
+static void rewrite_url(xmlNode *n, const char *attr, const char *base);
+static void save_complete_add_url(const char *url, int id);
+static int save_complete_find_url(const char *url);
 
-/** \todo this will probably want to take a filename */
-void save_complete(struct content *c) {
 
-	char *fname = 0, *spath;
+/**
+ * Save an HTML page with all dependencies.
+ *
+ * \param  c     CONTENT_HTML to save
+ * \param  path  directory to save to (must exist)
+ */
+
+void save_complete(struct content *c, const char *path)
+{
+	char spath[256];
 	unsigned int i;
-	struct url_entry urls = {0, 0, 0, 0}; /* sentinel at head */
-	struct url_entry *object;
 	htmlParserCtxtPtr toSave;
 
 	if (c->type != CONTENT_HTML)
 		return;
 
-	fname = "test";  /*get_filename(c->data.html.base_url);*/
-
-	spath = xcalloc(strlen(SAVE_PATH)+strlen(OBJ_DIR)+strlen(fname)+50,
-			sizeof(char));
-
-	sprintf(spath, "%s%s%s", SAVE_PATH, fname, OBJ_DIR);
-	xosfile_create_dir(spath, 77);
+	save_complete_list = 0;
 
         /* save stylesheets, ignoring the base sheet and <style> elements */
         for (i = 2; i != c->data.html.stylesheet_count; i++) {
 		struct content *css = c->data.html.stylesheet_content[i];
-		struct url_entry imports = {0, 0, 0, 0};
-		//char *source;
-		//int source_len;
+		char *source;
+		int source_len;
 
                 if (!css)
                         continue;
 
-                save_imported_sheets(css, spath, fname, &imports);
+		save_complete_add_url(css->url, (int) css);
 
-                /*source = xcalloc(css->source_size+100, sizeof(char));
-                source_len = rewrite_stylesheet_urls(css->source_data,
-                                                     css->source_size,
-                                                     source,
-                                                     css->source_size+100,
-                                                     &imports);*/
+                save_imported_sheets(css, path);
 
-                sprintf(spath, "%s%s%s.%p", SAVE_PATH, fname, OBJ_DIR, css);
-                /*if (source_len > 0) {
-                xosfile_save_stamped(spath, 0xf79, source,
-                                     source + source_len);
+		snprintf(spath, sizeof spath, "%s.%x", path,
+				(unsigned int) css);
+		source = rewrite_stylesheet_urls(css->source_data,
+				css->source_size, &source_len, css->url);
+		if (source) {
+			xosfile_save_stamped(spath, 0xf79, source,
+					source + source_len);
+			free(source);
 		}
-		xfree(source);*/
-		xosfile_save_stamped(spath, 0xf79, css->source_data,
-		                     css->source_data + css->source_size);
-
-		/* Now add the url of this sheet to the list
-		 * of objects imported by the parent page
-		 */
-		object = xcalloc(1, sizeof(struct url_entry));
-		object->url = css->url;
-		object->par = url_normalize(c->data.html.base_url);
-		object->ptr = (int)css;
-		object->next = urls.next;
-		urls.next = object;
         }
 
 	/* save objects */
@@ -115,24 +103,17 @@ void save_complete(struct content *c) {
 		struct content *obj = c->data.html.object[i].content;
 
 		/* skip difficult content types */
-		if (!obj || obj->type >= CONTENT_PLUGIN) {
+		if (!obj || obj->type >= CONTENT_OTHER || !obj->source_data)
 			continue;
-		}
 
-		sprintf(spath, "%s%s%s.%p", SAVE_PATH, fname, OBJ_DIR, c->data.html.object[i].content);
+		save_complete_add_url(obj->url, (int) obj);
 
+		snprintf(spath, sizeof spath, "%s.%x", path,
+				(unsigned int) obj);
 		xosfile_save_stamped(spath,
 				ro_content_filetype(obj),
 				obj->source_data,
 				obj->source_data + obj->source_size);
-
-		/* Add to list, as for stylesheets */
-		object = xcalloc(1, sizeof(struct url_entry));
-		object->url = obj->url;
-		object->par = url_normalize(c->data.html.base_url);
-		object->ptr = (int)obj;
-		object->next = urls.next;
-		urls.next = object;
 	}
 
 	/* make a copy of the document tree */
@@ -140,7 +121,7 @@ void save_complete(struct content *c) {
 	htmlParseDocument(toSave);
 
 	/* rewrite all urls we know about */
-       	if (rewrite_document_urls(toSave->myDoc, &urls, fname) == 0) {
+       	if (rewrite_document_urls(toSave->myDoc, c->data.html.base_url) == 0) {
        	        xfree(spath);
        	        xmlFreeDoc(toSave->myDoc);
        	        htmlFreeParserCtxt(toSave);
@@ -148,320 +129,225 @@ void save_complete(struct content *c) {
        	}
 
 	/* save the html file out last of all */
-	sprintf(spath, "%s%s", SAVE_PATH, fname);
+	snprintf(spath, sizeof spath, "%s.index", path);
 	htmlSaveFile(spath, toSave->myDoc);
 	xosfile_set_type(spath, 0xfaf);
 
         xmlFreeDoc(toSave->myDoc);
         htmlFreeParserCtxt(toSave);
-	xfree(spath);
-	//xfree(fname);
+
+	/* free save_complete_list */
+	while (save_complete_list) {
+		struct save_complete_entry *next = save_complete_list->next;
+		free(save_complete_list->url);
+		free(save_complete_list);
+		save_complete_list = next;
+	}
 }
 
-void save_imported_sheets(struct content *c, char *p, char *fn,
-                          struct url_entry *imports)
+
+void save_imported_sheets(struct content *c, const char *path)
 {
+	char spath[256];
         unsigned int j;
-        //struct url_entry *this;
-        //char *source;
-        //int source_len;
+        char *source;
+        int source_len;
 
         for (j = 0; j != c->data.css.import_count; j++) {
 		struct content *css = c->data.css.import_content[j];
-	        struct url_entry imp = {0, 0, 0, 0};
 
                 if (!css)
                         continue;
 
-                save_imported_sheets(css, p, fn, &imp);
+		save_complete_add_url(css->url, (int) css);
 
-                /*source = xcalloc(css->source_size+100, sizeof(char));
-                source_len = rewrite_stylesheet_urls(css->source_data,
-                                                     css->source_size,
-                                                     source,
-                                                     css->source_size+100,
-                                                     &imp);*/
+                save_imported_sheets(css, path);
 
-                sprintf(p, "%s%s%s.%p", SAVE_PATH, fn, OBJ_DIR, css);
-                /*if (source_len > 0) {
-                xosfile_save_stamped(p, 0xf79, source, source + source_len);
-                }
-                xfree(source);*/
-                xosfile_save_stamped(p, 0xf79, css->source_data,
-                                     css->source_data + css->source_size);
-
-		/* now add the url of this sheet to the list of
-		 * sheets imported by the parent sheet.
-		 */
-		/*this = xcalloc(1, sizeof(struct url_entry));
-		this->url = css->url;
-		this->par = url_normalize(c->url);
-		this->ptr = (int)css;
-		this->next = imports->next;
-		imports->next = this;*/
+		snprintf(spath, sizeof spath, "%s.%x", path,
+				(unsigned int) css);
+		source = rewrite_stylesheet_urls(css->source_data,
+				css->source_size, &source_len, css->url);
+		if (source) {
+			xosfile_save_stamped(spath, 0xf79, source,
+					source + source_len);
+			free(source);
+		}
         }
 }
 
-#if 0
-
-char *leafname(const char *url)
-{
-        char *res, *temp;
-
-        /* the input URL is that produced by url_join,
-         * therefore, we can assume that this will work.
-         */
-        temp = strrchr(url, '/');
-
-        if ((temp - url) == (int)(strlen(url)-1)) { /* root dir */
-                res = xstrdup("index/html");
-                return res;
-        }
-
-        temp += 1;
-        res = xcalloc(strlen(temp), sizeof(char));
-        if (__riscosify_std(temp, 0, res, strlen(temp), 0)) {
-                return res;
-        }
-
-        return NULL;
-}
 
 /**
- * Rewrite stylesheet @import rules to use relative urls.
- *
- * @param sheet The source of the stylesheet
- * @param isize The size of the input buffer
- * @param buffer The buffer into which to write the modified sheet
- * @param osize The size of the output buffer
- * @param head Pointer to the head of the list containing imported urls
- * @return The length of the output buffer, or 0 on error.
+ * Initialise the save_complete module.
  */
-int rewrite_stylesheet_urls(const char *sheet, int isize, char *buffer,
-                            int osize, struct url_entry *head)
+
+void save_complete_init(void)
 {
-        struct url_entry *item, *next;
-        char *rule, *input = sheet, *temp, *end;
-        int out_size = 0, out = 0;
-
-        assert(head);
-
-        while (input < sheet+isize) {
-                /* find next occurrence of @import in input buffer */
-                rule = strstr(input, "@import");
-
-                if (!rule) {
-                        if (out_size + ((sheet+isize)-input) > osize) {
-                                /* not enough space in buffer -> exit */
-                                return 0;
-                        }
-                        memcpy(buffer, input, ((sheet+isize)-input));
-                        out_size += ((sheet+isize)-input);
-                        break;
-                }
-
-                /* find end of this rule */
-                end = strchr(rule, ';');
-                if (!end) { /* rule not closed - give up */
-                        if (out_size + ((sheet+isize)-input) > osize) {
-                                /* not enough space in buffer -> exit */
-                                return 0;
-                        }
-                        memcpy(buffer, input, ((sheet+isize)-input));
-                        out_size += ((sheet+isize)-input);
-                        break;
-                }
-
-                /* skip until after first set of double quotes */
-                temp = strchr(rule, '"');
-                if (!temp) { /* no quotes - try parentheses */
-                        temp = strchr(rule, '(');
-                        if (!temp) { /* no parentheses - give up */
-                                if (out_size + (rule-input+1) > osize) {
-                                /* not enough space in buffer -> exit */
-                                        return 0;
-                                }
-                                memcpy(buffer, input, (rule-input+1));
-                                buffer += rule-input+1;
-                                out_size += rule-input+1;
-                                input = rule + 1;
-                                continue;
-                        }
-                }
-                /* check we haven't gone past the end */
-                if (temp > end && *temp == '(') { /* tested both */
-                        if (out_size + (end-input+1) > osize) {
-                               /* not enough space in buffer -> exit */
-                                return 0;
-                        }
-                        memcpy(buffer, input, (end-input+1));
-                        buffer += end-input+1;
-                        out_size += end-input+1;
-                        input = end + 1;
-                        continue;
-                }
-                else if (temp > end) { /* not done parentheses yet */
-                        temp = strchr(rule, '(');
-                        if (!temp) { /* no parentheses - give up */
-                                if (out_size + (rule-input+1) > osize) {
-                                /* not enough space in buffer -> exit */
-                                        return 0;
-                                }
-                                memcpy(buffer, input, (rule-input+1));
-                                buffer += rule-input+1;
-                                out_size += rule-input+1;
-                                input = rule + 1;
-                                continue;
-                        }
-                }
-                if (temp > end) {
-                        if (out_size + (end-input+1) > osize) {
-                               /* not enough space in buffer -> exit */
-                                return 0;
-                        }
-                        memcpy(buffer, input, (end-input+1));
-                        buffer += end-input+1;
-                        out_size += end-input+1;
-                        input = end + 1;
-                        continue;
-                }
-                rule = temp + 1;
-
-                /* pointer to end of url */
-                temp = strchr(rule, '"');
-                if (!temp) {
-                        temp = strchr(rule, ')');
-                        if (!temp) {
-                                if (out_size + (rule-input+1) > osize) {
-                                /* not enough space in buffer -> exit */
-                                        return 0;
-                                }
-                                memcpy(buffer, input, (rule-input+1));
-                                buffer += rule-input+1;
-                                out_size += rule-input+1;
-                                input = rule + 1;
-                                continue;
-                        }
-                }
-                /* check we haven't gone past the end */
-                if (temp > end && *temp == ')') { /* tested both */
-                        if (out_size + (end-input+1) > osize) {
-                               /* not enough space in buffer -> exit */
-                                return 0;
-                        }
-                        memcpy(buffer, input, (end-input+1));
-                        buffer += end-input+1;
-                        out_size += end-input+1;
-                        input = end + 1;
-                        continue;
-                }
-                else if (temp > end) { /* not done parentheses yet */
-                        temp = strchr(rule, ')');
-                        if (!temp) { /* no parentheses - give up */
-                                if (out_size + (rule-input+1) > osize) {
-                                /* not enough space in buffer -> exit */
-                                        return 0;
-                                }
-                                memcpy(buffer, input, (rule-input+1));
-                                buffer += rule-input+1;
-                                out_size += rule-input+1;
-                                input = rule + 1;
-                                continue;
-                        }
-                }
-                if (temp > end) {
-                        if (out_size + (end-input+1) > osize) {
-                               /* not enough space in buffer -> exit */
-                                return 0;
-                        }
-                        memcpy(buffer, input, (end-input+1));
-                        buffer += end-input+1;
-                        out_size += end-input+1;
-                        input = end + 1;
-                        continue;
-                }
-                end = temp;
-
-                /* copy input up to @import rule to output buffer */
-                if (out_size + (rule-input) > osize) {
-                        /* not enough space in buffer -> exit */
-                        return 0;
-                }
-                memcpy(buffer, input, (out = (rule-input)));
-                input = rule;
-                buffer += out;
-                out_size += out;
-
-                /* copy url into temporary buffer */
-                temp = xcalloc((end-rule), sizeof(char));
-                strncpy(temp, rule, (end-rule));
-
-                /* iterate over list, looking for url */
-                /** \todo make url detection more accurate */
-                for (item=head; item->next; item=item->next) {
-
-                        if (strstr(item->next->url, temp) != 0) {
-                                /* url found -> rewrite it */
-                                int len = 12;
-                                char *url = xcalloc(len, sizeof(char));
-                                sprintf(url, "./0x%x", item->next->ptr);
-                                if (out_size + len > osize) {
-                                        return 0;
-                                }
-                                memcpy(buffer, url, len);
-                                xfree(url);
-                                out = len;
-                                break;
-                        }
-                }
-
-                if (item->next == 0) {
-                        /* url not found -> write temp to buffer */
-                        if ((int)(out_size + strlen(temp)) > osize) {
-                                return 0;
-                        }
-                        memcpy(buffer, temp, strlen(temp));
-                        out = strlen(temp);
-                }
-
-                /* free url */
-                xfree(temp);
-
-                input = end;
-                buffer += out;
-                out_size += out;
-        }
-
-        /* free list */
-        for (item = head; item->next; item = item->next) {
-
-                next = item->next;
-                item->next = item->next->next;
-                xfree(next->par);
-                xfree(next);
-
-                if (item->next == 0) {
-                        break;
-                }
-        }
-
-        return out_size;
+	/* Match an @import rule - see CSS 2.1 G.1. */
+	regcomp_wrapper(&save_complete_import_re,
+			"@import"		/* IMPORT_SYM */
+			"[ \t\r\n\f]*"		/* S* */
+			/* 1 */
+			"("			/* [ */
+			/* 2 3 */
+			"\"(([^\"]|[\\]\")*)\""	/* STRING (approximated) */
+			"|"
+			/* 4 5 */
+			"'(([^']|[\\]')*)'"
+			"|"			/* | */
+			"url\\([ \t\r\n\f]*"	/* URI (approximated) */
+			     /* 6 7 */
+			     "\"(([^\"]|[\\]\")*)\""
+			     "[ \t\r\n\f]*\\)"
+			"|"
+			"url\\([ \t\r\n\f]*"
+			    /* 8 9 */
+			     "'(([^']|[\\]')*)'"
+			     "[ \t\r\n\f]*\\)"
+			"|"
+			"url\\([ \t\r\n\f]*"
+			   /* 10 */
+			     "([^) \t\r\n\f]*)"
+			     "[ \t\r\n\f]*\\)"
+			")",			/* ] */
+			REG_EXTENDED | REG_ICASE);
 }
 
-#endif
+
+/**
+ * Rewrite stylesheet @import rules for save complete.
+ *
+ * @param  source  stylesheet source
+ * @param  size    size of source
+ * @param  osize   updated with the size of the result
+ * @param  head    pointer to the head of the list containing imported urls
+ * @param  base    url of stylesheet
+ * @return  converted source, or 0 on error
+ */
+
+char * rewrite_stylesheet_urls(const char *source, unsigned int size,
+		int *osize, const char *base)
+{
+	char *res;
+	const char *url;
+	char *url2;
+	char buf[20];
+	unsigned int offset = 0;
+	int url_len = 0;
+	int id;
+	int m;
+	unsigned int i;
+	unsigned int imports = 0;
+	regmatch_t match[11];
+
+	/* count number occurences of @import to (over)estimate result size */
+	/* can't use strstr because source is not 0-terminated string */
+	for (i = 0; 7 < size && i != size - 7; i++) {
+		if (source[i] == '@' &&
+				tolower(source[i + 1]) == 'i' &&
+				tolower(source[i + 2]) == 'm' &&
+				tolower(source[i + 3]) == 'p' &&
+				tolower(source[i + 4]) == 'o' &&
+				tolower(source[i + 5]) == 'r' &&
+				tolower(source[i + 6]) == 't')
+			imports++;
+	}
+
+	res = malloc(size + imports * 20);
+	if (!res) {
+		warn_user("NoMemory");
+		return 0;
+	}
+	*osize = 0;
+
+	while (offset < size) {
+		m = regexec(&save_complete_import_re, source + offset,
+				11, match, 0);
+		if (m)
+			break;
+
+		/*for (unsigned int i = 0; i != 11; i++) {
+			if (match[i].rm_so == -1)
+				continue;
+			fprintf(stderr, "%i: '%.*s'\n", i,
+					match[i].rm_eo - match[i].rm_so,
+					source + offset + match[i].rm_so);
+		}*/
+
+		url = 0;
+		if (match[2].rm_so != -1) {
+			url = source + offset + match[2].rm_so;
+			url_len = match[2].rm_eo - match[2].rm_so;
+		} else if (match[4].rm_so != -1) {
+			url = source + offset + match[4].rm_so;
+			url_len = match[4].rm_eo - match[4].rm_so;
+		} else if (match[6].rm_so != -1) {
+			url = source + offset + match[6].rm_so;
+			url_len = match[6].rm_eo - match[6].rm_so;
+		} else if (match[8].rm_so != -1) {
+			url = source + offset + match[8].rm_so;
+			url_len = match[8].rm_eo - match[8].rm_so;
+		} else if (match[10].rm_so != -1) {
+			url = source + offset + match[10].rm_so;
+			url_len = match[10].rm_eo - match[10].rm_so;
+		}
+		assert(url);
+
+		url2 = strndup(url, url_len);
+		if (!url2) {
+			warn_user("NoMemory");
+			free(res);
+			return 0;
+		}
+		url = url_join(url2, base);
+		free(url2);
+		if (!url) {
+			warn_user("NoMemory");
+			free(res);
+			return 0;
+                }
+
+		/* copy data before match */
+		memcpy(res + *osize, source + offset, match[0].rm_so);
+		*osize += match[0].rm_so;
+
+		id = save_complete_find_url(url);
+		if (id) {
+			/* replace import */
+			sprintf(buf, "@import '%x'", id);
+			memcpy(res + *osize, buf, strlen(buf));
+			*osize += strlen(buf);
+		} else {
+			/* copy import */
+			memcpy(res + *osize, source + offset + match[0].rm_so,
+					match[0].rm_eo - match[0].rm_so);
+			*osize += match[0].rm_eo - match[0].rm_so;
+		}
+
+		assert(0 < match[0].rm_eo);
+		offset += match[0].rm_eo;
+	}
+
+	/* copy rest of source */
+	if (offset < size) {
+		memcpy(res + *osize, source + offset, size - offset);
+		*osize += size - offset;
+	}
+
+	return res;
+}
+
 
 /**
  * Rewrite URLs in a HTML document to be relative
  *
  * @param doc The root of the document tree
- * @param head The head of the list of known URLs
- * @param fname The name of the file to save as
  * @return 0 on error. >0 otherwise
+ * \param  base  base url of document
  */
-int rewrite_document_urls(xmlDoc *doc, struct url_entry *head, char *fname)
+
+int rewrite_document_urls(xmlDoc *doc, const char *base)
 {
         xmlNode *html;
-        struct url_entry *item, *next;
 
         /* find the html element */
         for (html = doc->children;
@@ -472,33 +358,21 @@ int rewrite_document_urls(xmlDoc *doc, struct url_entry *head, char *fname)
                 return 0;
         }
 
-	rewrite_urls(html, head, fname);
-
-	/* free list */
-        for (item = head; item->next; item = item->next) {
-
-                next = item->next;
-                item->next = item->next->next;
-                xfree(next->par);
-                xfree(next);
-
-                if (item->next == 0) {
-                        break;
-                }
-        }
+	rewrite_urls(html, base);
 
         return 1;
 }
+
 
 /**
  * Traverse tree, rewriting URLs as we go.
  *
  * @param n The root of the tree
- * @param head The head of the list of known URLs
- * @param fname The name of the file to save as
  * @return 0 on error. >0 otherwise
+ * \param  base  base url of document
  */
-int rewrite_urls(xmlNode *n, struct url_entry *head, char *fname)
+
+int rewrite_urls(xmlNode *n, const char *base)
 {
         xmlNode *this;
 
@@ -514,14 +388,14 @@ int rewrite_urls(xmlNode *n, struct url_entry *head, char *fname)
         if (n->type == XML_ELEMENT_NODE) {
                 /* 1 */
                 if (strcmp(n->name, "object") == 0) {
-                      rewrite_url(n, head, fname, "data");
+                      rewrite_url(n, "data", base);
                 }
                 /* 2 */
                 else if (strcmp(n->name, "a") == 0 ||
                          strcmp(n->name, "area") == 0 ||
                          strcmp(n->name, "link") == 0 ||
                          strcmp(n->name, "base") == 0) {
-                      rewrite_url(n, head, fname, "href");
+                      rewrite_url(n, "href", base);
                 }
                 /* 3 */
                 else if (strcmp(n->name, "frame") == 0 ||
@@ -529,7 +403,7 @@ int rewrite_urls(xmlNode *n, struct url_entry *head, char *fname)
                          strcmp(n->name, "input") == 0 ||
                          strcmp(n->name, "img") == 0 ||
                          strcmp(n->name, "script") == 0) {
-                      rewrite_url(n, head, fname, "src");
+                      rewrite_url(n, "src", base);
                 }
         }
         else {
@@ -538,56 +412,93 @@ int rewrite_urls(xmlNode *n, struct url_entry *head, char *fname)
 
         /* now recurse */
 	for (this = n->children; this != 0; this = this->next) {
-                rewrite_urls(this, head, fname);
+                rewrite_urls(this, base);
 	}
 
         return 1;
 }
 
+
 /**
  * Rewrite an URL in a HTML document.
  *
- * @param n The node to modify
- * @param head The head of the list of known URLs
- * @param fname The name of the file to save as
- * @param attr The html attribute to modify
+ * \param  n     The node to modify
+ * \param  attr  The html attribute to modify
+ * \param  base  base url of document
  */
-void rewrite_url(xmlNode *n, struct url_entry *head, char *fname,
-                 const char *attr)
+
+void rewrite_url(xmlNode *n, const char *attr, const char *base)
 {
-        char *url, *data, *rel;
-        struct url_entry *item;
-        int len = strlen(fname) + strlen(OBJ_DIR) + 13;
+        char *url, *data;
+        char rel[256];
+	int id;
 
         data = xmlGetProp(n, (const xmlChar*)attr);
 
         if (!data) return;
 
-        url = url_join(data, head->next->par);
+        url = url_join(data, base);
         if (!url) {
                 xmlFree(data);
                 return;
         }
 
-        for (item=head; item->next; item=item->next) {
+	id = save_complete_find_url(url);
+	if (id) {
+		/* found a match */
+		snprintf(rel, sizeof rel, "%x", id);
+		xmlSetProp(n, (const xmlChar *) attr, (xmlChar *) rel);
+	} else {
+		/* no match found */
+		xmlSetProp(n, (const xmlChar *) attr, (xmlChar *) url);
+	}
 
-                if (strcmp(url, item->next->url) == 0) { /* found a match */
-                        rel = xcalloc(len, sizeof(char));
-                        sprintf(rel, "./%s%s/0x%x", fname, OBJ_DIR,
-                                                           item->next->ptr);
-                        xmlSetProp(n, (const xmlChar*)attr,
-                                      (const xmlChar*) rel);
-                        xfree(rel);
-                        break;
-                }
-        }
-
-        if (item->next == 0) { /* no match found */
-                xmlSetProp(n, (const xmlChar*)attr, (const xmlChar*)url);
-        }
-
-        xfree(url);
+        free(url);
         xmlFree(data);
+}
+
+
+/**
+ * Add a url to the save_complete_list.
+ *
+ * \param  url  url to add (copied)
+ * \param  id   id to use for url
+ */
+
+void save_complete_add_url(const char *url, int id)
+{
+	struct save_complete_entry *entry;
+	entry = malloc(sizeof (*entry));
+	if (!entry)
+		return;
+	entry->url = strdup(url);
+	if (!url) {
+		free(entry);
+		return;
+	}
+	entry->ptr = id;
+	entry->next = save_complete_list;
+	save_complete_list = entry;
+}
+
+
+/**
+ * Look up a url in the save_complete_list.
+ *
+ * \param  url   url to find
+ * \param  len   length of url
+ * \return  id to use for url, or 0 if not present
+ */
+
+int save_complete_find_url(const char *url)
+{
+	struct save_complete_entry *entry;
+	for (entry = save_complete_list; entry; entry = entry->next)
+		if (strcmp(url, entry->url) == 0)
+			break;
+	if (entry)
+		return entry->ptr;
+	return 0;
 }
 
 #endif
