@@ -6,6 +6,7 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
+#include <locale.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include "netsurf/utils/config.h"
@@ -52,6 +53,7 @@ void netsurf_init(int argc, char** argv)
 {
   stdout = stderr;
   gui_init(argc, argv);
+  setlocale(LC_ALL, "");
   fetch_init();
   cache_init();
   fetchcache_init();
