@@ -14,6 +14,7 @@
  * precalculation of minimum / maximum box widths.
  */
 
+#define _GNU_SOURCE  /* for strndup */
 #include <alloca.h>
 #include <assert.h>
 #include <ctype.h>
@@ -1508,7 +1509,8 @@ bool layout_table(struct box *table, int available_width,
 				else
 					excess_y[i] = 0;
 				if (row_span_cell[i] != 0)
-					row_span_cell[i]->padding[BOTTOM] += row_height +
+					row_span_cell[i]->padding[BOTTOM] +=
+							row_height +
 							border_spacing_v;
 			}
 

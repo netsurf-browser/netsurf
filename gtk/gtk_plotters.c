@@ -23,7 +23,7 @@ extern GdkGC *current_gc;
 
 static bool nsgtk_plot_clg(colour c);
 static bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
-		colour c, bool dotted);
+		int line_width, colour c, bool dotted, bool dashed);
 static bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool nsgtk_plot_polygon(int *p, unsigned int n, colour fill);
@@ -69,7 +69,7 @@ bool nsgtk_plot_clg(colour c)
 
 
 bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
-		colour c, bool dotted)
+		int line_width, colour c, bool dotted, bool dashed)
 {
 	nsgtk_set_colour(c);
 	gdk_draw_rectangle(current_drawable, current_gc,

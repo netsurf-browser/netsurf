@@ -13,6 +13,7 @@
  * fetch changes and data is received, the content is updated appropriately.
  */
 
+#define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
 #include <string.h>
 #include <sys/types.h>
@@ -79,7 +80,7 @@ struct content * fetchcache(const char *url,
 
 	/* strip fragment identifier */
 	if ((hash = strchr(url1, '#')) != NULL)
-		*hash = NULL;
+		*hash = 0;
 
 	LOG(("url %s", url1));
 
