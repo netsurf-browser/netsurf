@@ -17,18 +17,13 @@
 #include "netsurf/utils/log.h"
 
 
-static long x0, y0, x1, y1;
-
 static void html_redraw_box(struct content *content, struct box * box,
 		signed long x, signed long y,
 		unsigned long current_background_color,
 		signed long gadget_subtract_x, signed long gadget_subtract_y,
 		bool *select_on,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1);
-static void html_redraw_clip(struct box * box,
-		signed long x, signed long y,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1);
-static void html_redraw_unclip(long clip_x0, long clip_y0,
+static inline void html_redraw_clip(long clip_x0, long clip_y0,
 		long clip_x1, long clip_y1);
 
 
@@ -85,37 +80,61 @@ void html_redraw_box(struct content *content, struct box * box,
 	struct box *c;
 	char *select_text;
 	struct formoption *opt;
+	int width, height, x0, y0, x1, y1;
 
-	if (x + (signed long) (box->x * 2 + box->width * 2) /* right edge */ < clip_x0 ||
-	    x + (signed long) (box->x * 2) /* left edge */ > clip_x1 ||
-	    y - (signed long) (box->y * 2 + box->height * 2 + 8) /* bottom edge */ > clip_y1 ||
-	    y - (signed long) (box->y * 2) /* top edge */ < clip_y0)
+	x += box->x * 2;
+	y -= box->y * 2;
+	width = box->width * 2;
+	height = box->height * 2;
+
+	x0 = x;
+	y1 = y - 1;
+	x1 = x0 + width - 1;
+	y0 = y1 - height + 1;
+
+	/* return if the box is completely outside the clip rectangle, except
+	 * for table rows which may contain cells spanning into other rows */
+	if (box->type != BOX_TABLE_ROW &&
+			(clip_y1 < y0 || y1 < clip_y0 ||
+			 clip_x1 < x0 || x1 < clip_x0))
 		return;
 
+	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
+			box->type == BOX_TABLE_CELL || box->object) {
+		/* find intersection of clip rectangle and box */
+		if (x0 < clip_x0) x0 = clip_x0;
+		if (y0 < clip_y0) y0 = clip_y0;
+		if (clip_x1 < x1) x1 = clip_x1;
+		if (clip_y1 < y1) y1 = clip_y1;
+		/* clip to it */
+		html_redraw_clip(x0, y0, x1, y1);
+	} else {
+		/* clip box unchanged */
+		x0 = clip_x0;
+		y0 = clip_y0;
+		x1 = clip_x1;
+		y1 = clip_y1;
+	}
+
+	/* background colour */
 	if (box->style != 0 && box->style->background_color != TRANSPARENT) {
 		colourtrans_set_gcol(box->style->background_color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-		os_plot(os_MOVE_TO, (int) x + (int) box->x * 2, (int) y - (int) box->y * 2);
-		os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, (int) box->width * 2, -(int) box->height * 2);
+		os_plot(os_MOVE_TO, x, y);
+		os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, width, -height);
 		current_background_color = box->style->background_color;
 	}
 
 	if (box->object) {
-		html_redraw_clip(box, x, y, clip_x0, clip_y0, clip_x1, clip_y1);
-		content_redraw(box->object,
-				(int) x + (int) box->x * 2,
-				(int) y - (int) box->y * 2,
-				box->width * 2, box->height * 2,
-				x0, y0, x1, y1);
-		html_redraw_unclip(clip_x0, clip_y0, clip_x1, clip_y1);
+		content_redraw(box->object, x, y, width, height, x0, y0, x1, y1);
 
 	} else if (box->gadget && box->gadget->type != GADGET_TEXTAREA) {
 		wimp_icon icon;
 		LOG(("writing GADGET"));
 
-		icon.extent.x0 = -gadget_subtract_x + x + box->x * 2;
-		icon.extent.y0 = -gadget_subtract_y + y - box->y * 2 - box->height * 2;
-		icon.extent.x1 = -gadget_subtract_x + x + box->x * 2 + box->width * 2;
-		icon.extent.y1 = -gadget_subtract_y + y - box->y * 2;
+		icon.extent.x0 = -gadget_subtract_x + x;
+		icon.extent.y0 = -gadget_subtract_y + y - height;
+		icon.extent.x1 = -gadget_subtract_x + x + width;
+		icon.extent.y1 = -gadget_subtract_y + y;
 
 		switch (box->gadget->type) {
 		case GADGET_TEXTAREA:
@@ -134,12 +153,10 @@ void html_redraw_box(struct content *content, struct box * box,
 		case GADGET_TEXTBOX:
 			colourtrans_set_font_colours(box->font->handle, current_background_color << 8,
 					     box->style->color << 8, 14, 0, 0, 0);
-			html_redraw_clip(box, x, y, clip_x0, clip_y0, clip_x1, clip_y1);
 			font_paint(box->font->handle, box->gadget->data.textbox.text,
 					font_OS_UNITS | font_GIVEN_FONT | font_KERN,
-					(int) x + (int) box->x * 2, (int) y - (int) box->y * 2 - (int) (box->height * 1.5),
+					x, y - (int) (box->height * 1.5),
 					NULL, NULL, 0);
-			html_redraw_unclip(clip_x0, clip_y0, clip_x1, clip_y1);
 			break;
 
                 case GADGET_PASSWORD:
@@ -277,36 +294,36 @@ void html_redraw_box(struct content *content, struct box * box,
 				if (end->box == box) {
 					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
 					os_plot(os_MOVE_TO,
-						(int) x + (int) box->x * 2 + start->pixel_offset * 2,
-						(int) y - (int) box->y * 2 - (int) box->height * 2);
+						x + start->pixel_offset * 2,
+						y - height);
 					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-						(int) x + (int) box->x * 2 + end->pixel_offset * 2 - 2,
-						(int) y - (int) box->y * 2 - 2);
+						x + end->pixel_offset * 2 - 2,
+						y - 2);
 				} else {
 					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
 					os_plot(os_MOVE_TO,
-						(int) x + (int) box->x * 2 + start->pixel_offset * 2,
-						(int) y - (int) box->y * 2 - (int) box->height * 2);
+						x + start->pixel_offset * 2,
+						y - height);
 					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-						(int) x + (int) box->x * 2 + (int) box->width * 2 - 2,
-						(int) y - (int) box->y * 2 - 2);
+						x + width - 2,
+						y - 2);
 					*select_on = true;
 				}
 			} else if (*select_on) {
 				if (end->box != box) {
 					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
-					os_plot(os_MOVE_TO, (int) x + (int) box->x * 2,
-						(int) y - (int) box->y * 2 - (int) box->height * 2);
+					os_plot(os_MOVE_TO, x,
+						y - height);
 					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-						(int) x + (int) box->x * 2 + (int) box->width * 2 - 2,
-						(int) y - (int) box->y * 2 - 2);
+						x + width - 2,
+						y - 2);
 				} else {
 					colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_USE_ECFS, 0, 0);
-					os_plot(os_MOVE_TO, (int) x + (int) box->x * 2,
-						(int) y - (int) box->y * 2 - (int) box->height * 2);
+					os_plot(os_MOVE_TO, x,
+						y - height);
 					os_plot(os_PLOT_RECTANGLE | os_PLOT_TO,
-						(int) x + (int) box->x * 2 + end->pixel_offset * 2 - 2,
-						(int) y - (int) box->y * 2 - 2);
+						x + end->pixel_offset * 2 - 2,
+						y - 2);
 					*select_on = false;
 				}
 			}
@@ -317,23 +334,27 @@ void html_redraw_box(struct content *content, struct box * box,
 
 		font_paint(box->font->handle, box->text,
 			   font_OS_UNITS | font_GIVEN_FONT | font_KERN | font_GIVEN_LENGTH,
-			   (int) x + (int) box->x * 2, (int) y - (int) box->y * 2 - (int) (box->height * 1.5),
+			   x, y - (int) (box->height * 1.5),
 			   NULL, NULL, (int) box->length);
 
 	} else {
 		for (c = box->children; c != 0; c = c->next)
 			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-				html_redraw_box(content, c, (int) x + (int) box->x * 2,
-						(int) y - (int) box->y * 2, current_background_color,
+				html_redraw_box(content, c, x,
+						y, current_background_color,
 						gadget_subtract_x, gadget_subtract_y, select_on,
-						clip_x0, clip_y0, clip_x1, clip_y1);
+						x0, y0, x1, y1);
 
 		for (c = box->float_children; c != 0; c = c->next_float)
-			html_redraw_box(content, c, (int) x + (int) box->x * 2,
-					(int) y - (int) box->y * 2, current_background_color,
+			html_redraw_box(content, c, x,
+					y, current_background_color,
 					gadget_subtract_x, gadget_subtract_y, select_on,
-					clip_x0, clip_y0, clip_x1, clip_y1);
+					x0, y0, x1, y1);
 	}
+
+	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
+			box->type == BOX_TABLE_CELL || box->object)
+		html_redraw_clip(clip_x0, clip_y0, clip_x1, clip_y1);
 
 /*	} else {
 		if (content->data.html.text_selection.selected == 1) {
@@ -352,29 +373,7 @@ void html_redraw_box(struct content *content, struct box * box,
 }
 
 
-void html_redraw_clip(struct box * box,
-		signed long x, signed long y,
-		long clip_x0, long clip_y0, long clip_x1, long clip_y1)
-{
-	x0 = x + box->x * 2;
-	y1 = y - box->y * 2 - 1;
-	x1 = x0 + box->width * 2 - 1;
-	y0 = y1 - box->height * 2 + 1;
-
-	if (x0 < clip_x0) x0 = clip_x0;
-	if (y0 < clip_y0) y0 = clip_y0;
-	if (clip_x1 < x1) x1 = clip_x1;
-	if (clip_y1 < y1) y1 = clip_y1;
-
-	os_set_graphics_window();
-	os_writec((char) (x0 & 0xff)); os_writec((char) (x0 >> 8));
-	os_writec((char) (y0 & 0xff)); os_writec((char) (y0 >> 8));
-	os_writec((char) (x1 & 0xff)); os_writec((char) (x1 >> 8));
-	os_writec((char) (y1 & 0xff)); os_writec((char) (y1 >> 8));
-}
-
-
-void html_redraw_unclip(long clip_x0, long clip_y0,
+inline void html_redraw_clip(long clip_x0, long clip_y0,
 		long clip_x1, long clip_y1)
 {
 	os_set_graphics_window();
