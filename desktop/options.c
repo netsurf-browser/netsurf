@@ -7,6 +7,7 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
+
 /** \file
  * Option reading and saving (implementation).
  *
