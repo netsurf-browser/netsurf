@@ -321,13 +321,13 @@ void clean_cookiejar(void) {
 
         if (remove(messages_get("cookiejar"))) {
                 LOG(("Failed to remove old jar"));
-                xfree(cookies);
+                free(cookies);
                 return;
         }
 
         fp = fopen(messages_get("cookiejar"), "w+");
         if (!fp) {
-                xfree(cookies);
+                free(cookies);
                 LOG(("Failed to create new jar"));
                 return;
         }
@@ -357,7 +357,7 @@ void clean_cookiejar(void) {
         }
         fclose(fp);
 
-        xfree(cookies);
+        free(cookies);
 }
 #endif
 
