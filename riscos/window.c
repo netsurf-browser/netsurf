@@ -767,7 +767,14 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 	if (!toolbar) {
 		int c = key;
 		/* Munge cursor keys into unused control chars */
-		if (c == 396) c = 29;          /* Left */
+		/* We can't map on to any of: 3,8,10,13,21,22 or 24
+		 * That leaves 1,2,4-7,11,12,14-20,23,25-31 and 129-159
+		 */
+		if (c == 394) c = 9;           /* Tab */
+		else if (c == 410) c = 11;     /* Shift+Tab */
+		else if (c == 428) c = 26;     /* Ctrl+Left */
+		else if (c == 429) c = 27;     /* Ctrl+Right*/
+		else if (c == 396) c = 29;     /* Left */
 		else if (c == 397) c = 28;     /* Right */
 		else if (c == 398) c = 31;     /* Down */
 		else if (c == 399) c = 30;     /* Up */

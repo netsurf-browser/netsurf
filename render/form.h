@@ -67,6 +67,7 @@ struct form_control {
 			int selected;
 		} radio;
 	} data;
+	struct form_control *prev;      /**< Previous control in this form */
 	struct form_control *next;	/**< Next control in this form. */
 };
 

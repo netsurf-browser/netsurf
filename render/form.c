@@ -31,6 +31,7 @@ void form_add_control(struct form *form, struct form_control *control)
 	if (form->controls) {
 		assert(form->last_control);
 		form->last_control->next = control;
+		control->prev = form->last_control;
 		control->next = 0;
 		form->last_control = control;
 	} else {

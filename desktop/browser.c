@@ -1193,8 +1193,74 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
 		        browser_form_submit(bw, form, 0);
 	} else if (key == 9) {
 	        /* Tab */
-	        /* TODO: tabbing between inputs */
+                struct form_control* next_input;
+                for (next_input = input->gadget->next;
+                     next_input != 0 && next_input->type != GADGET_TEXTBOX &&
+                     next_input->type != GADGET_TEXTAREA &&
+                     next_input->type != GADGET_PASSWORD &&
+                     next_input->type != GADGET_FILE;
+                     next_input = next_input->next)
+                        ;
+                if (!next_input) return;
+
+                input = next_input->box;
+                text_box = input->children->children;
+                box_coords(input, &actual_x, &actual_y);
+	        text_box->x = 0;
+	        input->gadget->caret_char_offset = 0;
+	        browser_window_place_caret(bw,
+	                (int)(actual_x + text_box->x),
+			(int)(actual_y + text_box->y),
+			text_box->height,
+			browser_window_input_callback, input);
+	        gui_window_redraw(bw->window,
+			actual_x,
+			actual_y,
+			actual_x + input->width,
+			actual_y + input->height);
 	        return;
+	} else if (key == 11) {
+	        /* Shift+Tab */
+                struct form_control* prev_input;
+                for (prev_input = input->gadget->prev;
+                     prev_input != 0 && prev_input->type != GADGET_TEXTBOX &&
+                     prev_input->type != GADGET_TEXTAREA &&
+                     prev_input->type != GADGET_PASSWORD &&
+                     prev_input->type != GADGET_FILE;
+                     prev_input = prev_input->prev)
+                        ;
+                if (!prev_input) return;
+
+                input = prev_input->box;
+                text_box = input->children->children;
+                box_coords(input, &actual_x, &actual_y);
+	        text_box->x = 0;
+	        input->gadget->caret_char_offset = 0;
+	        browser_window_place_caret(bw,
+	                (int)(actual_x + text_box->x),
+			(int)(actual_y + text_box->y),
+			text_box->height,
+			browser_window_input_callback, input);
+	        gui_window_redraw(bw->window,
+			actual_x,
+			actual_y,
+			actual_x + input->width,
+			actual_y + input->height);
+	        return;
+	} else if (key == 21) {
+	        /* Ctrl+U */
+	        xfree(text_box->text);
+	        text_box->text = xcalloc(0, sizeof(char));
+	        text_box->length = 0;
+	        xfree(input->gadget->value);
+	        input->gadget->value = xcalloc(0, sizeof(char));
+	        char_offset = 0;
+	} else if (key == 26) {
+	        /* Ctrl+Left */
+	        char_offset = 0;
+	} else if (key == 27) {
+	        /* Ctrl+Right */
+	        char_offset = text_box->length;
 	} else if (key == 28 && (unsigned int)char_offset != text_box->length) {
 	        /* Right cursor -> */
 	        char_offset++;
