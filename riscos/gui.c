@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.9 2002/12/29 20:02:46 bursa Exp $
+ * $Id: gui.c,v 1.10 2002/12/29 22:27:35 monkeyson Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -12,8 +12,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+int gadget_subtract_x;
+int gadget_subtract_y;
 #define browser_menu_flags (wimp_ICON_TEXT | wimp_ICON_FILLED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT))
-#define HOME_URL "file:/<NetSurf$Dir>/Resources/intro.html"
+char* HOME_URL = "file:/<NetSurf$Dir>/Resources/intro.html\0";
 
 wimp_MENU(2) netsurf_iconbar_menu =
   {
@@ -243,6 +245,7 @@ int window_y_units(int scr_units, wimp_window_state* win)
   return scr_units - (win->visible.y1 - win->yscroll);
 }
 
+
 gui_window* create_gui_browser_window(struct browser_window* bw)
 {
   struct wimp_window window;
@@ -458,7 +461,7 @@ gui_safety gui_window_set_redraw_safety(gui_window* g, gui_safety s)
 
 int select_on = 0;
 
-void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, signed long y, os_box* clip)
+void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, signed long y, os_box* clip, int current_background_color)
 {
   struct box * c;
   const char * const noname = "";
@@ -500,9 +503,50 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
       colourtrans_set_gcol(box->style->background_color << 8, 0, os_ACTION_OVERWRITE, 0);
       os_plot(os_MOVE_TO, x + box->x * 2, y - box->y * 2);
       os_plot(os_PLOT_RECTANGLE | os_PLOT_BY, box->width * 2, -box->height * 2);
+      current_background_color = box->style->background_color;
     }
 
-    if (box->type == BOX_INLINE)
+    if (box->gadget != 0)
+    {
+	wimp_icon icon;
+	fprintf(stderr, "writing GADGET\n");
+
+	icon.extent.x0 = -gadget_subtract_x + x + box->x * 2;
+	icon.extent.y0 = -gadget_subtract_y + y - box->y * 2 - box->height * 2;
+	icon.extent.x1 = -gadget_subtract_x + x + box->x * 2 + box->width * 2;
+	icon.extent.y1 = -gadget_subtract_y + y - box->y * 2;
+
+	switch (box->gadget->type)
+	{
+		case GADGET_TEXTBOX:
+			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER | 
+				wimp_ICON_VCENTRED | wimp_ICON_FILLED | 
+				wimp_ICON_INDIRECTED | 
+				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
+				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
+			icon.data.indirected_text.text = box->gadget->data.textbox.text;
+			icon.data.indirected_text.size = box->gadget->data.textbox.maxlength;
+			icon.data.indirected_text.validation = " ";
+			fprintf(stderr, "writing GADGET TEXTBOX\n");
+			wimp_plot_icon(&icon);
+      			break;
+
+		case GADGET_ACTIONBUTTON:
+			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER | 
+				wimp_ICON_VCENTRED | wimp_ICON_FILLED | 
+				wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
+				(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
+				(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
+			icon.data.indirected_text.text = box->gadget->data.actionbutt.label;
+			icon.data.indirected_text.size = strlen(box->gadget->data.actionbutt.label);
+			icon.data.indirected_text.validation = "R5,3";
+			fprintf(stderr, "writing GADGET ACTION\n");
+			wimp_plot_icon(&icon);
+			break;
+	}
+    }
+
+    if (box->type == BOX_INLINE && box->font != 0)
     {
 
 if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
@@ -515,6 +559,7 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
 
       if (start->box == box)
       {
+	      fprintf(stderr, "THE START OFFSET IS %d\n", start->pixel_offset * 2);
         if (end->box == box)
         {
           colourtrans_set_gcol(os_COLOUR_VERY_LIGHT_GREY, colourtrans_SET_FG, 0, 0);
@@ -563,7 +608,7 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
       }
 }
 
-      colourtrans_set_font_colours(box->font->handle, 0xffffff, box->style->color << 8,
+      colourtrans_set_font_colours(box->font->handle, current_background_color << 8, box->style->color << 8,
         14, 0, 0, 0);
 
       font_paint(box->font->handle, box->text,
@@ -593,10 +638,10 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
 
   for (c = box->children; c != 0; c = c->next)
     if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-      ro_gui_window_redraw_box(g, c, x + box->x * 2, y - box->y * 2, clip);
+      ro_gui_window_redraw_box(g, c, x + box->x * 2, y - box->y * 2, clip, current_background_color);
 
   for (c = box->float_children; c != 0; c = c->next_float)
-    ro_gui_window_redraw_box(g, c, x + box->x * 2, y - box->y * 2, clip);
+    ro_gui_window_redraw_box(g, c, x + box->x * 2, y - box->y * 2, clip, current_background_color);
 }
 
 
@@ -638,10 +683,12 @@ void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
 
         while (more)
         {
+		gadget_subtract_x = redraw->box.x0 - redraw->xscroll;
+		gadget_subtract_y = redraw->box.y1 - redraw->yscroll;
           ro_gui_window_redraw_box(g,
             g->data.browser.bw->current_content->data.html.layout->children,
             redraw->box.x0 - redraw->xscroll, redraw->box.y1 - redraw->yscroll,
-            &redraw->clip);
+            &redraw->clip, 0xffffff);
           more = wimp_get_rectangle(redraw);
         }
         return;

@@ -1,5 +1,5 @@
 /**
- * $Id: netsurf.c,v 1.4 2002/11/03 09:39:53 bursa Exp $
+ * $Id: netsurf.c,v 1.5 2002/12/29 22:27:35 monkeyson Exp $
  */
 
 #include "netsurf/desktop/netsurf.h"
@@ -51,7 +51,7 @@ int main(int argc, char** argv)
 
 void Log(char* func, char* msg)
 {
-#ifdef NETSURF_DUMP
+#ifdef NETSURF_DUMP_MONKEYS
   FILE* logfile = NULL;
   logfile = fopen("logfile","a");
   if (logfile == NULL)

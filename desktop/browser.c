@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.16 2002/12/25 22:59:21 bursa Exp $
+ * $Id: browser.c,v 1.17 2002/12/29 22:27:35 monkeyson Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -684,10 +684,18 @@ void browser_window_text_selection(struct browser_window* bw,
       start = &(bw->current_content->data.html.text_selection.start);
       end = &(bw->current_content->data.html.text_selection.end);
 
+      if (click_boxes[i].box->font != 0)
+      {
       font_position_in_string(click_boxes[i].box->text,
           click_boxes[i].box->font, click_boxes[i].box->length,
           click_x - click_boxes[i].actual_x,
           &click_char_offset, &click_pixel_offset);
+      }
+      else
+      {
+        click_char_offset = 0;
+	click_pixel_offset = 0;
+      }
 
       new_pos.box = click_boxes[i].box;
       new_pos.actual_box_x = click_boxes[i].actual_x;
@@ -989,5 +997,10 @@ char *url_join(const char* new, const char* base)
   }
 
   LOG(("ret = %s", ret));
+  if (ret == NULL)
+  {
+    ret = xcalloc(strlen(new) + 10, sizeof(char));
+    strcpy(ret, new);
+  }
   return ret;
 }

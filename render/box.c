@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.22 2002/12/27 20:35:32 bursa Exp $
+ * $Id: box.c,v 1.23 2002/12/29 22:27:35 monkeyson Exp $
  */
 
 #include <assert.h>
@@ -18,6 +18,8 @@
 /**
  * internal functions
  */
+
+struct box* box_gui_gadget(xmlNode * n, struct css_style* style);
 
 void box_add_child(struct box * parent, struct box * child);
 struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
@@ -77,6 +79,7 @@ struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
 	box->next_float = 0;
 	box->col = 0;
 	box->font = 0;
+	box->gadget = 0;
 	return box;
 }
 
@@ -173,6 +176,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 	}
 
 	if (n->type == XML_TEXT_NODE ||
+			(n->type == XML_ELEMENT_NODE && (strcmp((const char *) n->name, "input") == 0)) ||
 			(n->type == XML_ELEMENT_NODE && (style->float_ == CSS_FLOAT_LEFT ||
 							 style->float_ == CSS_FLOAT_RIGHT))) {
 		/* text nodes are converted to inline boxes, wrapped in an inline container block */
@@ -194,6 +198,11 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			}
 			box->font = font_open(fonts, box->style);
 			box_add_child(inline_container, box);
+		} else if (strcmp((const char *) n->name, "input") == 0) {
+			LOG(("input"));
+			box = box_gui_gadget(n, parent_style);
+			if (box != NULL)
+				box_add_child(inline_container, box);
 		} else {
 			LOG(("float"));
 			box = box_create(0, BOX_FLOAT_LEFT, 0, href);
@@ -406,6 +415,7 @@ void box_normalise_block(struct box *block)
 	assert(block->type == BOX_BLOCK || block->type == BOX_TABLE_CELL);
 
 	for (child = block->children; child != 0; prev_child = child, child = child->next) {
+		fprintf(stderr, "child->type = %d\n", child->type);
 		switch (child->type) {
 			case BOX_BLOCK:
 				/* ok */
@@ -702,6 +712,12 @@ void box_free(struct box *box)
 	/* last this box */
 //	if (box->style != 0)
 //		free(box->style);
+	if (box->gadget != 0)
+	{
+		/* gadget_free(box->gadget); */
+		free((void*)box->gadget);
+	}
+	
 	if (box->text != 0)
 		free((void*)box->text);
 	/* only free href if we're the top most user */
@@ -712,4 +728,71 @@ void box_free(struct box *box)
 		else if (box->parent->href != box->href)
 			free((void*)box->href);
 	}
+}
+
+struct box* box_gui_gadget(xmlNode * n, struct css_style* style)
+{
+	struct box* box = 0;
+	char* s;
+	char* type;
+
+	if ((type = (char *) xmlGetProp(n, (xmlChar *) "type")))
+	{
+		if (strcmp(type, "submit") == 0 || strcmp(type, "reset") == 0)
+		{
+			//style->display = CSS_DISPLAY_BLOCK;
+
+			box = box_create(n, BOX_INLINE, style, NULL);
+			box->gadget = xcalloc(1, sizeof(struct gui_gadget));
+			box->gadget->type = GADGET_ACTIONBUTTON;
+
+			box->text = 0;
+			box->length = 0;
+			box->font = 0;
+
+			if ((s = (char *) xmlGetProp(n, (xmlChar *) "value"))) {
+				box->gadget->data.actionbutt.label = s;
+			}
+			else 
+			{
+				box->gadget->data.actionbutt.label = strdup(type);
+				box->gadget->data.actionbutt.label[0] = toupper(type[0]);
+			}
+		}
+		if (strcmp(type, "text") == 0 || strcmp(type, "password") == 0)
+		{
+			//style->display = CSS_DISPLAY_BLOCK;
+
+			box = box_create(n, BOX_INLINE, style, NULL);
+			box->gadget = xcalloc(1, sizeof(struct gui_gadget));
+			box->gadget->type = GADGET_TEXTBOX;
+
+			box->text = 0;
+			box->length = 0;
+			box->font = 0;
+
+			box->gadget->data.textbox.maxlength = 255;
+			if ((s = (char *) xmlGetProp(n, (xmlChar *) "maxlength"))) {
+				box->gadget->data.textbox.maxlength = atoi(s);
+				free(s);
+			}
+
+			box->gadget->data.textbox.size = box->gadget->data.textbox.maxlength;
+			if ((s = (char *) xmlGetProp(n, (xmlChar *) "size"))) {
+				box->gadget->data.textbox.size = atoi(s);
+				free(s);
+			}
+
+			box->gadget->data.textbox.text = xcalloc(box->gadget->data.textbox.maxlength + 1, sizeof(char));
+
+			if ((s = (char *) xmlGetProp(n, (xmlChar *) "value"))) {
+				strncpy(box->gadget->data.textbox.text, s, 
+					box->gadget->data.textbox.maxlength);
+				free(s);
+			}
+
+		}
+		free(type);
+	}
+	return box;
 }

@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.27 2002/12/27 22:29:45 bursa Exp $
+ * $Id: layout.c,v 1.28 2002/12/29 22:27:35 monkeyson Exp $
  */
 
 #include <assert.h>
@@ -107,6 +107,35 @@ void layout_node(struct box * box, unsigned long width, struct box * cont,
 	}
 }
 
+
+
+int gadget_width(struct gui_gadget* gadget)
+{
+	switch (gadget->type)
+	{
+		case GADGET_TEXTBOX:
+			return gadget->data.textbox.size * 8;
+		case GADGET_ACTIONBUTTON:
+			return strlen(gadget->data.actionbutt.label) * 8 + 16;
+		default:
+			assert(0);
+	}
+	return 0;
+}
+
+int gadget_height(struct gui_gadget* gadget)
+{
+	switch (gadget->type)
+	{
+		case GADGET_TEXTBOX:
+			return 28;
+		case GADGET_ACTIONBUTTON:
+			return 28;
+		default:
+			assert(0);
+	}
+	return 0;
+}
 /**
  * layout_block -- position block and recursively layout children
  *
@@ -300,18 +329,31 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 	find_sides(cont->float_children, cy, cy, &x0, &x1, &left, &right);
 
 	/* get minimum line height from containing block */
-	height = line_height(first->parent->parent->style);
+	if (first->text != 0)
+		height = line_height(first->parent->parent->style);
+	else if (first->gadget != 0)
+		height = gadget_height(first->gadget);
 
 	/* pass 1: find height of line assuming sides at top of line */
 	for (x = 0, b = first; x < x1 - x0 && b != 0; b = b->next) {
 		assert(b->type == BOX_INLINE || b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT);
 		if (b->type == BOX_INLINE) {
-			h = line_height(b->style ? b->style : b->parent->parent->style);
+			if (b->text != 0)
+				h = line_height(b->style ? b->style : b->parent->parent->style);
+			else if (b->gadget != 0)
+				h = gadget_height(b->gadget);
+
 			b->height = h;
 			if (h > height) height = h;
-			if (b->width == UNKNOWN_WIDTH)
+			if (b->width == UNKNOWN_WIDTH && b->font != 0)
 				b->width = font_width(b->font, b->text, b->length);
-			x += b->width + b->space ? b->font->space_width : 0;
+			else if (b->width == UNKNOWN_WIDTH && b->gadget != 0)
+				b->width = gadget_width(b->gadget);
+
+			if (b->font != 0)
+				x += b->width + b->space ? b->font->space_width : 0;
+			else if (b->gadget != 0)
+				x += b->width;
 		}
 	}
 
@@ -328,7 +370,10 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			b->x = x;
 			x += b->width;
 			space_before = space_after;
-			space_after = b->space ? b->font->space_width : 0;
+			if (b->font != 0)
+				space_after = b->space ? b->font->space_width : 0;
+			else
+				space_after = 0;
 			c = b;
 			move_y = 1;
 /* 			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x); */
@@ -378,8 +423,10 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 
 		if (space == 0)
 			w = c->width;
-		else
+		else if (c->font != 0)
 			w = font_width(c->font, c->text, space - c->text);
+		else if (c->gadget != 0)
+			w = gadget_width(c->gadget);
 
 		if (x1 - x0 < x + space_before + w && left == 0 && right == 0 && c == first) {
 			/* first word doesn't fit, but no floats and first on line so force in */
@@ -405,7 +452,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			/* first word doesn't fit, but full width not available so leave for later */
 			b = c;
 /* 			fprintf(stderr, "layout_line:     overflow, leaving\n"); */
-		} else {
+		} else if (c->text != 0) {
 			/* fit as many words as possible */
 			assert(space != 0);
 			space = font_split(c->font, c->text, c->length,
@@ -669,8 +716,11 @@ void calculate_inline_container_widths(struct box *box)
 		switch (child->type) {
 			case BOX_INLINE:
 				/* max = all one line */
+				if (child->font != 0)
+				{
 				child->width = font_width(child->font,
 						child->text, child->length);
+
 				max += child->width;
 
 				/* min = widest word */
@@ -682,6 +732,14 @@ void calculate_inline_container_widths(struct box *box)
 				}
 				width = font_width(child->font, word, strlen(word));
 				if (min < width) min = width;
+				}
+				else if (child->gadget != 0)
+				{
+					child->width = gadget_width(child->gadget);
+					max += child->width;
+					if (min < child->width)
+						min = child->width;
+				}
 				break;
 
 			case BOX_FLOAT_LEFT:

@@ -1,5 +1,5 @@
 /**
- * $Id: font.c,v 1.8 2002/12/27 17:28:19 bursa Exp $
+ * $Id: font.c,v 1.9 2002/12/29 22:27:35 monkeyson Exp $
  */
 
 #include <assert.h>
@@ -68,7 +68,7 @@ void font_position_in_string(const char* text, struct font_data* font,
   block.letter.x = block.letter.y = 0;
   block.split_char = -1;
 
-  xfont_scan_string(font, text,
+  xfont_scan_string(font->handle, text,
     font_GIVEN_BLOCK | font_GIVEN_FONT | font_KERN | font_RETURN_CARET_POS | font_GIVEN_LENGTH,
     ro_x_units(x) * 400,
     0x7fffffff,

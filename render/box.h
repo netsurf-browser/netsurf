@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.12 2002/12/27 17:28:19 bursa Exp $
+ * $Id: box.h,v 1.13 2002/12/29 22:27:35 monkeyson Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -27,6 +27,21 @@ struct column {
 	unsigned long min, max, width;
 };
 
+struct gui_gadget {
+	enum { GADGET_HIDDEN = 0, GADGET_TEXTBOX, GADGET_RADIO, GADGET_OPTION,
+		GADGET_COMBO, GADGET_LIST, GADGET_TEXTAREA, GADGET_ACTIONBUTTON } type;
+        union {
+		struct {
+			int maxlength;
+			char* text;
+			int size;
+		} textbox;
+		struct {
+			char* label;
+		} actionbutt;
+	} data;
+};
+
 struct box {
 	box_type type;
 	xmlNode * node;
@@ -46,6 +61,7 @@ struct box {
 	struct box * next_float;
 	struct column *col;
 	struct font_data *font;
+	struct gui_gadget* gadget;
 };
 
 #define UNKNOWN_WIDTH ULONG_MAX
