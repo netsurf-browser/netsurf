@@ -61,7 +61,7 @@ struct {
 	{ "font_min_size",   OPTION_INTEGER, &option_font_min_size },
 	{ "accept_language", OPTION_STRING,  &option_accept_language },
 	{ "ssl_verify_certificates", OPTION_BOOL, &option_ssl_verify_certificates },
-	{ "memory_cache_size", OPTION_STRING, &option_memory_cache_size },
+	{ "memory_cache_size", OPTION_INTEGER, &option_memory_cache_size },
 	EXTRA_OPTION_TABLE
 };
 
