@@ -1,9 +1,10 @@
-# $Id: makefile,v 1.11 2002/12/30 14:33:49 bursa Exp $
+# $Id: makefile,v 1.12 2003/01/02 13:13:27 bursa Exp $
 
 all: !NetSurf/!RunImage,ff8
 clean:
 	rm */arm-riscos-aof/*
-dirs: render/arm-riscos-aof riscos/arm-riscos-aof desktop/arm-riscos-aof
+
+setup: render/arm-riscos-aof riscos/arm-riscos-aof desktop/arm-riscos-aof
 %/arm-riscos-aof:
 	mkdir $@
 
@@ -32,7 +33,7 @@ LIBS = \
  /usr/local/riscoslibs/libutf-8/libutf-8.ro \
  /usr/local/riscoslibs/ubiqx/ubiqx.ro
 
-!NetSurf/!RunImage,ff8: dirs $(OBJECTS)
+!NetSurf/!RunImage,ff8: $(OBJECTS)
 	$(CC) $(FLAGS) -o !NetSurf/!RunImage,ff8 $(OBJECTS) $(LIBS)
 
 render/css_enum.c render/css_enum.h: render/css_enums render/makeenum
