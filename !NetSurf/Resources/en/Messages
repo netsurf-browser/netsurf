@@ -108,6 +108,15 @@ Form_Reset:Reset
 Form_None:
 Form_Many:(Many)
 Form_Drop:Drop file here
+FormSelect:Click to choose a form item
+FormCheckbox:Click to check this option
+FormRadio:Click to choose this option
+FormSubmit:Send form to %s
+FormBadSubmit:Warning: form can not be submitted
+FormTextarea:Click to edit the text
+FormTextbox:Click to edit this field
+FormReset:Reset form (not implemented)
+FormFile:Drop a file here to upload it
 
 Not2xx:Server returned an error
 

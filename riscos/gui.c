@@ -35,7 +35,6 @@
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/font.h"
-#include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
@@ -62,8 +61,6 @@ const char *__dynamic_da_name = "NetSurf";	/**< For UnixLib. */
 int __feature_imagefs_is_file = 1;              /**< For UnixLib. */
 
 char *NETSURF_DIR;
-wimp_menu *combo_menu;
-struct form_control *current_gadget;
 
 /** The pointer is over a window which is tracking mouse movement. */
 static bool gui_track = false;
@@ -955,53 +952,6 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			netsurf_quit = true;
 			break;
 	}
-}
-
-
-void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigned long mx, unsigned long my)
-{
-	int count;
-	struct form_option* o;
-	wimp_pointer pointer;
-
-	if (combo_menu != NULL)
-		xfree(combo_menu);
-
-	for (count = 0, o = g->data.select.items; o != NULL; ++count, o = o->next)
-		/* no body */;
-
-	combo_menu = xcalloc(1, wimp_SIZEOF_MENU(count));
-
-	combo_menu->title_data.indirected_text.text =
-			messages_get("SelectMenu");
-	combo_menu->title_fg = wimp_COLOUR_BLACK;
-	combo_menu->title_bg = wimp_COLOUR_LIGHT_GREY;
-	combo_menu->work_fg = wimp_COLOUR_BLACK;
-	combo_menu->work_bg = wimp_COLOUR_WHITE;
-	combo_menu->width = 0;
-	combo_menu->height = wimp_MENU_ITEM_HEIGHT;
-	combo_menu->gap = wimp_MENU_ITEM_GAP;
-
-	for (count = 0, o = g->data.select.items; o != NULL; ++count, o = o->next) {
-		combo_menu->entries[count].menu_flags = 0;
-		if (count == 0)
-		  combo_menu->entries[count].menu_flags = wimp_MENU_TITLE_INDIRECTED;
-		if (o->selected)
-		  combo_menu->entries[count].menu_flags |= wimp_MENU_TICKED;
-		if (o->next == NULL)
-		  combo_menu->entries[count].menu_flags |= wimp_MENU_LAST;
-
-		combo_menu->entries[count].sub_menu = wimp_NO_SUB_MENU;
-		combo_menu->entries[count].icon_flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_FILLED | wimp_ICON_VCENTRED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT) | (wimp_BUTTON_MENU_ICON << wimp_ICON_BUTTON_TYPE_SHIFT);
-		/* \todo combo_menu->entries[count].data.indirected_text.text needs to be free() when menu gets closed. */
-		combo_menu->entries[count].data.indirected_text.text = cnv_str_local_enc(o->text);
-		combo_menu->entries[count].data.indirected_text.validation = "\0";
-		combo_menu->entries[count].data.indirected_text.size = strlen(combo_menu->entries[count].data.indirected_text.text) + 1;
-	}
-
-	wimp_get_pointer_info(&pointer);
-	current_gadget = g;
-	ro_gui_create_menu(combo_menu, pointer.pos.x - 64, pointer.pos.y, bw->window);
 }
 
 

@@ -53,25 +53,12 @@ struct browser_window
 };
 
 
-struct browser_action
-{
-  enum { act_UNKNOWN,
-         act_MOUSE_AT, act_MOUSE_CLICK, act_START_NEW_SELECTION,
-         act_ALTER_SELECTION, act_CLEAR_SELECTION,
-         act_FOLLOW_LINK, act_FOLLOW_LINK_NEW_WINDOW,
-	 act_GADGET_SELECT
-       } type;
-  union {
-    struct {
-      unsigned long x;
-      unsigned long y;
-    } mouse;
-    struct {
-      struct form_control* g;
-      int item;
-    } gadget_select;
-  } data;
-};
+typedef enum {
+	BROWSER_MOUSE_CLICK_1,
+	BROWSER_MOUSE_CLICK_2,
+	BROWSER_MOUSE_HOVER,
+} browser_mouse_click;
+
 
 struct box_selection
 {
@@ -93,7 +80,11 @@ void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);
 void browser_window_destroy(struct browser_window *bw);
 
-int browser_window_action(struct browser_window* bw, struct browser_action* act);
+void browser_window_mouse_click(struct browser_window *bw,
+		browser_mouse_click click, int x, int y);
+bool browser_window_key_press(struct browser_window *bw, char key);
+void browser_window_form_select(struct browser_window *bw,
+		struct form_control *control, int item);
 
 void box_under_area(struct content *content, struct box* box, unsigned long x, unsigned long y, unsigned long ox, unsigned long oy,
 		struct box_selection** found, int* count, int* plot_index);
@@ -104,8 +95,6 @@ int box_position_eq(struct box_position* x, struct box_position* y);
 int box_position_distance(struct box_position* x, struct box_position* y);
 
 void gui_redraw_gadget(struct browser_window* bw, struct form_control* g);
-
-bool browser_window_key_press(struct browser_window *bw, char key);
 
 /* In platform specific hotlist.c. */
 void hotlist_visited(struct content *content);

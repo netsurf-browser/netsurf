@@ -2454,32 +2454,6 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
 }
 
 
-/**
- * Find the absolute coordinates of a box.
- *
- * \param  box  the box to calculate coordinates of
- * \param  x    updated to x coordinate
- * \param  y    updated to y coordinate
- */
-
-void box_coords(struct box *box, int *x, int *y)
-{
-	*x = box->x;
-	*y = box->y;
-	while (box->parent) {
-		if (box->type == BOX_FLOAT_LEFT ||
-				box->type == BOX_FLOAT_RIGHT) {
-			do {
-				box = box->parent;
-			} while (!box->float_children);
-		} else
-			box = box->parent;
-		*x += box->x;
-		*y += box->y;
-	}
-}
-
-
 struct box_result box_frameset(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
@@ -2708,4 +2682,106 @@ struct box_multi_length *box_parse_multi_lengths(const char *s,
 
 	*count = n;
 	return length;
+}
+
+
+/**
+ * Find the absolute coordinates of a box.
+ *
+ * \param  box  the box to calculate coordinates of
+ * \param  x    updated to x coordinate
+ * \param  y    updated to y coordinate
+ */
+
+void box_coords(struct box *box, int *x, int *y)
+{
+	*x = box->x;
+	*y = box->y;
+	while (box->parent) {
+		if (box->type == BOX_FLOAT_LEFT ||
+				box->type == BOX_FLOAT_RIGHT) {
+			do {
+				box = box->parent;
+			} while (!box->float_children);
+		} else
+			box = box->parent;
+		*x += box->x;
+		*y += box->y;
+	}
+}
+
+
+/**
+ * Find the boxes at a point.
+ *
+ * \param  box      box to search children of
+ * \param  x        point to find, in global document coordinates
+ * \param  y        point to find, in global document coordinates
+ * \param  box_x    position of box, in global document coordinates, updated
+ *                  to position of returned box, if any
+ * \param  box_y    position of box, in global document coordinates, updated
+ *                  to position of returned box, if any
+ * \param  content  updated to content of object that returned box is in, if any
+ * \return  box at given point, or 0 if none found
+ *
+ * To find all the boxes in the heirarchy at a certain point, use code like
+ * this:
+ * \code
+ *	struct box *box = top_of_document_to_search;
+ *	int box_x = 0, box_y = 0;
+ *	struct content *content = document_to_search;
+ *
+ *	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
+ *		// process box
+ *	}
+ * \endcode
+ */
+
+struct box *box_at_point(struct box *box, int x, int y,
+		int *box_x, int *box_y,
+		struct content **content)
+{
+	struct box *child;
+
+	assert(box);
+
+	/* drill into HTML objects */
+	if (box->object) {
+		if (box->object->type == CONTENT_HTML &&
+				box->object->data.html.layout) {
+			*content = box->object;
+			box = box->object->data.html.layout;
+		} else {
+			return 0;
+		}
+	}
+
+	/* consider floats first, since they will often overlap other boxes */
+	for (child = box->float_children; child; child = child->next_float) {
+		if (*box_x + child->x <= x &&
+				x < *box_x + child->x + child->width &&
+				*box_y + child->y <= y &&
+				y < *box_y + child->y + child->height) {
+			*box_x += child->x;
+			*box_y += child->y;
+			return child;
+		}
+	}
+
+	/* non-float children */
+	for (child = box->children; child; child = child->next) {
+		if (child->type == BOX_FLOAT_LEFT ||
+				child->type == BOX_FLOAT_RIGHT)
+			continue;
+		if (*box_x + child->x <= x &&
+				x < *box_x + child->x + child->width &&
+				*box_y + child->y <= y &&
+				y < *box_y + child->y + child->height) {
+			*box_x += child->x;
+			*box_y += child->y;
+			return child;
+		}
+	}
+
+	return 0;
 }

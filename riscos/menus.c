@@ -18,6 +18,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/desktop/gui.h"
+#include "netsurf/render/form.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
 #include "netsurf/riscos/options.h"
@@ -56,6 +57,12 @@ static void ro_gui_menu_prepare_hotlist(void);
 struct gui_window *current_gui;
 wimp_menu *current_menu;
 static int current_menu_x, current_menu_y;
+
+/** Menu of options for form select controls. */
+static wimp_menu *gui_form_select_menu = 0;
+/** Form control which gui_form_select_menu is for. */
+static struct form_control *gui_form_select_control;
+
 
 /*	Default menu item flags
 */
@@ -512,18 +519,16 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 
 void ro_gui_menu_selection(wimp_selection *selection)
 {
-	struct browser_action msg;
 	wimp_pointer pointer;
 	wimp_window_state state;
 	os_error *error;
 
 	wimp_get_pointer_info(&pointer);
 
-	if (current_menu == combo_menu && selection->items[0] >= 0) {
-		msg.type = act_GADGET_SELECT;
-		msg.data.gadget_select.g = current_gadget;
-		msg.data.gadget_select.item = selection->items[0];
-		browser_window_action(current_gui->bw, &msg);
+	if (current_menu == gui_form_select_menu && 0 <= selection->items[0]) {
+		browser_window_form_select(current_gui->bw,
+				gui_form_select_control,
+				selection->items[0]);
 
 	} else if (current_menu == iconbar_menu) {
 		switch (selection->items[0]) {
@@ -655,8 +660,6 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 1: /* Select all */
 						break;
 					case 2: /* Clear */
-						msg.type = act_CLEAR_SELECTION;
-						browser_window_action(current_gui->bw, &msg);
 						break;
 				}
 				break;
@@ -807,10 +810,13 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	}
 
 	if (pointer.buttons == wimp_CLICK_ADJUST) {
-		if (current_menu == combo_menu)
-			gui_gadget_combo(current_gui->bw, current_gadget, (unsigned int)current_menu_x, (unsigned int)current_menu_y);
+		if (current_menu == gui_form_select_menu)
+			gui_create_form_select_menu(current_gui->bw,
+					gui_form_select_control);
 		else
-			ro_gui_create_menu(current_menu, current_menu_x, current_menu_y, current_gui);
+			ro_gui_create_menu(current_menu,
+					current_menu_x, current_menu_y,
+					current_gui);
 	} else {
 		if (current_menu == hotlist_menu) {
 			ro_gui_hotlist_menu_closed();
@@ -1458,3 +1464,92 @@ void ro_gui_menu_object_reload(void)
 	}
 }
 
+
+/**
+ * Display a menu of options for a form select control.
+ *
+ * \param  bw       browser window containing form control
+ * \param  control  form control of type GADGET_SELECT
+ */
+
+void gui_create_form_select_menu(struct browser_window *bw,
+		struct form_control *control)
+{
+	unsigned int i = 0, j;
+	struct form_option *option;
+	wimp_pointer pointer;
+	os_error *error;
+
+	for (option = control->data.select.items; option; option = option->next)
+		i++;
+
+	if (i == 0)
+		return;
+
+	if (gui_form_select_menu) {
+		for (j = 0; ; j++) {
+			free(gui_form_select_menu->entries[j].data.
+					indirected_text.text);
+			if (gui_form_select_menu->entries[j].menu_flags &
+					wimp_MENU_LAST)
+				break;
+		}
+		free(gui_form_select_menu);
+		gui_form_select_menu = 0;
+	}
+
+	gui_form_select_menu = malloc(wimp_SIZEOF_MENU(i));
+	if (!gui_form_select_menu) {
+		warn_user("NoMemory", 0);
+		return;
+	}
+
+	gui_form_select_menu->title_data.indirected_text.text =
+			messages_get("SelectMenu");
+	gui_form_select_menu->title_fg = wimp_COLOUR_BLACK;
+	gui_form_select_menu->title_bg = wimp_COLOUR_LIGHT_GREY;
+	gui_form_select_menu->work_fg = wimp_COLOUR_BLACK;
+	gui_form_select_menu->work_bg = wimp_COLOUR_WHITE;
+	gui_form_select_menu->width = 200;
+	gui_form_select_menu->height = wimp_MENU_ITEM_HEIGHT;
+	gui_form_select_menu->gap = wimp_MENU_ITEM_GAP;
+
+	for (i = 0, option = control->data.select.items; option;
+			i++, option = option->next) {
+		gui_form_select_menu->entries[i].menu_flags = 0;
+		if (option->selected)
+			gui_form_select_menu->entries[i].menu_flags =
+					wimp_MENU_TICKED;
+		gui_form_select_menu->entries[i].sub_menu = wimp_NO_SUB_MENU;
+		gui_form_select_menu->entries[i].icon_flags = wimp_ICON_TEXT |
+				wimp_ICON_INDIRECTED | wimp_ICON_FILLED |
+				(wimp_COLOUR_BLACK <<
+						wimp_ICON_FG_COLOUR_SHIFT) |
+				(wimp_COLOUR_WHITE <<
+						wimp_ICON_BG_COLOUR_SHIFT);
+		/* \todo  can cnv_str_local_enc() fail? */
+		gui_form_select_menu->entries[i].data.indirected_text.text =
+				cnv_str_local_enc(option->text);
+		gui_form_select_menu->entries[i].data.indirected_text.
+				validation = "\0";
+		gui_form_select_menu->entries[i].data.indirected_text.size =
+				strlen(gui_form_select_menu->entries[i].
+				data.indirected_text.text) + 1;
+	}
+
+	gui_form_select_menu->entries[0].menu_flags |=
+			wimp_MENU_TITLE_INDIRECTED;
+	gui_form_select_menu->entries[i - 1].menu_flags |= wimp_MENU_LAST;
+
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+
+	current_gui = bw->window;
+	gui_form_select_control = control;
+	ro_gui_create_menu(gui_form_select_menu,
+			pointer.pos.x - 64, pointer.pos.y, bw->window);
+}

@@ -25,6 +25,11 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 
+void gui_init(int argc, char** argv);
+void gui_multitask(void);
+void gui_poll(bool active);
+void gui_quit(void);
+
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone);
 void gui_window_destroy(struct gui_window *g);
@@ -39,6 +44,10 @@ void gui_window_set_extent(struct gui_window *g, int width, int height);
 void gui_window_set_status(struct gui_window *g, const char *text);
 void gui_window_set_pointer(gui_pointer_shape shape);
 void gui_window_set_url(struct gui_window *g, const char *url);
+void gui_window_start_throbber(struct gui_window *g);
+void gui_window_stop_throbber(struct gui_window *g);
+void gui_window_place_caret(struct gui_window *g, int x, int y, int height);
+void gui_window_new_content(struct gui_window *g);
 
 struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,
@@ -49,20 +58,9 @@ void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg);
 void gui_download_window_done(struct gui_download_window *dw);
 
-void gui_init(int argc, char** argv);
-void gui_multitask(void);
-void gui_poll(bool active);
-void gui_quit(void);
-
-void gui_window_start_throbber(struct gui_window *g);
-void gui_window_stop_throbber(struct gui_window *g);
-
-void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigned long mx, unsigned long my);
-
-void gui_window_place_caret(struct gui_window *g, int x, int y, int height);
+void gui_create_form_select_menu(struct browser_window *bw,
+		struct form_control *control);
 
 void gui_launch_url(const char *url);
-
-void gui_window_new_content(struct gui_window *g);
 
 #endif

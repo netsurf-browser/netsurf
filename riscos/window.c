@@ -908,14 +908,7 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 	x = window_x_units(pointer->pos.x, &state) / 2 / g->option.scale;
 	y = -window_y_units(pointer->pos.y, &state) / 2 / g->option.scale;
 
-    if (g->bw->current_content != NULL)
-    {
-      struct browser_action msg;
-      msg.type = act_MOUSE_AT;
-      msg.data.mouse.x = x;
-      msg.data.mouse.y = y;
-      browser_window_action(g->bw, &msg);
-    }
+	browser_window_mouse_click(g->bw, BROWSER_MOUSE_HOVER, x, y);
 }
 
 
@@ -1034,7 +1027,6 @@ void ro_gui_status_click(struct gui_window *g, wimp_pointer *pointer)
 
 void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 {
-	struct browser_action msg;
 	int x, y;
 	wimp_window_state state;
 	os_error *error;
@@ -1066,33 +1058,13 @@ void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 		}
 	}
 
-	if (pointer->buttons == wimp_CLICK_MENU) {
+	if (pointer->buttons == wimp_CLICK_MENU)
 		ro_gui_create_menu(browser_menu, pointer->pos.x - 64,
 				pointer->pos.y, g);
-		return;
-	}
-
-	if (pointer->buttons == wimp_CLICK_SELECT) {
-		msg.type = act_MOUSE_CLICK;
-		msg.data.mouse.x = x;
-		msg.data.mouse.y = y;
-		if (browser_window_action(
-					g->bw, &msg) == 1)
-			return;
-		msg.type = act_UNKNOWN;
-	}
-
-	if (pointer->buttons == wimp_CLICK_SELECT
-		|| pointer->buttons == wimp_CLICK_ADJUST) {
-
-		if (pointer->buttons == wimp_CLICK_SELECT)
-			msg.type = act_FOLLOW_LINK;
-		else
-			msg.type = act_FOLLOW_LINK_NEW_WINDOW;
-		msg.data.mouse.x = x;
-		msg.data.mouse.y = y;
-		browser_window_action(g->bw, &msg);
-	}
+	else if (pointer->buttons == wimp_CLICK_SELECT)
+		browser_window_mouse_click(g->bw, BROWSER_MOUSE_CLICK_1, x, y);
+	else if (pointer->buttons == wimp_CLICK_ADJUST)
+		browser_window_mouse_click(g->bw, BROWSER_MOUSE_CLICK_2, x, y);
 }
 
 

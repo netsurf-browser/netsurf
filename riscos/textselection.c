@@ -35,7 +35,7 @@ void ro_gui_start_selection(wimp_pointer *pointer, wimp_window_state *state,
 
 void ro_gui_selection_drag_end(wimp_dragged *drag)
 {
-    struct browser_action msg;
+/*     struct browser_action msg; */
     int final_x0, final_y0;
     wimp_window_state state;
 
@@ -45,16 +45,16 @@ void ro_gui_selection_drag_end(wimp_dragged *drag)
     final_x0 = window_x_units(drag->final.x0, &state) / 2;
     final_y0 = window_y_units(drag->final.y0, &state) / 2;
 
-    msg.data.mouse.x = final_x0;
+/*    msg.data.mouse.x = final_x0;
     msg.data.mouse.y = final_y0;
     msg.type = act_ALTER_SELECTION;
-    browser_window_action(current_gui->bw, &msg);
+    browser_window_action(current_gui->bw, &msg);*/
 
     if (box_position_eq(&(current_gui->bw->current_content->data.html.text_selection.start),
                         &(current_gui->bw->current_content->data.html.text_selection.end)))
     {
-      msg.type = act_CLEAR_SELECTION;
-      browser_window_action(current_gui->bw, &msg);
+/*      msg.type = act_CLEAR_SELECTION;
+      browser_window_action(current_gui->bw, &msg);*/
     }
     current_gui->bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
 }

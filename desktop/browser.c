@@ -49,6 +49,8 @@ static void browser_window_set_status(struct browser_window *bw,
 static void browser_window_set_pointer(gui_pointer_shape shape);
 static void download_window_callback(fetch_msg msg, void *p, const char *data,
 		unsigned long size);
+static void browser_window_mouse_click_html(struct browser_window *bw,
+		browser_mouse_click click, int x, int y);
 
 static void browser_window_text_selection(struct browser_window* bw,
 		unsigned long click_x, unsigned long click_y, int click_type);
@@ -58,13 +60,9 @@ static int redraw_box_list(struct browser_window* bw, struct box* current,
 		unsigned long x, unsigned long y, struct box_position* start,
 		struct box_position* end, int* plot);
 static void browser_window_redraw_boxes(struct browser_window* bw, struct box_position* start, struct box_position* end);
-static void browser_window_follow_link(struct browser_window* bw,
-		unsigned long click_x, unsigned long click_y, int click_type);
 static void clear_radio_gadgets(struct browser_window* bw, struct box* box, struct form_control* group);
 static void gui_redraw_gadget2(struct browser_window* bw, struct box* box, struct form_control* g,
 		unsigned long x, unsigned long y);
-static void browser_window_gadget_select(struct browser_window* bw, struct form_control* g, int item);
-static int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x, unsigned long click_y);
 static void browser_form_submit(struct browser_window *bw, struct form *form,
 		struct form_control *submit_button);
 static void browser_window_textarea_click(struct browser_window* bw,
@@ -533,6 +531,204 @@ void download_window_callback(fetch_msg msg, void *p, const char *data,
 }
 
 
+/**
+ * Handle mouse clicks in a browser window.
+ *
+ * \param  bw     browser window
+ * \param  click  type of mouse click
+ * \param  x      coordinate of mouse
+ * \param  y      coordinate of mouse
+ */
+
+void browser_window_mouse_click(struct browser_window *bw,
+		browser_mouse_click click, int x, int y)
+{
+	if (!bw->current_content)
+		return;
+
+	if (bw->current_content->type == CONTENT_HTML)
+		browser_window_mouse_click_html(bw, click, x, y);
+}
+
+
+/**
+ * Handle mouse clicks in an HTML content window.
+ *
+ * \param  bw     browser window
+ * \param  click  type of mouse click
+ * \param  x      coordinate of mouse
+ * \param  y      coordinate of mouse
+ */
+
+void browser_window_mouse_click_html(struct browser_window *bw,
+		browser_mouse_click click, int x, int y)
+{
+	struct content *c = bw->current_content;
+	struct box *box = c->data.html.layout;
+	int box_x = 0, box_y = 0;
+	struct content *content = c;
+	struct content *gadget_content = c;
+	char *base_url = 0;
+	char *href = 0;
+	char *title = 0;
+	struct form_control *gadget = 0;
+	const char *status = 0;
+	char status_buffer[200];
+	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	char *url;
+
+	/* search the box tree for a link, imagemap, or form control */
+	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
+		if (box->style &&
+				box->style->visibility == CSS_VISIBILITY_HIDDEN)
+			continue;
+
+		if (box->href) {
+			base_url = content->data.html.base_url;
+			href = box->href;
+		}
+
+		if (box->usemap) {
+			base_url = content->data.html.base_url;
+			href = imagemap_get(content, box->usemap,
+					box_x, box_y, x, y);
+		}
+
+		if (box->gadget) {
+			gadget_content = content;
+			base_url = content->data.html.base_url;
+			gadget = box->gadget;
+		}
+
+		if (box->title)
+			title = box->title;
+
+		if (box->style && box->style->cursor != CSS_CURSOR_UNKNOWN)
+			pointer = get_pointer_shape(box->style->cursor);
+	}
+
+	if (gadget) {
+		switch (gadget->type) {
+		case GADGET_SELECT:
+			status = messages_get("FormSelect");
+			pointer = GUI_POINTER_MENU;
+			if (click == BROWSER_MOUSE_CLICK_1)
+				gui_create_form_select_menu(bw, gadget);
+			break;
+		case GADGET_CHECKBOX:
+			status = messages_get("FormCheckbox");
+			if (click == BROWSER_MOUSE_CLICK_1) {
+				gadget->selected = !gadget->selected;
+				gui_redraw_gadget(bw, gadget);
+			}
+			break;
+		case GADGET_RADIO:
+			status = messages_get("FormRadio");
+			if (click == BROWSER_MOUSE_CLICK_1) {
+				clear_radio_gadgets(bw,
+						gadget_content->data.html.
+						layout, gadget);
+				gadget->selected = true;
+				gui_redraw_gadget(bw, gadget);
+			}
+			break;
+		case GADGET_IMAGE:
+			if (click == BROWSER_MOUSE_CLICK_1) {
+				gadget->data.image.mx = x - box_x;
+				gadget->data.image.my = y - box_y;
+			}
+			/* drop through */
+		case GADGET_SUBMIT:
+			if (gadget->form) {
+				url = url_join(gadget->form->action, base_url);
+				snprintf(status_buffer, sizeof status_buffer,
+						messages_get("FormSubmit"),
+						url ? url :
+						gadget->form->action);
+				status = status_buffer;
+				pointer = GUI_POINTER_POINT;
+				if (click == BROWSER_MOUSE_CLICK_1)
+					browser_form_submit(bw, gadget->form,
+							gadget);
+			} else {
+				status = messages_get("FormBadSubmit");
+			}
+			break;
+		case GADGET_TEXTAREA:
+			status = messages_get("FormTextarea");
+			pointer = GUI_POINTER_CARET;
+			if (click == BROWSER_MOUSE_CLICK_1)
+				browser_window_textarea_click(bw,
+						box_x, box_y,
+						x - box_x, y - box_y,
+						box);
+			break;
+		case GADGET_TEXTBOX:
+		case GADGET_PASSWORD:
+			status = messages_get("FormTextbox");
+			pointer = GUI_POINTER_CARET;
+			if (click == BROWSER_MOUSE_CLICK_1)
+				browser_window_input_click(bw,
+						box_x, box_y,
+						x - box_x, y - box_y,
+						box);
+			break;
+		case GADGET_HIDDEN:
+			/* not possible: no box generated */
+			break;
+		case GADGET_RESET:
+			status = messages_get("FormReset");
+			break;
+		case GADGET_FILE:
+			status = messages_get("FormFile");
+			break;
+		}
+
+	} else if (href) {
+		url = url_join(href, base_url);
+		if (!url)
+			return;
+
+		if (title) {
+			snprintf(status_buffer, sizeof status_buffer, "%s: %s",
+					title, url);
+			status = status_buffer;
+		} else
+			status = url;
+
+		pointer = GUI_POINTER_POINT;
+
+		if (click == BROWSER_MOUSE_CLICK_1 ||
+				click == BROWSER_MOUSE_CLICK_2) {
+			if (fetch_can_fetch(url)) {
+				if (click == BROWSER_MOUSE_CLICK_1)
+					browser_window_go(bw, url);
+				else
+					browser_window_create(url, bw);
+			} else {
+				gui_launch_url(url);
+			}
+		}
+
+	} else if (title) {
+		status = title;
+
+	} else {
+		if (bw->loading_content)
+			status = bw->loading_content->status_message;
+		else
+			status = c->status_message;
+	}
+
+	assert(status);
+
+	browser_window_set_status(bw, status);
+	browser_window_set_pointer(pointer);
+}
+
+
+
+
 void clear_radio_gadgets(struct browser_window *bw, struct box *box,
 			 struct form_control *group)
 {
@@ -587,138 +783,8 @@ void gui_redraw_gadget(struct browser_window* bw, struct form_control* g)
 	gui_redraw_gadget2(bw, bw->current_content->data.html.layout->children, g, 0, 0);
 }
 
-void browser_window_gadget_select(struct browser_window* bw, struct form_control* g, int item)
-{
-	struct form_option* o;
-	int count;
-	struct box *inline_box = g->box->children->children;
-	int x, y;
 
-	for (count = 0, o = g->data.select.items;
-			o != NULL;
-			count++, o = o->next) {
-		if (!g->data.select.multiple)
-			o->selected = false;
-		if (count == item) {
-			if (g->data.select.multiple) {
-				if (o->selected) {
-					o->selected = false;
-					g->data.select.num_selected--;
-				} else {
-					o->selected = true;
-					g->data.select.num_selected++;
-				}
-			} else {
-				o->selected = true;
-			}
-		}
-		if (o->selected)
-			g->data.select.current = o;
-	}
 
-	xfree(inline_box->text);
-	if (g->data.select.num_selected == 0)
-		inline_box->text = xstrdup(messages_get("Form_None"));
-	else if (g->data.select.num_selected == 1)
-		inline_box->text = xstrdup(g->data.select.current->text);
-	else
-		inline_box->text = xstrdup(messages_get("Form_Many"));
-	inline_box->width = g->box->width;
-	inline_box->length = strlen(inline_box->text);
-
-        box_coords(g->box, &x, &y);
-	gui_window_redraw(bw->window, (unsigned int)x, (unsigned int)y,
-			(unsigned int)(x + g->box->width),
-			(unsigned int)(y + g->box->height));
-}
-
-int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x, unsigned long click_y)
-{
-	struct box_selection* click_boxes;
-	int found, plot_index;
-	int i;
-	int x, y;
-
-	found = 0;
-	click_boxes = NULL;
-	plot_index = 0;
-
-	assert(bw->current_content->type == CONTENT_HTML);
-	box_under_area(bw->current_content,
-	               bw->current_content->data.html.layout->children,
-			click_x, click_y, 0, 0, &click_boxes, &found, &plot_index);
-
-	if (found == 0)
-		return 0;
-
-	for (i = found - 1; i >= 0; i--)
-	{
-	        if (click_boxes[i].box->style->visibility == CSS_VISIBILITY_HIDDEN)
-	                continue;
-
-		if (click_boxes[i].box->gadget)
-		{
-			struct form_control* g = click_boxes[i].box->gadget;
-
-			/* gadget clicked */
-			switch (g->type)
-			{
-				case GADGET_SELECT:
-					gui_gadget_combo(bw, g, click_x, click_y);
-					break;
-				case GADGET_CHECKBOX:
-					g->selected = !g->selected;
-					gui_redraw_gadget(bw, g);
-					break;
-				case GADGET_RADIO:
-					clear_radio_gadgets(bw, click_boxes[i].content->data.html.layout->children, g);
-					g->selected = true;
-					gui_redraw_gadget(bw, g);
-					break;
-				case GADGET_SUBMIT:
-					if (g->form)
-						browser_form_submit(bw, g->form, g);
-					break;
-				case GADGET_TEXTAREA:
-					browser_window_textarea_click(bw,
-							(unsigned int)click_boxes[i].actual_x,
-							(unsigned int)click_boxes[i].actual_y,
-							(int)(click_x - click_boxes[i].actual_x),
-							(int)(click_y - click_boxes[i].actual_y),
-							click_boxes[i].box);
-					break;
-				case GADGET_TEXTBOX:
-				case GADGET_PASSWORD:
-					browser_window_input_click(bw,
-							(unsigned int)click_boxes[i].actual_x,
-							(unsigned int)click_boxes[i].actual_y,
-							click_x - click_boxes[i].actual_x,
-							click_y - click_boxes[i].actual_y,
-							click_boxes[i].box);
-					break;
-				case GADGET_HIDDEN:
-					break;
-				case GADGET_IMAGE:
-				        box_coords(click_boxes[i].box, &x, &y);
-				        g->data.image.mx = click_x - x;
-				        g->data.image.my = click_y - y;
-				        if (g->form)
-					        browser_form_submit(bw, g->form, g);
-				        break;
-				case GADGET_RESET:
-				        break;
-				case GADGET_FILE:
-				        break;
-			}
-
-			xfree(click_boxes);
-			return 1;
-		}
-	}
-	xfree(click_boxes);
-
-	return 0;
-}
 
 
 /**
@@ -1342,46 +1408,66 @@ bool browser_window_key_press(struct browser_window *bw, char key)
 }
 
 
-int browser_window_action(struct browser_window *bw,
-			  struct browser_action *act)
+/**
+ * Process a selection from a form select menu.
+ *
+ * \param  bw       browser window with menu
+ * \param  control  form control with menu
+ * \param  item     index of item selected from the menu
+ */
+
+void browser_window_form_select(struct browser_window *bw,
+		struct form_control *control, int item)
 {
-	switch (act->type) {
-	case act_MOUSE_AT:
-		browser_window_follow_link(bw, act->data.mouse.x,
-					   act->data.mouse.y, 0);
-		break;
-	case act_MOUSE_CLICK:
-		return browser_window_gadget_click(bw, act->data.mouse.x,
-						   act->data.mouse.y);
-		break;
-	case act_CLEAR_SELECTION:
-//		browser_window_text_selection(bw, act->data.mouse.x,
-//					      act->data.mouse.y, 0);
-		break;
-	case act_START_NEW_SELECTION:
-//		browser_window_text_selection(bw, act->data.mouse.x,
-//					      act->data.mouse.y, 1);
-		break;
-	case act_ALTER_SELECTION:
-//		browser_window_text_selection(bw, act->data.mouse.x,
-//					      act->data.mouse.y, 2);
-		break;
-	case act_FOLLOW_LINK:
-		browser_window_follow_link(bw, act->data.mouse.x,
-					   act->data.mouse.y, 1);
-		break;
-	case act_FOLLOW_LINK_NEW_WINDOW:
-		browser_window_follow_link(bw, act->data.mouse.x,
-					   act->data.mouse.y, 2);
-		break;
-	case act_GADGET_SELECT:
-		browser_window_gadget_select(bw, act->data.gadget_select.g,
-					     act->data.gadget_select.item);
-	default:
-		break;
+	struct form_option *o;
+	int count;
+	struct box *inline_box = control->box->children->children;
+	int x, y;
+
+	for (count = 0, o = control->data.select.items;
+			o != NULL;
+			count++, o = o->next) {
+		if (!control->data.select.multiple)
+			o->selected = false;
+		if (count == item) {
+			if (control->data.select.multiple) {
+				if (o->selected) {
+					o->selected = false;
+					control->data.select.num_selected--;
+				} else {
+					o->selected = true;
+					control->data.select.num_selected++;
+				}
+			} else {
+				o->selected = true;
+			}
+		}
+		if (o->selected)
+			control->data.select.current = o;
 	}
-	return 0;
+
+	free(inline_box->text);
+	inline_box->text = 0;
+	if (control->data.select.num_selected == 0)
+		inline_box->text = strdup(messages_get("Form_None"));
+	else if (control->data.select.num_selected == 1)
+		inline_box->text = strdup(control->data.select.current->text);
+	else
+		inline_box->text = strdup(messages_get("Form_Many"));
+	if (!inline_box->text) {
+		warn_user("NoMemory", 0);
+		inline_box->length = 0;
+	} else
+		inline_box->length = strlen(inline_box->text);
+	inline_box->width = control->box->width;
+
+	box_coords(control->box, &x, &y);
+	gui_window_redraw(bw->window, x, y,
+			x + control->box->width, y + control->box->height);
 }
+
+
+
 
 void box_under_area(struct content *content, struct box *box,
                     unsigned long x, unsigned long y,
@@ -1471,170 +1557,6 @@ gui_pointer_shape get_pointer_shape(css_cursor cursor) {
         return pointer;
 }
 
-void browser_window_follow_link(struct browser_window *bw,
-				unsigned long click_x,
-				unsigned long click_y, int click_type)
-{
-	struct box_selection *click_boxes;
-	int found, plot_index;
-	int i;
-	int done = 0;
-	struct css_style *style;
-	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
-
-	found = 0;
-	click_boxes = NULL;
-	plot_index = 0;
-
-	if (bw->current_content->type != CONTENT_HTML)
-		return;
-
-	box_under_area(bw->current_content,
-	               bw->current_content->data.html.layout->children,
-		       click_x, click_y, 0, 0, &click_boxes, &found,
-		       &plot_index);
-
-	if (found == 0)
-		return;
-
-	for (i = found - 1; i >= 0; i--) {
-	        style = click_boxes[i].box->style;
-		if (style != 0 && style->visibility == CSS_VISIBILITY_HIDDEN)
-			continue;
-		if (click_boxes[i].box->href != NULL) {
-			char *url =
-			    url_join((char *) click_boxes[i].box->href,
-				     click_boxes[i].content->data.html.
-				     base_url);
-			if (!url)
-				continue;
-
-			if (click_type == 1) {
-			        if (fetch_can_fetch(url)) {
-			        	browser_window_go(bw, url);
-			        }
-			        else {
-			                gui_launch_url(url);
-			                done = 1;
-			        }
-			} else if (click_type == 2) {
-			        if (fetch_can_fetch(url)) {
-			        	browser_window_create(url, bw);
-			        }
-			        else {
-			                gui_launch_url(url);
-			                done = 1;
-			        }
-			} else if (click_type == 0) {
-				browser_window_set_status(bw, url);
-				pointer = GUI_POINTER_POINT;
-				done = 1;
-			}
-			free(url);
-			break;
-		}
-		if (click_boxes[i].box->usemap != NULL) {
-		        char *href, *url;
-
-		        href = imagemap_get(click_boxes[i].content,
-		                            click_boxes[i].box->usemap,
-		                            click_boxes[i].actual_x,
-		                            click_boxes[i].actual_y,
-		                            click_x, click_y);
-		        if (!href)
-		                continue;
-
-		        url = url_join(href,
-		                       click_boxes[i].content->data.html.
-		                       base_url);
-		        if (!url)
-		                continue;
-
-		        if (click_type == 1) {
-			        if (fetch_can_fetch(url)) {
-			        	browser_window_go(bw, url);
-			        }
-			        else {
-			                gui_launch_url(url);
-			                done = 1;
-			        }
-			} else if (click_type == 2) {
-			        if (fetch_can_fetch(url)) {
-			        	browser_window_create(url, NULL);
-			        }
-			        else {
-			                gui_launch_url(url);
-			                done = 1;
-			        }
-			} else if (click_type == 0) {
-				browser_window_set_status(bw, url);
-				pointer = GUI_POINTER_POINT;
-				done = 1;
-			}
-			free(url);
-			break;
-		}
-		if (click_type == 0 && click_boxes[i].box->gadget != NULL) {
-		        if (click_boxes[i].box->gadget->type == GADGET_TEXTBOX ||
-		            click_boxes[i].box->gadget->type == GADGET_TEXTAREA ||
-		            click_boxes[i].box->gadget->type == GADGET_PASSWORD) {
-                                pointer = GUI_POINTER_CARET;
-                                done = 1;
-                                break;
-		        }
-		        else if (click_boxes[i].box->gadget->type == GADGET_SELECT) {
-		                pointer = GUI_POINTER_MENU;
-		                done = 1;
-		                break;
-		        }
-		        else if (click_boxes[i].box->gadget->type == GADGET_SUBMIT || click_boxes[i].box->gadget->type == GADGET_IMAGE) {
-		        	struct form *form;
-		        	char *url, *href;
-		        	form = click_boxes[i].box->gadget->form;
-		        	if (!form) continue;
-		        	href = form->action;
-		        	if (!href) continue;
-				url = url_join(href, click_boxes[i].content->data.html.base_url);
-				if (!url) continue;
-		        	browser_window_set_status(bw, url);
-		        	free(url);
-		        	done = 1;
-		        	break;
-		        }
-		}
-		if (click_type == 0 && click_boxes[i].box->title != NULL) {
-			browser_window_set_status(bw,
-						  click_boxes[i].box->
-						  title);
-			done = 1;
-			break;
-		}
-		if (click_type == 0 && style != 0 &&
-		    style->cursor != CSS_CURSOR_UNKNOWN &&
-		    pointer == GUI_POINTER_DEFAULT) {
-		        pointer = get_pointer_shape(click_boxes[i].box->style->cursor);
-		}
-	}
-
-	if (click_type == 0 && done == 0) {
-		if (bw->loading_content != 0) {
-			browser_window_set_status(bw,
-						  bw->loading_content->
-						  status_message);
-		}
-		else {
-			browser_window_set_status(bw,
-						  bw->current_content->
-						  status_message);
-		}
-	}
-
-        browser_window_set_pointer(pointer);
-
-	free(click_boxes);
-
-	return;
-}
 
 void browser_window_text_selection(struct browser_window *bw,
 				   unsigned long click_x,
