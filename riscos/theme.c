@@ -41,13 +41,13 @@ static struct theme_entry *ro_theme_current = NULL;
  */
 void ro_theme_apply(struct theme_entry *theme) {
 #ifdef WITH_KIOSK_THEMES
-	char *kioskfilename = alloca(strlen(pathname) + 16);
+	char *kioskfilename = alloca(strlen(THEMES_DIR) + strlen(theme->name) + 16);
 #endif
 
 	/*	Release any previous theme
 	*/
 	if (ro_theme_current) ro_theme_free(ro_theme_current);
-  
+
 	/*	Set the current theme
 	*/
 	ro_theme_current = theme;
@@ -59,10 +59,10 @@ void ro_theme_apply(struct theme_entry *theme) {
         *       finished various other bits... Right now it works.
         */
 #ifdef WITH_KIOSK_THEMES
-        sprintf(kioskfilename, "%s.!SetTheme", pathname);
+        sprintf(kioskfilename, "%s.%s.!SetTheme", THEMES_DIR, theme->name);
         xos_cli(kioskfilename);
 #endif
-	
+
 	/* todo: update all current windows */
 }
 
@@ -81,10 +81,11 @@ struct theme_entry *ro_theme_load(char *pathname) {
  	os_coord dimensions;
 	int size, i, n;
 	char *filename = alloca(strlen(pathname) + 16);
+	char *name;
 	fileswitch_object_type obj_type;
 	struct theme_entry *theme;
 	os_error *error;
-	
+
 	/*	Get some memory for the theme
 	*/
 	theme = (struct theme_entry *)calloc(1, sizeof(struct theme_entry));
@@ -122,7 +123,7 @@ struct theme_entry *ro_theme_load(char *pathname) {
 			theme->sprite_area = NULL;
 		}
 	}
-	
+
 	/*	Get the throbber details
 	*/
 	if (theme->sprite_area) {
@@ -157,7 +158,25 @@ struct theme_entry *ro_theme_load(char *pathname) {
 			}
 		}
 	}
-	
+
+	/*	Copy name.
+	*/
+	name = strrchr(pathname, '.');
+	if (name) {
+		theme->name = strdup(name+1);
+		if (!theme->name) {
+			warn_user("NoMemory", 0);
+			ro_theme_free(theme);
+			return NULL;
+		}
+	}
+	else {
+		LOG(("failed to extract theme name from pathname"));
+		warn_user("MiscError", "Unable to acquire theme name");
+		ro_theme_free(theme);
+		return NULL;
+	}
+
 	/*	Load the options
 	*/
 	theme->browser_background = wimp_COLOUR_VERY_LIGHT_GREY;
@@ -165,7 +184,7 @@ struct theme_entry *ro_theme_load(char *pathname) {
 	theme->status_background = wimp_COLOUR_VERY_LIGHT_GREY;
 	theme->status_foreground = wimp_COLOUR_BLACK;
 	/* todo: impement option loading */
-	
+
 	/*	Return our new theme
 	*/
 	return theme;
@@ -427,7 +446,7 @@ struct theme_entry *ro_theme_list(unsigned int *entries) {
 		snprintf(pathname, sizeof pathname, "%s.%s",
 				THEMES_DIR, info.name);
 		pathname[sizeof pathname - 1] = 0;
-		
+
 		/*	Load the theme and link it in
 		*/
 		theme = ro_theme_load(pathname);
@@ -439,16 +458,6 @@ struct theme_entry *ro_theme_list(unsigned int *entries) {
 			}
 			last = theme;
 			*entries = *entries + 1;
-
-			/*	Copy name. This should be done when loading.
-			*/
-			theme->name = strdup(info.name);
-			if (!theme->name) {
-				warn_user("NoMemory", 0);
-				ro_theme_free(first);
-				*entries = 0;
-				return NULL;
-			}
 		} else {
 			if (theme) ro_theme_free(theme);
 		}
