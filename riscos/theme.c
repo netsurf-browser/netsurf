@@ -89,7 +89,7 @@ void ro_theme_load(char *pathname)
 
 	/* find the highest sprite called throbber%i */
 	theme_throbs = 0;
-	for (i = 1; i != theme_sprite_area->sprite_count; i++) {
+	for (i = 1; i <= theme_sprite_area->sprite_count; i++) {
 		char name[32];
 		osspriteop_return_name(osspriteop_USER_AREA,
 				theme_sprite_area, name, 32, i);
