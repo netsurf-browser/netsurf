@@ -101,7 +101,7 @@ int gadget_width(struct gui_gadget* gadget)
 	struct formoption* current;
 	int max;
 
-	/* should use wimp_textop via a gui wraper for these */
+	/* should use wimp_textop via a gui wrapper for these */
 	switch (gadget->type)
 	{
 		case GADGET_CHECKBOX:
@@ -109,8 +109,12 @@ int gadget_width(struct gui_gadget* gadget)
 			return 22;
 		case GADGET_TEXTBOX:
 			return gadget->data.textbox.size * 8;
+		case GADGET_PASSWORD:
+		        return gadget->data.password.size * 8;
 		case GADGET_ACTIONBUTTON:
 			return strlen(gadget->data.actionbutt.label) * 8 + 16;
+		case GADGET_IMAGE:
+		        return gadget->data.image.width;
 		case GADGET_SELECT:
 			current = gadget->data.select.items;
 			max = 32;
@@ -138,10 +142,14 @@ int gadget_height(struct gui_gadget* gadget)
 			return 22;
 		case GADGET_TEXTBOX:
 			return 28;
+		case GADGET_PASSWORD:
+		        return 28;
 		case GADGET_ACTIONBUTTON:
 			return 28;
+		case GADGET_IMAGE:
+		        return gadget->data.image.height;
 		case GADGET_SELECT:
-			return 28;
+			return 28; // * gadget->data.select.size;
 		case GADGET_TEXTAREA:
 			return gadget->data.textarea.rows * 16 + 8;
 		default:
@@ -925,7 +933,7 @@ void calculate_table_widths(struct box *table)
 		col = table->col;
 	else
 		col = xcalloc(table->columns, sizeof(*col));
-	
+
 	assert(table->children != 0 && table->children->children != 0);
 	for (pass = 0; pass != 2; pass++) {
 	for (row_group = table->children; row_group != 0; row_group = row_group->next) {

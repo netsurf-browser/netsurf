@@ -468,6 +468,7 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 	struct box_selection* click_boxes;
 	int found, plot_index;
 	int i;
+	unsigned long x, y;
 
 	found = 0;
 	click_boxes = NULL;
@@ -516,8 +517,16 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 				case GADGET_TEXTBOX:
 					gui_edit_textbox(bw, g);
 					break;
+				case GADGET_PASSWORD:
+				        gui_edit_password(bw, g);
 				case GADGET_HIDDEN:
 					break;
+				case GADGET_IMAGE:
+				        box_coords(click_boxes[i].box, &x, &y);
+				        g->data.image.mx = click_x - x;
+				        g->data.image.my = click_y - y;
+				        browser_form_submit(bw, g->form);
+				        break;
 			}
 
 			xfree(click_boxes);
@@ -1025,6 +1034,8 @@ char* browser_form_construct_get(struct page_elements *elements, struct formsubm
                                 break;
           case GADGET_TEXTBOX:  value = elements->gadgets[i]->data.textbox.text;
                                 break;
+          case GADGET_PASSWORD:  value = elements->gadgets[i]->data.password.text;
+                                break;
           case GADGET_RADIO:    if(elements->gadgets[i]->data.radio.selected == -1)
                                   value = elements->gadgets[i]->data.radio.value;
                                 break;
@@ -1042,6 +1053,28 @@ char* browser_form_construct_get(struct page_elements *elements, struct formsubm
                                 }
                                 break;
           case GADGET_TEXTAREA: value = elements->gadgets[i]->data.textarea.text;
+                                break;
+          case GADGET_IMAGE:    sprintf(elements->gadgets[i]->data.image.name,
+                                        "%s.x",
+                                        elements->gadgets[i]->data.image.n);
+                                sprintf(elements->gadgets[i]->data.image.value,
+                                        "%d",
+                                        elements->gadgets[i]->data.image.mx);
+                                browser_form_get_append(&ret, &length,
+                                                        j == 0 ? '?' : '&',
+                                        elements->gadgets[i]->data.image.name,
+                                        elements->gadgets[i]->data.image.value);
+                                sprintf(elements->gadgets[i]->data.image.name,
+                                        "%s.y",
+                                        elements->gadgets[i]->data.image.n);
+                                sprintf(elements->gadgets[i]->data.image.value,
+                                        "%d",
+                                        elements->gadgets[i]->data.image.my);
+                                browser_form_get_append(&ret, &length,
+                                                        j == 0 ? '?' : '&',
+                                        elements->gadgets[i]->data.image.name,
+                                        elements->gadgets[i]->data.image.value);
+                                j++;
                                 break;
           default:              break;
         }

@@ -751,13 +751,12 @@ struct result box_input(xmlNode *n, struct status *status,
 {
 	struct box* box = 0;
 	struct gui_gadget *gadget = 0;
-	char *s, *type;
+	char *s, *type, *url;
 
 	type = (char *) xmlGetProp(n, (const xmlChar *) "type");
 
 	/* the default type is "text" */
-	if (type == 0 || stricmp(type, "text") == 0 ||
-			stricmp(type, "password") == 0)
+	if (type == 0 || stricmp(type, "text") == 0)
 	{
 		box = box_create(style, NULL, 0);
 		box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
@@ -781,6 +780,34 @@ struct result box_input(xmlNode *n, struct status *status,
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
 			strncpy(gadget->data.textbox.text, s,
 				gadget->data.textbox.maxlength);
+			xmlFree(s);
+		}
+
+	}
+	if (stricmp(type, "password") == 0)
+	{
+		box = box_create(style, NULL, 0);
+		box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
+		gadget->type = GADGET_PASSWORD;
+
+		gadget->data.password.maxlength = 32;
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "maxlength"))) {
+			gadget->data.password.maxlength = atoi(s);
+			xmlFree(s);
+		}
+
+		gadget->data.password.size = box->gadget->data.password.maxlength;
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "size"))) {
+			gadget->data.password.size = atoi(s);
+			xmlFree(s);
+		}
+
+		gadget->data.password.text = xcalloc(
+				gadget->data.password.maxlength + 2, sizeof(char));
+
+		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
+			strncpy(gadget->data.password.text, s,
+				gadget->data.password.maxlength);
 			xmlFree(s);
 		}
 
@@ -834,6 +861,29 @@ struct result box_input(xmlNode *n, struct status *status,
 		}
 
                        box->gadget->data.actionbutt.butttype = strdup(type);
+	}
+	else if (stricmp(type, "image") == 0)
+	{
+	        box = box_create(style, NULL, 0);
+	        box->gadget = gadget = xcalloc(1, sizeof(struct gui_gadget));
+	        gadget->type = GADGET_IMAGE;
+	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "name"))) {
+	                gadget->data.image.n = s;
+	        }
+	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "width"))) {
+	                gadget->data.image.width = (atoi(s));
+	        }
+	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "height"))) {
+                        gadget->data.image.height = (atoi(s));
+	        }
+	        if ((s = (char *) xmlGetProp(n, (const xmlChar*) "src"))) {
+	                url = url_join(strdup(s), status->content->url);
+	                html_fetch_object(status->content, url, box);
+	        }
+	        gadget->data.image.name =
+	               xcalloc(strlen(gadget->data.image.n) + 5, sizeof(char));
+	        gadget->data.image.value =
+                       xcalloc(strlen(gadget->data.image.n) + 20, sizeof(char));
 	}
 
 	if (type != 0)
@@ -1319,10 +1369,23 @@ void gadget_free(struct gui_gadget* g)
 			if (g->data.textbox.text != 0)
 				xmlFree(g->data.textbox.text);
 			break;
+                case GADGET_PASSWORD:
+			gui_remove_gadget(g);
+			if (g->data.password.text != 0)
+				xmlFree(g->data.password.text);
+			break;
 		case GADGET_ACTIONBUTTON:
 			if (g->data.actionbutt.label != 0)
 				xmlFree(g->data.actionbutt.label);
 			break;
+		case GADGET_IMAGE:
+		        if (g->data.image.n != 0)
+		                xmlFree(g->data.image.n);
+		        if (g->data.image.name != 0)
+                                xfree(g->data.image.name);
+                        if (g->data.image.value != 0)
+                                xfree(g->data.image.value);
+		        break;
 		case GADGET_SELECT:
 			o = g->data.select.items;
 			while (o != NULL)

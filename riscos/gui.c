@@ -35,6 +35,7 @@
 
 const char *__dynamic_da_name = "NetSurf";
 static char empty_text[] = "";
+static char password_v[] = "D*";
 
 char *NETSURF_DIR;
 gui_window *window_list = 0;
@@ -1318,7 +1319,7 @@ void gui_multitask(void)
         case message_QUIT              :
                netsurf_quit = 1;
                break;
-	
+
 	default:
 		ro_gui_poll_queue(event, &block);
 		break;
@@ -1852,6 +1853,59 @@ void gui_edit_textbox(struct browser_window* bw, struct gui_gadget* g)
 	while (offset > 0)
 	{
 		letter_x = wimptextop_string_width(g->data.textbox.text, offset);
+		if (letter_x < pointer_x - textbox_x)
+			break;
+		offset--;
+	}
+
+	wimp_set_caret_position(current_textbox_w, current_textbox_i, 0,0,-1, offset);
+}
+
+void gui_edit_password(struct browser_window* bw, struct gui_gadget* g)
+{
+	wimp_icon_create icon;
+	wimp_pointer pointer;
+	wimp_window_state state;
+	int pointer_x;
+	int letter_x;
+	int textbox_x;
+	int offset;
+
+	wimp_get_pointer_info(&pointer);
+
+	if (current_textbox != 0)
+	{
+		wimp_delete_icon(current_textbox_w, current_textbox_i);
+		gui_redraw_gadget(current_textbox_bw, current_textbox);
+	}
+
+	current_textbox_bw = bw;
+	current_textbox_w = bw->window->data.browser.window;
+
+	icon.w = current_textbox_w;
+	gui_set_gadget_extent(bw->current_content->data.html.layout->children, 0, 0, &icon.icon.extent, g);
+	fprintf(stderr, "ICON EXTENT %d %d %d %d\n", icon.icon.extent.x0, icon.icon.extent.y0, icon.icon.extent.x1, icon.icon.extent.y1);
+	icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
+			wimp_ICON_VCENTRED | wimp_ICON_FILLED |
+			wimp_ICON_INDIRECTED |
+			(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
+			(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT) |
+			(wimp_BUTTON_WRITABLE << wimp_ICON_BUTTON_TYPE_SHIFT);
+	icon.icon.data.indirected_text.text = g->data.password.text;
+	icon.icon.data.indirected_text.size = g->data.password.maxlength + 1;
+	icon.icon.data.indirected_text.validation = password_v;
+	current_textbox_i = wimp_create_icon(&icon);
+	current_textbox = g;
+	gui_redraw_gadget(bw, current_textbox);
+
+	state.w = current_textbox_w;
+	wimp_get_window_state(&state);
+    	pointer_x = window_x_units(pointer.pos.x, &state);
+	textbox_x = icon.icon.extent.x0;
+	offset = strlen(g->data.password.text);
+	while (offset > 0)
+	{
+		letter_x = wimptextop_string_width(g->data.password.text, offset);
 		if (letter_x < pointer_x - textbox_x)
 			break;
 		offset--;

@@ -40,7 +40,8 @@ struct formoption {
 
 struct gui_gadget {
 	enum { GADGET_HIDDEN = 0, GADGET_TEXTBOX, GADGET_RADIO, GADGET_CHECKBOX,
-		GADGET_SELECT, GADGET_TEXTAREA, GADGET_ACTIONBUTTON } type;
+		GADGET_SELECT, GADGET_TEXTAREA, GADGET_ACTIONBUTTON,
+		GADGET_IMAGE, GADGET_PASSWORD } type;
 	char* name;
 	struct form* form;
         union {
@@ -53,10 +54,22 @@ struct gui_gadget {
 			int size;
 		} textbox;
 		struct {
+			unsigned int maxlength;
+			char* text;
+			int size;
+		} password;
+		struct {
 		        char* butttype;
 			char* label;
 			int pressed;
 		} actionbutt;
+		struct {
+                        char* name;
+                        char* value;
+                        char* n;
+                        int width, height;
+                        int mx, my;
+		} image;
 		struct {
 			int numitems;
 			struct formoption* items;

@@ -50,6 +50,7 @@ void html_redraw(struct content *c, long x, long y,
 /* validation strings can't be const */
 static char validation_textarea[] = "R7;L";
 static char validation_textbox[] = "";
+static char validation_password[] = "D*";
 static char validation_actionbutton[] = "R5";
 static char validation_actionbutton_pressed[] = "R5,3";
 static char validation_select[] = "R2";
@@ -72,6 +73,7 @@ void html_redraw_box(struct content *content, struct box * box,
   struct box * c;
   char* select_text;
   struct formoption* opt;
+  int i;
 
   if (x + (signed long) (box->x*2 + box->width*2) /* right edge */ >= clip->x0 &&
       x + (signed long) (box->x*2) /* left edge */ <= clip->x1 &&
@@ -143,6 +145,19 @@ void html_redraw_box(struct content *content, struct box * box,
 			wimp_plot_icon(&icon);
       			break;
 
+                case GADGET_PASSWORD:
+			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
+				wimp_ICON_VCENTRED | wimp_ICON_FILLED |
+				wimp_ICON_INDIRECTED |
+				(wimp_COLOUR_DARK_GREY << wimp_ICON_FG_COLOUR_SHIFT) |
+				(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
+			icon.data.indirected_text.text = box->gadget->data.password.text;
+			icon.data.indirected_text.size = box->gadget->data.password.maxlength + 1;
+			icon.data.indirected_text.validation = validation_password;
+			LOG(("writing GADGET PASSWORD"));
+			wimp_plot_icon(&icon);
+      			break;
+
 		case GADGET_ACTIONBUTTON:
 			icon.flags = wimp_ICON_TEXT | wimp_ICON_BORDER |
 				wimp_ICON_VCENTRED | wimp_ICON_FILLED |
@@ -172,20 +187,52 @@ void html_redraw_box(struct content *content, struct box * box,
 				(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
 			select_text = 0;
 			opt = box->gadget->data.select.items;
-			while (opt != NULL)
-			{
-				if (opt->selected)
-				{
-					if (select_text == 0)
-						select_text = opt->text;
-					else
-						select_text = select_text_multiple;
-				}
-				opt = opt->next;
+//			if (box->gadget->data.select.size == 1) {
+			        while (opt != NULL)
+			        {
+				        if (opt->selected)
+				        {
+					        if (select_text == 0)
+						        select_text = opt->text;
+					        else
+						        select_text = select_text_multiple;
+				        }
+				        opt = opt->next;
+			        }
+			        if (select_text == 0)
+				        select_text = select_text_none;
+/*			}
+			else {
+			        while (opt != NULL)
+			        {
+				        if (opt->selected)
+				        {
+					        select_text = opt->text;
+					        opt = opt->next;
+					        break;
+				        }
+				        opt = opt->next;
+			        }
+			        if (select_text == 0) {
+			        // display the first n options
+			                opt = box->gadget->data.select.items;
+			                select_text = opt->text;
+			                opt = opt->next;
+			                for(i = box->gadget->data.select.size-1;
+                                            i != 0; i--, opt=opt->next) {
+                                                strcat(select_text, "\n");
+                                                strcat(select_text, opt->text);
+                                        }
+			        }
+			        else {
+                                        for(i = box->gadget->data.select.size-1;
+                                            i != 0; i--, opt=opt->next) {
+                                                strcat(select_text, "\n");
+                                                strcat(select_text, opt->text);
+                                        }
+			        }
 			}
-			if (select_text == 0)
-				select_text = select_text_none;
-			icon.data.indirected_text.text = select_text;
+*/			icon.data.indirected_text.text = select_text;
 			icon.data.indirected_text.size = strlen(icon.data.indirected_text.text);
 			icon.data.indirected_text.validation = validation_select;
 			LOG(("writing GADGET ACTION"));
@@ -218,6 +265,7 @@ void html_redraw_box(struct content *content, struct box * box,
 			break;
 
 		case GADGET_HIDDEN:
+		case GADGET_IMAGE:
 			break;
 	}
 	LOG(("gadgets finished"));
