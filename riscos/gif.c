@@ -10,7 +10,7 @@
  *   Add better error handling
  *      - especially where bad GIFs are concerned.
  *
- * $Id: gif.c,v 1.2 2003/06/05 14:49:48 philpem Exp $
+ * $Id: gif.c,v 1.3 2003/06/06 02:06:23 jmb Exp $
  */
 
 #include <assert.h>
@@ -212,7 +212,7 @@ int nsgif_convert(struct content *c, unsigned int width, unsigned int height)
               {
                 LOG(("error: gif line %d - error %d", i, GifLastError()));
                 LOG(("exp height = %d, width = %d", height, width));
-                assert(1 == 2);
+//                assert(1 == 2);
               }
               // TODO: ^^^ better error checking
               LOG(("gif line %d", i));
@@ -308,7 +308,10 @@ void nsgif_redraw(struct content *c, long x, long y,
 	int size;
 	osspriteop_trans_tab *table;
 
+/* JMB - lose this, it's filling my error log up too quickly ;)
+
   LOG(("Redraw fired"));
+*/
 
 	xcolourtrans_generate_table_for_sprite(c->data.gif.sprite_area,
 			(osspriteop_id) (c->data.gif.sprite_area + 1),
