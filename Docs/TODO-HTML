@@ -1,4 +1,4 @@
-$Id: TODO-HTML,v 1.1 2003/05/31 18:39:35 jmb Exp $
+$Id: TODO-HTML,v 1.2 2003/06/01 01:02:29 jmb Exp $
 
 TODO-HTML file for NetSurf. 
 
@@ -21,9 +21,9 @@ Lists
 	
 Tables: 
 	Borders, 
-	cell widths?, 		- Can't tell if we do these 
-	row/column spanning?    - without borders displayed
-
+	row spanning
+	column spanning (only colspan=0 needs implementing)    
+	
 Images: 
 	display ALT text, 
 	MAP, 
