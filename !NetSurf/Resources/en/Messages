@@ -36,3 +36,7 @@ Form_None:
 Form_Many:(Many)
 
 Not2xx:Server returned an error
+
+cookiefile:Choices:WWW.NetSurf.Cookies
+cookiejar:<Choices$Write>.WWW.NetSurf.Cookies
+
