@@ -186,7 +186,7 @@ void nsgif_animate(void *p)
 
 		/*	A loop count of 0 has a special meaning of infinite
 		*/
-		if (c->data.gif.gif->loop_count != 0) {
+		if (gif->loop_count != 0) {
 			gif->loop_count--;
 			if (gif->loop_count == 0) {
 				c->data.gif.current_frame = gif->frame_count_partial - 1;
@@ -197,7 +197,7 @@ void nsgif_animate(void *p)
 
 	/*	Continue animating if we should
 	*/
-	if (c->data.gif.gif->loop_count >= 0) {
+	if (gif->loop_count >= 0) {
 		delay = gif->frames[c->data.gif.current_frame].frame_delay;
 		if (delay < option_minimum_gif_delay)
 			delay = option_minimum_gif_delay;
@@ -239,15 +239,15 @@ void nsgif_animate(void *p)
 	} else {
 		/* do advanced check */
 		if ((data.redraw.x == 0) && (data.redraw.y == 0) &&
-				(data.redraw.width == c->data.gif.gif->width) &&
-				(data.redraw.height == c->data.gif.gif->height)) {
-			data.redraw.full_redraw = !bitmap_get_opaque(c->data.gif.gif->frame_image);
-		} else {	
+				(data.redraw.width == gif->width) &&
+				(data.redraw.height == gif->height)) {
+			data.redraw.full_redraw = !gif->frames[f].opaque;
+		} else {
 			data.redraw.full_redraw = true;
 			data.redraw.x = 0;
 			data.redraw.y = 0;
-			data.redraw.width = c->data.gif.gif->width;
-			data.redraw.height = c->data.gif.gif->height;
+			data.redraw.width = gif->width;
+			data.redraw.height = gif->height;
 		}
 	}
 

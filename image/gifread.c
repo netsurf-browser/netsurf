@@ -137,19 +137,16 @@ int gif_initialise(struct gif_animation *gif) {
 
 		/*	Check we are a GIF
 		*/
-		if (strncmp(gif_data, "GIF", 3) != 0) {
-//			LOG(("Invalid GIF header - should be 'GIF'"));
+		if (strncmp(gif_data, "GIF", 3) != 0)
 			return GIF_DATA_ERROR;
-		}
 		gif_data += 3;
 
 		/*	Check we are a GIF type 87a or 89a
 		*/
-		if ((strncmp(gif_data, "87a", 3) != 0) &&
-				(strncmp(gif_data, "89a", 3) != 0)) {
-//			LOG(("Unknown GIF format - proceeding anyway"));
-		}
-		gif_data += 3;
+/*		if ((strncmp(gif_data, "87a", 3) != 0) &&
+				(strncmp(gif_data, "89a", 3) != 0))
+			LOG(("Unknown GIF format - proceeding anyway"));
+*/		gif_data += 3;
 
 		/*	Get our GIF data.
 		*/
@@ -223,7 +220,6 @@ int gif_initialise(struct gif_animation *gif) {
 			if (gif->buffer_size < (gif->colour_table_size * 3 + 12)) {
 				return GIF_INSUFFICIENT_DATA;
 			}
-//			LOG(("Found global colour table with %i entries", gif->colour_table_size));
 			for (index = 0; index < gif->colour_table_size; index++) {
 				gif->global_colour_table[index] = gif_data[0] | (gif_data[1] << 8) |
 					(gif_data[2] << 16) | 0xff000000;
@@ -231,7 +227,6 @@ int gif_initialise(struct gif_animation *gif) {
 			}
 			gif->buffer_position = (gif_data - gif->gif_data);
 		} else {
-//			LOG(("No global colour table"));
 			/*	Create a default colour table with the first two colours as black and white
 			*/
 			gif->global_colour_table[0] = 0xff000000;
@@ -246,16 +241,14 @@ int gif_initialise(struct gif_animation *gif) {
 	/*	If there was a memory error tell the caller
 	*/
 	if ((return_value == GIF_INSUFFICIENT_MEMORY) ||
-			(return_value == GIF_DATA_ERROR)) {
+			(return_value == GIF_DATA_ERROR))
 		return return_value;
-	}
 
 	/*	If we didn't have some frames then a GIF_INSUFFICIENT_DATA becomes a
 		GIF_INSUFFICIENT_FRAME_DATA
 	*/
-	if ((return_value == GIF_INSUFFICIENT_DATA) && (gif->frame_count_partial > 0)) {
-		return_value = GIF_INSUFFICIENT_FRAME_DATA;
-	}
+	if ((return_value == GIF_INSUFFICIENT_DATA) && (gif->frame_count_partial > 0))
+		return GIF_INSUFFICIENT_FRAME_DATA;
 
 	/*	Return how many we got
 	*/
@@ -318,8 +311,8 @@ int gif_initialise_frame(struct gif_animation *gif) {
 	unsigned int width, height, offset_x, offset_y;
 	unsigned int extension_size, colour_table_size;
 	unsigned int block_size;
-	unsigned int more_images;
-	unsigned int first_image;
+	bool more_images = true;
+	bool first_image = true;
 
 	/*	Get the frame to decode and our data position
 	*/
@@ -347,13 +340,9 @@ int gif_initialise_frame(struct gif_animation *gif) {
 		/*	Allocate more memory
 		*/
 		if ((temp_buf = (gif_frame *)realloc(gif->frames,
-					(frame + 1) * sizeof(gif_frame))) == NULL) {
+					(frame + 1) * sizeof(gif_frame))) == NULL)
 			return GIF_INSUFFICIENT_MEMORY;
-		}
 		gif->frames = temp_buf;
-
-		/*	Remember we allocated it
-		*/
 		gif->frame_holders = frame + 1;
 	}
 
@@ -367,19 +356,19 @@ int gif_initialise_frame(struct gif_animation *gif) {
 
 	/*	Invalidate any previous decoding we have of this frame
 	*/
-	if (gif->decoded_frame == frame) gif->decoded_frame = -1;
+	if (gif->decoded_frame == frame)
+		gif->decoded_frame = -1;
 
 	/*	We pretend to initialise the frames, but really we just skip over all
 		the data contained within. This is all basically a cut down version of
 		gif_decode_frame that doesn't have any of the LZW bits in it.
 	*/
-	more_images = 1;
-	first_image = 1;
-	while (more_images != 0) {
+	while (more_images) {
 
 		/*	Ensure we have some data
 		*/
-		if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;
+		if ((gif_end - gif_data) < 10)
+			return GIF_INSUFFICIENT_FRAME_DATA;
 
 		/*	Decode the extensions
 		*/
@@ -391,14 +380,15 @@ int gif_initialise_frame(struct gif_animation *gif) {
 
 			/*	Check we've enough data for the extension then header
 			*/
-			if ((gif_end - gif_data) < (int)(extension_size + 13)) return GIF_INSUFFICIENT_FRAME_DATA;
+			if ((gif_end - gif_data) < (int)(extension_size + 13))
+				return GIF_INSUFFICIENT_FRAME_DATA;
 
 			/*	Graphic control extension - store the frame delay.
 			*/
 			if (gif_data[1] == 0xf9) {
 				gif->frames[frame].frame_delay = gif_data[4] | (gif_data[5] << 8);
 				background_action = ((gif_data[3] & 0x1c) >> 2);
-				more_images = ((gif->frames[frame].frame_delay) == 0);
+				more_images = false;
 
 			/*	Application extension - handle NETSCAPE2.0 looping
 			*/
@@ -437,7 +427,7 @@ int gif_initialise_frame(struct gif_animation *gif) {
 		/*	Set up the redraw characteristics. We have to check for extending the area
 			due to multi-image frames.
 		*/
-		if (first_image == 0) {
+		if (!first_image) {
 			if (gif->frames[frame].redraw_x > offset_x) {
 				gif->frames[frame].redraw_width += (gif->frames[frame].redraw_x - offset_x);
 				gif->frames[frame].redraw_x = offset_x;
@@ -446,14 +436,12 @@ int gif_initialise_frame(struct gif_animation *gif) {
 				gif->frames[frame].redraw_height += (gif->frames[frame].redraw_y - offset_y);
 				gif->frames[frame].redraw_y = offset_y;
 			}
-			if ((offset_x + width) > (gif->frames[frame].redraw_x + gif->frames[frame].redraw_width)) {
+			if ((offset_x + width) > (gif->frames[frame].redraw_x + gif->frames[frame].redraw_width))
 				gif->frames[frame].redraw_width = (offset_x + width) - gif->frames[frame].redraw_x;
-			}
-			if ((offset_y + height) > (gif->frames[frame].redraw_y + gif->frames[frame].redraw_height)) {
+			if ((offset_y + height) > (gif->frames[frame].redraw_y + gif->frames[frame].redraw_height))
 				gif->frames[frame].redraw_height = (offset_y + height) - gif->frames[frame].redraw_y;
-			}
 		} else {
-			first_image = 0;
+			first_image = false;
 			gif->frames[frame].redraw_x = offset_x;
 			gif->frames[frame].redraw_y = offset_y;
 			gif->frames[frame].redraw_width = width;
@@ -467,9 +455,8 @@ int gif_initialise_frame(struct gif_animation *gif) {
 
 		/*	Boundary checking - shouldn't ever happen except with junk data
 		*/
-		if (gif_initialise_sprite(gif, (offset_x + width), (offset_y + height))) {
+		if (gif_initialise_sprite(gif, (offset_x + width), (offset_y + height)))
 			return GIF_INSUFFICIENT_MEMORY;
-		}
 
 		/*	Decode the flags
 		*/
@@ -486,17 +473,20 @@ int gif_initialise_frame(struct gif_animation *gif) {
 		*/
 		if (flags & 0x80) {
 			gif_data += 3 * colour_table_size;
-			if ((gif_bytes = (gif_end - gif_data)) < 0) return GIF_INSUFFICIENT_FRAME_DATA;
+			if ((gif_bytes = (gif_end - gif_data)) < 0)
+				return GIF_INSUFFICIENT_FRAME_DATA;
 		}
 
 		/*	Ensure we have a correct code size
 		*/
-		if (gif_data[0] > GIF_MAX_LZW) return GIF_DATA_ERROR;
+		if (gif_data[0] > GIF_MAX_LZW)
+			return GIF_DATA_ERROR;
 
 		/*	Move our data onwards
 		*/
 		gif_data++;
-		if (--gif_bytes < 0) return GIF_INSUFFICIENT_FRAME_DATA;
+		if (--gif_bytes < 0)
+			return GIF_INSUFFICIENT_FRAME_DATA;
 
 		/*	Repeatedly skip blocks until we get a zero block or run out of data
 		*/
@@ -505,20 +495,21 @@ int gif_initialise_frame(struct gif_animation *gif) {
 			/*	Skip the block data
 			*/
 			block_size = gif_data[0] + 1;
-			if ((gif_bytes -= block_size) < 0) return GIF_INSUFFICIENT_FRAME_DATA;
+			if ((gif_bytes -= block_size) < 0)
+				return GIF_INSUFFICIENT_FRAME_DATA;
 			gif_data += block_size;
 		}
 
 		/*	Check for end of data
 		*/
-		if ((gif_bytes < 1) || (gif_data[0] == 0x3b)) more_images = 0;
+		more_images &= !((gif_bytes < 1) || (gif_data[0] == 0x3b));
 	}
 
 	/*	Check if we've finished
 	*/
-	if (gif_bytes < 1) {
+	if (gif_bytes < 1)
 		return GIF_INSUFFICIENT_FRAME_DATA;
-	} else {
+	else {
 		gif->buffer_position = gif_data - gif->gif_data;
 		gif->frame_count = frame + 1;
 		if (gif_data[0] == 0x3b) return 1;
@@ -553,7 +544,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 	unsigned int x, y, decode_y, burst_bytes;
 	unsigned int block_size;
 	register int colour;
-	unsigned int more_images;
+	bool more_images = true;
 
 	/*	Ensure we have a frame to decode
 	*/
@@ -601,8 +592,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 
 	/*	We've got to do this more than one time if we've got multiple images
 	*/
-	more_images = 1;
-	while (more_images != 0) {
+	while (more_images) {
 		background_action = 0;
 
 		/*	Ensure we have some data
@@ -634,7 +624,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 				flags = gif_data[3];
 				if (flags & 0x01) transparency_index = gif_data[6];
 				background_action = ((flags & 0x1c) >> 2);
-				more_images = ((gif_data[4] | (gif_data[5] << 8)) == 0);
+				more_images = false;
 			}
 			/*	Move to the first sub-block
 			*/
@@ -709,10 +699,8 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		if (!clear_image) {
 			/*	Set our dirty status
 			*/
-			if ((background_action == 2) || (background_action == 3)) {
+			if ((background_action == 2) || (background_action == 3))
 				gif->dirty_frame = frame;
-//				LOG(("Dirty frame %i", gif->dirty_frame));
-			}
 
 			/*	Initialise the LZW decoding
 			*/
@@ -735,11 +723,10 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			/*	Decompress the data
 			*/
 			for (y = 0; y < height; y++) {
-				if (interlace) {
+				if (interlace)
 					decode_y = gif_interlaced_line(height, y) + offset_y;
-				} else {
+				else
 					decode_y = y + offset_y;
-				}
 				frame_scanline = frame_data + offset_x + (decode_y * gif->width);
 
 				/*	Rather than decoding pixel by pixel, we try to burst out streams
@@ -750,9 +737,8 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 					/*	Do the first pixel to get the stack of some sort
 					*/
 					if ((colour = gif_read_LZW(gif)) >= 0) {
-						if (colour != transparency_index) {
+						if (colour != transparency_index)
 							*frame_scanline = colour_table[colour];
-						}
 						frame_scanline++;
 					} else {
 						return_value = GIF_INSUFFICIENT_FRAME_DATA;
@@ -765,9 +751,8 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 					if (burst_bytes > x) burst_bytes = x;
 					x -= burst_bytes;
 					while (burst_bytes-- > 0) {
-						if ((colour = *--stack_pointer) != transparency_index) {
+						if ((colour = *--stack_pointer) != transparency_index)
 							  *frame_scanline = colour_table[colour];
-						}
 						frame_scanline++;
 					}
 				}
@@ -803,7 +788,7 @@ gif_decode_frame_exit:
 		/*	Check for end of data
 		*/
 		gif_bytes = gif->buffer_size - gif->buffer_position;
-		if ((gif_bytes < 1) || (gif_data[0] == 0x3b)) more_images = 0;
+		more_images &= !((gif_bytes < 1) || (gif_data[0] == 0x3b));
 		gif->buffer_position++;
 	}
 
