@@ -8,6 +8,8 @@
 #ifndef _NETSURF_RISCOS_URI_H_
 #define _NETSURF_RISCOS_URI_H_
 
-static void ro_uri_message_received(uri_full_message_process*);
+#include "oslib/wimp.h"
+
+void ro_uri_message_received(wimp_message *message);
 
 #endif

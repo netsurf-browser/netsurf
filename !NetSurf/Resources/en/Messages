@@ -1,0 +1,24 @@
+# English messages for NetSurf
+
+# Menus
+NetSurf:NetSurf
+Info:Info
+Choices:Choices...
+Quit:Quit
+
+Page:Page
+PageInfo:Info...
+Save:Save
+Export:Export
+Print:Print...
+Selection:Selection
+Copy:Copy to clipboard
+SelectAll:Select all
+Clear:Clear selection
+Navigate:Navigate
+OpenURL:Open URL...
+Home:Home page
+Back:Back one page
+Forward:Forward one page
+Reload:Reload this page
+

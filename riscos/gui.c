@@ -38,64 +38,9 @@ static gui_window *window_list = 0;
 
 int gadget_subtract_x;
 int gadget_subtract_y;
-#define browser_menu_flags (wimp_ICON_TEXT | wimp_ICON_FILLED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT))
 const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro";
 const char* GESTURES_URL = "file:///%3CNetSurf$Dir%3E/Resources/gestures";
 const char* THEMES_URL = "http://netsurf.sourceforge.net/themes/";
-
-wimp_MENU(3) netsurf_iconbar_menu =
-  {
-    { "NetSurf" }, 7,2,7,0, 0, 44, 0,
-    {
-      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MICONBAR1" } },
-      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MICONBAR2" } },
-      { wimp_MENU_LAST, wimp_NO_SUB_MENU, browser_menu_flags, { "MICONBAR3" } }
-    }
-  };
-#define ICONBAR_MENU_ENTRIES 3
-
-wimp_MENU(3) browser_save_menu =
-  {
-    { "Save as" }, 7,2,7,0, 0, 44, 0,
-    {
-      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MSAVE1" } },
-      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MSAVE2" } },
-      { wimp_MENU_LAST, wimp_NO_SUB_MENU, browser_menu_flags, { "MSAVE3" } }
-    }
-  };
-
-wimp_MENU(3) browser_selection_menu =
-  {
-    { "Selection" }, 7,2,7,0, 0, 44, 0,
-    {
-      { 0, wimp_NO_SUB_MENU, browser_menu_flags | wimp_ICON_SHADED, { "MSELECT1" } },
-      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MSELECT2" } },
-      { wimp_MENU_LAST, wimp_NO_SUB_MENU, browser_menu_flags, { "MSELECT3" } }
-    }
-  };
-
-wimp_MENU(5) browser_navigate_menu =
-  {
-    { "Navigate" }, 7,2,7,0, 0, 44, 0,
-    {
-      { 0, wimp_NO_SUB_MENU, browser_menu_flags | wimp_ICON_SHADED, { "MNAVIG1" } },
-      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MNAVIG2" } },
-      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MNAVIG3" } },
-      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MNAVIG4" } },
-      { wimp_MENU_LAST, wimp_NO_SUB_MENU, browser_menu_flags | wimp_ICON_SHADED, { "MNAVIG5" } }
-    }
-  };
-
-wimp_MENU(4) browser_menu =
-  {
-    { "NetSurf" }, 7,2,7,0, 0, 44, 0,
-    {
-      { 0, wimp_NO_SUB_MENU, browser_menu_flags | wimp_ICON_SHADED, { "MBROWSE1" } },
-      { 0, (wimp_menu*) &browser_save_menu, browser_menu_flags, { "MBROWSE2" } },
-      { 0, (wimp_menu*) &browser_selection_menu, browser_menu_flags, { "MBROWSE3" } },
-      { wimp_MENU_LAST, (wimp_menu*) &browser_navigate_menu, browser_menu_flags, { "MBROWSE4" } }
-    }
-  };
 
 wimp_menu* theme_menu = NULL;
 
@@ -154,9 +99,6 @@ static void ro_gui_load_messages(void);
 static wimp_w ro_gui_load_template(const char* template_name);
 static void ro_gui_load_templates(void);
 static wimp_i ro_gui_icon(char* token);
-static void ro_gui_transform_menu_entry(wimp_menu_entry* e);
-static void ro_gui_transform_menus(void);
-static void ro_gui_create_menu(wimp_menu* menu, int x, int y, gui_window* g);
 static int window_x_units(int scr_units, wimp_window_state* win);
 static int window_y_units(int scr_units, wimp_window_state* win);
 static void ro_gui_window_redraw_box(struct content *content, struct box * box,
@@ -181,8 +123,6 @@ static int anglesDifferent(double a, double b);
 static mouseaction ro_gui_try_mouse_action(void);
 static void ro_gui_poll_queue(wimp_event_no event, wimp_block* block);
 static void ro_gui_keypress(wimp_key* key);
-static void ro_gui_copy_selection(gui_window* g);
-static void ro_gui_menu_selection(wimp_selection* selection);
 static void ro_msg_datasave(wimp_message* block);
 static void ro_msg_dataload(wimp_message* block);
 static void gui_set_gadget_extent(struct box* box, int x, int y, os_box* extent, struct gui_gadget* g);
@@ -269,72 +209,10 @@ wimp_i ro_gui_icon(char* token)
     return -1;
 }
 
-void ro_gui_transform_menu_entry(wimp_menu_entry* e)
-{
-  char buffer[256];
-  char* block;
-  int size;
-
-  fprintf(stderr, "looking up message %s\n", e->data.text);
-  messagetrans_lookup(&netsurf_messages_cb, e->data.text, buffer, 256, 0,0,0,0, &size);
-  fprintf(stderr, "message '%s' uses %d bytes\n", buffer, size + 1);
-  block = xcalloc((unsigned int) size + 1, 1);
-  fprintf(stderr, "copying buffer to block\n");
-  strncpy(block, buffer, (unsigned int) size);
-
-  fprintf(stderr, "applying flags\n");
-  e->icon_flags = e->icon_flags | wimp_ICON_INDIRECTED;
-  e->data.indirected_text.text = block;
-  e->data.indirected_text.validation = NULL;
-  e->data.indirected_text.size = size+1;
-
-  fprintf(stderr, "returning\n");
-
-  return;
-}
-
-void ro_gui_transform_menus(void)
-{
-  int i;
-
-  for (i = 0; i < 3; i++)
-    ro_gui_transform_menu_entry(&netsurf_iconbar_menu.entries[i]);
-
-  for (i = 0; i < 3; i++)
-    ro_gui_transform_menu_entry(&browser_save_menu.entries[i]);
-
-  for (i = 0; i < 3; i++)
-    ro_gui_transform_menu_entry(&browser_selection_menu.entries[i]);
-
-  for (i = 0; i < 5; i++)
-    ro_gui_transform_menu_entry(&browser_navigate_menu.entries[i]);
-
-  for (i = 0; i < 4; i++)
-    ro_gui_transform_menu_entry(&browser_menu.entries[i]);
-
-  browser_save_menu.entries[0].sub_menu = (wimp_menu*) netsurf_saveas;
-  browser_save_menu.entries[1].sub_menu = (wimp_menu*) netsurf_saveas;
-  browser_save_menu.entries[2].sub_menu = (wimp_menu*) netsurf_saveas;
-  browser_selection_menu.entries[2].sub_menu = (wimp_menu*) netsurf_saveas;
-
-  netsurf_iconbar_menu.entries[0].sub_menu = (wimp_menu*) netsurf_info;
-}
-
-wimp_menu* current_menu;
-int current_menu_x, current_menu_y;
-gui_window* current_gui;
 
 wimp_menu* combo_menu;
 struct gui_gadget* current_gadget;
 
-void ro_gui_create_menu(wimp_menu* menu, int x, int y, gui_window* g)
-{
-  current_menu = menu;
-  current_menu_x = x;
-  current_menu_y = y;
-  current_gui = g;
-  wimp_create_menu(menu, x, y);
-}
 
 int TOOLBAR_HEIGHT = 128;
 
@@ -1113,7 +991,7 @@ void ro_gui_icon_bar_click(wimp_pointer* pointer)
 {
   if (pointer->buttons == wimp_CLICK_MENU)
   {
-    ro_gui_create_menu((wimp_menu*)&netsurf_iconbar_menu, pointer->pos.x - 64, 96 + ICONBAR_MENU_ENTRIES*44, NULL);
+    ro_gui_create_menu(iconbar_menu, pointer->pos.x - 64, 96 + iconbar_menu_height, NULL);
   }
   else if (pointer->buttons == wimp_CLICK_SELECT)
   {
@@ -1147,6 +1025,7 @@ void gui_init(int argc, char** argv)
   fileswitch_object_type *ot;
 
   NETSURF_DIR = getenv("NetSurf$Dir");
+  messages_load("<NetSurf$Dir>.Resources.en.Messages");
 
 /*   __riscosify_control = __RISCOSIFY_NO_PROCESS; */
 
@@ -1196,7 +1075,7 @@ void gui_init(int argc, char** argv)
 
   ro_gui_load_templates();
   ro_gui_load_messages();
-  ro_gui_transform_menus();
+  ro_gui_menus_init();
 }
 
 void ro_gui_throb(void)
@@ -1769,7 +1648,7 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
 	      int z;
 
 	      os_mouse(&x, &y, &z, &now);
-	      ro_gui_create_menu((wimp_menu*) &browser_menu, x - 64, y, g);
+	      ro_gui_create_menu(browser_menu, x - 64, y, g);
       }
       else
       {
@@ -2091,93 +1970,6 @@ void ro_gui_copy_selection(gui_window* g)
   }
 }
 
-void ro_gui_menu_selection(wimp_selection* selection)
-{
-  struct browser_action msg;
-  wimp_pointer pointer;
-  int i;
-  wimp_get_pointer_info(&pointer);
-
-  fprintf(stderr, "Menu selection: ");
-  i = 0; while (selection->items[i] != -1) {
-    fprintf(stderr, "%d ", selection->items[i]);
-    i++;
-  }
-  fprintf(stderr, "\n");
-
-  if (current_menu == combo_menu && selection->items[0] >= 0)
-  {
-	  struct browser_action msg;
-	  msg.type = act_GADGET_SELECT;
-	  msg.data.gadget_select.g= current_gadget;
-	  msg.data.gadget_select.item = selection->items[0];
-	  browser_window_action(current_gui->data.browser.bw, &msg);
-  }
-  else if (current_menu == (wimp_menu*) &netsurf_iconbar_menu)
-  {
-    if (selection->items[0] == 1)
-      gui_show_choices();
-    if (selection->items[0] == 2)
-      netsurf_quit = 1;
-  }
-  else if (current_menu == (wimp_menu*) &browser_menu)
-  {
-    switch (selection->items[0])
-    {
-      case 0: /* Display -> */
-        break;
-      case 1: /* Save -> */
-        break;
-      case 2: /* Selection -> */
-        switch (selection->items[1])
-        {
-          case 0: /* Copy to clipboard */
-            ro_gui_copy_selection(current_gui);
-            break;
-          case 1: /* Clear */
-            msg.type = act_CLEAR_SELECTION;
-            browser_window_action(current_gui->data.browser.bw, &msg);
-            break;
-          case 2: /* Save */
-            break;
-        }
-        break;
-      case 3: /* Navigate -> */
-        switch (selection->items[1])
-        {
-          case 0: /* Open URL... */
-            break;
-          case 1: /* Home */
-            browser_window_open_location(current_gui->data.browser.bw, HOME_URL);
-            break;
-          case 2: /* Back */
-            browser_window_back(current_gui->data.browser.bw);
-            break;
-          case 3: /* Forward */
-            browser_window_forward(current_gui->data.browser.bw);
-            break;
-        }
-        break;
-    }
-
-  }
-  else if (current_menu == theme_menu && theme_menu != NULL)
-  {
-	  strcpy(theme_choices.name, theme_menu->entries[selection->items[0]].data.indirected_text.text);
-	set_icon_string(config_th, ro_gui_icon("CONFIG_TH_NAME"), theme_choices.name);
-	load_theme_preview(theme_choices.name);
-  	wimp_set_icon_state(config_th, ro_gui_icon("CONFIG_TH_NAME"), 0, 0);
-  	wimp_set_icon_state(config_th, ro_gui_icon("CONFIG_TH_PREVIEW"), 0, 0);
-  }
-
-  if (pointer.buttons == wimp_CLICK_ADJUST)
-  {
-	  if (current_menu == combo_menu)
-		  gui_gadget_combo(current_gui->data.browser.bw, current_gadget, current_menu_x, current_menu_y);
-	  else
-		  ro_gui_create_menu(current_menu, current_menu_x, current_menu_y, current_gui);
-  }
-}
 
 void gui_poll(void)
 {
@@ -3013,4 +2805,13 @@ void ro_gui_redraw_config_th(wimp_draw* redraw)
 
 }
 
+void ro_gui_theme_menu_selection(char *theme)
+{
+	strcpy(theme_choices.name, theme);
+	set_icon_string(config_th, ro_gui_icon("CONFIG_TH_NAME"), theme_choices.name);
+	load_theme_preview(theme_choices.name);
+	wimp_set_icon_state(config_th, ro_gui_icon("CONFIG_TH_NAME"), 0, 0);
+	wimp_set_icon_state(config_th, ro_gui_icon("CONFIG_TH_PREVIEW"), 0, 0);
+
+}
 
