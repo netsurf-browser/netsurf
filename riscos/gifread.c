@@ -108,6 +108,7 @@ int gif_initialise(struct gif_animation *gif) {
 	unsigned char *gif_data;
 	unsigned int index;
 	int return_value;
+	unsigned int frame;
 
 	/*	Check for sufficient data to be a GIF
 	*/
@@ -238,6 +239,52 @@ int gif_initialise(struct gif_animation *gif) {
 	*/
 	while ((return_value = gif_initialise_frame(gif)) == 0);
 
+	/*	Update the redraw areas now we know the full data set
+	*/
+	if (gif->frame_count_partial > 0) {
+		/*	Set the redraw for the first frame to the maximum frame size
+		*/
+		gif->frames[0].redraw_required = 0;	
+		gif->frames[0].redraw_x = 0;
+		gif->frames[0].redraw_y = 0;
+		gif->frames[0].redraw_width = gif->width;
+		gif->frames[0].redraw_height = gif->height;
+		
+		/*	We now work backwards to update the redraw characteristics of frames
+			with clear codes to stop a snowball effect of the redraw areas. It doesn't
+			really make much difference for most images, and will not work as well
+			(ie will not optimise as well as for a single-pass call, but still works)
+			for multiple calls to this routine when decoding progressively.
+		*/
+		for (frame = gif->frame_count_partial - 1; frame > 0; frame--) {
+		  	if (gif->frames[frame].redraw_required) {
+				if (gif->frames[frame].redraw_x > gif->frames[frame - 1].redraw_x) {
+					gif->frames[frame].redraw_width +=
+							(gif->frames[frame].redraw_x - gif->frames[frame - 1].redraw_x);
+					gif->frames[frame].redraw_x = gif->frames[frame - 1].redraw_x;
+				}
+				if (gif->frames[frame].redraw_y > gif->frames[frame - 1].redraw_y) {
+					gif->frames[frame].redraw_height +=
+							(gif->frames[frame].redraw_y - gif->frames[frame - 1].redraw_y);
+					gif->frames[frame].redraw_y = gif->frames[frame - 1].redraw_y;
+				}
+				if ((gif->frames[frame - 1].redraw_x + gif->frames[frame - 1].redraw_width) >
+						(gif->frames[frame].redraw_x + gif->frames[frame].redraw_width)) {
+					gif->frames[frame].redraw_width =
+						(gif->frames[frame - 1].redraw_x + gif->frames[frame - 1].redraw_width) -
+						gif->frames[frame].redraw_x;
+				}
+				if ((gif->frames[frame - 1].redraw_y + gif->frames[frame - 1].redraw_height) >
+					(gif->frames[frame].redraw_y + gif->frames[frame].redraw_height)) {
+					gif->frames[frame].redraw_height =
+						(gif->frames[frame - 1].redraw_y + gif->frames[frame - 1].redraw_height) -
+						gif->frames[frame].redraw_y;
+				}
+			}
+		}
+		
+	}
+
 	/*	If there was a memory error tell the caller
 	*/
 	if ((return_value == GIF_INSUFFICIENT_MEMORY) ||
@@ -326,7 +373,7 @@ int gif_initialise_frame(struct gif_animation *gif) {
 	unsigned int extension_size, colour_table_size;
 	unsigned int block_size;
 	unsigned int more_images;
-	unsigned int increment, first_image;
+	unsigned int first_image;
 
 	/*	Get the frame to decode and our data position
 	*/
@@ -443,7 +490,6 @@ int gif_initialise_frame(struct gif_animation *gif) {
 		/*	Set up the redraw characteristics. We have to check for extending the area
 			due to multi-image frames.
 		*/
-		if ((background_action == 2) || (background_action == 3)) gif->frames[frame].redraw_required = 1;
 		if (first_image == 0) {
 			if (gif->frames[frame].redraw_x > offset_x) {
 				gif->frames[frame].redraw_width += (gif->frames[frame].redraw_x - offset_x);
@@ -453,18 +499,25 @@ int gif_initialise_frame(struct gif_animation *gif) {
 				gif->frames[frame].redraw_height += (gif->frames[frame].redraw_y - offset_y);
 				gif->frames[frame].redraw_y = offset_y;
 			}
-			increment = (offset_x + width) -
-					(gif->frames[frame].redraw_x + gif->frames[frame].redraw_width);
-			if (increment > 0) gif->frames[frame].redraw_width += increment;
-			increment = (offset_y + height) -
-					(gif->frames[frame].redraw_y + gif->frames[frame].redraw_height);
-			if (increment > 0) gif->frames[frame].redraw_height += increment;
+			if ((offset_x + width) > (gif->frames[frame].redraw_x + gif->frames[frame].redraw_width)) {
+				gif->frames[frame].redraw_width = (offset_x + width) - gif->frames[frame].redraw_x;
+			}
+			if ((offset_y + height) > (gif->frames[frame].redraw_y + gif->frames[frame].redraw_height)) {
+				gif->frames[frame].redraw_height = (offset_y + height) - gif->frames[frame].redraw_y;
+			}
 		} else {
 			first_image = 0;
 			gif->frames[frame].redraw_x = offset_x;
 			gif->frames[frame].redraw_y = offset_y;
 			gif->frames[frame].redraw_width = width;
 			gif->frames[frame].redraw_height = height;
+		}
+		
+		/*	if we are clearing the background then we need to redraw enough to cover the previous
+			frame too
+		*/
+		if (((background_action == 2) || (background_action == 3)) && (frame > 0)) {
+			gif->frames[frame].redraw_required = 1;
 		}
 
 		/*	Boundary checking - shouldn't ever happen except with junk data

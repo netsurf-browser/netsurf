@@ -78,6 +78,11 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight) 
 		schedule(gif->frames[0].frame_delay, nsgif_animate, c);
 	}
 
+	/*	Initialise the first frame so if we try to use the image data directly prior to
+		a plot we get some sensible data
+	*/
+	gif_decode_frame(c->data.gif.gif, 0);
+
 	/*	Exit as a success
 	*/
 	c->status = CONTENT_STATUS_DONE;
@@ -93,10 +98,6 @@ void nsgif_redraw(struct content *c, long x, long y,
 	int previous_frame;
 	unsigned int frame, current_frame;
 	unsigned int tinct_options;
-
-	/*	Reject no images (paranoia)
-	*/
-	if (c->data.gif.gif->frame_count_partial < 1) return;
 
 	/*	If we have a gui_window then we work from there, if not we use the global
 		settings. We default to the first image if we don't have a GUI as we are
@@ -145,7 +146,6 @@ void nsgif_redraw(struct content *c, long x, long y,
 }
 
 
-
 void nsgif_destroy(struct content *c)
 {
 	/*	Free all the associated memory buffers
@@ -154,7 +154,6 @@ void nsgif_destroy(struct content *c)
 	gif_finalise(c->data.gif.gif);
 	xfree(c->data.gif.gif);
 }
-
 
 
 /**	Performs any necessary animation.
