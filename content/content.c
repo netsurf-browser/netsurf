@@ -180,8 +180,10 @@ void content_set_type(struct content *c, content_type type, char* mime_type)
 	c->type = type;
 	c->mime_type = xstrdup(mime_type);
 	c->status = CONTENT_STATUS_LOADING;
-	content_broadcast(c, CONTENT_MSG_LOADING, 0);
 	handler_map[type].create(c);
+	content_broadcast(c, CONTENT_MSG_LOADING, 0);
+	/* c may be destroyed at this point as a result of
+	 * CONTENT_MSG_LOADING, so must not be accessed */
 }
 
 
