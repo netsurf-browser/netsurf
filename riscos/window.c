@@ -279,12 +279,40 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 	unsigned long background_colour = 0xffffff;
 	os_error *error;
 	wimp_draw update;
-
+	int size;
+	int addition_x = 0;
+	int addition_y = 0;
+	
+	/*	We must have an object otherwise things go very wrong
+	*/
+	assert(data->redraw.object);
+	
+	/*	Accomodate for rounding errors, minimising the number of those evil division things
+	*/
+	if (data->redraw.object_width < data->redraw.object->width) {
+		addition_x = 1 + (data->redraw.width + 1) * (data->redraw.object->width / data->redraw.object_width) -
+			data->redraw.width;
+	} else if (data->redraw.object_width > data->redraw.object->width) {
+	  	addition_x = 1;
+	}
+	if (data->redraw.object_height < data->redraw.object->height) {
+		addition_y = 1 + (data->redraw.height + 1) * (data->redraw.object->height / data->redraw.object_height) -
+			data->redraw.height;
+	} else if (data->redraw.object_height > data->redraw.object->height) {
+	  	addition_y = 1;
+	}
+	
+	/*	Calculate the update box, taking care not to exceed our bounds
+	*/
 	update.w = g->window;
 	update.box.x0 = data->redraw.x * 2 * g->scale;
-	update.box.y0 = -(data->redraw.y + data->redraw.height) * 2 * g->scale;
-	update.box.x1 = (data->redraw.x + data->redraw.width) * 2 * g->scale;
 	update.box.y1 = -data->redraw.y * 2 * g->scale;
+	size = data->redraw.x + data->redraw.width + addition_x;
+	if (size > (data->redraw.x + data->redraw.object_width)) size = data->redraw.x + data->redraw.object_width;
+	update.box.x1 = size * 2 * g->scale;
+	size = data->redraw.y + data->redraw.height + addition_y;
+	if (size > (data->redraw.y + data->redraw.object_height)) size = data->redraw.y + data->redraw.object_height;
+	update.box.y0 = -size * 2 * g->scale;
 	error = xwimp_update_window(&update, &more);
 	if (error) {
 		LOG(("xwimp_update_window: 0x%x: %s",

@@ -161,6 +161,7 @@ void nsgif_animate(void *p)
 {
 	struct content *c = p;
 	union content_msg_data data;
+	int delay;
 
 	/*	Advance by a frame, updating the loop count accordingly
 	*/
@@ -183,8 +184,9 @@ void nsgif_animate(void *p)
 	/*	Continue animating if we should
 	*/
 	if (c->data.gif.gif->loop_count >= 0) {
-		schedule(c->data.gif.gif->frames[c->data.gif.current_frame].frame_delay,
-				nsgif_animate, c);
+		delay = c->data.gif.gif->frames[c->data.gif.current_frame].frame_delay;
+		if (delay < option_minimum_gif_delay) delay = option_minimum_gif_delay;
+		schedule(delay, nsgif_animate, c);
 	}
 
 	/* area within gif to redraw */
@@ -203,6 +205,7 @@ void nsgif_animate(void *p)
 	data.redraw.object_y = 0;
 	data.redraw.object_width = c->width;
 	data.redraw.object_height = c->height;
+
 	content_broadcast(c, CONTENT_MSG_REDRAW, data);
 }
 
