@@ -36,6 +36,7 @@
 #ifdef WITH_GIF
 
 static void nsgif_animate(void *p);
+static void nsgif_get_frame(struct content *c);
 
 
 bool nsgif_create(struct content *c, const char *params[]) {
@@ -125,45 +126,11 @@ bool nsgif_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour) {
 
-	int previous_frame;
-	unsigned int frame, current_frame;
-
-	/*	If we have a gui_window then we work from there, if not we use the global
-		settings. We default to the first image if we don't have a GUI as we are
-		drawing a thumbnail unless something has gone very wrong somewhere else.
-	*/
-/*	if (ro_gui_current_redraw_gui) {
-		if (ro_gui_current_redraw_gui->option.animate_images) {
-*/			current_frame = c->data.gif.current_frame;
-/*		} else {
-			current_frame = 0;
-		}
-	} else {
-		if (c->data.gif.gif->loop_count == 0) {
-		  	current_frame = 0;
-		} else {
-		  	if (c->data.gif.gif->frame_count > 1) {
-				current_frame = c->data.gif.gif->frame_count - 1;
-			} else {
-				current_frame = 0;
-			}
-		}
-	}
-*/
-	/*	Decode from the last frame to the current frame
-	*/
-	if (current_frame < c->data.gif.gif->decoded_frame) {
-		previous_frame = 0;
-	} else {
-		previous_frame = c->data.gif.gif->decoded_frame + 1;
-        }
-	for (frame = previous_frame; frame <= current_frame; frame++) {
-		gif_decode_frame(c->data.gif.gif, frame);
-	}
+	nsgif_get_frame(c);
 	c->bitmap = c->data.gif.gif->frame_image;
 
-	return plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour);
+	return (c->data.gif.frame_drawn = plot.bitmap(x, y, width, height,
+			c->bitmap, background_colour));
 }
 
 
@@ -175,6 +142,26 @@ void nsgif_destroy(struct content *c)
 	gif_finalise(c->data.gif.gif);
 	free(c->data.gif.gif);
 	free(c->title);
+}
+
+
+/**
+ * Updates the GIF bitmap to display the current frame
+ *
+ * \param c  the content to update
+ */
+void nsgif_get_frame(struct content *c) {
+ 	int previous_frame, current_frame, frame;
+
+	current_frame = c->data.gif.current_frame;
+	if (current_frame < c->data.gif.gif->decoded_frame) {
+		previous_frame = 0;
+	} else {
+		previous_frame = c->data.gif.gif->decoded_frame + 1;
+        }
+	for (frame = previous_frame; frame <= current_frame; frame++)
+		gif_decode_frame(c->data.gif.gif, frame);
+
 }
 
 
@@ -191,7 +178,7 @@ void nsgif_animate(void *p)
 	/*	Advance by a frame, updating the loop count accordingly
 	*/
 	c->data.gif.current_frame++;
-	if (c->data.gif.current_frame == c->data.gif.gif->frame_count) {
+	if (c->data.gif.current_frame == (int)c->data.gif.gif->frame_count) {
 		c->data.gif.current_frame = 0;
 
 		/*	A loop count of 0 has a special meaning of infinite
@@ -205,6 +192,14 @@ void nsgif_animate(void *p)
 		}
 	}
 
+	/*	Animate onwards if the previous frame was used (ie it's onscreen), if not
+		then we let the animation be performed by the redraw loop. By doing this
+		it minimises the delay in the plot cycle, resulting in less flicker.
+	*/
+	if (c->data.gif.frame_drawn) {
+		nsgif_get_frame(c);
+		c->data.gif.frame_drawn = false;
+	}
 
 	/*	Continue animating if we should
 	*/
