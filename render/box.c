@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.46 2003/05/31 18:47:00 jmb Exp $
+ * $Id: box.c,v 1.47 2003/05/31 19:01:43 jmb Exp $
  */
 
 #include <assert.h>
@@ -16,7 +16,7 @@
 #include "netsurf/riscos/plugin.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
-#define NDEBUG
+//#define NDEBUG
 
 /**
  * internal functions
