@@ -278,7 +278,9 @@ struct mapentry *imagemap_addtolist(xmlNode *n, struct mapentry *entry) {
 	else if (strcasecmp(shape, "circle") == 0) {
 		new_map->type = IMAGEMAP_CIRCLE;
 	}
-	else if (strcasecmp(shape, "poly") == 0) {
+	else if (strcasecmp(shape, "poly") == 0 ||
+		strcasecmp(shape, "polygon") == 0) {
+		/* polygon shape name is not valid but sites use it */
 		new_map->type = IMAGEMAP_POLY;
 	}
 	else if (strcasecmp(shape, "default") == 0) {
