@@ -490,9 +490,14 @@ struct css_style * box_get_style(struct content ** stylesheet,
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "height"))) {
-		style->height.height = CSS_HEIGHT_LENGTH;
-		style->height.length.unit = CSS_UNIT_PX;
-		style->height.length.value = atof(s);
+		if (strrchr(s, '%')) {
+			/* tne specification doesn't make clear what
+			 * percentage heights mean, so ignore them */
+		} else {
+			style->height.height = CSS_HEIGHT_LENGTH;
+			style->height.length.unit = CSS_UNIT_PX;
+			style->height.length.value = atof(s);
+		}
 		xmlFree(s);
 	}
 
@@ -553,9 +558,9 @@ struct result box_a(xmlNode *n, struct status *status,
 {
 	struct box *box;
 	char *s;
-	box = box_create(style, status->href, status->title);
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "href")))
 		status->href = s;
+	box = box_create(style, status->href, status->title);
 	return (struct result) {box, 1};
 }
 
@@ -1342,13 +1347,13 @@ void box_free_box(struct box *box)
 	xmlFree(box->title);
 
 	/* only free href if we're the top most user */
-	if (box->href != 0)
+	/*if (box->href != 0)
 	{
 		if (box->parent == 0)
 			xmlFree(box->href);
 		else if (box->parent->href != box->href)
 			xmlFree(box->href);
-	}
+	}*/
 
 	/* TODO: free object_params */
 }
