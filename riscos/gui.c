@@ -63,6 +63,7 @@
 #include "netsurf/utils/utils.h"
 
 const char *__dynamic_da_name = "NetSurf";	/**< For UnixLib. */
+int __dynamic_da_max_size = 128 * 1024 * 1024;	/**< For UnixLib. */
 int __feature_imagefs_is_file = 1;		/**< For UnixLib. */
 /* default filename handling */
 int __riscosify_control = __RISCOSIFY_NO_SUFFIX |
