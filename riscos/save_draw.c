@@ -80,7 +80,7 @@ static bool drawbuf_group_end(void);
 static bool add_options(void);
 static bool draw_plot_clg(colour c);
 static bool draw_plot_rectangle(int x0, int y0, int width, int height,
-		colour c, bool dotted);
+		int line_width, colour c, bool dotted, bool dashed);
 static bool draw_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed);
 static bool draw_plot_polygon(int *p, unsigned int n, colour fill);
@@ -550,7 +550,7 @@ bool draw_plot_clg(colour c)
  * \return true on success, false otherwise.
  */
 bool draw_plot_rectangle(int x0, int y0, int width, int height,
-		colour c, bool dotted)
+		int line_width, colour c, bool dotted, bool dashed)
 {
 	drawfile_object *dro;
 	drawfile_path *dp;
