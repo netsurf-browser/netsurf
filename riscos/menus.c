@@ -2007,9 +2007,11 @@ void ro_gui_menu_prepare_hotlist(void) {
   	bool reopen = false;
 	bool selection = false;
 	struct node *single = NULL;
+	struct toolbar *hotlist_toolbar;
 
 	if (!hotlist_tree)
 		return;
+	hotlist_toolbar = hotlist_tree->toolbar;
 
 	if (hotlist_tree->root->child) {
 		single = tree_get_selected_node(hotlist_tree->root->child);
@@ -2022,12 +2024,12 @@ void ro_gui_menu_prepare_hotlist(void) {
 		hotlist_file_menu->entries[2].icon_flags |= wimp_ICON_SHADED;
 		hotlist_file_menu->entries[3].icon_flags &= wimp_ICON_SHADED;
 	}
-	ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
-				ICON_TOOLBAR_OPEN, !hotlist_tree->root->child);
-	ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
-				ICON_TOOLBAR_EXPAND, !hotlist_tree->root->child);
 
 	if (hotlist_toolbar) {
+		ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
+				ICON_TOOLBAR_OPEN, !hotlist_tree->root->child);
+		ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
+				ICON_TOOLBAR_EXPAND, !hotlist_tree->root->child);
 		ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
 				ICON_TOOLBAR_DELETE, !selection);
 		ro_gui_set_icon_shaded_state(hotlist_toolbar->toolbar_handle,
@@ -2070,9 +2072,11 @@ void ro_gui_menu_prepare_global_history(void) {
   	os_error *error;
   	bool reopen = false;
 	bool selection = false;
+	struct toolbar *global_history_toolbar;
 
 	if (!global_history_tree)
 		return;
+	global_history_toolbar = global_history_tree->toolbar;
 
 	if (global_history_tree->root->child) {
 		selection = tree_has_selection(global_history_tree->root->child);
@@ -2084,12 +2088,12 @@ void ro_gui_menu_prepare_global_history(void) {
 		history_file_menu->entries[1].icon_flags |= wimp_ICON_SHADED;
 		history_file_menu->entries[2].icon_flags |= wimp_ICON_SHADED;
 	}
-	ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
-				ICON_TOOLBAR_OPEN, !global_history_tree->root->child);
-	ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
-				ICON_TOOLBAR_EXPAND, !global_history_tree->root->child);
 
-	if (hotlist_toolbar) {
+	if (global_history_toolbar) {
+		ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
+				ICON_TOOLBAR_OPEN, !global_history_tree->root->child);
+		ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
+				ICON_TOOLBAR_EXPAND, !global_history_tree->root->child);
 		ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,
 				ICON_TOOLBAR_DELETE, !selection);
 		ro_gui_set_icon_shaded_state(global_history_toolbar->toolbar_handle,

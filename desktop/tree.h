@@ -23,6 +23,7 @@
 #define NODE_INSTEP 40
 
 struct node_sprite;
+struct toolbar;
 
 typedef enum {
   	NODE_ELEMENT_TEXT,		/* <-- Text only */
@@ -82,6 +83,7 @@ struct tree {
 	struct node_element *editing;	/* <-- Node element being edited */
 	char edit_buffer[256];		/* <-- Editing buffer */
 	struct node *temp_selection;	/* <-- Temporarily selected node */
+	struct toolbar *toolbar;	/* <-- Tree toolbar */
 };
 
 

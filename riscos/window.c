@@ -205,8 +205,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window.work_flags = wimp_BUTTON_CLICK_DRAG <<
 			wimp_ICON_BUTTON_TYPE_SHIFT;
 	window.sprite_area = wimpspriteop_AREA;
-	window.xmin = 100;
-	window.ymin = 100;
+	window.xmin = 1;
+	window.ymin = 1;
 	window.title_data.indirected_text.text = g->title;
 	window.title_data.indirected_text.validation = (char *) -1;
 	window.title_data.indirected_text.size = 255;
@@ -882,45 +882,39 @@ void ro_gui_window_update_theme(void) {
 	struct gui_window *g;
 	for (g = window_list; g; g = g->next) {
 		if (g->toolbar) {
-			height = g->toolbar->height;
+			height = ro_gui_theme_toolbar_height(g->toolbar);
 			if (!ro_gui_theme_update_toolbar(NULL, g->toolbar)) {
 				ro_gui_theme_destroy_toolbar(g->toolbar);
 				g->toolbar = NULL;
 				if (height != 0)
 					ro_gui_window_update_dimensions(g, height);
 			} else {
-				if (height != g->toolbar->height)
+				if (height != (ro_gui_theme_toolbar_height(g->toolbar)))
 					ro_gui_window_update_dimensions(g, height -
-						g->toolbar->height);
+						ro_gui_theme_toolbar_height(g->toolbar));
 			}
 			ro_gui_prepare_navigate(g);
 		}
 	}
-	if (hotlist_toolbar) {
-		if (!ro_gui_theme_update_toolbar(NULL, hotlist_toolbar)) {
-			ro_gui_theme_destroy_toolbar(hotlist_toolbar);
-			hotlist_toolbar = NULL;
+	if ((hotlist_tree) && (hotlist_tree->toolbar)) {
+		if (!ro_gui_theme_update_toolbar(NULL, hotlist_tree->toolbar)) {
+			ro_gui_theme_destroy_toolbar(hotlist_tree->toolbar);
+			hotlist_tree->toolbar = NULL;
 		}
-		if (hotlist_tree) {
-			ro_gui_theme_attach_toolbar(hotlist_toolbar,
-					(wimp_w)hotlist_tree->handle);
-			hotlist_tree->offset_y = hotlist_toolbar->height;
-			xwimp_force_redraw((wimp_w)hotlist_tree->handle,
-					0, -16384, 16384, 16384);
-		}
+		ro_gui_theme_attach_toolbar(hotlist_tree->toolbar,
+				(wimp_w)hotlist_tree->handle);
+		xwimp_force_redraw((wimp_w)hotlist_tree->handle,
+				0, -16384, 16384, 16384);
 	}
-	if (global_history_toolbar) {
-		if (!ro_gui_theme_update_toolbar(NULL, global_history_toolbar)) {
-			ro_gui_theme_destroy_toolbar(global_history_toolbar);
-			global_history_toolbar = NULL;
+	if ((global_history_tree) && (global_history_tree->toolbar)) {
+		if (!ro_gui_theme_update_toolbar(NULL, global_history_tree->toolbar)) {
+			ro_gui_theme_destroy_toolbar(global_history_tree->toolbar);
+			global_history_tree->toolbar = NULL;
 		}
-		if (global_history_tree) {
-			ro_gui_theme_attach_toolbar(global_history_toolbar,
-					(wimp_w)global_history_tree->handle);
-			global_history_tree->offset_y = global_history_toolbar->height;
-			xwimp_force_redraw((wimp_w)global_history_tree->handle,
-					0, -16384, 16384, 16384);
-		}
+		ro_gui_theme_attach_toolbar(global_history_tree->toolbar,
+				(wimp_w)global_history_tree->handle);
+		xwimp_force_redraw((wimp_w)global_history_tree->handle,
+				0, -16384, 16384, 16384);
 	}
 }
 
@@ -1558,6 +1552,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_F2:	/* Close window. */
+			ro_gui_url_complete_close(NULL, 0);
 			browser_window_destroy(g->bw);
 			return true;
 
@@ -1657,7 +1652,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			return true;
 
 		case wimp_KEY_ESCAPE:
-			if (ro_gui_url_complete_close(0, 0)) {
+			if (ro_gui_url_complete_close(NULL, 0)) {
 			  	ro_gui_url_complete_start(g);
 				return true;
 			}
@@ -1727,7 +1722,8 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 	state.w = g->window;
 	wimp_get_window_state(&state);
 	y = state.visible.y1 - state.visible.y0 - 32;
-	y -= g->toolbar->height;
+	if (g->toolbar)
+		y -= g->toolbar->height;
 
 	switch (key) {
 		case wimp_KEY_UP:
@@ -1768,7 +1764,8 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 
 	x = scroll->visible.x1 - scroll->visible.x0 - 32;
 	y = scroll->visible.y1 - scroll->visible.y0 - 32;
-	y -= g->toolbar->height;
+	if (g->toolbar)
+		y -= g->toolbar->height;
 
 	switch (scroll->xmin) {
 		case wimp_SCROLL_PAGE_LEFT:

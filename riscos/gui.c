@@ -785,13 +785,14 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 		ro_gui_url_complete_redraw(redraw);
 	else if ((hotlist_tree) && (redraw->w == (wimp_w)hotlist_tree->handle))
 		ro_gui_tree_redraw(redraw, hotlist_tree);
-	else if ((hotlist_toolbar) && (hotlist_toolbar->toolbar_handle == redraw->w))
-		ro_gui_theme_redraw(hotlist_toolbar, redraw);
+	else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
+			(hotlist_tree->toolbar->toolbar_handle == redraw->w))
+		ro_gui_theme_redraw(hotlist_tree->toolbar, redraw);
 	else if ((global_history_tree) && (redraw->w == (wimp_w)global_history_tree->handle))
 		ro_gui_tree_redraw(redraw, global_history_tree);
-	else if ((global_history_toolbar) &&
-			(global_history_toolbar->toolbar_handle == redraw->w))
-		ro_gui_theme_redraw(global_history_toolbar, redraw);
+	else if ((global_history_tree) && (global_history_tree->toolbar) &&
+			(global_history_tree->toolbar->toolbar_handle == redraw->w))
+		ro_gui_theme_redraw(global_history_tree->toolbar, redraw);
 	else if (redraw->w == dialog_debug)
 		ro_gui_debugwin_redraw(redraw);
 	else if ((g = ro_gui_window_lookup(redraw->w)) != NULL)
@@ -918,13 +919,12 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 		ro_gui_global_history_click(pointer);
 	else if (pointer->w == dialog_saveas)
 		ro_gui_save_click(pointer);
-	else if (hotlist_toolbar &&
-			hotlist_toolbar->toolbar_handle == pointer->w)
-		ro_gui_tree_toolbar_click(pointer, hotlist_tree, hotlist_toolbar);
-	else if (global_history_toolbar &&
-			global_history_toolbar->toolbar_handle == pointer->w)
-		ro_gui_tree_toolbar_click(pointer, global_history_tree,
-				global_history_toolbar);
+	else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
+			(hotlist_tree->toolbar->toolbar_handle == pointer->w))
+		ro_gui_tree_toolbar_click(pointer, hotlist_tree);
+	else if ((global_history_tree) && (global_history_tree->toolbar) &&
+			(global_history_tree->toolbar->toolbar_handle == pointer->w))
+		ro_gui_tree_toolbar_click(pointer, global_history_tree);
 	else if ((g = ro_gui_window_lookup(pointer->w)) != NULL)
 		ro_gui_window_click(g, pointer);
 	else if ((g = ro_gui_toolbar_lookup(pointer->w)) != NULL)

@@ -66,6 +66,7 @@ struct toolbar {
 	int status_current;			/**< the size of the status window in OS units */
 	int toolbar_current;			/**< the size of the toolbar window in OS units */
 	int height;				/**< vertical extent of the toolbar (read only) */
+	int max_height;				/**< allowed vertical extent (read only) */
 	wimp_w toolbar_handle;			/**< toolbar window handle */
 	wimp_w status_handle;			/**< status window handle (if applicable) */
 	wimp_w parent_handle;			/**< parent window handle (read only) */
@@ -120,4 +121,6 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar);
 struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar, int x, int y);
 bool ro_gui_theme_toolbar_separator_following(struct toolbar_icon *icon);
 
+#define ro_gui_theme_toolbar_height(toolbar) toolbar->height > toolbar->max_height ? \
+					toolbar->max_height : toolbar->height
 #endif

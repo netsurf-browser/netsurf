@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -64,7 +64,7 @@ static wimp_window hotlist_window_definition = {
 	wimp_BUTTON_DOUBLE_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT,
 	wimpspriteop_AREA,
 	1,
-	100,
+	1,
 	{""},
 	0,
 	{}
@@ -74,7 +74,6 @@ static wimp_window hotlist_window_definition = {
 /*	The hotlist window, toolbar and plot origins
 */
 static wimp_w hotlist_window;
-struct toolbar *hotlist_toolbar;
 struct tree *hotlist_tree;
 
 /*	Whether the editing facilities are for add so that we know how
@@ -137,11 +136,9 @@ void ro_gui_hotlist_initialise(void) {
 
 	/*	Create our toolbar
 	*/
-	hotlist_toolbar = ro_gui_theme_create_toolbar(NULL, THEME_HOTLIST_TOOLBAR);
-	if (hotlist_toolbar) {
-		ro_gui_theme_attach_toolbar(hotlist_toolbar, hotlist_window);
-		hotlist_tree->offset_y = hotlist_toolbar->height;
-        }
+	hotlist_tree->toolbar = ro_gui_theme_create_toolbar(NULL, THEME_HOTLIST_TOOLBAR);
+	if (hotlist_tree->toolbar)
+		ro_gui_theme_attach_toolbar(hotlist_tree->toolbar, hotlist_window);
 }
 
 
@@ -168,7 +165,7 @@ void ro_gui_hotlist_save(void) {
  * Shows the hotlist window.
  */
 void ro_gui_hotlist_show(void) {
-  	ro_gui_tree_show(hotlist_tree, hotlist_toolbar);
+  	ro_gui_tree_show(hotlist_tree);
 	ro_gui_menu_prepare_hotlist();
 }
 

@@ -76,7 +76,7 @@ static wimp_window history_window_definition = {
 	wimp_BUTTON_DOUBLE_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT,
 	wimpspriteop_AREA,
 	1,
-	100,
+	1,
 	{""},
 	0,
 	{}
@@ -86,7 +86,6 @@ static wimp_window history_window_definition = {
 /*	The history window, toolbar and plot origins
 */
 static wimp_w global_history_window;
-struct toolbar *global_history_toolbar;
 struct tree *global_history_tree;
 
 void ro_gui_global_history_initialise(void) {
@@ -134,13 +133,11 @@ void ro_gui_global_history_initialise(void) {
 
 	/*	Create our toolbar
 	*/
-	global_history_toolbar = ro_gui_theme_create_toolbar(NULL,
+	global_history_tree->toolbar = ro_gui_theme_create_toolbar(NULL,
 			THEME_HISTORY_TOOLBAR);
-	if (global_history_toolbar) {
-		ro_gui_theme_attach_toolbar(global_history_toolbar,
+	if (global_history_tree->toolbar)
+		ro_gui_theme_attach_toolbar(global_history_tree->toolbar,
 				global_history_window);
-		global_history_tree->offset_y = global_history_toolbar->height;
-        }
         
         /* load recent URLs */
 	fp = fopen(GLOBAL_HISTORY_RECENT_READ, "r");
@@ -331,7 +328,7 @@ void ro_gui_global_history_save_node(struct node *node, FILE *fp) {
  * Shows the history window.
  */
 void ro_gui_global_history_show(void) {
-  	ro_gui_tree_show(global_history_tree, global_history_toolbar);
+  	ro_gui_tree_show(global_history_tree);
 	ro_gui_menu_prepare_global_history();
 }
 

@@ -43,7 +43,6 @@ extern bool gui_reformat_pending;
 extern bool gui_redraw_debug;
 extern wimp_menu *current_menu;
 extern osspriteop_area *gui_sprites;
-extern struct toolbar *hotlist_toolbar, *global_history_toolbar;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
 extern bool print_active, print_text_black;
 extern struct tree *hotlist_tree, *global_history_tree;

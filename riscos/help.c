@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -16,6 +16,7 @@
 #include "oslib/os.h"
 #include "oslib/taskmanager.h"
 #include "oslib/wimp.h"
+#include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
 #include "netsurf/riscos/theme.h"
@@ -27,25 +28,27 @@
 /*	Recognised help keys
 	====================
 
-	HelpIconbar	 Iconbar (no icon suffix is used)
+	HelpIconbar		 Iconbar (no icon suffix is used)
 
-	HelpAppInfo	 Application info window
-	HelpBrowser	 Browser window [*]
-	HelpHistory	 History window [*]
-	HelpObjInfo	 Object info window
-	HelpPageInfo	 Page info window
-	HelpSaveAs	 Save as window
-	HelpScaleView	 Scale view window
-	HelpStatus	 Status window
-	HelpToolbar	 Toolbar window
-	HelpHotlist	 Hotlist window [*]
-	HelpHotToolbar	 Hotlist window toolbar
-	HelpHotEntry	 Hotlist entry window
-	HelpHotFolder	 Hotlist entry window
+	HelpAppInfo		 Application info window
+	HelpBrowser		 Browser window [*]
+	HelpHistory		 History window [*]
+	HelpObjInfo		 Object info window
+	HelpPageInfo		 Page info window
+	HelpSaveAs		 Save as window
+	HelpScaleView		 Scale view window
+	HelpStatus		 Status window
+	HelpToolbar		 Toolbar window
+	HelpHotlist		 Hotlist window [*]
+	HelpHotToolbar		 Hotlist window toolbar
+	HelpHotEntry		 Hotlist entry window
+	HelpHotFolder		 Hotlist entry window
+	HelpGHistory		 Global history window [*]
+	HelpGHistoryToolbar	 Global history window toolbar
 
-	HelpIconMenu	 Iconbar menu
-	HelpBrowserMenu  Browser window menu
-	HelpHotlistMenu  Hotlist window menu
+	HelpIconMenu		 Iconbar menu
+	HelpBrowserMenu 	 Browser window menu
+	HelpHotlistMenu 	 Hotlist window menu
 
 	The prefixes are followed by either the icon number (eg 'HelpToolbar7'), or a series
 	of numbers representing the menu structure (eg 'HelpBrowserMenu3-1-2').
@@ -123,9 +126,16 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		sprintf(message_token, "HelpHotlist%i",
 				ro_gui_hotlist_help(message_data->pos.x,
 						message_data->pos.y));
-	} else if (hotlist_toolbar &&
-			window == hotlist_toolbar->toolbar_handle) {
+	} else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
+			(window == hotlist_tree->toolbar->toolbar_handle)) {
 		sprintf(message_token, "HelpHotToolbar%i", (int)icon);
+	} else if ((global_history_tree) && (window == (wimp_w)global_history_tree->handle)) {
+		sprintf(message_token, "HelpGHistory%i",
+				ro_gui_global_history_help(message_data->pos.x,
+						message_data->pos.y));
+	} else if ((global_history_tree) && (global_history_tree->toolbar) &&
+			(window == global_history_tree->toolbar->toolbar_handle)) {
+		sprintf(message_token, "HelpGHistoryToolbar%i", (int)icon);
 	} else if ((g = ro_gui_window_lookup(window)) != NULL) {
 		sprintf(message_token, "HelpBrowser%i", (int)icon);
 	} else if ((g = ro_gui_toolbar_lookup(window)) != NULL) {

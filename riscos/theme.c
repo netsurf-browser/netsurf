@@ -994,21 +994,23 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent) {
 	wimp_outline outline;
 	wimp_window_state state;
+	int height;
 	if (!toolbar) return false;
 
 	/*	Attach/close the window
 	*/
 	toolbar->parent_handle = parent;
-	if (toolbar->height > 0) {
+	height = ro_gui_theme_toolbar_height(toolbar);
+	if (height > 0) {
 		outline.w = parent;
 		xwimp_get_window_outline(&outline);
 		state.w = parent;
 		xwimp_get_window_state(&state);
 		state.w = toolbar->toolbar_handle;
 		state.visible.x1 = outline.outline.x1 - 2;
-		state.visible.y0 = state.visible.y1 - toolbar->height + 2;
+		state.visible.y0 = state.visible.y1 - height + 2;
 		state.xscroll = 0;
-		state.yscroll = 0;
+		state.yscroll = toolbar->height;	/* clipped by WIMP to extent */
 		xwimp_open_window_nested((wimp_open *)&state, parent,
 				wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 						<< wimp_CHILD_XORIGIN_SHIFT |
@@ -1090,6 +1092,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 	wimp_w parent = NULL;
 	wimp_outline outline;
 	wimp_window_state state;
+	int height = -1;
 	int throbber_x = -1;
 	int status_max;
 	int left_edge, right_edge, bottom_edge;
@@ -1144,6 +1147,46 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 			width = outline.outline.x1 - outline.outline.x0 - 2;
 		}
 	}
+	
+	/*	Find the parent visible height to clip our toolbar height to
+	*/
+	if ((toolbar->toolbar_handle) && (toolbar->parent_handle)) {
+		/*	Get the current state
+		*/
+		state.w = toolbar->parent_handle;
+		error = xwimp_get_window_state(&state);
+		if (error) {
+			LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return false;
+		}
+		
+		height = state.visible.y1 - state.visible.y0 + 2;
+		
+		/*	We can't obscure the height of the scroll bar as we lose the resize
+			icon if we do.
+		*/
+		if ((state.flags & wimp_WINDOW_SIZE_ICON) && !(state.flags & wimp_WINDOW_HSCROLL))
+			height -= ro_get_hscroll_height(0) - 2;
+	
+		/*	Update our position
+		*/
+		if (height != toolbar->max_height) {
+			if ((state.flags & wimp_WINDOW_SIZE_ICON) &&
+					!(state.flags & wimp_WINDOW_HSCROLL) &&
+					(toolbar->height > toolbar->max_height))
+				xwimp_force_redraw(toolbar->parent_handle,
+					0, -16384, 16384, 16384);
+			toolbar->max_height = height;
+			ro_gui_theme_attach_toolbar(toolbar, toolbar->parent_handle);
+			if ((state.flags & wimp_WINDOW_SIZE_ICON) &&
+					!(state.flags & wimp_WINDOW_HSCROLL) &&
+					(toolbar->height > toolbar->max_height))
+				xwimp_force_redraw(toolbar->parent_handle,
+					0, -16384, 16384, 16384);
+		}
+	}	
 
 	/*	Reformat the buttons starting with the throbber
 	*/

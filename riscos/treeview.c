@@ -121,6 +121,8 @@ void tree_redraw_area(struct tree *tree, int x, int y, int width, int height) {
 	assert(tree);
 	assert(tree->handle);
 
+	if (tree->toolbar)
+		y += ro_gui_theme_toolbar_height(tree->toolbar);
 	error = xwimp_force_redraw((wimp_w)tree->handle, tree->offset_x + x - 2,
 			-tree->offset_y - y - height, tree->offset_x + x + width + 4,
 			-tree->offset_y - y);
@@ -177,19 +179,24 @@ void tree_draw_line(struct tree *tree, int x, int y, int width, int height) {
 void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 	os_error *error;
 	int temp;
+	int toolbar_height = 0;
 
 	assert(tree);
 	assert(element);
 	assert(element->parent);
+	
+	if (tree->toolbar)
+		toolbar_height = ro_gui_theme_toolbar_height(tree->toolbar);
+
 
 	ro_gui_tree_icon.flags = wimp_ICON_INDIRECTED | wimp_ICON_VCENTRED |
 			(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT);
 	ro_gui_tree_icon.extent.x0 = tree->offset_x + element->box.x;
-	ro_gui_tree_icon.extent.y1 = -tree->offset_y - element->box.y;
+	ro_gui_tree_icon.extent.y1 = -tree->offset_y - element->box.y - toolbar_height;
 	ro_gui_tree_icon.extent.x1 = tree->offset_x + element->box.x +
 			element->box.width;
 	ro_gui_tree_icon.extent.y0 = -tree->offset_y - element->box.y -
-			element->box.height;
+			element->box.height - toolbar_height;
 	if (&element->parent->data == element) {
 		if (element->parent->selected)
 			ro_gui_tree_icon.flags |= wimp_ICON_SELECTED;
@@ -319,6 +326,8 @@ void tree_initialise_redraw(struct tree *tree) {
 
 	ro_gui_tree_origin_x = state.visible.x0 - state.xscroll + tree->offset_x;
 	ro_gui_tree_origin_y = state.visible.y1 - state.yscroll - tree->offset_y;
+	if (tree->toolbar)
+		ro_gui_tree_origin_y -= ro_gui_theme_toolbar_height(tree->toolbar);
 }
 
 
@@ -530,6 +539,7 @@ void tree_resized(struct tree *tree) {
 void ro_gui_tree_redraw(wimp_draw *redraw, struct tree *tree) {
 	osbool more;
 	int clip_x0, clip_x1, clip_y0, clip_y1, origin_x, origin_y;
+	
 
 	more = wimp_redraw_window(redraw);
 	while (more) {
@@ -539,6 +549,8 @@ void ro_gui_tree_redraw(wimp_draw *redraw, struct tree *tree) {
 		clip_y1 = redraw->clip.y1;
 		origin_x = redraw->box.x0 - redraw->xscroll;
 		origin_y = redraw->box.y1 - redraw->yscroll;
+		if (tree->toolbar)
+			origin_y -= ro_gui_theme_toolbar_height(tree->toolbar);
 		tree_draw(tree, clip_x0 - origin_x - tree->offset_x,
 				origin_y - clip_y1 - tree->offset_y,
 				clip_x1 - clip_x0, clip_y1 - clip_y0);
@@ -806,11 +818,10 @@ void ro_gui_tree_menu_closed(struct tree *tree) {
  *
  * \param pointer  the pointer state
  */
-void ro_gui_tree_toolbar_click(wimp_pointer* pointer, struct tree *tree,
-		struct toolbar *toolbar) {
+void ro_gui_tree_toolbar_click(wimp_pointer* pointer, struct tree *tree) {
 	struct node *node;
 
-	current_toolbar = toolbar;
+	current_toolbar = tree->toolbar;
 	ro_gui_tree_stop_edit(tree);
 
 	switch (pointer->i) {
@@ -855,12 +866,15 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
 	os_error *error;
 	wimp_window_state state;
 	struct node *parent;
+	int toolbar_height = 0;
 
 	assert(tree);
 	assert(element);
 
 	if (tree->editing)
 		ro_gui_tree_stop_edit(tree);
+	if (tree->toolbar)
+		toolbar_height = ro_gui_theme_toolbar_height(tree->toolbar);
 
 	parent = element->parent;
 	if (&parent->data == element)
@@ -879,8 +893,9 @@ void ro_gui_tree_start_edit(struct tree *tree, struct node_element *element,
 	ro_gui_tree_edit_icon.icon.extent.x0 = tree->offset_x + element->box.x - 2;
 	ro_gui_tree_edit_icon.icon.extent.x1 = tree->offset_x +
 			element->box.x + element->box.width + 2;
-	ro_gui_tree_edit_icon.icon.extent.y1 = -tree->offset_y - element->box.y;
-	ro_gui_tree_edit_icon.icon.extent.y0 = -tree->offset_y -
+	ro_gui_tree_edit_icon.icon.extent.y1 = -tree->offset_y - toolbar_height -
+			element->box.y;
+	ro_gui_tree_edit_icon.icon.extent.y0 = -tree->offset_y - toolbar_height -
 			element->box.y - element->box.height;
 	if (element->type == NODE_ELEMENT_TEXT_PLUS_SPRITE)
 		ro_gui_tree_edit_icon.icon.extent.x0 += NODE_INSTEP;
@@ -951,8 +966,12 @@ void ro_gui_tree_scroll_visible(struct tree *tree, struct node_element *element)
 	wimp_window_state state;
 	int x0, x1, y0, y1;
 	os_error *error;
+	int toolbar_height = 0;
 
 	assert(element);
+
+	if (tree->toolbar)
+		toolbar_height = ro_gui_theme_toolbar_height(tree->toolbar);
 
 	state.w = (wimp_w)tree->handle;
 	error = xwimp_get_window_state(&state);
@@ -964,16 +983,17 @@ void ro_gui_tree_scroll_visible(struct tree *tree, struct node_element *element)
 	x0 = state.xscroll;
 	y0 = -state.yscroll;
 	x1 = x0 + state.visible.x1 - state.visible.x0 - tree->offset_x;
-	y1 = y0 - state.visible.y0 + state.visible.y1 - tree->offset_y;
+	y1 = y0 - state.visible.y0 + state.visible.y1 - tree->offset_y - toolbar_height;
 
-	state.yscroll = state.visible.y1 - state.visible.y0 - tree->offset_y - y1;
+	state.yscroll = state.visible.y1 - state.visible.y0 - tree->offset_y -
+			toolbar_height - y1;
 	if ((element->box.y >= y0) && (element->box.y + element->box.height <= y1))
 		return;
 	if (element->box.y < y0)
 		state.yscroll = -element->box.y;
 	if (element->box.y + element->box.height > y1)
 		state.yscroll = state.visible.y1 - state.visible.y0 -
-				tree->offset_y -
+				tree->offset_y - toolbar_height -
 				(element->box.y + element->box.height);
 	ro_gui_tree_open((wimp_open *)&state, tree);
 }
@@ -982,16 +1002,18 @@ void ro_gui_tree_scroll_visible(struct tree *tree, struct node_element *element)
 /**
  * Shows the a tree window.
  */
-void ro_gui_tree_show(struct tree *tree, struct toolbar *toolbar) {
+void ro_gui_tree_show(struct tree *tree) {
 	os_error *error;
 	int screen_width, screen_height;
 	wimp_window_state state;
 	int dimension;
 	int scroll_width;
+	struct toolbar *toolbar;
 
 	/*	We may have failed to initialise
 	*/
 	if (!tree) return;
+	toolbar = tree->toolbar;
 
 	/*	Get the window state
 	*/
@@ -1033,7 +1055,7 @@ void ro_gui_tree_show(struct tree *tree, struct toolbar *toolbar) {
 		state.xscroll = 0;
 		state.yscroll = 0;
 		if (toolbar)
-			state.yscroll = toolbar->height;
+			state.yscroll = ro_gui_theme_toolbar_height(toolbar);
 	}
 
 	/*	Open the window at the top of the stack
@@ -1057,13 +1079,19 @@ void ro_gui_tree_open(wimp_open *open, struct tree *tree) {
 	os_error *error;
 	int width;
 	int height;
+	int toolbar_height = 0;
+	
+	if (!tree)
+		return;
+	if (tree->toolbar)
+		toolbar_height = ro_gui_theme_toolbar_height(tree->toolbar);
 
 	width = open->visible.x1 - open->visible.x0;
 	if (width < (tree->offset_x + tree->width))
 		width = tree->offset_x + tree->width;
 	height = open->visible.y1 - open->visible.y0;
-	if (height < (tree->offset_y + tree->height))
-		height = tree->offset_y + tree->height;
+	if (height < (tree->offset_y + toolbar_height + tree->height))
+		height = tree->offset_y + toolbar_height + tree->height;
 
 	if ((height != tree->window_height) || (width != tree->window_width)) {
 		os_box extent = { 0, -height, width, 0};
@@ -1083,6 +1111,9 @@ void ro_gui_tree_open(wimp_open *open, struct tree *tree) {
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
+	if (tree->toolbar)
+		ro_gui_theme_process_toolbar(tree->toolbar, -1);
+
 }
 
 
@@ -1159,6 +1190,11 @@ void ro_gui_tree_selection_drag_end(wimp_dragged *drag) {
 	wimp_auto_scroll_info scroll;
 	os_error *error;
 	int x0, y0, x1, y1;
+	int toolbar_height = 0;
+	
+	if (ro_gui_tree_current_drag_tree->toolbar)
+		toolbar_height = ro_gui_theme_toolbar_height(
+				ro_gui_tree_current_drag_tree->toolbar);
 
 	scroll.w = (wimp_w)ro_gui_tree_current_drag_tree->handle;
 	error = xwimp_auto_scroll(0, &scroll, 0);
@@ -1177,11 +1213,11 @@ void ro_gui_tree_selection_drag_end(wimp_dragged *drag) {
 	x0 = drag->final.x0 - state.visible.x0 - state.xscroll +
 			ro_gui_tree_current_drag_tree->offset_x;
 	y0 = state.visible.y1 - state.yscroll - drag->final.y0 -
-			ro_gui_tree_current_drag_tree->offset_y;
+			ro_gui_tree_current_drag_tree->offset_y - toolbar_height;
 	x1 = drag->final.x1 - state.visible.x0 - state.xscroll +
 			ro_gui_tree_current_drag_tree->offset_x;
 	y1 = state.visible.y1 - state.yscroll - drag->final.y1 -
-			ro_gui_tree_current_drag_tree->offset_y;
+			ro_gui_tree_current_drag_tree->offset_y - toolbar_height;
 	tree_handle_selection_area(ro_gui_tree_current_drag_tree, x0, y0,
 		x1 - x0, y1 - y0,
 		(ro_gui_tree_current_drag_buttons == (wimp_CLICK_ADJUST << 4)));
@@ -1220,6 +1256,8 @@ void ro_gui_tree_get_tree_coordinates(struct tree *tree, int x, int y,
 	}
 	*tree_x = x - state.visible.x0 - state.xscroll + tree->offset_x;
 	*tree_y = state.visible.y1 - state.yscroll - y - tree->offset_y;
+	if (tree->toolbar)
+		*tree_y -= ro_gui_theme_toolbar_height(tree->toolbar);
 }
 
 
