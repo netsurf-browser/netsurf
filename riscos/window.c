@@ -809,7 +809,9 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer) {
 		return;
 	}
 
-	if (pointer->buttons == wimp_CLICK_SELECT && caret.w != state.w) {
+	if (((pointer->buttons == wimp_CLICK_SELECT) ||
+			(pointer->buttons == wimp_CLICK_ADJUST)) &&
+		 	(caret.w != state.w)) {
 		error = xwimp_set_caret_position(state.w, -1, -100,
 						-100, 32, -1);
 		if (error) {

@@ -108,6 +108,8 @@ WimpError:An unexpected Window Manager error occurred:
 Template:A window template is missing from the Templates file. Please reinstall NetSurf.
 MiscError:An unexpected error occurred:
 FileError:File does not exist:
+HotlistSaveError:The hotlist was unable to be correctly saved.
+HotlistLoadError:The hotlist was unable to be correctly loaded.
 
 # Some general purpose words and phrases
 Bytes: B

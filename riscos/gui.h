@@ -183,6 +183,7 @@ void ro_gui_hotlist_redraw(wimp_draw *redraw);
 void ro_gui_hotlist_click(wimp_pointer *pointer);
 void ro_gui_hotlist_selection_drag_end(wimp_dragged *drag);
 void ro_gui_hotlist_move_drag_end(wimp_dragged *drag);
+bool ro_gui_hotlist_keypress(int key);
 
 /* in save.c */
 void ro_gui_save_click(wimp_pointer *pointer);

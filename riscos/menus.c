@@ -16,6 +16,7 @@
 #include <string.h>
 #include "oslib/os.h"
 #include "oslib/wimp.h"
+#include "oslib/wimpspriteop.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
@@ -857,6 +858,14 @@ void ro_gui_menu_prepare_save(struct content *c)
 	if ((nice = url_nice(c->url)))
 		name = nice;
 
+	/*	Ensure the correct icon exists
+	*/
+	if (xwimpspriteop_read_sprite_info(icon, 0, 0, 0, 0)) {
+		icon = "file_xxx";
+	}
+
+	/*	Update the GUI
+	*/
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_ICON, icon);
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);
 }

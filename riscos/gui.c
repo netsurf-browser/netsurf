@@ -771,6 +771,17 @@ void ro_gui_drag_end(wimp_dragged *drag)
 void ro_gui_keypress(wimp_key *key)
 {
 	bool handled = false;
+	
+	/*	Check for hotlist windows
+	*/
+	if (key->w == hotlist_window) {
+		handled = ro_gui_hotlist_keypress(key->c);
+		if (!handled) wimp_process_key(key->c);
+		return;
+	}
+	
+	/*	Handle the rest
+	*/
 	gui_window *g = ro_gui_window_lookup(key->w);
 
 	if (!g) {

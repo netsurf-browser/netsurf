@@ -108,6 +108,8 @@ WimpError:Une erreur inattendue du Window Manager s'est produite:
 Template:Un modèle de fenêtre est absent du fichier Templates. Réinstallez NetSurf SVP.
 MiscError:Une erreur inattendue s'est produite:
 FileError:Le fichier n'existe pas:
+HotlistSaveError:The hotlist was unable to be correctly saved.
+HotlistLoadError:The hotlist was unable to be correctly loaded.
 
 # Some general purpose words and phrases
 Bytes: O
