@@ -3,9 +3,9 @@ Set NetSurf$Dir <Obey$Dir>
 Set File$Type_F79 CSS
 
 | Application system variables
-Set NetSurf$Help <NetSurf$Dir>.Docs.docs/en
+Set NetSurf$Help <NetSurf$Dir>.Docs.docs_en
 Set NetSurf$Version "Development Build"
-Set NetSurf$Web "http://www.netsurf.sourceforge.net/"
+Set NetSurf$Web "http://netsurf.sourceforge.net/"
 Set NetSurf$Title "NetSurf"
 Set NetSurf$Publisher "The NetSurf Developers"
 Set NetSurf$Description "Web browser"
