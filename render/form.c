@@ -159,11 +159,16 @@ bool form_successful_controls(struct form *form,
 					continue;
 				value = strdup(control->value);
 				if (!value) {
-					LOG(("failed to duplicate value"
-						"'%s' for control %s",
+					/* no current value -> use "" */
+					value = strdup("");
+					if (!value) {
+						LOG(("failed to duplicate"
+							"value '%s' for"
+							"control %s",
 							control->value,
 							control->name));
-					goto no_memory;
+						goto no_memory;
+					}
 				}
 				break;
 
