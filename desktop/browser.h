@@ -1,5 +1,5 @@
 /**
- * $Id: browser.h,v 1.1 2002/09/11 14:24:02 monkeyson Exp $
+ * $Id: browser.h,v 1.2 2002/09/26 21:38:32 bursa Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
@@ -10,6 +10,7 @@
 #include "netsurf/render/box.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/fetch.h"
+#include "netsurf/riscos/font.h"
 
 typedef int browser_window_flags;
 #define browser_TOOLBAR             ((browser_window_flags) 1)
@@ -58,6 +59,7 @@ struct content
         enum {alter_UNKNOWN, alter_START, alter_END} altering;
         int selected; /* 0 = unselected, 1 = selected */
       } text_selection;
+      struct font_set* fonts;
     } html;
   } data;
   struct fetch* main_fetch;

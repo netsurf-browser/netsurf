@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.1 2002/09/11 14:24:02 monkeyson Exp $
+ * $Id: gui.c,v 1.2 2002/09/26 21:38:33 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -264,7 +264,7 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
   struct box * c;
   const char * const noname = "";
   const char * name = noname;
-  font_f font;
+  char *text;
 
   switch (box->type)
   {
@@ -298,8 +298,6 @@ void ro_gui_window_redraw_box(gui_window* g, struct box * box, signed long x, si
 
     if (box->type == BOX_INLINE)
     {
-
-      font = riscos_font_css_to_handle(box->style);
 
 if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
 {
@@ -359,13 +357,13 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
       }
 }
 
-      font_paint(font, (char*) box->text,
-        font_OS_UNITS | font_GIVEN_LENGTH | font_GIVEN_FONT | font_KERN,
+      text = font_utf8_to_string(box->font, box->text, box->length);
+      font_paint(box->font->handle[0], text,
+        font_OS_UNITS | font_GIVEN_FONT | font_KERN,
         x + box->x * 2, y - box->y * 2 - box->height * 2,
         NULL, NULL,
-        box->length);
-
-       font_lose_font(font);
+        0);
+      free(text);
 
     }
   }

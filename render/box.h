@@ -1,5 +1,5 @@
 /**
- * $Id: box.h,v 1.10 2002/09/19 19:54:43 bursa Exp $
+ * $Id: box.h,v 1.11 2002/09/26 21:38:33 bursa Exp $
  */
 
 #ifndef _NETSURF_RENDER_BOX_H_
@@ -8,6 +8,7 @@
 #include <limits.h>
 #include "libxml/HTMLparser.h"
 #include "netsurf/render/css.h"
+#include "netsurf/riscos/font.h"
 
 /**
  * structures
@@ -43,6 +44,7 @@ struct box {
 	struct box * float_children;
 	struct box * next_float;
 	struct column *col;
+	struct font_data *font;
 };
 
 #define UNKNOWN_WIDTH ULONG_MAX
@@ -55,7 +57,7 @@ struct box {
 void xml_to_box(xmlNode * n, struct css_style * parent_style, struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
-		const char *href);
+		const char *href, struct font_set *fonts);
 void box_dump(struct box * box, unsigned int depth);
 void box_free(struct box *box);
 

@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.1 2002/09/11 14:24:02 monkeyson Exp $
+ * $Id: browser.c,v 1.2 2002/09/26 21:38:32 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <limits.h>
+#include <time.h>
 
 struct box_selection
 {
@@ -40,6 +41,7 @@ void content_destroy(struct content* c)
   {
     case CONTENT_HTML:
       /* free other memory here */
+      font_free_set(c->data.html.fonts);
       break;
     default:
       break;
@@ -138,8 +140,10 @@ void content_html_reformat(struct content* c, int width)
   c->data.html.layout->type = BOX_BLOCK;
   c->data.html.layout->node = c->data.html.markup;
 
+  c->data.html.fonts = font_new_set();
+
   Log("content_html_reformat", "XML to box");
-  xml_to_box(c->data.html.markup, c->data.html.style, c->data.html.stylesheet, &selector, 0, c->data.html.layout, 0, 0);
+  xml_to_box(c->data.html.markup, c->data.html.style, c->data.html.stylesheet, &selector, 0, c->data.html.layout, 0, 0, c->data.html.fonts);
   Log("content_html_reformat", "Layout document");
   layout_document(c->data.html.layout->children, (unsigned long)width);
 
@@ -150,6 +154,9 @@ void content_html_reformat(struct content* c, int width)
 
 void browser_window_reformat(struct browser_window* bw)
 {
+  char status[100];
+  clock_t time0, time1;
+
   Log("browser_window_reformat", "Entering...");
   if (bw == NULL)
     return;
@@ -161,7 +168,9 @@ void browser_window_reformat(struct browser_window* bw)
     case CONTENT_HTML:
       Log("browser_window_reformat", "HTML content.");
       browser_window_set_status(bw, "Formatting page...");
+      time0 = clock();
       content_html_reformat(bw->current_content, bw->format_width);
+      time1 = clock();
       Log("browser_window_reformat", "Content reformatted");
       if (bw->current_content->data.html.layout != NULL)
       {
@@ -172,7 +181,8 @@ void browser_window_reformat(struct browser_window* bw)
         Log("browser_window_reformat", "Redraw window");
         gui_window_redraw_window(bw->window);
         Log("browser_window_reformat", "Complete");
-        browser_window_set_status(bw, "Format complete.");
+        sprintf(status, "Format complete (%gs).", ((float) time1 - time0) / CLOCKS_PER_SEC);
+        browser_window_set_status(bw, status);
       }
       else
       {
@@ -541,7 +551,7 @@ void browser_window_text_selection(struct browser_window* bw,
       end = &(bw->current_content->data.html.text_selection.end);
 
       font_position_in_string(click_boxes[i].box->text,
-          click_boxes[i].box->style, click_boxes[i].box->length,
+          click_boxes[i].box->font, click_boxes[i].box->length,
           click_x - click_boxes[i].actual_x,
           &click_char_offset, &click_pixel_offset);
 

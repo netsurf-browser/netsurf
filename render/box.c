@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.16 2002/09/19 19:54:43 bursa Exp $
+ * $Id: box.c,v 1.17 2002/09/26 21:38:32 bursa Exp $
  */
 
 #include <assert.h>
@@ -10,7 +10,7 @@
 #include "libxml/HTMLparser.h"
 #include "utf-8.h"
 #include "netsurf/render/css.h"
-#include "netsurf/render/font.h"
+#include "netsurf/riscos/font.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/utils.h"
 
@@ -25,7 +25,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
-		const char *href);
+		const char *href, struct font_set *fonts);
 struct css_style * box_get_style(struct css_stylesheet * stylesheet, struct css_style * parent_style,
 		xmlNode * n, struct css_selector * selector, unsigned int depth);
 void box_normalise_block(struct box *block);
@@ -74,6 +74,7 @@ struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
 	box->float_children = 0;
 	box->next_float = 0;
 	box->col = 0;
+	box->font = 0;
 	return box;
 }
 
@@ -120,10 +121,10 @@ void xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
-		const char *href)
+		const char *href, struct font_set *fonts)
 {
 	convert_xml_to_box(n, parent_style, stylesheet,
-			selector, depth, parent, inline_container, href);
+			selector, depth, parent, inline_container, href, fonts);
 	box_normalise_block(parent->children);
 }
 
@@ -132,7 +133,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		struct css_stylesheet * stylesheet,
 		struct css_selector ** selector, unsigned int depth,
 		struct box * parent, struct box * inline_container,
-		const char *href)
+		const char *href, struct font_set *fonts)
 {
 	struct box * box;
 	struct box * inline_container_c;
@@ -174,8 +175,9 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 		}
 		if (n->type == XML_TEXT_NODE) {
 			box = box_create(n, BOX_INLINE, parent_style, href);
-			box->text = squash_whitespace(tolat1(n->content));
+			box->text = squash_whitespace(n->content);
 			box->length = strlen(box->text);
+			box->font = font_open(fonts, box->style);
 			box_add_child(inline_container, box);
 		} else {
 			box = box_create(0, BOX_FLOAT_LEFT, 0, href);
@@ -197,14 +199,14 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				for (c = n->children; c != 0; c = c->next)
 					inline_container_c = convert_xml_to_box(c, style, stylesheet,
 							selector, depth + 1, box, inline_container_c,
-							href);
+							href, fonts);
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_INLINE:  /* inline elements get no box, but their children do */
 				for (c = n->children; c != 0; c = c->next)
 					inline_container = convert_xml_to_box(c, style, stylesheet,
 							selector, depth + 1, parent, inline_container,
-							href);
+							href, fonts);
 				break;
 			case CSS_DISPLAY_TABLE:
 				box = box_create(n, BOX_TABLE, style, href);
@@ -212,7 +214,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				for (c = n->children; c != 0; c = c->next)
 					convert_xml_to_box(c, style, stylesheet,
 							selector, depth + 1, box, 0,
-							href);
+							href, fonts);
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_TABLE_ROW_GROUP:
@@ -224,7 +226,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				for (c = n->children; c != 0; c = c->next)
 					inline_container_c = convert_xml_to_box(c, style, stylesheet,
 							selector, depth + 1, box, inline_container_c,
-							href);
+							href, fonts);
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_TABLE_ROW:
@@ -233,7 +235,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				for (c = n->children; c != 0; c = c->next)
 					convert_xml_to_box(c, style, stylesheet,
 							selector, depth + 1, box, 0,
-							href);
+							href, fonts);
 				inline_container = 0;
 				break;
 			case CSS_DISPLAY_TABLE_CELL:
@@ -248,7 +250,7 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 				for (c = n->children; c != 0; c = c->next)
 					inline_container_c = convert_xml_to_box(c, style, stylesheet,
 							selector, depth + 1, box, inline_container_c,
-							href);
+							href, fonts);
 				inline_container = 0;
 				break;
 			default:
@@ -446,7 +448,7 @@ void box_normalise_table(struct box *table)
 			case BOX_TABLE_ROW:
 			case BOX_TABLE_CELL:
 				/* insert implied table row group */
-				fprintf(stderr, "inserting implied table row group\n");
+/* 				fprintf(stderr, "inserting implied table row group\n"); */
 				style = xcalloc(1, sizeof(struct css_style));
 				memcpy(style, table->style, sizeof(struct css_style));
 				css_cascade(style, &css_blank_style);

@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.18 2002/09/19 19:54:43 bursa Exp $
+ * $Id: layout.c,v 1.19 2002/09/26 21:38:33 bursa Exp $
  */
 
 #include <assert.h>
@@ -9,7 +9,7 @@
 #include <string.h>
 #include "libxml/HTMLparser.h"
 #include "netsurf/render/css.h"
-#include "netsurf/render/font.h"
+#include "netsurf/riscos/font.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/utils.h"
 #include "netsurf/render/layout.h"
@@ -308,7 +308,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			b->height = h;
 			if (h > height) height = h;
 			if (b->width == UNKNOWN_WIDTH)
-				b->width = font_width(b->style, b->text, b->length);
+				b->width = font_width(b->font, b->text, b->length);
 			x += b->width;
 		}
 	}
@@ -369,7 +369,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		if (space == 0)
 			wp = w = c->width;
 		else
-			wp = w = font_width(c->style, c->text, space - c->text);
+			wp = w = font_width(c->font, c->text, space - c->text);
 
 		if (x1 - x0 < xp + w && left == 0 && right == 0 && c == first) {
 			/* first word doesn't fit, but no floats and first on line so force in */
@@ -385,6 +385,8 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 				c->next = c2;
 				b = c2;
 			}
+			c->width = wp;
+			x = xp + wp;
 /* 			fprintf(stderr, "layout_line:     overflow, forcing\n"); */
 		} else if (x1 - x0 < xp + w) {
 			/* first word doesn't fit, but full width not available so leave for later */
@@ -393,13 +395,15 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 		} else {
 			/* fit as many words as possible */
 			assert(space != 0);
-			while (xp + w < x1 - x0) {
+			while (xp + w < x1 - x0 && space2 != 0) {
 /* 				fprintf(stderr, "%li + %li = %li < %li = %li - %li\n", */
 /* 						xp, w, xp + w, x1 - x0, x1, x0); */
 				space = space2;
 				wp = w;
 				space2 = strchr(space + 1, ' ');
-				w = font_width(c->style, c->text, space2 - c->text);
+				if (space2 == 0)
+					space2 = c->text + c->length;
+				w = font_width(c->font, c->text, space2 - c->text);
 			}
 			c2 = memcpy(xcalloc(1, sizeof(struct box)), c, sizeof(struct box));
 			c2->text = xstrdup(space + 1);
@@ -409,10 +413,10 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			c2->next = c->next;
 			c->next = c2;
 			b = c2;
+			c->width = wp;
+			x = xp + wp;
 /* 			fprintf(stderr, "layout_line:     overflow, fit\n"); */
 		}
-		c->width = wp;
-		x = xp + wp;
 		move_y = 1;
 	}
 
@@ -509,7 +513,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 			break;
 	}
 
-	fprintf(stderr, "table width %lu, min %lu, max %lu\n", table_width, table->min_width, table->max_width);
+/* 	fprintf(stderr, "table width %lu, min %lu, max %lu\n", table_width, table->min_width, table->max_width); */
 
 	/* percentage width columns give an upper bound if possible */
 	for (i = 0; i < table->columns; i++) {
@@ -537,7 +541,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
         	/* space between min and max: fill it exactly */
         	float scale = (float) (table_width - table->min_width) /
         			(float) (max_width - table->min_width);
-        	fprintf(stderr, "filling, scale %f\n", scale);
+/*         	fprintf(stderr, "filling, scale %f\n", scale); */
 		for (i = 0; i < table->columns; i++) {
 			table->col[i].width = table->col[i].min +
 					(table->col[i].max - table->col[i].min) * scale;
@@ -651,7 +655,7 @@ void calculate_inline_container_widths(struct box *box)
 		switch (child->type) {
 			case BOX_INLINE:
 				/* max = all one line */
-				child->width = font_width(child->style,
+				child->width = font_width(child->font,
 						child->text, child->length);
 				max += child->width;
 
@@ -659,10 +663,10 @@ void calculate_inline_container_widths(struct box *box)
 				for (word = child->text, space = strchr(child->text, ' ');
 						space != 0;
 						word = space + 1, space = strchr(word, ' ')) {
-					width = font_width(child->style, word, space - word);
+					width = font_width(child->font, word, space - word);
 					if (min < width) min = width;
 				}
-				width = font_width(child->style, word, strlen(word));
+				width = font_width(child->font, word, strlen(word));
 				if (min < width) min = width;
 				break;
 
@@ -741,7 +745,7 @@ void calculate_table_widths(struct box *table)
 	for (i = 0; i < table->columns; i++) {
 		min_width += col[i].min;
 		max_width += col[i].max;
-		fprintf(stderr, "col %u, min %lu, max %lu\n", i, col[i].min, col[i].max);
+/* 		fprintf(stderr, "col %u, min %lu, max %lu\n", i, col[i].min, col[i].max); */
 	}
 	table->min_width = min_width;
 	table->max_width = max_width;
