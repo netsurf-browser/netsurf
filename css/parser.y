@@ -35,6 +35,7 @@ ws ::= .
 ws ::= ws_1.
 
 ws_1 ::= S.
+ws_1 ::= ws_1 S.
 
 statement_list ::= .
 statement_list ::= statement_list statement.
@@ -52,7 +53,7 @@ at_rule ::= ATKEYWORD(A) ws any_list(B) SEMI ws.
 
 block ::= LBRACE ws block_body RBRACE ws.
 block_body ::= .
-block_body ::= block_body any.
+block_body ::= block_body any ws.
 block_body ::= block_body block.
 block_body ::= block_body ATKEYWORD ws.
 block_body ::= block_body SEMI ws.
