@@ -11,11 +11,10 @@ css_font_style normal italic oblique
 css_font_variant normal smallcaps
 css_font_weight normal bold bolder lighter 100 200 300 400 500 600 700 800 900
 css_letter_spacing normal length
-css_line_height normal length number percent
 css_list_style_position outside inside
 css_list_style_type disc circle square decimal lower_alpha lower_roman upper_alpha upper_roman none
 css_margin auto length percent
-css_text_align left right center justify
+css_text_align inherit left right center justify
 css_text_decoration none blink line_through overline underline
 css_text_transform none capitalize lowercase uppercase
 css_vertical_align baseline bottom middle sub super text_bottom text_top top percent

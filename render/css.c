@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.3 2002/05/18 08:23:39 bursa Exp $
+ * $Id: css.c,v 1.4 2002/06/18 21:24:21 bursa Exp $
  */
 
 #include <string.h>
@@ -35,6 +35,7 @@ static void parse_display(struct css_style * const style, const char * const val
 static void parse_float(struct css_style * const style, const char * const value);
 static void parse_font_size(struct css_style * const style, const char * const value);
 static void parse_height(struct css_style * const style, const char * const value);
+static void parse_text_align(struct css_style * const style, const char * const value);
 static void parse_width(struct css_style * const style, const char * const value);
 static void parse_selector(struct css_selector * sel, char * const str);
 static unsigned int hash_str(const char * str);
@@ -48,13 +49,14 @@ static void update_style(struct css_stylesheet * stylesheet, struct css_selector
 static void dump_length(const struct css_length * const length);
 static void dump_selector(const struct css_selector * const sel);
 static void dump_rule(const struct rule * rule);
-static void css_dump_stylesheet(const struct css_stylesheet * stylesheet);
 
 const struct css_style css_base_style = {
 	CSS_DISPLAY_BLOCK,
 	CSS_FLOAT_NONE,
-	{ CSS_FONT_SIZE_ABSOLUTE, 10.0 },
+	{ CSS_FONT_SIZE_LENGTH, {12, CSS_UNIT_PT} },
 	{ CSS_HEIGHT_AUTO },
+	{ CSS_LINE_HEIGHT_ABSOLUTE, 1.2 },
+	CSS_TEXT_ALIGN_LEFT,
 	{ CSS_WIDTH_AUTO }
 };
 
@@ -63,6 +65,8 @@ const struct css_style css_empty_style = {
 	CSS_FLOAT_INHERIT,
 	{ CSS_FONT_SIZE_INHERIT },
 	{ CSS_HEIGHT_AUTO },
+	{ CSS_LINE_HEIGHT_INHERIT },
+	CSS_TEXT_ALIGN_INHERIT,
 	{ CSS_WIDTH_AUTO }
 };
 
@@ -71,6 +75,8 @@ const struct css_style css_blank_style = {
 	CSS_FLOAT_NONE,
 	{ CSS_FONT_SIZE_INHERIT },
 	{ CSS_HEIGHT_AUTO },
+	{ CSS_LINE_HEIGHT_INHERIT },
+	CSS_TEXT_ALIGN_INHERIT,
 	{ CSS_WIDTH_AUTO }
 };
 
@@ -118,8 +124,9 @@ static void parse_font_size(struct css_style * const style, const char * const v
 	unsigned int i;
 	for (i = 0; i < sizeof(font_size) / sizeof(struct font_size); i++) {
 		if (strcmp(value, font_size[i].keyword) == 0) {
-			style->font_size.size = CSS_FONT_SIZE_ABSOLUTE;
-			style->font_size.value.absolute = font_size[i].size;
+			style->font_size.size = CSS_FONT_SIZE_LENGTH;
+			style->font_size.value.length.unit = CSS_UNIT_PT;
+			style->font_size.value.length.value = font_size[i].size * 12;
 			return;
 		}
 	}
@@ -144,6 +151,23 @@ static void parse_height(struct css_style * const style, const char * const valu
 		style->height.height = CSS_HEIGHT_LENGTH;
 }
 
+static void parse_line_height(struct css_style * const style, const char * const value)
+{
+	if (strcmp(value, "normal") == 0)
+		style->line_height.size = CSS_LINE_HEIGHT_ABSOLUTE,
+		style->line_height.value.absolute = 1.0;
+	else if (strrchr(value, '%'))
+		style->line_height.size = CSS_LINE_HEIGHT_PERCENT,
+		style->line_height.value.percent = atof(value);
+	else if (parse_length(&style->line_height.value.length, value) == 0)
+		style->line_height.size = CSS_LINE_HEIGHT_LENGTH;
+}
+
+static void parse_text_align(struct css_style * const style, const char * const value)
+{
+	style->text_align = css_text_align_parse(value);
+}
+
 static void parse_width(struct css_style * const style, const char * const value)
 {
 	if (strcmp(value, "auto") == 0)
@@ -163,6 +187,8 @@ static struct property {
 	{ "float", parse_float },
 	{ "font-size", parse_font_size },
 	{ "height", parse_height },
+	{ "line-height", parse_line_height },
+	{ "text-align", parse_text_align },
 	{ "width", parse_width },
 };
 
@@ -183,7 +209,7 @@ void css_parse_property_list(struct css_style * style, char * str)
 		*value = 0; value++;
 		prop = strip(str);
 		value = strip(value);
-		/*printf("css_parse: '%s' => '%s'\n", prop, value);*/
+		/*fprintf(stderr, "css_parse: '%s' => '%s'\n", prop, value);*/
 
 		for (i = 0; i < sizeof(property) / sizeof(struct property); i++) {
 			if (strcmp(prop, property[i].name) == 0) {
@@ -325,10 +351,10 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 
 	} else {
 		qsort(decl, decls, sizeof(struct decl), (int (*) (const void *, const void *)) cmpdecl);
-	
+
 		for (d = 0; d < decls; d++) {
-/* 			printf("%i: 0x%lx\n", d, decl[d].score); */
-/*	 		css_dump_rule(decl[d].rule); */
+/* 			fprintf(stderr, "%i: 0x%lx\n", d, decl[d].score); */
+/*	 		dump_rule(decl[d].rule);*/
 			css_cascade(style, decl[d].rule->style);
 		}
 	}
@@ -340,7 +366,7 @@ static void update_style(struct css_stylesheet * stylesheet, struct css_selector
  	struct rule * rule = find_rule(stylesheet, selector, selectors);
  	if (rule == 0) {
 	 	unsigned int h = hash_str(selector[selectors - 1].element);
-	 	/*printf("update_style: not present - adding\n");*/
+	 	/*fprintf(stderr, "update_style: not present - adding\n");*/
  		rule = xcalloc(1, sizeof(struct rule));
 		rule->selector = selector;
 		rule->selectors = selectors;
@@ -350,7 +376,7 @@ static void update_style(struct css_stylesheet * stylesheet, struct css_selector
 		rule->next = stylesheet->hash[h];
 		stylesheet->hash[h] = rule;
  	} else {
-	 	/*printf("update_style: already present - updating\n");*/
+	 	/*fprintf(stderr, "update_style: already present - updating\n");*/
 		css_parse_property_list(rule->style, str);
 		free(selector);
  	}
@@ -392,7 +418,7 @@ void css_parse_stylesheet(struct css_stylesheet * stylesheet, char * str)
 			if (comma != 0) *comma = 0;
 
 			sel_str = strip(sels_str);
-			/*printf("css_parse_stylesheet: %s\n", sel_str);*/
+			/*fprintf(stderr, "css_parse_stylesheet: %s\n", sel_str);*/
 			do {
 				space = strchr(sel_str, ' ');
 				if (space != 0) *space = 0;
@@ -418,50 +444,60 @@ void css_parse_stylesheet(struct css_stylesheet * stylesheet, char * str)
 
 static void dump_length(const struct css_length * const length)
 {
-	printf("%g%s", length->value,
+	fprintf(stderr, "%g%s", length->value,
 	               css_unit_name[length->unit]);
 }
 
 void css_dump_style(const struct css_style * const style)
 {
-	puts("{");
-	printf("\tdisplay: %s;\n", css_display_name[style->display]);
-	printf("\tfloat: %s;\n", css_float_name[style->float_]);
-	printf("\tfont-size: ");
+	fprintf(stderr, "{ ");
+	fprintf(stderr, "display: %s; ", css_display_name[style->display]);
+	fprintf(stderr, "float: %s; ", css_float_name[style->float_]);
+	fprintf(stderr, "font-size: ");
 	switch (style->font_size.size) {
-		case CSS_FONT_SIZE_ABSOLUTE: printf("[%g]", style->font_size.value.absolute); break;
+		case CSS_FONT_SIZE_ABSOLUTE: fprintf(stderr, "[%g]", style->font_size.value.absolute); break;
 		case CSS_FONT_SIZE_LENGTH:   dump_length(&style->font_size.value.length); break;
-		case CSS_FONT_SIZE_PERCENT:  printf("%g%%", style->font_size.value.percent); break;
-		case CSS_FONT_SIZE_INHERIT:  printf("inherit"); break;
-		default:                     printf("UNKNOWN"); break;
+		case CSS_FONT_SIZE_PERCENT:  fprintf(stderr, "%g%%", style->font_size.value.percent); break;
+		case CSS_FONT_SIZE_INHERIT:  fprintf(stderr, "inherit"); break;
+		default:                     fprintf(stderr, "UNKNOWN"); break;
 	}
-	puts(";");
-	printf("\theight: ");
+	fprintf(stderr, "; ");
+	fprintf(stderr, "height: ");
 	switch (style->height.height) {
-		case CSS_HEIGHT_AUTO:   printf("auto"); break;
+		case CSS_HEIGHT_AUTO:   fprintf(stderr, "auto"); break;
 		case CSS_HEIGHT_LENGTH: dump_length(&style->height.length); break;
-		default:                printf("UNKNOWN"); break;
+		default:                fprintf(stderr, "UNKNOWN"); break;
 	}
-	puts(";");
-	printf("\twidth: ");
+	fprintf(stderr, "; ");
+	fprintf(stderr, "line-height: ");
+	switch (style->line_height.size) {
+		case CSS_LINE_HEIGHT_ABSOLUTE: fprintf(stderr, "[%g]", style->line_height.value.absolute); break;
+		case CSS_LINE_HEIGHT_LENGTH:   dump_length(&style->line_height.value.length); break;
+		case CSS_LINE_HEIGHT_PERCENT:  fprintf(stderr, "%g%%", style->line_height.value.percent); break;
+		case CSS_LINE_HEIGHT_INHERIT:  fprintf(stderr, "inherit"); break;
+		default:                       fprintf(stderr, "UNKNOWN"); break;
+	}
+	fprintf(stderr, "; ");
+	fprintf(stderr, "text-align: %s; ", css_text_align_name[style->text_align]);
+	fprintf(stderr, "width: ");
 	switch (style->width.width) {
-		case CSS_WIDTH_AUTO:    printf("auto"); break;
+		case CSS_WIDTH_AUTO:    fprintf(stderr, "auto"); break;
 		case CSS_WIDTH_LENGTH:  dump_length(&style->width.value.length); break;
-		case CSS_WIDTH_PERCENT: printf("%g%%", style->width.value.percent); break;
-		default:                printf("UNKNOWN"); break;
+		case CSS_WIDTH_PERCENT: fprintf(stderr, "%g%%", style->width.value.percent); break;
+		default:                fprintf(stderr, "UNKNOWN"); break;
 	}
-	puts(";");
-	puts("}");
+	fprintf(stderr, "; ");
+	fprintf(stderr, "}");
 }
 
 static void dump_selector(const struct css_selector * const sel)
 {
 	if (sel->class != 0)
-		printf("%s.%s ", sel->element, sel->class);
+		fprintf(stderr, "'%s'.'%s' ", sel->element, sel->class);
 	else if (sel->id != 0)
-		printf("%s#%s ", sel->element, sel->id);
+		fprintf(stderr, "'%s'#'%s' ", sel->element, sel->id);
 	else
-		printf("%s ", sel->element);
+		fprintf(stderr, "'%s' ", sel->element);
 }
 
 static void dump_rule(const struct rule * rule)
@@ -472,12 +508,12 @@ static void dump_rule(const struct rule * rule)
 	css_dump_style(rule->style);
 }
 
-static void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
+void css_dump_stylesheet(const struct css_stylesheet * stylesheet)
 {
 	unsigned int i;
 	for (i = 0; i < HASH_SIZE; i++) {
 		struct rule * rule;
-		printf("hash %i:\n", i);
+		fprintf(stderr, "hash %i:\n", i);
 		for (rule = stylesheet->hash[i]; rule != 0; rule = rule->next)
 			dump_rule(rule);
 	}
@@ -552,7 +588,7 @@ int main(int argv, char *argc[])
 		css_dump_style(style);
 	}
 
-/* 	printf("%x %x\n", r, r2); */
+/* 	fprintf(stderr, "%x %x\n", r, r2); */
 
 /*	struct css_style *s;
 	struct css_selector *sel;

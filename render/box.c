@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.4 2002/05/21 21:32:35 bursa Exp $
+ * $Id: box.c,v 1.5 2002/06/18 21:24:21 bursa Exp $
  */
 
 #include <assert.h>
@@ -62,13 +62,15 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 	struct box * inline_container_c;
 	struct css_style * style;
 	xmlNode * c;
+	xmlChar * s;
 
 	if (n->type == XML_ELEMENT_NODE) {
 		/* work out the style for this element */
 		*selector = xrealloc(*selector, (depth + 1) * sizeof(struct css_selector));
 		(*selector)[depth].element = n->name;
 		(*selector)[depth].class = (*selector)[depth].id = 0;
-
+		if ((s = xmlGetProp(n, "class")))
+			(*selector)[depth].class = s;
 		style = box_get_style(stylesheet, parent_style, n, *selector, depth + 1);
 	}
 
@@ -87,6 +89,7 @@ struct box * xml_to_box(xmlNode * n, struct css_style * parent_style, struct css
 		if (n->type == XML_TEXT_NODE) {
 			box->type = BOX_INLINE;
 			box->text = squash_whitespace(n->content);
+			box->length = strlen(box->text);
 		} else {
 			box->type = BOX_FLOAT;
 			box->style = style;
@@ -204,23 +207,26 @@ void box_dump(struct box * box, unsigned int depth)
 {
 	unsigned int i;
 	struct box * c;
-	
-	for (i = 0; i < depth; i++)
-		printf("  ");
 
-	printf("x%li y%li w%li h%li ", box->x, box->y, box->width, box->height);
+	for (i = 0; i < depth; i++)
+		fprintf(stderr, "  ");
+
+	fprintf(stderr, "x%li y%li w%li h%li ", box->x, box->y, box->width, box->height);
 
 	switch (box->type) {
-		case BOX_BLOCK:            printf("BOX_BLOCK <%s>\n", box->node->name); break;
-		case BOX_INLINE_CONTAINER: printf("BOX_INLINE_CONTAINER\n"); break;
-		case BOX_INLINE:           printf("BOX_INLINE '%s'\n", box->text); break;
-		case BOX_TABLE:            printf("BOX_TABLE <%s>\n", box->node->name); break;
-		case BOX_TABLE_ROW:        printf("BOX_TABLE_ROW <%s>\n", box->node->name); break;
-		case BOX_TABLE_CELL:       printf("BOX_TABLE_CELL <%s>\n", box->node->name); break;
-		case BOX_FLOAT:            printf("BOX_FLOAT <%s>\n", box->node->name); break;
-		default:                   printf("Unknown box type\n");
+		case BOX_BLOCK:            fprintf(stderr, "BOX_BLOCK <%s> ", box->node->name); break;
+		case BOX_INLINE_CONTAINER: fprintf(stderr, "BOX_INLINE_CONTAINER "); break;
+		case BOX_INLINE:           fprintf(stderr, "BOX_INLINE '%.*s' ", box->length, box->text); break;
+		case BOX_TABLE:            fprintf(stderr, "BOX_TABLE <%s> ", box->node->name); break;
+		case BOX_TABLE_ROW:        fprintf(stderr, "BOX_TABLE_ROW <%s> ", box->node->name); break;
+		case BOX_TABLE_CELL:       fprintf(stderr, "BOX_TABLE_CELL <%s> ", box->node->name); break;
+		case BOX_FLOAT:            fprintf(stderr, "BOX_FLOAT <%s> ", box->node->name); break;
+		default:                   fprintf(stderr, "Unknown box type ");
 	}
-	
+	if (box->style)
+		css_dump_style(box->style);
+	fprintf(stderr, "\n");
+
 	for (c = box->children; c != 0; c = c->next)
 		box_dump(c, depth + 1);
 }

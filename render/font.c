@@ -1,11 +1,12 @@
 /**
- * $Id: font.c,v 1.2 2002/05/11 15:22:24 bursa Exp $
+ * $Id: font.c,v 1.3 2002/06/18 21:24:21 bursa Exp $
  */
 
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "css.h"
 #include "font.h"
 
 /**
@@ -66,4 +67,8 @@ struct font_split font_split(struct font_set * font_set, font_id id, const char 
 	return split;
 }
 
+unsigned long font_width(struct css_style * style, const char * text, unsigned int length)
+{
+	return length * 7;
+}
 

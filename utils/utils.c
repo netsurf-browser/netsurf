@@ -1,5 +1,5 @@
 /**
- * $Id: utils.c,v 1.2 2002/05/21 21:27:29 bursa Exp $
+ * $Id: utils.c,v 1.3 2002/06/18 21:24:21 bursa Exp $
  */
 
 #include <ctype.h>
@@ -54,23 +54,21 @@ char * xstrdup(const char * const s)
 	return c;
 }
 
-#define CHUNK 0x100
-
 char * load(const char * const path)
 {
-	FILE * fp = fopen(path, "r");
-	unsigned int l = 0;
-	char * buf = malloc(CHUNK);
-	if (buf == 0) die("Out of memory in load()");
-	while (1) {
-		unsigned int i;
-		for (i = 0; i != CHUNK && (buf[l] = fgetc(fp)) != EOF; i++, l++)
-			;
-		if (i != CHUNK) break;
-		buf = xrealloc(buf, l + CHUNK);
-	}
-	buf[l] = 0;
-	fclose(fp);
+	FILE * fp = fopen(path, "rb");
+	char * buf;
+	long size, read;
+
+	if (fp == 0) die("Failed to open file");
+	if (fseek(fp, 0, SEEK_END) != 0) die("fseek() failed");
+	if ((size = ftell(fp)) == -1) die("ftell() failed");
+	buf = xcalloc(size, 1);
+
+	if (fseek(fp, 0, SEEK_SET) != 0) die("fseek() failed");
+	read = fread(buf, 1, size, fp);
+	if (read < size) die("fread() failed");
+
 	return buf;
 }
 

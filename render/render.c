@@ -1,5 +1,5 @@
 /**
- * $Id: render.c,v 1.12 2002/05/27 23:21:11 bursa Exp $
+ * $Id: render.c,v 1.13 2002/06/18 21:24:21 bursa Exp $
  */
 
 #include <assert.h>
@@ -15,7 +15,7 @@
 #include "layout.h"
 
 /**
- * internal functions 
+ * internal functions
  */
 
 void render_plain_element(char * g, struct box * box, unsigned long x, unsigned long y);
@@ -141,9 +141,11 @@ int main(int argc, char *argv[])
 	xmlDoc * doc;
 	struct box * doc_box = xcalloc(1, sizeof(struct box));
 	struct box * html_box;
+	char * f;
 
 	if (argc < 3) die("usage: render htmlfile cssfile");
-	
+
+	fprintf(stderr, "Parsing html...\n");
 	doc = htmlParseFile(argv[1], 0);
 	if (doc == 0) die("htmlParseFile failed");
 
@@ -152,22 +154,29 @@ int main(int argc, char *argv[])
 	if (c == 0) die("no element in document");
 	if (strcmp(c->name, "html")) die("document is not html");
 
+	fprintf(stderr, "Parsing css...\n");
+	f = load(argv[2]);
 	stylesheet = css_new_stylesheet();
-	css_parse_stylesheet(stylesheet, load(argv[2]));
+	css_parse_stylesheet(stylesheet, f);
+/*	css_dump_stylesheet(stylesheet);*/
 
 	memcpy(style, &css_base_style, sizeof(struct css_style));
 	doc_box->type = BOX_BLOCK;
 	doc_box->node = c;
+	fprintf(stderr, "XML tree to box tree...\n");
 	xml_to_box(c, style, stylesheet, &selector, 0, doc_box, 0);
 	html_box = doc_box->children;
-	/*box_dump(html_box, 0);*/
+	box_dump(html_box, 0);
 
+	fprintf(stderr, "Layout document...\n");
 	layout_document(html_box, 600);
-/*	box_dump(html_box, 0);*/
+	box_dump(html_box, 0);
 /*	render_plain(html_box);*/
+
+	fprintf(stderr, "Rendering...\n");
 	printf("%li %li\n", html_box->width, html_box->height);
 	render_dump(html_box, 0, 0);
-	
+
 	return 0;
 }
 
