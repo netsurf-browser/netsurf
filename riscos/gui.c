@@ -1,5 +1,5 @@
 /**
- * $Id: gui.c,v 1.3 2002/10/08 11:15:29 bursa Exp $
+ * $Id: gui.c,v 1.4 2002/10/15 10:41:12 monkeyson Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -8,10 +8,200 @@
 #include "netsurf/desktop/netsurf.h"
 #include "oslib/wimp.h"
 #include "oslib/colourtrans.h"
+#include "netsurf/riscos/theme.h"
 #include <string.h>
 #include <stdlib.h>
 
-#define TOOLBAR_HEIGHT 128;
+#define browser_menu_flags (wimp_ICON_TEXT | wimp_ICON_FILLED | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | (wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT))
+#define HOME_URL "file:/<NetSurf$Dir>/Resources/intro.html"
+
+wimp_MENU(2) netsurf_iconbar_menu =
+  {
+    { "NetSurf" }, 7,2,7,0, 0, 44, 0,
+    {
+      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MICONBAR1" } },
+      { wimp_MENU_LAST, wimp_NO_SUB_MENU, browser_menu_flags, { "MICONBAR2" } }
+    }
+  };
+#define ICONBAR_MENU_ENTRIES 2
+
+wimp_MENU(3) browser_save_menu =
+  {
+    { "Save as" }, 7,2,7,0, 0, 44, 0,
+    {
+      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MSAVE1" } },
+      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MSAVE2" } },
+      { wimp_MENU_LAST, wimp_NO_SUB_MENU, browser_menu_flags, { "MSAVE3" } }
+    }
+  };
+
+wimp_MENU(3) browser_selection_menu =
+  {
+    { "Selection" }, 7,2,7,0, 0, 44, 0,
+    {
+      { 0, wimp_NO_SUB_MENU, browser_menu_flags | wimp_ICON_SHADED, { "MSELECT1" } },
+      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MSELECT2" } },
+      { wimp_MENU_LAST, wimp_NO_SUB_MENU, browser_menu_flags, { "MSELECT3" } }
+    }
+  };
+
+wimp_MENU(5) browser_navigate_menu =
+  {
+    { "Navigate" }, 7,2,7,0, 0, 44, 0,
+    {
+      { 0, wimp_NO_SUB_MENU, browser_menu_flags | wimp_ICON_SHADED, { "MNAVIG1" } },
+      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MNAVIG2" } },
+      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MNAVIG3" } },
+      { 0, wimp_NO_SUB_MENU, browser_menu_flags, { "MNAVIG4" } },
+      { wimp_MENU_LAST, wimp_NO_SUB_MENU, browser_menu_flags | wimp_ICON_SHADED, { "MNAVIG5" } }
+    }
+  };
+
+wimp_MENU(4) browser_menu =
+  {
+    { "NetSurf" }, 7,2,7,0, 0, 44, 0,
+    {
+      { 0, wimp_NO_SUB_MENU, browser_menu_flags | wimp_ICON_SHADED, { "MBROWSE1" } },
+      { 0, (wimp_menu*) &browser_save_menu, browser_menu_flags, { "MBROWSE2" } },
+      { 0, (wimp_menu*) &browser_selection_menu, browser_menu_flags, { "MBROWSE3" } },
+      { wimp_MENU_LAST, (wimp_menu*) &browser_navigate_menu, browser_menu_flags, { "MBROWSE4" } }
+    }
+  };
+
+char* netsurf_messages_filename = "<NetSurf$Dir>.Resources.Messages";
+messagetrans_control_block netsurf_messages_cb;
+char* netsurf_messages_data;
+
+char* templates_messages_filename = "<NetSurf$Dir>.Resources.IconNames";
+messagetrans_control_block templates_messages_cb;
+char* templates_messages_data;
+
+wimp_w netsurf_info;
+wimp_w netsurf_saveas;
+
+void ro_gui_load_messages()
+{
+  int size;
+  messagetrans_file_flags flags;
+
+  fprintf(stderr, "opening messages:\n");
+  messagetrans_file_info(netsurf_messages_filename, &flags, &size);
+  fprintf(stderr, "allocating %d bytes\n", size);
+  netsurf_messages_data = xcalloc(size, sizeof(char));
+  messagetrans_open_file(&netsurf_messages_cb, netsurf_messages_filename,
+                         netsurf_messages_data);
+  fprintf(stderr, "messages opened\n");
+}
+
+wimp_w ro_gui_load_template(char* template_name)
+{
+  int winicon;
+  int indirected;
+  char* data;
+  int temp;
+
+  wimp_load_template(0,0,0, (byte*)0xffffffff, template_name,0, &winicon, &indirected);
+  data = xcalloc(winicon + indirected + 16, 1);
+  wimp_load_template((wimp_window*) data, data+winicon, data+winicon+indirected,
+    (byte*)0xffffffff, template_name, 0, &temp, &temp);
+  return wimp_create_window((wimp_window*) data);
+}
+
+void ro_gui_load_templates()
+{
+  int size;
+  messagetrans_file_flags flags;
+
+  messagetrans_file_info(templates_messages_filename, &flags, &size);
+  templates_messages_data = xcalloc(size, sizeof(char));
+  messagetrans_open_file(&templates_messages_cb, templates_messages_filename,
+                         templates_messages_data);
+
+  wimp_open_template("<NetSurf$Dir>.Resources.Templates");
+  netsurf_info = ro_gui_load_template("info");
+  netsurf_saveas = ro_gui_load_template("saveas");
+  wimp_close_template();
+}
+
+wimp_i ro_gui_icon(char* token)
+{
+  int used;
+  char buffer[32];
+  
+  messagetrans_lookup(&templates_messages_cb, token, buffer, 32, 0,0,0,0, &used);
+  if (used > 0)
+    return atoi(buffer);
+  else
+    return -1;
+}
+
+void ro_gui_transform_menu_entry(wimp_menu_entry* e)
+{
+  char buffer[256];
+  char* block;
+  int size;
+
+  fprintf(stderr, "looking up message %s\n", e->data.text);
+  messagetrans_lookup(&netsurf_messages_cb, e->data.text, buffer, 256, 0,0,0,0, &size);
+  fprintf(stderr, "message '%s' uses %d bytes\n", buffer, size + 1);
+  block = xcalloc(size + 1, 1);
+  fprintf(stderr, "copying buffer to block\n");
+  strncpy(block, buffer, size);
+
+  fprintf(stderr, "applying flags\n");
+  e->icon_flags = e->icon_flags | wimp_ICON_INDIRECTED;
+  e->data.indirected_text.text = block;
+  e->data.indirected_text.validation = NULL;
+  e->data.indirected_text.size = size+1;
+
+  fprintf(stderr, "returning\n");
+
+  return;
+}
+
+void ro_gui_transform_menus()
+{
+  int i;
+  
+  for (i = 0; i < 2; i++)
+    ro_gui_transform_menu_entry(&netsurf_iconbar_menu.entries[i]);
+  
+  for (i = 0; i < 3; i++)
+    ro_gui_transform_menu_entry(&browser_save_menu.entries[i]);
+
+  for (i = 0; i < 3; i++)
+    ro_gui_transform_menu_entry(&browser_selection_menu.entries[i]);
+
+  for (i = 0; i < 5; i++)
+    ro_gui_transform_menu_entry(&browser_navigate_menu.entries[i]);
+
+  for (i = 0; i < 4; i++)
+    ro_gui_transform_menu_entry(&browser_menu.entries[i]);
+
+  browser_save_menu.entries[0].sub_menu = (wimp_menu*) netsurf_saveas;
+  browser_save_menu.entries[1].sub_menu = (wimp_menu*) netsurf_saveas;
+  browser_save_menu.entries[2].sub_menu = (wimp_menu*) netsurf_saveas;
+  browser_selection_menu.entries[2].sub_menu = (wimp_menu*) netsurf_saveas;
+  
+  netsurf_iconbar_menu.entries[0].sub_menu = (wimp_menu*) netsurf_info;
+}
+
+wimp_menu* current_menu;
+int current_menu_x, current_menu_y;
+gui_window* current_gui;
+
+void ro_gui_create_menu(wimp_menu* menu, int x, int y, gui_window* g)
+{
+  current_menu = menu;
+  current_menu_x = x;
+  current_menu_y = y;
+  current_gui = g;
+  wimp_create_menu(menu, x, y);
+}
+
+int TOOLBAR_HEIGHT = 128;
+
+ro_theme* current_theme = NULL;
 
 char* BROWSER_VALIDATION = "\0";
 
@@ -83,10 +273,10 @@ gui_window* create_gui_browser_window(struct browser_window* bw)
   window.extra_flags = 0;
   window.extent.x0 = 0;
   window.extent.y0 = ro_y_units(bw->format_height);
-  window.extent.x1 = ro_x_units(bw->format_width);
+  window.extent.x1 = 8192;//ro_x_units(bw->format_width);
   if ((bw->flags & browser_TOOLBAR) != 0)
   {
-    window.extent.y1 = TOOLBAR_HEIGHT;
+    window.extent.y1 = ro_theme_toolbar_height(current_theme);
   }
   else
   {
@@ -107,6 +297,8 @@ gui_window* create_gui_browser_window(struct browser_window* bw)
 
   if ((bw->flags & browser_TOOLBAR) != 0)
   {
+    ro_theme_window create_toolbar;
+/*
     struct wimp_window toolbar;
     wimp_icon_create status_icon;
     wimp_icon_create url_icon;
@@ -143,11 +335,18 @@ gui_window* create_gui_browser_window(struct browser_window* bw)
     toolbar.title_flags = wimp_ICON_TEXT;
     toolbar.work_flags = wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT;
     toolbar.sprite_area = NULL;
+    toolbar.icon_count = 0;
     toolbar.xmin = 0;
     toolbar.ymin = 2;
-    toolbar.icon_count = 0;
-    g->data.browser.toolbar = wimp_create_window(&toolbar);
+    g->data.browser.toolbar = wimp_create_window(&toolbar);*/
 
+    create_toolbar.type = THEME_TOOLBAR;
+    create_toolbar.data.toolbar.indirected_url = g->url;
+    create_toolbar.data.toolbar.indirected_status = g->status;
+    g->data.browser.toolbar = ro_theme_create_window(current_theme, &create_toolbar);
+    g->data.browser.toolbar_width = -1;
+    fprintf(stderr, "Created toolbar!");
+/*
     status_icon.w = g->data.browser.toolbar;
     status_icon.icon.extent.x0 = 0;
     status_icon.icon.extent.y0 = -128;
@@ -178,7 +377,7 @@ gui_window* create_gui_browser_window(struct browser_window* bw)
     url_icon.icon.data.indirected_text.text = g->url;
     url_icon.icon.data.indirected_text.validation = "Pptr_write;";
     url_icon.icon.data.indirected_text.size = 255;
-    wimp_create_icon(&url_icon);
+    wimp_create_icon(&url_icon);*/
   }
 
   g->redraw_safety = SAFE;
@@ -391,6 +590,27 @@ if (g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
 }
 
 
+void ro_gui_toolbar_redraw(gui_window* g, wimp_draw* redraw)
+{
+  osbool more;
+  wimp_icon_state throbber;
+
+  throbber.w = g->data.browser.toolbar;
+  throbber.i = ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_THROBBER");
+  wimp_get_icon_state(&throbber);
+
+  throbber.icon.flags = wimp_ICON_SPRITE;
+  sprintf(throbber.icon.data.sprite, "throbber%d", g->throbber);
+
+  more = wimp_redraw_window(redraw);
+  while (more)
+  {
+    wimp_plot_icon(&throbber.icon);
+    more = wimp_get_rectangle(redraw);
+  }
+  return;
+}
+
 void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
 {
   osbool more;
@@ -434,8 +654,16 @@ void gui_window_set_scroll(gui_window* g, int sx, int sy)
   state.xscroll = ro_x_units(sx);
   state.yscroll = ro_y_units(sy);
   if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
-    state.yscroll += TOOLBAR_HEIGHT;
+    state.yscroll += ro_theme_toolbar_height(current_theme);
   ro_gui_window_open(g, (wimp_open*)&state);
+}
+
+int gui_window_get_width(gui_window* g)
+{
+  wimp_window_state state;
+  state.w = g->data.browser.window;
+  wimp_get_window_state(&state);
+  return browser_x_units(state.visible.x1 - state.visible.x0);
 }
 
 void gui_window_set_extent(gui_window* g, int width, int height)
@@ -449,10 +677,10 @@ void gui_window_set_extent(gui_window* g, int width, int height)
   extent.y0 = ro_y_units(height);
   if (extent.y0 > -960)
     extent.y0 = -960;
-  extent.x1 = ro_x_units(width);
+  extent.x1 = 8192; //ro_x_units(width);
   if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
   {
-    extent.y1 = TOOLBAR_HEIGHT;
+    extent.y1 = ro_theme_toolbar_height(current_theme);
   }
   else
   {
@@ -467,8 +695,18 @@ void gui_window_set_status(gui_window* g, char* text)
   if (strcmp(g->status, text) != 0)
   {
     strncpy(g->status, text, 255);
-    wimp_set_icon_state(g->data.browser.toolbar, 0, 0, 0);
+    wimp_set_icon_state(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_STATUS"), 0, 0);
   }
+}
+
+void gui_disable_icon(wimp_w w, wimp_i i)
+{
+  wimp_set_icon_state(w, i, wimp_ICON_SHADED, wimp_ICON_SHADED);
+}
+
+void gui_enable_icon(wimp_w w, wimp_i i)
+{
+  wimp_set_icon_state(w, i, 0, wimp_ICON_SHADED);
 }
 
 void gui_window_message(gui_window* g, gui_message* msg)
@@ -479,8 +717,25 @@ void gui_window_message(gui_window* g, gui_message* msg)
   switch (msg->type)
   {
     case msg_SET_URL:
+fprintf(stderr, "Set URL '%s'\n", msg->data.set_url.url);
       strncpy(g->url, msg->data.set_url.url, 255);
-      wimp_set_icon_state(g->data.browser.toolbar, 1, 0, 0);
+      wimp_set_icon_state(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_URL"), 0, 0);
+      if (g->data.browser.bw->history != NULL)
+      {
+        if (g->data.browser.bw->history->earlier != NULL)
+          gui_enable_icon(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_BACK"));
+        else
+          gui_disable_icon(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_BACK"));
+        if (g->data.browser.bw->history->later != NULL)
+          gui_enable_icon(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_FORWARD"));
+        else
+          gui_disable_icon(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_FORWARD"));
+      }
+      else
+      {
+        gui_disable_icon(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_BACK"));
+        gui_disable_icon(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_FORWARD"));
+      }
       break;
     default:
       break;
@@ -501,11 +756,12 @@ void ro_gui_window_open(gui_window* g, wimp_open* open)
       outline.w = g->data.browser.window;
       wimp_get_window_outline(&outline);
 
+
       tstate.w = g->data.browser.toolbar;
       tstate.visible.x0 = open->visible.x0;
       tstate.visible.x1 = outline.outline.x1 - 2;
       tstate.visible.y1 = open->visible.y1;
-      tstate.visible.y0 = tstate.visible.y1 - TOOLBAR_HEIGHT;
+      tstate.visible.y0 = tstate.visible.y1 - ro_theme_toolbar_height(current_theme);
       tstate.xscroll = 0;
       tstate.yscroll = 0;
       tstate.next = wimp_TOP;
@@ -519,24 +775,35 @@ void ro_gui_window_open(gui_window* g, wimp_open* open)
           << wimp_CHILD_RS_EDGE_SHIFT |
         wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
           << wimp_CHILD_TS_EDGE_SHIFT);
+
+      if (tstate.visible.x1 - tstate.visible.x0 != g->data.browser.toolbar_width)
+      {
+        g->data.browser.toolbar_width = tstate.visible.x1 - tstate.visible.x0;
+        ro_theme_resize(current_theme, THEME_TOOLBAR, g->data.browser.toolbar, g->data.browser.toolbar_width, tstate.visible.y1 - tstate.visible.y0);
+      }
+
     }
   }
 }
 
 void ro_gui_icon_bar_click(wimp_pointer* pointer)
 {
-  if (pointer->buttons == wimp_CLICK_SELECT)
+  if (pointer->buttons == wimp_CLICK_MENU)
+  {
+    ro_gui_create_menu((wimp_menu*)&netsurf_iconbar_menu, pointer->pos.x - 64, 96 + ICONBAR_MENU_ENTRIES*44, NULL); 
+  }
+  else if (pointer->buttons == wimp_CLICK_SELECT)
   {
     struct browser_window* bw;
     bw = create_browser_window(browser_TITLE | browser_TOOLBAR
       | browser_SCROLL_X_NONE | browser_SCROLL_Y_ALWAYS, 640, 480);
     gui_window_show(bw->window);
-    browser_window_open_location(bw, "file:/<NetSurf$Dir>/Resources/intro.html");
-    wimp_set_caret_position(bw->window->data.browser.toolbar, 1,
-      0,0,-1, strlen(bw->window->url));
+    browser_window_open_location(bw, HOME_URL);
+    wimp_set_caret_position(bw->window->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_URL"),
+      0,0,-1, strlen(bw->window->url) - 1);
   }
-  else if (pointer->buttons == wimp_CLICK_ADJUST)
-    netsurf_quit = 1;
+//  else if (pointer->buttons == wimp_CLICK_ADJUST)
+//    netsurf_quit = 1;
 }
 
 
@@ -563,6 +830,64 @@ void gui_init(int argc, char** argv)
     | wimp_ICON_VCENTRED | (wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT);
   strcpy(iconbar.icon.data.sprite, "!netsurf");
   ro_gui_iconbar_i = wimp_create_icon(&iconbar);
+
+  current_theme = ro_theme_create("<NetSurf$Dir>.Themes.Default");
+
+  ro_gui_load_templates();
+  ro_gui_load_messages();
+  ro_gui_transform_menus();
+}
+
+void ro_gui_throb()
+{
+  gui_window* g = netsurf_gui_windows;
+  float nowtime = (float) clock() / CLOCKS_PER_SEC;
+
+  while (g != NULL)
+  {
+    if (g->type == GUI_BROWSER_WINDOW)
+    {
+      if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
+      {
+        if (g->data.browser.bw->throbbing != 0)
+        {
+          if (nowtime > g->throbtime + 0.2)
+          {
+//            wimp_icon_state throbber;
+//            wimp_draw redraw;
+//            osbool more;
+//
+            g->throbtime = nowtime;
+            g->throbber++;
+            if (g->throbber > current_theme->throbs)
+              g->throbber = 0;
+//
+//            throbber.w = g->data.browser.toolbar;
+//            throbber.i = ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_THROBBER");
+//            wimp_get_icon_state(&throbber);
+//
+//            redraw.w = throbber.w;
+//            redraw.box.x0 = throbber.icon.extent.x0;
+//            redraw.box.y0 = throbber.icon.extent.y0;
+//            redraw.box.x1 = throbber.icon.extent.x1;
+//            redraw.box.y1 = throbber.icon.extent.y1;
+//
+//            throbber.icon.flags = wimp_ICON_SPRITE;
+//            sprintf(throbber.icon.data.sprite, "throbber%d", g->throbber);
+
+            wimp_set_icon_state(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_THROBBER"), 0, 0);
+//            more = wimp_update_window(&redraw);
+//            while (more)
+//            {
+//              wimp_plot_icon(&throbber.icon);
+//              more = wimp_get_rectangle(&redraw);
+//            }
+          }
+        }
+      }
+    }
+    g = g->next;
+  }
 }
 
 gui_window* ro_lookup_gui_from_w(wimp_w window)
@@ -573,7 +898,9 @@ gui_window* ro_lookup_gui_from_w(wimp_w window)
     if (g->type == GUI_BROWSER_WINDOW)
     {
       if (g->data.browser.window == window)
+      {
         return g;
+      }
     }
     g = g->next;
   }
@@ -583,12 +910,15 @@ gui_window* ro_lookup_gui_from_w(wimp_w window)
 gui_window* ro_lookup_gui_toolbar_from_w(wimp_w window)
 {
   gui_window* g = netsurf_gui_windows;
+
   while (g != NULL)
   {
     if (g->type == GUI_BROWSER_WINDOW)
     {
       if (g->data.browser.toolbar == window)
+      {
         return g;
+      }
     }
     g = g->next;
   }
@@ -663,6 +993,12 @@ void ro_gui_window_mouse_at(wimp_pointer* pointer)
   if (g == NULL)
     return;
 
+  if (g->redraw_safety != SAFE)
+  {
+    fprintf(stderr, "mouse at UNSAFE\n");
+    return;
+  }
+
   state.w = pointer->w;
   wimp_get_window_state(&state);
 
@@ -691,11 +1027,51 @@ void ro_gui_window_mouse_at(wimp_pointer* pointer)
   }
 }
 
+void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
+{
+  if (pointer->i == ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_BACK"))
+  {
+    browser_window_back(g->data.browser.bw);
+  }
+  else if (pointer->i == ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_FORWARD"))
+  {
+    browser_window_forward(g->data.browser.bw);
+  }
+  else if (pointer->i == ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_RELOAD"))
+  {
+    browser_window_open_location_historical(g->data.browser.bw, g->data.browser.bw->url);
+  }
+}
+
+void ro_gui_w_click(wimp_pointer* pointer)
+{
+  if (pointer->w == netsurf_info)
+  {
+    if (pointer->i == ro_gui_icon("INFO_URL"))
+    {
+      struct browser_window* bw;
+      bw = create_browser_window(browser_TITLE | browser_TOOLBAR
+        | browser_SCROLL_X_NONE | browser_SCROLL_Y_ALWAYS, 640, 480);
+      gui_window_show(bw->window);
+      browser_window_open_location(bw, "http://sourceforge.net/projects/netsurf/");
+      wimp_set_caret_position(bw->window->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_URL"),
+      0,0,-1, strlen(bw->window->url) - 1);
+    }
+  }
+}
+
 void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
 {
   struct browser_action msg;
   int x,y;
   wimp_window_state state;
+
+  if (g->redraw_safety != SAFE)
+  {
+    fprintf(stderr, "gui_window_click UNSAFE\n");
+    return;
+  }
+
   state.w = pointer->w;
   wimp_get_window_state(&state);
 
@@ -704,7 +1080,11 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
     x = browser_x_units(window_x_units(pointer->pos.x, &state));
     y = browser_y_units(window_y_units(pointer->pos.y, &state));
 
-    if (g->data.browser.bw->current_content != NULL)
+    if (pointer->buttons == wimp_CLICK_MENU)
+    {
+      ro_gui_create_menu((wimp_menu*) &browser_menu, pointer->pos.x - 64, pointer->pos.y, g);
+    }
+    else if (g->data.browser.bw->current_content != NULL)
     {
       if (g->data.browser.bw->current_content->type == CONTENT_HTML)
       {
@@ -813,18 +1193,27 @@ void gui_multitask(void)
         wimp_get_pointer_info(&pointer);
         ro_gui_window_mouse_at(&pointer);
       }
+      ro_gui_throb();
       break;
 
     case wimp_REDRAW_WINDOW_REQUEST   :
       g = ro_lookup_gui_from_w(block.redraw.w);
       if (g != NULL)
         ro_gui_window_redraw(g, &(block.redraw));
+      else
+      {
+        g = ro_lookup_gui_toolbar_from_w(block.redraw.w);
+        if (g != NULL)
+          ro_gui_toolbar_redraw(g, &(block.redraw));
+      }
       break;
 
     case wimp_OPEN_WINDOW_REQUEST     :
       g = ro_lookup_gui_from_w(block.open.w);
       if (g != NULL)
         ro_gui_window_open(g, &(block.open));
+      else
+        wimp_open_window(&block.open);
       break;
 
     case wimp_CLOSE_WINDOW_REQUEST    :
@@ -845,7 +1234,17 @@ void gui_multitask(void)
             ro_gui_poll_queue(event, &block);
         }
         else
-          ro_gui_poll_queue(event, &block);
+        {
+          g = ro_lookup_gui_toolbar_from_w(block.pointer.w);
+          if (g != NULL)
+          {
+            ro_gui_toolbar_click(g, &(block.pointer));
+          }
+          else
+          {
+            ro_gui_poll_queue(event, &block);
+          }
+        }
       }
       break;
 
@@ -898,6 +1297,81 @@ void ro_gui_keypress(wimp_key* key)
   return;
 }
 
+void ro_gui_copy_selection(gui_window* g)
+{
+  if (g->type == GUI_BROWSER_WINDOW)
+  {
+//    if (g->data.browser.bw->text_selection->selected == 1)
+//    {
+//    }
+  }
+}
+
+void ro_gui_menu_selection(wimp_selection* selection)
+{
+  struct browser_action msg;
+  wimp_pointer pointer;
+  int i;
+  wimp_get_pointer_info(&pointer);
+
+  fprintf(stderr, "Menu selection: ");
+  i = 0; while (selection->items[i] != -1) {
+    fprintf(stderr, "%d ", selection->items[i]);
+    i++;
+  }
+  fprintf(stderr, "\n");
+
+  if (current_menu == (wimp_menu*) &netsurf_iconbar_menu)
+  {
+    if (selection->items[0] == 1)
+      netsurf_quit = 1;
+  }
+  else if (current_menu == (wimp_menu*) &browser_menu)
+  {
+    switch (selection->items[0])
+    {
+      case 0: /* Display -> */
+        break;
+      case 1: /* Save -> */
+        break;
+      case 2: /* Selection -> */
+        switch (selection->items[1])
+        {
+          case 0: /* Copy to clipboard */
+            ro_gui_copy_selection(current_gui);
+            break;
+          case 1: /* Clear */
+            msg.type = act_CLEAR_SELECTION;
+            browser_window_action(current_gui->data.browser.bw, &msg);
+            break;
+          case 2: /* Save */
+            break;
+        }
+        break;
+      case 3: /* Navigate -> */
+        switch (selection->items[1])
+        {
+          case 0: /* Open URL... */
+            break;
+          case 1: /* Home */
+            browser_window_open_location(current_gui->data.browser.bw, HOME_URL);
+            break;
+          case 2: /* Back */
+            browser_window_back(current_gui->data.browser.bw);
+            break;
+          case 3: /* Forward */
+            browser_window_forward(current_gui->data.browser.bw);
+            break;
+        }
+        break;
+    }
+
+  }
+
+  if (pointer.buttons == wimp_CLICK_ADJUST)
+    ro_gui_create_menu(current_menu, current_menu_x, current_menu_y, current_gui);
+}
+
 void gui_poll(void)
 {
   wimp_event_no event;
@@ -909,7 +1383,7 @@ void gui_poll(void)
   {
     if (ro_gui_poll_queued_blocks == NULL)
     {
-      event = wimp_poll(0, &block, 0);
+      event = wimp_poll(wimp_MASK_LOSE | wimp_MASK_GAIN, &block, 0);
       finished = 1;
     }
     else
@@ -939,18 +1413,28 @@ void gui_poll(void)
         g = ro_lookup_gui_from_w(block.redraw.w);
         if (g != NULL)
           ro_gui_window_redraw(g, &(block.redraw));
+        else
+        {
+          g = ro_lookup_gui_toolbar_from_w(block.redraw.w);
+          if (g != NULL)
+            ro_gui_toolbar_redraw(g, &(block.redraw));
+        }
         break;
 
       case wimp_OPEN_WINDOW_REQUEST     :
         g = ro_lookup_gui_from_w(block.open.w);
         if (g != NULL)
           ro_gui_window_open(g, &(block.open));
+        else
+          wimp_open_window(&block.open);
         break;
 
       case wimp_CLOSE_WINDOW_REQUEST    :
         g = ro_lookup_gui_from_w(block.close.w);
         if (g != NULL)
           gui_window_hide(g);
+        else
+          wimp_close_window(block.close.w);
         break;
 
       case wimp_POINTER_LEAVING_WINDOW  :
@@ -972,7 +1456,19 @@ void gui_poll(void)
         {
           g = ro_lookup_gui_from_w(block.pointer.w);
           if (g != NULL)
+          {
             ro_gui_window_click(g, &(block.pointer));
+          }
+          else
+          {
+            g = ro_lookup_gui_toolbar_from_w(block.pointer.w);
+            if (g != NULL)
+            {
+              ro_gui_toolbar_click(g, &(block.pointer));
+            }
+            else
+              ro_gui_w_click(&(block.pointer));
+          }
         }
         break;
 
@@ -985,6 +1481,7 @@ void gui_poll(void)
         break;
 
       case wimp_MENU_SELECTION          :
+        ro_gui_menu_selection(&(block.selection));
         break;
 
       case wimp_LOSE_CARET              :
@@ -1051,3 +1548,14 @@ int gui_file_to_filename(char* location, char* actual_filename, int size)
   return count + 1;
 }
 
+void gui_window_start_throbber(gui_window* g)
+{
+  g->throbtime = (float)clock() / CLOCKS_PER_SEC;
+  g->throbber = 0;
+}
+
+void gui_window_stop_throbber(gui_window* g)
+{
+  g->throbber = 0;
+  wimp_set_icon_state(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_THROBBER"), 0, 0);
+}

@@ -1,5 +1,5 @@
 /**
- * $Id: gui.h,v 1.1 2002/09/11 14:24:02 monkeyson Exp $
+ * $Id: gui.h,v 1.2 2002/10/15 10:41:12 monkeyson Exp $
  */
 
 #ifndef _NETSURF_RISCOS_GUI_H_
@@ -23,6 +23,7 @@ struct ro_gui_window
     struct {
       wimp_w window;
       wimp_w toolbar;
+      int toolbar_width;
       struct browser_window* bw;
     } browser;
   } data;
@@ -31,6 +32,9 @@ struct ro_gui_window
   char title[256];
   char url[256];
   gui_window* next;
+
+  int throbber;
+  float throbtime;
 
   gui_safety redraw_safety;
   enum { drag_NONE, drag_UNKNOWN, drag_BROWSER_TEXT_SELECTION } drag_status;

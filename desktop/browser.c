@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.2 2002/09/26 21:38:32 bursa Exp $
+ * $Id: browser.c,v 1.3 2002/10/15 10:41:12 monkeyson Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -31,6 +31,18 @@ void browser_window_follow_link(struct browser_window* bw,
 
 void box_under_area(struct box* box, int x, int y, int ox, int oy, struct box_selection** found, int* count, int* plot_index);
 
+void browser_window_start_throbber(struct browser_window* bw)
+{
+  bw->throbbing = 1;
+  gui_window_start_throbber(bw->window);
+  return;
+}
+
+void browser_window_stop_throbber(struct browser_window* bw)
+{
+  bw->throbbing = 0;
+  gui_window_stop_throbber(bw->window);
+}
 
 void content_destroy(struct content* c)
 {
@@ -41,6 +53,21 @@ void content_destroy(struct content* c)
   {
     case CONTENT_HTML:
       /* free other memory here */
+//      xmlFreeParserCtxt(c->data.html.parser);
+      fprintf(stderr, "free parser\n");
+//      htmlFreeParserCtxt(c->data.html.parser);
+      fprintf(stderr, "free sheet\n");
+//      xfree(c->data.html.stylesheet);
+      fprintf(stderr, "free style\n");
+//      xfree(c->data.html.style);
+      if (c->data.html.layout != NULL)
+      {
+        fprintf(stderr, "box_free box\n");
+//        box_free(c->data.html.layout);
+        fprintf(stderr, "free box\n");
+//        xfree(c->data.html.layout);
+      }
+      fprintf(stderr, "free font\n");
       font_free_set(c->data.html.fonts);
       break;
     default:
@@ -95,7 +122,14 @@ void content_html_reformat(struct content* c, int width)
   struct css_selector* selector = xcalloc(1, sizeof(struct css_selector));
 
   Log("content_html_reformat", "Starting stuff");
-  c->data.html.layout = NULL; /* should be a freeing operation here */
+  if (c->data.html.layout != NULL)
+  {
+    fprintf(stderr, "content_reformat box_free\n");
+//    box_free(c->data.html.layout);
+    fprintf(stderr, "content_reformat free box\n");
+//    xfree(c->data.html.layout);
+    c->data.html.layout = NULL; /* should be a freeing operation here */
+  }
   /* free other things too... */
 
   Log("content_html_reformat", "Setting document to myDoc");
@@ -124,6 +158,9 @@ void content_html_reformat(struct content* c, int width)
     Log("content_html_reformat", "Not html");
     return;
   }
+
+//  xfree(c->data.html.stylesheet);
+//  xfree(c->data.html.style);
 
   Log("content_html_reformat", "Loading CSS");
   file = load("<NetSurf$Dir>.Resources.CSS");  /*!!! not portable! !!!*/
@@ -169,7 +206,7 @@ void browser_window_reformat(struct browser_window* bw)
       Log("browser_window_reformat", "HTML content.");
       browser_window_set_status(bw, "Formatting page...");
       time0 = clock();
-      content_html_reformat(bw->current_content, bw->format_width);
+      content_html_reformat(bw->current_content, gui_window_get_width(bw->window));
       time1 = clock();
       Log("browser_window_reformat", "Content reformatted");
       if (bw->current_content->data.html.layout != NULL)
@@ -207,6 +244,30 @@ struct history* history_create(char* desc, char* url)
   return h;
 }
 
+void browser_window_back(struct browser_window* bw)
+{
+  if (bw->history != NULL)
+  {
+    if (bw->history->earlier != NULL)
+    {
+      bw->history = bw->history->earlier;
+      browser_window_open_location_historical(bw, bw->history->url);
+    }
+  }
+}
+
+void browser_window_forward(struct browser_window* bw)
+{
+  if (bw->history != NULL)
+  {
+    if (bw->history->later != NULL)
+    {
+      bw->history = bw->history->later;
+      browser_window_open_location_historical(bw, bw->history->url);
+    }
+  }
+}
+
 /* remember a new page after the current one. anything remembered after the
    current page is forgotten. */
 void history_remember(struct history* current, char* desc, char* url)
@@ -231,6 +292,7 @@ void history_remember(struct history* current, char* desc, char* url)
   }
 
   current->later = history_create(desc, url);
+  current->later->earlier = current;
   return;
 }
 
@@ -241,6 +303,7 @@ struct browser_window* create_browser_window(int flags, int width, int height)
   bw = (struct browser_window*) xcalloc(1, sizeof(struct browser_window));
 
   bw->flags = flags;
+  bw->throbbing = 0;
   bw->format_width = width;
   bw->format_height = height;
 
@@ -305,7 +368,7 @@ void browser_window_destroy(struct browser_window* bw)
   return;
 }
 
-void browser_window_open_location(struct browser_window* bw, char* url)
+void browser_window_open_location_historical(struct browser_window* bw, char* url)
 {
   struct fetch_request* req;
 
@@ -322,7 +385,21 @@ void browser_window_open_location(struct browser_window* bw, char* url)
   bw->future_content = (struct content*) xcalloc(1, sizeof(struct content));
   bw->future_content->main_fetch = create_fetch(url, bw->url, 0, req);
 
+  browser_window_start_throbber(bw);
+
   return;
+}
+
+void browser_window_open_location(struct browser_window* bw, char* url)
+{
+  browser_window_open_location_historical(bw, url);
+  if (bw->history == NULL)
+    bw->history = history_create(NULL, bw->future_content->main_fetch->location);
+  else
+  {
+    history_remember(bw->history, NULL, bw->future_content->main_fetch->location);
+    bw->history = bw->history->later;
+  }
 }
 
 int browser_window_message(struct browser_window* bw, struct browser_message* msg)
@@ -349,6 +426,7 @@ int browser_window_message(struct browser_window* bw, struct browser_message* ms
             set_content_html(bw->future_content);
             break;
           default:
+            browser_window_stop_throbber(bw);
             return 1;
         }
       }
@@ -364,6 +442,7 @@ int browser_window_message(struct browser_window* bw, struct browser_message* ms
       browser_window_set_status(bw, "Request failed.");
       if (msg->f == bw->future_content->main_fetch)
       {
+        browser_window_stop_throbber(bw);
         bw->future_content->main_fetch = NULL;
         content_destroy(bw->future_content);
         bw->future_content = NULL;
@@ -391,6 +470,7 @@ int browser_window_message(struct browser_window* bw, struct browser_message* ms
         bw->future_content = NULL;
         browser_window_reformat(bw);
         gui_window_set_redraw_safety(bw->window, previous_safety);
+        browser_window_stop_throbber(bw);
       }
       break;
 

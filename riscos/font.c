@@ -1,10 +1,10 @@
 /**
- * $Id: font.c,v 1.6 2002/10/12 13:05:16 bursa Exp $
+ * $Id: font.c,v 1.7 2002/10/15 10:41:12 monkeyson Exp $
  */
 
 #include <assert.h>
 #include <stdio.h>
-#include "utf-8.h"
+#include "libutf-8/utf-8.h"
 #include "netsurf/render/css.h"
 #include "netsurf/riscos/font.h"
 #include "netsurf/render/utils.h"

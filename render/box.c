@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.19 2002/10/08 11:15:29 bursa Exp $
+ * $Id: box.c,v 1.20 2002/10/15 10:41:12 monkeyson Exp $
  */
 
 #include <assert.h>
@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libxml/HTMLparser.h"
-#include "utf-8.h"
+#include "libutf-8/utf-8.h"
 #include "netsurf/render/css.h"
 #include "netsurf/riscos/font.h"
 #include "netsurf/render/box.h"
@@ -83,12 +83,12 @@ struct box * box_create(xmlNode * node, box_type type, struct css_style * style,
 
 char * tolat1(const xmlChar * s)
 {
-	char *d = xcalloc(strlen(s) + 1, sizeof(char));
+	char *d = xcalloc(strlen((char*)s) + 1, sizeof(char));
 	char *d0 = d;
 	unsigned int u, chars;
 
 	while (*s != 0) {
-		u = sgetu8(s, &chars);
+		u = sgetu8((unsigned char*)s, (int*) &chars);
 		s += chars;
 		if (u == 0x09 || u == 0x0a || u == 0x0d)
 			*d = ' ';
@@ -186,10 +186,8 @@ struct box * convert_xml_to_box(xmlNode * n, struct css_style * parent_style,
 			box = box_create(n, BOX_INLINE, parent_style, href);
 			box->text = squash_whitespace(tolat1(n->content));
 			box->length = strlen(box->text);
-			LOG(("text node 2"));
 			box->font = font_open(fonts, box->style);
 			box_add_child(inline_container, box);
-			LOG(("text node 3"));
 		} else {
 			LOG(("float"));
 			box = box_create(0, BOX_FLOAT_LEFT, 0, href);
@@ -684,11 +682,16 @@ void box_free(struct box *box)
 		box_free(box->next);
 
 	/* last this box */
-	if (box->style != 0)
-		free(box->style);
+//	if (box->style != 0)
+//		free(box->style);
 	if (box->text != 0)
-		free(box->text);
+		free((void*)box->text);
 	/* only free href if we're the top most user */
-	if (box->href != 0 && (box->parent == 0 || box->parent->href != box->href))
-		free(box->href);
+	if (box->href != 0)
+	{
+		if (box->parent == 0)
+			free((void*)box->href);
+		else if (box->parent->href != box->href)
+			free((void*)box->href);
+	}
 }

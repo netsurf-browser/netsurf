@@ -1,5 +1,5 @@
 /**
- * $Id: browser.h,v 1.2 2002/09/26 21:38:32 bursa Exp $
+ * $Id: browser.h,v 1.3 2002/10/15 10:41:12 monkeyson Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
@@ -93,6 +93,8 @@ struct browser_window
   browser_window_flags flags;
   char* title;
   gui_window* window;
+
+  int throbbing;
 };
 
 
@@ -137,9 +139,14 @@ struct browser_action
 struct browser_window* create_browser_window(int flags, int width, int height);
 void browser_window_destroy(struct browser_window* bw);
 void browser_window_open_location(struct browser_window* bw, char* url);
+void browser_window_open_location_historical(struct browser_window* bw, char* url);
 int browser_window_message(struct browser_window* bw, struct browser_message* msg);
 int browser_window_action(struct browser_window* bw, struct browser_action* act);
 void browser_window_set_status(struct browser_window* bw, char* text);
+
+void browser_window_back(struct browser_window* bw);
+void browser_window_forward(struct browser_window* bw);
+
 
 int box_position_lt(struct box_position* x, struct box_position* y);
 int box_position_gt(struct box_position* x, struct box_position* y);

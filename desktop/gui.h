@@ -1,5 +1,5 @@
 /**
- * $Id: gui.h,v 1.1 2002/09/11 14:24:02 monkeyson Exp $
+ * $Id: gui.h,v 1.2 2002/10/15 10:41:12 monkeyson Exp $
  */
 
 #ifndef _NETSURF_DESKTOP_GUI_H_
@@ -41,5 +41,8 @@ void gui_poll(void);
 
 gui_safety gui_window_set_redraw_safety(gui_window* g, gui_safety s);
 int gui_file_to_filename(char* location, char* actual_filename, int size);
+
+void gui_window_start_throbber(gui_window* g);
+void gui_window_stop_throbber(gui_window* g);
 
 #endif
