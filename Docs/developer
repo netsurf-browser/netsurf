@@ -141,7 +141,7 @@ void parse_white_space(struct css_style * const s, const struct css_node * const
 	css_white_space z;
 	if (v->type != CSS_NODE_IDENT || v->next != 0)
 		return;
-	z = css_white_space_parse(v->data);
+	z = css_white_space_parse(v->data, v->data_length);
 	if (z != CSS_WHITE_SPACE_UNKNOWN)
 		s->white_space = z;
 }
