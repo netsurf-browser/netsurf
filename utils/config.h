@@ -43,5 +43,8 @@
 /* ANT URL protocol support */
 #define WITH_URL
 
+/* Export modules */
+#define WITH_DRAW_EXPORT
+
 #endif
 
