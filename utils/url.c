@@ -329,7 +329,7 @@ char *url_join(const char *rel, const char *base)
         path = buf;
 
 step7:	/* 7) */
-	res = malloc(scheme_len + 1 + 2 + authority_len + path_len + 1 +
+	res = malloc(scheme_len + 1 + 2 + authority_len + path_len + 1 + 1 +
 			query_len + 1 + fragment_len + 1);
 	if (!res) {
 		LOG(("malloc failed"));
@@ -346,8 +346,12 @@ step7:	/* 7) */
 		strncpy(res + i, authority, authority_len);
 		i += authority_len;
 	}
-	strncpy(res + i, path, path_len);
-	i += path_len;
+	if (path_len) {
+		strncpy(res + i, path, path_len);
+		i += path_len;
+	} else {
+		res[i++] = '/';
+	}
 	if (query) {
 		res[i++] = '?';
 		strncpy(res + i, query, query_len);
