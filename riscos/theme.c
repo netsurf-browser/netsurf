@@ -74,7 +74,7 @@ static wimp_window theme_toolbar_window = {
 
 /*	Shared icon validation
 */
-static char theme_url_validation[] = "Pptr_write\0";
+static char theme_url_validation[] = "Pptr_write;KN\0";
 static char theme_resize_validation[] = "R1;Pptr_lr,8,6\0";
 static char theme_null_text_string[] = "\0";
 static char theme_separator_name[] = "separator\0";
@@ -86,9 +86,6 @@ static char theme_separator_name[] = "separator\0";
 void ro_gui_theme_initialise(void) {
 	/*	Get an initial theme list
 	*/
-	xosfile_create_dir("<Choices$Write>.WWW", 0);
-	xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
-	xosfile_create_dir("<Choices$Write>.WWW.NetSurf.Themes", 0);
 	theme_descriptors = ro_gui_theme_get_available();
 }
 
@@ -151,7 +148,11 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 	snprintf(pathname, 256, "%s.Resources", NETSURF_DIR);
 	pathname[255] = '\0';
 	ro_gui_theme_get_available_in_dir(pathname);
+#ifndef NCOS
 	ro_gui_theme_get_available_in_dir("Choices:WWW.NetSurf.Themes");
+#else
+	ro_gui_theme_get_available_in_dir("<User$Path>.Choices.NetSurf.Choices.Themes");
+#endif
 
 	/*	Sort alphabetically in a very rubbish way
 	*/
@@ -1164,7 +1165,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width) {
 		*/
 		if (toolbar->type == THEME_BROWSER_TOOLBAR) {
 			if (!toolbar->reformat_buttons) left_edge = bottom_edge;
-			if (toolbar->display_url) bottom_edge += 32;
+			if (toolbar->display_url) bottom_edge += 64;
 			if (bottom_edge > right_edge) right_edge = bottom_edge;
 			if ((toolbar->descriptor) && (toolbar->descriptor->theme) &&
 					(toolbar->display_throbber) &&
