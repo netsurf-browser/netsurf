@@ -19,8 +19,6 @@ extern const char * const COOKIE_URL;
 #endif
 #endif
 extern const char * const GESTURES_URL;
-extern const char * const HOME_URL;
-extern const char * const HELP_URL;
 extern const char * const THEMES_URL;
 
 #endif

@@ -233,8 +233,6 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 
 void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 {
-	struct browser_window* bw;
-
 	switch (pointer->i) {
 		case ICON_CONFIG_BR_OK:
 			if (pointer->buttons == wimp_CLICK_SELECT)
@@ -320,8 +318,6 @@ void ro_gui_dialog_click_config_prox(wimp_pointer *pointer)
 
 void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 {
-	struct browser_window* bw;
-
 	switch (pointer->i) {
 		case ICON_CONFIG_TH_OK:
 			if (pointer->buttons == wimp_CLICK_SELECT)

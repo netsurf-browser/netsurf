@@ -216,19 +216,12 @@ char *url_join(char *rel_url, char *base_url)
                return xstrdup(ABOUT_URL);
        }
 #ifdef WITH_COOKIES
-       else if (strcasecmp(rel_url, "about:cookies") == 0) {
+       if (strcasecmp(rel_url, "about:cookies") == 0) {
                cookie_create();
                return xstrdup(COOKIE_URL);
        }
 #endif
-       else
 #endif
-       if (strcasecmp(rel_url, "help:") == 0) {
-               return xstrdup(HELP_URL);
-       }
-       else if (strcasecmp(rel_url, "home:") == 0) {
-               return xstrdup(HOME_URL);
-       }
 #endif
 
 	if (!base_url) {

@@ -17,6 +17,7 @@
 #include "oslib/hourglass.h"
 #include "oslib/inetsuite.h"
 #include "oslib/os.h"
+#include "oslib/osbyte.h"
 #include "oslib/osfile.h"
 #include "oslib/plugin.h"
 #include "oslib/wimp.h"
@@ -103,6 +104,7 @@ struct ro_gui_poll_block {
 struct ro_gui_poll_block *ro_gui_poll_queued_blocks = 0;
 
 
+static void ro_gui_choose_language(void);
 static void ro_gui_icon_bar_create(void);
 static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
 static void ro_gui_poll_queue(wimp_event_no event, wimp_block* block);
@@ -128,13 +130,19 @@ static char *ro_path_to_url(const char *path);
 
 void gui_init(int argc, char** argv)
 {
+	char path[40];
 	char theme_fname[256];
-	os_error *e;
+	os_error *error;
 
 	xhourglass_start(1);
 
+	options_read("Choices:WWW.NetSurf.Choices");
+
+	ro_gui_choose_language();
+
 	NETSURF_DIR = getenv("NetSurf$Dir");
-	messages_load("<NetSurf$Dir>.Resources.en.Messages");
+	sprintf(path, "<NetSurf$Dir>.Resources.%s.Messages", option_language);
+	messages_load(path);
 
 	task_handle = wimp_initialise(wimp_VERSION_RO38, "NetSurf",
   			(wimp_message_list*) &task_messages, 0);
@@ -142,8 +150,6 @@ void gui_init(int argc, char** argv)
 	/* Issue a *Desktop to poke AcornURI into life */
 	if (getenv("NetSurf$Start_URI_Handler"))
 		xwimp_start_task("Desktop", 0);
-
-	options_read("Choices:WWW.NetSurf.Choices");
 
 	if (option_theme) {
 		snprintf(theme_fname, sizeof(theme_fname),
@@ -159,9 +165,13 @@ void gui_init(int argc, char** argv)
 	}
 	ro_theme_load(theme_fname);
 
-	e = xwimp_open_template("<NetSurf$Dir>.Resources.en.Templates");
-	if(e) {
-	  die(e->errmess);
+	sprintf(path, "<NetSurf$Dir>.Resources.%s.Templates", option_language);
+	error = xwimp_open_template(path);
+	if (error) {
+		LOG(("xwimp_open_template failed: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user(error->errmess);
+		exit(EXIT_FAILURE);
 	}
 	ro_gui_dialog_init();
 	ro_gui_download_init();
@@ -172,6 +182,56 @@ void gui_init(int argc, char** argv)
 	ro_gui_history_init();
 	wimp_close_template();
 	ro_gui_icon_bar_create();
+}
+
+
+/**
+ * Determine the language to use.
+ *
+ * RISC OS has no standard way of determining which language the user prefers.
+ * We have to guess from the 'Country' setting.
+ */
+
+void ro_gui_choose_language(void)
+{
+	char path[40];
+	const char *lang;
+	int country;
+	os_error *error;
+
+	/* if option_language exists and is valid, use that */
+	if (option_language) {
+		if (2 < strlen(option_language))
+			option_language[2] = 0;
+		sprintf(path, "<NetSurf$Dir>.Resources.%s", option_language);
+		if (is_dir(path))
+			return;
+		free(option_language);
+		option_language = 0;
+	}
+
+	/* choose a language from the configured country number */
+	error = xosbyte_read(osbyte_VAR_COUNTRY_NUMBER, &country);
+	if (error) {
+		LOG(("xosbyte_read failed: 0x%x: %s",
+				error->errnum, error->errmess));
+		country = 1;
+	}
+	switch (country) {
+		case 6: /* France */
+		case 18: /* Canada2 (French Canada?) */
+			lang = "fr";
+			break;
+		default:
+			lang = "en";
+			break;
+	}
+	sprintf(path, "<NetSurf$Dir>.Resources.%s", lang);
+	if (is_dir(path))
+		option_language = strdup(lang);
+	else
+		option_language = strdup("en");
+	assert(option_language);
 }
 
 
@@ -500,7 +560,10 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 		ro_gui_create_menu(iconbar_menu, pointer->pos.x - 64,
 				   96 + iconbar_menu_height, NULL);
 	} else if (pointer->buttons == wimp_CLICK_SELECT) {
-		browser_window_create(HOME_URL);
+		char url[80];
+		sprintf(url, "file:///%%3CNetSurf$Dir%%3E/Docs/intro.%s",
+				option_language);
+		browser_window_create(url);
 	}
 }
 
@@ -865,7 +928,10 @@ void ro_gui_screen_size(int *width, int *height)
 
 void ro_gui_open_help_page(void)
 {
-        browser_window_create(HELP_URL);
+	char url[80];
+	sprintf(url, "file:///%%3CNetSurf$Dir%%3E/Docs/docs.%s",
+			option_language);
+        browser_window_create(url);
 }
 
 

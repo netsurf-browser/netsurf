@@ -252,8 +252,6 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 0: /* Open URL... */
 						break;
 					case 1: /* Home */
-						browser_window_go(current_gui->data.browser.bw,
-								HOME_URL);
 						break;
 					case 2: /* Back */
 						history_back(current_gui->data.browser.bw,
