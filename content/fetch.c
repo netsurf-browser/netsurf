@@ -54,6 +54,7 @@ struct fetch {
 	unsigned long content_length;	/**< Response Content-Length, or 0. */
 	char *realm;            /**< HTTP Auth Realm */
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
+	struct HttpPost *post_multipart;	/**< Multipart post data, or 0. */
 	struct fetch *queue;	/**< Next fetch for this host. */
 	struct fetch *prev;	/**< Previous active fetch in ::fetch_list. */
 	struct fetch *next;	/**< Next active fetch in ::fetch_list. */
@@ -66,6 +67,7 @@ static struct fetch *fetch_list = 0;	/**< List of active fetches. */
 static size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f);
 static size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f);
 static bool fetch_process_headers(struct fetch *f);
+static struct HttpPost *fetch_post_convert(struct form_successful_control *control);
 
 #ifdef riscos
 static char * ca_bundle;	/**< SSL certificate bundle filename. */
@@ -174,8 +176,11 @@ struct fetch * fetch_start(char *url, char *referer,
 		fetch->host = xstrdup(uri->server);
 	fetch->content_length = 0;
 	fetch->post_urlenc = 0;
+	fetch->post_multipart = 0;
 	if (post_urlenc)
 		fetch->post_urlenc = xstrdup(post_urlenc);
+	else if (post_multipart)
+		fetch->post_multipart = fetch_post_convert(post_multipart);
 	fetch->queue = 0;
 	fetch->prev = 0;
 	fetch->next = 0;
@@ -275,6 +280,10 @@ struct fetch * fetch_start(char *url, char *referer,
 		code = curl_easy_setopt(fetch->curl_handle,
 				CURLOPT_POSTFIELDS, fetch->post_urlenc);
 		assert(code == CURLE_OK);
+	} else if (fetch->post_multipart) {
+		code = curl_easy_setopt(fetch->curl_handle,
+				CURLOPT_HTTPPOST, fetch->post_multipart);
+		assert(code == CURLE_OK);
 	}
 
 	/* add to the global curl multi handle */
@@ -352,6 +361,15 @@ void fetch_abort(struct fetch *f)
 			code = curl_easy_setopt(fetch->curl_handle,
 					CURLOPT_POSTFIELDS, fetch->post_urlenc);
 			assert(code == CURLE_OK);
+		} else if (fetch->post_multipart) {
+			code = curl_easy_setopt(fetch->curl_handle,
+					CURLOPT_HTTPPOST, fetch->post_multipart);
+			assert(code == CURLE_OK);
+		} else {
+			code = curl_easy_setopt(fetch->curl_handle, CURLOPT_POST, 0);
+			assert(code == CURLE_OK);
+			code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPPOST, 0);
+			assert(code == CURLE_OK);
 		}
 
 		/* add to the global curl multi handle */
@@ -369,6 +387,8 @@ void fetch_abort(struct fetch *f)
 	free(f->location);
 	free(f->realm);
 	free(f->post_urlenc);
+	if (f->post_multipart)
+		curl_formfree(f->post_multipart);
 	xfree(f);
 }
 
@@ -563,6 +583,26 @@ bool fetch_process_headers(struct fetch *f)
 		return true;
 
 	return false;
+}
+
+
+/**
+ * Convert a list of struct ::form_successful_control to a list of
+ * struct HttpPost for libcurl.
+ */
+
+struct HttpPost *fetch_post_convert(struct form_successful_control *control)
+{
+	struct HttpPost *post = 0, *last = 0;
+
+	for (; control; control = control->next) {
+		curl_formadd(&post, &last,
+				CURLFORM_COPYNAME, control->name,
+				CURLFORM_COPYCONTENTS, control->value,
+				CURLFORM_END);
+	}
+
+	return post;
 }
 
 

@@ -55,16 +55,19 @@ struct content * fetchcache(const char *url0, char *referer,
 
 	LOG(("url %s", url));
 
-	c = cache_get(url);
-	if (c != 0) {
-		free(url);
-		content_add_user(c, callback, p1, p2);
-		return c;
+	if (!post_urlenc && !post_multipart) {
+		c = cache_get(url);
+		if (c != 0) {
+			free(url);
+			content_add_user(c, callback, p1, p2);
+			return c;
+		}
 	}
 
 	c = content_create(url);
 	content_add_user(c, callback, p1, p2);
-	cache_put(c);
+	if (!post_urlenc && !post_multipart)
+		cache_put(c);
 	c->fetch_size = 0;
 	c->width = width;
 	c->height = height;
@@ -73,7 +76,8 @@ struct content * fetchcache(const char *url0, char *referer,
 	free(url);
 	if (c->fetch == 0) {
 		LOG(("warning: fetch_start failed"));
-		cache_destroy(c);
+		if (c->cache)
+			cache_destroy(c);
 		content_destroy(c);
 		return 0;
 	}
@@ -132,7 +136,8 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			LOG(("FETCH_ERROR, '%s'", data));
 			c->fetch = 0;
 			content_broadcast(c, CONTENT_MSG_ERROR, data);
-			cache_destroy(c);
+			if (c->cache)
+				cache_destroy(c);
 			content_destroy(c);
 			break;
 
@@ -144,7 +149,8 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			url = url_join(data, c->url);
 			content_broadcast(c, CONTENT_MSG_REDIRECT, url);
 			xfree(url);
-			cache_destroy(c);
+			if (c->cache)
+				cache_destroy(c);
 			content_destroy(c);
 			break;
 
