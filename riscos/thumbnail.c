@@ -85,47 +85,44 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 				width << option_thumbnail_oversampling,
 				height << option_thumbnail_oversampling,
 				(os_mode)0x301680b5);
-        }
+	}
         
-        /*	Oversample if we have an oversampled sprite, don't otherwise
-        */
-        if (oversampled_area != NULL) {
-          	/*	Scale up for oversampling
-          	*/
-          	width = width << option_thumbnail_oversampling;
-          	height = height << option_thumbnail_oversampling;
+	/*	Oversample if we have an oversampled sprite, don't otherwise
+	*/
+	if (oversampled_area != NULL) {
+		/*	Scale up for oversampling
+		*/
+		width = width << option_thumbnail_oversampling;
+		height = height << option_thumbnail_oversampling;
 
 		/*	Calculate the scale
 		*/
 		scale = (float) width / (float) content->width;
 
-       	  	/*	Switch output and redraw oversampled
-       	  	*/
-       		save_area = thumbnail_switch_output(oversampled_area,
-       						(osspriteop_header *)(oversampled_area + 1));
-       		if (save_area == NULL) return;
+		/*	Switch output and redraw oversampled
+		*/
+		save_area = thumbnail_switch_output(oversampled_area,
+						(osspriteop_header *)(oversampled_area + 1));
+		if (save_area == NULL) return;
 		content_redraw(content, 0, height * 2, width * 2, height * 2,
 				0, 0, width * 2, height * 2, scale);
 		thumbnail_restore_output(save_area);
-		
-/*	xosspriteop_save_sprite_file(osspriteop_USER_AREA,
-				oversampled_area, "oversample");
-*/
+
 		/*	Scale back
 		*/
-          	width = width >> option_thumbnail_oversampling;
-          	height = height >> option_thumbnail_oversampling;
+		width = width >> option_thumbnail_oversampling;
+		height = height >> option_thumbnail_oversampling;
         
-       	  	/*	Switch output to the final sprite
-       	  	*/
-       		save_area = thumbnail_switch_output(area, sprite);
-       		if (save_area == NULL) {
-       		  	free(oversampled_area);
-       			return;
-                }
+		/*	Switch output to the final sprite
+		*/
+		save_area = thumbnail_switch_output(area, sprite);
+		if (save_area == NULL) {
+			free(oversampled_area);
+			return;
+		}
 
-        	/*	Get Tinct to dither and bilinear filter back to what we want.
-        	*/
+		/*	Get Tinct to dither and bilinear filter back to what we want.
+		*/
 		_swix(Tinct_PlotScaled, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
 				(char *)(oversampled_area + 1), 0, 0, width * 2, height * 2,
 				(1<<1) | (1<<2));
@@ -133,28 +130,28 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 		/*	Restore output
 		*/      	
 		thumbnail_restore_output(save_area);
+		
+		/*	Free oversampled memory area
+		*/
+		free(oversampled_area);
 
-/*	xosspriteop_save_sprite_file(osspriteop_USER_AREA,
-				area, "thumb_scaled");
-*/
-        	
-       	} else {
+	} else {
 		/*	Calculate the scale
 		*/
 		scale = (float) width / (float) content->width;
+		LOG(("Scaling to %f and outputting at %ix%i", scale, width, height));
 
-       	  	/*	Switch output and redraw
-       	  	*/
-       		save_area = thumbnail_switch_output(area, sprite);
-       		if (save_area == NULL) return;
+		/*	Switch output and redraw
+		*/
+		save_area = thumbnail_switch_output(area, sprite);
+		if (save_area == NULL) return;
+		colourtrans_set_gcol(os_COLOUR_WHITE, colourtrans_SET_BG,
+				os_ACTION_OVERWRITE, 0);
+		os_clg();
 		content_redraw(content, 0, height * 2, width * 2, height * 2,
 				0, 0, width * 2, height * 2, scale);
 		thumbnail_restore_output(save_area);
-
-/*	xosspriteop_save_sprite_file(osspriteop_USER_AREA,
-				area, "thumb");
-*/
-        }
+	}
 }
 
 
@@ -253,11 +250,7 @@ osspriteop_area* thumbnail_initialise(int width, int height, os_mode mode) {
 		memset(sprite_image, 0xff, area_size - sizeof(osspriteop_area) -
 						sizeof(osspriteop_header) - 2048);
 	}
-/*	xosfile_save_stamped("thumb", 0xff9,
-			((char *)sprite_area) + 4,
-			((char *)sprite_area) + area_size);
 
-*/
 	/*	Return our sprite area
 	*/
 	return sprite_area;
@@ -272,6 +265,13 @@ osspriteop_area* thumbnail_initialise(int width, int height, os_mode mode) {
 static void thumbnail_test(void) {
 	unsigned int area_size;
 	osspriteop_area *sprite_area;
+
+	/*	If we're configured not to use 32bpp then we don't
+	*/
+	if (!option_thumbnail_32bpp) {
+		thumbnail_32bpp_available = 0;
+		return;
+	}
 
 	/*	Get enough memory for a 1x1 32bpp sprite
 	*/
@@ -316,7 +316,7 @@ static struct thumbnail_save_area* thumbnail_switch_output(osspriteop_area *spri
 	save_area = calloc(sizeof(struct thumbnail_save_area), 1);
 	if (save_area == NULL) return NULL;
 	
- 	/*	Allocate OS_SpriteOp save area
+	/*	Allocate OS_SpriteOp save area
 	*/
 	if (xosspriteop_read_save_area_size(osspriteop_PTR, sprite_area,
 			(osspriteop_id)sprite_header, &size)) {
@@ -328,7 +328,7 @@ static struct thumbnail_save_area* thumbnail_switch_output(osspriteop_area *spri
 	*/
 	save_area->save_area = malloc((unsigned)size);
 	if (save_area->save_area == NULL) {
-	  	free(save_area);
+		free(save_area);
 		return NULL;
 	}
 	save_area->save_area->a[0] = 0;
@@ -343,7 +343,7 @@ static struct thumbnail_save_area* thumbnail_switch_output(osspriteop_area *spri
 		free(save_area);
 		return NULL;
 	}
- 	return save_area;
+	return save_area;
 }
 
 
@@ -351,8 +351,8 @@ static struct thumbnail_save_area* thumbnail_switch_output(osspriteop_area *spri
 */
 static void thumbnail_restore_output(struct thumbnail_save_area *save_area) {
   
-  	/*	We don't care if we err, as there's nothing we can do about it
-  	*/
+	/*	We don't care if we err, as there's nothing we can do about it
+	*/
 	xosspriteop_switch_output_to_sprite(osspriteop_PTR,
 			(osspriteop_area *)save_area->context1,
 			(osspriteop_id)save_area->context2,
