@@ -375,7 +375,7 @@ static const struct css_colour_entry css_colour_table[] = {
 	{ "mintcream",			0xfafff5 },
 	{ "mistyrose",			0xe1e4ff },
 	{ "moccasin",			0xb5e4ff },
-	{ "navajowhite",		0xadedff },
+	{ "navajowhite",		0xaddeff },
 	{ "navy",			0x800000 },
 	{ "oldlace",			0xe6f5fd },
 	{ "olive",			0x008080 },
