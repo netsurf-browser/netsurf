@@ -96,7 +96,7 @@ struct element_entry {
 };
 static const struct element_entry element_table[] = {
 	{"a", box_a},
-//	{"applet", box_applet},
+	{"applet", box_applet},
         {"embed", box_embed},
 	{"form", box_form},
 	{"img", box_image},
@@ -490,13 +490,13 @@ struct css_style * box_get_style(struct content ** stylesheet,
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "height"))) {
-		if (strrchr(s, '%')) {
-			/* tne specification doesn't make clear what
-			 * percentage heights mean, so ignore them */
-		} else {
-			style->height.height = CSS_HEIGHT_LENGTH;
-			style->height.length.unit = CSS_UNIT_PX;
-			style->height.length.value = atof(s);
+	        if (strrchr(s, '%')) {
+	                /*the specification doesn't make clear what
+	                 * percentage heights mean, so ignore them */
+	        } else {
+		style->height.height = CSS_HEIGHT_LENGTH;
+		style->height.length.unit = CSS_UNIT_PX;
+		style->height.length.value = atof(s);
 		}
 		xmlFree(s);
 	}
@@ -558,6 +558,7 @@ struct result box_a(xmlNode *n, struct status *status,
 {
 	struct box *box;
 	char *s;
+	box = box_create(style, status->href, status->title);
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "href")))
 		status->href = s;
 	box = box_create(style, status->href, status->title);
@@ -1408,7 +1409,9 @@ struct result box_object(xmlNode *n, struct status *status,
 {
 	struct box *box;
 	struct object_params *po;
+	struct plugin_params* pp;
 	char *s, *url;
+	xmlNode *c;
 
 	box = box_create(style, status->href, 0);
 
@@ -1420,7 +1423,7 @@ struct result box_object(xmlNode *n, struct status *status,
         po->codetype = 0;
         po->codebase = 0;
         po->classid = 0;
-        po->paramds = 0;
+        po->params = 0;
 
         /* object data */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "data"))) {
@@ -1463,8 +1466,53 @@ struct result box_object(xmlNode *n, struct status *status,
                 xmlFree(s);
         }
 
-	/* TODO: go through children looking for <param>, and add
-	 * somewhere in po */
+        /* parameters
+         * parameter data is stored in a singly linked list.
+         * po->params points to the head of the list.
+         * new parameters are added to the head of the list.
+         */
+        for (c = n->children; c != 0; c = c->next) {
+	    if (strcmp((const char *) c->name, "param") == 0) {
+
+               pp = xcalloc(1, sizeof(*pp));
+
+               /* initialise pp struct */
+               pp->name = 0;
+               pp->value = 0;
+               pp->type = 0;
+               pp->next = 0;
+
+               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "name"))) {
+                   pp->name = strdup(s);
+                   xmlFree(s);
+               }
+               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "value"))) {
+                   pp->value = strdup(s);
+                   xmlFree(s);
+               }
+               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "type"))) {
+                   pp->type = strdup(s);
+                   xmlFree(s);
+               }
+               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "valuetype"))) {
+                   pp->valuetype = strdup(s);
+                   xmlFree(s);
+               }
+               else {
+
+                   pp->valuetype = strdup("data");
+               }
+
+               pp->next = po->params;
+               po->params = pp;
+	    }
+	    else {
+	            /* The first non-param child is the start of the
+	             * alt html. Therefore, we should break out of this loop.
+	             */
+	             continue;
+	    }
+	}
 
 	box->object_params = po;
 
@@ -1496,7 +1544,7 @@ struct result box_embed(xmlNode *n, struct status *status,
         po->codetype = 0;
         po->codebase = 0;
         po->classid = 0;
-        po->paramds = 0;
+        po->params = 0;
 
 	/* embed src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
@@ -1516,7 +1564,6 @@ struct result box_embed(xmlNode *n, struct status *status,
 }
 
 /**
- * TODO - finish this ;-)
  * add an applet to the box tree
  */
 
@@ -1524,22 +1571,93 @@ struct result box_applet(xmlNode *n, struct status *status,
 		struct css_style *style)
 {
 	struct box *box;
+	struct object_params *po;
+	struct plugin_params *pp;
 	char *s, *url;
+	xmlNode *c;
 
 	box = box_create(style, status->href, 0);
 
-	/* object without data is an error */
-	if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "data")))
-		return (struct result) {box,0};
+	po = xcalloc(1, sizeof(*po));
 
-	url = url_join(strdup(s), status->content->url);
-	LOG(("object '%s'", url));
-	xmlFree(s);
+	/* initialise po struct */
+        po->data = 0;
+        po->type = 0;
+        po->codetype = 0;
+        po->codebase = 0;
+        po->classid = 0;
+        po->params = 0;
+
+        /* code */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "code"))) {
+
+                po->classid = strdup(s);
+                url = url_join(strdup(s), status->content->url);
+                LOG(("applet '%s'", url));
+                xmlFree(s);
+        }
+
+        /* object codebase */
+        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codebase"))) {
+
+                po->codebase = strdup(s);
+                LOG(("codebase: %s", s));
+                xmlFree(s);
+        }
+
+        /* parameters
+         * parameter data is stored in a singly linked list.
+         * po->params points to the head of the list.
+         * new parameters are added to the head of the list.
+         */
+        for (c = n->children; c != 0; c = c->next) {
+	    if (strcmp((const char *) c->name, "param") == 0) {
+
+               pp = xcalloc(1, sizeof(*pp));
+
+               /* initialise pp struct */
+               pp->name = 0;
+               pp->value = 0;
+               pp->type = 0;
+               pp->next = 0;
+
+               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "name"))) {
+                   pp->name = strdup(s);
+                   xmlFree(s);
+               }
+               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "value"))) {
+                   pp->value = strdup(s);
+                   xmlFree(s);
+               }
+               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "type"))) {
+                   pp->type = strdup(s);
+                   xmlFree(s);
+               }
+               if ((s = (char *) xmlGetProp(c, (const xmlChar *) "valuetype"))) {
+                   pp->valuetype = strdup(s);
+                   xmlFree(s);
+               }
+               else {
+
+                   pp->valuetype = strdup("data");
+               }
+
+               pp->next = po->params;
+               po->params = pp;
+	    }
+	    else {
+	            /* The first non-param child is the start of the
+	             * alt html. Therefore, we should break out of this loop.
+	             */
+	             continue;
+	    }
+	}
 
 	/* start fetch */
-	//plugin_decode(content, url, box, po);
+	if(plugin_decode(status->content, url, box, po))
+        	return (struct result) {box,0};
 
-	return (struct result) {box,0};
+        return (struct result) {box,1};
 }
 
 
@@ -1551,19 +1669,18 @@ struct result box_applet(xmlNode *n, struct status *status,
  * necessary as there are multiple ways of declaring an object's attributes.
  *
  * Returns false if the object could not be handled.
- *
- * TODO: alt html
- *       params - create parameters file and put the filename string
- *                somewhere such that it is accessible from plugin_create.
  */
 bool plugin_decode(struct content* content, char* url, struct box* box,
                   struct object_params* po)
 {
+  /* Set basehref */
+  po->basehref = strdup(content->url);
+
   /* Check if the codebase attribute is defined.
    * If it is not, set it to the codebase of the current document.
    */
    if(po->codebase == 0)
-           po->codebase = strdup(content->url);
+           po->codebase = url_join("./", content->url);
    else
            po->codebase = url_join(po->codebase, content->url);
 
@@ -1575,15 +1692,22 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
    * we can't handle this object.
    */
    if(po->data == 0 && po->classid == 0) {
-           return false;
+           return FALSE;
    }
    if(po->data == 0 && po->classid != 0) {
            if(strncasecmp(po->classid, "clsid:", 6) == 0) {
                    LOG(("ActiveX object - n0"));
-                   return false;
+                   return FALSE;
            }
            else {
                    url = url_join(po->classid, po->codebase);
+
+                   /* The java plugin doesn't need the .class extension
+                    * so we strip it.
+                    */
+                   if(stricmp((&po->classid[strlen(po->classid)-6]),
+                                                            ".class") == 0)
+                           po->classid[strlen(po->classid)-6] = 0;
            }
    }
    else {
@@ -1595,11 +1719,11 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
     */
     if(po->type != 0) {
            if (content_lookup(po->type) == CONTENT_OTHER)
-                  return false;
+                  return FALSE;
     }
     if(po->codetype != 0) {
            if (content_lookup(po->codetype) == CONTENT_OTHER)
-                  return false;
+                  return FALSE;
     }
 
   /* If we've got to here, the object declaration has provided us with
@@ -1611,6 +1735,6 @@ bool plugin_decode(struct content* content, char* url, struct box* box,
    */
    html_fetch_object(content, url, box);
 
-   return true;
+   return TRUE;
 }
 

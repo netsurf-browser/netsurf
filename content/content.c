@@ -145,7 +145,7 @@ void content_set_type(struct content *c, content_type type, char* mime_type)
 	assert(type < CONTENT_UNKNOWN);
 	LOG(("content %s, type %i", c->url, type));
 	c->type = type;
-	c->mime_type = mime_type;
+	c->mime_type = strdup(mime_type);
 	c->status = CONTENT_STATUS_LOADING;
 	content_broadcast(c, CONTENT_MSG_LOADING, 0);
 	handler_map[type].create(c);

@@ -88,7 +88,19 @@ struct object_params {
         char* codetype;
         char* codebase;
         char* classid;
-        char* paramds;       /* very likely to change */
+        struct plugin_params* params;
+	/* not a parameter, but stored here for convenience */
+	char* basehref;
+	char* filename;
+};
+
+struct plugin_params {
+
+        char* name;
+        char* value;
+        char* type;
+        char* valuetype;
+        struct plugin_params* next;
 };
 
 struct box {
@@ -116,7 +128,7 @@ struct box {
 	struct gui_gadget* gadget;
 	struct content* object;  /* usually an image */
 	struct object_params *object_params;
-	void *object_state;  /* state of any object */
+	void* object_state; /* state of any object */
 };
 
 struct form
