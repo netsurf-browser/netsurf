@@ -36,13 +36,19 @@ static struct browser_window *bwin;
 
 void ro_gui_401login_init(void)
 {
-	char name[] = "dialog_401li";
+	char name[20];
 	int context, window_size, data_size;
 	char *data;
+	os_error *e;
+
+        strncpy(name, "dialog_401li", 20);
 
 	/* find required buffer sizes */
-	context = wimp_load_template(wimp_GET_SIZE, 0, 0, wimp_NO_FONTS,
-			name, 0, &window_size, &data_size);
+	e = xwimp_load_template(wimp_GET_SIZE, 0, 0, wimp_NO_FONTS,
+			name, 0, &window_size, &data_size, &context);
+	if (e) {
+	  die(e->errmess);
+	}
 	assert(context != 0);
 
 	dialog_401_template = xcalloc((unsigned int) window_size, 1);

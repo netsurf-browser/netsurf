@@ -103,6 +103,7 @@ static char *ro_path_to_url(const char *path);
 void gui_init(int argc, char** argv)
 {
 	char theme_fname[256];
+	os_error *e;
 
 	NETSURF_DIR = getenv("NetSurf$Dir");
 	messages_load("<NetSurf$Dir>.Resources.en.Messages");
@@ -129,7 +130,10 @@ void gui_init(int argc, char** argv)
 	}
 	ro_theme_load(theme_fname);
 
-	wimp_open_template("<NetSurf$Dir>.Resources.en.Templates");
+	e = xwimp_open_template("<NetSurf$Dir>.Resources.en.Templates");
+	if(e) {
+	  die(e->errmess);
+	}
 	ro_gui_dialog_init();
 	ro_gui_download_init();
 	ro_gui_menus_init();
