@@ -1356,46 +1356,54 @@ void ro_msg_datasave_ack(wimp_message *message)
 
 void ro_msg_dataopen(wimp_message *message)
 {
+	int file_type = message->data.data_xfer.file_type;
 	char *url = 0;
+	size_t len;
+	os_error *error;
 
-	if (message->data.data_xfer.file_type != 0xfaf &&
-	    message->data.data_xfer.file_type != 0xb28)
-		/* ignore all but HTML and URL */
-		return;
-
-	/* url file */
-	if (message->data.data_xfer.file_type == 0xb28) {
-		char *temp;
-		FILE *fp = fopen(message->data.data_xfer.file_name, "r");
-
-		if (!fp) return;
-
-		url = xcalloc(256, sizeof(char));
-
-		temp = fgets(url, 256, fp);
-
-		fclose(fp);
-
-		if (!temp) return;
-
-		if (url[strlen(url)-1] == '\n') {
-			url[strlen(url)-1] = '\0';
+	if (file_type == 0xb28)			/* ANT URL file */
+		url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
+	else if (file_type == 0xfaf)		/* HTML file */
+		url = ro_path_to_url(message->data.data_xfer.file_name);
+	else if (file_type == 0x2000) {		/* application */
+		len = strlen(message->data.data_xfer.file_name);
+		if (len < 9 || strcmp(".!NetSurf",
+				message->data.data_xfer.file_name + len - 9))
+			return;
+		if (option_homepage_url && option_homepage_url[0]) {
+			url = strdup(option_homepage_url);
+		} else {
+			url = malloc(80);
+			if (url)
+				snprintf(url, 80,
+					"file:/<NetSurf$Dir>/Docs/intro_%s",
+					option_language);
 		}
-	}
+		if (!url)
+			warn_user("NoMemory", 0);
+	} else
+		return;
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
 	message->your_ref = message->my_ref;
-	wimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+	error = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+	if (error) {
+		LOG(("xwimp_send_message: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	if (!url)
+		/* error has already been reported by one of the three
+		 * functions called above */
+		return;
 
 	/* create a new window with the file */
-	if (message->data.data_xfer.file_type != 0xb28) {
-		url = ro_path_to_url(message->data.data_xfer.file_name);
-	}
-	if (url) {
-		browser_window_create(url, NULL, 0);
-		free(url);
-	}
+	browser_window_create(url, NULL, 0);
+
+	free(url);
 }
 
 

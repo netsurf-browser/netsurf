@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.31 $ )
+| Run file for NetSurf. ( $Revision: 1.32 $ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -8,9 +8,6 @@
 Set NetSurf$ForceVars 1
 <Obey$Dir>.!Boot
 UnSet NetSurf$ForceVars
-
-| Can't run more than one copy of NetSurf at once.
-If "<NetSurf$Running>" = "yes" Then Error NetSurf is already running
 
 | We need RISC OS 3
 RMEnsure UtilityModule 3.00 Error NetSurf needs RISC OS 3 or later
@@ -63,7 +60,4 @@ RMEnsure Tinct 0.09 Error NetSurf requires Tinct 0.09 or later. This can be down
 RMEnsure Iconv 0.02 IfThere System:Modules.Iconv Then RMLoad System:Modules.Iconv
 
 WimpSlot -min 2240k -max 2240k
-
-Set NetSurf$Running yes
 Run <NetSurf$Dir>.!RunImage %*0 2><NetSurf$Dir>.stderr
-UnSet NetSurf$Running
