@@ -147,22 +147,30 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		bool history_add)
 {
 	struct content *c;
+	char *url2;
+
+	url2 = url_normalize(url);
+	if (!url2) {
+		LOG(("failed to normalize url %s", url));
+		return;
+	}
 
 	browser_window_stop(bw);
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
 	bw->time0 = clock();
-	if (strncmp(url, "about:", 6) == 0)
-		c = about_create(url, browser_window_callback, bw, 0,
+	if (strncmp(url2, "about:", 6) == 0)
+		c = about_create(url2, browser_window_callback, bw, 0,
 				gui_window_get_width(bw->window), 0);
 	else
-		c = fetchcache(url, 0,
+		c = fetchcache(url2, 0,
 				browser_window_callback, bw, 0,
 				gui_window_get_width(bw->window), 0,
 				false,
 				post_urlenc, post_multipart,
 				true);
+	free(url2);
 	if (!c) {
 		browser_window_set_status(bw, messages_get("FetchFailed"));
 		return;
