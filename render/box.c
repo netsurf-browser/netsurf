@@ -2458,7 +2458,7 @@ void box_free_box(struct box *box)
 		free(box->href);
 		free(box->title);
 		free(box->col);
-		if (!box->style_clone)
+		if (!box->style_clone && box->style)
 			css_free_style(box->style);
 	}
 
