@@ -79,8 +79,8 @@ colgroup { display: table-column-group; }
 col { display: table-column; }
 
 tr { display: table-row; vertical-align: middle; }
-th { display: table-cell; font-weight: bold; vertical-align: middle; }
-td { display: table-cell; text-align: left; vertical-align: middle; }
+th { display: table-cell; font-weight: bold; vertical-align: inherit; }
+td { display: table-cell; text-align: left; vertical-align: inherit; }
 th[nowrap], td[nowrap] { white-space: nowrap; }
 
 col[valign=top], colgroup[valign=top], tbody[valign=top], td[valign=top], tfoot[valign=top], th[valign=top], thead[valign=top], tr[valign=top] { vertical-align: top; }
@@ -90,10 +90,6 @@ col[valign=bottom], colgroup[valign=bottom], tbody[valign=bottom], td[valign=bot
 tr[align=left] > td, tr[align=left] > th { text-align: left; }
 tr[align=center] > td, tr[align=center] > th { text-align: center; }
 tr[align=right] > td, tr[align=right] > th { text-align: right; }
-
-tr[valign=top] > td, tr[valign=top] > th { vertical-align: top; }
-tr[valign=middle] > td, tr[valign=middle] > th { vertical-align: middle; }
-tr[valign=bottom] > td, tr[valign=bottom] > th { vertical-align: bottom; }
 
 a:link { color: #00f; text-decoration: underline; }
 
