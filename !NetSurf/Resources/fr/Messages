@@ -121,9 +121,9 @@ BadGIF:Reading GIF failed.
 PNGError:PNG library error.
 
 DrawTitle:Image Draw (%lux%lu, %lu octets)
-GIFTitle:Image GIF (%lux%lu)
+GIFTitle:Image GIF (%lux%lu, %lu octets)
 JPEGTitle:Image JPEG (%ux%u, %lu octets)
-PNGTitle:Image PNG (%lux%lu)
+PNGTitle:Image PNG (%lux%lu, %lu octets)
 SpriteTitle:Image Sprite (%lux%lu, %lu octets)
 
 SelectMenu:Sélection
