@@ -325,7 +325,7 @@ void nspng_redraw(struct content *c, long x, long y,
 	xosspriteop_put_sprite_scaled(osspriteop_PTR,
 			c->data.png.sprite_area,
 			(osspriteop_id) (c->data.png.sprite_area + 1),
-			x, y - c->height * 2,
+			x, y - height,
 			os_ACTION_OVERWRITE, &factors, table);
 
 	xfree(table);
