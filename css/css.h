@@ -196,5 +196,6 @@ void css_parse_property_list(struct css_style * style, char * str);
 colour named_colour(const char *name);
 void css_dump_style(const struct css_style * const style);
 
+signed long len(struct css_length * length, struct css_style * style);
 
 #endif

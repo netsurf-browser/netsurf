@@ -19,152 +19,30 @@
 
 #include "oslib/mimemap.h"
 
-bool plugin_handleable(struct content* c);
-
-/**
- * plugin_decode
- * This function checks that the contents of the plugin_object struct
- * are valid. If they are, it initiates the fetch process. If they are
- * not, it exits, leaving the box structure as it was on entry. This is
- * necessary as there are multiple ways of declaring an object's attributes.
- *
- * TODO: alt html
- *       params - create parameters file and put the filename string
- *                somewhere such that it is accessible from plugin_create.
- */
-void plugin_decode(struct content* content, char* url, struct box* box,
-                  struct plugin_object* po)
-{
-  os_error *e;
-  unsigned int *fv;
-
-  /* Check if the codebase attribute is defined.
-   * If it is not, set it to the codebase of the current document.
-   */
-   if(po->codebase == 0)
-           po->codebase = strdup(content->url);
-   else
-           po->codebase = url_join(po->codebase, content->url);
-
-  /* Check that we have some data specified.
-   * First, check the data attribute.
-   * Second, check the classid attribute.
-   * The data attribute takes precedence.
-   * If neither are specified or if classid begins "clsid:",
-   * we can't handle this object.
-   */
-   if(po->data == 0 && po->classid == 0) {
-           xfree(po);
-           return;
-   }
-   if(po->data == 0 && po->classid != 0) {
-           if(strnicmp(po->classid, "clsid:", 6) == 0) {
-                   LOG(("ActiveX object - n0"));
-                   xfree(po);
-                   return;
-           }
-           else {
-                   url = url_join(po->classid, po->codebase);
-           }
-   }
-   else {
-           url = url_join(po->data, po->codebase);
-   }
-
-   /* Check if the declared mime type is understandable.
-    * ie. is it referenced in the mimemap file?
-    * Checks type and codetype attributes.
-    */
-    if(po->type != 0) {
-          e = xmimemaptranslate_mime_type_to_filetype((const char*)po->type,
-                                                      (unsigned int*)&fv);
-          LOG(("fv: &%x", (int) fv));
-          if(e != NULL) {
-                  xfree(po);
-                  return;
-          }
-          /* If a filetype of &ffd (Data) is returned,
-           * one of the following mime types is possible :
-           * application/octet-stream
-           * multipart/x-mixed-replace
-           * unknown mime type (* / *)
-           * we assume it to be the last one as the other two
-           * are unlikely to occur in an <object> definition.
-           */
-          if((int)fv == 0xffd) {
-                  xfree(po);
-                  return;
-          }
-          /* TODO: implement GUI for iframes/frames
-           * For now, we just discard the data and
-           * render the alternative html
-           */
-          if((int)fv == 0xfaf) {
-                  xfree(po);
-                  return;
-          }
-    }
-    if(po->codetype != 0) {
-      e = xmimemaptranslate_mime_type_to_filetype((const char*)po->codetype,
-                                                  (unsigned int*)&fv);
-          if(e != NULL) {
-                  xfree(po);
-                  return;
-          }
-          /* If a filetype of &ffd (Data) is returned,
-           * one of the following mime types is possible :
-           * application/octet-stream
-           * multipart/x-mixed-replace
-           * unknown mime type (* / *)
-           * we assume it to be the last one as the other two
-           * are unlikely to occur in an <object> definition.
-           */
-          if((int)fv == 0xffd) {
-                  xfree(po);
-                  return;
-          }
-          /* TODO: implement GUI for iframes/frames
-           * For now, we just discard the data and
-           * render the alternative html
-           */
-          if((int)fv == 0xfaf) {
-                  xfree(po);
-                  return;
-          }
-    }
-
-  /* If we've got to here, the object declaration has provided us with
-   * enough data to enable us to have a go at downloading and displaying it.
-   */
-   xfree(po);
-   html_fetch_object(content, url, box);
-}
 
 /**
  * plugin_create
  * initialises plugin system in readiness for recieving object data
  *
  * TODO: implement aborting the fetch
- *       get parameter filename from wherever it was put by plugin_decode
- *       launch plugin system
  */
 void plugin_create(struct content *c)
 {
-  bool can_handle = TRUE; /* we assume we can handle all types */
+	/* we can't create the plugin here, because this is only called
+	 * once, even if the object appears several times */
+}
 
-  LOG(("mime type: %s", c->mime_type));
 
-  /* check if we can handle this type */
-  can_handle = plugin_handleable(c);
-  LOG(("can_handle = %s", can_handle ? "TRUE" : "FALSE"));
-  LOG(("sysvar: %s", can_handle ? c->data.plugin.sysvar : "not set"));
-
-  if(!can_handle) {
-          /* TODO: need to find a way of stopping the fetch
-           * if we can't handle this type
-           */
-  }
-
+/**
+ * plugin_add_user
+ *
+ * The content has been added to a page somewhere: launch the plugin.
+ * This may be called anytime after plugin_create any number of times.
+ * Each must launch a new plugin.
+ */
+void plugin_add_user(struct content *c, struct object_params *params)
+{
+	assert(params != 0);
   /* ok, it looks like we can handle this object.
    * Broadcast Message_PlugIn_Open (&4D540) and listen for response
    * Message_PlugIn_Opening (&4D541). If no response, try to launch
@@ -175,17 +53,21 @@ void plugin_create(struct content *c)
    *     values outside the area displayed. This is corrected when
    *     plugin_redraw is called.
    */
-
-
-
-  /* Recheck if can_handle is false. If it is, stop fetch and exit .*/
-  if(!can_handle) {
-          /* TODO: need to find a way of stopping the fetch
-           * if we can't handle this type
-           */
-  }
-
 }
+
+
+/**
+ * plugin_remove_user
+ *
+ * A plugin is no longer required, eg. the page containing it has
+ * been closed.
+ */
+void plugin_remove_user(struct content *c, struct object_params *params)
+{
+	assert(params != 0);
+}
+
+
 
 static const char * const ALIAS_PREFIX = "Alias$@PlugInType_";
 
@@ -194,35 +76,21 @@ static const char * const ALIAS_PREFIX = "Alias$@PlugInType_";
  * Tests whether we can handle an object using a browser plugin
  * returns TRUE if we can handle it, FALSE if we can't.
  */
-bool plugin_handleable(struct content* c)
+bool plugin_handleable(const char *mime_type)
 {
-  bool ret = TRUE;
   char *sysvar;
   unsigned int *fv;
-  int used;
   os_error *e;
 
   /* prefix + 3 for file type + 1 for terminating \0 */
   sysvar = xcalloc(strlen(ALIAS_PREFIX)+4, sizeof(char));
 
-  e = xmimemaptranslate_mime_type_to_filetype((const char*)c->mime_type,
-                                               (unsigned int*)&fv);
+  e = xmimemaptranslate_mime_type_to_filetype(mime_type, (bits *) &fv);
 
-  sprintf(sysvar, "%s%x", ALIAS_PREFIX, e == NULL ? (int)fv : 0 );
-
-  xos_read_var_val_size((const char*)sysvar,0, os_VARTYPE_STRING,
-                                            &used, 0, os_VARTYPE_STRING);
-
-  if(used == 0)
-          /* No system variable set => no plugin available */
-          ret = FALSE;
-
-  if(ret)
-          c->data.plugin.sysvar = strdup(sysvar);
-
-  xfree(sysvar);
-
-  return ret;
+  sprintf(sysvar, "%s%x", ALIAS_PREFIX, e == NULL ? fv : 0 );
+  if (getenv(sysvar) == 0)
+	  return false;
+  return true;
 }
 
 /**
@@ -244,6 +112,8 @@ void plugin_process_data(struct content *c, char *data, unsigned long size)
    * Therefore, we need to stop the fetch and exit.
    */
 
+  /* I think we should just buffer the data here, in case the
+   * plugin requests it sometime in the future. - James */
 }
 
 /**

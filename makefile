@@ -22,10 +22,10 @@ VPATH = content:css:desktop:render:riscos:utils:debug
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wconversion -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
-	-Wnested-externs -Winline -Wno-unused-parameter
-CFLAGS = $(WARNFLAGS) -I.. -I/usr/local/riscoslibs/include \
+	-Wnested-externs -Winline -Wno-unused-parameter -Wuninitialized
+CFLAGS = -O $(WARNFLAGS) -I.. -I/usr/local/riscoslibs/include \
 	-Dfd_set=long -mpoke-function-name
-CFLAGS_DEBUG = $(WARNFLAGS) -I.. -I/usr/include/libxml2 \
+CFLAGS_DEBUG = -O $(WARNFLAGS) -I.. -I/usr/include/libxml2 \
 	-Dfd_set=long -g
 LDFLAGS = \
 	/usr/local/riscoslibs/libungif/libungif.ro \

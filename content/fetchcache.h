@@ -10,9 +10,12 @@
 
 #include "netsurf/content/content.h"
 
+struct object_params;
+
 struct content * fetchcache(const char *url, char *referer,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
-		void *p1, void *p2, unsigned long width, unsigned long height);
+		void *p1, void *p2, unsigned long width, unsigned long height,
+		struct object_params *object_params);
 
 #endif

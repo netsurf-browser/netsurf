@@ -28,10 +28,6 @@ struct mime_entry {
 };
 static const struct mime_entry mime_map[] = {
 #ifdef riscos
-        {"application/java-vm", CONTENT_PLUGIN},
-        {"application/x-shockwave-flash", CONTENT_PLUGIN},
-        {"audio/midi", CONTENT_PLUGIN},
-        {"audio/x-midi", CONTENT_PLUGIN},
 	{"image/gif", CONTENT_GIF},
 	{"image/jpeg", CONTENT_JPEG},
 	{"image/png", CONTENT_PNG},
@@ -52,27 +48,31 @@ struct handler_entry {
 	void (*destroy)(struct content *c);
 	void (*redraw)(struct content *c, long x, long y,
 			unsigned long width, unsigned long height);
+	void (*add_user)(struct content *c, struct object_params *params);
+	void (*remove_user)(struct content *c, struct object_params *params);
 };
 static const struct handler_entry handler_map[] = {
 	{html_create, html_process_data, html_convert, html_revive,
-		html_reformat, html_destroy, 0},
+		html_reformat, html_destroy, 0, 0, 0},
 	{textplain_create, textplain_process_data, textplain_convert,
-		textplain_revive, textplain_reformat, textplain_destroy, 0},
+		textplain_revive, textplain_reformat, textplain_destroy, 0, 0, 0},
 #ifdef riscos
 	{jpeg_create, jpeg_process_data, jpeg_convert, jpeg_revive,
-		jpeg_reformat, jpeg_destroy, jpeg_redraw},
+		jpeg_reformat, jpeg_destroy, jpeg_redraw, 0, 0},
 #endif
-	{css_create, css_process_data, css_convert, css_revive, css_reformat, css_destroy, 0},
+	{css_create, css_process_data, css_convert, css_revive,
+		css_reformat, css_destroy, 0, 0, 0},
 #ifdef riscos
 	{nspng_create, nspng_process_data, nspng_convert, nspng_revive,
-		nspng_reformat, nspng_destroy, nspng_redraw},
+		nspng_reformat, nspng_destroy, nspng_redraw, 0, 0},
 	{nsgif_create, nsgif_process_data, nsgif_convert, nsgif_revive,
-	        nsgif_reformat, nsgif_destroy, nsgif_redraw},
+	        nsgif_reformat, nsgif_destroy, nsgif_redraw, 0, 0},
 	{plugin_create, plugin_process_data, plugin_convert, plugin_revive,
-	        plugin_reformat, plugin_destroy, plugin_redraw},
+	        plugin_reformat, plugin_destroy, plugin_redraw,
+		plugin_add_user, plugin_remove_user},
 #endif
 	{other_create, other_process_data, other_convert, other_revive,
-		other_reformat, other_destroy, 0}
+		other_reformat, other_destroy, 0, 0, 0}
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
@@ -86,8 +86,11 @@ content_type content_lookup(const char *mime_type)
 	struct mime_entry *m;
 	m = bsearch(mime_type, mime_map, MIME_MAP_COUNT, sizeof(mime_map[0]),
 			(int (*)(const void *, const void *)) strcmp);
-	if (m == 0)
+	if (m == 0) {
+		if (plugin_handleable(mime_type))
+			return CONTENT_PLUGIN;
 		return CONTENT_OTHER;
+	}
 	return m->type;
 }
 
@@ -126,6 +129,7 @@ void content_set_type(struct content *c, content_type type, char* mime_type)
 	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
 	assert(type < CONTENT_UNKNOWN);
 	LOG(("content %s, type %i", c->url, type));
+	/* TODO: call add_user on each existing user */
 	c->type = type;
 	c->mime_type = mime_type;
 	c->status = CONTENT_STATUS_LOADING;
@@ -241,7 +245,7 @@ void content_redraw(struct content *c, long x, long y,
 void content_add_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
-		void *p1, void *p2)
+		void *p1, void *p2, struct object_params *params)
 {
 	struct content_user *user;
 	LOG(("content %s, user %p %p %p", c->url, callback, p1, p2));
@@ -251,6 +255,8 @@ void content_add_user(struct content *c,
 	user->p2 = p2;
 	user->next = c->user_list->next;
 	c->user_list->next = user;
+	if (c->type != CONTENT_UNKNOWN && handler_map[c->type].add_user != 0)
+		handler_map[c->type].add_user(c, params);
 }
 
 
@@ -261,10 +267,13 @@ void content_add_user(struct content *c,
 void content_remove_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
-		void *p1, void *p2)
+		void *p1, void *p2, struct object_params *params)
 {
 	struct content_user *user, *next;
 	LOG(("content %s, user %p %p %p", c->url, callback, p1, p2));
+
+	if (c->type != CONTENT_UNKNOWN && handler_map[c->type].remove_user != 0)
+		handler_map[c->type].remove_user(c, params);
 
 	/* user_list starts with a sentinel */
 	for (user = c->user_list; user->next != 0 &&

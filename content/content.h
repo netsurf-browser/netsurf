@@ -201,11 +201,11 @@ void content_redraw(struct content *c, long x, long y,
 void content_add_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
-		void *p1, void *p2);
+		void *p1, void *p2, struct object_params *params);
 void content_remove_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, const char *error),
-		void *p1, void *p2);
+		void *p1, void *p2, struct object_params *params);
 void content_broadcast(struct content *c, content_msg msg, char *error);
 
 #endif

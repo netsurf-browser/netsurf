@@ -84,6 +84,8 @@ static struct result box_applet(xmlNode *n, struct status *status,
 static struct form* create_form(xmlNode* n);
 static void add_form_element(struct page_elements* pe, struct form* f);
 static void add_gadget_element(struct page_elements* pe, struct gui_gadget* g);
+static bool plugin_decode(struct content* content, char* url, struct box* box,
+                  struct object_params* po);
 
 /* element_table must be sorted by name */
 struct element_entry {
@@ -156,6 +158,8 @@ struct box * box_create(struct css_style * style,
 	box->font = 0;
 	box->gadget = 0;
 	box->object = 0;
+	box->object_params = 0;
+	box->plugin_state = 0;
 #endif
 	return box;
 }
@@ -1344,6 +1348,8 @@ void box_free_box(struct box *box)
 		else if (box->parent->href != box->href)
 			xmlFree(box->href);
 	}
+
+	/* TODO: free object_params and plugin_state */
 }
 
 
@@ -1394,7 +1400,7 @@ struct result box_object(xmlNode *n, struct status *status,
 		struct css_style *style)
 {
 	struct box *box;
-	struct plugin_object *po;
+	struct object_params *po;
 	char *s, *url;
 
 	box = box_create(style, status->href, 0);
@@ -1453,25 +1459,23 @@ struct result box_object(xmlNode *n, struct status *status,
         }
 
         /* object width */
-        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "width"))) {
-
-          po->width = (unsigned int)atoi(s);
-          LOG(("width: %u", (unsigned int)atoi(s)));
-          xmlFree(s);
-        }
+	if (style->width.width == CSS_WIDTH_LENGTH)
+		po->width = len(&style->width.value.length, style);
 
         /* object height */
-        if ((s = (char *) xmlGetProp(n, (const xmlChar *) "height"))) {
+	if (style->height.height == CSS_HEIGHT_LENGTH)
+		po->height = len(&style->height.length, style);
 
-          po->height = (unsigned int)atoi(s);
-          LOG(("height: %u",  (unsigned int)atoi(s)));
-          xmlFree(s);
-        }
+	/* TODO: go through children looking for <param>, and add
+	 * somewhere in po */
+
+	box->object_params = po;
 
 	/* start fetch */
-	plugin_decode(status->content, url, box, po);
+	if (plugin_decode(status->content, url, box, po))
+		return (struct result) {box, 0};
 
-	return (struct result) {box, 0};
+	return (struct result) {box, 1};
 }
 
 /**
@@ -1482,7 +1486,7 @@ struct result box_embed(xmlNode *n, struct status *status,
 		struct css_style *style)
 {
 	struct box *box;
-	struct plugin_object *po;
+	struct object_params *po;
 	char *s, *url;
 
 	box = box_create(style, status->href, 0);
@@ -1507,6 +1511,8 @@ struct result box_embed(xmlNode *n, struct status *status,
 	        LOG(("embed '%s'", url));
 	        xmlFree(s);
         }
+
+	box->object_params = po;
 
         /* start fetch */
 	plugin_decode(status->content, url, box, po);
@@ -1540,3 +1546,79 @@ struct result box_applet(xmlNode *n, struct status *status,
 
 	return (struct result) {box,0};
 }
+
+
+/**
+ * plugin_decode
+ * This function checks that the contents of the plugin_object struct
+ * are valid. If they are, it initiates the fetch process. If they are
+ * not, it exits, leaving the box structure as it was on entry. This is
+ * necessary as there are multiple ways of declaring an object's attributes.
+ *
+ * Returns false if the object could not be handled.
+ *
+ * TODO: alt html
+ *       params - create parameters file and put the filename string
+ *                somewhere such that it is accessible from plugin_create.
+ */
+bool plugin_decode(struct content* content, char* url, struct box* box,
+                  struct object_params* po)
+{
+  os_error *e;
+  unsigned int *fv;
+
+  /* Check if the codebase attribute is defined.
+   * If it is not, set it to the codebase of the current document.
+   */
+   if(po->codebase == 0)
+           po->codebase = strdup(content->url);
+   else
+           po->codebase = url_join(po->codebase, content->url);
+
+  /* Check that we have some data specified.
+   * First, check the data attribute.
+   * Second, check the classid attribute.
+   * The data attribute takes precedence.
+   * If neither are specified or if classid begins "clsid:",
+   * we can't handle this object.
+   */
+   if(po->data == 0 && po->classid == 0) {
+           return false;
+   }
+   if(po->data == 0 && po->classid != 0) {
+           if(strnicmp(po->classid, "clsid:", 6) == 0) {
+                   LOG(("ActiveX object - n0"));
+                   return false;
+           }
+           else {
+                   url = url_join(po->classid, po->codebase);
+           }
+   }
+   else {
+           url = url_join(po->data, po->codebase);
+   }
+
+   /* Check if the declared mime type is understandable.
+    * Checks type and codetype attributes.
+    */
+    if(po->type != 0) {
+           if (content_lookup(po->type) == CONTENT_OTHER)
+                  return false;
+    }
+    if(po->codetype != 0) {
+           if (content_lookup(po->codetype) == CONTENT_OTHER)
+                  return false;
+    }
+
+  /* If we've got to here, the object declaration has provided us with
+   * enough data to enable us to have a go at downloading and displaying it.
+   *
+   * We may still find that the object has a MIME type that we can't handle
+   * when we fetch it (if the type was not specified or is different to that
+   * given in the attributes).
+   */
+   html_fetch_object(content, url, box);
+
+   return true;
+}
+

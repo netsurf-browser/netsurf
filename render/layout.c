@@ -32,8 +32,6 @@
  * internal functions
  */
 
-static signed long len(struct css_length * length, struct css_style * style);
-
 static void layout_node(struct box * box, unsigned long width, struct box * cont,
 		unsigned long cx, unsigned long cy);
 static void layout_block(struct box * box, unsigned long width, struct box * cont,
@@ -54,26 +52,6 @@ static void calculate_widths(struct box *box);
 static void calculate_inline_container_widths(struct box *box);
 static void calculate_table_widths(struct box *table);
 
-/**
- * convert a struct css_length to pixels
- */
-
-signed long len(struct css_length * length, struct css_style * style)
-{
-	assert(!((length->unit == CSS_UNIT_EM || length->unit == CSS_UNIT_EX) && style == 0));
-	switch (length->unit) {
-		case CSS_UNIT_EM: return length->value * len(&style->font_size.value.length, 0);
-		case CSS_UNIT_EX: return length->value * len(&style->font_size.value.length, 0) * 0.6;
-		case CSS_UNIT_PX: return length->value;
-		case CSS_UNIT_IN: return length->value * 90.0;
-		case CSS_UNIT_CM: return length->value * 35.0;
-		case CSS_UNIT_MM: return length->value * 3.5;
-		case CSS_UNIT_PT: return length->value * 90.0 / 72.0;
-		case CSS_UNIT_PC: return length->value * 90.0 / 6.0;
-		default: break;
-	}
-	return 0;
-}
 
 /**
  * layout algorithm
@@ -196,7 +174,7 @@ void layout_block(struct box * box, unsigned long width, struct box * cont,
 
 	switch (style->width.width) {
 		case CSS_WIDTH_LENGTH:
-			box->width = len(&style->width.value.length, box->style);
+			box->width = len(&style->width.value.length, style);
 			break;
 		case CSS_WIDTH_PERCENT:
 			box->width = width * style->width.value.percent / 100;
@@ -210,7 +188,7 @@ void layout_block(struct box * box, unsigned long width, struct box * cont,
 	box->height = layout_block_children(box, box->width, cont, cx, cy);
 	switch (style->height.height) {
 		case CSS_HEIGHT_LENGTH:
-			box->height = len(&style->height.length, box->style);
+			box->height = len(&style->height.length, style);
 			break;
 		case CSS_HEIGHT_AUTO:
 		default:

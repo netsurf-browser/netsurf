@@ -81,6 +81,23 @@ struct gui_gadget {
 	} data;
 };
 
+/* state of a plugin handling this box, platform dependent */
+struct plugin_state;
+
+/* parameters for <object> and related elements */
+struct object_params {
+        char* data;
+        char* type;
+        char* codetype;
+        char* codebase;
+        char* classid;
+        char* paramds;       /* very likely to change */
+        unsigned int* width;
+        unsigned int* height;
+	/* not a parameter, but stored here for convenience */
+	struct plugin_state *plugin_state;
+};
+
 struct box {
 	box_type type;
 	struct css_style * style;
@@ -105,6 +122,7 @@ struct box {
 	struct font_data *font;
 	struct gui_gadget* gadget;
 	struct content* object;  /* usually an image */
+	struct object_params *object_params;
 };
 
 struct form

@@ -146,7 +146,7 @@ void css_revive(struct content *c, unsigned int width, unsigned int height)
 		c->data.css.import_content[i] = fetchcache(
 				c->data.css.import_url[i], c->url,
 				css_atimport_callback, c, i,
-				c->width, c->height);
+				c->width, c->height, 0);
 		if (c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
 			c->active++;
 	}
@@ -179,7 +179,7 @@ void css_destroy(struct content *c)
 		if (c->data.css.import_content[i] != 0) {
 			free(c->data.css.import_url[i]);
 			content_remove_user(c->data.css.import_content[i],
-					css_atimport_callback, c, i);
+					css_atimport_callback, c, i, 0);
 		}
 	xfree(c->data.css.import_url);
 	xfree(c->data.css.import_content);
@@ -295,7 +295,7 @@ void css_atimport(struct content *c, struct node *node)
 	c->data.css.import_url[i] = url_join(url, c->url);
 	c->data.css.import_content[i] = fetchcache(
 			c->data.css.import_url[i], c->url, css_atimport_callback,
-			c, i, c->width, c->height);
+			c, i, c->width, c->height, 0);
 	if (c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
 		c->active++;
 
@@ -311,7 +311,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
 			if (css->type != CONTENT_CSS) {
-				content_remove_user(css, css_atimport_callback, c, i);
+				content_remove_user(css, css_atimport_callback, c, i, 0);
 				c->data.css.import_content[i] = 0;
 				c->active--;
 				c->error = 1;
@@ -342,7 +342,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 			c->data.css.import_url[i] = xstrdup(error);
 			c->data.css.import_content[i] = fetchcache(
 					c->data.css.import_url[i], c->url, css_atimport_callback,
-					c, i, css->width, css->height);
+					c, i, css->width, css->height, 0);
 			if (c->data.css.import_content[i]->status != CONTENT_STATUS_DONE)
 				c->active++;
 			break;
@@ -661,6 +661,27 @@ unsigned int css_hash(const char *s)
 	return (z % (HASH_SIZE - 1)) + 1;
 }
 
+
+/**
+ * convert a struct css_length to pixels
+ */
+
+signed long len(struct css_length * length, struct css_style * style)
+{
+	assert(!((length->unit == CSS_UNIT_EM || length->unit == CSS_UNIT_EX) && style == 0));
+	switch (length->unit) {
+		case CSS_UNIT_EM: return length->value * len(&style->font_size.value.length, 0);
+		case CSS_UNIT_EX: return length->value * len(&style->font_size.value.length, 0) * 0.6;
+		case CSS_UNIT_PX: return length->value;
+		case CSS_UNIT_IN: return length->value * 90.0;
+		case CSS_UNIT_CM: return length->value * 35.0;
+		case CSS_UNIT_MM: return length->value * 3.5;
+		case CSS_UNIT_PT: return length->value * 90.0 / 72.0;
+		case CSS_UNIT_PC: return length->value * 90.0 / 6.0;
+		default: break;
+	}
+	return 0;
+}
 
 
 #ifdef DEBUG
