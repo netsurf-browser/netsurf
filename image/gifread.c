@@ -134,7 +134,7 @@ int gif_initialise(struct gif_animation *gif) {
 		*/
 		gif->frame_count = 0;
 		gif->frame_count_partial = 0;
-		gif->decoded_frame = 0xffffffff;
+		gif->decoded_frame = -1;
 
 		/*	Check we are a GIF
 		*/
@@ -339,7 +339,7 @@ static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, 
 
 	/*	Invalidate our currently decoded image
 	*/
-	gif->decoded_frame = 0xffffffff;
+	gif->decoded_frame = -1;
 	return 0;
 }
 
@@ -354,7 +354,7 @@ static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, 
 		1 for success (GIF terminator found)
 */
 int gif_initialise_frame(struct gif_animation *gif) {
-	unsigned int frame;
+	int frame;
 	gif_frame *temp_buf;
 
 	unsigned char *gif_data, *gif_end;
@@ -389,7 +389,7 @@ int gif_initialise_frame(struct gif_animation *gif) {
 
 	/*	Get some memory to store our pointers in etc.
 	*/
-	if (gif->frame_holders <= frame) {
+	if ((int)gif->frame_holders <= frame) {
 		/*	Allocate more memory
 		*/
 		if ((temp_buf = (gif_frame *)realloc(gif->frames,
@@ -413,7 +413,7 @@ int gif_initialise_frame(struct gif_animation *gif) {
 
 	/*	Invalidate any previous decoding we have of this frame
 	*/
-	if (gif->decoded_frame == frame) gif->decoded_frame = 0xffffffff;
+	if (gif->decoded_frame == frame) gif->decoded_frame = -1;
 
 	/*	We pretend to initialise the frames, but really we just skip over all
 		the data contained within. This is all basically a cut down version of
@@ -606,7 +606,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 	/*	Ensure we have a frame to decode
 	*/
 	if (frame > gif->frame_count_partial) return GIF_INSUFFICIENT_DATA;
-	if ((!clear_image) && (frame == gif->decoded_frame)) return 0;
+	if ((!clear_image) && ((int)frame == gif->decoded_frame)) return 0;
 
 	/*	If the previous frame was dirty, remove it
 	*/
@@ -635,7 +635,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 	*/
 	frame_data = (unsigned int *)bitmap_get_buffer(gif->frame_image);
 	if (!clear_image) {
-		if ((frame == 0) || (gif->decoded_frame == 0xffffffff)) {
+		if ((frame == 0) || (gif->decoded_frame == -1)) {
 			memset((char*)frame_data, 0x00, gif->width * gif->height * sizeof(int));
 		}
 		gif->decoded_frame = frame;
@@ -758,6 +758,7 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			*/
 			if ((background_action == 2) || (background_action == 3)) {
 				gif->dirty_frame = frame;
+				LOG(("Dirty frame %i", gif->dirty_frame));
 			}
 
 			/*	Initialise the LZW decoding

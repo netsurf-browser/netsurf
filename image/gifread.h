@@ -51,7 +51,7 @@ typedef struct gif_animation {
 	unsigned int buffer_position;		/**< current index into GIF data */
 	unsigned int buffer_size;		/**< total number of bytes of GIF data available */
 	unsigned int frame_holders;		/**< current number of frame holders */
-	unsigned int decoded_frame;		/**< current frame decoded to bitmap */
+	int decoded_frame;			/**< current frame decoded to bitmap */
 	int loop_count;				/**< number of times to loop animation */
 	gif_frame *frames;			/**< decoded frames */
 	unsigned int width;			/**< width of GIF (may increase during decoding) */
@@ -64,7 +64,7 @@ typedef struct gif_animation {
 	bool global_colours;			/**< whether the GIF has a global colour table */
 	unsigned int *global_colour_table;	/**< global colour table */
 	unsigned int *local_colour_table;	/**< local colour table */
-	unsigned int dirty_frame;		/**< the current dirty frame, or -1 for none */
+	int dirty_frame;			/**< the current dirty frame, or -1 for none */
 	struct bitmap *frame_image;		/**< currently decoded image */
 } gif_animation;
 
