@@ -92,13 +92,17 @@ static struct toolbar_icon *ro_toolbar_create_separator(void);
 static void ro_toolbar_destroy_icon(struct toolbar_icon *icon);
 static void ro_toolbar_add_icon(struct toolbar *toolbar, struct toolbar_icon *icon);
 
+
+
+
 /**
  * Creates a toolbar with a complete set of icons
  *
  * \param  sprite_area  the sprite area to read from
  */
 struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer,
-						char *status_buffer, char *throbber_buffer) {
+						char *status_buffer, char *throbber_buffer,
+						int toolbar_type) {
 	struct toolbar *toolbar;
 	wimp_i icon_handle;
 
@@ -108,14 +112,15 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 	if (!toolbar) return NULL;
 	toolbar->update_pending = true;
 	toolbar->standard_buttons = true;
-	toolbar->url_bar = true;
-	toolbar->throbber = true;
-	toolbar->status_window = true;
+	toolbar->url_bar = (toolbar_type == TOOLBAR_BROWSER);
+	toolbar->throbber = (toolbar_type == TOOLBAR_BROWSER);
+	toolbar->status_window = (toolbar_type == TOOLBAR_BROWSER);
 	toolbar->status_old_width = 0xffffffff;
+	toolbar->type = toolbar_type;
 
 	/*	Load the toolbar icons
 	*/
-	if (sprite_area) {
+	if ((sprite_area) && (toolbar_type == TOOLBAR_BROWSER)) {
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "back", ICON_TOOLBAR_BACK));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "forward", ICON_TOOLBAR_FORWARD));
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "stop", ICON_TOOLBAR_STOP));
@@ -132,6 +137,16 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
  		}
 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "save", ICON_TOOLBAR_SAVE));
 /* 		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "print", ICON_TOOLBAR_PRINT)); */
+	} else if ((sprite_area) && (toolbar_type == TOOLBAR_HOTLIST)) {
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "create", ICON_TOOLBAR_CREATE));
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "delete", ICON_TOOLBAR_DELETE));
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "launch", ICON_TOOLBAR_LAUNCH));
+		ro_toolbar_add_icon(toolbar, ro_toolbar_create_separator());
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "open", ICON_TOOLBAR_OPEN));
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "expand", ICON_TOOLBAR_EXPAND));
+		ro_toolbar_add_icon(toolbar, ro_toolbar_create_separator());
+		ro_toolbar_add_icon(toolbar, ro_toolbar_initialise_icon(sprite_area, "sort", ICON_TOOLBAR_SORT));
+		ro_toolbar_add_icon(toolbar, ro_toolbar_create_separator());
 	}
 
 	/*	Set the sprite area
@@ -144,12 +159,13 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 
 	/*	Create the basic windows
 	*/
-	empty_window.ymin = 36;
-	if (xwimp_create_window(&empty_window, &toolbar->status_handle)) {
-		ro_toolbar_destroy(toolbar);
-		return NULL;
+	if (toolbar_type == TOOLBAR_BROWSER) {
+		empty_window.ymin = 36;
+		if (xwimp_create_window(&empty_window, &toolbar->status_handle)) {
+			ro_toolbar_destroy(toolbar);
+			return NULL;
+		}
 	}
-
 	empty_window.ymin = 1;
 	if (xwimp_create_window(&empty_window, &toolbar->toolbar_handle)) {
 		ro_toolbar_destroy(toolbar);
@@ -158,34 +174,36 @@ struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer
 
 	/*	Create the status window icons. First the status text
 	*/
-	empty_icon.w = toolbar->status_handle;
-	empty_icon.icon.extent.x0 = 0;
-	empty_icon.icon.extent.y0 = 0;
-	empty_icon.icon.extent.x1 = 16384;
-	empty_icon.icon.extent.y1 = 36;
-	empty_icon.icon.flags = wimp_ICON_TEXT | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-					wimp_ICON_INDIRECTED | wimp_ICON_VCENTRED;
-	empty_icon.icon.data.indirected_text.text = status_buffer;
-	empty_icon.icon.data.indirected_text.validation = 0;
-	empty_icon.icon.data.indirected_text.size = 256;
-	if (xwimp_create_icon(&empty_icon, &icon_handle)) {
-		ro_toolbar_destroy(toolbar);
-		return NULL;
-	}
+	if (toolbar->status_handle) {
+		empty_icon.w = toolbar->status_handle;
+		empty_icon.icon.extent.x0 = 0;
+		empty_icon.icon.extent.y0 = 0;
+		empty_icon.icon.extent.x1 = 16384;
+		empty_icon.icon.extent.y1 = 36;
+		empty_icon.icon.flags = wimp_ICON_TEXT | (wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
+				wimp_ICON_INDIRECTED | wimp_ICON_VCENTRED;
+		empty_icon.icon.data.indirected_text.text = status_buffer;
+		empty_icon.icon.data.indirected_text.validation = 0;
+		empty_icon.icon.data.indirected_text.size = 256;
+		if (xwimp_create_icon(&empty_icon, &icon_handle)) {
+			ro_toolbar_destroy(toolbar);
+			return NULL;
+		}
 
-	/*	And finally the status resize icon
-	*/
-	empty_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED |
-					wimp_ICON_BORDER | wimp_ICON_FILLED |
-					(wimp_COLOUR_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) |
-					(wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT);
-	empty_icon.icon.extent.x1 = 0;
-	empty_icon.icon.data.indirected_text.text = null_text_string;
-	empty_icon.icon.data.indirected_text.validation = resize_validation;
-	empty_icon.icon.data.indirected_text.size = 1;
-	if (xwimp_create_icon(&empty_icon, &icon_handle)) {
-		ro_toolbar_destroy(toolbar);
-		return NULL;
+		/*	And finally the status resize icon
+		*/
+		empty_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED |
+				wimp_ICON_BORDER | wimp_ICON_FILLED |
+				(wimp_COLOUR_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) |
+				(wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT);
+		empty_icon.icon.extent.x1 = 0;
+		empty_icon.icon.data.indirected_text.text = null_text_string;
+		empty_icon.icon.data.indirected_text.validation = resize_validation;
+		empty_icon.icon.data.indirected_text.size = 1;
+		if (xwimp_create_icon(&empty_icon, &icon_handle)) {
+			ro_toolbar_destroy(toolbar);
+			return NULL;
+		}
 	}
 
 	/*	Create the icons
@@ -209,6 +227,7 @@ static struct toolbar *ro_toolbar_create_icons(struct toolbar *toolbar, ossprite
 	int index;
 	struct toolbar_icon *cur_icon;
 	wimp_i icon_handle;
+	int max_icon;
 
 	/*	Set the basic icon flags
 	*/
@@ -225,7 +244,9 @@ static struct toolbar *ro_toolbar_create_icons(struct toolbar *toolbar, ossprite
 
 	/*	Create all the required icons
 	*/
-	for (index = 0; index < ICON_TOOLBAR_URL; index++) {
+	max_icon = ICON_TOOLBAR_URL;
+	if (toolbar->type == TOOLBAR_HOTLIST) max_icon = ICON_TOOLBAR_HOTLIST_LAST;
+	for (index = 0; index < max_icon; index++) {
 
 		/*	Find an icon with the correct index and get the validation
 		*/
@@ -250,47 +271,51 @@ static struct toolbar *ro_toolbar_create_icons(struct toolbar *toolbar, ossprite
 
 	/*	Now the URL icon
 	*/
-	empty_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_VCENTRED |
+	if (toolbar->type == TOOLBAR_BROWSER) {
+		empty_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_VCENTRED |
 					wimp_ICON_BORDER | wimp_ICON_FILLED |
 					(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
 					(wimp_BUTTON_WRITE_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT);
-	empty_icon.icon.data.indirected_text.text = url_buffer;
-	empty_icon.icon.data.indirected_text.validation = url_validation;
-	empty_icon.icon.data.indirected_text.size = 256;
-	if (xwimp_create_icon(&empty_icon, &icon_handle)) {
-		ro_toolbar_destroy(toolbar);
-		return NULL;
-	}
+		empty_icon.icon.data.indirected_text.text = url_buffer;
+		empty_icon.icon.data.indirected_text.validation = url_validation;
+		empty_icon.icon.data.indirected_text.size = 256;
+		if (xwimp_create_icon(&empty_icon, &icon_handle)) {
+			ro_toolbar_destroy(toolbar);
+			return NULL;
+		}
 
-	/*	Now the throbber
-	*/
-	empty_icon.icon.flags = wimp_ICON_SPRITE | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
-					wimp_ICON_VCENTRED;
-	empty_icon.icon.data.indirected_sprite.id = (osspriteop_id)throbber_buffer;
-	if (sprite_area) {
-		empty_icon.icon.data.indirected_sprite.area = sprite_area;
-	} else {
-		empty_icon.icon.data.indirected_sprite.area = (osspriteop_area *) 1;
-	}
-	empty_icon.icon.data.indirected_sprite.size = 12;
-	if (xwimp_create_icon(&empty_icon, &icon_handle)) {
-		ro_toolbar_destroy(toolbar);
-		return NULL;
+		/*	Now the throbber
+		*/
+		empty_icon.icon.flags = wimp_ICON_SPRITE | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
+						wimp_ICON_VCENTRED;
+		empty_icon.icon.data.indirected_sprite.id = (osspriteop_id)throbber_buffer;
+		if (sprite_area) {
+			empty_icon.icon.data.indirected_sprite.area = sprite_area;
+		} else {
+			empty_icon.icon.data.indirected_sprite.area = (osspriteop_area *) 1;
+		}
+		empty_icon.icon.data.indirected_sprite.size = 12;
+		if (xwimp_create_icon(&empty_icon, &icon_handle)) {
+			ro_toolbar_destroy(toolbar);
+			return NULL;
+		}
 	}
 
 	/*	And finally the status resize icon
 	*/
-	empty_icon.w = toolbar->status_handle;
-	empty_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED |
+	if (toolbar->status_handle) {
+		empty_icon.w = toolbar->status_handle;
+		empty_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED |
 					wimp_ICON_BORDER | wimp_ICON_FILLED |
 					(wimp_COLOUR_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) |
 					(wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT);
-	empty_icon.icon.data.indirected_text.text = null_text_string;
-	empty_icon.icon.data.indirected_text.validation = resize_validation;
-	empty_icon.icon.data.indirected_text.size = 1;
-	if (xwimp_create_icon(&empty_icon, &icon_handle)) {
-		ro_toolbar_destroy(toolbar);
-		return NULL;
+		empty_icon.icon.data.indirected_text.text = null_text_string;
+		empty_icon.icon.data.indirected_text.validation = resize_validation;
+		empty_icon.icon.data.indirected_text.size = 1;
+		if (xwimp_create_icon(&empty_icon, &icon_handle)) {
+			ro_toolbar_destroy(toolbar);
+			return NULL;
+		}
 	}
 
 	/*	Success - return what we had
@@ -477,7 +502,7 @@ void ro_toolbar_resize_status(struct toolbar *toolbar, int height) {
 
 	/*	Paranoia
 	*/
-	if (toolbar == NULL) return;
+	if ((toolbar == NULL) || (toolbar->status_handle == NULL)) return;
 
 	/*	Check if we need to update
 	*/
@@ -693,32 +718,34 @@ int ro_toolbar_update(struct toolbar *toolbar) {
 
 	/*	Hide the URL bar if we should (and shade it to stop caret issues)
 	*/
-	if (!toolbar->url_bar) {
-		/*	Handle losing the caret
-		*/
-		if (!xwimp_get_caret_position(&caret)) {
-			if ((caret.w == toolbar->toolbar_handle) && (caret.i == ICON_TOOLBAR_URL)) {
-				xwimp_set_caret_position((wimp_w)-1, 0, 0, 0, 0, 0);
+	if (toolbar->type == TOOLBAR_BROWSER) {
+		if (!toolbar->url_bar) {
+			/*	Handle losing the caret
+			*/
+			if (!xwimp_get_caret_position(&caret)) {
+				if ((caret.w == toolbar->toolbar_handle) && (caret.i == ICON_TOOLBAR_URL)) {
+					xwimp_set_caret_position((wimp_w)-1, 0, 0, 0, 0, 0);
+				}
 			}
+			xwimp_resize_icon(toolbar->toolbar_handle, ICON_TOOLBAR_URL,
+					0,
+					1024 + toolbar_height,
+					64,
+					1024 + toolbar_height + 52);
+			ro_gui_set_icon_shaded_state(toolbar->toolbar_handle, ICON_TOOLBAR_URL, true);
+		} else {
+			ro_gui_set_icon_shaded_state(toolbar->toolbar_handle, ICON_TOOLBAR_URL, false);
 		}
-		xwimp_resize_icon(toolbar->toolbar_handle, ICON_TOOLBAR_URL,
-				0,
-				1024 + toolbar_height,
-				64,
-				1024 + toolbar_height + 52);
-		ro_gui_set_icon_shaded_state(toolbar->toolbar_handle, ICON_TOOLBAR_URL, true);
-	} else {
-		ro_gui_set_icon_shaded_state(toolbar->toolbar_handle, ICON_TOOLBAR_URL, false);
-	}
 
-	/*	Hide the throbber if we should
-	*/
-	if (!toolbar->throbber) {
-		xwimp_resize_icon(toolbar->toolbar_handle, ICON_TOOLBAR_THROBBER,
-				0,
-				1024 + toolbar_height,
-				toolbar->throbber_width,
-				1024 + toolbar_height + toolbar->throbber_height);
+		/*	Hide the throbber if we should
+		*/
+		if (!toolbar->throbber) {
+			xwimp_resize_icon(toolbar->toolbar_handle, ICON_TOOLBAR_THROBBER,
+					0,
+					1024 + toolbar_height,
+					toolbar->throbber_width,
+					1024 + toolbar_height + toolbar->throbber_height);
+		}
 	}
 
 	/*	Redraw the entire window

@@ -43,6 +43,10 @@ struct toolbar {
 	/*	The first toolbar icon
 	*/
 	struct toolbar_icon *icon;
+	
+	/*	The toolbar type
+	*/
+	int type;
 
 	/*	Window handles
 	*/
@@ -52,7 +56,7 @@ struct toolbar {
 
 
 struct toolbar *ro_toolbar_create(osspriteop_area *sprite_area, char *url_buffer,
-		char *status_buffer, char *throbber_buffer);
+		char *status_buffer, char *throbber_buffer, int toolbar_type);
 void ro_toolbar_destroy(struct toolbar *toolbar);
 void ro_toolbar_resize_status(struct toolbar *toolbar, int height);
 int ro_toolbar_reformat(struct toolbar *toolbar, int width);

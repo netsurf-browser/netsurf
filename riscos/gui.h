@@ -37,6 +37,7 @@ extern wimp_menu *current_menu;
 extern gui_window *current_gui;
 extern gui_window *ro_gui_current_redraw_gui;
 extern osspriteop_area *gui_sprites;
+extern struct toolbar *hotlist_toolbar;
 
 typedef enum { GUI_BROWSER_WINDOW } gui_window_type;
 typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW, GUI_SAVE_TEXT,
@@ -187,6 +188,7 @@ void ro_gui_hotlist_selection_drag_end(wimp_dragged *drag);
 void ro_gui_hotlist_move_drag_end(wimp_dragged *drag);
 bool ro_gui_hotlist_keypress(int key);
 void ro_gui_hotlist_menu_closed(void);
+void ro_gui_hotlist_toolbar_click(wimp_pointer* pointer);
 
 int ro_gui_hotlist_get_selected(bool folders);
 void ro_gui_hotlist_set_selected(bool selected);
@@ -215,7 +217,11 @@ void ro_gui_debugwin_open(void);
 void ro_gui_debugwin_close(void);
 void ro_gui_debugwin_redraw(wimp_draw *redraw);
 
-/* icon numbers */
+/* toolbar types */
+#define TOOLBAR_BROWSER 0
+#define TOOLBAR_HOTLIST 1
+
+/* icon numbers for browser toolbars */
 #define ICON_TOOLBAR_BACK 0
 #define ICON_TOOLBAR_FORWARD 1
 #define ICON_TOOLBAR_STOP 2
@@ -231,6 +237,16 @@ void ro_gui_debugwin_redraw(wimp_draw *redraw);
 #define ICON_TOOLBAR_URL 12  // Must be after highest toolbar icon
 #define ICON_TOOLBAR_THROBBER 13
 
+/* icon numbers for hotlist toolbars */
+#define ICON_TOOLBAR_CREATE 0
+#define ICON_TOOLBAR_DELETE 1
+#define ICON_TOOLBAR_EXPAND 2
+#define ICON_TOOLBAR_OPEN 3
+#define ICON_TOOLBAR_LAUNCH 4
+#define ICON_TOOLBAR_SORT 5
+#define ICON_TOOLBAR_HOTLIST_LAST 6
+
+/* icon numbers for toolbar status window */
 #define ICON_STATUS_TEXT 0
 #define ICON_STATUS_RESIZE 1
 

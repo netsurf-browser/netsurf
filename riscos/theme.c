@@ -118,13 +118,12 @@ void ro_theme_load(char *pathname) {
 
 
 /**
- * Create a toolbar from the current theme.
+ * Create a toolbar from the current theme for a browser window.
  *
  * The buffers url_buffer and status_buffer must be at least 256 bytes each,
  * throbber_buffer at least 12 bytes;
  */
-
-void ro_theme_create_toolbar(gui_window *g) {
+void ro_theme_create_browser_toolbar(gui_window *g) {
   	struct toolbar *toolbar;
 
 	/*	Destroy any previous toolbar (paranoia)
@@ -135,7 +134,8 @@ void ro_theme_create_toolbar(gui_window *g) {
 	}
   	/*	Create a toolbar
   	*/
-  	toolbar = ro_toolbar_create(theme_sprite_area, g->url, g->status, g->throb_buf);
+  	toolbar = ro_toolbar_create(theme_sprite_area, g->url, g->status,
+  			g->throb_buf, TOOLBAR_BROWSER);
   	if (toolbar == NULL) return;
 
   	/*	Set up the throbber
@@ -150,8 +150,41 @@ void ro_theme_create_toolbar(gui_window *g) {
 
   	/*	Update the toolbar
   	*/
-  	ro_theme_update_toolbar(g);
+  	ro_theme_update_toolbar(toolbar, g->window);
 }
+
+
+/**
+ * Create a toolbar from the current theme for a hotlist window.
+ *
+ * The buffers url_buffer and status_buffer must be at least 256 bytes each,
+ * throbber_buffer at least 12 bytes;
+ */
+void ro_theme_create_hotlist_toolbar(void) {
+  	struct toolbar *toolbar;
+
+	/*	Destroy any previous toolbar (paranoia)
+	*/
+	if (hotlist_toolbar) {
+		ro_toolbar_destroy(hotlist_toolbar);
+		hotlist_toolbar = NULL;
+	}
+
+  	/*	Create a toolbar
+  	*/
+  	toolbar = ro_toolbar_create(theme_sprite_area, NULL, NULL,
+  			NULL, TOOLBAR_HOTLIST);
+  	if (toolbar == NULL) return;
+
+  	/*	Store our toolbar
+  	*/
+  	hotlist_toolbar = toolbar;
+ 
+  	/*	Update the toolbar
+  	*/
+  	ro_theme_update_toolbar(toolbar, hotlist_window);
+}
+
 
 
 /**
@@ -159,15 +192,13 @@ void ro_theme_create_toolbar(gui_window *g) {
  *
  * \return non-zero if the toolbar height has changed
  */
-int ro_theme_update_toolbar(gui_window *g) {
+int ro_theme_update_toolbar(struct toolbar *toolbar, wimp_w window) {
 	wimp_outline outline;
 	wimp_window_state state;
-	struct toolbar *toolbar;
 	int return_value = 0;
 
 	/*	Set an update as pending
 	*/
-	toolbar = g->data.browser.toolbar;
 	toolbar->update_pending = true;
 
   	/*	Close the status window if we should, or resize it
@@ -175,22 +206,22 @@ int ro_theme_update_toolbar(gui_window *g) {
   	if (toolbar->status_window) {
 
 	  	/*	Update the status height
-  		*/
-  		ro_toolbar_resize_status(toolbar, ro_get_hscroll_height(g->window) - 2);
+  			*/
+  		ro_toolbar_resize_status(toolbar, ro_get_hscroll_height(window) - 2);
   	} else {
   	  	xwimp_close_window(toolbar->status_handle);
   	}
 
 	/*	Update the toolbar height
 	*/
-	return_value = ro_theme_resize_toolbar(g);
+	return_value = ro_theme_resize_toolbar(toolbar, window);
 
 	/*	Open/close the toolbar
 	*/
 	if (toolbar->height > 0) {
-		outline.w = g->window;
+		outline.w = window;
 		xwimp_get_window_outline(&outline);
-		state.w = g->window;
+		state.w = window;
 		xwimp_get_window_state(&state);
 		state.w = toolbar->toolbar_handle;
 		state.visible.x1 = outline.outline.x1 - 2;
@@ -198,7 +229,7 @@ int ro_theme_update_toolbar(gui_window *g) {
 		state.xscroll = 0;
 		state.yscroll = 0;
 		state.next = wimp_TOP;
-		xwimp_open_window_nested((wimp_open *)&state, g->window,
+		xwimp_open_window_nested((wimp_open *)&state, window,
 				wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 						<< wimp_CHILD_XORIGIN_SHIFT |
 				wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
@@ -226,9 +257,8 @@ int ro_theme_update_toolbar(gui_window *g) {
  *
  * \return non-zero if the toolbar height has changed
  */
-int ro_theme_resize_toolbar(gui_window *g) {
+int ro_theme_resize_toolbar(struct toolbar *toolbar, wimp_w window) {
 	os_box extent = { 0, 0, 0, 0 };
-	struct toolbar *toolbar;
 	wimp_outline outline;
 	wimp_outline status_outline;
 	wimp_window_state state;
@@ -237,28 +267,27 @@ int ro_theme_resize_toolbar(gui_window *g) {
 
 	/*	Paranoia
 	*/
-	toolbar = g->data.browser.toolbar;
 	if (toolbar == NULL) return 0;
 
 	/*	Get the toolbar width
 	*/
-	outline.w = g->window;
+	outline.w = window;
 	if (xwimp_get_window_outline(&outline)) return 0;
 	width = outline.outline.x1 - outline.outline.x0 - 2;
 
 	/*	Reformat if we should
 	*/
 	if ((toolbar->width != width) || (toolbar->resize_status) || (toolbar->update_pending)) {
- 	  	if (toolbar->resize_status) {
+ 	  	if ((toolbar->resize_status) && (toolbar->status_handle)) {
 		 	status_outline.w = toolbar->status_handle;
 			if (xwimp_get_window_outline(&status_outline)) return 0;
 			toolbar->status_width = width -
 					(status_outline.outline.x1 - status_outline.outline.x0 - 4);
   	  	  	toolbar->resize_status = 0;
-  	  	} else {
+  	  	} else if (toolbar->status_handle) {
   	  	  	/*	Update the extent of the status window
   	  	  	*/
- 	  		state.w = g->window;
+ 	  		state.w = window;
  	  		if (xwimp_get_window_state(&state)) return 0;
  	  		extent.x1 = state.visible.x1 - state.visible.x0;
  	  		extent.y1 = toolbar->status_height - 2;
@@ -279,7 +308,7 @@ int ro_theme_resize_toolbar(gui_window *g) {
 				state.visible.x1 = outline.outline.x0 + status_width;
 				state.visible.y0 = outline.outline.y0 - toolbar->status_height;
 				state.visible.y1 = outline.outline.y0 - 2;
-				xwimp_open_window_nested((wimp_open *) &state, g->window,
+				xwimp_open_window_nested((wimp_open *) &state, window,
 						wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 								<< wimp_CHILD_XORIGIN_SHIFT |
 						wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT

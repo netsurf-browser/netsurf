@@ -57,8 +57,8 @@ WindowStagr:Stagger window position
 WindowSize:Maintain window size
 WindowReset:Reset default position
 Utilities:Utilities
-HotlistAdd:Add page to hotlist
-HotlistShow:Show hotlist  F6
+HotlistAdd:Bookmark page
+HotlistShow:Show bookmarks  F6
 Help:Help
 HelpContent:Contents  F1
 HelpGuide:User guide
@@ -66,20 +66,29 @@ HelpInfo:User information
 HelpInter:Interactive help
 HelpAbout:About NetSurf
 
-Hotlist:Hotlist
+Themes:Themes
+
+# Hotlist menus
+Hotlist:Bookmarks
 New:New
 Expand:Expand
 Collapse:Collapse
 All:All
 Folders:Folders
-Links:Links
+Folder:Folder
+Links:Bookmarks
+Link:Bookmark
 SaveSelect:Save
 Launch:Launch
 Edit:Edit
 Delete:Delete
 ResetUsage:Reset statistics
 
-Themes:Themes
+# Hotlist sub-window titles
+NewLink:Create new bookmark
+NewFolder:Create new folder
+EditLink:Edit bookmark
+EditFolder:Edit folder
 
 # Hotlist window
 HotlistURL:Address: %s

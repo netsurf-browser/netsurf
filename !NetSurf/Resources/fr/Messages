@@ -66,20 +66,29 @@ HelpInfo:Information utilisateur
 HelpInter:Aide interactive
 HelpAbout:À propos de NetSurf
 
-Hotlist:Hotlist
+Themes:Thèmes
+
+# Hotlist menus
+Hotlist:Bookmarks
 New:New
 Expand:Expand
 Collapse:Collapse
 All:All
 Folders:Folders
-Links:Links
+Folder:Folder
+Links:Bookmarks
+Link:Bookmark
 SaveSelect:Save
 Launch:Launch
 Edit:Edit
 Delete:Delete
 ResetUsage:Reset statistics
 
-Themes:Thèmes
+# Hotlist sub-window titles
+NewLink:Create new bookmark
+NewFolder:Create new folder
+EditLink:Edit bookmark
+EditFolder:Edit folder
 
 # Hotlist window
 HotlistURL:Address: %s

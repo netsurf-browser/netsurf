@@ -167,7 +167,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw,
 		return 0;
 	}
 
-	ro_theme_create_toolbar(g);
+	ro_theme_create_browser_toolbar(g);
 
 	g->next = window_list;
 	window_list = g;
@@ -577,7 +577,7 @@ void ro_gui_window_open(gui_window *g, wimp_open *open) {
 		g->data.browser.old_height = height;
 	}
 
-	ro_theme_resize_toolbar(g);
+	ro_theme_resize_toolbar(g->data.browser.toolbar, g->window);
 }
 
 
@@ -1318,7 +1318,7 @@ void gui_window_clone_options(struct browser_window *new_bw,
 			new_gui->data.browser.toolbar->url_bar = option_toolbar_show_address;
 			new_gui->data.browser.toolbar->throbber = option_toolbar_show_throbber;
 		}
-		ro_theme_update_toolbar(new_gui);
+		ro_theme_update_toolbar(new_gui->data.browser.toolbar, new_gui->window);
 	}
 }
 

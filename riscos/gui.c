@@ -651,7 +651,7 @@ void ro_gui_open_window_request(wimp_open *open)
 			toolbar = g->data.browser.toolbar;
 			if (toolbar) {
 				toolbar->resize_status = 1;
-				ro_theme_resize_toolbar(g);
+				ro_theme_resize_toolbar(g->data.browser.toolbar, g->window);
 			}
 		}
 	}
@@ -698,6 +698,8 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 	else if (g && g->type == GUI_BROWSER_WINDOW &&
 			g->data.browser.toolbar->toolbar_handle == pointer->w)
 		ro_gui_toolbar_click(g, pointer);
+	else if (hotlist_toolbar && hotlist_toolbar->toolbar_handle == pointer->w)
+		ro_gui_hotlist_toolbar_click(pointer);
 	else if (g && g->type == GUI_BROWSER_WINDOW &&
 			g->data.browser.toolbar->status_handle == pointer->w)
 		ro_gui_status_click(g, pointer);

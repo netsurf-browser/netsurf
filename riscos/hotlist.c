@@ -20,6 +20,7 @@
 #include "oslib/wimpspriteop.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -128,7 +129,7 @@ static wimp_window hotlist_window_definition = {
 	wimp_COLOUR_BLACK,
 	wimp_COLOUR_LIGHT_GREY,
 	wimp_COLOUR_LIGHT_GREY,
-	wimp_COLOUR_VERY_LIGHT_GREY,
+	wimp_COLOUR_WHITE,
 	wimp_COLOUR_DARK_GREY,
 	wimp_COLOUR_MID_LIGHT_GREY,
 	wimp_COLOUR_CREAM,
@@ -138,8 +139,8 @@ static wimp_window hotlist_window_definition = {
 	(wimp_BUTTON_DOUBLE_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT),
 	wimpspriteop_AREA,
 	1,
-	1,
-	{"Hotlist"},
+	256,
+	{"Bookmarks"},
 	0
 };
 
@@ -161,9 +162,10 @@ static bool reformat_pending = false;
 static int max_width = 0;
 static int max_height = 0;
 
-/*	The hotlist window and plot origins
+/*	The hotlist window, toolbar and plot origins
 */
 wimp_w hotlist_window;
+struct toolbar *hotlist_toolbar = NULL;
 static int origin_x, origin_y;
 
 /*	The current redraw rectangle
@@ -224,6 +226,7 @@ static bool ro_gui_hotlist_move_processing(struct hotlist_entry *entry, struct h
 
 
 void ro_gui_hotlist_init(void) {
+	os_box extent = {0, 0, 0, 0};;
 	os_error *error;
 
 	/*	Set the initial root options
@@ -289,6 +292,20 @@ void ro_gui_hotlist_init(void) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
+	
+	/*	Create our toolbar
+	*/
+	ro_theme_create_hotlist_toolbar();
+
+	/*	Update the extent
+	*/
+	if (hotlist_toolbar) {
+		extent.x1 = 16384;
+		extent.y1 = hotlist_toolbar->height;
+		extent.y0 = -16384;
+		xwimp_set_extent(hotlist_window, &extent);
+		reformat_pending = true;
+	}
 }
 
 
@@ -337,6 +354,9 @@ void ro_gui_hotlist_show(void) {
 		dimension = state.visible.y1 - state.visible.y0;
 		state.visible.y0 = (screen_height - dimension) / 2;
 		state.visible.y1 = state.visible.y0 + dimension;
+		state.xscroll = 0;
+		state.yscroll = 0;
+		if (hotlist_toolbar) state.yscroll = hotlist_toolbar->height;
 	}
 
 	/*	Open the window at the top of the stack
@@ -870,6 +890,7 @@ void ro_gui_hotlist_delink_entry(struct hotlist_entry *entry) {
 	*/
 	if (entry->parent_entry) {
 		entry->parent_entry->children -= 1;
+		if (entry->parent_entry->children == 0) entry->parent_entry->expanded = false;
 		if (entry->parent_entry->child_entry == entry) {
 			entry->parent_entry->child_entry = entry->next_entry;
 		}
@@ -1072,6 +1093,10 @@ void ro_gui_hotlist_redraw(wimp_draw *redraw) {
 		if (max_height > -800) max_height = -800;
 		extent.x1 = max_width;
 		extent.y0 = max_height;
+		if (hotlist_toolbar) {
+			extent.y1 += hotlist_toolbar->height;
+		}
+		LOG(("Toolbar height: %i", hotlist_toolbar->height)); 
 		xwimp_set_extent(hotlist_window, &extent);
 		state.w = hotlist_window;
 		wimp_get_window_state(&state);
@@ -1449,18 +1474,20 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 		x_offset = x - entry->x0;
 		y_offset = y - (entry->y0 + entry->height);
 		if (((x_offset < HOTLIST_LEAF_INSET) && (y_offset > -HOTLIST_LINE_HEIGHT) &&
-			((buttons == wimp_CLICK_SELECT << 8) || (buttons == wimp_CLICK_ADJUST << 8))) ||
+				((buttons == wimp_CLICK_SELECT << 8) || (buttons == wimp_CLICK_ADJUST << 8))) ||
 				((entry->children != -1) &&
-			((buttons == wimp_DOUBLE_SELECT) || (buttons == wimp_DOUBLE_ADJUST)))) {
-			ro_gui_hotlist_update_expansion(entry->child_entry, false, true, true, false, true);
-			ro_gui_hotlist_selection_state(entry->child_entry,
-					false, false);
-			entry->expanded = !entry->expanded;
-			if (x_offset >= HOTLIST_LEAF_INSET) entry->selected = false;
-			reformat_pending = true;
-			xwimp_force_redraw(hotlist_window,
-					0, -16384, 16384,
-					entry->y0 + entry->height);
+				((buttons == wimp_DOUBLE_SELECT) || (buttons == wimp_DOUBLE_ADJUST)))) {
+			if (entry->children != 0) {
+				ro_gui_hotlist_update_expansion(entry->child_entry, false, true, true, false, true);
+				ro_gui_hotlist_selection_state(entry->child_entry,
+						false, false);
+				entry->expanded = !entry->expanded;
+				if (x_offset >= HOTLIST_LEAF_INSET) entry->selected = false;
+				reformat_pending = true;
+				xwimp_force_redraw(hotlist_window,
+						0, -16384, 16384,
+						entry->y0 + entry->height);
+			}
 		} else if (x_offset >= HOTLIST_LEAF_INSET) {
 
 		  	/*	We treat a menu click as a Select click if we have no selections
@@ -1593,6 +1620,7 @@ void ro_gui_hotlist_click(wimp_pointer *pointer) {
 			drag.bbox.x1 = state.visible.x1;
 			drag.bbox.y0 = state.visible.y0;
 			drag.bbox.y1 = state.visible.y1;
+			if (hotlist_toolbar) drag.bbox.y1 -= hotlist_toolbar->height;
 			xwimp_drag_box(&drag);
 		}
 	}
@@ -1965,6 +1993,11 @@ void ro_gui_hotlist_selection_drag(struct hotlist_entry *entry,
 void ro_gui_hotlist_selection_drag_end(wimp_dragged *drag) {
 	wimp_window_state state;
 	int x0, y0, x1, y1;
+	int toolbar_height = 0;
+
+	/*	Get the toolbar height
+	*/
+	if (hotlist_toolbar) toolbar_height = hotlist_toolbar->height * 2;
 
 	/*	Get the window state to make everything relative
 	*/
@@ -1975,8 +2008,8 @@ void ro_gui_hotlist_selection_drag_end(wimp_dragged *drag) {
 	*/
 	x0 = drag->final.x0 - state.visible.x0 - state.xscroll;
 	x1 = drag->final.x1 - state.visible.x0 - state.xscroll;
-	y0 = drag->final.y0 - state.visible.y1 - state.yscroll;
-	y1 = drag->final.y1 - state.visible.y1 - state.yscroll;
+	y0 = drag->final.y0 - state.visible.y1 - state.yscroll + toolbar_height;
+	y1 = drag->final.y1 - state.visible.y1 - state.yscroll + toolbar_height;
 
 	/*	Make sure x0 < x1 and y0 > y1
 	*/
@@ -2007,11 +2040,22 @@ void ro_gui_hotlist_selection_drag_end(wimp_dragged *drag) {
  * \param drag the final drag co-ordinates
  */
 void ro_gui_hotlist_move_drag_end(wimp_dragged *drag) {
+	wimp_pointer pointer;
+	int toolbar_height = 0;
 	wimp_window_state state;
 	struct hotlist_entry *test_entry;
 	struct hotlist_entry *entry;
 	int x, y, x0, y0, x1, y1;
 	bool before = false;
+
+
+	xwimp_get_pointer_info(&pointer);
+	if (pointer.w != hotlist_window) return;
+
+
+	/*	Get the toolbar height
+	*/
+	if (hotlist_toolbar) toolbar_height = hotlist_toolbar->height * 2;
 
   	/*	Set the process flag for all selected items
   	*/
@@ -2026,8 +2070,8 @@ void ro_gui_hotlist_move_drag_end(wimp_dragged *drag) {
 	*/
 	x0 = drag->final.x0 - state.visible.x0 - state.xscroll;
 	x1 = drag->final.x1 - state.visible.x0 - state.xscroll;
-	y0 = drag->final.y0 - state.visible.y1 - state.yscroll;
-	y1 = drag->final.y1 - state.visible.y1 - state.yscroll;
+	y0 = drag->final.y0 - state.visible.y1 - state.yscroll + toolbar_height;
+	y1 = drag->final.y1 - state.visible.y1 - state.yscroll + toolbar_height;
 	x = (x0 + x1) / 2;
 	y = (y0 + y1) / 2;
 
@@ -2168,7 +2212,36 @@ bool ro_gui_hotlist_keypress(int key) {
 }
 
 
+void ro_gui_hotlist_toolbar_click(wimp_pointer* pointer) {
+  	int selection;
 
+	/*	Reject Menu clicks
+	*/
+	if (pointer->buttons == wimp_CLICK_MENU) return;
+
+	/*	Handle the buttons appropriately
+	*/
+	switch (pointer->i) {
+	  	case ICON_TOOLBAR_OPEN:
+	  		selection = ro_gui_hotlist_get_selected(true);
+			ro_gui_hotlist_update_expansion(root.child_entry, (selection != 0), true, false,
+					(pointer->buttons == wimp_CLICK_SELECT),
+					(pointer->buttons == wimp_CLICK_ADJUST));
+			break;
+	  	case ICON_TOOLBAR_EXPAND:
+	  		selection = ro_gui_hotlist_get_selected(true);
+			ro_gui_hotlist_update_expansion(root.child_entry, (selection != 0), false, true,
+					(pointer->buttons == wimp_CLICK_SELECT),
+					(pointer->buttons == wimp_CLICK_ADJUST));
+			break;
+		case ICON_TOOLBAR_DELETE:
+			ro_gui_hotlist_delete_selected();
+			break;
+		case ICON_TOOLBAR_LAUNCH:
+			ro_gui_hotlist_keypress(wimp_KEY_RETURN);
+			break;
+	}
+}
 
 
 
