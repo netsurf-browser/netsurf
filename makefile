@@ -18,7 +18,7 @@ OBJECTS = $(OBJECTS_COMMON) \
 	textselection.o theme.o window.o \
 	draw.o gif.o jpeg.o plugin.o png.o sprite.o \
 	about.o filetype.o font.o uri.o url.o history.o \
-	version.o save_draw.o save_complete.o thumbnail.o
+	version.o save_draw.o save_complete.o thumbnail.o save.o
 OBJECTS_DEBUG = $(OBJECTS_COMMON) \
 	netsurfd.o \
 	options.o filetyped.o fontd.o

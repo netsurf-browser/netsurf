@@ -57,13 +57,15 @@ struct form_control *current_gadget;
 gui_window *over_window = 0;	/**< Window which the pointer is over. */
 bool gui_reformat_pending = false;	/**< Some windows have been resized,
 						and should be reformatted. */
+gui_drag_type gui_current_drag_type;
 static wimp_t task_handle;	/**< RISC OS wimp task handle. */
 /** Accepted wimp user messages. */
-static const wimp_MESSAGE_LIST(25) task_messages = { {
+static const wimp_MESSAGE_LIST(26) task_messages = { {
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
 	message_DATA_LOAD,
 	message_DATA_OPEN,
+	message_MENU_WARNING,
 #ifdef WITH_URI
 	message_URI_PROCESS,
 #endif
@@ -110,12 +112,12 @@ static void ro_gui_open_window_request(wimp_open *open);
 static void ro_gui_close_window_request(wimp_close *close);
 static void ro_gui_mouse_click(wimp_pointer *pointer);
 static void ro_gui_icon_bar_click(wimp_pointer* pointer);
+static void ro_gui_drag_end(wimp_dragged *drag);
 static void ro_gui_keypress(wimp_key* key);
 static void ro_gui_user_message(wimp_event_no event, wimp_message *message);
 static void ro_msg_datasave(wimp_message* block);
 static void ro_msg_dataload(wimp_message* block);
 static void ro_msg_datasave_ack(wimp_message* message);
-static int ro_save_data(void *data, unsigned long length, char *file_name, bits file_type);
 static void ro_msg_dataopen(wimp_message* block);
 static char *ro_path_to_url(const char *path);
 
@@ -388,14 +390,12 @@ void ro_gui_poll_queue(wimp_event_no event, wimp_block *block)
 
 void ro_gui_null_reason_code(void)
 {
-        ro_gui_throb();
-        if (over_window != NULL
-            || current_drag.type == draginfo_BROWSER_TEXT_SELECTION)
-        {
-          wimp_pointer pointer;
-          wimp_get_pointer_info(&pointer);
-          ro_gui_window_mouse_at(&pointer);
-        }
+	ro_gui_throb();
+	if (over_window) {
+		wimp_pointer pointer;
+		wimp_get_pointer_info(&pointer);
+		ro_gui_window_mouse_at(&pointer);
+	}
 }
 
 
@@ -483,6 +483,8 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 		ro_gui_toolbar_click(g, pointer);
 	else if (g && g->type == GUI_DOWNLOAD_WINDOW)
 		ro_download_window_click(g, pointer);
+	else if (pointer->w == dialog_saveas)
+		ro_gui_save_click(pointer);
 	else
 		ro_gui_dialog_click(pointer);
 }
@@ -499,6 +501,28 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 				   96 + iconbar_menu_height, NULL);
 	} else if (pointer->buttons == wimp_CLICK_SELECT) {
 		browser_window_create(HOME_URL);
+	}
+}
+
+
+/**
+ * Handle User_Drag_Box events.
+ */
+
+void ro_gui_drag_end(wimp_dragged *drag)
+{
+	switch (gui_current_drag_type) {
+		case GUI_DRAG_SELECTION:
+			ro_gui_selection_drag_end(drag);
+			break;
+
+		case GUI_DRAG_DOWNLOAD_SAVE:
+			ro_download_drag_end(drag);
+			break;
+
+		case GUI_DRAG_SAVE:
+			ro_gui_save_drag_end(drag);
+			break;
 	}
 }
 
@@ -555,6 +579,11 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 
 		case message_DATA_OPEN:
 			ro_msg_dataopen(message);
+			break;
+
+		case message_MENU_WARNING:
+			ro_gui_menu_warning((wimp_message_menu_warning *)
+					&message->data);
 			break;
 
 #ifdef WITH_URI
@@ -758,52 +787,24 @@ void ro_msg_dataload(wimp_message* block)
 }
 
 
+/**
+ * Handle Message_DataSaveAck.
+ */
+
 void ro_msg_datasave_ack(wimp_message *message)
 {
-  int save_status = 0;
+	switch (gui_current_drag_type) {
+		case GUI_DRAG_DOWNLOAD_SAVE:
+			ro_download_datasave_ack(message);
+			break;
 
-  LOG(("ACK Message: filename = %s", message->data.data_xfer.file_name));
+		case GUI_DRAG_SAVE:
+			ro_gui_save_datasave_ack(message);
+			break;
 
-  if (current_drag.type == draginfo_DOWNLOAD_SAVE)
-  {
-    assert(current_drag.data.download.gui->data.download.download_status ==
-                   download_COMPLETE);
-
-
-    save_status = ro_save_data(current_drag.data.download.gui->data.download.content->data.other.data,
-                 current_drag.data.download.gui->data.download.content->data.other.length,
-                 message->data.data_xfer.file_name,
-                 current_drag.data.download.gui->data.download.file_type);
-
-
-    if (save_status != 1)
-    {
-      LOG(("Could not save download data"));
-      //Report_Error
-    }
-    else
-    {
-      ro_download_window_close(current_drag.data.download.gui);
-      current_drag.type = draginfo_NONE;
-    }
-  }
-}
-
-int ro_save_data(void *data, unsigned long length, char *file_name, bits file_type)
-{
-  os_error *written = NULL;
-
-  void *end_data = (void*)((int)data + length);
-
-  written = xosfile_save_stamped(file_name, file_type, data, end_data);
-
-  if (written != NULL)
-  {
-    LOG(("Unable to create stamped file"));
-    return 0;
-  }
-
-  return 1;
+		default:
+			break;
+	}
 }
 
 
@@ -871,6 +872,7 @@ void ro_gui_open_help_page(void)
 /**
  * Send the source of a content to a text editor.
  */
+
 void ro_gui_view_source(struct content *content)
 {
 
@@ -891,61 +893,6 @@ void ro_gui_view_source(struct content *content)
                 xosfile_set_type("<Wimp$Scrap>", 0xf79);
         }
 }
-
-
-void ro_gui_drag_box_start(wimp_pointer *pointer)
-{
-  wimp_drag *drag_box;
-  wimp_window_state *icon_window;
-  wimp_icon_state *icon_icon;
-  int x0, y0;
-
-  /* TODO: support drag_a_sprite */
-
-  icon_window = xcalloc(1, sizeof(*icon_window));
-  icon_icon = xcalloc(1, sizeof(*icon_icon));
-  drag_box = xcalloc(1, sizeof(*drag_box));
-
-  drag_box->w = pointer->w;
-  drag_box->type = wimp_DRAG_USER_FIXED;
-
-  icon_window->w = pointer->w;
-  wimp_get_window_state(icon_window);
-
-  x0 = icon_window->visible.x0 - icon_window->xscroll;
-  y0 = icon_window->visible.y1 - icon_window->yscroll;
-
-  icon_icon->w = pointer->w;
-  icon_icon->i = pointer->i;
-  wimp_get_icon_state(icon_icon);
-
-  drag_box->initial.x0 =   x0 + icon_icon->icon.extent.x0;
-  drag_box->initial.y0 =   y0 + icon_icon->icon.extent.y0;
-  drag_box->initial.x1 =   x0 + icon_icon->icon.extent.x1;
-  drag_box->initial.y1 =   y0 + icon_icon->icon.extent.y1;
-
-  drag_box->bbox.x0 = 0x80000000;
-  drag_box->bbox.y0 = 0x80000000;
-  drag_box->bbox.x1 = 0x7FFFFFFF;       // CHANGE
-  drag_box->bbox.y1 = 0x7FFFFFFF;
-
-        /*if(USE_DRAGASPRITE == DRAGASPRITE_AVAILABLE)
-          xdragasprite_start((dragasprite_HPOS_CENTRE ^
-                              dragasprite_VPOS_CENTRE ^
-                              dragasprite_NO_BOUND ^
-                              dragasprite_BOUND_POINTER),
-                                    (osspriteop_area*) 1,
-                                    "file_fff",
-                                    (os_box*)&drag_box->initial,0);*/
-
-  wimp_drag_box(drag_box);
-
-  xfree(drag_box);
-  xfree(icon_window);
-  xfree(icon_icon);
-
-}
-
 
 
 static os_error warn_error = { 1, "" };

@@ -618,7 +618,7 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* pointer)
 
         if (pointer->buttons == wimp_CLICK_ADJUST && g->data.browser.bw->current_content->data.html.text_selection.selected == 1)
         {
-          current_drag.data.selection.gui->data.browser.bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
+          current_gui->data.browser.bw->current_content->data.html.text_selection.altering = alter_UNKNOWN;
         }
 
         if (pointer->buttons == wimp_CLICK_SELECT
@@ -727,7 +727,7 @@ bool ro_gui_window_keypress(gui_window *g, int key, bool toolbar)
 #endif
 #ifdef WITH_DRAW_EXPORT
 		case wimp_KEY_SHIFT + wimp_KEY_CONTROL + wimp_KEY_F3:
-		        save_as_draw(g->data.browser.bw->current_content);
+/* 		        save_as_draw(g->data.browser.bw->current_content); */
 		        return true;
 #endif
 

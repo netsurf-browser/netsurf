@@ -10,6 +10,6 @@
 
 struct content;
 
-void save_as_draw(struct content *c);
+void save_as_draw(struct content *c, char *path);
 
 #endif

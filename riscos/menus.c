@@ -48,12 +48,20 @@ wimp_menu *iconbar_menu = (wimp_menu *) & (wimp_MENU(4)) {
 int iconbar_menu_height = 4 * 44;
 
 /* browser window menu structure - based on Style Guide */
+static wimp_MENU(1) export_menu = {
+  { "ExportAs" }, 7,2,7,0, 200, 44, 0,
+  {
+    { wimp_MENU_LAST | wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Draw" } }
+  }
+};
+static wimp_menu *browser_export_menu = (wimp_menu *) &export_menu;
+
 static wimp_MENU(4) page_menu = {
   { "Page" }, 7,2,7,0, 200, 44, 0,
   {
     { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "Info" } },
-    { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "Save" } },
-    { 0,              (wimp_menu *) 1,  DEFAULT_FLAGS | wimp_ICON_SHADED, { "Export" } },
+    { wimp_MENU_GIVE_WARNING, wimp_NO_SUB_MENU, DEFAULT_FLAGS,            { "Save" } },
+    { 0,              (wimp_menu *) &export_menu, DEFAULT_FLAGS,          { "Export" } },
     { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "Print" } }
   }
 };
@@ -109,12 +117,14 @@ void ro_gui_menus_init(void)
 	translate_menu(iconbar_menu);
 	translate_menu(browser_menu);
 	translate_menu(browser_page_menu);
+	translate_menu(browser_export_menu);
 	translate_menu(browser_selection_menu);
 	translate_menu(browser_navigate_menu);
 	translate_menu(browser_view_menu);
 
 	iconbar_menu->entries[0].sub_menu = (wimp_menu *) dialog_info;
 	browser_page_menu->entries[1].sub_menu = (wimp_menu *) dialog_saveas;
+	browser_export_menu->entries[0].sub_menu = (wimp_menu *) dialog_saveas;
 	browser_view_menu->entries[0].sub_menu = (wimp_menu *) dialog_zoom;
 }
 
@@ -266,5 +276,44 @@ void ro_gui_menu_selection(wimp_selection *selection)
 			gui_gadget_combo(current_gui->data.browser.bw, current_gadget, (unsigned int)current_menu_x, (unsigned int)current_menu_y);
 		else
 			ro_gui_create_menu(current_menu, current_menu_x, current_menu_y, current_gui);
+	}
+}
+
+
+/**
+ * Handle Message_MenuWarning by opening the save dialog.
+ */
+
+void ro_gui_menu_warning(wimp_message_menu_warning *warning)
+{
+	os_error *error;
+
+	if (warning->selection.items[0] != 0)
+		return;
+
+	switch (warning->selection.items[2]) {
+		case 0: /* Export as -> Draw */
+			gui_current_save_type = GUI_SAVE_DRAW;
+			ro_gui_set_icon_string(dialog_saveas,
+					ICON_SAVE_ICON, "file_aff");
+			ro_gui_set_icon_string(dialog_saveas,
+					ICON_SAVE_PATH, "Webpage");
+			break;
+
+		case -1:
+		default: /* Save */
+			gui_current_save_type = GUI_SAVE_SOURCE;
+			ro_gui_set_icon_string(dialog_saveas,
+					ICON_SAVE_ICON, "file_faf");
+			ro_gui_set_icon_string(dialog_saveas,
+					ICON_SAVE_PATH, "Source");
+			break;
+	}
+
+	error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
+			warning->pos.x, warning->pos.y);
+	if (error) {
+		LOG(("0x%x: %s\n", error->errnum, error->errmess));
+		warn_user(error->errmess);
 	}
 }

@@ -2,12 +2,14 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2003 Rob Jackson <jacko@xms.ms>
  */
 
 #include <assert.h>
 #include <string.h>
 #include "oslib/mimemap.h"
+#include "oslib/osfile.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/desktop/gui.h"
@@ -77,13 +79,13 @@ gui_window *gui_create_download_window(struct content *content)
 		g->status;
 	download_template->icons[ICON_DOWNLOAD_STATUS].data.indirected_text.size =
 		256;
-	sprintf(g->data.download.sprite_name, "Sfile_%x",
+	sprintf(g->data.download.sprite_name, "file_%x",
 			g->data.download.file_type);
-	e = xwimpspriteop_select_sprite(g->data.download.sprite_name + 1, 0);
+	e = xwimpspriteop_select_sprite(g->data.download.sprite_name, 0);
 	if (e)
-		strcpy(g->data.download.sprite_name, "Sfile_xxx");
-	download_template->icons[ICON_DOWNLOAD_ICON].data.indirected_text.validation =
-		g->data.download.sprite_name;
+		strcpy(g->data.download.sprite_name, "file_xxx");
+	download_template->icons[ICON_DOWNLOAD_ICON].data.indirected_sprite.id =
+			(osspriteop_id) g->data.download.sprite_name;
 	ro_gui_download_leaf(content->url, g->data.download.path);
 	download_template->icons[ICON_DOWNLOAD_PATH].data.indirected_text.text =
 		g->data.download.path;
@@ -191,30 +193,90 @@ void gui_download_window_done(gui_window *g)
         g->data.download.download_status = download_COMPLETE;
 }
 
+
+/**
+ * Handle clicks in a download window.
+ */
+
 void ro_download_window_click(struct gui_window *g, wimp_pointer *pointer)
 {
-  /* Handle clicks on download windows */
+	switch (pointer->i) {
+		case ICON_DOWNLOAD_ABORT:
+			if (g->data.download.download_status ==
+					download_INCOMPLETE)
+				fetch_abort(g->data.download.content->fetch);
 
-  switch (pointer->i)
-  {
-    case ICON_DOWNLOAD_ABORT : if (g->data.download.download_status ==
-                                                         download_INCOMPLETE)
-                                  fetch_abort(g->data.download.content->fetch);
+			ro_download_window_close(g);
+			break;
 
-                               ro_download_window_close(g);
-                               break;
-
-    case ICON_DOWNLOAD_ICON  : if (g->data.download.download_status ==
-                                                         download_COMPLETE)
-                               {
-                                  current_drag.type = draginfo_DOWNLOAD_SAVE;
-                                  current_drag.data.download.gui = g;
-                                  ro_gui_drag_box_start(pointer);
-                               }
-
-                               break;
-  }
+		case ICON_DOWNLOAD_ICON:
+			if (g->data.download.download_status ==
+					download_COMPLETE) {
+				gui_current_drag_type = GUI_DRAG_DOWNLOAD_SAVE;
+				current_gui = g;
+				ro_gui_drag_icon(pointer);
+			}
+			break;
+	}
 }
+
+
+/**
+ * Handle User_Drag_Box event for a drag from a download window.
+ */
+
+void ro_download_drag_end(wimp_dragged *drag)
+{
+	wimp_pointer pointer;
+	wimp_message message;
+
+	wimp_get_pointer_info(&pointer);
+
+	message.your_ref = 0;
+	message.action = message_DATA_SAVE;
+	message.data.data_xfer.w = pointer.w;
+	message.data.data_xfer.i = pointer.i;
+	message.data.data_xfer.pos.x = pointer.pos.x;
+	message.data.data_xfer.pos.y = pointer.pos.y;
+	message.data.data_xfer.est_size = (int)
+			current_gui->data.download.content->data.other.length;
+	message.data.data_xfer.file_type = current_gui->data.download.file_type;
+	strncpy(message.data.data_xfer.file_name,
+			current_gui->data.download.path, 212);
+	message.size = 44 + ((strlen(message.data.data_xfer.file_name) + 4) &
+			(~3u));
+
+	wimp_send_message_to_window(wimp_USER_MESSAGE, &message,
+			pointer.w, pointer.i);
+}
+
+
+/**
+ * Handle Message_DataSaveAck for a drag from a download window.
+ */
+
+void ro_download_datasave_ack(wimp_message *message)
+{
+	char *data;
+	char *data_end;
+	os_error *error;
+
+	assert(current_gui->data.download.download_status == download_COMPLETE);
+
+	data = current_gui->data.download.content->data.other.data;
+	data_end = data + current_gui->data.download.content->data.other.length;
+
+	error = xosfile_save_stamped(message->data.data_xfer.file_name,
+			current_gui->data.download.file_type,
+			data, data_end);
+	if (error) {
+		LOG(("0x%x: %s\n", error->errnum, error->errmess));
+		warn_user(error->errmess);
+	} else {
+		ro_download_window_close(current_gui);
+	}
+}
+
 
 struct gui_window * ro_lookup_download_window_from_w(wimp_w window)
 {

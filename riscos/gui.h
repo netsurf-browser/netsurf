@@ -31,6 +31,11 @@ extern bool gui_redraw_debug;
 extern gui_window *current_gui;
 
 typedef enum { GUI_BROWSER_WINDOW, GUI_DOWNLOAD_WINDOW } gui_window_type;
+typedef enum { GUI_SAVE_SOURCE, GUI_SAVE_DRAW } gui_save_type;
+extern gui_save_type gui_current_save_type;
+typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
+		GUI_DRAG_SAVE } gui_drag_type;
+extern gui_drag_type gui_current_drag_type;
 
 struct gui_window
 {
@@ -74,22 +79,6 @@ struct gui_window
   float scale;
 };
 
-struct ro_gui_drag_info
-{
-  enum { draginfo_UNKNOWN, draginfo_NONE, draginfo_BROWSER_TEXT_SELECTION, draginfo_DOWNLOAD_SAVE } type;
-  union
-  {
-    struct
-    {
-      gui_window* gui;
-    } selection;
-
-    struct
-    {
-      gui_window* gui;
-    } download;
-  } data;
-};
 
 /* in gui.c */
 void ro_gui_copy_selection(gui_window* g);
@@ -103,6 +92,7 @@ void ro_gui_menus_init(void);
 void ro_gui_create_menu(wimp_menu* menu, int x, int y, gui_window* g);
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
 void ro_gui_menu_selection(wimp_selection* selection);
+void ro_gui_menu_warning(wimp_message_menu_warning *warning);
 
 /* in dialog.c */
 void ro_gui_dialog_init(void);
@@ -113,21 +103,24 @@ bool ro_gui_dialog_keypress(wimp_key *key);
 void ro_gui_dialog_close(wimp_w close);
 void ro_gui_redraw_config_th(wimp_draw* redraw);
 void ro_gui_theme_menu_selection(char *theme);
+void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text);
+char *ro_gui_get_icon_string(wimp_w w, wimp_i i);
 
 /* in download.c */
 void ro_gui_download_init(void);
 void ro_download_window_close(struct gui_window *g);
 struct gui_window * ro_lookup_download_window_from_w(wimp_w window);
 void ro_download_window_click(struct gui_window *g, wimp_pointer *pointer);
+void ro_download_drag_end(wimp_dragged *drag);
+void ro_download_datasave_ack(wimp_message *message);
 
 /* in mouseactions.c */
 void ro_gui_mouse_action(gui_window* g);
 
 /* in textselection.c */
-extern struct ro_gui_drag_info current_drag;
 void ro_gui_start_selection(wimp_pointer *pointer, wimp_window_state *state,
-                            gui_window *g);
-void ro_gui_drag_end(wimp_dragged* drag);
+		gui_window *g);
+void ro_gui_selection_drag_end(wimp_dragged *drag);
 
 /* in 401login.c */
 #ifdef WITH_AUTH
@@ -159,6 +152,12 @@ void ro_gui_history_open(struct browser_window *bw,
 		struct history *history, int wx, int wy);
 void ro_gui_history_redraw(wimp_draw *redraw);
 void ro_gui_history_click(wimp_pointer *pointer);
+
+/* in save.c */
+void ro_gui_save_click(wimp_pointer *pointer);
+void ro_gui_drag_icon(wimp_pointer *pointer);
+void ro_gui_save_drag_end(wimp_dragged *drag);
+void ro_gui_save_datasave_ack(wimp_message *message);
 
 /* icon numbers */
 #define ICON_TOOLBAR_THROBBER 1
@@ -231,5 +230,10 @@ void ro_gui_history_click(wimp_pointer *pointer);
 #define ICON_ZOOM_120 8
 #define ICON_ZOOM_CANCEL 9
 #define ICON_ZOOM_OK 10
+
+#define ICON_SAVE_ICON 0
+#define ICON_SAVE_PATH 1
+#define ICON_SAVE_OK 2
+#define ICON_SAVE_CANCEL 3
 
 #endif

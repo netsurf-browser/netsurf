@@ -51,8 +51,8 @@ static void add_circle(struct content *content, struct box *box,
                         unsigned long cbc, long x, long y);
 
 /** \todo this will probably want to take a filename/path too... */
-void save_as_draw(struct content *c) {
-
+void save_as_draw(struct content *c, char *path)
+{
 	struct box *box;
 	int temp;
 	unsigned long bc;
@@ -94,7 +94,7 @@ void save_as_draw(struct content *c) {
 	/* right, traverse the tree and grab the contents */
 	add_objects(c, box, bc, 0, A4PAGEHEIGHT*512);
 
-	xosfile_save_stamped("<NetSurf$Dir>.draw", 0xaff, (byte*)d, (byte*)d+length);
+	xosfile_save_stamped(path, 0xaff, (byte*)d, (byte*)d+length);
 
 	xfree(d);
 

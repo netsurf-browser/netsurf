@@ -55,8 +55,6 @@ static void ro_gui_build_theme_menu(void);
 static int file_exists(const char* base, const char* dir, const char* leaf, bits ftype);
 static void set_icon_state(wimp_w w, wimp_i i, int state);
 static int get_icon_state(wimp_w w, wimp_i i);
-static void set_icon_string(wimp_w w, wimp_i i, const char *text);
-static char* get_icon_string(wimp_w w, wimp_i i);
 static void set_icon_string_i(wimp_w w, wimp_i i, int num);
 
 
@@ -68,7 +66,7 @@ void ro_gui_dialog_init(void)
 {
 	dialog_info = ro_gui_dialog_create("info");
 	/* fill in about box version info */
-	set_icon_string(dialog_info, 4, netsurf_version);
+	ro_gui_set_icon_string(dialog_info, 4, netsurf_version);
 
 	dialog_saveas = ro_gui_dialog_create("saveas");
 	dialog_config = ro_gui_dialog_create("config");
@@ -290,9 +288,9 @@ void ro_gui_dialog_update_config_br(void)
 {
 	char s[10];
 	sprintf(s, "%i.%ipt", font_size / 10, font_size % 10);
-	set_icon_string(dialog_config_br, ICON_CONFIG_BR_FONTSIZE, s);
+	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_FONTSIZE, s);
 	sprintf(s, "%i.%ipt", font_min_size / 10, font_min_size % 10);
-	set_icon_string(dialog_config_br, ICON_CONFIG_BR_MINSIZE, s);
+	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_MINSIZE, s);
 }
 
 
@@ -357,7 +355,7 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 {
 	unsigned int scale;
-	scale = atoi(get_icon_string(dialog_zoom, ICON_ZOOM_VALUE));
+	scale = atoi(ro_gui_get_icon_string(dialog_zoom, ICON_ZOOM_VALUE));
 
 	switch (pointer->i) {
 		case ICON_ZOOM_DEC: scale -= 10; break;
@@ -440,7 +438,7 @@ void set_proxy_choices(void)
 {
 	set_icon_state(dialog_config_prox, ICON_CONFIG_PROX_HTTP,
 			option_http_proxy);
-	set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST,
+	ro_gui_set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST,
 			option_http_proxy_host ? option_http_proxy_host : "");
 	set_icon_string_i(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT,
 			option_http_proxy_port);
@@ -456,9 +454,9 @@ void get_proxy_choices(void)
 	option_http_proxy = get_icon_state(dialog_config_prox,
 			ICON_CONFIG_PROX_HTTP);
 	free(option_http_proxy_host);
-	option_http_proxy_host = strdup(get_icon_string(dialog_config_prox,
+	option_http_proxy_host = strdup(ro_gui_get_icon_string(dialog_config_prox,
 			ICON_CONFIG_PROX_HTTPHOST));
-	option_http_proxy_port = atoi(get_icon_string(dialog_config_prox,
+	option_http_proxy_port = atoi(ro_gui_get_icon_string(dialog_config_prox,
 			ICON_CONFIG_PROX_HTTPPORT));
 }
 
@@ -469,7 +467,7 @@ void get_proxy_choices(void)
 
 void set_theme_choices(void)
 {
-	set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME,
+	ro_gui_set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME,
 			option_theme ? option_theme : "Default");
 	load_theme_preview(option_theme ? option_theme : "Default");
 }
@@ -482,7 +480,7 @@ void set_theme_choices(void)
 void get_theme_choices(void)
 {
 	free(option_theme);
-	option_theme = strdup(get_icon_string(dialog_config_th,
+	option_theme = strdup(ro_gui_get_icon_string(dialog_config_th,
 			ICON_CONFIG_TH_NAME));
 }
 
@@ -661,7 +659,7 @@ void ro_gui_build_theme_menu(void)
 
 void ro_gui_theme_menu_selection(char *theme)
 {
-	set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME, theme);
+	ro_gui_set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME, theme);
 	load_theme_preview(theme);
 	wimp_set_icon_state(dialog_config_th, ICON_CONFIG_TH_PREVIEW, 0, 0);
 }
@@ -711,7 +709,7 @@ int get_icon_state(wimp_w w, wimp_i i)
  * \param  text  string (copied)
  */
 
-void set_icon_string(wimp_w w, wimp_i i, const char *text)
+void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text)
 {
 	wimp_icon_state ic;
 	ic.w = w;
@@ -722,7 +720,16 @@ void set_icon_string(wimp_w w, wimp_i i, const char *text)
 	wimp_set_icon_state(w, i, 0, 0);
 }
 
-char* get_icon_string(wimp_w w, wimp_i i)
+
+/**
+ * Read the contents of an icon.
+ *
+ * \param  w  window handle
+ * \param  i  icon handle
+ * \return string in icon
+ */
+
+char *ro_gui_get_icon_string(wimp_w w, wimp_i i)
 {
 	wimp_icon_state ic;
 	ic.w = w;
@@ -735,6 +742,6 @@ void set_icon_string_i(wimp_w w, wimp_i i, int num)
 {
 	char buffer[255];
 	sprintf(buffer, "%d", num);
-	set_icon_string(w, i, buffer);
+	ro_gui_set_icon_string(w, i, buffer);
 }
 
