@@ -1,11 +1,12 @@
 /**
- * $Id: netsurf.c,v 1.3 2002/10/15 10:41:12 monkeyson Exp $
+ * $Id: netsurf.c,v 1.4 2002/11/03 09:39:53 bursa Exp $
  */
 
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/fetch.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
+#include "netsurf/desktop/cache.h"
 #include <stdlib.h>
 
 int netsurf_quit = 0;
@@ -24,6 +25,13 @@ void netsurf_init(int argc, char** argv)
 {
   stdout = stderr;
   gui_init(argc, argv);
+  cache_init();
+}
+
+
+void netsurf_exit(void)
+{
+  cache_quit();
 }
 
 
@@ -35,6 +43,7 @@ int main(int argc, char** argv)
     netsurf_poll();
 
   fprintf(stderr, "Netsurf quit!\n");
+  netsurf_exit();
 
   return 0;
 }
