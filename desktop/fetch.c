@@ -1,5 +1,5 @@
 /**
- * $Id: fetch.c,v 1.5 2002/12/25 21:38:45 bursa Exp $
+ * $Id: fetch.c,v 1.6 2003/01/04 18:51:41 andrew Exp $
  */
 
 #include "libxml/HTMLparser.h"
@@ -173,7 +173,7 @@ struct fetch* fetch_poll(struct fetch* f)
         curl_easy_setopt(curl, CURLOPT_URL, f->location);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, fetch_curl_data);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, f);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, "NetSurf");
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "NetSurf/0.00 (alpha)");
         Log("fetch_poll","about to perform");
         curl_easy_perform(curl);
         Log("fetch_poll","about to cleanup");
