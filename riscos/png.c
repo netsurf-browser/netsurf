@@ -252,7 +252,7 @@ bool nspng_convert(struct content *c, int width, int height)
 	c->title = malloc(100);
 	if (c->title)
 		snprintf(c->title, 100, messages_get("PNGTitle"),
-				c->width, c->height);
+				c->width, c->height, c->source_size);
 	c->status = CONTENT_STATUS_DONE;
 	return true;
 }
