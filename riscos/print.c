@@ -17,6 +17,7 @@
 
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
+#include "netsurf/desktop/plotters.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
@@ -25,6 +26,7 @@
 #include "netsurf/riscos/print.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 /** \todo landscape format pages
@@ -40,7 +42,7 @@ bool print_active = false;
 
 #ifdef WITH_PRINT
 
-/* 1 millipoint == 1/400 OS unit = 1/800 browser units */
+/* 1 millipoint == 1/400 OS unit == 1/800 browser units */
 
 /* static globals */
 static int print_prev_message = 0;
@@ -50,17 +52,19 @@ static int print_num_copies = 1;
 static bool print_bg_images = false;
 static int print_max_sheets = -1;
 
-/* array of fonts in document - max 255 */
+/* a font in a document */
 struct print_font {
 	font_f handle;
-	void *fontName;
+	void *font_name;
 };
 
 static void print_update_sheets_shaded_state(bool on);
 static void print_send_printsave(struct content *c);
 static bool print_send_printtypeknown(wimp_message *m);
-static void print_document(struct gui_window *g, const char *filename);
-static bool print_find_fonts(struct box *box, struct print_font **print_fonts, int *numFonts);
+static bool print_document(struct gui_window *g, const char *filename);
+static const char *print_declare_fonts(struct box *box);
+static bool print_find_fonts(struct box *box, struct print_font **print_fonts,
+		int *font_count);
 
 /**
  * Open the print dialog
@@ -362,79 +366,79 @@ void print_type_odd(wimp_message *m)
 
 }
 
+
 /**
- * Handle message_DATASAVE_ACK for the printing protocol
+ * Handle message_DATASAVE_ACK for the printing protocol.
  *
- * \param m the message to handle
+ * \param  m  the message to handle
  * \return true if message successfully handled, false otherwise
+ *
+ * We cheat here and, instead of giving Printers what it asked for (a copy of
+ * the file so it can poke us later via a broadcast of PrintTypeOdd), we give
+ * it a file that it can print itself without having to bother us further. For
+ * PostScript printers (type 0) we give it a PostScript file. Otherwise, we give
+ * it a PrintOut file.
+ *
+ * This method has a couple of advantages:
+ * - we can reuse this code for background printing (we simply ignore the
+ *   PrintTypeOdd reply)
+ * - there's no need to ensure all components of a page queued to be printed
+ *   still exist when it reaches the top of the queue. (which reduces complexity
+ *   a fair bit)
  */
+
 bool print_ack(wimp_message *m)
 {
-	int type;
-	os_error *e;
+	pdriver_info_type info_type;
+	pdriver_type type;
+	os_error *error;
 
-	if (m->your_ref == 0 || m->your_ref != print_prev_message) {
-		LOG(("message ignored"));
+	if (m->your_ref == 0 || m->your_ref != print_prev_message ||
+			!print_current_window)
 		return false;
-	}
 
-	/* Read Printer Driver Type */
-	e = xpdriver_info(&type, 0, 0, 0, 0, 0, 0, 0);
-	if (e) {
-		LOG(("%s", e->errmess));
+	/* read printer driver type */
+	error = xpdriver_info(&info_type, 0, 0, 0, 0, 0, 0, 0);
+	if (error) {
+		LOG(("xpdriver_info: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("PrintError", error->errmess);
+		print_cleanup();
+		return true;
+	}
+	type = info_type >> 16;
+
+	/* print to file */
+	if (!print_document(print_current_window,
+			m->data.data_xfer.file_name)) {
 		print_cleanup();
 		return true;
 	}
 
-	type &= 0xFFFF0000; /* we don't care about the version no */
+	/* send dataload */
+	m->your_ref = m->my_ref;
+	m->action = message_DATA_LOAD;
 
-	if (print_current_window) {
-		print_document(print_current_window,
-				(const char*)m->data.data_xfer.file_name);
+	if (type == pdriver_TYPE_PS)
+		m->data.data_xfer.file_type = osfile_TYPE_POSTSCRIPT;
+	else
+		m->data.data_xfer.file_type = osfile_TYPE_PRINTOUT;
 
-		/* send dataload */
-		m->your_ref = m->my_ref;
-		m->action = message_DATA_LOAD;
-
-		/* We cheat here and, instead of giving Printers what
-		 * it asked for (a copy of the file so it can poke us
-		 * later via a broadcast of PrintTypeOdd), we give
-		 * it a file that it can print itself without having
-		 * to bother us further. For PostScript printers
-		 * (type 0) we give it a PostScript file. Otherwise,
-		 * we give it a PrintOut file.
-		 *
-		 * This method has a couple of advantages:
-		 * - we can reuse this code for background printing
-		 *   (we simply ignore the PrintTypeOdd reply)
-		 * - there's no need to ensure all components of a
-		 *   page queued to be printed still exist when it
-		 *   reaches the top of the queue. (which reduces
-		 *   complexity a fair bit)
-		 */
-		if (type == 0)
-			/* postscript */
-			m->data.data_xfer.file_type = 0xff5;
-		else
-			/* printout */
-			m->data.data_xfer.file_type = 0xff4;
-
-		e = xwimp_send_message(wimp_USER_MESSAGE_RECORDED, m,
-				m->sender);
-		if (e) {
-			LOG(("xwimp_send_message: 0x%x: %s",
-					e->errnum, e->errmess));
-			warn_user("WimpError", e->errmess);
-			/* and delete temporary file */
-			xosfile_delete(m->data.data_xfer.file_name,
-					0, 0, 0, 0, 0);
-			print_cleanup();
-		}
-		print_prev_message = m->my_ref;
+	error = xwimp_send_message(wimp_USER_MESSAGE_RECORDED, m, m->sender);
+	if (error) {
+		LOG(("xwimp_send_message: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		/* and delete temporary file */
+		xosfile_delete(m->data.data_xfer.file_name,
+				0, 0, 0, 0, 0);
 	}
+	print_prev_message = m->my_ref;
 
+	print_cleanup();
 	return true;
 }
+
 
 /**
  * Handle a bounced dataload message
@@ -466,188 +470,152 @@ void print_cleanup(void)
 	ro_gui_dialog_close(dialog_print);
 }
 
+
 /**
- * Print a document
+ * Print a document.
  *
- * \param g gui_window containing the document to print
- * \param filename name of file to print to
+ * \param  g         gui_window containing the document to print
+ * \param  filename  name of file to print to
+ * \return true on success, false on error and error reported
  */
-void print_document(struct gui_window *g, const char *filename)
+
+bool print_document(struct gui_window *g, const char *filename)
 {
-	struct content *c = g->bw->current_content;
-	struct box *box = NULL;
-	int temp;
-	os_error *e;
-	pdriver_features features;
 	int left, right, top, bottom, width, height;
-	os_fw fhandle, old_job = 0;
+	int saved_width;
 	int yscroll = 0, sheets = print_max_sheets;
+	struct box *box = 0;
+	struct content *c = g->bw->current_content;
+	const char *error_message;
+	pdriver_features features;
+	os_fw fhandle, old_job = 0;
+	os_error *error;
 
 	/* no point printing a blank page */
-	if (!c)
-		return;
-
-	LOG(("Printing page (%d)", print_max_sheets));
+	if (!c) {
+		warn_user("PrintError", "nothing to print");
+		return false;
+	}
 
 	if (c->type == CONTENT_HTML)
 		box = c->data.html.layout;
 
-	/* Read Printer Driver Features */
-	e = xpdriver_info(0, 0, 0, &features, 0, 0, 0, 0);
-	if (e) {
-		LOG(("%s", e->errmess));
-		return;
+	/* read printer driver features */
+	error = xpdriver_info(0, 0, 0, &features, 0, 0, 0, 0);
+	if (error) {
+		LOG(("xpdriver_info: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("PrintError", error->errmess);
+		return false;
 	}
 
-	LOG(("read features"));
-
-	/* Acquire page size */
-	e = xpdriver_page_size(&width, &height, &left, &bottom, &right, &top);
-	if (e) {
-		LOG(("%s", e->errmess));
-		return;
+	/* read page size */
+	error = xpdriver_page_size(0, 0, &left, &bottom, &right, &top);
+	if (error) {
+		LOG(("xpdriver_page_size: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("PrintError", error->errmess);
+		return false;
 	}
-
-	LOG(("page size: %d x %d", width/800, height/800));
 
 	width = (right - left) / 800;
 	height = (top - bottom) / 800;
 
-	LOG(("printable area: [(%d, %d), (%d, %d)] = %d x %d",
-				left, bottom, right, top, width, height));
-
-
-	temp = c->width;
-
 	/* layout the document to the correct width */
+	saved_width = c->width;
 	if (c->type == CONTENT_HTML)
 		layout_document(box, width, c->data.html.box_pool);
 
-	/* open printer */
-	e = xosfind_openoutw(0xf, filename, 0, &fhandle);
-	if (e) {
-		LOG(("%s", e->errmess));
-		return;
+	/* open printer file */
+	error = xosfind_openoutw(osfind_NO_PATH | osfind_ERROR_IF_DIR |
+			osfind_ERROR_IF_ABSENT, filename, 0, &fhandle);
+	if (error) {
+		LOG(("xosfind_openoutw: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("PrintError", error->errmess);
+		return false;
 	}
-
-	LOG(("opened %s", filename));
 
 	/* select print job */
-	e = xpdriver_select_jobw(fhandle, "NetSurf", &old_job);
-	if (e) {
-		LOG(("%s", e->errmess));
+	error = xpdriver_select_jobw(fhandle, "NetSurf", &old_job);
+	if (error) {
+		LOG(("xpdriver_select_jobw: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("PrintError", error->errmess);
 		xosfind_closew(fhandle);
-		return;
+		return false;
 	}
-
-	LOG(("selected job - polling the wimp now does bad things(TM)"));
 
 	/* declare fonts, if necessary */
 	if (features & pdriver_FEATURE_DECLARE_FONT &&
 					c->type == CONTENT_HTML) {
-		struct print_font *print_fonts =
-					calloc(255, sizeof(*print_fonts));
-		int numFonts = 0;
-		int i;
-
-		if (!print_fonts) {
-			LOG(("malloc failed"));
+		if ((error_message = print_declare_fonts(box)))
 			goto error;
-		}
-
-		if(!print_find_fonts(box, &print_fonts, &numFonts)) {
-			LOG(("print_find_fonts_failed"));
-			for (i = 0; i != numFonts; ++i) {
-					free((print_fonts[i]).fontName);
-				}
-			free(print_fonts);
-			goto error;
-		}
-		LOG(("%d", numFonts));
-
-		for (i = 0; i != numFonts; ++i) {
-			LOG(("0x%x: %s", (print_fonts[i]).handle, (char*)(print_fonts[i]).fontName));
-			e = xpdriver_declare_font((font_f)(print_fonts[i]).handle, (print_fonts[i]).fontName, 0);
-			if (e) {
-				for (i = 0; i != numFonts; ++i) {
-					free((print_fonts[i]).fontName);
-				}
-				free(print_fonts);
-				LOG(("%s", e->errmess));
-				goto error;
-			}
-		}
-
-		for (i = 0; i != numFonts; ++i) {
-			free((print_fonts[i]).fontName);
-		}
-		free(print_fonts);
-
-		e = xpdriver_declare_font(0, 0, 0);
-		if (e) {
-			LOG(("%s", e->errmess));
-			goto error;
-		}
-
-		LOG(("declared fonts"));
 	}
+
+	plot = ro_plotters;
+	ro_plot_set_scale(print_scale);
+	ro_gui_current_redraw_gui = g;
 
 	/* print is now active */
 	print_active = true;
 
 	do {
-		os_box b = {left/400 - 2, bottom/400 - 2,
-				right/400 + 2, top/400 + 2};
-		os_hom_trfm t = { { { 65536, 0}, {0, 65536} } };
+		int clip_x0, clip_y0, clip_x1, clip_y1;
+		os_box b = {left / 400 - 2, bottom / 400 - 2,
+				right / 400 + 2, top / 400 + 2};
+		os_hom_trfm t = { { {65536, 0}, {0, 65536} } };
 		os_coord p = {left, bottom};
+		osbool more;
 
-		e = xhourglass_percentage((int)(yscroll*100/c->height));
-		if (e) {
-			LOG(("%s", e->errmess));
-			/* the hourglass failing to be updated
-			 * shouldn't stop the printjob
-			 */
-		}
+		xhourglass_percentage((int) (yscroll * 100 / c->height));
 
-		/* Give page rectangle */
-		e = xpdriver_give_rectangle(0, &b, &t, &p, os_COLOUR_WHITE);
-		if (e) {
-			LOG(("%s", e->errmess));
+		/* give page rectangle */
+		error = xpdriver_give_rectangle(0, &b, &t, &p, os_COLOUR_WHITE);
+		if (error) {
+			LOG(("xpdriver_give_rectangle: 0x%x: %s",
+					error->errnum, error->errmess));
+			error_message = error->errmess;
 			goto error;
 		}
 
-		LOG(("given rectangle: [(%d, %d), (%d, %d)]", b.x0, b.y0, b.x1, b.y1));
+		LOG(("given rectangle: [(%d, %d), (%d, %d)]",
+				b.x0, b.y0, b.x1, b.y1));
 
 		/* and redraw the document */
-		osbool more;
-		e = xpdriver_draw_page(print_num_copies, &b, 0, 0, &more, 0);
-		if (e) {
-			LOG(("%s", e->errmess));
+		error = xpdriver_draw_page(print_num_copies, &b, 0, 0,
+				&more, 0);
+		if (error) {
+			LOG(("xpdriver_draw_page: 0x%x: %s",
+					error->errnum, error->errmess));
+			error_message = error->errmess;
 			goto error;
 		}
 
-		LOG(("done draw_page"));
-
-		ro_gui_current_redraw_gui = g;
+		ro_plot_origin_x = left / 400;
+		ro_plot_origin_y = top / 400 + yscroll * 2;
 
 		while (more) {
-			LOG(("redrawing area: [(%d, %d), (%d, %d)]", b.x0, b.y0, b.x1, b.y1));
-			if (c) {
-				if (!content_redraw(c, left/400,
-						top/400 + (yscroll*2),
-						c->width * 2, c->height * 2,
-						b.x0, b.y0,
-						b.x1-1, b.y1-1,
-						print_scale, 0xFFFFFF)) {
-					ro_gui_current_redraw_gui = NULL;
-					goto error;
-				}
+			LOG(("redrawing area: [(%d, %d), (%d, %d)]",
+					b.x0, b.y0, b.x1, b.y1));
+			clip_x0 = (b.x0 - ro_plot_origin_x) / 2;
+			clip_y0 = (ro_plot_origin_y - b.y1) / 2;
+			clip_x1 = (b.x1 - ro_plot_origin_x) / 2;
+			clip_y1 = (ro_plot_origin_y - b.y0) / 2;
+			if (!content_redraw(c, 0, 0,
+					c->width, c->height,
+					clip_x0, clip_y0, clip_x1, clip_y1,
+					print_scale,
+					0xFFFFFF)) {
+				error_message = "redraw error";
+				goto error;
 			}
 
-			e = xpdriver_get_rectangle(&b, &more, 0);
-			if (e) {
-				LOG(("%s", e->errmess));
-				ro_gui_current_redraw_gui = NULL;
+			error = xpdriver_get_rectangle(&b, &more, 0);
+			if (error) {
+				LOG(("xpdriver_get_rectangle: 0x%x: %s",
+						error->errnum, error->errmess));
+				error_message = error->errmess;
 				goto error;
 			}
 		}
@@ -657,47 +625,119 @@ void print_document(struct gui_window *g, const char *filename)
 
 	/* make print inactive */
 	print_active = false;
-
-	ro_gui_current_redraw_gui = NULL;
-	LOG(("finished redraw"));
+	ro_gui_current_redraw_gui = 0;
 
 	/* clean up */
-	e = xpdriver_end_jobw(fhandle);
-	if (e) {
-		LOG(("%s", e->errmess));
+	error = xpdriver_end_jobw(fhandle);
+	if (error) {
+		LOG(("xpdriver_end_jobw: 0x%x: %s",
+				error->errnum, error->errmess));
+		error_message = error->errmess;
 		goto error;
 	}
-	xosfind_close(fhandle);
-	if (old_job) xpdriver_select_jobw(old_job, 0, 0);
 
-	LOG(("done job"));
+	error = xosfind_closew(fhandle);
+	if (error) {
+		LOG(("xosfind_closew: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("PrintError", error->errmess);
+		return false;
+	}
+
+	if (old_job) {
+		error = xpdriver_select_jobw(old_job, 0, 0);
+		if (error) {
+			LOG(("xpdriver_select_jobw: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("PrintError", error->errmess);
+			/* the printing succeeded anyway */
+			return true;
+		}
+	}
 
 	/* restore document layout */
 	if (c->type == CONTENT_HTML)
-		layout_document(box, temp, c->data.html.box_pool);
+		layout_document(box, saved_width, c->data.html.box_pool);
 
-	return;
+	return true;
 
 error:
 	xpdriver_abort_job(fhandle);
-	xosfind_close(fhandle);
-	if (old_job) xpdriver_select_jobw(old_job, 0, 0);
+	xosfind_closew(fhandle);
+	if (old_job)
+		xpdriver_select_jobw(old_job, 0, 0);
 	print_active = false;
+	ro_gui_current_redraw_gui = 0;
+
+	warn_user("PrintError", error_message);
 
 	/* restore document layout */
 	if (c->type == CONTENT_HTML)
-		layout_document(box, temp, c->data.html.box_pool);
+		layout_document(box, saved_width, c->data.html.box_pool);
+
+	return false;
 }
+
+
+/**
+ * Declare fonts to the printer driver.
+ *
+ * \param  box  box tree being printed
+ * \return 0 on success, error message on error
+ */
+
+const char *print_declare_fonts(struct box *box)
+{
+	struct print_font *print_fonts = calloc(255, sizeof (*print_fonts));
+	unsigned int font_count = 0, i;
+	const char *error_message = 0;
+	os_error *error;
+
+	if (!print_fonts)
+		return messages_get("NoMemory");
+
+	if (!print_find_fonts(box, &print_fonts, &font_count)) {
+		LOG(("print_find_fonts() failed"));
+		error_message = "print_find_fonts() failed";
+		goto end;
+	}
+
+	for (i = 0; i != font_count; ++i) {
+		error = xpdriver_declare_font(print_fonts[i].handle,
+				print_fonts[i].font_name, 0);
+		if (error) {
+			LOG(("xpdriver_declare_font: 0x%x: %s",
+					error->errnum, error->errmess));
+			error_message = error->errmess;
+			goto end;
+		}
+	}
+	error = xpdriver_declare_font(0, 0, 0);
+	if (error) {
+		LOG(("xpdriver_declare_font: 0x%x: %s",
+				error->errnum, error->errmess));
+		error_message = error->errmess;
+		goto end;
+	}
+
+end:
+	for (i = 0; i != font_count; i++)
+		free(print_fonts[i].font_name);
+	free(print_fonts);
+
+	return error_message;
+}
+
 
 /**
  * Find all fonts in a document
  *
  * \param box Root of box tree
  * \param print_fonts pointer to array of fonts in document
- * \paran numFonts number of fonts declared
+ * \paran font_count number of fonts declared
  * \return true on success, false otherwise
  */
-bool print_find_fonts(struct box *box, struct print_font **print_fonts, int *numFonts)
+bool print_find_fonts(struct box *box, struct print_font **print_fonts, int *font_count)
 {
 	struct box *a;
 	const char *txt;
@@ -728,27 +768,27 @@ bool print_find_fonts(struct box *box, struct print_font **print_fonts, int *num
 			return false;
 		}
 
-		for (i = 0; i != *numFonts; ++i) {
-			if (!strcmp(((*print_fonts)[i]).fontName, rofontname))
+		for (i = 0; i != *font_count; ++i) {
+			if (!strcmp(((*print_fonts)[i]).font_name, rofontname))
 				break;
 		}
 
-		if (i == *numFonts) {
+		if (i == *font_count) {
 			/* max 255 fonts (as per draw) */
-			if (*numFonts == 255)
+			if (*font_count == 255)
 				return false;
-			if ((((*print_fonts)[*numFonts]).fontName = strdup(rofontname)) == NULL) {
+			if ((((*print_fonts)[*font_count]).font_name = strdup(rofontname)) == NULL) {
 				LOG(("failed to strdup (%s)", rofontname));
 				return false;
 			}
-			((*print_fonts)[(*numFonts)++]).handle = (font_f)box->font->handle;
+			((*print_fonts)[(*font_count)++]).handle = (font_f)box->font->handle;
 		}
 
 		free((void*)rotext);
 	}
 
 	for (a = box->children; a; a = a->next) {
-		if (!print_find_fonts(a, print_fonts, numFonts))
+		if (!print_find_fonts(a, print_fonts, font_count))
 			return false;
 	}
 

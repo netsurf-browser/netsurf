@@ -1344,7 +1344,7 @@ char *ro_gui_url_file_parse(const char *file_name)
 void ro_msg_datasave_ack(wimp_message *message)
 {
 #ifdef WITH_PRINT
-	if (print_current_window && print_ack(message))
+	if (print_ack(message))
 		return;
 #endif
 
