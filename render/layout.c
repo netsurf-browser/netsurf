@@ -585,7 +585,7 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 	unsigned int i;
 	unsigned int *row_span, *excess_y;
 	unsigned long table_width, min_width = 0, max_width = 0;
-	unsigned long fixed_width = 0, total_percent = 0, auto_min_width = 0;
+	unsigned long required_width = 0;
 	unsigned long x, x0, x1;
 	unsigned long table_height = 0;
 	unsigned long *xs;  /* array of column x positions */
@@ -627,14 +627,15 @@ void layout_table(struct box * table, unsigned long width, struct box * cont,
 
 	for (i = 0; i != columns; i++) {
 		if (col[i].type == COLUMN_WIDTH_FIXED)
-			fixed_width += col[i].width;
-		else if (col[i].type == COLUMN_WIDTH_PERCENT)
-			total_percent += col[i].width;
-		else
-			auto_min_width += col[i].min;
+			required_width += col[i].width;
+		else if (col[i].type == COLUMN_WIDTH_PERCENT) {
+			unsigned long width = col[i].width * table_width / 100;
+			required_width += col[i].min < width ? width : col[i].min;
+		} else
+			required_width += col[i].min;
 	}
 
-	if (table_width < fixed_width + total_percent * table_width / 100 + auto_min_width) {
+	if (table_width < required_width) {
 		/* table narrower than required width for columns:
 		 * treat percentage widths as maximums */
 		for (i = 0; i != columns; i++) {
@@ -879,6 +880,7 @@ void calculate_inline_container_widths(struct box *box)
 	struct box *child;
 	unsigned long min = 0, max = 0, width;
 	char *word, *space;
+	int i, j;
 
 	for (child = box->children; child != 0; child = child->next) {
 		switch (child->type) {
@@ -900,17 +902,14 @@ void calculate_inline_container_widths(struct box *box)
 					/* TODO: add spaces */
 
 					/* min = widest word */
-					for (word = child->text,
-							space = strchr(child->text, ' ');
-							space != 0;
-							word = space + 1,
-							space = strchr(word, ' ')) {
-						width = font_width(child->font, word,
-								(unsigned int) (space - word - 1));
+					i = 0;
+					do {
+						for (j = i; j != child->length && child->text[j] != ' '; j++)
+							;
+						width = font_width(child->font, child->text + i, j - i);
 						if (min < width) min = width;
-					}
-					width = font_width(child->font, word, strlen(word));
-					if (min < width) min = width;
+						i = j + 1;
+					} while (j != child->length);
 
 				} else if (child->gadget) {
 					child->width = gadget_width(child->gadget);
@@ -940,6 +939,7 @@ void calculate_inline_container_widths(struct box *box)
 		}
         }
 
+	assert(min <= max);
 	box->min_width = min;
 	box->max_width = max;
 }
