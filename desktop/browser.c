@@ -1,5 +1,5 @@
 /**
- * $Id: browser.c,v 1.17 2002/12/29 22:27:35 monkeyson Exp $
+ * $Id: browser.c,v 1.18 2002/12/30 21:14:29 bursa Exp $
  */
 
 #include "netsurf/riscos/font.h"
@@ -181,7 +181,7 @@ void content_html_reformat(struct content* c, int width)
   c->data.html.fonts = font_new_set();
 
   LOG(("XML to box"));
-  xml_to_box(c->data.html.markup, c->data.html.style, c->data.html.stylesheet, &selector, 0, c->data.html.layout, 0, 0, c->data.html.fonts);
+  xml_to_box(c->data.html.markup, c->data.html.style, c->data.html.stylesheet, &selector, 0, c->data.html.layout, 0, 0, c->data.html.fonts, 0, 0);
   LOG(("Layout document"));
   layout_document(c->data.html.layout->children, (unsigned long)width);
 
