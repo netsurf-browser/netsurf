@@ -4,11 +4,12 @@
 #                http://www.opensource.org/licenses/gpl-license
 #
 
-# There are 5 possible builds of NetSurf:
+# There are 6 possible builds of NetSurf:
 #
 #   riscos -- standard RISC OS build
 #   riscos_small -- identical to "riscos", but linked with smaller libraries
 #   		(no openssl, and libcurl without ssl support)
+#   ncos -- NCOS build (variant of RISC OS for Network Computers)
 #   debug -- command line Unix/Linux, for debugging
 #   riscos_debug -- a cross between "riscos" and "debug"
 #   gtk -- experimental gtk version
@@ -31,11 +32,14 @@ OBJECTS_RISCOS += 401login.o debugwin.o \
 	png.o save.o save_complete.o save_draw.o save_text.o \
 	schedule.o sprite.o textselection.o theme.o thumbnail.o \
 	toolbar.o ufont.o uri.o url_protocol.o wimp.o window.o	# riscos/
+# OBJECTS_RISCOS += memdebug.o
+
+OBJECTS_NCOS = $(OBJECTS_RISCOS)
 
 OBJECTS_DEBUG = $(OBJECTS_COMMON)
 OBJECTS_DEBUG += filetyped.o fontd.o netsurfd.o			# debug/
-OBJECTS_DEBUG += gif.o gifread.o jpeg.o png.o save_complete.o schedule.o \
-	save_draw.o						# riscos/
+OBJECTS_DEBUG += gif.o gifread.o jpeg.o mng.o png.o save_complete.o \
+	schedule.o						# riscos/
 
 OBJECTS_DEBUGRO = $(OBJECTS_COMMON)
 OBJECTS_DEBUGRO += netsurfd.o					# debug/
@@ -53,6 +57,10 @@ OBJECTS_GTK += font_pango.o gtk_gui.o gtk_window.o		# gtk/
 OBJDIR_RISCOS = $(shell $(CC) -dumpmachine)
 SOURCES_RISCOS=$(OBJECTS_RISCOS:.o=.c)
 OBJS_RISCOS=$(OBJECTS_RISCOS:%.o=$(OBJDIR_RISCOS)/%.o)
+
+OBJDIR_NCOS = $(shell $(CC) -dumpmachine)-ncos
+SOURCES_NCOS=$(OBJECTS_NCOS:.o=.c)
+OBJS_NCOS=$(OBJECTS_NCOS:%.o=$(OBJDIR_NCOS)/%.o)
 
 OBJDIR_DEBUG = $(shell $(CC_DEBUG) -dumpmachine)-debug
 SOURCES_DEBUG=$(OBJECTS_DEBUG:.o=.c)
@@ -85,7 +93,9 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wbad-function-cast -Wcast-qual \
 # PLATFORM_CFLAGS variables are defined in them
 
 CFLAGS_RISCOS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O \
-	$(WARNFLAGS) -I.. $(PLATFORM_CFLAGS_RISCOS) -mpoke-function-name
+	$(WARNFLAGS) -I.. $(PLATFORM_CFLAGS_RISCOS) -mpoke-function-name \
+#	-include netsurf/utils/memdebug.h
+CFLAGS_NCOS = $(CFLAGS_RISCOS) -Dncos
 CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -Ddebug $(WARNFLAGS) -I.. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
 CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
@@ -99,6 +109,10 @@ $(RUNIMAGE) : $(OBJS_RISCOS)
 riscos_small: u!RunImage,ff8
 u!RunImage,ff8 : $(OBJS_RISCOS)
 	$(CC) -o $@ $(LDFLAGS_SMALL) $^
+
+ncos: $(NCRUNIMAGE)
+$(NCRUNIMAGE) : $(OBJS_NCOS)
+	$(CC) -o $@ $(LDFLAGS_RISCOS) $^
 
 debug: nsdebug
 nsdebug: $(OBJS_DEBUG)
@@ -120,6 +134,9 @@ netsurf.zip: $(RUNIMAGE)
 $(OBJDIR_RISCOS)/%.o : %.c
 	@echo "==> $<"
 	@$(CC) -o $@ -c $(CFLAGS_RISCOS) $<
+$(OBJDIR_NCOS)/%.o : %.c
+	@echo "==> $<"
+	@$(CC) -o $@ -c $(CFLAGS_NCOS) $<
 $(OBJDIR_DEBUG)/%.o : %.c
 	@echo "==> $<"
 	@$(CC_DEBUG) -o $@ -c $(CFLAGS_DEBUG) $<
@@ -138,14 +155,15 @@ utils/translit.c: transtab
 	cd utils; ./tt2code < transtab > translit.c
 
 # generate dependencies
-depend : $(SOURCES_RISCOS) $(SOURCES_DEBUG) $(SOURCES_GTK)
-	-mkdir $(OBJDIR_RISCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)
+depend : $(SOURCES_RISCOS) $(SOURCES_NCOS) $(SOURCES_DEBUG) $(SOURCES_GTK)
+	-mkdir $(OBJDIR_RISCOS) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)
 	$(CC) -MM -MG $(CFLAGS_RISCOS) $^ | sed 's|.*\.o:|$(OBJDIR_RISCOS)/&|g' > depend
 	$(CC_DEBUG) -MM -MG $(CFLAGS_DEBUG) $^ | sed 's|.*\.o:|$(OBJDIR_DEBUG)/&|g' >> depend
 
 # remove generated files
 clean :
-	-rm $(OBJDIR_RISCOS)/* $(OBJDIR_DEBUG)/* $(OBJDIR_GTK)/* \
+	-rm $(OBJDIR_RISCOS)/* $(OBJDIR_NCOS)/* \
+		$(OBJDIR_DEBUG)/* $(OBJDIR_GTK)/* \
 		depend css/css_enum.c css/css_enum.h \
 		css/parser.c css/parser.h css/scanner.c css/scanner.h
 

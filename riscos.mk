@@ -12,3 +12,4 @@ LDFLAGS_SMALL = NSLibs:lib/libxml2 NSLibs:lib/libz NSLibs:lib/libcurl \
 	NSLibs:lib/libjpeg OSLib:o.oslib32
 
 RUNIMAGE = !NetSurf/!RunImage
+NCRUNIMAGE = !NCNetSurf/!RunImage

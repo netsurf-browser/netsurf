@@ -12,3 +12,4 @@ LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -lpng \
 		-ljpeg
 
 RUNIMAGE = !NetSurf/!RunImage,ff8
+NCRUNIMAGE = !NCNetSurf/!RunImage,ff8
