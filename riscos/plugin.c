@@ -18,7 +18,7 @@
  *       - Handle standalone objects
  */
 
-#undef NDEBUG
+#define NDEBUG
 
 #include <assert.h>
 #include <ctype.h>
@@ -88,6 +88,8 @@ char *plugin_get_string_value(os_string_value string, char *msg);
 void plugin_create_sysvar(const char *mime_type, char *sysvar);
 int plugin_process_opening(struct object_params *params,
                            struct plugin_message *message);
+void plugin_force_redraw(struct content *object, struct content *c,
+                         unsigned int i);
 
 /*-------------------------------------------------------------------------*/
 /* Linked List pointers                                                    */
@@ -1162,18 +1164,23 @@ void plugin_closed(wimp_message *message) {
  */
 void plugin_reshape_request(wimp_message *message) {
 
-         struct plugin_message *npm;
          struct plugin_list *npl;
          plugin_message_reshape_request *pmrr = (plugin_message_reshape_request*)&message->data;
+         unsigned int i;
 
-         /* add this message to linked list */
-         npm = plugin_add_message_to_linked_list(pmrr->browser, pmrr->plugin, message, 0);
-
-         /* TODO - need to find a way of forcing the browser to resize the
-          *        box containing this object. Then issue a Plugin_Reshape.
-          */
          npl = plugin_get_instance_from_list(pmrr->browser, pmrr->plugin);
-         plugin_remove_message_from_linked_list(npm); /* lose this later */
+
+         for (i = 0; i != npl->page->data.html.object_count &&
+                   npl->page->data.html.object[i].content != npl->c;
+              i++) ;
+
+         if (i != npl->page->data.html.object_count) {
+                 npl->c->width = pmrr->size.x;
+                 npl->c->height = pmrr->size.y;
+                 plugin_force_redraw(npl->c, npl->page, i);
+                 plugin_reshape_instance(npl->c, npl->bw, npl->page,
+                                         npl->box, npl->params, npl->state);
+         }
 
          LOG(("requested (width, height): (%d, %d)", pmrr->size.x, pmrr->size.y));
 }
@@ -1225,4 +1232,29 @@ char *plugin_get_string_value(os_string_value string, char *msg) {
                  return string.pointer;
          }
          return &msg[string.offset];
+}
+
+void plugin_force_redraw(struct content *object, struct content *c,
+                         unsigned int i) {
+
+	struct box *box = c->data.html.object[i].box;
+
+	LOG(("got object '%s'", object->url));
+	LOG(("w, h: %d %d", object->width, object->height));
+	box->object = object;
+
+        box->width = box->min_width = box->max_width = object->width;
+        box->height = object->height;
+
+        box->style->width.width = CSS_WIDTH_LENGTH;
+	box->style->width.value.length.unit = CSS_UNIT_PX;
+	box->style->width.value.length.value = object->width;
+
+        box->style->height.height = CSS_HEIGHT_LENGTH;
+	box->style->height.length.unit = CSS_UNIT_PX;
+	box->style->height.length.value = object->height;
+
+        LOG(("w, h: %d %d", box->width, box->height));
+	content_reformat(c, c->available_width, 0);
+	LOG(("w, h: %d %d", box->width, box->height));
 }
