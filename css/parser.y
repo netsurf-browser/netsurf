@@ -82,54 +82,61 @@ css_combinator(A) ::= GT.
 
 simple_selector(A) ::= element_name(B) detail_list(C).
 		{ A = css_new_node(CSS_NODE_SELECTOR, B, C, 0);
-		A->specificity = (B ? 1 : 0) + (C ? C->specificity : 0); }
+		A->specificity = 1 + C->specificity; }
+simple_selector(A) ::= element_name(B).
+		{ A = css_new_node(CSS_NODE_SELECTOR, B, 0, 0);
+		A->specificity = 1; }
+simple_selector(A) ::= detail_list(C).
+		{ A = css_new_node(CSS_NODE_SELECTOR, 0, C, 0);
+		A->specificity = C->specificity; }
 
-element_name(A) ::= . [EMPTYIDENT]
-		{ A = 0; }
 element_name(A) ::= IDENT(B).
 		{ A = B; }
 
-detail_list(A) ::= .
-		{ A = 0; }
-detail_list(A) ::= HASH(B) detail_list(C).
+detail_list(A) ::= detail(B).
+		{ A = B; }
+detail_list(A) ::= detail(B) detail_list(C).
+		{ A = B; A->specificity += C->specificity; A->next = C; }
+
+detail(A) ::= HASH(B).
 		{ A = css_new_node(CSS_NODE_ID, B, 0, 0);
-		A->specificity = 0x10000 + (C ? C->specificity : 0); A->next = C; }
-detail_list(A) ::= DOT IDENT(B) detail_list(C).
+		A->specificity = 0x10000; }
+detail(A) ::= DOT IDENT(B).
 		{ A = css_new_node(CSS_NODE_CLASS, B, 0, 0);
-		A->specificity = 0x100 + (C ? C->specificity : 0); A->next = C; }
-detail_list(A) ::= LBRAC IDENT(B) RBRAC detail_list(C).
+		A->specificity = 0x100; }
+detail(A) ::= LBRAC IDENT(B) RBRAC.
 		{ A = css_new_node(CSS_NODE_ATTRIB, B, 0, 0);
-		A->specificity = 0x100 + (C ? C->specificity : 0); A->next = C; }
-detail_list(A) ::= LBRAC IDENT(B) EQUALS IDENT(C) RBRAC detail_list(D).
+		A->specificity = 0x100; }
+detail(A) ::= LBRAC IDENT(B) EQUALS IDENT(C) RBRAC.
 		{ A = css_new_node(CSS_NODE_ATTRIB_EQ, B, 0, 0); A->data2 = C;
-		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
-detail_list(A) ::= LBRAC IDENT(B) EQUALS STRING(C) RBRAC detail_list(D).
+		A->specificity = 0x100; }
+detail(A) ::= LBRAC IDENT(B) EQUALS STRING(C) RBRAC.
 		{ A = css_new_node(CSS_NODE_ATTRIB_EQ, B, 0, 0); A->data2 = css_unquote(C);
-		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
-detail_list(A) ::= LBRAC IDENT(B) INCLUDES IDENT(C) RBRAC detail_list(D).
+		A->specificity = 0x100; }
+detail(A) ::= LBRAC IDENT(B) INCLUDES IDENT(C) RBRAC.
 		{ A = css_new_node(CSS_NODE_ATTRIB_INC, B, 0, 0); A->data2 = C;
-		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
-detail_list(A) ::= LBRAC IDENT(B) INCLUDES STRING(C) RBRAC detail_list(D).
+		A->specificity = 0x100; }
+detail(A) ::= LBRAC IDENT(B) INCLUDES STRING(C) RBRAC.
 		{ A = css_new_node(CSS_NODE_ATTRIB_INC, B, 0, 0); A->data2 = css_unquote(C);
-		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
-detail_list(A) ::= LBRAC IDENT(B) DASHMATCH IDENT(C) RBRAC detail_list(D).
+		A->specificity = 0x100; }
+detail(A) ::= LBRAC IDENT(B) DASHMATCH IDENT(C) RBRAC.
 		{ A = css_new_node(CSS_NODE_ATTRIB_DM, B, 0, 0); A->data2 = C;
-		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
-detail_list(A) ::= LBRAC IDENT(B) DASHMATCH STRING(C) RBRAC detail_list(D).
+		A->specificity = 0x100; }
+detail(A) ::= LBRAC IDENT(B) DASHMATCH STRING(C) RBRAC.
 		{ A = css_new_node(CSS_NODE_ATTRIB_DM, B, 0, 0); A->data2 = css_unquote(C);
-		A->specificity = 0x100 + (D ? D->specificity : 0); A->next = D; }
-detail_list(A) ::= COLON IDENT(B) detail_list(C).
+		A->specificity = 0x100; }
+detail(A) ::= COLON IDENT(B).
 		{ if (strcasecmp(B, "link") == 0) {
 			A = css_new_node(CSS_NODE_ATTRIB, xstrdup("href"), 0, 0);
-			A->specificity = 0x100 + (C ? C->specificity : 0); A->next = C;
+			A->specificity = 0x100;
 			free(B);
 		} else {
 			A = css_new_node(CSS_NODE_PSEUDO, B, 0, 0);
-			A->specificity = 0x100 + (C ? C->specificity : 0); A->next = C;
+			A->specificity = 0x100;
 		} }
-detail_list(A) ::= COLON FUNCTION(B) IDENT RPAREN detail_list(C).
+detail(A) ::= COLON FUNCTION(B) IDENT RPAREN.
 		{ A = css_new_node(CSS_NODE_PSEUDO, B, 0, 0);
-		A->specificity = 0x100 + (C ? C->specificity : 0); A->next = C; }
+		A->specificity = 0x100; }
 
 declaration_list(A) ::= .
 		{ A = 0; }
@@ -138,10 +145,12 @@ declaration_list(A) ::= declaration(B).
 declaration_list(A) ::= declaration_list(B) SEMI.
 		{ A = B; }
 declaration_list(A) ::= declaration(B) SEMI declaration_list(C).
-		{ B->next = C; A = B; }
+		{ if (B) { B->next = C; A = B; } else { A = C; } }
 
 declaration(A) ::= property(B) COLON value(C).
 		{ A = css_new_node(CSS_NODE_DECLARATION, B, C, 0); }
+declaration(A) ::= any_list_1(B).  /* malformed declaration: ignore */
+		{ A = 0; css_free_node(B); }
 
 property(A) ::= IDENT(B).
 		{ A = B; }
@@ -154,6 +163,7 @@ value(A) ::= value(B) block.
 		{ A = B; }
 value(A) ::= value(B) ATKEYWORD.
 		{ A = B; }
+
 
 any_list(A) ::= .
 		{ A = 0; }
@@ -219,6 +229,7 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 %type css_combinator { css_combinator }
 %type simple_selector { struct css_node * }
 %type detail_list { struct css_node * }
+%type detail { struct css_node * }
 %type declaration_list { struct css_node * }
 %type declaration { struct css_node * }
 %type value { struct css_node * }
@@ -239,7 +250,6 @@ any(A) ::= LBRAC any_list(B) RBRAC.
 
 %left COLON COMMA GT HASH LBRAC PLUS.
 %left DOT.
-%left EMPTYIDENT.
 %left IDENT.
 %left LBRACE.
 
