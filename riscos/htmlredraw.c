@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
@@ -22,6 +22,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/tinct.h"
+#include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -50,7 +51,7 @@ static void html_redraw_radio(int x, int y, int width, int height,
 static void html_redraw_file(int x, int y, int width, int height,
 		struct box *box, float scale);
 static void html_redraw_background(long x, long y, int width, int height,
-                struct box *box);
+		struct box *box, float scale);
 
 bool gui_redraw_debug = false;
 
@@ -103,7 +104,7 @@ void html_redraw_box(struct content *content, struct box * box,
 	int x0, y0, x1, y1;
 	int colour;
 	os_VDU_VAR_LIST(5) vars = { { os_VDUVAR_GWL_COL, os_VDUVAR_GWB_ROW,
-	                      os_VDUVAR_GWR_COL, os_VDUVAR_GWT_ROW, -1 } };
+			      os_VDUVAR_GWR_COL, os_VDUVAR_GWT_ROW, -1 } };
 	os_vdu_var cgw[4];
 
 	x += box->x * 2 * scale;
@@ -204,7 +205,7 @@ void html_redraw_box(struct content *content, struct box * box,
 		if (clip_x1 < x1) x1 = clip_x1;
 		if (clip_y1 < y1) y1 = clip_y1;
 		/* clip to it */
-        	html_redraw_clip(x0, y0, x1, y1);
+		html_redraw_clip(x0, y0, x1, y1);
 	} else {
 		/* clip box unchanged */
 		x0 = clip_x0;
@@ -213,8 +214,8 @@ void html_redraw_box(struct content *content, struct box * box,
 		y1 = clip_y1;
 	}
 
-        /* read current graphics window dimensions */
-        xos_read_vdu_variables((os_vdu_var_list const *) &vars, (int*)&cgw);
+	/* read current graphics window dimensions */
+	xos_read_vdu_variables((os_vdu_var_list const *) &vars, (int*)&cgw);
 
 	/* background colour */
 	if (box->style != 0 && box->style->background_color != TRANSPARENT) {
@@ -233,13 +234,13 @@ void html_redraw_box(struct content *content, struct box * box,
 		current_background_color = box->style->background_color;
 	}
 
-        /* plot background image */
-        html_redraw_background(x, y, width, clip_y1-clip_y0, box);
+	/* plot background image */
+	html_redraw_background(x, y, width, clip_y1-clip_y0, box, scale);
 
-        /* restore previous graphics window, if necessary */
-        if (box->style != 0 && box->style->background_color != TRANSPARENT)
-                /* should probably take account of the eigvalues here... */
-                html_redraw_clip(cgw[0]*2, cgw[1]*2, cgw[2]*2, cgw[3]*2);
+	/* restore previous graphics window, if necessary */
+	if (box->style != 0 && box->style->background_color != TRANSPARENT)
+		/* should probably take account of the eigvalues here... */
+		html_redraw_clip(cgw[0]*2, cgw[1]*2, cgw[2]*2, cgw[3]*2);
 
 	if (box->object) {
 		content_redraw(box->object, x + padding_left, y - padding_top,
@@ -330,8 +331,8 @@ void html_redraw_box(struct content *content, struct box * box,
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
 		}
 		if (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_UNDERLINE && box->parent->parent->type == BOX_BLOCK) {
-		        colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-		        os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8 * scale));
+			colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
+			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.8 * scale));
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
 			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		}
@@ -340,8 +341,8 @@ void html_redraw_box(struct content *content, struct box * box,
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
 		}
 		if (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_OVERLINE && box->parent->parent->type == BOX_BLOCK) {
-		        colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-		        os_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2 * scale));
+			colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
+			os_plot(os_MOVE_TO, x, y - (int) (box->height * 0.2 * scale));
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
 			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		}
@@ -350,8 +351,8 @@ void html_redraw_box(struct content *content, struct box * box,
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
 		}
 		if (box->parent->parent->style->text_decoration & CSS_TEXT_DECORATION_LINE_THROUGH && box->parent->parent->type == BOX_BLOCK) {
-		        colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
-		        os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0 * scale));
+			colourtrans_set_gcol((unsigned int)box->parent->parent->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
+			os_plot(os_MOVE_TO, x, y - (int) (box->height * 1.0 * scale));
 			os_plot(os_PLOT_SOLID_EX_END | os_PLOT_BY, box->width * 2 * scale, 0);
 			colourtrans_set_gcol((unsigned int)box->style->color << 8, colourtrans_USE_ECFS, os_ACTION_OVERWRITE, 0);
 		}
@@ -388,7 +389,7 @@ void html_redraw_box(struct content *content, struct box * box,
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object)
-               	html_redraw_clip(clip_x0, clip_y0, clip_x1, clip_y1);
+		html_redraw_clip(clip_x0, clip_y0, clip_x1, clip_y1);
 
 /*	} else {
 		if (content->data.html.text_selection.selected == 1) {
@@ -562,55 +563,76 @@ void html_redraw_file(int x, int y, int width, int height,
 			font_KERN | font_GIVEN_TRFM,
 			x, y - height * 0.75, 0, &trfm, 0);
 
-/* 	xwimpspriteop_put_sprite_user_coords(sprite, x + 4, */
-/* 			y - height / 2 - 17, os_ACTION_OVERWRITE); */
+/*	xwimpspriteop_put_sprite_user_coords(sprite, x + 4, */
+/*			y - height / 2 - 17, os_ACTION_OVERWRITE); */
 }
 
 void html_redraw_background(long xi, long yi, int width, int height,
-           struct box *box)
+	   struct box *box, float scale)
 {
-        unsigned int tinct_options = 0;
-        long x = 0;
-        long y = 0;
-        float multiplier;
-        bool fixed = false;
+	unsigned int tinct_options = 0;
+	long x = 0;
+	long y = 0;
+	unsigned int image_width, image_height;
+	os_coord image_size;
+	float multiplier;
+	bool fixed = false;
 
-        if (box->background == 0) return;
-
-        if (ro_gui_current_redraw_gui) {
+	if (box->background == 0) return;
+        
+	/* Set the plot options */
+	if (ro_gui_current_redraw_gui) {
+		if (!ro_gui_current_redraw_gui->option_background_images) return;
 		tinct_options = (ro_gui_current_redraw_gui->option_filter_sprites?tinct_BILINEAR_FILTER:0) |
 				(ro_gui_current_redraw_gui->option_dither_sprites?tinct_DITHER:0);
 	} else {
+		if (!option_background_images) return;
 		tinct_options = (option_filter_sprites?tinct_BILINEAR_FILTER:0) |
 				(option_dither_sprites?tinct_DITHER:0);
 	}
 
-        /* handle background-attachment */
+	/* Get the image dimensions for our positioning and scaling */
+	image_size.x = box->background->width;
+	image_size.y = box->background->height;
+	ro_convert_pixels_to_os_units(&image_size, -1);
+	image_width = image_size.x * scale;
+	image_height = image_size.y * scale;
+
+	/* handle background-attachment */
 	switch (box->style->background_attachment) {
-	        case CSS_BACKGROUND_ATTACHMENT_FIXED:
-	                fixed = true;
-	                break;
-	        case CSS_BACKGROUND_ATTACHMENT_SCROLL:
-	                break;
-	        default:
-	                break;
+		case CSS_BACKGROUND_ATTACHMENT_FIXED:
+			fixed = true;
+			break;
+		case CSS_BACKGROUND_ATTACHMENT_SCROLL:
+			break;
+		default:
+			break;
 	}
 
-        /* handle background-repeat */
+	/* handle background-repeat */
 	switch (box->style->background_repeat) {
-	        case CSS_BACKGROUND_REPEAT_REPEAT:
-	                tinct_options |= tinct_FILL_HORIZONTALLY | tinct_FILL_VERTICALLY;
-	                break;
-	        case CSS_BACKGROUND_REPEAT_REPEAT_X:
-	                tinct_options |= tinct_FILL_HORIZONTALLY;
-	                break;
-	        case CSS_BACKGROUND_REPEAT_REPEAT_Y:
-	                tinct_options |= tinct_FILL_VERTICALLY;
-	                break;
-	        case CSS_BACKGROUND_REPEAT_NO_REPEAT:
-	                break;
-	        default:
-	                break;
+		case CSS_BACKGROUND_REPEAT_REPEAT:
+			tinct_options |= tinct_FILL_HORIZONTALLY | tinct_FILL_VERTICALLY;
+			break;
+		case CSS_BACKGROUND_REPEAT_REPEAT_X:
+			tinct_options |= tinct_FILL_HORIZONTALLY;
+			break;
+		case CSS_BACKGROUND_REPEAT_REPEAT_Y:
+			tinct_options |= tinct_FILL_VERTICALLY;
+			break;
+		case CSS_BACKGROUND_REPEAT_NO_REPEAT:
+			break;
+		default:
+			break;
+	}
+	
+	/* handle window offset */
+	x = xi;
+	if (fixed) {
+		/**\todo fixed background attachments */
+		y = yi;
+	} else {
+		y = yi;
 	}
 	
 	/* handle window offset */
@@ -624,57 +646,63 @@ void html_redraw_background(long xi, long yi, int width, int height,
 
 	/* handle background-position */
 	switch (box->style->background_position.horz.pos) {
-	        case CSS_BACKGROUND_POSITION_PERCENT:
-	                multiplier =
-	                        box->style->background_position.horz.value.percent / 100;
-	                x += box->x + (box->width * multiplier) -
-	                        (box->background->width * multiplier);
-	                break;
-	        case CSS_BACKGROUND_POSITION_LENGTH:
-	                x += box->x + len(&box->style->background_position.horz.value.length, box->style);
-	                break;
-	        default:
-	                break;
+		case CSS_BACKGROUND_POSITION_PERCENT:
+			multiplier =
+				box->style->background_position.horz.value.percent / 100;
+			x += box->x + (box->width * multiplier) -
+				(box->background->width * scale * multiplier);
+			break;
+		case CSS_BACKGROUND_POSITION_LENGTH:
+			x += box->x + len(&box->style->background_position.horz.value.length, box->style) * scale;
+			break;
+		default:
+			break;
 	}
 
 	switch (box->style->background_position.vert.pos) {
-	        case CSS_BACKGROUND_POSITION_PERCENT:
-	                multiplier =
-	                        box->style->background_position.vert.value.percent / 100;
-	                y += box->y + (box->height * multiplier) -
-	                        (box->background->height * multiplier);
-	                break;
-	        case CSS_BACKGROUND_POSITION_LENGTH:
-	                y += box->y + len(&box->style->background_position.vert.value.length, box->style);
-	                break;
-	        default:
-	                break;
+		case CSS_BACKGROUND_POSITION_PERCENT:
+			multiplier =
+				box->style->background_position.vert.value.percent / 100;
+			y += box->y + (box->height * multiplier) -
+				(box->background->height * scale * multiplier);
+			break;
+		case CSS_BACKGROUND_POSITION_LENGTH:
+			y += box->y + len(&box->style->background_position.vert.value.length, box->style) * scale;
+			break;
+		default:
+			break;
 	}
 
-//        LOG(("Body [%ld, %ld], Image: [%ld, %ld], Flags: %x", xi, yi, x, y, tinct_options));
+//	  LOG(("Body [%ld, %ld], Image: [%ld, %ld], Flags: %x", xi, yi, x, y, tinct_options));
 
-        /* and plot the image */
-        switch (box->background->type) {
+	/* and plot the image */
+	switch (box->background->type) {
 #ifdef WITH_PNG
-                case CONTENT_PNG:
-                        _swix(Tinct_PlotAlpha, _INR(2,4) | _IN(7),
-                            ((char*) box->background->data.png.sprite_area + box->background->data.png.sprite_area->first), x, y, tinct_options);
-                        break;
+		case CONTENT_PNG:
+			_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
+			    ((char*) box->background->data.png.sprite_area + box->background->data.png.sprite_area->first),
+			    x, y, image_width, image_height,
+			    tinct_options);
+			break;
 #endif
 #ifdef WITH_JPEG
-                case CONTENT_JPEG:
-                        _swix(Tinct_Plot, _INR(2,4) | _IN(7),
-                            ((char*) box->background->data.jpeg.sprite_area + box->background->data.jpeg.sprite_area->first), x, y, tinct_options);
-                        break;
+		case CONTENT_JPEG:
+			_swix(Tinct_PlotScaled, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
+			    ((char*) box->background->data.jpeg.sprite_area + box->background->data.jpeg.sprite_area->first),
+			    x, y, image_width, image_height,
+			    tinct_options);
+			break;
 #endif
 #ifdef WITH_GIF
-                case CONTENT_GIF:
-                        _swix(Tinct_PlotAlpha, _INR(2,4) | _IN(7),
-                            (char*) box->background->data.gif.gif->frame_image, x, y, tinct_options);
-                        break;
+		case CONTENT_GIF:
+			_swix(Tinct_PlotScaledAlpha, _IN(2) | _IN(3) | _IN(4) | _IN(5) | _IN(6) | _IN(7),
+			    (char*) box->background->data.gif.gif->frame_image,
+			    x, y, image_width, image_height,
+			    tinct_options);
+			break;
 #endif
-        /**\todo Add draw/sprite background support? */
-                default:
-                        break;
-        }
+	/**\todo Add draw/sprite background support? */
+		default:
+			break;
+	}
 }

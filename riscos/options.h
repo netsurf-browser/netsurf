@@ -40,6 +40,7 @@ extern int option_window_height;
 extern int option_window_screen_width;
 extern int option_window_screen_height;
 extern int option_minimum_gif_delay;
+extern bool option_background_images;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -65,7 +66,8 @@ int option_window_width = 0; \
 int option_window_height = 0; \
 int option_window_screen_width = 0; \
 int option_window_screen_height = 0; \
-int option_minimum_gif_delay = 10;
+int option_minimum_gif_delay = 10; \
+bool option_background_images = true;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -91,6 +93,7 @@ int option_minimum_gif_delay = 10;
 { "window_height",          OPTION_INTEGER, &option_window_height }, \
 { "window_screen_width",    OPTION_INTEGER, &option_window_screen_width }, \
 { "window_screen_height",   OPTION_INTEGER, &option_window_screen_height }, \
-{ "minimum_gif_delay",      OPTION_INTEGER, &option_minimum_gif_delay }
+{ "minimum_gif_delay",      OPTION_INTEGER, &option_minimum_gif_delay }, \
+{ "background_images",      OPTION_BOOL,    &option_background_images }
 
 #endif

@@ -165,7 +165,7 @@ static wimp_MENU(5) image_menu = {
   { "Images" }, 7,2,7,0, 300, 44, 0,
   {
     { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "ForeImg" } },
-    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS | wimp_ICON_SHADED, { "BackImg" } },
+    { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "BackImg" } },
     { wimp_MENU_SEPARATE, wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "AnimImg" } },
     { 0,                  wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "DitherImg" } },
     { wimp_MENU_LAST,     wimp_NO_SUB_MENU, DEFAULT_FLAGS,                    { "FilterImg" } }
@@ -506,13 +506,15 @@ void ro_gui_menu_selection(wimp_selection *selection)
 					case 0: /* Scale view */
 						break;
 					case 1: /* Images -> */
+						if (selection->items[2] == 1) current_gui->option_background_images =
+								!current_gui->option_background_images;
 						if (selection->items[2] == 2) current_gui->option_animate_images =
 								!current_gui->option_animate_images;
 						if (selection->items[2] == 3) current_gui->option_dither_sprites =
 								!current_gui->option_dither_sprites;
 						if (selection->items[2] == 4) current_gui->option_filter_sprites =
 								!current_gui->option_filter_sprites;
-						if (selection->items[2] >= 2) {
+						if (selection->items[2] >= 1) {
 							ro_gui_menu_prepare_images();
 							gui_window_redraw_window(current_gui);
 //							content_broadcast(c, CONTENT_MSG_REDRAW, 0);
@@ -789,6 +791,8 @@ static void ro_gui_menu_prepare_images(void) {
 
 	/*	We don't currently have any local options so we update from the global ones
 	*/
+	browser_image_menu->entries[1].menu_flags &= ~wimp_MENU_TICKED;
+	if (current_gui->option_background_images) browser_image_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
 	browser_image_menu->entries[2].menu_flags &= ~wimp_MENU_TICKED;
 	if (current_gui->option_animate_images) browser_image_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
 	browser_image_menu->entries[3].menu_flags &= ~wimp_MENU_TICKED;

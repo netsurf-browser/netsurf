@@ -1166,11 +1166,13 @@ void gui_window_clone_options(struct browser_window *new_bw,
 		new_gui->option_dither_sprites = option_dither_sprites;
 		new_gui->option_filter_sprites = option_filter_sprites;
 		new_gui->option_animate_images = option_animate_images;
+		new_gui->option_background_images = option_background_images;
 	} else {
 		new_gui->scale = old_gui->scale;
 		new_gui->option_dither_sprites = old_gui->option_dither_sprites;
 		new_gui->option_filter_sprites = old_gui->option_filter_sprites;
 		new_gui->option_animate_images = old_gui->option_animate_images;
+		new_gui->option_background_images = old_gui->option_background_images;
 	}
 
 	/*	Set up the toolbar

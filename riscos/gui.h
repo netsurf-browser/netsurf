@@ -98,6 +98,7 @@ struct gui_window
 	bool option_toolbar_show_address;
 	bool option_toolbar_show_throbber;
 	bool option_animate_images;
+	bool option_background_images;
 };
 
 
