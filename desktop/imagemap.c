@@ -130,6 +130,7 @@ void imagemap_destroy(struct content *c)
 {
 	unsigned int i;
 
+	assert(c != NULL);
 	assert(c->type == CONTENT_HTML);
 
 	/* no imagemaps -> return */
@@ -161,6 +162,7 @@ void imagemap_dump(struct content *c)
 
 	int j;
 
+	assert(c != NULL);
 	assert(c->type == CONTENT_HTML);
 
 	if (c->data.html.imagemaps == 0) return;
@@ -221,6 +223,9 @@ bool imagemap_extract(xmlNode *node, struct content *c)
 	struct mapentry *entry = 0;
 	char *name;
 
+	assert(node != NULL);
+	assert(c != NULL);
+
 	if (node->type == XML_ELEMENT_NODE) {
 		if (strcmp(node->name, "map") == 0) {
 			if ((name = (char*)xmlGetProp(node, (const xmlChar*)"name")) == NULL)
@@ -229,9 +234,16 @@ bool imagemap_extract(xmlNode *node, struct content *c)
 				xmlFree(name);
 				return false;
 			}
-			if (!imagemap_add(c, name, entry)) {
-				xmlFree(name);
-				return false;
+			/* imagemap_extract_map may not extract anything,
+			 * so entry can still be NULL here. This isn't an
+			 * error as it just means that we've encountered
+			 * an incorrectly defined <map>...</map> block
+			 */
+			if (entry) {
+				if (!imagemap_add(c, name, entry)) {
+					xmlFree(name);
+					return false;
+				}
 			}
 			xmlFree(name);
 			return true;
@@ -261,6 +273,9 @@ bool imagemap_extract_map(xmlNode *node, struct content *c,
 {
 
 	xmlNode *this_node;
+
+	assert(c != NULL);
+	assert(entry != NULL);
 
 	if (node->type == XML_ELEMENT_NODE) {
 		/** \todo ignore <area> elements if there are other
@@ -505,6 +520,8 @@ void imagemap_freelist(struct mapentry *list) {
 
 	struct mapentry *entry, *prev;
 
+	assert(list != NULL);
+
 	entry = list;
 
 	while (entry != 0) {
@@ -538,6 +555,7 @@ char *imagemap_get(struct content *c, const char *key, unsigned long x,
 	struct mapentry *entry;
 	unsigned long cx, cy;
 
+	assert(c != NULL);
 	assert(c->type == CONTENT_HTML);
 	if (key == NULL) return NULL;
 	if (c->data.html.imagemaps == NULL) return NULL;
@@ -621,6 +639,9 @@ unsigned int imagemap_hash(const char *key) {
 int imagemap_point_in_poly(int num, float *xpt, float *ypt, unsigned long x, unsigned long y, unsigned long click_x, unsigned long click_y) {
 
 	int i, j, c=0;
+
+	assert(xpt != NULL);
+	assert(ypt != NULL);
 
 	for (i = 0, j = num-1; i < num; j = i++) {
 		if ((((ypt[i]+y <= click_y) && (click_y < ypt[j]+y)) ||
