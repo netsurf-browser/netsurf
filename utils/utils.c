@@ -294,3 +294,54 @@ void clean_cookiejar(void) {
         xfree(cookies);
 }
 #endif
+
+/** We can have a fairly good estimate of how long the buffer needs to
+  * be.  The unsigned long can store a value representing a maximum size
+  * of around 4 GB.  Therefore the greatest space required is to
+  * represent 1023MB.  Currently that would be represented as "1023MB" so 12
+  * including a null terminator.
+  * Ideally we would be able to know this value for sure, in the mean
+  * time the following should suffice.
+ **/
+
+#define BYTESIZE_BUFFER_SIZE 20
+
+/**
+  * Does a simple conversion which assumes the user speaks English.  The buffer
+  * returned is one of two static ones so may change each time this call is
+  * made.  Don't store the buffer for later use.  It's done this way for
+  * convenience and to fight possible memory leaks, it is not necesarily pretty.
+ **/
+
+char *human_friendly_bytesize(unsigned long bytesize) {
+	static char buffer1[BYTESIZE_BUFFER_SIZE];
+	static char buffer2[BYTESIZE_BUFFER_SIZE];
+	static char *curbuffer = buffer2;
+
+	if (curbuffer == buffer1)
+		curbuffer = buffer2;
+	else
+		curbuffer = buffer1;
+
+	enum {bytes, kilobytes, megabytes, gigabytes} unit = bytes;
+	static char units[][7] = {"Bytes", "kBytes", "MBytes", "GBytes"};
+
+	if (bytesize > 1024) {
+		bytesize /= 1024;
+		unit = kilobytes;
+	}
+
+	if (bytesize > 1024) {
+		bytesize /= 1024;
+		unit = megabytes;
+	}
+
+	if (bytesize > 1024) {
+		bytesize /= 1024;
+		unit = gigabytes;
+	}
+
+	sprintf(curbuffer, "%lu%s", bytesize, messages_get(units[unit]));
+
+	return curbuffer;
+}

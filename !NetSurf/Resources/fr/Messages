@@ -32,7 +32,7 @@ ScaleView:Ajuster la vue
 Themes:Thèmes
 
 # Download window
-Downloaded:Téléchargement terminé, %lu octès
+Downloaded:Téléchargement terminé, %s
 
 # Forms
 Form_Submit:Soumettre
@@ -52,9 +52,14 @@ NoMemory:NetSurf a besoin de plus de mémoire. Veuillez libérer de la mémoire et 
 FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
 FontError:Failed to open font "Homerton.Medium" (%s).
 
+Bytes: O
+kBytes: kO
+MBytes: MO
+GBytes: GO
+
 Loading:Ouverture de la page...
-RecPercent:%lu reçus de %lu octès (%u%%)
-Received:%lu octès reçus
+RecPercent:%s reçus de %s (%u%%)
+Received:%s reçus
 Converting:Convertion de %lu octès
 BadRedirect:Mauvais URL de redirection
 FetchFailed:Récupération du fichier impossible

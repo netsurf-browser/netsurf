@@ -41,7 +41,7 @@ HelpInter:Interactive help
 Themes:Themes
 
 # Download window
-Downloaded:Download complete, %lu bytes
+Downloaded:Download complete, %s
 
 # Forms
 Form_Submit:Submit
@@ -61,9 +61,16 @@ NoMemory:NetSurf is running out of memory. Please free some memory and try again
 FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
 FontError:Failed to open font "Homerton.Medium" (%s).
 
+# Some general purpose words and phrases
+Bytes: B
+kBytes: kB
+MBytes: MB
+GBytes: GB
+
+# Progress
 Loading:Opening page...
-RecPercent:Received %lu of %lu bytes (%u%%)
-Received:Received %lu bytes
+RecPercent:Received %s of %s (%u%%)
+Received:Received %s
 Converting:Converting %lu bytes
 BadRedirect:Bad redirect URL
 FetchFailed:Unable to fetch document

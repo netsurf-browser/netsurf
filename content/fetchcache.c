@@ -174,13 +174,13 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 			if (c->total_size)
 				sprintf(c->status_message,
 						messages_get("RecPercent"),
-						c->source_size + size, c->total_size,
-						(unsigned int) ((c->source_size + size) *
-						100.0 / c->total_size));
+						human_friendly_bytesize(c->source_size + size),
+						human_friendly_bytesize(c->total_size),
+						(unsigned int) ((c->source_size + size) * 100.0 / c->total_size));
 			else
 				sprintf(c->status_message,
 						messages_get("Received"),
-						c->source_size + size);
+						human_friendly_bytesize(c->source_size + size));
 			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 			content_process_data(c, data, size);
 			break;

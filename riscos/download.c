@@ -180,7 +180,7 @@ void gui_download_window_error(gui_window *g, const char *error)
 void gui_download_window_done(gui_window *g)
 {
 	snprintf(g->status, 256, messages_get("Downloaded"),
-			g->data.download.content->source_size);
+			human_friendly_bytesize(g->data.download.content->source_size));
 	wimp_set_icon_state(g->window,
 			ICON_DOWNLOAD_STATUS, 0, 0);
 
