@@ -65,6 +65,7 @@ typedef enum {
 	CONTENT_MSG_STATUS,    /**< new status string */
 	CONTENT_MSG_REDIRECT,  /**< replacement URL */
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
+	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
 #ifdef WITH_AUTH
 	CONTENT_MSG_AUTH       /**< authentication required */
 #endif

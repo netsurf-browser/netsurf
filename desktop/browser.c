@@ -276,6 +276,10 @@ void browser_window_callback(content_msg msg, struct content *c,
 			browser_window_update(bw, false);
 			break;
 
+		case CONTENT_MSG_REDRAW:
+			gui_window_redraw_window(bw->window);
+			break;
+
 #ifdef WITH_AUTH
 		case CONTENT_MSG_AUTH:
 			gui_401login_open(bw, c, error);
@@ -472,6 +476,9 @@ void download_window_callback(content_msg msg, struct content *c,
 			break;
 
 		case CONTENT_MSG_REFORMAT:
+			break;
+
+		case CONTENT_MSG_REDRAW:
 			break;
 
 #ifdef WITH_AUTH

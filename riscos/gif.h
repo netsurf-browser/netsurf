@@ -19,7 +19,7 @@ struct content_gif_data {
         /*	The sprite area containing the 8bpp frames.
 	*/
 	osspriteop_area *sprite_area;
-	
+
 	/*	The sprite header of the current 32bpp image.
 	*/
 	osspriteop_header *buffer_header;
@@ -27,7 +27,7 @@ struct content_gif_data {
 	/**	The current frame number of the GIF to display, [0...(max-1)]
 	*/
 	unsigned int current_frame;
-	
+
 	/**	The current frame that we hold a 32bpp version of [0...(max-1)]
 	*/
 	unsigned int expanded_frame;
@@ -39,7 +39,7 @@ struct content_gif_data {
 	/**	Whether the GIF should loop
 	*/
 	bool loop_gif;
-	
+
 	/**	The number of cs unprocessed as the next transition has
 		not yet occurred.
 	*/
@@ -52,18 +52,16 @@ struct content_gif_data {
 	/**	An array of times (in cs) for the frame transitions between each frame
 	*/
 	unsigned int *frame_transitions;
-	
+
 };
 
 void nsgif_init(void);
 void nsgif_create(struct content *c, const char *params[]);
 int nsgif_convert(struct content *c, unsigned int width, unsigned int height);
 void nsgif_destroy(struct content *c);
-int nsgif_animate(struct content *c, unsigned int advance_time);
 void nsgif_redraw(struct content *c, long x, long y,
 		unsigned long width, unsigned long height,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
 		float scale);
-osspriteop_header *nsgif_get_sprite_address(struct content *c, unsigned int frame);
 
 #endif

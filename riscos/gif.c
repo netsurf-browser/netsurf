@@ -22,6 +22,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/gif.h"
+#include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/utils/log.h"
@@ -56,6 +57,9 @@
 
 static bool nsgif_decompress_frame(struct content *c, anim *p_gif_animation,
 		unsigned int cur_frame);
+static void nsgif_animate(void *p);
+static osspriteop_header *nsgif_get_sprite_address(struct content *c,
+		unsigned int frame);
 static void CompressSpriteLine( pixel *dest, const pixel *src, int n, int bpp );
 static void CompressMaskLine( pixel *dest, const pixel *src, int n, int bpp );
 
@@ -224,6 +228,9 @@ int nsgif_convert(struct content *c, unsigned int iwidth, unsigned int iheight) 
 	}
 */
 
+	if (c->data.gif.animate_gif)
+		schedule(frame_delays[0], nsgif_animate, c);
+
 	/*	Exit as a success
 	*/
 	return 0;
@@ -367,7 +374,7 @@ void nsgif_redraw(struct content *c, long x, long y,
 
 	/*	Hack - animate as if 4cs have passed every redraw
 	*/
-	nsgif_animate(c, 4);
+/* 	nsgif_animate(c, 4); */
 
 	/*	Check if we need to expand the current frame to 32bpp
 	*/
@@ -412,13 +419,30 @@ void nsgif_destroy(struct content *c) {
 /**	Performs any necessary animation.
 
 	@param	c		The content to animate
-	@param	advance_time	The number of cs to move the animation forwards
-	@return	0 for no further scheduling as the animation has finished, or
-		>0 to indicate the number of cs until the next animation frame, or
-		<0 to indicate that an animation has occured. The absolute value
-			indicates the number of cs until the next animation frame.
 */
-int nsgif_animate(struct content *c, unsigned int advance_time) {
+void nsgif_animate(void *p)
+{
+	struct content *c = p;
+
+	/* at the moment just advance by one frame */
+	c->data.gif.current_frame++;
+	if (c->data.gif.current_frame == c->data.gif.total_frames) {
+		if (!c->data.gif.loop_gif) {
+			c->data.gif.current_frame--;
+			c->data.gif.animate_gif = false;
+			return;
+		} else
+			c->data.gif.current_frame = 0;
+	}
+
+	schedule(c->data.gif.frame_transitions[c->data.gif.current_frame],
+			nsgif_animate, c);
+
+	content_broadcast(c, CONTENT_MSG_REDRAW, 0);
+}
+
+
+#if 0
 	unsigned int max_frame;
 	unsigned int cur_frame;
 	unsigned int old_frame;
@@ -478,6 +502,7 @@ int nsgif_animate(struct content *c, unsigned int advance_time) {
 		return (advance_time - delay_values[cur_frame]);
 	}
 }
+#endif
 
 
 
