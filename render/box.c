@@ -806,7 +806,7 @@ struct result box_textarea(xmlNode *n, struct status *status,
 		current += len;
 		if (current[0] == '\r' && current[1] == '\n')
 			current += 2;
-		else if (current[0] == '\n')
+		else if (current[0] != 0)
 			current++;
 	} while (*current);
 	xmlFree(content);
