@@ -660,7 +660,7 @@ unsigned int css_hash(const char *s)
 	if (s == 0)
 		return 0;
 	for (; *s != 0; s++)
-		z += *s;
+		z += *s & 0x1f;  /* lower 5 bits, case insensitive */
 	return (z % (HASH_SIZE - 1)) + 1;
 }
 
