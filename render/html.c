@@ -192,6 +192,9 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			break;
 
 		case CONTENT_MSG_AUTH:
+		        c->data.html.stylesheet_content[i] = 0;
+			c->active--;
+			c->error = 1;
 		        break;
 
 		default:
@@ -483,6 +486,9 @@ void html_object_callback(content_msg msg, struct content *object,
 			break;
 
 		case CONTENT_MSG_AUTH:
+		        c->data.html.object[i].content = 0;
+			c->active--;
+			c->error = 1;
 		        break;
 
 		default:

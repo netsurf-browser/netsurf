@@ -266,10 +266,10 @@ struct fetch * fetch_start(char *url, char *referer,
 	}
 
         /* HTTP auth */
-        code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
-        assert(code == CURLE_OK);
-
         if ((li=login_list_get(url)) != NULL) {
+                code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
+                assert(code == CURLE_OK);
+
                 code = curl_easy_setopt(fetch->curl_handle, CURLOPT_USERPWD, li->logindetails);
 
                 assert(code == CURLE_OK);
@@ -301,6 +301,7 @@ struct fetch * fetch_start(char *url, char *referer,
 void fetch_abort(struct fetch *f)
 {
 	CURLMcode codem;
+	struct login *li;
 
 	assert(f != 0);
 	LOG(("fetch %p, url '%s'", f, f->url));
@@ -355,6 +356,16 @@ void fetch_abort(struct fetch *f)
 			code = curl_easy_setopt(fetch->curl_handle, CURLOPT_REFERER, fetch->referer);
 			assert(code == CURLE_OK);
 		}
+
+                /* HTTP auth */
+                if ((li=login_list_get(f->url)) != NULL) {
+                        code = curl_easy_setopt(fetch->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
+                        assert(code == CURLE_OK);
+
+                        code = curl_easy_setopt(fetch->curl_handle, CURLOPT_USERPWD, li->logindetails);
+
+                        assert(code == CURLE_OK);
+                }
 
 		/* POST */
 		if (fetch->post_urlenc) {
