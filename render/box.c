@@ -675,8 +675,8 @@ struct css_style * box_get_style(struct content *c,
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "height"))) {
 		float value = atof(s);
-		if (value < 0) {
-			/* ignore negative values */
+		if (value < 0 || strlen(s) == 0) {
+			/* ignore negative values and height="" */
 		} else if (strrchr(s, '%')) {
 	                /*the specification doesn't make clear what
 	                 * percentage heights mean, so ignore them */
@@ -722,8 +722,8 @@ struct css_style * box_get_style(struct content *c,
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "width"))) {
 		float value = atof(s);
-		if (value < 0) {
-			/* ignore negative values */
+		if (value < 0 || strlen(s) == 0) {
+			/* ignore negative values and width="" */
 		} else if (strrchr(s, '%')) {
 			style->width.width = CSS_WIDTH_PERCENT;
 			style->width.value.percent = value;
