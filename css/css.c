@@ -1,5 +1,5 @@
 /**
- * $Id: css.c,v 1.4 2003/04/05 21:38:06 bursa Exp $
+ * $Id: css.c,v 1.5 2003/04/06 18:09:34 bursa Exp $
  */
 
 #include <assert.h>
@@ -7,10 +7,13 @@
 #include <string.h>
 #include <strings.h>
 #define CSS_INTERNALS
-#define NDEBUG
+#undef NDEBUG
 #include "netsurf/content/content.h"
+#include "netsurf/content/fetch.h"
+#include "netsurf/content/fetchcache.h"
 #include "netsurf/css/css.h"
 #include "netsurf/css/parser.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -23,6 +26,13 @@ struct decl {
 	struct rule * rule;
 };
 
+struct fetch_data {
+	struct content *c;
+	unsigned int i;
+};
+
+void css_atimport_callback(fetchcache_msg msg, struct content *css,
+		void *p, const char *error);
 void css_dump_style(const struct css_style * const style);
 
 
@@ -78,11 +88,14 @@ void css_create(struct content *c)
 {
 	unsigned int i;
 	LOG(("content %p", c));
-	c->data.css = xcalloc(1, sizeof(*c->data.css));
-	css_lex_init(&c->data.css->lexer);
-	c->data.css->parser = css_parser_Alloc(malloc);
+	c->data.css.css = xcalloc(1, sizeof(*c->data.css.css));
+	css_lex_init(&c->data.css.css->lexer);
+	c->data.css.css->parser = css_parser_Alloc(malloc);
 	for (i = 0; i != HASH_SIZE; i++)
-		c->data.css->rule[i] = 0;
+		c->data.css.css->rule[i] = 0;
+	c->data.css.import_count = 0;
+	c->data.css.import_content = xcalloc(0, sizeof(*c->data.css.import_content));
+	c->active = 0;
 }
 
 
@@ -90,30 +103,36 @@ void css_process_data(struct content *c, char *data, unsigned long size)
 {
 	int token;
 	YY_BUFFER_STATE buffer;
-	struct parse_params param = {0, c->data.css, 0};
+	struct parse_params param = {0, c, 0};
 
 	LOG(("content %p, size %lu", c, size));
 
-	buffer = css__scan_bytes(data, size, c->data.css->lexer);
-	while ((token = css_lex(c->data.css->lexer))) {
-		css_parser_(c->data.css->parser, token,
-				strdup(css_get_text(c->data.css->lexer)),
+	buffer = css__scan_bytes(data, size, c->data.css.css->lexer);
+	while ((token = css_lex(c->data.css.css->lexer))) {
+		css_parser_(c->data.css.css->parser, token,
+				strdup(css_get_text(c->data.css.css->lexer)),
 				&param);
 	}
-	css__delete_buffer(buffer, c->data.css->lexer);
+	css__delete_buffer(buffer, c->data.css.css->lexer);
 }
 
 
 int css_convert(struct content *c, unsigned int width, unsigned int height)
 {
-	struct parse_params param = {0, c->data.css, 0};
+	struct parse_params param = {0, c, 0};
 
 	LOG(("content %p", c));
 
-	css_parser_(c->data.css->parser, 0, 0, &param);
+	css_parser_(c->data.css.css->parser, 0, 0, &param);
 
-	css_parser_Free(c->data.css->parser, free);
-	css_lex_destroy(c->data.css->lexer);
+	css_parser_Free(c->data.css.css->parser, free);
+	css_lex_destroy(c->data.css.css->lexer);
+
+	/* complete fetch of any imported stylesheets */
+	while (c->active != 0) {
+		fetch_poll();
+		gui_multitask();
+	}
 
 	return 0;
 }
@@ -131,7 +150,21 @@ void css_reformat(struct content *c, unsigned int width, unsigned int height)
 
 void css_destroy(struct content *c)
 {
-	xfree(c->data.css);
+	unsigned int i;
+	struct node *r;
+	
+	for (i = 0; i != HASH_SIZE; i++) {
+		for (r = c->data.css.css->rule[i]; r != 0; r = r->next)
+			xfree(r->style);
+		css_free_node(c->data.css.css->rule[i]);
+	}
+	xfree(c->data.css.css);
+
+	/* imported stylesheets */
+	for (i = 0; i != c->data.css.import_count; i++)
+		if (c->data.css.import_content[i] != 0)
+			cache_free(c->data.css.import_content[i]);
+	xfree(c->data.css.import_content);
 }
 
 
@@ -169,14 +202,131 @@ void css_free_node(struct node *node)
 }
 
 
+void css_atimport(struct content *c, struct node *node)
+{
+	char *s, *url;
+	int string = 0, screen = 1;
+	struct fetch_data *fetch_data;
 
-void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * selector,
+	LOG(("@import rule"));
+
+	/* uri(...) or "..." */
+	switch (node->type) {
+		case NODE_URI:
+			LOG(("URI '%s'", node->data));
+			for (s = node->data + 4;
+					*s == ' ' || *s == '\t' || *s == '\r' ||
+					*s == '\n' || *s == '\f';
+					s++)
+				;
+			if (*s == '\'' || *s == '"') {
+				string = 1;
+				s++;
+			}
+			url = xstrdup(s);
+			for (s = url + strlen(url) - 2;
+					*s == ' ' || *s == '\t' || *s == '\r' ||
+					*s == '\n' || *s == '\f';
+					s--)
+				;
+			if (string)
+				*s = 0;
+			else
+				*(s + 1) = 0;
+			break;
+		case NODE_STRING:
+			LOG(("STRING '%s'", node->data));
+			url = xstrdup(node->data + 1);
+			*(url + strlen(url) - 1) = 0;
+			break;
+		default:
+			return;
+	}
+
+	/* media not specified, 'screen', or 'all' */
+	for (node = node->next; node != 0; node = node->next) {
+		screen = 0;
+		if (node->type != NODE_IDENT) {
+			free(url);
+			return;
+		}
+		LOG(("medium '%s'", node->data));
+		if (strcmp(node->data, "screen") == 0 || strcmp(node->data, "all") == 0) {
+			screen = 1;
+			break;
+		}
+		node = node->next;
+		if (node == 0 || node->type != NODE_COMMA) {
+			free(url);
+			return;
+		}
+	}
+	if (!screen) {
+		free(url);
+		return;
+	}
+
+	/* start the fetch */
+	c->data.css.import_count++;
+	c->data.css.import_content = xrealloc(c->data.css.import_content,
+			c->data.css.import_count * sizeof(*c->data.css.import_content));
+
+	fetch_data = xcalloc(1, sizeof(*fetch_data));
+	fetch_data->c = c;
+	fetch_data->i = c->data.css.import_count - 1;
+	c->active++;
+	fetchcache(url_join(url, c->url), c->url, css_atimport_callback,
+			fetch_data, c->width, c->height);
+
+	free(url);
+}
+
+
+void css_atimport_callback(fetchcache_msg msg, struct content *css,
+		void *p, const char *error)
+{
+	struct fetch_data *data = p;
+	struct content *c = data->c;
+	unsigned int i = data->i;
+	switch (msg) {
+		case FETCHCACHE_OK:
+			free(data);
+			LOG(("got imported stylesheet '%s'", css->url));
+			c->data.css.import_content[i] = css;
+			/*css_dump_stylesheet(css->data.css);*/
+			c->active--;
+			break;
+		case FETCHCACHE_BADTYPE:
+		case FETCHCACHE_ERROR:
+			free(data);
+			c->data.css.import_content[i] = 0;
+			c->active--;
+			c->error = 1;
+			break;
+		case FETCHCACHE_STATUS:
+			/* TODO: need to add a way of sending status to the
+			 * owning window */
+			break;
+		default:
+			assert(0);
+	}
+}
+
+
+
+
+
+
+
+
+void css_get_style(struct content *c, struct css_selector * selector,
 		unsigned int selectors, struct css_style * style)
 {
+	struct css_stylesheet *stylesheet = c->data.css.css;
 	struct node *r, *n, *m;
 	unsigned int hash, i, done_empty = 0;
 
-	LOG(("stylesheet %p, selectors %u", stylesheet, selectors));
+	/*LOG(("stylesheet '%s'", c->url));*/
 
 	hash = css_hash(selector[selectors - 1].element);
 	for (r = stylesheet->rule[hash]; ; r = r->next) {
@@ -185,31 +335,30 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 			done_empty = 1;
 		}
 		if (r == 0)
-			return;
+			break;
 		i = selectors - 1;
 		n = r;
 		/* compare element */
 		if (n->data != 0)
 			if (strcasecmp(selector[i].element, n->data) != 0)
 				goto not_matched;
-		LOG(("top element '%s' matched", selector[i].element));
+		/*LOG(("top element '%s' matched", selector[i].element));*/
 		while (1) {
 			/* class and id */
 			for (m = n->left; m != 0; m = m->next) {
 				if (m->type == NODE_ID) {
 					/* TODO: check if case sensitive */
-					if (strcmp(selector[i].id, m->data) != 0)
+					if (strcmp(selector[i].id, m->data + 1) != 0)
 						goto not_matched;
 				} else if (m->type == NODE_CLASS) {
 					/* TODO: check if case sensitive */
-					LOG(("comparing class '%s' against '%s'", selector[i].class, m->data));
 					if (strcmp(selector[i].class, m->data) != 0)
 						goto not_matched;
 				} else {
 					goto not_matched;
 				}
 			}
-			LOG(("class and id matched"));
+			/*LOG(("class and id matched"));*/
 			/* ancestors etc. */
 			if (n->comb == COMB_NONE)
 				goto matched; /* match successful */
@@ -219,13 +368,13 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 				n = n->right;
 				if (n->data == 0)
 					goto not_matched;  /* TODO: handle this case */
-				LOG(("searching for ancestor '%s'", n->data));
+				/*LOG(("searching for ancestor '%s'", n->data));*/
 				while (i != 0 && strcasecmp(selector[i - 1].element, n->data) != 0)
 					i--;
 				if (i == 0)
 					goto not_matched;
 				i--;
-				LOG(("found"));
+				/*LOG(("found"));*/
 			} else {
 				/* TODO: COMB_PRECEDED, COMB_PARENT */
 				goto not_matched;
@@ -234,12 +383,18 @@ void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * sel
 
 matched:
 		/* TODO: sort by specificity */
-		LOG(("matched rule %p", r));
+		/*LOG(("matched rule %p", r));*/
 		css_merge(style, r->style);
 
 not_matched:
 
 	}
+
+	/* imported stylesheets */
+	for (i = 0; i != c->data.css.import_count; i++)
+		if (c->data.css.import_content[i] != 0)
+			css_get_style(c->data.css.import_content[i], selector,
+					selectors, style);
 }
 
 

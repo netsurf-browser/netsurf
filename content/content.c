@@ -1,5 +1,5 @@
 /**
- * $Id: content.c,v 1.5 2003/04/05 21:38:06 bursa Exp $
+ * $Id: content.c,v 1.6 2003/04/06 18:09:34 bursa Exp $
  */
 
 #include <assert.h>
@@ -74,6 +74,7 @@ struct content * content_create(content_type type, char *url)
 	c->type = type;
 	c->status = CONTENT_LOADING;
 	c->size = sizeof(struct content);
+	c->status_callback = 0;
 	handler_map[type].create(c);
 	return c;
 }

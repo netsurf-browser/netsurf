@@ -1,5 +1,5 @@
 /**
- * $Id: parser.y,v 1.5 2003/04/05 16:24:43 bursa Exp $
+ * $Id: parser.y,v 1.6 2003/04/06 18:09:34 bursa Exp $
  */
 
 /*
@@ -36,7 +36,10 @@ statement ::= ruleset.
 statement ::= at_rule.
 
 at_rule ::= ATKEYWORD any_list block.
-at_rule ::= ATKEYWORD any_list SEMI.
+at_rule ::= ATKEYWORD(A) any_list(B) SEMI.
+		{ if (strcasecmp(A, "@import") == 0)
+			css_atimport(param->stylesheet, B);
+		free(A); css_free_node(B); }
 
 block ::= LBRACE block_body RBRACE.
 block_body ::= .

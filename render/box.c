@@ -1,5 +1,5 @@
 /**
- * $Id: box.c,v 1.37 2003/04/05 21:38:06 bursa Exp $
+ * $Id: box.c,v 1.38 2003/04/06 18:09:34 bursa Exp $
  */
 
 #include <assert.h>
@@ -424,7 +424,7 @@ struct css_style * box_get_style(struct content ** stylesheet,
 	for (i = 0; i != stylesheet_count; i++) {
 		if (stylesheet[i] != 0) {
 			assert(stylesheet[i]->type == CONTENT_CSS);
-			css_get_style(stylesheet[i]->data.css, selector, depth, style_new);
+			css_get_style(stylesheet[i], selector, depth, style_new);
 		}
 	}
 	css_cascade(style, style_new);

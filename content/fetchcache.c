@@ -1,5 +1,5 @@
 /**
- * $Id: fetchcache.c,v 1.5 2003/03/08 20:26:31 bursa Exp $
+ * $Id: fetchcache.c,v 1.6 2003/04/06 18:09:34 bursa Exp $
  */
 
 #include <assert.h>
@@ -24,6 +24,7 @@ struct fetchcache {
 
 static void fetchcache_free(struct fetchcache *fc);
 static void fetchcache_callback(fetchcache_msg msg, void *p, char *data, unsigned long size);
+static void status_callback(void *p, const char *status);
 
 
 void fetchcache(const char *url, char *referer,
@@ -81,6 +82,8 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 				free(fc);
 			} else {
 				fc->c = content_create(type, fc->url);
+				fc->c->status_callback = status_callback;
+				fc->c->status_p = fc;
 			}
 			free(mime_type);
 			break;
@@ -116,6 +119,13 @@ void fetchcache_callback(fetch_msg msg, void *p, char *data, unsigned long size)
 		default:
 			assert(0);
 	}
+}
+
+
+void status_callback(void *p, const char *status)
+{
+	struct fetchcache *fc = p;
+	fc->callback(FETCHCACHE_STATUS, fc->c, fc->p, status);
 }
 
 

@@ -1,5 +1,5 @@
 /**
- * $Id: ruleset.c,v 1.4 2003/04/05 21:38:06 bursa Exp $
+ * $Id: ruleset.c,v 1.5 2003/04/06 18:09:34 bursa Exp $
  */
 
 #include <assert.h>
@@ -7,6 +7,7 @@
 #include <string.h>
 #include <strings.h>
 #define CSS_INTERNALS
+#define NDEBUG
 #include "netsurf/css/css.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
@@ -99,10 +100,11 @@ static const struct font_size_entry font_size_table[] = {
  * css_add_ruleset -- add a ruleset to a stylesheet
  */
 
-void css_add_ruleset(struct css_stylesheet *stylesheet,
+void css_add_ruleset(struct content *c,
 		struct node *selector,
 		struct node *declaration)
 {
+	struct css_stylesheet *stylesheet = c->data.css.css;
 	struct node *n, *sel, *next_sel;
 	struct css_style *style;
 	unsigned int hash;

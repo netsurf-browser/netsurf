@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.16 2003/04/04 15:19:31 bursa Exp $
+# $Id: makefile,v 1.17 2003/04/06 18:09:34 bursa Exp $
 
 all: !NetSurf/!RunImage,ff8
 clean:
@@ -62,7 +62,7 @@ utils/arm-riscos-aof/%.o: utils/%.c $(HEADERS)
 css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
 	cd ..; /usr/bin/perl netsurf/css/makeenum netsurf/css/css_enum < netsurf/css/css_enums
 
-css/parser.c css/parser.h: css/parser.y
+css/parser.c: css/parser.y
 	-cd css; lemon parser.y
 
 css/scanner.c css/scanner.h: css/scanner.l

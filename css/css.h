@@ -1,5 +1,5 @@
 /**
- * $Id: css.h,v 1.4 2003/04/05 21:38:06 bursa Exp $
+ * $Id: css.h,v 1.5 2003/04/06 18:09:34 bursa Exp $
  */
 
 #ifndef _NETSURF_CSS_CSS_H_
@@ -146,7 +146,7 @@ struct css_stylesheet {
 
 struct parse_params {
 	int ruleset_only;
-	struct css_stylesheet *stylesheet;
+	struct content *stylesheet;
 	struct node *declaration;
 };
 
@@ -170,7 +170,8 @@ void css_destroy(struct content *c);
 struct node * css_new_node(node_type type, char *data,
 		struct node *left, struct node *right);
 void css_free_node(struct node *node);
-void css_add_ruleset(struct css_stylesheet *stylesheet,
+void css_atimport(struct content *c, struct node *node);
+void css_add_ruleset(struct content *c,
 		struct node *selector,
 		struct node *declaration);
 void css_add_declarations(struct css_style *style, struct node *declaration);
@@ -184,7 +185,7 @@ void css_parser_(void *yyp, int yymajor, char* yyminor,
 
 #endif
 
-void css_get_style(struct css_stylesheet * stylesheet, struct css_selector * selector,
+void css_get_style(struct content *c, struct css_selector * selector,
 			unsigned int selectors, struct css_style * style);
 void css_cascade(struct css_style * const style, const struct css_style * const apply);
 void css_merge(struct css_style * const style, const struct css_style * const apply);

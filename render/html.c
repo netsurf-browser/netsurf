@@ -1,5 +1,5 @@
 /**
- * $Id: html.c,v 1.8 2003/04/05 21:38:06 bursa Exp $
+ * $Id: html.c,v 1.9 2003/04/06 18:09:34 bursa Exp $
  */
 
 #include <assert.h>
@@ -33,7 +33,6 @@ void html_create(struct content *c)
 	c->data.html.document = NULL;
 	c->data.html.markup = NULL;
 	c->data.html.layout = NULL;
-	c->data.html.stylesheet = NULL;
 	c->data.html.style = NULL;
 	c->data.html.fonts = NULL;
 }
@@ -57,6 +56,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	struct css_selector* selector = xcalloc(1, sizeof(struct css_selector));
 	struct fetch_data *fetch_data;
 	unsigned int i;
+	char status[80];
 
 	htmlParseChunk(c->data.html.parser, "", 0, 1);
 	c->data.html.document = c->data.html.parser->myDoc;
@@ -101,6 +101,10 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 	}
 
 	while (c->active != 0) {
+		if (c->status_callback != 0) {
+			sprintf(status, "Loading %u stylesheets", c->active);
+			c->status_callback(c->status_p, status);
+		}
 		fetch_poll();
 		gui_multitask();
 	}
@@ -110,8 +114,6 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 		return 1;
 	}
 
-	c->data.html.stylesheet = c->data.html.stylesheet_content[0]->data.css;
-	
 	LOG(("Copying base style"));
 	c->data.html.style = xcalloc(1, sizeof(struct css_style));
 	memcpy(c->data.html.style, &css_base_style, sizeof(struct css_style));
@@ -123,6 +125,7 @@ int html_convert(struct content *c, unsigned int width, unsigned int height)
 
 	c->data.html.fonts = font_new_set();
 
+	c->status_callback(c->status_p, "Formatting document");
 	LOG(("XML to box"));
 	xml_to_box(c->data.html.markup, c->data.html.style,
 			c->data.html.stylesheet_content, c->data.html.stylesheet_count,
