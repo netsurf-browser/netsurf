@@ -125,7 +125,7 @@ void gui_init(int argc, char** argv)
 		OPTIONS.theme = strdup("Default");
 		sprintf(theme_fname, "<NetSurf$Dir>.Themes.Default");
 	}
-	current_theme = ro_theme_create(theme_fname);
+	ro_theme_load(theme_fname);
 
 	wimp_open_template("<NetSurf$Dir>.Resources.en.Templates");
 	ro_gui_dialog_init();
@@ -231,14 +231,9 @@ void gui_poll(bool active)
 		if (g != NULL)
 			ro_gui_window_redraw(g, &(block.redraw));
 		else {
-			g = ro_lookup_gui_toolbar_from_w(block.redraw.w);
-			if (g != NULL) {
-				ro_gui_toolbar_redraw(g, &(block.redraw));
-			} else {
-				osbool more = wimp_redraw_window(&block.redraw);
-				while (more)
-					more = wimp_get_rectangle(&block.redraw);
-			}
+			osbool more = wimp_redraw_window(&block.redraw);
+			while (more)
+				more = wimp_get_rectangle(&block.redraw);
 		}
 	}
 	break;
@@ -411,14 +406,9 @@ void gui_multitask(void)
 		if (g)
 			ro_gui_window_redraw(g, &(block.redraw));
 		else {
-			g = ro_lookup_gui_toolbar_from_w(block.redraw.w);
-			if (g)
-				ro_gui_toolbar_redraw(g, &(block.redraw));
-			else {
-				osbool more = wimp_redraw_window(&block.redraw);
-				while (more)
-					more = wimp_get_rectangle(&block.redraw);
-			}
+			osbool more = wimp_redraw_window(&block.redraw);
+			while (more)
+				more = wimp_get_rectangle(&block.redraw);
 		}
 	}
 	break;
@@ -581,7 +571,7 @@ void ro_gui_icon_bar_click(wimp_pointer* pointer)
     gui_window_show(bw->window);
     browser_window_open_location(bw, HOME_URL);
     wimp_set_caret_position(bw->window->data.browser.toolbar,
-      ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_URL"),
+      ICON_TOOLBAR_URL,
       0,0,-1, (int) strlen(bw->window->url) - 1);
   }
 }
@@ -930,8 +920,7 @@ void ro_gui_open_help_page (void)
         gui_window_show(bw->window);
         browser_window_open_location(bw, HELP_URL);
         wimp_set_caret_position(bw->window->data.browser.toolbar,
-                                ro_theme_icon(current_theme, THEME_TOOLBAR,
-                                              "TOOLBAR_URL"),
+                                ICON_TOOLBAR_URL,
                                 0,0,-1, (int) strlen(bw->window->url) - 1);
 }
 

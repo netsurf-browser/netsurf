@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
  */
 
 #ifndef _NETSURF_RISCOS_GUI_H_
@@ -61,6 +62,7 @@ struct gui_window
   gui_window* next;
 
   int throbber;
+  char throb_buf[12];
   float throbtime;
 
   gui_safety redraw_safety;
@@ -134,7 +136,6 @@ void ro_gui_window_click(gui_window* g, wimp_pointer* mouse);
 void ro_gui_window_open(gui_window* g, wimp_open* open);
 void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw);
 void ro_gui_window_mouse_at(wimp_pointer* pointer);
-void ro_gui_toolbar_redraw(gui_window* g, wimp_draw* redraw);
 void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer);
 void ro_gui_throb(void);
 gui_window* ro_lookup_gui_from_w(wimp_w window);
@@ -149,6 +150,12 @@ void ro_gui_history_redraw(wimp_draw *redraw);
 void ro_gui_history_click(wimp_pointer *pointer);
 
 /* icon numbers */
+#define ICON_TOOLBAR_THROBBER 1
+#define ICON_TOOLBAR_URL 2
+#define ICON_TOOLBAR_STATUS 3
+#define ICON_TOOLBAR_HISTORY 4
+#define ICON_TOOLBAR_RELOAD 5
+
 #define ICON_CONFIG_SAVE 0
 #define ICON_CONFIG_CANCEL 1
 #define ICON_CONFIG_BROWSER 2

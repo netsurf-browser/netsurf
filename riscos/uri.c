@@ -18,7 +18,6 @@
 
 void ro_uri_message_received(uri_full_message_process*);
 
-extern ro_theme* current_theme;
 
 void ro_uri_message_received(uri_full_message_process* uri_message)
 {
@@ -79,7 +78,7 @@ void ro_uri_message_received(uri_full_message_process* uri_message)
   browser_window_open_location(bw, uri_requested);
 
   wimp_set_caret_position(bw->window->data.browser.toolbar,
-               ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_URL"),
+               ICON_TOOLBAR_URL,
                0,0,-1, (int) strlen(bw->window->url) - 1);
 
 

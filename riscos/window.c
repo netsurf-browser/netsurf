@@ -53,7 +53,7 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
   window.extent.x1 = 8192;//ro_x_units(bw->format_width);
   if ((bw->flags & browser_TOOLBAR) != 0)
   {
-    window.extent.y1 = ro_theme_toolbar_height(current_theme);
+    window.extent.y1 = ro_theme_toolbar_height();
   }
   else
   {
@@ -75,13 +75,10 @@ gui_window *gui_create_browser_window(struct browser_window *bw)
   g->data.browser.toolbar = 0;
   if ((bw->flags & browser_TOOLBAR) != 0)
   {
-    ro_theme_window create_toolbar;
-
-    create_toolbar.type = THEME_TOOLBAR;
-    create_toolbar.data.toolbar.indirected_url = g->url;
-    create_toolbar.data.toolbar.indirected_status = g->status;
-    g->data.browser.toolbar = ro_theme_create_window(current_theme, &create_toolbar);
+    g->data.browser.toolbar = ro_theme_create_toolbar(g->url, g->status,
+        g->throb_buf);
     g->data.browser.toolbar_width = -1;
+    sprintf(g->throb_buf, "throbber0");
   }
 
   g->redraw_safety = SAFE;
@@ -170,27 +167,6 @@ gui_safety gui_window_set_redraw_safety(gui_window* g, gui_safety s)
 }
 
 
-void ro_gui_toolbar_redraw(gui_window* g, wimp_draw* redraw)
-{
-  osbool more;
-  wimp_icon_state throbber;
-
-  throbber.w = g->data.browser.toolbar;
-  throbber.i = ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_THROBBER");
-  wimp_get_icon_state(&throbber);
-
-  throbber.icon.flags = wimp_ICON_SPRITE;
-  snprintf(throbber.icon.data.sprite, 12, "throbber%d", g->throbber);
-
-  more = wimp_redraw_window(redraw);
-  while (more)
-  {
-    wimp_plot_icon(&throbber.icon);
-    more = wimp_get_rectangle(redraw);
-  }
-  return;
-}
-
 void ro_gui_window_redraw(gui_window* g, wimp_draw* redraw)
 {
   osbool more;
@@ -230,7 +206,7 @@ void gui_window_set_scroll(gui_window* g, unsigned long sx, unsigned long sy)
   state.xscroll = ro_x_units(sx);
   state.yscroll = ro_y_units(sy);
   if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
-    state.yscroll += ro_theme_toolbar_height(current_theme);
+    state.yscroll += ro_theme_toolbar_height();
   ro_gui_window_open(g, (wimp_open*)&state);
 }
 
@@ -256,7 +232,7 @@ void gui_window_set_extent(gui_window* g, unsigned long width, unsigned long hei
   extent.x1 = ro_x_units(width);
   if ((g->data.browser.bw->flags & browser_TOOLBAR) != 0)
   {
-    extent.y1 = ro_theme_toolbar_height(current_theme);
+    extent.y1 = ro_theme_toolbar_height();
   }
   else
   {
@@ -271,7 +247,7 @@ void gui_window_set_status(gui_window* g, const char* text)
   if (strcmp(g->status, text) != 0)
   {
     strncpy(g->status, text, 255);
-    wimp_set_icon_state(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_STATUS"), 0, 0);
+    wimp_set_icon_state(g->data.browser.toolbar, ICON_TOOLBAR_STATUS, 0, 0);
   }
 }
 
@@ -296,23 +272,7 @@ void gui_window_message(gui_window* g, gui_message* msg)
     case msg_SET_URL:
       fprintf(stderr, "Set URL '%s'\n", msg->data.set_url.url);
       strncpy(g->url, msg->data.set_url.url, 255);
-      wimp_set_icon_state(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_URL"), 0, 0);
-      if (g->data.browser.bw->history != NULL)
-      {
-        if (g->data.browser.bw->history->earlier != NULL)
-          gui_enable_icon(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_BACK"));
-        else
-          gui_disable_icon(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_BACK"));
-        if (g->data.browser.bw->history->later != NULL)
-          gui_enable_icon(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_FORWARD"));
-        else
-          gui_disable_icon(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_FORWARD"));
-      }
-      else
-      {
-        gui_disable_icon(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_BACK"));
-        gui_disable_icon(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_FORWARD"));
-      }
+      wimp_set_icon_state(g->data.browser.toolbar, ICON_TOOLBAR_URL, 0, 0);
       break;
     default:
       break;
@@ -361,7 +321,7 @@ void ro_gui_window_open(gui_window* g, wimp_open* open)
       tstate.visible.x0 = open->visible.x0;
       tstate.visible.x1 = outline.outline.x1 - 2;
       tstate.visible.y1 = open->visible.y1;
-      tstate.visible.y0 = tstate.visible.y1 - ro_theme_toolbar_height(current_theme);
+      tstate.visible.y0 = tstate.visible.y1 - ro_theme_toolbar_height();
       tstate.xscroll = 0;
       tstate.yscroll = 0;
       tstate.next = wimp_TOP;
@@ -379,7 +339,9 @@ void ro_gui_window_open(gui_window* g, wimp_open* open)
       if (tstate.visible.x1 - tstate.visible.x0 != g->data.browser.toolbar_width)
       {
         g->data.browser.toolbar_width = tstate.visible.x1 - tstate.visible.x0;
-        ro_theme_resize(current_theme, THEME_TOOLBAR, g->data.browser.toolbar, g->data.browser.toolbar_width, tstate.visible.y1 - tstate.visible.y0);
+        ro_theme_resize_toolbar(g->data.browser.toolbar,
+            g->data.browser.toolbar_width,
+            tstate.visible.y1 - tstate.visible.y0);
       }
 
     }
@@ -406,10 +368,11 @@ void ro_gui_throb(void)
           {
             g->throbtime = nowtime;
             g->throbber++;
-            if (g->throbber > current_theme->throbs)
+            if (theme_throbs < g->throbber)
               g->throbber = 0;
-
-            wimp_set_icon_state(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_THROBBER"), 0, 0);
+            sprintf(g->throb_buf, "throbber%u", g->throbber);
+            wimp_set_icon_state(g->data.browser.toolbar,
+                ICON_TOOLBAR_THROBBER, 0, 0);
           }
         }
       }
@@ -497,21 +460,18 @@ void ro_gui_window_mouse_at(wimp_pointer* pointer)
 
 void ro_gui_toolbar_click(gui_window* g, wimp_pointer* pointer)
 {
-  if (pointer->i == ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_BACK"))
-  {
-    ro_gui_history_open(g->data.browser.bw, g->data.browser.bw->history_entry,
-		    pointer->pos.x - 200, pointer->pos.y + 100);
-  }
-  else if (pointer->i == ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_FORWARD"))
-  {
-    ro_gui_history_open(g->data.browser.bw, g->data.browser.bw->history_entry,
-		    pointer->pos.x - 200, pointer->pos.y + 100);
-  }
-  else if (pointer->i == ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_RELOAD"))
-  {
-    browser_window_open_location_historical(g->data.browser.bw,
-    		g->data.browser.bw->url, 0, 0);
-  }
+	switch (pointer->i) {
+		case ICON_TOOLBAR_HISTORY:
+			ro_gui_history_open(g->data.browser.bw,
+					g->data.browser.bw->history_entry,
+					pointer->pos.x - 200,
+					pointer->pos.y + 100);
+			break;
+		case ICON_TOOLBAR_RELOAD:
+			browser_window_open_location_historical(g->data.browser.bw,
+					g->data.browser.bw->url, 0, 0);
+			break;
+	}
 }
 
 
@@ -604,7 +564,8 @@ void gui_window_start_throbber(struct gui_window* g)
 void gui_window_stop_throbber(gui_window* g)
 {
   g->throbber = 0;
-  wimp_set_icon_state(g->data.browser.toolbar, ro_theme_icon(current_theme, THEME_TOOLBAR, "TOOLBAR_THROBBER"), 0, 0);
+  sprintf(g->throb_buf, "throbber%u", g->throbber);
+  wimp_set_icon_state(g->data.browser.toolbar, ICON_TOOLBAR_THROBBER, 0, 0);
 }
 
 void gui_window_place_caret(gui_window *g, int x, int y, int height)

@@ -30,17 +30,6 @@ typedef int action_buttons;
 #define act_BUTTON_ALTERNATIVE   ((action_buttons) 1)
 #define act_BUTTON_CONTEXT_MENU  ((action_buttons) 2)
 
-struct history
-{
-  struct history* earlier;
-  struct history* later;
-  char* description;
-  char* url;
-};
-
-struct history* history_create(char* desc, char* url);
-void history_remember(struct history* current, char* desc, char* url);
-
 struct history_entry;
 
 struct browser_window
@@ -52,7 +41,6 @@ struct browser_window
   struct content* current_content;
   void *current_content_state;
   struct content* loading_content;
-  struct history* history;
   struct history_entry *history_entry;
   bool history_add;
   clock_t time0;

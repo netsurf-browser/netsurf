@@ -101,71 +101,12 @@ void browser_window_reformat(struct browser_window* bw, int scroll_to_top)
   LOG(("done"));
 }
 
-/* create a new history item */
-struct history* history_create(char* desc, char* url)
-{
-  struct history* h = xcalloc(1, sizeof(struct history));
-  LOG(("desc = %s, url = %s", desc, url));
-  h->description = 0;
-  if (desc != 0)
-	  h->description = xstrdup(desc);
-  h->url = xstrdup(url);
-  LOG(("return h = %p", h));
-  return h;
-}
-
 void browser_window_back(struct browser_window* bw)
 {
-  if (bw->history != NULL)
-  {
-    if (bw->history->earlier != NULL)
-    {
-      bw->history = bw->history->earlier;
-      browser_window_open_location_historical(bw, bw->history->url, 0, 0);
-    }
-  }
 }
 
 void browser_window_forward(struct browser_window* bw)
 {
-  if (bw->history != NULL)
-  {
-    if (bw->history->later != NULL)
-    {
-      bw->history = bw->history->later;
-      browser_window_open_location_historical(bw, bw->history->url, 0, 0);
-    }
-  }
-}
-
-/* remember a new page after the current one. anything remembered after the
-   current page is forgotten. */
-void history_remember(struct history* current, char* desc, char* url)
-{
-  struct history* h;
-  LOG(("current = %p, desc = %s, url = %s", current, desc, url));
-  assert(current != NULL);
-
-  /* forget later history items */
-  h = current->later;
-  while (h != NULL)
-  {
-    struct history* hh;
-    hh = h;
-    h = h->later;
-
-    if (hh->description != NULL)
-      xfree(hh->description);
-    if (hh->url != NULL)
-      xfree(hh->url);
-
-    xfree(hh);
-  }
-
-  current->later = history_create(desc, url);
-  current->later->earlier = current;
-
-  LOG(("end"));
 }
 
 
@@ -184,7 +125,7 @@ struct browser_window* create_browser_window(int flags, int width, int height)
 
   bw->current_content = NULL;
   bw->loading_content = NULL;
-  bw->history = NULL;
+  bw->history_entry = 0;
 
   bw->url = NULL;
   bw->caret_callback = 0;
@@ -214,29 +155,6 @@ void browser_window_destroy(struct browser_window* bw)
   if (bw->loading_content != NULL) {
     content_remove_user(bw->loading_content, browser_window_callback, bw, 0);
   }
-/*
-  if (bw->history != NULL)
-  {
-    struct history* current = bw->history;
-
-    while (current->earlier != NULL)
-      current = current->earlier;
-
-    while (current != NULL)
-    {
-      struct history* hh;
-      hh = current;
-      current = current->later;
-
-      if (hh->description != NULL)
-        xfree(hh->description);
-      if (hh->url != NULL)
-        xfree(hh->url);
-
-      xfree(hh);
-    }
-  }
-*/
   xfree(bw->url);
 
   gui_window_destroy(bw->window);
@@ -296,14 +214,6 @@ void browser_window_open_location_post(struct browser_window* bw,
   url = url_join(url0, bw->url);
   browser_window_open_location_historical(bw, url, post_urlenc, post_multipart);
   bw->history_add = true;
-  /* TODO: move this to somewhere below CONTENT_MSG_READY below */
-  if (bw->history == NULL)
-    bw->history = history_create(NULL, url);
-  else
-  {
-    history_remember(bw->history, NULL, url);
-    bw->history = bw->history->later;
-  }
   xfree(url);
   LOG(("end"));
 }
