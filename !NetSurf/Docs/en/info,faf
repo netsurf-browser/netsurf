@@ -13,7 +13,12 @@
 <p><em>NetSurf</em> is currently in beta.  The latest version of NetSurf can be obtained from <a href="http://netsurf.strcprstskrzkrk.co.uk/">netsurf.strcprstskrzkrk.co.uk</a>.  As these builds are generated automatically from <a href="http://cvs.semichrome.net/netsurf/">CVS</a>, they are likely to be unstable and may crash your machine.</p>
 <h3><a name="versions">Different Versions</a></h3>
 <p>There are 32-bit and 26-bit NetSurf builds.  The 26-bit versions are suitable for any processor up to StrongARM and the 32-bit versions will work on ARM6 and higher.  Only the 32-bit versions will run on Castle's IYONIX pc.</p>
-<p>The 32-bit builds of NetSurf include https support, although they require more memory.</p>
+<p>The 32-bit builds of NetSurf include extra features, not found in the 26-bit builds, although they require more memory.  The additional features of the 32-bit build are:</p>
+<ul>
+<li>HTTPS support.
+<li>Can use RISC OS Select's ImageFileConvert to display PNGs with alpha channels.
+</ul>
+<p>We recommend the use of the 32-bit build for users of RISC OS 3.5 onwards.</p>
 <h3><a name="requ">Requirements</a></h3>
 <p>NetSurf requires the <a href="http://www.chocky.org/unix/usage.html">SharedUnixLibrary</a> to run.  Also, you may need to download the <a href="http://sudden.recoil.org/others/">Acorn URI module</a>.</p>
 <h2><a name="devel">Contacting the Developers</a></h2>

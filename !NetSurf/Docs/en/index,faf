@@ -44,7 +44,7 @@
 </tr>
 </table>
 </div>
-<h2>Developers</h2>
+<h2>Contributors</h2>
 <p>NetSurf's main developers are:</p>
 <ul>
 <li>James Bursa</li>
@@ -53,6 +53,14 @@
 <li>Phil Pemberton</li>
 <li>Rob Jackson</li>
 </ul>
+<p>Other contributors include:</p>
+<ul>
+<li>Andrew Poole - <em>(GUI stuff)</em></li>
+<li>Andrew Duffell - <em>(Website work, NetSurf logo and other graphics, beta testing)</em></li>
+<li>James Shaw - <em>(Started the NetSurf project)</em></li>
+<li>Michael Drake - <em>(This documentation, beta testing)</em></li>
+</ul>
+<p>Also, thanks to everyone else who has helped with bug reports and suggestions.  If you feel you should be mentioned on the above list or have any other issues with it, please post to the <a href="info#devel">mailing list</a> or <a href="mailto:mike@smoothartist.com">contact me</a> directly.</p>
 <h2>License</h2>
 <p>NetSurf is released under the GPL license.</p>
 
