@@ -610,7 +610,6 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 	x = pointer->pos.x - ro_gui_tree_origin_x;
 	y = ro_gui_tree_origin_y - pointer->pos.y;
 	element = tree_get_node_element_at(tree->root->child, x, y, &furniture);
-	node = element->parent;
 
 
 	/* stop editing for anything but a drag */
@@ -623,6 +622,8 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 		if ((!element) || (!tree->root->child) ||
 				(tree_has_selection(tree->root->child)))
 			return true;
+
+		node = element->parent;
 		tree->temp_selection = node;
 		node->selected = true;
 		tree_handle_node_element_changed(tree, &node->data);
@@ -673,6 +674,8 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 		}
 		return true;
 	}
+
+	node = element->parent;
 
 	/* click on furniture or double click on folder toggles node expansion */
 	if (((furniture) && ((pointer->buttons == wimp_CLICK_SELECT << 8) ||
