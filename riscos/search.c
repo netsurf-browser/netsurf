@@ -9,6 +9,7 @@
  * Free text search (implementation)
  */
 
+#include <ctype.h>
 #include <string.h>
 
 #include "oslib/wimp.h"
@@ -26,6 +27,10 @@
 
 
 #ifdef WITH_SEARCH
+
+#ifndef NOF_ELEMENTS
+#define NOF_ELEMENTS(array) (sizeof(array)/sizeof(*(array)))
+#endif
 
 struct list_entry {
 	struct box *box;
@@ -46,8 +51,8 @@ static bool search_prev_case_sens = false;
 static void start_search(void);
 static void end_search(void);
 static void do_search(char *string, bool from_top, bool case_sens, bool forwards);
-static bool find_occurrences(char *string, struct box *cur, bool case_sens);
-static char * strcasestr(char *s1, char *s2);
+static const char *find_pattern(const char *string, int s_len, const char *pattern, int p_len, bool case_sens);
+static bool find_occurrences(const char *pattern, int p_len, struct box *cur, bool case_sens);
 
 
 /**
@@ -261,7 +266,7 @@ void do_search(char *string, bool from_top, bool case_sens, bool forwards)
 		}
 		search_found->prev = 0;
 		search_found->next = 0;
-		if (!find_occurrences(string, box, case_sens)) {
+		if (!find_occurrences(string, strlen(string), box, case_sens)) {
 			for (a = search_found->next; a; a = b) {
 				b = a->next;
 				free(a);
@@ -334,31 +339,119 @@ void do_search(char *string, bool from_top, bool case_sens, bool forwards)
 
 }
 
+
+/**
+ * Find the first occurrence of 'match' in 'string' and return its index
+ *
+ * /param string   the string to be searched (unterminated)
+ * /param s_len    length of the string to be searched
+ * /param match    the pattern for which we are searching (unterminated)
+ * /param m_len    length of pattern
+ * /return         pointer to first match, NULL if none
+ */
+
+const char *find_pattern(const char *string, int s_len, const char *pattern, int p_len, bool case_sens)
+{
+	struct { const char *ss, *s, *p; } context[16];
+	const char *ep = pattern + p_len;
+	const char *es = string  + s_len;
+	const char *p = pattern - 1;  /* a virtual '*' before the pattern */
+	const char *ss = string;
+	const char *s = string;
+	int top = 0;
+
+	while (p < ep) {
+		bool matches;
+		if (p < pattern || *p == '*') {
+			char ch;
+
+			/* skip any further asterisks; one is the same as many */
+			do p++; while (p < ep && *p == '*');
+
+			/* if we're at the end of the pattern, yes, it matches */
+			if (p >= ep) return ss;
+
+			/* anything matches a # so continue matching from
+			   here, and stack a context that will try to match
+			   the wildcard against the next character */
+			
+			ch = *p;
+			if (ch != '#') {
+				/* scan forwards until we find a match for this char */
+				if (!case_sens) ch = toupper(ch);
+				while (s < es) {
+					if (case_sens) {
+						if (*s == ch) break;
+					} else if (toupper(*s) == ch)
+						break;
+					s++;
+				}
+			}
+			
+			if (s < es) {
+				/* remember where we are in case the match fails; we can then resume */
+				if (top < (int)NOF_ELEMENTS(context)) {
+					context[top].ss = ss;
+					context[top].s  = s + 1;
+					context[top].p  = p - 1;    /* ptr to last asterisk */
+					top++;
+				}
+				matches = true;
+			}
+			else
+				matches = false;
+		}
+		else if (s < es) {
+			char ch = *p;
+			if (ch == '#')
+				matches = true;
+			else {
+				if (case_sens)
+					matches = (*s == ch);
+				else
+					matches = (toupper(*s) == toupper(ch));
+			}
+		}
+		else
+			matches = false;
+
+		if (matches) {
+			p++; s++;
+		}
+		else {
+			/* doesn't match, resume with stacked context if we have one */
+			if (--top < 0) return NULL;  /* no match, give up */
+			
+			ss = context[top].ss;
+			s  = context[top].s;
+			p  = context[top].p;
+		}
+	}
+
+	/* end of pattern reached */
+	return ss;
+}
+
+
 /**
  * Finds all occurrences of a given string in the box tree
  *
- * \param string the string to search for
- * \param cur pointer to the current box
+ * \param pattern   the string pattern to search for
+ * \param p_len     pattern length
+ * \param cur       pointer to the current box
  * \param case_sens whether to perform a case sensitive search
  * \return true on success, false on memory allocation failure
  */
-bool find_occurrences(char *string, struct box *cur, bool case_sens)
+bool find_occurrences(const char *pattern, int p_len, struct box *cur, bool case_sens)
 {
 	struct box *a;
-	char *pos, *buf;
-	struct list_entry *entry;
 
 	/* ignore this box, if there's no visible text */
 	if (!cur->object && cur->text) {
-		buf = strndup(cur->text, cur->length);
-		if (case_sens)
-			pos = strstr(buf, string);
-		else
-			pos = strcasestr(buf, string);
-		free(buf);
+		const char *pos = find_pattern(cur->text, cur->length, pattern, p_len, case_sens);
 		if (pos) {
 			/* found string in box => add to list */
-			entry = calloc(1, sizeof(*entry));
+			struct list_entry *entry = calloc(1, sizeof(*entry));
 			if (!entry) {
 				warn_user("NoMemory", 0);
 				return false;
@@ -376,26 +469,11 @@ bool find_occurrences(char *string, struct box *cur, bool case_sens)
 
 	/* and recurse */
 	for (a = cur->children; a; a = a->next) {
-		if (!find_occurrences(string, a, case_sens))
+		if (!find_occurrences(pattern, p_len, a, case_sens))
 			return false;
 	}
 
 	return true;
-}
-
-/* case insensitive strstr */
-char * strcasestr(char *s1, char *s2)
-{
-	int l1 = strlen(s1), l2 = strlen(s2);
-	char *e1 = s1 + l1 - l2;
-
-	while (s1 <= e1) {
-		if (!strncasecmp(s1, s2, l2))
-			return s1;
-		s1++;
-	}
-
-	return 0;
 }
 
 #endif
