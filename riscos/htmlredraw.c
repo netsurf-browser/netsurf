@@ -25,7 +25,6 @@
 static void html_redraw_box(struct content *content, struct box * box,
 		signed long x, signed long y,
 		unsigned long current_background_color,
-		signed long gadget_subtract_x, signed long gadget_subtract_y,
 		bool *select_on,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
 		float scale);
@@ -77,7 +76,7 @@ void html_redraw(struct content *c, long x, long y,
 
 	trfm.entries[0][0] = trfm.entries[1][1] = 65536 * scale;
 
-	html_redraw_box(c, box, x, y, background_colour, x, y,
+	html_redraw_box(c, box, x, y, background_colour,
 			&select_on, clip_x0, clip_y0, clip_x1, clip_y1, scale);
 }
 
@@ -86,7 +85,6 @@ void html_redraw(struct content *c, long x, long y,
 void html_redraw_box(struct content *content, struct box * box,
 		signed long x, signed long y,
 		unsigned long current_background_color,
-		signed long gadget_subtract_x, signed long gadget_subtract_y,
 		bool *select_on,
 		long clip_x0, long clip_y0, long clip_x1, long clip_y1,
 		float scale)
@@ -115,10 +113,10 @@ void html_redraw_box(struct content *content, struct box * box,
 	y0 = y1 - padding_height + 1;
 
 	/* if visibility is hidden render children only */
-	if (box->style->visibility == CSS_VISIBILITY_HIDDEN) {
+	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
 		for (c = box->children; c; c = c->next)
 			html_redraw_box(content, c, x, y, current_background_color,
-					gadget_subtract_x, gadget_subtract_y, select_on,
+					select_on,
 					x0, y0, x1, y1, scale);
 		return;
 	}
@@ -355,13 +353,13 @@ void html_redraw_box(struct content *content, struct box * box,
 			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
 				html_redraw_box(content, c, x,
 						y, current_background_color,
-						gadget_subtract_x, gadget_subtract_y, select_on,
+						select_on,
 						x0, y0, x1, y1, scale);
 
 		for (c = box->float_children; c != 0; c = c->next_float)
 			html_redraw_box(content, c, x,
 					y, current_background_color,
-					gadget_subtract_x, gadget_subtract_y, select_on,
+					select_on,
 					x0, y0, x1, y1, scale);
 	}
 
