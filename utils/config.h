@@ -18,14 +18,15 @@
 #define WITH_POST
 
 /* Image renderering modules */
-#define WITH_DRAW
+#if defined(riscos) || defined(debug)
 #define WITH_GIF
 #define WITH_JPEG
 #define WITH_PNG
+#endif
+#ifdef riscos
+#define WITH_DRAW
 #define WITH_SPRITE
-
-/* Plugin module */
-#define WITH_PLUGIN
+#endif
 
 /* Frames */
 #undef WITH_FRAMES
@@ -39,16 +40,23 @@
 /* About page */
 #define WITH_ABOUT
 
+#ifdef riscos
+/* Plugin module */
+#define WITH_PLUGIN
+
 /* Acorn URI protocol support */
 #define WITH_URI
 
 /* ANT URL protocol support */
 #define WITH_URL
 
+#endif
+
+#if defined(riscos) || defined(debug)
 /* Export modules */
 #define WITH_SAVE_COMPLETE
 #define WITH_DRAW_EXPORT
 #define WITH_TEXT_EXPORT
-
 #endif
 
+#endif
