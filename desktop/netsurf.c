@@ -70,11 +70,11 @@ void netsurf_init(int argc, char** argv)
 				utsname.version, utsname.machine));
 
 	lib_init();
+	url_init();
 	gui_init(argc, argv);
 	setlocale(LC_ALL, "");
 	fetch_init();
 	fetchcache_init();
-	url_init();
 }
 
 

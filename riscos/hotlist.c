@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
+#include <swis.h>
 #include "oslib/colourtrans.h"
 #include "oslib/dragasprite.h"
 #include "oslib/osfile.h"
@@ -21,10 +22,12 @@
 #include "netsurf/content/content.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/theme.h"
+#include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
+#include "netsurf/utils/url.h"
 
 #define HOTLIST_EXPAND 0
 #define HOTLIST_COLLAPSE 1
@@ -135,12 +138,12 @@ static wimp_window hotlist_window_definition = {
 	wimp_COLOUR_CREAM,
 	0,
 	{0, -800, 16384, 0},
-	wimp_ICON_TEXT | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED,
+	wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED,
 	(wimp_BUTTON_DOUBLE_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT),
 	wimpspriteop_AREA,
 	1,
 	256,
-	{"Bookmarks"},
+	{""},
 	0
 };
 
@@ -176,13 +179,9 @@ static int clip_x0, clip_y0, clip_x1, clip_y1;
 */
 static struct hotlist_entry root;
 
-/*	The sprite ids for far faster plotting
+/*	The sprite header addresses for Tinct
 */
-static osspriteop_id sprite[6];
-
-/*	Pixel translation tables
-*/
-static osspriteop_trans_tab *pixel_table;
+static char *sprite[6];
 
 /*	The drag buttons
 */
@@ -212,10 +211,10 @@ static bool ro_gui_hotlist_load_entry(FILE *fp, struct hotlist_entry *entry);
 static void ro_gui_hotlist_link_entry(struct hotlist_entry *link, struct hotlist_entry *entry, bool before);
 static void ro_gui_hotlist_delink_entry(struct hotlist_entry *entry);
 static void ro_gui_hotlist_delete_entry(struct hotlist_entry *entry, bool siblings);
-static void ro_gui_hotlist_visited_update(struct content *content, struct hotlist_entry *entry);
+static void ro_gui_hotlist_visited_update(const char *url, struct hotlist_entry *entry);
 static int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, int y0);
 static int ro_gui_hotlist_redraw_item(struct hotlist_entry *entry, int level, int x0, int y0);
-static struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char *url,
+static struct hotlist_entry *ro_gui_hotlist_create_entry(const char *title, const char *url,
 		int filetype, struct hotlist_entry *folder);
 static void ro_gui_hotlist_update_entry_size(struct hotlist_entry *entry);
 static struct hotlist_entry *ro_gui_hotlist_find_entry(int x, int y, struct hotlist_entry *entry);
@@ -235,6 +234,7 @@ static bool ro_gui_hotlist_move_processing(struct hotlist_entry *entry, struct h
 
 
 void ro_gui_hotlist_init(void) {
+  	char *title;
 	os_box extent = {0, 0, 0, 0};;
 	os_error *error;
 
@@ -247,9 +247,7 @@ void ro_gui_hotlist_init(void) {
 
 	/*	Load the hotlist
 	*/
-	if (!ro_gui_hotlist_load()) {
-		return;
-	}
+	if (!ro_gui_hotlist_load()) return;
 
 	/*	Get our sprite ids for faster plotting.
 	*/
@@ -275,6 +273,10 @@ void ro_gui_hotlist_init(void) {
 
 	/*	Create our window
 	*/
+	title = messages_get("Hotlist");
+	hotlist_window_definition.title_data.indirected_text.text = title;
+	hotlist_window_definition.title_data.indirected_text.validation = null_text_string;
+	hotlist_window_definition.title_data.indirected_text.size = strlen(title);
 	error = xwimp_create_window(&hotlist_window_definition, &hotlist_window);
 	if (error) {
 		warn_user("WimpError", error->errmess);
@@ -297,7 +299,7 @@ void ro_gui_hotlist_init(void) {
 }
 
 /**
- * Initialise a hotlist sprite
+ * Initialise a hotlist sprite for use with Tinct
  *
  * \param name   the name of the sprite
  * \param number the sprite cache number
@@ -449,14 +451,14 @@ bool ro_gui_hotlist_load(void) {
 	} else {
 		/*	Create a folder
 		*/
-		netsurf = ro_gui_hotlist_create("NetSurf", NULL, 0, &root);
+		netsurf = ro_gui_hotlist_create_entry("NetSurf", NULL, 0, &root);
 
 		/*	Add some content
 		*/
-		entry = ro_gui_hotlist_create("NetSurf homepage", "http://netsurf.sf.net/",
+		entry = ro_gui_hotlist_create_entry("NetSurf homepage", "http://netsurf.sf.net/",
 				0xfaf, netsurf);
 		entry->add_date = (time_t)-1;
-		entry = ro_gui_hotlist_create("NetSurf test builds", "http://netsurf.strcprstskrzkrk.co.uk/",
+		entry = ro_gui_hotlist_create_entry("NetSurf test builds", "http://netsurf.strcprstskrzkrk.co.uk/",
 				0xfaf, netsurf);
 		entry->add_date = (time_t)-1;
 
@@ -592,7 +594,7 @@ bool ro_gui_hotlist_load_entry(FILE *fp, struct hotlist_entry *entry) {
 			if (title != NULL) {
 				/*	Add the entry
 				*/
-				last_entry = ro_gui_hotlist_create(title, url, filetype, entry);
+				last_entry = ro_gui_hotlist_create_entry(title, url, filetype, entry);
 				last_entry->add_date = add_date;
 				if (last_entry->url) {
 					last_entry->last_date = last_date;
@@ -663,7 +665,7 @@ bool ro_gui_hotlist_load_entry(FILE *fp, struct hotlist_entry *entry) {
  * \param content the content to add
  */
 void ro_gui_hotlist_add(char *title, struct content *content) {
-	ro_gui_hotlist_create(title, content->url, ro_content_filetype(content), &root);
+	ro_gui_hotlist_create_entry(title, content->url, ro_content_filetype(content), &root);
 }
 
 
@@ -674,7 +676,7 @@ void ro_gui_hotlist_add(char *title, struct content *content) {
  */
 void hotlist_visited(struct content *content) {
 	if ((!content) || (!content->url)) return;
-	ro_gui_hotlist_visited_update(content, root.child_entry);
+	ro_gui_hotlist_visited_update(content->url, root.child_entry);
 }
 
 
@@ -684,48 +686,34 @@ void hotlist_visited(struct content *content) {
  * \param content the content visited
  * \param entry	  the entry to check siblings and children of
  */
-void ro_gui_hotlist_visited_update(struct content *content, struct hotlist_entry *entry) {
-	char *url;
+void ro_gui_hotlist_visited_update(const char *url, struct hotlist_entry *entry) {
 	bool full = false;
 
 	/*	Update the hotlist
 	*/
-	url = content->url;
 	while (entry) {
-		if (entry->url) {
-			if (strcmp(url, entry->url) == 0) {
-				/*	Check if we're going to need a full redraw downwards
-				*/
-				full = ((entry->visits == 0) || (entry->last_date == -1));
+		if ((entry->url) && (strcmp(url, entry->url) == 0)) {
+			/*	Check if we're going to need a full redraw downwards
+			*/
+			full = ((entry->visits == 0) || (entry->last_date == -1));
 
-				/*	Update our values
-				*/
-				entry->visits++;
-				entry->last_date = time(NULL);
+			/*	Update our values
+			*/
+			entry->visits++;
+			entry->last_date = time(NULL);
+			ro_gui_hotlist_update_entry_size(entry);
 
-				/*	Update the entry width (extreme case - never likely to happen)
-				*/
-				ro_gui_hotlist_update_entry_size(entry);
-
-				/*	Redraw the least we can get away with
-				*/
-				if (entry->expanded) {
-					if (full) {
-						xwimp_force_redraw(hotlist_window,
-								0, -16384, 16384,
-								entry->y0 + entry->height);
-					} else {
-						xwimp_force_redraw(hotlist_window,
-								entry->x0, entry->y0,
-								entry->x0 + entry->width,
-								entry->y0 + entry->height);
-					}
-				}
+			/*	Redraw the least we can get away with
+			*/
+			if (entry->expanded) {
+				xwimp_force_redraw(hotlist_window,
+						full ? 0 : entry->x0,
+						full ? -16384 : entry->y0,
+						full ? 16384 : entry->x0 + entry->width,
+						entry->y0 + entry->height);
 			}
 		}
-		if (entry->child_entry) {
-			ro_gui_hotlist_visited_update(content, entry->child_entry);
-		}
+		if (entry->child_entry) ro_gui_hotlist_visited_update(url, entry->child_entry);
 		entry = entry->next_entry;
 	}
 }
@@ -738,7 +726,7 @@ void ro_gui_hotlist_visited_update(struct content *content, struct hotlist_entry
  * \param url	 the entry url (NULL to create a folder)
  * \param folder the folder to add the entry into
  */
-struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char *url,
+struct hotlist_entry *ro_gui_hotlist_create_entry(const char *title, const char *url,
 		int filetype, struct hotlist_entry *folder) {
 	struct hotlist_entry *entry;
 
@@ -754,21 +742,14 @@ struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char *url,
 		return NULL;
 	}
 
-	/*	And enough for the url/title
+	/*	Normalise the URL and add the title if we have one, or
+		use the URL instead
 	*/
-	if (url) {
-		entry->url = malloc(strlen(url) + 1);
-		if (!entry->url) {
-			warn_user("NoMemory", 0);
-			free(entry);
-			return NULL;
-		}
-		strcpy(entry->url, url);
-		entry->url = strip(entry->url);
+	if ((url) && ((entry->url = url_normalize(url)) == 0)) {
+		warn_user("NoMemory", 0);
+		free(entry->url);
+		return NULL;
 	}
-
-	/*	Add the title if we have one, or use the URL instead
-	*/
 	if (title) {
 		entry->title = malloc(strlen(title) + 1);
 		if (!entry->title) {
@@ -783,42 +764,17 @@ struct hotlist_entry *ro_gui_hotlist_create(const char *title, const char *url,
 		entry->title = entry->url;
 	}
 
-	/*	Set the children count
+	/*	Set the other values
 	*/
-	if (url) {
-		entry->children = -1;
-	} else {
-		entry->children = 0;
-	}
-
-	/*	Set the filetype
-	*/
+	entry->children = (url == NULL) ? 0 : -1;
 	entry->filetype = filetype;
-
-	/*	Set the default values
-	*/
 	entry->visits = 0;
-
-	/*	Get our dates
-	*/
 	entry->add_date = time(NULL);
 	entry->last_date = (time_t)-1;
-
-	/*	Set the expanded/selected state
-	*/
-	entry->expanded = false;
-	entry->selected = false;
-
-	/*	Set the width
-	*/
 	ro_gui_hotlist_update_entry_size(entry);
 
 	/*	Link into the tree
 	*/
-	entry->parent_entry = NULL;
-	entry->child_entry = NULL;
-	entry->next_entry = NULL;
-	entry->previous_entry = NULL;
 	ro_gui_hotlist_link_entry(folder, entry, false);
 	return entry;
 }
@@ -1050,29 +1006,12 @@ void ro_gui_hotlist_update_entry_size(struct hotlist_entry *entry) {
 void ro_gui_hotlist_redraw(wimp_draw *redraw) {
 	wimp_window_state state;
 	osbool more;
-	unsigned int size;
 	os_box extent = {0, 0, 0, 0};;
 
 	/*	Reset our min/max sizes
 	*/
 	max_width = 0;
 	max_height = 0;
-
-	/*	Get a pixel translation table for the sprites. We only
-		get one for all the sprites, so they must all have the
-		same characteristics.
-	*/
-	xcolourtrans_generate_table_for_sprite(gui_sprites, sprite[HOTLIST_EXPAND],
-			colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
-			0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
-	pixel_table = malloc(size);
-	if (pixel_table) {
-		xcolourtrans_generate_table_for_sprite(gui_sprites, sprite[HOTLIST_EXPAND],
-				colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
-				pixel_table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
-	} else {
-		pixel_table = 0;
-	}
 
 	/*	Redraw each rectangle
 	*/
@@ -1088,11 +1027,6 @@ void ro_gui_hotlist_redraw(wimp_draw *redraw) {
 				origin_x + 8, origin_y - 4);
 		more = wimp_get_rectangle(redraw);
 	}
-
-	/*	Free our memory
-	*/
-	if (pixel_table) free(pixel_table);
-	pixel_table = NULL;
 
 	/*	Check if we should reformat
 	*/
@@ -1171,11 +1105,8 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 			/*	Draw a half-line for the first entry in the top tree
 			*/
 			if (first && (level == 0)) {
-				xosspriteop_put_sprite_scaled(osspriteop_PTR,
-						gui_sprites, sprite[HOTLIST_BLINE],
-						x0 + 8, y0 - HOTLIST_LINE_HEIGHT,
-						osspriteop_USE_MASK | osspriteop_USE_PALETTE,
-						0, pixel_table);
+				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+						sprite[HOTLIST_BLINE], x0 + 8, y0 - HOTLIST_LINE_HEIGHT, 0);
 				y0 -= HOTLIST_LINE_HEIGHT;
 				height -= HOTLIST_LINE_HEIGHT;
 			}
@@ -1183,11 +1114,8 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 			/*	Draw the rest of the lines
 			*/
 			while (height > 0) {
-				xosspriteop_put_sprite_scaled(osspriteop_PTR,
-						gui_sprites, sprite[HOTLIST_LINE],
-						x0 + 8, y0 - HOTLIST_LINE_HEIGHT,
-						osspriteop_USE_MASK | osspriteop_USE_PALETTE,
-						0, pixel_table);
+				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+						sprite[HOTLIST_LINE], x0 + 8, y0 - HOTLIST_LINE_HEIGHT, 0);
 				y0 -= HOTLIST_LINE_HEIGHT;
 				height -= HOTLIST_LINE_HEIGHT;
 			}
@@ -1196,11 +1124,8 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 			/*	Draw a half-line for the last entry
 			*/
 			if (!first || (level != 0)) {
-				xosspriteop_put_sprite_scaled(osspriteop_PTR,
-						gui_sprites, sprite[HOTLIST_TLINE],
-						x0 + 8, y0 - 22,
-						osspriteop_USE_MASK | osspriteop_USE_PALETTE,
-						0, pixel_table);
+				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+						sprite[HOTLIST_TLINE], x0 + 8, y0 - 22, 0);
 				height -= HOTLIST_LINE_HEIGHT;
 				y0 -= HOTLIST_LINE_HEIGHT;
 			}
@@ -1209,28 +1134,16 @@ int ro_gui_hotlist_redraw_tree(struct hotlist_entry *entry, int level, int x0, i
 		/*	Draw the expansion type
 		*/
 		if (entry->children == 0) {
-			xosspriteop_put_sprite_scaled(osspriteop_PTR,
-					gui_sprites, sprite[HOTLIST_ENTRY],
-					x0, box_y0 - 23,
-					osspriteop_USE_MASK | osspriteop_USE_PALETTE,
-					0, pixel_table);
+			_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+					sprite[HOTLIST_ENTRY], x0, box_y0 - 23, 0);
 		} else {
 			if (entry->expanded) {
-				xosspriteop_put_sprite_scaled(osspriteop_PTR,
-						gui_sprites, sprite[HOTLIST_COLLAPSE],
-						x0, box_y0 - 31,
-						osspriteop_USE_MASK | osspriteop_USE_PALETTE,
-						0, pixel_table);
+				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+						sprite[HOTLIST_COLLAPSE], x0, box_y0 - 31, 0);
 			} else {
-				xosspriteop_put_sprite_scaled(osspriteop_PTR,
-						gui_sprites, sprite[HOTLIST_EXPAND],
-						x0, box_y0 - 31,
-						osspriteop_USE_MASK | osspriteop_USE_PALETTE,
-						0, pixel_table);
-
-
+				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+						sprite[HOTLIST_EXPAND], x0, box_y0 - 31, 0);
 			}
-
 		}
 
 		/*	Move to the next entry
@@ -1337,24 +1250,14 @@ int ro_gui_hotlist_redraw_item(struct hotlist_entry *entry, int level, int x0, i
 			line_height = height - HOTLIST_LINE_HEIGHT;
 			while (line_height > 0) {
 				if (line_height == HOTLIST_LINE_HEIGHT) {
-					xosspriteop_put_sprite_scaled(osspriteop_PTR,
-							gui_sprites, sprite[HOTLIST_TLINE],
-							x0 + 16, line_y0 - 22,
-							osspriteop_USE_MASK | osspriteop_USE_PALETTE,
-							0, pixel_table);
+					_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+							sprite[HOTLIST_TLINE], x0 + 16, line_y0 - 22, 0);
 				} else {
-					xosspriteop_put_sprite_scaled(osspriteop_PTR,
-							gui_sprites, sprite[HOTLIST_LINE],
-							x0 + 16, line_y0 - HOTLIST_LINE_HEIGHT,
-							osspriteop_USE_MASK | osspriteop_USE_PALETTE,
-							0, pixel_table);
-
+					_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+							sprite[HOTLIST_LINE], x0 + 16, line_y0 - HOTLIST_LINE_HEIGHT, 0);
 				}
-				xosspriteop_put_sprite_scaled(osspriteop_PTR,
-						gui_sprites, sprite[HOTLIST_ENTRY],
-						x0 + 8, line_y0 - 23,
-						osspriteop_USE_MASK | osspriteop_USE_PALETTE,
-						0, pixel_table);
+				_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
+						sprite[HOTLIST_ENTRY], x0 + 8, line_y0 - 23, 0);
 				line_height -= HOTLIST_LINE_HEIGHT;
 				line_y0 -= HOTLIST_LINE_HEIGHT;
 			}
@@ -1754,15 +1657,10 @@ struct hotlist_entry *ro_gui_hotlist_first_selection(struct hotlist_entry *entry
 	*/
 	if (!entry) return NULL;
 
-	/*	Get the first child entry
+	/*	Work through our entries
 	*/
 	while (entry) {
-		/*	Check this entry
-		*/
 		if (entry->selected) return entry;
-
-		/*	Continue onwards
-		*/
 		if (entry->child_entry) {
 			test_entry = ro_gui_hotlist_first_selection(entry->child_entry);
 			if (test_entry) return test_entry;
@@ -1780,54 +1678,44 @@ struct hotlist_entry *ro_gui_hotlist_first_selection(struct hotlist_entry *entry
  */
 int ro_gui_hotlist_selection_count(struct hotlist_entry *entry, bool folders) {
 	int count = 0;
-
-	/*	Check we have an entry (only applies if we have an empty hotlist)
-	*/
 	if (!entry) return 0;
-
-	/*	Get the first child entry
-	*/
 	while (entry) {
-		/*	Check this entry
-		*/
 		if ((entry->selected) && (folders || (entry->children == -1))) count++;
-
-		/*	Continue onwards
-		*/
-		if (entry->child_entry) {
-			count += ro_gui_hotlist_selection_count(entry->child_entry, folders);
-		}
+		if (entry->child_entry) count += ro_gui_hotlist_selection_count(entry->child_entry, folders);
 		entry = entry->next_entry;
 	}
 	return count;
 }
 
 
+/**
+ * Launch the current selection (internal interface)
+ *
+ * \param entry the entry to launch siblings and children of
+ */
 void ro_gui_hotlist_launch_selection(struct hotlist_entry *entry) {
-
-	/*	Check we have an entry (only applies if we have an empty hotlist)
-	*/
 	if (!entry) return;
-
-	/*	Get the first child entry
-	*/
 	while (entry) {
-		/*	Check this entry
-		*/
-		if ((entry->selected) && (entry->url)) {
-			browser_window_create(entry->url, NULL);
-		}
-
-		/*	Continue onwards
-		*/
-		if (entry->child_entry) {
-			ro_gui_hotlist_launch_selection(entry->child_entry);
-		}
+		if ((entry->selected) && (entry->url)) browser_window_create(entry->url, NULL);
+		if (entry->child_entry) ro_gui_hotlist_launch_selection(entry->child_entry);
 		entry = entry->next_entry;
 	}
 }
 
 
+/**
+ * Set the process flag for the current selection (internal interface)
+ *
+ * \param entry the entry to modify siblings and children of
+ */
+void ro_gui_hotlist_selection_to_process(struct hotlist_entry *entry) {
+	if (!entry) return;
+	while (entry) {
+		entry->process = entry->selected;
+		if (entry->child_entry) ro_gui_hotlist_selection_to_process(entry->child_entry);
+		entry = entry->next_entry;
+	}
+}
 
 
 /**
@@ -2108,16 +1996,6 @@ void ro_gui_hotlist_move_drag_end(wimp_dragged *drag) {
 }
 
 
-void ro_gui_hotlist_selection_to_process(struct hotlist_entry *entry) {
-	if (!entry) return;
-	while (entry) {
-		entry->process = (entry->selected);
-		if (entry->child_entry) {
-			ro_gui_hotlist_selection_to_process(entry->child_entry);
-		}
-		entry = entry->next_entry;
-	}
-}
 
 bool ro_gui_hotlist_move_processing(struct hotlist_entry *entry, struct hotlist_entry *destination, bool before) {
   	bool result = false;

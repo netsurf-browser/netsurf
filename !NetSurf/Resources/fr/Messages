@@ -91,7 +91,7 @@ EditLink:Edit bookmark
 EditFolder:Edit folder
 
 # Hotlist window
-HotlistURL:Address: %s
+HotlistURL:URL: %s
 HotlistAdded:Added: %s
 HotlistLast:Last visited: %s
 HotlistVisits:Visits: %i
