@@ -21,7 +21,6 @@
 #include "netsurf/utils/utils.h"
 
 
-static bool gui_start = true;
 bool gui_in_multitask = false;
 
 
@@ -32,13 +31,14 @@ void gui_init(int argc, char** argv)
 }
 
 
+void gui_init2(void)
+{
+	browser_window_create("http://netsurf.sourceforge.net/", 0);
+}
+
+
 void gui_poll(bool active)
 {
-	if (gui_start) {
-		browser_window_create("http://netsurf.sourceforge.net/", 0);
-		gui_start = false;
-	}
-
 	/*netsurf_quit =*/ gtk_main_iteration_do(!active);
 }
 
