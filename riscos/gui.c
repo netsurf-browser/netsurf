@@ -587,15 +587,6 @@ void ro_gui_null_reason_code(void)
 	}
 }
 
-void gui_launch_url(char *url) {
-	/* Try ant broadcast first */
-	if (!ro_url_broadcast(url))
-		/* then uri */
-		if (!ro_uri_launch(url))
-			/* then ant load */
-			ro_url_load(url);
-}
-
 
 /**
  * Handle Redraw_Window_Request events.
@@ -782,7 +773,7 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 	 	case message_HELP_REQUEST:
 	 		ro_gui_interactive_help_request(message);
 	 		break;
-	 	
+
 		case message_DATA_SAVE:
 			ro_msg_datasave(message);
 			break;
@@ -1292,6 +1283,17 @@ void ro_gui_view_source(struct content *content)
 			content->source_data + content->source_size);
 	xos_cli("Filer_Run <Wimp$Scrap>");
 	xosfile_set_type("<Wimp$Scrap>", ro_content_filetype(content));
+}
+
+
+/**
+ * Broadcast an URL that we can't handle.
+ */
+
+void gui_launch_url(const char *url)
+{
+	/* Try ant broadcast first */
+	ro_url_broadcast(url);
 }
 
 

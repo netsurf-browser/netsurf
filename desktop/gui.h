@@ -60,7 +60,7 @@ void gui_gadget_combo(struct browser_window* bw, struct form_control* g, unsigne
 
 void gui_window_place_caret(gui_window *g, int x, int y, int height);
 
-void gui_launch_url(char *url);
+void gui_launch_url(const char *url);
 
 void warn_user(const char *warning, const char *detail);
 
