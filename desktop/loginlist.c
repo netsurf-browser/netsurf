@@ -72,7 +72,7 @@ struct login *login_list_get(char *host) {
   if (host == NULL)
     return NULL;
 
-  if ((strncasecmp(host, "http://", 7) != 0) || 
+  if ((strncasecmp(host, "http://", 7) != 0) &&
                         (strncasecmp(host, "https://", 8) != 0))
     return NULL;
 
