@@ -1,4 +1,4 @@
-$Id: TODO-General,v 1.1 2003/05/31 18:39:35 jmb Exp $
+$Id: TODO-General,v 1.2 2003/06/01 21:47:43 jmb Exp $
 
 TODO-General for NetSurf.
 
@@ -13,3 +13,5 @@ View Source
 Global Clipboard Support
 More Image file formats
 JavaScript?
+URI Protocol support
+ANT URL protocol support
