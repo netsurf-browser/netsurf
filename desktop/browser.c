@@ -717,7 +717,8 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		reflow = true;
 	} else if (key == 10 || key == 13) {
 		/* paragraph break */
-		struct box *new_container = box_create(0, 0, 0);
+		struct box *new_container = box_create(0, 0, 0,
+				bw->current_content->data.html.box_pool);
 		struct box *new_text = xcalloc(1, sizeof(*new_text));
 		struct box *t;
 		new_container->type = BOX_INLINE_CONTAINER;

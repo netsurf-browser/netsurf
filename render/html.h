@@ -10,6 +10,7 @@
 
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
+#include "netsurf/utils/pool.h"
 
 struct box;
 struct browser_window;
@@ -49,6 +50,8 @@ struct content_html_data {
 		struct content *content;
 		struct box *box;
 	} *object;
+	pool box_pool;		/**< Memory pool for box tree. */
+	pool string_pool;	/**< Memory pool for strings. */
 };
 
 void html_create(struct content *c, const char *params[]);

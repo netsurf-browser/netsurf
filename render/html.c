@@ -51,6 +51,10 @@ void html_create(struct content *c, const char *params[])
 	c->data.html.source = xcalloc(0, 1);
 	c->data.html.base_url = xstrdup(c->url);
 	c->data.html.background_colour = TRANSPARENT;
+	c->data.html.string_pool = pool_create(8000);
+	assert(c->data.html.string_pool);
+	c->data.html.box_pool = pool_create(sizeof (struct box) * 100);
+	assert(c->data.html.box_pool);
 }
 
 
@@ -598,5 +602,7 @@ void html_destroy(struct content *c)
 	if (c->data.html.source != 0)
 	        xfree(c->data.html.source);
 	free(c->data.html.base_url);
+	pool_destroy(c->data.html.string_pool);
+	pool_destroy(c->data.html.box_pool);
 }
 

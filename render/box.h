@@ -14,6 +14,7 @@
 #include "libxml/HTMLparser.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/font.h"
+#include "netsurf/utils/pool.h"
 
 /**
  * structures
@@ -119,7 +120,7 @@ struct page_elements
 void xml_to_box(xmlNode *n, struct content *c);
 void box_dump(struct box * box, unsigned int depth);
 struct box * box_create(struct css_style * style,
-		char *href, char *title);
+		char *href, char *title, pool box_pool);
 void box_add_child(struct box * parent, struct box * child);
 void box_insert_sibling(struct box *box, struct box *new_box);
 void box_free(struct box *box);
