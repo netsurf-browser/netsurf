@@ -49,11 +49,29 @@ extern char *option_homepage_url;
 extern bool option_open_browser_at_startup;
 extern bool option_no_plugins;
 extern char *option_font_sans;
+extern char *option_font_sans_italic;
+extern char *option_font_sans_bold;
+extern char *option_font_sans_bold_italic;
 extern char *option_font_serif;
+extern char *option_font_serif_italic;
+extern char *option_font_serif_bold;
+extern char *option_font_serif_bold_italic;
 extern char *option_font_mono;
+extern char *option_font_mono_italic;
+extern char *option_font_mono_bold;
+extern char *option_font_mono_bold_italic;
 extern char *option_font_cursive;
+extern char *option_font_cursive_italic;
+extern char *option_font_cursive_bold;
+extern char *option_font_cursive_bold_italic;
 extern char *option_font_fantasy;
+extern char *option_font_fantasy_italic;
+extern char *option_font_fantasy_bold;
+extern char *option_font_fantasy_bold_italic;
 extern char *option_font_default;
+extern char *option_font_default_italic;
+extern char *option_font_default_bold;
+extern char *option_font_default_bold_italic;
 extern bool option_font_ufont;
 
 #define EXTRA_OPTION_DEFINE \
@@ -88,13 +106,31 @@ bool option_buffer_animations = true; \
 bool option_buffer_everything = false; \
 char *option_homepage_url = 0; \
 bool option_open_browser_at_startup = false; \
-bool option_no_plugins = true; \
+bool option_no_plugins = false; \
 char *option_font_sans = 0; \
+char *option_font_sans_italic = 0; \
+char *option_font_sans_bold = 0; \
+char *option_font_sans_bold_italic = 0; \
 char *option_font_serif = 0; \
+char *option_font_serif_italic = 0; \
+char *option_font_serif_bold = 0; \
+char *option_font_serif_bold_italic = 0; \
 char *option_font_mono = 0; \
+char *option_font_mono_italic = 0; \
+char *option_font_mono_bold = 0; \
+char *option_font_mono_bold_italic = 0; \
 char *option_font_cursive = 0; \
+char *option_font_cursive_italic = 0; \
+char *option_font_cursive_bold = 0; \
+char *option_font_cursive_bold_italic = 0; \
 char *option_font_fantasy = 0; \
+char *option_font_fantasy_italic = 0; \
+char *option_font_fantasy_bold = 0; \
+char *option_font_fantasy_bold_italic = 0; \
 char *option_font_default = 0; \
+char *option_font_default_italic = 0; \
+char *option_font_default_bold = 0; \
+char *option_font_default_bold_italic = 0; \
 bool option_font_ufont = false;
 
 #define EXTRA_OPTION_TABLE \
@@ -131,11 +167,29 @@ bool option_font_ufont = false;
 { "open_browser_at_startup",OPTION_BOOL,    &option_open_browser_at_startup }, \
 { "no_plugins",             OPTION_BOOL,    &option_no_plugins }, \
 { "font_sans",              OPTION_STRING,  &option_font_sans }, \
+{ "font_sans_italic",       OPTION_STRING,  &option_font_sans_italic }, \
+{ "font_sans_bold",         OPTION_STRING,  &option_font_sans_bold }, \
+{ "font_sans_bold_italic",  OPTION_STRING,  &option_font_sans_bold_italic }, \
 { "font_serif",             OPTION_STRING,  &option_font_serif }, \
+{ "font_serif_italic",      OPTION_STRING,  &option_font_serif_italic }, \
+{ "font_serif_bold",        OPTION_STRING,  &option_font_serif_bold }, \
+{ "font_serif_bold_italic", OPTION_STRING,  &option_font_serif_bold_italic }, \
 { "font_mono",              OPTION_STRING,  &option_font_mono }, \
+{ "font_mono_italic",       OPTION_STRING,  &option_font_mono_italic }, \
+{ "font_mono_bold",         OPTION_STRING,  &option_font_mono_bold }, \
+{ "font_mono_bold_italic",  OPTION_STRING,  &option_font_mono_bold_italic }, \
 { "font_cursive",           OPTION_STRING,  &option_font_cursive }, \
+{ "font_cursive_italic",    OPTION_STRING,  &option_font_cursive_italic }, \
+{ "font_cursive_bold",      OPTION_STRING,  &option_font_cursive_bold }, \
+{ "font_cursive_bold_italic", OPTION_STRING,  &option_font_cursive_bold_italic }, \
 { "font_fantasy",           OPTION_STRING,  &option_font_fantasy }, \
+{ "font_fantasy_italic",    OPTION_STRING,  &option_font_fantasy_italic }, \
+{ "font_fantasy_bold",      OPTION_STRING,  &option_font_fantasy_bold }, \
+{ "font_fantasy_bold_italic", OPTION_STRING,  &option_font_fantasy_bold_italic }, \
 { "font_default",           OPTION_STRING,  &option_font_default }, \
+{ "font_default_italic",    OPTION_STRING,  &option_font_default_italic }, \
+{ "font_default_bold",      OPTION_STRING,  &option_font_default_bold }, \
+{ "font_default_bold_italic", OPTION_STRING,  &option_font_default_bold_italic }, \
 { "font_ufont",             OPTION_BOOL,    &option_font_ufont}
 
 #endif

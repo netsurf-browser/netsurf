@@ -5,6 +5,7 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
+ * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
 /** \file
@@ -29,7 +30,7 @@
 #define FONT_MAX_NAME 128 /* max length of a font name */
 
 #define FONT_FAMILIES 6 /* Number of families */
-#define FONT_FACES 8    /* Number of faces */
+#define FONT_FACES 4    /* Number of faces per family */
 
 /* Font Variants */
 #define FONT_SMALLCAPS 4
@@ -51,133 +52,51 @@ struct font_set {
 	struct font_data *font[FONT_FAMILIES * FONT_FACES];
 };
 
-static os_error *nsfont_open_ufont(const char *fontNameP, const char *fbFontNameP, int size, int *handleP, bool *using_fb);
-static os_error *nsfont_open_standard(const char *fontNameP, const char *fbFontNameP, int size, int *handleP, bool *using_fb);
+static os_error *nsfont_open_ufont(const char *fontNameP, const char *fbFontNameP, int size, int *handleP, bool *using_fb, bool log_errors);
+static os_error *nsfont_open_standard(const char *fontNameP, const char *fbFontNameP, int size, int *handleP, bool *using_fb, bool log_errors);
+static char *nsfont_create_font_name(char *base, int id);
 
-/** Table of font names for UFont and an UTF-8 capable FontManager.
+/** Table of font names.
  *
- * font id = font family * 8 + smallcaps * 4 + bold * 2 + slanted
+ * font id = font family * 4 + bold * 2 + slanted
  *
  * font family: 1 = sans-serif, 2 = serif, 3 = monospace, 4 = cursive,
  * 5 = fantasy.
  * Font family 0 must be available as it is the replacement font when
  * the other font families can not be found.
  */
-static char ufont_table[FONT_FAMILIES * FONT_FACES][FONT_MAX_NAME] = {
-	/* default */
-/*0*/	"Homerton.Medium",
-/*1*/	"Homerton.Medium.Oblique",
-/*2*/	"Homerton.Bold",
-/*3*/	"Homerton.Bold.Oblique",
-	"Homerton.Medium.SmallCaps",
-	"Homerton.Medium.Oblique.SmallCaps",
-	"Homerton.Bold.SmallCaps",
-	"Homerton.Bold.Oblique.SmallCaps",
+static char font_table[FONT_FAMILIES * FONT_FACES][FONT_MAX_NAME] = {
+	/* default */			/* ---bs */
+/*0*/	"Homerton.Medium",		/* 00000 */
+/*1*/	"Homerton.Medium.Oblique",	/* 00001 */
+/*2*/	"Homerton.Bold",		/* 00010 */
+/*3*/	"Homerton.Bold.Oblique",	/* 00011 */
 	/* sans-serif */
-/*8*/	"Homerton.Medium",
-/*9*/	"Homerton.Medium.Oblique",
-/*10*/	"Homerton.Bold",
-/*11*/	"Homerton.Bold.Oblique",
-	"Homerton.Medium.SmallCaps",
-	"Homerton.Medium.Oblique.SmallCaps",
-	"Homerton.Bold.SmallCaps",
-	"Homerton.Bold.Oblique.SmallCaps",
+/*4*/	"Homerton.Medium",		/* 00100 */
+/*5*/	"Homerton.Medium.Oblique",	/* 00101 */
+/*6*/	"Homerton.Bold",		/* 00110 */
+/*7*/	"Homerton.Bold.Oblique",	/* 00111 */
 	/* serif */
-/*16*/	"Trinity.Medium",
-/*17*/	"Trinity.Medium.Italic",
-/*18*/	"Trinity.Bold",
-/*19*/	"Trinity.Bold.Italic",
-	"Trinity.Medium.SmallCaps",
-	"Trinity.Medium.Italic.SmallCaps",
-	"Trinity.Bold.SmallCaps",
-	"Trinity.Bold.Italic.SmallCaps",
+/*8*/	"Trinity.Medium",		/* 01000 */
+/*9*/	"Trinity.Medium.Italic",	/* 01001 */
+/*10*/	"Trinity.Bold",			/* 01010 */
+/*11*/	"Trinity.Bold.Italic",		/* 01011 */
 	/* monospace */
-/*24*/	"Corpus.Medium",
-/*25*/	"Corpus.Medium.Oblique",
-/*26*/	"Corpus.Bold",
-/*27*/	"Corpus.Bold.Oblique",
-	"Corpus.Medium.SmallCaps",
-	"Corpus.Medium.Oblique.SmallCaps",
-	"Corpus.Bold.SmallCaps",
-	"Corpus.Bold.Oblique.SmallCaps",
+/*12*/	"Corpus.Medium",		/* 01100 */
+/*13*/	"Corpus.Medium.Oblique",	/* 01101 */
+/*14*/	"Corpus.Bold",			/* 01110 */
+/*15*/	"Corpus.Bold.Oblique",		/* 01111 */
 	/* cursive */
-/*32*/	"Churchill.Medium",
-/*33*/	"Churchill.Medium.Oblique",
-/*34*/	"Churchill.Bold",
-/*35*/	"Churchill.Bold.Oblique",
-	"Churchill.Medium.SmallCaps",
-	"Churchill.Medium.Oblique.SmallCaps",
-	"Churchill.Bold.SmallCaps",
-	"Churchill.Bold.Oblique.SmallCaps",
+/*16*/	"Churchill.Medium",		/* 10000 */
+/*17*/	"Churchill.Medium.Italic",	/* 10001 */
+/*18*/	"Churchill.Bold",		/* 10010 */
+/*19*/	"Churchill.Bold.Italic",	/* 10011 */
 	/* fantasy */
-/*40*/	"Sassoon.Primary",
-/*41*/	"Sassoon.Primary.Oblique",
-/*42*/	"Sassoon.Primary.Bold",
-/*43*/	"Sassoon.Primary.Bold.Oblique",
-	"Sassoon.Primary.SmallCaps",
-	"Sassoon.Primary.Oblique.SmallCaps",
-	"Sassoon.Primary.Bold.SmallCaps",
-	"Sassoon.Primary.Bold.Oblique.SmallCaps",
+/*20*/	"Sassoon.Primary",		/* 10100 */
+/*21*/	"Sassoon.Primary.Oblique",	/* 10101 */
+/*22*/	"Sassoon.Primary.Bold",		/* 10110 */
+/*23*/	"Sassoon.Primary.Bold.Oblique",	/* 10111 */
 };
-
-#if 0
-/** Table of Latin1 encoded font names for a pre-UTF-8 capable FontManager.
- *
- * font id = font family * 8 + smallcaps * 4 + bold * 2 + slanted
- *
- * font family: 0 = sans-serif, 1 = serif, 2 = monospace, 3 = cursive,
- * 4 = fantasy.
- * Font family 0 must be available as it is the replacement font when
- * the other font families can not be found.
- */
-static const char * const font_table[FONT_FAMILIES * FONT_FACES] = {
-	/* sans-serif */
-/*0*/	"Homerton.Medium\\ELatin1",
-/*1*/	"Homerton.Medium.Oblique\\ELatin1",
-/*2*/	"Homerton.Bold\\ELatin1",
-/*3*/	"Homerton.Bold.Oblique\\ELatin1",
-	"Homerton.Medium.SmallCaps\\ELatin1",
-	"Homerton.Medium.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-	"Homerton.Bold.SmallCaps\\ELatin1",
-	"Homerton.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-	/* serif */
-/*8*/	"Trinity.Medium\\ELatin1",
-/*9*/	"Trinity.Medium.Italic\\ELatin1",
-/*10*/	"Trinity.Bold\\ELatin1",
-/*11*/	"Trinity.Bold.Italic\\ELatin1",
-	"Trinity.Medium.SmallCaps\\ELatin1",
-	"Trinity.Medium.Italic.SmallCaps\\ELatin1",
-	"Trinity.Bold.SmallCaps\\ELatin1",
-	"Trinity.Bold.Italic.SmallCaps\\ELatin1",
-	/* monospace */
-/*16*/	"Corpus.Medium\\ELatin1",
-/*17*/	"Corpus.Medium.Oblique\\ELatin1",
-/*18*/	"Corpus.Bold\\ELatin1",
-/*19*/	"Corpus.Bold.Oblique\\ELatin1",
-	"Corpus.Medium.SmallCaps\\ELatin1",
-	"Corpus.Medium.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-	"Corpus.Bold.SmallCaps\\ELatin1",
-	"Corpus.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-	/* cursive */
-/*24*/	"Churchill.Medium\\ELatin1",
-/*25*/	"Churchill.Medium\\ELatin1\\M65536 0 13930 65536 0 0",
-/*26*/	"Churchill.Bold\\ELatin1",
-/*27*/	"Churchill.Bold\\ELatin1\\M65536 0 13930 65536 0 0",
-	"Churchill.Medium.SmallCaps\\ELatin1",
-	"Churchill.Medium.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-	"Churchill.Bold.SmallCaps\\ELatin1",
-	"Churchill.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-	/* fantasy */
-/*32*/	"Sassoon.Primary\\ELatin1",
-/*33*/	"Sassoon.Primary\\ELatin1\\M65536 0 13930 65536 0 0",
-/*34*/	"Sassoon.Primary.Bold\\ELatin1",
-/*35*/	"Sassoon.Primary.Bold\\ELatin1\\M65536 0 13930 65536 0 0",
-	"Sassoon.Primary.SmallCaps\\ELatin1",
-	"Sassoon.Primary.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-	"Sassoon.Primary.Bold.SmallCaps\\ELatin1",
-	"Sassoon.Primary.Bold.SmallCaps\\ELatin1\\M65536 0 13930 65536 0 0",
-};
-#endif
 
 /**
  * Create an empty font_set.
@@ -248,14 +167,15 @@ struct font_data *nsfont_open(struct font_set *set, struct css_style *style)
 		default:
 			break;
 	}
-
-	switch (style->font_variant) {
+	/** \todo (re)implement smallcaps */
+/*	switch (style->font_variant) {
 		case CSS_FONT_VARIANT_SMALL_CAPS:
 			f += FONT_SMALLCAPS;
 			break;
 		default:
 			break;
 	}
+*/
 
 	switch (style->font_weight) {
 		case CSS_FONT_WEIGHT_BOLD:
@@ -293,21 +213,23 @@ struct font_data *nsfont_open(struct font_set *set, struct css_style *style)
 	 * If this still fails, we repeat the previous step but now using
 	 * the Latin 1 encoding.
 	 */
-	if (!option_font_ufont || (error = nsfont_open_ufont(ufont_table[f], ufont_table[f % 4], (int)size, &fhandle, &using_fb)) != NULL) {
+	if (!option_font_ufont || (error = nsfont_open_ufont(font_table[f], font_table[f % 4], (int)size, &fhandle, &using_fb, true)) != NULL) {
 		char fontName1[FONT_MAX_NAME+10];
 		char fontName2[FONT_MAX_NAME+10];
 		/* Go for the UTF-8 encoding with standard FontManager */
-		strcpy(fontName1, ufont_table[f]);
+		strcpy(fontName1, font_table[f]);
 		strcat(fontName1, "\\EUTF8");
-		strcpy(fontName2, ufont_table[f % 4]);
+		strcpy(fontName2, font_table[f % 4]);
 		strcat(fontName2, "\\EUTF8");
-		if ((error = nsfont_open_standard(fontName1, fontName2, (int)size, &fhandle, &using_fb)) != NULL) {
+
+		if ((error = nsfont_open_standard(fontName1, fontName2, (int)size, &fhandle, &using_fb, true)) != NULL) {
 			/* All UTF-8 font methods failed, only support Latin 1 */
-			strcpy(fontName1, ufont_table[f]);
+			strcpy(fontName1, font_table[f]);
 			strcat(fontName1, "\\ELatin1");
-			strcpy(fontName2, ufont_table[f % 4]);
+			strcpy(fontName2, font_table[f % 4]);
 			strcat(fontName2, "\\ELatin1");
-			if ((error = nsfont_open_standard(fontName1, fontName2, (int)size, &fhandle, &using_fb)) != NULL) {
+
+			if ((error = nsfont_open_standard(fontName1, fontName2, (int)size, &fhandle, &using_fb, true)) != NULL) {
 				LOG(("(u)font_find_font failed : %s\n", error->errmess));
 				die("(u)font_find_font failed");
 			}
@@ -339,20 +261,22 @@ struct font_data *nsfont_open(struct font_set *set, struct css_style *style)
  * \param using_fb returning whether the fallback font was used or not.
  * \return error in case there was one.
  */
-static os_error *nsfont_open_ufont(const char *fontNameP, const char *fbFontNameP, int size, int *handleP, bool *using_fb)
+static os_error *nsfont_open_ufont(const char *fontNameP, const char *fbFontNameP, int size, int *handleP, bool *using_fb, bool log_errors)
 {
 	os_error *errorP;
 	*handleP = 0; *using_fb = false;
 	if ((errorP = xufont_find_font(fontNameP, size, size, 0, 0, (ufont_f *)handleP, NULL, NULL)) == NULL)
 		return NULL;
-	LOG(("ufont_find_font(<%s>) failed <%s> (case 1)", fontNameP, errorP->errmess));
+	if (log_errors)
+		LOG(("ufont_find_font(<%s>) failed <%s> (case 1)", fontNameP, errorP->errmess));
 	/* If the fallback font is the same as the first font name, return */
 	if (strcmp(fontNameP, fbFontNameP) == 0)
 		return errorP;
 	*using_fb = true;
 	if ((errorP = xufont_find_font(fbFontNameP, size, size, 0, 0, (ufont_f *)handleP, NULL, NULL)) == NULL)
 		return NULL;
-	LOG(("ufont_find_font(<%s>) failed <%s> (case 2)", fbFontNameP, errorP->errmess));
+	if (log_errors)
+		LOG(("ufont_find_font(<%s>) failed <%s> (case 2)", fbFontNameP, errorP->errmess));
 	return errorP;
 }
 
@@ -367,20 +291,22 @@ static os_error *nsfont_open_ufont(const char *fontNameP, const char *fbFontName
  * \param using_fb returning whether the fallback font was used or not.
  * \return error in case there was one.
  */
-static os_error *nsfont_open_standard(const char *fontNameP, const char *fbFontNameP, int size, int *handleP, bool *using_fb)
+static os_error *nsfont_open_standard(const char *fontNameP, const char *fbFontNameP, int size, int *handleP, bool *using_fb, bool log_errors)
 {
 	os_error *errorP;
 	*handleP = 0; *using_fb = false;
 	if ((errorP = xfont_find_font(fontNameP, size, size, 0, 0, (font_f *)handleP, NULL, NULL)) == NULL)
 		return NULL;
-	LOG(("font_find_font(<%s>) failed <%s> (case 1)", fontNameP, errorP->errmess));
+	if (log_errors)
+		LOG(("font_find_font(<%s>) failed <%s> (case 1)", fontNameP, errorP->errmess));
 	/* If the fallback font is the same as the first font name, return */
 	if (strcmp(fontNameP, fbFontNameP) == 0)
 		return errorP;
 	*using_fb = true;
 	if ((errorP = xfont_find_font(fbFontNameP, size, size, 0, 0, (font_f *)handleP, NULL, NULL)) == NULL)
 		return NULL;
-	LOG(("font_find_font(<%s>) failed <%s> (case 2)", fbFontNameP, errorP->errmess));
+	if (log_errors)
+		LOG(("font_find_font(<%s>) failed <%s> (case 2)", fbFontNameP, errorP->errmess));
 	return errorP;
 }
 
@@ -530,7 +456,8 @@ void nsfont_position_in_string(struct font_data *font, const char *text,
 						| font_GIVEN_LENGTH,
 					x * 2 * 400, 0x7fffffff,
 					&block, NULL, (int)length,
-					&split, &x_out, NULL, NULL);
+					(unsigned const char **)&split,
+					&x_out, NULL, NULL);
 			break;
 		case FONTTYPE_STANDARD_UTF8ENC:
 			error = xfont_scan_string((font_f)font->handle,
@@ -542,7 +469,8 @@ void nsfont_position_in_string(struct font_data *font, const char *text,
 						| font_GIVEN_LENGTH,
 					x * 2 * 400, 0x7fffffff,
 					&block, NULL, (int)length,
-					&split, &x_out, NULL, NULL);
+					(char **)&split,
+					&x_out, NULL, NULL);
 			break;
 		case FONTTYPE_STANDARD_LATIN1: {
 			const ptrdiff_t *back_mapP;
@@ -555,7 +483,8 @@ void nsfont_position_in_string(struct font_data *font, const char *text,
 						| font_RETURN_CARET_POS,
 					x * 2 * 400, 0x7fffffff,
 					&block, NULL, 0,
-					&split, &x_out, NULL, NULL);
+					(char **)&split,
+					&x_out, NULL, NULL);
 			split = &text[back_mapP[split - loc_text]];
 			free((void *)loc_text); free((void *)back_mapP);
 			break;
@@ -610,7 +539,7 @@ char *nsfont_split(struct font_data *font, const char *text,
 					&block,
 					NULL,
 					(int)length,
-					&split,
+					(unsigned const char **)&split,
 					used_width, NULL, NULL);
 			break;
 		case FONTTYPE_STANDARD_UTF8ENC:
@@ -624,7 +553,7 @@ char *nsfont_split(struct font_data *font, const char *text,
 					&block,
 					NULL,
 					(int)length,
-					&split,
+					(char **)&split,
 					used_width, NULL, NULL);
 			break;
 		case FONTTYPE_STANDARD_LATIN1: {
@@ -639,7 +568,7 @@ char *nsfont_split(struct font_data *font, const char *text,
 					&block,
 					NULL,
 					0,
-					&split,
+					(char **)&split,
 					used_width, NULL, NULL);
 			split = &text[back_mapP[split - loc_text]];
 			free((void *)loc_text); free((void *)back_mapP);
@@ -658,7 +587,7 @@ char *nsfont_split(struct font_data *font, const char *text,
 
 	*used_width = *used_width / 2 / 400;
 
-	return split;
+	return (char*)split;
 }
 
 
@@ -758,7 +687,7 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 		size_t *rolength,
 		size_t *consumed)
 {
-	static char *fontname[FONT_MAX_NAME]; /** /todo: not nice */
+	static char *fontname[FONT_MAX_NAME]; /** \todo: not nice */
 
 	assert(font != NULL && text != NULL && rofontname != NULL && rotext != NULL && rolength != NULL && consumed != NULL);
 
@@ -777,8 +706,8 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 						| font_GIVEN_LENGTH,
 					length,
 					(int *)width,
-					rofontname,
-					rotext,
+					(unsigned const char **)rofontname,
+					(unsigned const char **)rotext,
 					rolength,
 					consumed);
 			*width /= 800;
@@ -799,7 +728,7 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 			if (error != NULL)
 				return;
 
-			strcpy(fontname, ufont_table[font->id]);
+			strcpy(fontname, font_table[font->id]);
 			strcat(fontname, "\\EUTF8");
 			if ((*rotext = strndup(text, length)) == NULL)
 				return;
@@ -829,7 +758,7 @@ void nsfont_txtenum(struct font_data *font, const char *text,
 				return;
 			}
 			*rolength = strlen(*rotext);
-			strcpy(fontname, ufont_table[font->id]);
+			strcpy(fontname, font_table[font->id]);
 			strcat(fontname, "\\ELatin1");
 			*rofontname = fontname;
 			*consumed = length;
@@ -847,35 +776,270 @@ void nsfont_txtenum(struct font_data *font, const char *text,
  */
 void nsfont_fill_nametable(void)
 {
-	int i, j;
-	char *name = NULL;
+	int i;
+	char *name = NULL, *created = NULL;
 
-	for (i = 0; i != FONT_FAMILIES; i++) {
+	for (i = 0; i != FONT_FAMILIES * FONT_FACES; i++) {
+		/* read the relevant option string */
 		switch (i) {
-			case FONT_DEFAULT/FONT_FACES:
+			/* default */
+			case FONT_DEFAULT:
 				name = option_font_default;
 				break;
-			case FONT_SANS_SERIF/FONT_FACES:
+			case FONT_DEFAULT + FONT_SLANTED:
+				name = option_font_default_italic;
+				break;
+			case FONT_DEFAULT + FONT_BOLD:
+				name = option_font_default_bold;
+				break;
+			case FONT_DEFAULT + FONT_BOLD + FONT_SLANTED:
+				name = option_font_default_bold_italic;
+				break;
+			/* sans */
+			case FONT_SANS_SERIF:
 				name = option_font_sans;
 				break;
-			case FONT_SERIF/FONT_FACES:
+			case FONT_SANS_SERIF + FONT_SLANTED:
+				name = option_font_sans_italic;
+				break;
+			case FONT_SANS_SERIF + FONT_BOLD:
+				name = option_font_sans_bold;
+				break;
+			case FONT_SANS_SERIF + FONT_BOLD + FONT_SLANTED:
+				name = option_font_sans_bold_italic;
+				break;
+			/* serif */
+			case FONT_SERIF:
 				name = option_font_serif;
 				break;
-			case FONT_MONOSPACE/FONT_FACES:
+			case FONT_SERIF + FONT_SLANTED:
+				name = option_font_serif_italic;
+				break;
+			case FONT_SERIF + FONT_BOLD:
+				name = option_font_serif_bold;
+				break;
+			case FONT_SERIF + FONT_BOLD + FONT_SLANTED:
+				name = option_font_serif_bold_italic;
+				break;
+			/* mono */
+			case FONT_MONOSPACE:
 				name = option_font_mono;
 				break;
-			case FONT_CURSIVE/FONT_FACES:
+			case FONT_MONOSPACE + FONT_SLANTED:
+				name = option_font_mono_italic;
+				break;
+			case FONT_MONOSPACE + FONT_BOLD:
+				name = option_font_mono_bold;
+				break;
+			case FONT_MONOSPACE + FONT_BOLD + FONT_SLANTED:
+				name = option_font_mono_bold_italic;
+				break;
+			/* cursive */
+			case FONT_CURSIVE:
 				name = option_font_cursive;
 				break;
-			case FONT_FANTASY/FONT_FACES:
+			case FONT_CURSIVE + FONT_SLANTED:
+				name = option_font_cursive_italic;
+				break;
+			case FONT_CURSIVE + FONT_BOLD:
+				name = option_font_cursive_bold;
+				break;
+			case FONT_CURSIVE + FONT_BOLD + FONT_SLANTED:
+				name = option_font_cursive_bold_italic;
+				break;
+			/* fantasy */
+			case FONT_FANTASY:
 				name = option_font_fantasy;
 				break;
+			case FONT_FANTASY + FONT_SLANTED:
+				name = option_font_fantasy_italic;
+				break;
+			case FONT_FANTASY + FONT_BOLD:
+				name = option_font_fantasy_bold;
+				break;
+			case FONT_FANTASY + FONT_BOLD + FONT_SLANTED:
+				name = option_font_fantasy_bold_italic;
+				break;
 		}
-		for (j = 0; j != FONT_FACES; j++) {
-			/**\todo Bold, italic, smallcaps */
-			if (name)
-				strncpy(ufont_table[FONT_FACES*i+j],
-						name, FONT_MAX_NAME);
+
+		if (name && name[0] != '\0') {
+			/* got a configured font name => use it */
+			strncpy(font_table[i], name, FONT_MAX_NAME);
+		}
+		else {
+			char *dot, *next_segment;
+
+			/* no configured name => try to create one */
+
+			/* get the base font for the family */
+			name = strdup(font_table[(i/FONT_FACES)*FONT_FACES]);
+			next_segment = name;
+
+			do {
+				dot = strchr(next_segment, '.');
+
+				/* restore '.' */
+				if (next_segment != name)
+					*(next_segment-1) = '.';
+
+				if (dot) {
+					*dot = '\0';
+					next_segment = dot+1;
+				}
+
+				created = nsfont_create_font_name(name, i);
+
+			} while(!created && dot);
+
+			/* now fill in the table entry */
+			if (created) {
+				strncpy(font_table[i], created,
+					FONT_MAX_NAME);
+				free(created);
+			}
+
+			free(name);
 		}
 	}
+}
+
+/* lookup table used by nsfont_create_font_name.
+ * Italic entries *must* precede bold entries
+ */
+static const char *style_lookup[] = {
+#define ITALIC_COUNT 3
+	"Italic", "Oblique", "Slant",
+#define BOLD_COUNT 5
+	"Bold", "Demi", "ExtraBold", "Ultra", "Heavy"
+};
+
+/**
+ * Create a valid font name, testing for presence on the system
+ *
+ * \param base The base name
+ * \param id   The id of the font (entry into font_table)
+ * \return The font name, or NULL on failure
+ */
+char *nsfont_create_font_name(char *base, int id)
+{
+	char *created, tempname[FONT_MAX_NAME+10];
+	int bold, italic;
+	os_error *error;
+	int fhandle;
+	bool using_fb, found = false;
+
+	created = malloc(FONT_MAX_NAME);
+	if (!created)
+		return NULL;
+
+	/* Font presence testing strategy is as-per nsfont_open */
+
+	/* try bold-italic first */
+	if ((id & FONT_BOLD) && (id & FONT_SLANTED)) {
+		for (bold = 0; bold != BOLD_COUNT; bold++) {
+			for (italic = 0; italic != ITALIC_COUNT; italic++) {
+				snprintf(created, FONT_MAX_NAME,
+					"%s.%s.%s", base,
+					style_lookup[bold+ITALIC_COUNT],
+					style_lookup[italic]);
+
+				/* try ufont first */
+				if (option_font_ufont && (error = nsfont_open_ufont(created, created, 160, &fhandle, &using_fb, false)) == NULL) {
+					xufont_lose_font((ufont_f)fhandle);
+					found = true;
+					break;
+				}
+
+				/* then UTF8 encoding */
+				strcpy(tempname, created);
+				strcat(tempname, "\\EUTF8");
+				if ((error = nsfont_open_standard(tempname, tempname, 160, &fhandle, &using_fb, false)) == NULL) {
+					xfont_lose_font((font_f)fhandle);
+					found = true;
+					break;
+				}
+
+				/* then Latin1 */
+				strcpy(tempname, created);
+				strcat(tempname, "\\ELatin1");
+				if ((error = nsfont_open_standard(tempname, tempname, 160, &fhandle, &using_fb, false)) == NULL) {
+					xfont_lose_font((font_f)fhandle);
+					found = true;
+					break;
+				}
+			}
+			if (found)
+				break;
+		}
+	}
+	/* bold */
+	else if (id & FONT_BOLD) {
+		for (bold = 0; bold != BOLD_COUNT; bold++) {
+			snprintf(created, FONT_MAX_NAME, "%s.%s", base,
+				style_lookup[bold+ITALIC_COUNT]);
+
+			/* try ufont first */
+			if (option_font_ufont && (error = nsfont_open_ufont(created, created, 160, &fhandle, &using_fb, false)) == NULL) {
+				xufont_lose_font((ufont_f)fhandle);
+				found = true;
+				break;
+			}
+
+			/* then UTF8 encoding */
+			strcpy(tempname, created);
+			strcat(tempname, "\\EUTF8");
+			if ((error = nsfont_open_standard(tempname, tempname, 160, &fhandle, &using_fb, false)) == NULL) {
+				xfont_lose_font((font_f)fhandle);
+				found = true;
+				break;
+			}
+
+			/* then Latin1 */
+			strcpy(tempname, created);
+			strcat(tempname, "\\ELatin1");
+			if ((error = nsfont_open_standard(tempname, tempname, 160, &fhandle, &using_fb, false)) == NULL) {
+				xfont_lose_font((font_f)fhandle);
+				found = true;
+				break;
+			}
+		}
+	}
+	/* italic */
+	else if (id & FONT_SLANTED) {
+		for (italic = 0; italic != ITALIC_COUNT; italic++) {
+			snprintf(created, FONT_MAX_NAME, "%s.%s", base,
+				style_lookup[italic]);
+
+			/* try ufont first */
+			if (option_font_ufont && (error = nsfont_open_ufont(created, created, 160, &fhandle, &using_fb, false)) == NULL) {
+				xufont_lose_font((ufont_f)fhandle);
+				found = true;
+				break;
+			}
+
+			/* then UTF8 encoding */
+			strcpy(tempname, created);
+			strcat(tempname, "\\EUTF8");
+			if ((error = nsfont_open_standard(tempname, tempname, 160, &fhandle, &using_fb, false)) == NULL) {
+				xfont_lose_font((font_f)fhandle);
+				found = true;
+				break;
+			}
+
+			/* then Latin1 */
+			strcpy(tempname, created);
+			strcat(tempname, "\\ELatin1");
+			if ((error = nsfont_open_standard(tempname, tempname, 160, &fhandle, &using_fb, false)) == NULL) {
+				xfont_lose_font((font_f)fhandle);
+				found = true;
+				break;
+			}
+		}
+	}
+
+	if (found)
+		return created;
+
+	free(created);
+	return NULL;
 }
