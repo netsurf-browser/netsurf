@@ -1,5 +1,5 @@
 /**
- * $Id: options.c,v 1.5 2003/06/27 13:25:48 jmb Exp $
+ * $Id: options.c,v 1.6 2003/06/30 11:47:36 bursa Exp $
  */
 
 #include "netsurf/desktop/options.h"
@@ -11,6 +11,10 @@
 #include "netsurf/utils/utils.h"
 
 struct options OPTIONS;
+static char* lookup(messagetrans_control_block* cb, const char* token, const char* deflt);
+static int lookup_yesno(messagetrans_control_block* cb, const char* token, const char* deflt);
+static int lookup_i(messagetrans_control_block* cb, const char* token, const char* deflt);
+static const char* yesno(int q);
 
 char* lookup(messagetrans_control_block* cb, const char* token, const char* deflt)
 {
@@ -58,26 +62,20 @@ const char* yesno(int q)
 		return "N";
 }
 
+static const char * const WRITE_DIR = "<Choices$Write>.NetSurf";
+
 void options_write(struct options* opt, char* filename)
 {
-	char* fn, *dir;
+	char* fn;
 	FILE* f;
 
-        dir = xcalloc(40, sizeof(char));
-        fn = xcalloc(60, sizeof(char));
+	fn = xcalloc(strlen(WRITE_DIR) + (filename == 0 ? 7 : strlen(filename)) + 10,
+			sizeof(char));
+	sprintf(fn, "%s.%s", WRITE_DIR, filename == 0 ? "Choices" : filename);
 
-        dir = strdup("<Choices$Write>.NetSurf");
-        fn = strdup(dir);
-        strcat(fn, ".");
+	xosfile_create_dir(WRITE_DIR, 0);
 
-	if (filename == NULL)
-		strcat(fn, "Choices");
-	else
-		strcat(fn, filename);
-
-        xosfile_create_dir(dir, 0);
-
-        LOG(("filename: %s", fn));
+	LOG(("filename: %s", fn));
 
 	f = fopen(fn, "w");
 	if (f != NULL)
@@ -100,8 +98,7 @@ void options_write(struct options* opt, char* filename)
 	    LOG(("Couldn't open Choices file"));
 
 	fclose(f);
-	xfree(dir);
-//	xfree(fn);
+	xfree(fn);
 }
 
 void options_init(struct options* opt)
@@ -125,14 +122,8 @@ void options_read(struct options* opt, char* filename)
 	char* fn;
 	int size;
 
-        fn = xcalloc(40,sizeof(char));
-        fn = strdup("Choices:NetSurf.");
-
-	LOG(("Testing filename"));
-	if (filename == NULL)
-		strcat(fn, "Choices");
-	else
-		strcat(fn, filename);
+        fn = xcalloc(20 + (filename == 0 ? 7 : strlen(filename)), sizeof(char));
+	sprintf(fn, "Choices:NetSurf.%s", filename == 0 ? "Choices" : filename);
 
 	LOG(("Getting file info"));
   	if (xmessagetrans_file_info(fn, &flags, &size) != NULL)
@@ -165,7 +156,7 @@ void options_read(struct options* opt, char* filename)
 	opt->theme = lookup(&cb, "RO_THEME", "Default");
 	messagetrans_close_file(&cb);
 	xfree(data);
-//	xfree(fn);
+	xfree(fn);
 }
 
 void options_to_ro(struct options* opt, struct ro_choices* ro)
