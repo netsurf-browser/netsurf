@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
 
@@ -46,6 +46,7 @@ static void layout_find_dimensions(int available_width,
 		int margin[4], int padding[4], int border[4]);
 static void layout_block_children(struct box *box, struct box *cont,
 		int cx, int cy);
+static int layout_clear(struct box *fl, css_clear clear);
 static void find_sides(struct box *fl, int y0, int y1,
 		int *x0, int *x1, struct box **left, struct box **right);
 static void layout_inline_container(struct box *box, int width,
@@ -351,6 +352,7 @@ void layout_block_children(struct box *box, struct box *cont,
 	struct box *c;
 	int width = box->width;
 	int y = box->padding[TOP];
+	int y1;
 
 	assert(box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 	       box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT ||
@@ -360,24 +362,11 @@ void layout_block_children(struct box *box, struct box *cont,
 			box, width, cont, cx, cy));
 
 	for (c = box->children; c != 0; c = c->next) {
-		if (c->style != 0 && c->style->clear != CSS_CLEAR_NONE) {
-			int x0, x1;
-			struct box * left, * right;
-			do {
-				x0 = cx;
-				x1 = cx + width;
-				find_sides(cont->float_children, cy + y, cy + y,
-						&x0, &x1, &left, &right);
-				if ((c->style->clear == CSS_CLEAR_LEFT || c->style->clear == CSS_CLEAR_BOTH)
-						&& left != 0)
-					y = left->y + left->height - cy + 1;
-				if ((c->style->clear == CSS_CLEAR_RIGHT || c->style->clear == CSS_CLEAR_BOTH)
-						&& right != 0)
-					if (cy + y < (right->y + right->height + 1))
-						y = right->y + right->height - cy + 1;
-			} while ((c->style->clear == CSS_CLEAR_LEFT && left != 0) ||
-			         (c->style->clear == CSS_CLEAR_RIGHT && right != 0) ||
-			         (c->style->clear == CSS_CLEAR_BOTH && (left != 0 || right != 0)));
+		if (c->style && c->style->clear != CSS_CLEAR_NONE) {
+			y1 = layout_clear(cont->float_children,
+					c->style->clear) - cy;
+			if (y < y1)
+				y = y1;
 		}
 
 		c->x = box->padding[LEFT];
@@ -398,6 +387,31 @@ void layout_block_children(struct box *box, struct box *cont,
 			box->width = c->width;
 	}
 	box->height = y - box->padding[TOP];
+}
+
+
+/**
+ * Find y coordinate which clears all floats on left and/or right.
+ *
+ * \param  fl     first float in float list
+ * \param  clear  type of clear
+ * \return  y coordinate relative to ancestor box for floats
+ */
+
+int layout_clear(struct box *fl, css_clear clear)
+{
+	int y = 0;
+	for (; fl; fl = fl->next_float) {
+		if ((clear == CSS_CLEAR_LEFT || clear == CSS_CLEAR_BOTH) &&
+				fl->type == BOX_FLOAT_LEFT)
+			if (y < fl->y + fl->height + 1)
+				y = fl->y + fl->height + 1;
+		if ((clear == CSS_CLEAR_RIGHT || clear == CSS_CLEAR_BOTH) &&
+				fl->type == BOX_FLOAT_RIGHT)
+			if (y < fl->y + fl->height + 1)
+				y = fl->y + fl->height + 1;
+	}
+	return y;
 }
 
 
