@@ -44,8 +44,6 @@ struct result {
 };
 
 static void box_add_child(struct box * parent, struct box * child);
-static struct box * box_create(struct css_style * style,
-		char *href, char *title);
 static struct box * convert_xml_to_box(xmlNode * n, struct content *content,
 		struct css_style * parent_style,
 		struct css_selector ** selector, unsigned int depth,

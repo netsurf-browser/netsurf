@@ -19,6 +19,7 @@
 #include "netsurf/desktop/browser.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
+#include "netsurf/render/layout.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -653,9 +654,98 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 		text_box->text[text_box->length] = 0;
 		text_box->width = UNKNOWN_WIDTH;
 		char_offset++;
+	} else if (key == 10 || key == 13) {
+		/* paragraph break */
+	} else if (key == 8 || key == 127) {
+		/* delete to left */
+		if (char_offset == 0) {
+			/* at the start of a text box */
+			struct box *prev;
+			if (text_box->prev) {
+				/* can be merged with previous text box */
+			} else if (inline_container->prev) {
+				/* merge with previous paragraph */
+				struct box *prev_container = inline_container->prev;
+				prev_container->last->next = inline_container->children;
+				inline_container->children->prev = prev_container->last;
+				prev_container->last = inline_container->last;
+				prev_container->next = inline_container->next;
+				if (inline_container->next)
+					inline_container->next->prev = prev_container;
+				else
+					inline_container->parent->last = prev_container;
+				inline_container->children = 0;
+				box_free(inline_container);
+				inline_container = prev_container;
+			} else {
+				/* at very beginning of text area: ignore */
+				return;
+			}
+			/* delete space by merging with previous text box */
+			prev = text_box->prev;
+			assert(prev->text);
+			prev->text = xrealloc(prev->text, prev->length + text_box->length + 1);
+			memcpy(prev->text + prev->length, text_box->text, text_box->length);
+			char_offset = prev->length;
+			prev->length += text_box->length;
+			prev->text[prev->length] = 0;
+			prev->width = UNKNOWN_WIDTH;
+			prev->next = text_box->next;
+			if (prev->next)
+				prev->next->prev = prev;
+			else
+				prev->parent->last = prev;
+			box_free(text_box);
+			text_box = prev;
+		} else if (char_offset == 1 && text_box->length == 1) {
+			/* delete this text box and add a space */
+			if (text_box->prev) {
+				struct box *prev = text_box->prev;
+				prev->text = xrealloc(prev->text, prev->length + 2);
+				prev->text[prev->length] = ' ';
+				prev->length++;
+				prev->text[prev->length] = 0;
+				prev->width = UNKNOWN_WIDTH;
+				prev->next = text_box->next;
+				if (prev->next)
+					prev->next->prev = prev;
+				else
+					prev->parent->last = prev;
+				box_free(text_box);
+				text_box = prev;
+				char_offset = prev->length;
+			} else if (text_box->next) {
+				struct box *next = text_box->next;
+				next->text = xrealloc(next->text, next->length + 2);
+				memmove(next->text + 1, next->text, next->length);
+				next->text[0] = ' ';
+				next->length++;
+				next->text[next->length] = 0;
+				next->width = UNKNOWN_WIDTH;
+				next->prev = 0;
+				next->parent->children = next;
+				box_free(text_box);
+				text_box = next;
+				char_offset = 0;
+			} else {
+				text_box->length = 0;
+				text_box->width = UNKNOWN_WIDTH;
+				char_offset--;
+			}			
+		} else {
+			/* delete a character */
+			memmove(text_box->text + char_offset - 1,
+					text_box->text + char_offset,
+					text_box->length - char_offset);
+			text_box->length--;
+			text_box->width = UNKNOWN_WIDTH;
+			char_offset--;
+		}
 	} else {
 		return;
 	}
+
+	box_dump(textarea, 0);
 
 	/* reflow textarea preserving width and height */
 	width = textarea->width;
@@ -666,12 +756,15 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 
 	if (text_box->length < char_offset) {
 		/* the text box has been split and the caret is in the second part */
-		char_offset -= text_box->length;
+		char_offset -= (text_box->length + 1);  /* +1 for the space */
 		text_box = text_box->next;
+		assert(text_box);
+		assert(char_offset <= text_box->length);
 	}
 
 	pixel_offset = font_width(text_box->font, text_box->text, char_offset);
 
+	textarea->gadget->data.textarea.caret_inline_container = inline_container;
 	textarea->gadget->data.textarea.caret_text_box = text_box;
 	textarea->gadget->data.textarea.caret_char_offset = char_offset;
 	browser_window_place_caret(bw, actual_x + text_box->x + pixel_offset,
