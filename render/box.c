@@ -140,8 +140,7 @@ static struct box_result box_button(xmlNode *n, struct box_status *status,
 		struct css_style *style);
 static struct box_result box_frameset(xmlNode *n, struct box_status *status,
 		struct css_style *style);
-static void add_option(xmlNode* n, struct form_control* current_select,
-		const char *text);
+static bool box_select_add_option(struct form_control *control, xmlNode *n);
 static void box_normalise_block(struct box *block, pool box_pool);
 static void box_normalise_table(struct box *table, pool box_pool);
 static void box_normalise_table_spans( struct box *table );
@@ -747,7 +746,12 @@ no_memory:
 
 
 /**
- * Get the style for an element
+ * Get the style for an element.
+ *
+ * \param  c             content of type CONTENT_HTML that is being processed
+ * \param  parent_style  style at this point in xml tree
+ * \param  n             node in xml tree
+ * \return  the new style, or 0 on memory exhaustion
  *
  * The style is collected from three sources:
  *  1. any styles for this element in the document stylesheet(s)
@@ -759,18 +763,23 @@ struct css_style * box_get_style(struct content *c,
 		struct css_style *parent_style,
 		xmlNode *n)
 {
-	struct css_style * style = xcalloc(1, sizeof(struct css_style));
-	struct css_style style_new;
-	char * s;
+	char *s;
 	unsigned int i;
-	url_func_result res;
-	struct content **stylesheet = c->data.html.stylesheet_content;
 	unsigned int stylesheet_count = c->data.html.stylesheet_count;
+	struct content **stylesheet = c->data.html.stylesheet_content;
+	struct css_style *style;
+	struct css_style style_new;
+	char *url;
+	url_func_result res;
+
+	style = malloc(sizeof (struct css_style));
+	if (!style)
+		return 0;
 
 	memcpy(style, parent_style, sizeof(struct css_style));
 	memcpy(&style_new, &css_blank_style, sizeof(struct css_style));
 	for (i = 0; i != stylesheet_count; i++) {
-		if (stylesheet[i] != 0) {
+		if (stylesheet[i]) {
 			assert(stylesheet[i]->type == CONTENT_CSS);
 			css_get_style(stylesheet[i], n, &style_new);
 		}
@@ -778,20 +787,24 @@ struct css_style * box_get_style(struct content *c,
 	css_cascade(style, &style_new);
 
 	/* This property only applies to the body element, if you believe
-	   the spec. Many browsers seem to allow it on other elements too,
-	   so let's be generic ;)
-	 */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "background")) != NULL) {
-		style->background_image.type = CSS_BACKGROUND_IMAGE_URI;
-		/**\todo This will leak memory. */
-		res = url_join(s, c->data.html.base_url, &style->background_image.uri);
-		/* if url is equivalent to the parent's url,
-		 * we've got infinite inclusion. stop it here.
-		 * also bail if url_join failed.
-		 */
-		if (res != URL_FUNC_OK ||
-		    strcasecmp(style->background_image.uri, c->data.html.base_url) == 0)
-			style->background_image.type = CSS_BACKGROUND_IMAGE_NONE;
+	 * the spec. Many browsers seem to allow it on other elements too,
+	 * so let's be generic ;) */
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "background"))) {
+		res = url_join(s, c->data.html.base_url, &url);
+		if (res == URL_FUNC_NOMEM) {
+			free(style);
+			return 0;
+		} else if (res == URL_FUNC_OK) {
+			/* if url is equivalent to the parent's url,
+			 * we've got infinite inclusion: ignore */
+			if (strcmp(url, c->data.html.base_url) == 0)
+				free(url);
+			else {
+				style->background_image.type =
+						CSS_BACKGROUND_IMAGE_URI;
+				style->background_image.uri = url;
+			}
+		}
 		xmlFree(s);
 	}
 
@@ -818,7 +831,7 @@ struct css_style * box_get_style(struct content *c,
 		if (value < 0 || strlen(s) == 0) {
 			/* ignore negative values and height="" */
 		} else if (strrchr(s, '%')) {
-			/*the specification doesn't make clear what
+			/* the specification doesn't make clear what
 			 * percentage heights mean, so ignore them */
 		} else {
 			style->height.height = CSS_HEIGHT_LENGTH;
@@ -996,10 +1009,14 @@ struct box_result box_a(xmlNode *n, struct box_status *status,
 			/* both specified and they match => ok */
 			id = status->id;
 		}
-		else if (!status->id)
+		else if (!status->id) {
 			/* only name specified */
 			id = squash_whitespace(s1);
-		else
+			if (!id) {
+				xmlFree(s1);
+				return (struct box_result) {0, false, true};
+			}
+		} else
 			/* both specified but no match */
 			id = 0;
 
@@ -1012,6 +1029,9 @@ struct box_result box_a(xmlNode *n, struct box_status *status,
 	if (id && id != status->id)
 		free(id);
 
+	if (!box)
+		return (struct box_result) {0, false, true};
+
 	return (struct box_result) {box, true, false};
 }
 
@@ -1022,7 +1042,8 @@ struct box_result box_body(xmlNode *n, struct box_status *status,
 	status->content->data.html.background_colour = style->background_color;
 	box = box_create(style, status->href, status->title, status->id,
 			status->content->data.html.box_pool);
-
+	if (!box)
+		return (struct box_result) {0, false, true};
 	return (struct box_result) {box, true, false};
 }
 
@@ -1032,6 +1053,8 @@ struct box_result box_br(xmlNode *n, struct box_status *status,
 	struct box *box;
 	box = box_create(style, status->href, status->title, status->id,
 			status->content->data.html.box_pool);
+	if (!box)
+		return (struct box_result) {0, false, true};
 	box->type = BOX_BR;
 	return (struct box_result) {box, false, false};
 }
@@ -1046,45 +1069,51 @@ struct box_result box_image(xmlNode *n, struct box_status *status,
 
 	box = box_create(style, status->href, status->title, status->id,
 			status->content->data.html.box_pool);
+	if (!box)
+		return (struct box_result) {0, false, true};
 
 	/* handle alt text */
 	if ((s2 = xmlGetProp(n, (const xmlChar *) "alt")) != NULL) {
 		box->text = squash_whitespace(s2);
+		xmlFree(s2);
+		if (!box->text)
+			return (struct box_result) {0, false, true};
 		box->length = strlen(box->text);
 		box->font = nsfont_open(status->content->data.html.fonts, style);
-		xmlFree(s2);
+	}
+
+	/* imagemap associated with this image */
+	if ((map = xmlGetProp(n, (const xmlChar *) "usemap")) != NULL) {
+		if (map[0] == '#')
+			box->usemap = strdup(map + 1);
+		else
+			box->usemap = strdup(map);
+		xmlFree(map);
+		if (!box->usemap) {
+			free(box->text);
+			return (struct box_result) {0, false, true};
+		}
 	}
 
 	/* img without src is an error */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src")) == NULL)
 		return (struct box_result) {box, false, false};
 
-	/* imagemap associated with this image */
-	if ((map = xmlGetProp(n, (const xmlChar *) "usemap")) != NULL) {
-		if (map[0] == '#') {
-			box->usemap = xstrdup(map+1);
-		}
-		else {
-			box->usemap = xstrdup(map);
-		}
-		xmlFree(map);
-	}
-
 	/* remove leading and trailing whitespace */
 	s1 = strip(s);
 	res = url_join(s1, status->content->data.html.base_url, &url);
-	/* if url is equivalent to the parent's url,
-	 * we've got infinite inclusion. stop it here.
-	 * also bail if url_join failed.
-	 */
-	if (res != URL_FUNC_OK ||
-	    strcasecmp(url, status->content->data.html.base_url) == 0) {
-		xmlFree(s);
+	xmlFree(s);
+	if (res == URL_FUNC_NOMEM) {
+		free(box->text);
+		return (struct box_result) {0, false, true};
+	} else if (res == URL_FUNC_FAILED) {
 		return (struct box_result) {box, false, false};
 	}
 
-	LOG(("image '%s'", url));
-	xmlFree(s);
+	if (strcmp(url, status->content->data.html.base_url) == 0)
+		/* if url is equivalent to the parent's url,
+		 * we've got infinite inclusion: ignore */
+		return (struct box_result) {box, false, false};
 
 	/* start fetch */
 	html_fetch_object(status->content, url, box, image_types,
@@ -1096,35 +1125,41 @@ struct box_result box_image(xmlNode *n, struct box_status *status,
 struct box_result box_form(xmlNode *n, struct box_status *status,
 		struct css_style *style)
 {
-	char *s, *s2;
+	char *action, *method, *enctype;
+	form_method fmethod;
 	struct box *box;
 	struct form *form;
 
 	box = box_create(style, status->href, status->title, status->id,
 			status->content->data.html.box_pool);
+	if (!box)
+		return (struct box_result) {0, false, true};
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "action")) == NULL) {
+	if (!(action = (char *) xmlGetProp(n, (const xmlChar *) "action"))) {
 		/* the action attribute is required */
 		return (struct box_result) {box, true, false};
 	}
 
-	status->current_form = form = xcalloc(1, sizeof(*form));
-	form->action = s;
-
-	form->method = method_GET;
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "method")) != NULL) {
-		if (strcasecmp(s, "post") == 0) {
-			form->method = method_POST_URLENC;
-			if ((s2 = (char *) xmlGetProp(n, (const xmlChar *) "enctype")) != NULL) {
-				if (strcasecmp(s2, "multipart/form-data") == 0)
-					form->method = method_POST_MULTIPART;
-				xmlFree(s2);
+	fmethod = method_GET;
+	if ((method = (char *) xmlGetProp(n, (const xmlChar *) "method"))) {
+		if (strcasecmp(method, "post") == 0) {
+			fmethod = method_POST_URLENC;
+			if ((enctype = (char *) xmlGetProp(n,
+					(const xmlChar *) "enctype"))) {
+				if (strcasecmp(enctype,
+						"multipart/form-data") == 0)
+					fmethod = method_POST_MULTIPART;
+				xmlFree(enctype);
 			}
 		}
-		xmlFree(s);
+		xmlFree(method);
 	}
 
-	form->controls = form->last_control = 0;
+	status->current_form = form = form_new(action, fmethod);
+	if (!form) {
+		xmlFree(action);
+		return (struct box_result) {0, false, true};
+	}
 
 	return (struct box_result) {box, true, false};
 }
@@ -1145,29 +1180,25 @@ struct box_result box_textarea(xmlNode *n, struct box_status *status,
 
 	box = box_create(style, NULL, 0, status->id,
 			status->content->data.html.box_pool);
+	if (!box)
+		return (struct box_result) {0, false, true};
 	box->type = BOX_INLINE_BLOCK;
 	box->gadget = form_new_control(GADGET_TEXTAREA);
-	if (!box->gadget) {
-		free(box);
+	if (!box->gadget)
 		return (struct box_result) {0, false, true};
-	}
 	box->gadget->box = box;
-	if (status->current_form)
-		form_add_control(status->current_form, box->gadget);
-	else
-		box->gadget->form = 0;
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name")) != NULL) {
 		box->gadget->name = strdup(s);
 		xmlFree(s);
-		if (!box->gadget->name) {
-			box_free(box);
+		if (!box->gadget->name)
 			return (struct box_result) {0, false, true};
-		}
 	}
 
 	inline_container = box_create(0, 0, 0, 0,
 			status->content->data.html.box_pool);
+	if (!inline_container)
+		return (struct box_result) {0, false, true};
 	inline_container->type = BOX_INLINE_CONTAINER;
 	box_add_child(box, inline_container);
 
@@ -1184,6 +1215,8 @@ struct box_result box_textarea(xmlNode *n, struct box_status *status,
 
 		inline_box = box_create(style, 0, 0, 0,
 				status->content->data.html.box_pool);
+		if (!inline_box)
+			return (struct box_result) {0, false, true};
 		inline_box->type = BOX_INLINE;
 		inline_box->style_clone = 1;
 		inline_box->text = s;
@@ -1200,6 +1233,8 @@ struct box_result box_textarea(xmlNode *n, struct box_status *status,
 		/* BOX_BR */
 		br_box = box_create(style, 0, 0, 0,
 				status->content->data.html.box_pool);
+		if (!br_box)
+			return (struct box_result) {0, false, true};
 		br_box->type = BOX_BR;
 		br_box->style_clone = 1;
 		box_add_child(inline_container, br_box);
@@ -1210,6 +1245,9 @@ struct box_result box_textarea(xmlNode *n, struct box_status *status,
 			current++;
 	}
 	xmlFree(content);
+
+	if (status->current_form)
+		form_add_control(status->current_form, box->gadget);
 
 	return (struct box_result) {box, false, false};
 }
@@ -1228,11 +1266,6 @@ struct box_result box_select(xmlNode *n, struct box_status *status,
 	if (!gadget)
 		return (struct box_result) {0, false, true};
 
-	if (status->current_form)
-		form_add_control(status->current_form, gadget);
-	else
-		gadget->form = 0;
-
 	gadget->data.select.multiple = false;
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "multiple")) != NULL) {
 		gadget->data.select.multiple = true;
@@ -1244,19 +1277,16 @@ struct box_result box_select(xmlNode *n, struct box_status *status,
 	gadget->data.select.num_items = 0;
 	gadget->data.select.num_selected = 0;
 
-	for (c = n->children; c != 0; c = c->next) {
+	for (c = n->children; c; c = c->next) {
 		if (strcmp((const char *) c->name, "option") == 0) {
-			xmlChar *content = xmlNodeGetContent(c);
-			add_option(c, gadget, content);
-			xmlFree(content);
-			gadget->data.select.num_items++;
+			if (!box_select_add_option(gadget, c))
+				goto no_memory;
 		} else if (strcmp((const char *) c->name, "optgroup") == 0) {
 			for (c2 = c->children; c2; c2 = c2->next) {
-				if (strcmp((const char *) c2->name, "option") == 0) {
-					xmlChar *content = xmlNodeGetContent(c2);
-					add_option(c2, gadget, content);
-					xmlFree(content);
-					gadget->data.select.num_items++;
+				if (strcmp((const char *) c2->name,
+						"option") == 0) {
+					if (!box_select_add_option(gadget, c2))
+						goto no_memory;
 				}
 			}
 		}
@@ -1271,22 +1301,27 @@ struct box_result box_select(xmlNode *n, struct box_status *status,
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name")) != NULL) {
 		gadget->name = strdup(s);
 		xmlFree(s);
-		if (!gadget->name) {
-			form_free_control(gadget);
-			return (struct box_result) {0, false, true};
-		}
+		if (!gadget->name)
+			goto no_memory;
 	}
 
-	box = box_create(style, NULL, 0, status->id, status->content->data.html.box_pool);
+	box = box_create(style, NULL, 0, status->id,
+			status->content->data.html.box_pool);
+	if (!box)
+		goto no_memory;
 	box->type = BOX_INLINE_BLOCK;
 	box->gadget = gadget;
 	gadget->box = box;
 
 	inline_container = box_create(0, 0, 0, 0,
 			status->content->data.html.box_pool);
+	if (!inline_container)
+		goto no_memory;
 	inline_container->type = BOX_INLINE_CONTAINER;
 	inline_box = box_create(style, 0, 0, 0,
 			status->content->data.html.box_pool);
+	if (!inline_box)
+		goto no_memory;
 	inline_box->type = BOX_INLINE;
 	inline_box->style_clone = 1;
 	box_add_child(inline_container, inline_box);
@@ -1301,65 +1336,71 @@ struct box_result box_select(xmlNode *n, struct box_status *status,
 	}
 
 	if (gadget->data.select.num_selected == 0)
-		inline_box->text = xstrdup(messages_get("Form_None"));
+		inline_box->text = strdup(messages_get("Form_None"));
 	else if (gadget->data.select.num_selected == 1)
-		inline_box->text = xstrdup(gadget->data.select.current->text);
+		inline_box->text = strdup(gadget->data.select.current->text);
 	else
-		inline_box->text = xstrdup(messages_get("Form_Many"));
+		inline_box->text = strdup(messages_get("Form_Many"));
+	if (!inline_box->text)
+		goto no_memory;
 
 	inline_box->length = strlen(inline_box->text);
 	inline_box->font = nsfont_open(status->content->data.html.fonts, style);
 
+	if (status->current_form)
+		form_add_control(status->current_form, gadget);
+
 	return (struct box_result) {box, false, false};
+
+no_memory:
+	form_free_control(gadget);
+	return (struct box_result) {0, false, true};
 }
 
 
-void add_option(xmlNode* n, struct form_control* current_select, const char *text)
+/**
+ * Add an option to a form select control.
+ *
+ * \param  control  select containing the option
+ * \param  n        xml element node for <option>
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool box_select_add_option(struct form_control *control, xmlNode *n)
 {
-	struct form_option *option = xcalloc(1, sizeof(struct form_option));
-	char *s;
+	char *value = 0;
+	char *text = 0;
+	bool selected;
+	xmlChar *content;
+	xmlChar *s;
 
-	if ((text = squash_whitespace(text)) == NULL) {
-		free(option);
-		return;
-	}
+	content = xmlNodeGetContent(n);
+	if (!content)
+		goto no_memory;
+	text = squash_whitespace(content);
+	xmlFree(content);
+	if (!text)
+		goto no_memory;
 
-	assert(current_select != 0);
-
-	if (current_select->data.select.items == 0)
-		current_select->data.select.items = option;
-	else
-		current_select->data.select.last_item->next = option;
-	current_select->data.select.last_item = option;
-
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")) != NULL) {
-		option->value = xstrdup(s);
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
+		value = strdup(s);
 		xmlFree(s);
-	} else {
-		option->value = xstrdup(text);
-	}
+	} else
+		value = strdup(text);
+	if (!value)
+		goto no_memory;
 
-	/* Convert all spaces into NBSP. */
-	for (s = text; *s != '\0' && *s != ' '; ++s)
-		/* no body */;
-	if (*s == ' ') {
-		const char *org_text = text;
-		text = cnv_space2nbsp(org_text);
-		free((void *)org_text);
-	}
+	selected = xmlHasProp(n, (const xmlChar *) "selected");
 
-	option->selected = option->initial_selected = false;
-	option->text = text;
+	if (!form_add_option(control, value, text, selected))
+		goto no_memory;
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "selected")) != NULL) {
-		xmlFree(s);
-		if (current_select->data.select.num_selected == 0 ||
-				current_select->data.select.multiple) {
-			option->selected = option->initial_selected = true;
-			current_select->data.select.num_selected++;
-			current_select->data.select.current = option;
-		}
-	}
+	return true;
+
+no_memory:
+	free(value);
+	free(text);
+	return false;
 }
 
 
