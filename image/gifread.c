@@ -655,7 +655,10 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		/*	Ensure we have some data
 		*/
 		gif_data = gif->gif_data + gif->buffer_position;
-		if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;
+		if ((gif_end - gif_data) < 10) {
+			return_value = GIF_INSUFFICIENT_FRAME_DATA;
+			break;
+		}
 
 		/*	Decode the extensions
 		*/
@@ -667,7 +670,10 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 
 			/*	Check we've enough data for the extension then header
 			*/
-			if ((gif_end - gif_data) < (int)(extension_size + 13)) return GIF_INSUFFICIENT_FRAME_DATA;
+			if ((gif_end - gif_data) < (int)(extension_size + 13)) {
+				return_value = GIF_INSUFFICIENT_FRAME_DATA;
+				break;
+			}
 
 			/*	Graphic control extension - store the frame delay.
 			*/
@@ -685,14 +691,20 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			*/
 			while (gif_data[0] != 0x00) {
 				gif_data += gif_data[0] + 1;
-				if ((gif_end - gif_data) < 10) return GIF_INSUFFICIENT_FRAME_DATA;
+				if ((gif_end - gif_data) < 10) {
+					return_value = GIF_INSUFFICIENT_FRAME_DATA;
+					break;
+				}
 			}
 			gif_data++;
 		}
 
 		/*	Decode the header
 		*/
-		if (gif_data[0] != 0x2c) return GIF_DATA_ERROR;
+		if (gif_data[0] != 0x2c) {
+			return_value = GIF_DATA_ERROR;
+			break;
+		}
 		offset_x = gif_data[1] | (gif_data[2] << 8);
 		offset_y = gif_data[3] | (gif_data[4] << 8);
 		width = gif_data[5] | (gif_data[6] << 8);
@@ -702,7 +714,8 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			modified since initialisation.
 		*/
 		if ((offset_x + width > gif->width) || (offset_y + height > gif->height)) {
-			return GIF_DATA_ERROR;
+			return_value = GIF_DATA_ERROR;
+			break;
 		}
 
 		/*	Decode the flags
@@ -719,7 +732,10 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 		/*	Set up the colour table
 		*/
 		if (flags & 0x80) {
-			if (gif_bytes < (int)(3 * colour_table_size)) return GIF_INSUFFICIENT_FRAME_DATA;
+			if (gif_bytes < (int)(3 * colour_table_size)) {
+				return_value = GIF_INSUFFICIENT_FRAME_DATA;
+				break;
+			}
 			colour_table = gif->local_colour_table;
 			if (!clear_image) {
 				for (index = 0; index < colour_table_size; index++) {

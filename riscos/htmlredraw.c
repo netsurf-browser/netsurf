@@ -294,7 +294,13 @@ bool html_redraw_box(struct box *box,
 		int py1 = y < y1 ? y : y1;
 
 		/* background colour */
-		if (box->style->background_color != TRANSPARENT) {
+		if ((box->style->background_color != TRANSPARENT) && 
+				/* don't redraw background if there is an image covering it */
+				((box->style->background_repeat != CSS_BACKGROUND_REPEAT_REPEAT) ||
+				(box->background->bitmap == NULL) ||
+				(ro_gui_current_redraw_gui == NULL) ||
+				(!ro_gui_current_redraw_gui->option.background_images) ||
+				(!box->background->bitmap->opaque))) {
 			if (ro_gui_redraw_box_depth > 2) {
 				error = xcolourtrans_set_gcol(
 					box->style->background_color << 8,
