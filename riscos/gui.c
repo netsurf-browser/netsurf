@@ -68,7 +68,7 @@ static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 osspriteop_area *pointers;      /**< Sprite area containing pointer data */
 gui_pointer_shape curr_pointer; /**< Current shape of the pointer */
 /** Accepted wimp user messages. */
-static const wimp_MESSAGE_LIST(27) task_messages = { {
+static wimp_MESSAGE_LIST(27) task_messages = { {
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
 	message_DATA_LOAD,
@@ -158,7 +158,7 @@ void gui_init(int argc, char** argv)
 	messages_load("<NetSurf$Dir>.Resources.LangNames");
 
 	error = xwimp_initialise(wimp_VERSION_RO38, "NetSurf",
-  			(wimp_message_list*) &task_messages, 0,
+  			(const wimp_message_list *) &task_messages, 0,
   			&task_handle);
   	if (error) {
   		LOG(("xwimp_initialise failed: 0x%x: %s",
@@ -215,7 +215,7 @@ void gui_init(int argc, char** argv)
 void gui_window_clone_options(struct browser_window *new_bw, struct browser_window *old_bw) {
 	gui_window *old_gui = NULL;
 	gui_window *new_gui;
-	
+
 	/*	Abort on bad input
 	*/
 	if (new_bw == NULL) return;
@@ -239,10 +239,10 @@ void gui_window_clone_options(struct browser_window *new_bw, struct browser_wind
 	} else {
 		new_gui->scale = old_gui->scale;
 		new_gui->option_dither_sprites = old_gui->option_dither_sprites;
-		new_gui->option_filter_sprites = old_gui->option_filter_sprites;	  
+		new_gui->option_filter_sprites = old_gui->option_filter_sprites;
 		new_gui->option_animate_images = old_gui->option_animate_images;
 	}
-	
+
 	/*	Set up the toolbar
 	*/
 	if (new_gui->data.browser.toolbar) {
@@ -271,7 +271,7 @@ void gui_window_clone_options(struct browser_window *new_bw, struct browser_wind
  */
 void gui_window_default_options(struct browser_window *bw) {
 	gui_window *gui;
-	
+
 	/*	Abort on bad input
 	*/
 	if (bw == NULL) return;
@@ -287,7 +287,7 @@ void gui_window_default_options(struct browser_window *bw) {
 	option_dither_sprites = gui->option_dither_sprites;
 	option_filter_sprites = gui->option_filter_sprites;
 	option_animate_images = gui->option_animate_images;
-	
+
 	/*	Set up the toolbar
 	*/
 	if (gui->data.browser.toolbar) {
@@ -769,7 +769,7 @@ void ro_gui_open_window_request(wimp_open *open) {
 		if (g) {
 			toolbar = g->data.browser.toolbar;
 			if (toolbar) {
-			  	toolbar->resize_status = 1; 	
+			  	toolbar->resize_status = 1;
 		  		ro_theme_resize_toolbar(g);
 		  	}
 		}

@@ -219,8 +219,8 @@ struct content * content_create(char *url)
  * \param params array of strings, ordered attribute, value, attribute, ..., 0
  */
 
-void content_set_type(struct content *c, content_type type, char* mime_type,
-		const char *params[])
+void content_set_type(struct content *c, content_type type,
+		const char *mime_type, const char *params[])
 {
 	union content_msg_data data;
 	assert(c != 0);

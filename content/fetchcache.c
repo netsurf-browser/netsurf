@@ -79,7 +79,6 @@ struct content * fetchcache(const char *url, char *referer,
 	struct content *c;
 	char *url1 = xstrdup(url);
 	char *hash = strchr(url1, '#');
-	const char *params[] = { 0 };
 	char error_message[500];
 
 	/* strip fragment identifier */

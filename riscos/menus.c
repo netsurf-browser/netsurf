@@ -20,6 +20,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"

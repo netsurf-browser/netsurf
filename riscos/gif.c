@@ -4,9 +4,6 @@
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2004 Richard Wilson <not_ginger_matt@sourceforge.net>
- *
- * Parts modified from IGviewer source by Peter Hartley
- *		  http://utter.chaos.org/~pdh/software/intergif.htm
  */
 
 #include <assert.h>
@@ -94,9 +91,12 @@ void nsgif_redraw(struct content *c, long x, long y,
 
 	/*	Decode from the last frame to the current frame
 	*/
-	previous_frame = c->data.gif.gif->decoded_frame;
-	if (previous_frame > c->data.gif.current_frame) previous_frame = -1;
-	for (frame = previous_frame + 1; frame <= c->data.gif.current_frame; frame++) {
+	if (c->data.gif.current_frame < c->data.gif.gif->decoded_frame)
+		previous_frame = 0;
+	else
+		previous_frame = c->data.gif.gif->decoded_frame + 1;
+
+	for (frame = previous_frame; frame <= c->data.gif.current_frame; frame++) {
 		gif_decode_frame(c->data.gif.gif, frame);
 	}
 

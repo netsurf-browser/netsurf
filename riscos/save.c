@@ -23,6 +23,7 @@
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/save_draw.h"
 #include "netsurf/riscos/thumbnail.h"
+#include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -286,7 +287,7 @@ void ro_gui_save_complete(struct content *c, char *path)
 
 	/*	!Paint gets confused with uppercase characters
 	*/
-	for (int index = 0; index < 12; index++) {
+	for (index = 0; index < 12; index++) {
 		sprite_header->name[index] = tolower(sprite_header->name[index]);
 	}
 	thumbnail_create(c, area,

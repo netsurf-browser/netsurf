@@ -92,7 +92,7 @@
 
 
 static void css_atimport_callback(content_msg msg, struct content *css,
-		void *p1, void *p2, const char *error);
+		void *p1, void *p2, union content_msg_data data);
 static bool css_match_rule(struct css_selector *rule, xmlNode *element);
 static bool css_match_detail(const struct css_selector *detail,
 		xmlNode *element);
@@ -580,7 +580,7 @@ void css_atimport(struct content *c, struct css_node *node)
  */
 
 void css_atimport_callback(content_msg msg, struct content *css,
-		void *p1, void *p2, const char *error)
+		void *p1, void *p2, union content_msg_data data)
 {
 	struct content *c = p1;
 	unsigned int i = (unsigned int) p2;
@@ -615,7 +615,7 @@ void css_atimport_callback(content_msg msg, struct content *css,
 		case CONTENT_MSG_REDIRECT:
 			c->active--;
 			free(c->data.css.import_url[i]);
-			c->data.css.import_url[i] = strdup(error);
+			c->data.css.import_url[i] = strdup(data.redirect);
 			if (!c->data.css.import_url[i]) {
 				/** \todo report to user */
 				c->error = 1;

@@ -599,7 +599,7 @@ size_t fetch_curl_data(void * data, size_t size, size_t nmemb, struct fetch *f)
 
 size_t fetch_curl_header(char * data, size_t size, size_t nmemb, struct fetch *f)
 {
-	int i;
+	unsigned int i;
 	size *= nmemb;
 	if (12 < size && strncasecmp(data, "Location:", 9) == 0) {
 		/* extract Location header */

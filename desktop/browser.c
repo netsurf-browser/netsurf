@@ -600,7 +600,7 @@ void browser_window_gadget_select(struct browser_window* bw, struct form_control
 	inline_box->width = g->box->width;
 	inline_box->length = strlen(inline_box->text);
 
-        box_coords(g->box, (unsigned long*)&x, (unsigned long*)&y);
+        box_coords(g->box, &x, &y);
 	gui_window_redraw(bw->window, (unsigned int)x, (unsigned int)y,
 			(unsigned int)(x + g->box->width),
 			(unsigned int)(y + g->box->height));
@@ -611,7 +611,7 @@ int browser_window_gadget_click(struct browser_window* bw, unsigned long click_x
 	struct box_selection* click_boxes;
 	int found, plot_index;
 	int i;
-	unsigned long x, y;
+	int x, y;
 
 	found = 0;
 	click_boxes = NULL;
@@ -790,8 +790,8 @@ void browser_window_textarea_callback(struct browser_window *bw, char key, void 
 	struct box *ic;
 	int char_offset = textarea->gadget->caret_char_offset;
 	int pixel_offset, dy;
-	unsigned long actual_x, actual_y;
-	unsigned long width=0, height=0;
+	int actual_x, actual_y;
+	unsigned long width = 0, height = 0;
 	bool reflow = false;
 
         box_coords(textarea, &actual_x, &actual_y);
@@ -1144,7 +1144,7 @@ void browser_window_input_callback(struct browser_window *bw, char key, void *p)
 	struct box *text_box = input->children->children;
 	int char_offset = input->gadget->caret_char_offset;
 	int pixel_offset;
-	unsigned long actual_x, actual_y;
+	int actual_x, actual_y;
 	struct form* form = input->gadget->form;
 
 	box_coords(input, &actual_x, &actual_y);
@@ -1451,7 +1451,6 @@ void browser_window_follow_link(struct browser_window *bw,
 	int done = 0;
 	struct css_style *style;
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
-	struct browser_window *new_bw;
 
 	found = 0;
 	click_boxes = NULL;

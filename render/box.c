@@ -609,9 +609,9 @@ struct css_style * box_get_style(struct content ** stylesheet,
 				style->width.width = CSS_WIDTH_LENGTH;
 				if (!type || strcasecmp(type, "text") == 0 ||
 						strcasecmp(type, "password") == 0)
-					/* in characters for text or password */
+					/* in characters for text, password, file */
 					style->width.value.length.unit = CSS_UNIT_EX;
-				else
+				else if (strcasecmp(type, "file") != 0)
 					/* in pixels otherwise */
 					style->width.value.length.unit = CSS_UNIT_PX;
 				style->width.value.length.value = size;
@@ -1998,8 +1998,8 @@ struct result box_embed(xmlNode *n, struct status *status,
                 pp->type = 0;
                 pp->next = 0;
 
-                if(strcasecmp((char*)a->name, "src") != 0) {
-                        pp->name = strdup((char*)a->name);
+                if(strcasecmp((const char*)a->name, "src") != 0) {
+                        pp->name = strdup((const char*)a->name);
                         pp->value = strdup((char*)a->children->content);
                         pp->valuetype = strdup("data");
 

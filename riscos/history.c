@@ -20,6 +20,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/thumbnail.h"
 #include "netsurf/riscos/tinct.h"
+#include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
