@@ -1248,7 +1248,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 
 	/* First send the key to the browser window, eg. form fields. */
 	if (!toolbar) {
-		int c = key;
+		wchar_t c = (wchar_t)key;
 		/* Munge cursor keys into unused control chars */
 		/* We can't map on to any of: 3,8,10,13,17,18,21,22,23 or 24
 		 * That leaves 1,2,4-7,11,12,14-16,18-20,25-31 and 129-159

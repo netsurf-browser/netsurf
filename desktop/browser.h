@@ -14,6 +14,7 @@
 #define _NETSURF_DESKTOP_BROWSER_H_
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <time.h>
 
 struct box;
@@ -36,7 +37,7 @@ struct browser_window
 
 	/** Handler for keyboard input, or 0. */
 	void (*caret_callback)(struct browser_window *bw,
-			unsigned int key, void *p);
+			wchar_t key, void *p);
 	/** User parameter for caret_callback. */
 	void *caret_p;
 
@@ -74,7 +75,7 @@ void browser_window_destroy(struct browser_window *bw);
 
 void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_click click, int x, int y);
-bool browser_window_key_press(struct browser_window *bw, unsigned int key);
+bool browser_window_key_press(struct browser_window *bw, wchar_t key);
 void browser_window_form_select(struct browser_window *bw,
 		struct form_control *control, int item);
 

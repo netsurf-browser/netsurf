@@ -5,6 +5,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
+ * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
  */
 
 /** \file
@@ -66,11 +67,11 @@ static void browser_window_input_click(struct browser_window* bw,
 		int box_x, int box_y,
 		int x, int y);
 static void browser_window_input_callback(struct browser_window *bw,
-		unsigned int key, void *p);
+		wchar_t key, void *p);
 static void browser_window_place_caret(struct browser_window *bw,
 		int x, int y, int height,
 		void (*callback)(struct browser_window *bw,
-		unsigned int key, void *p),
+		wchar_t key, void *p),
 		void *p);
 static void browser_window_remove_caret(struct browser_window *bw);
 static gui_pointer_shape get_pointer_shape(css_cursor cursor);
@@ -88,20 +89,18 @@ void browser_window_create(const char *url, struct browser_window *clone)
 {
 	struct browser_window *bw;
 
-	bw = malloc(sizeof *bw);
-	if (!bw) {
+	if ((bw = malloc(sizeof *bw)) == NULL) {
 		warn_user("NoMemory", 0);
 		return;
 	}
 
-	bw->current_content = 0;
-	bw->loading_content = 0;
+	bw->current_content = NULL;
+	bw->loading_content = NULL;
 	bw->history = history_create();
 	bw->throbbing = false;
-	bw->caret_callback = 0;
-	bw->frag_id = 0;
-	bw->window = gui_create_browser_window(bw, clone);
-	if (!bw->window) {
+	bw->caret_callback = NULL;
+	bw->frag_id = NULL;
+	if ((bw->window = gui_create_browser_window(bw, clone)) == NULL) {
 		free(bw);
 		return;
 	}
@@ -226,8 +225,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 						bw, 0);
 			}
 			bw->current_content = c;
-			bw->loading_content = 0;
-			bw->caret_callback = 0;
+			bw->loading_content = NULL;
+			bw->caret_callback = NULL;
 			gui_window_new_content(bw->window);
 			gui_window_set_url(bw->window, c->url);
 			browser_window_update(bw, true);
@@ -1271,7 +1270,7 @@ void browser_window_input_click(struct browser_window* bw,
  */
 
 void browser_window_input_callback(struct browser_window *bw,
-		unsigned int key, void *p)
+		wchar_t key, void *p)
 {
 	struct box *input = (struct box *)p;
 	struct box *text_box = input->children->children;
@@ -1495,7 +1494,7 @@ void browser_window_input_callback(struct browser_window *bw,
 void browser_window_place_caret(struct browser_window *bw,
 		int x, int y, int height,
 		void (*callback)(struct browser_window *bw,
-		unsigned int key, void *p),
+		wchar_t key, void *p),
 		void *p)
 {
 	gui_window_place_caret(bw->window, x, y, height);
@@ -1520,7 +1519,7 @@ void browser_window_remove_caret(struct browser_window *bw)
  * Handle key presses in a browser window.
  */
 
-bool browser_window_key_press(struct browser_window *bw, unsigned int key)
+bool browser_window_key_press(struct browser_window *bw, wchar_t key)
 {
 	if (!bw->caret_callback)
 		return false;
