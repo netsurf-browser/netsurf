@@ -174,6 +174,7 @@ void nsgif_destroy(struct content *c)
 	schedule_remove(nsgif_animate, c);
 	gif_finalise(c->data.gif.gif);
 	free(c->data.gif.gif);
+	free(c->title);
 }
 
 
