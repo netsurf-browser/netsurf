@@ -16,7 +16,7 @@
 es, die Standards HTML&nbsp;4 und CSS auf der RISC OS Plattform zur Verfügung zu stellen. Für weitere Informationen über NetSurf bitte die <a href="docs_de">Dokumentation</a> lesen.</p>
 
 <h2>Aktueller Status</h2>
-<p>NetSurf ist zur Zeit inkomplett und viele Funktionen sind noch nicht oder nicht vollständig implementiert. Um einen Überblick über NetSurf's Entwicklungzustand zu erhalten, lesen Sie bitte die Seite <a href="progress_de">'Stand der Entwicklung'</a>. Sollte es beim Benutzen zu Abstürzen oder unerwartetem Verhalten kommen, wäre es nett, wenn Sie das Problem mit einer genauen Fehlerbeschreibung an die <a href="info_de#Devel">Entwickler</a> melden würden.</p>
+<p>NetSurf ist zur Zeit inkomplett und viele Funktionen sind noch nicht oder nicht vollständig implementiert. Um einen Überblick über NetSurf's Entwicklungzustand zu erhalten, lesen Sie bitte die Seite <a href="progress_de">'Stand der Entwicklung'</a>. Sollte es beim Benutzen zu Abstürzen oder unerwartetem Verhalten kommen, wäre es nett, wenn Sie das Problem mit einer genauen Fehlerbeschreibung an die <a href="info_de#ContactDevelopers">Entwickler</a> melden würden.</p>
 
 <h2>NetSurf Links</h2>
 
@@ -67,7 +67,7 @@ es, die Standards HTML&nbsp;4 und CSS auf der RISC OS Plattform zur Verfügung zu
 
 </div>
 
-<p class="footer"><em>NetSurf</em> is copyright 2003 - 2004 The NetSurf
+<p class="footer">NetSurf is copyright 2003 - 2004 The NetSurf
 Developers</p>
 
 </body>
