@@ -1,5 +1,5 @@
 /**
- * $Id: layout.c,v 1.22 2002/12/23 22:31:28 bursa Exp $
+ * $Id: layout.c,v 1.23 2002/12/26 23:02:38 bursa Exp $
  */
 
 #include <assert.h>
@@ -382,11 +382,11 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 				c2->length = c->length - ((space + 1) - c->text);
 				c2->width = UNKNOWN_WIDTH;
 				c->length = space + 1 - c->text;
+				c->width = wp + 4;  /* should be the width of a space */
 				c2->next = c->next;
 				c->next = c2;
 				b = c2;
 			}
-			c->width = wp;
 			x = xp + wp;
 /* 			fprintf(stderr, "layout_line:     overflow, forcing\n"); */
 		} else if (x1 - x0 < xp + w) {
@@ -407,7 +407,7 @@ struct box * layout_line(struct box * first, unsigned long width, unsigned long 
 			c2->next = c->next;
 			c->next = c2;
 			b = c2;
-			c->width = wp;
+			c->width = wp + 4;  /* should be the width of a space */
 			x = xp + wp;
 /* 			fprintf(stderr, "layout_line:     overflow, fit\n"); */
 		}
