@@ -43,7 +43,7 @@ const char *__dynamic_da_name = "NetSurf";
 char *NETSURF_DIR;
 gui_window *window_list = 0;
 
-const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro";
+const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Docs/en/intro";
 const char* HELP_URL = "file:///%3CNetSurf$Dir%3E/Docs/en/index";
 
 void ro_gui_window_click(gui_window* g, wimp_pointer* mouse);
