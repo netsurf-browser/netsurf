@@ -627,6 +627,29 @@ void content_add_user(struct content *c,
 
 
 /**
+ * Search the users of a content for the specified user.
+ *
+ * \return  a content_user struct for the user, or 0 if not found
+ */
+
+struct content_user * content_find_user(struct content *c,
+		void (*callback)(content_msg msg, struct content *c, void *p1,
+			void *p2, union content_msg_data data),
+		void *p1, void *p2)
+{
+	struct content_user *user;
+
+	/* user_list starts with a sentinel */
+	for (user = c->user_list; user->next &&
+			!(user->next->callback == callback &&
+				user->next->p1 == p1 &&
+				user->next->p2 == p2); user = user->next)
+		;
+	return user->next;
+}
+
+
+/**
  * Remove a callback user.
  *
  * The callback function, p1, and p2 must be identical to those passed to
@@ -690,18 +713,12 @@ void content_stop(struct content *c,
 
 	assert(c->status == CONTENT_STATUS_READY);
 
-	/* user_list starts with a sentinel */
-	for (user = c->user_list; user->next != 0 &&
-			!(user->next->callback == callback &&
-				user->next->p1 == p1 &&
-				user->next->p2 == p2); user = user->next)
-		;
-	if (user->next == 0) {
+	user = content_find_user(c, callback, p1, p2);
+	if (!user) {
 		LOG(("user not found in list"));
 		assert(0);
 		return;
 	}
-	user = user->next;
 
 	LOG(("%p %s: stop user %p %p %p", c, c->url, callback, p1, p2));
 	user->stop = true;

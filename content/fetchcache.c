@@ -172,12 +172,15 @@ void fetchcache_go(struct content *content, char *referer,
 
 	} else if (content->status == CONTENT_STATUS_READY) {
 		callback(CONTENT_MSG_LOADING, content, p1, p2, msg_data);
-		callback(CONTENT_MSG_READY, content, p1, p2, msg_data);
+		if (content_find_user(content, callback, p1, p2))
+			callback(CONTENT_MSG_READY, content, p1, p2, msg_data);
 
 	} else if (content->status == CONTENT_STATUS_DONE) {
 		callback(CONTENT_MSG_LOADING, content, p1, p2, msg_data);
-		callback(CONTENT_MSG_READY, content, p1, p2, msg_data);
-		callback(CONTENT_MSG_DONE, content, p1, p2, msg_data);
+		if (content_find_user(content, callback, p1, p2))
+			callback(CONTENT_MSG_READY, content, p1, p2, msg_data);
+		if (content_find_user(content, callback, p1, p2))
+			callback(CONTENT_MSG_DONE, content, p1, p2, msg_data);
 
 	} else if (content->status == CONTENT_STATUS_ERROR) {
 		/* shouldn't usually occur */

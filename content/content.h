@@ -270,6 +270,10 @@ void content_add_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, union content_msg_data data),
 		void *p1, void *p2);
+struct content_user * content_find_user(struct content *c,
+		void (*callback)(content_msg msg, struct content *c, void *p1,
+			void *p2, union content_msg_data data),
+		void *p1, void *p2);
 void content_remove_user(struct content *c,
 		void (*callback)(content_msg msg, struct content *c, void *p1,
 			void *p2, union content_msg_data data),
