@@ -64,6 +64,7 @@ struct gui_window
 
 /* in gui.c */
 void ro_gui_copy_selection(gui_window* g);
+void ro_gui_open_help_page(void);
 
 /* in menus.c */
 void ro_gui_menus_init(void);

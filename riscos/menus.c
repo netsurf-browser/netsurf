@@ -31,15 +31,16 @@ gui_window *current_gui;
 		(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT))
 
 /* iconbar menu */
-wimp_menu *iconbar_menu = (wimp_menu *) & (wimp_MENU(3)) {
+wimp_menu *iconbar_menu = (wimp_menu *) & (wimp_MENU(4)) {
   { "NetSurf" }, 7,2,7,0, 200, 44, 0,
   {
     { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Info" } },
     { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Choices" } },
+    { 0,              wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Help" } },
     { wimp_MENU_LAST, wimp_NO_SUB_MENU, DEFAULT_FLAGS, { "Quit" } }
   }
 };
-int iconbar_menu_height = 3 * 44;
+int iconbar_menu_height = 4 * 44;
 
 /* browser window menu structure - based on Style Guide */
 /*wimp_menu *browser_page_menu = (wimp_menu *) & (wimp_MENU(4)) {*/
@@ -168,7 +169,10 @@ void ro_gui_menu_selection(wimp_selection *selection)
 			case 1: /* Choices */
 				ro_gui_dialog_open(dialog_config);
 				break;
-			case 2: /* Quit */
+			case 2: /* Help */
+			        ro_gui_open_help_page();
+			        break;
+			case 3: /* Quit */
 				netsurf_quit = 1;
 				break;
 		}
@@ -230,4 +234,3 @@ void ro_gui_menu_selection(wimp_selection *selection)
 			ro_gui_create_menu(current_menu, current_menu_x, current_menu_y, current_gui);
 	}
 }
-

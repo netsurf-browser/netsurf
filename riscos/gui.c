@@ -44,6 +44,7 @@ gui_window *window_list = 0;
 int gadget_subtract_x;
 int gadget_subtract_y;
 const char* HOME_URL = "file:///%3CNetSurf$Dir%3E/Resources/intro";
+const char* HELP_URL = "file:///%3CNetSurf$Dir%3E/Docs/en/index";
 
 struct ro_gui_drag_info;
 typedef enum {
@@ -1958,5 +1959,19 @@ void ro_gui_screen_size(int *width, int *height)
 	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_YWIND_LIMIT, &ywind_limit);
 	*width = (xwind_limit + 1) << xeig_factor;
 	*height = (ywind_limit + 1) << yeig_factor;
+}
+
+void ro_gui_open_help_page (void)
+{
+        struct browser_window *bw;
+        bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
+                                   browser_SCROLL_X_ALWAYS |
+                                   browser_SCROLL_Y_ALWAYS, 640, 480);
+        gui_window_show(bw->window);
+        browser_window_open_location(bw, HELP_URL);
+        wimp_set_caret_position(bw->window->data.browser.toolbar,
+                                ro_theme_icon(current_theme, THEME_TOOLBAR,
+                                              "TOOLBAR_URL"),
+                                0,0,-1, (int) strlen(bw->window->url) - 1);
 }
 
