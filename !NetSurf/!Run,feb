@@ -38,8 +38,8 @@ RMEnsure MimeMap 0.10 RMLoad System:Modules.Network.MimeMap
 RMEnsure MimeMap 0.10 Error NetSurf requires MimeMap 0.10 or later
 
 | Ensure Tinct is loaded
-RMEnsure Tinct 0.01 Run <NetSurf$Dir>.Resources.Tinct
-RMEnsure Tinct 0.01 Error NetSurf requires Tinct 0.01 or later
+RMEnsure Tinct 0.02 Run <NetSurf$Dir>.Resources.Tinct
+RMEnsure Tinct 0.02 Error NetSurf requires Tinct 0.02 or later
 
 | drag the 'next' slot in the task manager to something huge and ridiculous,
 | and/or increase the number below
