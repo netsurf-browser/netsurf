@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include <stdbool.h>
@@ -12,6 +12,7 @@
 #include "netsurf/content/cache.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
+#include "netsurf/desktop/options.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -41,6 +42,7 @@ int main(int argc, char *argv[])
 	fetch_init();
 	cache_init();
 	fetchcache_init();
+	options_read("options");
 
 	while (1) {
 		puts("=== URL:");
@@ -48,7 +50,7 @@ int main(int argc, char *argv[])
 			break;
 		url[strlen(url) - 1] = 0;
 		destroyed = 0;
-		c = fetchcache(url, 0, callback, 0, 0, 100, 1000, false
+		c = fetchcache(url, 0, callback, 0, 0, 1000, 1000, false
 #ifdef WITH_POST
 		, 0, 0
 #endif
@@ -70,6 +72,7 @@ int main(int argc, char *argv[])
 			content_remove_user(c, callback, 0, 0);
 	}
 
+	options_write("options");
 	cache_quit();
 	fetch_quit();
 

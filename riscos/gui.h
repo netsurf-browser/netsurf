@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
 #ifndef _NETSURF_RISCOS_GUI_H_
@@ -184,12 +184,9 @@ void ro_gui_history_click(wimp_pointer *pointer);
 #define ICON_CONFIG_BR_OK 0
 #define ICON_CONFIG_BR_CANCEL 1
 #define ICON_CONFIG_BR_EXPLAIN 2
-#define ICON_CONFIG_BR_DEFAULT 3
-#define ICON_CONFIG_BR_FORM 4
-#define ICON_CONFIG_BR_GESTURES 5
-#define ICON_CONFIG_BR_TEXT 6
-#define ICON_CONFIG_BR_TOOLBAR 7
-#define ICON_CONFIG_BR_PREVIEW 8
+#define ICON_CONFIG_BR_GESTURES 3
+#define ICON_CONFIG_BR_TEXT 4
+#define ICON_CONFIG_BR_TOOLBAR 5
 
 #define ICON_CONFIG_PROX_OK 0
 #define ICON_CONFIG_PROX_CANCEL 1

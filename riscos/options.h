@@ -3,6 +3,11 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ */
+
+/** \file
+ * RISC OS specific options.
  */
 
 #ifndef _NETSURF_RISCOS_OPTIONS_H_
@@ -10,48 +15,21 @@
 
 #include "netsurf/desktop/options.h"
 
-#define PLATFORM_OPTIONS \
-	int use_mouse_gestures;\
-	int allow_text_selection;\
-	int use_riscos_elements;\
-	int show_toolbar;\
-	int show_print_preview;\
-	\
-	char* theme;
+extern int option_use_mouse_gestures;
+extern int option_allow_text_selection;
+extern int option_show_toolbar;
+extern char *option_theme;
 
-/* choices made easier for the dialogue boxes.  only used by the interface */
+#define EXTRA_OPTION_DEFINE \
+int option_use_mouse_gestures = false;\
+int option_allow_text_selection = true;\
+int option_show_toolbar = true;\
+char *option_theme = 0;
 
-struct browser_choices
-{
-	int use_mouse_gestures;
-	int allow_text_selection;
-	int use_riscos_elements;
-	int show_toolbar;
-	int show_print_preview;
-} ;
-
-struct proxy_choices
-{
-	int http;
-	char http_proxy[256];
-	int http_port;
-} ;
-
-struct theme_choices
-{
-	char name[256];
-};
-
-struct ro_choices
-{
-	struct browser_choices browser;
-	struct proxy_choices proxy;
-	struct theme_choices theme;
-};
-
-void options_to_ro(struct options* opt, struct ro_choices* ro);
-void ro_to_options(struct ro_choices* ro, struct options* opt);
+#define EXTRA_OPTION_TABLE \
+{ "use_mouse_gestures",   OPTION_BOOL,   &option_use_mouse_gestures },\
+{ "allow_text_selection", OPTION_BOOL,   &option_allow_text_selection },\
+{ "show_toolbar",         OPTION_BOOL,   &option_show_toolbar },\
+{ "theme",                OPTION_STRING, &option_theme }
 
 #endif
-
-

@@ -3,32 +3,32 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
+/** \file
+ * Option reading and saving (interface).
+ *
+ * Non-platform specific options can be added by editing this file and
+ * netsurf/desktop/options.c
+ *
+ * Platform specific options should be added in the platform options.h.
+ *
+ * The following types of options are supported:
+ *  - bool (OPTION_BOOL)
+ *  - int (OPTION_INTEGER)
+ *  - char* (OPTION_STRING) (must be allocated on heap, may be 0, free before
+ *                           assigning a new value)
+ */
 
 #ifndef _NETSURF_DESKTOP_OPTIONS_H_
 #define _NETSURF_DESKTOP_OPTIONS_H_
 
-struct options;
+extern bool option_http_proxy;
+extern char *option_http_proxy_host;
+extern int option_http_proxy_port;
 
-#include "netsurf/riscos/options.h"
-
-struct options
-{
-	/* global options */
-	int http;
-	char* http_proxy;
-	int http_port;
-
-	/* platform specific options */
-	PLATFORM_OPTIONS
-};
-
-extern struct options OPTIONS;
-
-void options_init(struct options* opt);
-void options_write(struct options*, char* filename);
-void options_read(struct options*, char* filename);
+void options_read(const char *path);
+void options_write(const char *path);
 
 #endif
-

@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
 
@@ -291,11 +291,12 @@ struct fetch * fetch_start(char *url, char *referer,
 	assert(code == CURLE_OK);
 
 	/* use proxy if options dictate this */
-	if (OPTIONS.http)
-	{
-		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXY, OPTIONS.http_proxy);
+	if (option_http_proxy && option_http_proxy_host) {
+		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXY,
+				option_http_proxy_host);
 		assert(code == CURLE_OK);
-		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXYPORT, (long)OPTIONS.http_port);
+		code = curl_easy_setopt(fetch->curl_handle, CURLOPT_PROXYPORT,
+				(long) option_http_proxy_port);
 		assert(code == CURLE_OK);
 	}
 

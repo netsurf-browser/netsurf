@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include <stdbool.h>
@@ -50,8 +50,6 @@ int main(int argc, char** argv)
 void netsurf_init(int argc, char** argv)
 {
   stdout = stderr;
-  options_init(&OPTIONS);
-  options_read(&OPTIONS, NULL);
   gui_init(argc, argv);
   fetch_init();
   cache_init();

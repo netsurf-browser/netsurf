@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
@@ -32,29 +32,24 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	;
 wimp_menu* theme_menu = NULL;
 
-static struct ro_choices choices;
-static struct browser_choices browser_choices;
-static struct proxy_choices proxy_choices;
-static struct theme_choices theme_choices;
-
 
 static void ro_gui_dialog_click_config(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_br(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_prox(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_th(wimp_pointer *pointer);
-static void set_browser_choices(struct browser_choices* newchoices);
-static void get_browser_choices(struct browser_choices* newchoices);
-static void set_proxy_choices(struct proxy_choices* newchoices);
-static void get_proxy_choices(struct proxy_choices* newchoices);
+static void set_browser_choices(void);
+static void get_browser_choices(void);
+static void set_proxy_choices(void);
+static void get_proxy_choices(void);
+static void set_theme_choices(void);
+static void get_theme_choices(void);
 static void load_theme_preview(char* thname);
-static void set_theme_choices(struct theme_choices* newchoices);
-static void get_theme_choices(struct theme_choices* newchoices);
 /*static void ro_gui_destroy_theme_menu(void);*/
 static void ro_gui_build_theme_menu(void);
 static int file_exists(const char* base, const char* dir, const char* leaf, bits ftype);
 static void set_icon_state(wimp_w w, wimp_i i, int state);
 static int get_icon_state(wimp_w w, wimp_i i);
-static void set_icon_string(wimp_w w, wimp_i i, char* text);
+static void set_icon_string(wimp_w w, wimp_i i, const char *text);
 static char* get_icon_string(wimp_w w, wimp_i i);
 static void set_icon_string_i(wimp_w w, wimp_i i, int num);
 
@@ -75,10 +70,9 @@ void ro_gui_dialog_init(void)
 	dialog_config_prox = ro_gui_dialog_create("config_prox");
 	dialog_config_th = ro_gui_dialog_create("config_th");
 
-	options_to_ro(&OPTIONS, &choices);
-	set_browser_choices(&choices.browser);
-	set_proxy_choices(&choices.proxy);
-	set_theme_choices(&choices.theme);
+	set_browser_choices();
+	set_proxy_choices();
+	set_theme_choices();
 }
 
 
@@ -189,8 +183,12 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 {
 	switch (pointer->i) {
 		case ICON_CONFIG_SAVE:
-			ro_to_options(&choices, &OPTIONS);
-			options_write(&OPTIONS, NULL);
+			get_browser_choices();
+			get_proxy_choices();
+			get_theme_choices();
+		        xosfile_create_dir("<Choices$Write>.WWW", 0);
+			xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
+			options_write("<Choices$Write>.WWW.NetSurf.Choices");
 			if (pointer->buttons == wimp_CLICK_SELECT) {
 				ro_gui_dialog_close(dialog_config_br);
 				ro_gui_dialog_close(dialog_config_prox);
@@ -204,9 +202,10 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 				ro_gui_dialog_close(dialog_config_prox);
 				ro_gui_dialog_close(dialog_config_th);
 				ro_gui_dialog_close(dialog_config);
-			} else {
-				options_to_ro(&OPTIONS, &choices);
 			}
+			set_browser_choices();
+			set_proxy_choices();
+			set_theme_choices();
 			break;
 		case ICON_CONFIG_BROWSER:
 			ro_gui_dialog_open(dialog_config_br);
@@ -231,16 +230,13 @@ void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 
 	switch (pointer->i) {
 		case ICON_CONFIG_BR_OK:
-			get_browser_choices(&choices.browser);
-			get_browser_choices(&browser_choices);
 			if (pointer->buttons == wimp_CLICK_SELECT)
 				ro_gui_dialog_close(dialog_config_br);
 			break;
 		case ICON_CONFIG_BR_CANCEL:
 			if (pointer->buttons == wimp_CLICK_SELECT)
 				ro_gui_dialog_close(dialog_config_br);
-			else
-				set_browser_choices(&choices.browser);
+			set_browser_choices();
 			break;
 		case ICON_CONFIG_BR_EXPLAIN:
 			bw = create_browser_window(browser_TITLE | browser_TOOLBAR |
@@ -264,16 +260,13 @@ void ro_gui_dialog_click_config_prox(wimp_pointer *pointer)
 {
 	switch (pointer->i) {
 		case ICON_CONFIG_PROX_OK:
-			get_proxy_choices(&choices.proxy);
-			get_proxy_choices(&proxy_choices);
 			if (pointer->buttons == wimp_CLICK_SELECT)
 				ro_gui_dialog_close(dialog_config_prox);
 			break;
 		case ICON_CONFIG_PROX_CANCEL:
 			if (pointer->buttons == wimp_CLICK_SELECT)
 				ro_gui_dialog_close(dialog_config_prox);
-			else
-				set_proxy_choices(&choices.proxy);
+			set_proxy_choices();
 			break;
 	}
 }
@@ -289,16 +282,13 @@ void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
 
 	switch (pointer->i) {
 		case ICON_CONFIG_TH_OK:
-			get_theme_choices(&choices.theme);
-			get_theme_choices(&theme_choices);
 			if (pointer->buttons == wimp_CLICK_SELECT)
 				ro_gui_dialog_close(dialog_config_th);
 			break;
 		case ICON_CONFIG_TH_CANCEL:
 			if (pointer->buttons == wimp_CLICK_SELECT)
 				ro_gui_dialog_close(dialog_config_th);
-			else
-				set_theme_choices(&choices.theme);
+			set_theme_choices();
 			break;
 		case ICON_CONFIG_TH_NAME:
 		case ICON_CONFIG_TH_PICK:
@@ -333,40 +323,90 @@ void ro_gui_dialog_close(wimp_w close)
 }
 
 
+/**
+ * Update the browser choices dialog with the current options.
+ */
 
-void set_browser_choices(struct browser_choices* newchoices)
+void set_browser_choices(void)
 {
-	memcpy(&browser_choices, newchoices, sizeof(struct browser_choices));
-	set_icon_state(dialog_config_br, ICON_CONFIG_BR_GESTURES, browser_choices.use_mouse_gestures);
-	set_icon_state(dialog_config_br, ICON_CONFIG_BR_FORM, browser_choices.use_riscos_elements);
-	set_icon_state(dialog_config_br, ICON_CONFIG_BR_TEXT, browser_choices.allow_text_selection);
-	set_icon_state(dialog_config_br, ICON_CONFIG_BR_TOOLBAR, browser_choices.show_toolbar);
-	set_icon_state(dialog_config_br, ICON_CONFIG_BR_PREVIEW, browser_choices.show_print_preview);
+	set_icon_state(dialog_config_br, ICON_CONFIG_BR_GESTURES,
+			option_use_mouse_gestures);
+	set_icon_state(dialog_config_br, ICON_CONFIG_BR_TEXT,
+			option_allow_text_selection);
+	set_icon_state(dialog_config_br, ICON_CONFIG_BR_TOOLBAR,
+			option_show_toolbar);
 }
 
-void get_browser_choices(struct browser_choices* newchoices)
+
+/**
+ * Set the current options to the settings in the browser choices dialog.
+ */
+
+void get_browser_choices(void)
 {
-	newchoices->use_mouse_gestures = get_icon_state(dialog_config_br, ICON_CONFIG_BR_GESTURES);
-	newchoices->use_riscos_elements = get_icon_state(dialog_config_br, ICON_CONFIG_BR_FORM);
-	newchoices->allow_text_selection = get_icon_state(dialog_config_br, ICON_CONFIG_BR_TEXT);
-	newchoices->show_toolbar = get_icon_state(dialog_config_br, ICON_CONFIG_BR_TOOLBAR);
-	newchoices->show_print_preview = get_icon_state(dialog_config_br, ICON_CONFIG_BR_PREVIEW);
+	option_use_mouse_gestures = get_icon_state(dialog_config_br,
+			ICON_CONFIG_BR_GESTURES);
+	option_allow_text_selection = get_icon_state(dialog_config_br,
+			ICON_CONFIG_BR_TEXT);
+	option_show_toolbar = get_icon_state(dialog_config_br,
+			ICON_CONFIG_BR_TOOLBAR);
 }
 
-void set_proxy_choices(struct proxy_choices* newchoices)
+
+/**
+ * Update the proxy choices dialog with the current options.
+ */
+
+void set_proxy_choices(void)
 {
-	memcpy(&proxy_choices, newchoices, sizeof(struct proxy_choices));
-	set_icon_state(dialog_config_prox, ICON_CONFIG_PROX_HTTP, proxy_choices.http);
-	set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST, proxy_choices.http_proxy);
-	set_icon_string_i(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT, proxy_choices.http_port);
+	set_icon_state(dialog_config_prox, ICON_CONFIG_PROX_HTTP,
+			option_http_proxy);
+	set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST,
+			option_http_proxy_host);
+	set_icon_string_i(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT,
+			option_http_proxy_port);
 }
 
-void get_proxy_choices(struct proxy_choices* newchoices)
+
+/**
+ * Set the current options to the settings in the proxy choices dialog.
+ */
+
+void get_proxy_choices(void)
 {
-	newchoices->http = get_icon_state(dialog_config_prox, ICON_CONFIG_PROX_HTTP);
-	strncpy(newchoices->http_proxy, get_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST), 255);
-	newchoices->http_port = atoi(get_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT));
+	option_http_proxy = get_icon_state(dialog_config_prox,
+			ICON_CONFIG_PROX_HTTP);
+	free(option_http_proxy_host);
+	option_http_proxy_host = strdup(get_icon_string(dialog_config_prox,
+			ICON_CONFIG_PROX_HTTPHOST));
+	option_http_proxy_port = atoi(get_icon_string(dialog_config_prox,
+			ICON_CONFIG_PROX_HTTPPORT));
 }
+
+
+/**
+ * Update the theme choices dialog with the current options.
+ */
+
+void set_theme_choices(void)
+{
+	set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME,
+			option_theme ? option_theme : "Default");
+	load_theme_preview(option_theme ? option_theme : "Default");
+}
+
+
+/**
+ * Set the current options to the settings in the theme choices dialog.
+ */
+
+void get_theme_choices(void)
+{
+	free(option_theme);
+	option_theme = strdup(get_icon_string(dialog_config_th,
+			ICON_CONFIG_TH_NAME));
+}
+
 
 osspriteop_area* theme_preview = NULL;
 
@@ -469,18 +509,6 @@ void ro_gui_redraw_config_th(wimp_draw* redraw)
 
 }
 
-void set_theme_choices(struct theme_choices* newchoices)
-{
-	memcpy(&theme_choices, newchoices, sizeof(struct theme_choices));
-	set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME, theme_choices.name);
-	load_theme_preview(theme_choices.name);
-}
-
-void get_theme_choices(struct theme_choices* newchoices)
-{
-	strncpy(newchoices->name, get_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME), 255);
-}
-
 
 /**
  * Construct or update theme_menu by scanning THEMES_DIR.
@@ -527,7 +555,7 @@ void ro_gui_build_theme_menu(void)
 		theme_menu = xrealloc(theme_menu, wimp_SIZEOF_MENU(i + 1));
 
 		theme_menu->entries[i].menu_flags = 0;
-		if (strcmp(info.name, theme_choices.name) == 0)
+		if (option_theme && strcmp(info.name, option_theme) == 0)
 			theme_menu->entries[i].menu_flags |= wimp_MENU_TICKED;
 		theme_menu->entries[i].sub_menu = wimp_NO_SUB_MENU;
 		theme_menu->entries[i].icon_flags = wimp_ICON_TEXT |
@@ -554,9 +582,8 @@ void ro_gui_build_theme_menu(void)
 
 void ro_gui_theme_menu_selection(char *theme)
 {
-	strcpy(theme_choices.name, theme);
-	set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME, theme_choices.name);
-	load_theme_preview(theme_choices.name);
+	set_icon_string(dialog_config_th, ICON_CONFIG_TH_NAME, theme);
+	load_theme_preview(theme);
 	wimp_set_icon_state(dialog_config_th, ICON_CONFIG_TH_NAME, 0, 0);
 	wimp_set_icon_state(dialog_config_th, ICON_CONFIG_TH_PREVIEW, 0, 0);
 
@@ -598,14 +625,23 @@ int get_icon_state(wimp_w w, wimp_i i)
 	return (ic.icon.flags & wimp_ICON_SELECTED) != 0;
 }
 
-void set_icon_string(wimp_w w, wimp_i i, char* text)
+
+/**
+ * Set the contents of an icon to a string.
+ *
+ * \param  w     window handle
+ * \param  i     icon handle
+ * \param  text  string (copied)
+ */
+
+void set_icon_string(wimp_w w, wimp_i i, const char *text)
 {
 	wimp_icon_state ic;
 	ic.w = w;
 	ic.i = i;
 	wimp_get_icon_state(&ic);
 	strncpy(ic.icon.data.indirected_text.text, text,
-	        (unsigned int)ic.icon.data.indirected_text.size);
+			(unsigned int)ic.icon.data.indirected_text.size);
 }
 
 char* get_icon_string(wimp_w w, wimp_i i)

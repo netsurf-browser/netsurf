@@ -11,8 +11,8 @@
 
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/browser.h"
-#include "netsurf/desktop/options.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/options.h"
 #include "netsurf/utils/log.h"
 
 typedef enum {
@@ -34,7 +34,7 @@ void ro_gui_mouse_action(gui_window *g) {
   int x, y;
   mouseaction ma = mouseaction_NONE;
 
-  if (OPTIONS.use_mouse_gestures)
+  if (option_use_mouse_gestures)
     ma = ro_gui_try_mouse_action();
 
   if (ma == mouseaction_NONE) {

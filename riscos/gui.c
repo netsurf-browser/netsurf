@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
@@ -33,6 +33,7 @@
 #endif
 #include "netsurf/riscos/constdata.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/options.h"
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
 #endif
@@ -140,18 +141,19 @@ void gui_init(int argc, char** argv)
 	if (getenv("NetSurf$Start_URI_Handler"))
 		xwimp_start_task("Desktop", 0);
 
-	if (OPTIONS.theme) {
+	options_read("Choices:WWW.NetSurf.Choices");
+
+	if (option_theme) {
 		snprintf(theme_fname, sizeof(theme_fname),
-				"<NetSurf$Dir>.Themes.%s", OPTIONS.theme);
+				"<NetSurf$Dir>.Themes.%s", option_theme);
 	        /* check if theme directory exists */
 		if (!is_dir(theme_fname)) {
-			free(OPTIONS.theme);
-			OPTIONS.theme = strdup("Default");
+			free(option_theme);
+			option_theme = 0;
 			sprintf(theme_fname, "<NetSurf$Dir>.Themes.Default");
 		}
 	} else {
-		OPTIONS.theme = strdup("Default");
-		sprintf(theme_fname, "<NetSurf$Dir>.Themes.Default");
+		strcpy(theme_fname, "<NetSurf$Dir>.Themes.Default");
 	}
 	ro_theme_load(theme_fname);
 
