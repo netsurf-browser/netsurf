@@ -141,7 +141,6 @@ int css_convert(struct content *c, unsigned int width, unsigned int height)
 		}
 	}
 	css__delete_buffer(buffer, c->data.css.css->lexer);
-	free(c->data.css.data);
 
 	css_parser_(c->data.css.css->parser, 0, 0, &param);
 	css_parser_Free(c->data.css.css->parser, free);
@@ -199,6 +198,8 @@ void css_destroy(struct content *c)
 {
 	unsigned int i;
 	struct css_node *r;
+
+        xfree(c->data.css.data);
 
 	for (i = 0; i != HASH_SIZE; i++) {
 		for (r = c->data.css.css->rule[i]; r != 0; r = r->next)

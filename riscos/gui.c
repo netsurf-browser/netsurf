@@ -966,15 +966,23 @@ void ro_gui_open_help_page (void)
  */
 void ro_gui_view_source(struct content *content)
 {
-	if (content->type != CONTENT_HTML)
-		return;
 
-	xosfile_save_stamped("<Wimp$Scrap>", 0xfff,
-			content->data.html.source,
-			(content->data.html.source +
-			 content->data.html.length));
-	xos_cli("Filer_Run <Wimp$Scrap>");
-	xosfile_set_type("<Wimp$Scrap>", 0xfaf);
+        if (content->type == CONTENT_HTML) {
+               	xosfile_save_stamped("<Wimp$Scrap>", 0xfff,
+        		        content->data.html.source,
+        		        (content->data.html.source +
+        		        content->data.html.length));
+                xos_cli("Filer_Run <Wimp$Scrap>");
+                xosfile_set_type("<Wimp$Scrap>", 0xfaf);
+        }
+        else if (content->type == CONTENT_CSS) {
+               	xosfile_save_stamped("<Wimp$Scrap>", 0xfff,
+        		        content->data.css.data,
+        		        (content->data.css.data +
+        		        content->data.css.length));
+                xos_cli("Filer_Run <Wimp$Scrap>");
+                xosfile_set_type("<Wimp$Scrap>", 0xf79);
+        }
 }
 
 
