@@ -1216,7 +1216,7 @@ bool layout_table(struct box *table, int available_width,
 	int *excess_y;
 	int table_width, min_width = 0, max_width = 0;
 	int required_width = 0;
-	int x;
+	int x, cp;
 	int table_height = 0;
 	int *xs;  /* array of column x positions */
 	int auto_width;
@@ -1264,6 +1264,11 @@ bool layout_table(struct box *table, int available_width,
 				layout_find_dimensions(available_width,
 						c->style, 0,
 						c->padding, c->border);
+				if (c->style->html_style.cellpadding.type == CSS_CELLPADDING_VALUE)
+				  	for (cp = 0; cp < 4; cp++)
+				  		if (!c->style->padding[cp].override_cellpadding)
+			  	  			c->padding[cp] =
+			  	  				c->style->html_style.cellpadding.value;
 				if (c->style->overflow ==
 						CSS_OVERFLOW_SCROLL ||
 						c->style->overflow ==
@@ -1663,7 +1668,11 @@ bool calculate_widths(struct box *box)
 	/* add margins, border, padding to min, max widths */
 	if (style) {
 		for (side = 1; side != 5; side += 2) {  /* RIGHT, LEFT */
-			if (style->padding[side].padding == CSS_PADDING_LENGTH)
+			if ((box->type == BOX_TABLE_CELL) &&
+					(style->html_style.cellpadding.type == CSS_CELLPADDING_VALUE) &&
+				 	(!style->padding[side].override_cellpadding))
+				extra_fixed += style->html_style.cellpadding.value;
+			else if (style->padding[side].padding == CSS_PADDING_LENGTH)
 				extra_fixed += (int)css_len2px(&style->padding[side].value.length,
 						style);
 			else if (style->padding[side].padding == CSS_PADDING_PERCENT)

@@ -936,6 +936,21 @@ struct css_style * box_get_style(struct content *c,
 				}
 			}
 		}
+		style->html_style.cellpadding.type = CSS_CELLPADDING_VALUE;
+		if ((s = (char *) xmlGetProp(n,
+				(const xmlChar *) "cellpadding"))) {
+			if (!strrchr(s, '%')) {		/* % not implemented */
+				int value = atoi(s);
+				if (0 <= value) {
+					style->html_style.cellpadding.value = value;
+					/* todo: match <td> and <th> rules and don't set if they are */
+					for (i = 0; i < 4; i++)
+						style->padding[i].override_cellpadding = false;
+				}
+			}
+		} else {
+			style->html_style.cellpadding.value = 1;	  
+		}
 	}
 
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style")) != NULL) {

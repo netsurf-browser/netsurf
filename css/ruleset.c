@@ -2665,14 +2665,17 @@ void parse_padding_side(struct css_style * const s, const struct css_node * cons
 		unsigned int i)
 {
 	if (v->type == CSS_NODE_IDENT && v->data_length == 7 &&
-			strncasecmp(v->data, "inherit", 7) == 0)
+			strncasecmp(v->data, "inherit", 7) == 0) {
 		s->padding[i].padding = CSS_PADDING_INHERIT;
-	else if (v->type == CSS_NODE_PERCENTAGE) {
+		s->padding[i].override_cellpadding = true;
+	} else if (v->type == CSS_NODE_PERCENTAGE) {
 		s->padding[i].padding = CSS_PADDING_PERCENT;
 		s->padding[i].value.percent = atof(v->data);
+		s->padding[i].override_cellpadding = true;
 	} else if ((v->type == CSS_NODE_DIMENSION || v->type == CSS_NODE_NUMBER) &&
 			parse_length(&s->padding[i].value.length, v, true) == 0) {
 		s->padding[i].padding = CSS_PADDING_LENGTH;
+		s->padding[i].override_cellpadding = true;
 	}
 }
 
