@@ -80,33 +80,33 @@ ProxyNTLM:NTLM
 
 # Image redraw style
 Display:Display
-ImgStyle0:Use OS
-ImgStyle1:Direct to screen
-ImgStyle2:Dithered
-ImgStyle3:Error diffused
+ImgStyle0:RISC OS nutzen
+ImgStyle1:Direktausgabe
+ImgStyle2:Dithern
+ImgStyle3:Error-Diffusion
 
 # Toolbar menus
 Toolbar:Toolbar
-Icons:Buttons
-IconBack:Back
-IconForward:Forward
+Icons:Schaltknˆpfe
+IconBack:Zur¸ck
+IconForward:Vorw‰rts
 IconStop:Stop
-IconReload:Reload
-IconHome:Home
-IconSearch:Search
+IconReload:erneut laden
+IconHome:Homepage
+IconSearch:Text suchen
 IconHistory:History
-IconScale:Scale view
+IconScale:Vergrˆﬂerung
 IconHotlist:Hotlist
-IconSave:Save
-IconPrint:Print
-IconCreate:Create entry
-IconDelete:Delete entry
-IconLaunch:Launch
-IconOpen:Open directories
-IconExpand:Expand entries
-AddGap:Add separator
-DeleteGap:Remove separator
-LockToolbar:Lock toolbar
+IconSave:Speichern
+IconPrint:Drucken
+IconCreate:Eintrag anlegen
+IconDelete:Eintrag lˆschen
+IconLaunch:Auswahl starten
+IconOpen:Verzeichnisse ˆffnen
+IconExpand:Eintr‰ge expandieren
+AddGap:Separator setzen
+DeleteGap:Separator entfernen
+LockToolbar:Leiste fixieren
 
 # Hotlist menus
 Hotlist:Hotlist
@@ -143,8 +143,8 @@ Downloaded:%s komplett è etwa %s/s è gesamt %s
 Unwritten:Schreiben der Datei ist fehlgeschlagen.
 
 # Print dialog
-PrintSheetFilled:sheet is filled
-PrintSheetsFilled:sheets are filled
+PrintSheetFilled:Druckseite
+PrintSheetsFilled:Druckseiten
 
 # Forms
 Form_Submit:‹bertragen
@@ -242,16 +242,16 @@ SaveText:Webpage
 SaveObject:Object
 SaveLink:Link
 
-ScrollUp:Click the arrow to scroll up
-ScrollPUp:Click to scroll up one page
-ScrollV:Drag the bar to scroll vertically
-ScrollPDown:Click to scroll down one page
-ScrollDown:Click the arrow to scroll down
-ScrollLeft:Click the arrow to scroll left
-ScrollPLeft:Click to scroll left one page
-ScrollH:Drag the bar to scroll horizontally
-ScrollPRight:Click to scroll right one page
-ScrollRight:Click the arrow to scroll right
+ScrollUp:Pfeil anklicken zum Hochscrollen
+ScrollPUp:Anklicken scrollt eine Seite hoch
+ScrollV:Ziehen der Leiste scrollt vertikal
+ScrollPDown:Anklicken scrollt eine Seite nach unten
+ScrollDown:Pfeil anklicken zum Herunterscrollen
+ScrollLeft:Pfeil anklicken scrollt links
+ScrollPLeft:Anklicken scrollt eine Seite nach links
+ScrollH:Ziehen der Leiste scrollt horizontal
+ScrollPRight:Anklicken scrollt eine Seite nach rechts
+ScrollRight:Pfeil anklicken scrollt rechts
 
 # Interactive help
 HelpToolbar0:Schaltet zur¸ck auf die zuvor dargestellte Seite.|MDer Inhalt wird dabei nicht aktualisiert.
