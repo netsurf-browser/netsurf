@@ -85,6 +85,8 @@ union content_msg_data {
 		struct content *object;
 		/** Coordinates to plot object at. */
 		int object_x, object_y;
+		/** Dimensions to plot object with. */
+		int object_width, object_height;
 	} redraw;
 	char *auth_realm;	/**< Realm, for CONTENT_MSG_AUTH. */
 };

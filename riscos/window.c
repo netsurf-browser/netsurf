@@ -275,10 +275,10 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 	wimp_draw update;
 
 	update.w = g->window;
-	update.box.x0 = data->redraw.x * 2;
-	update.box.y0 = -(data->redraw.y + data->redraw.height) * 2;
-	update.box.x1 = (data->redraw.x + data->redraw.width) * 2;
-	update.box.y1 = -data->redraw.y * 2;
+	update.box.x0 = data->redraw.x * 2 * g->scale;
+	update.box.y0 = -(data->redraw.y + data->redraw.height) * 2 * g->scale;
+	update.box.x1 = (data->redraw.x + data->redraw.width) * 2 * g->scale;
+	update.box.y1 = -data->redraw.y * 2 * g->scale;
 	error = xwimp_update_window(&update, &more);
 	if (error) {
 		LOG(("xwimp_update_window: 0x%x: %s",
@@ -299,11 +299,11 @@ void gui_window_update_box(gui_window *g, const union content_msg_data *data)
 			assert(data->redraw.object);
 			content_redraw(data->redraw.object,
 					update.box.x0 - update.xscroll +
-						data->redraw.object_x * 2,
+						data->redraw.object_x * 2 * g->scale,
 					update.box.y1 - update.yscroll -
-						data->redraw.object_y * 2,
-					data->redraw.object->width * 2,
-					data->redraw.object->height * 2,
+						data->redraw.object_y * 2 * g->scale,
+					data->redraw.object_width * 2 * g->scale,
+					data->redraw.object_height * 2 * g->scale,
 					update.clip.x0, update.clip.y0,
 					update.clip.x1 - 1, update.clip.y1 - 1,
 					g->scale);

@@ -161,6 +161,8 @@ void nsgif_animate(void *p)
 	data.redraw.object = c;
 	data.redraw.object_x = 0;
 	data.redraw.object_y = 0;
+	data.redraw.object_width = c->width;
+	data.redraw.object_height = c->height;
 	content_broadcast(c, CONTENT_MSG_REDRAW, data);
 }
 

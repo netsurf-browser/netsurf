@@ -675,10 +675,22 @@ void html_object_callback(content_msg msg, struct content *object,
 
 		case CONTENT_MSG_REDRAW:
 			box_coords(box, &x, &y);
-			data.redraw.x += x;
-			data.redraw.y += y;
-			data.redraw.object_x += x;
-			data.redraw.object_y += y;
+			if (box->object == data.redraw.object) {
+				data.redraw.x = data.redraw.x *
+						box->width / box->object->width;
+				data.redraw.y = data.redraw.y *
+						box->height / box->object->height;
+				data.redraw.width = data.redraw.width *
+						box->width / box->object->width;
+				data.redraw.height = data.redraw.height *
+						box->height / box->object->height;
+				data.redraw.object_width = box->width;
+				data.redraw.object_height = box->height;
+			}
+			data.redraw.x += x + box->padding[LEFT];
+			data.redraw.y += y + box->padding[TOP];
+			data.redraw.object_x += x + box->padding[LEFT];
+			data.redraw.object_y += y + box->padding[TOP];
 			content_broadcast(c, CONTENT_MSG_REDRAW, data);
 			break;
 
