@@ -51,7 +51,6 @@ static unsigned int theme_list_entries = 0;
 static int config_br_icon = -1;
 static const char *ro_gui_choices_lang = 0;
 static const char *ro_gui_choices_alang = 0;
-static struct gui_window *current_zoom_gui;
 
 static const char *ro_gui_proxy_auth_name[] = {
 	"ProxyNone", "ProxyBasic", "ProxyNTLM"
