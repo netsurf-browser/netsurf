@@ -235,6 +235,6 @@ void nspng_redraw(struct content *c, long x, long y,
 			((char *) c->data.png.sprite_area + c->data.png.sprite_area->first),
 			x, (int)(y - height),
 			width, height,
-			(option_filter_sprites?0:(1<<1)) | (option_dither_sprites?0:(1<<2)));
+			(option_filter_sprites?(1<<1):0) | (option_dither_sprites?(1<<2):0));
 }
 #endif
