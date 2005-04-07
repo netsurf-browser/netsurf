@@ -21,9 +21,7 @@
 
 void ro_gui_global_history_initialise(void);
 void ro_gui_global_history_save(void);
-void ro_gui_global_history_show(void);
 void ro_gui_global_history_click(wimp_pointer *pointer);
-bool ro_gui_global_history_keypress(int key);
 void ro_gui_global_history_dialog_click(wimp_pointer *pointer);
 void ro_gui_global_history_menu_closed(void);
 int ro_gui_global_history_help(int x, int y);

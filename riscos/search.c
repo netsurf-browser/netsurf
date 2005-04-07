@@ -21,6 +21,7 @@
 #include "netsurf/render/box.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
@@ -59,15 +60,9 @@ static bool find_occurrences(const char *pattern, int p_len, struct box *cur, bo
  * Open the search dialog
  *
  * \param g the gui window to search
- * \param x x position, for sub_menu true only
- * \param y y position, for sub_menu true only
- * \param sub_menu open as a sub_menu, otherwise persistent
- * \param keypress whether opened by a keypress or not
  */
-void ro_gui_search_open(struct gui_window *g, int x, int y, bool sub_menu, bool keypress)
+void ro_gui_search_prepare(struct gui_window *g)
 {
-	os_error *e;
-
 	assert(g != NULL);
 
 	search_current_window = g;
@@ -81,18 +76,6 @@ void ro_gui_search_open(struct gui_window *g, int x, int y, bool sub_menu, bool 
 				false);
 	ro_gui_set_icon_selected_state(dialog_search,
 				ICON_SEARCH_CASE_SENSITIVE, false);
-
-	if (sub_menu) {
-		e = xwimp_create_sub_menu((wimp_menu *) dialog_search, x, y);
-		if (e) {
-			LOG(("xwimp_create_sub_menu: 0x%x: %s",
-					e->errnum, e->errmess));
-			warn_user("MenuError", e->errmess);
-		}
-	}
-	else {
-		ro_gui_dialog_open_persistant(g->window, dialog_search, !keypress);
-	}
 }
 
 /**
@@ -210,7 +193,7 @@ void end_search(void)
 	search_prev_case_sens = false;
 
 	/* and close the window */
-	xwimp_create_menu((wimp_menu *)-1, 0, 0);
+	ro_gui_menu_closed();
 	ro_gui_dialog_close(dialog_search);
 }
 

@@ -25,6 +25,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/tree.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/treeview.h"
@@ -85,38 +86,41 @@ struct node *dialog_entry_node;
 
 void ro_gui_hotlist_initialise(void) {
 	FILE *fp;
-  	const char *title;
+	const char *title;
 	os_error *error;
 	struct node *node;
 
 	/*	Create our window
 	*/
 	title = messages_get("Hotlist");
-	hotlist_window_definition.title_data.indirected_text.text = strdup(title);
+	hotlist_window_definition.title_data.indirected_text.text =
+			strdup(title);
 	hotlist_window_definition.title_data.indirected_text.validation =
 			(char *) -1;
-	hotlist_window_definition.title_data.indirected_text.size = strlen(title);
-	error = xwimp_create_window(&hotlist_window_definition, &hotlist_window);
+	hotlist_window_definition.title_data.indirected_text.size =
+			strlen(title);
+	error = xwimp_create_window(&hotlist_window_definition,
+			&hotlist_window);
 	if (error) {
 		LOG(("xwimp_create_window: 0x%x: %s",
 				error->errnum, error->errmess));
 		die(error->errmess);
 	}
-	
+
 	/*	Either load or create a hotlist
 	*/
 	fp = fopen("Choices:WWW.NetSurf.Hotlist", "r");
 	if (!fp) {
 		hotlist_tree = calloc(sizeof(struct tree), 1);
 		if (!hotlist_tree) {
-		 	warn_user("NoMemory", 0);
+			warn_user("NoMemory", 0);
 			return;
 		}
 		hotlist_tree->root = tree_create_folder_node(NULL, "Root");
 		if (!hotlist_tree->root) {
-		  	warn_user("NoMemory", 0);
-		  	free(hotlist_tree);
-		  	hotlist_tree = NULL;
+			warn_user("NoMemory", 0);
+			free(hotlist_tree);
+			hotlist_tree = NULL;
 		}
 		hotlist_tree->root->expanded = true;
 		node = tree_create_folder_node(hotlist_tree->root, "NetSurf");
@@ -127,7 +131,7 @@ void ro_gui_hotlist_initialise(void) {
 				time(NULL), -1, 0);
 		tree_initialise(hotlist_tree);
 	} else {
-	  	fclose(fp);
+		fclose(fp);
 		hotlist_tree = options_load_tree("Choices:WWW.NetSurf.Hotlist");
 	}
 	if (!hotlist_tree) return;
@@ -136,9 +140,11 @@ void ro_gui_hotlist_initialise(void) {
 
 	/*	Create our toolbar
 	*/
-	hotlist_tree->toolbar = ro_gui_theme_create_toolbar(NULL, THEME_HOTLIST_TOOLBAR);
+	hotlist_tree->toolbar = ro_gui_theme_create_toolbar(NULL,
+			THEME_HOTLIST_TOOLBAR);
 	if (hotlist_tree->toolbar)
-		ro_gui_theme_attach_toolbar(hotlist_tree->toolbar, hotlist_window);
+		ro_gui_theme_attach_toolbar(hotlist_tree->toolbar,
+				hotlist_window);
 }
 
 
@@ -146,8 +152,8 @@ void ro_gui_hotlist_initialise(void) {
  * Perform a save to the default file
  */
 void ro_gui_hotlist_save(void) {
-  	os_error *error;
-  
+	os_error *error;
+
 	if (!hotlist_tree) return;
 
 	/*	Save to our file
@@ -162,15 +168,6 @@ void ro_gui_hotlist_save(void) {
 
 
 /**
- * Shows the hotlist window.
- */
-void ro_gui_hotlist_show(void) {
-  	ro_gui_tree_show(hotlist_tree);
-	ro_gui_menu_prepare_hotlist();
-}
-
-
-/**
  * Respond to a mouse click
  *
  * \param pointer  the pointer state
@@ -178,32 +175,10 @@ void ro_gui_hotlist_show(void) {
 void ro_gui_hotlist_click(wimp_pointer *pointer) {
 	ro_gui_tree_click(pointer, hotlist_tree);
 	if (pointer->buttons == wimp_CLICK_MENU)
-		ro_gui_create_menu(hotlist_menu, pointer->pos.x,
-				pointer->pos.y, NULL);
+		ro_gui_menu_create(hotlist_menu, pointer->pos.x,
+				pointer->pos.y, pointer->w);
 	else
-		ro_gui_menu_prepare_hotlist();
-}
-
-
-/**
- * Respond to a keypress
- *
- * \param key  the key pressed
- */
-bool ro_gui_hotlist_keypress(int key) {
-  	bool result = ro_gui_tree_keypress(key, hotlist_tree);
-	ro_gui_menu_prepare_hotlist();
-	return result;
-}
-
-
-/**
- * Handles a menu closed event
- */
-void ro_gui_hotlist_menu_closed(void) {
-	ro_gui_tree_menu_closed(hotlist_tree);
-	current_menu = NULL;
-	ro_gui_menu_prepare_hotlist();
+		ro_gui_menu_prepare_action(pointer->w, TREE_SELECTION, false);
 }
 
 
@@ -223,28 +198,31 @@ void hotlist_visited(struct content *content) {
  * Informs the hotlist that some content has been visited
  *
  * \param content  the content visited
- * \param tree     the tree to find the URL data from
- * \param node     the node to update siblings and children of
+ * \param tree	   the tree to find the URL data from
+ * \param node	   the node to update siblings and children of
  */
 void ro_gui_hotlist_visited(struct content *content, struct tree *tree,
 		struct node *node) {
 	struct node_element *element;
-	
+
 	for (; node; node = node->next) {
 		if (!node->folder) {
 			element = tree_find_element(node, TREE_ELEMENT_URL);
-			if ((element) && (!strcmp(element->text, content->url))) {
-				element->user_data = ro_content_filetype(content);
+			if ((element) && (!strcmp(element->text,
+					content->url))) {
+				element->user_data =
+						ro_content_filetype(content);
 				element = tree_find_element(node,
-						TREE_ELEMENT_VISITS);  
+						TREE_ELEMENT_VISITS);
 				if (element)
 					element->user_data += 1;
 				element = tree_find_element(node,
 						TREE_ELEMENT_LAST_VISIT);
 				if (element)
 					element->user_data = time(NULL);
-		  		tree_update_URL_node(node);
-				tree_handle_node_changed(tree, node, true, false);
+				tree_update_URL_node(node);
+				tree_handle_node_changed(tree, node, true,
+						false);
 			}
 		}
 		if (node->child)
@@ -256,16 +234,19 @@ void ro_gui_hotlist_visited(struct content *content, struct tree *tree,
 /**
  * Prepares the folder dialog contents for a node
  *
- * \param node     the node to prepare the dialogue for, or NULL
+ * \param node	   the node to prepare the dialogue for, or NULL
  */
 void ro_gui_hotlist_prepare_folder_dialog(struct node *node) {
 	dialog_folder_node = node;
 	if (node) {
-		ro_gui_set_window_title(dialog_folder, messages_get("EditFolder"));
+		ro_gui_set_window_title(dialog_folder,
+				messages_get("EditFolder"));
 		ro_gui_set_icon_string(dialog_folder, 1, node->data.text);
 	} else {
-		ro_gui_set_window_title(dialog_folder, messages_get("NewFolder"));
-		ro_gui_set_icon_string(dialog_folder, 1, messages_get("Folder"));
+		ro_gui_set_window_title(dialog_folder,
+				messages_get("NewFolder"));
+		ro_gui_set_icon_string(dialog_folder, 1,
+				messages_get("Folder"));
 	}
 }
 
@@ -273,16 +254,16 @@ void ro_gui_hotlist_prepare_folder_dialog(struct node *node) {
 /**
  * Prepares the entry dialog contents for a node
  *
- * \param node     the node to prepare the dialogue for, or NULL
+ * \param node	   the node to prepare the dialogue for, or NULL
  */
 void ro_gui_hotlist_prepare_entry_dialog(struct node *node) {
-  	struct node_element *element;
+	struct node_element *element;
 
 	dialog_entry_node = node;
 	if (node) {
 		ro_gui_set_window_title(dialog_entry, messages_get("EditLink"));
 		ro_gui_set_icon_string(dialog_entry, 1, node->data.text);
-	  	element = tree_find_element(node, TREE_ELEMENT_URL);
+		element = tree_find_element(node, TREE_ELEMENT_URL);
 		if (element)
 			ro_gui_set_icon_string(dialog_entry, 3, element->text);
 		else
@@ -301,8 +282,8 @@ void ro_gui_hotlist_prepare_entry_dialog(struct node *node) {
  * \param pointer  the pointer state
  */
 void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
-  	struct node_element *element;
-  	struct node *node;
+	struct node_element *element;
+	struct node *node;
 	char *title = NULL;
 	char *url = NULL;
 	char *old_value;
@@ -326,12 +307,14 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 	if (icon == close_icon) {
 		if (pointer->buttons == wimp_CLICK_SELECT) {
 			ro_gui_dialog_close(pointer->w);
-  		  	xwimp_create_menu((wimp_menu *)-1, 0, 0);
+			xwimp_create_menu((wimp_menu *)-1, 0, 0);
 		} else {
 			if (pointer->w == dialog_folder)
-				ro_gui_hotlist_prepare_folder_dialog(dialog_folder_node);
+				ro_gui_hotlist_prepare_folder_dialog(
+						dialog_folder_node);
 			else
-				ro_gui_hotlist_prepare_entry_dialog(dialog_entry_node);
+				ro_gui_hotlist_prepare_entry_dialog(
+						dialog_entry_node);
 		}
 		return;
 	}
@@ -353,23 +336,25 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 	/*	Update/insert our data
 	*/
 	if (!node) {
-	  	if (pointer->w == dialog_folder) {
-			dialog_folder_node = tree_create_folder_node(hotlist_tree->root,
-	  				title);
-	  		node = dialog_folder_node;
-	  	} else {
-	  		dialog_entry_node = tree_create_URL_node(hotlist_tree->root,
-	  				title, url, 0xfaf, time(NULL), -1, 0);
-	  		node = dialog_entry_node;
-	  	}
+		if (pointer->w == dialog_folder) {
+			dialog_folder_node = tree_create_folder_node(
+					hotlist_tree->root,
+					title);
+			node = dialog_folder_node;
+		} else {
+			dialog_entry_node = tree_create_URL_node(
+					hotlist_tree->root,
+					title, url, 0xfaf, time(NULL), -1, 0);
+			node = dialog_entry_node;
+		}
 		tree_handle_node_changed(hotlist_tree, node, true, false);
-	  	ro_gui_tree_scroll_visible(hotlist_tree, &node->data);
+		ro_gui_tree_scroll_visible(hotlist_tree, &node->data);
 		tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP,
 				0, NODE_INSTEP, 16384);
 	} else {
 		if (url) {
-		  	element = tree_find_element(node, TREE_ELEMENT_URL);
-		  	if (element) {
+			element = tree_find_element(node, TREE_ELEMENT_URL);
+			if (element) {
 				old_value = element->text;
 				res = url_normalize(url, &element->text);
 				if (res != URL_FUNC_OK) {
@@ -394,8 +379,8 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer) {
 	}
 
 	if (pointer->buttons == wimp_CLICK_SELECT) {
-	  	xwimp_create_menu((wimp_menu *)-1, 0, 0);
 		ro_gui_dialog_close(pointer->w);
+	  	ro_gui_menu_closed();
 		return;
 	}
 	if (pointer->w == dialog_folder)

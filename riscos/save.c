@@ -22,6 +22,7 @@
 #include "netsurf/desktop/save_text.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/save_draw.h"
 #include "netsurf/riscos/thumbnail.h"
@@ -79,14 +80,12 @@ struct gui_save_table_entry gui_save_table[] = {
  * \param  parent     parent window for persistent box, for sub_menu false only
  */
 
-void ro_gui_save_open(gui_save_type save_type, struct content *c,
-		bool sub_menu, int x, int y, wimp_w parent, bool keypress)
+void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
 {
 	char icon_buf[20];
 	const char *icon = icon_buf;
 	const char *name = "";
 	const char *nice;
-	os_error *error;
 	url_func_result res;
 
 	assert((save_type == GUI_SAVE_HOTLIST_EXPORT_HTML) ||
@@ -111,21 +110,7 @@ void ro_gui_save_open(gui_save_type save_type, struct content *c,
 			name = nice;
         }
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);
-
-	/* open sub menu or persistent dialog */
-	if (sub_menu) {
-		error = xwimp_create_sub_menu((wimp_menu *) dialog_saveas,
-				x, y);
-		if (error) {
-			LOG(("xwimp_create_sub_menu: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("MenuError", error->errmess);
-		}
-	} else {
-		ro_gui_dialog_open_persistant(parent, dialog_saveas, !keypress);
-	}
 }
-
 
 /**
  * Handle clicks in the save dialog.
@@ -332,6 +317,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 	/*	Close the save window
 	*/
 	ro_gui_dialog_close(dialog_saveas);
+	ro_gui_menu_closed();
 
 	/* Ack successful save with message_DATA_LOAD */
 	message->action = message_DATA_LOAD;
@@ -343,15 +329,6 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 				error->errnum, error->errmess));
 		warn_user("SaveError", error->errmess);
 	}
-
-	error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
-	if (error) {
-		LOG(("xwimp_create_menu: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("MenuError", error->errmess);
-	}
-
-	gui_save_content = 0;
 }
 
 

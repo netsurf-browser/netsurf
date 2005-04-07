@@ -11,6 +11,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/utils/log.h"
 
@@ -39,7 +40,7 @@ void ro_gui_mouse_action(struct gui_window *g) {
   if (ma == mouseaction_NONE) {
 
     os_mouse(&x, &y, NULL, NULL);
-    ro_gui_create_menu(browser_menu, x - 64, y, g);
+    ro_gui_menu_create(browser_menu, x - 64, y, g->window);
   }
   else {
 

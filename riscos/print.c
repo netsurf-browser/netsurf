@@ -22,6 +22,7 @@
 #include "netsurf/render/html.h"
 #include "netsurf/render/layout.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/print.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
@@ -66,16 +67,11 @@ static bool print_find_fonts(struct box *box, struct print_font **print_fonts,
 		int *font_count);
 
 /**
- * Open the print dialog
+ * Prepares all aspects of the print dialog prior to opening.
  *
  * \param g parent window
- * \param x leftmost edge of dialog (only if sub_menu == true)
- * \param y topmost edge of dialog (as above)
- * \param sub_menu open window as a submenu or as a persistent dialog
- * \param keypress whether we were opened by a keypress
  */
-void ro_gui_print_open(struct gui_window *g, int x, int y, bool sub_menu, bool keypress)
-{
+void ro_gui_print_prepare(struct gui_window *g) {
 	char *pdName;
 	bool printers_exists = true;
 	os_error *e;
@@ -123,19 +119,8 @@ void ro_gui_print_open(struct gui_window *g, int x, int y, bool sub_menu, bool k
 		ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_PRINT, false);
 		ro_gui_set_window_title(dialog_print, pdName);
 	}
-
-	if (sub_menu) {
-		e = xwimp_create_sub_menu((wimp_menu *) dialog_print, x, y);
-		if (e) {
-			LOG(("xwimp_create_sub_menu: 0x%x: %s",
-					e->errnum, e->errmess));
-			warn_user("MenuError", e->errmess);
-		}
-	}
-	else {
-		ro_gui_dialog_open_persistant(g->window, dialog_print, !keypress);
-	}
 }
+
 
 /**
  * Handle mouse clicks in print dialog
@@ -468,7 +453,7 @@ void print_cleanup(void)
 	print_text_black = false;
 	print_prev_message = 0;
 	print_max_sheets = -1;
-	xwimp_create_menu((wimp_menu *)-1, 0, 0);
+	ro_gui_menu_closed();
 	ro_gui_dialog_close(dialog_print);
 }
 

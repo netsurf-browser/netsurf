@@ -21,12 +21,6 @@
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 
-struct eig_factors {
-	int xeig;
-	int yeig;
-};
-
-
 int ro_get_hscroll_height(wimp_w w);
 int ro_get_vscroll_width(wimp_w w);
 struct eig_factors ro_read_eig_factors(os_mode mode);
@@ -56,4 +50,7 @@ wimp_w ro_gui_set_window_background_colour(wimp_w window, wimp_colour background
 void ro_gui_set_icon_colours(wimp_w window, wimp_i icon,
 		wimp_colour foreground, wimp_colour background);
 void ro_gui_user_redraw(wimp_draw *redraw, bool user_fill, os_colour user_colour);
+void ro_gui_wimp_update_window_furniture(wimp_w w, wimp_window_flags bic_mask,
+		wimp_window_flags xor_mask);
+
 #endif

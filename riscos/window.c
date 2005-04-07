@@ -33,6 +33,7 @@
 #include "netsurf/riscos/buffer.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/thumbnail.h"
@@ -49,8 +50,6 @@
 static struct gui_window *window_list = 0;
 /** GUI window which is being redrawn. Valid only during redraw. */
 struct gui_window *ro_gui_current_redraw_gui;
-/** GUI window which the current zoom window refers to. */
-struct gui_window *ro_gui_current_zoom_gui;
 
 static float scale_snap_to[] = {0.10, 0.125, 0.25, 0.333, 0.5, 0.75,
 				1.0,
@@ -212,7 +211,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window.title_data.indirected_text.size = 255;
 	window.icon_count = 0;
 	if (open_centred) {
-		scroll_width = ro_get_vscroll_width(g->window);
+		scroll_width = ro_get_vscroll_width(NULL);
 		window.visible.x0 -= scroll_width;
 	}
 
@@ -1199,12 +1198,6 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 
 void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 {
-	struct node *node;
-	char url[80];
-
-	/*	Store the toolbar
-	*/
-	current_toolbar = g->toolbar;
 	
 	/* try to close url-completion */
 	ro_gui_url_complete_close(g, pointer->i);
@@ -1212,8 +1205,8 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 	/*	Handle Menu clicks
 	*/
 	if (pointer->buttons == wimp_CLICK_MENU) {
-		ro_gui_create_menu(toolbar_menu, pointer->pos.x,
-				pointer->pos.y, g);
+		ro_gui_menu_create(browser_toolbar_menu, pointer->pos.x,
+				pointer->pos.y, g->window);
 		return;
 	}
 	
@@ -1228,98 +1221,79 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 	*/
 	switch (pointer->i) {
 		case ICON_TOOLBAR_BACK:
-			history_back(g->bw, g->bw->history);
+		  	ro_gui_menu_handle_action(g->window,
+		  			BROWSER_NAVIGATE_BACK, true);
 			break;
+
 		case ICON_TOOLBAR_FORWARD:
-			history_forward(g->bw, g->bw->history);
+		  	ro_gui_menu_handle_action(g->window,
+		  			BROWSER_NAVIGATE_FORWARD, true);
 			break;
 
 		case ICON_TOOLBAR_STOP:
-			browser_window_stop(g->bw);
+		  	ro_gui_menu_handle_action(g->window,
+		  			BROWSER_NAVIGATE_STOP, true);
 			break;
 
 		case ICON_TOOLBAR_RELOAD:
 			if (pointer->buttons == wimp_CLICK_SELECT)
-				browser_window_reload(g->bw, false);
+			  	ro_gui_menu_handle_action(g->window,
+			  			BROWSER_NAVIGATE_RELOAD, true);
 			else if (pointer->buttons == wimp_CLICK_ADJUST)
-				browser_window_reload(g->bw, true);
+			  	ro_gui_menu_handle_action(g->window,
+			  			BROWSER_NAVIGATE_RELOAD_ALL, true);
 			break;
 
 		case ICON_TOOLBAR_HISTORY:
-			if (pointer->buttons == wimp_CLICK_SELECT) {
-				ro_gui_history_open(g->bw, g->bw->history, true);
-			} else if (global_history_tree) {
-				ro_gui_global_history_show();
-			}
+			if (pointer->buttons == wimp_CLICK_SELECT)
+			  	ro_gui_menu_handle_action(g->window,
+			  			HISTORY_SHOW_LOCAL, true);
+			else
+			  	ro_gui_menu_handle_action(g->window,
+			  			HISTORY_SHOW_GLOBAL, true);
 			break;
 		case ICON_TOOLBAR_HOME:
-			if (option_homepage_url && option_homepage_url[0]) {
-				if (pointer->buttons == wimp_CLICK_SELECT) {
-					browser_window_go(g->bw,
-							option_homepage_url, 0);
-				} else {
-					browser_window_create(option_homepage_url, NULL, 0);
-				}
-			} else {
-				snprintf(url, sizeof url,
-						"file:/<NetSurf$Dir>/Docs/intro_%s",
-						option_language);
-				if (pointer->buttons == wimp_CLICK_SELECT) {
-					browser_window_go(g->bw, url, 0);
-				} else {
-					browser_window_create(url, NULL, 0);
-				}
-			}
+		  	ro_gui_menu_handle_action(g->window,
+		  			BROWSER_NAVIGATE_HOME, true);
 			break;
 #ifdef WITH_SEARCH
 		case ICON_TOOLBAR_SEARCH:
-			ro_gui_search_open(g, 0, 0, false, true);
+			ro_gui_menu_handle_action(g->window,
+					BROWSER_FIND_TEXT, true);
 			break;
 #endif
 		case ICON_TOOLBAR_SCALE:
-			current_gui = g;
-			ro_gui_menu_prepare_scale();
-			ro_gui_dialog_open_persistant(g->window, dialog_zoom, true);
+			ro_gui_menu_handle_action(g->window,
+					BROWSER_SCALE_VIEW, true);
 			break;
 
 		case ICON_TOOLBAR_BOOKMARK:
-			if ((pointer->buttons == wimp_CLICK_ADJUST) && (hotlist_tree)) {
-				node = tree_create_URL_node(hotlist_tree->root,
-						g->bw->current_content->title,
-						g->bw->current_content->url,
-						ro_content_filetype(g->bw->current_content),
-						time(NULL), -1, 0);
-				if (node) {
-					tree_redraw_area(hotlist_tree,
-							node->box.x - NODE_INSTEP, 0,
-							NODE_INSTEP, 16384);
-					tree_handle_node_changed(hotlist_tree, node, false,
-							true);
-					ro_gui_tree_scroll_visible(hotlist_tree, &node->data);
-				}
-			} else if (hotlist_tree) {
-				ro_gui_hotlist_show();
-			}
+			if (pointer->buttons == wimp_CLICK_ADJUST)
+				ro_gui_menu_handle_action(g->window,
+						HOTLIST_ADD_URL, true);
+			else
+				ro_gui_menu_handle_action(g->window,
+						HOTLIST_SHOW, true);
 			break;
 
 		case ICON_TOOLBAR_SAVE:
-			current_gui = g;
-			if (g->bw->current_content)
-				ro_gui_save_open(GUI_SAVE_SOURCE,
-						g->bw->current_content,
-						false, 0, 0, g->window, false);
+			if (pointer->buttons == wimp_CLICK_ADJUST)
+				ro_gui_menu_handle_action(g->window,
+						BROWSER_SAVE_COMPLETE, true);
+			else
+				ro_gui_menu_handle_action(g->window,
+						BROWSER_SAVE, true);
 			break;
 		case ICON_TOOLBAR_PRINT:
-			current_gui = g;
-			ro_gui_print_open(g, 0, 0, false, false);
+		  	ro_gui_menu_handle_action(g->window,
+		  			BROWSER_PRINT, true);
 			break;
 		case ICON_TOOLBAR_URL:
 			ro_gui_url_complete_start(g);
 			break;
 		case ICON_TOOLBAR_SUGGEST:
-		  	current_gui = g;
 			ro_gui_popup_menu(url_suggest_menu,
-					current_toolbar->toolbar_handle,
+					g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_SUGGEST);
 			break;
 	}
@@ -1403,8 +1377,8 @@ void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 	}
 
 	if (pointer->buttons == wimp_CLICK_MENU)
-		ro_gui_create_menu(browser_menu, pointer->pos.x,
-				pointer->pos.y, g);
+		ro_gui_menu_create(browser_menu, pointer->pos.x,
+				pointer->pos.y, pointer->w);
 	else if (pointer->buttons == wimp_CLICK_SELECT)
 		browser_window_mouse_click(g->bw,
 			(shift == 0xff) ? BROWSER_MOUSE_CLICK_1_MOD
@@ -1424,6 +1398,7 @@ void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 
 void gui_window_start_throbber(struct gui_window *g)
 {
+  	ro_gui_menu_objects_moved();
 	ro_gui_prepare_navigate(g);
 	xos_read_monotonic_time(&g->throbtime);
 	g->throbber = 0;
@@ -1559,14 +1534,12 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 
 	switch (key) {
 		case wimp_KEY_F1:	/* Help. */
-			ro_gui_open_help_page("docs");
-			return true;
+			return ro_gui_menu_handle_action(g->window,
+					HELP_OPEN_CONTENTS, false);
 
 		case wimp_KEY_CONTROL + wimp_KEY_F1:
-			current_gui = g;
-			ro_gui_menu_prepare_pageinfo();
-			ro_gui_dialog_open_persistant(g->window, dialog_pageinfo, false);
-			return true;
+			return ro_gui_menu_handle_action(g->window,
+					BROWSER_PAGE_INFO, false);
 
 		case wimp_KEY_F2:
 			if (!g->toolbar)
@@ -1586,59 +1559,49 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			return true;
 
 		case wimp_KEY_F3:
-			current_gui = g;
-			ro_gui_save_open(GUI_SAVE_SOURCE, content,
-					false, 0, 0, g->window, true);
-			return true;
+			return ro_gui_menu_handle_action(g->window,
+					BROWSER_SAVE, false);
 
 		case wimp_KEY_CONTROL + wimp_KEY_F3:
-			current_gui = g;
-			ro_gui_save_open(GUI_SAVE_TEXT, content,
-					false, 0, 0, g->window, true);
-			return true;
+			return ro_gui_menu_handle_action(g->window,
+					BROWSER_EXPORT_TEXT, false);
 
 		case wimp_KEY_SHIFT + wimp_KEY_F3:
-			current_gui = g;
-			ro_gui_save_open(GUI_SAVE_COMPLETE, content,
-					false, 0, 0, g->window, true);
-			return true;
+			return ro_gui_menu_handle_action(g->window,
+					BROWSER_SAVE_COMPLETE, false);
 
 		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F3:
-			current_gui = g;
-			ro_gui_save_open(GUI_SAVE_DRAW, content,
-					false, 0, 0, g->window, true);
-			return true;
+			return ro_gui_menu_handle_action(g->window,
+					BROWSER_EXPORT_DRAW, false);
 
 #ifdef WITH_SEARCH
 		case wimp_KEY_F4:	/* Search */
-			ro_gui_search_open(g, 0, 0, false, true);
-			return true;
+			return ro_gui_menu_handle_action(g->window,
+					BROWSER_FIND_TEXT, false);
 #endif
 
-		case wimp_KEY_F5:	/* Refresh. */
-			browser_window_reload(g->bw, false);
-			return true;
+		case wimp_KEY_F5:	/* Reload */
+			return ro_gui_menu_handle_action(g->window,
+					BROWSER_NAVIGATE_RELOAD, false);
 
-		case wimp_KEY_F6:	/* Hotlist. */
-			ro_gui_hotlist_show();
-			return true;
+		case wimp_KEY_CONTROL + wimp_KEY_F5:	/* Full reload */
+			return ro_gui_menu_handle_action(g->window,
+					BROWSER_NAVIGATE_RELOAD_ALL, false);
 
-		case wimp_KEY_F7:	/* Show history. */
-			current_gui = g;
-			ro_gui_history_open(current_gui->bw,
-					current_gui->bw->history, false);
-			return true;
+		case wimp_KEY_F6:	/* Hotlist */
+			return ro_gui_menu_handle_action(g->window,
+					HOTLIST_SHOW, false);
 
-		case wimp_KEY_CONTROL + wimp_KEY_F7:	/* Show global history. */
-			ro_gui_global_history_show();
-			return true;
+		case wimp_KEY_F7:	/* Show local history */
+			return ro_gui_menu_handle_action(g->window,
+					HISTORY_SHOW_LOCAL, false);
 
-		case wimp_KEY_F8:	/* View source. */
+		case wimp_KEY_CONTROL + wimp_KEY_F7:	/* Show global history */
+			return ro_gui_menu_handle_action(g->window,
+					HISTORY_SHOW_GLOBAL, false);
+
+		case wimp_KEY_F8:	/* View source */
 			ro_gui_view_source(content);
-			return true;
-
-		case wimp_KEY_CONTROL + wimp_KEY_F8:	/* Dump url_store. */
-			url_store_dump();
 			return true;
 
 		case wimp_KEY_F9:	/* Dump content for debugging. */
@@ -1654,11 +1617,13 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			}
 			return true;
 
-		case wimp_KEY_F11:	/* Zoom */
-			current_gui = g;
-			ro_gui_menu_prepare_scale();
-			ro_gui_dialog_open_persistant(g->window, dialog_zoom, false);
+		case wimp_KEY_CONTROL + wimp_KEY_F9:	/* Dump url_store. */
+			url_store_dump();
 			return true;
+
+		case wimp_KEY_F11:	/* Zoom */
+			return ro_gui_menu_handle_action(g->window,
+					BROWSER_SCALE_VIEW, false);
 
 		case wimp_KEY_SHIFT + wimp_KEY_F11:	/* Toggle display of box outlines. */
 			html_redraw_debug = !html_redraw_debug;
@@ -1685,52 +1650,46 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			  	ro_gui_url_complete_start(g);
 				return true;
 			}
-			browser_window_stop(g->bw);
-			return true;
+			return ro_gui_menu_handle_action(g->window,
+					BROWSER_NAVIGATE_STOP, false);
 
 		case 14:	/* CTRL+N */
-			current_gui = g;
-			browser_window_create(current_gui->bw->current_content->url,
-					current_gui->bw, 0);
-			return true;
-		case 18:	/* CTRL+R */
-			browser_window_reload(g->bw, false);
-			return true;
+			return ro_gui_menu_handle_action(g->window,
+					BROWSER_NEW_WINDOW, false);
 
 		case 17:       /* CTRL+Q (Zoom out) */
 		case 23:       /* CTRL+W (Zoom in) */
-			current_gui = g;
-			old_scale = current_gui->option.scale;
+			old_scale = g->option.scale;
 			if (key == 17) {
 				for (int i = SCALE_SNAP_TO_SIZE - 1; i >= 0; i--)
 					if (scale_snap_to[i] < old_scale) {
-						current_gui->option.scale = scale_snap_to[i];
+						g->option.scale = scale_snap_to[i];
 						break;
 					}	
 			} else {
 				for (unsigned int i = 0; i < SCALE_SNAP_TO_SIZE; i++)
 					if (scale_snap_to[i] > old_scale) {
-						current_gui->option.scale = scale_snap_to[i];
+						g->option.scale = scale_snap_to[i];
 						break;
 					}	
                         }
-			if (current_gui->option.scale < scale_snap_to[0])
-				current_gui->option.scale = scale_snap_to[0];
-			if (current_gui->option.scale > scale_snap_to[SCALE_SNAP_TO_SIZE - 1])
-				current_gui->option.scale =
+			if (g->option.scale < scale_snap_to[0])
+				g->option.scale = scale_snap_to[0];
+			if (g->option.scale > scale_snap_to[SCALE_SNAP_TO_SIZE - 1])
+				g->option.scale =
 						scale_snap_to[SCALE_SNAP_TO_SIZE - 1];
-			if (old_scale != current_gui->option.scale) {
-				current_gui->reformat_pending = true;
+			if (old_scale != g->option.scale) {
+				g->reformat_pending = true;
 				if ((content) && (content->type != CONTENT_HTML))
-					browser_window_update(current_gui->bw, false);
+					browser_window_update(g->bw, false);
 				gui_reformat_pending = true;
 			}
 			return true;
 
 #ifdef WITH_PRINT
 		case wimp_KEY_PRINT:
-			ro_gui_print_open(g, 0, 0, false, true);
-			return true;
+		  	return ro_gui_menu_handle_action(g->window,
+		  			BROWSER_PRINT, false);
 #endif
 
 		case wimp_KEY_UP:
@@ -2128,6 +2087,7 @@ void gui_window_set_pointer(gui_pointer_shape shape)
 
 void gui_window_new_content(struct gui_window *g)
 {
+  	ro_gui_menu_objects_moved();
 	ro_gui_prepare_navigate(g);
 	ro_gui_dialog_close_persistant(g->window);
 }

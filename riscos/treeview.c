@@ -22,6 +22,7 @@
 #include "oslib/wimp.h"
 #include "netsurf/desktop/tree.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/treeview.h"
@@ -812,6 +813,7 @@ void ro_gui_tree_menu_closed(struct tree *tree) {
 		tree->temp_selection->selected = false;
 		tree_handle_node_element_changed(tree, &tree->temp_selection->data);
 		tree->temp_selection = NULL;
+		ro_gui_menu_prepare_action((wimp_w)tree->handle, TREE_SELECTION, false);
 	}
 }
 
@@ -823,18 +825,16 @@ void ro_gui_tree_menu_closed(struct tree *tree) {
  */
 void ro_gui_tree_toolbar_click(wimp_pointer* pointer, struct tree *tree) {
 	struct node *node;
-	bool refresh = true;
 
-	current_toolbar = tree->toolbar;
 	ro_gui_tree_stop_edit(tree);
 
 	if (pointer->buttons == wimp_CLICK_MENU) {
-		ro_gui_create_menu(toolbar_menu, pointer->pos.x,
-				pointer->pos.y, NULL);
+		ro_gui_menu_create(tree_toolbar_menu, pointer->pos.x,
+				pointer->pos.y, (wimp_w)tree->handle);
 		return;
 	}
 
-	if (current_toolbar->editor) {
+	if (tree->toolbar->editor) {
 		ro_gui_theme_toolbar_editor_click(tree->toolbar, pointer);
 		return; 
 	}
@@ -866,16 +866,7 @@ void ro_gui_tree_toolbar_click(wimp_pointer* pointer, struct tree *tree) {
 			ro_gui_tree_launch_selected(tree);
 			break;
 	}
-	switch (tree->toolbar->type) {
-		case THEME_HOTLIST_TOOLBAR:
-			ro_gui_menu_prepare_hotlist();
-			break; 
-		case THEME_HISTORY_TOOLBAR:
-			ro_gui_menu_prepare_global_history();
-			break; 	  
-		default:
-			break;
-	}
+	ro_gui_menu_prepare_action((wimp_w)tree->handle, TREE_SELECTION, false);
 }
 
 
@@ -1140,7 +1131,7 @@ void ro_gui_tree_open(wimp_open *open, struct tree *tree) {
 	}
 	if (tree->toolbar)
 		ro_gui_theme_process_toolbar(tree->toolbar, -1);
-
+	ro_gui_menu_prepare_action((wimp_w)tree->handle, TREE_SELECTION, false);
 }
 
 
@@ -1164,15 +1155,21 @@ bool ro_gui_tree_keypress(int key, struct tree *tree) {
 				tree->temp_selection = NULL;
 				tree_set_node_selected(tree, tree->root, true);
 			}
+			ro_gui_menu_prepare_action((wimp_w)tree->handle,
+					TREE_SELECTION, true);
 			return true;
 		case 24:	/* CTRL+X */
 			ro_gui_tree_stop_edit(tree);
 			tree_delete_selected_nodes(tree, tree->root);
+			ro_gui_menu_prepare_action((wimp_w)tree->handle,
+					TREE_SELECTION, true);
 			return true;
 		case 26:	/* CTRL+Z */
 			tree->temp_selection = NULL;
 			ro_gui_tree_stop_edit(tree);
 			tree_set_node_selected(tree, tree->root, false);
+			ro_gui_menu_prepare_action((wimp_w)tree->handle,
+					TREE_SELECTION, true);
 			return true;
 		case wimp_KEY_RETURN:
 			if (tree->editing) {
@@ -1248,14 +1245,8 @@ void ro_gui_tree_selection_drag_end(wimp_dragged *drag) {
 	tree_handle_selection_area(ro_gui_tree_current_drag_tree, x0, y0,
 		x1 - x0, y1 - y0,
 		(ro_gui_tree_current_drag_buttons == (wimp_CLICK_ADJUST << 4)));
-
-	/* send an empty keypress to stimulate the tree owner to update the GUI.
-	   for this to work, we must always own the caret when this function is
-	   called. */
-	error = xwimp_process_key(0);
-	if (error)
-		LOG(("xwimp_process_key: 0x%x: %s",
-				error->errnum, error->errmess));
+	ro_gui_menu_prepare_action((wimp_w)ro_gui_tree_current_drag_tree->handle,
+			TREE_SELECTION, false);
 }
 
 

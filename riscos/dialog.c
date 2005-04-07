@@ -5,7 +5,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
- * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2005 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  */
 
@@ -23,11 +23,13 @@
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/render/font.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 /*	The maximum number of persistant dialogues
@@ -44,7 +46,8 @@ wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
 	dialog_warning, dialog_config_th_pane, dialog_debug,
 	dialog_folder, dialog_entry, dialog_search, dialog_print,
-	dialog_config_font, dialog_config_image, dialog_url_complete;
+	dialog_config_font, dialog_config_image, dialog_url_complete,
+	dialog_openurl;
 
 static int ro_gui_choices_font_size;
 static int ro_gui_choices_font_min_size;
@@ -58,6 +61,8 @@ static int ro_gui_choices_image_edit_type = 0;
 static unsigned int ro_gui_choices_fg_plot_style = 0;
 static unsigned int ro_gui_choices_bg_plot_style = 0;
 
+
+struct gui_window *ro_gui_current_zoom_gui;
 
 struct toolbar_display {
 	struct toolbar *toolbar;
@@ -104,7 +109,7 @@ static void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer);
 static void ro_gui_dialog_update_config_font(void);
 static void ro_gui_dialog_click_config_font(wimp_pointer *pointer);
 static void ro_gui_dialog_click_zoom(wimp_pointer *pointer);
-static void ro_gui_dialog_reset_zoom(void);
+static void ro_gui_dialog_click_open_url(wimp_pointer *pointer);
 static void ro_gui_dialog_click_warning(wimp_pointer *pointer);
 static const char *language_name(const char *code);
 
@@ -142,6 +147,7 @@ void ro_gui_dialog_init(void)
 	dialog_config_image = ro_gui_dialog_create("config_img");
 	dialog_theme_install = ro_gui_dialog_create("theme_inst");
 	dialog_url_complete = ro_gui_dialog_create("url_suggest");
+	dialog_openurl = ro_gui_dialog_create("open_url");
 }
 
 
@@ -334,8 +340,13 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 		ro_gui_open_window_centre(parent, w);
 	}
 
-	/*	Set the caret position
+	/*	Set the caret position and window furniture
 	*/
+	if ((w == dialog_pageinfo) || (w == dialog_objinfo))
+		ro_gui_wimp_update_window_furniture(w, wimp_WINDOW_CLOSE_ICON,
+				wimp_WINDOW_CLOSE_ICON);
+	ro_gui_wimp_update_window_furniture(w, wimp_WINDOW_BACK_ICON,
+			wimp_WINDOW_BACK_ICON);
 	ro_gui_set_caret_first(w);
 
 	/*	Add a mapping
@@ -460,6 +471,8 @@ void ro_gui_dialog_click(wimp_pointer *pointer)
 		ro_gui_dialog_click_config_font(pointer);
 	else if (pointer->w == dialog_theme_install)
 		ro_gui_theme_install_click(pointer);
+	else if (pointer->w == dialog_openurl)
+		ro_gui_dialog_click_open_url(pointer);
 }
 
 
@@ -757,7 +770,8 @@ void ro_gui_dialog_click_config(wimp_pointer *pointer)
 			state.visible.x1 -= 12;
 			state.visible.y0 += 128;
 			state.visible.y1 -= 12;
-			xwimp_open_window_nested((wimp_open *) &state, dialog_config_th,
+			xwimp_open_window_nested((wimp_open *) &state,
+					dialog_config_th,
 					wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
 							<< wimp_CHILD_XORIGIN_SHIFT |
 					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
@@ -814,7 +828,8 @@ void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 			/* drop through */
 		case ICON_CONFIG_BR_ALANG_PICK:
 			config_br_icon = pointer->i;
-			ro_gui_popup_menu(languages_menu, dialog_config_br, pointer->i);
+			ro_gui_popup_menu(languages_menu, dialog_config_br,
+					pointer->i);
 			break;
 	}
 }
@@ -850,9 +865,6 @@ void ro_gui_dialog_languages_menu_selection(char *lang)
 						lang);
 			break;
 	}
-
-	/* invalidate icon number and update window */
-	config_br_icon = -1;
 }
 
 
@@ -868,7 +880,7 @@ void ro_gui_dialog_click_config_prox(wimp_pointer *pointer)
 			ro_gui_dialog_config_proxy_update();
 			break;
 		case ICON_CONFIG_PROX_AUTHTYPE_PICK:
-			ro_gui_popup_menu(proxyauth_menu, dialog_config_prox,
+			ro_gui_popup_menu(proxy_auth_menu, dialog_config_prox,
 					ICON_CONFIG_PROX_AUTHTYPE_PICK);
 			break;
 	}
@@ -895,7 +907,7 @@ void ro_gui_dialog_click_config_image(wimp_pointer *pointer)
 			} else {
 				ro_gui_choices_fg_plot_style &= ~tinct_BILINEAR_FILTER;
 			}
- 			break;
+			break;
 		case ICON_CONFIG_IMG_BG_MENU:
 			ro_gui_choices_image_edit_type = 2;
 			ro_gui_menu_prepare_image_quality(ro_gui_choices_bg_plot_style);
@@ -909,7 +921,7 @@ void ro_gui_dialog_click_config_image(wimp_pointer *pointer)
 			} else {
 				ro_gui_choices_bg_plot_style &= ~tinct_BILINEAR_FILTER;
 			}
- 			break;
+			break;
 	}
 }
 
@@ -1174,27 +1186,75 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 
 	if (pointer->buttons == wimp_CLICK_ADJUST &&
 			pointer->i == ICON_ZOOM_CANCEL)
-		ro_gui_dialog_reset_zoom();
+		ro_gui_dialog_prepare_zoom(ro_gui_current_zoom_gui);
 
 	if (pointer->buttons == wimp_CLICK_SELECT &&
 			(pointer->i == ICON_ZOOM_CANCEL ||
 			 pointer->i == ICON_ZOOM_OK)) {
 		ro_gui_dialog_close(dialog_zoom);
-		wimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+		ro_gui_menu_closed();
 	}
 }
 
 
 /**
- * Resets the Scale view dialog.
+ * Prepares the Scale view dialog.
  */
 
-void ro_gui_dialog_reset_zoom(void)
+void ro_gui_dialog_prepare_zoom(struct gui_window *g)
 {
 	char scale_buffer[8];
-	sprintf(scale_buffer, "%.0f",
-			ro_gui_current_zoom_gui->option.scale * 100);
+	sprintf(scale_buffer, "%.0f", g->option.scale * 100);
 	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
+
+	ro_gui_current_zoom_gui = g;
+}
+
+
+/**
+ * Handle clicks in the Open URL dialog.
+ */
+
+void ro_gui_dialog_click_open_url(wimp_pointer *pointer)
+{
+	url_func_result res;
+	const char *url;
+	char *url2;
+
+	if ((pointer->i != ICON_OPENURL_OPEN) &&
+			(pointer->i != ICON_OPENURL_CANCEL))
+		return;
+
+	if (pointer->i == ICON_OPENURL_OPEN) {
+		url = ro_gui_get_icon_string(dialog_openurl,
+				ICON_OPENURL_URL);
+		res = url_normalize(url, &url2);
+		if (res == URL_FUNC_OK) {
+			browser_window_create(url2, 0, 0);
+			global_history_add_recent(url2);
+			free(url2);
+		}
+	}
+
+	if (pointer->buttons == wimp_CLICK_ADJUST &&
+			pointer->i == ICON_OPENURL_CANCEL)
+		ro_gui_dialog_prepare_open_url();
+
+	if (pointer->buttons == wimp_CLICK_SELECT) {
+		ro_gui_dialog_close(dialog_openurl);
+		ro_gui_menu_closed();
+	}
+
+}
+
+
+/**
+ * Prepares the Open URL dialog.
+ */
+
+void ro_gui_dialog_prepare_open_url(void)
+{
+	ro_gui_set_icon_string(dialog_openurl, ICON_OPENURL_URL, "www.");
 }
 
 
@@ -1220,7 +1280,7 @@ void ro_gui_dialog_close(wimp_w close)
 	os_error *error;
 
 	/*	Give the caret back to the parent window. This code relies on
-		the fact that only hotlist windows and browser windows open
+		the fact that only tree windows and browser windows open
 		persistant dialogues, as the caret gets placed to no icon.
 	*/
 	error = xwimp_get_caret_position(&caret);
@@ -1306,7 +1366,8 @@ void ro_gui_dialog_load_themes(void)
 	while (descriptor) {
 		/*	Try to create a toolbar
 		*/
-		toolbar = ro_gui_theme_create_toolbar(descriptor, THEME_BROWSER_TOOLBAR);
+		toolbar = ro_gui_theme_create_toolbar(descriptor,
+				THEME_BROWSER_TOOLBAR);
 		if (toolbar) {
 			toolbar_display = calloc(sizeof(struct toolbar_display), 1);
 			if (!toolbar_display) {
@@ -1411,7 +1472,8 @@ void ro_gui_dialog_load_themes(void)
 		state.yscroll = 0;
 		state.visible.y1 = nested_y + base_extent;
 		state.visible.y0 = state.visible.y1 - link->toolbar->height + 2;
-		xwimp_open_window_nested((wimp_open *)&state, dialog_config_th_pane,
+		xwimp_open_window_nested((wimp_open *)&state,
+			dialog_config_th_pane,
 				wimp_CHILD_LINKS_PARENT_WORK_AREA
 						<< wimp_CHILD_BS_EDGE_SHIFT |
 				wimp_CHILD_LINKS_PARENT_WORK_AREA
@@ -1428,7 +1490,8 @@ void ro_gui_dialog_load_themes(void)
 	link = toolbars;
 	while (link) {
 		ro_gui_set_icon_selected_state(dialog_config_th_pane,
-				link->icon_number, (link->descriptor == theme_choice));
+				link->icon_number,
+				(link->descriptor == theme_choice));
 		link = link->next;
 	}
 	xwimp_force_redraw(dialog_config_th_pane, 0, -16384, 16384, 16384);
@@ -1451,7 +1514,8 @@ void ro_gui_dialog_free_themes(void)
 		xwimp_delete_icon(dialog_config_th_pane, toolbar->icon_number);
 		xwimp_delete_icon(dialog_config_th_pane, toolbar->icon_number + 1);
 		if (toolbar->next)
-			xwimp_delete_icon(dialog_config_th_pane, toolbar->icon_number + 2);
+			xwimp_delete_icon(dialog_config_th_pane,
+					toolbar->icon_number + 2);
 		ro_gui_theme_destroy_toolbar(toolbar->toolbar);
 		next_toolbar = toolbar->next;
 		free(toolbar);

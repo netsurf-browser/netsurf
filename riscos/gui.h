@@ -28,20 +28,15 @@ struct plotter_table;
 
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
-	dialog_objinfo, dialog_tooltip, dialog_warning,
+	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_openurl,
 	dialog_config_th_pane, dialog_debug, dialog_folder, dialog_entry,
 	dialog_search, dialog_print, dialog_config_font, dialog_theme_install,
 	dialog_url_complete;
+extern wimp_menu *font_menu;	/* font.c */
 extern wimp_w history_window;
-extern wimp_menu *iconbar_menu, *browser_menu, *combo_menu, *hotlist_menu,
-		*proxyauth_menu, *languages_menu, *toolbar_menu,
-		*image_quality_menu, *global_history_menu, *url_suggest_menu,
-		*font_menu;
-extern int iconbar_menu_height;
 extern struct form_control *current_gadget;
 extern bool gui_reformat_pending;
 extern bool gui_redraw_debug;
-extern wimp_menu *current_menu;
 extern osspriteop_area *gui_sprites;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
 extern bool print_active, print_text_black;
@@ -101,10 +96,7 @@ struct gui_window {
 };
 
 
-extern struct toolbar *current_toolbar;
-extern struct gui_window *current_gui;
 extern struct gui_window *ro_gui_current_redraw_gui;
-extern struct gui_window *ro_gui_current_zoom_gui;
 
 
 /* in gui.c */
@@ -114,21 +106,6 @@ void ro_gui_screen_size(int *width, int *height);
 void ro_gui_view_source(struct content *content);
 void ro_gui_drag_box_start(wimp_pointer *pointer);
 
-/* in menus.c */
-void ro_gui_menus_init(void);
-bool ro_gui_menu_prepare_url_suggest(void);
-void ro_gui_create_menu(wimp_menu* menu, int x, int y, struct gui_window *g);
-void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
-void ro_gui_menu_selection(wimp_selection* selection);
-void ro_gui_menu_warning(wimp_message_menu_warning *warning);
-void ro_gui_prepare_navigate(struct gui_window *gui);
-void ro_gui_menu_prepare_image_quality(unsigned int tinct_options);
-void ro_gui_menu_prepare_scale(void);
-void ro_gui_menu_prepare_pageinfo(void);
-void ro_gui_menu_prepare_hotlist(void);
-void ro_gui_menu_prepare_global_history(void);
-void ro_gui_display_font_menu(const char *tick, wimp_w w, wimp_i i);
-
 /* in dialog.c */
 void ro_gui_dialog_init(void);
 wimp_w ro_gui_dialog_create(const char *template_name);
@@ -137,6 +114,8 @@ void ro_gui_dialog_open(wimp_w w);
 void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer);
 void ro_gui_dialog_close_persistant(wimp_w parent);
 void ro_gui_dialog_click(wimp_pointer *pointer);
+void ro_gui_dialog_prepare_zoom(struct gui_window *g);
+void ro_gui_dialog_prepare_open_url(void);
 void ro_gui_save_options(void);
 bool ro_gui_dialog_keypress(wimp_key *key);
 void ro_gui_dialog_close(wimp_w close);
@@ -211,19 +190,14 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer);
 /* in hotlist.c */
 void ro_gui_hotlist_initialise(void);
 void ro_gui_hotlist_save(void);
-void ro_gui_hotlist_show(void);
 void ro_gui_hotlist_click(wimp_pointer *pointer);
-bool ro_gui_hotlist_keypress(int key);
-void ro_gui_hotlist_toolbar_click(wimp_pointer* pointer);
 void ro_gui_hotlist_prepare_folder_dialog(struct node *node);
 void ro_gui_hotlist_prepare_entry_dialog(struct node *node);
 void ro_gui_hotlist_dialog_click(wimp_pointer *pointer);
-void ro_gui_hotlist_menu_closed(void);
 int ro_gui_hotlist_help(int x, int y);
 
 /* in save.c */
-void ro_gui_save_open(gui_save_type save_type, struct content *c,
-		bool sub_menu, int x, int y, wimp_w parent, bool keypress);
+void ro_gui_save_prepare(gui_save_type save_type, struct content *c);
 void ro_gui_save_click(wimp_pointer *pointer);
 void ro_gui_drag_icon(wimp_pointer *pointer);
 void ro_gui_save_drag_end(wimp_dragged *drag);
@@ -242,12 +216,12 @@ void ro_gui_debugwin_close(void);
 void ro_gui_debugwin_redraw(wimp_draw *redraw);
 
 /* in search.c */
-void ro_gui_search_open(struct gui_window *g, int x, int y, bool sub_menu, bool keypress);
+void ro_gui_search_prepare(struct gui_window *g);
 void ro_gui_search_click(wimp_pointer *pointer);
 bool ro_gui_search_keypress(wimp_key *key);
 
 /* in print.c */
-void ro_gui_print_open(struct gui_window *g, int x, int y, bool sub_menu, bool keypress);
+void ro_gui_print_prepare(struct gui_window *g);
 void ro_gui_print_click(wimp_pointer *pointer);
 bool ro_gui_print_keypress(wimp_key *key);
 
@@ -433,5 +407,9 @@ void ro_gui_theme_install_click(wimp_pointer *pointer);
 #define ICON_THEME_INSTALL_MESSAGE 0
 #define ICON_THEME_INSTALL_INSTALL 1
 #define ICON_THEME_INSTALL_CANCEL 2
+
+#define ICON_OPENURL_URL 1
+#define ICON_OPENURL_CANCEL 2
+#define ICON_OPENURL_OPEN 3
 
 #endif

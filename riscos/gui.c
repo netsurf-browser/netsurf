@@ -48,6 +48,7 @@
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
+#include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
@@ -319,7 +320,7 @@ void gui_init(int argc, char** argv)
 	}
 	ro_gui_dialog_init();
 	ro_gui_download_init();
-	ro_gui_menus_init();
+	ro_gui_menu_init();
 #ifdef WITH_AUTH
 	ro_gui_401login_init();
 #endif
@@ -1024,8 +1025,8 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 	int key_down = 0;
 
 	if (pointer->buttons == wimp_CLICK_MENU) {
-		ro_gui_create_menu(iconbar_menu, pointer->pos.x,
-				   96 + iconbar_menu_height, NULL);
+		ro_gui_menu_create(iconbar_menu, pointer->pos.x,
+				   96 + iconbar_menu_height, wimp_ICON_BAR);
 
 	} else if (pointer->buttons == wimp_CLICK_SELECT) {
 		if (option_homepage_url && option_homepage_url[0]) {
@@ -1039,11 +1040,11 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 
 	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
 		xosbyte1(osbyte_SCAN_KEYBOARD, 0 ^ 0x80, 0, &key_down);
-		if (key_down == 0) {
-			ro_gui_hotlist_show();
-		} else {
+		if (key_down == 0)
+			ro_gui_menu_handle_action(pointer->w, HOTLIST_SHOW,
+					false);
+		else
 			ro_gui_debugwin_open();
-		}
 	}
 }
 
@@ -1096,9 +1097,9 @@ void ro_gui_keypress(wimp_key *key)
 	os_error *error;
 
 	if ((hotlist_tree) && (key->w == (wimp_w)hotlist_tree->handle))
-		handled = ro_gui_hotlist_keypress(key->c);
+		handled = ro_gui_tree_keypress(key->c, hotlist_tree);
 	else if ((global_history_tree) && (key->w == (wimp_w)global_history_tree->handle))
-		handled = ro_gui_global_history_keypress(key->c);
+		handled = ro_gui_tree_keypress(key->c, global_history_tree);
 	else if ((g = ro_gui_window_lookup(key->w)) != NULL)
 		handled = ro_gui_window_keypress(g, key->c, false);
 	else if ((g = ro_gui_toolbar_lookup(key->w)) != NULL)
@@ -1163,13 +1164,7 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 					&message->data);
 			break;
 		case message_MENUS_DELETED:
-			if ((current_menu == hotlist_menu) && (hotlist_tree))
-				ro_gui_hotlist_menu_closed();
-			else if ((current_menu == global_history_menu) &&
-					(global_history_tree))
-				ro_gui_global_history_menu_closed();
-			current_menu = NULL;
-			current_gui = NULL;
+			ro_gui_menu_closed();
 			break;
 		case message_MODE_CHANGE:
 			ro_gui_history_mode_change();

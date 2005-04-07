@@ -27,6 +27,7 @@
 #include "oslib/wimpextend.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/wimp.h"
@@ -1020,10 +1021,9 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 				ro_gui_prepare_navigate(g);
 			break;
 		case THEME_HOTLIST_TOOLBAR:
-			ro_gui_menu_prepare_hotlist();
-			break;
 		case THEME_HISTORY_TOOLBAR:
-			ro_gui_menu_prepare_global_history();
+			ro_gui_menu_prepare_action(toolbar->parent_handle,
+					TREE_SELECTION, false);
 			break;
 		default:
 			break;

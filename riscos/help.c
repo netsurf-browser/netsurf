@@ -9,20 +9,22 @@
  * Interactive help (implementation).
  */
 
-#include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
 #include "oslib/help.h"
 #include "oslib/os.h"
 #include "oslib/taskmanager.h"
 #include "oslib/wimp.h"
+#include "netsurf/desktop/tree.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
+#include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 
 
 /*	Recognised help keys
@@ -44,28 +46,35 @@
 	HelpHotEntry		 Hotlist entry window
 	HelpHotFolder		 Hotlist entry window
 	HelpGHistory		 Global history window [*]
-	HelpGHistoryToolbar	 Global history window toolbar
+	HelpGHistToolbar	 Global history window toolbar
+	HelpEditToolbar		 Toolbars in edit mode
 
 	HelpIconMenu		 Iconbar menu
-	HelpBrowserMenu 	 Browser window menu
-	HelpHotlistMenu 	 Hotlist window menu
+	HelpBrowserMenu		 Browser window menu
+	HelpHotlistMenu		 Hotlist window menu
+	HelpGHistoryMenu	 Global history window menu
 
-	The prefixes are followed by either the icon number (eg 'HelpToolbar7'), or a series
-	of numbers representing the menu structure (eg 'HelpBrowserMenu3-1-2').
-	If '<key><identifier>' is not available, then simply '<key>' is then used. For example
-	if 'HelpToolbar7' is not available then 'HelpToolbar' is then tried.
-
-	If an item is greyed out then a suffix of 'g' is added (eg 'HelpToolbar7g'). For this to
-	work, windows must have bit 4 of the window flag byte set and the user must be running
-	RISC OS 5.03 or greater.
-
-	For items marked with an asterisk [*] a call must be made to determine the required
-	help text as the window does not contain any icons. An example of this is the hotlist
-	window where ro_gui_hotlist_help() is called.
+	The prefixes are followed by either the icon number (eg 'HelpToolbar7'),
+	or a series of numbers representing the menu structure (eg
+	'HelpBrowserMenu3-1-2').
+	If '<key><identifier>' is not available, then simply '<key>' is then
+	used. For example if 'HelpToolbar7' is not available then 'HelpToolbar'
+	is then tried.
+	If an item is greyed out then a suffix of 'g' is added (eg
+	'HelpToolbar7g'). For this to work, windows must have bit 4 of the
+	window flag byte set and the user must be running RISC OS 5.03 or
+	greater.
+	For items marked with an asterisk [*] a call must be made to determine
+	the required help text as the window does not contain any icons. An
+	example of this is the hotlist window where ro_gui_hotlist_help() is
+	called.
 */
 
-static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token);
+
+static void ro_gui_interactive_help_broadcast(wimp_message *message,
+		char *token);
 static os_t help_time = 0;
+
 
 /**
  * Attempts to process an interactive help message request
@@ -80,135 +89,136 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	wimp_w window;
 	wimp_i icon;
 	struct gui_window *g;
+	struct toolbar *toolbar = NULL;
 	unsigned int index;
 	bool greyed = false;
 	wimp_menu *test_menu;
+	os_error *error;
 
-	/*	Ensure we have a help request
-	*/
-	if ((!message) || (message->action != message_HELP_REQUEST)) return;
+	/* only accept help requests */
+	if ((!message) || (message->action != message_HELP_REQUEST))
+		return;
 
-	/*	Remember the time of the request
-	*/
+	/* remember the time of the request so we can track them */
 	xos_read_monotonic_time(&help_time);
 
-	/*	Initialise the basic token to a null byte
-	*/
+	/* set up our state */
 	message_token[0] = 0x00;
-
-	/*	Get the message data
-	*/
 	message_data = (help_full_message_request *)message;
 	window = message_data->w;
 	icon = message_data->i;
 
-	/*	Do the basic window checks
-	*/
-	if (window == (wimp_w)-2) {
+	/* do the basic window checks */
+	if (window == wimp_ICON_BAR)
 		sprintf(message_token, "HelpIconbar");
-	} else if (window == dialog_info) {
+	else if (window == dialog_info)
 		sprintf(message_token, "HelpAppInfo%i", (int)icon);
-	} else if (window == history_window) {
+	else if (window == history_window)
 		sprintf(message_token, "HelpHistory%i", (int)icon);
-	} else if (window == dialog_objinfo) {
+	else if (window == dialog_objinfo)
 		sprintf(message_token, "HelpObjInfo%i", (int)icon);
-	} else if (window == dialog_pageinfo) {
+	else if (window == dialog_pageinfo)
 		sprintf(message_token, "HelpPageInfo%i", (int)icon);
-	} else if (window == dialog_saveas) {
+	else if (window == dialog_saveas)
 		sprintf(message_token, "HelpSaveAs%i", (int)icon);
-	} else if (window == dialog_zoom) {
+	else if (window == dialog_zoom)
 		sprintf(message_token, "HelpScaleView%i", (int)icon);
-	} else if (window == dialog_folder) {
+	else if (window == dialog_folder)
 		sprintf(message_token, "HelpHotFolder%i", (int)icon);
-	} else if (window == dialog_entry) {
+	else if (window == dialog_entry)
 		sprintf(message_token, "HelpHotEntry%i", (int)icon);
-	} else if ((hotlist_tree) && (window == (wimp_w)hotlist_tree->handle)) {
+	else if ((hotlist_tree) && (window == (wimp_w)hotlist_tree->handle))
 		sprintf(message_token, "HelpHotlist%i",
 				ro_gui_hotlist_help(message_data->pos.x,
 						message_data->pos.y));
-	} else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
-			(window == hotlist_tree->toolbar->toolbar_handle)) {
-		sprintf(message_token, "HelpHotToolbar%i", (int)icon);
-	} else if ((global_history_tree) && (window == (wimp_w)global_history_tree->handle)) {
+	else if ((global_history_tree) &&
+			(window == (wimp_w)global_history_tree->handle))
 		sprintf(message_token, "HelpGHistory%i",
 				ro_gui_global_history_help(message_data->pos.x,
 						message_data->pos.y));
+	else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
+			((window == hotlist_tree->toolbar->toolbar_handle) ||
+			((hotlist_tree->toolbar->editor) &&
+			(window == hotlist_tree->toolbar->
+					editor->toolbar_handle)))) {
+		toolbar = hotlist_tree->toolbar;
+		sprintf(message_token, "HelpHotToolbar%i", (int)icon);
 	} else if ((global_history_tree) && (global_history_tree->toolbar) &&
-			(window == global_history_tree->toolbar->toolbar_handle)) {
-		sprintf(message_token, "HelpGHistoryToolbar%i", (int)icon);
-	} else if ((g = ro_gui_window_lookup(window)) != NULL) {
+			((window == global_history_tree->toolbar->
+					toolbar_handle) ||
+			((global_history_tree->toolbar->editor) &&
+			(window == global_history_tree->toolbar->
+					editor->toolbar_handle)))) {
+		toolbar = global_history_tree->toolbar;
+		sprintf(message_token, "HelpGHistToolbar%i", (int)icon);
+	} else if ((g = ro_gui_window_lookup(window)) != NULL)
 		sprintf(message_token, "HelpBrowser%i", (int)icon);
-	} else if ((g = ro_gui_toolbar_lookup(window)) != NULL) {
+	else if ((g = ro_gui_toolbar_lookup(window)) != NULL) {
+	  	toolbar = g->toolbar;
 		sprintf(message_token, "HelpToolbar%i", (int)icon);
-	} else if ((g = ro_gui_status_lookup(window)) != NULL) {
+	} else if ((g = ro_gui_status_lookup(window)) != NULL)
 		sprintf(message_token, "HelpStatus%i", (int)icon);
-	}
+	
+	/* change toolbars to editors where appropriate */
+	if ((toolbar) && (toolbar->editor))
+		sprintf(message_token, "HelpEditToolbar%i", (int)icon);
 
-	/*	If we've managed to find something so far then we broadcast it
-	*/
-	if (message_token[0] != 0x00) {
-		/*	Check to see if we are greyed out
-		*/
-		if ((icon >= 0) && (ro_gui_get_icon_shaded_state(window, icon))) {
+	/* if we've managed to find something so far then we broadcast it */
+	if (message_token[0]) {
+		if ((icon >= 0) &&
+				(ro_gui_get_icon_shaded_state(window, icon)))
 			strcat(message_token, "g");
-		}
-
-		/*	Broadcast out message
-		*/
-		ro_gui_interactive_help_broadcast(message, &message_token[0]);
+		ro_gui_interactive_help_broadcast(message,
+				(char *)message_token);
 		return;
 	}
 
-	/*	If we are not on an icon, we can't be in a menu (which stops separators
-		giving help for their parent) so we abort. You don't even want to think
-		about the awful hack I was considering before I realised this...
-	*/
-	if (icon == (wimp_i)-1) return;
+	/* if we are not on an icon, we can't be in a menu (which stops
+	 * separators giving help for their parent) so we abort */
+	if (icon == wimp_ICON_WINDOW)
+		return;
 
-	/*	As a last resort, check for menu help.
-	*/
-	if (xwimp_get_menu_state((wimp_menu_state_flags)1,
-				&menu_tree,
-				window, icon)) return;
-	if (menu_tree.items[0] == -1) return;
+	/* get the current menu tree */
+	error = xwimp_get_menu_state(wimp_GIVEN_WINDOW_AND_ICON,
+				&menu_tree, window, icon);
+	if (error) {
+		LOG(("xwimp_get_menu_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	if (menu_tree.items[0] == -1)
+		return;
 
-	/*	Set the prefix
-	*/
-	if (current_menu == iconbar_menu) {
+	/* get the menu prefix */
+	if (current_menu == iconbar_menu)
 		sprintf(message_token, "HelpIconMenu");
-	} else if (current_menu == browser_menu) {
+	else if (current_menu == browser_menu)
 		sprintf(message_token, "HelpBrowserMenu");
-	} else if (current_menu == hotlist_menu) {
+	else if (current_menu == hotlist_menu)
 		sprintf(message_token, "HelpHotlistMenu");
-	} else {
+	else if (current_menu == global_history_menu)
+		sprintf(message_token, "HelpGHistoryMenu");
+	else
 		return;
-	}
 
-	/*	Decode the menu
-	*/
+	/* decode the menu */
 	index = 0;
 	test_menu = current_menu;
 	while (menu_tree.items[index] != -1) {
-		/*	Check if we're greyed out
-		*/
-		greyed |= test_menu->entries[menu_tree.items[index]].icon_flags & wimp_ICON_SHADED;
+		greyed |= test_menu->entries[menu_tree.items[index]].icon_flags
+				& wimp_ICON_SHADED;
 		test_menu = test_menu->entries[menu_tree.items[index]].sub_menu;
-
-		/*	Continue adding the entries
-		*/
-		if (index == 0) {
+		if (index == 0)
 			sprintf(menu_buffer, "%i", menu_tree.items[index]);
-		} else {
+		else
 			sprintf(menu_buffer, "-%i", menu_tree.items[index]);
-		}
 		strcat(message_token, menu_buffer);
 		index++;
 	}
-	if (greyed) strcat(message_token, "g");
-
-	/*	Finally, broadcast the menu help
-	*/
-	ro_gui_interactive_help_broadcast(message, &message_token[0]);
+	if (greyed)
+		strcat(message_token, "g");
+	ro_gui_interactive_help_broadcast(message, (char *)message_token);
 }
 
 
@@ -218,55 +228,53 @@ void ro_gui_interactive_help_request(wimp_message *message) {
  * \param  message the original request message
  * \param  token the token to look up
  */
-static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token) {
+static void ro_gui_interactive_help_broadcast(wimp_message *message,
+		char *token) {
 	const char *translated_token;
 	help_full_message_reply *reply;
 	char *base_token;
+	os_error *error;
 
-	/*	Start off with an empty reply
-	*/
+	/* start off with an empty reply */
 	reply = (help_full_message_reply *)message;
 	reply->reply[0] = '\0';
 
-	/*	Check if the message exists
-	*/
+	/* check if the message exists */
 	translated_token = messages_get(token);
 	if (translated_token == token) {
-		/*	We must never provide default help for a 'g' suffix.
-		*/
+		/* no default help for 'g' suffix */
 		if (token[strlen(token) - 1] != 'g') {
-			/*	Find the key from the token.
-			*/
+			/* find the base key from the token */
 			base_token = token;
 			while (base_token[0] != 0x00) {
 				if ((base_token[0] == '-') ||
-						((base_token[0] >= '0') && (base_token[0] <= '9'))) {
+						((base_token[0] >= '0') &&
+						(base_token[0] <= '9')))
 					base_token[0] = 0x00;
-				} else {
+				else
 					++base_token;
-				}
 			}
-
-			/*	Check if the base key exists and use an empty string if not
-			*/
 			translated_token = messages_get(token);
 		}
 	}
 
-
-	/*	Copy our message string
-	*/
+	/* copy our message string */
 	if (translated_token != token) {
 		reply->reply[235] = 0;
 		strncpy(reply->reply, translated_token, 235);
 	}
 
-	/*	Broadcast the help reply
-	*/
+	/* broadcast the help reply */
 	reply->size = 256;
 	reply->action = message_HELP_REPLY;
 	reply->your_ref = reply->my_ref;
-	wimp_send_message(wimp_USER_MESSAGE, (wimp_message *)reply, reply->sender);
+	error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message *)reply,
+			reply->sender);
+	if (error) {
+		LOG(("xwimp_send_message: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
 }
 
 
@@ -275,34 +283,80 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message, char *token
  *
  * \return non-zero if interactive help is available, or 0 if not available
  */
-int ro_gui_interactive_help_available() {
+bool ro_gui_interactive_help_available(void) {
 	taskmanager_task task;
 	int context = 0;
-	char *end;
 	os_t time;
+	os_error *error;
 
-	/*	Check if we've received a help request in the last 1.0s to test for generic
-		interactive help applications
-	*/
+	/* generic test: any help request within the last 100cs */
 	xos_read_monotonic_time(&time);
-	if ((help_time + 100) > time) return true;
+	if ((help_time + 100) > time)
+		return true;
 
-	/*	Attempt to find the task 'Help'
-	*/
+	/* special cases: check known application names */
 	do {
-		if (xtaskmanager_enumerate_tasks(context, &task, sizeof(taskmanager_task),
-					&context, &end)) return 0;
-
-		/*	We can't just use strcmp due to string termination issues.
-		*/
-		if (strncmp(task.name, "Help", 4) == 0) {
-			if (task.name[4] < 32) return true;
-		} else if (strncmp(task.name, "Floating Help", 13) == 0) {
-			if (task.name[13] < 32) return true;
+		error = xtaskmanager_enumerate_tasks(context, &task,
+				sizeof(taskmanager_task), &context, 0);
+		if (error) {
+			LOG(("xtaskmanager_enumerate_tasks: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("MiscError", error->errmess);
 		}
+		
+		/* we can't just use strcmp due to string termination issues */
+		if (!strncmp(task.name, "Help", 4) &&
+				(task.name[4] < 32))
+			return true;
+		else if (!strncmp(task.name, "Bubble Help", 11) &&
+				(task.name[11] < 32))
+			return true;
+		else if (!strncmp(task.name, "Floating Help", 13) &&
+				(task.name[13] < 32))
+			return true;
 	} while (context >= 0);
+	return false;
+}
 
-	/*	Return failure
-	*/
-	return 0;
+
+/**
+ * Launches interactive help.
+ */
+void ro_gui_interactive_help_start(void) {
+	char *help_start;
+	wimp_t task = 0;
+	os_error *error;
+
+	/* launch <Help$Start> */
+	help_start = getenv("Help$Start");
+	if ((help_start) && (help_start[0])) {
+		error = xwimp_start_task("<Help$Start>", &task);
+		if (error) {
+			LOG(("xwimp_start_tast: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+	}
+
+	/* first attempt failed, launch !Help */
+	if (!task) {
+		error = xwimp_start_task("Resources:$.Apps.!Help", &task);
+		if (error) {
+			LOG(("xwimp_start_tast: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+	}
+
+	/* pretend we got a help request straight away */
+	if (task) {
+		error = xos_read_monotonic_time(&help_time);
+		if (error) {
+			LOG(("xwimp_read_monotonic_time: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
 }
