@@ -1659,6 +1659,8 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 
 		case 17:       /* CTRL+Q (Zoom out) */
 		case 23:       /* CTRL+W (Zoom in) */
+			if (!content)
+				break;
 			old_scale = g->option.scale;
 			if (key == 17) {
 				for (int i = SCALE_SNAP_TO_SIZE - 1; i >= 0; i--)
