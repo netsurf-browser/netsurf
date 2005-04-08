@@ -52,14 +52,14 @@ static struct hostname_data *url_store_find_hostname(const char *url) {
 	int hostname_length;
 	int compare;
 	int fast_exit_counter = ITERATIONS_BEFORE_TEST;
-	
+
 	assert(url);
-	
+
 	res = url_host(url, &hostname);
 	if (res != URL_FUNC_OK)
 		return NULL;
 	hostname_length = strlen(hostname);
-	
+
 	/* try to find a matching hostname fairly quickly */
 	for (search = url_store_hostnames; search; search = search->next) {
 		if ((fast_exit_counter <= 0) ||
@@ -75,14 +75,14 @@ static struct hostname_data *url_store_find_hostname(const char *url) {
 			fast_exit_counter--;
 		}
 	}
-	
+
 	/* no hostname is available: create a new one */
 	result = calloc(sizeof(struct hostname_data), 1);
 	if (!result)
 		return NULL;
 	result->hostname = hostname;
 	result->hostname_length = hostname_length;
-	
+
 	/* simple case: no current hostnames */
 	if (!url_store_hostnames) {
 		url_store_hostnames = result;
@@ -97,7 +97,7 @@ static struct hostname_data *url_store_find_hostname(const char *url) {
 	if (!search)
 		for (search = url_store_hostnames; search->next;
 				search = search->next);
-	
+
 	/* we can now simply scan backwards as we know roughly where we need
 	 * to link to (we either had an early exit from the searching so we
 	 * know we're in the block following where we need to link, or we're
@@ -112,7 +112,7 @@ static struct hostname_data *url_store_find_hostname(const char *url) {
 		url_store_hostnames = result;
 		return result;
 	}
-	
+
 	/* general case: link in after the found hostname */
 	result->previous = search;
 	result->next = search->next;
@@ -137,17 +137,17 @@ struct url_content *url_store_find(const char *url) {
 	int url_length;
 	int compare;
 	int fast_exit_counter = ITERATIONS_BEFORE_TEST;
-	
+
 	assert(url);
-	
+
 	/* find the corresponding hostname data */
 	hostname_data = url_store_find_hostname(url);
 	if (!hostname_data)
 		return NULL;
-	
+
 	/* move to the start of the leafname */
 	url_length = strlen(url);
-	
+
 	/* try to find a matching url fairly quickly */
 	for (search = hostname_data->url; search; search = search->next) {
 		if ((fast_exit_counter <= 0) ||
@@ -177,7 +177,7 @@ struct url_content *url_store_find(const char *url) {
 	result->data.requests = 0;
 	result->data.visits = 0;
 	result->parent = hostname_data;
-	
+
 	/* simple case: no current URLs */
 	if (!hostname_data->url) {
 		hostname_data->url = result;
@@ -192,7 +192,7 @@ struct url_content *url_store_find(const char *url) {
 	if (!search)
 		for (search = hostname_data->url; search->next;
 				search = search->next);
-	
+
 	/* we can now simply scan backwards as we know roughly where we need
 	 * to link to (we either had an early exit from the searching so we
 	 * know we're in the block following where we need to link, or we're
@@ -207,7 +207,7 @@ struct url_content *url_store_find(const char *url) {
 		hostname_data->url = result;
 		return &result->data;
 	}
-	
+
 	/* general case: link in after the found hostname */
 	result->previous = search;
 	result->next = search->next;
@@ -234,7 +234,7 @@ static struct hostname_data *url_store_match_hostname(const char *url,
 	bool www_test;
 
 	assert(url);
-        
+
 	res = url_host(url, &hostname);
 	if (res != URL_FUNC_OK)
 		return NULL;
@@ -249,7 +249,7 @@ static struct hostname_data *url_store_match_hostname(const char *url,
 
 	/* skip past hostname data without URLs */
 	for (; current && (!current->url); current = current->next);
-	
+
 	while (current) {
 		if (current->hostname_length >= hostname_length) {
 			compare = strncmp(hostname, current->hostname,
@@ -268,7 +268,7 @@ static struct hostname_data *url_store_match_hostname(const char *url,
 			free(hostname);
 			return current;
 		}
-		
+
 		/* move to next hostname with URLs */
 		current = current->next;
 		for (; current && (!current->url); current = current->next);
@@ -310,7 +310,7 @@ char *url_store_match(const char *url, struct url_data **reference) {
 		search = *reference;
 		hostname = search->parent;
 	}
- 
+
 	res = url_scheme(url, &scheme);
 	if (res != URL_FUNC_OK)
 		return NULL;
@@ -318,7 +318,7 @@ char *url_store_match(const char *url, struct url_data **reference) {
 	url_length = strlen(url);
 	www_test = (!strcmp(scheme, "http") &&
 			strncmp(url + 4 + 3, "www.", 4)); /* 'http' + '://' */
-			
+
 	/* work through all our strings, ignoring the scheme and 'www.' */
 	while (hostname) {
 
@@ -354,9 +354,9 @@ char *url_store_match(const char *url, struct url_data **reference) {
 			}
 		}
 	}
-  	
+
 	free(scheme);
-	return NULL;  
+	return NULL;
 }
 
 
@@ -371,11 +371,11 @@ char *url_store_match_string(const char *text) {
 	char *url;
 
 	assert(text);
-        
+
 	res = url_normalize(text, &url);
 	if (res != URL_FUNC_OK)
 		return NULL;
- 
+
 	/* drop the '/' from the end if it was added when normalizing */
 	if ((url[strlen(url) - 1] == '/') && (text[strlen(text) - 1] != '/'))
 		url[strlen(url) - 1] = '\0';
@@ -388,7 +388,7 @@ char *url_store_match_string(const char *text) {
  *
  * \param file  the file to load options from
  */
-void url_store_load(const char *file) { 
+void url_store_load(const char *file) {
 	struct url_content *url;
 	char s[MAXIMUM_URL_LENGTH];
 	struct hostname_data *hostname;
@@ -409,8 +409,8 @@ void url_store_load(const char *file) {
 	version = atoi(s);
 	if ((version != 100) && (version != 101))
 		return;
-	
-	
+
+
 	/* version 100 file is sequences of <url><visits><requests> */
 	if (version == 100) {
 		while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
@@ -476,7 +476,7 @@ void url_store_load(const char *file) {
  *
  * \param file  the file to load options from
  */
-void url_store_save(const char *file) { 
+void url_store_save(const char *file) {
 	struct hostname_data *search;
 	struct url_data *url;
 	int url_count;
@@ -524,11 +524,11 @@ void url_store_dump(void) {
 	fprintf(stderr, "\nDumping hostname data:\n");
 	for (search = url_store_hostnames; search; search = search->next) {
 		fprintf(stderr, "\n");
-		fprintf(stderr, search->hostname);
+		fprintf(stderr, "%s", search->hostname);
 		fprintf(stderr, ":\n");
 		for (url = search->url; url; url = url->next) {
 			fprintf(stderr, " - ");
-			fprintf(stderr, url->data.url);
+			fprintf(stderr, "%s", url->data.url);
 			fprintf(stderr, "\n");
 		}
 	}
