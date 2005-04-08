@@ -204,7 +204,7 @@ static void ro_gui_drag_end(wimp_dragged *drag);
 static void ro_gui_keypress(wimp_key *key);
 static void ro_gui_user_message(wimp_event_no event, wimp_message *message);
 static void ro_msg_dataload(wimp_message *block);
-static char *ro_gui_uri_file_parse(const char *file_name);
+static char *ro_gui_uri_file_parse(const char *file_name, char **uri_title);
 static bool ro_gui_uri_file_parse_line(FILE *fp, char *b);
 static char *ro_gui_url_file_parse(const char *file_name);
 static char *ro_gui_ieurl_file_parse(const char *file_name);
@@ -1262,13 +1262,16 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 void ro_msg_dataload(wimp_message *message)
 {
 	int file_type = message->data.data_xfer.file_type;
+	int tree_file_type = file_type;
 	char *url = 0;
+	char *title = NULL;
 	struct gui_window *g;
 	struct node *node;
 	struct node *link;
 	os_error *error;
 	int x, y;
 	bool before;
+	bool tree_edit = false;
 
 	g = ro_gui_window_lookup(message->data.data_xfer.w);
 	if (g && ro_gui_window_dataload(g, message))
@@ -1276,13 +1279,17 @@ void ro_msg_dataload(wimp_message *message)
 
 	switch (file_type) {
 		case FILETYPE_ACORN_URI:
-			url = ro_gui_uri_file_parse(message->data.data_xfer.file_name);
+			url = ro_gui_uri_file_parse(message->data.data_xfer.file_name,
+					&title);
+			tree_file_type = 0xfaf;
 			break;
 		case FILETYPE_ANT_URL:
 			url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
+			tree_file_type = 0xfaf;
 			break;
 		case FILETYPE_IEURL:
 			url = ro_gui_ieurl_file_parse(message->data.data_xfer.file_name);
+			tree_file_type = 0xfaf;
 			break;
 
 		case FILETYPE_HTML:
@@ -1312,19 +1319,26 @@ void ro_msg_dataload(wimp_message *message)
 		browser_window_go(g->bw, url, 0);
 	} else if ((hotlist_tree) && ((wimp_w)hotlist_tree->handle ==
 			message->data.data_xfer.w)) {
+		if (!title) {
+		  	tree_edit = true;
+		  	title = url;
+		}
 		ro_gui_tree_get_tree_coordinates(hotlist_tree,
 				message->data.data_xfer.pos.x,
 				message->data.data_xfer.pos.y,
 				&x, &y);
 		link = tree_get_link_details(hotlist_tree, x, y, &before);
 		node = tree_create_URL_node(NULL,
-				messages_get("TreeImport"), url, file_type,
+				title, url, tree_file_type,
 				time(NULL), -1, 0);
 		tree_link_node(link, node, before);
 		tree_handle_node_changed(hotlist_tree, node, false, true);
 		tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP, 0,
 				NODE_INSTEP, 16384);
-		ro_gui_tree_start_edit(hotlist_tree, &node->data, NULL);
+		if (tree_edit)
+			ro_gui_tree_start_edit(hotlist_tree, &node->data, NULL);
+		else
+			free(title);
 	} else {
 		browser_window_create(url, 0, 0);
 	}
@@ -1348,15 +1362,16 @@ void ro_msg_dataload(wimp_message *message)
  * Parse an Acorn URI file.
  *
  * \param  file_name  file to read
+ * \param  uri_title  pointer to receive title data, or NULL for no data
  * \return  URL from file, or 0 on error and error reported
  */
 
-char *ro_gui_uri_file_parse(const char *file_name)
+char *ro_gui_uri_file_parse(const char *file_name, char **uri_title)
 {
 	/* See the "Acorn URI Handler Functional Specification" for the
 	 * definition of the URI file format. */
 	char line[400];
-	char *url;
+	char *url = NULL;
 	FILE *fp;
 
 	fp = fopen(file_name, "rb");
@@ -1379,15 +1394,22 @@ char *ro_gui_uri_file_parse(const char *file_name)
 	/* URI */
 	if (!ro_gui_uri_file_parse_line(fp, line))
 		goto uri_syntax_error;
-
-	fclose(fp);
-
 	url = strdup(line);
 	if (!url) {
 		warn_user("NoMemory", 0);
 		return 0;
 	}
 
+	/* title */
+	if (!ro_gui_uri_file_parse_line(fp, line))
+		goto uri_syntax_error;
+	if (uri_title && line[0] && ((line[0] != '*') || line[1])) {
+		*uri_title = strdup(line);
+		if (!*uri_title) /* non-fatal */
+			warn_user("NoMemory", 0);
+	}
+	fclose(fp);
+	
 	return url;
 
 uri_syntax_error:

@@ -471,7 +471,10 @@ bool ro_gui_save_link(struct content *c, link_format format, char *path)
 			fprintf(fp, "%s\t%s\n", "URI", "100");
 			fprintf(fp, "\t# NetSurf %s\n\n", netsurf_version);
 			fprintf(fp, "\t%s\n", c->url);
-			fprintf(fp, "\t*\n");
+			if (c->title)
+				fprintf(fp, "\t%s\n", c->title);
+			else
+				fprintf(fp, "\t*\n");
 			break;
 		case LINK_ANT: /* URL */
 		case LINK_TEXT: /* Text */
