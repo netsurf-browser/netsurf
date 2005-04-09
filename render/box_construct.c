@@ -11,7 +11,6 @@
  * Conversion of XML tree to box tree (implementation).
  */
 
-#define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -29,7 +28,7 @@
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
 #endif
-/* #define NDEBUG */
+#define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/talloc.h"
@@ -1517,6 +1516,13 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	po = talloc(content, struct object_params);
 	if (!po)
 		return false;
+	po->data = 0;
+	po->type = 0;
+	po->codetype = 0;
+	po->codebase = 0;
+	po->classid = 0;
+	po->params = 0;
+	po->basehref = 0;
 
 	/* iframe src */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
