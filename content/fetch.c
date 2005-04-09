@@ -241,6 +241,10 @@ struct fetch * fetch_start(char *url, char *referer,
 	/* we only fail memory exhaustion */
 	if (res == URL_FUNC_NOMEM)
 		goto failed;
+	if (!host)
+		host = strdup("");
+	if (!host)
+		goto failed;
 
 	res = url_scheme(url, &ref1);
 	/* we only fail memory exhaustion */
@@ -323,25 +327,22 @@ struct fetch * fetch_start(char *url, char *referer,
 	}
 
 	/* look for a fetch from the same host */
-	if (host) {
-		for (host_fetch = fetch_list;
-				host_fetch && (host_fetch->host == 0 ||
-				strcasecmp(host_fetch->host, host) != 0);
-				host_fetch = host_fetch->next)
+	for (host_fetch = fetch_list;
+			host_fetch && strcasecmp(host_fetch->host, host) != 0;
+			host_fetch = host_fetch->next)
+		;
+	if (host_fetch) {
+		/* fetch from this host in progress:
+		   queue the new fetch */
+		LOG(("queueing"));
+		fetch->curl_handle = 0;
+		/* queue at end */
+		for (; host_fetch->queue_next;
+				host_fetch = host_fetch->queue_next)
 			;
-		if (host_fetch) {
-			/* fetch from this host in progress:
-			   queue the new fetch */
-			LOG(("queueing"));
-			fetch->curl_handle = 0;
-			/* queue at end */
-			for (; host_fetch->queue_next;
-					host_fetch = host_fetch->queue_next)
-				;
-			fetch->queue_prev = host_fetch;
-			host_fetch->queue_next = fetch;
-			return fetch;
-		}
+		fetch->queue_prev = host_fetch;
+		host_fetch->queue_next = fetch;
+		return fetch;
 	}
 
 	/* create the curl easy handle */
