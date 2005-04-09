@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2004, 2005 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -30,12 +30,10 @@
 static bool ro_gui_wimp_cache_furniture_sizes(wimp_w w);
 static bool ro_gui_wimp_read_eig_factors(os_mode mode, int *xeig, int *yeig);
 
-/*	Wimp_Extend,11 block
-*/
 static wimpextend_furniture_sizes furniture_sizes;
 static wimp_w furniture_window = NULL;
-static int ro_gui_hscroll_height = -1;
-static int ro_gui_vscroll_width = -1;
+static int ro_gui_hscroll_height = 38;
+static int ro_gui_vscroll_width = 38;
 
 /**
  * Gets the horzontal scrollbar height
@@ -43,10 +41,7 @@ static int ro_gui_vscroll_width = -1;
  * \param  w  the window to read (or NULL to read a cached value)
  */
 int ro_get_hscroll_height(wimp_w w) {
-	if (!w)
-		w = dialog_debug;
-	if ((furniture_window != w) && (!ro_gui_wimp_cache_furniture_sizes(w)))
-		return 38;
+	ro_gui_wimp_cache_furniture_sizes(w);
 	return ro_gui_hscroll_height;
 }
 
@@ -57,10 +52,7 @@ int ro_get_hscroll_height(wimp_w w) {
  * \param  w  the window to read (or NULL to read a cached value)
  */
 int ro_get_vscroll_width(wimp_w w) {
-	if (!w)
-		w = dialog_debug;
-	if ((furniture_window != w) && (!ro_gui_wimp_cache_furniture_sizes(w)))
-		return 38;
+	ro_gui_wimp_cache_furniture_sizes(w);
 	return ro_gui_vscroll_width;
 }
 
@@ -68,28 +60,40 @@ int ro_get_vscroll_width(wimp_w w) {
  * Caches window furniture information
  *
  * \param  w  the window to cache information from
- * \return true on success, false on error
+ * \return true on success, false on error (default values cached)
  */
 bool ro_gui_wimp_cache_furniture_sizes(wimp_w w) {
 	wimp_version_no version;
 	os_error *error;
-	assert(w);
 
+	if (!w)
+		w = dialog_debug;
+	if (furniture_window == w)
+		return true;
 	furniture_sizes.w = w;
 	error = xwimpextend_get_furniture_sizes(&furniture_sizes);
 	if (error) {
 		LOG(("xwimpextend_get_furniture_sizes: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
+		ro_gui_vscroll_width = 38;
+		ro_gui_hscroll_height = 38;
 		return false;
+
 	}
 	furniture_window = w;
 	ro_gui_vscroll_width = furniture_sizes.border_widths.x1;
 	ro_gui_hscroll_height = furniture_sizes.border_widths.y0;
 
 	/* work around inconsistencies in returned sizes beteen wimp versions */
-	if ((!xwimpreadsysinfo_version(&version)) &&
-			((int)version <= 398))
+	error = xwimpreadsysinfo_version(&version);
+	if (error) {
+		LOG(("xwimpreadsysinfo_version: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+	if ((int)version <= 398)
 		ro_gui_hscroll_height += 2;
 	return true;
 }
