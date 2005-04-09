@@ -27,13 +27,11 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
-static bool ro_gui_wimp_cache_furniture_sizes(wimp_w w);
+static void ro_gui_wimp_cache_furniture_sizes(wimp_w w);
 static bool ro_gui_wimp_read_eig_factors(os_mode mode, int *xeig, int *yeig);
 
 static wimpextend_furniture_sizes furniture_sizes;
 static wimp_w furniture_window = NULL;
-static int ro_gui_hscroll_height = 38;
-static int ro_gui_vscroll_width = 38;
 
 /**
  * Gets the horzontal scrollbar height
@@ -42,7 +40,7 @@ static int ro_gui_vscroll_width = 38;
  */
 int ro_get_hscroll_height(wimp_w w) {
 	ro_gui_wimp_cache_furniture_sizes(w);
-	return ro_gui_hscroll_height;
+	return furniture_sizes.border_widths.y0;
 }
 
 
@@ -53,7 +51,7 @@ int ro_get_hscroll_height(wimp_w w) {
  */
 int ro_get_vscroll_width(wimp_w w) {
 	ro_gui_wimp_cache_furniture_sizes(w);
-	return ro_gui_vscroll_width;
+	return furniture_sizes.border_widths.x1;
 }
 
 /**
@@ -62,40 +60,23 @@ int ro_get_vscroll_width(wimp_w w) {
  * \param  w  the window to cache information from
  * \return true on success, false on error (default values cached)
  */
-bool ro_gui_wimp_cache_furniture_sizes(wimp_w w) {
-	wimp_version_no version;
+void ro_gui_wimp_cache_furniture_sizes(wimp_w w) {
 	os_error *error;
 
 	if (!w)
 		w = dialog_debug;
 	if (furniture_window == w)
-		return true;
+		return;
+	furniture_window = w;
 	furniture_sizes.w = w;
+	furniture_sizes.border_widths.y0 = 40;
+	furniture_sizes.border_widths.x1 = 40;
 	error = xwimpextend_get_furniture_sizes(&furniture_sizes);
 	if (error) {
 		LOG(("xwimpextend_get_furniture_sizes: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
-		ro_gui_vscroll_width = 38;
-		ro_gui_hscroll_height = 38;
-		return false;
-
 	}
-	furniture_window = w;
-	ro_gui_vscroll_width = furniture_sizes.border_widths.x1;
-	ro_gui_hscroll_height = furniture_sizes.border_widths.y0;
-
-	/* work around inconsistencies in returned sizes beteen wimp versions */
-	error = xwimpreadsysinfo_version(&version);
-	if (error) {
-		LOG(("xwimpreadsysinfo_version: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return false;
-	}
-	if ((int)version <= 398)
-		ro_gui_hscroll_height += 2;
-	return true;
 }
 
 
