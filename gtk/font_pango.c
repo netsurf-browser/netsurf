@@ -48,8 +48,10 @@ bool nsfont_width(const struct css_style *style,
 	PangoContext *context;
 	PangoLayout *layout;
 
-	if (length == 0)
-		return 0;
+	if (length == 0) {
+		*width = 0;
+		return true;
+	}
 
 	desc = nsfont_style_to_description(style);
 	context = gdk_pango_context_get();
@@ -190,7 +192,7 @@ bool nsfont_paint(const struct css_style *style,
 			((c & 0xff0000) >> 8) | (c & 0xff0000 >> 16) };
 
 	if (length == 0)
-		return 0;
+		return true;
 
 	desc = nsfont_style_to_description(style);
 	context = gdk_pango_context_get();
