@@ -166,12 +166,8 @@ struct box {
 	/** Text is followed by a space. */
 	unsigned int space : 1;
 	/** This box is a continuation of the previous box (eg from line
-	 * breaking). gadget, href, title, col and style are shared with the
-	 * previous box, and must not be freed when this box is destroyed. */
+	 * breaking). */
 	unsigned int clone : 1;
-	/** style is shared with some other box, and must not be freed when
-	 * this box is destroyed. */
-	unsigned int style_clone : 1;
 
 	char *href;   /**< Link, or 0. */
 	char *title;  /**< Title, or 0. */

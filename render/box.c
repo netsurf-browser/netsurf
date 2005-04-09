@@ -65,7 +65,6 @@ struct box * box_create(struct css_style *style,
 	box->length = 0;
 	box->space = 0;
 	box->clone = 0;
-	box->style_clone = 0;
 	box->href = href;
 	box->title = title;
 	box->columns = 1;

@@ -477,7 +477,6 @@ bool box_construct_text(xmlNode *n, struct content *content,
 		free(text);
 		if (!box->text)
 			return false;
-		box->style_clone = 1;
 		box->length = strlen(box->text);
 		/* strip ending space char off */
 		if (box->length > 1 && text[box->length - 1] == ' ') {
@@ -549,7 +548,6 @@ bool box_construct_text(xmlNode *n, struct content *content,
 				return false;
 			}
 			box->type = BOX_INLINE;
-			box->style_clone = 1;
 			box->text = talloc_strdup(content, current);
 			if (!box->text) {
 				free(text);
@@ -1649,7 +1647,6 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		if (!inline_box)
 			goto no_memory;
 		inline_box->type = BOX_INLINE;
-		inline_box->style_clone = 1;
 		if (box->gadget->value != NULL)
 			inline_box->text = talloc_strdup(content,
 					box->gadget->value);
@@ -1677,7 +1674,6 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		if (!inline_box)
 			goto no_memory;
 		inline_box->type = BOX_INLINE;
-		inline_box->style_clone = 1;
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")))
 			inline_box->text = talloc_strdup(content, s);
 		else
@@ -1793,7 +1789,6 @@ bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
 	if (!inline_box)
 		return 0;
 	inline_box->type = BOX_INLINE;
-	inline_box->style_clone = 1;
 	if (password) {
 		inline_box->length = strlen(box->gadget->value);
 		inline_box->text = talloc_array(content, char,
@@ -1935,7 +1930,6 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	if (!inline_box)
 		goto no_memory;
 	inline_box->type = BOX_INLINE;
-	inline_box->style_clone = 1;
 	box_add_child(inline_container, inline_box);
 	box_add_child(box, inline_container);
 
@@ -2067,7 +2061,6 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		if (!inline_box)
 			return false;
 		inline_box->type = BOX_INLINE;
-		inline_box->style_clone = 1;
 		inline_box->text = s;
 		inline_box->length = len;
 		box_add_child(inline_container, inline_box);
@@ -2082,7 +2075,6 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		if (!br_box)
 			return false;
 		br_box->type = BOX_BR;
-		br_box->style_clone = 1;
 		box_add_child(inline_container, br_box);
 
 		if (current[0] == '\r' && current[1] == '\n')
