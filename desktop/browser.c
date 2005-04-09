@@ -1317,7 +1317,6 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		}
 
 		new_br->type = BOX_BR;
-		new_br->style_clone = 1;
 		box_insert_sibling(text_box, new_br);
 
 		memcpy(new_text, text_box, sizeof (struct box));
@@ -1887,10 +1886,10 @@ void browser_window_form_select(struct browser_window *bw,
 {
 	struct form_option *o;
 	int count;
-	
+
 	assert(bw);
 	assert(control);
-	
+
 	struct box *inline_box = control->box->children->children;
 
 	for (count = 0, o = control->data.select.items;
