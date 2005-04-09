@@ -1374,6 +1374,7 @@ char *ro_gui_uri_file_parse(const char *file_name, char **uri_title)
 	char *url = NULL;
 	FILE *fp;
 
+	*uri_title = NULL;
 	fp = fopen(file_name, "rb");
 	if (!fp) {
 		LOG(("fopen(\"%s\", \"rb\"): %i: %s",
@@ -1397,6 +1398,7 @@ char *ro_gui_uri_file_parse(const char *file_name, char **uri_title)
 	url = strdup(line);
 	if (!url) {
 		warn_user("NoMemory", 0);
+		fclose(fp);
 		return 0;
 	}
 
