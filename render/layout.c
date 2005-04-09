@@ -903,6 +903,8 @@ bool layout_line(struct box *first, int width, int *y,
 	/* pass 2: place boxes in line: loop body executed at least once */
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b; b = b->next) {
 		if (b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK) {
+			assert(b->width != UNKNOWN_WIDTH);
+
 			x_previous = x;
 			x += space_after;
 			b->x = x;
