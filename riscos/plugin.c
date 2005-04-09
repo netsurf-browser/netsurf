@@ -1076,7 +1076,7 @@ void plugin_destroy_stream(struct content *c)
 bool plugin_write_parameters_file(struct content *c,
 		struct object_params *params)
 {
-	struct plugin_params *temp;
+	struct plugin_params *p;
 	struct plugin_param_item *ppi;
 	struct plugin_param_item *pilist = 0;
 	char bgcolor[10] = {0};
@@ -1127,47 +1127,36 @@ bool plugin_write_parameters_file(struct content *c,
 	}
 
 	/* Iterate through the parameter list, creating the parameters
-	 * file as we go. We can free up the memory as we go.
+	 * file as we go.
 	 */
-	while (params->params != 0) {
-		LOG(("name: %s", params->params->name == 0 ? "not set" : params->params->name));
-		LOG(("value: %s", params->params->value == 0 ? "not set" : params->params->value));
-		LOG(("type: %s", params->params->type == 0 ? "not set" : params->params->type));
-		LOG(("valuetype: %s", params->params->valuetype));
+	for (p = params->params; p != 0; p = p->next) {
+		LOG(("name: %s", p->name == 0 ? "not set" : p->name));
+		LOG(("value: %s", p->value == 0 ? "not set" : p->value));
+		LOG(("type: %s", p->type == 0 ? "not set" : p->type));
+		LOG(("valuetype: %s", p->valuetype));
 
 
-		if (strcasecmp(params->params->valuetype, "data") == 0)
+		if (strcasecmp(p->valuetype, "data") == 0)
 			if (!plugin_add_item_to_pilist(&pilist,
 					PLUGIN_PARAMETER_DATA,
-					(const char *)params->params->name,
-					(const char *)params->params->value,
-					(const char *)params->params->type))
+					(const char *)p->name,
+					(const char *)p->value,
+					(const char *)p->type))
 				goto error;
-		if (strcasecmp(params->params->valuetype, "ref") == 0)
+		if (strcasecmp(p->valuetype, "ref") == 0)
 			if (!plugin_add_item_to_pilist(&pilist,
 					PLUGIN_PARAMETER_URL,
-					(const char *)params->params->name,
-					(const char *)params->params->value,
-					(const char *)params->params->type))
+					(const char *)p->name,
+					(const char *)p->value,
+					(const char *)p->type))
 				goto error;
-		if (strcasecmp(params->params->valuetype, "object") == 0)
+		if (strcasecmp(p->valuetype, "object") == 0)
 			if (!plugin_add_item_to_pilist(&pilist,
 					PLUGIN_PARAMETER_OBJECT,
-					(const char *)params->params->name,
-					(const char *)params->params->value,
-					(const char *)params->params->type))
+					(const char *)p->name,
+					(const char *)p->value,
+					(const char *)p->type))
 				goto error;
-
-		temp = params->params;
-		params->params = params->params->next;
-
-		free(temp->name);
-		free(temp->value);
-		free(temp->type);
-		free(temp->valuetype);
-		temp->name = temp->value = temp->type = temp->valuetype = 0;
-		free(temp);
-		temp = 0;
 	}
 
 	/* Now write mandatory special parameters */
@@ -1261,19 +1250,6 @@ error:
 		ppi->name = ppi->value = ppi->mime_type = 0;
 		free(ppi);
 		ppi = 0;
-	}
-
-	while (params->params) {
-		temp = params->params;
-		params->params = params->params->next;
-
-		free(temp->name);
-		free(temp->value);
-		free(temp->type);
-		free(temp->valuetype);
-		temp->name = temp->value = temp->type = temp->valuetype = 0;
-		free(temp);
-		temp = 0;
 	}
 
 	free(c->data.plugin.filename);

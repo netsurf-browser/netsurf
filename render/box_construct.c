@@ -102,7 +102,7 @@ static bool box_frameset(BOX_SPECIAL_PARAMS);
 static bool box_select_add_option(struct form_control *control, xmlNode *n);
 static bool box_object(BOX_SPECIAL_PARAMS);
 static bool box_embed(BOX_SPECIAL_PARAMS);
-static bool box_applet(BOX_SPECIAL_PARAMS);
+/*static bool box_applet(BOX_SPECIAL_PARAMS);*/
 static bool box_iframe(BOX_SPECIAL_PARAMS);
 static bool plugin_decode(struct content* content, struct box* box);
 static struct box_multi_length *box_parse_multi_lengths(const char *s,
@@ -1162,8 +1162,8 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	box->object_params = po;
 
 	/* start fetch */
-	if (plugin_decode(content, box))
-		return false;
+	if (!plugin_decode(content, box))
+		*convert_children = true;
 
 	return true;
 }
@@ -2207,12 +2207,21 @@ bool plugin_decode(struct content *content, struct box *box)
 
 	/* free pre-existing codebase */
 	if (po->codebase)
-		free(po->codebase);
+		talloc_free(po->codebase);
 
-	po->codebase = codebase;
+	po->codebase = talloc_strdup(content, codebase);
+	if (!po->codebase) {
+		free(codebase);
+		return false;
+	}
+
+	/* no longer need this */
+	free(codebase);
 
 	/* Set basehref */
-	po->basehref = strdup(content->data.html.base_url);
+	po->basehref = talloc_strdup(content, content->data.html.base_url);
+	if (!po->basehref)
+		return false;
 
 	if (po->data == 0 && po->classid == 0)
 		/* no data => ignore this object */
@@ -2242,8 +2251,14 @@ bool plugin_decode(struct content *content, struct box *box)
 						return false;
 				}
 				if (po->codebase)
-					free(po->codebase);
-				po->codebase = codebase;
+					talloc_free(po->codebase);
+				po->codebase = talloc_strdup(content,
+								codebase);
+				free(codebase);
+				if (!po->codebase) {
+					free(url);
+					return false;
+				}
 			}
 			else {
 				LOG(("ActiveX object"));
