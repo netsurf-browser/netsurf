@@ -37,6 +37,7 @@
 #include "netsurf/render/layout.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/talloc.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
@@ -330,7 +331,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			browser_window_stop_throbber(bw);
 			history_update(bw->history, c);
 			hotlist_visited(c);
-			free (bw->referer);
+			free(bw->referer);
 			bw->referer = 0;
 			break;
 
@@ -388,7 +389,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 				bw->scrolling_box = NULL;
 			}
 			browser_window_stop_throbber(bw);
-			free (bw->referer);
+			free(bw->referer);
 			bw->referer = 0;
 			break;
 #endif
@@ -1279,7 +1280,8 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		utf8[0] = key;
 		utf8_len = 1;
 
-		text = realloc(text_box->text, text_box->length + 8);
+		text = talloc_realloc(bw->current_content, text_box->text,
+				char, text_box->length + 8);
 		if (!text) {
 			warn_user("NoMemory", 0);
 			return;
@@ -1299,16 +1301,16 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 	} else if (key == 10 || key == 13) {
 		/* paragraph break */
-		text = malloc(text_box->length + 1);
+		text = talloc_array(bw->current_content, char,
+				text_box->length + 1);
 		if (!text) {
 			warn_user("NoMemory", 0);
 			return;
 		}
 
-		new_br = box_create(text_box->style, 0, 0, 0,
-				bw->current_content->data.html.box_pool);
-		new_text = pool_alloc(bw->current_content->data.html.box_pool,
-				sizeof (struct box));
+		new_br = box_create(text_box->style, 0, text_box->title, 0,
+				bw->current_content);
+		new_text = talloc(bw->current_content, struct box);
 		if (!new_text) {
 			warn_user("NoMemory", 0);
 			return;
@@ -1353,7 +1355,8 @@ void browser_window_textarea_callback(struct browser_window *bw,
 			/* delete space by merging with previous text box */
 			prev = text_box->prev;
 			assert(prev->text);
-			text = realloc(prev->text,
+			text = talloc_realloc(bw->current_content, prev->text,
+					char,
 					prev->length + text_box->length + 1);
 			if (!text) {
 				warn_user("NoMemory", 0);
@@ -1469,7 +1472,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		height = textarea->height;
 		if (!layout_inline_container(inline_container, width,
 				textarea, 0, 0,
-				bw->current_content->data.html.box_pool))
+				bw->current_content))
 			warn_user("NoMemory", 0);
 		textarea->width = width;
 		textarea->height = height;
@@ -1627,7 +1630,8 @@ void browser_window_input_callback(struct browser_window *bw,
 			return;
 		utf8keySize = strlen(utf8key);
 
-		value = realloc(input->gadget->value, input->gadget->length + utf8keySize + 1);
+		value = realloc(input->gadget->value,
+				input->gadget->length + utf8keySize + 1);
 		if (!value) {
 			free(utf8key);
 			warn_user("NoMemory", 0);
@@ -1651,7 +1655,8 @@ void browser_window_input_callback(struct browser_window *bw,
 			return;
 		utf8keySize = strlen(utf8key);
 
-		value = realloc(text_box->text, text_box->length + utf8keySize + 1);
+		value = talloc_realloc(bw->current_content, text_box->text,
+				char, text_box->length + utf8keySize + 1);
 		if (!value) {
 			free(utf8key);
 			warn_user("NoMemory", 0);
@@ -1910,14 +1915,17 @@ void browser_window_form_select(struct browser_window *bw,
 			control->data.select.current = o;
 	}
 
-	free(inline_box->text);
+	talloc_free(inline_box->text);
 	inline_box->text = 0;
 	if (control->data.select.num_selected == 0)
-		inline_box->text = strdup(messages_get("Form_None"));
+		inline_box->text = talloc_strdup(bw->current_content,
+				messages_get("Form_None"));
 	else if (control->data.select.num_selected == 1)
-		inline_box->text = strdup(control->data.select.current->text);
+		inline_box->text = talloc_strdup(bw->current_content,
+				control->data.select.current->text);
 	else
-		inline_box->text = strdup(messages_get("Form_Many"));
+		inline_box->text = talloc_strdup(bw->current_content,
+				messages_get("Form_Many"));
 	if (!inline_box->text) {
 		warn_user("NoMemory", 0);
 		inline_box->length = 0;

@@ -1153,7 +1153,7 @@ bool css_background_position_parse(const struct css_node **node,
 		*node = w->next;
 		return true;
 	}
-	
+
 	/* reverse specifiers such that idents are places in h, v order */
 	if ((v->type == CSS_NODE_IDENT && bg && bg->vertical) ||
 			(w->type == CSS_NODE_IDENT && bg2 && bg2->horizontal)) {
@@ -1651,7 +1651,7 @@ void parse_content(struct css_style * const s, const struct css_node * v)
 	struct css_content *content;
 	struct css_node *t;
 	bool first = true;
-	
+
 	for (; v; v = v->next) {
 		switch (v->type) {
 			case CSS_NODE_STRING:
@@ -1746,18 +1746,18 @@ void parse_content(struct css_style * const s, const struct css_node * v)
 		}
 		first = false;
 	}
-	
+
 	if (new_content) {
 		css_deep_free_content(s->content.content);
 		s->content.type = CSS_CONTENT_INTERPRET;
-		s->content.content = new_content; 
+		s->content.content = new_content;
 	}
 }
 
 struct css_content *parse_content_new(struct css_content **current, css_content_type_generated generated) {
 	struct css_content *content;
 	struct css_content *link;
-	
+
 	content = (struct css_content *)calloc(1, sizeof(struct css_content));
 	if (!content) {
 		css_deep_free_content(*current);
@@ -1777,15 +1777,15 @@ struct css_content *parse_content_new(struct css_content **current, css_content_
 bool parse_content_counter(struct css_content **current, struct css_node *t, bool counters) {
 	struct css_content *content;
 	css_list_style_type z;
-	
+
 	content = parse_content_new(current, CSS_CONTENT_COUNTER);
 	if ((!content) || (t->type != CSS_NODE_IDENT))
 		return false;
-	
+
 	content->data.counter.name = strndup(t->data, t->data_length);
 	content->data.counter.style = CSS_LIST_STYLE_TYPE_DECIMAL;
 	t = t->next;
-	
+
 	if (counters) {
 		if ((!t) || (t->type != CSS_NODE_STRING)) {
 			css_deep_free_content(*current);
@@ -1794,7 +1794,7 @@ bool parse_content_counter(struct css_content **current, struct css_node *t, boo
 		content->data.counter.separator = strndup(t->data, t->data_length);
 		t = t->next;
 	}
-	
+
 	if (!t)
 		return true;
 
@@ -1818,7 +1818,7 @@ void parse_counter_reset(struct css_style * const s, const struct css_node * v) 
 		css_deep_free_counter_control(s->counter_reset.data);
 		s->counter_reset.type = CSS_COUNTER_RESET_INTERPRET;
 		s->counter_reset.data = counter;
-	}	
+	}
 }
 
 void parse_counter_increment(struct css_style * const s, const struct css_node * v) {
@@ -1836,7 +1836,7 @@ void parse_counter_increment(struct css_style * const s, const struct css_node *
 
 bool parse_counter_control_data(struct css_counter_control **current, const struct css_node * v, int empty) {
 	struct css_counter_control *open = NULL;
-  
+
 	for (; v; v = v->next) {
 		switch (v->type) {
 			case CSS_NODE_IDENT:
@@ -1869,7 +1869,7 @@ bool parse_counter_control_data(struct css_counter_control **current, const stru
 struct css_counter_control *parse_counter_control_new(struct css_counter_control **current) {
 	struct css_counter_control *counter;
 	struct css_counter_control *link;
-	
+
 	counter = (struct css_counter_control *)calloc(1, sizeof(struct css_counter_control));
 	if (!counter) {
 		css_deep_free_counter_control(*current);
@@ -2683,15 +2683,12 @@ void parse_padding_side(struct css_style * const s, const struct css_node * cons
 	if (v->type == CSS_NODE_IDENT && v->data_length == 7 &&
 			strncasecmp(v->data, "inherit", 7) == 0) {
 		s->padding[i].padding = CSS_PADDING_INHERIT;
-		s->padding[i].override_cellpadding = true;
 	} else if (v->type == CSS_NODE_PERCENTAGE) {
 		s->padding[i].padding = CSS_PADDING_PERCENT;
 		s->padding[i].value.percent = atof(v->data);
-		s->padding[i].override_cellpadding = true;
 	} else if ((v->type == CSS_NODE_DIMENSION || v->type == CSS_NODE_NUMBER) &&
 			parse_length(&s->padding[i].value.length, v, true) == 0) {
 		s->padding[i].padding = CSS_PADDING_LENGTH;
-		s->padding[i].override_cellpadding = true;
 	}
 }
 

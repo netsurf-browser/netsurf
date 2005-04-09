@@ -42,6 +42,7 @@ struct form *form_new(char *action, form_method method)
 	form->method = method;
 	form->controls = 0;
 	form->last_control = 0;
+	form->prev = 0;
 	return form;
 }
 

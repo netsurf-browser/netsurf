@@ -146,7 +146,7 @@ bool save_as_draw(struct content *c, const char *path)
 	memcpy(diagram->source, "NetSurf     ", 12);
 
 	/* recalculate box widths for an A4 page */
-	if (!layout_document(box, A4PAGEWIDTH, c->data.html.box_pool)) {
+	if (!layout_document(c, A4PAGEWIDTH)) {
 		warn_user("NoMemory", 0);
 		goto draw_save_error;
 	}
@@ -183,7 +183,7 @@ bool save_as_draw(struct content *c, const char *path)
 	drawbuf_free();
 
 	/* reset layout to current window width */
-	if (!layout_document(box, current_width, c->data.html.box_pool)) {
+	if (!layout_document(c, current_width)) {
 		warn_user("NoMemory", 0);
 		return false;
 	}
@@ -193,7 +193,7 @@ bool save_as_draw(struct content *c, const char *path)
 draw_save_error:
 	drawbuf_free();
 	/* attempt to reflow back on failure */
-	(void)layout_document(box, current_width, c->data.html.box_pool);
+	(void)layout_document(c, current_width);
 	return false;
 }
 

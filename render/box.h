@@ -76,7 +76,6 @@
 #include <limits.h>
 #include <stdbool.h>
 #include "libxml/HTMLparser.h"
-#include "netsurf/utils/pool.h"
 
 
 struct box;
@@ -90,7 +89,7 @@ typedef enum {
 	BOX_TABLE, BOX_TABLE_ROW, BOX_TABLE_CELL,
 	BOX_TABLE_ROW_GROUP,
 	BOX_FLOAT_LEFT, BOX_FLOAT_RIGHT,
-	BOX_INLINE_BLOCK, BOX_BR
+	BOX_INLINE_BLOCK, BOX_BR, BOX_TEXT
 } box_type;
 
 /* parameters for <object> and related elements */
@@ -232,8 +231,8 @@ struct column {
 
 
 struct box * box_create(struct css_style *style,
-		const char *href, const char *title,
-		const char *id, pool box_pool);
+		char *href, char *title,
+		char *id, void *context);
 void box_add_child(struct box *parent, struct box *child);
 void box_insert_sibling(struct box *box, struct box *new_box);
 void box_free(struct box *box);
@@ -259,6 +258,6 @@ void box_scrollbar_dimensions(const struct box *box,
 
 bool xml_to_box(xmlNode *n, struct content *c);
 
-bool box_normalise_block(struct box *block, pool box_pool);
+bool box_normalise_block(struct box *block, struct content *c);
 
 #endif

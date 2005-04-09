@@ -16,16 +16,14 @@
 #ifndef _NETSURF_RENDER_LAYOUT_H_
 #define _NETSURF_RENDER_LAYOUT_H_
 
-#include "netsurf/utils/pool.h"
-
 #define SCROLLBAR_WIDTH 16
 
 struct box;
 
-bool layout_document(struct box *box, int width, pool box_pool);
-bool layout_block_context(struct box *block, pool box_pool);
+bool layout_document(struct content *content, int width);
+bool layout_block_context(struct box *block, struct content *content);
 bool layout_inline_container(struct box *box, int width,
-		struct box *cont, int cx, int cy, pool box_pool);
+		struct box *cont, int cx, int cy, struct content *content);
 void layout_calculate_descendant_bboxes(struct box *box);
 
 #endif

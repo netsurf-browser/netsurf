@@ -110,7 +110,6 @@ static void css_dump_selector(const struct css_selector *r);
 /** Default style for a document. These are the 'Initial values' from the
  *  spec. */
 const struct css_style css_base_style = {
-	{ {CSS_CELLPADDING_VALUE, 1} },
 	CSS_BACKGROUND_ATTACHMENT_SCROLL,
 	0xffffff,
 	{ CSS_BACKGROUND_IMAGE_NONE, 0 },
@@ -167,10 +166,10 @@ const struct css_style css_base_style = {
 	  { CSS_BORDER_WIDTH_LENGTH, { 2, CSS_UNIT_PX } },
 	  CSS_BORDER_STYLE_NONE },
 	CSS_OVERFLOW_VISIBLE,
-	{ { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } }, false },
-	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } }, false },
-	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } }, false },
-	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } }, false }, },
+	{ { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } } },
 	CSS_PAGE_BREAK_AFTER_AUTO,
 	CSS_PAGE_BREAK_BEFORE_AUTO,
 	CSS_PAGE_BREAK_INSIDE_AUTO,
@@ -196,7 +195,6 @@ const struct css_style css_base_style = {
 
 /** Style with no values set. */
 const struct css_style css_empty_style = {
-	{ { CSS_CELLPADDING_NOT_SET, 0 } },
 	CSS_BACKGROUND_ATTACHMENT_NOT_SET,
 	CSS_COLOR_NOT_SET,
 	{ CSS_BACKGROUND_IMAGE_NOT_SET, 0 },
@@ -253,10 +251,10 @@ const struct css_style css_empty_style = {
 	  { CSS_BORDER_WIDTH_NOT_SET, { 0, CSS_UNIT_PX } },
 	  CSS_BORDER_STYLE_NOT_SET },
 	CSS_OVERFLOW_NOT_SET,
-	{ { CSS_PADDING_NOT_SET, { { 0, CSS_UNIT_PX } }, false },
-	  { CSS_PADDING_NOT_SET, { { 0, CSS_UNIT_PX } }, false },
-	  { CSS_PADDING_NOT_SET, { { 0, CSS_UNIT_PX } }, false },
-	  { CSS_PADDING_NOT_SET, { { 0, CSS_UNIT_PX } }, false }, },
+	{ { CSS_PADDING_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_NOT_SET, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_NOT_SET, { { 0, CSS_UNIT_PX } } } },
 	CSS_PAGE_BREAK_AFTER_NOT_SET,
 	CSS_PAGE_BREAK_BEFORE_NOT_SET,
 	CSS_PAGE_BREAK_INSIDE_NOT_SET,
@@ -283,7 +281,6 @@ const struct css_style css_empty_style = {
 /** Default style for an element. These should be INHERIT if 'Inherited' is yes,
  *  and the 'Initial value' otherwise. */
 const struct css_style css_blank_style = {
-	{ { CSS_CELLPADDING_INHERIT, 0 } },
 	CSS_BACKGROUND_ATTACHMENT_SCROLL,
 	TRANSPARENT,
 	{ CSS_BACKGROUND_IMAGE_NONE, 0 },
@@ -340,10 +337,10 @@ const struct css_style css_blank_style = {
 	  { CSS_BORDER_WIDTH_LENGTH, { 2, CSS_UNIT_PX } },
 	  CSS_BORDER_STYLE_NONE },
 	CSS_OVERFLOW_VISIBLE,
-	{ { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } }, false },
-	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } }, false },
-	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } }, false },
-	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } }, false }, },
+	{ { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } },
+	  { CSS_PADDING_LENGTH, { { 0, CSS_UNIT_PX } } } },
 	CSS_PAGE_BREAK_AFTER_AUTO,
 	CSS_PAGE_BREAK_BEFORE_AUTO,
 	CSS_PAGE_BREAK_INSIDE_INHERIT,
@@ -2383,11 +2380,6 @@ void css_cascade(struct css_style * const style,
 	unsigned int i;
 	float f;
 
-	if (apply->html_style.cellpadding.type !=
-			CSS_CELLPADDING_INHERIT &&
-				apply->html_style.cellpadding.type !=
-					CSS_CELLPADDING_NOT_SET)
-		style->html_style.cellpadding = apply->html_style.cellpadding;
 	if (apply->background_attachment !=
 			CSS_BACKGROUND_ATTACHMENT_INHERIT &&
 				apply->background_attachment !=
@@ -2678,8 +2670,6 @@ void css_merge(struct css_style * const style,
 {
 	unsigned int i;
 
-	if (apply->html_style.cellpadding.type != CSS_CELLPADDING_NOT_SET)
-		style->html_style.cellpadding = apply->html_style.cellpadding;
 	if (apply->background_attachment != CSS_BACKGROUND_ATTACHMENT_NOT_SET)
 		style->background_attachment = apply->background_attachment;
 	if (apply->background_color != CSS_COLOR_NOT_SET)

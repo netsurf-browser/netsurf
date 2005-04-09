@@ -149,16 +149,6 @@ struct css_content {
 
 /** Representation of a complete CSS 2 style. */
 struct css_style {
-  	/* html styles that don't translate directly to CSS */
-  	struct {
-  		struct { 
-  	  		enum { CSS_CELLPADDING_INHERIT,
-			CSS_CELLPADDING_VALUE,
-			CSS_CELLPADDING_NOT_SET } type;
-			int value;
-		} cellpadding;
-  	} html_style;
-  
 	/* background properties */
 	css_background_attachment background_attachment;
 	colour background_color;
@@ -378,7 +368,6 @@ struct css_style {
 			struct css_length length;
 			float percent;
 		} value;
-		bool override_cellpadding;	/* override HTML setting */
 	} padding[4];  /**< top, right, bottom, left */
 
 	css_page_break_after page_break_after;

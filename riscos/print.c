@@ -471,7 +471,6 @@ bool print_document(struct gui_window *g, const char *filename)
 	int left, right, top, bottom, width, height;
 	int saved_width;
 	int yscroll = 0, sheets = print_max_sheets;
-	struct box *box = 0;
 	struct content *c = g->bw->current_content;
 	const char *error_message;
 	pdriver_features features;
@@ -483,9 +482,6 @@ bool print_document(struct gui_window *g, const char *filename)
 		warn_user("PrintError", "nothing to print");
 		return false;
 	}
-
-	if (c->type == CONTENT_HTML)
-		box = c->data.html.layout;
 
 	/* read printer driver features */
 	error = xpdriver_info(0, 0, 0, &features, 0, 0, 0, 0);
@@ -511,7 +507,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	/* layout the document to the correct width */
 	saved_width = c->width;
 	if (c->type == CONTENT_HTML)
-		layout_document(box, width, c->data.html.box_pool);
+		layout_document(c, width);
 
 	/* open printer file */
 	error = xosfind_openoutw(osfind_NO_PATH | osfind_ERROR_IF_DIR |
@@ -648,7 +644,7 @@ bool print_document(struct gui_window *g, const char *filename)
 
 	/* restore document layout */
 	if (c->type == CONTENT_HTML)
-		layout_document(box, saved_width, c->data.html.box_pool);
+		layout_document(c, saved_width);
 
 	return true;
 
@@ -666,7 +662,7 @@ error:
 
 	/* restore document layout */
 	if (c->type == CONTENT_HTML)
-		layout_document(box, saved_width, c->data.html.box_pool);
+		layout_document(c, saved_width);
 
 	return false;
 }

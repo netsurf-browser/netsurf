@@ -18,7 +18,7 @@
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
-#include "netsurf/utils/pool.h"
+#include "netsurf/utils/talloc.h"
 
 
 static bool box_contains_point(struct box *box, int x, int y);
@@ -31,43 +31,23 @@ static bool box_contains_point(struct box *box, int x, int y);
  * Create a box tree node.
  *
  * \param  style     style for the box (not copied)
- * \param  href      href for the box (copied), or 0
- * \param  title     title for the box (copied), or 0
- * \param  id        id for the box (copied), or 0
- * \param  box_pool  pool to allocate box from
+ * \param  href      href for the box (not copied), or 0
+ * \param  title     title for the box (not copied), or 0
+ * \param  id        id for the box (not copied), or 0
+ * \param  context   context for allocations
  * \return  allocated and initialised box, or 0 on memory exhaustion
  */
 
 struct box * box_create(struct css_style *style,
-		const char *href, const char *title, const char *id,
-		pool box_pool)
+		char *href, char *title, char *id,
+		void *context)
 {
 	unsigned int i;
 	struct box *box;
-	char *href1 = 0;
-	char *title1 = 0;
-	char *id1 = 0;
 
-	if (href)
-		href1 = strdup(href);
-	if (title)
-		title1 = strdup(title);
-	if (id)
-		id1 = strdup(id);
-	if ((href && !href1) || (title && !title1) || (id && !id1)) {
-		free(href1);
-		free(title1);
-		free(id1);
+	box = talloc(context, struct box);
+	if (!box)
 		return 0;
-	}
-
-	box = pool_alloc(box_pool, sizeof (struct box));
-	if (!box) {
-		free(href1);
-		free(title1);
-		free(id1);
-		return 0;
-	}
 
 	box->type = BOX_INLINE;
 	box->style = style;
@@ -86,8 +66,8 @@ struct box * box_create(struct css_style *style,
 	box->space = 0;
 	box->clone = 0;
 	box->style_clone = 0;
-	box->href = href1;
-	box->title = title1;
+	box->href = href;
+	box->title = title;
 	box->columns = 1;
 	box->rows = 1;
 	box->start_column = 0;
@@ -101,7 +81,7 @@ struct box * box_create(struct css_style *style,
 	box->col = NULL;
 	box->gadget = NULL;
 	box->usemap = NULL;
-	box->id = id1;
+	box->id = id;
 	box->background = NULL;
 	box->object = NULL;
 	box->object_params = NULL;
@@ -153,12 +133,11 @@ void box_insert_sibling(struct box *box, struct box *new_box)
 
 
 /**
- * Free the data in a box tree recursively.
+ * Free the a box tree recursively.
  *
  * \param  box  box to free recursively
  *
- * The data in box and all its children is freed. The actual box structures are
- * not freed, only the data (since they will be in a pool).
+ * The box and all its children is freed.
  */
 
 void box_free(struct box *box)
@@ -187,17 +166,11 @@ void box_free_box(struct box *box)
 	if (!box->clone) {
 		if (box->gadget)
 			form_free_control(box->gadget);
-		free(box->href);
-		free(box->title);
-		free(box->col);
-		if (!box->style_clone && box->style)
-			css_free_style(box->style);
 	}
 
-	free(box->usemap);
-	free(box->text);
-	free(box->id);
 	box_free_object_params(box->object_params);
+
+	talloc_free(box);
 }
 
 

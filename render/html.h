@@ -18,7 +18,6 @@
 #include "libxml/HTMLparser.h"
 #include "netsurf/content/content_type.h"
 #include "netsurf/css/css.h"
-#include "netsurf/utils/pool.h"
 
 struct box;
 struct browser_window;
@@ -75,11 +74,10 @@ struct content_html_data {
 	unsigned int object_count;
 	/** Objects. Each may be 0. */
 	struct content_html_object *object;
-
-	struct imagemap **imagemaps; /**< Hashtable of imagemaps */
-
-	pool box_pool;		/**< Memory pool for box tree. */
-	pool string_pool;	/**< Memory pool for strings. */
+	/** Forms, in reverse order to document. */
+	struct form *forms;
+	/** Hash table of imagemaps */
+	struct imagemap **imagemaps;
 
 	/**< Browser window containing this document, or 0 if not open. */
 	struct browser_window *bw;

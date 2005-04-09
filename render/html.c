@@ -28,6 +28,7 @@
 #include "netsurf/render/layout.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/talloc.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
@@ -65,7 +66,7 @@ bool html_create(struct content *c, const char *params[])
 	html->encoding_handler = 0;
 	html->encoding = 0;
 	html->getenc = true;
-	html->base_url = strdup(c->url);
+	html->base_url = c->url;
 	html->layout = 0;
 	html->background_colour = TRANSPARENT;
 	html->stylesheet_count = 0;
@@ -73,17 +74,13 @@ bool html_create(struct content *c, const char *params[])
 	html->style = 0;
 	html->object_count = 0;
 	html->object = 0;
+	html->forms = 0;
 	html->imagemaps = 0;
-	html->box_pool = pool_create(sizeof (struct box) * 100);
-	html->string_pool = pool_create(8000);
 	html->bw = 0;
-
-	if (!html->base_url || !html->string_pool || !html->box_pool)
-		goto no_memory;
 
 	for (i = 0; params[i]; i += 2) {
 		if (strcasecmp(params[i], "charset") == 0) {
-			html->encoding = strdup(params[i + 1]);
+			html->encoding = talloc_strdup(c, params[i + 1]);
 			if (!html->encoding)
 				goto no_memory;
 			html->encoding_source = ENCODING_SOURCE_HEADER;
@@ -135,7 +132,7 @@ bool html_process_data(struct content *c, char *data, unsigned int size)
 		if (encoding) {
 			if (!html_set_parser_encoding(c, encoding))
 				return false;
-			c->data.html.encoding = strdup(encoding);
+			c->data.html.encoding = talloc_strdup(c, encoding);
 			if (!c->data.html.encoding)
 				return false;
 			c->data.html.encoding_source =
@@ -266,7 +263,7 @@ bool html_convert(struct content *c, int width, int height)
 		/* The encoding was not in headers or detected, and the parser
 		 * found a <meta http-equiv="content-type"
 		 * content="text/html; charset=...">. */
-		c->data.html.encoding = strdup(document->encoding);
+		c->data.html.encoding = talloc_strdup(c, document->encoding);
 		if (!c->data.html.encoding) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -338,11 +335,12 @@ bool html_convert(struct content *c, int width, int height)
 	content_set_status(c, messages_get("Formatting"));
 	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	LOG(("Layout document"));
-	layout_document(c->data.html.layout, width,
-			c->data.html.box_pool);
+	layout_document(c, width);
 	/*box_dump(c->data.html.layout->children, 0);*/
 	c->width = c->data.html.layout->descendant_x1;
 	c->height = c->data.html.layout->descendant_y1;
+
+	c->size = talloc_total_size(c);
 
 	if (c->active == 0) {
 		c->status = CONTENT_STATUS_DONE;
@@ -380,20 +378,26 @@ bool html_head(struct content *c, xmlNode *head)
 			xmlChar *title = xmlNodeGetContent(node);
 			if (!title)
 				return false;
-			c->title = squash_whitespace(title);
+			char *title2 = squash_whitespace(title);
+			xmlFree(title);
+			if (!title2)
+				return false;
+			c->title = talloc_strdup(c, title2);
+			free(title2);
 			if (!c->title)
 				return false;
-			xmlFree(title);
 
 		} else if (strcmp(node->name, "base") == 0) {
-			char *href = (char *) xmlGetProp(node, (const xmlChar *) "href");
+			char *href = (char *) xmlGetProp(node,
+					(const xmlChar *) "href");
 			if (href) {
 				char *url;
 				url_func_result res;
 				res = url_normalize(href, &url);
 				if (res == URL_FUNC_OK) {
-					free(c->data.html.base_url);
-					c->data.html.base_url = url;
+					c->data.html.base_url =
+							talloc_strdup(c, url);
+					free(url);
 				}
 				xmlFree(href);
 			}
@@ -424,8 +428,8 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 	/* stylesheet 0 is the base style sheet,
 	 * stylesheet 1 is the adblocking stylesheet,
 	 * stylesheet 2 is any <style> elements */
-	c->data.html.stylesheet_content = malloc(STYLESHEET_START *
-			sizeof *c->data.html.stylesheet_content);
+	c->data.html.stylesheet_content = talloc_array(c, struct content *,
+			STYLESHEET_START);
 	if (!c->data.html.stylesheet_content)
 		return false;
 	c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] = 0;
@@ -511,10 +515,9 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 			LOG(("linked stylesheet %i '%s'", i, url));
 
 			/* start fetch */
-			stylesheet_content = realloc(
+			stylesheet_content = talloc_realloc(c,
 					c->data.html.stylesheet_content,
-					(i + 1) * sizeof
-					*c->data.html.stylesheet_content);
+					struct content *, i + 1);
 			if (!stylesheet_content)
 				return false;
 			c->data.html.stylesheet_content = stylesheet_content;
@@ -709,7 +712,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
  * Start a fetch for an object required by a page.
  *
  * \param  c    content structure
- * \param  url  URL of object to fetch (not copied, must be on heap)
+ * \param  url  URL of object to fetch (copied)
  * \param  box  box that will contain the object
  * \param  permitted_types   array of types, terminated by CONTENT_UNKNOWN,
  *	      or 0 if all types except OTHER and UNKNOWN acceptable
@@ -727,7 +730,7 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 	unsigned int i = c->data.html.object_count;
 	struct content_html_object *object;
 	struct content *c_fetch;
-	
+
 	/* initialise fetch */
 	c_fetch = fetchcache(url, html_object_callback,
 			c, (void *) i, available_width, available_height,
@@ -736,14 +739,18 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 		return false;
 
 	/* add to object list */
-	object = realloc(c->data.html.object,
-			(i + 1) * sizeof *c->data.html.object);
+	object = talloc_realloc(c, c->data.html.object,
+			struct content_html_object, i + 1);
 	if (!object) {
 		content_remove_user(c_fetch, html_object_callback, c, (void*)i);
 		return false;
 	}
 	c->data.html.object = object;
-	c->data.html.object[i].url = url;
+	c->data.html.object[i].url = talloc_strdup(c, url);
+	if (!c->data.html.object[i].url) {
+		content_remove_user(c_fetch, html_object_callback, c, (void*)i);
+		return false;
+	}
 	c->data.html.object[i].box = box;
 	c->data.html.object[i].permitted_types = permitted_types;
        	c->data.html.object[i].background = background;
@@ -829,8 +836,9 @@ void html_object_callback(content_msg msg, struct content *object,
 
 		case CONTENT_MSG_REDIRECT:
 			c->active--;
-			free(c->data.html.object[i].url);
-			c->data.html.object[i].url = strdup(data.redirect);
+			talloc_free(c->data.html.object[i].url);
+			c->data.html.object[i].url = talloc_strdup(c,
+					data.redirect);
 			if (!c->data.html.object[i].url) {
 				/** \todo  report oom */
 			} else {
@@ -1003,8 +1011,7 @@ void html_stop(struct content *c)
 
 void html_reformat(struct content *c, int width, int height)
 {
-	layout_document(c->data.html.layout, width,
-			c->data.html.box_pool);
+	layout_document(c, width);
 	c->width = c->data.html.layout->descendant_x1;
 	c->height = c->data.html.layout->descendant_y1;
 }
@@ -1019,19 +1026,10 @@ void html_destroy(struct content *c)
 	unsigned int i;
 	LOG(("content %p", c));
 
-	free(c->title);
-
 	imagemap_destroy(c);
 
 	if (c->data.html.parser)
 		htmlFreeParserCtxt(c->data.html.parser);
-
-	free(c->data.html.encoding);
-
-	free(c->data.html.base_url);
-
-	if (c->data.html.layout)
-		box_free(c->data.html.layout);
 
 	/* Free stylesheets */
 	if (c->data.html.stylesheet_count) {
@@ -1043,10 +1041,9 @@ void html_destroy(struct content *c)
 						c, (void *) i);
 		}
 	}
-	free(c->data.html.stylesheet_content);
 
-	if (c->data.html.style)
-		css_free_style(c->data.html.style);
+	/*if (c->data.html.style)
+		css_free_style(c->data.html.style);*/
 
 	/* Free objects */
 	for (i = 0; i != c->data.html.object_count; i++) {
@@ -1054,12 +1051,7 @@ void html_destroy(struct content *c)
 		if (c->data.html.object[i].content)
 			content_remove_user(c->data.html.object[i].content,
 					 html_object_callback, c, (void*)i);
-		free(c->data.html.object[i].url);
 	}
-	free(c->data.html.object);
-
-	pool_destroy(c->data.html.string_pool);
-	pool_destroy(c->data.html.box_pool);
 }
 
 

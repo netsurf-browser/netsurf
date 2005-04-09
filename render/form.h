@@ -33,6 +33,7 @@ struct form {
 	form_method method;			/**< Method and enctype. */
 	struct form_control *controls;		/**< Linked list of controls. */
 	struct form_control *last_control;	/**< Last control in list. */
+	struct form *prev;			/**< Previous form in doc. */
 };
 
 /** Type of a struct form_control. */

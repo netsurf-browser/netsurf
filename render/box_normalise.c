@@ -21,7 +21,6 @@
 #endif
 #define NDEBUG
 #include "netsurf/utils/log.h"
-#include "netsurf/utils/pool.h"
 
 
 struct span_info {
@@ -45,18 +44,18 @@ struct columns {
 };
 
 
-static bool box_normalise_table(struct box *table, pool box_pool);
+static bool box_normalise_table(struct box *table, struct content *c);
 static void box_normalise_table_spans(struct box *table);
 static bool box_normalise_table_row_group(struct box *row_group,
 		struct columns *col_info,
-		pool box_pool);
+		struct content *c);
 static bool box_normalise_table_row(struct box *row,
 		struct columns *col_info,
-		pool box_pool);
+		struct content *c);
 static bool calculate_table_row(struct columns *col_info,
 		unsigned int col_span, unsigned int row_span,
 		unsigned int *start_column);
-static bool box_normalise_inline_container(struct box *cont, pool box_pool);
+static bool box_normalise_inline_container(struct box *cont, struct content *c);
 
 
 /**
@@ -79,7 +78,7 @@ static bool box_normalise_inline_container(struct box *cont, pool box_pool);
  * FLOAT_(LEFT|RIGHT)   exactly 1 BLOCK or TABLE                       \endcode
  */
 
-bool box_normalise_block(struct box *block, pool box_pool)
+bool box_normalise_block(struct box *block, struct content *c)
 {
 	struct box *child;
 	struct box *next_child;
@@ -98,16 +97,16 @@ bool box_normalise_block(struct box *block, pool box_pool)
 		switch (child->type) {
 		case BOX_BLOCK:
 			/* ok */
-			if (!box_normalise_block(child, box_pool))
+			if (!box_normalise_block(child, c))
 				return false;
 			break;
 		case BOX_INLINE_CONTAINER:
 			if (!box_normalise_inline_container(child,
-					box_pool))
+					c))
 				return false;
 			break;
 		case BOX_TABLE:
-			if (!box_normalise_table(child, box_pool))
+			if (!box_normalise_table(child, c))
 				return false;
 			break;
 		case BOX_INLINE:
@@ -127,7 +126,7 @@ bool box_normalise_block(struct box *block, pool box_pool)
 			if (!style)
 				return false;
 			css_cascade(style, &css_blank_style);
-			table = box_create(style, block->href, 0, 0, box_pool);
+			table = box_create(style, block->href, 0, 0, c);
 			if (!table) {
 				css_free_style(style);
 				return false;
@@ -152,7 +151,7 @@ bool box_normalise_block(struct box *block, pool box_pool)
 			if (table->next)
 				table->next->prev = table;
 			table->parent = block;
-			if (!box_normalise_table(table, box_pool))
+			if (!box_normalise_table(table, c))
 				return false;
 			break;
 		default:
@@ -164,7 +163,7 @@ bool box_normalise_block(struct box *block, pool box_pool)
 }
 
 
-bool box_normalise_table(struct box *table, pool box_pool)
+bool box_normalise_table(struct box *table, struct content * c)
 {
 	struct box *child;
 	struct box *next_child;
@@ -192,7 +191,7 @@ bool box_normalise_table(struct box *table, pool box_pool)
 		case BOX_TABLE_ROW_GROUP:
 			/* ok */
 			if (!box_normalise_table_row_group(child,
-					&col_info, box_pool)) {
+					&col_info, c)) {
 				free(col_info.spans);
 				return false;
 			}
@@ -211,7 +210,7 @@ bool box_normalise_table(struct box *table, pool box_pool)
 			}
 			css_cascade(style, &css_blank_style);
 			row_group = box_create(style, table->href, 0,
-					0, box_pool);
+					0, c);
 			if (!row_group) {
 				free(col_info.spans);
 				css_free_style(style);
@@ -240,7 +239,7 @@ bool box_normalise_table(struct box *table, pool box_pool)
 				row_group->next->prev = row_group;
 			row_group->parent = table;
 			if (!box_normalise_table_row_group(row_group,
-					&col_info, box_pool)) {
+					&col_info, c)) {
 				free(col_info.spans);
 				return false;
 			}
@@ -344,7 +343,7 @@ void box_normalise_table_spans(struct box *table)
 
 bool box_normalise_table_row_group(struct box *row_group,
 		struct columns *col_info,
-		pool box_pool)
+		struct content * c)
 {
 	struct box *child;
 	struct box *next_child;
@@ -361,7 +360,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 		case BOX_TABLE_ROW:
 			/* ok */
 			if (!box_normalise_table_row(child, col_info,
-					box_pool))
+					c))
 				return false;
 			break;
 		case BOX_BLOCK:
@@ -376,7 +375,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 				return false;
 			css_cascade(style, &css_blank_style);
 			row = box_create(style, row_group->href, 0,
-					0, box_pool);
+					0, c);
 			if (!row) {
 				css_free_style(style);
 				return false;
@@ -404,7 +403,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 				row->next->prev = row;
 			row->parent = row_group;
 			if (!box_normalise_table_row(row, col_info,
-					box_pool))
+					c))
 				return false;
 			break;
 		case BOX_INLINE:
@@ -440,7 +439,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 
 bool box_normalise_table_row(struct box *row,
 		struct columns *col_info,
-		pool box_pool)
+		struct content * c)
 {
 	struct box *child;
 	struct box *next_child;
@@ -457,7 +456,7 @@ bool box_normalise_table_row(struct box *row,
 		switch (child->type) {
 		case BOX_TABLE_CELL:
 			/* ok */
-			if (!box_normalise_block(child, box_pool))
+			if (!box_normalise_block(child, c))
 				return false;
 			cell = child;
 			break;
@@ -473,7 +472,7 @@ bool box_normalise_table_row(struct box *row,
 				return false;
 			css_cascade(style, &css_blank_style);
 			cell = box_create(style, row->href, 0, 0,
-					box_pool);
+					c);
 			if (!cell) {
 				css_free_style(style);
 				return false;
@@ -500,7 +499,7 @@ bool box_normalise_table_row(struct box *row,
 			if (cell->next)
 				cell->next->prev = cell;
 			cell->parent = row;
-			if (!box_normalise_block(cell, box_pool))
+			if (!box_normalise_block(cell, c))
 				return false;
 			break;
 		case BOX_INLINE:
@@ -627,7 +626,7 @@ bool calculate_table_row(struct columns *col_info,
 }
 
 
-bool box_normalise_inline_container(struct box *cont, pool box_pool)
+bool box_normalise_inline_container(struct box *cont, struct content * c)
 {
 	struct box *child;
 	struct box *next_child;
@@ -645,7 +644,7 @@ bool box_normalise_inline_container(struct box *cont, pool box_pool)
 			break;
 		case BOX_INLINE_BLOCK:
 			/* ok */
-			if (!box_normalise_block(child, box_pool))
+			if (!box_normalise_block(child, c))
 				return false;
 			break;
 		case BOX_FLOAT_LEFT:
@@ -656,13 +655,13 @@ bool box_normalise_inline_container(struct box *cont, pool box_pool)
 				case BOX_BLOCK:
 					if (!box_normalise_block(
 							child->children,
-							box_pool))
+							c))
 						return false;
 					break;
 				case BOX_TABLE:
 					if (!box_normalise_table(
 							child->children,
-							box_pool))
+							c))
 						return false;
 					break;
 				default:

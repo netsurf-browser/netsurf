@@ -15,7 +15,6 @@
  */
 
 #define _GNU_SOURCE  /* for strndup */
-#include <alloca.h>
 #include <assert.h>
 #include <ctype.h>
 #include <limits.h>
@@ -34,7 +33,7 @@
 #include "netsurf/render/layout.h"
 #define NDEBUG
 #include "netsurf/utils/log.h"
-#include "netsurf/utils/pool.h"
+#include "netsurf/utils/talloc.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -55,12 +54,13 @@ static void find_sides(struct box *fl, int y0, int y1,
 static int line_height(struct css_style *style);
 static bool layout_line(struct box *first, int width, int *y,
 		int cx, int cy, struct box *cont, bool indent,
-		pool box_pool, struct box **next_box);
+		struct content *content, struct box **next_box);
 static int layout_text_indent(struct css_style *style, int width);
-static bool layout_float(struct box *b, int width, pool box_pool);
+static bool layout_float(struct box *b, int width, struct content *content);
 static void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont);
-static bool layout_table(struct box *box, int available_width, pool box_pool);
+static bool layout_table(struct box *box, int available_width,
+		struct content *content);
 static void layout_move_children(struct box *box, int x, int y);
 static bool calculate_widths(struct box *box);
 static bool calculate_block_widths(struct box *box, int *min, int *max,
@@ -75,15 +75,17 @@ static bool calculate_table_widths(struct box *table);
 /**
  * Calculate positions of boxes in a document.
  *
- * \param  doc       root of document box tree
+ * \param  doc       content of type CONTENT_HTML
  * \param  width     available page width
- * \param  box_pool  memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  */
 
-bool layout_document(struct box *doc, int width, pool box_pool)
+bool layout_document(struct content *content, int width)
 {
 	bool ret;
+	struct box *doc = content->data.html.layout;
+
+	assert(content->type == CONTENT_HTML);
 
 	doc->float_children = 0;
 
@@ -97,7 +99,7 @@ bool layout_document(struct box *doc, int width, pool box_pool)
 			doc->border[RIGHT] + doc->margin[RIGHT];
 	doc->width = width;
 
-	ret = layout_block_context(doc, box_pool);
+	ret = layout_block_context(doc, content);
 
 	layout_calculate_descendant_bboxes(doc);
 
@@ -109,14 +111,14 @@ bool layout_document(struct box *doc, int width, pool box_pool)
  * Layout a block formatting context.
  *
  * \param  block  BLOCK, INLINE_BLOCK, or TABLE_CELL to layout.
- * \param  box_pool  memory pool for any new boxes
+ * \param  content  memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  *
  * This function carries out layout of a block and its children, as described
  * in CSS 2.1 9.4.1.
  */
 
-bool layout_block_context(struct box *block, pool box_pool)
+bool layout_block_context(struct box *block, struct content *content)
 {
 	struct box *box;
 	int cx;
@@ -154,7 +156,7 @@ bool layout_block_context(struct box *block, pool box_pool)
 		if (box->type == BOX_BLOCK)
 			layout_block_find_dimensions(box->parent->width, box);
 		else if (box->type == BOX_TABLE) {
-			if (!layout_table(box, box->parent->width, box_pool))
+			if (!layout_table(box, box->parent->width, content))
 				return false;
 			layout_solve_width(box->parent->width, box->width,
 					box->margin, box->padding, box->border);
@@ -195,7 +197,7 @@ bool layout_block_context(struct box *block, pool box_pool)
 		if (box->type == BOX_INLINE_CONTAINER) {
 			box->width = box->parent->width;
 			if (!layout_inline_container(box, box->width, block,
-					cx, cy, box_pool))
+					cx, cy, content))
 				return false;
 		} else if (box->type == BOX_TABLE) {
 			/* Move down to avoid floats if necessary. */
@@ -634,12 +636,12 @@ void find_sides(struct box *fl, int y0, int y1,
  * \param  cont   ancestor box which defines horizontal space, for floats
  * \param  cx     box position relative to cont
  * \param  cy     box position relative to cont
- * \param  box_pool  memory pool for any new boxes
+ * \param  content  memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  */
 
 bool layout_inline_container(struct box *box, int width,
-		struct box *cont, int cx, int cy, pool box_pool)
+		struct box *cont, int cx, int cy, struct content *content)
 {
 	bool first_line = true;
 	struct box *c, *next;
@@ -653,7 +655,7 @@ bool layout_inline_container(struct box *box, int width,
 	for (c = box->children; c; ) {
 		LOG(("c %p", c));
 		if (!layout_line(c, width, &y, cx, cy + y, cont, first_line,
-				box_pool, &next))
+				content, &next))
 			return false;
 		c = next;
 		first_line = false;
@@ -710,13 +712,13 @@ int line_height(struct css_style *style)
  * \param  cont    ancestor box which defines horizontal space, for floats
  * \param  indent  apply any first-line indent
  * \param  next_box  updated to first box for next line, or 0 at end
- * \param  box_pool  memory pool for any new boxes
+ * \param  content  memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  */
 
 bool layout_line(struct box *first, int width, int *y,
 		int cx, int cy, struct box *cont, bool indent,
-		pool box_pool, struct box **next_box)
+		struct content *content, struct box **next_box)
 {
 	int height, used_height;
 	int x0 = 0;
@@ -759,7 +761,7 @@ bool layout_line(struct box *first, int width, int *y,
 
 		if (b->type == BOX_INLINE_BLOCK) {
 			if (b->width == UNKNOWN_WIDTH)
-				if (!layout_float(b, width, box_pool))
+				if (!layout_float(b, width, content))
 					return false;
 			/** \todo  should margin be included? spec unclear */
 			h = b->border[TOP] + b->padding[TOP] + b->height +
@@ -943,7 +945,7 @@ bool layout_line(struct box *first, int width, int *y,
 			d->float_children = 0;
 /* 			css_dump_style(b->style); */
 
-			if (!layout_float(d, width, box_pool))
+			if (!layout_float(d, width, content))
 				return false;
 			d->x = d->margin[LEFT] + d->border[LEFT];
 			d->y = d->margin[TOP] + d->border[TOP];
@@ -1022,13 +1024,14 @@ bool layout_line(struct box *first, int width, int *y,
 				b = split_box->next;
 			} else {
 				/* cut off first word for this line */
-				/* \todo allocate from box_pool */
-				c2 = pool_alloc(box_pool, sizeof *c2);
+				/* \todo allocate from content */
+				c2 = talloc_memdup(content, split_box,
+						sizeof *c2);
 				if (!c2)
 					return false;
-				memcpy(c2, split_box, sizeof *c2);
-				c2->text = strndup(split_box->text + space + 1,
-					split_box->length - (space + 1));
+				c2->text = talloc_strndup(content,
+						split_box->text + space + 1,
+						split_box->length -(space + 1));
 				if (!c2->text)
 					return false;
 				c2->length = split_box->length - (space + 1);
@@ -1066,12 +1069,13 @@ bool layout_line(struct box *first, int width, int *y,
 			if (space == 0)
 				space = 1;
 			if (space != split_box->length) {
-				c2 = pool_alloc(box_pool, sizeof *c2);
+				c2 = talloc_memdup(content, split_box,
+						sizeof *c2);
 				if (!c2)
 					return false;
-				memcpy(c2, split_box, sizeof *c2);
-				c2->text = strndup(split_box->text + space + 1,
-						split_box->length - (space + 1));
+				c2->text = talloc_strndup(content,
+						split_box->text + space + 1,
+						split_box->length -(space + 1));
 				if (!c2->text)
 					return false;
 				c2->length = split_box->length - (space + 1);
@@ -1147,22 +1151,22 @@ int layout_text_indent(struct css_style *style, int width)
  *
  * \param  b      float or inline block box
  * \param  width  available width
- * \param  box_pool  memory pool for any new boxes
+ * \param  content  memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  */
 
-bool layout_float(struct box *b, int width, pool box_pool)
+bool layout_float(struct box *b, int width, struct content *content)
 {
 	layout_float_find_dimensions(width, b->style, b);
 	if (b->type == BOX_TABLE) {
-		if (!layout_table(b, width, box_pool))
+		if (!layout_table(b, width, content))
 			return false;
 		if (b->margin[LEFT] == AUTO)
 			b->margin[LEFT] = 0;
 		if (b->margin[RIGHT] == AUTO)
 			b->margin[RIGHT] = 0;
 	} else
-		return layout_block_context(b, box_pool);
+		return layout_block_context(b, content);
 	return true;
 }
 
@@ -1212,12 +1216,12 @@ void place_float_below(struct box *c, int width, int cx, int y,
  *
  * \param  table            table to layout
  * \param  available_width  width of containing block
- * \param  box_pool         memory pool for any new boxes
+ * \param  content         memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  */
 
 bool layout_table(struct box *table, int available_width,
-		pool box_pool)
+		struct content *content)
 {
 	unsigned int columns = table->columns;  /* total columns */
 	unsigned int i;
@@ -1225,7 +1229,7 @@ bool layout_table(struct box *table, int available_width,
 	int *excess_y;
 	int table_width, min_width = 0, max_width = 0;
 	int required_width = 0;
-	int x, cp, remainder = 0, count = 0;
+	int x, remainder = 0, count = 0;
 	int table_height = 0;
 	int *xs;  /* array of column x positions */
 	int auto_width;
@@ -1273,11 +1277,6 @@ bool layout_table(struct box *table, int available_width,
 				layout_find_dimensions(available_width,
 						c->style, 0,
 						c->padding, c->border);
-				if (c->style->html_style.cellpadding.type == CSS_CELLPADDING_VALUE)
-				  	for (cp = 0; cp < 4; cp++)
-				  		if (!c->style->padding[cp].override_cellpadding)
-			  	  			c->padding[cp] =
-			  	  				c->style->html_style.cellpadding.value;
 				if (c->style->overflow ==
 						CSS_OVERFLOW_SCROLL ||
 						c->style->overflow ==
@@ -1489,7 +1488,7 @@ bool layout_table(struct box *table, int available_width,
 				c->float_children = 0;
 
 				c->height = AUTO;
-				if (!layout_block_context(c, box_pool)) {
+				if (!layout_block_context(c, content)) {
 					free(col);
 					free(excess_y);
 					free(row_span);
@@ -1692,25 +1691,25 @@ bool calculate_widths(struct box *box)
 	/* add margins, border, padding to min, max widths */
 	if (style) {
 		for (side = 1; side != 5; side += 2) {  /* RIGHT, LEFT */
-			if ((box->type == BOX_TABLE_CELL) &&
-					(style->html_style.cellpadding.type == CSS_CELLPADDING_VALUE) &&
-				 	(!style->padding[side].override_cellpadding))
-				extra_fixed += style->html_style.cellpadding.value;
-			else if (style->padding[side].padding == CSS_PADDING_LENGTH)
-				extra_fixed += (int)css_len2px(&style->padding[side].value.length,
-						style);
-			else if (style->padding[side].padding == CSS_PADDING_PERCENT)
-				extra_frac += style->padding[side].value.percent * 0.01;
+			if (style->padding[side].padding == CSS_PADDING_LENGTH)
+				extra_fixed += css_len2px(&style->padding[side].
+						value.length, style);
+			else if (style->padding[side].padding ==
+					CSS_PADDING_PERCENT)
+				extra_frac += style->padding[side].value.
+						percent * 0.01;
 
 			if (style->border[side].style != CSS_BORDER_STYLE_NONE)
-				extra_fixed += (int)css_len2px(&style->border[side].width.value,
-						style);
+				extra_fixed += css_len2px(&style->border[side].
+						width.value, style);
 
 			if (style->margin[side].margin == CSS_MARGIN_LENGTH)
-				extra_fixed += (int)css_len2px(&style->margin[side].value.length,
-						style);
-			else if (style->margin[side].margin == CSS_MARGIN_PERCENT)
-				extra_frac += style->margin[side].value.percent * 0.01;
+				extra_fixed += css_len2px(&style->margin[side].
+						value.length, style);
+			else if (style->margin[side].margin ==
+					CSS_MARGIN_PERCENT)
+				extra_frac += style->margin[side].value.
+						percent * 0.01;
 		}
 	}
 
