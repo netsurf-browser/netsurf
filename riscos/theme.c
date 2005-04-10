@@ -489,7 +489,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 				warn_user("MiscError", error->errmess);
 				continue;
 			}
-			if (!strncmp(sprite_name, "throbber", 8))
+			if (strncmp(sprite_name, "throbber", 8))
 				continue;
 			
 			/* get the max sprite width/height */
