@@ -84,6 +84,7 @@ static struct css_style * box_get_style(struct content *c,
 		struct css_style *parent_style,
 		xmlNode *n);
 static void box_solve_display(struct css_style *style, bool root);
+static void box_set_cellpadding(struct box *box, int value);
 static void box_text_transform(char *s, unsigned int len,
 		css_text_transform tt);
 #define BOX_SPECIAL_PARAMS xmlNode *n, struct content *content, \
@@ -105,9 +106,11 @@ static bool box_embed(BOX_SPECIAL_PARAMS);
 /*static bool box_applet(BOX_SPECIAL_PARAMS);*/
 static bool box_iframe(BOX_SPECIAL_PARAMS);
 static bool plugin_decode(struct content* content, struct box* box);
+static bool box_get_attribute(xmlNode *n, const char *attribute,
+		void *context, char **value);
+static bool box_extract_link(const char *rel, const char *base, char **result);
 static struct box_multi_length *box_parse_multi_lengths(const char *s,
 		unsigned int *count, void *context);
-void box_set_cellpadding(struct box *box, int value);
 
 
 /* element_table must be sorted by name */
@@ -261,7 +264,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	struct box *inline_container_c;
 	struct css_style *style = 0;
 	struct element_entry *element;
-	xmlChar *title0, *id0;
+	xmlChar *title0;
 	xmlNode *c;
 
 	assert(n);
@@ -293,12 +296,8 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	}
 
 	/* extract id attribute, if present */
-	if ((id0 = xmlGetProp(n, (const xmlChar *) "id"))) {
-		id = talloc_strdup(content, id0);
-		xmlFree(id0);
-		if (!id)
-			return false;
-	}
+	if (!box_get_attribute(n, "id", content, &id))
+		return false;
 
 	/* create box for this element */
 	box = box_create(style, href, title, id, content);
@@ -900,8 +899,8 @@ void box_text_transform(char *s, unsigned int len,
 /**
  * \name  Special case element handlers
  *
- * These functions are called by convert_xml_to_box when an element is being
- * converted, according to the entries in element_table.
+ * These functions are called by box_construct_element() when an element is
+ * being converted, according to the entries in element_table.
  *
  * The parameters are the xmlNode, the content for the document, and a partly
  * filled in box structure for the element.
@@ -944,22 +943,26 @@ bool box_br(BOX_SPECIAL_PARAMS)
 
 bool box_a(BOX_SPECIAL_PARAMS)
 {
-	char *s;
+	bool ok;
+	char *url;
+	xmlChar *s;
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "href"))) {
-		box->href = talloc_strdup(content, s);
+	if ((s = xmlGetProp(n, (const xmlChar *) "href"))) {
+		ok = box_extract_link((const char *) s,
+				content->data.html.base_url, &url);
 		xmlFree(s);
-		if (!box->href)
+		if (!ok)
 			return false;
+		if (url) {
+			box->href = talloc_strdup(content, url);
+			if (!box->href)
+				return false;
+		}
 	}
 
 	/* name and id share the same namespace */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
-		box->id = talloc_strdup(content, s);
-		xmlFree(s);
-		if (!box->id)
-			return false;
-	}
+	if (!box_get_attribute(n, "name", content, &box->id))
+		return false;
 
 	return true;
 }
@@ -971,7 +974,7 @@ bool box_a(BOX_SPECIAL_PARAMS)
 
 bool box_image(BOX_SPECIAL_PARAMS)
 {
-	char *s, *url, *s1, *map;
+	char *s, *url, *s1;
 	xmlChar *s2;
 	url_func_result res;
 
@@ -989,15 +992,10 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	}
 
 	/* imagemap associated with this image */
-	if ((map = xmlGetProp(n, (const xmlChar *) "usemap"))) {
-		if (map[0] == '#')
-			box->usemap = talloc_strdup(content, map + 1);
-		else
-			box->usemap = talloc_strdup(content, map);
-		xmlFree(map);
-		if (!box->usemap)
-			return false;
-	}
+	if (!box_get_attribute(n, "usemap", content, &box->usemap))
+		return false;
+	if (box->usemap && box->usemap[0] == '#')
+		box->usemap++;
 
 	/* img without src is an error */
 	if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "src")))
@@ -1037,7 +1035,6 @@ bool box_object(BOX_SPECIAL_PARAMS)
 {
 	struct object_params *po;
 	struct plugin_params *pp = NULL;
-	char *s, *map;
 	xmlNode *c;
 
 	po = talloc(content, struct object_params);
@@ -1051,54 +1048,22 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	po->params = 0;
 	po->basehref = 0;
 
-	/* object data */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "data"))) {
-		po->data = strdup(s);
-		xmlFree(s);
-		if (!po->data)
-			return false;
-	}
+	if (!box_get_attribute(n, "data", content, &po->data))
+		return false;
 
-	/* imagemap associated with this object */
-	if ((map = xmlGetProp(n, (const xmlChar *) "usemap"))) {
-		box->usemap = (map[0] == '#') ? talloc_strdup(content, map + 1)
-				: talloc_strdup(content, map);
-		xmlFree(map);
-		if (!box->usemap)
-			return false;
-	}
+	if (!box_get_attribute(n, "usemap", content, &box->usemap))
+		return false;
+	if (box->usemap && box->usemap[0] == '#')
+		box->usemap++;
 
-	/* object type */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "type"))) {
-		po->type = talloc_strdup(content, s);
-		xmlFree(s);
-		if (!po->type)
-			return false;
-	}
-
-	/* object codetype */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codetype"))) {
-		po->codetype = talloc_strdup(content, s);
-		xmlFree(s);
-		if (!po->codetype)
-			return false;
-	}
-
-	/* object codebase */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codebase"))) {
-		po->codebase = talloc_strdup(content, s);
-		xmlFree(s);
-		if (!po->codebase)
-			return false;
-	}
-
-	/* object classid */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "classid"))) {
-		po->classid = talloc_strdup(content, s);
-		xmlFree(s);
-		if (!po->classid)
-			return false;
-	}
+	if (!box_get_attribute(n, "type", content, &po->type))
+		return false;
+	if (!box_get_attribute(n, "codetype", content, &po->codetype))
+		return false;
+	if (!box_get_attribute(n, "codebase", content, &po->codebase))
+		return false;
+	if (!box_get_attribute(n, "classid", content, &po->classid))
+		return false;
 
 	/* parameters
 	 * parameter data is stored in a singly linked list.
@@ -1125,31 +1090,15 @@ bool box_object(BOX_SPECIAL_PARAMS)
 		pp->valuetype = 0;
 		pp->next = 0;
 
-		if ((s = (char *) xmlGetProp(c, (const xmlChar *) "name"))) {
-			pp->name = talloc_strdup(content, s);
-			xmlFree(s);
-			if (!pp->name)
-				return false;
-		}
-		if ((s = (char *) xmlGetProp(c, (const xmlChar *) "value"))) {
-			pp->value = talloc_strdup(content, s);
-			xmlFree(s);
-			if (!pp->value)
-				return false;
-		}
-		if ((s = (char *) xmlGetProp(c, (const xmlChar *) "type"))) {
-			pp->type = talloc_strdup(content, s);
-			xmlFree(s);
-			if (!pp->type)
-				return false;
-		}
-		if ((s = (char *) xmlGetProp(c,
-				(const xmlChar *) "valuetype"))) {
-			pp->valuetype = talloc_strdup(content, s);
-			xmlFree(s);
-			if (!pp->valuetype)
-				return false;
-		} else {
+		if (!box_get_attribute(c, "name", content, &pp->name))
+			return false;
+		if (!box_get_attribute(c, "value", content, &pp->value))
+			return false;
+		if (!box_get_attribute(c, "type", content, &pp->type))
+			return false;
+		if (!box_get_attribute(c, "valuetype", content, &pp->valuetype))
+			return false;
+		if (!pp->valuetype) {
 			pp->valuetype = talloc_strdup(content, "data");
 			if (!pp->valuetype)
 				return false;
@@ -2316,6 +2265,100 @@ bool plugin_decode(struct content *content, struct box *box)
 no_handler:
 	free(url);
 	return false;
+}
+
+
+/**
+ * Get the value of an XML element's attribute.
+ *
+ * \param  n          xmlNode, of type XML_ELEMENT_NODE
+ * \param  attribute  name of attribute
+ * \param  context    talloc context for result buffer
+ * \param  value      updated to value, if the attribute is present
+ * \return  true on success, false if attribute present but memory exhausted
+ *
+ * Note that returning true does not imply that the attribute was found. If the
+ * attribute was not found, *value will be unchanged.
+ */
+
+bool box_get_attribute(xmlNode *n, const char *attribute,
+		void *context, char **value)
+{
+	xmlChar *s = xmlGetProp(n, (const xmlChar *) attribute);
+	if (!s)
+		return true;
+	*value = talloc_strdup(context, s);
+	xmlFree(s);
+	if (!*value)
+		return false;
+	return true;
+}
+
+
+/**
+ * Extract a URL from a relative link, handling junk like whitespace and
+ * attempting to read a real URL from "javascript:" links.
+ *
+ * \param  rel     relative URL taken from page
+ * \param  base    base for relative URLs
+ * \param  result  updated to target URL on heap, unchanged if extract failed
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool box_extract_link(const char *rel, const char *base, char **result)
+{
+	char *s, *s1, *apos0 = 0, *apos1 = 0, *quot0 = 0, *quot1 = 0;
+	unsigned int i, j, end;
+	url_func_result res;
+
+	s1 = s = malloc(3 * strlen(rel) + 1);
+	if (!s)
+		return false;
+
+	/* copy to s, removing white space and control characters */
+	for (i = 0; rel[i] && isspace(rel[i]); i++)
+		;
+	for (end = strlen(rel); end != i && isspace(rel[end - 1]); end--)
+		;
+	for (j = 0; i != end; i++) {
+		if ((unsigned char) rel[i] < 0x20) {
+			; /* skip control characters */
+		} else if (rel[i] == ' ') {
+			s[j++] = '%';
+			s[j++] = '2';
+			s[j++] = '0';
+		} else {
+			s[j++] = rel[i];
+		}
+	}
+	s[j] = 0;
+
+	/* extract first quoted string out of "javascript:" link */
+	if (strncmp(s, "javascript:", 11) == 0) {
+		apos0 = strchr(s, '\'');
+		if (apos0)
+			apos1 = strchr(apos0 + 1, '\'');
+		quot0 = strchr(s, '"');
+		if (quot0)
+			quot1 = strchr(quot0 + 1, '"');
+		if (apos0 && apos1 && (!quot0 || !quot1 || apos0 < quot0)) {
+			*apos1 = 0;
+			s1 = apos0 + 1;
+		} else if (quot0 && quot1) {
+			*quot1 = 0;
+			s1 = quot0 + 1;
+		}
+	}
+
+	/* construct absolute URL */
+	res = url_join(s1, base, result);
+	free(s);
+	if (res == URL_FUNC_NOMEM)
+		return false;
+	else if (res == URL_FUNC_FAILED)
+		return true;
+
+	return true;
 }
 
 
