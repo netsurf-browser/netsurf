@@ -59,7 +59,6 @@ extern int option_font_default;		/* a css_font_family */
 extern char *option_font_default_italic;
 extern char *option_font_default_bold;
 extern char *option_font_default_bold_italic;
-extern int option_screen_cache;
 extern bool option_block_popups;
 extern bool option_url_suggestion;
 
@@ -102,7 +101,6 @@ char *option_font_mono = 0; \
 char *option_font_cursive = 0; \
 char *option_font_fantasy = 0; \
 int option_font_default = CSS_FONT_FAMILY_SANS_SERIF; \
-int option_screen_cache = 0; \
 bool option_block_popups = false; \
 bool option_url_suggestion = true;
 
@@ -145,7 +143,6 @@ bool option_url_suggestion = true;
 { "font_cursive",           OPTION_STRING,  &option_font_cursive }, \
 { "font_fantasy",           OPTION_STRING,  &option_font_fantasy }, \
 { "font_default",           OPTION_INTEGER, &option_font_default }, \
-{ "screen_cache",           OPTION_INTEGER, &option_screen_cache }, \
 { "block_popups",           OPTION_BOOL,    &option_block_popups }, \
 { "url_suggestion",         OPTION_BOOL,    &option_url_suggestion }
 

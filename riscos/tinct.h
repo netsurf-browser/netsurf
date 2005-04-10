@@ -61,5 +61,5 @@
 
 /*	Sprite mode
 */
-#define tinct_SPRITE_MODE	  0x301680b5
+#define tinct_SPRITE_MODE	  (os_mode)0x301680b5
 #endif
