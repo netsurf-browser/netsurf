@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2005 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -428,8 +428,10 @@ bool nsmng_redraw(struct content *c, int x, int y,
 {
 	bool ret;
 
-	if ((c->bitmap) && (c->data.mng.opaque_test_pending))
+	if ((c->bitmap) && (c->data.mng.opaque_test_pending)) {
 		bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
+		c->data.mng.opaque_test_pending = false;
+	}
 
 	assert(c != NULL);
 
@@ -461,6 +463,7 @@ void nsmng_animate(void *p) {
  	} else {
  		c->data.mng.waiting = false;
  		mng_display_resume(c->data.mng.handle);
+		c->data.mng.opaque_test_pending = true;
  	}
 }
 
