@@ -299,10 +299,6 @@ bool ro_plot_clip(int clip_x0, int clip_y0,
 bool ro_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c)
 {
-	const os_VDU_VAR_LIST(3) var_list = { { os_VDUVAR_ORGX, os_VDUVAR_ORGY,
-			os_VDUVAR_END_LIST } };
-	int value_list[3];
-	int dx = 0, dy = 0;
 	os_error *error;
 
 	error = xcolourtrans_set_font_colours(font_CURRENT,
@@ -312,23 +308,10 @@ bool ro_plot_text(int x, int y, struct css_style *style,
 				error->errnum, error->errmess));
 		return false;
 	}
-
-	/* adjust by the origin (not if printing as the result is undefined) */
-	if (!print_active) {
-		error = xos_read_vdu_variables((const os_vdu_var_list *)
-				&var_list, value_list);
-		if (error) {
-			LOG(("xos_read_vdu_variables: 0x%x: %s",
-					error->errnum, error->errmess));
-			return false;
-		}
-		dx = value_list[0];
-		dy = value_list[1];
-	}
-
+	
 	return nsfont_paint(style, text, length,
-			ro_plot_origin_x + dx + x * 2,
-			ro_plot_origin_y + dy - y * 2,
+			ro_plot_origin_x + x * 2,
+			ro_plot_origin_y - y * 2,
 			ro_plot_scale);
 }
 

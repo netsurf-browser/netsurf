@@ -15,6 +15,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpreadsysinfo.h"
 #include "netsurf/riscos/buffer.h"
+#include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/wimp.h"
@@ -22,23 +23,6 @@
 //#define NDEBUG
 #define BUFFER_EXCLUSIVE_USER_REDRAW "Only support pure user redraw (faster)"
 //#define BUFFER_EMULATE_32BPP "Redirect to a 32bpp sprite and plot with Tinct"
-
-/*	SCREEN BUFFERING
-	================
-
-	Because RISC OS provides no native way for windows to be buffered (ie
-	the contents is only updated when the task has finished doing any
-	drawing) certain situation cause the window contents to flicker in an
-	undesirable manner. Examples of this are GIF and MNG animations, and
-	web pages with fixed backgrounds.
-
-	To overcome this, a very simple, transparent, interface is provided here
-	to allow for output to be buffered. It should be noted that screen
-	buffering can lower the perceived client response time as the user is
-	unable to see that the application is doing anything.
-
-	[rjw] - Mon 19th July 2004
-*/
 
 static void ro_gui_buffer_free(void);
 
@@ -63,14 +47,18 @@ static osspriteop_save_area *context3;
 */
 static os_mode mode;
 
+
 /**
  * Opens a buffer for writing to.
+ *
+ * The ro_plot_origin_ variables are updated to reflect the new screen origin,
+ * so the variables should be set before calling this function, and not
+ * changed until after ro_gui_buffer_close() has been called.
  *
  * \param redraw the current WIMP redraw area to buffer
  */
 void ro_gui_buffer_open(wimp_draw *redraw) {
 	int size;
-	int orig_x0, orig_y0;
 	int total_size;
 	os_coord sprite_size;
 	int bpp, word_width;
@@ -90,6 +78,19 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	*/
 	clipping = redraw->clip;
 
+	/*	Stop bad rectangles
+	*/
+	LOG(("Clipping rectangle (%i, %i) to (%i,%i)",
+		clipping.x0, clipping.y0,
+		clipping.x1, clipping.y1));
+	if ((clipping.x1 < clipping.x0) ||
+			(clipping.y1 < clipping.y0)) {
+		LOG(("Invalid clipping rectangle (%i, %i) to (%i,%i)",
+			clipping.x0, clipping.y0,
+			clipping.x1, clipping.y1));
+		return;
+	}
+
 	/*	Work out how much buffer we need
 	*/
 	sprite_size.x = clipping.x1 - clipping.x0 + 1;
@@ -97,7 +98,6 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	ro_convert_os_units_to_pixels(&sprite_size, (os_mode)-1);
 	if (sprite_size.y == 1) /* work around SpriteExtend bug */
 		sprite_size.y = 2;
-
 
 #ifdef BUFFER_EMULATE_32BPP
 	bpp = 5;
@@ -119,6 +119,7 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	buffer = (osspriteop_area *)malloc(total_size);
 	if (!buffer) {
 		LOG(("Failed to allocate memory"));
+		ro_gui_buffer_free();
 		return;
 	}
 	buffer->size = total_size;
@@ -200,15 +201,11 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 		return;
 	}
 
-	/*	Move the origin such that (x0, y0) becomes (0, 0). To do this
-		we use VDU 29,(1 << 16) - x0; (1 << 16) - y0; because RISC OS
-		is so insanely legacy driven.
+	/*	Emulate an origin as the FontManager doesn't respect it in
+		most cases.
 	*/
-	orig_x0 = (1 << 16) - clipping.x0;
-	orig_y0 = (1 << 16) - clipping.y0;
-	os_writec((char)29);
-	os_writec(orig_x0 & 0xff); os_writec(orig_x0 >> 8);
-	os_writec(orig_y0 & 0xff); os_writec(orig_y0 >> 8);
+	ro_plot_origin_x -= clipping.x0;
+	ro_plot_origin_y -= clipping.y0;
 }
 
 
@@ -224,6 +221,8 @@ void ro_gui_buffer_close(void) {
 
 	/*	Remove any previous redirection
 	*/
+	ro_plot_origin_x -= clipping.x0;
+	ro_plot_origin_y -= clipping.y0;
 	xosspriteop_switch_output_to_sprite(osspriteop_PTR,
 			context1, context2, context3,
 			0, 0, 0, 0);
