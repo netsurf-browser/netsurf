@@ -113,11 +113,11 @@ bool ro_gui_wimp_read_eig_factors(os_mode mode, int *xeig, int *yeig) {
  * \param  mode	     mode to use EIG factors for, or -1 for current
  */
 void ro_convert_os_units_to_pixels(os_coord *os_units, os_mode mode) {
-	int xeig = 2, yeig = 2;
+	int xeig = 1, yeig = 1;
 
 	ro_gui_wimp_read_eig_factors(mode, &xeig, &yeig);
-	os_units->x = (os_units->x >> xeig);
-	os_units->y = (os_units->y >> yeig);
+	os_units->x = ((os_units->x + (1 << xeig) - 1) >> xeig);
+	os_units->y = ((os_units->y + (1 << yeig) - 1) >> yeig);
 }
 
 
@@ -128,7 +128,7 @@ void ro_convert_os_units_to_pixels(os_coord *os_units, os_mode mode) {
  * \param  mode	   mode to use EIG factors for, or -1 for current
  */
 void ro_convert_pixels_to_os_units(os_coord *pixels, os_mode mode) {
-	int xeig = 2, yeig = 2;
+	int xeig = 1, yeig = 1;
 
 	ro_gui_wimp_read_eig_factors(mode, &xeig, &yeig);
 	pixels->x = (pixels->x << xeig);
