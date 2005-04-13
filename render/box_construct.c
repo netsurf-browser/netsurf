@@ -105,7 +105,6 @@ static bool box_object(BOX_SPECIAL_PARAMS);
 static bool box_embed(BOX_SPECIAL_PARAMS);
 /*static bool box_applet(BOX_SPECIAL_PARAMS);*/
 static bool box_iframe(BOX_SPECIAL_PARAMS);
-static bool plugin_decode(struct content* content, struct box* box);
 static bool box_get_attribute(xmlNode *n, const char *attribute,
 		void *context, char **value);
 static bool box_extract_link(const char *rel, const char *base, char **result);
@@ -957,6 +956,7 @@ bool box_a(BOX_SPECIAL_PARAMS)
 			box->href = talloc_strdup(content, url);
 			if (!box->href)
 				return false;
+			free(url);
 		}
 	}
 
@@ -974,14 +974,14 @@ bool box_a(BOX_SPECIAL_PARAMS)
 
 bool box_image(BOX_SPECIAL_PARAMS)
 {
-	char *s, *url, *s1;
-	xmlChar *s2;
-	url_func_result res;
+	bool ok;
+	char *s, *url;
+	xmlChar *alt, *src;
 
 	/* handle alt text */
-	if ((s2 = xmlGetProp(n, (const xmlChar *) "alt"))) {
-		s = squash_whitespace(s2);
-		xmlFree(s2);
+	if ((alt = xmlGetProp(n, (const xmlChar *) "alt"))) {
+		s = squash_whitespace(alt);
+		xmlFree(alt);
 		if (!s)
 			return false;
 		box->text = talloc_strdup(content, s);
@@ -997,33 +997,20 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	if (box->usemap && box->usemap[0] == '#')
 		box->usemap++;
 
-	/* img without src is an error */
-	if (!(s = (char *) xmlGetProp(n, (const xmlChar *) "src")))
+	/* get image URL */
+	if (!(src = xmlGetProp(n, (const xmlChar *) "src")))
 		return true;
-
-	/* remove leading and trailing whitespace */
-	s1 = strip(s);
-	res = url_join(s1, content->data.html.base_url, &url);
-	xmlFree(s);
-	if (res == URL_FUNC_NOMEM)
+	if (!box_extract_link((char *) src, content->data.html.base_url, &url))
 		return false;
-	else if (res == URL_FUNC_FAILED)
-		return true;
-
-	if (strcmp(url, content->data.html.base_url) == 0)
-		/* if url is equivalent to the parent's url,
-		 * we've got infinite inclusion: ignore */
+	xmlFree(src);
+	if (!url)
 		return true;
 
 	/* start fetch */
-	if (!html_fetch_object(content, url, box, image_types,
-			content->available_width, 1000, false)) {
-		free(url);
-		return false;
-	}
+	ok = html_fetch_object(content, url, box, image_types,
+			content->available_width, 1000, false);
 	free(url);
-
-	return true;
+	return ok;
 }
 
 
@@ -1033,93 +1020,120 @@ bool box_image(BOX_SPECIAL_PARAMS)
 
 bool box_object(BOX_SPECIAL_PARAMS)
 {
-	struct object_params *po;
-	struct plugin_params *pp = NULL;
+	struct object_params *params;
+	struct object_param *param;
+	xmlChar *codebase, *classid, *data;
 	xmlNode *c;
-
-	po = talloc(content, struct object_params);
-	if (!po)
-		return false;
-	po->data = 0;
-	po->type = 0;
-	po->codetype = 0;
-	po->codebase = 0;
-	po->classid = 0;
-	po->params = 0;
-	po->basehref = 0;
-
-	if (!box_get_attribute(n, "data", content, &po->data))
-		return false;
+	struct box *inline_container = 0;
 
 	if (!box_get_attribute(n, "usemap", content, &box->usemap))
 		return false;
 	if (box->usemap && box->usemap[0] == '#')
 		box->usemap++;
 
-	if (!box_get_attribute(n, "type", content, &po->type))
+	params = talloc(content, struct object_params);
+	if (!params)
 		return false;
-	if (!box_get_attribute(n, "codetype", content, &po->codetype))
-		return false;
-	if (!box_get_attribute(n, "codebase", content, &po->codebase))
-		return false;
-	if (!box_get_attribute(n, "classid", content, &po->classid))
-		return false;
+	params->data = 0;
+	params->type = 0;
+	params->codetype = 0;
+	params->codebase = 0;
+	params->classid = 0;
+	params->params = 0;
 
-	/* parameters
-	 * parameter data is stored in a singly linked list.
-	 * po->params points to the head of the list.
-	 * new parameters are added to the head of the list.
-	 */
+	/* codebase, classid, and data are URLs (codebase is the base for the
+	 * other two) */
+	if ((codebase = xmlGetProp(n, (const xmlChar *) "codebase"))) {
+		if (!box_extract_link((char *) codebase,
+				content->data.html.base_url, &params->codebase))
+			return false;
+		xmlFree(codebase);
+	}
+	if (!params->codebase)
+		params->codebase = content->data.html.base_url;
+
+	if ((classid = xmlGetProp(n, (const xmlChar *) "codebase"))) {
+		if (!box_extract_link((char *) classid, params->codebase,
+				&params->classid))
+			return false;
+		xmlFree(classid);
+	}
+
+	if ((data = xmlGetProp(n, (const xmlChar *) "data"))) {
+		if (!box_extract_link((char *) data, params->codebase,
+				&params->data))
+			return false;
+		xmlFree(data);
+	}
+	if (!params->data)
+		/* objects without data are ignored */
+		return true;
+
+	/* codetype and type are MIME types */
+	if (!box_get_attribute(n, "codetype", params, &params->codetype))
+		return false;
+	if (!box_get_attribute(n, "type", params, &params->type))
+		return false;
+	if (params->type && content_lookup(params->type) == CONTENT_OTHER)
+		/* can't handle this MIME type */
+		return true;
+
+	/* add parameters to linked list */
 	for (c = n->children; c; c = c->next) {
 		if (c->type != XML_ELEMENT_NODE)
 			continue;
-
 		if (strcmp((const char *) c->name, "param") != 0)
-			/* The first non-param child is the start
-			 * of the alt html. Therefore, we should
-			 * break out of this loop.
-			 */
+			/* The first non-param child is the start of the alt
+			 * html. Therefore, we should break out of this loop. */
 			break;
 
-		pp = talloc(content, struct plugin_params);
-		if (!pp)
+		param = talloc(params, struct object_param);
+		if (!param)
 			return false;
-		pp->name = 0;
-		pp->value = 0;
-		pp->type = 0;
-		pp->valuetype = 0;
-		pp->next = 0;
+		param->name = 0;
+		param->value = 0;
+		param->type = 0;
+		param->valuetype = 0;
+		param->next = 0;
 
-		if (!box_get_attribute(c, "name", content, &pp->name))
+		if (!box_get_attribute(c, "name", param, &param->name))
 			return false;
-		if (!box_get_attribute(c, "value", content, &pp->value))
+		if (!box_get_attribute(c, "value", param, &param->value))
 			return false;
-		if (!box_get_attribute(c, "type", content, &pp->type))
+		if (!box_get_attribute(c, "type", param, &param->type))
 			return false;
-		if (!box_get_attribute(c, "valuetype", content, &pp->valuetype))
+		if (!box_get_attribute(c, "valuetype", param,
+				&param->valuetype))
 			return false;
-		if (!pp->valuetype) {
-			pp->valuetype = talloc_strdup(content, "data");
-			if (!pp->valuetype)
-				return false;
-		}
+		if (!param->valuetype)
+			param->valuetype = "data";
 
-		pp->next = po->params;
-		po->params = pp;
+		param->next = params->params;
+		params->params = param;
 	}
 
-	box->object_params = po;
+	box->object_params = params;
 
-	/* start fetch */
-	if (!plugin_decode(content, box))
-		*convert_children = true;
+	/* start fetch (MIME type is ok or not specified) */
+	if (!html_fetch_object(content, params->data, box, 0,
+			content->available_width, 1000, false))
+		return false;
 
+	/* convert children and place into fallback */
+	for (c = n->children; c; c = c->next) {
+		if (!convert_xml_to_box(c, content, box->style, box,
+				&inline_container, 0, 0))
+			return false;
+	}
+	box->fallback = box->children;
+	box->children = box->last = 0;
+
+	*convert_children = false;
 	return true;
 }
 
 
-#if 0
-/**
+#if 0 /**
  * "Java applet" [13.4].
  *
  * \todo This needs reworking to be compliant to the spec
@@ -1131,7 +1145,7 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 {
 	struct box *box;
 	struct object_params *po;
-	struct plugin_params *pp = NULL;
+	struct object_param *pp = NULL;
 	char *s;
 	xmlNode *c;
 
@@ -1183,7 +1197,7 @@ struct box_result box_applet(xmlNode *n, struct box_status *status,
 			continue;
 
 		if (strcmp((const char *) c->name, "param") == 0) {
-			pp = calloc(1, sizeof(struct plugin_params));
+			pp = calloc(1, sizeof(struct object_param));
 			if (!pp)
 				goto no_memory;
 
@@ -1459,34 +1473,23 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 
 bool box_iframe(BOX_SPECIAL_PARAMS)
 {
-	struct object_params *po;
-	char *s;
+	bool ok;
+	char *url;
+	xmlChar *src;
 
-	po = talloc(content, struct object_params);
-	if (!po)
+	/* get frame URL */
+	if (!(src = xmlGetProp(n, (const xmlChar *) "src")))
+		return true;
+	if (!box_extract_link((char *) src, content->data.html.base_url, &url))
 		return false;
-	po->data = 0;
-	po->type = 0;
-	po->codetype = 0;
-	po->codebase = 0;
-	po->classid = 0;
-	po->params = 0;
-	po->basehref = 0;
-
-	/* iframe src */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src"))) {
-		po->data = talloc_strdup(content, s);
-		xmlFree(s);
-		if (!po->data)
-			return false;
-	}
-
-	box->object_params = po;
+	if (!url)
+		return true;
 
 	/* start fetch */
-	plugin_decode(content, box);
-
-	return true;
+	ok = html_fetch_object(content, url, box, 0,
+			content->available_width, 1000, false);
+	free(url);
+	return ok;
 }
 
 
@@ -2054,218 +2057,65 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 
 bool box_embed(BOX_SPECIAL_PARAMS)
 {
-	struct object_params *po;
-	struct plugin_params *pp = NULL;
-	char *s;
+	struct object_params *params;
+	struct object_param *param;
+	xmlChar *src;
 	xmlAttr *a;
 
-	po = talloc(content, struct object_params);
-	if (!po)
+	params = talloc(content, struct object_params);
+	if (!params)
 		return false;
-	po->data = 0;
-	po->type = 0;
-	po->codetype = 0;
-	po->codebase = 0;
-	po->classid = 0;
-	po->params = 0;
-	po->basehref = 0;
+	params->data = 0;
+	params->type = 0;
+	params->codetype = 0;
+	params->codebase = 0;
+	params->classid = 0;
+	params->params = 0;
 
-	/* embed src */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "src")) != NULL) {
-		LOG(("embed '%s'", s));
-		po->data = talloc_strdup(content, s);
-		xmlFree(s);
-		if (!po->data)
+	/* src is a URL */
+	if (!(src = xmlGetProp(n, (const xmlChar *) "src")))
+		return true;
+	if (!box_extract_link((char *) src, content->data.html.base_url,
+			&params->data))
+		return false;
+	xmlFree(src);
+	if (!params->data)
+		return true;
+
+	/* add attributes as parameters to linked list */
+	for (a = n->properties; a; a = a->next) {
+		if (strcasecmp((const char *) a->name, "src") == 0)
+			continue;
+		if (!a->children || !a->children->content)
+			continue;
+
+		param = talloc(content, struct object_param);
+		if (!param)
 			return false;
+		param->name = talloc_strdup(content, (const char *) a->name);
+		param->value = talloc_strdup(content,
+				(char *) a->children->content);
+		param->type = 0;
+		param->valuetype = "data";
+		param->next = 0;
+
+		if (!param->name || !param->value)
+			return false;
+
+		param->next = params->params;
+		params->params = param;
 	}
 
-	/**
-	 * we munge all other attributes into a plugin_parameter structure
-	 */
-	for (a = n->properties; a; a = a->next) {
-		pp = talloc(content, struct plugin_params);
-		if (!pp)
-			return false;
-		pp->name = 0;
-		pp->value = 0;
-		pp->type = 0;
-		pp->valuetype = 0;
-		pp->next = 0;
-
-		if (strcasecmp((const char *) a->name, "src") != 0 &&
-				a->children && a->children->content) {
-			pp->name = talloc_strdup(content,
-					(const char *) a->name);
-			pp->value = talloc_strdup(content,
-					(char *) a->children->content);
-			pp->valuetype = talloc_strdup(content, "data");
-			if (!pp->name || !pp->value || !pp->valuetype)
-				return false;
-
-			pp->next = po->params;
-			po->params = pp;
-		}
-	 }
-
-	box->object_params = po;
+	box->object_params = params;
 
 	/* start fetch */
-	/* embeds have no content, so we don't care if this returns false */
-	plugin_decode(content, box);
-
-	return true;
+	return html_fetch_object(content, params->data, box, 0,
+			content->available_width, 1000, false);
 }
 
 /**
  * \}
  */
-
-
-/**
- * plugin_decode
- * This function checks that the contents of the plugin_object struct
- * are valid. If they are, it initiates the fetch process. If they are
- * not, it exits, leaving the box structure as it was on entry. This is
- * necessary as there are multiple ways of declaring an object's attributes.
- *
- * Returns false if the object could not be handled.
- */
-bool plugin_decode(struct content *content, struct box *box)
-{
-	char *codebase, *url = NULL;
-	struct object_params *po;
-	struct plugin_params *pp;
-	url_func_result res;
-
-	assert(content && box);
-
-	po = box->object_params;
-
-	/* Check if the codebase attribute is defined.
-	 * If it is not, set it to the codebase of the current document.
-	 */
-	if (po->codebase == 0)
-		res = url_join("./", content->data.html.base_url,
-							&codebase);
-	else
-		res = url_join(po->codebase, content->data.html.base_url,
-							&codebase);
-
-	if (res != URL_FUNC_OK)
-		return false;
-
-	/* free pre-existing codebase */
-	if (po->codebase)
-		talloc_free(po->codebase);
-
-	po->codebase = talloc_strdup(content, codebase);
-	if (!po->codebase) {
-		free(codebase);
-		return false;
-	}
-
-	/* no longer need this */
-	free(codebase);
-
-	/* Set basehref */
-	po->basehref = talloc_strdup(content, content->data.html.base_url);
-	if (!po->basehref)
-		return false;
-
-	if (po->data == 0 && po->classid == 0)
-		/* no data => ignore this object */
-		return false;
-
-	if (po->data == 0 && po->classid != 0) {
-		/* just classid specified */
-		if (strncasecmp(po->classid, "clsid:", 6) == 0) {
-			if (strcasecmp(po->classid, "clsid:D27CDB6E-AE6D-11cf-96B8-444553540000") == 0) {
-				/* Flash */
-				for (pp = po->params;
-					pp != 0 &&
-					strcasecmp(pp->name, "movie") != 0;
-					pp = pp->next)
-					/* no body */;
-				if (pp == 0)
-						return false;
-				res = url_join(pp->value, po->basehref, &url);
-				if (res != URL_FUNC_OK)
-						return false;
-				/* munge the codebase */
-				res = url_join("./",
-						content->data.html.base_url,
-						&codebase);
-				if (res != URL_FUNC_OK) {
-						free(url);
-						return false;
-				}
-				if (po->codebase)
-					talloc_free(po->codebase);
-				po->codebase = talloc_strdup(content,
-								codebase);
-				free(codebase);
-				if (!po->codebase) {
-					free(url);
-					return false;
-				}
-			}
-			else {
-				LOG(("ActiveX object"));
-				return false;
-			}
-		} else {
-			res = url_join(po->classid, po->codebase, &url);
-			if (res != URL_FUNC_OK)
-				return false;
-
-#if 0
-			/* jmb - I'm not convinced by this */
-			/* The java plugin doesn't need the .class extension
-			 * so we strip it.
-			 */
-			if (strcasecmp(&po->classid[strlen(po->classid)-6],
-					".class") == 0)
-				po->classid[strlen(po->classid)-6] = 0;
-#endif
-		}
-	} else {
-		/* just data (or both) specified - data takes precedence */
-		res = url_join(po->data, po->codebase, &url);
-		if (res != URL_FUNC_OK)
-			return false;
-	}
-
-	/* Check if the declared mime type is understandable.
-	 * Checks type and codetype attributes.
-	 */
-	if (po->type != 0 && content_lookup(po->type) == CONTENT_OTHER)
-		goto no_handler;
-	if (po->codetype != 0 &&
-			content_lookup(po->codetype) == CONTENT_OTHER)
-		goto no_handler;
-
-	/* Ensure that the object to be included isn't this document */
-	if (strcasecmp(url, content->data.html.base_url) == 0)
-		goto no_handler;
-
-	/* If we've got to here, the object declaration has provided us with
-	 * enough data to enable us to have a go at downloading and
-	 * displaying it.
-	 *
-	 * We may still find that the object has a MIME type that we can't
-	 * handle when we fetch it (if the type was not specified or is
-	 * different to that given in the attributes).
-	 */
-	if (!html_fetch_object(content, url, box, 0, 1000, 1000, false))
-		goto no_handler;
-	free(url);
-
-	return true;
-
-no_handler:
-	free(url);
-	return false;
-}
 
 
 /**

@@ -75,6 +75,7 @@ struct box * box_create(struct css_style *style,
 	box->children = NULL;
 	box->last = NULL;
 	box->parent = NULL;
+	box->fallback = NULL;
 	box->float_children = NULL;
 	box->next_float = NULL;
 	box->col = NULL;
@@ -167,42 +168,7 @@ void box_free_box(struct box *box)
 			form_free_control(box->gadget);
 	}
 
-	box_free_object_params(box->object_params);
-
 	talloc_free(box);
-}
-
-
-/**
- * Free an object parameter structure.
- *
- * \param  op  object parameter structure to free
- */
-
-void box_free_object_params(struct object_params *op)
-{
-	struct plugin_params *a, *b;
-
-	if (!op)
-		return;
-
-	free(op->data);
-	free(op->type);
-	free(op->codetype);
-	free(op->codebase);
-	free(op->classid);
-	free(op->basehref);
-
-	for (a = op->params; a; a = b) {
-		b = a->next;
-		free(a->name);
-		free(a->value);
-		free(a->type);
-		free(a->valuetype);
-		free(a);
-	}
-
-	free(op);
 }
 
 
@@ -434,7 +400,7 @@ struct box *box_find_by_id(struct box *box, const char *id)
 void box_dump(struct box *box, unsigned int depth)
 {
 	unsigned int i;
-	struct box * c;
+	struct box *c, *prev;
 
 	for (i = 0; i != depth; i++)
 		fprintf(stderr, "  ");
@@ -486,6 +452,27 @@ void box_dump(struct box *box, unsigned int depth)
 		fprintf(stderr, " next_float %p", box->next_float);
 	fprintf(stderr, "\n");
 
-	for (c = box->children; c; c = c->next)
+	for (c = box->children; c->next; c = c->next)
+		;
+	if (box->last != c)
+		fprintf(stderr, "warning: box->last %p (should be %p) "
+				"(box %p)\n", box->last, c, box);
+	for (prev = 0, c = box->children; c; prev = c, c = c->next) {
+		if (c->parent != box)
+			fprintf(stderr, "warning: box->parent %p (should be "
+					"%p) (box on next line)\n",
+					c->parent, box);
+		if (c->prev != prev)
+			fprintf(stderr, "warning: box->prev %p (should be "
+					"%p) (box on next line)\n",
+					c->prev, prev);
 		box_dump(c, depth + 1);
+	}
+	if (box->fallback) {
+		for (i = 0; i != depth; i++)
+			fprintf(stderr, "  ");
+		fprintf(stderr, "fallback:\n");
+		for (c = box->fallback; c; c = c->next)
+			box_dump(c, depth + 1);
+	}
 }

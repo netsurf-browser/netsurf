@@ -90,7 +90,7 @@ static void plugin_stream_write_callback(void *p);
 static void plugin_write_stream_as_file(struct content *c);
 static void plugin_destroy_stream(struct content *c);
 static bool plugin_write_parameters_file(struct content *c,
-		struct object_params *params);
+		struct object_params *params, const char *base);
 static int plugin_calculate_rsize(const char* name, const char* data,
 		const char* mime);
 static bool plugin_add_item_to_pilist(struct plugin_param_item **pilist,
@@ -207,12 +207,12 @@ void plugin_open(struct content *c, struct browser_window *bw,
 		struct object_params *params)
 {
 	bool standalone = false;
+	const char *base;
 	char sysvar[25];
 	char *varval;
 	plugin_full_message_open pmo;
 	wimp_window_state state;
 	os_error *error;
-
 
 	if (option_no_plugins)
 		return;
@@ -235,11 +235,6 @@ void plugin_open(struct content *c, struct browser_window *bw,
 			warn_user("NoMemory", 0);
 			goto error;
 		}
-		params->basehref = strdup(c->url);
-		if (!params->basehref) {
-			warn_user("NoMemory", 0);
-			goto error;
-		}
 		standalone = true;
 	}
 
@@ -249,8 +244,15 @@ void plugin_open(struct content *c, struct browser_window *bw,
 	 */
 	c->data.plugin.box = box;
 
+	if (params->codebase)
+		base = params->codebase;
+	else if (page)
+		base = page->data.html.base_url;
+	else
+		base = c->url;
+
 	LOG(("writing parameters file"));
-	if (!plugin_write_parameters_file(c, params))
+	if (!plugin_write_parameters_file(c, params, base))
 		goto error;
 
 	LOG(("creating sysvar"));
@@ -325,7 +327,6 @@ error:
 	if (standalone) {
 		free(params->type);
 		free(params->data);
-		free(params->basehref);
 		free(params);
 	}
 
@@ -1069,14 +1070,15 @@ void plugin_destroy_stream(struct content *c)
 /**
  * Writes the plugin parameters file
  *
- * \param c      Content to write parameters for
- * \param params Plugin parameters struct
+ * \param  c       Content to write parameters for
+ * \param  params  Plugin parameters struct
+ * \param  base    base URL for object
  * \return true on success, false otherwise
  */
 bool plugin_write_parameters_file(struct content *c,
-		struct object_params *params)
+		struct object_params *params, const char *base)
 {
-	struct plugin_params *p;
+	struct object_param *p;
 	struct plugin_param_item *ppi;
 	struct plugin_param_item *pilist = 0;
 	char bgcolor[10] = {0};
@@ -1163,8 +1165,7 @@ bool plugin_write_parameters_file(struct content *c,
 
 	/* BASEHREF */
 	if (!plugin_add_item_to_pilist(&pilist, PLUGIN_PARAMETER_SPECIAL,
-					"BASEHREF",
-					(const char *)params->basehref,
+					"BASEHREF", base,
 					NULL))
 		goto error;
 

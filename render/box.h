@@ -81,6 +81,8 @@
 struct box;
 struct column;
 struct css_style;
+struct object_params;
+struct object_param;
 
 
 /** Type of a struct box. */
@@ -91,27 +93,6 @@ typedef enum {
 	BOX_FLOAT_LEFT, BOX_FLOAT_RIGHT,
 	BOX_INLINE_BLOCK, BOX_BR, BOX_TEXT
 } box_type;
-
-/* parameters for <object> and related elements */
-struct object_params {
-	char* data;
-	char* type;
-	char* codetype;
-	char* codebase;
-	char* classid;
-	struct plugin_params* params;
-	/* not a parameter but stored here for convenience */
-	char* basehref;
-
-};
-
-struct plugin_params {
-	char* name;
-	char* value;
-	char* type;
-	char* valuetype;
-	struct plugin_params* next;
-};
 
 /** Node in box tree. All dimensions are in pixels. */
 struct box {
@@ -181,6 +162,7 @@ struct box {
 	struct box *children;  /**< First child box, or 0. */
 	struct box *last;      /**< Last child box, or 0. */
 	struct box *parent;    /**< Parent box, or 0. */
+	struct box *fallback;  /**< Fallback children for object, or 0. */
 
 	/** First float child box, or 0. Float boxes are in the tree twice, in
 	 * this list for the block box which defines the area for floats, and
@@ -219,6 +201,25 @@ struct column {
 	int min;
 	/** Maximum width of content. */
 	int max;
+};
+
+/** Parameters for <object> and similar elements. */
+struct object_params {
+	char *data;
+	char *type;
+	char *codetype;
+	char *codebase;
+	char *classid;
+	struct object_param *params;
+};
+
+/** Linked list of <object> parameters. */
+struct object_param {
+	char *name;
+	char *value;
+	char *type;
+	char *valuetype;
+	struct object_param *next;
 };
 
 

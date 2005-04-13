@@ -45,6 +45,8 @@ static void html_object_callback(content_msg msg, struct content *object,
 		void *p1, void *p2, union content_msg_data data);
 static void html_object_done(struct box *box, struct content *object,
 			     bool background);
+static void html_object_failed(struct box *box, struct content *content,
+		bool background);
 static bool html_object_type_permitted(const content_type type,
 		const content_type *permitted_types);
 
@@ -799,7 +801,10 @@ void html_object_callback(content_msg msg, struct content *object,
 			content_add_error(c, "?", 0);
 			content_set_status(c, messages_get("BadObject"));
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
-			content_remove_user(object, html_object_callback, c, (void*)i);
+			content_remove_user(object, html_object_callback, c,
+					(void *) i);
+			html_object_failed(box, c,
+					c->data.html.object[i].background);
 			break;
 
 		case CONTENT_MSG_READY:
@@ -815,7 +820,8 @@ void html_object_callback(content_msg msg, struct content *object,
 			break;
 
 		case CONTENT_MSG_DONE:
-			html_object_done(box, object, c->data.html.object[i].background);
+			html_object_done(box, object,
+					c->data.html.object[i].background);
 			c->active--;
 			break;
 
@@ -826,6 +832,8 @@ void html_object_callback(content_msg msg, struct content *object,
 			content_set_status(c, messages_get("ObjError"),
 					data.error);
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
+			html_object_failed(box, c,
+					c->data.html.object[i].background);
 			break;
 
 		case CONTENT_MSG_STATUS:
@@ -948,6 +956,93 @@ void html_object_done(struct box *box, struct content *object,
 		/* box_free_box(box->next); */
 		box->next = box->next->next;
 	}
+}
+
+
+/**
+ * Handle object fetching or loading failure.
+ *
+ * \param  box         box containing object which failed to load
+ * \param  content     document of type CONTENT_HTML
+ * \param  background  the object was the background image for the box
+ *
+ * Any fallback content for the object is made visible.
+ */
+
+void html_object_failed(struct box *box, struct content *content,
+		bool background)
+{
+	struct box *b, *ic;
+
+	if (background)
+		return;
+	if (!box->fallback)
+		return;
+
+	/* make fallback boxes into children or siblings, as appropriate */
+	if (box->type != BOX_INLINE) {
+		/* easy case: fallbacks become children */
+		assert(box->type == BOX_BLOCK ||
+				box->type == BOX_TABLE_CELL ||
+				box->type == BOX_INLINE_BLOCK);
+		box->children = box->fallback;
+		box->last = box->children;
+		while (box->last->next)
+			box->last = box->last->next;
+		box->fallback = 0;
+		box_normalise_block(box, content);
+	} else {
+		assert(box->parent->type == BOX_INLINE_CONTAINER);
+		if (box->fallback->type == BOX_INLINE_CONTAINER &&
+				!box->fallback->next) {
+			/* the fallback is a single inline container: splice
+			 * it into this inline container */
+			for (b = box->fallback->children; b; b = b->next)
+				b->parent = box->parent;
+			box->fallback->last->next = box->next;
+			if (!box->next)
+				box->parent->last = box->fallback->last;
+			box->next = box->fallback->children;
+			box->next->prev = box;
+			box->fallback = 0;
+		} else {
+			if (box->next) {
+				/* split this inline container into two inline
+				 * containers */
+				ic = box_create(0, 0, 0, 0, content);
+				if (!ic) {
+					warn_user("NoMemory", 0);
+					return;
+				}
+				ic->type = BOX_INLINE_CONTAINER;
+				box_insert_sibling(box->parent, ic);
+				ic->children = box->next;
+				ic->last = box->parent->last;
+				ic->children->prev = 0;
+				box->next = 0;
+				box->parent->last = box;
+				for (b = ic->children; b; b = b->next)
+					b->parent = ic;
+			}
+			/* insert the fallback after the parent */
+			for (b = box->fallback; b->next; b = b->next)
+				b->parent = box->parent->parent;
+			b->parent = box->parent->parent;
+			/* [b is the last fallback box] */
+			b->next = box->parent->next;
+			if (b->next)
+				b->next->prev = b;
+			box->parent->next = box->fallback;
+			box->fallback->prev = box->parent;
+			box->fallback = 0;
+			box_normalise_block(box->parent->parent, content);
+		}
+	}
+
+	/* invalidate parent min, max widths */
+	for (b = box->parent; b; b = b->parent)
+		b->max_width = UNKNOWN_MAX_WIDTH;
+	box->width = UNKNOWN_WIDTH;
 }
 
 
