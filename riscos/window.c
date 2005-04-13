@@ -722,8 +722,8 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		return;
 	}
 
-	state.xscroll = sx * 2;
-	state.yscroll = -sy * 2;
+	state.xscroll = sx * 2 * g->option.scale;
+	state.yscroll = -sy * 2 * g->option.scale;
 	if (g->toolbar)
 		state.yscroll += ro_gui_theme_toolbar_full_height(g->toolbar);
 	ro_gui_window_open(g, (wimp_open *) &state);
