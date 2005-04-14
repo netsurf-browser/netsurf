@@ -509,15 +509,15 @@ void ro_gui_menu_closed(void) {
 	struct tree *tree;
 	os_error *error;
 
+	if (!current_menu)
+		return;
+
 	error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 	if (error) {
 		LOG(("xwimp_create_menu: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("MenuError", error->errmess);
 	}
-
-	if (!current_menu)
-		return;
 
 	ro_gui_menu_get_window_details(current_menu_window, &g, &bw, &c, &t, &tree);
 
