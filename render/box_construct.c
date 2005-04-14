@@ -900,11 +900,11 @@ void box_set_table_border(struct box *box, int value, colour color)
 					value;
 			box->style->border[i].width.value.unit =
 					CSS_UNIT_PX;
-			box->style->border[i].style = 
+			box->style->border[i].style =
 					CSS_BORDER_STYLE_OUTSET;
 		}
 	}
-  
+
 	/* The tree is not normalized yet, so accept cells not in rows and
 	 * rows not in row groups. */
 	for (child = box->children; child; child = child->next) {
@@ -922,7 +922,7 @@ void box_set_table_border(struct box *box, int value, colour color)
 						1;
 				child->style->border[i].width.value.unit =
 						CSS_UNIT_PX;
-				child->style->border[i].style = 
+				child->style->border[i].style =
 						CSS_BORDER_STYLE_INSET;
 			}
 			break;
@@ -1976,12 +1976,14 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	}
 
 	if (gadget->data.select.num_selected == 0)
-		inline_box->text = messages_get("Form_None");
+		inline_box->text = talloc_strdup(content,
+				messages_get("Form_None"));
 	else if (gadget->data.select.num_selected == 1)
 		inline_box->text = talloc_strdup(content,
 				gadget->data.select.current->text);
 	else
-		inline_box->text = messages_get("Form_Many");
+		inline_box->text = talloc_strdup(content,
+				messages_get("Form_Many"));
 	if (!inline_box->text)
 		goto no_memory;
 
