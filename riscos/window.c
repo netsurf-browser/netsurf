@@ -440,7 +440,7 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 	bool clear_partial = false;
 	float scale = 1;
 	struct content *c = g->bw->current_content;
-	int clip_x0, clip_y0, clip_x1, clip_y1;
+	int clip_x0, clip_y0, clip_x1, clip_y1, clear_x1, clear_y1;
 	int content_y1, content_x1;
 	os_error *error;
 	osspriteop_area *area;
@@ -509,6 +509,8 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 		clip_y0 = (ro_plot_origin_y - redraw->clip.y1) / 2;
 		clip_x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2;
 		clip_y1 = (ro_plot_origin_y - redraw->clip.y0) / 2;
+		clear_x1 = redraw->clip.x1 - ro_plot_origin_x;
+		clear_y1 = redraw->clip.y0 - ro_plot_origin_y;
 
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
@@ -525,20 +527,22 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 			if (clear_partial) {
 			  	content_x1 = ro_plot_origin_x + c->width * 2 * scale;
 			  	content_y1 = ro_plot_origin_y - c->height * 2 * scale;
-			  	if (content_y1 > redraw->clip.y0) {
+			  	clear_x1 += ro_plot_origin_x;
+			  	clear_y1 += ro_plot_origin_y;
+			  	if (content_y1 > clear_y1) {
 					xos_plot(os_MOVE_TO,
 							ro_plot_origin_x,
 							content_y1);
 					xos_plot(os_PLOT_BG_TO | os_PLOT_RECTANGLE,
-							redraw->clip.x1,
-							redraw->clip.y0);
+							clear_x1,
+							clear_y1);
 				}
 			  	if (content_x1 < redraw->clip.x1) {
 					xos_plot(os_MOVE_TO,
 							content_x1,
 							ro_plot_origin_y);
 					xos_plot(os_PLOT_BG_TO | os_PLOT_RECTANGLE,
-							redraw->clip.x1,
+							clear_x1,
 							content_y1);
 				}
 			} else {
