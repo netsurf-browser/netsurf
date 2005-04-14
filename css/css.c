@@ -2864,6 +2864,86 @@ float css_len2px(const struct css_length *length,
 }
 
 
+/**
+ * Return the most 'eyecatching' border.
+ *
+ * \return the most eyecatching border, favoured towards test2
+ */
+ 
+struct css_border *css_eyecatching_border(struct css_border *test1,
+		struct css_style *style1, struct css_border *test2,
+		struct css_style *style2)
+{ 
+	float width1, width2;
+	int impact = 0;
+	
+	assert(test1);
+	assert(style1);
+	assert(test2);
+	assert(style2);
+	
+	/* hidden border styles always win, none always loses */
+	if ((test1->style == CSS_BORDER_STYLE_HIDDEN) ||
+			(test2->style == CSS_BORDER_STYLE_NONE))
+		return test1;
+	if ((test2->style == CSS_BORDER_STYLE_HIDDEN) ||
+			(test1->style == CSS_BORDER_STYLE_NONE))
+		return test2;
+	
+	/* the widest border wins */
+	width1 = css_len2px(&test1->width.value, style1);
+	width2 = css_len2px(&test2->width.value, style2);
+	if (width1 > width2)
+		return test1;
+	if (width2 > width1)
+		return test2;
+	
+	/* the closest to a solid line wins */
+	switch (test1->style) {
+		case CSS_BORDER_STYLE_DOUBLE:
+			impact++;
+		case CSS_BORDER_STYLE_SOLID:
+			impact++;
+		case CSS_BORDER_STYLE_DASHED:
+			impact++;
+		case CSS_BORDER_STYLE_DOTTED:
+			impact++;
+		case CSS_BORDER_STYLE_RIDGE:
+			impact++;
+		case CSS_BORDER_STYLE_OUTSET:
+			impact++;
+		case CSS_BORDER_STYLE_GROOVE:
+			impact++;
+		case CSS_BORDER_STYLE_INSET:
+			impact++;
+		default:
+			break;
+	}
+	switch (test2->style) {
+		case CSS_BORDER_STYLE_DOUBLE:
+			impact--;
+		case CSS_BORDER_STYLE_SOLID:
+			impact--;
+		case CSS_BORDER_STYLE_DASHED:
+			impact--;
+		case CSS_BORDER_STYLE_DOTTED:
+			impact--;
+		case CSS_BORDER_STYLE_RIDGE:
+			impact--;
+		case CSS_BORDER_STYLE_OUTSET:
+			impact--;
+		case CSS_BORDER_STYLE_GROOVE:
+			impact--;
+		case CSS_BORDER_STYLE_INSET:
+			impact--;
+		default:
+			break;
+	}
+	if (impact > 0)
+		return test1;
+	return test2;
+}
+
 #ifdef DEBUG
 
 int main()

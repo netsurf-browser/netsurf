@@ -85,6 +85,7 @@ static struct css_style * box_get_style(struct content *c,
 		xmlNode *n);
 static void box_solve_display(struct css_style *style, bool root);
 static void box_set_cellpadding(struct box *box, int value);
+static void box_set_table_border(struct box *box, int value, colour color);
 static void box_text_transform(char *s, unsigned int len,
 		css_text_transform tt);
 #define BOX_SPECIAL_PARAMS xmlNode *n, struct content *content, \
@@ -263,6 +264,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	struct box *inline_container_c;
 	struct css_style *style = 0;
 	struct element_entry *element;
+	colour border_color;
 	xmlChar *title0;
 	xmlNode *c;
 
@@ -390,13 +392,31 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			box->rows = 1;
 		xmlFree(s);
 	}
-	if (strcmp((const char *) n->name, "table") == 0 &&
-			(s = (char *) xmlGetProp(n,
-			(const xmlChar *) "cellpadding"))) {
-		int value = atoi(s);
-		if (!strrchr(s, '%') && 0 < value)	/* % not implemented */
-			box_set_cellpadding(box, value);
-		xmlFree(s);
+	if (strcmp((const char *) n->name, "table") == 0) {
+	  	border_color = 0x888888;	/* default colour */
+	  	if ((s = (char *) xmlGetProp(n,
+				(const xmlChar *) "cellpadding"))) {
+			int value = atoi(s);
+			if (!strrchr(s, '%') && 0 < value)	/* % not implemented */
+				box_set_cellpadding(box, value);
+			xmlFree(s);
+		}
+	  	if ((s = (char *) xmlGetProp(n,
+					(const xmlChar *) "bordercolor"))) {
+			unsigned int r, g, b;
+			if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
+				border_color = (b << 16) | (g << 8) | r;
+			else if (s[0] != '#')
+				border_color = named_colour(s);
+			xmlFree(s);
+		}
+	  	if ((s = (char *) xmlGetProp(n,
+				(const xmlChar *) "border"))) {
+			int value = atoi(s);
+			if (!strrchr(s, '%') && 0 < value)	/* % not implemented */
+				box_set_table_border(box, value, border_color);
+			xmlFree(s);
+		}
 	}
 
 	/* fetch any background image for this box */
@@ -848,6 +868,62 @@ void box_set_cellpadding(struct box *box, int value)
 						value;
 				child->style->padding[i].value.length.unit =
 						CSS_UNIT_PX;
+			}
+			break;
+		default:
+			break;
+	        }
+	}
+}
+
+
+/**
+ * Set the borders on a table.
+ *
+ * \param  box    box to set cellpadding on
+ * \param  value  border in pixels
+ *
+ * The descendants of the box are searched for table cells, and the border is
+ * set on each one.
+ */
+
+void box_set_table_border(struct box *box, int value, colour color)
+{
+	struct box *child;
+
+	if (box->type == BOX_TABLE) {
+		for (unsigned int i = 0; i != 4; i++) {
+			box->style->border[i].color = color;
+			box->style->border[i].width.width =
+					CSS_BORDER_WIDTH_LENGTH;
+			box->style->border[i].width.value.value =
+					value;
+			box->style->border[i].width.value.unit =
+					CSS_UNIT_PX;
+			box->style->border[i].style = 
+					CSS_BORDER_STYLE_OUTSET;
+		}
+	}
+  
+	/* The tree is not normalized yet, so accept cells not in rows and
+	 * rows not in row groups. */
+	for (child = box->children; child; child = child->next) {
+		switch (child->type) {
+		case BOX_TABLE_ROW_GROUP:
+		case BOX_TABLE_ROW:
+			box_set_table_border(child, value, color);
+			break;
+		case BOX_TABLE_CELL:
+			for (unsigned int i = 0; i != 4; i++) {
+				child->style->border[i].color = color;
+				child->style->border[i].width.width =
+						CSS_BORDER_WIDTH_LENGTH;
+				child->style->border[i].width.value.value =
+						1;
+				child->style->border[i].width.value.unit =
+						CSS_UNIT_PX;
+				child->style->border[i].style = 
+						CSS_BORDER_STYLE_INSET;
 			}
 			break;
 		default:

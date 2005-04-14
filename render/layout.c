@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
@@ -70,12 +70,18 @@ static void calculate_inline_replaced_widths(struct box *box, int *min,
 		int *max, int *line_max);
 static void calculate_inline_widths(struct box *box, int *min, int *line_max);
 static bool calculate_table_widths(struct box *table);
+void table_collapse_borders_h(struct box *parent, struct box *child, bool *first);
+void table_collapse_borders_v(struct box *row, struct box *cell, unsigned int columns);
+void table_collapse_borders_cell(struct box *cell, struct box *right,
+		struct box *bottom);
+void table_remove_borders(struct css_style *style);
+struct box *table_find_cell(struct box *table, unsigned int x, unsigned int y);
 
 
 /**
  * Calculate positions of boxes in a document.
  *
- * \param  doc       content of type CONTENT_HTML
+ * \param  doc	     content of type CONTENT_HTML
  * \param  width     available page width
  * \return  true on success, false on memory exhaustion
  */
@@ -510,10 +516,10 @@ void layout_float_find_dimensions(int available_width,
  * Calculate size of margins, paddings, and borders.
  *
  * \param  available_width  width of containing block
- * \param  style            style giving margins, paddings, and borders
- * \param  margin[4]        filled with margins, may be NULL
- * \param  padding[4]       filled with paddings
- * \param  border[4]        filled with border widths
+ * \param  style	    style giving margins, paddings, and borders
+ * \param  margin[4]	    filled with margins, may be NULL
+ * \param  padding[4]	    filled with paddings
+ * \param  border[4]	    filled with border widths
  */
 
 void layout_find_dimensions(int available_width,
@@ -565,7 +571,7 @@ void layout_find_dimensions(int available_width,
 /**
  * Find y coordinate which clears all floats on left and/or right.
  *
- * \param  fl     first float in float list
+ * \param  fl	  first float in float list
  * \param  clear  type of clear
  * \return  y coordinate relative to ancestor box for floats
  */
@@ -590,12 +596,12 @@ int layout_clear(struct box *fl, css_clear clear)
 /**
  * Find left and right edges in a vertical range.
  *
- * \param  fl     first float in float list
- * \param  y0     start of y range to search
- * \param  y1     end of y range to search
- * \param  x0     start left edge, updated to available left edge
- * \param  x1     start right edge, updated to available right edge
- * \param  left   returns float on left if present
+ * \param  fl	  first float in float list
+ * \param  y0	  start of y range to search
+ * \param  y1	  end of y range to search
+ * \param  x0	  start left edge, updated to available left edge
+ * \param  x1	  start right edge, updated to available right edge
+ * \param  left	  returns float on left if present
  * \param  right  returns float on right if present
  */
 
@@ -631,11 +637,11 @@ void find_sides(struct box *fl, int y0, int y1,
 /**
  * Layout lines of text or inline boxes with floats.
  *
- * \param  box    inline container
+ * \param  box	  inline container
  * \param  width  horizontal space available
- * \param  cont   ancestor box which defines horizontal space, for floats
- * \param  cx     box position relative to cont
- * \param  cy     box position relative to cont
+ * \param  cont	  ancestor box which defines horizontal space, for floats
+ * \param  cx	  box position relative to cont
+ * \param  cy	  box position relative to cont
  * \param  content  memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  */
@@ -706,10 +712,10 @@ int line_height(struct css_style *style)
  *
  * \param  first   box at start of line
  * \param  width   available width
- * \param  y       coordinate of top of line, updated on exit to bottom
- * \param  cx      coordinate of left of line relative to cont
- * \param  cy      coordinate of top of line relative to cont
- * \param  cont    ancestor box which defines horizontal space, for floats
+ * \param  y	   coordinate of top of line, updated on exit to bottom
+ * \param  cx	   coordinate of left of line relative to cont
+ * \param  cy	   coordinate of top of line relative to cont
+ * \param  cont	   ancestor box which defines horizontal space, for floats
  * \param  indent  apply any first-line indent
  * \param  next_box  updated to first box for next line, or 0 at end
  * \param  content  memory pool for any new boxes
@@ -932,7 +938,7 @@ bool layout_line(struct box *first, int width, int *y,
 			split_box = b;
 			move_y = true;
 			inline_count++;
-/* 			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x); */
+/*			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x); */
 		} else if (b->type == BOX_BR) {
 			b->x = x;
 			b->width = 0;
@@ -945,7 +951,7 @@ bool layout_line(struct box *first, int width, int *y,
 			/* float */
 			d = b->children;
 			d->float_children = 0;
-/* 			css_dump_style(b->style); */
+/*			css_dump_style(b->style); */
 
 			if (!layout_float(d, width, content))
 				return false;
@@ -971,12 +977,12 @@ bool layout_line(struct box *first, int width, int *y,
 					right = b;
 				}
 				b->y = cy;
-/* 				fprintf(stderr, "layout_line:     float fits %li %li, edges %li %li\n", */
-/* 						b->x, b->y, x0, x1); */
+/*				fprintf(stderr, "layout_line:     float fits %li %li, edges %li %li\n", */
+/*						b->x, b->y, x0, x1); */
 			} else {
 				/* doesn't fit: place below */
 				place_float_below(b, width, cx, cy + height + 1, cont);
-/* 				fprintf(stderr, "layout_line:     float doesn't fit %li %li\n", b->x, b->y); */
+/*				fprintf(stderr, "layout_line:     float doesn't fit %li %li\n", b->x, b->y); */
 			}
 			assert(cont->float_children != b);
 			b->next_float = cont->float_children;
@@ -1052,12 +1058,12 @@ bool layout_line(struct box *first, int width, int *y,
 				b = c2;
 			}
 			x += space_before + w;
-/* 			fprintf(stderr, "layout_line:     overflow, forcing\n"); */
+/*			fprintf(stderr, "layout_line:     overflow, forcing\n"); */
 		} else if (space == 0 || x1 - x0 <= x + space_before + w) {
 			/* first word doesn't fit, but full width not
 			   available so leave for later */
 			b = split_box;
-/* 			fprintf(stderr, "layout_line:     overflow, leaving\n"); */
+/*			fprintf(stderr, "layout_line:     overflow, leaving\n"); */
 		} else {
 			/* fit as many words as possible */
 			assert(space != 0);
@@ -1067,7 +1073,7 @@ bool layout_line(struct box *first, int width, int *y,
 					x1 - x0 - x - space_before, &space, &w);
 			LOG(("'%.*s' %i %u %i", (int) split_box->length,
 					split_box->text, x1 - x0, space, w));
-/* 			assert(space == split_box->length || split_box->text[space] = ' '); */
+/*			assert(space == split_box->length || split_box->text[space] = ' '); */
 			if (space == 0)
 				space = 1;
 			if (space != split_box->length) {
@@ -1096,7 +1102,7 @@ bool layout_line(struct box *first, int width, int *y,
 				b = c2;
 			}
 			x += space_before + w;
-/* 			fprintf(stderr, "layout_line:     overflow, fit\n"); */
+/*			fprintf(stderr, "layout_line:     overflow, fit\n"); */
 		}
 		move_y = true;
 	}
@@ -1151,7 +1157,7 @@ int layout_text_indent(struct css_style *style, int width)
 /**
  * Layout the contents of a float or inline block.
  *
- * \param  b      float or inline block box
+ * \param  b	  float or inline block box
  * \param  width  available width
  * \param  content  memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
@@ -1176,11 +1182,11 @@ bool layout_float(struct box *b, int width, struct content *content)
 /**
  * Position a float in the first available space.
  *
- * \param  c      float box to position
+ * \param  c	  float box to position
  * \param  width  available width
- * \param  cx     x coordinate relative to cont to place float right of
- * \param  y      y coordinate relative to cont to place float below
- * \param  cont   ancestor box which defines horizontal space, for floats
+ * \param  cx	  x coordinate relative to cont to place float right of
+ * \param  y	  y coordinate relative to cont to place float below
+ * \param  cont	  ancestor box which defines horizontal space, for floats
  */
 
 void place_float_below(struct box *c, int width, int cx, int y,
@@ -1216,9 +1222,9 @@ void place_float_below(struct box *c, int width, int cx, int y,
 /**
  * Layout a table.
  *
- * \param  table            table to layout
+ * \param  table	    table to layout
  * \param  available_width  width of containing block
- * \param  content         memory pool for any new boxes
+ * \param  content	   memory pool for any new boxes
  * \return  true on success, false on memory exhaustion
  */
 
@@ -1321,7 +1327,7 @@ bool layout_table(struct box *table, int available_width,
 				 table->padding[RIGHT] +
 				 table->border[RIGHT] +
 				 (table->margin[RIGHT] == AUTO ? 0 :
-				 		table->margin[RIGHT]));
+						table->margin[RIGHT]));
 		break;
 	}
 
@@ -1579,8 +1585,8 @@ bool layout_table(struct box *table, int available_width,
 			for (c = row->children; c; c = c->next) {
 				/* unextended bottom padding is in c->descendant_y1, and unextended
 				 * cell height is in c->descendant_y0 */
-			  	spare_height = (c->padding[BOTTOM] - c->descendant_y1) +
-			  			(c->height - c->descendant_y0);
+				spare_height = (c->padding[BOTTOM] - c->descendant_y1) +
+						(c->height - c->descendant_y0);
 				switch (c->style->vertical_align.type) {
 					case CSS_VERTICAL_ALIGN_SUB:
 					case CSS_VERTICAL_ALIGN_SUPER:
@@ -1628,8 +1634,8 @@ bool layout_table(struct box *table, int available_width,
  * Moves the children of a box by a specified amount
  *
  * \param  box  top of tree of boxes
- * \param  x    the amount to move children by horizontally
- * \param  y    the amount to move children by vertically
+ * \param  x	the amount to move children by horizontally
+ * \param  y	the amount to move children by vertically
  */
 
 void layout_move_children(struct box *box, int x, int y) {
@@ -1729,9 +1735,9 @@ bool calculate_widths(struct box *box)
  * Find min, max widths for a BOX_BLOCK, BOX_INLINE_BLOCK, BOX_FLOAT_*,
  * or BOX_TABLE.
  *
- * \param  box      BLOCK, INLINE_BLOCK, FLOAT, or TABLE box
- * \param  min      current min, updated to new min
- * \param  max      current max, updated to new max
+ * \param  box	    BLOCK, INLINE_BLOCK, FLOAT, or TABLE box
+ * \param  min	    current min, updated to new min
+ * \param  max	    current max, updated to new max
  * \param  max_sum  sum of maximum widths, updated, or 0 if not required
  * \return  true on success, false on memory exhaustion
  */
@@ -1918,6 +1924,7 @@ bool calculate_table_widths(struct box *table)
 	struct box *row_group, *row, *cell;
 	int width, min_width = 0, max_width = 0;
 	struct column *col;
+	bool first;
 
 	LOG(("table %p, columns %u", table, table->columns));
 
@@ -1936,6 +1943,72 @@ bool calculate_table_widths(struct box *table)
 		col[i].min = col[i].max = 0;
 
 	assert(table->children && table->children->children);
+
+	/* handle collapsing border model */
+	assert(table->style);
+	if (table->style->border_collapse == CSS_BORDER_COLLAPSE_COLLAPSE) {
+
+		/* 1st stage: collapse all borders down to the cells */
+		first = true;
+		for (row_group = table->children; row_group;
+				row_group = row_group->next) {
+			assert(row_group->type == BOX_TABLE_ROW_GROUP);
+			assert(row_group->style);
+			table_collapse_borders_h(table, row_group, &first);
+			first = (row_group->children);
+			for (row = row_group->children; row; row = row->next) {
+				assert(row->type == BOX_TABLE_ROW);
+				assert(row->style);
+				table_collapse_borders_h(row_group, row, &first);
+				for (cell = row->children; cell; cell = cell->next) {
+					assert(cell->type == BOX_TABLE_CELL);
+					assert(cell->style);
+					table_collapse_borders_v(row, cell, table->columns);
+				}
+				table_remove_borders(row->style);
+			}
+			table_remove_borders(row_group->style);
+		}
+		table_remove_borders(table->style);
+
+		/* 2nd stage: rather than building a grid of cells, we slowly look up the
+		 * cell we want to collapse with */
+		for (i = 0; i < table->columns; i++) {
+			for (j = 0; j < table->rows; j++) {
+				table_collapse_borders_cell(
+						table_find_cell(table, i, j),
+						table_find_cell(table, i + 1, j),
+						table_find_cell(table, i, j + 1));
+			}
+		}
+
+		/* 3rd stage: remove redundant borders */
+		first = true;
+		for (row_group = table->children; row_group;
+				row_group = row_group->next) {
+			for (row = row_group->children; row; row = row->next) {
+				for (cell = row->children; cell; cell = cell->next) {
+				  	if (!first) {
+						cell->style->border[TOP].style =
+								CSS_BORDER_STYLE_NONE;
+						cell->style->border[TOP].width.value.value =
+								0;
+						cell->style->border[TOP].width.value.unit =
+								CSS_UNIT_PX;
+					}
+					if (cell->start_column > 0) {
+						cell->style->border[LEFT].style =
+								CSS_BORDER_STYLE_NONE;
+						cell->style->border[LEFT].width.value.value =
+								0;
+						cell->style->border[LEFT].width.value.unit =
+								CSS_UNIT_PX;
+					}
+				}
+				first = false;
+			}
+		}
+	}
 
 	/* 1st pass: consider cells with colspan 1 only */
 	for (row_group = table->children; row_group;
@@ -2079,6 +2152,139 @@ bool calculate_table_widths(struct box *table)
 	return true;
 }
 
+
+/**
+ * Collapse the borders of two boxes together.
+ */
+
+void table_collapse_borders_v(struct box *row, struct box *cell, unsigned int columns)
+{
+	struct css_border *border;
+
+	if (cell->start_column == 0) {
+		border = css_eyecatching_border(&row->style->border[LEFT], row->style,
+				&cell->style->border[LEFT], cell->style);
+		cell->style->border[LEFT] = *border;
+	}
+	border = css_eyecatching_border(&row->style->border[TOP], row->style,
+			&cell->style->border[TOP], cell->style);
+	cell->style->border[TOP] = *border;
+	border = css_eyecatching_border(&row->style->border[BOTTOM], row->style,
+			&cell->style->border[BOTTOM], cell->style);
+	cell->style->border[BOTTOM] = *border;
+	if ((cell->start_column + cell->columns) == columns) {
+		border = css_eyecatching_border(&row->style->border[RIGHT], row->style,
+				&cell->style->border[RIGHT], cell->style);
+		cell->style->border[RIGHT] = *border;
+	}
+}
+
+
+/**
+ * Collapse the borders of two boxes together.
+ */
+
+void table_collapse_borders_h(struct box *parent, struct box *child, bool *first)
+{
+	struct css_border *border;
+
+	if (*first) {
+		border = css_eyecatching_border(&parent->style->border[TOP], parent->style,
+				&child->style->border[TOP], child->style);
+		child->style->border[TOP] = *border;
+		*first = false;
+	}
+	border = css_eyecatching_border(&parent->style->border[LEFT], parent->style,
+			&child->style->border[LEFT], child->style);
+	child->style->border[LEFT] = *border;
+	border = css_eyecatching_border(&parent->style->border[RIGHT], parent->style,
+			&child->style->border[RIGHT], child->style);
+	child->style->border[RIGHT] = *border;
+	if (!child->next) {
+		border = css_eyecatching_border(&parent->style->border[BOTTOM], parent->style,
+				&child->style->border[BOTTOM], child->style);
+		child->style->border[BOTTOM] = *border;
+	}
+}
+
+
+/**
+ * Collapse the borders of two boxes together.
+ */
+
+void table_collapse_borders_cell(struct box *cell, struct box *right,
+		struct box *bottom) {
+	struct css_border *border;
+
+	if (!cell)
+		return;
+
+	if ((right) && (right != cell)) {
+		border = css_eyecatching_border(&cell->style->border[RIGHT], cell->style,
+				&right->style->border[LEFT], right->style);
+		cell->style->border[RIGHT] = *border;
+	  
+	}
+	if ((bottom) && (bottom != cell)) {
+		border = css_eyecatching_border(&cell->style->border[BOTTOM], cell->style,
+				&bottom->style->border[TOP], bottom->style);
+		cell->style->border[BOTTOM] = *border;
+	}
+}
+
+
+/**
+ * Removes all borders.
+ */
+
+void table_remove_borders(struct css_style *style)
+{
+	int i;
+
+	for (i = 0; i < 4; i++) {
+		style->border[i].style = CSS_BORDER_STYLE_NONE;
+		style->border[i].width.value.value = 0;
+		style->border[i].width.value.unit = CSS_UNIT_PX;
+	}
+}
+
+
+/**
+ * Find a cell occupying a particular position in a table grid
+ */
+
+struct box *table_find_cell(struct box *table, unsigned int x,
+		unsigned int y)
+{
+	struct box *row_group, *row, *cell;
+	struct box *match = NULL;
+	unsigned int cur_row = 0;
+	
+	if ((x > table->columns) || (y > table->rows))
+		return NULL;
+	
+	/* this code uses brute-force and should be re-implemented using a faster
+	 * algorithm */
+	for (row_group = table->children; row_group;
+			row_group = row_group->next) {
+		for (row = row_group->children; row; row = row->next) {
+			for (cell = row->children; cell; cell = cell->next) {
+				if (cell->start_column > x)
+					break;
+				if ((cell->start_column <= x) &&
+						(x < (cell->start_column +
+							cell->columns)))
+					match = cell;
+			}
+			if (cur_row == y)
+				return match;
+			if (++cur_row > y)
+				return NULL;
+		}
+	}
+
+	return NULL;
+}
 
 /**
  * Recursively calculate the descendant_[xy][01] values for a laid-out box tree.

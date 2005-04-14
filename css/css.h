@@ -84,6 +84,12 @@ struct css_border_width {
 	struct css_length value;
 };
 
+struct css_border {
+	colour color;
+	struct css_border_width width;
+	css_border_style style;
+};
+
 typedef enum {
 	CSS_CONTENT_STRING,
 	CSS_CONTENT_URI,
@@ -163,11 +169,7 @@ struct css_style {
 	css_background_repeat background_repeat;
 
 	/* borders */
-	struct {
-		colour color;
-		struct css_border_width width;
-		css_border_style style;
-	} border[4];  /**< top, right, bottom, left */
+	struct css_border border[4];  /**< top, right, bottom, left */
 	css_border_collapse border_collapse;
 	struct {
 		enum { CSS_BORDER_SPACING_INHERIT,
@@ -630,5 +632,8 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet);
 
 float css_len2px(const struct css_length *length,
 		const struct css_style *style);
+struct css_border *css_eyecatching_border(struct css_border *test1,
+		struct css_style *style1, struct css_border *test2,
+		struct css_style *style2);
 
 #endif
