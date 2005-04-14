@@ -80,9 +80,6 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 
 	/*	Stop bad rectangles
 	*/
-	LOG(("Clipping rectangle (%i, %i) to (%i,%i)",
-		clipping.x0, clipping.y0,
-		clipping.x1, clipping.y1));
 	if ((clipping.x1 < clipping.x0) ||
 			(clipping.y1 < clipping.y0)) {
 		LOG(("Invalid clipping rectangle (%i, %i) to (%i,%i)",
@@ -221,8 +218,8 @@ void ro_gui_buffer_close(void) {
 
 	/*	Remove any previous redirection
 	*/
-	ro_plot_origin_x -= clipping.x0;
-	ro_plot_origin_y -= clipping.y0;
+	ro_plot_origin_x += clipping.x0;
+	ro_plot_origin_y += clipping.y0;
 	xosspriteop_switch_output_to_sprite(osspriteop_PTR,
 			context1, context2, context3,
 			0, 0, 0, 0);
