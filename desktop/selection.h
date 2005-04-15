@@ -64,7 +64,7 @@ bool selection_click(struct selection *s, struct box *box, browser_mouse_state m
 void selection_track(struct selection *s, struct box *box, browser_mouse_state mouse, int dx, int dy);
 
 void selection_drag_end(struct selection *s, struct box *box,
-		browser_mouse_state mouse, int x, int y);
+		browser_mouse_state mouse, int dx, int dy);
 
 bool selection_traverse(struct selection *s, seln_traverse_handler handler, void *handle);
 

@@ -1126,7 +1126,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 				int dx, dy;
 				struct box *box = browser_window_pick_text_box(bw, mouse, x, y,
 						&dx, &dy);
-				selection_drag_end(bw->sel, box, mouse, x, y);
+				selection_drag_end(bw->sel, box, mouse, dx, dy);
 			}
 			break;
 
