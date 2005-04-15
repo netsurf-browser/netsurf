@@ -3,7 +3,7 @@
 # Menus
 NetSurf:NetSurf
 Info:Info
-Open:Open
+Open:÷ffnen
 OpenURL:÷ffne URL
 AppHelp:Hilfe...  F1
 Choices:Einstellungen...
@@ -65,8 +65,8 @@ Utilities:Werkzeuge
 HotlistAdd:Eintrag hinzuf¸gen
 HotlistShow:Hotlist zeigen...  F6
 History:History
-HistLocal:Show local history... F7
-HistGlobal:Show global history... ^F7
+HistLocal:History (lokal) zeigen... F7
+HistGlobal:History (global) zeigen... ^F7
 FindText:Text suchen  F4
 Help:Hilfe
 HelpContent:Inhalt  F1
@@ -83,19 +83,19 @@ ProxyBasic:Basic
 ProxyNTLM:NTLM
 
 # Image redraw style
-Display:Display
+Display:Ausgabe
 ImgStyle0:RISC OS nutzen
 ImgStyle1:Direktausgabe
 ImgStyle2:Dithern
 ImgStyle3:Error-Diffusion
 
 # Toolbar menus
-URLSuggest:Recent URLs
-Toolbar:Toolbar
-EditToolbar:Edit toolbar
+URLSuggest:Aktuelle URL's
+Toolbar:Symbolleiste
+EditToolbar:Symbolleiste bearbeiten
 
 # Font menu
-Fonts:Fonts
+Fonts:Schriften
 
 # Hotlist menus
 Hotlist:Hotlist
@@ -120,29 +120,29 @@ EditLink:Eintrag bearbeiten
 EditFolder:Verzeichnis umbenennen
 
 # Default hotlist
-HotlistHomepage:NetSurf homepage
-HotlistTestBuild:NetSurf test builds
+HotlistHomepage:NetSurf Homepage
+HotlistTestBuild:NetSurf Testversionen
 
 # Tree URL text
 TreeAdded:eingetragen am: %s
 TreeLast:letzter Besuch: %s
-TreeVisited:Visited: %s
+TreeVisited:gesehen am: %s
 TreeVisits:Besuche gesamt: %i
-TreeUnknown:Unknown
-TreeImport:Imported URL
-TreeNewFolder:New directory
+TreeUnknown:Unbekannt
+TreeImport:Importierte URL
+TreeNewFolder:Neues Verzeichnis
 
 # Tree export
-TreeHotlist:NetSurf hotlist
-TreeHistory:NetSurf history
+TreeHotlist:NetSurf Hotlist
+TreeHistory:NetSurf History
 
 # Global history
-GlobalHistory:Global history
-DateToday:Today
-DateYesterday:Yesterday
-Date1Week:Last week
-Date2Week:2 weeks ago
-Date3Week:3 weeks ago
+GlobalHistory:History (global)
+DateToday:Heute
+DateYesterday:Gestern
+Date1Week:vorige Woche
+Date2Week:vor 2 Wochen
+Date3Week:vor 3 Wochen
 
 # Download window
 Download:%s von %s è %s/s è noch %s
@@ -267,12 +267,12 @@ Encoding1:detected
 Encoding2:from <meta>
 EncodingUnk:Unknown
 
-ThemeInstActive:A theme is currently being downloaded or installed. Please wait for it to finish or cancel it before installing more themes.
-ThemeInstDown:Please wait for the theme to download.
-ThemeInvalid:The downloaded theme is invalid or requires a newer version of NetSurf.
-ThemeInstall:Would you like to install the theme '%s' by %s?
-ThemeInstallErr:An error occurred whilst trying to install the downloaded theme.
-ThemeApplyErr:An error occurred whilst trying to apply the downloaded theme.
+ThemeInstActive:Es wird gerade ein Thema geladen oder installiert. Bitte, vor der Installation weiterer Themen diesen Vorgang abwarten oder beenden.
+ThemeInstDown:Bitte warten bis das Thema vollst‰ndig heruntergeladen wurde.
+ThemeInvalid:Das geladene Thema ist fehlerhaft oder benˆtigt eine neuere Version von NetSurf.
+ThemeInstall:Soll das Thema '%s' von %s installiert werden ?
+ThemeInstallErr:Beim Installieren des geladenen Themas trat ein Fehler auf.
+ThemeApplyErr:Beim Versuch der Anwendung eines geladenen Themas trat ein Fehler auf.
 
 # Interactive help
 HelpToolbar0:Schaltet zur¸ck auf die zuvor dargestellte Seite.|MDer Inhalt wird dabei nicht aktualisiert.
@@ -280,15 +280,15 @@ HelpToolbar1:Schaltet vorw‰rts auf die n‰chste Seite.|MDer Inhalt wird dabei nic
 HelpToolbar2:Das ist der Stop Schaltknopf.|MUnterbricht den Ladvorgang.
 HelpToolbar3:Aktualisiert den Seiteninhalt.|MKlicken mit AUSWAHL l‰dt die Seite neu.|MKlicken mit SPEZIAL l‰dt die Seite und alle zugehˆrigen Objekte neu.
 HelpToolbar4:L‰dt die Homepage.
-HelpToolbar5:÷ffnet die lokale History.|M\Aopen the global history \w.
+HelpToolbar5:Das ist der Schaltknopf zur History-Funktion.|MKlicken mit AUSWAHL ˆffnet die lokale History.|MKlicken mit SPEZIAL ˆffnet das Fenster mit der globalen History. 
 HelpToolbar6:Speichert das aktuelle Dokument als HTML Datei.
 HelpToolbar7:Drucken der aktuellen Seite.|MAnklicken ˆffnet den 'Drucken' Dialog.
 HelpToolbar8:Das ist der Hotlist Schaltknopf.|MKlicken mit AUSWAHL ˆffnet die Hotlist.|MKlicken mit SPEZIAL tr‰gt die aktuelle Seite in die Hotlist ein.
 HelpToolbar9:Anklicken ˆffnet den Vergrˆﬂerungs-Dialog.|MDie Vergrˆﬂerung betrifft Text und Bilder.
 HelpToolbar10:Anklicken ˆffnet das Fenster zur Textsuche.
-HelpToolbar11:Das ist die Adressleiste.|MHier Adresse (URL) eingeben und Enter dr¸cken, um eine neue Seite zu laden.
+HelpToolbar11:Das ist die Adressleiste.|MHier die Adresse (URL) eingeben und Entertaste dr¸cken, um eine neue Seite zu laden.
 HelpToolbar12:Das ist die Ladeaktivit‰tsanzeige.|MSie wird animiert, wenn NetSurf aktiv ist.
-HelpToolbar13:\TURL suggestion icon.|M\Sopen a list of recently typed URLs.
+HelpToolbar13:Das ist das URL-Schnellwahl Symbol.|MKlicken mit AUSWAHL ˆffnet eine Liste der zuletzt eingegebenen Web-Adressen.
 
 HelpStatus0:Das ist die Begrenzung der Statusanzeige.|MKlicken und Ziehen ver‰ndert die L‰nge der Statusanzeige.
 HelpStatus1:Das ist die Statusanzeige|MSie zeigt an, was gerade im Browserfenster geschieht.
@@ -348,10 +348,10 @@ HelpBrowserMenu4:Untermen¸ Werkzeuge.|MEnth‰lt verschiedene n¸tzliche Zusatz- un
 HelpBrowserMenu4-0:Verwaltung der Hotlist.
 HelpBrowserMenu4-0-0:Anklicken tr‰gt die Adresse der aktuellen Seite in die Hotlist ein.
 HelpBrowserMenu4-0-1:÷ffnet die Hotlist.
-HelpBrowserMenu4-1:\Rview the history options.
-HelpBrowserMenu4-1-0:\Sopen the local history \w.
-HelpBrowserMenu4-1-1:\Sopen the global history \w.
-HelpBrowserMenu4-2:\Rsearch for instances of a string of text on the page.
+HelpBrowserMenu4-1:Zugriff auf die History Funktionen.|MIn die History werden bereits besuchte Webseiten eingetragen. Dies erlaubt das einfache Wiederfinden einmal gesehener Web-Inhalte.
+HelpBrowserMenu4-1-0:Anklicken mit AUSWAHL ˆffnet das Fenster mit der lokalen History.|MIn der lokalen History werden alle Webseiten notiert, die mit dem aktuellen Browserfenster bereits besucht worden waren.
+HelpBrowserMenu4-1-1:Anklicken mit AUSWAHL ˆffnet das Fenster mit der globalen History.|MIn der globalen History werden alle mit NetSurf besuchten Webseiten notiert.
+HelpBrowserMenu4-2:Erlaubt das Suchen einer Zeichenkette im Text des aktuellen Browserfensters.
 HelpBrowserMenu4-3:Kontrolle ¸ber Anordnung und Positionierung neuer Fenster.
 HelpBrowserMenu4-3-0:Die Position des aktuellen Fensters wird als globaler Standardwert ¸bernommen. Alle nachfolgend neu geˆffneten Fenster werden an dieser Position plaziert.
 HelpBrowserMenu4-3-1:Neu geˆffnete Fenster werden nicht alle an der Standardposition sondern zueinander leicht versetzt plaziert.
@@ -426,11 +426,11 @@ HelpHotlistMenu1-3:Setzt f¸r die markierten Eintr‰ge die Statistik, z.B. Anzahl 
 HelpHotlistMenu2:Markiert alle Elemente der Hotlist.
 HelpHotlistMenu3:Deselektiert alle markierten Elemente.
 
-HelpGHistory:\Tglobal history window.
+HelpGHistory:Das ist das Fenster der globalen History.
 
-HelpGHistoryToolbar0:\Tdelete button.|M\Sdelete the current selection.
-HelpGHistoryToolbar1:\Texpand entries button.|M\Sexpand all addresses in the hotlist.|M\Acollapse all addresses in the hotlist.|MExpanded addresses show additional details, such as a visit counter.
-HelpGHistoryToolbar2:\Topen directories button.|M\Sopen all directories in the hotlist.|M\Aclose all directories in the hotlist.
-HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
+HelpGHistoryToolbar0:Entfernt markierte Bereiche.|MAnklicken mit AUSWAHL lˆscht die vorher markierten Bereiche aus der History.
+HelpGHistoryToolbar1:Expandiert Eintr‰ge.|MAnklicken mit AUSWAHL expandiert alle Adressen.|MAnklicken mit SPEZIAL macht die Expansion aller Adressen r¸ckg‰ngig.|MIn expandierten Adressen werden Zusatzinformationen angezeigt.
+HelpGHistoryToolbar2:÷ffnet Verzeichnisse.|MAnklicken mit AUSWAHL ˆffnet alle Verzeichnisse.|MAnklicken mit SPEZIAL schlieﬂt alle geˆffneten Verzeichnisse.
+HelpGHistoryToolbar3:L‰dt Webseiten.|MAnklicken mit AUSWAHL ˆffnet die markierten Webseiten in je einem neuen Browserfenster.
 
 HelpAppInfo:Das ist das Info-Fenster zu NetSurf.|MGenauere Angaben zu Autoren und Entwicklerteam, zu genutzten Libraries etc. gibt es bei "‹ber NetSurf" im Untermen¸ Hilfe eines Browserfensters.
