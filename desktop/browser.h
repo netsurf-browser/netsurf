@@ -23,6 +23,7 @@ struct form_control;
 struct form_successful_control;
 struct gui_window;
 struct history;
+struct selection;
 
 /** Browser window data. */
 struct browser_window {
@@ -33,6 +34,9 @@ struct browser_window {
 
 	/** Window history structure. */
 	struct history *history;
+
+	/** Selection state */
+	struct selection *sel;
 
 	/** Handler for keyboard input, or 0. */
 	void (*caret_callback)(struct browser_window *bw,
@@ -54,7 +58,13 @@ struct browser_window {
 	char *frag_id;
 
 	/** Current drag status. */
-	enum { DRAGGING_NONE, DRAGGING_VSCROLL, DRAGGING_HSCROLL } drag_type;
+	enum {
+		DRAGGING_NONE,
+		DRAGGING_VSCROLL,
+		DRAGGING_HSCROLL,
+		DRAGGING_SELECTION,
+		DRAGGING_PAGE_SCROLL
+	} drag_type;
 
 	/** Box currently being scrolled, or 0. */
 	struct box *scrolling_box;
@@ -77,14 +87,21 @@ struct browser_window {
 
 
 typedef enum {
-	BROWSER_MOUSE_CLICK_1,
-	BROWSER_MOUSE_CLICK_2,
-	BROWSER_MOUSE_HOVER,
-	BROWSER_MOUSE_DRAG,	/**< CLICK is continuing as a drag. */
-	BROWSER_MOUSE_CLICK_1_MOD,
-	BROWSER_MOUSE_CLICK_2_MOD,
-} browser_mouse_click;
+	BROWSER_MOUSE_CLICK_1  = 1,  /* primary mouse button down (eg. Select) */
+	BROWSER_MOUSE_CLICK_2  = 2,
 
+	BROWSER_MOUSE_DRAG_1   = 8,  /* start of drag operation */
+	BROWSER_MOUSE_DRAG_2   = 16,
+
+	BROWSER_MOUSE_HOLDING_1 = 64,   /* whilst drag is in progress */
+	BROWSER_MOUSE_HOLDING_2 = 128,
+
+	BROWSER_MOUSE_MOD_1    = 512,  /* primary modifier key pressed (eg. Shift) */
+	BROWSER_MOUSE_MOD_2    = 1024
+} browser_mouse_state;
+
+
+extern struct browser_window *current_redraw_browser;
 
 void browser_window_create(const char *url, struct browser_window *clone,
 		char *referer);
@@ -100,10 +117,18 @@ void browser_window_destroy(struct browser_window *bw);
 void browser_window_update(struct browser_window *bw, bool scroll_to_top);
 
 void browser_window_mouse_click(struct browser_window *bw,
-		browser_mouse_click click, int x, int y);
+		browser_mouse_state mouse, int x, int y);
+void browser_window_mouse_track(struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y);
+void browser_window_mouse_drag_end(struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y);
+
 bool browser_window_key_press(struct browser_window *bw, wchar_t key);
 void browser_window_form_select(struct browser_window *bw,
 		struct form_control *control, int item);
+
+void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
+		int width, int height);
 
 /* In platform specific hotlist.c. */
 void hotlist_visited(struct content *content);

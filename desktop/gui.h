@@ -13,6 +13,22 @@
 #ifndef _NETSURF_DESKTOP_GUI_H_
 #define _NETSURF_DESKTOP_GUI_H_
 
+typedef enum {
+	GUI_SAVE_SOURCE,
+	GUI_SAVE_DRAW,
+	GUI_SAVE_TEXT,
+	GUI_SAVE_COMPLETE,
+	GUI_SAVE_OBJECT_ORIG,
+	GUI_SAVE_OBJECT_NATIVE,
+	GUI_SAVE_LINK_URI,
+	GUI_SAVE_LINK_URL,
+	GUI_SAVE_LINK_TEXT,
+	GUI_SAVE_HOTLIST_EXPORT_HTML,
+	GUI_SAVE_HISTORY_EXPORT_HTML,
+	GUI_SAVE_TEXT_SELECTION,
+	GUI_SAVE_CLIPBOARD_CONTENTS
+} gui_save_type;
+
 struct gui_window;
 struct gui_download_window;
 
@@ -39,6 +55,7 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1);
 void gui_window_redraw_window(struct gui_window *g);
 void gui_window_update_box(struct gui_window *g,
 		const union content_msg_data *data);
+bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
 int gui_window_get_width(struct gui_window *g);
 void gui_window_set_extent(struct gui_window *g, int width, int height);
@@ -50,6 +67,7 @@ void gui_window_stop_throbber(struct gui_window *g);
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height);
 void gui_window_remove_caret(struct gui_window *g);
 void gui_window_new_content(struct gui_window *g);
+bool gui_window_scroll_start(struct gui_window *g);
 
 struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,
@@ -59,6 +77,12 @@ void gui_download_window_data(struct gui_download_window *dw, const char *data,
 void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg);
 void gui_download_window_done(struct gui_download_window *dw);
+
+void gui_drag_save_object(gui_save_type type, struct content *c);
+void gui_drag_save_selection(struct selection *s);
+void gui_start_selection(struct gui_window *g);
+
+bool gui_copy_to_clipboard(struct selection *s);
 
 void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control);
