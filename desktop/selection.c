@@ -171,8 +171,11 @@ unsigned selection_label_subtree(struct selection *s, struct box *node, unsigned
 
 	node->byte_offset = idx;
 
-	if (node->text && !node->object)
+
+	if (node->text && !node->object) {
 		idx += node->length;
+		if (node->space) idx++;
+	}
 
 	while (child) {
 		idx = selection_label_subtree(s, child, idx);
