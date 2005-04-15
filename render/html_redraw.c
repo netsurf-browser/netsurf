@@ -16,6 +16,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/plotters.h"
+#include "netsurf/desktop/selection.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
@@ -119,16 +120,33 @@ bool html_redraw_box(struct box *box,
 	int colour;
 	int x_scrolled, y_scrolled;
 
-	x = (x_parent + box->x) * scale;
-	y = (y_parent + box->y) * scale;
-	width = box->width * scale;
-	height = box->height * scale;
-	padding_left = box->padding[LEFT] * scale;
-	padding_top = box->padding[TOP] * scale;
-	padding_width = (box->padding[LEFT] + box->width +
-			box->padding[RIGHT]) * scale;
-	padding_height = (box->padding[TOP] + box->height +
-			box->padding[BOTTOM]) * scale;
+	/* avoid trivial FP maths */
+	if (scale == 1.0) {
+		x = (x_parent + box->x);
+		y = (y_parent + box->y);
+		width = box->width;
+		height = box->height;
+		padding_left = box->padding[LEFT];
+		padding_top = box->padding[TOP];
+		padding_width = padding_left + box->width + box->padding[RIGHT];
+		padding_height = padding_top + box->height + box->padding[BOTTOM];
+	}
+	else {
+		x = (x_parent + box->x) * scale;
+		y = (y_parent + box->y) * scale;
+		width = box->width * scale;
+		height = box->height * scale;
+		/* left and top padding values are normally zero, so avoid trivial FP maths */
+		padding_left = box->padding[LEFT] ? (box->padding[LEFT] * scale) : 0;
+		padding_top  = box->padding[TOP]  ? (box->padding[TOP] * scale)  : 0;
+		padding_width = (box->padding[LEFT] + box->width +
+				box->padding[RIGHT]) * scale;
+		padding_height = (box->padding[TOP] + box->height +
+				box->padding[BOTTOM]) * scale;
+	}
+
+//LOG(("%d %d %d %d", padding_top, padding_left, padding_width, padding_height));
+//padding_top and padding_left are often 0
 
 	/* calculate clip rectangle for this box */
 	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
@@ -296,6 +314,10 @@ bool html_redraw_box(struct box *box,
 			return false;
 
 	} else if (box->text) {
+
+		unsigned start_idx;
+		unsigned end_idx;
+
 		/* antialias colour for under/overline */
 		colour = html_redraw_aa(current_background_color,
 				/*print_text_black ? 0 :*/ box->style->color);
@@ -330,12 +352,65 @@ bool html_redraw_box(struct box *box,
 				return false;
 		}
 
-		if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
-				box->style, box->text, box->length,
-				current_background_color,
-				/*print_text_black ? 0 :*/ box->style->color))
-			return false;
 
+		/* is this box part of the current selection? */
+		if (box->text && !box->object && current_redraw_browser &&
+			selection_defined(current_redraw_browser->sel) &&
+			selection_highlighted(current_redraw_browser->sel, box,
+					&start_idx, &end_idx)) {
+
+			int startx, endx;
+
+			if (!nsfont_width(box->style, box->text, start_idx, &startx))
+				startx = 0;
+
+			if (!nsfont_width(box->style, box->text + start_idx,
+					end_idx - start_idx, &endx))
+				endx = 0;
+			endx += startx;
+
+			if (scale != 1.0) {
+				startx *= scale;
+				endx *= scale;
+			}
+
+			if (start_idx > 0) {
+
+				if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
+						box->style, box->text, start_idx,
+						current_background_color,
+						/*print_text_black ? 0 :*/ box->style->color))
+					return false;
+
+			}
+
+			if (!plot.fill(x + startx, y, x + endx, y + box->height * scale,
+					current_background_color ^ 0xffffff))
+				return false;
+
+			if (!plot.text(x + startx, y + (int) (box->height * 0.75 * scale),
+					box->style, box->text + start_idx, end_idx - start_idx,
+					current_background_color ^ 0xffffff,
+					current_background_color))
+				return false;
+
+			if (end_idx < box->length) {
+
+				if (!plot.text(x + endx, y + (int) (box->height * 0.75 * scale),
+						box->style, box->text + end_idx, box->length - end_idx,
+						current_background_color,
+						/*print_text_black ? 0 :*/ box->style->color))
+					return false;
+
+			}
+		}
+		else {
+			if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
+					box->style, box->text, box->length,
+					current_background_color,
+					/*print_text_black ? 0 :*/ box->style->color))
+				return false;
+		}
 	} else {
 		for (c = box->children; c != 0; c = c->next)
 			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)

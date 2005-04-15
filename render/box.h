@@ -141,6 +141,8 @@ struct box {
 	int min_width;
 	int max_width;  /**< Width that would be taken with no line breaks. */
 
+	unsigned byte_offset;  /**< byte offset within a textual representation of this content */
+
 	char *text;     /**< Text, or 0 if none. Unterminated. */
 	size_t length;  /**< Length of text. */
 
