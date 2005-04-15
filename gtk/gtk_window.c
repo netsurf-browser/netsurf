@@ -287,6 +287,14 @@ void gui_window_update_box(struct gui_window *g,
 }
 
 
+bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+{
+	*sx = 0;
+	*sy = 0;
+	return true;
+}
+
+
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
 }
@@ -349,3 +357,31 @@ void gui_window_remove_caret(struct gui_window *g)
 void gui_window_new_content(struct gui_window *g)
 {
 }
+
+
+bool gui_window_scroll_start(struct gui_window *g)
+{
+	return true;
+}
+
+
+void gui_drag_save_object(gui_save_type type, struct content *c)
+{
+}
+
+
+void gui_drag_save_selection(struct selection *s)
+{
+}
+
+
+void gui_start_selection(struct gui_window *g)
+{
+}
+
+
+bool gui_copy_to_clipboard(struct selection *s)
+{
+	return false;
+}
+
