@@ -21,6 +21,7 @@
 #include "oslib/colourtrans.h"
 #include "oslib/osbyte.h"
 #include "oslib/osspriteop.h"
+#include "oslib/serviceinternational.h"
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "netsurf/utils/config.h"
@@ -38,9 +39,11 @@
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/thumbnail.h"
 #include "netsurf/riscos/treeview.h"
+#include "netsurf/riscos/ucstables.h"
 #include "netsurf/riscos/url_complete.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/talloc.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/messages.h"
@@ -341,7 +344,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 
 	assert(g);
 	assert(title);
-	
+
 	if (g->option.scale != 1.0) {
 	  	scale_disp = g->option.scale * 100;
 	  	if ((float)scale_disp != g->option.scale * 100)
@@ -473,7 +476,7 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 			clear_background = true;
 			scale = g->option.scale;
 			break;
-		
+
 
 #ifdef WITH_SPRITE
 		case CONTENT_SPRITE:
@@ -1084,7 +1087,7 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 
 	/* first resize stops any flickering by making the URL window on top */
 	ro_gui_url_complete_resize(g, open);
-	
+
 	error = xwimp_open_window(open);
 	if (error) {
 		LOG(("xwimp_open_window: 0x%x: %s",
@@ -1253,12 +1256,12 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 				pointer->pos.y, g->window);
 		return;
 	}
-	
+
 	/*	Handle toolbar edits
 	*/
 	if ((g->toolbar->editor) && (pointer->i < ICON_TOOLBAR_URL)) {
 		ro_gui_theme_toolbar_editor_click(g->toolbar, pointer);
-		return; 
+		return;
 	}
 
 	/*	Handle the buttons appropriately
@@ -1535,13 +1538,15 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 {
 	struct content *content = g->bw->current_content;
 	wimp_window_state state;
-	int y;
+	int y, t_alphabet;
 	char *url;
 	char *toolbar_url;
 	os_error *error;
 	wimp_pointer pointer;
 	url_func_result res;
 	float old_scale;
+	static int *ucstable = NULL;
+	static int alphabet = 0;
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
@@ -1551,24 +1556,147 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		return false;
 	}
 
+	/* In order to make sensible use of the 0x80->0xFF ranges specified
+	 * in the RISC OS 8bit alphabets, we must do the following:
+	 *
+	 * + Read the currently selected alphabet
+	 * + Acquire a pointer to the UCS conversion table for this alphabet:
+	 *     + Try using ServiceInternational 8 to get the table
+	 *     + If that fails, use our internal table (see ucstables.c)
+	 * + If the alphabet is not UTF8 and the conversion table exists:
+	 *     + Lookup UCS code in the conversion table
+	 *     + If code is -1 (i.e. undefined):
+	 *         + Use codepoint 0xFFFD instead
+	 * + If the alphabet is UTF8, we must buffer input, thus:
+	 *     + If the keycode is < 0x80:
+	 *         + Handle it directly
+	 *     + If the keycode is a UTF8 sequence start:
+	 *         + Initialise the buffer appropriately
+	 *     + Otherwise:
+	 *         + OR in relevant bits from keycode to buffer
+	 *         + If we've received an entire UTF8 character:
+	 *             + Handle UCS code
+	 * + Otherwise:
+	 *     + Simply handle the keycode directly, as there's no easy way
+	 *       of performing the mapping from keycode -> UCS4 codepoint.
+	 */
+	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0, &t_alphabet);
+	if (error) {
+		LOG(("failed reading alphabet: 0x%x: %s",
+				error->errnum, error->errmess));
+		/* prevent any corruption of ucstable */
+		t_alphabet = alphabet;
+	}
+
+	if (t_alphabet != alphabet) {
+		osbool unclaimed;
+		/* Alphabet has changed, so read UCS table location */
+		alphabet = t_alphabet;
+		error = xserviceinternational_get_ucs_conversion_table(
+						alphabet, &unclaimed,
+						(void**)&ucstable);
+		if (error) {
+			LOG(("failed reading UCS conversion table: 0x%x: %s",
+					error->errnum, error->errmess));
+			/* try using our own table instead */
+			ucstable = ucstable_from_alphabet(alphabet);
+		}
+		if (unclaimed)
+			/* Service wasn't claimed so use our own ucstable */
+			ucstable = ucstable_from_alphabet(alphabet);
+	}
+
 	/* First send the key to the browser window, eg. form fields. */
 	if (!toolbar) {
 		wchar_t c = (wchar_t)key;
+		static wchar_t wc = 0;	/* buffer for UTF8 alphabet */
+		static int shift = 0;
 		/* Munge cursor keys into unused control chars */
 		/* We can't map onto 1->26 (reserved for ctrl+<qwerty>
 		   That leaves 27->31 and 128->159 */
 
 		if (c == 394) c = 9;	       /* Tab */
 		else if (c == 410) c = 11;     /* Shift+Tab */
-		else if (c == 428) c = 128;     /* Ctrl+Left */
-		else if (c == 429) c = 129;     /* Ctrl+Right*/
+		else if (c == 428) c = 128;    /* Ctrl+Left */
+		else if (c == 429) c = 129;    /* Ctrl+Right*/
 		else if (c == 396) c = 29;     /* Left */
 		else if (c == 397) c = 28;     /* Right */
 		else if (c == 398) c = 31;     /* Down */
 		else if (c == 399) c = 30;     /* Up */
-		if (c < 256)
+		if (c < 256) {
+			if (alphabet != 111 /* UTF8 */ && ucstable != NULL)
+				/* read UCS4 value out of table */
+				c = ucstable[c] == -1 ? 0xFFFD : ucstable[c];
+			else if (alphabet == 111 /* UTF8 */) {
+				if ((c & 0x80) == 0x00 ||
+						(c & 0xC0) == 0xC0) {
+					/* UTF8 start sequence */
+					if ((c & 0xE0) == 0xC0) {
+						wc = ((c & 0x1F) << 6);
+						shift = 1;
+						return true;
+					}
+					else if ((c & 0xF0) == 0xE0) {
+						wc = ((c & 0x0F) << 12);
+						shift = 2;
+						return true;
+					}
+					else if ((c & 0xF8) == 0xF0) {
+						wc = ((c & 0x07) << 18);
+						shift = 3;
+						return true;
+					}
+					/* These next two have been removed
+					 * from RFC3629, but there's no
+					 * guarantee that RISC OS won't
+					 * generate a UCS4 value outside the
+					 * UTF16 plane, so we handle them
+					 * anyway. */
+					else if ((c & 0xFC) == 0xF8) {
+						wc = ((c & 0x03) << 24);
+						shift = 4;
+					}
+					else if ((c & 0xFE) == 0xFC) {
+						wc = ((c & 0x01) << 30);
+						shift = 5;
+					}
+					else if (c >= 0x80) {
+						/* If this ever happens,
+						 * RISC OS' UTF8 keyboard
+						 * drivers are broken */
+						LOG(("unexpected UTF8 start"
+						     " byte %x (ignoring)",
+						     c));
+						return true;
+					}
+					/* Anything else is ASCII, so just
+					 * handle it directly. */
+				}
+				else {
+					if ((c & 0xC0) != 0x80) {
+						/* If this ever happens,
+						 * RISC OS' UTF8 keyboard
+						 * drivers are broken */
+						LOG(("unexpected keycode: "
+						     "%x (ignoring)", c));
+						return true;
+					}
+
+					/* Continuation of UTF8 character */
+					wc |= ((c & 0x3F) << (6 * --shift));
+					if (shift > 0)
+						/* partial character */
+						return true;
+					else
+						/* got entire character, so
+						 * fetch from buffer and
+						 * handle it */
+						c = wc;
+				}
+			}
 			if (browser_window_key_press(g->bw, c))
 				return true;
+		}
 	}
 
 	switch (key) {
@@ -1706,13 +1834,13 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 					if (scale_snap_to[i] < old_scale) {
 						g->option.scale = scale_snap_to[i];
 						break;
-					}	
+					}
 			} else {
 				for (unsigned int i = 0; i < SCALE_SNAP_TO_SIZE; i++)
 					if (scale_snap_to[i] > old_scale) {
 						g->option.scale = scale_snap_to[i];
 						break;
-					}	
+					}
                         }
 			if (g->option.scale < scale_snap_to[0])
 				g->option.scale = scale_snap_to[0];
