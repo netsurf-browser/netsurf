@@ -26,6 +26,8 @@ extern const char * NETSURF_DIR;
 struct toolbar;
 struct plotter_table;
 
+extern wimp_t task_handle;	/**< RISC OS wimp task handle. */
+
 extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
 	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_openurl,
@@ -42,24 +44,11 @@ extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
 extern bool print_active, print_text_black;
 extern struct tree *hotlist_tree, *global_history_tree;
 
-typedef enum {
-	GUI_SAVE_SOURCE,
-	GUI_SAVE_DRAW,
-	GUI_SAVE_TEXT,
-	GUI_SAVE_COMPLETE,
-	GUI_SAVE_OBJECT_ORIG,
-	GUI_SAVE_OBJECT_NATIVE,
-	GUI_SAVE_LINK_URI,
-	GUI_SAVE_LINK_URL,
-	GUI_SAVE_LINK_TEXT,
-	GUI_SAVE_HOTLIST_EXPORT_HTML,
-	GUI_SAVE_HISTORY_EXPORT_HTML,
-} gui_save_type;
-
-typedef enum { GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
-		GUI_DRAG_SAVE, GUI_DRAG_STATUS_RESIZE,
+typedef enum { GUI_DRAG_NONE, GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
+		GUI_DRAG_SAVE, GUI_DRAG_SCROLL, GUI_DRAG_STATUS_RESIZE,
 		GUI_DRAG_TREE_SELECT, GUI_DRAG_TREE_MOVE,
 		GUI_DRAG_TOOLBAR_CONFIG } gui_drag_type;
+
 extern gui_drag_type gui_current_drag_type;
 
 
@@ -139,10 +128,10 @@ void ro_gui_download_window_destroy(struct gui_download_window *dw);
 void ro_gui_mouse_action(struct gui_window *g);
 
 /* in textselection.c */
-void ro_gui_start_selection(wimp_pointer *pointer, wimp_window_state *state,
-		struct gui_window *g);
-void ro_gui_selection_drag_end(wimp_dragged *drag);
-void ro_gui_copy_selection(struct gui_window *g);
+void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag);
+void ro_gui_selection_claim_entity(wimp_full_message_claim_entity *claim);
+void ro_gui_selection_data_request(wimp_full_message_data_request *req);
+bool ro_gui_save_clipboard(const char *path);
 
 /* in 401login.c */
 #ifdef WITH_AUTH
@@ -177,6 +166,10 @@ void ro_gui_window_process_reformats(void);
 void ro_gui_window_default_options(struct browser_window *bw);
 void ro_gui_window_redraw_all(void);
 void ro_gui_window_prepare_navigate_all(void);
+browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons);
+bool ro_gui_shift_pressed(void);
+bool ro_gui_ctrl_pressed(void);
+void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag);
 
 /* in history.c */
 void ro_gui_history_init(void);
@@ -199,9 +192,11 @@ int ro_gui_hotlist_help(int x, int y);
 /* in save.c */
 void ro_gui_save_prepare(gui_save_type save_type, struct content *c);
 void ro_gui_save_click(wimp_pointer *pointer);
-void ro_gui_drag_icon(wimp_pointer *pointer);
+void ro_gui_drag_icon(int x, int y, const char *sprite);
 void ro_gui_save_drag_end(wimp_dragged *drag);
+void ro_gui_send_datasave(gui_save_type save_type, const wimp_full_message_data_xfer *message, wimp_t to);
 void ro_gui_save_datasave_ack(wimp_message *message);
+void ro_gui_save_ok(wimp_w w);
 
 /* in filetype.c */
 int ro_content_filetype(struct content *content);

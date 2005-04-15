@@ -167,6 +167,8 @@ bool save_as_draw(struct content *c, const char *path)
 	draw_clip_x1 = A4PAGEWIDTH;
 	draw_clip_y1 = draw_plot_origin_y;
 
+	current_redraw_browser = NULL;  /* we don't want to save the selection */
+
 	if (!drawbuf_group_begin("page"))
 		goto draw_save_error;
 

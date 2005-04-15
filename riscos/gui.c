@@ -133,7 +133,7 @@ static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 osspriteop_area *gui_sprites;	   /**< Sprite area containing pointer and hotlist sprites */
 
 /** Accepted wimp user messages. */
-static wimp_MESSAGE_LIST(34) task_messages = { {
+static wimp_MESSAGE_LIST(36) task_messages = { {
 	message_HELP_REQUEST,
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
@@ -143,6 +143,8 @@ static wimp_MESSAGE_LIST(34) task_messages = { {
 	message_MENU_WARNING,
 	message_MENUS_DELETED,
 	message_MODE_CHANGE,
+	message_CLAIM_ENTITY,
+	message_DATA_REQUEST,
 #ifdef WITH_URI
 	message_URI_PROCESS,
 	message_URI_RETURN_RESULT,
@@ -635,16 +637,27 @@ void gui_poll(bool active)
 	xhourglass_off();
 	if (active) {
 		event = wimp_poll(mask, &block, 0);
-	} else if (sched_active && (gui_track || gui_reformat_pending)) {
-		os_t t = os_read_monotonic_time() + 10;
-		if (sched_time < t)
-			t = sched_time;
-		event = wimp_poll_idle(mask, &block, t, 0);
-	} else if (sched_active) {
-		event = wimp_poll_idle(mask, &block, sched_time, 0);
-	} else if (gui_track || gui_reformat_pending) {
+	} else if (sched_active || gui_track || gui_reformat_pending) {
 		os_t t = os_read_monotonic_time();
-		event = wimp_poll_idle(mask, &block, t + 10, 0);
+
+		if (gui_track)
+			switch (gui_current_drag_type) {
+				case GUI_DRAG_SELECTION:
+				case GUI_DRAG_SCROLL:
+					t += 4;	/* for smoother update */
+					break;
+
+				default:
+					t += 10;
+					break;
+			}
+		else
+			t += 10;
+
+		if (sched_active && (sched_time - t) < 0)
+			t = sched_time;
+
+		event = wimp_poll_idle(mask, &block, t, 0);
 	} else {
 		event = wimp_poll(wimp_MASK_NULL | mask, &block, 0);
 	}
@@ -814,17 +827,31 @@ void ro_gui_null_reason_code(void)
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
 		LOG(("xwimp_get_pointer_info: 0x%x: %s",
-				error->errnum, error->errmess));
+			error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 		return;
 	}
 
-	if (gui_track_wimp_w == history_window)
-		ro_gui_history_mouse_at(&pointer);
-	if (gui_track_wimp_w == dialog_url_complete)
-		ro_gui_url_complete_mouse_at(&pointer, false);
-	else if (gui_track_gui_window)
-		ro_gui_window_mouse_at(gui_track_gui_window, &pointer);
+	switch (gui_current_drag_type) {
+
+		/* pointer is allowed to wander outside the initiating window
+			for certain drag types */
+
+		case GUI_DRAG_SELECTION:
+		case GUI_DRAG_SCROLL:
+			assert(gui_track_gui_window);
+			ro_gui_window_mouse_at(gui_track_gui_window, &pointer);
+			break;
+
+		default:
+			if (gui_track_wimp_w == history_window)
+				ro_gui_history_mouse_at(&pointer);
+			if (gui_track_wimp_w == dialog_url_complete)
+				ro_gui_url_complete_mouse_at(&pointer, false);
+			else if (gui_track_gui_window)
+				ro_gui_window_mouse_at(gui_track_gui_window, &pointer);
+			break;
+	}
 }
 
 
@@ -938,10 +965,8 @@ void ro_gui_close_window_request(wimp_close *close)
 
 void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
 {
-	os_error *error;
-
 	if (gui_track_wimp_w == history_window) {
-		error = xwimp_close_window(dialog_tooltip);
+		os_error *error = xwimp_close_window(dialog_tooltip);
 		if (error) {
 			LOG(("xwimp_close_window: 0x%x: %s",
 					error->errnum, error->errmess));
@@ -949,8 +974,18 @@ void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
 		}
 	}
 
-	gui_track = false;
-	gui_window_set_pointer(GUI_POINTER_DEFAULT);
+	switch (gui_current_drag_type) {
+		case GUI_DRAG_SELECTION:
+		case GUI_DRAG_SCROLL:
+			/* ignore Pointer_Leaving_Window event that the Wimp mysteriously
+				issues when a Wimp_DragBox drag operations is started */
+			break;
+
+		default:
+			gui_track = false;
+			gui_window_set_pointer(GUI_POINTER_DEFAULT);
+			break;
+	}
 }
 
 
@@ -1057,7 +1092,11 @@ void ro_gui_drag_end(wimp_dragged *drag)
 {
 	switch (gui_current_drag_type) {
 		case GUI_DRAG_SELECTION:
-			ro_gui_selection_drag_end(drag);
+			ro_gui_selection_drag_end(gui_track_gui_window, drag);
+			break;
+
+		case GUI_DRAG_SCROLL:
+			ro_gui_window_scroll_end(gui_track_gui_window, drag);
 			break;
 
 		case GUI_DRAG_DOWNLOAD_SAVE:
@@ -1081,6 +1120,10 @@ void ro_gui_drag_end(wimp_dragged *drag)
 
 		case GUI_DRAG_TOOLBAR_CONFIG:
 			ro_gui_theme_toolbar_editor_drag_end(drag);
+			break;
+
+		default:
+			assert(gui_current_drag_type == GUI_DRAG_NONE);
 			break;
 	}
 }
@@ -1163,12 +1206,22 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			ro_gui_menu_warning((wimp_message_menu_warning *)
 					&message->data);
 			break;
+
 		case message_MENUS_DELETED:
 			ro_gui_menu_closed();
 			break;
+
 		case message_MODE_CHANGE:
 			ro_gui_history_mode_change();
 			rufl_invalidate_cache();
+			break;
+
+		case message_CLAIM_ENTITY:
+			ro_gui_selection_claim_entity((wimp_full_message_claim_entity*)message);
+			break;
+
+		case message_DATA_REQUEST:
+			ro_gui_selection_data_request((wimp_full_message_data_request*)message);
 			break;
 
 #ifdef WITH_URI

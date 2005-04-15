@@ -472,9 +472,10 @@ void ro_gui_download_window_click(struct gui_download_window *dw,
 
 	if (pointer->i == ICON_DOWNLOAD_ICON && !dw->error &&
 			!dw->saved) {
+		const char *sprite = ro_gui_get_icon_string(pointer->w, pointer->i);
 		gui_current_drag_type = GUI_DRAG_DOWNLOAD_SAVE;
 		download_window_current = dw;
-		ro_gui_drag_icon(pointer);
+		ro_gui_drag_icon(pointer->pos.x, pointer->pos.y, sprite);
 
 	} else if (pointer->i == ICON_DOWNLOAD_DESTINATION) {
 		strncpy(command + 14, dw->path, 242);
@@ -527,6 +528,7 @@ void ro_gui_download_drag_end(wimp_dragged *drag)
 			dw->received;
 	message.data.data_xfer.file_type = dw->file_type;
 	strncpy(message.data.data_xfer.file_name, dw->path, 212);
+	message.data.data_xfer.file_name[211] = 0;
 	message.size = 44 + ((strlen(message.data.data_xfer.file_name) + 4) &
 			(~3u));
 

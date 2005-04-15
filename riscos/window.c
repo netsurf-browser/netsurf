@@ -58,6 +58,7 @@ static float scale_snap_to[] = {0.10, 0.125, 0.25, 0.333, 0.5, 0.75,
 
 static void ro_gui_window_clone_options(struct browser_window *new_bw,
 		struct browser_window *old_bw);
+static browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons);
 
 
 
@@ -456,6 +457,7 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 	plot = ro_plotters;
 	ro_plot_set_scale(g->option.scale);
 	ro_gui_current_redraw_gui = g;
+	current_redraw_browser = g->bw;
 
 	/*	We should clear the background, except for HTML.
 	*/
@@ -572,10 +574,12 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
 			ro_gui_current_redraw_gui = NULL;
+			current_redraw_browser = NULL;
 			return;
 		}
 	}
 	ro_gui_current_redraw_gui = NULL;
+	current_redraw_browser = NULL;
 }
 
 
@@ -621,6 +625,7 @@ void gui_window_update_box(struct gui_window *g,
 	/*	Set the current redraw gui_window to get options from
 	*/
 	ro_gui_current_redraw_gui = g;
+	current_redraw_browser = g->bw;
 	use_buffer = (data->redraw.full_redraw) &&
 			(g->option.buffer_everything || g->option.buffer_animations);
 
@@ -691,6 +696,7 @@ void gui_window_update_box(struct gui_window *g,
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
 			ro_gui_current_redraw_gui = NULL;
+			current_redraw_browser = NULL;
 			return;
 		}
 	}
@@ -699,6 +705,44 @@ void gui_window_update_box(struct gui_window *g,
 		retaining options
 	*/
 	ro_gui_current_redraw_gui = NULL;
+	current_redraw_browser = NULL;
+}
+
+
+/**
+ * Get the scroll position of a browser window.
+ *
+ * \param  g   gui_window
+ * \param  sx  receives x ordinate of point at top-left of window
+ * \param  sy  receives y ordinate of point at top-left of window
+ * \return true iff successful
+ */
+
+bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
+{
+	wimp_window_state state;
+	os_error *error;
+
+	assert(g);
+
+	state.w = g->window;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+	else {
+		int toolbar_height = 0;
+
+		if (g->toolbar)
+			toolbar_height = ro_gui_theme_toolbar_full_height(g->toolbar);
+
+		*sx = state.xscroll / (2 * g->option.scale);
+		*sy = -(state.yscroll - toolbar_height) / (2 * g->option.scale);
+		return true;
+	}
 }
 
 
@@ -1177,7 +1221,7 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 
 	assert(g);
 
-	state.w = pointer->w;
+	state.w = g->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG(("xwimp_get_window_state: 0x%x: %s",
@@ -1189,10 +1233,7 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 	x = window_x_units(pointer->pos.x, &state) / 2 / g->option.scale;
 	y = -window_y_units(pointer->pos.y, &state) / 2 / g->option.scale;
 
-	if (pointer->buttons)
-		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG, x, y);
-	else
-		browser_window_mouse_click(g->bw, BROWSER_MOUSE_HOVER, x, y);
+	browser_window_mouse_track(g->bw, ro_gui_mouse_drag_state(pointer->buttons), x, y);
 }
 
 
@@ -1202,7 +1243,6 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 
 void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 {
-	
 	/* try to close url-completion */
 	ro_gui_url_complete_close(g, pointer->i);
 
@@ -1344,16 +1384,14 @@ void ro_gui_status_click(struct gui_window *g, wimp_pointer *pointer)
 
 void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 {
-	int x, y, shift;
 	wimp_window_state state;
 	os_error *error;
+	int x, y;
 
 	assert(g);
 
 	/* try to close url-completion */
 	ro_gui_url_complete_close(g, pointer->i);
-
-	xosbyte1(osbyte_SCAN_KEYBOARD, 0 ^ 0x80, 0, &shift);
 
 	state.w = pointer->w;
 	error = xwimp_get_window_state(&state);
@@ -1380,17 +1418,14 @@ void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 		}
 	}
 
+LOG(("%d %d", pointer->buttons, ro_gui_mouse_click_state(pointer->buttons)));
+
 	if (pointer->buttons == wimp_CLICK_MENU)
 		ro_gui_menu_create(browser_menu, pointer->pos.x,
 				pointer->pos.y, pointer->w);
-	else if (pointer->buttons == wimp_CLICK_SELECT)
+	else
 		browser_window_mouse_click(g->bw,
-			(shift == 0xff) ? BROWSER_MOUSE_CLICK_1_MOD
-					: BROWSER_MOUSE_CLICK_1, x, y);
-	else if (pointer->buttons == wimp_CLICK_ADJUST)
-		browser_window_mouse_click(g->bw,
-			(shift == 0xff) ? BROWSER_MOUSE_CLICK_2_MOD
-					: BROWSER_MOUSE_CLICK_2, x, y);
+				ro_gui_mouse_click_state(pointer->buttons), x, y);
 }
 
 
@@ -1520,13 +1555,13 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 	if (!toolbar) {
 		wchar_t c = (wchar_t)key;
 		/* Munge cursor keys into unused control chars */
-		/* We can't map on to any of: 3,8,10,13,17,18,21,22,23 or 24
-		 * That leaves 1,2,4-7,11,12,14-16,18-20,25-31 and 129-159
-		 */
+		/* We can't map onto 1->26 (reserved for ctrl+<qwerty>
+		   That leaves 27->31 and 128->159 */
+
 		if (c == 394) c = 9;	       /* Tab */
 		else if (c == 410) c = 11;     /* Shift+Tab */
-		else if (c == 428) c = 26;     /* Ctrl+Left */
-		else if (c == 429) c = 27;     /* Ctrl+Right*/
+		else if (c == 428) c = 128;     /* Ctrl+Left */
+		else if (c == 429) c = 129;     /* Ctrl+Right*/
 		else if (c == 396) c = 29;     /* Left */
 		else if (c == 397) c = 28;     /* Right */
 		else if (c == 398) c = 31;     /* Down */
@@ -2111,3 +2146,177 @@ void ro_gui_window_prepare_navigate_all(void) {
 	for (g = window_list; g; g = g->next)
 		ro_gui_prepare_navigate(g);
 }
+
+
+/**
+ * Returns the state of the mouse buttons and modifiers keys for a
+ * click/release action, suitable for passing to the OS-independent
+ * browser window code
+ */
+
+browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons)
+{
+	browser_mouse_state state = 0;
+
+	if (buttons & (wimp_CLICK_SELECT)) state |= BROWSER_MOUSE_CLICK_1;
+	if (buttons & (wimp_CLICK_ADJUST)) state |= BROWSER_MOUSE_CLICK_2;
+
+	if (buttons & (wimp_DRAG_SELECT)) state |= BROWSER_MOUSE_DRAG_1;
+	if (buttons & (wimp_DRAG_ADJUST)) state |= BROWSER_MOUSE_DRAG_2;
+
+	if (ro_gui_shift_pressed()) state |= BROWSER_MOUSE_MOD_1;
+	if (ro_gui_ctrl_pressed())  state |= BROWSER_MOUSE_MOD_2;
+
+	return state;
+}
+
+
+/**
+ * Returns the state of the mouse buttons and modifiers keys whilst
+ * dragging, for passing to the OS-independent browser window code
+ */
+
+browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons)
+{
+	browser_mouse_state state = 0;
+
+	if (buttons & (wimp_CLICK_SELECT)) state |= BROWSER_MOUSE_HOLDING_1;
+	if (buttons & (wimp_CLICK_ADJUST)) state |= BROWSER_MOUSE_HOLDING_2;
+
+	if (ro_gui_shift_pressed()) state |= BROWSER_MOUSE_MOD_1;
+	if (ro_gui_ctrl_pressed())  state |= BROWSER_MOUSE_MOD_2;
+
+	return state;
+}
+
+
+/**
+ * Returns true iff one or more Shift keys is held down
+ */
+
+bool ro_gui_shift_pressed(void)
+{
+	int shift = 0;
+	xosbyte1(osbyte_SCAN_KEYBOARD, 0 ^ 0x80, 0, &shift);
+	return (shift == 0xff);
+}
+
+
+/**
+ * Returns true iff one or more Ctrl keys is held down
+ */
+
+bool ro_gui_ctrl_pressed(void)
+{
+	int ctrl = 0;
+	xosbyte1(osbyte_SCAN_KEYBOARD, 1 ^ 0x80, 0, &ctrl);
+	return (ctrl == 0xff);
+}
+
+
+/**
+ * Starts drag scrolling of a browser window
+ *
+ * \param gw  gui window
+ */
+
+bool gui_window_scroll_start(struct gui_window *g)
+{
+	wimp_window_info_base info;
+	wimp_pointer pointer;
+	os_error *error;
+	wimp_drag drag;
+	int height;
+	int width;
+
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info 0x%x : %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+
+	info.w = g->window;
+	error = xwimp_get_window_info_header_only((wimp_window_info*)&info);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x : %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+
+	width  = info.extent.x1 - info.extent.x0;
+	height = info.extent.y1 - info.extent.y0;
+
+	drag.type = wimp_DRAG_USER_POINT;
+	drag.bbox.x1 = pointer.pos.x + info.xscroll;
+	drag.bbox.y0 = pointer.pos.y + info.yscroll;
+	drag.bbox.x0 = drag.bbox.x1 - (width  - (info.visible.x1 - info.visible.x0));
+	drag.bbox.y1 = drag.bbox.y0 + (height - (info.visible.y1 - info.visible.y0));
+
+	if (g->toolbar) {
+		int tbar_height = ro_gui_theme_toolbar_full_height(g->toolbar);
+		drag.bbox.y0 -= tbar_height;
+		drag.bbox.y1 -= tbar_height;
+	}
+
+	error = xwimp_drag_box(&drag);
+	if (error) {
+		LOG(("xwimp_drag_box: 0x%x : %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+
+	gui_current_drag_type = GUI_DRAG_SCROLL;
+	return true;
+}
+
+
+/**
+ * Completes scrolling of a browser window
+ *
+ * \param g  gui window
+ */
+
+void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag)
+{
+	wimp_window_state state;
+	wimp_pointer pointer;
+	os_error *error;
+	int x, y;
+
+	gui_current_drag_type = GUI_DRAG_NONE;
+
+	error = xwimp_drag_box((wimp_drag*)-1);
+	if (error) {
+		LOG(("xwimp_drag_box: 0x%x : %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info 0x%x : %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	state.w = g->window;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state 0x%x : %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	x = window_x_units(drag->final.x0, &state) / 2 / g->option.scale;
+	y = -window_y_units(drag->final.y0, &state) / 2 / g->option.scale;
+
+	browser_window_mouse_drag_end(g->bw,
+		ro_gui_mouse_click_state(pointer.buttons), x, y);
+}
+

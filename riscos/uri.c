@@ -27,8 +27,6 @@ void ro_uri_message_received(uri_full_message_process*);
 bool ro_uri_launch(char *uri);
 void ro_uri_bounce(uri_full_message_return_result*);
 
-extern wimp_t task_handle;
-
 
 void ro_uri_message_received(uri_full_message_process* uri_message)
 {

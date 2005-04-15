@@ -16,10 +16,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include "oslib/dragasprite.h"
+#include "oslib/osbyte.h"
 #include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/save_text.h"
+#include "netsurf/desktop/selection.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
@@ -33,13 +35,19 @@
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
+
 static gui_save_type gui_save_current_type;
-static struct content *gui_save_content = 0;
+static struct content *gui_save_content = NULL;
+static struct selection *gui_save_selection = NULL;
 static int gui_save_filetype;
+
+static bool using_dragasprite = true;
+static wimp_w gui_save_dialogw = (wimp_w)-1;
 
 typedef enum { LINK_ACORN, LINK_ANT, LINK_TEXT } link_format;
 
 static bool ro_gui_save_complete(struct content *c, char *path);
+static bool ro_gui_save_content(struct content *c, char *path);
 static void ro_gui_save_object_native(struct content *c, char *path);
 static bool ro_gui_save_link(struct content *c, link_format format, char *path);
 
@@ -65,6 +73,7 @@ struct gui_save_table_entry gui_save_table[] = {
 	/* GUI_SAVE_LINK_TEXT,           */ { 0xfff, "SaveLink" },
 	/* GUI_SAVE_HOTLIST_EXPORT_HTML, */ { 0xfaf, "Hotlist" },
 	/* GUI_SAVE_HISTORY_EXPORT_HTML, */ { 0xfaf, "History" },
+	/* GUI_SAVE_TEXT_SELECTION,      */ { 0xfff, "SaveText" },
 };
 
 
@@ -105,10 +114,11 @@ void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
 
 	/* filename */
 	name = gui_save_table[save_type].name;
-	if (c) {
-		if ((res = url_nice(c->url, (char **)&nice)) == URL_FUNC_OK)
-			name = nice;
-        }
+	if (c && (res = url_nice(c->url, (char **)&nice)) == URL_FUNC_OK)
+		name = nice;
+	else
+		name = messages_get(name);
+
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);
 }
 
@@ -119,21 +129,23 @@ void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
 void ro_gui_save_click(wimp_pointer *pointer)
 {
 	switch (pointer->i) {
-	  	case ICON_SAVE_OK:
-	  		/*	Todo: Try save, and report error NoPathError if needed */
-	  		break;
-	  	case ICON_SAVE_CANCEL:
-	  		if (pointer->buttons == wimp_CLICK_SELECT) {
-	  		  	xwimp_create_menu((wimp_menu *)-1, 0, 0);
-	  		  	ro_gui_dialog_close(pointer->w);
-	  		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
+		case ICON_SAVE_OK:
+			ro_gui_save_ok(pointer->w);
+			break;
+		case ICON_SAVE_CANCEL:
+			if (pointer->buttons == wimp_CLICK_SELECT) {
+				xwimp_create_menu((wimp_menu *)-1, 0, 0);
+				ro_gui_dialog_close(pointer->w);
+			} else if (pointer->buttons == wimp_CLICK_ADJUST) {
 /* 	  			ro_gui_menu_prepare_save(gui_save_content); */
 	  		}
 	  		break;
 		case ICON_SAVE_ICON:
 			if (pointer->buttons == wimp_DRAG_SELECT) {
+				const char *sprite = ro_gui_get_icon_string(pointer->w, pointer->i);
 				gui_current_drag_type = GUI_DRAG_SAVE;
-				ro_gui_drag_icon(pointer);
+				gui_save_dialogw = pointer->w;
+				ro_gui_drag_icon(pointer->pos.x, pointer->pos.y, sprite);
 			}
 			break;
 	}
@@ -141,28 +153,151 @@ void ro_gui_save_click(wimp_pointer *pointer)
 
 
 /**
+ * Handle OK click/keypress in the save dialog.
+ */
+
+void ro_gui_save_ok(wimp_w w)
+{
+	char *name = ro_gui_get_icon_string(w, ICON_SAVE_PATH);
+	if (!strrchr(name, '.'))
+	{
+		warn_user("NoPathError", NULL);
+		return;
+	}
+	gui_save_dialogw = w;
+	if (ro_gui_save_content(gui_save_content, name)) {
+		xwimp_create_menu((wimp_menu *)-1, 0, 0);
+		ro_gui_dialog_close(w);
+	}
+}
+
+
+/**
+ * Initiates drag saving of an object directly from a browser window
+ *
+ * \param  save_type  type of save
+ * \param  c          content to save
+ */
+
+void gui_drag_save_object(gui_save_type save_type, struct content *c)
+{
+	wimp_pointer pointer;
+	char icon_buf[20];
+	const char *icon = icon_buf;
+	os_error *error;
+
+	/* Close the save window because otherwise we need two contexts
+	*/
+	if (gui_save_dialogw != (wimp_w)-1)
+		ro_gui_dialog_close(gui_save_dialogw);
+
+	gui_save_dialogw = (wimp_w)-1;
+
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	gui_save_current_type = save_type;
+	gui_save_content = c;
+	gui_save_filetype = gui_save_table[save_type].filetype;
+	if (!gui_save_filetype)
+		gui_save_filetype = ro_content_filetype(c);
+
+	/* sprite to use */
+	sprintf(icon_buf, "file_%.3x", gui_save_filetype);
+	if (!ro_gui_wimp_sprite_exists(icon_buf))
+		icon = "file_xxx";
+
+	gui_current_drag_type = GUI_DRAG_SAVE;
+
+	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon);
+}
+
+
+void gui_drag_save_selection(struct selection *s)
+{
+	wimp_pointer pointer;
+	char icon_buf[20];
+	const char *icon = icon_buf;
+	os_error *error;
+
+	/* Close the save window because otherwise we need two contexts
+	*/
+	if (gui_save_dialogw != (wimp_w)-1)
+		ro_gui_dialog_close(gui_save_dialogw);
+
+	gui_save_dialogw = (wimp_w)-1;
+
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	gui_save_current_type = GUI_SAVE_TEXT_SELECTION;
+	gui_save_content = NULL;
+	gui_save_selection = s;
+	gui_save_filetype = gui_save_table[GUI_SAVE_TEXT_SELECTION].filetype;
+
+	/* sprite to use */
+	sprintf(icon_buf, "file_%.3x", gui_save_filetype);
+	if (!ro_gui_wimp_sprite_exists(icon_buf))
+		icon = "file_xxx";
+
+	gui_current_drag_type = GUI_DRAG_SAVE;
+
+	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon);
+}
+
+
+/**
  * Start drag of icon under the pointer.
  */
 
-void ro_gui_drag_icon(wimp_pointer *pointer)
+void ro_gui_drag_icon(int x, int y, const char *sprite)
 {
-	char *sprite;
-	os_box box = { pointer->pos.x - 34, pointer->pos.y - 34,
-			pointer->pos.x + 34, pointer->pos.y + 34 };
 	os_error *error;
+	wimp_drag drag;
+	int r2;
 
-	if (pointer->i == -1)
-		return;
+	drag.initial.x0 = x - 34;
+	drag.initial.y0 = y - 34;
+	drag.initial.x1 = x + 34;
+	drag.initial.y1 = y + 34;
 
-	sprite = ro_gui_get_icon_string(pointer->w, pointer->i);
+	if (sprite && (xosbyte2(osbyte_READ_CMOS, 28, 0, &r2) || (r2 & 2))) {
+		error = xdragasprite_start(dragasprite_HPOS_CENTRE |
+				dragasprite_VPOS_CENTRE |
+				dragasprite_BOUND_POINTER |
+				dragasprite_DROP_SHADOW,
+				(osspriteop_area *) 1, sprite, &drag.initial, 0);
 
-	error = xdragasprite_start(dragasprite_HPOS_CENTRE |
-			dragasprite_VPOS_CENTRE |
-			dragasprite_BOUND_POINTER |
-			dragasprite_DROP_SHADOW,
-			(osspriteop_area *) 1, sprite, &box, 0);
-	if (error) {
+		if (!error) {
+			using_dragasprite = true;
+			return;
+		}
+
 		LOG(("xdragasprite_start: 0x%x: %s",
+				error->errnum, error->errmess));
+	}
+
+	drag.type = wimp_DRAG_USER_FIXED;
+	drag.bbox.x0 = -0x8000;
+	drag.bbox.y0 = -0x8000;
+	drag.bbox.x1 = 0x7fff;
+	drag.bbox.y1 = 0x7fff;
+
+	using_dragasprite = false;
+	error = xwimp_drag_box(&drag);
+
+	if (error) {
+		LOG(("xwimp_drag_box: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("DragError", error->errmess);
 	}
@@ -170,22 +305,36 @@ void ro_gui_drag_icon(wimp_pointer *pointer)
 
 
 /**
- * Handle User_Drag_Box event for a drag from the save dialog.
+ * Handle User_Drag_Box event for a drag from the save dialog or browser window.
  */
 
 void ro_gui_save_drag_end(wimp_dragged *drag)
 {
-	char *name;
-	char *dot;
+	const char *name;
 	wimp_pointer pointer;
 	wimp_message message;
 
 	wimp_get_pointer_info(&pointer);
 
-	name = ro_gui_get_icon_string(dialog_saveas, ICON_SAVE_PATH);
-	dot = strrchr(name, '.');
-	if (dot)
-		name = dot + 1;
+	if (gui_save_dialogw == (wimp_w)-1) {
+		/* saving directly from browser window, choose a name based upon the URL */
+		struct content *c = gui_save_content;
+		const char *nice;
+		name = gui_save_table[gui_save_current_type].name;
+		if (c) {
+			url_func_result res;
+			if ((res = url_nice(c->url, (char **)&nice)) == URL_FUNC_OK)
+				name = nice;
+		}
+	}
+	else {
+		/* saving from dialog, grab leafname from icon */
+		char *dot;
+		name = ro_gui_get_icon_string(gui_save_dialogw, ICON_SAVE_PATH);
+		dot = strrchr(name, '.');
+		if (dot)
+			name = dot + 1;
+	}
 
 	message.your_ref = 0;
 	message.action = message_DATA_SAVE;
@@ -215,49 +364,110 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 }
 
 
+
 /**
- * Handle Message_DataSaveAck for a drag from the save dialog.
+ * Send DataSave message on behalf of clipboard code and remember that it's the
+ * clipboard contents we're being asked for when the DataSaveAck reply arrives
+ */
+
+void ro_gui_send_datasave(gui_save_type save_type, const wimp_full_message_data_xfer *message, wimp_t to)
+{
+	os_error *error;
+
+	/* Close the save window because otherwise we need two contexts
+	*/
+	if (gui_save_dialogw != (wimp_w)-1)
+		ro_gui_dialog_close(gui_save_dialogw);
+
+	error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)message, to);
+	if (error) {
+		LOG(("xwimp_send_message: 0x%x: %s", error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+	else {
+		gui_save_current_type = save_type;
+		gui_save_dialogw = (wimp_w)-1;
+		gui_current_drag_type = GUI_DRAG_SAVE;
+	}
+}
+
+
+/**
+ * Handle Message_DataSaveAck for a drag from the save dialog or browser window.
  */
 
 void ro_gui_save_datasave_ack(wimp_message *message)
 {
 	char *path = message->data.data_xfer.file_name;
 	struct content *c = gui_save_content;
-	os_error *error;
-
-	if (!gui_save_content &&
-			(gui_save_current_type != GUI_SAVE_HOTLIST_EXPORT_HTML) &&
-			(gui_save_current_type != GUI_SAVE_HISTORY_EXPORT_HTML)) {
-		LOG(("unexpected DataSaveAck: gui_save_content not set"));
-		return;
-	}
-
-	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, path);
 
 	switch (gui_save_current_type) {
-		case GUI_SAVE_SOURCE:
-			error = xosfile_save_stamped(path,
-					ro_content_filetype(c),
-					c->source_data,
-					c->source_data + c->source_size);
-			if (error) {
-				LOG(("xosfile_save_stamped: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("SaveError", error->errmess);
+		case GUI_SAVE_HOTLIST_EXPORT_HTML:
+		case GUI_SAVE_HISTORY_EXPORT_HTML:
+		case GUI_SAVE_TEXT_SELECTION:
+		case GUI_SAVE_CLIPBOARD_CONTENTS:
+			break;
+
+		default:
+			if (!gui_save_content) {
+				LOG(("unexpected DataSaveAck: gui_save_content not set"));
 				return;
 			}
 			break;
-#ifdef WITH_SAVE_COMPLETE
-		case GUI_SAVE_COMPLETE:
-			if (!ro_gui_save_complete(c, path))
-				return;
-			break;
-#endif
+	}
+
+	if (gui_save_dialogw != (wimp_w)-1)
+		ro_gui_set_icon_string(gui_save_dialogw, ICON_SAVE_PATH, path);
+
+	if (ro_gui_save_content(c, path)) {
+		os_error *error;
+
+		if (gui_save_dialogw != (wimp_w)-1) {
+			/*	Close the save window
+			*/
+			ro_gui_dialog_close(gui_save_dialogw);
+		}
+
+		/* Ack successful save with message_DATA_LOAD */
+		message->action = message_DATA_LOAD;
+		message->your_ref = message->my_ref;
+		error = xwimp_send_message_to_window(wimp_USER_MESSAGE, message,
+				message->data.data_xfer.w, message->data.data_xfer.i, 0);
+		if (error) {
+			LOG(("xwimp_send_message_to_window: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("SaveError", error->errmess);
+		}
+
+		error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+		if (error) {
+			LOG(("xwimp_create_menu: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("MenuError", error->errmess);
+		}
+
+		gui_save_content = 0;
+	}
+}
+
+
+
+/**
+ * Does the actual saving
+ *
+ * \param  c     content to save (or 0 for other)
+ * \param  path  path to save as
+ * \return  true on success, false on error and error reported
+ */
+
+bool ro_gui_save_content(struct content *c, char *path)
+{
+	os_error *error;
+
+	switch (gui_save_current_type) {
 #ifdef WITH_DRAW_EXPORT
 		case GUI_SAVE_DRAW:
-			if (!save_as_draw(c, path))
-				return;
-			break;
+			return save_as_draw(c, path);
 #endif
 #ifdef WITH_TEXT_EXPORT
 		case GUI_SAVE_TEXT:
@@ -265,6 +475,22 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			xosfile_set_type(path, 0xfff);
 			break;
 #endif
+#ifdef WITH_SAVE_COMPLETE
+		case GUI_SAVE_COMPLETE:
+			assert(c);
+			if (c->type == CONTENT_HTML) {
+				if (strcmp(path, "<Wimp$Scrap>"))
+					return ro_gui_save_complete(c, path);
+
+				/* we can't send a whole directory to another application,
+				 * so just send the HTML source */
+				gui_save_current_type = GUI_SAVE_SOURCE;
+			}
+			else
+				gui_save_current_type = GUI_SAVE_OBJECT_ORIG;	/* \todo do this earlier? */
+			/* no break */
+#endif
+		case GUI_SAVE_SOURCE:
 		case GUI_SAVE_OBJECT_ORIG:
 			error = xosfile_save_stamped(path,
 					ro_content_filetype(c),
@@ -274,7 +500,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 				LOG(("xosfile_save_stamped: 0x%x: %s",
 						error->errnum, error->errmess));
 				warn_user("SaveError", error->errmess);
-				return;
+				return false;
 			}
 			break;
 
@@ -283,22 +509,17 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			break;
 
 		case GUI_SAVE_LINK_URI:
-			if (!ro_gui_save_link(c, LINK_ACORN, path))
-				return;
-			break;
+			return ro_gui_save_link(c, LINK_ACORN, path);
 
 		case GUI_SAVE_LINK_URL:
-			if (!ro_gui_save_link(c, LINK_ANT, path))
-				return;
-			break;
+			return ro_gui_save_link(c, LINK_ANT, path);
 
 		case GUI_SAVE_LINK_TEXT:
-			if (!ro_gui_save_link(c, LINK_TEXT, path))
-				return;
-			break;
+			return ro_gui_save_link(c, LINK_TEXT, path);
+
 		case GUI_SAVE_HOTLIST_EXPORT_HTML:
 			if (!options_save_tree(hotlist_tree, path, "NetSurf hotlist"))
-				return;
+				return false;
 			error = xosfile_set_type(path, 0xfaf);
 			if (error)
 				LOG(("xosfile_set_type: 0x%x: %s",
@@ -306,29 +527,26 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			break;
 		case GUI_SAVE_HISTORY_EXPORT_HTML:
 			if (!options_save_tree(global_history_tree, path, "NetSurf history"))
-				return;
+				return false;
 			error = xosfile_set_type(path, 0xfaf);
 			if (error)
 				LOG(("xosfile_set_type: 0x%x: %s",
 						error->errnum, error->errmess));
 			break;
-	}
 
-	/*	Close the save window
-	*/
-	ro_gui_dialog_close(dialog_saveas);
-	ro_gui_menu_closed();
+		case GUI_SAVE_TEXT_SELECTION:
+			selection_save_text(gui_save_selection, path);
+			xosfile_set_type(path, 0xfff);
+			break;
 
-	/* Ack successful save with message_DATA_LOAD */
-	message->action = message_DATA_LOAD;
-	message->your_ref = message->my_ref;
-	error = xwimp_send_message_to_window(wimp_USER_MESSAGE, message,
-			message->data.data_xfer.w, message->data.data_xfer.i, 0);
-	if (error) {
-		LOG(("xwimp_send_message_to_window: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("SaveError", error->errmess);
+		case GUI_SAVE_CLIPBOARD_CONTENTS:
+			return ro_gui_save_clipboard(path);
+
+		default:
+			LOG(("Unexpected content type: %d, path %s", gui_save_current_type, path));
+			return false;
 	}
+	return true;
 }
 
 
@@ -459,7 +677,7 @@ void ro_gui_save_object_native(struct content *c, char *path)
 
 bool ro_gui_save_link(struct content *c, link_format format, char *path)
 {
-        FILE *fp = fopen(path, "w");
+	FILE *fp = fopen(path, "w");
 
 	if (!fp) {
 		warn_user("SaveError", strerror(errno));

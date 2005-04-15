@@ -297,23 +297,24 @@ void ro_gui_dialog_open(wimp_w w)
 
 void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 	int dx, dy, i;
-	wimp_pointer ptr;
 	wimp_window_state open;
 	os_error *error;
-
-	/*	Get the pointer position
-	*/
-	error = xwimp_get_pointer_info(&ptr);
-	if (error) {
-		LOG(("xwimp_get_pointer_info: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
 
 	/*	Move and open
 	*/
 	if (pointer) {
+		wimp_pointer ptr;
+
+		/*	Get the pointer position
+		*/
+		error = xwimp_get_pointer_info(&ptr);
+		if (error) {
+			LOG(("xwimp_get_pointer_info: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+
 		open.w = w;
 		error = xwimp_get_window_state(&open);
 		if (error) {
@@ -417,7 +418,8 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 			pointer.buttons = wimp_CLICK_SELECT;
 			ro_gui_hotlist_dialog_click(&pointer);
 			return true;
-		}
+		} else if (key->w == dialog_saveas)
+			ro_gui_save_ok(key->w);
 	}
 #ifdef WITH_AUTH
 	if (key->w == dialog_401li)

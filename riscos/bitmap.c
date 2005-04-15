@@ -102,9 +102,23 @@ bool bitmap_test_opaque(struct bitmap *bitmap)
 		(osspriteop_header *) (&(bitmap->sprite_area) + 1);
 	unsigned int height = (sprite_header->height + 1);
 	unsigned int size = width * height;
-	for (unsigned int i = 3; i < size; i += 4)
-		if (sprite[i] != 0xff)
+	unsigned *p = (unsigned*)sprite;
+	unsigned *ep;
+
+	ep = (unsigned*)(sprite + (size & ~31));
+	while (p < ep) {
+		/* \todo prefetch(p, 128)? */
+		if (((p[0] & p[1] & p[2] & p[3] & p[4] & p[5] & p[6] & p[7])
+				& 0xff000000U) != 0xff000000U)
 			return false;
+		p += 8;
+	}
+	ep = (unsigned*)(sprite + size);
+	while (p < ep) {
+		if ((*p & 0xff000000U) != 0xff000000U) return false;
+		p++;
+	}
+
 	return true;
 }
 

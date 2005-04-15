@@ -103,6 +103,8 @@ void thumbnail_create(struct content *content, osspriteop_area *area,
 	ro_plot_origin_y = height * 2;
 	ro_plot_set_scale(scale);
 
+	current_redraw_browser = NULL;  /* no selection */
+
 	/*	Switch output and redraw
 	*/
 	save_area = thumbnail_switch_output(render_area, render_sprite);
