@@ -22,7 +22,8 @@ OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
 OBJECTS_COMMON += box.o box_construct.o box_normalise.o form.o html.o \
 	html_redraw.o layout.o list.o textplain.o		# render/
 OBJECTS_COMMON += messages.o pool.o talloc.o url.o utils.o	# utils/
-OBJECTS_COMMON += imagemap.o loginlist.o options.o tree.o	# desktop/
+OBJECTS_COMMON += imagemap.o loginlist.o options.o \
+	selection.o tree.o					# desktop/
 
 OBJECTS_IMAGE = jpeg.o mng.o gif.o gifread.o			# image/
 
@@ -105,6 +106,8 @@ CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
 	$(WARNFLAGS) -I.. -g \
 	`pkg-config --cflags gtk+-2.0` `xml2-config --cflags`
 
+AFLAGS_RISCOS = -CPU XScale -ThrowBack -Quit
+
 # targets
 riscos: $(RUNIMAGE)
 $(RUNIMAGE) : $(OBJS_RISCOS)
@@ -146,6 +149,11 @@ $(OBJDIR_DEBUG)/%.o : %.c
 $(OBJDIR_GTK)/%.o : %.c
 	@echo "==> $<"
 	@gcc -o $@ -c $(CFLAGS_GTK) $<
+
+# pattern rules for asm source
+$(OBJDIR_RISCOS)/%.o : %.s
+	@echo "== $<"
+	$(ASM) -o $@ $(AFLAGS_RISCOS) $<
 
 # special cases
 css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
