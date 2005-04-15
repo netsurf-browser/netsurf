@@ -240,8 +240,7 @@ gboolean gui_window_motion_notify_event(GtkWidget *widget,
 {
 	struct gui_window *g = data;
 
-	browser_window_mouse_click(g->bw, BROWSER_MOUSE_HOVER,
-			event->x, event->y);
+	browser_window_mouse_track(g->bw, 0, event->x, event->y);
 
 	return TRUE;
 }
