@@ -16,6 +16,10 @@
 #include <regex.h>
 #include "libxml/encoding.h"
 
+#ifndef NOF_ELEMENTS
+#define NOF_ELEMENTS(array) (sizeof(array)/sizeof(*(array)))
+#endif
+
 void die(const char * const error);
 char * strip(char * const s);
 int whitespace(const char * str);
