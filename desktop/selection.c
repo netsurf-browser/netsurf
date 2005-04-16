@@ -656,26 +656,32 @@ void selection_set_end(struct selection *s, struct box *box, int idx)
 bool selection_highlighted(struct selection *s, struct box *box,
 		unsigned *start_idx, unsigned *end_idx)
 {
-	if (selection_defined(s) && box->length > 0 &&
-			box->byte_offset < s->end_idx &&
-			box->byte_offset + box->length > s->start_idx) {
-		unsigned offset = 0;
-		unsigned len;
+	assert(selection_defined(s));	/* caller should have checked for efficiency */
+	assert(s && box);
 
-		if (box->byte_offset < s->start_idx)
-			offset = s->start_idx - box->byte_offset;
+	if (box->length > 0) {
+		unsigned box_len = box->length + (box->space ? 1 : 0);
 
-		len = box->length - offset;
-
-		if (box->byte_offset + box->length > s->end_idx)
-			len = s->end_idx - (box->byte_offset + offset);
-
-		assert(offset < box->length);
-		assert(offset + len <= box->length);
-
-		*start_idx = offset;
-		*end_idx = offset + len;
-		return true;
+		if (box->byte_offset < s->end_idx &&
+			box->byte_offset + box_len > s->start_idx) {
+			unsigned offset = 0;
+			unsigned len;
+	
+			if (box->byte_offset < s->start_idx)
+				offset = s->start_idx - box->byte_offset;
+	
+			len = box_len - offset;
+	
+			if (box->byte_offset + box_len > s->end_idx)
+				len = s->end_idx - (box->byte_offset + offset);
+	
+			assert(offset <= box_len);
+			assert(offset + len <= box->length + 1);
+	
+			*start_idx = offset;
+			*end_idx = offset + len;
+			return true;
+		}
 	}
 	return false;
 }

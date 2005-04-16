@@ -359,15 +359,30 @@ bool html_redraw_box(struct box *box,
 			selection_highlighted(current_redraw_browser->sel, box,
 					&start_idx, &end_idx)) {
 
+			unsigned endtxt_idx = end_idx;
 			int startx, endx;
+
+			if (end_idx > box->length) {
+				/* adjust for trailing space, not present in box->text */
+				assert(end_idx == box->length + 1);
+				endtxt_idx = box->length;
+			}
 
 			if (!nsfont_width(box->style, box->text, start_idx, &startx))
 				startx = 0;
 
 			if (!nsfont_width(box->style, box->text + start_idx,
-					end_idx - start_idx, &endx))
+					endtxt_idx - start_idx, &endx))
 				endx = 0;
 			endx += startx;
+
+			/* is there a trailing space that should be highlighted as well? */
+			if (end_idx > box->length) {
+				int spc_width;
+				/* \todo is there a more elegant/efficient solution? */
+				if (nsfont_width(box->style, " ", 1, &spc_width))
+					endx += spc_width;
+			}
 
 			if (scale != 1.0) {
 				startx *= scale;
@@ -389,15 +404,15 @@ bool html_redraw_box(struct box *box,
 				return false;
 
 			if (!plot.text(x + startx, y + (int) (box->height * 0.75 * scale),
-					box->style, box->text + start_idx, end_idx - start_idx,
+					box->style, box->text + start_idx, endtxt_idx - start_idx,
 					current_background_color ^ 0xffffff,
 					current_background_color))
 				return false;
 
-			if (end_idx < box->length) {
+			if (endtxt_idx < box->length) {
 
 				if (!plot.text(x + endx, y + (int) (box->height * 0.75 * scale),
-						box->style, box->text + end_idx, box->length - end_idx,
+						box->style, box->text + endtxt_idx, box->length - endtxt_idx,
 						current_background_color,
 						/*print_text_black ? 0 :*/ box->style->color))
 					return false;
