@@ -172,7 +172,8 @@ url_func_result url_normalize(const char *url, char **result)
 		else
 			continue;
 
-		if (m <= 0x20 || strchr(";/?:@&=+$," "<>#%\"{}|\\^[]`", m)) {
+		if (m <= 0x20 || strchr(";/?:@&=+$," "<>#%\"{}|\\^[]`", m) ||
+				m >= 0x7f) {
 			i += 2;
 			continue;
 		}
