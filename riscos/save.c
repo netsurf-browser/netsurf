@@ -313,8 +313,15 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 	const char *name;
 	wimp_pointer pointer;
 	wimp_message message;
+	os_error *error;
 
-	wimp_get_pointer_info(&pointer);
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
 
 	if (gui_save_dialogw == (wimp_w)-1) {
 		/* saving directly from browser window, choose a name based upon the URL */
@@ -328,8 +335,12 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 		}
 	}
 	else {
-		/* saving from dialog, grab leafname from icon */
 		char *dot;
+
+		/* ignore drags to the saveas window itself */
+		if (pointer.w == gui_save_dialogw) return;
+
+		/* saving from dialog, grab leafname from icon */
 		name = ro_gui_get_icon_string(gui_save_dialogw, ICON_SAVE_PATH);
 		dot = strrchr(name, '.');
 		if (dot)

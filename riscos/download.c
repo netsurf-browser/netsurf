@@ -518,6 +518,9 @@ void ro_gui_download_drag_end(wimp_dragged *drag)
 		return;
 	}
 
+	/* ignore drags to the download window itself */
+	if (pointer.w == dw->window) return;
+
 	message.your_ref = 0;
 	message.action = message_DATA_SAVE;
 	message.data.data_xfer.w = pointer.w;
