@@ -698,7 +698,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 				else if (mouse & BROWSER_MOUSE_DRAG_1)
 					gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, c);
 			}
-			else {
+			else if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
 				browser_window_page_drag_start(bw, x, y);
 				browser_window_set_pointer(GUI_POINTER_MOVE);
 			}
@@ -1128,6 +1128,10 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 						&dx, &dy);
 				selection_drag_end(bw->sel, box, mouse, dx, dy);
 			}
+			break;
+
+		case DRAGGING_PAGE_SCROLL:
+			browser_window_set_pointer(GUI_POINTER_DEFAULT);
 			break;
 
 		default:
