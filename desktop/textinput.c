@@ -25,6 +25,7 @@
 #define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/talloc.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 static void browser_window_textarea_callback(struct browser_window *bw,
@@ -36,121 +37,6 @@ static void browser_window_place_caret(struct browser_window *bw,
 		void (*callback)(struct browser_window *bw,
 		wchar_t key, void *p),
 		void *p);
-
-/**
- * Convert a single UCS4 character into a UTF8 multibyte sequence
- *
- * Encoding of UCS values outside the UTF16 plane has been removed from
- * RFC3629. This macro conforms to RFC2279, however, as it is possible
- * that the platform specific keyboard input handler will generate a UCS4
- * value outside the UTF16 plane.
- *
- * \param c  The character to process (0 <= c <= 0x7FFFFFFF)
- * \param s  Pointer to 6 byte long output buffer
- * \param l  Integer in which to store length of multibyte sequence
- */
-#define ucs4_to_utf8(c, s, l)						\
-	do {								\
-		if ((c) < 0)						\
-			assert(0);					\
-		else if ((c) < 0x80) {					\
-			*(s) = (char)(c);				\
-			(l) = 1;					\
-		}							\
-		else if ((c) < 0x800) {					\
-			*(s) = 0xC0 | (((c) >> 6) & 0x1F);		\
-			*((s)+1) = 0x80 | ((c) & 0x3F);			\
-			(l) = 2;					\
-		}							\
-		else if ((c) < 0x10000) {				\
-			*(s) = 0xE0 | (((c) >> 12) & 0xF);		\
-			*((s)+1) = 0x80 | (((c) >> 6) & 0x3F);		\
-			*((s)+2) = 0x80 | ((c) & 0x3F);			\
-			(l) = 3;					\
-		}							\
-		else if ((c) < 0x200000) {				\
-			*(s) = 0xF0 | (((c) >> 18) & 0x7);		\
-			*((s)+1) = 0x80 | (((c) >> 12) & 0x3F);		\
-			*((s)+2) = 0x80 | (((c) >> 6) & 0x3F);		\
-			*((s)+3) = 0x80 | ((c) & 0x3F);			\
-			(l) = 4;					\
-		}							\
-		else if ((c) < 0x4000000) {				\
-			*(s) = 0xF8 | (((c) >> 24) & 0x3);		\
-			*((s)+1) = 0x80 | (((c) >> 18) & 0x3F);		\
-			*((s)+2) = 0x80 | (((c) >> 12) & 0x3F);		\
-			*((s)+3) = 0x80 | (((c) >> 6) & 0x3F);		\
-			*((s)+4) = 0x80 | ((c) & 0x3F);			\
-			(l) = 5;					\
-		}							\
-		else if ((c) <= 0x7FFFFFFF) {				\
-			*(s) = 0xFC | (((c) >> 30) & 0x1);		\
-			*((s)+1) = 0x80 | (((c) >> 24) & 0x3F);		\
-			*((s)+2) = 0x80 | (((c) >> 18) & 0x3F);		\
-			*((s)+3) = 0x80 | (((c) >> 12) & 0x3F);		\
-			*((s)+4) = 0x80 | (((c) >> 6) & 0x3F);		\
-			*((s)+5) = 0x80 | ((c) & 0x3F);			\
-			(l) = 6;					\
-		}							\
-	} while(0)
-
-/**
- * Calculate the length (in characters) of a NULL-terminated UTF8 string
- *
- * \param s  The string
- * \param l  Integer in which to store length
- */
-#define utf8_length(s, l)						\
-	do {								\
-		char *__s = (s);					\
-		(l) = 0;						\
-		while (*__s != '\0') {					\
-			if ((*__s & 0x80) == 0x00)			\
-				__s += 1;				\
-			else if ((*__s & 0xE0) == 0xC0)			\
-				__s += 2;				\
-			else if ((*__s & 0xF0) == 0xE0)			\
-				__s += 3;				\
-			else if ((*__s & 0xF8) == 0xF0)			\
-				__s += 4;				\
-			else if ((*__s & 0xFC) == 0xF8)			\
-				__s += 5;				\
-			else if ((*__s & 0xFE) == 0xFC)			\
-				__s += 6;				\
-			else						\
-				assert(0);				\
-			(l)++;						\
-		}							\
-	} while (0)
-
-/**
- * Find previous legal UTF8 char in string
- *
- * \param s  The string
- * \param o  Offset in the string to start at (updated on exit)
- */
-#define utf8_prev(s, o)							\
-	do {								\
-		while ((o) != 0 && 					\
-			!((((s)[--(o)] & 0x80) == 0x00) || 		\
-				(((s)[(o)] & 0xC0) == 0xC0)))		\
-			/* do nothing */;				\
-	} while(0)
-
-/**
- * Find next legal UTF8 char in string
- *
- * \param s  The string
- * \param l  Maximum offset in string
- * \param o  Offset in the string to start at (updated on exit)
- */
-#define utf8_next(s, l, o)						\
-	do {								\
-		while ((o) != (l) && 					\
-			!((((s)[++(o)] & 0x80) == 0x00) || 		\
-				(((s)[(o)] & 0xC0) == 0xC0)))		\
-			/* do nothing */;				\
-	} while(0)
 
 /**
  * Handle clicks in a text area by placing the caret.
@@ -300,7 +186,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 	if (!(key <= 0x001F || (0x007F <= key && key <= 0x009F))) {
 		/* normal character insertion */
-		ucs4_to_utf8(key, utf8, utf8_len);
+		utf8_len = utf8_from_ucs4(key, utf8);
 
 		text = talloc_realloc(bw->current_content, text_box->text,
 				char, text_box->length + 8);
@@ -368,7 +254,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		} else {
 			/* delete a character */
 			int prev_offset = char_offset;
-			utf8_prev(text_box->text, char_offset);
+			char_offset = utf8_prev(text_box->text, char_offset);
 
 			memmove(text_box->text + char_offset,
 					text_box->text + prev_offset,
@@ -429,8 +315,8 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 	case 28:	/* Right cursor -> */
 		if ((unsigned int) char_offset != text_box->length) {
-			utf8_next(text_box->text, text_box->length,
-								char_offset);
+			char_offset = utf8_next(text_box->text,
+					text_box->length, char_offset);
 		} else {
 			if (!text_box->next)
 				/* at end of text area: ignore */
@@ -445,7 +331,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 	case 29:	/* Left cursor <- */
 		if (char_offset != 0) {
-			utf8_prev(text_box->text, char_offset);
+			char_offset = utf8_prev(text_box->text, char_offset);
 		} else {
 			if (!text_box->prev)
 				/* at start of text area: ignore */
@@ -656,14 +542,14 @@ void browser_window_input_callback(struct browser_window *bw,
 		char *value;
 
 		/* have we exceeded max length of input? */
-		utf8_length(input->gadget->value, utf8_len);
+		utf8_len = utf8_length(input->gadget->value);
 		if (utf8_len >= input->gadget->maxlength)
 			return;
 
 		/* normal character insertion */
 
 		/* Insert key in gadget */
-		ucs4_to_utf8(key, utf8, utf8_len);
+		utf8_len = utf8_from_ucs4(key, utf8);
 
 		value = realloc(input->gadget->value,
 				input->gadget->length + utf8_len + 1);
@@ -683,9 +569,10 @@ void browser_window_input_callback(struct browser_window *bw,
 
 		/* Insert key in text box */
 		/* Convert space into NBSP */
-		ucs4_to_utf8((input->gadget->type == GADGET_PASSWORD) ?
+		utf8_len = utf8_from_ucs4(
+				(input->gadget->type == GADGET_PASSWORD) ?
 					'*' : (key == ' ') ? 160 : key,
-					utf8, utf8_len);
+					utf8);
 
 		value = talloc_realloc(bw->current_content, text_box->text,
 				char, text_box->length + utf8_len + 1);
@@ -718,7 +605,8 @@ void browser_window_input_callback(struct browser_window *bw,
 			/* Gadget */
 			prev_offset = form_offset;
 			/* Go to the previous valid UTF-8 character */
-			utf8_prev(input->gadget->value, form_offset);
+			form_offset = utf8_prev(input->gadget->value,
+								form_offset);
 
 			memmove(input->gadget->value + form_offset,
 					input->gadget->value + prev_offset,
@@ -729,7 +617,7 @@ void browser_window_input_callback(struct browser_window *bw,
 			/* Text box */
 			prev_offset = box_offset;
 			/* Go to the previous valid UTF-8 character */
-			utf8_prev(text_box->text, box_offset);
+			box_offset = utf8_prev(text_box->text, box_offset);
 
 			memmove(text_box->text + box_offset,
 					text_box->text + prev_offset,
@@ -810,20 +698,21 @@ void browser_window_input_callback(struct browser_window *bw,
 	case 28:	/* Right cursor -> */
 		/* Text box */
 		/* Go to the next valid UTF-8 character */
-		utf8_next(text_box->text, text_box->length, box_offset);
+		box_offset = utf8_next(text_box->text, text_box->length,
+								box_offset);
 		/* Gadget */
 		/* Go to the next valid UTF-8 character */
-		utf8_next(input->gadget->value, input->gadget->length,
-								form_offset);
+		form_offset = utf8_next(input->gadget->value,
+					input->gadget->length, form_offset);
 		break;
 
 	case 29:	/* Left cursor -> */
 		/* Text box */
 		/* Go to the previous valid UTF-8 character */
-		utf8_prev(text_box->text, box_offset);
+		box_offset = utf8_prev(text_box->text, box_offset);
 		/* Gadget */
 		/* Go to the previous valid UTF-8 character */
-		utf8_prev(input->gadget->value, form_offset);
+		form_offset = utf8_prev(input->gadget->value, form_offset);
 		break;
 
 	case 128:	/* Ctrl + Left */

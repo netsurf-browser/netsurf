@@ -1575,7 +1575,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 
 bool box_form(BOX_SPECIAL_PARAMS)
 {
-	char *action, *method, *enctype;
+	char *action, *method, *enctype, *charset;
 	form_method fmethod;
 	struct form *form;
 
@@ -1598,9 +1598,35 @@ bool box_form(BOX_SPECIAL_PARAMS)
 		xmlFree(method);
 	}
 
-	form = form_new(action, fmethod);
+	/* acceptable encoding(s) for form data */
+	if ((charset = (char *) xmlGetProp(n, (const xmlChar *) "accept-charset"))) {
+		char *comma = strchr(charset, ',');
+		if (!comma)
+			/* only one => use it */
+			comma = strdup(charset);
+		else
+			/* multiple => use first */
+			comma = strndup(charset, comma - charset);
+
+		xmlFree(charset);
+		charset = comma;
+	}
+	else if (content->data.html.encoding)
+		/* none specified => try document encoding */
+		charset = strdup(content->data.html.encoding);
+	else
+		/* none specified and no document encoding => 8859-1 */
+		charset = strdup("ISO-8859-1");
+
+	if (!charset) {
+		xmlFree(action);
+		return false;
+	}
+
+	form = form_new(action, fmethod, charset);
 	if (!form) {
 		xmlFree(action);
+		free(charset);
 		return false;
 	}
 	form->prev = content->data.html.forms;

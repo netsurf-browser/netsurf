@@ -20,20 +20,22 @@
 #define NOF_ELEMENTS(array) (sizeof(array)/sizeof(*(array)))
 #endif
 
-void die(const char * const error);
 char * strip(char * const s);
 int whitespace(const char * str);
 char * squash_whitespace(const char * s);
 char *cnv_space2nbsp(const char *s);
 char *cnv_local_enc_str(const char *s, size_t length);
 char *cnv_str_local_enc(const char *s);
-char *cnv_strn_local_enc(const char *s, int length,
-		const ptrdiff_t **back_mapPP);
+char *cnv_strn_local_enc(const char *s, int length);
 bool is_dir(const char *path);
 void regcomp_wrapper(regex_t *preg, const char *regex, int cflags);
 void clean_cookiejar(void);
 void unicode_transliterate(unsigned int c, char **r);
 char *human_friendly_bytesize(unsigned long bytesize);
+
+/* Platform specific functions */
+void die(const char * const error);
 void warn_user(const char *warning, const char *detail);
+const char *local_encoding_name(void);
 
 #endif

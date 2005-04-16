@@ -1492,7 +1492,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 
 	switch (form->method) {
 		case method_GET:
-			data = form_url_encode(success);
+			data = form_url_encode(form, success);
 			if (!data) {
 				form_free_successful(success);
 				warn_user("NoMemory", 0);
@@ -1517,7 +1517,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			break;
 
 		case method_POST_URLENC:
-			data = form_url_encode(success);
+			data = form_url_encode(form, success);
 			if (!data) {
 				form_free_successful(success);
 				warn_user("NoMemory", 0);

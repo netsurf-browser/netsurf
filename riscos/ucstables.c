@@ -9,8 +9,10 @@
  * UCS conversion tables
  */
 
+#include "oslib/osbyte.h"
 #include "oslib/territory.h"
 #include "netsurf/riscos/ucstables.h"
+#include "netsurf/utils/utils.h"
 
 /* Common values (ASCII) */
 #define common								\
@@ -330,4 +332,43 @@ int *ucstable_from_alphabet(int alphabet)
 	}
 
 	return ucstable;
+}
+
+static const char *localencodings[] = {
+	"ISO-8859-1",	/* BFont - 100 - just use Latin1, instead */
+	"ISO-8859-1",	/* do we want to use Acorn Latin1, instead? */
+	"ISO-8859-2",
+	"ISO-8859-3",
+	"ISO-8859-4",
+	"ISO-8859-5",
+	"ISO-8859-6",
+	"ISO-8869-7",
+	"ISO-8859-8",
+	"ISO-8859-9",
+	"ISO-IR-182",
+	"UTF-8",
+	"ISO-8859-15",
+	"ISO-8859-10",
+	"ISO-8859-13",
+	"ISO-8859-14",
+	"CP866"		/* Cyrillic2 - 120 */
+};
+
+/**
+ * Retrieve local encoding name, suitable for passing to iconv
+ */
+const char *local_encoding_name(void)
+{
+	os_error *error;
+	int alphabet;
+
+	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0, &alphabet);
+	if (!error) {
+		if (alphabet < 116)
+			return localencodings[alphabet - 100];
+		else if (alphabet == 120)
+			return localencodings[16];
+	}
+
+	return localencodings[0];
 }

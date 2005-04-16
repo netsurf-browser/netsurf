@@ -17,21 +17,22 @@
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 
 static char *form_textarea_value(struct form_control *textarea);
-
 
 /**
  * Create a struct form.
  *
  * \param  action  URL to submit form to, used directly (not copied)
  * \param  method  method and enctype
+ * \param  charset characterset of form (not copied)
  * \return  a new structure, or 0 on memory exhaustion
  */
 
-struct form *form_new(char *action, form_method method)
+struct form *form_new(char *action, form_method method, char *charset)
 {
 	struct form *form;
 
@@ -40,6 +41,7 @@ struct form *form_new(char *action, form_method method)
 		return 0;
 	form->action = action;
 	form->method = method;
+	form->charset = charset;
 	form->controls = 0;
 	form->last_control = 0;
 	form->prev = 0;
@@ -465,15 +467,15 @@ char *form_textarea_value(struct form_control *textarea)
 /**
  * Encode controls using application/x-www-form-urlencoded.
  *
+ * \param  form  form to which successful controls relate
  * \param  control  linked list of form_successful_control
  * \return  URL-encoded form, or 0 on memory exhaustion
- *
- * \todo  encoding conversion
  */
 
-char *form_url_encode(struct form_successful_control *control)
+char *form_url_encode(struct form *form,
+		struct form_successful_control *control)
 {
-	char *name, *value;
+	char *name, *value, *n_temp, *v_temp;
 	char *s = malloc(1), *s2;
 	unsigned int len = 0, len1;
 
@@ -482,11 +484,26 @@ char *form_url_encode(struct form_successful_control *control)
 	s[0] = 0;
 
 	for (; control; control = control->next) {
-		name = curl_escape(control->name, 0);
-		value = curl_escape(control->value, 0);
+		n_temp = utf8_to_enc(control->name, form->charset, 0);
+		if (!n_temp) {
+			free(s);
+			return 0;
+		}
+		v_temp = utf8_to_enc(control->value, form->charset, 0);
+		if (!v_temp) {
+			free(n_temp);
+			free(s);
+			return 0;
+		}
+		name = curl_escape(n_temp, 0);
+		value = curl_escape(v_temp, 0);
 		len1 = len + strlen(name) + strlen(value) + 2;
 		s2 = realloc(s, len1 + 1);
 		if (!s2) {
+			curl_free(value);
+			curl_free(name);
+			free(v_temp);
+			free(n_temp);
 			free(s);
 			return 0;
 		}
@@ -495,6 +512,8 @@ char *form_url_encode(struct form_successful_control *control)
 		len = len1;
 		curl_free(name);
 		curl_free(value);
+		free(v_temp);
+		free(n_temp);
 	}
 	if (len)
 		s[len - 1] = 0;
