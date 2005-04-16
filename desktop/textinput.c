@@ -13,6 +13,7 @@
  */
 
 #include <assert.h>
+#include <string.h>
 
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
