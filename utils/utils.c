@@ -131,9 +131,6 @@ char *cnv_str_local_enc(const char *s)
 /**
  * Converts UTF-8 string <s> of <length> bytes to the machine local encoding.
  * Caller needs to free return value.
- *
- * \todo: we should use libiconv to support more local encodings instead
- * of only ISOLATIN1.
  */
 char *cnv_strn_local_enc(const char *s, int length)
 {
