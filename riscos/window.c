@@ -1624,7 +1624,10 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		else if (c == 398) c = 31;     /* Down */
 		else if (c == 399) c = 30;     /* Up */
 		if (c < 256) {
-			if (alphabet != 111 /* UTF8 */ && ucstable != NULL)
+			if ((wchar_t)key > 256)
+				/* do nothing */;
+			else if (alphabet != 111 /* UTF8 */ &&
+							ucstable != NULL)
 				/* read UCS4 value out of table */
 				c = ucstable[c] == -1 ? 0xFFFD : ucstable[c];
 			else if (alphabet == 111 /* UTF8 */) {
