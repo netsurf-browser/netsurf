@@ -11,6 +11,7 @@
  * Conversion of XML tree to box tree (implementation).
  */
 
+#define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -1473,7 +1474,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 						content);
 				if (!frameset_box)
 					return false;
-				if (!box_frameset(n, content, frameset_box, 0))
+				if (!box_frameset(c, content, frameset_box, 0))
 					return false;
 				box_add_child(cell_box, frameset_box);
 
