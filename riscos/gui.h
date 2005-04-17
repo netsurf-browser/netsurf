@@ -170,6 +170,7 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons);
 bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
 void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag);
+void ro_gui_window_set_scale(struct gui_window *g, float scale);
 
 /* in history.c */
 void ro_gui_history_init(void);

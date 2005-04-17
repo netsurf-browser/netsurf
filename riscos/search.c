@@ -65,6 +65,7 @@ static const char *find_pattern(const char *string, int s_len,
 		const char *pattern, int p_len, bool case_sens, int *m_len);
 static bool find_occurrences(const char *pattern, int p_len, struct box *cur,
 		bool case_sens);
+static void show_search_direction(bool forwards);
 
 
 /**
@@ -81,10 +82,7 @@ void ro_gui_search_prepare(struct gui_window *g)
 	search_current_window = g;
 
 	ro_gui_set_icon_string(dialog_search, ICON_SEARCH_TEXT, "");
-	ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_FORWARDS,
-				true);
-	ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_BACKWARDS,
-				false);
+	show_search_direction(true);
 	ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_START,
 				false);
 	ro_gui_set_icon_selected_state(dialog_search,
@@ -147,12 +145,10 @@ bool ro_gui_search_keypress(wimp_key *key)
 
 	switch (key->c) {
 		case 2: /* ctrl b */
-			ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_FORWARDS, false);
-			ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_BACKWARDS, true);
+			show_search_direction(false);
 			return true;
 		case 6: /* ctrl f */
-			ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_FORWARDS, true);
-			ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_BACKWARDS, false);
+			show_search_direction(true);
 			return true;
 		case 9: /* ctrl i */
 			state = ro_gui_get_icon_selected_state(dialog_search, ICON_SEARCH_CASE_SENSITIVE);
@@ -161,13 +157,20 @@ bool ro_gui_search_keypress(wimp_key *key)
 		case 19: /* ctrl s */
 			state = ro_gui_get_icon_selected_state(dialog_search, ICON_SEARCH_START);
 			ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_START, !state);
-
 			return true;
 		case wimp_KEY_RETURN:
 			start_search();
 			return true;
 		case wimp_KEY_ESCAPE:
 			end_search();
+			return true;
+		case wimp_KEY_UP:
+			show_search_direction(false);
+			start_search();
+			return true;
+		case wimp_KEY_DOWN:
+			show_search_direction(true);
+			start_search();
 			return true;
 	}
 
@@ -562,5 +565,17 @@ bool gui_search_term_highlighted(struct gui_window *g, struct box *box,
 	return false;
 }
 
+
+/**
+ * Change the displayed search direction.
+ *
+ * \param forwards  true for forwards, else backwards
+ */
+
+void show_search_direction(bool forwards)
+{
+	ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_FORWARDS, forwards);
+	ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_BACKWARDS, !forwards);
+}
 
 #endif

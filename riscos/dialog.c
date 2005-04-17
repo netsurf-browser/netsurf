@@ -108,7 +108,9 @@ static void ro_gui_dialog_click_config_th(wimp_pointer *pointer);
 static void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer);
 static void ro_gui_dialog_update_config_font(void);
 static void ro_gui_dialog_click_config_font(wimp_pointer *pointer);
+static unsigned ro_gui_clamp_scale(unsigned scale);
 static void ro_gui_dialog_click_zoom(wimp_pointer *pointer);
+static bool ro_gui_zoom_keypress(wimp_key *key);
 static void ro_gui_dialog_click_open_url(wimp_pointer *pointer);
 static void ro_gui_dialog_click_warning(wimp_pointer *pointer);
 static const char *language_name(const char *code);
@@ -406,6 +408,8 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 	if (key->w == dialog_print)
 		return ro_gui_print_keypress(key);
 #endif
+	if (key->w == dialog_zoom)
+		return ro_gui_zoom_keypress(key);
 	if (key->c == wimp_KEY_ESCAPE) {
 		ro_gui_dialog_close(key->w);
 		return true;
@@ -1147,6 +1151,23 @@ void ro_gui_dialog_font_menu_selection(int item)
 
 
 /**
+ * Ensure that a scale percentage lies within a sensible range.
+ *
+ * \param  scale  scale percentage
+ * \return corrected scale value
+ */
+
+unsigned ro_gui_clamp_scale(unsigned scale)
+{
+	if (scale < 10)
+		scale = 10;
+	else if (1600 < scale)
+		scale = 1600;
+	return scale;
+}
+
+
+/**
  * Handle clicks in the Scale view dialog.
  */
 
@@ -1154,7 +1175,6 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 {
 	unsigned int scale;
 	int stepping = 10;
-	struct content *c;
 	scale = atoi(ro_gui_get_icon_string(dialog_zoom, ICON_ZOOM_VALUE));
 
 	/*	Adjust moves values the opposite direction
@@ -1171,20 +1191,11 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 		case ICON_ZOOM_200: scale = 200; break;
 	}
 
-	if (scale < 10)
-		scale = 10;
-	else if (1600 < scale)
-		scale = 1600;
+	scale = ro_gui_clamp_scale(scale);
 	ro_gui_set_icon_integer(dialog_zoom, ICON_ZOOM_VALUE, scale);
 
-	if (pointer->i == ICON_ZOOM_OK) {
-		ro_gui_current_zoom_gui->option.scale = scale * 0.01;
-		ro_gui_current_zoom_gui->reformat_pending = true;
-		c = ro_gui_current_zoom_gui->bw->current_content;
-		if ((c) && (c->type != CONTENT_HTML))
-			browser_window_update(ro_gui_current_zoom_gui->bw, false);
-		gui_reformat_pending = true;
-	}
+	if (pointer->i == ICON_ZOOM_OK)
+		ro_gui_window_set_scale(ro_gui_current_zoom_gui, (float)scale);
 
 	if (pointer->buttons == wimp_CLICK_ADJUST &&
 			pointer->i == ICON_ZOOM_CANCEL)
@@ -1196,6 +1207,27 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 		ro_gui_dialog_close(dialog_zoom);
 		ro_gui_menu_closed();
 	}
+}
+
+
+/**
+ * Handle keypresses in the Scale view dialog.
+ *
+ * \param key  keypress info from Wimp
+ */
+
+bool ro_gui_zoom_keypress(wimp_key *key)
+{
+	if (key->c == wimp_KEY_RETURN) {
+		unsigned int scale;
+		scale = atoi(ro_gui_get_icon_string(dialog_zoom, ICON_ZOOM_VALUE));
+		scale = ro_gui_clamp_scale(scale);
+		ro_gui_window_set_scale(ro_gui_current_zoom_gui, scale * 0.01);
+		ro_gui_dialog_close(dialog_zoom);
+		ro_gui_menu_closed();
+		return true;
+	}
+	return false;
 }
 
 

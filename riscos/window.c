@@ -1592,6 +1592,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		osbool unclaimed;
 		/* Alphabet has changed, so read UCS table location */
 		alphabet = t_alphabet;
+
 		error = xserviceinternational_get_ucs_conversion_table(
 						alphabet, &unclaimed,
 						(void**)&ucstable);
@@ -2451,3 +2452,21 @@ void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag)
 		ro_gui_mouse_click_state(pointer.buttons), x, y);
 }
 
+
+/**
+ * Alter the scale setting of a window
+ *
+ * \param  g      gui window
+ * \param  scale  scale value (1.0 == normal scale)
+ */
+
+void ro_gui_window_set_scale(struct gui_window *g, float scale)
+{
+	struct content *c;
+	g->option.scale = scale;
+	g->reformat_pending = true;
+	c = g->bw->current_content;
+	if ((c) && (c->type != CONTENT_HTML))
+		browser_window_update(g->bw, false);
+	gui_reformat_pending = true;
+}
