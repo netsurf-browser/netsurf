@@ -754,11 +754,6 @@ void gui_multitask(void)
 	gui_last_poll = clock();
 
 	switch (event) {
-		case wimp_CLOSE_WINDOW_REQUEST:
-			/* \todo close the window, and destroy content
-			 * or abort loading of content */
-			break;
-
 		case wimp_KEY_PRESSED:
 		case wimp_MENU_SELECTION:
 			ro_gui_poll_queue(event, &block);
@@ -1464,7 +1459,7 @@ char *ro_gui_uri_file_parse(const char *file_name, char **uri_title)
 			warn_user("NoMemory", 0);
 	}
 	fclose(fp);
-	
+
 	return url;
 
 uri_syntax_error:
