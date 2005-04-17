@@ -491,20 +491,27 @@ bool find_occurrences(const char *pattern, int p_len, struct box *cur,
 
 	/* ignore this box, if there's no visible text */
 	if (!cur->object && cur->text) {
-		unsigned match_length;
-		const char *pos = find_pattern(cur->text, cur->length,
-				pattern, p_len, case_sens, &match_length);
-		if (pos) {
-			/* found string in box => add to list */
+		const char *text = cur->text;
+		unsigned length = cur->length;
+
+		while (length > 0) {
+			unsigned match_length;
 			unsigned match_offset;
-			struct list_entry *entry = calloc(1, sizeof(*entry));
+			const char *new_text;
+			struct list_entry *entry;
+			const char *pos = find_pattern(text, length,
+					pattern, p_len, case_sens, &match_length);
+			if (!pos) break;
+
+			/* found string in box => add to list */
+			entry = calloc(1, sizeof(*entry));
 			if (!entry) {
 				warn_user("NoMemory", 0);
 				return false;
 			}
-
+	
 			match_offset = pos - cur->text;
-
+	
 			entry->start_box = cur;
 			entry->start_idx = match_offset;
 			entry->end_box = cur;
@@ -516,6 +523,10 @@ bool find_occurrences(const char *pattern, int p_len, struct box *cur,
 			else
 				search_found->prev->next = entry;
 			search_found->prev = entry;
+
+			new_text = pos + match_length;
+			length -= (new_text - text);
+			text = new_text;
 		}
 	}
 
