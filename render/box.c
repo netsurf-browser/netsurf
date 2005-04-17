@@ -452,7 +452,7 @@ void box_dump(struct box *box, unsigned int depth)
 		fprintf(stderr, " next_float %p", box->next_float);
 	fprintf(stderr, "\n");
 
-	for (c = box->children; c->next; c = c->next)
+	for (c = box->children; c && c->next; c = c->next)
 		;
 	if (box->last != c)
 		fprintf(stderr, "warning: box->last %p (should be %p) "
