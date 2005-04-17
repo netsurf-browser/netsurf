@@ -163,3 +163,4 @@ void schedule_run(void) {}
 
 void global_history_add(struct gui_window *g) {}
 
+const char *local_encoding_name(void) { return "UTF-8"; }

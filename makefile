@@ -23,13 +23,12 @@ OBJECTS_COMMON += box.o box_construct.o box_normalise.o form.o html.o \
 	html_redraw.o layout.o list.o textplain.o		# render/
 OBJECTS_COMMON += messages.o pool.o talloc.o url.o utf8.o \
 	utils.o							# utils/
-OBJECTS_COMMON += imagemap.o loginlist.o options.o selection.o \
-	textinput.o tree.o					# desktop/
+OBJECTS_COMMON += imagemap.o loginlist.o options.o tree.o	# desktop/
 
 OBJECTS_IMAGE = jpeg.o mng.o gif.o gifread.o			# image/
 
 OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
-OBJECTS_RISCOS += browser.o netsurf.o version.o			# desktop/
+OBJECTS_RISCOS += browser.o netsurf.o selection.o textinput.o version.o			# desktop/
 OBJECTS_RISCOS += 401login.o bitmap.o buffer.o debugwin.o \
 	dialog.o download.o draw.o filetype.o font.o \
 	global_history.o gui.o help.o history.o hotlist.o image.o \
@@ -50,11 +49,12 @@ OBJECTS_DEBUGRO += netsurfd.o					# debug/
 OBJECTS_DEBUGRO += version.o					# desktop/
 OBJECTS_DEBUGRO += bitmap.o draw.o filetype.o font.o \
 	gif.o gifread.o image.o jpeg.o plotters.o save_complete.o \
-	schedule.o sprite.o ufont.o				# riscos/
+	schedule.o sprite.o					# riscos/
 
 OBJECTS_GTK = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_GTK += filetyped.o					# debug/
-OBJECTS_GTK += browser.o netsurf.o version.o			# desktop/
+OBJECTS_GTK += browser.o netsurf.o selection.o textinput.o \
+	version.o						# desktop/
 OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o \
 	gtk_plotters.o gtk_treeview.o gtk_window.o		# gtk/
 

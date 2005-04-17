@@ -9,8 +9,8 @@ PLATFORM_CFLAGS_DEBUG = -I/usr/include/libxml2 -I/riscos/src/OSLib \
 
 LDFLAGS_RISCOS = -L/home/riscos/env/lib -lxml2 -lz -lcurl -lssl -lcrypto \
 		-lcares -lmng -loslib -ljpeg -lrufl
-LDFLAGS_SMALL = -L/riscos/lib -lxml2 -lz -lucurl -lcares -lmng -loslib -ljpeg \
-		-lrufl
+LDFLAGS_SMALL = -L/home/riscos/env/lib -lxml2 -lz -lucurl -lcares -lmng \
+		-loslib -ljpeg -lrufl
 LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -lmng \
 		-ljpeg -llcms
 

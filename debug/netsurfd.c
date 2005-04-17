@@ -27,6 +27,8 @@ int done, destroyed;
 bool print_active = false;
 void *hotlist_toolbar = NULL;
 void *hotlist_window = NULL;
+struct browser_window *current_redraw_browser = NULL;
+struct gui_window *search_current_window = NULL;
 
 #ifndef riscos
 char *default_stylesheet_url;
@@ -75,7 +77,8 @@ int main(int argc, char *argv[])
 		c = fetchcache(url, callback, 0, 0, 1000, 1000, false,
 				0, 0, true, false);
 		if (c) {
-			fetchcache_go(c, 0, callback, 0, 0, 0, 0, true);
+			fetchcache_go(c, 0, callback, 0, 0, 1000, 1000,
+					0, 0, true);
 			done = c->status == CONTENT_STATUS_DONE;
 			while (!done)
 				fetch_poll();
@@ -185,3 +188,10 @@ void schedule(int t, void (*callback)(void *p), void *p) {}
 void schedule_remove(void (*callback)(void *p), void *p) {}
 void schedule_run(void) {}
 #endif
+
+bool selection_highlighted(struct selection *s, struct box *box,
+		unsigned *start_idx, unsigned *end_idx) { return false; }
+bool gui_search_term_highlighted(struct gui_window *g, struct box *box,
+		unsigned *start_idx, unsigned *end_idx) { return false; }
+
+const char *local_encoding_name(void) { return "ISO-8859-1"; }
