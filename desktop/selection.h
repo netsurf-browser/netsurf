@@ -23,7 +23,10 @@ typedef enum {
 } seln_drag_state;
 
 
-/* this structure should be treated as opaque outside selection.c */
+/* this structure should be treated as opaque outside selection.c
+   (it's defined here to accelerate selection_defined(s) for reduced
+   impact on redraw code) */
+
 struct selection
 {
 	struct browser_window *bw;
