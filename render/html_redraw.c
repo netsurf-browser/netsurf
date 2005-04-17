@@ -15,6 +15,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/desktop/selection.h"
 #include "netsurf/render/box.h"
@@ -314,9 +315,7 @@ bool html_redraw_box(struct box *box,
 			return false;
 
 	} else if (box->text) {
-
-		unsigned start_idx;
-		unsigned end_idx;
+		bool highlighted = false;
 
 		/* antialias colour for under/overline */
 		colour = html_redraw_aa(current_background_color,
@@ -352,74 +351,90 @@ bool html_redraw_box(struct box *box,
 				return false;
 		}
 
+		/* is this box part of a selection? */
+		if (box->text && !box->object && current_redraw_browser) {
+			unsigned start_idx;
+			unsigned end_idx;
 
-		/* is this box part of the current selection? */
-		if (box->text && !box->object && current_redraw_browser &&
-			selection_defined(current_redraw_browser->sel) &&
-			selection_highlighted(current_redraw_browser->sel, box,
-					&start_idx, &end_idx)) {
-
-			unsigned endtxt_idx = end_idx;
-			int startx, endx;
-
-			if (end_idx > box->length) {
-				/* adjust for trailing space, not present in box->text */
-				assert(end_idx == box->length + 1);
-				endtxt_idx = box->length;
+			/* first try the browser window's current selection */
+			if (selection_defined(current_redraw_browser->sel) &&
+				selection_highlighted(current_redraw_browser->sel,
+					box, &start_idx, &end_idx)) {
+				highlighted = true;
 			}
 
-			if (!nsfont_width(box->style, box->text, start_idx, &startx))
-				startx = 0;
-
-			if (!nsfont_width(box->style, box->text + start_idx,
-					endtxt_idx - start_idx, &endx))
-				endx = 0;
-			endx += startx;
-
-			/* is there a trailing space that should be highlighted as well? */
-			if (end_idx > box->length) {
-				int spc_width;
-				/* \todo is there a more elegant/efficient solution? */
-				if (nsfont_width(box->style, " ", 1, &spc_width))
-					endx += spc_width;
+			/* what about the current search operation, if any */
+			if (!highlighted &&
+				search_current_window == current_redraw_browser->window &&
+				gui_search_term_highlighted(current_redraw_browser->window,
+					box, &start_idx, &end_idx)) {
+					highlighted = true;
 			}
 
-			if (scale != 1.0) {
-				startx *= scale;
-				endx *= scale;
-			}
-
-			if (start_idx > 0) {
-
-				if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
-						box->style, box->text, start_idx,
-						current_background_color,
-						/*print_text_black ? 0 :*/ box->style->color))
+			/* \todo make search terms visible within selected text */
+			if (highlighted) {
+				unsigned endtxt_idx = end_idx;
+				int startx, endx;
+	
+				if (end_idx > box->length) {
+					/* adjust for trailing space, not present in box->text */
+					assert(end_idx == box->length + 1);
+					endtxt_idx = box->length;
+				}
+	
+				if (!nsfont_width(box->style, box->text, start_idx, &startx))
+					startx = 0;
+	
+				if (!nsfont_width(box->style, box->text + start_idx,
+						endtxt_idx - start_idx, &endx))
+					endx = 0;
+				endx += startx;
+	
+				/* is there a trailing space that should be highlighted as well? */
+				if (end_idx > box->length) {
+					int spc_width;
+					/* \todo is there a more elegant/efficient solution? */
+					if (nsfont_width(box->style, " ", 1, &spc_width))
+						endx += spc_width;
+				}
+	
+				if (scale != 1.0) {
+					startx *= scale;
+					endx *= scale;
+				}
+	
+				if (start_idx > 0) {
+	
+					if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
+							box->style, box->text, start_idx,
+							current_background_color,
+							/*print_text_black ? 0 :*/ box->style->color))
+						return false;
+	
+				}
+	
+				if (!plot.fill(x + startx, y, x + endx, y + box->height * scale,
+						current_background_color ^ 0xffffff))
 					return false;
-
-			}
-
-			if (!plot.fill(x + startx, y, x + endx, y + box->height * scale,
-					current_background_color ^ 0xffffff))
-				return false;
-
-			if (!plot.text(x + startx, y + (int) (box->height * 0.75 * scale),
-					box->style, box->text + start_idx, endtxt_idx - start_idx,
-					current_background_color ^ 0xffffff,
-					current_background_color))
-				return false;
-
-			if (endtxt_idx < box->length) {
-
-				if (!plot.text(x + endx, y + (int) (box->height * 0.75 * scale),
-						box->style, box->text + endtxt_idx, box->length - endtxt_idx,
-						current_background_color,
-						/*print_text_black ? 0 :*/ box->style->color))
+	
+				if (!plot.text(x + startx, y + (int) (box->height * 0.75 * scale),
+						box->style, box->text + start_idx, endtxt_idx - start_idx,
+						current_background_color ^ 0xffffff,
+						current_background_color))
 					return false;
-
+	
+				if (endtxt_idx < box->length) {
+	
+					if (!plot.text(x + endx, y + (int) (box->height * 0.75 * scale),
+							box->style, box->text + endtxt_idx, box->length - endtxt_idx,
+							current_background_color,
+							/*print_text_black ? 0 :*/ box->style->color))
+						return false;
+				}
 			}
 		}
-		else {
+
+		if (!highlighted) {
 			if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
 					box->style, box->text, box->length,
 					current_background_color,

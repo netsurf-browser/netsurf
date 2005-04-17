@@ -29,6 +29,8 @@ bool gui_in_multitask = false;
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 
+struct gui_window *search_current_window = 0;
+
 
 void gui_init(int argc, char** argv)
 {
@@ -121,6 +123,13 @@ void gui_launch_url(const char *url)
 }
 
 
+bool gui_search_term_highlighted(struct gui_window *g, struct box *box,
+		unsigned *start_idx, unsigned *end_idx)
+{
+	return false;
+}
+
+
 void warn_user(const char *warning, const char *detail)
 {
 }
@@ -153,3 +162,4 @@ void schedule_remove(void (*callback)(void *p), void *p) {}
 void schedule_run(void) {}
 
 void global_history_add(struct gui_window *g) {}
+

@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net> 
  */
 
 /** \file
@@ -18,6 +19,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
+#include "netsurf/desktop/selection.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/gui.h"
@@ -34,15 +36,22 @@
 #endif
 
 struct list_entry {
-	struct box *box;
+	/* start position of match */
+	struct box *start_box;
+	unsigned start_idx;
+	/* end of match */
+	struct box *end_box;
+	unsigned end_idx;
+
 	struct list_entry *prev;
 	struct list_entry *next;
 };
 
-static struct gui_window *search_current_window = 0;
+struct gui_window *search_current_window = 0;
+static struct selection *search_selection = 0;
 
 static char *search_string = 0;
-static struct list_entry search_head = { 0, 0, 0 };
+static struct list_entry search_head = { 0, 0, 0, 0, 0, 0 };
 static struct list_entry *search_found = &search_head;
 static struct list_entry *search_current = 0;
 static struct content *search_content = 0;
@@ -52,8 +61,10 @@ static bool search_prev_case_sens = false;
 static void start_search(void);
 static void end_search(void);
 static void do_search(char *string, bool from_top, bool case_sens, bool forwards);
-static const char *find_pattern(const char *string, int s_len, const char *pattern, int p_len, bool case_sens);
-static bool find_occurrences(const char *pattern, int p_len, struct box *cur, bool case_sens);
+static const char *find_pattern(const char *string, int s_len,
+		const char *pattern, int p_len, bool case_sens, int *m_len);
+static bool find_occurrences(const char *pattern, int p_len, struct box *cur,
+		bool case_sens);
 
 
 /**
@@ -63,6 +74,8 @@ static bool find_occurrences(const char *pattern, int p_len, struct box *cur, bo
  */
 void ro_gui_search_prepare(struct gui_window *g)
 {
+	struct content *c;
+
 	assert(g != NULL);
 
 	search_current_window = g;
@@ -76,6 +89,22 @@ void ro_gui_search_prepare(struct gui_window *g)
 				false);
 	ro_gui_set_icon_selected_state(dialog_search,
 				ICON_SEARCH_CASE_SENSITIVE, false);
+
+	c = search_current_window->bw->current_content;
+
+	if (!c)
+		return;
+
+	/* only handle html contents */
+	if (c->type != CONTENT_HTML)
+		return;
+
+/* \todo build me properly please! */
+	search_selection = selection_create(g->bw);
+	if (!search_selection)
+		warn_user("NoMemory", 0);
+
+	selection_init(search_selection, c->data.html.layout);
 }
 
 /**
@@ -171,6 +200,10 @@ void start_search(void)
 void end_search(void)
 {
 	struct list_entry *a, *b;
+
+	selection_clear(search_selection, true);
+	selection_destroy(search_selection);
+	search_selection = 0;
 
 	search_current_window = 0;
 
@@ -289,7 +322,7 @@ void do_search(char *string, bool from_top, bool case_sens, bool forwards)
 		}
 
 		for (a = search_found->next; a; a = a->next) {
-			box_coords(a->box, &x, &y);
+			box_coords(a->start_box, &x, &y);
 			LOG(("%d, %d", y, state.yscroll / 2));
 			if (forwards && -y <= state.yscroll / 2)
 				break;
@@ -315,8 +348,16 @@ void do_search(char *string, bool from_top, bool case_sens, bool forwards)
 	if (!search_current)
 		return;
 
+	box = search_current->start_box;
+
+	selection_clear(search_selection, true);
+	selection_set_start(search_selection, search_current->start_box,
+		search_current->start_idx);
+	selection_set_end(search_selection, search_current->end_box,
+		search_current->end_idx);
+
 	/* get box position and jump to it */
-	box_coords(search_current->box, &x, &y);
+	box_coords(search_current->start_box, &x, &y);
 //	LOG(("%p (%d, %d)", search_current, x, y));
 	gui_window_set_scroll(search_current_window, x, y);
 
@@ -326,21 +367,25 @@ void do_search(char *string, bool from_top, bool case_sens, bool forwards)
 /**
  * Find the first occurrence of 'match' in 'string' and return its index
  *
- * /param string   the string to be searched (unterminated)
- * /param s_len    length of the string to be searched
- * /param match    the pattern for which we are searching (unterminated)
- * /param m_len    length of pattern
- * /return         pointer to first match, NULL if none
+ * /param  string     the string to be searched (unterminated)
+ * /param  s_len      length of the string to be searched
+ * /param  pattern    the pattern for which we are searching (unterminated)
+ * /param  p_len      length of pattern
+ * /param  case_sens  true iff case sensitive match required
+ * /param  m_len      accepts length of match in bytes
+ * /return pointer to first match, NULL if none
  */
 
-const char *find_pattern(const char *string, int s_len, const char *pattern, int p_len, bool case_sens)
+const char *find_pattern(const char *string, int s_len, const char *pattern,
+		int p_len, bool case_sens, int *m_len)
 {
-	struct { const char *ss, *s, *p; } context[16];
+	struct { const char *ss, *s, *p; bool first; } context[16];
 	const char *ep = pattern + p_len;
 	const char *es = string  + s_len;
 	const char *p = pattern - 1;  /* a virtual '*' before the pattern */
 	const char *ss = string;
 	const char *s = string;
+	bool first = true;
 	int top = 0;
 
 	while (p < ep) {
@@ -352,7 +397,7 @@ const char *find_pattern(const char *string, int s_len, const char *pattern, int
 			do p++; while (p < ep && *p == '*');
 
 			/* if we're at the end of the pattern, yes, it matches */
-			if (p >= ep) return ss;
+			if (p >= ep) break;
 
 			/* anything matches a # so continue matching from
 			   here, and stack a context that will try to match
@@ -372,13 +417,21 @@ const char *find_pattern(const char *string, int s_len, const char *pattern, int
 			}
 			
 			if (s < es) {
-				/* remember where we are in case the match fails; we can then resume */
+				/* remember where we are in case the match fails;
+					we can then resume */
 				if (top < (int)NOF_ELEMENTS(context)) {
 					context[top].ss = ss;
 					context[top].s  = s + 1;
 					context[top].p  = p - 1;    /* ptr to last asterisk */
+					context[top].first = first;
 					top++;
 				}
+
+				if (first) {
+					ss = s;  /* remember first non-'*' char */
+					first = false;
+				}
+
 				matches = true;
 			}
 			else
@@ -394,6 +447,10 @@ const char *find_pattern(const char *string, int s_len, const char *pattern, int
 				else
 					matches = (toupper(*s) == toupper(ch));
 			}
+			if (matches && first) {
+				ss = s;  /* remember first non-'*' char */
+				first = false;
+			}
 		}
 		else
 			matches = false;
@@ -408,10 +465,12 @@ const char *find_pattern(const char *string, int s_len, const char *pattern, int
 			ss = context[top].ss;
 			s  = context[top].s;
 			p  = context[top].p;
+			first = context[top].first;
 		}
 	}
 
 	/* end of pattern reached */
+	*m_len = s - ss;
 	return ss;
 }
 
@@ -425,21 +484,31 @@ const char *find_pattern(const char *string, int s_len, const char *pattern, int
  * \param case_sens whether to perform a case sensitive search
  * \return true on success, false on memory allocation failure
  */
-bool find_occurrences(const char *pattern, int p_len, struct box *cur, bool case_sens)
+bool find_occurrences(const char *pattern, int p_len, struct box *cur,
+		bool case_sens)
 {
 	struct box *a;
 
 	/* ignore this box, if there's no visible text */
 	if (!cur->object && cur->text) {
-		const char *pos = find_pattern(cur->text, cur->length, pattern, p_len, case_sens);
+		unsigned match_length;
+		const char *pos = find_pattern(cur->text, cur->length,
+				pattern, p_len, case_sens, &match_length);
 		if (pos) {
 			/* found string in box => add to list */
+			unsigned match_offset;
 			struct list_entry *entry = calloc(1, sizeof(*entry));
 			if (!entry) {
 				warn_user("NoMemory", 0);
 				return false;
 			}
-			entry->box = cur;
+
+			match_offset = pos - cur->text;
+
+			entry->start_box = cur;
+			entry->start_idx = match_offset;
+			entry->end_box = cur;
+			entry->end_idx = match_offset + match_length;
 			entry->next = 0;
 			entry->prev = search_found->prev;
 			if (!search_found->prev)
@@ -458,5 +527,29 @@ bool find_occurrences(const char *pattern, int p_len, struct box *cur, bool case
 
 	return true;
 }
+
+
+
+/**
+ * Determines whether any portion of the given text box should be
+ * selected because it matches the current search string.
+ *
+ * \param  g          gui window
+ * \param  box        box being tested
+ * \param  start_idx  byte offset within text box of highlight start
+ * \param  end_idx    byte offset of highlight end
+ * \return true iff part of the box should be highlighted
+ */
+
+bool gui_search_term_highlighted(struct gui_window *g, struct box *box,
+		unsigned *start_idx, unsigned *end_idx) 
+{
+	if (g == search_current_window && search_selection) {
+		if (selection_defined(search_selection))
+			return selection_highlighted(search_selection, box, start_idx, end_idx);
+	}
+	return false;
+}
+
 
 #endif

@@ -41,6 +41,8 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 
+extern struct gui_window *search_current_window;
+
 void gui_init(int argc, char** argv);
 void gui_init2(int argc, char** argv);
 void gui_multitask(void);
@@ -88,5 +90,9 @@ void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control);
 
 void gui_launch_url(const char *url);
+
+bool gui_search_term_highlighted(struct gui_window *g, struct box *box,
+		unsigned *start_idx, unsigned *end_idx);
+
 
 #endif

@@ -40,8 +40,6 @@ static inline bool before(const struct box *a, unsigned a_idx, unsigned b);
 static bool redraw_handler(struct box *box, int offset, size_t length, void *handle);
 static void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx);
 static unsigned selection_label_subtree(struct selection *s, struct box *node, unsigned idx);
-static void selection_set_start(struct selection *s, struct box *box, int idx);
-static void selection_set_end(struct selection *s, struct box *box, int idx);
 static bool save_handler(struct box *box, int offset, size_t length, void *handle);
 static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		seln_traverse_handler handler, void *handle);
@@ -656,7 +654,8 @@ void selection_set_end(struct selection *s, struct box *box, int idx)
 bool selection_highlighted(struct selection *s, struct box *box,
 		unsigned *start_idx, unsigned *end_idx)
 {
-	assert(selection_defined(s));	/* caller should have checked for efficiency */
+	/* caller should have checked first for efficiency */
+	assert(selection_defined(s));
 	assert(s && box);
 
 	if (box->length > 0) {
