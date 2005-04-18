@@ -694,9 +694,9 @@ void browser_window_mouse_click(struct browser_window *bw,
 		default:
 			if (mouse & BROWSER_MOUSE_MOD_2) {
 				if (mouse & BROWSER_MOUSE_DRAG_2)
-					gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, c);
+					gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, c, bw->window);
 				else if (mouse & BROWSER_MOUSE_DRAG_1)
-					gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, c);
+					gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, c, bw->window);
 			}
 			else if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
 				browser_window_page_drag_start(bw, x, y);
@@ -893,9 +893,9 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	} else if (object && (mouse & BROWSER_MOUSE_MOD_2)) {
 
 		if (mouse & BROWSER_MOUSE_DRAG_2)
-			gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, object);
+			gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, object, bw->window);
 		else if (mouse & BROWSER_MOUSE_DRAG_1)
-			gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, object);
+			gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, object, bw->window);
 
 		/* \todo should have a drag-saving object msg */
 		status = c->status_message;
@@ -954,7 +954,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 			if (mouse & BROWSER_MOUSE_DRAG_1) {
 				if (mouse & BROWSER_MOUSE_MOD_2) {
-					gui_drag_save_object(GUI_SAVE_COMPLETE, c);
+					gui_drag_save_object(GUI_SAVE_COMPLETE, c, bw->window);
 				}
 				else {
 					browser_window_page_drag_start(bw, x, y);
@@ -963,7 +963,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			}
 			else if (mouse & BROWSER_MOUSE_DRAG_2) {
 				if (mouse & BROWSER_MOUSE_MOD_2) {
-					gui_drag_save_object(GUI_SAVE_SOURCE, c);
+					gui_drag_save_object(GUI_SAVE_SOURCE, c, bw->window);
 				}
 				else {
 					browser_window_page_drag_start(bw, x, y);
@@ -997,8 +997,8 @@ void browser_window_mouse_track(struct browser_window *bw,
 	struct content *c = bw->current_content;
 	if (!c) return;
 
-	/* detect end of drag operation in case the platform specific
-	   code doesn't call browser_mouse_drag_end() */
+	/* detect end of drag operation in case the platform-specific code
+	   doesn't call browser_mouse_drag_end() (RISC OS code does) */
 
 	if (bw->drag_type != DRAGGING_NONE && !mouse) {
 		browser_window_mouse_drag_end(bw, mouse, x, y);

@@ -226,7 +226,8 @@ bool selection_click(struct selection *s, struct box *box,
 	if (!pos && (mouse & BROWSER_MOUSE_MOD_2) &&
 		(mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2))) {
 		/* drag-saving selection */
-		gui_drag_save_selection(s);
+		assert(s->bw);
+		gui_drag_save_selection(s, s->bw->window);
 	}
 	else if (!modkeys) {
 		if (mouse & BROWSER_MOUSE_DRAG_1) {

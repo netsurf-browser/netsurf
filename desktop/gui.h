@@ -80,8 +80,9 @@ void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg);
 void gui_download_window_done(struct gui_download_window *dw);
 
-void gui_drag_save_object(gui_save_type type, struct content *c);
-void gui_drag_save_selection(struct selection *s);
+void gui_drag_save_object(gui_save_type type, struct content *c,
+		struct gui_window *g);
+void gui_drag_save_selection(struct selection *s, struct gui_window *g);
 void gui_start_selection(struct gui_window *g);
 
 bool gui_copy_to_clipboard(struct selection *s);

@@ -42,7 +42,8 @@ static struct selection *gui_save_selection = NULL;
 static int gui_save_filetype;
 
 static bool using_dragasprite = true;
-static wimp_w gui_save_dialogw = (wimp_w)-1;
+static bool saving_from_dialog = true;
+static wimp_w gui_save_sourcew = (wimp_w)-1;
 
 typedef enum { LINK_ACORN, LINK_ANT, LINK_TEXT } link_format;
 
@@ -124,6 +125,8 @@ void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
 
 /**
  * Handle clicks in the save dialog.
+ *
+ * \param  pointer  mouse position info from Wimp
  */
 
 void ro_gui_save_click(wimp_pointer *pointer)
@@ -134,17 +137,18 @@ void ro_gui_save_click(wimp_pointer *pointer)
 			break;
 		case ICON_SAVE_CANCEL:
 			if (pointer->buttons == wimp_CLICK_SELECT) {
-				xwimp_create_menu((wimp_menu *)-1, 0, 0);
+				xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 				ro_gui_dialog_close(pointer->w);
 			} else if (pointer->buttons == wimp_CLICK_ADJUST) {
-/* 	  			ro_gui_menu_prepare_save(gui_save_content); */
-	  		}
-	  		break;
+				ro_gui_save_prepare(gui_save_current_type, gui_save_content);
+			}
+			break;
 		case ICON_SAVE_ICON:
 			if (pointer->buttons == wimp_DRAG_SELECT) {
 				const char *sprite = ro_gui_get_icon_string(pointer->w, pointer->i);
 				gui_current_drag_type = GUI_DRAG_SAVE;
-				gui_save_dialogw = pointer->w;
+				gui_save_sourcew = pointer->w;
+				saving_from_dialog = true;
 				ro_gui_drag_icon(pointer->pos.x, pointer->pos.y, sprite);
 			}
 			break;
@@ -154,6 +158,8 @@ void ro_gui_save_click(wimp_pointer *pointer)
 
 /**
  * Handle OK click/keypress in the save dialog.
+ *
+ * \param  w  window handle of save dialog
  */
 
 void ro_gui_save_ok(wimp_w w)
@@ -164,9 +170,10 @@ void ro_gui_save_ok(wimp_w w)
 		warn_user("NoPathError", NULL);
 		return;
 	}
-	gui_save_dialogw = w;
+	gui_save_sourcew = w;
+	saving_from_dialog = true;
 	if (ro_gui_save_content(gui_save_content, name)) {
-		xwimp_create_menu((wimp_menu *)-1, 0, 0);
+		xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 		ro_gui_dialog_close(w);
 	}
 }
@@ -177,9 +184,11 @@ void ro_gui_save_ok(wimp_w w)
  *
  * \param  save_type  type of save
  * \param  c          content to save
+ * \param  g          gui window
  */
 
-void gui_drag_save_object(gui_save_type save_type, struct content *c)
+void gui_drag_save_object(gui_save_type save_type, struct content *c,
+		struct gui_window *g)
 {
 	wimp_pointer pointer;
 	char icon_buf[20];
@@ -188,10 +197,11 @@ void gui_drag_save_object(gui_save_type save_type, struct content *c)
 
 	/* Close the save window because otherwise we need two contexts
 	*/
-	if (gui_save_dialogw != (wimp_w)-1)
-		ro_gui_dialog_close(gui_save_dialogw);
+	xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+	ro_gui_dialog_close(dialog_saveas);
 
-	gui_save_dialogw = (wimp_w)-1;
+	gui_save_sourcew = g->window;
+	saving_from_dialog = false;
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
@@ -218,7 +228,14 @@ void gui_drag_save_object(gui_save_type save_type, struct content *c)
 }
 
 
-void gui_drag_save_selection(struct selection *s)
+/**
+ * Initiates drag saving of a selection from a browser window
+ *
+ * \param  s  selection object
+ * \param  g  gui window
+ */
+
+void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 {
 	wimp_pointer pointer;
 	char icon_buf[20];
@@ -227,10 +244,11 @@ void gui_drag_save_selection(struct selection *s)
 
 	/* Close the save window because otherwise we need two contexts
 	*/
-	if (gui_save_dialogw != (wimp_w)-1)
-		ro_gui_dialog_close(gui_save_dialogw);
+	xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+	ro_gui_dialog_close(dialog_saveas);
 
-	gui_save_dialogw = (wimp_w)-1;
+	gui_save_sourcew = g->window;
+	saving_from_dialog = false;
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
@@ -323,10 +341,15 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 		return;
 	}
 
-	if (gui_save_dialogw == (wimp_w)-1) {
+	/* ignore drags that remain within the source window */
+	if (gui_save_sourcew != (wimp_w)-1 && pointer.w == gui_save_sourcew)
+		return;
+
+	if (!saving_from_dialog) {
 		/* saving directly from browser window, choose a name based upon the URL */
 		struct content *c = gui_save_content;
 		const char *nice;
+
 		name = gui_save_table[gui_save_current_type].name;
 		if (c) {
 			url_func_result res;
@@ -337,11 +360,8 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 	else {
 		char *dot;
 
-		/* ignore drags to the saveas window itself */
-		if (pointer.w == gui_save_dialogw) return;
-
 		/* saving from dialog, grab leafname from icon */
-		name = ro_gui_get_icon_string(gui_save_dialogw, ICON_SAVE_PATH);
+		name = ro_gui_get_icon_string(gui_save_sourcew, ICON_SAVE_PATH);
 		dot = strrchr(name, '.');
 		if (dot)
 			name = dot + 1;
@@ -387,8 +407,8 @@ void ro_gui_send_datasave(gui_save_type save_type, const wimp_full_message_data_
 
 	/* Close the save window because otherwise we need two contexts
 	*/
-	if (gui_save_dialogw != (wimp_w)-1)
-		ro_gui_dialog_close(gui_save_dialogw);
+	xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+	ro_gui_dialog_close(dialog_saveas);
 
 	error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)message, to);
 	if (error) {
@@ -397,7 +417,8 @@ void ro_gui_send_datasave(gui_save_type save_type, const wimp_full_message_data_
 	}
 	else {
 		gui_save_current_type = save_type;
-		gui_save_dialogw = (wimp_w)-1;
+		gui_save_sourcew = (wimp_w)-1;
+		saving_from_dialog = false;
 		gui_current_drag_type = GUI_DRAG_SAVE;
 	}
 }
@@ -427,17 +448,11 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			break;
 	}
 
-	if (gui_save_dialogw != (wimp_w)-1)
-		ro_gui_set_icon_string(gui_save_dialogw, ICON_SAVE_PATH, path);
+	if (saving_from_dialog)
+		ro_gui_set_icon_string(gui_save_sourcew, ICON_SAVE_PATH, path);
 
 	if (ro_gui_save_content(c, path)) {
 		os_error *error;
-
-		if (gui_save_dialogw != (wimp_w)-1) {
-			/*	Close the save window
-			*/
-			ro_gui_dialog_close(gui_save_dialogw);
-		}
 
 		/* Ack successful save with message_DATA_LOAD */
 		message->action = message_DATA_LOAD;
@@ -450,6 +465,8 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 			warn_user("SaveError", error->errmess);
 		}
 
+		/*	Close the save window */
+		ro_gui_dialog_close(dialog_saveas);
 		error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 		if (error) {
 			LOG(("xwimp_create_menu: 0x%x: %s",
