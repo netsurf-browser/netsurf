@@ -364,12 +364,13 @@ bool gui_window_scroll_start(struct gui_window *g)
 }
 
 
-void gui_drag_save_object(gui_save_type type, struct content *c)
+void gui_drag_save_object(gui_save_type type, struct content *c,
+		struct gui_window *g)
 {
 }
 
 
-void gui_drag_save_selection(struct selection *s)
+void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 {
 }
 
