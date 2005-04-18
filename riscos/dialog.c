@@ -1195,7 +1195,7 @@ void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
 	ro_gui_set_icon_integer(dialog_zoom, ICON_ZOOM_VALUE, scale);
 
 	if (pointer->i == ICON_ZOOM_OK)
-		ro_gui_window_set_scale(ro_gui_current_zoom_gui, (float)scale);
+		ro_gui_window_set_scale(ro_gui_current_zoom_gui, scale * 0.01);
 
 	if (pointer->buttons == wimp_CLICK_ADJUST &&
 			pointer->i == ICON_ZOOM_CANCEL)
