@@ -295,7 +295,11 @@ HelpStatus1:\Tla barre d'état.|MElle affiche des informations sur ce que fait la
 
 HelpIconMenu0:\Rvoir des informations sur ce logiciel.
 HelpIconMenu1:\Svoir la documentation de NetSurf.
-HelpIconMenu2:\Souvrir la boîte de dialogue des Préférences.
+HelpIconMenu2:\Ropen a window.
+HelpIconMenu2-0:\Renter an address to visit.
+HelpIconMenu2-1:\Sopen the hotlist management \w.
+HelpIconMenu2-2:\Sopen the global history \w.
+HelpIconMenu3:\Souvrir la boîte de dialogue des Préférences.
 HelpIconMenu3:\Squitter NetSurf.
 
 HelpBrowserMenu0:\Rvoir les options en rapport avec la page en cours.

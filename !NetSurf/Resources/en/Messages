@@ -295,8 +295,12 @@ HelpStatus1:\Tstatus bar.|MIt displays information on what the browser \w is doi
 
 HelpIconMenu0:\Rview information about this software.
 HelpIconMenu1:\Sview NetSurf's documentation.
-HelpIconMenu2:\Sopen the Choices dialogue box.
-HelpIconMenu3:\Squit NetSurf.
+HelpIconMenu2:\Ropen a window.
+HelpIconMenu2-0:\Renter an address to visit.
+HelpIconMenu2-1:\Sopen the hotlist management \w.
+HelpIconMenu2-2:\Sopen the global history \w.
+HelpIconMenu3:\Sopen the Choices dialogue box.
+HelpIconMenu4:\Squit NetSurf.
 
 HelpBrowserMenu0:\Rsee the options relating to the current page.
 HelpBrowserMenu0-0:\Rsee information about the current page.

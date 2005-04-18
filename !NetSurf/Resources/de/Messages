@@ -295,7 +295,11 @@ HelpStatus1:Das ist die Statusanzeige|MSie zeigt an, was gerade im Browserfenste
 
 HelpIconMenu0:Zeigt Informationen zu dieser Software.
 HelpIconMenu1:Lädt die NetSurf Dokumentation in einem neuen Browserfenster.
-HelpIconMenu2:Öffnet einen Dialog mit Einstellungen für NetSurf.
+HelpIconMenu2:\Ropen a window.
+HelpIconMenu2-0:\Renter an address to visit.
+HelpIconMenu2-1:\Sopen the hotlist management \w.
+HelpIconMenu2-2:\Sopen the global history \w.
+HelpIconMenu3:Öffnet einen Dialog mit Einstellungen für NetSurf.
 HelpIconMenu3:Beendet das Programm.|MAlle Browserfenster werden geschlossen. Downloads werden abgebrochen.
 
 HelpBrowserMenu0:Untermenü Seite.|MMenüpunkte beziehen sich auf die angezeigte Seite.
