@@ -313,6 +313,9 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			/* redirect URLs must be absolute by HTTP/1.1, but many sites send
 			 * relative ones: treat them as relative to requested URL */
 			result = url_join(data, c->url, &url);
+			/* set the status to ERROR so that the content is
+			 * destroyed in content_clean() */
+			c->status = CONTENT_STATUS_ERROR;
 			if (result == URL_FUNC_OK) {
 				msg_data.redirect = url;
 				content_broadcast(c, CONTENT_MSG_REDIRECT, msg_data);
@@ -321,9 +324,6 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 				msg_data.error = messages_get("BadRedirect");
 				content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			}
-			/* set the status to ERROR so that the content is
-			 * destroyed in content_clean() */
-			c->status = CONTENT_STATUS_ERROR;
 			break;
 #ifdef WITH_AUTH
 		case FETCH_AUTH:
