@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.36 $ )
+| Run file for NetSurf. ( $Revision: 1.37 $ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -60,16 +60,12 @@ RMEnsure Tinct 0.09 Error NetSurf requires Tinct 0.09 or later. This can be down
 
 | Ensure Iconv
 | http://moose.mine.nu:6888/iconv_latest.zip
-|
-| If Iconv is present, then ensure that the !Unicode resource has been
-| seen before loading Iconv. If it isn't present, don't bother checking
-| as we don't care.
-| Not an error if not present - there'll be no charset conversion.
-Set NetSurf$LoadIconv 0
-RMEnsure Iconv 0.02 IfThere System:Modules.Iconv Then Set NetSurf$LoadIconv 1
-If "<NetSurf$LoadIconv>" = "1" AND "<Unicode$Path>" = "" Then Error NetSurf requires the !Unicode resource. This can be found, along with the Iconv module, at http://moose.mine.nu:6888/iconv_latest.zip
-If "<NetSurf$LoadIconv>" = "1" Then NetSurfRMLoad System:Modules.Iconv
-Unset NetSurf$LoadIconv
+RMEnsure Iconv 0.04 NetSurfRMLoad System:Modules.Iconv
+RMEnsure Iconv 0.04 Error NetSurf requires Iconv 0.04 or later. This can be downloaded from http://moose.mine.nu:6888/iconv_latest.zip
+
+| Ensure !Unicode resource
+| URL as for Iconv
+If "<Unicode$Path>" = "" Then Error NetSurf requires the !Unicode resource. This can be found, along with the Iconv module, at http://moose.mine.nu:6888/iconv_latest.zip
 
 | No longer need this alias
 Unset Alias$NetSurfRMLoad
