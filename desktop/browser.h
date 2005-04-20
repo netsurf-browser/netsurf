@@ -25,6 +25,13 @@ struct form_successful_control;
 struct gui_window;
 struct history;
 struct selection;
+struct browser_window;
+
+
+typedef void (*browser_caret_callback)(struct browser_window *bw,
+	wchar_t key, void *p);
+typedef bool (*browser_paste_callback)(struct browser_window *bw,
+	const char *utf8, unsigned utf8_len, bool last, void *p);
 
 /** Browser window data. */
 struct browser_window {
@@ -40,9 +47,11 @@ struct browser_window {
 	struct selection *sel;
 
 	/** Handler for keyboard input, or 0. */
-	void (*caret_callback)(struct browser_window *bw,
-			wchar_t key, void *p);
-	/** User parameter for caret_callback. */
+	browser_caret_callback caret_callback;
+	/** Handler for pasting text, or 0. */
+	browser_paste_callback paste_callback;
+
+	/** User parameter for caret_callback and paste_callback */
 	void *caret_p;
 
 	/** Platform specific window data. */
@@ -125,6 +134,8 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 
 bool browser_window_key_press(struct browser_window *bw, wchar_t key);
+bool browser_window_paste_text(struct browser_window *bw, const char *utf8,
+		unsigned utf8_len, bool last);
 void browser_window_form_select(struct browser_window *bw,
 		struct form_control *control, int item);
 void browser_redraw_box(struct content *c, struct box *box);

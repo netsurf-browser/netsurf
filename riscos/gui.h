@@ -161,6 +161,7 @@ void ro_gui_scroll_request(wimp_scroll *scroll);
 //#define window_y_units(y, state) (y - (state->visible.y1 - state->yscroll))
 int window_x_units(int x, wimp_window_state *state);
 int window_y_units(int y, wimp_window_state *state);
+bool window_screen_pos(struct gui_window *g, int x, int y, os_coord *pos);
 bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message);
 void ro_gui_window_process_reformats(void);
 void ro_gui_window_default_options(struct browser_window *bw);

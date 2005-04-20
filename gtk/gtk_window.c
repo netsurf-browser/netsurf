@@ -380,6 +380,11 @@ void gui_start_selection(struct gui_window *g)
 }
 
 
+void gui_paste_from_clipboard(struct browser_window *bw, int x, int y)
+{
+}
+
+
 bool gui_copy_to_clipboard(struct selection *s)
 {
 	return false;

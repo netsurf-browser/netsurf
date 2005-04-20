@@ -20,6 +20,7 @@
 #include <string.h>
 #include "oslib/colourtrans.h"
 #include "oslib/osbyte.h"
+#include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
 #include "oslib/serviceinternational.h"
 #include "oslib/wimp.h"
@@ -28,7 +29,9 @@
 #include "netsurf/content/content.h"
 #include "netsurf/content/url_store.h"
 #include "netsurf/css/css.h"
+#include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/plotters.h"
+#include "netsurf/desktop/textinput.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/riscos/buffer.h"
@@ -48,6 +51,10 @@
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/messages.h"
 
+#ifndef wimp_KEY_END
+#define wimp_KEY_END wimp_KEY_COPY
+#endif
+
 
 /** List of all browser windows. */
 static struct gui_window *window_list = 0;
@@ -62,6 +69,7 @@ static float scale_snap_to[] = {0.10, 0.125, 0.25, 0.333, 0.5, 0.75,
 static void ro_gui_window_clone_options(struct browser_window *new_bw,
 		struct browser_window *old_bw);
 static browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons);
+static bool ro_gui_window_import_text(struct gui_window *g, const char *filename);
 
 
 
@@ -1616,14 +1624,29 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		/* We can't map onto 1->26 (reserved for ctrl+<qwerty>
 		   That leaves 27->31 and 128->159 */
 
-		if (c == 394) c = 9;	       /* Tab */
-		else if (c == 410) c = 11;     /* Shift+Tab */
-		else if (c == 428) c = 128;    /* Ctrl+Left */
-		else if (c == 429) c = 129;    /* Ctrl+Right*/
-		else if (c == 396) c = 29;     /* Left */
-		else if (c == 397) c = 28;     /* Right */
-		else if (c == 398) c = 31;     /* Down */
-		else if (c == 399) c = 30;     /* Up */
+		switch (key) {
+			case wimp_KEY_TAB: c = 9; break;
+			case wimp_KEY_SHIFT | wimp_KEY_TAB: c = 11; break;
+
+			/* cursor movement keys */
+			case wimp_KEY_CONTROL | wimp_KEY_LEFT:  c = KEY_LINE_START; break;
+			case wimp_KEY_END:
+			case wimp_KEY_CONTROL | wimp_KEY_RIGHT: c = KEY_LINE_END;   break;
+			case wimp_KEY_CONTROL | wimp_KEY_UP:    c = KEY_TEXT_START; break;
+			case wimp_KEY_CONTROL | wimp_KEY_DOWN:  c = KEY_TEXT_END;   break;
+			case wimp_KEY_SHIFT | wimp_KEY_LEFT:    c = KEY_WORD_LEFT ; break;
+			case wimp_KEY_SHIFT | wimp_KEY_RIGHT:   c = KEY_WORD_RIGHT; break;
+			case wimp_KEY_SHIFT | wimp_KEY_UP:      c = KEY_PAGE_UP;    break;
+			case wimp_KEY_SHIFT | wimp_KEY_DOWN:    c = KEY_PAGE_DOWN;  break;
+			case wimp_KEY_LEFT:  c = KEY_LEFT; break;
+			case wimp_KEY_RIGHT: c = KEY_RIGHT; break;
+			case wimp_KEY_UP:    c = KEY_UP; break;
+			case wimp_KEY_DOWN:  c = KEY_DOWN; break;
+
+			/* editing */
+			case wimp_KEY_CONTROL | wimp_KEY_END: c = 136; break;
+		}
+
 		if (c < 256) {
 			if ((wchar_t)key > 256)
 				/* do nothing */;
@@ -1685,7 +1708,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 						     "%x (ignoring)", c));
 						return true;
 					}
-
+        
 					/* Continuation of UTF8 character */
 					wc |= ((c & 0x3F) << (6 * --shift));
 					if (shift > 0)
@@ -1993,6 +2016,35 @@ int window_y_units(int y, wimp_window_state *state) {
 
 
 /**
+ * Convert x,y window co-ordinates into screen co-ordinates.
+ *
+ * \param  g    gui window
+ * \param  x    x ordinate
+ * \param  y    y ordinate
+ * \param  pos  receives position in screen co-ordinatates
+ * \return true iff conversion successful
+ */
+
+bool window_screen_pos(struct gui_window *g, int x, int y, os_coord *pos)
+{
+	wimp_window_state state;
+	os_error *error;
+
+	state.w = g->window;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x:%s",
+			error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+	pos->x = state.visible.x0 + ((x * 2 * g->option.scale)  - state.xscroll);
+	pos->y = state.visible.y1 + ((-y * 2 * g->option.scale) - state.yscroll);
+	return true;
+}
+
+
+/**
  * Handle Message_DataLoad (file dragged in) for a window.
  *
  * \param  g	    window
@@ -2008,6 +2060,7 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 	int x, y;
 	struct box *box;
 	struct box *file_box = 0;
+	struct box *text_box = 0;
 	struct browser_window *bw = g->bw;
 	struct content *content;
 	wimp_window_state state;
@@ -2021,7 +2074,7 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 	if (0x1000 <= message->data.data_xfer.file_type)
 		return false;
 
-	/* Search for a file input at the drop point. */
+	/* Search for a file input or text area at the drop point. */
 	state.w = message->data.data_xfer.w;
 	error = xwimp_get_window_state(&state);
 	if (error) {
@@ -2043,23 +2096,49 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 				box->style->visibility == CSS_VISIBILITY_HIDDEN)
 			continue;
 
-		if (box->gadget && box->gadget->type == GADGET_FILE)
-			file_box = box;
+		if (box->gadget) {
+			switch (box->gadget->type) {
+				case GADGET_FILE:
+					file_box = box;
+				break;
+
+				case GADGET_TEXTBOX:
+				case GADGET_TEXTAREA:
+				case GADGET_PASSWORD:
+					text_box = box;
+					break;
+
+				default:	/* appease compiler */
+					break;
+			}
+		}
 	}
 
-	if (!file_box)
+	if (!file_box && !text_box)
 		return false;
 
-	/* Found: update form input. */
-	free(file_box->gadget->value);
-	file_box->gadget->value =
-			strdup(message->data.data_xfer.file_name);
+	if (file_box) {
 
-	/* Redraw box. */
-	box_coords(file_box, &x, &y);
-	gui_window_redraw(bw->window, x, y,
-			x + file_box->width,
-			y + file_box->height);
+		/* Found: update form input. */
+		free(file_box->gadget->value);
+		file_box->gadget->value =
+				strdup(message->data.data_xfer.file_name);
+
+		/* Redraw box. */
+		box_coords(file_box, &x, &y);
+		gui_window_redraw(bw->window, x, y,
+				x + file_box->width,
+				y + file_box->height);
+	}
+	else {
+
+		const char *filename = message->data.data_xfer.file_name;
+
+		browser_window_mouse_click(g->bw, BROWSER_MOUSE_CLICK_1, x, y);
+
+		if (!ro_gui_window_import_text(g, filename))
+			return true;  /* it was for us, it just didn't work! */
+	}
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
@@ -2469,4 +2548,51 @@ void ro_gui_window_set_scale(struct gui_window *g, float scale)
 	if ((c) && (c->type != CONTENT_HTML))
 		browser_window_update(g->bw, false);
 	gui_reformat_pending = true;
+}
+
+
+/**
+ * Import text file into textarea at caret position
+ *
+ * \param  g         gui window containing textarea
+ * \param  filename  pathname of file to be imported
+ * \return true iff successful
+ */
+
+bool ro_gui_window_import_text(struct gui_window *g, const char *filename)
+{
+	fileswitch_object_type obj_type;
+	os_error *error;
+	char *buf;
+	int size;
+
+	error = xosfile_read_stamped(filename, &obj_type, NULL, NULL,
+			&size, NULL, NULL);
+	if (error) {
+		LOG(("xosfile_read_stamped: 0x%x:%s",
+			error->errnum, error->errmess));
+		warn_user("FileError", error->errmess);
+		return true;  /* was for us, but it didn't work! */
+	}
+
+	buf = malloc(size);
+	if (!buf) {
+		warn_user("NoMemory", NULL);
+		return true;
+	}
+
+	error = xosfile_load_stamped(filename, (byte*)buf,
+			NULL, NULL, NULL, NULL, NULL);
+	if (error) {
+		LOG(("xosfile_load_stamped: 0x%x:%s",
+			error->errnum, error->errmess));
+		warn_user("LoadError", error->errmess);
+		free(buf);
+		return true;
+	}
+
+	browser_window_paste_text(g->bw, buf, size, true); 
+
+	free(buf);
+	return true;
 }

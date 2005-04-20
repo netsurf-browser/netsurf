@@ -133,7 +133,35 @@ void box_insert_sibling(struct box *box, struct box *new_box)
 
 
 /**
- * Free the a box tree recursively.
+ * Unlink a box from the box tree and then free it recursively.
+ *
+ * \param  box  box to unlink and free recursively.
+ */
+
+void box_unlink_and_free(struct box *box)
+{
+	struct box *parent = box->parent;
+	struct box *next = box->next;
+	struct box *prev = box->prev;
+
+	if (parent) {
+		if (parent->children == box)
+			parent->children = next;
+		if (parent->last == box)
+			parent->last = next ? next : prev;
+	}
+
+	if (prev)
+		prev->next = next;
+	if (next)
+		next->prev = prev;
+
+	box_free(box);
+}
+
+
+/**
+ * Free a box tree recursively.
  *
  * \param  box  box to free recursively
  *

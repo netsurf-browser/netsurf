@@ -97,6 +97,7 @@ void browser_window_create(const char *url, struct browser_window *clone,
 	bw->sel = selection_create(bw);
 	bw->throbbing = false;
 	bw->caret_callback = NULL;
+	bw->paste_callback = NULL;
 	bw->frag_id = NULL;
 	bw->drag_type = DRAGGING_NONE;
 	bw->scrolling_box = NULL;
@@ -292,6 +293,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			bw->current_content = c;
 			bw->loading_content = NULL;
 			bw->caret_callback = NULL;
+			bw->paste_callback = NULL;
 			bw->scrolling_box = NULL;
 			gui_window_new_content(bw->window);
 			if (bw->frag_id)
@@ -335,6 +337,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			else if (c == bw->current_content) {
 				bw->current_content = 0;
 				bw->caret_callback = NULL;
+				bw->paste_callback = NULL;
 				bw->scrolling_box = NULL;
 				selection_init(bw->sel, NULL);
 			}
@@ -384,6 +387,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			else if (c == bw->current_content) {
 				bw->current_content = 0;
 				bw->caret_callback = NULL;
+				bw->paste_callback = NULL;
 				bw->scrolling_box = NULL;
 				selection_init(bw->sel, NULL);
 			}
@@ -935,6 +939,11 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	} else {
 
 		if (text_box && selection_click(bw->sel, text_box, mouse, x - box_x, y - box_y)) {
+
+			/* key presses must be directed at the main browser window,
+			   paste text operations ignored */
+			if (bw->caret_callback) bw->caret_callback = NULL;
+			if (bw->paste_callback) bw->paste_callback = NULL;
 
 			if (selection_dragging(bw->sel)) {
 				bw->drag_type = DRAGGING_SELECTION;

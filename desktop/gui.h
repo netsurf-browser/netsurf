@@ -85,6 +85,7 @@ void gui_drag_save_object(gui_save_type type, struct content *c,
 void gui_drag_save_selection(struct selection *s, struct gui_window *g);
 void gui_start_selection(struct gui_window *g);
 
+void gui_paste_from_clipboard(struct gui_window *g, int x, int y);
 bool gui_copy_to_clipboard(struct selection *s);
 
 void gui_create_form_select_menu(struct browser_window *bw,

@@ -6,6 +6,7 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
+ * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
  */
 
 /** \file
@@ -23,7 +24,7 @@
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/layout.h"
-#define NDEBUG
+//#define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/talloc.h"
 #include "netsurf/utils/utf8.h"
@@ -35,9 +36,27 @@ static void browser_window_input_callback(struct browser_window *bw,
 		wchar_t key, void *p);
 static void browser_window_place_caret(struct browser_window *bw,
 		int x, int y, int height,
-		void (*callback)(struct browser_window *bw,
-		wchar_t key, void *p),
+		browser_caret_callback caret_cb,
+		browser_paste_callback paste_cb,
 		void *p);
+static bool browser_window_textarea_paste_text(struct browser_window *bw,
+		const char *utf8, unsigned utf8_len, bool last, void *handle);
+static bool browser_window_input_paste_text(struct browser_window *bw,
+		const char *utf8, unsigned utf8_len, bool last, void *handle);
+static void input_update_display(struct browser_window *bw, struct box *input,
+		unsigned form_offset, unsigned box_offset, bool to_textarea,
+		bool redraw);
+static bool textbox_insert(struct browser_window *bw, struct box *text_box,
+		unsigned char_offset, const char *utf8, unsigned utf8_len);
+static bool textbox_delete(struct browser_window *bw, struct box *text_box,
+		unsigned char_offset, unsigned utf8_len);
+static struct box *textarea_insert_break(struct browser_window *bw,
+		struct box *text_box, size_t char_offset);
+static bool delete_handler(struct box *b, int offset, size_t length,
+		void *handle);
+static void textarea_reflow(struct browser_window *bw, struct box *textarea,
+		struct box *inline_container);
+
 
 /**
  * Handle clicks in a text area by placing the caret.
@@ -142,7 +161,9 @@ void browser_window_textarea_click(struct browser_window *bw,
 			pixel_offset,
 			box_y + inline_container->y + text_box->y,
 			text_box->height,
-			browser_window_textarea_callback, textarea);
+			browser_window_textarea_callback,
+			browser_window_textarea_paste_text,
+			textarea);
 
 	if (new_scroll_y != textarea->scroll_y) {
 		textarea->scroll_y = new_scroll_y;
@@ -165,16 +186,13 @@ void browser_window_textarea_callback(struct browser_window *bw,
 	struct box *inline_container =
 				textarea->gadget->caret_inline_container;
 	struct box *text_box = textarea->gadget->caret_text_box;
-	struct box *new_br, *new_text, *t;
-	struct box *prev;
+	struct box *new_text;
 	size_t char_offset = textarea->gadget->caret_box_offset;
 	int pixel_offset = textarea->gadget->caret_pixel_offset;
 	int new_scroll_y;
 	int box_x, box_y;
 	char utf8[6];
-	unsigned int utf8_len, i;
-	char *text;
-	int width = 0, height = 0;
+	unsigned int utf8_len;
 	bool reflow = false;
 
 	/* box_dump(textarea, 0); */
@@ -189,65 +207,39 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		/* normal character insertion */
 		utf8_len = utf8_from_ucs4(key, utf8);
 
-		text = talloc_realloc(bw->current_content, text_box->text,
-				char, text_box->length + 8);
-		if (!text) {
-			warn_user("NoMemory", 0);
+		if (!textbox_insert(bw, text_box, char_offset, utf8, utf8_len))
 			return;
-		}
-		text_box->text = text;
-		memmove(text_box->text + char_offset + utf8_len,
-				text_box->text + char_offset,
-				text_box->length - char_offset);
-		for (i = 0; i != utf8_len; i++)
-			text_box->text[char_offset + i] = utf8[i];
-		text_box->length += utf8_len;
-		text_box->text[text_box->length] = 0;
-		text_box->width = UNKNOWN_WIDTH;
-		char_offset += utf8_len;
 
+		char_offset += utf8_len;
 		reflow = true;
 
 	} else switch (key) {
-	case 8:
-	case 127:	/* delete to left */
+	case KEY_DELETE_LEFT:
 		if (char_offset == 0) {
 			/* at the start of a text box */
+			struct box *prev;
+
+			while (text_box->prev && text_box->prev->type == BOX_BR) {
+				/* previous box is BR: remove it */
+				box_unlink_and_free(text_box->prev);
+			}
+
 			if (!text_box->prev)
 				/* at very beginning of text area: ignore */
 				return;
 
-			if (text_box->prev->type == BOX_BR) {
-				/* previous box is BR: remove it */
-				t = text_box->prev;
-				t->prev->next = t->next;
-				t->next->prev = t->prev;
-				box_free(t);
-			}
-
 			/* delete space by merging with previous text box */
 			prev = text_box->prev;
+			assert(prev->type == BOX_INLINE);
 			assert(prev->text);
-			text = talloc_realloc(bw->current_content,
-					prev->text, char,
-					prev->length + text_box->length + 1);
-			if (!text) {
-				warn_user("NoMemory", 0);
-				return;
-			}
-			prev->text = text;
-			memcpy(prev->text + prev->length, text_box->text,
-					text_box->length);
+
 			char_offset = prev->length;	/* caret at join */
-			prev->length += text_box->length;
-			prev->text[prev->length] = 0;
-			prev->width = UNKNOWN_WIDTH;
-			prev->next = text_box->next;
-			if (prev->next)
-				prev->next->prev = prev;
-			else
-				prev->parent->last = prev;
-			box_free(text_box);
+
+			if (!textbox_insert(bw, prev, prev->length,
+						text_box->text, text_box->length))
+				return;
+
+			box_unlink_and_free(text_box);
 
 			/* place caret at join (see above) */
 			text_box = prev;
@@ -257,45 +249,54 @@ void browser_window_textarea_callback(struct browser_window *bw,
 			int prev_offset = char_offset;
 			char_offset = utf8_prev(text_box->text, char_offset);
 
-			memmove(text_box->text + char_offset,
-					text_box->text + prev_offset,
-					text_box->length - prev_offset);
-			text_box->length -= (prev_offset - char_offset);
-			text_box->width = UNKNOWN_WIDTH;
+			textbox_delete(bw, text_box, char_offset, prev_offset - char_offset);
 		}
+		reflow = true;
+		break;
 
+	case KEY_DELETE_RIGHT:	/* delete to right */
+		if (char_offset >= text_box->length) {
+			/* at the end of a text box */
+			struct box *next;
+
+			while (text_box->next && text_box->next->type == BOX_BR) {
+				/* next box is a BR: remove it */
+				box_unlink_and_free(text_box->next);
+			}
+
+			if (!text_box->next)
+				/* at very end of text area: ignore */
+				return;
+
+			/* delete space by merging with next text box */
+
+			next = text_box->next;
+			assert(next->type == BOX_INLINE);
+			assert(next->text);
+
+			if (!textbox_insert(bw, text_box, text_box->length,
+							next->text, next->length))
+				return;
+
+			box_unlink_and_free(next);
+
+			/* leave caret at join */
+			reflow = true;
+		}
+		else {
+			/* delete a character */
+			int next_offset = utf8_next(text_box->text, text_box->length,
+				char_offset);
+			textbox_delete(bw, text_box, char_offset,
+				next_offset - char_offset);
+		}
 		reflow = true;
 		break;
 
 	case 10:
 	case 13:	/* paragraph break */
-		text = talloc_array(bw->current_content, char,
-				text_box->length + 1);
-		if (!text) {
-			warn_user("NoMemory", 0);
-			return;
-		}
-
-		new_br = box_create(text_box->style, 0, text_box->title, 0,
-				bw->current_content);
-		new_text = talloc(bw->current_content, struct box);
-		if (!new_text) {
-			warn_user("NoMemory", 0);
-			return;
-		}
-
-		new_br->type = BOX_BR;
-		box_insert_sibling(text_box, new_br);
-
-		memcpy(new_text, text_box, sizeof (struct box));
-		new_text->clone = 1;
-		new_text->text = text;
-		memcpy(new_text->text, text_box->text + char_offset,
-				text_box->length - char_offset);
-		new_text->length = text_box->length - char_offset;
-		text_box->length = char_offset;
-		text_box->width = new_text->width = UNKNOWN_WIDTH;
-		box_insert_sibling(new_br, new_text);
+		new_text = textarea_insert_break(bw, text_box, char_offset);
+		if (!new_text) return;
 
 		/* place caret at start of new text box */
 		text_box = new_text;
@@ -304,18 +305,52 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		reflow = true;
 		break;
 
+	case 21: {	/* Ctrl + U */
+			struct box *next;
+
+			/* run back to start of line */
+			while (text_box->prev && text_box->prev->type == BOX_INLINE)
+				text_box = text_box->prev;
+
+			/* run forwards to end */
+			next = text_box->next;
+			while (next && next->type == BOX_INLINE) {
+				box_unlink_and_free(text_box);
+					text_box = next;
+				next = text_box->next;
+			}
+
+			/* can we take out this last inline and and the following BR? */
+			if (next && next->type == BOX_BR && next->next) {
+				box_unlink_and_free(text_box);
+
+				/* place caret at start of next box */
+				text_box = next->next;
+				box_unlink_and_free(next);
+			}
+			else
+				textbox_delete(bw, text_box, 0, text_box->length);
+
+			char_offset = 0;
+			reflow = true;
+		}
+		break;
+
 	case 22:	/* Ctrl + V */
-//		gui_paste_from_clipboard();
+		gui_paste_from_clipboard(bw->window,
+			box_x + inline_container->x + text_box->x + pixel_offset,
+			box_y + inline_container->y + text_box->y);
 		break;
 
 	case 24:	/* Ctrl + X */
 		if (gui_copy_to_clipboard(bw->sel)) {
-			/** \todo block delete */
+			selection_traverse(bw->sel, delete_handler, bw);
+			reflow = true;
 		}
 		break;
 
-	case 28:	/* Right cursor -> */
-		if ((unsigned int) char_offset != text_box->length) {
+	case KEY_RIGHT:
+		if ((unsigned int) char_offset < text_box->length) {
 			char_offset = utf8_next(text_box->text,
 					text_box->length, char_offset);
 		} else {
@@ -330,7 +365,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		}
 		break;
 
-	case 29:	/* Left cursor <- */
+	case KEY_LEFT:
 		if (char_offset != 0) {
 			char_offset = utf8_prev(text_box->text, char_offset);
 		} else {
@@ -345,7 +380,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		}
 		break;
 
-	case 30:	/* Up cursor */
+	case KEY_UP:
 		browser_window_textarea_click(bw, BROWSER_MOUSE_CLICK_1,
 				textarea,
 				box_x, box_y,
@@ -353,7 +388,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 				inline_container->y + text_box->y - 1);
 		return;
 
-	case 31:	/* Down cursor */
+	case KEY_DOWN:
 		browser_window_textarea_click(bw, BROWSER_MOUSE_CLICK_1,
 				textarea,
 				box_x, box_y,
@@ -361,6 +396,70 @@ void browser_window_textarea_callback(struct browser_window *bw,
 				inline_container->y + text_box->y +
 				text_box->height + 1);
 		return;
+
+	case KEY_LINE_START:
+		while (text_box->prev && text_box->prev->type == BOX_INLINE)
+			text_box = text_box->prev;
+		char_offset = 0;
+		break;
+
+	case KEY_LINE_END:
+		while (text_box->next && text_box->next->type == BOX_INLINE)
+			text_box = text_box->next;
+		char_offset = text_box->length;
+		break;
+
+	case KEY_TEXT_START:
+		assert(text_box->parent);
+
+		/* place caret at start of first box */
+		text_box = text_box->parent->children;
+		char_offset = 0;
+		break;
+
+	case KEY_TEXT_END:
+		assert(text_box->parent);
+
+		/* place caret at end of last box */
+		text_box = text_box->parent->last;
+		char_offset = text_box->length;
+		break;
+
+	case KEY_WORD_LEFT:
+//		while () {
+//		}
+		break;
+
+	case KEY_WORD_RIGHT:
+//		while () {
+//		}
+		break;
+
+	case KEY_PAGE_UP:
+//		while () {
+//		}
+		if (char_offset > text_box->length)
+			char_offset = text_box->length;
+		break;
+
+	case KEY_PAGE_DOWN:
+
+//		while () {
+//		}
+		if (char_offset > text_box->length)
+			char_offset = text_box->length;
+		break;
+
+	case KEY_DELETE_LINE_START:
+		textbox_delete(bw, text_box, 0, char_offset);
+		reflow = true;
+		break;
+
+	case KEY_DELETE_LINE_END:
+		textbox_delete(bw, text_box, char_offset,
+			text_box->length - char_offset);
+		reflow = true;
+		break;
 
 	default:
 		return;
@@ -384,18 +483,8 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		}
 	} */
 
-	if (reflow) {
-		/* reflow textarea preserving width and height */
-		width = textarea->width;
-		height = textarea->height;
-		if (!layout_inline_container(inline_container, width,
-				textarea, 0, 0,
-				bw->current_content))
-			warn_user("NoMemory", 0);
-		textarea->width = width;
-		textarea->height = height;
-		layout_calculate_descendant_bboxes(textarea);
-	}
+	if (reflow)
+		textarea_reflow(bw, textarea, inline_container);
 
 	if (text_box->length < char_offset) {
 		/* the text box has been split and the caret is in the
@@ -405,6 +494,14 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		assert(text_box);
 		assert(char_offset <= text_box->length);
 	}
+
+	nsfont_width(text_box->style, text_box->text,
+			char_offset, &pixel_offset);
+
+	textarea->gadget->caret_inline_container = inline_container;
+	textarea->gadget->caret_text_box = text_box;
+	textarea->gadget->caret_box_offset = char_offset;
+	textarea->gadget->caret_pixel_offset = pixel_offset;
 
 	/* scroll to place the caret in the centre of the visible region */
 	new_scroll_y = inline_container->y + text_box->y +
@@ -416,19 +513,14 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		new_scroll_y = 0;
 	box_y += textarea->scroll_y - new_scroll_y;
 
-	nsfont_width(text_box->style, text_box->text,
-			char_offset, &pixel_offset);
-
-	textarea->gadget->caret_inline_container = inline_container;
-	textarea->gadget->caret_text_box = text_box;
-	textarea->gadget->caret_box_offset = char_offset;
-	textarea->gadget->caret_pixel_offset = pixel_offset;
 	browser_window_place_caret(bw,
 			box_x + inline_container->x + text_box->x +
 			pixel_offset,
 			box_y + inline_container->y + text_box->y,
 			text_box->height,
-			browser_window_textarea_callback, textarea);
+			browser_window_textarea_callback,
+			browser_window_textarea_paste_text,
+			textarea);
 
 	if (new_scroll_y != textarea->scroll_y || reflow) {
 		textarea->scroll_y = new_scroll_y;
@@ -508,7 +600,9 @@ void browser_window_input_click(struct browser_window* bw,
 					text_box->x + pixel_offset,
 			box_y + input->children->y + text_box->y,
 			text_box->height,
-			browser_window_input_callback, input);
+			browser_window_input_callback,
+			browser_window_input_paste_text,
+			input);
 
 	if (dx)
 		browser_redraw_box(bw->current_content, input);
@@ -529,7 +623,7 @@ void browser_window_input_callback(struct browser_window *bw,
 	struct box *text_box = input->children->children;
 	unsigned int box_offset = input->gadget->caret_box_offset;
 	unsigned int form_offset = input->gadget->caret_form_offset;
-	int pixel_offset, dx;
+	int pixel_offset = input->gadget->caret_pixel_offset;
 	int box_x, box_y;
 	struct form* form = input->gadget->form;
 	bool changed = false;
@@ -575,20 +669,9 @@ void browser_window_input_callback(struct browser_window *bw,
 					'*' : (key == ' ') ? 160 : key,
 					utf8);
 
-		value = talloc_realloc(bw->current_content, text_box->text,
-				char, text_box->length + utf8_len + 1);
-		if (!value) {
-			warn_user("NoMemory", 0);
+		if (!textbox_insert(bw, text_box, box_offset, utf8, utf8_len))
 			return;
-		}
-		text_box->text = value;
 
-		memmove(text_box->text + box_offset + utf8_len,
-				text_box->text + box_offset,
-				text_box->length - box_offset);
-		memcpy(text_box->text + box_offset, utf8, utf8_len);
-		text_box->length += utf8_len;
-		text_box->text[text_box->length] = 0;
 		box_offset += utf8_len;
 
 		nsfont_width(text_box->style, text_box->text,
@@ -596,8 +679,7 @@ void browser_window_input_callback(struct browser_window *bw,
 		changed = true;
 
 	} else switch (key) {
-	case 8:
-	case 127: {	/* Delete to left */
+	case KEY_DELETE_LEFT: {
 			int prev_offset;
 
 			if (box_offset == 0)
@@ -620,11 +702,41 @@ void browser_window_input_callback(struct browser_window *bw,
 			/* Go to the previous valid UTF-8 character */
 			box_offset = utf8_prev(text_box->text, box_offset);
 
-			memmove(text_box->text + box_offset,
-					text_box->text + prev_offset,
-					text_box->length - prev_offset);
-			text_box->length -= prev_offset - box_offset;
-			text_box->text[text_box->length] = 0;
+			textbox_delete(bw, text_box, box_offset,
+					prev_offset - box_offset);
+
+			nsfont_width(text_box->style, text_box->text,
+					text_box->length, &text_box->width);
+
+			changed = true;
+		}
+		break;
+
+	case KEY_DELETE_RIGHT: {
+			unsigned next_offset;
+
+			if (box_offset >= text_box->length)
+				return;
+
+			/* Gadget */
+			/* Go to the next valid UTF-8 character */
+			next_offset = utf8_next(input->gadget->value,
+								input->gadget->length,
+								form_offset);
+
+			memmove(input->gadget->value + form_offset,
+					input->gadget->value + next_offset,
+					input->gadget->length - next_offset);
+			input->gadget->length -= next_offset - form_offset;
+			input->gadget->value[input->gadget->length] = 0;
+
+			/* Text box */
+			/* Go to the next valid UTF-8 character */
+			next_offset = utf8_next(text_box->text, text_box->length,
+								box_offset);
+
+			textbox_delete(bw, text_box, box_offset,
+					next_offset - box_offset);
 
 			nsfont_width(text_box->style, text_box->text,
 					text_box->length, &text_box->width);
@@ -647,7 +759,6 @@ void browser_window_input_callback(struct browser_window *bw,
 
 			input = next_input->box;
 			text_box = input->children->children;
-			box_coords(input, &box_x, &box_y);
 			form_offset = box_offset = 0;
 			to_textarea = next_input->type == GADGET_TEXTAREA;
 		}
@@ -673,7 +784,6 @@ void browser_window_input_callback(struct browser_window *bw,
 
 			input = prev_input->box;
 			text_box = input->children->children;
-			box_coords(input, &box_x, &box_y);
 			form_offset = box_offset = 0;
 			to_textarea = prev_input->type == GADGET_TEXTAREA;
 		}
@@ -693,10 +803,12 @@ void browser_window_input_callback(struct browser_window *bw,
 		break;
 
 	case 22:	/* Ctrl + V */
-//		gui_paste_from_clipboard();
+		gui_paste_from_clipboard(bw->window,
+			box_x + input->children->x + text_box->x + pixel_offset,
+			box_y + input->children->y + text_box->y);
 		break;
 
-	case 28:	/* Right cursor -> */
+	case KEY_RIGHT:
 		/* Text box */
 		/* Go to the next valid UTF-8 character */
 		box_offset = utf8_next(text_box->text, text_box->length,
@@ -707,7 +819,7 @@ void browser_window_input_callback(struct browser_window *bw,
 					input->gadget->length, form_offset);
 		break;
 
-	case 29:	/* Left cursor -> */
+	case KEY_LEFT:
 		/* Text box */
 		/* Go to the previous valid UTF-8 character */
 		box_offset = utf8_prev(text_box->text, box_offset);
@@ -716,11 +828,11 @@ void browser_window_input_callback(struct browser_window *bw,
 		form_offset = utf8_prev(input->gadget->value, form_offset);
 		break;
 
-	case 128:	/* Ctrl + Left */
+	case KEY_LINE_START:
 		box_offset = form_offset = 0;
 		break;
 
-	case 129:	/* Ctrl + Right */
+	case KEY_LINE_END:
 		box_offset = text_box->length;
 		form_offset = input->gadget->length;
 		break;
@@ -729,39 +841,10 @@ void browser_window_input_callback(struct browser_window *bw,
 		return;
 	}
 
-	nsfont_width(text_box->style, text_box->text, box_offset,
-			&pixel_offset);
-	dx = text_box->x;
-	text_box->x = 0;
-	if (input->width < text_box->width &&
-			input->width / 2 < pixel_offset) {
-		text_box->x = input->width / 2 - pixel_offset;
-		if (text_box->x < input->width - text_box->width)
-			text_box->x = input->width - text_box->width;
-	}
-	dx -= text_box->x;
-	input->gadget->caret_pixel_offset = pixel_offset;
-
-	if (to_textarea) {
-		/* moving to textarea so need to set these up */
-		input->gadget->caret_inline_container = input->children;
-		input->gadget->caret_text_box = text_box;
-	}
-
-	input->gadget->caret_box_offset = box_offset;
 	input->gadget->caret_form_offset = form_offset;
 
-	browser_window_place_caret(bw,
-			box_x + input->children->x +
-					text_box->x + pixel_offset,
-			box_y + input->children->y + text_box->y,
-			text_box->height,
-			/* use the appropriate callback */
-			to_textarea ? browser_window_textarea_callback
-				    : browser_window_input_callback, input);
-
-	if (dx || changed)
-		browser_redraw_box(bw->current_content, input);
+	input_update_display(bw, input, form_offset, box_offset,
+		to_textarea, changed);
 }
 
 
@@ -771,18 +854,20 @@ void browser_window_input_callback(struct browser_window *bw,
  * \param bw  The browser window in which to place the caret
  * \param x   X coordinate of the caret
  * \param y   Y coordinate
- * \param height  Height of caret
- * \param callback  Callback function for keypresses
+ * \param height    Height of caret
+ * \param caret_cb  Callback function for keypresses
+ * \param paste_cb  Callback function for pasting text
  * \param p  Callback private data pointer, passed to callback function
  */
 void browser_window_place_caret(struct browser_window *bw,
 		int x, int y, int height,
-		void (*callback)(struct browser_window *bw,
-		wchar_t key, void *p),
+		browser_caret_callback caret_cb,
+		browser_paste_callback paste_cb,
 		void *p)
 {
 	gui_window_place_caret(bw->window, x, y, height);
-	bw->caret_callback = callback;
+	bw->caret_callback = caret_cb;
+	bw->paste_callback = paste_cb;
 	bw->caret_p = p;
 }
 
@@ -828,7 +913,8 @@ bool browser_window_key_press(struct browser_window *bw, wchar_t key)
 				selection_clear(bw->sel, true);
 				return true;
 			}
-			break;
+			/* if there's no selection, leave Escape for the caller */
+			return false;
 	}
 
 	/* pass on to the appropriate field */
@@ -837,3 +923,424 @@ bool browser_window_key_press(struct browser_window *bw, wchar_t key)
 	bw->caret_callback(bw, key, bw->caret_p);
 	return true;
 }
+
+
+/**
+ * Paste a block of text into a browser window at the caret position.
+ *
+ * \param  bw        browser window
+ * \param  utf8      pointer to block of text
+ * \param  utf8_len  length (bytes) of text block
+ * \param  last      true iff this is the last chunk (update screen too)
+ * \return true iff successful
+ */
+
+bool browser_window_paste_text(struct browser_window *bw, const char *utf8,
+		unsigned utf8_len, bool last)
+{
+	if (!bw->paste_callback)
+		return false;
+	return bw->paste_callback(bw, utf8, utf8_len, last, bw->caret_p);
+}
+
+
+/**
+ * Paste a block of text into a textarea at the
+ * current caret position.
+ *
+ * \param  bw        browser window
+ * \param  utf8      pointer to block of text
+ * \param  utf8_len  length (bytes) of text block
+ * \param  last      true iff this is the last chunk (update screen too)
+ * \param  handle    pointer to textarea
+ * \return true iff successful
+ */
+
+bool browser_window_textarea_paste_text(struct browser_window *bw,
+		const char *utf8, unsigned utf8_len, bool last, void *handle)
+{
+	struct box *textarea = handle;
+	struct box *inline_container =
+			textarea->gadget->caret_inline_container;
+	struct box *text_box = textarea->gadget->caret_text_box;
+	size_t char_offset = textarea->gadget->caret_box_offset;
+	int pixel_offset = textarea->gadget->caret_pixel_offset;
+	const char *ep = utf8 + utf8_len;
+	const char *p = utf8;
+	bool success = true;
+	bool update = last;
+
+	while (p < ep) {
+		struct box *new_text;
+		unsigned utf8_len;
+
+		while (p < ep) {
+			if (*p == '\n' || *p == '\r') break;
+			p++;
+		}
+
+		utf8_len = p - utf8;
+		if (!textbox_insert(bw, text_box, char_offset, utf8, utf8_len))
+			return false;
+
+		char_offset += utf8_len;
+
+		new_text = textarea_insert_break(bw, text_box, char_offset);
+		if (!new_text) {
+			/* we still need to update the screen */
+			update = true;
+			success = false;
+			break;
+		}
+
+		/* place caret at start of new text box */
+		text_box = new_text;
+		char_offset = 0;
+
+		/* handle CR/LF and LF/CR terminations */
+		if ((*p == '\n' && p[1] == '\r') || (*p == '\r' && p[1] == '\n'))
+			 p++;
+		utf8 = ++p;
+	}
+
+	if (update) {
+		int box_x, box_y;
+
+		/* reflow textarea preserving width and height */
+		textarea_reflow(bw, textarea, inline_container);
+
+		nsfont_width(text_box->style, text_box->text,
+				char_offset, &pixel_offset);
+
+		box_x -= textarea->scroll_x;
+		box_y -= textarea->scroll_y;
+
+		box_coords(textarea, &box_x, &box_y);
+
+		browser_window_place_caret(bw,
+				box_x + inline_container->x + text_box->x +
+				pixel_offset,
+				box_y + inline_container->y + text_box->y,
+				text_box->height,
+				browser_window_textarea_callback,
+				browser_window_textarea_paste_text,
+				textarea);
+
+		textarea->gadget->caret_pixel_offset = pixel_offset;
+
+		browser_redraw_box(bw->current_content, textarea);
+	}
+
+//	textarea->gadget->caret_inline_container = inline_container;
+	textarea->gadget->caret_text_box = text_box;
+	textarea->gadget->caret_box_offset = char_offset;
+
+	return success;
+}
+
+
+/**
+ * Paste a block of text into an input field at the caret position.
+ *
+ * \param  bw        browser window
+ * \param  utf8      pointer to block of text
+ * \param  utf8_len  length (bytes) of text block
+ * \param  last      true iff this is the last chunk (update screen too)
+ * \param  p         pointer to input box
+ * \return true iff successful
+ */
+
+bool browser_window_input_paste_text(struct browser_window *bw,
+		const char *utf8, unsigned utf8_len, bool last, void *handle)
+{
+	struct box *input = handle;
+	struct box *text_box = input->children->children;
+	unsigned int box_offset = input->gadget->caret_box_offset;
+	unsigned int form_offset = input->gadget->caret_form_offset;
+	unsigned int nchars = utf8_length(input->gadget->value);
+	const char *ep = utf8 + utf8_len;
+	const char *p = utf8;
+	bool success = true;
+	bool update = last;
+
+	/* keep adding chars until we've run out or would exceed
+		the maximum length of the field (in which we silently
+		ignore all others)
+	*/
+	while (p < ep && nchars < input->gadget->maxlength) {
+		char buf[80 + 6];
+		int nbytes = 0;
+		unsigned utf8_len;
+		char *value;
+
+		/* how many more chars can we insert in one go? */
+		while (p < ep && nbytes < 80 &&
+				nchars < input->gadget->maxlength &&
+				*p != '\n' && *p != '\r') {
+			unsigned len = utf8_next(p, ep - p, 0);
+
+			if (input->gadget->type == GADGET_PASSWORD)
+				buf[nbytes++] = '*';
+			else if (*p == ' ')
+				nbytes += utf8_from_ucs4(160, &buf[nbytes]);
+			else {
+				memcpy(&buf[nbytes], p, len);
+				nbytes += len;
+			}
+
+			p += len;
+			nchars++;
+		}
+
+		utf8_len = p - utf8;
+
+		value = realloc(input->gadget->value,
+				input->gadget->length + utf8_len + 1);
+		if (!value) {
+			/* we still need to update the screen */
+			warn_user("NoMemory", 0);
+			update = true;
+			success = false;
+			break;
+		}
+		input->gadget->value = value;
+
+		memmove(input->gadget->value + form_offset + utf8_len,
+				input->gadget->value + form_offset,
+				input->gadget->length - form_offset);
+		memcpy(input->gadget->value + form_offset, utf8, utf8_len);
+		input->gadget->length += utf8_len;
+		input->gadget->value[input->gadget->length] = 0;
+		form_offset += utf8_len;
+
+		if (!textbox_insert(bw, text_box, box_offset, buf, nbytes)) {
+			/* we still need to update the screen */
+			update = true;
+			success = false;
+			break;
+		}
+		box_offset += nbytes;
+
+		/* handle CR/LF and LF/CR terminations */
+		if (*p == '\n') {
+			p++;
+			if (*p == '\r') p++;
+		}
+		else if (*p == '\r') {
+			p++;
+			if (*p == '\n') p++;
+		}
+		utf8 = p;
+	}
+
+	if (update) {
+
+		nsfont_width(text_box->style, text_box->text, text_box->length,
+			&text_box->width);
+
+		input_update_display(bw, input, form_offset, box_offset, false, true);
+	}
+
+	return success;
+}
+
+
+/**
+ * Update display to reflect modified input field
+ *
+ * \param  bw           browser window
+ * \param  input        input field
+ * \param  form_offset
+ * \param  box_offset   offset of caret within text box
+ * \param  to_textarea  caret is to be moved to a textarea
+ * \param  redraw       force redraw even if field hasn't scrolled
+ */
+
+void input_update_display(struct browser_window *bw, struct box *input,
+		unsigned form_offset, unsigned box_offset, bool to_textarea,
+		bool redraw)
+{
+	struct box *text_box = input->children->children;
+	unsigned pixel_offset;
+	int box_x, box_y;
+	int dx;
+
+	box_coords(input, &box_x, &box_y);
+
+	nsfont_width(text_box->style, text_box->text, box_offset,
+			&pixel_offset);
+	dx = text_box->x;
+	text_box->x = 0;
+	if (input->width < text_box->width &&
+			input->width / 2 < pixel_offset) {
+		text_box->x = input->width / 2 - pixel_offset;
+		if (text_box->x < input->width - text_box->width)
+			text_box->x = input->width - text_box->width;
+	}
+	dx -= text_box->x;
+	input->gadget->caret_pixel_offset = pixel_offset;
+
+	if (to_textarea) {
+		/* moving to textarea so need to set these up */
+		input->gadget->caret_inline_container = input->children;
+		input->gadget->caret_text_box = text_box;
+	}
+
+	input->gadget->caret_box_offset = box_offset;
+	input->gadget->caret_form_offset = form_offset;
+
+	browser_window_place_caret(bw,
+			box_x + input->children->x +
+					text_box->x + pixel_offset,
+			box_y + input->children->y + text_box->y,
+			text_box->height,
+			/* use the appropriate callback */
+			to_textarea ? browser_window_textarea_callback
+					: browser_window_input_callback,
+			to_textarea ? browser_window_textarea_paste_text
+					: browser_window_input_paste_text,
+			input);
+
+	if (dx || redraw)
+		browser_redraw_box(bw->current_content, input);
+}
+
+
+/**
+ * Insert a number of chars into a text box
+ *
+ * \param  bw           browser window
+ * \param  text_box     text box
+ * \param  char_offset  offsets (bytes) at which to insert text
+ * \param  utf8         UTF-8 text to insert
+ * \param  utf8_len     length (bytes) of UTF-8 text to insert
+ * \return true iff successful
+ */
+
+bool textbox_insert(struct browser_window *bw, struct box *text_box,
+		unsigned char_offset, const char *utf8, unsigned utf8_len)
+{
+	char *text = talloc_realloc(bw->current_content, text_box->text,
+			char, text_box->length + utf8_len + 1);
+	if (!text) {
+		warn_user("NoMemory", 0);
+		return false;
+	}
+	text_box->text = text;
+	memmove(text_box->text + char_offset + utf8_len,
+			text_box->text + char_offset,
+			text_box->length - char_offset);
+	memcpy(text_box->text + char_offset, utf8, utf8_len);
+	text_box->length += utf8_len;
+
+	/* nothing should assume that the text is terminated, but just in case */
+	text_box->text[text_box->length] = 0;
+
+	text_box->width = UNKNOWN_WIDTH;
+
+	return true;
+}
+
+
+/**
+ * Delete a number of chars from a text box
+ *
+ * \param  bw           browser window
+ * \param  text_box     text box
+ * \param  char_offset  offset within text box (bytes) of first char to delete
+ * \param  utf8_len     length (bytes) of chars to be deleted
+ */
+
+bool textbox_delete(struct browser_window *bw, struct box *text_box,
+		unsigned char_offset, unsigned utf8_len)
+{
+	unsigned prev_offset = char_offset + utf8_len;
+	if (prev_offset <= text_box->length) {
+		memmove(text_box->text + char_offset,
+				text_box->text + prev_offset,
+				text_box->length - prev_offset);
+		text_box->length -= (prev_offset - char_offset);
+
+		/* nothing should assume that the text is terminated, but just in case */
+		text_box->text[text_box->length] = 0;
+
+		text_box->width = UNKNOWN_WIDTH;
+		return true;
+	}
+	return false;
+}
+
+
+bool delete_handler(struct box *b, int offset, size_t length, void *handle)
+{
+	struct browser_window *bw = handle;
+	return textbox_delete(bw, b, offset, length);
+}
+
+
+/**
+ * Break a text box into two
+ *
+ * \param  bw           browser window
+ * \param  text_box     text box to be split
+ * \param  char_offset  offset (in bytes) at which text box is to be split
+ */
+
+struct box *textarea_insert_break(struct browser_window *bw, struct box *text_box,
+		size_t char_offset)
+{
+	struct box *new_br, *new_text;
+	char *text = talloc_array(bw->current_content, char,
+			text_box->length + 1);
+	if (!text) {
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+
+	new_br = box_create(text_box->style, 0, text_box->title, 0,
+			bw->current_content);
+	new_text = talloc(bw->current_content, struct box);
+	if (!new_text) {
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+
+	new_br->type = BOX_BR;
+	box_insert_sibling(text_box, new_br);
+
+	memcpy(new_text, text_box, sizeof (struct box));
+	new_text->clone = 1;
+	new_text->text = text;
+	memcpy(new_text->text, text_box->text + char_offset,
+			text_box->length - char_offset);
+	new_text->length = text_box->length - char_offset;
+	text_box->length = char_offset;
+	text_box->width = new_text->width = UNKNOWN_WIDTH;
+	box_insert_sibling(new_br, new_text);
+
+	return new_text;
+}
+
+
+/**
+ * Reflow textarea preserving width and height
+ *
+ * \param  bw                browser window
+ * \param  textarea          text area box
+ * \param  inline_container  container holding text box
+ */
+
+void textarea_reflow(struct browser_window *bw, struct box *textarea,
+		struct box *inline_container)
+{
+	int width = textarea->width;
+	int height = textarea->height;
+	if (!layout_inline_container(inline_container, width,
+			textarea, 0, 0,
+			bw->current_content))
+		warn_user("NoMemory", 0);
+	textarea->width = width;
+	textarea->height = height;
+	layout_calculate_descendant_bboxes(textarea);
+}
+

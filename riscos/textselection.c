@@ -259,6 +259,53 @@ bool gui_copy_to_clipboard(struct selection *s)
 
 
 /**
+ * Request to paste the clipboard contents into a textarea/input field
+ * at a given position. Note that the actual operation may take place
+ * straight away (local clipboard) or in a number of chunks at some
+ * later time (clipboard owned by another app).
+ *
+ * \param  g  gui window
+ * \param  x  x ordinate at which to paste text
+ * \param  y  y ordinate at which to paste text
+ */
+
+void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
+{
+	if (owns_clipboard) {
+		if (clip_length > 0)
+			browser_window_paste_text(g->bw, clipboard, clip_length, true);
+	}
+	else {
+		wimp_full_message_data_request msg;
+		os_error *error;
+		os_coord pos;
+
+		if (!window_screen_pos(g, x, y, &pos))
+			return;
+
+		msg.size = sizeof(msg);
+		msg.your_ref = 0;
+		msg.action = message_DATA_REQUEST;
+		msg.w = g->window;
+		msg.i = -1;
+		msg.pos.x = pos.x;
+		msg.pos.y = pos.y;
+		msg.flags = wimp_DATA_REQUEST_CLIPBOARD;
+		msg.file_types[0] = osfile_TYPE_TEXT;
+		msg.file_types[1] = ~0;
+
+		error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)&msg,
+				wimp_BROADCAST);
+		if (error) {
+			LOG(("xwimp_send_message: 0x%x : %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
+}
+
+
+/**
  * Discard the current contents of the clipboard, if any, releasing the
  * memory it uses.
  */
@@ -306,8 +353,6 @@ void ro_gui_selection_claim_entity(wimp_full_message_claim_entity *claim)
 
 void ro_gui_selection_data_request(wimp_full_message_data_request *req)
 {
-	LOG(("%x owns %d size %d", req->flags, owns_clipboard, req->size));
-
 	if (owns_clipboard && clip_length > 0 &&
 		(req->flags & wimp_DATA_REQUEST_CLIPBOARD)) {
 		wimp_full_message_data_xfer message;
