@@ -24,7 +24,7 @@
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/layout.h"
-//#define NDEBUG
+#define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/talloc.h"
 #include "netsurf/utils/utf8.h"
