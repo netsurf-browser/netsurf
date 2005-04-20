@@ -10,7 +10,6 @@
 
 #include <stdbool.h>
 #include "oslib/wimp.h"
-#include "netsurf/desktop/gui.h"
 
 extern wimp_menu *iconbar_menu, *browser_menu, *hotlist_menu,
 	*global_history_menu, *image_quality_menu,
@@ -82,7 +81,6 @@ typedef enum {
 	BROWSER_FIND_TEXT,
 	BROWSER_IMAGES_FOREGROUND,
 	BROWSER_IMAGES_BACKGROUND,
-	BROWSER_BLEND_TEXT,
 	BROWSER_BUFFER_ANIMS,
 	BROWSER_BUFFER_ALL,
 	BROWSER_SAVE_VIEW,

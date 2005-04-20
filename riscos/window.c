@@ -5,8 +5,8 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
- * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
+ * Copyright 2005 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -2200,7 +2200,6 @@ void ro_gui_window_clone_options(struct browser_window *new_bw,
 	if (!old_gui) {
 		new_gui->option.scale = ((float)option_scale) / 100;
 		new_gui->option.background_images = option_background_images;
-		new_gui->option.background_blending = option_background_blending;
 		new_gui->option.buffer_animations = option_buffer_animations;
 		new_gui->option.buffer_everything = option_buffer_everything;
 	} else {
@@ -2248,7 +2247,6 @@ void ro_gui_window_default_options(struct browser_window *bw) {
 	/*	Save the basic options
 	*/
 	option_scale = gui->option.scale * 100;
-	option_background_blending = gui->option.background_blending;
 	option_buffer_animations = gui->option.buffer_animations;
 	option_buffer_everything = gui->option.buffer_everything;
 

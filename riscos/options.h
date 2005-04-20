@@ -44,7 +44,6 @@ extern int option_window_screen_height;
 extern bool option_window_stagger;
 extern bool option_window_size_clone;
 extern bool option_background_images;
-extern bool option_background_blending;
 extern bool option_buffer_animations;
 extern bool option_buffer_everything;
 extern char *option_homepage_url;
@@ -89,7 +88,6 @@ int option_window_screen_height = 0; \
 bool option_window_stagger = true; \
 bool option_window_size_clone = true; \
 bool option_background_images = true; \
-bool option_background_blending = true; \
 bool option_buffer_animations = true; \
 bool option_buffer_everything = false; \
 char *option_homepage_url = 0; \
@@ -131,7 +129,6 @@ bool option_url_suggestion = true;
 { "window_stagger",         OPTION_BOOL,    &option_window_stagger }, \
 { "window_size_clone",      OPTION_BOOL,    &option_window_size_clone }, \
 { "background_images",      OPTION_BOOL,    &option_background_images }, \
-{ "background_blending",    OPTION_BOOL,    &option_background_blending }, \
 { "buffer_animations",      OPTION_BOOL,    &option_buffer_animations }, \
 { "buffer_everything",      OPTION_BOOL,    &option_buffer_everything }, \
 { "homepage_url",           OPTION_STRING,  &option_homepage_url }, \

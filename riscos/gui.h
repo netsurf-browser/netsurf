@@ -75,7 +75,6 @@ struct gui_window {
 	struct {
 		float scale;		/**< Scale, 1.0 = 100%. */
 		bool background_images;	/**< Display background images. */
-		bool background_blending;	/**< Perform background blending on text. */
 		bool buffer_animations;	/**< Use screen buffering for animations. */
 		bool buffer_everything;	/**< Use screen buffering for everything. */
 	} option;

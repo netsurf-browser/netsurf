@@ -191,7 +191,6 @@ void ro_gui_menu_init(void) {
 			{ "View.Toolbars.ToolStatus_", TOOLBAR_STATUS_BAR, 0 },
 			{ "View.Toolbars.EditToolbar", TOOLBAR_EDIT, 0 },
 			{ "View.Render_", NO_ACTION, 0 },
-			{ "View.Render.RenderText_", BROWSER_BLEND_TEXT, 0 },
 			{ "View.Render.RenderAnims", BROWSER_BUFFER_ANIMS, 0 },
 			{ "View.Render.RenderAll", BROWSER_BUFFER_ALL, 0 },
 			{ "View.OptDefault", BROWSER_SAVE_VIEW, 0 },
@@ -1428,11 +1427,6 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			g->option.background_images = !g->option.background_images;
 			gui_window_redraw_window(g);
 			return true;
-		case BROWSER_BLEND_TEXT:
-			if (!g)
-				return false;
-			g->option.background_blending = !g->option.background_blending;
-			break;
 		case BROWSER_BUFFER_ANIMS:
 			if (!g)
 				return false;
@@ -1483,13 +1477,13 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		/* tree actions */
 		case TREE_NEW_FOLDER:
 			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistant(g->window, dialog_folder,
-					windows_at_pointer);
+			ro_gui_dialog_open_persistant((wimp_w)tree->handle,
+					dialog_folder, windows_at_pointer);
 			return true;
 		case TREE_NEW_LINK:
 			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistant(g->window, dialog_entry,
-					windows_at_pointer);
+			ro_gui_dialog_open_persistant((wimp_w)tree->handle,
+					dialog_entry, windows_at_pointer);
 			return true;
 		case TREE_EXPAND_ALL:
 		case TREE_EXPAND_FOLDERS:
@@ -1798,11 +1792,6 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action, bool windows) 
 			if (g)
 				ro_gui_menu_set_entry_ticked(current_menu, action,
 					g->option.background_images);
-			break;
-		case BROWSER_BLEND_TEXT:
-			if (g)
-				ro_gui_menu_set_entry_ticked(current_menu, action,
-					g->option.background_blending);
 			break;
 		case BROWSER_BUFFER_ANIMS:
 			if (g) {
