@@ -617,7 +617,7 @@ int parse_length(struct css_length * const length,
 	float value;
 	int num_length;
 	if (v->type == CSS_NODE_NUMBER && atof(v->data) == 0) {
-		length->unit = CSS_UNIT_EM;
+		length->unit = CSS_UNIT_PX;
 		length->value = 0;
 		return 0;
 	}
@@ -1096,7 +1096,8 @@ bool css_background_position_parse(const struct css_node **node,
 
 	if (!(w && ((w->type == CSS_NODE_IDENT && bg2) ||
 			w->type == CSS_NODE_PERCENTAGE ||
-			w->type == CSS_NODE_DIMENSION))) {
+			w->type == CSS_NODE_DIMENSION ||
+			w->type == CSS_NODE_NUMBER))) {
 		/* only one value specified */
 		if (v->type == CSS_NODE_IDENT) {
 			if (v->data_length == 7 &&
@@ -1118,7 +1119,8 @@ bool css_background_position_parse(const struct css_node **node,
 			horz->value.percent = atof(v->data);
 			vert->value.percent = 50.0;
 		}
-		else if (v->type == CSS_NODE_DIMENSION) {
+		else if ((v->type == CSS_NODE_DIMENSION) ||
+				(v->type == CSS_NODE_NUMBER)) {
 			if (parse_length(&horz->value.
 					length, v, false) == 0) {
 				horz->pos = CSS_BACKGROUND_POSITION_LENGTH;
@@ -1177,7 +1179,8 @@ bool css_background_position_parse(const struct css_node **node,
 	} else if (v->type == CSS_NODE_PERCENTAGE) {
 		horz->pos = CSS_BACKGROUND_POSITION_PERCENT;
 		horz->value.percent = atof(v->data);
-	} else if (v->type == CSS_NODE_DIMENSION) {
+	} else if ((v->type == CSS_NODE_DIMENSION) ||
+			(v->type == CSS_NODE_NUMBER)) {
 		if (parse_length(&horz->value.length,
 				v, false) == 0)
 			horz->pos = CSS_BACKGROUND_POSITION_LENGTH;
@@ -1189,7 +1192,8 @@ bool css_background_position_parse(const struct css_node **node,
 	} else if (w->type == CSS_NODE_PERCENTAGE) {
 		vert->pos = CSS_BACKGROUND_POSITION_PERCENT;
 		vert->value.percent = atof(w->data);
-	} else if (w->type == CSS_NODE_DIMENSION) {
+	} else if ((w->type == CSS_NODE_DIMENSION) ||
+			(w->type == CSS_NODE_NUMBER)) {
 		if (parse_length(&vert->value.length,
 				w, false) == 0)
 			vert->pos = CSS_BACKGROUND_POSITION_LENGTH;
@@ -2057,6 +2061,7 @@ void parse_font_size(struct css_style * const s, const struct css_node * const v
 			break;
 
 		case CSS_NODE_DIMENSION:
+		case CSS_NODE_NUMBER:
 			if (parse_length(&s->font_size.value.length, v, true) == 0)
 				s->font_size.size = CSS_FONT_SIZE_LENGTH;
 			break;
