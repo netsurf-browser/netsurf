@@ -19,6 +19,15 @@
 #ifndef NOF_ELEMENTS
 #define NOF_ELEMENTS(array) (sizeof(array)/sizeof(*(array)))
 #endif
+#ifndef ABS
+#define ABS(x) (((x)>0)?(x):(-(x)))
+#endif
+#ifndef min
+#define min(x,y) (((x)<(y))?(x):(y))
+#endif
+#ifndef max
+#define max(x,y) (((x)>(y))?(x):(y))
+#endif
 
 char * strip(char * const s);
 int whitespace(const char * str);

@@ -7,6 +7,7 @@
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  * Copyright 2005 Richard Wilson <info@tinct.net>
+ * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
  */
 
 /** \file
@@ -14,6 +15,7 @@
  */
 
 #include <assert.h>
+#include <ctype.h>
 #include <math.h>
 #include <stdbool.h>
 #include <time.h>
@@ -48,6 +50,7 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/talloc.h"
 #include "netsurf/utils/url.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/messages.h"
 
@@ -66,10 +69,12 @@ static float scale_snap_to[] = {0.10, 0.125, 0.25, 0.333, 0.5, 0.75,
 				1.5, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0, 16.0};
 #define SCALE_SNAP_TO_SIZE (sizeof scale_snap_to) / (sizeof(float))
 
+static void ro_gui_window_launch_url(struct gui_window *g, const char *url);
 static void ro_gui_window_clone_options(struct browser_window *new_bw,
 		struct browser_window *old_bw);
 static browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons);
-static bool ro_gui_window_import_text(struct gui_window *g, const char *filename);
+static bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
+		bool toolbar);
 
 
 
@@ -355,7 +360,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 
 	if (g->option.scale != 1.0) {
 	  	scale_disp = g->option.scale * 100;
-	  	if ((float)scale_disp != g->option.scale * 100)
+	  	if (ABS((float)scale_disp - g->option.scale * 100) >= 0.05)
 			snprintf(g->title, sizeof g->title, "%s (%.1f%%)", title,
 					g->option.scale * 100);
 		else
@@ -927,6 +932,29 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 		warn_user("WimpError", error->errmess);
 	}
 	ro_gui_url_complete_start(g);
+}
+
+
+/**
+ * Launch a new url in the given window.
+ *
+ * \param  g    gui_window to update
+ * \param  url  url to be launched
+ */
+
+void ro_gui_window_launch_url(struct gui_window *g, const char *url)
+{
+	url_func_result res;
+	char *url_norm;
+
+	ro_gui_url_complete_close(NULL, 0);
+	res = url_normalize(url, &url_norm);
+	if (res == URL_FUNC_OK) {
+		gui_window_set_url(g, url_norm);
+		browser_window_go(g->bw, url_norm, 0);
+		global_history_add_recent(url_norm);
+		free(url_norm);
+	}
 }
 
 
@@ -1547,11 +1575,9 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 	struct content *content = g->bw->current_content;
 	wimp_window_state state;
 	int y, t_alphabet;
-	char *url;
 	char *toolbar_url;
 	os_error *error;
 	wimp_pointer pointer;
-	url_func_result res;
 	float old_scale;
 	static int *ucstable = NULL;
 	static int alphabet = 0;
@@ -1631,6 +1657,11 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			/* cursor movement keys */
 			case wimp_KEY_CONTROL | wimp_KEY_LEFT:  c = KEY_LINE_START; break;
 			case wimp_KEY_END:
+				if (os_version >= RISCOS5)
+					c = KEY_LINE_END;
+				else
+					c = KEY_DELETE_RIGHT;
+				break;
 			case wimp_KEY_CONTROL | wimp_KEY_RIGHT: c = KEY_LINE_END;   break;
 			case wimp_KEY_CONTROL | wimp_KEY_UP:    c = KEY_TEXT_START; break;
 			case wimp_KEY_CONTROL | wimp_KEY_DOWN:  c = KEY_TEXT_END;   break;
@@ -1644,7 +1675,15 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			case wimp_KEY_DOWN:  c = KEY_DOWN; break;
 
 			/* editing */
-			case wimp_KEY_CONTROL | wimp_KEY_END: c = 136; break;
+			case wimp_KEY_CONTROL | wimp_KEY_END:
+				c = KEY_DELETE_LINE_END;
+				break;
+			case wimp_KEY_DELETE:
+				if (ro_gui_ctrl_pressed())
+					c = KEY_DELETE_LINE_START;
+				else if (os_version < RISCOS5)
+					c = KEY_DELETE_LEFT;
+				break;
 		}
 
 		if (c < 256) {
@@ -1827,16 +1866,9 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		case wimp_KEY_RETURN:
 			if (!toolbar)
 				break;
-			ro_gui_url_complete_close(NULL, 0);
 			toolbar_url = ro_gui_get_icon_string(g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_URL);
-			res = url_normalize(toolbar_url, &url);
-			if (res == URL_FUNC_OK) {
-				gui_window_set_url(g, url);
-				browser_window_go(g->bw, url, 0);
-				global_history_add_recent(url);
-				free(url);
-			}
+			ro_gui_window_launch_url(g, toolbar_url);
 			return true;
 
 		case wimp_KEY_ESCAPE:
@@ -2130,15 +2162,17 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 				x + file_box->width,
 				y + file_box->height);
 	}
-	else {
+	else if (message->data.data_xfer.file_type == osfile_TYPE_TEXT) {
 
 		const char *filename = message->data.data_xfer.file_name;
 
 		browser_window_mouse_click(g->bw, BROWSER_MOUSE_CLICK_1, x, y);
 
-		if (!ro_gui_window_import_text(g, filename))
+		if (!ro_gui_window_import_text(g, filename, false))
 			return true;  /* it was for us, it just didn't work! */
 	}
+	else
+		return false;	/* only text files allowed in textareas/input fields */
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
@@ -2151,6 +2185,36 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 	}
 
 	return true;
+}
+
+
+/**
+ * Handle Message_DataLoad (file dragged in) for a toolbar
+ *
+ * \param  g        window
+ * \param  message  Message_DataLoad block
+ * \return true if the load was processed
+ */
+
+bool ro_gui_toolbar_dataload(struct gui_window *g, wimp_message *message)
+{
+	if (message->data.data_xfer.file_type == osfile_TYPE_TEXT &&
+		ro_gui_window_import_text(g, message->data.data_xfer.file_name, true)) {
+
+		os_error *error;
+
+		/* send DataLoadAck */
+		message->action = message_DATA_LOAD_ACK;
+		message->your_ref = message->my_ref;
+		error = xwimp_send_message(wimp_USER_MESSAGE, message, message->sender);
+		if (error) {
+			LOG(("xwimp_send_message: 0x%x: %s\n",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+		return true;
+	}
+	return false;
 }
 
 
@@ -2550,14 +2614,16 @@ void ro_gui_window_set_scale(struct gui_window *g, float scale)
 
 
 /**
- * Import text file into textarea at caret position
+ * Import text file into window or its toolbar
  *
  * \param  g         gui window containing textarea
  * \param  filename  pathname of file to be imported
+ * \param  toolbar   true iff imported to toolbar rather than main window
  * \return true iff successful
  */
 
-bool ro_gui_window_import_text(struct gui_window *g, const char *filename)
+bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
+		bool toolbar)
 {
 	fileswitch_object_type obj_type;
 	os_error *error;
@@ -2573,7 +2639,7 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename)
 		return true;  /* was for us, but it didn't work! */
 	}
 
-	buf = malloc(size);
+	buf = malloc(size + 1);  /* allow room for NUL terminator */
 	if (!buf) {
 		warn_user("NoMemory", NULL);
 		return true;
@@ -2589,7 +2655,26 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename)
 		return true;
 	}
 
-	browser_window_paste_text(g->bw, buf, size, true); 
+	if (toolbar) {
+		const char *ep = buf + size;
+		const char *sp;
+		char *p = buf;
+
+		/* skip leading whitespace */
+		while (p < ep && isspace(*p)) p++;
+
+		sp = p;
+		while (p < ep) {
+			if (*p == '\n' || *p == '\r') break;
+			p += utf8_next(p, ep - p, 0);
+		}
+		*p = '\0';
+
+		if (p > sp)
+			ro_gui_window_launch_url(g, sp);
+	}
+	else
+		browser_window_paste_text(g->bw, buf, size, true);
 
 	free(buf);
 	return true;

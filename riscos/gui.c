@@ -105,6 +105,8 @@
 #endif
 
 
+int os_version = 0;
+
 const char *__dynamic_da_name = "NetSurf";	/**< For UnixLib. */
 int __dynamic_da_max_size = 128 * 1024 * 1024;	/**< For UnixLib. */
 int __feature_imagefs_is_file = 1;		/**< For UnixLib. */
@@ -229,6 +231,10 @@ void gui_init(int argc, char** argv)
 	char *nsdir_temp;
 
 	xhourglass_start(1);
+
+	/* read OS version for code that adapts to conform to the OS (remember
+		that it's preferable to check for specific features being present) */
+	xos_byte(osbyte_IN_KEY, 0, 0xff, &os_version, NULL);
 
 	atexit(ro_gui_cleanup);
 	signal(SIGABRT, ro_gui_signal);
@@ -1322,8 +1328,15 @@ void ro_msg_dataload(wimp_message *message)
 	bool tree_edit = false;
 
 	g = ro_gui_window_lookup(message->data.data_xfer.w);
-	if (g && ro_gui_window_dataload(g, message))
-		return;
+	if (g) {
+		if (ro_gui_window_dataload(g, message))
+			return;
+	}
+	else {
+		g = ro_gui_toolbar_lookup(message->data.data_xfer.w);
+		if (g && ro_gui_toolbar_dataload(g, message))
+			return;
+	}
 
 	switch (file_type) {
 		case FILETYPE_ACORN_URI:

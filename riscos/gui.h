@@ -21,6 +21,10 @@
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/tree.h"
 
+#define RISCOS5 0xAA
+
+extern int os_version;
+
 extern const char * NETSURF_DIR;
 
 struct toolbar;
@@ -162,6 +166,7 @@ int window_x_units(int x, wimp_window_state *state);
 int window_y_units(int y, wimp_window_state *state);
 bool window_screen_pos(struct gui_window *g, int x, int y, os_coord *pos);
 bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message);
+bool ro_gui_toolbar_dataload(struct gui_window *g, wimp_message *message);
 void ro_gui_window_process_reformats(void);
 void ro_gui_window_default_options(struct browser_window *bw);
 void ro_gui_window_redraw_all(void);
