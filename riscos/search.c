@@ -204,8 +204,10 @@ void end_search(void)
 {
 	struct list_entry *a, *b;
 
-	selection_clear(search_selection, true);
-	selection_destroy(search_selection);
+	if (search_selection) {
+		selection_clear(search_selection, true);
+		selection_destroy(search_selection);
+	}
 	search_selection = 0;
 
 	search_current_window = 0;
