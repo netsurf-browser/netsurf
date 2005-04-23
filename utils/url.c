@@ -236,6 +236,7 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 	path = base + base_match[5].rm_so;
 	path_len = base_match[5].rm_eo - base_match[5].rm_so;
 
+
 	/* 1) */
 	m = regexec(&url_re, rel, 10, rel_match, 0);
 	if (m) {
@@ -245,7 +246,6 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 
 	/* 2) */
 	/* base + "#s" = (current document)#s (see Appendix C.1) */
-	/** \todo does (current document) include the query? */
 	if (rel_match[9].rm_so != -1) {
 		fragment = rel + rel_match[9].rm_so;
 		fragment_len = rel_match[9].rm_eo - rel_match[9].rm_so;
@@ -254,12 +254,25 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 			rel_match[2].rm_so == -1 &&
 			rel_match[4].rm_so == -1 &&
 			rel_match[6].rm_so == -1) {
+		if (base_match[7].rm_so != -1) {
+			query = base + base_match[7].rm_so;
+			query_len = base_match[7].rm_eo -
+						base_match[7].rm_so;
+		}
 		goto step7;
 	}
 	if (rel_match[7].rm_so != -1) {
 		query = rel + rel_match[7].rm_so;
 		query_len = rel_match[7].rm_eo - rel_match[7].rm_so;
 	}
+
+	/* base + "?y" = (base - query)?y
+	 * e.g http://a/b/c/d;p?q + ?y = http://a/b/c/d;p?y */
+	if (rel_match[5].rm_so == rel_match[5].rm_eo &&
+			rel_match[2].rm_so == -1 &&
+			rel_match[4].rm_so == -1 &&
+			rel_match[6].rm_so != -1)
+		goto step7;
 
 	/* 3) */
 	if (rel_match[2].rm_so != -1) {
@@ -334,8 +347,24 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 		} else
 			path_len -= up_match[1].rm_eo - up_match[1].rm_so + 3;
 	}
+
+	/* and strip any remaining ../ | ./ pairs */
+	for (path = buf; path - buf < path_len; ) {
+		if (*path == '.' && path[1] == '.' && path[2] == '/') {
+			memmove(buf + (path - buf), path + 3,
+				((buf + path_len) - path) - 3);
+			path_len -= 3;
+		}
+		else if (*path == '.' && path[1] == '/') {
+			memmove(buf + (path - buf), path + 2,
+				((buf + path_len) - path) - 2);
+			path_len -= 2;
+		}
+		else
+			path++;
+	}
 	buf[path_len] = 0;
-        path = buf;
+	path = buf;
 
 step7:	/* 7) */
 	(*result) = malloc(scheme_len + 1 + 2 + authority_len + path_len + 1 + 1 +
