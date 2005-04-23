@@ -202,6 +202,10 @@ EmptyError:file is empty.
 PrintError:An error occurred when printing:
 PrintErrorRO2:It appears that the printer is busy.
 
+# User queries
+AbortDownload:Are you sure you wish to abort this download?
+QuitDownload:One or more downloads is still in progress. Are you sure you wish to quit?
+
 # Some general purpose words and phrases
 Bytes: B
 kBytes: kB

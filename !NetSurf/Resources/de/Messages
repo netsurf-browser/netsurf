@@ -202,6 +202,10 @@ EmptyError:Datei ist leer.
 PrintError:Ein Fehler trat während des Druckens auf:
 PrintErrorRO2:Der Drucker scheint beschäftigt zu sein.
 
+# User queries
+AbortDownload:Are you sure you wish to abort this download?
+QuitDownload:One or more downloads is still in progress. Are you sure you wish to quit?
+
 # Some general purpose words and phrases
 Bytes: B
 kBytes: kB
