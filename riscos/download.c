@@ -31,6 +31,7 @@
 #include "netsurf/content/fetch.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/query.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -55,10 +56,14 @@ struct gui_download_window {
 
 	/** User has chosen the destination, and it is being written. */
 	bool saved;
+	bool close_confirmed;
 	bool error;		/**< Error occurred, aborted. */
 	/** RISC OS file handle, of temporary file when !saved, and of
 	 * destination when saved. */
 	os_fw file;
+
+	query_id query;
+	bool query_quit;
 
 	struct timeval start_time;	/**< Time download started. */
 	struct timeval last_time;	/**< Time status was last updated. */
@@ -88,6 +93,15 @@ static int download_progress_y1;
 static void ro_gui_download_update_status(struct gui_download_window *dw);
 static void ro_gui_download_update_status_wrapper(void *p);
 static void ro_gui_download_window_destroy_wrapper(void *p);
+static void ro_gui_download_close_confirmed(query_id, enum query_response res, void *p);
+static void ro_gui_download_close_cancelled(query_id, enum query_response res, void *p);
+
+static const query_callback close_funcs =
+{
+	ro_gui_download_close_confirmed,
+	ro_gui_download_close_cancelled,
+	ro_gui_download_close_cancelled
+};
 
 
 /**
@@ -138,7 +152,9 @@ struct gui_download_window *gui_download_window_create(const char *url,
 
 	dw->fetch = fetch;
 	dw->saved = false;
+	dw->close_confirmed = false;
 	dw->error = false;
+	dw->query = QUERY_INVALID;
 	dw->received = 0;
 	dw->total_size = total_size;
 	strncpy(dw->url, url, sizeof dw->url);
@@ -557,6 +573,7 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 	char *file_name;
 	struct gui_download_window *dw = download_window_current;
 	os_error *error;
+	wimp_caret caret;
 
 	if (dw->saved || dw->error)
 		return;
@@ -675,6 +692,22 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 		warn_user("WimpError", error->errmess);
 	}
 
+	/* hide the caret but preserve input focus */
+	error = xwimp_get_caret_position(&caret);
+	if (error) {
+		LOG(("xwimp_get_caret_position: 0x%x : %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+	else if (caret.w == dw->window) {
+		error = xwimp_set_caret_position(dw->window, (wimp_i)-1, 0, 0, 1 << 25, -1);
+		if (error) {
+			LOG(("xwimp_get_caret_position: 0x%x : %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
+
 	/* Ack successful save with message_DATA_LOAD */
 	message->action = message_DATA_LOAD;
 	message->your_ref = message->my_ref;
@@ -702,6 +735,21 @@ void ro_gui_download_window_destroy(struct gui_download_window *dw)
 {
 	char temp_name[40];
 	os_error *error;
+
+	if (!dw->saved && !dw->close_confirmed)
+	{
+		if (dw->query != QUERY_INVALID && dw->query_quit) {
+			query_close(dw->query);
+			dw->query = QUERY_INVALID;
+		}
+
+		dw->query_quit = false;
+		if (dw->query == QUERY_INVALID)
+			dw->query = query_user("AbortDownload", NULL, &close_funcs, dw);
+		else
+			ro_gui_query_window_bring_to_front(dw->query);
+		return;
+	}
 
 	schedule_remove(ro_gui_download_update_status_wrapper, dw);
 	schedule_remove(ro_gui_download_window_destroy_wrapper, dw);
@@ -757,5 +805,72 @@ void ro_gui_download_window_destroy(struct gui_download_window *dw)
 
 void ro_gui_download_window_destroy_wrapper(void *p)
 {
-	ro_gui_download_window_destroy((struct gui_download_window *) p);
+	struct gui_download_window *dw = p;
+	if (dw->query != QUERY_INVALID)
+		query_close(dw->query);
+	dw->query = QUERY_INVALID;
+	ro_gui_download_window_destroy(dw);
+}
+
+
+/**
+ * User has opted to cancel the close, leaving the download to continue.
+ */
+
+void ro_gui_download_close_cancelled(query_id id, enum query_response res, void *p)
+{
+	struct gui_download_window *dw = p;
+	dw->query = QUERY_INVALID;
+}
+
+
+/**
+ * Download aborted, close window and tidy up.
+ */
+
+void ro_gui_download_close_confirmed(query_id id, enum query_response res, void *p)
+{
+	struct gui_download_window *dw = (struct gui_download_window *)p;
+	dw->query = QUERY_INVALID;
+	dw->close_confirmed = true;
+	if (dw->query_quit) {
+
+		/* destroy all our downloads */
+		while (download_window_list)
+			ro_gui_download_window_destroy_wrapper(download_window_list);
+
+		/* and restart the shutdown */
+		if (ro_gui_prequit())
+			netsurf_quit = true;
+	}
+	else
+		ro_gui_download_window_destroy(dw);
+}
+
+
+/**
+ * Respond to PreQuit message, displaying a prompt message if we need
+ * the user to confirm the shutdown.
+ *
+ * \return true iff we can shutdown straightaway
+ */
+
+bool ro_gui_download_prequit(void)
+{
+	if (download_window_list) {
+		struct gui_download_window *dw = download_window_list;
+
+		if (dw->query != QUERY_INVALID && !dw->query_quit) {
+			query_close(dw->query);
+			dw->query = QUERY_INVALID;
+		}
+
+		dw->query_quit = true;
+		if (dw->query == QUERY_INVALID)
+			dw->query = query_user("QuitDownload", NULL, &close_funcs, dw);
+		else
+			ro_gui_query_window_bring_to_front(dw->query);
+		return false;
+	}
+	return true;
 }

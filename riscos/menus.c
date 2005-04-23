@@ -1547,7 +1547,8 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 
 		/* misc actions */
 		case APPLICATION_QUIT:
-			netsurf_quit = true;
+			if (ro_gui_prequit())
+				netsurf_quit = true;
 			return true;
 		case CHOICES_SHOW:
 			ro_gui_dialog_open_config();

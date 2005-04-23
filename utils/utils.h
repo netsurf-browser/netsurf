@@ -29,6 +29,25 @@
 #define max(x,y) (((x)>(y))?(x):(y))
 #endif
 
+enum query_response {
+  QUERY_CONTINUE,
+  QUERY_YES,
+  QUERY_NO,
+  QUERY_ESCAPE
+};
+
+typedef int query_id;
+
+#define QUERY_INVALID ((query_id)-1)
+
+typedef struct
+{
+	void (*confirm)(query_id id, enum query_response res, void *pw);
+	void (*cancel)(query_id, enum query_response res, void *pw);
+	void (*escape)(query_id, enum query_response res, void *pw);
+} query_callback;
+
+
 char * strip(char * const s);
 int whitespace(const char * str);
 char * squash_whitespace(const char * s);
@@ -45,6 +64,8 @@ char *human_friendly_bytesize(unsigned long bytesize);
 /* Platform specific functions */
 void die(const char * const error);
 void warn_user(const char *warning, const char *detail);
+query_id query_user(const char *query, const char *detail, const query_callback *cb, void *pw);
+void query_close(query_id);
 const char *local_encoding_name(void);
 
 #endif

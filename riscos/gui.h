@@ -97,6 +97,7 @@ void ro_gui_open_help_page(const char *page);
 void ro_gui_screen_size(int *width, int *height);
 void ro_gui_view_source(struct content *content);
 void ro_gui_drag_box_start(wimp_pointer *pointer);
+bool ro_gui_prequit(void);
 
 /* in dialog.c */
 void ro_gui_dialog_init(void);
@@ -126,6 +127,7 @@ void ro_gui_download_window_click(struct gui_download_window *dw,
 void ro_gui_download_drag_end(wimp_dragged *drag);
 void ro_gui_download_datasave_ack(wimp_message *message);
 void ro_gui_download_window_destroy(struct gui_download_window *dw);
+bool ro_gui_download_prequit(void);
 
 /* in mouseactions.c */
 void ro_gui_mouse_action(struct gui_window *g);
@@ -378,6 +380,11 @@ void ro_gui_theme_install_click(wimp_pointer *pointer);
 #define ICON_WARNING_MESSAGE 0
 #define ICON_WARNING_CONTINUE 1
 #define ICON_WARNING_HELP 2
+
+#define ICON_QUERY_MESSAGE 0
+#define ICON_QUERY_YES 1
+#define ICON_QUERY_NO 2
+#define ICON_QUERY_HELP 3
 
 #define ICON_SEARCH_TEXT 0
 #define ICON_SEARCH_START 1

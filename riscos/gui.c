@@ -27,6 +27,7 @@
 #include "oslib/osbyte.h"
 #include "oslib/osfile.h"
 #include "oslib/osfscontrol.h"
+#include "oslib/osgbpb.h"
 #include "oslib/osspriteop.h"
 #include "oslib/pdriver.h"
 #include "oslib/plugin.h"
@@ -56,6 +57,7 @@
 #ifdef WITH_PRINT
 #include "netsurf/riscos/print.h"
 #endif
+#include "netsurf/riscos/query.h"
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/treeview.h"
@@ -135,13 +137,15 @@ static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 osspriteop_area *gui_sprites;	   /**< Sprite area containing pointer and hotlist sprites */
 
 /** Accepted wimp user messages. */
-static wimp_MESSAGE_LIST(36) task_messages = { {
+static wimp_MESSAGE_LIST(38) task_messages = { {
 	message_HELP_REQUEST,
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
 	message_DATA_LOAD,
 	message_DATA_LOAD_ACK,
 	message_DATA_OPEN,
+	message_PRE_QUIT,
+	message_SAVE_DESKTOP,
 	message_MENU_WARNING,
 	message_MENUS_DELETED,
 	message_MODE_CHANGE,
@@ -215,6 +219,8 @@ static char *ro_gui_ieurl_file_parse(const char *file_name);
 static void ro_msg_datasave(wimp_message *message);
 static void ro_msg_datasave_ack(wimp_message *message);
 static void ro_msg_dataopen(wimp_message *block);
+static void ro_msg_prequit(wimp_message *message);
+static void ro_msg_save_desktop(wimp_message *message);
 static char *ro_path_to_url(const char *path);
 
 
@@ -329,6 +335,7 @@ void gui_init(int argc, char** argv)
 	ro_gui_dialog_init();
 	ro_gui_download_init();
 	ro_gui_menu_init();
+	ro_gui_query_init();
 #ifdef WITH_AUTH
 	ro_gui_401login_init();
 #endif
@@ -1011,6 +1018,7 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 {
 	struct gui_window *g;
 	struct gui_download_window *dw;
+	struct gui_query_window *qw;
 
 	if (pointer->w == wimp_ICON_BAR)
 		ro_gui_icon_bar_click(pointer);
@@ -1046,6 +1054,8 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 		ro_gui_status_click(g, pointer);
 	else if ((dw = ro_gui_download_window_lookup(pointer->w)) != NULL)
 		ro_gui_download_window_click(dw, pointer);
+	else if ((qw = ro_gui_query_window_lookup(pointer->w)) != NULL)
+		ro_gui_query_window_click(qw, pointer);
 	else
 		ro_gui_dialog_click(pointer);
 }
@@ -1136,6 +1146,7 @@ void ro_gui_drag_end(wimp_dragged *drag)
 
 void ro_gui_keypress(wimp_key *key)
 {
+	struct gui_query_window *qw;
 	bool handled = false;
 	struct gui_window *g;
 	os_error *error;
@@ -1148,6 +1159,8 @@ void ro_gui_keypress(wimp_key *key)
 		handled = ro_gui_window_keypress(g, key->c, false);
 	else if ((g = ro_gui_toolbar_lookup(key->w)) != NULL)
 		handled = ro_gui_window_keypress(g, key->c, true);
+	else if ((qw = ro_gui_query_window_lookup(key->w)) != NULL)
+		handled = ro_gui_query_window_keypress(qw, key);
 	else
 		handled = ro_gui_dialog_keypress(key);
 
@@ -1201,6 +1214,14 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 
 		case message_DATA_OPEN:
 			ro_msg_dataopen(message);
+			break;
+
+		case message_PRE_QUIT:
+			ro_msg_prequit(message);
+			break;
+
+		case message_SAVE_DESKTOP:
+			ro_msg_save_desktop(message);
 			break;
 
 		case message_MENU_WARNING:
@@ -1755,6 +1776,64 @@ void ro_msg_dataopen(wimp_message *message)
 
 
 /**
+ * Handle PreQuit message
+ *
+ * \param  message  PreQuit message from Wimp
+ */
+
+void ro_msg_prequit(wimp_message *message)
+{
+	if (!ro_gui_prequit()) {
+		os_error *error;
+
+		/* we're objecting to the close down */
+		message->your_ref = message->my_ref;
+		error = xwimp_send_message(wimp_USER_MESSAGE_ACKNOWLEDGE,
+						message, message->sender);
+		if (error) {
+			LOG(("xwimp_send_message: 0x%x:%s", error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
+}
+
+
+/**
+ * Handle SaveDesktop message
+ *
+ * \param  message  SaveDesktop message from Wimp
+ */
+
+void ro_msg_save_desktop(wimp_message *message)
+{
+	os_error *error;
+
+	error = xosgbpb_writew(message->data.save_desktopw.file,
+				(const byte*)"Run ", 4, NULL);
+	if (!error) {
+		error = xosgbpb_writew(message->data.save_desktopw.file,
+					(const byte*)NETSURF_DIR, strlen(NETSURF_DIR), NULL);
+		if (!error)
+			error = xos_bputw('\n', message->data.save_desktopw.file);
+	}
+
+	if (error) {
+		LOG(("xosgbpb_writew/xos_bputw: 0x%x:%s", error->errnum, error->errmess));
+		warn_user("SaveError", error->errmess);
+
+		/* we must cancel the save by acknowledging the message */
+		message->your_ref = message->my_ref;
+		error = xwimp_send_message(wimp_USER_MESSAGE_ACKNOWLEDGE,
+						message, message->sender);
+		if (error) {
+			LOG(("xwimp_send_message: 0x%x:%s", error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
+}
+
+
+/**
  * Convert a RISC OS pathname to a file: URL.
  *
  * \param  path  RISC OS pathname
@@ -1879,7 +1958,7 @@ void gui_launch_url(const char *url)
 
 void warn_user(const char *warning, const char *detail)
 {
-	static char warn_buffer[300];
+	char warn_buffer[300];
 
 	LOG(("%s %s", warning, detail));
 	snprintf(warn_buffer, sizeof warn_buffer, "%s %s",
@@ -1917,4 +1996,16 @@ void die(const char *error)
 			"NetSurf", "!netsurf",
 			(osspriteop_area *) 1, 0, 0);
 	exit(EXIT_FAILURE);
+}
+
+
+/**
+ * Test whether it's okay to shutdown, prompting the user if not.
+ *
+ * \return true iff it's okay to shutdown immediately
+ */
+
+bool ro_gui_prequit(void)
+{
+	return ro_gui_download_prequit();
 }

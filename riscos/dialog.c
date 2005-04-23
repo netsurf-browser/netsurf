@@ -39,7 +39,7 @@
 
 
 wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
-	dialog_config_prox, dialog_config_th, download_template,
+	dialog_config_prox, dialog_config_th,
 #ifdef WITH_AUTH
 	dialog_401li,
 #endif

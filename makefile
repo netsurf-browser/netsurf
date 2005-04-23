@@ -32,7 +32,7 @@ OBJECTS_RISCOS += browser.o netsurf.o selection.o textinput.o version.o			# desk
 OBJECTS_RISCOS += 401login.o bitmap.o buffer.o debugwin.o \
 	dialog.o download.o draw.o filetype.o font.o \
 	global_history.o gui.o help.o history.o hotlist.o image.o \
-	menus.o mouseactions.o plotters.o plugin.o print.o \
+	menus.o mouseactions.o plotters.o plugin.o print.o query.o \
 	save.o save_complete.o save_draw.o save_text.o \
 	schedule.o search.o sprite.o textselection.o theme.o \
 	theme_install.o thumbnail.o treeview.o ucstables.o uri.o \
