@@ -204,7 +204,7 @@ PrintErrorRO2:Der Drucker scheint beschäftigt zu sein.
 
 # User queries
 AbortDownload:Are you sure you wish to abort this download?
-QuitDownload:One or more downloads is still in progress. Are you sure you wish to quit?
+QuitDownload:One or more downloads are still in progress. Are you sure you wish to quit?
 
 # Some general purpose words and phrases
 Bytes: B
