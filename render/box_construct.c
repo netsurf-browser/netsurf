@@ -478,7 +478,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 		if (!*inline_container) {
 			/* this is the first inline node: make a container */
 			*inline_container = box_create(0, 0, 0, 0, content);
-			if (!*inline_container)	{
+			if (!*inline_container) {
 				free(text);
 				return false;
 			}
@@ -497,7 +497,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 			return false;
 		box->length = strlen(box->text);
 		/* strip ending space char off */
-		if (box->length > 1 && text[box->length - 1] == ' ') {
+		if (box->length > 1 && box->text[box->length - 1] == ' ') {
 			box->space = 1;
 			box->length--;
 		}
@@ -506,7 +506,8 @@ bool box_construct_text(xmlNode *n, struct content *content,
 					parent_style->text_transform);
 		if (parent_style->white_space == CSS_WHITE_SPACE_NOWRAP) {
 			unsigned int i;
-			for (i = 0; i != box->length && text[i] != ' '; ++i)
+			for (i = 0; i != box->length &&
+						box->text[i] != ' '; ++i)
 				; /* no body */
 			if (i != box->length) {
 				/* there is a space in text block and we
