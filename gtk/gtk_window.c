@@ -380,7 +380,7 @@ void gui_start_selection(struct gui_window *g)
 }
 
 
-void gui_paste_from_clipboard(struct browser_window *bw, int x, int y)
+void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 {
 }
 
