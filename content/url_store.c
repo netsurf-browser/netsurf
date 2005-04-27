@@ -35,6 +35,7 @@ static struct hostname_data *url_store_hostnames = NULL;
 static struct hostname_data *url_store_find_hostname(const char *url);
 static struct hostname_data *url_store_match_hostname(const char *url,
 		struct hostname_data *previous);
+static char *url_store_match_scheme = NULL;
 
 
 /**
@@ -261,7 +262,8 @@ static struct hostname_data *url_store_match_hostname(const char *url,
 				break;
 		}
 		/* special case: if hostname is not www then try it */
-		if (www_test && ((current->hostname_length - 4) >= hostname_length) &&
+		if (www_test && ((current->hostname_length - 4) >=
+				hostname_length) &&
 				(!strncmp(current->hostname, "www.", 4)) &&
 				(!strncmp(hostname, current->hostname + 4,
 					hostname_length))) {
@@ -290,7 +292,6 @@ static struct hostname_data *url_store_match_hostname(const char *url,
 char *url_store_match(const char *url, struct url_data **reference) {
 	struct hostname_data *hostname;
 	struct url_data *search = NULL;
-	char *scheme;
 	int scheme_length;
 	int url_length;
 	url_func_result res;
@@ -300,23 +301,27 @@ char *url_store_match(const char *url, struct url_data **reference) {
 
 	if (!url_store_hostnames)
 		return NULL;
-
-	/* find the first URL, not necessarily matching */
+		
+	/* find the scheme and first URL, not necessarily matching */
 	if (!*reference) {
 		hostname = url_store_match_hostname(url, NULL);
 		if (!hostname)
+			return NULL;
+		if (url_store_match_scheme) {
+		  	free(url_store_match_scheme);
+		  	url_store_match_scheme = NULL;
+		}
+		res = url_scheme(url, &url_store_match_scheme);
+		if (res != URL_FUNC_OK)
 			return NULL;
 	} else {
 		search = *reference;
 		hostname = search->parent;
 	}
 
-	res = url_scheme(url, &scheme);
-	if (res != URL_FUNC_OK)
-		return NULL;
-	scheme_length = strlen(scheme);
+	scheme_length = strlen(url_store_match_scheme);
 	url_length = strlen(url);
-	www_test = (!strcmp(scheme, "http") &&
+	www_test = (!strcmp(url_store_match_scheme, "http") &&
 			strncmp(url + 4 + 3, "www.", 4)); /* 'http' + '://' */
 
 	/* work through all our strings, ignoring the scheme and 'www.' */
@@ -333,29 +338,31 @@ char *url_store_match(const char *url, struct url_data **reference) {
 			hostname = url_store_match_hostname(url, hostname);
 			if (!hostname)
 				return NULL;
-		} else if ((search->data.visits > 0) && (search->data.requests > 0)){
+		} else if ((search->data.visits > 0) &&
+				(search->data.requests > 0)){
 			/* straight match */
 			if ((search->data.url_length >= url_length) &&
-					(!strncmp(search->data.url, url, url_length))) {
-				free(scheme);
+					(!strncmp(search->data.url, url,
+							url_length))) {
 				*reference = search;
 				return search->data.url;
 			}
 			/* try with 'www.' inserted after the scheme */
-			if (www_test && ((search->data.url_length - 4) >= url_length) &&
-				(!strncmp(search->data.url, scheme, scheme_length)) &&
-				(!strncmp(search->data.url + scheme_length + 3, "www.", 4)) &&
+			if (www_test && ((search->data.url_length - 4) >=
+					url_length) &&
+				(!strncmp(search->data.url,
+						url_store_match_scheme,
+						scheme_length)) &&
+				(!strncmp(search->data.url + scheme_length + 3,
+						"www.", 4)) &&
 				(!strncmp(search->data.url + scheme_length + 7,
 						url + scheme_length + 3,
 						url_length - scheme_length - 3))) {
-				free(scheme);
 				*reference = search;
 				return search->data.url;
 			}
 		}
 	}
-
-	free(scheme);
 	return NULL;
 }
 
@@ -427,8 +434,8 @@ void url_store_load(const char *file) {
 			url->requests = atoi(s);
 		}
 	} else if (version == 101) {
-		/* version 101 is as 100, but in hostname chunks, pre-sorted in reverse
-		 * alphabetical order */
+		/* version 101 is as 100, but in hostname chunks, pre-sorted
+		 * in reverse alphabetical order */
 		while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
 			if (s[strlen(s) - 1] == '\n')
 				s[strlen(s) - 1] = '\0';
@@ -447,7 +454,8 @@ void url_store_load(const char *file) {
 				if (!result)
 					break;
 				result->data.url_length = strlen(s);
-				result->data.url = malloc(result->data.url_length + 1);
+				result->data.url = malloc(result->
+						data.url_length + 1);
 				if (!result->data.url) {
 					free(result);
 					break;
@@ -491,12 +499,14 @@ void url_store_save(const char *file) {
 
 	/* file format version number */
 	fprintf(fp, "101\n");
-	for (search = url_store_hostnames; search && search->next; search = search->next);
+	for (search = url_store_hostnames; search && search->next;
+			search = search->next);
 	for (; search; search = search->previous) {
 		url_count = 0;
 		for (url = search->url; url; url = url->next)
 			if ((url->data.requests > 0) &&
-					(strlen(url->data.url) < MAXIMUM_URL_LENGTH))
+					(strlen(url->data.url) <
+					MAXIMUM_URL_LENGTH))
 				url_count++;
 		free(normal);
 		normal = url_store_match_string(search->hostname);
@@ -505,9 +515,12 @@ void url_store_save(const char *file) {
 			for (url = search->url; url->next; url = url->next);
 			for (; url; url = url->previous)
 				if ((url->data.requests > 0) &&
-						(strlen(url->data.url) < MAXIMUM_URL_LENGTH))
-					fprintf(fp, "%s\n%i\n%i\n", url->data.url,
-							url->data.visits, url->data.requests);
+						(strlen(url->data.url) <
+						MAXIMUM_URL_LENGTH))
+					fprintf(fp, "%s\n%i\n%i\n",
+							url->data.url,
+							url->data.visits,
+							url->data.requests);
 		}
 	}
 	fclose(fp);
