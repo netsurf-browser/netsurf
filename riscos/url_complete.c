@@ -321,10 +321,12 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
 	int lines;
 	int scroll_v = 0;
 
-	/* if we the URL completion isn't for our window, or there is no toolbar,
-	 * or there is no URL bar shown, or there are no URL matches, close it */
-	if ((open->w != url_complete_parent) || (!g->toolbar) ||
-			(!g->toolbar->display_url) ||
+	/* only react to our window */
+	if (open->w != url_complete_parent)
+		return;
+	/* if there is no toolbar, or there is no URL bar shown, or there are
+	 * no URL matches, close it */
+	if ((!g->toolbar) || (!g->toolbar->display_url) ||
 			(!url_complete_matches) ||
 			(url_complete_matches_available == 0)) {
 		ro_gui_url_complete_close(NULL, 0);
@@ -465,6 +467,13 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw) {
 	url_complete_icon.extent.x1 = 16384;
 	url_complete_icon.data.indirected_text.validation = url_complete_icon_null;
 
+	/* no matches? no redraw */
+	if (!url_complete_matches) {
+	  	LOG(("Attempt to redraw with no matches made"));
+		ro_gui_user_redraw(redraw, false, NULL);
+		return;
+	}
+	
 	/* redraw */
 	more = wimp_redraw_window(redraw);
 	while (more) {
