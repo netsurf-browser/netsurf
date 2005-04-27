@@ -397,8 +397,10 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	  	border_color = 0x888888;	/* default colour */
 	  	if ((s = (char *) xmlGetProp(n,
 				(const xmlChar *) "cellpadding"))) {
-			int value = atoi(s);
-			if (!strrchr(s, '%') && 0 < value)	/* % not implemented */
+			char *endp;
+			long value = strtol(s, &endp, 10);
+			if (*endp == 0 && 0 <= value && value < 1000)
+							/* % not implemented */
 				box_set_cellpadding(box, value);
 			xmlFree(s);
 		}
