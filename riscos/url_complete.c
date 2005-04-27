@@ -180,7 +180,6 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 			}
 			url_complete_matches[url_complete_matches_available - 1] =
 					output;
-
 		}
 
 		/* update the window */
@@ -200,7 +199,7 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 		lines = MAXIMUM_VISIBLE_LINES;
 		if (lines > url_complete_matches_available)
 			lines = url_complete_matches_available;
-		for (i = 0; i < MAXIMUM_VISIBLE_LINES; i++) {
+		for (i = 0; i < lines; i++) {
 			if (url_complete_redraw[i] != url_complete_matches[i]) {
 				error = xwimp_force_redraw(dialog_url_complete,
 					0, -(i + 1) * 44, 65536, -i * 44);
@@ -326,6 +325,7 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
 	 * or there is no URL bar shown, or there are no URL matches, close it */
 	if ((open->w != url_complete_parent) || (!g->toolbar) ||
 			(!g->toolbar->display_url) ||
+			(!url_complete_matches) ||
 			(url_complete_matches_available == 0)) {
 		ro_gui_url_complete_close(NULL, 0);
 		return;
