@@ -29,7 +29,7 @@
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
 #endif
-#define NDEBUG
+//#define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/talloc.h"
@@ -785,6 +785,50 @@ struct css_style * box_get_style(struct content *c,
 					style->border_spacing.horz.value =
 					style->border_spacing.vert.value =
 							value;
+				}
+			}
+		}
+	}
+
+	if ((strcmp((const char *) n->name, "img") == 0) ||
+			(strcmp((const char *) n->name, "applet") == 0)) {
+		if ((s = (char *) xmlGetProp(n,
+				(const xmlChar *) "hspace"))) {
+			if (!strrchr(s, '%')) {		/* % not implemented */
+				int value = atoi(s);
+				if (0 <= value) {
+					style->margin[LEFT].margin =
+							CSS_MARGIN_LENGTH;
+					style->margin[LEFT].value.length.value =
+							value;
+					style->margin[LEFT].value.length.unit =
+							CSS_UNIT_PX;
+					style->margin[RIGHT].margin =
+							CSS_MARGIN_LENGTH;
+					style->margin[RIGHT].value.length.value =
+							value;
+					style->margin[RIGHT].value.length.unit =
+							CSS_UNIT_PX;
+				}
+			}
+		}
+		if ((s = (char *) xmlGetProp(n,
+				(const xmlChar *) "vspace"))) {
+			if (!strrchr(s, '%')) {		/* % not implemented */
+				int value = atoi(s);
+				if (0 <= value) {
+					style->margin[TOP].margin =
+							CSS_MARGIN_LENGTH;
+					style->margin[TOP].value.length.value =
+							value;
+					style->margin[TOP].value.length.unit =
+							CSS_UNIT_PX;
+					style->margin[BOTTOM].margin =
+							CSS_MARGIN_LENGTH;
+					style->margin[BOTTOM].value.length.value =
+							value;
+					style->margin[BOTTOM].value.length.unit =
+							CSS_UNIT_PX;
 				}
 			}
 		}
