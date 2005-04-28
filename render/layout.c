@@ -1488,6 +1488,9 @@ bool layout_table(struct box *table, int available_width,
 			 * possible, so treat it as a minimum */
 			int row_height = (int) css_len2px(&row->style->
 				height.length, row->style);
+			/* we can't use this value currently as it is always
+			 * the height of a line of text in the current style */
+			row_height = 0;
 			for (c = row->children; c; c = c->next) {
 				assert(c->style);
 				c->width = xs[c->start_column + c->columns] -

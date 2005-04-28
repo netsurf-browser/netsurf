@@ -941,15 +941,18 @@ void box_set_table_border(struct box *box, int value, colour color)
 
 	if (box->type == BOX_TABLE) {
 		for (unsigned int i = 0; i != 4; i++) {
-			box->style->border[i].color = color;
-			box->style->border[i].width.width =
-					CSS_BORDER_WIDTH_LENGTH;
-			box->style->border[i].width.value.value =
-					value;
-			box->style->border[i].width.value.unit =
-					CSS_UNIT_PX;
-			box->style->border[i].style =
-					CSS_BORDER_STYLE_OUTSET;
+		  	if (box->style->border[i].style ==
+		  			CSS_BORDER_STYLE_NOT_SET) {
+				box->style->border[i].color = color;
+				box->style->border[i].width.width =
+						CSS_BORDER_WIDTH_LENGTH;
+				box->style->border[i].width.value.value =
+						value;
+				box->style->border[i].width.value.unit =
+						CSS_UNIT_PX;
+				box->style->border[i].style =
+						CSS_BORDER_STYLE_OUTSET;
+			}
 		}
 	}
 
@@ -963,15 +966,18 @@ void box_set_table_border(struct box *box, int value, colour color)
 			break;
 		case BOX_TABLE_CELL:
 			for (unsigned int i = 0; i != 4; i++) {
-				child->style->border[i].color = color;
-				child->style->border[i].width.width =
-						CSS_BORDER_WIDTH_LENGTH;
-				child->style->border[i].width.value.value =
-						1;
-				child->style->border[i].width.value.unit =
-						CSS_UNIT_PX;
-				child->style->border[i].style =
-						CSS_BORDER_STYLE_INSET;
+			  	if (child->style->border[i].style ==
+		  			CSS_BORDER_STYLE_NOT_SET) {
+					child->style->border[i].color = color;
+					child->style->border[i].width.width =
+							CSS_BORDER_WIDTH_LENGTH;
+					child->style->border[i].width.value.value =
+							1;
+					child->style->border[i].width.value.unit =
+							CSS_UNIT_PX;
+					child->style->border[i].style =
+							CSS_BORDER_STYLE_INSET;
+				}
 			}
 			break;
 		default:
