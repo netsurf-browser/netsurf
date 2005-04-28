@@ -942,7 +942,7 @@ void box_set_table_border(struct box *box, int value, colour color)
 	if (box->type == BOX_TABLE) {
 		for (unsigned int i = 0; i != 4; i++) {
 		  	if (box->style->border[i].style ==
-		  			CSS_BORDER_STYLE_NOT_SET) {
+		  			CSS_BORDER_STYLE_NONE) {
 				box->style->border[i].color = color;
 				box->style->border[i].width.width =
 						CSS_BORDER_WIDTH_LENGTH;
@@ -967,7 +967,7 @@ void box_set_table_border(struct box *box, int value, colour color)
 		case BOX_TABLE_CELL:
 			for (unsigned int i = 0; i != 4; i++) {
 			  	if (child->style->border[i].style ==
-		  			CSS_BORDER_STYLE_NOT_SET) {
+		  			CSS_BORDER_STYLE_NONE) {
 					child->style->border[i].color = color;
 					child->style->border[i].width.width =
 							CSS_BORDER_WIDTH_LENGTH;
