@@ -526,7 +526,6 @@ void ro_gui_menu_closed(void) {
 
 	if (tree)
 		ro_gui_tree_menu_closed(tree);
-		
 }
 
 
@@ -538,7 +537,7 @@ void ro_gui_menu_objects_moved(void) {
 	current_menu_object_box = NULL;
 	
 	ro_gui_menu_prepare_action(0, BROWSER_OBJECT, false);
-	if (current_menu == gui_form_select_menu)
+	if ((current_menu) && (current_menu == gui_form_select_menu))
 		ro_gui_menu_closed();
 }
 
@@ -626,10 +625,12 @@ void ro_gui_menu_selection(wimp_selection *selection) {
 						action, false);
 		} while (!(menu->entries[j++].menu_flags & wimp_MENU_LAST));
 		j = selection->items[i++];
-		if (j != -1)
+		if (j != -1) {
 			menu = menu->entries[j].sub_menu;
+			if ((!menu) || (menu == wimp_NO_SUB_MENU))
+				break;
+		}
 	} while (j != -1);
-
 	if (current_menu == gui_form_select_menu)
 		gui_create_form_select_menu(g->bw,
 				gui_form_select_control);
@@ -897,8 +898,10 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	gui_form_select_control = NULL;
 	for (option = control->data.select.items; option; option = option->next)
 		i++;
-	if (i == 0)
+	if (i == 0) {
+		ro_gui_menu_closed();
 		return;
+	}
 
 	if (gui_form_select_menu) {
 		for (j = 0; ; j++) {
@@ -1979,7 +1982,7 @@ int ro_gui_menu_get_checksum(void) {
 	int i = 0, j, checksum = 0;
 	os_error *error;
 	wimp_menu *menu;
-
+	
 	if (!current_menu_open)
 		return 0;
 
@@ -2002,8 +2005,11 @@ int ro_gui_menu_get_checksum(void) {
 				checksum ^= (2 << (i + j * 2));
 		} while (!(menu->entries[j++].menu_flags & wimp_MENU_LAST));
 		j = menu_tree.items[i++];
-		if (j != -1)
+		if (j != -1) {
 			menu = menu->entries[j].sub_menu;
+			if ((!menu) || (menu == wimp_NO_SUB_MENU))
+				break;
+		}
 	} while (j != -1);
 	return checksum;
 }
