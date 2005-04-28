@@ -508,24 +508,23 @@ void ro_gui_menu_closed(void) {
 	struct tree *tree;
 	os_error *error;
 
-	if (!current_menu)
-		return;
-
-	error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
-	if (error) {
-		LOG(("xwimp_create_menu: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("MenuError", error->errmess);
+	if (current_menu) {
+		error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
+		if (error) {
+			LOG(("xwimp_create_menu: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("MenuError", error->errmess);
+		}
+		ro_gui_menu_get_window_details(current_menu_window,
+				&g, &bw, &c, &t, &tree);
+		if (tree)
+			ro_gui_tree_menu_closed(tree);
 	}
-
-	ro_gui_menu_get_window_details(current_menu_window, &g, &bw, &c, &t, &tree);
 
 	current_menu = NULL;
 	current_menu_window = NULL;
 	current_menu_open = false;
-
-	if (tree)
-		ro_gui_tree_menu_closed(tree);
+	gui_form_select_control = NULL;
 }
 
 
@@ -894,8 +893,10 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	struct form_option *option;
 	wimp_pointer pointer;
 	os_error *error;
+	bool reopen = true;
 
-	gui_form_select_control = NULL;
+	assert(control);
+
 	for (option = control->data.select.items; option; option = option->next)
 		i++;
 	if (i == 0) {
@@ -903,7 +904,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 		return;
 	}
 
-	if (gui_form_select_menu) {
+	if ((gui_form_select_menu) && (control != gui_form_select_control)) {
 		for (j = 0; ; j++) {
 			free(gui_form_select_menu->entries[j].data.
 					indirected_text.text);
@@ -915,22 +916,24 @@ void gui_create_form_select_menu(struct browser_window *bw,
 		gui_form_select_menu = 0;
 	}
 
-	gui_form_select_menu = malloc(wimp_SIZEOF_MENU(i));
 	if (!gui_form_select_menu) {
-		warn_user("NoMemory", 0);
-		ro_gui_menu_closed();
-		return;
+		reopen = false;
+		gui_form_select_menu = malloc(wimp_SIZEOF_MENU(i));
+		if (!gui_form_select_menu) {
+			warn_user("NoMemory", 0);
+			ro_gui_menu_closed();
+			return;
+		}
+		gui_form_select_menu->title_data.indirected_text.text =
+				messages_get("SelectMenu");
+		gui_form_select_menu->title_fg = wimp_COLOUR_BLACK;
+		gui_form_select_menu->title_bg = wimp_COLOUR_LIGHT_GREY;
+		gui_form_select_menu->work_fg = wimp_COLOUR_BLACK;
+		gui_form_select_menu->work_bg = wimp_COLOUR_WHITE;
+		gui_form_select_menu->width = 200;
+		gui_form_select_menu->height = wimp_MENU_ITEM_HEIGHT;
+		gui_form_select_menu->gap = wimp_MENU_ITEM_GAP;
 	}
-
-	gui_form_select_menu->title_data.indirected_text.text =
-			messages_get("SelectMenu");
-	gui_form_select_menu->title_fg = wimp_COLOUR_BLACK;
-	gui_form_select_menu->title_bg = wimp_COLOUR_LIGHT_GREY;
-	gui_form_select_menu->work_fg = wimp_COLOUR_BLACK;
-	gui_form_select_menu->work_bg = wimp_COLOUR_WHITE;
-	gui_form_select_menu->width = 200;
-	gui_form_select_menu->height = wimp_MENU_ITEM_HEIGHT;
-	gui_form_select_menu->gap = wimp_MENU_ITEM_GAP;
 
 	for (i = 0, option = control->data.select.items; option;
 			i++, option = option->next) {
@@ -938,29 +941,36 @@ void gui_create_form_select_menu(struct browser_window *bw,
 		if (option->selected)
 			gui_form_select_menu->entries[i].menu_flags =
 					wimp_MENU_TICKED;
-		gui_form_select_menu->entries[i].sub_menu = wimp_NO_SUB_MENU;
-		gui_form_select_menu->entries[i].icon_flags = wimp_ICON_TEXT |
-				wimp_ICON_INDIRECTED | wimp_ICON_FILLED |
-				(wimp_COLOUR_BLACK <<
-						wimp_ICON_FG_COLOUR_SHIFT) |
-				(wimp_COLOUR_WHITE <<
-						wimp_ICON_BG_COLOUR_SHIFT);
-		/* \todo  can cnv_str_local_enc() fail? */
-		gui_form_select_menu->entries[i].data.indirected_text.text =
-				cnv_str_local_enc(option->text);
-		/* convert spaces to hard spaces to stop things like 'Go Home'
-		 * being treated as if 'Home' is a keyboard shortcut and right
-		 * aligned in the menu. */
-		text_convert = gui_form_select_menu->entries[i].
-				data.indirected_text.text - 1;
-		while (*++text_convert != '\0')
-			if (*text_convert == 0x20)
-				*text_convert = 0xa0;
-		gui_form_select_menu->entries[i].data.indirected_text.
-				validation = (char *)-1;
-		gui_form_select_menu->entries[i].data.indirected_text.size =
-				strlen(gui_form_select_menu->entries[i].
-				data.indirected_text.text) + 1;
+		if (!reopen) {
+			gui_form_select_menu->entries[i].sub_menu = wimp_NO_SUB_MENU;
+			gui_form_select_menu->entries[i].icon_flags = wimp_ICON_TEXT |
+					wimp_ICON_INDIRECTED | wimp_ICON_FILLED |
+					(wimp_COLOUR_BLACK <<
+							wimp_ICON_FG_COLOUR_SHIFT) |
+					(wimp_COLOUR_WHITE <<
+							wimp_ICON_BG_COLOUR_SHIFT);
+			text_convert = cnv_str_local_enc(option->text);
+			if (!text_convert) {
+			  	LOG(("cnv_str_local_enc failed."));
+			  	warn_user("NoMemory", 0);
+				ro_gui_menu_closed();
+				return;
+			} 	
+			gui_form_select_menu->entries[i].data.indirected_text.text =
+					text_convert;
+			/* convert spaces to hard spaces to stop things like 'Go Home'
+			 * being treated as if 'Home' is a keyboard shortcut and right
+			 * aligned in the menu. */
+			text_convert -= 1;
+			while (*++text_convert != '\0')
+				if (*text_convert == 0x20)
+					*text_convert = 0xa0;
+			gui_form_select_menu->entries[i].data.indirected_text.
+					validation = (char *)-1;
+			gui_form_select_menu->entries[i].data.indirected_text.size =
+					strlen(gui_form_select_menu->entries[i].
+					data.indirected_text.text) + 1;
+		}
 	}
 
 	gui_form_select_menu->entries[0].menu_flags |=
