@@ -1483,7 +1483,11 @@ bool layout_table(struct box *table, int available_width,
 			row_group = row_group->next) {
 		int row_group_height = 0;
 		for (row = row_group->children; row; row = row->next) {
-			int row_height = 0;
+			/* some sites use height="1" or similar
+			 * to attempt to make cells as small as
+			 * possible, so treat it as a minimum */
+			int row_height = (int) css_len2px(&row->style->
+				height.length, row->style);
 			for (c = row->children; c; c = c->next) {
 				assert(c->style);
 				c->width = xs[c->start_column + c->columns] -
@@ -1988,7 +1992,7 @@ bool calculate_table_widths(struct box *table)
 				row_group = row_group->next) {
 			for (row = row_group->children; row; row = row->next) {
 				for (cell = row->children; cell; cell = cell->next) {
-				  	if (!first) {
+					if (!first) {
 						cell->style->border[TOP].style =
 								CSS_BORDER_STYLE_NONE;
 						cell->style->border[TOP].width.value.value =
@@ -2223,7 +2227,7 @@ void table_collapse_borders_cell(struct box *cell, struct box *right,
 		border = css_eyecatching_border(&cell->style->border[RIGHT], cell->style,
 				&right->style->border[LEFT], right->style);
 		cell->style->border[RIGHT] = *border;
-	  
+
 	}
 	if ((bottom) && (bottom != cell)) {
 		border = css_eyecatching_border(&cell->style->border[BOTTOM], cell->style,
@@ -2259,10 +2263,10 @@ struct box *table_find_cell(struct box *table, unsigned int x,
 	struct box *row_group, *row, *cell;
 	struct box *match = NULL;
 	unsigned int cur_row = 0;
-	
+
 	if ((x > table->columns) || (y > table->rows))
 		return NULL;
-	
+
 	/* this code uses brute-force and should be re-implemented using a faster
 	 * algorithm */
 	for (row_group = table->children; row_group;
