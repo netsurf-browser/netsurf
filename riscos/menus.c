@@ -1428,7 +1428,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 					windows_at_pointer);
 			return true;
 		case BROWSER_FIND_TEXT:
-			if (!c)
+			if (!c || c->type != CONTENT_HTML)
 				return false;
 			ro_gui_menu_prepare_action(owner, action, true);
 			ro_gui_dialog_open_persistant(g->window, dialog_search,
@@ -1792,11 +1792,13 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action, bool windows) 
 						ICON_TOOLBAR_SCALE, !c);
 			break;
 		case BROWSER_FIND_TEXT:
+			result = !c || c->type != CONTENT_HTML;
+			ro_gui_menu_set_entry_shaded(current_menu, action, result);
 			if ((c) && (windows))
 				ro_gui_search_prepare(g);
 			if ((t) && (!t->editor) && (t->type == THEME_BROWSER_TOOLBAR))
 				ro_gui_set_icon_shaded_state(t->toolbar_handle,
-						ICON_TOOLBAR_SEARCH, !c);
+						ICON_TOOLBAR_SEARCH, result);
 			break;
 		case BROWSER_IMAGES_FOREGROUND:
 			ro_gui_menu_set_entry_shaded(current_menu, action, true);
