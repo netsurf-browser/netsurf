@@ -2,48 +2,120 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 Richard Wilson <not_ginger_matt@hotmail.com>
+ * Copyright 2005 Richard Wilson <info@tinct.net>
  *
  * Complete details on using Tinct are available from http://www.tinct.net.
  */
 
 /** \file
- * Tinct SWI numbers and flags for version 0.06
+ * Tinct SWI numbers and flags for version 0.11
  */
 
 #ifndef _NETSURF_RISCOS_TINCT_H_
 #define _NETSURF_RISCOS_TINCT_H_
 
-/*	Tinct_PlotAlpha plots the RGBA sprite pointed to by R2 at the OS screen location (R3,R4). Flags are
-	supplied in R7.
+
+/**
+ * Plots an alpha-blended sprite at the specified coordinates.
+ *
+ * ->	R2	Sprite pointer
+ *	R3	X coordinate
+ *	R4	Y coordinate
+ *	R7	Flag word
 */
 #define Tinct_PlotAlpha 0x57240
 
-/*	Tinct_PlotScaledAlpha plots the RGBA sprite pointed to by R2 at the OS screen location (R3,R4)
-	scaled to (R5,R6) OS units. Flags are supplied in R7.
-*/
+
+/**
+ * Plots a scaled alpha-blended sprite at the specified coordinates.
+ *
+ * ->	R2	Sprite pointer
+ *	R3	X coordinate
+ *	R4	Y coordinate
+ *	R5	Scaled sprite width
+ *	R6	Scaled sprite height
+ *	R7	Flag word
+ */
 #define Tinct_PlotScaledAlpha 0x57241
 
-/*	Tinct_PlotAlpha plots the RGB0 sprite pointed to by R2 at the OS screen location (R3,R4). Flags are
-	supplied in R7.
-*/
+
+/**
+ * Plots a sprite at the specified coordinates with a constant 0xff value for
+ * the alpha channel, ie without a mask.
+ *
+ * ->	R2	Sprite pointer
+ *	R3	X coordinate
+ *	R4	Y coordinate
+ *	R7	Flag word
+ */
 #define Tinct_Plot 0x57242
 
-/*	Tinct_PlotScaledAlpha plots the RGB0 sprite pointed to by R2 at the OS screen location (R3,R4)
-	scaled to (R5,R6) OS units. Flags are supplied in R7.
-*/
+/**
+ * Plots a scaled sprite at the specified coordinates with a constant 0xff value
+ * for the alpha channel, ie without a mask.
+ *
+ * ->	R2	Sprite pointer
+ *	R3	X coordinate
+ *	R4	Y coordinate
+ *	R5	Scaled sprite width
+ *	R6	Scaled sprite height
+ *	R7	Flag word
+ */
 #define Tinct_PlotScaled 0x57243
 
-/*	Tinct_ConvertSprite creates a 32bpp sprite (pointer to memory supplied in R3) from a paletted sprite
-	provided in R2.
-*/
+
+/**
+ * Converts a paletted sprite into its 32bpp equivalent. Sufficient memory must
+ * have previously been allocated for the sprite (44 + width * height * 4).
+ * As sprites with 16bpp or 32bpp do not have palettes, conversion cannot be
+ * performed on these variants. All sprites must be supplied with a full palette, 
+ * eg 8bpp must have 256 palette entries.
+ *
+ * ->	R2	Source sprite pointer
+ *	R3	Destination sprite pointer
+ */
 #define Tinct_ConvertSprite 0x57244
 
-/*	Tinct_AvailableFeatures returns the current feature set.
-*/
+
+/**
+ * Returns the features available to the caller by specifying bits in the flag
+ * word. The features available are unique for each mode, although the current
+ * version of Tinct supports the same subset of features for all modes.
+ *
+ * ->	R0	Feature to test for, or 0 for all features
+ * <-	R0	Features available
+ */
 #define Tinct_AvailableFeatures 0x57245
 
-/*	Flags
+
+/**
+ * Compresses an image using a fast algorithm. Sufficient memory must have been
+ * previously allocated for the maximum possible compressed size. This value is
+ * equal to 28 + (width * height * 4) * 33 / 32.
+ *
+ * ->	R0	Source sprite pointer
+ *	R2	Output data buffer
+ *	R3	Output bytes available
+ *	R7	Flag word (currently 0)
+ * <-	R0	Size of compressed data
+ */
+#define Tinct_Compress 0x57246
+
+
+/**
+ * Decompresses an image previously compressed. Sufficient memory must have been
+ * previously allocated for the decompressed data (44 + width * height * 4) where
+ * width and height are available at +0 and +4 of the compressed data respectively.
+ *
+ * ->	R0	Input data buffer
+ *	R2	Output data buffer
+ *	R7	Flag word (currently 0)
+ * <-	R0	Size of decompressed data
+ */
+#define Tinct_Decompress 0x57247
+
+
+/*	Plotting flags
 */
 #define tinct_READ_SCREEN_BASE	  0x01	/** <-- Use when hardware scrolling */
 #define tinct_BILINEAR_FILTER	  0x02	/** <-- Perform bi-linear filtering */
@@ -62,4 +134,5 @@
 /*	Sprite mode
 */
 #define tinct_SPRITE_MODE	  (os_mode)0x301680b5
+
 #endif
