@@ -422,6 +422,42 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		}
 	}
 
+	/* transfer <tr height="n"> down to the <td> elements */
+	if (strcmp((const char *) n->name, "tr") == 0) {
+	  	if ((s = (char *) xmlGetProp(n,
+				(const xmlChar *) "height"))) {
+			float value = atof(s);
+			if (value < 0 || strlen(s) == 0) {
+				/* ignore negative values and height="" */
+			} else if (strrchr(s, '%')) {
+				/* the specification doesn't make clear what
+				 * percentage heights mean, so ignore them */
+			} else {
+				/* The tree is not normalized yet, so accept cells not
+				 * in rows and rows not in row groups. */
+				struct box *child;
+				float current;
+				for (child = box->children; child; child = child->next) {
+				  	if (child->type == BOX_TABLE_CELL) {
+					  	current = css_len2px(
+					  			&child->style->height.length,
+					  			child->style);
+					  	value = (value > current) ?
+					  			value : current;
+						child->style->height.height =
+								CSS_HEIGHT_LENGTH;
+						child->style->height.length.unit =
+								CSS_UNIT_PX;
+						child->style->height.length.value =
+								value;
+					}
+				}
+			}
+			xmlFree(s);
+		}
+	}
+	
+	
 	/* fetch any background image for this box */
 	if (style->background_image.type == CSS_BACKGROUND_IMAGE_URI) {
 		if (!html_fetch_object(content, style->background_image.uri,
@@ -642,7 +678,8 @@ struct css_style * box_get_style(struct content *c,
 	/* This property only applies to the body element, if you believe
 	 * the spec. Many browsers seem to allow it on other elements too,
 	 * so let's be generic ;) */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "background"))) {
+	if (((s = (char *) xmlGetProp(n, (const xmlChar *) "background"))) &&
+			(style->background_image.type == CSS_BACKGROUND_IMAGE_NONE)) {
 		res = url_join(s, c->data.html.base_url, &url);
 		xmlFree(s);
 		if (res == URL_FUNC_NOMEM) {
@@ -664,7 +701,8 @@ struct css_style * box_get_style(struct content *c,
 		}
 	}
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bgcolor"))) {
+	if (((s = (char *) xmlGetProp(n, (const xmlChar *) "bgcolor"))) && 
+			(style->background_color == TRANSPARENT)) {
 		unsigned int r, g, b;
 		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)
 			style->background_color = (b << 16) | (g << 8) | r;
