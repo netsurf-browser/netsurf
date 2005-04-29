@@ -188,7 +188,7 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 
 	LOG(("processing header (%p) %d, %d", c, width, height));
 
-	c->bitmap = bitmap_create(width, height);
+	c->bitmap = bitmap_create(width, height, false);
 	if (!c->bitmap) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -297,6 +297,9 @@ bool nsmng_convert(struct content *c, int width, int height) {
 	/*	Optimise the plotting of JNG/PNGs
 	*/
 	c->data.mng.opaque_test_pending = (c->type == CONTENT_PNG) || (c->type == CONTENT_JNG);
+	if (c->data.mng.opaque_test_pending)
+		bitmap_set_opaque(c->bitmap, false);
+		
 	return true;
 }
 

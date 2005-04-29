@@ -29,10 +29,11 @@
  *
  * \param  width   width of image in pixels
  * \param  height  width of image in pixels
+ * \param  clear   whether to clear the image ready for use
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create(int width, int height)
+struct bitmap *bitmap_create(int width, int height, bool clear)
 {
 	unsigned int area_size;
 	struct bitmap *bitmap;
@@ -43,7 +44,10 @@ struct bitmap *bitmap_create(int width, int height)
 		return NULL;
 
 	area_size = 16 + 44 + width * height * 4;
-	bitmap = calloc(sizeof(struct bitmap) + area_size, 1);
+	if (clear)
+		bitmap = calloc(sizeof(struct bitmap) + area_size, 1);
+	else
+		bitmap = malloc(sizeof(struct bitmap) + area_size);
 	if (!bitmap)
 		return NULL;
 
@@ -61,7 +65,8 @@ struct bitmap *bitmap_create(int width, int height)
 	/* sprite control block */
 	sprite = (osspriteop_header *) (sprite_area + 1);
 	sprite->size = area_size - 16;
-/*	memset(sprite->name, 0x00, 12); */
+	if (!clear)
+		memset(sprite->name, 0x00, 12);
 	strncpy(sprite->name, "bitmap", 12);
 	sprite->width = width - 1;
 	sprite->height = height - 1;

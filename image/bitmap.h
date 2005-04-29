@@ -25,7 +25,7 @@ struct content;
 /** An opaque image. */
 struct bitmap;
 
-struct bitmap *bitmap_create(int width, int height);
+struct bitmap *bitmap_create(int width, int height, bool clear);
 void bitmap_set_opaque(struct bitmap *bitmap, bool opaque);
 bool bitmap_test_opaque(struct bitmap *bitmap);
 bool bitmap_get_opaque(struct bitmap *bitmap);

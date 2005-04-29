@@ -32,10 +32,11 @@ struct bitmap;
  *
  * \param  width   width of image in pixels
  * \param  height  width of image in pixels
+ * \param  clear   whether to clear the image ready for use
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create(int width, int height)
+struct bitmap *bitmap_create(int width, int height, bool clear)
 {
 	GdkPixbuf *pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
 			width, height);

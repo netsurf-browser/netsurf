@@ -202,7 +202,7 @@ int gif_initialise(struct gif_animation *gif) {
 
 		/*	Initialise the sprite header
 		*/
-		if ((gif->frame_image = bitmap_create(gif->width, gif->height)) == NULL) {
+		if ((gif->frame_image = bitmap_create(gif->width, gif->height, false)) == NULL) {
 			gif_finalise(gif);
 			return GIF_INSUFFICIENT_MEMORY;
 		}
@@ -280,7 +280,7 @@ static int gif_initialise_sprite(struct gif_animation *gif, unsigned int width, 
 
 	/*	Allocate some more memory
 	*/
-	if ((buffer = bitmap_create(max_width, max_height)) == NULL)
+	if ((buffer = bitmap_create(max_width, max_height, false)) == NULL)
 		return GIF_INSUFFICIENT_MEMORY;
 	bitmap_destroy(gif->frame_image);
 	gif->frame_image = buffer;

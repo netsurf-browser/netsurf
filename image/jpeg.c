@@ -94,7 +94,7 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 	width = cinfo.output_width;
 	height = cinfo.output_height;
 
-	bitmap = bitmap_create(width, height);
+	bitmap = bitmap_create(width, height, false);
 	if (!bitmap) {
 		jpeg_destroy_decompress(&cinfo);
 
