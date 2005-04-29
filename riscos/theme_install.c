@@ -236,7 +236,6 @@ void theme_install_install(bool apply)
 		}
 		theme_found = (obj_type == osfile_NOT_FOUND);
 	}
-	free(theme_file);
 
 	error = xosfile_save_stamped(theme_save, 0xffd,
 			theme_install_content->source_data,
@@ -247,26 +246,21 @@ void theme_install_install(bool apply)
 				error->errnum, error->errmess));
 		warn_user("ThemeInstallErr", 0);
 		theme_install_close();
+		free(theme_file);
 		return;
 	}
 
 	if (apply) {
 		ro_gui_theme_get_available();
-		snprintf(theme_save, sizeof theme_save, "%s%s",
-				THEME_PATH_R, theme_leaf);
-		theme_save[sizeof theme_save - 1] = '\0';
-		theme_install = ro_gui_theme_find(theme_save);
+		theme_install = ro_gui_theme_find(theme_file);
 		if (!theme_install || !ro_gui_theme_apply(theme_install)) {
 			warn_user("ThemeApplyErr", 0);
 		} else {
-			theme_file = strdup(theme_save);
-			if (!theme_file) {
-				warn_user("NoMemory", 0);
-			} else {
-				free(option_theme);
-				option_theme = theme_file;
-			}
+			free(option_theme);
+			option_theme = theme_file;
 		}
+	} else {
+		free(theme_file);
 	}
 }
 
