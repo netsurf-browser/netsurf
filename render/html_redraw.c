@@ -42,8 +42,9 @@ static bool html_redraw_radio(int x, int y, int width, int height,
 		bool selected);
 static bool html_redraw_file(int x, int y, int width, int height,
 		struct box *box, float scale, colour background_colour);
-static bool html_redraw_background(int x, int y,
-		struct box *box, float scale, colour background_colour);
+static bool html_redraw_background(int x, int y, struct box *box, float scale,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		colour *background_colour);
 static bool html_redraw_scrollbars(struct box *box, float scale,
 		int x, int y, int padding_width, int padding_height,
 		colour background_colour);
@@ -235,51 +236,23 @@ bool html_redraw_box(struct box *box,
 	}
 
 	/* background colour and image */
-	if (box->style && box->type != BOX_BR && (box->type != BOX_INLINE ||
-			box->style != box->parent->parent->style)) {
+	if ((box->style && box->type != BOX_BR && (box->type != BOX_INLINE ||
+			box->style != box->parent->parent->style)) &&
+			((box->style->background_color != TRANSPARENT) ||
+			(box->background))) {
 		/* find intersection of clip box and padding box */
 		int px0 = x < x0 ? x0 : x;
 		int py0 = y < y0 ? y0 : y;
 		int px1 = x + padding_width < x1 ? x + padding_width : x1;
 		int py1 = y + padding_height < y1 ? y + padding_height : y1;
 
-		/* background colour */
-		if (box->style->background_color != TRANSPARENT &&
-				px0 < px1 && py0 < py1 &&
-				/* don't redraw background if there is an
-				 * image covering it */
-				((box->style->background_repeat !=
-				  CSS_BACKGROUND_REPEAT_REPEAT) ||
-				(box->background == NULL) ||
-				(box->background->bitmap == NULL) ||
-				/*(ro_gui_current_redraw_gui == NULL) ||
-				(!ro_gui_current_redraw_gui->
-				  option.background_images) ||*/
-				(!bitmap_get_opaque(box->background->
-				  bitmap)))) {
-			if (!plot.fill(px0, py0, px1, py1,
-					box->style->background_color))
-				return false;
-			/* set current background color for font painting */
-			current_background_color = box->style->background_color;
-		}
-
-		if ((box->background) && (px0 < px1) && (py0 < py1)) {
-			/* clip to padding box for everything but the main window */
-			if (box->parent) {
-				if (!plot.clip(px0, py0, px1, py1))
-					return false;
-			} else {
-				if (!plot.clip(clip_x0, clip_y0,
-						clip_x1, clip_y1))
-					return false;
-			}
-
-			/* plot background image */
+		/* valid clipping rectangles only */
+		if ((px0 < px1) && (py0 < py1)) {
+			/* plot background */
 			if (!html_redraw_background(x, y, box, scale,
-					current_background_color))
+					px0, py0, px1, py1,
+					&current_background_color))
 				return false;
-
 			/* restore previous graphics window */
 			if (!plot.clip(x0, y0, x1, y1))
 				return false;
@@ -375,21 +348,21 @@ bool html_redraw_box(struct box *box,
 			if (highlighted) {
 				unsigned endtxt_idx = end_idx;
 				int startx, endx;
-	
+
 				if (end_idx > box->length) {
 					/* adjust for trailing space, not present in box->text */
 					assert(end_idx == box->length + 1);
 					endtxt_idx = box->length;
 				}
-	
+
 				if (!nsfont_width(box->style, box->text, start_idx, &startx))
 					startx = 0;
-	
+
 				if (!nsfont_width(box->style, box->text + start_idx,
 						endtxt_idx - start_idx, &endx))
 					endx = 0;
 				endx += startx;
-	
+
 				/* is there a trailing space that should be highlighted as well? */
 				if (end_idx > box->length) {
 					int spc_width;
@@ -397,36 +370,37 @@ bool html_redraw_box(struct box *box,
 					if (nsfont_width(box->style, " ", 1, &spc_width))
 						endx += spc_width;
 				}
-	
+
 				if (scale != 1.0) {
 					startx *= scale;
 					endx *= scale;
 				}
-	
+
 				if (start_idx > 0) {
-	
+
 					if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
 							box->style, box->text, start_idx,
 							current_background_color,
 							/*print_text_black ? 0 :*/ box->style->color))
 						return false;
-	
+
 				}
-	
+
 				if (!plot.fill(x + startx, y, x + endx, y + box->height * scale,
 						current_background_color ^ 0xffffff))
 					return false;
-	
+
 				if (!plot.text(x + startx, y + (int) (box->height * 0.75 * scale),
 						box->style, box->text + start_idx, endtxt_idx - start_idx,
 						current_background_color ^ 0xffffff,
 						current_background_color))
 					return false;
-	
+
 				if (endtxt_idx < box->length) {
-	
+
 					if (!plot.text(x + endx, y + (int) (box->height * 0.75 * scale),
-							box->style, box->text + endtxt_idx, box->length - endtxt_idx,
+							box->style, box->text + endtxt_idx,
+							box->length - endtxt_idx,
 							current_background_color,
 							/*print_text_black ? 0 :*/ box->style->color))
 						return false;
@@ -609,7 +583,7 @@ bool html_redraw_borders(struct box *box, int x, int y,
 				c_lit = html_redraw_lighter(c_lit);
 				break;
 			case 1:
-			     	c_lit = html_redraw_darker(c_lit);
+				c_lit = html_redraw_darker(c_lit);
 			case 2:
 				c_lit = html_redraw_darker(c_lit);
 			}
@@ -652,14 +626,14 @@ bool html_redraw_borders(struct box *box, int x, int y,
  * \param  c  colour
  * \return  a darker shade of c
  */
- 
+
 #define mix_colour(c0, c1) ((((c0 >> 16) + 3 * (c1 >> 16)) >> 2) << 16) | \
 		(((((c0 >> 8) & 0xff) + 3 * ((c1 >> 8) & 0xff)) >> 2) << 8) | \
 		((((c0 & 0xff) + 3 * (c1 & 0xff)) >> 2) << 0);
 
 colour html_redraw_darker(colour c)
-{	
-	return mix_colour(0x000000, c)	
+{
+	return mix_colour(0x000000, c)
 }
 
 
@@ -672,7 +646,7 @@ colour html_redraw_darker(colour c)
 
 colour html_redraw_lighter(colour c)
 {
-	return mix_colour(0xffffff, c)	
+	return mix_colour(0xffffff, c)
 }
 
 
@@ -803,82 +777,140 @@ bool html_redraw_file(int x, int y, int width, int height,
  * \return true if successful, false otherwise
  */
 
-bool html_redraw_background(int x, int y,
-		struct box *box, float scale, colour background_colour)
+bool html_redraw_background(int x, int y, struct box *box, float scale,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		colour *background_colour)
 {
 	bool repeat_x = false;
 	bool repeat_y = false;
+	bool plot_colour = true;
+	bool clip_to_children = false;
+	struct box *clip_box = box;
+	int px0 = clip_x0, py0 = clip_y0, px1 = clip_x1, py1 = clip_y1;
+	int ox = x, oy = y;
 
-	assert(box->background);
+	if (box->background->bitmap) {
+		/* handle background-repeat */
+		switch (box->style->background_repeat) {
+			case CSS_BACKGROUND_REPEAT_REPEAT:
+				repeat_x = repeat_y = true;
+				break;
+			case CSS_BACKGROUND_REPEAT_REPEAT_X:
+				repeat_x = true;
+				break;
+			case CSS_BACKGROUND_REPEAT_REPEAT_Y:
+				repeat_y = true;
+				break;
+			case CSS_BACKGROUND_REPEAT_NO_REPEAT:
+				break;
+			default:
+				break;
+		}
 
-	/* only bitmaps handled currently */
-	if (!box->background->bitmap)
-		return true;
+		/* handle background-position */
+		switch (box->style->background_position.horz.pos) {
+			case CSS_BACKGROUND_POSITION_PERCENT:
+				x += (box->padding[LEFT] + box->width +
+						box->padding[RIGHT] -
+						box->background->width) * scale *
+						box->style->background_position.horz.
+						value.percent / 100;
+				break;
+			case CSS_BACKGROUND_POSITION_LENGTH:
+				x += (int) (css_len2px(&box->style->background_position.
+						horz.value.length, box->style) * scale);
+				break;
+			default:
+				break;
+		}
 
-	/* exit if background images aren't wanted */
-	/*if (ro_gui_current_redraw_gui)
-		if (!ro_gui_current_redraw_gui->option.background_images)
-			return true;
-	else if (!option_background_images)
-		return true;*/
+		switch (box->style->background_position.vert.pos) {
+			case CSS_BACKGROUND_POSITION_PERCENT:
+				y += (box->padding[TOP] + box->height +
+						box->padding[BOTTOM] -
+						box->background->height) * scale *
+						box->style->background_position.vert.
+						value.percent / 100;
+				break;
+			case CSS_BACKGROUND_POSITION_LENGTH:
+				y += (int) (css_len2px(&box->style->background_position.
+						vert.value.length, box->style) * scale);
+				break;
+			default:
+				break;
+		}
 
-	/* handle background-repeat */
-	switch (box->style->background_repeat) {
-		case CSS_BACKGROUND_REPEAT_REPEAT:
-			repeat_x = repeat_y = true;
-			break;
-		case CSS_BACKGROUND_REPEAT_REPEAT_X:
-			repeat_x = true;
-			break;
-		case CSS_BACKGROUND_REPEAT_REPEAT_Y:
-			repeat_y = true;
-			break;
-		case CSS_BACKGROUND_REPEAT_NO_REPEAT:
-			break;
-		default:
-			break;
+		/* optimisation: only plot the colour if we're filled and opaque */
+		if ((repeat_x) && (repeat_y))
+			plot_colour = !bitmap_get_opaque(box->background->bitmap);
 	}
 
-	/* handle background-position */
-	switch (box->style->background_position.horz.pos) {
-		case CSS_BACKGROUND_POSITION_PERCENT:
-			x += (box->padding[LEFT] + box->width +
-					box->padding[RIGHT] -
-					box->background->width) * scale *
-					box->style->background_position.horz.
-					value.percent / 100;
-			break;
-		case CSS_BACKGROUND_POSITION_LENGTH:
-			x += (int) (css_len2px(&box->style->background_position.
-					horz.value.length, box->style) * scale);
-			break;
-		default:
-			break;
+	/* special case for table rows as their background needs to be clipped to
+	 * all the cells */
+	if (box->type == BOX_TABLE_ROW) {
+		struct box *parent = box->parent;
+		if ((parent) && (parent->type == BOX_TABLE_ROW_GROUP))
+			parent = parent->parent;
+		if ((parent) && (parent->type == BOX_TABLE)) {
+			assert(parent->style);
+			clip_to_children = (parent->style->border_spacing.horz.value > 0) ||
+					(parent->style->border_spacing.vert.value > 0);
+			if (clip_to_children)
+				clip_box = box->children;
+		}
 	}
 
-	switch (box->style->background_position.vert.pos) {
-		case CSS_BACKGROUND_POSITION_PERCENT:
-			y += (box->padding[TOP] + box->height +
-					box->padding[BOTTOM] -
-					box->background->height) * scale *
-					box->style->background_position.vert.
-					value.percent / 100;
-			break;
-		case CSS_BACKGROUND_POSITION_LENGTH:
-			y += (int) (css_len2px(&box->style->background_position.
-					vert.value.length, box->style) * scale);
-			break;
-		default:
-			break;
-	}
+	do {
+	  	if (clip_to_children) {
+	  	  	assert(clip_box->type == BOX_TABLE_CELL);
+	  	  	
+	  	  	/* update clip_* to the child cell */
+	  	  	clip_x0 = ox + (clip_box->x * scale);
+	  	  	clip_y0 = oy + (clip_box->y * scale);
+	  	  	clip_x1 = clip_x0 + clip_box->padding[LEFT] +
+	  	  			clip_box->width + clip_box->padding[RIGHT];
+	  	  	clip_y1 = clip_y0 + clip_box->padding[TOP] +
+	  	  			clip_box->height + clip_box->padding[BOTTOM];
+			if (clip_x0 < px0) clip_x0 = px0;
+			if (clip_y0 < py0) clip_y0 = py0;
+			if (clip_x1 > px1) clip_x1 = px1;
+			if (clip_y1 > py1) clip_y1 = py1;
+			
+			if ((clip_x0 >= clip_x1) || (clip_y0 >= clip_y1) ||
+					(clip_box->style->background_color != TRANSPARENT) ||
+					((clip_box->background->bitmap) &&
+					(bitmap_get_opaque(clip_box->background->bitmap)))) {
+				if (!(clip_box = clip_box->next))
+					return true;
+				continue;
+			}
+	  	}
 
-	/* and plot the image */
-	return plot.bitmap_tile(x, y,
-			ceilf(box->background->width * scale),
-			ceilf(box->background->height * scale),
-			box->background->bitmap,
-			background_colour,
-			repeat_x, repeat_y);
+		/* plot the background colour */
+		if (box->style->background_color != TRANSPARENT) {
+			*background_colour = box->style->background_color;
+			if (plot_colour)
+				if (!plot.fill(clip_x0, clip_y0, clip_x1, clip_y1,
+						*background_colour))
+				return false;
+		}
+		/* and plot the image */
+		if (box->background->bitmap) {
+			if (!plot.clip(clip_x0, clip_y0, clip_x1, clip_y1))
+					return false;
+			if (!plot.bitmap_tile(x, y,
+					ceilf(box->background->width * scale),
+					ceilf(box->background->height * scale),
+					box->background->bitmap,
+					*background_colour,
+					repeat_x, repeat_y))
+				return false;
+		}
+		
+		/* advance and loop for child clipping */
+		clip_box = clip_box->next;
+	} while (clip_box && clip_to_children);
+	return true;
 }
 
 
@@ -1043,18 +1075,18 @@ bool box_hscrollbar_present(const struct box * const box)
 /**
  * Calculate scrollbar dimensions and positions for a box.
  *
- * \param  box             scrolling box
+ * \param  box		   scrolling box
  * \param  padding_width   scaled width of padding box
  * \param  padding_height  scaled height of padding box
- * \param  w               scaled scrollbar width
- * \param  vscroll         updated to vertical scrollbar present
- * \param  hscroll         updated to horizontal scrollbar present
- * \param  well_height     updated to vertical well height
- * \param  bar_top         updated to top position of vertical scrollbar
- * \param  bar_height      updated to height of vertical scrollbar
- * \param  well_width      updated to horizontal well width
- * \param  bar_left        updated to left position of horizontal scrollbar
- * \param  bar_width       updated to width of horizontal scrollbar
+ * \param  w		   scaled scrollbar width
+ * \param  vscroll	   updated to vertical scrollbar present
+ * \param  hscroll	   updated to horizontal scrollbar present
+ * \param  well_height	   updated to vertical well height
+ * \param  bar_top	   updated to top position of vertical scrollbar
+ * \param  bar_height	   updated to height of vertical scrollbar
+ * \param  well_width	   updated to horizontal well width
+ * \param  bar_left	   updated to left position of horizontal scrollbar
+ * \param  bar_width	   updated to width of horizontal scrollbar
  */
 
 void box_scrollbar_dimensions(const struct box * const box,
