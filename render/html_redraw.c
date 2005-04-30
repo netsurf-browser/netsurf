@@ -789,7 +789,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	int px0 = clip_x0, py0 = clip_y0, px1 = clip_x1, py1 = clip_y1;
 	int ox = x, oy = y;
 
-	if (box->background->bitmap) {
+	if (box->background && box->background->bitmap) {
 		/* handle background-repeat */
 		switch (box->style->background_repeat) {
 			case CSS_BACKGROUND_REPEAT_REPEAT:
@@ -878,8 +878,9 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			
 			if ((clip_x0 >= clip_x1) || (clip_y0 >= clip_y1) ||
 					(clip_box->style->background_color != TRANSPARENT) ||
-					((clip_box->background->bitmap) &&
-					(bitmap_get_opaque(clip_box->background->bitmap)))) {
+					(clip_box->background &&
+					 clip_box->background->bitmap &&
+					 bitmap_get_opaque(clip_box->background->bitmap))) {
 				if (!(clip_box = clip_box->next))
 					return true;
 				continue;
@@ -895,7 +896,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 				return false;
 		}
 		/* and plot the image */
-		if (box->background->bitmap) {
+		if (box->background && box->background->bitmap) {
 			if (!plot.clip(clip_x0, clip_y0, clip_x1, clip_y1))
 					return false;
 			if (!plot.bitmap_tile(x, y,
