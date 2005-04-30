@@ -123,6 +123,9 @@ query_id query_user(const char *query, const char *detail, const query_callback 
 
 	ro_gui_set_icon_string(qw->window, ICON_QUERY_MESSAGE, query_buffer);
 
+	xwimp_set_icon_state(qw->window, ICON_QUERY_HELP,
+			wimp_ICON_DELETED, wimp_ICON_DELETED);
+
 	ro_gui_open_window_centre(NULL, qw->window);
 
 	error = xwimp_set_caret_position(qw->window, (wimp_i)-1, 0, 0, 1 << 25, -1);
