@@ -2,7 +2,8 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
 /** \file
@@ -32,12 +33,21 @@ regex_t url_re, url_up_re, url_nice_re;
 void url_init(void)
 {
 	/* regex from RFC 2396 */
-	regcomp_wrapper(&url_re, "^[[:space:]]*(([a-zA-Z][-a-zA-Z0-9+.]*):)?"
-			"(//([^/?#[:space:]]*))?([^?#[:space:]]*)"
-			"(\\?([^#[:space:]]*))?(#([^[:space:]]*))?"
+	regcomp_wrapper(&url_re, "^[[:space:]]*"
+#define URL_RE_SCHEME 2
+			"(([a-zA-Z][-a-zA-Z0-9+.]*):)?"
+#define URL_RE_AUTHORITY 4
+			"(//([^/?#[:space:]]*))?"
+#define URL_RE_PATH 5
+			"([^?#[:space:]]*)"
+#define URL_RE_QUERY 7
+			"(\\?([^#[:space:]]*))?"
+#define URL_RE_FRAGMENT 9
+			"(#([^[:space:]]*))?"
 			"[[:space:]]*$", REG_EXTENDED);
 	regcomp_wrapper(&url_up_re,
-			"/([^/]|[.][^./]|[^./][.]|[^/][^/][^/]+)?/[.][.](/|$)",
+			"/([^/]|[.][^./]|[^./][.]|[^./][^./]|[^/][^/][^/]+)?"
+			"/[.][.](/|$)",
 			REG_EXTENDED);
 	regcomp_wrapper(&url_nice_re,
 			"^([^.]{0,4}[.])?([^.][^.][.])?([^/?&;.=]*)"
@@ -75,7 +85,7 @@ url_func_result url_normalize(const char *url, char **result)
 
 	len = strlen(url);
 
-	if (match[1].rm_so == -1) {
+	if (match[URL_RE_SCHEME].rm_so == -1) {
 		/* scheme missing: add http:// and reparse */
 /*		LOG(("scheme missing: using http"));*/
 		if ((*result = malloc(len + 13)) == NULL) {
@@ -108,10 +118,11 @@ url_func_result url_normalize(const char *url, char **result)
 
 	/* see RFC 2616 section 3.2.3 */
 	/* make scheme lower-case */
-	if (match[2].rm_so != -1) {
-		for (i = match[2].rm_so; i != match[2].rm_eo; i++)
+	if (match[URL_RE_SCHEME].rm_so != -1) {
+		for (i = match[URL_RE_SCHEME].rm_so;
+				i != match[URL_RE_SCHEME].rm_eo; i++)
 			(*result)[i] = tolower((*result)[i]);
-		if (match[2].rm_eo == 4
+		if (match[URL_RE_SCHEME].rm_eo == 4
 				&& (*result)[0] == 'h'
 				&& (*result)[1] == 't'
 				&& (*result)[2] == 't'
@@ -120,30 +131,37 @@ url_func_result url_normalize(const char *url, char **result)
 	}
 
 	/* make empty path into "/" */
-	if (match[5].rm_so != -1 && match[5].rm_so == match[5].rm_eo) {
-		memmove((*result) + match[5].rm_so + 1,
-				(*result) + match[5].rm_so,
-				len - match[5].rm_so + 1);
-		(*result)[match[5].rm_so] = '/';
+	if (match[URL_RE_PATH].rm_so != -1 &&
+			match[URL_RE_PATH].rm_so == match[URL_RE_PATH].rm_eo) {
+		memmove((*result) + match[URL_RE_PATH].rm_so + 1,
+				(*result) + match[URL_RE_PATH].rm_so,
+				len - match[URL_RE_PATH].rm_so + 1);
+		(*result)[match[URL_RE_PATH].rm_so] = '/';
 		len++;
 	}
 
 	/* make host lower-case */
-	if (match[4].rm_so != -1) {
-		for (i = match[4].rm_so; i != match[4].rm_eo; i++) {
+	if (match[URL_RE_AUTHORITY].rm_so != -1) {
+		for (i = match[URL_RE_AUTHORITY].rm_so;
+				i != match[URL_RE_AUTHORITY].rm_eo; i++) {
 			if ((*result)[i] == ':') {
 				if (http && (*result)[i + 1] == '8' &&
 						(*result)[i + 2] == '0' &&
-						i + 3 == match[4].rm_eo) {
+						i + 3 ==
+						match[URL_RE_AUTHORITY].rm_eo) {
 					memmove((*result) + i,
 							(*result) + i + 3,
-							len - match[4].rm_eo);
+							len -
+							match[URL_RE_AUTHORITY].
+							rm_eo);
 					len -= 3;
 					(*result)[len] = '\0';
 				} else if (i + 1 == match[4].rm_eo) {
 					memmove((*result) + i,
 							(*result) + i + 1,
-							len - match[4].rm_eo);
+							len -
+							match[URL_RE_AUTHORITY].
+							rm_eo);
 					len--;
 					(*result)[len] = '\0';
 				}
@@ -223,18 +241,21 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 				base_match[i].rm_eo - base_match[i].rm_so,
 				base + base_match[i].rm_so);
 	}*/
-	if (base_match[2].rm_so == -1) {
+	if (base_match[URL_RE_SCHEME].rm_so == -1) {
 		LOG(("base url '%s' is not absolute", base));
 		return URL_FUNC_FAILED;
 	}
-	scheme = base + base_match[2].rm_so;
-	scheme_len = base_match[2].rm_eo - base_match[2].rm_so;
-	if (base_match[4].rm_so != -1) {
-		authority = base + base_match[4].rm_so;
-		authority_len = base_match[4].rm_eo - base_match[4].rm_so;
+	scheme = base + base_match[URL_RE_SCHEME].rm_so;
+	scheme_len = base_match[URL_RE_SCHEME].rm_eo -
+			base_match[URL_RE_SCHEME].rm_so;
+	if (base_match[URL_RE_AUTHORITY].rm_so != -1) {
+		authority = base + base_match[URL_RE_AUTHORITY].rm_so;
+		authority_len = base_match[URL_RE_AUTHORITY].rm_eo -
+				base_match[URL_RE_AUTHORITY].rm_so;
 	}
-	path = base + base_match[5].rm_so;
-	path_len = base_match[5].rm_eo - base_match[5].rm_so;
+	path = base + base_match[URL_RE_PATH].rm_so;
+	path_len = base_match[URL_RE_PATH].rm_eo -
+			base_match[URL_RE_PATH].rm_so;
 
 
 	/* 1) */
@@ -246,67 +267,77 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 
 	/* 2) */
 	/* base + "#s" = (current document)#s (see Appendix C.1) */
-	if (rel_match[9].rm_so != -1) {
-		fragment = rel + rel_match[9].rm_so;
-		fragment_len = rel_match[9].rm_eo - rel_match[9].rm_so;
+	if (rel_match[URL_RE_FRAGMENT].rm_so != -1) {
+		fragment = rel + rel_match[URL_RE_FRAGMENT].rm_so;
+		fragment_len = rel_match[URL_RE_FRAGMENT].rm_eo -
+				rel_match[URL_RE_FRAGMENT].rm_so;
 	}
-	if (rel_match[5].rm_so == rel_match[5].rm_eo &&
-			rel_match[2].rm_so == -1 &&
-			rel_match[4].rm_so == -1 &&
-			rel_match[6].rm_so == -1) {
-		if (base_match[7].rm_so != -1) {
-			query = base + base_match[7].rm_so;
-			query_len = base_match[7].rm_eo -
-						base_match[7].rm_so;
+	if (rel_match[URL_RE_PATH].rm_so == rel_match[URL_RE_PATH].rm_eo &&
+			rel_match[URL_RE_SCHEME].rm_so == -1 &&
+			rel_match[URL_RE_AUTHORITY].rm_so == -1 &&
+			rel_match[URL_RE_QUERY].rm_so == -1) {
+		if (base_match[URL_RE_QUERY].rm_so != -1) {
+			/* normally the base query is discarded, but this is a
+			 * "reference to the current document", so keep it */
+			query = base + base_match[URL_RE_QUERY].rm_so;
+			query_len = base_match[URL_RE_QUERY].rm_eo -
+					base_match[URL_RE_QUERY].rm_so;
 		}
 		goto step7;
 	}
-	if (rel_match[7].rm_so != -1) {
-		query = rel + rel_match[7].rm_so;
-		query_len = rel_match[7].rm_eo - rel_match[7].rm_so;
+	if (rel_match[URL_RE_QUERY].rm_so != -1) {
+		query = rel + rel_match[URL_RE_QUERY].rm_so;
+		query_len = rel_match[URL_RE_QUERY].rm_eo -
+				rel_match[URL_RE_QUERY].rm_so;
 	}
 
 	/* base + "?y" = (base - query)?y
 	 * e.g http://a/b/c/d;p?q + ?y = http://a/b/c/d;p?y */
-	if (rel_match[5].rm_so == rel_match[5].rm_eo &&
-			rel_match[2].rm_so == -1 &&
-			rel_match[4].rm_so == -1 &&
-			rel_match[6].rm_so != -1)
+	if (rel_match[URL_RE_PATH].rm_so == rel_match[URL_RE_PATH].rm_eo &&
+			rel_match[URL_RE_SCHEME].rm_so == -1 &&
+			rel_match[URL_RE_AUTHORITY].rm_so == -1 &&
+			rel_match[URL_RE_QUERY].rm_so != -1)
 		goto step7;
 
 	/* 3) */
-	if (rel_match[2].rm_so != -1) {
-		scheme = rel + rel_match[2].rm_so;
-		scheme_len = rel_match[2].rm_eo - rel_match[2].rm_so;
+	if (rel_match[URL_RE_SCHEME].rm_so != -1) {
+		scheme = rel + rel_match[URL_RE_SCHEME].rm_so;
+		scheme_len = rel_match[URL_RE_SCHEME].rm_eo -
+				rel_match[URL_RE_SCHEME].rm_so;
 		authority = 0;
 		authority_len = 0;
-		if (rel_match[4].rm_so != -1) {
-			authority = rel + rel_match[4].rm_so;
-			authority_len = rel_match[4].rm_eo - rel_match[4].rm_so;
+		if (rel_match[URL_RE_AUTHORITY].rm_so != -1) {
+			authority = rel + rel_match[URL_RE_AUTHORITY].rm_so;
+			authority_len = rel_match[URL_RE_AUTHORITY].rm_eo -
+					rel_match[URL_RE_AUTHORITY].rm_so;
 		}
-		path = rel + rel_match[5].rm_so;
-		path_len = rel_match[5].rm_eo - rel_match[5].rm_so;
+		path = rel + rel_match[URL_RE_PATH].rm_so;
+		path_len = rel_match[URL_RE_PATH].rm_eo -
+				rel_match[URL_RE_PATH].rm_so;
 		goto step7;
 	}
 
 	/* 4) */
-	if (rel_match[4].rm_so != -1) {
-		authority = rel + rel_match[4].rm_so;
-		authority_len = rel_match[4].rm_eo - rel_match[4].rm_so;
-		path = rel + rel_match[5].rm_so;
-		path_len = rel_match[5].rm_eo - rel_match[5].rm_so;
+	if (rel_match[URL_RE_AUTHORITY].rm_so != -1) {
+		authority = rel + rel_match[URL_RE_AUTHORITY].rm_so;
+		authority_len = rel_match[URL_RE_AUTHORITY].rm_eo -
+				rel_match[URL_RE_AUTHORITY].rm_so;
+		path = rel + rel_match[URL_RE_PATH].rm_so;
+		path_len = rel_match[URL_RE_PATH].rm_eo -
+				rel_match[URL_RE_PATH].rm_so;
 		goto step7;
 	}
 
 	/* 5) */
-	if (rel[rel_match[5].rm_so] == '/') {
-		path = rel + rel_match[5].rm_so;
-		path_len = rel_match[5].rm_eo - rel_match[5].rm_so;
+	if (rel[rel_match[URL_RE_PATH].rm_so] == '/') {
+		path = rel + rel_match[URL_RE_PATH].rm_so;
+		path_len = rel_match[URL_RE_PATH].rm_eo -
+				rel_match[URL_RE_PATH].rm_so;
 		goto step7;
 	}
 
 	/* 6) */
-	buf = malloc(path_len + rel_match[5].rm_eo + 10);
+	buf = malloc(path_len + rel_match[URL_RE_PATH].rm_eo + 10);
 	if (!buf) {
 		LOG(("malloc failed"));
 		return URL_FUNC_NOMEM;
@@ -316,9 +347,10 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 	for (; path_len != 0 && buf[path_len - 1] != '/'; path_len--)
 		;
 	/* b) */
-	strncpy(buf + path_len, rel + rel_match[5].rm_so,
-			rel_match[5].rm_eo - rel_match[5].rm_so);
-	path_len += rel_match[5].rm_eo - rel_match[5].rm_so;
+	strncpy(buf + path_len, rel + rel_match[URL_RE_PATH].rm_so,
+			rel_match[URL_RE_PATH].rm_eo -
+			rel_match[URL_RE_PATH].rm_so);
+	path_len += rel_match[URL_RE_PATH].rm_eo - rel_match[URL_RE_PATH].rm_so;
 	/* c) */
 	buf[path_len] = 0;
 	for (i = j = 0; j != path_len; ) {
@@ -347,28 +379,18 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 		} else
 			path_len -= up_match[1].rm_eo - up_match[1].rm_so + 3;
 	}
-
-	/* and strip any remaining ../ | ./ pairs */
-	for (path = buf; path - buf < path_len; ) {
-		if (*path == '.' && path[1] == '.' && path[2] == '/') {
-			memmove(buf + (path - buf), path + 3,
-				((buf + path_len) - path) - 3);
-			path_len -= 3;
-		}
-		else if (*path == '.' && path[1] == '/') {
-			memmove(buf + (path - buf), path + 2,
-				((buf + path_len) - path) - 2);
-			path_len -= 2;
-		}
-		else
-			path++;
-	}
-	buf[path_len] = 0;
+	/* g) (choose to remove) */
 	path = buf;
+	while (3 <= path_len && path[1] == '.' && path[2] == '.') {
+		path += 3;
+		path_len -= 3;
+	}
+
+	buf[path - buf + path_len] = 0;
 
 step7:	/* 7) */
-	(*result) = malloc(scheme_len + 1 + 2 + authority_len + path_len + 1 + 1 +
-			query_len + 1 + fragment_len + 1);
+	(*result) = malloc(scheme_len + 1 + 2 + authority_len + path_len + 1 +
+			1 + query_len + 1 + fragment_len + 1);
 	if (!(*result)) {
 		LOG(("malloc failed"));
 		free(buf);
@@ -427,16 +449,19 @@ url_func_result url_host(const char *url, char **result)
 		LOG(("url '%s' failed to match regex", url));
 		return URL_FUNC_FAILED;
 	}
-	if (match[4].rm_so == -1)
+	if (match[URL_RE_AUTHORITY].rm_so == -1)
 		return URL_FUNC_FAILED;
 
-	(*result) = malloc(match[4].rm_eo - match[4].rm_so + 1);
+	(*result) = malloc(match[URL_RE_AUTHORITY].rm_eo -
+			match[URL_RE_AUTHORITY].rm_so + 1);
 	if (!(*result)) {
 		LOG(("malloc failed"));
 		return URL_FUNC_NOMEM;
 	}
-	strncpy((*result), url + match[4].rm_so, match[4].rm_eo - match[4].rm_so);
-	(*result)[match[4].rm_eo - match[4].rm_so] = 0;
+	strncpy((*result), url + match[URL_RE_AUTHORITY].rm_so,
+			match[URL_RE_AUTHORITY].rm_eo - match[4].rm_so);
+	(*result)[match[URL_RE_AUTHORITY].rm_eo -
+			match[URL_RE_AUTHORITY].rm_so] = 0;
 
 	return URL_FUNC_OK;
 }
@@ -460,17 +485,20 @@ url_func_result url_scheme(const char *url, char **result)
 		LOG(("url '%s' failed to match regex", url));
 		return URL_FUNC_FAILED;
 	}
-	if (match[2].rm_so == -1)
+	if (match[URL_RE_SCHEME].rm_so == -1)
 		return URL_FUNC_FAILED;
 
-	(*result) = malloc(match[2].rm_eo - match[2].rm_so + 1);
+	(*result) = malloc(match[URL_RE_SCHEME].rm_eo -
+			match[URL_RE_SCHEME].rm_so + 1);
 	if (!(*result)) {
 		LOG(("malloc failed"));
 		return URL_FUNC_NOMEM;
 	}
 
-	strncpy((*result), url + match[2].rm_so, match[2].rm_eo - match[2].rm_so);
-	(*result)[match[2].rm_eo - match[2].rm_so] = 0;
+	strncpy((*result), url + match[URL_RE_SCHEME].rm_so,
+			match[URL_RE_SCHEME].rm_eo -
+			match[URL_RE_SCHEME].rm_so);
+	(*result)[match[URL_RE_SCHEME].rm_eo - match[URL_RE_SCHEME].rm_so] = 0;
 
 	return URL_FUNC_OK;
 }

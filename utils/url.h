@@ -2,7 +2,8 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
 /** \file
