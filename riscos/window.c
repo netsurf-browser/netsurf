@@ -1646,6 +1646,8 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 		wchar_t c = (wchar_t)key;
 		static wchar_t wc = 0;	/* buffer for UTF8 alphabet */
 		static int shift = 0;
+		bool ctrl_key = true;
+
 		/* Munge cursor keys into unused control chars */
 		/* We can't map onto 1->26 (reserved for ctrl+<qwerty>
 		   That leaves 27->31 and 128->159 */
@@ -1655,7 +1657,10 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			case wimp_KEY_SHIFT | wimp_KEY_TAB: c = 11; break;
 
 			/* cursor movement keys */
-			case wimp_KEY_CONTROL | wimp_KEY_LEFT:  c = KEY_LINE_START; break;
+			case wimp_KEY_HOME:
+			case wimp_KEY_CONTROL | wimp_KEY_LEFT:
+				c = KEY_LINE_START; break;
+				break;
 			case wimp_KEY_END:
 				if (os_version >= RISCOS5)
 					c = KEY_LINE_END;
@@ -1684,15 +1689,24 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 				else if (os_version < RISCOS5)
 					c = KEY_DELETE_LEFT;
 				break;
+
+			default:
+				ctrl_key = false;
+				break;
 		}
 
 		if (c < 256) {
-			if ((wchar_t)key > 256)
-				/* do nothing */;
+			if (ctrl_key)
+				/* do nothing, these are our control chars */;
 			else if (alphabet != 111 /* UTF8 */ &&
-							ucstable != NULL)
+							ucstable != NULL) {
+				/* defined in this alphabet? */
+				if (ucstable[c] == -1)
+					return true;
+
 				/* read UCS4 value out of table */
-				c = ucstable[c] == -1 ? 0xFFFD : ucstable[c];
+				c = ucstable[c];
+			}
 			else if (alphabet == 111 /* UTF8 */) {
 				if ((c & 0x80) == 0x00 ||
 						(c & 0xC0) == 0xC0) {
