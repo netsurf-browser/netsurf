@@ -4,6 +4,7 @@
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Rob Jackson <jacko@xms.ms>
+ * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
  */
 
 /** \file
@@ -69,6 +70,9 @@ struct gui_download_window {
 	struct timeval last_time;	/**< Time status was last updated. */
 	unsigned int last_received;	/**< Value of received at last_time. */
 
+	bool send_dataload;	/**< Should send DataLoad message when finished */
+	wimp_message save_message;	/**< Copy of wimp DataSaveAck message */
+
 	struct gui_download_window *prev;	/**< Previous in linked list. */
 	struct gui_download_window *next;	/**< Next in linked list. */
 };
@@ -92,6 +96,8 @@ static int download_progress_y1;
 
 static void ro_gui_download_update_status(struct gui_download_window *dw);
 static void ro_gui_download_update_status_wrapper(void *p);
+static bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name);
+static void ro_gui_download_send_dataload(struct gui_download_window *dw);
 static void ro_gui_download_window_destroy_wrapper(void *p);
 static void ro_gui_download_close_confirmed(query_id, enum query_response res, void *p);
 static void ro_gui_download_close_cancelled(query_id, enum query_response res, void *p);
@@ -204,11 +210,13 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	download_template->icons[ICON_DOWNLOAD_ICON].data.indirected_sprite.id =
 			(osspriteop_id) dw->sprite_name;
 
-	strcpy(dw->path, messages_get("SaveObject"));
 	if ((res = url_nice(url, &nice)) == URL_FUNC_OK) {
 		strcpy(dw->path, nice);
 		free(nice);
 	}
+	else
+		strcpy(dw->path, messages_get("SaveObject"));
+
 	download_template->icons[ICON_DOWNLOAD_PATH].data.indirected_text.text =
 			dw->path;
 	download_template->icons[ICON_DOWNLOAD_PATH].data.indirected_text.size =
@@ -450,6 +458,9 @@ void gui_download_window_done(struct gui_download_window *dw)
 			warn_user("SaveError", error->errmess);
 		}
 
+		if (dw->send_dataload)
+			ro_gui_download_send_dataload(dw);
+
 		schedule(200, ro_gui_download_window_destroy_wrapper, dw);
 	}
 }
@@ -511,6 +522,47 @@ void ro_gui_download_window_click(struct gui_download_window *dw,
 
 
 /**
+ * Handler Key_Press events in a download window.
+ *
+ * \param  dw       download window
+ * \param  key  key press returned by Wimp_Poll
+ * \return true iff key press handled
+ */
+
+bool ro_gui_download_window_keypress(struct gui_download_window *dw, wimp_key *key)
+{
+	switch (key->c)
+	{
+		case wimp_KEY_ESCAPE:
+			ro_gui_download_window_destroy(dw, false);
+			return true;
+
+		case wimp_KEY_RETURN: {
+				char *name = ro_gui_get_icon_string(dw->window, ICON_DOWNLOAD_PATH);
+				if (!strrchr(name, '.'))
+				{
+					warn_user("NoPathError", NULL);
+					return true;
+				}
+				ro_gui_convert_save_path(dw->path, sizeof dw->path, name);
+
+				dw->send_dataload = false;
+				if (ro_gui_download_save(dw, dw->path) && !dw->fetch)
+				{
+					/* finished already */
+					schedule(200, ro_gui_download_window_destroy_wrapper, dw);
+				}
+				return true;
+			}
+			break;
+	}
+
+	/* ignore all other keypresses (F12 etc) */
+	return false;
+}
+
+
+/**
  * Handle User_Drag_Box event for a drag from a download window.
  *
  * \param  drag  block returned by Wimp_Poll
@@ -521,6 +573,7 @@ void ro_gui_download_drag_end(wimp_dragged *drag)
 	wimp_pointer pointer;
 	wimp_message message;
 	struct gui_download_window *dw = download_window_current;
+	const char *leaf;
 	os_error *error;
 
 	if (dw->saved || dw->error)
@@ -537,6 +590,13 @@ void ro_gui_download_drag_end(wimp_dragged *drag)
 	/* ignore drags to the download window itself */
 	if (pointer.w == dw->window) return;
 
+	leaf = strrchr(dw->path, '.');
+	if (leaf)
+		leaf++;
+	else
+		leaf = dw->path;
+	ro_gui_convert_save_path(message.data.data_xfer.file_name, 212, leaf);
+
 	message.your_ref = 0;
 	message.action = message_DATA_SAVE;
 	message.data.data_xfer.w = pointer.w;
@@ -546,8 +606,6 @@ void ro_gui_download_drag_end(wimp_dragged *drag)
 	message.data.data_xfer.est_size = dw->total_size ? dw->total_size :
 			dw->received;
 	message.data.data_xfer.file_type = dw->file_type;
-	strncpy(message.data.data_xfer.file_name, dw->path, 212);
-	message.data.data_xfer.file_name[211] = 0;
 	message.size = 44 + ((strlen(message.data.data_xfer.file_name) + 4) &
 			(~3u));
 
@@ -569,16 +627,44 @@ void ro_gui_download_drag_end(wimp_dragged *drag)
 
 void ro_gui_download_datasave_ack(wimp_message *message)
 {
-	char temp_name[40];
-	char *file_name;
 	struct gui_download_window *dw = download_window_current;
+
+	dw->send_dataload = true;
+	memcpy(&dw->save_message, message, sizeof(wimp_message));
+
+	if (!ro_gui_download_save(dw, message->data.data_xfer.file_name))
+		return;
+
+	if (!dw->fetch)
+	{
+		/* Ack successful completed save with message_DATA_LOAD immediately
+		   to reduce the chance of the target app getting confused by it
+		   being delayed */
+
+		ro_gui_download_send_dataload(dw);
+
+		schedule(200, ro_gui_download_window_destroy_wrapper, dw);
+	}
+}
+
+
+/**
+ * Start of save operation, user has specified where the file should be saved.
+ *
+ * \param  dw         download window
+ * \param  file_name  pathname of destination file
+ * \return true iff save successfully initiated
+ */
+
+bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name)
+{
+	char temp_name[40];
 	os_error *error;
 	wimp_caret caret;
 
 	if (dw->saved || dw->error)
-		return;
+		return true;
 
-	file_name = message->data.data_xfer.file_name;
 	snprintf(temp_name, sizeof temp_name, "<Wimp$ScrapDir>.ns%x",
 			(unsigned int) dw);
 
@@ -593,7 +679,7 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 			if (dw->fetch)
 				fetch_abort(dw->fetch);
 			gui_download_window_error(dw, error->errmess);
-			return;
+			return false;
 		}
 	}
 
@@ -616,7 +702,7 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 			if (dw->fetch)
 				fetch_abort(dw->fetch);
 			gui_download_window_error(dw, error->errmess);
-			return;
+			return false;
 		}
 	} else if (error) {
 		LOG(("xosfscontrol_rename: 0x%x: %s",
@@ -625,7 +711,7 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 		if (dw->fetch)
 			fetch_abort(dw->fetch);
 		gui_download_window_error(dw, error->errmess);
-		return;
+		return false;
 	}
 
 	if (dw->fetch) {
@@ -648,7 +734,7 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 			if (dw->fetch)
 				fetch_abort(dw->fetch);
 			gui_download_window_error(dw, error->errmess);
-			return;
+			return false;
 		}
 
 		error = xosargs_set_ptrw(dw->file, dw->received);
@@ -659,7 +745,7 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 			if (dw->fetch)
 				fetch_abort(dw->fetch);
 			gui_download_window_error(dw, error->errmess);
-			return;
+			return false;
 		}
 
 	} else {
@@ -708,7 +794,26 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 		}
 	}
 
+	return true;
+}
+
+
+/**
+ * Send DataLoad message in response to DataSaveAck, informing the
+ * target application that the transfer is complete.
+ *
+ * \param  dw  download window
+ */
+
+void ro_gui_download_send_dataload(struct gui_download_window *dw)
+{
 	/* Ack successful save with message_DATA_LOAD */
+	wimp_message *message = &dw->save_message;
+	os_error *error;
+
+	assert(dw->send_dataload);
+	dw->send_dataload = false;
+
 	message->action = message_DATA_LOAD;
 	message->your_ref = message->my_ref;
 	error = xwimp_send_message_to_window(wimp_USER_MESSAGE, message,
@@ -720,35 +825,39 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 		warn_user("WimpError", error->errmess);
 	}
 
-	if (!dw->fetch)
-		schedule(200, ro_gui_download_window_destroy_wrapper, dw);
+	schedule(200, ro_gui_download_window_destroy_wrapper, dw);
 }
 
 
 /**
  * Close a download window and free any related resources.
  *
- * \param  dw  download window
+ * \param  dw   download window
+ * \param  quit destroying because we're quitting the whole app
+ * \return true iff window destroyed, not waiting for user confirmation
  */
 
-void ro_gui_download_window_destroy(struct gui_download_window *dw)
+bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit)
 {
+	bool safe = dw->saved && !dw->fetch;
 	char temp_name[40];
 	os_error *error;
 
-	if (!dw->saved && !dw->close_confirmed)
+	if (!safe && !dw->close_confirmed)
 	{
-		if (dw->query != QUERY_INVALID && dw->query_quit) {
+		if (dw->query != QUERY_INVALID && dw->query_quit != quit) {
 			query_close(dw->query);
 			dw->query = QUERY_INVALID;
 		}
 
-		dw->query_quit = false;
+		dw->query_quit = quit;
 		if (dw->query == QUERY_INVALID)
-			dw->query = query_user("AbortDownload", NULL, &close_funcs, dw);
+			dw->query = query_user(quit ? "QuitDownload" : "AbortDownload",
+					NULL, &close_funcs, dw);
 		else
 			ro_gui_query_window_bring_to_front(dw->query);
-		return;
+
+		return false;
 	}
 
 	schedule_remove(ro_gui_download_update_status_wrapper, dw);
@@ -796,6 +905,8 @@ void ro_gui_download_window_destroy(struct gui_download_window *dw)
 		fetch_abort(dw->fetch);
 
 	free(dw);
+
+	return true;
 }
 
 
@@ -809,7 +920,8 @@ void ro_gui_download_window_destroy_wrapper(void *p)
 	if (dw->query != QUERY_INVALID)
 		query_close(dw->query);
 	dw->query = QUERY_INVALID;
-	ro_gui_download_window_destroy(dw);
+	dw->close_confirmed = true;
+	ro_gui_download_window_destroy(dw, false);
 }
 
 
@@ -844,7 +956,7 @@ void ro_gui_download_close_confirmed(query_id id, enum query_response res, void 
 			netsurf_quit = true;
 	}
 	else
-		ro_gui_download_window_destroy(dw);
+		ro_gui_download_window_destroy(dw, false);
 }
 
 
@@ -857,20 +969,10 @@ void ro_gui_download_close_confirmed(query_id id, enum query_response res, void 
 
 bool ro_gui_download_prequit(void)
 {
-	if (download_window_list) {
-		struct gui_download_window *dw = download_window_list;
-
-		if (dw->query != QUERY_INVALID && !dw->query_quit) {
-			query_close(dw->query);
-			dw->query = QUERY_INVALID;
-		}
-
-		dw->query_quit = true;
-		if (dw->query == QUERY_INVALID)
-			dw->query = query_user("QuitDownload", NULL, &close_funcs, dw);
-		else
-			ro_gui_query_window_bring_to_front(dw->query);
-		return false;
+	while (download_window_list)
+	{
+		if (!ro_gui_download_window_destroy(download_window_list, true))
+			return false;	/* awaiting user confirmation */
 	}
 	return true;
 }

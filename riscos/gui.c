@@ -961,7 +961,7 @@ void ro_gui_close_window_request(wimp_close *close)
 		browser_window_destroy(g->bw);
 	}
 	else if ((dw = ro_gui_download_window_lookup(close->w)) != NULL)
-		ro_gui_download_window_destroy(dw);
+		ro_gui_download_window_destroy(dw, false);
 	else
 		ro_gui_dialog_close(close->w);
 }
@@ -1146,6 +1146,7 @@ void ro_gui_drag_end(wimp_dragged *drag)
 
 void ro_gui_keypress(wimp_key *key)
 {
+	struct gui_download_window *dw;
 	struct gui_query_window *qw;
 	bool handled = false;
 	struct gui_window *g;
@@ -1161,6 +1162,8 @@ void ro_gui_keypress(wimp_key *key)
 		handled = ro_gui_window_keypress(g, key->c, true);
 	else if ((qw = ro_gui_query_window_lookup(key->w)) != NULL)
 		handled = ro_gui_query_window_keypress(qw, key);
+	else if ((dw = ro_gui_download_window_lookup(key->w)) != NULL)
+		handled = ro_gui_download_window_keypress(dw, key);
 	else
 		handled = ro_gui_dialog_keypress(key);
 

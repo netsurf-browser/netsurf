@@ -126,8 +126,9 @@ void ro_gui_download_window_click(struct gui_download_window *dw,
 		wimp_pointer *pointer);
 void ro_gui_download_drag_end(wimp_dragged *drag);
 void ro_gui_download_datasave_ack(wimp_message *message);
-void ro_gui_download_window_destroy(struct gui_download_window *dw);
+bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit);
 bool ro_gui_download_prequit(void);
+bool ro_gui_download_window_keypress(struct gui_download_window *dw, wimp_key *key);
 
 /* in mouseactions.c */
 void ro_gui_mouse_action(struct gui_window *g);
@@ -205,6 +206,7 @@ void ro_gui_save_drag_end(wimp_dragged *drag);
 void ro_gui_send_datasave(gui_save_type save_type, const wimp_full_message_data_xfer *message, wimp_t to);
 void ro_gui_save_datasave_ack(wimp_message *message);
 void ro_gui_save_ok(wimp_w w);
+void ro_gui_convert_save_path(char *dp, size_t len, const char *p);
 
 /* in filetype.c */
 int ro_content_filetype(struct content *content);

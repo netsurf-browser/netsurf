@@ -10,6 +10,7 @@
  * Save dialog and drag and drop saving (implementation).
  */
 
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -166,14 +167,18 @@ void ro_gui_save_click(wimp_pointer *pointer)
 void ro_gui_save_ok(wimp_w w)
 {
 	char *name = ro_gui_get_icon_string(w, ICON_SAVE_PATH);
+	char path[256];
+
 	if (!strrchr(name, '.'))
 	{
 		warn_user("NoPathError", NULL);
 		return;
 	}
+
+	ro_gui_convert_save_path(path, sizeof path, name);
 	gui_save_sourcew = w;
 	saving_from_dialog = true;
-	if (ro_gui_save_content(gui_save_content, name)) {
+	if (ro_gui_save_content(gui_save_content, path)) {
 		xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 		ro_gui_dialog_close(w);
 	}
@@ -324,6 +329,30 @@ void ro_gui_drag_icon(int x, int y, const char *sprite)
 
 
 /**
+ * Convert a ctrl-char terminated pathname possibly containing spaces
+ * to a NUL-terminated one containing only hard spaces.
+ *
+ * \param  dp   destination buffer to receive pathname
+ * \param  len  size of destination buffer
+ * \param  p    source pathname, ctrl-char terminated
+ */
+
+void ro_gui_convert_save_path(char *dp, size_t len, const char *p)
+{
+	char *ep = dp + len - 1;	/* leave room for NUL */
+
+	assert(p <= dp || p > ep);	/* in-situ conversion /is/ allowed */
+
+	while (dp < ep && *p >= ' ')	/* ctrl-char terminated */
+	{
+		*dp++ = (*p == ' ') ? 160 : *p;
+		p++;
+	}
+	*dp = '\0';
+}
+
+
+/**
  * Handle User_Drag_Box event for a drag from the save dialog or browser window.
  */
 
@@ -333,6 +362,7 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 	wimp_pointer pointer;
 	wimp_message message;
 	os_error *error;
+	char *dp, *ep;
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
@@ -368,6 +398,17 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 			name = dot + 1;
 	}
 
+	dp = message.data.data_xfer.file_name;
+	ep = dp + sizeof message.data.data_xfer.file_name;
+
+	if (gui_save_current_type == GUI_SAVE_COMPLETE) {
+		message.data.data_xfer.file_type = 0x2000;
+		if (*name != '!') *dp++ = '!';
+	} else
+		message.data.data_xfer.file_type = gui_save_filetype;
+
+	ro_gui_convert_save_path(dp, ep - dp, name);
+
 	message.your_ref = 0;
 	message.action = message_DATA_SAVE;
 	message.data.data_xfer.w = pointer.w;
@@ -375,19 +416,6 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 	message.data.data_xfer.pos.x = pointer.pos.x;
 	message.data.data_xfer.pos.y = pointer.pos.y;
 	message.data.data_xfer.est_size = 1000;
-	message.data.data_xfer.file_type = gui_save_filetype;
-	if (gui_save_current_type == GUI_SAVE_COMPLETE) {
-		message.data.data_xfer.file_type = 0x2000;
-		if (name[0] != '!') {
-			message.data.data_xfer.file_name[0] = '!';
-			strncpy(message.data.data_xfer.file_name + 1, name,
-					211);
-		} else {
-			strncpy(message.data.data_xfer.file_name, name, 212);
-		}
-	} else
-		strncpy(message.data.data_xfer.file_name, name, 212);
-	message.data.data_xfer.file_name[211] = 0;
 	message.size = 44 + ((strlen(message.data.data_xfer.file_name) + 4) &
 			(~3u));
 
