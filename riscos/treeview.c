@@ -1053,9 +1053,11 @@ void ro_gui_tree_show(struct tree *tree) {
 	  
 	 	/*	Set the default state
 	 	*/
-	 	if (tree->root->child)
+	 	if (tree->root->child) {
+		  	tree_set_node_selected(tree, tree->root, false);
 	 		tree_handle_node_changed(tree, tree->root,
 					false, true);
+		}
 
 		/*	Get the current screen size
 		*/
