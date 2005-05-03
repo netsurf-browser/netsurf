@@ -517,11 +517,11 @@ void ro_gui_menu_closed(void) {
 		}
 		ro_gui_menu_get_window_details(current_menu_window,
 				&g, &bw, &c, &t, &tree);
+		current_menu = NULL;
 		if (tree)
 			ro_gui_tree_menu_closed(tree);
 	}
 
-	current_menu = NULL;
 	current_menu_window = NULL;
 	current_menu_open = false;
 	gui_form_select_control = NULL;
