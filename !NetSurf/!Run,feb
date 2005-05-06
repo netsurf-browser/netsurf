@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.37 $ )
+| Run file for NetSurf. ( $Revision: 1.38 $ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -35,9 +35,9 @@ RMEnsure DrawFile 1.30 NetSurfRMLoad System:Modules.DrawFile
 RMEnsure DrawFile 1.30 Error NetSurf requires the DrawFile module. An old verson of this can be downloaded from http://acorn.riscos.com/riscos/releases/drawfile.arc
 
 | Ensure SharedUnixLibrary is installed
-| http://gccsdk.riscos.info/#SUL
+| http://gccsdk.riscos.info/downloads/sharedunixlib/
 RMEnsure SharedUnixLibrary 1.02 NetSurfRMLoad System:Modules.SharedULib
-RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.02 or later. This can be downloaded from http://gccsdk.riscos.info/
+RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.02 or later. This can be downloaded from http://gccsdk.riscos.info/downloads/sharedunixlib/
 
 | Load AcornURI if it isn't already
 | http://sudden.recoil.org/
