@@ -570,11 +570,18 @@ void ro_gui_menu_selection(wimp_selection *selection) {
 	/* perform non-automated actions */
 	if (current_menu == url_suggest_menu) {
 		g = ro_gui_toolbar_lookup(current_menu_window);
-		assert(g);
-		browser_window_go(g->bw,
-				url_suggest_menu->entries[selection->items[0]].
+		if (g)
+			browser_window_go(g->bw,
+					url_suggest_menu->entries[selection->items[0]].
 						data.indirected_text.text, 0);
-		global_history_add_recent(url_suggest_menu->
+		else
+			ro_gui_set_icon_string(dialog_openurl, ICON_OPENURL_URL,
+					url_suggest_menu->entries[selection->items[0]].
+						data.indirected_text.text);
+/*			browser_window_create(
+					url_suggest_menu->entries[selection->items[0]].
+						data.indirected_text.text, 0, 0);
+*/		global_history_add_recent(url_suggest_menu->
 				entries[selection->items[0]].
 						data.indirected_text.text);
 	} else if (current_menu == proxy_auth_menu) {

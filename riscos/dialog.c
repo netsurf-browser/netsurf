@@ -424,12 +424,23 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 			return true;
 		} else if (key->w == dialog_saveas)
 			ro_gui_save_ok(key->w);
+		else if (key->w == dialog_openurl) {
+			pointer.w = key->w;
+			pointer.i = ICON_OPENURL_OPEN;
+			pointer.buttons = wimp_CLICK_SELECT;
+			ro_gui_dialog_click_open_url(&pointer); 
+		} else if (key->w == dialog_search) {
+			pointer.w = key->w;
+			pointer.i = ICON_SEARCH_FIND;
+			pointer.buttons = wimp_CLICK_SELECT;
+			ro_gui_search_click(&pointer); 
+		}
 	}
 #ifdef WITH_AUTH
 	if (key->w == dialog_401li)
 		return ro_gui_401login_keypress(key);
 #endif
-
+	  	
 	return false;
 }
 
@@ -1251,9 +1262,64 @@ void ro_gui_dialog_prepare_zoom(struct gui_window *g)
 
 void ro_gui_dialog_click_open_url(wimp_pointer *pointer)
 {
+	wimp_window_state open;
 	url_func_result res;
 	const char *url;
 	char *url2;
+	bool reopen_window = false;
+	wimp_caret caret;
+	os_error *error;
+	
+	if (pointer->i == ICON_OPENURL_MENU) {
+	  	/* we can't have two open menus, so we close the iconbar menu
+	  	 * and detach our window from it */
+		if (current_menu == iconbar_menu) {
+		  	reopen_window = true;
+			open.w = dialog_openurl;
+			error = xwimp_get_window_state(&open);
+			if (error) {
+				LOG(("xwimp_get_window_state: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+				return;
+			}
+			error = xwimp_get_caret_position(&caret);
+			if (error) {
+				LOG(("xwimp_get_caret_position: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+				return;
+			}
+
+			ro_gui_menu_closed();
+			gui_poll(true);
+			ro_gui_wimp_update_window_furniture(dialog_openurl,
+					wimp_WINDOW_BACK_ICON,
+					wimp_WINDOW_BACK_ICON);
+			error = xwimp_open_window((wimp_open *) &open);
+			if (error) {
+				LOG(("xwimp_open_window: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+				return;
+			}
+			if (caret.w == dialog_openurl) {
+				error = xwimp_set_caret_position(dialog_openurl,
+						ICON_OPENURL_URL,
+						caret.pos.x, caret.pos.y,
+						-1, caret.index);
+				if (error) {
+					LOG(("xwimp_set_caret_position: 0x%x: %s",
+							error->errnum, error->errmess));
+					warn_user("WimpError", error->errmess);
+				}
+			}
+		}
+		ro_gui_popup_menu(url_suggest_menu,
+				dialog_openurl,
+				ICON_OPENURL_MENU);
+		return; 
+	}
 
 	if ((pointer->i != ICON_OPENURL_OPEN) &&
 			(pointer->i != ICON_OPENURL_CANCEL))
@@ -1288,7 +1354,11 @@ void ro_gui_dialog_click_open_url(wimp_pointer *pointer)
 
 void ro_gui_dialog_prepare_open_url(void)
 {
-	ro_gui_set_icon_string(dialog_openurl, ICON_OPENURL_URL, "www.");
+	int suggestions;
+	ro_gui_set_icon_string(dialog_openurl, ICON_OPENURL_URL, "");
+	global_history_get_recent(&suggestions);
+	ro_gui_set_icon_shaded_state(dialog_openurl,
+			ICON_OPENURL_MENU, (suggestions <= 0));
 }
 
 

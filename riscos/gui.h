@@ -421,5 +421,6 @@ void ro_gui_theme_install_click(wimp_pointer *pointer);
 #define ICON_OPENURL_URL 1
 #define ICON_OPENURL_CANCEL 2
 #define ICON_OPENURL_OPEN 3
+#define ICON_OPENURL_MENU 4
 
 #endif
