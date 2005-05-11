@@ -11,6 +11,7 @@
  */
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include "curl/curl.h"
@@ -191,6 +192,7 @@ bool form_successful_controls(struct form *form,
 	struct form_option *option;
 	struct form_successful_control sentinel, *last_success, *success_new;
 	char *value;
+	bool had_submit = false;
 
 	last_success = &sentinel;
 	sentinel.next = 0;
@@ -344,9 +346,13 @@ bool form_successful_controls(struct form *form,
 			}
 
 			case GADGET_SUBMIT:
-				/* only the activated submit button is
-				 * successful */
-				if (control != submit_button)
+				if (!submit_button && !had_submit)
+					/* no submit button specified, so
+					 * use first declared in form */
+					had_submit = true;
+				else if (control != submit_button)
+					/* only the activated submit button
+					 * is successful */
 					continue;
 				value = strdup(control->value);
 				if (!value) {
