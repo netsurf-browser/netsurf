@@ -429,11 +429,6 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 			pointer.i = ICON_OPENURL_OPEN;
 			pointer.buttons = wimp_CLICK_SELECT;
 			ro_gui_dialog_click_open_url(&pointer); 
-		} else if (key->w == dialog_search) {
-			pointer.w = key->w;
-			pointer.i = ICON_SEARCH_FIND;
-			pointer.buttons = wimp_CLICK_SELECT;
-			ro_gui_search_click(&pointer); 
 		}
 	}
 #ifdef WITH_AUTH
