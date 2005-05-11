@@ -230,18 +230,17 @@ bool form_successful_controls(struct form *form,
 				 * aren't selected */
 				if (!control->selected)
 					continue;
-				value = strdup(control->value);
+				if (control->value)
+					value = strdup(control->value);
+				else
+					value = strdup("on");
 				if (!value) {
-					/* no current value -> use "" */
-					value = strdup("");
-					if (!value) {
-						LOG(("failed to duplicate"
-							"value '%s' for"
-							"control %s",
-							control->value,
-							control->name));
-						goto no_memory;
-					}
+					LOG(("failed to duplicate"
+						"value '%s' for"
+						"control %s",
+						control->value,
+						control->name));
+					goto no_memory;
 				}
 				break;
 
