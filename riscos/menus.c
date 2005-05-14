@@ -553,7 +553,10 @@ void ro_gui_menu_selection(wimp_selection *selection) {
 	wimp_menu *menu;
 	os_error *error;
 
-	assert(current_menu);
+	/* if we are using gui_multitask then menu selection events may be delivered
+	 * after the menu has been closed. As such, we simply ignore these events. */
+	if (!current_menu)
+		return
 	assert(current_menu_window);
 
 	/* get the menu entry and associated action */
