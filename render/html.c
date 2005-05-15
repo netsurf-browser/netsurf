@@ -290,7 +290,7 @@ bool html_convert(struct content *c, int width, int height)
 			head != 0 && head->type != XML_ELEMENT_NODE;
 			head = head->next)
 		;
-	if (strcmp((const char *) head->name, "head") != 0) {
+	if (head && strcmp((const char *) head->name, "head") != 0) {
 		head = 0;
 		LOG(("head element not found"));
 	}
