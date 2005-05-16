@@ -457,8 +457,9 @@ char *form_textarea_value(struct form_control *textarea)
 		if (text_box->type == BOX_INLINE) {
 			strncpy(s, text_box->text, text_box->length);
 			s += text_box->length;
-			if (text_box->next)
-				/* only add space if this isn't the last box */
+			if (text_box->next && text_box->next->type != BOX_BR)
+				/* only add space if this isn't
+				 * the last box on a line (or in the area) */
 				*s++ = ' ';
 		} else { /* BOX_BR */
 			*s++ = '\r';
