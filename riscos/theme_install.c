@@ -257,11 +257,10 @@ void theme_install_install(bool apply)
 			warn_user("ThemeApplyErr", 0);
 		} else {
 			free(option_theme);
-			option_theme = theme_file;
+			option_theme = strdup(theme_install->leafname);
 		}
-	} else {
-		free(theme_file);
 	}
+	free(theme_file);
 }
 
 

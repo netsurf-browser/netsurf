@@ -146,6 +146,11 @@ struct theme_descriptor *ro_gui_theme_find(const char *leafname) {
 			descriptor = descriptor->next)
 		if (!strcmp(leafname, descriptor->leafname))
 			return descriptor;
+	/* fallback for 10 chars on old filesystems */
+	for (descriptor = theme_descriptors; descriptor;
+			descriptor = descriptor->next)
+		if (!strncmp(leafname, descriptor->leafname, 10))
+			return descriptor;
 	return NULL;
 }
 
