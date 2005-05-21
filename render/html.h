@@ -69,6 +69,8 @@ struct content_html_data {
 	/** Stylesheets. Each may be 0. */
 	struct content **stylesheet_content;
 	struct css_style *style;  /**< Base style. */
+	/** Working stylesheet. */
+	struct css_working_stylesheet *working_stylesheet;
 
 	/** Number of entries in object. */
 	unsigned int object_count;

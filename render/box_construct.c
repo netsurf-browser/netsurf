@@ -456,8 +456,8 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			xmlFree(s);
 		}
 	}
-	
-	
+
+
 	/* fetch any background image for this box */
 	if (style->background_image.type == CSS_BACKGROUND_IMAGE_URI) {
 		if (!html_fetch_object(content, style->background_image.uri,
@@ -663,13 +663,7 @@ struct css_style * box_get_style(struct content *c,
 	style_new = talloc_memdup(c, &css_blank_style, sizeof *style_new);
 	if (!style_new)
 		return 0;
-
-	for (i = 0; i != stylesheet_count; i++) {
-		if (stylesheet[i]) {
-			assert(stylesheet[i]->type == CONTENT_CSS);
-			css_get_style(stylesheet[i], n, style_new);
-		}
-	}
+	css_get_style(c->data.html.working_stylesheet, n, style_new);
 	css_cascade(style, style_new);
 
 	/* style_new isn't needed past this point */
@@ -701,7 +695,7 @@ struct css_style * box_get_style(struct content *c,
 		}
 	}
 
-	if (((s = (char *) xmlGetProp(n, (const xmlChar *) "bgcolor"))) && 
+	if (((s = (char *) xmlGetProp(n, (const xmlChar *) "bgcolor"))) &&
 			(style->background_color == TRANSPARENT)) {
 		unsigned int r, g, b;
 		if (s[0] == '#' && sscanf(s + 1, "%2x%2x%2x", &r, &g, &b) == 3)

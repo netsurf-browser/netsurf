@@ -628,6 +628,24 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 /* 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data); */
 /* 	} */
 
+	css_set_origin(c->data.html.stylesheet_content[STYLESHEET_BASE],
+			CSS_ORIGIN_UA);
+	if (c->data.html.stylesheet_content[STYLESHEET_ADBLOCK])
+		css_set_origin(c->data.html.stylesheet_content[
+				STYLESHEET_ADBLOCK], CSS_ORIGIN_UA);
+	if (c->data.html.stylesheet_content[STYLESHEET_STYLE])
+		css_set_origin(c->data.html.stylesheet_content[
+				STYLESHEET_STYLE], CSS_ORIGIN_AUTHOR);
+	for (i = STYLESHEET_START; i != c->data.html.stylesheet_count; i++)
+		css_set_origin(c->data.html.stylesheet_content[i],
+				CSS_ORIGIN_AUTHOR);
+
+	c->data.html.working_stylesheet = css_make_working_stylesheet(
+			c->data.html.stylesheet_content,
+			c->data.html.stylesheet_count);
+	if (!c->data.html.working_stylesheet)
+		return false;
+
 	return true;
 }
 
@@ -1136,6 +1154,8 @@ void html_destroy(struct content *c)
 						c, (void *) i);
 		}
 	}
+
+	talloc_free(c->data.html.working_stylesheet);
 
 	/*if (c->data.html.style)
 		css_free_style(c->data.html.style);*/

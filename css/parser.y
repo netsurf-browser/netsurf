@@ -118,7 +118,7 @@ simple_selector(A) ::= element_name(B) detail_list(C).
 simple_selector(A) ::= element_name(B).
 		{ if ((A = css_new_selector(CSS_SELECTOR_ELEMENT,
 				B.text, B.length)))
-			A->specificity = 1;
+			A->specificity = CSS_SPECIFICITY_ELEMENT;
 		else
 			param->memory_error = true;
 		}
@@ -152,93 +152,93 @@ detail_list(A) ::= detail(B) detail_list(C).
 
 detail(A) ::= HASH(B).
 		{ A = css_new_selector(CSS_SELECTOR_ID, B.text+1, B.length-1);
-		if (A) A->specificity = 0x10000;
+		if (A) A->specificity = CSS_SPECIFICITY_ID;
 		else param->memory_error = true; }
 detail(A) ::= DOT IDENT(B).
 		{ A = css_new_selector(CSS_SELECTOR_CLASS, B.text, B.length);
-		if (A) A->specificity = 0x100;
+		if (A) A->specificity = CSS_SPECIFICITY_CLASS;
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB, B.text, B.length);
-		if (A) A->specificity = 0x100;
+		if (A) A->specificity = CSS_SPECIFICITY_ATTR;
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws EQUALS ws IDENT(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_EQ, B.text, B.length);
 		if (A) { A->data2 = C.text; A->data2_length = C.length;
-			A->specificity = 0x100; }
+			A->specificity = CSS_SPECIFICITY_ATTR; }
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws EQUALS ws STRING(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_EQ, B.text, B.length);
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
-			A->specificity = 0x100; }
+			A->specificity = CSS_SPECIFICITY_ATTR; }
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws INCLUDES ws IDENT(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_INC, B.text, B.length);
 		if (A) { A->data2 = C.text; A->data2_length = C.length;
-			A->specificity = 0x100; }
+			A->specificity = CSS_SPECIFICITY_ATTR; }
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws INCLUDES ws STRING(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_INC, B.text, B.length);
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
-			A->specificity = 0x100; }
+			A->specificity = CSS_SPECIFICITY_ATTR; }
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws DASHMATCH ws IDENT(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_DM, B.text, B.length);
 		if (A) { A->data2 = C.text; A->data2_length = C.length;
-			A->specificity = 0x100; }
+			A->specificity = CSS_SPECIFICITY_ATTR; }
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws DASHMATCH ws STRING(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_DM, B.text, B.length);
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
-			A->specificity = 0x100; }
+			A->specificity = CSS_SPECIFICITY_ATTR; }
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws PREFIX ws IDENT(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_PRE, B.text, B.length);
 		if (A) { A->data2 = C.text; A->data2_length = C.length;
-			A->specificity = 0x100; }
+			A->specificity = CSS_SPECIFICITY_ATTR; }
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws PREFIX ws STRING(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_PRE, B.text, B.length);
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
-			A->specificity = 0x100; }
+			A->specificity = CSS_SPECIFICITY_ATTR; }
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws SUFFIX ws IDENT(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_SUF, B.text, B.length);
 		if (A) { A->data2 = C.text; A->data2_length = C.length;
-			A->specificity = 0x100; }
+			A->specificity = CSS_SPECIFICITY_ATTR; }
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws SUFFIX ws STRING(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_SUF, B.text, B.length);
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
-			A->specificity = 0x100; }
+			A->specificity = CSS_SPECIFICITY_ATTR; }
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws SUBSTR ws IDENT(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_SUB, B.text, B.length);
 		if (A) { A->data2 = C.text; A->data2_length = C.length;
-			A->specificity = 0x100; }
+			A->specificity = CSS_SPECIFICITY_ATTR; }
 		else param->memory_error = true; }
 detail(A) ::= LBRAC ws IDENT(B) ws SUBSTR ws STRING(C) ws RBRAC.
 		{ A = css_new_selector(CSS_SELECTOR_ATTRIB_SUB, B.text, B.length);
 		if (A) { A->data2 = C.text + 1; A->data2_length = C.length - 2;
-			A->specificity = 0x100; }
+			A->specificity = CSS_SPECIFICITY_ATTR; }
 		else param->memory_error = true; }
 detail(A) ::= COLON IDENT(B).
 		{ if (B.length == 4 && strncasecmp(B.text, "link", 4) == 0) {
 			A = css_new_selector(CSS_SELECTOR_ATTRIB, "href", 4);
-			if (A) A->specificity = 0x100;
+			if (A) A->specificity = CSS_SPECIFICITY_ATTR;
 			else param->memory_error = true;
 		} else {
 			A = css_new_selector(CSS_SELECTOR_PSEUDO, B.text, B.length);
-			if (A) A->specificity = 0x100;
+			if (A) A->specificity = CSS_SPECIFICITY_ATTR;
 			else param->memory_error = true;
 		} }
 detail(A) ::= COLON FUNCTION(B) ws IDENT ws RPAREN.
 		{ A = css_new_selector(CSS_SELECTOR_PSEUDO, B.text, B.length);
-		if (A) A->specificity = 0x100;
+		if (A) A->specificity = CSS_SPECIFICITY_ATTR;
 		else param->memory_error = true; }
 detail(A) ::= COLON FUNCTION(B) ws RPAREN.
 		{ A = css_new_selector(CSS_SELECTOR_PSEUDO, B.text, B.length);
-		if (A) A->specificity = 0x100;
+		if (A) A->specificity = CSS_SPECIFICITY_ATTR;
 		else param->memory_error = true; }
 
 declaration_list(A) ::= .

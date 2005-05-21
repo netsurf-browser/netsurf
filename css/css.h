@@ -38,6 +38,17 @@ typedef unsigned long colour;  /* 0xbbggrr */
 #define RIGHT 1
 #define BOTTOM 2
 #define LEFT 3
+#define CSS_SPECIFICITY_UA 0x0000000
+#define CSS_SPECIFICITY_USER 0x1000000
+#define CSS_SPECIFICITY_AUTHOR 0x2000000
+#define CSS_SPECIFICITY_ID 0x10000
+#define CSS_SPECIFICITY_CLASS 0x100
+#define CSS_SPECIFICITY_ATTR 0x100
+#define CSS_SPECIFICITY_ELEMENT 0x1
+
+
+struct css_working_stylesheet;
+
 
 /** Representation of a CSS 2 length. */
 struct css_length {
@@ -461,12 +472,19 @@ struct css_style {
 
 struct css_stylesheet;
 
+typedef enum {
+	CSS_ORIGIN_AUTHOR,
+	CSS_ORIGIN_USER,
+	CSS_ORIGIN_UA
+} css_origin;
+
 /** Data specific to CONTENT_CSS. */
 struct content_css_data {
 	struct css_stylesheet *css;	/**< Opaque stylesheet data. */
 	unsigned int import_count;	/**< Number of entries in import_url. */
 	char **import_url;		/**< Imported stylesheet urls. */
 	struct content **import_content; /**< Imported stylesheet contents. */
+	css_origin origin;		/**< Origin of stylesheet. */
 };
 
 
@@ -615,7 +633,12 @@ const char *css_parser_TokenName(int tokenType);
 
 #endif
 
-void css_get_style(struct content *c, xmlNode *n, struct css_style * style);
+void css_set_origin(struct content *c, css_origin origin);
+struct css_working_stylesheet *css_make_working_stylesheet(
+		struct content **stylesheet_content,
+		unsigned int stylesheet_count);
+void css_get_style(struct css_working_stylesheet *working_stylesheet,
+		xmlNode *element, struct css_style *style);
 struct css_style *css_duplicate_style(const struct css_style * const style);
 void css_free_style(struct css_style *style);
 void css_deep_free_content(struct css_content *content);

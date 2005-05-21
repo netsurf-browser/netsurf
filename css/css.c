@@ -94,11 +94,23 @@
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
+
+struct css_working_stylesheet {
+	struct css_selector **rule[HASH_SIZE];
+};
+
+
 static void css_deep_free_style(struct css_style *style);
 static void css_atimport_callback(content_msg msg, struct content *css,
 		void *p1, void *p2, union content_msg_data data);
-static struct css_selector *css_merge_rule_lists(struct css_selector *l1, struct css_selector *l2);
-static bool css_merge_rule_lists_internal(struct css_selector *l1, struct css_selector *l2, struct css_selector **result);
+static bool css_working_list_imports(struct content **import,
+		unsigned int import_count,
+		struct content ***css, unsigned int *css_count);
+static bool css_working_merge_chains(
+		struct css_working_stylesheet *working_stylesheet,
+		struct content **css, unsigned int css_count,
+		unsigned int chain,
+		struct css_selector **rule);
 static bool css_match_rule(struct css_selector *rule, xmlNode *element);
 static bool css_match_detail(const struct css_selector *detail,
 		xmlNode *element);
@@ -400,6 +412,7 @@ bool css_convert(struct content *c, int width, int height)
 	c->data.css.import_count = 0;
 	c->data.css.import_url = 0;
 	c->data.css.import_content = 0;
+	c->data.css.origin = CSS_ORIGIN_UA;
 	c->active = 0;
 	c->source_data = source_data;
 
@@ -477,12 +490,54 @@ void css_destroy(struct content *c)
 	free(c->data.css.import_content);
 }
 
+
 /**
- * Duplicate a CSS style struct
+ * Set the origin of a stylesheet.
+ *
+ * \param  c       content of type CONTENT_CSS
+ * \param  origin  new origin
+ *
+ * This may only be called once per stylesheet.
+ */
+
+void css_set_origin(struct content *c, css_origin origin)
+{
+	unsigned int chain, i;
+	unsigned long specificity = 0;
+	struct css_selector *selector;
+
+	assert(c->type == CONTENT_CSS);
+
+	if (origin == c->data.css.origin)
+		return;
+
+	switch (origin)
+	{
+	case CSS_ORIGIN_AUTHOR: specificity = CSS_SPECIFICITY_AUTHOR; break;
+	case CSS_ORIGIN_USER:   specificity = CSS_SPECIFICITY_USER; break;
+	case CSS_ORIGIN_UA:     specificity = CSS_SPECIFICITY_UA; break;
+	}
+
+	for (chain = 0; chain != HASH_SIZE; chain++)
+		for (selector = c->data.css.css->rule[chain];
+				selector;
+				selector = selector->next)
+			selector->specificity += specificity;
+	c->data.css.origin = origin;
+
+	for (i = 0; i != c->data.css.import_count; i++)
+		if (c->data.css.import_content[i])
+			css_set_origin(c->data.css.import_content[i], origin);
+}
+
+
+/**
+ * Duplicate a CSS style struct.
  *
  * \param style The style to duplicate
  * \return The duplicate style, or NULL if out of memory.
  */
+
 struct css_style *css_duplicate_style(const struct css_style * const style)
 {
 	struct css_style *dup;
@@ -490,7 +545,7 @@ struct css_style *css_duplicate_style(const struct css_style * const style)
 	assert(style);
 
 	/* create duplicated style */
-	dup = calloc(1, sizeof(struct css_style));
+	dup = malloc(sizeof (struct css_style));
 	if (!dup)
 		return NULL;
 
@@ -500,11 +555,13 @@ struct css_style *css_duplicate_style(const struct css_style * const style)
 	return dup;
 }
 
+
 /**
- * Free a CSS style
+ * Free a CSS style.
  *
  * \param style The style to free
  */
+
 void css_free_style(struct css_style *style)
 {
 	assert(style);
@@ -512,11 +569,13 @@ void css_free_style(struct css_style *style)
 	free(style);
 }
 
+
 /**
- * Free a CSS style, deleting all alloced elements
+ * Free a CSS style, deleting all alloced elements.
  *
  * \param style The style to free
  */
+
 void css_deep_free_style(struct css_style *style)
 {
 	assert(style);
@@ -539,12 +598,15 @@ void css_deep_free_style(struct css_style *style)
 	free(style);
 }
 
+
 /**
- * Free all auto-generated content data
+ * Free all auto-generated content data.
  *
- * \param content  the auto-generated content data to free
+ * \param  content  the auto-generated content data to free
  */
-void css_deep_free_content(struct css_content *content) {
+
+void css_deep_free_content(struct css_content *content)
+{
 	struct css_content *next;
 
 	while (content) {
@@ -574,12 +636,15 @@ void css_deep_free_content(struct css_content *content) {
 	}
 }
 
+
 /**
- * Free all counter control data
+ * Free all counter control data.
  *
  * \param counter  the counter control data to free
  */
-void css_deep_free_counter_control(struct css_counter_control *control) {
+
+void css_deep_free_counter_control(struct css_counter_control *control)
+{
 	struct css_counter_control *next;
 
 	while (control) {
@@ -589,6 +654,7 @@ void css_deep_free_counter_control(struct css_counter_control *control) {
 		control = next;
 	}
 }
+
 
 /**
  * Create a new struct css_node.
@@ -887,115 +953,213 @@ void css_atimport_callback(content_msg msg, struct content *css,
 	}
 }
 
+
 /**
- * Merge two sorted lists of CSS selectors
+ * Prepare a working stylesheet with pre-sorted lists of selectors from an
+ * array of stylesheets.
  *
- * \param l1 the first list
- * \param l2 the second list
- * \return the merged list, or NULL on error.
- * It is left to the caller to free the list when they've finished with it
+ * \param  stylesheet_content  array of contents of type CONTENT_CSS (each may
+ *                             be 0)
+ * \param  stylesheet_count    number of entries in css
+ * \return  working stylesheet, or 0 on memory exhaustion
+ *
+ * See CSS 2.1 6.4.
  */
-struct css_selector *css_merge_rule_lists(struct css_selector *l1, struct css_selector *l2)
+
+struct css_working_stylesheet *css_make_working_stylesheet(
+		struct content **stylesheet_content,
+		unsigned int stylesheet_count)
 {
-	struct css_selector *merged = calloc(1, sizeof(*merged));
-	struct css_selector *a, *b;
+	struct content **css = 0;
+	unsigned int css_count = 0;
+	struct css_working_stylesheet *working_stylesheet;
+	unsigned int chain;
+	struct css_selector **rule_scratch;
 
-	if (css_merge_rule_lists_internal(l1, l2, &merged))
-		return merged;
+	working_stylesheet = talloc(0, struct css_working_stylesheet);
+	if (!working_stylesheet)
+		return 0;
 
-	for (a = merged->next; a; a = b) {
-		b = a->next;
-		free(a);
+	/* make a complete list of stylesheets involved by walking @imports */
+	css_working_list_imports(stylesheet_content, stylesheet_count,
+			&css, &css_count);
+
+	rule_scratch = talloc_array(working_stylesheet, struct css_selector *,
+			css_count);
+	if (!rule_scratch) {
+		talloc_free(working_stylesheet);
+		return 0;
 	}
 
-	free(merged);
+	/* merge the corresponding sorted hash chains from each stylesheet */
+	for (chain = 0; chain != HASH_SIZE; chain++) {
+		if (!css_working_merge_chains(working_stylesheet, css,
+				css_count, chain, rule_scratch)) {
+			talloc_free(working_stylesheet);
+			return 0;
+		}
+	}
 
-	return NULL;
+	talloc_free(rule_scratch);
+
+	return working_stylesheet;
 }
 
+
 /**
- * Actually perform the merge
+ * Recursively make a list of stylesheets and their imports.
  *
- * \param l1 the first list
- * \param l2 the second list
- * \param result pointer to the head of the resultant list
+ * \param  import        array of contents of type CONTENT_CSS
+ * \param  import_count  number of elements in import
+ * \param  css           pointer to array of contents for result
+ * \param  css_count     number of elements used so far in *css
  */
-bool css_merge_rule_lists_internal(struct css_selector *l1, struct css_selector *l2, struct css_selector **result)
+
+bool css_working_list_imports(struct content **import,
+		unsigned int import_count,
+		struct content ***css, unsigned int *css_count)
 {
-	struct css_selector *a, *b;
-	struct css_selector *entry, *prev = (*result);
-
-	for (a = l1, b = l2; a || b; ) {
-		entry = calloc(1, sizeof(*entry));
-		if (!entry)
-			/** \todo warn user? */
+	unsigned int i, j;
+	struct content **css2;
+	for (i = 0; i != import_count; i++) {
+		if (!import[i])
+			continue;
+		/* search for import[i] in css[0..css_count) */
+		for (j = 0; j != *css_count && (*css)[j] != import[i]; j++)
+			;
+		if (j != *css_count)
+			/* we've seen this stylesheet already */
+			continue;
+		/* recurse into imports of import[i] */
+		if (!css_working_list_imports(import[i]->data.css.
+				import_content,
+				import[i]->data.css.import_count,
+				css, css_count))
 			return false;
-
-		if ((a && b && a->specificity < b->specificity) ||
-		    (a && !b)) {
-			entry = memcpy(entry, a, sizeof(*entry));
-			a = a->next;
-		}
-		else {
-			entry = memcpy(entry, b, sizeof(*entry));
-			b = b->next;
-		}
-		entry->next = 0;
-		if (!prev)
-			(*result)->next = entry;
-		else
-			prev->next = entry;
-		prev = entry;
+		css2 = realloc(*css, sizeof *css * (*css_count + 1));
+		if (!css2)
+			return false;
+		*css = css2;
+		(*css)[*css_count] = import[i];
+		(*css_count)++;
 	}
+	return true;
+}
+
+
+/**
+ * Merge hash chains of rules into an array of pointers ordered by specificity.
+ *
+ * \param  working_stylesheet  working stylesheet to add array to
+ * \param  css        array of contents of type CONTENT_CSS
+ * \param  css_count  number of elements in css
+ * \param  chain      hash chain index to merge
+ * \param  rule       scratch array of css_selector with css_count entries
+ * \return  true on success, false if memory exhausted
+ */
+
+bool css_working_merge_chains(struct css_working_stylesheet *working_stylesheet,
+		struct content **css, unsigned int css_count,
+		unsigned int chain,
+		struct css_selector **rule)
+{
+	unsigned int sheet, rules, rules_done = 0;
+	struct css_selector *selector;
+	unsigned int best = 0;
+	unsigned long min;
+
+	/* count total rules */
+	rules = 0;
+	for (sheet = 0; sheet != css_count; sheet++)
+		for (selector = css[sheet]->data.css.css->rule[chain];
+				selector;
+				selector = selector->next)
+			rules++;
+	working_stylesheet->rule[chain] = talloc_array(working_stylesheet,
+			struct css_selector *, rules + 1);
+	if (!working_stylesheet->rule[chain])
+		return false;
+
+	/* mergesort by specificity (increasing) */
+	for (sheet = 0; sheet != css_count; sheet++) {
+		rule[sheet] = 0;
+		rule[sheet] = css[sheet]->data.css.css->rule[chain];
+	}
+	for (; rules_done != rules; rules_done++) {
+		/* find rule with lowest specificity */
+ 		min = ULONG_MAX;
+ 		for (sheet = 0; sheet != css_count; sheet++) {
+ 			if (rule[sheet] && rule[sheet]->specificity < min) {
+ 				min = rule[sheet]->specificity;
+ 				best = sheet;
+ 			}
+ 		}
+ 		assert(min != ULONG_MAX);
+ 		working_stylesheet->rule[chain][rules_done] = rule[best];
+ 		rule[best] = rule[best]->next;
+ 	}
+	assert(rules_done == rules);
+	working_stylesheet->rule[chain][rules] = 0;
 
 	return true;
 }
 
+
 /**
  * Find the style which applies to an element.
  *
- * \param  css      content of type CONTENT_CSS
+ * \param  working_stylesheet  working stylesheet
  * \param  element  element in xml tree to match
  * \param  style    style to update
  *
  * The style is updated with any rules that match the element.
  */
 
-void css_get_style(struct content *css, xmlNode *element,
-		struct css_style *style)
+void css_get_style(struct css_working_stylesheet *working_stylesheet,
+		xmlNode *element, struct css_style *style)
 {
-	struct css_stylesheet *stylesheet = css->data.css.css;
-	struct css_selector *rules, *a, *b;
-	unsigned int hash, i;
-
-	/* imported stylesheets */
-	for (i = 0; i != css->data.css.import_count; i++)
-		if (css->data.css.import_content[i] != 0)
-			css_get_style(css->data.css.import_content[i],
-					element, style);
+	unsigned int hash, rule_0 = 0, rule_h = 0;
+	struct css_selector *rule;
 
 	hash = css_hash((const char *) element->name,
 			strlen((const char *) element->name));
 
-	/* merge element and global rules */
-	rules = css_merge_rule_lists(stylesheet->rule[hash],
-					stylesheet->rule[0]);
-
-	if (!rules)
-		return;
-
-	/* match applicable rules */
-	for (a = rules->next; a; a = a->next)
-		if (css_match_rule(a, element))
-			css_merge(style, a->style);
-
-	/* free rules list */
-	for (a = rules->next; a; a = b) {
-		b = a->next;
-		free(a);
+	/* merge sort rules from special hash chain 0 (universal selector) and
+	 * rules from hash chain for element name */
+	while (working_stylesheet->rule[0] &&
+			working_stylesheet->rule[0][rule_0] &&
+			working_stylesheet->rule[hash] &&
+			working_stylesheet->rule[hash][rule_h]) {
+		if (working_stylesheet->rule[0][rule_0]->specificity <
+				working_stylesheet->rule[hash][rule_h]->
+				specificity) {
+			rule = working_stylesheet->rule[0][rule_0];
+			rule_0++;
+                } else {
+			rule = working_stylesheet->rule[hash][rule_h];
+			rule_h++;
+		}
+		if (css_match_rule(rule, element))
+			css_merge(style, rule->style);
 	}
 
-	free(rules);
+	/* remaining rules from hash chain 0 */
+	while (working_stylesheet->rule[0] &&
+			working_stylesheet->rule[0][rule_0]) {
+		rule = working_stylesheet->rule[0][rule_0];
+		rule_0++;
+		if (css_match_rule(rule, element))
+			css_merge(style, rule->style);
+	}
+
+	/* remaining rules from hash chain for element name */
+	while (working_stylesheet->rule[hash] &&
+			working_stylesheet->rule[hash][rule_h]) {
+		rule = working_stylesheet->rule[hash][rule_h];
+		rule_h++;
+		if (css_match_rule(rule, element))
+			css_merge(style, rule->style);
+	}
 }
 
 
@@ -1272,13 +1436,15 @@ bool css_match_detail(const struct css_selector *detail,
 	return match;
 }
 
+
 /**
- * Handle :first-child pseudo-class
+ * Handle :first-child pseudo-class.
  *
  * \param  detail   a css_selector of type other than CSS_SELECTOR_ELEMENT
  * \param  element  element in xml tree to match
  * \return  true if the selector matches the element
  */
+
 bool css_match_first_child(const struct css_selector *detail,
 		xmlNode *element)
 {
@@ -1293,6 +1459,7 @@ bool css_match_first_child(const struct css_selector *detail,
 
 	return false;
 }
+
 
 /**
  * Parse a stand-alone CSS property list.
@@ -1378,13 +1545,11 @@ void css_dump_style(const struct css_style * const style)
 	fprintf(stderr, "{ ");
 
 #define DUMP_COLOR(z, s) \
-	if (style->z != css_empty_style.z) {				\
+	if (style->z != CSS_COLOR_NOT_SET) {				\
 		if (style->z == TRANSPARENT)				\
 			fprintf(stderr, s ": transparent; ");		\
 		else if (style->z == CSS_COLOR_NONE)			\
 			fprintf(stderr, s ": none; ");			\
-		else if (style->z == CSS_COLOR_NOT_SET)			\
-			fprintf(stderr, s ": NOT_SET; ");			\
 		else							\
 			fprintf(stderr, s ": #%.6lx; ", style->z);	\
 	}
@@ -1404,25 +1569,25 @@ void css_dump_style(const struct css_style * const style)
 			css_empty_style.background_position.vert.pos ||
 			style->background_repeat !=
 			css_empty_style.background_repeat) {
-		fprintf(stderr, "background: ");
+		fprintf(stderr, "background:");
 		switch (style->background_image.type) {
-			case CSS_BACKGROUND_IMAGE_NONE:
-				fprintf(stderr, "none");
-				break;
-			case CSS_BACKGROUND_IMAGE_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_BACKGROUND_IMAGE_URI:
-				fprintf(stderr, "(%p) \"%s\"",
-						style->background_image.uri,
-						style->background_image.uri);
-				break;
-			case CSS_BACKGROUND_IMAGE_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_BACKGROUND_IMAGE_NONE:
+			fprintf(stderr, " none");
+			break;
+		case CSS_BACKGROUND_IMAGE_INHERIT:
+			fprintf(stderr, " inherit");
+			break;
+		case CSS_BACKGROUND_IMAGE_URI:
+			fprintf(stderr, " (%p) \"%s\"",
+					style->background_image.uri,
+					style->background_image.uri);
+			break;
+		case CSS_BACKGROUND_IMAGE_NOT_SET:
+			;
+			break;
+		default:
+			fprintf(stderr, " UNKNOWN");
+			break;
 		}
 
 		if (style->background_repeat ==
@@ -1430,7 +1595,7 @@ void css_dump_style(const struct css_style * const style)
 			fprintf(stderr, " UNKNOWN");
 		else if (style->background_repeat ==
 				CSS_BACKGROUND_REPEAT_NOT_SET)
-			fprintf(stderr, " NOT_SET");
+			;
 		else
 			fprintf(stderr, " %s",
 				css_background_repeat_name[
@@ -1438,90 +1603,91 @@ void css_dump_style(const struct css_style * const style)
 
 		if (style->background_attachment ==
 				CSS_BACKGROUND_ATTACHMENT_UNKNOWN)
-			fprintf(stderr, " UNKNOWN ");
+			fprintf(stderr, " UNKNOWN");
 		else if (style->background_repeat ==
 				CSS_BACKGROUND_ATTACHMENT_NOT_SET)
-			fprintf(stderr, " NOT_SET ");
+			;
 		else
-			fprintf(stderr, " %s ",
+			fprintf(stderr, " %s",
 				css_background_attachment_name[
 					style->background_attachment]);
 
 		switch (style->background_position.horz.pos) {
-			case CSS_BACKGROUND_POSITION_LENGTH:
-				css_dump_length(&style->background_position.
-						horz.value.length);
-				break;
-			case CSS_BACKGROUND_POSITION_PERCENT:
-				fprintf(stderr, "%g%%",
-						style->background_position.
-						horz.value.percent);
-				break;
-			case CSS_BACKGROUND_POSITION_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_BACKGROUND_POSITION_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_BACKGROUND_POSITION_LENGTH:
+			fprintf(stderr, " ");
+			css_dump_length(&style->background_position.
+					horz.value.length);
+			break;
+		case CSS_BACKGROUND_POSITION_PERCENT:
+			fprintf(stderr, " %g%%",
+					style->background_position.
+					horz.value.percent);
+			break;
+		case CSS_BACKGROUND_POSITION_INHERIT:
+			fprintf(stderr, " inherit");
+			break;
+		case CSS_BACKGROUND_POSITION_NOT_SET:
+			break;
+		default:
+			fprintf(stderr, " UNKNOWN");
+			break;
 		}
-		fprintf(stderr, " ");
 		switch (style->background_position.vert.pos) {
-			case CSS_BACKGROUND_POSITION_LENGTH:
-				css_dump_length(&style->background_position.
-						vert.value.length);
-				break;
-			case CSS_BACKGROUND_POSITION_PERCENT:
-				fprintf(stderr, "%g%%",
-						style->background_position.
-						vert.value.percent);
-				break;
-			case CSS_BACKGROUND_POSITION_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_BACKGROUND_POSITION_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_BACKGROUND_POSITION_LENGTH:
+			fprintf(stderr, " ");
+			css_dump_length(&style->background_position.
+					vert.value.length);
+			break;
+		case CSS_BACKGROUND_POSITION_PERCENT:
+			fprintf(stderr, " %g%%",
+					style->background_position.
+					vert.value.percent);
+			break;
+		case CSS_BACKGROUND_POSITION_INHERIT:
+			fprintf(stderr, " inherit");
+			break;
+		case CSS_BACKGROUND_POSITION_NOT_SET:
+			break;
+		default:
+			fprintf(stderr, " UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
 	for (i = 0; i != 4; i++) {
-		if (style->border[i].color != css_empty_style.border[i].color ||
-				style->border[i].width.width != css_empty_style.border[i].width.width ||
-				style->border[i].style != css_empty_style.border[i].style) {
+		if (style->border[i].color != CSS_COLOR_NOT_SET ||
+				style->border[i].width.width !=
+				CSS_BORDER_WIDTH_NOT_SET ||
+				style->border[i].style !=
+				CSS_BORDER_STYLE_NOT_SET) {
 			fprintf(stderr, "border-");
 			switch (i) {
-				case TOP:
-					fprintf(stderr, "top: ");
-					break;
-				case RIGHT:
-					fprintf(stderr, "right: ");
-					break;
-				case BOTTOM:
-					fprintf(stderr, "bottom: ");
-					break;
-				case LEFT:
-					fprintf(stderr, "left: ");
-					break;
+			case TOP:
+				fprintf(stderr, "top:");
+				break;
+			case RIGHT:
+				fprintf(stderr, "right:");
+				break;
+			case BOTTOM:
+				fprintf(stderr, "bottom:");
+				break;
+			case LEFT:
+				fprintf(stderr, "left:");
+				break;
 			}
 			switch (style->border[i].width.width) {
-				case CSS_BORDER_WIDTH_INHERIT:
-					fprintf(stderr, "inherit");
-					break;
-				case CSS_BORDER_WIDTH_LENGTH:
-					css_dump_length(&style->border[i].width.value);
-					break;
-				case CSS_BORDER_WIDTH_NOT_SET:
-					fprintf(stderr, "NOT_SET");
-					break;
-				default:
-					fprintf(stderr, "UNKNOWN");
-					break;
+			case CSS_BORDER_WIDTH_INHERIT:
+				fprintf(stderr, " inherit");
+				break;
+			case CSS_BORDER_WIDTH_LENGTH:
+				fprintf(stderr, " ");
+				css_dump_length(&style->border[i].width.value);
+				break;
+			case CSS_BORDER_WIDTH_NOT_SET:
+				break;
+			default:
+				fprintf(stderr, " UNKNOWN");
+				break;
 			}
 
 			if (style->border[i].style ==
@@ -1529,27 +1695,30 @@ void css_dump_style(const struct css_style * const style)
 				fprintf(stderr, " UNKNOWN");
 			else if (style->border[i].style ==
 					CSS_BORDER_STYLE_NOT_SET)
-				fprintf(stderr, " NOT_SET");
+				;
 			else
 				fprintf(stderr, " %s",
 					css_border_style_name[
 						style->border[i].style]);
 
 			if (style->border[i].color == TRANSPARENT)
-				fprintf(stderr, " transparent; ");
+				fprintf(stderr, " transparent");
 			else if (style->border[i].color == CSS_COLOR_NONE)
-				fprintf(stderr, " none; ");
+				fprintf(stderr, " none");
 			else if (style->border[i].color == CSS_COLOR_INHERIT)
-				fprintf(stderr, " inherit; ");
+				fprintf(stderr, " inherit");
 			else if (style->border[i].color == CSS_COLOR_NOT_SET)
-				fprintf(stderr, " NOT_SET; ");
+				;
 			else
-				fprintf(stderr, " #%.6lx; ", style->border[i].color);
+				fprintf(stderr, " #%.6lx",
+						style->border[i].color);
+			fprintf(stderr, "; ");
 		}
 	}
-	DUMP_KEYWORD(border_collapse, "border-collapse", css_border_collapse_name);
+	DUMP_KEYWORD(border_collapse, "border-collapse",
+			css_border_collapse_name);
 	if (style->border_spacing.border_spacing !=
-			css_empty_style.border_spacing.border_spacing) {
+			CSS_BORDER_SPACING_NOT_SET) {
 		fprintf(stderr, "border-spacing: ");
 		css_dump_length(&style->border_spacing.horz);
 		fprintf(stderr, " ");
@@ -1560,37 +1729,34 @@ void css_dump_style(const struct css_style * const style)
 	DUMP_KEYWORD(caption_side, "caption-side", css_caption_side_name);
 	DUMP_KEYWORD(clear, "clear", css_clear_name);
 
-	if (style->clip.clip != css_empty_style.clip.clip) {
+	if (style->clip.clip != CSS_CLIP_NOT_SET) {
 		fprintf(stderr, "clip: ");
 		switch (style->clip.clip) {
-			case CSS_CLIP_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_CLIP_AUTO:
-				fprintf(stderr, "auto");
-				break;
-			case CSS_CLIP_RECT:
-				fprintf(stderr, "rect(");
-				for (i = 0; i != 4; i++) {
-					switch (style->clip.rect[i].rect) {
-						case CSS_CLIP_RECT_AUTO:
-							fprintf(stderr, "auto");
-							break;
-						case CSS_CLIP_RECT_LENGTH:
-							css_dump_length(&style->clip.rect[i].value);
-							break;
-					}
-					if (i != 3)
-						fprintf(stderr, ", ");
+		case CSS_CLIP_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_CLIP_AUTO:
+			fprintf(stderr, "auto");
+			break;
+		case CSS_CLIP_RECT:
+			fprintf(stderr, "rect(");
+			for (i = 0; i != 4; i++) {
+				switch (style->clip.rect[i].rect) {
+				case CSS_CLIP_RECT_AUTO:
+					fprintf(stderr, "auto");
+					break;
+				case CSS_CLIP_RECT_LENGTH:
+					css_dump_length(&style->clip.rect[i].value);
+					break;
 				}
-				fprintf(stderr, ")");
-				break;
-			case CSS_CLIP_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+				if (i != 3)
+					fprintf(stderr, ", ");
+			}
+			fprintf(stderr, ")");
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -1601,81 +1767,78 @@ void css_dump_style(const struct css_style * const style)
 	DUMP_KEYWORD(empty_cells, "empty-cells", css_empty_cells_name);
 	DUMP_KEYWORD(float_, "float", css_float_name);
 
-	if (style->font_style != css_empty_style.font_style ||
-			style->font_weight != css_empty_style.font_weight ||
-			style->font_size.size !=
-					css_empty_style.font_size.size ||
-			style->line_height.size !=
-					css_empty_style.line_height.size ||
-			style->font_family != css_empty_style.font_family ||
-			style->font_variant != css_empty_style.font_variant) {
-		fprintf(stderr, "font: ");
+	if (style->font_style != CSS_FONT_STYLE_NOT_SET ||
+			style->font_weight != CSS_FONT_WEIGHT_NOT_SET ||
+			style->font_size.size != CSS_FONT_SIZE_NOT_SET ||
+			style->line_height.size != CSS_LINE_HEIGHT_NOT_SET ||
+			style->font_family != CSS_FONT_FAMILY_NOT_SET ||
+			style->font_variant != CSS_FONT_VARIANT_NOT_SET) {
+		fprintf(stderr, "font:");
 
 		if (style->font_style == CSS_FONT_STYLE_UNKNOWN)
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stderr, " UNKNOWN");
 		else if (style->font_style == CSS_FONT_STYLE_NOT_SET)
-			fprintf(stderr, "NOT_SET");
+			;
 		else
-			fprintf(stderr, "%s",
+			fprintf(stderr, " %s",
 				css_font_style_name[style->font_style]);
 
 		if (style->font_weight == CSS_FONT_WEIGHT_UNKNOWN)
-			fprintf(stderr, " UNKNOWN ");
+			fprintf(stderr, " UNKNOWN");
 		else if (style->font_weight == CSS_FONT_WEIGHT_NOT_SET)
-			fprintf(stderr, " NOT_SET ");
+			;
 		else
-			fprintf(stderr, " %s ",
+			fprintf(stderr, " %s",
 				css_font_weight_name[style->font_weight]);
 
 		switch (style->font_size.size) {
-			case CSS_FONT_SIZE_ABSOLUTE:
-				fprintf(stderr, "[%g]",
-					style->font_size.value.absolute);
-				break;
-			case CSS_FONT_SIZE_LENGTH:
-				css_dump_length(&style->font_size.value.length);
-				break;
-			case CSS_FONT_SIZE_PERCENT:
-				fprintf(stderr, "%g%%",
-					style->font_size.value.percent);
-				break;
-			case CSS_FONT_SIZE_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_FONT_SIZE_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_FONT_SIZE_ABSOLUTE:
+			fprintf(stderr, " [%g]",
+				style->font_size.value.absolute);
+			break;
+		case CSS_FONT_SIZE_LENGTH:
+			fprintf(stderr, " ");
+			css_dump_length(&style->font_size.value.length);
+			break;
+		case CSS_FONT_SIZE_PERCENT:
+			fprintf(stderr, " %g%%",
+				style->font_size.value.percent);
+			break;
+		case CSS_FONT_SIZE_INHERIT:
+			fprintf(stderr, " inherit");
+			break;
+		case CSS_FONT_SIZE_NOT_SET:
+			break;
+		default:
+			fprintf(stderr, " UNKNOWN");
+			break;
 		}
-		fprintf(stderr, "/");
 		switch (style->line_height.size) {
-			case CSS_LINE_HEIGHT_ABSOLUTE:
-				fprintf(stderr, "[%g]",
-					style->line_height.value.absolute);
-					break;
-			case CSS_LINE_HEIGHT_LENGTH:
-				css_dump_length(&style->line_height.value.length);
+		case CSS_LINE_HEIGHT_ABSOLUTE:
+			fprintf(stderr, "/[%g]",
+				style->line_height.value.absolute);
 				break;
-			case CSS_LINE_HEIGHT_PERCENT:
-				fprintf(stderr, "%g%%",
-					style->line_height.value.percent);
-					break;
-			case CSS_LINE_HEIGHT_INHERIT:
-				fprintf(stderr, "inherit");
+		case CSS_LINE_HEIGHT_LENGTH:
+			fprintf(stderr, "/");
+			css_dump_length(&style->line_height.value.length);
+			break;
+		case CSS_LINE_HEIGHT_PERCENT:
+			fprintf(stderr, "/%g%%",
+				style->line_height.value.percent);
 				break;
-			case CSS_LINE_HEIGHT_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_LINE_HEIGHT_INHERIT:
+			fprintf(stderr, "/inherit");
+			break;
+		case CSS_LINE_HEIGHT_NOT_SET:
+			break;
+		default:
+			fprintf(stderr, "/UNKNOWN");
+			break;
 		}
 		if (style->font_family == CSS_FONT_FAMILY_UNKNOWN)
 			fprintf(stderr, " UNKNOWN");
 		else if (style->font_family == CSS_FONT_FAMILY_NOT_SET)
-			fprintf(stderr, " NOT_SET");
+			;
 		else
 			fprintf(stderr, " %s",
 				css_font_family_name[style->font_family]);
@@ -1683,68 +1846,65 @@ void css_dump_style(const struct css_style * const style)
 		if (style->font_variant == CSS_FONT_VARIANT_UNKNOWN)
 			fprintf(stderr, " UNKNOWN");
 		else if (style->font_variant == CSS_FONT_VARIANT_NOT_SET)
-			fprintf(stderr, " NOT_SET");
+			;
 		else
 			fprintf(stderr, " %s",
 				css_font_variant_name[style->font_variant]);
 		fprintf(stderr, "; ");
 	}
 
-	if (style->height.height != css_empty_style.height.height) {
+	if (style->height.height != CSS_HEIGHT_NOT_SET) {
 		fprintf(stderr, "height: ");
 		switch (style->height.height) {
-			case CSS_HEIGHT_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_HEIGHT_AUTO:
-				fprintf(stderr, "auto");
-				break;
-			case CSS_HEIGHT_LENGTH:
-				css_dump_length(&style->height.length);
-				break;
-			case CSS_HEIGHT_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_HEIGHT_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_HEIGHT_AUTO:
+			fprintf(stderr, "auto");
+			break;
+		case CSS_HEIGHT_LENGTH:
+			css_dump_length(&style->height.length);
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
 
-	if (style->letter_spacing.letter_spacing != css_empty_style.letter_spacing.letter_spacing) {
+	if (style->letter_spacing.letter_spacing !=
+			CSS_LETTER_SPACING_NOT_SET) {
 		fprintf(stderr, "letter-spacing: ");
 		switch (style->letter_spacing.letter_spacing) {
-			case CSS_LETTER_SPACING_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_LETTER_SPACING_NORMAL:
-				fprintf(stderr, "normal");
-				break;
-			case CSS_LETTER_SPACING_LENGTH:
-				css_dump_length(&style->letter_spacing.length);
-				break;
-			case CSS_LETTER_SPACING_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_LETTER_SPACING_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_LETTER_SPACING_NORMAL:
+			fprintf(stderr, "normal");
+			break;
+		case CSS_LETTER_SPACING_LENGTH:
+			css_dump_length(&style->letter_spacing.length);
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
 
-	if (style->list_style_type != css_empty_style.list_style_type ||
-			style->list_style_position != css_empty_style.list_style_position ||
-			style->list_style_image.type != css_empty_style.list_style_image.type) {
-		fprintf(stderr, "list-style: ");
+	if (style->list_style_type != CSS_LIST_STYLE_TYPE_NOT_SET ||
+			style->list_style_position !=
+			CSS_LIST_STYLE_POSITION_NOT_SET ||
+			style->list_style_image.type !=
+			CSS_LIST_STYLE_IMAGE_NOT_SET) {
+		fprintf(stderr, "list-style:");
 
 		if (style->list_style_type == CSS_LIST_STYLE_TYPE_UNKNOWN)
-			fprintf(stderr, "UNKNOWN");
+			fprintf(stderr, " UNKNOWN");
 		else if (style->list_style_type == CSS_LIST_STYLE_TYPE_NOT_SET)
-			fprintf(stderr, "NOT_SET");
+			;
 		else
-			fprintf(stderr, "%s",
+			fprintf(stderr, " %s",
 					css_list_style_type_name[
 						style->list_style_type]);
 
@@ -1753,309 +1913,291 @@ void css_dump_style(const struct css_style * const style)
 			fprintf(stderr, " UNKNOWN");
 		else if (style->list_style_type ==
 				CSS_LIST_STYLE_POSITION_NOT_SET)
-			fprintf(stderr, " NOT_SET");
+			;
 		else
 			fprintf(stderr, " %s",
 					css_list_style_position_name[
 						style->list_style_position]);
 
 		switch (style->list_style_image.type) {
-			case CSS_LIST_STYLE_IMAGE_INHERIT:
-				fprintf(stderr, " inherit");
-				break;
-			case CSS_LIST_STYLE_IMAGE_NONE:
-				fprintf(stderr, " none");
-				break;
-			case CSS_LIST_STYLE_IMAGE_URI:
-				fprintf(stderr, " url('%s')",
-					style->list_style_image.uri);
-				break;
-			case CSS_LIST_STYLE_IMAGE_NOT_SET:
-				fprintf(stderr, " NOT_SET");
-				break;
-			default:
-				fprintf(stderr, " UNKNOWN");
+		case CSS_LIST_STYLE_IMAGE_INHERIT:
+			fprintf(stderr, " inherit");
+			break;
+		case CSS_LIST_STYLE_IMAGE_NONE:
+			fprintf(stderr, " none");
+			break;
+		case CSS_LIST_STYLE_IMAGE_URI:
+			fprintf(stderr, " url('%s')",
+				style->list_style_image.uri);
+			break;
+		case CSS_LIST_STYLE_IMAGE_NOT_SET:
+			break;
+		default:
+			fprintf(stderr, " UNKNOWN");
 		}
 		fprintf(stderr, "; ");
 	}
 
-	if (style->margin[0].margin != css_empty_style.margin[0].margin ||
-			style->margin[1].margin != css_empty_style.margin[1].margin ||
-			style->margin[2].margin != css_empty_style.margin[2].margin ||
-			style->margin[3].margin != css_empty_style.margin[3].margin) {
+	if (style->margin[0].margin != CSS_MARGIN_NOT_SET ||
+			style->margin[1].margin != CSS_MARGIN_NOT_SET ||
+			style->margin[2].margin != CSS_MARGIN_NOT_SET ||
+			style->margin[3].margin != CSS_MARGIN_NOT_SET) {
 		fprintf(stderr, "margin:");
 		for (i = 0; i != 4; i++) {
 			switch (style->margin[i].margin) {
-				case CSS_MARGIN_INHERIT:
-					fprintf(stderr, " inherit");
-					break;
-				case CSS_MARGIN_LENGTH:
-					fprintf(stderr, " ");
-					css_dump_length(&style->margin[i].value.length);
-					break;
-				case CSS_MARGIN_PERCENT:
-					fprintf(stderr, " %g%%",
-						style->margin[i].value.percent);
-					break;
-				case CSS_MARGIN_AUTO:
-					fprintf(stderr, " auto");
-					break;
-				case CSS_MARGIN_NOT_SET:
-					fprintf(stderr, " NOT_SET");
-					break;
-				default:
-					fprintf(stderr, " UNKNOWN");
-					break;
+			case CSS_MARGIN_INHERIT:
+				fprintf(stderr, " inherit");
+				break;
+			case CSS_MARGIN_LENGTH:
+				fprintf(stderr, " ");
+				css_dump_length(&style->margin[i].value.length);
+				break;
+			case CSS_MARGIN_PERCENT:
+				fprintf(stderr, " %g%%",
+					style->margin[i].value.percent);
+				break;
+			case CSS_MARGIN_AUTO:
+				fprintf(stderr, " auto");
+				break;
+			case CSS_MARGIN_NOT_SET:
+				fprintf(stderr, " .");
+				break;
+			default:
+				fprintf(stderr, " UNKNOWN");
+				break;
 			}
 		}
 		fprintf(stderr, "; ");
 	}
 
-	if (style->max_height.max_height != css_empty_style.max_height.max_height) {
+	if (style->max_height.max_height != CSS_MAX_HEIGHT_NOT_SET) {
 		fprintf(stderr, "max-height: ");
 		switch (style->max_height.max_height) {
-			case CSS_MAX_HEIGHT_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_MAX_HEIGHT_NONE:
-				fprintf(stderr, "none");
-				break;
-			case CSS_MAX_HEIGHT_LENGTH:
-				css_dump_length(&style->max_height.value.length);
-				break;
-			case CSS_MAX_HEIGHT_PERCENT:
-				fprintf(stderr, "%g%%",
-					style->max_height.value.percent);
-				break;
-			case CSS_MAX_HEIGHT_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_MAX_HEIGHT_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_MAX_HEIGHT_NONE:
+			fprintf(stderr, "none");
+			break;
+		case CSS_MAX_HEIGHT_LENGTH:
+			css_dump_length(&style->max_height.value.length);
+			break;
+		case CSS_MAX_HEIGHT_PERCENT:
+			fprintf(stderr, "%g%%",
+				style->max_height.value.percent);
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
 
-	if (style->max_width.max_width != css_empty_style.max_width.max_width) {
+	if (style->max_width.max_width != CSS_MAX_WIDTH_NOT_SET) {
 		fprintf(stderr, "max-width: ");
 		switch (style->max_width.max_width) {
-			case CSS_MAX_WIDTH_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_MAX_WIDTH_NONE:
-				fprintf(stderr, "none");
-				break;
-			case CSS_MAX_WIDTH_LENGTH:
-				css_dump_length(&style->max_width.value.length);
-				break;
-			case CSS_MAX_WIDTH_PERCENT:
-				fprintf(stderr, "%g%%",
-					style->max_width.value.percent);
-				break;
-			case CSS_MAX_WIDTH_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_MAX_WIDTH_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_MAX_WIDTH_NONE:
+			fprintf(stderr, "none");
+			break;
+		case CSS_MAX_WIDTH_LENGTH:
+			css_dump_length(&style->max_width.value.length);
+			break;
+		case CSS_MAX_WIDTH_PERCENT:
+			fprintf(stderr, "%g%%",
+				style->max_width.value.percent);
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
 
-	if (style->min_height.min_height != css_empty_style.min_height.min_height) {
+	if (style->min_height.min_height != CSS_MIN_HEIGHT_NOT_SET) {
 		fprintf(stderr, "min-height: ");
 		switch (style->min_height.min_height) {
-			case CSS_MIN_HEIGHT_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_MIN_HEIGHT_LENGTH:
-				css_dump_length(&style->min_height.value.length);
-				break;
-			case CSS_MIN_HEIGHT_PERCENT:
-				fprintf(stderr, "%g%%",
-					style->min_height.value.percent);
-				break;
-			case CSS_MIN_HEIGHT_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_MIN_HEIGHT_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_MIN_HEIGHT_LENGTH:
+			css_dump_length(&style->min_height.value.length);
+			break;
+		case CSS_MIN_HEIGHT_PERCENT:
+			fprintf(stderr, "%g%%",
+				style->min_height.value.percent);
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
 
-	if (style->min_width.min_width != css_empty_style.min_width.min_width) {
+	if (style->min_width.min_width != CSS_MIN_WIDTH_NOT_SET) {
 		fprintf(stderr, "min-width: ");
 		switch (style->min_width.min_width) {
-			case CSS_MIN_WIDTH_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_MIN_WIDTH_LENGTH:
-				css_dump_length(&style->min_width.value.length);
-				break;
-			case CSS_MIN_WIDTH_PERCENT:
-				fprintf(stderr, "%g%%",
-					style->min_width.value.percent);
-				break;
-			case CSS_MIN_WIDTH_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_MIN_WIDTH_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_MIN_WIDTH_LENGTH:
+			css_dump_length(&style->min_width.value.length);
+			break;
+		case CSS_MIN_WIDTH_PERCENT:
+			fprintf(stderr, "%g%%",
+				style->min_width.value.percent);
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
 
-	if (style->orphans.orphans != css_empty_style.orphans.orphans) {
+	if (style->orphans.orphans != CSS_ORPHANS_NOT_SET) {
 		fprintf(stderr, "orphans: ");
 		switch (style->orphans.orphans) {
-			case CSS_ORPHANS_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_ORPHANS_INTEGER:
-				fprintf(stderr, "%d",
-					style->orphans.value);
-				break;
-			case CSS_ORPHANS_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_ORPHANS_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_ORPHANS_INTEGER:
+			fprintf(stderr, "%d",
+				style->orphans.value);
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
 
-	if (style->outline.color.color != css_empty_style.outline.color.color ||
-		style->outline.width.width != css_empty_style.outline.width.width ||
-		style->outline.style != css_empty_style.outline.style) {
-		fprintf(stderr, "outline: ");
+	if (style->outline.color.color != CSS_OUTLINE_COLOR_NOT_SET ||
+		style->outline.width.width != CSS_BORDER_WIDTH_NOT_SET ||
+		style->outline.style != CSS_BORDER_STYLE_NOT_SET) {
+		fprintf(stderr, "outline:");
 		switch (style->outline.color.color) {
-			case CSS_OUTLINE_COLOR_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_OUTLINE_COLOR_INVERT:
-				fprintf(stderr, "invert");
-				break;
-			case CSS_OUTLINE_COLOR_COLOR:
-				if (style->outline.color.value == TRANSPARENT)
-					fprintf(stderr, "transparent");
-				else if (style->outline.color.value == CSS_COLOR_NONE)
-					fprintf(stderr, "none");
-				else if (style->outline.color.value == CSS_COLOR_INHERIT)
-					fprintf(stderr, "inherit");
-				else if (style->outline.color.value == CSS_COLOR_NOT_SET)
-					fprintf(stderr, "NOT_SET");
-				else
-					fprintf(stderr, "#%.6lx", style->outline.color.value);
-				break;
-			case CSS_OUTLINE_COLOR_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_OUTLINE_COLOR_INHERIT:
+			fprintf(stderr, " inherit");
+			break;
+		case CSS_OUTLINE_COLOR_INVERT:
+			fprintf(stderr, " invert");
+			break;
+		case CSS_OUTLINE_COLOR_COLOR:
+			if (style->outline.color.value == TRANSPARENT)
+				fprintf(stderr, " transparent");
+			else if (style->outline.color.value == CSS_COLOR_NONE)
+				fprintf(stderr, " none");
+			else if (style->outline.color.value == CSS_COLOR_INHERIT)
+				fprintf(stderr, " inherit");
+			else if (style->outline.color.value == CSS_COLOR_NOT_SET)
+				fprintf(stderr, " .");
+			else
+				fprintf(stderr, " #%.6lx", style->outline.color.value);
+			break;
+		case CSS_OUTLINE_COLOR_NOT_SET:
+			break;
+		default:
+			fprintf(stderr, " UNKNOWN");
+			break;
 		}
 
 		if (style->outline.style == CSS_BORDER_STYLE_UNKNOWN)
-			fprintf(stderr, " UNKNOWN ");
+			fprintf(stderr, " UNKNOWN");
 		else if (style->outline.style == CSS_BORDER_STYLE_NOT_SET)
-			fprintf(stderr, " NOT_SET ");
+			;
 		else
-			fprintf(stderr, " %s ",
+			fprintf(stderr, " %s",
 				css_border_style_name[style->outline.style]);
 
 		switch (style->outline.width.width) {
-			case CSS_BORDER_WIDTH_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_BORDER_WIDTH_LENGTH:
-				css_dump_length(&style->outline.width.value);
-				break;
-			case CSS_BORDER_WIDTH_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_BORDER_WIDTH_INHERIT:
+			fprintf(stderr, " inherit");
+			break;
+		case CSS_BORDER_WIDTH_LENGTH:
+			css_dump_length(&style->outline.width.value);
+			break;
+		case CSS_BORDER_WIDTH_NOT_SET:
+			break;
+		default:
+			fprintf(stderr, " UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
 
 	DUMP_KEYWORD(overflow, "overflow", css_overflow_name);
 
-	if (style->padding[0].padding != css_empty_style.padding[0].padding ||
-			style->padding[1].padding != css_empty_style.padding[1].padding ||
-			style->padding[2].padding != css_empty_style.padding[2].padding ||
-			style->padding[3].padding != css_empty_style.padding[3].padding) {
+	if (style->padding[0].padding != CSS_PADDING_NOT_SET ||
+			style->padding[1].padding != CSS_PADDING_NOT_SET ||
+			style->padding[2].padding != CSS_PADDING_NOT_SET ||
+			style->padding[3].padding != CSS_PADDING_NOT_SET) {
 		fprintf(stderr, "padding:");
 		for (i = 0; i != 4; i++) {
 			switch (style->padding[i].padding) {
-				case CSS_PADDING_INHERIT:
-					fprintf(stderr, " inherit");
-					break;
-				case CSS_PADDING_LENGTH:
-					fprintf(stderr, " ");
-					css_dump_length(&style->padding[i].value.length);
-					break;
-				case CSS_PADDING_PERCENT:
-					fprintf(stderr, " %g%%",
-						style->padding[i].value.percent);
-					break;
-				case CSS_PADDING_NOT_SET:
-					fprintf(stderr, " NOT_SET");
-					break;
-				default:
-					fprintf(stderr, " UNKNOWN");
-					break;
+			case CSS_PADDING_INHERIT:
+				fprintf(stderr, " inherit");
+				break;
+			case CSS_PADDING_LENGTH:
+				fprintf(stderr, " ");
+				css_dump_length(&style->padding[i].value.length);
+				break;
+			case CSS_PADDING_PERCENT:
+				fprintf(stderr, " %g%%",
+					style->padding[i].value.percent);
+				break;
+			case CSS_PADDING_NOT_SET:
+				fprintf(stderr, " .");
+				break;
+			default:
+				fprintf(stderr, " UNKNOWN");
+				break;
 			}
 		}
 		fprintf(stderr, "; ");
 	}
 
-	DUMP_KEYWORD(page_break_after, "page-break-after", css_page_break_after_name);
-	DUMP_KEYWORD(page_break_before, "page-break-before", css_page_break_before_name);
-	DUMP_KEYWORD(page_break_inside, "page-break-inside", css_page_break_inside_name);
+	DUMP_KEYWORD(page_break_after, "page-break-after",
+			css_page_break_after_name);
+	DUMP_KEYWORD(page_break_before, "page-break-before",
+			css_page_break_before_name);
+	DUMP_KEYWORD(page_break_inside, "page-break-inside",
+			css_page_break_inside_name);
 
 	for (i = 0; i != 4; i++) {
-		if (style->pos[i].pos != css_empty_style.pos[i].pos) {
+		if (style->pos[i].pos != CSS_POS_NOT_SET) {
 			switch (i) {
-				case TOP:
-					fprintf(stderr, "top: ");
-					break;
-				case RIGHT:
-					fprintf(stderr, "right: ");
-					break;
-				case BOTTOM:
-					fprintf(stderr, "bottom: ");
-					break;
-				case LEFT:
-					fprintf(stderr, "left: ");
-					break;
+			case TOP:
+				fprintf(stderr, "top: ");
+				break;
+			case RIGHT:
+				fprintf(stderr, "right: ");
+				break;
+			case BOTTOM:
+				fprintf(stderr, "bottom: ");
+				break;
+			case LEFT:
+				fprintf(stderr, "left: ");
+				break;
 			}
 			switch (style->pos[i].pos) {
-				case CSS_POS_INHERIT:
-					fprintf(stderr, "inherit");
-					break;
-				case CSS_POS_AUTO:
-					fprintf(stderr, "auto");
-					break;
-				case CSS_POS_PERCENT:
-					fprintf(stderr, "%g%%",
-							style->pos[i].value.percent);
-					break;
-				case CSS_POS_LENGTH:
-					css_dump_length(&style->pos[i].value.length);
-					break;
-				case CSS_POS_NOT_SET:
-					fprintf(stderr, "NOT_SET");
-					break;
-				default:
-					fprintf(stderr, "UNKNOWN");
-					break;
+			case CSS_POS_INHERIT:
+				fprintf(stderr, "inherit");
+				break;
+			case CSS_POS_AUTO:
+				fprintf(stderr, "auto");
+				break;
+			case CSS_POS_PERCENT:
+				fprintf(stderr, "%g%%",
+						style->pos[i].value.percent);
+				break;
+			case CSS_POS_LENGTH:
+				css_dump_length(&style->pos[i].value.length);
+				break;
+			default:
+				fprintf(stderr, "UNKNOWN");
+				break;
 			}
 			fprintf(stderr, "; ");
 		}
@@ -2065,7 +2207,7 @@ void css_dump_style(const struct css_style * const style)
 	DUMP_KEYWORD(table_layout, "table-layout", css_table_layout_name);
 	DUMP_KEYWORD(text_align, "text-align", css_text_align_name);
 
-	if (style->text_decoration != css_empty_style.text_decoration) {
+	if (style->text_decoration != CSS_TEXT_DECORATION_NOT_SET) {
 		fprintf(stderr, "text-decoration:");
 		if (style->text_decoration == CSS_TEXT_DECORATION_NONE)
 			fprintf(stderr, " none");
@@ -2082,25 +2224,22 @@ void css_dump_style(const struct css_style * const style)
 		fprintf(stderr, "; ");
 	}
 
-	if (style->text_indent.size != css_empty_style.text_indent.size) {
+	if (style->text_indent.size != CSS_TEXT_INDENT_NOT_SET) {
 		fprintf(stderr, "text-indent: ");
 		switch (style->text_indent.size) {
-			case CSS_TEXT_INDENT_LENGTH:
-				css_dump_length(&style->text_indent.value.length);
-				break;
-			case CSS_TEXT_INDENT_PERCENT:
-				fprintf(stderr, "%g%%",
-					style->text_indent.value.percent);
-				break;
-			case CSS_TEXT_INDENT_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_TEXT_INDENT_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_TEXT_INDENT_LENGTH:
+			css_dump_length(&style->text_indent.value.length);
+			break;
+		case CSS_TEXT_INDENT_PERCENT:
+			fprintf(stderr, "%g%%",
+				style->text_indent.value.percent);
+			break;
+		case CSS_TEXT_INDENT_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -2109,49 +2248,46 @@ void css_dump_style(const struct css_style * const style)
 
 	DUMP_KEYWORD(unicode_bidi, "unicode-bidi", css_unicode_bidi_name);
 
-	if (style->vertical_align.type != css_empty_style.vertical_align.type) {
+	if (style->vertical_align.type != CSS_VERTICAL_ALIGN_NOT_SET) {
 		fprintf(stderr, "vertical-align: ");
 		switch (style->vertical_align.type) {
-			case CSS_VERTICAL_ALIGN_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_VERTICAL_ALIGN_BASELINE:
-				fprintf(stderr, "baseline");
-				break;
-			case CSS_VERTICAL_ALIGN_SUB:
-				fprintf(stderr, "sub");
-				break;
-			case CSS_VERTICAL_ALIGN_SUPER:
-				fprintf(stderr, "super");
-				break;
-			case CSS_VERTICAL_ALIGN_TOP:
-				fprintf(stderr, "top");
-				break;
-			case CSS_VERTICAL_ALIGN_TEXT_TOP:
-				fprintf(stderr, "text-top");
-				break;
-			case CSS_VERTICAL_ALIGN_MIDDLE:
-				fprintf(stderr, "middle");
-				break;
-			case CSS_VERTICAL_ALIGN_BOTTOM:
-				fprintf(stderr, "bottom");
-				break;
-			case CSS_VERTICAL_ALIGN_TEXT_BOTTOM:
-				fprintf(stderr, "text-bottom");
-				break;
-			case CSS_VERTICAL_ALIGN_LENGTH:
-				css_dump_length(&style->vertical_align.value.length);
-				break;
-			case CSS_VERTICAL_ALIGN_PERCENT:
-				fprintf(stderr, "%g%%",
-					style->vertical_align.value.percent);
-				break;
-			case CSS_VERTICAL_ALIGN_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_VERTICAL_ALIGN_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_VERTICAL_ALIGN_BASELINE:
+			fprintf(stderr, "baseline");
+			break;
+		case CSS_VERTICAL_ALIGN_SUB:
+			fprintf(stderr, "sub");
+			break;
+		case CSS_VERTICAL_ALIGN_SUPER:
+			fprintf(stderr, "super");
+			break;
+		case CSS_VERTICAL_ALIGN_TOP:
+			fprintf(stderr, "top");
+			break;
+		case CSS_VERTICAL_ALIGN_TEXT_TOP:
+			fprintf(stderr, "text-top");
+			break;
+		case CSS_VERTICAL_ALIGN_MIDDLE:
+			fprintf(stderr, "middle");
+			break;
+		case CSS_VERTICAL_ALIGN_BOTTOM:
+			fprintf(stderr, "bottom");
+			break;
+		case CSS_VERTICAL_ALIGN_TEXT_BOTTOM:
+			fprintf(stderr, "text-bottom");
+			break;
+		case CSS_VERTICAL_ALIGN_LENGTH:
+			css_dump_length(&style->vertical_align.value.length);
+			break;
+		case CSS_VERTICAL_ALIGN_PERCENT:
+			fprintf(stderr, "%g%%",
+				style->vertical_align.value.percent);
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -2159,93 +2295,80 @@ void css_dump_style(const struct css_style * const style)
 	DUMP_KEYWORD(visibility, "visibility", css_visibility_name);
 	DUMP_KEYWORD(white_space, "white-space", css_white_space_name);
 
-	if (style->widows.widows != css_empty_style.widows.widows) {
+	if (style->widows.widows != CSS_WIDOWS_NOT_SET) {
 		fprintf(stderr, "widows: ");
 		switch (style->widows.widows) {
-			case CSS_WIDOWS_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_WIDOWS_INTEGER:
-				fprintf(stderr, "%d",
-					style->widows.value);
-				break;
-			case CSS_WIDOWS_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_WIDOWS_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_WIDOWS_INTEGER:
+			fprintf(stderr, "%d",
+				style->widows.value);
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
 
-	if (style->width.width != css_empty_style.width.width) {
+	if (style->width.width != CSS_WIDTH_NOT_SET) {
 		fprintf(stderr, "width: ");
 		switch (style->width.width) {
-			case CSS_WIDTH_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_WIDTH_AUTO:
-				fprintf(stderr, "auto");
-				break;
-			case CSS_WIDTH_LENGTH:
-				css_dump_length(&style->width.value.length);
-				break;
-			case CSS_WIDTH_PERCENT:
-				fprintf(stderr, "%g%%",
-						style->width.value.percent);
-				break;
-			case CSS_WIDTH_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_WIDTH_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_WIDTH_AUTO:
+			fprintf(stderr, "auto");
+			break;
+		case CSS_WIDTH_LENGTH:
+			css_dump_length(&style->width.value.length);
+			break;
+		case CSS_WIDTH_PERCENT:
+			fprintf(stderr, "%g%%", style->width.value.percent);
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
 
-	if (style->word_spacing.word_spacing != css_empty_style.word_spacing.word_spacing) {
+	if (style->word_spacing.word_spacing != CSS_WORD_SPACING_NOT_SET) {
 		fprintf(stderr, "word-spacing: ");
 		switch (style->word_spacing.word_spacing) {
-			case CSS_WORD_SPACING_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_WORD_SPACING_NORMAL:
-				fprintf(stderr, "normal");
-				break;
-			case CSS_WORD_SPACING_LENGTH:
-				css_dump_length(&style->word_spacing.length);
-				break;
-			case CSS_WORD_SPACING_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_WORD_SPACING_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_WORD_SPACING_NORMAL:
+			fprintf(stderr, "normal");
+			break;
+		case CSS_WORD_SPACING_LENGTH:
+			css_dump_length(&style->word_spacing.length);
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
 
-	if (style->z_index.z_index != css_empty_style.z_index.z_index) {
+	if (style->z_index.z_index != CSS_Z_INDEX_NOT_SET) {
 		fprintf(stderr, "z-index: ");
 		switch (style->z_index.z_index) {
-			case CSS_Z_INDEX_INHERIT:
-				fprintf(stderr, "inherit");
-				break;
-			case CSS_Z_INDEX_AUTO:
-				fprintf(stderr, "auto");
-				break;
-			case CSS_Z_INDEX_INTEGER:
-				fprintf(stderr, "%d",
-					style->z_index.value);
-				break;
-			case CSS_Z_INDEX_NOT_SET:
-				fprintf(stderr, "NOT_SET");
-				break;
-			default:
-				fprintf(stderr, "UNKNOWN");
-				break;
+		case CSS_Z_INDEX_INHERIT:
+			fprintf(stderr, "inherit");
+			break;
+		case CSS_Z_INDEX_AUTO:
+			fprintf(stderr, "auto");
+			break;
+		case CSS_Z_INDEX_INTEGER:
+			fprintf(stderr, "%d",
+				style->z_index.value);
+			break;
+		default:
+			fprintf(stderr, "UNKNOWN");
+			break;
 		}
 		fprintf(stderr, "; ");
 	}
@@ -2260,7 +2383,11 @@ void css_dump_style(const struct css_style * const style)
 
 void css_dump_length(const struct css_length * const length)
 {
-	fprintf(stderr, "%g%s", length->value, css_unit_name[length->unit]);
+	if (length->value == 0)
+		fprintf(stderr, "0");
+	else
+		fprintf(stderr, "%g%s", length->value,
+				css_unit_name[length->unit]);
 }
 
 
@@ -2869,19 +2996,19 @@ float css_len2px(const struct css_length *length,
  *
  * \return the most eyecatching border, favoured towards test2
  */
- 
+
 struct css_border *css_eyecatching_border(struct css_border *test1,
 		struct css_style *style1, struct css_border *test2,
 		struct css_style *style2)
-{ 
+{
 	float width1, width2;
 	int impact = 0;
-	
+
 	assert(test1);
 	assert(style1);
 	assert(test2);
 	assert(style2);
-	
+
 	/* hidden border styles always win, none always loses */
 	if ((test1->style == CSS_BORDER_STYLE_HIDDEN) ||
 			(test2->style == CSS_BORDER_STYLE_NONE))
@@ -2889,7 +3016,7 @@ struct css_border *css_eyecatching_border(struct css_border *test1,
 	if ((test2->style == CSS_BORDER_STYLE_HIDDEN) ||
 			(test1->style == CSS_BORDER_STYLE_NONE))
 		return test2;
-	
+
 	/* the widest border wins */
 	width1 = css_len2px(&test1->width.value, style1);
 	width2 = css_len2px(&test2->width.value, style2);
@@ -2897,7 +3024,7 @@ struct css_border *css_eyecatching_border(struct css_border *test1,
 		return test1;
 	if (width2 > width1)
 		return test2;
-	
+
 	/* the closest to a solid line wins */
 	switch (test1->style) {
 		case CSS_BORDER_STYLE_DOUBLE:
