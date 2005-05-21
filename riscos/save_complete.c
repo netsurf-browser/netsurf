@@ -54,7 +54,7 @@ static bool rewrite_url(xmlNode *n, const char *attr, const char *base);
 static bool save_complete_list_add(struct content *content);
 static struct content * save_complete_list_find(const char *url);
 static bool save_complete_list_check(struct content *content);
-
+static void save_complete_list_dump(void);
 
 /**
  * Save an HTML page with all dependencies.
@@ -179,6 +179,8 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 			return false;
 		}
 	}
+
+	/*save_complete_list_dump();*/
 
 	/* make a copy of the document tree */
 	parser = htmlCreateMemoryParserCtxt(c->source_data, c->source_size);
@@ -500,17 +502,19 @@ bool rewrite_urls(xmlNode *n, const char *base)
 {
 	xmlNode *child;
 
+	assert(n->type == XML_ELEMENT_NODE);
+
 	/**
 	 * We only need to consider the following cases:
 	 *
 	 * Attribute:      Elements:
 	 *
 	 * 1)   data         <object>
-	 * 2)   href         <a> <area> <link> <base>
+	 * 2)   href         <a> <area> <link>
 	 * 3)   src          <script> <input> <frame> <iframe> <img>
- 	 * 4)   n/a          <style>
-	 * 5)   background   any (except those above)
-
+	 * 4)   n/a          <style>
+	 * 5)   n/a          any <base> tag
+	 * 6)   background   any (except those above)
 	 */
 	if (!n->name) {
 		/* ignore */
@@ -523,8 +527,7 @@ bool rewrite_urls(xmlNode *n, const char *base)
 	/* 2 */
 	else if (strcmp(n->name, "a") == 0 ||
 			strcmp(n->name, "area") == 0 ||
-			strcmp(n->name, "link") == 0 ||
-			strcmp(n->name, "base") == 0) {
+			strcmp(n->name, "link") == 0) {
 		if (!rewrite_url(n, "href", base))
 			return false;
 	}
@@ -546,9 +549,9 @@ bool rewrite_urls(xmlNode *n, const char *base)
 			/* Get current content */
 			content = xmlNodeGetContent(child);
 			if (!content)
-				/* unfortunately we don't know if this is due to
-				 * memory exhaustion, or because there is no
-				 * content for this node */
+				/* unfortunately we don't know if this is
+				 * due to memory exhaustion, or because
+				 * there is no content for this node */
 				continue;
 
 			/* Rewrite @import rules */
@@ -569,15 +572,34 @@ bool rewrite_urls(xmlNode *n, const char *base)
 		return true;
 	}
 	/* 5 */
+	else if (strcmp(n->name, "base") == 0) {
+		/* simply remove any <base> tags from the document */
+		xmlUnlinkNode(n);
+		xmlFreeNode(n);
+		/* base tags have no content, so there's no point recursing
+		 * additionally, we've just destroyed this node, so trying
+		 * to recurse would result in bad things happening */
+		return true;
+	}
+	/* 6 */
 	else {
 	        if (!rewrite_url(n, "background", base))
 	                return false;
 	}
 
 	/* now recurse */
-	for (child = n->children; child; child = child->next)
-		if (!rewrite_urls(child, base))
-			return false;
+	for (child = n->children; child;) {
+		/* we must extract the next child now, as if the current
+		 * child is a <base> element, it will be removed from the
+		 * tree (see 5, above), thus preventing extraction of the
+		 * next child */
+		xmlNode *next = child->next;
+		if (child->type == XML_ELEMENT_NODE) {
+			if (!rewrite_urls(child, base))
+				return false;
+		}
+		child = next;
+	}
 
 	return true;
 }
@@ -686,6 +708,17 @@ bool save_complete_list_check(struct content *content)
 		if (entry->content == content)
 			return true;
 	return false;
+}
+
+/**
+ * Dump save complete list to stderr
+ */
+void save_complete_list_dump(void)
+{
+	struct save_complete_entry *entry;
+	for (entry = save_complete_list; entry; entry = entry->next)
+		fprintf(stderr, "%p : %s\n", entry->content,
+						entry->content->url);
 }
 
 #endif
