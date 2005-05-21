@@ -10,6 +10,7 @@
  * Save HTML document with dependencies (implementation).
  */
 
+#define _GNU_SOURCE /* for strndup */
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -17,6 +18,7 @@
 #include <sys/types.h>
 #include <regex.h>
 #include "libxml/HTMLtree.h"
+#include "libxml/parserInternals.h"
 #include "oslib/osfile.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
@@ -184,7 +186,23 @@ bool save_complete_html(struct content *c, const char *path, bool index)
 		warn_user("NoMemory", 0);
 		return false;
 	}
-	/** \todo set parser charset */
+	/* set parser charset */
+	if (c->data.html.encoding) {
+		xmlCharEncodingHandler *enc_handler;
+		enc_handler =
+			xmlFindCharEncodingHandler(c->data.html.encoding);
+		if (enc_handler) {
+			xmlCtxtResetLastError(parser);
+			if (xmlSwitchToEncoding(parser, enc_handler)) {
+				xmlFreeDoc(parser->myDoc);
+				htmlFreeParserCtxt(parser);
+				warn_user("MiscError",
+						"Encoding switch failed");
+				return false;
+			}
+		}
+	}
+
 	htmlParseDocument(parser);
 
 	/* rewrite all urls we know about */
