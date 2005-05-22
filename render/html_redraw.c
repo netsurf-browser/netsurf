@@ -913,7 +913,7 @@ bool html_redraw_text_decoration(struct box *box,
 	static const css_text_decoration decoration[] = {
 		CSS_TEXT_DECORATION_UNDERLINE, CSS_TEXT_DECORATION_OVERLINE,
 		CSS_TEXT_DECORATION_LINE_THROUGH };
-	static const float line_ratio[] = { 0.9, 0.5, 0.1 };
+	static const float line_ratio[] = { 0.9, 0.1, 0.5 };
 	int colour;
 	unsigned int i;
 
