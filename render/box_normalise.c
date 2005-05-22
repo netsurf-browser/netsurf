@@ -69,8 +69,8 @@ static bool box_normalise_inline_container(struct box *cont, struct content *c);
  * \code
  * parent               permitted child nodes
  * BLOCK, INLINE_BLOCK  BLOCK, INLINE_CONTAINER, TABLE
- * INLINE_CONTAINER     INLINE, INLINE_BLOCK, FLOAT_LEFT, FLOAT_RIGHT, BR
- * INLINE               none
+ * INLINE_CONTAINER     INLINE, INLINE_BLOCK, FLOAT_LEFT, FLOAT_RIGHT, BR, TEXT
+ * INLINE, TEXT         none
  * TABLE                at least 1 TABLE_ROW_GROUP
  * TABLE_ROW_GROUP      at least 1 TABLE_ROW
  * TABLE_ROW            at least 1 TABLE_CELL
@@ -114,6 +114,7 @@ bool box_normalise_block(struct box *block, struct content *c)
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:
 		case BOX_BR:
+		case BOX_TEXT:
 			/* should have been wrapped in inline
 			   container by convert_xml_to_box() */
 			assert(0);
@@ -249,6 +250,7 @@ bool box_normalise_table(struct box *table, struct content * c)
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:
 		case BOX_BR:
+		case BOX_TEXT:
 			/* should have been wrapped in inline
 			   container by convert_xml_to_box() */
 			assert(0);
@@ -411,6 +413,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:
 		case BOX_BR:
+		case BOX_TEXT:
 			/* should have been wrapped in inline
 			   container by convert_xml_to_box() */
 			assert(0);
@@ -507,6 +510,7 @@ bool box_normalise_table_row(struct box *row,
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:
 		case BOX_BR:
+		case BOX_TEXT:
 			/* should have been wrapped in inline
 			   container by convert_xml_to_box() */
 			assert(0);
@@ -640,6 +644,7 @@ bool box_normalise_inline_container(struct box *cont, struct content * c)
 		switch (child->type) {
 		case BOX_INLINE:
 		case BOX_BR:
+		case BOX_TEXT:
 			/* ok */
 			break;
 		case BOX_INLINE_BLOCK:

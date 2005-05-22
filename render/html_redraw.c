@@ -45,6 +45,13 @@ static bool html_redraw_file(int x, int y, int width, int height,
 static bool html_redraw_background(int x, int y, struct box *box, float scale,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		colour *background_colour);
+static bool html_redraw_text_decoration(struct box *box,
+		int x_parent, int y_parent, float scale,
+		colour background_colour);
+static bool html_redraw_text_decoration_inline(struct box *box, int x, int y,
+		float scale, colour colour, float ratio);
+static bool html_redraw_text_decoration_block(struct box *box, int x, int y,
+		float scale, colour colour, float ratio);
 static bool html_redraw_scrollbars(struct box *box, float scale,
 		int x, int y, int padding_width, int padding_height,
 		colour background_colour);
@@ -119,7 +126,6 @@ bool html_redraw_box(struct box *box,
 	int width, height;
 	int padding_left, padding_top, padding_width, padding_height;
 	int x0, y0, x1, y1;
-	int colour;
 	int x_scrolled, y_scrolled;
 
 	/* avoid trivial FP maths */
@@ -259,6 +265,14 @@ bool html_redraw_box(struct box *box,
 		}
 	}
 
+	/* text decoration */
+	if (box->type != BOX_TEXT && box->style &&
+			box->style->text_decoration !=
+			CSS_TEXT_DECORATION_NONE)
+		if (!html_redraw_text_decoration(box, x_parent, y_parent,
+				scale, current_background_color))
+			return false;
+
 	if (box->object) {
 		x_scrolled = x - box->scroll_x * scale;
 		y_scrolled = y - box->scroll_y * scale;
@@ -289,40 +303,6 @@ bool html_redraw_box(struct box *box,
 
 	} else if (box->text) {
 		bool highlighted = false;
-
-		/* antialias colour for under/overline */
-		colour = html_redraw_aa(current_background_color,
-				/*print_text_black ? 0 :*/ box->style->color);
-
-		if (box->style->text_decoration &
-				CSS_TEXT_DECORATION_UNDERLINE) {
-			if (!plot.line(x,
-					y + (int) (box->height * 0.9 * scale),
-					x + box->width * scale,
-					y + (int) (box->height * 0.9 * scale),
-					0, colour, false, false))
-				return false;
-		}
-
-		if (box->style->text_decoration &
-				CSS_TEXT_DECORATION_OVERLINE) {
-			if (!plot.line(x,
-					y + (int) (box->height * 0.1 * scale),
-					x + box->width * scale,
-					y + (int) (box->height * 0.1 * scale),
-					0, colour, false, false))
-				return false;
-		}
-
-		if (box->style->text_decoration &
-				CSS_TEXT_DECORATION_LINE_THROUGH) {
-			if (!plot.line(x,
-					y + (int) (box->height * 0.5 * scale),
-					x + box->width * scale,
-					y + (int) (box->height * 0.5 * scale),
-					0, colour, false, false))
-				return false;
-		}
 
 		/* is this box part of a selection? */
 		if (box->text && !box->object && current_redraw_browser) {
@@ -863,7 +843,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	do {
 	  	if (clip_to_children) {
 	  	  	assert(clip_box->type == BOX_TABLE_CELL);
-	  	  	
+
 	  	  	/* update clip_* to the child cell */
 	  	  	clip_x0 = ox + (clip_box->x * scale);
 	  	  	clip_y0 = oy + (clip_box->y * scale);
@@ -875,7 +855,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			if (clip_y0 < py0) clip_y0 = py0;
 			if (clip_x1 > px1) clip_x1 = px1;
 			if (clip_y1 > py1) clip_y1 = py1;
-			
+
 			if ((clip_x0 >= clip_x1) || (clip_y0 >= clip_y1) ||
 					(clip_box->style->background_color != TRANSPARENT) ||
 					(clip_box->background &&
@@ -907,10 +887,125 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 					repeat_x, repeat_y))
 				return false;
 		}
-		
+
 		/* advance and loop for child clipping */
 		clip_box = clip_box->next;
 	} while (clip_box && clip_to_children);
+	return true;
+}
+
+
+/**
+ * Plot text decoration for a box.
+ *
+ * \param  box       box to plot decorations for
+ * \param  x_parent  x coordinate of parent of box
+ * \param  y_parent  y coordinate of parent of box
+ * \param  scale     scale for redraw
+ * \param  background_colour  current background colour
+ * \return true if successful, false otherwise
+ */
+
+bool html_redraw_text_decoration(struct box *box,
+		int x_parent, int y_parent, float scale,
+		colour background_colour)
+{
+	static const css_text_decoration decoration[] = {
+		CSS_TEXT_DECORATION_UNDERLINE, CSS_TEXT_DECORATION_OVERLINE,
+		CSS_TEXT_DECORATION_LINE_THROUGH };
+	static const float line_ratio[] = { 0.9, 0.5, 0.1 };
+	int colour;
+	unsigned int i;
+
+	/* antialias colour for under/overline */
+	colour = html_redraw_aa(background_colour, box->style->color);
+
+	if (box->type == BOX_INLINE) {
+		for (i = 0; i != NOF_ELEMENTS(decoration); i++)
+			if (box->style->text_decoration & decoration[i])
+				if (!html_redraw_text_decoration_inline(box,
+						x_parent, y_parent, scale,
+						colour, line_ratio[i]))
+					return false;
+	} else {
+		for (i = 0; i != NOF_ELEMENTS(decoration); i++)
+			if (box->style->text_decoration & decoration[i])
+				if (!html_redraw_text_decoration_block(box,
+						x_parent + box->x,
+						y_parent + box->y,
+						scale,
+						colour, line_ratio[i]))
+					return false;
+	}
+
+	return true;
+}
+
+
+/**
+ * Plot text decoration for an inline box.
+ *
+ * \param  box     box to plot decorations for, of type BOX_INLINE
+ * \param  x       x coordinate of parent of box
+ * \param  y       y coordinate of parent of box
+ * \param  scale   scale for redraw
+ * \param  colour  colour for decorations
+ * \param  ratio   position of line as a ratio of line height
+ * \return true if successful, false otherwise
+ */
+
+bool html_redraw_text_decoration_inline(struct box *box, int x, int y,
+		float scale, colour colour, float ratio)
+{
+	/* draw from next sibling to the sibling which has the same inline
+	 * parent as this box (which must mean it was the next sibling of this
+	 * inline in the HTML tree) */
+	for (struct box *c = box->next;
+			c && c->inline_parent != box->inline_parent;
+			c = c->next) {
+		if (!plot.line((x + c->x) * scale,
+				(y + c->y + c->height * ratio) * scale,
+				(x + c->x + c->width) * scale,
+				(y + c->y + c->height * ratio) * scale,
+				0, colour, false, false))
+			return false;
+	}
+	return true;
+}
+
+
+/**
+ * Plot text decoration for an non-inline box.
+ *
+ * \param  box     box to plot decorations for, of type other than BOX_INLINE
+ * \param  x       x coordinate of box
+ * \param  y       y coordinate of box
+ * \param  scale   scale for redraw
+ * \param  colour  colour for decorations
+ * \param  ratio   position of line as a ratio of line height
+ * \return true if successful, false otherwise
+ */
+
+bool html_redraw_text_decoration_block(struct box *box, int x, int y,
+		float scale, colour colour, float ratio)
+{
+	/* draw through text descendants */
+	for (struct box *c = box->children; c; c = c->next) {
+		if (c->type == BOX_TEXT) {
+			if (!plot.line((x + c->x) * scale,
+					(y + c->y + c->height * ratio) * scale,
+					(x + c->x + c->width) * scale,
+					(y + c->y + c->height * ratio) * scale,
+					0, colour, false, false))
+				return false;
+		} else if (c->type == BOX_INLINE_CONTAINER ||
+				c->type == BOX_BLOCK) {
+			if (!html_redraw_text_decoration_block(c,
+					x + c->x, y + c->y,
+					scale, colour, ratio))
+				return false;
+		}
+	}
 	return true;
 }
 

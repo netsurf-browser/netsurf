@@ -141,7 +141,8 @@ struct box {
 	int min_width;
 	int max_width;  /**< Width that would be taken with no line breaks. */
 
-	unsigned byte_offset;  /**< byte offset within a textual representation of this content */
+	/**< Byte offset within a textual representation of this content. */
+	size_t byte_offset;
 
 	char *text;     /**< Text, or 0 if none. Unterminated. */
 	size_t length;  /**< Length of text. */
@@ -165,6 +166,9 @@ struct box {
 	struct box *last;      /**< Last child box, or 0. */
 	struct box *parent;    /**< Parent box, or 0. */
 	struct box *fallback;  /**< Fallback children for object, or 0. */
+	/** Box of type INLINE which contains this box in the document tree
+	 * (only valid for TEXT boxes). */
+	struct box *inline_parent;
 
 	/** First float child box, or 0. Float boxes are in the tree twice, in
 	 * this list for the block box which defines the area for floats, and

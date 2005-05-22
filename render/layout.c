@@ -761,7 +761,7 @@ bool layout_line(struct box *first, int width, int *y,
 		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_FLOAT_LEFT ||
 				b->type == BOX_FLOAT_RIGHT ||
-				b->type == BOX_BR);
+				b->type == BOX_BR || b->type == BOX_TEXT);
 
 		x += space_after;
 
@@ -784,7 +784,7 @@ bool layout_line(struct box *first, int width, int *y,
 		if (b->type == BOX_BR)
 			break;
 
-		if (b->type != BOX_INLINE)
+		if (b->type != BOX_INLINE && b->type != BOX_TEXT)
 			continue;
 
 		if (!b->object && !b->gadget) {
@@ -908,7 +908,8 @@ bool layout_line(struct box *first, int width, int *y,
 
 	/* pass 2: place boxes in line: loop body executed at least once */
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b; b = b->next) {
-		if (b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK) {
+		if (b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
+				b->type == BOX_TEXT) {
 			assert(b->width != UNKNOWN_WIDTH);
 
 			x_previous = x;
@@ -1000,7 +1001,9 @@ bool layout_line(struct box *first, int width, int *y,
 
 		x = x_previous;
 
-		if (split_box->type == BOX_INLINE && !split_box->object &&
+		if ((split_box->type == BOX_INLINE ||
+				split_box->type == BOX_TEXT) &&
+				!split_box->object &&
 				!split_box->gadget && split_box->text) {
 			for (i = 0; i != split_box->length &&
 					split_box->text[i] != ' '; i++)
@@ -1116,7 +1119,7 @@ bool layout_line(struct box *first, int width, int *y,
 
 	for (d = first; d != b; d = d->next) {
 		if (d->type == BOX_INLINE || d->type == BOX_INLINE_BLOCK ||
-				d->type == BOX_BR) {
+				d->type == BOX_BR || d->type == BOX_TEXT) {
 			d->x += x0;
 			d->y = *y + d->border[TOP];
 			h = d->border[TOP] + d->padding[TOP] + d->height +
@@ -1800,6 +1803,7 @@ bool calculate_inline_container_widths(struct box *box)
 	for (child = box->children; child != 0; child = child->next) {
 		switch (child->type) {
 			case BOX_INLINE:
+			case BOX_TEXT:
 				if (child->object)
 					calculate_inline_replaced_widths(child,
 							&min, &max, &line_max);

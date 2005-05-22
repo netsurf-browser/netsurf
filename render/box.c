@@ -76,6 +76,7 @@ struct box * box_create(struct css_style *style,
 	box->last = NULL;
 	box->parent = NULL;
 	box->fallback = NULL;
+	box->inline_parent = NULL;
 	box->float_children = NULL;
 	box->next_float = NULL;
 	box->col = NULL;
@@ -457,6 +458,7 @@ void box_dump(struct box *box, unsigned int depth)
 	case BOX_FLOAT_LEFT:       fprintf(stderr, "FLOAT_LEFT "); break;
 	case BOX_FLOAT_RIGHT:      fprintf(stderr, "FLOAT_RIGHT "); break;
 	case BOX_BR:               fprintf(stderr, "BR "); break;
+	case BOX_TEXT:             fprintf(stderr, "TEXT "); break;
 	default:                   fprintf(stderr, "Unknown box type ");
 	}
 
@@ -474,6 +476,8 @@ void box_dump(struct box *box, unsigned int depth)
 		fprintf(stderr, " [%s]", box->title);
 	if (box->id != 0)
 		fprintf(stderr, " <%s>", box->id);
+	if (box->inline_parent)
+		fprintf(stderr, " inline_parent %p", box->inline_parent);
 	if (box->float_children)
 		fprintf(stderr, " float_children %p", box->float_children);
 	if (box->next_float)
