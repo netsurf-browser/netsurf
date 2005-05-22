@@ -637,8 +637,9 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 		css_set_origin(c->data.html.stylesheet_content[
 				STYLESHEET_STYLE], CSS_ORIGIN_AUTHOR);
 	for (i = STYLESHEET_START; i != c->data.html.stylesheet_count; i++)
-		css_set_origin(c->data.html.stylesheet_content[i],
-				CSS_ORIGIN_AUTHOR);
+		if (c->data.html.stylesheet_content[i])
+			css_set_origin(c->data.html.stylesheet_content[i],
+					CSS_ORIGIN_AUTHOR);
 
 	c->data.html.working_stylesheet = css_make_working_stylesheet(
 			c->data.html.stylesheet_content,
