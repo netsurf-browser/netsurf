@@ -74,6 +74,7 @@ bool html_create(struct content *c, const char *params[])
 	html->stylesheet_count = 0;
 	html->stylesheet_content = 0;
 	html->style = 0;
+	html->working_stylesheet = 0;
 	html->object_count = 0;
 	html->object = 0;
 	html->forms = 0;
