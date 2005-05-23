@@ -84,7 +84,7 @@ size_t utf8_from_ucs4(size_t c, char *s)
 {
 	size_t l = 0;
 
-	if (c > 0x7FFFFFFF)
+	if (c > 0x7FFFFFFF || s == NULL)
 		assert(0);
 	else if (c < 0x80) {
 		*s = (char)c;
@@ -139,6 +139,9 @@ size_t utf8_length(const char *s)
 {
 	const char *__s = s;
 	int l = 0;
+
+	assert(__s != NULL);
+
 	while (*__s != '\0') {
 		if ((*__s & 0x80) == 0x00)
 			__s += 1;
@@ -169,6 +172,8 @@ size_t utf8_length(const char *s)
  */
 size_t utf8_prev(const char *s, size_t o)
 {
+	assert(s != NULL);
+
 	while (o != 0 && !(((s[--o] & 0x80) == 0x00) ||
 			((s[o] & 0xC0) == 0xC0)))
 		/* do nothing */;
@@ -186,6 +191,8 @@ size_t utf8_prev(const char *s, size_t o)
  */
 size_t utf8_next(const char *s, size_t l, size_t o)
 {
+	assert(s != NULL);
+
 	while (o != l && !(((s[++o] & 0x80) == 0x00) ||
 			((s[o] & 0xC0) == 0xC0)))
 		/* do nothing */;
