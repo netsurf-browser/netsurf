@@ -738,6 +738,7 @@ bool layout_line(struct box *first, int width, int *y,
 	bool move_y = false;
 	int space_before = 0, space_after = 0;
 	unsigned int inline_count = 0;
+	unsigned int i;
 
 	LOG(("first %p, first->text '%.*s', width %i, y %i, cy %i",
 			first, first->length, first->text, width, *y, cy));
@@ -786,6 +787,15 @@ bool layout_line(struct box *first, int width, int *y,
 
 		if (b->type != BOX_INLINE && b->type != BOX_TEXT)
 			continue;
+
+		if (b->type == BOX_INLINE) {
+			/* calculate borders, margins, and padding */
+			layout_find_dimensions(width, b->style,
+					b->margin, b->padding, b->border);
+			for (i = 0; i != 4; i++)
+				if (b->margin[i] == AUTO)
+					b->margin[i] = 0;
+		}
 
 		if (!b->object && !b->gadget) {
 			/* inline non-replaced, 10.3.1 and 10.6.1 */
@@ -1121,7 +1131,10 @@ bool layout_line(struct box *first, int width, int *y,
 		if (d->type == BOX_INLINE || d->type == BOX_INLINE_BLOCK ||
 				d->type == BOX_BR || d->type == BOX_TEXT) {
 			d->x += x0;
-			d->y = *y + d->border[TOP];
+			d->y = *y - d->padding[TOP];
+		}
+		if ((d->type == BOX_INLINE && (d->object || d->gadget)) ||
+				d->type == BOX_INLINE_BLOCK) {
 			h = d->border[TOP] + d->padding[TOP] + d->height +
 					d->padding[BOTTOM] + d->border[BOTTOM];
 			if (used_height < h)

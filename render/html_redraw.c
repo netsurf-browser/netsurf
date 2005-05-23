@@ -31,8 +31,10 @@ static bool html_redraw_box(struct box *box,
 		int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour current_background_color);
-static bool html_redraw_borders(struct box *box, int x, int y,
+static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int padding_width, int padding_height, float scale);
+static bool html_redraw_border_plot(int i, int *p, colour c,
+		css_border_style style, int thickness);
 static colour html_redraw_darker(colour c);
 static colour html_redraw_lighter(colour c);
 static colour html_redraw_aa(colour c0, colour c1);
@@ -130,31 +132,31 @@ bool html_redraw_box(struct box *box,
 
 	/* avoid trivial FP maths */
 	if (scale == 1.0) {
-		x = (x_parent + box->x);
-		y = (y_parent + box->y);
+		x = x_parent + box->x;
+		y = y_parent + box->y;
 		width = box->width;
 		height = box->height;
 		padding_left = box->padding[LEFT];
 		padding_top = box->padding[TOP];
 		padding_width = padding_left + box->width + box->padding[RIGHT];
-		padding_height = padding_top + box->height + box->padding[BOTTOM];
-	}
-	else {
+		padding_height = padding_top + box->height +
+				box->padding[BOTTOM];
+	} else {
 		x = (x_parent + box->x) * scale;
 		y = (y_parent + box->y) * scale;
 		width = box->width * scale;
 		height = box->height * scale;
-		/* left and top padding values are normally zero, so avoid trivial FP maths */
-		padding_left = box->padding[LEFT] ? (box->padding[LEFT] * scale) : 0;
-		padding_top  = box->padding[TOP]  ? (box->padding[TOP] * scale)  : 0;
+		/* left and top padding values are normally zero,
+		 * so avoid trivial FP maths */
+		padding_left = box->padding[LEFT] ? box->padding[LEFT] * scale
+				: 0;
+		padding_top = box->padding[TOP] ? box->padding[TOP] * scale
+				: 0;
 		padding_width = (box->padding[LEFT] + box->width +
 				box->padding[RIGHT]) * scale;
 		padding_height = (box->padding[TOP] + box->height +
 				box->padding[BOTTOM]) * scale;
 	}
-
-//LOG(("%d %d %d %d", padding_top, padding_left, padding_width, padding_height));
-//padding_top and padding_left are often 0
 
 	/* calculate clip rectangle for this box */
 	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
@@ -209,8 +211,10 @@ bool html_redraw_box(struct box *box,
 	}
 
 	/* borders */
-	if (box->style)
-		if (!html_redraw_borders(box, x, y,
+	if (box->style && box->type != BOX_TEXT && (box->border[TOP] ||
+			box->border[RIGHT] || box->border[BOTTOM] ||
+			box->border[LEFT]))
+		if (!html_redraw_borders(box, x_parent, y_parent,
 				padding_width, padding_height,
 				scale))
 			return false;
@@ -436,165 +440,238 @@ bool html_redraw_box(struct box *box,
  * Draw borders for a box.
  *
  * \param  box		   box to draw
- * \param  x		   coordinate of left padding edge
- * \param  y		   coordinate of top padding edge
+ * \param  x_parent	   coordinate of left padding edge of parent of box
+ * \param  y_parent	   coordinate of top padding edge of parent of box
  * \param  padding_width   width of padding box
  * \param  padding_height  height of padding box
  * \param  scale	   scale for redraw
  * \return true if successful, false otherwise
  */
 
-bool html_redraw_borders(struct box *box, int x, int y,
+bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int padding_width, int padding_height, float scale)
 {
-	unsigned int i;
 	int top = box->border[TOP] * scale;
 	int right = box->border[RIGHT] * scale;
 	int bottom = box->border[BOTTOM] * scale;
 	int left = box->border[LEFT] * scale;
-	int p[20] = {
-		x, y,
-		x - left, y - top,
-		x + padding_width + right, y - top,
-		x + padding_width, y,
-		x + padding_width, y + padding_height,
-		x + padding_width + right, y + padding_height + bottom,
-		x - left, y + padding_height + bottom,
-		x, y + padding_height,
-		x, y,
-		x - left, y - top
-	};
-	int z[8];
-	colour c;
-	colour c_lit;
-	bool dotted;
-	unsigned int light;
 
 	assert(box->style);
 
-	for (i = 0; i != 4; i++) {
-		if (box->border[i] == 0)
-			continue;
-
-		c = box->style->border[i].color;
-		dotted = false;
-		light = i;
-
-		switch (box->style->border[i].style) {
-		case CSS_BORDER_STYLE_DOTTED:
-			dotted = true;
-		case CSS_BORDER_STYLE_DASHED:
-			if (!plot.line((p[i * 4 + 0] + p[i * 4 + 2]) / 2,
-					(p[i * 4 + 1] + p[i * 4 + 3]) / 2,
-					(p[i * 4 + 4] + p[i * 4 + 6]) / 2,
-					(p[i * 4 + 5] + p[i * 4 + 7]) / 2,
-					box->border[i] * scale,
-					c, dotted, !dotted))
-				return false;
-			continue;
-
-		case CSS_BORDER_STYLE_SOLID:
-			break;
-
-		case CSS_BORDER_STYLE_DOUBLE:
-			z[0] = p[i * 4 + 0];
-			z[1] = p[i * 4 + 1];
-			z[2] = (p[i * 4 + 0] * 2 + p[i * 4 + 2]) / 3;
-			z[3] = (p[i * 4 + 1] * 2 + p[i * 4 + 3]) / 3;
-			z[4] = (p[i * 4 + 6] * 2 + p[i * 4 + 4]) / 3;
-			z[5] = (p[i * 4 + 7] * 2 + p[i * 4 + 5]) / 3;
-			z[6] = p[i * 4 + 6];
-			z[7] = p[i * 4 + 7];
-			if (!plot.polygon(z, 4, c))
-				return false;
-			z[0] = p[i * 4 + 2];
-			z[1] = p[i * 4 + 3];
-			z[2] = (p[i * 4 + 2] * 2 + p[i * 4 + 0]) / 3;
-			z[3] = (p[i * 4 + 3] * 2 + p[i * 4 + 1]) / 3;
-			z[4] = (p[i * 4 + 4] * 2 + p[i * 4 + 6]) / 3;
-			z[5] = (p[i * 4 + 5] * 2 + p[i * 4 + 7]) / 3;
-			z[6] = p[i * 4 + 4];
-			z[7] = p[i * 4 + 5];
-			if (!plot.polygon(z, 4, c))
-				return false;
-			continue;
-
-		case CSS_BORDER_STYLE_GROOVE:
-			light = 3 - light;
-		case CSS_BORDER_STYLE_RIDGE:
-			z[0] = p[i * 4 + 0];
-			z[1] = p[i * 4 + 1];
-			z[2] = (p[i * 4 + 0] + p[i * 4 + 2]) / 2;
-			z[3] = (p[i * 4 + 1] + p[i * 4 + 3]) / 2;
-			z[4] = (p[i * 4 + 6] + p[i * 4 + 4]) / 2;
-			z[5] = (p[i * 4 + 7] + p[i * 4 + 5]) / 2;
-			z[6] = p[i * 4 + 6];
-			z[7] = p[i * 4 + 7];
-			if (!plot.polygon(z, 4, light <= 1 ?
-					html_redraw_darker(c) :
-					html_redraw_lighter(c)))
-				return false;
-			z[0] = p[i * 4 + 2];
-			z[1] = p[i * 4 + 3];
-			z[6] = p[i * 4 + 4];
-			z[7] = p[i * 4 + 5];
-			if (!plot.polygon(z, 4, light <= 1 ?
-					html_redraw_lighter(c) :
-					html_redraw_darker(c)))
-				return false;
-			continue;
-
-		case CSS_BORDER_STYLE_INSET:
-			light = (light + 2) % 4;
-		case CSS_BORDER_STYLE_OUTSET:
-			z[0] = p[i * 4 + 0];
-			z[1] = p[i * 4 + 1];
-			z[2] = (p[i * 4 + 0] + p[i * 4 + 2]) / 2;
-			z[3] = (p[i * 4 + 1] + p[i * 4 + 3]) / 2;
-			z[4] = (p[i * 4 + 6] + p[i * 4 + 4]) / 2;
-			z[5] = (p[i * 4 + 7] + p[i * 4 + 5]) / 2;
-			z[6] = p[i * 4 + 6];
-			z[7] = p[i * 4 + 7];
-			c_lit = c;
-			switch (light) {
-			case 3:
-				c_lit = html_redraw_lighter(c_lit);
-			case 0:
-				c_lit = html_redraw_lighter(c_lit);
-				break;
-			case 1:
-				c_lit = html_redraw_darker(c_lit);
-			case 2:
-				c_lit = html_redraw_darker(c_lit);
-			}
-			if (!plot.polygon(z, 4,	c_lit))
-				return false;
-			z[0] = p[i * 4 + 2];
-			z[1] = p[i * 4 + 3];
-			z[6] = p[i * 4 + 4];
-			z[7] = p[i * 4 + 5];
-			switch (light) {
-			case 0:
-				c = html_redraw_lighter(c);
-			case 3:
-				c = html_redraw_lighter(c);
-				break;
-			case 2:
-				c = html_redraw_darker(c);
-			case 1:
-				c = html_redraw_darker(c);
-			}
-			if (!plot.polygon(z, 4, c))
-				return false;
-			continue;
-
-		default:
-			break;
+	if (box->type == BOX_INLINE && !box->object && !box->gadget &&
+			!box->text) {
+		/* draw from next sibling to the sibling which has the same
+		 * inline parent as this box (which must mean it was the next
+		 * sibling of this inline in the HTML tree) */
+		for (struct box *c = box->next;
+				c && c->inline_parent != box->inline_parent;
+				c = c->next) {
+			int x = (x_parent + c->x) * scale;
+			int y = (y_parent + c->y - box->padding[TOP]) * scale;
+			int padding_width = c->width * scale;
+			int padding_height = (box->padding[TOP] + c->height +
+					box->padding[BOTTOM]) * scale;
+			int p[20] = {
+				x, y,
+				x - left, y - top,
+				x + padding_width + right, y - top,
+				x + padding_width, y,
+				x + padding_width, y + padding_height,
+				x + padding_width + right,
+				y + padding_height + bottom,
+				x - left, y + padding_height + bottom,
+				x, y + padding_height,
+				x, y,
+				x - left, y - top
+			};
+			if (box->border[LEFT] && c == box->next)
+				html_redraw_border_plot(LEFT, p,
+						box->style->border[LEFT].color,
+						box->style->border[LEFT].style,
+						box->border[LEFT] * scale);
+			if (box->border[TOP])
+				html_redraw_border_plot(TOP, p,
+						box->style->border[TOP].color,
+						box->style->border[TOP].style,
+						box->border[TOP] * scale);
+			if (box->border[BOTTOM])
+				html_redraw_border_plot(BOTTOM, p,
+						box->style->border[BOTTOM].
+						color,
+						box->style->border[BOTTOM].
+						style,
+						box->border[BOTTOM] * scale);
+			if (box->border[RIGHT] && (!c->next ||
+					c->next->inline_parent ==
+					box->inline_parent))
+				html_redraw_border_plot(RIGHT, p,
+						box->style->border[RIGHT].color,
+						box->style->border[RIGHT].style,
+						box->border[RIGHT] * scale);
 		}
-
-		if (!plot.polygon(p + i * 4, 4, c))
-			return false;
+	} else {
+		int x = (x_parent + box->x) * scale;
+		int y = (y_parent + box->y) * scale;
+		int p[20] = {
+			x, y,
+			x - left, y - top,
+			x + padding_width + right, y - top,
+			x + padding_width, y,
+			x + padding_width, y + padding_height,
+			x + padding_width + right, y + padding_height + bottom,
+			x - left, y + padding_height + bottom,
+			x, y + padding_height,
+			x, y,
+			x - left, y - top
+		};
+		for (unsigned int i = 0; i != 4; i++) {
+			if (box->border[i] == 0)
+				continue;
+			if (!html_redraw_border_plot(i, p,
+					box->style->border[i].color,
+					box->style->border[i].style,
+					box->border[i] * scale))
+				return false;
+		}
 	}
+
+	return true;
+}
+
+
+/**
+ * Draw one border.
+ *
+ * \param  i          index of border (TOP, RIGHT, BOTTOM, LEFT)
+ * \param  p          array of precomputed border vertices
+ * \param  c          colour for border
+ * \param  style      border line style
+ * \param  thickness  border thickness
+ * \return true if successful, false otherwise
+ */
+
+bool html_redraw_border_plot(int i, int *p, colour c,
+		css_border_style style, int thickness)
+{
+	int z[8];
+	bool dotted = false;
+	unsigned int light = i;
+	colour c_lit;
+
+	switch (style) {
+	case CSS_BORDER_STYLE_DOTTED:
+		dotted = true;
+	case CSS_BORDER_STYLE_DASHED:
+		if (!plot.line((p[i * 4 + 0] + p[i * 4 + 2]) / 2,
+				(p[i * 4 + 1] + p[i * 4 + 3]) / 2,
+				(p[i * 4 + 4] + p[i * 4 + 6]) / 2,
+				(p[i * 4 + 5] + p[i * 4 + 7]) / 2,
+				thickness,
+				c, dotted, !dotted))
+			return false;
+		return true;
+
+	case CSS_BORDER_STYLE_SOLID:
+		break;
+
+	case CSS_BORDER_STYLE_DOUBLE:
+		z[0] = p[i * 4 + 0];
+		z[1] = p[i * 4 + 1];
+		z[2] = (p[i * 4 + 0] * 2 + p[i * 4 + 2]) / 3;
+		z[3] = (p[i * 4 + 1] * 2 + p[i * 4 + 3]) / 3;
+		z[4] = (p[i * 4 + 6] * 2 + p[i * 4 + 4]) / 3;
+		z[5] = (p[i * 4 + 7] * 2 + p[i * 4 + 5]) / 3;
+		z[6] = p[i * 4 + 6];
+		z[7] = p[i * 4 + 7];
+		if (!plot.polygon(z, 4, c))
+			return false;
+		z[0] = p[i * 4 + 2];
+		z[1] = p[i * 4 + 3];
+		z[2] = (p[i * 4 + 2] * 2 + p[i * 4 + 0]) / 3;
+		z[3] = (p[i * 4 + 3] * 2 + p[i * 4 + 1]) / 3;
+		z[4] = (p[i * 4 + 4] * 2 + p[i * 4 + 6]) / 3;
+		z[5] = (p[i * 4 + 5] * 2 + p[i * 4 + 7]) / 3;
+		z[6] = p[i * 4 + 4];
+		z[7] = p[i * 4 + 5];
+		if (!plot.polygon(z, 4, c))
+			return false;
+		return true;
+
+	case CSS_BORDER_STYLE_GROOVE:
+		light = 3 - light;
+	case CSS_BORDER_STYLE_RIDGE:
+		z[0] = p[i * 4 + 0];
+		z[1] = p[i * 4 + 1];
+		z[2] = (p[i * 4 + 0] + p[i * 4 + 2]) / 2;
+		z[3] = (p[i * 4 + 1] + p[i * 4 + 3]) / 2;
+		z[4] = (p[i * 4 + 6] + p[i * 4 + 4]) / 2;
+		z[5] = (p[i * 4 + 7] + p[i * 4 + 5]) / 2;
+		z[6] = p[i * 4 + 6];
+		z[7] = p[i * 4 + 7];
+		if (!plot.polygon(z, 4, light <= 1 ?
+				html_redraw_darker(c) :
+				html_redraw_lighter(c)))
+			return false;
+		z[0] = p[i * 4 + 2];
+		z[1] = p[i * 4 + 3];
+		z[6] = p[i * 4 + 4];
+		z[7] = p[i * 4 + 5];
+		if (!plot.polygon(z, 4, light <= 1 ?
+				html_redraw_lighter(c) :
+				html_redraw_darker(c)))
+			return false;
+		return true;
+
+	case CSS_BORDER_STYLE_INSET:
+		light = (light + 2) % 4;
+	case CSS_BORDER_STYLE_OUTSET:
+		z[0] = p[i * 4 + 0];
+		z[1] = p[i * 4 + 1];
+		z[2] = (p[i * 4 + 0] + p[i * 4 + 2]) / 2;
+		z[3] = (p[i * 4 + 1] + p[i * 4 + 3]) / 2;
+		z[4] = (p[i * 4 + 6] + p[i * 4 + 4]) / 2;
+		z[5] = (p[i * 4 + 7] + p[i * 4 + 5]) / 2;
+		z[6] = p[i * 4 + 6];
+		z[7] = p[i * 4 + 7];
+		c_lit = c;
+		switch (light) {
+		case 3:
+			c_lit = html_redraw_lighter(c_lit);
+		case 0:
+			c_lit = html_redraw_lighter(c_lit);
+			break;
+		case 1:
+			c_lit = html_redraw_darker(c_lit);
+		case 2:
+			c_lit = html_redraw_darker(c_lit);
+		}
+		if (!plot.polygon(z, 4,	c_lit))
+			return false;
+		z[0] = p[i * 4 + 2];
+		z[1] = p[i * 4 + 3];
+		z[6] = p[i * 4 + 4];
+		z[7] = p[i * 4 + 5];
+		switch (light) {
+		case 0:
+			c = html_redraw_lighter(c);
+		case 3:
+			c = html_redraw_lighter(c);
+			break;
+		case 2:
+			c = html_redraw_darker(c);
+		case 1:
+			c = html_redraw_darker(c);
+		}
+		if (!plot.polygon(z, 4, c))
+			return false;
+		return true;
+
+	default:
+		break;
+	}
+
+	if (!plot.polygon(p + i * 4, 4, c))
+		return false;
 
 	return true;
 }
