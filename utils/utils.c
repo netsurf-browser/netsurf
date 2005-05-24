@@ -17,7 +17,6 @@
 #include <sys/types.h>
 #include <regex.h>
 #include <time.h>
-#include "libxml/encoding.h"
 #include "netsurf/utils/config.h"
 #define NDEBUG
 #include "netsurf/utils/log.h"
