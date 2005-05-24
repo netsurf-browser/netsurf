@@ -1799,7 +1799,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		inline_box = box_create(box->style, 0, box->title, 0, content);
 		if (!inline_box)
 			goto no_memory;
-		inline_box->type = BOX_INLINE;
+		inline_box->type = BOX_TEXT;
 		if (box->gadget->value != NULL)
 			inline_box->text = talloc_strdup(content,
 					box->gadget->value);
@@ -1826,7 +1826,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		inline_box = box_create(box->style, 0, box->title, 0, content);
 		if (!inline_box)
 			goto no_memory;
-		inline_box->type = BOX_INLINE;
+		inline_box->type = BOX_TEXT;
 		if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value")))
 			inline_box->text = talloc_strdup(content, s);
 		else
@@ -1941,7 +1941,7 @@ bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
 	inline_box = box_create(box->style, 0, box->title, 0, content);
 	if (!inline_box)
 		return 0;
-	inline_box->type = BOX_INLINE;
+	inline_box->type = BOX_TEXT;
 	if (password) {
 		inline_box->length = strlen(box->gadget->value);
 		inline_box->text = talloc_array(content, char,
@@ -2082,7 +2082,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	inline_box = box_create(box->style, 0, box->title, 0, content);
 	if (!inline_box)
 		goto no_memory;
-	inline_box->type = BOX_INLINE;
+	inline_box->type = BOX_TEXT;
 	box_add_child(inline_container, inline_box);
 	box_add_child(box, inline_container);
 
@@ -2173,10 +2173,10 @@ no_memory:
 bool box_textarea(BOX_SPECIAL_PARAMS)
 {
 	/* A textarea is an INLINE_BLOCK containing a single INLINE_CONTAINER,
-	 * which contains the text as runs of INLINE separated by BR. There is
-	 * at least one INLINE. The first and last boxes are INLINE.
+	 * which contains the text as runs of TEXT separated by BR. There is
+	 * at least one TEXT. The first and last boxes are TEXT.
 	 * Consecutive BR may not be present. These constraints are satisfied
-	 * by using a 0-length INLINE for blank lines. */
+	 * by using a 0-length TEXT for blank lines. */
 
 	xmlChar *text, *current;
 	struct box *inline_container, *inline_box, *br_box;
@@ -2204,7 +2204,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 
 	current = text = xmlNodeGetContent(n);
 	while (1) {
-		/* BOX_INLINE */
+		/* BOX_TEXT */
 		len = strcspn(current, "\r\n");
 		s = talloc_strndup(content, current, len);
 		if (!s) {
@@ -2215,7 +2215,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		inline_box = box_create(box->style, 0, box->title, 0, content);
 		if (!inline_box)
 			return false;
-		inline_box->type = BOX_INLINE;
+		inline_box->type = BOX_TEXT;
 		inline_box->text = s;
 		inline_box->length = len;
 		box_add_child(inline_container, inline_box);

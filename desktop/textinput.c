@@ -90,7 +90,7 @@ void browser_window_textarea_click(struct browser_window *bw,
 	if (inline_container->y + inline_container->height < y) {
 		/* below the bottom of the textarea: place caret at end */
 		text_box = inline_container->last;
-		assert(text_box->type == BOX_INLINE);
+		assert(text_box->type == BOX_TEXT);
 		assert(text_box->text);
 		/** \todo handle errors */
 		nsfont_position_in_string(text_box->style, text_box->text,
@@ -113,7 +113,7 @@ void browser_window_textarea_click(struct browser_window *bw,
 		if (!text_box) {
 			/* past last text box */
 			text_box = inline_container->last;
-			assert(text_box->type == BOX_INLINE);
+			assert(text_box->type == BOX_TEXT);
 			assert(text_box->text);
 			nsfont_position_in_string(text_box->style,
 					text_box->text,
@@ -132,7 +132,7 @@ void browser_window_textarea_click(struct browser_window *bw,
 				else
 					text_box = text_box->prev;
 			}
-			assert(text_box->type == BOX_INLINE);
+			assert(text_box->type == BOX_TEXT);
 			assert(text_box->text);
 			nsfont_position_in_string(text_box->style,
 					text_box->text,
@@ -230,7 +230,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 			/* delete space by merging with previous text box */
 			prev = text_box->prev;
-			assert(prev->type == BOX_INLINE);
+			assert(prev->type == BOX_TEXT);
 			assert(prev->text);
 
 			char_offset = prev->length;	/* caret at join */
@@ -271,7 +271,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 			/* delete space by merging with next text box */
 
 			next = text_box->next;
-			assert(next->type == BOX_INLINE);
+			assert(next->type == BOX_TEXT);
 			assert(next->text);
 
 			if (!textbox_insert(bw, text_box, text_box->length,
@@ -309,12 +309,12 @@ void browser_window_textarea_callback(struct browser_window *bw,
 			struct box *next;
 
 			/* run back to start of line */
-			while (text_box->prev && text_box->prev->type == BOX_INLINE)
+			while (text_box->prev && text_box->prev->type == BOX_TEXT)
 				text_box = text_box->prev;
 
 			/* run forwards to end */
 			next = text_box->next;
-			while (next && next->type == BOX_INLINE) {
+			while (next && next->type == BOX_TEXT) {
 				box_unlink_and_free(text_box);
 					text_box = next;
 				next = text_box->next;
@@ -398,13 +398,13 @@ void browser_window_textarea_callback(struct browser_window *bw,
 		return;
 
 	case KEY_LINE_START:
-		while (text_box->prev && text_box->prev->type == BOX_INLINE)
+		while (text_box->prev && text_box->prev->type == BOX_TEXT)
 			text_box = text_box->prev;
 		char_offset = 0;
 		break;
 
 	case KEY_LINE_END:
-		while (text_box->next && text_box->next->type == BOX_INLINE)
+		while (text_box->next && text_box->next->type == BOX_TEXT)
 			text_box = text_box->next;
 		char_offset = text_box->length;
 		break;
@@ -467,7 +467,7 @@ void browser_window_textarea_callback(struct browser_window *bw,
 
 	/* box_dump(textarea, 0); */
 	/* for (struct box *t = inline_container->children; t; t = t->next) {
-		assert(t->type == BOX_INLINE);
+		assert(t->type == BOX_TEXT);
 		assert(t->text);
 		assert(t->font);
 		assert(t->parent == inline_container);
