@@ -150,7 +150,7 @@ input[type=button], input[type=reset], input[type=submit], button {
 	border-width: medium; border-color: #d9d9d9;
 	border-style: outset; height: auto; text-align: center;}
 input[type=image] { background-color: transparent; color: #000; width: auto;
-	height: auto; }
+	height: auto; border: 0; }
 input[type=checkbox], input[type=radio] { background-color: transparent;
 	padding: 0 0.1em; border: 0; width: 1em; height: 1em; }
 input[type=file] { background-color: #d9d9d9; color: #000;
