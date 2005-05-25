@@ -126,7 +126,7 @@ HotlistTestBuild:Versions test de NetSurf
 # Tree URL text
 TreeAdded:Ajoutée: %s
 TreeLast:Dernière visitée: %s
-TreeVisited:Visited: %s
+TreeVisited:Visitées: %s
 TreeVisits:Visites: %i
 TreeUnknown:Inconnu
 TreeImport:URL importée
@@ -203,8 +203,8 @@ PrintError:Une erreur s'est produite lors de l'impression:
 PrintErrorRO2:Il semble que l'imprimante soit occupée.
 
 # User queries
-AbortDownload:Are you sure you wish to abort this download?
-QuitDownload:One or more downloads are still in progress. Are you sure you wish to quit?
+AbortDownload:Étes-vous sûr de vouloir interrompre ce téléchargement ?
+QuitDownload:Un ou plusieurs téléchargements sont en cours. Êtes-vous sûr de vouloir quitter ?
 
 # Some general purpose words and phrases
 Bytes: O
@@ -237,7 +237,7 @@ ParsingFail:L'analyse syntaxique du document a échoué.
 BadGIF:Erreur de lecture de GIF.
 PNGError:Erreur dans la bibliothèque PNG.
 MNGError:Erreur dans la bibliothèque MNG.
-BadSprite:Invalid or corrupt Sprite data.
+BadSprite:Les données du sprite sont invalides ou corrompues.
 
 DrawTitle:Image Draw (%lux%lu, %lu octets)
 GIFTitle:Image GIF (%lux%lu, %lu octets)
@@ -275,8 +275,8 @@ ThemeInstActive:Un thème est en cours de téléchargement ou d'installation. Veuil
 ThemeInstDown:Veuillez attendre le téléchargement du thème.
 ThemeInvalid:Le thème téléchargé est invalide ou nécessite une version plus récente de NetSurf.
 ThemeInstall:Voulez-vous installer le thème '%s' par %s?
-ThemeInstallErr:An error occurred whilst trying to install the downloaded theme.
-ThemeApplyErr:An error occurred whilst trying to apply the downloaded theme.
+ThemeInstallErr:Une erreur s'est produite pendant l'installation du thème téléchargé.
+ThemeApplyErr:Une erreur s'est produite en essayant d'appliquer le thème téléchargé.
 
 # Interactive help
 HelpToolbar0:\Tle bouton de retour.|M\Srevenir d'une page en arrière dans l'historique.|MNe renvoie pas l'information de formulaire.
