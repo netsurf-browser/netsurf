@@ -442,7 +442,7 @@ char *form_textarea_value(struct form_control *textarea)
 	/* find required length */
 	for (text_box = textarea->box->children->children; text_box;
 			text_box = text_box->next) {
-		if (text_box->type == BOX_INLINE)
+		if (text_box->type == BOX_TEXT)
 			len += text_box->length + 1;
 		else /* BOX_BR */
 			len += 2;
@@ -454,7 +454,7 @@ char *form_textarea_value(struct form_control *textarea)
 		return 0;
 	for (text_box = textarea->box->children->children; text_box;
 			text_box = text_box->next) {
-		if (text_box->type == BOX_INLINE) {
+		if (text_box->type == BOX_TEXT) {
 			strncpy(s, text_box->text, text_box->length);
 			s += text_box->length;
 			if (text_box->next && text_box->next->type != BOX_BR)
