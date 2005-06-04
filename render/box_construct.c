@@ -72,17 +72,14 @@ static const content_type image_types[] = {
 static bool convert_xml_to_box(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		struct box *inline_parent,
 		char *href, char *title);
 bool box_construct_element(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		struct box *inline_parent,
 		char *href, char *title);
 bool box_construct_text(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		struct box *inline_parent,
 		char *href, char *title);
 static struct css_style * box_get_style(struct content *c,
 		struct css_style *parent_style,
@@ -177,7 +174,7 @@ bool xml_to_box(xmlNode *n, struct content *c)
 	c->data.html.object = 0;
 
 	if (!convert_xml_to_box(n, c, c->data.html.style, &root,
-			&inline_container, 0, 0, 0))
+			&inline_container, 0, 0))
 		return false;
 	if (!box_normalise_block(&root, c))
 		return false;
@@ -227,16 +224,15 @@ static const box_type box_map[] = {
 bool convert_xml_to_box(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		struct box *inline_parent,
 		char *href, char *title)
 {
 	switch (n->type) {
 	case XML_ELEMENT_NODE:
 		return box_construct_element(n, content, parent_style, parent,
-				inline_container, inline_parent, href, title);
+				inline_container, href, title);
 	case XML_TEXT_NODE:
 		return box_construct_text(n, content, parent_style, parent,
-				inline_container, inline_parent, href, title);
+				inline_container, href, title);
 	default:
 		/* not an element or text node: ignore it (eg. comment) */
 		return true;
@@ -260,7 +256,6 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
 bool box_construct_element(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		struct box *inline_parent,
 		char *href, char *title)
 {
 	bool convert_children = true;
@@ -340,19 +335,21 @@ bool box_construct_element(xmlNode *n, struct content *content,
 
 	if (box->type == BOX_INLINE || box->type == BOX_BR) {
 		/* inline box: add to tree and recurse */
-		box->inline_parent = inline_parent;
 		box_add_child(*inline_container, box);
 		for (c = n->children; convert_children && c; c = c->next)
 			if (!convert_xml_to_box(c, content, style, parent,
-					inline_container, box, href, title))
+					inline_container, href, title))
 				return false;
+		/* corrected to next box (which doesn't exist yet) in
+		 * box_normalise_inline_container() */
+		box->end_inline_children = (*inline_container)->last;
 	} else if (box->type == BOX_INLINE_BLOCK) {
 		/* inline block box: add to tree and recurse */
 		box_add_child(*inline_container, box);
 		inline_container_c = 0;
 		for (c = n->children; convert_children && c; c = c->next)
 			if (!convert_xml_to_box(c, content, style, box,
-					&inline_container_c, 0, href, title))
+					&inline_container_c, href, title))
 				return false;
 	} else {
 		if (style->float_ == CSS_FLOAT_LEFT ||
@@ -379,7 +376,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		inline_container_c = 0;
 		for (c = n->children; convert_children && c; c = c->next)
 			if (!convert_xml_to_box(c, content, style, box,
-					&inline_container_c, 0, href, title))
+					&inline_container_c, href, title))
 				return false;
 		if (style->float_ == CSS_FLOAT_NONE)
 			/* new inline container unless this is a float */
@@ -492,7 +489,6 @@ bool box_construct_element(xmlNode *n, struct content *content,
 bool box_construct_text(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		struct box *inline_parent,
 		char *href, char *title)
 {
 	struct box *box = 0;
@@ -537,7 +533,6 @@ bool box_construct_text(xmlNode *n, struct content *content,
 			return false;
 		}
 		box->type = BOX_TEXT;
-		box->inline_parent = inline_parent;
 		box->text = talloc_strdup(content, text);
 		free(text);
 		if (!box->text)
@@ -614,7 +609,6 @@ bool box_construct_text(xmlNode *n, struct content *content,
 				return false;
 			}
 			box->type = BOX_TEXT;
-			box->inline_parent = inline_parent;
 			box->text = talloc_strdup(content, current);
 			if (!box->text) {
 				free(text);
@@ -1291,7 +1285,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	/* convert children and place into fallback */
 	for (c = n->children; c; c = c->next) {
 		if (!convert_xml_to_box(c, content, box->style, box,
-				&inline_container, 0, 0, 0))
+				&inline_container, 0, 0))
 			return false;
 	}
 	box->fallback = box->children;

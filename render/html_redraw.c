@@ -464,7 +464,7 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		 * inline parent as this box (which must mean it was the next
 		 * sibling of this inline in the HTML tree) */
 		for (struct box *c = box->next;
-				c && c->inline_parent != box->inline_parent;
+				c && c != box->end_inline_children;
 				c = c->next) {
 			int x = (x_parent + c->x) * scale;
 			int y = (y_parent + c->y - box->padding[TOP]) * scale;
@@ -502,8 +502,7 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 						style,
 						box->border[BOTTOM] * scale);
 			if (box->border[RIGHT] && (!c->next ||
-					c->next->inline_parent ==
-					box->inline_parent))
+					c->next == box->end_inline_children))
 				html_redraw_border_plot(RIGHT, p,
 						box->style->border[RIGHT].color,
 						box->style->border[RIGHT].style,
@@ -1038,7 +1037,7 @@ bool html_redraw_text_decoration_inline(struct box *box, int x, int y,
 	 * parent as this box (which must mean it was the next sibling of this
 	 * inline in the HTML tree) */
 	for (struct box *c = box->next;
-			c && c->inline_parent != box->inline_parent;
+			c && c != box->end_inline_children;
 			c = c->next) {
 		if (!plot.line((x + c->x) * scale,
 				(y + c->y + c->height * ratio) * scale,

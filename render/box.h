@@ -166,9 +166,11 @@ struct box {
 	struct box *last;      /**< Last child box, or 0. */
 	struct box *parent;    /**< Parent box, or 0. */
 	struct box *fallback;  /**< Fallback children for object, or 0. */
-	/** Box of type INLINE which contains this box in the document tree
-	 * (only valid for TEXT boxes). */
-	struct box *inline_parent;
+	/** Sibling box after the last sibling box which was a child of this box
+	 * in the document tree (the box after is used so that splitting boxes
+	 * for line wrapping doesn't change it), or 0 if continues to end of
+	 * inline container (only valid for INLINE boxes). */
+	struct box *end_inline_children;
 
 	/** First float child box, or 0. Float boxes are in the tree twice, in
 	 * this list for the block box which defines the area for floats, and

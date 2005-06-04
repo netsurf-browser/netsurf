@@ -643,6 +643,10 @@ bool box_normalise_inline_container(struct box *cont, struct content * c)
 		next_child = child->next;
 		switch (child->type) {
 		case BOX_INLINE:
+			/* correct end_inline_children to the box after the
+			 * last inline child (see box_construct_element()) */
+			child->end_inline_children =
+					child->end_inline_children->next;
 		case BOX_BR:
 		case BOX_TEXT:
 			/* ok */

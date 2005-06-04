@@ -76,7 +76,7 @@ struct box * box_create(struct css_style *style,
 	box->last = NULL;
 	box->parent = NULL;
 	box->fallback = NULL;
-	box->inline_parent = NULL;
+	box->end_inline_children = NULL;
 	box->float_children = NULL;
 	box->next_float = NULL;
 	box->col = NULL;
@@ -476,8 +476,9 @@ void box_dump(struct box *box, unsigned int depth)
 		fprintf(stderr, " [%s]", box->title);
 	if (box->id != 0)
 		fprintf(stderr, " <%s>", box->id);
-	if (box->inline_parent)
-		fprintf(stderr, " inline_parent %p", box->inline_parent);
+	if (box->type == BOX_INLINE)
+		fprintf(stderr, " end_inline_children %p",
+				box->end_inline_children);
 	if (box->float_children)
 		fprintf(stderr, " float_children %p", box->float_children);
 	if (box->next_float)
