@@ -91,7 +91,8 @@ typedef enum {
 	BOX_TABLE, BOX_TABLE_ROW, BOX_TABLE_CELL,
 	BOX_TABLE_ROW_GROUP,
 	BOX_FLOAT_LEFT, BOX_FLOAT_RIGHT,
-	BOX_INLINE_BLOCK, BOX_BR, BOX_TEXT
+	BOX_INLINE_BLOCK, BOX_BR, BOX_TEXT,
+	BOX_INLINE_END
 } box_type;
 
 /** Node in box tree. All dimensions are in pixels. */
@@ -166,11 +167,9 @@ struct box {
 	struct box *last;      /**< Last child box, or 0. */
 	struct box *parent;    /**< Parent box, or 0. */
 	struct box *fallback;  /**< Fallback children for object, or 0. */
-	/** Sibling box after the last sibling box which was a child of this box
-	 * in the document tree (the box after is used so that splitting boxes
-	 * for line wrapping doesn't change it), or 0 if continues to end of
-	 * inline container (only valid for INLINE boxes). */
-	struct box *end_inline_children;
+	/** INLINE_END box corresponding to this INLINE box, or INLINE box
+	 * corresponding to this INLINE_END box. */
+	struct box *inline_end;
 
 	/** First float child box, or 0. Float boxes are in the tree twice, in
 	 * this list for the block box which defines the area for floats, and

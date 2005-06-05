@@ -689,12 +689,13 @@ int line_height(struct css_style *style)
 
 	/* take account of minimum font size option */
 	if ((font_len = css_len2px(&style->font_size.value.length, 0)) <
-	    ((float)(option_font_min_size * 9.0 / 72.0)))
-		font_len = (float)(option_font_min_size * 9.0 / 72.0);
+			option_font_min_size * 9.0 / 72.0)
+		font_len = option_font_min_size * 9.0 / 72.0;
 
 	switch (style->line_height.size) {
 		case CSS_LINE_HEIGHT_LENGTH:
-			return (int)css_len2px(&style->line_height.value.length, style);
+			return css_len2px(&style->line_height.value.length,
+					style);
 
 		case CSS_LINE_HEIGHT_ABSOLUTE:
 			return style->line_height.value.absolute * font_len;
@@ -762,7 +763,8 @@ bool layout_line(struct box *first, int width, int *y,
 		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_FLOAT_LEFT ||
 				b->type == BOX_FLOAT_RIGHT ||
-				b->type == BOX_BR || b->type == BOX_TEXT);
+				b->type == BOX_BR || b->type == BOX_TEXT ||
+				b->type == BOX_INLINE_END);
 
 		x += space_after;
 
@@ -785,7 +787,8 @@ bool layout_line(struct box *first, int width, int *y,
 		if (b->type == BOX_BR)
 			break;
 
-		if (b->type != BOX_INLINE && b->type != BOX_TEXT)
+		if (b->type != BOX_INLINE && b->type != BOX_TEXT &&
+				b->type != BOX_INLINE_END)
 			continue;
 
 		if (b->type == BOX_INLINE) {
@@ -795,6 +798,22 @@ bool layout_line(struct box *first, int width, int *y,
 			for (i = 0; i != 4; i++)
 				if (b->margin[i] == AUTO)
 					b->margin[i] = 0;
+			if (b->inline_end) {
+				b->inline_end->margin[RIGHT] = b->margin[RIGHT];
+				b->inline_end->padding[RIGHT] =
+						b->padding[RIGHT];
+				b->inline_end->border[RIGHT] =
+						b->border[RIGHT];
+			}
+		} else if (b->type == BOX_INLINE_END) {
+			b->width = 0;
+			if (b->space) {
+				/** \todo optimize out */
+				nsfont_width(b->style, " ", 1, &space_after);
+			} else {
+				space_after = 0;
+			}
+			continue;
 		}
 
 		if (!b->object && !b->gadget) {
@@ -919,26 +938,35 @@ bool layout_line(struct box *first, int width, int *y,
 	/* pass 2: place boxes in line: loop body executed at least once */
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b; b = b->next) {
 		if (b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
-				b->type == BOX_TEXT) {
+				b->type == BOX_TEXT ||
+				b->type == BOX_INLINE_END) {
 			assert(b->width != UNKNOWN_WIDTH);
 
 			x_previous = x;
 			x += space_after;
 			b->x = x;
 
-			if (b->type == BOX_INLINE_BLOCK) {
+			if ((b->type == BOX_INLINE && !b->inline_end) ||
+					b->type == BOX_INLINE_BLOCK) {
 				b->x += b->margin[LEFT] + b->border[LEFT];
 				x = b->x + b->padding[LEFT] + b->width +
 						b->padding[RIGHT] +
 						b->border[RIGHT] +
 						b->margin[RIGHT];
-			} else
+			} else if (b->type == BOX_INLINE) {
+				b->x += b->margin[LEFT] + b->border[LEFT];
+				x = b->x + b->padding[LEFT] + b->width;
+			} else if (b->type == BOX_INLINE_END) {
+				x += b->padding[RIGHT] + b->border[RIGHT] +
+						b->margin[RIGHT];
+			} else {
 				x += b->width;
+			}
 
 			space_before = space_after;
 			if (b->object)
 				space_after = 0;
-			else if (b->text) {
+			else if (b->text || b->type == BOX_INLINE_END) {
 				space_after = 0;
 				if (b->space)
 					/** \todo handle errors, optimize */
@@ -1129,7 +1157,8 @@ bool layout_line(struct box *first, int width, int *y,
 
 	for (d = first; d != b; d = d->next) {
 		if (d->type == BOX_INLINE || d->type == BOX_INLINE_BLOCK ||
-				d->type == BOX_BR || d->type == BOX_TEXT) {
+				d->type == BOX_BR || d->type == BOX_TEXT ||
+				d->type == BOX_INLINE_END) {
 			d->x += x0;
 			d->y = *y - d->padding[TOP];
 		}
@@ -1825,6 +1854,9 @@ bool calculate_inline_container_widths(struct box *box)
 							&min, &line_max);
 				else
 					child->width = 0;
+				break;
+
+			case BOX_INLINE_END:
 				break;
 
 			case BOX_INLINE_BLOCK:

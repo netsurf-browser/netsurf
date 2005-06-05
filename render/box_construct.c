@@ -263,6 +263,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	char *s;
 	struct box *box = 0;
 	struct box *inline_container_c;
+	struct box *inline_end;
 	struct css_style *style = 0;
 	struct element_entry *element;
 	colour border_color;
@@ -336,13 +337,24 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	if (box->type == BOX_INLINE || box->type == BOX_BR) {
 		/* inline box: add to tree and recurse */
 		box_add_child(*inline_container, box);
-		for (c = n->children; convert_children && c; c = c->next)
-			if (!convert_xml_to_box(c, content, style, parent,
-					inline_container, href, title))
+		if (convert_children) {
+			for (c = n->children; c; c = c->next)
+				if (!convert_xml_to_box(c, content, style,
+						parent, inline_container,
+						href, title))
+					return false;
+			inline_end = box_create(style, href, title, id,
+					content);
+			if (!inline_end)
 				return false;
-		/* corrected to next box (which doesn't exist yet) in
-		 * box_normalise_inline_container() */
-		box->end_inline_children = (*inline_container)->last;
+			inline_end->type = BOX_INLINE_END;
+			if (*inline_container)
+				box_add_child(*inline_container, inline_end);
+			else
+				box_add_child(box->parent, inline_end);
+			box->inline_end = inline_end;
+			inline_end->inline_end = box;
+		}
 	} else if (box->type == BOX_INLINE_BLOCK) {
 		/* inline block box: add to tree and recurse */
 		box_add_child(*inline_container, box);

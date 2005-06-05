@@ -110,6 +110,7 @@ bool box_normalise_block(struct box *block, struct content *c)
 				return false;
 			break;
 		case BOX_INLINE:
+		case BOX_INLINE_END:
 		case BOX_INLINE_BLOCK:
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:
@@ -246,6 +247,7 @@ bool box_normalise_table(struct box *table, struct content * c)
 			}
 			break;
 		case BOX_INLINE:
+		case BOX_INLINE_END:
 		case BOX_INLINE_BLOCK:
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:
@@ -409,6 +411,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 				return false;
 			break;
 		case BOX_INLINE:
+		case BOX_INLINE_END:
 		case BOX_INLINE_BLOCK:
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:
@@ -506,6 +509,7 @@ bool box_normalise_table_row(struct box *row,
 				return false;
 			break;
 		case BOX_INLINE:
+		case BOX_INLINE_END:
 		case BOX_INLINE_BLOCK:
 		case BOX_FLOAT_LEFT:
 		case BOX_FLOAT_RIGHT:
@@ -643,10 +647,7 @@ bool box_normalise_inline_container(struct box *cont, struct content * c)
 		next_child = child->next;
 		switch (child->type) {
 		case BOX_INLINE:
-			/* correct end_inline_children to the box after the
-			 * last inline child (see box_construct_element()) */
-			child->end_inline_children =
-					child->end_inline_children->next;
+		case BOX_INLINE_END:
 		case BOX_BR:
 		case BOX_TEXT:
 			/* ok */
