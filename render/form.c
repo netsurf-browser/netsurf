@@ -486,19 +486,28 @@ char *form_url_encode(struct form *form,
 	char *name, *value, *n_temp, *v_temp;
 	char *s = malloc(1), *s2;
 	unsigned int len = 0, len1;
+	utf8_convert_ret err;
 
 	if (!s)
 		return 0;
 	s[0] = 0;
 
 	for (; control; control = control->next) {
-		n_temp = utf8_to_enc(control->name, form->charset, 0);
-		if (!n_temp) {
+		/** \todo fallback to document encoding or 8859-1 as
+		 * last resort.
+		 * What would also be an improvement would be to choose
+		 * an encoding acceptable by the server which covers as much
+		 * of the input values as possible. Additionally, we need to
+		 * handle the case where none of the acceptable encodings
+		 * cover all the textual input values.
+		 */
+		err = utf8_to_enc(control->name, form->charset, 0, &n_temp);
+		if (err != UTF8_CONVERT_OK) {
 			free(s);
 			return 0;
 		}
-		v_temp = utf8_to_enc(control->value, form->charset, 0);
-		if (!v_temp) {
+		err = utf8_to_enc(control->value, form->charset, 0, &v_temp);
+		if (err != UTF8_CONVERT_OK) {
 			free(n_temp);
 			free(s);
 			return 0;

@@ -41,6 +41,7 @@
 #include "netsurf/utils/talloc.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
+#include "netsurf/utils/utf8.h"
 
 
 /** browser window which is being redrawn. Valid only during redraw. */
@@ -480,12 +481,16 @@ void browser_window_update(struct browser_window *bw,
 	char *title_local_enc;
 	struct box *pos;
 	int x, y;
+	utf8_convert_ret err;
 
 	if (!bw->current_content)
 		return;
 
-	if (bw->current_content->title != NULL
-	    && (title_local_enc = cnv_str_local_enc(bw->current_content->title)) != NULL) {
+	if (bw->current_content->title != NULL) {
+		err = utf8_to_enc(bw->current_content->title,
+				local_encoding_name(), 0, &title_local_enc);
+		/* this should never fail */
+		assert(err == UTF8_CONVERT_OK);
 		gui_window_set_title(bw->window, title_local_enc);
 		free(title_local_enc);
 	} else

@@ -10,23 +10,23 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <iconv.h>
 
+#include "netsurf/utils/log.h"
 #include "netsurf/utils/utf8.h"
 
-static char *utf8_convert(const char *string, size_t len, const char *from,
-		const char *to);
+static utf8_convert_ret utf8_convert(const char *string, size_t len,
+		const char *from, const char *to, char **result);
 
 /**
  * Convert a UTF-8 multibyte sequence into a single UCS4 character
  *
  * Encoding of UCS values outside the UTF-16 plane has been removed from
- * RFC3629. This function conforms to RFC2279, however, as it is possible
- * that the platform specific keyboard input handler will generate a UCS4
- * value outside the UTF-16 plane.
+ * RFC3629. This function conforms to RFC2279, however.
  *
  * \param s  The sequence to process
  * \param l  Length of sequence
@@ -72,9 +72,7 @@ size_t utf8_to_ucs4(const char *s, size_t l)
  * Convert a single UCS4 character into a UTF-8 multibyte sequence
  *
  * Encoding of UCS values outside the UTF-16 plane has been removed from
- * RFC3629. This function conforms to RFC2279, however, as it is possible
- * that the platform specific keyboard input handler will generate a UCS4
- * value outside the UTF-16 plane.
+ * RFC3629. This function conforms to RFC2279, however.
  *
  * \param c  The character to process (0 <= c <= 0x7FFFFFFF)
  * \param s  Pointer to 6 byte long output buffer
@@ -207,24 +205,28 @@ size_t utf8_next(const char *s, size_t l, size_t o)
  * \param string  The NULL-terminated string to convert
  * \param encname The encoding name (suitable for passing to iconv)
  * \param len     Length of input string to consider (in bytes), or 0
- * \return Pointer to converted string (on heap) or NULL on error
+ * \param result  Pointer to location to store result (allocated on heap)
+ * \return Appropriate utf8_convert_ret value
  */
-char *utf8_to_enc(const char *string, const char *encname, size_t len)
+utf8_convert_ret utf8_to_enc(const char *string, const char *encname,
+		size_t len, char **result)
 {
-	return utf8_convert(string, len, "UTF-8", encname);
+	return utf8_convert(string, len, "UTF-8", encname, result);
 }
 
 /**
- * Convert a UTF8 string into the named encoding
+ * Convert a string in the named encoding into a UTF-8 string
  *
  * \param string  The NULL-terminated string to convert
  * \param encname The encoding name (suitable for passing to iconv)
  * \param len     Length of input string to consider (in bytes), or 0
- * \return Pointer to converted string (on heap) or NULL on error
+ * \param result  Pointer to location to store result (allocated on heap)
+ * \return Appropriate utf8_convert_ret value
  */
-char *utf8_from_enc(const char *string, const char *encname, size_t len)
+utf8_convert_ret utf8_from_enc(const char *string, const char *encname,
+		size_t len, char **result)
 {
-	return utf8_convert(string, len, encname, "UTF-8");
+	return utf8_convert(string, len, encname, "UTF-8", result);
 }
 
 /**
@@ -234,23 +236,27 @@ char *utf8_from_enc(const char *string, const char *encname, size_t len)
  * \param len     Length of input string to consider (in bytes)
  * \param from    The encoding name to convert from
  * \param to      The encoding name to convert to
- * \return Pointer to converted string (on heap) or NULL on error
+ * \param result  Pointer to location in which to store result
+ * \return Appropriate utf8_convert_ret value
  */
-char *utf8_convert(const char *string, size_t len, const char *from,
-		const char *to)
+utf8_convert_ret utf8_convert(const char *string, size_t len,
+		const char *from, const char *to, char **result)
 {
 	iconv_t cd;
 	char *ret, *temp, *out, *in;
 	size_t slen, rlen;
 
-	if (!string || !from || !to)
-		return NULL;
+	assert(string && from && to && result);
 
 	in = (char *)string;
 
 	cd = iconv_open(to, from);
-	if (cd == (iconv_t)-1)
-		return NULL;
+	if (cd == (iconv_t)-1) {
+		if (errno == EINVAL)
+			return UTF8_CONVERT_BADENC;
+		/* default to no memory */
+		return UTF8_CONVERT_NOMEM;
+	}
 
 	slen = len ? len : strlen(string);
 	/* Worst case = ACSII -> UCS4, so allocate an output buffer
@@ -262,14 +268,19 @@ char *utf8_convert(const char *string, size_t len, const char *from,
 	temp = out = calloc(rlen, sizeof(char));
 	if (!out) {
 		iconv_close(cd);
-		return NULL;
+		return UTF8_CONVERT_NOMEM;
 	}
 
 	/* perform conversion */
 	if (iconv(cd, &in, &slen, &out, &rlen) == (size_t)-1) {
 		free(temp);
 		iconv_close(cd);
-		return NULL;
+		/** \todo handle the various cases properly
+		 * There are 3 possible error cases:
+		 * a) Insufficiently large output buffer
+		 * b) Invalid input byte sequence
+		 * c) Incomplete input sequence */
+		return UTF8_CONVERT_NOMEM;
 	}
 
 	iconv_close(cd);
@@ -277,12 +288,18 @@ char *utf8_convert(const char *string, size_t len, const char *from,
 	if (rlen > 64 /* allow 64bytes wasted space */) {
 		/* and allocate a more sensibly sized output buffer */
 		ret = calloc(out - temp + 4, sizeof(char));
+		if (!ret) {
+			free(temp);
+			return UTF8_CONVERT_NOMEM;
+		}
 		memcpy(ret, temp, out - temp);
 		free(temp);
 	}
 	else
 		ret = temp;
 
-	return ret;
+	*result = ret;
+
+	return UTF8_CONVERT_OK;
 }
 

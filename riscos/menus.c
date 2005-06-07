@@ -32,6 +32,7 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
+#include "netsurf/utils/utf8.h"
 
 
 struct ns_menu_entry {
@@ -534,7 +535,7 @@ void ro_gui_menu_closed(void) {
 void ro_gui_menu_objects_moved(void) {
   	gui_form_select_control = NULL;
 	current_menu_object_box = NULL;
-	
+
 	ro_gui_menu_prepare_action(0, BROWSER_OBJECT, false);
 	if ((current_menu) && (current_menu == gui_form_select_menu))
 		ro_gui_menu_closed();
@@ -565,6 +566,7 @@ void ro_gui_menu_selection(wimp_selection *selection) {
 		menu_entry = &menu_entry->sub_menu->
 				entries[selection->items[i]];
 	action = ro_gui_menu_find_action(current_menu, menu_entry);
+
 
 	/* perform menu action */
 	if (action != NO_ACTION)
@@ -904,6 +906,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	wimp_pointer pointer;
 	os_error *error;
 	bool reopen = true;
+	utf8_convert_ret err;
 
 	assert(control);
 
@@ -959,13 +962,11 @@ void gui_create_form_select_menu(struct browser_window *bw,
 							wimp_ICON_FG_COLOUR_SHIFT) |
 					(wimp_COLOUR_WHITE <<
 							wimp_ICON_BG_COLOUR_SHIFT);
-			text_convert = cnv_str_local_enc(option->text);
-			if (!text_convert) {
-			  	LOG(("cnv_str_local_enc failed."));
-			  	warn_user("NoMemory", 0);
-				ro_gui_menu_closed();
-				return;
-			} 	
+			err = utf8_to_enc(option->text,
+				local_encoding_name(), 0, &text_convert);
+			/* this should never fail */
+			assert(err == UTF8_CONVERT_OK);
+
 			gui_form_select_menu->entries[i].data.indirected_text.text =
 					text_convert;
 			/* convert spaces to hard spaces to stop things like 'Go Home'
@@ -2004,7 +2005,7 @@ int ro_gui_menu_get_checksum(void) {
 	int i = 0, j, checksum = 0;
 	os_error *error;
 	wimp_menu *menu;
-	
+
 	if (!current_menu_open)
 		return 0;
 

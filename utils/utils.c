@@ -104,40 +104,6 @@ char *cnv_space2nbsp(const char *s)
 }
 
 /**
- * Convert local encoding to NUL terminated UTF-8 string.
- * Caller needs to free return value.
- *
- * \param s string in local machine encoding. NUL or length terminated (which comes first).
- * \param length maximum number of bytes to consider at s.
- * \return malloc()'ed NUL termined string in UTF-8 encoding.
- */
-char *cnv_local_enc_str(const char *s, size_t length)
-{
-	return utf8_from_enc(s, local_encoding_name(), length);
-}
-
-
-/**
- * Converts NUL terminated UTF-8 string <s> to the machine local encoding.
- * Caller needs to free return value.
- */
-char *cnv_str_local_enc(const char *s)
-{
-	return cnv_strn_local_enc(s, 0);
-}
-
-
-/**
- * Converts UTF-8 string <s> of <length> bytes to the machine local encoding.
- * Caller needs to free return value.
- */
-char *cnv_strn_local_enc(const char *s, int length)
-{
-	return utf8_to_enc(s, local_encoding_name(), length);
-}
-
-
-/**
  * Check if a directory exists.
  */
 

@@ -884,23 +884,19 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
 	char *local_text;
+	utf8_convert_ret err;
 
 	if ((!g->toolbar) || (!g->toolbar->status_handle))
 		return;
 
 	/* convert text to local encoding */
-	local_text = cnv_str_local_enc(text);
-	if (!local_text) {
-		LOG(("failed converting '%s' to local encoding", text));
-		/* just use the UTF-8 text */
-		ro_gui_set_icon_string(g->toolbar->status_handle,
-				ICON_STATUS_TEXT, text);
-	}
-	else {
-		ro_gui_set_icon_string(g->toolbar->status_handle,
+	err = utf8_to_enc(text, local_encoding_name(), 0, &local_text);
+	/* this should never fail */
+	assert(err == UTF8_CONVERT_OK);
+
+	ro_gui_set_icon_string(g->toolbar->status_handle,
 				ICON_STATUS_TEXT, local_text);
-		free(local_text);
-	}
+	free(local_text);
 }
 
 
