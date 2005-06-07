@@ -964,8 +964,15 @@ void gui_create_form_select_menu(struct browser_window *bw,
 							wimp_ICON_BG_COLOUR_SHIFT);
 			err = utf8_to_enc(option->text,
 				local_encoding_name(), 0, &text_convert);
-			/* this should never fail */
-			assert(err == UTF8_CONVERT_OK);
+			if (err != UTF8_CONVERT_OK) {
+				/* A bad encoding should never happen,
+				 * so assert this */
+				assert(err != UTF8_CONVERT_BADENC);
+				LOG(("utf8_to_enc failed"));
+				warn_user("NoMemory", 0);
+				ro_gui_menu_closed();
+				return;
+			}
 
 			gui_form_select_menu->entries[i].data.indirected_text.text =
 					text_convert;

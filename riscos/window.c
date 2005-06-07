@@ -891,8 +891,12 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 	/* convert text to local encoding */
 	err = utf8_to_enc(text, local_encoding_name(), 0, &local_text);
-	/* this should never fail */
-	assert(err == UTF8_CONVERT_OK);
+	if (err != UTF8_CONVERT_OK) {
+		/* A bad encoding should never happen, so assert this */
+		assert(err != UTF8_CONVERT_BADENC);
+		LOG(("utf8_to_enc failed"));
+		return;
+	}
 
 	ro_gui_set_icon_string(g->toolbar->status_handle,
 				ICON_STATUS_TEXT, local_text);
