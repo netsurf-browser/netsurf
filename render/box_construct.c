@@ -337,7 +337,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	if (box->type == BOX_INLINE || box->type == BOX_BR) {
 		/* inline box: add to tree and recurse */
 		box_add_child(*inline_container, box);
-		if (convert_children) {
+		if (convert_children && n->children) {
 			for (c = n->children; c; c = c->next)
 				if (!convert_xml_to_box(c, content, style,
 						parent, inline_container,
