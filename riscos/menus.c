@@ -2026,7 +2026,7 @@ int ro_gui_menu_get_checksum(void) {
 	}
 
 	menu = current_menu;
-	do {
+	while (menu_tree.items[i] != -1) {
 		j = 0;
 		do {
 			if (menu->entries[j].icon_flags & wimp_ICON_SHADED)
@@ -2034,12 +2034,12 @@ int ro_gui_menu_get_checksum(void) {
 			if (menu->entries[j].menu_flags & wimp_MENU_TICKED)
 				checksum ^= (2 << (i + j * 2));
 		} while (!(menu->entries[j++].menu_flags & wimp_MENU_LAST));
+
 		j = menu_tree.items[i++];
-		if (j != -1) {
-			menu = menu->entries[j].sub_menu;
-			if ((!menu) || (menu == wimp_NO_SUB_MENU))
-				break;
-		}
-	} while (j != -1);
+		menu = menu->entries[j].sub_menu;
+		if ((!menu) || (menu == wimp_NO_SUB_MENU))
+			break;
+	}
+
 	return checksum;
 }
