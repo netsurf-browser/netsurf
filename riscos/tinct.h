@@ -127,6 +127,10 @@
 #define tinct_FORCE_PALETTE_READ  0x40	/** <-- Use after a palette change when out of the desktop */
 #define tinct_USE_OS_SPRITE_OP	  0x80	/** <-- Use when printing */
 
+/*	Compression flags
+*/
+#define tinct_OPAQUE_IMAGE	  0x01	/** <-- Image is opaque, compress further */
+
 /*	Shifts
 */
 #define tinct_BACKGROUND_SHIFT	  0x08
@@ -134,5 +138,4 @@
 /*	Sprite mode
 */
 #define tinct_SPRITE_MODE	  (os_mode)0x301680b5
-
 #endif
