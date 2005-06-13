@@ -1080,7 +1080,7 @@ void tree_reset_URL_nodes(struct tree *tree, struct node *node, bool selected) {
 			tree_reset_URL_node(tree, node);
 		if (node->child)
 			tree_reset_URL_nodes(tree, node->child,
-				!((node->selected) | selected));
+				((!node->selected) && selected));
 	}
 }
 
