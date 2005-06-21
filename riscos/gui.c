@@ -404,6 +404,9 @@ void ro_gui_choose_language(void)
 		case 18: /* Canada2 (French Canada?) */
 			lang = "fr";
 			break;
+		case 34: /* Netherlands */
+			lang = "nl";
+			break;
 		default:
 			lang = "en";
 			break;
