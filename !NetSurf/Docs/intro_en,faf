@@ -13,7 +13,7 @@
 <div class="main">
 
 <p><em>NetSurf</em> is an open-source web browser for RISC OS. Its aim is to
-bring HTML&nbsp;4 and CSS standards to the RISC OS platform. For more
+bring the HTML&nbsp;4 and CSS standards to the RISC OS platform. For more
 information about NetSurf see the <a href="docs_en">documentation</a>.</p>
 
 <h2>Current Status</h2>
@@ -64,11 +64,12 @@ mailing list</a></dt>
 <h3>RISC OS Links</h3>
 <ul>
 <li><a href="http://www.drobe.co.uk/">Drobe Launch Pad</a></li>
-<li><a href="http://www.iconbar.com/">The Icon Bar</a></li>
+<li><a href="http://www.iconbar.com/">The&nbsp;Icon Bar</a></li>
 </ul>
 
 <h3>Other Links</h3>
 <ul>
+<li><a href="http://news.bbc.co.uk/">BBC News</a></li>
 <li><a href="http://slashdot.org/">Slashdot</a></li>
 <li><a href="http://www.theregister.co.uk/">The&nbsp;Register</a></li>
 </ul>
