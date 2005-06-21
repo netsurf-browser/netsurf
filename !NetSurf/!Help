@@ -1,15 +1,25 @@
-NetSurf - Open Source web browser
-http://netsurf.sourceforge.net/
-__________________________________________________
+NetSurf - Open Source web browser - http://netsurf.sourceforge.net/
 
-To view the full documentation, start NetSurf and
-choose "Help..." from the icon bar menu.
+To view the full documentation, start NetSurf and choose "Help..." from the
+icon bar menu.
 
-This is a test build of NetSurf. In case of
-problems, please check for a newer build first at
-http://netsurf.sourceforge.net/builds/
+This is a test build of NetSurf. In case of problems, please check for a
+newer build first at http://netsurf.sourceforge.net/builds/
 
-Please report bugs to the development mailing
-list, netsurf-develop@lists.sourceforge.net
-Alternatively, the developers are often available
-on Freenode in the channel #netsurf.
+Please report bugs to the development mailing list,
+netsurf-develop@lists.sourceforge.net. Alternatively, the developers are
+often available on Freenode in the channel #netsurf.
+___________________________________________________________________________
+
+NetSurf - Webbrowser (met open broncode) - http://netsurf.sourceforge.net/
+
+Om alle documentatie te kunnen raadplegen: start NetSurf en kies "Help..."
+van het symbolenbalk-menu.
+
+Dit is een testversie van NetSurf. Bij problemen: kijk eerst of er een
+nieuwere versie is op http://netsurf.sourceforge.net/builds/
+
+Meld fouten en/of onvolkomenheden a.u.b. (in het Engels!) aan de
+ontwikkelingsverzendlijst, netsurf-develop@lists.sourceforge.net. Een
+alternatief is Freenode op het kanaal #netsurf waar de ontwikkelaars vaak
+bereikbaar zijn.
