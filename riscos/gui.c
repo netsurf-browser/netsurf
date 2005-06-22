@@ -398,6 +398,8 @@ void ro_gui_choose_language(void)
 	}
 	switch (country) {
 		case 7: /* Germany */
+		case 30: /* Austria */
+		case 35: /* Switzerland (70% German-speaking) */
 			lang = "de";
 			break;
 		case 6: /* France */
