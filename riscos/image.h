@@ -8,6 +8,8 @@
 #ifndef _NETSURF_RISCOS_IMAGE_H_
 #define _NETSURF_RISCOS_IMAGE_H_
 
+#include "oslib/osspriteop.h"
+
 struct osspriteop_area;
 
 typedef enum {

@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2005 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -20,8 +20,12 @@
 #include "oslib/osbyte.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
+#include "netsurf/content/url_store.h"
+#include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/tree.h"
+#include "netsurf/riscos/bitmap.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/image.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/tinct.h"
@@ -38,6 +42,7 @@
 static bool ro_gui_tree_initialise_sprite(const char *name, int number);
 static void ro_gui_tree_launch_selected_node(struct node *node, bool all);
 static bool ro_gui_tree_launch_node(struct node *node);
+static void tree_handle_node_changed_callback(void *p);
 
 /* an array of sprite addresses for Tinct */
 static char *ro_gui_tree_sprites[2];
@@ -60,6 +65,12 @@ static wimp_icon_create ro_gui_tree_edit_icon;
 
 /* dragging information */
 static char ro_gui_tree_drag_name[12];
+
+/* callback update */
+struct node_update {
+  	struct tree *tree;
+  	struct node *node;
+};
 
 
 /**
@@ -181,6 +192,10 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 	os_error *error;
 	int temp;
 	int toolbar_height = 0;
+	struct node_element *url_element;
+	struct bitmap *bitmap = NULL;
+	struct node_update *update;
+	char *frame;
 
 	assert(tree);
 	assert(element);
@@ -265,6 +280,50 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 			ro_gui_tree_icon.data.indirected_sprite.size =
 					strlen(element->sprite->name);
 			break;
+		case NODE_ELEMENT_THUMBNAIL:
+			url_element = tree_find_element(element->parent, TREE_ELEMENT_URL);
+			if (url_element)
+				bitmap = url_store_get_thumbnail(url_element->text);
+			if (bitmap) {
+			  	frame = bitmap_get_buffer(bitmap);
+			  	if (!frame)
+			  		url_store_add_thumbnail(url_element->text, NULL);
+				if ((!frame) || (element->box.width == 0)) {
+				  	update = calloc(sizeof(struct node_update), 1);
+				  	if (!update)
+				  		return;
+				  	update->tree = tree;
+				  	update->node = element->parent;
+				  	schedule(0, tree_handle_node_changed_callback,
+				  			update);
+				 	return;
+				}
+				image_redraw(bitmap->sprite_area,
+						ro_gui_tree_origin_x + element->box.x + 2,
+						ro_gui_tree_origin_y - element->box.y,
+						bitmap->width, bitmap->height,
+						bitmap->width, bitmap->height,
+						0xffffff,
+						false, false, false,
+						IMAGE_PLOT_TINCT_OPAQUE);
+				tree_draw_line(tree, element->box.x,
+						element->box.y,
+						element->box.width - 1,
+						0);
+				tree_draw_line(tree, element->box.x,
+						element->box.y,
+						0,
+						element->box.height - 3);
+				tree_draw_line(tree, element->box.x,
+						element->box.y + element->box.height - 3,
+						element->box.width - 1,
+						0);
+				tree_draw_line(tree, element->box.x + element->box.width - 1,
+						element->box.y,
+						0,
+						element->box.height - 3);
+			}
+			return;
 	}
 
 	error = xwimp_plot_icon(&ro_gui_tree_icon);
@@ -273,6 +332,14 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
+}
+
+
+void tree_handle_node_changed_callback(void *p) {
+	struct node_update *update = p;
+	
+	tree_handle_node_changed(update->tree, update->node, true, false);
+	free(update);
 }
 
 
@@ -342,6 +409,8 @@ void tree_recalculate_node_element(struct node_element *element) {
 	int sprite_width;
 	int sprite_height;
 	osspriteop_flags flags;
+	struct bitmap *bitmap = NULL;
+	struct node_element *url_element;
 
 	assert(element);
 
@@ -384,6 +453,17 @@ void tree_recalculate_node_element(struct node_element *element) {
 			if (element->box.height < TREE_TEXT_HEIGHT)
 				element->box.height = TREE_TEXT_HEIGHT;
 			break;
+		case NODE_ELEMENT_THUMBNAIL:
+			url_element = tree_find_element(element->parent, TREE_ELEMENT_URL);
+			if (url_element)
+				bitmap = url_store_get_thumbnail(url_element->text);
+			if (bitmap) {
+				element->box.width = bitmap->width * 2 + 2;
+				element->box.height = bitmap->height * 2 + 4;
+			} else {
+				element->box.width = 0;
+				element->box.height = 0;
+			}
 	}
 }
 
@@ -502,7 +582,6 @@ void tree_update_URL_node(struct node *node) {
 				element->user_data);
 		element->text = strdup(buffer);
 	}
-
 }
 
 

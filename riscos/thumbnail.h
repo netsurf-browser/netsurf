@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -10,7 +11,8 @@
  */
 
 #include "oslib/osspriteop.h"
+#include "netsurf/image/bitmap.h"
 
-void thumbnail_create(struct content *content, osspriteop_area *area,
-		osspriteop_header *sprite, int width, int height);
-osspriteop_area* thumbnail_initialise(int width, int height, os_mode mode);
+bool thumbnail_create(struct content *content, struct bitmap *bitmap,
+		const char *url);
+osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap);

@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -16,12 +17,17 @@
 #include "oslib/colourtrans.h"
 #include "oslib/font.h"
 #include "oslib/wimp.h"
+#include "netsurf/content/url_store.h"
+#include "netsurf/image/bitmap.h"
+#include "netsurf/riscos/bitmap.h"
+#include "netsurf/riscos/image.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/thumbnail.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 #define SIZE 10
@@ -45,7 +51,7 @@ struct history_entry {
 	struct history_entry *forward_last;  /**< Last child. */
 	unsigned int children;  /**< Number of children. */
 	int x, y, width;
-	osspriteop_area *sprite_area;  /**< Thumbnail sprite area, or 0. */
+	struct bitmap *bitmap;	/**< Thumbnail bitmap, or 0. */
 };
 
 /** History tree for a window. */
@@ -108,20 +114,24 @@ struct history *history_create(void)
 
 void history_add(struct history *history, struct content *content, char *frag_id)
 {
+	url_func_result res;
 	struct history_entry *entry;
 	char *url;
 	char *title;
 	char *split;
 	int width;
-	osspriteop_area *area;
-//	os_error *error;
+	struct bitmap *bitmap;
 
 	if (!history)
 		return;
 
 	/* allocate space */
 	entry = malloc(sizeof *entry);
-	url = strdup(content->url);
+	res = url_normalize(content->url, &url);
+	if (res != URL_FUNC_OK) {
+		warn_user("NoMemory", 0);
+		return;
+	}
 	title = strdup(content->title ? content->title : url);
 	if (!entry || !url || !title) {
 		warn_user("NoMemory", 0);
@@ -148,7 +158,7 @@ void history_add(struct history *history, struct content *content, char *frag_id
 	entry->forward = entry->forward_pref = entry->forward_last = 0;
 	entry->children = 0;
 	entry->width = width / 400;
-	entry->sprite_area = 0;
+	entry->bitmap = 0;
 	if (history->current) {
 		if (history->current->forward_last)
 			history->current->forward_last->next = entry;
@@ -162,37 +172,20 @@ void history_add(struct history *history, struct content *content, char *frag_id
 	}
 	history->current = entry;
 
-/*	area = malloc(SPRITE_SIZE);
-	if (!area) {
-		LOG(("malloc failed"));
-		return;
+	/* if we have a thumbnail, don't update until the page has finished
+	 * loading */
+	bitmap = url_store_get_thumbnail(url);
+	bitmap = NULL;
+	if (!bitmap) {
+	 	bitmap = bitmap_create(WIDTH / 2, HEIGHT / 2, false);
+  		if (!bitmap) {
+			LOG(("Thumbnail initialisation failed."));
+			return;
+		}
+		bitmap_set_opaque(bitmap, true);
+		thumbnail_create(content, bitmap, url);
 	}
-
-	area->size = SPRITE_SIZE;
-	area->sprite_count = 0;
-	area->first = 16;
-	area->used = 16;
-
-	error = xosspriteop_create_sprite(osspriteop_NAME,
-			area, "thumbnail", false,
-			WIDTH / 2, HEIGHT / 2, os_MODE8BPP90X90);
-	if (error) {
-		LOG(("0x%x: %s", error->errnum, error->errmess));
-		return;
-	}
-  */
-  	area = thumbnail_initialise(WIDTH / 2, HEIGHT / 2, (os_mode)0x301680b5);
-  	if (!area) {
-		LOG(("Thumbnail initialisation failed."));
-		return;
-	}
-	thumbnail_create(content, area,
-			(osspriteop_header *) (area + 1),
-			WIDTH / 2, HEIGHT / 2);
-/*	xosspriteop_save_sprite_file(osspriteop_NAME,
-			area, "thumbnail");*/
-
-	entry->sprite_area = area;
+	entry->bitmap = bitmap;
 }
 
 
@@ -205,13 +198,10 @@ void history_add(struct history *history, struct content *content, char *frag_id
 
 void history_update(struct history *history, struct content *content)
 {
-	if (!history || !history->current || !history->current->sprite_area)
+	if (!history || !history->current || !history->current->bitmap)
 		return;
 
-	thumbnail_create(content, history->current->sprite_area,
-			(osspriteop_header *)
-				(history->current->sprite_area + 1),
-			WIDTH / 2, HEIGHT / 2);
+	thumbnail_create(content, history->current->bitmap, NULL);
 }
 
 
@@ -248,7 +238,6 @@ void history_free_entry(struct history_entry *entry)
 	if (entry->frag_id)
 		free(entry->frag_id);
 	free(entry->title);
-	free(entry->sprite_area);
 	free(entry);
 }
 
@@ -412,58 +401,22 @@ void ro_gui_history_redraw_tree(struct history_entry *he,
 	os_plot(os_PLOT_SOLID | os_PLOT_BY, -WIDTH - 1, 0);
 	os_plot(os_PLOT_SOLID | os_PLOT_BY, 0, HEIGHT + 1);
 
-	if (he->sprite_area) {
-		osspriteop_area *area = he->sprite_area;
-		osspriteop_header *header = (osspriteop_header *)(area + 1);
-		osspriteop_trans_tab *table;
-
-		/* 	Because we're supporting people with OS3.1 we need to check if the
-			sprite we have is a legacy 256 colour one
-		*/
-		if (header->mode == (os_mode)tinct_SPRITE_MODE) {
-
-			/*	We plot with no mask and no scaling as any EIG factors are
-				handled internally by Tinct
-			*/
-			_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
-				(char *)(header),
-				x0 + he->x * FULL_WIDTH + MARGIN,
-				y0 - he->y * FULL_HEIGHT - FULL_HEIGHT + MARGIN,
-				tinct_ERROR_DIFFUSE | tinct_BILINEAR_FILTER);
+	if (he->bitmap) {
+  		if (bitmap_get_buffer(he->bitmap)) {
+			image_redraw(he->bitmap->sprite_area,
+					x0 + he->x * FULL_WIDTH + MARGIN,
+					y0 - he->y * FULL_HEIGHT - MARGIN,
+					he->bitmap->width, he->bitmap->height,
+					he->bitmap->width, he->bitmap->height,
+					0xffffff,
+					false, false, false,
+					IMAGE_PLOT_TINCT_OPAQUE);
 		} else {
-		        unsigned int size;
-			os_factors factors;
-
-			xcolourtrans_generate_table_for_sprite(
-					area, (osspriteop_id)header,
-					colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
-					0, colourtrans_GIVEN_SPRITE, 0, 0, &size);
-			table = calloc(size, 1);
-			if (!table) {
-				LOG(("Insufficient memory for calloc"));
-				warn_user("NoMemory", 0);
-			} else {
-				xcolourtrans_generate_table_for_sprite(
-						area, (osspriteop_id)header,
-						colourtrans_CURRENT_MODE, colourtrans_CURRENT_PALETTE,
-						table, colourtrans_GIVEN_SPRITE, 0, 0, 0);
-
-				factors.xmul = 1;
-				factors.ymul = 1;
-				factors.xdiv = 1;
-				factors.ydiv = 1;
-
-				xosspriteop_put_sprite_scaled(osspriteop_PTR,
-						area, (osspriteop_id)header,
-						x0 + he->x * FULL_WIDTH + MARGIN,
-						y0 - he->y * FULL_HEIGHT - FULL_HEIGHT + MARGIN,
-						osspriteop_USE_MASK | osspriteop_USE_PALETTE,
-						&factors, table);
-				free(table);
-			}
+		  	url_store_add_thumbnail(he->url, NULL);
+		  	he->bitmap = NULL;
+		  
 		}
 	}
-
 
 	if (he == history_current->current)
 		wimp_set_font_colours(wimp_COLOUR_WHITE, wimp_COLOUR_RED);

@@ -630,6 +630,7 @@ bool ro_gui_save_complete(struct content *c, char *path)
 	osspriteop_header *sprite_header;
 	char *appname;
 	unsigned int index;
+	struct bitmap *bitmap;
 
         /* Create dir */
 	error = xosfile_create_dir(path, 0);
@@ -663,21 +664,26 @@ bool ro_gui_save_complete(struct content *c, char *path)
 	appname = strrchr(path, '.');
 	if (!appname)
 		appname = path;
-
-  	area = thumbnail_initialise(34, 34, os_MODE8BPP90X90);
-  	if (!area) {
-		warn_user("NoMemory", 0);
+    	bitmap = bitmap_create(34, 34, false);
+  	if (!bitmap) {
+		LOG(("Thumbnail initialisation failed."));
+		return false;
+	}
+	bitmap_set_opaque(bitmap, true);
+	thumbnail_create(c, bitmap, NULL);
+	area = thumbnail_convert_8bpp(bitmap);
+	bitmap_destroy(bitmap);
+	if (!area) {
+		LOG(("Thumbnail conversion failed."));
 		return false;
 	}
 	sprite_header = (osspriteop_header *)(area + 1);
+	memset(sprite_header->name, 0x00, 12);
 	strncpy(sprite_header->name, appname + 1, 12);
 
 	/* Paint gets confused with uppercase characters */
 	for (index = 0; index < 12; index++)
 		sprite_header->name[index] = tolower(sprite_header->name[index]);
-	thumbnail_create(c, area,
-			(osspriteop_header *) ((char *) area + 16),
-			34, 34);
 	error = xosspriteop_save_sprite_file(osspriteop_NAME, area, buf);
 	free(area);
 	if (error) {

@@ -1051,7 +1051,7 @@ bool draw_plot_bitmap(int x, int y, int width, int height,
 	drawfile_object *dro;
 	drawfile_sprite *ds;
 
-	sprite_length = ((osspriteop_header*)((char*)&bitmap->sprite_area+bitmap->sprite_area.first))->size;
+	sprite_length = ((osspriteop_header*)((char*)bitmap->sprite_area+bitmap->sprite_area->first))->size;
 
 	if ((dro = (drawfile_object *)drawbuf_claim(8 + 16 + sprite_length, DrawBuf_eBody)) == NULL)
 		return false;
@@ -1065,7 +1065,7 @@ bool draw_plot_bitmap(int x, int y, int width, int height,
 	ds->bbox.x1 = (x + width) * 512;
 	ds->bbox.y1 = (draw_plot_origin_y - y) * 512;
 
-	memcpy((char*)ds+16, (char*)&bitmap->sprite_area+bitmap->sprite_area.first, (unsigned)sprite_length);
+	memcpy((char*)ds+16, (char*)bitmap->sprite_area+bitmap->sprite_area->first, (unsigned)sprite_length);
 
 	return true;
 }

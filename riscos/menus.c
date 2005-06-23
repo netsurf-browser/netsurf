@@ -31,6 +31,7 @@
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/utf8.h"
 
@@ -1277,6 +1278,8 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 	struct node *node;
 	os_error *error;
 	char url[80];
+	url_func_result res;
+	char *norm_url = NULL;
 
 	ro_gui_menu_get_window_details(owner, &g, &bw, &c, &t, &tree);
 
@@ -1312,11 +1315,17 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 
 		/* hotlist actions */
 		case HOTLIST_ADD_URL:
-			if ((!hotlist_tree) || (!c))
+			if ((!hotlist_tree) || (!c) || (!c->url))
 				return false;
+			res = url_normalize(c->url, &norm_url);
+			if (res != URL_FUNC_OK) {
+				warn_user("NoMemory", 0);
+				return false;
+			}
 			node = tree_create_URL_node(hotlist_tree->root,
-					c->title, c->url, ro_content_filetype(c),
+					c->title, norm_url, ro_content_filetype(c),
 					time(NULL), -1, 0);
+			free(norm_url);
 			if (node) {
 				tree_redraw_area(hotlist_tree,
 						node->box.x - NODE_INSTEP, 0,
@@ -1325,6 +1334,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 						false, true);
 				ro_gui_tree_scroll_visible(hotlist_tree,
 						&node->data);
+				ro_gui_hotlist_save();
 			}
 			return true;
 		case HOTLIST_SHOW:

@@ -347,7 +347,8 @@ bool ro_plot_disc(int x, int y, int radius, colour colour)
 bool ro_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg)
 {
-	return image_redraw(&bitmap->sprite_area,
+  	bitmap_get_buffer(bitmap);
+	return image_redraw(bitmap->sprite_area,
 			ro_plot_origin_x + x * 2,
 			ro_plot_origin_y - y * 2,
 			width, height,
@@ -364,7 +365,8 @@ bool ro_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y)
 {
-	return image_redraw(&bitmap->sprite_area,
+  	bitmap_get_buffer(bitmap);
+	return image_redraw(bitmap->sprite_area,
 			ro_plot_origin_x + x * 2,
 			ro_plot_origin_y - y * 2,
 			width, height,

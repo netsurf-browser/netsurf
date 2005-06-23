@@ -24,7 +24,6 @@ extern char *option_theme;
 extern char *option_language;
 extern int option_fg_plot_style;	/* tinct flagword */
 extern int option_bg_plot_style;	/* tinct flagword */
-extern bool option_thumbnail_32bpp;
 extern bool option_history_tooltip;
 extern int option_scale;
 extern int option_toolbar_status_width;
@@ -60,6 +59,8 @@ extern char *option_font_default_bold;
 extern char *option_font_default_bold_italic;
 extern bool option_block_popups;
 extern bool option_url_suggestion;
+extern int option_image_memory_direct;	/* -1 means auto-detect */
+extern int option_image_memory_compressed;	/* -1 means auto-detect */
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -68,7 +69,6 @@ char *option_theme = 0;\
 char *option_language = 0;\
 int option_fg_plot_style = tinct_ERROR_DIFFUSE;\
 int option_bg_plot_style = tinct_DITHER;\
-bool option_thumbnail_32bpp = true;\
 bool option_history_tooltip = true; \
 int option_scale = 100; \
 int option_toolbar_status_width = 5000; \
@@ -100,7 +100,9 @@ char *option_font_cursive = 0; \
 char *option_font_fantasy = 0; \
 int option_font_default = CSS_FONT_FAMILY_SANS_SERIF; \
 bool option_block_popups = false; \
-bool option_url_suggestion = true;
+bool option_url_suggestion = true; \
+int option_image_memory_direct = -1; \
+int option_image_memory_compressed = -1;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -109,7 +111,6 @@ bool option_url_suggestion = true;
 { "language",               OPTION_STRING,  &option_language },\
 { "plot_fg_quality",        OPTION_INTEGER, &option_fg_plot_style },\
 { "plot_bg_quality",        OPTION_INTEGER, &option_bg_plot_style },\
-{ "thumbnail_32bpp",        OPTION_BOOL,    &option_thumbnail_32bpp },\
 { "history_tooltip",        OPTION_BOOL,    &option_history_tooltip }, \
 { "scale",                  OPTION_INTEGER, &option_scale }, \
 { "toolbar_show_status",    OPTION_BOOL,    &option_toolbar_show_status }, \
@@ -141,6 +142,8 @@ bool option_url_suggestion = true;
 { "font_fantasy",           OPTION_STRING,  &option_font_fantasy }, \
 { "font_default",           OPTION_INTEGER, &option_font_default }, \
 { "block_popups",           OPTION_BOOL,    &option_block_popups }, \
-{ "url_suggestion",         OPTION_BOOL,    &option_url_suggestion }
+{ "url_suggestion",         OPTION_BOOL,    &option_url_suggestion }, \
+{ "image_memory_direct",    OPTION_INTEGER, &option_image_memory_direct }, \
+{ "image_memory_compressed",OPTION_INTEGER, &option_image_memory_compressed }
 
 #endif

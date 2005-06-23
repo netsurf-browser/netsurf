@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unixlib/features.h>
+//#include <unixlib/features.h>
 #include <unixlib/local.h>
 #include "oslib/font.h"
 #include "oslib/help.h"
@@ -45,7 +45,9 @@
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
+#include "netsurf/riscos/bitmap.h"
 #include "netsurf/riscos/buffer.h"
+#include "netsurf/riscos/filename.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
@@ -109,7 +111,7 @@
 
 int os_version = 0;
 
-const char *__dynamic_da_name = "NetSurf";	/**< For UnixLib. */
+const char * const __dynamic_da_name = "NetSurf";	/**< For UnixLib. */
 int __dynamic_da_max_size = 128 * 1024 * 1024;	/**< For UnixLib. */
 int __feature_imagefs_is_file = 1;		/**< For UnixLib. */
 /* default filename handling */
@@ -260,6 +262,7 @@ void gui_init(int argc, char** argv)
 	xosfile_create_dir("<User$Path>.Choices.NetSurf.Choices", 0);
 	xosfile_create_dir("<User$Path>.Choices.NetSurf.Choices.Themes", 0);
 #endif
+	ro_filename_initialise();
 
 #ifdef WITH_SAVE_COMPLETE
 	save_complete_init();
@@ -283,6 +286,7 @@ void gui_init(int argc, char** argv)
 
 	ro_gui_choose_language();
 
+	bitmap_initialise_memory();
 	url_store_load("Choices:WWW.NetSurf.URL");
 
 	nsdir_temp = getenv("NetSurf$Dir");
@@ -584,7 +588,8 @@ void gui_init2(int argc, char** argv)
 
 void gui_quit(void)
 {
-  	url_store_save("<Choices$Write>.WWW.NetSurf.URL");
+	bitmap_quit();
+	url_store_save("<Choices$Write>.WWW.NetSurf.URL");
 	ro_gui_window_quit();
 	ro_gui_global_history_save();
 	ro_gui_hotlist_save();
@@ -655,7 +660,8 @@ void gui_poll(bool active)
 	xhourglass_off();
 	if (active) {
 		event = wimp_poll(mask, &block, 0);
-	} else if (sched_active || gui_track || gui_reformat_pending) {
+	} else if (sched_active || gui_track || gui_reformat_pending ||
+			bitmap_maintenance) {
 		os_t t = os_read_monotonic_time();
 
 		if (gui_track)
@@ -686,6 +692,9 @@ void gui_poll(bool active)
 
 	if (gui_reformat_pending && event == wimp_NULL_REASON_CODE)
 		ro_gui_window_process_reformats();
+	else if (bitmap_maintenance_priority ||
+			(bitmap_maintenance && event == wimp_NULL_REASON_CODE))
+		bitmap_maintain();
 }
 
 
@@ -801,7 +810,7 @@ void ro_gui_poll_queue(wimp_event_no event, wimp_block *block)
 	q->event = event;
 	q->block = calloc(1, sizeof(*block));
 	if (!q->block) {
-	  	free(q);
+		free(q);
 		LOG(("Insufficient memory for calloc"));
 		warn_user("NoMemory", 0);
 		return;
@@ -903,7 +912,7 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 	else if ((g = ro_gui_window_lookup(redraw->w)) != NULL)
 		ro_gui_window_redraw(g, redraw);
 	else if ((g = ro_gui_toolbar_lookup(redraw->w)) != NULL) {
-	  	if (g->toolbar->toolbar_handle == redraw->w)
+		if (g->toolbar->toolbar_handle == redraw->w)
 			ro_gui_theme_redraw(g->toolbar, redraw);
 		else if ((g->toolbar->editor) &&
 				(g->toolbar->editor->toolbar_handle == redraw->w))
@@ -1045,7 +1054,7 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 			(hotlist_tree->toolbar->editor->toolbar_handle == pointer->w))
 		ro_gui_tree_toolbar_click(pointer, hotlist_tree);
 	else if ((global_history_tree) && (global_history_tree->toolbar) &&
-	 		(global_history_tree->toolbar->toolbar_handle == pointer->w))
+			(global_history_tree->toolbar->toolbar_handle == pointer->w))
 		ro_gui_tree_toolbar_click(pointer, global_history_tree);
 	else if ((global_history_tree) && (global_history_tree->toolbar) &&
 			(global_history_tree->toolbar->editor) &&
@@ -1410,8 +1419,8 @@ void ro_msg_dataload(wimp_message *message)
 	} else if ((hotlist_tree) && ((wimp_w)hotlist_tree->handle ==
 			message->data.data_xfer.w)) {
 		if (!title) {
-		  	tree_edit = true;
-		  	title = url;
+			tree_edit = true;
+			title = url;
 		}
 		ro_gui_tree_get_tree_coordinates(hotlist_tree,
 				message->data.data_xfer.pos.x,

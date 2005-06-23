@@ -16,6 +16,7 @@
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/tree.h"
+#include "netsurf/image/bitmap.h"
 
 #define TREE_TEXT_HEIGHT 40
 #define TREE_SPRITE_WIDTH 40	/* text plus sprite entries only */
