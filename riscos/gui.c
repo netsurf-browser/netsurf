@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-//#include <unixlib/features.h>
+#include <unixlib/features.h>
 #include <unixlib/local.h>
 #include "oslib/font.h"
 #include "oslib/help.h"
@@ -111,7 +111,7 @@
 
 int os_version = 0;
 
-const char * const __dynamic_da_name = "NetSurf";	/**< For UnixLib. */
+const char *__dynamic_da_name = "NetSurf";	/**< For UnixLib. */
 int __dynamic_da_max_size = 128 * 1024 * 1024;	/**< For UnixLib. */
 int __feature_imagefs_is_file = 1;		/**< For UnixLib. */
 /* default filename handling */
