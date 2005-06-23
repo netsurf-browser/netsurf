@@ -802,6 +802,7 @@ gif_decode_frame_exit:
 		gif->frames[frame].virgin = false;
 	}
 	bitmap_set_opaque(gif->frame_image, gif->frames[frame].opaque);
+	bitmap_modified(gif->frame_image);
 
 	/*	Restore the buffer position
 	*/
@@ -828,7 +829,8 @@ static unsigned int gif_interlaced_line(int height, int y) {
 void gif_finalise(struct gif_animation *gif) {
 	/*	Release all our memory blocks
 	*/
-	free(gif->frame_image);
+	if (gif->frame_image)
+		bitmap_destroy(gif->frame_image);
 	gif->frame_image = NULL;
 	free(gif->frames);
 	gif->frames = NULL;

@@ -33,5 +33,6 @@ char *bitmap_get_buffer(struct bitmap *bitmap);
 size_t bitmap_get_rowstride(struct bitmap *bitmap);
 void bitmap_destroy(struct bitmap *bitmap);
 bool bitmap_save(struct bitmap *bitmap, const char *path);
+void bitmap_modified(struct bitmap *bitmap);
 
 #endif

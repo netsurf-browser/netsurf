@@ -126,6 +126,7 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 		}
 #endif
 	} while (cinfo.output_scanline != cinfo.output_height);
+	bitmap_modified(bitmap);
 
 	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);

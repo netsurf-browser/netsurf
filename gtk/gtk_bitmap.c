@@ -140,3 +140,12 @@ bool bitmap_save(struct bitmap *bitmap, const char *path)
 {
 	return true;
 }
+
+
+/**
+ * The bitmap image has changed, so flush any persistant cache.
+ *
+ * \param  bitmap  a bitmap, as returned by bitmap_create()
+ */
+void bitmap_modified(struct bitmap *bitmap) {
+}

@@ -12,7 +12,11 @@
 #ifndef _NETSURF_CONTENT_URLSTORE_H_
 #define _NETSURF_CONTENT_URLSTORE_H_
 
+#include "netsurf/image/bitmap.h"
+
+
 struct url_content {
+  	struct bitmap *thumbnail;	/** Thumbnail, or NULL */
 	char *url;			/** URL (including hostname) */
 	int url_length;			/** Length of URL (including hostname) */
 	int visits;			/** Number of times visited */
@@ -30,6 +34,9 @@ struct url_data {
 struct url_content *url_store_find(const char *url);
 char *url_store_match(const char *url, struct url_data **reference);
 char *url_store_match_string(const char *text);
+
+void url_store_add_thumbnail(const char *url, struct bitmap *bitmap);
+struct bitmap *url_store_get_thumbnail(const char *url);
 
 void url_store_load(const char *file);
 void url_store_save(const char *file);

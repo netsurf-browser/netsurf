@@ -1143,6 +1143,11 @@ void html_destroy(struct content *c)
 
 	imagemap_destroy(c);
 
+	if (c->bitmap) {
+	  	bitmap_destroy(c->bitmap);
+	  	c->bitmap = NULL;
+	}
+
 	if (c->data.html.parser)
 		htmlFreeParserCtxt(c->data.html.parser);
 

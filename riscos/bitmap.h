@@ -1,20 +1,45 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
 #ifndef _NETSURF_RISCOS_BITMAP_H_
 #define _NETSURF_RISCOS_BITMAP_H_
 
+#include "oslib/osspriteop.h"
+
 struct osspriteop_area;
 
 struct bitmap {
 	int width;
 	int height;
-  	bool opaque;
-	osspriteop_area sprite_area;
+	bool opaque;
+	bool modified;
+	bool persistent;
+
+	osspriteop_area *sprite_area;	/** Uncompressed data, or NULL */
+	char *compressed;		/** Compressed data, or NULL */
+	char filename[12];		/** Data filename, or '/0' */
+
+	struct bitmap *previous;	/** Previous bitmap */
+	struct bitmap *next;		/** Next bitmap */
+
 };
+
+struct bitmap *bitmap_create_file(int width, int height, char *file);
+void bitmap_initialise_memory(void);
+void bitmap_quit(void);
+void bitmap_maintain(void);
+
+/** Whether maintenance of the pool states is needed
+*/
+extern bool bitmap_maintenance;
+
+/** Whether maintenance of the pool is high priority
+*/
+extern bool bitmap_maintenance_priority;
+
 
 #endif

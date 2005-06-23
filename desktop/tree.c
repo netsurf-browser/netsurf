@@ -99,10 +99,8 @@ void tree_handle_node_changed(struct tree *tree, struct node *node,
 
 	width = node->box.width;
 	height = node->box.height;
-	if (recalculate_sizes)
+	if ((recalculate_sizes) || (expansion))
 		tree_recalculate_node(node, true);
-	else if (expansion)
-		tree_recalculate_node(node, false);
 	if ((node->box.height != height) || (expansion)) {
 		tree_recalculate_node_positions(tree->root);
 		tree_redraw_area(tree, 0, node->box.y, 16384, 16384);
@@ -172,6 +170,9 @@ void tree_recalculate_node(struct node *node, bool recalculate_sizes) {
 		}
 	} else {
 		if (recalculate_sizes)
+			for (element = &node->data; element; element = element->next)
+				tree_recalculate_node_element(element);
+		else
 			tree_recalculate_node_element(&node->data);
 		node->box.width = node->data.box.width;
 		node->box.height = node->data.box.height;
@@ -332,7 +333,10 @@ bool tree_handle_expansion(struct tree *tree, struct node *node, bool expanded, 
 			node->expanded = expanded;
 			if (node->child)
 				tree_set_node_expanded(node->child, false);
-			tree_recalculate_node(node, false);
+			if ((node->data.next) && (node->data.next->box.height == 0))
+				tree_recalculate_node(node, true);
+			else
+				tree_recalculate_node(node, false);
 			redraw = true;
 		}
 		if ((node->child) && (node->expanded))
@@ -993,7 +997,7 @@ struct node *tree_create_URL_node(struct node *parent, const char *title,
 	if (element) {
 		element->user_data = filetype;
 		element->type = NODE_ELEMENT_TEXT;
-		element->text = squash_whitespace(url);
+		element->text = strdup(url);
 	}
 	element = tree_create_node_element(node, TREE_ELEMENT_ADDED);
 	if (element) {
@@ -1010,12 +1014,12 @@ struct node *tree_create_URL_node(struct node *parent, const char *title,
 		element->type = NODE_ELEMENT_TEXT;
 		element->user_data = visits;
 	}
+	element = tree_create_node_element(node, TREE_ELEMENT_THUMBNAIL);
+	if (element)
+		element->type = NODE_ELEMENT_THUMBNAIL;
 	
 	tree_update_URL_node(node);
-
-	node->expanded = true;
-	tree_recalculate_node(node, true);
-	node->expanded = false;
+	tree_recalculate_node(node, false);
 
 	return node;
 }
@@ -1056,12 +1060,13 @@ struct node *tree_create_URL_node_brief(struct node *parent, const char *title,
 		element->type = NODE_ELEMENT_TEXT;
 		element->user_data = visit_date;
 	}
+	element = tree_create_node_element(node, TREE_ELEMENT_THUMBNAIL);
+	if (element) {
+		element->type = NODE_ELEMENT_THUMBNAIL;
+	}
 	
 	tree_update_URL_node(node);
-
-	node->expanded = true;
-	tree_recalculate_node(node, true);
-	node->expanded = false;
+	tree_recalculate_node(node, false);
 
 	return node;
 }

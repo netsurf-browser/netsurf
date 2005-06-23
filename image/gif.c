@@ -106,6 +106,8 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 		a plot we get some sensible data
 	*/
 	gif_decode_frame(c->data.gif.gif, 0);
+	if (c->data.gif.gif->frame_image)
+		bitmap_modified(c->data.gif.gif->frame_image);
 
 	/*	Schedule the animation if we have one
 	*/
@@ -158,10 +160,8 @@ void nsgif_get_frame(struct content *c) {
 		previous_frame = 0;
 	else
 		previous_frame = c->data.gif.gif->decoded_frame + 1;
-
 	for (frame = previous_frame; frame <= current_frame; frame++)
 		gif_decode_frame(c->data.gif.gif, frame);
-
 }
 
 

@@ -15,6 +15,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "netsurf/content/url_store.h"
+#ifdef riscos
+#include "netsurf/riscos/bitmap.h"
+#endif
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/log.h"
 
@@ -57,8 +60,11 @@ static struct hostname_data *url_store_find_hostname(const char *url) {
 	assert(url);
 
 	res = url_host(url, &hostname);
-	if (res != URL_FUNC_OK)
-		return NULL;
+	if (res != URL_FUNC_OK) {
+		hostname = strdup("file:/");		/* for 'file:/' */
+		if (!hostname)
+			return NULL;
+	}
 	hostname_length = strlen(hostname);
 
 	/* try to find a matching hostname fairly quickly */
@@ -237,8 +243,11 @@ static struct hostname_data *url_store_match_hostname(const char *url,
 	assert(url);
 
 	res = url_host(url, &hostname);
-	if (res != URL_FUNC_OK)
-		return NULL;
+	if (res != URL_FUNC_OK) {
+		hostname = strdup("file:/");		/* for 'file:/' */
+		if (!hostname)
+			return NULL;
+	}
 	hostname_length = strlen(hostname);
 	www_test = strncmp(hostname, "www.", 4);
 
@@ -403,6 +412,7 @@ void url_store_load(const char *file) {
 	int urls;
 	int i;
 	int version;
+	int width, height, size;
 	FILE *fp;
 
 	fp = fopen(file, "r");
@@ -414,7 +424,7 @@ void url_store_load(const char *file) {
 	if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 		return;
 	version = atoi(s);
-	if ((version != 100) && (version != 101))
+	if ((version < 100) || (version > 102))
 		return;
 
 
@@ -433,7 +443,8 @@ void url_store_load(const char *file) {
 				break;
 			url->requests = atoi(s);
 		}
-	} else if (version == 101) {
+	} else if (version >= 101) {
+	  	/* version 102 is as 101, but with thumbnail information */
 		/* version 101 is as 100, but in hostname chunks, pre-sorted
 		 * in reverse alphabetical order */
 		while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
@@ -472,6 +483,22 @@ void url_store_load(const char *file) {
 				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 					break;
 				result->data.requests = atoi(s);
+				if (version == 102) {
+					if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+						break;
+					size = atoi(s);
+					width = size & 65535;
+					height = size >> 16;
+					if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+						break;
+#ifdef riscos
+					if (s[strlen(s) - 1] == '\n')
+						s[strlen(s) - 1] = '\0';
+					result->data.thumbnail =
+							bitmap_create_file(
+							width, height, s);
+#endif
+				}
 			}
 		}
 	}
@@ -489,7 +516,10 @@ void url_store_save(const char *file) {
 	struct url_data *url;
 	int url_count;
 	char *normal = NULL;
+	const char *thumb_file = "";
+	int thumb_size = 0;
 	FILE *fp;
+	struct bitmap *bitmap;
 
 	fp = fopen(file, "w");
 	if (!fp) {
@@ -498,13 +528,13 @@ void url_store_save(const char *file) {
 	}
 
 	/* file format version number */
-	fprintf(fp, "101\n");
+	fprintf(fp, "102\n");
 	for (search = url_store_hostnames; search && search->next;
 			search = search->next);
 	for (; search; search = search->previous) {
 		url_count = 0;
 		for (url = search->url; url; url = url->next)
-			if ((url->data.requests > 0) &&
+			if ((url->data.visits > 0) &&
 					(strlen(url->data.url) <
 					MAXIMUM_URL_LENGTH))
 				url_count++;
@@ -514,13 +544,27 @@ void url_store_save(const char *file) {
 			fprintf(fp, "%s\n%i\n", normal, url_count);
 			for (url = search->url; url->next; url = url->next);
 			for (; url; url = url->previous)
-				if ((url->data.requests > 0) &&
+				if ((url->data.visits > 0) &&
 						(strlen(url->data.url) <
-						MAXIMUM_URL_LENGTH))
-					fprintf(fp, "%s\n%i\n%i\n",
+						MAXIMUM_URL_LENGTH)) {
+#ifdef riscos
+					bitmap = url->data.thumbnail;
+					if (bitmap) {
+						thumb_size = bitmap->width |
+							(bitmap->height << 16);
+						thumb_file = bitmap->filename;
+					} else {
+					  	thumb_size = 0;
+						thumb_file = "";
+					}
+#endif
+					fprintf(fp, "%s\n%i\n%i\n%i\n%s\n",
 							url->data.url,
 							url->data.visits,
-							url->data.requests);
+							url->data.requests,
+							thumb_size,
+							thumb_file);
+				}
 		}
 	}
 	fclose(fp);
@@ -546,4 +590,25 @@ void url_store_dump(void) {
 		}
 	}
 	fprintf(stderr, "\nEnd of hostname data.\n\n");
+}
+
+
+void url_store_add_thumbnail(const char *url, struct bitmap *bitmap) {
+	struct url_content *content;
+	
+	content = url_store_find(url);
+	if (content) {
+	  	if (content->thumbnail)
+	  		bitmap_destroy(content->thumbnail);
+	  	content->thumbnail = bitmap;
+	}
+}
+
+struct bitmap *url_store_get_thumbnail(const char *url) {
+	struct url_content *content;
+	
+	content = url_store_find(url);
+	if (content)
+		return content->thumbnail;
+	return NULL;
 }

@@ -293,13 +293,13 @@ bool nsmng_convert(struct content *c, int width, int height) {
 		LOG(("Unable to start display (%i)", status));
 		return nsmng_broadcast_error(c);
 	}
+	bitmap_modified(c->bitmap);
 
 	/*	Optimise the plotting of JNG/PNGs
 	*/
 	c->data.mng.opaque_test_pending = (c->type == CONTENT_PNG) || (c->type == CONTENT_JNG);
 	if (c->data.mng.opaque_test_pending)
 		bitmap_set_opaque(c->bitmap, false);
-		
 	return true;
 }
 
@@ -467,6 +467,8 @@ void nsmng_animate(void *p) {
  		c->data.mng.waiting = false;
  		mng_display_resume(c->data.mng.handle);
 		c->data.mng.opaque_test_pending = true;
+		if (c->bitmap)
+			bitmap_modified(c->bitmap);
  	}
 }
 
