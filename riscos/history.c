@@ -175,7 +175,6 @@ void history_add(struct history *history, struct content *content, char *frag_id
 	/* if we have a thumbnail, don't update until the page has finished
 	 * loading */
 	bitmap = url_store_get_thumbnail(url);
-	bitmap = NULL;
 	if (!bitmap) {
 	 	bitmap = bitmap_create(WIDTH / 2, HEIGHT / 2, false);
   		if (!bitmap) {
