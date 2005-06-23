@@ -25,8 +25,6 @@ struct directory {
 	char prefix[10];		/** directory prefix, eg '00.11.52.' */
   	unsigned int low_used;		/** first 32 files, 1 bit per file */
   	unsigned int high_used;		/** last 32 files, 1 bit per file */
-  	unsigned int low_persistent;	/** first 32 files, 1 bit per file */
-  	unsigned int high_persistent;	/** last 32 files, 1 bit per file */
 	struct directory *next;		/** next directory (sorted by prefix) */
 };
 
@@ -41,10 +39,9 @@ static struct directory *ro_filename_create_directory(const char *prefix);
 /**
  * Request a new, unique, filename.
  *
- * \param  persistent  keep the filename allocated across sessions
  * \return a pointer to a shared buffer containing the new filename
  */
-char *ro_filename_request(bool persistent) {
+char *ro_filename_request(void) {
 	struct directory *dir;
 	int i = -1;
 	
@@ -67,17 +64,50 @@ char *ro_filename_request(bool persistent) {
 		}
 		i = 63;
 	}
-	if (i < 32) {
+	if (i < 32)
 		dir->low_used |= (1 << i);
-		if (persistent) 
-			dir->low_persistent |= (1 << i);
-	} else {
+	else
 		dir->high_used |= (1 << (i - 32));
-		if (persistent) 
-			dir->high_persistent |= (1 << (i - 32));
-	}
 	sprintf(ro_filename_buffer, "%s%i", dir->prefix, i);
 	return ro_filename_buffer;
+}
+
+
+/**
+ * Claim a specific filename.
+ *
+ * \param  filename  the filename to claim
+ * \return whether the claim was successful
+ */
+bool ro_filename_claim(const char *filename) {
+  	char *last;
+	char dir_prefix[16];
+	int i;
+	struct directory *dir;
+	
+	/* extract the prefix */
+	sprintf(dir_prefix, filename);
+	for (i = 0, last = dir_prefix; i < 3; i++)
+		while (*last++ != '.');
+	i = atoi(last);
+	last[0] = '\0';
+	
+	/* create the directory */
+	dir = ro_filename_create_directory(dir_prefix);
+	if (!dir)
+		return false;
+
+	/* update the entry */
+  	if (i < 32) {
+  	  	if (dir->low_used & (1 << i))
+  	  		return false;
+  		dir->low_used |= (1 << i);
+  	} else {
+  	  	if (dir->high_used & (1 << (i - 32)))
+  	  		return false;
+  		dir->high_used |= (1 << (i - 32));
+  	}
+  	return true;
 }
 
 
@@ -102,102 +132,24 @@ void ro_filename_release(const char *filename) {
 	/* modify the correct directory entry */
 	for (dir = root; dir; dir = dir->next)
 		if (!strcmp(dir->prefix, dir_prefix)) {
-		  	if (i < 32) {
+		  	if (i < 32)
 		  		dir->low_used &= ~(1 << i);
-		  		dir->low_persistent &= ~(1 << i);
-		  	} else {
+		  	else
 		  		dir->high_used &= ~(1 << (i - 32));
-		  		dir->high_persistent &= ~(1 << (i - 32));
-		  	}
 			return;
 		}
 }
 
 
 /**
- * Initialise the filename provider and load the previous session state.
+ * Initialise the filename provider.
  */
 bool ro_filename_initialise(void) {
-	char s[16];
-  	struct directory *dir;
-	FILE *fp;
-	int version;
-
 	/* create the 'CACHE_FILENAME_PREFIX' structure */
 	xosfile_create_dir("<Wimp$ScrapDir>.WWW", 0);
 	xosfile_create_dir("<Wimp$ScrapDir>.WWW.NetSurf", 0);
 	xosfile_create_dir("<Wimp$ScrapDir>.WWW.NetSurf.Cache", 0);
 
-	/* load the persistent file list */
-	fp = fopen("Choices:WWW.NetSurf.Filename", "r");
-	if (!fp) {
-		LOG(("Unable to open filename record for reading."));
-		return true;
-	}
-
-	if (!fgets(s, 16, fp)) {
-	  	fclose(fp);
-		return false;
-	}
-	version = atoi(s);
-	if (version != 100) {
-	  	LOG(("Invalid or unsupported filename record."));
-	  	fclose(fp);
-		return false;
-	}
-	while (fgets(s, 16, fp)) {
-		if (s[strlen(s) - 1] == '\n')
-			s[strlen(s) - 1] = '\0';
-		dir = ro_filename_create_directory(s);
-		if (!dir) {
-			LOG(("Unable to load filename record for prefix '%s'.",
-					s));
-		  	fclose(fp);
-			return false;
-		}
-		if (!fgets(s, 16, fp)) {
-		  	fclose(fp);
-			return false;
-		}
-		dir->low_used = dir->low_persistent = (unsigned int)
-				strtoul(s, (char **)NULL, 10);
-		if (!fgets(s, 16, fp)) {
-		  	fclose(fp);
-			return false;
-		}
-		dir->high_used = dir->high_persistent = (unsigned int)
-				strtoul(s, (char **)NULL, 10);
-	}
-  	fclose(fp);
-
-	ro_filename_finalise();
-	return true;
-}
-
-
-/**
- * Finalise the filename provider and save the previous session state.
- */
-bool ro_filename_finalise(void) {
-	struct directory *dir;
-	FILE *fp;
-
-	fp = fopen("<Choices$Write>.WWW.NetSurf.Filename", "w");
-	if (!fp) {
-		LOG(("Unable to open filename record for writing."));
-		return false;
-	}
-	fprintf(fp, "100\n");
-
-	/* dump the persistent files in the format of:
-	 * [prefix]\n[low used word]\n[high used word]\n */
-	for (dir = root; dir; dir = dir->next)
-		if ((dir->low_persistent | dir->high_persistent) != 0)
-			fprintf(fp, "%s\n%u\n%u\n",
-					dir->prefix,
-					dir->low_persistent,
-					dir->high_persistent);
-	fclose(fp);
 	return true;
 }
 

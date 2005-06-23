@@ -12,10 +12,10 @@
 
 #define CACHE_FILENAME_PREFIX "<Wimp$ScrapDir>.WWW.NetSurf.Cache"
 
-char *ro_filename_request(bool persistent);
+char *ro_filename_request(void);
+bool ro_filename_claim(const char *filename);
 void ro_filename_release(const char *filename);
 bool ro_filename_initialise(void);
-bool ro_filename_finalise(void);
 void ro_filename_flush(void);
 
 
