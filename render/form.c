@@ -4,6 +4,7 @@
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
+ * Copyright 2005 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
 /** \file
@@ -11,6 +12,7 @@
  */
 
 #include <assert.h>
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -23,17 +25,20 @@
 
 
 static char *form_textarea_value(struct form_control *textarea);
+static char *form_acceptable_charset(struct form *form);
 
 /**
  * Create a struct form.
  *
  * \param  action  URL to submit form to, used directly (not copied)
  * \param  method  method and enctype
- * \param  charset characterset of form (not copied)
+ * \param  charset acceptable charactersets for form submission (not copied)
+ * \param  doc_charset  characterset of containing document (not copied)
  * \return  a new structure, or 0 on memory exhaustion
  */
 
-struct form *form_new(char *action, form_method method, char *charset)
+struct form *form_new(char *action, form_method method, char *charset,
+		char *doc_charset)
 {
 	struct form *form;
 
@@ -42,7 +47,8 @@ struct form *form_new(char *action, form_method method, char *charset)
 		return 0;
 	form->action = action;
 	form->method = method;
-	form->charset = charset;
+	form->accept_charsets = charset;
+	form->document_charset = doc_charset;
 	form->controls = 0;
 	form->last_control = 0;
 	form->prev = 0;
@@ -83,6 +89,9 @@ struct form_control *form_new_control(form_control_type type)
 
 /**
  * Add a control to the list of controls in a form.
+ *
+ * \param form  The form to add the control to
+ * \param control  The control to add
  */
 
 void form_add_control(struct form *form, struct form_control *control)
@@ -485,6 +494,7 @@ char *form_url_encode(struct form *form,
 {
 	char *name, *value, *n_temp, *v_temp;
 	char *s = malloc(1), *s2;
+	char *charset;
 	unsigned int len = 0, len1;
 	utf8_convert_ret err;
 
@@ -492,23 +502,37 @@ char *form_url_encode(struct form *form,
 		return 0;
 	s[0] = 0;
 
+	charset = form_acceptable_charset(form);
+	if (!charset)
+		return 0;
+
 	for (; control; control = control->next) {
-		/** \todo fallback to document encoding or 8859-1 as
-		 * last resort.
-		 * What would also be an improvement would be to choose
-		 * an encoding acceptable by the server which covers as much
-		 * of the input values as possible. Additionally, we need to
-		 * handle the case where none of the acceptable encodings
-		 * cover all the textual input values.
-		 */
-		err = utf8_to_enc(control->name, form->charset, 0, &n_temp);
+		err = utf8_to_enc(control->name, charset, 0, &n_temp);
+		if (err == UTF8_CONVERT_BADENC) {
+			/* charset not understood, try document charset */
+			err = utf8_to_enc(control->name,
+					form->document_charset, 0, &n_temp);
+			if (err == UTF8_CONVERT_BADENC)
+				/* that also failed, use 8859-1 */
+				err = utf8_to_enc(control->name,
+						"ISO-8859-1", 0, &n_temp);
+		}
 		if (err != UTF8_CONVERT_OK) {
+			free(charset);
 			free(s);
 			return 0;
 		}
-		err = utf8_to_enc(control->value, form->charset, 0, &v_temp);
+		err = utf8_to_enc(control->value, charset, 0, &v_temp);
+		if (err == UTF8_CONVERT_BADENC) {
+			err = utf8_to_enc(control->value,
+					form->document_charset, 0, &v_temp);
+			if (err == UTF8_CONVERT_BADENC)
+				err = utf8_to_enc(control->value,
+						"ISO-8859-1", 0, &v_temp);
+		}
 		if (err != UTF8_CONVERT_OK) {
 			free(n_temp);
+			free(charset);
 			free(s);
 			return 0;
 		}
@@ -521,6 +545,7 @@ char *form_url_encode(struct form *form,
 			curl_free(name);
 			free(v_temp);
 			free(n_temp);
+			free(charset);
 			free(s);
 			return 0;
 		}
@@ -532,6 +557,9 @@ char *form_url_encode(struct form *form,
 		free(v_temp);
 		free(n_temp);
 	}
+
+	free(charset);
+
 	if (len)
 		s[len - 1] = 0;
 	return s;
@@ -540,6 +568,8 @@ char *form_url_encode(struct form *form,
 
 /**
  * Free a linked list of form_successful_control.
+ *
+ * \param control Pointer to head of list to free
  */
 
 void form_free_successful(struct form_successful_control *control)
@@ -551,4 +581,66 @@ void form_free_successful(struct form_successful_control *control)
 		free(control->value);
 		free(control);
 	}
+}
+
+/**
+ * Find an acceptable character set encoding with which to submit the form
+ *
+ * \param form  The form
+ * \return Pointer to charset name (on heap, caller should free) or NULL
+ */
+char *form_acceptable_charset(struct form *form)
+{
+	char *temp, *c;
+
+	if (!form)
+		return NULL;
+
+	if (!form->accept_charsets) {
+		/* no accept-charsets attribute for this form */
+		if (form->document_charset)
+			/* document charset present, so use it */
+			return strdup(form->document_charset);
+		else
+			/* no document charset, so default to 8859-1 */
+			return strdup("ISO-8859-1");
+	}
+
+	/* make temporary copy of accept-charsets attribute */
+	temp = strdup(form->accept_charsets);
+	if (!temp)
+		return NULL;
+
+	/* make it upper case */
+	for (c = temp; *c; c++)
+		*c = toupper(c);
+
+	/* is UTF-8 specified? */
+	c = strstr(temp, "UTF-8");
+	if (c) {
+		free(temp);
+		return strdup("UTF-8");
+	}
+
+	/* dispense with temporary copy */
+	free(temp);
+
+	/* according to RFC2070, the accept-charsets attribute of the
+	 * form element contains a space and/or comma separated list */
+	c = form->accept_charsets;
+
+	/* What would be an improvement would be to choose an encoding
+	 * acceptable to the server which covers as much of the input
+	 * values as possible. Additionally, we need to handle the case
+	 * where none of the acceptable encodings cover all the textual
+	 * input values.
+	 * For now, we just extract the first element of the charset list
+	 */
+	while (*c && !isspace(*c)) {
+		if (*c == ',')
+			break;
+		c++;
+	}
+
+	return strndup(form->accept_charsets, c - form->accept_charsets);
 }

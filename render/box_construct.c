@@ -472,7 +472,6 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		}
 	}
 
-
 	/* fetch any background image for this box */
 	if (style->background_image.type == CSS_BACKGROUND_IMAGE_URI) {
 		if (!html_fetch_object(content, style->background_image.uri,
@@ -832,6 +831,7 @@ struct css_style * box_get_style(struct content *c,
 							value;
 				}
 			}
+			xmlFree(s);
 		}
 	}
 
@@ -856,6 +856,7 @@ struct css_style * box_get_style(struct content *c,
 							CSS_UNIT_PX;
 				}
 			}
+			xmlFree(s);
 		}
 		if ((s = (char *) xmlGetProp(n,
 				(const xmlChar *) "vspace"))) {
@@ -876,6 +877,7 @@ struct css_style * box_get_style(struct content *c,
 							CSS_UNIT_PX;
 				}
 			}
+			xmlFree(s);
 		}
 	}
 
@@ -1663,6 +1665,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	/* start fetch */
 	ok = html_fetch_object(content, url, box, 0,
 			content->available_width, 1000, false);
+
 	free(url);
 	return ok;
 }
@@ -1698,34 +1701,13 @@ bool box_form(BOX_SPECIAL_PARAMS)
 	}
 
 	/* acceptable encoding(s) for form data */
-	if ((charset = (char *) xmlGetProp(n, (const xmlChar *) "accept-charset"))) {
-		char *comma = strchr(charset, ',');
-		if (!comma)
-			/* only one => use it */
-			comma = strdup(charset);
-		else
-			/* multiple => use first */
-			comma = strndup(charset, comma - charset);
+	charset = (char *) xmlGetProp(n, (const xmlChar *) "accept-charset");
 
-		xmlFree(charset);
-		charset = comma;
-	}
-	else if (content->data.html.encoding)
-		/* none specified => try document encoding */
-		charset = strdup(content->data.html.encoding);
-	else
-		/* none specified and no document encoding => 8859-1 */
-		charset = strdup("ISO-8859-1");
-
-	if (!charset) {
-		xmlFree(action);
-		return false;
-	}
-
-	form = form_new(action, fmethod, charset);
+	form = form_new(action, fmethod, charset,
+				content->data.html.encoding);
 	if (!form) {
 		xmlFree(action);
-		free(charset);
+		xmlFree(charset);
 		return false;
 	}
 	form->prev = content->data.html.forms;

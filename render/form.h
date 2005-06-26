@@ -31,7 +31,8 @@ typedef enum {
 struct form {
 	char *action;				/**< URL to submit to. */
 	form_method method;			/**< Method and enctype. */
-	char *charset;				/**< Charset to submit form in */
+	char *accept_charsets;			/**< Charset to submit form in */
+	char *document_charset;			/**< Charset of document containing form */
 	struct form_control *controls;		/**< Linked list of controls. */
 	struct form_control *last_control;	/**< Last control in list. */
 	struct form *prev;			/**< Previous form in doc. */
@@ -102,7 +103,8 @@ struct form_successful_control {
 	struct form_successful_control *next;	/**< Next in linked list. */
 };
 
-struct form *form_new(char *action, form_method method, char *charset);
+struct form *form_new(char *action, form_method method, char *charset,
+		char *doc_charset);
 struct form_control *form_new_control(form_control_type type);
 void form_add_control(struct form *form, struct form_control *control);
 void form_free_control(struct form_control *control);
