@@ -88,23 +88,28 @@ void bitmap_delete_file(struct bitmap *bitmap);
 void bitmap_initialise_memory(void)
 {
 	int available_memory, direct_size, compressed_size;
-	int next_slot, free_slot;
+	int free_slot;
 	os_error *error;
 
-	/* calculate how much memory is currently free */
-	error = xwimp_slot_size(-1, -1, 0, &next_slot, &free_slot);
+	/* calculate how much memory is currently free
+		(Note that the free_slot returned by wimp_slot_size
+		 includes the next_slot; the value displayed by the
+		 TaskManager has been adjusted to make it more logical
+		 for the user).
+	*/
+	error = xwimp_slot_size(-1, -1, 0, NULL, &free_slot);
 	if (error) {
 		LOG(("xwimp_slot_size: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 		return;
 	}
-	available_memory = next_slot + free_slot;	
-	
+	available_memory = free_slot;
+
 	/* calculate our memory block sizes */
 	if (option_image_memory_direct == -1) {
 		/* claim 20% of free memory - min 256KB, max 32768KB */
-		direct_size = available_memory * 0.20;
+		direct_size = available_memory / 5;
 		if (direct_size < (256 << 10))
 			direct_size = (256 << 10);
 		if (direct_size > (32768 << 10))
