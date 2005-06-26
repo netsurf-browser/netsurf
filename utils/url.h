@@ -25,5 +25,6 @@ url_func_result url_join(const char *rel, const char *base, char **result);
 url_func_result url_host(const char *url, char **result);
 url_func_result url_scheme(const char *url, char **result);
 url_func_result url_nice(const char *url, char **result);
+url_func_result url_escape(const char *unescaped, char **result);
 
 #endif

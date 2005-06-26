@@ -16,10 +16,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include "curl/curl.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
@@ -497,6 +497,7 @@ char *form_url_encode(struct form *form,
 	char *charset;
 	unsigned int len = 0, len1;
 	utf8_convert_ret err;
+	url_func_result url_err;
 
 	if (!s)
 		return 0;
@@ -517,11 +518,14 @@ char *form_url_encode(struct form *form,
 				err = utf8_to_enc(control->name,
 						"ISO-8859-1", 0, &n_temp);
 		}
-		if (err != UTF8_CONVERT_OK) {
+		if (err == UTF8_CONVERT_NOMEM) {
 			free(charset);
 			free(s);
 			return 0;
 		}
+
+		assert(err == UTF8_CONVERT_OK);
+
 		err = utf8_to_enc(control->value, charset, 0, &v_temp);
 		if (err == UTF8_CONVERT_BADENC) {
 			err = utf8_to_enc(control->value,
@@ -530,19 +534,43 @@ char *form_url_encode(struct form *form,
 				err = utf8_to_enc(control->value,
 						"ISO-8859-1", 0, &v_temp);
 		}
-		if (err != UTF8_CONVERT_OK) {
+		if (err == UTF8_CONVERT_NOMEM) {
 			free(n_temp);
 			free(charset);
 			free(s);
 			return 0;
 		}
-		name = curl_escape(n_temp, 0);
-		value = curl_escape(v_temp, 0);
+
+		assert(err == UTF8_CONVERT_OK);
+
+		url_err = url_escape(n_temp, &name);
+		if (url_err == URL_FUNC_NOMEM) {
+			free(v_temp);
+			free(n_temp);
+			free(charset);
+			free(s);
+			return 0;
+		}
+
+		assert(url_err == URL_FUNC_OK);
+
+		url_err = url_escape(v_temp, &value);
+		if (url_err == URL_FUNC_NOMEM) {
+			free(name);
+			free(v_temp);
+			free(n_temp);
+			free(charset);
+			free(s);
+			return 0;
+		}
+
+		assert(url_err == URL_FUNC_OK);
+
 		len1 = len + strlen(name) + strlen(value) + 2;
 		s2 = realloc(s, len1 + 1);
 		if (!s2) {
-			curl_free(value);
-			curl_free(name);
+			free(value);
+			free(name);
 			free(v_temp);
 			free(n_temp);
 			free(charset);
@@ -552,8 +580,8 @@ char *form_url_encode(struct form *form,
 		s = s2;
 		sprintf(s + len, "%s=%s&", name, value);
 		len = len1;
-		curl_free(name);
-		curl_free(value);
+		free(name);
+		free(value);
 		free(v_temp);
 		free(n_temp);
 	}

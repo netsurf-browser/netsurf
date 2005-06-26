@@ -595,7 +595,56 @@ url_func_result url_nice(const char *url, char **result)
 	return URL_FUNC_OK;
 }
 
+/**
+ * Escape a string suitable for inclusion in an URI
+ *
+ * \param unescaped  The unescaped string
+ * \param result  Pointer to location to store escaped string
+ * \return URL_FUNC_OK on success
+ */
+url_func_result url_escape(const char *unescaped, char **result)
+{
+	int len;
+	char *escaped, *d;
+	const char *c;
 
+	if (!unescaped || !result)
+		return URL_FUNC_FAILED;
+
+	*result = NULL;
+
+	len = strlen(unescaped);
+
+	escaped = malloc(len * 3 + 1);
+	if (!escaped)
+		return URL_FUNC_NOMEM;
+
+	for (c = unescaped, d = escaped; *c; c++) {
+		if (!isascii(*c) ||
+				strchr(";/?:@&=+$," "<>#%\"{}|\\^[]`", *c) ||
+				*c <= 0x20 || *c == 0x7f) {
+			*d++ = '%';
+			*d++ = "0123456789ABCDEF"[((*c >> 4) & 0xf)];
+			*d++ = "0123456789ABCDEF"[(*c & 0xf)];
+		}
+		else {
+			/* unreserved characters: [a-zA-Z0-9-_.!~*'()] */
+			*d++ = *c;
+		}
+	}
+
+	(*result) = malloc(++d - escaped + 1);
+	if (!(*result)) {
+		free(escaped);
+		return URL_FUNC_NOMEM;
+	}
+	snprintf((*result), d - escaped, "%s", escaped);
+	(*result)[d - escaped] = '\0';
+
+	free(escaped);
+
+	return URL_FUNC_OK;
+}
 
 #ifdef TEST
 
