@@ -238,9 +238,10 @@ void gui_init(int argc, char** argv)
 	struct theme_descriptor *descriptor = NULL;
 	char *nsdir_temp;
 
-	/* re-enable all FPU exceptions/traps -
-	 * UnixLib disables them by default */
-	_FPU_SETCW(_FPU_IEEE);
+	/* re-enable all FPU exceptions/traps except inexact operations,
+	 * which we're not interested in - UnixLib disables all FP
+	 * exceptions by default */
+	_FPU_SETCW(_FPU_IEEE & ~_FPU_MASK_PM);
 
 	xhourglass_start(1);
 
