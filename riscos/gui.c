@@ -11,13 +11,14 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fpu_control.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unixlib/features.h>
+#include <features.h>
 #include <unixlib/local.h>
 #include "oslib/font.h"
 #include "oslib/help.h"
@@ -108,10 +109,9 @@
 #define FILETYPE_JPEG 0xc85
 #endif
 
-
 int os_version = 0;
 
-const char *__dynamic_da_name = "NetSurf";	/**< For UnixLib. */
+const char * const __dynamic_da_name = "NetSurf";	/**< For UnixLib. */
 int __dynamic_da_max_size = 128 * 1024 * 1024;	/**< For UnixLib. */
 int __feature_imagefs_is_file = 1;		/**< For UnixLib. */
 /* default filename handling */
@@ -237,6 +237,10 @@ void gui_init(int argc, char** argv)
 	int length;
 	struct theme_descriptor *descriptor = NULL;
 	char *nsdir_temp;
+
+	/* re-enable all FPU exceptions/traps -
+	 * UnixLib disables them by default */
+	_FPU_SETCW(_FPU_IEEE);
 
 	xhourglass_start(1);
 
@@ -446,7 +450,7 @@ void ro_gui_sprites_init(void)
 		die(e->errmess);
 	}
 	if (obj_type != fileswitch_IS_FILE)
-		die("<NetSurf$Dir>.Resources.Pointers missing.");
+		die("<NetSurf$Dir>.Resources.Sprites missing.");
 
 	gui_sprites = malloc(len + 4);
 	if (!gui_sprites)
