@@ -633,13 +633,15 @@ url_func_result url_escape(const char *unescaped, char **result)
 		}
 	}
 
-	(*result) = malloc(++d - escaped + 1);
+	*d++ = '\0';
+
+	(*result) = malloc(d - escaped);
 	if (!(*result)) {
 		free(escaped);
 		return URL_FUNC_NOMEM;
 	}
-	snprintf((*result), d - escaped, "%s", escaped);
-	(*result)[d - escaped] = '\0';
+
+	memcpy((*result), escaped, d - escaped);
 
 	free(escaped);
 
