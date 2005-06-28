@@ -248,6 +248,18 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 
 	assert(string && from && to && result);
 
+	if (strcasecmp(from, to) == 0) {
+		/* conversion from an encoding to itself == strdup */
+		slen = len ? len : strlen(string);
+		ret = strndup(string, slen);
+		if (!ret)
+			return UTF8_CONVERT_NOMEM;
+
+		*result = ret;
+
+		return UTF8_CONVERT_OK;
+	}
+
 	in = (char *)string;
 
 	cd = iconv_open(to, from);
