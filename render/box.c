@@ -486,6 +486,17 @@ void box_dump(struct box *box, unsigned int depth)
 		fprintf(stderr, " float_children %p", box->float_children);
 	if (box->next_float)
 		fprintf(stderr, " next_float %p", box->next_float);
+	if (box->col) {
+		fprintf(stderr, " (columns");
+		for (i = 0; i != box->columns; i++)
+			fprintf(stderr, " (%s %i %i %i)",
+					((const char *[]) {"UNKNOWN", "FIXED",
+					"AUTO", "PERCENT", "RELATIVE"})
+					[box->col[i].type],
+					box->col[i].width,
+					box->col[i].min, box->col[i].max);
+		fprintf(stderr, ")");
+	}
 	fprintf(stderr, "\n");
 
 	for (c = box->children; c && c->next; c = c->next)
