@@ -319,6 +319,11 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			return false;
 		href = box->href;
 	}
+	if (style->display == CSS_DISPLAY_NONE) {
+		talloc_free(style);
+		box_free_box(box);
+		return true;
+	}
 
 	if (!*inline_container &&
 			(box->type == BOX_INLINE ||
@@ -1744,6 +1749,8 @@ bool box_input(BOX_SPECIAL_PARAMS)
 
 	} else if (type && strcasecmp(type, "hidden") == 0) {
 		/* no box for hidden inputs */
+		box->style->display = CSS_DISPLAY_NONE;
+
 		gadget = form_new_control(GADGET_HIDDEN);
 		if (!gadget)
 			goto no_memory;
