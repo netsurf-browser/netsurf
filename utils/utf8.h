@@ -5,8 +5,8 @@
  * Copyright 2005 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
-/**
- * \file UTF-8 manipulation functions (interface)
+/** \file
+ * UTF-8 manipulation functions (interface).
  */
 
 #ifndef _NETSURF_UTILS_UTF8_H_

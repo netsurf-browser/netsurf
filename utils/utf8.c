@@ -5,8 +5,8 @@
  * Copyright 2005 John M Bell <jmb202@ecs.soton.ac.uk>
  */
 
-/**
- * \file UTF-8 manipulation functions (implementation)
+/** \file
+ * UTF-8 manipulation functions (implementation).
  */
 
 #include <assert.h>
