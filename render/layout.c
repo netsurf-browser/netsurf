@@ -71,8 +71,8 @@ static bool layout_table(struct box *box, int available_width,
 		struct content *content);
 static void layout_minmax_table(struct box *table);
 static void layout_move_children(struct box *box, int x, int y);
-static void calculate_mbp_width(struct css_style *style, int *fixed,
-		float *frac);
+static void calculate_mbp_width(struct css_style *style, unsigned int side,
+		int *fixed, float *frac);
 
 
 /**
@@ -373,7 +373,8 @@ void layout_minmax_block(struct box *block)
 				block->style);
 
 	/* add margins, border, padding to min, max widths */
-	calculate_mbp_width(block->style, &extra_fixed, &extra_frac);
+	calculate_mbp_width(block->style, LEFT, &extra_fixed, &extra_frac);
+	calculate_mbp_width(block->style, RIGHT, &extra_fixed, &extra_frac);
 	if (1.0 <= extra_frac)
 		extra_frac = 0.9;
 	block->min_width = (min + extra_fixed) / (1.0 - extra_frac);
@@ -575,15 +576,15 @@ void layout_float_find_dimensions(int available_width,
 					box->object->width;
 	} else if (box->width == AUTO) {
 		/* CSS 2.1 section 10.3.5 */
-		available_width -= box->margin[LEFT] + box->border[LEFT] +
-				box->padding[LEFT] + box->padding[RIGHT] +
-				box->border[RIGHT] + box->margin[RIGHT];
 		if (box->min_width < available_width)
 			box->width = available_width;
 		else
 			box->width = box->min_width;
 		if (box->max_width < box->width)
 			box->width = box->max_width;
+		box->width -= box->margin[LEFT] + box->border[LEFT] +
+				box->padding[LEFT] + box->padding[RIGHT] +
+				box->border[RIGHT] + box->margin[RIGHT];
 	} else {
 		box->width -= scrollbar_width;
 	}
@@ -1304,7 +1305,8 @@ bool layout_line(struct box *first, int width, int *y,
 struct box *layout_minmax_line(struct box *first,
 		int *line_min, int *line_max)
 {
-	int min = 0, max = 0, width, height;
+	int min = 0, max = 0, width, height, fixed;
+	float frac;
 	size_t i, j;
 	struct box *b;
 
@@ -1315,6 +1317,8 @@ struct box *layout_minmax_line(struct box *first,
 				b->type == BOX_FLOAT_RIGHT ||
 				b->type == BOX_BR || b->type == BOX_TEXT ||
 				b->type == BOX_INLINE_END);
+
+		LOG(("%p: min %i, max %i", b, min, max));
 
 		if (b->type == BOX_BR) {
 			b = b->next;
@@ -1344,9 +1348,22 @@ struct box *layout_minmax_line(struct box *first,
 		}
 
 		if (b->type == BOX_INLINE) {
-			/* \todo */
-			/* calculate borders, margins, and padding */
+			fixed = frac = 0;
+			calculate_mbp_width(b->style, LEFT, &fixed, &frac);
+			if (!b->inline_end)
+				calculate_mbp_width(b->style, RIGHT,
+						&fixed, &frac);
+			max += fixed;
+			/* \todo  update min width, consider fractional extra */
 		} else if (b->type == BOX_INLINE_END) {
+			fixed = frac = 0;
+			calculate_mbp_width(b->inline_end->style, RIGHT,
+					&fixed, &frac);
+			max += fixed;
+			if (b->next && b->space) {
+				nsfont_width(b->style, " ", 1, &width);
+				max += width;
+			}
 			continue;
 		}
 
@@ -1439,6 +1456,7 @@ struct box *layout_minmax_line(struct box *first,
 
 	*line_min = min;
 	*line_max = max;
+	LOG(("line_min %i, line_max %i", min, max));
 
 	assert(b != first);
 	return b;
@@ -2074,7 +2092,8 @@ void layout_minmax_table(struct box *table)
 	}
 
 	/* add margins, border, padding to min, max widths */
-	calculate_mbp_width(table->style, &extra_fixed, &extra_frac);
+	calculate_mbp_width(table->style, LEFT, &extra_fixed, &extra_frac);
+	calculate_mbp_width(table->style, RIGHT, &extra_fixed, &extra_frac);
 	if (1.0 <= extra_frac)
 		extra_frac = 0.9;
 	table->min_width = (table_min + extra_fixed) / (1.0 - extra_frac);
@@ -2104,45 +2123,34 @@ void layout_move_children(struct box *box, int x, int y)
 
 
 /**
- * Determine width of horizontal margin, borders, and padding.
+ * Determine width of margin, borders, and padding on one side of a box.
  *
  * \param  style  style to measure
- * \param  fixed  updated to sum of fixed left and right margins, borders, and
- *                padding
- * \param  frac   updated to sum of fractional left and right margins, borders,
- *                and padding
+ * \param  size   side of box to measure
+ * \param  fixed  increased by sum of fixed margin, border, and padding
+ * \param  frac   increased by sum of fractional margin and padding
  */
 
-void calculate_mbp_width(struct css_style *style, int *fixed,
-		float *frac)
+void calculate_mbp_width(struct css_style *style, unsigned int side,
+		int *fixed, float *frac)
 {
-	unsigned int side;
-
 	assert(style);
 
-	*fixed = 0;
-	*frac = 0;
+	/* margin */
+	if (style->margin[side].margin == CSS_MARGIN_LENGTH)
+		*fixed += css_len2px(&style->margin[side].value.length, style);
+	else if (style->margin[side].margin == CSS_MARGIN_PERCENT)
+		*frac += style->margin[side].value.percent * 0.01;
 
-	for (side = 1; side != 5; side += 2) {  /* RIGHT, LEFT */
-		/* margin */
-		if (style->margin[side].margin == CSS_MARGIN_LENGTH)
-			*fixed += css_len2px(&style->margin[side].value.length,
-					style);
-		else if (style->margin[side].margin == CSS_MARGIN_PERCENT)
-			*frac += style->margin[side].value.percent * 0.01;
+	/* border */
+	if (style->border[side].style != CSS_BORDER_STYLE_NONE)
+		*fixed += css_len2px(&style->border[side].width.value, style);
 
-		/* border */
-		if (style->border[side].style != CSS_BORDER_STYLE_NONE)
-			*fixed += css_len2px(&style->border[side].width.value,
-					style);
-
-		/* padding */
-		if (style->padding[side].padding == CSS_PADDING_LENGTH)
-			*fixed += css_len2px(&style->padding[side].value.length,
-					style);
-		else if (style->padding[side].padding == CSS_PADDING_PERCENT)
-			*frac += style->padding[side].value.percent * 0.01;
-	}
+	/* padding */
+	if (style->padding[side].padding == CSS_PADDING_LENGTH)
+		*fixed += css_len2px(&style->padding[side].value.length, style);
+	else if (style->padding[side].padding == CSS_PADDING_PERCENT)
+		*frac += style->padding[side].value.percent * 0.01;
 }
 
 
