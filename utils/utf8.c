@@ -243,7 +243,7 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 		const char *from, const char *to, char **result)
 {
 	iconv_t cd;
-	char *ret, *temp, *out, *in;
+	char *temp, *out, *in;
 	size_t slen, rlen;
 
 	assert(string && from && to && result);
@@ -251,11 +251,11 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 	if (strcasecmp(from, to) == 0) {
 		/* conversion from an encoding to itself == strdup */
 		slen = len ? len : strlen(string);
-		ret = strndup(string, slen);
-		if (!ret)
+		*(result) = strndup(string, slen);
+		if (!(*result)) {
+			*(result) = NULL;
 			return UTF8_CONVERT_NOMEM;
-
-		*result = ret;
+		}
 
 		return UTF8_CONVERT_OK;
 	}
@@ -277,7 +277,7 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 	 */
 	rlen = slen * 4 + 4;
 
-	temp = out = calloc(rlen, sizeof(char));
+	temp = out = malloc(rlen);
 	if (!out) {
 		iconv_close(cd);
 		return UTF8_CONVERT_NOMEM;
@@ -297,20 +297,16 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 
 	iconv_close(cd);
 
-	if (rlen > 64 /* allow 64bytes wasted space */) {
-		/* and allocate a more sensibly sized output buffer */
-		ret = calloc(out - temp + 4, sizeof(char));
-		if (!ret) {
-			free(temp);
-			return UTF8_CONVERT_NOMEM;
-		}
-		memcpy(ret, temp, out - temp);
+	*(result) = realloc(temp, out - temp + 4);
+	if (!(*result)) {
 		free(temp);
+		*(result) = NULL; /* for sanity's sake */
+		return UTF8_CONVERT_NOMEM;
 	}
-	else
-		ret = temp;
 
-	*result = ret;
+	/* NULL terminate - needs 4 characters as we may have
+	 * converted to UTF-32 */
+	memset((*result) + (out - temp), 0, 4);
 
 	return UTF8_CONVERT_OK;
 }
