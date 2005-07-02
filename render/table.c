@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 Richard Wilson <info@tinct.net>
  */
 
 /** \file
