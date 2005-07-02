@@ -213,7 +213,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	bw->history_add = history_add;
 	bw->time0 = clock();
 	c = fetchcache(url2, browser_window_callback, bw, 0,
-			gui_window_get_width(bw->window), 0,
+			gui_window_get_width(bw->window),
+			gui_window_get_height(bw->window),
 			false,
 			post_urlenc, post_multipart, true, download);
 	free(url2);
@@ -235,7 +236,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 
 	fetchcache_go(c, option_send_referer ? referer : 0,
 			browser_window_callback, bw, 0,
-			gui_window_get_width(bw->window), 0,
+			gui_window_get_width(bw->window),
+			gui_window_get_height(bw->window),
 			post_urlenc, post_multipart, true);
 }
 
@@ -738,7 +740,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	char *base_url = 0;
-	char *href = 0;
 	char *title = 0;
 	char *url = 0;
 	char status_buffer[200];
@@ -774,16 +775,12 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		if (box->object)
 			object = box->object;
 
-		if (box->href) {
-			base_url = content->data.html.base_url;
-			href = box->href;
-		}
+		if (box->href)
+			url = box->href;
 
-		if (box->usemap) {
-			base_url = content->data.html.base_url;
-			href = imagemap_get(content, box->usemap,
+		if (box->usemap)
+			url = imagemap_get(content, box->usemap,
 					box_x, box_y, x, y);
-		}
 
 		if (box->gadget) {
 			gadget_content = content;
@@ -802,6 +799,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 		if (box->style && box->type != BOX_BR &&
 				box->type != BOX_INLINE &&
+				box->type != BOX_TEXT &&
 				(box->style->overflow == CSS_OVERFLOW_SCROLL ||
 				 box->style->overflow == CSS_OVERFLOW_AUTO) &&
 				((box_vscrollbar_present(box) &&
@@ -918,14 +916,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		/* \todo should have a drag-saving object msg */
 		status = c->status_message;
 
-	} else if (href) {
-		res = url_join(href, base_url, &url);
-		if (res != URL_FUNC_OK)
-			return;
-
+	} else if (url) {
 		if (title) {
 			snprintf(status_buffer, sizeof status_buffer, "%s: %s",
-					title, url);
+					url, title);
 			status = status_buffer;
 		} else
 			status = url;
@@ -1000,8 +994,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 	browser_window_set_status(bw, status);
 	browser_window_set_pointer(pointer);
-
-	free(url);
 }
 
 

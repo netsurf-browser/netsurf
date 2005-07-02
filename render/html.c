@@ -338,7 +338,7 @@ bool html_convert(struct content *c, int width, int height)
 	content_set_status(c, messages_get("Formatting"));
 	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	LOG(("Layout document"));
-	layout_document(c, width);
+	layout_document(c, width, height);
 	/*box_dump(c->data.html.layout->children, 0);*/
 	c->width = c->data.html.layout->descendant_x1;
 	c->height = c->data.html.layout->descendant_y1;
@@ -1126,7 +1126,7 @@ void html_stop(struct content *c)
 
 void html_reformat(struct content *c, int width, int height)
 {
-	layout_document(c, width);
+	layout_document(c, width, height);
 	c->width = c->data.html.layout->descendant_x1;
 	c->height = c->data.html.layout->descendant_y1;
 }

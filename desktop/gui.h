@@ -60,6 +60,7 @@ void gui_window_update_box(struct gui_window *g,
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
 int gui_window_get_width(struct gui_window *g);
+int gui_window_get_height(struct gui_window *g);
 void gui_window_set_extent(struct gui_window *g, int width, int height);
 void gui_window_set_status(struct gui_window *g, const char *text);
 void gui_window_set_pointer(gui_pointer_shape shape);

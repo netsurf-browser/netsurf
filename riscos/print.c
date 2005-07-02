@@ -469,7 +469,7 @@ void print_cleanup(void)
 bool print_document(struct gui_window *g, const char *filename)
 {
 	int left, right, top, bottom, width, height;
-	int saved_width;
+	int saved_width, saved_height;
 	int yscroll = 0, sheets = print_max_sheets;
 	struct content *c = g->bw->current_content;
 	const char *error_message;
@@ -506,8 +506,9 @@ bool print_document(struct gui_window *g, const char *filename)
 
 	/* layout the document to the correct width */
 	saved_width = c->width;
+	saved_height = c->height;
 	if (c->type == CONTENT_HTML)
-		layout_document(c, width);
+		layout_document(c, width, height);
 
 	/* open printer file */
 	error = xosfind_openoutw(osfind_NO_PATH | osfind_ERROR_IF_DIR |
@@ -645,7 +646,7 @@ bool print_document(struct gui_window *g, const char *filename)
 
 	/* restore document layout */
 	if (c->type == CONTENT_HTML)
-		layout_document(c, saved_width);
+		layout_document(c, saved_width, saved_height);
 
 	return true;
 
@@ -663,7 +664,7 @@ error:
 
 	/* restore document layout */
 	if (c->type == CONTENT_HTML)
-		layout_document(c, saved_width);
+		layout_document(c, saved_width, saved_height);
 
 	return false;
 }

@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
+#include "netsurf/render/table.h"
 #ifdef riscos
 #include "netsurf/desktop/gui.h"
 #endif
@@ -267,8 +268,6 @@ bool box_normalise_table(struct box *table, struct content * c)
 	table->rows = col_info.num_rows;
 	free(col_info.spans);
 
-	box_normalise_table_spans(table);
-
 	if (table->children == 0) {
 		LOG(("table->children == 0, removing"));
 		if (table->prev == 0)
@@ -278,6 +277,13 @@ bool box_normalise_table(struct box *table, struct content * c)
 		if (table->next != 0)
 			table->next->prev = table->prev;
 		box_free(table);
+	} else {
+		box_normalise_table_spans(table);
+		if (!table_calculate_column_types(table))
+			return false;
+		if (table->style->border_collapse ==
+				CSS_BORDER_COLLAPSE_COLLAPSE)
+			table_collapse_borders(table);
 	}
 
 	LOG(("table %p done", table));

@@ -20,7 +20,7 @@
 
 struct box;
 
-bool layout_document(struct content *content, int width);
+bool layout_document(struct content *content, int width, int height);
 bool layout_block_context(struct box *block, struct content *content);
 bool layout_inline_container(struct box *box, int width,
 		struct box *cont, int cx, int cy, struct content *content);

@@ -819,6 +819,32 @@ int gui_window_get_width(struct gui_window *g)
 
 
 /**
+ * Find the current height of a browser window.
+ *
+ * \param  g  gui_window to measure
+ * \return  height of window
+ */
+
+int gui_window_get_height(struct gui_window *g)
+{
+	wimp_window_state state;
+	os_error *error;
+
+	state.w = g->window;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return 800;
+	}
+	return (state.visible.y1 - state.visible.y0 - (g->toolbar ?
+			ro_gui_theme_toolbar_full_height(g->toolbar) : 0)) /
+			2 / g->option.scale;
+}
+
+
+/**
  * Set the extent of the inside of a browser window.
  *
  * \param  g	   gui_window to resize
@@ -1878,6 +1904,10 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			}
 			return true;
 
+		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F9:
+			talloc_report_full(0, stderr);
+			return true;
+
 		case wimp_KEY_CONTROL + wimp_KEY_F9:	/* Dump url_store. */
 			url_store_dump();
 			return true;
@@ -2259,7 +2289,7 @@ void ro_gui_window_process_reformats(void)
 			continue;
 		content_reformat(g->bw->current_content,
 				g->old_width / 2 / g->option.scale,
-				1000);
+				gui_window_get_height(g));
 		g->reformat_pending = false;
 	}
 	gui_reformat_pending = false;
