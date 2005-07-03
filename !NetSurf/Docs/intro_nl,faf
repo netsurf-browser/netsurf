@@ -51,7 +51,7 @@ Zie het hoofdstuk <a href="progress_nl">voortgang</a> voor een indruk van de hui
 <div class="links">
 <h3>Raadpleeg het web</h3>
 
-<form method="get" action="http://www.google.com/search"><p>Zoeken met&nbsp;<a href="http://www.google.com/"><strong>Google</strong></a><input type="text" size="15" name="q" maxlength="255"><input type="submit" value="Zoek" name="btnG"></p></form>
+<form method="get" action="http://www.google.nl/search"><p>Zoeken met&nbsp;<a href="http://www.google.nl/"><strong>Google</strong></a><input type="text" size="15" name="q" maxlength="255"><input type="submit" value="Zoek" name="btnG"></p></form>
 
 <h3>Web-standaarden</h3>
 <ul>

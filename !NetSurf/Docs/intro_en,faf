@@ -54,7 +54,7 @@ mailing list</a></dt>
 <div class="links">
 <h3>Search the web</h3>
 
-<form method="get" action="http://www.google.com/search"><p><a href="http://www.google.com/">Google</a> search:<br><input type="text" size="15" name="q" maxlength="255"><input type="submit" value="Go" name="btnG"></p></form>
+<form method="get" action="http://www.google.co.uk/search"><p><a href="http://www.google.co.uk/">Google</a> search:<br><input type="text" size="15" name="q" maxlength="255"><input type="submit" value="Go" name="btnG"></p></form>
 
 <h3>Web Standards</h3>
 <ul>
@@ -72,6 +72,7 @@ mailing list</a></dt>
 <li><a href="http://news.bbc.co.uk/">BBC News</a></li>
 <li><a href="http://slashdot.org/">Slashdot</a></li>
 <li><a href="http://www.theregister.co.uk/">The&nbsp;Register</a></li>
+<li><a href="http://www.yahoo.co.uk/">Yahoo!</a></li>
 </ul>
 
 </div>

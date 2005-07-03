@@ -45,7 +45,7 @@ es, die Standards HTML&nbsp;4 und CSS auf der RISC OS Plattform zur Verfügung zu
 <div class="links">
 <h3>Netzsuche</h3>
 
-<form method="get" action="http://www.google.com/search"><p><a href="http://www.google.com/">Google</a> Suche:<br><input type="text" size="15" name="q" maxlength="255"><input type="submit" value="starten" name="btnG"></p></form>
+<form method="get" action="http://www.google.de/search"><p><a href="http://www.google.de/">Google</a> Suche:<br><input type="text" size="15" name="q" maxlength="255"><input type="submit" value="starten" name="btnG"></p></form>
 
 <h3>Web Standards</h3>
 <ul>
