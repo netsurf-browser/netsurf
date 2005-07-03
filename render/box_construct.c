@@ -1682,13 +1682,24 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 
 bool box_form(BOX_SPECIAL_PARAMS)
 {
-	char *action, *method, *enctype, *charset;
+	char *xmlaction, *action, *method, *enctype, *charset;
 	form_method fmethod;
 	struct form *form;
 
-	if (!(action = (char *) xmlGetProp(n, (const xmlChar *) "action")))
-		/* the action attribute is required */
-		return true;
+	if (!(xmlaction = (char *)
+			xmlGetProp(n, (const xmlChar *) "action"))) {
+		/* the action attribute is required, but many forms fail to
+		 * specify it. In the case where it is _not_ specified,
+		 * follow other browsers and make the form action the
+		 * URI of the page the form is contained in. */
+		action = strdup("");
+	} else {
+		action = strdup(xmlaction);
+		xmlFree(xmlaction);
+	}
+
+	if (!action)
+		return false;
 
 	fmethod = method_GET;
 	if ((method = (char *) xmlGetProp(n, (const xmlChar *) "method"))) {
@@ -1711,7 +1722,7 @@ bool box_form(BOX_SPECIAL_PARAMS)
 	form = form_new(action, fmethod, charset,
 				content->data.html.encoding);
 	if (!form) {
-		xmlFree(action);
+		free(action);
 		xmlFree(charset);
 		return false;
 	}
