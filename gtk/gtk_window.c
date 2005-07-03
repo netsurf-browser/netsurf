@@ -305,6 +305,12 @@ int gui_window_get_width(struct gui_window* g)
 }
 
 
+int gui_window_get_height(struct gui_window* g)
+{
+	return g->drawing_area->allocation.height;
+}
+
+
 void gui_window_set_extent(struct gui_window *g, int width, int height)
 {
 	gtk_widget_set_size_request(g->drawing_area, width, height);
