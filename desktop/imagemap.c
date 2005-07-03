@@ -13,6 +13,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/imagemap.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 #define HASH_SIZE 31 /* fixed size hash table */
@@ -21,7 +22,7 @@ typedef enum {IMAGEMAP_DEFAULT, IMAGEMAP_RECT, IMAGEMAP_CIRCLE, IMAGEMAP_POLY } 
 
 struct mapentry {
 	imagemap_entry_type type;	/**< type of shape */
-	char *url;			/**< url to go to */
+	char *url;			/**< absolute url to go to */
 	union {
 		struct {
 			int x;		/**< x coordinate of centre */
@@ -54,7 +55,8 @@ static bool imagemap_add(struct content *c, const char *key,
 static bool imagemap_create(struct content *c);
 static bool imagemap_extract_map(xmlNode *node, struct content *c,
 		struct mapentry **entry);
-static bool imagemap_addtolist(xmlNode *n, struct mapentry **entry);
+static bool imagemap_addtolist(xmlNode *n, char *base_url,
+		struct mapentry **entry);
 static void imagemap_freelist(struct mapentry *list);
 static unsigned int imagemap_hash(const char *key);
 static int imagemap_point_in_poly(int num, float *xpt, float *ypt,
@@ -283,7 +285,8 @@ bool imagemap_extract_map(xmlNode *node, struct content *c,
 		 */
 		if (strcmp(node->name, "area") == 0 ||
 		    strcmp(node->name, "a") == 0) {
-			return imagemap_addtolist(node, entry);
+			return imagemap_addtolist(node,
+				c->data.html.base_url, entry);
 		}
 	}
 	else return true;
@@ -300,16 +303,19 @@ bool imagemap_extract_map(xmlNode *node, struct content *c,
  * Adds an imagemap entry to the list
  *
  * \param n     The xmlNode representing the entry to add
+ * \param base_url  Base URL for resolving relative URLs
  * \param entry Pointer to list of entries
  * \return false on memory exhaustion, true otherwise
  */
-bool imagemap_addtolist(xmlNode *n, struct mapentry **entry)
+bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
 {
 	char *shape, *coords = 0, *href, *val;
 	int num;
 	struct mapentry *new_map, *temp;
+	url_func_result err;
 
 	assert(n != NULL);
+	assert(base_url != NULL);
 	assert(entry != NULL);
 
 	if (strcmp(n->name, "area") == 0) {
@@ -363,12 +369,17 @@ bool imagemap_addtolist(xmlNode *n, struct mapentry **entry)
 		return true;
 	}
 
-	new_map->url = strdup(href);
-	if (!new_map->url) {
-		free(new_map);
-		xmlFree(href);
-		xmlFree(shape);
-		xmlFree(coords);
+	err = url_join(href, base_url, &new_map->url);
+	if (err != URL_FUNC_OK) {
+		if (err != URL_FUNC_NOMEM) {
+			/* non-fatal error -> ignore this entry */
+			free(new_map);
+			xmlFree(href);
+			xmlFree(shape);
+			xmlFree(coords);
+			return true;
+		}
+		LOG(("insufficent memory to resolve URI"));
 		return false;
 	}
 
