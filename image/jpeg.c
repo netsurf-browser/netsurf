@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #define JPEG_INTERNAL_OPTIONS
-#include "libjpeg/jpeglib.h"
+#include "jpeglib.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/plotters.h"
