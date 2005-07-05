@@ -287,6 +287,7 @@ struct content * content_create(const char *url)
 	user_sentinel->next = 0;
 	c->user_list = user_sentinel;
 	content_set_status(c, messages_get("Loading"));
+	c->locked = false;
 	c->fetch = 0;
 	c->source_data = 0;
 	c->source_size = 0;
@@ -452,9 +453,10 @@ void content_set_status(struct content *c, const char *status_message, ...)
 	int len;
 
 	va_start(ap, status_message);
-	if ((len = vsnprintf(c->status_message, sizeof(c->status_message), status_message, ap)) < 0
-			|| len >= (int)sizeof(c->status_message))
-		c->status_message[sizeof(c->status_message) - 1] = '\0';
+	if ((len = vsnprintf(c->status_message, sizeof (c->status_message),
+			status_message, ap)) < 0 ||
+			(int)sizeof (c->status_message) <= len)
+		c->status_message[sizeof (c->status_message) - 1] = '\0';
 	va_end(ap);
 }
 
@@ -536,6 +538,7 @@ void content_convert(struct content *c, int width, int height)
 	assert(c);
 	assert(c->type < HANDLER_MAP_COUNT);
 	assert(c->status == CONTENT_STATUS_LOADING);
+	assert(!c->locked);
 	LOG(("content %s", c->url));
 
 	if (c->source_allocated != c->source_size) {
@@ -547,15 +550,20 @@ void content_convert(struct content *c, int width, int height)
 		}
 	}
 
+	c->locked = true;
 	c->available_width = width;
 	if (handler_map[c->type].convert) {
 		if (!handler_map[c->type].convert(c, width, height)) {
 			c->status = CONTENT_STATUS_ERROR;
+			c->locked = false;
 			return;
 		}
 	} else {
 		c->status = CONTENT_STATUS_DONE;
 	}
+	c->locked = false;
+
+	c->size = talloc_total_size(c);
 
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
@@ -577,11 +585,14 @@ void content_reformat(struct content *c, int width, int height)
 	assert(c != 0);
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
+	assert(!c->locked);
+	c->locked = true;
 	c->available_width = width;
 	if (handler_map[c->type].reformat) {
 		handler_map[c->type].reformat(c, width, height);
 		content_broadcast(c, CONTENT_MSG_REFORMAT, data);
 	}
+	c->locked = false;
 }
 
 
@@ -603,6 +614,9 @@ void content_clean(void)
 	/* destroy unused stale contents and contents with errors */
 	for (c = content_list; c; c = next) {
 		next = c->next;
+
+		/* this function must not be called from a content function */
+		assert(!c->locked);
 
 		if (c->user_list->next && c->status != CONTENT_STATUS_ERROR)
 			/* content has users */
@@ -650,6 +664,7 @@ void content_destroy(struct content *c)
 {
 	assert(c);
 	LOG(("content %p %s", c, c->url));
+	assert(!c->locked);
 
 	if (c->fetch)
 		fetch_abort(c->fetch);
@@ -679,6 +694,7 @@ void content_reset(struct content *c)
 {
 	assert(c != 0);
 	LOG(("content %p %s", c, c->url));
+	assert(!c->locked);
 	if (c->type < HANDLER_MAP_COUNT && handler_map[c->type].destroy)
 		handler_map[c->type].destroy(c);
 	c->type = CONTENT_UNKNOWN;
@@ -732,6 +748,9 @@ bool content_redraw(struct content *c, int x, int y,
 		float scale, unsigned long background_colour)
 {
 	assert(c != 0);
+	if (c->locked)
+		/* not safe to attempt redraw */
+		return true;
 	if (handler_map[c->type].redraw)
 		return handler_map[c->type].redraw(c, x, y, width, height,
 		                clip_x0, clip_y0, clip_x1, clip_y1, scale,

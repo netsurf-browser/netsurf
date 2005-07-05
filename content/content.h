@@ -92,6 +92,10 @@
  *   if an error occurs, must broadcast CONTENT_MSG_ERROR and return false.
  *   Optionally use warn_user() for serious errors. The _destroy function will
  *   be called soon after.
+ *
+ * Each content structure is allocated using talloc, and all data related to a
+ * content should be allocated as a child block of the content structure using
+ * talloc. This will ensure that all memory used by a page is freed.
  */
 
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
@@ -235,6 +239,9 @@ struct content {
 					  conversions currently in progress. */
 	struct content_user *user_list;	/**< List of users. */
 	char status_message[80];	/**< Text for status bar. */
+	/** Content is being processed: data structures may be inconsistent
+	 * and content must not be redrawn or modified. */
+	bool locked;
 
 	struct fetch *fetch;		/**< Associated fetch, or 0. */
 	char *source_data;		/**< Source data, as received. */
