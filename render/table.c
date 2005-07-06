@@ -350,10 +350,11 @@ void table_remove_borders(struct css_style *style)
 struct box *table_find_cell(struct box *table, unsigned int x,
 		unsigned int y)
 {
-	struct box *row_group, *row = 0, *cell;
+	struct box *row_group, *row, *cell;
 	unsigned int row_num = 0;
 
-	if (table->columns < x || table->rows < y)
+	if (table->columns <= x || table->rows <= y)
+		return 0;
 
 	for (row_group = table->children, row = row_group->children;
 			row_num != y;
