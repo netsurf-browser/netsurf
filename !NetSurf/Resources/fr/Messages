@@ -189,6 +189,8 @@ MenuError:Une erreur s'est produite lors de l'ouverture du menu:
 DragError:Une erreur s'est produite lors du déplacement d'icône:
 TbarError:Une erreur s'est produite lors de la construction de la barre d'outils:
 WimpError:Une erreur inattendue du Window Manager s'est produite:
+DownloadWarn:This download may not complete:
+NoDiscSpace:Not enough space available on disc.
 Template:Un modèle de fenêtre est absent du fichier Templates. Réinstallez NetSurf SVP.
 MiscError:Une erreur inattendue s'est produite:
 FileError:Le fichier n'existe pas:

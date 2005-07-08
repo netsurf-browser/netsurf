@@ -189,6 +189,8 @@ MenuError:Fehler beim Öffnen des Menüs:
 DragError:Fehler beim Ziehen des Symboles:
 TbarError:Fehler beim Aufbau der Toolbar:
 WimpError:Unerwarteter Fehler im Window Manager:
+DownloadWarn:This download may not complete:
+NoDiscSpace:Not enough space available on disc.
 Template:Ein Template für ein Fenster fehlt in der Datei Templates. Bitte NetSurf neu installieren.
 MiscError:Unerwarteter Fehler:
 FileError:Datei existiert nicht:

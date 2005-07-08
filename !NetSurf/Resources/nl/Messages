@@ -189,6 +189,8 @@ MenuError:An error occurred when opening the menu:
 DragError:An error occurred when dragging the icon:
 TbarError:An error occurred when constructing the toolbar:
 WimpError:An unexpected Window Manager error occurred:
+DownloadWarn:This download may not complete:
+NoDiscSpace:Not enough space available on disc.
 Template:A window template is missing from the Templates file. Please reinstall NetSurf.
 MiscError:An unexpected error occurred:
 FileError:File does not exist:
