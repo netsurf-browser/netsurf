@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <ctype.h>
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
@@ -94,8 +95,15 @@ static int download_progress_y0;
 static int download_progress_y1;
 
 
+static const char *ro_gui_download_temp_name(struct gui_download_window *dw);
 static void ro_gui_download_update_status(struct gui_download_window *dw);
 static void ro_gui_download_update_status_wrapper(void *p);
+static void ro_gui_download_window_hide_caret(struct gui_download_window *dw);
+static char *ro_gui_download_canonicalise(const char *path);
+static bool ro_gui_download_check_space(struct gui_download_window *dw,
+		const char *dest_file, const char *orig_file);
+static os_error *ro_gui_download_move(struct gui_download_window *dw,
+		const char *dest_file, const char *src_file);
 static bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name);
 static void ro_gui_download_send_dataload(struct gui_download_window *dw);
 static void ro_gui_download_window_destroy_wrapper(void *p);
@@ -130,6 +138,22 @@ void ro_gui_download_init(void)
 
 
 /**
+ * Returns the pathname of a temporary file for this download.
+ *
+ * \param  dw   download window
+ * \return ptr to pathname
+ */
+
+const char *ro_gui_download_temp_name(struct gui_download_window *dw)
+{
+	static char temp_name[40];
+	snprintf(temp_name, sizeof temp_name, "<Wimp$ScrapDir>.ns%x",
+			(unsigned int) dw);
+	return temp_name;
+}
+
+
+/**
  * Create and open a download progress window.
  *
  * \param  url         URL of download
@@ -144,9 +168,10 @@ struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,
 		unsigned int total_size)
 {
+	const char *temp_name;
 	char *nice;
-	char temp_name[40];
 	struct gui_download_window *dw;
+	bool space_warning = false;
 	os_error *error;
 	url_func_result res;
 
@@ -181,8 +206,12 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	}
 
 	/* open temporary output file */
-	snprintf(temp_name, sizeof temp_name, "<Wimp$ScrapDir>.ns%x",
-			(unsigned int) dw);
+	temp_name = ro_gui_download_temp_name(dw);
+	if (!ro_gui_download_check_space(dw, temp_name, NULL)) {
+		/* issue a warning but continue with the download because the
+		   user can save it to another medium whilst it's downloading */
+		space_warning = true;
+	}
 	error = xosfind_openoutw(osfind_NO_PATH | osfind_ERROR_IF_DIR,
 			temp_name, 0, &dw->file);
 	if (error) {
@@ -250,6 +279,10 @@ struct gui_download_window *gui_download_window_create(const char *url,
 
 	ro_gui_dialog_open(dw->window);
 
+	/* issue the warning now, so that it appears in front of the download window! */
+	if (space_warning)
+		warn_user("DownloadWarn", messages_get("NoDiscSpace"));
+
 	return dw;
 }
 
@@ -265,27 +298,72 @@ struct gui_download_window *gui_download_window_create(const char *url,
 void gui_download_window_data(struct gui_download_window *dw, const char *data,
 		unsigned int size)
 {
-	int unwritten;
-	os_error *error;
+	while (true) {
+		const char *msg;
+		int unwritten;
+		os_error *error;
 
-	error = xosgbpb_writew(dw->file, data, size, &unwritten);
-	if (error) {
-		LOG(("xosgbpb_writew: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("SaveError", error->errmess);
+		error = xosgbpb_writew(dw->file, data, size, &unwritten);
+		if (error) {
+			LOG(("xosgbpb_writew: 0x%x: %s",
+					error->errnum, error->errmess));
+			msg = error->errmess;
+
+		} else if (unwritten) {
+			LOG(("xosgbpb_writew: unwritten %i", unwritten));
+			msg = messages_get("Unwritten");
+		}
+		else {
+			dw->received += size;
+			return;
+		}
+
+		warn_user("SaveError", msg);
+
+		if (dw->saved) {
+			/* try to continue with the temporary file */
+			const char *temp_name = ro_gui_download_temp_name(dw);
+
+			error = ro_gui_download_move(dw, temp_name, dw->path);
+			if (!error) {
+
+				/* re-allow saving */
+				dw->saved = false;
+
+				error = xwimp_set_icon_state(dw->window, ICON_DOWNLOAD_ICON,
+						wimp_ICON_SHADED, 0);
+				if (error) {
+					LOG(("xwimp_set_icon_state: 0x%x: %s",
+							error->errnum, error->errmess));
+					warn_user("WimpError", error->errmess);
+				}
+
+				error = xwimp_set_icon_state(dw->window, ICON_DOWNLOAD_DESTINATION,
+						wimp_ICON_DELETED, wimp_ICON_DELETED);
+				if (error) {
+					LOG(("xwimp_set_icon_state: 0x%x: %s",
+							error->errnum, error->errmess));
+					warn_user("WimpError", error->errmess);
+				}
+				error = xwimp_set_icon_state(dw->window,
+						ICON_DOWNLOAD_PATH, wimp_ICON_DELETED, 0);
+				if (error) {
+					LOG(("xwimp_set_icon_state: 0x%x: %s",
+							error->errnum, error->errmess));
+					warn_user("WimpError", error->errmess);
+				}
+
+				continue;
+			}
+		}
+
+		/* give up then */
+		assert(dw->fetch);
 		fetch_abort(dw->fetch);
-		gui_download_window_error(dw, error->errmess);
+		gui_download_window_error(dw, msg);
+
 		return;
 	}
-	if (unwritten) {
-		LOG(("xosgbpb_writew: unwritten %i", unwritten));
-		warn_user("SaveError", messages_get("Unwritten"));
-		fetch_abort(dw->fetch);
-		gui_download_window_error(dw, messages_get("Unwritten"));
-		return;
-	}
-
-	dw->received += size;
 }
 
 
@@ -301,12 +379,12 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 	char *total_size;
 	char *speed;
 	char time[20] = "?";
-	float f = 0;
 	struct timeval t;
 	float dt;
 	unsigned int left;
 	float rate;
 	os_error *error;
+	int width;
 
 	gettimeofday(&t, 0);
 	dt = (t.tv_sec + 0.000001 * t.tv_usec) - (dw->last_time.tv_sec +
@@ -314,13 +392,15 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 	if (dt == 0)
 		dt = 0.001;
 
-	total_size = human_friendly_bytesize(dw->total_size);
+	total_size = human_friendly_bytesize(max(dw->received, dw->total_size));
 
 	if (dw->fetch) {
 		rate = (dw->received - dw->last_received) / dt;
 		received = human_friendly_bytesize(dw->received);
 		speed = human_friendly_bytesize(rate);
 		if (dw->total_size) {
+			float f;
+
 			if (rate) {
 				left = (dw->total_size - dw->received) / rate;
 				sprintf(time, "%u:%.2u", left / 60, left % 60);
@@ -328,12 +408,18 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 			snprintf(dw->status, sizeof dw->status,
 					messages_get("Download"),
 					received, total_size, speed, time);
+
+			f = (float) dw->received / (float) dw->total_size;
+			width = download_progress_width * f;
 		} else {
 			left = t.tv_sec - dw->start_time.tv_sec;
 			sprintf(time, "%u:%.2u", left / 60, left % 60);
 			snprintf(dw->status, sizeof dw->status,
 					messages_get("DownloadU"),
 					received, speed, time);
+
+			/* length unknown, stay at 0 til finished */
+			width = 0;
 		}
 	} else {
 		left = dw->last_time.tv_sec - dw->start_time.tv_sec;
@@ -345,18 +431,18 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 		snprintf(dw->status, sizeof dw->status,
 				messages_get("Downloaded"),
 				total_size, speed, time);
+
+		/* all done */
+		width = download_progress_width;
 	}
 
 	dw->last_time = t;
 	dw->last_received = dw->received;
 
-	if (dw->total_size)
-		f = (float) dw->received /
-				(float) dw->total_size;
 	error = xwimp_resize_icon(dw->window, ICON_DOWNLOAD_PROGRESS,
 			download_progress_x0,
 			download_progress_y0,
-			download_progress_x0 + download_progress_width * f,
+			download_progress_x0 + width,
 			download_progress_y1);
 	if (error) {
 		LOG(("xwimp_resize_icon: 0x%x: %s",
@@ -385,6 +471,35 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 void ro_gui_download_update_status_wrapper(void *p)
 {
 	ro_gui_download_update_status((struct gui_download_window *) p);
+}
+
+
+
+/**
+ * Hide the caret but preserve input focus.
+ *
+ * \param  dw  download window
+ */
+
+void ro_gui_download_window_hide_caret(struct gui_download_window *dw)
+{
+	wimp_caret caret;
+	os_error *error;
+
+	error = xwimp_get_caret_position(&caret);
+	if (error) {
+		LOG(("xwimp_get_caret_position: 0x%x : %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+	else if (caret.w == dw->window) {
+		error = xwimp_set_caret_position(dw->window, (wimp_i)-1, 0, 0, 1 << 25, -1);
+		if (error) {
+			LOG(("xwimp_get_caret_position: 0x%x : %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
 }
 
 
@@ -425,6 +540,17 @@ void gui_download_window_error(struct gui_download_window *dw,
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
+
+	/* grey out file icon */
+	error = xwimp_set_icon_state(dw->window, ICON_DOWNLOAD_ICON,
+			wimp_ICON_SHADED, wimp_ICON_SHADED);
+	if (error) {
+		LOG(("xwimp_set_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+
+	ro_gui_download_window_hide_caret(dw);
 }
 
 
@@ -649,24 +775,159 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 
 
 /**
- * Start of save operation, user has specified where the file should be saved.
+ * Return a pathname in canonical form
  *
- * \param  dw         download window
- * \param  file_name  pathname of destination file
- * \return true iff save successfully initiated
+ * \param  path  pathnamee to be canonicalised
+ * \return ptr to pathname in malloc block, or NULL
  */
 
-bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name)
+char *ro_gui_download_canonicalise(const char *path)
 {
-	char temp_name[40];
 	os_error *error;
-	wimp_caret caret;
+	int spare = 0;
+	char *buf;
 
-	if (dw->saved || dw->error)
-		return true;
+	error = xosfscontrol_canonicalise_path(path, NULL, NULL, NULL, 0, &spare);
+	if (error) {
+		LOG(("xosfscontrol_canonicalise_path: 0x%x: %s",
+			error->errnum, error->errmess));
+		return NULL;
+	}
 
-	snprintf(temp_name, sizeof temp_name, "<Wimp$ScrapDir>.ns%x",
-			(unsigned int) dw);
+	buf = malloc(1 - spare);
+	if (buf) {
+		error = xosfscontrol_canonicalise_path(path, buf, NULL, NULL,
+				1 - spare, NULL);
+		if (error) {
+			LOG(("xosfscontrol_canonicalise_path: 0x%x: %s",
+				error->errnum, error->errmess));
+
+			free(buf);
+			return NULL;
+		}
+	}
+
+	return buf;
+}
+
+
+/**
+ * Check the available space on the medium containing the destination file,
+ * taking into account any space currently occupied by the file at its
+ * original location.
+ *
+ * \param  dw         download window
+ * \param  dest_file  destination pathname
+ * \param  orig_file  current pathname, NULL if no existing file
+ * \return true iff there's enough space
+ */
+
+bool ro_gui_download_check_space(struct gui_download_window *dw,
+		const char *dest_file, const char *orig_file)
+{
+	/* is there enough free space for this file? */
+	int dest_len = strlen(dest_file);
+	os_error *error;
+	int max_file;
+	bits free_lo;
+	int free_hi;
+	char *dir;
+
+	dir = malloc(dest_len + 1);
+	if (!dir) return true;
+
+	while (dest_len > 0 && dest_file[--dest_len] != '.');
+
+	memcpy(dir, dest_file, dest_len);
+	dir[dest_len] = '\0';
+
+	/* try the 64-bit variant first (RO 3.6+) */
+	error = xosfscontrol_free_space64(dir, &free_lo, &free_hi,
+			&max_file, NULL, NULL);
+	if (error) {
+		LOG(("xosfscontrol_free_space64: 0x%x: %s",
+			error->errnum, error->errmess));
+
+		free_hi = 0;
+		error = xosfscontrol_free_space(dir, (int*)&free_lo,
+				&max_file, NULL);
+		if (error) {
+			LOG(("xosfscontrol_free_space: 0x%x: %s",
+				error->errnum, error->errmess));
+			/* close our eyes and hope */
+			free(dir);
+			return true;
+		}
+	}
+
+	free(dir);
+
+	if ((bits)max_file < dw->total_size || (!free_hi && free_lo < dw->total_size)) {
+		char *dest_canon, *orig_canon;
+		const char *a, *b;
+		bits space;
+
+		if (!orig_file || !dw->file) {
+			/* no original file to take into account */
+			return false;
+		}
+
+		space = min((bits)max_file, free_lo);
+
+		dest_canon = ro_gui_download_canonicalise(dest_file);
+		if (!dest_canon) dest_canon = (char*)dest_file;
+
+		orig_canon = ro_gui_download_canonicalise(orig_file);
+		if (!orig_canon) orig_canon = (char*)orig_file;
+
+		/* not enough space; allow for the file's original location
+		   when space is tight (assuming the FS isn't brain damaged!) */
+
+		a = dest_canon; b = orig_canon;
+		while (toupper(*a) == toupper(*b)) {
+			if (*a == '.' && *b == '.') {
+				int allocation;
+
+				error = xosargs_read_allocation(dw->file,
+						&allocation);
+				if (error) {
+					LOG(("xosargs_read_allocation: 0x%x : %s",
+						error->errnum, error->errmess));
+				}
+				else {
+					space += allocation;
+				}
+				break;
+			}
+			a++; b++;
+		}
+
+		if (dest_canon != dest_file) free(dest_canon);
+		if (orig_canon != orig_file) free(orig_canon);
+
+		if (space >= dw->total_size) {
+			/* OK, renaming should work */
+			return true;
+		}
+
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Move the downloading file to a new location and continue downloading there.
+ *
+ * \param  dw         download window
+ * \param  dest_file  new location
+ * \param  src_file   old location
+ * \return error iff failed to move file
+ */
+
+os_error *ro_gui_download_move(struct gui_download_window *dw,
+		const char *dest_file, const char *src_file)
+{
+	os_error *error;
 
 	/* close temporary file */
 	if (dw->file) {
@@ -675,22 +936,18 @@ bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name)
 		if (error) {
 			LOG(("xosfind_closew: 0x%x: %s",
 					error->errnum, error->errmess));
-			warn_user("SaveError", error->errmess);
-			if (dw->fetch)
-				fetch_abort(dw->fetch);
-			gui_download_window_error(dw, error->errmess);
-			return false;
+			return error;
 		}
 	}
 
 	/* move or copy temporary file to destination file */
-	error = xosfscontrol_rename(temp_name, file_name);
+	error = xosfscontrol_rename(src_file, dest_file);
 	/* Errors from a filing system have number 0x1XXnn, where XX is the FS
 	 * number, and nn the error number. 0x9F is "Not same disc". */
 	if (error && (error->errnum == error_BAD_RENAME ||
 			(error->errnum & 0xFF00FFu) == 0x1009Fu)) {
 		/* rename failed: copy with delete */
-		error = xosfscontrol_copy(temp_name, file_name,
+		error = xosfscontrol_copy(src_file, dest_file,
 				osfscontrol_COPY_FORCE |
 				osfscontrol_COPY_DELETE |
 				osfscontrol_COPY_LOOK,
@@ -698,25 +955,17 @@ bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name)
 		if (error) {
 			LOG(("xosfscontrol_copy: 0x%x: %s",
 					error->errnum, error->errmess));
-			warn_user("SaveError", error->errmess);
-			if (dw->fetch)
-				fetch_abort(dw->fetch);
-			gui_download_window_error(dw, error->errmess);
-			return false;
+			return error;
 		}
 	} else if (error) {
 		LOG(("xosfscontrol_rename: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user("SaveError", error->errmess);
-		if (dw->fetch)
-			fetch_abort(dw->fetch);
-		gui_download_window_error(dw, error->errmess);
-		return false;
+		return error;
 	}
 
 	if (dw->fetch) {
 		/* open new destination file if still fetching */
-		error = xosfile_write(file_name, 0xdeaddead, 0xdeaddead,
+		error = xosfile_write(dest_file, 0xdeaddead, 0xdeaddead,
 				fileswitch_ATTR_OWNER_READ |
 				fileswitch_ATTR_OWNER_WRITE);
 		if (error) {
@@ -726,31 +975,23 @@ bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name)
 		}
 
 		error = xosfind_openupw(osfind_NO_PATH | osfind_ERROR_IF_DIR,
-				file_name, 0, &dw->file);
+				dest_file, 0, &dw->file);
 		if (error) {
 			LOG(("xosfind_openupw: 0x%x: %s",
 					error->errnum, error->errmess));
-			warn_user("SaveError", error->errmess);
-			if (dw->fetch)
-				fetch_abort(dw->fetch);
-			gui_download_window_error(dw, error->errmess);
-			return false;
+			return error;
 		}
 
 		error = xosargs_set_ptrw(dw->file, dw->received);
 		if (error) {
 			LOG(("xosargs_set_ptrw: 0x%x: %s",
 					error->errnum, error->errmess));
-			warn_user("SaveError", error->errmess);
-			if (dw->fetch)
-				fetch_abort(dw->fetch);
-			gui_download_window_error(dw, error->errmess);
-			return false;
+			return error;
 		}
 
 	} else {
 		/* otherwise just set the file type */
-		error = xosfile_set_type(file_name,
+		error = xosfile_set_type(dest_file,
 				dw->file_type);
 		if (error) {
 			LOG(("xosfile_set_type: 0x%x: %s",
@@ -759,10 +1000,79 @@ bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name)
 		}
 	}
 
+	/* success */
+	return NULL;
+}
+
+
+/**
+ * Start of save operation, user has specified where the file should be saved.
+ *
+ * \param  dw         download window
+ * \param  file_name  pathname of destination file
+ * \return true iff save successfully initiated
+ */
+
+bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name)
+{
+	const char *temp_name;
+	os_error *error;
+
+	if (dw->saved || dw->error)
+		return true;
+
+	temp_name = ro_gui_download_temp_name(dw);
+
+	if (!ro_gui_download_check_space(dw, file_name, temp_name)) {
+		warn_user("SaveError", messages_get("NoDiscSpace"));
+		return false;
+	}
+
+	error = ro_gui_download_move(dw, file_name, temp_name);
+	if (error) {
+		warn_user("SaveError", error->errmess);
+
+		/* try to reopen at old location so that the download can continue
+		   to the temporary file */
+		error = xosfind_openupw(osfind_NO_PATH | osfind_ERROR_IF_DIR,
+				temp_name, 0, &dw->file);
+		if (error) {
+			LOG(("xosfind_openupw: 0x%x: %s",
+					error->errnum, error->errmess));
+
+		} else {
+			error = xosargs_set_ptrw(dw->file, dw->received);
+			if (error) {
+				LOG(("xosargs_set_ptrw: 0x%x: %s",
+						error->errnum, error->errmess));
+			}
+		}
+
+		if (error) {
+			if (dw->fetch) fetch_abort(dw->fetch);
+			gui_download_window_error(dw, error->errmess);
+		}
+		return false;
+	}
+
 	dw->saved = true;
 	strncpy(dw->path, file_name, sizeof dw->path);
 
-	/* hide writeable path icon and show destination icon */
+	/* grey out file icon */
+	error = xwimp_set_icon_state(dw->window, ICON_DOWNLOAD_ICON,
+			wimp_ICON_SHADED, wimp_ICON_SHADED);
+	if (error) {
+		LOG(("xwimp_set_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+
+	/* hide writeable path icon and show destination icon
+	   Note: must redraw icon bounding box because the destination icon
+		has rounded edges on RISC OS Select/Adjust and doesn't
+		completely cover the writeable icon */
+
+	ro_gui_force_redraw_icon(dw->window, ICON_DOWNLOAD_PATH);
 	error = xwimp_set_icon_state(dw->window, ICON_DOWNLOAD_PATH,
 			wimp_ICON_DELETED, wimp_ICON_DELETED);
 	if (error) {
@@ -771,28 +1081,14 @@ bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name)
 		warn_user("WimpError", error->errmess);
 	}
 	error = xwimp_set_icon_state(dw->window,
-			ICON_DOWNLOAD_DESTINATION, 0, wimp_ICON_DELETED);
+			ICON_DOWNLOAD_DESTINATION, wimp_ICON_DELETED, 0);
 	if (error) {
 		LOG(("xwimp_set_icon_state: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
 
-	/* hide the caret but preserve input focus */
-	error = xwimp_get_caret_position(&caret);
-	if (error) {
-		LOG(("xwimp_get_caret_position: 0x%x : %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-	else if (caret.w == dw->window) {
-		error = xwimp_set_caret_position(dw->window, (wimp_i)-1, 0, 0, 1 << 25, -1);
-		if (error) {
-			LOG(("xwimp_get_caret_position: 0x%x : %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-		}
-	}
+	ro_gui_download_window_hide_caret(dw);
 
 	return true;
 }
@@ -840,7 +1136,6 @@ void ro_gui_download_send_dataload(struct gui_download_window *dw)
 bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit)
 {
 	bool safe = dw->saved && !dw->fetch;
-	char temp_name[40];
 	os_error *error;
 
 	if (!safe && !dw->close_confirmed)
@@ -891,8 +1186,8 @@ bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit)
 
 	/* delete temporary file */
 	if (!dw->saved) {
-		snprintf(temp_name, sizeof temp_name, "<Wimp$ScrapDir>.ns%x",
-				(unsigned int) dw);
+		const char *temp_name = ro_gui_download_temp_name(dw);
+
 		error = xosfile_delete(temp_name, 0, 0, 0, 0, 0);
 		if (error) {
 			LOG(("xosfile_delete: 0x%x: %s",
