@@ -864,7 +864,6 @@ bool ro_gui_download_check_space(struct gui_download_window *dw,
 
 	if ((bits)max_file < dw->total_size || (!free_hi && free_lo < dw->total_size)) {
 		char *dest_canon, *orig_canon;
-		const char *a, *b;
 		bits space;
 
 		if (!orig_file || !dw->file) {
@@ -881,25 +880,22 @@ bool ro_gui_download_check_space(struct gui_download_window *dw,
 		if (!orig_canon) orig_canon = (char*)orig_file;
 
 		/* not enough space; allow for the file's original location
-		   when space is tight (assuming the FS isn't brain damaged!) */
+		   when space is tight by comparing the first part of the two
+		   pathnames (and assuming the FS isn't brain damaged!) */
 
-		a = dest_canon; b = orig_canon;
-		while (toupper(*a) == toupper(*b)) {
-			if (*a == '.' && *b == '.') {
-				int allocation;
+		char *dot = strchr(orig_canon, '.');
+		if (dot && !strncasecmp(dest_canon, orig_canon, (dot + 1) - orig_canon)) {
+			int allocation;
 
-				error = xosargs_read_allocation(dw->file,
-						&allocation);
-				if (error) {
-					LOG(("xosargs_read_allocation: 0x%x : %s",
-						error->errnum, error->errmess));
-				}
-				else {
-					space += allocation;
-				}
-				break;
+			error = xosargs_read_allocation(dw->file,
+					&allocation);
+			if (error) {
+				LOG(("xosargs_read_allocation: 0x%x : %s",
+					error->errnum, error->errmess));
 			}
-			a++; b++;
+			else {
+				space += allocation;
+			}
 		}
 
 		if (dest_canon != dest_file) free(dest_canon);
