@@ -23,6 +23,7 @@
 #endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/url.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 bool netsurf_quit = false;
@@ -73,6 +74,7 @@ void netsurf_init(int argc, char** argv)
 				"machine <%s>", utsname.sysname,
 				utsname.nodename, utsname.release,
 				utsname.version, utsname.machine));
+
 	lib_init();
 	url_init();
 	gui_init(argc, argv);
@@ -103,6 +105,7 @@ void netsurf_exit(void)
 	gui_quit();
 	content_quit();
 	fetch_quit();
+	utf8_finalise();
 }
 
 

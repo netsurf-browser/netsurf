@@ -198,6 +198,26 @@ size_t utf8_next(const char *s, size_t l, size_t o)
 	return o;
 }
 
+/* Cache of previous iconv conversion descriptor used by utf8_convert */
+static struct {
+	char from[32];	/**< Encoding name to convert from */
+	char to[32];	/**< Encoding name to convert to */
+	iconv_t cd;	/**< Iconv conversion descriptor */
+} last_cd;
+
+/**
+ * Finalise the UTF-8 library
+ */
+void utf8_finalise(void)
+{
+	if (last_cd.cd != 0)
+		iconv_close(last_cd.cd);
+
+	/* paranoia follows */
+	last_cd.from[0] = '\0';
+	last_cd.to[0] = '\0';
+	last_cd.cd = 0;
+}
 
 /**
  * Convert a UTF8 string into the named encoding
@@ -262,12 +282,29 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 
 	in = (char *)string;
 
-	cd = iconv_open(to, from);
-	if (cd == (iconv_t)-1) {
-		if (errno == EINVAL)
-			return UTF8_CONVERT_BADENC;
-		/* default to no memory */
-		return UTF8_CONVERT_NOMEM;
+	/* we cache the last used conversion descriptor,
+	 * so check if we're trying to use it here */
+	if (strncasecmp(last_cd.from, from, 32) == 0 &&
+			strncasecmp(last_cd.to, to, 32) == 0) {
+		cd = last_cd.cd;
+	}
+	else {
+		/* no match, so create a new cd */
+		cd = iconv_open(to, from);
+		if (cd == (iconv_t)-1) {
+			if (errno == EINVAL)
+				return UTF8_CONVERT_BADENC;
+			/* default to no memory */
+			return UTF8_CONVERT_NOMEM;
+		}
+
+		/* close the last cd - we don't care if this fails */
+		iconv_close(last_cd.cd);
+
+		/* and copy the to/from/cd data into last_cd */
+		strncpy(last_cd.from, from, 32);
+		strncpy(last_cd.to, to, 32);
+		last_cd.cd = cd;
 	}
 
 	slen = len ? len : strlen(string);
@@ -278,15 +315,12 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 	rlen = slen * 4 + 4;
 
 	temp = out = malloc(rlen);
-	if (!out) {
-		iconv_close(cd);
+	if (!out)
 		return UTF8_CONVERT_NOMEM;
-	}
 
 	/* perform conversion */
 	if (iconv(cd, &in, &slen, &out, &rlen) == (size_t)-1) {
 		free(temp);
-		iconv_close(cd);
 		/** \todo handle the various cases properly
 		 * There are 3 possible error cases:
 		 * a) Insufficiently large output buffer
@@ -294,8 +328,6 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 		 * c) Incomplete input sequence */
 		return UTF8_CONVERT_NOMEM;
 	}
-
-	iconv_close(cd);
 
 	*(result) = realloc(temp, out - temp + 4);
 	if (!(*result)) {
