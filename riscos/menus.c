@@ -966,7 +966,7 @@ void ro_gui_menu_prepare_languages(bool accept, const char *lang)
 void gui_create_form_select_menu(struct browser_window *bw,
 		struct form_control *control) {
 	unsigned int i = 0, j;
-	char *text_convert, *temp, *s;
+	char *text_convert, *temp;
 	struct form_option *option;
 	wimp_pointer pointer;
 	os_error *error;
@@ -1039,6 +1039,12 @@ void gui_create_form_select_menu(struct browser_window *bw,
 							wimp_ICON_FG_COLOUR_SHIFT) |
 					(wimp_COLOUR_WHITE <<
 							wimp_ICON_BG_COLOUR_SHIFT);
+
+			/* convert spaces to hard spaces to stop things
+			 * like 'Go Home' being treated as if 'Home' is a
+			 * keyboard shortcut and right aligned in the menu.
+			 */
+
 			temp = cnv_space2nbsp(option->text);
 			if (!temp) {
 				LOG(("cnv_space2nbsp failed"));
@@ -1047,15 +1053,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 				return;
 			}
 
-			/* convert spaces to hard spaces to stop things
-			 * like 'Go Home' being treated as if 'Home' is a
-			 * keyboard shortcut and right aligned in the menu.
-			 */
-			for (s = temp; *s != '\0'; s++)
-				if (*s == 0x20)
-					*s = 0xa0;
-
-			err = utf8_to_local_encoding(option->text,
+			err = utf8_to_local_encoding(temp,
 				0, &text_convert);
 			if (err != UTF8_CONVERT_OK) {
 				/* A bad encoding should never happen,
