@@ -7,6 +7,7 @@
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2005 Richard Wilson <not_ginger_matt@users.sourceforge.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
+ * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
  */
 
 #include <assert.h>
@@ -32,10 +33,9 @@
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
-/*	The maximum number of persistant dialogues
+/*	The maximum number of persistent dialogues
 */
-#define MAX_PERSISTANT 8
-
+#define MAX_PERSISTENT 8
 
 
 wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
@@ -94,7 +94,7 @@ static const char *ro_gui_image_name[] = {
 static struct {
 	wimp_w dialog;
 	wimp_w parent;
-} persistant_dialog[MAX_PERSISTANT];
+} persistent_dialog[MAX_PERSISTENT];
 
 static void ro_gui_dialog_config_prepare(void);
 static void ro_gui_dialog_set_image_quality(int icon, unsigned int tinct_options);
@@ -129,7 +129,7 @@ void ro_gui_dialog_init(void)
 	/* fill in about box version info */
 	ro_gui_set_icon_string(dialog_info, 4, netsurf_version);
 
-	dialog_saveas = ro_gui_dialog_create("saveas");
+	dialog_saveas = ro_gui_saveas_create("saveas");
 	dialog_config = ro_gui_dialog_create("config");
 	dialog_config_br = ro_gui_dialog_create("config_br");
 	dialog_config_prox = ro_gui_dialog_create("config_prox");
@@ -181,6 +181,8 @@ wimp_w ro_gui_dialog_create(const char *template_name)
 
 	/* the window definition is copied by the wimp and may be freed */
 	free(window);
+
+LOG(("gui_dialog_create given handle %p", w));
 
 	return w;
 }
@@ -289,7 +291,7 @@ void ro_gui_dialog_open(wimp_w w)
 
 
 /**
- * Open a persistant dialog box relative to the pointer.
+ * Open a persistent dialog box relative to the pointer.
  *
  * \param  parent   the owning window (NULL for no owner)
  * \param  w	    the dialog window
@@ -297,7 +299,7 @@ void ro_gui_dialog_open(wimp_w w)
  *		    otherwise)
  */
 
-void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
+void ro_gui_dialog_open_persistent(wimp_w parent, wimp_w w, bool pointer) {
 	int dx, dy, i;
 	wimp_window_state open;
 	os_error *error;
@@ -356,18 +358,18 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
 	*/
 	if (parent == NULL)
 		return;
-	for (i = 0; i < MAX_PERSISTANT; i++) {
-		if (persistant_dialog[i].dialog == NULL ||
-				persistant_dialog[i].dialog == w) {
-			persistant_dialog[i].dialog = w;
-			persistant_dialog[i].parent = parent;
+	for (i = 0; i < MAX_PERSISTENT; i++) {
+		if (persistent_dialog[i].dialog == NULL ||
+				persistent_dialog[i].dialog == w) {
+			persistent_dialog[i].dialog = w;
+			persistent_dialog[i].parent = parent;
 			return;
 		}
 	}
 
 	/*	Log that we failed to create a mapping
 	*/
-	LOG(("Unable to map persistant dialog to parent."));
+	LOG(("Unable to map persistent dialog to parent."));
 }
 
 
@@ -377,16 +379,16 @@ void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer) {
  * \param  parent  the window to close children of
  */
 
-void ro_gui_dialog_close_persistant(wimp_w parent) {
+void ro_gui_dialog_close_persistent(wimp_w parent) {
 	int i;
 
 	/*	Check our mappings
 	*/
-	for (i = 0; i < MAX_PERSISTANT; i++) {
-		if (persistant_dialog[i].parent == parent &&
-				persistant_dialog[i].dialog != NULL) {
-			ro_gui_dialog_close(persistant_dialog[i].dialog);
-			persistant_dialog[i].dialog = NULL;
+	for (i = 0; i < MAX_PERSISTENT; i++) {
+		if (persistent_dialog[i].parent == parent &&
+				persistent_dialog[i].dialog != NULL) {
+			ro_gui_dialog_close(persistent_dialog[i].dialog);
+			persistent_dialog[i].dialog = NULL;
 		}
 	}
 }
@@ -1380,7 +1382,7 @@ void ro_gui_dialog_close(wimp_w close)
 
 	/*	Give the caret back to the parent window. This code relies on
 		the fact that only tree windows and browser windows open
-		persistant dialogues, as the caret gets placed to no icon.
+		persistent dialogues, as the caret gets placed to no icon.
 	*/
 	error = xwimp_get_caret_position(&caret);
 	if (error) {
@@ -1388,13 +1390,13 @@ void ro_gui_dialog_close(wimp_w close)
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	} else if (caret.w == close) {
-		/*	Check if we are a persistant window
+		/*	Check if we are a persistent window
 		*/
-		for (i = 0; i < MAX_PERSISTANT; i++) {
-			if (persistant_dialog[i].dialog == close) {
-				persistant_dialog[i].dialog = NULL;
+		for (i = 0; i < MAX_PERSISTENT; i++) {
+			if (persistent_dialog[i].dialog == close) {
+				persistent_dialog[i].dialog = NULL;
 				error = xwimp_set_caret_position(
-						persistant_dialog[i].parent,
+						persistent_dialog[i].parent,
 						wimp_ICON_WINDOW, -100, -100,
 						32, -1);
 				if (error) {

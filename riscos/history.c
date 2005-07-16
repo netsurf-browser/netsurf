@@ -351,7 +351,7 @@ void ro_gui_history_open(struct browser_window *bw,
 	state.visible.y1 = height;
 	state.next = wimp_HIDDEN;
 	wimp_open_window((wimp_open *) &state);
-	ro_gui_dialog_open_persistant(bw->window->window, history_window, pointer);
+	ro_gui_dialog_open_persistent(bw->window->window, history_window, pointer);
 }
 
 

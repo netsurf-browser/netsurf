@@ -1346,14 +1346,14 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			if (!c)
 				return false;
 			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistant(g->window, dialog_pageinfo,
+			ro_gui_dialog_open_persistent(g->window, dialog_pageinfo,
 					windows_at_pointer);
 			return true;
 		case BROWSER_PRINT:
 			if (!c)
 				return false;
 			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistant(g->window, dialog_print,
+			ro_gui_dialog_open_persistent(g->window, dialog_print,
 					windows_at_pointer);
 			return true;
 		case BROWSER_NEW_WINDOW:
@@ -1372,7 +1372,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			if (!current_menu_object_box)
 				return false;
 			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistant(g->window, dialog_objinfo,
+			ro_gui_dialog_open_persistent(g->window, dialog_objinfo,
 					windows_at_pointer);
 			return true;
 		case BROWSER_OBJECT_RELOAD:
@@ -1402,7 +1402,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		case HOTLIST_EXPORT:
 		case HISTORY_EXPORT:
 			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistant(owner, dialog_saveas,
+			ro_gui_dialog_open_persistent(owner, dialog_saveas,
 					windows_at_pointer);
 			return true;
 
@@ -1443,7 +1443,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			return true;
 		case BROWSER_NAVIGATE_URL:
 			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistant(NULL, dialog_openurl,
+			ro_gui_dialog_open_persistent(NULL, dialog_openurl,
 					windows_at_pointer);
 			return true;
 
@@ -1452,14 +1452,14 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			if (!c)
 				return false;
 			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistant(g->window, dialog_zoom,
+			ro_gui_dialog_open_persistent(g->window, dialog_zoom,
 					windows_at_pointer);
 			return true;
 		case BROWSER_FIND_TEXT:
 			if (!c || c->type != CONTENT_HTML)
 				return false;
 			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistant(g->window, dialog_search,
+			ro_gui_dialog_open_persistent(g->window, dialog_search,
 					windows_at_pointer);
 			return true;
 		case BROWSER_IMAGES_BACKGROUND:
@@ -1518,12 +1518,12 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		/* tree actions */
 		case TREE_NEW_FOLDER:
 			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistant((wimp_w)tree->handle,
+			ro_gui_dialog_open_persistent((wimp_w)tree->handle,
 					dialog_folder, windows_at_pointer);
 			return true;
 		case TREE_NEW_LINK:
 			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistant((wimp_w)tree->handle,
+			ro_gui_dialog_open_persistent((wimp_w)tree->handle,
 					dialog_entry, windows_at_pointer);
 			return true;
 		case TREE_EXPAND_ALL:

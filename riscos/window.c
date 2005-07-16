@@ -2461,7 +2461,7 @@ void gui_window_new_content(struct gui_window *g)
 {
   	ro_gui_menu_objects_moved();
 	ro_gui_prepare_navigate(g);
-	ro_gui_dialog_close_persistant(g->window);
+	ro_gui_dialog_close_persistent(g->window);
 }
 
 
@@ -2633,6 +2633,13 @@ void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag)
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 		return;
+	}
+
+	error = xwimpspriteop_set_pointer_shape(NULL, 0x31, 0, 0, 0, 0);
+	if (error) {
+		LOG(("xwimpspriteop_set_pointer_shape: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
 	}
 
 	state.w = g->window;

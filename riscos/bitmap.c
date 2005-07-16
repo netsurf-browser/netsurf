@@ -119,7 +119,7 @@ void bitmap_initialise_memory(void)
 	}
 	if (option_image_memory_compressed == -1) {
 		/* claim 5% of free memory - min 256KB, max 4192KB */
-		compressed_size = available_memory * 0.05;
+		compressed_size = available_memory / 20;
 		if (compressed_size < (256 << 10))
 			compressed_size = 0;
 		if (compressed_size > (4192 << 10))
@@ -463,7 +463,7 @@ bool bitmap_save(struct bitmap *bitmap, const char *path)
 
 
 /**
- * The bitmap image has changed, so flush any persistant cache.
+ * The bitmap image has changed, so flush any persistent cache.
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */

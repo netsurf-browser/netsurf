@@ -616,6 +616,33 @@ bool ro_gui_wimp_sprite_exists(const char *sprite)
 
 
 /**
+ * Locate a sprite in the Wimp sprite pool, returning a pointer to it.
+ *
+ * \param  name    sprite name
+ * \param  sprite  receives pointer to sprite if found
+ * \return error ptr iff not found
+ */
+
+os_error *ro_gui_wimp_get_sprite(const char *name, osspriteop_header **sprite)
+{
+	osspriteop_area *rom_base, *ram_base;
+	os_error *error;
+
+	error = xwimp_base_of_sprites(&rom_base, &ram_base);
+	if (error) return error;
+
+	error = xosspriteop_select_sprite(osspriteop_USER_AREA,
+			rom_base, (osspriteop_id)name, sprite);
+
+	if (error && error->errnum == error_SPRITE_OP_DOESNT_EXIST)
+		error = xosspriteop_select_sprite(osspriteop_USER_AREA,
+				ram_base, (osspriteop_id)name, sprite);
+
+	return error;
+}
+
+
+/**
  * Open a window as a pane in another window.
  *
  * \param  parent  parent window

@@ -599,6 +599,7 @@ void gui_quit(void)
 	ro_gui_global_history_save();
 	ro_gui_hotlist_save();
 	ro_gui_history_quit();
+	ro_gui_saveas_quit();
 	rufl_quit();
 	free(gui_sprites);
 	xwimp_close_down(task_handle);
@@ -971,7 +972,7 @@ void ro_gui_close_window_request(wimp_close *close)
 
 	/*	Check for children
 	*/
-	ro_gui_dialog_close_persistant(close->w);
+	ro_gui_dialog_close_persistent(close->w);
 
 	if (close->w == dialog_debug)
 		ro_gui_debugwin_close();

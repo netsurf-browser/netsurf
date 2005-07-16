@@ -104,8 +104,8 @@ void ro_gui_dialog_init(void);
 wimp_w ro_gui_dialog_create(const char *template_name);
 wimp_window * ro_gui_dialog_load_template(const char *template_name);
 void ro_gui_dialog_open(wimp_w w);
-void ro_gui_dialog_open_persistant(wimp_w parent, wimp_w w, bool pointer);
-void ro_gui_dialog_close_persistant(wimp_w parent);
+void ro_gui_dialog_open_persistent(wimp_w parent, wimp_w w, bool pointer);
+void ro_gui_dialog_close_persistent(wimp_w parent);
 void ro_gui_dialog_click(wimp_pointer *pointer);
 void ro_gui_dialog_prepare_zoom(struct gui_window *g);
 void ro_gui_dialog_prepare_open_url(void);
@@ -138,6 +138,8 @@ void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag);
 void ro_gui_selection_claim_entity(wimp_full_message_claim_entity *claim);
 void ro_gui_selection_data_request(wimp_full_message_data_request *req);
 bool ro_gui_save_clipboard(const char *path);
+void ro_gui_selection_dragging(wimp_full_message_dragging *drag);
+void ro_gui_selection_drag_claim(wimp_full_message_drag_claim *drag);
 
 /* in 401login.c */
 #ifdef WITH_AUTH
@@ -199,11 +201,13 @@ void ro_gui_hotlist_dialog_click(wimp_pointer *pointer);
 int ro_gui_hotlist_help(int x, int y);
 
 /* in save.c */
+wimp_w ro_gui_saveas_create(const char *template_name);
+void ro_gui_saveas_quit(void);
 void ro_gui_save_prepare(gui_save_type save_type, struct content *c);
 void ro_gui_save_click(wimp_pointer *pointer);
 void ro_gui_drag_icon(int x, int y, const char *sprite);
 void ro_gui_save_drag_end(wimp_dragged *drag);
-void ro_gui_send_datasave(gui_save_type save_type, const wimp_full_message_data_xfer *message, wimp_t to);
+void ro_gui_send_datasave(gui_save_type save_type, wimp_full_message_data_xfer *message, wimp_t to);
 void ro_gui_save_datasave_ack(wimp_message *message);
 void ro_gui_save_ok(wimp_w w);
 void ro_gui_convert_save_path(char *dp, size_t len, const char *p);

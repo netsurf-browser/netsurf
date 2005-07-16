@@ -20,8 +20,10 @@
 #include "oslib/dragasprite.h"
 #include "oslib/osbyte.h"
 #include "oslib/osfile.h"
+#include "oslib/osmodule.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
+#include "oslib/wimpspriteop.h"
 #include "netsurf/desktop/save_text.h"
 #include "netsurf/desktop/selection.h"
 #include "netsurf/image/bitmap.h"
@@ -45,7 +47,9 @@ static int gui_save_filetype;
 
 static bool using_dragasprite = true;
 static bool saving_from_dialog = true;
+static osspriteop_area *saveas_area = NULL;
 static wimp_w gui_save_sourcew = (wimp_w)-1;
+static char save_leafname[32];
 
 typedef enum { LINK_ACORN, LINK_ANT, LINK_TEXT } link_format;
 
@@ -53,6 +57,8 @@ static bool ro_gui_save_complete(struct content *c, char *path);
 static bool ro_gui_save_content(struct content *c, char *path);
 static void ro_gui_save_object_native(struct content *c, char *path);
 static bool ro_gui_save_link(struct content *c, link_format format, char *path);
+static void ro_gui_save_set_state(struct content *c, gui_save_type save_type, char *leaf_buf, char *icon_buf);
+static bool ro_gui_save_create_thumbnail(struct content *c, const char *name);
 
 
 /** An entry in gui_save_table. */
@@ -81,6 +87,87 @@ struct gui_save_table_entry gui_save_table[] = {
 
 
 /**
+ * Create the saveas dialogue from the given template, and the sprite area
+ * necessary for our thumbnail (full page save)
+ *
+ * \param  template_name  name of template to be used
+ * \return window handle of created dialogue
+ */
+
+wimp_w ro_gui_saveas_create(const char *template_name)
+{
+	const int sprite_size = (68 * 68 * 4) + ((68 * 68) / 8);  /* 32bpp with mask */
+	int area_size = sizeof(osspriteop_area) + sizeof(osspriteop_header) +
+			256 * 8 + sprite_size;
+	wimp_window *window;
+	os_error *error;
+	wimp_icon *icons;
+	wimp_w w;
+
+	window = ro_gui_dialog_load_template(template_name);
+	assert(window);
+
+	icons = window->icons;
+
+	error = xosmodule_alloc(area_size, (void**)&saveas_area);
+	if (error) {
+		LOG(("xosmodule_alloc: 0x%x: %s", error->errnum, error->errmess));
+		xwimp_close_template();
+		die(error->errmess);
+	}
+	else {
+		saveas_area->size = area_size;
+		saveas_area->first = 16;
+
+		error = xosspriteop_clear_sprites(osspriteop_USER_AREA, saveas_area);
+		if (error) {
+			LOG(("xosspriteop_clear_sprites: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("MiscError", error->errmess);
+
+			xosmodule_free(saveas_area);
+			saveas_area = NULL;
+		}
+	}
+
+	assert((icons[ICON_SAVE_ICON].flags &
+		(wimp_ICON_TEXT | wimp_ICON_SPRITE | wimp_ICON_INDIRECTED)) ==
+		(wimp_ICON_SPRITE | wimp_ICON_INDIRECTED));
+	icons[ICON_SAVE_ICON].data.indirected_sprite.area = saveas_area;
+
+	/* create window */
+	error = xwimp_create_window(window, &w);
+	if (error) {
+		LOG(("xwimp_create_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		xwimp_close_template();
+		die(error->errmess);
+	}
+
+	/* the window definition is copied by the wimp and may be freed */
+	free(window);
+
+	return w;
+}
+
+
+/**
+ * Clean-up function that releases our sprite area.
+ */
+
+void ro_gui_saveas_quit(void)
+{
+	if (saveas_area) {
+		os_error *error = xosmodule_free(saveas_area);
+		if (error) {
+			LOG(("xosmodule_free: 0x%x: %s", error->errnum, error->errmess));
+			warn_user("MiscError", error->errmess);
+		}
+		saveas_area = NULL;
+	}
+}
+
+/**
  * Prepares the save box to reflect gui_save_type and a content, and
  * opens it.
  *
@@ -94,35 +181,20 @@ struct gui_save_table_entry gui_save_table[] = {
 
 void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
 {
+	char name_buf[64];
 	char icon_buf[20];
-	const char *icon = icon_buf;
-	const char *name = "";
-	const char *nice;
-	url_func_result res;
 
 	assert((save_type == GUI_SAVE_HOTLIST_EXPORT_HTML) ||
 			(save_type == GUI_SAVE_HISTORY_EXPORT_HTML) || c);
 
 	gui_save_current_type = save_type;
 	gui_save_content = c;
-	gui_save_filetype = gui_save_table[save_type].filetype;
-	if (!gui_save_filetype)
-		gui_save_filetype = ro_content_filetype(c);
 
-	/* icon */
-	sprintf(icon_buf, "file_%.3x", gui_save_filetype);
-	if (!ro_gui_wimp_sprite_exists(icon_buf))
-		icon = "file_xxx";
-	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_ICON, icon);
+	ro_gui_save_set_state(c, save_type, name_buf, icon_buf);
 
-	/* filename */
-	name = gui_save_table[save_type].name;
-	if (c && (res = url_nice(c->url, (char **)&nice)) == URL_FUNC_OK)
-		name = nice;
-	else
-		name = messages_get(name);
+	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_ICON, icon_buf);
 
-	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name);
+	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name_buf);
 }
 
 /**
@@ -198,7 +270,6 @@ void gui_drag_save_object(gui_save_type save_type, struct content *c,
 {
 	wimp_pointer pointer;
 	char icon_buf[20];
-	const char *icon = icon_buf;
 	os_error *error;
 
 	/* Close the save window because otherwise we need two contexts
@@ -217,20 +288,11 @@ void gui_drag_save_object(gui_save_type save_type, struct content *c,
 		return;
 	}
 
-	gui_save_current_type = save_type;
-	gui_save_content = c;
-	gui_save_filetype = gui_save_table[save_type].filetype;
-	if (!gui_save_filetype)
-		gui_save_filetype = ro_content_filetype(c);
-
-	/* sprite to use */
-	sprintf(icon_buf, "file_%.3x", gui_save_filetype);
-	if (!ro_gui_wimp_sprite_exists(icon_buf))
-		icon = "file_xxx";
+	ro_gui_save_set_state(c, save_type, save_leafname, icon_buf);
 
 	gui_current_drag_type = GUI_DRAG_SAVE;
 
-	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon);
+	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon_buf);
 }
 
 
@@ -245,7 +307,6 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 {
 	wimp_pointer pointer;
 	char icon_buf[20];
-	const char *icon = icon_buf;
 	os_error *error;
 
 	/* Close the save window because otherwise we need two contexts
@@ -264,19 +325,13 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 		return;
 	}
 
-	gui_save_current_type = GUI_SAVE_TEXT_SELECTION;
-	gui_save_content = NULL;
 	gui_save_selection = s;
-	gui_save_filetype = gui_save_table[GUI_SAVE_TEXT_SELECTION].filetype;
 
-	/* sprite to use */
-	sprintf(icon_buf, "file_%.3x", gui_save_filetype);
-	if (!ro_gui_wimp_sprite_exists(icon_buf))
-		icon = "file_xxx";
+	ro_gui_save_set_state(NULL, GUI_SAVE_TEXT_SELECTION, save_leafname, icon_buf);
 
 	gui_current_drag_type = GUI_DRAG_SAVE;
 
-	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon);
+	ro_gui_drag_icon(pointer.pos.x, pointer.pos.y, icon_buf);
 }
 
 
@@ -296,11 +351,28 @@ void ro_gui_drag_icon(int x, int y, const char *sprite)
 	drag.initial.y1 = y + 34;
 
 	if (sprite && (xosbyte2(osbyte_READ_CMOS, 28, 0, &r2) || (r2 & 2))) {
+		osspriteop_area *area = (osspriteop_area*)1;
+
+		/* first try our local sprite area in case it's a thumbnail sprite */
+		if (saveas_area) {
+			error = xosspriteop_select_sprite(osspriteop_USER_AREA,
+					saveas_area, (osspriteop_id)sprite, NULL);
+			if (error) {
+				if (error->errnum != error_SPRITE_OP_DOESNT_EXIST) {
+					LOG(("xosspriteop_select_sprite: 0x%x: %s",
+						error->errnum, error->errmess));
+					warn_user("MiscError", error->errmess);
+				}
+			}
+			else
+				area = saveas_area;
+		}
+
 		error = xdragasprite_start(dragasprite_HPOS_CENTRE |
 				dragasprite_VPOS_CENTRE |
 				dragasprite_BOUND_POINTER |
 				dragasprite_DROP_SHADOW,
-				(osspriteop_area *) 1, sprite, &drag.initial, 0);
+				area, sprite, &drag.initial, 0);
 
 		if (!error) {
 			using_dragasprite = true;
@@ -364,6 +436,23 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 	os_error *error;
 	char *dp, *ep;
 
+	if (using_dragasprite) {
+		error = xdragasprite_stop();
+		if (error) {
+			LOG(("xdragasprite_stop: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
+	else {
+		error = xwimp_drag_box(NULL);
+		if (error) {
+			LOG(("xwimp_drag_box: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
+
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
 		LOG(("xwimp_get_pointer_info: 0x%x: %s",
@@ -378,15 +467,7 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 
 	if (!saving_from_dialog) {
 		/* saving directly from browser window, choose a name based upon the URL */
-		struct content *c = gui_save_content;
-		const char *nice;
-
-		name = gui_save_table[gui_save_current_type].name;
-		if (c) {
-			url_func_result res;
-			if ((res = url_nice(c->url, (char **)&nice)) == URL_FUNC_OK)
-				name = nice;
-		}
+		name = save_leafname;
 	}
 	else {
 		char *dot;
@@ -430,7 +511,7 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
  * clipboard contents we're being asked for when the DataSaveAck reply arrives
  */
 
-void ro_gui_send_datasave(gui_save_type save_type, const wimp_full_message_data_xfer *message, wimp_t to)
+void ro_gui_send_datasave(gui_save_type save_type, wimp_full_message_data_xfer *message, wimp_t to)
 {
 	os_error *error;
 
@@ -626,11 +707,6 @@ bool ro_gui_save_complete(struct content *c, char *path)
 	char buf[256];
 	FILE *fp;
 	os_error *error;
-	osspriteop_area *area;
-	osspriteop_header *sprite_header;
-	char *appname;
-	unsigned int index;
-	struct bitmap *bitmap;
 
         /* Create dir */
 	error = xosfile_create_dir(path, 0);
@@ -661,31 +737,8 @@ bool ro_gui_save_complete(struct content *c, char *path)
 
 	/* Create !Sprites */
 	snprintf(buf, sizeof buf, "%s.!Sprites", path);
-	appname = strrchr(path, '.');
-	if (!appname)
-		appname = path;
-    	bitmap = bitmap_create(34, 34, false);
-  	if (!bitmap) {
-		LOG(("Thumbnail initialisation failed."));
-		return false;
-	}
-	bitmap_set_opaque(bitmap, true);
-	thumbnail_create(c, bitmap, NULL);
-	area = thumbnail_convert_8bpp(bitmap);
-	bitmap_destroy(bitmap);
-	if (!area) {
-		LOG(("Thumbnail conversion failed."));
-		return false;
-	}
-	sprite_header = (osspriteop_header *)(area + 1);
-	memset(sprite_header->name, 0x00, 12);
-	strncpy(sprite_header->name, appname + 1, 12);
 
-	/* Paint gets confused with uppercase characters */
-	for (index = 0; index < 12; index++)
-		sprite_header->name[index] = tolower(sprite_header->name[index]);
-	error = xosspriteop_save_sprite_file(osspriteop_NAME, area, buf);
-	free(area);
+	error = xosspriteop_save_sprite_file(osspriteop_NAME, saveas_area, buf);
 	if (error) {
 		LOG(("xosspriteop_save_sprite_file: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -776,6 +829,136 @@ bool ro_gui_save_link(struct content *c, link_format format, char *path)
 			xosfile_set_type(path, 0xfff);
 			break;
 	}
+
+	return true;
+}
+
+
+/**
+ * Suggest a leafname and sprite name for the given content.
+ *
+ * \param  c          content being saved
+ * \param  save_type  type of save operation being performed
+ * \param  leaf_buf   buffer to receive suggested leafname
+ * \param  icon_buf   buffer to receive sprite name
+ */
+
+void ro_gui_save_set_state(struct content *c, gui_save_type save_type, char *leaf_buf, char *icon_buf)
+{
+	/* filename */
+	const char *name = gui_save_table[save_type].name;
+	url_func_result res;
+	bool done = false;
+	char *nice = NULL;
+
+	/* parameters that we need to remember */
+	gui_save_current_type = save_type;
+	gui_save_content = c;
+
+	/* suggest a filetype based upon the content */
+	gui_save_filetype = gui_save_table[save_type].filetype;
+	if (!gui_save_filetype)
+		gui_save_filetype = ro_content_filetype(c);
+
+	/* leafname */
+	if (c && (res = url_nice(c->url, (char **)&nice)) == URL_FUNC_OK)
+		name = nice;
+	else
+		name = messages_get(name);
+	strcpy(leaf_buf, name);
+
+	/* sprite name used for icon and dragging */
+	if (save_type == GUI_SAVE_COMPLETE) {
+		int index;
+
+		/* Paint gets confused with uppercase characters and we need to
+		   convert spaces to hard spaces */
+		icon_buf[0] = '!';
+		for (index = 0; index < 11 && name[index]; ) {
+			char ch = name[index];
+			if (ch == ' ')
+				icon_buf[++index] = 0xa0;
+			else
+				icon_buf[++index] = tolower(ch);
+		}
+		memset(&icon_buf[index + 1], 0, 11 - index);
+		icon_buf[12] = '\0';
+
+		if (ro_gui_save_create_thumbnail(c, icon_buf))
+			done = true;
+	}
+
+	if (!done) {
+		osspriteop_header *sprite;
+		os_error *error;
+
+		sprintf(icon_buf, "file_%.3x", gui_save_filetype);
+
+		error = ro_gui_wimp_get_sprite(icon_buf, &sprite);
+		if (error) {
+			LOG(("ro_gui_wimp_get_sprite: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("MiscError", error->errmess);
+		} else {
+			/* the sprite area should always be large enough for file_xxx sprites */
+			assert(sprite->size <= saveas_area->size - saveas_area->first);
+
+			memcpy((byte*)saveas_area + saveas_area->first,
+				sprite,
+				sprite->size);
+
+			saveas_area->sprite_count = 1;
+			saveas_area->used = saveas_area->first + sprite->size;
+		}
+	}
+
+	free(nice);
+}
+
+
+
+/**
+ * Create a thumbnail sprite for the page being saved.
+ *
+ * \param  c     content to be converted
+ * \param  name  sprite name to use
+ * \return true iff successful
+ */
+
+bool ro_gui_save_create_thumbnail(struct content *c, const char *name)
+{
+	osspriteop_header *sprite_header;
+	struct bitmap *bitmap;
+	osspriteop_area *area;
+
+	bitmap = bitmap_create(34, 34, false);
+	if (!bitmap) {
+		LOG(("Thumbnail initialisation failed."));
+		return false;
+	}
+	bitmap_set_opaque(bitmap, true);
+	thumbnail_create(c, bitmap, NULL);
+	area = thumbnail_convert_8bpp(bitmap);
+	bitmap_destroy(bitmap);
+	if (!area) {
+		LOG(("Thumbnail conversion failed."));
+		return false;
+	}
+
+	sprite_header = (osspriteop_header *)(area + 1);
+	memcpy(sprite_header->name, name, 12);
+
+	/* we can't resize the saveas sprite area because it may move and we have
+	   no elegant way to update the window definition on all OS versions */
+	assert(sprite_header->size <= saveas_area->size - saveas_area->first);
+
+	memcpy((byte*)saveas_area + saveas_area->first,
+		sprite_header, sprite_header->size);
+
+	saveas_area->sprite_count = 1;
+	saveas_area->used = saveas_area->first + sprite_header->size;
+
+	free(area);
 
 	return true;
 }

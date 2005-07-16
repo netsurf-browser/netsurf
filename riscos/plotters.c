@@ -233,6 +233,7 @@ bool ro_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1)
 {
 	os_error *error;
+	char buf[12];
 
 	clip_x0 = ro_plot_origin_x + clip_x0 * 2;
 	clip_y0 = ro_plot_origin_y - clip_y0 * 2 - 1;
@@ -245,50 +246,19 @@ bool ro_plot_clip(int clip_x0, int clip_y0,
 		return false;
 	}
 
-	error = xos_set_graphics_window();
+	buf[0] = os_VDU_SET_GRAPHICS_WINDOW;
+	buf[1] = clip_x0;
+	buf[2] = clip_x0 >> 8;
+	buf[3] = clip_y1;
+	buf[4] = clip_y1 >> 8;
+	buf[5] = clip_x1;
+	buf[6] = clip_x1 >> 8;
+	buf[7] = clip_y0;
+	buf[8] = clip_y0 >> 8;
+
+	error = xos_writen(buf, 9);
 	if (error) {
-		LOG(("xos_set_graphics_window: 0x%x: %s", error->errnum,
-		     error->errmess));
-		return false;
-	}
-	error = xos_writec((char) (clip_x0 & 0xff));
-	if (error) {
-		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_writec((char) (clip_x0 >> 8));
-	if (error) {
-		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_writec((char) (clip_y1 & 0xff));
-	if (error) {
-		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_writec((char) (clip_y1 >> 8));
-	if (error) {
-		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_writec((char) (clip_x1 & 0xff));
-	if (error) {
-		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_writec((char) (clip_x1 >> 8));
-	if (error) {
-		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_writec((char) (clip_y0 & 0xff));
-	if (error) {
-		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
-		return false;
-	}
-	error = xos_writec((char) (clip_y0 >> 8));
-	if (error) {
-		LOG(("xos_writec: 0x%x: %s", error->errnum, error->errmess));
+		LOG(("xos_writen: 0x%x: %s", error->errnum, error->errmess));
 		return false;
 	}
 
