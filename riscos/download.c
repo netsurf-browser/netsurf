@@ -175,6 +175,8 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	bool space_warning = false;
 	os_error *error;
 	url_func_result res;
+	char *local_path;
+	utf8_convert_ret err;
 
 	dw = malloc(sizeof *dw);
 	if (!dw) {
@@ -246,6 +248,20 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	}
 	else
 		strcpy(dw->path, messages_get("SaveObject"));
+
+	err = utf8_to_local_encoding(dw->path, 0, &local_path);
+	if (err != UTF8_CONVERT_OK) {
+		/* badenc should never happen */
+		assert(err != UTF8_CONVERT_BADENC);
+		LOG(("utf8_to_local_encoding failed"));
+		warn_user("NoMemory", 0);
+		free(dw);
+		return 0;
+	}
+	else {
+		strncpy(dw->path, local_path, sizeof dw->path);
+		free(local_path);
+	}
 
 	download_template->icons[ICON_DOWNLOAD_PATH].data.indirected_text.text =
 			dw->path;
