@@ -480,30 +480,14 @@ void browser_window_stop_throbber(struct browser_window *bw)
 void browser_window_update(struct browser_window *bw,
 		bool scroll_to_top)
 {
-	char *title_local_enc;
 	struct box *pos;
 	int x, y;
-	utf8_convert_ret err;
 
 	if (!bw->current_content)
 		return;
 
 	if (bw->current_content->title != NULL) {
-		err = utf8_to_enc(bw->current_content->title,
-				local_encoding_name(), 0, &title_local_enc);
-		if (err != UTF8_CONVERT_OK) {
-			/* A bad encoding should never happen,
-			 * so assert this */
-			assert(err != UTF8_CONVERT_BADENC);
-			LOG(("utf8_to_enc failed"));
-			/* use utf-8 encoded title instead */
-			gui_window_set_title(bw->window,
-						bw->current_content->title);
-		}
-		else {
-			gui_window_set_title(bw->window, title_local_enc);
-			free(title_local_enc);
-		}
+		gui_window_set_title(bw->window, bw->current_content->title);
 	} else
 		gui_window_set_title(bw->window, bw->current_content->url);
 

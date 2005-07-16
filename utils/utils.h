@@ -62,6 +62,5 @@ void die(const char * const error);
 void warn_user(const char *warning, const char *detail);
 query_id query_user(const char *query, const char *detail, const query_callback *cb, void *pw);
 void query_close(query_id);
-const char *local_encoding_name(void);
 
 #endif

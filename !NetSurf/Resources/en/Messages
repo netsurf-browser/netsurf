@@ -1,129 +1,222 @@
 # English messages for NetSurf
+# ============================
+#
+# Description
+# -----------
+#
+# This file contains lines of colon separated key-value pairs in the format:
+#
+# Key:Value
+#
+# Contents of Key _must_ be representable in the US-ASCII character set and
+# should not be modified for translation purposes.
+#
+# Values must be UTF-8 encoded strings. When these strings are displayed in
+# NetSurf's user interface, they are converted to the system's local character
+# set. As a result of this conversion process, unrepresentable characters are
+# stripped from the displayed string.
+#
+# Blank lines and lines starting with a # character are treated as comments and
+# ignored.
+#
+
 
 # Menus
+# =====
+#
+# This section defines the title and entry text for NetSurf's menus.
+#
+
+# Iconbar menu
+#
 NetSurf:NetSurf
 Info:Info
-Open:Open
-OpenURL:Open URL
 AppHelp:Help...  F1
+Open:Open
 Choices:Choices...
 Quit:Quit
 
+# Iconbar -> Open menu
+#
+OpenURL:Open URL
+
+# Main menu
+#
 Page:Page
+Object:Object
+Navigate:Navigate
+View:Display
+Utilities:Utilities
+Help:Help
+
+# Main -> Page menu
+#
 PageInfo:Info  ^F1
 Save:Save  F3
-SaveComp:Full save  ãF3
+SaveComp:Full save  ‚áëF3
 Export:Export
-ExportAs:Export as
-Draw:Draw  ã^F3
-Text:Text  ^F3
 SaveURL:Save location
 Print:Print  PRINT
 NewWindow:New window  ^N
 ViewSrc:View source...  F8
-Object:Object
-ObjInfo:Info
-ObjSave:Save
-ObjReload:Reload
+
+# Main -> Page -> Export menu
+#
+Draw:Draw  ‚áë^F3
+Text:Text  ^F3
+
+# Main -> Page -> Save location menu
+#
 URI:Acorn URI
 URL:ANT URL
 LinkText:Text
-Selection:Selection
-Copy:Copy to clipboard  ^C
-SelectAll:Select all  ^A
-Clear:Clear selection  ^Z
-Navigate:Navigate
+
+# Main -> Object menu
+#
+ObjInfo:Info
+ObjSave:Save
+ObjReload:Reload
+
+# Main -> Object -> Export menu
+#
+Sprite:Sprite
+
+# Main -> Navigate menu
+#
 Home:Home page
 Back:Back one page
 Forward:Forward one page
 Reload:Reload this page  ^F5
 Stop:Stop loading this page
-View:Display
+
+# Main -> Display menu
+#
 ScaleView:Scale view  F11
 Images:Images
+Toolbars:Toolbars
+Render:Render
+OptDefault:Set as default
+
+# Main -> Display -> Images menu
+#
 ForeImg:Foreground images
 BackImg:Background images
-AnimImg:Animations
-DitherImg:Dither images
-FilterImg:Smooth images
-Toolbars:Toolbars
+
+# Main -> Display -> Toolbars menu
+#
 ToolButtons:Buttons
 ToolAddress:Address bar
 ToolThrob:Throbber
 ToolStatus:Status bar
-Render:Render
-RenderText:Blend text to background
+
+# Main -> Display -> Render menu
+#
 RenderAnims:Buffer animations
 RenderAll:Buffer all rendering
-OptDefault:Set as default
+
+# Main -> Utilities menu
+#
+Hotlist:Hotlist
+History:History
+FindText:Find text  F4
 Window:Window
+
+# Main -> Utilities -> Hotlist menu
+#
+HotlistAdd:Add to hotlist
+HotlistShow:Show hotlist...  F6
+
+# Main -> Utilities -> History menu
+#
+HistLocal:Show local history... F7
+HistGlobal:Show global history... ^F7
+
+# Main -> Utilities -> Window menu
+#
 WindowSave:Set as default position
 WindowStagr:Stagger window position
 WindowSize:Copy window position
 WindowReset:Reset default position
-Utilities:Utilities
-HotlistAdd:Add to hotlist
-HotlistShow:Show hotlist...  F6
-History:History
-HistLocal:Show local history... F7
-HistGlobal:Show global history... ^F7
-FindText:Find text  F4
-Help:Help
+
+# Main -> Help menu
+#
 HelpContent:Contents  F1
 HelpGuide:User guide
 HelpInfo:User information
-HelpInter:Interactive help
 HelpAbout:About NetSurf
+HelpInter:Interactive help
 
+# Toolbar menu
+#
+Toolbar:Toolbar
+EditToolbar:Edit toolbar
+
+# Generic tree menus (currently Hotlist and Global history)
+#
+Selection:Selection
+SelectAll:Select all  ^A
+Clear:Clear selection  ^Z
+
+# Selection Menu
+#
+Edit:Edit
+Launch:Launch  RETURN
+Delete:Delete  ^X
+ResetUsage:Reset statistics
+
+# Hotlist/Global history menu
+#
+New:New
+Expand:Expand
+Collapse:Collapse
+
+# New hotlist entry menu
+#
+Folder:Directory
+Link:Address
+
+# Tree expand/collapse menu
+#
+All:All
+Folders:Directories
+Links:Addresses
+
+# Other menus
+#
+# URL suggestion menu
+URLSuggest:Recent URLs
+
+# Menus within the choices system
+#
+# Browser pane
 Languages:Language
-
+#
+# Network pane
 ProxyAuth:Authentication
 ProxyNone:None
 ProxyBasic:Basic
 ProxyNTLM:NTLM
-
-# Image redraw style
+#
+# Fonts pane
+Fonts:Fonts
+#
+# Images pane
 Display:Display
 ImgStyle0:Use OS
 ImgStyle1:Direct to screen
 ImgStyle2:Dithered
 ImgStyle3:Error diffused
 
-# Toolbar menus
-URLSuggest:Recent URLs
-Toolbar:Toolbar
-EditToolbar:Edit toolbar
 
-# Font menu
-Fonts:Fonts
-
-# Hotlist menus
-Hotlist:Hotlist
-New:New
-Expand:Expand
-Collapse:Collapse
-All:All
-Folders:Directories
-Folder:Directory
-Links:Addresses
-Link:Address
-SaveSelect:Save
-Launch:Launch  RETURN
-Edit:Edit
-Delete:Delete  ^X
-ResetUsage:Reset statistics
-
-# Hotlist sub-window titles
-NewLink:Create new address
-NewFolder:Create new directory
-EditLink:Edit address
-EditFolder:Rename directory
-
-# Default hotlist
-HotlistHomepage:NetSurf homepage
-HotlistTestBuild:NetSurf test builds
+# Treeview interface tokens
+# =========================
+#
+# This section contains tokens which are used in the treeview
+# component. (For example, in the main hotlist/global history windows)
+#
 
 # Tree URL text
+#
 TreeAdded:Added: %s
 TreeLast:Last visited: %s
 TreeVisited:Visited: %s
@@ -132,11 +225,34 @@ TreeUnknown:Unknown
 TreeImport:Imported URL
 TreeNewFolder:New directory
 
-# Tree export
-TreeHotlist:NetSurf hotlist
-TreeHistory:NetSurf history
 
-# Global history
+# Hotlist user interface tokens
+# =============================
+#
+# This section contains tokens which are used in various parts of
+# the hotlist user interface.
+#
+
+# Hotlist sub-window titles
+#
+NewLink:Create new address
+NewFolder:Create new directory
+EditLink:Edit address
+EditFolder:Rename directory
+
+# Default hotlist page names
+#
+HotlistHomepage:NetSurf homepage
+HotlistTestBuild:NetSurf test builds
+
+
+# Global history user interface tokens
+# ====================================
+#
+# This section contains tokens which are used in various parts of
+# the global history user interface.
+#
+
 GlobalHistory:Global history
 DateToday:Today
 DateYesterday:Yesterday
@@ -144,17 +260,38 @@ Date1Week:Last week
 Date2Week:2 weeks ago
 Date3Week:3 weeks ago
 
-# Download window
-Download:%s of %s  è  %s/s  è  %s remaining
-DownloadU:%s of unknown  è  %s/s  è  %s total
-Downloaded:%s complete  è  average %s/s  è  %s total
+
+# Download user interface tokens
+# ==============================
+#
+# This section contains tokens which are used in the download
+# window.
+#
+Download:%s of %s  ‚Ä¢  %s/s  ‚Ä¢  %s remaining
+DownloadU:%s of unknown  ‚Ä¢  %s/s  ‚Ä¢  %s total
+Downloaded:%s complete  ‚Ä¢  average %s/s  ‚Ä¢  %s total
 Unwritten:Writing data to file failed.
 
-# Print dialog
+
+# Printing user interface tokens
+# ==============================
+#
+# This section contains tokens which are used in the printing
+# dialog box.
+#
+
 PrintSheetFilled:sheet is filled
 PrintSheetsFilled:sheets are filled
 
+
+# Content
+# =======
+#
+# This section contains tokens used by contents
+#
+
 # Forms
+#
 Form_Submit:Submit
 Form_Reset:Reset
 Form_None:
@@ -169,19 +306,58 @@ FormTextarea:Click to edit the text
 FormTextbox:Click to edit this field
 FormReset:Reset form (not implemented)
 FormFile:Drop a file here to upload it
+SelectMenu:Select
 
-Not2xx:Server returned an error
+# Content titles
+#
+DrawTitle:Draw image (%lux%lu, %lu bytes)
+GIFTitle:GIF image (%lux%lu, %lu bytes)
+JPEGTitle:JPEG image (%ux%u, %lu bytes)
+PNGTitle:PNG image (%lux%lu, %lu bytes)
+JNGTitle:JNG image (%lux%lu, %lu bytes)
+MNGTitle:MNG image (%lux%lu, %lu bytes)
+SpriteTitle:Sprite image (%lux%lu, %lu bytes)
 
+# HTML page character set
+#
+Encoding0:from HTTP headers
+Encoding1:detected
+Encoding2:from <meta>
+EncodingUnk:Unknown
+
+
+# Cookies
+# =======
+#
+# Cookies related tokens.
+#
+# At present, this section simply stores the location of
+# the cookie file. This should not be changed.
+#
 cookiefile:Choices:WWW.NetSurf.Cookies
 cookiejar:<Choices$Write>.WWW.NetSurf.Cookies
 
-ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><title>Page error</title></head><body><h1>Sorry, NetSurf was unable to display this page</h1><p><strong>%s</strong></p></body></html>
+# Errors
+# ======
+#
+# This section contains error and warning messages which
+# are displayed to the user.
+#
+
+# Fetching errors - displayed as an HTML page
+#
+Not2xx:Server returned an error
 InvalidURL:The address <em>%s</em> could not be understood.
 
-NoMemory:NetSurf is running out of memory. Please free some memory and try again.
-FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
-FontError:Failed to open font "Homerton.Medium" (%s).
-Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
+# HTML error page
+#
+ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Page error</title></head><body><h1>Sorry, NetSurf was unable to display this page</h1><p><strong>%s</strong></p></body></html>
+
+# General errors - displayed in a dialog box
+#
+# These may be augmented with further relevant information, which
+# is displayed after the contents of the relevant token.
+#
 PathToURL:An error occurred converting the file path to an URL:
 SaveError:The file could not be saved due to an error:
 LoadError:The file could not be loaded due to an error:
@@ -190,10 +366,18 @@ DragError:An error occurred when dragging the icon:
 TbarError:An error occurred when constructing the toolbar:
 WimpError:An unexpected Window Manager error occurred:
 DownloadWarn:This download may not complete:
-NoDiscSpace:Not enough space available on disc.
-Template:A window template is missing from the Templates file. Please reinstall NetSurf.
 MiscError:An unexpected error occurred:
 FileError:File does not exist:
+PrintError:An error occurred when printing:
+
+# Specific errors - displayed in a dialog box
+#
+NoMemory:NetSurf is running out of memory. Please free some memory and try again.
+FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
+FontError:Failed to open font "Homerton.Medium" (%s).
+Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
+NoDiscSpace:Not enough space available on disc.
+Template:A window template is missing from the Templates file. Please reinstall NetSurf.
 HotlistSaveError:The hotlist was unable to be correctly saved.
 HotlistLoadError:The hotlist was unable to be correctly loaded.
 NoPathError:To save, drag the icon to a directory display
@@ -201,28 +385,34 @@ NoNameError:Please enter a name
 NoURLError:Please enter a URL
 URIError:NetSurf was unable to parse this URI file due to a syntax error.
 EmptyError:file is empty.
-PrintError:An error occurred when printing:
 PrintErrorRO2:It appears that the printer is busy.
 
-# User queries
+
+# Queries
+# =======
+#
+# This section contains queries which are displayed to the user
+#
+
 AbortDownload:Are you sure you wish to abort this download?
 QuitDownload:One or more downloads are still in progress. Are you sure you wish to quit?
 
-# Some general purpose words and phrases
-Bytes: B
-kBytes: kB
-MBytes: MB
-GBytes: GB
 
-# Progress
+# Page fetching
+# =============
+#
+# This section contains messages which may be displayed whilst
+# fetching a page or other content
+#
+
+# Fetch status messages - displayed in status bar
+#
 Progress:%s of %s
 ProgressU:%s
 Loading:Opening page...
 RecPercent:Received %s (%u%%)
 Received:Received %s
 Converting:Converting %lu bytes
-BadRedirect:Bad redirect URL
-FetchFailed:Unable to fetch document
 Complete:Page complete (%gs)
 Redirecting:Redirecting...
 Processing:Processing document
@@ -232,6 +422,11 @@ FetchObjs2:Loading %u objects: %s
 Done:Document done
 FetchStyle:Loading %u stylesheets
 FetchStyle2:Loading %u stylesheets: %s
+
+# Fetch warning/error messages - displayed in status bar
+#
+BadRedirect:Bad redirect URL
+FetchFailed:Unable to fetch document
 NotCSS:Warning: stylesheet is not CSS
 BadObject:Warning: bad object type
 ObjError:Error loading object: %s
@@ -241,22 +436,16 @@ PNGError:PNG library error.
 MNGError:MNG library error.
 BadSprite:Invalid or corrupt Sprite data.
 
-DrawTitle:Draw image (%lux%lu, %lu bytes)
-GIFTitle:GIF image (%lux%lu, %lu bytes)
-JPEGTitle:JPEG image (%ux%u, %lu bytes)
-PNGTitle:PNG image (%lux%lu, %lu bytes)
-JNGTitle:JNG image (%lux%lu, %lu bytes)
-MNGTitle:MNG image (%lux%lu, %lu bytes)
-SpriteTitle:Sprite image (%lux%lu, %lu bytes)
 
-SelectMenu:Select
+# User interface
+# ==============
+#
+# This section contains messages to deal with user interface
+# features.
+#
 
-SaveSource:Source
-SaveDraw:Webpage
-SaveText:Webpage
-SaveObject:Object
-SaveLink:Link
-
+# Scrollbars - displayed in status bar
+#
 ScrollUp:Click the arrow to scroll up
 ScrollPUp:Click to scroll up one page
 ScrollV:Drag the bar to scroll vertically
@@ -268,10 +457,25 @@ ScrollH:Drag the bar to scroll horizontally
 ScrollPRight:Click to scroll right one page
 ScrollRight:Click the arrow to scroll right
 
-Encoding0:from HTTP headers
-Encoding1:detected
-Encoding2:from <meta>
-EncodingUnk:Unknown
+
+# Saving
+# ======
+#
+# Messages used when saving
+#
+
+SaveSource:Source
+SaveDraw:Webpage
+SaveText:Webpage
+SaveObject:Object
+SaveLink:Link
+
+
+# Themes
+# ======
+#
+# Messages used when installing new themes
+#
 
 ThemeInstActive:A theme is currently being downloaded or installed. Please wait for it to finish or cancel it before installing more themes.
 ThemeInstDown:Please wait for the theme to download.
@@ -280,7 +484,24 @@ ThemeInstall:Would you like to install the theme '%s' by %s?
 ThemeInstallErr:An error occurred whilst trying to install the downloaded theme.
 ThemeApplyErr:An error occurred whilst trying to apply the downloaded theme.
 
+
+# General
+# =======
+#
+# Some general purpose words and phrases
+#
+
+Bytes: B
+kBytes: kB
+MBytes: MB
+GBytes: GB
+
+
 # Interactive help
+# ================
+#
+# This section contains interactive help messages
+#
 HelpToolbar0:\Tback button.|M\Straverse back one page in the history tree.|MDoes not resubmit form information.
 HelpToolbar1:\Tforward button.|M\Straverse forward one page in the history tree.|MDoes not resubmit form information.
 HelpToolbar2:\Tstop button.|M\Sstop loading this page.
@@ -444,3 +665,21 @@ HelpGHistoryToolbar2:\Topen directories button.|M\Sopen all directories in the h
 HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
 
 HelpAppInfo:\TNetSurf information \w.|MSee the about page for the contributor list and credits.
+
+
+# Unused tokens
+# =============
+#
+# These tokens appear to be unused at the current time.
+#
+
+# Tree export
+TreeHotlist:NetSurf hotlist
+TreeHistory:NetSurf history
+SaveSelect:Save
+ExportAs:Export as
+Copy:Copy to clipboard  ^C
+AnimImg:Animations
+DitherImg:Dither images
+FilterImg:Smooth images
+RenderText:Blend text to background

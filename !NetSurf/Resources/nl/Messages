@@ -1,129 +1,223 @@
-# Nederlandstalige meldingen voor NetSurf, gebaseerd op (Eng: 09/12/2004 en 01/01/2005) en (Ned.) 17/06/2005
+# Nederlandstalige meldingen voor NetSurf
+# =======================================
+# gebaseerd op (Eng: 09/12/2004 en 01/01/2005) en (Ned.) 17/06/2005
+#
+# Description
+# -----------
+#
+# This file contains lines of colon separated key-value pairs in the format:
+#
+# Key:Value
+#
+# Contents of Key _must_ be representable in the US-ASCII character set and
+# should not be modified for translation purposes.
+#
+# Values must be UTF-8 encoded strings. When these strings are displayed in
+# NetSurf's user interface, they are converted to the system's local character
+# set. As a result of this conversion process, unrepresentable characters are
+# stripped from the displayed string.
+#
+# Blank lines and lines starting with a # character are treated as comments and
+# ignored.
+#
 
-# Menu's
+
+# Menus
+# =====
+#
+# This section defines the title and entry text for NetSurf's menus.
+#
+
+# Iconbar menu
+#
 NetSurf:NetSurf
 Info:Informatie
-Open:Open
-OpenURL:Open URL...
 AppHelp:Hulp...  F1
+Open:Open
 Choices:Keuzes...
 Quit:Stop
 
+# Iconbar -> Open menu
+#
+OpenURL:Open URL
+
+# Main menu
+#
 Page:Pagina
+Object:Object
+Navigate:Navigeer
+View:Weergave
+Utilities:Utilities
+Help:Hulp
+
+# Main -> Page menu
+#
 PageInfo:Informatie  ^F1
 Save:Bewaar  F3
-SaveComp:Bewaar alles  ãF3
+SaveComp:Bewaar alles  ‚áëF3
 Export:Exporteer
-ExportAs:Exporteer als
-Draw:Draw  ã^F3
-Text:Tekst  ^F3
 SaveURL:Bewaar adres
 Print:Afdrukken  PRINT
 NewWindow:Nieuw venster  ^N
 ViewSrc:Bekijk HTML...  F8
-Object:Object
-ObjInfo:Informatie
-ObjSave:Bewaar
-ObjReload:Herlaad
+
+# Main -> Page -> Export menu
+#
+Draw:Draw  ‚áë^F3
+Text:Tekst  ^F3
+
+# Main -> Page -> Save location menu
+#
 URI:Acorn URI
 URL:ANT URL
 LinkText:Tekst
-Selection:Selectie
-Copy:Copieer naar prikbord  ^C
-SelectAll:Selecteer alles  ^A
-Clear:Selectie opheffen  ^Z
-Navigate:Navigeer
+
+# Main -> Object menu
+#
+ObjInfo:Informatie
+ObjSave:Bewaar
+ObjReload:Herlaad
+
+# Main -> Object -> Export menu
+#
+Sprite:Sprite
+
+# Main -> Navigate menu
+#
 Home:Startpagina
 Back:Vorige pagina
 Forward:Volgende pagina
-Reload:Pagina opnieuw laden  ^R
+Reload:Pagina opnieuw laden  ^F5
 Stop:Pagina ophalen afbreken
-View:Weergave
+
+# Main -> Display menu
+#
 ScaleView:Pagina schalen  F11
 Images:Afbeeldingen
+Toolbars:Werkbalk
+Render:Weergeven
+OptDefault:Als standaard instellen
+
+# Main -> Display -> Images menu
+#
 ForeImg:Voorgrondafbeelding
 BackImg:Achtergrondafbeelding
-AnimImg:Animatie
-DitherImg:Dither afbeelding
-FilterImg:Smooth afbeelding
-Toolbars:Werkbalk
+
+# Main -> Display -> Toolbars menu
+#
 ToolButtons:Knoppen
 ToolAddress:Adresbalk
 ToolThrob:Laadactiviteit
 ToolStatus:Status balk
-Render:Weergeven
-RenderText:Tekst met achtergrond mengen
+
+# Main -> Display -> Render menu
+#
 RenderAnims:Buffer animaties
 RenderAll:Buffer alle weergaven
-OptDefault:Als standaard instellen
+
+# Main -> Utilities menu
+#
+Hotlist:Bladwijzers
+History:Historie
+FindText:Tekst zoeken  F4
 Window:Venster
+
+# Main -> Utilities -> Hotlist menu
+#
+HotlistAdd:Toevoegen aan bladwijzers
+HotlistShow:Toon bladwijzers  F6
+
+# Main -> Utilities -> History menu
+#
+HistLocal:Toon historie (lokaal)... F7
+HistGlobal:Toon historie (globaal)... ^F7
+
+# Main -> Utilities -> Window menu
+#
 WindowSave:Als standaard positie opslaan
 WindowStagr:Nieuw venster verplaatsen
 WindowSize:Copieer venster positie
 WindowReset:Venster positie terugzetten
-Utilities:Utilities
-HotlistAdd:Toevoegen aan bladwijzers
-HotlistShow:Toon bladwijzers  F6
-History:Historie
-HistLocal:Toon historie (lokaal)... F7
-HistGlobal:Toon historie (globaal)... ^F7
-FindText:Tekst zoeken  F4
-Help:Hulp
+
+# Main -> Help menu
+#
 HelpContent:Inhoud  F1
 HelpGuide:Handboek
 HelpInfo:Gebruikers informatie
-HelpInter:Interactieve hulp
 HelpAbout:Over NetSurf
+HelpInter:Interactieve hulp
 
+# Toolbar menu
+#
+Toolbar:Werkbalk
+EditToolbar:Werkbalk aanpassen
+
+# Generic tree menus (currently Hotlist and Global history)
+#
+Selection:Selectie
+SelectAll:Selecteer alles  ^A
+Clear:Selectie opheffen  ^Z
+
+# Selection Menu
+#
+Edit:Bewerken
+Launch:Openen  RETURN
+Delete:Verwijderen  ^X
+ResetUsage:Statistiek op nul zetten
+
+# Hotlist/Global history menu
+#
+New:Nieuw
+Expand:Uitklappen
+Collapse:Inklappen
+
+# New hotlist entry menu
+#
+Folder:Map
+Link:Adres
+
+# Tree expand/collapse menu
+#
+All:Alles
+Folders:Mappen
+Links:Adressen
+
+# Other menus
+#
+# URL suggestion menu
+URLSuggest:Recente URLs
+
+# Menus within the choices system
+#
+# Browser pane
 Languages:Taal
-
+#
+# Network pane
 ProxyAuth:Authentificatie
 ProxyNone:Geen
 ProxyBasic:Basis
 ProxyNTLM:NTLM
-
-# Image redraw style
+#
+# Fonts pane
+Fonts:Lettertypen
+#
+# Images pane
 Display:Weergave
 ImgStyle0:RISC OS gebruiken
 ImgStyle1:Direct weergave
 ImgStyle2:Ditheren
 ImgStyle3:Error-diffusie
 
-# Toolbar menus
-URLSuggest:Recente URLs
-Toolbar:Werkbalk
-EditToolbar:Werkbalk aanpassen
 
-# Font menu
-Fonts:Lettertypen
-
-# Hotlist menus
-Hotlist:Bladwijzers
-New:Nieuw
-Expand:Uitklappen
-Collapse:Inklappen
-All:Alles
-Folders:Mappen
-Folder:Map
-Links:Adressen
-Link:Adres
-SaveSelect:Bewaar
-Launch:Openen  RETURN
-Edit:Bewerken
-Delete:Verwijderen  ^X
-ResetUsage:Statistiek op nul zetten
-
-# Hotlist sub-window titles
-NewLink:Nieuw adres aanmaken
-NewFolder:Nieuwe map aanmaken
-EditLink:Bewerk adres
-EditFolder:Map hernoemen
-
-# Default hotlist
-HotlistHomepage:NetSurf homepage
-HotlistTestBuild:NetSurf test versie
+# Treeview interface tokens
+# =========================
+#
+# This section contains tokens which are used in the treeview
+# component. (For example, in the main hotlist/global history windows)
+#
 
 # Tree URL text
+#
 TreeAdded:Toegevoegd: %s
 TreeLast:Laatst bezocht: %s
 TreeVisited:Bezocht: %s
@@ -132,11 +226,34 @@ TreeUnknown:Onbekend
 TreeImport:Ge-importeerde URL
 TreeNewFolder:Nieuwe map
 
-# Tree export
-TreeHotlist:NetSurf bladwijzers
-TreeHistory:NetSurf historie
 
-# Global history
+# Hotlist user interface tokens
+# =============================
+#
+# This section contains tokens which are used in various parts of
+# the hotlist user interface.
+#
+
+# Hotlist sub-window titles
+#
+NewLink:Nieuw adres aanmaken
+NewFolder:Nieuwe map aanmaken
+EditLink:Bewerk adres
+EditFolder:Map hernoemen
+
+# Default hotlist page names
+#
+HotlistHomepage:NetSurf homepage
+HotlistTestBuild:NetSurf test versie
+
+
+# Global history user interface tokens
+# ====================================
+#
+# This section contains tokens which are used in various parts of
+# the global history user interface.
+#
+
 GlobalHistory:Historie (globaal)
 DateToday:vandaag
 DateYesterday:gisteren
@@ -144,17 +261,38 @@ Date1Week:vorige week
 Date2Week:2 weken geleden
 Date3Week:3 weken geleden
 
-# Download window
-Download:%s van %s  è  %s/s  è nog %s
-DownloadU:%s van onbekend  è  %s/s  è  %s totaal
-Downloaded:%s compleet  è  gemiddeld %s/s  è  %s totaal
+
+# Download user interface tokens
+# ==============================
+#
+# This section contains tokens which are used in the download
+# window.
+#
+Download:%s van %s  ‚Ä¢  %s/s  ‚Ä¢  nog %s
+DownloadU:%s van onbekend  ‚Ä¢  %s/s  ‚Ä¢  %s totaal
+Downloaded:%s compleet  ‚Ä¢  gemiddeld %s/s  ‚Ä¢  %s totaal
 Unwritten:Data naar bestand schrijven ging fout.
 
-# Print dialog
+
+# Printing user interface tokens
+# ==============================
+#
+# This section contains tokens which are used in the printing
+# dialog box.
+#
+
 PrintSheetFilled:pagina
 PrintSheetsFilled:pagina's
 
+
+# Content
+# =======
+#
+# This section contains tokens used by contents
+#
+
 # Forms
+#
 Form_Submit:Versturen
 Form_Reset:Reset
 Form_None:
@@ -169,19 +307,58 @@ FormTextarea:Klikken om tekst te bewerken
 FormTextbox:Klikken om dit veld te bewerken
 FormReset:Reset form (not implemented)
 FormFile:Plaats het bestand hier voor uploaden
+SelectMenu:Select
 
-Not2xx:Server retourneert een fout
+# Content titles
+#
+DrawTitle:Draw image (%lux%lu, %lu bytes)
+GIFTitle:GIF image (%lux%lu, %lu bytes)
+JPEGTitle:JPEG image (%ux%u, %lu bytes)
+PNGTitle:PNG image (%lux%lu, %lu bytes)
+JNGTitle:JNG image (%lux%lu, %lu bytes)
+MNGTitle:MNG image (%lux%lu, %lu bytes)
+SpriteTitle:Sprite image (%lux%lu, %lu bytes)
 
+# HTML page character set
+#
+Encoding0:from HTTP headers
+Encoding1:detected
+Encoding2:from <meta>
+EncodingUnk:Unknown
+
+
+# Cookies
+# =======
+#
+# Cookies related tokens.
+#
+# At present, this section simply stores the location of
+# the cookie file. This should not be changed.
+#
 cookiefile:Choices:WWW.NetSurf.Cookies
 cookiejar:<Choices$Write>.WWW.NetSurf.Cookies
 
-ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><title>Page error</title></head><body><h1>Sorry, NetSurf was unable to display this page</h1><p><strong>%s</strong></p></body></html>
+# Errors
+# ======
+#
+# This section contains error and warning messages which
+# are displayed to the user.
+#
+
+# Fetching errors - displayed as an HTML page
+#
+Not2xx:Server retourneert een fout
 InvalidURL:The address <em>%s</em> could not be understood.
 
-NoMemory:NetSurf is running out of memory. Please free some memory and try again.
-FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
-FontError:Failed to open font "Homerton.Medium" (%s).
-Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
+# HTML error page
+#
+ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Page error</title></head><body><h1>Sorry, NetSurf was unable to display this page</h1><p><strong>%s</strong></p></body></html>
+
+# General errors - displayed in a dialog box
+#
+# These may be augmented with further relevant information, which
+# is displayed after the contents of the relevant token.
+#
 PathToURL:An error occurred converting the file path to an URL:
 SaveError:The file could not be saved due to an error:
 LoadError:The file could not be loaded due to an error:
@@ -190,10 +367,18 @@ DragError:An error occurred when dragging the icon:
 TbarError:An error occurred when constructing the toolbar:
 WimpError:An unexpected Window Manager error occurred:
 DownloadWarn:This download may not complete:
-NoDiscSpace:Not enough space available on disc.
-Template:A window template is missing from the Templates file. Please reinstall NetSurf.
 MiscError:An unexpected error occurred:
 FileError:File does not exist:
+PrintError:An error occurred when printing:
+
+# Specific errors - displayed in a dialog box
+#
+NoMemory:NetSurf is running out of memory. Please free some memory and try again.
+FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
+FontError:Failed to open font "Homerton.Medium" (%s).
+Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
+NoDiscSpace:Not enough space available on disc.
+Template:A window template is missing from the Templates file. Please reinstall NetSurf.
 HotlistSaveError:The hotlist was unable to be correctly saved.
 HotlistLoadError:The hotlist was unable to be correctly loaded.
 NoPathError:To save, drag the icon to a directory display
@@ -201,28 +386,34 @@ NoNameError:Please enter a name
 NoURLError:Please enter a URL
 URIError:NetSurf was unable to parse this URI file due to a syntax error.
 EmptyError:file is empty.
-PrintError:An error occurred when printing:
 PrintErrorRO2:It appears that the printer is busy.
 
-# User queries
+
+# Queries
+# =======
+#
+# This section contains queries which are displayed to the user
+#
+
 AbortDownload:Zeker weten dat u deze download af wilt breken?
 QuitDownload:Een of meer downloads zijn nog bezig. Toch afbreken?
 
-# Some general purpose words and phrases
-Bytes: B
-kBytes: kB
-MBytes: MB
-GBytes: GB
 
-# Progress
+# Page fetching
+# =============
+#
+# This section contains messages which may be displayed whilst
+# fetching a page or other content
+#
+
+# Fetch status messages - displayed in status bar
+#
 Progress:%s van %s
 ProgressU:%s
 Loading:pagina ophalen...
 RecPercent:ontvangen %s (%u%%)
 Received:ontvangen %s
 Converting:converteren van %lu bytes
-BadRedirect:foutief doorverwijzen naar URL
-FetchFailed:kan dit document niet ophalen
 Complete:pagina verwerkt (%gs)
 Redirecting:doorverwijzen...
 Processing:verwerking van document
@@ -232,6 +423,11 @@ FetchObjs2:laden van %u objecten: %s
 Done:klaar
 FetchStyle:laden van %u stylesheets
 FetchStyle2:laden van %u stylesheets: %s
+
+# Fetch warning/error messages - displayed in status bar
+#
+BadRedirect:foutief doorverwijzen naar URL
+FetchFailed:kan dit document niet ophalen
 NotCSS:melding: stylesheet is geen CSS
 BadObject:melding: fout object type
 ObjError:fout bij laden object: %s
@@ -241,22 +437,16 @@ PNGError:PNG library fout.
 MNGError:MNG library fout.
 BadSprite:foutief sprite bestand.
 
-DrawTitle:Draw image (%lux%lu, %lu bytes)
-GIFTitle:GIF image (%lux%lu, %lu bytes)
-JPEGTitle:JPEG image (%ux%u, %lu bytes)
-PNGTitle:PNG image (%lux%lu, %lu bytes)
-JNGTitle:JNG image (%lux%lu, %lu bytes)
-MNGTitle:MNG image (%lux%lu, %lu bytes)
-SpriteTitle:Sprite image (%lux%lu, %lu bytes)
 
-SelectMenu:Select
+# User interface
+# ==============
+#
+# This section contains messages to deal with user interface
+# features.
+#
 
-SaveSource:Source
-SaveDraw:Webpage
-SaveText:Webpage
-SaveObject:Object
-SaveLink:Link
-
+# Scrollbars - displayed in status bar
+#
 ScrollUp:Click the arrow to scroll up
 ScrollPUp:Click to scroll up one page
 ScrollV:Drag the bar to scroll vertically
@@ -268,10 +458,25 @@ ScrollH:Drag the bar to scroll horizontally
 ScrollPRight:Click to scroll right one page
 ScrollRight:Click the arrow to scroll right
 
-Encoding0:from HTTP headers
-Encoding1:detected
-Encoding2:from <meta>
-EncodingUnk:Unknown
+
+# Saving
+# ======
+#
+# Messages used when saving
+#
+
+SaveSource:Source
+SaveDraw:Webpage
+SaveText:Webpage
+SaveObject:Object
+SaveLink:Link
+
+
+# Themes
+# ======
+#
+# Messages used when installing new themes
+#
 
 ThemeInstActive:A theme is currently being downloaded or installed. Please wait for it to finish or cancel it before installing more themes.
 ThemeInstDown:Please wait for the theme to download.
@@ -280,7 +485,24 @@ ThemeInstall:Would you like to install the theme '%s' by %s?
 ThemeInstallErr:An error occurred whilst trying to install the downloaded theme.
 ThemeApplyErr:An error occurred whilst trying to apply the downloaded theme.
 
+
+# General
+# =======
+#
+# Some general purpose words and phrases
+#
+
+Bytes: B
+kBytes: kB
+MBytes: MB
+GBytes: GB
+
+
 # Interactive help
+# ================
+#
+# This section contains interactive help messages
+#
 HelpToolbar0:\Tback button.|M\Straverse back one page in the history tree.|MDoes not resubmit form information.
 HelpToolbar1:\Tforward button.|M\Straverse forward one page in the history tree.|MDoes not resubmit form information.
 HelpToolbar2:\Tstop button.|M\Sstop loading this page.
@@ -444,3 +666,21 @@ HelpGHistoryToolbar2:\Topen directories button.|M\Sopen all directories in the h
 HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
 
 HelpAppInfo:\TNetSurf information \w.|MSee the about page for the contributor list and credits.
+
+
+# Unused tokens
+# =============
+#
+# These tokens appear to be unused at the current time.
+#
+
+# Tree export
+TreeHotlist:NetSurf bladwijzers
+TreeHistory:NetSurf historie
+SaveSelect:Bewaar
+ExportAs:Exporteer als
+Copy:Copieer naar prikbord  ^C
+AnimImg:Animatie
+DitherImg:Dither afbeelding
+FilterImg:Smooth afbeelding
+RenderText:Tekst met achtergrond mengen

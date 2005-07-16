@@ -38,6 +38,7 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -385,6 +386,8 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 	float rate;
 	os_error *error;
 	int width;
+	char *local_status;
+	utf8_convert_ret err;
 
 	gettimeofday(&t, 0);
 	dt = (t.tv_sec + 0.000001 * t.tv_usec) - (dw->last_time.tv_sec +
@@ -405,18 +408,47 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 				left = (dw->total_size - dw->received) / rate;
 				sprintf(time, "%u:%.2u", left / 60, left % 60);
 			}
-			snprintf(dw->status, sizeof dw->status,
+
+			/* convert to local encoding */
+			err = utf8_to_local_encoding(
+				messages_get("Download"), 0, &local_status);
+			if (err != UTF8_CONVERT_OK) {
+				/* badenc should never happen */
+				assert(err != UTF8_CONVERT_BADENC);
+				/* hide nomem error */
+				snprintf(dw->status, sizeof dw->status,
 					messages_get("Download"),
 					received, total_size, speed, time);
+			}
+			else {
+				snprintf(dw->status, sizeof dw->status,
+					local_status,
+					received, total_size, speed, time);
+				free(local_status);
+			}
 
 			f = (float) dw->received / (float) dw->total_size;
 			width = download_progress_width * f;
 		} else {
 			left = t.tv_sec - dw->start_time.tv_sec;
 			sprintf(time, "%u:%.2u", left / 60, left % 60);
-			snprintf(dw->status, sizeof dw->status,
+
+			err = utf8_to_local_encoding(
+				messages_get("DownloadU"), 0, &local_status);
+			if (err != UTF8_CONVERT_OK) {
+				/* badenc should never happen */
+				assert(err != UTF8_CONVERT_BADENC);
+				/* hide nomem error */
+				snprintf(dw->status, sizeof dw->status,
 					messages_get("DownloadU"),
 					received, speed, time);
+			}
+			else {
+				snprintf(dw->status, sizeof dw->status,
+					local_status,
+					received, speed, time);
+				free(local_status);
+			}
 
 			/* length unknown, stay at 0 til finished */
 			width = 0;
@@ -428,9 +460,22 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 		rate = (float) dw->received / (float) left;
 		sprintf(time, "%u:%.2u", left / 60, left % 60);
 		speed = human_friendly_bytesize(rate);
-		snprintf(dw->status, sizeof dw->status,
+
+		err = utf8_to_local_encoding(messages_get("DownloadU"), 0,
+				&local_status);
+		if (err != UTF8_CONVERT_OK) {
+			/* badenc should never happen */
+			assert(err != UTF8_CONVERT_BADENC);
+			/* hide nomem error */
+			snprintf(dw->status, sizeof dw->status,
 				messages_get("Downloaded"),
 				total_size, speed, time);
+		}
+		else {
+			snprintf(dw->status, sizeof dw->status, local_status,
+					total_size, speed, time);
+			free(local_status);
+		}
 
 		/* all done */
 		width = download_progress_width;

@@ -909,24 +909,11 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
-	char *local_text;
-	utf8_convert_ret err;
-
 	if ((!g->toolbar) || (!g->toolbar->status_handle))
 		return;
 
-	/* convert text to local encoding */
-	err = utf8_to_enc(text, local_encoding_name(), 0, &local_text);
-	if (err != UTF8_CONVERT_OK) {
-		/* A bad encoding should never happen, so assert this */
-		assert(err != UTF8_CONVERT_BADENC);
-		LOG(("utf8_to_enc failed"));
-		return;
-	}
-
 	ro_gui_set_icon_string(g->toolbar->status_handle,
-				ICON_STATUS_TEXT, local_text);
-	free(local_text);
+				ICON_STATUS_TEXT, text);
 }
 
 
@@ -1904,12 +1891,12 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			}
 			return true;
 
-		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F9:
-			talloc_report_full(0, stderr);
-			return true;
-
 		case wimp_KEY_CONTROL + wimp_KEY_F9:	/* Dump url_store. */
 			url_store_dump();
+			return true;
+
+		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F9:
+			talloc_report_full(0, stderr);
 			return true;
 
 		case wimp_KEY_F11:	/* Zoom */

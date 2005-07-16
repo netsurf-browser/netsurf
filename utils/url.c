@@ -567,10 +567,11 @@ url_func_result url_nice(const char *url, char **result)
 			if (15 < k + i)
 				break;
 			if (k)
-				k++;
+				k+=2;
 			strncpy(buf + k, rurl + j + so, i);
 			k += i;
 			buf[k] = 160;	/* nbsp */
+			buf[k+1] = 0xc2;	/* as UTF-8 */
 		}
 
 		j += match[0].rm_eo;

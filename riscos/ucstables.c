@@ -6,12 +6,17 @@
  */
 
 /** \file
- * UCS conversion tables
+ * UCS conversion tables and RISC OS-specific UTF-8 text handling
  */
+#include <assert.h>
+#include <limits.h>
+#include <string.h>
 
 #include "oslib/osbyte.h"
 #include "oslib/territory.h"
+
 #include "netsurf/riscos/ucstables.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 /* Common values (ASCII) */
@@ -334,15 +339,16 @@ int *ucstable_from_alphabet(int alphabet)
 	return ucstable;
 }
 
+
 static const char *localencodings[] = {
 	"ISO-8859-1",	/* BFont - 100 - just use Latin1, instead */
-	"ISO-8859-1",	/* do we want to use Acorn Latin1, instead? */
+	"ISO-8859-1",
 	"ISO-8859-2",
 	"ISO-8859-3",
 	"ISO-8859-4",
 	"ISO-8859-5",
 	"ISO-8859-6",
-	"ISO-8869-7",
+	"ISO-8859-7",
 	"ISO-8859-8",
 	"ISO-8859-9",
 	"ISO-IR-182",
@@ -354,21 +360,272 @@ static const char *localencodings[] = {
 	"CP866"		/* Cyrillic2 - 120 */
 };
 
+static const struct special {
+	char local;		/**< Local 8bit representation */
+	char len;		/**< Length (in bytes) of UTF-8 character */
+	const char *utf;	/**< UTF-8 representation */
+} special_chars[] = {
+	{ 0x80, 3, "\xE2\x82\xAC" },	/* EURO SIGN */
+	{ 0x81, 2, "\xC5\xB4" },	/* LATIN CAPITAL LETTER W WITH CIRCUMFLEX */
+	{ 0x82, 2, "\xC5\xB5" },	/* LATIN SMALL LETTER W WITH CIRCUMFLEX */
+	{ 0x84, 3, "\xE2\x9C\x98" },	/* HEAVY BALLOT X */
+	{ 0x85, 2, "\xC5\xB6" },	/* LATIN CAPITAL LETTER Y WITH CIRCUMFLEX */
+	{ 0x86, 2, "\xC5\xB7" },	/* LATIN SMALL LETTER Y WITH CIRCUMFLEX */
+	{ 0x88, 3, "\xE2\x87\x90" },	/* LEFTWARDS DOUBLE ARROW */
+	{ 0x89, 3, "\xE2\x87\x92" },	/* RIGHTWARDS DOUBLE ARROW */
+	{ 0x8a, 3, "\xE2\x87\x93" },	/* DOWNWARDS DOUBLE ARROW */
+	{ 0x8b, 3, "\xE2\x87\x91" },	/* UPWARDS DOUBLE ARROW */
+	{ 0x8c, 3, "\xE2\x80\xA6" },	/* HORIZONTAL ELLIPSIS */
+	{ 0x8d, 3, "\xE2\x84\xA2" },	/* TRADE MARK SIGN */
+	{ 0x8e, 3, "\xE2\x80\xB0" },	/* PER MILLE SIGN */
+	{ 0x8f, 3, "\xE2\x80\xA2" },	/* BULLET */
+	{ 0x90, 3, "\xE2\x80\x98" },	/* LEFT SINGLE QUOTATION MARK */
+	{ 0x91, 3, "\xE2\x80\x99" },	/* RIGHT SINGLE QUOTATION MARK */
+	{ 0x92, 3, "\xE2\x80\xB9" },	/* SINGLE LEFT-POINTING ANGLE QUOTATION MARK */
+	{ 0x93, 3, "\xE2\x80\xBA" },	/* SINGLE RIGHT-POINTING ANGLE QUOTATION MARK */
+	{ 0x94, 3, "\xE2\x80\x9C" },	/* LEFT DOUBLE QUOTATION MARK */
+	{ 0x95, 3, "\xE2\x80\x9D" },	/* RIGHT DOUBLE QUOTATION MARK */
+	{ 0x96, 3, "\xE2\x80\x9E" },	/* DOUBLE LOW-9 QUOTATION MARK */
+	{ 0x97, 3, "\xE2\x80\x93" },	/* EN DASH */
+	{ 0x98, 3, "\xE2\x80\x94" },	/* EM DASH */
+	{ 0x99, 3, "\xE2\x88\x92" },	/* MINUS SIGN */
+	{ 0x9a, 2, "\xC5\x92" },	/* LATIN CAPITAL LIGATURE OE */
+	{ 0x9b, 2, "\xC5\x93" },	/* LATIN SMALL LIGATURE OE */
+	{ 0x9c, 3, "\xE2\x80\xA0" },	/* DAGGER */
+	{ 0x9d, 3, "\xE2\x80\xA1" },	/* DOUBLE DAGGER */
+	{ 0x9e, 3, "\xEF\xAC\x81" },	/* LATIN SMALL LIGATURE FI */
+	{ 0x9f, 3, "\xEF\xAC\x82" } 	/* LATIN SMALL LIGATURE FL */
+};
+
+
 /**
- * Retrieve local encoding name, suitable for passing to iconv
+ * Convert a UTF-8 encoded string into the system local encoding
+ *
+ * \param string The string to convert
+ * \param len The length (in bytes) of the string, or 0
+ * \param result Pointer to location in which to store result
+ * \return The appropriate utf8_convert_ret value
  */
-const char *local_encoding_name(void)
+utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
+		char **result)
 {
 	os_error *error;
-	int alphabet;
+	int alphabet, i, offset_count = 0;
+	struct {
+		const struct special *local;	/* local character */
+		size_t offset;		/* byte offset into string */
+	} offsets[CHAR_MAX];
+	size_t off;
+	char *temp;
+	const char *enc;
+	utf8_convert_ret err;
 
+	assert(string && result);
+
+	/* get length, if necessary */
+	if (len == 0)
+		len = strlen(string);
+
+	/* read system alphabet */
 	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0, &alphabet);
-	if (!error) {
-		if (alphabet < 116)
-			return localencodings[alphabet - 100];
-		else if (alphabet == 120)
-			return localencodings[16];
+	if (error)
+		alphabet = territory_ALPHABET_LATIN1;
+
+	/* UTF-8 -> simply copy string */
+	if (alphabet == 111 /* UTF-8 */) {
+		*result = strndup(string, len);
+		return UTF8_CONVERT_OK;
 	}
 
-	return localencodings[0];
+	/* get encoding name */
+	enc = (alphabet < 116 ? localencodings[alphabet - 100]
+			      : (alphabet == 120 ? localencodings[16]
+						 : localencodings[0]));
+
+	/* populate offsets array with details of characters that
+	 * will be stripped by iconv */
+	for (off = 0; off < len; off = utf8_next(string, len, off)) {
+		if (string[off] != 0xE2 &&
+				string[off] != 0xC5 && string[off] != 0xEF)
+			continue;
+
+		for (i = 0; i != NOF_ELEMENTS(special_chars); i++) {
+			if (strncmp(string + off, special_chars[i].utf,
+					special_chars[i].len) == 0) {
+				/* ensure we don't overflow our buffer */
+				assert(offset_count < CHAR_MAX - 1);
+				offsets[offset_count].local =
+							&special_chars[i];
+				offsets[offset_count].offset = off;
+				offset_count++;
+				break;
+			}
+		}
+	}
+
+	if (offset_count == 0) {
+		/* No substitutions are required, so exit here */
+		return utf8_to_enc(string, enc, len, result);
+	}
+
+	/* create output buffer */
+	*(result) = malloc(len + 1);
+	if (!(*result))
+		return UTF8_CONVERT_NOMEM;
+	*(*result) = '\0';
+
+	/* convert the chunks between offsets, then copy stripped
+	 * character into output string */
+	for (i = 0; i != offset_count; i++) {
+		off = (i > 0 ? offsets[i-1].offset + offsets[i-1].local->len
+			     : 0);
+
+		err = utf8_to_enc(string + off, enc,
+				offsets[i].offset - off, &temp);
+		if (err != UTF8_CONVERT_OK) {
+			assert(err != UTF8_CONVERT_BADENC);
+			free(*result);
+			return UTF8_CONVERT_NOMEM;
+		}
+
+		strcat((*result), temp);
+		off = strlen(*result);
+		(*result)[off] = offsets[i].local->local;
+		(*result)[off+1] = '\0';
+
+		free(temp);
+	}
+
+	/* handle last chunk */
+	if (offsets[offset_count - 1].offset < len) {
+		off = offsets[offset_count - 1].offset +
+				offsets[offset_count - 1].local->len;
+
+		err = utf8_to_enc(string + off, enc, len - off, &temp);
+		if (err != UTF8_CONVERT_OK) {
+			assert(err != UTF8_CONVERT_BADENC);
+			free(*result);
+			return UTF8_CONVERT_NOMEM;
+		}
+
+		strcat((*result), temp);
+
+		free(temp);
+	}
+
+	return UTF8_CONVERT_OK;
+}
+
+/**
+ * Convert a string encoded in the system local encoding to UTF-8
+ *
+ * \param string The string to convert
+ * \param len The length (in bytes) of the string, or 0
+ * \param result Pointer to location in which to store result
+ * \return The appropriate utf8_convert_ret value
+ */
+utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
+		char **result)
+{
+	os_error *error;
+	int alphabet, i, offset_count = 0;
+	struct {
+		const struct special *local;	/* utf character */
+		size_t offset;		/* byte offset into string */
+	} offsets[CHAR_MAX];
+	size_t off;
+	char *temp;
+	const char *enc;
+	utf8_convert_ret err;
+
+	assert(string && result);
+
+	/* get length, if necessary */
+	if (len == 0)
+		len = strlen(string);
+
+	/* read system alphabet */
+	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0, &alphabet);
+	if (error)
+		alphabet = territory_ALPHABET_LATIN1;
+
+	/* UTF-8 -> simply copy string */
+	if (alphabet == 111 /* UTF-8 */) {
+		*result = strndup(string, len);
+		return UTF8_CONVERT_OK;
+	}
+
+	/* get encoding name */
+	enc = (alphabet < 116 ? localencodings[alphabet - 100]
+			      : (alphabet == 120 ? localencodings[16]
+						 : localencodings[0]));
+
+	/* populate offsets array with details of characters that
+	 * will be stripped by iconv */
+	for (off = 0; off < len; off++) {
+		if (string[off] < 0x80 || string[off] > 0x9f)
+			continue;
+
+		for (i = 0; i != NOF_ELEMENTS(special_chars); i++) {
+			if (string[off] == special_chars[i].local) {
+				/* ensure we don't overflow our buffer */
+				assert(offset_count < CHAR_MAX - 1);
+				offsets[offset_count].local =
+							&special_chars[i];
+				offsets[offset_count].offset = off;
+				offset_count++;
+				break;
+			}
+		}
+	}
+
+	if (offset_count == 0) {
+		/* No substitutions are required, so exit here */
+		return utf8_from_enc(string, enc, len, result);
+	}
+
+	/* create output buffer (oversized, but not by much) */
+	*(result) = malloc(len + (3 * offset_count) + 1);
+	if (!(*result))
+		return UTF8_CONVERT_NOMEM;
+	*(*result) = '\0';
+
+	/* convert the chunks between offsets, then copy stripped
+	 * UTF-8 character into output string */
+	for (i = 0; i != offset_count; i++) {
+		off = (i > 0 ? offsets[i-1].offset + offsets[i-1].local->len
+			     : 0);
+
+		err = utf8_from_enc(string + off, enc,
+				offsets[i].offset - off, &temp);
+		if (err != UTF8_CONVERT_OK) {
+			assert(err != UTF8_CONVERT_BADENC);
+			free(*result);
+			return UTF8_CONVERT_NOMEM;
+		}
+
+		strcat((*result), temp);
+		strcat((*result), offsets[i].local->utf);
+
+		free(temp);
+	}
+
+	/* handle last chunk */
+	if (offsets[offset_count - 1].offset < len) {
+		off = offsets[offset_count - 1].offset +
+				offsets[offset_count - 1].local->len;
+
+		err = utf8_from_enc(string + off, enc, len - off, &temp);
+		if (err != UTF8_CONVERT_OK) {
+			assert(err != UTF8_CONVERT_BADENC);
+			free(*result);
+			return UTF8_CONVERT_NOMEM;
+		}
+
+		strcat((*result), temp);
+
+		free(temp);
+	}
+
+	return UTF8_CONVERT_OK;
 }

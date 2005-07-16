@@ -9,6 +9,7 @@
  * Interactive help (implementation).
  */
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include "oslib/help.h"
@@ -24,6 +25,7 @@
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -158,7 +160,7 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		sprintf(message_token, "HelpToolbar%i", (int)icon);
 	} else if ((g = ro_gui_status_lookup(window)) != NULL)
 		sprintf(message_token, "HelpStatus%i", (int)icon);
-	
+
 	/* change toolbars to editors where appropriate */
 	if ((toolbar) && (toolbar->editor))
 		sprintf(message_token, "HelpEditToolbar%i", (int)icon);
@@ -233,7 +235,9 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message,
 	const char *translated_token;
 	help_full_message_reply *reply;
 	char *base_token;
+	char *local_token;
 	os_error *error;
+	utf8_convert_ret err;
 
 	/* start off with an empty reply */
 	reply = (help_full_message_reply *)message;
@@ -260,8 +264,20 @@ static void ro_gui_interactive_help_broadcast(wimp_message *message,
 
 	/* copy our message string */
 	if (translated_token != token) {
-		reply->reply[235] = 0;
-		strncpy(reply->reply, translated_token, 235);
+		/* convert to local encoding */
+		err = utf8_to_local_encoding(translated_token, 0,
+				&local_token);
+		if (err != UTF8_CONVERT_OK) {
+			/* badenc should never happen */
+			assert(err != UTF8_CONVERT_BADENC);
+			/* simply use UTF-8 string */
+			strncpy(reply->reply, translated_token, 235);
+		}
+		else {
+			strncpy(reply->reply, local_token, 235);
+			free(local_token);
+		}
+		reply->reply[235] = '\0';
 	}
 
 	/* broadcast the help reply */
@@ -303,7 +319,7 @@ bool ro_gui_interactive_help_available(void) {
 					error->errnum, error->errmess));
 			warn_user("MiscError", error->errmess);
 		}
-		
+
 		/* we can't just use strcmp due to string termination issues */
 		if (!strncmp(task.name, "Help", 4) &&
 				(task.name[4] < 32))

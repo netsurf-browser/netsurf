@@ -430,14 +430,14 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 			pointer.w = key->w;
 			pointer.i = ICON_OPENURL_OPEN;
 			pointer.buttons = wimp_CLICK_SELECT;
-			ro_gui_dialog_click_open_url(&pointer); 
+			ro_gui_dialog_click_open_url(&pointer);
 		}
 	}
 #ifdef WITH_AUTH
 	if (key->w == dialog_401li)
 		return ro_gui_401login_keypress(key);
 #endif
-	  	
+
 	return false;
 }
 
@@ -838,46 +838,44 @@ void ro_gui_save_options(void)
 void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
 {
 	switch (pointer->i) {
-		case ICON_CONFIG_BR_LANG_PICK:
-			/* drop through */
-		case ICON_CONFIG_BR_ALANG_PICK:
-			config_br_icon = pointer->i;
-			ro_gui_popup_menu(languages_menu, dialog_config_br,
-					pointer->i);
-			break;
+	case ICON_CONFIG_BR_LANG_PICK:
+		ro_gui_menu_prepare_languages(false, ro_gui_choices_lang);
+		config_br_icon = pointer->i;
+		ro_gui_popup_menu(languages_menu, dialog_config_br,
+				pointer->i);
+		break;
+	case ICON_CONFIG_BR_ALANG_PICK:
+		ro_gui_menu_prepare_languages(true, ro_gui_choices_alang);
+		config_br_icon = pointer->i;
+		ro_gui_popup_menu(languages_menu, dialog_config_br,
+				pointer->i);
+		break;
 	}
 }
 
 /**
  * Handle a selection from the language selection popup menu.
  *
- * \param lang The language name (as returned by messages_get)
+ * \param lang The language messages key
  */
 
-void ro_gui_dialog_languages_menu_selection(char *lang)
+void ro_gui_dialog_languages_menu_selection(const char *lang)
 {
 	int offset = strlen("lang_");
 
-	const char *temp = messages_get_key(lang);
-	if (temp == NULL) {
-		warn_user("MiscError", "Failed to retrieve message key");
-		config_br_icon = -1;
-		return;
-	}
-
 	switch (config_br_icon) {
-		case ICON_CONFIG_BR_LANG_PICK:
-			ro_gui_choices_lang = temp + offset;
-			ro_gui_set_icon_string(dialog_config_br,
-						ICON_CONFIG_BR_LANG,
-						lang);
-			break;
-		case ICON_CONFIG_BR_ALANG_PICK:
-			ro_gui_choices_alang = temp + offset;
-			ro_gui_set_icon_string(dialog_config_br,
-						ICON_CONFIG_BR_ALANG,
-						lang);
-			break;
+	case ICON_CONFIG_BR_LANG_PICK:
+		ro_gui_choices_lang = lang + offset;
+		ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_LANG,
+				messages_get(lang));
+		ro_gui_menu_prepare_languages(false, ro_gui_choices_lang);
+		break;
+	case ICON_CONFIG_BR_ALANG_PICK:
+		ro_gui_choices_alang = lang + offset;
+		ro_gui_set_icon_string(dialog_config_br,
+				ICON_CONFIG_BR_ALANG, messages_get(lang));
+		ro_gui_menu_prepare_languages(true, ro_gui_choices_alang);
+		break;
 	}
 }
 
@@ -1266,7 +1264,7 @@ void ro_gui_dialog_click_open_url(wimp_pointer *pointer)
 	bool reopen_window = false;
 	wimp_caret caret;
 	os_error *error;
-	
+
 	if (pointer->i == ICON_OPENURL_MENU) {
 	  	/* we can't have two open menus, so we close the iconbar menu
 	  	 * and detach our window from it */
@@ -1315,7 +1313,7 @@ void ro_gui_dialog_click_open_url(wimp_pointer *pointer)
 		ro_gui_popup_menu(url_suggest_menu,
 				dialog_openurl,
 				ICON_OPENURL_MENU);
-		return; 
+		return;
 	}
 
 	if ((pointer->i != ICON_OPENURL_OPEN) &&

@@ -25,6 +25,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 static void ro_gui_wimp_cache_furniture_sizes(wimp_w w);
@@ -205,13 +206,15 @@ char *ro_gui_get_icon_string(wimp_w w, wimp_i i) {
  *
  * \param  w	 window handle
  * \param  i	 icon handle
- * \param  text  string (copied)
+ * \param  text  string (UTF-8 encoded) (copied)
  */
 void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 	wimp_caret caret;
 	wimp_icon_state ic;
 	os_error *error;
 	int old_len, len;
+	char *local_text;
+	utf8_convert_ret err;
 
 	/* get the icon data */
 	ic.w = w;
@@ -224,17 +227,27 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 		return;
 	}
 
+	/* convert text to local encoding */
+	err = utf8_to_local_encoding(text, 0, &local_text);
+	if (err != UTF8_CONVERT_OK) {
+		/* A bad encoding should never happen, so assert this */
+		assert(err != UTF8_CONVERT_BADENC);
+		LOG(("utf8_to_enc failed"));
+		return;
+	}
+
 	/* check that the existing text is not the same as the updated text
 	 * to stop flicker */
 	if (ic.icon.data.indirected_text.size &&
-			!strncmp(ic.icon.data.indirected_text.text, text,
+			!strncmp(ic.icon.data.indirected_text.text,
+			local_text,
 			(unsigned int)ic.icon.data.indirected_text.size - 1))
 		return;
 
 	/* copy the text across */
 	old_len = strlen(ic.icon.data.indirected_text.text);
 	if (ic.icon.data.indirected_text.size) {
-		strncpy(ic.icon.data.indirected_text.text, text,
+		strncpy(ic.icon.data.indirected_text.text, local_text,
 			(unsigned int)ic.icon.data.indirected_text.size - 1);
 		ic.icon.data.indirected_text.text[
 				ic.icon.data.indirected_text.size - 1] = '\0';
@@ -249,7 +262,7 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 		return;
 	}
 	if ((caret.w == w) && (caret.i == i)) {
-		len = strlen(text);
+		len = strlen(local_text);
 		if ((caret.index > len) || (caret.index == old_len))
 				caret.index = len;
 		error = xwimp_set_caret_position(w, i, caret.pos.x, caret.pos.y,
@@ -261,6 +274,8 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 		}
 	}
 	ro_gui_redraw_icon(w, i);
+
+	free(local_text);
 }
 
 
@@ -374,6 +389,45 @@ void ro_gui_set_icon_button_type(wimp_w w, wimp_i i, int type) {
 
 
 /**
+ * Set an icon's sprite
+ *
+ * \param  w	window handle
+ * \param  i	icon handle
+ * \param  area sprite area containing sprite
+ * \param  name name of sprite in area (in local encoding)
+ */
+void ro_gui_set_icon_sprite(wimp_w w, wimp_i i, osspriteop_area *area,
+		const char *name)
+{
+	wimp_icon_state ic;
+	os_error *error;
+
+	/* get the icon data */
+	ic.w = w;
+	ic.i = i;
+	error = xwimp_get_icon_state(&ic);
+	if (error) {
+		LOG(("xwimp_get_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	/* copy the name across */
+	if (ic.icon.data.indirected_text.size) {
+		strncpy(ic.icon.data.indirected_text.text, name,
+			(unsigned int)ic.icon.data.indirected_text.size - 1);
+		ic.icon.data.indirected_text.text[
+				ic.icon.data.indirected_text.size - 1] = '\0';
+	}
+
+	ic.icon.data.indirected_sprite.area = area;
+
+	ro_gui_redraw_icon(w, i);
+}
+
+
+/**
  * Set a window title (does *not* redraw the title)
  *
  * \param  w	 window handle
@@ -382,6 +436,8 @@ void ro_gui_set_icon_button_type(wimp_w w, wimp_i i, int type) {
 void ro_gui_set_window_title(wimp_w w, const char *text) {
 	wimp_window_info_base window;
 	os_error *error;
+	char *title_local_enc;
+	utf8_convert_ret err;
 
 	/*	Get the window details
 	*/
@@ -394,9 +450,19 @@ void ro_gui_set_window_title(wimp_w w, const char *text) {
 		return;
 	}
 
+	/* convert text to local encoding */
+	err = utf8_to_local_encoding(text, 0, &title_local_enc);
+	if (err != UTF8_CONVERT_OK) {
+		/* A bad encoding should never happen,
+		 * so assert this */
+		assert(err != UTF8_CONVERT_BADENC);
+		LOG(("utf8_to_enc failed"));
+		return;
+	}
+
 	/*	Set the title string
 	*/
-	strncpy(window.title_data.indirected_text.text, text,
+	strncpy(window.title_data.indirected_text.text, title_local_enc,
 			(unsigned int)window.title_data.indirected_text.size
 					- 1);
 	window.title_data.indirected_text.text[
@@ -411,6 +477,8 @@ void ro_gui_set_window_title(wimp_w w, const char *text) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
+
+	free(title_local_enc);
 }
 
 

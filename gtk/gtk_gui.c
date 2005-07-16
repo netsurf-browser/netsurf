@@ -5,6 +5,7 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +22,7 @@
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -163,4 +165,32 @@ void schedule_run(void) {}
 
 void global_history_add(struct gui_window *g) {}
 
-const char *local_encoding_name(void) { return "UTF-8"; }
+utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
+		char **result)
+{
+	assert(string && result);
+
+	if (len == 0)
+		len = strlen(string);
+
+	*result = strndup(string, len);
+	if (!(*result))
+		return UTF8_CONVERT_NOMEM;
+
+	return UTF8_CONVERT_OK;
+}
+
+utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
+		char **result)
+{
+	assert(string && result);
+
+	if (len == 0)
+		len = strlen(string);
+
+	*result = strndup(string, len);
+	if (!(*result))
+		return UTF8_CONVERT_NOMEM;
+
+	return UTF8_CONVERT_OK;
+}

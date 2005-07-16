@@ -31,6 +31,12 @@ utf8_convert_ret utf8_to_enc(const char *string, const char *encname,
 utf8_convert_ret utf8_from_enc(const char *string, const char *encname,
 		size_t len, char **result);
 
+/* These two are platform specific */
+utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
+		char **result);
+utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
+		char **result);
+
 void utf8_finalise(void);
 
 #endif

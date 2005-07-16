@@ -37,6 +37,7 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -192,7 +193,8 @@ void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
 
 	ro_gui_save_set_state(c, save_type, name_buf, icon_buf);
 
-	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_ICON, icon_buf);
+	ro_gui_set_icon_sprite(dialog_saveas, ICON_SAVE_ICON, saveas_area,
+			icon_buf);
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name_buf);
 }
@@ -435,6 +437,8 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 	wimp_message message;
 	os_error *error;
 	char *dp, *ep;
+	char *local_name = NULL;
+	utf8_convert_ret err;
 
 	if (using_dragasprite) {
 		error = xdragasprite_stop();
@@ -466,8 +470,15 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 		return;
 
 	if (!saving_from_dialog) {
-		/* saving directly from browser window, choose a name based upon the URL */
-		name = save_leafname;
+		/* saving directly from browser window, choose a
+		 * name based upon the URL */
+		err = utf8_to_local_encoding(save_leafname, 0, &local_name);
+		if (err != UTF8_CONVERT_OK) {
+			/* badenc should never happen */
+			assert(err != UTF8_CONVERT_BADENC);
+			local_name = NULL;
+		}
+		name = local_name ? local_name : save_leafname;
 	}
 	else {
 		char *dot;
@@ -502,6 +513,8 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 
 	wimp_send_message_to_window(wimp_USER_MESSAGE, &message,
 			pointer.w, pointer.i);
+
+	free(local_name);
 }
 
 
@@ -871,6 +884,8 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type, char *lea
 	url_func_result res;
 	bool done = false;
 	char *nice = NULL;
+	utf8_convert_ret err;
+	char *local_name;
 
 	/* parameters that we need to remember */
 	gui_save_current_type = save_type;
@@ -886,7 +901,18 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type, char *lea
 		name = nice;
 	else
 		name = messages_get(name);
+
+	/* filename is utf8 */
 	strcpy(leaf_buf, name);
+
+	err = utf8_to_local_encoding(name, 0, &local_name);
+	if (err != UTF8_CONVERT_OK) {
+		/* badenc should never happen */
+		assert(err != UTF8_CONVERT_BADENC);
+		local_name = NULL;
+	}
+
+	name = local_name ? local_name : name;
 
 	/* sprite name used for icon and dragging */
 	if (save_type == GUI_SAVE_COMPLETE) {
@@ -933,6 +959,7 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type, char *lea
 		}
 	}
 
+	free(local_name);
 	free(nice);
 }
 

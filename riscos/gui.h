@@ -115,7 +115,7 @@ void ro_gui_dialog_close(wimp_w close);
 void ro_gui_dialog_open_config(void);
 void ro_gui_dialog_proxyauth_menu_selection(int item);
 void ro_gui_dialog_image_menu_selection(int item);
-void ro_gui_dialog_languages_menu_selection(char *lang);
+void ro_gui_dialog_languages_menu_selection(const char *lang);
 void ro_gui_dialog_font_menu_selection(int item);
 void ro_gui_dialog_redraw(wimp_draw *redraw);
 

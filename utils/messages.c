@@ -53,7 +53,7 @@ static unsigned int messages_hash(const char *s);
 
 void messages_load(const char *path)
 {
-	char s[300];
+	char s[400];
 	FILE *fp;
 
 	fp = fopen(path, "r");
@@ -119,23 +119,6 @@ const char *messages_get(const char *key)
 	if (!entry)
 		return key;
 	return entry->value;
-}
-
-/**
- * Retrieve the key associated with a value
- *
- * \param value The value as returned by messages_get
- * \return The key associated with the value or NULL if not found
- */
-const char *messages_get_key(const char *value)
-{
-	const char *key = value - MAX_KEY_LENGTH;
-	const char *temp_value = messages_get(key);
-
-	if (strcmp(value, temp_value) == 0)
-		return key;
-
-	return NULL;
 }
 
 
