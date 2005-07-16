@@ -704,9 +704,13 @@ bool ro_gui_save_content(struct content *c, char *path)
 
 bool ro_gui_save_complete(struct content *c, char *path)
 {
+	osspriteop_header *sprite;
+	char name[12];
 	char buf[256];
 	FILE *fp;
 	os_error *error;
+	size_t len;
+	char *dot;
 
         /* Create dir */
 	error = xosfile_create_dir(path, 0);
@@ -735,6 +739,20 @@ bool ro_gui_save_complete(struct content *c, char *path)
 		return false;
 	}
 
+	/* Make sure the sprite name matches the directory name, because
+	   the user may have renamed the directory since we created the
+	   thumbnail sprite */
+
+	dot = strrchr(path, '.');
+	if (dot) dot++; else dot = path;
+	len = strlen(dot);
+	if (len >= 12) len = 12;
+
+	sprite = (osspriteop_header*)((byte*)saveas_area + saveas_area->first);
+	memcpy(name, sprite->name, 12);  /* remember original name */
+	memcpy(sprite->name, dot, len);
+	memset(sprite->name + len, 0, 12 - len);
+
 	/* Create !Sprites */
 	snprintf(buf, sizeof buf, "%s.!Sprites", path);
 
@@ -745,6 +763,9 @@ bool ro_gui_save_complete(struct content *c, char *path)
 		warn_user("SaveError", error->errmess);
 	        return false;
 	}
+
+	/* restore sprite name in case the save fails and we need to try again */
+	memcpy(sprite->name, name, 12);
 
 	return save_complete(c, path);
 }
