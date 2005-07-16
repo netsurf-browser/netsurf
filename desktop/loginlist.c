@@ -84,10 +84,13 @@ void login_list_add(char *host, char* logindets)
 		warn_user("NoMemory", 0);
 		return;
 	}
-	nli->prev = loginlist->prev;
-	nli->next = loginlist;
-	loginlist->prev->next = nli;
-	loginlist->prev = nli;
+
+	/* prepend to list so that more recent additions are
+	   encountered first in login_list_get */
+	nli->next = loginlist->next;
+	nli->prev = loginlist;
+	loginlist->next->prev = nli;
+	loginlist->next = nli;
 
 	LOG(("Adding %s", temp));
 	#ifndef NDEBUG
@@ -149,9 +152,9 @@ struct login *login_list_get(char *url)
 	do {
 		LOG(("%s, %d", temp, strlen(temp)));
 
-			for (nli = loginlist->next; nli != loginlist &&
-					(strcasecmp(nli->host, temp)!=0);
-					nli = nli->next)
+		for (nli = loginlist->next; nli != loginlist &&
+			(strcasecmp(nli->host, temp)!=0);
+			nli = nli->next)
 				/* do nothing */;
 
 		if (nli != loginlist) {
