@@ -172,8 +172,7 @@ size_t utf8_prev(const char *s, size_t o)
 {
 	assert(s != NULL);
 
-	while (o != 0 && !(((s[--o] & 0x80) == 0x00) ||
-			((s[o] & 0xC0) == 0xC0)))
+	while (o != 0 && (s[--o] & 0xC0) == 0x80)
 		/* do nothing */;
 
 	return o;
@@ -191,8 +190,7 @@ size_t utf8_next(const char *s, size_t l, size_t o)
 {
 	assert(s != NULL);
 
-	while (o != l && !(((s[++o] & 0x80) == 0x00) ||
-			((s[o] & 0xC0) == 0xC0)))
+	while (o != l && (s[++o] & 0xC0) == 0x80)
 		/* do nothing */;
 
 	return o;
