@@ -741,7 +741,7 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 		/* extract Content-Length header */
 		for (i = 15; i < (int)size && (data[i] == ' ' || data[i] == '\t'); i++)
 			/* */;
-		if ('0' <= data[i] && data[i] <= '9')
+		if (i < (int)size && '0' <= data[i] && data[i] <= '9')
 			f->content_length = atol(data + i);
 #ifdef WITH_AUTH
 	} else if (16 < size && strncasecmp(data, "WWW-Authenticate", 16) == 0) {
