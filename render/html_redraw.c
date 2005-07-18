@@ -31,6 +31,9 @@ static bool html_redraw_box(struct box *box,
 		int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour current_background_color);
+static bool html_redraw_text_box(struct box *box, int x, int y,
+		int x0, int y0, int x1, int y1,
+		float scale, colour current_background_color);
 static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int padding_width, int padding_height, float scale);
 static bool html_redraw_border_plot(int i, int *p, colour c,
@@ -306,99 +309,10 @@ bool html_redraw_box(struct box *box,
 			return false;
 
 	} else if (box->text) {
-		bool highlighted = false;
+		if (!html_redraw_text_box(box, x, y, x0, y0, x1, y1,
+				scale, current_background_color))
+			return false;
 
-		/* is this box part of a selection? */
-		if (box->text && !box->object && current_redraw_browser) {
-			unsigned start_idx;
-			unsigned end_idx;
-
-			/* first try the browser window's current selection */
-			if (selection_defined(current_redraw_browser->sel) &&
-				selection_highlighted(current_redraw_browser->sel,
-					box, &start_idx, &end_idx)) {
-				highlighted = true;
-			}
-
-			/* what about the current search operation, if any */
-			if (!highlighted &&
-				search_current_window == current_redraw_browser->window &&
-				gui_search_term_highlighted(current_redraw_browser->window,
-					box, &start_idx, &end_idx)) {
-					highlighted = true;
-			}
-
-			/* \todo make search terms visible within selected text */
-			if (highlighted) {
-				unsigned endtxt_idx = end_idx;
-				int startx, endx;
-
-				if (end_idx > box->length) {
-					/* adjust for trailing space, not present in box->text */
-					assert(end_idx == box->length + 1);
-					endtxt_idx = box->length;
-				}
-
-				if (!nsfont_width(box->style, box->text, start_idx, &startx))
-					startx = 0;
-
-				if (!nsfont_width(box->style, box->text + start_idx,
-						endtxt_idx - start_idx, &endx))
-					endx = 0;
-				endx += startx;
-
-				/* is there a trailing space that should be highlighted as well? */
-				if (end_idx > box->length) {
-					int spc_width;
-					/* \todo is there a more elegant/efficient solution? */
-					if (nsfont_width(box->style, " ", 1, &spc_width))
-						endx += spc_width;
-				}
-
-				if (scale != 1.0) {
-					startx *= scale;
-					endx *= scale;
-				}
-
-				if (start_idx > 0) {
-
-					if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
-							box->style, box->text, start_idx,
-							current_background_color,
-							/*print_text_black ? 0 :*/ box->style->color))
-						return false;
-
-				}
-
-				if (!plot.fill(x + startx, y, x + endx, y + box->height * scale,
-						current_background_color ^ 0xffffff))
-					return false;
-
-				if (!plot.text(x + startx, y + (int) (box->height * 0.75 * scale),
-						box->style, box->text + start_idx, endtxt_idx - start_idx,
-						current_background_color ^ 0xffffff,
-						current_background_color))
-					return false;
-
-				if (endtxt_idx < box->length) {
-
-					if (!plot.text(x + endx, y + (int) (box->height * 0.75 * scale),
-							box->style, box->text + endtxt_idx,
-							box->length - endtxt_idx,
-							current_background_color,
-							/*print_text_black ? 0 :*/ box->style->color))
-						return false;
-				}
-			}
-		}
-
-		if (!highlighted) {
-			if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
-					box->style, box->text, box->length,
-					current_background_color,
-					/*print_text_black ? 0 :*/ box->style->color))
-				return false;
-		}
 	} else {
 		for (c = box->children; c != 0; c = c->next)
 			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
@@ -433,6 +347,155 @@ bool html_redraw_box(struct box *box,
 			return false;
 
 	return plot.group_end();
+}
+
+
+/**
+ * Redraw the text content of a box, possibly partially highlighted
+ * because the text has been selected, or matches a search operation.
+ *
+ * \param  box      box with text content
+ * \param  x        x co-ord of box
+ * \param  y        y co-ord of box
+ * \param  x0       current clip rectangle
+ * \param  y0
+ * \param  x1
+ * \param  y1
+ * \param  scale    current scale setting (1.0 = 100%)
+ * \param  current_background_color
+ * \return true iff successful and redraw should proceed
+ */
+
+bool html_redraw_text_box(struct box *box, int x, int y,
+		int x0, int y0, int x1, int y1,
+		float scale, colour current_background_color)
+{
+	bool highlighted = false;
+
+	/* is this box part of a selection? */
+	if (!box->object && current_redraw_browser) {
+		unsigned start_idx;
+		unsigned end_idx;
+
+		/* first try the browser window's current selection */
+		if (selection_defined(current_redraw_browser->sel) &&
+			selection_highlighted(current_redraw_browser->sel,
+				box, &start_idx, &end_idx)) {
+			highlighted = true;
+		}
+
+		/* what about the current search operation, if any */
+		if (!highlighted &&
+			search_current_window == current_redraw_browser->window &&
+			gui_search_term_highlighted(current_redraw_browser->window,
+				box, &start_idx, &end_idx)) {
+				highlighted = true;
+		}
+
+		/* \todo make search terms visible within selected text */
+		if (highlighted) {
+			unsigned endtxt_idx = end_idx;
+			colour hfore_col, hback_col;
+			bool clip_changed = false;
+			bool text_visible = true;
+			int startx, endx;
+
+			if (end_idx > box->length) {
+				/* adjust for trailing space, not present in box->text */
+				assert(end_idx == box->length + 1);
+				endtxt_idx = box->length;
+			}
+
+			if (!nsfont_width(box->style, box->text, start_idx, &startx))
+				startx = 0;
+
+			if (!nsfont_width(box->style, box->text, endtxt_idx, &endx))
+				endx = 0;
+
+			/* is there a trailing space that should be highlighted as well? */
+			if (end_idx > box->length) {
+				int spc_width;
+				/* \todo is there a more elegant/efficient solution? */
+				if (nsfont_width(box->style, " ", 1, &spc_width))
+					endx += spc_width;
+			}
+
+			if (scale != 1.0) {
+				startx *= scale;
+				endx *= scale;
+			}
+
+			/* draw any text preceding highlighted portion */
+			if (start_idx > 0 && 
+				!plot.text(x, y + (int) (box->height * 0.75 * scale),
+						box->style, box->text, start_idx,
+						current_background_color,
+						/*print_text_black ? 0 :*/ box->style->color))
+				return false;
+
+			/* decide whether highlighted portion is to be white-on-black or
+			   black-on-white */
+			if ((current_background_color & 0x808080) == 0x808080)
+				hback_col = 0;
+			else
+				hback_col = 0xffffff;
+			hfore_col = hback_col ^ 0xffffff;
+
+			/* highlighted portion */
+			if (!plot.fill(x + startx, y, x + endx, y + box->height * scale,
+					hback_col))
+				return false;
+
+			if (start_idx > 0) {
+				int px0 = max(x + startx, x0);
+				int px1 = min(x + endx, x1);
+
+				if (px0 < px1) {
+					if (!plot.clip(px0, y0, px1, y1))
+						return false;
+					clip_changed = true;
+				} else
+					text_visible = false;
+			}
+
+			if (text_visible &&
+				!plot.text(x, y + (int) (box->height * 0.75 * scale),
+						box->style, box->text, endtxt_idx,
+						hback_col, hfore_col))
+				return false;
+
+			/* draw any text succeeding highlighted portion */
+			if (endtxt_idx < box->length) {
+				int px0 = max(x + endx, x0);
+				if (px0 < x1) {
+
+					if (!plot.clip(px0, y0, x1, y1))
+						return false;
+
+					clip_changed = true;
+
+					if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
+						box->style, box->text, box->length,
+						current_background_color,
+						/*print_text_black ? 0 :*/ box->style->color))
+						return false;
+				}
+			}
+
+			if (clip_changed && !plot.clip(x0, y0, x1, y1))
+				return false;
+		}
+	}
+
+	if (!highlighted) {
+		if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
+				box->style, box->text, box->length,
+				current_background_color,
+				/*print_text_black ? 0 :*/ box->style->color))
+			return false;
+	}
+
+	return true;
 }
 
 
