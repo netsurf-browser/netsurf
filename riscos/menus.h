@@ -132,6 +132,7 @@ void ro_gui_menu_selection(wimp_selection* selection);
 void ro_gui_menu_warning(wimp_message_menu_warning *warning);
 void ro_gui_prepare_navigate(struct gui_window *gui);
 void ro_gui_menu_prepare_image_quality(unsigned int tinct_options);
+void ro_gui_menu_prepare_languages(bool accept, const char *lang);
 void ro_gui_display_font_menu(const char *tick, wimp_w w, wimp_i i);
 
 #endif
