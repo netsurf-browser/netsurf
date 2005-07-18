@@ -641,7 +641,7 @@ char *form_acceptable_charset(struct form *form)
 
 	/* make it upper case */
 	for (c = temp; *c; c++)
-		*c = toupper(c);
+		*c = toupper(*c);
 
 	/* is UTF-8 specified? */
 	c = strstr(temp, "UTF-8");
