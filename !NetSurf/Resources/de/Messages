@@ -600,6 +600,8 @@ HelpBrowser-1:Das ist ein Browserfenster.|MEinen Link mit AUSWAHL anklicken, um 
 HelpIconbar:Das ist das NetSurf Icon.|MKlicken mit AUSWAHL öffnet ein neues Browserfenster.|MKlicken mit SPEZIAL öffnet die Hotlist.
 HelpHistory:Die History zeigt alle in dieser Sitzung besuchten Seiten.|MKlicken mit AUSWAHL auf eine Symbolgrafik kehrt zurück zur jeweiligen Seite.
 
+HelpPrint:Use this \w to print the page.
+
 HelpSaveAs0:Symbol mit AUSWAHL festhalten und in ein Verzeichnisfenster ziehen, um die Datei zu speichern.
 HelpSaveAs1:Das ist der Name unter dem die Datei gespeichert wird.
 HelpSaveAs2:Klicken mit AUSWAHL speichert die Datei unter angezeigtem Pfad und Namen.|MWird kein voller Dateipfad angezeigt, muß die Datei per Drag & Drop gespeichert werden.
@@ -615,6 +617,13 @@ HelpScaleView7:Stellt einen Skalierungswert von 150% ein.
 HelpScaleView8:Stellt einen Skalierungswert von 200% ein.
 HelpScaleView9:Klicken mit AUSWAHL um die Skalierung nicht durchzuführen.|MDas Dialogfenster wird geschlossen.|MDie Darstellung der Seite wird unverändert beibehalten.
 HelpScaleView10:Klicken mit AUSWAHL um die Seite skaliert darzustellen.|MDie Seite wird in der gewählten Vergrößerung angezeigt.
+
+HelpSearch:Use this \w to search for text within the page.
+HelpSearch0:Enter the search text. # matches any single character, * matches 0 or more characters.
+HelpSearch1:Choose whether the search should regard upper and lower case characters as different.
+HelpSearch2:\Smove to the next match.
+HelpSearch3:\Smove to the previous match.
+HelpSearch4:\Sstop searching and close this \w.
 
 HelpHotFolder:Dieses Fenster verwenden, um den Verzeichnis-Namen festzulegen.
 HelpHotEntry:Dieses Fenster verwenden, um die Details des Eintrages festzulegen.

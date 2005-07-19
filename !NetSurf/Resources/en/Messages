@@ -600,6 +600,8 @@ HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in
 HelpIconbar:\TNetSurf icon.|M\Sopen a new browser \w.|M\Aopen the hotlist management \w.
 HelpHistory:Use this \w to navigate around the local history tree.|M\Son a thumbnail to return to that page.
 
+HelpPrint:Use this \w to print the page.
+
 HelpSaveAs0:Drag SELECT this icon to the directory in which you want to save the file.
 HelpSaveAs1:This is the filename under which this document will be saved.
 HelpSaveAs2:\Ssave the file with the current filename.|MIf a full path is not set, you must drag the icon to a directory.
@@ -615,6 +617,13 @@ HelpScaleView7:\Sautomatically choose a scale of 150%.
 HelpScaleView8:\Sautomatically choose a scale of 200%.
 HelpScaleView9:\Scancel changes.|MThe current scale will not be changed.
 HelpScaleView10:\Schange the view to the scale you have chosen.
+
+HelpSearch:Use this \w to search for text within the page.
+HelpSearch0:Enter the search text. # matches any single character, * matches 0 or more characters.
+HelpSearch1:Choose whether the search should regard upper and lower case characters as different.
+HelpSearch2:\Smove to the next match.
+HelpSearch3:\Smove to the previous match.
+HelpSearch4:\Sstop searching and close this \w.
 
 HelpHotFolder:Use this \w to set the directory name.
 HelpHotEntry:Use this \w to set the entry details.

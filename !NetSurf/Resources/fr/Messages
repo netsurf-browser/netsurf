@@ -600,6 +600,8 @@ HelpBrowser-1:Cliquer \s sur un lien pour le suivre.|MCliquer \a sur un lien pou
 HelpIconbar:\Tl'icône de NetSurf.|M\Souvrir une nouvelle \w de navigateur.|M\Aouvrir la fenêtre de gestion des favoris.
 HelpHistory:Utiliser cette \w pour naviguer dans l'historique arborescent local.|M\Ssur une vignette pour revenir à cette page.
 
+HelpPrint:Use this \w to print the page.
+
 HelpSaveAs0:Déposer cette icône dans le repertoire où vous voulez sauver le fichier.
 HelpSaveAs1:Ceci est le nom de fichier sous lequel le document sera sauvé.
 HelpSaveAs2:\Ssauver le fichier avec le nom de fichier en cours.|MSi le nom de chemin n'est pas complet, il vous faudra déposer l'icône dans un répertoire.
@@ -615,6 +617,13 @@ HelpScaleView7:\Sdirectement choisir une échelle de 150%.
 HelpScaleView8:\Sdirectement choisir une échelle de 200%.
 HelpScaleView9:\Sannuler les changements.|ML'échelle en cours ne sera pas modifiée.
 HelpScaleView10:\Svalider le changement d'échelle.
+
+HelpSearch:Use this \w to search for text within the page.
+HelpSearch0:Enter the search text. # matches any single character, * matches 0 or more characters.
+HelpSearch1:Choose whether the search should regard upper and lower case characters as different.
+HelpSearch2:\Smove to the next match.
+HelpSearch3:\Smove to the previous match.
+HelpSearch4:\Sstop searching and close this \w.
 
 HelpHotFolder:Utiliser cette \w pour définir le nom de répertoire.
 HelpHotEntry:Utiliser cette \w pour définir les détails de cette entrée.
