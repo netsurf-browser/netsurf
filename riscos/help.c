@@ -39,8 +39,10 @@
 	HelpHistory		 History window [*]
 	HelpObjInfo		 Object info window
 	HelpPageInfo		 Page info window
+	HelpPrint		 Print window
 	HelpSaveAs		 Save as window
 	HelpScaleView		 Scale view window
+	HelpSearch		 Search window
 	HelpStatus		 Status window
 	HelpToolbar		 Toolbar window
 	HelpHotlist		 Hotlist window [*]
@@ -121,10 +123,14 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		sprintf(message_token, "HelpObjInfo%i", (int)icon);
 	else if (window == dialog_pageinfo)
 		sprintf(message_token, "HelpPageInfo%i", (int)icon);
+	else if (window == dialog_print)
+		sprintf(message_token, "HelpPrint%i", (int)icon);
 	else if (window == dialog_saveas)
 		sprintf(message_token, "HelpSaveAs%i", (int)icon);
 	else if (window == dialog_zoom)
 		sprintf(message_token, "HelpScaleView%i", (int)icon);
+	else if (window == dialog_search)
+		sprintf(message_token, "HelpSearch%i", (int)icon);
 	else if (window == dialog_folder)
 		sprintf(message_token, "HelpHotFolder%i", (int)icon);
 	else if (window == dialog_entry)
