@@ -17,7 +17,7 @@
 #include "netsurf/desktop/selection.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/utils/log.h"
-#include "netsurf/utils/talloc.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -170,20 +170,21 @@ void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
 
 bool copy_handler(struct box *box, int offset, size_t length, void *handle)
 {
+	size_t len = min(length, box->length - offset);
 	size_t new_length;
 	const char *text;
 	int space = 0;
 
 	if (box) {
 		text = box->text + offset;
-		if (box->space) space = 1;
+		if (box->space && length > len) space = 1;
 	}
 	else {
 		text = "\n";
-		length = 1;
+		len = 1;
 	}
 
-	new_length = clip_length + length + space;
+	new_length = clip_length + len + space;
 
 	if (new_length > clip_alloc) {
 		size_t new_alloc = clip_alloc + (clip_alloc / 4);
@@ -191,15 +192,15 @@ bool copy_handler(struct box *box, int offset, size_t length, void *handle)
 
 		if (new_alloc < new_length) new_alloc = new_length;
 
-		new_cb = talloc_realloc(NULL, clipboard, char, new_alloc);
+		new_cb = realloc(clipboard, new_alloc);
 		if (!new_cb) return false;
 
 		clipboard = new_cb;
 		clip_alloc = new_alloc;
 	}
 
-	memcpy(clipboard + clip_length, text, length);
-	clip_length += length;
+	memcpy(clipboard + clip_length, text, len);
+	clip_length += len;
 	if (space) clipboard[clip_length++] = ' ';
 
 	return true;
@@ -217,9 +218,12 @@ bool copy_handler(struct box *box, int offset, size_t length, void *handle)
 bool gui_copy_to_clipboard(struct selection *s)
 {
 	const int init_size = 1024;
+	utf8_convert_ret res;
+	char *new_cb;
+
 
 	if (!clip_alloc) {
-		clipboard = talloc_array(NULL, char, init_size);
+		clipboard = malloc(init_size);
 		if (!clipboard) {
 			LOG(("out of memory"));
 			warn_user("NoMemory", 0);
@@ -230,6 +234,14 @@ bool gui_copy_to_clipboard(struct selection *s)
 
 	clip_length = 0;
 	selection_traverse(s, copy_handler, NULL);
+
+	res = utf8_to_local_encoding(clipboard, clip_length, &new_cb);
+	if (res == UTF8_CONVERT_OK) {
+		free(clipboard);
+		clipboard = new_cb;
+/* \todo utf8_to_local_encoding should return the length! */
+		clip_alloc = clip_length = strlen(new_cb);
+	}
 
 	if (!owns_clipboard) {
 		wimp_full_message_claim_entity msg;
@@ -312,7 +324,7 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 
 void ro_gui_discard_clipboard_contents(void)
 {
-	if (clip_alloc) talloc_free(clipboard);
+	if (clip_alloc) free(clipboard);
 	clip_alloc = 0;
 	clip_length = 0;
 }
