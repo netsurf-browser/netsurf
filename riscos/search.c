@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <string.h>
 
+#include "oslib/hourglass.h"
 #include "oslib/wimp.h"
 
 #include "netsurf/utils/config.h"
@@ -55,17 +56,15 @@ static struct list_entry search_head = { 0, 0, 0, 0, 0, 0 };
 static struct list_entry *search_found = &search_head;
 static struct list_entry *search_current = 0;
 static struct content *search_content = 0;
-static bool search_prev_from_top = false;
 static bool search_prev_case_sens = false;
 
-static void start_search(void);
-static void end_search(void);
-static void do_search(char *string, bool from_top, bool case_sens, bool forwards);
+static void start_search(bool forwards);
+static void do_search(char *string, int string_len, bool case_sens, bool forwards);
 static const char *find_pattern(const char *string, int s_len,
 		const char *pattern, int p_len, bool case_sens, int *m_len);
 static bool find_occurrences(const char *pattern, int p_len, struct box *cur,
 		bool case_sens);
-static void show_search_direction(bool forwards);
+static void show_status(bool found);
 
 
 /**
@@ -82,9 +81,6 @@ void ro_gui_search_prepare(struct gui_window *g)
 	search_current_window = g;
 
 	ro_gui_set_icon_string(dialog_search, ICON_SEARCH_TEXT, "");
-	show_search_direction(true);
-	ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_START,
-				false);
 	ro_gui_set_icon_selected_state(dialog_search,
 				ICON_SEARCH_CASE_SENSITIVE, false);
 
@@ -96,6 +92,10 @@ void ro_gui_search_prepare(struct gui_window *g)
 	/* only handle html contents */
 	if (c->type != CONTENT_HTML)
 		return;
+
+	show_status(true);
+	ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_FIND_PREV, true);
+	ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_FIND_NEXT, true);
 
 /* \todo build me properly please! */
 	search_selection = selection_create(g->bw);
@@ -117,18 +117,18 @@ void ro_gui_search_click(wimp_pointer *pointer)
 		return;
 
 	switch(pointer->i) {
-		case ICON_SEARCH_FORWARDS:
-		case ICON_SEARCH_BACKWARDS:
-			/* prevent deselection on adjust clicking */
-			if (pointer->buttons == wimp_CLICK_ADJUST)
-				ro_gui_set_icon_selected_state(dialog_search,
-						pointer->i, true);
+		case ICON_SEARCH_FIND_PREV:
+			start_search(false);
 			break;
-		case ICON_SEARCH_FIND:
-			start_search();
+		case ICON_SEARCH_FIND_NEXT:
+			start_search(true);
 			break;
 		case ICON_SEARCH_CANCEL:
-			end_search();
+			/* cancel the search operation */
+			ro_gui_search_end();
+			/* and close the window */
+			ro_gui_menu_closed();
+			ro_gui_dialog_close(dialog_search);
 			break;
 	}
 }
@@ -144,63 +144,75 @@ bool ro_gui_search_keypress(wimp_key *key)
 	bool state;
 
 	switch (key->c) {
-		case 2: /* ctrl b */
-			show_search_direction(false);
-			return true;
-		case 6: /* ctrl f */
-			show_search_direction(true);
-			return true;
 		case 9: /* ctrl i */
 			state = ro_gui_get_icon_selected_state(dialog_search, ICON_SEARCH_CASE_SENSITIVE);
 			ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_CASE_SENSITIVE, !state);
 			return true;
-		case 19: /* ctrl s */
-			state = ro_gui_get_icon_selected_state(dialog_search, ICON_SEARCH_START);
-			ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_START, !state);
-			return true;
 		case wimp_KEY_RETURN:
-			start_search();
+			start_search(true);
 			return true;
 		case wimp_KEY_ESCAPE:
-			end_search();
+			/* cancel the search operation */
+			ro_gui_search_end();
+			/* and close the window */
+			ro_gui_menu_closed();
+			ro_gui_dialog_close(dialog_search);
 			return true;
 		case wimp_KEY_UP:
-			show_search_direction(false);
-			start_search();
+			start_search(false);
 			return true;
 		case wimp_KEY_DOWN:
-			show_search_direction(true);
-			start_search();
+			start_search(true);
 			return true;
+
+		default:
+			if (key->c == 8  || /* backspace */
+			    key->c == 21 || /* ctrl u */
+			    (key->c >= 0x20 && key->c <= 0x7f)) {
+				start_search(true);
+				return true;
+			}
+			break;
 	}
 
 	return false;
 }
 
 /**
- * Begins the search process
+ * Begins/continues the search process
+ * Note that this may be called many times for a single search.
+ *
+ * \param  forwards  search forwards from start/current position
  */
-void start_search(void)
+
+void start_search(bool forwards)
 {
+	int string_len;
 	char *string;
 
 	string = ro_gui_get_icon_string(dialog_search, ICON_SEARCH_TEXT);
-	if (strlen(string) == 0)
+	assert(string);
+
+	string_len = strlen(string);
+	if (string_len <= 0) {
+		show_status(true);
+		ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_FIND_PREV, true);
+		ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_FIND_NEXT, true);
+		gui_window_set_scroll(search_current_window, 0, 0);
 		return;
-	do_search(string,
-		ro_gui_get_icon_selected_state(dialog_search,
-						ICON_SEARCH_START),
+	}
+
+	do_search(string, string_len,
 		ro_gui_get_icon_selected_state(dialog_search,
 						ICON_SEARCH_CASE_SENSITIVE),
-		ro_gui_get_icon_selected_state(dialog_search,
-						ICON_SEARCH_FORWARDS));
+		forwards);
 }
 
 /**
  * Ends the search process, invalidating all global state and
  * freeing the list of found boxes
  */
-void end_search(void)
+void ro_gui_search_end(void)
 {
 	struct list_entry *a, *b;
 
@@ -227,24 +239,18 @@ void end_search(void)
 
 	search_content = 0;
 
-	search_prev_from_top = false;
 	search_prev_case_sens = false;
-
-	/* and close the window */
-	ro_gui_menu_closed();
-	ro_gui_dialog_close(dialog_search);
 }
 
 /**
  * Search for a string in the box tree
  *
  * \param string the string to search for
- * \param from_top whether to display results from the top of the page, or
- *                 the current scroll position
+ * \param string_len length of search string
  * \param case_sens whether to perform a case sensitive search
  * \param forwards direction to search in
  */
-void do_search(char *string, bool from_top, bool case_sens, bool forwards)
+void do_search(char *string, int string_len, bool case_sens, bool forwards)
 {
 	struct content *c;
 	struct box *box;
@@ -269,17 +275,18 @@ void do_search(char *string, bool from_top, bool case_sens, bool forwards)
 	if (!box)
 		return;
 
-//	LOG(("'%s' - '%s' (%p, %p) %p (%d, %d) (%d, %d) %d", search_string, string, search_content, c, search_found->next, search_prev_from_top, from_top, search_prev_case_sens, case_sens, forwards));
+//	LOG(("'%s' - '%s' (%p, %p) %p (%d, %d) %d", search_string, string, search_content, c, search_found->next, search_prev_case_sens, case_sens, forwards));
+
+	selection_clear(search_selection, true);
 
 	/* check if we need to start a new search or continue an old one */
-	if (!search_string || c != search_content ||
-	    !search_found->next || search_prev_from_top != from_top ||
+	if (!search_string || c != search_content || !search_found->next ||
 	    search_prev_case_sens != case_sens ||
 	    (case_sens && strcmp(string, search_string) != 0) ||
 	    (!case_sens && strcasecmp(string, search_string) != 0)) {
+
 		if (search_string)
 			free(search_string);
-		search_string = strdup(string);
 		search_current = 0;
 		for (a = search_found->next; a; a = b) {
 			b = a->next;
@@ -287,75 +294,56 @@ void do_search(char *string, bool from_top, bool case_sens, bool forwards)
 		}
 		search_found->prev = 0;
 		search_found->next = 0;
-		if (!find_occurrences(string, strlen(string), box, case_sens)) {
+
+		search_string = strdup(string);
+
+		xhourglass_on();
+		if (!find_occurrences(string, string_len, box, case_sens)) {
 			for (a = search_found->next; a; a = b) {
 				b = a->next;
 				free(a);
 			}
 			search_found->prev = 0;
 			search_found->next = 0;
+
+			xhourglass_off();
 			return;
 		}
+		xhourglass_off();
+
 		new = true;
 		search_content = c;
-		search_prev_from_top = from_top;
 		search_prev_case_sens = case_sens;
 	}
 
 //	LOG(("%d %p %p (%p, %p)", new, search_found->next, search_current, search_current->prev, search_current->next));
 
-	if (!search_found->next)
-		return;
-
-	if (new && from_top) {
+	if (new) {
 		/* new search, beginning at the top of the page */
 		search_current = search_found->next;
 	}
-	else if (new) {
-		/* new search, beginning from user's current scroll
-		 * position */
-		wimp_window_state state;
-		os_error *error;
-
-		state.w = search_current_window->window;
-		error = xwimp_get_window_state(&state);
-		if (error) {
-			LOG(("xwimp_get_window_state: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-
-		for (a = search_found->next; a; a = a->next) {
-			box_coords(a->start_box, &x, &y);
-			LOG(("%d, %d", y, state.yscroll / 2));
-			if (forwards && -y <= state.yscroll / 2)
-				break;
-			if (!forwards && -y >= state.yscroll / 2)
-				break;
-		}
-
-		if (a)
-			search_current = a;
-		else
-			return;
-	}
-	else {
+	else if (search_current) {
 		/* continued search in the direction specified */
-		if (forwards && search_current && search_current->next) {
-			search_current = search_current->next;
+		if (forwards) {
+			if (search_current->next)
+				search_current = search_current->next;
 		}
-		else if (!forwards && search_current && search_current->prev) {
-			search_current = search_current->prev;
+		else {
+			if (search_current->prev)
+				search_current = search_current->prev;
 		}
 	}
+
+	show_status(search_current != NULL);
+
+	ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_FIND_PREV,
+		!search_current || !search_current->prev);
+	ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_FIND_NEXT,
+		!search_current || !search_current->next);
 
 	if (!search_current)
 		return;
 
-	box = search_current->start_box;
-
-	selection_clear(search_selection, true);
 	selection_set_start(search_selection, search_current->start_box,
 		search_current->start_idx);
 	selection_set_end(search_selection, search_current->end_box,
@@ -420,7 +408,7 @@ const char *find_pattern(const char *string, int s_len, const char *pattern,
 					s++;
 				}
 			}
-			
+
 			if (s < es) {
 				/* remember where we are in case the match fails;
 					we can then resume */
@@ -562,22 +550,28 @@ bool gui_search_term_highlighted(struct gui_window *g, struct box *box,
 {
 	if (g == search_current_window && search_selection) {
 		if (selection_defined(search_selection))
-			return selection_highlighted(search_selection, box, start_idx, end_idx);
+			return selection_highlighted(search_selection, box,
+					start_idx, end_idx);
 	}
 	return false;
 }
 
 
 /**
- * Change the displayed search direction.
+ * Change the displayed search status.
  *
- * \param forwards  true for forwards, else backwards
+ * \param found  search pattern matched in text
  */
 
-void show_search_direction(bool forwards)
+void show_status(bool found)
 {
-	ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_FORWARDS, forwards);
-	ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_BACKWARDS, !forwards);
+	os_error *error = xwimp_set_icon_state(dialog_search, ICON_SEARCH_STATUS,
+			found ? wimp_ICON_DELETED : 0, wimp_ICON_DELETED);
+	if (error) {
+		LOG(("xwimp_set_icon_state: 0x%x: %s",
+			error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
 }
 
 #endif

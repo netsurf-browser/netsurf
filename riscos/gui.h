@@ -226,6 +226,7 @@ void ro_gui_debugwin_redraw(wimp_draw *redraw);
 
 /* in search.c */
 void ro_gui_search_prepare(struct gui_window *g);
+void ro_gui_search_end(void);
 void ro_gui_search_click(wimp_pointer *pointer);
 bool ro_gui_search_keypress(wimp_key *key);
 
@@ -393,12 +394,11 @@ void ro_gui_theme_install_click(wimp_pointer *pointer);
 #define ICON_QUERY_HELP 3
 
 #define ICON_SEARCH_TEXT 0
-#define ICON_SEARCH_START 1
-#define ICON_SEARCH_CASE_SENSITIVE 2
-#define ICON_SEARCH_FORWARDS 3
-#define ICON_SEARCH_BACKWARDS 4
-#define ICON_SEARCH_CANCEL 5
-#define ICON_SEARCH_FIND 6
+#define ICON_SEARCH_CASE_SENSITIVE 1
+#define ICON_SEARCH_FIND_NEXT 2
+#define ICON_SEARCH_FIND_PREV 3
+#define ICON_SEARCH_CANCEL 4
+#define ICON_SEARCH_STATUS 5
 
 #define ICON_PRINT_TO_BOTTOM 1
 #define ICON_PRINT_SHEETS 2

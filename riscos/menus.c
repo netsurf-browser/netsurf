@@ -340,7 +340,7 @@ void ro_gui_menu_init(void)
 
 	/* special case menus */
 	url_suggest_menu->title_data.indirected_text.text =
-			messages_get("URLSuggest");
+			(char*)messages_get("URLSuggest");
 	url_suggest_menu->title_fg = wimp_COLOUR_BLACK;
 	url_suggest_menu->title_bg = wimp_COLOUR_LIGHT_GREY;
 	url_suggest_menu->work_fg = wimp_COLOUR_BLACK;
@@ -534,6 +534,7 @@ void ro_gui_menu_closed(void) {
 	os_error *error;
 
 	if (current_menu) {
+
 		error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 		if (error) {
 			LOG(("xwimp_create_menu: 0x%x: %s",
@@ -543,6 +544,11 @@ void ro_gui_menu_closed(void) {
 		ro_gui_menu_get_window_details(current_menu_window,
 				&g, &bw, &c, &t, &tree);
 		current_menu = NULL;
+
+		/* end any search operation that was started so that
+		   the text doesn't remain highlighted */
+		ro_gui_search_end();
+
 		if (tree)
 			ro_gui_tree_menu_closed(tree);
 	}
