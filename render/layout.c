@@ -1353,13 +1353,15 @@ struct box *layout_minmax_line(struct box *first,
 			if (!b->inline_end)
 				calculate_mbp_width(b->style, RIGHT,
 						&fixed, &frac);
-			max += fixed;
+			if (0 < fixed)
+				max += fixed;
 			/* \todo  update min width, consider fractional extra */
 		} else if (b->type == BOX_INLINE_END) {
 			fixed = frac = 0;
 			calculate_mbp_width(b->inline_end->style, RIGHT,
 					&fixed, &frac);
-			max += fixed;
+			if (0 < fixed)
+				max += fixed;
 			if (b->next && b->space) {
 				nsfont_width(b->style, " ", 1, &width);
 				max += width;
