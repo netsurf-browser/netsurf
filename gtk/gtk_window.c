@@ -333,6 +333,11 @@ void gui_window_set_pointer(gui_pointer_shape shape)
 }
 
 
+void gui_window_hide_pointer(void)
+{
+}
+
+
 void gui_window_set_url(struct gui_window *g, const char *url)
 {
 	gtk_entry_set_text(GTK_ENTRY(g->url_bar), url);
@@ -369,6 +374,11 @@ bool gui_window_scroll_start(struct gui_window *g)
 	return true;
 }
 
+bool gui_window_box_scroll_start(struct gui_window *g,
+		int x0, int y0, int x1, int y1)
+{
+	return true;
+}
 
 void gui_drag_save_object(gui_save_type type, struct content *c,
 		struct gui_window *g)
@@ -391,8 +401,32 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 }
 
 
+bool gui_empty_clipboard(void)
+{
+	return true;
+}
+
+
+bool gui_add_to_clipboard(const char *text, size_t length, bool space)
+{
+	return true;
+}
+
+
+bool gui_commit_clipboard(void)
+{
+	return true;
+}
+
+
 bool gui_copy_to_clipboard(struct selection *s)
+{
+	return true;
+}
+
+
+bool gui_window_copy_rectangle(struct gui_window *g, int sx, int sy,
+		int dx, int dy, int w, int h)
 {
 	return false;
 }
-

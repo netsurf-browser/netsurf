@@ -73,7 +73,8 @@ struct browser_window {
 		DRAGGING_VSCROLL,
 		DRAGGING_HSCROLL,
 		DRAGGING_SELECTION,
-		DRAGGING_PAGE_SCROLL
+		DRAGGING_PAGE_SCROLL,
+		DRAGGING_2DSCROLL
 	} drag_type;
 
 	/** Box currently being scrolled, or 0. */

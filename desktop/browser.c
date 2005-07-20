@@ -73,6 +73,9 @@ static struct box *browser_window_pick_text_box(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y, int *dx, int *dy);
 static void browser_window_page_drag_start(struct browser_window *bw, int x, int y);
 
+static void browser_window_scroll_box(struct browser_window *bw, struct box *box,
+		int scroll_x, int scroll_y);
+
 
 /**
  * Create and open a new browser window with the given page.
@@ -852,14 +855,31 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		case GADGET_TEXTAREA:
 			status = messages_get("FormTextarea");
 			pointer = GUI_POINTER_CARET;
-			if (mouse & BROWSER_MOUSE_CLICK_1)
-				browser_window_textarea_click(bw,
-						mouse,
-						gadget_box,
-						gadget_box_x,
-						gadget_box_y,
-						x - gadget_box_x,
-						y - gadget_box_y);
+			if (mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2)) {
+				if (text_box) {
+					selection_click(bw->sel, text_box, mouse, x - box_x, y - box_y);
+					if (selection_dragging(bw->sel))
+						bw->drag_type = DRAGGING_SELECTION;
+				}
+			} else {
+				if (mouse & BROWSER_MOUSE_CLICK_1) {
+					browser_window_textarea_click(bw,
+							mouse,
+							gadget_box,
+							gadget_box_x,
+							gadget_box_y,
+							x - gadget_box_x,
+							y - gadget_box_y);
+				}
+				else if (text_box) {
+					if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2))
+						selection_init(bw->sel, gadget_box);
+
+					selection_click(bw->sel, text_box, mouse, x - box_x, y - box_y);
+					if (selection_dragging(bw->sel))
+						bw->drag_type = DRAGGING_SELECTION;
+				}
+			}
 			break;
 		case GADGET_TEXTBOX:
 		case GADGET_PASSWORD:
@@ -874,9 +894,13 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						x - gadget_box_x,
 						y - gadget_box_y);
 			}
-			else {
-				selection_init(bw->sel, gadget_box);
-				selection_click(bw->sel, gadget_box, mouse, x - box_x, y - box_y);
+			else if (text_box) {
+				if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2))
+					selection_init(bw->sel, gadget_box);
+
+				selection_click(bw->sel, text_box, mouse, x - box_x, y - box_y);
+				if (selection_dragging(bw->sel))
+					bw->drag_type = DRAGGING_SELECTION;
 			}
 			break;
 		case GADGET_HIDDEN:
@@ -1051,43 +1075,47 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	switch (bw->drag_type) {
-		case DRAGGING_VSCROLL: {
-			int scroll_y;
-			struct box *box = bw->scrolling_box;
-			assert(box);
-			scroll_y = bw->scrolling_start_scroll_y +
-					(float) (y - bw->scrolling_start_y) /
-					(float) bw->scrolling_well_height *
-					(float) (box->descendant_y1 -
-					box->descendant_y0);
-			if (scroll_y < box->descendant_y0)
-				scroll_y = box->descendant_y0;
-			else if (box->descendant_y1 - box->height < scroll_y)
-				scroll_y = box->descendant_y1 - box->height;
-			if (scroll_y == box->scroll_y)
-				return;
-			box->scroll_y = scroll_y;
-			browser_redraw_box(bw->current_content, bw->scrolling_box);
-		}
-		break;
 
-		case DRAGGING_HSCROLL: {
-			int scroll_x;
+		case DRAGGING_HSCROLL:
+		case DRAGGING_VSCROLL:
+		case DRAGGING_2DSCROLL: {
 			struct box *box = bw->scrolling_box;
+			int scroll_y;
+			int scroll_x;
+
 			assert(box);
-			scroll_x = bw->scrolling_start_scroll_x +
-					(float) (x - bw->scrolling_start_x) /
-					(float) bw->scrolling_well_width *
-					(float) (box->descendant_x1 -
-					box->descendant_x0);
-			if (scroll_x < box->descendant_x0)
-				scroll_x = box->descendant_x0;
-			else if (box->descendant_x1 - box->width < scroll_x)
-				scroll_x = box->descendant_x1 - box->width;
-			if (scroll_x == box->scroll_x)
-				return;
-			box->scroll_x = scroll_x;
-			browser_redraw_box(bw->current_content, bw->scrolling_box);
+
+			if (bw->drag_type == DRAGGING_HSCROLL) {
+				scroll_y = box->scroll_y;
+			} else {
+				scroll_y = bw->scrolling_start_scroll_y +
+						(float) (y - bw->scrolling_start_y) /
+						(float) bw->scrolling_well_height *
+						(float) (box->descendant_y1 -
+						box->descendant_y0);
+				if (scroll_y < box->descendant_y0)
+					scroll_y = box->descendant_y0;
+				else if (box->descendant_y1 - box->height < scroll_y)
+					scroll_y = box->descendant_y1 - box->height;
+				if (scroll_y == box->scroll_y)
+					return;
+			}
+
+			if (bw->drag_type == DRAGGING_VSCROLL) {
+				scroll_x = box->scroll_x;
+			} else {
+				scroll_x = bw->scrolling_start_scroll_x +
+						(float) (x - bw->scrolling_start_x) /
+						(float) bw->scrolling_well_width *
+						(float) (box->descendant_x1 -
+						box->descendant_x0);
+				if (scroll_x < box->descendant_x0)
+					scroll_x = box->descendant_x0;
+				else if (box->descendant_x1 - box->width < scroll_x)
+					scroll_x = box->descendant_x1 - box->width;
+			}
+
+			browser_window_scroll_box(bw, box, scroll_x, scroll_y);
 		}
 		break;
 
@@ -1129,6 +1157,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 			}
 			break;
 
+		case DRAGGING_2DSCROLL:
 		case DRAGGING_PAGE_SCROLL:
 			browser_window_set_pointer(GUI_POINTER_DEFAULT);
 			break;
@@ -1218,9 +1247,32 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 			scroll += page;
 	} else if (z < w + bar_start + bar_size - w / 4) {
 		status = messages_get(vert ? "ScrollV" : "ScrollH");
-		if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2))
-			bw->drag_type = vert ? DRAGGING_VSCROLL :
-					DRAGGING_HSCROLL;
+
+		/* respond on the click rather than the drag because it gives
+		   the scrollbars a more solid, RISC OS feel */
+		if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
+			int x0 = 0, x1 = 0;
+			int y0 = 0, y1 = 0;
+
+			if (mouse & BROWSER_MOUSE_CLICK_1) {
+				bw->drag_type = vert ? DRAGGING_VSCROLL :
+						DRAGGING_HSCROLL;
+			} else
+				bw->drag_type = DRAGGING_2DSCROLL;
+
+			/* \todo - some proper numbers please! */
+			if (bw->drag_type != DRAGGING_VSCROLL) {
+				x0 = -1024;
+				x1 = 1024;
+			}
+			if (bw->drag_type != DRAGGING_HSCROLL) {
+				y0 = -1024;
+				y1 = 1024;
+			}
+			gui_window_box_scroll_start(bw->window, x0, y0, x1, y1);
+			if (bw->drag_type == DRAGGING_2DSCROLL)
+				gui_window_hide_pointer();
+		}
 	} else if (z < w + well_size) {
 		status = messages_get(vert ? "ScrollPDown" : "ScrollPRight");
 		if (mouse & BROWSER_MOUSE_CLICK_1)
@@ -1241,19 +1293,16 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 			scroll = box->descendant_y0;
 		else if (box->descendant_y1 - box->height < scroll)
 			scroll = box->descendant_y1 - box->height;
-		if (scroll != box->scroll_y) {
-			box->scroll_y = scroll;
-			browser_redraw_box(bw->current_content, box);
-		}
+		if (scroll != box->scroll_y)
+			browser_window_scroll_box(bw, box, box->scroll_x, scroll);
+
 	} else {
 		if (scroll < box->descendant_x0)
 			scroll = box->descendant_x0;
 		else if (box->descendant_x1 - box->width < scroll)
 			scroll = box->descendant_x1 - box->width;
-		if (scroll != box->scroll_x) {
-			box->scroll_x = scroll;
-			browser_redraw_box(bw->current_content, box);
-		}
+		if (scroll != box->scroll_x)
+			browser_window_scroll_box(bw, box, scroll, box->scroll_y);
 	}
 
 	return status;
@@ -1365,6 +1414,26 @@ void browser_redraw_box(struct content *c, struct box *box)
 	data.redraw.object_height = c->height;
 
 	content_broadcast(c, CONTENT_MSG_REDRAW, data);
+}
+
+
+/**
+ * Update the scroll offsets of a box within a browser window
+ * (In future, copying where possible, rather than redrawing the entire box)
+ *
+ * \param  bw        browser window
+ * \param  box       box to be updated
+ * \param  scroll_x  new horizontal scroll offset
+ * \param  scroll_y  new vertical scroll offset
+ */
+
+void browser_window_scroll_box(struct browser_window *bw, struct box *box, int scroll_x, int scroll_y)
+{
+	box->scroll_x = scroll_x;
+	box->scroll_y = scroll_y;
+
+	/* fall back to redrawing the whole box */
+	browser_redraw_box(bw->current_content, box);
 }
 
 

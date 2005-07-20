@@ -78,6 +78,10 @@ void ro_gui_search_prepare(struct gui_window *g)
 
 	assert(g != NULL);
 
+	/* if the search dialogue is reopened over a new window, we still
+	   need to cancel the previous search */
+	ro_gui_search_end();
+
 	search_current_window = g;
 
 	ro_gui_set_icon_string(dialog_search, ICON_SEARCH_TEXT, "");

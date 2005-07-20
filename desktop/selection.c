@@ -20,6 +20,7 @@
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 
 
 #define IS_TEXT(box) ((box)->text && !(box)->object)
@@ -43,7 +44,11 @@ static unsigned selection_label_subtree(struct selection *s, struct box *node, u
 static bool save_handler(struct box *box, int offset, size_t length, void *handle);
 static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		seln_traverse_handler handler, void *handle);
+static struct box *get_box(struct box *b, unsigned offset, int *pidx);
 
+
+void set_start(struct selection *s, unsigned offset);
+void set_end(struct selection *s, unsigned offset);
 
 /**
  * Decides whether the char at byte offset 'a_idx' in the box 'a' lies after
@@ -120,8 +125,12 @@ void selection_reinit(struct selection *s, struct box *root)
 	assert(s);
 
 	s->root = root;
-	if (root)
-		s->max_idx = selection_label_subtree(s, root, 0);
+	if (root) {
+		int root_idx = 0;
+		if (root->gadget) root_idx = 0x10000000;
+
+		s->max_idx = selection_label_subtree(s, root, root_idx);
+	}
 	else
 		s->max_idx = 0;
 
@@ -143,6 +152,9 @@ void selection_reinit(struct selection *s, struct box *root)
 
 void selection_init(struct selection *s, struct box *root)
 {
+	if (s->defined)
+		selection_clear(s, true);
+
 	s->defined = false;
 	s->start_idx = 0;
 	s->end_idx = 0;
@@ -168,7 +180,6 @@ unsigned selection_label_subtree(struct selection *s, struct box *node, unsigned
 	struct box *child = node->children;
 
 	node->byte_offset = idx;
-
 
 	if (node->text && !node->object) {
 		idx += node->length;
@@ -319,7 +330,9 @@ void selection_track(struct selection *s, struct box *box,
 
 		case DRAG_START:
 			if (after(box, idx, s->end_idx)) {
+				unsigned old_end = s->end_idx;
 				selection_set_end(s, box, idx);
+				set_start(s, old_end);
 				s->drag_state = DRAG_END;
 			}
 			else
@@ -328,7 +341,9 @@ void selection_track(struct selection *s, struct box *box,
 
 		case DRAG_END:
 			if (before(box, idx, s->start_idx)) {
+				unsigned old_start = s->start_idx;
 				selection_set_start(s, box, idx);
+				set_end(s, old_start);
 				s->drag_state = DRAG_START;
 			}
 			else
@@ -386,6 +401,9 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 	if (box->byte_offset >= end_idx)
 		return true;
 
+	/* read before calling the handler in case it modifies the tree */
+	child = box->children;
+
 	if (IS_TEXT(box) && box->length > 0) {
 
 		if (box->byte_offset >= start_idx &&
@@ -426,7 +444,6 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		this is important at the top-levels of the tree for pruning subtrees
 		that lie entirely before the selection */
 
-	child = box->children;
 	if (child) {
 		struct box *next = child->next;
 
@@ -436,9 +453,13 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		}
 
 		while (child) {
+			/* read before calling the handler in case it modifies the tree */
+			struct box *next = child->next;
+
 			if (!traverse_tree(child, start_idx, end_idx, handler, handle))
 				return false;
-			child = child->next;
+
+			child = next;
 		}
 	}
 
@@ -563,7 +584,7 @@ void selection_clear(struct selection *s, bool redraw)
 
 void selection_select_all(struct selection *s)
 {
-	int old_start, old_end;
+	unsigned old_start, old_end;
 	bool was_defined;
 
 	assert(s);
@@ -584,6 +605,46 @@ void selection_select_all(struct selection *s)
 }
 
 
+void set_start(struct selection *s, unsigned offset)
+{
+	bool was_defined = selection_defined(s);
+	unsigned old_start = s->start_idx;
+
+	s->start_idx = offset;
+	s->last_was_end = false;
+	s->defined = (s->start_idx < s->end_idx);
+
+	if (was_defined) {
+		if (offset < old_start)
+			selection_redraw(s, s->start_idx, old_start);
+		else
+			selection_redraw(s, old_start, s->start_idx);
+	}
+	else if (selection_defined(s))
+		selection_redraw(s, s->start_idx, s->end_idx);
+}
+
+
+void set_end(struct selection *s, unsigned offset)
+{
+	bool was_defined = selection_defined(s);
+	unsigned old_end = s->end_idx;
+
+	s->end_idx = offset;
+	s->last_was_end = true;
+	s->defined = (s->start_idx < s->end_idx);
+
+	if (was_defined) {
+		if (offset < old_end)
+			selection_redraw(s, s->end_idx, old_end);
+		else
+			selection_redraw(s, old_end, s->end_idx);
+	}
+	else if (selection_defined(s))
+		selection_redraw(s, s->start_idx, s->end_idx);
+}
+
+
 /**
  * Set the start position of the current selection, updating the screen.
  *
@@ -594,21 +655,7 @@ void selection_select_all(struct selection *s)
 
 void selection_set_start(struct selection *s, struct box *box, int idx)
 {
-	int old_start = s->start_idx;
-	bool was_defined = selection_defined(s);
-
-	s->start_idx = box->byte_offset + idx;
-	s->last_was_end = false;
-	s->defined = (s->start_idx < s->end_idx);
-
-	if (was_defined) {
-		if (before(box, idx, old_start))
-			selection_redraw(s, s->start_idx, old_start);
-		else
-			selection_redraw(s, old_start, s->start_idx);
-	}
-	else if (selection_defined(s))
-		selection_redraw(s, s->start_idx, s->end_idx);
+	set_start(s, box->byte_offset + idx);
 }
 
 
@@ -622,21 +669,74 @@ void selection_set_start(struct selection *s, struct box *box, int idx)
 
 void selection_set_end(struct selection *s, struct box *box, int idx)
 {
-	int old_end = s->end_idx;
-	bool was_defined = selection_defined(s);
+	set_end(s, box->byte_offset + idx);
+}
 
-	s->end_idx = box->byte_offset + idx;
-	s->last_was_end = true;
-	s->defined = (s->start_idx < s->end_idx);
 
-	if (was_defined) {
-		if (before(box, idx, old_end))
-			selection_redraw(s, s->end_idx, old_end);
-		else
-			selection_redraw(s, old_end, s->end_idx);
+/**
+ * Get the box and index of the specified byte offset within the
+ * textual representation.
+ *
+ * \param  b       root node of search
+ * \param  offset  byte offset within textual representation
+ * \param  pidx    receives byte index of selection start point within box
+ * \return ptr to box, or NULL if no selection defined
+ */
+
+struct box *get_box(struct box *b, unsigned offset, int *pidx)
+{
+	struct box *child = b->children;
+
+	if (b->text && !b->object) {
+
+		if (offset >= b->byte_offset &&
+			offset < b->byte_offset + b->length + b->space) {
+
+			/* it's in this box */
+			*pidx = offset - b->byte_offset;
+			return b;
+		}
 	}
-	else if (selection_defined(s))
-		selection_redraw(s, s->start_idx, s->end_idx);
+
+	/* find the first child that could contain this offset */
+	if (child) {
+		struct box *next = child->next;
+		while (next && next->byte_offset < offset) {
+			child = next;
+			next = child->next;
+		}
+		return get_box(child, offset, pidx);
+	}
+
+	return NULL;
+}
+
+
+/**
+ * Get the box and index of the selection start, if defined.
+ *
+ * \param  s     selection object
+ * \param  pidx  receives byte index of selection start point within box
+ * \return ptr to box, or NULL if no selection defined
+ */
+
+struct box *selection_get_start(struct selection *s, int *pidx)
+{
+	return (s->defined ? get_box(s->root, s->start_idx, pidx) : NULL);
+}
+
+
+/**
+ * Get the box and index of the selection end, if defined.
+ *
+ * \param  s     selection object
+ * \param  pidx  receives byte index of selection end point within box
+ * \return ptr to box, or NULL if no selection defined.
+ */
+
+struct box *selection_get_end(struct selection *s, int *pidx)
+{
+	return (s->defined ? get_box(s->root, s->end_idx, pidx) : NULL);
 }
 
 
@@ -703,10 +803,12 @@ bool save_handler(struct box *box, int offset, size_t length, void *handle)
 	assert(out);
 
 	if (box) {
-		if (fwrite(box->text + offset, 1, length, out) < length)
+		size_t len = min(length, box->length - offset);
+
+		if (fwrite(box->text + offset, 1, len, out) < len)
 			return false;
 
-		if (box->space)
+		if (box->space && length > len)
 			return (EOF != fputc(' ', out));
 
 		return true;

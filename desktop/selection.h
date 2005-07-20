@@ -62,8 +62,12 @@ void selection_reinit(struct selection *s, struct box *root);
 
 void selection_clear(struct selection *s, bool redraw);
 void selection_select_all(struct selection *s);
+
 void selection_set_start(struct selection *s, struct box *box, int idx);
 void selection_set_end(struct selection *s, struct box *box, int idx);
+
+struct box *selection_get_start(struct selection *s, int *pidx);
+struct box *selection_get_end(struct selection *s, int *pidx);
 
 bool selection_click(struct selection *s, struct box *box, browser_mouse_state mouse, int dx, int dy);
 void selection_track(struct selection *s, struct box *box, browser_mouse_state mouse, int dx, int dy);

@@ -171,20 +171,61 @@ void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
 bool copy_handler(struct box *box, int offset, size_t length, void *handle)
 {
 	size_t len = min(length, box->length - offset);
-	size_t new_length;
 	const char *text;
-	int space = 0;
+	bool space = false;
 
 	if (box) {
 		text = box->text + offset;
-		if (box->space && length > len) space = 1;
+		if (box->space && length > len) space = true;
 	}
 	else {
 		text = "\n";
 		len = 1;
 	}
 
-	new_length = clip_length + len + space;
+	return gui_add_to_clipboard(text, len, space);
+}
+
+
+/**
+ * Empty the clipboard, called prior to gui_add_to_clipboard and
+ * gui_commit_clipboard
+ *
+ * \return true iff successful
+ */
+
+bool gui_empty_clipboard(void)
+{
+	const int init_size = 1024;
+
+	if (!clip_alloc) {
+		clipboard = malloc(init_size);
+		if (!clipboard) {
+			LOG(("out of memory"));
+			warn_user("NoMemory", 0);
+			return false;
+		}
+		clip_alloc = init_size;
+	}
+
+	clip_length = 0;
+
+	return true;
+}
+
+
+/**
+ * Add some text to the clipboard, optionally appending a trailing space.
+ *
+ * \param  text    text to be added
+ * \param  length  length of text in bytes
+ * \param  space   indicates whether a trailing space should be appended also
+ * \return true iff successful
+ */
+
+bool gui_add_to_clipboard(const char *text, size_t length, bool space)
+{
+	size_t new_length = clip_length + length + (space ? 1 : 0);
 
 	if (new_length > clip_alloc) {
 		size_t new_alloc = clip_alloc + (clip_alloc / 4);
@@ -199,8 +240,8 @@ bool copy_handler(struct box *box, int offset, size_t length, void *handle)
 		clip_alloc = new_alloc;
 	}
 
-	memcpy(clipboard + clip_length, text, len);
-	clip_length += len;
+	memcpy(clipboard + clip_length, text, length);
+	clip_length += length;
 	if (space) clipboard[clip_length++] = ' ';
 
 	return true;
@@ -208,32 +249,15 @@ bool copy_handler(struct box *box, int offset, size_t length, void *handle)
 
 
 /**
- * Copy the selected contents to the global clipboard,
- * and claim ownership of the clipboard from other apps.
+ * Commit the changes made by gui_empty_clipboard and gui_add_to_clipboard.
  *
- * \param s  selection
- * \return true iff successful, ie. cut operation can proceed without losing data
+ * \return true iff successful
  */
 
-bool gui_copy_to_clipboard(struct selection *s)
+bool gui_commit_clipboard(void)
 {
-	const int init_size = 1024;
 	utf8_convert_ret res;
 	char *new_cb;
-
-
-	if (!clip_alloc) {
-		clipboard = malloc(init_size);
-		if (!clipboard) {
-			LOG(("out of memory"));
-			warn_user("NoMemory", 0);
-			return false;
-		}
-		clip_alloc = init_size;
-	}
-
-	clip_length = 0;
-	selection_traverse(s, copy_handler, NULL);
 
 	res = utf8_to_local_encoding(clipboard, clip_length, &new_cb);
 	if (res == UTF8_CONVERT_OK) {
@@ -267,6 +291,26 @@ bool gui_copy_to_clipboard(struct selection *s)
 	LOG(("clipboard now holds %d bytes", clip_length));
 
 	return true;
+}
+
+
+
+/**
+ * Copy the selected contents to the global clipboard,
+ * and claim ownership of the clipboard from other apps.
+ *
+ * \param s  selection
+ * \return true iff successful, ie. cut operation can proceed without losing data
+ */
+
+bool gui_copy_to_clipboard(struct selection *s)
+{
+	if (!gui_empty_clipboard())
+		return false;
+
+	selection_traverse(s, copy_handler, NULL);
+
+	return gui_commit_clipboard();
 }
 
 

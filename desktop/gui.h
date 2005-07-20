@@ -64,6 +64,7 @@ int gui_window_get_height(struct gui_window *g);
 void gui_window_set_extent(struct gui_window *g, int width, int height);
 void gui_window_set_status(struct gui_window *g, const char *text);
 void gui_window_set_pointer(gui_pointer_shape shape);
+void gui_window_hide_pointer(void);
 void gui_window_set_url(struct gui_window *g, const char *url);
 void gui_window_start_throbber(struct gui_window *g);
 void gui_window_stop_throbber(struct gui_window *g);
@@ -71,6 +72,8 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height);
 void gui_window_remove_caret(struct gui_window *g);
 void gui_window_new_content(struct gui_window *g);
 bool gui_window_scroll_start(struct gui_window *g);
+bool gui_window_box_scroll_start(struct gui_window *g,
+		int x0, int y0, int x1, int y1);
 
 struct gui_download_window *gui_download_window_create(const char *url,
 		const char *mime_type, struct fetch *fetch,
@@ -87,6 +90,9 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g);
 void gui_start_selection(struct gui_window *g);
 
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y);
+bool gui_empty_clipboard(void);
+bool gui_add_to_clipboard(const char *text, size_t length, bool space);
+bool gui_commit_clipboard(void);
 bool gui_copy_to_clipboard(struct selection *s);
 
 void gui_create_form_select_menu(struct browser_window *bw,
@@ -97,5 +103,5 @@ void gui_launch_url(const char *url);
 bool gui_search_term_highlighted(struct gui_window *g, struct box *box,
 		unsigned *start_idx, unsigned *end_idx);
 
-
 #endif
+

@@ -2439,6 +2439,23 @@ void gui_window_set_pointer(gui_pointer_shape shape)
 
 
 /**
+ * Remove the mouse pointer from the screen
+ */
+
+void gui_window_hide_pointer(void)
+{
+	os_error *error;
+
+	error = xwimpspriteop_set_pointer_shape(NULL, 0x30, 0, 0, 0, 0);
+	if (error) {
+		LOG(("xwimpspriteop_set_pointer_shape: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+}
+
+
+/**
  * Called when the gui_window has new content.
  *
  * \param  g  the gui_window that has new content
@@ -2529,6 +2546,50 @@ bool ro_gui_ctrl_pressed(void)
 	int ctrl = 0;
 	xosbyte1(osbyte_SCAN_KEYBOARD, 1 ^ 0x80, 0, &ctrl);
 	return (ctrl == 0xff);
+}
+
+
+/**
+ * Platform-dependent part of starting a box scrolling operation,
+ * for frames and textareas.
+ *
+ * \param  x0  minimum x ordinate of box relative to mouse pointer
+ * \param  y0  minimum y ordinate
+ * \param  x1  maximum x ordinate
+ * \param  y1  maximum y ordinate
+ * \return true iff succesful
+ */
+
+bool gui_window_box_scroll_start(struct gui_window *g, int x0, int y0, int x1, int y1)
+{
+	wimp_pointer pointer;
+	os_error *error;
+	wimp_drag drag;
+
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info 0x%x : %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+
+	drag.type = wimp_DRAG_USER_POINT;
+	drag.bbox.x0 = pointer.pos.x + (int)(x0 * 2 * g->option.scale);
+	drag.bbox.y0 = pointer.pos.y + (int)(y0 * 2 * g->option.scale);
+	drag.bbox.x1 = pointer.pos.x + (int)(x1 * 2 * g->option.scale);
+	drag.bbox.y1 = pointer.pos.y + (int)(y1 * 2 * g->option.scale);
+
+	error = xwimp_drag_box(&drag);
+	if (error) {
+		LOG(("xwimp_drag_box: 0x%x : %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+
+	gui_current_drag_type = GUI_DRAG_SCROLL;
+	return true;
 }
 
 
