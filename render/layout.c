@@ -2093,6 +2093,16 @@ void layout_minmax_table(struct box *table)
 		table_max += col[i].max;
 	}
 
+	/* fixed width takes priority, unless it is too narrow */
+	if (table->style->width.width == CSS_WIDTH_LENGTH) {
+		int width = css_len2px(&table->style->width.value.length,
+				table->style);
+		if (table_min < width)
+			table_min = width;
+		if (table_max < width)
+			table_max = width;
+	}
+
 	/* add margins, border, padding to min, max widths */
 	calculate_mbp_width(table->style, LEFT, &extra_fixed, &extra_frac);
 	calculate_mbp_width(table->style, RIGHT, &extra_fixed, &extra_frac);
