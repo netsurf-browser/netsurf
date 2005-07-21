@@ -139,9 +139,12 @@ struct box {
 	int scroll_x;  /**< Horizontal scroll of descendants. */
 	int scroll_y;  /**< Vertical scroll of descendants. */
 
-	/**< Width of box taking all line breaks (including margins etc.). */
+	/** Width of box taking all line breaks (including margins etc). Must
+	 * be non-negative. */
 	int min_width;
-	int max_width;  /**< Width that would be taken with no line breaks. */
+	/** Width that would be taken with no line breaks. Must be
+	 * non-negative. */
+	int max_width;
 
 	/**< Byte offset within a textual representation of this content. */
 	size_t byte_offset;

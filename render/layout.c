@@ -322,6 +322,8 @@ bool layout_block_context(struct box *block, struct content *content)
  * Calculate minimum and maximum width of a block.
  *
  * \param  block  box of type BLOCK, INLINE_BLOCK, or TABLE_CELL
+ * \post  block->min_width and block->max_width filled in,
+ *        0 <= block->min_width <= block->max_width
  */
 
 void layout_minmax_block(struct box *block)
@@ -375,10 +377,16 @@ void layout_minmax_block(struct box *block)
 	/* add margins, border, padding to min, max widths */
 	calculate_mbp_width(block->style, LEFT, &extra_fixed, &extra_frac);
 	calculate_mbp_width(block->style, RIGHT, &extra_fixed, &extra_frac);
+	if (extra_fixed < 0)
+		extra_fixed = 0;
+	if (extra_frac < 0)
+		extra_frac = 0;
 	if (1.0 <= extra_frac)
 		extra_frac = 0.9;
 	block->min_width = (min + extra_fixed) / (1.0 - extra_frac);
 	block->max_width = (max + extra_fixed) / (1.0 - extra_frac);
+
+	assert(0 <= block->min_width && block->min_width <= block->max_width);
 }
 
 
@@ -762,6 +770,8 @@ bool layout_inline_container(struct box *inline_container, int width,
  * Calculate minimum and maximum width of an inline container.
  *
  * \param  inline_container  box of type INLINE_CONTAINER
+ * \post  inline_container->min_width and inline_container->max_width filled in,
+ *        0 <= inline_container->min_width <= inline_container->max_width
  */
 
 void layout_minmax_inline_container(struct box *inline_container)
@@ -786,6 +796,10 @@ void layout_minmax_inline_container(struct box *inline_container)
 
 	inline_container->min_width = min;
 	inline_container->max_width = max;
+
+	assert(0 <= inline_container->min_width &&
+			inline_container->min_width <=
+			inline_container->max_width);
 }
 
 
@@ -1300,6 +1314,7 @@ bool layout_line(struct box *first, int width, int *y,
  * \param  line_min  updated to minimum width of line starting at first
  * \param  line_max  updated to maximum width of line starting at first
  * \return  first box in next line, or 0 if no more lines
+ * \post  0 <= *line_min <= *line_max
  */
 
 struct box *layout_minmax_line(struct box *first,
@@ -1408,6 +1423,8 @@ struct box *layout_minmax_line(struct box *first,
 			case CSS_WIDTH_LENGTH:
 				width = css_len2px(&b->style->width.value.
 						length, b->style);
+				if (width < 0)
+					width = 0;
 				break;
 			case CSS_WIDTH_PERCENT:
 				/*b->width = width *
@@ -1461,6 +1478,7 @@ struct box *layout_minmax_line(struct box *first,
 	LOG(("line_min %i, line_max %i", min, max));
 
 	assert(b != first);
+	assert(0 <= *line_min && *line_min <= *line_max);
 	return b;
 }
 
@@ -1976,6 +1994,8 @@ bool layout_table(struct box *table, int available_width,
  * Calculate minimum and maximum width of a table.
  *
  * \param  table  box of type TABLE
+ * \post  table->min_width and table->max_width filled in,
+ *        0 <= table->min_width <= table->max_width
  */
 
 void layout_minmax_table(struct box *table)
@@ -2112,6 +2132,8 @@ void layout_minmax_table(struct box *table)
 	table->max_width = (table_max + extra_fixed) / (1.0 - extra_frac);
 	table->min_width += (table->columns + 1) * border_spacing_h;
 	table->max_width += (table->columns + 1) * border_spacing_h;
+
+	assert(0 <= table->min_width && table->min_width <= table->max_width);
 }
 
 
