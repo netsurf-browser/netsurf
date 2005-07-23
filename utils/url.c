@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/types.h>
 #include <regex.h>
 #include "netsurf/utils/log.h"
@@ -22,7 +23,7 @@
 #include "netsurf/utils/utils.h"
 
 
-regex_t url_re, url_up_re, url_nice_re;
+regex_t url_re, url_up_re;
 
 /**
  * Initialise URL routines.
@@ -49,18 +50,15 @@ void url_init(void)
 			"/([^/]|[.][^./]|[^./][.]|[^./][^./]|[^/][^/][^/]+)?"
 			"/[.][.](/|$)",
 			REG_EXTENDED);
-	regcomp_wrapper(&url_nice_re,
-			"^([^.]{0,4}[.])?([^.][^.][.])?([^/?&;.=]*)"
-			"(=[^/?&;.]*)?[/?&;.]",
-			REG_EXTENDED);
 }
 
 
 /**
  * Normalize a URL.
  *
- * \param  url  an absolute URL
- * \return  cleaned up url, allocated on the heap, or 0 on failure
+ * \param  url     an absolute URL
+ * \param  result  pointer to pointer to buffer to hold cleaned up url
+ * \return  URL_FUNC_OK on success
  *
  * If there is no scheme, http:// is added. The scheme and host are
  * lower-cased. Default ports are removed (http only). An empty path is
@@ -208,9 +206,10 @@ url_func_result url_normalize(const char *url, char **result)
 /**
  * Resolve a relative URL to absolute form.
  *
- * \param  rel   relative URL
- * \param  base  base URL, must be absolute and cleaned as by url_normalize()
- * \return  an absolute URL, allocated on the heap, or 0 on failure
+ * \param  rel     relative URL
+ * \param  base    base URL, must be absolute and cleaned as by url_normalize()
+ * \param  result  pointer to pointer to buffer to hold absolute url
+ * \return  URL_FUNC_OK on success
  */
 
 url_func_result url_join(const char *rel, const char *base, char **result)
@@ -433,8 +432,9 @@ step7:	/* 7) */
 /**
  * Return the host name from an URL.
  *
- * \param  url  an absolute URL
- * \returns  host name allocated on heap, or 0 on failure
+ * \param  url     an absolute URL
+ * \param  result  pointer to pointer to buffer to hold host name
+ * \return  URL_FUNC_OK on success
  */
 
 url_func_result url_host(const char *url, char **result)
@@ -459,20 +459,23 @@ url_func_result url_host(const char *url, char **result)
 		return URL_FUNC_NOMEM;
 	}
 	strncpy((*result), url + match[URL_RE_AUTHORITY].rm_so,
-			match[URL_RE_AUTHORITY].rm_eo - match[4].rm_so);
+			match[URL_RE_AUTHORITY].rm_eo -
+			match[URL_RE_AUTHORITY].rm_so);
 	(*result)[match[URL_RE_AUTHORITY].rm_eo -
 			match[URL_RE_AUTHORITY].rm_so] = 0;
 
 	return URL_FUNC_OK;
 }
 
+
 /**
- * Return the scheme name from an URL
+ * Return the scheme name from an URL.
  *
- * \param url     an absolute URL
- * \param result  pointer to pointer to buffer to hold scheme name
- * \return URL_FUNC_OK on success
+ * \param  url     an absolute URL
+ * \param  result  pointer to pointer to buffer to hold scheme name
+ * \return  URL_FUNC_OK on success
  */
+
 url_func_result url_scheme(const char *url, char **result)
 {
 	int m;
@@ -494,7 +497,6 @@ url_func_result url_scheme(const char *url, char **result)
 		LOG(("malloc failed"));
 		return URL_FUNC_NOMEM;
 	}
-
 	strncpy((*result), url + match[URL_RE_SCHEME].rm_so,
 			match[URL_RE_SCHEME].rm_eo -
 			match[URL_RE_SCHEME].rm_so);
@@ -503,106 +505,126 @@ url_func_result url_scheme(const char *url, char **result)
 	return URL_FUNC_OK;
 }
 
+
 /**
  * Attempt to find a nice filename for a URL.
  *
- * \param  url  an absolute URL
- * \returns  filename allocated on heap, or 0 on memory exhaustion
+ * \param  url     an absolute URL
+ * \param  result  pointer to pointer to buffer to hold filename
+ * \param  remove_extensions  remove any extensions from the filename
+ * \return  URL_FUNC_OK on success
  */
 
-url_func_result url_nice(const char *url, char **result)
+url_func_result url_nice(const char *url, char **result,
+		bool remove_extensions)
 {
-	unsigned int i, j, k = 0, so;
-	unsigned int len;
-	const char *colon;
-	char buf[40];
-	char *rurl;
 	int m;
 	regmatch_t match[10];
+	regoff_t start, end;
+	size_t i;
+	char *dot;
 
-	/* just in case */
-	(*result) = 0;
+	*result = 0;
 
-	(*result) = malloc(40);
-	if (!(*result))
-		return URL_FUNC_NOMEM;
-
-	len = strlen(url);
-	assert(len != 0);
-	rurl = malloc(len + 1);
-	if (!rurl) {
-		free((*result));
-		return URL_FUNC_NOMEM;
+	m = regexec(&url_re, url, 10, match, 0);
+	if (m) {
+		LOG(("url '%s' failed to match regex", url));
+		return URL_FUNC_FAILED;
 	}
 
-	/* reverse url into rurl */
-	for (i = 0, j = len - 1; i != len; i++, j--)
-		rurl[i] = url[j];
-	rurl[len] = 0;
+	/* extract the last component of the path, if possible */
+	if (match[URL_RE_PATH].rm_so == -1 || match[URL_RE_PATH].rm_so ==
+			match[URL_RE_PATH].rm_eo)
+		goto no_path;  /* no path, or empty */
+	for (end = match[URL_RE_PATH].rm_eo - 1;
+			end != match[URL_RE_PATH].rm_so && url[end] == '/';
+			end--)
+		;
+	if (end == match[URL_RE_PATH].rm_so)
+		goto no_path;  /* path is a string of '/' */
+	end++;
+	for (start = end - 1;
+			start != match[URL_RE_PATH].rm_so && url[start] != '/';
+			start--)
+		;
+	if (url[start] == '/')
+		start++;
 
-	/* prepare a fallback: always succeeds */
-	colon = strchr(url, ':');
-	if (colon)
-		url = colon + 1;
-	strncpy((*result), url, 15);
-	(*result)[15] = 0;
-	for (i = 0; (*result)[i]; i++)
-		if (!isalnum((*result)[i]))
-			(*result)[i] = '_';
-
-	/* append nice pieces */
-	j = 0;
-	do {
-		m = regexec(&url_nice_re, rurl + j, 10, match, 0);
-		if (m)
-			break;
-
-		if (match[3].rm_so != match[3].rm_eo) {
-			so = match[3].rm_so;
-			i = match[3].rm_eo - so;
-			if (15 < i) {
-				so = match[3].rm_eo - 15;
-				i = 15;
-			}
-			if (15 < k + i)
-				break;
-			if (k)
-				k+=2;
-			strncpy(buf + k, rurl + j + so, i);
-			k += i;
-			buf[k] = 160;	/* nbsp */
-			buf[k+1] = 0xc2;	/* as UTF-8 */
-		}
-
-		j += match[0].rm_eo;
-	} while (j != len);
-
-	if (k == 0) {
-		free(rurl);
-		return URL_FUNC_OK;
+	if (!strncasecmp(url + start, "index.", 6) ||
+			!strncasecmp(url + start, "default.", 8)) {
+		/* try again */
+		if (start == match[URL_RE_PATH].rm_so)
+			goto no_path;
+		for (end = start - 1;
+				end != match[URL_RE_PATH].rm_so &&
+				url[end] == '/';
+				end--)
+			;
+		if (end == match[URL_RE_PATH].rm_so)
+			goto no_path;
+		end++;
+		for (start = end - 1;
+				start != match[URL_RE_PATH].rm_so &&
+				url[start] != '/';
+				start--)
+		;
+		if (url[start] == '/')
+			start++;
 	}
 
-	/* reverse back */
-	for (i = 0, j = k - 1; i != k; i++, j--)
-		(*result)[i] = buf[j];
-	(*result)[k] = 0;
+	*result = malloc(end - start + 1);
+	if (!*result) {
+		LOG(("malloc failed"));
+		return URL_FUNC_NOMEM;
+	}
+	strncpy(*result, url + start, end - start);
+	(*result)[end - start] = 0;
 
-	for (i = 0; i != k; i++)
-		if ((*result)[i] != (char) 0xa0 && !isalnum((*result)[i]))
-			(*result)[i] = '_';
-
-	free(rurl);
+	if (remove_extensions) {
+		dot = strchr(*result, '.');
+		if (dot && dot != *result)
+			*dot = 0;
+	}
 
 	return URL_FUNC_OK;
+
+no_path:
+
+	/* otherwise, use the host name, with '.' replaced by '_' */
+	if (match[URL_RE_AUTHORITY].rm_so != -1 &&
+			match[URL_RE_AUTHORITY].rm_so !=
+			match[URL_RE_AUTHORITY].rm_eo) {
+		*result = malloc(match[URL_RE_AUTHORITY].rm_eo -
+				match[URL_RE_AUTHORITY].rm_so + 1);
+		if (!*result) {
+			LOG(("malloc failed"));
+			return URL_FUNC_NOMEM;
+		}
+		strncpy(*result, url + match[URL_RE_AUTHORITY].rm_so,
+				match[URL_RE_AUTHORITY].rm_eo -
+				match[URL_RE_AUTHORITY].rm_so);
+		(*result)[match[URL_RE_AUTHORITY].rm_eo -
+				match[URL_RE_AUTHORITY].rm_so] = 0;
+
+		for (i = 0; (*result)[i]; i++)
+			if ((*result)[i] == '.')
+				(*result)[i] = '_';
+
+		return URL_FUNC_OK;
+	}	
+	
+	return URL_FUNC_FAILED;
 }
 
+
 /**
- * Escape a string suitable for inclusion in an URI
+ * Escape a string suitable for inclusion in an URL.
  *
- * \param unescaped  The unescaped string
- * \param result  Pointer to location to store escaped string
- * \return URL_FUNC_OK on success
+ * \param  unescaped  the unescaped string
+ * \param  result     pointer to pointer to buffer to hold escaped string
+ * \return  URL_FUNC_OK on success
  */
+
 url_func_result url_escape(const char *unescaped, char **result)
 {
 	int len;
@@ -649,6 +671,7 @@ url_func_result url_escape(const char *unescaped, char **result)
 	return URL_FUNC_OK;
 }
 
+
 #ifdef TEST
 
 int main(int argc, char *argv[])
@@ -670,19 +693,30 @@ int main(int argc, char *argv[])
 			printf("<== '%s'\n", s);
 			free(s);
 		}*/
-		if (1 != i) {
+/*		if (1 != i) {
 			res = url_join(argv[i], argv[1], &s);
 			if (res == URL_FUNC_OK) {
 				printf("'%s' + '%s' \t= '%s'\n", argv[1],
 						argv[i], s);
 				free(s);
 			}
-		}
-/*		res = url_nice(argv[i], &s);
-		if (res == URL_FUNC_OK) {
-			printf("'%s'\n", s);
-			free(s);
 		}*/
+		printf("'%s' => ", argv[i]);
+		res = url_nice(argv[i], &s, true);
+		if (res == URL_FUNC_OK) {
+			printf("'%s', ", s);
+			free(s);
+		} else {
+			printf("failed %u, ", res);
+		}
+		res = url_nice(argv[i], &s, false);
+		if (res == URL_FUNC_OK) {
+			printf("'%s', ", s);
+			free(s);
+		} else {
+			printf("failed %u, ", res);
+		}
+		printf("\n");
 	}
 	return 0;
 }

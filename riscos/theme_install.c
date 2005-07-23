@@ -203,7 +203,7 @@ void theme_install_install(bool apply)
 
 	assert(theme_install_content);
 
-	if (url_nice(theme_install_descriptor.name, &theme_file) !=
+	if (url_nice(theme_install_descriptor.name, &theme_file, true) !=
 			URL_FUNC_OK) {
 		warn_user("ThemeInstallErr", 0);
 		theme_install_close();

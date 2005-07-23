@@ -29,6 +29,7 @@
 #include "netsurf/image/bitmap.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
+#include "netsurf/riscos/options.h"
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/save_draw.h"
 #include "netsurf/riscos/thumbnail.h"
@@ -50,7 +51,8 @@ static bool using_dragasprite = true;
 static bool saving_from_dialog = true;
 static osspriteop_area *saveas_area = NULL;
 static wimp_w gui_save_sourcew = (wimp_w)-1;
-static char save_leafname[32];
+#define LEAFNAME_MAX 200
+static char save_leafname[LEAFNAME_MAX];
 
 typedef enum { LINK_ACORN, LINK_ANT, LINK_TEXT } link_format;
 
@@ -58,7 +60,8 @@ static bool ro_gui_save_complete(struct content *c, char *path);
 static bool ro_gui_save_content(struct content *c, char *path);
 static void ro_gui_save_object_native(struct content *c, char *path);
 static bool ro_gui_save_link(struct content *c, link_format format, char *path);
-static void ro_gui_save_set_state(struct content *c, gui_save_type save_type, char *leaf_buf, char *icon_buf);
+static void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
+		char *leaf_buf, char *icon_buf);
 static bool ro_gui_save_create_thumbnail(struct content *c, const char *name);
 
 
@@ -182,7 +185,7 @@ void ro_gui_saveas_quit(void)
 
 void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
 {
-	char name_buf[64];
+	char name_buf[LEAFNAME_MAX];
 	char icon_buf[20];
 
 	assert((save_type == GUI_SAVE_HOTLIST_EXPORT_HTML) ||
@@ -329,7 +332,8 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 
 	gui_save_selection = s;
 
-	ro_gui_save_set_state(NULL, GUI_SAVE_TEXT_SELECTION, save_leafname, icon_buf);
+	ro_gui_save_set_state(NULL, GUI_SAVE_TEXT_SELECTION, save_leafname,
+			icon_buf);
 
 	gui_current_drag_type = GUI_DRAG_SAVE;
 
@@ -873,19 +877,22 @@ bool ro_gui_save_link(struct content *c, link_format format, char *path)
  *
  * \param  c          content being saved
  * \param  save_type  type of save operation being performed
- * \param  leaf_buf   buffer to receive suggested leafname
- * \param  icon_buf   buffer to receive sprite name
+ * \param  leaf_buf   buffer to receive suggested leafname, length at least
+ *                    LEAFNAME_MAX
+ * \param  icon_buf   buffer to receive sprite name, length at least 13
  */
 
-void ro_gui_save_set_state(struct content *c, gui_save_type save_type, char *leaf_buf, char *icon_buf)
+void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
+		char *leaf_buf, char *icon_buf)
 {
 	/* filename */
 	const char *name = gui_save_table[save_type].name;
 	url_func_result res;
 	bool done = false;
-	char *nice = NULL;
+	char *nice;
 	utf8_convert_ret err;
 	char *local_name;
+	size_t i;
 
 	/* parameters that we need to remember */
 	gui_save_current_type = save_type;
@@ -897,13 +904,23 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type, char *lea
 		gui_save_filetype = ro_content_filetype(c);
 
 	/* leafname */
-	if (c && (res = url_nice(c->url, (char **)&nice)) == URL_FUNC_OK)
+	if (c && (res = url_nice(c->url, &nice, option_strip_extensions)) ==
+			URL_FUNC_OK) {
+		for (i = 0; nice[i]; i++) {
+			if (nice[i] == '.')
+				nice[i] = '/';
+			else if (nice[i] <= ' ' ||
+					strchr(":*#$&@^%\\", nice[i]))
+				nice[i] = '_';
+		}
 		name = nice;
-	else
+	} else {
 		name = messages_get(name);
+	}
 
 	/* filename is utf8 */
-	strcpy(leaf_buf, name);
+	strncpy(leaf_buf, name, LEAFNAME_MAX);
+	leaf_buf[LEAFNAME_MAX - 1] = 0;
 
 	err = utf8_to_local_encoding(name, 0, &local_name);
 	if (err != UTF8_CONVERT_OK) {
@@ -944,15 +961,17 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type, char *lea
 		error = ro_gui_wimp_get_sprite(icon_buf, &sprite);
 		if (error) {
 			LOG(("ro_gui_wimp_get_sprite: 0x%x: %s",
-				error->errnum, error->errmess));
+					error->errnum, error->errmess));
 			warn_user("MiscError", error->errmess);
 		} else {
-			/* the sprite area should always be large enough for file_xxx sprites */
-			assert(sprite->size <= saveas_area->size - saveas_area->first);
+			/* the sprite area should always be large enough for
+			 * file_xxx sprites */
+			assert(sprite->size <= saveas_area->size -
+					saveas_area->first);
 
 			memcpy((byte*)saveas_area + saveas_area->first,
-				sprite,
-				sprite->size);
+					sprite,
+					sprite->size);
 
 			saveas_area->sprite_count = 1;
 			saveas_area->used = saveas_area->first + sprite->size;

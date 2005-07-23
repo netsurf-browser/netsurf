@@ -61,6 +61,7 @@ extern bool option_block_popups;
 extern bool option_url_suggestion;
 extern int option_image_memory_direct;	/* -1 means auto-detect */
 extern int option_image_memory_compressed;	/* -1 means auto-detect */
+extern bool option_strip_extensions;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -102,7 +103,8 @@ int option_font_default = CSS_FONT_FAMILY_SANS_SERIF; \
 bool option_block_popups = false; \
 bool option_url_suggestion = true; \
 int option_image_memory_direct = -1; \
-int option_image_memory_compressed = -1;
+int option_image_memory_compressed = -1; \
+bool option_strip_extensions = true;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -144,6 +146,7 @@ int option_image_memory_compressed = -1;
 { "block_popups",           OPTION_BOOL,    &option_block_popups }, \
 { "url_suggestion",         OPTION_BOOL,    &option_url_suggestion }, \
 { "image_memory_direct",    OPTION_INTEGER, &option_image_memory_direct }, \
-{ "image_memory_compressed",OPTION_INTEGER, &option_image_memory_compressed }
+{ "image_memory_compressed",OPTION_INTEGER, &option_image_memory_compressed }, \
+{ "strip_extensions",       OPTION_BOOL,    &option_strip_extensions }
 
 #endif

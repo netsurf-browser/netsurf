@@ -32,6 +32,7 @@
 #include "oslib/wimpspriteop.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/desktop/gui.h"
+#include "netsurf/riscos/options.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/query.h"
 #include "netsurf/riscos/wimp.h"
@@ -177,6 +178,7 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	url_func_result res;
 	char *local_path;
 	utf8_convert_ret err;
+	size_t i;
 
 	dw = malloc(sizeof *dw);
 	if (!dw) {
@@ -242,8 +244,16 @@ struct gui_download_window *gui_download_window_create(const char *url,
 	download_template->icons[ICON_DOWNLOAD_ICON].data.indirected_sprite.id =
 			(osspriteop_id) dw->sprite_name;
 
-	if ((res = url_nice(url, &nice)) == URL_FUNC_OK) {
-		strcpy(dw->path, nice);
+	if ((res = url_nice(url, &nice, option_strip_extensions)) ==
+			URL_FUNC_OK) {
+		for (i = 0; nice[i]; i++) {
+			if (nice[i] == '.')
+				nice[i] = '/';
+			else if (nice[i] <= ' ' ||
+					strchr(":*#$&@^%\\", nice[i]))
+				nice[i] = '_';
+		}
+		strncpy(dw->path, nice, sizeof dw->path);
 		free(nice);
 	}
 	else
@@ -296,7 +306,8 @@ struct gui_download_window *gui_download_window_create(const char *url,
 
 	ro_gui_dialog_open(dw->window);
 
-	/* issue the warning now, so that it appears in front of the download window! */
+	/* issue the warning now, so that it appears in front of the download
+	 * window! */
 	if (space_warning)
 		warn_user("DownloadWarn", messages_get("NoDiscSpace"));
 
