@@ -86,7 +86,7 @@ struct gui_save_table_entry gui_save_table[] = {
 	/* GUI_SAVE_LINK_TEXT,           */ { 0xfff, "SaveLink" },
 	/* GUI_SAVE_HOTLIST_EXPORT_HTML, */ { 0xfaf, "Hotlist" },
 	/* GUI_SAVE_HISTORY_EXPORT_HTML, */ { 0xfaf, "History" },
-	/* GUI_SAVE_TEXT_SELECTION,      */ { 0xfff, "SaveText" },
+	/* GUI_SAVE_TEXT_SELECTION,      */ { 0xfff, "SaveSelection" },
 };
 
 

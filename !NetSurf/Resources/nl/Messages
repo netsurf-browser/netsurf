@@ -470,7 +470,7 @@ SaveDraw:Webpage
 SaveText:Webpage
 SaveObject:Object
 SaveLink:Link
-
+SaveSelection:Selectie
 
 # Themes
 # ======

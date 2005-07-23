@@ -469,7 +469,7 @@ SaveDraw:PageWeb
 SaveText:PageWeb
 SaveObject:Objet
 SaveLink:Lien
-
+SaveSelection:Texte
 
 # Themes
 # ======
