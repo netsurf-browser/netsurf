@@ -2212,7 +2212,7 @@ void ro_gui_theme_add_toolbar_icons(struct toolbar *toolbar,
 		} else {
 			hex_no[0] = ident[index];
 			hex_no[1] = '\0';
-			number = (int)strtol(&hex_no, (char **)NULL, 16);
+			number = strtol(hex_no, NULL, 16);
 			for (icon = toolbar->icon; icon; icon = icon->next)
 				if (icon->icon_number == number) {
 					ro_gui_theme_delink_toolbar_icon(
