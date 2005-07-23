@@ -889,7 +889,7 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
 	const char *name = gui_save_table[save_type].name;
 	url_func_result res;
 	bool done = false;
-	char *nice;
+	char *nice = NULL;
 	utf8_convert_ret err;
 	char *local_name;
 	size_t i;
