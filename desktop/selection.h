@@ -59,6 +59,9 @@ void selection_reinit(struct selection *s, struct box *root);
 /* bool selection_dragging(struct selection *s); */
 #define selection_dragging(s) ((s)->drag_state != DRAG_NONE)
 
+/* bool selection_dragging_start(struct selection *s); */
+#define selection_dragging_start(s) ((s)->drag_state == DRAG_START)
+
 
 void selection_clear(struct selection *s, bool redraw);
 void selection_select_all(struct selection *s);
