@@ -69,6 +69,7 @@ static void browser_radio_set(struct content *content,
 		struct form_control *radio);
 static gui_pointer_shape get_pointer_shape(css_cursor cursor);
 
+static struct box *browser_window_nearest_text_box(struct box *box, int x, int y);
 static struct box *browser_window_pick_text_box(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y, int *dx, int *dy);
 static void browser_window_page_drag_start(struct browser_window *bw, int x, int y);
@@ -745,6 +746,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	struct form_control *gadget = 0;
 	struct content *object = NULL;
 	url_func_result res;
+	struct box *next_box;
 
 	bw->drag_type = DRAGGING_NONE;
 	bw->scrolling_box = NULL;
@@ -753,8 +755,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	 * box with scrollbars */
 
 	box = c->data.html.layout;
-	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
+	while ((next_box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
 			NULL) {
+		box = next_box;
+
 		if (box->style &&
 				box->style->visibility == CSS_VISIBILITY_HIDDEN)
 			continue;
@@ -1622,6 +1626,42 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 
 
 /**
+ * Pick the text box child of 'box' that is closest to and above left of
+ * the point 'x,y'
+ *
+ * \param  box  parent box
+ * \param  x    x ordinate relative to parent box
+ * \param  y    y ordinate relative to parent box
+ * \return ptr to the nearest box, or NULL if none found
+ */
+
+struct box *browser_window_nearest_text_box(struct box *box, int x, int y)
+{
+	struct box *child = box->children;
+	struct box *nearest = NULL;
+	int nr_yd = INT_MAX;
+	int nr_xd = INT_MAX;
+
+	while (child) {
+		if (child->text && !child->object && child->y <= y && child->x <= x) {
+			int yd = y - (child->y + child->padding[TOP] + child->height + child->padding[BOTTOM]);
+			int xd = x - (child->x + child->padding[LEFT] + child->width + child->padding[RIGHT]);
+
+			/* give y displacement precedence of x */
+			if (yd < nr_yd || (yd == nr_yd && xd <= nr_xd)) {
+				nr_yd = yd;
+				nr_xd = xd;
+				nearest = child;
+			}
+		}
+		child = child->next;
+	}
+
+	return nearest;
+}
+
+
+/**
  * Peform pick text on browser window contents to locate the box under
  * the mouse pointer
  *
@@ -1639,29 +1679,41 @@ struct box *browser_window_pick_text_box(struct browser_window *bw,
 	struct content *c = bw->current_content;
 	struct box *text_box = NULL;
 
-	if (c) {
-		switch (c->type) {
-			case CONTENT_HTML: {
-				struct box *box = c->data.html.layout;
-				int box_x = 0, box_y = 0;
-				struct content *content;
+	if (c && c->type == CONTENT_HTML) {
+		struct box *box = c->data.html.layout;
+		int box_x = 0, box_y = 0;
+		struct content *content;
+		struct box *next_box;
 
-				while ((box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
-						NULL) {
+		while ((next_box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
+				NULL) {
+			box = next_box;
 
-					if (box->text && !box->object)
-						text_box = box;
-				}
-
-				/* return coordinates relative to box */
-				*dx = x - box_x;
-				*dy = y - box_y;
-			}
-			break;
-
-			default:
-				break;
+			if (box->text && !box->object)
+				text_box = box;
 		}
+
+		if (!text_box) {
+			box = browser_window_nearest_text_box(box, x - box_x, y - box_y);
+
+			if (box->text && !box->object) {
+
+				box_x += box->x - box->scroll_x;
+				box_y += box->y - box->scroll_y;
+
+				int y1 = box_y + (box->padding[TOP] + box->height + box->padding[BOTTOM]);
+				int x1 = box_x + (box->padding[LEFT] + box->width + box->padding[RIGHT]);
+
+				if (y > y1) y = y1;
+				if (x > x1) x = x1;
+
+				text_box = box;
+			}
+		}
+
+		/* return coordinates relative to box */
+		*dx = x - box_x;
+		*dy = y - box_y;
 	}
 
 	return text_box;

@@ -42,6 +42,8 @@ static bool redraw_handler(struct box *box, int offset, size_t length, void *han
 static void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx);
 static unsigned selection_label_subtree(struct selection *s, struct box *node, unsigned idx);
 static bool save_handler(struct box *box, int offset, size_t length, void *handle);
+static bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
+		unsigned *start_offset, unsigned *end_offset);
 static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		seln_traverse_handler handler, void *handle);
 static struct box *get_box(struct box *b, unsigned offset, int *pidx);
@@ -181,10 +183,8 @@ unsigned selection_label_subtree(struct selection *s, struct box *node, unsigned
 
 	node->byte_offset = idx;
 
-	if (node->text && !node->object) {
-		idx += node->length;
-		if (node->space) idx++;
-	}
+	if (node->text && !node->object)
+		idx += node->length + node->space;
 
 	while (child) {
 		idx = selection_label_subtree(s, child, idx);
@@ -380,6 +380,56 @@ void selection_drag_end(struct selection *s, struct box *box,
 
 
 /**
+ * Tests whether a text box lies partially within the given range of
+ * byte offsets, returning the start and end indexes of the bytes
+ * that are enclosed.
+ *
+ * \param  box           box to be tested
+ * \param  start_idx     byte offset of start of range
+ * \param  end_idx       byte offset of end of range
+ * \param  start_offset  receives the start offset of the selected part
+ * \param  end_offset    receives the end offset of the selected part
+ * \return true iff the range encloses at least part of the box
+ */
+
+bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
+		unsigned *start_offset, unsigned *end_offset)
+{
+	size_t box_length = box->length + box->space;
+
+	if (box->byte_offset >= start_idx &&
+		box->byte_offset + box_length <= end_idx) {
+
+		/* fully enclosed */
+		*start_offset = 0;
+		*end_offset = box_length;
+		return true;
+	}
+	else if (box->byte_offset + box_length > start_idx &&
+		box->byte_offset < end_idx) {
+		/* partly enclosed */
+		int offset = 0;
+		int len;
+
+		if (box->byte_offset < start_idx)
+			offset = start_idx - box->byte_offset;
+
+		len = box_length - offset;
+
+		if (box->byte_offset + box_length > end_idx)
+			len = end_idx - (box->byte_offset + offset);
+
+		*start_offset = offset;
+		*end_offset = offset + len;
+
+		return true;
+	}
+
+	return false;
+}
+
+
+/**
  * Traverse the given box subtree, calling the handler function (with its handle)
  * for all boxes that lie (partially) within the given range
  *
@@ -395,6 +445,7 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		seln_traverse_handler handler, void *handle)
 {
 	struct box *child;
+	size_t box_length;
 
 	/* we can prune this subtree, it's after the selection */
 	assert(box);
@@ -404,31 +455,14 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 	/* read before calling the handler in case it modifies the tree */
 	child = box->children;
 
-	if (IS_TEXT(box) && box->length > 0) {
+	box_length = box->length + box->space;  /* include trailing space */
+	if (IS_TEXT(box)) {
+		unsigned start_offset;
+		unsigned end_offset;
 
-		if (box->byte_offset >= start_idx &&
-			box->byte_offset + box->length <= end_idx) {
-			/* fully enclosed */
-			if (!handler(box, 0, box->length, handle))
+		if (selected_part(box, start_idx, end_idx, &start_offset, &end_offset) &&
+			!handler(box, start_offset, end_offset - start_offset, handle))
 				return false;
-		}
-		else if (box->byte_offset + box->length >= start_idx &&
-			box->byte_offset < end_idx) {
-			/* partly enclosed */
-			int offset = 0;
-			int len;
-	
-			if (box->byte_offset < start_idx)
-				offset = start_idx - box->byte_offset;
-	
-			len = box->length - offset;
-	
-			if (box->byte_offset + box->length > end_idx)
-				len = end_idx - (box->byte_offset + offset);
-
-			if (!handler(box, offset, len, handle))
-				return false;
-		}
 	}
 	else {
 		/* make a guess at where the newlines should go */
@@ -756,34 +790,13 @@ bool selection_highlighted(struct selection *s, struct box *box,
 		unsigned *start_idx, unsigned *end_idx)
 {
 	/* caller should have checked first for efficiency */
+	assert(s);
 	assert(selection_defined(s));
-	assert(s && box);
 
-	if (box->length > 0) {
-		unsigned box_len = box->length + (box->space ? 1 : 0);
+	assert(box);
+	assert(IS_TEXT(box));
 
-		if (box->byte_offset < s->end_idx &&
-			box->byte_offset + box_len > s->start_idx) {
-			unsigned offset = 0;
-			unsigned len;
-	
-			if (box->byte_offset < s->start_idx)
-				offset = s->start_idx - box->byte_offset;
-	
-			len = box_len - offset;
-	
-			if (box->byte_offset + box_len > s->end_idx)
-				len = s->end_idx - (box->byte_offset + offset);
-	
-			assert(offset <= box_len);
-			assert(offset + len <= box->length + 1);
-	
-			*start_idx = offset;
-			*end_idx = offset + len;
-			return true;
-		}
-	}
-	return false;
+	return selected_part(box, s->start_idx, s->end_idx, start_idx, end_idx);
 }
 
 
