@@ -143,6 +143,7 @@ void ro_convert_pixels_to_os_units(os_coord *pixels, os_mode mode) {
  * \param  w  window handle
  * \param  i  icon handle
  */
+
 #define ro_gui_redraw_icon(w, i) xwimp_set_icon_state(w, i, 0, 0)
 
 
@@ -428,7 +429,7 @@ void ro_gui_set_icon_sprite(wimp_w w, wimp_i i, osspriteop_area *area,
 
 
 /**
- * Set a window title (does *not* redraw the title)
+ * Set a window title
  *
  * \param  w	 window handle
  * \param  text  new title (copied)
