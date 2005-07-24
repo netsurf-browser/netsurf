@@ -158,7 +158,7 @@ bool layout_block_context(struct box *block, struct content *content)
 	gui_multitask();
 
 	box = margin_box = block->children;
-	cx = block->padding[LEFT];
+	cx = 0;
 	cy = block->padding[TOP];
 	if (box)
 		box->y = block->padding[TOP];
@@ -870,8 +870,9 @@ bool layout_line(struct box *first, int width, int *y,
 	unsigned int inline_count = 0;
 	unsigned int i;
 
-	LOG(("first %p, first->text '%.*s', width %i, y %i, cy %i",
-			first, first->length, first->text, width, *y, cy));
+	LOG(("first %p, first->text '%.*s', width %i, y %i, cx %i, cy %i",
+			first, (int) first->length, first->text, width,
+			*y, cx, cy));
 
 	/* find sides at top of line */
 	x0 += cx;
@@ -1188,7 +1189,7 @@ bool layout_line(struct box *first, int width, int *y,
 			nsfont_width(split_box->style, split_box->text,
 					space, &w);
 
-		LOG(("splitting: split_box %p, space %u, w %i, left %p, "
+		LOG(("splitting: split_box %p, space %zu, w %i, left %p, "
 				"right %p, inline_count %u",
 				split_box, space, w, left, right,
 				inline_count));
@@ -1241,7 +1242,7 @@ bool layout_line(struct box *first, int width, int *y,
 			nsfont_split(split_box->style,
 					split_box->text, split_box->length,
 					x1 - x0 - x - space_before, &space, &w);
-			LOG(("'%.*s' %i %u %i", (int) split_box->length,
+			LOG(("'%.*s' %i %zu %i", (int) split_box->length,
 					split_box->text, x1 - x0, space, w));
 /*			assert(space == split_box->length || split_box->text[space] = ' '); */
 			if (space == 0)
@@ -1685,6 +1686,11 @@ bool layout_table(struct box *table, int available_width,
 
 	/* calculate width required by cells */
 	for (i = 0; i != columns; i++) {
+		LOG(("table %p, column %u: type %s, width %i, min %i, max %i",
+				table, i,
+				((const char *[]) {"UNKNOWN", "FIXED", "AUTO",
+				"PERCENT", "RELATIVE"})[col[i].type],
+				col[i].width, col[i].min, col[i].max));
 		if (col[i].type == COLUMN_WIDTH_FIXED) {
 			if (col[i].width < col[i].min)
 				col[i].width = col[i].max = col[i].min;
@@ -1697,6 +1703,7 @@ bool layout_table(struct box *table, int available_width,
 					col[i].min;
 		} else
 			required_width += col[i].min;
+		LOG(("required_width %i", required_width));
 	}
 	required_width += (columns + 1) * border_spacing_h;
 
