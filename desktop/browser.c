@@ -69,9 +69,11 @@ static void browser_radio_set(struct content *content,
 		struct form_control *radio);
 static gui_pointer_shape get_pointer_shape(css_cursor cursor);
 
-static struct box *browser_window_nearest_text_box(struct box *box, int x, int y);
+static struct box *browser_window_nearest_text_box(struct box *box, int x, int y,
+		int dir);
 static struct box *browser_window_pick_text_box(struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y, int *dx, int *dy);
+		browser_mouse_state mouse, int x, int y, int *dx, int *dy,
+		int dir);
 static void browser_window_page_drag_start(struct browser_window *bw, int x, int y);
 
 static void browser_window_scroll_box(struct browser_window *bw, struct box *box,
@@ -690,7 +692,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 				struct box *box;
 				int dx, dy;
 
-				box = browser_window_pick_text_box(bw, mouse, x, y, &dx, &dy);
+				box = browser_window_pick_text_box(bw, mouse, x, y, &dx, &dy, -1);
 				if (box && !(mouse & BROWSER_MOUSE_MOD_2)) {
 					selection_click(bw->sel, box, mouse, dx, dy);
 					if (selection_dragging(bw->sel))
@@ -1053,9 +1055,13 @@ void browser_window_mouse_track(struct browser_window *bw,
 		case CONTENT_TEXTPLAIN:
 			if (bw->drag_type == DRAGGING_SELECTION) {
 				struct box *box;
+				int dir = -1;
 				int dx, dy;
 
-				box = browser_window_pick_text_box(bw, mouse, x, y, &dx, &dy);
+				if (selection_dragging_start(bw->sel)) dir = 1;
+
+				box = browser_window_pick_text_box(bw, mouse, x, y,
+						&dx, &dy, dir);
 				if (box)
 					selection_track(bw->sel, box, mouse, dx, dy);
 			}
@@ -1125,9 +1131,13 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 
 		case DRAGGING_SELECTION: {
 			struct box *box;
+			int dir = -1;
 			int dx, dy;
 
-			box = browser_window_pick_text_box(bw, mouse, x, y, &dx, &dy);
+			if (selection_dragging_start(bw->sel)) dir = 1;
+
+			box = browser_window_pick_text_box(bw, mouse, x, y,
+					&dx, &dy, dir);
 			if (box)
 				selection_track(bw->sel, box, mouse, dx, dy);
 		}
@@ -1154,12 +1164,17 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 {
 	switch (bw->drag_type) {
 		case DRAGGING_SELECTION: {
-				int dx, dy;
-				struct box *box = browser_window_pick_text_box(bw, mouse, x, y,
-						&dx, &dy);
-				selection_drag_end(bw->sel, box, mouse, dx, dy);
-			}
-			break;
+			int dx, dy;
+			struct box *box;
+			int dir = -1;
+
+			if (selection_dragging_start(bw->sel)) dir = 1;
+
+			box = browser_window_pick_text_box(bw, mouse, x, y,
+					&dx, &dy, dir);
+			selection_drag_end(bw->sel, box, mouse, dx, dy);
+		}
+		break;
 
 		case DRAGGING_2DSCROLL:
 		case DRAGGING_PAGE_SCROLL:
@@ -1363,7 +1378,8 @@ void browser_radio_set(struct content *content,
  * \param  height height of rectangle
  */
 
-void browser_window_redraw_rect(struct browser_window *bw, int x, int y, int width, int height)
+void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
+		int width, int height)
 {
 	struct content *c = bw->current_content;
 
@@ -1431,7 +1447,8 @@ void browser_redraw_box(struct content *c, struct box *box)
  * \param  scroll_y  new vertical scroll offset
  */
 
-void browser_window_scroll_box(struct browser_window *bw, struct box *box, int scroll_x, int scroll_y)
+void browser_window_scroll_box(struct browser_window *bw, struct box *box,
+		int scroll_x, int scroll_y)
 {
 	box->scroll_x = scroll_x;
 	box->scroll_y = scroll_y;
@@ -1626,28 +1643,49 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 
 
 /**
- * Pick the text box child of 'box' that is closest to and above left of
- * the point 'x,y'
+ * Pick the text box child of 'box' that is closest to and above-left
+ * (dir -ve) or below-right (dir +ve) of the point 'x,y'
  *
  * \param  box  parent box
  * \param  x    x ordinate relative to parent box
  * \param  y    y ordinate relative to parent box
+ * \param  dir  direction in which to search (-1 = above-left, +1 = below-right)
  * \return ptr to the nearest box, or NULL if none found
  */
 
-struct box *browser_window_nearest_text_box(struct box *box, int x, int y)
+struct box *browser_window_nearest_text_box(struct box *box, int x, int y, int dir)
 {
 	struct box *child = box->children;
 	struct box *nearest = NULL;
-	int nr_yd = INT_MAX;
-	int nr_xd = INT_MAX;
+	int nr_yd = INT_MAX / 2;  /* displacement of 'nearest so far' */
+	int nr_xd = INT_MAX / 2;
 
 	while (child) {
-		if (child->text && !child->object && child->y <= y && child->x <= x) {
-			int yd = y - (child->y + child->padding[TOP] + child->height + child->padding[BOTTOM]);
-			int xd = x - (child->x + child->padding[LEFT] + child->width + child->padding[RIGHT]);
+		if (child->text && !child->object) {
+			int w = child->padding[LEFT] + child->width +
+				child->padding[RIGHT];
+			int h = child->padding[TOP] + child->height +
+				child->padding[BOTTOM];
+			int child_y1 = child->y + h;
+			int child_x1 = child->x + w;
+			int yd = INT_MAX;
+			int xd = INT_MAX;
 
-			/* give y displacement precedence of x */
+			if (dir < 0) {
+				/* consider only those children (partly) above-left */
+				if (child->y <= y && child->x < x) {
+					yd = y - child_y1;
+					xd = x - child_x1;
+				}
+			} else {
+				/* consider only those children (partly) below-right */
+				if (child_y1 > y && child_x1 > x) {
+					yd = child->y - y;
+					xd = child->x - x;
+				}
+			}
+
+			/* give y displacement precedence over x */
 			if (yd < nr_yd || (yd == nr_yd && xd <= nr_xd)) {
 				nr_yd = yd;
 				nr_xd = xd;
@@ -1663,7 +1701,8 @@ struct box *browser_window_nearest_text_box(struct box *box, int x, int y)
 
 /**
  * Peform pick text on browser window contents to locate the box under
- * the mouse pointer
+ * the mouse pointer, or nearest in the given direction if the pointer is
+ * not over a text box.
  *
  * \param bw    browser window
  * \param mouse state of mouse buttons and modifier keys
@@ -1671,10 +1710,12 @@ struct box *browser_window_nearest_text_box(struct box *box, int x, int y)
  * \param y     coordinate of mouse
  * \param dx    receives x ordinate of mouse relative to innermost containing box
  * \param dy    receives y ordinate
+ * \param dir   direction to search (-1 = above-left, +1 = below-right)
  */
 
 struct box *browser_window_pick_text_box(struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y, int *dx, int *dy)
+		browser_mouse_state mouse, int x, int y, int *dx, int *dy,
+		int dir)
 {
 	struct content *c = bw->current_content;
 	struct box *text_box = NULL;
@@ -1694,16 +1735,22 @@ struct box *browser_window_pick_text_box(struct browser_window *bw,
 		}
 
 		if (!text_box) {
-			box = browser_window_nearest_text_box(box, x - box_x, y - box_y);
+			box = browser_window_nearest_text_box(box, x - box_x, y - box_y, dir);
 
 			if (box->text && !box->object) {
+				int w = (box->padding[LEFT] + box->width + box->padding[RIGHT]);
+				int h = (box->padding[TOP] + box->height + box->padding[BOTTOM]);
+				int x1, y1;
 
 				box_x += box->x - box->scroll_x;
 				box_y += box->y - box->scroll_y;
 
-				int y1 = box_y + (box->padding[TOP] + box->height + box->padding[BOTTOM]);
-				int x1 = box_x + (box->padding[LEFT] + box->width + box->padding[RIGHT]);
+				y1 = box_y + h;
+				x1 = box_x + w;
 
+				/* ensure point lies within the text box */
+				if (x < box_x) x = box_x;
+				if (y < box_y) y = box_y;
 				if (y > y1) y = y1;
 				if (x > x1) x = x1;
 
