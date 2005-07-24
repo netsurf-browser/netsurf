@@ -352,7 +352,6 @@ void ro_gui_window_quit(void)
 
 void gui_window_set_title(struct gui_window *g, const char *title)
 {
-	os_error *error;
 	int scale_disp;
 
 	assert(g);
@@ -368,12 +367,8 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	} else {
 		strncpy(g->title, title, sizeof g->title);
 	}
-	error = xwimp_force_redraw_title(g->window);
-	if (error) {
-		LOG(("xwimp_force_redraw_title: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
+
+	ro_gui_set_window_title(g->window, g->title);
 }
 
 
