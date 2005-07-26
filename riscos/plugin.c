@@ -15,14 +15,15 @@
  * The are still a number of outstanding issues:
  *
  * Stream Protocol:
- * 	Fetching data, then streaming it to a plugin is not supported
  * 	Streaming data from a plugin is not supported
  *
  * Messages:
  * 	Most Plugin_Opening flags not supported
  * 	No support for Plugin_Focus, Plugin_Busy, Plugin_Action
  * 	No support for Plugin_Abort, Plugin_Inform, Plugin_Informed
- * 	Plugin_URL_Access is only part-implemented
+ * 	Plugin_URL_Access ignores POST requests.
+ *
+ * Helpers are not supported (system variable detection is #if 0ed out)
  */
 
 #include <assert.h>
@@ -42,6 +43,8 @@
 
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
+#include "netsurf/content/fetch.h"
+#include "netsurf/content/fetchcache.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/render/html.h"
@@ -52,12 +55,11 @@
 #include "netsurf/riscos/theme.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 
 #ifdef WITH_PLUGIN
-
-static const char * const ALIAS_PREFIX = "Alias$@PlugInType_";
 
 typedef enum {
 	PLUGIN_PARAMETER_DATA    = 1,
@@ -67,28 +69,88 @@ typedef enum {
 } plugin_parameter_type;
 
 struct plugin_param_item {
+	plugin_parameter_type type;
+	int rsize;
+	int nsize;
+	char *name;
+	int npad;
+	int vsize;
+	char *value;
+	int vpad;
+	int msize;
+	char *mime_type;
+	int mpad;
 
-        plugin_parameter_type type;
-        int rsize;
-        int nsize;
-        char *name;
-        int npad;
-        int vsize;
-        char *value;
-        int vpad;
-        int msize;
-        char *mime_type;
-        int mpad;
-
-        struct plugin_param_item *next;
+	struct plugin_param_item *next;
 };
 
-static bool plugin_create_sysvar(const char *mime_type, char* sysvar);
-static void plugin_create_stream(struct content *c);
-static void plugin_write_stream(struct content *c, unsigned int consumed);
+struct plugin_stream {
+	struct plugin_stream *next;	/* next in list */
+
+	struct content *plugin;		/* the plugin content */
+	struct content *c;		/* the content being fetched for
+					 * this stream (may be the same as
+					 * plugin iff we've been asked to
+					 * fetch the data resource for the
+					 * plugin task) */
+
+	/* browser stream handle is the address of this struct in memory */
+	plugin_s pluginh;		/* plugin stream handle */
+
+	/* We only support stream types 0 and 3 (Normal and As file only)
+	 * Type 1 (Seek only) streams are treated as type 0.
+	 * Type 2 (As file) streams are treated as type 3.
+	 * Streams are never seekable.
+	 */
+	enum { NORMAL = plugin_STREAM_NEW_TYPE_NORMAL,
+	       AS_FILE = plugin_STREAM_NEW_TYPE_AS_FILE_ONLY } type;
+	union {
+		struct {
+			char *datafile;	/* filename of filestreamed file */
+
+			/* we need this flag as we should only send stream
+			 * destroy once. This struct may still persist after
+			 * the stream has ended in the case where it's a
+			 * file only stream, as we've still got to destroy
+			 * the temporary file. We can only do this when
+			 * we're certain the plugin's no longer using it
+			 * (i.e. after we've sent the plugin close message)
+			 */
+			bool destroyed;	/* have we destroyed this stream? */
+			bool waiting;	/* waiting for data to arrive */
+		} file;
+		struct {
+			unsigned int consumed;	/* size of data consumed by plugin */
+			/* The following is nasty, but necessary to prevent
+			 * a race condition between the plugin application
+			 * handling the stream write message and our fetch
+			 * code reallocing the data buffer (and potentially
+			 * relocating it)
+			 */
+#define PLUGIN_STREAM_BUFFER_SIZE (32*1024)
+			char buffer[PLUGIN_STREAM_BUFFER_SIZE];	/* buffer for data chunk */
+		} normal;
+	} stream;
+};
+
+#define PLUGIN_SCHEDULE_WAIT (40)	/* time (in cs) to wait between processing data chunks */
+
+#define PLUGIN_PREFIX "Alias$@PlugInType_"
+#define HELPER_PREFIX "Alias$@HelperType_"
+#define SYSVAR_BUF_SIZE (25)		/* size of buffer to hold system variable */
+
+static bool plugin_create_sysvar(const char *mime_type, char* sysvar,
+		bool helper);
+static void plugin_create_stream(struct content *plugin, struct content *c,
+		const char *url);
+static bool plugin_send_stream_new(struct plugin_stream *p);
+static void plugin_write_stream(struct plugin_stream *p,
+		unsigned int consumed);
 static void plugin_stream_write_callback(void *p);
-static void plugin_write_stream_as_file(struct content *c);
-static void plugin_destroy_stream(struct content *c);
+static void plugin_stream_as_file_callback(void *p);
+static void plugin_write_stream_as_file(struct plugin_stream *p);
+static void plugin_destroy_stream(struct plugin_stream *p,
+		plugin_stream_destroy_reason reason);
 static bool plugin_write_parameters_file(struct content *c,
 		struct object_params *params, const char *base);
 static int plugin_calculate_rsize(const char* name, const char* data,
@@ -98,6 +160,12 @@ static bool plugin_add_item_to_pilist(struct plugin_param_item **pilist,
 		const char* value, const char* mime_type);
 static char *plugin_get_string_value(os_string_value string, char *msg);
 static bool plugin_active(struct content *c);
+static void plugin_stream_free(struct plugin_stream *p);
+static bool plugin_start_fetch(struct plugin_stream *p, const char *url);
+static void plugin_stream_callback(content_msg msg, struct content *c,
+		void *p1, void *p2, union content_msg_data data);
+static void plugin_fetch_callback(fetch_msg msg, void *p, const char *data,
+		unsigned long size);
 
 /**
  * Initialises plugin system in readiness for receiving object data
@@ -114,19 +182,16 @@ bool plugin_create(struct content *c, const char *params[])
 	c->data.plugin.box = 0;
 	c->data.plugin.taskname = 0;
 	c->data.plugin.filename = 0;
-	c->data.plugin.datafile = 0;
 	c->data.plugin.opened = false;
 	c->data.plugin.repeated = 0;
 	c->data.plugin.browser = 0;
 	c->data.plugin.plugin = 0;
-	c->data.plugin.browser_stream = 0;
-	c->data.plugin.plugin_stream = 0;
 	c->data.plugin.plugin_task = 0;
-	c->data.plugin.consumed = 0;
 	c->data.plugin.reformat_pending = false;
 	c->data.plugin.width = 0;
 	c->data.plugin.height = 0;
-	c->data.plugin.file_stream_waiting = false;
+	c->data.plugin.streams = 0;
+
 	return true;
 }
 
@@ -144,12 +209,6 @@ bool plugin_convert(struct content *c, int width, int height)
 	c->width = width;
 	c->height = height;
 
-	/* deal with a plugin waiting for a file stream */
-	if (c->data.plugin.file_stream_waiting) {
-		c->data.plugin.file_stream_waiting = false;
-		plugin_write_stream_as_file(c);
-	}
-
 	c->status = CONTENT_STATUS_DONE;
 	return true;
 }
@@ -166,8 +225,6 @@ void plugin_destroy(struct content *c)
 		free(c->data.plugin.taskname);
 	if (c->data.plugin.filename)
 		free(c->data.plugin.filename);
-	if (c->data.plugin.datafile)
-		free(c->data.plugin.datafile);
 }
 
 /**
@@ -206,9 +263,9 @@ void plugin_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params)
 {
-	bool standalone = false;
+	bool standalone = false, helper = false;
 	const char *base;
-	char sysvar[25];
+	char sysvar[SYSVAR_BUF_SIZE];
 	char *varval;
 	plugin_full_message_open pmo;
 	wimp_window_state state;
@@ -238,7 +295,7 @@ void plugin_open(struct content *c, struct browser_window *bw,
 		standalone = true;
 	}
 
-	/* we only do this here cos the box is needed by
+	/* we only do this here because the box is needed by
 	 * write_parameters_file. Ideally it would be at the
 	 * end of this function with the other writes to c->data.plugin
 	 */
@@ -255,16 +312,23 @@ void plugin_open(struct content *c, struct browser_window *bw,
 	if (!plugin_write_parameters_file(c, params, base))
 		goto error;
 
-	LOG(("creating sysvar"));
 	/* get contents of Alias$@PlugInType_xxx variable */
-	if (!plugin_create_sysvar(c->mime_type, sysvar))
+	if (!plugin_create_sysvar(c->mime_type, sysvar, false))
 		goto error;
 
-	LOG(("getenv"));
 	varval = getenv(sysvar);
 	LOG(("%s: '%s'", sysvar, varval));
 	if(!varval) {
+#if 0
+		if (!plugin_create_sysvar(c->mime_type, sysvar, true))
+			goto error;
+		varval = getenv(sysvar);
+		if (!varval)
+			goto error;
+		helper = true;
+#else
 		goto error;
+#endif
 	}
 
 	/* The browser instance handle is the content struct pointer */
@@ -273,8 +337,7 @@ void plugin_open(struct content *c, struct browser_window *bw,
 	pmo.size = 60;
 	pmo.your_ref = 0;
 	pmo.action = message_PLUG_IN_OPEN;
-	/* open as helper, if standalone */
-	pmo.flags = /*standalone ? plugin_OPEN_AS_HELPER :*/ 0;
+	pmo.flags = helper ? plugin_OPEN_AS_HELPER : 0;
 	pmo.reserved = 0;
 	pmo.browser = (plugin_b)c->data.plugin.browser;
 	pmo.parent_window = bw->window->window;
@@ -295,6 +358,7 @@ void plugin_open(struct content *c, struct browser_window *bw,
 		pmo.bbox.y0 = (state.visible.y0 - state.visible.y1) - 10;
 	}
 	else {
+		/* open off the left hand edge of the work area */
 		pmo.bbox.x0 = -100;
 		pmo.bbox.x1 = pmo.bbox.y0 = 0;
 		pmo.bbox.y1 = 100;
@@ -341,6 +405,7 @@ error:
  */
 void plugin_close(struct content *c)
 {
+	struct plugin_stream *p, *q;
 	plugin_full_message_close pmc;
 	os_error *error;
 
@@ -348,6 +413,13 @@ void plugin_close(struct content *c)
 
 	if (!plugin_active(c) || !c->data.plugin.opened)
 		return;
+
+	/* destroy all active streams */
+	for (p = c->data.plugin.streams; p; p = q) {
+		q = p->next;
+
+		plugin_destroy_stream(p, plugin_STREAM_DESTROY_USER_REQUEST);
+	}
 
 	pmc.size = 32;
 	pmc.your_ref = 0;
@@ -363,9 +435,23 @@ void plugin_close(struct content *c)
 		return;
 	}
 
-	/* delete the data file used to send the data to the plugin */
-	if (c->data.plugin.datafile != 0)
-		xosfile_delete(c->data.plugin.datafile, 0, 0, 0, 0, 0);
+	/* delete any temporary files */
+	for (p = c->data.plugin.streams; p; p = q) {
+		q = p->next;
+
+		assert(p->type == AS_FILE);
+
+		/* delete the data file used to send the
+		 * data to the plugin */
+		xosfile_delete(p->stream.file.datafile, 0, 0, 0, 0, 0);
+
+		/* and destroy the struct */
+		free(p->stream.file.datafile);
+		free(p);
+	}
+
+	/* paranoia */
+	c->data.plugin.streams = 0;
 }
 
 /**
@@ -442,10 +528,12 @@ void plugin_reformat(struct content *c, int width, int height)
  * Creates a system variable from the mimetype
  *
  * \param mime_type The mime type
- * \param sysvar    Pointer to buffer into which the string should be written
+ * \param sysvar    Pointer to buffer of length >= SYSVAR_BUF_SIZE into
+ *                  which the string should be written
+ * \param helper    Whether we're interested in the helper variable
  * \return true on success, false otherwise.
  */
-bool plugin_create_sysvar(const char *mime_type, char* sysvar)
+bool plugin_create_sysvar(const char *mime_type, char* sysvar, bool helper)
 {
 	unsigned int *fv;
 	os_error *e;
@@ -455,7 +543,9 @@ bool plugin_create_sysvar(const char *mime_type, char* sysvar)
 		return false;
 	}
 
-	sprintf(sysvar, "%s%03x", ALIAS_PREFIX, (unsigned int)fv);
+	snprintf(sysvar, SYSVAR_BUF_SIZE, "%s%03x",
+			helper ? HELPER_PREFIX : PLUGIN_PREFIX,
+			(unsigned int)fv);
 
 	return true;
 }
@@ -468,14 +558,22 @@ bool plugin_create_sysvar(const char *mime_type, char* sysvar)
  */
 bool plugin_handleable(const char *mime_type)
 {
-	char sysvar[25];
+	char sysvar[SYSVAR_BUF_SIZE];
 
-	if (plugin_create_sysvar(mime_type, sysvar)) {
+	/* Look for Alias$@PluginType_xxx */
+	if (plugin_create_sysvar(mime_type, sysvar, false)) {
 		if (getenv(sysvar) != 0) {
 			return true;
 		}
 	}
-
+#if 0
+	/* Look for Alias$@HelperType_xxx */
+	if (plugin_create_sysvar(mime_type, sysvar, true)) {
+		if (getenv(sysvar) != 0) {
+			return true;
+		}
+	}
+#endif
 	return false;
 }
 
@@ -555,12 +653,12 @@ void plugin_opening(wimp_message *message)
 					c->data.plugin.height);
 	}
 
-	if (pmo->flags & 0x04) { /* plugin wants the data fetching */
+	if (pmo->flags & plugin_OPENING_WANTS_DATA_FETCHING) {
 		LOG(("wants stream"));
-		plugin_create_stream(c);
+		plugin_create_stream(c, c, NULL);
 	}
 
-	if (!(pmo->flags & 0x08)) {
+	if (!(pmo->flags & plugin_OPENING_WILL_DELETE_PARAMETERS)) {
 		LOG(("we delete file"));
 		/* we don't care if this fails */
 		xosfile_delete(c->data.plugin.filename, 0, 0, 0, 0, 0);
@@ -599,7 +697,7 @@ void plugin_closed(wimp_message *message)
 	LOG(("died"));
 	c->data.plugin.opened = false;
 
-	if (pmc->flags & 0x4) {
+	if (pmc->flags & plugin_CLOSED_WITH_ERROR) {
 		LOG(("plugin_closed: 0x%x: %s", pmc->error_number,
 							pmc->error_text));
 		/* not really important enough to do a warn_user */
@@ -686,31 +784,35 @@ void plugin_status(wimp_message *message)
  */
 void plugin_stream_new(wimp_message *message)
 {
-	struct content *c;
+	struct plugin_stream *p;
 	int stream_type;
 	plugin_message_stream_new *pmsn =
 				(plugin_message_stream_new*)&message->data;
 
 	LOG(("plugin_stream_new"));
 
-	/* retrieve our content */
-	c = (struct content *)pmsn->browser;
+	p = (struct plugin_stream *)pmsn->browser_stream;
 
 	/* check we expect this message */
-	if (!c || !plugin_active(c))
+	if (!p || !p->plugin || !plugin_active(p->plugin))
 		return;
 
 	/* response to a message we sent */
 	if (message->my_ref != 0) {
-		c->data.plugin.browser_stream = (unsigned int)pmsn->browser;
-		c->data.plugin.plugin_stream = (unsigned int)pmsn->stream;
+		p->pluginh = pmsn->stream;
 
 		LOG(("flags: %x", pmsn->flags));
 
-		stream_type = pmsn->flags & 0xF; /* bottom four bits */
+		/* extract the stream type */
+		stream_type = pmsn->flags & plugin_STREAM_NEW_TYPE;
 
-		if (stream_type == 3) {
+		if (stream_type == plugin_STREAM_NEW_TYPE_AS_FILE_ONLY ||
+				stream_type ==
+					plugin_STREAM_NEW_TYPE_AS_FILE) {
 			LOG(("as file"));
+
+			p->type = AS_FILE;
+
 			/* received all data => go ahead and stream
 			 * we have to check the content's status too, as
 			 * we could be dealing with a stream of unknown
@@ -718,17 +820,22 @@ void plugin_stream_new(wimp_message *message)
 			 * is CONTENT_STATUS_DONE, we've received all the
 			 * data anyway, regardless of the total size.
 			 */
-			if (c->source_size == c->total_size ||
-					c->status == CONTENT_STATUS_DONE)
-				plugin_write_stream_as_file(c);
+			if (p->c->source_size == p->c->total_size ||
+					p->c->status == CONTENT_STATUS_DONE)
+				plugin_write_stream_as_file(p);
 			else {
 				LOG(("waiting for data"));
-				c->data.plugin.file_stream_waiting = true;
+				p->stream.file.waiting = true;
+				/* schedule a callback */
+				schedule(PLUGIN_SCHEDULE_WAIT,
+					plugin_stream_as_file_callback, p);
 			}
 		}
-		else if (stream_type < 3) {
+		else if (stream_type == plugin_STREAM_NEW_TYPE_SEEK_ONLY ||
+				stream_type ==
+					plugin_STREAM_NEW_TYPE_NORMAL) {
 			LOG(("write stream"));
-			plugin_write_stream(c, 0);
+			plugin_write_stream(p, 0);
 		}
 	}
 	/* new stream, initiated by plugin */
@@ -744,20 +851,20 @@ void plugin_stream_new(wimp_message *message)
  */
 void plugin_stream_written(wimp_message *message)
 {
-	struct content *c;
+	struct plugin_stream *p;
 	plugin_message_stream_written *pmsw =
 			(plugin_message_stream_written*)&message->data;
 
-	/* retrieve our box */
-	c = (struct content *)pmsw->browser;
+	/* retrieve our stream context */
+	p = (struct plugin_stream *)pmsw->browser_stream;
 
 	/* check we expect this message */
-	if (!c || !plugin_active(c))
+	if (!p || !p->plugin || !plugin_active(p->plugin))
 		return;
 
 	LOG(("got written"));
 
-	plugin_write_stream(c, pmsw->length);
+	plugin_write_stream(p, pmsw->length);
 }
 
 /**
@@ -776,9 +883,9 @@ void plugin_url_access(wimp_message *message)
 	char *url = plugin_get_string_value(pmua->url, (char*)pmua);
 	char *window;
 
-	if (pmua->flags & 0x01) notify = true;
-	if (pmua->flags & 0x02) post = true;
-	if (pmua->flags & 0x04) file = true;
+	notify = (pmua->flags & plugin_URL_ACCESS_NOTIFY_COMPLETION);
+	post = (pmua->flags & plugin_URL_ACCESS_USE_POST);
+	file = (pmua->flags & plugin_URL_ACCESS_POST_FILE);
 
 	/* retrieve our content */
 	c = (struct content *)pmua->browser;
@@ -823,15 +930,15 @@ void plugin_url_access(wimp_message *message)
 	/* fetch data and stream to plugin */
 	else {
 		if (!post) { /* GET request */
-			/* fetch URL */
+			/* stream to plugin */
+			plugin_create_stream(c, NULL, url);
 		}
 		else { /* POST request */
 			/* fetch URL */
 		}
-
-		/* stream data to plugin */
 	}
 
+	/* this may be a little early to send this, but tough. */
 	if (notify) {
 		/* send message_plugin_notify to plugin task */
 		pmn.size = 44;
@@ -855,9 +962,54 @@ void plugin_url_access(wimp_message *message)
 /**
  * Creates a plugin stream
  *
- * \param c The content to fetch the data for
+ * \param plugin The content to fetch the data for
+ * \param c The content being fetched, or NULL.
+ * \param url The url of the resource to fetch, or NULL if content provided.
  */
-void plugin_create_stream(struct content *c)
+void plugin_create_stream(struct content *plugin, struct content *c,
+		const char *url)
+{
+	struct plugin_stream *p;
+
+	assert(plugin && plugin->type == CONTENT_PLUGIN &&
+			((c && !url) || (!c && url)));
+
+	p = malloc(sizeof(struct plugin_stream));
+	if (!p)
+		return;
+
+	if (url) {
+		if (!plugin_start_fetch(p, url)) {
+			free(p);
+			return;
+		}
+	}
+	else
+		p->c = c;
+
+	p->plugin = plugin;
+	p->pluginh = 0;
+	p->type = NORMAL;
+	p->stream.normal.consumed = 0;
+
+	/* add to head of list */
+	p->next = plugin->data.plugin.streams;
+	plugin->data.plugin.streams = p;
+
+	if (url)
+		/* we'll send this later, once some data is arriving */
+		return;
+
+	plugin_send_stream_new(p);
+}
+
+/**
+ * Send a plugin stream new message
+ *
+ * \param p The stream context
+ * \return true on success, false otherwise
+ */
+bool plugin_send_stream_new(struct plugin_stream *p)
 {
 	plugin_full_message_stream_new pmsn;
 	os_error *error;
@@ -866,205 +1018,255 @@ void plugin_create_stream(struct content *c)
 	pmsn.your_ref = 0;
 	pmsn.action = message_PLUG_IN_STREAM_NEW;
 	pmsn.flags = 0;
-	pmsn.plugin = (plugin_p)c->data.plugin.plugin;
-	pmsn.browser = (plugin_b)c->data.plugin.browser;
+	pmsn.plugin = (plugin_p)p->plugin->data.plugin.plugin;
+	pmsn.browser = (plugin_b)p->plugin->data.plugin.browser;
 	pmsn.stream = (plugin_s)0;
-	pmsn.browser_stream = (plugin_bs)c->data.plugin.browser;
-	pmsn.url.pointer = c->url;
-	pmsn.end = c->total_size;
+	pmsn.browser_stream = (plugin_bs)p;
+	pmsn.url.pointer = p->c->url;
+	pmsn.end = p->c->total_size;
 	pmsn.last_modified_date = 0;
 	pmsn.notify_data = 0;
-	pmsn.mime_type.pointer = c->mime_type;
+	pmsn.mime_type.pointer = p->c->mime_type;
 	pmsn.target_window.offset = 0;
 
 	LOG(("Sending message &4D548"));
 	error = xwimp_send_message(wimp_USER_MESSAGE_RECORDED,
-		(wimp_message*)&pmsn, (wimp_t)c->data.plugin.plugin_task);
+		(wimp_message*)&pmsn,
+		(wimp_t)p->plugin->data.plugin.plugin_task);
 	if (error) {
-		return;
+		plugin_stream_free(p);
+		return false;
 	}
+
+	return true;
 }
 
 /**
  * Writes to an open stream
  *
- * \param c      The content to write data to
+ * \param c      The stream context
  * \param consumed The amount of data consumed
  */
-void plugin_write_stream(struct content *c, unsigned int consumed)
+void plugin_write_stream(struct plugin_stream *p, unsigned int consumed)
 {
 	plugin_full_message_stream_write pmsw;
 	os_error *error;
 
-	c->data.plugin.consumed += consumed;
+	assert(p->type == NORMAL);
+
+	p->stream.normal.consumed += consumed;
 
 	pmsw.size = 68;
 	pmsw.your_ref = 0;
 	pmsw.action = message_PLUG_IN_STREAM_WRITE;
 	pmsw.flags = 0;
-	pmsw.plugin = (plugin_p)c->data.plugin.plugin;
-	pmsw.browser = (plugin_b)c->data.plugin.browser;
-	pmsw.stream = (plugin_s)c->data.plugin.plugin_stream;
-	pmsw.browser_stream = (plugin_bs)c->data.plugin.browser_stream;
-	pmsw.url.pointer = c->url;
-	/* end of stream is total_size
+	pmsw.plugin = (plugin_p)p->plugin->data.plugin.plugin;
+	pmsw.browser = (plugin_b)p->plugin->data.plugin.browser;
+	pmsw.stream = (plugin_s)p->pluginh;
+	pmsw.browser_stream = (plugin_bs)p;
+	pmsw.url.pointer = p->c->url;
+	/* end of stream is p->c->total_size
 	 * (which is conveniently 0 if unknown)
 	 */
-	pmsw.end = c->total_size;
+	pmsw.end = p->c->total_size;
 	pmsw.last_modified_date = 0;
 	pmsw.notify_data = 0;
 	/* offset into data is amount of data consumed by plugin already */
-	pmsw.offset = c->data.plugin.consumed;
-	/* length of data available */
-	pmsw.length = c->source_size - c->data.plugin.consumed;
+	pmsw.offset = p->stream.normal.consumed;
+	/* length of data available is <= sizeof fixed buffer */
+	pmsw.length = p->c->source_size - p->stream.normal.consumed;
+	if (pmsw.length >= PLUGIN_STREAM_BUFFER_SIZE)
+		pmsw.length = PLUGIN_STREAM_BUFFER_SIZE;
+
+	/* copy data into buffer */
+	memcpy(p->stream.normal.buffer,
+		p->c->source_data + p->stream.normal.consumed, pmsw.length);
+
 	/* pointer to available data */
-	/**\todo This pointer can change underneath us (ie between us
-	 *       sending the message and the recipient handling it)
-	 */
-	pmsw.data = (byte*)(c->source_data + c->data.plugin.consumed);
+	pmsw.data = (byte*)(p->stream.normal.buffer);
 
 	/* still have data to send */
-	if (c->data.plugin.consumed < c->source_size) {
+	if (p->stream.normal.consumed < p->c->source_size) {
 		LOG(("Sending message &4D54A"));
 		error = xwimp_send_message(wimp_USER_MESSAGE_RECORDED,
 			(wimp_message *)&pmsw,
-			(wimp_t)c->data.plugin.plugin_task);
+			(wimp_t)p->plugin->data.plugin.plugin_task);
 		if (error) {
+			plugin_destroy_stream(p,
+					plugin_STREAM_DESTROY_ERROR);
 			return;
 		}
 	}
-	else if (c->source_size < c->total_size) {
+	else if (p->c->source_size < p->c->total_size) {
 		/* the plugin has consumed all the available data,
 		 * but there's still more to fetch, so we wait for
-		 * 20 cs then try again (note that streams of unknown
-		 * total length won't ever get in here as c->total_size
-		 * will be 0)
+		 * 40 cs then try again (note that streams of unknown
+		 * total length won't ever get in here as
+		 * p->c->total_size will be 0)
 		 */
-		schedule(20, plugin_stream_write_callback, c);
+		schedule(PLUGIN_SCHEDULE_WAIT,
+				plugin_stream_write_callback, p);
 	}
 	/* no further data => destroy stream */
 	else {
-		plugin_destroy_stream(c);
+		plugin_destroy_stream(p, plugin_STREAM_DESTROY_FINISHED);
 	}
 }
 
 /**
  * Stream write callback - used to wait for data to download
  *
- * \param p The appropriate content struct
+ * \param p The stream context
  */
 void plugin_stream_write_callback(void *p)
 {
-	struct content *c = (struct content *)p;
-
 	/* remove ourselves from the schedule queue */
 	schedule_remove(plugin_stream_write_callback, p);
 
 	/* continue writing stream */
-	plugin_write_stream(c, 0);
+	plugin_write_stream((struct plugin_stream *)p, 0);
+}
+
+/**
+ * Stream as file callback - used to wait for data to download
+ *
+ * \param p The stream context
+ */
+void plugin_stream_as_file_callback(void *p)
+{
+	struct plugin_stream *s = (struct plugin_stream *)p;
+
+	/* remove ourselves from the schedule queue */
+	schedule_remove(plugin_stream_as_file_callback, p);
+
+	if (s->c->source_size < s->c->total_size ||
+			s->c->status != CONTENT_STATUS_DONE) {
+		/* not got all the data so wait some more */
+		schedule(PLUGIN_SCHEDULE_WAIT,
+				plugin_stream_as_file_callback, p);
+		return;
+	}
+
+	/* deal with a plugin waiting for a file stream */
+	if (s->stream.file.waiting) {
+		s->stream.file.waiting = false;
+		plugin_write_stream_as_file(s);
+	}
 }
 
 /**
  * Writes a stream as a file
  *
- * \param c The content to write data to
+ * \param c The stream context
  */
-void plugin_write_stream_as_file(struct content *c)
+void plugin_write_stream_as_file(struct plugin_stream *p)
 {
 	plugin_full_message_stream_as_file pmsaf;
 	unsigned int filetype;
 	os_error *error;
 
-	c->data.plugin.datafile =
+	assert(p->type == AS_FILE);
+
+	p->stream.file.datafile =
 		calloc(strlen(getenv("Wimp$ScrapDir"))+13+10, sizeof(char));
 
-	if (!c->data.plugin.datafile) {
+	if (!p->stream.file.datafile) {
 		LOG(("malloc failed"));
 		warn_user("NoMemory", 0);
-		plugin_destroy_stream(c);
+		plugin_destroy_stream(p, plugin_STREAM_DESTROY_ERROR);
 		return;
 	}
 
 	/* create filename */
-	if (c->data.plugin.box) {
-		sprintf(c->data.plugin.datafile, "%s.WWW.NetSurf.d%x",
-			getenv("Wimp$ScrapDir"),
-			(unsigned int)c->data.plugin.box->object_params);
-	}
-	else {
-		sprintf(c->data.plugin.datafile, "%s.WWW.NetSurf.d%x",
-			getenv("Wimp$ScrapDir"),
-			(unsigned int)c);
-	}
+	sprintf(p->stream.file.datafile, "%s.WWW.NetSurf.d%x",
+			getenv("Wimp$ScrapDir"), (unsigned int)p);
 
 	pmsaf.size = 60;
 	pmsaf.your_ref = 0;
 	pmsaf.action = message_PLUG_IN_STREAM_AS_FILE;
 	pmsaf.flags = 0;
-	pmsaf.plugin = (plugin_p)c->data.plugin.plugin;
-	pmsaf.browser = (plugin_b)c->data.plugin.browser;
-	pmsaf.stream = (plugin_s)c->data.plugin.plugin_stream;
-	pmsaf.browser_stream = (plugin_bs)c->data.plugin.browser_stream;
-	pmsaf.url.pointer = c->url;
-	pmsaf.end = 0;
+	pmsaf.plugin = (plugin_p)p->plugin->data.plugin.plugin;
+	pmsaf.browser = (plugin_b)p->plugin->data.plugin.browser;
+	pmsaf.stream = (plugin_s)p->pluginh;
+	pmsaf.browser_stream = (plugin_bs)p;
+	pmsaf.url.pointer = p->c->url;
+	pmsaf.end = p->c->total_size;
 	pmsaf.last_modified_date = 0;
 	pmsaf.notify_data = 0;
-	pmsaf.filename.pointer = c->data.plugin.datafile;
+	pmsaf.filename.pointer = p->stream.file.datafile;
 
-	error = xmimemaptranslate_mime_type_to_filetype(c->mime_type,
+	error = xmimemaptranslate_mime_type_to_filetype(p->c->mime_type,
 							(bits *) &filetype);
 	if (error) {
+		plugin_destroy_stream(p, plugin_STREAM_DESTROY_ERROR);
 		return;
 	}
 
-	error = xosfile_save_stamped((char const*)c->data.plugin.datafile,
-			filetype, c->source_data,
-			c->source_data + c->source_size);
+	error = xosfile_save_stamped((char const*)p->stream.file.datafile,
+			filetype, p->c->source_data,
+			p->c->source_data + p->c->source_size);
 	if (error) {
+		plugin_destroy_stream(p, plugin_STREAM_DESTROY_ERROR);
 		return;
 	}
 
 	LOG(("Sending message &4D54C"));
 	error = xwimp_send_message(wimp_USER_MESSAGE,
-		(wimp_message *)&pmsaf, (wimp_t)c->data.plugin.plugin_task);
+		(wimp_message *)&pmsaf,
+		(wimp_t)p->plugin->data.plugin.plugin_task);
 	if (error) {
+		plugin_destroy_stream(p, plugin_STREAM_DESTROY_ERROR);
 		return;
 	}
+
+	plugin_destroy_stream(p, plugin_STREAM_DESTROY_FINISHED);
 }
 
 /**
  * Destroys a plugin stream
  *
- * \param c The content to destroy
+ * \param c The stream context to destroy
+ * \param reason The reason for the destruction
  */
-void plugin_destroy_stream(struct content *c)
+void plugin_destroy_stream(struct plugin_stream *p,
+		plugin_stream_destroy_reason reason)
 {
 	plugin_full_message_stream_destroy pmsd;
 	os_error *error;
 
-	/* reset stream */
-	c->data.plugin.consumed = 0;
+	if (p->type == AS_FILE && p->stream.file.destroyed)
+		/* we've already destroyed this stream */
+		return;
+
+	/* stop any scheduled callbacks */
+	if (p->type == NORMAL)
+		schedule_remove(plugin_stream_write_callback, p);
+	else
+		schedule_remove(plugin_stream_as_file_callback, p);
 
 	pmsd.size = 60;
 	pmsd.your_ref = 0;
 	pmsd.action = message_PLUG_IN_STREAM_DESTROY;
 	pmsd.flags = 0;
-	pmsd.plugin = (plugin_p)c->data.plugin.plugin;
-	pmsd.browser = (plugin_b)c->data.plugin.browser;
-	pmsd.stream = (plugin_s)c->data.plugin.plugin_stream;
-	pmsd.browser_stream = (plugin_bs)c->data.plugin.browser_stream;
-	pmsd.url.pointer = c->url;
-	pmsd.end = c->total_size;
+	pmsd.plugin = (plugin_p)p->plugin->data.plugin.plugin;
+	pmsd.browser = (plugin_b)p->plugin->data.plugin.browser;
+	pmsd.stream = (plugin_s)p->pluginh;
+	pmsd.browser_stream = (plugin_bs)p;
+	pmsd.url.pointer = p->c->url;
+	pmsd.end = p->c->total_size;
 	pmsd.last_modified_date = 0;
 	pmsd.notify_data = 0;
-	pmsd.reason = plugin_STREAM_DESTROY_FINISHED;
+	pmsd.reason = reason;
 
 	LOG(("Sending message &4D549"));
 	error = xwimp_send_message(wimp_USER_MESSAGE,
-		(wimp_message *)&pmsd, (wimp_t)c->data.plugin.plugin_task);
+		(wimp_message *)&pmsd,
+		(wimp_t)p->plugin->data.plugin.plugin_task);
 	if (error) {
-		return;
+		LOG(("0x%x %s", error->errnum, error->errmess));
 	}
+
+	plugin_stream_free(p);
 }
 
 /**
@@ -1386,4 +1588,174 @@ bool plugin_active(struct content *c)
 
 	return false;
 }
+
+/**
+ * Free a plugin_stream struct and unlink it from the list
+ */
+void plugin_stream_free(struct plugin_stream *p)
+{
+	if (p->c != p->plugin) {
+		if (p->c->fetch) {
+			/* abort fetch, if active */
+			fetch_abort(p->c->fetch);
+			p->c->fetch = 0;
+			p->c->status = CONTENT_STATUS_DONE;
+		}
+		content_remove_user(p->c, plugin_stream_callback, p, 0);
+	}
+
+	/* free normal stream context. file streams get freed later */
+	if (p->type == NORMAL) {
+		struct plugin_stream *q;
+		for (q = p->plugin->data.plugin.streams; q && q->next != p;
+				q = q->next)
+			/* do nothing */;
+		assert(q || p == p->plugin->data.plugin.streams);
+		if (q)
+			q->next = p->next;
+		else
+			p->plugin->data.plugin.streams = p->next;
+
+		free(p);
+	}
+	else
+		p->stream.file.destroyed = true;
+}
+
+/**
+ * Initialise a fetch for a plugin
+ *
+ * \param p The stream context to fetch for
+ * \param url The URL to fetch
+ * \return true on successful fetch initiation and p->c filled in, false
+ *         otherwise.
+ */
+bool plugin_start_fetch(struct plugin_stream *p, const char *url)
+{
+	char *url2;
+	struct content *c;
+	url_func_result res;
+
+	assert(p && url);
+
+	res = url_normalize(url, &url2);
+	if (res != URL_FUNC_OK) {
+		return false;
+	}
+
+	if (!fetch_can_fetch(url2)) {
+		free(url2);
+		return false;
+	}
+
+	c = fetchcache(url2, plugin_stream_callback, p, 0,
+			100, 100, true, 0, 0, true, true);
+	free(url2);
+	if (!c) {
+		return false;
+	}
+
+	p->c = c;
+	fetchcache_go(c, 0, plugin_stream_callback, p, 0,
+			100, 100, 0, 0, true);
+
+	return true;
+}
+
+/**
+ * Callback for fetchcache() for plugin stream fetches.
+ */
+void plugin_stream_callback(content_msg msg, struct content *c,
+		void *p1, void *p2, union content_msg_data data)
+{
+	struct plugin_stream *p = p1;
+
+	switch (msg) {
+		case CONTENT_MSG_LOADING:
+			assert(p->c == c);
+			assert(c->type == CONTENT_OTHER);
+			fetch_change_callback(c->fetch,
+					plugin_fetch_callback, p);
+			/* and kickstart the stream protocol */
+			plugin_send_stream_new(p);
+			break;
+
+		case CONTENT_MSG_ERROR:
+			plugin_destroy_stream(p, plugin_STREAM_DESTROY_ERROR);
+			break;
+
+		case CONTENT_MSG_REDIRECT:
+			/* and re-start fetch with new URL */
+			p->c = 0;
+			if (!plugin_start_fetch(p, data.redirect))
+				plugin_destroy_stream(p,
+						plugin_STREAM_DESTROY_ERROR);
+			break;
+
+		case CONTENT_MSG_NEWPTR:
+			p->c = c;
+			break;
+
+		case CONTENT_MSG_AUTH:
+			/**\todo handle authentication */
+			plugin_destroy_stream(p, plugin_STREAM_DESTROY_ERROR);
+			break;
+
+		case CONTENT_MSG_STATUS:
+			/* ignore this */
+			break;
+
+		case CONTENT_MSG_READY:
+		case CONTENT_MSG_DONE:
+		case CONTENT_MSG_REFORMAT:
+		case CONTENT_MSG_REDRAW:
+		default:
+			/* not possible */
+			assert(0);
+			break;
+	}
+}
+
+/**
+ * Callback for plugin fetch
+ */
+void plugin_fetch_callback(fetch_msg msg, void *p, const char *data,
+		unsigned long size)
+{
+	struct plugin_stream *s = p;
+	union content_msg_data msg_data;
+
+	switch (msg) {
+		case FETCH_PROGRESS:
+			break;
+
+		case FETCH_DATA:
+			if (!content_process_data(s->c, data, size)) {
+				fetch_abort(s->c->fetch);
+				s->c->fetch = 0;
+			}
+			break;
+
+		case FETCH_FINISHED:
+			s->c->fetch = 0;
+			s->c->status = CONTENT_STATUS_DONE;
+			break;
+
+		case FETCH_ERROR:
+			s->c->fetch = 0;
+			s->c->status = CONTENT_STATUS_ERROR;
+			msg_data.error = data;
+			content_broadcast(s->c, CONTENT_MSG_ERROR, msg_data);
+			break;
+
+		case FETCH_TYPE:
+		case FETCH_REDIRECT:
+		case FETCH_AUTH:
+		default:
+			/* not possible */
+			assert(0);
+			break;
+	}
+}
+
 #endif

@@ -16,25 +16,23 @@ struct box;
 struct browser_window;
 struct content;
 struct object_params;
+struct plugin_stream;
 
+/* We have one content per instance of a plugin */
 struct content_plugin_data {
 	struct browser_window *bw;	/* window containing this content */
 	struct content *page;		/* parent content */
 	struct box *box;		/* box containing this content */
 	char *taskname;			/* plugin task to launch */
 	char *filename;			/* filename of parameters file */
-	char *datafile;			/* filename of filestreamed file */
 	bool opened;			/* has this plugin been opened? */
 	int repeated;			/* indication of opening state */
 	unsigned int browser;		/* browser handle */
 	unsigned int plugin;		/* plugin handle */
-	unsigned int browser_stream;	/* browser stream handle */
-	unsigned int plugin_stream;	/* plugin stream handle */
 	unsigned int plugin_task;	/* plugin task handle */
-	unsigned int consumed;		/* size of data consumed by plugin */
 	bool reformat_pending;		/* is a reformat pending? */
 	int width, height;		/* reformat width & height */
-	bool file_stream_waiting;	/* waiting to stream as file */
+	struct plugin_stream *streams;	/* list of active streams */
 };
 
 /* function definitions */
