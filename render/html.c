@@ -672,6 +672,17 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 				content_set_status(c, messages_get("NotCSS"));
 				content_broadcast(c, CONTENT_MSG_STATUS, data);
 				content_remove_user(css, html_convert_css_callback, c, (void*)i);
+				if (!css->user_list) {
+					/* we were the only user and we
+					 * don't want this content, so
+					 * stop it fetching and mark it
+					 * as having an error so it gets
+					 * removed from the cache next time
+					 * content_clean() gets called */
+					fetch_abort(css->fetch);
+					css->fetch = 0;
+					css->status = CONTENT_STATUS_ERROR;
+				}
 			}
 			break;
 
