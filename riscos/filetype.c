@@ -17,8 +17,31 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
+/* type_map must be in sorted order by file_type */
+struct type_entry {
+	bits file_type;
+	char mime_type[40];
+};
+static const struct type_entry type_map[] = {
+        {0x188, "application/x-shockwave-flash"},
+	{0x695, "image/gif"},
+	{0xaff, "image/x-drawfile"},
+	{0xb60, "image/png"},
+	{0xc85, "image/jpeg"},
+	{0xf78, "image/jng"},
+	{0xf79, "text/css"},
+	{0xf83, "image/mng"},
+	{0xfaf, "text/html"},
+	{0xff9, "image/x-riscos-sprite"},
+	{0xfff, "text/plain"},
+};
+#define TYPE_MAP_COUNT (sizeof(type_map) / sizeof(type_map[0]))
+
 #define BUF_SIZE (256)
 static char type_buf[BUF_SIZE];
+
+
+static int cmp_type(const void *x, const void *y);
 
 /**
  * Determine the MIME type of a local file.
@@ -29,6 +52,7 @@ static char type_buf[BUF_SIZE];
  */
 const char *fetch_filetype(const char *unix_path)
 {
+	struct type_entry *t;
 	unsigned int len = strlen(unix_path) + 100;
 	char *path = calloc(len, 1);
 	char *r, *slash;
@@ -75,6 +99,16 @@ const char *fetch_filetype(const char *unix_path)
 		}
 	}
 
+	/* search for MIME type in our internal table */
+	t = bsearch(&file_type, type_map, TYPE_MAP_COUNT,
+				sizeof(type_map[0]), cmp_type);
+	if (t) {
+		/* found, so return it */
+		free(path);
+		return t->mime_type;
+	}
+
+	/* not in internal table, so ask MimeMap */
 	error = xmimemaptranslate_filetype_to_mime_type(file_type, type_buf);
 	if (error) {
 		LOG(("0x%x %s", error->errnum, error->errmess));
@@ -153,6 +187,16 @@ char *fetch_mimetype(const char *ro_path)
 	mime[BUF_SIZE - 1] = '\0';
 
 	return mime;
+}
+
+/**
+ * Comparison function for bsearch
+ */
+int cmp_type(const void *x, const void *y)
+{
+	const bits *p = x;
+	const struct type_entry *q = y;
+	return *p < q->file_type ? -1 : (*p == q->file_type ? 0 : +1);
 }
 
 /**
