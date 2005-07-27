@@ -182,8 +182,6 @@ wimp_w ro_gui_dialog_create(const char *template_name)
 	/* the window definition is copied by the wimp and may be freed */
 	free(window);
 
-LOG(("gui_dialog_create given handle %p", w));
-
 	return w;
 }
 
@@ -412,6 +410,7 @@ bool ro_gui_dialog_keypress(wimp_key *key)
 #endif
 	if (key->w == dialog_zoom)
 		return ro_gui_zoom_keypress(key);
+
 	if (key->c == wimp_KEY_ESCAPE) {
 		ro_gui_dialog_close(key->w);
 		return true;
