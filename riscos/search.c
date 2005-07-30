@@ -27,6 +27,7 @@
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -569,13 +570,8 @@ bool gui_search_term_highlighted(struct gui_window *g, struct box *box,
 
 void show_status(bool found)
 {
-	os_error *error = xwimp_set_icon_state(dialog_search, ICON_SEARCH_STATUS,
-			found ? wimp_ICON_DELETED : 0, wimp_ICON_DELETED);
-	if (error) {
-		LOG(("xwimp_set_icon_state: 0x%x: %s",
-			error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
+	ro_gui_set_icon_string(dialog_search, ICON_SEARCH_STATUS,
+			found ? "" : messages_get("Notfound"));
 }
 
 #endif

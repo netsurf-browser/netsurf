@@ -284,6 +284,15 @@ PrintSheetFilled:feuille remplie
 PrintSheetsFilled:feuilles remplies
 
 
+# Find text user interface tokens
+# ===============================
+#
+# This section contains tokens which are used in the find text
+# dialog box.
+#
+NotFound:Non trouvé
+
+
 # Content
 # =======
 #

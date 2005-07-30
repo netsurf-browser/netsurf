@@ -284,6 +284,15 @@ PrintSheetFilled:sheet is filled
 PrintSheetsFilled:sheets are filled
 
 
+# Find text user interface tokens
+# ===============================
+#
+# This section contains tokens which are used in the find text
+# dialog box.
+#
+NotFound:Not found
+
+
 # Content
 # =======
 #
