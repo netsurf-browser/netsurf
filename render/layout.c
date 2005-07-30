@@ -73,6 +73,8 @@ static void layout_minmax_table(struct box *table);
 static void layout_move_children(struct box *box, int x, int y);
 static void calculate_mbp_width(struct css_style *style, unsigned int side,
 		int *fixed, float *frac);
+static void layout_position_relative(struct box *root);
+static void layout_compute_relative_offset(struct box *box, int *x, int *y);
 
 
 /**
@@ -314,6 +316,9 @@ bool layout_block_context(struct box *block, struct content *content)
 	if (block->height == AUTO)
 		block->height = cy - block->padding[TOP];
 
+	/* and position blocks relatively */
+	layout_position_relative(block);
+
 	return true;
 }
 
@@ -510,7 +515,7 @@ int layout_solve_width(int available_width, int width,
 				(border[LEFT] + padding[LEFT] + width +
 				padding[RIGHT] + border[RIGHT] + margin[RIGHT]);
 	} else {
-		/* margin-right auto or "over-constained" */
+		/* margin-right auto or "over-constrained" */
 		margin[RIGHT] = available_width -
 				(margin[LEFT] + border[LEFT] + padding[LEFT] +
 				 width + padding[RIGHT] + border[RIGHT]);
@@ -519,6 +524,132 @@ int layout_solve_width(int available_width, int width,
 	return width;
 }
 
+/**
+ * Position a box tree relatively
+ */
+void layout_position_relative(struct box *root)
+{
+	struct box *box;
+
+	/**\todo ensure containing box is large enough after moving boxes */
+
+	if (!root)
+		return;
+
+	for (box = root->children; box; box = box->next) {
+		int x, y;
+
+		/* recurse first */
+		layout_position_relative(box);
+
+		/* Ignore things we're not interested in.
+		 * TEXT boxes are ignored, regardless of whether
+		 * they're relatively positioned. */
+		if (!box->style || (box->style &&
+				box->style->position !=
+					CSS_POSITION_RELATIVE) ||
+				box->type == BOX_TEXT)
+			continue;
+
+		layout_compute_relative_offset(box, &x, &y);
+
+		box->x += x;
+		box->y += y;
+
+		/* Handle INLINEs - their "children" are in fact
+		 * the sibling boxes between the INLINE and
+		 * INLINE_END boxes */
+		if (box->type == BOX_INLINE && box->inline_end) {
+			struct box *b;
+			for (b = box->next; b && b != box->inline_end;
+					b = b->next) {
+				b->x += x;
+				b->y += y;
+			}
+		}
+	}
+}
+
+/**
+ * Compute a box's relative offset as per CSS 2.1 9.4.3
+ */
+void layout_compute_relative_offset(struct box *box, int *x, int *y)
+{
+	int left = 0, right = 0, top = 0, bottom = 0;
+
+	assert(box && box->parent && box->style &&
+			box->style->position == CSS_POSITION_RELATIVE);
+
+	/* left */
+	if (box->style->pos[LEFT].pos == CSS_POS_PERCENT)
+		left = ((box->style->pos[LEFT].value.percent *
+				box->parent->width) / 100);
+	else if (box->style->pos[LEFT].pos == CSS_POS_LENGTH)
+		left = css_len2px(&box->style->pos[LEFT].value.length,
+				box->style);
+
+	/* right */
+	if (box->style->pos[RIGHT].pos == CSS_POS_PERCENT)
+		right = ((box->style->pos[RIGHT].value.percent *
+				box->parent->width) / 100);
+	else if (box->style->pos[RIGHT].pos == CSS_POS_LENGTH)
+		right = css_len2px(&box->style->pos[RIGHT].value.length,
+				box->style);
+
+	if (box->style->pos[LEFT].pos == CSS_POS_AUTO)
+		/* left is auto => computed = -right */
+		left = -right;
+	if (box->style->pos[RIGHT].pos == CSS_POS_AUTO)
+		/* right is auto => computed = -left */
+		right = -left;
+
+	if (box->style->pos[LEFT].pos != CSS_POS_AUTO &&
+			box->style->pos[RIGHT].pos != CSS_POS_AUTO) {
+		/* over constrained => examine direction property
+		 * of containing block */
+		if (box->parent->style) {
+			if (box->parent->style->direction ==
+					CSS_DIRECTION_LTR)
+				/* left wins */
+				right = -left;
+			else if (box->parent->style->direction ==
+					CSS_DIRECTION_RTL)
+				/* right wins */
+				left = -right;
+		}
+		else {
+			/* no parent style, so assume LTR */
+			right = -left;
+		}
+	}
+
+	assert(left == -right);
+
+	/* top */
+	if (box->style->pos[TOP].pos == CSS_POS_PERCENT)
+		top = ((box->style->pos[TOP].value.percent *
+				box->parent->height) / 100);
+	else if (box->style->pos[TOP].pos == CSS_POS_LENGTH)
+		top = css_len2px(&box->style->pos[TOP].value.length,
+				box->style);
+
+	/* bottom */
+	if (box->style->pos[BOTTOM].pos == CSS_POS_PERCENT)
+		bottom = ((box->style->pos[BOTTOM].value.percent *
+				box->parent->height) / 100);
+	else if (box->style->pos[BOTTOM].pos == CSS_POS_LENGTH)
+		bottom = css_len2px(&box->style->pos[BOTTOM].value.length,
+				box->style);
+
+	if (box->style->pos[TOP].pos == CSS_POS_AUTO)
+		/* top is auto => computed = -bottom */
+		top = -bottom;
+
+	LOG(("%d,%d,%d,%d", left, right, top, bottom));
+
+	*x = left;
+	*y = top;
+}
 
 /**
  * Compute dimensions of box, margins, paddings, and borders for a floating
