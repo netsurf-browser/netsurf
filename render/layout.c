@@ -126,6 +126,8 @@ bool layout_document(struct content *content, int width, int height)
 					 doc->children->margin[BOTTOM]);
 	}
 
+	layout_position_relative(doc);
+
 	layout_calculate_descendant_bboxes(doc);
 
 	return ret;
@@ -315,9 +317,6 @@ bool layout_block_context(struct box *block, struct content *content)
 
 	if (block->height == AUTO)
 		block->height = cy - block->padding[TOP];
-
-	/* and position blocks relatively */
-	layout_position_relative(block);
 
 	return true;
 }
@@ -539,16 +538,15 @@ void layout_position_relative(struct box *root)
 	for (box = root->children; box; box = box->next) {
 		int x, y;
 
+		if (box->type == BOX_TEXT)
+			continue;
+
 		/* recurse first */
 		layout_position_relative(box);
 
-		/* Ignore things we're not interested in.
-		 * TEXT boxes are ignored, regardless of whether
-		 * they're relatively positioned. */
+		/* Ignore things we're not interested in. */
 		if (!box->style || (box->style &&
-				box->style->position !=
-					CSS_POSITION_RELATIVE) ||
-				box->type == BOX_TEXT)
+				box->style->position != CSS_POSITION_RELATIVE))
 			continue;
 
 		layout_compute_relative_offset(box, &x, &y);
