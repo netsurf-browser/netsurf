@@ -588,6 +588,7 @@ struct css_parser_params {
 	struct css_node *declaration;
 	bool syntax_error;
 	bool memory_error;
+	bool had_ruleset;
 };
 
 /** Token type for the CSS parser. */

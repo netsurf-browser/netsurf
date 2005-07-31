@@ -47,7 +47,7 @@ statement ::= at_rule.
 at_rule ::= ATKEYWORD ws any_list block.
 at_rule ::= ATKEYWORD(A) ws any_list(B) SEMI ws.
 		{ if ((A.length == 7) && (strncasecmp(A.text, "@import", 7) == 0)
-				&& B)
+				&& B && !param->had_ruleset)
 			css_atimport(param->stylesheet, B);
 		css_free_node(B); }
 
@@ -59,8 +59,10 @@ block_body ::= block_body ATKEYWORD ws.
 block_body ::= block_body SEMI ws.
 
 ruleset ::= selector_list(A) LBRACE ws declaration_list(B) RBRACE ws.
-		{ if (A && B)
+		{ if (A && B) {
+			param->had_ruleset = true;
 			css_add_ruleset(param->stylesheet, A, B);
+		}
 		else
 			css_free_selector(A);
 		css_free_node(B); }

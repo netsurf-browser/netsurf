@@ -388,7 +388,7 @@ bool css_convert(struct content *c, int width, int height)
 	unsigned int i;
 	int token;
 	void *parser;
-	struct css_parser_params param = {false, c, 0, false, false};
+	struct css_parser_params param = {false, c, 0, false, false, false};
 	struct css_parser_token token_data;
 	union content_msg_data msg_data;
 
@@ -1478,7 +1478,7 @@ void css_parse_property_list(struct content *c, struct css_style * style,
 	unsigned int i;
 	int token;
 	void *parser;
-	struct css_parser_params param = {true, c, 0, false, false};
+	struct css_parser_params param = {true, c, 0, false, false, false};
 	struct css_parser_token token_data;
 	const struct css_parser_token token_start = { "{", 1 };
 	const struct css_parser_token token_end = { "}", 1 };
