@@ -1431,7 +1431,18 @@ bool layout_line(struct box *first, int width, int *y,
 	}
 
 	assert(b != first || (move_y && 0 < used_height && (left || right)));
-	if (move_y) *y += used_height;
+
+	/* handle clearance for br */
+	if (b->prev->type == BOX_BR &&
+			b->prev->style->clear != CSS_CLEAR_NONE) {
+		int clear_y = layout_clear(cont->float_children,
+				b->prev->style->clear);
+		if (used_height < clear_y - cy)
+			used_height = clear_y - cy;
+	}
+
+	if (move_y)
+		*y += used_height;
 	*next_box = b;
 	return true;
 }
