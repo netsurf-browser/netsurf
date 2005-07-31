@@ -300,13 +300,13 @@ const struct css_style css_blank_style = {
 	  { CSS_BACKGROUND_POSITION_PERCENT, { 0.0 } } },
 	CSS_BACKGROUND_REPEAT_REPEAT,
 	{ { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
-	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
+	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
 	  { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
-	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
+	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
 	  { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
-	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
+	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE },
 	  { 0x000000, { CSS_BORDER_WIDTH_LENGTH,
-	    { 0, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE } },
+	    { 2, CSS_UNIT_PX } }, CSS_BORDER_STYLE_NONE } },
 	CSS_BORDER_COLLAPSE_INHERIT,
 	{ CSS_BORDER_SPACING_INHERIT,
 	  { 0, CSS_UNIT_PX }, { 0, CSS_UNIT_PX } },
@@ -2980,11 +2980,14 @@ float css_len2px(const struct css_length *length,
 		case CSS_UNIT_EM: return length->value * css_len2px(&style->font_size.value.length, 0);
 		case CSS_UNIT_EX: return length->value * css_len2px(&style->font_size.value.length, 0) * 0.6;
 		case CSS_UNIT_PX: return length->value;
+		/* RISC OS assumes 90dpi  */
 		case CSS_UNIT_IN: return length->value * 90.0;
-		case CSS_UNIT_CM: return length->value * 35.0;
-		case CSS_UNIT_MM: return length->value * 3.5;
-		case CSS_UNIT_PT: return length->value * 90.0 / 72.0;
-		case CSS_UNIT_PC: return length->value * 90.0 / 6.0;
+		case CSS_UNIT_CM: return length->value * 35.43307087;
+		case CSS_UNIT_MM: return length->value * 3.543307087;
+		/* 1pt = 1in/72 */
+		case CSS_UNIT_PT: return length->value * 1.25;
+		/* 1pc = 1pt * 12 */
+		case CSS_UNIT_PC: return length->value * 15.0;
 		default: break;
 	}
 	return 0;
