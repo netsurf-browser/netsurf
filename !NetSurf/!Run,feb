@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.39 $ )
+| Run file for NetSurf. ( $Revision: 1.40 $ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -55,8 +55,8 @@ RMEnsure MimeMap 0.10 Error NetSurf requires MimeMap 0.10 or later
 
 | Ensure Tinct is loaded
 | http://www.tinct.net/
-RMEnsure Tinct 0.12 NetSurfRMLoad System:Modules.Tinct
-RMEnsure Tinct 0.12 Error NetSurf requires Tinct 0.12 or later. This can be downloaded from http://www.tinct.net/
+RMEnsure Tinct 0.13 NetSurfRMLoad System:Modules.Tinct
+RMEnsure Tinct 0.13 Error NetSurf requires Tinct 0.13 or later. This can be downloaded from http://www.tinct.net/
 
 | Ensure Iconv
 | http://moose.mine.nu:6888/iconv_latest.zip
