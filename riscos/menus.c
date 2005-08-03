@@ -614,10 +614,7 @@ void ro_gui_menu_selection(wimp_selection *selection) {
 			ro_gui_set_icon_string(dialog_openurl, ICON_OPENURL_URL,
 					url_suggest_menu->entries[selection->items[0]].
 						data.indirected_text.text);
-/*			browser_window_create(
-					url_suggest_menu->entries[selection->items[0]].
-						data.indirected_text.text, 0, 0);
-*/		global_history_add_recent(url_suggest_menu->
+		global_history_add_recent(url_suggest_menu->
 				entries[selection->items[0]].
 						data.indirected_text.text);
 	} else if (current_menu == proxy_auth_menu) {
@@ -1642,6 +1639,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 					state.visible.x1 - state.visible.x0;
 			option_window_height =
 					state.visible.y1 - state.visible.y0;
+			ro_gui_save_options();
 			return true;
 		case BROWSER_WINDOW_STAGGER:
 			option_window_stagger = !option_window_stagger;
