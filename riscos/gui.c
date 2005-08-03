@@ -1946,16 +1946,57 @@ void ro_gui_open_help_page(const char *page)
 
 void ro_gui_view_source(struct content *content)
 {
+	os_error *error;
+  	char *temp_name, *full_name;
+
 	if (!content || !content->source_data) {
 		warn_user("MiscError", "No document source");
 		return;
 	}
+	
+	/* We cannot release the requested filename until after it has finished
+	   being used. As we can't easily find out when this is, we simply don't
+	   bother releasing it and simply allow it to be re-used next time NetSurf
+	   is started. The memory overhead from doing this is under 1 byte per
+	   filename. */
+	temp_name = ro_filename_request();
+	if (!temp_name) {
+	  	warn_user("NoMemory", 0);
+	  	return;
+	}
+	full_name = malloc(strlen(temp_name) + strlen(CACHE_FILENAME_PREFIX) + 12);
+	if (!full_name) {
+	  	warn_user("NoMemory", 0);
+	  	return;
+	}
+	sprintf(full_name, "Filer_Run %s.%s", CACHE_FILENAME_PREFIX, temp_name);
 
-	xosfile_save_stamped("<Wimp$Scrap>", 0xfff,
+	error = xosfile_save_stamped(full_name + 10, 0xfff,
 			content->source_data,
 			content->source_data + content->source_size);
-	xos_cli("Filer_Run <Wimp$Scrap>");
-	xosfile_set_type("<Wimp$Scrap>", ro_content_filetype(content));
+	if (error) {
+		LOG(("xosfile_save_stamped failed: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MiscErr", error->errmess);
+		free(full_name);
+		return;
+	}
+	error = xosfile_set_type(full_name + 10, ro_content_filetype(content));
+	if (error) {
+		LOG(("xosfile_set_type failed: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MiscErr", error->errmess);
+		free(full_name);
+		return;
+	}
+	error = xos_cli(full_name);
+	free(full_name);
+	if (error) {
+		LOG(("xos_cli: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MiscErr", error->errmess);
+		return;
+	}
 }
 
 
