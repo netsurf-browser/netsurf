@@ -1953,7 +1953,7 @@ void ro_gui_view_source(struct content *content)
 		warn_user("MiscError", "No document source");
 		return;
 	}
-	
+
 	/* We cannot release the requested filename until after it has finished
 	   being used. As we can't easily find out when this is, we simply don't
 	   bother releasing it and simply allow it to be re-used next time NetSurf
@@ -1977,26 +1977,30 @@ void ro_gui_view_source(struct content *content)
 	if (error) {
 		LOG(("xosfile_save_stamped failed: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user("MiscErr", error->errmess);
+		warn_user("MiscError", error->errmess);
 		free(full_name);
 		return;
 	}
+
+	error = xos_cli(full_name);
+	if (error) {
+		LOG(("xos_cli: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MiscError", error->errmess);
+		free(full_name);
+		return;
+	}
+
 	error = xosfile_set_type(full_name + 10, ro_content_filetype(content));
 	if (error) {
 		LOG(("xosfile_set_type failed: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user("MiscErr", error->errmess);
+		warn_user("MiscError", error->errmess);
 		free(full_name);
 		return;
 	}
-	error = xos_cli(full_name);
+
 	free(full_name);
-	if (error) {
-		LOG(("xos_cli: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("MiscErr", error->errmess);
-		return;
-	}
 }
 
 
