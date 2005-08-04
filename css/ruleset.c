@@ -18,6 +18,7 @@
  * any of it to be used.
  */
 
+#define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
