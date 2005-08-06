@@ -2159,8 +2159,13 @@ void layout_minmax_table(struct box *table)
 	if (table->max_width != UNKNOWN_MAX_WIDTH)
 		return;
 
-	for (i = 0; i != table->columns; i++)
-		col[i].min = col[i].max = 0;
+	/* start with 0 except for fixed-width columns */
+	for (i = 0; i != table->columns; i++) {
+		if (col[i].type == COLUMN_WIDTH_FIXED)
+			col[i].min = col[i].max = col[i].width;
+		else
+			col[i].min = col[i].max = 0;
+	}
 
 	/* border-spacing is used in the separated borders model */
 	if (table->style->border_collapse == CSS_BORDER_COLLAPSE_SEPARATE)
