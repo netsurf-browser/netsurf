@@ -220,6 +220,8 @@ bool layout_block_context(struct box *block, struct content *content)
 			}
 		}
 
+		LOG(("box %p, cx %i, cy %i", box, cx, cy));
+
 		/* Layout (except tables). */
 		if (box->type == BOX_INLINE_CONTAINER) {
 			box->width = box->parent->width;
@@ -269,7 +271,8 @@ bool layout_block_context(struct box *block, struct content *content)
 			}
 
 			continue;
-		}
+		} else if (box->type == BOX_BLOCK)
+			cy += box->padding[TOP];
 		if (box->type == BOX_BLOCK && box->height == AUTO)
 			box->height = 0;
 		cy += box->height + box->padding[BOTTOM] + box->border[BOTTOM];
@@ -1687,6 +1690,7 @@ void place_float_below(struct box *c, int width, int cx, int y,
 	int x0, x1, yy = y;
 	struct box * left;
 	struct box * right;
+	LOG(("c %p, width %i, cx %i, y %i, cont %p", c, width, cx, y, cont));
 	do {
 		y = yy;
 		x0 = cx;
