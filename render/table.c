@@ -44,6 +44,10 @@ bool table_calculate_column_types(struct box *table)
 	struct column *col;
 	struct box *row_group, *row, *cell;
 
+	if (table->col)
+		/* table->col already constructed, for example frameset table */
+		return true;
+
 	table->col = col = talloc_array(table, struct column, table->columns);
 	if (!col)
 		return false;

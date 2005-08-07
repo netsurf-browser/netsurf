@@ -1462,11 +1462,9 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 	struct box *row_box;
 	struct box *cell_box;
 	struct box *frameset_box;
-	struct box *object_box;
 	struct css_style *style = box->style;
 	struct css_style *row_style;
 	struct css_style *cell_style;
-	struct css_style *object_style;
 	struct box_multi_length *row_height = 0, *col_width = 0;
 	xmlNode *c;
 	url_func_result res;
@@ -1564,7 +1562,6 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 					sizeof *style);
 			if (!cell_style)
 				return false;
-			css_cascade(cell_style, &css_blank_style);
 			cell_style->overflow = CSS_OVERFLOW_AUTO;
 
 			cell_box = box_create(cell_style, 0, 0, 0, content);
@@ -1586,24 +1583,6 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 				c = c->next;
 				continue;
 			}
-
-			object_style = talloc_memdup(content, style,
-					sizeof *style);
-			if (!object_style)
-				return false;
-			if (col_width && col_width[col].type == LENGTH_PX) {
-				object_style->width.width = CSS_WIDTH_LENGTH;
-				object_style->width.value.length.unit =
-						CSS_UNIT_PX;
-				object_style->width.value.length.value =
-						object_width;
-			}
-
-			object_box = box_create(object_style, 0, 0, 0, content);
-			if (!object_box)
-				return false;
-			object_box->type = BOX_BLOCK;
-			box_add_child(cell_box, object_box);
 
 			if (!(s = (char *) xmlGetProp(c,
 					(const xmlChar *) "src"))) {
@@ -1628,7 +1607,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 			LOG(("frame, url '%s'", url));
 
 			if (!html_fetch_object(content, url,
-					object_box, 0,
+					cell_box, 0,
 					object_width, object_height, false))
 				return false;
 			free(url);
@@ -1669,7 +1648,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 
 	/* start fetch */
 	ok = html_fetch_object(content, url, box, 0,
-			content->available_width, 1000, false);
+			content->available_width, 0, false);
 
 	free(url);
 	return ok;

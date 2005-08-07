@@ -972,11 +972,16 @@ void html_object_done(struct box *box, struct content *object,
 		return;
 	}
 
-	box->object = object;
-
-	if (box->width != UNKNOWN_WIDTH &&
-			object->available_width != box->width)
-		content_reformat(object, box->width, box->height);
+	if (object->type == CONTENT_HTML) {
+		/* patch in the HTML object's box tree */
+		box->children = object->data.html.layout;
+		object->data.html.layout->parent = box;
+	} else {
+		box->object = object;
+		if (box->width != UNKNOWN_WIDTH &&
+				object->available_width != box->width)
+			content_reformat(object, box->width, box->height);
+	}
 
 	/* invalidate parent min, max widths */
 	for (b = box->parent; b; b = b->parent)

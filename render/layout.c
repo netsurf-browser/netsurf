@@ -997,6 +997,7 @@ bool layout_line(struct box *first, int width, int *y,
 	struct box *b;
 	struct box *split_box = 0;
 	struct box *d;
+	struct box *br_box = 0;
 	bool move_y = false;
 	int space_before = 0, space_after = 0;
 	unsigned int inline_count = 0;
@@ -1243,6 +1244,7 @@ bool layout_line(struct box *first, int width, int *y,
 		} else if (b->type == BOX_BR) {
 			b->x = x;
 			b->width = 0;
+			br_box = b;
 			b = b->next;
 			split_box = 0;
 			move_y = true;
@@ -1436,10 +1438,9 @@ bool layout_line(struct box *first, int width, int *y,
 	assert(b != first || (move_y && 0 < used_height && (left || right)));
 
 	/* handle clearance for br */
-	if (b->prev->type == BOX_BR &&
-			b->prev->style->clear != CSS_CLEAR_NONE) {
+	if (br_box && br_box->style->clear != CSS_CLEAR_NONE) {
 		int clear_y = layout_clear(cont->float_children,
-				b->prev->style->clear);
+				br_box->style->clear);
 		if (used_height < clear_y - cy)
 			used_height = clear_y - cy;
 	}
@@ -2387,6 +2388,10 @@ void layout_calculate_descendant_bboxes(struct box *box)
 			continue;
 
 		layout_calculate_descendant_bboxes(child);
+
+		if (child->style &&
+				child->style->overflow != CSS_OVERFLOW_VISIBLE)
+			continue;
 
 		if (child->x + child->descendant_x0 < box->descendant_x0)
 			box->descendant_x0 = child->x + child->descendant_x0;
