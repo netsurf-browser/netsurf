@@ -133,6 +133,8 @@ hr[align=left] { margin-left: 0; }
 hr[align=center] { margin-left: auto; margin-right: auto; }
 hr[align=right] { margin-right: 0; }
 
+frameset { border: thin solid gray; border-collapse: collapse }
+
 noframes { display: none; }
 
 iframe[align=left] { float: left; }
