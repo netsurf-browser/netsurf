@@ -2382,6 +2382,38 @@ void layout_calculate_descendant_bboxes(struct box *box)
 		return;
 	}
 
+	if (box->type == BOX_INLINE || box->type == BOX_TEXT)
+		return;
+
+	if (box->type == BOX_INLINE_END) {
+		box = box->inline_end;
+		for (child = box->next;
+				child && child != box->inline_end;
+				child = child->next) {
+			if (child->type == BOX_FLOAT_LEFT ||
+					child->type == BOX_FLOAT_RIGHT)
+				continue;
+
+			if (child->x + child->descendant_x0 - box->x <
+					box->descendant_x0)
+				box->descendant_x0 = child->x +
+						child->descendant_x0 - box->x;
+			if (box->descendant_x1 < child->x +
+					child->descendant_x1 - box->x)
+				box->descendant_x1 = child->x +
+						child->descendant_x1 - box->x;
+			if (child->y + child->descendant_y0 - box->y <
+					box->descendant_y0)
+				box->descendant_y0 = child->y +
+						child->descendant_y0 - box->y;
+			if (box->descendant_y1 < child->y +
+					child->descendant_y1 - box->y)
+				box->descendant_y1 = child->y +
+						child->descendant_y1 - box->y;
+		}
+		return;
+	}
+
 	for (child = box->children; child; child = child->next) {
 		if (child->type == BOX_FLOAT_LEFT ||
 				child->type == BOX_FLOAT_RIGHT)
