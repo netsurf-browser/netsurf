@@ -352,7 +352,8 @@ siblings:
 
 bool box_contains_point(struct box *box, int x, int y)
 {
-	if (box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) {
+	if ((box->style && box->style->overflow != CSS_OVERFLOW_VISIBLE) ||
+			box->inline_end) {
 		if (box->x <= x + box->border[LEFT] &&
 				x < box->x + box->padding[LEFT] + box->width +
 				box->border[RIGHT] + box->padding[RIGHT] &&
