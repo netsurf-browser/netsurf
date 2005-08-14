@@ -29,12 +29,12 @@
 #endif
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
-#include "netsurf/desktop/imagemap.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/selection.h"
 #include "netsurf/desktop/textinput.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
+#include "netsurf/render/imagemap.h"
 #include "netsurf/render/layout.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"

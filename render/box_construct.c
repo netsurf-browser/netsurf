@@ -109,7 +109,6 @@ static bool box_embed(BOX_SPECIAL_PARAMS);
 static bool box_iframe(BOX_SPECIAL_PARAMS);
 static bool box_get_attribute(xmlNode *n, const char *attribute,
 		void *context, char **value);
-static bool box_extract_link(const char *rel, const char *base, char **result);
 static struct box_multi_length *box_parse_multi_lengths(const char *s,
 		unsigned int *count, void *context);
 

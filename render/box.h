@@ -254,6 +254,7 @@ struct box *box_at_point(struct box *box, int x, int y,
 struct box *box_object_at_point(struct content *c, int x, int y);
 struct box *box_find_by_id(struct box *box, const char *id);
 void box_dump(struct box *box, unsigned int depth);
+bool box_extract_link(const char *rel, const char *base, char **result);
 
 bool box_vscrollbar_present(const struct box *box);
 bool box_hscrollbar_present(const struct box *box);

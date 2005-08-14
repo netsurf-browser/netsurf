@@ -19,16 +19,18 @@
 
 OBJECTS_COMMON = content.o fetch.o fetchcache.o	url_store.o	# content/
 OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
-OBJECTS_COMMON += box.o box_construct.o box_normalise.o form.o html.o \
-	html_redraw.o layout.o list.o table.o textplain.o	# render/
+OBJECTS_COMMON += box.o box_construct.o box_normalise.o form.o \
+	html.o html_redraw.o imagemap.o layout.o list.o \
+	table.o textplain.o					# render/
 OBJECTS_COMMON += messages.o talloc.o url.o utf8.o \
 	utils.o							# utils/
-OBJECTS_COMMON += imagemap.o loginlist.o options.o tree.o	# desktop/
+OBJECTS_COMMON += loginlist.o options.o tree.o			# desktop/
 
 OBJECTS_IMAGE = gif.o gifread.o jpeg.o mng.o			# image/
 
 OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
-OBJECTS_RISCOS += browser.o netsurf.o selection.o textinput.o version.o			# desktop/
+OBJECTS_RISCOS += browser.o netsurf.o selection.o textinput.o \
+	version.o						# desktop/
 OBJECTS_RISCOS += 401login.o bitmap.o buffer.o debugwin.o \
 	dialog.o download.o draw.o filename.o filetype.o font.o \
 	global_history.o gui.o help.o history.o hotlist.o image.o \
