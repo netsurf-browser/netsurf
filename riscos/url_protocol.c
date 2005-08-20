@@ -13,6 +13,7 @@
  * See http://www.vigay.com/inet/inet_url.html
  */
 
+#define _GNU_SOURCE  /* for strndup */
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>

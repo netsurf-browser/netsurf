@@ -9,6 +9,7 @@
  * UTF-8 manipulation functions (implementation).
  */
 
+#define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>

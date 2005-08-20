@@ -8,6 +8,8 @@
 /** \file
  * UCS conversion tables and RISC OS-specific UTF-8 text handling
  */
+
+#define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
 #include <limits.h>
 #include <string.h>
