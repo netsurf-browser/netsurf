@@ -744,21 +744,22 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 /**
  * Start a fetch for an object required by a page.
  *
- * \param  c    content structure
- * \param  url  URL of object to fetch (copied)
- * \param  box  box that will contain the object
+ * \param  c                 content structure
+ * \param  url               URL of object to fetch (copied)
+ * \param  box               box that will contain the object
  * \param  permitted_types   array of types, terminated by CONTENT_UNKNOWN,
  *	      or 0 if all types except OTHER and UNKNOWN acceptable
  * \param  available_width   estimate of width of object
  * \param  available_height  estimate of height of object
- * \param  background	this is a background image
+ * \param  background        this is a background image
+ * \param  frame             name of frame, or 0 if not a frame (copied)
  * \return  true on success, false on memory exhaustion
  */
 
 bool html_fetch_object(struct content *c, char *url, struct box *box,
 		const content_type *permitted_types,
 		int available_width, int available_height,
-		bool background)
+		bool background, char *frame)
 {
 	unsigned int i = c->data.html.object_count;
 	struct content_html_object *object;
@@ -788,6 +789,9 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 	c->data.html.object[i].permitted_types = permitted_types;
        	c->data.html.object[i].background = background;
 	c->data.html.object[i].content = c_fetch;
+	c->data.html.object[i].frame = 0;
+	if (frame)
+		c->data.html.object[i].frame = talloc_strdup(c, frame);
 	c->data.html.object_count++;
 	c->active++;
 

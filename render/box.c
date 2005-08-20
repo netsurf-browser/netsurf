@@ -66,6 +66,7 @@ struct box * box_create(struct css_style *style,
 	box->space = 0;
 	box->clone = 0;
 	box->href = href;
+	box->target = 0;
 	box->title = title;
 	box->columns = 1;
 	box->rows = 1;
@@ -475,11 +476,13 @@ void box_dump(struct box *box, unsigned int depth)
 		fprintf(stderr, "(object '%s') ", box->object->url);
 	if (box->style)
 		css_dump_style(box->style);
-	if (box->href != 0)
+	if (box->href)
 		fprintf(stderr, " -> '%s'", box->href);
-	if (box->title != 0)
+	if (box->target)
+		fprintf(stderr, " |%s|", box->target);
+	if (box->title)
 		fprintf(stderr, " [%s]", box->title);
-	if (box->id != 0)
+	if (box->id)
 		fprintf(stderr, " <%s>", box->id);
 	if (box->type == BOX_INLINE || box->type == BOX_INLINE_END)
 		fprintf(stderr, " inline_end %p", box->inline_end);

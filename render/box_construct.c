@@ -69,6 +69,12 @@ static const content_type image_types[] = {
 #define MAX_SPAN (100)
 
 
+/* the strings are not important, since we just compare the pointers */
+const char *TARGET_SELF = "_self";
+const char *TARGET_PARENT = "_parent";
+const char *TARGET_TOP = "_top";
+
+
 static bool convert_xml_to_box(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
@@ -480,7 +486,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	if (style->background_image.type == CSS_BACKGROUND_IMAGE_URI) {
 		if (!html_fetch_object(content, style->background_image.uri,
 				box, image_types, content->available_width,
-				1000, true))
+				1000, true, 0))
 			return false;
 	}
 
@@ -1135,15 +1141,36 @@ bool box_a(BOX_SPECIAL_PARAMS)
 			return false;
 		if (url) {
 			box->href = talloc_strdup(content, url);
+			free(url);
 			if (!box->href)
 				return false;
-			free(url);
 		}
 	}
 
 	/* name and id share the same namespace */
 	if (!box_get_attribute(n, "name", content, &box->id))
 		return false;
+
+	/* target frame [16.3] */
+	if ((s = xmlGetProp(n, (const xmlChar *) "target"))) {
+		if (!strcmp(s, "_blank") || !strcmp(s, "_top"))
+			box->target = TARGET_TOP;
+		else if (!strcmp(s, "_parent"))
+			box->target = TARGET_PARENT;
+		else if (!strcmp(s, "_self"))
+			/* the default may have been overridden by a
+			 * <base target=...>, so this is different to 0 */
+			box->target = TARGET_SELF;
+		else if (('a' <= s[0] && s[0] <= 'z') ||
+				('A' <= s[0] && s[0] <= 'Z')) {  /* [6.16] */
+			box->target = talloc_strdup(content, s);
+			if (!box->target) {
+				xmlFree(s);
+				return false;
+			}
+	        }
+		xmlFree(s);
+	}
 
 	return true;
 }
@@ -1189,7 +1216,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 
 	/* start fetch */
 	ok = html_fetch_object(content, url, box, image_types,
-			content->available_width, 1000, false);
+			content->available_width, 1000, false, 0);
 	free(url);
 	return ok;
 }
@@ -1297,7 +1324,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 
 	/* start fetch (MIME type is ok or not specified) */
 	if (!html_fetch_object(content, params->data, box, 0,
-			content->available_width, 1000, false))
+			content->available_width, 1000, false, 0))
 		return false;
 
 	/* convert children and place into fallback */
@@ -1457,7 +1484,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 	unsigned int row, col;
 	unsigned int rows = 1, cols = 1;
 	int object_width, object_height;
-	char *s, *s1, *url;
+	char *s, *s1, *url, *name;
 	struct box *row_box;
 	struct box *cell_box;
 	struct box *frameset_box;
@@ -1603,13 +1630,19 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 				continue;
 			}
 
-			LOG(("frame, url '%s'", url));
+			name = xmlGetProp(c, (const xmlChar *) "name");
+
+			LOG(("frame, url '%s', name '%s'", url, name));
 
 			if (!html_fetch_object(content, url,
 					cell_box, 0,
-					object_width, object_height, false))
+					object_width, object_height, false,
+					name))
 				return false;
 			free(url);
+
+			if (name)
+				xmlFree(name);
 
 			c = c->next;
 		}
@@ -1647,7 +1680,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 
 	/* start fetch */
 	ok = html_fetch_object(content, url, box, 0,
-			content->available_width, 0, false);
+			content->available_width, 0, false, 0);
 
 	free(url);
 	return ok;
@@ -1840,7 +1873,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 				if (!html_fetch_object(content, url,
 						box, image_types,
 						content->available_width,
-						1000, false)) {
+						1000, false, 0)) {
 					free(url);
 					goto no_memory;
 			        }
@@ -2291,7 +2324,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 
 	/* start fetch */
 	return html_fetch_object(content, params->data, box, 0,
-			content->available_width, 1000, false);
+			content->available_width, 1000, false, 0);
 }
 
 /**

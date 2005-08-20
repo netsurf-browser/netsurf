@@ -159,6 +159,7 @@ struct box {
 	unsigned int clone : 1;
 
 	char *href;   /**< Link, or 0. */
+	const char *target;  /**< Link target, or 0. */
 	char *title;  /**< Title, or 0. */
 
 	unsigned int columns;  /**< Number of columns for TABLE / TABLE_CELL. */
@@ -232,6 +233,12 @@ struct object_param {
 	char *valuetype;
 	struct object_param *next;
 };
+
+/** Frame target names (constant pointers to save duplicating the strings many
+ * times). We convert _blank to _top for user-friendliness. */
+extern const char *TARGET_SELF;
+extern const char *TARGET_PARENT;
+extern const char *TARGET_TOP;
 
 
 #define UNKNOWN_WIDTH INT_MAX

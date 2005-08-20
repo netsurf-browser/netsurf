@@ -43,7 +43,8 @@ struct content_html_object {
 	/** Pointer to array of permitted content_type, terminated by
 	 *  CONTENT_UNKNOWN, or 0 if any type is acceptable. */
 	const content_type *permitted_types;
-	bool background; /** Is this object a background image? */
+	bool background;  /**< This object is a background image. */
+	char *frame;      /**< Name of frame, or 0 if not a frame. */
 };
 
 /** Data specific to CONTENT_HTML. */
@@ -78,10 +79,10 @@ struct content_html_data {
 	struct content_html_object *object;
 	/** Forms, in reverse order to document. */
 	struct form *forms;
-	/** Hash table of imagemaps */
+	/** Hash table of imagemaps. */
 	struct imagemap **imagemaps;
 
-	/**< Browser window containing this document, or 0 if not open. */
+	/** Browser window containing this document, or 0 if not open. */
 	struct browser_window *bw;
 };
 
@@ -97,7 +98,7 @@ void html_destroy(struct content *c);
 bool html_fetch_object(struct content *c, char *url, struct box *box,
 		const content_type *permitted_types,
 		int available_width, int available_height,
-		bool background);
+		bool background, char *frame);
 void html_stop(struct content *c);
 void html_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
