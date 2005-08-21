@@ -680,39 +680,30 @@ void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	struct content *c = bw->current_content;
-	if (!c) return;
+
+	if (!c)
+		return;
 
 	switch (c->type) {
-		case CONTENT_HTML:
-			browser_window_mouse_action_html(bw, mouse, x, y);
-			break;
+	case CONTENT_HTML:
+		browser_window_mouse_action_html(bw, mouse, x, y);
+		break;
 
-		case CONTENT_CSS:
-		case CONTENT_TEXTPLAIN: {
-				struct box *box;
-				int dx, dy;
-
-				box = browser_window_pick_text_box(bw, mouse, x, y, &dx, &dy, -1);
-				if (box && !(mouse & BROWSER_MOUSE_MOD_2)) {
-					selection_click(bw->sel, box, mouse, dx, dy);
-					if (selection_dragging(bw->sel))
-						bw->drag_type = DRAGGING_SELECTION;
-					break;
-				}
-			}
-			/* no break */
-		default:
-			if (mouse & BROWSER_MOUSE_MOD_2) {
-				if (mouse & BROWSER_MOUSE_DRAG_2)
-					gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, c, bw->window);
-				else if (mouse & BROWSER_MOUSE_DRAG_1)
-					gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, c, bw->window);
-			}
-			else if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
-				browser_window_page_drag_start(bw, x, y);
-				browser_window_set_pointer(GUI_POINTER_MOVE);
-			}
-			break;
+	default:
+		if (mouse & BROWSER_MOUSE_MOD_2) {
+			if (mouse & BROWSER_MOUSE_DRAG_2)
+				gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, c,
+						bw->window);
+			else if (mouse & BROWSER_MOUSE_DRAG_1)
+				gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, c,
+						bw->window);
+		}
+		else if (mouse & (BROWSER_MOUSE_DRAG_1 |
+				BROWSER_MOUSE_DRAG_2)) {
+			browser_window_page_drag_start(bw, x, y);
+			browser_window_set_pointer(GUI_POINTER_MOVE);
+		}
+		break;
 	}
 }
 
@@ -724,6 +715,12 @@ void browser_window_mouse_click(struct browser_window *bw,
  * \param  click  type of mouse click
  * \param  x      coordinate of mouse
  * \param  y      coordinate of mouse
+ *
+ * This function handles both hovering and clicking. It is important that the
+ * code path is identical (except that hovering doesn't carry out the action),
+ * so that the status bar reflects exactly what will happen. Having separate
+ * code paths opens the possibility that an attacker will make the status bar
+ * show some harmless action where clicking will be harmful.
  */
 
 void browser_window_mouse_action_html(struct browser_window *bw,
@@ -732,6 +729,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	char *base_url = 0;
 	char *title = 0;
 	char *url = 0;
+	const char *target = 0;
 	char status_buffer[200];
 	const char *status = 0;
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
@@ -768,8 +766,10 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		if (box->object)
 			object = box->object;
 
-		if (box->href)
+		if (box->href) {
 			url = box->href;
+			target = box->target;
+		}
 
 		if (box->usemap)
 			url = imagemap_get(content, box->usemap,
@@ -861,30 +861,33 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		case GADGET_TEXTAREA:
 			status = messages_get("FormTextarea");
 			pointer = GUI_POINTER_CARET;
-			if (mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2)) {
+			if (mouse & (BROWSER_MOUSE_MOD_1 |
+					BROWSER_MOUSE_MOD_2)) {
 				if (text_box) {
-					selection_click(bw->sel, text_box, mouse, x - box_x, y - box_y);
+					selection_click(bw->sel, text_box,
+							mouse, x - box_x,
+							y - box_y);
 					if (selection_dragging(bw->sel))
-						bw->drag_type = DRAGGING_SELECTION;
+						bw->drag_type =
+							DRAGGING_SELECTION;
 				}
-			} else {
-				if (mouse & BROWSER_MOUSE_CLICK_1) {
-					browser_window_textarea_click(bw,
-							mouse,
-							gadget_box,
-							gadget_box_x,
-							gadget_box_y,
-							x - gadget_box_x,
-							y - gadget_box_y);
-				}
-				else if (text_box) {
-					if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2))
-						selection_init(bw->sel, gadget_box);
+			} else if (mouse & BROWSER_MOUSE_CLICK_1) {
+				browser_window_textarea_click(bw,
+						mouse,
+						gadget_box,
+						gadget_box_x,
+						gadget_box_y,
+						x - gadget_box_x,
+						y - gadget_box_y);
+			} else if (text_box) {
+				if (mouse & (BROWSER_MOUSE_DRAG_1 |
+						BROWSER_MOUSE_DRAG_2))
+					selection_init(bw->sel, gadget_box);
 
-					selection_click(bw->sel, text_box, mouse, x - box_x, y - box_y);
-					if (selection_dragging(bw->sel))
-						bw->drag_type = DRAGGING_SELECTION;
-				}
+				selection_click(bw->sel, text_box, mouse,
+						x - box_x, y - box_y);
+				if (selection_dragging(bw->sel))
+					bw->drag_type = DRAGGING_SELECTION;
 			}
 			break;
 		case GADGET_TEXTBOX:
@@ -892,7 +895,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			status = messages_get("FormTextbox");
 			pointer = GUI_POINTER_CARET;
 			if ((mouse & BROWSER_MOUSE_CLICK_1) &&
-				!(mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2))) {
+					!(mouse & (BROWSER_MOUSE_MOD_1 |
+					BROWSER_MOUSE_MOD_2))) {
 				browser_window_input_click(bw,
 						gadget_box,
 						gadget_box_x,
@@ -901,10 +905,12 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						y - gadget_box_y);
 			}
 			else if (text_box) {
-				if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2))
+				if (mouse & (BROWSER_MOUSE_DRAG_1 |
+						BROWSER_MOUSE_DRAG_2))
 					selection_init(bw->sel, gadget_box);
 
-				selection_click(bw->sel, text_box, mouse, x - box_x, y - box_y);
+				selection_click(bw->sel, text_box, mouse,
+						x - box_x, y - box_y);
 				if (selection_dragging(bw->sel))
 					bw->drag_type = DRAGGING_SELECTION;
 			}
@@ -923,9 +929,11 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	} else if (object && (mouse & BROWSER_MOUSE_MOD_2)) {
 
 		if (mouse & BROWSER_MOUSE_DRAG_2)
-			gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, object, bw->window);
+			gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, object,
+					bw->window);
 		else if (mouse & BROWSER_MOUSE_DRAG_1)
-			gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, object, bw->window);
+			gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, object,
+					bw->window);
 
 		/* \todo should have a drag-saving object msg */
 		status = c->status_message;
@@ -943,8 +951,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		if (mouse & BROWSER_MOUSE_CLICK_1) {
 
 			if (mouse & BROWSER_MOUSE_MOD_1)
-				browser_window_go_post(bw, url, 0, 0, false, c->url,
-						true);
+				browser_window_go_post(bw, url, 0, 0, false,
+						c->url, true);
 			else
 				browser_window_go(bw, url, c->url);
 		}
@@ -960,18 +968,18 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 	} else {
 
-		if (text_box && selection_click(bw->sel, text_box, mouse, x - box_x, y - box_y)) {
+		if (text_box && selection_click(bw->sel, text_box, mouse,
+				x - box_x, y - box_y)) {
 
-			/* key presses must be directed at the main browser window,
-			   paste text operations ignored */
+			/* key presses must be directed at the main browser
+			 * window, paste text operations ignored */
 			if (bw->caret_callback) bw->caret_callback = NULL;
 			if (bw->paste_callback) bw->paste_callback = NULL;
 
 			if (selection_dragging(bw->sel)) {
 				bw->drag_type = DRAGGING_SELECTION;
 				status = messages_get("Selecting");
-			}
-			else
+			} else
 				status = c->status_message;
 		}
 		else {
@@ -985,19 +993,21 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 			if (mouse & BROWSER_MOUSE_DRAG_1) {
 				if (mouse & BROWSER_MOUSE_MOD_2) {
-					gui_drag_save_object(GUI_SAVE_COMPLETE, c, bw->window);
-				}
-				else {
-					browser_window_page_drag_start(bw, x, y);
+					gui_drag_save_object(GUI_SAVE_COMPLETE,
+							c, bw->window);
+				} else {
+					browser_window_page_drag_start(bw,
+							x, y);
 					pointer = GUI_POINTER_MOVE;
 				}
 			}
 			else if (mouse & BROWSER_MOUSE_DRAG_2) {
 				if (mouse & BROWSER_MOUSE_MOD_2) {
-					gui_drag_save_object(GUI_SAVE_SOURCE, c, bw->window);
-				}
-				else {
-					browser_window_page_drag_start(bw, x, y);
+					gui_drag_save_object(GUI_SAVE_SOURCE,
+							c, bw->window);
+				} else {
+					browser_window_page_drag_start(bw,
+							x, y);
 					pointer = GUI_POINTER_MOVE;
 				}
 			}
@@ -1024,7 +1034,8 @@ void browser_window_mouse_track(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	struct content *c = bw->current_content;
-	if (!c) return;
+	if (!c)
+		return;
 
 	/* detect end of drag operation in case the platform-specific code
 	   doesn't call browser_mouse_drag_end() (RISC OS code does) */
@@ -1034,41 +1045,26 @@ void browser_window_mouse_track(struct browser_window *bw,
 	}
 
 	if (bw->drag_type == DRAGGING_PAGE_SCROLL) {
-
-		int scrollx = bw->scrolling_start_x - x;	/* mouse movement since drag started */
+		/* mouse movement since drag started */
+		int scrollx = bw->scrolling_start_x - x;
 		int scrolly = bw->scrolling_start_y - y;
 
-		scrollx += bw->scrolling_start_scroll_x;	/* new scroll offsets */
+		/* new scroll offsets */
+		scrollx += bw->scrolling_start_scroll_x;
 		scrolly += bw->scrolling_start_scroll_y;
 
 		bw->scrolling_start_scroll_x = scrollx;
 		bw->scrolling_start_scroll_y = scrolly;
 
 		gui_window_set_scroll(bw->window, scrollx, scrolly);
-	}
-	else switch (c->type) {
-		case CONTENT_HTML:
-			browser_window_mouse_track_html(bw, mouse, x, y);
-			break;
 
-		case CONTENT_CSS:
-		case CONTENT_TEXTPLAIN:
-			if (bw->drag_type == DRAGGING_SELECTION) {
-				struct box *box;
-				int dir = -1;
-				int dx, dy;
+	} else switch (c->type) {
+	case CONTENT_HTML:
+		browser_window_mouse_track_html(bw, mouse, x, y);
+		break;
 
-				if (selection_dragging_start(bw->sel)) dir = 1;
-
-				box = browser_window_pick_text_box(bw, mouse, x, y,
-						&dx, &dy, dir);
-				if (box)
-					selection_track(bw->sel, box, mouse, dx, dy);
-			}
-			break;
-
-		default:
-			break;
+	default:
+		break;
 	}
 }
 
