@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -13,6 +13,7 @@
  */
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -363,9 +364,9 @@ bool content_set_type(struct content *c, content_type type,
 {
 	union content_msg_data msg_data;
 	struct content *clone;
-	void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, union content_msg_data data);
-	void *p1, *p2;
+	void (*callback)(content_msg msg, struct content *c, intptr_t p1,
+			intptr_t p2, union content_msg_data data);
+	intptr_t p1, p2;
 
 	assert(c != 0);
 	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
@@ -772,13 +773,14 @@ bool content_redraw(struct content *c, int x, int y,
  */
 
 bool content_add_user(struct content *c,
-		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, union content_msg_data data),
-		void *p1, void *p2)
+		void (*callback)(content_msg msg, struct content *c,
+			intptr_t p1, intptr_t p2, union content_msg_data data),
+		intptr_t p1, intptr_t p2)
 {
 	struct content_user *user;
 
-	LOG(("content %s, user %p %p %p", c->url, callback, p1, p2));
+	LOG(("content %s, user %p 0x%" PRIxPTR " 0x%" PRIxPTR,
+			c->url, callback, p1, p2));
 	user = talloc(c, struct content_user);
 	if (!user)
 		return false;
@@ -800,9 +802,9 @@ bool content_add_user(struct content *c,
  */
 
 struct content_user * content_find_user(struct content *c,
-		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, union content_msg_data data),
-		void *p1, void *p2)
+		void (*callback)(content_msg msg, struct content *c,
+			intptr_t p1, intptr_t p2, union content_msg_data data),
+		intptr_t p1, intptr_t p2)
 {
 	struct content_user *user;
 
@@ -824,12 +826,13 @@ struct content_user * content_find_user(struct content *c,
  */
 
 void content_remove_user(struct content *c,
-		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, union content_msg_data data),
-		void *p1, void *p2)
+		void (*callback)(content_msg msg, struct content *c,
+			intptr_t p1, intptr_t p2, union content_msg_data data),
+		intptr_t p1, intptr_t p2)
 {
 	struct content_user *user, *next;
-	LOG(("content %s, user %p %p %p", c->url, callback, p1, p2));
+	LOG(("content %s, user %p 0x%" PRIxPTR " 0x%" PRIxPTR,
+			c->url, callback, p1, p2));
 
 	/* user_list starts with a sentinel */
 	for (user = c->user_list; user->next != 0 &&
@@ -873,9 +876,9 @@ void content_broadcast(struct content *c, content_msg msg,
  */
 
 void content_stop(struct content *c,
-		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, union content_msg_data data),
-		void *p1, void *p2)
+		void (*callback)(content_msg msg, struct content *c,
+			intptr_t p1, intptr_t p2, union content_msg_data data),
+		intptr_t p1, intptr_t p2)
 {
 	struct content_user *user;
 
@@ -888,7 +891,8 @@ void content_stop(struct content *c,
 		return;
 	}
 
-	LOG(("%p %s: stop user %p %p %p", c, c->url, callback, p1, p2));
+	LOG(("%p %s: stop user %p 0x%" PRIxPTR " 0x%" PRIxPTR,
+			c, c->url, callback, p1, p2));
 	user->stop = true;
 }
 

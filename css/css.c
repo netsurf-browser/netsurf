@@ -74,6 +74,7 @@
 
 #define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -102,7 +103,7 @@ struct css_working_stylesheet {
 
 static void css_deep_free_style(struct css_style *style);
 static void css_atimport_callback(content_msg msg, struct content *css,
-		void *p1, void *p2, union content_msg_data data);
+		intptr_t p1, intptr_t p2, union content_msg_data data);
 static bool css_working_list_imports(struct content **import,
 		unsigned int import_count,
 		struct content ***css, unsigned int *css_count);
@@ -484,7 +485,7 @@ void css_destroy(struct content *c)
 		if (c->data.css.import_content[i] != 0) {
 			free(c->data.css.import_url[i]);
 			content_remove_user(c->data.css.import_content[i],
-					css_atimport_callback, c, (void*)i);
+					css_atimport_callback, (intptr_t) c, i);
 		}
 	free(c->data.css.import_url);
 	free(c->data.css.import_content);
@@ -869,12 +870,12 @@ void css_atimport(struct content *c, struct css_node *node)
 	i = c->data.css.import_count - 1;
 	c->data.css.import_url[i] = url1;
 	c->data.css.import_content[i] = fetchcache(c->data.css.import_url[i],
-			css_atimport_callback, c, (void *) i,
+			css_atimport_callback, (intptr_t) c, i,
 			c->width, c->height, true, 0, 0, false, false);
 	if (c->data.css.import_content[i]) {
 		c->active++;
 		fetchcache_go(c->data.css.import_content[i], c->url,
-				css_atimport_callback, c, (void *) i,
+				css_atimport_callback, (intptr_t) c, i,
 				c->width, c->height,
 				0, 0, false);
 	}
@@ -888,14 +889,16 @@ void css_atimport(struct content *c, struct css_node *node)
  */
 
 void css_atimport_callback(content_msg msg, struct content *css,
-		void *p1, void *p2, union content_msg_data data)
+		intptr_t p1, intptr_t p2, union content_msg_data data)
 {
-	struct content *c = p1;
-	unsigned int i = (unsigned int) p2;
+	struct content *c = (struct content *) p1;
+	unsigned int i = p2;
+
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
 			if (css->type != CONTENT_CSS) {
-				content_remove_user(css, css_atimport_callback, c, (void*)i);
+				content_remove_user(css, css_atimport_callback,
+						(intptr_t) c, i);
 				c->data.css.import_content[i] = 0;
 				c->active--;
 				content_add_error(c, "NotCSS", 0);
@@ -931,14 +934,14 @@ void css_atimport_callback(content_msg msg, struct content *css,
 			}
 			c->data.css.import_content[i] = fetchcache(
 					c->data.css.import_url[i],
-					css_atimport_callback, c, (void *) i,
+					css_atimport_callback, (intptr_t) c, i,
 					css->width, css->height, true, 0, 0,
 					false, false);
 			if (c->data.css.import_content[i]) {
 				c->active++;
 				fetchcache_go(c->data.css.import_content[i],
 						c->url, css_atimport_callback,
-						c, (void *) i,
+						(intptr_t) c, i,
 						css->width, css->height,
 						0, 0, false);
 			}

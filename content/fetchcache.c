@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -46,8 +46,8 @@ static void fetchcache_error_page(struct content *c, const char *error);
  * \param  url       address to fetch
  * \param  callback  function to call when anything interesting happens to
  *                   the new content
- * \param  p1 user   parameter for callback
- * \param  p2 user   parameter for callback
+ * \param  p1        user parameter for callback (may be a pointer or integer)
+ * \param  p2        user parameter for callback (may be a pointer or integer)
  * \param  width     available space
  * \param  height    available space
  * \param  no_error_pages if an error occurs, send CONTENT_MSG_ERROR instead
@@ -62,9 +62,9 @@ static void fetchcache_error_page(struct content *c, const char *error);
  */
 
 struct content * fetchcache(const char *url,
-		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, union content_msg_data data),
-		void *p1, void *p2,
+		void (*callback)(content_msg msg, struct content *c,
+			intptr_t p1, intptr_t p2, union content_msg_data data),
+		intptr_t p1, intptr_t p2,
 		int width, int height,
 		bool no_error_pages,
 		char *post_urlenc,
@@ -122,8 +122,8 @@ struct content * fetchcache(const char *url,
  * \param  referer   referring URL, or 0
  * \param  callback  function to call when anything interesting happens to
  *                   the new content
- * \param  p1 user   parameter for callback
- * \param  p2 user   parameter for callback
+ * \param  p1        user parameter for callback
+ * \param  p2        user parameter for callback
  * \param  width     available space
  * \param  height    available space
  * \param  post_urlenc     url encoded post data, or 0 if none
@@ -134,9 +134,9 @@ struct content * fetchcache(const char *url,
  */
 
 void fetchcache_go(struct content *content, char *referer,
-		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, union content_msg_data data),
-		void *p1, void *p2,
+		void (*callback)(content_msg msg, struct content *c,
+			intptr_t p1, intptr_t p2, union content_msg_data data),
+		intptr_t p1, intptr_t p2,
 		int width, int height,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,

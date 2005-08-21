@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  * Copyright 2004 John Tytgat <John.Tytgat@aaug.net>
  */
@@ -16,6 +16,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -49,7 +50,7 @@ struct browser_window *current_redraw_browser;
 
 
 static void browser_window_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, union content_msg_data data);
+		intptr_t p1, intptr_t p2, union content_msg_data data);
 static void browser_window_convert_to_download(struct browser_window *bw);
 static void browser_window_start_throbber(struct browser_window *bw);
 static void browser_window_stop_throbber(struct browser_window *bw);
@@ -218,7 +219,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
 	bw->time0 = clock();
-	c = fetchcache(url2, browser_window_callback, bw, 0,
+	c = fetchcache(url2, browser_window_callback, (intptr_t) bw, 0,
 			gui_window_get_width(bw->window),
 			gui_window_get_height(bw->window),
 			false,
@@ -241,7 +242,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	bw->download = download;
 
 	fetchcache_go(c, option_send_referer ? referer : 0,
-			browser_window_callback, bw, 0,
+			browser_window_callback, (intptr_t) bw, 0,
 			gui_window_get_width(bw->window),
 			gui_window_get_height(bw->window),
 			post_urlenc, post_multipart, true);
@@ -253,9 +254,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
  */
 
 void browser_window_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, union content_msg_data data)
+		intptr_t p1, intptr_t p2, union content_msg_data data)
 {
-	struct browser_window *bw = p1;
+	struct browser_window *bw = (struct browser_window *) p1;
 	char status[40];
 	char url[256];
 
@@ -270,7 +271,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 				theme_install_start(c);
 				bw->loading_content = 0;
 				content_remove_user(c, browser_window_callback,
-						bw, 0);
+						(intptr_t) bw, 0);
 				browser_window_stop_throbber(bw);
 			}
 #endif
@@ -297,7 +298,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 					content_close(bw->current_content);
 				content_remove_user(bw->current_content,
 						browser_window_callback,
-						bw, 0);
+						(intptr_t) bw, 0);
 			}
 			bw->current_content = c;
 			bw->loading_content = NULL;
@@ -445,7 +446,7 @@ void browser_window_convert_to_download(struct browser_window *bw)
 
 	/* remove content from browser window */
 	bw->loading_content = 0;
-	content_remove_user(c, browser_window_callback, bw, 0);
+	content_remove_user(c, browser_window_callback, (intptr_t) bw, 0);
 	browser_window_stop_throbber(bw);
 }
 
@@ -525,7 +526,7 @@ void browser_window_stop(struct browser_window *bw)
 {
 	if (bw->loading_content) {
 		content_remove_user(bw->loading_content,
-				browser_window_callback, bw, 0);
+				browser_window_callback, (intptr_t) bw, 0);
 		bw->loading_content = 0;
 	}
 
@@ -533,7 +534,7 @@ void browser_window_stop(struct browser_window *bw)
 			bw->current_content->status != CONTENT_STATUS_DONE) {
 		assert(bw->current_content->status == CONTENT_STATUS_READY);
 		content_stop(bw->current_content,
-				browser_window_callback, bw, 0);
+				browser_window_callback, (intptr_t) bw, 0);
 	}
 
 	browser_window_stop_throbber(bw);
@@ -610,7 +611,7 @@ void browser_window_destroy(struct browser_window *bw)
 {
 	if (bw->loading_content) {
 		content_remove_user(bw->loading_content,
-				browser_window_callback, bw, 0);
+				browser_window_callback, (intptr_t) bw, 0);
 		bw->loading_content = 0;
 	}
 
@@ -620,7 +621,7 @@ void browser_window_destroy(struct browser_window *bw)
 				CONTENT_STATUS_DONE)
 			content_close(bw->current_content);
 		content_remove_user(bw->current_content,
-				browser_window_callback, bw, 0);
+				browser_window_callback, (intptr_t) bw, 0);
 	}
 
 	selection_destroy(bw->sel);

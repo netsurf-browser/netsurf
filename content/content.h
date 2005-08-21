@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Philip Pemberton <philpem@users.sourceforge.net>
  */
 
@@ -101,6 +101,7 @@
 #ifndef _NETSURF_DESKTOP_CONTENT_H_
 #define _NETSURF_DESKTOP_CONTENT_H_
 
+#include <stdint.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content_type.h"
 #include "netsurf/css/css.h"
@@ -172,10 +173,10 @@ union content_msg_data {
 /** Linked list of users of a content. */
 struct content_user
 {
-	void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, union content_msg_data data);
-	void *p1;
-	void *p2;
+	void (*callback)(content_msg msg, struct content *c, intptr_t p1,
+			intptr_t p2, union content_msg_data data);
+	intptr_t p1;
+	intptr_t p2;
 	bool stop;
 	struct content_user *next;
 };
@@ -286,23 +287,23 @@ bool content_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour);
 bool content_add_user(struct content *c,
-		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, union content_msg_data data),
-		void *p1, void *p2);
+		void (*callback)(content_msg msg, struct content *c,
+			intptr_t p1, intptr_t p2, union content_msg_data data),
+		intptr_t p1, intptr_t p2);
 struct content_user * content_find_user(struct content *c,
-		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, union content_msg_data data),
-		void *p1, void *p2);
+		void (*callback)(content_msg msg, struct content *c,
+			intptr_t p1, intptr_t p2, union content_msg_data data),
+		intptr_t p1, intptr_t p2);
 void content_remove_user(struct content *c,
-		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, union content_msg_data data),
-		void *p1, void *p2);
+		void (*callback)(content_msg msg, struct content *c,
+			intptr_t p1, intptr_t p2, union content_msg_data data),
+		intptr_t p1, intptr_t p2);
 void content_broadcast(struct content *c, content_msg msg,
 		union content_msg_data data);
 void content_stop(struct content *c,
-		void (*callback)(content_msg msg, struct content *c, void *p1,
-			void *p2, union content_msg_data data),
-		void *p1, void *p2);
+		void (*callback)(content_msg msg, struct content *c,
+			intptr_t p1, intptr_t p2, union content_msg_data data),
+		intptr_t p1, intptr_t p2);
 void content_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params);

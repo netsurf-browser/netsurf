@@ -519,7 +519,9 @@ void url_store_save(const char *file) {
 	const char *thumb_file = "";
 	int thumb_size = 0;
 	FILE *fp;
+#ifdef riscos
 	struct bitmap *bitmap;
+#endif
 
 	fp = fopen(file, "w");
 	if (!fp) {

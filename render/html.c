@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <stdint.h>
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
@@ -38,11 +39,11 @@
 static bool html_set_parser_encoding(struct content *c, const char *encoding);
 static const char *html_detect_encoding(const char *data, unsigned int size);
 static void html_convert_css_callback(content_msg msg, struct content *css,
-		void *p1, void *p2, union content_msg_data data);
+		intptr_t p1, intptr_t p2, union content_msg_data data);
 static bool html_head(struct content *c, xmlNode *head);
 static bool html_find_stylesheets(struct content *c, xmlNode *head);
 static void html_object_callback(content_msg msg, struct content *object,
-		void *p1, void *p2, union content_msg_data data);
+		intptr_t p1, intptr_t p2, union content_msg_data data);
 static void html_object_done(struct box *box, struct content *object,
 			     bool background);
 static void html_object_failed(struct box *box, struct content *content,
@@ -443,30 +444,30 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 
 	c->data.html.stylesheet_content[STYLESHEET_BASE] = fetchcache(
 			default_stylesheet_url,
-			html_convert_css_callback, c,
-			(void *) STYLESHEET_BASE, c->width, c->height,
+			html_convert_css_callback, (intptr_t) c,
+			STYLESHEET_BASE, c->width, c->height,
 			true, 0, 0, false, false);
 	if (!c->data.html.stylesheet_content[STYLESHEET_BASE])
 		return false;
 	c->active++;
 	fetchcache_go(c->data.html.stylesheet_content[STYLESHEET_BASE], 0,
-			html_convert_css_callback, c,
-			(void *) STYLESHEET_BASE, c->width, c->height,
+			html_convert_css_callback, (intptr_t) c,
+			STYLESHEET_BASE, c->width, c->height,
 			0, 0, false);
 
 	if (option_block_ads) {
 		c->data.html.stylesheet_content[STYLESHEET_ADBLOCK] =
 				fetchcache(adblock_stylesheet_url,
-				html_convert_css_callback, c,
-				(void *) STYLESHEET_ADBLOCK, c->width,
+				html_convert_css_callback, (intptr_t) c,
+				STYLESHEET_ADBLOCK, c->width,
 				c->height, true, 0, 0, false, false);
 		if (!c->data.html.stylesheet_content[STYLESHEET_ADBLOCK])
 			return false;
 		c->active++;
 		fetchcache_go(c->data.html.
 				stylesheet_content[STYLESHEET_ADBLOCK],
-				0, html_convert_css_callback, c,
-				(void *) STYLESHEET_ADBLOCK, c->width,
+				0, html_convert_css_callback, (intptr_t) c,
+				STYLESHEET_ADBLOCK, c->width,
 				c->height, 0, 0, false);
 	}
 
@@ -526,7 +527,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 			c->data.html.stylesheet_content = stylesheet_content;
 			c->data.html.stylesheet_content[i] = fetchcache(url,
 					html_convert_css_callback,
-					c, (void *) i, c->width, c->height,
+					(intptr_t) c, i, c->width, c->height,
 					true, 0, 0, false, false);
 			if (!c->data.html.stylesheet_content[i])
 				return false;
@@ -534,7 +535,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 			fetchcache_go(c->data.html.stylesheet_content[i],
 					c->url,
 					html_convert_css_callback,
-					c, (void *) i, c->width, c->height,
+					(intptr_t) c, i, c->width, c->height,
 					0, 0, false);
 			free(url);
 			i++;
@@ -601,7 +602,7 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 				c->height)) {
 			if (!content_add_user(c->data.html.stylesheet_content[STYLESHEET_STYLE],
 					html_convert_css_callback,
-					c, (void *) STYLESHEET_STYLE)) {
+					(intptr_t) c, STYLESHEET_STYLE)) {
 				/* no memory */
 				c->data.html.stylesheet_content[STYLESHEET_STYLE] = 0;
 				return false;
@@ -657,10 +658,10 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
  */
 
 void html_convert_css_callback(content_msg msg, struct content *css,
-		void *p1, void *p2, union content_msg_data data)
+		intptr_t p1, intptr_t p2, union content_msg_data data)
 {
-	struct content *c = p1;
-	unsigned int i = (unsigned int) p2;
+	struct content *c = (struct content *) p1;
+	unsigned int i = p2;
 
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
@@ -671,7 +672,9 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 				content_add_error(c, "NotCSS", 0);
 				content_set_status(c, messages_get("NotCSS"));
 				content_broadcast(c, CONTENT_MSG_STATUS, data);
-				content_remove_user(css, html_convert_css_callback, c, (void*)i);
+				content_remove_user(css,
+						html_convert_css_callback,
+						(intptr_t) c, i);
 				if (!css->user_list) {
 					/* we were the only user and we
 					 * don't want this content, so
@@ -711,14 +714,14 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 			c->data.html.stylesheet_content[i] = fetchcache(
 					data.redirect,
 					html_convert_css_callback,
-					c, (void *) i, css->width, css->height,
+					(intptr_t) c, i, css->width, css->height,
 					true, 0, 0, false, false);
 			if (c->data.html.stylesheet_content[i]) {
 				c->active++;
 				fetchcache_go(c->data.html.stylesheet_content[i],
 						c->url,
 						html_convert_css_callback,
-						c, (void *) i, css->width,
+						(intptr_t) c, i, css->width,
 						css->height, 0, 0, false);
 			}
 			break;
@@ -767,7 +770,7 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 
 	/* initialise fetch */
 	c_fetch = fetchcache(url, html_object_callback,
-			c, (void *) i, available_width, available_height,
+			(intptr_t) c, i, available_width, available_height,
 			true, 0, 0, false, false);
 	if (!c_fetch)
 		return false;
@@ -776,13 +779,15 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 	object = talloc_realloc(c, c->data.html.object,
 			struct content_html_object, i + 1);
 	if (!object) {
-		content_remove_user(c_fetch, html_object_callback, c, (void*)i);
+		content_remove_user(c_fetch, html_object_callback,
+				(intptr_t) c, i);
 		return false;
 	}
 	c->data.html.object = object;
 	c->data.html.object[i].url = talloc_strdup(c, url);
 	if (!c->data.html.object[i].url) {
-		content_remove_user(c_fetch, html_object_callback, c, (void*)i);
+		content_remove_user(c_fetch, html_object_callback,
+				(intptr_t) c, i);
 		return false;
 	}
 	c->data.html.object[i].box = box;
@@ -797,7 +802,7 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 
 	/* start fetch */
 	fetchcache_go(c_fetch, c->url,
-			html_object_callback, c, (void *) i,
+			html_object_callback, (intptr_t) c, i,
 			available_width, available_height,
 			0, 0, false);
 
@@ -810,10 +815,10 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
  */
 
 void html_object_callback(content_msg msg, struct content *object,
-		void *p1, void *p2, union content_msg_data data)
+		intptr_t p1, intptr_t p2, union content_msg_data data)
 {
-	struct content *c = p1;
-	unsigned int i = (unsigned int) p2;
+	struct content *c = (struct content *) p1;
+	unsigned int i = p2;
 	int x, y;
 	struct box *box = c->data.html.object[i].box;
 
@@ -836,8 +841,8 @@ void html_object_callback(content_msg msg, struct content *object,
 			content_add_error(c, "?", 0);
 			content_set_status(c, messages_get("BadObject"));
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
-			content_remove_user(object, html_object_callback, c,
-					(void *) i);
+			content_remove_user(object, html_object_callback,
+					(intptr_t) c, i);
 			html_object_failed(box, c,
 					c->data.html.object[i].background);
 			break;
@@ -888,7 +893,7 @@ void html_object_callback(content_msg msg, struct content *object,
 				c->data.html.object[i].content = fetchcache(
 						data.redirect,
 						html_object_callback,
-						c, (void * ) i, 0, 0, true,
+						(intptr_t) c, i, 0, 0, true,
 						0, 0, false, false);
 				if (!c->data.html.object[i].content) {
 					/** \todo  report oom */
@@ -898,7 +903,7 @@ void html_object_callback(content_msg msg, struct content *object,
 							content,
 							c->url,
 							html_object_callback,
-							c, (void * ) i,
+							(intptr_t) c, i,
 							0, 0,
 							0, 0, false);
 				}
@@ -1129,10 +1134,10 @@ void html_stop(struct content *c)
 			; /* already loaded: do nothing */
 		else if (object->status == CONTENT_STATUS_READY)
 			content_stop(object, html_object_callback,
-					c, (void *) i);
+					(intptr_t) c, i);
 		else {
 			content_remove_user(c->data.html.object[i].content,
-					 html_object_callback, c, (void *) i);
+					 html_object_callback, (intptr_t) c, i);
 			c->data.html.object[i].content = 0;
 		}
 	}
@@ -1178,7 +1183,7 @@ void html_destroy(struct content *c)
 				content_remove_user(c->data.html.
 						stylesheet_content[i],
 						html_convert_css_callback,
-						c, (void *) i);
+						(intptr_t) c, i);
 		}
 	}
 
@@ -1192,7 +1197,7 @@ void html_destroy(struct content *c)
 		LOG(("object %i %p", i, c->data.html.object[i].content));
 		if (c->data.html.object[i].content)
 			content_remove_user(c->data.html.object[i].content,
-					 html_object_callback, c, (void*)i);
+					 html_object_callback, (intptr_t) c, i);
 	}
 }
 
