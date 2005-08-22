@@ -129,7 +129,8 @@ bool box_normalise_block(struct box *block, struct content *c)
 			if (!style)
 				return false;
 			css_cascade(style, &css_blank_style);
-			table = box_create(style, block->href, 0, 0, c);
+			table = box_create(style, block->href, block->target,
+					0, 0, c);
 			if (!table) {
 				css_free_style(style);
 				return false;
@@ -212,8 +213,8 @@ bool box_normalise_table(struct box *table, struct content * c)
 				return false;
 			}
 			css_cascade(style, &css_blank_style);
-			row_group = box_create(style, table->href, 0,
-					0, c);
+			row_group = box_create(style, table->href,
+					table->target, 0, 0, c);
 			if (!row_group) {
 				free(col_info.spans);
 				css_free_style(style);
@@ -384,8 +385,8 @@ bool box_normalise_table_row_group(struct box *row_group,
 			if (!style)
 				return false;
 			css_cascade(style, &css_blank_style);
-			row = box_create(style, row_group->href, 0,
-					0, c);
+			row = box_create(style, row_group->href,
+					row_group->target, 0, 0, c);
 			if (!row) {
 				css_free_style(style);
 				return false;
@@ -483,7 +484,7 @@ bool box_normalise_table_row(struct box *row,
 			if (!style)
 				return false;
 			css_cascade(style, &css_blank_style);
-			cell = box_create(style, row->href, 0, 0,
+			cell = box_create(style, row->href, row->target, 0, 0,
 					c);
 			if (!cell) {
 				css_free_style(style);

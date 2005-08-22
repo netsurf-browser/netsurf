@@ -78,15 +78,15 @@ const char *TARGET_TOP = "_top";
 static bool convert_xml_to_box(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		char *href, char *title);
+		char *href, const char *target, char *title);
 bool box_construct_element(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		char *href, char *title);
+		char *href, const char *target, char *title);
 bool box_construct_text(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		char *href, char *title);
+		char *href, const char *target, char *title);
 static struct css_style * box_get_style(struct content *c,
 		struct css_style *parent_style,
 		xmlNode *n);
@@ -179,7 +179,7 @@ bool xml_to_box(xmlNode *n, struct content *c)
 	c->data.html.object = 0;
 
 	if (!convert_xml_to_box(n, c, c->data.html.style, &root,
-			&inline_container, 0, 0))
+			&inline_container, 0, 0, 0))
 		return false;
 	if (!box_normalise_block(&root, c))
 		return false;
@@ -222,22 +222,24 @@ static const box_type box_map[] = {
  * \param  parent        parent in box tree
  * \param  inline_container  current inline container box, or 0, updated to
  *                       new current inline container on exit
- * \param  status        status for forms etc.
+ * \param  href          current link URL, or 0 if not in a link
+ * \param  target        current link target, or 0 if none
+ * \param  title         current title, or 0 if none
  * \return  true on success, false on memory exhaustion
  */
 
 bool convert_xml_to_box(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		char *href, char *title)
+		char *href, const char *target, char *title)
 {
 	switch (n->type) {
 	case XML_ELEMENT_NODE:
 		return box_construct_element(n, content, parent_style, parent,
-				inline_container, href, title);
+				inline_container, href, target, title);
 	case XML_TEXT_NODE:
 		return box_construct_text(n, content, parent_style, parent,
-				inline_container, href, title);
+				inline_container, href, target, title);
 	default:
 		/* not an element or text node: ignore it (eg. comment) */
 		return true;
@@ -254,14 +256,16 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
  * \param  parent        parent in box tree
  * \param  inline_container  current inline container box, or 0, updated to
  *                       new current inline container on exit
- * \param  status        status for forms etc.
+ * \param  href          current link URL, or 0 if not in a link
+ * \param  target        current link target, or 0 if none
+ * \param  title         current title, or 0 if none
  * \return  true on success, false on memory exhaustion
  */
 
 bool box_construct_element(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		char *href, char *title)
+		char *href, const char *target, char *title)
 {
 	bool convert_children = true;
 	char *id = 0;
@@ -308,7 +312,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		return false;
 
 	/* create box for this element */
-	box = box_create(style, href, title, id, content);
+	box = box_create(style, href, target, title, id, content);
 	if (!box)
 		return false;
 	/* set box type from style */
@@ -323,6 +327,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		if (!element->convert(n, content, box, &convert_children))
 			return false;
 		href = box->href;
+		target = box->target;
 	}
 	if (style->display == CSS_DISPLAY_NONE) {
 		talloc_free(style);
@@ -337,7 +342,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			style->float_ == CSS_FLOAT_LEFT ||
 			style->float_ == CSS_FLOAT_RIGHT)) {
 		/* this is the first inline in a block: make a container */
-		*inline_container = box_create(0, 0, 0, 0, content);
+		*inline_container = box_create(0, 0, 0, 0, 0, content);
 		if (!*inline_container)
 			return false;
 		(*inline_container)->type = BOX_INLINE_CONTAINER;
@@ -351,9 +356,9 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			for (c = n->children; c; c = c->next)
 				if (!convert_xml_to_box(c, content, style,
 						parent, inline_container,
-						href, title))
+						href, target, title))
 					return false;
-			inline_end = box_create(style, href, title, id,
+			inline_end = box_create(style, href, target, title, id,
 					content);
 			if (!inline_end)
 				return false;
@@ -371,7 +376,8 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		inline_container_c = 0;
 		for (c = n->children; convert_children && c; c = c->next)
 			if (!convert_xml_to_box(c, content, style, box,
-					&inline_container_c, href, title))
+					&inline_container_c,
+					href, target, title))
 				return false;
 	} else {
 		if (style->float_ == CSS_FLOAT_LEFT ||
@@ -380,7 +386,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			 * current node */
 			assert(style->float_ == CSS_FLOAT_LEFT ||
 					style->float_ == CSS_FLOAT_RIGHT);
-			parent = box_create(0, href, title, 0, content);
+			parent = box_create(0, href, target, title, 0, content);
 			if (!parent)
 				return false;
 			if (style->float_ == CSS_FLOAT_LEFT)
@@ -398,7 +404,8 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		inline_container_c = 0;
 		for (c = n->children; convert_children && c; c = c->next)
 			if (!convert_xml_to_box(c, content, style, box,
-					&inline_container_c, href, title))
+					&inline_container_c,
+					href, target, title))
 				return false;
 		if (style->float_ == CSS_FLOAT_NONE)
 			/* new inline container unless this is a float */
@@ -503,14 +510,16 @@ bool box_construct_element(xmlNode *n, struct content *content,
  * \param  parent        parent in box tree
  * \param  inline_container  current inline container box, or 0, updated to
  *                       new current inline container on exit
- * \param  status        status for forms etc.
+ * \param  href          current link URL, or 0 if not in a link
+ * \param  target        current link target, or 0 if none
+ * \param  title         current title, or 0 if none
  * \return  true on success, false on memory exhaustion
  */
 
 bool box_construct_text(xmlNode *n, struct content *content,
 		struct css_style *parent_style,
 		struct box *parent, struct box **inline_container,
-		char *href, char *title)
+		char *href, const char *target, char *title)
 {
 	struct box *box = 0;
 
@@ -539,7 +548,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 
 		if (!*inline_container) {
 			/* this is the first inline node: make a container */
-			*inline_container = box_create(0, 0, 0, 0, content);
+			*inline_container = box_create(0, 0, 0, 0, 0, content);
 			if (!*inline_container) {
 				free(text);
 				return false;
@@ -548,7 +557,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 			box_add_child(parent, *inline_container);
 		}
 
-		box = box_create(parent_style, href, title, 0, content);
+		box = box_create(parent_style, href, target, title, 0, content);
 		if (!box) {
 			free(text);
 			return false;
@@ -614,7 +623,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 			char old = current[len];
 			current[len] = 0;
 			if (!*inline_container) {
-				*inline_container = box_create(0, 0, 0, 0,
+				*inline_container = box_create(0, 0, 0, 0, 0,
 						content);
 				if (!*inline_container) {
 					free(text);
@@ -624,7 +633,8 @@ bool box_construct_text(xmlNode *n, struct content *content,
 						BOX_INLINE_CONTAINER;
 				box_add_child(parent, *inline_container);
 			}
-			box = box_create(parent_style, href, title, 0, content);
+			box = box_create(parent_style, href, target, title, 0,
+					content);
 			if (!box) {
 				free(text);
 				return false;
@@ -1330,7 +1340,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	/* convert children and place into fallback */
 	for (c = n->children; c; c = c->next) {
 		if (!convert_xml_to_box(c, content, box->style, box,
-				&inline_container, 0, 0))
+				&inline_container, 0, 0, 0))
 			return false;
 	}
 	box->fallback = box->children;
@@ -1563,7 +1573,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 						row_height[row].value;
 			object_height = row_style->height.length.value;
 		}*/
-		row_box = box_create(row_style, 0, 0, 0, content);
+		row_box = box_create(row_style, 0, 0, 0, 0, content);
 		if (!row_box)
 			return false;
 
@@ -1590,7 +1600,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 				return false;
 			cell_style->overflow = CSS_OVERFLOW_AUTO;
 
-			cell_box = box_create(cell_style, 0, 0, 0, content);
+			cell_box = box_create(cell_style, 0, 0, 0, 0, content);
 			if (!cell_box)
 				return false;
 			cell_box->type = BOX_TABLE_CELL;
@@ -1599,7 +1609,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 			if (strcmp((const char *) c->name, "frameset") == 0) {
 				LOG(("frameset"));
 				frameset_box = box_create(cell_style, 0, 0, 0,
-						content);
+						0, content);
 				if (!frameset_box)
 					return false;
 				if (!box_frameset(c, content, frameset_box, 0))
@@ -1809,11 +1819,12 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		struct box *inline_container, *inline_box;
 		if (!box_button(n, content, box, 0))
 			goto no_memory;
-		inline_container = box_create(0, 0, 0, 0, content);
+		inline_container = box_create(0, 0, 0, 0, 0, content);
 		if (!inline_container)
 			goto no_memory;
 		inline_container->type = BOX_INLINE_CONTAINER;
-		inline_box = box_create(box->style, 0, box->title, 0, content);
+		inline_box = box_create(box->style, 0, 0, box->title, 0,
+				content);
 		if (!inline_box)
 			goto no_memory;
 		inline_box->type = BOX_TEXT;
@@ -1836,11 +1847,12 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		struct box *inline_container, *inline_box;
 		if (!box_button(n, content, box, 0))
 			goto no_memory;
-		inline_container = box_create(0, 0, 0, 0, content);
+		inline_container = box_create(0, 0, 0, 0, 0, content);
 		if (!inline_container)
 			goto no_memory;
 		inline_container->type = BOX_INLINE_CONTAINER;
-		inline_box = box_create(box->style, 0, box->title, 0, content);
+		inline_box = box_create(box->style, 0, 0, box->title, 0,
+				content);
 		if (!inline_box)
 			goto no_memory;
 		inline_box->type = BOX_TEXT;
@@ -1951,11 +1963,11 @@ bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
 	}
 	box->gadget->length = strlen(box->gadget->value);
 
-	inline_container = box_create(0, 0, 0, 0, content);
+	inline_container = box_create(0, 0, 0, 0, 0, content);
 	if (!inline_container)
 		return 0;
 	inline_container->type = BOX_INLINE_CONTAINER;
-	inline_box = box_create(box->style, 0, box->title, 0, content);
+	inline_box = box_create(box->style, 0, 0, box->title, 0, content);
 	if (!inline_box)
 		return 0;
 	inline_box->type = BOX_TEXT;
@@ -2092,11 +2104,11 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	box->gadget = gadget;
 	gadget->box = box;
 
-	inline_container = box_create(0, 0, 0, 0, content);
+	inline_container = box_create(0, 0, 0, 0, 0, content);
 	if (!inline_container)
 		goto no_memory;
 	inline_container->type = BOX_INLINE_CONTAINER;
-	inline_box = box_create(box->style, 0, box->title, 0, content);
+	inline_box = box_create(box->style, 0, 0, box->title, 0, content);
 	if (!inline_box)
 		goto no_memory;
 	inline_box->type = BOX_TEXT;
@@ -2213,7 +2225,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 			return false;
 	}
 
-	inline_container = box_create(0, 0, box->title, 0, content);
+	inline_container = box_create(0, 0, 0, box->title, 0, content);
 	if (!inline_container)
 		return false;
 	inline_container->type = BOX_INLINE_CONTAINER;
@@ -2229,7 +2241,8 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 			return false;
 		}
 
-		inline_box = box_create(box->style, 0, box->title, 0, content);
+		inline_box = box_create(box->style, 0, 0, box->title, 0,
+				content);
 		if (!inline_box)
 			return false;
 		inline_box->type = BOX_TEXT;
@@ -2243,7 +2256,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 			break;
 
 		/* BOX_BR */
-		br_box = box_create(box->style, 0, box->title, 0, content);
+		br_box = box_create(box->style, 0, 0, box->title, 0, content);
 		if (!br_box)
 			return false;
 		br_box->type = BOX_BR;

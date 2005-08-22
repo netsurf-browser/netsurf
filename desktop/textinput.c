@@ -1480,7 +1480,7 @@ struct box *textarea_insert_break(struct browser_window *bw, struct box *text_bo
 		return NULL;
 	}
 
-	new_br = box_create(text_box->style, 0, text_box->title, 0,
+	new_br = box_create(text_box->style, 0, 0, text_box->title, 0,
 			bw->current_content);
 	new_text = talloc(bw->current_content, struct box);
 	if (!new_text) {

@@ -32,6 +32,7 @@ static bool box_contains_point(struct box *box, int x, int y);
  *
  * \param  style     style for the box (not copied)
  * \param  href      href for the box (not copied), or 0
+ * \param  target    target for the box (not copied), or 0
  * \param  title     title for the box (not copied), or 0
  * \param  id        id for the box (not copied), or 0
  * \param  context   context for allocations
@@ -39,7 +40,7 @@ static bool box_contains_point(struct box *box, int x, int y);
  */
 
 struct box * box_create(struct css_style *style,
-		char *href, char *title, char *id,
+		char *href, const char *target, char *title, char *id,
 		void *context)
 {
 	unsigned int i;
@@ -66,7 +67,7 @@ struct box * box_create(struct css_style *style,
 	box->space = 0;
 	box->clone = 0;
 	box->href = href;
-	box->target = 0;
+	box->target = target;
 	box->title = title;
 	box->columns = 1;
 	box->rows = 1;

@@ -246,7 +246,7 @@ extern const char *TARGET_TOP;
 
 
 struct box * box_create(struct css_style *style,
-		char *href, char *title,
+		char *href, const char *target, char *title,
 		char *id, void *context);
 void box_add_child(struct box *parent, struct box *child);
 void box_insert_sibling(struct box *box, struct box *new_box);
