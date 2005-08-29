@@ -126,9 +126,7 @@ font[size="-1"] { font-size: smaller; }
 font[size="+1"] { font-size: larger; }
 
 hr {	display: block; background-color: #000; height: 1px;
-	margin-left:auto; margin-right: auto;
-	margin-top:4px; margin-bottom:4px;
-	border-top-width: medium; border-color: #d9d9d9; border-style: ridge; }
+	margin: 4px auto; border-top: medium #d9d9d9 ridge; }
 hr[align=left] { margin-left: 0; }
 hr[align=center] { margin-left: auto; margin-right: auto; }
 hr[align=right] { margin-right: 0; }
