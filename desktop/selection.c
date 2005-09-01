@@ -20,6 +20,7 @@
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -35,6 +36,13 @@ struct rdw_info {
 	int y1;
 };
 
+
+/* text selection currently being saved */
+struct save_state {
+	char *block;
+	size_t length;
+	size_t alloc;
+};
 
 static inline bool after(const struct box *a, unsigned a_idx, unsigned b);
 static inline bool before(const struct box *a, unsigned a_idx, unsigned b);
@@ -397,34 +405,35 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 {
 	size_t box_length = box->length + box->space;
 
-	if (box->byte_offset >= start_idx &&
-		box->byte_offset + box_length <= end_idx) {
-
-		/* fully enclosed */
-		*start_offset = 0;
-		*end_offset = box_length;
-		return true;
+	if (box_length > 0) {
+		if (box->byte_offset >= start_idx &&
+			box->byte_offset + box_length <= end_idx) {
+	
+			/* fully enclosed */
+			*start_offset = 0;
+			*end_offset = box_length;
+			return true;
+		}
+		else if (box->byte_offset + box_length > start_idx &&
+			box->byte_offset < end_idx) {
+			/* partly enclosed */
+			int offset = 0;
+			int len;
+	
+			if (box->byte_offset < start_idx)
+				offset = start_idx - box->byte_offset;
+	
+			len = box_length - offset;
+	
+			if (box->byte_offset + box_length > end_idx)
+				len = end_idx - (box->byte_offset + offset);
+	
+			*start_offset = offset;
+			*end_offset = offset + len;
+	
+			return true;
+		}
 	}
-	else if (box->byte_offset + box_length > start_idx &&
-		box->byte_offset < end_idx) {
-		/* partly enclosed */
-		int offset = 0;
-		int len;
-
-		if (box->byte_offset < start_idx)
-			offset = start_idx - box->byte_offset;
-
-		len = box_length - offset;
-
-		if (box->byte_offset + box_length > end_idx)
-			len = end_idx - (box->byte_offset + offset);
-
-		*start_offset = offset;
-		*end_offset = offset + len;
-
-		return true;
-	}
-
 	return false;
 }
 
@@ -812,21 +821,46 @@ bool selection_highlighted(struct selection *s, struct box *box,
 
 bool save_handler(struct box *box, int offset, size_t length, void *handle)
 {
-	FILE *out = (FILE*)handle;
-	assert(out);
+	struct save_state *sv = handle;
+	size_t new_length;
+	const char *text;
+	int space = 0;
+	size_t len;
+
+	assert(sv);
 
 	if (box) {
-		size_t len = min(length, box->length - offset);
+		len = min(length, box->length - offset);
+		text = box->text + offset;
 
-		if (fwrite(box->text + offset, 1, len, out) < len)
-			return false;
-
-		if (box->space && length > len)
-			return (EOF != fputc(' ', out));
-
-		return true;
+		if (box->space && length > len) space = 1;
 	}
-	return (EOF != fputc('\n', out));
+	else {
+		text = "\n";
+		len = 1;
+	}
+
+	new_length = sv->length + len + space;
+	if (new_length >= sv->alloc) {
+		size_t new_alloc = sv->alloc + (sv->alloc / 4);
+		char *new_block;
+
+		if (new_alloc < new_length) new_alloc = new_length;
+
+		new_block = realloc(sv->block, new_alloc);
+		if (!new_block) return false;
+
+		sv->block = new_block;
+		sv->alloc = new_alloc;
+	}
+
+	memcpy(sv->block + sv->length, text, len);
+	sv->length += len;
+
+	if (space)
+		sv->block[sv->length++] = ' ';
+
+	return true;
 }
 
 
@@ -840,11 +874,30 @@ bool save_handler(struct box *box, int offset, size_t length, void *handle)
 
 bool selection_save_text(struct selection *s, const char *path)
 {
-	FILE *out = fopen(path, "w");
-	if (!out) return false;
+	struct save_state sv = { NULL, 0, 0 };
+	utf8_convert_ret ret;
+	char *result;
+	FILE *out;
 
-	selection_traverse(s, save_handler, out);
+	if (!selection_traverse(s, save_handler, &sv)) {
+		free(sv.block);
+		return false;
+	}
 
-	fclose(out);
-	return true;
+	ret = utf8_to_local_encoding(sv.block, sv.length, &result);
+	free(sv.block);
+
+	if (ret != UTF8_CONVERT_OK) {
+		LOG(("failed to convert to local encoding, return %d", ret));
+		return false;
+	}
+
+	out = fopen(path, "w");
+	if (out) {
+		int res = fputs(result, out);
+		fclose(out);
+		return (res != EOF);
+	}
+
+	return false;
 }
