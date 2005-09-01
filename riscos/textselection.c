@@ -170,11 +170,12 @@ void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
 
 bool copy_handler(struct box *box, int offset, size_t length, void *handle)
 {
-	size_t len = min(length, box->length - offset);
-	const char *text;
 	bool space = false;
+	const char *text;
+	size_t len;
 
 	if (box) {
+    	len = min(length, box->length - offset);
 		text = box->text + offset;
 		if (box->space && length > len) space = true;
 	}
