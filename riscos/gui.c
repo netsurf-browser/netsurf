@@ -218,6 +218,7 @@ static char *ro_gui_uri_file_parse(const char *file_name, char **uri_title);
 static bool ro_gui_uri_file_parse_line(FILE *fp, char *b);
 static char *ro_gui_url_file_parse(const char *file_name);
 static char *ro_gui_ieurl_file_parse(const char *file_name);
+static void ro_msg_terminate_filename(wimp_full_message_data_xfer *message);
 static void ro_msg_datasave(wimp_message *message);
 static void ro_msg_datasave_ack(wimp_message *message);
 static void ro_msg_dataopen(wimp_message *block);
@@ -1218,6 +1219,8 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			break;
 
 		case message_DATA_LOAD:
+			ro_msg_terminate_filename((wimp_full_message_data_xfer*)message);
+
 			if (event == wimp_USER_MESSAGE_ACKNOWLEDGE) {
 #ifdef WITH_PRINT
 				if (print_current_window)
@@ -1350,6 +1353,26 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			netsurf_quit = true;
 			break;
 	}
+}
+
+
+/**
+ * Ensure that the filename in a data transfer message is NUL terminated
+ * (some applications, especially BASIC programs use CR)
+ *
+ * \param  message  message to be corrected
+ */
+
+void ro_msg_terminate_filename(wimp_full_message_data_xfer *message)
+{
+	const char *ep = (char*)message + message->size;
+	char *p = message->file_name;
+
+	if ((size_t)message->size >= sizeof(*message))
+		ep = (char*)message + sizeof(*message) - 1;
+
+	while (p < ep && *p >= ' ') p++;
+	*p = '\0';
 }
 
 
@@ -1679,6 +1702,8 @@ void ro_msg_datasave(wimp_message *message)
 {
 	wimp_full_message_data_xfer *dataxfer = (wimp_full_message_data_xfer*)message;
 
+	ro_msg_terminate_filename(dataxfer);
+
 	switch (dataxfer->file_type) {
 		case FILETYPE_ACORN_URI:
 		case FILETYPE_ANT_URL:
@@ -1718,6 +1743,8 @@ void ro_msg_datasave(wimp_message *message)
 
 void ro_msg_datasave_ack(wimp_message *message)
 {
+	ro_msg_terminate_filename((wimp_full_message_data_xfer*)message);
+
 #ifdef WITH_PRINT
 	if (print_ack(message))
 		return;
