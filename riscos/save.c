@@ -746,6 +746,7 @@ bool ro_gui_save_complete(struct content *c, char *path)
 		warn_user("SaveError", strerror(errno));
 		return false;
 	}
+	fprintf(fp, "IconSprites <Obey$Dir>.!Sprites\n");
 	fprintf(fp, "Filer_Run <Obey$Dir>.index\n");
 	fclose(fp);
 	error = xosfile_set_type(buf, 0xfeb);
