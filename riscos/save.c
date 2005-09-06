@@ -960,6 +960,12 @@ void ro_gui_save_set_state(struct content *c, gui_save_type save_type,
 		sprintf(icon_buf, "file_%.3x", gui_save_filetype);
 
 		error = ro_gui_wimp_get_sprite(icon_buf, &sprite);
+		if (error && error->errnum == error_SPRITE_OP_DOESNT_EXIST) {
+			/* try the 'unknown' filetype sprite has a fallback */
+			memcpy(icon_buf, "file_xxx", 9);
+			error = ro_gui_wimp_get_sprite(icon_buf, &sprite);
+		}
+
 		if (error) {
 			LOG(("ro_gui_wimp_get_sprite: 0x%x: %s",
 					error->errnum, error->errmess));
