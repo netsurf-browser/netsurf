@@ -13,6 +13,7 @@
  * page at a small scale.
  */
 
+#include <assert.h>
 #include <string.h>
 #include <swis.h>
 #include "rufl.h"
@@ -65,12 +66,16 @@ static void thumbnail_restore_output(struct thumbnail_save_area *save_area);
  * \param  url      the URL the thumnail belongs to, or NULL
  */
 bool thumbnail_create(struct content *content, struct bitmap *bitmap,
-		const char *url) {
+		const char *url)
+{
 	float scale = 1.0;
 	struct thumbnail_save_area *save_area;
 	osspriteop_area *sprite_area = NULL;
 	osspriteop_header *sprite_header = NULL;
 	_kernel_oserror *error;
+
+	assert(content);
+	assert(bitmap);
 
 	/* check if we have access to 32bpp sprites natively */
 	if (thumbnail_32bpp_available == -1)
@@ -79,12 +84,14 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	/* if we don't support 32bpp sprites then we redirect to an 8bpp
 	 * image and then convert back. */
 	if (thumbnail_32bpp_available != 1) {
-	  	sprite_area = thumbnail_create_8bpp(bitmap);
-	  	if (!sprite_area)
-	  		return false;
+		sprite_area = thumbnail_create_8bpp(bitmap);
+		if (!sprite_area)
+			return false;
 		sprite_header = (osspriteop_header *)(sprite_area + 1);
 	} else {
-		bitmap_get_buffer(bitmap);
+		char *pixbufp = bitmap_get_buffer(bitmap);
+		if (!pixbufp || !bitmap->sprite_area)
+			return false;
 		sprite_area = bitmap->sprite_area;
 		sprite_header = (osspriteop_header *)(sprite_area + 1);
 	}
@@ -100,7 +107,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 
 	/* switch output and redraw */
 	save_area = thumbnail_switch_output(sprite_area, sprite_header);
-	if (save_area == NULL) {
+	if (!save_area) {
 		if (thumbnail_32bpp_available != 1)
 			free(sprite_area);
 		return false;
@@ -116,7 +123,11 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 
 	/* if we changed to 8bpp then go back to 32bpp */
 	if (thumbnail_32bpp_available != 1) {
-		bitmap_get_buffer(bitmap);
+		char *pixbufp = bitmap_get_buffer(bitmap);
+		if (!pixbufp || !bitmap->sprite_area) {
+			free(sprite_area);
+			return false;
+		}
 		error = _swix(Tinct_ConvertSprite, _INR(2,3),
 				sprite_header,
 				(osspriteop_header *)(bitmap->sprite_area + 1));
@@ -124,11 +135,11 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 		if (error)
 			return false;
 	}
-	
+
 	/* register the thumbnail with the URL */
 	if (url)
 		url_store_add_thumbnail(url, bitmap);
-	
+
 	bitmap_modified(bitmap);
 	bitmap->persistent = true;
 	return true;
@@ -141,12 +152,13 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
  * \param  bitmap  the bitmap to convert
  * \return a sprite area containing an 8bpp sprite
  */
-osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap) {
+osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap)
+{
 	struct thumbnail_save_area *save_area;
 	osspriteop_area *sprite_area = NULL;
 	osspriteop_header *sprite_header = NULL;
 
-  	sprite_area = thumbnail_create_8bpp(bitmap);
+ 	sprite_area = thumbnail_create_8bpp(bitmap);
 	if (!sprite_area)
 		return NULL;
 	sprite_header = (osspriteop_header *)(sprite_area + 1);
@@ -164,7 +176,7 @@ osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap) {
 			0, 0,
 			tinct_ERROR_DIFFUSE);
 	thumbnail_restore_output(save_area);
-	
+
 	return sprite_area;
 }
 
@@ -175,7 +187,8 @@ osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap) {
  * \param  bitmap  the bitmap to clone the size of
  * \return a sprite area containing an 8bpp sprite
  */
-osspriteop_area *thumbnail_create_8bpp(struct bitmap *bitmap) {
+osspriteop_area *thumbnail_create_8bpp(struct bitmap *bitmap)
+{
 	unsigned int area_size;
 	osspriteop_area *sprite_area = NULL;
 	osspriteop_header *sprite_header = NULL;
@@ -223,7 +236,8 @@ osspriteop_area *thumbnail_create_8bpp(struct bitmap *bitmap) {
  * Rather than using Wimp_ReadSysInfo we test if 32bpp sprites are available
  * in case the user has a 3rd party patch to enable them.
  */
-static void thumbnail_test(void) {
+static void thumbnail_test(void)
+{
 	unsigned int area_size;
 	osspriteop_area *sprite_area;
 
@@ -252,7 +266,8 @@ static void thumbnail_test(void) {
  */
 static struct thumbnail_save_area* thumbnail_switch_output(
 		osspriteop_area *sprite_area,
-		osspriteop_header *sprite_header) {
+		osspriteop_header *sprite_header)
+{
 	struct thumbnail_save_area *save_area;
 	int size;
 
@@ -291,8 +306,8 @@ static struct thumbnail_save_area* thumbnail_switch_output(
 /**
  * Restores output to the specified context, and destroys it.
  */
-static void thumbnail_restore_output(struct thumbnail_save_area *save_area) {
-
+static void thumbnail_restore_output(struct thumbnail_save_area *save_area)
+{
 	/* we don't care if we err, as there's nothing we can do about it */
 	xosspriteop_switch_output_to_sprite(osspriteop_PTR,
 			(osspriteop_area *)save_area->context1,

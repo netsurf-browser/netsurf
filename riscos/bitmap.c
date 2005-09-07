@@ -73,12 +73,12 @@ struct bitmap_compressed_header {
 char bitmap_filename[256];
 
 
-bool bitmap_initialise(struct bitmap *bitmap, bool clear);
-void bitmap_decompress(struct bitmap *bitmap);
-void bitmap_compress(struct bitmap *bitmap);
-void bitmap_load_file(struct bitmap *bitmap);
-void bitmap_save_file(struct bitmap *bitmap);
-void bitmap_delete_file(struct bitmap *bitmap);
+static bool bitmap_initialise(struct bitmap *bitmap, bool clear);
+static void bitmap_decompress(struct bitmap *bitmap);
+static void bitmap_compress(struct bitmap *bitmap);
+static void bitmap_load_file(struct bitmap *bitmap);
+static void bitmap_save_file(struct bitmap *bitmap);
+static void bitmap_delete_file(struct bitmap *bitmap);
 
 
 /**
@@ -127,7 +127,7 @@ void bitmap_initialise_memory(void)
 	} else {
 		compressed_size = (option_image_memory_compressed << 10);
 	}
-	
+
 	/* set our values. No fixed buffers here, ho hum. */
 	bitmap_direct_size = direct_size;
 	bitmap_compressed_size = compressed_size;
@@ -145,10 +145,10 @@ void bitmap_initialise_memory(void)
 void bitmap_quit(void)
 {
 	struct bitmap *bitmap;
-	
+
 	for (bitmap = bitmap_head; bitmap; bitmap = bitmap->next)
 		if ((bitmap->persistent) && (bitmap->filename[0] == '\0'))
-			bitmap_save_file(bitmap); 
+			bitmap_save_file(bitmap);
 }
 
 
@@ -372,7 +372,7 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
 		return ((char *) (bitmap->sprite_area)) + 16 + 44;
 
 	/* load and/or decompress the image */
-	if (bitmap->filename[0])
+	if (bitmap->filename && bitmap->filename[0])
 		bitmap_load_file(bitmap);
 	if (bitmap->compressed)
 		bitmap_decompress(bitmap);
@@ -409,9 +409,9 @@ size_t bitmap_get_rowstride(struct bitmap *bitmap)
 void bitmap_destroy(struct bitmap *bitmap)
 {
   	unsigned int area_size;
- 
+
 	assert(bitmap);
-	
+
 	/* delink from list */
 	bitmap_maintenance = true;
 	if (bitmap_head == bitmap)
@@ -424,12 +424,12 @@ void bitmap_destroy(struct bitmap *bitmap)
 	/* destroy bitmap */
 	if (bitmap->sprite_area) {
 		area_size = 16 + 44 + bitmap->width * bitmap->height * 4;
-	  	bitmap_direct_used -= area_size;
+		bitmap_direct_used -= area_size;
 		free(bitmap->sprite_area);
 	}
 	if (bitmap->compressed)
 		free(bitmap->compressed);
-	if (bitmap->filename[0])
+	if (bitmap->filename && bitmap->filename[0])
 		bitmap_delete_file(bitmap);
 	free(bitmap);
 }
@@ -536,7 +536,7 @@ void bitmap_maintain(void)
 		  	if (bitmap_maintenance_priority) {
 		  		if (bitmap->sprite_area)
 					bitmap_save_file(bitmap);
-					
+
 			} else {
 				bitmap_save_file(bitmap);
 				return;
@@ -574,7 +574,7 @@ void bitmap_decompress(struct bitmap *bitmap)
 		free(bitmap->sprite_area);
 		bitmap->sprite_area = NULL;
 	} else {
-//	  	LOG(("Decompressed"));
+//		LOG(("Decompressed"));
 		header = (struct bitmap_compressed_header *)bitmap->compressed;
 		area_size = header->input_size +
 				sizeof(struct bitmap_compressed_header);
@@ -582,14 +582,14 @@ void bitmap_decompress(struct bitmap *bitmap)
 		free(bitmap->compressed);
 		bitmap->compressed = NULL;
 		area_size = 16 + 44 + bitmap->width * bitmap->height * 4;
-	  	bitmap_direct_used += area_size;
+		bitmap_direct_used += area_size;
 	}
 }
 
 
 void bitmap_compress(struct bitmap *bitmap)
 {
-  	unsigned int area_size;
+	unsigned int area_size;
 	_kernel_oserror *error;
 	char *output;
 	unsigned int output_size, new_size;
@@ -619,11 +619,11 @@ void bitmap_compress(struct bitmap *bitmap)
 		if (!bitmap->compressed) {
 			free(output);
 		} else {
-		  	bitmap_compressed_used += new_size;
-		  	if (bitmap->sprite_area) {
+			bitmap_compressed_used += new_size;
+			if (bitmap->sprite_area) {
 				area_size = 16 + 44 + bitmap->width *
 						bitmap->height * 4;
-			  	bitmap_direct_used -= area_size;
+				bitmap_direct_used -= area_size;
 				free(bitmap->sprite_area);
 			}
 			bitmap->sprite_area = NULL;
@@ -636,7 +636,7 @@ void bitmap_compress(struct bitmap *bitmap)
 
 void bitmap_load_file(struct bitmap *bitmap)
 {
-  	unsigned int area_size;
+	unsigned int area_size;
 	int len;
 	fileswitch_object_type obj_type;
 	os_error *error;
@@ -649,44 +649,69 @@ void bitmap_load_file(struct bitmap *bitmap)
 			&obj_type, 0, 0, &len, 0, 0);
 	if ((error) || (obj_type != fileswitch_IS_FILE))
 		return;
+
 	bitmap->compressed = malloc(len);
 	if (!bitmap->compressed)
 		return;
+
 	error = xosfile_load_stamped_no_path(bitmap_filename,
 			bitmap->compressed, 0, 0, 0, 0, 0);
 	if (error) {
 		free(bitmap->compressed);
 		bitmap->compressed = NULL;
 		return;
-	} else {
-//	  	LOG(("Loaded file from disk"));
-		if (strncmp(bitmap->compressed + 8, "bitmap", 6)) {
-			bitmap->sprite_area =
-					(osspriteop_area *)bitmap->compressed;
-			bitmap->compressed = NULL;
-			area_size = 16 + 44 +
-					bitmap->width * bitmap->height * 4;
-		  	bitmap_direct_used += area_size;
-		} else {
-		  	bitmap_compressed_used -= len;
-		}
-		if (bitmap->modified)
-			bitmap_delete_file(bitmap);
 	}
+
+//	LOG(("Loaded file from disk"));
+	/* Sanity check the file we've just loaded:
+	 * If it's an uncompressed buffer, then it's a raw sprite area,
+	 * including the total size word at the start. Therefore, we check
+	 * that:
+	 *   a) The declared total area size == file length
+	 *   b) The offset to the first free word == file length
+	 *   c) There is only 1 sprite in the area
+	 *   d) The name of the sprite in the area is "bitmap"
+	 *
+	 * If it's a compressed buffer, then we check that:
+	 *   a) The declared input size + header size == file length
+	 *   b) The name of the buffer is "bitmap"
+	 *
+	 * If it's neither of these, we fail.
+	 */
+	if ((*(int *)bitmap->compressed) == len &&
+			(*(((int *)bitmap->compressed) + 3)) == len &&
+			(*(((int *)bitmap->compressed) + 1)) == 1 &&
+			strncmp(bitmap->compressed + 20, "bitmap", 6) == 0) {
+		bitmap->sprite_area = (osspriteop_area *)bitmap->compressed;
+		bitmap->compressed = NULL;
+		area_size = 16 + 44 + bitmap->width * bitmap->height * 4;
+		bitmap_direct_used += area_size;
+	} else if ((int)((*(((int *)bitmap->compressed) + 6)) +
+			sizeof(struct bitmap_compressed_header)) == len &&
+			strncmp(bitmap->compressed + 8, "bitmap", 6) == 0) {
+		bitmap_compressed_used -= len;
+	} else {
+		free(bitmap->compressed);
+		bitmap->compressed = NULL;
+		return;
+	}
+
+	if (bitmap->modified)
+		bitmap_delete_file(bitmap);
 }
 
 
 void bitmap_save_file(struct bitmap *bitmap)
 {
-  	unsigned int area_size;
-  	char *filename;
+	unsigned int area_size;
+	char *filename;
 	os_error *error;
 	struct bitmap_compressed_header *header;
 
 	assert(bitmap->compressed || bitmap->sprite_area);
 
 	/* unmodified bitmaps will still have their file available */
-	if (!bitmap->modified && bitmap->filename[0]) {
+	if (!bitmap->modified && bitmap->filename && bitmap->filename[0]) {
 		if (bitmap->sprite_area)
 			free(bitmap->sprite_area);
 		bitmap->sprite_area = NULL;
@@ -722,12 +747,12 @@ void bitmap_save_file(struct bitmap *bitmap)
 		bitmap->filename[0] = 0;
 	} else {
 		if (bitmap->sprite_area) {
-		  	bitmap_direct_used -= area_size;
+			bitmap_direct_used -= area_size;
 			free(bitmap->sprite_area);
 		}
 		bitmap->sprite_area = NULL;
 		if (bitmap->compressed) {
-		  	bitmap_compressed_used -= area_size;
+			bitmap_compressed_used -= area_size;
 			free(bitmap->compressed);
 		}
 		bitmap->compressed = NULL;
