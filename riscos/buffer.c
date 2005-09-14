@@ -125,7 +125,7 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 #ifdef BUFFER_EMULATE_32BPP
 	mode = tinct_SPRITE_MODE;
 #else
-	if (bpp == 32) {
+	if (bpp == 5) {
 		mode = tinct_SPRITE_MODE;
 	} else {
 		if ((error = xwimpreadsysinfo_wimp_mode(&mode)) != NULL) {
