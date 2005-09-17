@@ -127,6 +127,8 @@ bool nsmng_create(struct content *c, const char *params[]) {
 	c->data.mng.read_resume = false;
 	c->data.mng.read_size = 0;
 	c->data.mng.waiting = false;
+
+	c->data.mng.displayed = false;
 	return true;
 }
 
@@ -285,7 +287,18 @@ bool nsmng_convert(struct content *c, int width, int height) {
 	c->size += c->width * c->height * 4 + 100;
 	c->status = CONTENT_STATUS_DONE;
 
-
+	/* jmb: I'm really not sure that this should be here.
+	 * The *_convert functions are for converting a content into a
+	 * displayable format. They should not, however, do anything which
+	 * could cause the content to be displayed; the content may have
+	 * hidden visibility or be a fallback for an object; this
+	 * information is not available here (nor is there any need for it
+	 * to be).
+	 * The specific issue here is that mng_display calls the display
+	 * callbacks, which include nsmng_refresh. nsmng_refresh forces
+	 * a content to be redrawn regardless of whether it should be
+	 * displayed or not.
+	 */
 	/*	Start displaying
 	*/
 	status = mng_display(c->data.mng.handle);
@@ -385,7 +398,15 @@ mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, mng_uint32 w,
 	data.redraw.object_width = c->width;
 	data.redraw.object_height = c->height;
 
-	content_broadcast(c, CONTENT_MSG_REDRAW, data);
+	/* Only attempt to force the redraw if we've been requested to
+	 * display the image in the first place (i.e. nsmng_redraw has
+	 * been called). This avoids the situation of forcibly redrawing
+	 * an image that shouldn't be shown (e.g. if the image is a fallback
+	 * for an object that can't be rendered)
+	 */
+	if (c->data.mng.displayed)
+		content_broadcast(c, CONTENT_MSG_REDRAW, data);
+
 	return MNG_TRUE;
 }
 
@@ -430,6 +451,10 @@ bool nsmng_redraw(struct content *c, int x, int y,
 		float scale, unsigned long background_colour)
 {
 	bool ret;
+
+	/* mark image as having been requested to display */
+	if (!c->data.mng.displayed)
+		c->data.mng.displayed = true;
 
 	if ((c->bitmap) && (c->data.mng.opaque_test_pending)) {
 		bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
