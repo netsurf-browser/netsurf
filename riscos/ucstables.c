@@ -207,6 +207,27 @@ static int latin9_table[256] =
   0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x00FE, 0x00FF
 };
 
+static int latin10_table[256] =
+{
+  common,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  0x2026, 0x2122, 0x2030, 0x2022, 0x2018, 0x2019, 0x2039, 0x203a,
+  0x201c, -1, -1, 0x2013, 0x2014, 0x2212, -1, -1,
+  0x2020, 0x2021, 0xfb01, 0xfb02,
+  0x00A0, 0x0104, 0x0105, 0x0141, 0x20AC, 0x201E, 0x0160, 0x00a7,
+  0x0161, 0x00A9, 0x0218, 0x00AB, 0x0179, 0x00AD, 0x017A, 0x017B,
+  0x00B0, 0x00B1, 0x010C, 0x0142, 0x017D, 0x201D, 0x00B6, 0x00B7,
+  0x017E, 0x010D, 0x0219, 0x00BB, 0x0152, 0x0153, 0x0178, 0x017C,
+  0x00C0, 0x00C1, 0x00C2, 0x0102, 0x00C4, 0x0106, 0x00C6, 0x00C7,
+  0x00C8, 0x00C9, 0x00CA, 0x00CB, 0x00CC, 0x00CD, 0x00CE, 0x00CF,
+  0x0110, 0x0143, 0x00D2, 0x00D3, 0x00D4, 0x0150, 0x00D6, 0x015A,
+  0x0170, 0x00D9, 0x00DA, 0x00DB, 0x00DC, 0x0118, 0x021A, 0x00DF,
+  0x00E0, 0x00E1, 0x00E2, 0x0103, 0x00E4, 0x0107, 0x00E6, 0x00E7,
+  0x00E8, 0x00E9, 0x00EA, 0x00EB, 0x00EC, 0x00ED, 0x00EE, 0x00EF,
+  0x0111, 0x0144, 0x00F2, 0x00F3, 0x00F4, 0x0151, 0x00F6, 0x015B,
+  0x0171, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x0119, 0x021B, 0x00FF
+};
+
 static int welsh_table[256] =
 {
   common,
@@ -318,6 +339,8 @@ int *ucstable_from_alphabet(int alphabet)
 		case 115: /* Latin8 */
 			ucstable = latin8_table;
 			break;
+		case 116: /* Latin10 */
+			ucstable = latin10_table;
 		case territory_ALPHABET_LATIN9:
 			ucstable = latin9_table;
 			break;
@@ -359,6 +382,11 @@ static const char *localencodings[] = {
 	"ISO-8859-10",
 	"ISO-8859-13",
 	"ISO-8859-14",
+	"ISO-8859-16",
+#define CONT_ENC_END 116	/* RISC OS alphabet numbers lie in a
+				 * contiguous range [100,CONT_ENC_END]
+				 * _except_ for Cyrillic2, which doesn't.
+				 */
 	"CP866"		/* Cyrillic2 - 120 */
 };
 
@@ -440,8 +468,9 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 	}
 
 	/* get encoding name */
-	enc = (alphabet < 116 ? localencodings[alphabet - 100]
-			      : (alphabet == 120 ? localencodings[16]
+	enc = (alphabet <= CONT_ENC_END ? localencodings[alphabet - 100]
+			      : (alphabet == 120 ?
+					localencodings[CONT_ENC_END + 1]
 						 : localencodings[0]));
 
 	/* populate offsets array with details of characters that
@@ -558,8 +587,9 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	}
 
 	/* get encoding name */
-	enc = (alphabet < 116 ? localencodings[alphabet - 100]
-			      : (alphabet == 120 ? localencodings[16]
+	enc = (alphabet <= CONT_ENC_END ? localencodings[alphabet - 100]
+			      : (alphabet == 120 ?
+					localencodings[CONT_ENC_END + 1]
 						 : localencodings[0]));
 
 	/* populate offsets array with details of characters that
