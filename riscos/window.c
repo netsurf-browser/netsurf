@@ -1394,7 +1394,20 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 		  			BROWSER_PRINT, true);
 			break;
 		case ICON_TOOLBAR_URL:
-			ro_gui_url_complete_start(g);
+			if (pointer->buttons & (wimp_DRAG_SELECT | wimp_DRAG_ADJUST)) {
+				if (g->bw->current_content) {
+					gui_save_type save_type;
+
+					if (ro_gui_shift_pressed())
+						save_type = GUI_SAVE_LINK_URL;
+					else
+						save_type = GUI_SAVE_LINK_TEXT;
+
+					gui_drag_save_object(save_type, g->bw->current_content, g);
+				}
+			}
+			else
+				ro_gui_url_complete_start(g);
 			break;
 		case ICON_TOOLBAR_SUGGEST:
 			ro_gui_popup_menu(url_suggest_menu,
@@ -1478,8 +1491,6 @@ void ro_gui_window_click(struct gui_window *g, wimp_pointer *pointer)
 			return;
 		}
 	}
-
-LOG(("%d %d", pointer->buttons, ro_gui_mouse_click_state(pointer->buttons)));
 
 	if (pointer->buttons == wimp_CLICK_MENU)
 		ro_gui_menu_create(browser_menu, pointer->pos.x,
