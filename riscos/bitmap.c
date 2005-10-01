@@ -168,7 +168,7 @@ struct bitmap *bitmap_create(int width, int height, bool clear)
 	if (width == 0 || height == 0)
 		return NULL;
 
-	bitmap = calloc(sizeof(struct bitmap), 1);
+	bitmap = calloc(1, sizeof(struct bitmap));
 	if (!bitmap)
 		return NULL;
 	bitmap->width = width;
@@ -206,19 +206,19 @@ struct bitmap *bitmap_create_file(int width, int height, char *file)
 	struct bitmap *bitmap;
 	struct bitmap *link;
 
-	if (width == 0 || height == 0)
+	if (width == 0 || height == 0 || file[0] == '\0')
 		return NULL;
 
 	if (!ro_filename_claim(file))
 		return NULL;
-	bitmap = calloc(sizeof(struct bitmap), 1);
+	bitmap = calloc(1, sizeof(struct bitmap));
 	if (!bitmap)
 		return NULL;
 	bitmap->width = width;
 	bitmap->height = height;
 	bitmap->opaque = true;
 	bitmap->persistent = true;
-	sprintf(bitmap->filename, file);
+	strcpy(bitmap->filename, file);
 
 	/* link into our list of bitmaps at the tail */
 	if (bitmap_head) {
@@ -247,7 +247,7 @@ bool bitmap_initialise(struct bitmap *bitmap, bool clear)
 
 	area_size = 16 + 44 + bitmap->width * bitmap->height * 4;
 	if (clear)
-		bitmap->sprite_area = calloc(area_size, 1);
+		bitmap->sprite_area = calloc(1, area_size);
 	else
 		bitmap->sprite_area = malloc(area_size);
 	if (!bitmap->sprite_area) {
@@ -372,7 +372,7 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
 		return ((char *) (bitmap->sprite_area)) + 16 + 44;
 
 	/* load and/or decompress the image */
-	if (bitmap->filename && bitmap->filename[0])
+	if (bitmap->filename[0])
 		bitmap_load_file(bitmap);
 	if (bitmap->compressed)
 		bitmap_decompress(bitmap);
@@ -429,7 +429,7 @@ void bitmap_destroy(struct bitmap *bitmap)
 	}
 	if (bitmap->compressed)
 		free(bitmap->compressed);
-	if (bitmap->filename && bitmap->filename[0])
+	if (bitmap->filename[0])
 		bitmap_delete_file(bitmap);
 	free(bitmap);
 }
@@ -711,7 +711,7 @@ void bitmap_save_file(struct bitmap *bitmap)
 	assert(bitmap->compressed || bitmap->sprite_area);
 
 	/* unmodified bitmaps will still have their file available */
-	if (!bitmap->modified && bitmap->filename && bitmap->filename[0]) {
+	if (!bitmap->modified && bitmap->filename[0]) {
 		if (bitmap->sprite_area)
 			free(bitmap->sprite_area);
 		bitmap->sprite_area = NULL;
