@@ -84,7 +84,7 @@ static struct hostname_data *url_store_find_hostname(const char *url) {
 	}
 
 	/* no hostname is available: create a new one */
-	result = calloc(sizeof(struct hostname_data), 1);
+	result = calloc(1, sizeof(struct hostname_data));
 	if (!result)
 		return NULL;
 	result->hostname = hostname;
@@ -171,7 +171,7 @@ struct url_content *url_store_find(const char *url) {
 	}
 
 	/* no URL is available: create a new one */
-	result = calloc(sizeof(struct url_data), 1);
+	result = calloc(1, sizeof(struct url_data));
 	if (!result)
 		return NULL;
 	result->data.url = malloc(url_length + 1);
@@ -400,7 +400,7 @@ char *url_store_match_string(const char *text) {
 
 
 /**
- * Loads the current contents of the URL store to disk
+ * Loads the current contents of the URL store from disk
  *
  * \param file  the file to load options from
  */
@@ -461,7 +461,7 @@ void url_store_load(const char *file) {
 					break;
 				if (s[strlen(s) - 1] == '\n')
 					s[strlen(s) - 1] = '\0';
-				result = calloc(sizeof(struct url_data), 1);
+				result = calloc(1, sizeof(struct url_data));
 				if (!result)
 					break;
 				result->data.url_length = strlen(s);
