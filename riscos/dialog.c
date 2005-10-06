@@ -537,6 +537,8 @@ void ro_gui_dialog_open_config(void)
 void ro_gui_dialog_config_prepare(void)
 {
 	/* browser pane */
+	ro_gui_choices_lang = option_language;
+	ro_gui_choices_alang = option_accept_language;
 	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_LANG,
 			language_name(option_language ?
 					option_language : "en"));
@@ -654,15 +656,15 @@ void ro_gui_dialog_config_set(void)
 	option_no_plugins = ro_gui_get_icon_selected_state(
 			dialog_config_br,
 			ICON_CONFIG_BR_PLUGINS);
-	if (ro_gui_choices_lang) {
+	if (ro_gui_choices_lang != option_language) {
 		free(option_language);
 		option_language = strdup(ro_gui_choices_lang);
-		ro_gui_choices_lang = 0;
+		ro_gui_choices_lang = option_language;
 	}
-	if (ro_gui_choices_alang) {
+	if (ro_gui_choices_alang != option_accept_language) {
 		free(option_accept_language);
 		option_accept_language = strdup(ro_gui_choices_alang);
-		ro_gui_choices_alang = 0;
+		ro_gui_choices_alang = option_accept_language;
 	}
 
 	/* proxy pane */
