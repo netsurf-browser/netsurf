@@ -1,4 +1,4 @@
-| Boot file for NetSurf. ( $Revision: 1.10 $ )
+| Boot file for NetSurf. ( $Revision: 1.11 $ )
 |
 | This file sets up various system variables which NetSurf may use.
 | Additionally, it places the NetSurf application sprites into the Wimp
@@ -41,11 +41,14 @@ Set NetSurf$Description "Web browser"
 
 | NetSurf Sprites
 |
-| The sprite file used is based on the OS version:
-|   RO <  Select 3 uses !Sprites<nn>
-|   RO >= Select 3 uses ASprites<nn>
-|   RO >= 5        uses 5Sprites<nn>
-If "<Boot$OSVersion>" < "436" Then IconSprites <Obey$Dir>.!Sprites Else If "<Boot$OSVersion>" < "500" Then IconSprites <Obey$Dir>.ASprites Else IconSprites <Obey$Dir>.5Sprites
+| The sprite file used is based on the OS and SpriteExtend versions:
+|   RO <  5 and SpriteExtend <  1.50 uses !Sprites<nn>
+|   RO <  5 and SpriteExtend >= 1.50 uses ASprites<nn>
+|   RO >= 5                          uses 5Sprites<nn>
+Set NetSurf$Sprites <NetSurf$Dir>.ASprites
+RMEnsure SpriteExtend 1.50 Set NetSurf$Sprites <NetSurf$Dir>.!Sprites
+If "<Boot$OSVersion>" < "500" Then IconSprites <NetSurf$Sprites> Else IconSprites <NetSurf$Dir>.5Sprites
+Unset NetSurf$Sprites
 
 | Acorn URI protocol
 |
