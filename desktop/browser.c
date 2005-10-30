@@ -69,16 +69,15 @@ static const char *browser_window_scrollbar_click(struct browser_window *bw,
 static void browser_radio_set(struct content *content,
 		struct form_control *radio);
 static gui_pointer_shape get_pointer_shape(css_cursor cursor);
-
-static struct box *browser_window_nearest_text_box(struct box *box, int x, int y,
-		int dir);
+static struct box *browser_window_nearest_text_box(struct box *box,
+		int x, int y, int dir);
 static struct box *browser_window_pick_text_box(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y, int *dx, int *dy,
 		int dir);
-static void browser_window_page_drag_start(struct browser_window *bw, int x, int y);
-
-static void browser_window_scroll_box(struct browser_window *bw, struct box *box,
-		int scroll_x, int scroll_y);
+static void browser_window_page_drag_start(struct browser_window *bw,
+		int x, int y);
+static void browser_window_scroll_box(struct browser_window *bw,
+		struct box *box, int scroll_x, int scroll_y);
 
 
 /**
@@ -314,7 +313,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 			url[sizeof url - 1] = 0;
 			gui_window_set_url(bw->window, url);
 			browser_window_update(bw, true);
-			content_open(c, bw, 0, 0, 0);
+			content_open(c, bw, 0, 0, 0, 0);
 			browser_window_set_status(bw, c->status_message);
 			if (bw->history_add) {
 				history_add(bw->history, c, bw->frag_id);
@@ -559,15 +558,16 @@ void browser_window_reload(struct browser_window *bw, bool all)
 	if (all && bw->current_content->type == CONTENT_HTML) {
 		c = bw->current_content;
 		/* invalidate objects */
-		for (i=0; i!=c->data.html.object_count; i++) {
-			if (c->data.html.object[i].content != 0)
+		for (i = 0; i != c->data.html.object_count; i++) {
+			if (c->data.html.object[i].content)
 				c->data.html.object[i].content->fresh = false;
 		}
 		/* invalidate stylesheets */
-		for (i=STYLESHEET_START;
-			i!=c->data.html.stylesheet_count; i++) {
-			if (c->data.html.stylesheet_content[i] != 0)
-				c->data.html.stylesheet_content[i]->fresh = false;
+		for (i = STYLESHEET_START; i != c->data.html.stylesheet_count;
+				i++) {
+			if (c->data.html.stylesheet_content[i])
+				c->data.html.stylesheet_content[i]->fresh =
+						false;
 		}
 	}
 	bw->current_content->fresh = false;
@@ -744,6 +744,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	struct box *box;
 	struct content *content = c;
 	struct content *gadget_content = c;
+	struct content *url_content = c;
 	struct form_control *gadget = 0;
 	struct content *object = NULL;
 	url_func_result res;
@@ -768,6 +769,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			object = box->object;
 
 		if (box->href) {
+			url_content = content;
 			url = box->href;
 			target = box->target;
 		}
@@ -949,22 +951,33 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 		pointer = GUI_POINTER_POINT;
 
-		if (mouse & BROWSER_MOUSE_CLICK_1) {
+		if (mouse & BROWSER_MOUSE_CLICK_1 &&
+				mouse & BROWSER_MOUSE_MOD_1) {
+			/* force download of link */
+			browser_window_go_post(bw, url, 0, 0, false,
+					c->url, true);
 
-			if (mouse & BROWSER_MOUSE_MOD_1)
-				browser_window_go_post(bw, url, 0, 0, false,
-						c->url, true);
-			else
+		} else if (mouse & BROWSER_MOUSE_CLICK_1) {
+			struct content *page = 0;
+			unsigned int i = 0;
+
+			html_find_target(url_content, target, &page, &i);
+
+			if (page) {
+				if (!html_replace_object(page, i, url, 0, 0))
+					warn_user("NoMemory", 0);
+			} else {
 				browser_window_go(bw, url, c->url);
-		}
-		else if (mouse & BROWSER_MOUSE_CLICK_2) {
+                        }
 
-			if (mouse & BROWSER_MOUSE_MOD_1) {
-				/* \todo saving of links as URL files */
-				//ro_gui_save_prepare(GUI_SAVE_LINK_URL, c);
-			}
-			else
-				browser_window_create(url, bw, c->url);
+		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
+				mouse & BROWSER_MOUSE_MOD_1) {
+			/* \todo saving of links as URL files */
+			//ro_gui_save_prepare(GUI_SAVE_LINK_URL, c);
+
+		} else if (mouse & BROWSER_MOUSE_CLICK_2) {
+			/* open link in new window */
+			browser_window_create(url, bw, c->url);
 		}
 
 	} else {
