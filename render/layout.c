@@ -161,6 +161,22 @@ bool layout_block_context(struct box *block, struct content *content)
 
 	gui_multitask();
 
+	if (block->object) {
+		if (block->object->type == CONTENT_HTML) {
+			box = block->object->data.html.layout;
+			box->width = block->width;
+			box->height = AUTO;
+			if (!layout_block_context(box, block->object))
+				return false;
+			block->height = box->height;
+			layout_calculate_descendant_bboxes(box);
+			block->object->width = box->descendant_x1;
+			block->object->height = box->descendant_y1;
+		} else {
+		}
+		return true;
+	}
+
 	box = margin_box = block->children;
 	cx = 0;
 	cy = block->padding[TOP];
@@ -180,7 +196,7 @@ bool layout_block_context(struct box *block, struct content *content)
 		 * correct handling of floats.
 		 */
 
-		if (box->type == BOX_BLOCK)
+		if (box->type == BOX_BLOCK || box->object)
 			layout_block_find_dimensions(box->parent->width, box);
 		else if (box->type == BOX_TABLE) {
 			if (!layout_table(box, box->parent->width, content))
@@ -223,7 +239,21 @@ bool layout_block_context(struct box *block, struct content *content)
 		LOG(("box %p, cx %i, cy %i", box, cx, cy));
 
 		/* Layout (except tables). */
-		if (box->type == BOX_INLINE_CONTAINER) {
+		if (box->object) {
+			if (box->object->type == CONTENT_HTML) {
+				box->object->data.html.layout->width =
+						box->width;
+				if (!layout_block_context(box->object->
+						data.html.layout, box->object))
+					return false;
+				box->height = box->object->
+						data.html.layout->height;
+							/* + margins etc. */
+			} else {
+				/* this case handled already in
+				 * layout_block_find_dimensions() */
+			}
+		} else if (box->type == BOX_INLINE_CONTAINER) {
 			box->width = box->parent->width;
 			if (!layout_inline_container(box, box->width, block,
 					cx, cy, content))
@@ -260,7 +290,7 @@ bool layout_block_context(struct box *block, struct content *content)
 		}
 
 		/* Advance to next box. */
-		if (box->type == BOX_BLOCK && box->children) {
+		if (box->type == BOX_BLOCK && !box->object && box->children) {
 			y = box->padding[TOP];
 			box = box->children;
 			box->y = y;
@@ -271,7 +301,7 @@ bool layout_block_context(struct box *block, struct content *content)
 			}
 
 			continue;
-		} else if (box->type == BOX_BLOCK)
+		} else if (box->type == BOX_BLOCK || box->object)
 			cy += box->padding[TOP];
 		if (box->type == BOX_BLOCK && box->height == AUTO)
 			box->height = 0;
@@ -348,26 +378,36 @@ void layout_minmax_block(struct box *block)
 	if (block->max_width != UNKNOWN_MAX_WIDTH)
 		return;
 
-	/* recurse through children */
-	for (child = block->children; child; child = child->next) {
-		switch (child->type) {
-		case BOX_BLOCK:
-			layout_minmax_block(child);
-			break;
-		case BOX_INLINE_CONTAINER:
-			layout_minmax_inline_container(child);
-			break;
-		case BOX_TABLE:
-			layout_minmax_table(child);
-			break;
-		default:
-			assert(0);
+	if (block->object) {
+		if (block->object->type == CONTENT_HTML) {
+			layout_minmax_block(block->object->data.html.layout);
+			min = block->object->data.html.layout->min_width;
+			max = block->object->data.html.layout->max_width;
+		} else {
+			min = max = block->object->width;
 		}
-		assert(child->max_width != UNKNOWN_MAX_WIDTH);
-		if (min < child->min_width)
-			min = child->min_width;
-		if (max < child->max_width)
-			max = child->max_width;
+	} else {
+		/* recurse through children */
+		for (child = block->children; child; child = child->next) {
+			switch (child->type) {
+			case BOX_BLOCK:
+				layout_minmax_block(child);
+				break;
+			case BOX_INLINE_CONTAINER:
+				layout_minmax_inline_container(child);
+				break;
+			case BOX_TABLE:
+				layout_minmax_table(child);
+				break;
+			default:
+				assert(0);
+			}
+			assert(child->max_width != UNKNOWN_MAX_WIDTH);
+			if (min < child->min_width)
+				min = child->min_width;
+			if (max < child->max_width)
+				max = child->max_width;
+		}
 	}
 
 	if (max < min) {
@@ -438,7 +478,7 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 			break;
 	}
 
-	if (box->object) {
+	if (box->object && box->object->type != CONTENT_HTML) {
 		/* block-level replaced element, see 10.3.4 and 10.6.2 */
 		if (width == AUTO && box->height == AUTO) {
 			width = box->object->width;
@@ -471,13 +511,6 @@ void layout_block_find_dimensions(int available_width, struct box *box)
 		box->width -= SCROLLBAR_WIDTH;
 		box->padding[RIGHT] += SCROLLBAR_WIDTH;
 		box->padding[BOTTOM] += SCROLLBAR_WIDTH;
-	}
-
-	if (box->object && box->object->type == CONTENT_HTML &&
-			 box->width != box->object->available_width) {
-		content_reformat(box->object, box->width, box->height);
-		if (style->height.height == CSS_HEIGHT_AUTO)
-			box->height = box->object->height;
 	}
 
 	if (margin[TOP] == AUTO)
@@ -703,7 +736,7 @@ void layout_float_find_dimensions(int available_width,
 	box->padding[RIGHT] += scrollbar_width;
 	box->padding[BOTTOM] += scrollbar_width;
 
-	if (box->object) {
+	if (box->object && box->object->type != CONTENT_HTML) {
 		/* floating replaced element, see 10.3.6 and 10.6.2 */
 		if (box->width == AUTO && box->height == AUTO) {
 			box->width = box->object->width;
