@@ -50,6 +50,8 @@ static void html_object_failed(struct box *box, struct content *content,
 		bool background);
 static bool html_object_type_permitted(const content_type type,
 		const content_type *permitted_types);
+static bool html_find_frame(struct content *c, const char *frame,
+		struct content **page, unsigned int *i);
 
 
 /**
@@ -81,6 +83,9 @@ bool html_create(struct content *c, const char *params[])
 	html->forms = 0;
 	html->imagemaps = 0;
 	html->bw = 0;
+	html->page = 0;
+	html->index = 0;
+	html->box = 0;
 
 	for (i = 0; params[i]; i += 2) {
 		if (strcasecmp(params[i], "charset") == 0) {
@@ -747,7 +752,7 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 /**
  * Start a fetch for an object required by a page.
  *
- * \param  c                 content structure
+ * \param  c                 content of type CONTENT_HTML
  * \param  url               URL of object to fetch (copied)
  * \param  box               box that will contain the object
  * \param  permitted_types   array of types, terminated by CONTENT_UNKNOWN,
@@ -811,6 +816,73 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 
 
 /**
+ * Start a fetch for an object required by a page, replacing an existing object.
+ *
+ * \param  c               content of type CONTENT_HTML
+ * \param  i               index of object to replace in c->data.html.object
+ * \param  url             URL of object to fetch (copied)
+ * \param  post_urlenc     url encoded post data, or 0 if none
+ * \param  post_multipart  multipart post data, or 0 if none
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool html_replace_object(struct content *c, unsigned int i, char *url,
+		char *post_urlenc,
+		struct form_successful_control *post_multipart)
+{
+	struct content *c_fetch;
+	struct content *page;
+
+	assert(c->type == CONTENT_HTML);
+
+	if (c->data.html.object[i].content) {
+		/* remove existing object */
+		if (c->data.html.object[i].content->status !=
+				CONTENT_STATUS_DONE)
+			c->active--;
+		content_remove_user(c->data.html.object[i].content,
+				html_object_callback, (intptr_t) c, i);
+		c->data.html.object[i].content = 0;
+		c->data.html.object[i].box->object = 0;
+		talloc_free(c->data.html.object[i].url);
+		c->data.html.object[i].url = 0;
+	}
+
+	/* initialise fetch */
+	c_fetch = fetchcache(url, html_object_callback,
+			(intptr_t) c, i,
+			c->data.html.object[i].box->width,
+			c->data.html.object[i].box->height,
+			false, post_urlenc, post_multipart, false, false);
+	if (!c_fetch)
+		return false;
+
+	c->data.html.object[i].url = talloc_strdup(c, url);
+	if (!c->data.html.object[i].url) {
+		content_remove_user(c_fetch, html_object_callback,
+				(intptr_t) c, i);
+		return false;
+	}
+	c->data.html.object[i].content = c_fetch;
+
+	for (page = c; page; page = page->data.html.page) {
+		assert(page->type == CONTENT_HTML);
+		page->active++;
+		page->status = CONTENT_STATUS_READY;
+	}
+
+	/* start fetch */
+	fetchcache_go(c_fetch, c->url,
+			html_object_callback, (intptr_t) c, i,
+			c->data.html.object[i].box->width,
+			c->data.html.object[i].box->height,
+			post_urlenc, post_multipart, false);
+
+	return true;
+}
+
+
+/**
  * Callback for fetchcache() for objects.
  */
 
@@ -830,7 +902,7 @@ void html_object_callback(content_msg msg, struct content *object,
 				if (c->data.html.bw)
 					content_open(object,
 							c->data.html.bw, c,
-							box,
+							i, box,
 							box->object_params);
 				break;
 			}
@@ -981,19 +1053,10 @@ void html_object_done(struct box *box, struct content *object,
 		return;
 	}
 
-	if (object->type == CONTENT_HTML) {
-		/* patch in the HTML object's box tree */
-		box->children = object->data.html.layout;
-		object->data.html.layout->parent = box;
-	} else {
-		box->object = object;
-		if (box->width != UNKNOWN_WIDTH &&
-				object->available_width != box->width)
-			content_reformat(object, box->width, box->height);
-	}
+	box->object = object;
 
 	/* invalidate parent min, max widths */
-	for (b = box->parent; b; b = b->parent)
+	for (b = box; b; b = b->parent)
 		b->max_width = UNKNOWN_MAX_WIDTH;
 
 	/* delete any clones of this box */
@@ -1207,18 +1270,21 @@ void html_destroy(struct content *c)
  */
 
 void html_open(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
+		struct content *page, unsigned int index, struct box *box,
 		struct object_params *params)
 {
 	unsigned int i;
 	c->data.html.bw = bw;
+	c->data.html.page = page;
+	c->data.html.index = index;
+	c->data.html.box = box;
 	for (i = 0; i != c->data.html.object_count; i++) {
 		if (c->data.html.object[i].content == 0)
 			continue;
 		if (c->data.html.object[i].content->type == CONTENT_UNKNOWN)
 			continue;
                	content_open(c->data.html.object[i].content,
-				bw, c,
+				bw, c, i,
 				c->data.html.object[i].box,
 				c->data.html.object[i].box->object_params);
 	}
@@ -1240,4 +1306,87 @@ void html_close(struct content *c)
 			continue;
                	content_close(c->data.html.object[i].content);
 	}
+}
+
+
+/**
+ * Find the target frame for a link.
+ *
+ * \param  c       content containing the link, of type CONTENT_HTML
+ * \param  target  target frame
+ * \retval  page   updated to content containing target object, or 0 if the
+ *                 target should replace the top-level content
+ * \retval  i      updated to index of target object in page->data.html.object
+ */
+
+void html_find_target(struct content *c, const char *target,
+		struct content **page, unsigned int *i)
+{
+	*page = 0;
+
+	assert(c->type == CONTENT_HTML);
+
+	if (!target) {
+		/** \todo  get target from <base target=...> */
+		*page = c->data.html.page;
+		*i = c->data.html.index;
+		return;
+	}
+
+	if (target == TARGET_SELF) {
+		*page = c->data.html.page;
+		*i = c->data.html.index;
+		return;
+	} else if (target == TARGET_PARENT) {
+		if (c->data.html.page && c->data.html.page->data.html.page) {
+			*page = c->data.html.page->data.html.page;
+			*i = c->data.html.page->data.html.index;
+		}
+		return;
+	} else if (target == TARGET_TOP) {
+		return;
+	}
+
+	/* recursively search for a frame named target, starting with the
+	 * top-level content in the frameset */
+	while (c->data.html.page)
+		c = c->data.html.page;
+
+	html_find_frame(c, target, page, i);
+}
+
+
+/**
+ * Recursively search a frameset for a frame.
+ *
+ * \param  c      frameset page, of type CONTENT_HTML
+ * \param  frame  name of frame
+ * \retval  page  updated to content containing the frame, if true returned
+ * \retval  i     updated to index of target frame in page->data.html.object
+ * \return  true iff the frame was found
+ */
+
+bool html_find_frame(struct content *c, const char *frame,
+		struct content **page, unsigned int *i)
+{
+	unsigned int j;
+
+	assert(c->type == CONTENT_HTML);
+
+	for (j = 0; j != c->data.html.object_count; j++) {
+		if (!strcmp(c->data.html.object[j].frame, frame)) {
+			*page = c;
+			*i = j;
+			return true;
+		}
+		if (c->data.html.object[j].content &&
+				c->data.html.object[j].content->type ==
+				CONTENT_HTML) {
+			if (html_find_frame(c->data.html.object[j].content,
+					frame, page, i))
+				return true;
+		}
+	}
+
+	return false;
 }

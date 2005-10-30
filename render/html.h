@@ -22,6 +22,7 @@
 struct box;
 struct browser_window;
 struct content;
+struct form_successful_control;
 struct imagemap;
 struct object_params;
 struct plotters;
@@ -84,6 +85,14 @@ struct content_html_data {
 
 	/** Browser window containing this document, or 0 if not open. */
 	struct browser_window *bw;
+
+	/** Content of type CONTENT_HTML containing this, or 0 if not an object
+	 * within a page. */
+	struct content *page;
+	/** Index in page->data.html.object, or 0 if not an object. */
+	unsigned int index;
+	/** Box containing this, or 0 if not an object. */
+	struct box *box;
 };
 
 /** Render padding and margin box outlines in html_redraw(). */
@@ -99,11 +108,16 @@ bool html_fetch_object(struct content *c, char *url, struct box *box,
 		const content_type *permitted_types,
 		int available_width, int available_height,
 		bool background, char *frame);
+bool html_replace_object(struct content *c, unsigned int i, char *url,
+		char *post_urlenc,
+		struct form_successful_control *post_multipart);
 void html_stop(struct content *c);
 void html_open(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
+		struct content *page, unsigned int index, struct box *box,
 		struct object_params *params);
 void html_close(struct content *c);
+void html_find_target(struct content *c, const char *target,
+		struct content **page, unsigned int *i);
 
 /* in render/html_redraw.c */
 bool html_redraw(struct content *c, int x, int y,
