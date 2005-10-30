@@ -20,9 +20,11 @@
  * Contents have an associated set of users, which are informed by a callback
  * when the state of the content changes or something interesting happens.
  *
- * Optionally, contents may have instances (depending on type). Instances
- * represent copies of the same URL, for example if a page is open in two
- * windows, or a page contains the same image twice.
+ * Depending on the type of content, there may be either one content structure
+ * per URL which is shared among all users, or one per URL per user. For
+ * example, CONTENT_JPEGs are shared, while there is one CONTENT_HTML per user
+ * (because each instance of an HTML page may have different parameters such as
+ * window width). This is controlled by no_share in ::handler_map.
  *
  * The status of a content follows a fixed order. Certain content functions
  * change the state, and each change of state results in a message to all users
@@ -305,7 +307,7 @@ void content_stop(struct content *c,
 			intptr_t p1, intptr_t p2, union content_msg_data data),
 		intptr_t p1, intptr_t p2);
 void content_open(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
+		struct content *page, unsigned int index, struct box *box,
 		struct object_params *params);
 void content_close(struct content *c);
 void content_add_error(struct content *c, const char *token,

@@ -163,7 +163,8 @@ struct handler_entry {
 			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 			float scale, unsigned long background_colour);
 	void (*open)(struct content *c, struct browser_window *bw,
-			struct content *page, struct box *box,
+			struct content *page, unsigned int index,
+			struct box *box,
 			struct object_params *params);
 	void (*close)(struct content *c);
 	/** There must be one content per user for this type. */
@@ -928,18 +929,26 @@ void content_stop_check(struct content *c)
 /**
  * A window containing the content has been opened.
  *
+ * \param  c       content that has been opened
+ * \param  bw      browser window containing the content
+ * \param  page    content of type CONTENT_HTML containing c, or 0 if not an
+ *                 object within a page
+ * \param  index   index in page->data.html.object, or 0 if not an object
+ * \param  box     box containing c, or 0 if not an object
+ * \param  params  object parameters, or 0 if not an object
+ *
  * Calls the open function for the content.
  */
 
 void content_open(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
+		struct content *page, unsigned int index, struct box *box,
 		struct object_params *params)
 {
 	assert(c != 0);
 	assert(c->type < CONTENT_UNKNOWN);
 	LOG(("content %s", c->url));
 	if (handler_map[c->type].open)
-		handler_map[c->type].open(c, bw, page, box, params);
+		handler_map[c->type].open(c, bw, page, index, box, params);
 }
 
 
