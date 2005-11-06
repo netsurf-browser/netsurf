@@ -93,8 +93,6 @@ bool layout_document(struct content *content, int width, int height)
 
 	assert(content->type == CONTENT_HTML);
 
-	doc->float_children = 0;
-
 	layout_minmax_block(doc);
 
 	layout_block_find_dimensions(width, doc);
@@ -160,6 +158,8 @@ bool layout_block_context(struct box *block, struct content *content)
 			block->type == BOX_TABLE_CELL);
 
 	gui_multitask();
+
+	block->float_children = 0;
 
 	if (block->object) {
 		if (block->object->type == CONTENT_HTML) {
@@ -1285,6 +1285,7 @@ bool layout_line(struct box *first, int width, int *y,
 
 		} else {
 			/* float */
+			LOG(("float %p", b));
 			d = b->children;
 			d->float_children = 0;
 /*			css_dump_style(b->style); */
@@ -1320,7 +1321,11 @@ bool layout_line(struct box *first, int width, int *y,
 				place_float_below(b, width, cx, cy + height + 1, cont);
 /*				fprintf(stderr, "layout_line:     float doesn't fit %li %li\n", b->x, b->y); */
 			}
-			assert(cont->float_children != b);
+			if (cont->float_children == b) {
+				LOG(("float %p already placed", b));
+				box_dump(cont, 0);
+				assert(0);
+			}
 			b->next_float = cont->float_children;
 			cont->float_children = b;
 			split_box = 0;
@@ -1370,7 +1375,6 @@ bool layout_line(struct box *first, int width, int *y,
 				b = split_box->next;
 			} else {
 				/* cut off first word for this line */
-				/* \todo allocate from content */
 				c2 = talloc_memdup(content, split_box,
 						sizeof *c2);
 				if (!c2)
