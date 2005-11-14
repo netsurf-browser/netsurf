@@ -128,8 +128,8 @@ font[size="+1"] { font-size: larger; }
 hr {	display: block; background-color: #000; height: 1px;
 	margin: 4px auto; border-top: medium #d9d9d9 ridge; }
 hr[align=left] { margin-left: 0; }
-hr[align=center] { margin-left: auto; margin-right: auto; }
 hr[align=right] { margin-right: 0; }
+hr[noshade] { background-color: #888; height: 2px; border: none; }
 
 frameset { border: thin solid gray; border-collapse: collapse }
 
