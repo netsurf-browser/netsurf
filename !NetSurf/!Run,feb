@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.40 $ )
+| Run file for NetSurf. ( $Revision: 1.41 $ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -66,6 +66,12 @@ RMEnsure Iconv 0.04 Error NetSurf requires Iconv 0.04 or later. This can be down
 | Ensure !Unicode resource
 | URL as for Iconv
 If "<Unicode$Path>" = "" Then Error NetSurf requires the !Unicode resource. This can be found, along with the Iconv module, at http://moose.mine.nu:6888/iconv_latest.zip
+
+| Disable SpecialFX, if present
+Set NetSurf$SpecialFX 1
+RMEnsure SpecialFX 1.00 Set NetSurf$SpecialFX 0
+If <NetSurf$SpecialFX> Then SpecialFX ~B~G~L NetSurf
+Unset NetSurf$SpecialFX
 
 | No longer need this alias
 Unset Alias$NetSurfRMLoad
