@@ -12,8 +12,9 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include "oslib/osspriteop.h"
-#include "oslib/wimp.h"
+#include <oslib/osspriteop.h>
+#include <oslib/wimp.h>
+#include <rufl.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/netsurf.h"
@@ -239,6 +240,9 @@ bool ro_gui_print_keypress(wimp_key *key);
 void nsfont_init(void);
 bool nsfont_paint(struct css_style *style, const char *string,
 		size_t length, int x, int y, float scale);
+void nsfont_read_style(const struct css_style *style,
+		const char **font_family, unsigned int *font_size,
+		rufl_style *font_style);
 
 /* in plotters.c */
 extern const struct plotter_table ro_plotters;

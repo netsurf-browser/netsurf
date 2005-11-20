@@ -33,9 +33,6 @@ static bool nsfont_exists(const char *font_family);
 static int nsfont_list_cmp(const void *keyval, const void *datum);
 static void nsfont_check_fonts(void);
 static void nsfont_init_menu(void);
-static void nsfont_read_style(const struct css_style *style,
-		const char **font_family, unsigned int *font_size,
-		rufl_style *font_style);
 
 
 /**
