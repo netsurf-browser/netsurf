@@ -84,9 +84,14 @@ td { text-align: left; }
 th { font-weight: bold; }
 
 td[nowrap], th[nowrap] { white-space: nowrap; }
-tr[align=left] > td, tr[align=left] > th { text-align: left; }
-tr[align=center] > td, tr[align=center] > th { text-align: center; }
-tr[align=right] > td, tr[align=right] > th { text-align: right; }
+
+td[align=left] > *, th[align=left] > * { margin-right: auto; }
+td[align=center] > *, th[align=center] > * { margin-left: auto; margin-right: auto; }
+td[align=right] > *, th[align=right] > * { margin-left: auto; }
+
+tr[align=left] > td, tr[align=left] > th { text-align: left; margin-right: auto; }
+tr[align=center] > td, tr[align=center] > th { text-align: center; margin-left: auto; margin-right: auto; }
+tr[align=right] > td, tr[align=right] > th { text-align: right; margin-left: auto; }
 
 col[valign=top], colgroup[valign=top], tbody[valign=top], td[valign=top], tfoot[valign=top], th[valign=top], thead[valign=top], tr[valign=top] { vertical-align: top; }
 col[valign=middle], colgroup[valign=middle], tbody[valign=middle], td[valign=middle], tfoot[valign=middle], th[valign=middle], thead[valign=middle], tr[valign=middle] { vertical-align: middle; }
