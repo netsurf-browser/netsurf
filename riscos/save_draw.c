@@ -18,6 +18,7 @@
 #include <pencil.h>
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/plotters.h"
+#include "netsurf/riscos/bitmap.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/save_draw.h"
 #include "netsurf/utils/log.h"
@@ -260,6 +261,15 @@ bool ro_save_draw_disc(int x, int y, int radius, colour colour)
 bool ro_save_draw_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg)
 {
+	pencil_code code;
+
+	code = pencil_sprite(ro_save_draw_diagram, x * 2, (-y - height) * 2,
+			width * 2, height * 2,
+			((char *) bitmap->sprite_area) +
+			bitmap->sprite_area->first);
+	if (code != pencil_OK)
+		return ro_save_draw_error(code);
+
 	return true;
 }
 
