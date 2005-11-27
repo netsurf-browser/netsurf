@@ -708,6 +708,11 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning) {
 		menu_entry = &menu_entry->sub_menu->
 				entries[warning->selection.items[i]];
 
+	LOG(("menu (%s): %p submenu: %p",
+			menu_entry->data.indirected_text.text,
+			menu_entry,
+			menu_entry->sub_menu));
+
 	if (IS_MENU(menu_entry, menu_entry->sub_menu)) {
 		sub_menu = menu_entry->sub_menu;
 		i = 0;
@@ -1144,7 +1149,7 @@ wimp_menu *ro_gui_menu_define_menu(struct ns_menu *menu) {
  * \param depth  Depth of menu we're currently building
  * \param parent_entry  Entry in parent menu, or NULL if root menu
  * \param first  First index in declaration data that is used by this menu
- * \param last  Last index in declaration data that is used by this menu
+ * \param last Last index in declaration data that is used by this menu
  * \param prefix  Prefix pf menu declaration string already seen
  * \param prefix_length  Length of prefix
  */
@@ -2311,6 +2316,11 @@ bool ro_gui_menu_translate(struct menu_definition *menu)
 				(char *) -1;
 		entry->menu_entry->data.indirected_text.size =
 				strlen(translated);
+
+		LOG(("menu (%s): %p submenu: %p",
+				entry->menu_entry->data.indirected_text.text,
+				entry->menu_entry,
+				submenu));
 
 		/* child menu title - this is the same as the text of
 		 * the parent menu entry, so just copy the pointer */
