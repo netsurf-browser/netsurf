@@ -128,9 +128,11 @@ static wimp_MENU(GLOBAL_HISTORY_RECENT_URLS) url_suggest;
 wimp_menu *url_suggest_menu = (wimp_menu *)&url_suggest;
 
 /* the values given in PRM 3-157 for how to check menus/windows are
- * incorrect so we use a hack of checking if the sub-menu is within
- * 256KB of its parent */
-#define IS_MENU(menu, submenu) (abs((int)(submenu) - (int)(menu)) < 0x40000)
+ * incorrect so we use a hack of checking if the sub-menu has bit 0
+ * set which is undocumented but true of window handles on
+ * all target OS versions */
+#define IS_MENU(menu, submenu) !((int)(submenu) & 1)
+
 
 /**
  * Create menu structures.
@@ -707,11 +709,6 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning) {
 	for (i = 1; warning->selection.items[i] != -1; i++)
 		menu_entry = &menu_entry->sub_menu->
 				entries[warning->selection.items[i]];
-
-	LOG(("menu (%s): %p submenu: %p",
-			menu_entry->data.indirected_text.text,
-			menu_entry,
-			menu_entry->sub_menu));
 
 	if (IS_MENU(menu_entry, menu_entry->sub_menu)) {
 		sub_menu = menu_entry->sub_menu;
@@ -2316,11 +2313,6 @@ bool ro_gui_menu_translate(struct menu_definition *menu)
 				(char *) -1;
 		entry->menu_entry->data.indirected_text.size =
 				strlen(translated);
-
-		LOG(("menu (%s): %p submenu: %p",
-				entry->menu_entry->data.indirected_text.text,
-				entry->menu_entry,
-				submenu));
 
 		/* child menu title - this is the same as the text of
 		 * the parent menu entry, so just copy the pointer */
