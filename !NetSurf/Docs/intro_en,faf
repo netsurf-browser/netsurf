@@ -32,14 +32,18 @@ developers.</p>
 
 <dt><a href="http://sourceforge.net/projects/netsurf/">SourceForge project
 page</a></dt>
-<dd>SourceForge provides the mailing list, bug tracker, and other services</dd>
+<dd>SourceForge provides the bug tracker, mailing list and other services</dd>
 
 <dt><a href="http://netsurf.sourceforge.net/builds/">Test builds</a></dt>
 <dd>Built automatically from the latest source</dd>
 
 <dt><a href="http://sourceforge.net/tracker/?atid=464312&amp;group_id=51719">Bug
 tracker</a></dt>
-<dd>Please submit bugs to the tracker, or report them to the mailing list</dd>
+<dd>Please report bugs on the bug tracker</dd>
+
+<dt><a href="http://sourceforge.net/tracker/?group_id=51719&amp;atid=464315">Request
+tracker</a></dt>
+<dd>Please make feature requests on the request tracker</dd>
 
 <dt><a href="http://lists.sourceforge.net/lists/listinfo/netsurf-develop">Development
 mailing list</a></dt>
