@@ -850,3 +850,25 @@ void ro_gui_wimp_update_window_furniture(wimp_w w, wimp_window_flags bic_mask,
 		}
 	}
 }
+
+
+/**
+ * Checks whether a piece of window furniture is present for a window.
+ *
+ * \param  w	     the window to modify
+ * \param  mask      the furniture flags to check
+ */
+bool ro_gui_wimp_check_window_furniture(wimp_w w, wimp_window_flags mask) {
+	wimp_window_state state;
+	os_error *error;
+
+	state.w = w;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+	return state.flags & mask;
+}
