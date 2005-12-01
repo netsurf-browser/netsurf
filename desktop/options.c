@@ -5,7 +5,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
- * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2005 Richard Wilson <info@tinct.net>
  */
 
 /** \file
@@ -360,6 +360,7 @@ void options_load_tree_entry(xmlNode *li, struct node *directory) {
 		  		last_date = atoi(comment + 10);
 			else if (strncmp("Visits:", comment, 7) == 0)
 		  		visits = atoi(comment + 7);
+		  	xmlFree(comment);
 		}
 	}
 
@@ -371,6 +372,8 @@ void options_load_tree_entry(xmlNode *li, struct node *directory) {
 
 	entry = tree_create_URL_node(directory, title, url, filetype, add_date,
 			last_date, visits);
+	xmlFree(url);
+	xmlFree(title);
 }
 
 
