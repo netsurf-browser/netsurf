@@ -1,6 +1,6 @@
 CC = /home/riscos/cross/bin/gcc
 CC_DEBUG = gcc
-ASM = gcc
+ASM = /home/riscos/cross/bin/gcc
 
 PLATFORM_CFLAGS_RISCOS = -I/home/riscos/env/include \
 		-I/home/riscos/env/include/libxml2 \
