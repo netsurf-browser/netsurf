@@ -111,6 +111,7 @@ CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
 	`pkg-config --cflags gtk+-2.0` `xml2-config --cflags`
 
 AFLAGS_RISCOS = -I..,. $(PLATFORM_AFLAGS_RISCOS)
+AFLAGS_NCOS = $(AFLAGS_RISCOS) -Dncos
 
 # targets
 riscos: $(RUNIMAGE)
@@ -158,6 +159,9 @@ $(OBJDIR_GTK)/%.o : %.c
 $(OBJDIR_RISCOS)/%.o : %.s
 	@echo "== $<"
 	$(ASM) -o $@ -c $(AFLAGS_RISCOS) $<
+$(OBJDIR_NCOS)/%.o : %.s
+	@echo "== $<"
+	$(ASM) -o $@ -c $(AFLAGS_NCOS) $<
 
 # special cases
 css/css_enum.c css/css_enum.h: css/css_enums css/makeenum
