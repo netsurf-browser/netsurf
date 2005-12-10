@@ -1,11 +1,13 @@
 CC = /home/riscos/cross/bin/gcc
 CC_DEBUG = gcc
+ASM = gcc
 
 PLATFORM_CFLAGS_RISCOS = -I/home/riscos/env/include \
 		-I/home/riscos/env/include/libxml2 \
 		-I/home/riscos/env/include/libmng
 PLATFORM_CFLAGS_DEBUG = -I/usr/include/libxml2 -I/riscos/src/OSLib \
 		-I/riscos/include/libjpeg -D_POSIX_C_SOURCE
+PLATFORM_AFLAGS_RISCOS = -I/riscos/src/OSLib
 
 LDFLAGS_RISCOS = -L/home/riscos/env/lib -lxml2 -lz -lcurl -lssl -lcrypto \
 		-lcares -lmng -loslib -ljpeg -lrufl -lpencil
