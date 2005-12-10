@@ -45,6 +45,9 @@
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
 #endif
+#ifdef WITH_ARTWORKS
+#include "netsurf/riscos/artworks.h"
+#endif
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/talloc.h"
@@ -62,6 +65,9 @@ struct mime_entry {
 };
 /** A map from MIME type to ::content_type. Must be sorted by mime_type. */
 static const struct mime_entry mime_map[] = {
+#ifdef WITH_ARTWORKS
+	{"application/artworks", CONTENT_ARTWORKS},
+#endif
 #ifdef WITH_DRAW
 	{"application/drawfile", CONTENT_DRAW},
 	{"application/x-drawfile", CONTENT_DRAW},
@@ -70,6 +76,9 @@ static const struct mime_entry mime_map[] = {
 	{"application/x-netsurf-theme", CONTENT_THEME},
 #endif
 	{"application/xhtml+xml", CONTENT_HTML},
+#ifdef WITH_ARTWORKS
+	{"image/artworks", CONTENT_ARTWORKS},
+#endif
 #ifdef WITH_DRAW
 	{"image/drawfile", CONTENT_DRAW},
 #endif
@@ -137,6 +146,9 @@ const char *content_type_name[] = {
 #endif
 #ifdef WITH_THEME_INSTALL
 	"THEME",
+#endif
+#ifdef WITH_ARTWORKS
+	"ARTWORKS",
 #endif
 	"OTHER",
 	"UNKNOWN"
@@ -212,6 +224,10 @@ static const struct handler_entry handler_map[] = {
 #endif
 #ifdef WITH_THEME_INSTALL
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, false},
+#endif
+#ifdef WITH_ARTWORKS
+	{0, 0, artworks_convert,
+		0, artworks_destroy, 0, artworks_redraw, 0, 0, false},
 #endif
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, false}
 };

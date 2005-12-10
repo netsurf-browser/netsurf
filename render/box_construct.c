@@ -64,6 +64,9 @@ static const content_type image_types[] = {
 #ifdef WITH_DRAW
 	CONTENT_DRAW,
 #endif
+#ifdef WITH_ARTWORKS
+	CONTENT_ARTWORKS,
+#endif
 	CONTENT_UNKNOWN };
 
 #define MAX_SPAN (100)

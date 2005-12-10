@@ -327,6 +327,7 @@ PNGTitle:PNG image (%lux%lu, %lu bytes)
 JNGTitle:JNG image (%lux%lu, %lu bytes)
 MNGTitle:MNG image (%lux%lu, %lu bytes)
 SpriteTitle:Sprite image (%lux%lu, %lu bytes)
+ArtWorksTitle:ArtWorks image (%lux%lu, %lu bytes)
 
 # HTML page character set
 #
@@ -379,6 +380,7 @@ DownloadWarn:This download may not complete:
 MiscError:An unexpected error occurred:
 FileError:File does not exist:
 PrintError:An error occurred when printing:
+AWNotSeen:Please locate the AWViewer application and try again.
 
 # Specific errors - displayed in a dialog box
 #

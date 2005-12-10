@@ -126,6 +126,9 @@
 #ifdef WITH_DRAW
 #include "netsurf/riscos/draw.h"
 #endif
+#ifdef WITH_ARTWORKS
+#include "netsurf/riscos/artworks.h"
+#endif
 
 
 struct bitmap;
@@ -224,6 +227,9 @@ struct content {
 #endif
 #ifdef WITH_PLUGIN
 		struct content_plugin_data plugin;
+#endif
+#ifdef WITH_ARTWORKS
+		struct content_artworks_data artworks;
 #endif
 	} data;
 

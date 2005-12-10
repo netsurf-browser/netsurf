@@ -30,6 +30,7 @@
 #if defined(riscos) || defined(ncos)
     #define WITH_DRAW
     #define WITH_SPRITE
+    #define WITH_ARTWORKS
 #endif
 
 /* Platform specific features */

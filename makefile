@@ -31,7 +31,8 @@ OBJECTS_IMAGE = gif.o gifread.o jpeg.o mng.o			# image/
 OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_RISCOS += browser.o netsurf.o selection.o textinput.o \
 	version.o						# desktop/
-OBJECTS_RISCOS += 401login.o bitmap.o buffer.o debugwin.o \
+OBJECTS_RISCOS += 401login.o artworks.o awrender.o bitmap.o \
+	buffer.o debugwin.o \
 	dialog.o download.o draw.o filename.o filetype.o font.o \
 	global_history.o gui.o help.o history.o hotlist.o image.o \
 	menus.o mouseactions.o plotters.o plugin.o print.o query.o \
@@ -49,7 +50,7 @@ OBJECTS_DEBUG += debug_bitmap.o filetyped.o fontd.o netsurfd.o	# debug/
 OBJECTS_DEBUGRO = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_DEBUGRO += netsurfd.o					# debug/
 OBJECTS_DEBUGRO += version.o					# desktop/
-OBJECTS_DEBUGRO += bitmap.o draw.o filetype.o font.o \
+OBJECTS_DEBUGRO += artworks.o bitmap.o draw.o filetype.o font.o \
 	gif.o gifread.o image.o jpeg.o plotters.o save_complete.o \
 	schedule.o sprite.o					# riscos/
 
@@ -109,7 +110,7 @@ CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
 	$(WARNFLAGS) -I.. -g \
 	`pkg-config --cflags gtk+-2.0` `xml2-config --cflags`
 
-AFLAGS_RISCOS = -CPU XScale -ThrowBack -Quit
+AFLAGS_RISCOS = -I..,. $(PLATFORM_AFLAGS_RISCOS)
 
 # targets
 riscos: $(RUNIMAGE)
@@ -156,7 +157,7 @@ $(OBJDIR_GTK)/%.o : %.c
 # pattern rules for asm source
 $(OBJDIR_RISCOS)/%.o : %.s
 	@echo "== $<"
-	$(ASM) -o $@ $(AFLAGS_RISCOS) $<
+	$(ASM) -o $@ -c $(AFLAGS_RISCOS) $<
 
 # special cases
 css/css_enum.c css/css_enum.h: css/css_enums css/makeenum

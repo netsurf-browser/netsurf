@@ -326,6 +326,7 @@ PNGTitle:PNG image (%lux%lu, %lu bytes)
 JNGTitle:JNG image (%lux%lu, %lu bytes)
 MNGTitle:MNG image (%lux%lu, %lu bytes)
 SpriteTitle:Sprite image (%lux%lu, %lu bytes)
+ArtWorksTitle:ArtWorks image (%lux%lu, %lu bytes)
 
 # HTML page character set
 #
@@ -395,7 +396,7 @@ NoURLError:Please enter a URL
 URIError:NetSurf was unable to parse this URI file due to a syntax error.
 EmptyError:file is empty.
 PrintErrorRO2:It appears that the printer is busy.
-
+AWNotSeen:Please locate the AWViewer application and try again.
 
 # Queries
 # =======

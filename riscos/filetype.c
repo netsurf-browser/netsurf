@@ -28,6 +28,7 @@ static const struct type_entry type_map[] = {
 	{0xaff, "image/x-drawfile"},
 	{0xb60, "image/png"},
 	{0xc85, "image/jpeg"},
+	{0xd94, "image/artworks"},
 	{0xf78, "image/jng"},
 	{0xf79, "text/css"},
 	{0xf83, "image/mng"},
@@ -232,6 +233,9 @@ int ro_content_filetype(struct content *content)
 #endif
 #ifdef WITH_DRAW
 		case CONTENT_DRAW:	return 0xaff;
+#endif
+#ifdef WITH_ARTWORKS
+		case CONTENT_ARTWORKS:	return 0xd94;
 #endif
 		default:		break;
 	}

@@ -108,6 +108,9 @@
 #ifndef FILETYPE_JPEG
 #define FILETYPE_JPEG 0xc85
 #endif
+#ifndef FILETYPE_ARTWORKS
+#define FILETYPE_ARTWORKS 0xd94
+#endif
 
 int os_version = 0;
 
@@ -197,7 +200,9 @@ struct ro_gui_poll_block *ro_gui_poll_queued_blocks = 0;
 
 static void ro_gui_choose_language(void);
 static void ro_gui_sprites_init(void);
+#ifndef ncos
 static void ro_gui_icon_bar_create(void);
+#endif
 static void ro_gui_signal(int sig);
 static void ro_gui_cleanup(void);
 static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
@@ -473,6 +478,7 @@ void ro_gui_sprites_init(void)
 }
 
 
+#ifndef ncos
 /**
  * Create an iconbar icon.
  */
@@ -487,6 +493,7 @@ void ro_gui_icon_bar_create(void)
 		{ "!netsurf" } } };
 	wimp_create_icon(&icon);
 }
+#endif
 
 
 /**
@@ -1430,6 +1437,7 @@ void ro_msg_dataload(wimp_message *message)
 		case FILETYPE_JPEG:
 		case osfile_TYPE_SPRITE:
 		case osfile_TYPE_TEXT:
+		case FILETYPE_ARTWORKS:
 			/* display the actual file */
 			url = ro_path_to_url(message->data.data_xfer.file_name);
 			break;
@@ -1717,7 +1725,8 @@ void ro_msg_datasave(wimp_message *message)
 		case FILETYPE_PNG:
 		case FILETYPE_JPEG:
 		case osfile_TYPE_SPRITE:
-		case osfile_TYPE_TEXT: {
+		case osfile_TYPE_TEXT:
+		case FILETYPE_ARTWORKS: {
 			os_error *error;
 
 			dataxfer->your_ref = dataxfer->my_ref;
