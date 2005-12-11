@@ -31,7 +31,7 @@ OBJECTS_IMAGE = gif.o gifread.o jpeg.o mng.o			# image/
 OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_RISCOS += browser.o netsurf.o selection.o textinput.o \
 	version.o						# desktop/
-OBJECTS_RISCOS += 401login.o artworks.o awrender.o bitmap.o \
+OBJECTS_RISCOS += 401login.o artworks.o assert.o awrender.o bitmap.o \
 	buffer.o debugwin.o \
 	dialog.o download.o draw.o filename.o filetype.o font.o \
 	global_history.o gui.o help.o history.o hotlist.o image.o \
