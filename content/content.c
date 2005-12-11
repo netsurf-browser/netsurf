@@ -501,7 +501,6 @@ bool content_process_data(struct content *c, const char *data,
 	assert(c);
 	assert(c->type < HANDLER_MAP_COUNT);
 	assert(c->status == CONTENT_STATUS_LOADING);
-	LOG(("content %s, size %u", c->url, size));
 
 	if ((c->source_size + size) > c->source_allocated) {
 		extra_space = (c->source_size + size) / 4;

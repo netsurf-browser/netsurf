@@ -234,8 +234,6 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 				return;
 			}
 			type = content_lookup(mime_type);
-			LOG(("FETCH_TYPE, type %u", c->download ?
-						CONTENT_OTHER : type));
 			res = content_set_type(c,
 					c->download ? CONTENT_OTHER : type,
 					mime_type, params);
@@ -262,7 +260,6 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			break;
 
 		case FETCH_DATA:
-			LOG(("FETCH_DATA"));
 /*			if (c->total_size)
 				content_set_status(c,
 						messages_get("RecPercent"),
@@ -285,7 +282,6 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			if (url_content)
 				url_content->requests++;
 
-			LOG(("FETCH_FINISHED"));
 			c->fetch = 0;
 			content_set_status(c, messages_get("Converting"),
 					c->source_size);
@@ -308,7 +304,6 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			break;
 
 		case FETCH_REDIRECT:
-			LOG(("FETCH_REDIRECT, '%s'", data));
 			c->fetch = 0;
 			/* redirect URLs must be absolute by HTTP/1.1, but many sites send
 			 * relative ones: treat them as relative to requested URL */

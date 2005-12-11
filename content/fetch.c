@@ -41,6 +41,7 @@
 #ifdef riscos
 #include "netsurf/riscos/gui.h"
 #endif
+#define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"

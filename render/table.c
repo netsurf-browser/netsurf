@@ -14,6 +14,7 @@
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/table.h"
+#define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/talloc.h"
 
