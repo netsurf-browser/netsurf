@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.42 $ )
+| Run file for NetSurf. ( $Revision: 1.43 $ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -16,8 +16,12 @@ RMEnsure UtilityModule 3.00 Error NetSurf needs RISC OS 3 or later
 | http://acorn.riscos.com/ (in the universal boot archive)
 RMEnsure WindowManager 3.80 Error NetSurf requires the Nested Window Manager. This can be obtained by downloading the Universal Boot sequence from http://acorn.riscos.com/
 
-| Ensure the System resource exists - can't do much if it doesn't
+| Check for various key resources - can't do much if they don't exist
 If "<System$Path>" = "" Then Set System$Path_Message System resources not found.
+If "<Wimp$ScrapDir>" = "" Then Error Scrap resource not found.
+If "<InetDBase$Path>" = "" Then Error Internet resources can not be found
+If "<Unicode$Path>" = "" Then Error NetSurf requires the !Unicode resource. This can be found, along with the Iconv module, at http://moose.mine.nu/iconv_latest.zip
+If "<Inet$MimeMappings>" = "" Then Set Inet$MimeMappings InetDBase:MimeMap
 
 | Define this alias for clarity
 | Syntax: NetSurfRMLoad <Path to module>
@@ -48,8 +52,6 @@ RMEnsure AcornURI 0.12 Error NetSurf requires AcornURI 0.12 or later. A version 
 RMEnsure AcornURI 0.12 Unset NetSurf$Start_URI_Handler
 
 | Check for mime map module
-If "<InetDBase$Path>" = "" Then Error Inet databases can not be found
-If "<Inet$MimeMappings>" = "" Then Set Inet$MimeMappings InetDBase:MimeMap
 RMEnsure MimeMap 0.10 NetSurfRMLoad System:Modules.Network.MimeMap
 RMEnsure MimeMap 0.10 Error NetSurf requires MimeMap 0.10 or later
 
@@ -63,10 +65,6 @@ RMEnsure Tinct 0.13 Error NetSurf requires Tinct 0.13 or later. This can be down
 RMEnsure Iconv 0.04 NetSurfRMLoad System:Modules.Iconv
 RMEnsure Iconv 0.04 Error NetSurf requires Iconv 0.04 or later. This can be downloaded from http://moose.mine.nu:6888/iconv_latest.zip
 
-| Ensure !Unicode resource
-| URL as for Iconv
-If "<Unicode$Path>" = "" Then Error NetSurf requires the !Unicode resource. This can be found, along with the Iconv module, at http://moose.mine.nu:6888/iconv_latest.zip
-
 | Disable SpecialFX, if present
 Set NetSurf$SpecialFX 1
 RMEnsure SpecialFX 1.00 Set NetSurf$SpecialFX 0
@@ -75,6 +73,16 @@ Unset NetSurf$SpecialFX
 
 | No longer need this alias
 Unset Alias$NetSurfRMLoad
+
+| Now attempt to create Scrap directories
+Set NetSurf$ScrapWWW 1
+Set NetSurf$ScrapNS 1
+IfThere <Wimp$ScrapDir>.WWW Then Set NetSurf$ScrapWWW 0
+IfThere <Wimp$ScrapDir>.WWW.NetSurf Then Set NetSurf$ScrapNS 0
+If <NetSurf$ScrapWWW> Then CDir <Wimp$ScrapDir>.WWW
+If <NetSurf$ScrapNS> Then CDir <Wimp$ScrapDir>.WWW.NetSurf
+Unset NetSurf$ScrapWWW
+Unset NetSurf$ScrapNS
 
 WimpSlot -min 2240k -max 2240k
 Run <NetSurf$Dir>.!RunImage %*0 2><Wimp$ScrapDir>.WWW.NetSurf.Log
