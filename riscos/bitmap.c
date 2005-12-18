@@ -557,6 +557,14 @@ void bitmap_decompress(struct bitmap *bitmap)
 
 	assert(bitmap->compressed);
 
+	/* ensure the width/height is correct */
+	header = (struct bitmap_compressed_header *)bitmap->compressed;
+	if ((header->width != bitmap->width) ||
+			(header->height != bitmap->height)) {
+		LOG(("Warning: Mismatch between bitmap and compressed sizes"));
+		return;
+	}
+
 	/* create the image memory/header to decompress to */
 	if (!bitmap_initialise(bitmap, false))
 		return;
@@ -575,7 +583,6 @@ void bitmap_decompress(struct bitmap *bitmap)
 		bitmap->sprite_area = NULL;
 	} else {
 //		LOG(("Decompressed"));
-		header = (struct bitmap_compressed_header *)bitmap->compressed;
 		area_size = header->input_size +
 				sizeof(struct bitmap_compressed_header);
 		bitmap_compressed_used -= area_size;
