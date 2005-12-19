@@ -17,11 +17,8 @@
 #include <gdk/gdk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include "netsurf/content/content.h"
+#include "netsurf/gtk/gtk_window.h"
 #include "netsurf/image/bitmap.h"
-
-
-extern GdkDrawable *current_drawable;
-extern GdkGC *current_gc;
 
 
 struct bitmap;

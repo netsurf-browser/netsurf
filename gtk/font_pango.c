@@ -16,13 +16,11 @@
 #include <stdio.h>
 #include <gtk/gtk.h>
 #include "netsurf/css/css.h"
+#include "netsurf/gtk/font_pango.h"
+#include "netsurf/gtk/gtk_window.h"
 #include "netsurf/render/font.h"
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
-
-
-extern GdkDrawable *current_drawable;
-extern GdkGC *current_gc;
 
 
 static PangoFontDescription *nsfont_style_to_description(

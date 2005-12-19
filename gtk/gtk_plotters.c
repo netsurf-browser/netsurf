@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -12,13 +12,11 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include "netsurf/desktop/plotters.h"
+#include "netsurf/gtk/font_pango.h"
+#include "netsurf/gtk/gtk_plotters.h"
+#include "netsurf/gtk/gtk_window.h"
 #include "netsurf/render/font.h"
 #include "netsurf/utils/log.h"
-
-
-extern GtkWidget *current_widget;
-extern GdkDrawable *current_drawable;
-extern GdkGC *current_gc;
 
 
 static bool nsgtk_plot_clg(colour c);

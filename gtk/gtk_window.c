@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include <stdbool.h>
@@ -16,14 +16,14 @@
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/plotters.h"
+#include "netsurf/gtk/gtk_gui.h"
+#include "netsurf/gtk/gtk_plotters.h"
+#include "netsurf/gtk/gtk_window.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
-
-
-extern bool gui_in_multitask;
 
 
 struct gui_window {
@@ -162,8 +162,6 @@ void gui_window_destroy_event(GtkWidget *widget, gpointer data)
 	netsurf_quit = true;
 }
 
-
-extern const struct plotter_table nsgtk_plotters;
 
 gboolean gui_window_expose_event(GtkWidget *widget,
 		GdkEventExpose *event, gpointer data)
