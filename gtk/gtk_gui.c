@@ -5,14 +5,17 @@
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  */
 
+#define _GNU_SOURCE  /* for strndup */
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <curl/curl.h>
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 #include "netsurf/content/content.h"
+#include "netsurf/content/fetch.h"
 #include "netsurf/desktop/401login.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
@@ -21,6 +24,7 @@
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/html.h"
+#include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
@@ -68,7 +72,52 @@ void gui_init2(int argc, char** argv)
 
 void gui_poll(bool active)
 {
-	gtk_main_iteration_do(!active);
+	CURLMcode code;
+	fd_set read_fd_set, write_fd_set, exc_fd_set;
+	int max_fd;
+	GPollFD *fd_list[1000];
+	unsigned int fd_count = 0;
+
+	if (active) {
+		fetch_poll();
+		FD_ZERO(&read_fd_set);
+		FD_ZERO(&write_fd_set);
+		FD_ZERO(&exc_fd_set);
+		code = curl_multi_fdset(fetch_curl_multi,
+				&read_fd_set,
+				&write_fd_set,
+				&exc_fd_set,
+				&max_fd);
+		assert(code == CURLM_OK);
+		for (int i = 0; i <= max_fd; i++) {
+			if (FD_ISSET(i, &read_fd_set)) {
+				GPollFD *fd = malloc(sizeof *fd);
+				fd->fd = i;
+				fd->events = G_IO_IN | G_IO_HUP | G_IO_ERR;
+				g_main_context_add_poll(0, fd, 0);
+				fd_list[fd_count++] = fd;
+			}
+			if (FD_ISSET(i, &write_fd_set)) {
+				GPollFD *fd = malloc(sizeof *fd);
+				fd->fd = i;
+				fd->events = G_IO_OUT | G_IO_ERR;
+				g_main_context_add_poll(0, fd, 0);
+				fd_list[fd_count++] = fd;
+			}
+			if (FD_ISSET(i, &exc_fd_set)) {
+				GPollFD *fd = malloc(sizeof *fd);
+				fd->fd = i;
+				fd->events = G_IO_ERR;
+				g_main_context_add_poll(0, fd, 0);
+				fd_list[fd_count++] = fd;
+			}
+		}
+	}
+	gtk_main_iteration_do(true);
+	for (unsigned int i = 0; i != fd_count; i++) {
+		g_main_context_remove_poll(0, fd_list[i]);
+		free(fd_list[i]);
+	}
 }
 
 

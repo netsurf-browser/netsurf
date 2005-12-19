@@ -78,7 +78,7 @@ struct fetch {
 };
 
 static const char * const user_agent = "NetSurf";
-static CURLM *curl_multi;		/**< Global cURL multi handle. */
+CURLM *fetch_curl_multi;		/**< Global cURL multi handle. */
 /** Curl handle with default options set; not used for transfers. */
 static CURL *fetch_blank_curl;
 static struct fetch *fetch_list = 0;	/**< List of active fetches. */
@@ -121,8 +121,8 @@ void fetch_init(void)
 		die("Failed to initialise the fetch module "
 				"(curl_global_init failed).");
 
-	curl_multi = curl_multi_init();
-	if (!curl_multi)
+	fetch_curl_multi = curl_multi_init();
+	if (!fetch_curl_multi)
 		die("Failed to initialise the fetch module "
 				"(curl_multi_init failed).");
 
@@ -189,7 +189,7 @@ void fetch_quit(void)
 
 	curl_easy_cleanup(fetch_blank_curl);
 
-	codem = curl_multi_cleanup(curl_multi);
+	codem = curl_multi_cleanup(fetch_curl_multi);
 	if (codem != CURLM_OK)
 		LOG(("curl_multi_cleanup failed: ignoring"));
 
@@ -356,7 +356,7 @@ struct fetch * fetch_start(char *url, char *referer,
 		goto failed;
 
 	/* add to the global curl multi handle */
-	codem = curl_multi_add_handle(curl_multi, fetch->curl_handle);
+	codem = curl_multi_add_handle(fetch_curl_multi, fetch->curl_handle);
 	assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
 
 	fetch->next = fetch_list;
@@ -491,7 +491,8 @@ void fetch_stop(struct fetch *f)
 
 	/* remove from curl multi handle */
 	if (f->curl_handle) {
-		codem = curl_multi_remove_handle(curl_multi, f->curl_handle);
+		codem = curl_multi_remove_handle(fetch_curl_multi,
+				f->curl_handle);
 		assert(codem == CURLM_OK);
 	}
 
@@ -506,7 +507,7 @@ void fetch_stop(struct fetch *f)
 		code = fetch_set_options(fetch);
 		if (code == CURLE_OK)
 			/* add to the global curl multi handle */
-			codem = curl_multi_add_handle(curl_multi,
+			codem = curl_multi_add_handle(fetch_curl_multi,
 					fetch->curl_handle);
 
 		if (code == CURLE_OK && (codem == CURLM_OK ||
@@ -576,12 +577,12 @@ void fetch_poll(void)
 
 	/* do any possible work on the current fetches */
 	do {
-		codem = curl_multi_perform(curl_multi, &running);
+		codem = curl_multi_perform(fetch_curl_multi, &running);
 		assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
 	} while (codem == CURLM_CALL_MULTI_PERFORM);
 
 	/* process curl results */
-	curl_msg = curl_multi_info_read(curl_multi, &queue);
+	curl_msg = curl_multi_info_read(fetch_curl_multi, &queue);
 	while (curl_msg) {
 		switch (curl_msg->msg) {
 			case CURLMSG_DONE:
@@ -591,7 +592,7 @@ void fetch_poll(void)
 			default:
 				break;
 		}
-		curl_msg = curl_multi_info_read(curl_multi, &queue);
+		curl_msg = curl_multi_info_read(fetch_curl_multi, &queue);
 	}
 
 	if (!fetch_list)

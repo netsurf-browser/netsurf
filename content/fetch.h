@@ -13,6 +13,7 @@
 #define _NETSURF_DESKTOP_FETCH_H_
 
 #include <stdbool.h>
+#include "curl/curl.h"
 #include "netsurf/utils/config.h"
 
 typedef enum {
@@ -34,6 +35,7 @@ struct form_successful_control;
 #endif
 
 extern bool fetch_active;
+extern CURLM *fetch_curl_multi;
 
 void fetch_init(void);
 struct fetch * fetch_start(char *url, char *referer,
