@@ -68,7 +68,7 @@ char *ro_filename_request(void) {
 		dir->low_used |= (1 << i);
 	else
 		dir->high_used |= (1 << (i - 32));
-	sprintf(ro_filename_buffer, "%s%i", dir->prefix, i);
+	sprintf(ro_filename_buffer, "%s%.2i", dir->prefix, i);
 	return ro_filename_buffer;
 }
 
