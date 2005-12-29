@@ -44,6 +44,7 @@ extern bool option_block_ads;
 extern int option_minimum_gif_delay;
 extern bool option_send_referer;
 extern bool option_animate_images;
+extern int option_expire_url;
 
 void options_read(const char *path);
 void options_write(const char *path);

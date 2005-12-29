@@ -65,7 +65,8 @@ int option_minimum_gif_delay = 10;
 bool option_send_referer = true;
 /** Whether to animate images */
 bool option_animate_images = true;
-
+/** How many days to retain URL data for */
+int option_expire_url = 28;
 
 EXTRA_OPTION_DEFINE
 
@@ -89,7 +90,8 @@ struct {
 	{ "block_advertisements", OPTION_BOOL, &option_block_ads },
 	{ "minimum_gif_delay",      OPTION_INTEGER, &option_minimum_gif_delay },
 	{ "send_referer",    OPTION_BOOL,    &option_send_referer },
-	{ "animate_images",  OPTION_BOOL,    &option_animate_images }, \
+	{ "animate_images",  OPTION_BOOL,    &option_animate_images },
+	{ "expire_url",	     OPTION_INTEGER, &option_expire_url }, \
 	EXTRA_OPTION_TABLE
 };
 
