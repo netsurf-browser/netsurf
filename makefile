@@ -32,14 +32,15 @@ OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_RISCOS += browser.o netsurf.o selection.o textinput.o \
 	version.o						# desktop/
 OBJECTS_RISCOS += 401login.o artworks.o assert.o awrender.o bitmap.o \
-	buffer.o debugwin.o \
+	buffer.o configure.o debugwin.o \
 	dialog.o download.o draw.o filename.o filetype.o font.o \
 	global_history.o gui.o help.o history.o hotlist.o image.o \
 	menus.o mouseactions.o plotters.o plugin.o print.o query.o \
 	save.o save_complete.o save_draw.o save_text.o \
 	schedule.o search.o sprite.o textselection.o theme.o \
 	theme_install.o thumbnail.o treeview.o ucstables.o uri.o \
-	url_complete.o url_protocol.o wimp.o window.o		# riscos/
+	url_complete.o url_protocol.o wimp.o wimp_event.o window.o	# riscos/
+OBJECTS_RISCOS += con_fonts.o					# riscos/configure/
 # OBJECTS_RISCOS += memdebug.o
 
 OBJECTS_NCOS = $(OBJECTS_RISCOS)
@@ -90,7 +91,7 @@ else
 include posix.mk
 endif
 
-VPATH = content:css:desktop:image:render:riscos:utils:debug:gtk
+VPATH = content:css:desktop:image:render:riscos:riscos/configure:utils:debug:gtk
 
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
