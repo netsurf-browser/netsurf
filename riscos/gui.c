@@ -48,6 +48,7 @@
 #include "netsurf/render/html.h"
 #include "netsurf/riscos/bitmap.h"
 #include "netsurf/riscos/buffer.h"
+#include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/filename.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
@@ -72,6 +73,7 @@
 #endif
 #include "netsurf/riscos/url_complete.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -191,12 +193,6 @@ static wimp_MESSAGE_LIST(38) task_messages = { {
 #endif
 	0
 } };
-struct ro_gui_poll_block {
-	wimp_event_no event;
-	wimp_block *block;
-	struct ro_gui_poll_block *next;
-};
-struct ro_gui_poll_block *ro_gui_poll_queued_blocks = 0;
 
 static void ro_gui_choose_language(void);
 static void ro_gui_sprites_init(void);
@@ -206,14 +202,13 @@ static void ro_gui_icon_bar_create(void);
 static void ro_gui_signal(int sig);
 static void ro_gui_cleanup(void);
 static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
-static void ro_gui_poll_queue(wimp_event_no event, wimp_block *block);
 static void ro_gui_null_reason_code(void);
 static void ro_gui_redraw_window_request(wimp_draw *redraw);
 static void ro_gui_close_window_request(wimp_close *close);
 static void ro_gui_pointer_leaving_window(wimp_leaving *leaving);
 static void ro_gui_pointer_entering_window(wimp_entering *entering);
 static void ro_gui_mouse_click(wimp_pointer *pointer);
-static void ro_gui_icon_bar_click(wimp_pointer *pointer);
+static bool ro_gui_icon_bar_click(wimp_pointer *pointer);
 static void ro_gui_check_resolvers(void);
 static void ro_gui_drag_end(wimp_dragged *drag);
 static void ro_gui_keypress(wimp_key *key);
@@ -295,6 +290,7 @@ void gui_init(int argc, char** argv)
 	if (!option_toolbar_history)
 		option_toolbar_history = strdup("01|23");
 
+	ro_gui_sprites_init();
 	ro_gui_choose_language();
 
 	bitmap_initialise_memory();
@@ -347,7 +343,7 @@ void gui_init(int argc, char** argv)
 				error->errnum, error->errmess));
 		die(error->errmess);
 	}
-	ro_gui_dialog_init();
+	ro_gui_dialog_init(); /* must be done after sprite loading */
 	ro_gui_download_init();
 	ro_gui_menu_init();
 	ro_gui_query_init();
@@ -356,7 +352,6 @@ void gui_init(int argc, char** argv)
 #endif
 	ro_gui_history_init();
 	wimp_close_template();
-	ro_gui_sprites_init();
 	ro_gui_tree_initialise(); /* must be done after sprite loading */
 	ro_gui_hotlist_initialise();
 	ro_gui_global_history_initialise();
@@ -492,6 +487,8 @@ void ro_gui_icon_bar_create(void)
 				(wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT),
 		{ "!netsurf" } } };
 	wimp_create_icon(&icon);
+	ro_gui_wimp_event_register_mouse_click(wimp_ICON_BAR,
+			ro_gui_icon_bar_click);
 }
 #endif
 
@@ -659,17 +656,6 @@ void gui_poll(bool active)
 	wimp_block block;
 	const wimp_poll_flags mask = wimp_MASK_LOSE | wimp_MASK_GAIN;
 
-	/* Process queued events. */
-	while (ro_gui_poll_queued_blocks) {
-		struct ro_gui_poll_block *next;
-		ro_gui_handle_event(ro_gui_poll_queued_blocks->event,
-				ro_gui_poll_queued_blocks->block);
-		next = ro_gui_poll_queued_blocks->next;
-		free(ro_gui_poll_queued_blocks->block);
-		free(ro_gui_poll_queued_blocks);
-		ro_gui_poll_queued_blocks = next;
-	}
-
 	/* Poll wimp. */
 	xhourglass_off();
 	if (active) {
@@ -794,57 +780,8 @@ void gui_multitask(void)
 	xhourglass_on();
 	gui_last_poll = clock();
 
-	switch (event) {
-		case wimp_KEY_PRESSED:
-		case wimp_MENU_SELECTION:
-			ro_gui_poll_queue(event, &block);
-			break;
-
-		default:
-			ro_gui_handle_event(event, &block);
-			break;
-	}
+	ro_gui_handle_event(event, &block);
 }
-
-
-/**
- * Add a wimp_block to the queue for later handling.
- */
-
-void ro_gui_poll_queue(wimp_event_no event, wimp_block *block)
-{
-	struct ro_gui_poll_block *q =
-			calloc(1, sizeof(struct ro_gui_poll_block));
-	if (!q) {
-		LOG(("Insufficient memory for calloc"));
-		warn_user("NoMemory", 0);
-		return;
-	}
-
-	q->event = event;
-	q->block = calloc(1, sizeof(*block));
-	if (!q->block) {
-		free(q);
-		LOG(("Insufficient memory for calloc"));
-		warn_user("NoMemory", 0);
-		return;
-	}
-	memcpy(q->block, block, sizeof(*block));
-	q->next = NULL;
-
-	if (ro_gui_poll_queued_blocks == NULL) {
-		ro_gui_poll_queued_blocks = q;
-		return;
-	} else {
-		struct ro_gui_poll_block *current =
-				ro_gui_poll_queued_blocks;
-		while (current->next != NULL)
-			current = current->next;
-		current->next = q;
-	}
-	return;
-}
-
 
 /**
  * Handle Null_Reason_Code events.
@@ -899,41 +836,12 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 {
 	struct gui_window *g;
 
-	if (redraw->w == history_window)
-		ro_gui_history_redraw(redraw);
-	else if (redraw->w == dialog_url_complete)
-		ro_gui_url_complete_redraw(redraw);
-	else if ((hotlist_tree) && (redraw->w == (wimp_w)hotlist_tree->handle))
-		ro_gui_tree_redraw(redraw, hotlist_tree);
-	else if ((global_history_tree) && (redraw->w == (wimp_w)global_history_tree->handle))
-		ro_gui_tree_redraw(redraw, global_history_tree);
-	else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
-			(hotlist_tree->toolbar->toolbar_handle == redraw->w))
-		ro_gui_theme_redraw(hotlist_tree->toolbar, redraw);
-	else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
-			(hotlist_tree->toolbar->editor) &&
-			(hotlist_tree->toolbar->editor->toolbar_handle == redraw->w))
-		ro_gui_theme_redraw(hotlist_tree->toolbar->editor, redraw);
-	else if ((global_history_tree) && (global_history_tree->toolbar) &&
-			(global_history_tree->toolbar->toolbar_handle == redraw->w))
-		ro_gui_theme_redraw(global_history_tree->toolbar, redraw);
-	else if ((global_history_tree) && (global_history_tree->toolbar) &&
-			(global_history_tree->toolbar->editor) &&
-			(global_history_tree->toolbar->editor->toolbar_handle == redraw->w))
-		ro_gui_theme_redraw(global_history_tree->toolbar->editor, redraw);
-	else if (redraw->w == dialog_debug)
-		ro_gui_debugwin_redraw(redraw);
-	else if ((g = ro_gui_window_lookup(redraw->w)) != NULL)
+	if (ro_gui_wimp_event_redraw_window(redraw))
+		return;
+	
+	g = ro_gui_window_lookup(redraw->w);
+	if (g)
 		ro_gui_window_redraw(g, redraw);
-	else if ((g = ro_gui_toolbar_lookup(redraw->w)) != NULL) {
-		if (g->toolbar->toolbar_handle == redraw->w)
-			ro_gui_theme_redraw(g->toolbar, redraw);
-		else if ((g->toolbar->editor) &&
-				(g->toolbar->editor->toolbar_handle == redraw->w))
-			ro_gui_theme_redraw(g->toolbar->editor, redraw);
-	} else {
-		ro_gui_dialog_redraw(redraw);
-	}
 }
 
 
@@ -946,13 +854,12 @@ void ro_gui_open_window_request(wimp_open *open)
 	struct gui_window *g;
 	os_error *error;
 
+	if (ro_gui_wimp_event_open_window(open))
+		return;
+
 	g = ro_gui_window_lookup(open->w);
 	if (g) {
 		ro_gui_window_open(g, open);
-	} else if ((hotlist_tree) && (open->w == (wimp_w)hotlist_tree->handle)){
-		ro_gui_tree_open(open, hotlist_tree);
-	} else if ((global_history_tree) && (open->w == (wimp_w)global_history_tree->handle)){
-		ro_gui_tree_open(open, global_history_tree);
 	} else {
 		error = xwimp_open_window(open);
 		if (error) {
@@ -982,16 +889,14 @@ void ro_gui_close_window_request(wimp_close *close)
 	*/
 	ro_gui_dialog_close_persistent(close->w);
 
-	if (close->w == dialog_debug)
-		ro_gui_debugwin_close();
-	else if ((g = ro_gui_window_lookup(close->w)) != NULL) {
+	if ((g = ro_gui_window_lookup(close->w)) != NULL) {
 		ro_gui_url_complete_close(NULL, 0);
 		browser_window_destroy(g->bw);
-	}
-	else if ((dw = ro_gui_download_window_lookup(close->w)) != NULL)
+	} else if ((dw = ro_gui_download_window_lookup(close->w)) != NULL) {
 		ro_gui_download_window_destroy(dw, false);
-	else
+	} else {
 		ro_gui_dialog_close(close->w);
+	}
 }
 
 
@@ -1048,44 +953,17 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
 	struct gui_download_window *dw;
 	struct gui_query_window *qw;
 
-	if (pointer->w == wimp_ICON_BAR)
-		ro_gui_icon_bar_click(pointer);
-	else if (pointer->w == history_window)
-		ro_gui_history_click(pointer);
-	else if (pointer->w == dialog_url_complete)
+	if (ro_gui_wimp_event_mouse_click(pointer))
+		return;
+	
+	if (pointer->w == dialog_url_complete)
 		ro_gui_url_complete_mouse_at(pointer, true);
-	else if ((hotlist_tree) && (pointer->w == (wimp_w)hotlist_tree->handle))
-		ro_gui_hotlist_click(pointer);
-	else if ((global_history_tree) && (pointer->w == (wimp_w)global_history_tree->handle))
-		ro_gui_global_history_click(pointer);
-	else if (pointer->w == dialog_saveas)
-		ro_gui_save_click(pointer);
-	else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
-			(hotlist_tree->toolbar->toolbar_handle == pointer->w))
-		ro_gui_tree_toolbar_click(pointer, hotlist_tree);
-	else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
-			(hotlist_tree->toolbar->editor) &&
-			(hotlist_tree->toolbar->editor->toolbar_handle == pointer->w))
-		ro_gui_tree_toolbar_click(pointer, hotlist_tree);
-	else if ((global_history_tree) && (global_history_tree->toolbar) &&
-			(global_history_tree->toolbar->toolbar_handle == pointer->w))
-		ro_gui_tree_toolbar_click(pointer, global_history_tree);
-	else if ((global_history_tree) && (global_history_tree->toolbar) &&
-			(global_history_tree->toolbar->editor) &&
-			(global_history_tree->toolbar->editor->toolbar_handle == pointer->w))
-		ro_gui_tree_toolbar_click(pointer, global_history_tree);
 	else if ((g = ro_gui_window_lookup(pointer->w)) != NULL)
 		ro_gui_window_click(g, pointer);
-	else if ((g = ro_gui_toolbar_lookup(pointer->w)) != NULL)
-		ro_gui_toolbar_click(g, pointer);
-	else if ((g = ro_gui_status_lookup(pointer->w)) != NULL)
-		ro_gui_status_click(g, pointer);
 	else if ((dw = ro_gui_download_window_lookup(pointer->w)) != NULL)
 		ro_gui_download_window_click(dw, pointer);
 	else if ((qw = ro_gui_query_window_lookup(pointer->w)) != NULL)
 		ro_gui_query_window_click(qw, pointer);
-	else
-		ro_gui_dialog_click(pointer);
 }
 
 
@@ -1093,7 +971,7 @@ void ro_gui_mouse_click(wimp_pointer *pointer)
  * Handle Mouse_Click events on the iconbar icon.
  */
 
-void ro_gui_icon_bar_click(wimp_pointer *pointer)
+bool ro_gui_icon_bar_click(wimp_pointer *pointer)
 {
 	char url[80];
 	int key_down = 0;
@@ -1120,6 +998,7 @@ void ro_gui_icon_bar_click(wimp_pointer *pointer)
 		else
 			ro_gui_debugwin_open();
 	}
+	return true;
 }
 
 
@@ -1179,11 +1058,9 @@ void ro_gui_keypress(wimp_key *key)
 	bool handled = false;
 	struct gui_window *g;
 	os_error *error;
-
-	if ((hotlist_tree) && (key->w == (wimp_w)hotlist_tree->handle))
-		handled = ro_gui_tree_keypress(key->c, hotlist_tree);
-	else if ((global_history_tree) && (key->w == (wimp_w)global_history_tree->handle))
-		handled = ro_gui_tree_keypress(key->c, global_history_tree);
+	
+	if (ro_gui_wimp_event_keypress(key))
+		handled = true;
 	else if ((g = ro_gui_window_lookup(key->w)) != NULL)
 		handled = ro_gui_window_keypress(g, key->c, false);
 	else if ((g = ro_gui_toolbar_lookup(key->w)) != NULL)
@@ -1192,8 +1069,6 @@ void ro_gui_keypress(wimp_key *key)
 		handled = ro_gui_query_window_keypress(qw, key);
 	else if ((dw = ro_gui_download_window_lookup(key->w)) != NULL)
 		handled = ro_gui_download_window_keypress(dw, key);
-	else
-		handled = ro_gui_dialog_keypress(key);
 
 	if (!handled) {
 		error = xwimp_process_key(key->c);
@@ -1263,7 +1138,7 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			break;
 
 		case message_MENUS_DELETED:
-			ro_gui_menu_closed();
+			ro_gui_menu_closed(true);
 			break;
 
 		case message_MODE_CHANGE:
@@ -1399,7 +1274,7 @@ void ro_msg_dataload(wimp_message *message)
 	os_error *error;
 	int x, y;
 	bool before;
-	bool tree_edit = false;
+	struct url_content *data;
 
 	g = ro_gui_window_lookup(message->data.data_xfer.w);
 	if (g) {
@@ -1455,26 +1330,25 @@ void ro_msg_dataload(wimp_message *message)
 		browser_window_go(g->bw, url, 0);
 	} else if ((hotlist_tree) && ((wimp_w)hotlist_tree->handle ==
 			message->data.data_xfer.w)) {
-		if (!title) {
-			tree_edit = true;
-			title = url;
+		data = url_store_find(url);
+		if (data) {
+			if ((title) && (!data->title))
+				data->title = title;
+			if (!title)
+				title = strdup(url);
+			ro_gui_tree_get_tree_coordinates(hotlist_tree,
+					message->data.data_xfer.pos.x,
+					message->data.data_xfer.pos.y,
+					&x, &y);
+			link = tree_get_link_details(hotlist_tree, x, y, &before);
+			node = tree_create_URL_node(NULL, data, title);
+			tree_link_node(link, node, before);
+			tree_handle_node_changed(hotlist_tree, node, false, true);
+			tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP, 0,
+					NODE_INSTEP, 16384);
+			if (!title)
+				ro_gui_tree_start_edit(hotlist_tree, &node->data, NULL);
 		}
-		ro_gui_tree_get_tree_coordinates(hotlist_tree,
-				message->data.data_xfer.pos.x,
-				message->data.data_xfer.pos.y,
-				&x, &y);
-		link = tree_get_link_details(hotlist_tree, x, y, &before);
-		node = tree_create_URL_node(NULL,
-				title, url, tree_file_type,
-				time(NULL), -1, 0);
-		tree_link_node(link, node, before);
-		tree_handle_node_changed(hotlist_tree, node, false, true);
-		tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP, 0,
-				NODE_INSTEP, 16384);
-		if (tree_edit)
-			ro_gui_tree_start_edit(hotlist_tree, &node->data, NULL);
-		else
-			free(title);
 	} else {
 		browser_window_create(url, 0, 0);
 	}

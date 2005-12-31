@@ -24,6 +24,9 @@
 
 #define RISCOS5 0xAA
 
+#define THUMBNAIL_WIDTH 100
+#define THUMBNAIL_HEIGHT 86
+
 extern int os_version;
 
 extern const char * NETSURF_DIR;
@@ -39,7 +42,10 @@ extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
 	dialog_config_th_pane, dialog_debug, dialog_folder, dialog_entry,
 	dialog_search, dialog_print, dialog_config_font, dialog_theme_install,
 	dialog_url_complete;
+extern wimp_w current_menu_window;
+extern bool current_menu_open;
 extern wimp_menu *font_menu;	/* font.c */
+extern wimp_menu *recent_search_menu;	/* search.c */
 extern wimp_w history_window;
 extern struct form_control *current_gadget;
 extern bool gui_reformat_pending;
@@ -100,26 +106,6 @@ void ro_gui_view_source(struct content *content);
 void ro_gui_drag_box_start(wimp_pointer *pointer);
 bool ro_gui_prequit(void);
 
-/* in dialog.c */
-void ro_gui_dialog_init(void);
-wimp_w ro_gui_dialog_create(const char *template_name);
-wimp_window * ro_gui_dialog_load_template(const char *template_name);
-void ro_gui_dialog_open(wimp_w w);
-void ro_gui_dialog_open_persistent(wimp_w parent, wimp_w w, bool pointer);
-void ro_gui_dialog_close_persistent(wimp_w parent);
-void ro_gui_dialog_click(wimp_pointer *pointer);
-void ro_gui_dialog_prepare_zoom(struct gui_window *g);
-void ro_gui_dialog_prepare_open_url(void);
-void ro_gui_save_options(void);
-bool ro_gui_dialog_keypress(wimp_key *key);
-void ro_gui_dialog_close(wimp_w close);
-void ro_gui_dialog_open_config(void);
-void ro_gui_dialog_proxyauth_menu_selection(int item);
-void ro_gui_dialog_image_menu_selection(int item);
-void ro_gui_dialog_languages_menu_selection(const char *lang);
-void ro_gui_dialog_font_menu_selection(int item);
-void ro_gui_dialog_redraw(wimp_draw *redraw);
-
 /* in download.c */
 void ro_gui_download_init(void);
 struct gui_download_window * ro_gui_download_window_lookup(wimp_w w);
@@ -145,9 +131,6 @@ void ro_gui_selection_drag_claim(wimp_full_message_drag_claim *drag);
 /* in 401login.c */
 #ifdef WITH_AUTH
 void ro_gui_401login_init(void);
-void ro_gui_401login_open(wimp_w parent, char* host, char * realm, char* fetchurl);
-void ro_gui_401login_click(wimp_pointer *pointer);
-bool ro_gui_401login_keypress(wimp_key *key);
 #endif
 
 /* in window.c */
@@ -158,8 +141,8 @@ void ro_gui_window_update_dimensions(struct gui_window *g, int yscroll);
 void ro_gui_window_open(struct gui_window *g, wimp_open *open);
 void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw);
 void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer);
-void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer);
-void ro_gui_status_click(struct gui_window *g, wimp_pointer *pointer);
+bool ro_gui_toolbar_click(wimp_pointer *pointer);
+bool ro_gui_status_click(wimp_pointer *pointer);
 void ro_gui_throb(void);
 struct gui_window *ro_gui_window_lookup(wimp_w window);
 struct gui_window *ro_gui_toolbar_lookup(wimp_w window);
@@ -188,33 +171,31 @@ void ro_gui_history_init(void);
 void ro_gui_history_quit(void);
 void ro_gui_history_mode_change(void);
 void ro_gui_history_open(struct browser_window *bw, struct history *history, bool pointer);
-void ro_gui_history_redraw(wimp_draw *redraw);
-void ro_gui_history_click(wimp_pointer *pointer);
 void ro_gui_history_mouse_at(wimp_pointer *pointer);
 
 /* in hotlist.c */
 void ro_gui_hotlist_initialise(void);
 void ro_gui_hotlist_save(void);
-void ro_gui_hotlist_click(wimp_pointer *pointer);
 void ro_gui_hotlist_prepare_folder_dialog(struct node *node);
 void ro_gui_hotlist_prepare_entry_dialog(struct node *node);
-void ro_gui_hotlist_dialog_click(wimp_pointer *pointer);
+bool ro_gui_hotlist_dialog_apply(wimp_w w);
 int ro_gui_hotlist_help(int x, int y);
 
 /* in save.c */
 wimp_w ro_gui_saveas_create(const char *template_name);
 void ro_gui_saveas_quit(void);
 void ro_gui_save_prepare(gui_save_type save_type, struct content *c);
-void ro_gui_save_click(wimp_pointer *pointer);
+void ro_gui_save_start_drag(wimp_pointer *pointer);
 void ro_gui_drag_icon(int x, int y, const char *sprite);
 void ro_gui_save_drag_end(wimp_dragged *drag);
 void ro_gui_send_datasave(gui_save_type save_type, wimp_full_message_data_xfer *message, wimp_t to);
 void ro_gui_save_datasave_ack(wimp_message *message);
-void ro_gui_save_ok(wimp_w w);
+bool ro_gui_save_ok(wimp_w w);
 void ro_gui_convert_save_path(char *dp, size_t len, const char *p);
 
 /* in filetype.c */
 int ro_content_filetype(struct content *content);
+int ro_content_filetype_from_type(content_type type);
 
 /* in schedule.c */
 extern bool sched_active;
@@ -222,19 +203,16 @@ extern os_t sched_time;
 
 /* in debugwin.c */
 void ro_gui_debugwin_open(void);
-void ro_gui_debugwin_close(void);
-void ro_gui_debugwin_redraw(wimp_draw *redraw);
 
 /* in search.c */
+void ro_gui_search_init(void);
 void ro_gui_search_prepare(struct gui_window *g);
-void ro_gui_search_end(void);
-void ro_gui_search_click(wimp_pointer *pointer);
-bool ro_gui_search_keypress(wimp_key *key);
+bool ro_gui_search_prepare_menu(void);
+void ro_gui_search_end(wimp_w w);
 
 /* in print.c */
+void ro_gui_print_init(void);
 void ro_gui_print_prepare(struct gui_window *g);
-void ro_gui_print_click(wimp_pointer *pointer);
-bool ro_gui_print_keypress(wimp_key *key);
 
 /* in font.c */
 void nsfont_init(void);
@@ -251,7 +229,7 @@ extern int ro_plot_origin_y;
 void ro_plot_set_scale(float scale);
 
 /* in theme_install.c */
-void ro_gui_theme_install_click(wimp_pointer *pointer);
+bool ro_gui_theme_install_apply(wimp_w w);
 
 /* icon numbers for browser toolbars */
 #define ICON_TOOLBAR_BACK 0
@@ -403,6 +381,7 @@ void ro_gui_theme_install_click(wimp_pointer *pointer);
 #define ICON_SEARCH_FIND_PREV 3
 #define ICON_SEARCH_CANCEL 4
 #define ICON_SEARCH_STATUS 5
+#define ICON_SEARCH_MENU 8
 
 #define ICON_PRINT_TO_BOTTOM 1
 #define ICON_PRINT_SHEETS 2
@@ -430,5 +409,15 @@ void ro_gui_theme_install_click(wimp_pointer *pointer);
 #define ICON_OPENURL_CANCEL 2
 #define ICON_OPENURL_OPEN 3
 #define ICON_OPENURL_MENU 4
+
+#define ICON_ENTRY_NAME 1
+#define ICON_ENTRY_URL 3
+#define ICON_ENTRY_CANCEL 4
+#define ICON_ENTRY_OK 5
+#define ICON_ENTRY_RECENT 6
+
+#define ICON_FOLDER_NAME 1
+#define ICON_FOLDER_CANCEL 2
+#define ICON_FOLDER_OK 3
 
 #endif
