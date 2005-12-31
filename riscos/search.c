@@ -111,7 +111,6 @@ void ro_gui_search_init(void) {
  */
 bool ro_gui_search_next(wimp_w w) {
 	search_insert = true;
-	ro_gui_search_add_recent(ro_gui_get_icon_string(dialog_search, ICON_SEARCH_TEXT));	
 	start_search(true);
 	return false;
 }
@@ -120,7 +119,6 @@ bool ro_gui_search_click(wimp_pointer *pointer) {
 	switch (pointer->i) {
 	  	case ICON_SEARCH_FIND_PREV:
 			search_insert = true;
-			ro_gui_search_add_recent(ro_gui_get_icon_string(dialog_search, ICON_SEARCH_TEXT));
 			start_search(false);
 			return true;
 		case ICON_SEARCH_CASE_SENSITIVE:
@@ -145,10 +143,8 @@ void ro_gui_search_add_recent(char *search) {
 	}
 
 	if ((recent_search[0] != NULL) &&
-			(!strcmp(recent_search[0], search))) {
-		search_insert = false;
+			(!strcmp(recent_search[0], search)))
 		return;	  
-	}
 
 	tmp = strdup(search);
 	if (!tmp) {
@@ -178,6 +174,7 @@ bool ro_gui_search_prepare_menu(void) {
 		return false;
 
 	for (i = 0; i < suggestions; i++) {
+		recent_search_menu->entries[i].menu_flags &= ~wimp_MENU_LAST;
 		recent_search_menu->entries[i].data.indirected_text.text =
 				recent_search[i];
 		recent_search_menu->entries[i].data.indirected_text.size =
@@ -255,11 +252,11 @@ bool ro_gui_search_keypress(wimp_key *key)
 			return true;
 		case wimp_KEY_UP:
 			search_insert = true;
-			ro_gui_search_add_recent(ro_gui_get_icon_string(dialog_search, ICON_SEARCH_TEXT));
 			start_search(false);
 			return true;
 		case wimp_KEY_DOWN:
-			ro_gui_search_next(dialog_search);
+			search_insert = true;
+			start_search(true);
 			return true;
 
 		default:
