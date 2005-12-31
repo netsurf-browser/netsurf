@@ -211,7 +211,26 @@ int ro_content_filetype(struct content *content)
 	int file_type;
 	os_error *error;
 
-	switch (content->type) {
+	file_type = ro_content_filetype_from_type(content->type);
+	if (file_type != 0)
+		return file_type;
+
+	error = xmimemaptranslate_mime_type_to_filetype(content->mime_type,
+			&file_type);
+	if (error)
+		return 0xffd;
+	return file_type;
+}
+
+
+/**
+ * Determine the RISC OS filetype from a content type.
+ *
+ * \param type The content type to examine.
+ * \return The RISC OS filetype corresponding to the content, or 0 for unknown
+ */
+int ro_content_filetype_from_type(content_type type) {
+	switch (type) {
 		case CONTENT_HTML:	return 0xfaf;
 		case CONTENT_TEXTPLAIN:	return 0xfff;
 		case CONTENT_CSS:	return 0xf79;
@@ -239,10 +258,5 @@ int ro_content_filetype(struct content *content)
 #endif
 		default:		break;
 	}
-
-	error = xmimemaptranslate_mime_type_to_filetype(content->mime_type,
-			&file_type);
-	if (error)
-		return 0xffd;
-	return file_type;
+	return 0;
 }
