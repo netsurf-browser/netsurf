@@ -103,7 +103,6 @@ static void options_load_tree_entry(xmlNode *li, struct node *directory);
 xmlNode *options_find_tree_element(xmlNode *node, const char *name);
 bool options_save_tree_directory(struct node *directory, xmlNode *node);
 bool options_save_tree_entry(struct node *entry, xmlNode *node);
-bool options_save_tree_entry_comment(xmlNode *node, const char *name, int value);
 
 
 /**
@@ -333,36 +332,16 @@ void options_load_tree_directory(xmlNode *ul, struct node *directory) {
 void options_load_tree_entry(xmlNode *li, struct node *directory) {
 	char *url = 0;
 	char *title = 0;
-  	int filetype = 0xfaf;
-	int add_date = -1;
-	int last_date = -1;
-	int visits = 0;
-	char *comment;
 	struct node *entry;
 	xmlNode *n;
+	struct url_content *data;
 
 	for (n = li->children; n; n = n->next) {
-		/* The li must contain an "a" element, and may contain
-		 * some additional data as comments. */
-
+		/* The li must contain an "a" element */
 		if (n->type == XML_ELEMENT_NODE &&
 				strcmp(n->name, "a") == 0) {
 			url = (char *) xmlGetProp(n, (const xmlChar *) "href");
 			title = (char *) xmlNodeGetContent(n);
-
-		} else if (n->type == XML_COMMENT_NODE) {
-			comment = (char *) xmlNodeGetContent(n);
-			if (!comment)
-				continue;
-			if (strncmp("Type:", comment, 5) == 0)
-			  	filetype = atoi(comment + 5);
-			else if (strncmp("Added:", comment, 6) == 0)
-		  		add_date = atoi(comment + 6);
-			else if (strncmp("LastVisit:", comment, 10) == 0)
-		  		last_date = atoi(comment + 10);
-			else if (strncmp("Visits:", comment, 7) == 0)
-		  		visits = atoi(comment + 7);
-		  	xmlFree(comment);
 		}
 	}
 
@@ -371,9 +350,13 @@ void options_load_tree_entry(xmlNode *li, struct node *directory) {
 				"memory exhausted.)");
 		return;
 	}
-
-	entry = tree_create_URL_node(directory, title, url, filetype, add_date,
-			last_date, visits);
+	
+	data = url_store_find(url);
+	if (!data)
+		return;
+	if (!data->title)
+		data->title = strdup(title);
+	entry = tree_create_URL_node(directory, data, title);
 	xmlFree(url);
 	xmlFree(title);
 }
@@ -530,55 +513,5 @@ bool options_save_tree_entry(struct node *entry, xmlNode *node) {
 	href = xmlNewProp(a, "href", element->text);
 	if (!href)
 		return false;
-
-	if (element->user_data != 0xfaf)
-		if (!options_save_tree_entry_comment(li,
-				"Type", element->user_data))
-			return false;
-
-	element = tree_find_element(entry, TREE_ELEMENT_ADDED);
-	if ((element) && (element->user_data != -1))
-		if (!options_save_tree_entry_comment(li,
-  				"Added", element->user_data))
-			return false;
-
-	element = tree_find_element(entry, TREE_ELEMENT_LAST_VISIT);
-	if ((element) && (element->user_data != -1))
-		if (!options_save_tree_entry_comment(li,
-				"LastVisit", element->user_data))
-			return false;
-
-	element = tree_find_element(entry, TREE_ELEMENT_VISITS);
-	if ((element) && (element->user_data != 0))
-		if (!options_save_tree_entry_comment(li,
-				"Visits", element->user_data))
-			return false;
-	return true;
-}
-
-
-/**
- * Add a special comment node to the HTML tree for saving.
- *
- * \param  node   node to add comment to
- * \param  name   name of special comment
- * \param  value  value of special comment
- * \return  true on success, false on memory exhaustion
- */
-bool options_save_tree_entry_comment(xmlNode *node, const char *name, int value) {
-	char s[40];
-	xmlNode *comment;
-
-	snprintf(s, sizeof s, "%s:%i", name, value);
-	s[sizeof s - 1] = 0;
-
-	comment = xmlNewComment(s);
-	if (!comment)
-		return false;
-	if (!xmlAddChild(node, comment)) {
-		xmlFreeNode(comment);
-		return false;
-	}
-
 	return true;
 }
