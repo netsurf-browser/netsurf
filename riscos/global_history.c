@@ -24,6 +24,7 @@
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/treeview.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/url.h"
@@ -34,8 +35,6 @@
 
 #define GLOBAL_HISTORY_RECENT_READ "Choices:WWW.NetSurf.Recent"
 #define GLOBAL_HISTORY_RECENT_WRITE "<Choices$Write>.WWW.NetSurf.Recent"
-#define GLOBAL_HISTORY_READ "Choices:WWW.NetSurf.History"
-#define GLOBAL_HISTORY_WRITE "<Choices$Write>.WWW.NetSurf.History"
 
 
 static struct node *global_history_base_node[MAXIMUM_BASE_NODES];
@@ -47,13 +46,11 @@ static int global_history_recent_count = 0;
 
 static bool global_history_init;
 
-
+static bool ro_gui_global_history_click(wimp_pointer *pointer);
 static void ro_gui_global_history_initialise_nodes(void);
 static void ro_gui_global_history_initialise_node(const char *title,
 		time_t base, int days_back);
-static void ro_gui_global_history_add(char *title, char *url, int visit_date,
-		int filetype);
-static void ro_gui_global_history_save_node(struct node *node, FILE *fp);
+struct node *ro_gui_global_history_find(const char *url);
 
 /*	A basic window for the history
 */
@@ -98,10 +95,11 @@ void ro_gui_global_history_initialise(void) {
 	FILE *fp;
 	const char *title;
 	os_error *error;
-	char *node_title;
-	char *node_url;
-	int node_filetype;
-	int node_visited;
+	struct hostname_data *hostname;
+	struct url_data *url;
+	int url_count = 0;
+	struct url_content **url_block;
+	int i = 0;
 
 	/*	Create our window
 	*/
@@ -119,6 +117,12 @@ void ro_gui_global_history_initialise(void) {
 				error->errnum, error->errmess));
 		die(error->errmess);
 	}
+	ro_gui_wimp_event_register_redraw_window(global_history_window,
+			ro_gui_tree_redraw);
+	ro_gui_wimp_event_register_open_window(global_history_window,
+			ro_gui_tree_open);
+	ro_gui_wimp_event_register_mouse_click(global_history_window,
+			ro_gui_global_history_click);
 
 	/*	Create an empty tree
 	*/
@@ -138,6 +142,10 @@ void ro_gui_global_history_initialise(void) {
 	tree_initialise(global_history_tree);
 	global_history_tree->handle = (int)global_history_window;
 	global_history_tree->movable = false;
+	ro_gui_wimp_event_set_user_data(global_history_window,
+			global_history_tree);
+	ro_gui_wimp_event_register_keypress(global_history_window,
+			ro_gui_tree_keypress);
 
 	/*	Create our toolbar
 	*/
@@ -161,60 +169,40 @@ void ro_gui_global_history_initialise(void) {
 		fclose(fp);
 	}
 
-	/* load global history */
-	fp = fopen(GLOBAL_HISTORY_READ, "r");
-	if (!fp)
-		LOG(("Failed to open file '%s' for reading",
-				GLOBAL_HISTORY_READ));
-	else {
-	  	global_history_init = true;
-		while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
-			if (s[strlen(s) - 1] == '\n')
-				s[strlen(s) - 1] = '\0';
-			node_title = strdup(s);
-			if (!fgets(s, MAXIMUM_URL_LENGTH, fp)) {
-				LOG(("Error reading global history"));
-				warn_user("HistoryCorrupt", 0);
-				fclose(fp);
-			  	global_history_init = false;
-				return;
-			}
-			if (s[strlen(s) - 1] == '\n')
-				s[strlen(s) - 1] = '\0';
-			node_url = strdup(s);
-			if ((!node_title) || (!node_url)) {
-				LOG(("No memory to read global history node"));
-				warn_user("NoMemory", 0);
-				fclose(fp);
-			  	global_history_init = false;
-				return;
-			}
-			if (!fgets(s, MAXIMUM_URL_LENGTH, fp)) {
-				LOG(("Error reading global history"));
-				warn_user("HistoryCorrupt", 0);
-				fclose(fp);
-			  	global_history_init = false;
-				return;
-			}
-			node_filetype = atoi(s);
-			if (!fgets(s, MAXIMUM_URL_LENGTH, fp)) {
-				LOG(("Error reading global history"));
-				warn_user("HistoryCorrupt", 0);
-				fclose(fp);
-			  	global_history_init = false;
-				return;
-			}
-			node_visited = atoi(s);
-			ro_gui_global_history_add(node_title, node_url,
-					node_visited, node_filetype);
-			free(node_title);
-			node_title = NULL;
-			free(node_url);
-			node_url = NULL;
-		}
-	  	global_history_init = false;
-		fclose(fp);
+	/* count the number of URLs to add */
+	for (hostname = url_store_hostnames; hostname;
+			hostname = hostname->next)
+		for (url = hostname->url; url; url = url->next)
+			url_count++;
+	if (url_count == 0)
+		return;
+	
+	/* place pointers to the URL data in a single block of memory so
+	 * they can be quickly sorted */
+	url_block = (struct url_content **)malloc(
+			url_count * sizeof(struct url_content *));
+	if (!url_block) {
+	  	warn_user("NoMemory", 0);
+	  	LOG(("Insufficient memory for malloc()"));
+	  	return;
 	}
+	for (hostname = url_store_hostnames; hostname;
+			hostname = hostname->next)
+		for (url = hostname->url; url; url = url->next)
+			url_block[i++] = &url->data;
+	assert(i == url_count);
+	
+	/* sort information by the last_visit information */
+	qsort(url_block, url_count, sizeof(struct url_content *),
+			url_store_compare_last_visit);
+	
+	/* add URLs to the global history */
+	global_history_init = true;
+	for (i = 0; i < url_count; i++)
+		global_history_add(url_block[i]);
+	
+	global_history_init = false;	
+	free(url_block);
 }
 
 
@@ -283,7 +271,7 @@ static void ro_gui_global_history_initialise_node(const char *title,
 
 
 /**
- * Saves the global history and recent URL data.
+ * Saves the global history's recent URL data.
  */
 void ro_gui_global_history_save(void) {
 	FILE *fp;
@@ -302,44 +290,6 @@ void ro_gui_global_history_save(void) {
 						global_history_recent_url[i]);
 		fclose(fp);
 	}
-
-	/* save global history tree */
-	fp = fopen(GLOBAL_HISTORY_WRITE, "w");
-	if (!fp)
-		LOG(("Failed to open file '%s' for writing",
-				GLOBAL_HISTORY_WRITE));
-	else {
-		ro_gui_global_history_save_node(global_history_tree->root, fp);
-		fclose(fp);
-	}
-}
-
-
-/**
- * Saves the global history for a tree node.
- */
-void ro_gui_global_history_save_node(struct node *node, FILE *fp) {
-	struct node_element *element;
-
-	for (; node; node = node->next) {
-		if (node->folder) {
-			ro_gui_global_history_save_node(node->child, fp);
-		} else {
-			element = tree_find_element(node, TREE_ELEMENT_URL);
-			if (element) {
-				fprintf(fp, "%s\n%s\n%i\n", node->data.text,
-						element->text,
-						element->user_data);
-
-				element = tree_find_element(node,
-						TREE_ELEMENT_VISITED);
-				if (element)
-					fprintf(fp, "%i\n", element->user_data);
-				else
-					fprintf(fp, "-1\n");
-			}
-		}
-	}
 }
 
 
@@ -348,13 +298,14 @@ void ro_gui_global_history_save_node(struct node *node, FILE *fp) {
  *
  * \param pointer  the pointer state
  */
-void ro_gui_global_history_click(wimp_pointer *pointer) {
+bool ro_gui_global_history_click(wimp_pointer *pointer) {
 	ro_gui_tree_click(pointer, global_history_tree);
 	if (pointer->buttons == wimp_CLICK_MENU)
 		ro_gui_menu_create(global_history_menu, pointer->pos.x,
 				pointer->pos.y, pointer->w);
 	else
 		ro_gui_menu_prepare_action(pointer->w, TREE_SELECTION, false);
+	return true;
 }
 
 
@@ -372,46 +323,20 @@ int ro_gui_global_history_help(int x, int y) {
 
 /**
  * Adds to the global history
- *
- * \param g  the gui_window to add to the global history
  */
-void global_history_add(struct gui_window *g) {
-	url_func_result res;
-	char *norm_url = NULL;
-
-	assert(g);
-
-	if ((!g->bw->current_content) || (!global_history_tree))
-		return;
-
-	res = url_normalize(g->bw->current_content->url, &norm_url);
-	if (res != URL_FUNC_OK) {
-		warn_user("NoMemory", 0);
-		return;
-	}
-
-	ro_gui_global_history_add(g->bw->current_content->title,
-			norm_url, time(NULL),
-			ro_content_filetype(g->bw->current_content));
-	free(norm_url);
-}
-
-
-/**
- * Adds to the global history
- *
- * \param title	      the page title
- * \param url	      the page URL
- * \param visit_date  the visit date
- */
-void ro_gui_global_history_add(char *title, char *url, int visit_date,
-	int filetype) {
+void global_history_add(struct url_content *data) {
 	int i, j;
 	struct node *parent = NULL;
 	struct node *link;
 	struct node *node;
-	struct node_element *element;
 	bool before = false;
+	int visit_date;
+	int filetype;
+
+	assert(data);
+
+	visit_date = data->last_visit;
+	filetype = ro_content_filetype_from_type(data->type);
 
 	/*	Find/create the node to link into
 	*/
@@ -439,10 +364,28 @@ void ro_gui_global_history_add(char *title, char *url, int visit_date,
 	}
 
 	if (parent) {
+	  	/* find any previous occurance */
+	  	if (!global_history_init) {
+		  	node = ro_gui_global_history_find(data->url);
+		  	if (node) {
+		  	  	/* \todo: calculate old/new positions and redraw
+		  	  	 * only the relevant portion */
+				tree_redraw_area(global_history_tree,
+						0, 0, 16384, 16384);
+		  	  	tree_update_URL_node(node);
+		  	  	tree_delink_node(node);
+		  		tree_link_node(parent, node, false);
+				tree_handle_node_changed(global_history_tree,
+					node, false, true);
+/*				ro_gui_tree_scroll_visible(hotlist_tree,
+						&node->data);
+*/		  		return;
+		  	}
+		}
+
 		/*	Add the node at the bottom
 		*/
-		node = tree_create_URL_node_brief(parent, title, url, filetype,
-				 visit_date);
+		node = tree_create_URL_node_shared(parent, data);
 		if (node && !global_history_init)
 			tree_redraw_area(global_history_tree,
 					node->box.x - NODE_INSTEP,
@@ -451,21 +394,27 @@ void ro_gui_global_history_add(char *title, char *url, int visit_date,
 			tree_handle_node_changed(global_history_tree, node,
 					true, false);
 
-		/* Remove any duplicate URL from within the parent node.
-		 * This must be done after the duplicate has been created as
-		 * deleting all children of a child automatically collapses
-		 * the display.
-		*/
-		for (node = parent->child; node && (node->next);
-				node = node->next) {
-			element = tree_find_element(node, TREE_ELEMENT_URL);
-			if ((element) && (!strcmp(url, element->text))) {
-				 tree_delete_node(global_history_tree, node,
-						false);
-				 break;
+	}
+}
+
+
+struct node *ro_gui_global_history_find(const char *url) {
+	int i;
+	struct node *node;
+	struct node_element *element;
+
+	for (i = 0; i < global_history_base_node_count; i++) {
+		if (!global_history_base_node[i]->deleted) {
+			for (node = global_history_base_node[i]->child;
+					node; node = node->next) {
+				element = tree_find_element(node,
+					TREE_ELEMENT_URL);
+				if ((element) && (url == element->text))
+					return node;
 			}
 		}
 	}
+	return NULL;
 }
 
 
