@@ -13,14 +13,25 @@
 #define _NETSURF_CONTENT_URLSTORE_H_
 
 #include "netsurf/image/bitmap.h"
+#include "netsurf/content/content_type.h"
 
+
+struct hostname_data {
+	char *hostname;			/** Hostname (lowercase) */
+	int hostname_length;		/** Length of hostname */
+	struct url_data *url;		/** URLs for this host */
+	struct hostname_data *previous;	/** Previous hostname */
+	struct hostname_data *next;	/** Next hostname */
+};
 
 struct url_content {
   	struct bitmap *thumbnail;	/** Thumbnail, or NULL */
 	char *url;			/** URL (including hostname) */
+	char *title;			/** Page title */
 	int url_length;			/** Length of URL (including hostname) */
 	int visits;			/** Number of times visited */
-	int requests;			/** Number of times requested */
+	int last_visit;			/** The time() of the last visit */
+	content_type type;		/** The content type */
 };
 
 struct url_data {
@@ -30,6 +41,7 @@ struct url_data {
 	struct hostname_data *parent;	/** Parent hostname data */
 };
 
+extern struct hostname_data *url_store_hostnames;
 
 struct url_content *url_store_find(const char *url);
 char *url_store_match(const char *url, struct url_data **reference);
@@ -41,6 +53,6 @@ struct bitmap *url_store_get_thumbnail(const char *url);
 void url_store_load(const char *file);
 void url_store_save(const char *file);
 
-void url_store_dump(void);
+int url_store_compare_last_visit(const void *, const void *);
 
 #endif

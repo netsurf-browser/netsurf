@@ -14,26 +14,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "netsurf/content/url_store.h"
+#include "netsurf/desktop/options.h"
 #ifdef riscos
 #include "netsurf/riscos/bitmap.h"
 #endif
-#include "netsurf/utils/url.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/url.h"
+#include "netsurf/utils/utils.h"
 
 
 #define ITERATIONS_BEFORE_TEST 32
 #define MAXIMUM_URL_LENGTH 1024
 
-struct hostname_data {
-	char *hostname;			/** Hostname (lowercase) */
-	int hostname_length;		/** Length of hostname */
-	struct url_data *url;		/** URLs for this host */
-	struct hostname_data *previous;	/** Previous hostname */
-	struct hostname_data *next;	/** Next hostname */
-};
-
-static struct hostname_data *url_store_hostnames = NULL;
+struct hostname_data *url_store_hostnames = NULL;
 
 static struct hostname_data *url_store_find_hostname(const char *url);
 static struct hostname_data *url_store_match_hostname(const char *url,
@@ -181,8 +176,6 @@ struct url_content *url_store_find(const char *url) {
 	}
 	strcpy(result->data.url, url);
 	result->data.url_length = url_length;
-	result->data.requests = 0;
-	result->data.visits = 0;
 	result->parent = hostname_data;
 
 	/* simple case: no current URLs */
@@ -347,8 +340,7 @@ char *url_store_match(const char *url, struct url_data **reference) {
 			hostname = url_store_match_hostname(url, hostname);
 			if (!hostname)
 				return NULL;
-		} else if ((search->data.visits > 0) &&
-				(search->data.requests > 0)){
+		} else if (search->data.visits > 0) {
 			/* straight match */
 			if ((search->data.url_length >= url_length) &&
 					(!strncmp(search->data.url, url,
@@ -405,15 +397,16 @@ char *url_store_match_string(const char *text) {
  * \param file  the file to load options from
  */
 void url_store_load(const char *file) {
-	struct url_content *url;
 	char s[MAXIMUM_URL_LENGTH];
 	struct hostname_data *hostname;
 	struct url_data *result;
 	int urls;
 	int i;
 	int version;
-	int width, height, size;
+	int length;
 	FILE *fp;
+	
+	LOG(("Loading URL file"));
 
 	fp = fopen(file, "r");
 	if (!fp) {
@@ -424,85 +417,83 @@ void url_store_load(const char *file) {
 	if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 		return;
 	version = atoi(s);
-	if ((version < 100) || (version > 102))
+	if (version < 102) {
+	  	LOG(("Unsupported URL file version."));
+	  	return;
+	}
+	if (version > 104) {
+	 	LOG(("Unknown URL file version."));
 		return;
+	}
 
-
-	/* version 100 file is sequences of <url><visits><requests> */
-	if (version == 100) {
-		while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
-			if (s[strlen(s) - 1] == '\n')
-				s[strlen(s) - 1] = '\0';
-			url = url_store_find(s);
-			if (!url)
-				break;
+	while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
+		if (s[strlen(s) - 1] == '\n')
+			s[strlen(s) - 1] = '\0';
+		hostname = url_store_find_hostname(s);
+		if (!hostname)
+			break;
+		if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+			break;
+		urls = atoi(s);
+		for (i = 0; i < urls; i++) {
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
-			url->visits = atoi(s);
+			for (length = 0; s[length] > 32; length++);
+			s[length] = 0x00;
+			result = calloc(1, sizeof(struct url_data));
+			if (!result)
+				break;
+			result->data.url_length = length;
+			result->data.url = strdup(s);
+			if (!result->data.url)
+				die("Insufficient memory");
+			result->parent = hostname;
+			result->next = hostname->url;
+			if (hostname->url)
+				hostname->url->previous = result;
+			hostname->url = result;
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
-			url->requests = atoi(s);
-		}
-	} else if (version >= 101) {
-	  	/* version 102 is as 101, but with thumbnail information */
-		/* version 101 is as 100, but in hostname chunks, pre-sorted
-		 * in reverse alphabetical order */
-		while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
-			if (s[strlen(s) - 1] == '\n')
-				s[strlen(s) - 1] = '\0';
-			hostname = url_store_find_hostname(s);
-			if (!hostname)
-				break;
-			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
-				break;
-			urls = atoi(s);
-			for (i = 0; i < urls; i++) {
+			result->data.visits = atoi(s);
+			if (version == 102) {
+			  	/* ignore requests */
 				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 					break;
-				if (s[strlen(s) - 1] == '\n')
-					s[strlen(s) - 1] = '\0';
-				result = calloc(1, sizeof(struct url_data));
-				if (!result)
-					break;
-				result->data.url_length = strlen(s);
-				result->data.url = malloc(result->
-						data.url_length + 1);
-				if (!result->data.url) {
-					free(result);
-					break;
-				}
-				strcpy(result->data.url, s);
-				result->parent = hostname;
-				result->next = hostname->url;
-				if (hostname->url)
-					hostname->url->previous = result;
-				hostname->url = result;
+				/* ignore thumbnail size */
 				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 					break;
-				result->data.visits = atoi(s);
+				/* set last visit as today to retain */
+				result->data.last_visit = time(NULL);
+			} else {
 				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 					break;
-				result->data.requests = atoi(s);
-				if (version == 102) {
-					if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
-						break;
-					size = atoi(s);
-					width = size & 65535;
-					height = size >> 16;
-					if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
-						break;
-#ifdef riscos
-					if (s[strlen(s) - 1] == '\n')
-						s[strlen(s) - 1] = '\0';
-					result->data.thumbnail =
-							bitmap_create_file(
-							width, height, s);
-#endif
-				}
+				result->data.last_visit = atoi(s);
+				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+					break;
+				result->data.type = atoi(s);
 			}
+			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+				break;
+#ifdef riscos
+			for (length = 0; s[length] > 32; length++);
+			s[length] = 0x00;
+			if (length > 11)
+				break;
+			result->data.thumbnail =
+					bitmap_create_file(s);
+#endif
+			if (version == 104) {
+				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+					break;
+				for (length = 0; s[length] >= 32; length++);
+				s[length] = 0x00;
+				if (length > 0)
+					result->data.title = strdup(s);
+			}  
 		}
 	}
 	fclose(fp);
+	LOG(("Successfully loaded URL file"));
 }
 
 
@@ -516,29 +507,36 @@ void url_store_save(const char *file) {
 	struct url_data *url;
 	int url_count;
 	char *normal = NULL;
-	const char *thumb_file = "";
-	int thumb_size = 0;
+	const char *thumb_file;
+	char *s;
+	int i;
 	FILE *fp;
 #ifdef riscos
 	struct bitmap *bitmap;
 #endif
+	int min_date;
+	char *title;
 
 	fp = fopen(file, "w");
 	if (!fp) {
 		LOG(("Failed to open file '%s' for writing", file));
 		return;
 	}
+	
+	/* get the minimum date for expiry */
+	min_date = time(NULL) - (60 * 60 * 24) * option_expire_url;
 
 	/* file format version number */
-	fprintf(fp, "102\n");
+	fprintf(fp, "104\n");
 	for (search = url_store_hostnames; search && search->next;
 			search = search->next);
 	for (; search; search = search->previous) {
 		url_count = 0;
 		for (url = search->url; url; url = url->next)
-			if ((url->data.visits > 0) &&
-					(strlen(url->data.url) <
-					MAXIMUM_URL_LENGTH))
+			if ((url->data.last_visit > min_date) &&
+					(url->data.visits > 0) &&
+					(url->data.url_length <
+						MAXIMUM_URL_LENGTH))
 				url_count++;
 		free(normal);
 		normal = url_store_match_string(search->hostname);
@@ -546,26 +544,32 @@ void url_store_save(const char *file) {
 			fprintf(fp, "%s\n%i\n", normal, url_count);
 			for (url = search->url; url->next; url = url->next);
 			for (; url; url = url->previous)
-				if ((url->data.visits > 0) &&
-						(strlen(url->data.url) <
-						MAXIMUM_URL_LENGTH)) {
+				if ((url->data.last_visit > min_date) &&
+						(url->data.visits > 0) &&
+						(url->data.url_length <
+							MAXIMUM_URL_LENGTH)) {
+					thumb_file = "";
 #ifdef riscos
 					bitmap = url->data.thumbnail;
-					if (bitmap) {
-						thumb_size = bitmap->width |
-							(bitmap->height << 16);
+					if (bitmap)
 						thumb_file = bitmap->filename;
-					} else {
-					  	thumb_size = 0;
-						thumb_file = "";
-					}
 #endif
-					fprintf(fp, "%s\n%i\n%i\n%i\n%s\n",
+					s = url->data.title;
+					for (i = 0; s[i] != '\0'; i++)
+						if (s[i] < 32) s[i] = ' ';
+					for (--i; ((i > 0) && (s[i] == ' ')); i--)
+						s[i] = '\0';
+					if (url->data.title)
+						title = url->data.title;
+					else
+						title = "";
+					fprintf(fp, "%s\n%i\n%i\n%i\n%s\n%s\n",
 							url->data.url,
 							url->data.visits,
-							url->data.requests,
-							thumb_size,
-							thumb_file);
+							url->data.last_visit,
+							url->data.type,
+							thumb_file,
+							title);
 				}
 		}
 	}
@@ -574,27 +578,8 @@ void url_store_save(const char *file) {
 
 
 /**
- * Dumps the currently stored URLs and hostnames to stderr.
+ * Associates a thumbnail with a specified URL.
  */
-void url_store_dump(void) {
-	struct hostname_data *search;
-	struct url_data *url;
-
-	fprintf(stderr, "\nDumping hostname data:\n");
-	for (search = url_store_hostnames; search; search = search->next) {
-		fprintf(stderr, "\n");
-		fprintf(stderr, "%s", search->hostname);
-		fprintf(stderr, ":\n");
-		for (url = search->url; url; url = url->next) {
-			fprintf(stderr, " - ");
-			fprintf(stderr, "%s", url->data.url);
-			fprintf(stderr, "\n");
-		}
-	}
-	fprintf(stderr, "\nEnd of hostname data.\n\n");
-}
-
-
 void url_store_add_thumbnail(const char *url, struct bitmap *bitmap) {
 	struct url_content *content;
 	
@@ -606,6 +591,10 @@ void url_store_add_thumbnail(const char *url, struct bitmap *bitmap) {
 	}
 }
 
+
+/**
+ * Gets the thumbnail associated with a given URL.
+ */
 struct bitmap *url_store_get_thumbnail(const char *url) {
 	struct url_content *content;
 	
@@ -613,4 +602,11 @@ struct bitmap *url_store_get_thumbnail(const char *url) {
 	if (content)
 		return content->thumbnail;
 	return NULL;
+}
+
+
+int url_store_compare_last_visit(const void *a, const void *b) {
+  	struct url_content **url_a = (struct url_content **)a;
+  	struct url_content **url_b = (struct url_content **)b;
+	return ((*url_a)->last_visit - (*url_b)->last_visit);
 }
