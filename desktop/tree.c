@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "netsurf/content/url_store.h"
 #include "netsurf/desktop/tree.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/utils/log.h"
@@ -21,10 +22,9 @@
 
 static void tree_draw_node(struct tree *tree, struct node *node, int clip_x, int clip_y,
 		int clip_width, int clip_height);
-static struct node_element *tree_create_node_element(struct node *parent, int user_type);
+static struct node_element *tree_create_node_element(struct node *parent, node_element_data data);
 static int tree_get_node_width(struct node *node);
 static int tree_get_node_height(struct node *node);
-static void tree_reset_URL_node(struct tree *tree, struct node *node);
 static void tree_handle_selection_area_node(struct tree *tree, struct node *node, int x, int y,
 		int width, int height, bool invert);
 static void tree_selected_to_processing(struct node *node);
@@ -448,10 +448,10 @@ struct node_element *tree_get_node_element_at(struct node *node, int x, int y,
  * \param user_type  the user_type to check for
  * \return the corresponding element
  */
-struct node_element *tree_find_element(struct node *node, int user_type) {
+struct node_element *tree_find_element(struct node *node, node_element_data data) {
 	struct node_element *element;
 	for (element = &node->data; element; element = element->next)
-		if (element->user_type == user_type) return element;
+		if (element->data == data) return element;
 	return NULL;
 }
 
@@ -891,8 +891,13 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 		tree_delink_node(node);
 		if (!node->retain_in_memory) {
 			for (element = &node->data; element; element = element->next) {
-				if (element->text)
-					free(element->text);
+				if (element->text) {
+				  	/* we don't free non-editable titles or URLs */
+				 	if ((node->editable) ||
+				 			((node->data.data != TREE_ELEMENT_TITLE) &&
+				 				(node->data.data != TREE_ELEMENT_URL)))
+						free(element->text);
+				}
 				if (element->sprite)
 					free(element->sprite);	/* \todo platform specific bits */
 			}
@@ -961,6 +966,7 @@ struct node *tree_create_leaf_node(struct node *parent, const char *title) {
 	node->data.parent = node;
 	node->data.type = NODE_ELEMENT_TEXT;
 	node->data.text = squash_whitespace(title);
+	node->data.data = TREE_ELEMENT_TITLE;
 	if (parent)
 		tree_link_node(parent, node, false);
 	return node;
@@ -969,51 +975,38 @@ struct node *tree_create_leaf_node(struct node *parent, const char *title) {
 
 /**
  * Creates a tree entry for a URL, and links it into the tree
+ * 
  *
  * \param parent     the node to link to
- * \param title	     the node title
- * \param url	     the node URL
- * \param filetype   the node filetype
- * \param add_date   the date added
- * \param last_date  the last visited date
- * \param visits     the number of visits
+ * \param data	     the URL data to use
+ * \param title	     the custom title to use
  * \return the node created, or NULL for failure
  */
-struct node *tree_create_URL_node(struct node *parent, const char *title,
-		const char *url, int filetype, int add_date, int last_date, int visits) {
+struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
+		char *title) {
 	struct node *node;
 	struct node_element *element;
 	
-	assert(url);
-	if (!title)
-		title = url;
+	assert(data);
 	
+	if (!title) {
+	  	if (data->title)
+	  		title = strdup(data->title);
+	  	else
+			title = strdup(data->url);
+		if (!title)
+			return NULL;
+	}
 	node = tree_create_leaf_node(parent, title);
 	if (!node)
 		return NULL;
 	node->editable = true;
 
 	element = tree_create_node_element(node, TREE_ELEMENT_URL);
-	if (element) {
-		element->user_data = filetype;
-		element->type = NODE_ELEMENT_TEXT;
-		element->text = strdup(url);
-	}
-	element = tree_create_node_element(node, TREE_ELEMENT_ADDED);
-	if (element) {
-		element->type = NODE_ELEMENT_TEXT;
-		element->user_data = add_date;
-	}
-	element = tree_create_node_element(node, TREE_ELEMENT_LAST_VISIT);
-	if (element) {
-		element->type = NODE_ELEMENT_TEXT;
-		element->user_data = last_date;
-	}
-	element = tree_create_node_element(node, TREE_ELEMENT_VISITS);
-	if (element) {
-		element->type = NODE_ELEMENT_TEXT;
-		element->user_data = visits;
-	}
+	if (element)
+		element->text = strdup(data->url);
+	tree_create_node_element(node, TREE_ELEMENT_LAST_VISIT);
+	tree_create_node_element(node, TREE_ELEMENT_VISITS);
 	element = tree_create_node_element(node, TREE_ELEMENT_THUMBNAIL);
 	if (element)
 		element->type = NODE_ELEMENT_THUMBNAIL;
@@ -1027,43 +1020,40 @@ struct node *tree_create_URL_node(struct node *parent, const char *title,
 
 /**
  * Creates a tree entry for a URL, and links it into the tree.
+ * 
+ * All information is used directly from the url_content, and as such cannot be
+ * edited and should never be freed.
  *
  * \param parent      the node to link to
- * \param title	      the node title
- * \param url	      the node URL
- * \param filetype    the node filetype
- * \param visit_date  the date visited
+ * \param data	      the URL data to use
  * \return the node created, or NULL for failure
  */
-struct node *tree_create_URL_node_brief(struct node *parent, const char *title,
-		const char *url, int filetype, int visit_date) {
+struct node *tree_create_URL_node_shared(struct node *parent, struct url_content *data) {
 	struct node *node;
 	struct node_element *element;
+	char *title;
 	
-	assert(url);
-	if (!title)
-		title = url;
+	assert(data);
 	
+	if (data->title)
+		title = data->title;
+	else
+		title = data->url;
 	node = tree_create_leaf_node(parent, title);
 	if (!node)
 		return NULL;
+	free(node->data.text);
+	node->data.text = title;
 	node->editable = false;
 
 	element = tree_create_node_element(node, TREE_ELEMENT_URL);
-	if (element) {
-		element->user_data = filetype;
-		element->type = NODE_ELEMENT_TEXT;
-		element->text = squash_whitespace(url);
-	}
-	element = tree_create_node_element(node, TREE_ELEMENT_VISITED);
-	if (element) {
-		element->type = NODE_ELEMENT_TEXT;
-		element->user_data = visit_date;
-	}
+	if (element)
+		element->text = data->url;
+	tree_create_node_element(node, TREE_ELEMENT_LAST_VISIT);
+	tree_create_node_element(node, TREE_ELEMENT_VISITS);
 	element = tree_create_node_element(node, TREE_ELEMENT_THUMBNAIL);
-	if (element) {
+	if (element)
 		element->type = NODE_ELEMENT_THUMBNAIL;
-	}
 	
 	tree_update_URL_node(node);
 	tree_recalculate_node(node, false);
@@ -1073,56 +1063,13 @@ struct node *tree_create_URL_node_brief(struct node *parent, const char *title,
 
 
 /**
- * Resets all selected URL nodes from the tree.
- *
- * \param tree	    the tree to reset from
- * \param node	    the node to reset
- * \param selected  whether to only reset selected nodes
- */
-void tree_reset_URL_nodes(struct tree *tree, struct node *node, bool selected) {
-	for (; node; node = node->next) {
-		if (((node->selected) || (!selected)) && (!node->folder))
-			tree_reset_URL_node(tree, node);
-		if (node->child)
-			tree_reset_URL_nodes(tree, node->child,
-				((!node->selected) && selected));
-	}
-}
-
-
-/**
- * Resets a tree entry for a URL
- */
-void tree_reset_URL_node(struct tree *tree, struct node *node) {
-	struct node_element *element;
-	
-	assert(tree);
-	assert(node);
-
-	element = tree_find_element(node, TREE_ELEMENT_LAST_VISIT);
-	if (element)
-		element->user_data = -1;
-	element = tree_find_element(node, TREE_ELEMENT_VISITS);
-	if (element)
-		element->user_data = 0;
-	tree_update_URL_node(node);
-	tree_recalculate_node(node, true);
-	
-	if (node->expanded)
-		tree_redraw_area(tree, node->box.x, node->box.y + node->data.box.height,
-				node->box.width, node->box.height - node->data.box.height);
-
-}
-
-
-/**
- * Creates an empty node element and links it to a node.
+ * Creates an empty text node element and links it to a node.
  *
  * \param parent     the parent node
  * \param user_type  the required user_type
  * \return the newly created element.
  */
-struct node_element *tree_create_node_element(struct node *parent, int user_type) {
+struct node_element *tree_create_node_element(struct node *parent, node_element_data data) {
 	struct node_element *element;
 	struct node_element *link;
 	
@@ -1131,9 +1078,10 @@ struct node_element *tree_create_node_element(struct node *parent, int user_type
 	element = calloc(sizeof(struct node_element), 1);
 	if (!element) return NULL;
 	element->parent = parent;
-	element->user_type = user_type;
+	element->data = data;
+	element->type = NODE_ELEMENT_TEXT;
 
-	for (link = parent->data.next; ((link) && (link->user_type < user_type));
+	for (link = parent->data.next; ((link) && (link->data < data));
 		link = link->next);
 	if (link) {
 		element->next = link->next;

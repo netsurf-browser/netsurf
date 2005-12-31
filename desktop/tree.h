@@ -13,13 +13,17 @@
 #define _NETSURF_DESKTOP_TREE_H_
 
 #include <stdbool.h>
+#include "netsurf/content/url_store.h"
 
-#define TREE_ELEMENT_URL 1
-#define TREE_ELEMENT_ADDED 2
-#define TREE_ELEMENT_LAST_VISIT 3
-#define TREE_ELEMENT_VISITS 4
-#define TREE_ELEMENT_VISITED 5
-#define TREE_ELEMENT_THUMBNAIL 6
+typedef enum {
+	TREE_ELEMENT_URL,
+	TREE_ELEMENT_ADDED,
+	TREE_ELEMENT_LAST_VISIT,
+	TREE_ELEMENT_VISITS,
+	TREE_ELEMENT_VISITED,
+	TREE_ELEMENT_THUMBNAIL,
+	TREE_ELEMENT_TITLE
+} node_element_data;
 
 #define NODE_INSTEP 40
 
@@ -49,8 +53,7 @@ struct node_element {
 	char *text;			/* <-- Text for the element */
 	struct node_sprite *sprite;	/* <-- Sprite for the element */
 	struct node_element *next;	/* <-- Next node element */
-	int user_data;			/* <-- Private user data */
-	int user_type;			/* <-- Private user data */
+	node_element_data data;		/* <-- Data being represented */
 };
 
 
@@ -101,7 +104,7 @@ void tree_recalculate_node_positions(struct node *root);
 struct node *tree_get_node_at(struct node *root, int x, int y, bool *furniture);
 struct node_element *tree_get_node_element_at(struct node *node, int x, int y,
 		bool *furniture);
-struct node_element *tree_find_element(struct node *node, int user_type);
+struct node_element *tree_find_element(struct node *node, node_element_data data);
 void tree_move_selected_nodes(struct tree *tree, struct node *destination,
 		bool before);
 bool tree_has_selection(struct node *node);
@@ -113,12 +116,9 @@ struct node *tree_create_folder_node(struct node *parent, const char *title);
 struct node *tree_create_leaf_node(struct node *parent, const char *title);
 void tree_set_node_sprite(struct node *node, const char *sprite,
 		const char *expanded);
-struct node *tree_create_URL_node(struct node *parent, const char *title,
-		const char *url, int filetype, int add_date, int last_date,
-		int visits);
-struct node *tree_create_URL_node_brief(struct node *parent, const char *title,
-		const char *url, int filetype, int visit_date);
-void tree_reset_URL_nodes(struct tree *tree, struct node *node, bool selected);
+struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
+		char *title);
+struct node *tree_create_URL_node_shared(struct node *parent, struct url_content *data);
 void tree_set_node_expanded(struct node *node, bool expanded);
 void tree_set_node_selected(struct tree *tree, struct node *node,
 		bool selected);

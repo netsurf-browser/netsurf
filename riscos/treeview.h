@@ -28,14 +28,14 @@ struct node_sprite {
 };
 
 bool ro_gui_tree_initialise(void);
-void ro_gui_tree_redraw(wimp_draw *redraw, struct tree *tree);
+void ro_gui_tree_redraw(wimp_draw *redraw);
 bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree);
 void ro_gui_tree_menu_closed(struct tree *tree);
-void ro_gui_tree_toolbar_click(wimp_pointer* pointer, struct tree *tree);
+bool ro_gui_tree_toolbar_click(wimp_pointer* pointer);
 void ro_gui_tree_stop_edit(struct tree *tree);
-void ro_gui_tree_open(wimp_open *open, struct tree *tree);
+void ro_gui_tree_open(wimp_open *open);
 void ro_gui_tree_show(struct tree *tree);
-bool ro_gui_tree_keypress(int key, struct tree *tree);
+bool ro_gui_tree_keypress(wimp_key *key);
 void ro_gui_tree_selection_drag_end(wimp_dragged *drag);
 void ro_gui_tree_move_drag_end(wimp_dragged *drag);
 void ro_gui_tree_launch_selected(struct tree *tree);
