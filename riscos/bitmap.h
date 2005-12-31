@@ -28,7 +28,7 @@ struct bitmap {
 
 };
 
-struct bitmap *bitmap_create_file(int width, int height, char *file);
+struct bitmap *bitmap_create_file(char *file);
 void bitmap_initialise_memory(void);
 void bitmap_quit(void);
 void bitmap_maintain(void);

@@ -13,6 +13,8 @@
  * sprites.
  */
 
+#define NDEBUG
+
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
@@ -195,18 +197,14 @@ struct bitmap *bitmap_create(int width, int height, bool clear)
 /**
  * Create a persistent, opaque bitmap from a file reference.
  *
- * \param  width   width of image in pixels
- * \param  height  width of image in pixels
  * \param  file    the file containing the image data
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create_file(int width, int height, char *file)
+struct bitmap *bitmap_create_file(char *file)
 {
 	struct bitmap *bitmap;
-	struct bitmap *link;
-
-	if (width == 0 || height == 0 || file[0] == '\0')
+	if (file[0] == '\0')
 		return NULL;
 
 	if (!ro_filename_claim(file))
@@ -214,20 +212,16 @@ struct bitmap *bitmap_create_file(int width, int height, char *file)
 	bitmap = calloc(1, sizeof(struct bitmap));
 	if (!bitmap)
 		return NULL;
-	bitmap->width = width;
-	bitmap->height = height;
 	bitmap->opaque = true;
 	bitmap->persistent = true;
 	strcpy(bitmap->filename, file);
 
-	/* link into our list of bitmaps at the tail */
+	/* link in at the head */
 	if (bitmap_head) {
-		for (link = bitmap_head; link->next; link = link->next);
-		link->next = bitmap;
-		bitmap->previous = link;
-	} else {
-		bitmap_head = bitmap;
+		bitmap->next = bitmap_head;
+		bitmap_head->previous = bitmap;
 	}
+	bitmap_head = bitmap;
 	return bitmap;
 }
 
@@ -482,13 +476,16 @@ void bitmap_maintain(void)
 	struct bitmap_compressed_header *header;
 	unsigned int maintain_direct_size;
 
-//	LOG(("Performing maintenance."));
+	LOG(("Performing maintenance."));
 
-	if (!bitmap) {
+	if ((!bitmap) || ((bitmap_direct_used < bitmap_direct_size) &&
+			(bitmap_compressed_used < bitmap_compressed_size))) {
 		bitmap_maintenance = false;
 		bitmap_maintenance_priority = false;
 		return;
 	}
+
+	/* under heavy loads free up an extra 30% to work with */
 	maintain_direct_size = bitmap_direct_size;
 	if (!bitmap_maintenance_priority)
 		maintain_direct_size = maintain_direct_size * 0.7;
@@ -529,7 +526,7 @@ void bitmap_maintain(void)
 			return;
 		}
 	}
-
+	
 	/* for the remaining entries we dump to disk */
 	for (; bitmap; bitmap = bitmap->next) {
 		if ((bitmap->sprite_area) || (bitmap->compressed)) {
@@ -582,7 +579,7 @@ void bitmap_decompress(struct bitmap *bitmap)
 		free(bitmap->sprite_area);
 		bitmap->sprite_area = NULL;
 	} else {
-//		LOG(("Decompressed"));
+		LOG(("Decompressed"));
 		area_size = header->input_size +
 				sizeof(struct bitmap_compressed_header);
 		bitmap_compressed_used -= area_size;
@@ -635,18 +632,19 @@ void bitmap_compress(struct bitmap *bitmap)
 			}
 			bitmap->sprite_area = NULL;
 			calc = (100 / (float)output_size) * new_size;
-//			LOG(("Compression: %i->%i, %.3f%%",
-//					output_size, new_size, calc));
+			LOG(("Compression: %i->%i, %.3f%%",
+					output_size, new_size, calc));
 		}
 	}
 }
 
 void bitmap_load_file(struct bitmap *bitmap)
 {
-	unsigned int area_size;
 	int len;
 	fileswitch_object_type obj_type;
 	os_error *error;
+	struct bitmap_compressed_header *bitmap_compressed;
+	osspriteop_header *bitmap_direct;
 
 	assert(bitmap->filename);
 
@@ -669,7 +667,7 @@ void bitmap_load_file(struct bitmap *bitmap)
 		return;
 	}
 
-//	LOG(("Loaded file from disk"));
+	LOG(("Loaded file from disk"));
 	/* Sanity check the file we've just loaded:
 	 * If it's an uncompressed buffer, then it's a raw sprite area,
 	 * including the total size word at the start. Therefore, we check
@@ -691,18 +689,24 @@ void bitmap_load_file(struct bitmap *bitmap)
 			strncmp(bitmap->compressed + 20, "bitmap", 6) == 0) {
 		bitmap->sprite_area = (osspriteop_area *)bitmap->compressed;
 		bitmap->compressed = NULL;
-		area_size = 16 + 44 + bitmap->width * bitmap->height * 4;
-		bitmap_direct_used += area_size;
+		bitmap_direct = (osspriteop_header *)(bitmap->sprite_area + 1);
+		bitmap->width = bitmap_direct->width + 1;
+		bitmap->height = bitmap_direct->height + 1;
+		bitmap_direct_used += 16 + 44 +
+				bitmap->width * bitmap->height * 4;
 	} else if ((int)((*(((int *)bitmap->compressed) + 6)) +
 			sizeof(struct bitmap_compressed_header)) == len &&
 			strncmp(bitmap->compressed + 8, "bitmap", 6) == 0) {
 		bitmap_compressed_used -= len;
+		bitmap_compressed = (struct bitmap_compressed_header *)
+				bitmap->compressed;
+		bitmap->width = bitmap_compressed->width;
+		bitmap->height = bitmap_compressed->height;
 	} else {
 		free(bitmap->compressed);
 		bitmap->compressed = NULL;
 		return;
 	}
-
 	if (bitmap->modified)
 		bitmap_delete_file(bitmap);
 }
@@ -764,7 +768,7 @@ void bitmap_save_file(struct bitmap *bitmap)
 		}
 		bitmap->compressed = NULL;
 		bitmap->modified = false;
-//		LOG(("Saved file to disk"));
+		LOG(("Saved file to disk"));
 	}
 }
 
