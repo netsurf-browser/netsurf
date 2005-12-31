@@ -686,6 +686,15 @@ HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
 HelpAppInfo:\TNetSurf information \w.|MSee the about page for the contributor list and credits.
 
 
+# Configuration tokens
+# ====================
+#
+# These tokens are used for the configuration icon text.
+#
+
+con_fonts:Fonts
+
+
 # Unused tokens
 # =============
 #

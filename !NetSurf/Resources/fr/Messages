@@ -687,6 +687,15 @@ HelpGHistoryToolbar3:\Tle bouton de lancement.|M\Slancer la sélection en cours.
 HelpAppInfo:\Tla \w d'information de NetSurf.|MVoir la page "À propos de" pour une liste des contributeurs et les remerciements.
 
 
+# Configuration tokens
+# ====================
+#
+# These tokens are used for the configuration icon text.
+#
+
+con_fonts:Fonts
+
+
 # Unused tokens
 # =============
 #

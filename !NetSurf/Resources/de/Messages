@@ -687,6 +687,15 @@ HelpGHistoryToolbar3:Lädt Webseiten.|MAnklicken mit AUSWAHL öffnet die markier
 HelpAppInfo:Das ist das Info-Fenster zu NetSurf.|MGenauere Angaben zu Autoren und Entwicklerteam, zu genutzten Libraries etc. gibt es bei "Über NetSurf" im Untermenü Hilfe eines Browserfensters.
 
 
+# Configuration tokens
+# ====================
+#
+# These tokens are used for the configuration icon text.
+#
+
+con_fonts:Fonts
+
+
 # Unused tokens
 # =============
 #
