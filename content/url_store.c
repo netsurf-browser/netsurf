@@ -303,7 +303,7 @@ char *url_store_match(const char *url, struct url_data **reference) {
 
 	if (!url_store_hostnames)
 		return NULL;
-		
+
 	/* find the scheme and first URL, not necessarily matching */
 	if (!*reference) {
 		hostname = url_store_match_hostname(url, NULL);
@@ -405,7 +405,7 @@ void url_store_load(const char *file) {
 	int version;
 	int length;
 	FILE *fp;
-	
+
 	LOG(("Loading URL file"));
 
 	fp = fopen(file, "r");
@@ -489,7 +489,7 @@ void url_store_load(const char *file) {
 				s[length] = 0x00;
 				if (length > 0)
 					result->data.title = strdup(s);
-			}  
+			}
 		}
 	}
 	fclose(fp);
@@ -522,9 +522,10 @@ void url_store_save(const char *file) {
 		LOG(("Failed to open file '%s' for writing", file));
 		return;
 	}
-	
+
 	/* get the minimum date for expiry */
 	min_date = time(NULL) - (60 * 60 * 24) * option_expire_url;
+	LOG(("%d", min_date));
 
 	/* file format version number */
 	fprintf(fp, "104\n");
@@ -536,13 +537,15 @@ void url_store_save(const char *file) {
 			if ((url->data.last_visit > min_date) &&
 					(url->data.visits > 0) &&
 					(url->data.url_length <
-						MAXIMUM_URL_LENGTH))
+						MAXIMUM_URL_LENGTH)) {
 				url_count++;
+			}
 		free(normal);
 		normal = url_store_match_string(search->hostname);
 		if ((url_count > 0) && (normal)) {
 			fprintf(fp, "%s\n%i\n", normal, url_count);
-			for (url = search->url; url->next; url = url->next);
+			for (url = search->url; url && url->next;
+					url = url->next);
 			for (; url; url = url->previous)
 				if ((url->data.last_visit > min_date) &&
 						(url->data.visits > 0) &&
@@ -554,13 +557,21 @@ void url_store_save(const char *file) {
 					if (bitmap)
 						thumb_file = bitmap->filename;
 #endif
-					s = url->data.title;
-					for (i = 0; s[i] != '\0'; i++)
-						if (s[i] < 32) s[i] = ' ';
-					for (--i; ((i > 0) && (s[i] == ' ')); i--)
-						s[i] = '\0';
-					if (url->data.title)
+
+					if (url->data.title) {
+						s = url->data.title;
+						for (i = 0; s[i] != '\0';
+								i++)
+							if (s[i] < 32)
+								s[i] = ' ';
+						for (--i;
+							((i > 0) &&
+							(s[i] == ' '));
+								i--)
+							s[i] = '\0';
+
 						title = url->data.title;
+					}
 					else
 						title = "";
 					fprintf(fp, "%s\n%i\n%i\n%i\n%s\n%s\n",
@@ -582,7 +593,7 @@ void url_store_save(const char *file) {
  */
 void url_store_add_thumbnail(const char *url, struct bitmap *bitmap) {
 	struct url_content *content;
-	
+
 	content = url_store_find(url);
 	if (content) {
 	  	if (content->thumbnail)
@@ -597,7 +608,7 @@ void url_store_add_thumbnail(const char *url, struct bitmap *bitmap) {
  */
 struct bitmap *url_store_get_thumbnail(const char *url) {
 	struct url_content *content;
-	
+
 	content = url_store_find(url);
 	if (content)
 		return content->thumbnail;
