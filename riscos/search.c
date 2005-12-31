@@ -23,13 +23,13 @@
 #include "netsurf/desktop/selection.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/html.h"
-#include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
-
 
 #ifdef WITH_SEARCH
 
@@ -59,6 +59,16 @@ static struct list_entry *search_current = 0;
 static struct content *search_content = 0;
 static bool search_prev_case_sens = false;
 
+#define RECENT_SEARCHES 8
+bool search_insert;
+static char *recent_search[RECENT_SEARCHES];
+static wimp_MENU(RECENT_SEARCHES) menu_recent;
+wimp_menu *recent_search_menu = (wimp_menu *)&menu_recent;
+#define DEFAULT_FLAGS (wimp_ICON_TEXT | wimp_ICON_FILLED | \
+		(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) | \
+		(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT))
+
+
 static void start_search(bool forwards);
 static void do_search(char *string, int string_len, bool case_sens, bool forwards);
 static const char *find_pattern(const char *string, int s_len,
@@ -67,6 +77,124 @@ static bool find_occurrences(const char *pattern, int p_len, struct box *cur,
 		bool case_sens);
 static void show_status(bool found);
 
+static bool ro_gui_search_next(wimp_w w);
+static bool ro_gui_search_click(wimp_pointer *pointer);
+static bool ro_gui_search_keypress(wimp_key *key);
+static void ro_gui_search_add_recent(char *search);
+
+void ro_gui_search_init(void) {
+	dialog_search = ro_gui_dialog_create("search");
+	ro_gui_wimp_event_register_keypress(dialog_search,
+			ro_gui_search_keypress);
+	ro_gui_wimp_event_register_close_window(dialog_search,
+			ro_gui_search_end);
+	ro_gui_wimp_event_register_menu_gright(dialog_search, ICON_SEARCH_TEXT,
+			ICON_SEARCH_MENU, recent_search_menu);
+	ro_gui_wimp_event_register_text_field(dialog_search, ICON_SEARCH_STATUS);
+	ro_gui_wimp_event_register_checkbox(dialog_search, ICON_SEARCH_CASE_SENSITIVE);
+	ro_gui_wimp_event_register_mouse_click(dialog_search,
+			ro_gui_search_click);
+	ro_gui_wimp_event_register_ok(dialog_search, ICON_SEARCH_FIND_NEXT,
+			ro_gui_search_next);
+	ro_gui_wimp_event_register_cancel(dialog_search, ICON_SEARCH_CANCEL);
+	ro_gui_wimp_event_set_help_prefix(dialog_search, "HelpSearch");
+
+	recent_search_menu->title_data.indirected_text.text =
+			(char*)messages_get("Search");
+	ro_gui_menu_init_structure(recent_search_menu, RECENT_SEARCHES);
+}
+
+/**
+ * Wrapper for the pressing of an OK button for wimp_event.
+ *
+ * \return false, to indicate the window should not be closed
+ */
+bool ro_gui_search_next(wimp_w w) {
+	search_insert = true;
+	ro_gui_search_add_recent(ro_gui_get_icon_string(dialog_search, ICON_SEARCH_TEXT));	
+	start_search(true);
+	return false;
+}
+
+bool ro_gui_search_click(wimp_pointer *pointer) {
+	switch (pointer->i) {
+	  	case ICON_SEARCH_FIND_PREV:
+			search_insert = true;
+			ro_gui_search_add_recent(ro_gui_get_icon_string(dialog_search, ICON_SEARCH_TEXT));
+			start_search(false);
+			return true;
+		case ICON_SEARCH_CASE_SENSITIVE:
+			start_search(true);
+			return true;
+	}
+	return false;
+}
+
+void ro_gui_search_add_recent(char *search) {
+  	char *tmp;
+  	int i;
+
+	if ((search == NULL) || (search[0] == '\0'))
+		return;
+
+	if (!search_insert) {
+	  	free(recent_search[0]);
+	  	recent_search[0] = strdup(search);
+		ro_gui_search_prepare_menu();
+		return;
+	}
+
+	if ((recent_search[0] != NULL) &&
+			(!strcmp(recent_search[0], search))) {
+		search_insert = false;
+		return;	  
+	}
+
+	tmp = strdup(search);
+	if (!tmp) {
+	  	warn_user("NoMemory", 0);
+	  	return;
+	}
+	free(recent_search[RECENT_SEARCHES - 1]);
+	for (i = RECENT_SEARCHES - 1; i > 0; i--)
+		recent_search[i] = recent_search[i - 1];
+	recent_search[0] = tmp;
+	search_insert = false;
+	
+	ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_MENU, false);
+	ro_gui_search_prepare_menu();
+}
+
+bool ro_gui_search_prepare_menu(void) {
+	os_error *error;
+	int i;
+	int suggestions = 0;
+	
+	for (i = 0; i < RECENT_SEARCHES; i++)
+		if (recent_search[i] != NULL)
+			suggestions++;
+
+	if (suggestions == 0)
+		return false;
+
+	for (i = 0; i < suggestions; i++) {
+		recent_search_menu->entries[i].data.indirected_text.text =
+				recent_search[i];
+		recent_search_menu->entries[i].data.indirected_text.size =
+				strlen(recent_search[i]) + 1;
+	}
+	recent_search_menu->entries[suggestions - 1].menu_flags |= wimp_MENU_LAST;
+
+	if ((current_menu_open) && (current_menu == recent_search_menu)) {
+		error = xwimp_create_menu(current_menu, 0, 0);
+		if (error) {
+			LOG(("xwimp_create_menu: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("MenuError", error->errmess);
+		}
+	}
+	return true;
+}
 
 /**
  * Open the search dialog
@@ -81,7 +209,7 @@ void ro_gui_search_prepare(struct gui_window *g)
 
 	/* if the search dialogue is reopened over a new window, we still
 	   need to cancel the previous search */
-	ro_gui_search_end();
+	ro_gui_search_end(dialog_search);
 
 	search_current_window = g;
 
@@ -91,11 +219,8 @@ void ro_gui_search_prepare(struct gui_window *g)
 
 	c = search_current_window->bw->current_content;
 
-	if (!c)
-		return;
-
 	/* only handle html contents */
-	if (c->type != CONTENT_HTML)
+	if ((!c) || (c->type != CONTENT_HTML))
 		return;
 
 	show_status(true);
@@ -108,34 +233,8 @@ void ro_gui_search_prepare(struct gui_window *g)
 		warn_user("NoMemory", 0);
 
 	selection_init(search_selection, c->data.html.layout);
-}
-
-/**
- * Handle clicks in the search dialog
- *
- * \param pointer wimp_pointer block
- * \param parent The parent window of this persistent dialog
- */
-void ro_gui_search_click(wimp_pointer *pointer)
-{
-	if (pointer->buttons == wimp_CLICK_MENU)
-		return;
-
-	switch(pointer->i) {
-		case ICON_SEARCH_FIND_PREV:
-			start_search(false);
-			break;
-		case ICON_SEARCH_FIND_NEXT:
-			start_search(true);
-			break;
-		case ICON_SEARCH_CANCEL:
-			/* cancel the search operation */
-			ro_gui_search_end();
-			/* and close the window */
-			ro_gui_menu_closed();
-			ro_gui_dialog_close(dialog_search);
-			break;
-	}
+	ro_gui_wimp_event_memorise(dialog_search);
+	search_insert = true;
 }
 
 /**
@@ -152,25 +251,20 @@ bool ro_gui_search_keypress(wimp_key *key)
 		case 9: /* ctrl i */
 			state = ro_gui_get_icon_selected_state(dialog_search, ICON_SEARCH_CASE_SENSITIVE);
 			ro_gui_set_icon_selected_state(dialog_search, ICON_SEARCH_CASE_SENSITIVE, !state);
-			return true;
-		case wimp_KEY_RETURN:
 			start_search(true);
 			return true;
-		case wimp_KEY_ESCAPE:
-			/* cancel the search operation */
-			ro_gui_search_end();
-			/* and close the window */
-			ro_gui_menu_closed();
-			ro_gui_dialog_close(dialog_search);
-			return true;
 		case wimp_KEY_UP:
+			search_insert = true;
+			ro_gui_search_add_recent(ro_gui_get_icon_string(dialog_search, ICON_SEARCH_TEXT));
 			start_search(false);
 			return true;
 		case wimp_KEY_DOWN:
-			start_search(true);
+			ro_gui_search_next(dialog_search);
 			return true;
 
 		default:
+			if (key->c == 21) /* ctrl+u means the user's starting a new search */
+				search_insert = true;
 			if (key->c == 8  || /* backspace */
 			    key->c == 21 || /* ctrl u */
 			    (key->c >= 0x20 && key->c <= 0x7f)) {
@@ -198,6 +292,8 @@ void start_search(bool forwards)
 	string = ro_gui_get_icon_string(dialog_search, ICON_SEARCH_TEXT);
 	assert(string);
 
+	ro_gui_search_add_recent(string);
+
 	string_len = strlen(string);
 	if (string_len <= 0) {
 		show_status(true);
@@ -216,10 +312,13 @@ void start_search(bool forwards)
 /**
  * Ends the search process, invalidating all global state and
  * freeing the list of found boxes
+ *
+ * \param w	the search window handle (not used)
  */
-void ro_gui_search_end(void)
+void ro_gui_search_end(wimp_w w)
 {
 	struct list_entry *a, *b;
+
 
 	if (search_selection) {
 		selection_clear(search_selection, true);
@@ -229,8 +328,10 @@ void ro_gui_search_end(void)
 
 	search_current_window = 0;
 
-	if (search_string)
+	if (search_string) {
+		ro_gui_search_add_recent(search_string);
 		free(search_string);
+	}
 	search_string = 0;
 
 	for (a = search_found->next; a; a = b) {
@@ -268,11 +369,8 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
 
 	c = search_current_window->bw->current_content;
 
-	if (!c)
-		return;
-
 	/* only handle html contents */
-	if (c->type != CONTENT_HTML)
+	if ((!c) || (c->type != CONTENT_HTML))
 		return;
 
 	box = c->data.html.layout;
