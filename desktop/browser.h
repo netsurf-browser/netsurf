@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <time.h>
+#include "netsurf/content/url_store.h"
 
 struct box;
 struct content;
@@ -161,7 +162,7 @@ bool history_back_available(struct history *history);
 bool history_forward_available(struct history *history);
 
 /* In platform specific global_history.c. */
-void global_history_add(struct gui_window *g);
+void global_history_add(struct url_content *data);
 void global_history_add_recent(const char *url);
 char **global_history_get_recent(int *count);
 

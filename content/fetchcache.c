@@ -211,7 +211,6 @@ void fetchcache_go(struct content *content, char *referer,
 void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 		unsigned long size)
 {
-	struct url_content *url_content;
 	bool res;
 	struct content *c = p;
 	content_type type;
@@ -278,10 +277,6 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			break;
 
 		case FETCH_FINISHED:
-			url_content = url_store_find(c->url);
-			if (url_content)
-				url_content->requests++;
-
 			c->fetch = 0;
 			content_set_status(c, messages_get("Converting"),
 					c->source_size);

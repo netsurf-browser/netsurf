@@ -164,7 +164,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	char *url2;
 	char *hash;
 	url_func_result res;
-	struct url_content *url_content;
 	char url_buf[256];
 
 	LOG(("bw %p, url %s", bw, url));
@@ -211,10 +210,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_stop(bw);
 	browser_window_remove_caret(bw);
 
-	url_content = url_store_find(url2);
-	if (url_content)
-		url_content->visits++;
-
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = history_add;
 	bw->time0 = clock();
@@ -255,9 +250,11 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 void browser_window_callback(content_msg msg, struct content *c,
 		intptr_t p1, intptr_t p2, union content_msg_data data)
 {
+	struct url_content *url_content;
 	struct browser_window *bw = (struct browser_window *) p1;
 	char status[40];
 	char url[256];
+	char *title;
 
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
@@ -317,7 +314,18 @@ void browser_window_callback(content_msg msg, struct content *c,
 			browser_window_set_status(bw, c->status_message);
 			if (bw->history_add) {
 				history_add(bw->history, c, bw->frag_id);
-				global_history_add(bw->window);
+				url_content = url_store_find(c->url);
+				if (url_content) {
+				  	title = strdup(c->title);
+				  	if (title) {
+				  	  	free(url_content->title);
+				  	  	url_content->title = title;
+				  	}
+					url_content->visits++;
+					url_content->last_visit = time(NULL);
+					url_content->type = c->type;
+					global_history_add(url_content);
+				}
 			}
 			if (c->type == CONTENT_HTML)
 				selection_init(bw->sel, bw->current_content->data.html.layout);
