@@ -41,7 +41,7 @@ static int tree_initialising = 0;
  * \param tree  the tree to initialise
  */
 void tree_initialise(struct tree *tree) {
-  
+
 	assert(tree);
 
 	tree_set_node_expanded(tree->root, true);
@@ -63,7 +63,7 @@ void tree_initialise_nodes(struct node *root) {
 	struct node *node;
 
 	assert(root);
-	
+
 	tree_initialising++;
 	for (node = root; node; node = node->next) {
 		tree_recalculate_node(node, true);
@@ -89,7 +89,7 @@ void tree_initialise_nodes(struct node *root) {
 void tree_handle_node_changed(struct tree *tree, struct node *node,
 		bool recalculate_sizes, bool expansion) {
 	int width, height;
-	
+
 	assert(node);
 
 	if ((expansion) && (node->expanded) && (node->child)) {
@@ -122,13 +122,13 @@ void tree_handle_node_changed(struct tree *tree, struct node *node,
  */
 void tree_handle_node_element_changed(struct tree *tree, struct node_element *element) {
 	int width, height;
-	
+
 	assert(element);
 
 	width = element->box.width;
 	height = element->box.height;
 	tree_recalculate_node_element(element);
-	
+
 	if (element->box.height != height) {
 		tree_recalculate_node(element->parent, false);
 		tree_redraw_area(tree, 0, element->box.y, 16384, 16384);
@@ -151,9 +151,9 @@ void tree_handle_node_element_changed(struct tree *tree, struct node_element *el
 void tree_recalculate_node(struct node *node, bool recalculate_sizes) {
 	struct node_element *element;
 	int width, height;
-  
+
 	assert(node);
-	
+
 	width = node->box.width;
 	height = node->box.height;
 	node->box.width = 0;
@@ -181,7 +181,7 @@ void tree_recalculate_node(struct node *node, bool recalculate_sizes) {
 	if (height != node->box.height) {
 		for (; node->parent; node = node->parent);
 		if (tree_initialising == 0)
-			tree_recalculate_node_positions(node);	  
+			tree_recalculate_node_positions(node);
 	}
 }
 
@@ -249,9 +249,9 @@ void tree_recalculate_node_positions(struct node *root) {
 int tree_get_node_width(struct node *node) {
 	int width = 0;
 	int child_width;
-	
+
 	assert(node);
-	
+
 	for (; node; node = node->next) {
 		if (width < (node->box.x + node->box.width))
 			width = node->box.x + node->box.width;
@@ -273,9 +273,9 @@ int tree_get_node_width(struct node *node) {
  */
 int tree_get_node_height(struct node *node) {
 	int y1;
-	
+
 	assert(node);
-	
+
 	if ((node->child) && (node->expanded)) {
 		y1 = node->box.y;
 		if (y1 < 0)
@@ -328,7 +328,7 @@ bool tree_handle_expansion(struct tree *tree, struct node *node, bool expanded, 
 	bool redraw = false;
 
 	for (; node; node = node->next) {
-		if ((node->expanded != expanded) && (node != tree->root) && 
+		if ((node->expanded != expanded) && (node != tree->root) &&
 				((folder && (node->folder)) || (leaf && (!node->folder)))) {
 			node->expanded = expanded;
 			if (node->child)
@@ -383,7 +383,7 @@ void tree_set_node_selected(struct tree *tree, struct node *node, bool selected)
  */
 struct node *tree_get_node_at(struct node *root, int x, int y, bool *furniture) {
 	struct node_element *result;
-	
+
 	if ((result = tree_get_node_element_at(root, x, y, furniture)))
 		return result->parent;
 	return NULL;
@@ -470,7 +470,7 @@ void tree_move_selected_nodes(struct tree *tree, struct node *destination, bool 
 
 	tree_clear_processing(tree->root);
 	tree_selected_to_processing(tree->root);
-	
+
 	/* the destination node cannot be a child of any node with the processing flag set */
 	error = destination->processing;
 	for (test = destination; test; test = test->parent)
@@ -482,7 +482,7 @@ void tree_move_selected_nodes(struct tree *tree, struct node *destination, bool 
 	if ((destination->folder) && (!destination->expanded) && (!before)) {
 		destination->expanded = true;
 		tree_handle_node_changed(tree, destination, false, true);
-	} 
+	}
 	link = tree_move_processing_node(tree->root, destination, before, true);
 	while (link)
 		link = tree_move_processing_node(tree->root, link, false, false);
@@ -552,7 +552,7 @@ struct node *tree_move_processing_node(struct node *node, struct node *link, boo
 		  		return result;
 		}
 	}
-	return NULL;	  
+	return NULL;
 }
 
 /**
@@ -586,9 +586,9 @@ void tree_handle_selection_area(struct tree *tree, int x, int y, int width, int 
 		bool invert) {
 	assert(tree);
 	assert(tree->root);
-	
+
 	if (!tree->root->child) return;
-	
+
 	if (width < 0) {
 		x += width;
 		width =- width;
@@ -597,7 +597,7 @@ void tree_handle_selection_area(struct tree *tree, int x, int y, int width, int 
 		y += height;
 		height =- height;
 	}
-	
+
 	tree_handle_selection_area_node(tree, tree->root->child, x, y, width, height, invert);
 }
 
@@ -622,7 +622,7 @@ void tree_handle_selection_area_node(struct tree *tree, struct node *node, int x
 
 	assert(tree);
 	assert(node);
-	
+
 	x_max = x + width;
 	y_max = y + height;
 
@@ -677,9 +677,9 @@ void tree_draw(struct tree *tree, int clip_x, int clip_y, int clip_width,
 		int clip_height) {
 	assert(tree);
 	assert(tree->root);
-	
+
 	if (!tree->root->child) return;
-	
+
 	tree_initialise_redraw(tree);
 	tree_draw_node(tree, tree->root->child, clip_x,
 			clip_y, clip_width, clip_height);
@@ -704,10 +704,10 @@ void tree_draw_node(struct tree *tree, struct node *node, int clip_x, int clip_y
 
 	assert(tree);
 	assert(node);
-	
+
 	x_max = clip_x + clip_width + NODE_INSTEP;
 	y_max = clip_y + clip_height;
-	
+
 	if ((node->parent->next) && (node->parent->next->box.y < clip_y))
 		return;
 
@@ -715,7 +715,7 @@ void tree_draw_node(struct tree *tree, struct node *node, int clip_x, int clip_y
 		if (node->box.y > y_max) return;
 		if (node->next)
 			tree_draw_line(tree, node->box.x - (NODE_INSTEP / 2),
-					node->box.y + (40 / 2), 0, 
+					node->box.y + (40 / 2), 0,
 					node->next->box.y - node->box.y);
 		if ((node->box.x < x_max) && (node->box.y < y_max) &&
 				(node->box.x + node->box.width + NODE_INSTEP >= clip_x) &&
@@ -723,11 +723,11 @@ void tree_draw_node(struct tree *tree, struct node *node, int clip_x, int clip_y
 			if ((node->expanded) && (node->child))
 				tree_draw_line(tree, node->box.x + (NODE_INSTEP / 2),
 						node->data.box.y + node->data.box.height, 0,
-						(40 / 2)); 
+						(40 / 2));
 			tree_draw_line(tree, node->box.x - (NODE_INSTEP / 2),
 					node->data.box.y +
 					node->data.box.height - (40 / 2),
-					(NODE_INSTEP / 2) - 4, 0); 
+					(NODE_INSTEP / 2) - 4, 0);
 			tree_draw_node_expansion(tree, node);
 			if (node->expanded)
 				for (element = &node->data; element;
@@ -764,7 +764,7 @@ struct node *tree_get_link_details(struct tree *tree, int x, int y, bool *before
 		node = tree_get_node_at(tree->root->child, x, y, &furniture);
 	if ((!node) || (furniture))
 		return tree->root;
-	
+
 	if (y < (node->box.y + (node->box.height / 2))) {
 		*before = true;
 	} else if ((node->folder) && (node->expanded) && (node->child)) {
@@ -783,8 +783,6 @@ struct node *tree_get_link_details(struct tree *tree, int x, int y, bool *before
  * \param before  whether to link siblings before or after the supplied node
  */
 void tree_link_node(struct node *link, struct node *node, bool before) {
-	struct node *sibling;
-  
 	assert(link);
 	assert(node);
 
@@ -804,15 +802,13 @@ void tree_link_node(struct node *link, struct node *node, bool before) {
 			link->next = node;
 		}
 	} else {
-		sibling = link->child;
-		if (!sibling) {
-			link->child = node;
+		if (!link->child) {
+			link->child = link->last_child = node;
 			node->previous = NULL;
 		} else {
-			while (sibling->next)
-				sibling = sibling->next;
-			sibling->next = node;
-			node->previous = sibling;
+			link->last_child->next = node;
+			node->previous = link->last_child;
+			link->last_child = node;
 		}
 		node->parent = link;
 		node->next = NULL;
@@ -877,7 +873,7 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 	struct node *parent;
 	struct node_element *element;
 
-	assert(node); 
+	assert(node);
 
 	while (node) {
 		if (tree->temp_selection == node)
@@ -930,9 +926,9 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
  */
 struct node *tree_create_folder_node(struct node *parent, const char *title) {
 	struct node *node;
-	
+
 	assert(title);
-	
+
 	node = calloc(sizeof(struct node), 1);
 	if (!node) return NULL;
 	node->editable = true;
@@ -957,9 +953,9 @@ struct node *tree_create_folder_node(struct node *parent, const char *title) {
  */
 struct node *tree_create_leaf_node(struct node *parent, const char *title) {
 	struct node *node;
-	
+
 	assert(title);
-	
+
 	node = calloc(sizeof(struct node), 1);
 	if (!node) return NULL;
 	node->folder = false;
@@ -975,7 +971,7 @@ struct node *tree_create_leaf_node(struct node *parent, const char *title) {
 
 /**
  * Creates a tree entry for a URL, and links it into the tree
- * 
+ *
  *
  * \param parent     the node to link to
  * \param data	     the URL data to use
@@ -986,9 +982,9 @@ struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
 		char *title) {
 	struct node *node;
 	struct node_element *element;
-	
+
 	assert(data);
-	
+
 	if (!title) {
 	  	if (data->title)
 	  		title = strdup(data->title);
@@ -1010,7 +1006,7 @@ struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
 	element = tree_create_node_element(node, TREE_ELEMENT_THUMBNAIL);
 	if (element)
 		element->type = NODE_ELEMENT_THUMBNAIL;
-	
+
 	tree_update_URL_node(node);
 	tree_recalculate_node(node, false);
 
@@ -1020,7 +1016,7 @@ struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
 
 /**
  * Creates a tree entry for a URL, and links it into the tree.
- * 
+ *
  * All information is used directly from the url_content, and as such cannot be
  * edited and should never be freed.
  *
@@ -1032,9 +1028,9 @@ struct node *tree_create_URL_node_shared(struct node *parent, struct url_content
 	struct node *node;
 	struct node_element *element;
 	char *title;
-	
+
 	assert(data);
-	
+
 	if (data->title)
 		title = data->title;
 	else
@@ -1054,7 +1050,7 @@ struct node *tree_create_URL_node_shared(struct node *parent, struct url_content
 	element = tree_create_node_element(node, TREE_ELEMENT_THUMBNAIL);
 	if (element)
 		element->type = NODE_ELEMENT_THUMBNAIL;
-	
+
 	tree_update_URL_node(node);
 	tree_recalculate_node(node, false);
 
@@ -1072,9 +1068,9 @@ struct node *tree_create_URL_node_shared(struct node *parent, struct url_content
 struct node_element *tree_create_node_element(struct node *parent, node_element_data data) {
 	struct node_element *element;
 	struct node_element *link;
-	
+
 	assert(parent);
-	
+
 	element = calloc(sizeof(struct node_element), 1);
 	if (!element) return NULL;
 	element->parent = parent;
@@ -1101,9 +1097,9 @@ struct node_element *tree_create_node_element(struct node *parent, node_element_
  */
 void tree_recalculate_size(struct tree *tree) {
 	int width, height;
-	
+
 	assert(tree);
-	
+
 	if (!tree->handle)
 		return;
 	width = tree->width;

@@ -69,6 +69,7 @@ struct node {
 	struct node_element data;	/* <-- Data to display */
 	struct node *parent;		/* <-- Parent entry (NULL for root) */
 	struct node *child;		/* <-- First child */
+	struct node *last_child;	/* <-- Last child */
   	struct node *previous;		/* <-- Previous child of the parent */
 	struct node *next;		/* <-- Next child of the parent */
 
@@ -97,7 +98,7 @@ void tree_initialise(struct tree *tree);
 void tree_initialise_nodes(struct node *root);
 void tree_handle_node_changed(struct tree *tree, struct node *node,
 		bool recalculate_sizes, bool expansion);
-void tree_handle_node_element_changed(struct tree *tree, 
+void tree_handle_node_element_changed(struct tree *tree,
 		struct node_element *element);
 void tree_recalculate_node(struct node *node, bool recalculate_sizes);
 void tree_recalculate_node_positions(struct node *root);
