@@ -20,23 +20,24 @@
 #include "netsurf/content/url_store.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/riscos/bitmap.h"
+#include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/image.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/thumbnail.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 #define SIZE 10
-#define WIDTH 200
-#define HEIGHT 152
+#define WIDTH (THUMBNAIL_WIDTH << 1)
+#define HEIGHT (THUMBNAIL_HEIGHT << 1)
 #define MARGIN 32
 #define FULL_WIDTH (WIDTH + MARGIN + MARGIN)
 #define FULL_HEIGHT (HEIGHT + MARGIN + MARGIN)
-#define SPRITE_SIZE (16 + 44 + ((WIDTH / 2 + 3) & ~3) * HEIGHT / 2)
 
 /** A node in the history tree. */
 struct history_entry {
@@ -77,7 +78,8 @@ static struct history_entry * ro_gui_history_click_find(
 		int x, int y);
 static void history_go(struct browser_window *bw,
 		struct history_entry *entry, bool new_window);
-
+static void ro_gui_history_redraw(wimp_draw *redraw);
+static bool ro_gui_history_click(wimp_pointer *pointer);
 
 /**
  * Create a new history tree for a window.
@@ -249,6 +251,11 @@ void ro_gui_history_init(void)
 {
 	history_window = ro_gui_dialog_create("history");
 	history_font = font_find_font("Homerton.Medium", 112, 128, 0, 0, 0, 0);
+	ro_gui_wimp_event_register_redraw_window(history_window,
+			ro_gui_history_redraw);
+	ro_gui_wimp_event_register_mouse_click(history_window,
+			ro_gui_history_click);
+	ro_gui_wimp_event_set_help_prefix(history_window, "HelpHistory");
 }
 
 
@@ -512,9 +519,11 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer)
 
 /**
  * Handle mouse clicks in the history window.
+ *
+ * \return true if the event was handled, false to pass it on
  */
 
-void ro_gui_history_click(wimp_pointer *pointer)
+bool ro_gui_history_click(wimp_pointer *pointer)
 {
 	int x, y;
 	struct history_entry *he;
@@ -523,7 +532,7 @@ void ro_gui_history_click(wimp_pointer *pointer)
 	if (pointer->buttons != wimp_CLICK_SELECT &&
 			pointer->buttons != wimp_CLICK_ADJUST)
 		/* return if not select or adjust click */
-		return;
+		return true;
 
 	state.w = history_window;
 	wimp_get_window_state(&state);
@@ -539,6 +548,7 @@ void ro_gui_history_click(wimp_pointer *pointer)
 		history_go(history_bw, he,
 				pointer->buttons == wimp_CLICK_ADJUST);
 	}
+	return true;
 }
 
 

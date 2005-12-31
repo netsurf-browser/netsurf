@@ -511,7 +511,7 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw) {
  * Handle mouse movements/clicks over the URL completion window.
  *
  * \param pointer  the pointer state
- * \param buttons  whethere to react to mouse buttons
+ * \param buttons  whether to react to mouse buttons
  */
 void ro_gui_url_complete_mouse_at(wimp_pointer *pointer, bool buttons) {
 	wimp_window_state state;

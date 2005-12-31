@@ -23,6 +23,7 @@
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utf8.h"
@@ -31,27 +32,13 @@
 
 /*	Recognised help keys
 	====================
+	Help keys should be registered using the wimp_event system to be
+	recognised. The only special case help values are:
 
 	HelpIconbar		 Iconbar (no icon suffix is used)
-
-	HelpAppInfo		 Application info window
-	HelpBrowser		 Browser window [*]
-	HelpHistory		 History window [*]
-	HelpObjInfo		 Object info window
-	HelpPageInfo		 Page info window
-	HelpPrint		 Print window
-	HelpSaveAs		 Save as window
-	HelpScaleView		 Scale view window
-	HelpSearch		 Search window
-	HelpStatus		 Status window
-	HelpToolbar		 Toolbar window
 	HelpHotlist		 Hotlist window [*]
-	HelpHotToolbar		 Hotlist window toolbar
-	HelpHotEntry		 Hotlist entry window
-	HelpHotFolder		 Hotlist entry window
 	HelpGHistory		 Global history window [*]
-	HelpGHistToolbar	 Global history window toolbar
-	HelpEditToolbar		 Toolbars in edit mode
+	HelpBrowser		 Browser window [*]
 
 	HelpIconMenu		 Iconbar menu
 	HelpBrowserMenu		 Browser window menu
@@ -93,11 +80,11 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	wimp_w window;
 	wimp_i icon;
 	struct gui_window *g;
-	struct toolbar *toolbar = NULL;
 	unsigned int index;
 	bool greyed = false;
 	wimp_menu *test_menu;
 	os_error *error;
+	const char *auto_text;
 
 	/* only accept help requests */
 	if ((!message) || (message->action != message_HELP_REQUEST))
@@ -113,28 +100,11 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 	icon = message_data->i;
 
 	/* do the basic window checks */
-	if (window == wimp_ICON_BAR)
+	auto_text = ro_gui_wimp_event_get_help_prefix(window);
+	if (auto_text)
+	  	sprintf(message_token, "%s%i", auto_text, (int)icon);
+	else if (window == wimp_ICON_BAR)
 		sprintf(message_token, "HelpIconbar");
-	else if (window == dialog_info)
-		sprintf(message_token, "HelpAppInfo%i", (int)icon);
-	else if (window == history_window)
-		sprintf(message_token, "HelpHistory%i", (int)icon);
-	else if (window == dialog_objinfo)
-		sprintf(message_token, "HelpObjInfo%i", (int)icon);
-	else if (window == dialog_pageinfo)
-		sprintf(message_token, "HelpPageInfo%i", (int)icon);
-	else if (window == dialog_print)
-		sprintf(message_token, "HelpPrint%i", (int)icon);
-	else if (window == dialog_saveas)
-		sprintf(message_token, "HelpSaveAs%i", (int)icon);
-	else if (window == dialog_zoom)
-		sprintf(message_token, "HelpScaleView%i", (int)icon);
-	else if (window == dialog_search)
-		sprintf(message_token, "HelpSearch%i", (int)icon);
-	else if (window == dialog_folder)
-		sprintf(message_token, "HelpHotFolder%i", (int)icon);
-	else if (window == dialog_entry)
-		sprintf(message_token, "HelpHotEntry%i", (int)icon);
 	else if ((hotlist_tree) && (window == (wimp_w)hotlist_tree->handle))
 		sprintf(message_token, "HelpHotlist%i",
 				ro_gui_hotlist_help(message_data->pos.x,
@@ -144,32 +114,8 @@ void ro_gui_interactive_help_request(wimp_message *message) {
 		sprintf(message_token, "HelpGHistory%i",
 				ro_gui_global_history_help(message_data->pos.x,
 						message_data->pos.y));
-	else if ((hotlist_tree) && (hotlist_tree->toolbar) &&
-			((window == hotlist_tree->toolbar->toolbar_handle) ||
-			((hotlist_tree->toolbar->editor) &&
-			(window == hotlist_tree->toolbar->
-					editor->toolbar_handle)))) {
-		toolbar = hotlist_tree->toolbar;
-		sprintf(message_token, "HelpHotToolbar%i", (int)icon);
-	} else if ((global_history_tree) && (global_history_tree->toolbar) &&
-			((window == global_history_tree->toolbar->
-					toolbar_handle) ||
-			((global_history_tree->toolbar->editor) &&
-			(window == global_history_tree->toolbar->
-					editor->toolbar_handle)))) {
-		toolbar = global_history_tree->toolbar;
-		sprintf(message_token, "HelpGHistToolbar%i", (int)icon);
-	} else if ((g = ro_gui_window_lookup(window)) != NULL)
+	else if ((g = ro_gui_window_lookup(window)) != NULL)
 		sprintf(message_token, "HelpBrowser%i", (int)icon);
-	else if ((g = ro_gui_toolbar_lookup(window)) != NULL) {
-	  	toolbar = g->toolbar;
-		sprintf(message_token, "HelpToolbar%i", (int)icon);
-	} else if ((g = ro_gui_status_lookup(window)) != NULL)
-		sprintf(message_token, "HelpStatus%i", (int)icon);
-
-	/* change toolbars to editors where appropriate */
-	if ((toolbar) && (toolbar->editor))
-		sprintf(message_token, "HelpEditToolbar%i", (int)icon);
 
 	/* if we've managed to find something so far then we broadcast it */
 	if (message_token[0]) {

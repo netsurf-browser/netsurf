@@ -5,7 +5,7 @@
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 John M Bell <jmb202@ecs.soton.ac.uk>
- * Copyright 2005 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
  */
@@ -23,11 +23,15 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/render/font.h"
+#include "netsurf/riscos/configure.h"
+#include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
+#include "netsurf/riscos/url_complete.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
@@ -35,58 +39,19 @@
 
 /*	The maximum number of persistent dialogues
 */
-#define MAX_PERSISTENT 8
+#define MAX_PERSISTENT 16
 
 
-wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
-	dialog_config_prox, dialog_config_th,
+wimp_w dialog_info, dialog_saveas,
 #ifdef WITH_AUTH
 	dialog_401li,
 #endif
 	dialog_zoom, dialog_pageinfo, dialog_objinfo, dialog_tooltip,
-	dialog_warning, dialog_config_th_pane, dialog_debug,
+	dialog_warning, dialog_debug,
 	dialog_folder, dialog_entry, dialog_search, dialog_print,
-	dialog_config_font, dialog_config_image, dialog_url_complete,
-	dialog_openurl;
-
-static int ro_gui_choices_font_size;
-static int ro_gui_choices_font_min_size;
-static int config_font_icon = -1;
-static bool ro_gui_choices_http_proxy;
-static int ro_gui_choices_http_proxy_auth;
-static int config_br_icon = -1;
-static const char *ro_gui_choices_lang = 0;
-static const char *ro_gui_choices_alang = 0;
-static int ro_gui_choices_image_edit_type = 0;
-static unsigned int ro_gui_choices_fg_plot_style = 0;
-static unsigned int ro_gui_choices_bg_plot_style = 0;
-
+	dialog_url_complete, dialog_openurl;
 
 struct gui_window *ro_gui_current_zoom_gui;
-
-struct toolbar_display {
-	struct toolbar *toolbar;
-	struct theme_descriptor *descriptor;
-	int icon_number;
-	struct toolbar_display *next;
-};
-
-static struct theme_descriptor *theme_choice = NULL;
-static struct theme_descriptor *theme_list = NULL;
-static int theme_count = 0;
-static struct toolbar_display *toolbars = NULL;
-static char theme_radio_validation[] = "Sradiooff,radioon\0";
-static char theme_null_validation[] = "\0";
-static char theme_line_validation[] = "R2\0";
-
-
-static const char *ro_gui_proxy_auth_name[] = {
-	"ProxyNone", "ProxyBasic", "ProxyNTLM"
-};
-
-static const char *ro_gui_image_name[] = {
-	"ImgStyle0", "ImgStyle1", "ImgStyle2", "ImgStyle3"
-};
 
 
 /*	A simple mapping of parent and child
@@ -96,28 +61,10 @@ static struct {
 	wimp_w parent;
 } persistent_dialog[MAX_PERSISTENT];
 
-static void ro_gui_dialog_config_prepare(void);
-static void ro_gui_dialog_set_image_quality(int icon, unsigned int tinct_options);
-static void ro_gui_dialog_config_set(void);
-static void ro_gui_dialog_click_config(wimp_pointer *pointer);
-static void ro_gui_dialog_click_config_br(wimp_pointer *pointer);
-static void ro_gui_dialog_click_config_prox(wimp_pointer *pointer);
-static void ro_gui_dialog_click_config_image(wimp_pointer *pointer);
-static void ro_gui_dialog_config_proxy_update(void);
-static void ro_gui_dialog_click_config_th(wimp_pointer *pointer);
-static void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer);
-static void ro_gui_dialog_update_config_font(void);
-static void ro_gui_dialog_click_config_font(wimp_pointer *pointer);
-static unsigned ro_gui_clamp_scale(unsigned scale);
-static void ro_gui_dialog_click_zoom(wimp_pointer *pointer);
-static bool ro_gui_zoom_keypress(wimp_key *key);
-static void ro_gui_dialog_click_open_url(wimp_pointer *pointer);
-static void ro_gui_dialog_click_warning(wimp_pointer *pointer);
-static const char *language_name(const char *code);
 
-static void ro_gui_dialog_load_themes(void);
-static void ro_gui_dialog_free_themes(void);
-
+static bool ro_gui_dialog_openurl_apply(wimp_w w);
+static bool ro_gui_dialog_zoom_click(wimp_pointer *pointer);
+static bool ro_gui_dialog_zoom_apply(wimp_w w);
 
 /**
  * Load and create dialogs from template file.
@@ -125,31 +72,108 @@ static void ro_gui_dialog_free_themes(void);
 
 void ro_gui_dialog_init(void)
 {
-	dialog_info = ro_gui_dialog_create("info");
-	/* fill in about box version info */
-	ro_gui_set_icon_string(dialog_info, 4, netsurf_version);
-
-	dialog_saveas = ro_gui_saveas_create("saveas");
-	dialog_config = ro_gui_dialog_create("config");
-	dialog_config_br = ro_gui_dialog_create("config_br");
-	dialog_config_prox = ro_gui_dialog_create("config_prox");
-	dialog_config_th = ro_gui_dialog_create("config_th");
-	dialog_config_th_pane = ro_gui_dialog_create("config_th_p");
-	dialog_zoom = ro_gui_dialog_create("zoom");
-	dialog_pageinfo = ro_gui_dialog_create("pageinfo");
-	dialog_objinfo = ro_gui_dialog_create("objectinfo");
 	dialog_tooltip = ro_gui_dialog_create("tooltip");
+
+	/* configure window */
+	ro_gui_configure_initialise();
+
+	/* warning dialog */
 	dialog_warning = ro_gui_dialog_create("warning");
-	dialog_debug = ro_gui_dialog_create("debug");
-	dialog_folder = ro_gui_dialog_create("new_folder");
-	dialog_entry = ro_gui_dialog_create("new_entry");
-	dialog_search = ro_gui_dialog_create("search");
-	dialog_print = ro_gui_dialog_create("print");
-	dialog_config_font = ro_gui_dialog_create("config_font");
-	dialog_config_image = ro_gui_dialog_create("config_img");
+	ro_gui_wimp_event_register_ok(dialog_warning, ICON_WARNING_CONTINUE,
+			NULL);
+	ro_gui_wimp_event_set_help_prefix(dialog_debug, "HelpWarning");
+
+	/* theme installation */
 	dialog_theme_install = ro_gui_dialog_create("theme_inst");
+	ro_gui_wimp_event_register_cancel(dialog_theme_install,
+			ICON_THEME_INSTALL_CANCEL);
+	ro_gui_wimp_event_register_ok(dialog_theme_install,
+			ICON_THEME_INSTALL_INSTALL,
+			ro_gui_theme_install_apply);
+	ro_gui_wimp_event_set_help_prefix(dialog_theme_install, "HelpThemeInst");
+	
+	/* debug window */
+	dialog_debug = ro_gui_dialog_create("debug");
+	ro_gui_wimp_event_set_help_prefix(dialog_debug, "HelpDebug");
+
+	/* search */
+#ifdef WITH_SEARCH
+	ro_gui_search_init();
+#endif
+	
+	/* print */
+#ifdef WITH_PRINT
+	ro_gui_print_init();
+#endif
+
+	/* about us */
+	dialog_info = ro_gui_dialog_create("info");
+	ro_gui_set_icon_string(dialog_info, 4, netsurf_version);
+	ro_gui_wimp_event_set_help_prefix(dialog_info, "HelpAppInfo");
+
+	/* page info */
+	dialog_pageinfo = ro_gui_dialog_create("pageinfo");
+	ro_gui_wimp_event_set_help_prefix(dialog_pageinfo, "HelpPageInfo");
+
+	/* object info */
+	dialog_objinfo = ro_gui_dialog_create("objectinfo");
+	ro_gui_wimp_event_set_help_prefix(dialog_objinfo, "HelpObjInfo");
+
+	/* hotlist folder editing */
+	dialog_folder = ro_gui_dialog_create("new_folder");
+	ro_gui_wimp_event_register_text_field(dialog_folder, ICON_FOLDER_NAME);
+	ro_gui_wimp_event_register_menu_gright(dialog_openurl, ICON_OPENURL_URL,
+			ICON_OPENURL_MENU, url_suggest_menu);
+	ro_gui_wimp_event_register_cancel(dialog_folder, ICON_FOLDER_CANCEL);
+	ro_gui_wimp_event_register_ok(dialog_folder, ICON_FOLDER_OK,
+			ro_gui_hotlist_dialog_apply);
+	ro_gui_wimp_event_set_help_prefix(dialog_folder, "HelpHotFolder");
+	
+	/* hotlist entry editing */
+	dialog_entry = ro_gui_dialog_create("new_entry");
+	ro_gui_wimp_event_register_text_field(dialog_entry, ICON_ENTRY_NAME);
+	ro_gui_wimp_event_register_menu_gright(dialog_entry, ICON_ENTRY_URL,
+			ICON_ENTRY_RECENT, url_suggest_menu);
+	ro_gui_wimp_event_register_cancel(dialog_entry, ICON_ENTRY_CANCEL);
+	ro_gui_wimp_event_register_ok(dialog_entry, ICON_ENTRY_OK,
+			ro_gui_hotlist_dialog_apply);
+	ro_gui_wimp_event_set_help_prefix(dialog_entry, "HelpHotEntry");
+
+	/* save as */
+	dialog_saveas = ro_gui_saveas_create("saveas");
+	ro_gui_wimp_event_register_button(dialog_saveas, ICON_SAVE_ICON,
+			ro_gui_save_start_drag);
+	ro_gui_wimp_event_register_text_field(dialog_saveas, ICON_SAVE_PATH);
+	ro_gui_wimp_event_register_cancel(dialog_saveas, ICON_SAVE_CANCEL);
+	ro_gui_wimp_event_register_ok(dialog_saveas, ICON_SAVE_OK,
+			ro_gui_save_ok);
+	ro_gui_wimp_event_set_help_prefix(dialog_saveas, "HelpSaveAs");
+	
+	/* url suggestion */
 	dialog_url_complete = ro_gui_dialog_create("url_suggest");
+	ro_gui_wimp_event_register_redraw_window(dialog_url_complete,
+			ro_gui_url_complete_redraw);
+	ro_gui_wimp_event_set_help_prefix(dialog_url_complete, "HelpAutoURL");
+	
+	/* open URL */
 	dialog_openurl = ro_gui_dialog_create("open_url");
+	ro_gui_wimp_event_register_menu_gright(dialog_openurl, ICON_OPENURL_URL,
+			ICON_OPENURL_MENU, url_suggest_menu);
+	ro_gui_wimp_event_register_cancel(dialog_openurl, ICON_OPENURL_CANCEL);
+	ro_gui_wimp_event_register_ok(dialog_openurl, ICON_OPENURL_OPEN,
+			ro_gui_dialog_openurl_apply);
+	ro_gui_wimp_event_set_help_prefix(dialog_openurl, "HelpOpenURL");
+	
+	/* scale view */
+	dialog_zoom = ro_gui_dialog_create("zoom");
+	ro_gui_wimp_event_register_numeric_field(dialog_zoom, ICON_ZOOM_VALUE,
+			ICON_ZOOM_INC, ICON_ZOOM_DEC, 10, 1600, 10, 0);
+	ro_gui_wimp_event_register_mouse_click(dialog_zoom,
+			ro_gui_dialog_zoom_click);
+	ro_gui_wimp_event_register_cancel(dialog_zoom, ICON_ZOOM_CANCEL);
+	ro_gui_wimp_event_register_ok(dialog_zoom, ICON_ZOOM_OK,
+			ro_gui_dialog_zoom_apply);
+	ro_gui_wimp_event_set_help_prefix(dialog_zoom, "HelpScaleView");
 }
 
 
@@ -171,6 +195,7 @@ wimp_w ro_gui_dialog_create(const char *template_name)
 	window = ro_gui_dialog_load_template(template_name);
 
 	/* create window */
+	window->sprite_area = gui_sprites;
 	error = xwimp_create_window(window, &w);
 	if (error) {
 		LOG(("xwimp_create_window: 0x%x: %s",
@@ -289,1087 +314,6 @@ void ro_gui_dialog_open(wimp_w w)
 
 
 /**
- * Open a persistent dialog box relative to the pointer.
- *
- * \param  parent   the owning window (NULL for no owner)
- * \param  w	    the dialog window
- * \param  pointer  open the window at the pointer (centre of the parent
- *		    otherwise)
- */
-
-void ro_gui_dialog_open_persistent(wimp_w parent, wimp_w w, bool pointer) {
-	int dx, dy, i;
-	wimp_window_state open;
-	os_error *error;
-
-	/*	Move and open
-	*/
-	if (pointer) {
-		wimp_pointer ptr;
-
-		/*	Get the pointer position
-		*/
-		error = xwimp_get_pointer_info(&ptr);
-		if (error) {
-			LOG(("xwimp_get_pointer_info: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-
-		open.w = w;
-		error = xwimp_get_window_state(&open);
-		if (error) {
-			LOG(("xwimp_get_window_state: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-		dx = (open.visible.x1 - open.visible.x0);
-		dy = (open.visible.y1 - open.visible.y0);
-		open.visible.x0 = ptr.pos.x - 64;
-		open.visible.x1 = ptr.pos.x - 64 + dx;
-		open.visible.y0 = ptr.pos.y - dy;
-		open.visible.y1 = ptr.pos.y;
-		open.next = wimp_TOP;
-		error = xwimp_open_window((wimp_open *) &open);
-		if (error) {
-			LOG(("xwimp_open_window: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-	} else {
-		ro_gui_open_window_centre(parent, w);
-	}
-
-	/*	Set the caret position and window furniture
-	*/
-	if ((w == dialog_pageinfo) || (w == dialog_objinfo))
-		ro_gui_wimp_update_window_furniture(w, wimp_WINDOW_CLOSE_ICON,
-				wimp_WINDOW_CLOSE_ICON);
-	ro_gui_wimp_update_window_furniture(w, wimp_WINDOW_BACK_ICON,
-			wimp_WINDOW_BACK_ICON);
-	ro_gui_set_caret_first(w);
-
-	/*	Add a mapping
-	*/
-	if (parent == NULL)
-		return;
-	for (i = 0; i < MAX_PERSISTENT; i++) {
-		if (persistent_dialog[i].dialog == NULL ||
-				persistent_dialog[i].dialog == w) {
-			persistent_dialog[i].dialog = w;
-			persistent_dialog[i].parent = parent;
-			return;
-		}
-	}
-
-	/*	Log that we failed to create a mapping
-	*/
-	LOG(("Unable to map persistent dialog to parent."));
-}
-
-
-/**
- * Close persistent dialogs associated with a window.
- *
- * \param  parent  the window to close children of
- */
-
-void ro_gui_dialog_close_persistent(wimp_w parent) {
-	int i;
-
-	/*	Check our mappings
-	*/
-	for (i = 0; i < MAX_PERSISTENT; i++) {
-		if (persistent_dialog[i].parent == parent &&
-				persistent_dialog[i].dialog != NULL) {
-			ro_gui_dialog_close(persistent_dialog[i].dialog);
-			persistent_dialog[i].dialog = NULL;
-		}
-	}
-}
-
-
-/**
- * Handle key presses in one of the dialog boxes.
- */
-
-bool ro_gui_dialog_keypress(wimp_key *key)
-{
-	wimp_pointer pointer;
-
-#ifdef WITH_SEARCH
-	if (key->w == dialog_search)
-		return ro_gui_search_keypress(key);
-#endif
-#ifdef WITH_PRINT
-	if (key->w == dialog_print)
-		return ro_gui_print_keypress(key);
-#endif
-	if (key->w == dialog_zoom)
-		return ro_gui_zoom_keypress(key);
-
-	if (key->c == wimp_KEY_ESCAPE) {
-		ro_gui_dialog_close(key->w);
-		return true;
-	}
-	else if (key->c == wimp_KEY_RETURN) {
-		if ((key->w == dialog_folder) || (key->w == dialog_entry)) {
-			pointer.w = key->w;
-			/** \todo  replace magic numbers with defines */
-			pointer.i = (key->w == dialog_folder) ? 3 : 5;
-			pointer.buttons = wimp_CLICK_SELECT;
-			ro_gui_hotlist_dialog_click(&pointer);
-			return true;
-		} else if (key->w == dialog_saveas)
-			ro_gui_save_ok(key->w);
-		else if (key->w == dialog_openurl) {
-			pointer.w = key->w;
-			pointer.i = ICON_OPENURL_OPEN;
-			pointer.buttons = wimp_CLICK_SELECT;
-			ro_gui_dialog_click_open_url(&pointer);
-		}
-	}
-#ifdef WITH_AUTH
-	if (key->w == dialog_401li)
-		return ro_gui_401login_keypress(key);
-#endif
-
-	return false;
-}
-
-
-/**
- * Handle clicks in one of the dialog boxes.
- */
-
-void ro_gui_dialog_click(wimp_pointer *pointer)
-{
-	if (pointer->buttons == wimp_CLICK_MENU)
-		return;
-
-	if (pointer->w == dialog_config)
-		ro_gui_dialog_click_config(pointer);
-	else if (pointer->w == dialog_config_br)
-		ro_gui_dialog_click_config_br(pointer);
-	else if (pointer->w == dialog_config_prox)
-		ro_gui_dialog_click_config_prox(pointer);
-	else if (pointer->w == dialog_config_image)
-		ro_gui_dialog_click_config_image(pointer);
-	else if (pointer->w == dialog_config_th)
-		ro_gui_dialog_click_config_th(pointer);
-	else if (pointer->w == dialog_config_th_pane)
-		ro_gui_dialog_click_config_th_pane(pointer);
-#ifdef WITH_AUTH
-	else if (pointer->w == dialog_401li)
-		ro_gui_401login_click(pointer);
-#endif
-	else if (pointer->w == dialog_zoom)
-		ro_gui_dialog_click_zoom(pointer);
-	else if (pointer->w == dialog_warning)
-		ro_gui_dialog_click_warning(pointer);
-	else if ((pointer->w == dialog_folder) || (pointer->w == dialog_entry))
-		ro_gui_hotlist_dialog_click(pointer);
-#ifdef WITH_SEARCH
-	else if (pointer->w == dialog_search)
-		ro_gui_search_click(pointer);
-#endif
-#ifdef WITH_PRINT
-	else if (pointer->w == dialog_print)
-		ro_gui_print_click(pointer);
-#endif
-	else if (pointer->w == dialog_config_font)
-		ro_gui_dialog_click_config_font(pointer);
-	else if (pointer->w == dialog_theme_install)
-		ro_gui_theme_install_click(pointer);
-	else if (pointer->w == dialog_openurl)
-		ro_gui_dialog_click_open_url(pointer);
-}
-
-
-/**
- * Redraw a dialog window
- */
-
-void ro_gui_dialog_redraw(wimp_draw *redraw)
-{
-	struct toolbar_display *display;
-
-	for (display = toolbars; display; display = display->next)
-		if ((display->toolbar) && (display->toolbar->toolbar_handle ==
-				redraw->w)) {
-			ro_gui_theme_redraw(display->toolbar, redraw);
-			return;
-		}
-
-	ro_gui_user_redraw(redraw, false, (os_gcol)0);
-}
-
-
-/**
- * Prepare and open the Choices dialog.
- */
-
-void ro_gui_dialog_open_config(void)
-{
-	ro_gui_dialog_config_prepare();
-	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_BROWSER,
-			true);
-	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_PROXY,
-			false);
-	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_THEME,
-			false);
-	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_FONT,
-			false);
-	ro_gui_set_icon_selected_state(dialog_config, ICON_CONFIG_IMAGE,
-			false);
-	ro_gui_dialog_open(dialog_config);
-	ro_gui_open_pane(dialog_config, dialog_config_br, 0);
-}
-
-
-/**
- * Set the choices panes with the current options.
- */
-
-void ro_gui_dialog_config_prepare(void)
-{
-	/* browser pane */
-	ro_gui_choices_lang = option_language;
-	ro_gui_choices_alang = option_accept_language;
-	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_LANG,
-			language_name(option_language ?
-					option_language : "en"));
-	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_ALANG,
-			language_name(option_accept_language ?
-					option_accept_language : "en"));
-	ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_HOMEPAGE,
-			option_homepage_url ? option_homepage_url : "");
-	ro_gui_set_icon_selected_state(dialog_config_br,
-			ICON_CONFIG_BR_OPENBROWSER,
-			option_open_browser_at_startup);
-	ro_gui_set_icon_selected_state(dialog_config_br,
-			ICON_CONFIG_BR_BLOCKADS,
-			option_block_ads);
-	ro_gui_set_icon_selected_state(dialog_config_br,
-			ICON_CONFIG_BR_PLUGINS,
-			option_no_plugins);
-
-	/* proxy pane */
-	ro_gui_choices_http_proxy = option_http_proxy;
-	ro_gui_set_icon_selected_state(dialog_config_prox,
-			ICON_CONFIG_PROX_HTTP,
-			option_http_proxy);
-	ro_gui_set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_HTTPHOST,
-			option_http_proxy_host ? option_http_proxy_host : "");
-	ro_gui_set_icon_integer(dialog_config_prox, ICON_CONFIG_PROX_HTTPPORT,
-			option_http_proxy_port);
-	ro_gui_choices_http_proxy_auth = option_http_proxy_auth;
-	ro_gui_set_icon_string(dialog_config_prox,
-			ICON_CONFIG_PROX_AUTHTYPE,
-			messages_get(ro_gui_proxy_auth_name[
-			ro_gui_choices_http_proxy_auth]));
-	ro_gui_set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_AUTHUSER,
-			option_http_proxy_auth_user ?
-			option_http_proxy_auth_user : "");
-	ro_gui_set_icon_string(dialog_config_prox, ICON_CONFIG_PROX_AUTHPASS,
-			option_http_proxy_auth_pass ?
-			option_http_proxy_auth_pass : "");
-	ro_gui_set_icon_selected_state(dialog_config_prox,
-			ICON_CONFIG_PROX_REFERER, option_send_referer);
-	ro_gui_dialog_config_proxy_update();
-
-	/* themes pane */
-	ro_gui_dialog_load_themes();
-	theme_choice = ro_gui_theme_find(option_theme);
-
-	/* font pane */
-	ro_gui_choices_font_size = option_font_size;
-	ro_gui_choices_font_min_size = option_font_min_size;
-	ro_gui_dialog_update_config_font();
-	ro_gui_set_icon_string(dialog_config_font, ICON_CONFIG_FONT_SANS,
-			option_font_sans);
-	ro_gui_set_icon_string(dialog_config_font, ICON_CONFIG_FONT_SERIF,
-			option_font_serif);
-	ro_gui_set_icon_string(dialog_config_font, ICON_CONFIG_FONT_MONO,
-			option_font_mono);
-	ro_gui_set_icon_string(dialog_config_font, ICON_CONFIG_FONT_CURS,
-			option_font_cursive);
-	ro_gui_set_icon_string(dialog_config_font, ICON_CONFIG_FONT_FANT,
-			option_font_fantasy);
-	ro_gui_set_icon_string(dialog_config_font, ICON_CONFIG_FONT_DEF,
-			css_font_family_name[option_font_default]);
-
-	/* image pane */
-	ro_gui_choices_fg_plot_style = option_fg_plot_style;
-	ro_gui_choices_bg_plot_style = option_bg_plot_style;
-	ro_gui_dialog_set_image_quality(ICON_CONFIG_IMG_FG_DISP,
-			option_fg_plot_style);
-	ro_gui_dialog_set_image_quality(ICON_CONFIG_IMG_BG_DISP,
-			option_bg_plot_style);
-}
-
-
-/**
- * Set an icon in the Image config window with Tinct options.
- */
-
-void ro_gui_dialog_set_image_quality(int icon, unsigned int tinct_options)
-{
-	int i = 1;
-	if (tinct_options & tinct_USE_OS_SPRITE_OP) {
-		i = 0;
-	} else if (tinct_options & tinct_ERROR_DIFFUSE) {
-		i = 3;
-	} else if (tinct_options & tinct_DITHER) {
-		i = 2;
-	}
-	ro_gui_set_icon_string(dialog_config_image, icon,
-			messages_get(ro_gui_image_name[i]));
-	ro_gui_set_icon_selected_state(dialog_config_image, icon + 3,
-			(tinct_options & tinct_BILINEAR_FILTER));
-
-}
-
-
-/**
- * Set the current options to the settings in the choices panes.
- */
-
-void ro_gui_dialog_config_set(void)
-{
-	char *font_default;
-
-	/* browser pane */
-	if (option_homepage_url)
-		free(option_homepage_url);
-	option_homepage_url = strdup(ro_gui_get_icon_string(dialog_config_br,
-			ICON_CONFIG_BR_HOMEPAGE));
-	option_open_browser_at_startup = ro_gui_get_icon_selected_state(
-			dialog_config_br,
-			ICON_CONFIG_BR_OPENBROWSER);
-	option_block_ads = ro_gui_get_icon_selected_state(
-			dialog_config_br,
-			ICON_CONFIG_BR_BLOCKADS);
-	option_no_plugins = ro_gui_get_icon_selected_state(
-			dialog_config_br,
-			ICON_CONFIG_BR_PLUGINS);
-	if (ro_gui_choices_lang != option_language) {
-		free(option_language);
-		option_language = strdup(ro_gui_choices_lang);
-		ro_gui_choices_lang = option_language;
-	}
-	if (ro_gui_choices_alang != option_accept_language) {
-		free(option_accept_language);
-		option_accept_language = strdup(ro_gui_choices_alang);
-		ro_gui_choices_alang = option_accept_language;
-	}
-
-	/* proxy pane */
-	option_http_proxy = ro_gui_choices_http_proxy;
-	if (option_http_proxy_host)
-		free(option_http_proxy_host);
-	option_http_proxy_host = strdup(ro_gui_get_icon_string(
-			dialog_config_prox,
-			ICON_CONFIG_PROX_HTTPHOST));
-	option_http_proxy_port = atoi(ro_gui_get_icon_string(dialog_config_prox,
-			ICON_CONFIG_PROX_HTTPPORT));
-	option_http_proxy_auth = ro_gui_choices_http_proxy_auth;
-	if (option_http_proxy_auth_user)
-		free(option_http_proxy_auth_user);
-	option_http_proxy_auth_user = strdup(ro_gui_get_icon_string(
-			dialog_config_prox,
-			ICON_CONFIG_PROX_AUTHUSER));
-	if (option_http_proxy_auth_pass)
-		free(option_http_proxy_auth_pass);
-	option_http_proxy_auth_pass = strdup(ro_gui_get_icon_string(
-			dialog_config_prox,
-			ICON_CONFIG_PROX_AUTHPASS));
-	option_send_referer = ro_gui_get_icon_selected_state(
-			dialog_config_prox,
-			ICON_CONFIG_PROX_REFERER);
-
-	/* theme pane */
-	if (option_theme) {
-		free(option_theme);
-		option_theme = NULL;
-	}
-	if (theme_choice) {
-		option_theme = strdup(theme_choice->leafname);
-		ro_gui_theme_apply(theme_choice);
-	}
-
-	/* font pane */
-	option_font_size = ro_gui_choices_font_size;
-	option_font_min_size = ro_gui_choices_font_min_size;
-	free(option_font_sans);
-	option_font_sans = strdup(ro_gui_get_icon_string(dialog_config_font,
-			ICON_CONFIG_FONT_SANS));
-	free(option_font_serif);
-	option_font_serif = strdup(ro_gui_get_icon_string(dialog_config_font,
-			ICON_CONFIG_FONT_SERIF));
-	free(option_font_mono);
-	option_font_mono = strdup(ro_gui_get_icon_string(dialog_config_font,
-			ICON_CONFIG_FONT_MONO));
-	free(option_font_cursive);
-	option_font_cursive = strdup(ro_gui_get_icon_string(
-			dialog_config_font, ICON_CONFIG_FONT_CURS));
-	free(option_font_fantasy);
-	option_font_fantasy = strdup(ro_gui_get_icon_string(
-			dialog_config_font, ICON_CONFIG_FONT_FANT));
-	font_default = ro_gui_get_icon_string(dialog_config_font,
-			ICON_CONFIG_FONT_DEF);
-	option_font_default = css_font_family_parse(font_default,
-			strlen(font_default));
-
-	/* image pane */
-	if ((option_fg_plot_style != (int)ro_gui_choices_fg_plot_style) ||
-			(option_bg_plot_style !=
-			(int) ro_gui_choices_bg_plot_style)) {
-		option_fg_plot_style = ro_gui_choices_fg_plot_style;
-		option_bg_plot_style = ro_gui_choices_bg_plot_style;
-		ro_gui_window_redraw_all();
-	}
-}
-
-
-/**
- * Handle clicks in the main Choices dialog.
- */
-
-void ro_gui_dialog_click_config(wimp_pointer *pointer)
-{
-	wimp_window_state state;
-	switch (pointer->i) {
-		case ICON_CONFIG_SAVE:
-			ro_gui_dialog_config_set();
-			ro_gui_save_options();
-			if (pointer->buttons == wimp_CLICK_SELECT) {
-				ro_gui_dialog_close(dialog_config);
-				ro_gui_dialog_free_themes();
-			}
-			break;
-		case ICON_CONFIG_CANCEL:
-			if (pointer->buttons == wimp_CLICK_SELECT) {
-				ro_gui_dialog_close(dialog_config);
-				ro_gui_dialog_free_themes();
-			} else {
-				ro_gui_dialog_config_prepare();
-			}
-			break;
-		case ICON_CONFIG_BROWSER:
-			/* set selected state of radio icon to prevent
-			 * de-selection of all radio icons */
-			if (pointer->buttons == wimp_CLICK_ADJUST)
-				ro_gui_set_icon_selected_state(dialog_config,
-						ICON_CONFIG_BROWSER, true);
-			ro_gui_open_pane(dialog_config, dialog_config_br, 0);
-			break;
-		case ICON_CONFIG_PROXY:
-			if (pointer->buttons == wimp_CLICK_ADJUST)
-				ro_gui_set_icon_selected_state(dialog_config,
-						ICON_CONFIG_PROXY, true);
-			ro_gui_open_pane(dialog_config, dialog_config_prox, 0);
-			break;
-		case ICON_CONFIG_THEME:
-			if (pointer->buttons == wimp_CLICK_ADJUST)
-				ro_gui_set_icon_selected_state(dialog_config,
-						ICON_CONFIG_THEME, true);
-			ro_gui_open_pane(dialog_config, dialog_config_th, 0);
-			state.w = dialog_config_th;
-			xwimp_get_window_state(&state);
-			state.w = dialog_config_th_pane;
-			state.visible.x0 += 12;
-			state.visible.x1 -= 12;
-			state.visible.y0 += 128;
-			state.visible.y1 -= 12;
-			xwimp_open_window_nested((wimp_open *) &state,
-					dialog_config_th,
-					wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-							<< wimp_CHILD_XORIGIN_SHIFT |
-					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-							<< wimp_CHILD_YORIGIN_SHIFT |
-					wimp_CHILD_LINKS_PARENT_VISIBLE_BOTTOM_OR_LEFT
-							<< wimp_CHILD_LS_EDGE_SHIFT |
-					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-							<< wimp_CHILD_BS_EDGE_SHIFT |
-					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-							<< wimp_CHILD_RS_EDGE_SHIFT |
-					wimp_CHILD_LINKS_PARENT_VISIBLE_TOP_OR_RIGHT
-							<< wimp_CHILD_TS_EDGE_SHIFT);
-			break;
-		case ICON_CONFIG_FONT:
-			if (pointer->buttons == wimp_CLICK_ADJUST)
-				ro_gui_set_icon_selected_state(dialog_config,
-						ICON_CONFIG_FONT, true);
-			ro_gui_open_pane(dialog_config, dialog_config_font, 0);
-			break;
-		case ICON_CONFIG_IMAGE:
-			if (pointer->buttons == wimp_CLICK_ADJUST)
-				ro_gui_set_icon_selected_state(dialog_config,
-						ICON_CONFIG_IMAGE, true);
-			ro_gui_open_pane(dialog_config, dialog_config_image, 0);
-			break;
-	}
-}
-
-
-/**
- * Save the current options.
- */
-
-void ro_gui_save_options(void)
-{
-	/* NCOS doesnt have the fancy Universal Boot vars; so select
-	 * the path to the choices file based on the build options */
-#ifndef NCOS
-	options_write("<Choices$Write>.WWW.NetSurf.Choices");
-#else
-	options_write("<User$Path>.Choices.NetSurf.Choices");
-#endif
-}
-
-
-/**
- * Handle clicks in the Browser Choices pane.
- */
-
-void ro_gui_dialog_click_config_br(wimp_pointer *pointer)
-{
-	switch (pointer->i) {
-	case ICON_CONFIG_BR_LANG_PICK:
-		ro_gui_menu_prepare_languages(false, ro_gui_choices_lang);
-		config_br_icon = pointer->i;
-		ro_gui_popup_menu(languages_menu, dialog_config_br,
-				pointer->i);
-		break;
-	case ICON_CONFIG_BR_ALANG_PICK:
-		ro_gui_menu_prepare_languages(true, ro_gui_choices_alang);
-		config_br_icon = pointer->i;
-		ro_gui_popup_menu(languages_menu, dialog_config_br,
-				pointer->i);
-		break;
-	}
-}
-
-/**
- * Handle a selection from the language selection popup menu.
- *
- * \param lang The language messages key
- */
-
-void ro_gui_dialog_languages_menu_selection(const char *lang)
-{
-	int offset = strlen("lang_");
-
-	switch (config_br_icon) {
-	case ICON_CONFIG_BR_LANG_PICK:
-		ro_gui_choices_lang = lang + offset;
-		ro_gui_set_icon_string(dialog_config_br, ICON_CONFIG_BR_LANG,
-				messages_get(lang));
-		ro_gui_menu_prepare_languages(false, ro_gui_choices_lang);
-		break;
-	case ICON_CONFIG_BR_ALANG_PICK:
-		ro_gui_choices_alang = lang + offset;
-		ro_gui_set_icon_string(dialog_config_br,
-				ICON_CONFIG_BR_ALANG, messages_get(lang));
-		ro_gui_menu_prepare_languages(true, ro_gui_choices_alang);
-		break;
-	}
-}
-
-
-/**
- * Handle clicks in the Proxy Choices pane.
- */
-
-void ro_gui_dialog_click_config_prox(wimp_pointer *pointer)
-{
-	switch (pointer->i) {
-		case ICON_CONFIG_PROX_HTTP:
-			ro_gui_choices_http_proxy = !ro_gui_choices_http_proxy;
-			ro_gui_dialog_config_proxy_update();
-			break;
-		case ICON_CONFIG_PROX_AUTHTYPE_PICK:
-			ro_gui_popup_menu(proxy_auth_menu, dialog_config_prox,
-					ICON_CONFIG_PROX_AUTHTYPE_PICK);
-			break;
-	}
-}
-
-
-/**
- * Handle clicks in the Proxy Choices pane.
- */
-
-void ro_gui_dialog_click_config_image(wimp_pointer *pointer)
-{
-	switch (pointer->i) {
-		case ICON_CONFIG_IMG_FG_MENU:
-			ro_gui_choices_image_edit_type = 1;
-			ro_gui_menu_prepare_image_quality(ro_gui_choices_fg_plot_style);
-			ro_gui_popup_menu(image_quality_menu, dialog_config_image,
-					pointer->i);
-			break;
-		case ICON_CONFIG_IMG_FG_FILTER:
-			if (ro_gui_get_icon_selected_state(dialog_config_image,
-					ICON_CONFIG_IMG_FG_FILTER)) {
-				ro_gui_choices_fg_plot_style |= tinct_BILINEAR_FILTER;
-			} else {
-				ro_gui_choices_fg_plot_style &= ~tinct_BILINEAR_FILTER;
-			}
-			break;
-		case ICON_CONFIG_IMG_BG_MENU:
-			ro_gui_choices_image_edit_type = 2;
-			ro_gui_menu_prepare_image_quality(ro_gui_choices_bg_plot_style);
-			ro_gui_popup_menu(image_quality_menu, dialog_config_image,
-					pointer->i);
-			break;
-		case ICON_CONFIG_IMG_BG_FILTER:
-			if (ro_gui_get_icon_selected_state(dialog_config_image,
-					ICON_CONFIG_IMG_BG_FILTER)) {
-				ro_gui_choices_bg_plot_style |= tinct_BILINEAR_FILTER;
-			} else {
-				ro_gui_choices_bg_plot_style &= ~tinct_BILINEAR_FILTER;
-			}
-			break;
-	}
-}
-
-
-/**
- * Handle a selection from the proxy auth method popup menu.
- */
-
-void ro_gui_dialog_proxyauth_menu_selection(int item)
-{
-	ro_gui_choices_http_proxy_auth = item;
-	ro_gui_set_icon_string(dialog_config_prox,
-			ICON_CONFIG_PROX_AUTHTYPE,
-			messages_get(ro_gui_proxy_auth_name[
-			ro_gui_choices_http_proxy_auth]));
-	ro_gui_dialog_config_proxy_update();
-}
-
-
-/**
- * Handle a selection from the image quality popup menu.
- */
-
-void ro_gui_dialog_image_menu_selection(int item)
-{
-	unsigned int tinct_options = 0;
-	if (item == 0) {
-		tinct_options = tinct_USE_OS_SPRITE_OP;
-	} else if (item == 2) {
-		tinct_options = tinct_DITHER;
-	} else if (item == 3) {
-		tinct_options = tinct_ERROR_DIFFUSE;
-	}
-	if (ro_gui_choices_image_edit_type == 1) {
-		ro_gui_choices_fg_plot_style &= tinct_BILINEAR_FILTER;
-		ro_gui_choices_fg_plot_style |= tinct_options;
-		ro_gui_dialog_set_image_quality(ICON_CONFIG_IMG_FG_DISP,
-				ro_gui_choices_fg_plot_style);
-	} else {
-		ro_gui_choices_bg_plot_style &= tinct_BILINEAR_FILTER;
-		ro_gui_choices_bg_plot_style |= tinct_options;
-		ro_gui_dialog_set_image_quality(ICON_CONFIG_IMG_BG_DISP,
-				ro_gui_choices_bg_plot_style);
-	}
-	ro_gui_menu_prepare_image_quality(tinct_options);
-}
-
-
-/**
- * Update greying of icons in the proxy choices pane.
- */
-
-void ro_gui_dialog_config_proxy_update(void)
-{
-	int icon;
-	for (icon = ICON_CONFIG_PROX_HTTPHOST;
-			icon <= ICON_CONFIG_PROX_AUTHTYPE_PICK;
-			icon++)
-		ro_gui_set_icon_shaded_state(dialog_config_prox,
-				icon, !ro_gui_choices_http_proxy);
-	for (icon = ICON_CONFIG_PROX_AUTHTYPE_PICK + 1;
-			icon <= ICON_CONFIG_PROX_AUTHPASS;
-			icon++)
-		ro_gui_set_icon_shaded_state(dialog_config_prox,
-				icon, !ro_gui_choices_http_proxy ||
-				ro_gui_choices_http_proxy_auth ==
-				OPTION_HTTP_PROXY_AUTH_NONE);
-}
-
-
-/**
- * Handle clicks in the Theme Choices pane.
- */
-
-void ro_gui_dialog_click_config_th(wimp_pointer *pointer)
-{
-	switch (pointer->i) {
-		case ICON_CONFIG_TH_MANAGE:
-			os_cli("Filer_OpenDir Choices:WWW.NetSurf.Themes");
-			break;
-		case ICON_CONFIG_TH_GET:
-			browser_window_create(
-					"http://netsurf.sourceforge.net/themes/",
-					NULL, 0);
-			break;
-	}
-}
-
-
-#define THEME_HEIGHT 80
-#define THEME_WIDTH  705
-
-/**
- * Handle clicks in the scrolling Theme Choices list pane.
- */
-void ro_gui_dialog_click_config_th_pane(wimp_pointer *pointer) {
-	struct toolbar_display *link;
-	int i = pointer->i;
-	if (i < 0) return;
-
-	/*	Set the clicked theme as selected
-	*/
-	link = toolbars;
-	while (link) {
-		if ((link->icon_number == i) || (link->icon_number == (i - 1))) {
-			theme_choice = link->descriptor;
-			ro_gui_set_icon_selected_state(dialog_config_th_pane,
-				link->icon_number, true);
-		} else {
-			ro_gui_set_icon_selected_state(dialog_config_th_pane,
-				link->icon_number, false);
-		}
-		link = link->next;
-	}
-}
-
-
-/**
- * Update font size icons in font choices pane.
- */
-
-void ro_gui_dialog_update_config_font(void)
-{
-	char s[10];
-	sprintf(s, "%i.%ipt", ro_gui_choices_font_size / 10,
-			ro_gui_choices_font_size % 10);
-	ro_gui_set_icon_string(dialog_config_font,
-			ICON_CONFIG_FONT_FONTSIZE, s);
-	sprintf(s, "%i.%ipt", ro_gui_choices_font_min_size / 10,
-			ro_gui_choices_font_min_size % 10);
-	ro_gui_set_icon_string(dialog_config_font,
-			ICON_CONFIG_FONT_MINSIZE, s);
-}
-
-
-/**
- * Handle clicks in the font choices pane
- */
-
-void ro_gui_dialog_click_config_font(wimp_pointer *pointer)
-{
-	int stepping = 1;
-
-	if (pointer->buttons == wimp_CLICK_ADJUST)
-		stepping = -stepping;
-
-	switch (pointer->i) {
-		case ICON_CONFIG_FONT_FONTSIZE_DEC:
-			ro_gui_choices_font_size -= stepping;
-			if (ro_gui_choices_font_size < 50)
-				ro_gui_choices_font_size = 50;
-			if (ro_gui_choices_font_size > 1000)
-				ro_gui_choices_font_size = 1000;
-
-			if (ro_gui_choices_font_size <
-					ro_gui_choices_font_min_size)
-				ro_gui_choices_font_min_size =
-						ro_gui_choices_font_size;
-			ro_gui_dialog_update_config_font();
-			break;
-		case ICON_CONFIG_FONT_FONTSIZE_INC:
-			ro_gui_choices_font_size += stepping;
-			if (ro_gui_choices_font_size < 50)
-				ro_gui_choices_font_size = 50;
-			if (ro_gui_choices_font_size > 1000)
-				ro_gui_choices_font_size = 1000;
-			ro_gui_dialog_update_config_font();
-			break;
-		case ICON_CONFIG_FONT_MINSIZE_DEC:
-			ro_gui_choices_font_min_size -= stepping;
-			if (ro_gui_choices_font_min_size < 10)
-				ro_gui_choices_font_min_size = 10;
-			if (ro_gui_choices_font_min_size > 500)
-				ro_gui_choices_font_min_size = 500;
-			ro_gui_dialog_update_config_font();
-			break;
-		case ICON_CONFIG_FONT_MINSIZE_INC:
-			ro_gui_choices_font_min_size += stepping;
-			if (ro_gui_choices_font_min_size < 10)
-				ro_gui_choices_font_min_size = 10;
-			if (ro_gui_choices_font_min_size > 500)
-				ro_gui_choices_font_min_size = 500;
-
-			if (ro_gui_choices_font_size <
-					ro_gui_choices_font_min_size)
-				ro_gui_choices_font_size =
-						ro_gui_choices_font_min_size;
-			ro_gui_dialog_update_config_font();
-			break;
-		case ICON_CONFIG_FONT_SANS:
-		case ICON_CONFIG_FONT_SANS_PICK:
-		case ICON_CONFIG_FONT_SERIF:
-		case ICON_CONFIG_FONT_SERIF_PICK:
-		case ICON_CONFIG_FONT_MONO:
-		case ICON_CONFIG_FONT_MONO_PICK:
-		case ICON_CONFIG_FONT_CURS:
-		case ICON_CONFIG_FONT_CURS_PICK:
-		case ICON_CONFIG_FONT_FANT:
-		case ICON_CONFIG_FONT_FANT_PICK:
-			config_font_icon = pointer->i & ~1;
-			ro_gui_popup_menu(font_menu, dialog_config_font,
-					pointer->i | 1);
-			break;
-		case ICON_CONFIG_FONT_DEF_PICK:
-			break;
-	}
-}
-
-
-/**
- * Handle font menu selections.
- */
-
-void ro_gui_dialog_font_menu_selection(int item)
-{
-	if (item < 0 || rufl_family_list_entries <= (unsigned int) item)
-		return;
-	ro_gui_set_icon_string(dialog_config_font, config_font_icon,
-			rufl_family_list[item]);
-}
-
-
-/**
- * Ensure that a scale percentage lies within a sensible range.
- *
- * \param  scale  scale percentage
- * \return corrected scale value
- */
-
-unsigned ro_gui_clamp_scale(unsigned scale)
-{
-	if (scale < 10)
-		scale = 10;
-	else if (1600 < scale)
-		scale = 1600;
-	return scale;
-}
-
-
-/**
- * Handle clicks in the Scale view dialog.
- */
-
-void ro_gui_dialog_click_zoom(wimp_pointer *pointer)
-{
-	unsigned int scale;
-	int stepping = 10;
-	scale = atoi(ro_gui_get_icon_string(dialog_zoom, ICON_ZOOM_VALUE));
-
-	/*	Adjust moves values the opposite direction
-	*/
-	if (pointer->buttons == wimp_CLICK_ADJUST)
-		stepping = -stepping;
-
-	switch (pointer->i) {
-		case ICON_ZOOM_DEC: scale -= stepping; break;
-		case ICON_ZOOM_INC: scale += stepping; break;
-		case ICON_ZOOM_75:  scale = 75;	break;
-		case ICON_ZOOM_100: scale = 100; break;
-		case ICON_ZOOM_150: scale = 150; break;
-		case ICON_ZOOM_200: scale = 200; break;
-	}
-
-	scale = ro_gui_clamp_scale(scale);
-	ro_gui_set_icon_integer(dialog_zoom, ICON_ZOOM_VALUE, scale);
-
-	if (pointer->i == ICON_ZOOM_OK)
-		ro_gui_window_set_scale(ro_gui_current_zoom_gui, scale * 0.01);
-
-	if (pointer->buttons == wimp_CLICK_ADJUST &&
-			pointer->i == ICON_ZOOM_CANCEL)
-		ro_gui_dialog_prepare_zoom(ro_gui_current_zoom_gui);
-
-	if (pointer->buttons == wimp_CLICK_SELECT &&
-			(pointer->i == ICON_ZOOM_CANCEL ||
-			 pointer->i == ICON_ZOOM_OK)) {
-		ro_gui_dialog_close(dialog_zoom);
-		ro_gui_menu_closed();
-	}
-}
-
-
-/**
- * Handle keypresses in the Scale view dialog.
- *
- * \param key  keypress info from Wimp
- */
-
-bool ro_gui_zoom_keypress(wimp_key *key)
-{
-	if (key->c == wimp_KEY_RETURN) {
-		unsigned int scale;
-		scale = atoi(ro_gui_get_icon_string(dialog_zoom, ICON_ZOOM_VALUE));
-		scale = ro_gui_clamp_scale(scale);
-		ro_gui_window_set_scale(ro_gui_current_zoom_gui, scale * 0.01);
-		ro_gui_dialog_close(dialog_zoom);
-		ro_gui_menu_closed();
-		return true;
-	}
-	return false;
-}
-
-
-/**
- * Prepares the Scale view dialog.
- */
-
-void ro_gui_dialog_prepare_zoom(struct gui_window *g)
-{
-	char scale_buffer[8];
-	sprintf(scale_buffer, "%.0f", g->option.scale * 100);
-	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
-
-	ro_gui_current_zoom_gui = g;
-}
-
-
-/**
- * Handle clicks in the Open URL dialog.
- */
-
-void ro_gui_dialog_click_open_url(wimp_pointer *pointer)
-{
-	wimp_window_state open;
-	url_func_result res;
-	const char *url;
-	char *url2;
-	bool reopen_window = false;
-	wimp_caret caret;
-	os_error *error;
-
-	if (pointer->i == ICON_OPENURL_MENU) {
-	  	/* we can't have two open menus, so we close the iconbar menu
-	  	 * and detach our window from it */
-		if (current_menu == iconbar_menu) {
-		  	reopen_window = true;
-			open.w = dialog_openurl;
-			error = xwimp_get_window_state(&open);
-			if (error) {
-				LOG(("xwimp_get_window_state: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("WimpError", error->errmess);
-				return;
-			}
-			error = xwimp_get_caret_position(&caret);
-			if (error) {
-				LOG(("xwimp_get_caret_position: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("WimpError", error->errmess);
-				return;
-			}
-
-			ro_gui_menu_closed();
-			gui_poll(true);
-			ro_gui_wimp_update_window_furniture(dialog_openurl,
-					wimp_WINDOW_BACK_ICON,
-					wimp_WINDOW_BACK_ICON);
-			error = xwimp_open_window((wimp_open *) &open);
-			if (error) {
-				LOG(("xwimp_open_window: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("WimpError", error->errmess);
-				return;
-			}
-			if (caret.w == dialog_openurl) {
-				error = xwimp_set_caret_position(dialog_openurl,
-						ICON_OPENURL_URL,
-						caret.pos.x, caret.pos.y,
-						-1, caret.index);
-				if (error) {
-					LOG(("xwimp_set_caret_position: 0x%x: %s",
-							error->errnum, error->errmess));
-					warn_user("WimpError", error->errmess);
-				}
-			}
-		}
-		ro_gui_popup_menu(url_suggest_menu,
-				dialog_openurl,
-				ICON_OPENURL_MENU);
-		return;
-	}
-
-	if ((pointer->i != ICON_OPENURL_OPEN) &&
-			(pointer->i != ICON_OPENURL_CANCEL))
-		return;
-
-	if (pointer->i == ICON_OPENURL_OPEN) {
-		url = ro_gui_get_icon_string(dialog_openurl,
-				ICON_OPENURL_URL);
-		res = url_normalize(url, &url2);
-		if (res == URL_FUNC_OK) {
-			browser_window_create(url2, 0, 0);
-			global_history_add_recent(url2);
-			free(url2);
-		}
-	}
-
-	if (pointer->buttons == wimp_CLICK_ADJUST &&
-			pointer->i == ICON_OPENURL_CANCEL)
-		ro_gui_dialog_prepare_open_url();
-
-	if (pointer->buttons == wimp_CLICK_SELECT) {
-		ro_gui_dialog_close(dialog_openurl);
-		ro_gui_menu_closed();
-	}
-
-}
-
-
-/**
- * Prepares the Open URL dialog.
- */
-
-void ro_gui_dialog_prepare_open_url(void)
-{
-	int suggestions;
-	ro_gui_set_icon_string(dialog_openurl, ICON_OPENURL_URL, "");
-	global_history_get_recent(&suggestions);
-	ro_gui_set_icon_shaded_state(dialog_openurl,
-			ICON_OPENURL_MENU, (suggestions <= 0));
-}
-
-
-/**
- * Handle clicks in the warning dialog.
- */
-
-void ro_gui_dialog_click_warning(wimp_pointer *pointer)
-{
-	if (pointer->i == ICON_WARNING_CONTINUE)
-		ro_gui_dialog_close(dialog_warning);
-}
-
-
-/**
  * Close a dialog box.
  */
 
@@ -1409,223 +353,345 @@ void ro_gui_dialog_close(wimp_w close)
 			}
 		}
 	}
-
+	
 	error = xwimp_close_window(close);
 	if (error) {
 		LOG(("xwimp_close_window: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
+	ro_gui_wimp_event_close_window(close);
 }
 
 
 /**
- * Convert a 2-letter ISO language code to the language name.
+ * Moves a window to the top of the stack.
+ * 
+ * If the window is currently closed then:
  *
- * \param  code  2-letter ISO language code
- * \return  language name, or code if unknown
+ *  * The window is opened in the centre of the screen (at the supplied size)
+ *  * Any toolbar editing session is stopped
+ *  * The scroll position is set to the top of the window
+ *
+ * If the window is currently open then:
+ *
+ *  * The window is brought to the top of the stack
+ *
+ * \param w		the window to show
+ * \param toolbar	the toolbar to consider
+ * \param width		the window width if it is currently closed (or 0 to retain)
+ * \param height	the window height if it is currently closed (or 0 to retain)
+ * \return true if the window was previously open
  */
-
-const char *language_name(const char *code)
-{
-	char key[] = "lang_xx";
-	key[5] = code[0];
-	key[6] = code[1];
-	return messages_get(key);
-}
-
-
-/**
- * Loads and nests all available themes in the theme pane.
- */
-
-void ro_gui_dialog_load_themes(void)
-{
+bool ro_gui_dialog_open_top(wimp_w w, struct toolbar *toolbar,
+		int width, int height) {
 	os_error *error;
-	os_box extent = { 0, 0, 0, 0 };
-	struct theme_descriptor *descriptor;
-	struct toolbar_display *link;
-	struct toolbar_display *toolbar_display;
-	struct toolbar *toolbar;
-	wimp_icon_create new_icon;
+	int screen_width, screen_height;
 	wimp_window_state state;
-	int parent_width, nested_y, min_extent, base_extent;
-	int item_height;
+	int dimension;
+	int scroll_width;
+	bool open;
 
-	/*	Delete our old list and get/open a new one
-	*/
-	ro_gui_dialog_free_themes();
-	theme_list = ro_gui_theme_get_available();
-	ro_gui_theme_open(theme_list, true);
-	theme_choice = ro_gui_theme_find(option_theme);
-
-	/*	Create toolbars for each theme
-	*/
-	theme_count = 0;
-	descriptor = theme_list;
-	while (descriptor) {
-		/*	Try to create a toolbar
-		*/
-		toolbar = ro_gui_theme_create_toolbar(descriptor,
-				THEME_BROWSER_TOOLBAR);
-		if (toolbar) {
-			toolbar_display = calloc(sizeof(struct toolbar_display), 1);
-			if (!toolbar_display) {
-				LOG(("No memory for calloc()"));
-				warn_user("NoMemory", 0);
-				return;
-			}
-			toolbar_display->toolbar = toolbar;
-			toolbar_display->descriptor = descriptor;
-			if (!toolbars) {
-				toolbars = toolbar_display;
-			} else {
-				link = toolbars;
-				while (link->next) link = link->next;
-				link->next = toolbar_display;
-			}
-			theme_count++;
-		}
-		descriptor = descriptor->next;
-	}
-
-	/*	Nest the toolbars
-	*/
-	state.w = dialog_config_th_pane;
+	state.w = w;
 	error = xwimp_get_window_state(&state);
 	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-			error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+
+	/* if we're open we jump to the top of the stack, if not then we
+	 * open in the centre of the screen. */
+	open = state.flags & wimp_WINDOW_OPEN;
+	if (!open) {
+	  	/* cancel any editing */
+	  	if ((toolbar) && (toolbar->editor))
+	  		ro_gui_theme_toggle_edit(toolbar);
+
+		/* move to the centre */
+		ro_gui_screen_size(&screen_width, &screen_height);
+		dimension = ((width == 0) ?
+				(state.visible.x1 - state.visible.x0) : width);
+		scroll_width = ro_get_vscroll_width(w);
+		state.visible.x0 = (screen_width - (dimension + scroll_width)) / 2;
+		state.visible.x1 = state.visible.x0 + dimension;
+		dimension = ((height == 0) ?
+				(state.visible.y1 - state.visible.y0) : height);
+		state.visible.y0 = (screen_height - dimension) / 2;
+		state.visible.y1 = state.visible.y0 + dimension;
+		state.xscroll = 0;
+		state.yscroll = 0;
+		if (toolbar)
+			state.yscroll = ro_gui_theme_toolbar_height(toolbar);
+	}
+
+	/* open the window at the top of the stack */
+	state.next = wimp_TOP;
+	ro_gui_open_window_request((wimp_open*)&state);
+	return open;
+}
+
+
+/**
+ * Open window at the location of the pointer.
+ */
+
+void ro_gui_dialog_open_at_pointer(wimp_w w)
+{
+	int dx, dy;
+	wimp_window_state state;
+	wimp_pointer ptr;
+	os_error *error;
+
+	/* get the pointer position */
+	error = xwimp_get_pointer_info(&ptr);
+	if (error) {
+		LOG(("xwimp_get_pointer_info: 0x%x: %s",
+				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 		return;
 	}
 
-	parent_width = state.visible.x1 - state.visible.x0;
-	min_extent = state.visible.y0 - state.visible.y1;
-	nested_y = 0;
-	base_extent = state.visible.y1 - state.yscroll;
-	extent.x1 = parent_width;
-	link = toolbars;
-	new_icon.w = dialog_config_th_pane;
-	new_icon.icon.flags = wimp_ICON_TEXT | wimp_ICON_INDIRECTED |
-			wimp_ICON_VCENTRED |
-			(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-			(wimp_COLOUR_VERY_LIGHT_GREY << wimp_ICON_BG_COLOUR_SHIFT) |
-			(wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT);
-	while (link) {
-		/*	Update the toolbar
-		*/
-		item_height = 44 + 44 + 16;
-		if (link->next) item_height += 16;
-		ro_gui_theme_process_toolbar(link->toolbar, parent_width);
-		extent.y0 = nested_y - link->toolbar->height - item_height;
-		if (link->next) extent.y0 -= 16;
-		if (extent.y0 > min_extent) extent.y0 = min_extent;
-		xwimp_set_extent(dialog_config_th_pane, &extent);
-		ro_gui_set_icon_button_type(link->toolbar->toolbar_handle,
-				ICON_TOOLBAR_URL, wimp_BUTTON_NEVER);
-
-		/*	Create the descriptor icons and separator line
-		*/
-		new_icon.icon.extent.x0 = 8;
-		new_icon.icon.extent.x1 = parent_width - 8;
-		new_icon.icon.flags &= ~wimp_ICON_BORDER;
-		new_icon.icon.flags |= wimp_ICON_SPRITE;
-		new_icon.icon.extent.y1 = nested_y - link->toolbar->height - 8;
-		new_icon.icon.extent.y0 = nested_y - link->toolbar->height - 52;
-		new_icon.icon.data.indirected_text_and_sprite.text =
-			(char *)&link->descriptor->name;
-		new_icon.icon.data.indirected_text_and_sprite.size =
-			strlen(link->descriptor->name) + 1;
-		new_icon.icon.data.indirected_text_and_sprite.validation =
-				theme_radio_validation;
-		xwimp_create_icon(&new_icon, &link->icon_number);
-		new_icon.icon.flags &= ~wimp_ICON_SPRITE;
-		new_icon.icon.extent.x0 = 52;
-		new_icon.icon.extent.y1 -= 44;
-		new_icon.icon.extent.y0 -= 44;
-		new_icon.icon.data.indirected_text.text =
-			(char *)&link->descriptor->author;
-		new_icon.icon.data.indirected_text.size =
-			strlen(link->descriptor->filename) + 1;
-		new_icon.icon.data.indirected_text.validation =
-				theme_null_validation;
-		xwimp_create_icon(&new_icon, 0);
-		if (link->next) {
-			new_icon.icon.flags |= wimp_ICON_BORDER;
-			new_icon.icon.extent.x0 = -8;
-			new_icon.icon.extent.x1 = parent_width + 8;
-			new_icon.icon.extent.y1 -= 52;
-			new_icon.icon.extent.y0 = new_icon.icon.extent.y1 - 8;
-			new_icon.icon.data.indirected_text.text =
-					theme_null_validation;
-			new_icon.icon.data.indirected_text.validation =
-					theme_line_validation;
-			new_icon.icon.data.indirected_text.size = 1;
-					strlen(link->descriptor->filename) + 1;
-			xwimp_create_icon(&new_icon, 0);
-		}
-
-		/*	Nest the toolbar window
-		*/
-		state.w = link->toolbar->toolbar_handle;
-		state.yscroll = 0;
-		state.visible.y1 = nested_y + base_extent;
-		state.visible.y0 = state.visible.y1 - link->toolbar->height + 2;
-		xwimp_open_window_nested((wimp_open *)&state,
-			dialog_config_th_pane,
-				wimp_CHILD_LINKS_PARENT_WORK_AREA
-						<< wimp_CHILD_BS_EDGE_SHIFT |
-				wimp_CHILD_LINKS_PARENT_WORK_AREA
-						<< wimp_CHILD_TS_EDGE_SHIFT);
-
-		/*	Continue processing
-		*/
-		nested_y -= link->toolbar->height + item_height;
-		link = link->next;
+	/* move the window */
+	state.w = w;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
 	}
+	dx = (state.visible.x1 - state.visible.x0);
+	dy = (state.visible.y1 - state.visible.y0);
+	state.visible.x0 = ptr.pos.x - 64;
+	state.visible.x1 = ptr.pos.x - 64 + dx;
+	state.visible.y0 = ptr.pos.y - dy;
+	state.visible.y1 = ptr.pos.y;
 
-	/*	Set the current theme as selected
-	*/
-	link = toolbars;
-	while (link) {
-		ro_gui_set_icon_selected_state(dialog_config_th_pane,
-				link->icon_number,
-				(link->descriptor == theme_choice));
-		link = link->next;
-	}
-	xwimp_force_redraw(dialog_config_th_pane, 0, -16384, 16384, 16384);
+	/* open the window at the top of the stack */
+	state.next = wimp_TOP;
+	ro_gui_open_window_request((wimp_open*)&state);
 }
 
 
 /**
- * Removes and closes all themes in the theme pane.
+ * Opens a window at the centre of either another window or the screen
+ *
+ * /param parent the parent window (NULL for centre of screen)
+ * /param child the child window
+ */
+void ro_gui_dialog_open_centre_parent(wimp_w parent, wimp_w child) {
+	os_error *error;
+	wimp_window_state state;
+	int mid_x, mid_y;
+	int dimension, scroll_width;
+
+	/* get the parent window state */
+	if (parent) {
+		state.w = parent;
+		error = xwimp_get_window_state(&state);
+		if (error) {
+			LOG(("xwimp_get_window_state: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+		scroll_width = ro_get_vscroll_width(parent);
+		mid_x = (state.visible.x0 + state.visible.x1 + scroll_width);
+		mid_y = (state.visible.y0 + state.visible.y1);
+	} else {
+		ro_gui_screen_size(&mid_x, &mid_y);
+	}
+	mid_x /= 2;
+	mid_y /= 2;
+
+	/* get the child window state */
+	state.w = child;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	/* move to the centre of the parent at the top of the stack */
+	dimension = state.visible.x1 - state.visible.x0;
+	scroll_width = ro_get_vscroll_width(history_window);
+	state.visible.x0 = mid_x - (dimension + scroll_width) / 2;
+	state.visible.x1 = state.visible.x0 + dimension;
+	dimension = state.visible.y1 - state.visible.y0;
+	state.visible.y0 = mid_y - dimension / 2;
+	state.visible.y1 = state.visible.y0 + dimension;
+	state.next = wimp_TOP;
+	ro_gui_open_window_request((wimp_open*)&state);
+}
+
+
+/**
+ * Open a persistent dialog box relative to the pointer.
+ *
+ * \param  parent   the owning window (NULL for no owner)
+ * \param  w	    the dialog window
+ * \param  pointer  open the window at the pointer (centre of the parent
+ *		    otherwise)
  */
 
-void ro_gui_dialog_free_themes(void)
-{
-	struct toolbar_display *toolbar;
-	struct toolbar_display *next_toolbar;
+void ro_gui_dialog_open_persistent(wimp_w parent, wimp_w w, bool pointer) {
 
-	/*	Free all our toolbars
+	if (pointer)
+	  	ro_gui_dialog_open_at_pointer(w);
+	else
+		ro_gui_dialog_open_centre_parent(parent, w);
+
+	/* todo: use wimp_event definitions rather than special cases */
+	if ((w == dialog_pageinfo) || (w == dialog_objinfo))
+		ro_gui_wimp_update_window_furniture(w, wimp_WINDOW_CLOSE_ICON,
+				wimp_WINDOW_CLOSE_ICON);
+	ro_gui_dialog_add_persistent(parent, w);
+	ro_gui_set_caret_first(w);
+
+}
+
+
+void ro_gui_dialog_add_persistent(wimp_w parent, wimp_w w) {
+  	int i;
+
+	/* all persistant windows have a back icon */
+	ro_gui_wimp_update_window_furniture(w, wimp_WINDOW_BACK_ICON,
+			wimp_WINDOW_BACK_ICON);
+
+	/*	Add a mapping
 	*/
-	next_toolbar = toolbars;
-	while ((toolbar = next_toolbar) != NULL) {
-		xwimp_delete_icon(dialog_config_th_pane, toolbar->icon_number);
-		xwimp_delete_icon(dialog_config_th_pane, toolbar->icon_number + 1);
-		if (toolbar->next)
-			xwimp_delete_icon(dialog_config_th_pane,
-					toolbar->icon_number + 2);
-		ro_gui_theme_destroy_toolbar(toolbar->toolbar);
-		next_toolbar = toolbar->next;
-		free(toolbar);
+	if ((parent == NULL) || (parent == wimp_ICON_BAR))
+		return;
+	for (i = 0; i < MAX_PERSISTENT; i++) {
+		if (persistent_dialog[i].dialog == NULL ||
+				persistent_dialog[i].dialog == w) {
+			persistent_dialog[i].dialog = w;
+			persistent_dialog[i].parent = parent;
+			return;
+		}
 	}
-	toolbars = NULL;
+	LOG(("Unable to map persistent dialog to parent."));
+	return;
+}
 
-	/*	Close all our themes
+
+/**
+ * Close persistent dialogs associated with a window.
+ *
+ * \param  parent  the window to close children of
+ */
+
+void ro_gui_dialog_close_persistent(wimp_w parent) {
+	int i;
+
+	/*	Check our mappings
 	*/
-	if (theme_list) ro_gui_theme_close(theme_list, true);
-	theme_list = NULL;
-	theme_count = 0;
-	theme_choice = NULL;
+	for (i = 0; i < MAX_PERSISTENT; i++) {
+		if (persistent_dialog[i].parent == parent &&
+				persistent_dialog[i].dialog != NULL) {
+			ro_gui_dialog_close(persistent_dialog[i].dialog);
+			persistent_dialog[i].dialog = NULL;
+		}
+	}
+}
+
+
+/**
+ * Save the current options.
+ */
+
+void ro_gui_save_options(void)
+{
+	/* NCOS doesnt have the fancy Universal Boot vars; so select
+	 * the path to the choices file based on the build options */
+#ifndef NCOS
+	options_write("<Choices$Write>.WWW.NetSurf.Choices");
+#else
+	options_write("<User$Path>.Choices.NetSurf.Choices");
+#endif
+}
+
+
+/**
+ * Handle clicks in the Scale view dialog.
+ */
+
+bool ro_gui_dialog_zoom_click(wimp_pointer *pointer)
+{
+	switch (pointer->i) {
+		case ICON_ZOOM_75:
+			ro_gui_set_icon_integer(dialog_zoom,
+					ICON_ZOOM_VALUE, 75);
+			return true;
+		case ICON_ZOOM_100:
+			ro_gui_set_icon_integer(dialog_zoom,
+					ICON_ZOOM_VALUE, 100);
+			return true;
+		case ICON_ZOOM_150:
+			ro_gui_set_icon_integer(dialog_zoom,
+					ICON_ZOOM_VALUE, 150);
+			return true;
+		case ICON_ZOOM_200:
+			ro_gui_set_icon_integer(dialog_zoom,
+					ICON_ZOOM_VALUE, 200);
+			return true;
+	}
+	return false;
+}
+
+bool ro_gui_dialog_zoom_apply(wimp_w w) {
+	unsigned int scale;
+
+	scale = atoi(ro_gui_get_icon_string(w, ICON_ZOOM_VALUE));
+	ro_gui_window_set_scale(ro_gui_current_zoom_gui, scale * 0.01);
+	return true;
+}
+
+
+/**
+ * Prepares the Scale view dialog.
+ */
+
+void ro_gui_dialog_prepare_zoom(struct gui_window *g)
+{
+	char scale_buffer[8];
+	sprintf(scale_buffer, "%.0f", g->option.scale * 100);
+	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer);
+
+	ro_gui_current_zoom_gui = g;
+	ro_gui_wimp_event_memorise(dialog_zoom);
+}
+
+
+bool ro_gui_dialog_openurl_apply(wimp_w w) {
+	url_func_result res;
+	const char *url;
+	char *url2;
+
+	url = ro_gui_get_icon_string(w, ICON_OPENURL_URL);
+	res = url_normalize(url, &url2);
+	if (res == URL_FUNC_OK) {
+		browser_window_create(url2, 0, 0);
+		global_history_add_recent(url2);
+		free(url2);
+		return true;
+	}
+	return false;
+}
+
+
+/**
+ * Prepares the Open URL dialog.
+ */
+
+void ro_gui_dialog_prepare_open_url(void)
+{
+	int suggestions;
+	ro_gui_set_icon_string(dialog_openurl, ICON_OPENURL_URL, "");
+	global_history_get_recent(&suggestions);
+	ro_gui_set_icon_shaded_state(dialog_openurl,
+			ICON_OPENURL_MENU, (suggestions <= 0));
+	ro_gui_wimp_event_memorise(dialog_openurl);
 }

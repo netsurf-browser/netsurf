@@ -30,7 +30,9 @@
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
+#include "netsurf/riscos/treeview.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -53,7 +55,7 @@ static const char * theme_hotlist_icons[] = {"delete", "expand", "open",
 static const char * theme_history_icons[] = {"delete", "expand", "open",
 		"launch", NULL};
 
-
+static void ro_gui_theme_redraw(wimp_draw *redraw);
 static void ro_gui_theme_get_available_in_dir(const char *directory);
 static void ro_gui_theme_free(struct theme_descriptor *descriptor);
 static struct toolbar_icon *ro_gui_theme_add_toolbar_icon(
@@ -70,6 +72,8 @@ static struct toolbar_icon *ro_gui_theme_toolbar_get_insert_icon(
 		struct toolbar *toolbar, int x, int y, bool *before);
 static void ro_gui_theme_add_toolbar_icons(struct toolbar *toolbar,
 		const char* icons[], const char* ident);
+static void ro_gui_theme_set_help_prefix(struct toolbar *toolbar);
+
 
 /*	A basic window for the toolbar and status
 */
@@ -169,17 +173,13 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 	*/
 	ro_gui_theme_free(theme_descriptors);
 
-	/*	Open a variety of directories
-	*/
+	/* scan !NetSurf.Resources.* and our choices directory */
 	snprintf(pathname, 256, "%s.Resources", NETSURF_DIR);
 	pathname[255] = '\0';
 	ro_gui_theme_get_available_in_dir(pathname);
-#ifndef NCOS
-	ro_gui_theme_get_available_in_dir("Choices:WWW.NetSurf.Themes");
-#else
-	ro_gui_theme_get_available_in_dir(
-			"<User$Path>.Choices.NetSurf.Choices.Themes");
-#endif
+	snprintf(pathname, 256, "%s%s", THEME_PATH_R, THEME_LEAFNAME);
+	pathname[255] = '\0';
+	ro_gui_theme_get_available_in_dir(pathname);
 
 	/*	Sort alphabetically in a very rubbish way
 	*/
@@ -595,14 +595,18 @@ void ro_gui_theme_close(struct theme_descriptor *descriptor, bool list) {
  * \param redraw   the redraw area
  * \param toolbar  the toolbar to redraw
  */
-void ro_gui_theme_redraw(struct toolbar *toolbar, wimp_draw *redraw) {
-	assert(toolbar);
+void ro_gui_theme_redraw(wimp_draw *redraw) {
+	struct toolbar *toolbar;
 
 	struct toolbar_icon *icon;
 	osbool more;
 	wimp_icon separator_icon;
 	os_error *error;
 	bool perform_redraw = false;
+
+	toolbar = (struct toolbar *)ro_gui_wimp_event_get_user_data(redraw->w);
+
+	assert(toolbar);
 
 	/* set up the icon */
 	if ((toolbar->descriptor) && (toolbar->descriptor->theme) &&
@@ -855,6 +859,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 		if (error)
 			LOG(("xwimp_delete_window: 0x%x: %s",
 					error->errnum, error->errmess));
+		ro_gui_wimp_event_finalise(toolbar->toolbar_handle);
 		toolbar->toolbar_handle = NULL;
 	}
 	error = xwimp_create_window(&theme_toolbar_window,
@@ -864,6 +869,23 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 		return false;
+	}
+	ro_gui_wimp_event_register_redraw_window(toolbar->toolbar_handle,
+			ro_gui_theme_redraw);
+	ro_gui_wimp_event_set_user_data(toolbar->toolbar_handle, toolbar);
+	switch (toolbar->type) {
+	 	case THEME_BROWSER_TOOLBAR:
+	 	case THEME_BROWSER_EDIT_TOOLBAR:
+	 		ro_gui_wimp_event_register_mouse_click(toolbar->toolbar_handle,
+	 				ro_gui_toolbar_click);
+	 		break;
+		case THEME_HOTLIST_TOOLBAR:
+		case THEME_HOTLIST_EDIT_TOOLBAR:
+		case THEME_HISTORY_TOOLBAR:
+	  	case THEME_HISTORY_EDIT_TOOLBAR:
+			ro_gui_wimp_event_register_mouse_click(toolbar->toolbar_handle,
+					ro_gui_tree_toolbar_click);
+			break;
 	}
 
 	/*	Create the basic icons
@@ -993,6 +1015,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 		if (toolbar->status_handle) {
 			xwimp_delete_window(toolbar->status_handle);
 			toolbar->status_handle = NULL;
+			ro_gui_wimp_event_finalise(toolbar->status_handle);
 		}
 		if (toolbar->descriptor)
 			theme_toolbar_window.work_bg =
@@ -1014,6 +1037,9 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 			warn_user("WimpError", error->errmess);
 			return false;
 		}
+ 		ro_gui_wimp_event_register_mouse_click(toolbar->status_handle,
+ 				ro_gui_status_click);
+ 		ro_gui_wimp_event_set_help_prefix(toolbar->status_handle, "HelpStatus");
 
 		/*	Create the status resize icon
 		*/
@@ -1077,6 +1103,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 
 	/*	Keep menus up to date etc
 	*/
+	ro_gui_theme_set_help_prefix(toolbar);
 	switch (toolbar->type) {
 		case THEME_BROWSER_TOOLBAR:
 			g = ro_gui_window_lookup(toolbar->parent_handle);
@@ -1616,11 +1643,15 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar) {
 
 	/*	Delete our windows
 	*/
-	if (toolbar->toolbar_handle)
+	if (toolbar->toolbar_handle) {
 		xwimp_delete_window(toolbar->toolbar_handle);
-	if (toolbar->status_handle)
+		ro_gui_wimp_event_finalise(toolbar->toolbar_handle);
+	}
+	if (toolbar->status_handle) {
 		xwimp_delete_window(toolbar->status_handle);
+		ro_gui_wimp_event_finalise(toolbar->status_handle);
 
+        }
 	/*	Free the Wimp buffer (we only created one for them all)
 	*/
 	free(toolbar->url_buffer);
@@ -1762,6 +1793,7 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
 		ro_gui_theme_process_toolbar(toolbar, -1);
 		ro_gui_theme_toolbar_editor_sync(toolbar);
 	}
+	ro_gui_theme_set_help_prefix(toolbar);
 }
 
 
@@ -2221,5 +2253,36 @@ void ro_gui_theme_add_toolbar_icons(struct toolbar *toolbar,
 							icon, NULL, NULL);
 				}
 		}
+	}
+}
+
+
+/**
+ * Sets the correct help prefix for a toolbar
+ */
+void ro_gui_theme_set_help_prefix(struct toolbar *toolbar) {
+	if (toolbar->editor) {
+		ro_gui_wimp_event_set_help_prefix(toolbar->toolbar_handle, "HelpEditToolbar");
+		return;
+	}
+	switch (toolbar->type) {
+	 	case THEME_BROWSER_TOOLBAR:
+			ro_gui_wimp_event_set_help_prefix(toolbar->toolbar_handle,
+					"HelpToolbar");
+			break;
+		case THEME_HOTLIST_TOOLBAR:
+			ro_gui_wimp_event_set_help_prefix(toolbar->toolbar_handle,
+					"HelpHotToolbar");
+			break;
+		case THEME_HISTORY_TOOLBAR:
+			ro_gui_wimp_event_set_help_prefix(toolbar->toolbar_handle,
+					"HelpGHistToolbar");
+			break;
+	 	case THEME_BROWSER_EDIT_TOOLBAR:
+		case THEME_HOTLIST_EDIT_TOOLBAR:
+	  	case THEME_HISTORY_EDIT_TOOLBAR:
+			ro_gui_wimp_event_set_help_prefix(toolbar->toolbar_handle,
+					"HelpEditToolbar");
+			break;
 	}
 }

@@ -27,6 +27,7 @@
 #include "netsurf/desktop/save_text.h"
 #include "netsurf/desktop/selection.h"
 #include "netsurf/image/bitmap.h"
+#include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
@@ -34,6 +35,7 @@
 #include "netsurf/riscos/save_draw.h"
 #include "netsurf/riscos/thumbnail.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -200,37 +202,22 @@ void ro_gui_save_prepare(gui_save_type save_type, struct content *c)
 			icon_buf);
 
 	ro_gui_set_icon_string(dialog_saveas, ICON_SAVE_PATH, name_buf);
+	ro_gui_wimp_event_memorise(dialog_saveas);
 }
 
 /**
- * Handle clicks in the save dialog.
+ * Starts a drag for the save dialog
  *
  * \param  pointer  mouse position info from Wimp
  */
-
-void ro_gui_save_click(wimp_pointer *pointer)
+void ro_gui_save_start_drag(wimp_pointer *pointer)
 {
-	switch (pointer->i) {
-		case ICON_SAVE_OK:
-			ro_gui_save_ok(pointer->w);
-			break;
-		case ICON_SAVE_CANCEL:
-			if (pointer->buttons == wimp_CLICK_SELECT) {
-				xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
-				ro_gui_dialog_close(pointer->w);
-			} else if (pointer->buttons == wimp_CLICK_ADJUST) {
-				ro_gui_save_prepare(gui_save_current_type, gui_save_content);
-			}
-			break;
-		case ICON_SAVE_ICON:
-			if (pointer->buttons == wimp_DRAG_SELECT) {
-				const char *sprite = ro_gui_get_icon_string(pointer->w, pointer->i);
-				gui_current_drag_type = GUI_DRAG_SAVE;
-				gui_save_sourcew = pointer->w;
-				saving_from_dialog = true;
-				ro_gui_drag_icon(pointer->pos.x, pointer->pos.y, sprite);
-			}
-			break;
+	if (pointer->buttons == wimp_DRAG_SELECT) {
+		const char *sprite = ro_gui_get_icon_string(pointer->w, pointer->i);
+		gui_current_drag_type = GUI_DRAG_SAVE;
+		gui_save_sourcew = pointer->w;
+		saving_from_dialog = true;
+		ro_gui_drag_icon(pointer->pos.x, pointer->pos.y, sprite);
 	}
 }
 
@@ -239,26 +226,22 @@ void ro_gui_save_click(wimp_pointer *pointer)
  * Handle OK click/keypress in the save dialog.
  *
  * \param  w  window handle of save dialog
+ * \return true on success, false on failure
  */
-
-void ro_gui_save_ok(wimp_w w)
+bool ro_gui_save_ok(wimp_w w)
 {
 	char *name = ro_gui_get_icon_string(w, ICON_SAVE_PATH);
 	char path[256];
 
-	if (!strrchr(name, '.'))
-	{
+	if (!strrchr(name, '.')) {
 		warn_user("NoPathError", NULL);
-		return;
+		return false;
 	}
 
 	ro_gui_convert_save_path(path, sizeof path, name);
 	gui_save_sourcew = w;
 	saving_from_dialog = true;
-	if (ro_gui_save_content(gui_save_content, path)) {
-		xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
-		ro_gui_dialog_close(w);
-	}
+	return ro_gui_save_content(gui_save_content, path);
 }
 
 

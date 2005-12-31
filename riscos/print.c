@@ -21,10 +21,12 @@
 #include "netsurf/render/font.h"
 #include "netsurf/render/html.h"
 #include "netsurf/render/layout.h"
+#include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/print.h"
 #include "netsurf/riscos/wimp.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
@@ -66,6 +68,29 @@ static const char *print_declare_fonts(struct box *box);
 static bool print_find_fonts(struct box *box, struct print_font **print_fonts,
 		int *font_count);
 
+static bool ro_gui_print_click(wimp_pointer *pointer);
+static bool ro_gui_print_apply(wimp_w w);
+
+
+void ro_gui_print_init(void) {
+  	wimp_i radio_print_type[] = {ICON_PRINT_TO_BOTTOM, ICON_PRINT_SHEETS, -1};
+  	wimp_i radio_print_orientation[] = {ICON_PRINT_UPRIGHT, ICON_PRINT_SIDEWAYS, -1};	
+  
+	dialog_print = ro_gui_dialog_create("print");
+	ro_gui_wimp_event_register_radio(dialog_print, radio_print_type);
+	ro_gui_wimp_event_register_radio(dialog_print, radio_print_orientation);
+	ro_gui_wimp_event_register_text_field(dialog_print, ICON_PRINT_SHEETS_TEXT);
+	ro_gui_wimp_event_register_numeric_field(dialog_print, ICON_PRINT_COPIES,
+			ICON_PRINT_COPIES_UP, ICON_PRINT_COPIES_DOWN, 1, 99, 1, 0);
+	ro_gui_wimp_event_register_numeric_field(dialog_print, ICON_PRINT_SHEETS_VALUE,
+			ICON_PRINT_SHEETS_UP, ICON_PRINT_SHEETS_DOWN, 1, 99, 1, 0);
+	ro_gui_wimp_event_register_cancel(dialog_print, ICON_PRINT_CANCEL);
+	ro_gui_wimp_event_register_mouse_click(dialog_print, ro_gui_print_click);
+	ro_gui_wimp_event_register_ok(dialog_print, ICON_PRINT_PRINT,
+			ro_gui_print_apply);
+	ro_gui_wimp_event_set_help_prefix(dialog_info, "HelpPrint");
+}
+
 /**
  * Prepares all aspects of the print dialog prior to opening.
  *
@@ -94,8 +119,6 @@ void ro_gui_print_prepare(struct gui_window *g) {
 
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_SHEETS, false);
 	ro_gui_set_icon_integer(dialog_print, ICON_PRINT_SHEETS_VALUE, 1);
-	ro_gui_set_icon_string(dialog_print, ICON_PRINT_SHEETS_TEXT,
-			messages_get("PrintSheetFilled"));
 	print_update_sheets_shaded_state(true);
 
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_FG_IMAGES, true);
@@ -119,6 +142,7 @@ void ro_gui_print_prepare(struct gui_window *g) {
 		ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_PRINT, false);
 		ro_gui_set_window_title(dialog_print, pdName);
 	}
+	ro_gui_wimp_event_memorise(dialog_print);
 }
 
 
@@ -127,99 +151,37 @@ void ro_gui_print_prepare(struct gui_window *g) {
  *
  * \param pointer wimp_pointer block
  */
-void ro_gui_print_click(wimp_pointer *pointer)
+bool ro_gui_print_click(wimp_pointer *pointer)
 {
+	if (pointer->buttons == wimp_CLICK_MENU)
+		return true;
+
+	switch (pointer->i) {
+		case ICON_PRINT_SHEETS:
+		case ICON_PRINT_TO_BOTTOM:
+			print_update_sheets_shaded_state(true);
+			break;
+	}
+	return false;
+}
+
+
+bool ro_gui_print_apply(wimp_w w) {
 	int copies = atoi(ro_gui_get_icon_string(dialog_print,
 						ICON_PRINT_COPIES));
 	int sheets = atoi(ro_gui_get_icon_string(dialog_print,
 						ICON_PRINT_SHEETS_VALUE));
 
-	if (pointer->buttons == wimp_CLICK_MENU)
-		return;
-
-	switch (pointer->i) {
-		case ICON_PRINT_SHEETS:
-			/* retain selection state */
-			ro_gui_set_icon_selected_state(dialog_print,
-					pointer->i, true);
-			print_update_sheets_shaded_state(false);
-			break;
-		case ICON_PRINT_TO_BOTTOM:
-			print_update_sheets_shaded_state(true);
-		case ICON_PRINT_UPRIGHT:
-		case ICON_PRINT_SIDEWAYS:
-			/* retain selection state */
-			ro_gui_set_icon_selected_state(dialog_print,
-					pointer->i, true);
-			break;
-		case ICON_PRINT_COPIES_UP:   copies += 1; break;
-		case ICON_PRINT_COPIES_DOWN: copies -= 1; break;
-		case ICON_PRINT_SHEETS_UP:   sheets += 1; break;
-		case ICON_PRINT_SHEETS_DOWN: sheets -= 1; break;
-		case ICON_PRINT_CANCEL:
-			print_cleanup();
-			break;
-		case ICON_PRINT_PRINT:
-			print_in_background = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_IN_BACKGROUND);
-			print_text_black = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_TEXT_BLACK);
-			print_num_copies = copies;
-			if (ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_SHEETS))
-				print_max_sheets = sheets;
-			else
-				print_max_sheets = -1;
-			print_current_window->option.background_images = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_BG_IMAGES);
-			print_send_printsave(print_current_window->bw->current_content);
-			break;
-	}
-
-	if (copies < 1)
-		copies = 1;
-	else if (copies > 99)
-		copies = 99;
-	ro_gui_set_icon_integer(dialog_print, ICON_PRINT_COPIES, copies);
-
-	if (sheets < 1)
-		sheets = 1;
-	else if (sheets > 99)
-		sheets = 99;
-	ro_gui_set_icon_integer(dialog_print, ICON_PRINT_SHEETS_VALUE, sheets);
-	if (sheets > 1)
-		ro_gui_set_icon_string(dialog_print, ICON_PRINT_SHEETS_TEXT,
-				messages_get("PrintSheetsFilled"));
+	print_in_background = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_IN_BACKGROUND);
+	print_text_black = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_TEXT_BLACK);
+	print_num_copies = copies;
+	if (ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_SHEETS))
+		print_max_sheets = sheets;
 	else
-		ro_gui_set_icon_string(dialog_print, ICON_PRINT_SHEETS_TEXT,
-				messages_get("PrintSheetFilled"));
-}
-
-/**
- * Handle keypresses in print dialog
- *
- * \param key wimp_key block
- * \return true if keypress dealt with, false otherwise.
- */
-bool ro_gui_print_keypress(wimp_key *key)
-{
-	switch (key->c) {
-		case wimp_KEY_ESCAPE:
-			print_cleanup();
-			return true;
-		case wimp_KEY_RETURN:
-			if (ro_gui_get_icon_shaded_state(dialog_print, ICON_PRINT_PRINT))
-				return true;
-
-			print_in_background = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_IN_BACKGROUND);
-			print_text_black = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_TEXT_BLACK);
-			print_num_copies = atoi(ro_gui_get_icon_string(dialog_print, ICON_PRINT_COPIES));
-			if (ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_SHEETS))
-				print_max_sheets = atoi(ro_gui_get_icon_string(dialog_print, ICON_PRINT_SHEETS_VALUE));
-			else
-				print_max_sheets = -1;
-			print_current_window->option.background_images = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_BG_IMAGES);
-			print_send_printsave(print_current_window->bw->current_content);
-			return true;
-	}
-
-	return false;
+		print_max_sheets = -1;
+	print_current_window->option.background_images = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_BG_IMAGES);
+	print_send_printsave(print_current_window->bw->current_content);
+	return true;
 }
 
 /**
@@ -453,7 +415,7 @@ void print_cleanup(void)
 	print_text_black = false;
 	print_prev_message = 0;
 	print_max_sheets = -1;
-	ro_gui_menu_closed();
+	ro_gui_menu_closed(true);
 	ro_gui_dialog_close(dialog_print);
 }
 

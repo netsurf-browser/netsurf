@@ -23,6 +23,7 @@
 #include "oslib/wimpspriteop.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utf8.h"
@@ -295,6 +296,53 @@ void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value) {
 
 
 /**
+ * Set the contents of an icon to a number.
+ *
+ * \param  w	  window handle
+ * \param  i	  icon handle
+ * \param  value  value
+ */
+void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places) {
+	char buffer[20]; // Big enough for 64-bit int
+
+	switch (decimal_places) {
+		case 0:
+			sprintf(buffer, "%d", value);
+			break;
+		case 1:
+			sprintf(buffer, "%.1f", (float)value / 10);
+			break;
+		case 2:
+			sprintf(buffer, "%.2f", (float)value / 100);
+			break;
+		default:
+			assert("Unsupported decimal format");
+			break;
+	}
+	ro_gui_set_icon_string(w, i, buffer);
+}
+
+
+/**
+ * Set the contents of an icon to a number.
+ *
+ * \param  w	  window handle
+ * \param  i	  icon handle
+ * \param  value  value
+ */
+int ro_gui_get_icon_decimal(wimp_w w, wimp_i i, int decimal_places) {
+	double value;
+	int multiple = 1;
+
+	for (; decimal_places > 0; decimal_places--)
+		multiple *= 10;
+
+	value = atof(ro_gui_get_icon_string(w, i)) * multiple;
+	return (int)value;
+}
+
+
+/**
  * Set the selected state of an icon.
  *
  * \param  w	 window handle
@@ -549,66 +597,6 @@ void ro_gui_set_caret_first(wimp_w w) {
 
 
 /**
- * Opens a window at the centre of either another window or the screen
- *
- * /param parent the parent window (NULL for centre of screen)
- * /param child the child window
- */
-void ro_gui_open_window_centre(wimp_w parent, wimp_w child) {
-	os_error *error;
-	wimp_window_state state;
-	int mid_x, mid_y;
-	int dimension, scroll_width;
-
-	/* get the parent window state */
-	if (parent) {
-		state.w = parent;
-		error = xwimp_get_window_state(&state);
-		if (error) {
-			LOG(("xwimp_get_window_state: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-		scroll_width = ro_get_vscroll_width(parent);
-		mid_x = (state.visible.x0 + state.visible.x1 + scroll_width);
-		mid_y = (state.visible.y0 + state.visible.y1);
-	} else {
-		ro_gui_screen_size(&mid_x, &mid_y);
-	}
-	mid_x /= 2;
-	mid_y /= 2;
-
-	/* get the child window state */
-	state.w = child;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-
-	/* move to the centre of the parent at the top of the stack */
-	dimension = state.visible.x1 - state.visible.x0;
-	scroll_width = ro_get_vscroll_width(history_window);
-	state.visible.x0 = mid_x - (dimension + scroll_width) / 2;
-	state.visible.x1 = state.visible.x0 + dimension;
-	dimension = state.visible.y1 - state.visible.y0;
-	state.visible.y0 = mid_y - dimension / 2;
-	state.visible.y1 = state.visible.y0 + dimension;
-	state.next = wimp_TOP;
-	error = xwimp_open_window((wimp_open *) &state);
-	if (error) {
-		LOG(("xwimp_open_window: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-}
-
-
-/**
  * Load a sprite file into memory.
  *
  * \param  pathname  file to load
@@ -687,7 +675,7 @@ bool ro_gui_wimp_sprite_exists(const char *sprite)
 /**
  * Locate a sprite in the Wimp sprite pool, returning a pointer to it.
  *
- * \param  name    sprite name
+ * \param  name	   sprite name
  * \param  sprite  receives pointer to sprite if found
  * \return error ptr iff not found
  */
@@ -856,7 +844,7 @@ void ro_gui_wimp_update_window_furniture(wimp_w w, wimp_window_flags bic_mask,
  * Checks whether a piece of window furniture is present for a window.
  *
  * \param  w	     the window to modify
- * \param  mask      the furniture flags to check
+ * \param  mask	     the furniture flags to check
  */
 bool ro_gui_wimp_check_window_furniture(wimp_w w, wimp_window_flags mask) {
 	wimp_window_state state;

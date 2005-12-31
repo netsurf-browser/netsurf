@@ -103,7 +103,6 @@ typedef enum {
 	TREE_SELECTION_EDIT,
 	TREE_SELECTION_LAUNCH,
 	TREE_SELECTION_DELETE,
-	TREE_SELECTION_RESET,
 	TREE_SELECT_ALL,
 	TREE_CLEAR_SELECTION,
 
@@ -126,11 +125,12 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		bool windows_at_pointer);
 void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 		bool windows);
-void ro_gui_menu_closed(void);
+void ro_gui_menu_closed(bool cleanup);
 void ro_gui_menu_objects_moved(void);
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
 void ro_gui_menu_selection(wimp_selection* selection);
 void ro_gui_menu_warning(wimp_message_menu_warning *warning);
+void ro_gui_menu_init_structure(wimp_menu *menu, int entries);
 void ro_gui_prepare_navigate(struct gui_window *gui);
 void ro_gui_menu_prepare_image_quality(unsigned int tinct_options);
 void ro_gui_menu_prepare_languages(bool accept, const char *lang);

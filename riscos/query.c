@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 
-#include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/query.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
@@ -126,7 +126,7 @@ query_id query_user(const char *query, const char *detail, const query_callback 
 	xwimp_set_icon_state(qw->window, ICON_QUERY_HELP,
 			wimp_ICON_DELETED, wimp_ICON_DELETED);
 
-	ro_gui_open_window_centre(NULL, qw->window);
+	ro_gui_dialog_open(qw->window);
 
 	error = xwimp_set_caret_position(qw->window, (wimp_i)-1, 0, 0, 1 << 25, -1);
 	if (error) {
@@ -196,7 +196,7 @@ void ro_gui_query_window_bring_to_front(query_id id)
 	if (qw) {
 		os_error *error;
 
-		ro_gui_open_window_centre(NULL, qw->window);
+		ro_gui_dialog_open(qw->window);
 
 		error = xwimp_set_caret_position(qw->window, (wimp_i)-1, 0, 0, 1 << 25, -1);
 		if (error) {

@@ -37,6 +37,7 @@
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/riscos/buffer.h"
+#include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
@@ -1302,8 +1303,12 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
  * Process Mouse_Click events in a toolbar.
  */
 
-void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
+bool ro_gui_toolbar_click(wimp_pointer *pointer)
 {
+	struct gui_window *g = ro_gui_toolbar_lookup(pointer->w);
+
+	assert(g);
+
 	/* try to close url-completion */
 	ro_gui_url_complete_close(g, pointer->i);
 
@@ -1312,14 +1317,14 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 	if (pointer->buttons == wimp_CLICK_MENU) {
 		ro_gui_menu_create(browser_toolbar_menu, pointer->pos.x,
 				pointer->pos.y, g->window);
-		return;
+		return true;
 	}
 
 	/*	Handle toolbar edits
 	*/
 	if ((g->toolbar->editor) && (pointer->i < ICON_TOOLBAR_URL)) {
 		ro_gui_theme_toolbar_editor_click(g->toolbar, pointer);
-		return;
+		return true;
 	}
 
 	/*	Handle the buttons appropriately
@@ -1415,6 +1420,7 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
 					ICON_TOOLBAR_SUGGEST);
 			break;
 	}
+	return true;
 }
 
 
@@ -1425,14 +1431,18 @@ void ro_gui_toolbar_click(struct gui_window *g, wimp_pointer *pointer)
  * \param  pointer  details of mouse click
  */
 
-void ro_gui_status_click(struct gui_window *g, wimp_pointer *pointer)
+bool ro_gui_status_click(wimp_pointer *pointer)
 {
+  	struct gui_window *g = ro_gui_status_lookup(pointer->w);
 	wimp_drag drag;
 	os_error *error;
+	
+	assert(g);
+	
 	switch (pointer->i) {
 		case ICON_STATUS_RESIZE:
 			gui_current_drag_type = GUI_DRAG_STATUS_RESIZE;
-			drag.w = g->toolbar->status_handle;
+			drag.w = pointer->w;
 			drag.type = wimp_DRAG_SYSTEM_SIZE;
 			drag.initial.x0 = pointer->pos.x;
 			drag.initial.x1 = pointer->pos.x;
@@ -1446,6 +1456,7 @@ void ro_gui_status_click(struct gui_window *g, wimp_pointer *pointer)
 			}
 			break;
 	}
+	return true;
 }
 
 
@@ -1895,10 +1906,6 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 				default:
 					break;
 			}
-			return true;
-
-		case wimp_KEY_CONTROL + wimp_KEY_F9:	/* Dump url_store. */
-			url_store_dump();
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F9:

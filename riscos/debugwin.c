@@ -12,7 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "oslib/wimp.h"
-#include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/dialog.h"
+#include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -21,11 +22,16 @@
 
 static void ro_gui_debugwin_resize(void);
 static void ro_gui_debugwin_update(void *p);
+static void ro_gui_debugwin_close(wimp_w w);
 static void ro_gui_debugwin_redraw_plot(wimp_draw *redraw);
-
+static void ro_gui_debugwin_redraw(wimp_draw *redraw);
 
 void ro_gui_debugwin_open(void)
 {
+	ro_gui_wimp_event_register_close_window(dialog_debug,
+			ro_gui_debugwin_close);
+	ro_gui_wimp_event_register_redraw_window(dialog_debug,
+			ro_gui_debugwin_redraw);
 	ro_gui_debugwin_resize();
 	ro_gui_dialog_open(dialog_debug);
 	schedule_remove(ro_gui_debugwin_update, 0);
@@ -70,7 +76,7 @@ void ro_gui_debugwin_update(void *p)
 }
 
 
-void ro_gui_debugwin_close(void)
+void ro_gui_debugwin_close(wimp_w w)
 {
 	os_error *error;
 	error = xwimp_close_window(dialog_debug);
@@ -80,6 +86,7 @@ void ro_gui_debugwin_close(void)
 		warn_user("WimpError", error->errmess);
 	}
 	schedule_remove(ro_gui_debugwin_update, 0);
+	ro_gui_wimp_event_finalise(dialog_debug);
 }
 
 

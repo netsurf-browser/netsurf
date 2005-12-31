@@ -31,7 +31,11 @@ void ro_convert_pixels_to_os_units(os_coord *pixels, os_mode mode);
 void ro_gui_force_redraw_icon(wimp_w w, wimp_i i);
 char *ro_gui_get_icon_string(wimp_w w, wimp_i i);
 void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text);
+
 void ro_gui_set_icon_integer(wimp_w w, wimp_i i, int value);
+void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places);
+int ro_gui_get_icon_decimal(wimp_w w, wimp_i i, int decimal_places);
+
 void ro_gui_set_icon_selected_state(wimp_w w, wimp_i i, bool state);
 bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i);
 void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state);
