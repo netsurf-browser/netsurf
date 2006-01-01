@@ -872,6 +872,7 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 	struct node *next;
 	struct node *parent;
 	struct node_element *element;
+	struct url_content *data;
 
 	assert(node);
 
@@ -893,6 +894,14 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 				 			((node->data.data != TREE_ELEMENT_TITLE) &&
 				 				(node->data.data != TREE_ELEMENT_URL)))
 						free(element->text);
+					else if (node->data.data != TREE_ELEMENT_URL) {
+						/* reset URL characteristics */
+						data = url_store_find(element->text);
+						if (data) {
+							data->last_visit = 0;
+							data->visits = 0;
+						}
+					}
 				}
 				if (element->sprite)
 					free(element->sprite);	/* \todo platform specific bits */
