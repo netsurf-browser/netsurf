@@ -48,6 +48,7 @@ extern int option_expire_url;
 
 void options_read(const char *path);
 void options_write(const char *path);
+void options_dump(void);
 
 struct tree *options_load_tree(const char *filename);
 bool options_save_tree(struct tree *tree, const char *filename,

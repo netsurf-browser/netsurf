@@ -221,6 +221,36 @@ void options_write(const char *path)
 	fclose(fp);
 }
 
+/**
+ * Dump user options to stderr
+ */
+void options_dump(void)
+{
+	unsigned int i;
+
+	for (i = 0; i != option_table_entries; i++) {
+		fprintf(stderr, "%s:", option_table[i].key);
+		switch (option_table[i].type) {
+			case OPTION_BOOL:
+				fprintf(stderr, "%c",
+					*((bool *) option_table[i].p) ?
+						'1' : '0');
+				break;
+
+			case OPTION_INTEGER:
+				fprintf(stderr, "%i",
+					*((int *) option_table[i].p));
+				break;
+
+			case OPTION_STRING:
+				if (*((char **) option_table[i].p))
+					fprintf(stderr, "%s",
+						*((char **) option_table[i].p));
+				break;
+		}
+		fprintf(stderr, "\n");
+	}
+}
 
 /**
  * Loads a hotlist as a tree from a specified file.
@@ -238,7 +268,7 @@ struct tree *options_load_tree(const char *filename) {
 		warn_user("HotlistLoadError", messages_get("ParsingFail"));
 		return NULL;
 	}
-	
+
 	html = options_find_tree_element((xmlNode *) doc, "html");
 	body = options_find_tree_element(html, "body");
 	ul = options_find_tree_element(body, "ul");
@@ -277,7 +307,7 @@ void options_load_tree_directory(xmlNode *ul, struct node *directory) {
 	char *title;
 	struct node *dir;
 	xmlNode *n;
-	
+
 	assert(ul);
 	assert(directory);
 
@@ -350,7 +380,7 @@ void options_load_tree_entry(xmlNode *li, struct node *directory) {
 				"memory exhausted.)");
 		return;
 	}
-	
+
 	data = url_store_find(url);
 	if (!data)
 		return;

@@ -621,12 +621,20 @@ void gui_quit(void)
 void ro_gui_signal(int sig)
 {
 	struct content *c;
-	if (sig == SIGFPE) {
+	if (sig == SIGFPE || sig == SIGABRT) {
+		os_colour old_sand, old_glass;
+
+		xhourglass_on();
+		xhourglass_colours(0x0000ffff, 0x000000ff,
+				&old_sand, &old_glass);
 		for (c = content_list; c; c = c->next)
 			if (c->type == CONTENT_HTML && c->data.html.layout) {
 				LOG(("Dumping: '%s'", c->url));
 				box_dump(c->data.html.layout, 0);
 			}
+		options_dump();
+		xhourglass_colours(old_sand, old_glass, 0, 0);
+		xhourglass_off();
 	}
 	ro_gui_cleanup();
 	raise(sig);
@@ -838,7 +846,7 @@ void ro_gui_redraw_window_request(wimp_draw *redraw)
 
 	if (ro_gui_wimp_event_redraw_window(redraw))
 		return;
-	
+
 	g = ro_gui_window_lookup(redraw->w);
 	if (g)
 		ro_gui_window_redraw(g, redraw);
@@ -1055,7 +1063,7 @@ void ro_gui_keypress(wimp_key *key)
 	bool handled = false;
 	struct gui_window *g;
 	os_error *error;
-	
+
 	if (ro_gui_wimp_event_keypress(key))
 		handled = true;
 	else if ((g = ro_gui_window_lookup(key->w)) != NULL)
