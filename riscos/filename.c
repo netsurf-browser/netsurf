@@ -20,8 +20,11 @@
 #include "netsurf/utils/log.h"
 
 #define FULL_WORD (unsigned int)4294967295
+/* '0' + '0' * 10 */
+#define START_PREFIX 528 
 
 struct directory {
+  	int numeric_prefix;		/** numeric representation of prefix */
 	char prefix[10];		/** directory prefix, eg '00.11.52.' */
   	unsigned int low_used;		/** first 32 files, 1 bit per file */
   	unsigned int high_used;		/** last 32 files, 1 bit per file */
@@ -80,17 +83,14 @@ char *ro_filename_request(void) {
  * \return whether the claim was successful
  */
 bool ro_filename_claim(const char *filename) {
-  	char *last;
-	char dir_prefix[16];
-	int i;
+	char dir_prefix[9];
+	int file;
 	struct directory *dir;
 	
-	/* extract the prefix */
-	strcpy(dir_prefix, filename);
-	for (i = 0, last = dir_prefix; i < 3; i++)
-		while (*last && *last++ != '.');
-	i = atoi(last);
-	last[0] = '\0';
+	/* filename format is always '01.23.45.XX' */
+	strncpy(dir_prefix, filename, 8);
+	dir_prefix[9] = '\0';
+	file = (filename[10] + filename[9] * 10 - START_PREFIX);
 	
 	/* create the directory */
 	dir = ro_filename_create_directory(dir_prefix);
@@ -98,14 +98,14 @@ bool ro_filename_claim(const char *filename) {
 		return false;
 
 	/* update the entry */
-  	if (i < 32) {
-  	  	if (dir->low_used & (1 << i))
+  	if (file < 32) {
+  	  	if (dir->low_used & (1 << file))
   	  		return false;
-  		dir->low_used |= (1 << i);
+  		dir->low_used |= (1 << file);
   	} else {
-  	  	if (dir->high_used & (1 << (i - 32)))
+  	  	if (dir->high_used & (1 << (file - 32)))
   	  		return false;
-  		dir->high_used |= (1 << (i - 32));
+  		dir->high_used |= (1 << (file - 32));
   	}
   	return true;
 }
@@ -117,25 +117,22 @@ bool ro_filename_claim(const char *filename) {
  * \param  filename  the filename to release
  */
 void ro_filename_release(const char *filename) {
-  	char *last;
-	char dir_prefix[16];
-	int i;
 	struct directory *dir;
-	
-	/* extract the prefix */
-	sprintf(dir_prefix, filename);
-	for (i = 0, last = dir_prefix; i < 3; i++)
-		while (*last++ != '.');
-	i = atoi(last);
-	last[0] = '\0';
+	int index, file;
+
+	/* filename format is always '01.23.45.XX' */
+	index = ((filename[7] + filename[6] * 10 - START_PREFIX) |
+		((filename[4] + filename[3] * 10 - START_PREFIX) << 6) |
+		((filename[1] + filename[0] * 10 - START_PREFIX) << 12));
+	file = (filename[10] + filename[9] * 10 - START_PREFIX);
 	
 	/* modify the correct directory entry */
 	for (dir = root; dir; dir = dir->next)
-		if (!strcmp(dir->prefix, dir_prefix)) {
-		  	if (i < 32)
-		  		dir->low_used &= ~(1 << i);
+		if (dir->numeric_prefix == index) {
+		  	if (file < 32)
+		  		dir->low_used &= ~(1 << file);
 		  	else
-		  		dir->high_used &= ~(1 << (i - 32));
+		  		dir->high_used &= ~(1 << (file - 32));
 			return;
 		}
 }
@@ -174,45 +171,46 @@ void ro_filename_flush(void) {
  */
 static struct directory *ro_filename_create_directory(const char *prefix) {
 	char *last_1, *last_2;
-	int result, index;
+	int index;
 	struct directory *old_dir, *new_dir, *prev_dir = NULL;
 	char dir_prefix[16];
 
 	/* get the lowest unique prefix, or use the provided one */
 	if (!prefix) {
-		sprintf(dir_prefix, "00.00.00.");
-		for (index = 1, old_dir = root; old_dir;
-				index++, old_dir = old_dir->next) {
-			if (strcmp(old_dir->prefix, dir_prefix))
+		for (index = 0, old_dir = root; old_dir; index++,
+				prev_dir = old_dir, old_dir = old_dir->next)
+			if (old_dir->numeric_prefix != index)
 				break;
-			sprintf(dir_prefix, "%.2i.%.2i.%.2i.",
-					((index >> 12) & 63),
-					((index >> 6) & 63),
-					((index >> 0) & 63));
-		}
+		sprintf(dir_prefix, "%.2i.%.2i.%.2i.",
+				((index >> 12) & 63),
+				((index >> 6) & 63),
+				((index >> 0) & 63));
 		prefix = dir_prefix;
+	} else {
+		/* prefix format is always '01.23.45.' */
+		index = ((prefix[7] + prefix[6] * 10 - START_PREFIX) |
+			((prefix[4] + prefix[3] * 10 - START_PREFIX) << 6) |
+			((prefix[1] + prefix[0] * 10 - START_PREFIX) << 12));
+		for (old_dir = root; old_dir; prev_dir = old_dir,
+				old_dir = old_dir->next) {
+			if (old_dir->numeric_prefix == index)
+				return old_dir;
+			else if (old_dir->numeric_prefix > index)
+				break;
+		}
 	}
 
 	/* allocate a new directory */
-	new_dir = (struct directory *)calloc(1,
-			sizeof(struct directory));
+	new_dir = (struct directory *)malloc(sizeof(struct directory));
 	if (!new_dir) {
-		LOG(("No memory for calloc()"));
+		LOG(("No memory for malloc()"));
 		return NULL;
 	}
 	strncpy(new_dir->prefix, prefix, 9);
 	new_dir->prefix[9] = '\0';
+	new_dir->low_used = new_dir->high_used = 0;
+	new_dir->numeric_prefix = index;
 
-	/* link into the tree, sorted by prefix. */
-	for (old_dir = root; old_dir; prev_dir = old_dir,
-			old_dir = old_dir->next) {
-		 result = strcmp(old_dir->prefix, prefix);
-		 if (result == 0) {
-			free(new_dir);
-			return old_dir;
-		 } else if (result > 0)
-			break;
-	}
 	if (!prev_dir) {
 		new_dir->next = root;
 		root = new_dir;
@@ -234,6 +232,5 @@ static struct directory *ro_filename_create_directory(const char *prefix) {
 			xosfile_create_dir(ro_filename_directory, 0);
 		}
 	}
-
 	return new_dir;
 }
