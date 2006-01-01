@@ -1007,14 +1007,14 @@ struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
 		return NULL;
 	node->editable = true;
 
-	element = tree_create_node_element(node, TREE_ELEMENT_URL);
-	if (element)
-		element->text = strdup(data->url);
-	tree_create_node_element(node, TREE_ELEMENT_LAST_VISIT);
-	tree_create_node_element(node, TREE_ELEMENT_VISITS);
 	element = tree_create_node_element(node, TREE_ELEMENT_THUMBNAIL);
 	if (element)
 		element->type = NODE_ELEMENT_THUMBNAIL;
+	tree_create_node_element(node, TREE_ELEMENT_VISITS);
+	tree_create_node_element(node, TREE_ELEMENT_LAST_VISIT);
+	element = tree_create_node_element(node, TREE_ELEMENT_URL);
+	if (element)
+		element->text = strdup(data->url);
 
 	tree_update_URL_node(node);
 	tree_recalculate_node(node, false);
@@ -1051,14 +1051,14 @@ struct node *tree_create_URL_node_shared(struct node *parent, struct url_content
 	node->data.text = title;
 	node->editable = false;
 
-	element = tree_create_node_element(node, TREE_ELEMENT_URL);
-	if (element)
-		element->text = data->url;
-	tree_create_node_element(node, TREE_ELEMENT_LAST_VISIT);
-	tree_create_node_element(node, TREE_ELEMENT_VISITS);
 	element = tree_create_node_element(node, TREE_ELEMENT_THUMBNAIL);
 	if (element)
 		element->type = NODE_ELEMENT_THUMBNAIL;
+	tree_create_node_element(node, TREE_ELEMENT_VISITS);
+	tree_create_node_element(node, TREE_ELEMENT_LAST_VISIT);
+	element = tree_create_node_element(node, TREE_ELEMENT_URL);
+	if (element)
+		element->text = data->url;
 
 	tree_update_URL_node(node);
 	tree_recalculate_node(node, false);
@@ -1076,25 +1076,14 @@ struct node *tree_create_URL_node_shared(struct node *parent, struct url_content
  */
 struct node_element *tree_create_node_element(struct node *parent, node_element_data data) {
 	struct node_element *element;
-	struct node_element *link;
-
-	assert(parent);
 
 	element = calloc(sizeof(struct node_element), 1);
 	if (!element) return NULL;
 	element->parent = parent;
 	element->data = data;
 	element->type = NODE_ELEMENT_TEXT;
-
-	for (link = parent->data.next; ((link) && (link->data < data));
-		link = link->next);
-	if (link) {
-		element->next = link->next;
-		link->next = element;
-	} else {
-		for (link = &parent->data; link->next; link = link->next);
-		link->next = element;
-	}
+	element->next = parent->data.next;
+	parent->data.next = element;
 	return element;
 }
 
