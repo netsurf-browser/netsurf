@@ -910,16 +910,21 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	bool repeat_x = false;
 	bool repeat_y = false;
 	bool plot_colour = true;
+	bool plot_bitmap;
 	bool clip_to_children = false;
 	struct box *clip_box = box;
 	int px0 = clip_x0, py0 = clip_y0, px1 = clip_x1, py1 = clip_y1;
 	int ox = x, oy = y;
+	struct box *parent;
 
-	if (box->background && box->background->bitmap) {
+	plot_bitmap = (box->background && box->background->bitmap);
+	if (plot_bitmap) {
 		/* handle background-repeat */
 		switch (box->style->background_repeat) {
 			case CSS_BACKGROUND_REPEAT_REPEAT:
 				repeat_x = repeat_y = true;
+				/* optimisation: only plot the colour if bitmap is not opaque */
+				plot_colour = !bitmap_get_opaque(box->background->bitmap);
 				break;
 			case CSS_BACKGROUND_REPEAT_REPEAT_X:
 				repeat_x = true;
@@ -965,28 +970,22 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			default:
 				break;
 		}
-
-		/* optimisation: only plot the colour if we're filled and opaque */
-		if ((repeat_x) && (repeat_y))
-			plot_colour = !bitmap_get_opaque(box->background->bitmap);
 	}
 
 	/* special case for table rows as their background needs to be clipped to
 	 * all the cells */
 	if (box->type == BOX_TABLE_ROW) {
-		struct box *parent = box->parent;
-		if ((parent) && (parent->type == BOX_TABLE_ROW_GROUP))
-			parent = parent->parent;
-		if ((parent) && (parent->type == BOX_TABLE)) {
-			assert(parent->style);
-			clip_to_children = (parent->style->border_spacing.horz.value > 0) ||
-					(parent->style->border_spacing.vert.value > 0);
-			if (clip_to_children)
-				clip_box = box->children;
-		}
+		for (parent = box->parent; ((parent) && (parent->type != BOX_TABLE));
+				parent = parent->parent);
+		assert(parent && (parent->style));
+		clip_to_children = (parent->style->border_spacing.horz.value > 0) ||
+				(parent->style->border_spacing.vert.value > 0);
+		if (clip_to_children)
+			clip_box = box->children;
 	}
 
-	do {
+	for (; clip_box; clip_box = clip_box->next) {
+	  	/* clip to child boxes if needed */
 	  	if (clip_to_children) {
 	  	  	assert(clip_box->type == BOX_TABLE_CELL);
 
@@ -1002,15 +1001,13 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			if (clip_x1 > px1) clip_x1 = px1;
 			if (clip_y1 > py1) clip_y1 = py1;
 
+			/* <td> attributes override <tr> */
 			if ((clip_x0 >= clip_x1) || (clip_y0 >= clip_y1) ||
 					(clip_box->style->background_color != TRANSPARENT) ||
 					(clip_box->background &&
 					 clip_box->background->bitmap &&
-					 bitmap_get_opaque(clip_box->background->bitmap))) {
-				if (!(clip_box = clip_box->next))
-					return true;
+					 bitmap_get_opaque(clip_box->background->bitmap)))
 				continue;
-			}
 	  	}
 
 		/* plot the background colour */
@@ -1022,7 +1019,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 				return false;
 		}
 		/* and plot the image */
-		if (box->background && box->background->bitmap) {
+		if (plot_bitmap) {
 			if (!plot.clip(clip_x0, clip_y0, clip_x1, clip_y1))
 					return false;
 			if (!plot.bitmap_tile(x, y,
@@ -1034,9 +1031,10 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 				return false;
 		}
 
-		/* advance and loop for child clipping */
-		clip_box = clip_box->next;
-	} while (clip_box && clip_to_children);
+		/* only <tr> rows being clipped to child boxes loop */
+		if (!clip_to_children)
+			return true;
+	}
 	return true;
 }
 
