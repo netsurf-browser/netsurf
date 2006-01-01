@@ -65,6 +65,7 @@ static unsigned int gif_interlaced_line(int height, int y);
 
 /*	Internal LZW routines
 */
+static void gif_init_LZW(struct gif_animation *gif);
 static int gif_next_LZW(struct gif_animation *gif);
 static int gif_next_code(struct gif_animation *gif, int code_size);
 #define gif_read_LZW(gif) ((stack_pointer > stack) ? *--stack_pointer : gif_next_LZW(gif))
@@ -79,12 +80,14 @@ static int maskTbl[16] = {0x0000, 0x0001, 0x0003, 0x0007, 0x000f, 0x001f, 0x003f
 static int table[2][(1<< GIF_MAX_LZW)];
 static int stack[(1 << GIF_MAX_LZW) * 2];
 static int *stack_pointer;
+static int *stack_end;
 static int code_size, set_code_size;
 static int max_code, max_code_size;
 static int clear_code, end_code;
-static int curbit, lastbit, get_done, last_byte;
-static int return_clear;
+static int curbit, lastbit, last_byte;
+static int firstcode, oldcode;
 static bool zero_data_block = false;
+static bool get_done;
 
 /*	Whether to clear the decoded image rather than plot
 */
@@ -551,8 +554,10 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 
 	/*	Ensure we have a frame to decode
 	*/
-	if (frame > gif->frame_count_partial) return GIF_INSUFFICIENT_DATA;
-	if ((!clear_image) && ((int)frame == gif->decoded_frame)) return 0;
+	if (frame > gif->frame_count_partial)
+		return GIF_INSUFFICIENT_DATA;
+	if ((!clear_image) && ((int)frame == gif->decoded_frame))
+		return 0;
 
 	/*	If the previous frame was dirty, remove it
 	*/
@@ -561,7 +566,8 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 	  		gif->dirty_frame = -1;
 		if (gif->decoded_frame == gif->dirty_frame) {
 			clear_image = true;
-			if (frame != 0) gif_decode_frame(gif, gif->dirty_frame);
+			if (frame != 0)
+				gif_decode_frame(gif, gif->dirty_frame);
 			clear_image = false;
 		}
 		gif->dirty_frame = -1;
@@ -719,9 +725,8 @@ int gif_decode_frame(struct gif_animation *gif, unsigned int frame) {
 			max_code = clear_code + 2;
 			curbit = lastbit = 0;
 			last_byte = 2;
-			get_done = 0;
-			return_clear = 1;
-			stack_pointer = stack;
+			get_done = false;
+			gif_init_LZW(gif);
 
 			/*	Decompress the data
 			*/
@@ -840,41 +845,50 @@ void gif_finalise(struct gif_animation *gif) {
 	gif->global_colour_table = NULL;
 }
 
+/**
+ * Initialise LZW decoding
+ */
+void gif_init_LZW(struct gif_animation *gif) {
+	int i;
+
+	if (clear_code >= (1 << GIF_MAX_LZW)) {
+		stack_pointer = stack;
+		*stack_pointer++ = -2;
+	}
+
+	/* initialise our table */
+	memset(table, 0x00, (1 << GIF_MAX_LZW) * 8);
+	for (i = 0; i < clear_code; ++i)
+		table[1][i] = i;
+
+	/* update our LZW parameters */
+	code_size = set_code_size + 1;
+	max_code_size = clear_code << 1;
+	max_code = clear_code + 2;
+	stack_pointer = stack;
+	stack_end = (int *)((char *)stack + sizeof(stack));
+	do {
+		firstcode = oldcode = gif_next_code(gif, code_size);
+	} while (firstcode == clear_code);
+	*stack_pointer++ =firstcode;
+}
+
 
 static int gif_next_LZW(struct gif_animation *gif) {
-	static int firstcode, oldcode;
 	int code, incode;
-	unsigned int i, block_size;
+	int block_size;
+	int stack_remaining;
 
 	while ((code = gif_next_code(gif, code_size)) >= 0) {
 		if (code == clear_code) {
-			/*	Check we have a valid clear code
-			*/
-			if (clear_code >= (1 << GIF_MAX_LZW)) return -2;
-
-			/*	Initialise our table
-			*/
-			memset(table, 0x00, (1 << GIF_MAX_LZW) * 8);
-			for (i = 0; i < (unsigned int)clear_code; ++i) {
-				table[1][i] = i;
-			}
-
-			/*	Update our LZW parameters
-			*/
-			code_size = set_code_size + 1;
-			max_code_size = clear_code << 1;
-			max_code = clear_code + 2;
-			stack_pointer = stack;
-			do {
-				firstcode = oldcode = gif_next_code(gif, code_size);
-			} while (firstcode == clear_code);
-			return firstcode;
+			gif_init_LZW(gif);
+			return *--stack_pointer;
 		}
 
 		if (code == end_code) {
-			/*	Skip to the end of our data so multi-image GIFs work
-			*/
-			if (zero_data_block) return -2;
+			/* skip to the end of our data so multi-image GIFs work */
+			if (zero_data_block)
+				return -2;
 			block_size = 0;
 			while (block_size != 1) {
 				block_size = gif->gif_data[gif->buffer_position] + 1;
@@ -883,19 +897,30 @@ static int gif_next_LZW(struct gif_animation *gif) {
 			return -2;
 		}
 
-		/*	Fill the stack with some data
-		*/
+		/* fill the stack with some data */
 		incode = code;
-
 		if (code >= max_code) {
 			*stack_pointer++ = firstcode;
 			code = oldcode;
 		}
 
+		stack_remaining = (stack_end - stack_pointer) / sizeof(int);
+		/* flush out odd number of words */
+		if ((code >= clear_code) && (stack_remaining & 1)) {
+			*stack_pointer++ = table[1][code];
+			if ((code == table[0][code]) || (--stack_remaining <= 0))
+				return code;
+			code = table[0][code];
+		}
+		stack_remaining = stack_remaining >> 1;
 		while (code >= clear_code) {
 			*stack_pointer++ = table[1][code];
-			if (code == table[0][code]) return(code);
-			if (((char *)stack_pointer - (char *)stack) >= (int)sizeof(stack)) return(code);
+			code = table[0][code];
+			if (code < clear_code)
+				break;
+			*stack_pointer++ = table[1][code];
+			if ((code == table[0][code]) || (--stack_remaining <= 0))
+				return code;
 			code = table[0][code];
 		}
 
@@ -910,45 +935,38 @@ static int gif_next_LZW(struct gif_animation *gif) {
 				++code_size;
 			}
 		}
-
 		oldcode = incode;
 
-		if (stack_pointer > stack) return *--stack_pointer;
+		if (stack_pointer > stack)
+			return *--stack_pointer;
 	}
 	return code;
 }
 
-
 static int gif_next_code(struct gif_animation *gif, int code_size) {
 	int i, j, end, count;
-	long ret;
+	unsigned int ret;
 	unsigned char *gif_data;
-
-	if (return_clear) {
-		return_clear = 0;
-		return clear_code;
-	}
 
 	end = curbit + code_size;
 	if (end >= lastbit) {
-		if (get_done) return -1;
+		if (get_done)
+			return -1;
 		buf[0] = buf[last_byte - 2];
 		buf[1] = buf[last_byte - 1];
 
-		/*	Get the next block
-		*/
+		/* get the next block */
 		gif_data = gif->gif_data + gif->buffer_position;
 		zero_data_block = ((count = gif_data[0]) == 0);
-		if ((gif->buffer_position + count) >= gif->buffer_size) return -1;
-		if (count == 0) {
-			get_done = 1;
-		} else {
+		if ((gif->buffer_position + count) >= gif->buffer_size)
+			return -1;
+		if (count == 0)
+			get_done = true;
+		else
 			memcpy(&buf[2], gif_data + 1, count);
-		}
 		gif->buffer_position += count + 1;
 
-		/*	Update our variables
-		*/
+		/* update our variables */
 		last_byte = 2 + count;
 		curbit = (curbit - lastbit) + 16;
 		lastbit = (2 + count) << 3;
@@ -957,13 +975,12 @@ static int gif_next_code(struct gif_animation *gif, int code_size) {
 
 	j = end >> 3;
 	i = curbit >> 3;
-	if (i == j) {
-		ret = (long)buf[i];
-	} else if (i + 1 == j) {
-		ret = (long)buf[i] | ((long)buf[i+1] << 8);
-	} else {
-		ret = (long)buf[i] | ((long)buf[i+1] << 8) | ((long)buf[i+2] << 16);
-	}
+	if (i == j)
+		ret = buf[i];
+	else if (i + 1 == j)
+		ret = buf[i] | (buf[i+1] << 8);
+	else
+		ret = buf[i] | (buf[i+1] << 8) | (buf[i+2] << 16);
 
 	ret = (ret >> (curbit % 8)) & maskTbl[code_size];
 	curbit += code_size;
