@@ -20,8 +20,7 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key);
 void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open);
 bool ro_gui_url_complete_close(struct gui_window *g, wimp_i i);
 void ro_gui_url_complete_redraw(wimp_draw *redraw);
-void ro_gui_url_complete_mouse_at(wimp_pointer *pointer, bool buttons);
-
-void url_complete_dump_matches(const char *url);
+void ro_gui_url_complete_mouse_at(wimp_pointer *pointer);
+bool ro_gui_url_complete_click(wimp_pointer *pointer);
 
 #endif

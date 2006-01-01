@@ -508,12 +508,27 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw) {
 
 
 /**
- * Handle mouse movements/clicks over the URL completion window.
+ * Handle mouse movement over the URL completion window.
  *
  * \param pointer  the pointer state
- * \param buttons  whether to react to mouse buttons
  */
-void ro_gui_url_complete_mouse_at(wimp_pointer *pointer, bool buttons) {
+void ro_gui_url_complete_mouse_at(wimp_pointer *pointer) {
+	wimp_mouse_state current;
+
+	current = pointer->buttons;
+	pointer->buttons = 0;
+	ro_gui_url_complete_click(pointer);
+	pointer->buttons = current;
+}
+
+
+/**
+ * Handle mouse clicks in the URL completion window.
+ *
+ * \param pointer  the pointer state
+ * \return whether the click was handled
+ */
+bool ro_gui_url_complete_click(wimp_pointer *pointer) {
 	wimp_window_state state;
 	os_error *error;
 	int selection, old_selection;
@@ -521,8 +536,8 @@ void ro_gui_url_complete_mouse_at(wimp_pointer *pointer, bool buttons) {
 	char *url;
 
 	if ((mouse_x == pointer->pos.x) && (mouse_y == pointer->pos.y) &&
-			(pointer->buttons == 0))
-		return;
+			(!pointer->buttons))
+		return false;
 	mouse_x = pointer->pos.x;
 	mouse_y = pointer->pos.y;
 
@@ -532,20 +547,20 @@ void ro_gui_url_complete_mouse_at(wimp_pointer *pointer, bool buttons) {
 		LOG(("xwimp_get_window_state: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
-		return;
+		return false;
 	}
 	selection = (state.visible.y1 - pointer->pos.y - state.yscroll) / 44;
 	if (selection != url_complete_matches_selection) {
 		if (url_complete_matches_selection == -1) {
 			g = ro_gui_window_lookup(url_complete_parent);
 			if (!g)
-				return;
+				return false;
 			url = ro_gui_get_icon_string(g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_URL);
 			free(url_complete_original_url);
 			url_complete_original_url = malloc(strlen(url) + 1);
 			if (!url_complete_original_url)
-				return;
+				return false;
 			strcpy(url_complete_original_url, url);
 		}
 		old_selection = url_complete_matches_selection;
@@ -566,12 +581,16 @@ void ro_gui_url_complete_mouse_at(wimp_pointer *pointer, bool buttons) {
 			warn_user("WimpError", error->errmess);
 		}
 	}
+	if (!pointer->buttons)
+		return true;
 	
+	/* find owning window */
+	g = ro_gui_window_lookup(url_complete_parent);
+	if (!g)
+		return false;
+
 	/* Select sets the text and launches */
-	if ((pointer->buttons == wimp_CLICK_SELECT) && (buttons)) {
-		g = ro_gui_window_lookup(url_complete_parent);
-		if (!g)
-			return;
+	if (pointer->buttons == wimp_CLICK_SELECT) {
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
 				url_complete_matches[url_complete_matches_selection]);
@@ -582,36 +601,11 @@ void ro_gui_url_complete_mouse_at(wimp_pointer *pointer, bool buttons) {
 		ro_gui_url_complete_close(NULL, 0);
 
 	/* Adjust just sets the text */
-	} else if ((pointer->buttons == wimp_CLICK_ADJUST) && (buttons)) {
-		g = ro_gui_window_lookup(url_complete_parent);
-		if (!g)
-			return;
+	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
 				url_complete_matches[url_complete_matches_selection]);
 		ro_gui_url_complete_keypress(g, 0);
 	}
-}
-
-
-/**
- * Dumps all matching URLs to stderr.
- */
-void url_complete_dump_matches(const char *url) {
-	char *match_url;
-	struct url_data *reference = NULL;
-	char *output;
-
-	match_url = url_store_match_string(url);
-	if (!match_url)
-		return;
-
-	fprintf(stderr, "\nDumping matches for '%s' ('%s'):\n", url, match_url);
-	while ((output = url_store_match(match_url, &reference))) {
-		fprintf(stderr, " - ");
-		fprintf(stderr, output);
-		fprintf(stderr, "\n");
-	}
-	fprintf(stderr, "\nEnd of matches.\n\n");
-	free(match_url);
+	return true;
 }
