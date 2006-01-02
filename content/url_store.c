@@ -36,6 +36,7 @@ static struct hostname_data *url_store_match_hostname(const char *url,
 		struct hostname_data *previous);
 static char *url_store_match_scheme = NULL;
 
+static struct hostname_data *last_hostname_found = NULL;
 
 /**
  * Returns the hostname data for the specified URL. If no hostname
@@ -49,26 +50,35 @@ struct hostname_data *url_store_find_hostname(const char *url)
 	struct hostname_data *search;
 	struct hostname_data *result;
 	url_func_result res;
-	char *hostname;
+	char *hostname = NULL;
 	int hostname_length;
 	int compare;
 	int fast_exit_counter = ITERATIONS_BEFORE_TEST;
 
 	assert(url);
 
+	/* try to match the last hostname for http:// */
+	if ((last_hostname_found) &&
+			(!strncmp("http://", url, 7)) &&
+			(!strncmp(last_hostname_found->hostname, url + 7,
+				last_hostname_found->hostname_length))) {
+		return last_hostname_found;
+	}
+	
+	/* no match found, fallback */
 	res = url_host(url, &hostname);
 	switch (res) {
-	case URL_FUNC_OK:
-		break;
-	case URL_FUNC_NOMEM:
-		return NULL;
-	case URL_FUNC_FAILED:
-		hostname = strdup("file:/");		/* for 'file:/' */
-		if (!hostname)
+		case URL_FUNC_OK:
+			break;
+		case URL_FUNC_NOMEM:
 			return NULL;
-		break;
-	default:
-		assert(0);
+		case URL_FUNC_FAILED:
+			hostname = strdup("file:/");	/* for 'file:/' */
+			if (!hostname)
+				return NULL;
+			break;
+		default:
+			assert(0);
 	}
 	hostname_length = strlen(hostname);
 
@@ -79,6 +89,7 @@ struct hostname_data *url_store_find_hostname(const char *url)
 			compare = strcmp(hostname, search->hostname);
 			if (compare == 0) {
 				free(hostname);
+				last_hostname_found = search;
 				return search;
 			} else if (compare < 0)
 				break;
@@ -99,6 +110,7 @@ struct hostname_data *url_store_find_hostname(const char *url)
 	result->url = 0;
 	result->previous = 0;
 	result->next = 0;
+	last_hostname_found = result;
 
 	/* simple case: no current hostnames */
 	if (!url_store_hostnames) {
