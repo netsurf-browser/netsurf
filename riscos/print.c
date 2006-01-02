@@ -710,7 +710,7 @@ end:
  *
  * \param box Root of box tree
  * \param print_fonts pointer to array of fonts in document
- * \paran font_count number of fonts declared
+ * \param font_count number of fonts declared
  * \return true on success, false otherwise
  */
 bool print_find_fonts(struct box *box, struct print_font **print_fonts, int *font_count)

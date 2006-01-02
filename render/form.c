@@ -187,7 +187,7 @@ bool form_add_option(struct form_control *control, char *value, char *text,
  *
  * \param  form           form to search for successful controls
  * \param  submit_button  control used to submit the form, if any
- * \parma  successful_controls  updated to point to linked list of
+ * \param  successful_controls  updated to point to linked list of
  *                        form_successful_control, 0 if no controls
  * \return  true on success, false on memory exhaustion
  *
