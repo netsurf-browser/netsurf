@@ -54,9 +54,6 @@ extern char *option_font_mono;
 extern char *option_font_cursive;
 extern char *option_font_fantasy;
 extern int option_font_default;		/* a css_font_family */
-extern char *option_font_default_italic;
-extern char *option_font_default_bold;
-extern char *option_font_default_bold_italic;
 extern bool option_block_popups;
 extern bool option_url_suggestion;
 extern int option_image_memory_direct;	/* -1 means auto-detect */
