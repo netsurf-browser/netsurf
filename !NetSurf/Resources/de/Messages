@@ -694,6 +694,8 @@ HelpAppInfo:Das ist das Info-Fenster zu NetSurf.|MGenauere Angaben zu Autoren un
 #
 
 con_fonts:Fonts
+con_memory:Memory
+con_image:Images
 
 
 # Unused tokens

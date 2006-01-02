@@ -693,6 +693,8 @@ HelpAppInfo:\TNetSurf information \w.|MSee the about page for the contributor li
 #
 
 con_fonts:Fonts
+con_memory:Memory
+con_image:Images
 
 
 # Unused tokens

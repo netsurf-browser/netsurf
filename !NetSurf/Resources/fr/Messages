@@ -694,6 +694,8 @@ HelpAppInfo:\Tla \w d'information de NetSurf.|MVoir la page "À propos de" pour 
 #
 
 con_fonts:Fonts
+con_memory:Memory
+con_image:Images
 
 
 # Unused tokens
