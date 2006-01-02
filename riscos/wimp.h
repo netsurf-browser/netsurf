@@ -50,7 +50,6 @@ void ro_gui_open_window_centre(wimp_w parent, wimp_w child);
 osspriteop_area *ro_gui_load_sprite_file(const char *pathname);
 bool ro_gui_wimp_sprite_exists(const char *sprite);
 os_error *ro_gui_wimp_get_sprite(const char *name, osspriteop_header **sprite);
-void ro_gui_open_pane(wimp_w parent, wimp_w pane, int offset);
 
 
 wimp_w ro_gui_set_window_background_colour(wimp_w window, wimp_colour background);
