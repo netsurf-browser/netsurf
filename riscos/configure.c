@@ -68,6 +68,9 @@ void ro_gui_configure_initialise(void) {
 	ro_gui_configure_register("con_memory",
 			ro_gui_options_memory_initialise,
 			ro_gui_wimp_event_finalise);
+	ro_gui_configure_register("con_image",
+			ro_gui_options_image_initialise,
+			ro_gui_options_image_finalise);
 }
 
 void ro_gui_configure_show(void) {
@@ -88,7 +91,8 @@ bool ro_gui_configure_click(wimp_pointer *pointer) {
   		if (tool->i == pointer->i) {
   			if (!tool->open) {
   			  	tool->open = true;
-  				tool->initialise(tool->w);
+  				if (!tool->initialise(tool->w))
+  					return false;
   				ro_gui_dialog_open_persistent(
   						configure_window,
   						tool->w, true);
