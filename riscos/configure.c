@@ -43,7 +43,7 @@ static wimp_w configure_window;
 static int configure_icons = 0;
 static struct configure_tool *configure_tools = NULL;
 static int configure_icon_width = 68 + CONFIGURE_ICON_PADDING_H;
-static int configure_icon_height = 112 + CONFIGURE_ICON_PADDING_V;
+static int configure_icon_height = 128 + CONFIGURE_ICON_PADDING_V;
 static int configure_icons_per_line = 0;
 static int configure_width;
 static int configure_height;
@@ -71,6 +71,9 @@ void ro_gui_configure_initialise(void) {
 	ro_gui_configure_register("con_image",
 			ro_gui_options_image_initialise,
 			ro_gui_options_image_finalise);
+	ro_gui_configure_register("con_theme",
+			ro_gui_options_theme_initialise,
+			ro_gui_options_theme_finalise);
 }
 
 void ro_gui_configure_show(void) {
