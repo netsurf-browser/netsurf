@@ -22,7 +22,6 @@
 #include "netsurf/render/html.h"
 #include "netsurf/render/layout.h"
 #include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/print.h"
 #include "netsurf/riscos/wimp.h"
@@ -30,6 +29,26 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
+
+
+#define ICON_PRINT_TO_BOTTOM 1
+#define ICON_PRINT_SHEETS 2
+#define ICON_PRINT_SHEETS_VALUE 3
+#define ICON_PRINT_SHEETS_DOWN 4
+#define ICON_PRINT_SHEETS_UP 5
+#define ICON_PRINT_SHEETS_TEXT 6
+#define ICON_PRINT_FG_IMAGES 7
+#define ICON_PRINT_BG_IMAGES 8
+#define ICON_PRINT_IN_BACKGROUND 9
+#define ICON_PRINT_UPRIGHT 10
+#define ICON_PRINT_SIDEWAYS 11
+#define ICON_PRINT_COPIES 12
+#define ICON_PRINT_COPIES_DOWN 13
+#define ICON_PRINT_COPIES_UP 14
+#define ICON_PRINT_CANCEL 15
+#define ICON_PRINT_PRINT 16
+#define ICON_PRINT_TEXT_BLACK 20
+
 
 /** \todo landscape format pages
  *  \todo be somewhat more intelligent and try not to crop pages
@@ -82,6 +101,7 @@ void ro_gui_print_init(void) {
 	ro_gui_wimp_event_register_checkbox(dialog_print, ICON_PRINT_FG_IMAGES);
 	ro_gui_wimp_event_register_checkbox(dialog_print, ICON_PRINT_BG_IMAGES);
 	ro_gui_wimp_event_register_checkbox(dialog_print, ICON_PRINT_IN_BACKGROUND);
+	ro_gui_wimp_event_register_checkbox(dialog_print, ICON_PRINT_TEXT_BLACK);
 	ro_gui_wimp_event_register_text_field(dialog_print, ICON_PRINT_SHEETS_TEXT);
 	ro_gui_wimp_event_register_numeric_field(dialog_print, ICON_PRINT_COPIES,
 			ICON_PRINT_COPIES_UP, ICON_PRINT_COPIES_DOWN, 1, 99, 1, 0);
