@@ -144,6 +144,8 @@ bool ro_gui_wimp_event_memorise(wimp_w w) {
 bool ro_gui_wimp_event_restore(wimp_w w) {
 	struct event_window *window;
 	struct icon_event *event;
+	wimp_caret caret;
+	os_error *error;
 
 	window = ro_gui_wimp_event_find_window(w);
 	if (!window)
@@ -169,6 +171,19 @@ bool ro_gui_wimp_event_restore(wimp_w w) {
 			ro_gui_set_icon_shaded_state(window->w, event->i,
 					event->previous_shaded);
 	}
+	
+	/* ensure the caret is not in a shaded icon */
+	error = xwimp_get_caret_position(&caret);
+	if (error) {
+		LOG(("xwimp_get_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+	if (caret.w != w)
+		return true;
+	if (ro_gui_get_icon_shaded_state(w, caret.i))
+	  	ro_gui_set_caret_first(w);
 	return true;
 }
 
