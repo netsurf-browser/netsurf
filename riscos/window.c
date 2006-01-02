@@ -1307,7 +1307,9 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 {
 	struct gui_window *g = ro_gui_toolbar_lookup(pointer->w);
 
-	assert(g);
+	/* toolbars in the options window have no gui_window */
+	if (!g)
+		return true;
 
 	/* try to close url-completion */
 	ro_gui_url_complete_close(g, pointer->i);
