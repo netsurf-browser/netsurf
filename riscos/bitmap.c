@@ -13,7 +13,7 @@
  * sprites.
  */
 
-#define NDEBUG
+//#define NDEBUG
 
 #include <assert.h>
 #include <stdbool.h>
@@ -60,7 +60,6 @@ unsigned int bitmap_compressed_size;
 /** Total size of compressed area
 */
 unsigned int bitmap_compressed_used = 0;
-
 
 /** Compressed data header
 */
@@ -194,7 +193,7 @@ struct bitmap *bitmap_create(int width, int height, bool clear)
 /**
  * Create a persistent, opaque bitmap from a file reference.
  *
- * \param  file    the file containing the image data
+ * \param  file	   the file containing the image data
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
@@ -370,7 +369,7 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
 
 	bitmap_maintenance = true;
 	bitmap_maintenance_priority |=
-			(bitmap_direct_used > bitmap_direct_size * 1.1);
+			(bitmap_direct_used > bitmap_direct_size * 0.9);
 
 	if (bitmap->sprite_area)
 		return ((char *) (bitmap->sprite_area)) + 16 + 44;
@@ -399,7 +398,7 @@ size_t bitmap_get_rowstride(struct bitmap *bitmap)
 
 void bitmap_destroy(struct bitmap *bitmap)
 {
-  	unsigned int area_size;
+	unsigned int area_size;
 
 	assert(bitmap);
 
@@ -468,32 +467,42 @@ void bitmap_modified(struct bitmap *bitmap) {
  */
 void bitmap_maintain(void)
 {
-	unsigned int memory;
+	unsigned int memory = 0;
+	unsigned int compressed_memory = 0;
 	struct bitmap *bitmap = bitmap_head;
 	struct bitmap_compressed_header *header;
 	unsigned int maintain_direct_size;
 
 	LOG(("Performing maintenance."));
 
-	if ((!bitmap) || ((bitmap_direct_used < bitmap_direct_size) &&
-			(bitmap_compressed_used < bitmap_compressed_size))) {
-		bitmap_maintenance = false;
-		bitmap_maintenance_priority = false;
-		return;
-	}
-
-	/* under heavy loads free up an extra 30% to work with */
+	/* under heavy loads allow an extra 30% to work with */
 	maintain_direct_size = bitmap_direct_size;
 	if (!bitmap_maintenance_priority)
 		maintain_direct_size = maintain_direct_size * 0.7;
 
+	if ((!bitmap) || ((bitmap_direct_used < maintain_direct_size) &&
+			(bitmap_compressed_used < bitmap_compressed_size))) {
+		bitmap_maintenance = bitmap_maintenance_priority;
+		bitmap_maintenance_priority = false;
+		return;
+	}
+
 	/* we don't change the first bitmap_MEMORY entries as they
 	 * will automatically be loaded/decompressed from whatever state
 	 * they are in when neeeded. */
-	for (memory = 0; bitmap && (memory < maintain_direct_size);
-			bitmap = bitmap->next)
+	for (; bitmap && (memory < maintain_direct_size);
+			bitmap = bitmap->next) {
 		if (bitmap->sprite_area)
 			memory += bitmap->width * bitmap->height * 4;
+		else if ((bitmap->compressed) &&
+				(!bitmap_maintenance_priority)) {
+			header = (struct bitmap_compressed_header *)
+					bitmap->compressed;
+			compressed_memory += header->input_size +
+				sizeof(struct bitmap_compressed_header);
+		}
+	}
+
 	if (!bitmap) {
 		bitmap_maintenance = bitmap_maintenance_priority;
 		bitmap_maintenance_priority = false;
@@ -505,16 +514,20 @@ void bitmap_maintain(void)
 		/* for the next section, up until bitmap_COMPRESSED we
 		 * forcibly compress the data if it's currently held directly
 		 * in memory */
-		for (memory = 0; bitmap && (memory < bitmap_compressed_size);
+		for (; bitmap && (compressed_memory < bitmap_compressed_size);
 				bitmap = bitmap->next) {
 			if (bitmap->sprite_area) {
-				bitmap_compress(bitmap);
+				if ((bitmap->width * bitmap->height) <=
+						(512 * 512))
+					bitmap_compress(bitmap);
+				else
+					bitmap_save_file(bitmap);
 				return;
 			}
 			if (bitmap->compressed) {
 				header = (struct bitmap_compressed_header *)
 						bitmap->compressed;
-				memory += header->input_size +
+				compressed_memory += header->input_size +
 					sizeof(struct bitmap_compressed_header);
 			}
 		}
@@ -523,12 +536,12 @@ void bitmap_maintain(void)
 			return;
 		}
 	}
-	
+
 	/* for the remaining entries we dump to disk */
 	for (; bitmap; bitmap = bitmap->next) {
 		if ((bitmap->sprite_area) || (bitmap->compressed)) {
-		  	if (bitmap_maintenance_priority) {
-		  		if (bitmap->sprite_area)
+			if (bitmap_maintenance_priority) {
+				if (bitmap->sprite_area)
 					bitmap_save_file(bitmap);
 
 			} else {
@@ -544,7 +557,7 @@ void bitmap_maintain(void)
 
 void bitmap_decompress(struct bitmap *bitmap)
 {
-  	unsigned int area_size;
+	unsigned int area_size;
 	_kernel_oserror *error;
 	int output_size;
 	struct bitmap_compressed_header *header;
