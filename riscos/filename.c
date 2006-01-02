@@ -88,7 +88,7 @@ bool ro_filename_claim(const char *filename) {
 	struct directory *dir;
 	
 	/* filename format is always '01.23.45.XX' */
-	strncpy(dir_prefix, filename, 8);
+	strncpy(dir_prefix, filename, 9);
 	dir_prefix[9] = '\0';
 	file = (filename[10] + filename[9] * 10 - START_PREFIX);
 	
