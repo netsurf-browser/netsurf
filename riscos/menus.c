@@ -161,7 +161,6 @@ void ro_gui_menu_init(void)
 	};
 	iconbar_menu = ro_gui_menu_define_menu(
 			(struct ns_menu *)&iconbar_definition);
-	ro_gui_menu_set_entry_shaded(iconbar_menu, CHOICES_SHOW, true);
 
 	/* browser menu */
 	NS_MENU(66) browser_definition = {
@@ -1268,6 +1267,7 @@ void ro_gui_menu_init_structure(wimp_menu *menu, int entries) {
 				(char *)-1;
 	}
 	menu->entries[0].menu_flags |= wimp_MENU_TITLE_INDIRECTED;
+	menu->entries[i - 1].menu_flags |= wimp_MENU_LAST;
 }
 
 
