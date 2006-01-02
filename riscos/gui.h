@@ -36,12 +36,10 @@ struct plotter_table;
 
 extern wimp_t task_handle;	/**< RISC OS wimp task handle. */
 
-extern wimp_w dialog_info, dialog_saveas, dialog_config, dialog_config_br,
-	dialog_config_prox, dialog_config_th, dialog_zoom, dialog_pageinfo,
+extern wimp_w dialog_info, dialog_saveas, dialog_zoom, dialog_pageinfo,
 	dialog_objinfo, dialog_tooltip, dialog_warning, dialog_openurl,
-	dialog_config_th_pane, dialog_debug, dialog_folder, dialog_entry,
-	dialog_search, dialog_print, dialog_config_font, dialog_theme_install,
-	dialog_url_complete;
+	dialog_debug, dialog_folder, dialog_entry, dialog_url_complete,
+	dialog_search, dialog_print, dialog_theme_install;
 extern wimp_w current_menu_window;
 extern bool current_menu_open;
 extern wimp_menu *font_menu;	/* font.c */
