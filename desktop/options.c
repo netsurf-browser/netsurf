@@ -21,6 +21,7 @@
 #include <string.h>
 #include "libxml/HTMLparser.h"
 #include "libxml/HTMLtree.h"
+#include "netsurf/css/css.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/tree.h"
 #include "netsurf/utils/log.h"
@@ -67,6 +68,8 @@ bool option_send_referer = true;
 bool option_animate_images = true;
 /** How many days to retain URL data for */
 int option_expire_url = 28;
+/** Default font family */
+int option_font_default = CSS_FONT_FAMILY_SANS_SERIF;
 
 EXTRA_OPTION_DEFINE
 
@@ -91,7 +94,8 @@ struct {
 	{ "minimum_gif_delay",      OPTION_INTEGER, &option_minimum_gif_delay },
 	{ "send_referer",    OPTION_BOOL,    &option_send_referer },
 	{ "animate_images",  OPTION_BOOL,    &option_animate_images },
-	{ "expire_url",	     OPTION_INTEGER, &option_expire_url }, \
+	{ "expire_url",	     OPTION_INTEGER, &option_expire_url },
+	{ "font_default",           OPTION_INTEGER, &option_font_default },
 	EXTRA_OPTION_TABLE
 };
 

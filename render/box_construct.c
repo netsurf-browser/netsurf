@@ -177,6 +177,8 @@ bool xml_to_box(xmlNode *n, struct content *c)
 		return false;
 	c->data.html.style->font_size.value.length.value =
 			option_font_size * 0.1;
+	/* and get the default font family from the options */
+	c->data.html.style->font_family = option_font_default;
 
 	c->data.html.object_count = 0;
 	c->data.html.object = 0;

@@ -155,7 +155,7 @@ const struct css_style css_base_style = {
 	CSS_DISPLAY_BLOCK,
 	CSS_EMPTY_CELLS_SHOW,
 	CSS_FLOAT_NONE,
-	CSS_FONT_FAMILY_INHERIT, /* Default font is user-defined */
+	CSS_FONT_FAMILY_SANS_SERIF,
 	{ CSS_FONT_SIZE_LENGTH, { { 10, CSS_UNIT_PT } } },
 	CSS_FONT_STYLE_NORMAL,
 	CSS_FONT_VARIANT_NORMAL,

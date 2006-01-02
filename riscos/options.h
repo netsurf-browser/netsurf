@@ -14,7 +14,6 @@
 #ifndef _NETSURF_RISCOS_OPTIONS_H_
 #define _NETSURF_RISCOS_OPTIONS_H_
 
-#include "netsurf/css/css.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/riscos/tinct.h"
 
@@ -53,7 +52,6 @@ extern char *option_font_serif;
 extern char *option_font_mono;
 extern char *option_font_cursive;
 extern char *option_font_fantasy;
-extern int option_font_default;		/* a css_font_family */
 extern bool option_block_popups;
 extern bool option_url_suggestion;
 extern int option_image_memory_direct;	/* -1 means auto-detect */
@@ -96,7 +94,6 @@ char *option_font_serif = 0; \
 char *option_font_mono = 0; \
 char *option_font_cursive = 0; \
 char *option_font_fantasy = 0; \
-int option_font_default = CSS_FONT_FAMILY_SANS_SERIF; \
 bool option_block_popups = false; \
 bool option_url_suggestion = true; \
 int option_image_memory_direct = -1; \
@@ -139,7 +136,6 @@ bool option_strip_extensions = true;
 { "font_mono",              OPTION_STRING,  &option_font_mono }, \
 { "font_cursive",           OPTION_STRING,  &option_font_cursive }, \
 { "font_fantasy",           OPTION_STRING,  &option_font_fantasy }, \
-{ "font_default",           OPTION_INTEGER, &option_font_default }, \
 { "block_popups",           OPTION_BOOL,    &option_block_popups }, \
 { "url_suggestion",         OPTION_BOOL,    &option_url_suggestion }, \
 { "image_memory_direct",    OPTION_INTEGER, &option_image_memory_direct }, \

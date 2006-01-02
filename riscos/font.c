@@ -452,26 +452,7 @@ void nsfont_read_style(const struct css_style *style,
 		*font_family = option_font_fantasy;
 		break;
 	default:
-		switch (option_font_default) {
-		case CSS_FONT_FAMILY_SANS_SERIF:
-			*font_family = option_font_sans;
-			break;
-		case CSS_FONT_FAMILY_SERIF:
-			*font_family = option_font_serif;
-			break;
-		case CSS_FONT_FAMILY_MONOSPACE:
-			*font_family = option_font_mono;
-			break;
-		case CSS_FONT_FAMILY_CURSIVE:
-			*font_family = option_font_cursive;
-			break;
-		case CSS_FONT_FAMILY_FANTASY:
-			*font_family = option_font_fantasy;
-			break;
-		default:
-			*font_family = option_font_sans;
-			break;
-		}
+		*font_family = option_font_sans;
 		break;
 	}
 
