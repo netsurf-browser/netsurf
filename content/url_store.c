@@ -16,6 +16,7 @@
 #include <string.h>
 #include <time.h>
 #include "netsurf/content/url_store.h"
+#include "netsurf/image/bitmap.h"
 #include "netsurf/desktop/options.h"
 #ifdef riscos
 #include "netsurf/riscos/bitmap.h"
@@ -40,10 +41,11 @@ static char *url_store_match_scheme = NULL;
  * Returns the hostname data for the specified URL. If no hostname
  * data is currently available then it is created.
  *
- * \param url  the url to find hostname data for
- * \return the current hostname data, or NULL on error
+ * \param  url  the url to find hostname data for
+ * \return  the current hostname data, or NULL if memory exhausted
  */
-static struct hostname_data *url_store_find_hostname(const char *url) {
+struct hostname_data *url_store_find_hostname(const char *url)
+{
 	struct hostname_data *search;
 	struct hostname_data *result;
 	url_func_result res;
@@ -55,10 +57,18 @@ static struct hostname_data *url_store_find_hostname(const char *url) {
 	assert(url);
 
 	res = url_host(url, &hostname);
-	if (res != URL_FUNC_OK) {
+	switch (res) {
+	case URL_FUNC_OK:
+		break;
+	case URL_FUNC_NOMEM:
+		return NULL;
+	case URL_FUNC_FAILED:
 		hostname = strdup("file:/");		/* for 'file:/' */
 		if (!hostname)
 			return NULL;
+		break;
+	default:
+		assert(0);
 	}
 	hostname_length = strlen(hostname);
 
@@ -79,11 +89,16 @@ static struct hostname_data *url_store_find_hostname(const char *url) {
 	}
 
 	/* no hostname is available: create a new one */
-	result = calloc(1, sizeof(struct hostname_data));
-	if (!result)
+	result = malloc(sizeof *result);
+	if (!result) {
+		free(hostname);
 		return NULL;
+	}
 	result->hostname = hostname;
 	result->hostname_length = hostname_length;
+	result->url = 0;
+	result->previous = 0;
+	result->next = 0;
 
 	/* simple case: no current hostnames */
 	if (!url_store_hostnames) {
@@ -98,7 +113,8 @@ static struct hostname_data *url_store_find_hostname(const char *url) {
 	 * of the hostname list ready to work backwards. */
 	if (!search)
 		for (search = url_store_hostnames; search->next;
-				search = search->next);
+				search = search->next)
+			;
 
 	/* we can now simply scan backwards as we know roughly where we need
 	 * to link to (we either had an early exit from the searching so we
@@ -129,14 +145,14 @@ static struct hostname_data *url_store_find_hostname(const char *url) {
  * Returns the url data for the specified URL. If no url
  * data is currently available then it is created.
  *
- * \param url  a normalized url to find hostname data for
- * \return the current hostname data, or NULL on error
+ * \param  url  a normalized url to find hostname data for
+ * \return  the current hostname data, or NULL if memory exhausted
  */
 struct url_content *url_store_find(const char *url) {
 	struct hostname_data *hostname_data;
 	struct url_data *search;
 	struct url_data *result;
-	int url_length;
+	size_t url_length;
 	int compare;
 	int fast_exit_counter = ITERATIONS_BEFORE_TEST;
 
@@ -191,7 +207,8 @@ struct url_content *url_store_find(const char *url) {
 	 * of the URL list ready to work backwards. */
 	if (!search)
 		for (search = hostname_data->url; search->next;
-				search = search->next);
+				search = search->next)
+			;
 
 	/* we can now simply scan backwards as we know roughly where we need
 	 * to link to (we either had an early exit from the searching so we
@@ -224,8 +241,10 @@ struct url_content *url_store_find(const char *url) {
  * \param url	   a normalized url to find the next match for
  * \param current  the current hostname to search forward from, or NULL
  * \return the next matching hostname, or NULL
+ *
+ * \todo  distinguish between out-of-memory and no more results in return
  */
-static struct hostname_data *url_store_match_hostname(const char *url,
+struct hostname_data *url_store_match_hostname(const char *url,
 		struct hostname_data *current) {
 	url_func_result res;
 	char *hostname;
@@ -236,10 +255,18 @@ static struct hostname_data *url_store_match_hostname(const char *url,
 	assert(url);
 
 	res = url_host(url, &hostname);
-	if (res != URL_FUNC_OK) {
+	switch (res) {
+	case URL_FUNC_OK:
+		break;
+	case URL_FUNC_NOMEM:
+		return NULL;
+	case URL_FUNC_FAILED:
 		hostname = strdup("file:/");		/* for 'file:/' */
 		if (!hostname)
 			return NULL;
+		break;
+	default:
+		assert(0);
 	}
 	hostname_length = strlen(hostname);
 	www_test = strncmp(hostname, "www.", 4);
@@ -251,7 +278,8 @@ static struct hostname_data *url_store_match_hostname(const char *url,
 		current = current->next;
 
 	/* skip past hostname data without URLs */
-	for (; current && (!current->url); current = current->next);
+	for (; current && (!current->url); current = current->next)
+		;
 
 	while (current) {
 		if (current->hostname_length >= hostname_length) {
@@ -275,7 +303,8 @@ static struct hostname_data *url_store_match_hostname(const char *url,
 
 		/* move to next hostname with URLs */
 		current = current->next;
-		for (; current && (!current->url); current = current->next);
+		for (; current && (!current->url); current = current->next)
+			;
 	}
 
 	free(hostname);
@@ -295,7 +324,7 @@ char *url_store_match(const char *url, struct url_data **reference) {
 	struct hostname_data *hostname;
 	struct url_data *search = NULL;
 	int scheme_length;
-	int url_length;
+	size_t url_length;
 	url_func_result res;
 	bool www_test;
 
@@ -514,7 +543,7 @@ void url_store_save(const char *file) {
 #ifdef riscos
 	struct bitmap *bitmap;
 #endif
-	int min_date;
+	time_t min_date;
 	char *title;
 
 	fp = fopen(file, "w");
@@ -525,7 +554,7 @@ void url_store_save(const char *file) {
 
 	/* get the minimum date for expiry */
 	min_date = time(NULL) - (60 * 60 * 24) * option_expire_url;
-	LOG(("%d", min_date));
+	LOG(("%d", (int) min_date));
 
 	/* file format version number */
 	fprintf(fp, "104\n");
@@ -577,7 +606,8 @@ void url_store_save(const char *file) {
 					fprintf(fp, "%s\n%i\n%i\n%i\n%s\n%s\n",
 							url->data.url,
 							url->data.visits,
-							url->data.last_visit,
+							(int) url->data.
+								last_visit,
 							url->data.type,
 							thumb_file,
 							title);
@@ -617,7 +647,7 @@ struct bitmap *url_store_get_thumbnail(const char *url) {
 
 
 int url_store_compare_last_visit(const void *a, const void *b) {
-  	struct url_content **url_a = (struct url_content **)a;
-  	struct url_content **url_b = (struct url_content **)b;
+  	struct url_content * const *url_a = (struct url_content * const *)a;
+  	struct url_content * const *url_b = (struct url_content * const *)b;
 	return ((*url_a)->last_visit - (*url_b)->last_visit);
 }

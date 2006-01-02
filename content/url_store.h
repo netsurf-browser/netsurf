@@ -12,33 +12,36 @@
 #ifndef _NETSURF_CONTENT_URLSTORE_H_
 #define _NETSURF_CONTENT_URLSTORE_H_
 
-#include "netsurf/image/bitmap.h"
+#include <time.h>
 #include "netsurf/content/content_type.h"
+
+struct bitmap;
 
 
 struct hostname_data {
-	char *hostname;			/** Hostname (lowercase) */
-	int hostname_length;		/** Length of hostname */
-	struct url_data *url;		/** URLs for this host */
-	struct hostname_data *previous;	/** Previous hostname */
-	struct hostname_data *next;	/** Next hostname */
+	char *hostname;			/**< Hostname (lowercase) */
+	int hostname_length;		/**< Length of hostname */
+	struct url_data *url;		/**< URLs for this host */
+	struct hostname_data *previous;	/**< Previous hostname */
+	struct hostname_data *next;	/**< Next hostname */
 };
 
+
 struct url_content {
-  	struct bitmap *thumbnail;	/** Thumbnail, or NULL */
-	char *url;			/** URL (including hostname) */
-	char *title;			/** Page title */
-	int url_length;			/** Length of URL (including hostname) */
-	int visits;			/** Number of times visited */
-	int last_visit;			/** The time() of the last visit */
-	content_type type;		/** The content type */
+  	struct bitmap *thumbnail;	/**< Thumbnail, or NULL */
+	char *url;			/**< URL (including hostname) */
+	char *title;			/**< Page title */
+	size_t url_length;		/**< Length of URL (including hostname) */
+	unsigned int visits;		/**< Number of times visited */
+	time_t last_visit;		/**< The time() of the last visit */
+	content_type type;		/**< The content type */
 };
 
 struct url_data {
-  	struct url_content data;	/** Stored URL content data */
-  	struct url_data *previous;	/** Previous URL */
-  	struct url_data *next;		/** Next URL */
-	struct hostname_data *parent;	/** Parent hostname data */
+  	struct url_content data;	/**< Stored URL content data */
+  	struct url_data *previous;	/**< Previous URL */
+  	struct url_data *next;		/**< Next URL */
+	struct hostname_data *parent;	/**< Parent hostname data */
 };
 
 extern struct hostname_data *url_store_hostnames;
