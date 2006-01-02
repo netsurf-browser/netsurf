@@ -199,6 +199,7 @@ ProxyNTLM:NTLM
 #
 # Fonts pane
 Fonts:Fontes
+DefaultFonts:Font Families
 #
 # Images pane
 Display:Affichage

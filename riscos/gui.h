@@ -216,6 +216,8 @@ void ro_gui_print_prepare(struct gui_window *g);
 
 /* in font.c */
 void nsfont_init(void);
+bool nsfont_exists(const char *font_family);
+const char *nsfont_fallback_font(void);
 bool nsfont_paint(struct css_style *style, const char *string,
 		size_t length, int x, int y, float scale);
 void nsfont_read_style(const struct css_style *style,

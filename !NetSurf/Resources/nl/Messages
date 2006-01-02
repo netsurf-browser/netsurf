@@ -200,6 +200,7 @@ ProxyNTLM:NTLM
 #
 # Fonts pane
 Fonts:Lettertypen
+DefaultFonts:Font Families
 #
 # Images pane
 Display:Weergave

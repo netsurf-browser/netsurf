@@ -29,7 +29,6 @@ wimp_menu *font_menu;
 
 static void nsfont_check_option(char **option, const char *family,
 		const char *fallback);
-static bool nsfont_exists(const char *font_family);
 static int nsfont_list_cmp(const void *keyval, const void *datum);
 static void nsfont_check_fonts(void);
 static void nsfont_init_menu(void);
@@ -83,6 +82,21 @@ void nsfont_init(void)
 	nsfont_init_menu();
 }
 
+
+/**
+ * Retrieve the fallback font name
+ *
+ * \return Fallback font name
+ */
+const char *nsfont_fallback_font(void)
+{
+	const char *fallback = "Homerton";
+
+	if (!nsfont_exists(fallback))
+		fallback = rufl_family_list[0];
+
+	return fallback;
+}
 
 /**
  * Check that a font option is valid, and fix it if not.
