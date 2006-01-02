@@ -40,7 +40,7 @@ OBJECTS_RISCOS += 401login.o artworks.o assert.o awrender.o bitmap.o \
 	schedule.o search.o sprite.o textselection.o theme.o \
 	theme_install.o thumbnail.o treeview.o ucstables.o uri.o \
 	url_complete.o url_protocol.o wimp.o wimp_event.o window.o	# riscos/
-OBJECTS_RISCOS += con_fonts.o					# riscos/configure/
+OBJECTS_RISCOS += con_fonts.o con_memory.o		# riscos/configure/
 # OBJECTS_RISCOS += memdebug.o
 
 OBJECTS_NCOS = $(OBJECTS_RISCOS)
