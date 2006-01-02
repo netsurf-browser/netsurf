@@ -63,6 +63,7 @@ bool ro_gui_wimp_event_register_close_window(wimp_w w,
 		void (*callback)(wimp_w w));
 bool ro_gui_wimp_event_register_redraw_window(wimp_w w,
 		void (*callback)(wimp_draw *redraw));
-
+bool ro_gui_wimp_event_register_menu_selection(wimp_w w,
+		void (*callback)(wimp_w w, wimp_i i));
 
 #endif

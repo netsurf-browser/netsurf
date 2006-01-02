@@ -74,6 +74,7 @@ struct event_window {
 	void (*open_window)(wimp_open *open);
 	void (*close_window)(wimp_w w);
 	void (*redraw_window)(wimp_draw *redraw);
+	void (*menu_selection)(wimp_w w, wimp_i i);
 	const char *help_prefix;
 	void *user_data;
 	struct icon_event *first;
@@ -87,6 +88,7 @@ static struct event_window *ro_gui_wimp_event_get_window(wimp_w w);
 static struct event_window *ro_gui_wimp_event_find_window(wimp_w w);
 static struct icon_event *ro_gui_wimp_event_get_event(wimp_w w, wimp_i i,
 		event_type type);
+static void ro_gui_wimp_event_prepare_menu(wimp_w w, struct icon_event *event);
 
 static struct event_window *ro_gui_wimp_event_windows;
 
@@ -115,7 +117,7 @@ bool ro_gui_wimp_event_memorise(wimp_w w) {
 				event->previous_value.textual = strdup(
 					ro_gui_get_icon_string(window->w, event->i));
 				if (!event->previous_value.textual) {
-				  	error = true;
+					error = true;
 					LOG(("Unable to store state for icon %i", event->i));
 				}
 				break;
@@ -171,7 +173,7 @@ bool ro_gui_wimp_event_restore(wimp_w w) {
 			ro_gui_set_icon_shaded_state(window->w, event->i,
 					event->previous_shaded);
 	}
-	
+
 	/* ensure the caret is not in a shaded icon */
 	error = xwimp_get_caret_position(&caret);
 	if (error) {
@@ -183,7 +185,7 @@ bool ro_gui_wimp_event_restore(wimp_w w) {
 	if (caret.w != w)
 		return true;
 	if (ro_gui_get_icon_shaded_state(w, caret.i))
-	  	ro_gui_set_caret_first(w);
+		ro_gui_set_caret_first(w);
 	return true;
 }
 
@@ -272,7 +274,7 @@ void ro_gui_wimp_event_finalise(wimp_w w) {
  * Set the associated help prefix for a given window.
  *
  * \param w		the window to get the prefix for
- * \param help_prefix   the prefix to associate with the window (used directly)
+ * \param help_prefix	the prefix to associate with the window (used directly)
  * \return true on success, or NULL for memory exhaustion
  */
 bool ro_gui_wimp_event_set_help_prefix(wimp_w w, const char *help_prefix) {
@@ -340,7 +342,7 @@ void *ro_gui_wimp_event_get_user_data(wimp_w w) {
  * Handles a menu selection event.
  *
  * \param w		the window to owning the menu
- * \param i 		the icon owning the menu
+ * \param i		the icon owning the menu
  * \param menu		the menu that has been selected
  * \param selection	the selection information
  * \return true if the event was handled, false otherwise
@@ -349,7 +351,6 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection) {
 	struct event_window *window;
 	struct icon_event *event;
-	struct icon_event *search;
 	wimp_menu_entry *menu_entry;
 	wimp_key key;
 	os_error *error;
@@ -372,29 +373,21 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 		return false;
 	}
 
-	for (search = window->first; search; search = search->next)
-		if (search->i == event->data.menu_gright.field)
-			break;
-	if (!search)
-		return false;
-
-	if (search->type != EVENT_TEXT_FIELD) {
-		LOG(("Incorrect or missing field reference."));
-		return false;
-	}
-
 	menu_entry = &menu->entries[selection->items[0]];
 	for (i = 1; selection->items[i] != -1; i++)
 		menu_entry = &menu_entry->sub_menu->
 				entries[selection->items[i]];
 
-	ro_gui_set_icon_string(window->w, search->i,
+	ro_gui_set_icon_string(window->w, event->data.menu_gright.field,
 			menu_entry->data.indirected_text.text);
-	
+	ro_gui_wimp_event_prepare_menu(window->w, event);
+	if (window->menu_selection)
+		window->menu_selection(window->w, event->i);
+
 	/* set the caret for writable icons and send a CTRL+U keypress to
 	 * stimulate activity if needed */
 	ic.w = window->w;
-	ic.i = search->i;
+	ic.i = event->data.menu_gright.field;
 	error = xwimp_get_icon_state(&ic);
 	if (error) {
 		LOG(("xwimp_get_icon_state: 0x%x: %s",
@@ -413,9 +406,9 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 		warn_user("WimpError", error->errmess);
 		return false;
 	}
-	if ((caret.w != window->w) || (caret.i != search->i)) {
-		error = xwimp_set_caret_position(window->w, search->i, -1, -1,
-				-1, strlen(menu_entry->data.indirected_text.text));
+	if ((caret.w != window->w) || (caret.i != event->data.menu_gright.field)) {
+		error = xwimp_set_caret_position(window->w, event->data.menu_gright.field,
+				-1, -1, -1, strlen(menu_entry->data.indirected_text.text));
 		if (error) {
 			LOG(("xwimp_set_caret_position: 0x%x: %s",
 					error->errnum, error->errmess));
@@ -550,6 +543,8 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer) {
 					}
 				}
 			}
+			/* display the menu */
+			ro_gui_wimp_event_prepare_menu(pointer->w, event);
 			ro_gui_popup_menu(event->data.menu_gright.menu, pointer->w, pointer->i);
 			break;
 		case EVENT_CHECKBOX:
@@ -561,7 +556,6 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer) {
 							event->data.radio_group))
 					ro_gui_set_icon_selected_state(pointer->w,
 							search->i, (search == event));
-			/* TODO: Enforce radio behaviour */
 			break;
 		case EVENT_BUTTON:
 			if (event->data.callback)
@@ -584,6 +578,48 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer) {
 
 
 /**
+ * Prepare a menu ready for use
+ *
+ * /param w	the window owning the menu
+ * /param event	the icon event owning the menu
+ */
+void ro_gui_wimp_event_prepare_menu(wimp_w w, struct icon_event *event) {
+	int i;
+	char *text;
+	unsigned int button_type;
+	wimp_icon_state ic;
+	wimp_menu *menu;
+	os_error *error;
+
+	/* if the linked icon is not writable then we set the ticked state
+	 * of the menu item that matches the contents */
+	ic.w = w;
+	ic.i = event->data.menu_gright.field;
+	error = xwimp_get_icon_state(&ic);
+	if (error) {
+		LOG(("xwimp_get_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	button_type = (ic.icon.flags & wimp_ICON_BUTTON_TYPE)
+			>> wimp_ICON_BUTTON_TYPE_SHIFT;
+	if ((button_type == wimp_BUTTON_WRITABLE) ||
+			(button_type == wimp_BUTTON_WRITE_CLICK_DRAG))
+		return;
+	text = ro_gui_get_icon_string(w, event->data.menu_gright.field);
+	menu = event->data.menu_gright.menu;
+	i = 0;
+	do {
+		if (!strcmp(menu->entries[i].data.indirected_text.text, text))
+			menu->entries[i].menu_flags |= wimp_MENU_TICKED;
+		else
+			menu->entries[i].menu_flags &= ~wimp_MENU_TICKED;
+	} while (!(menu->entries[i++].menu_flags & wimp_MENU_LAST));
+}
+
+
+/**
  * Perform the necessary actions following a click on the OK button.
  *
  * /param window	the window to perform the action on
@@ -594,8 +630,8 @@ void ro_gui_wimp_event_ok_click(struct event_window *window, wimp_mouse_state st
 
 	for (search = window->first; search; search = search->next)
 		if (search->type == EVENT_OK) {
-		  	if (ro_gui_get_icon_shaded_state(window->w, search->i))
-		  		return;
+			if (ro_gui_get_icon_shaded_state(window->w, search->i))
+				return;
 			break;
 		}
 	ro_gui_wimp_event_validate(window->w);
@@ -629,9 +665,9 @@ bool ro_gui_wimp_event_keypress(wimp_key *key) {
 	if (window->keypress)
 		if (window->keypress(key))
 			return true;
-	
+
 	switch (key->c) {
-	  	/* Escape closes a dialog with a registered OK button */
+		/* Escape closes a dialog with a registered OK button */
 		case wimp_KEY_ESCAPE:
 			if (!window->ok_click)
 				return false;
@@ -925,6 +961,19 @@ bool ro_gui_wimp_event_register_redraw_window(wimp_w w,
 	return true;
 }
 
+/**
+ * Register a function to be called following a menu selection.
+ */
+bool ro_gui_wimp_event_register_menu_selection(wimp_w w,
+		void (*callback)(wimp_w w, wimp_i i)) {
+	struct event_window *window;
+
+	window = ro_gui_wimp_event_get_window(w);
+	if (!window)
+		return false;
+	window->menu_selection = callback;
+	return true;
+}
 
 
 /**
