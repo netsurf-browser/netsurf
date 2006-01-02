@@ -79,6 +79,9 @@ void ro_gui_print_init(void) {
 	dialog_print = ro_gui_dialog_create("print");
 	ro_gui_wimp_event_register_radio(dialog_print, radio_print_type);
 	ro_gui_wimp_event_register_radio(dialog_print, radio_print_orientation);
+	ro_gui_wimp_event_register_checkbox(dialog_print, ICON_PRINT_FG_IMAGES);
+	ro_gui_wimp_event_register_checkbox(dialog_print, ICON_PRINT_BG_IMAGES);
+	ro_gui_wimp_event_register_checkbox(dialog_print, ICON_PRINT_IN_BACKGROUND);
 	ro_gui_wimp_event_register_text_field(dialog_print, ICON_PRINT_SHEETS_TEXT);
 	ro_gui_wimp_event_register_numeric_field(dialog_print, ICON_PRINT_COPIES,
 			ICON_PRINT_COPIES_UP, ICON_PRINT_COPIES_DOWN, 1, 99, 1, 0);
@@ -157,9 +160,9 @@ bool ro_gui_print_click(wimp_pointer *pointer)
 		return true;
 
 	switch (pointer->i) {
-		case ICON_PRINT_SHEETS:
 		case ICON_PRINT_TO_BOTTOM:
-			print_update_sheets_shaded_state(true);
+		case ICON_PRINT_SHEETS:
+			print_update_sheets_shaded_state(pointer->i != ICON_PRINT_SHEETS);
 			break;
 	}
 	return false;
