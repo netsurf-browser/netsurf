@@ -16,5 +16,6 @@
 #include <stdbool.h>
 
 bool ro_gui_options_fonts_initialise(wimp_w w);
+bool ro_gui_options_memory_initialise(wimp_w w);
 
 #endif
