@@ -166,30 +166,12 @@ bool ro_gui_options_fonts_init_menu(void)
 	}
 	default_menu->title_data.indirected_text.text =
 			messages_get("DefaultFonts");
-	default_menu->title_fg = wimp_COLOUR_BLACK;
-	default_menu->title_bg = wimp_COLOUR_LIGHT_GREY;
-	default_menu->work_fg = wimp_COLOUR_BLACK;
-	default_menu->work_bg = wimp_COLOUR_WHITE;
-	default_menu->width = 200;
-	default_menu->height = wimp_MENU_ITEM_HEIGHT;
-	default_menu->gap = wimp_MENU_ITEM_GAP;
-
-	for (i = 0; i != 5; i++) {
-		default_menu->entries[i].menu_flags = 0;
-		default_menu->entries[i].sub_menu = wimp_NO_SUB_MENU;
-		default_menu->entries[i].icon_flags = wimp_ICON_TEXT |
-				wimp_ICON_INDIRECTED |
-			(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
-			(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
+	ro_gui_menu_init_structure(default_menu, 5);
+	for (i = 0; i < 5; i++) {
 		default_menu->entries[i].data.indirected_text.text =
 				css_font_family_name[i+1];
-		default_menu->entries[i].data.indirected_text.validation =
-				(char *)-1;
 		default_menu->entries[i].data.indirected_text.size =
 				strlen(css_font_family_name[i+1]);
 	}
-	default_menu->entries[0].menu_flags = wimp_MENU_TITLE_INDIRECTED;
-	default_menu->entries[i-1].menu_flags |= wimp_MENU_LAST;
-
 	return true;
 }
