@@ -195,7 +195,6 @@ static wimp_MESSAGE_LIST(38) task_messages = { {
 } };
 
 static void ro_gui_choose_language(void);
-static void ro_gui_sprites_init(void);
 #ifndef ncos
 static void ro_gui_icon_bar_create(void);
 #endif
@@ -290,7 +289,9 @@ void gui_init(int argc, char** argv)
 	if (!option_toolbar_history)
 		option_toolbar_history = strdup("01|23");
 
-	ro_gui_sprites_init();
+	gui_sprites = ro_gui_load_sprite_file("<NetSurf$Dir>.Resources.Sprites");
+	if (!gui_sprites)
+		die("Unable to load Sprites.");
 	ro_gui_choose_language();
 
 	bitmap_initialise_memory();
@@ -431,45 +432,6 @@ void ro_gui_choose_language(void)
 	assert(option_language);
 	if (!option_accept_language)
 		option_accept_language = strdup(option_language);
-}
-
-
-/**
- * Load resource sprites (pointers and misc icons).
- */
-
-void ro_gui_sprites_init(void)
-{
-	int len;
-	fileswitch_object_type obj_type;
-	os_error *e;
-
-	e = xosfile_read_stamped_no_path("<NetSurf$Dir>.Resources.Sprites",
-			&obj_type, 0, 0, &len, 0, 0);
-	if (e) {
-		LOG(("xosfile_read_stamped_no_path: 0x%x: %s",
-				e->errnum, e->errmess));
-		die(e->errmess);
-	}
-	if (obj_type != fileswitch_IS_FILE)
-		die("<NetSurf$Dir>.Resources.Sprites missing.");
-
-	gui_sprites = malloc(len + 4);
-	if (!gui_sprites)
-		die("NoMemory");
-
-	gui_sprites->size = len+4;
-	gui_sprites->sprite_count = 0;
-	gui_sprites->first = 16;
-	gui_sprites->used = 16;
-
-	e = xosspriteop_load_sprite_file(osspriteop_USER_AREA,
-			gui_sprites, "<NetSurf$Dir>.Resources.Sprites");
-	if (e) {
-		LOG(("xosspriteop_load_sprite_file: 0x%x: %s",
-				e->errnum, e->errmess));
-		die(e->errmess);
-	}
 }
 
 
