@@ -363,20 +363,19 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 		return false;
 
 	for (event = window->first; event; event = event->next)
-		if (event->i == i)
+		if ((event->type == EVENT_MENU_GRIGHT) && (event->i == i))
 			break;
 	if (!event)
 		return false;
-
-	if (event->type != EVENT_MENU_GRIGHT) {
-		LOG(("Incorrect or missing menu reference."));
-		return false;
-	}
 
 	menu_entry = &menu->entries[selection->items[0]];
 	for (i = 1; selection->items[i] != -1; i++)
 		menu_entry = &menu_entry->sub_menu->
 				entries[selection->items[i]];
+
+	/* if the entry is already ticked then we do nothing */
+	if (menu_entry->menu_flags & wimp_MENU_TICKED)
+		return true;
 
 	ro_gui_set_icon_string(window->w, event->data.menu_gright.field,
 			menu_entry->data.indirected_text.text);
