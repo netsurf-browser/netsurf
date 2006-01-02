@@ -97,7 +97,7 @@ void ro_gui_options_image_finalise(wimp_w w) {
 }
 
 void ro_gui_options_image_update(wimp_w w, wimp_i i) {
-	ro_gui_force_redraw_icon(w, IMAGE_CURRENT_DISPLAY);
+	ro_gui_redraw_icon(w, IMAGE_CURRENT_DISPLAY);
 }
 
 void ro_gui_options_image_redraw(wimp_draw *redraw) {
@@ -162,6 +162,9 @@ void ro_gui_options_image_read(wimp_w w, unsigned int *bg, unsigned int *fg) {
 }
 
 bool ro_gui_options_image_click(wimp_pointer *pointer) {
+	unsigned int old_fg, old_bg, bg, fg;
+	
+	ro_gui_options_image_read(pointer->w, &old_bg, &old_fg);
 	switch (pointer->i) {
 		case IMAGE_DEFAULT_BUTTON:
 			ro_gui_set_icon_string(pointer->w, IMAGE_FOREGROUND_FIELD,
@@ -170,10 +173,16 @@ bool ro_gui_options_image_click(wimp_pointer *pointer) {
   			ro_gui_set_icon_string(pointer->w, IMAGE_BACKGROUND_FIELD,
 					image_quality_menu->entries[2].
 						data.indirected_text.text);
-		case IMAGE_CANCEL_BUTTON:
-			ro_gui_force_redraw_icon(pointer->w, IMAGE_CURRENT_DISPLAY);
 			break;
+		case IMAGE_CANCEL_BUTTON:
+			ro_gui_wimp_event_restore(pointer->w);
+			break;
+		default:
+			return false;
 	}
+	ro_gui_options_image_read(pointer->w, &bg, &fg);
+	if ((bg != old_bg) || (fg != old_fg))
+		ro_gui_options_image_update(pointer->w, pointer->i);
 	return false;
 }
 
