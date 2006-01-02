@@ -41,5 +41,13 @@ extern bool bitmap_maintenance;
 */
 extern bool bitmap_maintenance_priority;
 
+/** Maximum amount of memory for direct images
+*/
+extern unsigned int bitmap_direct_size;
+
+/** Total size of compressed area
+*/
+extern unsigned int bitmap_compressed_size;
+
 
 #endif

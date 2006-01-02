@@ -25,5 +25,4 @@ void ro_gui_configure_initialise(void);
 void ro_gui_configure_show(void);
 void ro_gui_configure_register(const char *window,
 		bool (*initialise)(wimp_w w), void (*finalise)(wimp_w w));
-
 #endif

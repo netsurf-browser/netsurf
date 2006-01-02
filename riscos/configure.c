@@ -62,9 +62,11 @@ void ro_gui_configure_initialise(void) {
 	ro_gui_wimp_event_set_help_prefix(dialog_zoom, "HelpConfigure");
 	
 	/* add in our option windows */
-	for (int i = 0; i < 12; i++)
 	ro_gui_configure_register("con_fonts",
 			ro_gui_options_fonts_initialise,
+			ro_gui_wimp_event_finalise);
+	ro_gui_configure_register("con_memory",
+			ro_gui_options_memory_initialise,
 			ro_gui_wimp_event_finalise);
 }
 

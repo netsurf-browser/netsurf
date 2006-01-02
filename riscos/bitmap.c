@@ -110,8 +110,8 @@ void bitmap_initialise_memory(void)
 
 	/* calculate our memory block sizes */
 	if (option_image_memory_direct == -1) {
-		/* claim 20% of free memory - min 256KB, max 32768KB */
-		direct_size = available_memory / 5;
+		/* claim 25% of free memory - min 256KB, max 32768KB */
+		direct_size = available_memory / 4;
 		if (direct_size < (256 << 10))
 			direct_size = (256 << 10);
 		if (direct_size > (32768 << 10))
@@ -120,8 +120,8 @@ void bitmap_initialise_memory(void)
 		direct_size = (option_image_memory_direct << 10);
 	}
 	if (option_image_memory_compressed == -1) {
-		/* claim 5% of free memory - min 256KB, max 4192KB */
-		compressed_size = available_memory / 20;
+		/* claim 10% of free memory - min 256KB, max 4192KB */
+		compressed_size = available_memory / 10;
 		if (compressed_size < (256 << 10))
 			compressed_size = 0;
 		if (compressed_size > (4192 << 10))
@@ -133,10 +133,7 @@ void bitmap_initialise_memory(void)
 	/* set our values. No fixed buffers here, ho hum. */
 	bitmap_direct_size = direct_size;
 	bitmap_compressed_size = compressed_size;
-	LOG(("Allowing %iKB of memory for compressed images.",
-			(bitmap_compressed_size >> 10)));
-	LOG(("Allowing %iKB of memory for uncompressed images.",
-			(bitmap_direct_size >> 10)));
+	bitmap_maintenance = bitmap_maintenance_priority = true;
 }
 
 
