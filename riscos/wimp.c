@@ -388,17 +388,45 @@ bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i) {
  *
  * \param  w	 window handle
  * \param  i	 icon handle
- * \param  state selected state
+ * \param  state shaded state
  */
 void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state) {
+	wimp_caret caret;
 	os_error *error;
-	if (ro_gui_get_icon_shaded_state(w, i) == state) return;
+
+	/* update the state */
+	if (ro_gui_get_icon_shaded_state(w, i) == state)
+		return;
 	error = xwimp_set_icon_state(w, i,
 			(state ? wimp_ICON_SHADED : 0), wimp_ICON_SHADED);
 	if (error) {
 		LOG(("xwimp_get_icon_state: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
+	}
+	if (!state) 
+		return;
+
+	/* ensure the caret is not in a shaded icon */
+	error = xwimp_get_caret_position(&caret);
+	if (error) {
+		LOG(("xwimp_get_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	if ((caret.w != w) || (caret.i != i))
+		return;
+	/* move the caret to the first avaiable writable */
+	if (ro_gui_set_caret_first(w))
+		return;
+	/* lose the caret */
+	error = xwimp_set_caret_position((wimp_w)-1, (wimp_i)-1, -1, -1, -1, -1);
+	if (error) {
+		LOG(("xwimp_set_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
 	}
 }
 
@@ -533,8 +561,11 @@ void ro_gui_set_window_title(wimp_w w, const char *text) {
 
 /**
  * Places the caret in the first available icon
+ *
+ * \w	the window to place the caret in
+ * \return true if the caret was placed, false otherwise
  */
-void ro_gui_set_caret_first(wimp_w w) {
+bool ro_gui_set_caret_first(wimp_w w) {
 	int icon, b;
 	wimp_window_state win_state;
 	wimp_window_info_base window;
@@ -548,10 +579,10 @@ void ro_gui_set_caret_first(wimp_w w) {
 		LOG(("xwimp_get_window_state: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
-		return;
+		return false;
 	}
 	if (!(win_state.flags & wimp_WINDOW_OPEN))
-		return;
+		return false;
 
 	/* get the window details for the icon count */
 	window.w = w;
@@ -560,7 +591,7 @@ void ro_gui_set_caret_first(wimp_w w) {
 		LOG(("xwimp_get_window_info: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
-		return;
+		return false;
 	}
 
 	/* work through all the icons */
@@ -572,7 +603,7 @@ void ro_gui_set_caret_first(wimp_w w) {
 			LOG(("xwimp_get_icon_state: 0x%x: %s",
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
-			return;
+			return false;
 		}
 
 		/* ignore if it's shaded or not writable */
@@ -591,8 +622,9 @@ void ro_gui_set_caret_first(wimp_w w) {
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
 		}
-		return;
+		return true;
 	}
+	return false;
 }
 
 

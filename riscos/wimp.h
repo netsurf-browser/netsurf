@@ -44,7 +44,7 @@ void ro_gui_set_icon_button_type(wimp_w w, wimp_i i, int type);
 void ro_gui_set_icon_sprite(wimp_w w, wimp_i i, osspriteop_area *area,
 		const char *name);
 void ro_gui_set_window_title(wimp_w w, const char *title);
-void ro_gui_set_caret_first(wimp_w w);
+bool ro_gui_set_caret_first(wimp_w w);
 void ro_gui_open_window_centre(wimp_w parent, wimp_w child);
 
 osspriteop_area *ro_gui_load_sprite_file(const char *pathname);
