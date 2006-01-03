@@ -26,15 +26,22 @@
 #define IMAGE_BACKGROUND_FIELD 6
 #define IMAGE_BACKGROUND_MENU 7
 #define IMAGE_CURRENT_DISPLAY 8
-#define IMAGE_DEFAULT_BUTTON 9
-#define IMAGE_CANCEL_BUTTON 10
-#define IMAGE_OK_BUTTON 11
+#define IMAGE_SPEED_TEXT 11
+#define IMAGE_SPEED_FIELD 12
+#define IMAGE_SPEED_DEC 13
+#define IMAGE_SPEED_INC 14
+#define IMAGE_SPEED_CS 15
+#define IMAGE_DISABLE_ANIMATION 16
+#define IMAGE_DEFAULT_BUTTON 17
+#define IMAGE_CANCEL_BUTTON 18
+#define IMAGE_OK_BUTTON 19
 
 static bool ro_gui_options_image_click(wimp_pointer *pointer);
 static bool ro_gui_options_image_ok(wimp_w w);
 static void ro_gui_options_image_redraw(wimp_draw *redraw);
 static void ro_gui_options_image_update(wimp_w w, wimp_i i);
 static void ro_gui_options_image_read(wimp_w w,unsigned int *bg, unsigned int *fg);
+static void ro_gui_options_update_shading(wimp_w w);
 
 static osspriteop_area *example_images;
 int example_users = 0;
@@ -66,12 +73,21 @@ bool ro_gui_options_image_initialise(wimp_w w) {
 					image_quality_menu->entries[i].
 						data.indirected_text.text);
 	}
+	ro_gui_set_icon_decimal(w, IMAGE_SPEED_FIELD, option_minimum_gif_delay, 2);
+	ro_gui_set_icon_selected_state(w, IMAGE_DISABLE_ANIMATION,
+			!option_animate_images);
+	ro_gui_options_update_shading(w);
 
 	/* register icons */
 	ro_gui_wimp_event_register_menu_gright(w, IMAGE_FOREGROUND_FIELD,
 			IMAGE_FOREGROUND_MENU, image_quality_menu);
 	ro_gui_wimp_event_register_menu_gright(w, IMAGE_BACKGROUND_FIELD,
 			IMAGE_BACKGROUND_MENU, image_quality_menu);
+	ro_gui_wimp_event_register_text_field(w, IMAGE_SPEED_TEXT);
+	ro_gui_wimp_event_register_numeric_field(w, IMAGE_SPEED_FIELD,
+			IMAGE_SPEED_INC, IMAGE_SPEED_DEC, 0, 6000, 10, 2);
+	ro_gui_wimp_event_register_checkbox(w, IMAGE_DISABLE_ANIMATION);
+	ro_gui_wimp_event_register_text_field(w, IMAGE_SPEED_CS);
 	ro_gui_wimp_event_register_redraw_window(w,
 			ro_gui_options_image_redraw);
 	ro_gui_wimp_event_register_mouse_click(w,
@@ -122,6 +138,7 @@ void ro_gui_options_image_redraw(wimp_draw *redraw) {
 	/* find the sprites */
 	if (example_images) {
 		ro_gui_options_image_read(redraw->w, &bg_tinct, &fg_tinct);
+		fg_tinct |= 0xeeeeee00;
 		xosspriteop_select_sprite(osspriteop_USER_AREA,
 				example_images, (osspriteop_id)"img_bg", &bg);
 		xosspriteop_select_sprite(osspriteop_USER_AREA,
@@ -173,6 +190,12 @@ bool ro_gui_options_image_click(wimp_pointer *pointer) {
   			ro_gui_set_icon_string(pointer->w, IMAGE_BACKGROUND_FIELD,
 					image_quality_menu->entries[2].
 						data.indirected_text.text);
+			ro_gui_set_icon_decimal(pointer->w, IMAGE_SPEED_FIELD,
+					10, 2);
+			ro_gui_set_icon_selected_state(pointer->w,
+					IMAGE_DISABLE_ANIMATION, false);
+		case IMAGE_DISABLE_ANIMATION:
+			ro_gui_options_update_shading(pointer->w);
 			break;
 		case IMAGE_CANCEL_BUTTON:
 			ro_gui_wimp_event_restore(pointer->w);
@@ -186,8 +209,23 @@ bool ro_gui_options_image_click(wimp_pointer *pointer) {
 	return false;
 }
 
+void ro_gui_options_update_shading(wimp_w w) {
+	bool shaded;
+
+	shaded = ro_gui_get_icon_selected_state(w, IMAGE_DISABLE_ANIMATION);
+	ro_gui_set_icon_shaded_state(w, IMAGE_SPEED_TEXT, shaded);
+	ro_gui_set_icon_shaded_state(w, IMAGE_SPEED_FIELD, shaded);
+	ro_gui_set_icon_shaded_state(w, IMAGE_SPEED_DEC, shaded);
+	ro_gui_set_icon_shaded_state(w, IMAGE_SPEED_INC, shaded);
+	ro_gui_set_icon_shaded_state(w, IMAGE_SPEED_CS, shaded);
+}
+
 bool ro_gui_options_image_ok(wimp_w w) {
 	ro_gui_options_image_read(w, &option_bg_plot_style, &option_fg_plot_style);
+	option_minimum_gif_delay = ro_gui_get_icon_decimal(w,
+			IMAGE_SPEED_FIELD, 2);
+	option_animate_images = !ro_gui_get_icon_selected_state(w,
+					IMAGE_DISABLE_ANIMATION);
 	ro_gui_save_options();
 	return true;
 }
