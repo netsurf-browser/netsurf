@@ -326,6 +326,13 @@ struct fetch * fetch_start(char *url, char *referer,
 		s[sizeof s - 1] = 0;
 		APPEND(fetch->headers, s);
 	}
+	/* Ensure that the Host header is set */
+	{
+		char s[80];
+		snprintf(s, sizeof s, "Host: %s", host);
+		s[sizeof s - 1] = 0;
+		APPEND(fetch->headers, s);
+	}
 
 	/* look for a fetch from the same host */
 	for (host_fetch = fetch_list;
@@ -821,12 +828,12 @@ bool fetch_process_headers(struct fetch *f)
 		type = "text/html";
 		if (strncmp(f->url, "file:///", 8) == 0) {
 			char *url_path;
-			url_path = curl_unescape(f->url + 8, (int) strlen(f->url) - 8);
+			url_path = curl_unescape(f->url + 7, (int) strlen(f->url) - 7);
 			type = fetch_filetype(url_path);
 			curl_free(url_path);
 		} else if (strncmp(f->url, "file:/", 6) == 0) {
 			char *url_path;
-			url_path = curl_unescape(f->url + 6, (int) strlen(f->url) - 6);
+			url_path = curl_unescape(f->url + 5, (int) strlen(f->url) - 5);
 			type = fetch_filetype(url_path);
 			curl_free(url_path);
 		}
