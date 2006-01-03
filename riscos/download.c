@@ -1183,7 +1183,21 @@ void ro_gui_download_send_dataload(struct gui_download_window *dw)
 	error = xwimp_send_message_to_window(wimp_USER_MESSAGE, message,
 			message->data.data_xfer.w,
 			message->data.data_xfer.i, 0);
-	if (error) {
+	/* The window we just attempted to send a message to may
+	 * have been closed before the message was sent. As we've
+	 * no clean way of detecting this, we'll just detect the
+	 * error return from the message send attempt and judiciously
+	 * ignore it.
+	 *
+	 * Ideally, we would have registered to receive Message_WindowClosed
+	 * and then cleared dw->send_dataload flag for the appropriate
+	 * window. Unfortunately, however, a long-standing bug in the
+	 * Pinboard module prevents this from being a viable solution.
+	 *
+	 * See http://groups.google.co.uk/group/comp.sys.acorn.tech/msg/e3fbf70d8393e6cf?dmode=source&hl=en
+	 * for the rather depressing details.
+	 */
+	if (error && error->errnum != error_WIMP_BAD_HANDLE) {
 		LOG(("xwimp_set_icon_state: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
