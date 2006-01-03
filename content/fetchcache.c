@@ -307,8 +307,20 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			 * destroyed in content_clean() */
 			c->status = CONTENT_STATUS_ERROR;
 			if (result == URL_FUNC_OK) {
-				msg_data.redirect = url;
-				content_broadcast(c, CONTENT_MSG_REDIRECT, msg_data);
+				/* check that we're not attempting to
+				 * redirect to the same URL */
+				if (strcasecmp(c->url, url) == 0) {
+					msg_data.error =
+						messages_get("BadRedirect");
+					content_broadcast(c,
+						CONTENT_MSG_ERROR, msg_data);
+				}
+				else {
+					msg_data.redirect = url;
+					content_broadcast(c,
+							CONTENT_MSG_REDIRECT,
+							msg_data);
+				}
 				free(url);
 			} else {
 				msg_data.error = messages_get("BadRedirect");
