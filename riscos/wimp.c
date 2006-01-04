@@ -35,6 +35,8 @@ static bool ro_gui_wimp_read_eig_factors(os_mode mode, int *xeig, int *yeig);
 static wimpextend_furniture_sizes furniture_sizes;
 static wimp_w furniture_window = NULL;
 
+unsigned char last_sprite_found[16];
+
 /**
  * Gets the horzontal scrollbar height
  *
@@ -691,6 +693,11 @@ bool ro_gui_wimp_sprite_exists(const char *sprite)
 {
 	os_error *error;
 
+	/* make repeated calls fast */
+	if (!strncmp(sprite, last_sprite_found, 16))
+		return true;
+
+	/* fallback if not known to exist */
 	error = xwimpspriteop_select_sprite(sprite, 0);
 	if (error) {
 		if (error->errnum != error_SPRITE_OP_DOESNT_EXIST) {
@@ -700,6 +707,7 @@ bool ro_gui_wimp_sprite_exists(const char *sprite)
 		}
 		return false;
 	}
+  	snprintf(last_sprite_found, 16, sprite);
 	return true;
 }
 
