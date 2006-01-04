@@ -331,15 +331,11 @@ void global_history_add(struct url_content *data) {
 	struct node *node;
 	bool before = false;
 	int visit_date;
-	int filetype;
 
 	assert(data);
 
 	visit_date = data->last_visit;
-	filetype = ro_content_filetype_from_type(data->type);
 
-	/*	Find/create the node to link into
-	*/
 	for (i = 0; i < global_history_base_node_count; i++) {
 		if (global_history_base_node_time[i] <= visit_date) {
 			parent = global_history_base_node[i];
@@ -354,46 +350,48 @@ void global_history_add(struct url_content *data) {
 				}
 			}
 			tree_link_node(link, parent, before);
-			tree_recalculate_node_positions(
-					global_history_tree->root);
-			if (!global_history_init)
+			if (!global_history_init) {
+				tree_recalculate_node_positions(
+						global_history_tree->root);
 				tree_redraw_area(global_history_tree,
 						0, 0, 16384, 16384);
+			}
 			break;
 		}
 	}
 
-	if (parent) {
-	  	/* find any previous occurance */
-	  	if (!global_history_init) {
-		  	node = ro_gui_global_history_find(data->url);
-		  	if (node) {
-		  	  	/* \todo: calculate old/new positions and redraw
-		  	  	 * only the relevant portion */
-				tree_redraw_area(global_history_tree,
-						0, 0, 16384, 16384);
-		  	  	tree_update_URL_node(node);
-		  	  	tree_delink_node(node);
-		  		tree_link_node(parent, node, false);
-				tree_handle_node_changed(global_history_tree,
-					node, false, true);
-/*				ro_gui_tree_scroll_visible(hotlist_tree,
-						&node->data);
-*/		  		return;
-		  	}
-		}
+	/* the entry is too old to care about */
+	if (!parent)
+		return;
 
-		/*	Add the node at the bottom
-		*/
-		node = tree_create_URL_node_shared(parent, data);
-		if (node && !global_history_init)
+  	/* find any previous occurance */
+  	if (!global_history_init) {
+	  	node = ro_gui_global_history_find(data->url);
+	  	if (node) {
+	  	  	/* \todo: calculate old/new positions and redraw
+	  	  	 * only the relevant portion */
 			tree_redraw_area(global_history_tree,
-					node->box.x - NODE_INSTEP,
-					0, NODE_INSTEP, 16384);
-		if (!global_history_init)
-			tree_handle_node_changed(global_history_tree, node,
-					true, false);
+					0, 0, 16384, 16384);
+	  	  	tree_update_URL_node(node);
+	  	  	tree_delink_node(node);
+	  		tree_link_node(parent, node, false);
+			tree_handle_node_changed(global_history_tree,
+				node, false, true);
+/*			ro_gui_tree_scroll_visible(hotlist_tree,
+					&node->data);
+*/	  		return;
+	  	}
+	}
 
+	/*	Add the node at the bottom
+	*/
+	node = tree_create_URL_node_shared(parent, data);
+	if ((!global_history_init) && (node)) {
+		tree_redraw_area(global_history_tree,
+				node->box.x - NODE_INSTEP,
+				0, NODE_INSTEP, 16384);
+		tree_handle_node_changed(global_history_tree, node,
+				true, false);
 	}
 }
 
