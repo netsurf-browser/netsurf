@@ -47,6 +47,7 @@ static struct hostname_data *last_hostname_found = NULL;
  */
 struct hostname_data *url_store_find_hostname(const char *url)
 {
+	struct hostname_data *first = url_store_hostnames;
 	struct hostname_data *search;
 	struct hostname_data *result;
 	url_func_result res;
@@ -54,36 +55,74 @@ struct hostname_data *url_store_find_hostname(const char *url)
 	int hostname_length;
 	int compare;
 	int fast_exit_counter = ITERATIONS_BEFORE_TEST;
+	char *host_test;
 
 	assert(url);
 
-	/* try to match the last hostname for http:// */
-	if ((last_hostname_found) &&
-			(!strncmp("http://", url, 7)) &&
-			(!strncmp(last_hostname_found->hostname, url + 7,
-				last_hostname_found->hostname_length))) {
-		return last_hostname_found;
-	}
+	/* as the URL is normalised, we optimise the hostname finding for http:// */
+	if (!strncmp("http://", url, 7)) {
+	  	/* check for duplicate hostname calls */
+		if ((last_hostname_found) &&
+				(!strncmp(last_hostname_found->hostname, url + 7,
+					last_hostname_found->hostname_length))) {
+			/* ensure it isn't comparing 'foo.com' to 'foo.com.au' etc */
+			if (url[last_hostname_found->hostname_length + 7] != '.')
+				return last_hostname_found;
+		}
+
+		/* check for a hostname match */
+	  	for (host_test = url + 7;
+	  			((*host_test > 32) && (*host_test != '/'));
+	  			*host_test++);
+		hostname_length = host_test - url - 7;
+		host_test = url + 7;
+		if ((last_hostname_found) &&
+				(strncmp(host_test,
+					last_hostname_found->hostname,
+					hostname_length) > 0))
+			first = last_hostname_found;
+		for (search = first; search; search = search->next) {
+			if (search->hostname_length == hostname_length) {
+				compare = strncmp(host_test, search->hostname,
+						hostname_length);
+				if (compare == 0) {
+					last_hostname_found = search;
+					return search;
+				} else if (compare < 0)
+					break;
+			}
+		}
 	
-	/* no match found, fallback */
-	res = url_host(url, &hostname);
-	switch (res) {
-		case URL_FUNC_OK:
-			break;
-		case URL_FUNC_NOMEM:
+	  	/* allocate a new hostname */
+		hostname = malloc(hostname_length + 1);
+		if (!hostname)
 			return NULL;
-		case URL_FUNC_FAILED:
-			hostname = strdup("file:/");	/* for 'file:/' */
-			if (!hostname)
+		strncpy(hostname, host_test, hostname_length);
+		hostname[hostname_length] = '\0';
+	} else {
+		/* no quick match found, fallback */
+		res = url_host(url, &hostname);
+		switch (res) {
+			case URL_FUNC_OK:
+				break;
+			case URL_FUNC_NOMEM:
 				return NULL;
-			break;
-		default:
-			assert(0);
+			case URL_FUNC_FAILED:
+				hostname = strdup("file:/");	/* for 'file:/' */
+				if (!hostname)
+					return NULL;
+				break;
+			default:
+				assert(0);
+		}
+		hostname_length = strlen(hostname);
 	}
-	hostname_length = strlen(hostname);
 
 	/* try to find a matching hostname fairly quickly */
-	for (search = url_store_hostnames; search; search = search->next) {
+	if ((last_hostname_found) &&
+			(strcmp(hostname, last_hostname_found->hostname) > 0))
+		first = last_hostname_found;
+	for (search = first; search; search = search->next) {
 		if ((fast_exit_counter <= 0) ||
 				(search->hostname_length == hostname_length)) {
 			compare = strcmp(hostname, search->hostname);
@@ -518,10 +557,13 @@ void url_store_load(const char *file) {
 #ifdef riscos
 			for (length = 0; s[length] > 32; length++);
 			s[length] = 0x00;
-			if (length > 11)
-				break;
-			result->data.thumbnail =
-					bitmap_create_file(s);
+			if (length == 11) {
+				/* ensure filename is 'XX.XX.XX.XX' */
+				if ((s[2] == '.') && (s[5] == '.') &&
+						(s[8] == '.'))
+					result->data.thumbnail =
+							bitmap_create_file(s);
+			}
 #endif
 			if (version == 104) {
 				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
@@ -570,9 +612,7 @@ void url_store_save(const char *file) {
 
 	/* file format version number */
 	fprintf(fp, "104\n");
-	for (search = url_store_hostnames; search && search->next;
-			search = search->next);
-	for (; search; search = search->previous) {
+	for (search = url_store_hostnames; search; search = search->next) {
 		url_count = 0;
 		for (url = search->url; url; url = url->next)
 			if ((url->data.last_visit > min_date) &&
