@@ -945,6 +945,7 @@ struct node *tree_create_folder_node(struct node *parent, const char *title) {
 	node->data.parent = node;
 	node->data.type = NODE_ELEMENT_TEXT;
 	node->data.text = squash_whitespace(title);
+	node->data.data = TREE_ELEMENT_TITLE;
 	tree_set_node_sprite_folder(node);
 	if (parent)
 		tree_link_node(parent, node, false);
