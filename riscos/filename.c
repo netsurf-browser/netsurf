@@ -174,6 +174,7 @@ static struct directory *ro_filename_create_directory(const char *prefix) {
 	int index;
 	struct directory *old_dir, *new_dir, *prev_dir = NULL;
 	char dir_prefix[16];
+	os_error *error;
 
 	/* get the lowest unique prefix, or use the provided one */
 	if (!prefix) {
@@ -219,6 +220,23 @@ static struct directory *ro_filename_create_directory(const char *prefix) {
 		prev_dir->next = new_dir;
 	}
 	
+	/* if the previous directory has the same parent then we can simply
+	 * create the child. */
+	if ((prev_dir) && (!strncmp(prev_dir->prefix, new_dir->prefix, 6))) {
+	  	new_dir->prefix[8] = '\0';
+		sprintf(ro_filename_directory, "%s.%s",
+				CACHE_FILENAME_PREFIX, new_dir->prefix);
+		new_dir->prefix[8] = '.';
+		error = xosfile_create_dir(ro_filename_directory, 0);
+		/* the user has probably deleted the parent directory whilst
+		 * we are running if there is an error, so we don't report this
+		 * yet and try to create the structure normally. */
+		if (!error)
+			return new_dir;
+		LOG(("xosfile_create_dir: 0x%x: %s",
+				error->errnum, error->errmess));
+	}
+	
 	/* create the directory structure */
 	sprintf(ro_filename_directory, "%s.", CACHE_FILENAME_PREFIX);
 	last_1 = ro_filename_directory + strlen(CACHE_FILENAME_PREFIX) + 1;
@@ -227,9 +245,14 @@ static struct directory *ro_filename_create_directory(const char *prefix) {
 		*last_1++ = *last_2++;
 		while (*last_2 && *last_2 != '.')
 			*last_1++ = *last_2++;
-		if (*last_2) {
+		if (*last_2) {		 	
 			last_1[0] = '\0';
-			xosfile_create_dir(ro_filename_directory, 0);
+			error = xosfile_create_dir(ro_filename_directory, 0);
+			if (error) {
+				LOG(("xosfile_create_dir: 0x%x: %s",
+						error->errnum, error->errmess));
+				return NULL;
+			}
 		}
 	}
 	return new_dir;
