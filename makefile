@@ -15,7 +15,7 @@
 #   gtk -- experimental gtk version
 #
 # "riscos", "riscos_small", "ncos", and "riscos_debug" can be compiled under
-# RISC OS, or cross-compiled using gccsdk.
+# RISC OS, or cross-compiled using GCCSDK.
 
 OBJECTS_COMMON = content.o fetch.o fetchcache.o	url_store.o	# content/
 OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
@@ -78,14 +78,14 @@ OBJS_DEBUG=$(OBJECTS_DEBUG:%.o=$(OBJDIR_DEBUG)/%.o)
 
 OBJS_DEBUGRO=$(OBJECTS_DEBUGRO:%.o=$(OBJDIR_RISCOS)/%.o)
 
-OBJDIR_GTK = $(shell gcc -dumpmachine)-gtk
+OBJDIR_GTK = $(shell /usr/bin/gcc -dumpmachine)-gtk
 SOURCES_GTK=$(OBJECTS_GTK:.o=.c)
 OBJS_GTK=$(OBJECTS_GTK:%.o=$(OBJDIR_GTK)/%.o)
 
 # Inclusion of platform specific files has to occur after the OBJDIR stuff as
 # that is refered to in the files
 
-OS = $(word 2,$(subst -, ,$(shell gcc -dumpmachine)))
+OS = $(word 2,$(subst -, ,$(shell /usr/bin/gcc -dumpmachine)))
 ifeq ($(OS),riscos)
 include riscos.mk
 else
@@ -137,7 +137,7 @@ nsrodebug,ff8: $(OBJS_DEBUGRO)
 
 gtk: nsgtk
 nsgtk: $(OBJS_GTK)
-	gcc -o nsgtk `pkg-config --cflags --libs gtk+-2.0 gthread-2.0` \
+	/usr/bin/gcc -o nsgtk `pkg-config --cflags --libs gtk+-2.0 gthread-2.0` \
 	$(LDFLAGS_DEBUG) $^
 
 netsurf.zip: $(RUNIMAGE)
@@ -155,7 +155,7 @@ $(OBJDIR_DEBUG)/%.o : %.c
 	@$(CC_DEBUG) -o $@ -c $(CFLAGS_DEBUG) $<
 $(OBJDIR_GTK)/%.o : %.c
 	@echo "==> $<"
-	@gcc -o $@ -c $(CFLAGS_GTK) $<
+	@/usr/bin/gcc -o $@ -c $(CFLAGS_GTK) $<
 
 # pattern rules for asm source
 $(OBJDIR_RISCOS)/%.o : %.s
