@@ -245,7 +245,6 @@ void gui_init(int argc, char** argv)
 	char path[40];
 	os_error *error;
 	int length;
-	struct theme_descriptor *descriptor = NULL;
 	char *nsdir_temp;
 
 	/* re-enable all FPU exceptions/traps except inexact operations,
@@ -361,26 +360,15 @@ void gui_init(int argc, char** argv)
 				error->errnum, error->errmess));
 		die(error->errmess);
 	}
+	ro_gui_theme_initialise(); /* initialise themes before dialogs */
 	ro_gui_dialog_init(); /* must be done after sprite loading */
 	ro_gui_download_init();
 	ro_gui_menu_init();
 	ro_gui_query_init();
-#ifdef WITH_AUTH
-	ro_gui_401login_init();
-#endif
 	ro_gui_history_init();
 	wimp_close_template();
-	ro_gui_tree_initialise(); /* must be done after sprite loading */
-	ro_gui_hotlist_initialise();
-	ro_gui_global_history_initialise();
 
-	/*	Load our chosen theme
-	*/
-	ro_gui_theme_initialise();
-	descriptor = ro_gui_theme_find(option_theme);
-	if (!descriptor)
-		descriptor = ro_gui_theme_find("Aletheia");
-	ro_gui_theme_apply(descriptor);
+	ro_gui_tree_initialise(); /* must be done after sprite loading */
 
 #ifndef ncos
 	ro_gui_icon_bar_create();

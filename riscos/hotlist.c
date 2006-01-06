@@ -14,20 +14,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <swis.h>
-#include "libxml/HTMLparser.h"
-#include "libxml/HTMLtree.h"
-#include "oslib/colourtrans.h"
-#include "oslib/dragasprite.h"
 #include "oslib/osfile.h"
 #include "oslib/wimp.h"
-#include "oslib/wimpspriteop.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/tree.h"
-#include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/theme.h"
-#include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/treeview.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/riscos/wimp_event.h"
@@ -40,38 +33,6 @@
 static void ro_gui_hotlist_visited(struct content *content, struct tree *tree,
 		struct node *node);
 static bool ro_gui_hotlist_click(wimp_pointer *pointer);
-
-/*	A basic window for the hotlist
-*/
-static wimp_window hotlist_window_definition = {
-	{0, 0, 600, 800},
-	0,
-	0,
-	wimp_TOP,
-	wimp_WINDOW_NEW_FORMAT | wimp_WINDOW_MOVEABLE | wimp_WINDOW_BACK_ICON |
-			wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_TITLE_ICON |
-			wimp_WINDOW_TOGGLE_ICON | wimp_WINDOW_SIZE_ICON |
-			wimp_WINDOW_VSCROLL | wimp_WINDOW_IGNORE_XEXTENT |
-			wimp_WINDOW_IGNORE_YEXTENT,
-	wimp_COLOUR_BLACK,
-	wimp_COLOUR_LIGHT_GREY,
-	wimp_COLOUR_LIGHT_GREY,
-	wimp_COLOUR_WHITE,
-	wimp_COLOUR_DARK_GREY,
-	wimp_COLOUR_MID_LIGHT_GREY,
-	wimp_COLOUR_CREAM,
-	0,
-	{0, -16384, 16384, 0},
-	wimp_ICON_TEXT | wimp_ICON_INDIRECTED | wimp_ICON_HCENTRED |
-			wimp_ICON_VCENTRED,
-	wimp_BUTTON_DOUBLE_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT,
-	wimpspriteop_AREA,
-	1,
-	1,
-	{""},
-	0,
-	{}
-};
 
 
 /*	The hotlist window, toolbar and plot origins
@@ -88,27 +49,13 @@ struct node *dialog_entry_node;
 
 void ro_gui_hotlist_initialise(void) {
 	FILE *fp;
-	const char *title;
-	os_error *error;
 	struct node *node;
 	struct url_content *data;
 
-	/*	Create our window
-	*/
-	title = messages_get("Hotlist");
-	hotlist_window_definition.title_data.indirected_text.text =
-			strdup(title);
-	hotlist_window_definition.title_data.indirected_text.validation =
-			(char *) -1;
-	hotlist_window_definition.title_data.indirected_text.size =
-			strlen(title);
-	error = xwimp_create_window(&hotlist_window_definition,
-			&hotlist_window);
-	if (error) {
-		LOG(("xwimp_create_window: 0x%x: %s",
-				error->errnum, error->errmess));
-		die(error->errmess);
-	}
+	/* create our window */
+	hotlist_window = ro_gui_dialog_create("tree");
+	ro_gui_set_window_title(hotlist_window,
+			messages_get("Hotlist"));
 	ro_gui_wimp_event_register_redraw_window(hotlist_window,
 			ro_gui_tree_redraw);
 	ro_gui_wimp_event_register_open_window(hotlist_window,

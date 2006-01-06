@@ -25,6 +25,7 @@
 #include "netsurf/render/font.h"
 #include "netsurf/riscos/configure.h"
 #include "netsurf/riscos/dialog.h"
+#include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
@@ -72,16 +73,28 @@ static bool ro_gui_dialog_zoom_apply(wimp_w w);
 
 void ro_gui_dialog_init(void)
 {
-	dialog_tooltip = ro_gui_dialog_create("tooltip");
-
-	/* configure window */
-	ro_gui_configure_initialise();
-
 	/* warning dialog */
 	dialog_warning = ro_gui_dialog_create("warning");
 	ro_gui_wimp_event_register_ok(dialog_warning, ICON_WARNING_CONTINUE,
 			NULL);
 	ro_gui_wimp_event_set_help_prefix(dialog_debug, "HelpWarning");
+
+	/* tooltip for history */
+	dialog_tooltip = ro_gui_dialog_create("tooltip");
+
+	/* configure window */
+	ro_gui_configure_initialise();
+	
+	/* 401 login window */
+#ifdef WITH_AUTH
+	ro_gui_401login_init();
+#endif
+	
+	/* hotlist window */
+	ro_gui_hotlist_initialise();
+	
+	/* global history window */
+	ro_gui_global_history_initialise();
 
 	/* theme installation */
 	dialog_theme_install = ro_gui_dialog_create("theme_inst");
