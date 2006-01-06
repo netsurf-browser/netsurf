@@ -55,6 +55,7 @@ static const char * theme_hotlist_icons[] = {"delete", "expand", "open",
 static const char * theme_history_icons[] = {"delete", "expand", "open",
 		"launch", NULL};
 
+static bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname);
 static void ro_gui_theme_redraw(wimp_draw *redraw);
 static void ro_gui_theme_get_available_in_dir(const char *directory);
 static void ro_gui_theme_free(struct theme_descriptor *descriptor);
@@ -117,7 +118,13 @@ static char theme_separator_name[] = "separator\0";
  * Initialise the theme handler
  */
 void ro_gui_theme_initialise(void) {
+	struct theme_descriptor *descriptor;
+
 	theme_descriptors = ro_gui_theme_get_available();
+	descriptor = ro_gui_theme_find(option_theme);
+	if (!descriptor)
+		descriptor = ro_gui_theme_find("Aletheia");
+	ro_gui_theme_apply(descriptor);
 }
 
 
@@ -169,20 +176,20 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 	struct theme_descriptor *test;
 	char pathname[256];
 
-	/*	Close any descriptors we've got so far
-	*/
+	/* close any descriptors we've got so far */
 	ro_gui_theme_free(theme_descriptors);
-
-	/* scan !NetSurf.Resources.* and our choices directory */
+	
+	/* add our default 'Aletheia' theme */
 	snprintf(pathname, 256, "%s.Resources", NETSURF_DIR);
 	pathname[255] = '\0';
-	ro_gui_theme_get_available_in_dir(pathname);
+	ro_gui_theme_add_descriptor(pathname, "Aletheia"); 
+
+	/* scan our choices directory */
 	snprintf(pathname, 256, "%s%s", THEME_PATH_R, THEME_LEAFNAME);
 	pathname[255] = '\0';
 	ro_gui_theme_get_available_in_dir(pathname);
 
-	/*	Sort alphabetically in a very rubbish way
-	*/
+	/* sort alphabetically in a very rubbish way */
 	if ((theme_descriptors) && (theme_descriptors->next)) {
 		current = theme_descriptors;
 		while ((test = current->next)) {
@@ -215,21 +222,13 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
  * \param directory  the directory to scan
  */
 static void ro_gui_theme_get_available_in_dir(const char *directory) {
-	struct theme_file_header file_header;
-	struct theme_descriptor *current;
-	char pathname[256];
 	int context = 0;
 	int read_count;
 	osgbpb_INFO(100) info;
-	int output_left;
-	os_fw file_handle;
 	os_error *error;
 
-	/*	Create a new set
-	*/
 	while (context != -1) {
-		/*	Get the next entry
-		*/
+	  	/* read some directory info */
 		error = xosgbpb_dir_entries_info(directory,
 				(osgbpb_info_list *) &info, 1, context,
 				sizeof(info), 0, &read_count, &context);
@@ -242,84 +241,93 @@ static void ro_gui_theme_get_available_in_dir(const char *directory) {
 			break;
 		}
 
-		/*	Check if we've read anything
-		*/
-		if (read_count == 0)
-			continue;
-
-		/*	Get our full filename
-		*/
-		snprintf(pathname, sizeof pathname, "%s.%s",
-				directory, info.name);
-		pathname[sizeof pathname - 1] = 0;
-
-		/*	Only process files
-		*/
-		if ((info.obj_type == fileswitch_IS_FILE) &&
-				(!ro_gui_theme_find(info.name))) {
-
-			/*	Get the header
-			*/
-			error = xosfind_openinw(osfind_NO_PATH, pathname, 0,
-					&file_handle);
-			if (error) {
-				LOG(("xosfind_openinw: 0x%x: %s",
-					error->errnum, error->errmess));
-				warn_user("FileError", error->errmess);
-				continue;
-			}
-			if (file_handle == 0)
-				continue;
-			error = xosgbpb_read_atw(file_handle,
-					(char *)&file_header,
-					sizeof (struct theme_file_header),
-					0, &output_left);
-			xosfind_closew(file_handle);
-			if (error) {
-				LOG(("xosbgpb_read_atw: 0x%x: %s",
-					error->errnum, error->errmess));
-				warn_user("FileError", error->errmess);
-				continue;
-			}
-			if (output_left > 0)
-				continue;	/* should try to read more? */
-
-			/*	Create a new theme descriptor
-			*/
-			current = (struct theme_descriptor *)calloc(1,
-					sizeof(struct theme_descriptor));
-			if (!current) {
-				LOG(("calloc failed"));
-				warn_user("NoMemory", 0);
-				return;
-			}
-
-			if (!ro_gui_theme_read_file_header(current,
-					&file_header)) {
-				free(current);
-				continue;
-			}
-
-			current->filename = malloc(strlen(pathname) + 1);
-			if (!current->filename) {
-				LOG(("malloc failed"));
-				warn_user("NoMemory", 0);
-				free(current);
-				return;
-			}
-			strcpy(current->filename, pathname);
-			current->leafname = current->filename +
-					strlen(directory) + 1;
-
-			/*	Link in our new descriptor
-			*/
-			if (theme_descriptors) {
-				current->next = theme_descriptors;
-				theme_descriptors->previous = current;
-			}
-			theme_descriptors = current;
-		}
+		/* only process files */
+		if ((read_count != 0) && (info.obj_type == fileswitch_IS_FILE))
+			ro_gui_theme_add_descriptor(directory, info.name);
 	}
+}
+
+
+/**
+ * Checks a theme is valid and adds it to the current list
+ *
+ * \param folder	the theme folder
+ * \param leafname	the theme leafname
+ * \return whether the theme was added
+ */
+bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname) {
+	struct theme_file_header file_header;
+	struct theme_descriptor *current;
+	int output_left;
+	os_fw file_handle;
+	os_error *error;
+	char *filename;
+	
+	/* create a full filename */
+	filename = malloc(strlen(folder) + strlen(leafname) + 2);
+	if (!filename) {
+	  	LOG(("No memory for malloc"));
+	  	warn_user("NoMemory", 0);
+	  	return false;
+	}
+	sprintf(filename, "%s.%s", folder, leafname);
+
+	/* get the header */
+	error = xosfind_openinw(osfind_NO_PATH, filename, 0,
+			&file_handle);
+	if (error) {
+		LOG(("xosfind_openinw: 0x%x: %s",
+			error->errnum, error->errmess));
+		warn_user("FileError", error->errmess);
+		free(filename);
+		return false;
+	}
+	if (file_handle == 0) {
+		free(filename);
+		return false;
+	}
+	error = xosgbpb_read_atw(file_handle,
+			(char *)&file_header,
+			sizeof (struct theme_file_header),
+			0, &output_left);
+	xosfind_closew(file_handle);
+	if (error) {
+		LOG(("xosbgpb_read_atw: 0x%x: %s",
+			error->errnum, error->errmess));
+		warn_user("FileError", error->errmess);
+		free(filename);
+		return false;
+	}
+	if (output_left > 0) {	/* should try to read more? */
+	  	free(filename);
+	  	return false;
+	}
+
+	/* create a new theme descriptor */
+	current = (struct theme_descriptor *)calloc(1,
+			sizeof(struct theme_descriptor));
+	if (!current) {
+		LOG(("calloc failed"));
+		warn_user("NoMemory", 0);
+		free(filename);
+		return false;
+	}
+	if (!ro_gui_theme_read_file_header(current, &file_header)) {
+		free(filename);
+		free(current);
+		return false;
+	}
+	current->filename = filename;
+	current->leafname = current->filename + strlen(folder) + 1;
+
+	/* link in our new descriptor at the head*/
+	if (theme_descriptors) {
+		current->next = theme_descriptors;
+		theme_descriptors->previous = current;
+	}
+	theme_descriptors = current;
+	return true;
+ 
 }
 
 
@@ -549,8 +557,6 @@ bool ro_gui_theme_apply(struct theme_descriptor *descriptor) {
 
 	/* apply the theme to all the current windows */
 	ro_gui_window_update_theme();
-
-	/* release the previous theme */
 	ro_gui_theme_close(theme_previous, false);
 	return true;
 }
