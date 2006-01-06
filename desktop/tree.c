@@ -828,6 +828,8 @@ void tree_delink_node(struct node *node) {
 	if (node->parent) {
 		if (node->parent->child == node)
 			node->parent->child = node->next;
+		if (node->parent->last_child == node)
+			node->parent->last_child = node->previous;
 		if (node->parent->child == NULL)
 			node->parent->expanded = false;
 		node->parent = NULL;
