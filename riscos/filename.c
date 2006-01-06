@@ -15,6 +15,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "oslib/hourglass.h"
 #include "oslib/osgbpb.h"
 #include "oslib/osfile.h"
 #include "netsurf/riscos/filename.h"
