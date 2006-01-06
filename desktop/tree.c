@@ -989,7 +989,7 @@ struct node *tree_create_leaf_node(struct node *parent, const char *title) {
  * \return the node created, or NULL for failure
  */
 struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
-		char *title) {
+		const char *title) {
 	struct node *node;
 	struct node_element *element;
 
@@ -1017,7 +1017,7 @@ struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
 	if (element)
 		element->text = strdup(data->url);
 
-	tree_update_URL_node(node, data);
+	tree_update_URL_node(node, NULL);
 	tree_recalculate_node(node, false);
 
 	return node;

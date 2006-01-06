@@ -118,7 +118,7 @@ struct node *tree_create_leaf_node(struct node *parent, const char *title);
 void tree_set_node_sprite(struct node *node, const char *sprite,
 		const char *expanded);
 struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
-		char *title);
+		const char *title);
 struct node *tree_create_URL_node_shared(struct node *parent, struct url_content *data);
 void tree_set_node_expanded(struct node *node, bool expanded);
 void tree_set_node_selected(struct tree *tree, struct node *node,
