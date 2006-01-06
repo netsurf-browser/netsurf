@@ -509,20 +509,56 @@ void url_store_load(const char *file) {
 		LOG(("Unsupported URL file version."));
 		return;
 	}
-	if (version > 104) {
+	if (version > 105) {
 		LOG(("Unknown URL file version."));
 		return;
 	}
 
+	last_hostname_found = NULL;
 	while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
-		if (s[strlen(s) - 1] == '\n')
-			s[strlen(s) - 1] = '\0';
-		hostname = url_store_find_hostname(s);
-		if (!hostname)
-			break;
+		/* get the hostname */
+	  	length = strlen(s) - 1;
+		if (s[length] == '\n')
+			s[length] = '\0';
+
+		/* skip data that has ended up with a host of '' */
+		if (length == 0) {
+			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+				break;
+			urls = atoi(s);
+			for (i = 0; i < (6 * urls); i++)
+				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+					break;
+			continue; 
+		}
+
+		/* add the host at the tail */
+		if (version == 105) {
+			hostname = malloc(sizeof *hostname);
+			if (!hostname)
+				die("Insufficient memory to create hostname");
+			hostname->hostname = strdup(s);
+			if (!hostname->hostname)
+				die("Insufficient memory to create hostname");
+			hostname->hostname_length = length;
+			hostname->url = 0;
+			hostname->previous = last_hostname_found;
+			if (!hostname->previous)
+				url_store_hostnames = hostname;
+			else
+				last_hostname_found->next = hostname;
+			hostname->next = 0;
+			last_hostname_found = hostname;
+		} else {
+			hostname = url_store_find_hostname(s);
+			if (!hostname)
+				break;
+		}
 		if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 			break;
 		urls = atoi(s);
+
+		/* load the non-corrupt data */
 		for (i = 0; i < urls; i++) {
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
@@ -530,11 +566,11 @@ void url_store_load(const char *file) {
 			s[length] = 0x00;
 			result = calloc(1, sizeof(struct url_data));
 			if (!result)
-				break;
+				die("Insufficient memory to create URL");
 			result->data.url_length = length;
 			result->data.url = strdup(s);
 			if (!result->data.url)
-				die("Insufficient memory");
+				die("Insufficient memory to create URL");
 			result->parent = hostname;
 			result->next = hostname->url;
 			if (hostname->url)
@@ -573,7 +609,7 @@ void url_store_load(const char *file) {
 							bitmap_create_file(s);
 			}
 #endif
-			if (version == 104) {
+			if (version >= 104) {
 				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 					break;
 				for (length = 0; s[length] >= 32; length++);
@@ -597,7 +633,6 @@ void url_store_save(const char *file) {
 	struct hostname_data *search;
 	struct url_data *url;
 	int url_count;
-	char *normal = NULL;
 	const char *thumb_file;
 	char *s;
 	int i;
@@ -616,10 +651,9 @@ void url_store_save(const char *file) {
 
 	/* get the minimum date for expiry */
 	min_date = time(NULL) - (60 * 60 * 24) * option_expire_url;
-	LOG(("%d", (int) min_date));
 
 	/* file format version number */
-	fprintf(fp, "104\n");
+	fprintf(fp, "105\n");
 	for (search = url_store_hostnames; search; search = search->next) {
 		url_count = 0;
 		for (url = search->url; url; url = url->next)
@@ -629,10 +663,8 @@ void url_store_save(const char *file) {
 						MAXIMUM_URL_LENGTH)) {
 				url_count++;
 			}
-		free(normal);
-		normal = url_store_match_string(search->hostname);
-		if ((url_count > 0) && (normal)) {
-			fprintf(fp, "%s\n%i\n", normal, url_count);
+		if (url_count > 0) {
+			fprintf(fp, "%s\n%i\n", search->hostname, url_count);
 			for (url = search->url; url && url->next;
 					url = url->next);
 			for (; url; url = url->previous)
