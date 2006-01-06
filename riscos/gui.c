@@ -1355,10 +1355,6 @@ void ro_msg_dataload(wimp_message *message)
 			message->data.data_xfer.w)) {
 		data = url_store_find(url);
 		if (data) {
-			if ((title) && (!data->title))
-				data->title = title;
-			if (!title)
-				title = strdup(url);
 			ro_gui_tree_get_tree_coordinates(hotlist_tree,
 					message->data.data_xfer.pos.x,
 					message->data.data_xfer.pos.y,
@@ -1369,7 +1365,7 @@ void ro_msg_dataload(wimp_message *message)
 			tree_handle_node_changed(hotlist_tree, node, false, true);
 			tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP, 0,
 					NODE_INSTEP, 16384);
-			if (!title)
+			if ((!title) && (!data->title))
 				ro_gui_tree_start_edit(hotlist_tree, &node->data, NULL);
 		}
 	} else {
