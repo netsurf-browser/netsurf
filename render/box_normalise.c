@@ -225,6 +225,8 @@ bool box_normalise_table(struct box *table, struct content * c)
 				table->children = row_group;
 			else
 				child->prev->next = row_group;
+			if (table->last == child)
+				table->last = row_group;
 			row_group->prev = child->prev;
 			while (child != 0 && (
 					child->type == BOX_BLOCK ||
