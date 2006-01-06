@@ -140,6 +140,28 @@ void ro_gui_hotlist_initialise(void) {
 			tree_create_URL_node(node, data,
 				messages_get("HotlistHomepage"));
 		}
+		data = url_store_find("http://netsurf.sourceforge.net/builds/");
+		if (data) {
+			tree_create_URL_node(node, data,
+				messages_get("HotlistTestBuild"));
+		}
+		data = url_store_find("http://netsurf.sourceforge.net/docs");
+		if (data) {
+			tree_create_URL_node(node, data,
+				messages_get("HotlistDocumentation"));
+		}
+		data = url_store_find("http://sourceforge.net/tracker/"
+						"?atid=464312&group_id=51719");
+		if (data) {
+			tree_create_URL_node(node, data,
+				messages_get("HotlistBugTracker"));
+		}
+		data = url_store_find("http://sourceforge.net/tracker/"
+						"?atid=464315&group_id=51719");
+		if (data) {
+			tree_create_URL_node(node, data,
+				messages_get("HotlistFeatureRequest"));
+		}
 		tree_initialise(hotlist_tree);
 	} else {
 		fclose(fp);
@@ -168,7 +190,8 @@ void ro_gui_hotlist_initialise(void) {
 void ro_gui_hotlist_save(void) {
 	os_error *error;
 
-	if (!hotlist_tree) return;
+	if (!hotlist_tree)
+		return;
 
 	/*	Save to our file
 	*/

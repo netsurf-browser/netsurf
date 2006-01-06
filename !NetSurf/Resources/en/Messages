@@ -245,6 +245,9 @@ EditFolder:Rename directory
 #
 HotlistHomepage:NetSurf homepage
 HotlistTestBuild:NetSurf test builds
+HotlistDocumentation:NetSurf documentation
+HotlistBugTracker:NetSurf bug tracker
+HotlistFeatureRequest:NetSurf feature requests
 
 
 # Global history user interface tokens

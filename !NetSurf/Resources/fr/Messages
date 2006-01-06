@@ -245,6 +245,9 @@ EditFolder:Éditer le dossier
 #
 HotlistHomepage:Page d'accueil de NetSurf
 HotlistTestBuild:Versions test de NetSurf
+HotlistDocumentation:NetSurf documentation
+HotlistBugTracker:NetSurf bug tracker
+HotlistFeatureRequest:NetSurf feature requests
 
 
 # Global history user interface tokens

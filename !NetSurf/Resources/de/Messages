@@ -245,6 +245,9 @@ EditFolder:Verzeichnis umbenennen
 #
 HotlistHomepage:NetSurf Homepage
 HotlistTestBuild:NetSurf Testversionen
+HotlistDocumentation:NetSurf documentation
+HotlistBugTracker:NetSurf bug tracker
+HotlistFeatureRequest:NetSurf feature requests
 
 
 # Global history user interface tokens

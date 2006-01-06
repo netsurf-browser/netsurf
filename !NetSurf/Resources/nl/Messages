@@ -246,6 +246,9 @@ EditFolder:Map hernoemen
 #
 HotlistHomepage:NetSurf homepage
 HotlistTestBuild:NetSurf test versie
+HotlistDocumentation:NetSurf documentation
+HotlistBugTracker:NetSurf bug tracker
+HotlistFeatureRequest:NetSurf feature requests
 
 
 # Global history user interface tokens
