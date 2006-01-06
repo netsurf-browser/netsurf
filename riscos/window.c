@@ -44,7 +44,6 @@
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/thumbnail.h"
-#include "netsurf/riscos/treeview.h"
 #include "netsurf/riscos/ucstables.h"
 #include "netsurf/riscos/url_complete.h"
 #include "netsurf/riscos/wimp.h"

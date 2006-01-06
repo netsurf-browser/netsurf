@@ -17,7 +17,6 @@
 #include "oslib/dragasprite.h"
 #include "oslib/os.h"
 #include "oslib/osgbpb.h"
-#include "oslib/osgbpb.h"
 #include "oslib/osfile.h"
 #include "oslib/osfind.h"
 #include "oslib/osspriteop.h"
