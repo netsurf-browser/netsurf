@@ -143,6 +143,16 @@ wimp_t task_handle;	/**< RISC OS wimp task handle. */
 static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 osspriteop_area *gui_sprites;	   /**< Sprite area containing pointer and hotlist sprites */
 
+/** Previously registered signal handlers */
+static struct {
+	void (*sigabrt)(int);
+	void (*sigfpe)(int);
+	void (*sigill)(int);
+	void (*sigint)(int);
+	void (*sigsegv)(int);
+	void (*sigterm)(int);
+} prev_sigs;
+
 /** Accepted wimp user messages. */
 static wimp_MESSAGE_LIST(38) task_messages = { {
 	message_HELP_REQUEST,
@@ -250,12 +260,19 @@ void gui_init(int argc, char** argv)
 	xos_byte(osbyte_IN_KEY, 0, 0xff, &os_version, NULL);
 
 	atexit(ro_gui_cleanup);
-	signal(SIGABRT, ro_gui_signal);
-	signal(SIGFPE, ro_gui_signal);
-	signal(SIGILL, ro_gui_signal);
-	signal(SIGINT, ro_gui_signal);
-	signal(SIGSEGV, ro_gui_signal);
-	signal(SIGTERM, ro_gui_signal);
+	prev_sigs.sigabrt = signal(SIGABRT, ro_gui_signal);
+	prev_sigs.sigfpe = signal(SIGFPE, ro_gui_signal);
+	prev_sigs.sigill = signal(SIGILL, ro_gui_signal);
+	prev_sigs.sigint = signal(SIGINT, ro_gui_signal);
+	prev_sigs.sigsegv = signal(SIGSEGV, ro_gui_signal);
+	prev_sigs.sigterm = signal(SIGTERM, ro_gui_signal);
+
+	if (prev_sigs.sigabrt == SIG_ERR || prev_sigs.sigfpe == SIG_ERR ||
+			prev_sigs.sigill == SIG_ERR ||
+			prev_sigs.sigint == SIG_ERR ||
+			prev_sigs.sigsegv == SIG_ERR ||
+			prev_sigs.sigterm == SIG_ERR)
+		die("Failed registering signal handlers");
 
 	/* create our choices directories */
 #ifndef ncos
@@ -583,6 +600,8 @@ void gui_quit(void)
 void ro_gui_signal(int sig)
 {
 	struct content *c;
+	void (*prev_handler)(int);
+
 	if (sig == SIGFPE || sig == SIGABRT) {
 		os_colour old_sand, old_glass;
 
@@ -599,7 +618,44 @@ void ro_gui_signal(int sig)
 		xhourglass_off();
 	}
 	ro_gui_cleanup();
-	raise(sig);
+
+	/* Get previous handler of this signal */
+	switch (sig) {
+		case SIGABRT:
+			prev_handler = prev_sigs.sigabrt;
+			break;
+		case SIGFPE:
+			prev_handler = prev_sigs.sigfpe;
+			break;
+		case SIGILL:
+			prev_handler = prev_sigs.sigill;
+			break;
+		case SIGINT:
+			prev_handler = prev_sigs.sigint;
+			break;
+		case SIGSEGV:
+			prev_handler = prev_sigs.sigsegv;
+			break;
+		case SIGTERM:
+			prev_handler = prev_sigs.sigterm;
+			break;
+		default:
+			abort();
+	}
+
+	if (prev_handler != SIG_IGN && prev_handler != SIG_DFL) {
+		/* User-registered handler, so call it direct */
+		prev_handler(sig);
+	} else if (prev_handler == SIG_DFL) {
+		/* Default handler so set handler to that and raise() */
+		prev_handler = signal(sig, SIG_DFL);
+		if (prev_handler == SIG_ERR)
+			abort();
+		raise(sig);
+	}
+	/* If we reach here, previous handler was either SIG_IGN or
+	 * the user-defined handler returned. In either case, we have
+	 * nothing to do */
 }
 
 
