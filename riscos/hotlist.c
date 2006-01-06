@@ -225,7 +225,7 @@ void ro_gui_hotlist_visited(struct content *content, struct tree *tree,
 			element = tree_find_element(node, TREE_ELEMENT_URL);
 			if ((element) && (!strcmp(element->text,
 					content->url))) {
-				tree_update_URL_node(node);
+				tree_update_URL_node(node, NULL);
 				tree_handle_node_changed(tree, node, true,
 						false);
 			}

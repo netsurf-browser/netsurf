@@ -50,7 +50,8 @@ static bool ro_gui_global_history_click(wimp_pointer *pointer);
 static void ro_gui_global_history_initialise_nodes(void);
 static void ro_gui_global_history_initialise_node(const char *title,
 		time_t base, int days_back);
-struct node *ro_gui_global_history_find(const char *url);
+static struct node *ro_gui_global_history_find(const char *url);
+
 
 /*	A basic window for the history
 */
@@ -372,7 +373,7 @@ void global_history_add(struct url_content *data) {
 	  	  	 * only the relevant portion */
 			tree_redraw_area(global_history_tree,
 					0, 0, 16384, 16384);
-	  	  	tree_update_URL_node(node);
+	  	  	tree_update_URL_node(node, data);
 	  	  	tree_delink_node(node);
 	  		tree_link_node(parent, node, false);
 			tree_handle_node_changed(global_history_tree,

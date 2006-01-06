@@ -157,10 +157,21 @@ void tree_redraw_area(struct tree *tree, int x, int y, int width, int height) {
  * \param x	 the width of the line
  * \param x	 the height of the line
  */
-void tree_draw_line(struct tree *tree, int x, int y, int width, int height) {
+void tree_draw_line(int x, int y, int width, int height) {
 	os_error *error;
+	int y0, y1;
 
-	assert(tree);
+	/* stop the 16-bit co-ordinate system from causing redraw errors */
+	y1 = ro_gui_tree_origin_y - y;
+	if (y1 < 0)
+		return;
+	y0 = y1 - height;
+	if (y0 > 16384)
+		return;
+	if (y0 < 0)
+		y0 = 0;
+	if (y1 > 16384)
+		y1 = 16384;
 
 	error = xcolourtrans_set_gcol((os_colour)0x88888800, 0, os_ACTION_OVERWRITE,
 			0, 0);
@@ -170,11 +181,9 @@ void tree_draw_line(struct tree *tree, int x, int y, int width, int height) {
 		warn_user("MiscError", error->errmess);
 		return;
 	}
-	error = xos_plot(os_MOVE_TO, ro_gui_tree_origin_x + x,
-			ro_gui_tree_origin_y - y);
+	error = xos_plot(os_MOVE_TO, ro_gui_tree_origin_x + x, y0);
 	if (!error)
-		xos_plot(os_PLOT_TO, ro_gui_tree_origin_x + x + width,
-				ro_gui_tree_origin_y - y - height);
+		xos_plot(os_PLOT_TO, ro_gui_tree_origin_x + x + width, y1);
 	if (error) {
 		LOG(("xos_plot: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -308,19 +317,19 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 						0xffffff,
 						false, false, false,
 						IMAGE_PLOT_TINCT_OPAQUE);
-				tree_draw_line(tree, element->box.x,
+				tree_draw_line(element->box.x,
 						element->box.y,
 						element->box.width - 1,
 						0);
-				tree_draw_line(tree, element->box.x,
+				tree_draw_line(element->box.x,
 						element->box.y,
 						0,
 						element->box.height - 3);
-				tree_draw_line(tree, element->box.x,
+				tree_draw_line(element->box.x,
 						element->box.y + element->box.height - 3,
 						element->box.width - 1,
 						0);
-				tree_draw_line(tree, element->box.x + element->box.width - 1,
+				tree_draw_line(element->box.x + element->box.width - 1,
 						element->box.y,
 						0,
 						element->box.height - 3);
@@ -514,9 +523,9 @@ void tree_set_node_sprite_folder(struct node *node) {
  * The internal node dimensions are not updated.
  *
  * \param node  the node to update
+ * \param data  the data the node is linked to, or NULL for unlinked data
  */
-void tree_update_URL_node(struct node *node) {
-	struct url_content *data;
+void tree_update_URL_node(struct node *node, struct url_content *data) {
 	struct node_element *element;
 	char buffer[256];
 	
@@ -525,17 +534,19 @@ void tree_update_URL_node(struct node *node) {
 	element = tree_find_element(node, TREE_ELEMENT_URL);
 	if (!element)
 		return;
-	data = url_store_find(element->text);
-	if (!data)
-		return;
-		
-	/* data may have moved */
-	if (!node->editable) {
+	if (data) {
+	  	/* node is linked, update */
 		if (data->title)
 			node->data.text = data->title;
 		else
 			node->data.text = data->url;
+	} else {
+	  	/* node is not link, find data */
+		data = url_store_find(element->text);
+		if (!data)
+			return;
 	}
+	
 	if (element) {
 		sprintf(buffer, "small_%.3x", ro_content_filetype_from_type(data->type));
 		if (ro_gui_wimp_sprite_exists(buffer))

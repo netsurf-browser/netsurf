@@ -714,17 +714,17 @@ void tree_draw_node(struct tree *tree, struct node *node, int clip_x, int clip_y
 	for (; node; node = node->next) {
 		if (node->box.y > y_max) return;
 		if (node->next)
-			tree_draw_line(tree, node->box.x - (NODE_INSTEP / 2),
+			tree_draw_line(node->box.x - (NODE_INSTEP / 2),
 					node->box.y + (40 / 2), 0,
 					node->next->box.y - node->box.y);
 		if ((node->box.x < x_max) && (node->box.y < y_max) &&
 				(node->box.x + node->box.width + NODE_INSTEP >= clip_x) &&
 				(node->box.y + node->box.height >= clip_y)) {
 			if ((node->expanded) && (node->child))
-				tree_draw_line(tree, node->box.x + (NODE_INSTEP / 2),
+				tree_draw_line(node->box.x + (NODE_INSTEP / 2),
 						node->data.box.y + node->data.box.height, 0,
 						(40 / 2));
-			tree_draw_line(tree, node->box.x - (NODE_INSTEP / 2),
+			tree_draw_line(node->box.x - (NODE_INSTEP / 2),
 					node->data.box.y +
 					node->data.box.height - (40 / 2),
 					(NODE_INSTEP / 2) - 4, 0);
@@ -1017,7 +1017,7 @@ struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
 	if (element)
 		element->text = strdup(data->url);
 
-	tree_update_URL_node(node);
+	tree_update_URL_node(node, data);
 	tree_recalculate_node(node, false);
 
 	return node;
@@ -1061,7 +1061,7 @@ struct node *tree_create_URL_node_shared(struct node *parent, struct url_content
 	if (element)
 		element->text = data->url;
 
-	tree_update_URL_node(node);
+	tree_update_URL_node(node, data);
 	tree_recalculate_node(node, false);
 
 	return node;

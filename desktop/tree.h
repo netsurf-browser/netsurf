@@ -138,11 +138,11 @@ struct node *tree_get_link_details(struct tree *tree, int x, int y,
 /* Platform specific code */
 void tree_initialise_redraw(struct tree *tree);
 void tree_redraw_area(struct tree *tree, int x, int y, int width, int height);
-void tree_draw_line(struct tree *tree, int x, int y, int width, int height);
+void tree_draw_line(int x, int y, int width, int height);
 void tree_draw_node_element(struct tree *tree, struct node_element *element);
 void tree_draw_node_expansion(struct tree *tree, struct node *node);
 void tree_recalculate_node_element(struct node_element *element);
-void tree_update_URL_node(struct node *node);
+void tree_update_URL_node(struct node *node, struct url_content *data);
 void tree_resized(struct tree *tree);
 void tree_set_node_sprite_folder(struct node *node);
 
