@@ -74,13 +74,19 @@ void ro_gui_configure_initialise(void) {
 	ro_gui_configure_register("con_theme",
 			ro_gui_options_theme_initialise,
 			ro_gui_options_theme_finalise);
+	ro_gui_configure_register("con_cache",
+			ro_gui_options_cache_initialise,
+			ro_gui_wimp_event_finalise);
+	ro_gui_configure_register("con_home",
+			ro_gui_options_home_initialise,
+			ro_gui_wimp_event_finalise);
 }
 
 void ro_gui_configure_show(void) {
   	int width, height;
 
-	width = configure_icon_width * 5;
-	height = (configure_icons % 5) * configure_icon_height;
+	width = configure_icon_width << 2;
+	height = ((configure_icons + 3) >> 2) * configure_icon_height;
 	ro_gui_dialog_open_top(configure_window, NULL, width, height);
 }
 
