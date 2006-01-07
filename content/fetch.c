@@ -858,6 +858,7 @@ struct curl_httppost *fetch_post_convert(struct form_successful_control *control
 	struct curl_httppost *post = 0, *last = 0;
 	char *mimetype = 0;
 	char *leafname = 0, *temp = 0;
+	int leaflen;
 
 	for (; control; control = control->next) {
 		if (control->file) {
@@ -868,13 +869,21 @@ struct curl_httppost *fetch_post_convert(struct form_successful_control *control
 				temp = control->value; /* already leafname */
 			else
 				temp += 1;
-			leafname = calloc(strlen(temp)+5, sizeof(char));
+
+			leaflen = strlen(temp);
+
+			leafname = malloc(leaflen + 1);
 			if (!leafname) {
-				LOG(("calloc failed"));
+				LOG(("malloc failed"));
 				free(mimetype);
 				continue;
 			}
-			__unixify_std(temp, leafname, strlen(temp), 0xfff);
+			memcpy(leafname, temp, leaflen + 1);
+
+			/* and s/\//\./g */
+			for (temp = leafname; *temp; temp++)
+				if (*temp == '/')
+					*temp = '.';
 #else
 			leafname = strrchr(control->value, '/') ;
 			if (!leafname)
