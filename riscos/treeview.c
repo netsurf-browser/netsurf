@@ -536,12 +536,14 @@ void tree_update_URL_node(struct node *node, struct url_content *data) {
 		return;
 	if (data) {
 	  	/* node is linked, update */
+	  	assert(!node->editable);
 		if (data->title)
 			node->data.text = data->title;
 		else
 			node->data.text = data->url;
 	} else {
 	  	/* node is not link, find data */
+	  	assert(node->editable);
 		data = url_store_find(element->text);
 		if (!data)
 			return;
@@ -1358,14 +1360,17 @@ void ro_gui_tree_move_drag_end(wimp_dragged *drag) {
 	  	/* try to drop into a browser window */
 		single = tree_get_selected_node(ro_gui_tree_current_drag_tree->root->child);
 	  	element = tree_find_element(single, TREE_ELEMENT_URL);
-		if ((single) && (element)) {
+	  	if (!element)
+	  		return;
+	  	if (single) {
+	  		/* \todo:send datasave for element */
 			g = ro_gui_window_lookup(pointer.w);
 			if (g)
 				browser_window_go(g->bw, element->text, 0);
 			return;
-
-		}
-		/* todo: handle export */
+	  	} else {
+	  	  	/* \todo:update save.c to handle multiple concurrent saves */
+	  	}
 		return;
 	}
 
