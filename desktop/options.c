@@ -58,6 +58,8 @@ char *option_accept_language = 0;
 bool option_ssl_verify_certificates = true;
 /** Preferred maximum size of memory cache / bytes. */
 int option_memory_cache_size = 2 * 1024 * 1024;
+/** Preferred expiry age of disc cache / days. */
+int option_disc_cache_age = 28;
 /** Whether to block advertisements */
 bool option_block_ads = false;
 /** Minimum GIF animation delay */
@@ -90,6 +92,7 @@ struct {
 	{ "accept_language", OPTION_STRING,  &option_accept_language },
 	{ "ssl_verify_certificates", OPTION_BOOL, &option_ssl_verify_certificates },
 	{ "memory_cache_size", OPTION_INTEGER, &option_memory_cache_size },
+	{ "disc_cache_age", OPTION_INTEGER, &option_disc_cache_age },
 	{ "block_advertisements", OPTION_BOOL, &option_block_ads },
 	{ "minimum_gif_delay",      OPTION_INTEGER, &option_minimum_gif_delay },
 	{ "send_referer",    OPTION_BOOL,    &option_send_referer },

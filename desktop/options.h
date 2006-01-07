@@ -40,6 +40,7 @@ extern int option_font_min_size;
 extern char *option_accept_language;
 extern bool option_ssl_verify_certificates;
 extern int option_memory_cache_size;
+extern int option_disc_cache_age;
 extern bool option_block_ads;
 extern int option_minimum_gif_delay;
 extern bool option_send_referer;
