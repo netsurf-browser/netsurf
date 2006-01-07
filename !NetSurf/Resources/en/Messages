@@ -700,6 +700,8 @@ con_fonts:Fonts
 con_memory:Memory
 con_image:Images
 con_theme:Themes
+con_cache:Cache
+con_home:Home page
 
 
 # Unused tokens
