@@ -25,6 +25,7 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpextend.h"
 #include "oslib/wimpspriteop.h"
+#include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
@@ -1773,6 +1774,8 @@ void ro_gui_theme_toggle_edit(struct toolbar *toolbar) {
 			LOG(("Unable to create toolbar editor"));
 			return;
 		}
+		ro_gui_wimp_event_set_user_data(toolbar->editor->toolbar_handle,
+				ro_gui_wimp_event_get_user_data(toolbar->toolbar_handle));
 		ro_gui_theme_update_toolbar(toolbar->descriptor, toolbar);
 		switch (toolbar->type) {
 			case THEME_BROWSER_TOOLBAR:
