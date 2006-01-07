@@ -19,11 +19,13 @@
 #include "oslib/wimpspriteop.h"
 #include "netsurf/content/url_store.h"
 #include "netsurf/desktop/tree.h"
+#include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/treeview.h"
+#include "netsurf/riscos/wimp.h"
 #include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/log.h"
@@ -61,8 +63,6 @@ struct tree *global_history_tree;
 void ro_gui_global_history_initialise(void) {
 	char s[MAXIMUM_URL_LENGTH];
 	FILE *fp;
-	const char *title;
-	os_error *error;
 	struct hostname_data *hostname;
 	struct url_data *url;
 	int url_count = 0;
