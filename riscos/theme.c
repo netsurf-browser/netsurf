@@ -176,13 +176,18 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 	struct theme_descriptor *test;
 	char pathname[256];
 
-	/* close any descriptors we've got so far */
+	/* close any descriptors we've got so far
+	 * _except_ the current theme */
 	ro_gui_theme_free(theme_descriptors);
-	
-	/* add our default 'Aletheia' theme */
-	snprintf(pathname, 256, "%s.Resources", NETSURF_DIR);
-	pathname[255] = '\0';
-	ro_gui_theme_add_descriptor(pathname, "Aletheia"); 
+
+	assert(theme_descriptors == theme_current);
+
+	if (strcmp(theme_current->name, "Aletheia") != 0) {
+		/* add our default 'Aletheia' theme */
+		snprintf(pathname, 256, "%s.Resources", NETSURF_DIR);
+		pathname[255] = '\0';
+		ro_gui_theme_add_descriptor(pathname, "Aletheia");
+	}
 
 	/* scan our choices directory */
 	snprintf(pathname, 256, "%s%s", THEME_PATH_R, THEME_LEAFNAME);
@@ -212,6 +217,7 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 		while (theme_descriptors->previous)
 			theme_descriptors = theme_descriptors->previous;
 	}
+
 	return theme_descriptors;
 }
 
@@ -262,7 +268,7 @@ bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname) {
 	os_fw file_handle;
 	os_error *error;
 	char *filename;
-	
+
 	/* create a full filename */
 	filename = malloc(strlen(folder) + strlen(leafname) + 2);
 	if (!filename) {
@@ -320,6 +326,13 @@ bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname) {
 	current->filename = filename;
 	current->leafname = current->filename + strlen(folder) + 1;
 
+	if (strcmp(current->name, theme_current->name) == 0) {
+		/* Don't add if this theme matches the current one */
+		free(current->filename);
+		free(current);
+		return false;
+	}
+
 	/* link in our new descriptor at the head*/
 	if (theme_descriptors) {
 		current->next = theme_descriptors;
@@ -327,7 +340,7 @@ bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname) {
 	}
 	theme_descriptors = current;
 	return true;
- 
+
 }
 
 
@@ -504,7 +517,7 @@ bool ro_gui_theme_open(struct theme_descriptor *descriptor, bool list) {
 			}
 			if (strncmp(sprite_name, "throbber", 8))
 				continue;
-			
+
 			/* get the max sprite width/height */
 			error = xosspriteop_read_sprite_info(
 					osspriteop_USER_AREA,
@@ -1206,7 +1219,7 @@ bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent) {
 		}
 		return true;
 	}
-	
+
 	error = xwimp_close_window(toolbar->toolbar_handle);
 	if (error) {
 		LOG(("xwimp_close_window: 0x%x: %s",
