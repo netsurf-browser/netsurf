@@ -520,7 +520,7 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i) {
 		warn_user("MenuError", error->errmess);
 		return;
 	}
-	
+
 	ro_gui_menu_create(menu,
 			state.visible.x0 + icon_state.icon.extent.x1 + 64,
 			state.visible.y1 + icon_state.icon.extent.y1 -
@@ -559,7 +559,7 @@ void ro_gui_menu_closed(bool cleanup) {
 			   the text doesn't remain highlighted */
 			if (ro_gui_menu_search_window_menu)
 				ro_gui_search_end(dialog_search);
-	
+
 			if (tree)
 				ro_gui_tree_menu_closed(tree);
 		}
@@ -605,7 +605,7 @@ void ro_gui_menu_selection(wimp_selection *selection) {
 	if (!current_menu)
 		return
 	assert(current_menu_window);
-	
+
 	/* get the menu entry and associated action */
 	menu_entry = &current_menu->entries[selection->items[0]];
 	for (i = 1; selection->items[i] != -1; i++)
@@ -932,7 +932,7 @@ void ro_gui_menu_prepare_languages(bool accept, const char *lang)
 	for (entry = menu->entries; entry; entry = entry->next) {
 		if (!accept) {
 			snprintf(path_buf, sizeof path_buf,
-					"<NetSurf$Dir>.Resources.%.2s",
+					"NetSurf:Resources.%.2s",
 					entry->entry_key + offset);
 
 			entry->menu_entry->icon_flags |= is_dir(path_buf) ?
@@ -1249,7 +1249,7 @@ void ro_gui_menu_define_menu_add(struct menu_definition *definition,
  */
 void ro_gui_menu_init_structure(wimp_menu *menu, int entries) {
   	int i;
-  
+
 	menu->title_fg = wimp_COLOUR_BLACK;
 	menu->title_bg = wimp_COLOUR_LIGHT_GREY;
 	menu->work_fg = wimp_COLOUR_BLACK;

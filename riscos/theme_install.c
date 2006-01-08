@@ -172,8 +172,8 @@ bool ro_gui_theme_install_apply(wimp_w w)
 	}
 
 	/* simply overwrite previous theme versions */
-	snprintf(theme_save, sizeof theme_save, "%s%s.%s",
-			THEME_PATH_W, THEME_LEAFNAME, theme_file);
+	snprintf(theme_save, sizeof theme_save, "%s.%s",
+			option_theme_save, theme_file);
 
 	theme_save[sizeof theme_save - 1] = '\0';
 	error = xosfile_save_stamped(theme_save, 0xffd,
@@ -187,7 +187,7 @@ bool ro_gui_theme_install_apply(wimp_w w)
 		free(theme_file);
 		return false;
 	}
-	
+
 	/* apply the new theme */
 	ro_gui_theme_get_available();
 	theme_install = ro_gui_theme_find(theme_file);

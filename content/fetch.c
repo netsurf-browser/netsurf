@@ -38,9 +38,6 @@
 #ifdef WITH_POST
 #include "netsurf/render/form.h"
 #endif
-#ifdef riscos
-#include "netsurf/riscos/gui.h"
-#endif
 #define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -101,10 +98,6 @@ static bool fetch_process_headers(struct fetch *f);
 static struct curl_httppost *fetch_post_convert(struct form_successful_control *control);
 #endif
 
-#ifdef riscos
-static char * ca_bundle;	/**< SSL certificate bundle filename. */
-#endif
-
 
 /**
  * Initialise the fetcher.
@@ -125,13 +118,6 @@ void fetch_init(void)
 	if (!fetch_curl_multi)
 		die("Failed to initialise the fetch module "
 				"(curl_multi_init failed).");
-
-#ifdef riscos
-	ca_bundle = malloc(strlen(NETSURF_DIR) + 40);
-	if (!ca_bundle)
-		die("NoMemory");
-	sprintf(ca_bundle, "%s.Resources.ca-bundle", NETSURF_DIR);
-#endif
 
 	/* Create a curl easy handle with the options that are common to all
 	   fetches. */
@@ -157,9 +143,9 @@ void fetch_init(void)
 	SETOPT(CURLOPT_LOW_SPEED_TIME, 60L);
 	SETOPT(CURLOPT_NOSIGNAL, 1L);
 	SETOPT(CURLOPT_CONNECTTIMEOUT, 60L);
-#ifdef riscos
-	SETOPT(CURLOPT_CAINFO, ca_bundle);
-#endif
+
+	if (option_ca_bundle)
+		SETOPT(CURLOPT_CAINFO, option_ca_bundle);
 
 	if (!option_ssl_verify_certificates) {
         	/* disable verification of SSL certificates.
@@ -421,8 +407,10 @@ CURLcode fetch_set_options(struct fetch *f)
 		SETOPT(CURLOPT_HTTPGET, 1L);
 	}
 	if (f->cookies) {
-		SETOPT(CURLOPT_COOKIEFILE, messages_get("cookiefile"));
-		SETOPT(CURLOPT_COOKIEJAR, messages_get("cookiejar"));
+		if (option_cookie_file)
+			SETOPT(CURLOPT_COOKIEFILE, option_cookie_file);
+		if (option_cookie_jar)
+			SETOPT(CURLOPT_COOKIEJAR, option_cookie_jar);
 	} else {
 		SETOPT(CURLOPT_COOKIEFILE, 0);
 		SETOPT(CURLOPT_COOKIEJAR, 0);

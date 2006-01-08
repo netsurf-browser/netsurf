@@ -20,6 +20,7 @@
 #include "netsurf/desktop/tree.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/menus.h"
+#include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/treeview.h"
 #include "netsurf/riscos/wimp.h"
@@ -65,7 +66,7 @@ void ro_gui_hotlist_initialise(void) {
 
 	/*	Either load or create a hotlist
 	*/
-	fp = fopen("Choices:WWW.NetSurf.Hotlist", "r");
+	fp = fopen(option_hotlist_path, "r");
 	if (!fp) {
 		hotlist_tree = calloc(sizeof(struct tree), 1);
 		if (!hotlist_tree) {
@@ -112,7 +113,7 @@ void ro_gui_hotlist_initialise(void) {
 		tree_initialise(hotlist_tree);
 	} else {
 		fclose(fp);
-		hotlist_tree = options_load_tree("Choices:WWW.NetSurf.Hotlist");
+		hotlist_tree = options_load_tree(option_hotlist_path);
 	}
 	if (!hotlist_tree) return;
 	hotlist_tree->handle = (int)hotlist_window;
@@ -142,9 +143,9 @@ void ro_gui_hotlist_save(void) {
 
 	/*	Save to our file
 	*/
-	options_save_tree(hotlist_tree, "<Choices$Write>.WWW.NetSurf.Hotlist",
+	options_save_tree(hotlist_tree, option_hotlist_save,
 			"NetSurf hotlist");
-	error = xosfile_set_type("<Choices$Write>.WWW.NetSurf.Hotlist", 0xfaf);
+	error = xosfile_set_type(option_hotlist_save, 0xfaf);
 	if (error)
 		LOG(("xosfile_set_type: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -214,7 +215,7 @@ void ro_gui_hotlist_visited(struct content *content, struct tree *tree,
 void ro_gui_hotlist_prepare_folder_dialog(struct node *node) {
 	const char *name;
 	const char *title;
-	
+
 	dialog_folder_node = node;
 	if (node) {
 		title = messages_get("EditFolder");
@@ -222,7 +223,7 @@ void ro_gui_hotlist_prepare_folder_dialog(struct node *node) {
 	} else {
 	  	title = messages_get("NewFolder");
 	  	name = messages_get("Folder");
-	} 	
+	}
 	ro_gui_set_window_title(dialog_folder, title);
 	ro_gui_set_icon_string(dialog_folder, ICON_FOLDER_NAME, name);
 	ro_gui_wimp_event_memorise(dialog_folder);
@@ -277,7 +278,7 @@ bool ro_gui_hotlist_dialog_apply(wimp_w w) {
 		if (strlen(icon) == 0) {
 			warn_user("NoURLError", 0);
 			return false;
-		}  
+		}
 		res = url_normalize(icon, &url);
 		title = strip(ro_gui_get_icon_string(w, ICON_ENTRY_NAME));
 		node = dialog_entry_node;
@@ -314,7 +315,7 @@ bool ro_gui_hotlist_dialog_apply(wimp_w w) {
 				data->title = strdup(title);
 			node = dialog_entry_node = tree_create_URL_node(
 					hotlist_tree->root, data, title);
-			
+
 		} else {
 			node = dialog_folder_node = tree_create_folder_node(
 					hotlist_tree->root, title);

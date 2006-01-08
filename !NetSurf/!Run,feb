@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.44 $ )
+| Run file for NetSurf. ( $Revision: 1.45 $ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -8,6 +8,12 @@
 Set NetSurf$ForceVars 1
 <Obey$Dir>.!Boot
 UnSet NetSurf$ForceVars
+
+| Resource Locations
+| The following are read-only locations
+SetMacro NetSurf$Path        Choices:WWW.NetSurf.,<NetSurf$Dir>.
+| The following are write-only locations
+SetMacro NetSurf$ChoicesSave <Choices$Write>.WWW.NetSurf.Choices
 
 | We need RISC OS 3
 RMEnsure UtilityModule 3.00 Error NetSurf needs RISC OS 3 or later

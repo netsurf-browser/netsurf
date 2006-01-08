@@ -38,13 +38,12 @@ void tree_redraw_area(struct tree *tree, int x, int y, int width, int height) {
 /**
  * Draws a line.
  *
- * \param tree	 the tree to draw a line for
  * \param x	 the x co-ordinate
  * \param x	 the y co-ordinate
  * \param x	 the width of the line
  * \param x	 the height of the line
  */
-void tree_draw_line(struct tree *tree, int x, int y, int width, int height) {
+void tree_draw_line(int x, int y, int width, int height) {
 }
 
 
@@ -83,7 +82,7 @@ void tree_recalculate_node_element(struct node_element *element) {
  *
  * \param node  the node to update
  */
-void tree_update_URL_node(struct node *node) {
+void tree_update_URL_node(struct node *node, struct url_content *data) {
 }
 
 

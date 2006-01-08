@@ -340,17 +340,6 @@ Encoding2:de <meta>
 EncodingUnk:Inconnu
 
 
-# Cookies
-# =======
-#
-# Cookies related tokens.
-#
-# At present, this section simply stores the location of
-# the cookie file. This should not be changed.
-#
-cookiefile:Choices:WWW.NetSurf.Cookies
-cookiejar:<Choices$Write>.WWW.NetSurf.Cookies
-
 # Errors
 # ======
 #

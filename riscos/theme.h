@@ -14,18 +14,6 @@
 #ifndef _NETSURF_RISCOS_THEME_H_
 #define _NETSURF_RISCOS_THEME_H_
 
-
-#ifndef NCOS
-#define THEME_LEAFNAME "WWW.NetSurf.Themes"
-#define THEME_PATH_W "<Choices$Write>."
-#define THEME_PATH_R "Choices:"
-#else
-#define THEME_LEAFNAME "NetSurf.Choices.Themes"
-#define THEME_PATH_W "<User$Path>.Choices."
-#define THEME_PATH_R THEME_PATH_W
-#endif
-
-
 typedef enum {
   	THEME_BROWSER_TOOLBAR,
   	THEME_HOTLIST_TOOLBAR,

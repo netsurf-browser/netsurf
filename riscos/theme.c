@@ -174,7 +174,6 @@ struct theme_descriptor *ro_gui_theme_find(const char *leafname) {
 struct theme_descriptor *ro_gui_theme_get_available(void) {
 	struct theme_descriptor *current;
 	struct theme_descriptor *test;
-	char pathname[256];
 
 	/* close any descriptors we've got so far
 	 * _except_ the current theme */
@@ -184,15 +183,11 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 
 	if (strcmp(theme_current->name, "Aletheia") != 0) {
 		/* add our default 'Aletheia' theme */
-		snprintf(pathname, 256, "%s.Resources", NETSURF_DIR);
-		pathname[255] = '\0';
-		ro_gui_theme_add_descriptor(pathname, "Aletheia");
+		ro_gui_theme_add_descriptor("NetSurf:Resources", "Aletheia");
 	}
 
 	/* scan our choices directory */
-	snprintf(pathname, 256, "%s%s", THEME_PATH_R, THEME_LEAFNAME);
-	pathname[255] = '\0';
-	ro_gui_theme_get_available_in_dir(pathname);
+	ro_gui_theme_get_available_in_dir(option_theme_path);
 
 	/* sort alphabetically in a very rubbish way */
 	if ((theme_descriptors) && (theme_descriptors->next)) {

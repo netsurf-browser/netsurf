@@ -16,6 +16,7 @@
 #include <gtk/gtk.h>
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetch.h"
+#include "netsurf/content/url_store.h"
 #include "netsurf/desktop/401login.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
@@ -54,6 +55,17 @@ void gui_init(int argc, char** argv)
 	snprintf(buf, sizeof buf, "%s/.netsurf/Choices", home);
 	options_read(buf);
 
+	if (!option_cookie_file) {
+		snprintf(buf, sizeof buf, "%s/.netsurf/Cookies");
+		option_cookie_file = strdup(buf);
+	}
+	if (!option_cookie_jar) {
+		snprintf(buf, sizeof buf, "%s/.netsurf/Cookies");
+		option_cookie_jar = strdup(buf);
+	}
+	if (!option_cookie_file || !option_cookie_jar)
+		die("Failed initialising cookie options");
+
 	snprintf(buf, sizeof buf, "%s/.netsurf/messages", home);
 	messages_load(buf);
 
@@ -62,6 +74,8 @@ void gui_init(int argc, char** argv)
 	default_stylesheet_url = strdup(buf);
 	snprintf(buf, sizeof buf, "file:///%s/.netsurf/AdBlock.css", home);
 	adblock_stylesheet_url = strdup(buf);
+	if (!default_stylesheet_url || !adblock_stylesheet_url)
+		die("Failed duplicating stylesheet strings");
 }
 
 
@@ -213,7 +227,7 @@ void schedule(int t, void (*callback)(void *p), void *p) {}
 void schedule_remove(void (*callback)(void *p), void *p) {}
 void schedule_run(void) {}
 
-void global_history_add(struct gui_window *g) {}
+void global_history_add(struct url_content *data) {}
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 		char **result)

@@ -47,6 +47,9 @@ extern bool option_send_referer;
 extern bool option_animate_images;
 extern int option_expire_url;
 extern int option_font_default;		/* a css_font_family */
+extern char *option_ca_bundle;
+extern char *option_cookie_file;
+extern char *option_cookie_jar;
 
 void options_read(const char *path);
 void options_write(const char *path);

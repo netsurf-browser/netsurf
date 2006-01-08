@@ -72,6 +72,12 @@ bool option_animate_images = true;
 int option_expire_url = 28;
 /** Default font family */
 int option_font_default = CSS_FONT_FAMILY_SANS_SERIF;
+/** ca-bundle location */
+char *option_ca_bundle = 0;
+/** Cookie file location */
+char *option_cookie_file = 0;
+/** Cookie jar loaction */
+char *option_cookie_jar = 0;
 
 EXTRA_OPTION_DEFINE
 
@@ -97,8 +103,11 @@ struct {
 	{ "minimum_gif_delay",      OPTION_INTEGER, &option_minimum_gif_delay },
 	{ "send_referer",    OPTION_BOOL,    &option_send_referer },
 	{ "animate_images",  OPTION_BOOL,    &option_animate_images },
-	{ "expire_url",	     OPTION_INTEGER, &option_expire_url },
-	{ "font_default",           OPTION_INTEGER, &option_font_default },
+	{ "expire_url",      OPTION_INTEGER, &option_expire_url },
+	{ "font_default",    OPTION_INTEGER, &option_font_default },
+	{ "ca_bundle",       OPTION_STRING,  &option_ca_bundle },
+	{ "cookie_file",     OPTION_STRING,  &option_cookie_file },
+	{ "cookie_jar",      OPTION_STRING,  &option_cookie_jar },
 	EXTRA_OPTION_TABLE
 };
 

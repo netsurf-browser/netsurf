@@ -128,6 +128,15 @@ const char * NETSURF_DIR;
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 
+#ifndef ncos
+static const char *task_name = "NetSurf";
+#define CHOICES_PREFIX "<Choices$Write>.WWW.NetSurf."
+#else
+static const char *task_name = "NCNetSurf";
+#define CHOICES_PREFIX "<User$Path>.Choices.NetSurf."
+#endif
+
+
 /** The pointer is over a window which is tracking mouse movement. */
 static bool gui_track = false;
 /** Handle of window which the pointer is over. */
@@ -204,10 +213,9 @@ static wimp_MESSAGE_LIST(38) task_messages = { {
 	0
 } };
 
+static void ro_gui_create_dirs(void);
 static void ro_gui_choose_language(void);
-#ifndef ncos
 static void ro_gui_icon_bar_create(void);
-#endif
 static void ro_gui_signal(int sig);
 static void ro_gui_cleanup(void);
 static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
@@ -254,8 +262,9 @@ void gui_init(int argc, char** argv)
 
 	xhourglass_start(1);
 
-	/* read OS version for code that adapts to conform to the OS (remember
-		that it's preferable to check for specific features being present) */
+	/* read OS version for code that adapts to conform to the OS
+	 * (remember that it's preferable to check for specific features
+	 * being present) */
 	xos_byte(osbyte_IN_KEY, 0, 0xff, &os_version, NULL);
 
 	atexit(ro_gui_cleanup);
@@ -273,28 +282,14 @@ void gui_init(int argc, char** argv)
 			prev_sigs.sigterm == SIG_ERR)
 		die("Failed registering signal handlers");
 
-	/* create our choices directories */
-#ifndef ncos
-	xosfile_create_dir("<Choices$Write>.WWW", 0);
-	xosfile_create_dir("<Choices$Write>.WWW.NetSurf", 0);
-	xosfile_create_dir("<Choices$Write>.WWW.NetSurf.Themes", 0);
-#else
-	xosfile_create_dir("<User$Path>.Choices.NetSurf", 0);
-	xosfile_create_dir("<User$Path>.Choices.NetSurf.Choices", 0);
-	xosfile_create_dir("<User$Path>.Choices.NetSurf.Choices.Themes", 0);
-#endif
 	ro_filename_initialise();
 
 #ifdef WITH_SAVE_COMPLETE
 	save_complete_init();
 #endif
 
-	/* We don't have the universal boot sequence on NCOS */
-#ifndef ncos
-	options_read("Choices:WWW.NetSurf.Choices");
-#else
-	options_read("<User$Path>.Choices.NetSurf.Choices");
-#endif
+	options_read("NetSurf:Choices");
+
 	/* set defaults for absent strings */
 	if (!option_theme)
 		option_theme = strdup("Aletheia");
@@ -304,38 +299,72 @@ void gui_init(int argc, char** argv)
 		option_toolbar_hotlist = strdup("401|23");
 	if (!option_toolbar_history)
 		option_toolbar_history = strdup("01|23");
+	if (!option_ca_bundle)
+		option_ca_bundle = strdup("NetSurf:Resources.ca-bundle");
+	if (!option_cookie_file)
+		option_cookie_file = strdup("NetSurf:Cookies");
+	if (!option_cookie_jar)
+		option_cookie_jar = strdup(CHOICES_PREFIX "Cookies");
+	if (!option_url_path)
+		option_url_path = strdup("NetSurf:URL");
+	if (!option_url_save)
+		option_url_save = strdup(CHOICES_PREFIX "URL");
+	if (!option_hotlist_path)
+		option_hotlist_path = strdup("NetSurf:Hotlist");
+	if (!option_hotlist_save)
+		option_hotlist_save = strdup(CHOICES_PREFIX "Hotlist");
+	if (!option_recent_path)
+		option_recent_path = strdup("NetSurf:Recent");
+	if (!option_recent_save)
+		option_recent_save = strdup(CHOICES_PREFIX "Recent");
+	if (!option_theme_path)
+		option_theme_path = strdup("NetSurf:Themes");
+	if (!option_theme_save)
+		option_theme_save = strdup(CHOICES_PREFIX "Themes");
 
-	gui_sprites = ro_gui_load_sprite_file("<NetSurf$Dir>.Resources.Sprites");
+	if (!option_theme || ! option_toolbar_browser ||
+			!option_toolbar_hotlist || !option_toolbar_history ||
+			!option_ca_bundle || !option_cookie_file ||
+			!option_cookie_jar || !option_url_path ||
+			!option_url_save || !option_hotlist_path ||
+			!option_hotlist_save || !option_recent_path ||
+			!option_recent_save || !option_theme_path ||
+			!option_theme_save)
+		die("Failed initialising string options");
+
+	/* create our choices directories */
+	ro_gui_create_dirs();
+
+	gui_sprites = ro_gui_load_sprite_file("NetSurf:Resources.Sprites");
 	if (!gui_sprites)
 		die("Unable to load Sprites.");
 	ro_gui_choose_language();
 
 	bitmap_initialise_memory();
-	url_store_load("Choices:WWW.NetSurf.URL");
+	url_store_load(option_url_path);
 
 	nsdir_temp = getenv("NetSurf$Dir");
 	if (!nsdir_temp)
 		die("Failed to locate NetSurf directory");
 	NETSURF_DIR = strdup(nsdir_temp);
+	if (!NETSURF_DIR)
+		die("Failed duplicating NetSurf directory string");
 
 	if ((length = snprintf(path, sizeof(path),
-			"<NetSurf$Dir>.Resources.%s.Messages",
+			"NetSurf:Resources.%s.Messages",
 			option_language)) < 0 || length >= (int)sizeof(path))
 		die("Failed to locate Messages resource.");
 	messages_load(path);
-	messages_load("<NetSurf$Dir>.Resources.LangNames");
+	messages_load("NetSurf:Resources.LangNames");
 
-	default_stylesheet_url = strdup("file:/<NetSurf$Dir>/Resources/CSS");
-	adblock_stylesheet_url = strdup("file:/<NetSurf$Dir>/Resources/AdBlock");
-#ifndef ncos
-	error = xwimp_initialise(wimp_VERSION_RO38, "NetSurf",
+	default_stylesheet_url = strdup("file:/NetSurf:/Resources/CSS");
+	adblock_stylesheet_url = strdup("file:/NetSurf:/Resources/AdBlock");
+	if (!default_stylesheet_url || !adblock_stylesheet_url)
+		die("Failed initialising string constants.");
+
+	error = xwimp_initialise(wimp_VERSION_RO38, task_name,
 			(const wimp_message_list *) &task_messages, 0,
 			&task_handle);
-#else
-	error = xwimp_initialise(wimp_VERSION_RO38, "NCNetSurf",
-			(const wimp_message_list *) &task_messages, 0,
-			&task_handle);
-#endif
 	if (error) {
 		LOG(("xwimp_initialise: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -351,7 +380,7 @@ void gui_init(int argc, char** argv)
 	/*	Open the templates
 	*/
 	if ((length = snprintf(path, sizeof(path),
-			"<NetSurf$Dir>.Resources.%s.Templates",
+			"NetSurf:Resources.%s.Templates",
 			option_language)) < 0 || length >= (int)sizeof(path))
 		die("Failed to locate Templates resource.");
 	error = xwimp_open_template(path);
@@ -370,12 +399,75 @@ void gui_init(int argc, char** argv)
 
 	ro_gui_tree_initialise(); /* must be done after sprite loading */
 
-#ifndef ncos
 	ro_gui_icon_bar_create();
-#endif
 	ro_gui_check_resolvers();
 }
 
+/**
+ * Create intermediate directories for Choices and User Data files
+ */
+void ro_gui_create_dirs(void)
+{
+	char *path;
+	char buf[256];
+
+	/* Choices */
+	path = getenv("NetSurf$ChoicesSave");
+	if (!path)
+		die("Failed to find NetSurf Choices save path");
+
+	snprintf(buf, sizeof(buf), "%s", path);
+	path = buf;
+
+	/* Given a path x.y.z, this will try to create x, x.y */
+	while ((path = strchr(path, '.'))) {
+		*path = '\0';
+		xosfile_create_dir(buf, 0);
+		*path++ = '.';
+	}
+
+	/* URL */
+	snprintf(buf, sizeof(buf), "%s", option_url_save);
+	path = buf;
+
+	while ((path = strchr(path, '.'))) {
+		*path = '\0';
+		xosfile_create_dir(buf, 0);
+		*path++ = '.';
+	}
+
+	/* Hotlist */
+	snprintf(buf, sizeof(buf), "%s", option_hotlist_save);
+	path = buf;
+
+	while ((path = strchr(path, '.'))) {
+		*path = '\0';
+		xosfile_create_dir(buf, 0);
+		*path++ = '.';
+	}
+
+	/* Recent */
+	snprintf(buf, sizeof(buf), "%s", option_recent_save);
+	path = buf;
+
+	while ((path = strchr(path, '.'))) {
+		*path = '\0';
+		xosfile_create_dir(buf, 0);
+		*path++ = '.';
+	}
+
+	/* Theme */
+	snprintf(buf, sizeof(buf), "%s", option_theme_save);
+	path = buf;
+
+	while ((path = strchr(path, '.'))) {
+		*path = '\0';
+		xosfile_create_dir(buf, 0);
+		*path++ = '.';
+	}
+	/* and the final directory part (as theme_save is a directory) */
+	xosfile_create_dir(buf, 0);
+}
 
 /**
  * Determine the language to use.
@@ -395,7 +487,7 @@ void ro_gui_choose_language(void)
 	if (option_language) {
 		if (2 < strlen(option_language))
 			option_language[2] = 0;
-		sprintf(path, "<NetSurf$Dir>.Resources.%s", option_language);
+		sprintf(path, "NetSurf:Resources.%s", option_language);
 		if (is_dir(path)) {
 			if (!option_accept_language)
 				option_accept_language = strdup(option_language);
@@ -429,7 +521,7 @@ void ro_gui_choose_language(void)
 			lang = "en";
 			break;
 	}
-	sprintf(path, "<NetSurf$Dir>.Resources.%s", lang);
+	sprintf(path, "NetSurf:Resources.%s", lang);
 	if (is_dir(path))
 		option_language = strdup(lang);
 	else
@@ -440,13 +532,13 @@ void ro_gui_choose_language(void)
 }
 
 
-#ifndef ncos
 /**
  * Create an iconbar icon.
  */
 
 void ro_gui_icon_bar_create(void)
 {
+#ifndef ncos
 	wimp_icon_create icon = {
 		wimp_ICON_BAR_RIGHT,
 		{ { 0, 0, 68, 68 },
@@ -456,8 +548,8 @@ void ro_gui_icon_bar_create(void)
 	wimp_create_icon(&icon);
 	ro_gui_wimp_event_register_mouse_click(wimp_ICON_BAR,
 			ro_gui_icon_bar_click);
-}
 #endif
+}
 
 
 /**
@@ -566,7 +658,7 @@ void gui_init2(int argc, char** argv)
 void gui_quit(void)
 {
 	bitmap_quit();
-	url_store_save("<Choices$Write>.WWW.NetSurf.URL");
+	url_store_save(option_url_save);
 	ro_gui_window_quit();
 	ro_gui_global_history_save();
 	ro_gui_hotlist_save();

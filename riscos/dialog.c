@@ -84,15 +84,15 @@ void ro_gui_dialog_init(void)
 
 	/* configure window */
 	ro_gui_configure_initialise();
-	
+
 	/* 401 login window */
 #ifdef WITH_AUTH
 	ro_gui_401login_init();
 #endif
-	
+
 	/* hotlist window */
 	ro_gui_hotlist_initialise();
-	
+
 	/* global history window */
 	ro_gui_global_history_initialise();
 
@@ -104,7 +104,7 @@ void ro_gui_dialog_init(void)
 			ICON_THEME_INSTALL_INSTALL,
 			ro_gui_theme_install_apply);
 	ro_gui_wimp_event_set_help_prefix(dialog_theme_install, "HelpThemeInst");
-	
+
 	/* debug window */
 	dialog_debug = ro_gui_dialog_create("debug");
 	ro_gui_wimp_event_set_help_prefix(dialog_debug, "HelpDebug");
@@ -113,7 +113,7 @@ void ro_gui_dialog_init(void)
 #ifdef WITH_SEARCH
 	ro_gui_search_init();
 #endif
-	
+
 	/* print */
 #ifdef WITH_PRINT
 	ro_gui_print_init();
@@ -141,7 +141,7 @@ void ro_gui_dialog_init(void)
 	ro_gui_wimp_event_register_ok(dialog_folder, ICON_FOLDER_OK,
 			ro_gui_hotlist_dialog_apply);
 	ro_gui_wimp_event_set_help_prefix(dialog_folder, "HelpHotFolder");
-	
+
 	/* hotlist entry editing */
 	dialog_entry = ro_gui_dialog_create("new_entry");
 	ro_gui_wimp_event_register_text_field(dialog_entry, ICON_ENTRY_NAME);
@@ -161,7 +161,7 @@ void ro_gui_dialog_init(void)
 	ro_gui_wimp_event_register_ok(dialog_saveas, ICON_SAVE_OK,
 			ro_gui_save_ok);
 	ro_gui_wimp_event_set_help_prefix(dialog_saveas, "HelpSaveAs");
-	
+
 	/* url suggestion */
 	dialog_url_complete = ro_gui_dialog_create("url_suggest");
 	ro_gui_wimp_event_register_mouse_click(dialog_url_complete,
@@ -169,7 +169,7 @@ void ro_gui_dialog_init(void)
 	ro_gui_wimp_event_register_redraw_window(dialog_url_complete,
 			ro_gui_url_complete_redraw);
 	ro_gui_wimp_event_set_help_prefix(dialog_url_complete, "HelpAutoURL");
-	
+
 	/* open URL */
 	dialog_openurl = ro_gui_dialog_create("open_url");
 	ro_gui_wimp_event_register_menu_gright(dialog_openurl, ICON_OPENURL_URL,
@@ -178,7 +178,7 @@ void ro_gui_dialog_init(void)
 	ro_gui_wimp_event_register_ok(dialog_openurl, ICON_OPENURL_OPEN,
 			ro_gui_dialog_openurl_apply);
 	ro_gui_wimp_event_set_help_prefix(dialog_openurl, "HelpOpenURL");
-	
+
 	/* scale view */
 	dialog_zoom = ro_gui_dialog_create("zoom");
 	ro_gui_wimp_event_register_numeric_field(dialog_zoom, ICON_ZOOM_VALUE,
@@ -368,7 +368,7 @@ void ro_gui_dialog_close(wimp_w close)
 			}
 		}
 	}
-	
+
 	error = xwimp_close_window(close);
 	if (error) {
 		LOG(("xwimp_close_window: 0x%x: %s",
@@ -381,7 +381,7 @@ void ro_gui_dialog_close(wimp_w close)
 
 /**
  * Moves a window to the top of the stack.
- * 
+ *
  * If the window is currently closed then:
  *
  *  * The window is opened in the centre of the screen (at the supplied size)
@@ -619,13 +619,7 @@ void ro_gui_dialog_close_persistent(wimp_w parent) {
 
 void ro_gui_save_options(void)
 {
-	/* NCOS doesnt have the fancy Universal Boot vars; so select
-	 * the path to the choices file based on the build options */
-#ifndef NCOS
-	options_write("<Choices$Write>.WWW.NetSurf.Choices");
-#else
-	options_write("<User$Path>.Choices.NetSurf.Choices");
-#endif
+	options_write("<NetSurf$ChoicesSave>");
 }
 
 

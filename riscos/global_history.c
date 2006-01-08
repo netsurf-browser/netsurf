@@ -23,6 +23,7 @@
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
+#include "netsurf/riscos/options.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/treeview.h"
 #include "netsurf/riscos/wimp.h"
@@ -34,10 +35,6 @@
 
 #define MAXIMUM_URL_LENGTH 1024
 #define MAXIMUM_BASE_NODES 16
-
-#define GLOBAL_HISTORY_RECENT_READ "Choices:WWW.NetSurf.Recent"
-#define GLOBAL_HISTORY_RECENT_WRITE "<Choices$Write>.WWW.NetSurf.Recent"
-
 
 static struct node *global_history_base_node[MAXIMUM_BASE_NODES];
 static int global_history_base_node_time[MAXIMUM_BASE_NODES];
@@ -53,7 +50,6 @@ static void ro_gui_global_history_initialise_nodes(void);
 static void ro_gui_global_history_initialise_node(const char *title,
 		time_t base, int days_back);
 static struct node *ro_gui_global_history_find(const char *url);
-
 
 /*	The history window, toolbar and plot origins
 */
@@ -112,10 +108,10 @@ void ro_gui_global_history_initialise(void) {
 				global_history_window);
 
 	/* load recent URLs */
-	fp = fopen(GLOBAL_HISTORY_RECENT_READ, "r");
+	fp = fopen(option_recent_path, "r");
 	if (!fp)
 		LOG(("Failed to open file '%s' for reading",
-				GLOBAL_HISTORY_RECENT_READ));
+				option_recent_path));
 	else {
 		while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
 			if (s[strlen(s) - 1] == '\n')
@@ -132,7 +128,7 @@ void ro_gui_global_history_initialise(void) {
 			url_count++;
 	if (url_count == 0)
 		return;
-	
+
 	/* place pointers to the URL data in a single block of memory so
 	 * they can be quickly sorted */
 	url_block = (struct url_content **)malloc(
@@ -147,17 +143,17 @@ void ro_gui_global_history_initialise(void) {
 		for (url = hostname->url; url; url = url->next)
 			url_block[i++] = &url->data;
 	assert(i == url_count);
-	
+
 	/* sort information by the last_visit information */
 	qsort(url_block, url_count, sizeof(struct url_content *),
 			url_store_compare_last_visit);
-	
+
 	/* add URLs to the global history */
 	global_history_init = true;
 	for (i = 0; i < url_count; i++)
 		global_history_add(url_block[i]);
-	
-	global_history_init = false;	
+
+	global_history_init = false;
 	free(url_block);
 }
 
@@ -234,10 +230,10 @@ void ro_gui_global_history_save(void) {
 	int i;
 
 	/* save recent URLs */
-	fp = fopen(GLOBAL_HISTORY_RECENT_WRITE, "w");
+	fp = fopen(option_recent_save, "w");
 	if (!fp)
 		LOG(("Failed to open file '%s' for writing",
-				GLOBAL_HISTORY_RECENT_WRITE));
+				option_recent_save));
 	else {
 		for (i = global_history_recent_count - 1; i >= 0; i--)
 			if (strlen(global_history_recent_url[i]) <

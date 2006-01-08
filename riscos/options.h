@@ -57,6 +57,14 @@ extern bool option_url_suggestion;
 extern int option_image_memory_direct;	/* -1 means auto-detect */
 extern int option_image_memory_compressed;	/* -1 means auto-detect */
 extern bool option_strip_extensions;
+extern char *option_url_path;
+extern char *option_url_save;
+extern char *option_hotlist_path;
+extern char *option_hotlist_save;
+extern char *option_recent_path;
+extern char *option_recent_save;
+extern char *option_theme_path;
+extern char *option_theme_save;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -98,7 +106,15 @@ bool option_block_popups = false; \
 bool option_url_suggestion = true; \
 int option_image_memory_direct = -1; \
 int option_image_memory_compressed = -1; \
-bool option_strip_extensions = true;
+bool option_strip_extensions = true; \
+char *option_url_path = 0; \
+char *option_url_save = 0; \
+char *option_hotlist_path = 0; \
+char *option_hotlist_save = 0; \
+char *option_recent_path = 0; \
+char *option_recent_save = 0; \
+char *option_theme_path = 0; \
+char *option_theme_save = 0;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -140,6 +156,14 @@ bool option_strip_extensions = true;
 { "url_suggestion",         OPTION_BOOL,    &option_url_suggestion }, \
 { "image_memory_direct",    OPTION_INTEGER, &option_image_memory_direct }, \
 { "image_memory_compressed",OPTION_INTEGER, &option_image_memory_compressed }, \
-{ "strip_extensions",       OPTION_BOOL,    &option_strip_extensions }
+{ "strip_extensions",       OPTION_BOOL,    &option_strip_extensions }, \
+{ "url_path",               OPTION_STRING,  &option_url_path }, \
+{ "url_save",               OPTION_STRING,  &option_url_save }, \
+{ "hotlist_path",           OPTION_STRING,  &option_hotlist_path }, \
+{ "hotlist_save",           OPTION_STRING,  &option_hotlist_save }, \
+{ "recent_path",            OPTION_STRING,  &option_recent_path }, \
+{ "recent_save",            OPTION_STRING,  &option_recent_save }, \
+{ "theme_path",             OPTION_STRING,  &option_theme_path }, \
+{ "theme_save",             OPTION_STRING,  &option_theme_save }
 
 #endif
