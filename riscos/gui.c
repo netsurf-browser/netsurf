@@ -20,6 +20,7 @@
 #include <time.h>
 #include <features.h>
 #include <unixlib/local.h>
+#include "curl/curl.h"
 #include "oslib/font.h"
 #include "oslib/help.h"
 #include "oslib/hourglass.h"
@@ -54,6 +55,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
 #include "netsurf/riscos/menus.h"
+#include "netsurf/riscos/message.h"
 #include "netsurf/riscos/options.h"
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
@@ -242,6 +244,7 @@ static void ro_msg_dataopen(wimp_message *block);
 static void ro_msg_prequit(wimp_message *message);
 static void ro_msg_save_desktop(wimp_message *message);
 static char *ro_path_to_url(const char *path);
+static void ro_gui_view_source_bounce(wimp_event_no event, wimp_message *message);
 
 
 /**
@@ -1187,9 +1190,12 @@ void ro_gui_keypress(wimp_key *key)
 /**
  * Handle the three User_Message events.
  */
-
 void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 {
+  	/* attempt automatic routing */
+  	if (ro_message_handle_message(event, message))
+  		return;
+  
 	switch (message->action) {
 		case message_HELP_REQUEST:
 			ro_gui_interactive_help_request(message);
@@ -1956,60 +1962,88 @@ void ro_gui_open_help_page(const char *page)
 void ro_gui_view_source(struct content *content)
 {
 	os_error *error;
-  	char *temp_name, *full_name;
+  	char *temp_name, *r;
+  	wimp_full_message_data_xfer message;
 
 	if (!content || !content->source_data) {
 		warn_user("MiscError", "No document source");
 		return;
 	}
-
-	/* We cannot release the requested filename until after it has finished
-	   being used. As we can't easily find out when this is, we simply don't
-	   bother releasing it and simply allow it to be re-used next time NetSurf
-	   is started. The memory overhead from doing this is under 1 byte per
-	   filename. */
-	temp_name = ro_filename_request();
-	if (!temp_name) {
-	  	warn_user("NoMemory", 0);
-	  	return;
+	
+	/* try to load local files directly. */
+	if ((content->url) && (!strncmp(content->url, "file:/", 6))) {
+		if (strncmp(content->url, "file:///", 8) == 0)
+			temp_name = curl_unescape(content->url + 7,
+					strlen(content->url) - 7);
+		else
+			temp_name = curl_unescape(content->url + 5,
+					strlen(content->url) - 5);
+		if (!temp_name) {
+			warn_user("NoMemory", 0);
+			return;
+		}
+		r = __riscosify(temp_name, 0, __RISCOSIFY_NO_SUFFIX,
+				message.file_name, 212, 0);
+		curl_free(temp_name);
+		if (r == 0) {
+			LOG(("__riscosify failed"));
+			return;
+		}
+	} else {
+		/* We cannot release the requested filename until after it has finished
+		   being used. As we can't easily find out when this is, we simply don't
+		   bother releasing it and simply allow it to be re-used next time NetSurf
+		   is started. The memory overhead from doing this is under 1 byte per
+		   filename. */
+		temp_name = ro_filename_request();
+		if (!temp_name) {
+		  	warn_user("NoMemory", 0);
+		  	return;
+		}
+		snprintf(message.file_name, 212, "%s.%s",
+				CACHE_FILENAME_PREFIX, temp_name);
+		message.file_name[211] = '\0';
+		error = xosfile_save_stamped(message.file_name,
+				ro_content_filetype(content),
+				content->source_data,
+				content->source_data + content->source_size);
+		if (error) {
+			LOG(("xosfile_save_stamped failed: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("MiscError", error->errmess);
+			return;
+		}
 	}
-	full_name = malloc(strlen(temp_name) + strlen(CACHE_FILENAME_PREFIX) + 12);
-	if (!full_name) {
-	  	warn_user("NoMemory", 0);
-	  	return;
-	}
-	sprintf(full_name, "Filer_Run %s.%s", CACHE_FILENAME_PREFIX, temp_name);
 
-	error = xosfile_save_stamped(full_name + 10, 0xfff,
-			content->source_data,
-			content->source_data + content->source_size);
+	/* begin the DataOpen protocol */
+	message.your_ref = 0;
+	message.size = 44 + ((strlen(message.file_name) + 4) & (~3u));
+	message.action = message_DATA_OPEN;
+	message.w = 0;
+	message.i = 0;
+	message.pos.x = 0;
+	message.pos.y = 0;
+	message.est_size = 0;
+	message.file_type = 0xfff;
+	ro_message_send_message(wimp_USER_MESSAGE_RECORDED, (wimp_message*)&message, 0,
+			ro_gui_view_source_bounce);
+}
+
+
+void ro_gui_view_source_bounce(wimp_event_no event, wimp_message *message) {
+	char *filename;
+	os_error *error;
+	char command[256];
+
+	/* run the file as text */
+	filename = ((wimp_full_message_data_xfer *)message)->file_name;
+	sprintf(command, "@RunType_FFF %s", filename);
+	error = xwimp_start_task(command, 0);
 	if (error) {
-		LOG(("xosfile_save_stamped failed: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("MiscError", error->errmess);
-		free(full_name);
-		return;
+		LOG(("xwimp_start_task failed: 0x%x: %s",
+					error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
 	}
-
-	error = xos_cli(full_name);
-	if (error) {
-		LOG(("xos_cli: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("MiscError", error->errmess);
-		free(full_name);
-		return;
-	}
-
-	error = xosfile_set_type(full_name + 10, ro_content_filetype(content));
-	if (error) {
-		LOG(("xosfile_set_type failed: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("MiscError", error->errmess);
-		free(full_name);
-		return;
-	}
-
-	free(full_name);
 }
 
 
