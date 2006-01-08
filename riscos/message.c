@@ -28,6 +28,10 @@ struct active_message {
 };
 struct active_message *current_messages = NULL;
 
+static struct active_message *ro_message_add(unsigned int message_code,
+		void (*callback)(wimp_event_no event, wimp_message *message));
+static void ro_message_free(int ref);
+
 
 /**
  * Sends a message and registers a return route for a bounce.
@@ -43,6 +47,8 @@ bool ro_message_send_message(wimp_event_no event, wimp_message *message,
 		void (*callback)(wimp_event_no event, wimp_message *message)) {
 	os_error *error;
 
+	assert(message);
+
 	/* send a message */
 	error = xwimp_send_message(event, message, task);
 	if (error) {
@@ -51,7 +57,7 @@ bool ro_message_send_message(wimp_event_no event, wimp_message *message,
 		warn_user("WimpError", error->errmess);
 		return false;
 	}
-	
+
 	/* register the default bounce handler */
 	if (callback) {
 		assert(event == wimp_USER_MESSAGE_RECORDED);
@@ -62,7 +68,6 @@ bool ro_message_send_message(wimp_event_no event, wimp_message *message,
 }
 
 
-
 /**
  * Registers a return route for a message.
  *
@@ -70,7 +75,7 @@ bool ro_message_send_message(wimp_event_no event, wimp_message *message,
  * valid value is present in the my_ref field.
  *
  * \param message	the message to register a route back for
- * \param messge_code	the message action code to route
+ * \param message_code	the message action code to route
  * \param callback	the code to call for a matched action
  * \return true on success, false on memory exhaustion
  */
@@ -82,16 +87,43 @@ bool ro_message_register_handler(wimp_message *message,
 	assert(message);
 	assert(callback);
 
+	add = ro_message_add(message_code, callback);
+	if (add)
+		add->id = message->my_ref;
+	return (add != NULL);
+}
+
+
+/**
+ * Registers a route for a message code.
+ *
+ * \param message_code	the message action code to route
+ * \param callback	the code to call for a matched action
+ * \return true on success, false on memory exhaustion
+ */
+bool ro_message_register_route(unsigned int message_code,
+		void (*callback)(wimp_event_no event, wimp_message *message)) {
+	assert(callback);
+	
+	return (ro_message_add(message_code, callback) != NULL);
+}
+
+struct active_message *ro_message_add(unsigned int message_code,
+		void (*callback)(wimp_event_no event, wimp_message *message)) {
+	struct active_message *add;
+
+	assert(callback);
+
 	add = (struct active_message *)malloc(sizeof(*add));
 	if (!add)
-		return false;
+		return NULL;
 	add->message_code = message_code;
-	add->id = message->my_ref;
+	add->id = 0;
 	add->callback = callback;
 	add->next = current_messages;
 	add->previous = NULL;
 	current_messages = add;
-	return true;
+	return add;	  
 }
 
 
@@ -103,32 +135,51 @@ bool ro_message_register_handler(wimp_message *message,
  */
 bool ro_message_handle_message(wimp_event_no event, wimp_message *message) {
 	struct active_message *test;
-	struct active_message *next;
-	bool handled = true;
+	bool handled = false;
 	int ref;
 
 	assert(message);
 
-	/* we can't work without a reference */
-	ref = message->my_ref;
-	if (ref == 0)
-		return false;
+	if (event == wimp_USER_MESSAGE_ACKNOWLEDGE) {
+		/* handle message acknowledgement */
+		ref = message->my_ref;
+		if (ref == 0)
+			return false;
 
-	/* handle the message */
-	for (test = current_messages; test; test = test->next) {
-		if ((ref == test->id) &&
-				(message->action == test->message_code)) {
-			handled = true;
-			if (test->callback)
+		/* handle the message */
+		for (test = current_messages; test; test = test->next) {
+			if ((ref == test->id) &&
+					(message->action == test->message_code)) {
+				handled = true;
+				if (test->callback)
+					test->callback(event, message);
+				break;
+			}
+		}
+
+		/* remove all handlers for this id */
+		ro_message_free(ref);
+		return handled;
+	} else {
+		/* handle simple routing */
+		for (test = current_messages; test; test = test->next) {
+			if ((test->id == 0) &&
+					(message->action == test->message_code)) {
 				test->callback(event, message);
-			break;
+				return true;
+			}
 		}
 	}
+	return false;
+}
 
-	/* remove all handlers for this id */
-	next = current_messages;
+
+void ro_message_free(int ref) {
+	struct active_message *test;
+	struct active_message *next = current_messages;
+
 	while ((test = next)) {
-	  	next = test->next;
+		next = test->next;
 		if (ref == test->id) {
 			if (test->previous)
 				test->previous->next = test->next;
@@ -136,8 +187,7 @@ bool ro_message_handle_message(wimp_event_no event, wimp_message *message) {
 				test->next->previous = test->previous;
 			if (current_messages == test)
 				current_messages = test->next;
-		  	free(test);
+			free(test);
 		}
 	}
-	return handled;
 }
