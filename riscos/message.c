@@ -22,14 +22,14 @@
 struct active_message {
 	unsigned int message_code;
 	int id;
-	void (*callback)(wimp_event_no event, wimp_message *message);
+	void (*callback)(wimp_message *message);
 	struct active_message *next;
 	struct active_message *previous;
 };
 struct active_message *current_messages = NULL;
 
 static struct active_message *ro_message_add(unsigned int message_code,
-		void (*callback)(wimp_event_no event, wimp_message *message));
+		void (*callback)(wimp_message *message));
 static void ro_message_free(int ref);
 
 
@@ -43,8 +43,7 @@ static void ro_message_free(int ref);
  * \return true on success, false otherwise
  */
 bool ro_message_send_message(wimp_event_no event, wimp_message *message,
-		wimp_t task,
-		void (*callback)(wimp_event_no event, wimp_message *message)) {
+		wimp_t task, void (*callback)(wimp_message *message)) {
 	os_error *error;
 
 	assert(message);
@@ -81,7 +80,7 @@ bool ro_message_send_message(wimp_event_no event, wimp_message *message,
  */
 bool ro_message_register_handler(wimp_message *message,
 		unsigned int message_code,
-		void (*callback)(wimp_event_no event, wimp_message *message)) {
+		void (*callback)(wimp_message *message)) {
 	struct active_message *add;
 
 	assert(message);
@@ -102,14 +101,14 @@ bool ro_message_register_handler(wimp_message *message,
  * \return true on success, false on memory exhaustion
  */
 bool ro_message_register_route(unsigned int message_code,
-		void (*callback)(wimp_event_no event, wimp_message *message)) {
+		void (*callback)(wimp_message *message)) {
 	assert(callback);
 	
 	return (ro_message_add(message_code, callback) != NULL);
 }
 
 struct active_message *ro_message_add(unsigned int message_code,
-		void (*callback)(wimp_event_no event, wimp_message *message)) {
+		void (*callback)(wimp_message *message)) {
 	struct active_message *add;
 
 	assert(callback);
@@ -152,7 +151,7 @@ bool ro_message_handle_message(wimp_event_no event, wimp_message *message) {
 					(message->action == test->message_code)) {
 				handled = true;
 				if (test->callback)
-					test->callback(event, message);
+					test->callback(message);
 				break;
 			}
 		}
@@ -165,7 +164,7 @@ bool ro_message_handle_message(wimp_event_no event, wimp_message *message) {
 		for (test = current_messages; test; test = test->next) {
 			if ((test->id == 0) &&
 					(message->action == test->message_code)) {
-				test->callback(event, message);
+				test->callback(message);
 				return true;
 			}
 		}

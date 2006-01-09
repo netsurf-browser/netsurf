@@ -240,11 +240,11 @@ static char *ro_gui_ieurl_file_parse(const char *file_name);
 static void ro_msg_terminate_filename(wimp_full_message_data_xfer *message);
 static void ro_msg_datasave(wimp_message *message);
 static void ro_msg_datasave_ack(wimp_message *message);
-static void ro_msg_dataopen(wimp_message *block);
+static void ro_msg_dataopen(wimp_message *message);
 static void ro_msg_prequit(wimp_message *message);
 static void ro_msg_save_desktop(wimp_message *message);
 static char *ro_path_to_url(const char *path);
-static void ro_gui_view_source_bounce(wimp_event_no event, wimp_message *message);
+static void ro_gui_view_source_bounce(wimp_message *message);
 
 
 /**
@@ -373,6 +373,20 @@ void gui_init(int argc, char** argv)
 				error->errnum, error->errmess));
 		die(error->errmess);
 	}
+	/* register our message handlers */
+	ro_message_register_route(message_HELP_REQUEST,
+			ro_gui_interactive_help_request);
+	ro_message_register_route(message_DATA_OPEN,
+			ro_msg_dataopen);
+	ro_message_register_route(message_DATA_SAVE,
+			ro_msg_datasave);
+	ro_message_register_route(message_DATA_SAVE_ACK,
+			ro_msg_datasave_ack);
+	ro_message_register_route(message_PRE_QUIT,
+			ro_msg_prequit);
+	ro_message_register_route(message_SAVE_DESKTOP,
+			ro_msg_save_desktop);
+	/* end of handler registration */
 
 	nsfont_init();
 
@@ -993,12 +1007,66 @@ void ro_gui_close_window_request(wimp_close *close)
 {
 	struct gui_window *g;
 	struct gui_download_window *dw;
-
-	/*	Check for children
-	*/
-	ro_gui_dialog_close_persistent(close->w);
+	wimp_pointer pointer;
+	os_error *error;
+	char *temp_name, *r;
+	char *filename;
+	struct content *content = NULL;
 
 	if ((g = ro_gui_window_lookup(close->w)) != NULL) {
+		error = xwimp_get_pointer_info(&pointer);
+		if (error) {
+			LOG(("xwimp_get_pointer_info: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+		if (g->bw)
+			content = g->bw->current_content;
+		if ((pointer.buttons & wimp_CLICK_ADJUST) && (content) &&
+				(content->url) && (!strncmp(content->url, "file:/", 6))) {
+			if (strncmp(content->url, "file:///", 8) == 0)
+				temp_name = curl_unescape(content->url + 7,
+						strlen(content->url) - 7);
+			else
+				temp_name = curl_unescape(content->url + 5,
+						strlen(content->url) - 5);
+			if (!temp_name) {
+				warn_user("NoMemory", 0);
+				return;
+			}
+			filename = malloc(strlen(temp_name) + 100);
+			if (!filename) {
+			  	curl_free(temp_name);
+				warn_user("NoMemory", 0);
+				return;
+			}
+			sprintf(filename, "Filer_OpenDir ");
+			r = __riscosify(temp_name, 0, __RISCOSIFY_NO_SUFFIX,
+					filename + 14, strlen(temp_name) + 86, 0);
+			if (r == 0) {
+				LOG(("__riscosify failed"));
+				return;
+			}
+			curl_free(temp_name);
+			while (r > filename) {
+				if (*r == '.') {
+					*r = '\0';
+					break;
+				}
+				*r--;
+			}
+			error = xos_cli(filename);
+			if (error) {
+				LOG(("xos_cli: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("MiscError", error->errmess);
+				return;
+			}
+			free(filename);
+		}
+		if (ro_gui_shift_pressed())
+			return;
 		ro_gui_url_complete_close(NULL, 0);
 		browser_window_destroy(g->bw);
 	} else if ((dw = ro_gui_download_window_lookup(close->w)) != NULL) {
@@ -1006,6 +1074,7 @@ void ro_gui_close_window_request(wimp_close *close)
 	} else {
 		ro_gui_dialog_close(close->w);
 	}
+	ro_gui_dialog_close_persistent(close->w);
 }
 
 
@@ -1197,18 +1266,6 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
   		return;
   
 	switch (message->action) {
-		case message_HELP_REQUEST:
-			ro_gui_interactive_help_request(message);
-			break;
-
-		case message_DATA_SAVE:
-			ro_msg_datasave(message);
-			break;
-
-		case message_DATA_SAVE_ACK:
-			ro_msg_datasave_ack(message);
-			break;
-
 		case message_DATA_LOAD:
 			ro_msg_terminate_filename((wimp_full_message_data_xfer*)message);
 
@@ -1227,18 +1284,6 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			if (print_current_window)
 				print_cleanup();
 #endif
-			break;
-
-		case message_DATA_OPEN:
-			ro_msg_dataopen(message);
-			break;
-
-		case message_PRE_QUIT:
-			ro_msg_prequit(message);
-			break;
-
-		case message_SAVE_DESKTOP:
-			ro_msg_save_desktop(message);
 			break;
 
 		case message_MENU_WARNING:
@@ -2030,7 +2075,7 @@ void ro_gui_view_source(struct content *content)
 }
 
 
-void ro_gui_view_source_bounce(wimp_event_no event, wimp_message *message) {
+void ro_gui_view_source_bounce(wimp_message *message) {
 	char *filename;
 	os_error *error;
 	char command[256];
