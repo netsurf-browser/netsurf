@@ -42,7 +42,7 @@ static void nsfont_init_menu(void);
 
 void nsfont_init(void)
 {
-	const char *fallback = "Homerton";
+	const char *fallback;
 	rufl_code code;
 
 	nsfont_check_fonts();
@@ -63,8 +63,7 @@ void nsfont_init(void)
 		die("No fonts could be found. At least one font must be "
 				"installed.");
 
-	if (!nsfont_exists("Homerton"))
-		fallback = rufl_family_list[0];
+	fallback = nsfont_fallback_font();
 
 	nsfont_check_option(&option_font_sans, "Homerton", fallback);
 	nsfont_check_option(&option_font_serif, "Trinity", fallback);
@@ -144,7 +143,7 @@ int nsfont_list_cmp(const void *keyval, const void *datum)
 {
 	const char *key = keyval;
 	const char * const *entry = datum;
-	return strcmp(key, *entry);
+	return strcasecmp(key, *entry);
 }
 
 
