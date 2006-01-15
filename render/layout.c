@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 Richard Wilson <info@tinct.net>
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2006 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
 
@@ -1095,12 +1095,17 @@ bool layout_line(struct box *first, int width, int *y,
 			for (i = 0; i != 4; i++)
 				if (b->margin[i] == AUTO)
 					b->margin[i] = 0;
+			x += b->margin[LEFT] + b->border[LEFT] +
+					b->padding[LEFT];
 			if (b->inline_end) {
 				b->inline_end->margin[RIGHT] = b->margin[RIGHT];
 				b->inline_end->padding[RIGHT] =
 						b->padding[RIGHT];
 				b->inline_end->border[RIGHT] =
 						b->border[RIGHT];
+			} else {
+				x += b->padding[RIGHT] + b->border[RIGHT] +
+						b->margin[RIGHT];
 			}
 		} else if (b->type == BOX_INLINE_END) {
 			b->width = 0;
@@ -1110,6 +1115,8 @@ bool layout_line(struct box *first, int width, int *y,
 			} else {
 				space_after = 0;
 			}
+			x += b->padding[RIGHT] + b->border[RIGHT] +
+					b->margin[RIGHT];
 			continue;
 		}
 
