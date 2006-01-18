@@ -78,6 +78,7 @@
 #include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
 
@@ -243,7 +244,6 @@ static void ro_msg_datasave_ack(wimp_message *message);
 static void ro_msg_dataopen(wimp_message *message);
 static void ro_msg_prequit(wimp_message *message);
 static void ro_msg_save_desktop(wimp_message *message);
-static char *ro_path_to_url(const char *path);
 static void ro_gui_view_source_bounce(wimp_message *message);
 
 
@@ -608,7 +608,7 @@ void gui_init2(int argc, char** argv)
 
 		/* HTML files */
 		if (strcasecmp(argv[1], "-html") == 0) {
-			url = ro_path_to_url(argv[2]);
+			url = path_to_url(argv[2]);
 			if (!url) {
 				LOG(("malloc failed"));
 				die("Insufficient memory for URL");
@@ -1023,47 +1023,33 @@ void ro_gui_close_window_request(wimp_close *close)
 		}
 		if (g->bw)
 			content = g->bw->current_content;
-		if ((pointer.buttons & wimp_CLICK_ADJUST) && (content) &&
-				(content->url) && (!strncmp(content->url, "file:/", 6))) {
-			if (strncmp(content->url, "file:///", 8) == 0)
-				temp_name = curl_unescape(content->url + 7,
-						strlen(content->url) - 7);
-			else
-				temp_name = curl_unescape(content->url + 5,
-						strlen(content->url) - 5);
-			if (!temp_name) {
-				warn_user("NoMemory", 0);
-				return;
-			}
-			filename = malloc(strlen(temp_name) + 100);
-			if (!filename) {
-			  	curl_free(temp_name);
-				warn_user("NoMemory", 0);
-				return;
-			}
-			sprintf(filename, "Filer_OpenDir ");
-			r = __riscosify(temp_name, 0, __RISCOSIFY_NO_SUFFIX,
-					filename + 14, strlen(temp_name) + 86, 0);
-			if (r == 0) {
-				LOG(("__riscosify failed"));
-				return;
-			}
-			curl_free(temp_name);
-			while (r > filename) {
-				if (*r == '.') {
-					*r = '\0';
-					break;
+		if (pointer.buttons & wimp_CLICK_ADJUST) {
+			filename = url_to_path(content->url);
+			if (filename) {
+				temp_name = malloc(strlen(filename) + 32);
+				if (temp_name) {
+					sprintf(temp_name, "Filer_OpenDir %s", filename);
+					r = temp_name + strlen(temp_name);
+					while (r > temp_name) {
+						if (*r == '.') {
+							*r = '\0';
+							break;
+						}
+						*r--;
+					}
+					error = xos_cli(temp_name);
+					if (error) {
+						LOG(("xos_cli: 0x%x: %s",
+								error->errnum, error->errmess));
+						warn_user("MiscError", error->errmess);
+						return;
+					}
+					free(temp_name);
 				}
-				*r--;
+				free(filename);
+			} else {
+				/* todo: go 'up' */ 
 			}
-			error = xos_cli(filename);
-			if (error) {
-				LOG(("xos_cli: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("MiscError", error->errmess);
-				return;
-			}
-			free(filename);
 		}
 		if (ro_gui_shift_pressed())
 			return;
@@ -1468,7 +1454,7 @@ void ro_msg_dataload(wimp_message *message)
 		case osfile_TYPE_TEXT:
 		case FILETYPE_ARTWORKS:
 			/* display the actual file */
-			url = ro_path_to_url(message->data.data_xfer.file_name);
+			url = path_to_url(message->data.data_xfer.file_name);
 			break;
 
 		default:
@@ -1812,7 +1798,7 @@ void ro_msg_dataopen(wimp_message *message)
 	if (file_type == 0xb28)			/* ANT URL file */
 		url = ro_gui_url_file_parse(message->data.data_xfer.file_name);
 	else if (file_type == 0xfaf)		/* HTML file */
-		url = ro_path_to_url(message->data.data_xfer.file_name);
+		url = path_to_url(message->data.data_xfer.file_name);
 	else if (file_type == 0x1ba)		/* IEURL file */
 		url = ro_gui_ieurl_file_parse(message->
 				data.data_xfer.file_name);
@@ -1923,7 +1909,7 @@ void ro_msg_save_desktop(wimp_message *message)
  * \return  URL, allocated on heap, or 0 on failure
  */
 
-char *ro_path_to_url(const char *path)
+char *path_to_url(const char *path)
 {
 	int spare;
 	char *buffer = 0;
@@ -1968,6 +1954,48 @@ char *ro_path_to_url(const char *path)
 
 
 /**
+ * Convert a file: URL to a RISC OS pathname.
+ *
+ * \param  url  a file: URL
+ * \return  RISC OS pathname, allocated on heap, or 0 on failure
+ */
+
+char *url_to_path(const char *url)
+{
+	char *temp_name, *r;
+	char *filename;
+
+	if (strncmp(url, "file:/", 5))
+		return NULL;
+
+	if (!strncmp(url, "file:///", 8))
+		temp_name = curl_unescape(url + 7, strlen(url) - 7);
+	else
+		temp_name = curl_unescape(url + 5, strlen(url) - 5);
+
+	if (!temp_name) {
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+
+	filename = malloc(strlen(temp_name) + 100);
+	if (!filename) {
+	  	curl_free(temp_name);
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+	r = __riscosify(temp_name, 0, __RISCOSIFY_NO_SUFFIX,
+			filename, strlen(temp_name) + 100, 0);
+	if (r == 0) {
+		LOG(("__riscosify failed"));
+		return NULL;
+	}
+	curl_free(temp_name);
+	return filename;
+}
+
+
+/**
  * Find screen size in OS units.
  */
 
@@ -2007,7 +2035,7 @@ void ro_gui_open_help_page(const char *page)
 void ro_gui_view_source(struct content *content)
 {
 	os_error *error;
-  	char *temp_name, *r;
+  	char *temp_name;
   	wimp_full_message_data_xfer message;
 
 	if (!content || !content->source_data) {
@@ -2016,24 +2044,11 @@ void ro_gui_view_source(struct content *content)
 	}
 	
 	/* try to load local files directly. */
-	if ((content->url) && (!strncmp(content->url, "file:/", 6))) {
-		if (strncmp(content->url, "file:///", 8) == 0)
-			temp_name = curl_unescape(content->url + 7,
-					strlen(content->url) - 7);
-		else
-			temp_name = curl_unescape(content->url + 5,
-					strlen(content->url) - 5);
-		if (!temp_name) {
-			warn_user("NoMemory", 0);
-			return;
-		}
-		r = __riscosify(temp_name, 0, __RISCOSIFY_NO_SUFFIX,
-				message.file_name, 212, 0);
-		curl_free(temp_name);
-		if (r == 0) {
-			LOG(("__riscosify failed"));
-			return;
-		}
+	temp_name = url_to_path(content->url);
+	if (temp_name) {
+		snprintf(message.file_name, 212, "%s", temp_name);
+		message.file_name[211] = '\0';
+		free(temp_name);
 	} else {
 		/* We cannot release the requested filename until after it has finished
 		   being used. As we can't easily find out when this is, we simply don't
