@@ -18,6 +18,7 @@
 #include "oslib/territory.h"
 
 #include "netsurf/riscos/ucstables.h"
+#include "netsurf/utils/log.h"
 #include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
@@ -582,7 +583,11 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 
 	/* UTF-8 -> simply copy string */
 	if (alphabet == 111 /* UTF-8 */) {
-		*result = strndup(string, len);
+		temp = strndup(string, len);
+		if (!temp)
+			return UTF8_CONVERT_NOMEM;
+
+		*result = temp;
 		return UTF8_CONVERT_OK;
 	}
 
@@ -616,8 +621,8 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 		return utf8_from_enc(string, enc, len, result);
 	}
 
-	/* create output buffer (oversized, but not by much) */
-	*(result) = malloc(len + (3 * offset_count) + 1);
+	/* create output buffer (oversized) */
+	*(result) = malloc((len * 4) + (3 * offset_count) + 1);
 	if (!(*result))
 		return UTF8_CONVERT_NOMEM;
 	*(*result) = '\0';
@@ -625,13 +630,13 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	/* convert the chunks between offsets, then copy stripped
 	 * UTF-8 character into output string */
 	for (i = 0; i != offset_count; i++) {
-		off = (i > 0 ? offsets[i-1].offset + offsets[i-1].local->len
-			     : 0);
+		off = (i > 0 ? offsets[i-1].offset + 1 : 0);
 
 		err = utf8_from_enc(string + off, enc,
 				offsets[i].offset - off, &temp);
 		if (err != UTF8_CONVERT_OK) {
 			assert(err != UTF8_CONVERT_BADENC);
+			LOG(("utf8_from_enc failed"));
 			free(*result);
 			return UTF8_CONVERT_NOMEM;
 		}
@@ -644,12 +649,12 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 
 	/* handle last chunk */
 	if (offsets[offset_count - 1].offset < len) {
-		off = offsets[offset_count - 1].offset +
-				offsets[offset_count - 1].local->len;
+		off = offsets[offset_count - 1].offset + 1;
 
 		err = utf8_from_enc(string + off, enc, len - off, &temp);
 		if (err != UTF8_CONVERT_OK) {
 			assert(err != UTF8_CONVERT_BADENC);
+			LOG(("utf8_from_enc failed"));
 			free(*result);
 			return UTF8_CONVERT_NOMEM;
 		}
@@ -658,6 +663,19 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 
 		free(temp);
 	}
+
+	/* and copy into more reasonably-sized buffer */
+	temp = malloc(strlen((*result)) + 1);
+	if (!temp) {
+		LOG(("malloc failed"));
+		free(*result);
+		return UTF8_CONVERT_NOMEM;
+	}
+	*temp = '\0';
+
+	strcpy(temp, (*result));
+	free(*result);
+	*result = temp;
 
 	return UTF8_CONVERT_OK;
 }

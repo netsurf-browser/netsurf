@@ -1437,9 +1437,9 @@ bool ro_gui_status_click(wimp_pointer *pointer)
   	struct gui_window *g = ro_gui_status_lookup(pointer->w);
 	wimp_drag drag;
 	os_error *error;
-	
+
 	assert(g);
-	
+
 	switch (pointer->i) {
 		case ICON_STATUS_RESIZE:
 			gui_current_drag_type = GUI_DRAG_STATUS_RESIZE;
@@ -2209,11 +2209,23 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 		return false;
 
 	if (file_box) {
+		utf8_convert_ret ret;
+		char *utf8_fn;
+
+		ret = utf8_from_local_encoding(
+				message->data.data_xfer.file_name, 0,
+				&utf8_fn);
+		if (ret != UTF8_CONVERT_OK) {
+			/* A bad encoding should never happen */
+			assert(ret != UTF8_CONVERT_BADENC);
+			LOG(("utf8_from_local_encoding failed"));
+			/* Load was for us - just no memory */
+			return true;
+		}
 
 		/* Found: update form input. */
 		free(file_box->gadget->value);
-		file_box->gadget->value =
-				strdup(message->data.data_xfer.file_name);
+		file_box->gadget->value = utf8_fn;
 
 		/* Redraw box. */
 		box_coords(file_box, &x, &y);
@@ -2754,8 +2766,9 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
 {
 	fileswitch_object_type obj_type;
 	os_error *error;
-	char *buf;
+	char *buf, *utf8_buf;
 	int size;
+	utf8_convert_ret ret;
 
 	error = xosfile_read_stamped(filename, &obj_type, NULL, NULL,
 			&size, NULL, NULL);
@@ -2782,10 +2795,20 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
 		return true;
 	}
 
+	ret = utf8_from_local_encoding(buf, size + 1, &utf8_buf);
+	if (ret != UTF8_CONVERT_OK) {
+		/* bad encoding shouldn't happen */
+		assert(ret != UTF8_CONVERT_BADENC);
+		LOG(("utf8_from_local_encoding failed"));
+		free(buf);
+		warn_user("NoMemory", NULL);
+		return true;
+	}
+
 	if (toolbar) {
 		const char *ep = buf + size;
 		const char *sp;
-		char *p = buf;
+		char *p = utf8_buf;
 
 		/* skip leading whitespace */
 		while (p < ep && isspace(*p)) p++;
@@ -2801,8 +2824,10 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
 			ro_gui_window_launch_url(g, sp);
 	}
 	else
-		browser_window_paste_text(g->bw, buf, size, true);
+		browser_window_paste_text(g->bw, utf8_buf,
+				strlen(utf8_buf), true);
 
 	free(buf);
+	free(utf8_buf);
 	return true;
 }
