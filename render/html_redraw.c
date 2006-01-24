@@ -1022,6 +1022,12 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		if (plot_bitmap) {
 			if (!plot.clip(clip_x0, clip_y0, clip_x1, clip_y1))
 					return false;
+			/* SPECIAL CASE: As GIFs are normally decoded on the first call to
+			 * nsgif_redraw we may need to get the first frame manually. */
+			if ((box->background->type == CONTENT_GIF) &&
+					(box->background->data.gif.gif->decoded_frame < 0))
+						gif_decode_frame(box->background->data.gif.gif,
+								0);
 			if (!plot.bitmap_tile(x, y,
 					ceilf(box->background->width * scale),
 					ceilf(box->background->height * scale),
