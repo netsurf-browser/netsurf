@@ -13,7 +13,7 @@
  * sprites.
  */
 
-//#define NDEBUG
+#define NDEBUG
 
 #include <assert.h>
 #include <stdbool.h>
@@ -172,15 +172,12 @@ struct bitmap *bitmap_create(int width, int height, bool clear)
 	bitmap->width = width;
 	bitmap->height = height;
 	bitmap->opaque = false;
-	if (!bitmap_initialise(bitmap, clear)) {
-		free(bitmap);
-		return NULL;
-	}
+	if (clear)
+		bitmap->init = BITMAP_INITIALISE_FULL;
+	else
+		bitmap->init = BITMAP_INITIALISE_QUICK;
 
 	/* link into our list of bitmaps at the head */
-	bitmap_maintenance = true;
-	bitmap_maintenance_priority |=
-			(bitmap_direct_used > bitmap_direct_size * 1.1);
 	if (bitmap_head) {
 		bitmap->next = bitmap_head;
 		bitmap_head->previous = bitmap;
@@ -210,6 +207,7 @@ struct bitmap *bitmap_create_file(char *file)
 		return NULL;
 	bitmap->opaque = true;
 	bitmap->persistent = true;
+	bitmap->init = BITMAP_INITIALISE_DONE;
 	strcpy(bitmap->filename, file);
 
 	/* link in at the head */
@@ -243,6 +241,7 @@ bool bitmap_initialise(struct bitmap *bitmap, bool clear)
 	if (!bitmap->sprite_area) {
 		return false;
 	}
+	bitmap->init = BITMAP_INITIALISE_DONE;
 	bitmap_direct_used += area_size;
 
 	/* area control block */
@@ -264,6 +263,10 @@ bool bitmap_initialise(struct bitmap *bitmap, bool clear)
 	sprite->right_bit = 31;
 	sprite->image = sprite->mask = 44;
 	sprite->mode = tinct_SPRITE_MODE;
+
+	bitmap_maintenance = true;
+	bitmap_maintenance_priority |=
+			(bitmap_direct_used > bitmap_direct_size * 0.9);
 	return true;
 }
 
@@ -343,6 +346,8 @@ bool bitmap_get_opaque(struct bitmap *bitmap)
 
 char *bitmap_get_buffer(struct bitmap *bitmap)
 {
+  	bool clear;
+ 
 	assert(bitmap);
 
 	/* move to the head of the list */
@@ -355,6 +360,13 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
 		bitmap_head->previous = bitmap;
 		bitmap->previous = NULL;
 		bitmap_head = bitmap;
+	}
+
+	/* dynamically create the buffer */
+	if (bitmap->init != BITMAP_INITIALISE_DONE) {
+	  	clear = (bitmap->init == BITMAP_INITIALISE_FULL);
+		if (!bitmap_initialise(bitmap, clear))
+			return NULL;
 	}
 
 	/* image is already decompressed, no change to image states */
@@ -398,6 +410,7 @@ size_t bitmap_get_rowstride(struct bitmap *bitmap)
 
 void bitmap_destroy(struct bitmap *bitmap)
 {
+	struct bitmap_compressed_header *header;
 	unsigned int area_size;
 
 	assert(bitmap);
@@ -417,8 +430,13 @@ void bitmap_destroy(struct bitmap *bitmap)
 		bitmap_direct_used -= area_size;
 		free(bitmap->sprite_area);
 	}
-	if (bitmap->compressed)
+	if (bitmap->compressed) {
+		header = (struct bitmap_compressed_header *)
+				bitmap->compressed;
+		bitmap_compressed_used -= header->input_size +
+			sizeof(struct bitmap_compressed_header);
 		free(bitmap->compressed);
+	}
 	if (bitmap->filename[0])
 		bitmap_delete_file(bitmap);
 	free(bitmap);
@@ -707,9 +725,10 @@ void bitmap_load_file(struct bitmap *bitmap)
 	} else if ((int)((*(((int *)bitmap->compressed) + 6)) +
 			sizeof(struct bitmap_compressed_header)) == len &&
 			strncmp(bitmap->compressed + 8, "bitmap", 6) == 0) {
-		bitmap_compressed_used -= len;
 		bitmap_compressed = (struct bitmap_compressed_header *)
 				bitmap->compressed;
+		bitmap_compressed_used -= bitmap_compressed->input_size +
+				sizeof(struct bitmap_compressed_header);
 		bitmap->width = bitmap_compressed->width;
 		bitmap->height = bitmap_compressed->height;
 	} else {

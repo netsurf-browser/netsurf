@@ -12,12 +12,19 @@
 
 struct osspriteop_area;
 
+typedef enum {
+	BITMAP_INITIALISE_DONE,		/** Initialisation has been done */
+	BITMAP_INITIALISE_QUICK,	/** Just allocate memory */
+	BITMAP_INITIALISE_FULL		/** Clear the sprite buffer */
+} bitmap_initialisation;
+
 struct bitmap {
 	int width;
 	int height;
 	bool opaque;
 	bool modified;
 	bool persistent;
+	bitmap_initialisation init;
 
 	osspriteop_area *sprite_area;	/** Uncompressed data, or NULL */
 	char *compressed;		/** Compressed data, or NULL */
