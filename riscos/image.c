@@ -49,6 +49,11 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 		bool repeatx, bool repeaty, bool background, image_type type)
 {
 	unsigned int tinct_options;
+	
+	/* failed decompression/loading can result in no image being present */
+	if (!area)
+		return false;
+	
 	osspriteop_id header = (osspriteop_id)
 			((char*) area + area->first);
 	req_width *= 2;
