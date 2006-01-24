@@ -67,6 +67,7 @@ typedef struct gif_animation {
 	unsigned int *local_colour_table;	/**< local colour table */
 	int dirty_frame;			/**< the current dirty frame, or -1 for none */
 	struct bitmap *frame_image;		/**< currently decoded image */
+	int current_error;			/**< current error type, or 0 for none*/
 } gif_animation;
 
 int gif_initialise(struct gif_animation *gif);
