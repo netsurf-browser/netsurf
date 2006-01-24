@@ -105,7 +105,7 @@ struct hostname_data *url_store_find_hostname(const char *url)
 		hostname = malloc(hostname_length + 1);
 		if (!hostname)
 			return NULL;
-		strncpy(hostname, host_test, hostname_length);
+		memcpy(hostname, host_test, hostname_length);
 		hostname[hostname_length] = '\0';
 	} else {
 		/* no quick match found, fallback */
@@ -249,7 +249,7 @@ struct url_content *url_store_find(const char *url) {
 		free(result);
 		return NULL;
 	}
-	strcpy(result->data.url, url);
+	memcpy(result->data.url, url, url_length + 1);
 	result->data.url_length = url_length;
 	result->parent = hostname_data;
 
@@ -404,7 +404,7 @@ char *url_store_match(const char *url, struct url_data **reference) {
 		hostname = url_store_match_hostname(NULL);
 		if (!hostname)
 			return NULL;
-	        } else {
+		} else {
 		search = *reference;
 		hostname = search->parent;
 	}
@@ -517,9 +517,8 @@ void url_store_load(const char *file) {
 	last_hostname_found = NULL;
 	while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
 		/* get the hostname */
-	  	length = strlen(s) - 1;
-		if (s[length] == '\n')
-			s[length] = '\0';
+		length = strlen(s) - 1;
+		s[length] = '\0';
 
 		/* skip data that has ended up with a host of '' */
 		if (length == 0) {
@@ -537,9 +536,10 @@ void url_store_load(const char *file) {
 			hostname = malloc(sizeof *hostname);
 			if (!hostname)
 				die("Insufficient memory to create hostname");
-			hostname->hostname = strdup(s);
+			hostname->hostname = malloc(length + 1);
 			if (!hostname->hostname)
 				die("Insufficient memory to create hostname");
+			memcpy(hostname->hostname, s, length + 1);
 			hostname->hostname_length = length;
 			hostname->url = 0;
 			hostname->previous = last_hostname_found;
@@ -562,15 +562,16 @@ void url_store_load(const char *file) {
 		for (i = 0; i < urls; i++) {
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
-			for (length = 0; s[length] > 32; length++);
-			s[length] = 0x00;
+			length = strlen(s) - 1;
+			s[length] = '\0';
 			result = calloc(1, sizeof(struct url_data));
 			if (!result)
 				die("Insufficient memory to create URL");
 			result->data.url_length = length;
-			result->data.url = strdup(s);
+			result->data.url = malloc(length + 1);
 			if (!result->data.url)
 				die("Insufficient memory to create URL");
+			memcpy(result->data.url, s, length + 1);
 			result->parent = hostname;
 			result->next = hostname->url;
 			if (hostname->url)
@@ -599,23 +600,27 @@ void url_store_load(const char *file) {
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
 #ifdef riscos
-			for (length = 0; s[length] > 32; length++);
-			s[length] = 0x00;
-			if (length == 11) {
+			if (strlen(s) == 12) {
 				/* ensure filename is 'XX.XX.XX.XX' */
 				if ((s[2] == '.') && (s[5] == '.') &&
-						(s[8] == '.'))
+						(s[8] == '.')) {
+					s[11] = '\0';
 					result->data.thumbnail =
 							bitmap_create_file(s);
+				}
 			}
 #endif
 			if (version >= 104) {
 				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 					break;
-				for (length = 0; s[length] >= 32; length++);
-				s[length] = 0x00;
-				if (length > 0)
-					result->data.title = strdup(s);
+				length = strlen(s) - 1;
+				if (length > 0) {
+					s[length] = '\0';
+					result->data.title = malloc(length + 1);
+					if (result->data.title)
+						memcpy(result->data.title, s,
+								length + 1);
+				}
 			}
 		}
 	}
