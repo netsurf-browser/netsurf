@@ -67,7 +67,7 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 	unsigned int height;
 	unsigned int width;
 	struct bitmap *bitmap = NULL;
-	char *pixels;
+	char *pixels = NULL;
 	size_t rowstride;
 	union content_msg_data msg_data;
 
@@ -95,8 +95,12 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 	height = cinfo.output_height;
 
 	bitmap = bitmap_create(width, height, false);
-	if (!bitmap) {
+	if (bitmap)
+		pixels = bitmap_get_buffer(bitmap);
+	if ((!bitmap) || (!pixels)) {
 		jpeg_destroy_decompress(&cinfo);
+		if (bitmap)
+			bitmap_destroy(bitmap);
 
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -105,7 +109,6 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 	}
 	bitmap_set_opaque(bitmap, true);
 
-	pixels = bitmap_get_buffer(bitmap);
 	rowstride = bitmap_get_rowstride(bitmap);
 	do {
 		JSAMPROW scanlines[1];
