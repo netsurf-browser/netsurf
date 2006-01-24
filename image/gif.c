@@ -50,7 +50,6 @@ bool nsgif_create(struct content *c, const char *params[]) {
 		warn_user("NoMemory", 0);
 		return false;
 	}
-	c->data.gif.current_frame = 0;
 	return true;
 }
 
@@ -65,7 +64,7 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 	gif = c->data.gif.gif;
 	gif->gif_data = c->source_data;
 	gif->buffer_size = c->source_size;
-	gif->buffer_position = 0;	// Paranoid
+	gif->buffer_position = 0;
 
 	/*	Initialise the GIF
 	*/
@@ -97,20 +96,13 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 	c->width = gif->width;
 	c->height = gif->height;
 	c->title = malloc(100);
-	if (c->title) {
+	if (c->title)
 		snprintf(c->title, 100, messages_get("GIFTitle"), c->width, c->height, c->source_size);
-	}
 	c->size += (gif->width * gif->height * 4) + 16 + 44 + 100;
-
-	/*	Initialise the first frame so if we try to use the image data directly prior to
-		a plot we get some sensible data
-	*/
-	gif_decode_frame(c->data.gif.gif, 0);
-	if (c->data.gif.gif->frame_image)
-		bitmap_modified(c->data.gif.gif->frame_image);
 
 	/*	Schedule the animation if we have one
 	*/
+	c->data.gif.current_frame = 0;
 	if (gif->frame_count_partial > 1)
 		schedule(gif->frames[0].frame_delay, nsgif_animate, c);
 
