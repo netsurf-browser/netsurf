@@ -175,16 +175,11 @@ struct theme_descriptor *ro_gui_theme_get_available(void) {
 	struct theme_descriptor *current;
 	struct theme_descriptor *test;
 
-	/* close any descriptors we've got so far
-	 * _except_ the current theme */
+	/* close any unused descriptors */
 	ro_gui_theme_free(theme_descriptors);
 
-	assert(theme_descriptors == theme_current);
-
-	if (strcmp(theme_current->name, "Aletheia") != 0) {
-		/* add our default 'Aletheia' theme */
-		ro_gui_theme_add_descriptor("NetSurf:Resources", "Aletheia");
-	}
+	/* add our default 'Aletheia' theme */
+	ro_gui_theme_add_descriptor("NetSurf:Resources", "Aletheia");
 
 	/* scan our choices directory */
 	ro_gui_theme_get_available_in_dir(option_theme_path);
@@ -259,6 +254,7 @@ static void ro_gui_theme_get_available_in_dir(const char *directory) {
 bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname) {
 	struct theme_file_header file_header;
 	struct theme_descriptor *current;
+	struct theme_descriptor *test;
 	int output_left;
 	os_fw file_handle;
 	os_error *error;
@@ -272,6 +268,7 @@ bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname) {
 	  	return false;
 	}
 	sprintf(filename, "%s.%s", folder, leafname);
+	LOG(("Filename: %s", filename));
 
 	/* get the header */
 	error = xosfind_openinw(osfind_NO_PATH, filename, 0,
@@ -321,11 +318,13 @@ bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname) {
 	current->filename = filename;
 	current->leafname = current->filename + strlen(folder) + 1;
 
-	if (strcmp(current->name, theme_current->name) == 0) {
-		/* Don't add if this theme matches the current one */
-		free(current->filename);
-		free(current);
-		return false;
+	/* don't add duplicates */
+	for (test = theme_descriptors; test; test = test->next) {
+		if (!strcmp(current->name, test->name)) {
+			free(current->filename);
+			free(current);
+			return false;
+		}
 	}
 
 	/* link in our new descriptor at the head*/
