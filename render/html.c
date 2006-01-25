@@ -1374,9 +1374,13 @@ void html_destroy(struct content *c)
 	/* Free objects */
 	for (i = 0; i != c->data.html.object_count; i++) {
 		LOG(("object %i %p", i, c->data.html.object[i].content));
-		if (c->data.html.object[i].content)
+		if (c->data.html.object[i].content) {
 			content_remove_user(c->data.html.object[i].content,
 					 html_object_callback, (intptr_t) c, i);
+			if (c->data.html.object[i].content->type == CONTENT_HTML)
+				schedule_remove(html_object_refresh,
+					c->data.html.object[i].content);
+		}
 	}
 }
 
@@ -1415,6 +1419,7 @@ void html_close(struct content *c)
 {
 	unsigned int i;
 	c->data.html.bw = 0;
+	schedule_remove(html_object_refresh, c);
 	for (i = 0; i != c->data.html.object_count; i++) {
 		if (c->data.html.object[i].content == 0)
 			continue;

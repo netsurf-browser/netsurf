@@ -570,6 +570,8 @@ void browser_window_stop(struct browser_window *bw)
 				browser_window_callback, (intptr_t) bw, 0);
 	}
 
+	schedule_remove(browser_window_refresh, bw);
+
 	browser_window_stop_throbber(bw);
 }
 
@@ -657,6 +659,8 @@ void browser_window_destroy(struct browser_window *bw)
 		content_remove_user(bw->current_content,
 				browser_window_callback, (intptr_t) bw, 0);
 	}
+
+	schedule_remove(browser_window_refresh, bw);
 
 	selection_destroy(bw->sel);
 	history_destroy(bw->history);
