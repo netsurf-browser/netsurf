@@ -58,6 +58,7 @@
 #define wimp_KEY_END wimp_KEY_COPY
 #endif
 
+#define SCROLL_VISIBLE_PADDING 32
 
 /** List of all browser windows. */
 static struct gui_window *window_list = 0;
@@ -786,6 +787,91 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 	if (g->toolbar)
 		state.yscroll += ro_gui_theme_toolbar_full_height(g->toolbar);
 	ro_gui_window_open(g, (wimp_open *) &state);
+}
+
+
+/**
+ * Scrolls the specified area of a browser window into view.
+ *
+ * \param  g   gui_window to scroll
+ * \param  x0  left point to ensure visible
+ * \param  y0  top-left point to ensure visible
+ * \param  x1  left point to ensure visible
+ * \param  y1  top-left point to ensure visible
+ */
+void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int x1, int y1)
+{
+	wimp_window_state state;
+	os_error *error;
+	int cx0, cy0, width, height;
+	int padding_available;
+	int toolbar_height = 0;
+	int correction;
+
+	assert(g);
+
+	state.w = g->window;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	if (g->toolbar)
+	  	toolbar_height = ro_gui_theme_toolbar_full_height(g->toolbar);
+	
+	x0 = x0 * 2 * g->option.scale;
+	y0 = y0 * 2 * g->option.scale;
+	x1 = x1 * 2 * g->option.scale;
+	y1 = y1 * 2 * g->option.scale;
+
+	cx0 = state.xscroll;
+	cy0 = -state.yscroll + toolbar_height;
+	width = state.visible.x1 - state.visible.x0;
+	height = state.visible.y1 - state.visible.y0 - toolbar_height;
+	
+	/* make sure we're visible */
+	correction = (x1 - cx0 - width);
+	if (correction > 0)
+		cx0 += correction;
+	correction = (y1 - cy0 - height);
+	if (correction > 0)
+		cy0 += correction;
+	if (x0 < cx0)
+		cx0 = x0;
+	if (y0 < cy0)
+		cy0 = y0;
+
+	/* try to give a SCROLL_VISIBLE_PADDING border of space around us */
+	padding_available = (width - x1 + x0) / 2;
+	if (padding_available > 0) {
+	  	if (padding_available > SCROLL_VISIBLE_PADDING)
+	  		padding_available = SCROLL_VISIBLE_PADDING;
+	  	correction = (cx0 + width - x1);
+	  	if (correction < padding_available)
+	  		cx0 += padding_available;
+	  	correction = (x0 - cx0);
+	  	if (correction < padding_available)
+	  		cx0 -= padding_available;
+	}
+	padding_available = (height - y1 + y0) / 2;
+	LOG(("Padding available: %i", padding_available));
+	if (padding_available > 0) {
+	  	if (padding_available > SCROLL_VISIBLE_PADDING)
+	  		padding_available = SCROLL_VISIBLE_PADDING;
+	  	correction = (cy0 + height - y1);
+	  	if (correction < padding_available)
+	  		cy0 += padding_available;
+	  	correction = (y0 - cy0);
+	  	if (correction < padding_available)
+	  		cy0 -= padding_available;
+	}
+
+	state.xscroll = cx0;
+	state.yscroll = -cy0 + toolbar_height;
+	ro_gui_window_open(g, (wimp_open *)&state);
 }
 
 

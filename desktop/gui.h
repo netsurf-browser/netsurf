@@ -59,6 +59,8 @@ void gui_window_update_box(struct gui_window *g,
 		const union content_msg_data *data);
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
+void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
+		int x1, int y1);
 int gui_window_get_width(struct gui_window *g);
 int gui_window_get_height(struct gui_window *g);
 void gui_window_set_extent(struct gui_window *g, int width, int height);

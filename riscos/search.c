@@ -358,7 +358,7 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
 	struct content *c;
 	struct box *box;
 	struct list_entry *a, *b;
-	int x,y;
+	int x0,y0,x1,y1;
 	bool new = false;
 
 	if (!search_current_window)
@@ -450,9 +450,13 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
 		search_current->end_idx);
 
 	/* get box position and jump to it */
-	box_coords(search_current->start_box, &x, &y);
-//	LOG(("%p (%d, %d)", search_current, x, y));
-	gui_window_set_scroll(search_current_window, x, y);
+	box_coords(search_current->start_box, &x0, &y0);
+	x0 += 0;	/* \todo: move x0 in by correct idx */
+	box_coords(search_current->end_box, &x1, &y1);
+	x1 += search_current->end_box->width;	/* \todo: move x1 in by correct idx */
+	y1 += search_current->end_box->height;
+	
+	gui_window_scroll_visible(search_current_window, x0, y0, x1, y1);
 
 }
 
