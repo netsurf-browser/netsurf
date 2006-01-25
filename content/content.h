@@ -150,6 +150,7 @@ typedef enum {
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
 	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
 	CONTENT_MSG_NEWPTR,    /**< address of structure has changed */
+	CONTENT_MSG_REFRESH,   /**< wants refresh */
 #ifdef WITH_AUTH
 	CONTENT_MSG_AUTH       /**< authentication required */
 #endif
@@ -173,6 +174,7 @@ union content_msg_data {
 		float object_width, object_height;
 	} redraw;
 	char *auth_realm;	/**< Realm, for CONTENT_MSG_AUTH. */
+	int delay;	/**< Minimum delay, for CONTENT_MSG_REFRESH */
 };
 
 /** Linked list of users of a content. */
@@ -232,6 +234,9 @@ struct content {
 		struct content_artworks_data artworks;
 #endif
 	} data;
+
+	/**< URL for refresh request, in standard form as from url_join. */
+	char *refresh;
 
 	/** Bitmap, for various image contents. */
 	struct bitmap *bitmap;

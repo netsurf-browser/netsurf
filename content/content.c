@@ -295,6 +295,7 @@ struct content * content_create(const char *url)
 	c->width = 0;
 	c->height = 0;
 	c->available_width = 0;
+	c->refresh = 0;
 	c->bitmap = 0;
 	c->fresh = false;
 	c->size = sizeof(struct content);

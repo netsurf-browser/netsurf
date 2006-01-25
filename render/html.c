@@ -20,6 +20,7 @@
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
+#include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/box.h"
@@ -40,6 +41,7 @@ static bool html_set_parser_encoding(struct content *c, const char *encoding);
 static const char *html_detect_encoding(const char *data, unsigned int size);
 static void html_convert_css_callback(content_msg msg, struct content *css,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
+static bool html_meta_refresh(struct content *c, xmlNode *head);
 static bool html_head(struct content *c, xmlNode *head);
 static bool html_find_stylesheets(struct content *c, xmlNode *head);
 static void html_object_callback(content_msg msg, struct content *object,
@@ -50,6 +52,7 @@ static void html_object_failed(struct box *box, struct content *content,
 		bool background);
 static bool html_object_type_permitted(const content_type type,
 		const content_type *permitted_types);
+static void html_object_refresh(void *p);
 static bool html_find_frame(struct content *c, const char *frame,
 		struct content **page, unsigned int *i);
 
@@ -308,6 +311,10 @@ bool html_convert(struct content *c, int width, int height)
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			return false;
 		}
+
+		/* handle meta refresh */
+		if (!html_meta_refresh(c, head))
+			return false;
 	}
 
 	/* get stylesheets */
@@ -362,6 +369,90 @@ bool html_convert(struct content *c, int width, int height)
 	return true;
 }
 
+/**
+ * Search for meta refresh
+ *
+ * \param c content structure
+ * \param head xml node of head element
+ * \return true on success, false otherwise (error reported)
+ */
+
+bool html_meta_refresh(struct content *c, xmlNode *head)
+{
+	xmlNode *n;
+	xmlChar *equiv, *content;
+	union content_msg_data msg_data;
+	char *url, *end, *refresh;
+	url_func_result res;
+
+	for (n = head == 0 ? 0 : head->children; n; n = n->next) {
+		if (n->type != XML_ELEMENT_NODE)
+			continue;
+
+		if (strcmp((const char *)n->name, "meta"))
+			continue;
+
+		equiv = xmlGetProp(n, (const xmlChar *)"http-equiv");
+		if (!equiv)
+			continue;
+
+		if (strcasecmp((const char *)equiv, "refresh")) {
+			xmlFree(equiv);
+			continue;
+		}
+
+		xmlFree(equiv);
+
+		content = xmlGetProp(n, (const xmlChar *)"content");
+		if (!content)
+			continue;
+
+		end = (char *)content + strlen(content);
+
+		msg_data.delay = (int)strtol((char *) content, &url, 10);
+
+		for ( ; url <= end - 4; url++) {
+			if (!strncasecmp(url, "url=", 4))
+				break;
+		}
+
+		if (url <= end - 4) {
+			res = url_join(url + 4, c->data.html.base_url,
+					&refresh);
+
+			xmlFree(content);
+
+			if (res == URL_FUNC_NOMEM) {
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(c,
+					CONTENT_MSG_ERROR, msg_data);
+				return false;
+			}
+			else if (res == URL_FUNC_FAILED) {
+				/* This isn't fatal so carry on looking */
+				continue;
+			}
+
+			c->refresh = talloc_strdup(c, refresh);
+
+			free(refresh);
+
+			if (!c->refresh) {
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(c,
+					CONTENT_MSG_ERROR, msg_data);
+				return false;
+			}
+
+			content_broadcast(c, CONTENT_MSG_REFRESH, msg_data);
+			break;
+		}
+
+		xmlFree(content);
+	}
+
+	return true;
+}
 
 /**
  * Process elements in <head>.
@@ -1018,6 +1109,13 @@ void html_object_callback(content_msg msg, struct content *object,
 			break;
 #endif
 
+		case CONTENT_MSG_REFRESH:
+			if (object->type == CONTENT_HTML)
+				/* only for HTML objects */
+				schedule(data.delay * 100,
+						html_object_refresh, object);
+			break;
+
 		default:
 			assert(0);
 	}
@@ -1176,6 +1274,24 @@ bool html_object_type_permitted(const content_type type,
 	return false;
 }
 
+
+/**
+ * schedule() callback for object refresh
+ */
+
+void html_object_refresh(void *p)
+{
+	struct content *c = (struct content *)p;
+
+	assert(c->type == CONTENT_HTML && c->refresh);
+
+	c->fresh = false;
+
+	if (!html_replace_object(c->data.html.page, c->data.html.index,
+			c->refresh, 0, 0)) {
+		/** \todo handle memory exhaustion */
+	}
+}
 
 /**
  * Stop loading a CONTENT_HTML in state READY.

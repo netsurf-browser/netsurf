@@ -51,6 +51,7 @@ struct browser_window *current_redraw_browser;
 
 static void browser_window_callback(content_msg msg, struct content *c,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
+static void browser_window_refresh(void *p);
 static void browser_window_convert_to_download(struct browser_window *bw);
 static void browser_window_start_throbber(struct browser_window *bw);
 static void browser_window_stop_throbber(struct browser_window *bw);
@@ -414,11 +415,36 @@ void browser_window_callback(content_msg msg, struct content *c,
 			break;
 #endif
 
+		case CONTENT_MSG_REFRESH:
+			schedule(data.delay * 100,
+					browser_window_refresh, bw);
+			break;
+
 		default:
 			assert(0);
 	}
 }
 
+
+/**
+ * Refresh browser window
+ *
+ * \param p Browser window to refresh
+ */
+
+void browser_window_refresh(void *p)
+{
+	struct browser_window *bw = p;
+
+	assert(bw->current_content->status == CONTENT_STATUS_READY ||
+			bw->current_content->status == CONTENT_STATUS_DONE);
+
+	/* mark this content as invalid so it gets flushed from the cache */
+	bw->current_content->fresh = false;
+
+	browser_window_go(bw, bw->current_content->refresh,
+			bw->current_content->url);
+}
 
 /**
  * Transfer the loading_content to a new download window.
