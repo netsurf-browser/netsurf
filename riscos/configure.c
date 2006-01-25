@@ -60,7 +60,7 @@ void ro_gui_configure_initialise(void) {
 	ro_gui_wimp_event_register_mouse_click(configure_window,
 			ro_gui_configure_click);
 	ro_gui_wimp_event_set_help_prefix(dialog_zoom, "HelpConfigure");
-	
+
 	/* add in our option windows */
 	ro_gui_configure_register("con_fonts",
 			ro_gui_options_fonts_initialise,
@@ -95,10 +95,10 @@ void ro_gui_configure_show(void) {
 
 bool ro_gui_configure_click(wimp_pointer *pointer) {
   	struct configure_tool *tool;
-  	
+
   	if (pointer->buttons == wimp_CLICK_MENU)
   		return true;
-  	
+
   	for (tool = configure_tools; tool; tool = tool->next) {
   		if (tool->i == pointer->i) {
   			if (!tool->open) {
@@ -111,7 +111,7 @@ bool ro_gui_configure_click(wimp_pointer *pointer) {
   				ro_gui_wimp_event_register_close_window(
   						tool->w,
   						ro_gui_configure_close);
-  				
+
   			} else {
 				ro_gui_dialog_open_top(tool->w, NULL, 0, 0);
 			}
@@ -123,7 +123,7 @@ bool ro_gui_configure_click(wimp_pointer *pointer) {
 
 void ro_gui_configure_close(wimp_w w) {
   	struct configure_tool *tool;
-  	
+
   	for (tool = configure_tools; tool; tool = tool->next) {
   		if (tool->w == w) {
   			tool->open = false;
@@ -150,7 +150,7 @@ void ro_gui_configure_open_window(wimp_open *open) {
 	if (icons_per_line < 1)
 		icons_per_line = 1;
 
-	/* move our icons */ 
+	/* move our icons */
 	if (icons_per_line != configure_icons_per_line) {
 		configure_icons_per_line = icons_per_line;
 		x = CONFIGURE_ICON_PADDING_H / 2;
@@ -174,8 +174,8 @@ void ro_gui_configure_open_window(wimp_open *open) {
 			if (l >= icons_per_line) {
 				x = CONFIGURE_ICON_PADDING_H / 2;
 				l = 0;
-				y -= configure_icon_height; 
-                        } 
+				y -= configure_icon_height;
+                        }
 		}
 		error = xwimp_force_redraw(configure_window,
 				0, -16384, 16384, 0);
@@ -185,14 +185,14 @@ void ro_gui_configure_open_window(wimp_open *open) {
 			warn_user("WimpError", error->errmess);
 		}
 	}
-	
+
 	/* restrict our height */
 	icon_lines = (configure_icons + icons_per_line - 1) /
 			icons_per_line;
 	max_height = (icon_lines * configure_icon_height);
 	if (height > max_height)
 		open->visible.y0 = open->visible.y1 - max_height;
-	
+
 	/* set the extent */
 	if ((configure_height != height) || (configure_width != width)) {
 		ro_gui_screen_size(&screen_width, &screen_height);
@@ -238,7 +238,7 @@ void ro_gui_configure_register(const char *window,
 	}
 	tool->name = window;
 	tool->translated = messages_get(window);
-	tool->validation = malloc(strlen(window) + 1);
+	tool->validation = malloc(strlen(window) + 2);
 	if (!tool->validation) {
 	  	LOG(("Insufficient memory for malloc()"));
 		die("Insufficient memory");
@@ -247,7 +247,7 @@ void ro_gui_configure_register(const char *window,
 	tool->initialise = initialise;
 	tool->finalise = finalise;
 	tool->w = ro_gui_dialog_create(tool->name);
-	
+
 	/* update the width */
 	error = xwimptextop_string_width(tool->translated,
 			strlen(tool->translated), &icon_width);
@@ -283,7 +283,7 @@ void ro_gui_configure_register(const char *window,
 				error->errnum, error->errmess));
 		die(error->errmess);
 	}
-	
+
 	/* link into our list alphabetically */
 	if ((!configure_tools) ||
 			(strcmp(configure_tools->translated,
