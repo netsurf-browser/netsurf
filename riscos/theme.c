@@ -268,7 +268,6 @@ bool ro_gui_theme_add_descriptor(const char *folder, const char *leafname) {
 	  	return false;
 	}
 	sprintf(filename, "%s.%s", folder, leafname);
-	LOG(("Filename: %s", filename));
 
 	/* get the header */
 	error = xosfind_openinw(osfind_NO_PATH, filename, 0,
@@ -636,6 +635,8 @@ void ro_gui_theme_redraw(wimp_draw *redraw) {
 		perform_redraw = true;
 	}
 	perform_redraw &= toolbar->display_buttons || toolbar->editor;
+	if ((toolbar->editor) && (toolbar->editor->toolbar_handle == redraw->w))
+		toolbar = toolbar->editor;
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
