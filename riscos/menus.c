@@ -818,25 +818,6 @@ void ro_gui_prepare_navigate(struct gui_window *gui) {
 
 
 /**
- * Prepare the image quality menu for use
- *
- * \param tinct_options  the options to set the menu status for
- */
-void ro_gui_menu_prepare_image_quality(unsigned int tinct_options) {
-	for (int i = 0; i < 4; i++)
-		image_quality_menu->entries[i].menu_flags &= ~wimp_MENU_TICKED;
-	if (tinct_options & tinct_USE_OS_SPRITE_OP)
-		image_quality_menu->entries[0].menu_flags |= wimp_MENU_TICKED;
-	else if (tinct_options & tinct_ERROR_DIFFUSE)
-		image_quality_menu->entries[3].menu_flags |= wimp_MENU_TICKED;
-	else if (tinct_options & tinct_DITHER)
-		image_quality_menu->entries[2].menu_flags |= wimp_MENU_TICKED;
-	else
-		image_quality_menu->entries[1].menu_flags |= wimp_MENU_TICKED;
-}
-
-
-/**
  * Prepare the page info window for use
  *
  * \param g  the gui_window to set the display icons for
@@ -914,40 +895,6 @@ void ro_gui_menu_prepare_objectinfo(struct box *box) {
 	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TYPE, mime);
 }
 
-
-/**
- * Prepare languages menu for use
- *
- * \param accept For Accept-Languages selection
- * \param lang Currently selected language
- */
-void ro_gui_menu_prepare_languages(bool accept, const char *lang)
-{
-	struct menu_definition *menu;
-	struct menu_definition_entry *entry;
-	char path_buf[40];
-	int offset = strlen("lang_");
-
-	menu = ro_gui_menu_find_menu(languages_menu);
-	for (entry = menu->entries; entry; entry = entry->next) {
-		if (!accept) {
-			snprintf(path_buf, sizeof path_buf,
-					"NetSurf:Resources.%.2s",
-					entry->entry_key + offset);
-
-			entry->menu_entry->icon_flags |= is_dir(path_buf) ?
-						0 : wimp_ICON_SHADED;
-		}
-		else
-			entry->menu_entry->icon_flags &= ~wimp_ICON_SHADED;
-
-		/* set ticked status */
-		if (strncmp(lang, entry->entry_key + offset, 2) == 0)
-			entry->menu_entry->menu_flags |= wimp_MENU_TICKED;
-		else
-			entry->menu_entry->menu_flags &= ~wimp_MENU_TICKED;
-	}
-}
 
 /**
  * Display a menu of options for a form select control.
@@ -1287,6 +1234,28 @@ struct menu_definition *ro_gui_menu_find_menu(wimp_menu *menu) {
 			definition = definition->next)
 		if (definition->menu == menu)
 			return definition;
+	return NULL;
+}
+
+
+/**
+ * Finds the key associated with a menu entry translation.
+ *
+ * \param menu  the menu to search
+ * \param translated  the translated text
+ * \return the original message key, or NULL if one could not be found
+ */
+const char *ro_gui_menu_find_menu_entry_key(wimp_menu *menu,
+		const char *translated) {
+	struct menu_definition_entry *entry;
+	struct menu_definition *definition = ro_gui_menu_find_menu(menu);
+
+	if (!definition)
+		return NULL;
+
+	for (entry = definition->entries; entry; entry = entry->next)
+		if (!strcmp(entry->menu_entry->data.indirected_text.text, translated))
+			return entry->entry_key;
 	return NULL;
 }
 

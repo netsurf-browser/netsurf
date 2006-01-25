@@ -487,18 +487,12 @@ void ro_gui_create_dirs(void)
 }
 
 /**
- * Determine the language to use.
- *
- * RISC OS has no standard way of determining which language the user prefers.
- * We have to guess from the 'Country' setting.
+ * Choose the language to use.
  */
 
 void ro_gui_choose_language(void)
 {
 	char path[40];
-	const char *lang;
-	int country;
-	os_error *error;
 
 	/* if option_language exists and is valid, use that */
 	if (option_language) {
@@ -513,6 +507,25 @@ void ro_gui_choose_language(void)
 		free(option_language);
 		option_language = 0;
 	}
+	
+	option_language = strdup(ro_gui_default_language());
+	assert(option_language);
+	option_accept_language = strdup(option_language);
+	assert(option_accept_language);
+}
+
+
+/**
+ * Determine the default language to use.
+ *
+ * RISC OS has no standard way of determining which language the user prefers.
+ * We have to guess from the 'Country' setting.
+ */
+const char *ro_gui_default_language(void) {
+	char path[40];
+	const char *lang;
+	int country;
+	os_error *error;
 
 	/* choose a language from the configured country number */
 	error = xosbyte_read(osbyte_VAR_COUNTRY_NUMBER, &country);
@@ -540,8 +553,8 @@ void ro_gui_choose_language(void)
 	}
 	sprintf(path, "NetSurf:Resources.%s", lang);
 	if (is_dir(path))
-		option_language = strdup(lang);
-	else
+		return lang;
+	return "en";
 		option_language = strdup("en");
 	assert(option_language);
 	if (!option_accept_language)
