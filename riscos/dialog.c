@@ -246,6 +246,14 @@ wimp_window * ro_gui_dialog_load_template(const char *template_name)
 	/* wimp_load_template won't accept a const char * */
 	strncpy(name, template_name, sizeof name);
 
+	/* there is an OS bug such that wimp_load_template with a 12 character
+	 * name will sometimes fail. to work around it we truncate such names to a
+	 * 10 character wildcarded name, eg 'con_language' -> 'con_langua*' */
+	if (strlen(template_name) > 11) {
+		name[10] = '*';
+		name[11] = '\0';
+	}
+
 	/* find required buffer sizes */
 	error = xwimp_load_template(wimp_GET_SIZE, 0, 0, wimp_NO_FONTS,
 			name, 0, &window_size, &data_size, &context);
@@ -267,6 +275,12 @@ wimp_window * ro_gui_dialog_load_template(const char *template_name)
 	if (!data || !window) {
 		xwimp_close_template();
 		die("NoMemory");
+	}
+
+	/* the OS has updated our name, so we reset it back if required*/
+	if (strlen(template_name) > 11) {
+		name[10] = '*';
+		name[11] = '\0';
 	}
 
 	/* load template */
