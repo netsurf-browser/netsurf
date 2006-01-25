@@ -357,7 +357,8 @@ void ro_gui_dialog_close(wimp_w close)
 						persistent_dialog[i].parent,
 						wimp_ICON_WINDOW, -100, -100,
 						32, -1);
-				if (error) {
+				/* parent may have been closed first */
+				if ((error) && (error->errnum != 0x287)) {
 					LOG(("xwimp_set_caret_position: "
 							"0x%x: %s",
 							error->errnum,
