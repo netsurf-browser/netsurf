@@ -35,7 +35,7 @@ OBJECTS_RISCOS += 401login.o artworks.o assert.o awrender.o bitmap.o \
 	buffer.o configure.o debugwin.o \
 	dialog.o download.o draw.o filename.o filetype.o font.o \
 	global_history.o gui.o help.o history.o hotlist.o image.o \
-	menus.o message.o plotters.o plugin.o print.o \
+	menus.o message.o mouseactions.o plotters.o plugin.o print.o \
 	query.o save.o save_complete.o save_draw.o save_text.o \
 	schedule.o search.o sprite.o textselection.o theme.o \
 	theme_install.o thumbnail.o treeview.o ucstables.o uri.o \
@@ -85,7 +85,7 @@ OBJS_GTK=$(OBJECTS_GTK:%.o=$(OBJDIR_GTK)/%.o)
 # Inclusion of platform specific files has to occur after the OBJDIR stuff as
 # that is refered to in the files
 
-OS = $(word 2,$(subst -, ,$(shell gcc -dumpmachine)))
+OS = $(word 2,$(subst -, ,$(shell /usr/bin/gcc -dumpmachine)))
 ifeq ($(OS),riscos)
 include riscos.mk
 else
@@ -180,7 +180,7 @@ utils/translit.c: transtab
 # available), remove */*.[ch] from the line below.
 # Under RISC OS, you may require *Set UnixFS$sfix "", if perl gives
 # "No such file or directory" errors.
-depend:
+depend: */*.[ch]
 	@echo "--> modified files $?"
 	@echo "--> updating dependencies"
 	@-mkdir -p $(OBJDIR_RISCOS) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)
