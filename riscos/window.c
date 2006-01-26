@@ -1179,7 +1179,7 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 	}
 	if ((state.flags & wimp_WINDOW_TOGGLED) && // bit 19
 			(state.flags & wimp_WINDOW_BOUNDED_ONCE) && // bit 21
-			(state.flags & wimp_WINDOW_FULL_SIZE)) { // not bit 18
+			!(state.flags & wimp_WINDOW_FULL_SIZE)) { // not bit 18
 		ro_gui_screen_size(&screen_width, &screen_height);
 		/* i can see no way of easily discovering if we were the result of a shift-
 		 * toggle as wimp_WINDOW_PARTIAL_SIZE does not seem to be what we need. As
