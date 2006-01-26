@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.45 $ )
+| Run file for NetSurf. ( $Revision: 1.46 $ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -84,5 +84,5 @@ Unset Alias$NetSurfRMLoad
 CDir <Wimp$ScrapDir>.WWW
 CDir <Wimp$ScrapDir>.WWW.NetSurf
 
-WimpSlot -min 2240k -max 2240k
+WimpSlot -min 3100k -max 3100k
 Run <NetSurf$Dir>.!RunImage %*0 2><Wimp$ScrapDir>.WWW.NetSurf.Log
