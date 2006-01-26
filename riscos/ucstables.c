@@ -512,27 +512,32 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 		off = (i > 0 ? offsets[i-1].offset + offsets[i-1].local->len
 			     : 0);
 
-		err = utf8_to_enc(string + off, enc,
-				offsets[i].offset - off, &temp);
-		if (err != UTF8_CONVERT_OK) {
-			assert(err != UTF8_CONVERT_BADENC);
-			free(*result);
-			return UTF8_CONVERT_NOMEM;
+		/* 0 length has a special meaning to utf8_to_enc */
+		if (offsets[i].offset > off) {
+			err = utf8_to_enc(string + off, enc,
+					offsets[i].offset - off, &temp);
+			if (err != UTF8_CONVERT_OK) {
+				assert(err != UTF8_CONVERT_BADENC);
+				free(*result);
+				return UTF8_CONVERT_NOMEM;
+			}
+
+			strcat((*result), temp);
+
+			free(temp);
 		}
 
-		strcat((*result), temp);
 		off = strlen(*result);
 		(*result)[off] = offsets[i].local->local;
 		(*result)[off+1] = '\0';
-
-		free(temp);
 	}
 
-	/* handle last chunk */
-	if (offsets[offset_count - 1].offset < len) {
-		off = offsets[offset_count - 1].offset +
-				offsets[offset_count - 1].local->len;
+	/* handle last chunk
+	 * NB. 0 length has a special meaning to utf8_to_enc */
 
+	off = offsets[offset_count - 1].offset +
+			offsets[offset_count - 1].local->len;
+	if (off < len) {
 		err = utf8_to_enc(string + off, enc, len - off, &temp);
 		if (err != UTF8_CONVERT_OK) {
 			assert(err != UTF8_CONVERT_BADENC);
@@ -632,25 +637,28 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	for (i = 0; i != offset_count; i++) {
 		off = (i > 0 ? offsets[i-1].offset + 1 : 0);
 
-		err = utf8_from_enc(string + off, enc,
-				offsets[i].offset - off, &temp);
-		if (err != UTF8_CONVERT_OK) {
-			assert(err != UTF8_CONVERT_BADENC);
-			LOG(("utf8_from_enc failed"));
-			free(*result);
-			return UTF8_CONVERT_NOMEM;
+		/* 0 length has a special meaning to utf8_from_enc */
+		if (offsets[i].offset > off) {
+			err = utf8_from_enc(string + off, enc,
+					offsets[i].offset - off, &temp);
+			if (err != UTF8_CONVERT_OK) {
+				assert(err != UTF8_CONVERT_BADENC);
+				LOG(("utf8_from_enc failed"));
+				free(*result);
+				return UTF8_CONVERT_NOMEM;
+			}
+
+			strcat((*result), temp);
+			free(temp);
 		}
 
-		strcat((*result), temp);
 		strcat((*result), offsets[i].local->utf);
-
-		free(temp);
 	}
 
-	/* handle last chunk */
-	if (offsets[offset_count - 1].offset < len) {
-		off = offsets[offset_count - 1].offset + 1;
-
+	/* handle last chunk
+	 * NB. 0 length has a special meaning to utf8_from_enc */
+	off = offsets[offset_count - 1].offset + 1;
+	if (off < len) {
 		err = utf8_from_enc(string + off, enc, len - off, &temp);
 		if (err != UTF8_CONVERT_OK) {
 			assert(err != UTF8_CONVERT_BADENC);
@@ -658,7 +666,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 			free(*result);
 			return UTF8_CONVERT_NOMEM;
 		}
-
+	
 		strcat((*result), temp);
 
 		free(temp);
