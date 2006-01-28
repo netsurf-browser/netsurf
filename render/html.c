@@ -372,6 +372,8 @@ bool html_convert(struct content *c, int width, int height)
 /**
  * Search for meta refresh
  *
+ * http://wp.netscape.com/assist/net_sites/pushpull.html
+ *
  * \param c content structure
  * \param head xml node of head element
  * \return true on success, false otherwise (error reported)
@@ -410,6 +412,22 @@ bool html_meta_refresh(struct content *c, xmlNode *head)
 		end = (char *)content + strlen(content);
 
 		msg_data.delay = (int)strtol((char *) content, &url, 10);
+
+		if (url == end) {
+			/* Just delay specified, so refresh current page */
+			xmlFree(content);
+
+			c->refresh = talloc_strdup(c, c->url);
+			if (!c->refresh) {
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(c,
+					CONTENT_MSG_ERROR, msg_data);
+				return false;
+			}
+
+			content_broadcast(c, CONTENT_MSG_REFRESH, msg_data);
+			break;
+		}
 
 		for ( ; url <= end - 4; url++) {
 			if (!strncasecmp(url, "url=", 4))
