@@ -2,7 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
- * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2006 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -461,19 +461,42 @@ void nsfont_read_style(const struct css_style *style,
 		*font_style = rufl_SLANTED;
 		break;
 	default:
-		*font_style = rufl_REGULAR;
+		*font_style = 0;
 		break;
 	}
 
 	switch (style->font_weight) {
-	case CSS_FONT_WEIGHT_BOLD:
+	case CSS_FONT_WEIGHT_100:
+		*font_style |= rufl_WEIGHT_100;
+		break;
+	case CSS_FONT_WEIGHT_200:
+		*font_style |= rufl_WEIGHT_200;
+		break;
+	case CSS_FONT_WEIGHT_300:
+		*font_style |= rufl_WEIGHT_300;
+		break;
+	case CSS_FONT_WEIGHT_NORMAL:
+	case CSS_FONT_WEIGHT_400:
+		*font_style |= rufl_WEIGHT_400;
+		break;
+	case CSS_FONT_WEIGHT_500:
+		*font_style |= rufl_WEIGHT_500;
+		break;
 	case CSS_FONT_WEIGHT_600:
+		*font_style |= rufl_WEIGHT_600;
+		break;
+	case CSS_FONT_WEIGHT_BOLD:
 	case CSS_FONT_WEIGHT_700:
+		*font_style |= rufl_WEIGHT_700;
+		break;
 	case CSS_FONT_WEIGHT_800:
+		*font_style |= rufl_WEIGHT_800;
+		break;
 	case CSS_FONT_WEIGHT_900:
-		*font_style += rufl_BOLD;
+		*font_style |= rufl_WEIGHT_900;
 		break;
 	default:
+		*font_style |= rufl_WEIGHT_400;
 		break;
 	}
 }
