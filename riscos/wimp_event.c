@@ -23,6 +23,9 @@
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
+#define WIN_HASH_SIZE 32
+#define WIN_HASH(w) (((unsigned)(w) >> 5) % WIN_HASH_SIZE)
+
 typedef enum {
 	EVENT_NUMERIC_FIELD,
 	EVENT_TEXT_FIELD,
@@ -89,8 +92,9 @@ static struct event_window *ro_gui_wimp_event_find_window(wimp_w w);
 static struct icon_event *ro_gui_wimp_event_get_event(wimp_w w, wimp_i i,
 		event_type type);
 static void ro_gui_wimp_event_prepare_menu(wimp_w w, struct icon_event *event);
+static struct event_window *ro_gui_wimp_event_remove_window(wimp_w w);
 
-static struct event_window *ro_gui_wimp_event_windows;
+static struct event_window *ro_gui_wimp_event_windows[WIN_HASH_SIZE];
 
 
 /**
@@ -217,23 +221,11 @@ bool ro_gui_wimp_event_validate(wimp_w w) {
  */
 void ro_gui_wimp_event_finalise(wimp_w w) {
 	struct event_window *window;
-	struct event_window *link;
 	struct icon_event *event;
 
-	window = ro_gui_wimp_event_find_window(w);
+	window = ro_gui_wimp_event_remove_window(w);
 	if (!window)
 		return;
-
-	if (window == ro_gui_wimp_event_windows) {
-		ro_gui_wimp_event_windows = window->next;
-	} else {
-		for (link = ro_gui_wimp_event_windows; link; link = link->next) {
-			if (link->next == window) {
-				link->next = window->next;
-				break;
-			}
-		}
-	}
 
 	while (window->first) {
 		event = window->first;
@@ -967,6 +959,7 @@ bool ro_gui_wimp_event_register_menu_selection(wimp_w w,
  */
 struct event_window *ro_gui_wimp_event_get_window(wimp_w w) {
 	struct event_window *window;
+	int h;
 
 	window = ro_gui_wimp_event_find_window(w);
 	if (window)
@@ -975,12 +968,43 @@ struct event_window *ro_gui_wimp_event_get_window(wimp_w w) {
 	window = calloc(1, sizeof(struct event_window));
 	if (!window)
 		return NULL;
+
+	h = WIN_HASH(w);
 	window->w = w;
-	window->next = ro_gui_wimp_event_windows;
-	ro_gui_wimp_event_windows = window;
+	window->next = ro_gui_wimp_event_windows[h];
+	ro_gui_wimp_event_windows[h] = window;
 	return window;
 }
 
+
+/**
+ * Removes the event data associated with a given handle from the hash tables,
+ * but does not delete it.
+ *
+ * \param   w  the window to be removed
+ * \return  pointer to the event data or NULL if not found
+ */
+
+struct event_window *ro_gui_wimp_event_remove_window(wimp_w w) {
+	struct event_window **prev;
+	int h = WIN_HASH(w);
+
+	/* search hash chain for the window */
+	prev = &ro_gui_wimp_event_windows[h];
+	while (*prev) {
+		struct event_window *window = *prev;
+
+		if (window->w == w) {
+			/* remove from chain */
+			*prev = window->next;
+			return window;
+		}
+		prev = &window->next;
+	}
+
+	/* not found */
+	return NULL;
+}
 
 /**
  * Find the event data associated with a given window handle
@@ -989,8 +1013,10 @@ struct event_window *ro_gui_wimp_event_get_window(wimp_w w) {
  */
 struct event_window *ro_gui_wimp_event_find_window(wimp_w w) {
 	struct event_window *window;
+	int h = WIN_HASH(w);
 
-	for (window = ro_gui_wimp_event_windows; window; window = window->next) {
+	/* search hash chain for window */
+	for (window = ro_gui_wimp_event_windows[h]; window; window = window->next) {
 		if (window->w == w)
 			return window;
 	}
