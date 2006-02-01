@@ -2865,7 +2865,7 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
 		return true;  /* was for us, but it didn't work! */
 	}
 
-	buf = malloc(size + 1);  /* allow room for NUL terminator */
+	buf = malloc(size);
 	if (!buf) {
 		warn_user("NoMemory", NULL);
 		return true;
@@ -2881,7 +2881,7 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
 		return true;
 	}
 
-	ret = utf8_from_local_encoding(buf, size + 1, &utf8_buf);
+	ret = utf8_from_local_encoding(buf, size, &utf8_buf);
 	if (ret != UTF8_CONVERT_OK) {
 		/* bad encoding shouldn't happen */
 		assert(ret != UTF8_CONVERT_BADENC);
