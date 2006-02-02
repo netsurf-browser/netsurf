@@ -29,7 +29,8 @@ static char *clipboard = NULL;
 static size_t clip_alloc = 0;
 static size_t clip_length = 0;
 
-static bool copy_handler(struct box *box, int offset, size_t length, void *handle);
+static bool copy_handler(struct box *box, int offset, size_t length,
+		void *handle);
 static void ro_gui_discard_clipboard_contents(void);
 
 
@@ -64,7 +65,8 @@ void gui_start_selection(struct gui_window *g)
 	msg.action = message_CLAIM_ENTITY;
 	msg.flags = wimp_CLAIM_CARET_OR_SELECTION;
 
-	error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)&msg, wimp_BROADCAST);
+	error = xwimp_send_message(wimp_USER_MESSAGE,
+			(wimp_message*)&msg, wimp_BROADCAST);
 	if (error) {
 		LOG(("xwimp_send_message: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -123,7 +125,8 @@ void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
 	scroll.w = g->window;
 	error = xwimp_auto_scroll(0, &scroll, 0);
 	if (error)
-		LOG(("xwimp_auto_scroll: 0x%x: %s", error->errnum, error->errmess));
+		LOG(("xwimp_auto_scroll: 0x%x: %s",
+				error->errnum, error->errmess));
 
 	error = xwimp_drag_box((wimp_drag*)-1);
 	if (error) {
@@ -175,7 +178,7 @@ bool copy_handler(struct box *box, int offset, size_t length, void *handle)
 	size_t len;
 
 	if (box) {
-    	len = min(length, box->length - offset);
+	len = min(length, box->length - offset);
 		text = box->text + offset;
 		if (box->space && length > len) space = true;
 	}
@@ -279,8 +282,8 @@ bool gui_commit_clipboard(void)
 		msg.action = message_CLAIM_ENTITY;
 		msg.flags = wimp_CLAIM_CLIPBOARD;
 
-		error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)&msg,
-				wimp_BROADCAST);
+		error = xwimp_send_message(wimp_USER_MESSAGE,
+				(wimp_message*)&msg, wimp_BROADCAST);
 		if (error) {
 			LOG(("xwimp_send_message: 0x%x: %s",
 					error->errnum, error->errmess));
@@ -329,8 +332,19 @@ bool gui_copy_to_clipboard(struct selection *s)
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 {
 	if (owns_clipboard) {
-		if (clip_length > 0)
-			browser_window_paste_text(g->bw, clipboard, clip_length, true);
+		if (clip_length > 0) {
+			char *utf8;
+			utf8_convert_ret ret;
+			/* Clipboard is in local encoding so
+			 * convert to UTF8 */
+			ret = utf8_from_local_encoding(clipboard,
+					clip_length, &utf8);
+			if (ret == UTF8_CONVERT_OK) {
+				browser_window_paste_text(g->bw, utf8,
+						strlen(utf8), true);
+				free(utf8);
+			}
+		}
 	}
 	else {
 		wimp_full_message_data_request msg;
@@ -351,8 +365,8 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 		msg.file_types[0] = osfile_TYPE_TEXT;
 		msg.file_types[1] = ~0;
 
-		error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)&msg,
-				wimp_BROADCAST);
+		error = xwimp_send_message(wimp_USER_MESSAGE,
+				(wimp_message*)&msg, wimp_BROADCAST);
 		if (error) {
 			LOG(("xwimp_send_message: 0x%x : %s",
 					error->errnum, error->errmess));
@@ -436,7 +450,8 @@ void ro_gui_selection_data_request(wimp_full_message_data_request *req)
 		message.est_size = clip_length;
 		memcpy(message.file_name, "TextFile", 9);
 
-		ro_gui_send_datasave(GUI_SAVE_CLIPBOARD_CONTENTS, &message, req->sender);
+		ro_gui_send_datasave(GUI_SAVE_CLIPBOARD_CONTENTS,
+				&message, req->sender);
 	}
 }
 
@@ -457,7 +472,8 @@ bool ro_gui_save_clipboard(const char *path)
 			(byte*)clipboard,
 			(byte*)clipboard + clip_length);
 	if (error) {
-		LOG(("xosfile_save_stamped: 0x%x: %s", error->errnum, error->errmess));
+		LOG(("xosfile_save_stamped: 0x%x: %s",
+				error->errnum, error->errmess));
 		warn_user("SaveError", error->errmess);
 		return false;
 	}
