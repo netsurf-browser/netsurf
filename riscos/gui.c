@@ -216,6 +216,12 @@ static wimp_MESSAGE_LIST(38) task_messages = { {
 	0
 } };
 
+static struct
+{
+	int	width;  /* in OS units */
+	int	height;
+} screen_info;
+
 static void ro_gui_create_dirs(void);
 static void ro_gui_choose_language(void);
 static void ro_gui_icon_bar_create(void);
@@ -242,6 +248,7 @@ static void ro_msg_terminate_filename(wimp_full_message_data_xfer *message);
 static void ro_msg_datasave(wimp_message *message);
 static void ro_msg_datasave_ack(wimp_message *message);
 static void ro_msg_dataopen(wimp_message *message);
+static void ro_gui_get_screen_properties(void);
 static void ro_msg_prequit(wimp_message *message);
 static void ro_msg_save_desktop(wimp_message *message);
 static void ro_gui_view_source_bounce(wimp_message *message);
@@ -389,6 +396,7 @@ void gui_init(int argc, char** argv)
 	/* end of handler registration */
 
 	nsfont_init();
+	ro_gui_get_screen_properties();
 
 	/* Issue a *Desktop to poke AcornURI into life */
 	if (getenv("NetSurf$Start_URI_Handler"))
@@ -1295,6 +1303,7 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			break;
 
 		case message_MODE_CHANGE:
+			ro_gui_get_screen_properties();
 			ro_gui_history_mode_change();
 			rufl_invalidate_cache();
 			break;
@@ -2009,19 +2018,41 @@ char *url_to_path(const char *url)
 
 
 /**
+ * Get screen properties following a mode change.
+ */
+
+void ro_gui_get_screen_properties(void)
+{
+	const os_VDU_VAR_LIST(5) vars = {
+		{ os_MODEVAR_XWIND_LIMIT,
+		os_MODEVAR_YWIND_LIMIT,
+		os_MODEVAR_XEIG_FACTOR,
+		os_MODEVAR_YEIG_FACTOR,
+		os_VDUVAR_END_LIST }
+	};
+	os_error *error;
+	int vals[4];
+
+	error = xos_read_vdu_variables((const os_vdu_var_list*)&vars, vals);
+	if (error) {
+		LOG(("xos_read_vdu_variables: 0x%x: %s",
+			error->errnum, error->errmess));
+		warn_user("MiscError", error->errmess);
+		return;
+	}
+	screen_info.width  = (vals[0] + 1) << vals[2];
+	screen_info.height = (vals[1] + 1) << vals[3];
+}
+
+
+/**
  * Find screen size in OS units.
  */
 
 void ro_gui_screen_size(int *width, int *height)
 {
-	int xeig_factor, yeig_factor, xwind_limit, ywind_limit;
-
-	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_XEIG_FACTOR, &xeig_factor);
-	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_YEIG_FACTOR, &yeig_factor);
-	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_XWIND_LIMIT, &xwind_limit);
-	os_read_mode_variable(os_CURRENT_MODE, os_MODEVAR_YWIND_LIMIT, &ywind_limit);
-	*width = (xwind_limit + 1) << xeig_factor;
-	*height = (ywind_limit + 1) << yeig_factor;
+	*width = screen_info.width;
+	*height = screen_info.height;
 }
 
 
