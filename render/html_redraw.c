@@ -426,7 +426,7 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 			}
 
 			/* draw any text preceding highlighted portion */
-			if (start_idx > 0 && 
+			if (start_idx > 0 &&
 				!plot.text(x, y + (int) (box->height * 0.75 * scale),
 						box->style, box->text, start_idx,
 						current_background_color,
@@ -1071,6 +1071,8 @@ bool html_redraw_text_decoration(struct box *box,
 	colour = html_redraw_aa(background_colour, box->style->color);
 
 	if (box->type == BOX_INLINE) {
+		if (!box->inline_end)
+			return true;
 		for (i = 0; i != NOF_ELEMENTS(decoration); i++)
 			if (box->style->text_decoration & decoration[i])
 				if (!html_redraw_text_decoration_inline(box,
