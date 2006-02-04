@@ -218,15 +218,12 @@ bool form_successful_controls(struct form *form,
 
 		switch (control->type) {
 			case GADGET_HIDDEN:
-				/* ignore hidden controls with no value */
-				/* this fixes ebay silliness */
-				if (!control->value)
-					continue;
-
-				/* fall through */
 			case GADGET_TEXTBOX:
 			case GADGET_PASSWORD:
-				value = strdup(control->value);
+				if (control->value)
+					value = strdup(control->value);
+				else
+					value = strdup("");
 				if (!value) {
 					LOG(("failed to duplicate value"
 						"'%s' for control %s",
@@ -369,7 +366,10 @@ bool form_successful_controls(struct form *form,
 					/* only the activated submit button
 					 * is successful */
 					continue;
-				value = strdup(control->value);
+				if (control->value)
+					value = strdup(control->value);
+				else
+					value = strdup("");
 				if (!value) {
 					LOG(("failed to duplicate value"
 						"'%s' for control %s",
