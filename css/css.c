@@ -1386,10 +1386,13 @@ bool css_match_detail(const struct css_selector *detail,
 			free(word);
 			if (!s)
 				break;
-			word = s + (strlen(s) - detail->data2_length);
-			if (s && strncasecmp(detail->data2, word,
-					detail->data2_length) == 0)
-				match = true;
+			length = strlen(s);
+			if (detail->data2_length <= length) {
+				word = s + (length - detail->data2_length);
+				if (s && strncasecmp(detail->data2, word,
+						detail->data2_length) == 0)
+					match = true;
+			}
 			break;
 
 		case CSS_SELECTOR_ATTRIB_SUB:
