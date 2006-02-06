@@ -44,7 +44,8 @@ struct selection
 };
 
 
-typedef bool (*seln_traverse_handler)(struct box *b, int offset, size_t length, void *handle);
+typedef bool (*seln_traverse_handler)(struct box *b, int offset,
+					size_t length, void *handle);
 
 
 struct selection *selection_create(struct browser_window *bw);
@@ -72,17 +73,23 @@ void selection_set_end(struct selection *s, struct box *box, int idx);
 struct box *selection_get_start(struct selection *s, int *pidx);
 struct box *selection_get_end(struct selection *s, int *pidx);
 
-bool selection_click(struct selection *s, struct box *box, browser_mouse_state mouse, int dx, int dy);
-void selection_track(struct selection *s, struct box *box, browser_mouse_state mouse, int dx, int dy);
+bool selection_click(struct selection *s, struct box *box, browser_mouse_state mouse,
+		int dx, int dy);
+void selection_track(struct selection *s, struct box *box, browser_mouse_state mouse,
+		int dx, int dy);
 
 void selection_drag_end(struct selection *s, struct box *box,
 		browser_mouse_state mouse, int dx, int dy);
 
-bool selection_traverse(struct selection *s, seln_traverse_handler handler, void *handle);
+bool selection_traverse(struct selection *s, seln_traverse_handler handler,
+		void *handle);
 
 bool selection_highlighted(struct selection *s, struct box *box,
 		unsigned *start_idx, unsigned *end_idx);
 
 bool selection_save_text(struct selection *s, const char *path);
+
+void selection_update(struct selection *s, size_t byte_offset, int change,
+		bool redraw);
 
 #endif

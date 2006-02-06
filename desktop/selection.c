@@ -242,7 +242,7 @@ bool selection_click(struct selection *s, struct box *box,
 		}
 	}
 
-	if (!pos && (mouse & BROWSER_MOUSE_MOD_2) &&
+	if (!pos &&
 		(mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2))) {
 		/* drag-saving selection */
 		assert(s->bw);
@@ -279,7 +279,7 @@ bool selection_click(struct selection *s, struct box *box,
 			}
 			gui_start_selection(s->bw->window);
 		}
-		else if (mouse & BROWSER_MOUSE_CLICK_1) {
+		else if (pos && (mouse & BROWSER_MOUSE_CLICK_1)) {
 
 			/* clear selection */
 			selection_clear(s, true);
@@ -900,4 +900,29 @@ bool selection_save_text(struct selection *s, const char *path)
 	}
 
 	return false;
+}
+
+
+/**
+ * Adjust the selection to reflect a change in the selected text,
+ * eg. editing in a text area/input field.
+ *
+ * \param  s            selection object
+ * \param  byte_offset  byte offset of insertion/removal point
+ * \param  change       byte size of change, +ve = insertion, -ve = removal
+ * \param  redraw       true iff the screen should be updated
+ */
+
+void selection_update(struct selection *s, size_t byte_offset,
+		int change, bool redraw)
+{
+	if (selection_defined(s) &&
+		byte_offset >= s->start_idx &&
+		byte_offset < s->end_idx)
+	{
+		if (change > 0)
+			s->end_idx += change;
+		else
+			s->end_idx += max(change, byte_offset - s->end_idx);
+	}
 }
