@@ -163,7 +163,7 @@ static bool plugin_active(struct content *c);
 static void plugin_stream_free(struct plugin_stream *p);
 static bool plugin_start_fetch(struct plugin_stream *p, const char *url);
 static void plugin_stream_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, union content_msg_data data);
+		intptr_t p1, intptr_t p2, union content_msg_data data);
 static void plugin_fetch_callback(fetch_msg msg, void *p, const char *data,
 		unsigned long size);
 
@@ -1602,7 +1602,8 @@ void plugin_stream_free(struct plugin_stream *p)
 			p->c->fetch = 0;
 			p->c->status = CONTENT_STATUS_DONE;
 		}
-		content_remove_user(p->c, plugin_stream_callback, p, 0);
+		content_remove_user(p->c, plugin_stream_callback,
+				(intptr_t)p, 0);
 	}
 
 	/* free normal stream context. file streams get freed later */
@@ -1649,7 +1650,7 @@ bool plugin_start_fetch(struct plugin_stream *p, const char *url)
 		return false;
 	}
 
-	c = fetchcache(url2, plugin_stream_callback, p, 0,
+	c = fetchcache(url2, plugin_stream_callback, (intptr_t)p, 0,
 			100, 100, true, 0, 0, true, true);
 	free(url2);
 	if (!c) {
@@ -1657,7 +1658,7 @@ bool plugin_start_fetch(struct plugin_stream *p, const char *url)
 	}
 
 	p->c = c;
-	fetchcache_go(c, 0, plugin_stream_callback, p, 0,
+	fetchcache_go(c, 0, plugin_stream_callback, (intptr_t)p, 0,
 			100, 100, 0, 0, true);
 
 	return true;
@@ -1667,9 +1668,9 @@ bool plugin_start_fetch(struct plugin_stream *p, const char *url)
  * Callback for fetchcache() for plugin stream fetches.
  */
 void plugin_stream_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, union content_msg_data data)
+		intptr_t p1, intptr_t p2, union content_msg_data data)
 {
-	struct plugin_stream *p = p1;
+	struct plugin_stream *p = (struct plugin_stream *)p1;
 
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
@@ -1751,6 +1752,7 @@ void plugin_fetch_callback(fetch_msg msg, void *p, const char *data,
 
 		case FETCH_TYPE:
 		case FETCH_REDIRECT:
+		case FETCH_NOTMODIFIED:
 		case FETCH_AUTH:
 		default:
 			/* not possible */

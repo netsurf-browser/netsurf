@@ -23,6 +23,7 @@ typedef enum {
               FETCH_FINISHED,
               FETCH_ERROR,
               FETCH_REDIRECT,
+              FETCH_NOTMODIFIED,
 #ifdef WITH_AUTH
               FETCH_AUTH
 #endif
@@ -30,9 +31,19 @@ typedef enum {
 
 struct content;
 struct fetch;
-#ifdef WITH_POST
 struct form_successful_control;
-#endif
+
+struct cache_data {
+	time_t req_time;	/**< Time of request */
+	time_t res_time;	/**< Time of response */
+	time_t date;		/**< Date: response header */
+	time_t expires;		/**< Expires: response header */
+#define INVALID_AGE -1
+	int age;		/**< Age: response header */
+	int max_age;		/**< Max-age Cache-control parameter */
+	bool no_cache;		/**< no-cache Cache-control parameter */
+	char *etag;		/**< Etag: response header */
+};
 
 extern bool fetch_active;
 extern CURLM *fetch_curl_multi;
@@ -41,15 +52,9 @@ void fetch_init(void);
 struct fetch * fetch_start(char *url, char *referer,
 		void (*callback)(fetch_msg msg, void *p, const char *data,
 				unsigned long size),
-		void *p, bool only_2xx
-#ifdef WITH_POST
-		, char *post_urlenc,
-		struct form_successful_control *post_multipart
-#endif
-#ifdef WITH_COOKIES
-		,bool cookies
-#endif
-		);
+		void *p, bool only_2xx, char *post_urlenc,
+		struct form_successful_control *post_multipart,
+		bool cookies, char *headers[]);
 void fetch_abort(struct fetch *f);
 void fetch_poll(void);
 void fetch_quit(void);

@@ -288,6 +288,11 @@ struct content * content_create(const char *url)
 		talloc_free(c);
 		return 0;
 	}
+	c->cache_data = talloc(c, struct cache_data);
+	if (!c->cache_data) {
+		talloc_free(c);
+		return 0;
+	}
 	talloc_set_name_const(c, c->url);
 	c->type = CONTENT_UNKNOWN;
 	c->mime_type = 0;
@@ -315,6 +320,14 @@ struct content * content_create(const char *url)
 	c->no_error_pages = false;
 	c->download = false;
 	c->error_count = 0;
+	c->cache_data->req_time = 0;
+	c->cache_data->res_time = 0;
+	c->cache_data->date = 0;
+	c->cache_data->expires = 0;
+	c->cache_data->age = INVALID_AGE;
+	c->cache_data->max_age = INVALID_AGE;
+	c->cache_data->no_cache = false;
+	c->cache_data->etag = 0;
 
 	c->prev = 0;
 	c->next = content_list;
@@ -346,6 +359,42 @@ struct content * content_get(const char *url)
 			continue;
 		if (c->status == CONTENT_STATUS_ERROR)
 			/* error state */
+			continue;
+		if (c->type != CONTENT_UNKNOWN &&
+				handler_map[c->type].no_share &&
+				c->user_list->next)
+			/* not shareable, and has a user already */
+			continue;
+		if (strcmp(c->url, url))
+			continue;
+		return c;
+	}
+
+	return 0;
+}
+
+
+/**
+ * Get a READY or DONE content from the memory cache.
+ *
+ * \param url URL of content
+ * \return content if found, or 0
+ *
+ * Searches the list of contents for one corresponding to the given url, and
+ * which is fresh, shareable and either READY or DONE.
+ */
+
+struct content * content_get_ready(const char *url)
+{
+	struct content *c;
+
+	for (c = content_list; c; c = c->next) {
+		if (!c->fresh)
+			/* not fresh */
+			continue;
+		if (c->status != CONTENT_STATUS_READY &&
+				c->status != CONTENT_STATUS_DONE)
+			/* not ready or done */
 			continue;
 		if (c->type != CONTENT_UNKNOWN &&
 				handler_map[c->type].no_share &&

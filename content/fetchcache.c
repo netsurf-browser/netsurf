@@ -18,6 +18,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <regex.h>
+#include <time.h>
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
@@ -25,6 +26,7 @@
 #include "netsurf/content/url_store.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
+#include "netsurf/utils/talloc.h"
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
@@ -35,6 +37,9 @@ static void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 		unsigned long size);
 static char *fetchcache_parse_type(const char *s, char **params[]);
 static void fetchcache_error_page(struct content *c, const char *error);
+static void fetchcache_cache_update(struct content *c,
+		const struct cache_data *data);
+static void fetchcache_notmodified(struct content *c, const char *data);
 
 
 /**
@@ -74,7 +79,9 @@ struct content * fetchcache(const char *url,
 {
 	struct content *c;
 	char *url1;
-	char *hash;
+	char *hash, *query;
+	char *etag = 0;
+	time_t date = 0;
 
 	if ((url1 = strdup(url)) == NULL)
 		return NULL;
@@ -83,15 +90,48 @@ struct content * fetchcache(const char *url,
 	if ((hash = strchr(url1, '#')) != NULL)
 		*hash = 0;
 
+	/* look for query; we don't cache URLs with a query segment */
+	query = strchr(url1, '?');
+
 	LOG(("url %s", url1));
 
-	if (!post_urlenc && !post_multipart && !download) {
+	if (!post_urlenc && !post_multipart && !download && !query) {
 		if ((c = content_get(url1)) != NULL) {
-			free(url1);
-			if (!content_add_user(c, callback, p1, p2))
-				return NULL;
-			else
-				return c;
+			struct cache_data *cd = c->cache_data;
+			int current_age, freshness_lifetime;
+
+			/* Calculate staleness of cached content as per
+			 * RFC 2616 13.2.3/13.2.4 */
+			current_age = max(0, (cd->res_time - cd->date));
+			current_age = max(current_age,
+					(cd->age == INVALID_AGE) ? 0
+								 : cd->age);
+			current_age += cd->res_time - cd->req_time +
+					time(0) - cd->res_time;
+			freshness_lifetime =
+				(cd->max_age != INVALID_AGE) ? cd->max_age :
+				(cd->expires != 0) ? cd->expires - cd->date :
+				0;
+
+			if (freshness_lifetime > current_age ||
+					cd->date == 0) {
+				/* Ok, either a fresh content or we're
+				 * currently fetching the selected content
+				 * (therefore it must be fresh) */
+				free(url1);
+				if (!content_add_user(c, callback, p1, p2))
+					return NULL;
+				else
+					return c;
+			}
+
+			/* Ok. We have a cache entry, but it appears stale.
+			 * Therefore, validate it. */
+			/** \todo perhaps it'd be better to use the
+			 * contents of the Last-Modified header here
+			 * instead */
+			date = c->cache_data->date;
+			etag = c->cache_data->etag;
 		}
 	}
 
@@ -99,11 +139,21 @@ struct content * fetchcache(const char *url,
 	free(url1);
 	if (!c)
 		return NULL;
+
+	/* Fill in cache validation fields (if present) */
+	if (date)
+		c->cache_data->date = date;
+	if (etag) {
+		c->cache_data->etag = talloc_strdup(c, etag);
+		if (!c->cache_data->etag)
+			return NULL;
+	}
+
 	if (!content_add_user(c, callback, p1, p2)) {
 		return NULL;
 	}
 
-	if (!post_urlenc && !post_multipart && !download)
+	if (!post_urlenc && !post_multipart && !download && !query)
 		c->fresh = true;
 
 	c->width = width;
@@ -152,12 +202,59 @@ void fetchcache_go(struct content *content, char *referer,
 		/* fetching, but not yet received any response:
 		 * no action required */
 
-        } else if (content->status == CONTENT_STATUS_TYPE_UNKNOWN) {
-        	/* brand new content: start fetch */
+	} else if (content->status == CONTENT_STATUS_TYPE_UNKNOWN) {
+		/* brand new content: start fetch */
+		char **headers;
+		int i = 0;
+		char *etag = content->cache_data->etag;
+		time_t date = content->cache_data->date;
+		content->cache_data->etag = 0;
+		content->cache_data->date = 0;
+		headers = malloc(3 * sizeof(char *));
+		if (!headers) {
+			talloc_free(etag);
+			msg_data.error = messages_get("NoMemory");
+			callback(CONTENT_MSG_ERROR, content, p1, p2,
+					msg_data);
+			return;
+		}
+		if (etag) {
+			headers[i] = malloc(15 + strlen(etag) + 1);
+			if (!headers[i]) {
+				free(headers);
+				talloc_free(etag);
+				msg_data.error = messages_get("NoMemory");
+				callback(CONTENT_MSG_ERROR, content, p1, p2,
+						msg_data);
+				return;
+			}
+			sprintf(headers[i++], "If-None-Match: %s", etag);
+			talloc_free(etag);
+		}
+		if (date) {
+			headers[i] = malloc(19 + 29 + 1);
+			if (!headers[i]) {
+				while (--i >= 0) {
+					free(headers[i]);
+				}
+				free(headers);
+				msg_data.error = messages_get("NoMemory");
+				callback(CONTENT_MSG_ERROR, content, p1, p2,
+						msg_data);
+				return;
+			}
+			sprintf(headers[i++], "If-Modified-Since: %s",
+					rfc1123_date(date));
+		}
+		headers[i] = 0;
 		content->fetch = fetch_start(content->url, referer,
 				fetchcache_callback, content,
 				content->no_error_pages,
-				post_urlenc, post_multipart, cookies);
+				post_urlenc, post_multipart, cookies,
+				headers);
+		for (i = 0; headers[i]; i++)
+			free(headers[i]);
+		free(headers);
 		if (!content->fetch) {
 			LOG(("warning: fetch_start failed"));
 			snprintf(error_message, sizeof error_message,
@@ -259,24 +356,15 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			break;
 
 		case FETCH_DATA:
-/*			if (c->total_size)
-				content_set_status(c,
-						messages_get("RecPercent"),
-						human_friendly_bytesize(c->source_size + size),
-						human_friendly_bytesize(c->total_size),
-						(unsigned int) ((c->source_size + size) * 100 / c->total_size));
-			else
-				content_set_status(c,
-						messages_get("Received"),
-						human_friendly_bytesize(c->source_size + size));
-			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
-*/			if (!content_process_data(c, data, size)) {
+			if (!content_process_data(c, data, size)) {
 				fetch_abort(c->fetch);
 				c->fetch = 0;
 			}
 			break;
 
 		case FETCH_FINISHED:
+			fetchcache_cache_update(c,
+					(const struct cache_data *)data);
 			c->fetch = 0;
 			content_set_status(c, messages_get("Converting"),
 					c->source_size);
@@ -327,6 +415,11 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 				content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			}
 			break;
+
+		case FETCH_NOTMODIFIED:
+			fetchcache_notmodified(c, data);
+			break;
+
 #ifdef WITH_AUTH
 		case FETCH_AUTH:
 			/* data -> string containing the Realm */
@@ -455,6 +548,139 @@ void fetchcache_error_page(struct content *c, const char *error)
 	content_convert(c, c->width, c->height);
 }
 
+
+/**
+ * Update a content's cache info
+ *
+ * \param The content
+ * \param Cache data
+ */
+
+void fetchcache_cache_update(struct content *c,
+		const struct cache_data *data)
+{
+	assert(c && data);
+
+	c->cache_data->req_time = data->req_time;
+	c->cache_data->res_time = data->res_time;
+
+	if (data->date != 0)
+		c->cache_data->date = data->date;
+	else
+		c->cache_data->date = time(0);
+
+	if (data->expires != 0)
+		c->cache_data->expires = data->expires;
+
+	if (data->age != INVALID_AGE)
+		c->cache_data->age = data->age;
+
+	if (data->max_age != INVALID_AGE)
+		c->cache_data->max_age = data->max_age;
+
+	if (data->no_cache)
+		c->fresh = false;
+
+	if (data->etag) {
+		talloc_free(c->cache_data->etag);
+		c->cache_data->etag = talloc_strdup(c, data->etag);
+	}
+}
+
+
+/**
+ * Not modified callback handler
+ */
+
+void fetchcache_notmodified(struct content *c, const char *data)
+{
+	struct content *fb;
+	union content_msg_data msg_data;
+
+	assert(c && data);
+	assert(c->status == CONTENT_STATUS_TYPE_UNKNOWN);
+
+	/* Look for cached content */
+	fb = content_get_ready(c->url);
+
+	if (fb) {
+		/* Found it */
+		intptr_t p1, p2;
+		void (*callback)(content_msg msg,
+			struct content *c, intptr_t p1,
+			intptr_t p2,
+			union content_msg_data data);
+
+		/* Now notify all users that we're changing content */
+		while (c->user_list->next) {
+			p1 = c->user_list->next->p1;
+			p2 = c->user_list->next->p2;
+			callback = c->user_list->next->callback;
+
+			if (!content_add_user(fb, callback, p1, p2)) {
+				c->type = CONTENT_UNKNOWN;
+				c->status = CONTENT_STATUS_ERROR;
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(c, CONTENT_MSG_ERROR,
+						msg_data);
+				return;
+			}
+
+			content_remove_user(c, callback, p1, p2);
+			callback(CONTENT_MSG_NEWPTR, fb, p1, p2, msg_data);
+
+			/* and catch user up with fallback's state */
+			if (fb->status == CONTENT_STATUS_LOADING) {
+				callback(CONTENT_MSG_LOADING,
+					fb, p1, p2, msg_data);
+			} else if (fb->status == CONTENT_STATUS_READY) {
+				callback(CONTENT_MSG_LOADING,
+					fb, p1, p2, msg_data);
+				if (content_find_user(fb, callback, p1, p2))
+					callback(CONTENT_MSG_READY,
+						fb, p1, p2, msg_data);
+			} else if (fb->status == CONTENT_STATUS_DONE) {
+				callback(CONTENT_MSG_LOADING,
+					fb, p1, p2, msg_data);
+				if (content_find_user(fb, callback, p1, p2))
+					callback(CONTENT_MSG_READY,
+						fb, p1, p2, msg_data);
+				if (content_find_user(fb, callback, p1, p2))
+					callback(CONTENT_MSG_DONE,
+						fb, p1, p2, msg_data);
+			} else if (fb->status == CONTENT_STATUS_ERROR) {
+				/* shouldn't usually occur */
+				msg_data.error = messages_get("MiscError");
+				callback(CONTENT_MSG_ERROR, fb, p1, p2,
+						msg_data);
+			}
+		}
+
+		/* mark content invalid */
+		c->fetch = 0;
+		c->status = CONTENT_STATUS_ERROR;
+
+		/* and update fallback's cache control data */
+		fetchcache_cache_update(fb,
+			(const struct cache_data *)data);
+	}
+	else {
+		/* No cached content, so unconditionally refetch */
+		struct content_user *u;
+
+		fetch_abort(c->fetch);
+		c->fetch = 0;
+
+		c->cache_data->date = 0;
+		talloc_free(c->cache_data->etag);
+		c->cache_data->etag = 0;
+
+		for (u = c->user_list->next; u; u = u->next) {
+			fetchcache_go(c, 0, u->callback, u->p1, u->p2,
+					c->width, c->height, 0, 0, false);
+		}
+	}
+}
 
 #ifdef TEST
 

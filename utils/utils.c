@@ -268,3 +268,26 @@ char *human_friendly_bytesize(unsigned long bsize) {
 
 	return curbuffer;
 }
+
+/**
+ * Create an RFC 1123 compliant date string from a Unix timestamp
+ *
+ * \param t The timestamp to consider
+ * \return Pointer to buffer containing string - invalidated by next call.
+ */
+const char *rfc1123_date(time_t t)
+{
+	static char ret[30];
+
+	struct tm *tm = gmtime(&t);
+	const char *days[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" },
+		*months[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+				"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
+	snprintf(ret, sizeof ret, "%s, %02d %s %d %02d:%02d:%02d GMT",
+			days[tm->tm_wday], tm->tm_mday, months[tm->tm_mon],
+			tm->tm_year + 1900, tm->tm_hour, tm->tm_min,
+			tm->tm_sec);
+
+	return ret;
+}

@@ -134,6 +134,7 @@
 struct bitmap;
 struct box;
 struct browser_window;
+struct cache_data;
 struct content;
 struct fetch;
 struct object_params;
@@ -245,6 +246,7 @@ struct content {
 	 *  was fetched using a simple GET, has not expired, and may be
 	 *  shared between users. */
 	bool fresh;
+	struct cache_data *cache_data;	/**< Cache control data */
 
 	unsigned int size;		/**< Estimated size of all data
 					  associated with this content. */
@@ -285,6 +287,7 @@ extern const char *content_status_name[];
 content_type content_lookup(const char *mime_type);
 struct content * content_create(const char *url);
 struct content * content_get(const char *url);
+struct content * content_get_ready(const char *url);
 bool content_set_type(struct content *c, content_type type,
 		const char *mime_type, const char *params[]);
 void content_set_status(struct content *c, const char *status_message, ...);

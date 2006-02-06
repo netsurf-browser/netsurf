@@ -25,6 +25,7 @@
 #include <string.h>
 #include <strings.h>
 #include <time.h>
+#include <sys/stat.h>
 #ifdef riscos
 #include <unixlib/local.h>
 #endif
@@ -35,9 +36,7 @@
 #ifdef WITH_AUTH
 #include "netsurf/desktop/401login.h"
 #endif
-#ifdef WITH_POST
 #include "netsurf/render/form.h"
-#endif
 #define NDEBUG
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
@@ -68,6 +67,8 @@ struct fetch {
 	char *realm;            /**< HTTP Auth Realm */
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
+	struct cache_data cachedata;	/**< Cache control data */
+	time_t last_modified;		/**< If-Modified-Since time */
 	struct fetch *queue_prev;	/**< Previous fetch for this host. */
 	struct fetch *queue_next;	/**< Next fetch for this host. */
 	struct fetch *prev;	/**< Previous active fetch in ::fetch_list. */
@@ -94,9 +95,8 @@ static size_t fetch_curl_data(void *data, size_t size, size_t nmemb,
 static size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 		struct fetch *f);
 static bool fetch_process_headers(struct fetch *f);
-#ifdef WITH_POST
-static struct curl_httppost *fetch_post_convert(struct form_successful_control *control);
-#endif
+static struct curl_httppost *fetch_post_convert(
+		struct form_successful_control *control);
 
 
 /**
@@ -148,10 +148,10 @@ void fetch_init(void)
 		SETOPT(CURLOPT_CAINFO, option_ca_bundle);
 
 	if (!option_ssl_verify_certificates) {
-        	/* disable verification of SSL certificates.
-	         * security? we've heard of it...
-	         */
-        	SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
+		/* disable verification of SSL certificates.
+		* security? we've heard of it...
+		*/
+		SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
 	        SETOPT(CURLOPT_SSL_VERIFYHOST, 0L);
 	}
 
@@ -209,7 +209,8 @@ struct fetch * fetch_start(char *url, char *referer,
 		void (*callback)(fetch_msg msg, void *p, const char *data,
 				unsigned long size),
 		void *p, bool only_2xx, char *post_urlenc,
-		struct form_successful_control *post_multipart, bool cookies)
+		struct form_successful_control *post_multipart, bool cookies,
+		char *headers[])
 {
 	char *host;
 	struct fetch *fetch;
@@ -219,6 +220,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	struct curl_slist *slist;
 	url_func_result res;
 	char *ref1 = 0, *ref2 = 0;
+	int i;
 
 	fetch = malloc(sizeof (*fetch));
 	if (!fetch)
@@ -274,6 +276,15 @@ struct fetch * fetch_start(char *url, char *referer,
 		fetch->post_urlenc = strdup(post_urlenc);
 	else if (post_multipart)
 		fetch->post_multipart = fetch_post_convert(post_multipart);
+	fetch->cachedata.req_time = time(0);
+	fetch->cachedata.res_time = 0;
+	fetch->cachedata.date = 0;
+	fetch->cachedata.expires = 0;
+	fetch->cachedata.age = INVALID_AGE;
+	fetch->cachedata.max_age = INVALID_AGE;
+	fetch->cachedata.no_cache = false;
+	fetch->cachedata.etag = 0;
+	fetch->last_modified = 0;
 	fetch->queue_prev = 0;
 	fetch->queue_next = 0;
 	fetch->prev = 0;
@@ -318,6 +329,16 @@ struct fetch * fetch_start(char *url, char *referer,
 		snprintf(s, sizeof s, "Host: %s", host);
 		s[sizeof s - 1] = 0;
 		APPEND(fetch->headers, s);
+	}
+	/* And add any headers specified by the caller */
+	for (i = 0; headers[i]; i++) {
+		if (strncasecmp(headers[i], "If-Modified-Since:", 18) == 0) {
+			char *d = headers[i] + 18;
+			for (; *d && (*d == ' ' || *d == '\t'); d++)
+				/* do nothing */;
+			fetch->last_modified = curl_getdate(d, NULL);
+		}
+		APPEND(fetch->headers, headers[i]);
 	}
 
 	/* look for a fetch from the same host */
@@ -499,6 +520,7 @@ void fetch_stop(struct fetch *f)
 
 		fetch->curl_handle = f->curl_handle;
 		f->curl_handle = 0;
+		fetch->cachedata.req_time = time(0);
 		code = fetch_set_options(fetch);
 		if (code == CURLE_OK)
 			/* add to the global curl multi handle */
@@ -554,6 +576,7 @@ void fetch_free(struct fetch *f)
 	free(f->post_urlenc);
 	if (f->post_multipart)
 		curl_formfree(f->post_multipart);
+	free(f->cachedata.etag);
 	free(f);
 }
 
@@ -611,6 +634,7 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 	void (*callback)(fetch_msg msg, void *p, const char *data,
 			unsigned long size);
 	CURLcode code;
+	struct cache_data cachedata;
 
 	/* find the structure associated with this fetch */
 	code = curl_easy_getinfo(curl_handle, CURLINFO_PRIVATE, &f);
@@ -635,14 +659,22 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 	else
 		error = true;
 
+	/* If finished, acquire cache info to pass to callback */
+	if (finished) {
+		memcpy(&cachedata, &f->cachedata, sizeof(struct cache_data));
+		f->cachedata.etag = 0;
+	}
+
 	/* clean up fetch and start any queued fetch for this host */
 	fetch_stop(f);
 
 	/* postponed until after stop so that queue fetches are started */
 	if (abort)
 		; /* fetch was aborted: no callback */
-	else if (finished)
-		callback(FETCH_FINISHED, p, 0, 0);
+	else if (finished) {
+		callback(FETCH_FINISHED, p, (const char *)&cachedata, 0);
+		free(cachedata.etag);
+	}
 	else if (error)
 		callback(FETCH_ERROR, p, fetch_error_buffer, 0);
 }
@@ -716,6 +748,13 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 {
 	int i;
 	size *= nmemb;
+
+#define SKIP_ST(o) for (i = (o); i < (int) size && (data[i] == ' ' || data[i] == '\t'); i++)
+
+	/* Set fetch response time if not already set */
+	if (f->cachedata.res_time == 0)
+		f->cachedata.res_time = time(0);
+
 	if (12 < size && strncasecmp(data, "Location:", 9) == 0) {
 		/* extract Location header */
 		free(f->location);
@@ -724,8 +763,7 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 			LOG(("malloc failed"));
 			return size;
 		}
-		for (i = 9; i < (int)size && (data[i] == ' ' || data[i] == '\t'); i++)
-			/* */;
+		SKIP_ST(9);
 		strncpy(f->location, data + i, size - i);
 		f->location[size - i] = '\0';
 		for (i = size - i - 1; i >= 0 &&
@@ -736,12 +774,11 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 			f->location[i] = '\0';
 	} else if (15 < size && strncasecmp(data, "Content-Length:", 15) == 0) {
 		/* extract Content-Length header */
-		for (i = 15; i < (int)size && (data[i] == ' ' || data[i] == '\t'); i++)
-			/* */;
+		SKIP_ST(15);
 		if (i < (int)size && '0' <= data[i] && data[i] <= '9')
 			f->content_length = atol(data + i);
 #ifdef WITH_AUTH
-	} else if (16 < size && strncasecmp(data, "WWW-Authenticate", 16) == 0) {
+	} else if (17 < size && strncasecmp(data, "WWW-Authenticate:", 17) == 0) {
 		/* extract the first Realm from WWW-Authenticate header */
 		free(f->realm);
 		f->realm = malloc(size);
@@ -749,8 +786,7 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 			LOG(("malloc failed"));
 			return size;
 		}
-		for (i = 16; i < (int)size && data[i] != '='; i++)
-			/* */;
+		SKIP_ST(17);
 		while (i < (int)size && data[++i] == '"')
 			/* */;
 		strncpy(f->realm, data + i, size - i);
@@ -763,8 +799,70 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 				f->realm[i] == '\n'); --i)
 			f->realm[i] = '\0';
 #endif
+	} else if (5 < size && strncasecmp(data, "Date:", 5) == 0) {
+		/* extract Date header */
+		SKIP_ST(5);
+		if (i < (int) size)
+			f->cachedata.date = curl_getdate(&data[i], NULL);
+	} else if (4 < size && strncasecmp(data, "Age:", 4) == 0) {
+		/* extract Age header */
+		SKIP_ST(4);
+		if (i < (int) size && '0' <= data[i] && data[i] <= '9')
+			f->cachedata.age = atoi(data + i);
+	} else if (8 < size && strncasecmp(data, "Expires:", 8) == 0) {
+		/* extract Expires header */
+		SKIP_ST(8);
+		if (i < (int) size)
+			f->cachedata.expires = curl_getdate(&data[i], NULL);
+	} else if (14 < size && strncasecmp(data, "Cache-Control:", 14) == 0) {
+		/* extract and parse Cache-Control header */
+		int comma;
+		SKIP_ST(14);
+
+		while (i < (int) size) {
+			for (comma = i; comma < (int) size; comma++)
+				if (data[comma] == ',')
+					break;
+
+			SKIP_ST(i);
+
+			if (8 < comma - i && (strncasecmp(data + i, "no-cache", 8) == 0 || strncasecmp(data + i, "no-store", 8) == 0))
+				/* When we get a disk cache we should
+				 * distinguish between these two */
+				f->cachedata.no_cache = true;
+			else if (7 < comma - i && strncasecmp(data + i, "max-age", 7) == 0) {
+				for (; i < comma; i++)
+					if (data[i] == '=')
+						break;
+				SKIP_ST(i+1);
+				if (i < comma)
+					f->cachedata.max_age =
+							atoi(data + i);
+			}
+
+			i = comma + 1;
+		}
+	} else if (5 < size && strncasecmp(data, "ETag:", 5) == 0) {
+		/* extract ETag header */
+		free(f->cachedata.etag);
+		f->cachedata.etag = malloc(size);
+		if (!f->cachedata.etag) {
+			LOG(("malloc failed"));
+			return size;
+		}
+		SKIP_ST(5);
+		strncpy(f->cachedata.etag, data + i, size - i);
+		f->cachedata.etag[size - i] = '\0';
+		for (i = size - i - 1; i >= 0 &&
+				(f->cachedata.etag[i] == ' ' ||
+				f->cachedata.etag[i] == '\t' ||
+				f->cachedata.etag[i] == '\r' ||
+				f->cachedata.etag[i] == '\n'); --i)
+			f->cachedata.etag[i] = '\0';
 	}
+
 	return size;
+#undef SKIP_ST
 }
 
 
@@ -779,12 +877,46 @@ bool fetch_process_headers(struct fetch *f)
 	long http_code;
 	const char *type;
 	CURLcode code;
+	struct stat s;
 
 	f->had_headers = true;
+
+	/* Set fetch response time if not already set */
+	if (f->cachedata.res_time == 0)
+		f->cachedata.res_time = time(0);
 
 	code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE, &http_code);
 	assert(code == CURLE_OK);
 	LOG(("HTTP status code %li", http_code));
+
+	if (f->last_modified) {
+		/* Fake up HTTP cache control for local files */
+		char *url_path = 0;
+
+		if (strncmp(f->url, "file:///", 8) == 0) {
+			url_path = curl_unescape(f->url + 7,
+					(int) strlen(f->url) - 7);
+		}
+		else if (strncmp(f->url, "file:/", 6) == 0) {
+			url_path = curl_unescape(f->url + 5,
+					(int) strlen(f->url) - 5);
+		}
+
+		if (url_path && stat(url_path, &s) == 0) {
+			if (f->last_modified > s.st_mtime) {
+				f->callback(FETCH_NOTMODIFIED, f->p,
+					(const char *)&f->cachedata, 0);
+				return true;
+			}
+		}
+	}
+
+	if (http_code == 304 && !f->post_urlenc && !f->post_multipart) {
+		/* Not Modified && GET request */
+		f->callback(FETCH_NOTMODIFIED, f->p,
+				(const char *)&f->cachedata, 0);
+		return true;
+	}
 
 	/* handle HTTP redirects (3xx response codes) */
 	if (300 <= http_code && http_code < 400 && f->location != 0) {
@@ -840,7 +972,6 @@ bool fetch_process_headers(struct fetch *f)
  * Convert a list of struct ::form_successful_control to a list of
  * struct curl_httppost for libcurl.
  */
-#ifdef WITH_POST
 struct curl_httppost *fetch_post_convert(struct form_successful_control *control)
 {
 	struct curl_httppost *post = 0, *last = 0;
@@ -901,7 +1032,6 @@ struct curl_httppost *fetch_post_convert(struct form_successful_control *control
 
 	return post;
 }
-#endif
 
 
 /**

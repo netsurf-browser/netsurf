@@ -697,6 +697,7 @@ void download_window_callback(fetch_msg msg, void *p, const char *data,
 
 		case FETCH_TYPE:
 		case FETCH_REDIRECT:
+		case FETCH_NOTMODIFIED:
 		case FETCH_AUTH:
 		default:
 			/* not possible */
