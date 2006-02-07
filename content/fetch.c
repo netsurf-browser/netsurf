@@ -69,6 +69,7 @@ struct fetch {
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
 	struct cache_data cachedata;	/**< Cache control data */
 	time_t last_modified;		/**< If-Modified-Since time */
+	time_t file_etag;		/**< ETag for local objects */
 	struct fetch *queue_prev;	/**< Previous fetch for this host. */
 	struct fetch *queue_next;	/**< Next fetch for this host. */
 	struct fetch *prev;	/**< Previous active fetch in ::fetch_list. */
@@ -285,6 +286,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->cachedata.no_cache = false;
 	fetch->cachedata.etag = 0;
 	fetch->last_modified = 0;
+	fetch->file_etag = 0;
 	fetch->queue_prev = 0;
 	fetch->queue_next = 0;
 	fetch->prev = 0;
@@ -337,6 +339,13 @@ struct fetch * fetch_start(char *url, char *referer,
 			for (; *d && (*d == ' ' || *d == '\t'); d++)
 				/* do nothing */;
 			fetch->last_modified = curl_getdate(d, NULL);
+		}
+		else if (strncasecmp(headers[i], "If-None-Match:", 14) == 0) {
+			char *d = headers[i] + 14;
+			for (; *d && (*d == ' ' || *d == '\t' || *d == '"');
+					d++)
+				/* do nothing */;
+			fetch->file_etag = atoi(d);
 		}
 		APPEND(fetch->headers, headers[i]);
 	}
@@ -878,6 +887,7 @@ bool fetch_process_headers(struct fetch *f)
 	const char *type;
 	CURLcode code;
 	struct stat s;
+	char *url_path = 0;
 
 	f->had_headers = true;
 
@@ -888,28 +898,6 @@ bool fetch_process_headers(struct fetch *f)
 	code = curl_easy_getinfo(f->curl_handle, CURLINFO_HTTP_CODE, &http_code);
 	assert(code == CURLE_OK);
 	LOG(("HTTP status code %li", http_code));
-
-	if (f->last_modified) {
-		/* Fake up HTTP cache control for local files */
-		char *url_path = 0;
-
-		if (strncmp(f->url, "file:///", 8) == 0) {
-			url_path = curl_unescape(f->url + 7,
-					(int) strlen(f->url) - 7);
-		}
-		else if (strncmp(f->url, "file:/", 6) == 0) {
-			url_path = curl_unescape(f->url + 5,
-					(int) strlen(f->url) - 5);
-		}
-
-		if (url_path && stat(url_path, &s) == 0) {
-			if (f->last_modified > s.st_mtime) {
-				f->callback(FETCH_NOTMODIFIED, f->p,
-					(const char *)&f->cachedata, 0);
-				return true;
-			}
-		}
-	}
 
 	if (http_code == 304 && !f->post_urlenc && !f->post_multipart) {
 		/* Not Modified && GET request */
@@ -944,20 +932,41 @@ bool fetch_process_headers(struct fetch *f)
 	code = curl_easy_getinfo(f->curl_handle, CURLINFO_CONTENT_TYPE, &type);
 	assert(code == CURLE_OK);
 
-	if (type == 0) {
-		type = "text/html";
-		if (strncmp(f->url, "file:///", 8) == 0) {
-			char *url_path;
-			url_path = curl_unescape(f->url + 7, (int) strlen(f->url) - 7);
-			type = fetch_filetype(url_path);
+	if (strncmp(f->url, "file:///", 8) == 0)
+		url_path = curl_unescape(f->url + 7,
+				(int) strlen(f->url) - 7);
+	else if (strncmp(f->url, "file:/", 6) == 0)
+		url_path = curl_unescape(f->url + 5,
+				(int) strlen(f->url) - 5);
+
+	if (url_path && stat(url_path, &s) == 0) {
+		/* file: URL and file exists */
+		/* create etag */
+		free(f->cachedata.etag);
+		f->cachedata.etag = malloc(13);
+		if (f->cachedata.etag)
+			sprintf(f->cachedata.etag,
+					"\"%10d\"", (int)s.st_mtime);
+
+		/* If performed a conditional request and unmodified ... */
+		if (f->last_modified && f->file_etag &&
+				f->last_modified > s.st_mtime &&
+				f->file_etag == s.st_mtime) {
+			f->callback(FETCH_NOTMODIFIED, f->p,
+					(const char *)&f->cachedata, 0);
 			curl_free(url_path);
-		} else if (strncmp(f->url, "file:/", 6) == 0) {
-			char *url_path;
-			url_path = curl_unescape(f->url + 5, (int) strlen(f->url) - 5);
-			type = fetch_filetype(url_path);
-			curl_free(url_path);
+			return true;
 		}
 	}
+
+	if (type == 0) {
+		type = "text/html";
+		if (url_path) {
+			type = fetch_filetype(url_path);
+		}
+	}
+
+	curl_free(url_path);
 
 	LOG(("FETCH_TYPE, '%s'", type));
 	f->callback(FETCH_TYPE, f->p, type, f->content_length);
