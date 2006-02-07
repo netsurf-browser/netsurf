@@ -59,5 +59,6 @@ void ro_gui_user_redraw(wimp_draw *redraw, bool user_fill, os_colour user_colour
 void ro_gui_wimp_update_window_furniture(wimp_w w, wimp_window_flags bic_mask,
 		wimp_window_flags xor_mask);
 bool ro_gui_wimp_check_window_furniture(wimp_w w, wimp_window_flags mask);
+bool ro_gui_open_window_at_front(wimp_w w);
 
 #endif

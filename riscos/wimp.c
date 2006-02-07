@@ -849,3 +849,32 @@ bool ro_gui_wimp_check_window_furniture(wimp_w w, wimp_window_flags mask) {
 	}
 	return state.flags & mask;
 }
+
+
+/**
+ * Open/move a window to the front of the window stack.
+ */
+
+bool ro_gui_open_window_at_front(wimp_w w) {
+	wimp_window_state state;
+	os_error *error;
+
+	state.w = w;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+
+	state.next = wimp_TOP;
+	error = xwimp_open_window((wimp_open*)&state);
+	if (error) {
+		LOG(("xwimp_open_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+	return true;
+}
