@@ -6,6 +6,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/query.h"
@@ -39,6 +40,10 @@ static struct gui_query_window *gui_query_window_list = 0;
 
 /** Template for a query window. */
 static struct wimp_window *query_template;
+
+/** Widths of Yes and No buttons */
+static int query_yes_width = 0;
+static int query_no_width  = 0;
 
 static void ro_gui_query_window_destroy(struct gui_query_window *qw);
 static struct gui_query_window *ro_gui_query_window_lookup_id(query_id id);
@@ -89,14 +94,22 @@ struct gui_query_window *ro_gui_query_window_lookup_id(query_id id)
  * \param  detail  parameter used in expanding tokenised message
  * \param  cb      table of callback functions to be called when user responds
  * \param  pw      handle to be passed to callback functions
+ * \param  yes     text to use for 'Yes' button' (or NULL for default)
+ * \param  no      text to use for 'No' button (or NULL for default)
  * \return id number of the query (or QUERY_INVALID if it failed)
  */
 
-query_id query_user(const char *query, const char *detail, const query_callback *cb, void *pw)
+query_id query_user(const char *query, const char *detail,
+		const query_callback *cb, void *pw,
+		const char *yes, const char *no)
 {
 	struct gui_query_window *qw;
 	char query_buffer[300];
 	os_error *error;
+	wimp_icon *icn;
+	int width;
+	int len;
+	int x;
 
 	qw = malloc(sizeof(struct gui_query_window));
 	if (!qw) {
@@ -112,9 +125,53 @@ query_id query_user(const char *query, const char *detail, const query_callback 
 	if (next_id == QUERY_INVALID)
 		next_id++;
 
+	if (!yes) yes = messages_get("Yes");
+	if (!no) no = messages_get("No");
+
+	/* set the text of the 'No' button and size accordingly */
+	icn = &query_template->icons[ICON_QUERY_NO];
+	len = strnlen(no, icn->data.indirected_text.size - 1);
+	memcpy(icn->data.indirected_text.text, no, len);
+	icn->data.indirected_text.text[len] = '\0';
+
+	error = xwimptextop_string_width(icn->data.indirected_text.text, len, &width);
+	if (error) {
+		LOG(("xwimptextop_string_width: 0x%x:%s",
+			error->errnum, error->errmess));
+		width = len * 16;
+	}
+	if (!query_no_width) query_no_width = icn->extent.x1 - icn->extent.x0;
+	if (width < query_no_width)
+		width = query_no_width;
+	else
+		width += 44;
+	icn->extent.x0 = x = icn->extent.x1 - width;
+
+	/* set the text of the 'Yes' button and size accordingly */
+	icn = &query_template->icons[ICON_QUERY_YES];
+	len = strnlen(yes, icn->data.indirected_text.size - 1);
+	memcpy(icn->data.indirected_text.text, yes, len);
+	icn->data.indirected_text.text[len] = '\0';
+
+	if (!query_yes_width) query_yes_width = icn->extent.x1 - icn->extent.x0;
+	icn->extent.x1 = x - 16;
+	error = xwimptextop_string_width(icn->data.indirected_text.text, len, &width);
+	if (error) {
+		LOG(("xwimptextop_string_width: 0x%x:%s",
+			error->errnum, error->errmess));
+		width = len * 16;
+	}
+	if (width < query_yes_width)
+		width = query_yes_width;
+	else
+		width += 28;
+	icn->extent.x0 = icn->extent.x1 - width;
+
 	error = xwimp_create_window(query_template, &qw->window);
 	if (error) {
 		warn_user("WimpError", error->errmess);
+		free(qw);
+		return QUERY_INVALID;
 	}
 
 	snprintf(query_buffer, sizeof query_buffer, "%s %s",

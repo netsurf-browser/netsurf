@@ -83,6 +83,9 @@ void ro_gui_configure_initialise(void) {
 	ro_gui_configure_register("con_language",
 			ro_gui_options_language_initialise,
 			ro_gui_wimp_event_finalise);
+	ro_gui_configure_register("con_inter",
+			ro_gui_options_interface_initialise,
+			ro_gui_wimp_event_finalise);
 }
 
 void ro_gui_configure_show(void) {

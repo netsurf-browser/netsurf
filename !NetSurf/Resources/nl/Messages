@@ -401,6 +401,7 @@ PrintErrorRO2:It appears that the printer is busy.
 
 AbortDownload:Zeker weten dat u deze download af wilt breken?
 QuitDownload:Een of meer downloads zijn nog bezig. Toch afbreken?
+OverwriteFile:A file with that name already exists and would be lost.
 
 
 # Page fetching
@@ -501,6 +502,10 @@ kBytes: kB
 MBytes: MB
 GBytes: GB
 
+Yes:Ja
+No:Nee
+Replace:Replace file
+DontReplace:Don't replace
 
 # Interactive help
 # ================

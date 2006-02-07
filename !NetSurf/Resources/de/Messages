@@ -400,7 +400,7 @@ PrintErrorRO2:Der Drucker scheint beschäftigt zu sein.
 
 AbortDownload:Soll das Herunterladen der Datei wirklich abgebrochen werden ?
 QuitDownload:Das Herunterladen ein oder mehrerer Dateien wurde noch nicht abgeschlossen. Soll NetSurf trotzdem beendet werden ?
-
+OverwriteFile:A file with that name already exists and would be lost.
 
 # Page fetching
 # =============
@@ -500,6 +500,10 @@ kBytes: kB
 MBytes: MB
 GBytes: GB
 
+Yes:Ja
+No:Nein
+Replace:Replace file
+DontReplace:Don't replace
 
 # Interactive help
 # ================

@@ -57,6 +57,7 @@ extern bool option_url_suggestion;
 extern int option_image_memory_direct;	/* -1 means auto-detect */
 extern int option_image_memory_compressed;	/* -1 means auto-detect */
 extern bool option_strip_extensions;
+extern bool option_confirm_overwrite;
 extern char *option_url_path;
 extern char *option_url_save;
 extern char *option_hotlist_path;
@@ -107,6 +108,7 @@ bool option_url_suggestion = true; \
 int option_image_memory_direct = -1; \
 int option_image_memory_compressed = -1; \
 bool option_strip_extensions = true; \
+bool option_confirm_overwrite = true; \
 char *option_url_path = 0; \
 char *option_url_save = 0; \
 char *option_hotlist_path = 0; \
@@ -157,6 +159,7 @@ char *option_theme_save = 0;
 { "image_memory_direct",    OPTION_INTEGER, &option_image_memory_direct }, \
 { "image_memory_compressed",OPTION_INTEGER, &option_image_memory_compressed }, \
 { "strip_extensions",       OPTION_BOOL,    &option_strip_extensions }, \
+{ "confirm_overwrite",      OPTION_BOOL,    &option_confirm_overwrite }, \
 { "url_path",               OPTION_STRING,  &option_url_path }, \
 { "url_save",               OPTION_STRING,  &option_url_save }, \
 { "hotlist_path",           OPTION_STRING,  &option_hotlist_path }, \

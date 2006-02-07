@@ -43,6 +43,14 @@
 #include "netsurf/utils/utils.h"
 
 
+typedef enum
+{
+	QueryRsn_Quit,
+	QueryRsn_Abort,
+	QueryRsn_Overwrite
+} query_reason;
+
+
 /** Data for a download window. */
 struct gui_download_window {
 	/** Associated fetch, or 0 if the fetch has completed or aborted. */
@@ -62,12 +70,13 @@ struct gui_download_window {
 	bool saved;
 	bool close_confirmed;
 	bool error;		/**< Error occurred, aborted. */
+
 	/** RISC OS file handle, of temporary file when !saved, and of
 	 * destination when saved. */
 	os_fw file;
 
 	query_id query;
-	bool query_quit;
+	query_reason query_rsn;
 
 	struct timeval start_time;	/**< Time download started. */
 	struct timeval last_time;	/**< Time status was last updated. */
@@ -97,6 +106,7 @@ static int download_progress_y0;
 static int download_progress_y1;
 
 
+
 static const char *ro_gui_download_temp_name(struct gui_download_window *dw);
 static void ro_gui_download_update_status(struct gui_download_window *dw);
 static void ro_gui_download_update_status_wrapper(void *p);
@@ -106,17 +116,27 @@ static bool ro_gui_download_check_space(struct gui_download_window *dw,
 		const char *dest_file, const char *orig_file);
 static os_error *ro_gui_download_move(struct gui_download_window *dw,
 		const char *dest_file, const char *src_file);
-static bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name);
+static bool ro_gui_download_save(struct gui_download_window *dw,
+		const char *file_name, bool force_overwrite);
 static void ro_gui_download_send_dataload(struct gui_download_window *dw);
 static void ro_gui_download_window_destroy_wrapper(void *p);
 static void ro_gui_download_close_confirmed(query_id, enum query_response res, void *p);
 static void ro_gui_download_close_cancelled(query_id, enum query_response res, void *p);
+static void ro_gui_download_overwrite_confirmed(query_id, enum query_response res, void *p);
+static void ro_gui_download_overwrite_cancelled(query_id, enum query_response res, void *p);
 
 static const query_callback close_funcs =
 {
 	ro_gui_download_close_confirmed,
 	ro_gui_download_close_cancelled,
 	ro_gui_download_close_cancelled
+};
+
+static const query_callback overwrite_funcs =
+{
+	ro_gui_download_overwrite_confirmed,
+	ro_gui_download_overwrite_cancelled,
+	ro_gui_download_overwrite_cancelled
 };
 
 
@@ -736,23 +756,24 @@ bool ro_gui_download_window_keypress(struct gui_download_window *dw, wimp_key *k
 			return true;
 
 		case wimp_KEY_RETURN: {
-				char *name = ro_gui_get_icon_string(dw->window, ICON_DOWNLOAD_PATH);
-				if (!strrchr(name, '.'))
-				{
-					warn_user("NoPathError", NULL);
-					return true;
-				}
-				ro_gui_convert_save_path(dw->path, sizeof dw->path, name);
-
-				dw->send_dataload = false;
-				if (ro_gui_download_save(dw, dw->path) && !dw->fetch)
-				{
-					/* finished already */
-					schedule(200, ro_gui_download_window_destroy_wrapper, dw);
-				}
+			char *name = ro_gui_get_icon_string(dw->window, ICON_DOWNLOAD_PATH);
+			if (!strrchr(name, '.'))
+			{
+				warn_user("NoPathError", NULL);
 				return true;
 			}
-			break;
+			ro_gui_convert_save_path(dw->path, sizeof dw->path, name);
+
+			dw->send_dataload = false;
+			if (ro_gui_download_save(dw, dw->path,
+					!option_confirm_overwrite) && !dw->fetch)
+			{
+				/* finished already */
+				schedule(200, ro_gui_download_window_destroy_wrapper, dw);
+			}
+			return true;
+		}
+		break;
 	}
 
 	/* ignore all other keypresses (F12 etc) */
@@ -830,11 +851,11 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 	dw->send_dataload = true;
 	memcpy(&dw->save_message, message, sizeof(wimp_message));
 
-	if (!ro_gui_download_save(dw, message->data.data_xfer.file_name))
+	if (!ro_gui_download_save(dw, message->data.data_xfer.file_name,
+			!option_confirm_overwrite))
 		return;
 
-	if (!dw->fetch)
-	{
+	if (!dw->fetch) {
 		/* Ack successful completed save with message_DATA_LOAD immediately
 		   to reduce the chance of the target app getting confused by it
 		   being delayed */
@@ -1076,13 +1097,16 @@ os_error *ro_gui_download_move(struct gui_download_window *dw,
 /**
  * Start of save operation, user has specified where the file should be saved.
  *
- * \param  dw         download window
- * \param  file_name  pathname of destination file
+ * \param  dw               download window
+ * \param  file_name        pathname of destination file
+ & \param  force_overwrite  true iff required to overwrite without prompting
  * \return true iff save successfully initiated
  */
 
-bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name)
+bool ro_gui_download_save(struct gui_download_window *dw,
+		const char *file_name, bool force_overwrite)
 {
+	fileswitch_object_type obj_type;
 	const char *temp_name;
 	os_error *error;
 
@@ -1090,6 +1114,34 @@ bool ro_gui_download_save(struct gui_download_window *dw, const char *file_name)
 		return true;
 
 	temp_name = ro_gui_download_temp_name(dw);
+
+	/* does the user want to check for collisions when saving? */
+	if (true && !force_overwrite) {
+		/* check whether the destination file/dir already exists */
+		error = xosfile_read_stamped(file_name, &obj_type,
+				NULL, NULL, NULL, NULL, NULL);
+		if (error) {
+			LOG(("xosfile_read_stamped: 0x%x:%s", error->errnum, error->errmess));
+			return false;
+		}
+
+		switch (obj_type) {
+			case osfile_NOT_FOUND:
+				break;
+
+			case osfile_IS_FILE:
+				dw->query = query_user("OverwriteFile", NULL, &overwrite_funcs, dw,
+							messages_get("Replace"), messages_get("DontReplace"));
+				dw->query_rsn = QueryRsn_Overwrite;
+				return false;
+
+			default:
+				error = xosfile_make_error(file_name, obj_type);
+				assert(error);
+				warn_user("SaveError", error->errmess);
+				return false;
+		}
+	}
 
 	if (!ro_gui_download_check_space(dw, file_name, temp_name)) {
 		warn_user("SaveError", messages_get("NoDiscSpace"));
@@ -1222,17 +1274,34 @@ bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit)
 
 	if (!safe && !dw->close_confirmed)
 	{
-		if (dw->query != QUERY_INVALID && dw->query_quit != quit) {
+		query_reason rsn = quit ? QueryRsn_Quit : QueryRsn_Abort;
+
+		if (dw->query != QUERY_INVALID) {
+
+			/* can we just reuse the existing query? */
+			if (rsn == dw->query_rsn) {
+				ro_gui_query_window_bring_to_front(dw->query);
+				return false;
+			}
+
 			query_close(dw->query);
 			dw->query = QUERY_INVALID;
 		}
 
-		dw->query_quit = quit;
-		if (dw->query == QUERY_INVALID)
-			dw->query = query_user(quit ? "QuitDownload" : "AbortDownload",
-					NULL, &close_funcs, dw);
-		else
-			ro_gui_query_window_bring_to_front(dw->query);
+		if (quit) {
+			/* bring all download windows to the front of the desktop as
+			   a convenience if there are lots of windows open */
+
+			struct gui_download_window *d = download_window_list;
+			while (d) {
+				ro_gui_open_window_at_front(d->window);
+				d = d->next;
+			}
+		}
+
+		dw->query_rsn = rsn;
+		dw->query = query_user(quit ? "QuitDownload" : "AbortDownload",
+				NULL, &close_funcs, dw, NULL, NULL);
 
 		return false;
 	}
@@ -1319,10 +1388,10 @@ void ro_gui_download_close_cancelled(query_id id, enum query_response res, void 
 
 void ro_gui_download_close_confirmed(query_id id, enum query_response res, void *p)
 {
-	struct gui_download_window *dw = (struct gui_download_window *)p;
+	struct gui_download_window *dw = p;
 	dw->query = QUERY_INVALID;
 	dw->close_confirmed = true;
-	if (dw->query_quit) {
+	if (dw->query_rsn == QueryRsn_Quit) {
 
 		/* destroy all our downloads */
 		while (download_window_list)
@@ -1334,6 +1403,41 @@ void ro_gui_download_close_confirmed(query_id id, enum query_response res, void 
 	}
 	else
 		ro_gui_download_window_destroy(dw, false);
+}
+
+
+/**
+ * User has opted not to overwrite the existing file.
+ */
+
+void ro_gui_download_overwrite_cancelled(query_id id, enum query_response res, void *p)
+{
+	struct gui_download_window *dw = p;
+	dw->query = QUERY_INVALID;
+}
+
+
+/**
+ * Overwrite of existing file confirmed, proceed with the save.
+ */
+
+void ro_gui_download_overwrite_confirmed(query_id id, enum query_response res, void *p)
+{
+	struct gui_download_window *dw = p;
+	dw->query = QUERY_INVALID;
+
+	if (!ro_gui_download_save(dw, dw->save_message.data.data_xfer.file_name, true))
+		return;
+
+	if (!dw->fetch) {
+		/* Ack successful completed save with message_DATA_LOAD immediately
+		   to reduce the chance of the target app getting confused by it
+		   being delayed */
+
+		ro_gui_download_send_dataload(dw);
+
+		schedule(200, ro_gui_download_window_destroy_wrapper, dw);
+	}
 }
 
 

@@ -400,7 +400,7 @@ PrintErrorRO2:Il semble que l'imprimante soit occupée.
 
 AbortDownload:Étes-vous sûr de vouloir interrompre ce téléchargement ?
 QuitDownload:Un ou plusieurs téléchargements sont en cours. Êtes-vous sûr de vouloir quitter ?
-
+OverwriteFile:A file with that name already exists and would be lost.
 
 # Page fetching
 # =============
@@ -500,6 +500,10 @@ kBytes: KO
 MBytes: MO
 GBytes: GO
 
+Yes:Oui
+No:Non
+Replace:Replace file
+DontReplace:Don't replace
 
 # Interactive help
 # ================

@@ -399,7 +399,7 @@ AWNotSeen:Please locate the AWViewer application and try again.
 
 AbortDownload:Are you sure you wish to abort this download?
 QuitDownload:One or more downloads are still in progress. Are you sure you wish to quit?
-
+OverwriteFile:A file with that name already exists and would be lost.
 
 # Page fetching
 # =============
@@ -499,6 +499,10 @@ kBytes: kB
 MBytes: MB
 GBytes: GB
 
+Yes:Yes
+No:No
+Replace:Replace file
+DontReplace:Don't replace
 
 # Interactive help
 # ================

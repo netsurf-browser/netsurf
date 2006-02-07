@@ -61,7 +61,8 @@ const char *rfc1123_date(time_t t);
 /* Platform specific functions */
 void die(const char * const error);
 void warn_user(const char *warning, const char *detail);
-query_id query_user(const char *query, const char *detail, const query_callback *cb, void *pw);
+query_id query_user(const char *query, const char *detail,
+	const query_callback *cb, void *pw, const char *yes, const char *no);
 void query_close(query_id);
 
 #endif
