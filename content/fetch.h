@@ -43,6 +43,7 @@ struct cache_data {
 	int max_age;		/**< Max-age Cache-control parameter */
 	bool no_cache;		/**< no-cache Cache-control parameter */
 	char *etag;		/**< Etag: response header */
+	time_t last_modified;	/**< Last-Modified: response header */
 };
 
 extern bool fetch_active;

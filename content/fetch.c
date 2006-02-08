@@ -285,6 +285,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->cachedata.max_age = INVALID_AGE;
 	fetch->cachedata.no_cache = false;
 	fetch->cachedata.etag = 0;
+	fetch->cachedata.last_modified = 0;
 	fetch->last_modified = 0;
 	fetch->file_etag = 0;
 	fetch->queue_prev = 0;
@@ -868,6 +869,13 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 				f->cachedata.etag[i] == '\r' ||
 				f->cachedata.etag[i] == '\n'); --i)
 			f->cachedata.etag[i] = '\0';
+	} else if (14 < size && strncasecmp(data, "Last-Modified:", 14) == 0) {
+		/* extract Last-Modified header */
+		SKIP_ST(14);
+		if (i < (int) size) {
+			f->cachedata.last_modified =
+					curl_getdate(&data[i], NULL);
+		}
 	}
 
 	return size;
@@ -947,6 +955,9 @@ bool fetch_process_headers(struct fetch *f)
 		if (f->cachedata.etag)
 			sprintf(f->cachedata.etag,
 					"\"%10d\"", (int)s.st_mtime);
+
+		/* don't set last modified time so as to ensure that local
+		 * files are revalidated at all times. */
 
 		/* If performed a conditional request and unmodified ... */
 		if (f->last_modified && f->file_etag &&

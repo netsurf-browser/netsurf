@@ -328,6 +328,7 @@ struct content * content_create(const char *url)
 	c->cache_data->max_age = INVALID_AGE;
 	c->cache_data->no_cache = false;
 	c->cache_data->etag = 0;
+	c->cache_data->last_modified = 0;
 
 	c->prev = 0;
 	c->next = content_list;

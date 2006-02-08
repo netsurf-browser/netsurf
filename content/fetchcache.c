@@ -111,7 +111,9 @@ struct content * fetchcache(const char *url,
 			freshness_lifetime =
 				(cd->max_age != INVALID_AGE) ? cd->max_age :
 				(cd->expires != 0) ? cd->expires - cd->date :
-				0;
+				(cd->last_modified != 0) ?
+					(time(0) - cd->last_modified) / 10 :
+					0;
 
 			if (freshness_lifetime > current_age ||
 					cd->date == 0) {
@@ -127,10 +129,10 @@ struct content * fetchcache(const char *url,
 
 			/* Ok. We have a cache entry, but it appears stale.
 			 * Therefore, validate it. */
-			/** \todo perhaps it'd be better to use the
-			 * contents of the Last-Modified header here
-			 * instead */
-			date = c->cache_data->date;
+			if (cd->last_modified)
+				date = cd->last_modified;
+			else
+				date = c->cache_data->date;
 			etag = c->cache_data->etag;
 		}
 	}
@@ -585,6 +587,9 @@ void fetchcache_cache_update(struct content *c,
 		talloc_free(c->cache_data->etag);
 		c->cache_data->etag = talloc_strdup(c, data->etag);
 	}
+
+	if (data->last_modified)
+		c->cache_data->last_modified = data->last_modified;
 }
 
 
