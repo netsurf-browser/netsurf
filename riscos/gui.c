@@ -266,9 +266,12 @@ void gui_init(int argc, char** argv)
 	char *nsdir_temp;
 
 	/* re-enable all FPU exceptions/traps except inexact operations,
-	 * which we're not interested in - UnixLib disables all FP
-	 * exceptions by default */
-	_FPU_SETCW(_FPU_IEEE & ~_FPU_MASK_PM);
+	 * which we're not interested in, and underflow which is incorrectly
+	 * raised when converting an exact value of 0 from double-precision
+	 * to single-precision on FPEmulator v4.09-4.11 (MVFD F0,#0:MVFS F0,F0)
+	 * - UnixLib disables all FP exceptions by default */
+
+	_FPU_SETCW(_FPU_IEEE & ~(_FPU_MASK_PM | _FPU_MASK_UM));
 
 	xhourglass_start(1);
 
