@@ -2176,19 +2176,40 @@ void gui_launch_url(const char *url)
 
 void warn_user(const char *warning, const char *detail)
 {
-	char warn_buffer[300];
+	union {
+		char warn_buffer[300];
+		os_error error;
+	} d;
 
 	LOG(("%s %s", warning, detail));
-	snprintf(warn_buffer, sizeof warn_buffer, "%s %s",
-			messages_get(warning),
-			detail ? detail : "");
-	warn_buffer[sizeof warn_buffer - 1] = 0;
-	ro_gui_set_icon_string(dialog_warning, ICON_WARNING_MESSAGE,
-			warn_buffer);
-	xwimp_set_icon_state(dialog_warning, ICON_WARNING_HELP,
-			wimp_ICON_DELETED, wimp_ICON_DELETED);
-	ro_gui_dialog_open(dialog_warning);
-	xos_bell();
+
+	if (dialog_warning) {
+		snprintf(d.warn_buffer, sizeof d.warn_buffer, "%s %s",
+				messages_get(warning),
+				detail ? detail : "");
+		d.warn_buffer[sizeof d.warn_buffer - 1] = 0;
+		ro_gui_set_icon_string(dialog_warning, ICON_WARNING_MESSAGE,
+				d.warn_buffer);
+		xwimp_set_icon_state(dialog_warning, ICON_WARNING_HELP,
+				wimp_ICON_DELETED, wimp_ICON_DELETED);
+		ro_gui_dialog_open(dialog_warning);
+		xos_bell();
+	}
+	else {
+		/* probably haven't initialised (properly), use a
+		   non-multitasking error box */
+		snprintf(d.error.errmess, sizeof d.error.errmess, "%s %s",
+				messages_get(warning),
+				detail ? detail : "");
+		d.error.errmess[sizeof d.error.errmess - 1] = 0;
+		xwimp_report_error_by_category(&d.error,
+				wimp_ERROR_BOX_OK_ICON |
+				wimp_ERROR_BOX_GIVEN_CATEGORY |
+				wimp_ERROR_BOX_CATEGORY_ERROR <<
+					wimp_ERROR_BOX_CATEGORY_SHIFT,
+				"NetSurf", "!netsurf",
+				(osspriteop_area *) 1, 0, 0);
+	}
 }
 
 
