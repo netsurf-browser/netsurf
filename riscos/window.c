@@ -2890,28 +2890,26 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
 		warn_user("NoMemory", NULL);
 		return true;
 	}
+	size = strlen(utf8_buf);
 
 	if (toolbar) {
-		const char *ep = buf + size;
+		const char *ep = utf8_buf + size;
 		const char *sp;
 		char *p = utf8_buf;
 
 		/* skip leading whitespace */
-		while (p < ep && isspace(*p)) p++;
+		while (isspace(*p)) p++;
 
 		sp = p;
-		while (p < ep) {
-			if (*p == '\n' || *p == '\r') break;
+		while (*p && *p != '\r' && *p != '\n')
 			p += utf8_next(p, ep - p, 0);
-		}
 		*p = '\0';
 
 		if (p > sp)
 			ro_gui_window_launch_url(g, sp);
 	}
 	else
-		browser_window_paste_text(g->bw, utf8_buf,
-				strlen(utf8_buf), true);
+		browser_window_paste_text(g->bw, utf8_buf, size, true);
 
 	free(buf);
 	free(utf8_buf);
