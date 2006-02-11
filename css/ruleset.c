@@ -2806,7 +2806,7 @@ void parse_text_indent(struct css_style * const s, const struct css_node * const
 		s->text_indent.size = CSS_TEXT_INDENT_PERCENT;
 		s->text_indent.value.percent = atof(v->data);
 	} else if ((v->type == CSS_NODE_DIMENSION || v->type == CSS_NODE_NUMBER) &&
-			parse_length(&s->text_indent.value.length, v, true) == 0) {
+			parse_length(&s->text_indent.value.length, v, false) == 0) {
 		s->text_indent.size = CSS_TEXT_INDENT_LENGTH;
 	}
 }
