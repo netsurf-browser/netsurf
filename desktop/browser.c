@@ -1255,6 +1255,10 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 		browser_mouse_state mouse, struct box *box,
 		int box_x, int box_y, int x, int y)
 {
+	const browser_mouse_state but1 = (BROWSER_MOUSE_CLICK_1 |
+			BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_HOLDING_1);
+	const browser_mouse_state but2 = (BROWSER_MOUSE_CLICK_2 |
+			BROWSER_MOUSE_DRAG_2 | BROWSER_MOUSE_HOLDING_2);
 	const int w = SCROLLBAR_WIDTH;
 	bool vscroll, hscroll;
 	int well_height, bar_top, bar_height;
@@ -1303,9 +1307,9 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 	/* find icon in scrollbar and calculate scroll */
 	if (z < w) {
 		status = messages_get(vert ? "ScrollUp" : "ScrollLeft");
-		if (mouse & BROWSER_MOUSE_CLICK_1)
+		if (mouse & but1)
 			scroll -= 16;
-		else if (mouse & BROWSER_MOUSE_CLICK_2)
+		else if (mouse & but2)
 			scroll += 16;
 	} else if (z < w + bar_start + w / 4) {
 		status = messages_get(vert ? "ScrollPUp" : "ScrollPLeft");
@@ -1349,9 +1353,9 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 			scroll -= page;
 	} else {
 		status = messages_get(vert ? "ScrollDown" : "ScrollRight");
-		if (mouse & BROWSER_MOUSE_CLICK_1)
+		if (mouse & but1)
 			scroll += 16;
-		else if (mouse & BROWSER_MOUSE_CLICK_2)
+		else if (mouse & but2)
 			scroll -= 16;
 	}
 
