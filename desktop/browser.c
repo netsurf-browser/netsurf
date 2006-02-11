@@ -903,17 +903,12 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		case GADGET_TEXTAREA:
 			status = messages_get("FormTextarea");
 			pointer = GUI_POINTER_CARET;
-			if (mouse & (BROWSER_MOUSE_MOD_1 |
-					BROWSER_MOUSE_MOD_2)) {
-				if (text_box) {
-					selection_click(bw->sel, text_box,
-							mouse, x - box_x,
-							y - box_y);
-					if (selection_dragging(bw->sel))
-						bw->drag_type =
-							DRAGGING_SELECTION;
-				}
-			} else if (mouse & BROWSER_MOUSE_CLICK_1) {
+
+			if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) {
+
+				if (text_box && selection_root(bw->sel) != gadget_box)
+					selection_init(bw->sel, gadget_box);
+
 				browser_window_textarea_click(bw,
 						mouse,
 						gadget_box,
@@ -921,15 +916,16 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						gadget_box_y,
 						x - gadget_box_x,
 						y - gadget_box_y);
-			} else if (text_box) {
-				if (mouse & (BROWSER_MOUSE_DRAG_1 |
-						BROWSER_MOUSE_DRAG_2))
-					selection_init(bw->sel, gadget_box);
+			}
 
-				selection_click(bw->sel, text_box, mouse,
-						x - box_x, y - box_y);
-				if (selection_dragging(bw->sel))
+			if (text_box) {
+				selection_click(bw->sel, text_box, mouse, x - box_x, y - box_y);
+
+				if (selection_dragging(bw->sel)) {
 					bw->drag_type = DRAGGING_SELECTION;
+					status = messages_get("Selecting");
+				} else
+					status = c->status_message;
 			}
 			break;
 		case GADGET_TEXTBOX:
@@ -1020,6 +1016,12 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		}
 
 	} else {
+
+		/* if clicking in the main page, remove the selection from any text areas */
+		if (text_box &&
+			(mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2)) &&
+			selection_root(bw->sel) != c->data.html.layout)
+			selection_init(bw->sel, c->data.html.layout);
 
 		if (text_box && selection_click(bw->sel, text_box, mouse,
 				x - box_x, y - box_y)) {

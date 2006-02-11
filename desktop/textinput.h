@@ -46,12 +46,41 @@ enum input_key {
 };
 
 
+struct caret
+{
+	bool defined;
+
+	struct browser_window *bw;
+	struct box *text_box;
+	size_t	char_offset;
+
+	/* document co-ordinates of bottom left of caret */
+	int	x;
+	int	y;
+	int	height;
+};
+
+
+/** There's a single ghost caret used to implement
+ *  drag-and-drop of text into text areas and input fields.
+ */
+
+extern struct caret ghost_caret;
+
+
+void caret_set_position(struct caret *c, struct browser_window *bw,
+		struct box *text_box, int char_offset, int pixel_offset);
+void caret_remove(struct caret *c);
+
+
+struct box *textarea_get_position(struct box *textarea, int x, int y,
+		int *pchar_offset, int *ppixel_offset);
+
 void browser_window_textarea_click(struct browser_window *bw,
 		browser_mouse_state mouse,
 		struct box *textarea,
 		int box_x, int box_y,
 		int x, int y);
-//bool browser_window_textarea_paste(struct browser_window *bw,
 
 void browser_window_input_click(struct browser_window* bw,
 		struct box *input,

@@ -19,13 +19,31 @@
 #include "netsurf/desktop/selection.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
+#include "netsurf/render/form.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
 
+/**
+ * Text selection works by labelling each node in the box tree with its
+ * start index in the textual representation of the tree's content.
+ *
+ * Text input fields and text areas have their own number spaces so that
+ * they can be relabelled more efficiently when editing (rather than relabel
+ * the entire box tree) and so that selections are either wholly within
+ * or wholly without the textarea/input box.
+ */
+
 #define IS_TEXT(box) ((box)->text && !(box)->object)
 
+#define IS_INPUT(box) ((box)->gadget && \
+	((box)->gadget->type == GADGET_TEXTAREA || (box)->gadget->type == GADGET_TEXTBOX))
+
+/** check whether the given text box is in the same number space as the
+    current selection; number spaces are identified by their uppermost nybble */
+
+#define SAME_SPACE(s, offset) (((s)->max_idx & 0xF0000000U) == ((offset) & 0xF0000000U))
 
 
 struct rdw_info {
@@ -132,13 +150,22 @@ void selection_destroy(struct selection *s)
 
 void selection_reinit(struct selection *s, struct box *root)
 {
+	unsigned root_idx;
+
 	assert(s);
+
+	if (s->root == root) {
+		/* keep the same number space as before, because we want
+		   to keep the selection too */
+		root_idx = (s->max_idx & 0xF0000000U);
+	}
+	else {
+		static int next_idx = 0;
+		root_idx = (next_idx++) << 28;
+	}
 
 	s->root = root;
 	if (root) {
-		int root_idx = 0;
-		if (root->gadget) root_idx = 0x10000000;
-
 		s->max_idx = selection_label_subtree(s, root, root_idx);
 	}
 	else
@@ -195,7 +222,8 @@ unsigned selection_label_subtree(struct selection *s, struct box *node, unsigned
 		idx += node->length + node->space;
 
 	while (child) {
-		idx = selection_label_subtree(s, child, idx);
+		if (!IS_INPUT(child))
+			idx = selection_label_subtree(s, child, idx);
 		child = child->next;
 	}
 
@@ -223,7 +251,7 @@ bool selection_click(struct selection *s, struct box *box,
 	int pos = -1;  /* 0 = inside selection, 1 = after it */
 	int idx;
 
-	if (!s->root)
+	if (!s->root ||!SAME_SPACE(s, box->byte_offset))
 		return false;	/* not our problem */
 
 	nsfont_position_in_string(box->style,
@@ -326,6 +354,9 @@ void selection_track(struct selection *s, struct box *box,
 {
 	int pixel_offset;
 	int idx;
+
+	if (!SAME_SPACE(s, box->byte_offset))
+		return;
 
 	nsfont_position_in_string(box->style,
 		box->text,
@@ -580,6 +611,7 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 {
 	struct rdw_info rdw;
 
+if (end_idx < start_idx) LOG(("*** asked to redraw from %d to %d", start_idx, end_idx));
 	assert(end_idx >= start_idx);
 	rdw.inited = false;
 	if (traverse_tree(s->root, start_idx, end_idx, redraw_handler, &rdw) &&
@@ -634,6 +666,8 @@ void selection_select_all(struct selection *s)
 	was_defined = selection_defined(s);
 	old_start = s->start_idx;
 	old_end = s->end_idx;
+
+LOG(("selection was %d: %u to %u, max %u", was_defined, old_start, old_end, s->max_idx));
 
 	s->defined = true;
 	s->start_idx = 0;
@@ -926,3 +960,4 @@ void selection_update(struct selection *s, size_t byte_offset,
 			s->end_idx += max(change, byte_offset - s->end_idx);
 	}
 }
+

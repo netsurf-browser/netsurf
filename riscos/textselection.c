@@ -120,6 +120,8 @@ void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
 	os_error *error;
 	int x, y;
 
+	LOG(("ending text selection drag"));
+
 	gui_current_drag_type = GUI_DRAG_NONE;
 
 	scroll.w = g->window;
@@ -163,8 +165,8 @@ void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
 /**
  * Selection traversal routine for appending text to the current contents
  * of the clipboard.
-
- * \param box     pointer to text box being (partially) added
+ *
+ * \param box     pointer to text box being (partially) added (or NULL for newline)
  * \param offset  start offset of text within box (bytes)
  * \param length  length of text to be appended (bytes)
  * \param handle  unused handle, we don't need one
@@ -178,7 +180,7 @@ bool copy_handler(struct box *box, int offset, size_t length, void *handle)
 	size_t len;
 
 	if (box) {
-	len = min(length, box->length - offset);
+		len = min(length, box->length - offset);
 		text = box->text + offset;
 		if (box->space && length > len) space = true;
 	}
@@ -260,15 +262,17 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 
 bool gui_commit_clipboard(void)
 {
-	utf8_convert_ret res;
-	char *new_cb;
+	if (clip_length) {
+		utf8_convert_ret res;
+		char *new_cb;
 
-	res = utf8_to_local_encoding(clipboard, clip_length, &new_cb);
-	if (res == UTF8_CONVERT_OK) {
-		free(clipboard);
-		clipboard = new_cb;
+		res = utf8_to_local_encoding(clipboard, clip_length, &new_cb);
+		if (res == UTF8_CONVERT_OK) {
+			free(clipboard);
+			clipboard = new_cb;
 /* \todo utf8_to_local_encoding should return the length! */
-		clip_alloc = clip_length = strlen(new_cb);
+			clip_alloc = clip_length = strlen(new_cb);
+		}
 	}
 
 	if (!owns_clipboard) {

@@ -54,6 +54,9 @@ void selection_destroy(struct selection *s);
 void selection_init(struct selection *s, struct box *root);
 void selection_reinit(struct selection *s, struct box *root);
 
+/* struct box *selection_root(struct selection *s); */
+#define selection_root(s) ((s)->root)
+
 /* bool selection_defined(struct selection *s); */
 #define selection_defined(s) ((s)->defined)
 
