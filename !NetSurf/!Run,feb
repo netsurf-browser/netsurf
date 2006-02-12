@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.47 $ )
+| Run file for NetSurf. ( $Revision: 1.48 $ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -68,8 +68,8 @@ RMEnsure Tinct 0.13 Error NetSurf requires Tinct 0.13 or later. This can be down
 
 | Ensure Iconv
 | http://moose.mine.nu:6888/iconv_latest.zip
-RMEnsure Iconv 0.04 NetSurfRMLoad System:Modules.Iconv
-RMEnsure Iconv 0.04 Error NetSurf requires Iconv 0.04 or later. This can be downloaded from http://moose.mine.nu:6888/iconv_latest.zip
+RMEnsure Iconv 0.07 NetSurfRMLoad System:Modules.Iconv
+RMEnsure Iconv 0.07 Error NetSurf requires Iconv 0.07 or later. This can be downloaded from http://moose.mine.nu:6888/iconv_latest.zip
 
 | Disable SpecialFX, if present
 Set NetSurf$SpecialFX 1
