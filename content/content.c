@@ -190,7 +190,8 @@ static const struct handler_entry handler_map[] = {
 		html_open, html_close,
 		true},
 	{textplain_create, textplain_process_data, textplain_convert,
-		0, 0, 0, 0, 0, 0, true},
+		textplain_reformat, textplain_destroy, 0, textplain_redraw,
+		0, 0, true},
 	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0, false},
 #ifdef WITH_JPEG
 	{0, 0, nsjpeg_convert,

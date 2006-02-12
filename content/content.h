@@ -108,6 +108,7 @@
 #include "netsurf/content/content_type.h"
 #include "netsurf/css/css.h"
 #include "netsurf/render/html.h"
+#include "netsurf/render/textplain.h"
 #ifdef WITH_JPEG
 #include "netsurf/image/jpeg.h"
 #endif
@@ -212,6 +213,7 @@ struct content {
 	/** Data dependent on type. */
 	union {
 		struct content_html_data html;
+		struct content_textplain_data textplain;
 		struct content_css_data css;
 #ifdef WITH_JPEG
 		struct content_jpeg_data jpeg;
