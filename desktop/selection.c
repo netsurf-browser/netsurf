@@ -127,9 +127,11 @@ struct selection *selection_create(struct browser_window *bw)
 
 
 /**
- * Destroys a selection object.
+ * Destroys a selection object, without updating the
+ * owning window (caller should call selection_clear()
+ * first if update is desired)
  *
- * \param  s  selection object
+ * \param  s       selection object
  */
 
 void selection_destroy(struct selection *s)
@@ -154,15 +156,22 @@ void selection_reinit(struct selection *s, struct box *root)
 
 	assert(s);
 
-	if (s->root == root) {
-		/* keep the same number space as before, because we want
-		   to keep the selection too */
-		root_idx = (s->max_idx & 0xF0000000U);
-	}
-	else {
+	if (IS_INPUT(root)) {
 		static int next_idx = 0;
 		root_idx = (next_idx++) << 28;
 	}
+	else
+		root_idx = 0;
+
+//	if (s->root == root) {
+//		/* keep the same number space as before, because we want
+//		   to keep the selection too */
+//		root_idx = (s->max_idx & 0xF0000000U);
+//	}
+//	else {
+//		static int next_idx = 0;
+//		root_idx = (next_idx++) << 28;
+//	}
 
 	s->root = root;
 	if (root) {
@@ -666,8 +675,6 @@ void selection_select_all(struct selection *s)
 	was_defined = selection_defined(s);
 	old_start = s->start_idx;
 	old_end = s->end_idx;
-
-LOG(("selection was %d: %u to %u, max %u", was_defined, old_start, old_end, s->max_idx));
 
 	s->defined = true;
 	s->start_idx = 0;

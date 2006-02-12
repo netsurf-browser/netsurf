@@ -322,6 +322,7 @@ bool ro_gui_theme_install_apply(wimp_w w);
 #define ICON_SEARCH_CANCEL 4
 #define ICON_SEARCH_STATUS 5
 #define ICON_SEARCH_MENU 8
+#define ICON_SEARCH_SHOW_ALL 9 
 
 #define ICON_THEME_INSTALL_MESSAGE 0
 #define ICON_THEME_INSTALL_INSTALL 1
