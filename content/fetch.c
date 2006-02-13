@@ -319,6 +319,11 @@ struct fetch * fetch_start(char *url, char *referer,
 	/* remove curl default headers */
 	APPEND(fetch->headers, "Accept:");
 	APPEND(fetch->headers, "Pragma:");
+
+	/* when doing a POST libcurl sends Expect: 100-continue" by default
+	 * which fails with lighttpd, so disable it (see bug 1429054) */
+	APPEND(fetch->headers, "Expect:");
+
 	if (option_accept_language) {
 		char s[80];
 		snprintf(s, sizeof s, "Accept-Language: %s, *;q=0.1",
@@ -326,13 +331,7 @@ struct fetch * fetch_start(char *url, char *referer,
 		s[sizeof s - 1] = 0;
 		APPEND(fetch->headers, s);
 	}
-	/* Ensure that the Host header is set */
-	{
-		char s[80];
-		snprintf(s, sizeof s, "Host: %s", host);
-		s[sizeof s - 1] = 0;
-		APPEND(fetch->headers, s);
-	}
+
 	/* And add any headers specified by the caller */
 	for (i = 0; headers[i]; i++) {
 		if (strncasecmp(headers[i], "If-Modified-Since:", 18) == 0) {
