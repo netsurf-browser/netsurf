@@ -12,6 +12,8 @@
 #ifndef _NETSURF_RENDER_TEXTPLAIN_H_
 #define _NETSURF_RENDER_TEXTPLAIN_H_
 
+#include <iconv.h>
+
 struct content;
 
 struct content_textplain_data {

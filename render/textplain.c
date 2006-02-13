@@ -10,6 +10,7 @@
  */
 
 #include <errno.h>
+#include <stddef.h>
 #include <iconv.h>
 #include "netsurf/content/content.h"
 #include "netsurf/css/css.h"
