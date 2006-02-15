@@ -38,12 +38,11 @@
 #endif
 
 struct list_entry {
-	/* start position of match */
-	struct box *start_box;
-	unsigned start_idx;
-	/* end of match */
+	unsigned start_idx;	/* start position of match */
+	unsigned end_idx;	/* end of match */
+
+	struct box *start_box;	/* used only for html contents */
 	struct box *end_box;
-	unsigned end_idx;
 
 	struct selection *sel;
 
@@ -54,7 +53,7 @@ struct list_entry {
 struct gui_window *search_current_window = 0;
 
 static char *search_string = 0;
-static struct list_entry search_head = { 0, 0, 0, 0, 0, 0, 0 };
+static struct list_entry search_head = { 0, 0, NULL, NULL, NULL, NULL, NULL };
 static struct list_entry *search_found = &search_head;
 static struct list_entry *search_current = 0;
 static struct content *search_content = 0;
@@ -74,8 +73,11 @@ static void start_search(bool forwards);
 static void do_search(char *string, int string_len, bool case_sens, bool forwards);
 static const char *find_pattern(const char *string, int s_len,
 		const char *pattern, int p_len, bool case_sens, int *m_len);
-static bool find_occurrences(const char *pattern, int p_len, struct box *cur,
+static bool find_occurrences_html(const char *pattern, int p_len, struct box *cur,
 		bool case_sens);
+static bool find_occurrences_text(const char *pattern, int p_len,
+		struct content *c, bool case_sens);
+static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx);
 static void free_matches(void);
 static void show_all(bool all);
 static void show_status(bool found);
@@ -135,15 +137,15 @@ bool ro_gui_search_click(wimp_pointer *pointer) {
 }
 
 void ro_gui_search_add_recent(char *search) {
-  	char *tmp;
-  	int i;
+	char *tmp;
+	int i;
 
 	if ((search == NULL) || (search[0] == '\0'))
 		return;
 
 	if (!search_insert) {
-	  	free(recent_search[0]);
-	  	recent_search[0] = strdup(search);
+		free(recent_search[0]);
+		recent_search[0] = strdup(search);
 		ro_gui_search_prepare_menu();
 		return;
 	}
@@ -210,6 +212,12 @@ void ro_gui_search_prepare(struct gui_window *g)
 
 	assert(g != NULL);
 
+	c = g->bw->current_content;
+
+	/* only handle html/textplain contents */
+	if ((!c) || (c->type != CONTENT_HTML && c->type != CONTENT_TEXTPLAIN))
+		return;
+
 	/* if the search dialogue is reopened over a new window, we still
 	   need to cancel the previous search */
 	ro_gui_search_end(dialog_search);
@@ -219,12 +227,8 @@ void ro_gui_search_prepare(struct gui_window *g)
 	ro_gui_set_icon_string(dialog_search, ICON_SEARCH_TEXT, "");
 	ro_gui_set_icon_selected_state(dialog_search,
 				ICON_SEARCH_CASE_SENSITIVE, false);
-
-	c = search_current_window->bw->current_content;
-
-	/* only handle html contents */
-	if ((!c) || (c->type != CONTENT_HTML))
-		return;
+	ro_gui_set_icon_selected_state(dialog_search,
+				ICON_SEARCH_SHOW_ALL, false);
 
 	show_status(true);
 	ro_gui_set_icon_shaded_state(dialog_search, ICON_SEARCH_FIND_PREV, true);
@@ -377,9 +381,9 @@ void free_matches(void)
  */
 void do_search(char *string, int string_len, bool case_sens, bool forwards)
 {
+	struct rect bounds;
 	struct content *c;
 	struct box *box;
-	int x0,y0,x1,y1;
 	bool new = false;
 
 	if (!search_current_window)
@@ -388,7 +392,7 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
 	c = search_current_window->bw->current_content;
 
 	/* only handle html contents */
-	if ((!c) || (c->type != CONTENT_HTML))
+	if ((!c) || (c->type != CONTENT_HTML && c->type != CONTENT_TEXTPLAIN))
 		return;
 
 	box = c->data.html.layout;
@@ -405,6 +409,7 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
 	    search_prev_case_sens != case_sens ||
 	    (case_sens && strcmp(string, search_string) != 0) ||
 	    (!case_sens && strcasecmp(string, search_string) != 0)) {
+		bool res;
 
 		if (search_string)
 			free(search_string);
@@ -418,7 +423,15 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
 		}
 
 		xhourglass_on();
-		if (!find_occurrences(string, string_len, box, case_sens)) {
+
+		if (c->type == CONTENT_HTML)
+			res = find_occurrences_html(string, string_len, box, case_sens);
+		else {
+			assert(c->type == CONTENT_TEXTPLAIN);
+			res = find_occurrences_text(string, string_len, c, case_sens);
+		}
+
+		if (!res) {
 			free_matches();
 			xhourglass_off();
 			return;
@@ -459,14 +472,26 @@ void do_search(char *string, int string_len, bool case_sens, bool forwards)
 	if (!search_current)
 		return;
 
-	/* get box position and jump to it */
-	box_coords(search_current->start_box, &x0, &y0);
-	x0 += 0;	/* \todo: move x0 in by correct idx */
-	box_coords(search_current->end_box, &x1, &y1);
-	x1 += search_current->end_box->width;	/* \todo: move x1 in by correct idx */
-	y1 += search_current->end_box->height;
-	
-	gui_window_scroll_visible(search_current_window, x0, y0, x1, y1);
+	switch (c->type) {
+		case CONTENT_HTML:
+			/* get box position and jump to it */
+			box_coords(search_current->start_box, &bounds.x0, &bounds.y0);
+			/* \todo: move x0 in by correct idx */
+			box_coords(search_current->end_box, &bounds.x1, &bounds.y1);
+			/* \todo: move x1 in by correct idx */
+			bounds.x1 += search_current->end_box->width;
+			bounds.y1 += search_current->end_box->height;
+			break;
+
+		default:
+			assert(c->type == CONTENT_TEXTPLAIN);
+			textplain_coords_from_range(c, search_current->start_idx,
+					search_current->end_idx, &bounds);
+			break;
+	}
+
+	gui_window_scroll_visible(search_current_window,
+			bounds.x0, bounds.y0, bounds.x1, bounds.y1);
 }
 
 
@@ -582,7 +607,7 @@ const char *find_pattern(const char *string, int s_len, const char *pattern,
 
 
 /**
- * Finds all occurrences of a given string in the box tree
+ * Finds all occurrences of a given string in the html box tree
  *
  * \param pattern   the string pattern to search for
  * \param p_len     pattern length
@@ -590,7 +615,7 @@ const char *find_pattern(const char *string, int s_len, const char *pattern,
  * \param case_sens whether to perform a case sensitive search
  * \return true on success, false on memory allocation failure
  */
-bool find_occurrences(const char *pattern, int p_len, struct box *cur,
+bool find_occurrences_html(const char *pattern, int p_len, struct box *cur,
 		bool case_sens)
 {
 	struct box *a;
@@ -601,36 +626,24 @@ bool find_occurrences(const char *pattern, int p_len, struct box *cur,
 		unsigned length = cur->length;
 
 		while (length > 0) {
+			struct list_entry *entry;
 			unsigned match_length;
 			unsigned match_offset;
 			const char *new_text;
-			struct list_entry *entry;
 			const char *pos = find_pattern(text, length,
 					pattern, p_len, case_sens, &match_length);
 			if (!pos) break;
 
 			/* found string in box => add to list */
-			entry = calloc(1, sizeof(*entry));
-			if (!entry) {
-				warn_user("NoMemory", 0);
-				return false;
-			}
-	
 			match_offset = pos - cur->text;
 
-			entry->start_box = cur;
-			entry->start_idx = match_offset;
-			entry->end_box = cur;
-			entry->end_idx = match_offset + match_length;
-			entry->sel = NULL;
+			entry = add_entry(cur->byte_offset + match_offset,
+						cur->byte_offset + match_offset + match_length);
+			if (!entry)
+				return false;
 
-			entry->next = 0;
-			entry->prev = search_found->prev;
-			if (!search_found->prev)
-				search_found->next = entry;
-			else
-				search_found->prev->next = entry;
-			search_found->prev = entry;
+			entry->start_box = cur;
+			entry->end_box = cur;
 
 			new_text = pos + match_length;
 			length -= (new_text - text);
@@ -640,7 +653,7 @@ bool find_occurrences(const char *pattern, int p_len, struct box *cur,
 
 	/* and recurse */
 	for (a = cur->children; a; a = a->next) {
-		if (!find_occurrences(pattern, p_len, a, case_sens))
+		if (!find_occurrences_html(pattern, p_len, a, case_sens))
 			return false;
 	}
 
@@ -648,31 +661,109 @@ bool find_occurrences(const char *pattern, int p_len, struct box *cur,
 }
 
 
+/**
+ * Finds all occurrences of a given string in a textplain content
+ *
+ * \param pattern   the string pattern to search for
+ * \param p_len     pattern length
+ * \param c         the content to be searched
+ * \param case_sens wheteher to perform a case sensitive search
+ * \return true on success, false on memory allocation failure
+ */
+
+bool find_occurrences_text(const char *pattern, int p_len,
+		struct content *c, bool case_sens)
+{
+	int nlines = textplain_line_count(c);
+	int line;
+
+	for(line = 0; line < nlines; line++) {
+		size_t offset, length;
+		const char *text = textplain_get_line(c, line, &offset, &length);
+		if (text) {
+			while (length > 0) {
+				struct list_entry *entry;
+				unsigned match_length;
+				size_t start_idx;
+				const char *new_text;
+				const char *pos = find_pattern(text, length,
+						pattern, p_len, case_sens, &match_length);
+				if (!pos) break;
+	
+				/* found string in line => add to list */
+				start_idx = offset + (pos - text);
+				entry = add_entry(start_idx, start_idx + match_length);
+				if (!entry)
+					return false;
+
+				new_text = pos + match_length;
+				offset += (new_text - text);
+				length -= (new_text - text);
+				text = new_text;
+			}
+		}
+	}
+
+	return true;
+}
+
+
+/**
+ * Add a new entry to the list of matches
+ *
+ * \param  start_idx  offset of match start within textual representation
+ * \param  end_idx    offset of match end
+ * \return pointer to added entry, NULL iff failed
+ */
+
+struct list_entry *add_entry(unsigned start_idx, unsigned end_idx)
+{
+	struct list_entry *entry;
+
+	/* found string in box => add to list */
+	entry = calloc(1, sizeof(*entry));
+	if (!entry) {
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+
+	entry->start_idx = start_idx;
+	entry->end_idx = end_idx;
+	entry->sel = NULL;
+
+	entry->next = 0;
+	entry->prev = search_found->prev;
+	if (!search_found->prev)
+		search_found->next = entry;
+	else
+		search_found->prev->next = entry;
+	search_found->prev = entry;
+
+	return entry;
+}
+
 
 /**
  * Determines whether any portion of the given text box should be
  * selected because it matches the current search string.
  *
- * \param  g          gui window
- * \param  box        box being tested
- * \param  start_idx  byte offset within text box of highlight start
- * \param  end_idx    byte offset of highlight end
+ * \param  g             gui window
+ * \param  start_offset  byte offset within text of string to be checked
+ * \param  end_offset    byte offset within text
+ * \param  start_idx     byte offset within string of highlight start
+ * \param  end_idx       byte offset of highlight end
  * \return true iff part of the box should be highlighted
  */
 
-bool gui_search_term_highlighted(struct gui_window *g, struct box *box,
-		unsigned *start_idx, unsigned *end_idx) 
+bool gui_search_term_highlighted(struct gui_window *g,
+		unsigned start_offset, unsigned end_offset,
+		unsigned *start_idx, unsigned *end_idx)
 {
-//	if (g == search_current_window && search_selection) {
-//		if (selection_defined(search_selection))
-//			return selection_highlighted(search_selection, box,
-//					start_idx, end_idx);
-//	}
 	if (g == search_current_window) {
 		struct list_entry *a;
 		for(a = search_found->next; a; a = a->next)
 			if (a->sel && selection_defined(a->sel) &&
-				selection_highlighted(a->sel, box,
+				selection_highlighted(a->sel, start_offset, end_offset,
 					start_idx, end_idx))
 				return true;
 	}
@@ -704,9 +795,17 @@ void show_all(bool all)
 			a->sel = selection_create(search_current_window->bw);
 			if (a->sel) {
 				struct content *c = search_current_window->bw->current_content;
-				selection_init(a->sel, c->data.html.layout);
-				selection_set_start(a->sel, a->start_box, a->start_idx);
-				selection_set_end(a->sel, a->end_box, a->end_idx);
+				switch (c->type) {
+					case CONTENT_HTML:
+						selection_init(a->sel, c->data.html.layout);
+						break;
+					default:
+						assert(c->type == CONTENT_TEXTPLAIN);
+						selection_init(a->sel, NULL);
+						break;
+				}
+				selection_set_start(a->sel, a->start_idx);
+				selection_set_end(a->sel, a->end_idx);
 			}
 		}
 	}
