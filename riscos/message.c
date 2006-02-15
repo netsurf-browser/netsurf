@@ -68,6 +68,43 @@ bool ro_message_send_message(wimp_event_no event, wimp_message *message,
 
 
 /**
+ * Sends a message and registers a return route for a bounce.
+ *
+ * \param event		the message event type
+ * \param message	the message to register a route back for
+ * \param to_w		the window to send the message to
+ * \param to_i		the icon
+ * \param callback	the code to call on a bounce
+ * \param to_t		receives the task handle of the window's creator
+ * \return true on success, false otherwise
+ */
+bool ro_message_send_message_to_window(wimp_event_no event, wimp_message *message,
+		wimp_w to_w, wimp_i to_i, void (*callback)(wimp_message *message),
+		wimp_t *to_t) {
+	os_error *error;
+
+	assert(message);
+
+	/* send a message */
+	error = xwimp_send_message_to_window(event, message, to_w, to_i, to_t);
+	if (error) {
+		LOG(("xwimp_send_message_to_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return false;
+	}
+
+	/* register the default bounce handler */
+	if (callback) {
+		assert(event == wimp_USER_MESSAGE_RECORDED);
+		return ro_message_register_handler(message, message->action,
+				callback);
+	}
+	return true;
+}
+
+
+/**
  * Registers a return route for a message.
  *
  * This function must be called after wimp_send_message so that a

@@ -29,6 +29,7 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/save.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/url_complete.h"
 #include "netsurf/riscos/wimp.h"

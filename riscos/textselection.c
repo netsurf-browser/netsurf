@@ -14,12 +14,32 @@
 #include <string.h>
 #include "oslib/osfile.h"
 #include "oslib/wimp.h"
+#include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/selection.h"
+#include "netsurf/desktop/textinput.h"
 #include "netsurf/riscos/gui.h"
+#include "netsurf/riscos/message.h"
+#include "netsurf/riscos/save.h"
+#include "netsurf/riscos/textselection.h"
+#include "netsurf/render/form.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
+#ifndef wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX
+#define wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX ((wimp_drag_claim_flags) 0x2u)
+#endif
+
+
+
+/** Receive of Dragging message has claimed it */
+static bool dragging_claimed = false;
+static wimp_t dragging_claimant;
+static os_box dragging_box = { -34, -34, 34, 34 };  /* \todo - size properly */
+static wimp_drag_claim_flags last_claim_flags = 0;
+
+
+static bool drag_claimed = false;
 
 static bool owns_clipboard = false;
 static bool owns_caret_and_selection = false;
@@ -29,9 +49,10 @@ static char *clipboard = NULL;
 static size_t clip_alloc = 0;
 static size_t clip_length = 0;
 
-static bool copy_handler(struct box *box, int offset, size_t length,
-		void *handle);
+static bool copy_handler(const char *text, size_t length, bool space,
+		struct box *box, void *handle);
 static void ro_gui_discard_clipboard_contents(void);
+static void ro_gui_dragging_bounced(wimp_message *message);
 
 
 /**
@@ -166,30 +187,22 @@ void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
  * Selection traversal routine for appending text to the current contents
  * of the clipboard.
  *
- * \param box     pointer to text box being (partially) added (or NULL for newline)
- * \param offset  start offset of text within box (bytes)
- * \param length  length of text to be appended (bytes)
- * \param handle  unused handle, we don't need one
+ * \param  text    pointer to text being added, or NULL for newline
+ * \param  length  length of text to be appended (bytes)
+ * \param  space   trailing space required after text
+ * \param  box     pointer to text box, or NULL if from textplain
+ * \param  handle  unused handle, we don't need one
  * \return true iff successful and traversal should continue
  */
 
-bool copy_handler(struct box *box, int offset, size_t length, void *handle)
+bool copy_handler(const char *text, size_t length, bool space,
+		struct box *box, void *handle)
 {
-	bool space = false;
-	const char *text;
-	size_t len;
-
-	if (box) {
-		len = min(length, box->length - offset);
-		text = box->text + offset;
-		if (box->space && length > len) space = true;
-	}
-	else {
+	if (!text) {
 		text = "\n";
-		len = 1;
+		length = 1;
 	}
-
-	return gui_add_to_clipboard(text, len, space);
+	return gui_add_to_clipboard(text, length, space);
 }
 
 
@@ -482,4 +495,222 @@ bool ro_gui_save_clipboard(const char *path)
 		return false;
 	}
 	return true;
+}
+
+
+/**
+ * Handler for Message_Dragging, used to implement auto-scrolling and
+ * ghost caret when a drag is in progress.
+ */
+
+void ro_gui_selection_dragging(wimp_message *message)
+{
+	wimp_full_message_dragging *drag = (wimp_full_message_dragging*)message;
+	struct box *textarea = NULL;
+	struct box *text_box = NULL;
+	struct browser_window *bw;
+	wimp_window_state state;
+	struct content *content;
+	int gadget_box_x = 0;
+	int gadget_box_y = 0;
+	struct gui_window *g;
+	os_error *error;
+	int box_x = 0;
+	int box_y = 0;
+	int x, y;
+
+/* with autoscrolling, we will probably need to remember the gui_window and
+   override the drag->w window handle which could be any window on the desktop */
+	g = ro_gui_window_lookup(drag->w);
+
+	if ((drag->flags & wimp_DRAGGING_TERMINATE_DRAG) || !g) {
+
+		if (drag_claimed) {
+			/* make sure that we erase the ghost caret */
+			caret_remove(&ghost_caret);
+		}
+
+		drag_claimed = false;
+		return;
+	}
+
+	state.w = drag->w;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s\n",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		drag_claimed = false;
+		return;
+	}
+
+	x = window_x_units(drag->pos.x, &state) / 2 /
+			g->option.scale;
+	y = -window_y_units(drag->pos.y, &state) / 2 /
+			g->option.scale;
+
+	bw = g->bw;
+	content = bw->current_content;
+	if (content && content->type == CONTENT_HTML &&
+		content->data.html.layout) {
+
+		struct box *box = content->data.html.layout;
+
+		while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
+			if (box->style &&
+					box->style->visibility == CSS_VISIBILITY_HIDDEN)
+				continue;
+	
+			if (box->gadget) {
+				switch (box->gadget->type) {
+
+					case GADGET_TEXTAREA:
+						textarea = box;
+						gadget_box_x = box_x;
+						gadget_box_y = box_y;
+					case GADGET_TEXTBOX:
+					case GADGET_PASSWORD:
+						text_box = box;
+						break;
+	
+					default:	/* appease compiler */
+						break;
+				}
+			}
+		}
+	}
+
+	if (textarea) {
+		int pixel_offset;
+		int char_offset;
+
+		/* draw/move the ghost caret */
+		if (drag_claimed)
+			caret_remove(&ghost_caret);
+		else
+			gui_window_set_pointer(GUI_POINTER_CARET);
+
+		text_box = textarea_get_position(textarea, x - gadget_box_x,
+					y - gadget_box_y, &char_offset, &pixel_offset);
+
+		caret_set_position(&ghost_caret, bw, text_box, char_offset, pixel_offset);
+		drag_claimed = true;
+	}
+	else {
+		if (drag_claimed) {
+			/* make sure that we erase the ghost caret */
+			caret_remove(&ghost_caret);
+		}
+		drag_claimed = false;
+	}
+
+	if (drag_claimed) {
+		wimp_full_message_drag_claim claim;
+		os_error *error;
+
+		claim.size = offsetof(wimp_full_message_drag_claim, file_types) + 8;
+		claim.your_ref = drag->my_ref;
+		claim.action = message_DRAG_CLAIM;
+		claim.flags = wimp_DRAG_CLAIM_POINTER_CHANGED | wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX;
+		claim.file_types[0] = osfile_TYPE_TEXT;
+		claim.file_types[1] = ~0;
+
+		error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)&claim,
+					drag->sender);
+		if (error) {
+			LOG(("xwimp_send_message: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+		drag_claimed = true;
+	}
+}
+
+
+
+/**
+ * Reset drag-and-drop state when drag completes (DataSave received)
+ */
+
+void ro_gui_selection_drag_reset(void)
+{
+	caret_remove(&ghost_caret);
+	drag_claimed = false;
+}
+
+
+/**
+ *
+ */
+
+void ro_gui_selection_drag_claim(wimp_message *message)
+{
+	wimp_full_message_drag_claim *claim = (wimp_full_message_drag_claim*)message;
+
+	dragging_claimant = message->sender;
+	dragging_claimed = true;
+
+	/* have we been asked to remove the drag box/sprite? */
+	if (claim->flags & wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX) {
+		ro_gui_drag_box_cancel();
+	}
+	else {
+		/* \todo - restore it here? */
+	}
+
+	/* do we need to restore the default pointer shape? */
+	if ((last_claim_flags & wimp_DRAG_CLAIM_POINTER_CHANGED) &&
+			!(claim->flags & wimp_DRAG_CLAIM_POINTER_CHANGED)) {
+		gui_window_set_pointer(GUI_POINTER_DEFAULT);
+	}
+
+	last_claim_flags = claim->flags;
+}
+
+
+void ro_gui_selection_send_dragging(wimp_pointer *pointer)
+{
+	wimp_full_message_dragging dragmsg;
+
+	LOG(("sending DRAGGING to %p, %d", pointer->w, pointer->i));
+
+	dragmsg.size = offsetof(wimp_full_message_dragging, file_types) + 8;
+	dragmsg.your_ref = 0;
+	dragmsg.action = message_DRAGGING;
+	dragmsg.w = pointer->w;
+	dragmsg.i = pointer->i;
+	dragmsg.pos = pointer->pos;
+/* \todo - this is interesting because it depends upon not just the state of the
+      shift key, but also whether it /can/ be deleted, ie. from text area/input
+      rather than page contents */
+	dragmsg.flags = wimp_DRAGGING_FROM_SELECTION;
+	dragmsg.box = dragging_box;
+	dragmsg.file_types[0] = osfile_TYPE_TEXT;
+	dragmsg.file_types[1] = ~0;
+
+	/* if the message_dragmsg messages have been claimed we must address them
+	   to the claimant task, which is not necessarily the task that owns whatever
+	   window happens to be under the pointer */
+
+	if (dragging_claimed) {
+		ro_message_send_message(wimp_USER_MESSAGE_RECORDED,
+				(wimp_message*)&dragmsg, dragging_claimant, ro_gui_dragging_bounced);
+	}
+	else {
+		ro_message_send_message_to_window(wimp_USER_MESSAGE_RECORDED,
+				(wimp_message*)&dragmsg, pointer->w, pointer->i,
+				ro_gui_dragging_bounced, &dragging_claimant);
+	}
+}
+
+
+/**
+ * Our message_DRAGGING message was bounced, ie. the intended recipient does not
+ * support the drag-and-drop protocol or cannot receive the data at the pointer
+ * position.
+ */
+
+void ro_gui_dragging_bounced(wimp_message *message)
+{
+	dragging_claimed = false;
 }

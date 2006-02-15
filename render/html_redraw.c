@@ -18,6 +18,7 @@
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/desktop/selection.h"
+#include "netsurf/desktop/textinput.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
@@ -34,6 +35,8 @@ static bool html_redraw_box(struct box *box,
 static bool html_redraw_text_box(struct box *box, int x, int y,
 		int x0, int y0, int x1, int y1,
 		float scale, colour current_background_color);
+static bool html_redraw_caret(struct caret *caret,
+		os_colour current_background_color, float scale);
 static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int padding_width, int padding_height, float scale);
 static bool html_redraw_border_plot(int i, int *p, colour c,
@@ -370,25 +373,76 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 		int x0, int y0, int x1, int y1,
 		float scale, colour current_background_color)
 {
+	bool excluded = (box->object != NULL);
+	struct rect clip;
+
+	clip.x0 = x0;
+	clip.y0 = y0;
+	clip.x1 = x1;
+	clip.y1 = y1;
+
+	if (!text_redraw(box->text, box->length, box->byte_offset,
+			box->space, box->style, x, y,
+			&clip, box->height, scale,
+			current_background_color, excluded))
+		return false;
+
+	/* does this textbox contain the ghost caret? */
+	if (ghost_caret.defined && box == ghost_caret.text_box) {
+
+		if (!html_redraw_caret(&ghost_caret, current_background_color, scale))
+			return false;
+	}
+	return true;
+}
+
+
+/**
+ * Redraw a short text string, complete with highlighting
+ * (for selection/search) and ghost caret
+ *
+ * \param  utf8_text  pointer to UTF-8 text string
+ * \param  utf8_len   length of string, in bytes
+ * \param  offset     byte offset within textual representation
+ * \param  space      indicates whether string is followed by a space
+ * \param  style      text style to use
+ * \param  x          x ordinate at which to plot text
+ * \param  y          y ordinate at which to plot text
+ * \param  clip       pointer to current clip rectangle
+ * \param  height     height of text string
+ * \param  scale      current display scale (1.0 = 100%)
+ * \param  current_background_color
+ * \param  excluded   exclude this text string from the selection
+ * \return true iff successful and redraw should proceed
+ */
+
+bool text_redraw(const char *utf8_text, size_t utf8_len,
+		size_t offset, bool space, struct css_style *style,
+		int x, int y, struct rect *clip,
+		int height,
+		float scale, colour current_background_color,
+		bool excluded)
+{
 	bool highlighted = false;
 
 	/* is this box part of a selection? */
-	if (!box->object && current_redraw_browser) {
+	if (!excluded && current_redraw_browser) {
+		unsigned len = utf8_len + (space ? 1 : 0);
 		unsigned start_idx;
 		unsigned end_idx;
 
 		/* first try the browser window's current selection */
 		if (selection_defined(current_redraw_browser->sel) &&
 			selection_highlighted(current_redraw_browser->sel,
-				box, &start_idx, &end_idx)) {
+				offset, offset + len, &start_idx, &end_idx)) {
 			highlighted = true;
 		}
 
-		/* what about the current search operation, if any */
+		/* what about the current search operation, if any? */
 		if (!highlighted &&
 			search_current_window == current_redraw_browser->window &&
 			gui_search_term_highlighted(current_redraw_browser->window,
-				box, &start_idx, &end_idx)) {
+				offset, offset + len, &start_idx, &end_idx)) {
 				highlighted = true;
 		}
 
@@ -400,23 +454,23 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 			bool text_visible = true;
 			int startx, endx;
 
-			if (end_idx > box->length) {
-				/* adjust for trailing space, not present in box->text */
-				assert(end_idx == box->length + 1);
-				endtxt_idx = box->length;
+			if (end_idx > utf8_len) {
+				/* adjust for trailing space, not present in utf8_text */
+				assert(end_idx == utf8_len + 1);
+				endtxt_idx = utf8_len;
 			}
 
-			if (!nsfont_width(box->style, box->text, start_idx, &startx))
+			if (!nsfont_width(style, utf8_text, start_idx, &startx))
 				startx = 0;
 
-			if (!nsfont_width(box->style, box->text, endtxt_idx, &endx))
+			if (!nsfont_width(style, utf8_text, endtxt_idx, &endx))
 				endx = 0;
 
 			/* is there a trailing space that should be highlighted as well? */
-			if (end_idx > box->length) {
+			if (end_idx > utf8_len) {
 				int spc_width;
 				/* \todo is there a more elegant/efficient solution? */
-				if (nsfont_width(box->style, " ", 1, &spc_width))
+				if (nsfont_width(style, " ", 1, &spc_width))
 					endx += spc_width;
 			}
 
@@ -427,10 +481,10 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 
 			/* draw any text preceding highlighted portion */
 			if (start_idx > 0 &&
-				!plot.text(x, y + (int) (box->height * 0.75 * scale),
-						box->style, box->text, start_idx,
+				!plot.text(x, y + (int) (height * 0.75 * scale),
+						style, utf8_text, start_idx,
 						current_background_color,
-						/*print_text_black ? 0 :*/ box->style->color))
+						/*print_text_black ? 0 :*/ style->color))
 				return false;
 
 			/* decide whether highlighted portion is to be white-on-black or
@@ -442,16 +496,16 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 			hfore_col = hback_col ^ 0xffffff;
 
 			/* highlighted portion */
-			if (!plot.fill(x + startx, y, x + endx, y + box->height * scale,
+			if (!plot.fill(x + startx, y, x + endx, y + height * scale,
 					hback_col))
 				return false;
 
 			if (start_idx > 0) {
-				int px0 = max(x + startx, x0);
-				int px1 = min(x + endx, x1);
+				int px0 = max(x + startx, clip->x0);
+				int px1 = min(x + endx, clip->x1);
 
 				if (px0 < px1) {
-					if (!plot.clip(px0, y0, px1, y1))
+					if (!plot.clip(px0, clip->y0, px1, clip->y1))
 						return false;
 					clip_changed = true;
 				} else
@@ -459,43 +513,72 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 			}
 
 			if (text_visible &&
-				!plot.text(x, y + (int) (box->height * 0.75 * scale),
-						box->style, box->text, endtxt_idx,
+				!plot.text(x, y + (int) (height * 0.75 * scale),
+						style, utf8_text, endtxt_idx,
 						hback_col, hfore_col))
 				return false;
 
 			/* draw any text succeeding highlighted portion */
-			if (endtxt_idx < box->length) {
-				int px0 = max(x + endx, x0);
-				if (px0 < x1) {
+			if (endtxt_idx < utf8_len) {
+				int px0 = max(x + endx, clip->x0);
+				if (px0 < clip->x1) {
 
-					if (!plot.clip(px0, y0, x1, y1))
+					if (!plot.clip(px0, clip->y0, clip->x1, clip->y1))
 						return false;
 
 					clip_changed = true;
 
-					if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
-						box->style, box->text, box->length,
+					if (!plot.text(x, y + (int) (height * 0.75 * scale),
+						style, utf8_text, utf8_len,
 						current_background_color,
-						/*print_text_black ? 0 :*/ box->style->color))
+						/*print_text_black ? 0 :*/ style->color))
 						return false;
 				}
 			}
 
-			if (clip_changed && !plot.clip(x0, y0, x1, y1))
+			if (clip_changed &&
+				!plot.clip(clip->x0, clip->y0, clip->x1, clip->y1))
 				return false;
 		}
 	}
 
 	if (!highlighted) {
-		if (!plot.text(x, y + (int) (box->height * 0.75 * scale),
-				box->style, box->text, box->length,
+		if (!plot.text(x, y + (int) (height * 0.75 * scale),
+				style, utf8_text, utf8_len,
 				current_background_color,
-				/*print_text_black ? 0 :*/ box->style->color))
+				/*print_text_black ? 0 :*/ style->color))
 			return false;
 	}
-
 	return true;
+}
+
+
+/**
+ * Draw text caret.
+ *
+ * \param  c	structure describing text caret
+ * \param  current_background_color		background colour under the caret
+ * \param  scale	current scale setting (1.0 = 100%)
+ * \return true iff successful and redraw should proceed
+ */
+
+bool html_redraw_caret(struct caret *c, os_colour current_background_color,
+		float scale)
+{
+	os_colour caret_color = 0x808080;  /* todo - choose a proper colour */
+	int xc = c->x, y = c->y;
+	int h = c->height - 1;
+	int w = (h + 7) / 8;
+
+	return (plot.line(xc * scale, y * scale,
+				xc * scale, (y + h) * scale,
+				0, caret_color, false, false) &&
+			plot.line((xc - w) * scale, y * scale,
+				(xc + w) * scale, y * scale,
+				0, caret_color, false, false) &&
+			plot.line((xc - w) * scale, (y + h) * scale,
+				(xc + w) * scale, (y + h) * scale,
+				0, caret_color, false, false));
 }
 
 
@@ -514,10 +597,17 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int padding_width, int padding_height, float scale)
 {
-	int top = box->border[TOP] * scale;
-	int right = box->border[RIGHT] * scale;
-	int bottom = box->border[BOTTOM] * scale;
-	int left = box->border[LEFT] * scale;
+	int top = box->border[TOP];
+	int right = box->border[RIGHT];
+	int bottom = box->border[BOTTOM];
+	int left = box->border[LEFT];
+
+	if (scale != 1.0) {
+		top *= scale;
+		right *= scale;
+		bottom *= scale;
+		left *= scale;
+	}
 
 	assert(box->style);
 

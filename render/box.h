@@ -96,6 +96,12 @@ typedef enum {
 	BOX_INLINE_END
 } box_type;
 
+struct rect {
+	int x0, y0;
+	int x1, y1;
+};
+
+
 /** Node in box tree. All dimensions are in pixels. */
 struct box {
 	/** Type of box. */
@@ -254,6 +260,7 @@ void box_unlink_and_free(struct box *box);
 void box_free(struct box *box);
 void box_free_box(struct box *box);
 void box_free_object_params(struct object_params *op);
+void box_bounds(struct box *box, struct rect *r);
 void box_coords(struct box *box, int *x, int *y);
 struct box *box_at_point(struct box *box, int x, int y,
 		int *box_x, int *box_y,

@@ -47,8 +47,9 @@ struct box * box_create(struct css_style *style,
 	struct box *box;
 
 	box = talloc(context, struct box);
-	if (!box)
+	if (!box) {
 		return 0;
+	}
 
 	box->type = BOX_INLINE;
 	box->style = style;
@@ -232,6 +233,27 @@ void box_coords(struct box *box, int *x, int *y)
 
 
 /**
+ * Find the bounds of a box.
+ *
+ * \param  box  the box to calculate bounds of
+ * \param  r    receives bounds
+ */
+
+void box_bounds(struct box *box, struct rect *r)
+{
+	int width, height;
+
+	box_coords(box, &r->x0, &r->y0);
+
+	width = box->padding[LEFT] + box->width + box->padding[RIGHT];
+	height = box->padding[TOP] + box->height + box->padding[BOTTOM];
+
+	r->x1 = r->x0 + width;
+	r->y1 = r->y0 + height;
+}
+
+
+/**
  * Find the boxes at a point.
  *
  * \param  box      box to search children of
@@ -244,7 +266,7 @@ void box_coords(struct box *box, int *x, int *y)
  * \param  content  updated to content of object that returned box is in, if any
  * \return  box at given point, or 0 if none found
  *
- * To find all the boxes in the heirarchy at a certain point, use code like
+ * To find all the boxes in the hierarchy at a certain point, use code like
  * this:
  * \code
  *	struct box *box = top_of_document_to_search;
@@ -469,6 +491,7 @@ void box_dump(struct box *box, unsigned int depth)
 	default:                   fprintf(stderr, "Unknown box type ");
 	}
 
+	fprintf(stderr, "ofst %d", box->byte_offset);
 	if (box->text)
 		fprintf(stderr, "'%.*s' ", (int) box->length, box->text);
 	if (box->space)

@@ -31,8 +31,10 @@
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/save.h"
 #include "netsurf/riscos/save_complete.h"
 #include "netsurf/riscos/save_draw.h"
+#include "netsurf/riscos/textselection.h"
 #include "netsurf/riscos/thumbnail.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/riscos/wimp_event.h"
@@ -49,6 +51,7 @@ static struct content *gui_save_content = NULL;
 static struct selection *gui_save_selection = NULL;
 static int gui_save_filetype;
 
+static bool dragbox_active = false;  /** there is a Wimp_DragBox or DragASprite call in progress */
 static bool using_dragasprite = true;
 static bool saving_from_dialog = true;
 static osspriteop_area *saveas_area = NULL;
@@ -365,6 +368,7 @@ void ro_gui_drag_icon(int x, int y, const char *sprite)
 
 		if (!error) {
 			using_dragasprite = true;
+			dragbox_active = true;
 			return;
 		}
 
@@ -386,6 +390,8 @@ void ro_gui_drag_icon(int x, int y, const char *sprite)
 				error->errnum, error->errmess));
 		warn_user("DragError", error->errmess);
 	}
+	else
+		dragbox_active = true;
 }
 
 
@@ -413,6 +419,31 @@ void ro_gui_convert_save_path(char *dp, size_t len, const char *p)
 }
 
 
+void ro_gui_drag_box_cancel(void)
+{
+	if (dragbox_active) {
+		os_error *error;
+		if (using_dragasprite) {
+			error = xdragasprite_stop();
+			if (error) {
+				LOG(("xdragasprite_stop: 0x%x: %s",
+					error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
+		}
+		else {
+			error = xwimp_drag_box(NULL);
+			if (error) {
+				LOG(("xwimp_drag_box: 0x%x: %s",
+					error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
+		}
+		dragbox_active = false;
+	}
+}
+
+
 /**
  * Handle User_Drag_Box event for a drag from the save dialog or browser window.
  */
@@ -427,22 +458,8 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 	char *local_name = NULL;
 	utf8_convert_ret err;
 
-	if (using_dragasprite) {
-		error = xdragasprite_stop();
-		if (error) {
-			LOG(("xdragasprite_stop: 0x%x: %s",
-				error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-		}
-	}
-	else {
-		error = xwimp_drag_box(NULL);
-		if (error) {
-			LOG(("xwimp_drag_box: 0x%x: %s",
-				error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-		}
-	}
+	if (dragbox_active)
+		ro_gui_drag_box_cancel();
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
@@ -488,7 +505,9 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 
 	ro_gui_convert_save_path(dp, ep - dp, name);
 
+/* \todo - we're supposed to set this if drag-n-drop used */
 	message.your_ref = 0;
+
 	message.action = message_DATA_SAVE;
 	message.data.data_xfer.w = pointer.w;
 	message.data.data_xfer.i = pointer.i;

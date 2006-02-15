@@ -119,14 +119,6 @@ bool ro_gui_download_window_keypress(struct gui_download_window *dw, wimp_key *k
 /* in mouseactions.c */
 void ro_gui_mouse_action(struct gui_window *g);
 
-/* in textselection.c */
-void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag);
-void ro_gui_selection_claim_entity(wimp_full_message_claim_entity *claim);
-void ro_gui_selection_data_request(wimp_full_message_data_request *req);
-bool ro_gui_save_clipboard(const char *path);
-void ro_gui_selection_dragging(wimp_full_message_dragging *drag);
-void ro_gui_selection_drag_claim(wimp_full_message_drag_claim *drag);
-
 /* in 401login.c */
 #ifdef WITH_AUTH
 void ro_gui_401login_init(void);
@@ -179,18 +171,6 @@ void ro_gui_hotlist_prepare_folder_dialog(struct node *node);
 void ro_gui_hotlist_prepare_entry_dialog(struct node *node);
 bool ro_gui_hotlist_dialog_apply(wimp_w w);
 int ro_gui_hotlist_help(int x, int y);
-
-/* in save.c */
-wimp_w ro_gui_saveas_create(const char *template_name);
-void ro_gui_saveas_quit(void);
-void ro_gui_save_prepare(gui_save_type save_type, struct content *c);
-void ro_gui_save_start_drag(wimp_pointer *pointer);
-void ro_gui_drag_icon(int x, int y, const char *sprite);
-void ro_gui_save_drag_end(wimp_dragged *drag);
-void ro_gui_send_datasave(gui_save_type save_type, wimp_full_message_data_xfer *message, wimp_t to);
-void ro_gui_save_datasave_ack(wimp_message *message);
-bool ro_gui_save_ok(wimp_w w);
-void ro_gui_convert_save_path(char *dp, size_t len, const char *p);
 
 /* in filetype.c */
 int ro_content_filetype(struct content *content);

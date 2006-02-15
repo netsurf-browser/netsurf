@@ -3,12 +3,14 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2006 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2006 Adrian Lees <adrianl@users.sourceforge.net>
  */
 
 /** \file
  * Content for text/plain (implementation).
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <stddef.h>
 #include <iconv.h>
@@ -16,6 +18,7 @@
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/plotters.h"
+#include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/textplain.h"
 #include "netsurf/utils/log.h"
@@ -76,8 +79,9 @@ bool textplain_create(struct content *c, const char *params[])
 	c->data.textplain.utf8_data = utf8_data;
 	c->data.textplain.utf8_data_size = 0;
 	c->data.textplain.utf8_data_allocated = CHUNK;
-	c->data.textplain.physical_line_start = 0;
+	c->data.textplain.physical_line = 0;
 	c->data.textplain.physical_line_count = 0;
+	c->data.textplain.formatted_width = 0;
 
 	return true;
 
@@ -169,11 +173,12 @@ void textplain_reformat(struct content *c, int width, int height)
 	char *utf8_data = c->data.textplain.utf8_data;
 	size_t utf8_data_size = c->data.textplain.utf8_data_size;
 	unsigned long line_count = 0;
-	size_t *line_start = c->data.textplain.physical_line_start;
-	size_t *line_start1;
+	struct textplain_line *line = c->data.textplain.physical_line;
+	struct textplain_line *line1;
 	size_t i, space, col;
 	size_t columns = 80;
 	int character_width;
+	size_t line_start;
 
 	/* compute available columns (assuming monospaced font) - use 8
 	 * characters for better accuracy */
@@ -181,30 +186,49 @@ void textplain_reformat(struct content *c, int width, int height)
 		return;
 	columns = (width - MARGIN - MARGIN) * 8 / character_width;
 
+	c->data.textplain.formatted_width = width;
+
 	c->data.textplain.physical_line_count = 0;
 
-	if (!line_start) {
-		c->data.textplain.physical_line_start = line_start =
-				talloc_array(c, size_t, 1024 + 3);
-		if (!line_start)
+	if (!line) {
+		c->data.textplain.physical_line = line =
+				talloc_array(c, struct textplain_line, 1024 + 3);
+		if (!line)
 			goto no_memory;
 	}
 
-	line_start[line_count++] = 0;
+	line[line_count++].start = line_start = 0;
 	space = 0;
 	for (i = 0, col = 0; i != utf8_data_size; i++) {
-		if (utf8_data[i] == '\n' || col + 1 == columns) {
+		bool term = (utf8_data[i] == '\n' || utf8_data[i] == '\r');
+		if (term || col + 1 == columns) {
 			if (line_count % 1024 == 0) {
-				line_start1 = talloc_realloc(c, line_start,
-						size_t, line_count + 1024 + 3);
-				if (!line_start1)
+				line1 = talloc_realloc(c, line,
+						struct textplain_line, line_count + 1024 + 3);
+				if (!line1)
 					goto no_memory;
-				c->data.textplain.physical_line_start =
-						line_start = line_start1;
-                        }
-			if (utf8_data[i] != '\n' && space)
-				i = space;
-			line_start[line_count++] = i + 1;
+				c->data.textplain.physical_line =
+						line = line1;
+			}
+			if (term) {
+				line[line_count-1].length = i - line_start;
+
+				/* skip second char of CR/LF or LF/CR pair */
+				if (i + 1 < utf8_data_size &&
+					utf8_data[i+1] != utf8_data[i] &&
+					(utf8_data[i+1] == '\n' || utf8_data[i+1] == '\r'))
+					i++;
+			}
+			else {
+				if (space) {
+					/* break at last space in line */
+					i = space;
+					line[line_count-1].length = (i + 1) - line_start;
+				}
+				else
+					line[line_count-1].length = i - line_start;
+			}
+			line[line_count++].start = line_start = i + 1;
 			col = 0;
 			space = 0;
 		} else {
@@ -213,7 +237,8 @@ void textplain_reformat(struct content *c, int width, int height)
 				space = i;
 		}
 	}
-	line_start[line_count] = utf8_data_size;
+	line[line_count-1].length = i - line[line_count-1].start;
+	line[line_count].start = utf8_data_size;
 
 	c->data.textplain.physical_line_count = line_count;
 	c->width = width;
@@ -266,14 +291,21 @@ bool textplain_redraw(struct content *c, int x, int y,
 		float scale, unsigned long background_colour)
 {
 	char *utf8_data = c->data.textplain.utf8_data;
-	long line;
+	long lineno;
 	unsigned long line_count = c->data.textplain.physical_line_count;
 	float line_height = css_len2px(&textplain_style.font_size.value.length,
-			&textplain_style) * 1.2 * scale;
-	long line0 = clip_y0 / line_height - 1;
-	long line1 = clip_y1 / line_height + 1;
-	size_t *line_start = c->data.textplain.physical_line_start;
+			&textplain_style) * 1.2;
+	float scaled_line_height = line_height * scale;
+	long line0 = clip_y0 / scaled_line_height - 1;
+	long line1 = clip_y1 / scaled_line_height + 1;
+	struct textplain_line *line = c->data.textplain.physical_line;
 	size_t length;
+	struct rect clip;
+
+	clip.x0 = clip_x0;
+	clip.y0 = clip_y0;
+	clip.x1 = clip_x1;
+	clip.y1 = clip_y1;
 
 	if (line0 < 0)
 		line0 = 0;
@@ -289,23 +321,219 @@ bool textplain_redraw(struct content *c, int x, int y,
 	if (!plot.clg(0xffffff))
 		return false;
 
-	if (!line_start)
+	if (!line)
 		return true;
 
 	x += MARGIN * scale;
 	y += MARGIN * scale;
-	for (line = line0; line != line1; line++) {
-		length = line_start[line + 1] - line_start[line];
+	for (lineno = line0; lineno != line1; lineno++) {
+		length = line[lineno].length;
 		if (!length)
 			continue;
-		if (utf8_data[line_start[line] + length - 1] == '\n')
-			length--;
-		if (!plot.text(x, y + (line + 1) * line_height,
-				&textplain_style,
-				utf8_data + line_start[line], length,
-				0xffffff, 0x000000))
+		if (!text_redraw(utf8_data + line[lineno].start, length,
+				line[lineno].start, false, &textplain_style,
+				x, y + (lineno * scaled_line_height),
+				&clip, line_height, scale,
+				background_colour, false))
 			return false;
 	}
 
 	return true;
+}
+
+
+/**
+ * Return byte offset within UTF8 textplain content, given the co-ordinates
+ * of a point within a textplain content. 'dir' specifies the direction in
+ * which to search (-1 = above-left, +1 = below-right) if the co-ordinates are not
+ * contained within a line.
+ *
+ * \param  c     content of type CONTENT_TEXTPLAIN
+ * \param  x     x ordinate of point
+ * \param  y     y ordinate of point
+ * \param  dir   direction of search if not within line
+ * \return ptr to start of line containing (or nearest to) point
+ */
+
+unsigned textplain_offset_from_coords(struct content *c, int x, int y, int dir)
+{
+	float line_height = css_len2px(&textplain_style.font_size.value.length,
+			&textplain_style) * 1.2;
+	struct textplain_line *line;
+	int pixel_offset;
+	unsigned nlines;
+	int idx;
+
+	assert(c->type == CONTENT_TEXTPLAIN);
+
+	y = (int)((float)(y - MARGIN) / line_height);
+	x -= MARGIN;
+
+	nlines = c->data.textplain.physical_line_count;
+	if (!nlines)
+		return 0;
+
+	if (y < 0) y = 0;
+	else if (y >= nlines)
+		y = nlines - 1;
+	line = &c->data.textplain.physical_line[y];
+
+	if (x < 0) x = 0;
+
+	nsfont_position_in_string(&textplain_style,
+		c->data.textplain.utf8_data + line->start,
+		line->length,
+		x,
+		&idx,
+		&pixel_offset);
+
+	return line->start + idx;
+}
+
+
+/**
+ * Given a byte offset within the text, return the line number
+ * of the line containing that offset (or -1 if offset invalid)
+ *
+ * \param  c       content of type CONTENT_TEXTPLAIN
+ * \param  offset  byte offset within textual representation
+ * \return line number, or -1 if offset invalid (larger than size)
+ */
+
+int textplain_find_line(struct content *c, unsigned offset)
+{
+	struct textplain_line *line = c->data.textplain.physical_line;
+	int nlines = c->data.textplain.physical_line_count;
+	int lineno = 0;
+
+	assert(c->type == CONTENT_TEXTPLAIN);
+
+	if (offset > c->data.textplain.utf8_data_size)
+		return -1;
+
+/* \todo - implement binary search here */
+	while (lineno < nlines && line[lineno].start < offset)
+		lineno++;
+	if (line[lineno].start > offset)
+		lineno--;
+
+	return lineno;
+}
+
+
+/**
+ * Given a range of byte offsets within a UTF8 textplain content,
+ * return a box that fully encloses the text
+ *
+ * \param  c      content of type CONTENT_TEXTPLAIN
+ * \param  start  byte offset of start of text range
+ * \param  end    byte offset of end
+ * \param  r      rectangle to be completed
+ */
+
+void textplain_coords_from_range(struct content *c, unsigned start, unsigned end,
+		struct rect *r)
+{
+	float line_height = css_len2px(&textplain_style.font_size.value.length,
+			&textplain_style) * 1.2;
+	char *utf8_data = c->data.textplain.utf8_data;
+	struct textplain_line *line;
+	unsigned lineno = 0;
+	unsigned nlines;
+
+	assert(c->type == CONTENT_TEXTPLAIN);
+	assert(start <= end);
+	assert(end <= c->data.textplain.utf8_data_size);
+
+	nlines = c->data.textplain.physical_line_count;
+	line = c->data.textplain.physical_line;
+
+	/* find start */
+	lineno = textplain_find_line(c, start);
+
+	r->y0 = (int)(MARGIN + lineno * line_height);
+
+	if (lineno + 1 <= nlines || line[lineno + 1].start >= end) {
+		/* \todo - it may actually be more efficient just to run
+			forwards most of the time */
+
+		/* find end */
+		lineno = textplain_find_line(c, end);
+
+		r->x0 = 0;
+		r->x1 = c->data.textplain.formatted_width;
+	}
+	else {
+		/* single line */
+		nsfont_width(&textplain_style,
+			utf8_data + line[lineno].start,
+			start - line[lineno].start,
+			&r->x0);
+
+		nsfont_width(&textplain_style,
+			utf8_data + line[lineno].start,
+			min(line[lineno].length, end - line[lineno].start),
+			&r->x1);
+	}
+
+	r->y1 = (int)(MARGIN + (lineno + 1) * line_height);
+}
+
+
+/**
+ * Return a pointer to the requested line of text.
+ *
+ * \param  c		    content of type CONTENT_TEXTPLAIN
+ * \param  lineno	    line number
+ * \param  poffset	    receives byte offset of line start within text
+ * \param  plen		    receives length of returned line
+ * \return pointer to text, or NULL if invalid line number
+ */
+
+char *textplain_get_line(struct content *c, unsigned lineno,
+		size_t *poffset, size_t *plen)
+{
+	struct textplain_line *line;
+
+	assert(c->type == CONTENT_TEXTPLAIN);
+
+	if (lineno >= c->data.textplain.physical_line_count)
+		return NULL;
+	line = &c->data.textplain.physical_line[lineno];
+
+	*poffset = line->start;
+	*plen = line->length;
+	return c->data.textplain.utf8_data + line->start;
+}
+
+
+/**
+ * Return a pointer to the raw UTF-8 data, as opposed to the reformatted
+ * text to fit the window width. Thus only hard newlines are preserved
+ * in the saved/copied text of a selection.
+ *
+ * \param  c		    content of type CONTENT_TEXTPLAIN
+ * \param  start	    starting byte offset within UTF-8 text
+ * \param  end		    ending byte offset
+ * \param  plen		    receives validated length
+ * \return pointer to text, or NULL if no text
+ */
+
+char *textplain_get_raw_data(struct content *c, unsigned start, unsigned end,
+		size_t *plen)
+{
+	size_t utf8_size = c->data.textplain.utf8_data_size;
+
+	assert(c->type == CONTENT_TEXTPLAIN);
+
+	/* any text at all? */
+	if (!utf8_size) return NULL;
+
+	/* clamp to valid offset range */
+	if (start >= utf8_size) start = utf8_size;
+	if (end >= utf8_size) end = utf8_size;
+
+	*plen = end - start;
+
+	return c->data.textplain.utf8_data + start;
 }

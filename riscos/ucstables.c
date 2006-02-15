@@ -451,7 +451,8 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 	const char *enc;
 	utf8_convert_ret err;
 
-	assert(string && result);
+	assert(string);
+	assert(result);
 
 	/* get length, if necessary */
 	if (len == 0)

@@ -64,7 +64,9 @@
 #include "netsurf/riscos/print.h"
 #endif
 #include "netsurf/riscos/query.h"
+#include "netsurf/riscos/save.h"
 #include "netsurf/riscos/save_complete.h"
+#include "netsurf/riscos/textselection.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/treeview.h"
 #ifdef WITH_URI
@@ -166,7 +168,7 @@ static struct {
 } prev_sigs;
 
 /** Accepted wimp user messages. */
-static wimp_MESSAGE_LIST(38) task_messages = { {
+static wimp_MESSAGE_LIST(40) task_messages = { {
 	message_HELP_REQUEST,
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
@@ -180,6 +182,8 @@ static wimp_MESSAGE_LIST(38) task_messages = { {
 	message_MODE_CHANGE,
 	message_CLAIM_ENTITY,
 	message_DATA_REQUEST,
+	message_DRAGGING,
+	message_DRAG_CLAIM,
 #ifdef WITH_URI
 	message_URI_PROCESS,
 	message_URI_RETURN_RESULT,
@@ -396,6 +400,10 @@ void gui_init(int argc, char** argv)
 			ro_msg_prequit);
 	ro_message_register_route(message_SAVE_DESKTOP,
 			ro_msg_save_desktop);
+	ro_message_register_route(message_DRAGGING,
+			ro_gui_selection_dragging);
+	ro_message_register_route(message_DRAG_CLAIM,
+			ro_gui_selection_drag_claim);
 	/* end of handler registration */
 
 	nsfont_init();
@@ -930,6 +938,7 @@ void gui_multitask(void)
 	ro_gui_handle_event(event, &block);
 }
 
+
 /**
  * Handle Null_Reason_Code events.
  */
@@ -962,6 +971,10 @@ void ro_gui_null_reason_code(void)
 			assert(gui_track_gui_window);
 			ro_gui_window_mouse_at(gui_track_gui_window, &pointer);
 			break;
+
+//		case GUI_DRAG_SAVE:
+//			ro_gui_selection_send_dragging(&pointer);
+//			break;
 
 		default:
 			if (gui_track_wimp_w == history_window)
@@ -1078,7 +1091,13 @@ void ro_gui_close_window_request(wimp_close *close)
 		if (ro_gui_shift_pressed())
 			return;
 		ro_gui_url_complete_close(NULL, 0);
+
+		/* search must be closed before the main window so that
+		   the content still exists */
+		ro_gui_dialog_close_persistent(close->w);
 		browser_window_destroy(g->bw);
+		return;
+
 	} else if ((dw = ro_gui_download_window_lookup(close->w)) != NULL) {
 		ro_gui_download_window_destroy(dw, false);
 	} else {
@@ -1106,8 +1125,9 @@ void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
 	switch (gui_current_drag_type) {
 		case GUI_DRAG_SELECTION:
 		case GUI_DRAG_SCROLL:
+		case GUI_DRAG_SAVE:
 			/* ignore Pointer_Leaving_Window event that the Wimp mysteriously
-				issues when a Wimp_DragBox drag operations is started */
+				issues when a Wimp_DragBox drag operation is started */
 			break;
 
 		default:
@@ -1745,6 +1765,9 @@ void ro_msg_datasave(wimp_message *message)
 {
 	wimp_full_message_data_xfer *dataxfer = (wimp_full_message_data_xfer*)message;
 
+	/* remove ghost caret if drag-and-drop protocol was used */
+//	ro_gui_selection_drag_reset();
+
 	ro_msg_terminate_filename(dataxfer);
 
 	switch (dataxfer->file_type) {
@@ -1801,6 +1824,7 @@ void ro_msg_datasave_ack(wimp_message *message)
 
 		case GUI_DRAG_SAVE:
 			ro_gui_save_datasave_ack(message);
+			gui_current_drag_type = GUI_DRAG_NONE;
 			break;
 
 		default:

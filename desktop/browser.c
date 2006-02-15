@@ -35,8 +35,10 @@
 #include "netsurf/desktop/textinput.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
+#include "netsurf/render/font.h"
 #include "netsurf/render/imagemap.h"
 #include "netsurf/render/layout.h"
+#include "netsurf/render/textplain.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/talloc.h"
@@ -62,7 +64,11 @@ static void download_window_callback(fetch_msg msg, void *p, const char *data,
 		unsigned long size);
 static void browser_window_mouse_action_html(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
+static void browser_window_mouse_action_text(struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y);
 static void browser_window_mouse_track_html(struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y);
+static void browser_window_mouse_track_text(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 static const char *browser_window_scrollbar_click(struct browser_window *bw,
 		browser_mouse_state mouse, struct box *box,
@@ -328,8 +334,16 @@ void browser_window_callback(content_msg msg, struct content *c,
 					global_history_add(url_content);
 				}
 			}
-			if (c->type == CONTENT_HTML)
-				selection_init(bw->sel, bw->current_content->data.html.layout);
+			switch (c->type) {
+				case CONTENT_HTML:
+					selection_init(bw->sel, bw->current_content->data.html.layout);
+					break;
+				case CONTENT_TEXTPLAIN:
+					selection_init(bw->sel, NULL);
+					break;
+				default:
+					break;
+			}
 			break;
 
 		case CONTENT_MSG_DONE:
@@ -729,6 +743,10 @@ void browser_window_mouse_click(struct browser_window *bw,
 		browser_window_mouse_action_html(bw, mouse, x, y);
 		break;
 
+	case CONTENT_TEXTPLAIN:
+		browser_window_mouse_action_text(bw, mouse, x, y);
+		break;
+
 	default:
 		if (mouse & BROWSER_MOUSE_MOD_2) {
 			if (mouse & BROWSER_MOUSE_DRAG_2)
@@ -752,7 +770,7 @@ void browser_window_mouse_click(struct browser_window *bw,
  * Handle mouse clicks and movements in an HTML content window.
  *
  * \param  bw     browser window
- * \param  click  type of mouse click
+ * \param  mouse  state of mouse buttons and modifier keys
  * \param  x      coordinate of mouse
  * \param  y      coordinate of mouse
  *
@@ -919,7 +937,17 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			}
 
 			if (text_box) {
-				selection_click(bw->sel, text_box, mouse, x - box_x, y - box_y);
+				int pixel_offset;
+				int idx;
+
+				nsfont_position_in_string(text_box->style,
+					text_box->text,
+					text_box->length,
+					x - box_x,
+					&idx,
+					&pixel_offset);
+
+				selection_click(bw->sel, mouse, text_box->byte_offset + idx);
 
 				if (selection_dragging(bw->sel)) {
 					bw->drag_type = DRAGGING_SELECTION;
@@ -943,12 +971,21 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 						y - gadget_box_y);
 			}
 			else if (text_box) {
-				if (mouse & (BROWSER_MOUSE_DRAG_1 |
-						BROWSER_MOUSE_DRAG_2))
+				int pixel_offset;
+				int idx;
+
+				if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2))
 					selection_init(bw->sel, gadget_box);
 
-				selection_click(bw->sel, text_box, mouse,
-						x - box_x, y - box_y);
+				nsfont_position_in_string(text_box->style,
+					text_box->text,
+					text_box->length,
+					x - box_x,
+					&idx,
+					&pixel_offset);
+
+				selection_click(bw->sel, mouse, text_box->byte_offset + idx);
+
 				if (selection_dragging(bw->sel))
 					bw->drag_type = DRAGGING_SELECTION;
 			}
@@ -1016,6 +1053,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 		}
 
 	} else {
+		bool done = false;
 
 		/* if clicking in the main page, remove the selection from any text areas */
 		if (text_box &&
@@ -1023,22 +1061,34 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			selection_root(bw->sel) != c->data.html.layout)
 			selection_init(bw->sel, c->data.html.layout);
 
-		if (text_box && selection_click(bw->sel, text_box, mouse,
-				x - box_x, y - box_y)) {
+		if (text_box) {
+			int pixel_offset;
+			int idx;
 
-			/* key presses must be directed at the main browser
-			 * window, paste text operations ignored */
-			if (bw->caret_callback) bw->caret_callback = NULL;
-			if (bw->paste_callback) bw->paste_callback = NULL;
+			nsfont_position_in_string(text_box->style,
+				text_box->text,
+				text_box->length,
+				x - box_x,
+				&idx,
+				&pixel_offset);
 
-			if (selection_dragging(bw->sel)) {
-				bw->drag_type = DRAGGING_SELECTION;
-				status = messages_get("Selecting");
-			} else
-				status = c->status_message;
+			if (selection_click(bw->sel, mouse, text_box->byte_offset + idx)) {
+				/* key presses must be directed at the main browser
+				 * window, paste text operations ignored */
+				if (bw->caret_callback) bw->caret_callback = NULL;
+				if (bw->paste_callback) bw->paste_callback = NULL;
+
+				if (selection_dragging(bw->sel)) {
+					bw->drag_type = DRAGGING_SELECTION;
+					status = messages_get("Selecting");
+				} else
+					status = c->status_message;
+
+				done = true;
+			}
 		}
-		else {
 
+		if (!done) {
 			if (title)
 				status = title;
 			else if (bw->loading_content)
@@ -1066,6 +1116,63 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 					pointer = GUI_POINTER_MOVE;
 				}
 			}
+		}
+	}
+
+	assert(status);
+
+	browser_window_set_status(bw, status);
+	browser_window_set_pointer(pointer);
+}
+
+
+/**
+ * Handle mouse clicks and movements in a TEXTPLAIN content window.
+ *
+ * \param  bw     browser window
+ * \param  click  type of mouse click
+ * \param  x      coordinate of mouse
+ * \param  y      coordinate of mouse
+ *
+ * This function handles both hovering and clicking. It is important that the
+ * code path is identical (except that hovering doesn't carry out the action),
+ * so that the status bar reflects exactly what will happen. Having separate
+ * code paths opens the possibility that an attacker will make the status bar
+ * show some harmless action where clicking will be harmful.
+ */
+
+void browser_window_mouse_action_text(struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y)
+{
+	struct content *c = bw->current_content;
+	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	const char *status = 0;
+	size_t idx;
+	int dir = 0;
+
+	bw->drag_type = DRAGGING_NONE;
+
+	if (!bw->sel) return;
+
+	idx = textplain_offset_from_coords(c, x, y, dir);
+	if (selection_click(bw->sel, mouse, idx)) {
+
+		if (selection_dragging(bw->sel)) {
+			bw->drag_type = DRAGGING_SELECTION;
+			status = messages_get("Selecting");
+		}
+		else
+			status = c->status_message;
+	}
+	else {
+		if (bw->loading_content)
+			status = bw->loading_content->status_message;
+		else
+			status = c->status_message;
+
+		if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
+			browser_window_page_drag_start(bw, x, y);
+			pointer = GUI_POINTER_MOVE;
 		}
 	}
 
@@ -1118,6 +1225,10 @@ void browser_window_mouse_track(struct browser_window *bw,
 		browser_window_mouse_track_html(bw, mouse, x, y);
 		break;
 
+	case CONTENT_TEXTPLAIN:
+		browser_window_mouse_track_text(bw, mouse, x, y);
+		break;
+
 	default:
 		break;
 	}
@@ -1128,6 +1239,7 @@ void browser_window_mouse_track(struct browser_window *bw,
  * Handle mouse tracking (including drags) in an HTML content window.
  *
  * \param  bw     browser window
+ * \param  mouse  state of mouse buttons and modifier keys
  * \param  x      coordinate of mouse
  * \param  y      coordinate of mouse
  */
@@ -1189,13 +1301,57 @@ void browser_window_mouse_track_html(struct browser_window *bw,
 
 			box = browser_window_pick_text_box(bw, mouse, x, y,
 					&dx, &dy, dir);
-			if (box)
-				selection_track(bw->sel, box, mouse, dx, dy);
+			if (box) {
+				int pixel_offset;
+				int idx;
+
+				nsfont_position_in_string(box->style,
+					box->text,
+					box->length,
+					dx,
+					&idx,
+					&pixel_offset);
+
+				selection_track(bw->sel, mouse, box->byte_offset + idx);
+			}
 		}
 		break;
 
 		default:
 			browser_window_mouse_action_html(bw, mouse, x, y);
+			break;
+	}
+}
+
+
+/**
+ * Handle mouse tracking (including drags) in a TEXTPLAIN content window.
+ *
+ * \param  bw     browser window
+ * \param  mouse  state of mouse buttons and modifier keys
+ * \param  x      coordinate of mouse
+ * \param  y      coordinate of mouse
+ */
+
+void browser_window_mouse_track_text(struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y)
+{
+	switch (bw->drag_type) {
+
+		case DRAGGING_SELECTION: {
+			struct content *c = bw->current_content;
+			int dir = -1;
+			size_t idx;
+
+			if (selection_dragging_start(bw->sel)) dir = 1;
+
+			idx = textplain_offset_from_coords(c, x, y, dir);
+			selection_track(bw->sel, mouse, idx);
+		}
+		break;
+
+		default:
+			browser_window_mouse_action_text(bw, mouse, x, y);
 			break;
 	}
 }
@@ -1215,15 +1371,44 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 {
 	switch (bw->drag_type) {
 		case DRAGGING_SELECTION: {
-			int dx, dy;
-			struct box *box;
-			int dir = -1;
+			struct content *c = bw->current_content;
+			if (c) {
+				bool found = true;
+				int dir = -1;
+				int idx;
 
-			if (selection_dragging_start(bw->sel)) dir = 1;
+				if (selection_dragging_start(bw->sel)) dir = 1;
 
-			box = browser_window_pick_text_box(bw, mouse, x, y,
-					&dx, &dy, dir);
-			selection_drag_end(bw->sel, box, mouse, dx, dy);
+				if (c->type == CONTENT_HTML) {
+					int pixel_offset;
+					struct box *box;
+					int dx, dy;
+
+					box = browser_window_pick_text_box(bw, mouse, x, y,
+							&dx, &dy, dir);
+					if (box) {
+						nsfont_position_in_string(box->style,
+							box->text,
+							box->length,
+							dx,
+							&idx,
+							&pixel_offset);
+
+						idx += box->byte_offset;
+						selection_track(bw->sel, mouse, idx);
+					}
+					else
+						found = false;
+				}
+				else {
+					assert(c->type == CONTENT_TEXTPLAIN);
+					idx = textplain_offset_from_coords(c, x, y, dir);
+				}
+
+				if (found)
+					selection_track(bw->sel, mouse, idx);
+			}
+			selection_drag_end(bw->sel);
 		}
 		break;
 
@@ -1438,8 +1623,10 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 {
 	struct content *c = bw->current_content;
 
-	if (c && c->type == CONTENT_HTML) {
+	if (c) {
 		union content_msg_data data;
+
+LOG(("REDRAW %d,%d,%d,%d", x, y, width, height));
 
 		data.redraw.x = x;
 		data.redraw.y = y;
@@ -1792,7 +1979,7 @@ struct box *browser_window_pick_text_box(struct browser_window *bw,
 		if (!text_box) {
 			box = browser_window_nearest_text_box(box, x - box_x, y - box_y, dir);
 
-			if (box->text && !box->object) {
+			if (box && box->text && !box->object) {
 				int w = (box->padding[LEFT] + box->width + box->padding[RIGHT]);
 				int h = (box->padding[TOP] + box->height + box->padding[BOTTOM]);
 				int x1, y1;

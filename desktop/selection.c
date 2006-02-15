@@ -18,8 +18,8 @@
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/desktop/selection.h"
 #include "netsurf/render/box.h"
-#include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
+#include "netsurf/render/textplain.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
@@ -37,7 +37,7 @@
 
 #define IS_TEXT(box) ((box)->text && !(box)->object)
 
-#define IS_INPUT(box) ((box)->gadget && \
+#define IS_INPUT(box) ((box) && (box)->gadget && \
 	((box)->gadget->type == GADGET_TEXTAREA || (box)->gadget->type == GADGET_TEXTBOX))
 
 /** check whether the given text box is in the same number space as the
@@ -48,10 +48,7 @@
 
 struct rdw_info {
 	bool inited;
-	int x0;
-	int y0;
-	int x1;
-	int y1;
+	struct rect r;
 };
 
 
@@ -62,50 +59,19 @@ struct save_state {
 	size_t alloc;
 };
 
-static inline bool after(const struct box *a, unsigned a_idx, unsigned b);
-static inline bool before(const struct box *a, unsigned a_idx, unsigned b);
-static bool redraw_handler(struct box *box, int offset, size_t length, void *handle);
+static bool redraw_handler(const char *text, size_t length, bool space,
+		struct box *box, void *handle);
 static void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx);
-static unsigned selection_label_subtree(struct selection *s, struct box *node, unsigned idx);
-static bool save_handler(struct box *box, int offset, size_t length, void *handle);
+static unsigned selection_label_subtree(struct selection *s, struct box *node,
+		unsigned idx);
+static bool save_handler(const char *text, size_t length, bool space,
+		struct box *box, void *handle);
 static bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned *start_offset, unsigned *end_offset);
 static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		seln_traverse_handler handler, void *handle);
 static struct box *get_box(struct box *b, unsigned offset, int *pidx);
 
-
-void set_start(struct selection *s, unsigned offset);
-void set_end(struct selection *s, unsigned offset);
-
-/**
- * Decides whether the char at byte offset 'a_idx' in the box 'a' lies after
- * position 'b' within the textual representation of the content.
- *
- * \param  a      box being tested
- * \param  a_idx  byte offset within text of box 'a'
- * \param  b      position within textual representation
- */
-
-inline bool after(const struct box *a, unsigned a_idx, unsigned b)
-{
-	return (a->byte_offset + a_idx > b);
-}
-
-
-/**
- * Decides whether the char at byte offset 'a_idx' in the box 'a' lies before
- * position 'b' within the textual representation of the content.
- *
- * \param  a      box being tested
- * \param  a_idx  byte offset within text of box 'a'
- * \param  b      position within textual representation
- */
-
-inline bool before(const struct box *a, unsigned a_idx, unsigned b)
-{
-	return (a->byte_offset + a_idx < b);
-}
 
 /**
  * Creates a new selection object associated with a browser window.
@@ -177,8 +143,13 @@ void selection_reinit(struct selection *s, struct box *root)
 	if (root) {
 		s->max_idx = selection_label_subtree(s, root, root_idx);
 	}
-	else
-		s->max_idx = 0;
+	else {
+		struct content *c = s->bw->current_content;
+		if (c && c->type == CONTENT_TEXTPLAIN)
+			s->max_idx = textplain_size(c);
+		else
+			s->max_idx = 0;
+	}
 
 	if (s->defined) {
 		if (s->end_idx > s->max_idx) s->end_idx = s->max_idx;
@@ -244,35 +215,23 @@ unsigned selection_label_subtree(struct selection *s, struct box *node, unsigned
  * Handles mouse clicks (including drag starts) in or near a selection
  *
  * \param  s      selection object
- * \param  box    text box containing the mouse pointer
  * \param  mouse  state of mouse buttons and modifier keys
- * \param  dx     x position of mouse relative to top-left of box
- * \param  dy     y position of mouse relative to top-left of box
+ * \param  idx    byte offset within textual representation
  *
  * \return true iff the click has been handled by the selection code
  */
 
-bool selection_click(struct selection *s, struct box *box,
-		browser_mouse_state mouse, int dx, int dy)
+bool selection_click(struct selection *s, browser_mouse_state mouse, unsigned idx)
 {
 	browser_mouse_state modkeys = (mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2));
-	int pixel_offset;
 	int pos = -1;  /* 0 = inside selection, 1 = after it */
-	int idx;
 
-	if (!s->root ||!SAME_SPACE(s, box->byte_offset))
+	if (!SAME_SPACE(s, idx))
 		return false;	/* not our problem */
 
-	nsfont_position_in_string(box->style,
-		box->text,
-		box->length,
-		dx,
-		&idx,
-		&pixel_offset);
-
 	if (selection_defined(s)) {
-		if (!before(box, idx, s->start_idx)) {
-			if (before(box, idx, s->end_idx))
+		if (idx >= s->start_idx) {
+			if (idx < s->end_idx)
 				pos = 0;
 			else
 				pos = 1;
@@ -280,7 +239,8 @@ bool selection_click(struct selection *s, struct box *box,
 	}
 
 	if (!pos &&
-		(mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2))) {
+		((mouse & BROWSER_MOUSE_DRAG_1) ||
+		 (modkeys && (mouse & BROWSER_MOUSE_DRAG_2)))) {
 		/* drag-saving selection */
 		assert(s->bw);
 		gui_drag_save_selection(s, s->bw->window);
@@ -291,8 +251,8 @@ bool selection_click(struct selection *s, struct box *box,
 			/* start new selection drag */
 			selection_clear(s, true);
 
-			selection_set_start(s, box, idx);
-			selection_set_end(s, box, idx);
+			selection_set_start(s, idx);
+			selection_set_end(s, idx);
 
 			s->drag_state = DRAG_END;
 
@@ -305,13 +265,13 @@ bool selection_click(struct selection *s, struct box *box,
 				return false;	/* ignore Adjust drags */
 
 			if (pos > 0 || (!pos && s->last_was_end)) {
-				selection_set_end(s, box, idx);
-	
+				selection_set_end(s, idx);
+
 				s->drag_state = DRAG_END;
 			}
 			else {
-				selection_set_start(s, box, idx);
-	
+				selection_set_start(s, idx);
+
 				s->drag_state = DRAG_START;
 			}
 			gui_start_selection(s->bw->window);
@@ -329,9 +289,9 @@ bool selection_click(struct selection *s, struct box *box,
 				return false;
 
 			if (pos > 0 || (!pos && s->last_was_end))
-				selection_set_end(s, box, idx);
+				selection_set_end(s, idx);
 			else
-				selection_set_start(s, box, idx);
+				selection_set_start(s, idx);
 			s->drag_state = DRAG_NONE;
 		}
 		else
@@ -352,78 +312,42 @@ bool selection_click(struct selection *s, struct box *box,
  * end points.
  *
  * \param  s      selection object
- * \param  box    text box containing the mouse pointer
  * \param  mouse  state of mouse buttons and modifier keys
- * \param  dx     x position of mouse relative to top-left of box
- * \param  dy     y position of mouse relative to top-left of box
+ * \param  idx    byte offset within text representation
  */
 
-void selection_track(struct selection *s, struct box *box,
-		browser_mouse_state mouse, int dx, int dy)
+void selection_track(struct selection *s, browser_mouse_state mouse, unsigned idx)
 {
-	int pixel_offset;
-	int idx;
-
-	if (!SAME_SPACE(s, box->byte_offset))
+	if (!SAME_SPACE(s, idx))
 		return;
-
-	nsfont_position_in_string(box->style,
-		box->text,
-		box->length,
-		dx,
-		&idx,
-		&pixel_offset);
 
 	switch (s->drag_state) {
 
 		case DRAG_START:
-			if (after(box, idx, s->end_idx)) {
+			if (idx > s->end_idx) {
 				unsigned old_end = s->end_idx;
-				selection_set_end(s, box, idx);
-				set_start(s, old_end);
+				selection_set_end(s, idx);
+				selection_set_start(s, old_end);
 				s->drag_state = DRAG_END;
 			}
 			else
-				selection_set_start(s, box, idx);
+				selection_set_start(s, idx);
 			break;
 
 		case DRAG_END:
-			if (before(box, idx, s->start_idx)) {
+			if (idx < s->start_idx) {
 				unsigned old_start = s->start_idx;
-				selection_set_start(s, box, idx);
-				set_end(s, old_start);
+				selection_set_start(s, idx);
+				selection_set_end(s, old_start);
 				s->drag_state = DRAG_START;
 			}
 			else
-				selection_set_end(s, box, idx);
+				selection_set_end(s, idx);
 			break;
 
 		default:
 			break;
 	}
-}
-
-
-/**
- * Handles completion of a drag operation
- *
- * \param  s      selection object
- * \param  box    text box containing the mouse pointer
- * \param  mouse  state of mouse buttons and modifier keys
- * \param  dx     x position of mouse relative to top-left of box
- * \param  dy     y position of mouse relative to top-left of box
- */
-
-void selection_drag_end(struct selection *s, struct box *box,
-		browser_mouse_state mouse, int dx, int dy)
-{
-	if (box) {
-		/* selection_track() does all that we need to do
-			so avoid code duplication */
-		selection_track(s, box, mouse, dx, dy);
-	}
-
-	s->drag_state = DRAG_NONE;
 }
 
 
@@ -510,15 +434,17 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned end_offset;
 
 		if (selected_part(box, start_idx, end_idx, &start_offset, &end_offset) &&
-			!handler(box, start_offset, end_offset - start_offset, handle))
+			!handler(box->text + start_offset,
+					min(box->length, end_offset) - start_offset,
+					(end_offset >= box->length), box, handle))
 				return false;
 	}
 	else {
 		/* make a guess at where the newlines should go */
 		if (box->byte_offset >= start_idx &&
 			box->byte_offset < end_idx) {
-	
-			if (!handler(NULL, 0, 0, handle))
+
+			if (!handler(NULL, 0, false, NULL, handle))
 				return false;
 		}
 	}
@@ -561,8 +487,23 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 
 bool selection_traverse(struct selection *s, seln_traverse_handler handler, void *handle)
 {
-	if (s->root && selection_defined(s))
+	struct content *c;
+
+	if (!selection_defined(s))
+		return true;	/* easy case, nothing to do */
+
+	if (s->root)
 		return traverse_tree(s->root, s->start_idx, s->end_idx, handler, handle);
+
+	c = s->bw->current_content;
+	if (!c) return true;
+
+	size_t length;
+	const char *text = textplain_get_raw_data(c, s->start_idx, s->end_idx, &length);
+
+	if (text && !handler(text, length, false, NULL, handle))
+		return false;
+
 	return true;
 }
 
@@ -571,37 +512,41 @@ bool selection_traverse(struct selection *s, seln_traverse_handler handler, void
  * Selection traversal handler for redrawing the screen when the selection
  * has been altered.
  *
- * \param  box     pointer to text box being (partially) added
- * \param  offset  start offset of text within box (bytes)
+ * \param  text    pointer to text string
  * \param  length  length of text to be appended (bytes)
+ * \param  space   text string should be followed by a trailing space
+ * \param  box     pointer to text box being (partially) added
  * \param  handle  unused handle, we don't need one
  * \return true iff successful and traversal should continue
  */
 
-bool redraw_handler(struct box *box, int offset, size_t length, void *handle)
+bool redraw_handler(const char *text, size_t length, bool space,
+		struct box *box, void *handle)
 {
 	if (box) {
 		struct rdw_info *r = (struct rdw_info*)handle;
 		int width, height;
 		int x, y;
 
+		/* \todo - it should be possible to reduce the redrawn area by
+				considering the 'text', 'length' and 'space' parameters */
 		box_coords(box, &x, &y);
 
 		width = box->padding[LEFT] + box->width + box->padding[RIGHT];
 		height = box->padding[TOP] + box->height + box->padding[BOTTOM];
 
 		if (r->inited) {
-			if (x < r->x0) r->x0 = x;
-			if (y < r->y0) r->y0 = y;
-			if (x + width > r->x1) r->x1 = x + width;
-			if (y + height > r->y1) r->y1 = y + height;
+			if (x < r->r.x0) r->r.x0 = x;
+			if (y < r->r.y0) r->r.y0 = y;
+			if (x + width > r->r.x1) r->r.x1 = x + width;
+			if (y + height > r->r.y1) r->r.y1 = y + height;
 		}
 		else {
 			r->inited = true;
-			r->x0 = x;
-			r->y0 = y;
-			r->x1 = x + width;
-			r->y1 = y + height;
+			r->r.x0 = x;
+			r->r.y0 = y;
+			r->r.x1 = x + width;
+			r->r.y1 = y + height;
 		}
 	}
 	return true;
@@ -620,14 +565,24 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 {
 	struct rdw_info rdw;
 
-if (end_idx < start_idx) LOG(("*** asked to redraw from %d to %d", start_idx, end_idx));
 	assert(end_idx >= start_idx);
 	rdw.inited = false;
-	if (traverse_tree(s->root, start_idx, end_idx, redraw_handler, &rdw) &&
-		rdw.inited) {
-		browser_window_redraw_rect(s->bw, rdw.x0, rdw.y0,
-			rdw.x1 - rdw.x0, rdw.y1 - rdw.y0);
+
+	if (s->root) {
+		if (!traverse_tree(s->root, start_idx, end_idx, redraw_handler, &rdw))
+			return;
 	}
+	else {
+		struct content *c = s->bw->current_content;
+		if (c && c->type == CONTENT_TEXTPLAIN && end_idx > start_idx) {
+			textplain_coords_from_range(c, start_idx, end_idx, &rdw.r);
+			rdw.inited = true;
+		}
+	}
+
+	if (rdw.inited)
+		browser_window_redraw_rect(s->bw, rdw.r.x0, rdw.r.y0,
+			rdw.r.x1 - rdw.r.x0, rdw.r.y1 - rdw.r.y0);
 }
 
 
@@ -689,7 +644,14 @@ void selection_select_all(struct selection *s)
 }
 
 
-void set_start(struct selection *s, unsigned offset)
+/**
+ * Set the start position of the current selection, updating the screen.
+ *
+ * \param  s       selection object
+ * \param  offset  byte offset within textual representation
+ */
+
+void selection_set_start(struct selection *s, unsigned offset)
 {
 	bool was_defined = selection_defined(s);
 	unsigned old_start = s->start_idx;
@@ -709,7 +671,14 @@ void set_start(struct selection *s, unsigned offset)
 }
 
 
-void set_end(struct selection *s, unsigned offset)
+/**
+ * Set the end position of the current selection, updating the screen.
+ *
+ * \param  s       selection object
+ * \param  offset  byte offset within textual representation
+ */
+
+void selection_set_end(struct selection *s, unsigned offset)
 {
 	bool was_defined = selection_defined(s);
 	unsigned old_end = s->end_idx;
@@ -726,34 +695,6 @@ void set_end(struct selection *s, unsigned offset)
 	}
 	else if (selection_defined(s))
 		selection_redraw(s, s->start_idx, s->end_idx);
-}
-
-
-/**
- * Set the start position of the current selection, updating the screen.
- *
- * \param  s    selection object
- * \param  box  box object containing start point
- * \param  idx  byte offset of starting point within box
- */
-
-void selection_set_start(struct selection *s, struct box *box, int idx)
-{
-	set_start(s, box->byte_offset + idx);
-}
-
-
-/**
- * Set the end position of the current selection, updating the screen.
- *
- * \param  s    selection object
- * \param  box  box object containing end point
- * \param  idx  byte offset of end point within box
- */
-
-void selection_set_end(struct selection *s, struct box *box, int idx)
-{
-	set_end(s, box->byte_offset + idx);
 }
 
 
@@ -825,63 +766,64 @@ struct box *selection_get_end(struct selection *s, int *pidx)
 
 
 /**
- * Tests whether a text box lies partially within the selection, if there is
+ * Tests whether a text range lies partially within the selection, if there is
  * a selection defined, returning the start and end indexes of the bytes
  * that should be selected.
  *
  * \param  s          the selection object
- * \param  box        the box to be tested
+ * \param  start      byte offset of start of text
  * \param  start_idx  receives the start index (in bytes) of the highlighted portion
  * \param  end_idx    receives the end index (in bytes)
  * \return true iff part of the given box lies within the selection
  */
 
-bool selection_highlighted(struct selection *s, struct box *box,
+bool selection_highlighted(struct selection *s, unsigned start, unsigned end,
 		unsigned *start_idx, unsigned *end_idx)
 {
 	/* caller should have checked first for efficiency */
 	assert(s);
 	assert(selection_defined(s));
 
-	assert(box);
-	assert(IS_TEXT(box));
+	if (end <= s->start_idx || start >= s->end_idx)
+		return false;
 
-	return selected_part(box, s->start_idx, s->end_idx, start_idx, end_idx);
+	*start_idx = (s->start_idx >= start) ? (s->start_idx - start) : 0;
+	*end_idx = min(end, s->end_idx) - start;
+
+	return true;
+
+//	assert(box);
+//	assert(IS_TEXT(box));
+
+//	return selected_part(box, s->start_idx, s->end_idx, start_idx, end_idx);
 }
 
 
 /**
  * Selection traversal handler for saving the text to a file.
  *
- * \param  box     pointer to text box being (partially) added
- * \param  offset  start offset of text within box (bytes)
+ * \param  text    pointer to text being added, or NULL for newline
  * \param  length  length of text to be appended (bytes)
- * \param  handle  unused handle, we don't need one
+ * \param  space   trailing space required after text
+ * \param  box     pointer to text box (or NULL for textplain content)
+ * \param  handle  our save_state workspace pointer
  * \return true iff the file writing succeeded and traversal should continue.
  */
 
-bool save_handler(struct box *box, int offset, size_t length, void *handle)
+bool save_handler(const char *text, size_t length, bool space,
+		struct box *box, void *handle)
 {
 	struct save_state *sv = handle;
 	size_t new_length;
-	const char *text;
-	int space = 0;
-	size_t len;
 
 	assert(sv);
 
-	if (box) {
-		len = min(length, box->length - offset);
-		text = box->text + offset;
-
-		if (box->space && length > len) space = 1;
-	}
-	else {
+	if (!text) {
 		text = "\n";
-		len = 1;
+		length = 1;
 	}
 
-	new_length = sv->length + len + space;
+	new_length = sv->length + length + space;
 	if (new_length >= sv->alloc) {
 		size_t new_alloc = sv->alloc + (sv->alloc / 4);
 		char *new_block;
@@ -895,8 +837,8 @@ bool save_handler(struct box *box, int offset, size_t length, void *handle)
 		sv->alloc = new_alloc;
 	}
 
-	memcpy(sv->block + sv->length, text, len);
-	sv->length += len;
+	memcpy(sv->block + sv->length, text, length);
+	sv->length += length;
 
 	if (space)
 		sv->block[sv->length++] = ' ';
@@ -915,10 +857,13 @@ bool save_handler(struct box *box, int offset, size_t length, void *handle)
 
 bool selection_save_text(struct selection *s, const char *path)
 {
+	struct content *c = s->bw->current_content;
 	struct save_state sv = { NULL, 0, 0 };
 	utf8_convert_ret ret;
 	char *result;
 	FILE *out;
+
+	assert(c);
 
 	if (!selection_traverse(s, save_handler, &sv)) {
 		free(sv.block);

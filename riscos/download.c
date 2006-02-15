@@ -34,6 +34,7 @@
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/save.h"
 #include "netsurf/riscos/query.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/utils/log.h"
@@ -1294,7 +1295,7 @@ bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit)
 
 			struct gui_download_window *d = download_window_list;
 			while (d) {
-				ro_gui_open_window_at_front(d->window);
+				ro_gui_dialog_open_top(d->window, NULL, 0, 0);
 				d = d->next;
 			}
 		}

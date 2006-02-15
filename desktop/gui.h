@@ -102,7 +102,8 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 void gui_launch_url(const char *url);
 
-bool gui_search_term_highlighted(struct gui_window *g, struct box *box,
+bool gui_search_term_highlighted(struct gui_window *g,
+		unsigned start_offset, unsigned end_offset,
 		unsigned *start_idx, unsigned *end_idx);
 
 #endif

@@ -44,8 +44,8 @@ struct selection
 };
 
 
-typedef bool (*seln_traverse_handler)(struct box *b, int offset,
-					size_t length, void *handle);
+typedef bool (*seln_traverse_handler)(const char *text, size_t length,
+		bool space, struct box *box, void *handle);
 
 
 struct selection *selection_create(struct browser_window *bw);
@@ -70,24 +70,23 @@ void selection_reinit(struct selection *s, struct box *root);
 void selection_clear(struct selection *s, bool redraw);
 void selection_select_all(struct selection *s);
 
-void selection_set_start(struct selection *s, struct box *box, int idx);
-void selection_set_end(struct selection *s, struct box *box, int idx);
+void selection_set_start(struct selection *s, unsigned idx);
+void selection_set_end(struct selection *s, unsigned idx);
 
 struct box *selection_get_start(struct selection *s, int *pidx);
 struct box *selection_get_end(struct selection *s, int *pidx);
 
-bool selection_click(struct selection *s, struct box *box, browser_mouse_state mouse,
-		int dx, int dy);
-void selection_track(struct selection *s, struct box *box, browser_mouse_state mouse,
-		int dx, int dy);
+bool selection_click(struct selection *s, browser_mouse_state mouse, unsigned idx);
+void selection_track(struct selection *s, browser_mouse_state mouse, unsigned idx);
 
-void selection_drag_end(struct selection *s, struct box *box,
-		browser_mouse_state mouse, int dx, int dy);
+/** Handles completion of a drag operation */
+/* void selection_drag_end(struct selection *s); */
+#define selection_drag_end(s) ((s)->drag_state = DRAG_NONE)
 
 bool selection_traverse(struct selection *s, seln_traverse_handler handler,
 		void *handle);
 
-bool selection_highlighted(struct selection *s, struct box *box,
+bool selection_highlighted(struct selection *s, unsigned start, unsigned end,
 		unsigned *start_idx, unsigned *end_idx);
 
 bool selection_save_text(struct selection *s, const char *path);

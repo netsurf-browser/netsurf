@@ -20,6 +20,7 @@
 #include "netsurf/css/css.h"
 
 struct box;
+struct rect;
 struct browser_window;
 struct content;
 struct form_successful_control;
@@ -124,5 +125,18 @@ bool html_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour);
+
+
+/* redraw a short text string, complete with highlighting
+   (for selection/search) and ghost caret */
+
+bool text_redraw(const char *utf8_text, size_t utf8_len,
+		size_t offset, bool space,
+		struct css_style *style,
+		int x, int y,
+		struct rect *clip,
+		int height,
+		float scale, colour current_background_color,
+		bool excluded);
 
 #endif
