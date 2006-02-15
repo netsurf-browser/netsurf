@@ -30,6 +30,7 @@
 #include "netsurf/riscos/help.h"
 #include "netsurf/riscos/menus.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/save.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/riscos/theme.h"
 #include "netsurf/riscos/treeview.h"
@@ -138,7 +139,6 @@ wimp_menu *url_suggest_menu = (wimp_menu *)&url_suggest;
  * set which is undocumented but true of window handles on
  * all target OS versions */
 #define IS_MENU(menu) !((int)(menu) & 1)
-
 
 /**
  * Create menu structures.
@@ -1539,7 +1539,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 					windows_at_pointer);
 			return true;
 		case BROWSER_FIND_TEXT:
-			if (!c || c->type != CONTENT_HTML)
+			if (!c || (c->type != CONTENT_HTML && c->type != CONTENT_TEXTPLAIN))
 				return false;
 			ro_gui_menu_prepare_action(owner, action, true);
 			ro_gui_menu_search_window_menu = false;
@@ -1965,7 +1965,7 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 						ICON_TOOLBAR_SCALE, !c);
 			break;
 		case BROWSER_FIND_TEXT:
-			result = !c || c->type != CONTENT_HTML;
+			result = !c || (c->type != CONTENT_HTML && c->type != CONTENT_TEXTPLAIN);
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, result);
 			if ((!result) && (windows)) {
