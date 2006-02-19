@@ -31,11 +31,11 @@
 #endif
 #include "curl/curl.h"
 #include "netsurf/utils/config.h"
+#ifdef WITH_AUTH
+#include "netsurf/content/authdb.h"
+#endif
 #include "netsurf/content/fetch.h"
 #include "netsurf/desktop/options.h"
-#ifdef WITH_AUTH
-#include "netsurf/desktop/401login.h"
-#endif
 #include "netsurf/render/form.h"
 #define NDEBUG
 #include "netsurf/utils/log.h"
@@ -414,7 +414,7 @@ failed:
 CURLcode fetch_set_options(struct fetch *f)
 {
 	CURLcode code;
-	struct login *li;
+	const char *auth;
 
 #undef SETOPT
 #define SETOPT(option, value) \
@@ -445,12 +445,16 @@ CURLcode fetch_set_options(struct fetch *f)
 		SETOPT(CURLOPT_COOKIEFILE, 0);
 		SETOPT(CURLOPT_COOKIEJAR, 0);
 	}
-	if ((li = login_list_get(f->url)) != NULL) {
+#ifdef WITH_AUTH
+	if ((auth = authdb_get(f->url)) != NULL) {
 		SETOPT(CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-		SETOPT(CURLOPT_USERPWD, li->logindetails);
+		SETOPT(CURLOPT_USERPWD, auth);
 	} else {
+#endif
 		SETOPT(CURLOPT_USERPWD, 0);
+#ifdef WITH_AUTH
 	}
+#endif
 	if (option_http_proxy && option_http_proxy_host) {
 		SETOPT(CURLOPT_PROXY, option_http_proxy_host);
 		SETOPT(CURLOPT_PROXYPORT, (long) option_http_proxy_port);
@@ -796,8 +800,13 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 			return size;
 		}
 		SKIP_ST(17);
-		while (i < (int)size && data[++i] == '"')
+
+		while (i < (int) size && strncasecmp(data + i, "realm", 5))
+			i++;
+		while (i < (int)size && data[++i] != '"')
 			/* */;
+		i++;
+
 		strncpy(f->realm, data + i, size - i);
 		f->realm[size - i] = '\0';
 		for (i = size - i - 1; i >= 0 &&

@@ -27,6 +27,8 @@ url_func_result url_scheme(const char *url, char **result);
 url_func_result url_nice(const char *url, char **result,
 		bool remove_extensions);
 url_func_result url_escape(const char *unescaped, char **result);
+url_func_result url_canonical_root(const char *url, char **result);
+url_func_result url_strip_lqf(const char *url, char **result);
 
 char *path_to_url(const char *path);
 char *url_to_path(const char *url);

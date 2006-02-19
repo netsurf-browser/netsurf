@@ -8,9 +8,11 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include <string.h>
 #include "oslib/wimp.h"
 #include "netsurf/utils/config.h"
+#include "netsurf/content/authdb.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/401login.h"
@@ -33,12 +35,12 @@ static void ro_gui_401login_open(struct browser_window *bw, char *host,
 static wimp_window *dialog_401_template;
 
 struct session_401 {
-  	char *host;
-  	char *realm;
-	char uname[256];
-	char *url;
-	char pwd[256];
-	struct browser_window *bwin;
+	char *host;			/**< Host for user display */
+	char *realm;			/**< Authentication realm */
+	char uname[256];		/**< Buffer for username */
+	char *url;			/**< URL being fetched */
+	char pwd[256];			/**< Buffer for password */
+	struct browser_window *bwin;	/**< Browser window handle */
 };
 
 
@@ -52,7 +54,11 @@ void ro_gui_401login_init(void)
 }
 
 
-void gui_401login_open(struct browser_window *bw, struct content *c, char *realm)
+/**
+ * Open the login dialog
+ */
+void gui_401login_open(struct browser_window *bw, struct content *c,
+		char *realm)
 {
 	char *murl, *host;
 	url_func_result res;
@@ -76,7 +82,7 @@ void ro_gui_401login_open(struct browser_window *bw, char *host, char *realm,
 {
 	struct session_401 *session;
 	wimp_w w;
-	
+
 	session = calloc(1, sizeof(struct session_401));
 	if (!session) {
 		warn_user("NoMemory", 0);
@@ -85,7 +91,7 @@ void ro_gui_401login_open(struct browser_window *bw, char *host, char *realm,
 
 	session->url = strdup(fetchurl);
 	if (!session->url) {
-	  	free(session);
+		free(session);
 		warn_user("NoMemory", 0);
 		return;
 	}
@@ -95,9 +101,11 @@ void ro_gui_401login_open(struct browser_window *bw, char *host, char *realm,
 	session->realm = strdup(realm);
 	session->bwin = bw;
 	if ((!session->host) || (!session->realm)) {
-	  	free(session->host);
-	  	free(session->realm);
-	  	free(session);
+		free(session->host);
+		free(session->realm);
+		free(session);
+		warn_user("NoMemory", 0);
+		return;
 	}
 
 	/* fill in download window icons */
@@ -120,7 +128,7 @@ void ro_gui_401login_open(struct browser_window *bw, char *host, char *realm,
 
 	/* create and open the window */
 	w = wimp_create_window(dialog_401_template);
-	
+
 	ro_gui_wimp_event_register_text_field(w, ICON_401LOGIN_USERNAME);
 	ro_gui_wimp_event_register_text_field(w, ICON_401LOGIN_PASSWORD);
 	ro_gui_wimp_event_register_cancel(w, ICON_401LOGIN_CANCEL);
@@ -130,22 +138,24 @@ void ro_gui_401login_open(struct browser_window *bw, char *host, char *realm,
 	ro_gui_wimp_event_set_user_data(w, session);
 
 	ro_gui_dialog_open_persistent(bw->window->window, w, false);
-
 }
 
-
-void ro_gui_401login_close(wimp_w w) {
+/**
+ * Handle closing of login dialog
+ */
+void ro_gui_401login_close(wimp_w w)
+{
 	os_error *error;
-  	struct session_401 *session;
-  	
-  	session = (struct session_401 *)ro_gui_wimp_event_get_user_data(w);
-  	
-  	assert(session);
-  	
-  	free(session->host);
-  	free(session->realm);
-  	free(session->url);
-  	free(session);
+	struct session_401 *session;
+
+	session = (struct session_401 *)ro_gui_wimp_event_get_user_data(w);
+
+	assert(session);
+
+	free(session->host);
+	free(session->realm);
+	free(session->url);
+	free(session);
 
 	ro_gui_wimp_event_finalise(w);
 
@@ -153,7 +163,6 @@ void ro_gui_401login_close(wimp_w w) {
 	if (error)
 		LOG(("xwimp_delete_window: 0x%x: %s",
 				error->errnum, error->errmess));
-
 }
 
 
@@ -163,23 +172,29 @@ void ro_gui_401login_close(wimp_w w) {
 bool ro_gui_401login_apply(wimp_w w)
 {
 	struct session_401 *session;
-	char *lidets;
+	char *auth;
 
-  	session = (struct session_401 *)ro_gui_wimp_event_get_user_data(w);
-  	
-  	assert(session);
+	session = (struct session_401 *)ro_gui_wimp_event_get_user_data(w);
 
-	lidets = calloc(strlen(session->uname) + strlen(session->pwd) + 2,
-			sizeof(char));
-	if (!lidets) {
-		LOG(("Insufficient memory for calloc"));
+	assert(session);
+
+	auth = malloc(strlen(session->uname) + strlen(session->pwd) + 2);
+	if (!auth) {
+		LOG(("calloc failed"));
 		warn_user("NoMemory", 0);
 		return false;
 	}
 
-	sprintf(lidets, "%s:%s", session->uname, session->pwd);
+	sprintf(auth, "%s:%s", session->uname, session->pwd);
 
-	login_list_add(session->url, lidets);
+	if (!authdb_insert(session->url, session->realm, auth)) {
+		LOG(("failed"));
+		free(auth);
+		return false;
+	}
+
+	free(auth);
+
 	browser_window_go(session->bwin, session->url, 0);
 	return true;
 }

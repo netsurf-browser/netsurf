@@ -507,6 +507,117 @@ url_func_result url_scheme(const char *url, char **result)
 
 
 /**
+ * Return the canonical root of an URL
+ *
+ * \param url     an absolute URL
+ * \param result  pointer to pointer to buffer to hold canonical rool URL
+ * \return  URL_FUNC_OK on success
+ */
+
+url_func_result url_canonical_root(const char *url, char **result)
+{
+	int m, scheme_len, authority_len;
+	regmatch_t match[10];
+
+	(*result) = 0;
+
+	m = regexec(&url_re, url, 10, match, 0);
+	if (m) {
+		LOG(("url '%s' failed to match regex", url));
+		return URL_FUNC_FAILED;
+	}
+	if (match[URL_RE_SCHEME].rm_so == -1 ||
+			match[URL_RE_AUTHORITY].rm_so == -1)
+		return URL_FUNC_FAILED;
+
+	scheme_len = match[URL_RE_SCHEME].rm_eo - match[URL_RE_SCHEME].rm_so;
+	authority_len = match[URL_RE_AUTHORITY].rm_eo -
+			match[URL_RE_AUTHORITY].rm_so;
+
+	(*result) = malloc(scheme_len + 1 + 2 + authority_len + 1);
+	if (!(*result)) {
+		LOG(("malloc failed"));
+		return URL_FUNC_NOMEM;
+	}
+
+	strncpy((*result), url + match[URL_RE_SCHEME].rm_so, scheme_len);
+	m = scheme_len;
+	(*result)[m++] = ':';
+	(*result)[m++] = '/';
+	(*result)[m++] = '/';
+	strncpy((*result) + m, url + match[URL_RE_AUTHORITY].rm_so,
+			authority_len);
+	(*result)[m + authority_len] = '\0';
+
+	return URL_FUNC_OK;
+}
+
+
+/**
+ * Strip leafname, query and fragment segments from an URL
+ *
+ * \param url     an absolute URL
+ * \param result  pointer to pointer to buffer to hold result
+ * \return URL_FUNC_OK on success
+ */
+
+url_func_result url_strip_lqf(const char *url, char **result)
+{
+	int m, scheme_len, authority_len, path_len = 0;
+	regmatch_t match[10];
+
+	(*result) = 0;
+
+	m = regexec(&url_re, url, 10, match, 0);
+	if (m) {
+		LOG(("url '%s' failed to match regex", url));
+		return URL_FUNC_FAILED;
+	}
+	if (match[URL_RE_SCHEME].rm_so == -1 ||
+			match[URL_RE_AUTHORITY].rm_so == -1)
+		return URL_FUNC_FAILED;
+
+	scheme_len = match[URL_RE_SCHEME].rm_eo - match[URL_RE_SCHEME].rm_so;
+	authority_len = match[URL_RE_AUTHORITY].rm_eo -
+			match[URL_RE_AUTHORITY].rm_so;
+	if (match[URL_RE_PATH].rm_so != -1)
+		path_len = match[URL_RE_PATH].rm_eo -
+				match[URL_RE_PATH].rm_so;
+
+	(*result) = malloc(scheme_len + 1 + 2 + authority_len +
+			(path_len ? path_len : 1) + 1);
+	if (!(*result)) {
+		LOG(("malloc failed"));
+		return URL_FUNC_NOMEM;
+	}
+
+	strncpy((*result), url + match[URL_RE_SCHEME].rm_so, scheme_len);
+	m = scheme_len;
+	(*result)[m++] = ':';
+	(*result)[m++] = '/';
+	(*result)[m++] = '/';
+	strncpy((*result) + m, url + match[URL_RE_AUTHORITY].rm_so,
+			authority_len);
+	m += authority_len;
+
+	if (path_len) {
+		strncpy((*result) + m, url + match[URL_RE_AUTHORITY].rm_so,
+				path_len);
+		for (; path_len != 0 && (*result)[m + path_len - 1] != '/';
+				path_len--)
+			/* do nothing */;
+		m += path_len;
+	}
+	else
+		(*result)[m++] = '/';
+
+	(*result)[m] = '\0';
+
+	return URL_FUNC_OK;
+}
+
+
+/**
  * Attempt to find a nice filename for a URL.
  *
  * \param  url     an absolute URL
@@ -611,8 +722,8 @@ no_path:
 				(*result)[i] = '_';
 
 		return URL_FUNC_OK;
-	}	
-	
+	}
+
 	return URL_FUNC_FAILED;
 }
 
