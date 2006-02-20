@@ -36,7 +36,7 @@ static bool html_redraw_text_box(struct box *box, int x, int y,
 		int x0, int y0, int x1, int y1,
 		float scale, colour current_background_color);
 static bool html_redraw_caret(struct caret *caret,
-		os_colour current_background_color, float scale);
+		colour current_background_color, float scale);
 static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int padding_width, int padding_height, float scale);
 static bool html_redraw_border_plot(int i, int *p, colour c,
@@ -562,10 +562,10 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
  * \return true iff successful and redraw should proceed
  */
 
-bool html_redraw_caret(struct caret *c, os_colour current_background_color,
+bool html_redraw_caret(struct caret *c, colour current_background_color,
 		float scale)
 {
-	os_colour caret_color = 0x808080;  /* todo - choose a proper colour */
+	colour caret_color = 0x808080;  /* todo - choose a proper colour */
 	int xc = c->x, y = c->y;
 	int h = c->height - 1;
 	int w = (h + 7) / 8;

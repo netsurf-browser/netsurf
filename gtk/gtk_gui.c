@@ -56,11 +56,11 @@ void gui_init(int argc, char** argv)
 	options_read(buf);
 
 	if (!option_cookie_file) {
-		snprintf(buf, sizeof buf, "%s/.netsurf/Cookies");
+		snprintf(buf, sizeof buf, "%s/.netsurf/Cookies", home);
 		option_cookie_file = strdup(buf);
 	}
 	if (!option_cookie_jar) {
-		snprintf(buf, sizeof buf, "%s/.netsurf/Cookies");
+		snprintf(buf, sizeof buf, "%s/.netsurf/Cookies", home);
 		option_cookie_jar = strdup(buf);
 	}
 	if (!option_cookie_file || !option_cookie_jar)
@@ -189,7 +189,8 @@ void gui_launch_url(const char *url)
 }
 
 
-bool gui_search_term_highlighted(struct gui_window *g, struct box *box,
+bool gui_search_term_highlighted(struct gui_window *g,
+		unsigned start_offset, unsigned end_offset,
 		unsigned *start_idx, unsigned *end_idx)
 {
 	return false;
