@@ -20,12 +20,18 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+typedef enum {
+	BITMAP_READY,		/** Bitmap buffer is ready */
+	BITMAP_ALLOCATE_MEMORY,	/** Allocate memory */
+	BITMAP_CLEAR_MEMORY,	/** Clear the memory */
+} bitmap_state;
+
 struct content;
 
 /** An opaque image. */
 struct bitmap;
 
-struct bitmap *bitmap_create(int width, int height, bool clear);
+struct bitmap *bitmap_create(int width, int height, bitmap_state state);
 void bitmap_set_opaque(struct bitmap *bitmap, bool opaque);
 bool bitmap_test_opaque(struct bitmap *bitmap);
 bool bitmap_get_opaque(struct bitmap *bitmap);

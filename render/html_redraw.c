@@ -1000,21 +1000,23 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	bool repeat_x = false;
 	bool repeat_y = false;
 	bool plot_colour = true;
-	bool plot_bitmap;
+	bool plot_content;
 	bool clip_to_children = false;
 	struct box *clip_box = box;
 	int px0 = clip_x0, py0 = clip_y0, px1 = clip_x1, py1 = clip_y1;
 	int ox = x, oy = y;
 	struct box *parent;
 
-	plot_bitmap = (box->background && box->background->bitmap);
-	if (plot_bitmap) {
+	plot_content = (box->background != NULL);
+	if (plot_content) {
 		/* handle background-repeat */
 		switch (box->style->background_repeat) {
 			case CSS_BACKGROUND_REPEAT_REPEAT:
 				repeat_x = repeat_y = true;
 				/* optimisation: only plot the colour if bitmap is not opaque */
-				plot_colour = !bitmap_get_opaque(box->background->bitmap);
+				if (box->background->bitmap)
+					plot_colour = !bitmap_get_opaque(
+							box->background->bitmap);
 				break;
 			case CSS_BACKGROUND_REPEAT_REPEAT_X:
 				repeat_x = true;
@@ -1109,19 +1111,13 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 				return false;
 		}
 		/* and plot the image */
-		if (plot_bitmap) {
+		if (plot_content) {
 			if (!plot.clip(clip_x0, clip_y0, clip_x1, clip_y1))
 					return false;
-			/* SPECIAL CASE: As GIFs are normally decoded on the first call to
-			 * nsgif_redraw we may need to get the first frame manually. */
-			if ((box->background->type == CONTENT_GIF) &&
-					(box->background->data.gif.gif->decoded_frame < 0))
-						gif_decode_frame(box->background->data.gif.gif,
-								0);
-			if (!plot.bitmap_tile(x, y,
+			if (!content_redraw_tiled(box->background, x, y,
 					ceilf(box->background->width * scale),
 					ceilf(box->background->height * scale),
-					box->background->bitmap,
+					clip_x0, clip_y0, clip_x1, clip_y1, scale,
 					*background_colour,
 					repeat_x, repeat_y))
 				return false;

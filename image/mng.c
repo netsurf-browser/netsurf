@@ -190,7 +190,7 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 
 	LOG(("processing header (%p) %d, %d", c, width, height));
 
-	c->bitmap = bitmap_create(width, height, false);
+	c->bitmap = bitmap_create(width, height, BITMAP_ALLOCATE_MEMORY);
 	if (!c->bitmap) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -450,21 +450,32 @@ bool nsmng_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour)
 {
+	return nsmng_redraw_tiled(c, x, y, width, height,
+			clip_x0, clip_y0, clip_x1, clip_y1,
+			scale, background_colour,
+			false, false);
+}
+
+
+bool nsmng_redraw_tiled(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		float scale, unsigned long background_colour,
+		bool repeat_x, bool repeat_y)
+{
 	bool ret;
 
 	/* mark image as having been requested to display */
-	if (!c->data.mng.displayed)
-		c->data.mng.displayed = true;
+	c->data.mng.displayed = true;
 
 	if ((c->bitmap) && (c->data.mng.opaque_test_pending)) {
 		bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
 		c->data.mng.opaque_test_pending = false;
 	}
 
-	assert(c != NULL);
-
-	ret = plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour);
+	ret = plot.bitmap_tile(x, y, width, height,
+			c->bitmap, background_colour,
+			repeat_x, repeat_y);
 
 	/*	Check if we need to restart the animation
 	*/

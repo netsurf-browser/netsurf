@@ -33,7 +33,7 @@ struct bitmap;
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create(int width, int height, bool clear)
+struct bitmap *bitmap_create(int width, int height, bitmap_state state)
 {
 	GdkPixbuf *pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
 			width, height);

@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  */
 
@@ -174,6 +174,11 @@ struct handler_entry {
 			int width, int height,
 			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 			float scale, unsigned long background_colour);
+	bool (*redraw_tiled)(struct content *c, int x, int y,
+			int width, int height,
+			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+			float scale, unsigned long background_colour,
+			bool repeat_x, bool repeat_y);
 	void (*open)(struct content *c, struct browser_window *bw,
 			struct content *page, unsigned int index,
 			struct box *box,
@@ -186,51 +191,54 @@ struct handler_entry {
  * Must be ordered as enum ::content_type. */
 static const struct handler_entry handler_map[] = {
 	{html_create, html_process_data, html_convert,
-		html_reformat, html_destroy, html_stop, html_redraw,
+		html_reformat, html_destroy, html_stop, html_redraw, 0,
 		html_open, html_close,
 		true},
 	{textplain_create, textplain_process_data, textplain_convert,
-		textplain_reformat, textplain_destroy, 0, textplain_redraw,
+		textplain_reformat, textplain_destroy, 0, textplain_redraw, 0,
 		0, 0, true},
-	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0, false},
+	{0, 0, css_convert, 0, css_destroy, 0, 0, 0, 0, 0, false},
 #ifdef WITH_JPEG
-	{0, 0, nsjpeg_convert,
-		0, nsjpeg_destroy, 0, nsjpeg_redraw, 0, 0, false},
+	{0, 0, nsjpeg_convert, 0, nsjpeg_destroy, 0,
+		nsjpeg_redraw, nsjpeg_redraw_tiled, 0, 0, false},
 #endif
 #ifdef WITH_GIF
-	{nsgif_create, 0, nsgif_convert,
-	        0, nsgif_destroy, 0, nsgif_redraw, 0, 0, false},
+	{nsgif_create, 0, nsgif_convert, 0, nsgif_destroy, 0,
+			nsgif_redraw, nsgif_redraw_tiled, 0, 0, false},
 #endif
 #ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, false},
+		0, nsmng_destroy, 0, nsmng_redraw, nsmng_redraw_tiled,
+		0, 0, false},
 	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, false},
+		0, nsmng_destroy, 0, nsmng_redraw, nsmng_redraw_tiled,
+		0, 0, false},
 	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, nsmng_redraw, 0, 0, false},
+		0, nsmng_destroy, 0, nsmng_redraw, nsmng_redraw_tiled,
+		0, 0, false},
 #endif
 #ifdef WITH_SPRITE
 	{0, 0, sprite_convert,
-		0, sprite_destroy, 0, sprite_redraw, 0, 0, false},
+		0, sprite_destroy, 0, sprite_redraw, 0, 0, 0, false},
 #endif
 #ifdef WITH_DRAW
 	{0, 0, draw_convert,
-		0, draw_destroy, 0, draw_redraw, 0, 0, false},
+		0, draw_destroy, 0, draw_redraw, 0, 0, 0, false},
 #endif
 #ifdef WITH_PLUGIN
 	{plugin_create, 0, plugin_convert,
-		plugin_reformat, plugin_destroy, 0, plugin_redraw,
+		plugin_reformat, plugin_destroy, 0, plugin_redraw, 0,
 		plugin_open, plugin_close,
 		true},
 #endif
 #ifdef WITH_THEME_INSTALL
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, false},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false},
 #endif
 #ifdef WITH_ARTWORKS
 	{0, 0, artworks_convert,
-		0, artworks_destroy, 0, artworks_redraw, 0, 0, false},
+		0, artworks_destroy, 0, artworks_redraw, 0, 0, 0, false},
 #endif
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, false}
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
 };
 #define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
@@ -415,8 +423,8 @@ struct content * content_get_ready(const char *url)
 /**
  * Initialise the content for the specified type.
  *
- * \param c        content structure
- * \param type     content_type to initialise to
+ * \param c	   content structure
+ * \param type	   content_type to initialise to
  * \param mime_type  MIME-type string for this content
  * \param params   array of strings, ordered attribute, value, attribute, ..., 0
  * \return  true on success, false on error and error broadcast to users and
@@ -536,7 +544,7 @@ void content_set_status(struct content *c, const char *status_message, ...)
  *
  * Calls the process_data function for the content.
  *
- * \param   c     content structure
+ * \param   c	  content structure
  * \param   data  new data to process
  * \param   size  size of data
  * \return  true on success, false on error and error broadcast to users and
@@ -822,8 +830,71 @@ bool content_redraw(struct content *c, int x, int y,
 		return true;
 	if (handler_map[c->type].redraw)
 		return handler_map[c->type].redraw(c, x, y, width, height,
-		                clip_x0, clip_y0, clip_x1, clip_y1, scale,
-		                background_colour);
+				clip_x0, clip_y0, clip_x1, clip_y1, scale,
+				background_colour);
+	return true;
+}
+
+
+/**
+ * Display content on screen with optional tiling.
+ *
+ * Calls the redraw_tile function for the content, or emulates it with the
+ * redraw function if it doesn't exist.
+ */
+
+bool content_redraw_tiled(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		float scale, unsigned long background_colour,
+		bool repeat_x, bool repeat_y)
+{
+	int x0, y0, x1, y1;
+
+	assert(c != 0);
+
+	if (c->locked)
+		/* not safe to attempt redraw */
+		return true;
+	if (handler_map[c->type].redraw_tiled) {
+		return handler_map[c->type].redraw_tiled(c, x, y, width, height,
+				clip_x0, clip_y0, clip_x1, clip_y1, scale,
+				background_colour, repeat_x, repeat_y);
+	} else {
+	  	/* ensure we have a redrawable content */
+		if ((!handler_map[c->type].redraw) || (width == 0) ||
+				(height == 0))
+			return true;
+		/* simple optimisation for no repeat (common for backgrounds) */
+		if ((!repeat_x) || (!repeat_y))
+			return handler_map[c->type].redraw(c, x, y, width,
+				height, clip_x0, clip_y0, clip_x1, clip_y1,
+				scale, background_colour);
+		/* find the redraw boundaries to loop within*/
+		x0 = x;
+		if (repeat_x) {
+		  	for (; x0 > clip_x0; x0 -= width);
+		  	x1 = clip_x1;
+		} else {
+			x1 = x + 1;
+		}
+		y0 = y;
+		if (repeat_y) {
+		  	for (; y0 > clip_y0; y0 -= height);
+		  	y1 = clip_y1;
+		} else {
+			y1 = y + 1;
+		}
+		/* repeatedly plot our content */
+		for (y = y0; y < y1; y += height)
+			for (x = x0; x < x1; x += width)
+				if (!handler_map[c->type].redraw(c, x, y,
+						width, height,
+						clip_x0, clip_y0,
+						clip_x1, clip_y1,
+						scale, background_colour))
+					return false;
+	}
 	return true;
 }
 
@@ -831,7 +902,7 @@ bool content_redraw(struct content *c, int x, int y,
 /**
  * Register a user for callbacks.
  *
- * \param  c         the content to register
+ * \param  c	     the content to register
  * \param  callback  the callback function
  * \param  p1, p2    callback private data
  * \return true on success, false otherwise on memory exhaustion
@@ -996,12 +1067,12 @@ void content_stop_check(struct content *c)
 /**
  * A window containing the content has been opened.
  *
- * \param  c       content that has been opened
- * \param  bw      browser window containing the content
- * \param  page    content of type CONTENT_HTML containing c, or 0 if not an
- *                 object within a page
+ * \param  c	   content that has been opened
+ * \param  bw	   browser window containing the content
+ * \param  page	   content of type CONTENT_HTML containing c, or 0 if not an
+ *		   object within a page
  * \param  index   index in page->data.html.object, or 0 if not an object
- * \param  box     box containing c, or 0 if not an object
+ * \param  box	   box containing c, or 0 if not an object
  * \param  params  object parameters, or 0 if not an object
  *
  * Calls the open function for the content.

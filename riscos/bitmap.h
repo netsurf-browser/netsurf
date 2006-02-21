@@ -9,14 +9,9 @@
 #define _NETSURF_RISCOS_BITMAP_H_
 
 #include "oslib/osspriteop.h"
+#include "netsurf/image/bitmap.h"
 
 struct osspriteop_area;
-
-typedef enum {
-	BITMAP_INITIALISE_DONE,		/** Initialisation has been done */
-	BITMAP_INITIALISE_QUICK,	/** Just allocate memory */
-	BITMAP_INITIALISE_FULL		/** Clear the sprite buffer */
-} bitmap_initialisation;
 
 struct bitmap {
 	int width;
@@ -24,7 +19,7 @@ struct bitmap {
 	bool opaque;
 	bool modified;
 	bool persistent;
-	bitmap_initialisation init;
+	bitmap_state state;
 
 	osspriteop_area *sprite_area;	/** Uncompressed data, or NULL */
 	char *compressed;		/** Compressed data, or NULL */

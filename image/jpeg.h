@@ -22,10 +22,15 @@ struct content_jpeg_data {
 };
 
 bool nsjpeg_convert(struct content *c, int width, int height);
+void nsjpeg_destroy(struct content *c);
 bool nsjpeg_redraw(struct content *c, int x, int y,
 		int width, int height,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour);
-void nsjpeg_destroy(struct content *c);
+bool nsjpeg_redraw_tiled(struct content *c, int x, int y,
+		int width, int height,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		float scale, unsigned long background_colour,
+		bool repeat_x, bool repeat_y);
 
 #endif

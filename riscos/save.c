@@ -1007,7 +1007,7 @@ bool ro_gui_save_create_thumbnail(struct content *c, const char *name)
 	struct bitmap *bitmap;
 	osspriteop_area *area;
 
-	bitmap = bitmap_create(34, 34, false);
+	bitmap = bitmap_create(34, 34, BITMAP_CLEAR_MEMORY);
 	if (!bitmap) {
 		LOG(("Thumbnail initialisation failed."));
 		return false;

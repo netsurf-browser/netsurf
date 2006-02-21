@@ -178,7 +178,8 @@ void history_add(struct history *history, struct content *content, char *frag_id
 	 * loading */
 	bitmap = url_store_get_thumbnail(url);
 	if (!bitmap) {
-	 	bitmap = bitmap_create(WIDTH / 2, HEIGHT / 2, false);
+	 	bitmap = bitmap_create(WIDTH / 2, HEIGHT / 2,
+	 			BITMAP_ALLOCATE_MEMORY);
   		if (!bitmap) {
 			LOG(("Thumbnail initialisation failed."));
 			return;

@@ -32,7 +32,7 @@ struct bitmap {
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create(int width, int height, bool clear)
+struct bitmap *bitmap_create(int width, int height, bitmap_state state)
 {
 	struct bitmap *bitmap;
 	bitmap = calloc(sizeof *bitmap + width * height * 4, 1);

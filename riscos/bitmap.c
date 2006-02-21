@@ -74,7 +74,7 @@ struct bitmap_compressed_header {
 char bitmap_filename[256];
 
 
-static bool bitmap_initialise(struct bitmap *bitmap, bool clear);
+static bool bitmap_initialise(struct bitmap *bitmap);
 static void bitmap_decompress(struct bitmap *bitmap);
 static void bitmap_compress(struct bitmap *bitmap);
 static void bitmap_load_file(struct bitmap *bitmap);
@@ -145,7 +145,8 @@ void bitmap_quit(void)
 	struct bitmap *bitmap;
 
 	for (bitmap = bitmap_head; bitmap; bitmap = bitmap->next)
-		if ((bitmap->persistent) && (bitmap->filename[0] == '\0'))
+		if ((bitmap->persistent) && ((bitmap->modified) ||
+				(bitmap->filename[0] == '\0')))
 			bitmap_save_file(bitmap);
 }
 
@@ -159,7 +160,7 @@ void bitmap_quit(void)
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create(int width, int height, bool clear)
+struct bitmap *bitmap_create(int width, int height, bitmap_state state)
 {
 	struct bitmap *bitmap;
 
@@ -172,10 +173,15 @@ struct bitmap *bitmap_create(int width, int height, bool clear)
 	bitmap->width = width;
 	bitmap->height = height;
 	bitmap->opaque = false;
-	if (clear)
-		bitmap->init = BITMAP_INITIALISE_FULL;
-	else
-		bitmap->init = BITMAP_INITIALISE_QUICK;
+	switch (state) {
+	  	case BITMAP_CLEAR_MEMORY:
+	  	case BITMAP_ALLOCATE_MEMORY:
+	  		bitmap->state = state;
+	  		break;
+	  	default:
+	  		LOG(("Invalid bitmap state"));
+	  		assert(false);
+	}
 
 	/* link into our list of bitmaps at the head */
 	if (bitmap_head) {
@@ -207,7 +213,7 @@ struct bitmap *bitmap_create_file(char *file)
 		return NULL;
 	bitmap->opaque = true;
 	bitmap->persistent = true;
-	bitmap->init = BITMAP_INITIALISE_DONE;
+	bitmap->state = BITMAP_READY;
 	strcpy(bitmap->filename, file);
 
 	/* link in at the head */
@@ -227,21 +233,30 @@ struct bitmap *bitmap_create_file(char *file)
  * \param  clear   whether to clear the image ready for use
  */
 
-bool bitmap_initialise(struct bitmap *bitmap, bool clear)
+bool bitmap_initialise(struct bitmap *bitmap)
 {
 	unsigned int area_size;
 	osspriteop_area *sprite_area;
 	osspriteop_header *sprite;
 
 	area_size = 16 + 44 + bitmap->width * bitmap->height * 4;
-	if (clear)
-		bitmap->sprite_area = calloc(1, area_size);
-	else
-		bitmap->sprite_area = malloc(area_size);
-	if (!bitmap->sprite_area) {
-		return false;
+	switch (bitmap->state) {
+	  	case BITMAP_CLEAR_MEMORY:
+			bitmap->sprite_area = calloc(1, area_size);
+			if (!bitmap->sprite_area)
+				return false;
+			bitmap->state = BITMAP_READY;
+			break;
+	  	case BITMAP_ALLOCATE_MEMORY:
+			bitmap->sprite_area = malloc(area_size);
+			if (!bitmap->sprite_area)
+				return false;
+			bitmap->state = BITMAP_READY;
+	  		break;
+	  	default:
+	  		LOG(("Invalid bitmap state"));
+	  		assert(false);
 	}
-	bitmap->init = BITMAP_INITIALISE_DONE;
 	bitmap_direct_used += area_size;
 
 	/* area control block */
@@ -254,8 +269,7 @@ bool bitmap_initialise(struct bitmap *bitmap, bool clear)
 	/* sprite control block */
 	sprite = (osspriteop_header *) (sprite_area + 1);
 	sprite->size = area_size - 16;
-	if (!clear)
-		memset(sprite->name, 0x00, 12);
+	memset(sprite->name, 0x00, 12);
 	strncpy(sprite->name, "bitmap", 12);
 	sprite->width = bitmap->width - 1;
 	sprite->height = bitmap->height - 1;
@@ -346,8 +360,6 @@ bool bitmap_get_opaque(struct bitmap *bitmap)
 
 char *bitmap_get_buffer(struct bitmap *bitmap)
 {
-  	bool clear;
- 
 	assert(bitmap);
 
 	/* move to the head of the list */
@@ -363,10 +375,14 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
 	}
 
 	/* dynamically create the buffer */
-	if (bitmap->init != BITMAP_INITIALISE_DONE) {
-	  	clear = (bitmap->init == BITMAP_INITIALISE_FULL);
-		if (!bitmap_initialise(bitmap, clear))
-			return NULL;
+	switch (bitmap->state) {
+		case BITMAP_ALLOCATE_MEMORY:
+		case BITMAP_CLEAR_MEMORY:
+			if (!bitmap_initialise(bitmap))
+				return NULL;
+			break;
+		default:
+			break;
 	}
 
 	/* image is already decompressed, no change to image states */
@@ -591,7 +607,7 @@ void bitmap_decompress(struct bitmap *bitmap)
 	}
 
 	/* create the image memory/header to decompress to */
-	if (!bitmap_initialise(bitmap, false))
+	if (!bitmap_initialise(bitmap))
 		return;
 
 	/* decompress the data */
