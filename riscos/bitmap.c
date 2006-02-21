@@ -181,6 +181,7 @@ struct bitmap *bitmap_create(int width, int height, bitmap_state state)
 	  	default:
 	  		LOG(("Invalid bitmap state"));
 	  		assert(false);
+	  		return false;
 	}
 
 	/* link into our list of bitmaps at the head */
@@ -239,24 +240,24 @@ bool bitmap_initialise(struct bitmap *bitmap)
 	osspriteop_area *sprite_area;
 	osspriteop_header *sprite;
 
+	assert(!bitmap->sprite_area);
+
 	area_size = 16 + 44 + bitmap->width * bitmap->height * 4;
 	switch (bitmap->state) {
 	  	case BITMAP_CLEAR_MEMORY:
 			bitmap->sprite_area = calloc(1, area_size);
-			if (!bitmap->sprite_area)
-				return false;
-			bitmap->state = BITMAP_READY;
 			break;
 	  	case BITMAP_ALLOCATE_MEMORY:
 			bitmap->sprite_area = malloc(area_size);
-			if (!bitmap->sprite_area)
-				return false;
-			bitmap->state = BITMAP_READY;
 	  		break;
 	  	default:
 	  		LOG(("Invalid bitmap state"));
 	  		assert(false);
+	  		return false;
 	}
+	if (!bitmap->sprite_area)
+		return false;
+	bitmap->state = BITMAP_READY;
 	bitmap_direct_used += area_size;
 
 	/* area control block */
@@ -607,6 +608,7 @@ void bitmap_decompress(struct bitmap *bitmap)
 	}
 
 	/* create the image memory/header to decompress to */
+	bitmap->state = BITMAP_ALLOCATE_MEMORY;
 	if (!bitmap_initialise(bitmap))
 		return;
 
