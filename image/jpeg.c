@@ -94,7 +94,7 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 	width = cinfo.output_width;
 	height = cinfo.output_height;
 
-	bitmap = bitmap_create(width, height, BITMAP_ALLOCATE_MEMORY);
+	bitmap = bitmap_create(width, height, BITMAP_NEW | BITMAP_OPAQUE);
 	if (bitmap)
 		pixels = bitmap_get_buffer(bitmap);
 	if ((!bitmap) || (!pixels)) {
@@ -107,7 +107,6 @@ bool nsjpeg_convert(struct content *c, int w, int h)
 		warn_user("NoMemory", 0);
 		return false;
 	}
-	bitmap_set_opaque(bitmap, true);
 
 	rowstride = bitmap_get_rowstride(bitmap);
 	do {

@@ -190,7 +190,7 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 
 	LOG(("processing header (%p) %d, %d", c, width, height));
 
-	c->bitmap = bitmap_create(width, height, BITMAP_ALLOCATE_MEMORY);
+	c->bitmap = bitmap_create(width, height, BITMAP_NEW);
 	if (!c->bitmap) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);

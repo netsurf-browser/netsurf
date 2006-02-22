@@ -801,12 +801,8 @@ void ro_gui_save_object_native(struct content *c, char *path)
 			bitmap_save(c->bitmap, path);
 			break;
 #endif
-#ifdef WITH_PNG
-		case CONTENT_PNG:
-/*			error = xosspriteop_save_sprite_file(osspriteop_USER_AREA, c->data.png.sprite_area, path);
-			break;*/
-#endif
 #ifdef WITH_MNG
+		case CONTENT_PNG:
 		case CONTENT_JNG:
 		case CONTENT_MNG:
 			bitmap_save(c->bitmap, path);
@@ -1007,12 +1003,11 @@ bool ro_gui_save_create_thumbnail(struct content *c, const char *name)
 	struct bitmap *bitmap;
 	osspriteop_area *area;
 
-	bitmap = bitmap_create(34, 34, BITMAP_CLEAR_MEMORY);
+	bitmap = bitmap_create(34, 34, BITMAP_NEW | BITMAP_OPAQUE | BITMAP_CLEAR_MEMORY);
 	if (!bitmap) {
 		LOG(("Thumbnail initialisation failed."));
 		return false;
 	}
-	bitmap_set_opaque(bitmap, true);
 	thumbnail_create(c, bitmap, NULL);
 	area = thumbnail_convert_8bpp(bitmap);
 	bitmap_destroy(bitmap);

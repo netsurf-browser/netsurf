@@ -35,6 +35,7 @@
 
 #ifdef WITH_GIF
 
+static void nsgif_invalidate(struct bitmap *bitmap, void *private_word);
 static void nsgif_animate(void *p);
 static void nsgif_get_frame(struct content *c);
 
@@ -105,6 +106,8 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 	c->data.gif.current_frame = 0;
 	if (gif->frame_count_partial > 1)
 		schedule(gif->frames[0].frame_delay, nsgif_animate, c);
+	else
+		bitmap_set_suspendable(gif->frame_image, gif, nsgif_invalidate);
 
 	/*	Exit as a success
 	*/
@@ -113,6 +116,11 @@ bool nsgif_convert(struct content *c, int iwidth, int iheight) {
 	return true;
 }
 
+void nsgif_invalidate(struct bitmap *bitmap, void *private_word) {
+	struct gif_animation *gif = (struct gif_animation *)private_word;
+	
+	gif->decoded_frame = -1;
+}
 
 bool nsgif_redraw(struct content *c, int x, int y,
 		int width, int height,

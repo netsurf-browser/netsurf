@@ -29,11 +29,11 @@ struct bitmap;
  *
  * \param  width   width of image in pixels
  * \param  height  width of image in pixels
- * \param  clear   whether to clear the image ready for use
+ * \param  state   a flag word indicating the initial state
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create(int width, int height, bitmap_state state)
+struct bitmap *bitmap_create(int width, int height, unsigned int state)
 {
 	GdkPixbuf *pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
 			width, height);
@@ -146,3 +146,16 @@ bool bitmap_save(struct bitmap *bitmap, const char *path)
  */
 void bitmap_modified(struct bitmap *bitmap) {
 }
+
+
+/**
+ * The bitmap image can be suspended.
+ *
+ * \param  bitmap  	a bitmap, as returned by bitmap_create()
+ * \param  private_word	a private word to be returned later
+ * \param  suspend	the function to be called upon suspension
+ * \param  resume	the function to be called when resuming
+ */
+void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
+		void (*invalidate)(struct bitmap *bitmap, void *private_word)) {
+}	

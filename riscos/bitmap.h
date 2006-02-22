@@ -16,10 +16,11 @@ struct osspriteop_area;
 struct bitmap {
 	int width;
 	int height;
-	bool opaque;
-	bool modified;
-	bool persistent;
-	bitmap_state state;
+	
+	unsigned int state;
+	
+	void *private_word;
+	void (*invalidate)(struct bitmap *bitmap, void *private_word);
 
 	osspriteop_area *sprite_area;	/** Uncompressed data, or NULL */
 	char *compressed;		/** Compressed data, or NULL */

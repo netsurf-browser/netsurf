@@ -20,18 +20,20 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-typedef enum {
-	BITMAP_READY,		/** Bitmap buffer is ready */
-	BITMAP_ALLOCATE_MEMORY,	/** Allocate memory */
-	BITMAP_CLEAR_MEMORY,	/** Clear the memory */
-} bitmap_state;
+#define BITMAP_NEW		0
+#define BITMAP_OPAQUE		(1 << 0)	/** image is opaque */
+#define BITMAP_MODIFIED		(1 << 1)	/** buffer has been modified */
+#define BITMAP_PERSISTENT	(1 << 2)	/** retain between sessions */
+#define BITMAP_CLEAR_MEMORY	(1 << 3)	/** memory should be wiped */
+#define BITMAP_SUSPENDED	(1 << 4)	/** currently suspended */
+#define BITMAP_READY		(1 << 5)	/** fully initialised */
 
 struct content;
 
 /** An opaque image. */
 struct bitmap;
 
-struct bitmap *bitmap_create(int width, int height, bitmap_state state);
+struct bitmap *bitmap_create(int width, int height, unsigned int state);
 void bitmap_set_opaque(struct bitmap *bitmap, bool opaque);
 bool bitmap_test_opaque(struct bitmap *bitmap);
 bool bitmap_get_opaque(struct bitmap *bitmap);
@@ -40,5 +42,7 @@ size_t bitmap_get_rowstride(struct bitmap *bitmap);
 void bitmap_destroy(struct bitmap *bitmap);
 bool bitmap_save(struct bitmap *bitmap, const char *path);
 void bitmap_modified(struct bitmap *bitmap);
+void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
+		void (*invalidate)(struct bitmap *bitmap, void *private_word));
 
 #endif

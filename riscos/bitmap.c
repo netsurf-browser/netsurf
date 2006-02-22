@@ -13,8 +13,6 @@
  * sprites.
  */
 
-#define NDEBUG
-
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
@@ -60,6 +58,14 @@ unsigned int bitmap_compressed_size;
 /** Total size of compressed area
 */
 unsigned int bitmap_compressed_used = 0;
+
+/** Total number of suspendable bitmaps
+*/
+unsigned int bitmap_suspendable = 0;
+
+/** Total number of suspended bitmaps
+*/
+unsigned int bitmap_suspended = 0;
 
 /** Compressed data header
 */
@@ -145,7 +151,8 @@ void bitmap_quit(void)
 	struct bitmap *bitmap;
 
 	for (bitmap = bitmap_head; bitmap; bitmap = bitmap->next)
-		if ((bitmap->persistent) && ((bitmap->modified) ||
+		if ((bitmap->state & BITMAP_PERSISTENT) &&
+				((bitmap->state & BITMAP_MODIFIED) ||
 				(bitmap->filename[0] == '\0')))
 			bitmap_save_file(bitmap);
 }
@@ -160,7 +167,7 @@ void bitmap_quit(void)
  * \return an opaque struct bitmap, or NULL on memory exhaustion
  */
 
-struct bitmap *bitmap_create(int width, int height, bitmap_state state)
+struct bitmap *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 
@@ -172,17 +179,7 @@ struct bitmap *bitmap_create(int width, int height, bitmap_state state)
 		return NULL;
 	bitmap->width = width;
 	bitmap->height = height;
-	bitmap->opaque = false;
-	switch (state) {
-	  	case BITMAP_CLEAR_MEMORY:
-	  	case BITMAP_ALLOCATE_MEMORY:
-	  		bitmap->state = state;
-	  		break;
-	  	default:
-	  		LOG(("Invalid bitmap state"));
-	  		assert(false);
-	  		return false;
-	}
+	bitmap->state = state;
 
 	/* link into our list of bitmaps at the head */
 	if (bitmap_head) {
@@ -212,9 +209,7 @@ struct bitmap *bitmap_create_file(char *file)
 	bitmap = calloc(1, sizeof(struct bitmap));
 	if (!bitmap)
 		return NULL;
-	bitmap->opaque = true;
-	bitmap->persistent = true;
-	bitmap->state = BITMAP_READY;
+	bitmap->state = BITMAP_OPAQUE | BITMAP_PERSISTENT | BITMAP_READY;
 	strcpy(bitmap->filename, file);
 
 	/* link in at the head */
@@ -243,21 +238,14 @@ bool bitmap_initialise(struct bitmap *bitmap)
 	assert(!bitmap->sprite_area);
 
 	area_size = 16 + 44 + bitmap->width * bitmap->height * 4;
-	switch (bitmap->state) {
-	  	case BITMAP_CLEAR_MEMORY:
-			bitmap->sprite_area = calloc(1, area_size);
-			break;
-	  	case BITMAP_ALLOCATE_MEMORY:
-			bitmap->sprite_area = malloc(area_size);
-	  		break;
-	  	default:
-	  		LOG(("Invalid bitmap state"));
-	  		assert(false);
-	  		return false;
-	}
+	if (bitmap->state & BITMAP_CLEAR_MEMORY)
+		bitmap->sprite_area = calloc(1, area_size);
+	else
+		bitmap->sprite_area = malloc(area_size);
+
 	if (!bitmap->sprite_area)
 		return false;
-	bitmap->state = BITMAP_READY;
+	bitmap->state |= BITMAP_READY;
 	bitmap_direct_used += area_size;
 
 	/* area control block */
@@ -295,7 +283,11 @@ bool bitmap_initialise(struct bitmap *bitmap)
 void bitmap_set_opaque(struct bitmap *bitmap, bool opaque)
 {
 	assert(bitmap);
-	bitmap->opaque = opaque;
+	
+	if (opaque)
+		bitmap->state |= BITMAP_OPAQUE;
+	else
+		bitmap->state &= ~BITMAP_OPAQUE;
 }
 
 
@@ -345,7 +337,7 @@ bool bitmap_test_opaque(struct bitmap *bitmap)
 bool bitmap_get_opaque(struct bitmap *bitmap)
 {
 	assert(bitmap);
-	return (bitmap->opaque);
+	return (bitmap->state & BITMAP_OPAQUE);
 }
 
 
@@ -374,17 +366,16 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
 		bitmap->previous = NULL;
 		bitmap_head = bitmap;
 	}
-
+	
 	/* dynamically create the buffer */
-	switch (bitmap->state) {
-		case BITMAP_ALLOCATE_MEMORY:
-		case BITMAP_CLEAR_MEMORY:
-			if (!bitmap_initialise(bitmap))
-				return NULL;
-			break;
-		default:
-			break;
+	if (!(bitmap->state & BITMAP_READY)) {
+		if (!bitmap_initialise(bitmap))
+			return NULL;
 	}
+
+	/* reset our suspended flag */
+	if (bitmap->state & BITMAP_SUSPENDED)
+		bitmap->state &= ~BITMAP_SUSPENDED;
 
 	/* image is already decompressed, no change to image states */
 	if (bitmap->sprite_area)
@@ -493,8 +484,23 @@ bool bitmap_save(struct bitmap *bitmap, const char *path)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
 void bitmap_modified(struct bitmap *bitmap) {
-	bitmap->modified = true;
+	bitmap->state |= BITMAP_MODIFIED;
 }
+
+
+/**
+ * The bitmap image can be suspended.
+ *
+ * \param  bitmap  	a bitmap, as returned by bitmap_create()
+ * \param  private_word	a private word to be returned later
+ * \param  invalidate	the function to be called upon suspension
+ */
+void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
+		void (*invalidate)(struct bitmap *bitmap, void *private_word)) {
+	bitmap->private_word = private_word;
+	bitmap->invalidate = invalidate;
+	bitmap_suspendable++;		  
+}	
 
 
 /**
@@ -504,6 +510,7 @@ void bitmap_maintain(void)
 {
 	unsigned int memory = 0;
 	unsigned int compressed_memory = 0;
+	unsigned int suspended = 0;
 	struct bitmap *bitmap = bitmap_head;
 	struct bitmap_compressed_header *header;
 	unsigned int maintain_direct_size;
@@ -535,12 +542,32 @@ void bitmap_maintain(void)
 					bitmap->compressed;
 			compressed_memory += header->input_size +
 				sizeof(struct bitmap_compressed_header);
-		}
+		} else if (bitmap->state & BITMAP_SUSPENDED)
+			suspended++;
 	}
 
 	if (!bitmap) {
 		bitmap_maintenance = bitmap_maintenance_priority;
 		bitmap_maintenance_priority = false;
+		return;
+	}
+	
+	/* the fastest and easiest way to release memory is by suspending
+	 * images. as such, we try to do this first for as many images as
+	 * possible, potentially freeing up large amounts of memory */
+	if (suspended <= (bitmap_suspendable - bitmap_suspended)) {
+		for (; bitmap; bitmap = bitmap->next) {
+			if (bitmap->invalidate) {
+				bitmap->invalidate(bitmap, bitmap->private_word);
+				free(bitmap->sprite_area);
+				bitmap->sprite_area = NULL;
+				bitmap->state |= BITMAP_SUSPENDED;
+				bitmap->state &= ~BITMAP_READY;
+				bitmap_direct_used -= 16 + 44 +
+					    bitmap->width * bitmap->height * 4;
+			  	bitmap_suspended++;
+			} 
+		}
 		return;
 	}
 
@@ -608,7 +635,6 @@ void bitmap_decompress(struct bitmap *bitmap)
 	}
 
 	/* create the image memory/header to decompress to */
-	bitmap->state = BITMAP_ALLOCATE_MEMORY;
 	if (!bitmap_initialise(bitmap))
 		return;
 
@@ -654,7 +680,7 @@ void bitmap_compress(struct bitmap *bitmap)
 		return;
 
 	/* compress the data */
-	if (bitmap->opaque)
+	if (bitmap->state & BITMAP_OPAQUE)
 		flags |= tinct_OPAQUE_IMAGE;
 	error = _swix(Tinct_Compress, _IN(0) | _IN(2) | _IN(7) | _OUT(0),
 			(char *)(bitmap->sprite_area + 1),
@@ -754,7 +780,7 @@ void bitmap_load_file(struct bitmap *bitmap)
 		bitmap->compressed = NULL;
 		return;
 	}
-	if (bitmap->modified)
+	if (bitmap->state & BITMAP_MODIFIED)
 		bitmap_delete_file(bitmap);
 }
 
@@ -769,7 +795,7 @@ void bitmap_save_file(struct bitmap *bitmap)
 	assert(bitmap->compressed || bitmap->sprite_area);
 
 	/* unmodified bitmaps will still have their file available */
-	if (!bitmap->modified && bitmap->filename[0]) {
+	if ((!(bitmap->state & BITMAP_MODIFIED)) && bitmap->filename[0]) {
 		if (bitmap->sprite_area)
 			free(bitmap->sprite_area);
 		bitmap->sprite_area = NULL;
@@ -814,7 +840,7 @@ void bitmap_save_file(struct bitmap *bitmap)
 			free(bitmap->compressed);
 		}
 		bitmap->compressed = NULL;
-		bitmap->modified = false;
+		bitmap->state &= ~BITMAP_MODIFIED;
 		LOG(("Saved file to disk"));
 	}
 }

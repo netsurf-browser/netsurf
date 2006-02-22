@@ -179,12 +179,12 @@ void history_add(struct history *history, struct content *content, char *frag_id
 	bitmap = url_store_get_thumbnail(url);
 	if (!bitmap) {
 	 	bitmap = bitmap_create(WIDTH / 2, HEIGHT / 2,
-	 			BITMAP_ALLOCATE_MEMORY);
+	 			BITMAP_NEW | BITMAP_CLEAR_MEMORY |
+	 			BITMAP_OPAQUE | BITMAP_PERSISTENT);
   		if (!bitmap) {
 			LOG(("Thumbnail initialisation failed."));
 			return;
 		}
-		bitmap_set_opaque(bitmap, true);
 		thumbnail_create(content, bitmap, url);
 	}
 	entry->bitmap = bitmap;

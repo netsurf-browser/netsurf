@@ -139,9 +139,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	/* register the thumbnail with the URL */
 	if (url)
 		url_store_add_thumbnail(url, bitmap);
-
 	bitmap_modified(bitmap);
-	bitmap->persistent = true;
 	return true;
 }
 
