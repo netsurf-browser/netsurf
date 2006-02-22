@@ -597,6 +597,7 @@ void ro_gui_menu_selection(wimp_selection *selection) {
 	wimp_menu *menu;
 	os_error *error;
 	int previous_menu_icon = current_menu_icon;
+	char *url;
 
 
 	/* if we are using gui_multitask then menu selection events
@@ -621,10 +622,12 @@ void ro_gui_menu_selection(wimp_selection *selection) {
 	/* perform non-automated actions */
 	if (current_menu == url_suggest_menu) {
 		g = ro_gui_toolbar_lookup(current_menu_window);
-		if (g)
-			browser_window_go(g->bw,
-					url_suggest_menu->entries[selection->items[0]].
-						data.indirected_text.text, 0);
+		if (g) {
+		  	url = url_suggest_menu->entries[selection->items[0]].data.indirected_text.text;
+			gui_window_set_url(g, url);
+			browser_window_go(g->bw, url, 0);
+			global_history_add_recent(url);
+		}
 	} else if ((current_menu == gui_form_select_menu) &&
 			(selection->items[0] >= 0)) {
 		g = ro_gui_window_lookup(current_menu_window);
