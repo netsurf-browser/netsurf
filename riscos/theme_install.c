@@ -33,7 +33,7 @@ wimp_w dialog_theme_install;
 
 static void theme_install_close(wimp_w w);
 static void theme_install_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, union content_msg_data data);
+		intptr_t p1, intptr_t p2, union content_msg_data data);
 static bool theme_install_read(char *source_data, unsigned long source_size);
 
 
@@ -72,7 +72,7 @@ void theme_install_start(struct content *c)
  */
 
 void theme_install_callback(content_msg msg, struct content *c,
-		void *p1, void *p2, union content_msg_data data)
+		intptr_t p1, intptr_t p2, union content_msg_data data)
 {
 	char buffer[256];
 	int author_indent = 0;
