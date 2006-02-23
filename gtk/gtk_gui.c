@@ -70,9 +70,9 @@ void gui_init(int argc, char** argv)
 	messages_load(buf);
 
 	/* set up stylesheet urls */
-	snprintf(buf, sizeof buf, "file:///%s/.netsurf/Default.css", home);
+	snprintf(buf, sizeof buf, "file://%s/.netsurf/Default.css", home);
 	default_stylesheet_url = strdup(buf);
-	snprintf(buf, sizeof buf, "file:///%s/.netsurf/AdBlock.css", home);
+	snprintf(buf, sizeof buf, "file://%s/.netsurf/AdBlock.css", home);
 	adblock_stylesheet_url = strdup(buf);
 	if (!default_stylesheet_url || !adblock_stylesheet_url)
 		die("Failed duplicating stylesheet strings");
@@ -222,7 +222,9 @@ void history_back(struct browser_window *bw, struct history *history) {}
 void history_forward(struct browser_window *bw, struct history *history) {}
 
 void gui_401login_open(struct browser_window *bw, struct content *c,
-                       char *realm) {}
+		const char *realm) {}
+void gui_cert_verify(struct browser_window *bw, struct content *c,
+		const struct ssl_cert_info *certs, unsigned long num) {}
 
 void schedule(int t, void (*callback)(void *p), void *p) {}
 void schedule_remove(void (*callback)(void *p), void *p) {}
