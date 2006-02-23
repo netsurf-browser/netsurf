@@ -22,6 +22,11 @@
 /* Cookies */
 #define WITH_COOKIES
 
+/* SSL */
+#if !defined(small)
+#define WITH_SSL
+#endif
+
 /* Image renderering modules */
 #define WITH_JPEG
 #define WITH_MNG

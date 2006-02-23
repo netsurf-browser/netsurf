@@ -15,7 +15,7 @@
 #ifdef WITH_AUTH
 
 void gui_401login_open(struct browser_window *bw, struct content *c,
-                       char *realm);
+		const char *realm);
 
 #endif
 

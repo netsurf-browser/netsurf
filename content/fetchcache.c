@@ -33,13 +33,13 @@
 
 static char error_page[1000];
 static regex_t re_content_type;
-static void fetchcache_callback(fetch_msg msg, void *p, const char *data,
+static void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 		unsigned long size);
 static char *fetchcache_parse_type(const char *s, char **params[]);
 static void fetchcache_error_page(struct content *c, const char *error);
 static void fetchcache_cache_update(struct content *c,
 		const struct cache_data *data);
-static void fetchcache_notmodified(struct content *c, const char *data);
+static void fetchcache_notmodified(struct content *c, const void *data);
 
 
 /**
@@ -307,7 +307,7 @@ void fetchcache_go(struct content *content, char *referer,
  * This is called when the status of a fetch changes.
  */
 
-void fetchcache_callback(fetch_msg msg, void *p, const char *data,
+void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 		unsigned long size)
 {
 	bool res;
@@ -375,7 +375,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			break;
 
 		case FETCH_ERROR:
-			LOG(("FETCH_ERROR, '%s'", data));
+			LOG(("FETCH_ERROR, '%s'", (const char *)data));
 			c->fetch = 0;
 			if (c->no_error_pages) {
 				c->status = CONTENT_STATUS_ERROR;
@@ -425,7 +425,7 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 #ifdef WITH_AUTH
 		case FETCH_AUTH:
 			/* data -> string containing the Realm */
-			LOG(("FETCH_AUTH, '%s'", data));
+			LOG(("FETCH_AUTH, '%s'", (const char *)data));
 			c->fetch = 0;
 			msg_data.auth_realm = data;
 			content_broadcast(c, CONTENT_MSG_AUTH, msg_data);
@@ -434,6 +434,20 @@ void fetchcache_callback(fetch_msg msg, void *p, const char *data,
 			c->status = CONTENT_STATUS_ERROR;
 			break;
 #endif
+
+#ifdef WITH_SSL
+		case FETCH_CERT_ERR:
+			c->fetch = 0;
+			/* set the status to ERROR so that the content is
+			 * destroyed in content_clean() */
+			c->status = CONTENT_STATUS_ERROR;
+
+			msg_data.ssl.certs = data;
+			msg_data.ssl.num = size;
+			content_broadcast(c, CONTENT_MSG_SSL, msg_data);
+			break;
+#endif
+
 		default:
 			assert(0);
 	}
@@ -597,7 +611,7 @@ void fetchcache_cache_update(struct content *c,
  * Not modified callback handler
  */
 
-void fetchcache_notmodified(struct content *c, const char *data)
+void fetchcache_notmodified(struct content *c, const void *data)
 {
 	struct content *fb;
 	union content_msg_data msg_data;

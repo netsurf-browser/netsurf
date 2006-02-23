@@ -17,8 +17,8 @@
 # "riscos", "riscos_small", "ncos", and "riscos_debug" can be compiled under
 # RISC OS, or cross-compiled using GCCSDK.
 
-OBJECTS_COMMON = authdb.o content.o fetch.o fetchcache.o \
-	url_store.o						# content/
+OBJECTS_COMMON = authdb.o certdb.o content.o fetch.o \
+	fetchcache.o url_store.o				# content/
 OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
 OBJECTS_COMMON += box.o box_construct.o box_normalise.o form.o \
 	html.o html_redraw.o imagemap.o layout.o list.o \
@@ -38,12 +38,14 @@ OBJECTS_RISCOS += 401login.o artworks.o assert.o awrender.o bitmap.o \
 	global_history.o gui.o help.o history.o hotlist.o image.o \
 	menus.o message.o mouseactions.o plotters.o plugin.o print.o \
 	query.o save.o save_complete.o save_draw.o save_text.o \
-	schedule.o search.o sprite.o textselection.o theme.o \
+	schedule.o search.o sprite.o sslcert.o textselection.o theme.o \
 	theme_install.o thumbnail.o treeview.o ucstables.o uri.o \
 	url_complete.o url_protocol.o wimp.o wimp_event.o window.o	# riscos/
 OBJECTS_RISCOS += con_cache.o con_fonts.o con_home.o con_image.o \
 	con_inter.o con_language.o con_memory.o con_theme.o 		# riscos/configure/
 # OBJECTS_RISCOS += memdebug.o
+
+OBJECTS_RISCOS_SMALL = $(OBJECTS_RISCOS)
 
 OBJECTS_NCOS = $(OBJECTS_RISCOS)
 
@@ -68,6 +70,10 @@ OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o \
 OBJDIR_RISCOS = arm-riscos-aof
 SOURCES_RISCOS=$(OBJECTS_RISCOS:.o=.c)
 OBJS_RISCOS=$(OBJECTS_RISCOS:%.o=$(OBJDIR_RISCOS)/%.o)
+
+OBJDIR_RISCOS_SMALL = arm-riscos-aof-small
+SOURCES_RISCOS_SMALL=$(OBJECTS_RISCOS_SMALL:.o=.c)
+OBJS_RISCOS_SMALL=$(OBJECTS_RISCOS_SMALL:%.o=$(OBJDIR_RISCOS_SMALL)/%.o)
 
 OBJDIR_NCOS = arm-ncos-aof
 SOURCES_NCOS=$(OBJECTS_NCOS:.o=.c)
@@ -106,6 +112,7 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
 CFLAGS_RISCOS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O \
 	$(WARNFLAGS) -I.. $(PLATFORM_CFLAGS_RISCOS) -mpoke-function-name \
 #	-include netsurf/utils/memdebug.h
+CFLAGS_RISCOS_SMALL = $(CFLAGS_RISCOS) -Dsmall
 CFLAGS_NCOS = $(CFLAGS_RISCOS) -Dncos
 CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -Ddebug $(WARNFLAGS) -I.. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
@@ -114,6 +121,7 @@ CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
 	`pkg-config --cflags gtk+-2.0` `xml2-config --cflags`
 
 AFLAGS_RISCOS = -I..,. $(PLATFORM_AFLAGS_RISCOS)
+AFLAGS_RISCOS_SMALL = $(AFLAGS_RISCOS) -Dsmall
 AFLAGS_NCOS = $(AFLAGS_RISCOS) -Dncos
 
 # targets
@@ -121,7 +129,7 @@ riscos: $(RUNIMAGE)
 $(RUNIMAGE) : $(OBJS_RISCOS)
 	$(CC) -o $@ $(LDFLAGS_RISCOS) $^
 riscos_small: u!RunImage,ff8
-u!RunImage,ff8 : $(OBJS_RISCOS)
+u!RunImage,ff8 : $(OBJS_RISCOS_SMALL)
 	$(CC) -o $@ $(LDFLAGS_SMALL) $^
 
 ncos: $(NCRUNIMAGE)
@@ -148,6 +156,9 @@ netsurf.zip: $(RUNIMAGE)
 $(OBJDIR_RISCOS)/%.o : %.c
 	@echo "==> $<"
 	@$(CC) -o $@ -c $(CFLAGS_RISCOS) $<
+$(OBJDIR_RISCOS_SMALL)/%.o : %.c
+	@echo "==> $<"
+	@$(CC) -o $@ -c $(CFLAGS_RISCOS_SMALL) $<
 $(OBJDIR_NCOS)/%.o : %.c
 	@echo "==> $<"
 	@$(CC) -o $@ -c $(CFLAGS_NCOS) $<
@@ -160,10 +171,13 @@ $(OBJDIR_GTK)/%.o : %.c
 
 # pattern rules for asm source
 $(OBJDIR_RISCOS)/%.o : %.s
-	@echo "== $<"
+	@echo "==> $<"
 	$(ASM) -o $@ -c $(AFLAGS_RISCOS) $<
+$(OBJDIR_RISCOS_SMALL)/%.o : %.s
+	@echo "==> $<"
+	$(ASM) -o $@ -c $(AFLAGS_RISCOS_SMALL) $<
 $(OBJDIR_NCOS)/%.o : %.s
-	@echo "== $<"
+	@echo "==> $<"
 	$(ASM) -o $@ -c $(AFLAGS_NCOS) $<
 
 # special cases
@@ -184,14 +198,14 @@ utils/translit.c: transtab
 depend: */*.[ch]
 	@echo "--> modified files $?"
 	@echo "--> updating dependencies"
-	@-mkdir -p $(OBJDIR_RISCOS) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)
-	@perl scandeps netsurf $(OBJDIR_RISCOS) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK) -- $^ > depend
+	@-mkdir -p $(OBJDIR_RISCOS) $(OBJDIR_RISCOS_SMALL) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK)
+	@perl scandeps netsurf $(OBJDIR_RISCOS) $(OBJDIR_RISCOS_SMALL) $(OBJDIR_NCOS) $(OBJDIR_DEBUG) $(OBJDIR_GTK) -- $^ > depend
 
 include depend
 
 # remove generated files
 clean:
-	-rm $(OBJDIR_RISCOS)/* $(OBJDIR_NCOS)/* \
+	-rm $(OBJDIR_RISCOS)/* $(OBJDIR_RISCOS_SMALL)/* $(OBJDIR_NCOS)/* \
 		$(OBJDIR_DEBUG)/* $(OBJDIR_GTK)/* \
 		css/css_enum.c css/css_enum.h \
 		css/parser.c css/parser.h css/scanner.c css/scanner.h

@@ -164,7 +164,7 @@ static void plugin_stream_free(struct plugin_stream *p);
 static bool plugin_start_fetch(struct plugin_stream *p, const char *url);
 static void plugin_stream_callback(content_msg msg, struct content *c,
 		intptr_t p1, intptr_t p2, union content_msg_data data);
-static void plugin_fetch_callback(fetch_msg msg, void *p, const char *data,
+static void plugin_fetch_callback(fetch_msg msg, void *p, const void *data,
 		unsigned long size);
 
 /**
@@ -1707,6 +1707,12 @@ void plugin_stream_callback(content_msg msg, struct content *c,
 			/* ignore this */
 			break;
 
+#ifdef WITH_SSL
+		case CONTENT_MSG_SSL:
+			plugin_destroy_stream(p, plugin_STREAM_DESTROY_ERROR);
+			break;
+#endif
+
 		case CONTENT_MSG_READY:
 		case CONTENT_MSG_DONE:
 		case CONTENT_MSG_REFORMAT:
@@ -1721,7 +1727,7 @@ void plugin_stream_callback(content_msg msg, struct content *c,
 /**
  * Callback for plugin fetch
  */
-void plugin_fetch_callback(fetch_msg msg, void *p, const char *data,
+void plugin_fetch_callback(fetch_msg msg, void *p, const void *data,
 		unsigned long size)
 {
 	struct plugin_stream *s = p;
@@ -1754,6 +1760,9 @@ void plugin_fetch_callback(fetch_msg msg, void *p, const char *data,
 		case FETCH_REDIRECT:
 		case FETCH_NOTMODIFIED:
 		case FETCH_AUTH:
+#ifdef WITH_SSL
+		case FETCH_CERT_ERR:
+#endif
 		default:
 			/* not possible */
 			assert(0);

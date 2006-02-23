@@ -28,8 +28,8 @@
 
 static void ro_gui_401login_close(wimp_w w);
 static bool ro_gui_401login_apply(wimp_w w);
-static void ro_gui_401login_open(struct browser_window *bw, char *host,
-		char *realm, char *fetchurl);
+static void ro_gui_401login_open(struct browser_window *bw, const char *host,
+		const char *realm, const char *fetchurl);
 
 
 static wimp_window *dialog_401_template;
@@ -58,7 +58,7 @@ void ro_gui_401login_init(void)
  * Open the login dialog
  */
 void gui_401login_open(struct browser_window *bw, struct content *c,
-		char *realm)
+		const char *realm)
 {
 	char *murl, *host;
 	url_func_result res;
@@ -77,8 +77,8 @@ void gui_401login_open(struct browser_window *bw, struct content *c,
  * Open a 401 login window.
  */
 
-void ro_gui_401login_open(struct browser_window *bw, char *host, char *realm,
-		char *fetchurl)
+void ro_gui_401login_open(struct browser_window *bw, const char *host,
+		const char *realm, const char *fetchurl)
 {
 	struct session_401 *session;
 	wimp_w w;

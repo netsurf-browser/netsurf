@@ -31,8 +31,14 @@
 #endif
 #include "curl/curl.h"
 #include "netsurf/utils/config.h"
+#ifdef WITH_SSL
+#include "openssl/ssl.h"
+#endif
 #ifdef WITH_AUTH
 #include "netsurf/content/authdb.h"
+#endif
+#ifdef WITH_SSL
+#include "netsurf/content/certdb.h"
 #endif
 #include "netsurf/content/fetch.h"
 #include "netsurf/desktop/options.h"
@@ -46,10 +52,18 @@
 
 bool fetch_active;	/**< Fetches in progress, please call fetch_poll(). */
 
+#ifdef WITH_SSL
+/** SSL certificate info */
+struct cert_info {
+	X509 *cert;		/**< Pointer to certificate */
+	long err;		/**< OpenSSL error code */
+};
+#endif
+
 /** Information for a single fetch. */
 struct fetch {
 	CURL * curl_handle;	/**< cURL handle if being fetched, or 0. */
-	void (*callback)(fetch_msg msg, void *p, const char *data,
+	void (*callback)(fetch_msg msg, void *p, const void *data,
 			unsigned long size);
 				/**< Callback function. */
 	bool had_headers;	/**< Headers have been processed. */
@@ -70,6 +84,10 @@ struct fetch {
 	struct cache_data cachedata;	/**< Cache control data */
 	time_t last_modified;		/**< If-Modified-Since time */
 	time_t file_etag;		/**< ETag for local objects */
+#ifdef WITH_SSL
+#define MAX_CERTS 10
+	struct cert_info cert_data[MAX_CERTS];	/**< HTTPS certificate data */
+#endif
 	struct fetch *queue_prev;	/**< Previous fetch for this host. */
 	struct fetch *queue_next;	/**< Next fetch for this host. */
 	struct fetch *prev;	/**< Previous active fetch in ::fetch_list. */
@@ -86,6 +104,9 @@ static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
 static char fetch_proxy_userpwd[100];	/**< Proxy authentication details. */
 
 static CURLcode fetch_set_options(struct fetch *f);
+#ifdef WITH_SSL
+static CURLcode fetch_sslctxfun(CURL *curl_handle, SSL_CTX *sslctx, void *p);
+#endif
 static void fetch_free(struct fetch *f);
 static void fetch_stop(struct fetch *f);
 static void fetch_done(CURL *curl_handle, CURLcode result);
@@ -98,6 +119,10 @@ static size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 static bool fetch_process_headers(struct fetch *f);
 static struct curl_httppost *fetch_post_convert(
 		struct form_successful_control *control);
+#ifdef WITH_SSL
+static int fetch_verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx);
+static int fetch_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm);
+#endif
 
 
 /**
@@ -147,14 +172,6 @@ void fetch_init(void)
 
 	if (option_ca_bundle)
 		SETOPT(CURLOPT_CAINFO, option_ca_bundle);
-
-	if (!option_ssl_verify_certificates) {
-		/* disable verification of SSL certificates.
-		* security? we've heard of it...
-		*/
-		SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
-	        SETOPT(CURLOPT_SSL_VERIFYHOST, 0L);
-	}
 
 	return;
 
@@ -207,7 +224,7 @@ void fetch_quit(void)
  */
 
 struct fetch * fetch_start(char *url, char *referer,
-		void (*callback)(fetch_msg msg, void *p, const char *data,
+		void (*callback)(fetch_msg msg, void *p, const void *data,
 				unsigned long size),
 		void *p, bool only_2xx, char *post_urlenc,
 		struct form_successful_control *post_multipart, bool cookies,
@@ -288,6 +305,9 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->cachedata.last_modified = 0;
 	fetch->last_modified = 0;
 	fetch->file_etag = 0;
+#ifdef WITH_SSL
+	memset(fetch->cert_data, 0, sizeof(fetch->cert_data));
+#endif
 	fetch->queue_prev = 0;
 	fetch->queue_next = 0;
 	fetch->prev = 0;
@@ -473,8 +493,35 @@ CURLcode fetch_set_options(struct fetch *f)
 		}
 	}
 
+#ifdef WITH_SSL
+	if (certdb_get(f->url) != NULL) {
+		/* Disable certificate verification */
+		SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
+		SETOPT(CURLOPT_SSL_VERIFYHOST, 0L);
+	} else {
+		/* do verification */
+		SETOPT(CURLOPT_SSL_CTX_FUNCTION, fetch_sslctxfun);
+		SETOPT(CURLOPT_SSL_CTX_DATA, f);
+	}
+#endif
+
 	return CURLE_OK;
 }
+
+
+#ifdef WITH_SSL
+/**
+ * cURL SSL setup callback
+ */
+
+CURLcode fetch_sslctxfun(CURL *curl_handle, SSL_CTX *sslctx, void *parm)
+{
+	SSL_CTX_set_verify(sslctx, SSL_VERIFY_PEER, fetch_verify_callback);
+	SSL_CTX_set_cert_verify_callback(sslctx, fetch_cert_verify_callback,
+			parm);
+	return CURLE_OK;
+}
+#endif
 
 
 /**
@@ -577,6 +624,10 @@ void fetch_stop(struct fetch *f)
 
 void fetch_free(struct fetch *f)
 {
+#ifdef WITH_SSL
+	int i;
+#endif
+
 	if (f->curl_handle)
 		curl_easy_cleanup(f->curl_handle);
 	free(f->url);
@@ -590,6 +641,15 @@ void fetch_free(struct fetch *f)
 	if (f->post_multipart)
 		curl_formfree(f->post_multipart);
 	free(f->cachedata.etag);
+
+#ifdef WITH_SSL
+	for (i = 0; i < MAX_CERTS && f->cert_data[i].cert; i++) {
+		f->cert_data[i].cert->references--;
+		if (f->cert_data[i].cert->references == 0)
+			X509_free(f->cert_data[i].cert);
+	}
+#endif
+
 	free(f);
 }
 
@@ -641,13 +701,20 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 {
 	bool finished = false;
 	bool error = false;
+#ifdef WITH_SSL
+	bool cert = false;
+#endif
 	bool abort;
 	struct fetch *f;
 	void *p;
-	void (*callback)(fetch_msg msg, void *p, const char *data,
+	void (*callback)(fetch_msg msg, void *p, const void *data,
 			unsigned long size);
 	CURLcode code;
 	struct cache_data cachedata;
+#ifdef WITH_SSL
+	struct cert_info certs[MAX_CERTS];
+	memset(certs, 0, sizeof(certs));
+#endif
 
 	/* find the structure associated with this fetch */
 	code = curl_easy_getinfo(curl_handle, CURLINFO_PRIVATE, &f);
@@ -669,6 +736,14 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 		/* CURLE_WRITE_ERROR occurs when fetch_curl_data
 		 * returns 0, which we use to abort intentionally */
 		;
+#ifdef WITH_SSL
+	else if (result == CURLE_SSL_PEER_CERTIFICATE ||
+			result == CURLE_SSL_CACERT) {
+		memcpy(certs, f->cert_data, sizeof(certs));
+		memset(f->cert_data, 0, sizeof(f->cert_data));
+		cert = true;
+	}
+#endif
 	else
 		error = true;
 
@@ -685,9 +760,91 @@ void fetch_done(CURL *curl_handle, CURLcode result)
 	if (abort)
 		; /* fetch was aborted: no callback */
 	else if (finished) {
-		callback(FETCH_FINISHED, p, (const char *)&cachedata, 0);
+		callback(FETCH_FINISHED, p, &cachedata, 0);
 		free(cachedata.etag);
 	}
+#ifdef WITH_SSL
+	else if (cert) {
+		int i;
+		BIO *mem;
+		BUF_MEM *buf;
+		struct ssl_cert_info ssl_certs[MAX_CERTS];
+
+		for (i = 0; i < MAX_CERTS && certs[i].cert; i++) {
+			ssl_certs[i].version =
+				X509_get_version(certs[i].cert);
+
+			mem = BIO_new(BIO_s_mem());
+			ASN1_TIME_print(mem,
+					X509_get_notBefore(certs[i].cert));
+			BIO_get_mem_ptr(mem, &buf);
+			BIO_set_close(mem, BIO_NOCLOSE);
+			BIO_free(mem);
+			snprintf(ssl_certs[i].not_before,
+					min(sizeof ssl_certs[i].not_before,
+						(unsigned) buf->length + 1),
+					"%s", buf->data);
+			BUF_MEM_free(buf);
+
+			mem = BIO_new(BIO_s_mem());
+			ASN1_TIME_print(mem,
+					X509_get_notAfter(certs[i].cert));
+			BIO_get_mem_ptr(mem, &buf);
+			BIO_set_close(mem, BIO_NOCLOSE);
+			BIO_free(mem);
+			snprintf(ssl_certs[i].not_after,
+					min(sizeof ssl_certs[i].not_after,
+						(unsigned) buf->length + 1),
+					"%s", buf->data);
+			BUF_MEM_free(buf);
+
+			ssl_certs[i].sig_type =
+				X509_get_signature_type(certs[i].cert);
+			ssl_certs[i].serial =
+				ASN1_INTEGER_get(
+					X509_get_serialNumber(certs[i].cert));
+			mem = BIO_new(BIO_s_mem());
+			X509_NAME_print_ex(mem,
+				X509_get_issuer_name(certs[i].cert),
+				0, XN_FLAG_SEP_CPLUS_SPC |
+					XN_FLAG_DN_REV | XN_FLAG_FN_NONE);
+			BIO_get_mem_ptr(mem, &buf);
+			BIO_set_close(mem, BIO_NOCLOSE);
+			BIO_free(mem);
+			snprintf(ssl_certs[i].issuer,
+					min(sizeof ssl_certs[i].issuer,
+						(unsigned) buf->length + 1),
+					"%s", buf->data);
+			BUF_MEM_free(buf);
+
+			mem = BIO_new(BIO_s_mem());
+			X509_NAME_print_ex(mem,
+				X509_get_subject_name(certs[i].cert),
+				0, XN_FLAG_SEP_CPLUS_SPC |
+					XN_FLAG_DN_REV | XN_FLAG_FN_NONE);
+			BIO_get_mem_ptr(mem, &buf);
+			BIO_set_close(mem, BIO_NOCLOSE);
+			BIO_free(mem);
+			snprintf(ssl_certs[i].subject,
+					min(sizeof ssl_certs[i].subject,
+						(unsigned) buf->length + 1),
+					"%s", buf->data);
+			BUF_MEM_free(buf);
+
+			ssl_certs[i].cert_type =
+				X509_certificate_type(certs[i].cert,
+					X509_get_pubkey(certs[i].cert));
+
+			/* and clean up */
+			certs[i].cert->references--;
+			if (certs[i].cert->references == 0)
+				X509_free(certs[i].cert);
+		}
+
+		callback(FETCH_CERT_ERR, p, &ssl_certs, i);
+
+	}
+#endif
 	else if (error)
 		callback(FETCH_ERROR, p, fetch_error_buffer, 0);
 }
@@ -1096,7 +1253,7 @@ bool fetch_can_fetch(const char *url)
  */
 
 void fetch_change_callback(struct fetch *fetch,
-		void (*callback)(fetch_msg msg, void *p, const char *data,
+		void (*callback)(fetch_msg msg, void *p, const void *data,
 				unsigned long size),
 		void *p)
 {
@@ -1104,6 +1261,52 @@ void fetch_change_callback(struct fetch *fetch,
 	fetch->callback = callback;
 	fetch->p = p;
 }
+
+
+#ifdef WITH_SSL
+/**
+ * OpenSSL Certificate verification callback
+ * Stores certificate details in fetch struct.
+ */
+
+int fetch_verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx)
+{
+	X509 *cert = X509_STORE_CTX_get_current_cert(x509_ctx);
+	int depth = X509_STORE_CTX_get_error_depth(x509_ctx);
+	int err = X509_STORE_CTX_get_error(x509_ctx);
+	struct fetch *f = X509_STORE_CTX_get_app_data(x509_ctx);
+
+	/* save the certificate by incrementing the reference count and
+	 * keeping a pointer */
+	if (depth < MAX_CERTS && !f->cert_data[depth].cert) {
+		f->cert_data[depth].cert = cert;
+		f->cert_data[depth].err = err;
+		cert->references++;
+	}
+
+	return preverify_ok;
+}
+
+
+/**
+ * OpenSSL certificate chain verification callback
+ * Verifies certificate chain, setting up context for fetch_verify_callback
+ */
+
+int fetch_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm)
+{
+	int ok;
+
+	/* Store fetch struct in context for verify callback */
+	ok = X509_STORE_CTX_set_app_data(x509_ctx, parm);
+
+	/* and verify the certificate chain */
+	if (ok)
+		ok = X509_verify_cert(x509_ctx);
+
+	return ok;
+}
+#endif
 
 
 /**

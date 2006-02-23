@@ -38,6 +38,7 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
                GUI_POINTER_MOVE } gui_pointer_shape;
 
 #include <stdbool.h>
+#include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
 
@@ -105,6 +106,13 @@ void gui_launch_url(const char *url);
 bool gui_search_term_highlighted(struct gui_window *g,
 		unsigned start_offset, unsigned end_offset,
 		unsigned *start_idx, unsigned *end_idx);
+
+#ifdef WITH_SSL
+struct ssl_cert_info;
+
+void gui_cert_verify(struct browser_window *bw, struct content *c,
+		const struct ssl_cert_info *certs, unsigned long num);
+#endif
 
 #endif
 

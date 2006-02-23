@@ -60,7 +60,7 @@ static void browser_window_stop_throbber(struct browser_window *bw);
 static void browser_window_set_status(struct browser_window *bw,
 		const char *text);
 static void browser_window_set_pointer(gui_pointer_shape shape);
-static void download_window_callback(fetch_msg msg, void *p, const char *data,
+static void download_window_callback(fetch_msg msg, void *p, const void *data,
 		unsigned long size);
 static void browser_window_mouse_action_html(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
@@ -429,6 +429,24 @@ void browser_window_callback(content_msg msg, struct content *c,
 			break;
 #endif
 
+#ifdef WITH_SSL
+		case CONTENT_MSG_SSL:
+			gui_cert_verify(bw, c, data.ssl.certs, data.ssl.num);
+			if (c == bw->loading_content)
+				bw->loading_content = 0;
+			else if (c == bw->current_content) {
+				bw->current_content = 0;
+				bw->caret_callback = NULL;
+				bw->paste_callback = NULL;
+				bw->scrolling_box = NULL;
+				selection_init(bw->sel, NULL);
+			}
+			browser_window_stop_throbber(bw);
+			free(bw->referer);
+			bw->referer = 0;
+			break;
+#endif
+
 		case CONTENT_MSG_REFRESH:
 			schedule(data.delay * 100,
 					browser_window_refresh, bw);
@@ -689,7 +707,7 @@ void browser_window_destroy(struct browser_window *bw)
  * Callback for fetch for download window fetches.
  */
 
-void download_window_callback(fetch_msg msg, void *p, const char *data,
+void download_window_callback(fetch_msg msg, void *p, const void *data,
 		unsigned long size)
 {
 	struct gui_download_window *download_window = p;
@@ -713,6 +731,9 @@ void download_window_callback(fetch_msg msg, void *p, const char *data,
 		case FETCH_REDIRECT:
 		case FETCH_NOTMODIFIED:
 		case FETCH_AUTH:
+#ifdef WITH_SSL
+		case FETCH_CERT_ERR:
+#endif
 		default:
 			/* not possible */
 			assert(0);

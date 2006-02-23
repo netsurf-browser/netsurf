@@ -139,6 +139,7 @@ struct cache_data;
 struct content;
 struct fetch;
 struct object_params;
+struct ssl_cert_info;
 
 
 /** Used in callbacks to indicate what has occurred. */
@@ -154,7 +155,10 @@ typedef enum {
 	CONTENT_MSG_NEWPTR,    /**< address of structure has changed */
 	CONTENT_MSG_REFRESH,   /**< wants refresh */
 #ifdef WITH_AUTH
-	CONTENT_MSG_AUTH       /**< authentication required */
+	CONTENT_MSG_AUTH,      /**< authentication required */
+#endif
+#ifdef WITH_SSL
+	CONTENT_MSG_SSL        /**< SSL cert verify failed */
 #endif
 } content_msg;
 
@@ -175,8 +179,13 @@ union content_msg_data {
 		/** Dimensions to plot object with. */
 		float object_width, object_height;
 	} redraw;
-	char *auth_realm;	/**< Realm, for CONTENT_MSG_AUTH. */
+	const char *auth_realm;	/**< Realm, for CONTENT_MSG_AUTH. */
 	int delay;	/**< Minimum delay, for CONTENT_MSG_REFRESH */
+	struct {
+		/** Certificate chain (certs[0] == server) */
+		const struct ssl_cert_info *certs;
+		unsigned long num;	/**< Number of certs in chain */
+	} ssl;
 };
 
 /** Linked list of users of a content. */

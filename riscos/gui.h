@@ -124,6 +124,11 @@ void ro_gui_mouse_action(struct gui_window *g);
 void ro_gui_401login_init(void);
 #endif
 
+/* in sslcert.c */
+#ifdef WITH_SSL
+void ro_gui_cert_init(void);
+#endif
+
 /* in window.c */
 void ro_gui_window_quit(void);
 void ro_gui_window_click(struct gui_window *g, wimp_pointer *mouse);
@@ -302,7 +307,7 @@ bool ro_gui_theme_install_apply(wimp_w w);
 #define ICON_SEARCH_CANCEL 4
 #define ICON_SEARCH_STATUS 5
 #define ICON_SEARCH_MENU 8
-#define ICON_SEARCH_SHOW_ALL 9 
+#define ICON_SEARCH_SHOW_ALL 9
 
 #define ICON_THEME_INSTALL_MESSAGE 0
 #define ICON_THEME_INSTALL_INSTALL 1

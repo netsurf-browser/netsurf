@@ -25,7 +25,10 @@ typedef enum {
               FETCH_REDIRECT,
               FETCH_NOTMODIFIED,
 #ifdef WITH_AUTH
-              FETCH_AUTH
+              FETCH_AUTH,
+#endif
+#ifdef WITH_SSL
+              FETCH_CERT_ERR,
 #endif
 } fetch_msg;
 
@@ -46,12 +49,25 @@ struct cache_data {
 	time_t last_modified;	/**< Last-Modified: response header */
 };
 
+#ifdef WITH_SSL
+struct ssl_cert_info {
+	long version;		/**< Certificate version */
+	char not_before[32];	/**< Valid from date */
+	char not_after[32];	/**< Valid to date */
+	int sig_type;		/**< Signature type */
+	long serial;		/**< Serial number */
+	char issuer[256];	/**< Issuer details */
+	char subject[256];	/**< Subject details */
+	int cert_type;		/**< Certificate type */
+};
+#endif
+
 extern bool fetch_active;
 extern CURLM *fetch_curl_multi;
 
 void fetch_init(void);
 struct fetch * fetch_start(char *url, char *referer,
-		void (*callback)(fetch_msg msg, void *p, const char *data,
+		void (*callback)(fetch_msg msg, void *p, const void *data,
 				unsigned long size),
 		void *p, bool only_2xx, char *post_urlenc,
 		struct form_successful_control *post_multipart,
@@ -63,7 +79,7 @@ const char *fetch_filetype(const char *unix_path);
 char *fetch_mimetype(const char *ro_path);
 bool fetch_can_fetch(const char *url);
 void fetch_change_callback(struct fetch *fetch,
-		void (*callback)(fetch_msg msg, void *p, const char *data,
+		void (*callback)(fetch_msg msg, void *p, const void *data,
 				unsigned long size),
 		void *p);
 

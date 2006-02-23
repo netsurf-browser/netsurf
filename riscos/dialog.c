@@ -91,6 +91,11 @@ void ro_gui_dialog_init(void)
 	ro_gui_401login_init();
 #endif
 
+	/* certificate verification window */
+#ifdef WITH_SSL
+	ro_gui_cert_init();
+#endif
+
 	/* hotlist window */
 	ro_gui_hotlist_initialise();
 
@@ -353,6 +358,15 @@ void ro_gui_dialog_close(wimp_w close)
 	wimp_caret caret;
 	os_error *error;
 
+	/* Check if we're a persistent window */
+	for (i = 0; i < MAX_PERSISTENT; i++) {
+		if (persistent_dialog[i].dialog == close) {
+			/* We are => invalidate record */
+			persistent_dialog[i].dialog = NULL;
+			break;
+		}
+	}
+
 	/*	Give the caret back to the parent window. This code relies on
 		the fact that only tree windows and browser windows open
 		persistent dialogues, as the caret gets placed to no icon.
@@ -363,24 +377,18 @@ void ro_gui_dialog_close(wimp_w close)
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	} else if (caret.w == close) {
-		/*	Check if we are a persistent window
-		*/
-		for (i = 0; i < MAX_PERSISTENT; i++) {
-			if (persistent_dialog[i].dialog == close) {
-				persistent_dialog[i].dialog = NULL;
-				error = xwimp_set_caret_position(
-						persistent_dialog[i].parent,
-						wimp_ICON_WINDOW, -100, -100,
-						32, -1);
-				/* parent may have been closed first */
-				if ((error) && (error->errnum != 0x287)) {
-					LOG(("xwimp_set_caret_position: "
-							"0x%x: %s",
-							error->errnum,
-							error->errmess));
-					warn_user("WimpError", error->errmess);
-				}
-				break;
+		/* Check if we are a persistent window */
+		if (i < MAX_PERSISTENT) {
+			error = xwimp_set_caret_position(
+					persistent_dialog[i].parent,
+					wimp_ICON_WINDOW, -100, -100,
+					32, -1);
+			/* parent may have been closed first */
+			if ((error) && (error->errnum != 0x287)) {
+				LOG(("xwimp_set_caret_position: 0x%x: %s",
+						error->errnum,
+						error->errmess));
+				warn_user("WimpError", error->errmess);
 			}
 		}
 	}
