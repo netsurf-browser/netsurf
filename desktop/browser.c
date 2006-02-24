@@ -197,9 +197,10 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	if (hash) {
 		bw->frag_id = strdup(hash+1);
 		/* if we're simply moving to another ID on the same page,
-		 * don't bother to fetch, just update the window
+		 * don't bother to fetch, just update the window.
 		 */
-		if (bw->current_content && bw->current_content->url &&
+		if (!post_urlenc && !post_multipart && !strchr(url2, '?') &&
+			bw->current_content && bw->current_content->url &&
 				strncasecmp(bw->current_content->url,
 						url2, hash - url2) == 0 &&
 				strlen(bw->current_content->url) ==
