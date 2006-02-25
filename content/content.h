@@ -115,6 +115,9 @@
 #ifdef WITH_GIF
 #include "netsurf/image/gif.h"
 #endif
+#ifdef WITH_BMP
+#include "netsurf/image/bmp.h"
+#endif
 #ifdef WITH_PLUGIN
 #include "netsurf/riscos/plugin.h"
 #endif
@@ -229,6 +232,9 @@ struct content {
 #endif
 #ifdef WITH_GIF
 		struct content_gif_data gif;
+#endif
+#ifdef WITH_BMP
+		struct content_bmp_data bmp;
 #endif
 #ifdef WITH_MNG
 		struct content_mng_data mng;

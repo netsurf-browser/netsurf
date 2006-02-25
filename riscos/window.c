@@ -496,6 +496,9 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 #ifdef WITH_GIF
 		case CONTENT_GIF:
 #endif
+#ifdef WITH_BMP
+		case CONTENT_BMP:
+#endif
 #ifdef WITH_MNG
 		case CONTENT_JNG:
 		case CONTENT_MNG:

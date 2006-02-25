@@ -28,6 +28,9 @@ typedef enum {
 #ifdef WITH_GIF
 	CONTENT_GIF,
 #endif
+#ifdef WITH_BMP
+	CONTENT_BMP,
+#endif
 #ifdef WITH_MNG
 	CONTENT_PNG,
 	CONTENT_JNG,

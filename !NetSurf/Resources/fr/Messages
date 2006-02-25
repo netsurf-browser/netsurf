@@ -325,6 +325,7 @@ SelectMenu:Sélection
 #
 DrawTitle:Image Draw (%lux%lu, %lu octets)
 GIFTitle:Image GIF (%lux%lu, %lu octets)
+BMPTitle:Image BMP (%lux%lu, %lu octets)
 JPEGTitle:Image JPEG (%ux%u, %lu octets)
 PNGTitle:Image PNG (%lux%lu, %lu octets)
 JNGTitle:Image JNG (%lux%lu, %lu octets)
@@ -436,6 +437,7 @@ BadObject:Attention: mauvais type d'objet
 ObjError:Erreur lors du chargement de: %s
 ParsingFail:L'analyse syntaxique du document a échoué.
 BadGIF:Erreur de lecture de GIF.
+BadBMP:Erreur de lecture de BMP.
 PNGError:Erreur dans la bibliothèque PNG.
 MNGError:Erreur dans la bibliothèque MNG.
 BadSprite:Les données du sprite sont invalides ou corrompues.

@@ -36,6 +36,9 @@
 #ifdef WITH_GIF
 #include "netsurf/image/gif.h"
 #endif
+#ifdef WITH_BMP
+#include "netsurf/image/bmp.h"
+#endif
 #ifdef WITH_SPRITE
 #include "netsurf/riscos/sprite.h"
 #endif
@@ -68,16 +71,31 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_ARTWORKS
 	{"application/artworks", CONTENT_ARTWORKS},
 #endif
+#ifdef WITH_BMP
+	{"application/bmp", CONTENT_BMP},
+#endif
 #ifdef WITH_DRAW
 	{"application/drawfile", CONTENT_DRAW},
+#endif
+#ifdef WITH_BMP
+	{"application/preview", CONTENT_BMP},
+	{"application/x-bmp", CONTENT_BMP},
+#endif
+#ifdef WITH_DRAW
 	{"application/x-drawfile", CONTENT_DRAW},
 #endif
 #ifdef WITH_THEME_INSTALL
 	{"application/x-netsurf-theme", CONTENT_THEME},
 #endif
+#ifdef WITH_BMP
+	{"application/x-win-bitmap", CONTENT_BMP},
+#endif
 	{"application/xhtml+xml", CONTENT_HTML},
 #ifdef WITH_ARTWORKS
 	{"image/artworks", CONTENT_ARTWORKS},
+#endif
+#ifdef WITH_BMP
+	{"image/bmp", CONTENT_BMP},
 #endif
 #ifdef WITH_DRAW
 	{"image/drawfile", CONTENT_DRAW},
@@ -94,11 +112,18 @@ static const struct mime_entry mime_map[] = {
 #ifdef WITH_MNG
 	{"image/mng", CONTENT_MNG},
 #endif
+#ifdef WITH_BMP
+	{"image/ms-bmp", CONTENT_BMP},
+#endif
 #ifdef WITH_JPEG
 	{"image/pjpeg", CONTENT_JPEG},
 #endif
 #ifdef WITH_MNG
 	{"image/png", CONTENT_PNG},
+#endif
+#ifdef WITH_BMP
+	{"image/x-bitmap", CONTENT_BMP},
+	{"image/x-bmp", CONTENT_BMP},
 #endif
 #ifdef WITH_DRAW
 	{"image/x-drawfile", CONTENT_DRAW},
@@ -107,8 +132,16 @@ static const struct mime_entry mime_map[] = {
 	{"image/x-jng", CONTENT_JNG},
 	{"image/x-mng", CONTENT_MNG},
 #endif
+#ifdef WITH_BMP
+	{"image/x-ms-bmp", CONTENT_BMP},
+#endif
 #ifdef WITH_SPRITE
 	{"image/x-riscos-sprite", CONTENT_SPRITE},
+#endif
+#ifdef WITH_BMP
+	{"image/x-win-bitmap", CONTENT_BMP},
+	{"image/x-windows-bmp", CONTENT_BMP},
+	{"image/x-xbitmap", CONTENT_BMP},
 #endif
 	{"text/css", CONTENT_CSS},
 	{"text/html", CONTENT_HTML},
@@ -129,6 +162,9 @@ const char *content_type_name[] = {
 #endif
 #ifdef WITH_GIF
 	"GIF",
+#endif
+#ifdef WITH_BMP
+	"BMP",
 #endif
 #ifdef WITH_MNG
 	"PNG",
@@ -205,6 +241,10 @@ static const struct handler_entry handler_map[] = {
 #ifdef WITH_GIF
 	{nsgif_create, 0, nsgif_convert, 0, nsgif_destroy, 0,
 			nsgif_redraw, nsgif_redraw_tiled, 0, 0, false},
+#endif
+#ifdef WITH_BMP
+	{nsbmp_create, 0, nsbmp_convert, 0, nsbmp_destroy, 0,
+			nsbmp_redraw, nsbmp_redraw_tiled, 0, 0, false},
 #endif
 #ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,

@@ -28,9 +28,9 @@
 #endif
 
 /* Image renderering modules */
+#define WITH_BMP
 #define WITH_JPEG
 #define WITH_MNG
-#define WITH_PNG
 #define WITH_GIF
 #if defined(riscos) || defined(ncos)
     #define WITH_DRAW

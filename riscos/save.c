@@ -813,6 +813,11 @@ void ro_gui_save_object_native(struct content *c, char *path)
 			bitmap_save(c->bitmap, path);
 			break;
 #endif
+#ifdef WITH_BMP
+		case CONTENT_BMP:
+			bitmap_save(c->bitmap, path);
+			break;
+#endif
 		default:
 			break;
 	}

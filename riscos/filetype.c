@@ -237,15 +237,16 @@ int ro_content_filetype_from_type(content_type type) {
 #ifdef WITH_MNG
 		case CONTENT_JNG:	return 0xf78;
 		case CONTENT_MNG:	return 0xf84;
+		case CONTENT_PNG:	return 0xb60;
 #endif
 #ifdef WITH_JPEG
 		case CONTENT_JPEG:	return 0xc85;
 #endif
-#ifdef WITH_PNG
-		case CONTENT_PNG:	return 0xb60;
-#endif
 #ifdef WITH_GIF
 		case CONTENT_GIF:	return 0x695;
+#endif
+#ifdef WITH_BMP
+		case CONTENT_BMP:	return 0x69c;
 #endif
 #ifdef WITH_SPRITE
 		case CONTENT_SPRITE:	return 0xff9;
