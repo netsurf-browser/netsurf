@@ -27,7 +27,8 @@ OBJECTS_COMMON += messages.o talloc.o url.o utf8.o \
 	utils.o							# utils/
 OBJECTS_COMMON += options.o tree.o				# desktop/
 
-OBJECTS_IMAGE = bmp.o bmpread.o gif.o gifread.o jpeg.o mng.o	# image/
+OBJECTS_IMAGE = bmp.o bmpread.o gif.o gifread.o ico.o jpeg.o \	# image/
+	mng.o
 
 OBJECTS_RISCOS = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_RISCOS += browser.o netsurf.o selection.o textinput.o \
