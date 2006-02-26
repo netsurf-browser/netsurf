@@ -44,11 +44,29 @@ struct bmp_image {
 	unsigned int *colour_table;	/** colour table */
 	bool reversed;			/** scanlines are top to bottom */
 	bool decoded;			/** whether the image has been decoded */
+	bool ico;			/** image is part of an ICO, mask follows */
 	struct bitmap *bitmap;		/** decoded image */
+};
+
+struct ico_image {
+	struct bmp_image bmp;
+	struct ico_image *next;
+};
+
+struct ico_collection {
+	unsigned char *ico_data;	/** pointer to ICO data */
+	unsigned int buffer_size;	/** total number of bytes of ICO data available */
+	unsigned int width;		/** width of largest BMP */
+	unsigned int height;		/** heigth of largest BMP */
+  	struct ico_image *first;
 };
 
 bmp_result bmp_analyse(struct bmp_image *bmp);
 bmp_result bmp_decode(struct bmp_image *bmp);
 void bmp_finalise(struct bmp_image *bmp);
+
+bmp_result ico_analyse(struct ico_collection *ico);
+struct bmp_image *ico_find(struct ico_collection *ico, int width, int height);
+void ico_finalise(struct ico_collection *ico);
 
 #endif

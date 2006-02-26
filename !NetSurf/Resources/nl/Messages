@@ -327,6 +327,7 @@ SelectMenu:Select
 DrawTitle:Draw image (%lux%lu, %lu bytes)
 GIFTitle:GIF image (%lux%lu, %lu bytes)
 BMPTitle:BMP image (%lux%lu, %lu bytes)
+ICOTitle:ICO image (%lux%lu, %lu bytes)
 JPEGTitle:JPEG image (%ux%u, %lu bytes)
 PNGTitle:PNG image (%lux%lu, %lu bytes)
 JNGTitle:JNG image (%lux%lu, %lu bytes)
@@ -440,6 +441,7 @@ ObjError:fout bij laden object: %s
 ParsingFail:fout bij ontleden van dit document.
 BadGIF:fout bij lezen GIF.
 BadBMP:fout bij lezen BMP.
+BadICO:fout bij lezen ICO.
 PNGError:PNG library fout.
 MNGError:MNG library fout.
 BadSprite:foutief sprite bestand.

@@ -38,6 +38,7 @@
 #endif
 #ifdef WITH_BMP
 #include "netsurf/image/bmp.h"
+#include "netsurf/image/ico.h"
 #endif
 #ifdef WITH_SPRITE
 #include "netsurf/riscos/sprite.h"
@@ -78,11 +79,15 @@ static const struct mime_entry mime_map[] = {
 	{"application/drawfile", CONTENT_DRAW},
 #endif
 #ifdef WITH_BMP
+	{"application/ico", CONTENT_ICO},
 	{"application/preview", CONTENT_BMP},
 	{"application/x-bmp", CONTENT_BMP},
 #endif
 #ifdef WITH_DRAW
 	{"application/x-drawfile", CONTENT_DRAW},
+#endif
+#ifdef WITH_BMP
+	{"application/x-ico", CONTENT_ICO},
 #endif
 #ifdef WITH_THEME_INSTALL
 	{"application/x-netsurf-theme", CONTENT_THEME},
@@ -102,6 +107,9 @@ static const struct mime_entry mime_map[] = {
 #endif
 #ifdef WITH_GIF
 	{"image/gif", CONTENT_GIF},
+#endif
+#ifdef WITH_BMP
+	{"image/ico", CONTENT_ICO},
 #endif
 #ifdef WITH_MNG
 	{"image/jng", CONTENT_JNG},
@@ -127,6 +135,9 @@ static const struct mime_entry mime_map[] = {
 #endif
 #ifdef WITH_DRAW
 	{"image/x-drawfile", CONTENT_DRAW},
+#endif
+#ifdef WITH_BMP
+	{"image/x-icon", CONTENT_ICO},
 #endif
 #ifdef WITH_MNG
 	{"image/x-jng", CONTENT_JNG},
@@ -165,6 +176,7 @@ const char *content_type_name[] = {
 #endif
 #ifdef WITH_BMP
 	"BMP",
+	"ICO",
 #endif
 #ifdef WITH_MNG
 	"PNG",
@@ -245,6 +257,8 @@ static const struct handler_entry handler_map[] = {
 #ifdef WITH_BMP
 	{nsbmp_create, 0, nsbmp_convert, 0, nsbmp_destroy, 0,
 			nsbmp_redraw, nsbmp_redraw_tiled, 0, 0, false},
+	{nsico_create, 0, nsico_convert, 0, nsico_destroy, 0,
+			nsico_redraw, nsico_redraw_tiled, 0, 0, false},
 #endif
 #ifdef WITH_MNG
 	{nsmng_create, nsmng_process_data, nsmng_convert,

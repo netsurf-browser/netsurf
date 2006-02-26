@@ -23,8 +23,10 @@ struct type_entry {
 	char mime_type[40];
 };
 static const struct type_entry type_map[] = {
+        {0x132, "image/ico"},
         {0x188, "application/x-shockwave-flash"},
 	{0x695, "image/gif"},
+	{0x69c, "image/x-ms-bmp"},
 	{0xaff, "image/x-drawfile"},
 	{0xb60, "image/png"},
 	{0xc85, "image/jpeg"},
@@ -247,6 +249,7 @@ int ro_content_filetype_from_type(content_type type) {
 #endif
 #ifdef WITH_BMP
 		case CONTENT_BMP:	return 0x69c;
+		case CONTENT_ICO:	return 0x132;
 #endif
 #ifdef WITH_SPRITE
 		case CONTENT_SPRITE:	return 0xff9;

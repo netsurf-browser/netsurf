@@ -30,6 +30,7 @@ typedef enum {
 #endif
 #ifdef WITH_BMP
 	CONTENT_BMP,
+	CONTENT_ICO,
 #endif
 #ifdef WITH_MNG
 	CONTENT_PNG,

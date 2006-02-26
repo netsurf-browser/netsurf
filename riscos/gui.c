@@ -112,6 +112,9 @@
 #ifndef FILETYPE_BMP
 #define FILETYPE_BMP 0x69c
 #endif
+#ifndef FILETYPE_ICO
+#define FILETYPE_ICO 0x132
+#endif
 #ifndef FILETYPE_PNG
 #define FILETYPE_PNG 0xb60
 #endif
@@ -1496,6 +1499,7 @@ void ro_msg_dataload(wimp_message *message)
 		case FILETYPE_MNG:
 		case FILETYPE_GIF:
 		case FILETYPE_BMP:
+		case FILETYPE_ICO:
 		case osfile_TYPE_DRAW:
 		case FILETYPE_PNG:
 		case FILETYPE_JPEG:
@@ -1784,6 +1788,7 @@ void ro_msg_datasave(wimp_message *message)
 		case FILETYPE_MNG:
 		case FILETYPE_GIF:
 		case FILETYPE_BMP:
+		case FILETYPE_ICO:
 		case osfile_TYPE_DRAW:
 		case FILETYPE_PNG:
 		case FILETYPE_JPEG:
