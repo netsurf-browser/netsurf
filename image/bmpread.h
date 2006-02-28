@@ -31,7 +31,6 @@ typedef enum {
   	BMP_ENCODING_BITFIELDS = 3
 } bmp_encoding;
 
-
 struct bmp_image {
 	unsigned char *bmp_data;	/** pointer to BMP data */
 	unsigned int buffer_size;	/** total number of bytes of BMP data available */
@@ -45,6 +44,8 @@ struct bmp_image {
 	bool reversed;			/** scanlines are top to bottom */
 	bool decoded;			/** whether the image has been decoded */
 	bool ico;			/** image is part of an ICO, mask follows */
+	unsigned int mask[4];		/** four bitwise mask */
+	int shift[4];			/** four bitwise shifts */
 	struct bitmap *bitmap;		/** decoded image */
 };
 

@@ -5,7 +5,6 @@
  * Copyright 2006 Richard Wilson <info@tinct.net>
  */
 
-
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -20,6 +19,7 @@
 
 bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data);
 bmp_result bmp_decode_rgb24(struct bmp_image *bmp, char **start, int bytes);
+bmp_result bmp_decode_rgb16(struct bmp_image *bmp, char **start, int bytes);
 bmp_result bmp_decode_rgb(struct bmp_image *bmp, char **start, int bytes);
 bmp_result bmp_decode_mask(struct bmp_image *bmp, char *data, int bytes);
 bmp_result bmp_decode_rle(struct bmp_image *bmp, char *data, int bytes, int size);
@@ -58,11 +58,11 @@ bmp_result bmp_analyse(struct bmp_image *bmp) {
 	if ((data[0] != 'B') || (data[1] != 'M'))
 		return BMP_DATA_ERROR;
 	bmp->bitmap_offset = READ_INT(data, 10);
-	
+
 	/* decode the BMP header */
 	return bmp_analyse_header(bmp, data + 14);
 }
-	
+
 
 /**
  * Analyse an ICO prior to decoding.
@@ -99,7 +99,7 @@ bmp_result ico_analyse(struct ico_collection *ico) {
 	if (count == 0)
 		return BMP_DATA_ERROR;
 	data += 6;
-	
+
 	/* decode the BMP files */
 	if (ico->buffer_size < 6 + (16 * count))
 		return BMP_INSUFFICIENT_DATA;
@@ -132,7 +132,7 @@ bmp_result ico_analyse(struct ico_collection *ico) {
 bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data) {
 	unsigned int header_size;
 	unsigned int i;
-	int width, height;
+	int width, height, j;
 	int palette_size;
 	unsigned int flags;
 
@@ -157,8 +157,8 @@ bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data) {
 		if (width < 0)
 			return BMP_DATA_ERROR;
 		if (height < 0) {
-		  	bmp->reversed = true;
-		  	height = -height;
+			bmp->reversed = true;
+			height = -height;
 		}
 		bmp->width = width;
 		bmp->height = height;
@@ -170,8 +170,8 @@ bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data) {
 	} else if (header_size < 40) {
 		return BMP_DATA_ERROR;
 	} else {
-	  	/* the following header is for windows 3.x and onwards. it is a
-	  	 * minimum of 40 bytes and (as of Windows 95) a maximum of 108 bytes.
+		/* the following header is for windows 3.x and onwards. it is a
+		 * minimum of 40 bytes and (as of Windows 95) a maximum of 108 bytes.
 		 *
 		 *	+0	INT	size of this header (in bytes)
 		 *	+4	INT	image width (in pixels)
@@ -208,8 +208,8 @@ bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data) {
 			if (width < 0)
 				return BMP_DATA_ERROR;
 			if (height < 0) {
-			  	bmp->reversed = true;
-			  	height = -height;
+				bmp->reversed = true;
+				height = -height;
 			}
 			bmp->width = width;
 			bmp->height = height;
@@ -220,13 +220,39 @@ bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data) {
 		if (bmp->bpp == 0)
 			bmp->bpp = 8;
 		bmp->encoding = READ_INT(data, 16);
-		if (bmp->encoding >= BMP_ENCODING_BITFIELDS)	/* unsupported so far */
+		if (bmp->encoding > BMP_ENCODING_BITFIELDS)
 			return BMP_DATA_ERROR;
+		if (bmp->encoding == BMP_ENCODING_BITFIELDS) {
+			if ((bmp->bpp != 16) && (bmp->bpp != 32))
+				return BMP_DATA_ERROR;
+			if (header_size == 40) {
+				header_size += 12;
+				if (bmp->buffer_size < (14 + header_size))
+					return BMP_INSUFFICIENT_DATA;
+				for (i = 0; i < 3; i++)
+					bmp->mask[i] = READ_INT(data, 40 + (i << 2));
+			} else {
+				for (i = 0; i < 4; i++)
+					bmp->mask[i] = READ_INT(data, 40 + (i << 2));
+			}
+			for (i = 0; i < 4; i++) {
+				if (bmp->mask[i] == 0)
+					break;
+				for (j = 31; j > 0; j--)
+					if (bmp->mask[i] & (1 << j)) {
+					  	if ((j - 7) > 0)
+					  		bmp->mask[i] &= 0xff << (j - 7);
+					  	else
+					  		bmp->mask[i] &= 0xff >> (-(j - 7));
+					  	bmp->shift[i] = (i << 3) - (j - 7);
+						break;
+					}
+			}
+		}
 		bmp->colours = READ_INT(data, 32);
 		if (bmp->colours == 0)
 			bmp->colours = (1 << bmp->bpp);
 		palette_size = 4;
-		/* we don't understand the rest of the data yet */
 	}
 	data += header_size;
 
@@ -239,7 +265,7 @@ bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data) {
 		 *	+2	BYTE	red
 		 *
 		 * if the palette is from an OS/2 or Win2.x file then the entries
-		 * are padded with an extra byte. 
+		 * are padded with an extra byte.
 		 */
 		if (bmp->buffer_size < (14 + header_size + (4 * bmp->colours)))
 			return BMP_INSUFFICIENT_DATA;
@@ -256,7 +282,7 @@ bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data) {
 
 	/* create our bitmap */
 	flags = BITMAP_NEW | BITMAP_CLEAR_MEMORY;
-	if (!bmp->ico)
+	if ((!bmp->ico) || (bmp->mask[3] == 0))
 		flags |= BITMAP_OPAQUE;
 	bmp->bitmap = bitmap_create(bmp->width, bmp->height, flags);
 	if (!bmp->bitmap) {
@@ -275,17 +301,17 @@ bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data) {
  * Finds the closest BMP within an ICO collection
  *
  * This function finds the BMP with dimensions as close to a specified set
- * as possible from the images in the collection. 
+ * as possible from the images in the collection.
  *
  * \param ico		the ICO collection to examine
- * \param width         the preferred width
+ * \param width		the preferred width
  * \param height	the preferred height
  */
 struct bmp_image *ico_find(struct ico_collection *ico, int width, int height) {
 	struct bmp_image *bmp = NULL;
 	struct ico_image *image;
 	int x, y, cur, distance = (1 << 24);
-	
+
 	for (image = ico->first; image; image = image->next) {
 		if (((int)image->bmp.width == width) && ((int)image->bmp.height == height))
 			return &image->bmp;
@@ -305,13 +331,13 @@ struct bmp_image *ico_find(struct ico_collection *ico, int width, int height) {
  * Invalidates a BMP
  *
  * This function sets the BMP into a state such that the bitmap image data
- * can be released from memory. 
+ * can be released from memory.
  *
  * \param bmp	the BMP image to invalidate
  */
 void bmp_invalidate(struct bitmap *bitmap, void *private_word) {
 	struct bmp_image *bmp = (struct bmp_image *)private_word;
-	
+
 	bmp->decoded = false;
 }
 
@@ -341,7 +367,7 @@ bmp_result bmp_decode(struct bmp_image *bmp) {
 			if (bmp->bpp >= 24)
 				result = bmp_decode_rgb24(bmp, &data, bytes);
 			else if (bmp->bpp > 8)
-				return BMP_DATA_ERROR;
+				result = bmp_decode_rgb16(bmp, &data, bytes);
 			else
 				result = bmp_decode_rgb(bmp, &data, bytes);
 			break;
@@ -352,12 +378,17 @@ bmp_result bmp_decode(struct bmp_image *bmp) {
 			result = bmp_decode_rle(bmp, data, bytes, 4);
 			break;
 		case BMP_ENCODING_BITFIELDS:
-			return BMP_DATA_ERROR;
+			if (bmp->bpp == 32)
+				result = bmp_decode_rgb24(bmp, &data, bytes);
+			else if (bmp->bpp == 16)
+				result = bmp_decode_rgb16(bmp, &data, bytes);
+			else
+				return BMP_DATA_ERROR;
 	}
-	
+
 	if ((!bmp->ico) || (result != BMP_OK))
 		return result;
-	
+
 	bytes = (int)bmp->bmp_data + bmp->buffer_size - (int)data;
 	return bmp_decode_mask(bmp, data, bytes);
 }
@@ -376,6 +407,7 @@ bmp_result bmp_decode_rgb24(struct bmp_image *bmp, char **start, int bytes) {
 	unsigned int *scanline;
 	unsigned int x, y, swidth, skip;
 	unsigned int addr;
+	unsigned int i, word;
 
 	data = *start;
 	swidth = bitmap_get_rowstride(bmp->bitmap);
@@ -395,9 +427,86 @@ bmp_result bmp_decode_rgb24(struct bmp_image *bmp, char **start, int bytes) {
 			scanline = (unsigned int *)(top + (y * swidth));
 		else
 			scanline = (unsigned int *)(bottom - (y * swidth));
-		for (x = 0; x < bmp->width; x++) {
-			scanline[x] = data[2] | (data[1] << 8) | (data[0] << 16);
-			data += skip;
+		if (bmp->encoding == BMP_ENCODING_BITFIELDS) {
+			for (x = 0; x < bmp->width; x++) {
+				word = data[0] | (data[1] << 8) | (data[2] << 16) |
+						(data[3] << 24);
+				scanline[x] = 0;
+				for (i = 0; i < 4; i++)
+					if (bmp->shift[i] > 0)
+						scanline[x] |= ((word & bmp->mask[i]) <<
+								bmp->shift[i]);
+					else
+						scanline[x] |= ((word & bmp->mask[i]) >>
+								(-bmp->shift[i]));
+				data += 4;
+			}
+		} else {
+			for (x = 0; x < bmp->width; x++) {
+				scanline[x] = data[2] | (data[1] << 8) | (data[0] << 16) |
+						(data[3] << 24);
+				data += skip;
+			}
+		}
+	}
+	*start = data;
+	return BMP_OK;
+}
+
+
+/**
+ * Decode BMP data stored in 16bpp colour.
+ *
+ * \param bmp	the BMP image to decode
+ * \param start	the data to decode, updated to last byte read on success
+ * \param bytes	the number of bytes of data available
+ * \return BMP_OK on success
+ */
+bmp_result bmp_decode_rgb16(struct bmp_image *bmp, char **start, int bytes) {
+	char *top, *bottom, *end, *data;
+	unsigned int *scanline;
+	unsigned int x, y, swidth;
+	unsigned int addr;
+	unsigned int word, i;
+
+	data = *start;
+	swidth = bitmap_get_rowstride(bmp->bitmap);
+	top = bitmap_get_buffer(bmp->bitmap);
+	bottom = top + swidth * (bmp->height - 1);
+	end = data + bytes;
+	addr = ((unsigned int)data) & 3;
+	bmp->decoded = true;
+
+	for (y = 0; y < bmp->height; y++) {
+		if (addr != (((unsigned int)data) & 3))
+			data += 2;
+		if ((data + (2 * bmp->width)) > end)
+			return BMP_INSUFFICIENT_DATA;
+		if (bmp->reversed)
+			scanline = (unsigned int *)(top + (y * swidth));
+		else
+			scanline = (unsigned int *)(bottom - (y * swidth));
+		if (bmp->encoding == BMP_ENCODING_BITFIELDS) {
+			for (x = 0; x < bmp->width; x++) {
+				word = data[0] | (data[1] << 8);
+				scanline[x] = 0;
+				for (i = 0; i < 4; i++)
+					if (bmp->shift[i] > 0)
+						scanline[x] |= ((word & bmp->mask[i]) <<
+								bmp->shift[i]);
+					else
+						scanline[x] |= ((word & bmp->mask[i]) >>
+								(-bmp->shift[i]));
+				data += 2;
+			}
+		} else {
+			for (x = 0; x < bmp->width; x++) {
+				word = data[0] | (data[1] << 8);
+			  	scanline[x] = ((word & (31 << 0)) << 19) |
+			  			((word & (31 << 5)) << 6) |
+			  			((word & (31 << 10)) >> 7);
+				data += 2;
+			}
 		}
 	}
 	*start = data;
@@ -487,7 +596,7 @@ bmp_result bmp_decode_mask(struct bmp_image *bmp, char *data, int bytes) {
 			return BMP_INSUFFICIENT_DATA;
 		scanline = (unsigned int *)(bottom - (y * swidth));
 		for (x = 0; x < bmp->width; x++) {
-		  	if ((x & 7) == 0)
+			if ((x & 7) == 0)
 				cur_byte = *data++;
 			if ((cur_byte & 128) == 0)
 				scanline[x] |= (0xff << 24);
@@ -523,15 +632,15 @@ bmp_result bmp_decode_rle(struct bmp_image *bmp, char *data, int bytes, int size
 	bottom = top + swidth * (bmp->height - 1);
 	end = data + bytes;
 	bmp->decoded = true;
-	
+
 	do {
-	  	if (data + 2 > end)
-	  		return BMP_INSUFFICIENT_DATA;
+		if (data + 2 > end)
+			return BMP_INSUFFICIENT_DATA;
 		length = *data++;
 		if (length == 0) {
 			length = *data++;
 			if (length == 0) {
-			  	/* 00 - 00 means end of scanline */
+				/* 00 - 00 means end of scanline */
 				x = 0;
 				if (last_y == y) {
 					if (++y > bmp->height)
@@ -539,12 +648,12 @@ bmp_result bmp_decode_rle(struct bmp_image *bmp, char *data, int bytes, int size
 				}
 				last_y = y;
 			} else if (length == 1) {
-			  	/* 00 - 01 means end of RLE data */
+				/* 00 - 01 means end of RLE data */
 				return BMP_OK;
 			} else if (length == 2) {
-			  	/* 00 - 02 - XX - YY means move cursor */
-			  	if (data + 2 > end)
-			  		return BMP_INSUFFICIENT_DATA;
+				/* 00 - 02 - XX - YY means move cursor */
+				if (data + 2 > end)
+					return BMP_INSUFFICIENT_DATA;
 				x += *data++;
 				if (x >= bmp->width)
 					return BMP_DATA_ERROR;
@@ -552,7 +661,7 @@ bmp_result bmp_decode_rle(struct bmp_image *bmp, char *data, int bytes, int size
 				if (y >= bmp->height)
 					return BMP_DATA_ERROR;
 			} else {
-				/* 00 - NN means escape pixels */
+				/* 00 - NN means escape NN pixels */
 				if (bmp->reversed) {
 					pixels_left = (y + 1) * bmp->width - x;
 					scanline = (unsigned int *)(top + (y * swidth));
@@ -560,14 +669,14 @@ bmp_result bmp_decode_rle(struct bmp_image *bmp, char *data, int bytes, int size
 					pixels_left = (bmp->height - y + 1) * bmp->width - x;
 					scanline = (unsigned int *)(bottom - (y * swidth));
 				}
-			  	if (length > pixels_left)
-			  		length = pixels_left;
-			  	if (data + length > end)
-	  				return BMP_INSUFFICIENT_DATA;
+				if (length > pixels_left)
+					length = pixels_left;
+				if (data + length > end)
+					return BMP_INSUFFICIENT_DATA;
 
-			  	/* the following code could be easily optimised by simply
-			  	 * checking the bounds on entry and using some simply copying
-			  	 * routines if so */
+				/* the following code could be easily optimised by simply
+				 * checking the bounds on entry and using some simply copying
+				 * routines if so */
 				if (size == 8) {
 					for (i = 0; i < length; i++) {
 						if (x >= bmp->width) {
@@ -586,11 +695,11 @@ bmp_result bmp_decode_rle(struct bmp_image *bmp, char *data, int bytes, int size
 								return BMP_DATA_ERROR;
 							scanline -= bmp->width;
 						}
-					  	if ((i & 1) == 0) {
+						if ((i & 1) == 0) {
 							pixel = *data++;
 							scanline[x++] = bmp->colour_table
 									[pixel >> 4];
-						} else {				  
+						} else {
 							scanline[x++] = bmp->colour_table
 									[pixel & 0xf];
 						}
@@ -602,7 +711,7 @@ bmp_result bmp_decode_rle(struct bmp_image *bmp, char *data, int bytes, int size
 
 			}
 		} else {
-		  	/* NN means perform RLE for NN pixels */ 
+			/* NN means perform RLE for NN pixels */
 			if (bmp->reversed) {
 				pixels_left = (y + 1) * bmp->width - x;
 				scanline = (unsigned int *)(top + (y * swidth));
@@ -610,12 +719,12 @@ bmp_result bmp_decode_rle(struct bmp_image *bmp, char *data, int bytes, int size
 				pixels_left = (bmp->height - y + 1) * bmp->width - x;
 				scanline = (unsigned int *)(bottom - (y * swidth));
 			}
-		  	if (length > pixels_left)
-		  		length = pixels_left;
+			if (length > pixels_left)
+				length = pixels_left;
 
-		  	/* the following code could be easily optimised by simply
-		  	 * checking the bounds on entry and using some simply copying
-		  	 * routines if so */
+			/* the following code could be easily optimised by simply
+			 * checking the bounds on entry and using some simply copying
+			 * routines if so */
 			if (size == 8) {
 				pixel = bmp->colour_table[(int)*data++];
 				for (i = 0; i < length; i++) {
@@ -672,12 +781,12 @@ void bmp_finalise(struct bmp_image *bmp) {
  */
 void ico_finalise(struct ico_collection *ico) {
 	struct ico_image *image;
-	
+
 	for (image = ico->first; image; image = image->next)
 		bmp_finalise(&image->bmp);
 	while (ico->first) {
-	  	image = ico->first;
-	  	ico->first = image->next;
-	  	free(image);
+		image = ico->first;
+		ico->first = image->next;
+		free(image);
 	}
 }
