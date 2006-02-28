@@ -282,7 +282,7 @@ bmp_result bmp_analyse_header(struct bmp_image *bmp, char *data) {
 
 	/* create our bitmap */
 	flags = BITMAP_NEW | BITMAP_CLEAR_MEMORY;
-	if ((!bmp->ico) || (bmp->mask[3] == 0))
+	if ((!bmp->ico) && (bmp->mask[3] == 0))
 		flags |= BITMAP_OPAQUE;
 	bmp->bitmap = bitmap_create(bmp->width, bmp->height, flags);
 	if (!bmp->bitmap) {
@@ -431,13 +431,13 @@ bmp_result bmp_decode_rgb24(struct bmp_image *bmp, char **start, int bytes) {
 			for (x = 0; x < bmp->width; x++) {
 				word = data[0] | (data[1] << 8) | (data[2] << 16) |
 						(data[3] << 24);
-				scanline[x] = 0;
+				scanline[x] = (0xff << 24);
 				for (i = 0; i < 4; i++)
 					if (bmp->shift[i] > 0)
-						scanline[x] |= ((word & bmp->mask[i]) <<
+						scanline[x] ^= ((word & bmp->mask[i]) <<
 								bmp->shift[i]);
 					else
-						scanline[x] |= ((word & bmp->mask[i]) >>
+						scanline[x] ^= ((word & bmp->mask[i]) >>
 								(-bmp->shift[i]));
 				data += 4;
 			}
@@ -489,13 +489,13 @@ bmp_result bmp_decode_rgb16(struct bmp_image *bmp, char **start, int bytes) {
 		if (bmp->encoding == BMP_ENCODING_BITFIELDS) {
 			for (x = 0; x < bmp->width; x++) {
 				word = data[0] | (data[1] << 8);
-				scanline[x] = 0;
+				scanline[x] = (0xff << 24);
 				for (i = 0; i < 4; i++)
 					if (bmp->shift[i] > 0)
-						scanline[x] |= ((word & bmp->mask[i]) <<
+						scanline[x] ^= ((word & bmp->mask[i]) <<
 								bmp->shift[i]);
 					else
-						scanline[x] |= ((word & bmp->mask[i]) >>
+						scanline[x] ^= ((word & bmp->mask[i]) >>
 								(-bmp->shift[i]));
 				data += 2;
 			}
