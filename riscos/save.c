@@ -794,7 +794,6 @@ bool ro_gui_save_complete(struct content *c, char *path)
 
 void ro_gui_save_object_native(struct content *c, char *path)
 {
-
 	switch (c->type) {
 #ifdef WITH_JPEG
 		case CONTENT_JPEG:
@@ -811,11 +810,24 @@ void ro_gui_save_object_native(struct content *c, char *path)
 		case CONTENT_BMP:
 		case CONTENT_ICO:
 #endif
-#ifdef WITH_SPRITE
-		case CONTENT_SPRITE:
-#endif
 			bitmap_save(c->bitmap, path);
 			break;
+
+#ifdef WITH_SPRITE
+		case CONTENT_SPRITE: {
+			os_error *error;
+			error = xosfile_save_stamped(path,
+					ro_content_filetype(c),
+					c->source_data,
+					c->source_data + c->source_size);
+			if (error) {
+				LOG(("xosfile_save_stamped: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("SaveError", error->errmess);
+			}
+		}
+		break;
+#endif
 
 		default:
 			break;
