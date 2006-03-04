@@ -263,6 +263,8 @@ bool ro_save_draw_bitmap(int x, int y, int width, int height,
 {
 	pencil_code code;
 
+	bitmap_get_buffer(bitmap);
+
 	code = pencil_sprite(ro_save_draw_diagram, x * 2, (-y - height) * 2,
 			width * 2, height * 2,
 			((char *) bitmap->sprite_area) +
