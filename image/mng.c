@@ -450,10 +450,25 @@ bool nsmng_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour)
 {
-	return nsmng_redraw_tiled(c, x, y, width, height,
-			clip_x0, clip_y0, clip_x1, clip_y1,
-			scale, background_colour,
-			false, false);
+	bool ret;
+
+	/* mark image as having been requested to display */
+	c->data.mng.displayed = true;
+
+	if ((c->bitmap) && (c->data.mng.opaque_test_pending)) {
+		bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
+		c->data.mng.opaque_test_pending = false;
+	}
+
+	ret = plot.bitmap(x, y, width, height,
+			c->bitmap, background_colour);
+
+	/*	Check if we need to restart the animation
+	*/
+	if ((c->data.mng.waiting) && (option_animate_images))
+		nsmng_animate(c);
+
+	return ret;
 }
 
 
