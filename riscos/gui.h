@@ -217,36 +217,6 @@ void ro_plot_set_scale(float scale);
 /* in theme_install.c */
 bool ro_gui_theme_install_apply(wimp_w w);
 
-/* icon numbers for browser toolbars */
-#define ICON_TOOLBAR_BACK 0
-#define ICON_TOOLBAR_FORWARD 1
-#define ICON_TOOLBAR_STOP 2
-#define ICON_TOOLBAR_RELOAD 3
-#define ICON_TOOLBAR_HOME 4
-#define ICON_TOOLBAR_HISTORY 5
-#define ICON_TOOLBAR_SAVE 6
-#define ICON_TOOLBAR_PRINT 7
-#define ICON_TOOLBAR_BOOKMARK 8
-#define ICON_TOOLBAR_SCALE 9
-#define ICON_TOOLBAR_SEARCH 10
-#define ICON_TOOLBAR_URL 11  // Must be after highest toolbar icon
-#define ICON_TOOLBAR_THROBBER 12
-#define ICON_TOOLBAR_SUGGEST 13
-
-/* icon numbers for hotlist/history toolbars */
-#define ICON_TOOLBAR_DELETE 0
-#define ICON_TOOLBAR_EXPAND 1
-#define ICON_TOOLBAR_OPEN 2
-#define ICON_TOOLBAR_LAUNCH 3
-#define ICON_TOOLBAR_HISTORY_LAST 4
-#define ICON_TOOLBAR_CREATE 4 // must be after last history icon
-#define ICON_TOOLBAR_HOTLIST_LAST 5
-
-/* editing toolbar separator number */
-#define ICON_TOOLBAR_SEPARATOR_BROWSER 11
-#define ICON_TOOLBAR_SEPARATOR_HOTLIST 5
-#define ICON_TOOLBAR_SEPARATOR_HISTORY 4
-
 /* icon numbers for toolbar status window */
 #define ICON_STATUS_RESIZE 0
 #define ICON_STATUS_TEXT 1

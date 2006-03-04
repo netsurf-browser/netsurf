@@ -1020,6 +1020,8 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 
 	ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 			ICON_TOOLBAR_URL, url);
+	ro_gui_force_redraw_icon(g->toolbar->toolbar_handle,
+			ICON_TOOLBAR_FAVICON);
 
 	/* if the caret is in the address bar, move it to the end */
 	error = xwimp_get_caret_position(&caret);

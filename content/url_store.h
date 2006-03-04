@@ -47,7 +47,7 @@ struct url_data {
 extern struct hostname_data *url_store_hostnames;
 
 struct url_content *url_store_find(const char *url);
-char *url_store_match(const char *url, struct url_data **reference);
+struct url_content *url_store_match(const char *url, struct url_data **reference);
 char *url_store_match_string(const char *text);
 
 void url_store_add_thumbnail(const char *url, struct bitmap *bitmap);

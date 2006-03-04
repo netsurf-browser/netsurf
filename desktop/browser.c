@@ -121,7 +121,6 @@ void browser_window_create(const char *url, struct browser_window *clone,
 		free(bw);
 		return;
 	}
-	gui_window_set_url(bw->window, url);
 	browser_window_go(bw, url, referer);
 }
 
@@ -187,6 +186,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		free(url2);
 		return;
 	}
+	gui_window_set_url(bw->window, url2);
 
 	/* find any fragment identifier on end of URL */
 	hash = strchr(url2, '#');

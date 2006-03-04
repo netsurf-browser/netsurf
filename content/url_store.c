@@ -356,7 +356,7 @@ struct hostname_data *url_store_match_hostname(
  * \param reference  internal reference (NULL for first call)
  * \return the next URL that matches
  */
-char *url_store_match(const char *url, struct url_data **reference) {
+struct url_content *url_store_match(const char *url, struct url_data **reference) {
 	struct hostname_data *hostname;
 	struct url_data *search = NULL;
 	url_func_result res;
@@ -404,7 +404,7 @@ char *url_store_match(const char *url, struct url_data **reference) {
 		hostname = url_store_match_hostname(NULL);
 		if (!hostname)
 			return NULL;
-		} else {
+	} else {
 		search = *reference;
 		hostname = search->parent;
 	}
@@ -429,7 +429,7 @@ char *url_store_match(const char *url, struct url_data **reference) {
 					(!strncmp(search->data.url, url,
 							current_match_url_length))) {
 				*reference = search;
-				return search->data.url;
+				return &search->data;
 			}
 			/* try with 'www.' inserted after the scheme */
 			if (current_match_www_test &&
@@ -448,7 +448,7 @@ char *url_store_match(const char *url, struct url_data **reference) {
 						current_match_url_length -
 						current_match_scheme_length - 3))) {
 				*reference = search;
-				return search->data.url;
+				return &search->data;
 			}
 		}
 	}

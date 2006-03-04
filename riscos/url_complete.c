@@ -27,7 +27,7 @@
 
 #define MAXIMUM_VISIBLE_LINES 7
 
-static char **url_complete_matches = NULL;
+static struct url_content **url_complete_matches = NULL;
 static int url_complete_matches_allocated = 0;
 static int url_complete_matches_available = 0;
 static char *url_complete_matched_string = NULL;
@@ -37,9 +37,11 @@ static wimp_w url_complete_parent = 0;
 static bool url_complete_matches_reset = false;
 static char *url_complete_original_url = NULL;
 
-static char *url_complete_redraw[MAXIMUM_VISIBLE_LINES];
+static struct url_content *url_complete_redraw[MAXIMUM_VISIBLE_LINES];
 static char url_complete_icon_null[] = "\0";
+static char url_complete_icon_sprite[12];
 static wimp_icon url_complete_icon;
+static wimp_icon url_complete_sprite;
 static int mouse_x;
 static int mouse_y;
 
@@ -71,11 +73,11 @@ void ro_gui_url_complete_start(struct gui_window *g) {
  */
 bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 	wimp_window_state state;
-	char **array_extend;
+	struct url_content **array_extend;
 	struct url_data *reference = NULL;
 	char *match_url;
 	char *url;
-	char *output;
+	struct url_content *output;
 	int i, lines;
 	int old_selection;
 	bool ignore_changes = false;
@@ -119,7 +121,7 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 	/* check if we should ignore text changes */
 	if ((url_complete_keypress_selection >= 0) && (url_complete_matches))
 		ignore_changes = !strcmp(url,
-				url_complete_matches[url_complete_keypress_selection]);
+				url_complete_matches[url_complete_keypress_selection]->url);
 
 	/* if the text to match has changed then update it */
 	if (!ignore_changes && ((!url_complete_matched_string) ||
@@ -168,9 +170,10 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 			if (url_complete_matches_available >
 					url_complete_matches_allocated) {
 
-				array_extend = realloc(url_complete_matches,
+				array_extend = (struct url_content **)realloc(
+						url_complete_matches,
 						(url_complete_matches_allocated + 64) *
-						sizeof(char *));
+						sizeof(struct url_content *));
 				if (!array_extend) {
 					ro_gui_url_complete_close(NULL, 0);
 					return false;
@@ -276,7 +279,7 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 	} else {
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
-				url_complete_matches[url_complete_matches_selection]);
+				url_complete_matches[url_complete_matches_selection]->url);
 	}
 	url_complete_keypress_selection = url_complete_matches_selection;
 
@@ -355,7 +358,7 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
 		return;
 	}
 	url_state.w = g->toolbar->toolbar_handle;
-	url_state.i = ICON_TOOLBAR_URL;
+	url_state.i = ICON_TOOLBAR_SURROUND;
 	error = xwimp_get_icon_state(&url_state);
 	if (error) {
 		LOG(("xwimp_get_window_state: 0x%x: %s",
@@ -463,9 +466,17 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw) {
 			wimp_ICON_TEXT | wimp_ICON_FILLED |
 			(wimp_COLOUR_BLACK << wimp_ICON_FG_COLOUR_SHIFT) |
 			(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
-	url_complete_icon.extent.x0 = 0;
+	url_complete_icon.extent.x0 = 50;
 	url_complete_icon.extent.x1 = 16384;
 	url_complete_icon.data.indirected_text.validation = url_complete_icon_null;
+	url_complete_sprite.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
+				wimp_ICON_INDIRECTED | wimp_ICON_FILLED |
+				wimp_ICON_HCENTRED | wimp_ICON_VCENTRED;
+	url_complete_sprite.extent.x0 = 0;
+	url_complete_sprite.extent.x1 = 50;
+	url_complete_sprite.data.indirected_text.text = url_complete_icon_null;
+	url_complete_sprite.data.indirected_text.validation = url_complete_icon_sprite;
+	url_complete_sprite.data.indirected_text.size = 1;
 
 	/* no matches? no redraw */
 	if (!url_complete_matches) {
@@ -492,10 +503,23 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw) {
 			url_complete_icon.extent.y1 = -line * 44;
 			url_complete_icon.extent.y0 = -(line + 1) * 44;
 			url_complete_icon.data.indirected_text.text =
-					url_complete_matches[line];
+					url_complete_matches[line]->url;
 			url_complete_icon.data.indirected_text.size =
-					strlen(url_complete_matches[line]);
+					strlen(url_complete_matches[line]->url);
 			error = xwimp_plot_icon(&url_complete_icon);
+			if (error) {
+				LOG(("xwimp_plot_icon: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
+			sprintf(url_complete_icon_sprite, "Ssmall_%.3x",
+					ro_content_filetype_from_type(
+					url_complete_matches[line]->type));
+			if (!ro_gui_wimp_sprite_exists(url_complete_icon_sprite + 1))
+				sprintf(url_complete_icon_sprite, "Ssmall_xxx");
+			url_complete_sprite.extent.y1 = -line * 44;
+			url_complete_sprite.extent.y0 = -(line + 1) * 44;
+			error = xwimp_plot_icon(&url_complete_sprite);
 			if (error) {
 				LOG(("xwimp_plot_icon: 0x%x: %s",
 						error->errnum, error->errmess));
@@ -593,18 +617,18 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer) {
 	if (pointer->buttons == wimp_CLICK_SELECT) {
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
-				url_complete_matches[url_complete_matches_selection]);
+				url_complete_matches[url_complete_matches_selection]->url);
 		browser_window_go(g->bw,
-				url_complete_matches[url_complete_matches_selection],
+				url_complete_matches[url_complete_matches_selection]->url,
 				0);
-		global_history_add_recent(url_complete_matches[url_complete_matches_selection]);
+		global_history_add_recent(url_complete_matches[url_complete_matches_selection]->url);
 		ro_gui_url_complete_close(NULL, 0);
 
 	/* Adjust just sets the text */
 	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
-				url_complete_matches[url_complete_matches_selection]);
+				url_complete_matches[url_complete_matches_selection]->url);
 		ro_gui_url_complete_keypress(g, 0);
 	}
 	return true;
