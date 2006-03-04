@@ -624,16 +624,22 @@ void ro_gui_theme_redraw(wimp_draw *redraw) {
 	
 	/* set the content-type icon */
 	g = ro_gui_toolbar_lookup(toolbar->toolbar_handle);
-	assert(g);
-	assert(g->bw);
-	if (g->bw->current_content) {
-		sprintf(theme_favicon_sprite, "Ssmall_%.3x",
-				ro_content_filetype_from_type(
-				g->bw->current_content->type));
-		if (!ro_gui_wimp_sprite_exists(theme_favicon_sprite + 1))
-			sprintf(theme_favicon_sprite, "Ssmall_xxx");  
+	
+	/* only set type for browser windows */
+	if (g) {
+	  	assert(toolbar->type == THEME_BROWSER_TOOLBAR);
+		assert(g->bw);
+		if (g->bw->current_content) {
+			sprintf(theme_favicon_sprite, "Ssmall_%.3x",
+					ro_content_filetype_from_type(
+					g->bw->current_content->type));
+			if (!ro_gui_wimp_sprite_exists(theme_favicon_sprite + 1))
+				sprintf(theme_favicon_sprite, "Ssmall_xxx");  
+		} else {
+			sprintf(theme_favicon_sprite, "Ssmall_xxx");
+		}
 	} else {
-		sprintf(theme_favicon_sprite, "Ssmall_xxx");
+	  	assert(toolbar->type != THEME_BROWSER_TOOLBAR);	  
 	}
 
 	/* set up the icon */
