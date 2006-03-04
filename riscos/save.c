@@ -798,27 +798,25 @@ void ro_gui_save_object_native(struct content *c, char *path)
 	switch (c->type) {
 #ifdef WITH_JPEG
 		case CONTENT_JPEG:
-			bitmap_save(c->bitmap, path);
-			break;
 #endif
 #ifdef WITH_MNG
 		case CONTENT_PNG:
 		case CONTENT_JNG:
 		case CONTENT_MNG:
-			bitmap_save(c->bitmap, path);
-			break;
 #endif
 #ifdef WITH_GIF
 		case CONTENT_GIF:
-			bitmap_save(c->bitmap, path);
-			break;
 #endif
 #ifdef WITH_BMP
 		case CONTENT_BMP:
 		case CONTENT_ICO:
+#endif
+#ifdef WITH_SPRITE
+		case CONTENT_SPRITE:
+#endif
 			bitmap_save(c->bitmap, path);
 			break;
-#endif
+
 		default:
 			break;
 	}
