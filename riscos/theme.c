@@ -638,8 +638,6 @@ void ro_gui_theme_redraw(wimp_draw *redraw) {
 		} else {
 			sprintf(theme_favicon_sprite, "Ssmall_xxx");
 		}
-	} else {
-	  	assert(toolbar->type != THEME_BROWSER_TOOLBAR);	  
 	}
 
 	/* set up the icon */
