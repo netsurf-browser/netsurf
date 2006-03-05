@@ -3,6 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2006 James Bursa <bursa@users.sourceforge.net>
  */
 
 #include <assert.h>
@@ -56,7 +57,6 @@
  *  \todo make use of print stylesheets
  */
 
-/* extern globals */
 struct gui_window *print_current_window = 0;
 bool print_text_black = false;
 bool print_active = false;
@@ -65,106 +65,164 @@ bool print_active = false;
 
 /* 1 millipoint == 1/400 OS unit == 1/800 browser units */
 
-/* static globals */
 static int print_prev_message = 0;
 static bool print_in_background = false;
 static float print_scale = 1.0;
 static int print_num_copies = 1;
 static bool print_bg_images = false;
 static int print_max_sheets = -1;
+/** List of fonts in current print. */
+static char **print_fonts_list = 0;
+/** Number of entries in print_fonts_list. */
+static unsigned int print_fonts_count;
+/** Error in print_fonts_plot_text() or print_fonts_callback(). */
+static const char *print_fonts_error;
 
-/* a font in a document */
-struct print_font {
-	font_f handle;
-	void *font_name;
-};
 
+static bool ro_gui_print_click(wimp_pointer *pointer);
+static bool ro_gui_print_apply(wimp_w w);
 static void print_update_sheets_shaded_state(bool on);
 static void print_send_printsave(struct content *c);
 static bool print_send_printtypeknown(wimp_message *m);
 static bool print_document(struct gui_window *g, const char *filename);
-static const char *print_declare_fonts(struct box *box);
-static bool print_find_fonts(struct box *box, struct print_font **print_fonts,
-		int *font_count);
+static const char *print_declare_fonts(struct content *content);
+static bool print_fonts_plot_clg(colour c);
+static bool print_fonts_plot_rectangle(int x0, int y0, int width, int height,
+		int line_width, colour c, bool dotted, bool dashed);
+static bool print_fonts_plot_line(int x0, int y0, int x1, int y1, int width,
+		colour c, bool dotted, bool dashed);
+static bool print_fonts_plot_polygon(int *p, unsigned int n, colour fill);
+static bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, colour c);
+static bool print_fonts_plot_clip(int clip_x0, int clip_y0,
+		int clip_x1, int clip_y1);
+static bool print_fonts_plot_text(int x, int y, struct css_style *style,
+		const char *text, size_t length, colour bg, colour c);
+static bool print_fonts_plot_disc(int x, int y, int radius, colour colour);
+static bool print_fonts_plot_bitmap(int x, int y, int width, int height,
+		struct bitmap *bitmap, colour bg);
+static bool print_fonts_plot_bitmap_tile(int x, int y, int width, int height,
+		struct bitmap *bitmap, colour bg,
+		bool repeat_x, bool repeat_y);
+static bool print_fonts_plot_group_start(const char *name);
+static bool print_fonts_plot_group_end(void);
+static void print_fonts_callback(void *context,
+		const char *font_name, unsigned int font_size,
+		const char *s8, unsigned short *s16, unsigned int n,
+		int x, int y);
 
-static bool ro_gui_print_click(wimp_pointer *pointer);
-static bool ro_gui_print_apply(wimp_w w);
+
+/** Plotter for print_declare_fonts(). All the functions do nothing except for
+ * print_fonts_plot_text, which records the fonts used. */
+static const struct plotter_table print_fonts_plotters = {
+	print_fonts_plot_clg,
+	print_fonts_plot_rectangle,
+	print_fonts_plot_line,
+	print_fonts_plot_polygon,
+	print_fonts_plot_fill,
+	print_fonts_plot_clip,
+	print_fonts_plot_text,
+	print_fonts_plot_disc,
+	print_fonts_plot_bitmap,
+	print_fonts_plot_bitmap_tile,
+	print_fonts_plot_group_start,
+	print_fonts_plot_group_end
+};
 
 
-void ro_gui_print_init(void) {
-  	wimp_i radio_print_type[] = {ICON_PRINT_TO_BOTTOM, ICON_PRINT_SHEETS, -1};
-  	wimp_i radio_print_orientation[] = {ICON_PRINT_UPRIGHT, ICON_PRINT_SIDEWAYS, -1};	
-  
+/**
+ * Initialise the print dialog.
+ */
+
+void ro_gui_print_init(void)
+{
+  	wimp_i radio_print_type[] = {ICON_PRINT_TO_BOTTOM, ICON_PRINT_SHEETS,
+  			-1};
+  	wimp_i radio_print_orientation[] = {ICON_PRINT_UPRIGHT,
+  			ICON_PRINT_SIDEWAYS, -1};
+
 	dialog_print = ro_gui_dialog_create("print");
 	ro_gui_wimp_event_register_radio(dialog_print, radio_print_type);
 	ro_gui_wimp_event_register_radio(dialog_print, radio_print_orientation);
 	ro_gui_wimp_event_register_checkbox(dialog_print, ICON_PRINT_FG_IMAGES);
 	ro_gui_wimp_event_register_checkbox(dialog_print, ICON_PRINT_BG_IMAGES);
-	ro_gui_wimp_event_register_checkbox(dialog_print, ICON_PRINT_IN_BACKGROUND);
-	ro_gui_wimp_event_register_checkbox(dialog_print, ICON_PRINT_TEXT_BLACK);
-	ro_gui_wimp_event_register_text_field(dialog_print, ICON_PRINT_SHEETS_TEXT);
-	ro_gui_wimp_event_register_numeric_field(dialog_print, ICON_PRINT_COPIES,
-			ICON_PRINT_COPIES_UP, ICON_PRINT_COPIES_DOWN, 1, 99, 1, 0);
-	ro_gui_wimp_event_register_numeric_field(dialog_print, ICON_PRINT_SHEETS_VALUE,
-			ICON_PRINT_SHEETS_UP, ICON_PRINT_SHEETS_DOWN, 1, 99, 1, 0);
+	ro_gui_wimp_event_register_checkbox(dialog_print,
+			ICON_PRINT_IN_BACKGROUND);
+	ro_gui_wimp_event_register_checkbox(dialog_print,
+			ICON_PRINT_TEXT_BLACK);
+	ro_gui_wimp_event_register_text_field(dialog_print,
+			ICON_PRINT_SHEETS_TEXT);
+	ro_gui_wimp_event_register_numeric_field(dialog_print,
+			ICON_PRINT_COPIES, ICON_PRINT_COPIES_UP,
+			ICON_PRINT_COPIES_DOWN, 1, 99, 1, 0);
+	ro_gui_wimp_event_register_numeric_field(dialog_print,
+			ICON_PRINT_SHEETS_VALUE, ICON_PRINT_SHEETS_UP,
+			ICON_PRINT_SHEETS_DOWN, 1, 99, 1, 0);
 	ro_gui_wimp_event_register_cancel(dialog_print, ICON_PRINT_CANCEL);
-	ro_gui_wimp_event_register_mouse_click(dialog_print, ro_gui_print_click);
+	ro_gui_wimp_event_register_mouse_click(dialog_print,
+			ro_gui_print_click);
 	ro_gui_wimp_event_register_ok(dialog_print, ICON_PRINT_PRINT,
 			ro_gui_print_apply);
 	ro_gui_wimp_event_set_help_prefix(dialog_info, "HelpPrint");
 }
+
 
 /**
  * Prepares all aspects of the print dialog prior to opening.
  *
  * \param g parent window
  */
-void ro_gui_print_prepare(struct gui_window *g) {
-	char *pdName;
-	bool printers_exists = true;
-	os_error *e;
 
-	assert(g != NULL);
+void ro_gui_print_prepare(struct gui_window *g)
+{
+	char *desc;
+	bool printers_exists = true;
+	os_error *error;
+
+	assert(g);
 
 	print_current_window = g;
 	print_prev_message = 0;
 
 	/* Read Printer Driver name */
-	e = xpdriver_info(0, 0, 0, 0, &pdName, 0, 0, 0);
-	if (e) {
-		LOG(("%s", e->errmess));
+	error = xpdriver_info(0, 0, 0, 0, &desc, 0, 0, 0);
+	if (error) {
+		LOG(("xpdriver_info: 0x%x: %s", error->errnum, error->errmess));
 		printers_exists = false;
 	}
 
 	print_bg_images = g->option.background_images;
 
-	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_TO_BOTTOM, true);
+	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_TO_BOTTOM,
+			true);
 
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_SHEETS, false);
 	ro_gui_set_icon_integer(dialog_print, ICON_PRINT_SHEETS_VALUE, 1);
 	print_update_sheets_shaded_state(true);
 
-	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_FG_IMAGES, true);
+	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_FG_IMAGES,
+			true);
 	ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_FG_IMAGES, true);
 
-	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_BG_IMAGES, print_bg_images);
+	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_BG_IMAGES,
+			print_bg_images);
 
-	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_IN_BACKGROUND, false);
+	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_IN_BACKGROUND,
+			false);
 
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_UPRIGHT, true);
-	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_SIDEWAYS, false);
+	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_SIDEWAYS,
+			false);
 
-	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_TEXT_BLACK, false);
+	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_TEXT_BLACK,
+			false);
 
 	ro_gui_set_icon_integer(dialog_print, ICON_PRINT_COPIES, 1);
 
-	if (!printers_exists) {
-		ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_PRINT, true);
-	}
-	else {
-		ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_PRINT, false);
-		ro_gui_set_window_title(dialog_print, pdName);
-	}
+	ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_PRINT,
+			!printers_exists);
+	if (printers_exists)
+		ro_gui_set_window_title(dialog_print, desc);
+
 	ro_gui_wimp_event_memorise(dialog_print);
 }
 
@@ -174,6 +232,7 @@ void ro_gui_print_prepare(struct gui_window *g) {
  *
  * \param pointer wimp_pointer block
  */
+
 bool ro_gui_print_click(wimp_pointer *pointer)
 {
 	if (pointer->buttons == wimp_CLICK_MENU)
@@ -182,36 +241,50 @@ bool ro_gui_print_click(wimp_pointer *pointer)
 	switch (pointer->i) {
 		case ICON_PRINT_TO_BOTTOM:
 		case ICON_PRINT_SHEETS:
-			print_update_sheets_shaded_state(pointer->i != ICON_PRINT_SHEETS);
+			print_update_sheets_shaded_state(pointer->i !=
+					ICON_PRINT_SHEETS);
 			break;
 	}
 	return false;
 }
 
 
-bool ro_gui_print_apply(wimp_w w) {
+/**
+ * Handle click on the Print button in the print dialog.
+ */
+
+bool ro_gui_print_apply(wimp_w w)
+{
 	int copies = atoi(ro_gui_get_icon_string(dialog_print,
 						ICON_PRINT_COPIES));
 	int sheets = atoi(ro_gui_get_icon_string(dialog_print,
 						ICON_PRINT_SHEETS_VALUE));
 
-	print_in_background = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_IN_BACKGROUND);
-	print_text_black = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_TEXT_BLACK);
+	print_in_background = ro_gui_get_icon_selected_state(dialog_print,
+			ICON_PRINT_IN_BACKGROUND);
+	print_text_black = ro_gui_get_icon_selected_state(dialog_print,
+			ICON_PRINT_TEXT_BLACK);
 	print_num_copies = copies;
 	if (ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_SHEETS))
 		print_max_sheets = sheets;
 	else
 		print_max_sheets = -1;
-	print_current_window->option.background_images = ro_gui_get_icon_selected_state(dialog_print, ICON_PRINT_BG_IMAGES);
+	print_current_window->option.background_images =
+			ro_gui_get_icon_selected_state(dialog_print,
+					ICON_PRINT_BG_IMAGES);
+
 	print_send_printsave(print_current_window->bw->current_content);
+
 	return true;
 }
+
 
 /**
  * Set shaded state of sheets
  *
  * \param on whether to turn shading on or off
  */
+
 void print_update_sheets_shaded_state(bool on)
 {
 	ro_gui_set_icon_shaded_state(dialog_print, ICON_PRINT_SHEETS_VALUE, on);
@@ -221,11 +294,13 @@ void print_update_sheets_shaded_state(bool on)
 	ro_gui_set_caret_first(dialog_print);
 }
 
+
 /**
  * Send a message_PRINT_SAVE
  *
  * \param c content to print
  */
+
 void print_send_printsave(struct content *c)
 {
 	wimp_full_message_data_xfer m;
@@ -256,12 +331,14 @@ void print_send_printsave(struct content *c)
 	print_prev_message = m.my_ref;
 }
 
+
 /**
  * Send a message_PRINT_TYPE_KNOWN
  *
  * \param m message to reply to
  * \return true on success, false otherwise
  */
+
 bool print_send_printtypeknown(wimp_message *m)
 {
 	os_error *e;
@@ -280,11 +357,13 @@ bool print_send_printtypeknown(wimp_message *m)
 	return true;
 }
 
+
 /**
  * Handle a bounced message_PRINT_SAVE
  *
  * \param m the bounced message
  */
+
 void print_save_bounce(wimp_message *m)
 {
 	if (m->my_ref == 0 || m->my_ref != print_prev_message)
@@ -297,11 +376,13 @@ void print_save_bounce(wimp_message *m)
 	print_cleanup();
 }
 
+
 /**
  * Handle message_PRINT_ERROR
  *
  * \param m the message containing the error
  */
+
 void print_error(wimp_message *m)
 {
 	pdriver_message_print_error *p = (pdriver_message_print_error*)&m->data;
@@ -316,11 +397,13 @@ void print_error(wimp_message *m)
 	print_cleanup();
 }
 
+
 /**
  * Handle message_PRINT_TYPE_ODD
  *
  * \param m the message to handle
  */
+
 void print_type_odd(wimp_message *m)
 {
 	if ((m->your_ref == 0 || m->your_ref == print_prev_message) &&
@@ -417,6 +500,7 @@ bool print_ack(wimp_message *m)
  *
  * \param m the message to handle
  */
+
 void print_dataload_bounce(wimp_message *m)
 {
 	if (m->your_ref == 0 || m->your_ref != print_prev_message)
@@ -426,9 +510,11 @@ void print_dataload_bounce(wimp_message *m)
 	print_cleanup();
 }
 
+
 /**
  * Cleanup after printing
  */
+
 void print_cleanup(void)
 {
 	if (print_current_window)
@@ -518,16 +604,16 @@ bool print_document(struct gui_window *g, const char *filename)
 	rufl_invalidate_cache();
 
 	/* declare fonts, if necessary */
-	/*if (features & pdriver_FEATURE_DECLARE_FONT &&
-					c->type == CONTENT_HTML) {
-		if ((error_message = print_declare_fonts(box)))
+	if (features & pdriver_FEATURE_DECLARE_FONT) {
+		if ((error_message = print_declare_fonts(c)))
 			goto error;
-	}*/
+	}
 
 	plot = ro_plotters;
 	ro_plot_set_scale(print_scale);
 	ro_gui_current_redraw_gui = g;
-	current_redraw_browser = NULL;  /* we don't want to print the selection */
+	current_redraw_browser = NULL;  /* we don't want to print the
+	                                  selection */
 
 	/* print is now active */
 	print_active = true;
@@ -658,29 +744,33 @@ error:
 /**
  * Declare fonts to the printer driver.
  *
- * \param  box  box tree being printed
+ * \param  c  content being printed
  * \return 0 on success, error message on error
  */
 
-const char *print_declare_fonts(struct box *box)
+const char *print_declare_fonts(struct content *content)
 {
-	struct print_font *print_fonts = calloc(255, sizeof (*print_fonts));
-	unsigned int font_count = 0, i;
+	unsigned int i;
 	const char *error_message = 0;
 	os_error *error;
 
-	if (!print_fonts)
-		return messages_get("NoMemory");
+	free(print_fonts_list);
+	print_fonts_list = 0;
+	print_fonts_count = 0;
+	print_fonts_error = 0;
 
-	if (!print_find_fonts(box, &print_fonts, &font_count)) {
-		LOG(("print_find_fonts() failed"));
-		error_message = "print_find_fonts() failed";
-		goto end;
+	plot = print_fonts_plotters;
+	if (!content_redraw(content, 0, 0, content->width, content->height,
+			INT_MIN, INT_MIN, INT_MAX, INT_MAX, 1, 0xffffff)) {
+		if (print_fonts_error)
+			return print_fonts_error;
+		return "Declaring fonts failed.";
 	}
 
-	for (i = 0; i != font_count; ++i) {
-		error = xpdriver_declare_font(print_fonts[i].handle,
-				print_fonts[i].font_name, 0);
+	for (i = 0; i != print_fonts_count; ++i) {
+		LOG(("%u %s", i, print_fonts_list[i]));
+		error = xpdriver_declare_font(0, print_fonts_list[i],
+				pdriver_KERNED);
 		if (error) {
 			LOG(("xpdriver_declare_font: 0x%x: %s",
 					error->errnum, error->errmess));
@@ -697,78 +787,117 @@ const char *print_declare_fonts(struct box *box)
 	}
 
 end:
-	for (i = 0; i != font_count; i++)
-		free(print_fonts[i].font_name);
-	free(print_fonts);
+	for (i = 0; i != print_fonts_count; i++)
+		free(print_fonts_list[i]);
+	free(print_fonts_list);
+	print_fonts_list = 0;
 
 	return error_message;
 }
 
 
+bool print_fonts_plot_clg(colour c) { return true; }
+bool print_fonts_plot_rectangle(int x0, int y0, int width, int height,
+		int line_width, colour c, bool dotted, bool dashed)
+		{ return true; }
+bool print_fonts_plot_line(int x0, int y0, int x1, int y1, int width,
+		colour c, bool dotted, bool dashed) { return true; }
+bool print_fonts_plot_polygon(int *p, unsigned int n, colour fill)
+		{ return true; }
+bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, colour c)
+		{ return true; }
+bool print_fonts_plot_clip(int clip_x0, int clip_y0,
+		int clip_x1, int clip_y1) { return true; }
+bool print_fonts_plot_disc(int x, int y, int radius, colour colour)
+		{ return true; }
+bool print_fonts_plot_bitmap(int x, int y, int width, int height,
+		struct bitmap *bitmap, colour bg) { return true; }
+bool print_fonts_plot_bitmap_tile(int x, int y, int width, int height,
+		struct bitmap *bitmap, colour bg,
+		bool repeat_x, bool repeat_y) { return true; }
+bool print_fonts_plot_group_start(const char *name) { return true; }
+bool print_fonts_plot_group_end(void) { return true; }
+
+
 /**
- * Find all fonts in a document
- *
- * \param box Root of box tree
- * \param print_fonts pointer to array of fonts in document
- * \param font_count number of fonts declared
- * \return true on success, false otherwise
+ * Plotter for text plotting during font listing.
  */
-bool print_find_fonts(struct box *box, struct print_font **print_fonts, int *font_count)
+
+bool print_fonts_plot_text(int x, int y, struct css_style *style,
+		const char *text, size_t length, colour bg, colour c)
 {
-	struct box *a;
-	const char *txt;
-	size_t txt_len;
-	size_t width, rolength, consumed;
-	const char *rofontname, *rotext;
-	int i;
+	const char *font_family;
+	unsigned int font_size;
+	rufl_style font_style;
+	rufl_code code;
 
-	assert(box);
-#if 0
-	if (box->text && box->font && box->length > 0) {
-		txt = box->text;
-		txt_len = box->length;
+	nsfont_read_style(style, &font_family, &font_size, &font_style);
 
-		if (box->font->ftype == FONTTYPE_UFONT) {
-			/** \todo handle ufont */
-			LOG(("ufont"));
-			return false;
+	code = rufl_paint_callback(font_family, font_style, font_size,
+			text, length, 0, 0, print_fonts_callback, 0);
+	if (code != rufl_OK) {
+		if (code == rufl_FONT_MANAGER_ERROR) {
+			LOG(("rufl_paint_callback: rufl_FONT_MANAGER_ERROR: "
+					"0x%x: %s",
+					rufl_fm_error->errnum,
+					rufl_fm_error->errmess));
+			print_fonts_error = rufl_fm_error->errmess;
+		} else {
+			LOG(("rufl_paint_callback: 0x%x", code));
 		}
-
-		nsfont_txtenum(box->font, txt, txt_len,
-				&width, &rofontname,
-				&rotext, &rolength,
-				&consumed);
-
-		if (rotext == NULL) {
-			LOG(("rotext = null (%d)", txt_len));
-			return false;
-		}
-
-		for (i = 0; i != *font_count; ++i) {
-			if (!strcmp(((*print_fonts)[i]).font_name, rofontname))
-				break;
-		}
-
-		if (i == *font_count) {
-			/* max 255 fonts (as per draw) */
-			if (*font_count == 255)
-				return false;
-			if ((((*print_fonts)[*font_count]).font_name = strdup(rofontname)) == NULL) {
-				LOG(("failed to strdup (%s)", rofontname));
-				return false;
-			}
-			((*print_fonts)[(*font_count)++]).handle = (font_f)box->font->handle;
-		}
-
-		free((void*)rotext);
+		return false;
 	}
+	if (print_fonts_error)
+		return false;
 
-	for (a = box->children; a; a = a->next) {
-		if (!print_find_fonts(a, print_fonts, font_count))
-			return false;
-	}
-#endif
 	return true;
 }
+
+
+/**
+ * Callback for print_fonts_plot_text().
+ *
+ * The font name is added to print_fonts_list.
+ */
+
+void print_fonts_callback(void *context,
+		const char *font_name, unsigned int font_size,
+		const char *s8, unsigned short *s16, unsigned int n,
+		int x, int y)
+{
+	unsigned int i;
+	char **fonts_list;
+
+	(void) context;  /* unused */
+	(void) font_size;  /* unused */
+	(void) x;  /* unused */
+	(void) y;  /* unused */
+
+	assert(s8 || s16);
+
+	/* check if the font name is new */
+	for (i = 0; i != print_fonts_count &&
+			strcmp(print_fonts_list[i], font_name) != 0; i++)
+		;
+	if (i != print_fonts_count)
+		return;
+
+	/* add to list of fonts */
+	fonts_list = realloc(print_fonts_list,
+			sizeof print_fonts_list[0] *
+			(print_fonts_count + 1));
+	if (!fonts_list) {
+		print_fonts_error = messages_get("NoMemory");
+		return;
+	}
+	fonts_list[print_fonts_count] = strdup(font_name);
+	if (!fonts_list[print_fonts_count]) {
+		print_fonts_error = messages_get("NoMemory");
+		return;
+	}
+	print_fonts_list = fonts_list;
+	print_fonts_count++;
+}
+
 
 #endif
