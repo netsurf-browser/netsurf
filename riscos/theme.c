@@ -626,6 +626,7 @@ void ro_gui_theme_redraw(wimp_draw *redraw) {
 	g = ro_gui_toolbar_lookup(toolbar->toolbar_handle);
 	
 	/* only set type for browser windows */
+	sprintf(theme_favicon_sprite, "Ssmall_xxx");
 	if (g) {
 	  	assert(toolbar->type == THEME_BROWSER_TOOLBAR);
 		assert(g->bw);
@@ -635,8 +636,6 @@ void ro_gui_theme_redraw(wimp_draw *redraw) {
 					g->bw->current_content->type));
 			if (!ro_gui_wimp_sprite_exists(theme_favicon_sprite + 1))
 				sprintf(theme_favicon_sprite, "Ssmall_xxx");  
-		} else {
-			sprintf(theme_favicon_sprite, "Ssmall_xxx");
 		}
 	}
 
