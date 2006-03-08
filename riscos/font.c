@@ -398,7 +398,8 @@ bool nsfont_paint(struct css_style *style, const char *string,
 	nsfont_read_style(style, &font_family, &font_size, &font_style);
 
 	code = rufl_paint(font_family, font_style, font_size * scale,
-			string, length, x, y, rufl_BLEND_FONT);
+			string, length, x, y,
+			print_active ? 0 : rufl_BLEND_FONT);
 	if (code != rufl_OK) {
 		if (code == rufl_FONT_MANAGER_ERROR)
 			LOG(("rufl_paint: rufl_FONT_MANAGER_ERROR: 0x%x: %s",
