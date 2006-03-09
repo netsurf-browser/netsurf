@@ -324,7 +324,10 @@ void browser_window_callback(content_msg msg, struct content *c,
 				history_add(bw->history, c, bw->frag_id);
 				url_content = url_store_find(c->url);
 				if (url_content) {
-				  	title = strdup(c->title);
+					if (c->title)
+					  	title = strdup(c->title);
+					else
+						title = strdup(c->url);
 				  	if (title) {
 				  	  	free(url_content->title);
 				  	  	url_content->title = title;
