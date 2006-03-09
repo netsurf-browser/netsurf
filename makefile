@@ -65,6 +65,7 @@ OBJECTS_GTK += filetyped.o					# debug/
 OBJECTS_GTK += browser.o netsurf.o selection.o textinput.o \
 	version.o						# desktop/
 OBJECTS_GTK += font_pango.o gtk_bitmap.o gtk_gui.o \
+        gtk_schedule.o \
 	gtk_plotters.o gtk_treeview.o gtk_window.o		# gtk/
 
 

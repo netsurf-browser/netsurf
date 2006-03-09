@@ -226,10 +226,6 @@ void gui_401login_open(struct browser_window *bw, struct content *c,
 void gui_cert_verify(struct browser_window *bw, struct content *c,
 		const struct ssl_cert_info *certs, unsigned long num) {}
 
-void schedule(int t, void (*callback)(void *p), void *p) {}
-void schedule_remove(void (*callback)(void *p), void *p) {}
-void schedule_run(void) {}
-
 void global_history_add(struct url_content *data) {}
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
