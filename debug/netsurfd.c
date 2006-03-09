@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 	default_stylesheet_url = malloc(200);
 	adblock_stylesheet_url = malloc(200);
 	getcwd(url, sizeof url);
-	snprintf(default_stylesheet_url, 200, "file:%s/CSS", url);
+	snprintf(default_stylesheet_url, 200, "file:%s/ns.css", url);
 	snprintf(adblock_stylesheet_url, 200, "file:%s/AdBlock", url);
 #endif
 
@@ -175,11 +175,11 @@ void bitmap_set_opaque(struct bitmap *bitmap, bool opaque) {}
 
 void tree_initialise_redraw(struct tree *tree) {}
 void tree_redraw_area(struct tree *tree, int x, int y, int width, int height) {}
-void tree_draw_line(struct tree *tree, int x, int y, int width, int height) {}
+void tree_draw_line(int x, int y, int width, int height) {}
 void tree_draw_node_element(struct tree *tree, struct node_element *element) {}
 void tree_draw_node_expansion(struct tree *tree, struct node *node) {}
 void tree_recalculate_node_element(struct node_element *element) {}
-void tree_update_URL_node(struct node *node) {}
+void tree_update_URL_node(struct node *node, struct url_content *data) {}
 void tree_resized(struct tree *tree) {}
 void tree_set_node_sprite_folder(struct node *node) {}
 
@@ -191,7 +191,8 @@ void schedule_run(void) {}
 
 bool selection_highlighted(struct selection *s, struct box *box,
 		unsigned *start_idx, unsigned *end_idx) { return false; }
-bool gui_search_term_highlighted(struct gui_window *g, struct box *box,
+bool gui_search_term_highlighted(struct gui_window *g,
+		unsigned start_offset, unsigned end_offset,
 		unsigned *start_idx, unsigned *end_idx) { return false; }
 
 const char *local_encoding_name(void) { return "ISO-8859-1"; }

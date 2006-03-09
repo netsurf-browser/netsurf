@@ -115,10 +115,10 @@ CFLAGS_RISCOS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O \
 #	-include netsurf/utils/memdebug.h
 CFLAGS_RISCOS_SMALL = $(CFLAGS_RISCOS) -Dsmall
 CFLAGS_NCOS = $(CFLAGS_RISCOS) -Dncos
-CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -Ddebug $(WARNFLAGS) -I.. \
+CFLAGS_DEBUG = -std=c9x -D_BSD_SOURCE -DDEBUG_BUILD $(WARNFLAGS) -I.. \
 	$(PLATFORM_CFLAGS_DEBUG) -g
 CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
-	$(WARNFLAGS) -I.. -g \
+	$(WARNFLAGS) -I.. -g -O \
 	`pkg-config --cflags gtk+-2.0` `xml2-config --cflags`
 
 AFLAGS_RISCOS = -I..,. $(PLATFORM_AFLAGS_RISCOS)

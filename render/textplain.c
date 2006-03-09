@@ -355,7 +355,7 @@ bool textplain_redraw(struct content *c, int x, int y,
  * \return ptr to start of line containing (or nearest to) point
  */
 
-unsigned textplain_offset_from_coords(struct content *c, int x, int y, int dir)
+size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
 {
 	float line_height = css_len2px(&textplain_style.font_size.value.length,
 			&textplain_style) * 1.2;
