@@ -227,7 +227,10 @@ PangoFontDescription *nsfont_style_to_description(
 	PangoStyle styl = PANGO_STYLE_NORMAL;
 
 	assert(style->font_size.size == CSS_FONT_SIZE_LENGTH);
-	size = css_len2px(&style->font_size.value.length, style) * PANGO_SCALE;
+	if (style->font_size.value.length.unit == CSS_UNIT_PX)
+		size = style->font_size.value.length.value * PANGO_SCALE;
+	else
+		size = css_len2pt(&style->font_size.value.length, style) * PANGO_SCALE;
 
 	switch (style->font_style) {
 	case CSS_FONT_STYLE_ITALIC:
@@ -258,7 +261,10 @@ PangoFontDescription *nsfont_style_to_description(
 	}
 
 	desc = pango_font_description_new();
-	pango_font_description_set_size(desc, size);
+	if (style->font_size.value.length.unit == CSS_UNIT_PX)
+		pango_font_description_set_absolute_size(desc, size);
+	else
+		pango_font_description_set_size(desc, size);
 	pango_font_description_set_family_static(desc, "Sans");
 	pango_font_description_set_weight(desc, weight);
 	pango_font_description_set_style(desc, styl);
