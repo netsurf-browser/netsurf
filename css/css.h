@@ -656,6 +656,8 @@ void css_dump_stylesheet(const struct css_stylesheet * stylesheet);
 
 float css_len2px(const struct css_length *length,
 		const struct css_style *style);
+float css_len2pt(const struct css_length *length,
+		const struct css_style *style);
 struct css_border *css_eyecatching_border(struct css_border *test1,
 		struct css_style *style1, struct css_border *test2,
 		struct css_style *style2);

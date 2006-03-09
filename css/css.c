@@ -2976,6 +2976,8 @@ unsigned int css_hash(const char *s, int length)
 
 /**
  * Convert a struct css_length to pixels.
+ *
+ * Note: This assumes 90dpi (if converting from points)
  */
 
 float css_len2px(const struct css_length *length,
@@ -2999,6 +3001,32 @@ float css_len2px(const struct css_length *length,
 	return 0;
 }
 
+/**
+ * Convert a struct css_length to points.
+ *
+ * Note: This assumes 90dpi (if converting a pixel size)
+ */
+
+float css_len2pt(const struct css_length *length,
+		const struct css_style *style)
+{
+	assert(!((length->unit == CSS_UNIT_EM || length->unit == CSS_UNIT_EX) && style == 0));
+	switch (length->unit) {
+		case CSS_UNIT_EM: return length->value * css_len2pt(&style->font_size.value.length, 0);
+		case CSS_UNIT_EX: return length->value * css_len2pt(&style->font_size.value.length, 0) * 0.6;
+		/* RISC OS assumes 90dpi  */
+		case CSS_UNIT_PX: return length->value / 1.25;
+		/* 1pt = 1in/72 */
+		case CSS_UNIT_IN: return length->value * 72;
+		case CSS_UNIT_CM: return length->value * 28.452756;
+		case CSS_UNIT_MM: return length->value * 2.8452756;
+		case CSS_UNIT_PT: return length->value;
+		/* 1pc = 1pt * 12 */
+		case CSS_UNIT_PC: return length->value * 12.0;
+		default: break;
+	}
+	return 0;
+}
 
 /**
  * Return the most 'eyecatching' border.
