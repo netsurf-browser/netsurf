@@ -138,6 +138,11 @@ bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 {
 	GdkPixbuf *pixbuf = (GdkPixbuf *) bitmap;
 
+	LOG(("PLOT: %p @ %d,%d (%dx%d)\n", bitmap, x, y, width, height));
+
+	if (width == 0 || height == 0)
+		return true;
+	
 	if (gdk_pixbuf_get_width(pixbuf) == width &&
 			gdk_pixbuf_get_height(pixbuf) == height) {
 		gdk_draw_pixbuf(current_drawable, current_gc,
