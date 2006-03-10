@@ -362,7 +362,47 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
-
+	GdkCursor *cursor = NULL;
+	GdkCursorType cursortype;
+	bool nullcursor = false;
+	if (g->current_pointer == shape) return;
+	g->current_pointer = shape;
+	switch (shape) {
+        case GUI_POINTER_POINT:
+		cursortype = GDK_HAND1;
+		break;
+        case GUI_POINTER_CARET:
+		cursortype = GDK_XTERM;
+		break;
+        case GUI_POINTER_UD:
+		cursortype = GDK_SB_V_DOUBLE_ARROW;
+		break;
+        case GUI_POINTER_LR:
+		cursortype = GDK_SB_H_DOUBLE_ARROW;
+		break;
+        case GUI_POINTER_LD:
+		cursortype = GDK_SIZING; /* XXX */
+		break;
+        case GUI_POINTER_RD:
+		cursortype = GDK_SIZING; /* XXX */
+		break;
+        case GUI_POINTER_CROSS:
+		cursortype = GDK_CROSS;
+		break;
+        case GUI_POINTER_MOVE:
+		cursortype = GDK_FLEUR;
+		break;
+        case GUI_POINTER_MENU:
+		/* Cannot think of a good cursor for 'menu' yet */
+        case GUI_POINTER_DEFAULT:
+	default:
+	      nullcursor = true;
+	}
+	if (!nullcursor)
+		cursor = gdk_cursor_new_for_display(gtk_widget_get_display(GTK_WIDGET(g->drawing_area)), cursortype);
+	gdk_window_set_cursor(g->drawing_area->window, cursor);
+	if (!nullcursor)
+		gdk_cursor_unref(cursor);
 }
 
 
