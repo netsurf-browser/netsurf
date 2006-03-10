@@ -269,6 +269,8 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
+	fprintf(stderr, "Redrawing region %d,%d %dx%d\n", x0, y0, x1-x0+1, y1-y0+1);
+	gtk_widget_queue_draw_area(g->drawing_area, x0, y0, x1-x0+1, y1-y0+1);
 }
 
 
@@ -281,6 +283,12 @@ void gui_window_redraw_window(struct gui_window* g)
 void gui_window_update_box(struct gui_window *g,
 		const union content_msg_data *data)
 {
+	struct content *c = g->bw->current_content;
+
+	if (!c) return;
+
+	gtk_widget_queue_draw_area(g->drawing_area, data->redraw.x, data->redraw.y,
+			data->redraw.width, data->redraw.height);
 }
 
 
