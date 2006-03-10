@@ -15,6 +15,7 @@
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/desktop/textinput.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/render/box.h"
 #include "netsurf/riscos/save_complete.h"
@@ -196,3 +197,5 @@ bool gui_search_term_highlighted(struct gui_window *g,
 		unsigned *start_idx, unsigned *end_idx) { return false; }
 
 const char *local_encoding_name(void) { return "ISO-8859-1"; }
+
+struct caret ghost_caret;
