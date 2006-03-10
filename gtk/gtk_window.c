@@ -34,6 +34,7 @@ struct gui_window {
 	struct browser_window *bw;
 	int target_width;
 	int target_height;
+	gui_pointer_shape current_pointer;
 };
 GtkWidget *current_widget;
 GdkDrawable *current_drawable;
@@ -139,6 +140,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->drawing_area = drawing_area;
 	g->status_bar = status_bar;
 	g->bw = bw;
+	g->current_pointer = GUI_POINTER_DEFAULT;
 
 	g_signal_connect(G_OBJECT(window), "destroy",
 			G_CALLBACK(gui_window_destroy_event), g);
@@ -360,6 +362,7 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 void gui_window_set_pointer(gui_pointer_shape shape)
 {
+
 }
 
 
