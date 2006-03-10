@@ -37,7 +37,7 @@ static bool dragging_claimed = false;
 static wimp_t dragging_claimant;
 static os_box dragging_box = { -34, -34, 34, 34 };  /* \todo - size properly */
 static wimp_drag_claim_flags last_claim_flags = 0;
-
+static struct gui_window *last_start_window;
 
 static bool drag_claimed = false;
 
@@ -123,6 +123,7 @@ void gui_start_selection(struct gui_window *g)
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
+	last_start_window = g;
 }
 
 
@@ -588,7 +589,7 @@ void ro_gui_selection_dragging(wimp_message *message)
 		if (drag_claimed)
 			caret_remove(&ghost_caret);
 		else
-			gui_window_set_pointer(GUI_POINTER_CARET);
+			gui_window_set_pointer(g, GUI_POINTER_CARET);
 
 		text_box = textarea_get_position(textarea, x - gadget_box_x,
 					y - gadget_box_y, &char_offset, &pixel_offset);
@@ -661,7 +662,7 @@ void ro_gui_selection_drag_claim(wimp_message *message)
 	/* do we need to restore the default pointer shape? */
 	if ((last_claim_flags & wimp_DRAG_CLAIM_POINTER_CHANGED) &&
 			!(claim->flags & wimp_DRAG_CLAIM_POINTER_CHANGED)) {
-		gui_window_set_pointer(GUI_POINTER_DEFAULT);
+		gui_window_set_pointer(last_start_window, GUI_POINTER_DEFAULT);
 	}
 
 	last_claim_flags = claim->flags;

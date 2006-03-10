@@ -360,13 +360,13 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 }
 
 
-void gui_window_set_pointer(gui_pointer_shape shape)
+void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
 
 }
 
 
-void gui_window_hide_pointer(void)
+void gui_window_hide_pointer(struct gui_window *g)
 {
 }
 

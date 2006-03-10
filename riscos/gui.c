@@ -1138,7 +1138,7 @@ void ro_gui_pointer_leaving_window(wimp_leaving *leaving)
 
 		default:
 			gui_track = false;
-			gui_window_set_pointer(GUI_POINTER_DEFAULT);
+			gui_window_set_pointer(gui_track_gui_window, GUI_POINTER_DEFAULT);
 			break;
 	}
 }

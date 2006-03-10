@@ -59,7 +59,7 @@ static void browser_window_start_throbber(struct browser_window *bw);
 static void browser_window_stop_throbber(struct browser_window *bw);
 static void browser_window_set_status(struct browser_window *bw,
 		const char *text);
-static void browser_window_set_pointer(gui_pointer_shape shape);
+static void browser_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
 static void download_window_callback(fetch_msg msg, void *p, const void *data,
 		unsigned long size);
 static void browser_window_mouse_action_html(struct browser_window *bw,
@@ -667,9 +667,9 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
  * \param  shape    shape to use
  */
 
-void browser_window_set_pointer(gui_pointer_shape shape)
+void browser_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
-	gui_window_set_pointer(shape);
+	gui_window_set_pointer(g, shape);
 }
 
 
@@ -784,7 +784,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 		else if (mouse & (BROWSER_MOUSE_DRAG_1 |
 				BROWSER_MOUSE_DRAG_2)) {
 			browser_window_page_drag_start(bw, x, y);
-			browser_window_set_pointer(GUI_POINTER_MOVE);
+			browser_window_set_pointer(bw->window, GUI_POINTER_MOVE);
 		}
 		break;
 	}
@@ -1147,7 +1147,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	assert(status);
 
 	browser_window_set_status(bw, status);
-	browser_window_set_pointer(pointer);
+	browser_window_set_pointer(bw->window, pointer);
 }
 
 
@@ -1204,7 +1204,7 @@ void browser_window_mouse_action_text(struct browser_window *bw,
 	assert(status);
 
 	browser_window_set_status(bw, status);
-	browser_window_set_pointer(pointer);
+	browser_window_set_pointer(bw->window, pointer);
 }
 
 
@@ -1439,7 +1439,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 
 		case DRAGGING_2DSCROLL:
 		case DRAGGING_PAGE_SCROLL:
-			browser_window_set_pointer(GUI_POINTER_DEFAULT);
+			browser_window_set_pointer(bw->window, GUI_POINTER_DEFAULT);
 			break;
 
 		default:
@@ -1555,7 +1555,7 @@ const char *browser_window_scrollbar_click(struct browser_window *bw,
 			}
 			gui_window_box_scroll_start(bw->window, x0, y0, x1, y1);
 			if (bw->drag_type == DRAGGING_2DSCROLL)
-				gui_window_hide_pointer();
+				gui_window_hide_pointer(bw->window);
 		}
 	} else if (z < w + well_size) {
 		status = messages_get(vert ? "ScrollPDown" : "ScrollPRight");

@@ -2516,7 +2516,7 @@ struct ro_gui_pointer_entry ro_gui_pointer_table[] = {
  * Change mouse pointer shape
  */
 
-void gui_window_set_pointer(gui_pointer_shape shape)
+void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
 	static gui_pointer_shape curr_pointer = GUI_POINTER_DEFAULT;
 	struct ro_gui_pointer_entry *entry;
@@ -2560,7 +2560,7 @@ void gui_window_set_pointer(gui_pointer_shape shape)
  * Remove the mouse pointer from the screen
  */
 
-void gui_window_hide_pointer(void)
+void gui_window_hide_pointer(gui_window *g)
 {
 	os_error *error;
 
