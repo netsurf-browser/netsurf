@@ -31,8 +31,9 @@ struct gui_window {
 	GtkWidget *url_bar;
 	GtkWidget *drawing_area;
 	GtkWidget *status_bar;
-	int old_width;
 	struct browser_window *bw;
+	int target_width;
+	int target_height;
 };
 GtkWidget *current_widget;
 GdkDrawable *current_drawable;
@@ -50,7 +51,8 @@ static gboolean gui_window_motion_notify_event(GtkWidget *widget,
 		GdkEventMotion *event, gpointer data);
 static gboolean gui_window_button_press_event(GtkWidget *widget,
 		GdkEventButton *event, gpointer data);
-
+static void gui_window_size_allocate_event(GtkWidget *widget,
+		GtkAllocation *allocation, gpointer data);
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone)
@@ -73,7 +75,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_widget_set_size_request(GTK_WIDGET(window), 600, 600);
+	gtk_window_set_default_size(GTK_WINDOW(window), 600, 600);
 	gtk_window_set_title(GTK_WINDOW(window), "NetSurf");
 
 	vbox = gtk_vbox_new(false, 0);
@@ -136,7 +138,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->url_bar = url_bar;
 	g->drawing_area = drawing_area;
 	g->status_bar = status_bar;
-	g->old_width = drawing_area->allocation.width;
 	g->bw = bw;
 
 	g_signal_connect(G_OBJECT(window), "destroy",
@@ -150,6 +151,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			G_CALLBACK(gui_window_motion_notify_event), g);
 	g_signal_connect(G_OBJECT(drawing_area), "button_press_event",
 			G_CALLBACK(gui_window_button_press_event), g);
+	g_signal_connect(G_OBJECT(scrolled), "size_allocate",
+			G_CALLBACK(gui_window_size_allocate_event), g);
 
 	return g;
 }
@@ -226,12 +229,35 @@ gboolean gui_window_configure_event(GtkWidget *widget,
 			g->bw->current_content->status != CONTENT_STATUS_DONE)
 		return FALSE;
 
-	g->old_width = event->width;
 /* 	content_reformat(g->bw->current_content, event->width, event->height); */
 
 	return FALSE;
 }
 
+static void gtk_perform_deferred_resize(void *p)
+{
+	struct gui_window *g = p;
+	if (gui_in_multitask) return;
+	if (!g->bw->current_content) return;
+	if (g->bw->current_content->status != CONTENT_STATUS_READY &&
+			g->bw->current_content->status != CONTENT_STATUS_DONE)
+		return;
+	content_reformat(g->bw->current_content, g->target_width, g->target_height);
+}
+
+void gui_window_size_allocate_event(GtkWidget *widget,
+		GtkAllocation *allocation, gpointer data)
+{
+	struct gui_window *g = data;
+	GtkWidget *viewport = gtk_bin_get_child(GTK_BIN(widget));
+	/* The widget is the scrolled window, which is a GtkBin. We want
+	 * The width and height of the allocation of its child
+	 */
+	g->target_width = viewport->allocation.width - 2;
+	g->target_height = viewport->allocation.height;
+	/* Schedule a callback to perform the resize for 1/10s from now */
+	schedule(10, gtk_perform_deferred_resize, g);
+}
 
 gboolean gui_window_motion_notify_event(GtkWidget *widget,
 		GdkEventMotion *event, gpointer data)
@@ -255,7 +281,6 @@ gboolean gui_window_button_press_event(GtkWidget *widget,
 	return TRUE;
 }
 
-
 void gui_window_destroy(struct gui_window *g)
 {
 }
@@ -269,7 +294,6 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
-	fprintf(stderr, "Redrawing region %d,%d %dx%d\n", x0, y0, x1-x0+1, y1-y0+1);
 	gtk_widget_queue_draw_area(g->drawing_area, x0, y0, x1-x0+1, y1-y0+1);
 }
 
