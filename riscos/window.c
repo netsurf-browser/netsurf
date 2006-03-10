@@ -826,7 +826,7 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int x1, int
 
 	if (g->toolbar)
 	  	toolbar_height = ro_gui_theme_toolbar_full_height(g->toolbar);
-	
+
 	x0 = x0 * 2 * g->option.scale;
 	y0 = y0 * 2 * g->option.scale;
 	x1 = x1 * 2 * g->option.scale;
@@ -836,7 +836,7 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0, int x1, int
 	cy0 = -state.yscroll + toolbar_height;
 	width = state.visible.x1 - state.visible.x0;
 	height = state.visible.y1 - state.visible.y0 - toolbar_height;
-	
+
 	/* make sure we're visible */
 	correction = (x1 - cx0 - width);
 	if (correction > 0)
@@ -2561,7 +2561,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
  * Remove the mouse pointer from the screen
  */
 
-void gui_window_hide_pointer(gui_window *g)
+void gui_window_hide_pointer(struct gui_window *g)
 {
 	os_error *error;
 
@@ -2582,7 +2582,7 @@ void gui_window_hide_pointer(gui_window *g)
 
 void gui_window_new_content(struct gui_window *g)
 {
-  	ro_gui_menu_objects_moved();
+	ro_gui_menu_objects_moved();
 	ro_gui_prepare_navigate(g);
 	ro_gui_dialog_close_persistent(g->window);
 }
