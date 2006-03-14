@@ -2,6 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2006 Daniel Silverstone <dsilvers@digital-scurf.org>
  * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
  */
@@ -14,10 +15,6 @@
  * Active fetches are held in the linked list fetch_list. There may be at most
  * one fetch in progress from each host. Any further fetches are queued until
  * the previous one ends.
- *
- * Invariant: only the fetch at the head of each queue is in progress, ie.
- *        queue_prev == 0  <=>  curl_handle != 0
- *   and  queue_prev != 0  <=>  curl_handle == 0.
  */
 
 #include <assert.h>
@@ -88,17 +85,26 @@ struct fetch {
 #define MAX_CERTS 10
 	struct cert_info cert_data[MAX_CERTS];	/**< HTTPS certificate data */
 #endif
-	struct fetch *queue_prev;	/**< Previous fetch for this host. */
-	struct fetch *queue_next;	/**< Next fetch for this host. */
-	struct fetch *prev;	/**< Previous active fetch in ::fetch_list. */
-	struct fetch *next;	/**< Next active fetch in ::fetch_list. */
+	struct fetch *r_prev;	/**< Previous active fetch in ::fetch_ring. */
+	struct fetch *r_next;	/**< Next active fetch in ::fetch_ring. */
+};
+
+struct cache_handle {
+	CURL *handle; /**< The cached cURL handle */
+	char *host;        /**< The host for which this handle is cached */
+
+	struct cache_handle *r_prev; /**< Previous cached handle in ring. */
+	struct cache_handle *r_next; /**< Next cached handle in ring. */
 };
 
 static const char * const user_agent = "NetSurf";
 CURLM *fetch_curl_multi;		/**< Global cURL multi handle. */
 /** Curl handle with default options set; not used for transfers. */
 static CURL *fetch_blank_curl;
-static struct fetch *fetch_list = 0;	/**< List of active fetches. */
+static struct fetch *fetch_ring = 0;	/**< Ring of active fetches. */
+static struct fetch *queue_ring = 0;    /**< Ring of queued fetches */
+static struct cache_handle *handle_ring = 0; /**< Ring of cached handles */
+
 static char fetch_error_buffer[CURL_ERROR_SIZE]; /**< Error buffer for cURL. */
 static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
 static char fetch_proxy_userpwd[100];	/**< Proxy authentication details. */
@@ -124,6 +130,77 @@ static int fetch_verify_callback(int preverify_ok, X509_STORE_CTX *x509_ctx);
 static int fetch_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm);
 #endif
 
+/** Insert the given item into the specified ring.
+ * Assumes that the element is zeroed as appropriate.
+ */
+#define RING_INSERT(ring,element) \
+	LOG(("RING_INSERT(%s, %p(%s))", #ring, element, element->host)); \
+        if (ring) { \
+		element->r_next = ring; \
+		element->r_prev = ring->r_prev; \
+		ring->r_prev = element; \
+		element->r_prev->r_next = element; \
+       	} else \
+		ring = element->r_prev = element->r_next = element
+
+/** Remove the given element from the specified ring.
+ * Will zero the element as needed
+ */
+#define RING_REMOVE(ring, element) \
+	LOG(("RING_REMOVE(%s, %p(%s)", #ring, element, element->host)); \
+	if (element->r_next != element ) { \
+		/* Not the only thing in the ring */ \
+		element->r_next->r_prev = element->r_prev; \
+		element->r_prev->r_next = element->r_next; \
+		if (ring == element) ring = element->r_next; \
+	} else { \
+		/* Only thing in the ring */ \
+		ring = 0; \
+	} \
+	element->r_next = element->r_prev = 0
+	
+/** Find the element (by hostname) in the given ring, leave it in the
+ * provided element variable
+ */
+#define RING_FINDBYHOST(ring, element, hostname) \
+	LOG(("RING_FINDBYHOST(%s, %s)", #ring, hostname)); \
+	if (ring) { \
+		element = ring; \
+		do { \
+			if (strcasecmp(element->host, hostname) == 0) \
+				break; \
+			element = element->r_next; \
+		} while (element != ring); \
+		element = 0; \
+	} else element = 0
+
+/** Measure the size of a ring and put it in the supplied variable */
+#define RING_GETSIZE(ringtype, ring, sizevar) \
+	LOG(("RING_GETSIZE(%s)", #ring)); \
+	if (ring) { \
+		ringtype *p = ring; \
+		sizevar = 0; \
+		do { \
+			sizevar++; \
+			p = p->r_next; \
+		} while (p != ring); \
+	} else sizevar = 0
+
+/** Count the number of elements in the ring which match the provided hostname */
+#define RING_COUNTBYHOST(ringtype, ring, sizevar, hostname) \
+	LOG(("RING_COUNTBYHOST(%s, %s)", #ring, hostname)); \
+	if (ring) { \
+		ringtype *p = ring; \
+		sizevar = 0; \
+		do { \
+			if (strcasecmp(p->host, hostname) == 0) \
+				sizevar++; \
+			p = p->r_next; \
+		} while (p != ring); \
+	} else sizevar = 0
+
+static void ns_internal_cache_handle(CURL *handle, char *hostname);
+static void ns_internal_dispatch_jobs(void);
 
 /**
  * Initialise the fetcher.
@@ -232,9 +309,6 @@ struct fetch * fetch_start(char *url, char *referer,
 {
 	char *host;
 	struct fetch *fetch;
-	struct fetch *host_fetch;
-	CURLcode code;
-	CURLMcode codem;
 	struct curl_slist *slist;
 	url_func_result res;
 	char *ref1 = 0, *ref2 = 0;
@@ -308,10 +382,8 @@ struct fetch * fetch_start(char *url, char *referer,
 #ifdef WITH_SSL
 	memset(fetch->cert_data, 0, sizeof(fetch->cert_data));
 #endif
-	fetch->queue_prev = 0;
-	fetch->queue_next = 0;
-	fetch->prev = 0;
-	fetch->next = 0;
+	fetch->r_prev = 0;
+	fetch->r_next = 0;
 
 	if (!fetch->url || (referer &&
 			(ref1 && ref2 && strcasecmp(ref1, ref2) == 0) &&
@@ -370,44 +442,9 @@ struct fetch * fetch_start(char *url, char *referer,
 		APPEND(fetch->headers, headers[i]);
 	}
 
-	/* look for a fetch from the same host */
-	for (host_fetch = fetch_list;
-			host_fetch && strcasecmp(host_fetch->host, host) != 0;
-			host_fetch = host_fetch->next)
-		;
-	if (host_fetch) {
-		/* fetch from this host in progress:
-		   queue the new fetch */
-		LOG(("queueing"));
-		fetch->curl_handle = 0;
-		/* queue at end */
-		for (; host_fetch->queue_next;
-				host_fetch = host_fetch->queue_next)
-			;
-		fetch->queue_prev = host_fetch;
-		host_fetch->queue_next = fetch;
-		return fetch;
-	}
-
-	/* create the curl easy handle */
-	fetch->curl_handle = curl_easy_duphandle(fetch_blank_curl);
-	if (!fetch->curl_handle)
-		goto failed;
-
-	code = fetch_set_options(fetch);
-	if (code != CURLE_OK)
-		goto failed;
-
-	/* add to the global curl multi handle */
-	codem = curl_multi_add_handle(fetch_curl_multi, fetch->curl_handle);
-	assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
-
-	fetch->next = fetch_list;
-	if (fetch_list != 0)
-		fetch_list->prev = fetch;
-	fetch_list = fetch;
-	fetch_active = true;
-
+	/* Dump us in the queue and ask the queue to run. */
+	RING_INSERT(queue_ring, fetch);
+	ns_internal_dispatch_jobs();
 	return fetch;
 
 failed:
@@ -426,6 +463,152 @@ failed:
 	return 0;
 }
 
+/**
+ * Initiate a fetch from the queue.
+ *
+ * Called with a fetch structure and a CURL handle to be used to fetch the content.
+ *
+ * This will return whether or not the fetch was successfully initiated.
+ */
+static bool ns_internal_initiate_fetch(struct fetch *fetch, CURL *handle)
+{
+	CURLcode code;
+	CURLMcode codem;
+
+	fetch->curl_handle = handle;
+
+	/* Initialise the handle */
+	code = fetch_set_options(fetch);
+	if (code != CURLE_OK) {
+		fetch->curl_handle = 0;
+		return false;
+	}
+	
+	/* add to the global curl multi handle */
+	codem = curl_multi_add_handle(fetch_curl_multi, fetch->curl_handle);
+	assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
+
+	fetch_active = true;
+	return true;
+}
+
+/**
+ * Find a CURL handle to use to dispatch a job
+ */
+static CURL *ns_internal_get_handle(char *host)
+{
+	struct cache_handle *h;
+	CURL *ret;
+	RING_FINDBYHOST(handle_ring, h, host);
+	if (h) {
+		ret = h->handle;
+		free(h->host);
+		RING_REMOVE(handle_ring, h);
+		free(h);
+	} else {
+		ret = curl_easy_duphandle(fetch_blank_curl);
+	}
+	return ret;
+}
+
+/**
+ * Dispatch a single job
+ */
+static bool ns_internal_dispatch_job(struct fetch *fetch)
+{
+	RING_REMOVE(queue_ring, fetch);
+	if (!ns_internal_initiate_fetch(fetch, ns_internal_get_handle(fetch->host))) {
+		RING_INSERT(queue_ring, fetch); /* Put it back on the end of the queue */
+		return false;
+	} else {
+		RING_INSERT(fetch_ring, fetch);
+		return true;
+	}
+}
+
+/**
+ * Choose and dispatch a single job. Return false if we failed to dispatch anything.
+ *
+ * We don't check the overall dispatch size here because we're not called unless
+ * there is room in the fetch queue for us.
+ */
+static bool ns_internal_choose_and_dispatch(void)
+{
+	struct fetch *queueitem;
+	queueitem = queue_ring;
+	do {
+		/* We can dispatch the selected item if there is room in the
+		 * fetch ring
+		 */
+		int countbyhost;
+		RING_COUNTBYHOST(struct fetch, fetch_ring, countbyhost, queueitem->host);
+		if (countbyhost < option_max_fetchers_per_host) {
+			/* We can dispatch this item in theory */
+			return ns_internal_dispatch_job(queueitem);
+		}
+		queueitem = queueitem->r_next;
+	} while (queueitem != queue_ring);
+	return false;
+}
+
+/**
+ * Dispatch as many jobs as we have room to dispatch.
+ */
+static void ns_internal_dispatch_jobs(void)
+{
+	int all_active, all_queued;
+
+	if (!queue_ring) return; /* Nothing to do, the queue is empty */
+	RING_GETSIZE(struct fetch, queue_ring, all_queued);
+	RING_GETSIZE(struct fetch, fetch_ring, all_active);
+	while( all_queued && all_active < option_max_fetchers ) {
+		LOG(("%d queued, %d fetching", all_queued, all_active));
+		if (ns_internal_choose_and_dispatch()) {
+			all_queued--;
+			all_active++;
+		} else {
+			/* Either a dispatch failed or we ran out. Just stop */
+			break;
+		}
+	}
+}
+
+/**
+ * Cache a CURL handle for the provided host (if wanted)
+ *
+ */
+static void ns_internal_cache_handle(CURL *handle, char *host)
+{
+	struct cache_handle *h = 0;
+	int c;
+	RING_FINDBYHOST(handle_ring, h, host);
+	if (h) {
+		/* Already have a handle cached for this hostname */
+		curl_easy_cleanup(handle);
+		return;
+	}
+	/* We do not have a handle cached, first up determine if the cache is full */
+	RING_GETSIZE(struct cache_handle, handle_ring, c);
+	if (c >= option_max_cached_fetch_handles) {
+		/* Cache is full, so, we rotate the ring by one and replace the
+		 * oldest handle with this one. We do this without freeing/allocating
+		 * memory (except the hostname) and without removing the entry from the
+		 * ring and then re-inserting it, in order to be as efficient as we can.
+		 */
+		h = handle_ring;
+		handle_ring = h->r_next;
+		curl_easy_cleanup(h->handle);
+		h->handle = handle;
+		free(h->host);
+		h->host = strdup(host);
+		return;
+	}
+	/* The table isn't full yet, so make a shiny new handle to add to the ring */
+	h = (struct cache_handle*)malloc(sizeof(struct cache_handle));
+	h->handle = handle;
+	h->host = strdup(host);
+	RING_INSERT(handle_ring, h);
+}
 
 /**
  * Set options specific for a fetch.
@@ -532,89 +715,48 @@ void fetch_abort(struct fetch *f)
 {
 	assert(f);
 	LOG(("fetch %p, url '%s'", f, f->url));
-	if (f->queue_prev) {
-		f->queue_prev->queue_next = f->queue_next;
-		if (f->queue_next)
-			f->queue_next->queue_prev = f->queue_prev;
-		fetch_free(f);
-	} else {
+	if (f->curl_handle) {
 		f->abort = true;
+	} else {
+		RING_REMOVE(queue_ring, f);
+		fetch_free(f);
 	}
 }
 
 
 /**
- * Clean up a fetch and start any queued fetch for the same host.
+ * Clean up the provided fetch object and free it.
+ *
+ * Will prod the queue afterwards to allow pending requests to be initiated.
  */
 
 void fetch_stop(struct fetch *f)
 {
-	CURLcode code;
 	CURLMcode codem;
-	struct fetch *fetch;
-	struct fetch *next_fetch;
 
 	assert(f);
 	LOG(("fetch %p, url '%s'", f, f->url));
 
-	/* remove from list of fetches */
-	if (f->prev == 0)
-		fetch_list = f->next;
-	else
-		f->prev->next = f->next;
-	if (f->next != 0)
-		f->next->prev = f->prev;
-
-	/* remove from curl multi handle */
 	if (f->curl_handle) {
+		/* remove from curl multi handle */
 		codem = curl_multi_remove_handle(fetch_curl_multi,
 				f->curl_handle);
 		assert(codem == CURLM_OK);
-	}
-
-	if (f->curl_handle && f->queue_next) {
-		/* start a queued fetch for this host, reusing the handle */
-		fetch = f->queue_next;
-
-		LOG(("starting queued %p '%s'", fetch, fetch->url));
-
-		fetch->curl_handle = f->curl_handle;
+		/* Put this curl handle into the cache if wanted. */
+		ns_internal_cache_handle(f->curl_handle, f->host);
 		f->curl_handle = 0;
-		fetch->cachedata.req_time = time(0);
-		code = fetch_set_options(fetch);
-		if (code == CURLE_OK)
-			/* add to the global curl multi handle */
-			codem = curl_multi_add_handle(fetch_curl_multi,
-					fetch->curl_handle);
-
-		if (code == CURLE_OK && (codem == CURLM_OK ||
-				codem == CURLM_CALL_MULTI_PERFORM)) {
-			/* add to list of fetches */
-			fetch->prev = 0;
-			fetch->next = fetch_list;
-			if (fetch_list != 0)
-				fetch_list->prev = fetch;
-			fetch_list = fetch;
-			fetch->queue_prev = 0;
-		} else {
-			/* destroy all queued fetches for this host */
-			do {
-				fetch->callback(FETCH_ERROR, fetch->p,
-						messages_get("FetchError"), 0);
-				next_fetch = fetch->queue_next;
-				fetch_free(fetch);
-				fetch = next_fetch;
-			} while (fetch);
-		}
-
+		/* Remove this from the active set of fetches (if it's still there) */
+		RING_REMOVE(fetch_ring, f);
 	} else {
-		if (f->queue_prev)
-			f->queue_prev->queue_next = f->queue_next;
-		if (f->queue_next)
-			f->queue_next->queue_prev = f->queue_prev;
+		/* Remove this from the queued set of fetches (if it's still there) */
+		RING_REMOVE(queue_ring, f);
 	}
 
 	fetch_free(f);
+	if (!fetch_ring && !queue_ring)
+		fetch_active = false;
+	else if (queue_ring)
+		ns_internal_dispatch_jobs();
 }
 
 
@@ -685,9 +827,6 @@ void fetch_poll(void)
 		}
 		curl_msg = curl_multi_info_read(fetch_curl_multi, &queue);
 	}
-
-	if (!fetch_list)
-		fetch_active = false;
 }
 
 
@@ -1161,8 +1300,7 @@ struct curl_httppost *fetch_post_convert(struct form_successful_control *control
 {
 	struct curl_httppost *post = 0, *last = 0;
 	char *mimetype = 0;
-	char *leafname = 0, *temp = 0;
-	int leaflen;
+	char *leafname = 0;
 
 	for (; control; control = control->next) {
 		if (control->file) {

@@ -77,6 +77,19 @@ char *option_cookie_file = 0;
 /** Cookie jar loaction */
 char *option_cookie_jar = 0;
 
+/* Fetcher configuration */
+/** Maximum simultaneous active fetchers */
+int option_max_fetchers = 24;
+/** Maximum simultaneous active fetchers per host.
+ * (<=option_max_fetchers else it makes no sense 
+ */
+int option_max_fetchers_per_host = 5;
+/** Maximum number of inactive fetchers cached.
+ * The total number of handles netsurf will therefore have open
+ * is this plus option_max_fetchers.
+ */
+int option_max_cached_fetch_handles = 6;
+
 EXTRA_OPTION_DEFINE
 
 
@@ -105,6 +118,12 @@ struct {
 	{ "ca_bundle",       OPTION_STRING,  &option_ca_bundle },
 	{ "cookie_file",     OPTION_STRING,  &option_cookie_file },
 	{ "cookie_jar",      OPTION_STRING,  &option_cookie_jar },
+	/* Fetcher options */
+	{ "max_fetchers",    OPTION_INTEGER, &option_max_fetchers },
+	{ "max_fetchers_per_host",
+		             OPTION_INTEGER, &option_max_fetchers_per_host },
+	{ "max_cached_fetch_handles",
+		             OPTION_INTEGER, &option_max_cached_fetch_handles },
 	EXTRA_OPTION_TABLE
 };
 

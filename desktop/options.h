@@ -50,6 +50,12 @@ extern char *option_ca_bundle;
 extern char *option_cookie_file;
 extern char *option_cookie_jar;
 
+/* Fetcher configuration. */
+extern int option_max_fetchers;
+extern int option_max_fetchers_per_host;
+extern int option_max_cached_fetch_handles;
+
+
 void options_read(const char *path);
 void options_write(const char *path);
 void options_dump(void);
