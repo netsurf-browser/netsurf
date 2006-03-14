@@ -258,7 +258,7 @@ void gui_window_size_allocate_event(GtkWidget *widget,
 	g->target_width = viewport->allocation.width - 2;
 	g->target_height = viewport->allocation.height;
 	/* Schedule a callback to perform the resize for 1/10s from now */
-	schedule(10, gtk_perform_deferred_resize, g);
+	schedule(5, gtk_perform_deferred_resize, g);
 }
 
 gboolean gui_window_motion_notify_event(GtkWidget *widget,
