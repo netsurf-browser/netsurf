@@ -40,7 +40,7 @@ static bool nsgtk_plot_group_start(const char *name);
 static bool nsgtk_plot_group_end(void);
 static void nsgtk_set_colour(colour c);
 
-
+static GdkRectangle cliprect;
 
 struct plotter_table plot;
 
@@ -113,9 +113,11 @@ bool nsgtk_plot_fill(int x0, int y0, int x1, int y1, colour c)
 bool nsgtk_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1)
 {
-	GdkRectangle clip = { clip_x0, clip_y0,
-		clip_x1 - clip_x0 + 1, clip_y1 - clip_y0 + 1 };
-	gdk_gc_set_clip_rectangle(current_gc, &clip);
+	cliprect.x = clip_x0;
+	cliprect.y = clip_y0;
+	cliprect.width = clip_x1 - clip_x0 + 1;
+	cliprect.height = clip_y1 - clip_y0 + 1;
+	gdk_gc_set_clip_rectangle(current_gc, &cliprect);
 	return true;
 }
 
@@ -136,6 +138,9 @@ bool nsgtk_plot_disc(int x, int y, int radius, colour colour)
 bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg)
 {
+	/* XXX: This currently ignores the background colour supplied.
+	 * Does this matter?
+	 */
 	GdkPixbuf *pixbuf = (GdkPixbuf *) bitmap;
 
 	if (width == 0 || height == 0)
@@ -176,6 +181,24 @@ bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y)
 {
+	int doneheight = 0, donewidth = 0;
+	
+	if (!(repeat_x || repeat_y)) {
+		/* Not repeating at all, so just pass it on */
+		return nsgtk_plot_bitmap(x,y,width,height,bitmap,bg);
+	}
+
+	doneheight = cliprect.y - (cliprect.y % height);
+	
+	while (doneheight < (cliprect.y + cliprect.height)) {
+		donewidth = cliprect.x - (cliprect.x % width);
+		while (donewidth < (cliprect.x + cliprect.width)) {
+			nsgtk_plot_bitmap(donewidth, doneheight,
+					width, height, bitmap, bg);
+			donewidth += width;
+		}
+		doneheight += height;
+	}	
 	return true;
 }
 
