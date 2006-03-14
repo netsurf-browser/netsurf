@@ -188,17 +188,27 @@ bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		return nsgtk_plot_bitmap(x,y,width,height,bitmap,bg);
 	}
 
-	doneheight = cliprect.y - (cliprect.y % height);
+	if (y > cliprect.y)	
+		doneheight = (cliprect.y - height) + ((y - cliprect.y) % height);
+	else
+		doneheight = y;
 	
 	while (doneheight < (cliprect.y + cliprect.height)) {
-		donewidth = cliprect.x - (cliprect.x % width);
+		if (x > cliprect.x)
+			donewidth = (cliprect.x - width) + ((x - cliprect.x) % width);
+		else
+			donewidth = x;
 		while (donewidth < (cliprect.x + cliprect.width)) {
 			nsgtk_plot_bitmap(donewidth, doneheight,
 					width, height, bitmap, bg);
 			donewidth += width;
+			if (!repeat_x) break;
 		}
 		doneheight += height;
-	}	
+		if (!repeat_y) break;
+	}
+
+	
 	return true;
 }
 
