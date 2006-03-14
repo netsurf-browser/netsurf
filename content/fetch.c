@@ -1301,6 +1301,10 @@ struct curl_httppost *fetch_post_convert(struct form_successful_control *control
 	struct curl_httppost *post = 0, *last = 0;
 	char *mimetype = 0;
 	char *leafname = 0;
+#ifdef riscos
+	char *temp;
+	int leaflen;
+#endif
 
 	for (; control; control = control->next) {
 		if (control->file) {
