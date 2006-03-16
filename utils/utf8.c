@@ -298,7 +298,8 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 		}
 
 		/* close the last cd - we don't care if this fails */
-		iconv_close(last_cd.cd);
+		if (last_cd.cd)
+			iconv_close(last_cd.cd);
 
 		/* and copy the to/from/cd data into last_cd */
 		strncpy(last_cd.from, from, 32);
