@@ -1588,55 +1588,79 @@ void parse_clip(struct css_style * const s, const struct css_node * v)
 		return;
 
 	switch (v->type) {
-		case CSS_NODE_IDENT:
-			if (v->data_length == 7 &&
-			    strncasecmp(v->data, "inherit", 7) == 0)
-				s->clip.clip = CSS_CLIP_INHERIT;
-			else if (v->data_length == 4 &&
-				strncasecmp(v->data, "auto", 4) == 0)
-				s->clip.clip = CSS_CLIP_AUTO;
-			break;
-		case CSS_NODE_FUNCTION:
-			/* must be rect(X,X,X,X) */
-			if (v->data_length == 5 &&
-			    strncasecmp(v->data, "rect", 4) == 0) {
-				t = v->value;
-				for (i = 0; i != 4; i++) {
-					switch (t->type) {
-						case CSS_NODE_IDENT:
-							if (t->data_length == 4 && strncasecmp(t->data, "auto", 4) == 0) {
-								s->clip.rect[i].rect = CSS_CLIP_AUTO;
-							}
-							else
-								return;
-							break;
-						case CSS_NODE_DIMENSION:
-						case CSS_NODE_NUMBER:
-							if (parse_length(&s->clip.rect[i].value, t, false) != 0)
-								return;
-							s->clip.rect[i].rect = CSS_CLIP_RECT_LENGTH;
-							break;
-						default:
-							return;
-					}
-					t = t->next;
+	case CSS_NODE_IDENT:
+		if (v->data_length == 7 &&
+		    strncasecmp(v->data, "inherit", 7) == 0)
+			s->clip.clip = CSS_CLIP_INHERIT;
+		else if (v->data_length == 4 &&
+			strncasecmp(v->data, "auto", 4) == 0)
+			s->clip.clip = CSS_CLIP_AUTO;
+		break;
+	case CSS_NODE_FUNCTION:
+		/* must be rect(X,X,X,X) */
+		if (v->data_length == 5 &&
+		    strncasecmp(v->data, "rect", 4) == 0) {
+			struct {
+				enum { CSS_CLIP_RECT_AUTO,
+					CSS_CLIP_RECT_LENGTH } rect;
+				struct css_length value;
+			} rect[4];
 
-					if (i == 3) {
-						if (t)
-							return;
-					}
-					else {
-						if (!t || t->type != CSS_NODE_COMMA)
-							return;
-					}
+			t = v->value;
+			if (!t)
+				return;
 
-					t = t->next;
+			for (i = 0; i != 4; i++) {
+				switch (t->type) {
+				case CSS_NODE_IDENT:
+					if (t->data_length == 4 &&
+							strncasecmp(t->data, "auto", 4) == 0) {
+						rect[i].rect = CSS_CLIP_AUTO;
+					}
+					else
+						return;
+					break;
+				case CSS_NODE_DIMENSION:
+				case CSS_NODE_NUMBER:
+					if (parse_length(&rect[i].value,
+							t, false) != 0)
+						return;
+					rect[i].rect = CSS_CLIP_RECT_LENGTH;
+					break;
+				default:
+					return;
 				}
-				s->clip.clip = CSS_CLIP_RECT;
+
+				/* move to comma or end */
+				t = t->next;
+
+				if (i == 3 && t)
+					/* excess arguments - ignore rule */
+					return;
+				else {
+					if (!t || t->type != CSS_NODE_COMMA)
+						/* insufficient arguments or
+						 * no comma - ignore rule */
+						return;
+				}
+
+				/* move to next argument */
+				t = t->next;
 			}
-			break;
-		default:
-			break;
+
+			/* If we reach here, rule is valid, so apply to s */
+			for (i = 0; i != 4; i++) {
+				s->clip.rect[i].rect = rect[i].rect;
+				s->clip.rect[i].value.value =
+						rect[i].value.value;
+				s->clip.rect[i].value.unit =
+						rect[i].value.unit;
+			}
+			s->clip.clip = CSS_CLIP_RECT;
+		}
+		break;
+	default:
+		break;
 	}
 }
 
