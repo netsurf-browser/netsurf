@@ -1803,24 +1803,43 @@ gui_pointer_shape get_pointer_shape(css_cursor cursor)
 			pointer = GUI_POINTER_MOVE;
 			break;
 		case CSS_CURSOR_E_RESIZE:
+			pointer = GUI_POINTER_RIGHT;
+			break;
 		case CSS_CURSOR_W_RESIZE:
-			pointer = GUI_POINTER_LR;
+			pointer = GUI_POINTER_LEFT;
 			break;
 		case CSS_CURSOR_N_RESIZE:
+			pointer = GUI_POINTER_UP;
+			break;
 		case CSS_CURSOR_S_RESIZE:
-			pointer = GUI_POINTER_UD;
+			pointer = GUI_POINTER_DOWN;
 			break;
 		case CSS_CURSOR_NE_RESIZE:
+			pointer = GUI_POINTER_RU;
+			break;
 		case CSS_CURSOR_SW_RESIZE:
 			pointer = GUI_POINTER_LD;
 			break;
 		case CSS_CURSOR_SE_RESIZE:
-		case CSS_CURSOR_NW_RESIZE:
 			pointer = GUI_POINTER_RD;
+			break;
+		case CSS_CURSOR_NW_RESIZE:
+			pointer = GUI_POINTER_LU;
 			break;
 		case CSS_CURSOR_TEXT:
 			pointer = GUI_POINTER_CARET;
 			break;
+		case CSS_CURSOR_WAIT:
+			pointer = GUI_POINTER_WAIT;
+			break;
+		case CSS_CURSOR_PROGRESS:
+			pointer = GUI_POINTER_PROGRESS;
+		case CSS_CURSOR_NO_DROP:
+			pointer = GUI_POINTER_NO_DROP;
+		case CSS_CURSOR_NOT_ALLOWED:
+			pointer = GUI_POINTER_NOT_ALLOWED;
+		case CSS_CURSOR_HELP:
+			pointer = GUI_POINTER_HELP;
 		default:
 			pointer = GUI_POINTER_DEFAULT;
 			break;

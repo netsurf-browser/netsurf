@@ -5,7 +5,7 @@ css_border_collapse inherit collapse separate
 css_border_style inherit none hidden dotted dashed solid double groove ridge inset outset
 css_caption_side inherit top bottom
 css_clear inherit none both left right
-css_cursor inherit auto crosshair default pointer move e-resize ne-resize nw-resize n-resize se-resize sw-resize s-resize w-resize text wait help
+css_cursor inherit auto crosshair default pointer move e-resize ne-resize nw-resize n-resize se-resize sw-resize s-resize w-resize text wait help no-drop not-allowed progress
 css_direction inherit ltr rtl
 css_display inherit inline block list-item run-in inline-block table inline-table table-row-group table-header-group table-footer-group table-row table-column-group table-column table-cell table-caption none
 css_empty_cells inherit show hide

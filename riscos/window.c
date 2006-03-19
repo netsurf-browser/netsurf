@@ -2506,11 +2506,20 @@ struct ro_gui_pointer_entry ro_gui_pointer_table[] = {
 	{ false, "ptr_caret", 4, 9 },
 	{ false, "ptr_menu", 6, 4 },
 	{ false, "ptr_ud", 6, 7 },
+	{ false, "ptr_ud", 6, 7 },
+	{ false, "ptr_lr", 7, 6 },
 	{ false, "ptr_lr", 7, 6 },
 	{ false, "ptr_ld", 7, 7 },
+	{ false, "ptr_ld", 7, 7 },
 	{ false, "ptr_rd", 7, 7 },
+	{ false, "ptr_rd", 6, 7 },
 	{ false, "ptr_cross", 7, 7 },
 	{ false, "ptr_move", 8, 0 },
+	{ true, "ptr_default", 0, 0 }, /* WAIT */
+	{ true, "ptr_default", 0, 0 }, /* HELP */
+	{ true, "ptr_default", 0, 0 }, /* NO DROP */
+	{ true, "ptr_default", 0, 0 }, /* NOT ALLOWED */
+	{ true, "ptr_default", 0, 0 }, /* PROGRESS */
 };
 
 /**

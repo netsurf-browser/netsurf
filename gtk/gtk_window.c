@@ -374,17 +374,29 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
         case GUI_POINTER_CARET:
 		cursortype = GDK_XTERM;
 		break;
-        case GUI_POINTER_UD:
-		cursortype = GDK_SB_V_DOUBLE_ARROW;
+        case GUI_POINTER_UP:
+		cursortype = GDK_TOP_SIDE;
 		break;
-        case GUI_POINTER_LR:
-		cursortype = GDK_SB_H_DOUBLE_ARROW;
+        case GUI_POINTER_DOWN:
+		cursortype = GDK_BOTTOM_SIDE;
+		break;
+        case GUI_POINTER_LEFT:
+		cursortype = GDK_LEFT_SIDE;
+		break;
+        case GUI_POINTER_RIGHT:
+		cursortype = GDK_RIGHT_SIDE;
 		break;
         case GUI_POINTER_LD:
-		cursortype = GDK_SIZING; /* XXX */
+		cursortype = GDK_BOTTOM_LEFT_CORNER;
 		break;
         case GUI_POINTER_RD:
-		cursortype = GDK_SIZING; /* XXX */
+		cursortype = GDK_BOTTOM_RIGHT_CORNER;
+		break;
+        case GUI_POINTER_LU:
+		cursortype = GDK_TOP_LEFT_CORNER;
+		break;
+        case GUI_POINTER_RU:
+		cursortype = GDK_TOP_RIGHT_CORNER;
 		break;
         case GUI_POINTER_CROSS:
 		cursortype = GDK_CROSS;
@@ -392,8 +404,22 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
         case GUI_POINTER_MOVE:
 		cursortype = GDK_FLEUR;
 		break;
+	case GUI_POINTER_WAIT:
+		cursortype = GDK_WATCH;
+		break;
+	case GUI_POINTER_HELP:
+		cursortype = GDK_QUESTION_ARROW;
+		break;
         case GUI_POINTER_MENU:
-		/* Cannot think of a good cursor for 'menu' yet */
+		cursortype = GDK_RIGHTBUTTON;
+		break;
+	case GUI_POINTER_PROGRESS:
+		/* In reality, this needs to be the funky left_ptr_watch which we can't do easily yet */
+		cursortype = GDK_WATCH;
+		break;
+	/* The following we're not sure about */
+	case GUI_POINTER_NO_DROP:
+	case GUI_POINTER_NOT_ALLOWED:
         case GUI_POINTER_DEFAULT:
 	default:
 	      nullcursor = true;
