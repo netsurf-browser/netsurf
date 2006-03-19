@@ -81,7 +81,9 @@ void gui_init(int argc, char** argv)
 
 void gui_init2(int argc, char** argv)
 {
-	browser_window_create("http://netsurf.sourceforge.net/", 0, 0);
+	const char *addr = "http://netsurf.sourceforge.net/";
+	if (argc > 1) addr = argv[1];
+	browser_window_create(addr, 0, 0); 
 }
 
 
