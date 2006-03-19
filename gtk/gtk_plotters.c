@@ -19,7 +19,6 @@
 #include "netsurf/render/font.h"
 #include "netsurf/utils/log.h"
 
-
 static bool nsgtk_plot_clg(colour c);
 static bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed);
@@ -88,6 +87,8 @@ bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
 {
 	nsgtk_set_colour(c);
 #ifdef CAIRO_VERSION
+        if (width == 0)
+          width = 1;
         cairo_set_line_width(current_cr, width);
         cairo_move_to(current_cr, x0, y0);
         cairo_line_to(current_cr, x1, y1);
@@ -105,6 +106,7 @@ bool nsgtk_plot_polygon(int *p, unsigned int n, colour fill)
 	unsigned int i;
 #ifdef CAIRO_VERSION
         nsgtk_set_colour(fill);
+        cairo_set_line_width(current_cr, 0);
         cairo_move_to(current_cr, p[0], p[1]);
         for (i = 1; i != n; i++) {
           cairo_line_to(current_cr, p[i * 2], p[i * 2 + 1]);
