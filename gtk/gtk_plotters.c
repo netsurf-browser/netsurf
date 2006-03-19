@@ -9,6 +9,7 @@
  * Target independent plotting (GDK / GTK+  implementation).
  */
 
+#include <math.h>
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include "netsurf/desktop/plotters.h"
@@ -70,8 +71,14 @@ bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed)
 {
 	nsgtk_set_colour(c);
+#ifdef CAIRO_VERSION
+        cairo_set_line_width(current_cr, line_width);
+        cairo_rectangle(current_cr, x0, y0, width, height);
+        cairo_stroke(current_cr);
+#else
 	gdk_draw_rectangle(current_drawable, current_gc,
 			FALSE, x0, y0, width, height);
+#endif
 	return true;
 }
 
@@ -80,16 +87,32 @@ bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed)
 {
 	nsgtk_set_colour(c);
+#ifdef CAIRO_VERSION
+        cairo_set_line_width(current_cr, width);
+        cairo_move_to(current_cr, x0, y0);
+        cairo_line_to(current_cr, x1, y1);
+        cairo_stroke(current_cr);
+#else
 	gdk_draw_line(current_drawable, current_gc,
 			x0, y0, x1, y1);
-	return true;
+#endif
+        return true;
 }
 
 
 bool nsgtk_plot_polygon(int *p, unsigned int n, colour fill)
 {
 	unsigned int i;
-	GdkPoint q[n];
+#ifdef CAIRO_VERSION
+        nsgtk_set_colour(fill);
+        cairo_move_to(current_cr, p[0], p[1]);
+        for (i = 1; i != n; i++) {
+          cairo_line_to(current_cr, p[i * 2], p[i * 2 + 1]);
+        }
+        cairo_fill(current_cr);
+        cairo_stroke(current_cr);
+#else
+        GdkPoint q[n];
 	for (i = 0; i != n; i++) {
 		q[i].x = p[i * 2];
 		q[i].y = p[i * 2 + 1];
@@ -97,6 +120,7 @@ bool nsgtk_plot_polygon(int *p, unsigned int n, colour fill)
 	nsgtk_set_colour(fill);
 	gdk_draw_polygon(current_drawable, current_gc,
 			TRUE, q, n);
+#endif
 	return true;
 }
 
@@ -104,9 +128,16 @@ bool nsgtk_plot_polygon(int *p, unsigned int n, colour fill)
 bool nsgtk_plot_fill(int x0, int y0, int x1, int y1, colour c)
 {
 	nsgtk_set_colour(c);
+#ifdef CAIRO_VERSION
+        cairo_set_line_width(current_cr, 0);
+        cairo_rectangle(current_cr, x0, y0, x1 - x0, y1 - y0);
+        cairo_fill(current_cr);
+        cairo_stroke(current_cr);
+#else
 	gdk_draw_rectangle(current_drawable, current_gc,
 			TRUE, x0, y0, x1 - x0, y1 - y0);
-	return true;
+#endif
+        return true;
 }
 
 
@@ -132,11 +163,19 @@ bool nsgtk_plot_text(int x, int y, struct css_style *style,
 bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled)
 {
         nsgtk_set_colour(c);
+#ifdef CAIRO_VERSION
+        cairo_set_line_width(current_cr, 1);
+        cairo_arc(current_cr, x, y, radius, 0, M_PI * 2);
+        if (filled)
+          cairo_fill(current_cr);
+        cairo_stroke(current_cr);
+#else
         gdk_draw_arc(current_drawable, current_gc,
             filled, x - (radius), y - radius, 
             radius * 2, radius * 2,
             0,
             360 * 64);
+#endif
 	return true;
 }
 
@@ -245,4 +284,7 @@ void nsgtk_set_colour(colour c)
 	gdk_color_alloc(gtk_widget_get_colormap(current_widget),
 			&colour);
 	gdk_gc_set_foreground(current_gc, &colour);
+#ifdef CAIRO_VERSION
+        gdk_cairo_set_source_color(current_cr, &colour);
+#endif
 }

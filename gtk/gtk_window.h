@@ -11,4 +11,7 @@
 extern GtkWidget *current_widget;
 extern GdkDrawable *current_drawable;
 extern GdkGC *current_gc;
+#ifdef CAIRO_VERSION
+extern cairo_t *current_cr;
+#endif
 

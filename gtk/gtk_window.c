@@ -39,6 +39,9 @@ struct gui_window {
 GtkWidget *current_widget;
 GdkDrawable *current_drawable;
 GdkGC *current_gc;
+#ifdef CAIRO_VERSION
+cairo_t *current_cr;
+#endif
 
 
 static void gui_window_destroy_event(GtkWidget *widget, gpointer data);
@@ -180,6 +183,9 @@ gboolean gui_window_expose_event(GtkWidget *widget,
 	current_widget = widget;
 	current_drawable = widget->window;
 	current_gc = gdk_gc_new(current_drawable);
+#ifdef CAIRO_VERSION
+        current_cr = gdk_cairo_create(current_drawable);
+#endif
 
 	plot = nsgtk_plotters;
 
@@ -193,6 +199,9 @@ gboolean gui_window_expose_event(GtkWidget *widget,
 			1.0, 0xFFFFFF);
 
 	g_object_unref(current_gc);
+#ifdef CAIRO_VERSION
+        cairo_destroy(current_cr);
+#endif
 
 	return FALSE;
 }
