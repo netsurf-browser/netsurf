@@ -36,7 +36,8 @@ static bool ro_save_draw_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool ro_save_draw_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
-static bool ro_save_draw_disc(int x, int y, int radius, colour colour);
+static bool ro_save_draw_disc(int x, int y, int radius, colour colour,
+		bool filled);
 static bool ro_save_draw_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg);
 static bool ro_save_draw_bitmap_tile(int x, int y, int width, int height,
@@ -252,7 +253,7 @@ bool ro_save_draw_text(int x, int y, struct css_style *style,
 }
 
 
-bool ro_save_draw_disc(int x, int y, int radius, colour colour)
+bool ro_save_draw_disc(int x, int y, int radius, colour colour, bool filled)
 {
 	return true;
 }
