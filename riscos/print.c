@@ -97,7 +97,8 @@ static bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool print_fonts_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
-static bool print_fonts_plot_disc(int x, int y, int radius, colour colour);
+static bool print_fonts_plot_disc(int x, int y, int radius, colour c, 
+                bool filled);
 static bool print_fonts_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg);
 static bool print_fonts_plot_bitmap_tile(int x, int y, int width, int height,
@@ -808,7 +809,7 @@ bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, colour c)
 		{ return true; }
 bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1) { return true; }
-bool print_fonts_plot_disc(int x, int y, int radius, colour colour)
+bool print_fonts_plot_disc(int x, int y, int radius, colour colour, bool filled)
 		{ return true; }
 bool print_fonts_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg) { return true; }

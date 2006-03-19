@@ -33,7 +33,7 @@ static bool ro_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool ro_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
-static bool ro_plot_disc(int x, int y, int radius, colour colour);
+static bool ro_plot_disc(int x, int y, int radius, colour colour, bool filled);
 static bool ro_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg);
 static bool ro_plot_bitmap_tile(int x, int y, int width, int height,
@@ -286,7 +286,7 @@ bool ro_plot_text(int x, int y, struct css_style *style,
 }
 
 
-bool ro_plot_disc(int x, int y, int radius, colour colour)
+bool ro_plot_disc(int x, int y, int radius, colour colour, bool filled)
 {
 	os_error *error;
 
@@ -304,7 +304,12 @@ bool ro_plot_disc(int x, int y, int radius, colour colour)
 		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
 		return false;
 	}
-	error = xos_plot(os_PLOT_CIRCLE | os_PLOT_BY, radius * 2, 0);
+        if (filled) {
+  	        error = xos_plot(os_PLOT_CIRCLE | os_PLOT_BY, radius * 2, 0);
+        } else {
+                error = xos_plot(os_PLOT_CIRCLE_OUTLINE | os_PLOT_BY,
+                    radius * 2, 0);
+        }
 	if (error) {
 		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
 		return false;

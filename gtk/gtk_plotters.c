@@ -30,7 +30,7 @@ static bool nsgtk_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1);
 static bool nsgtk_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
-static bool nsgtk_plot_disc(int x, int y, int radius, colour colour);
+static bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled);
 static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg);
 static bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
@@ -129,8 +129,14 @@ bool nsgtk_plot_text(int x, int y, struct css_style *style,
 }
 
 
-bool nsgtk_plot_disc(int x, int y, int radius, colour colour)
+bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled)
 {
+        nsgtk_set_colour(c);
+        gdk_draw_arc(current_drawable, current_gc,
+            filled, x - (radius), y - radius, 
+            radius * 2, radius * 2,
+            0,
+            360 * 64);
 	return true;
 }
 
