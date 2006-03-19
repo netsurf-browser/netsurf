@@ -935,7 +935,7 @@ bool html_redraw_radio(int x, int y, int width, int height,
 		return false;
 	if (selected)
 		if (!plot.disc(x + width * 0.5, y + height * 0.5,
-				width * 0.4 - 1, 0x0000ff, TRUE))
+				width * 0.3 - 1, 0x0000ff, TRUE))
 			return false;
 
 	return true;
