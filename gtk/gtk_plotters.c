@@ -71,6 +71,9 @@ bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
 {
 	nsgtk_set_colour(c);
 #ifdef CAIRO_VERSION
+        if (line_width == 0)
+                line_width = 1;
+
         cairo_set_line_width(current_cr, line_width);
         cairo_rectangle(current_cr, x0, y0, width, height);
         cairo_stroke(current_cr);
@@ -88,7 +91,8 @@ bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
 	nsgtk_set_colour(c);
 #ifdef CAIRO_VERSION
         if (width == 0)
-          width = 1;
+                width = 1;
+
         cairo_set_line_width(current_cr, width);
         cairo_move_to(current_cr, x0, y0);
         cairo_line_to(current_cr, x1, y1);
@@ -109,7 +113,7 @@ bool nsgtk_plot_polygon(int *p, unsigned int n, colour fill)
         cairo_set_line_width(current_cr, 0);
         cairo_move_to(current_cr, p[0], p[1]);
         for (i = 1; i != n; i++) {
-          cairo_line_to(current_cr, p[i * 2], p[i * 2 + 1]);
+                cairo_line_to(current_cr, p[i * 2], p[i * 2 + 1]);
         }
         cairo_fill(current_cr);
         cairo_stroke(current_cr);
@@ -146,7 +150,13 @@ bool nsgtk_plot_fill(int x0, int y0, int x1, int y1, colour c)
 bool nsgtk_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1)
 {
-	cliprect.x = clip_x0;
+#ifdef CAIRO_VERSION
+        cairo_reset_clip(current_cr);
+        cairo_rectangle(current_cr, clip_x0 - 1, clip_y0 - 1, 
+                clip_x1 - clip_x0 + 1, clip_y1 - clip_y0 + 1);
+        cairo_clip(current_cr);
+#endif
+        cliprect.x = clip_x0;
 	cliprect.y = clip_y0;
 	cliprect.width = clip_x1 - clip_x0 + 1;
 	cliprect.height = clip_y1 - clip_y0 + 1;
@@ -166,10 +176,16 @@ bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled)
 {
         nsgtk_set_colour(c);
 #ifdef CAIRO_VERSION
-        cairo_set_line_width(current_cr, 1);
-        cairo_arc(current_cr, x, y, radius, 0, M_PI * 2);
         if (filled)
-          cairo_fill(current_cr);
+                cairo_set_line_width(current_cr, 0);
+        else
+                cairo_set_line_width(current_cr, 1);
+
+        cairo_arc(current_cr, x, y, radius, 0, M_PI * 2);
+        
+        if (filled)
+                cairo_fill(current_cr);
+        
         cairo_stroke(current_cr);
 #else
         gdk_draw_arc(current_drawable, current_gc,
