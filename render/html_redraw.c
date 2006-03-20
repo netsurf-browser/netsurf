@@ -927,15 +927,15 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 bool html_redraw_radio(int x, int y, int width, int height,
 		bool selected)
 {
-        if (!plot.disc(x + width * 0.5, y + height * 0.5,
-                        width * 0.5 - 1, 0xffffff, TRUE))
-                return false;
 	if (!plot.disc(x + width * 0.5, y + height * 0.5,
-			width * 0.5 - 1, 0x000000, FALSE))
+			width * 0.5 - 1, 0xffffff, true))
+		return false;
+	if (!plot.disc(x + width * 0.5, y + height * 0.5,
+			width * 0.5 - 1, 0x000000, false))
 		return false;
 	if (selected)
 		if (!plot.disc(x + width * 0.5, y + height * 0.5,
-				width * 0.3 - 1, 0x0000ff, TRUE))
+				width * 0.3 - 1, 0x0000ff, true))
 			return false;
 
 	return true;
