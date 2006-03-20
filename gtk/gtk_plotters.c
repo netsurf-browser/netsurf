@@ -94,8 +94,8 @@ bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
 		width = 1;
 
 	cairo_set_line_width(current_cr, width);
-	cairo_move_to(current_cr, x0, y0);
-	cairo_line_to(current_cr, x1, y1);
+	cairo_move_to(current_cr, x0, y0 - 0.5);
+	cairo_line_to(current_cr, x1, y1 - 0.5);
 	cairo_stroke(current_cr);
 #else
 	gdk_draw_line(current_drawable, current_gc,
@@ -303,6 +303,6 @@ void nsgtk_set_colour(colour c)
 			&colour);
 	gdk_gc_set_foreground(current_gc, &colour);
 #ifdef CAIRO_VERSION
-	gdk_cairo_set_source_color(current_cr, &colour);
+	cairo_set_source_rgba(current_cr, r / 255.0, g / 255.0, b / 255.0, 1.0);
 #endif
 }
