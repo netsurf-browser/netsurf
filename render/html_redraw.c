@@ -905,7 +905,7 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 	if (z == 0)
 		z = 1;
 
-	if !((plot.fill(x, y, x + width, y + height, WIDGET_BASEC) &&
+	if (!(plot.fill(x, y, x + width, y + height, WIDGET_BASEC) &&
 		plot.line(x, y, x + width, y, 1, dark, false, false) &&
 		plot.line(x, y, x, y + height, 1, dark, false, false) &&
 		plot.line(x + width, y, x + width, y + height, 1, lite, 
