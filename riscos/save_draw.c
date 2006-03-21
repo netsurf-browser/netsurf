@@ -262,7 +262,7 @@ bool ro_save_draw_disc(int x, int y, int radius, colour colour, bool filled)
 }
 
 bool ro_save_draw_arc(int x, int y, int radius, int angle1, int angle2,
-		colour c);
+		colour c)
 {
 	return true;
 }
