@@ -893,21 +893,38 @@ colour html_redraw_aa(colour c0, colour c1)
  * \return true if successful, false otherwise
  */
 
+#define WIDGET_BASEC 0xd9d9d9
+#define WIDGET_BLOBC 0x0000ff
 bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected)
 {
+	int dark = html_redraw_darker(html_redraw_darker(WIDGET_BASEC));
+	int lite = html_redraw_lighter(html_redraw_lighter(WIDGET_BASEC));
+
 	int z = width * 0.15;
 	if (z == 0)
 		z = 1;
-	if (!plot.fill(x, y, x + width, y + height, 0x000000))
+
+	if !((plot.fill(x, y, x + width, y + height, WIDGET_BASEC) &&
+		plot.line(x, y, x + width, y, 1, dark, false, false) &&
+		plot.line(x, y, x, y + height, 1, dark, false, false) &&
+		plot.line(x + width, y, x + width, y + height, 1, lite, 
+		  false, false) &&
+		plot.line(x, y + height, x + width, y + height, 1, lite, 
+		  false, false)))
 		return false;
-	if (!plot.fill(x + z, y + z, x + width - z, y + height - z, 0xffffff))
-		return false;
-	if (selected)
-		if (!plot.fill(x + z + z, y + z + z,
-				x + width - z - z, y + height - z - z,
-				0x0000ff))
+
+	if (selected) {
+		if (!plot.line(x + z + z, y + z + z, 
+		    	x + width - z - z, y + height - z - z,
+			2, WIDGET_BLOBC, false, false))
 			return false;
+
+		if (!plot.line(x - z - z + width, y + z + z,
+		    	x + z + z, y + height - z - z,
+			2, WIDGET_BLOBC, false, false))
+			return false;
+	}
 
 	return true;
 }
@@ -923,20 +940,33 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
  * \param  selected  the radio icon is selected
  * \return true if successful, false otherwise
  */
-
 bool html_redraw_radio(int x, int y, int width, int height,
 		bool selected)
 {
-	if (!plot.disc(x + width * 0.5, y + height * 0.5,
-			width * 0.5 - 1, 0xffffff, true))
+	int dark = html_redraw_darker(html_redraw_darker(WIDGET_BASEC));
+	int lite = html_redraw_lighter(html_redraw_lighter(WIDGET_BASEC));
+	                            
+  	/* plot background of radio button */
+  	if (!plot.disc(x + width * 0.5, y + height * 0.5,
+			width * 0.5 - 1, WIDGET_BASEC, true))
 		return false;
-	if (!plot.disc(x + width * 0.5, y + height * 0.5,
-			width * 0.5 - 1, 0x000000, false))
+
+	/* plot dark arc */
+	if (!plot.arc(x + width * 0.5, y + height * 0.5,
+			width * 0.5 - 1, 45, 225, dark))
 		return false;
-	if (selected)
+                
+	/* plot light arc */
+	if (!plot.arc(x + width * 0.5, y + height * 0.5,
+			width * 0.5 - 1, 225, 45, lite))
+		return false;
+
+  	if (selected) {
+		/* plot selection blob */
 		if (!plot.disc(x + width * 0.5, y + height * 0.5,
-				width * 0.3 - 1, 0x0000ff, true))
+		      		width * 0.3 - 1, WIDGET_BLOBC, true))
 			return false;
+	}
 
 	return true;
 }

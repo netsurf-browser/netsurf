@@ -32,6 +32,8 @@ struct plotter_table {
 	bool (*text)(int x, int y, struct css_style *style, const char *text,
 			size_t length, colour bg, colour c);
 	bool (*disc)(int x, int y, int radius, colour c, bool filled);
+	bool (*arc)(int x, int y, int radius, int angle1, int angle2,
+	    		colour c);
 	bool (*bitmap)(int x, int y, int width, int height,
 			struct bitmap *bitmap, colour bg);
 	bool (*bitmap_tile)(int x, int y, int width, int height,

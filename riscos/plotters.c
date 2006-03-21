@@ -9,6 +9,7 @@
  * Target independent plotting (RISC OS screen implementation).
  */
 
+#include <math.h>
 #include "oslib/colourtrans.h"
 #include "oslib/draw.h"
 #include "oslib/os.h"
@@ -34,6 +35,8 @@ static bool ro_plot_clip(int clip_x0, int clip_y0,
 static bool ro_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
 static bool ro_plot_disc(int x, int y, int radius, colour colour, bool filled);
+static bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2,
+    		colour c);
 static bool ro_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg);
 static bool ro_plot_bitmap_tile(int x, int y, int width, int height,
@@ -54,6 +57,7 @@ const struct plotter_table ro_plotters = {
 	ro_plot_clip,
 	ro_plot_text,
 	ro_plot_disc,
+	ro_plot_arc,
 	ro_plot_bitmap,
 	ro_plot_bitmap_tile,
 	ro_plot_group_start,
@@ -318,6 +322,53 @@ bool ro_plot_disc(int x, int y, int radius, colour colour, bool filled)
 	return true;
 }
 
+bool ro_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
+{
+	os_error *error;
+	int sx, sy, ex, ey;
+	double t;
+
+	x = ro_plot_origin_x + x * 2;
+	y = ro_plot_origin_y - y * 2;
+	radius <<= 1;
+	
+	error = xcolourtrans_set_gcol(c << 8, 0,
+	    		os_ACTION_OVERWRITE, 0, 0);
+
+	if (error) {
+		LOG(("xcolourtrans_set_gcol: 0x%x: %s",
+				error->errnum, error->errmess));
+		return false;
+	}
+
+	t = ((double)angle1 * M_PI) / 180.0;
+	sx = (x + (int)(radius * cos(t)));
+	sy = (y + (int)(radius * sin(t)));
+
+	t = ((double)angle2 * M_PI) / 180.0;
+	ex = (x + (int)(radius * cos(t)));
+	ey = (y + (int)(radius * sin(t)));
+
+        error = xos_plot(os_MOVE_TO, x, y);	/* move to centre */
+	if (error) {
+		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+
+	error = xos_plot(os_MOVE_TO, sx, sy);	/* move to start */
+	if (error) {
+		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+
+	error = xos_plot(os_PLOT_ARC | os_PLOT_TO, ex, ey);	/* arc to end */
+	if (error) {
+		LOG(("xos_plot: 0x%x: %s", error->errnum, error->errmess));
+		return false;
+	}
+
+	return true;
+}
 
 bool ro_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg)

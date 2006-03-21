@@ -31,6 +31,8 @@ static bool nsgtk_plot_clip(int clip_x0, int clip_y0,
 static bool nsgtk_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
 static bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled);
+static bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2,
+    		colour c);
 static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg);
 static bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
@@ -53,6 +55,7 @@ const struct plotter_table nsgtk_plotters = {
 	nsgtk_plot_clip,
 	nsgtk_plot_text,
 	nsgtk_plot_disc,
+	nsgtk_plot_arc,
 	nsgtk_plot_bitmap,
 	nsgtk_plot_bitmap_tile,
 	nsgtk_plot_group_start,
@@ -64,7 +67,6 @@ bool nsgtk_plot_clg(colour c)
 {
 	return true;
 }
-
 
 bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed)
@@ -197,6 +199,23 @@ bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled)
 	return true;
 }
 
+bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
+{
+	nsgtk_set_colour(c);
+#ifdef CAIRO_VERSION
+	cairo_set_line_width(current_cr, 1);
+	cairo_arc(current_cr, x, y, radius, 
+	    (angle1 + 90) * (M_PI / 180), 
+	    (angle2 + 90) * (M_PI / 180));
+	cairo_stroke(current_cr);
+#else
+	gdk_draw_arc(current_drawable, current_gc,
+		FALSE, x - (radius), y - radius,
+		radius * 2, radius * 2,
+		angle1 * 64, angle2 * 64);
+#endif
+	return true;
+}
 
 bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg)

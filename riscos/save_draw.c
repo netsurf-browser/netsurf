@@ -38,6 +38,8 @@ static bool ro_save_draw_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
 static bool ro_save_draw_disc(int x, int y, int radius, colour colour,
 		bool filled);
+static bool ro_save_draw_arc(int x, int y, int radius, int angle1, int angle2,
+    		colour c);
 static bool ro_save_draw_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg);
 static bool ro_save_draw_bitmap_tile(int x, int y, int width, int height,
@@ -57,6 +59,7 @@ const struct plotter_table ro_save_draw_plotters = {
 	ro_save_draw_clip,
 	ro_save_draw_text,
 	ro_save_draw_disc,
+	ro_save_draw_arc,
 	ro_save_draw_bitmap,
 	ro_save_draw_bitmap_tile,
 	ro_save_draw_group_start,
@@ -258,6 +261,11 @@ bool ro_save_draw_disc(int x, int y, int radius, colour colour, bool filled)
 	return true;
 }
 
+bool ro_save_draw_arc(int x, int y, int radius, int angle1, int angle2,
+		colour c);
+{
+	return true;
+}
 
 bool ro_save_draw_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg)
