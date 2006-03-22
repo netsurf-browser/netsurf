@@ -744,7 +744,10 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 /* 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data); */
 /* 	} */
 
-	css_set_origin(c->data.html.stylesheet_content[STYLESHEET_BASE],
+	/* any of our stylesheets pointers could be NULL at this point if the
+	   CSS file(s) failed to load/fetch */
+	if (c->data.html.stylesheet_content[STYLESHEET_BASE])
+		css_set_origin(c->data.html.stylesheet_content[STYLESHEET_BASE],
 			CSS_ORIGIN_UA);
 	if (c->data.html.stylesheet_content[STYLESHEET_ADBLOCK])
 		css_set_origin(c->data.html.stylesheet_content[
