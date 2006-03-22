@@ -1834,12 +1834,16 @@ gui_pointer_shape get_pointer_shape(css_cursor cursor)
 			break;
 		case CSS_CURSOR_PROGRESS:
 			pointer = GUI_POINTER_PROGRESS;
+			break;
 		case CSS_CURSOR_NO_DROP:
 			pointer = GUI_POINTER_NO_DROP;
+			break;
 		case CSS_CURSOR_NOT_ALLOWED:
 			pointer = GUI_POINTER_NOT_ALLOWED;
+			break;
 		case CSS_CURSOR_HELP:
 			pointer = GUI_POINTER_HELP;
+			break;
 		default:
 			pointer = GUI_POINTER_DEFAULT;
 			break;
