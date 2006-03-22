@@ -894,14 +894,14 @@ colour html_redraw_aa(colour c0, colour c1)
  */
 
 #define WIDGET_BASEC 0xd9d9d9
-#define WIDGET_BLOBC 0x0000ff
+#define WIDGET_BLOBC 0x000000
 bool html_redraw_checkbox(int x, int y, int width, int height,
 		bool selected)
 {
 	int dark = html_redraw_darker(html_redraw_darker(WIDGET_BASEC));
 	int lite = html_redraw_lighter(html_redraw_lighter(WIDGET_BASEC));
 
-	int z = width * 0.15;
+	double z = width * 0.15;
 	if (z == 0)
 		z = 1;
 
@@ -915,17 +915,28 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 		return false;
 
 	if (selected) {
-		if (!plot.line(x + z + z, y + z + z, 
-		    	x + width - z - z, y + height - z - z,
-			2, WIDGET_BLOBC, false, false))
-			return false;
-
-		if (!plot.line(x - z - z + width, y + z + z,
-		    	x + z + z, y + height - z - z,
-			2, WIDGET_BLOBC, false, false))
-			return false;
+	  	if (width < 12 || height < 12) {
+			/* render a solid box instead of a tick */
+			if (!plot.fill(x + z + z, y + z + z,
+				x + width - z, y + height - z,
+				WIDGET_BLOBC))
+				return false;
+		} else {
+			/* render a tick, as it'll fit comfortably */
+			if (!(plot.line(x + width - z,	
+				y + z,
+				x + (z * 3),
+				y + height - z,
+				2, WIDGET_BLOBC, false, false) &&
+				
+				plot.line(x + (z * 3),
+				y + height - z,
+				x + z + z,
+				y + (height / 2),
+				2, WIDGET_BLOBC, false, false)))
+				return false;
+		}
 	}
-
 	return true;
 }
 
