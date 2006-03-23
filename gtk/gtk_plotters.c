@@ -235,7 +235,7 @@ bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 				0, 0,
 				x, y,
 				width, height,
-				GDK_RGB_DITHER_NORMAL, 0, 0);
+				GDK_RGB_DITHER_MAX, 0, 0);
 
 	} else {
 		GdkPixbuf *scaled;
@@ -250,7 +250,7 @@ bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 				0, 0,
 				x, y,
 				width, height,
-				GDK_RGB_DITHER_NORMAL, 0, 0);
+				GDK_RGB_DITHER_MAX, 0, 0);
 
 		g_object_unref(scaled);
 	}
