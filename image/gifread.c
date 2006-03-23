@@ -78,8 +78,8 @@ static unsigned char *direct;
 static int maskTbl[16] = {0x0000, 0x0001, 0x0003, 0x0007, 0x000f, 0x001f, 0x003f, 0x007f,
 			  0x00ff, 0x01ff, 0x03ff, 0x07ff, 0x0fff, 0x1fff, 0x3fff, 0x7fff};
 static int table[2][(1 << GIF_MAX_LZW)];
-static char stack[(1 << GIF_MAX_LZW) * 2];
-static char *stack_pointer;
+static unsigned char stack[(1 << GIF_MAX_LZW) * 2];
+static unsigned char *stack_pointer;
 static int code_size, set_code_size;
 static int max_code, max_code_size;
 static int clear_code, end_code;
