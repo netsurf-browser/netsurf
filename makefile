@@ -122,6 +122,14 @@ CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
 	$(WARNFLAGS) -I.. -g -O \
 	`pkg-config --cflags gtk+-2.0` `xml2-config --cflags`
 
+# Stop GCC under Cygwin throwing a fit
+# If you pass -std=<whatever> it appears to define __STRICT_ANSI__
+# This causes use of functions such as vsnprintf to fail (as Cygwin's header 
+# files surround declarations of such things with #ifndef __STRICT_ANSI__)
+ifeq ($(shell echo $$OS),Windows_NT)
+CFLAGS_GTK += -U__STRICT_ANSI__
+endif
+
 AFLAGS_RISCOS = -I..,. $(PLATFORM_AFLAGS_RISCOS)
 AFLAGS_RISCOS_SMALL = $(AFLAGS_RISCOS) -Dsmall
 AFLAGS_NCOS = $(AFLAGS_RISCOS) -Dncos
@@ -148,8 +156,8 @@ nsrodebug,ff8: $(OBJS_DEBUGRO)
 
 gtk: nsgtk
 nsgtk: $(OBJS_GTK)
-	/usr/bin/gcc -o nsgtk `pkg-config --cflags --libs gtk+-2.0 gthread-2.0` \
-	$(LDFLAGS_DEBUG) $^
+	/usr/bin/gcc -o nsgtk $^ `pkg-config --cflags --libs gtk+-2.0 gthread-2.0` \
+	$(LDFLAGS_DEBUG)
 
 netsurf.zip: $(RUNIMAGE)
 	rm netsurf.zip; riscos-zip -9vr, netsurf.zip !NetSurf

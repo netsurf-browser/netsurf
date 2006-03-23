@@ -19,5 +19,10 @@ LDFLAGS_SMALL = -L$(GCCSDK_INSTALL_ENV)/lib -lxml2 -lz -lucurl \
 LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -lmng \
 		-ljpeg -llcms
 
+# Hackery for Cygwin - it has no libdl, so remove it from LDFLAGS
+ifeq ($(shell echo $$OS),Windows_NT)
+LDFLAGS_DEBUG := $(subst -ldl,,$(LDFLAGS_DEBUG))
+endif
+
 RUNIMAGE = !NetSurf/!RunImage,ff8
 NCRUNIMAGE = !NCNetSurf/!RunImage,ff8
