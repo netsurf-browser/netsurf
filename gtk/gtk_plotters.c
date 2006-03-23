@@ -40,7 +40,11 @@ static bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		bool repeat_x, bool repeat_y);
 static bool nsgtk_plot_group_start(const char *name);
 static bool nsgtk_plot_group_end(void);
+
 static void nsgtk_set_colour(colour c);
+static void nsgtk_set_solid(void);	/**< Set for drawing solid lines */
+static void nsgtk_set_dotted(void);	/**< Set for drawing dotted lines */
+static void nsgtk_set_dashed(void);	/**< Set for drawing dashed lines */
 
 static GdkRectangle cliprect;
 
@@ -72,6 +76,13 @@ bool nsgtk_plot_rectangle(int x0, int y0, int width, int height,
 		int line_width, colour c, bool dotted, bool dashed)
 {
 	nsgtk_set_colour(c);
+        if (dotted) 
+                nsgtk_set_dotted();
+        else if (dashed)
+                nsgtk_set_dashed();
+        else
+                nsgtk_set_solid();
+
 #ifdef CAIRO_VERSION
 	if (line_width == 0)
 		line_width = 1;
@@ -91,6 +102,13 @@ bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
 		colour c, bool dotted, bool dashed)
 {
 	nsgtk_set_colour(c);
+	if (dotted)
+		nsgtk_set_dotted();
+	else if (dashed)
+		nsgtk_set_dashed();
+	else
+		nsgtk_set_solid();
+
 #ifdef CAIRO_VERSION
 	if (width == 0)
 		width = 1;
@@ -110,8 +128,10 @@ bool nsgtk_plot_line(int x0, int y0, int x1, int y1, int width,
 bool nsgtk_plot_polygon(int *p, unsigned int n, colour fill)
 {
 	unsigned int i;
-#ifdef CAIRO_VERSION
+
 	nsgtk_set_colour(fill);
+	nsgtk_set_solid();
+#ifdef CAIRO_VERSION
 	cairo_set_line_width(current_cr, 0);
 	cairo_move_to(current_cr, p[0], p[1]);
 	for (i = 1; i != n; i++) {
@@ -125,7 +145,6 @@ bool nsgtk_plot_polygon(int *p, unsigned int n, colour fill)
 		q[i].x = p[i * 2];
 		q[i].y = p[i * 2 + 1];
 	}
-	nsgtk_set_colour(fill);
 	gdk_draw_polygon(current_drawable, current_gc,
 			TRUE, q, n);
 #endif
@@ -136,6 +155,7 @@ bool nsgtk_plot_polygon(int *p, unsigned int n, colour fill)
 bool nsgtk_plot_fill(int x0, int y0, int x1, int y1, colour c)
 {
 	nsgtk_set_colour(c);
+	nsgtk_set_solid();
 #ifdef CAIRO_VERSION
 	cairo_set_line_width(current_cr, 0);
 	cairo_rectangle(current_cr, x0, y0, x1 - x0, y1 - y0);
@@ -177,6 +197,7 @@ bool nsgtk_plot_text(int x, int y, struct css_style *style,
 bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled)
 {
 	nsgtk_set_colour(c);
+	nsgtk_set_solid();
 #ifdef CAIRO_VERSION
 	if (filled)
 		cairo_set_line_width(current_cr, 0);
@@ -202,6 +223,7 @@ bool nsgtk_plot_disc(int x, int y, int radius, colour c, bool filled)
 bool nsgtk_plot_arc(int x, int y, int radius, int angle1, int angle2, colour c)
 {
 	nsgtk_set_colour(c);
+	nsgtk_set_solid();
 #ifdef CAIRO_VERSION
 	cairo_set_line_width(current_cr, 1);
 	cairo_arc(current_cr, x, y, radius, 
@@ -323,5 +345,44 @@ void nsgtk_set_colour(colour c)
 	gdk_gc_set_foreground(current_gc, &colour);
 #ifdef CAIRO_VERSION
 	cairo_set_source_rgba(current_cr, r / 255.0, g / 255.0, b / 255.0, 1.0);
+#endif
+}
+
+void nsgtk_set_solid()
+{
+#ifdef CAIRO_VERSION
+	double dashes = 0;
+	cairo_set_dash(current_cr, &dashes, 0, 0);
+#else
+	gdk_gc_set_line_attributes(current_gc, 1, GDK_LINE_SOLID, GDK_CAP_BUTT,
+		GDK_JOIN_MITER);
+#endif
+}
+
+void nsgtk_set_dotted()
+{
+#ifdef CAIRO_VERSION
+	double dashes = 2;
+	cairo_set_dash(current_cr, &dashes, 1, 0);
+#else
+	gint8 dashes[] = { 2, 2 };
+
+	gdk_gc_set_dashes(current_gc, 0, dashes, 2);
+	gdk_gc_set_line_attributes(current_gc, 1, GDK_LINE_ON_OFF_DASH,
+		GDK_CAP_BUTT, GDK_JOIN_MITER);
+#endif
+}
+
+void nsgtk_set_dashed()
+{
+#ifdef CAIRO_VERSION
+	double dashes = 3;
+	cairo_set_dash(current_cr, &dashes, 1, 0);
+#else
+	gint8 dashes[] = { 3, 3 };
+
+	gdk_gc_set_dashes(current_gc, 0, dashes, 2);
+	gdk_gc_set_line_attributes(current_gc, 1, GDK_LINE_ON_OFF_DASH,
+		GDK_CAP_BUTT, GDK_JOIN_MITER);
 #endif
 }
