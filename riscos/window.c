@@ -2515,11 +2515,11 @@ struct ro_gui_pointer_entry ro_gui_pointer_table[] = {
 	{ false, "ptr_rd", 6, 7 },
 	{ false, "ptr_cross", 7, 7 },
 	{ false, "ptr_move", 8, 0 },
-	{ true, "ptr_default", 0, 0 }, /* WAIT */
+	{ false, "ptr_wait", 7, 10 },
 	{ false, "ptr_help", 0, 0 },
 	{ false, "ptr_nodrop", 0, 0 },
 	{ false, "ptr_nt_allwd", 10, 10 },
-	{ true, "ptr_default", 0, 0 }, /* PROGRESS */
+	{ false, "ptr_progress", 0, 0 },
 };
 
 /**
