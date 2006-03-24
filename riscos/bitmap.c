@@ -25,6 +25,7 @@
 #include "netsurf/riscos/filename.h"
 #include "netsurf/riscos/image.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/palettes.h"
 #include "netsurf/riscos/sprite.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/utils/log.h"
