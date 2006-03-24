@@ -99,6 +99,8 @@ static bool print_fonts_plot_text(int x, int y, struct css_style *style,
 		const char *text, size_t length, colour bg, colour c);
 static bool print_fonts_plot_disc(int x, int y, int radius, colour c, 
                 bool filled);
+static bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle2,
+		colour c);
 static bool print_fonts_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg);
 static bool print_fonts_plot_bitmap_tile(int x, int y, int width, int height,
@@ -123,6 +125,7 @@ static const struct plotter_table print_fonts_plotters = {
 	print_fonts_plot_clip,
 	print_fonts_plot_text,
 	print_fonts_plot_disc,
+	print_fonts_plot_arc,
 	print_fonts_plot_bitmap,
 	print_fonts_plot_bitmap_tile,
 	print_fonts_plot_group_start,
@@ -810,6 +813,9 @@ bool print_fonts_plot_fill(int x0, int y0, int x1, int y1, colour c)
 bool print_fonts_plot_clip(int clip_x0, int clip_y0,
 		int clip_x1, int clip_y1) { return true; }
 bool print_fonts_plot_disc(int x, int y, int radius, colour colour, bool filled)
+		{ return true; }
+bool print_fonts_plot_arc(int x, int y, int radius, int angle1, int angle2,
+		colour c)
 		{ return true; }
 bool print_fonts_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg) { return true; }

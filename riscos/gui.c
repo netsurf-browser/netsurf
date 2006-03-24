@@ -174,7 +174,7 @@ static struct {
 } prev_sigs;
 
 /** Accepted wimp user messages. */
-static wimp_MESSAGE_LIST(40) task_messages = { {
+static wimp_MESSAGE_LIST(41) task_messages = { {
 	message_HELP_REQUEST,
 	message_DATA_SAVE,
 	message_DATA_SAVE_ACK,
@@ -185,6 +185,7 @@ static wimp_MESSAGE_LIST(40) task_messages = { {
 	message_SAVE_DESKTOP,
 	message_MENU_WARNING,
 	message_MENUS_DELETED,
+	message_WINDOW_INFO,
 	message_MODE_CHANGE,
 	message_CLAIM_ENTITY,
 	message_DATA_REQUEST,
@@ -261,6 +262,7 @@ static void ro_msg_dataopen(wimp_message *message);
 static void ro_gui_get_screen_properties(void);
 static void ro_msg_prequit(wimp_message *message);
 static void ro_msg_save_desktop(wimp_message *message);
+static void ro_msg_window_info(wimp_message *message);
 static void ro_gui_view_source_bounce(wimp_message *message);
 
 
@@ -410,6 +412,8 @@ void gui_init(int argc, char** argv)
 			ro_gui_selection_dragging);
 	ro_message_register_route(message_DRAG_CLAIM,
 			ro_gui_selection_drag_claim);
+	ro_message_register_route(message_WINDOW_INFO,
+			ro_msg_window_info);
 	/* end of handler registration */
 
 	nsfont_init();
@@ -1958,6 +1962,25 @@ void ro_msg_save_desktop(wimp_message *message)
 			warn_user("WimpError", error->errmess);
 		}
 	}
+}
+
+
+/**
+ * Handle WindowInfo message (part of the iconising protocol)
+ *
+ * \param  message  WindowInfo message from the Iconiser
+ */
+
+void ro_msg_window_info(wimp_message *message)
+{
+	wimp_full_message_window_info *wi;
+	struct gui_window *g;
+
+	wi = (wimp_full_message_window_info*)message;
+	g = ro_gui_window_lookup(wi->w);
+
+	/* ic_<task name> will suffice for our other windows */
+	if (g) ro_gui_window_iconise(g, wi);
 }
 
 

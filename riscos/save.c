@@ -1033,7 +1033,7 @@ bool ro_gui_save_create_thumbnail(struct content *c, const char *name)
 	}
 
 	sprite_header = (osspriteop_header *)(area + 1);
-	memcpy(sprite_header->name, name, 12);
+	strncpy(sprite_header->name, name, 12);
 
 	/* we can't resize the saveas sprite area because it may move and we have
 	   no elegant way to update the window definition on all OS versions */

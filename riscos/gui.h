@@ -80,6 +80,8 @@ struct gui_window {
 	int throbber;		/**< Current frame of throbber animation. */
 	int throbtime;		/**< Time of last throbber frame. */
 
+	int iconise_icon;	/**< ID number of icon when window is iconised */
+
 	/** Options. */
 	struct {
 		float scale;		/**< Scale, 1.0 = 100%. */
@@ -161,6 +163,7 @@ bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
 void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag);
 void ro_gui_window_set_scale(struct gui_window *g, float scale);
+void ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *wi);
 
 /* in history.c */
 void ro_gui_history_init(void);

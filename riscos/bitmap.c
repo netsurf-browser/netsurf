@@ -25,9 +25,13 @@
 #include "netsurf/riscos/filename.h"
 #include "netsurf/riscos/image.h"
 #include "netsurf/riscos/options.h"
+#include "netsurf/riscos/sprite.h"
 #include "netsurf/riscos/tinct.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
+
+/** Colour in the overlay sprite that allows the bitmap to show through */
+#define OVERLAY_KEY 0xff0000U
 
 #define MAINTENANCE_THRESHOLD 32
 
@@ -219,6 +223,92 @@ struct bitmap *bitmap_create_file(char *file)
 	}
 	bitmap_head = bitmap;
 	return bitmap;
+}
+
+
+/**
+ * Overlay a sprite onto the given bitmap
+ *
+ * \param  bitmap  bitmap object
+ * \param  s       8bpp sprite to be overlayed onto bitmap
+ */
+
+void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s)
+{
+	const os_colour *palette;
+	const byte *sp, *mp;
+	bool masked = false;
+	bool alpha = false;
+	os_error *error;
+	int dp_offset;
+	int sp_offset;
+	unsigned *dp;
+	int x, y;
+	int w, h;
+
+	assert(sprite_bpp(s) == 8);
+
+	if ((unsigned)s->mode & 0x80000000U)
+		alpha = true; 
+
+	error = xosspriteop_read_sprite_info(osspriteop_PTR,
+			(osspriteop_area *)0x100,
+			(osspriteop_id)s,
+			&w, &h, NULL, NULL);
+	if (error) {
+		LOG(("xosspriteop_read_sprite_info: 0x%x:%s",
+				error->errnum, error->errmess));
+		return;
+	}
+
+	sp_offset = ((s->width + 1) * 4) - w;
+
+	if (w > bitmap->width)  w = bitmap->width;
+	if (h > bitmap->height) h = bitmap->height;
+
+	dp_offset = bitmap_get_rowstride(bitmap)/4;
+
+	dp = (unsigned*)bitmap_get_buffer(bitmap);
+	sp = (byte*)s + s->image;
+	mp = (byte*)s + s->mask;
+
+	sp += s->left_bit / 8;
+	mp += s->left_bit / 8;
+
+	if (s->image > sizeof(*s))
+		palette = (os_colour*)(s + 1);
+	else
+		palette = default_palette8;
+
+	if (s->mask != s->image) {
+		masked = true;
+		bitmap_set_opaque(bitmap, false);
+	}
+
+	/* (partially-)transparent pixels in the overlayed sprite retain
+	   their transparency in the output bitmap; opaque sprite pixels
+	   are also propagated to the bitmap, except those which are the
+	   OVERLAY_KEY colour which allow the original bitmap contents to
+	   show through */
+
+	for(y = 0; y < h; y++) {
+		unsigned *sdp = dp;
+		for(x = 0; x < w; x++) {
+			os_colour d = ((unsigned)palette[(*sp++) << 1]) >> 8;
+			if (d == OVERLAY_KEY) d = *dp;
+			if (masked) {
+				if (alpha)
+					d |= ((*mp << 24) ^ 0xff000000U);
+				else if (*mp)
+					d |= 0xff000000U;
+			}
+			*dp++ = d;
+			mp++;
+		}
+		dp = sdp + dp_offset;
+		sp += sp_offset;
+		mp += sp_offset;
+	}
 }
 
 
@@ -851,4 +941,16 @@ void bitmap_delete_file(struct bitmap *bitmap)
 	assert(bitmap->filename[0]);
 	ro_filename_release(bitmap->filename);
 	bitmap->filename[0] = 0;
+}
+
+
+int bitmap_get_width(struct bitmap *bitmap)
+{
+	return bitmap->width;
+}
+
+
+int bitmap_get_height(struct bitmap *bitmap)
+{
+	return bitmap->height;
 }

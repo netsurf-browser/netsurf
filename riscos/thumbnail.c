@@ -156,7 +156,7 @@ osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap)
 	osspriteop_area *sprite_area = NULL;
 	osspriteop_header *sprite_header = NULL;
 
- 	sprite_area = thumbnail_create_8bpp(bitmap);
+	sprite_area = thumbnail_create_8bpp(bitmap);
 	if (!sprite_area)
 		return NULL;
 	sprite_header = (osspriteop_header *)(sprite_area + 1);
@@ -175,6 +175,30 @@ osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap)
 			tinct_ERROR_DIFFUSE);
 	thumbnail_restore_output(save_area);
 
+	if (sprite_header->image != sprite_header->mask) {
+		/* build the sprite mask from the alpha channel */
+		unsigned *dp = (unsigned*)bitmap_get_buffer(bitmap);
+		int h = bitmap_get_width(bitmap);
+		int w = bitmap_get_height(bitmap);
+		int dp_offset = bitmap_get_rowstride(bitmap)/4 - w;
+		int mp_offset = ((sprite_header->width + 1) * 4) - w;
+		byte *mp = (byte*)sprite_header + sprite_header->mask;
+		bool alpha = ((unsigned)sprite_header->mode & 0x80000000U) != 0;
+
+		while (h-- > 0) {
+			int x = 0;
+			for(x = 0; x < w; x++) {
+				unsigned d = *dp++;
+				if (alpha)
+					*mp++ = (d >> 24) ^ 0xff;
+				else
+					*mp++ = (d < 0xff000000U) ? 0 : 0xff;
+			}
+			dp += dp_offset;
+			mp += mp_offset;
+		}
+	}
+
 	return sprite_area;
 }
 
@@ -187,15 +211,20 @@ osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap)
  */
 osspriteop_area *thumbnail_create_8bpp(struct bitmap *bitmap)
 {
-	unsigned int area_size;
-	osspriteop_area *sprite_area = NULL;
+	unsigned image_size = ((bitmap->width + 3) & ~3) * bitmap->height;
+	bool opaque = bitmap_get_opaque(bitmap);
 	osspriteop_header *sprite_header = NULL;
+	osspriteop_area *sprite_area = NULL;
+	unsigned area_size;
 
 	/* clone the sprite */
 	area_size = sizeof(osspriteop_area) +
 			sizeof(osspriteop_header) +
-			((bitmap->width + 3) & ~3) * bitmap->height +
+			image_size +
 			2048;
+
+	if (!opaque) area_size += image_size;
+
 	sprite_area = (osspriteop_area *)malloc(area_size);
 	if (!sprite_area) {
 		LOG(("no memory for malloc()"));
@@ -216,6 +245,7 @@ osspriteop_area *thumbnail_create_8bpp(struct bitmap *bitmap)
 	sprite_header->width = ((bitmap->width + 3) >> 2) - 1;
 	sprite_header->image = sizeof(osspriteop_header) + 2048;
 	sprite_header->mask = sizeof(osspriteop_header) + 2048;
+	if (!opaque) sprite_header->mask += image_size;
 
 	/* create the palette. we don't read the necessary size like
 	 * we really should as we know it's going to have 256 entries

@@ -32,6 +32,7 @@ struct bitmap {
 };
 
 struct bitmap *bitmap_create_file(char *file);
+void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s);
 void bitmap_initialise_memory(void);
 void bitmap_quit(void);
 void bitmap_maintain(void);
@@ -51,6 +52,5 @@ extern unsigned int bitmap_direct_size;
 /** Total size of compressed area
 */
 extern unsigned int bitmap_compressed_size;
-
 
 #endif

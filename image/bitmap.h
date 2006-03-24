@@ -45,4 +45,7 @@ void bitmap_modified(struct bitmap *bitmap);
 void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
 		void (*invalidate)(struct bitmap *bitmap, void *private_word));
 
+int bitmap_get_width(struct bitmap *bitmap);
+int bitmap_get_height(struct bitmap *bitmap);
+
 #endif

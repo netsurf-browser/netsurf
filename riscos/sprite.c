@@ -110,3 +110,37 @@ bool sprite_redraw(struct content *c, int x, int y,
 }
 
 #endif
+
+
+/**
+ * Returns the bit depth of a sprite
+ *
+ * \param   s   sprite
+ * \return  depth in bpp
+ */
+
+byte sprite_bpp(const osspriteop_header *s)
+{
+	/* bit 31 indicates the presence of a full alpha channel rather than a binary mask */
+	int type = ((unsigned)s->mode >> osspriteop_TYPE_SHIFT) & 15;
+	byte bpp = 0;
+
+	switch (type) {
+		case osspriteop_TYPE_OLD:
+		{
+			bits psr;
+			int val;
+			if (!xos_read_mode_variable(s->mode, os_MODEVAR_LOG2_BPP, &val, &psr) &&
+				!(psr & _C)) bpp = 1 << val;
+		}
+		break;
+		case osspriteop_TYPE1BPP:  bpp = 1; break;
+		case osspriteop_TYPE2BPP:  bpp = 2; break;
+		case osspriteop_TYPE4BPP:  bpp = 4; break;
+		case osspriteop_TYPE8BPP:  bpp = 8; break;
+		case osspriteop_TYPE16BPP: bpp = 16; break;
+		case osspriteop_TYPE32BPP: bpp = 32; break;
+		case osspriteop_TYPE_CMYK: bpp = 32; break;
+	}
+	return bpp;
+}

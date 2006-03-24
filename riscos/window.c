@@ -17,6 +17,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
 #include <string.h>
@@ -37,6 +38,7 @@
 #include "netsurf/desktop/gui.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
+#include "netsurf/riscos/bitmap.h"
 #include "netsurf/riscos/buffer.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/global_history.h"
@@ -60,6 +62,10 @@
 #endif
 
 #define SCROLL_VISIBLE_PADDING 32
+
+/** Remembers which iconised sprite numbers are in use */
+static bool iconise_used[64];
+static int iconise_next = 0;
 
 /** List of all browser windows. */
 static struct gui_window *window_list = 0;
@@ -112,6 +118,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	strcpy(g->title, "NetSurf");
 	g->throbber = 0;
 	g->throbtime = 0;
+	g->iconise_icon = -1;
 
 	/*	Set the window position
 	*/
@@ -1172,6 +1179,12 @@ void ro_gui_window_open(struct gui_window *g, wimp_open *open)
 	os_error *error;
 	int key_down = 0;
 	int inset = 0;
+
+	if (open->next == wimp_TOP && g->iconise_icon >= 0) {
+		/* window is no longer iconised, release its sprite number */
+		iconise_used[g->iconise_icon] = false;
+		g->iconise_icon = -1;
+	}
 
 	content = g->bw->current_content;
 
@@ -2930,4 +2943,121 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
 	free(buf);
 	free(utf8_buf);
 	return true;
+}
+
+
+/**
+ * Window is being iconised. Create a suitable thumbnail sprite
+ * (which, sadly, must be in the Wimp sprite pool), and return
+ * the sprite name and truncated title to the iconiser
+ *
+ * \param  g   the gui window being iconised
+ * \param  wi  the WindowInfo message from the iconiser
+ */
+
+void ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *wi)
+{
+	/* sadly there is no 'legal' way to get the sprite into
+	   the Wimp sprite pool other than via a filing system */
+	const char *temp_fname = "Pipe:$._tmpfile";
+	struct browser_window *bw = g->bw;
+	osspriteop_header *overlay = NULL;
+	osspriteop_header *sprite_header;
+	struct bitmap *bitmap;
+	osspriteop_area *area;
+	int w = 34, h = 34;
+	struct content *c;
+	os_error *error;
+	int len, id;
+
+	assert(bw);
+
+	c = bw->current_content;
+	if (!c) return;
+
+	/* if an overlay sprite is defined, locate it and gets its dimensions
+	   so that we can produce a thumbnail with the same dimensions */
+	if (!ro_gui_wimp_get_sprite("ic_netsfxx", &overlay)) {
+		error = xosspriteop_read_sprite_info(osspriteop_PTR,
+				(osspriteop_area *)0x100,
+				(osspriteop_id)overlay, &w, &h, NULL, NULL);
+		if (error) {
+			LOG(("xosspriteop_read_sprite_info: 0x%x: %s",
+				error->errnum, error->errmess));
+			warn_user("MiscError", error->errmess);
+			overlay = NULL;
+		}
+		else if (sprite_bpp(overlay) != 8) {
+			LOG(("overlay sprite is not 8bpp"));
+			overlay = NULL;
+		}
+	}
+
+	/* create the thumbnail sprite */
+	bitmap = bitmap_create(w, h, BITMAP_NEW | BITMAP_OPAQUE | BITMAP_CLEAR_MEMORY);
+	if (!bitmap) {
+		LOG(("Thumbnail initialisation failed."));
+		return;
+	}
+	thumbnail_create(c, bitmap, NULL);
+	if (overlay) bitmap_overlay_sprite(bitmap, overlay);
+
+	area = thumbnail_convert_8bpp(bitmap);
+	bitmap_destroy(bitmap);
+	if (!area) {
+		LOG(("Thumbnail conversion failed."));
+		return;
+	}
+
+	/* choose a suitable sprite name */
+	id = 0;
+	while (iconise_used[id])
+		if (++id >= NOF_ELEMENTS(iconise_used)) {
+			id = iconise_next;
+			if (++iconise_next >= NOF_ELEMENTS(iconise_used))
+				iconise_next = 0;
+			break;
+		}
+
+	sprite_header = (osspriteop_header *)(area + 1);
+	len = sprintf(sprite_header->name, "ic_netsf%.2d", id);
+
+	error = xosspriteop_save_sprite_file(osspriteop_USER_AREA,
+			area, temp_fname);
+	if (error) {
+		LOG(("xosspriteop_save_sprite_file: 0x%x:%s",
+			error->errnum, error->errmess));
+		warn_user("MiscError", error->errmess);
+		free(area);
+		return;
+	}
+
+	error = xwimpspriteop_merge_sprite_file(temp_fname);
+	if (error) {
+		LOG(("xwimpspriteop_merge_sprite_file: 0x%x:%s",
+			error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		remove(temp_fname);
+		free(area);
+		return;
+	}
+
+	memcpy(wi->sprite_name, sprite_header->name + 3, len - 2);	/* inc NUL */
+	strncpy(wi->title, g->title, sizeof(wi->title));
+	wi->title[sizeof(wi->title) - 1] = '\0';
+
+	wi->size = sizeof(wimp_full_message_window_info);
+	wi->your_ref = wi->my_ref;
+	error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)wi, wi->sender);
+	if (error) {
+		LOG(("xwimp_send_message: 0x%x:%s",
+			error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+	else {
+		g->iconise_icon = id;
+		iconise_used[id] = true;
+	}
+
+	free(area);
 }
