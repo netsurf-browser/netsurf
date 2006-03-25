@@ -184,6 +184,8 @@ bool nsfont_paint(const struct css_style *style,
 	PangoContext *context;
 	PangoLayout *layout;
 	PangoLayoutLine *line;
+	gint size;
+	
 	GdkColor colour = { 0,
 			((c & 0xff) << 8) | (c & 0xff),
 			(c & 0xff00) | (c & 0xff00 >> 8),
@@ -193,6 +195,11 @@ bool nsfont_paint(const struct css_style *style,
 		return true;
 
 	desc = nsfont_style_to_description(style);
+	size = (gint)((double)pango_font_description_get_size(desc) * nsgtk_plot_get_scale());
+	if (pango_font_description_get_size_is_absolute(desc))
+		pango_font_description_set_absolute_size(desc, size);
+	else
+		pango_font_description_set_size(desc, size);
 	context = gdk_pango_context_get();
 	layout = pango_layout_new(context);
 	pango_layout_set_font_description(layout, desc);
