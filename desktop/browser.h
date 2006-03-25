@@ -3,7 +3,7 @@
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
  * Copyright 2003 Phil Mellor <monkeyson@users.sourceforge.net>
- * Copyright 2004 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2006 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
@@ -150,22 +150,14 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 /* In platform specific hotlist.c. */
 void hotlist_visited(struct content *content);
 
-/* In platform specific history.c. */
-struct history *history_create(void);
-void history_add(struct history *history, struct content *content,
-		char *frag_id);
-void history_update(struct history *history, struct content *content);
-void history_destroy(struct history *history);
-void history_back(struct browser_window *bw, struct history *history);
-void history_forward(struct browser_window *bw, struct history *history);
-bool history_back_available(struct history *history);
-bool history_forward_available(struct history *history);
-
 /* In platform specific global_history.c. */
 void global_history_add(struct url_content *data);
 void global_history_add_recent(const char *url);
 char **global_history_get_recent(int *count);
 
+/* In platform specific thumbnail.c. */
+bool thumbnail_create(struct content *content, struct bitmap *bitmap,
+		const char *url);
 
 /* In platform specific schedule.c. */
 void schedule(int t, void (*callback)(void *p), void *p);

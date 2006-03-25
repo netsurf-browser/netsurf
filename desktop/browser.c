@@ -29,6 +29,7 @@
 #include "netsurf/desktop/401login.h"
 #endif
 #include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/history_core.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/selection.h"
@@ -173,6 +174,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	char url_buf[256];
 
 	LOG(("bw %p, url %s", bw, url));
+	assert(bw);
+	assert(url);
 
 	res = url_normalize(url, &url2);
 	if (res != URL_FUNC_OK) {

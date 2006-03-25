@@ -13,6 +13,4 @@
 #include "oslib/osspriteop.h"
 #include "netsurf/image/bitmap.h"
 
-bool thumbnail_create(struct content *content, struct bitmap *bitmap,
-		const char *url);
 osspriteop_area *thumbnail_convert_8bpp(struct bitmap *bitmap);

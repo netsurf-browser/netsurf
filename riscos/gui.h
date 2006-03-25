@@ -147,8 +147,6 @@ struct gui_window *ro_gui_toolbar_lookup(wimp_w window);
 struct gui_window *ro_gui_status_lookup(wimp_w window);
 bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar);
 void ro_gui_scroll_request(wimp_scroll *scroll);
-//#define window_x_units(x, state) (x - (state->visible.x0 - state->xscroll))
-//#define window_y_units(y, state) (y - (state->visible.y1 - state->yscroll))
 int window_x_units(int x, wimp_window_state *state);
 int window_y_units(int y, wimp_window_state *state);
 bool window_screen_pos(struct gui_window *g, int x, int y, os_coord *pos);
@@ -167,8 +165,6 @@ void ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *
 
 /* in history.c */
 void ro_gui_history_init(void);
-void ro_gui_history_quit(void);
-void ro_gui_history_mode_change(void);
 void ro_gui_history_open(struct browser_window *bw, struct history *history, bool pointer);
 void ro_gui_history_mouse_at(wimp_pointer *pointer);
 
@@ -220,7 +216,7 @@ void ro_plot_set_scale(float scale);
 /* in theme_install.c */
 bool ro_gui_theme_install_apply(wimp_w w);
 
-/* icon numbers for toolbar status window */
+/* icon numbers */
 #define ICON_STATUS_RESIZE 0
 #define ICON_STATUS_TEXT 1
 

@@ -536,7 +536,7 @@ void ro_gui_choose_language(void)
 		free(option_language);
 		option_language = 0;
 	}
-	
+
 	option_language = strdup(ro_gui_default_language());
 	assert(option_language);
 	option_accept_language = strdup(option_language);
@@ -721,7 +721,6 @@ void gui_quit(void)
 	ro_gui_window_quit();
 	ro_gui_global_history_save();
 	ro_gui_hotlist_save();
-	ro_gui_history_quit();
 	ro_gui_saveas_quit();
 	rufl_quit();
 	free(gui_sprites);
@@ -1095,7 +1094,7 @@ void ro_gui_close_window_request(wimp_close *close)
 				}
 				free(filename);
 			} else {
-				/* todo: go 'up' */ 
+				/* todo: go 'up' */
 			}
 		}
 		if (ro_gui_shift_pressed())
@@ -1304,7 +1303,7 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
   	/* attempt automatic routing */
   	if (ro_message_handle_message(event, message))
   		return;
-  
+
 	switch (message->action) {
 		case message_DATA_LOAD:
 			ro_msg_terminate_filename((wimp_full_message_data_xfer*)message);
@@ -1337,7 +1336,6 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 
 		case message_MODE_CHANGE:
 			ro_gui_get_screen_properties();
-			ro_gui_history_mode_change();
 			rufl_invalidate_cache();
 			break;
 
@@ -2146,7 +2144,7 @@ void ro_gui_view_source(struct content *content)
 		warn_user("MiscError", "No document source");
 		return;
 	}
-	
+
 	/* try to load local files directly. */
 	temp_name = url_to_path(content->url);
 	if (temp_name) {
