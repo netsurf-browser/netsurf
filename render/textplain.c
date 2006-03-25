@@ -25,12 +25,17 @@
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/talloc.h"
 #include "netsurf/utils/utils.h"
+#include "netsurf/utils/utf8.h"
 
 
 #define CHUNK 20480
 #define MARGIN 4
 
+
+#define TAB_WIDTH 8  /* must be power of 2 currently */
+
 static struct css_style textplain_style;
+static int textplain_tab_width = 256;  /* try for a sensible default */
 
 
 /**
@@ -185,6 +190,7 @@ void textplain_reformat(struct content *c, int width, int height)
 	if (!nsfont_width(&textplain_style, "ABCDEFGH", 8, &character_width))
 		return;
 	columns = (width - MARGIN - MARGIN) * 8 / character_width;
+	textplain_tab_width = (TAB_WIDTH * character_width) / 8;
 
 	c->data.textplain.formatted_width = width;
 
@@ -201,7 +207,12 @@ void textplain_reformat(struct content *c, int width, int height)
 	space = 0;
 	for (i = 0, col = 0; i != utf8_data_size; i++) {
 		bool term = (utf8_data[i] == '\n' || utf8_data[i] == '\r');
-		if (term || col + 1 == columns) {
+		int next_col = col + 1;
+
+		if (utf8_data[i] == '\t')
+			next_col = (next_col + TAB_WIDTH - 1) & ~(TAB_WIDTH - 1);
+
+		if (term || next_col >= columns) {
 			if (line_count % 1024 == 0) {
 				line1 = talloc_realloc(c, line,
 						struct textplain_line, line_count + 1024 + 3);
@@ -299,6 +310,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 	long line0 = clip_y0 / scaled_line_height - 1;
 	long line1 = clip_y1 / scaled_line_height + 1;
 	struct textplain_line *line = c->data.textplain.physical_line;
+	int spc_width;
 	size_t length;
 	struct rect clip;
 
@@ -327,15 +339,42 @@ bool textplain_redraw(struct content *c, int x, int y,
 	x += MARGIN * scale;
 	y += MARGIN * scale;
 	for (lineno = line0; lineno != line1; lineno++) {
+		const char *text = utf8_data + line[lineno].start;
+		size_t offset = 0;
+		int tx = x;
+
 		length = line[lineno].length;
 		if (!length)
 			continue;
-		if (!text_redraw(utf8_data + line[lineno].start, length,
-				line[lineno].start, false, &textplain_style,
-				x, y + (lineno * scaled_line_height),
-				&clip, line_height, scale,
-				background_colour, false))
-			return false;
+
+		while (offset < length) {
+			size_t next_offset = offset;
+			int width;
+
+			while (text[next_offset] != '\t' && next_offset < length)
+				next_offset = utf8_next(text, length, next_offset);
+
+				if (!text_redraw(text + offset, next_offset - offset,
+					line[lineno].start + offset, false,
+					&textplain_style,
+					tx, y + (lineno * scaled_line_height),
+					&clip, line_height, scale,
+					background_colour, false))
+				return false;
+
+			if (next_offset >= length)
+				break;
+
+			/* locate end of string and align to next tab position */
+			if (nsfont_width(&textplain_style, &text[offset],
+					next_offset - offset, &width))
+				tx += width;
+
+			tx = x + ((1 + (tx - x) / textplain_tab_width) *
+					textplain_tab_width);
+
+			offset = next_offset + 1;
+		}
 	}
 
 	return true;
