@@ -40,13 +40,15 @@ static bool nsgtk_plot_bitmap_tile(int x, int y, int width, int height,
 		bool repeat_x, bool repeat_y);
 static bool nsgtk_plot_group_start(const char *name);
 static bool nsgtk_plot_group_end(void);
-
 static void nsgtk_set_colour(colour c);
 static void nsgtk_set_solid(void);	/**< Set for drawing solid lines */
 static void nsgtk_set_dotted(void);	/**< Set for drawing dotted lines */
 static void nsgtk_set_dashed(void);	/**< Set for drawing dashed lines */
+void nsgtk_plot_set_scale(float s);
+float nsgtk_plot_get_scale(void);
 
 static GdkRectangle cliprect;
+static float nsgtk_plot_scale = 1.0;
 
 struct plotter_table plot;
 
@@ -386,3 +388,14 @@ void nsgtk_set_dashed()
 		GDK_CAP_BUTT, GDK_JOIN_MITER);
 #endif
 }
+
+void nsgtk_plot_set_scale(float s)
+{
+	nsgtk_plot_scale = s;
+}
+
+float nsgtk_plot_get_scale(void)
+{
+	return nsgtk_plot_scale;
+}
+

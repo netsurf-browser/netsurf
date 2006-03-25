@@ -215,14 +215,6 @@ void hotlist_visited(struct content *content)
 }
 
 
-struct history *history_create(void) { return 0; }
-void history_add(struct history *history, struct content *content,
-	char *frag_id) {}
-void history_update(struct history *history, struct content *content) {}
-void history_destroy(struct history *history) {}
-void history_back(struct browser_window *bw, struct history *history) {}
-void history_forward(struct browser_window *bw, struct history *history) {}
-
 void gui_401login_open(struct browser_window *bw, struct content *c,
 		const char *realm) {}
 void gui_cert_verify(struct browser_window *bw, struct content *c,

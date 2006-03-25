@@ -188,6 +188,7 @@ gboolean gui_window_expose_event(GtkWidget *widget,
 #endif
 
 	plot = nsgtk_plotters;
+	nsgtk_plot_set_scale(1.0);
 
 	content_redraw(c, 0, 0,
 			widget->allocation.width,
