@@ -125,42 +125,38 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 #ifdef BUFFER_EMULATE_32BPP
 	mode = tinct_SPRITE_MODE;
 #else
-	if (bpp == 5) {
-		mode = tinct_SPRITE_MODE;
-	} else {
-		if ((error = xwimpreadsysinfo_wimp_mode(&mode)) != NULL) {
-			LOG(("Error reading mode '%s'", error->errmess));
+	if ((error = xwimpreadsysinfo_wimp_mode(&mode)) != NULL) {
+		LOG(("Error reading mode '%s'", error->errmess));
+		ro_gui_buffer_free();
+		return;
+	}
+
+	/* if we're not in a numbered screen mode then we need
+	   to build a suitable sprite mode word */
+	if (mode >= (os_mode)0x100) {
+		const os_VDU_VAR_LIST(4) vars = {
+			{ os_MODEVAR_LOG2_BPP,
+			os_MODEVAR_XEIG_FACTOR,
+			os_MODEVAR_YEIG_FACTOR,
+			os_VDUVAR_END_LIST }
+		};
+		int xeig, yeig;
+		int vals[4];
+		int type;
+
+		error = xos_read_vdu_variables((const os_vdu_var_list*)&vars, vals);
+		if (error) {
+			LOG(("Error reading mode properties '%s'", error->errmess));
 			ro_gui_buffer_free();
 			return;
 		}
 
-		/* if we're not in a numbered screen mode then we need
-		   to build a suitable sprite mode word */
-		if (mode >= (os_mode)0x100) {
-			const os_VDU_VAR_LIST(4) vars = {
-				{ os_MODEVAR_LOG2_BPP,
-				os_MODEVAR_XEIG_FACTOR,
-				os_MODEVAR_YEIG_FACTOR,
-				os_VDUVAR_END_LIST }
-			};
-			int xeig, yeig;
-			int vals[4];
-			int type;
+		type = 1 + vals[0];
+		xeig = vals[1];
+		yeig = vals[2];
 
-			error = xos_read_vdu_variables((const os_vdu_var_list*)&vars, vals);
-			if (error) {
-				LOG(("Error reading mode properties '%s'", error->errmess));
-				ro_gui_buffer_free();
-				return;
-			}
-
-			type = 1 + vals[0];
-			xeig = vals[1];
-			yeig = vals[2];
-
-			mode = (os_mode)((type << 27) | ((180 >> yeig) << 14) |
-						((180 >> xeig) << 1) | 1);
-		}
+		mode = (os_mode)((type << 27) | ((180 >> yeig) << 14) |
+					((180 >> xeig) << 1) | 1);
 	}
 #endif
 
