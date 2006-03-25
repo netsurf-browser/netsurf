@@ -40,7 +40,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	gint height = gdk_pixbuf_get_height(pixbuf);
 	gint depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
 	GdkPixmap *pixmap = gdk_pixmap_new(NULL, width, height, depth);
-	GdkColor c = { 0, 65535, 65535, 65535 };
+	GdkColor c = { 0xffffff, 65535, 65535, 65535 };
 	float scale = 1.0;
 
 	assert(content);
@@ -58,9 +58,12 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	/* set to plot to pixmap */
 	current_drawable = pixmap;
 	current_gc = gdk_gc_new(current_drawable);
+	gdk_gc_set_foreground(current_gc, &c);
 #ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
+	cairo_set_source_rgba(current_cr, 1, 1, 1, 1);
 #endif
+	gdk_draw_rectangle(pixmap, current_gc, TRUE, 0, 0, width, height);
 
 	/* render the content */
 	content_redraw(content, 0, 0, width, height,

@@ -17,4 +17,4 @@ extern cairo_t *current_cr;
 
 void nsgtk_plot_set_scale(float s);
 float nsgtk_plot_get_scale(void);
-
+void nsgtk_set_colour(colour c);
