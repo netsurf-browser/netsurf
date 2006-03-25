@@ -80,7 +80,7 @@ void ro_gui_configure_initialise(void) {
 	ro_gui_configure_register("con_home",
 			ro_gui_options_home_initialise,
 			ro_gui_wimp_event_finalise);
-	ro_gui_configure_register("con_language",
+	ro_gui_configure_register("con_lang",
 			ro_gui_options_language_initialise,
 			ro_gui_wimp_event_finalise);
 	ro_gui_configure_register("con_inter",
