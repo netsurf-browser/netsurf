@@ -506,9 +506,19 @@ void ro_gui_dialog_open_at_pointer(wimp_w w)
 	state.visible.y0 = ptr.pos.y - dy;
 	state.visible.y1 = ptr.pos.y;
 
+	/* if the window is already open, close it first so that it opens fully
+	 * on screen */
+	error = xwimp_close_window(w);
+	if (error) {
+		LOG(("xwimp_close_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
 	/* open the window at the top of the stack */
 	state.next = wimp_TOP;
-	ro_gui_open_window_request((wimp_open*)&state);
+	ro_gui_open_window_request((wimp_open *) &state);
 }
 
 
