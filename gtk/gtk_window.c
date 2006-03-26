@@ -63,6 +63,8 @@ static gboolean gui_window_button_press_event(GtkWidget *widget,
 static void gui_window_size_allocate_event(GtkWidget *widget,
 		GtkAllocation *allocation, gpointer data);
 
+static void gtk_perform_deferred_resize(void *p);
+
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone)
 {
@@ -317,7 +319,7 @@ gboolean gui_window_configure_event(GtkWidget *widget,
 	return FALSE;
 }
 
-static void gtk_perform_deferred_resize(void *p)
+void gtk_perform_deferred_resize(void *p)
 {
 	struct gui_window *g = p;
 	if (gui_in_multitask) return;
@@ -326,6 +328,9 @@ static void gtk_perform_deferred_resize(void *p)
 			g->bw->current_content->status != CONTENT_STATUS_DONE)
 		return;
 	content_reformat(g->bw->current_content, g->target_width, g->target_height);
+	if (GTK_WIDGET_SENSITIVE (g->stop_button)) {
+		schedule(25, gtk_perform_deferred_resize, g);
+	}
 }
 
 void gui_window_size_allocate_event(GtkWidget *widget,
@@ -527,6 +532,7 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 void gui_window_start_throbber(struct gui_window* g)
 {
 	gtk_widget_set_sensitive(g->stop_button, TRUE);
+	schedule(25, gtk_perform_deferred_resize, g);
 }
 
 
