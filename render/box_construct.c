@@ -624,6 +624,17 @@ bool box_construct_text(xmlNode *n, struct content *content,
 			box_text_transform(text, strlen(text),
 					parent_style->text_transform);
 		current = text;
+		
+		/* swallow a single leading new line */
+		switch (*current) {
+		case '\n':
+			current++; break;
+		case '\r':
+			current++;
+			if (*current == '\n') current++;
+			break;
+		}
+		
 		do {
 			size_t len = strcspn(current, "\r\n");
 			char old = current[len];
