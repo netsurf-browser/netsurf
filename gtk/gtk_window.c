@@ -13,6 +13,7 @@
 #include <gtk/gtk.h>
 #include "netsurf/content/content.h"
 #include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/history_core.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/plotters.h"
@@ -32,6 +33,8 @@ struct gui_window {
 	GtkWidget *drawing_area;
 	GtkWidget *status_bar;
 	GtkWidget *stop_button;
+	GtkWidget *back_button;
+	GtkWidget *forward_button;
 	struct browser_window *bw;
 	int target_width;
 	int target_height;
@@ -48,7 +51,12 @@ cairo_t *current_cr;
 static void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data);
+
 static void gui_window_stop_button_event(GtkWidget *widget, gpointer data);
+static void gui_window_back_button_event(GtkWidget *widget, gpointer data);
+static void gui_window_forward_button_event(GtkWidget *widget, gpointer data);
+static void gui_window_update_back_forward(struct gui_window *g);
+
 static void gui_window_destroy_event(GtkWidget *widget, gpointer data);
 static gboolean gui_window_expose_event(GtkWidget *widget,
 		GdkEventExpose *event, gpointer data);
@@ -103,10 +111,14 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	back_button = gtk_tool_button_new_from_stock(GTK_STOCK_GO_BACK);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), back_button, -1);
 	gtk_widget_show(GTK_WIDGET(back_button));
+	g->back_button = GTK_WIDGET(back_button);
+	gtk_widget_set_sensitive(g->back_button, FALSE);
 
 	forward_button = gtk_tool_button_new_from_stock(GTK_STOCK_GO_FORWARD);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), forward_button, -1);
 	gtk_widget_show(GTK_WIDGET(forward_button));
+	g->forward_button = GTK_WIDGET(forward_button);
+	gtk_widget_set_sensitive(g->forward_button, FALSE);
 
 	stop_button = gtk_tool_button_new_from_stock(GTK_STOCK_STOP);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), stop_button, -1);
@@ -183,8 +195,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	else
 	  g->scale = 1.0;
 
-	g_signal_connect(G_OBJECT(window), "destroy",
-			G_CALLBACK(gui_window_destroy_event), g);
+#define NS_SIGNAL_CONNECT(obj, sig, callback, ptr) \
+	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
+
+	NS_SIGNAL_CONNECT(window, "destroy", gui_window_destroy_event, g);	
 
 	g_signal_connect(G_OBJECT(drawing_area), "expose_event",
 			G_CALLBACK(gui_window_expose_event), g);
@@ -205,6 +219,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
                         G_CALLBACK(gui_window_zoomout_button_event), g);
 	g_signal_connect(G_OBJECT(g->stop_button), "clicked",
 			G_CALLBACK(gui_window_stop_button_event), g);
+
+	NS_SIGNAL_CONNECT(g->back_button, "clicked", gui_window_back_button_event, g);
+	NS_SIGNAL_CONNECT(g->forward_button, "clicked", gui_window_forward_button_event, g);
+	
+#undef NS_SIGNAL_CONNECT
 
 	return g;
 }
@@ -243,6 +262,29 @@ void gui_window_destroy_event(GtkWidget *widget, gpointer data)
 	netsurf_quit = true;
 }
 
+void gui_window_back_button_event(GtkWidget *widget, gpointer data)
+{
+	struct gui_window *g = data;
+	if (!history_back_available(g->bw->history)) return;
+	history_back(g->bw, g->bw->history);
+	gui_window_update_back_forward(g);
+}
+
+void gui_window_forward_button_event(GtkWidget *widget, gpointer data)
+{
+	struct gui_window *g = data;
+	if (!history_forward_available(g->bw->history)) return;
+	history_forward(g->bw, g->bw->history);
+	gui_window_update_back_forward(g);
+}
+
+void gui_window_update_back_forward(struct gui_window *g)
+{
+	gtk_widget_set_sensitive(g->back_button,
+			history_back_available(g->bw->history));
+	gtk_widget_set_sensitive(g->forward_button,
+			history_forward_available(g->bw->history));
+}
 
 gboolean gui_window_expose_event(GtkWidget *widget,
 		GdkEventExpose *event, gpointer data)
@@ -533,12 +575,14 @@ void gui_window_start_throbber(struct gui_window* g)
 {
 	gtk_widget_set_sensitive(g->stop_button, TRUE);
 	schedule(25, gtk_perform_deferred_resize, g);
+	gui_window_update_back_forward(g);
 }
 
 
 void gui_window_stop_throbber(struct gui_window* g)
 {
 	gtk_widget_set_sensitive(g->stop_button, FALSE);
+	gui_window_update_back_forward(g);
 }
 
 
