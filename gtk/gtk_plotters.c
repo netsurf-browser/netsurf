@@ -339,7 +339,7 @@ void nsgtk_set_colour(colour c)
 	colour.blue = b | (b << 8);
 	colour.pixel = (r << 16) | (g << 8) | b;
 
-	gdk_color_alloc(gtk_widget_get_colormap(current_widget),
+	gdk_color_alloc(gdk_colormap_get_system(),
 			&colour);
 	gdk_gc_set_foreground(current_gc, &colour);
 #ifdef CAIRO_VERSION
