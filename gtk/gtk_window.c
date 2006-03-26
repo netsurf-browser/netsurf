@@ -35,6 +35,7 @@ struct gui_window {
 	int target_width;
 	int target_height;
 	gui_pointer_shape current_pointer;
+	float scale;
 };
 GtkWidget *current_widget;
 GdkDrawable *current_drawable;
@@ -43,7 +44,9 @@ GdkGC *current_gc;
 cairo_t *current_cr;
 #endif
 
-
+static void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data);
+static void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data);
+static void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_destroy_event(GtkWidget *widget, gpointer data);
 static gboolean gui_window_expose_event(GtkWidget *widget,
 		GdkEventExpose *event, gpointer data);
@@ -66,6 +69,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	GtkWidget *vbox;
 	GtkWidget *toolbar;
 	GtkToolItem *back_button, *forward_button, *stop_button, *reload_button;
+	GtkToolItem *zoomin_button, *zoomout_button, *zoom100_button;
+	GtkToolItem *home_button, *history_button;
 	GtkToolItem *url_item;
 	GtkWidget *url_bar;
 	GtkWidget *scrolled;
@@ -87,6 +92,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_widget_show(vbox);
 
 	toolbar = gtk_toolbar_new();
+	gtk_toolbar_set_style(toolbar, GTK_TOOLBAR_ICONS);
 	gtk_box_pack_start(GTK_BOX(vbox), toolbar, FALSE, TRUE, 0);
 	gtk_widget_show(toolbar);
 
@@ -105,6 +111,26 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	reload_button = gtk_tool_button_new_from_stock(GTK_STOCK_REFRESH);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), reload_button, -1);
 	gtk_widget_show(GTK_WIDGET(reload_button));
+
+	home_button = gtk_tool_button_new_from_stock(GTK_STOCK_HOME);
+	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), home_button, -1);
+	gtk_widget_show(GTK_WIDGET(home_button));
+
+	zoomin_button = gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_IN);
+	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), zoomin_button, -1);
+	gtk_widget_show(GTK_WIDGET(zoomin_button));
+
+        zoom100_button = gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_100);
+        gtk_toolbar_insert(GTK_TOOLBAR(toolbar), zoom100_button, -1);
+        gtk_widget_show(GTK_WIDGET(zoom100_button));
+
+        zoomout_button = gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_OUT);
+        gtk_toolbar_insert(GTK_TOOLBAR(toolbar), zoomout_button, -1);
+        gtk_widget_show(GTK_WIDGET(zoomout_button));
+
+	history_button = gtk_tool_button_new_from_stock(GTK_STOCK_OPEN);
+	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), history_button, -1);
+	gtk_widget_show(GTK_WIDGET(history_button));
 
 	url_item = gtk_tool_item_new();
 	gtk_tool_item_set_expand(url_item, TRUE);
@@ -145,6 +171,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->bw = bw;
 	g->current_pointer = GUI_POINTER_DEFAULT;
 
+	if (clone)
+	  g->scale = clone->window->scale;
+	else
+	  g->scale = 1.0;
+
 	g_signal_connect(G_OBJECT(window), "destroy",
 			G_CALLBACK(gui_window_destroy_event), g);
 
@@ -159,7 +190,36 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g_signal_connect(G_OBJECT(scrolled), "size_allocate",
 			G_CALLBACK(gui_window_size_allocate_event), g);
 
+	g_signal_connect(G_OBJECT(zoomin_button), "clicked",
+			G_CALLBACK(gui_window_zoomin_button_event), g);
+        g_signal_connect(G_OBJECT(zoom100_button), "clicked",
+                        G_CALLBACK(gui_window_zoom100_button_event), g);
+        g_signal_connect(G_OBJECT(zoomout_button), "clicked",
+                        G_CALLBACK(gui_window_zoomout_button_event), g);
+
+
 	return g;
+}
+
+void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data)
+{
+	struct gui_window *g = data;
+	g->scale += 0.05;
+	gtk_widget_queue_draw(g->drawing_area);
+}
+
+void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data)
+{
+        struct gui_window *g = data;
+        g->scale = 1.0;
+        gtk_widget_queue_draw(g->drawing_area);
+}
+
+void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data)
+{
+        struct gui_window *g = data;
+        g->scale -= 0.05;
+        gtk_widget_queue_draw(g->drawing_area);
 }
 
 
@@ -188,7 +248,7 @@ gboolean gui_window_expose_event(GtkWidget *widget,
 #endif
 
 	plot = nsgtk_plotters;
-	nsgtk_plot_set_scale(1.0);
+	nsgtk_plot_set_scale(g->scale);
 
 	content_redraw(c, 0, 0,
 			widget->allocation.width,
@@ -197,7 +257,7 @@ gboolean gui_window_expose_event(GtkWidget *widget,
 			event->area.y,
 			event->area.x + event->area.width,
 			event->area.y + event->area.height,
-			1.0, 0xFFFFFF);
+			g->scale, 0xFFFFFF);
 
 	g_object_unref(current_gc);
 #ifdef CAIRO_VERSION
