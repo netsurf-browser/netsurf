@@ -451,7 +451,7 @@ bool history_redraw_entry(struct history *history,
 			strlen(entry->title), WIDTH, &char_offset, &actual_x))
 		return false;
 	if (!plot.text(entry->x, entry->y + HEIGHT + 12, &css_base_style,
-			entry->title, char_offset, 0xffffff, c))
+			entry->title, char_offset + 1, 0xffffff, c))
 		return false;
 
 	for (child = entry->forward; child; child = child->next) {
