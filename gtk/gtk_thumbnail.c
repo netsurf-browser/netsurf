@@ -88,6 +88,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	cairo_destroy(current_cr);
 #endif
 	g_object_unref(pixmap);
+	g_object_unref(big);
 
 	return true;
 }
