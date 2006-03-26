@@ -1372,12 +1372,10 @@ void html_reformat(struct content *c, int width, int height)
 	doc = c->data.html.layout;
 	
 	c->width = doc->descendant_x1 + 
-		doc->margin[LEFT] + doc->margin[RIGHT] + 
-		doc->border[LEFT] + doc->border[RIGHT];
+		doc->margin[LEFT] + doc->margin[RIGHT];
 	
 	c->height = doc->descendant_y1 + 
-		doc->margin[TOP] + doc->margin[BOTTOM] + 
-		doc->border[TOP] + doc->border[BOTTOM];
+		doc->margin[TOP] + doc->margin[BOTTOM];
 }
 
 
