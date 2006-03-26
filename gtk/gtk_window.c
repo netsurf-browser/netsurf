@@ -31,6 +31,7 @@ struct gui_window {
 	GtkWidget *url_bar;
 	GtkWidget *drawing_area;
 	GtkWidget *status_bar;
+	GtkWidget *stop_button;
 	struct browser_window *bw;
 	int target_width;
 	int target_height;
@@ -47,6 +48,7 @@ cairo_t *current_cr;
 static void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data);
+static void gui_window_stop_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_destroy_event(GtkWidget *widget, gpointer data);
 static gboolean gui_window_expose_event(GtkWidget *widget,
 		GdkEventExpose *event, gpointer data);
@@ -92,7 +94,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_widget_show(vbox);
 
 	toolbar = gtk_toolbar_new();
-	gtk_toolbar_set_style(toolbar, GTK_TOOLBAR_ICONS);
+	gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_ICONS);
 	gtk_box_pack_start(GTK_BOX(vbox), toolbar, FALSE, TRUE, 0);
 	gtk_widget_show(toolbar);
 
@@ -107,6 +109,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	stop_button = gtk_tool_button_new_from_stock(GTK_STOCK_STOP);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), stop_button, -1);
 	gtk_widget_show(GTK_WIDGET(stop_button));
+	g->stop_button = GTK_WIDGET(stop_button);
+	gtk_widget_set_sensitive(g->stop_button, FALSE);
+	
 
 	reload_button = gtk_tool_button_new_from_stock(GTK_STOCK_REFRESH);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), reload_button, -1);
@@ -196,7 +201,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
                         G_CALLBACK(gui_window_zoom100_button_event), g);
         g_signal_connect(G_OBJECT(zoomout_button), "clicked",
                         G_CALLBACK(gui_window_zoomout_button_event), g);
-
+	g_signal_connect(G_OBJECT(g->stop_button), "clicked",
+			G_CALLBACK(gui_window_stop_button_event), g);
 
 	return g;
 }
@@ -222,6 +228,11 @@ void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data)
         gtk_widget_queue_draw(g->drawing_area);
 }
 
+void gui_window_stop_button_event(GtkWidget *widget, gpointer data)
+{
+	struct gui_window *g = data;
+	browser_window_stop(g->bw);
+}
 
 void gui_window_destroy_event(GtkWidget *widget, gpointer data)
 {
@@ -515,11 +526,13 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 
 void gui_window_start_throbber(struct gui_window* g)
 {
+	gtk_widget_set_sensitive(g->stop_button, TRUE);
 }
 
 
 void gui_window_stop_throbber(struct gui_window* g)
 {
+	gtk_widget_set_sensitive(g->stop_button, FALSE);
 }
 
 
