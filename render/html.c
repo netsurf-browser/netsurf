@@ -1367,9 +1367,17 @@ void html_stop(struct content *c)
 
 void html_reformat(struct content *c, int width, int height)
 {
+	struct box *doc;
 	layout_document(c, width, height);
-	c->width = c->data.html.layout->descendant_x1;
-	c->height = c->data.html.layout->descendant_y1;
+	doc = c->data.html.layout;
+	
+	c->width = doc->descendant_x1 + 
+		doc->margin[LEFT] + doc->margin[RIGHT] + 
+		doc->border[LEFT] + doc->border[RIGHT];
+	
+	c->height = doc->descendant_y1 + 
+		doc->margin[TOP] + doc->margin[BOTTOM] + 
+		doc->border[TOP] + doc->border[BOTTOM];
 }
 
 
