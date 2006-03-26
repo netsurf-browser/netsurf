@@ -48,7 +48,7 @@ br[clear=left] { clear: left; }
 br[clear=right] { clear: right; }
 br[clear=all] { clear: both; }
 
-pre { display: block; font-family: monospace; white-space: pre; }
+pre { display: block; font-family: monospace; white-space: pre; margin-bottom: 0.5em; }
 
 ins { color: green; text-decoration: underline; }
 del { color: red; text-decoration: line-through; }
