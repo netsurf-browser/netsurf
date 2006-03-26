@@ -1047,21 +1047,26 @@ bool layout_line(struct box *first, int width, int *y,
 	x0 -= cx;
 	x1 -= cx;
 
-	/* get minimum line height from containing block */
-	used_height = height = line_height(first->parent->parent->style);
+	if (indent)
+		x0 += layout_text_indent(first->parent->parent->style, width);
 
 	if (x1 < x0)
 		x1 = x0;
 
+	/* get minimum line height from containing block */
+	used_height = height = line_height(first->parent->parent->style);
+
 	/* pass 1: find height of line assuming sides at top of line: loop
 	 * body executed at least once
 	 * keep in sync with the loop in layout_minmax_line() */
+	LOG(("x0 %i, x1 %i, x1 - x0 %i", x0, x1, x1 - x0));
 	for (x = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
 		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_FLOAT_LEFT ||
 				b->type == BOX_FLOAT_RIGHT ||
 				b->type == BOX_BR || b->type == BOX_TEXT ||
 				b->type == BOX_INLINE_END);
+		LOG(("pass 1: b %p, x %i", b, x));
 
 		if (b->type == BOX_BR)
 			break;
@@ -1239,7 +1244,9 @@ bool layout_line(struct box *first, int width, int *y,
 	space_after = space_before = 0;
 
 	/* pass 2: place boxes in line: loop body executed at least once */
+	LOG(("x0 %i, x1 %i, x1 - x0 %i", x0, x1, x1 - x0));
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b; b = b->next) {
+		LOG(("pass 2: b %p, x %i", b, x));
 		if (b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_TEXT ||
 				b->type == BOX_INLINE_END) {
