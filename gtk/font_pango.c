@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  */
 
@@ -22,6 +22,8 @@
 #include "netsurf/utils/utils.h"
 #include "netsurf/utils/log.h"
 
+/* Until we can consider the descenders etc, we need to not render using cairo */
+#undef CAIRO_VERSION
 
 static PangoFontDescription *nsfont_style_to_description(
 		const struct css_style *style);
@@ -31,7 +33,7 @@ static PangoFontDescription *nsfont_style_to_description(
  * Measure the width of a string.
  *
  * \param  style   css_style for this text, with style->font_size.size ==
- *                 CSS_FONT_SIZE_LENGTH
+ *		   CSS_FONT_SIZE_LENGTH
  * \param  string  UTF-8 string to measure
  * \param  length  length of string
  * \param  width   updated to width of string[0..length)
@@ -70,13 +72,13 @@ bool nsfont_width(const struct css_style *style,
 /**
  * Find the position in a string where an x coordinate falls.
  *
- * \param  style        css_style for this text, with style->font_size.size ==
- *                      CSS_FONT_SIZE_LENGTH
- * \param  string       UTF-8 string to measure
- * \param  length       length of string
- * \param  x            x coordinate to search for
- * \param  char_offset  updated to offset in string of actual_x, [0..length]
- * \param  actual_x     updated to x coordinate of character closest to x
+ * \param  style	css_style for this text, with style->font_size.size ==
+ *			CSS_FONT_SIZE_LENGTH
+ * \param  string	UTF-8 string to measure
+ * \param  length	length of string
+ * \param  x		x coordinate to search for
+ * \param  char_offset	updated to offset in string of actual_x, [0..length]
+ * \param  actual_x	updated to x coordinate of character closest to x
  * \return  true on success, false on error and error reported
  */
 
@@ -113,18 +115,18 @@ bool nsfont_position_in_string(const struct css_style *style,
 /**
  * Find where to split a string to make it fit a width.
  *
- * \param  style        css_style for this text, with style->font_size.size ==
- *                      CSS_FONT_SIZE_LENGTH
- * \param  string       UTF-8 string to measure
- * \param  length       length of string
- * \param  x            width available
- * \param  char_offset  updated to offset in string of actual_x, [0..length]
- * \param  actual_x     updated to x coordinate of character closest to x
+ * \param  style	css_style for this text, with style->font_size.size ==
+ *			CSS_FONT_SIZE_LENGTH
+ * \param  string	UTF-8 string to measure
+ * \param  length	length of string
+ * \param  x		width available
+ * \param  char_offset	updated to offset in string of actual_x, [0..length]
+ * \param  actual_x	updated to x coordinate of character closest to x
  * \return  true on success, false on error and error reported
  *
  * On exit, [char_offset == 0 ||
- *           string[char_offset] == ' ' ||
- *           char_offset == length]
+ *	     string[char_offset] == ' ' ||
+ *	     char_offset == length]
  */
 
 bool nsfont_split(const struct css_style *style,
@@ -167,12 +169,12 @@ bool nsfont_split(const struct css_style *style,
  * Render a string.
  *
  * \param  style   css_style for this text, with style->font_size.size ==
- *                 CSS_FONT_SIZE_LENGTH
+ *		   CSS_FONT_SIZE_LENGTH
  * \param  string  UTF-8 string to measure
  * \param  length  length of string
- * \param  x       x coordinate
- * \param  y       y coordinate
- * \param  c       colour for text
+ * \param  x	   x coordinate
+ * \param  y	   y coordinate
+ * \param  c	   colour for text
  * \return  true on success, false on error and error reported
  */
 
@@ -181,15 +183,18 @@ bool nsfont_paint(const struct css_style *style,
 		int x, int y, colour c)
 {
 	PangoFontDescription *desc;
-	PangoContext *context;
 	PangoLayout *layout;
-	PangoLayoutLine *line;
 	gint size;
-	
+#ifdef CAIRO_VERSION
+	int width, height;
+#else
+	PangoLayoutLine *line;
+	PangoContext *context;
 	GdkColor colour = { 0,
 			((c & 0xff) << 8) | (c & 0xff),
 			(c & 0xff00) | (c & 0xff00 >> 8),
 			((c & 0xff0000) >> 8) | (c & 0xff0000 >> 16) };
+#endif
 
 	if (length == 0)
 		return true;
@@ -200,17 +205,30 @@ bool nsfont_paint(const struct css_style *style,
 		pango_font_description_set_absolute_size(desc, size);
 	else
 		pango_font_description_set_size(desc, size);
+
+#ifdef CAIRO_VERSION
+	layout = pango_cairo_create_layout(current_cr);
+#else
 	context = gdk_pango_context_get();
 	layout = pango_layout_new(context);
+#endif
+	
 	pango_layout_set_font_description(layout, desc);
 	pango_layout_set_text(layout, string, length);
-
+	
+#ifdef CAIRO_VERSION
+	pango_layout_get_pixel_size(layout, &width, &height);
+	cairo_move_to(current_cr, x, y - height);
+	nsgtk_set_colour(c);
+	pango_cairo_show_layout(current_cr, layout);
+#else
 	line = pango_layout_get_line(layout, 0);
 	gdk_draw_layout_line_with_colors(current_drawable, current_gc,
 			x, y, line, &colour, 0);
 
-	g_object_unref(layout);
 	g_object_unref(context);
+#endif
+	g_object_unref(layout);
 	pango_font_description_free(desc);
 
 	return true;
@@ -220,8 +238,8 @@ bool nsfont_paint(const struct css_style *style,
 /**
  * Convert a css_style to a PangoFontDescription.
  *
- * \param  style        css_style for this text, with style->font_size.size ==
- *                      CSS_FONT_SIZE_LENGTH
+ * \param  style	css_style for this text, with style->font_size.size ==
+ *			CSS_FONT_SIZE_LENGTH
  * \return  a new Pango font description
  */
 
@@ -234,6 +252,9 @@ PangoFontDescription *nsfont_style_to_description(
 	PangoStyle styl = PANGO_STYLE_NORMAL;
 
 	assert(style->font_size.size == CSS_FONT_SIZE_LENGTH);
+	
+	desc = pango_font_description_new();
+	
 	if (style->font_size.value.length.unit == CSS_UNIT_PX)
 		size = style->font_size.value.length.value * PANGO_SCALE;
 	else
@@ -250,6 +271,8 @@ PangoFontDescription *nsfont_style_to_description(
 		break;
 	}
 
+	pango_font_description_set_style(desc, styl);
+	
 	switch (style->font_weight) {
 	case CSS_FONT_WEIGHT_NORMAL:
 		weight = PANGO_WEIGHT_NORMAL; break;
@@ -267,14 +290,41 @@ PangoFontDescription *nsfont_style_to_description(
 	default: break;
 	}
 
-	desc = pango_font_description_new();
+	pango_font_description_set_weight(desc, weight);
+
 	if (style->font_size.value.length.unit == CSS_UNIT_PX)
 		pango_font_description_set_absolute_size(desc, size);
 	else
 		pango_font_description_set_size(desc, size);
-	pango_font_description_set_family_static(desc, "Sans");
-	pango_font_description_set_weight(desc, weight);
-	pango_font_description_set_style(desc, styl);
-
+	
+	switch (style->font_family) {
+	case CSS_FONT_FAMILY_SERIF:
+		pango_font_description_set_family_static(desc, "Serif");
+		break;
+	case CSS_FONT_FAMILY_MONOSPACE:
+		pango_font_description_set_family_static(desc, "Monospace");
+		break;
+	case CSS_FONT_FAMILY_CURSIVE:
+		pango_font_description_set_family_static(desc, "Cursive");
+		break;
+	case CSS_FONT_FAMILY_FANTASY:
+		pango_font_description_set_family_static(desc, "Fantasy");
+		break;
+	case CSS_FONT_FAMILY_SANS_SERIF:
+	default:
+		pango_font_description_set_family_static(desc, "Sans");
+		break;
+	}
+	
+	switch (style->font_variant) {
+	case CSS_FONT_VARIANT_SMALL_CAPS:
+		LOG(("Small caps!"));
+		pango_font_description_set_variant(desc, PANGO_VARIANT_SMALL_CAPS);
+		break;
+	case CSS_FONT_VARIANT_NORMAL:
+	default:
+		pango_font_description_set_variant(desc, PANGO_VARIANT_NORMAL);
+	}
+	
 	return desc;
 }
