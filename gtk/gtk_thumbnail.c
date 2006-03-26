@@ -39,9 +39,8 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	gint width = gdk_pixbuf_get_width(pixbuf);
 	gint height = gdk_pixbuf_get_height(pixbuf);
 	gint depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
-	GdkPixmap *pixmap = gdk_pixmap_new(NULL, width, height, depth);
-	GdkColor c = { 0xffffff, 65535, 65535, 65535 };
-	float scale = 1.0;
+	GdkPixmap *pixmap = gdk_pixmap_new(NULL, content->width, content->width, depth);
+	GdkPixbuf *big;
 
 	assert(content);
 	assert(bitmap);
@@ -51,30 +50,31 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	/* set the plotting functions up */
 	plot = nsgtk_plotters;
 
-	if (content->width)
-		scale = (float)width / (float)content->width;
-	nsgtk_plot_set_scale(scale);
+	nsgtk_plot_set_scale(1.0);
 
 	/* set to plot to pixmap */
 	current_drawable = pixmap;
 	current_gc = gdk_gc_new(current_drawable);
-	gdk_gc_set_foreground(current_gc, &c);
 #ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
-	cairo_set_source_rgba(current_cr, 1, 1, 1, 1);
 #endif
-	gdk_draw_rectangle(pixmap, current_gc, TRUE, 0, 0, width, height);
+	plot.fill(0, 0, content->width, content->width, 0xffffffff);
 
 	/* render the content */
-	content_redraw(content, 0, 0, width, height,
-			0, 0, width, height, scale, 0xFFFFFF);
+	content_redraw(content, 0, 0, content->width, content->width,
+			0, 0, content->width, content->width, 1.0, 0xFFFFFF);
 
-	/* copy thumbnail to pixbuf we've been passed */
-	gdk_pixbuf_get_from_drawable(pixbuf, pixmap, NULL, 0, 0, 0, 0,
-					width, height);
+	/* resample the large plot down to the size of our thumbnail */
+	big = gdk_pixbuf_get_from_drawable(NULL, pixmap, NULL, 0, 0, 0, 0,
+			content->width, content->width);
 
-	/* As a debugging aid, try this to dump out a copy of the thumbnail as a PNG:
-	 * gdk_pixbuf_save(pixbuf, "thumbnail.png", "png", NULL, NULL);
+	gdk_pixbuf_scale(big, pixbuf, 0, 0, width, height, 0, 0,
+			(double)width / (double)content->width, 
+			(double)height / (double)content->width,
+			GDK_INTERP_HYPER);
+
+	/* As a debugging aid, try this to dump out a copy of the thumbnail as
+	 * a PNG: gdk_pixbuf_save(pixbuf, "thumbnail.png", "png", NULL, NULL);
 	 */
 
 	/* register the thumbnail with the URL */
