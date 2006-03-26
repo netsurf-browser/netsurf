@@ -37,6 +37,7 @@ struct gui_window {
 	GtkWidget *stop_button;
 	GtkWidget *back_button;
 	GtkWidget *forward_button;
+        GtkWidget *reload_button;
 	struct browser_window *bw;
 	int target_width;
 	int target_height;
@@ -62,6 +63,7 @@ static void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_history_button_event(GtkWidget *widget, gpointer data);
+static void gui_window_reload_button_event(GtkWidget *widget, gpointer data);
 
 static void gui_window_stop_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_back_button_event(GtkWidget *widget, gpointer data);
@@ -163,6 +165,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	reload_button = gtk_tool_button_new_from_stock(GTK_STOCK_REFRESH);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), reload_button, -1);
 	gtk_widget_show(GTK_WIDGET(reload_button));
+        g->reload_button = GTK_WIDGET(reload_button);
+        gtk_widget_set_sensitive(g->reload_button, FALSE);
 
 	home_button = gtk_tool_button_new_from_stock(GTK_STOCK_HOME);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), home_button, -1);
@@ -272,7 +276,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	NS_SIGNAL_CONNECT(g->back_button, "clicked", gui_window_back_button_event, g);
 	NS_SIGNAL_CONNECT(g->forward_button, "clicked", gui_window_forward_button_event, g);
-	
+	NS_SIGNAL_CONNECT(g->reload_button, "clicked", gui_window_reload_button_event, g);
+        
 	NS_SIGNAL_CONNECT(history_button, "clicked", gui_window_history_button_event, g);
 	
 	/* History window events */
@@ -358,6 +363,12 @@ void gui_window_history_button_event(GtkWidget *widget, gpointer data)
 	struct gui_window *g = data;
 	gtk_widget_show(GTK_WIDGET(g->history_window_widget));
 	gdk_window_raise(g->history_window_widget->window);
+}
+
+void gui_window_reload_button_event(GtkWidget *widget, gpointer data)
+{
+        struct gui_window *g = data;
+        browser_window_reload(g->bw, true);
 }
 
 gboolean gui_window_expose_event(GtkWidget *widget,
@@ -695,6 +706,7 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 void gui_window_start_throbber(struct gui_window* g)
 {
 	gtk_widget_set_sensitive(g->stop_button, TRUE);
+	gtk_widget_set_sensitive(g->reload_button, FALSE);
 	schedule(100, gtk_perform_deferred_resize, g);
 	gui_window_update_back_forward(g);
 }
@@ -703,6 +715,7 @@ void gui_window_start_throbber(struct gui_window* g)
 void gui_window_stop_throbber(struct gui_window* g)
 {
 	gtk_widget_set_sensitive(g->stop_button, FALSE);
+	gtk_widget_set_sensitive(g->reload_button, TRUE);
 	gui_window_update_back_forward(g);
 }
 
