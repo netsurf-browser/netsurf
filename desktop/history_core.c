@@ -439,6 +439,7 @@ bool history_redraw_entry(struct history *history,
 	int actual_x;
 	struct history_entry *child;
 	colour c = entry == history->current ? 0x0000ff : 0x333333;
+	int tailsize = 5;
 
 	if (!plot.bitmap(entry->x, entry->y, WIDTH, HEIGHT, entry->bitmap,
 			0xffffff))
@@ -456,6 +457,16 @@ bool history_redraw_entry(struct history *history,
 
 	for (child = entry->forward; child; child = child->next) {
 		if (!plot.line(entry->x + WIDTH, entry->y + HEIGHT / 2,
+		      		entry->x + WIDTH + tailsize,
+				entry->y + HEIGHT / 2, 1,
+				0x333333, false, false))
+			return false;
+		if (!plot.line(entry->x + WIDTH + tailsize,
+				entry->y + HEIGHT / 2,
+				child->x - tailsize, child->y + HEIGHT / 2, 1,
+				0x333333, false, false))
+			return false;
+		if (!plot.line(child->x - tailsize, child->y + HEIGHT / 2,
 				child->x, child->y + HEIGHT / 2, 1,
 				0x333333, false, false))
 			return false;
