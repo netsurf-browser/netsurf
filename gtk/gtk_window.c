@@ -64,6 +64,7 @@ static void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_history_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_reload_button_event(GtkWidget *widget, gpointer data);
+static void gui_window_home_button_event(GtkWidget *widget, gpointer data);
 
 static void gui_window_stop_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_back_button_event(GtkWidget *widget, gpointer data);
@@ -279,6 +280,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	NS_SIGNAL_CONNECT(g->reload_button, "clicked", gui_window_reload_button_event, g);
         
 	NS_SIGNAL_CONNECT(history_button, "clicked", gui_window_history_button_event, g);
+	NS_SIGNAL_CONNECT(home_button, "clicked", gui_window_home_button_event, g);
 	
 	/* History window events */
 	NS_SIGNAL_CONNECT(history_area, "expose_event", 
@@ -369,6 +371,18 @@ void gui_window_reload_button_event(GtkWidget *widget, gpointer data)
 {
         struct gui_window *g = data;
         browser_window_reload(g->bw, true);
+}
+
+void gui_window_home_button_event(GtkWidget *widget, gpointer data)
+{
+        struct gui_window *g = data;
+        char *referer = 0;
+
+        if (g->bw->current_content && g->bw->current_content->url)
+                referer = g->bw->current_content->url;
+
+        browser_window_go(g->bw, "http://netsurf.sourceforge.net/",
+                                referer);
 }
 
 gboolean gui_window_expose_event(GtkWidget *widget,
