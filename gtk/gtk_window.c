@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  */
 
@@ -25,7 +25,9 @@
 #include "netsurf/render/form.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
+#include "netsurf/utils/log.h"
 
+struct gtk_history_window;
 
 struct gui_window {
 	GtkWidget *window;
@@ -40,7 +42,15 @@ struct gui_window {
 	int target_height;
 	gui_pointer_shape current_pointer;
 	float scale;
+	struct gtk_history_window *history_window;
+	GtkWidget *history_window_widget;
 };
+
+struct gtk_history_window {
+	struct gui_window *g;
+	GtkWidget *drawing_area;
+};
+
 GtkWidget *current_widget;
 GdkDrawable *current_drawable;
 GdkGC *current_gc;
@@ -51,11 +61,19 @@ cairo_t *current_cr;
 static void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data);
+static void gui_window_history_button_event(GtkWidget *widget, gpointer data);
 
 static void gui_window_stop_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_back_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_forward_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_update_back_forward(struct gui_window *g);
+
+static gboolean gui_history_expose_event(GtkWidget *widget, 
+				     GdkEventExpose *event, gpointer data);
+static gboolean gui_history_motion_notify_event(GtkWidget *widget,
+					    GdkEventMotion *event, gpointer data);
+static gboolean gui_history_button_press_event(GtkWidget *widget,
+					   GdkEventButton *event, gpointer data);
 
 static void gui_window_destroy_event(GtkWidget *widget, gpointer data);
 static gboolean gui_window_expose_event(GtkWidget *widget,
@@ -77,7 +95,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone)
 {
 	struct gui_window *g;
-	GtkWidget *window;
+	GtkWidget *window, *history_window;
 	GtkWidget *vbox;
 	GtkWidget *toolbar;
 	GtkToolItem *back_button, *forward_button, *stop_button, *reload_button;
@@ -85,8 +103,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	GtkToolItem *home_button, *history_button;
 	GtkToolItem *url_item;
 	GtkWidget *url_bar;
-	GtkWidget *scrolled;
-	GtkWidget *drawing_area;
+	GtkWidget *scrolled, *history_scrolled;
+	GtkWidget *drawing_area, *history_area;
 	GtkWidget *status_bar;
 
 	g = malloc(sizeof *g);
@@ -98,7 +116,22 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_default_size(GTK_WINDOW(window), 600, 600);
 	gtk_window_set_title(GTK_WINDOW(window), "NetSurf");
-
+	
+	g->history_window = malloc(sizeof(struct gtk_history_window));
+	if (!g->history_window) {
+		warn_user("NoMemory", 0);
+		return 0;
+	}
+	g->history_window->g = g;
+	
+	history_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_transient_for(GTK_WINDOW(history_window), 
+				     GTK_WINDOW(window));
+	gtk_window_set_default_size(GTK_WINDOW(history_window), 400, 400);
+	gtk_window_set_title(GTK_WINDOW(history_window), "NetSurf History");
+	
+	g->history_window_widget = GTK_WIDGET(history_window);
+	
 	vbox = gtk_vbox_new(false, 0);
 	gtk_container_add(GTK_CONTAINER(window), vbox);
 	gtk_widget_show(vbox);
@@ -139,13 +172,13 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), zoomin_button, -1);
 	gtk_widget_show(GTK_WIDGET(zoomin_button));
 
-        zoom100_button = gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_100);
-        gtk_toolbar_insert(GTK_TOOLBAR(toolbar), zoom100_button, -1);
-        gtk_widget_show(GTK_WIDGET(zoom100_button));
+	zoom100_button = gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_100);
+	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), zoom100_button, -1);
+	gtk_widget_show(GTK_WIDGET(zoom100_button));
 
-        zoomout_button = gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_OUT);
-        gtk_toolbar_insert(GTK_TOOLBAR(toolbar), zoomout_button, -1);
-        gtk_widget_show(GTK_WIDGET(zoomout_button));
+	zoomout_button = gtk_tool_button_new_from_stock(GTK_STOCK_ZOOM_OUT);
+	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), zoomout_button, -1);
+	gtk_widget_show(GTK_WIDGET(zoomout_button));
 
 	history_button = gtk_tool_button_new_from_stock(GTK_STOCK_OPEN);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), history_button, -1);
@@ -165,6 +198,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	scrolled = gtk_scrolled_window_new(0, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), scrolled, TRUE, TRUE, 0);
 	gtk_widget_show(scrolled);
+	
+	history_scrolled = gtk_scrolled_window_new(0, 0);
+	gtk_container_add(GTK_CONTAINER(history_window), history_scrolled);
+	gtk_widget_show(history_scrolled);
 
 	drawing_area = gtk_drawing_area_new();
 	gtk_widget_set_events(drawing_area,
@@ -177,6 +214,19 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled),
 			drawing_area);
 	gtk_widget_show(drawing_area);
+	
+	history_area = gtk_drawing_area_new();
+	gtk_widget_set_events(history_area,
+			      GDK_EXPOSURE_MASK |
+			      GDK_POINTER_MOTION_MASK |
+			      GDK_BUTTON_PRESS_MASK);
+	gtk_widget_modify_bg(history_area, GTK_STATE_NORMAL,
+			     &((GdkColor) { 0, 0xffff, 0xffff, 0xffff }));
+	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(history_scrolled),
+					      history_area);
+	gtk_widget_show(history_area);
+	g->history_window->drawing_area = history_area;
+	
 	status_bar = gtk_statusbar_new();
 	gtk_box_pack_start(GTK_BOX(vbox), status_bar, FALSE, TRUE, 0);
 	gtk_widget_show(status_bar);
@@ -213,16 +263,28 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	g_signal_connect(G_OBJECT(zoomin_button), "clicked",
 			G_CALLBACK(gui_window_zoomin_button_event), g);
-        g_signal_connect(G_OBJECT(zoom100_button), "clicked",
-                        G_CALLBACK(gui_window_zoom100_button_event), g);
-        g_signal_connect(G_OBJECT(zoomout_button), "clicked",
-                        G_CALLBACK(gui_window_zoomout_button_event), g);
+	g_signal_connect(G_OBJECT(zoom100_button), "clicked",
+			G_CALLBACK(gui_window_zoom100_button_event), g);
+	g_signal_connect(G_OBJECT(zoomout_button), "clicked",
+			G_CALLBACK(gui_window_zoomout_button_event), g);
 	g_signal_connect(G_OBJECT(g->stop_button), "clicked",
 			G_CALLBACK(gui_window_stop_button_event), g);
 
 	NS_SIGNAL_CONNECT(g->back_button, "clicked", gui_window_back_button_event, g);
 	NS_SIGNAL_CONNECT(g->forward_button, "clicked", gui_window_forward_button_event, g);
 	
+	NS_SIGNAL_CONNECT(history_button, "clicked", gui_window_history_button_event, g);
+	
+	/* History window events */
+	NS_SIGNAL_CONNECT(history_area, "expose_event", 
+			  gui_history_expose_event, g->history_window);
+	NS_SIGNAL_CONNECT(history_area, "motion_notify_event", 
+			  gui_history_motion_notify_event, g->history_window);
+	NS_SIGNAL_CONNECT(history_area, "button_press_event",
+			  gui_history_button_press_event, g->history_window);
+	NS_SIGNAL_CONNECT(g->history_window_widget, "delete_event",
+			  gtk_widget_hide_on_delete, NULL);
+
 #undef NS_SIGNAL_CONNECT
 
 	return g;
@@ -237,16 +299,16 @@ void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data)
 
 void gui_window_zoom100_button_event(GtkWidget *widget, gpointer data)
 {
-        struct gui_window *g = data;
-        g->scale = 1.0;
-        gtk_widget_queue_draw(g->drawing_area);
+	struct gui_window *g = data;
+	g->scale = 1.0;
+	gtk_widget_queue_draw(g->drawing_area);
 }
 
 void gui_window_zoomout_button_event(GtkWidget *widget, gpointer data)
 {
-        struct gui_window *g = data;
-        g->scale -= 0.05;
-        gtk_widget_queue_draw(g->drawing_area);
+	struct gui_window *g = data;
+	g->scale -= 0.05;
+	gtk_widget_queue_draw(g->drawing_area);
 }
 
 void gui_window_stop_button_event(GtkWidget *widget, gpointer data)
@@ -280,10 +342,22 @@ void gui_window_forward_button_event(GtkWidget *widget, gpointer data)
 
 void gui_window_update_back_forward(struct gui_window *g)
 {
+	int width, height;
 	gtk_widget_set_sensitive(g->back_button,
 			history_back_available(g->bw->history));
 	gtk_widget_set_sensitive(g->forward_button,
 			history_forward_available(g->bw->history));
+	history_size(g->bw->history, &width, &height);
+	gtk_widget_set_size_request(GTK_WIDGET(g->history_window->drawing_area),
+				    width, height);
+	gtk_widget_queue_draw(GTK_WIDGET(g->history_window_widget));
+}
+
+void gui_window_history_button_event(GtkWidget *widget, gpointer data)
+{
+	struct gui_window *g = data;
+	gtk_widget_show(GTK_WIDGET(g->history_window_widget));
+	gdk_window_raise(g->history_window_widget->window);
 }
 
 gboolean gui_window_expose_event(GtkWidget *widget,
@@ -322,6 +396,52 @@ gboolean gui_window_expose_event(GtkWidget *widget,
 	return FALSE;
 }
 
+gboolean gui_history_expose_event(GtkWidget *widget,
+				  GdkEventExpose *event,
+				  gpointer data)
+{
+	struct gtk_history_window *hw = data;
+	current_widget = widget;
+	current_drawable = widget->window;
+	current_gc = gdk_gc_new(current_drawable);
+#ifdef CAIRO_VERSION
+	current_cr = gdk_cairo_create(current_drawable);
+#endif
+	plot = nsgtk_plotters;
+	nsgtk_plot_set_scale(1.0);
+	
+	history_redraw(hw->g->bw->history);
+	
+	g_object_unref(current_gc);
+#ifdef CAIRO_VERSION
+	cairo_destroy(current_cr);
+#endif
+	return FALSE;
+}
+
+gboolean gui_history_motion_notify_event(GtkWidget *widget,
+		GdkEventMotion *event, gpointer data)
+{
+	struct gtk_history_window *hw = data;
+
+	/* Not sure what to do here */
+
+	return TRUE;
+}
+
+gboolean gui_history_button_press_event(GtkWidget *widget,
+					GdkEventButton *event,
+					gpointer data)
+{
+	struct gtk_history_window *hw = data;
+	
+	LOG(("History click %d,%d", event->x, event->y));
+	
+	history_click(hw->g->bw, hw->g->bw->history, 
+		      event->x, event->y, false);
+	
+	return TRUE;
+}
 
 gboolean gui_window_url_key_press_event(GtkWidget *widget,
 		GdkEventKey *event, gpointer data)
@@ -356,7 +476,7 @@ gboolean gui_window_configure_event(GtkWidget *widget,
 			g->bw->current_content->status != CONTENT_STATUS_DONE)
 		return FALSE;
 
-/* 	content_reformat(g->bw->current_content, event->width, event->height); */
+/*	content_reformat(g->bw->current_content, event->width, event->height); */
 
 	return FALSE;
 }
@@ -371,7 +491,7 @@ void gtk_perform_deferred_resize(void *p)
 		return;
 	content_reformat(g->bw->current_content, g->target_width, g->target_height);
 	if (GTK_WIDGET_SENSITIVE (g->stop_button)) {
-		schedule(25, gtk_perform_deferred_resize, g);
+		schedule(100, gtk_perform_deferred_resize, g);
 	}
 }
 
@@ -413,6 +533,7 @@ gboolean gui_window_button_press_event(GtkWidget *widget,
 
 void gui_window_destroy(struct gui_window *g)
 {
+	/* XXX: Destroy history window etc here */
 }
 
 
@@ -496,40 +617,40 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 	if (g->current_pointer == shape) return;
 	g->current_pointer = shape;
 	switch (shape) {
-        case GUI_POINTER_POINT:
+	case GUI_POINTER_POINT:
 		cursortype = GDK_HAND1;
 		break;
-        case GUI_POINTER_CARET:
+	case GUI_POINTER_CARET:
 		cursortype = GDK_XTERM;
 		break;
-        case GUI_POINTER_UP:
+	case GUI_POINTER_UP:
 		cursortype = GDK_TOP_SIDE;
 		break;
-        case GUI_POINTER_DOWN:
+	case GUI_POINTER_DOWN:
 		cursortype = GDK_BOTTOM_SIDE;
 		break;
-        case GUI_POINTER_LEFT:
+	case GUI_POINTER_LEFT:
 		cursortype = GDK_LEFT_SIDE;
 		break;
-        case GUI_POINTER_RIGHT:
+	case GUI_POINTER_RIGHT:
 		cursortype = GDK_RIGHT_SIDE;
 		break;
-        case GUI_POINTER_LD:
+	case GUI_POINTER_LD:
 		cursortype = GDK_BOTTOM_LEFT_CORNER;
 		break;
-        case GUI_POINTER_RD:
+	case GUI_POINTER_RD:
 		cursortype = GDK_BOTTOM_RIGHT_CORNER;
 		break;
-        case GUI_POINTER_LU:
+	case GUI_POINTER_LU:
 		cursortype = GDK_TOP_LEFT_CORNER;
 		break;
-        case GUI_POINTER_RU:
+	case GUI_POINTER_RU:
 		cursortype = GDK_TOP_RIGHT_CORNER;
 		break;
-        case GUI_POINTER_CROSS:
+	case GUI_POINTER_CROSS:
 		cursortype = GDK_CROSS;
 		break;
-        case GUI_POINTER_MOVE:
+	case GUI_POINTER_MOVE:
 		cursortype = GDK_FLEUR;
 		break;
 	case GUI_POINTER_WAIT:
@@ -538,7 +659,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 	case GUI_POINTER_HELP:
 		cursortype = GDK_QUESTION_ARROW;
 		break;
-        case GUI_POINTER_MENU:
+	case GUI_POINTER_MENU:
 		cursortype = GDK_RIGHTBUTTON;
 		break;
 	case GUI_POINTER_PROGRESS:
@@ -548,7 +669,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 	/* The following we're not sure about */
 	case GUI_POINTER_NO_DROP:
 	case GUI_POINTER_NOT_ALLOWED:
-        case GUI_POINTER_DEFAULT:
+	case GUI_POINTER_DEFAULT:
 	default:
 	      nullcursor = true;
 	}
@@ -574,7 +695,7 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 void gui_window_start_throbber(struct gui_window* g)
 {
 	gtk_widget_set_sensitive(g->stop_button, TRUE);
-	schedule(25, gtk_perform_deferred_resize, g);
+	schedule(100, gtk_perform_deferred_resize, g);
 	gui_window_update_back_forward(g);
 }
 
