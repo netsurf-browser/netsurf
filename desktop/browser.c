@@ -842,6 +842,11 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	 * box with scrollbars */
 
 	box = c->data.html.layout;
+	
+	/* Consider the margins of the html page now */
+	box_x = box->margin[LEFT];
+	box_y = box->margin[TOP];
+	
 	while ((next_box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
 			NULL) {
 		box = next_box;
@@ -2018,6 +2023,10 @@ struct box *browser_window_pick_text_box(struct browser_window *bw,
 		int box_x = 0, box_y = 0;
 		struct content *content;
 		struct box *next_box;
+		
+		/* Consider the margins of the html page now */
+		box_x = box->margin[LEFT];
+		box_y = box->margin[TOP];
 
 		while ((next_box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
 				NULL) {
