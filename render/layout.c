@@ -1063,13 +1063,13 @@ bool layout_line(struct box *first, int width, int *y,
 				b->type == BOX_BR || b->type == BOX_TEXT ||
 				b->type == BOX_INLINE_END);
 
-		x += space_after;
-
 		if (b->type == BOX_BR)
 			break;
 
 		if (b->type == BOX_FLOAT_LEFT || b->type == BOX_FLOAT_RIGHT)
 			continue;
+
+		x += space_after;
 
 		if (b->type == BOX_INLINE_BLOCK) {
 			if (b->width == UNKNOWN_WIDTH)
