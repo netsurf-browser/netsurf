@@ -18,6 +18,7 @@
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/plotters.h"
+#include "netsurf/desktop/selection.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/textplain.h"
@@ -36,6 +37,9 @@
 
 static struct css_style textplain_style;
 static int textplain_tab_width = 256;  /* try for a sensible default */
+
+static int textplain_coord_from_offset(const char *text, size_t offset,
+	size_t length);
 
 
 /**
@@ -207,7 +211,7 @@ void textplain_reformat(struct content *c, int width, int height)
 	space = 0;
 	for (i = 0, col = 0; i != utf8_data_size; i++) {
 		bool term = (utf8_data[i] == '\n' || utf8_data[i] == '\r');
-		int next_col = col + 1;
+		size_t next_col = col + 1;
 
 		if (utf8_data[i] == '\t')
 			next_col = (next_col + TAB_WIDTH - 1) & ~(TAB_WIDTH - 1);
@@ -301,6 +305,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour)
 {
+	struct browser_window *bw = current_redraw_browser;
 	char *utf8_data = c->data.textplain.utf8_data;
 	long lineno;
 	unsigned long line_count = c->data.textplain.physical_line_count;
@@ -310,9 +315,9 @@ bool textplain_redraw(struct content *c, int x, int y,
 	long line0 = clip_y0 / scaled_line_height - 1;
 	long line1 = clip_y1 / scaled_line_height + 1;
 	struct textplain_line *line = c->data.textplain.physical_line;
-	int spc_width;
-	size_t length;
+	colour hback_col;
 	struct rect clip;
+	size_t length;
 
 	clip.x0 = clip_x0;
 	clip.y0 = clip_y0;
@@ -336,12 +341,21 @@ bool textplain_redraw(struct content *c, int x, int y,
 	if (!line)
 		return true;
 
+	/* choose a suitable background colour for any highlighted text */
+	if ((background_colour & 0x808080) == 0x808080)
+		hback_col = 0;
+	else
+		hback_col = 0xffffff;
+
 	x += MARGIN * scale;
 	y += MARGIN * scale;
 	for (lineno = line0; lineno != line1; lineno++) {
 		const char *text = utf8_data + line[lineno].start;
+		int tab_width = textplain_tab_width * scale;
 		size_t offset = 0;
 		int tx = x;
+
+		if (!tab_width) tab_width = 1;
 
 		length = line[lineno].length;
 		if (!length)
@@ -350,8 +364,9 @@ bool textplain_redraw(struct content *c, int x, int y,
 		while (offset < length) {
 			size_t next_offset = offset;
 			int width;
+			int ntx;
 
-			while (text[next_offset] != '\t' && next_offset < length)
+			while (next_offset < length && text[next_offset] != '\t')
 				next_offset = utf8_next(text, length, next_offset);
 
 				if (!text_redraw(text + offset, next_offset - offset,
@@ -368,12 +383,45 @@ bool textplain_redraw(struct content *c, int x, int y,
 			/* locate end of string and align to next tab position */
 			if (nsfont_width(&textplain_style, &text[offset],
 					next_offset - offset, &width))
-				tx += width;
+				tx += (int)(width * scale);
 
-			tx = x + ((1 + (tx - x) / textplain_tab_width) *
-					textplain_tab_width);
+			ntx = x + ((1 + (tx - x) / tab_width) * tab_width);
+
+			/* if the tab character lies within the selection, if any,
+			   then we must draw it as a filled rectangle so that it's
+			   consistent with background of the selected text */
+
+			if (bw) {
+				unsigned tab_ofst = line[lineno].start + next_offset;
+				struct selection *sel = bw->sel;
+				bool highlighted = false;
+
+				if (selection_defined(sel)) {
+					unsigned start_idx, end_idx;
+					if (selection_highlighted(sel,
+						tab_ofst, tab_ofst + 1,
+						&start_idx, &end_idx))
+						highlighted = true;
+				}
+
+				if (!highlighted && search_current_window == bw->window) {
+					unsigned start_idx, end_idx;
+					if (gui_search_term_highlighted(bw->window,
+						tab_ofst, tab_ofst + 1,
+						&start_idx, &end_idx))
+						highlighted = true;
+				}
+
+				if (highlighted) {
+					int sy = y + (lineno * scaled_line_height);
+					if (!plot.fill(tx, sy, ntx, sy + scaled_line_height,
+							hback_col))
+						return false;
+				}
+			}
 
 			offset = next_offset + 1;
+			tx = ntx;
 		}
 	}
 
@@ -391,7 +439,7 @@ bool textplain_redraw(struct content *c, int x, int y,
  * \param  x     x ordinate of point
  * \param  y     y ordinate of point
  * \param  dir   direction of search if not within line
- * \return ptr to start of line containing (or nearest to) point
+ * \return byte offset of character containing (or nearest to) point
  */
 
 size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
@@ -399,8 +447,9 @@ size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
 	float line_height = css_len2px(&textplain_style.font_size.value.length,
 			&textplain_style) * 1.2;
 	struct textplain_line *line;
-	int pixel_offset;
+	const char *text;
 	unsigned nlines;
+	size_t length;
 	int idx;
 
 	assert(c->type == CONTENT_TEXTPLAIN);
@@ -412,19 +461,51 @@ size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
 	if (!nlines)
 		return 0;
 
-	if (y < 0) y = 0;
-	else if (y >= nlines)
+	if (y <= 0) y = 0;
+	else if ((unsigned)y >= nlines)
 		y = nlines - 1;
+
 	line = &c->data.textplain.physical_line[y];
+	text = c->data.textplain.utf8_data + line->start;
+	length = line->length;
+	idx = 0;
 
-	if (x < 0) x = 0;
+	while (x > 0) {
+		size_t next_offset = 0;
+		int width = INT_MAX;
 
-	nsfont_position_in_string(&textplain_style,
-		c->data.textplain.utf8_data + line->start,
-		line->length,
-		x,
-		&idx,
-		&pixel_offset);
+		while (next_offset < length && text[next_offset] != '\t')
+			next_offset = utf8_next(text, next_offset, length);
+
+		if (next_offset < length)
+			nsfont_width(&textplain_style, text, next_offset, &width);
+
+		if (x < width) {
+			int pixel_offset;
+			int char_offset;
+
+			nsfont_position_in_string(&textplain_style,
+				text, next_offset, x,
+				&char_offset, &pixel_offset);
+
+			idx += char_offset;
+			break;
+		}
+
+		x -= width;
+		length -= next_offset;
+		text += next_offset;
+		idx += next_offset;
+
+		/* check if it's within the tab */
+		width = textplain_tab_width - (width % textplain_tab_width);
+		if (x < width) break;
+
+		x -= width;
+		length--;
+		text++;
+		idx++;
+	}
 
 	return line->start + idx;
 }
@@ -457,6 +538,46 @@ int textplain_find_line(struct content *c, unsigned offset)
 		lineno--;
 
 	return lineno;
+}
+
+
+/**
+ * Convert a character offset within a line of text into the
+ * horizontal co-ordinate, taking into account the font being
+ * used and any tabs in the text
+ *
+ * \param  text    line of text
+ * \param  offset  char offset within text
+ * \param  length  line length
+ * \return x ordinate
+ */
+
+int textplain_coord_from_offset(const char *text, size_t offset, size_t length)
+{
+	int x = 0;
+
+	while (offset > 0) {
+		size_t next_offset = 0;
+		int tx;
+
+		while (next_offset < offset && text[next_offset] != '\t')
+			next_offset = utf8_next(text, length, next_offset);
+
+		nsfont_width(&textplain_style, text, next_offset, &tx);
+		x += tx;
+
+		if (next_offset >= offset)
+			break;
+
+		/* align to next tab boundary */
+		next_offset++;
+		x = (1 + (x / textplain_tab_width)) * textplain_tab_width;
+		offset -= next_offset;
+		text += next_offset;
+		length -= next_offset;
+	}
+
+	return x;
 }
 
 
@@ -504,15 +625,13 @@ void textplain_coords_from_range(struct content *c, unsigned start, unsigned end
 	}
 	else {
 		/* single line */
-		nsfont_width(&textplain_style,
-			utf8_data + line[lineno].start,
-			start - line[lineno].start,
-			&r->x0);
+		const char *text = utf8_data + line[lineno].start;
 
-		nsfont_width(&textplain_style,
-			utf8_data + line[lineno].start,
-			min(line[lineno].length, end - line[lineno].start),
-			&r->x1);
+		r->x0 = textplain_coord_from_offset(text, start - line[lineno].start,
+				line[lineno].length);
+
+		r->x1 = textplain_coord_from_offset(text, end - line[lineno].start,
+				line[lineno].length);
 	}
 
 	r->y1 = (int)(MARGIN + (lineno + 1) * line_height);
