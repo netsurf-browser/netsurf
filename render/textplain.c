@@ -475,12 +475,12 @@ size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
 		int width = INT_MAX;
 
 		while (next_offset < length && text[next_offset] != '\t')
-			next_offset = utf8_next(text, next_offset, length);
+			next_offset = utf8_next(text, length, next_offset);
 
 		if (next_offset < length)
 			nsfont_width(&textplain_style, text, next_offset, &width);
 
-		if (x < width) {
+		if (x <= width) {
 			int pixel_offset;
 			int char_offset;
 
@@ -499,7 +499,7 @@ size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
 
 		/* check if it's within the tab */
 		width = textplain_tab_width - (width % textplain_tab_width);
-		if (x < width) break;
+		if (x <= width) break;
 
 		x -= width;
 		length--;
