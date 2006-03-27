@@ -48,16 +48,16 @@ br[clear=left] { clear: left; }
 br[clear=right] { clear: right; }
 br[clear=all] { clear: both; }
 
-pre { display: block; font-family: monospace; white-space: pre; margin-bottom: 0.5em; }
+pre { display: block; font-family: monospace; white-space: pre; margin-bottom: 1em; }
 
 ins { color: green; text-decoration: underline; }
 del { color: red; text-decoration: line-through; }
 
-ul { display: block; padding-left: 0.5em; }
-ol { display: block; padding-left: 0.5em; }
+ul { display: block; padding-left: 0.5em; margin-bottom: 1em; }
+ol { display: block; padding-left: 0.5em; margin-bottom: 1em; }
 li { display: block; padding-left: 1em; margin-bottom: 0.3em; }
 
-dl { display: block; padding-left: 0.5em; }
+dl { display: block; padding-left: 0.5em; margin-bottom: 1em; }
 dt { display: block; font-weight: bold; }
 dd { display: block; padding-left: 1em; margin-bottom: 0.3em; }
 
