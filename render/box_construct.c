@@ -187,6 +187,7 @@ bool xml_to_box(xmlNode *n, struct content *c)
 	if (!convert_xml_to_box(n, c, c->data.html.style, &root,
 			&inline_container, 0, 0, 0))
 		return false;
+
 	if (!box_normalise_block(&root, c))
 		return false;
 
@@ -1304,6 +1305,10 @@ bool box_object(BOX_SPECIAL_PARAMS)
 		/* objects without data are ignored */
 		return true;
 
+	/* Don't include ourself */
+	if (strcmp(content->data.html.base_url, params->data) == 0)
+		return true;
+
 	/* codetype and type are MIME types */
 	if (!box_get_attribute(n, "codetype", params, &params->codetype))
 		return false;
@@ -1704,6 +1709,12 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		return false;
 	if (!url)
 		return true;
+
+	/* Don't include ourself */
+	if (strcmp(content->data.html.base_url, url) == 0) {
+		free(url);
+		return true;
+	}
 
 	/* start fetch */
 	ok = html_fetch_object(content, url, box, 0,
@@ -2324,6 +2335,10 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 		return false;
 	xmlFree(src);
 	if (!params->data)
+		return true;
+
+	/* Don't include ourself */
+	if (strcmp(content->data.html.base_url, params->data) == 0)
 		return true;
 
 	/* add attributes as parameters to linked list */
