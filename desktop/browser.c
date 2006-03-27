@@ -122,6 +122,7 @@ void browser_window_create(const char *url, struct browser_window *clone,
 		free(bw);
 		return;
 	}
+	bw->refresh_interval = -1;
 	browser_window_go(bw, url, referer);
 }
 
