@@ -71,7 +71,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 	gdk_pixbuf_scale(big, pixbuf, 0, 0, width, height, 0, 0,
 			(double)width / (double)content->width, 
 			(double)height / (double)content->width,
-			GDK_INTERP_HYPER);
+			GDK_INTERP_TILES);
 
 	/* As a debugging aid, try this to dump out a copy of the thumbnail as
 	 * a PNG: gdk_pixbuf_save(pixbuf, "thumbnail.png", "png", NULL, NULL);
