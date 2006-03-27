@@ -291,6 +291,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 						c->url);
 				url[sizeof url - 1] = 0;
 				gui_window_set_url(bw->window, url);
+				bw->refresh_interval = -1;
 			}
 			break;
 
@@ -366,6 +367,9 @@ void browser_window_callback(content_msg msg, struct content *c,
 			hotlist_visited(c);
 			free(bw->referer);
 			bw->referer = 0;
+			if (bw->refresh_interval != -1)
+				schedule(bw->refresh_interval,
+					 browser_window_refresh, bw);
 			break;
 
 		case CONTENT_MSG_ERROR:
@@ -455,8 +459,7 @@ void browser_window_callback(content_msg msg, struct content *c,
 #endif
 
 		case CONTENT_MSG_REFRESH:
-			schedule(data.delay * 100,
-					browser_window_refresh, bw);
+			bw->refresh_interval = data.delay * 100;
 			break;
 
 		default:

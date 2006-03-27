@@ -95,6 +95,9 @@ struct browser_window {
 
 	/** Current fetch is download */
 	bool download;
+        
+	/** Refresh interval (-1 if undefined) */
+	int refresh_interval;
 };
 
 
