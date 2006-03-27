@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <limits.h>
 #include <curl/curl.h>
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
@@ -31,6 +33,8 @@
 #include "netsurf/utils/utf8.h"
 #include "netsurf/utils/utils.h"
 
+/* Where to search for shared resources.  Must have trailing / */
+#define RESPATH "/usr/share/netsurf/"
 
 bool gui_in_multitask = false;
 
@@ -39,43 +43,96 @@ char *adblock_stylesheet_url;
 
 struct gui_window *search_current_window = 0;
 
+/**
+ * Locate a shared resource file by searching known places in order.
+ *
+ * \param  buf      buffer to write to.  must be at least PATH_MAX chars
+ * \param  filename file to look for
+ * \param  def      default to return if file not found
+ * \return buf
+ *
+ * Search order is: ~/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
+ * environment variable), and finally the path specified by the #define
+ * at the top of this file.
+ */
+
+static char *find_resource(char *buf, const char *filename, const char *def)
+{
+	char *cdir = getenv("HOME");
+
+	if (cdir != NULL) {
+		strcpy(buf, cdir);
+		strcat(buf, "/.netsurf/");
+		strcat(buf, filename);
+		if (access(buf, R_OK) == 0)
+			return buf;
+	}
+
+	cdir = getenv("NETSURFRES");
+
+	if (cdir != NULL) {
+		strcpy(buf, cdir);
+		strcat(buf, "/");
+		strcat(buf, filename);
+		if (access(buf, R_OK) == 0)
+			return buf;
+	}
+
+	strcpy(buf, RESPATH);
+	strcat(buf, filename);
+	if (access(buf, R_OK) == 0)
+		return buf;
+
+	strcpy(buf, def);
+	return buf;
+}
+
+static char *path_to_url(const char *path)
+{
+	char *r = malloc(strlen(path) + 7);
+
+	strcpy(r, "file://");
+	strcat(r, path);
+
+	return r;
+}
 
 void gui_init(int argc, char** argv)
 {
-	char *home;
-	char buf[1024];
-
-	/* All our resources are stored in ~/.netsurf/ */
-	home = getenv("HOME");
-	if (!home)
-		die("Couldn't find HOME");
+	char buf[PATH_MAX];
 
 	gtk_init(&argc, &argv);
 
-	snprintf(buf, sizeof buf, "%s/.netsurf/Choices", home);
+	find_resource(buf, "Choices", "Choices");
+	LOG(("Using '%s' as Choices file", buf));
 	options_read(buf);
 
 	if (!option_cookie_file) {
-		snprintf(buf, sizeof buf, "%s/.netsurf/Cookies", home);
+		find_resource(buf, "Cookies", "Cookies");
+		LOG(("Using '%s' as Cookies file", buf));
 		option_cookie_file = strdup(buf);
 	}
 	if (!option_cookie_jar) {
-		snprintf(buf, sizeof buf, "%s/.netsurf/Cookies", home);
+		find_resource(buf, "Cookies", "Cookies");
+		LOG(("Using '%s' as Cookie Jar file", buf));
 		option_cookie_jar = strdup(buf);
 	}
 	if (!option_cookie_file || !option_cookie_jar)
 		die("Failed initialising cookie options");
 
-	snprintf(buf, sizeof buf, "%s/.netsurf/messages", home);
+	find_resource(buf, "messages", "messages");
+	LOG(("Using '%s' as Messages file", buf));
 	messages_load(buf);
 
 	/* set up stylesheet urls */
-	snprintf(buf, sizeof buf, "file://%s/.netsurf/Default.css", home);
-	default_stylesheet_url = strdup(buf);
-	snprintf(buf, sizeof buf, "file://%s/.netsurf/AdBlock.css", home);
-	adblock_stylesheet_url = strdup(buf);
-	if (!default_stylesheet_url || !adblock_stylesheet_url)
-		die("Failed duplicating stylesheet strings");
+	find_resource(buf, "Default.css", "Default.css");
+	default_stylesheet_url = path_to_url(buf);
+	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
+	
+	find_resource(buf, "AdBlock.css", "AdBlock.css");
+	adblock_stylesheet_url = path_to_url(buf);
+	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
+	
 }
 
 
@@ -151,6 +208,8 @@ void gui_quit(void)
 {
 	free(default_stylesheet_url);
 	free(adblock_stylesheet_url);
+	free(option_cookie_file);
+	free(option_cookie_jar);
 }
 
 
