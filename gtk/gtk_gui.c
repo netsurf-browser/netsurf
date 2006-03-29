@@ -139,6 +139,10 @@ void gui_init(int argc, char** argv)
 void gui_init2(int argc, char** argv)
 {
 	const char *addr = "http://netsurf.sourceforge.net/";
+        
+        if (option_homepage_url != NULL)
+                addr = option_homepage_url;
+
 	if (argc > 1) addr = argv[1];
 	browser_window_create(addr, 0, 0); 
 }

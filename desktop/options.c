@@ -76,7 +76,8 @@ char *option_ca_bundle = 0;
 char *option_cookie_file = 0;
 /** Cookie jar loaction */
 char *option_cookie_jar = 0;
-
+/** Home page location */
+char *option_homepage_url = 0;
 /* Fetcher configuration */
 /** Maximum simultaneous active fetchers */
 int option_max_fetchers = 24;
@@ -118,6 +119,7 @@ struct {
 	{ "ca_bundle",       OPTION_STRING,  &option_ca_bundle },
 	{ "cookie_file",     OPTION_STRING,  &option_cookie_file },
 	{ "cookie_jar",      OPTION_STRING,  &option_cookie_jar },
+        { "homepage_url",    OPTION_STRING,  &option_homepage_url },
 	/* Fetcher options */
 	{ "max_fetchers",    OPTION_INTEGER, &option_max_fetchers },
 	{ "max_fetchers_per_host",

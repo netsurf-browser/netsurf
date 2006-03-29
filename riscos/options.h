@@ -44,7 +44,6 @@ extern bool option_window_size_clone;
 extern bool option_background_images;
 extern bool option_buffer_animations;
 extern bool option_buffer_everything;
-extern char *option_homepage_url;
 extern bool option_open_browser_at_startup;
 extern bool option_no_plugins;
 extern char *option_font_sans;
@@ -146,7 +145,6 @@ char *option_theme_save = 0;
 { "background_images",      OPTION_BOOL,    &option_background_images }, \
 { "buffer_animations",      OPTION_BOOL,    &option_buffer_animations }, \
 { "buffer_everything",      OPTION_BOOL,    &option_buffer_everything }, \
-{ "homepage_url",           OPTION_STRING,  &option_homepage_url }, \
 { "open_browser_at_startup",OPTION_BOOL,    &option_open_browser_at_startup }, \
 { "no_plugins",             OPTION_BOOL,    &option_no_plugins }, \
 { "font_sans",              OPTION_STRING,  &option_font_sans }, \

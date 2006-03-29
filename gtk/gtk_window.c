@@ -17,6 +17,7 @@
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/plotters.h"
+#include "netsurf/desktop/options.h"
 #include "netsurf/gtk/gtk_gui.h"
 #include "netsurf/gtk/gtk_plotters.h"
 #include "netsurf/gtk/gtk_window.h"
@@ -377,12 +378,15 @@ void gui_window_home_button_event(GtkWidget *widget, gpointer data)
 {
         struct gui_window *g = data;
         char *referer = 0;
+        char *addr = "http://netsurf.sourceforge.net/";
+
+        if (option_homepage_url != NULL)
+                addr = option_homepage_url;
 
         if (g->bw->current_content && g->bw->current_content->url)
                 referer = g->bw->current_content->url;
 
-        browser_window_go(g->bw, "http://netsurf.sourceforge.net/",
-                                referer);
+        browser_window_go(g->bw, addr, referer);
 }
 
 gboolean gui_window_expose_event(GtkWidget *widget,
