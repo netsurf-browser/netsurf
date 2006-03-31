@@ -46,11 +46,6 @@ extern bool option_buffer_animations;
 extern bool option_buffer_everything;
 extern bool option_open_browser_at_startup;
 extern bool option_no_plugins;
-extern char *option_font_sans;
-extern char *option_font_serif;
-extern char *option_font_mono;
-extern char *option_font_cursive;
-extern char *option_font_fantasy;
 extern bool option_block_popups;
 extern bool option_url_suggestion;
 extern int option_image_memory_direct;	/* -1 means auto-detect */
@@ -94,14 +89,8 @@ bool option_window_size_clone = true; \
 bool option_background_images = true; \
 bool option_buffer_animations = true; \
 bool option_buffer_everything = false; \
-char *option_homepage_url = 0; \
 bool option_open_browser_at_startup = false; \
 bool option_no_plugins = false; \
-char *option_font_sans = 0; \
-char *option_font_serif = 0; \
-char *option_font_mono = 0; \
-char *option_font_cursive = 0; \
-char *option_font_fantasy = 0; \
 bool option_block_popups = false; \
 bool option_url_suggestion = true; \
 int option_image_memory_direct = -1; \
@@ -147,11 +136,6 @@ char *option_theme_save = 0;
 { "buffer_everything",      OPTION_BOOL,    &option_buffer_everything }, \
 { "open_browser_at_startup",OPTION_BOOL,    &option_open_browser_at_startup }, \
 { "no_plugins",             OPTION_BOOL,    &option_no_plugins }, \
-{ "font_sans",              OPTION_STRING,  &option_font_sans }, \
-{ "font_serif",             OPTION_STRING,  &option_font_serif }, \
-{ "font_mono",              OPTION_STRING,  &option_font_mono }, \
-{ "font_cursive",           OPTION_STRING,  &option_font_cursive }, \
-{ "font_fantasy",           OPTION_STRING,  &option_font_fantasy }, \
 { "block_popups",           OPTION_BOOL,    &option_block_popups }, \
 { "url_suggestion",         OPTION_BOOL,    &option_url_suggestion }, \
 { "image_memory_direct",    OPTION_INTEGER, &option_image_memory_direct }, \

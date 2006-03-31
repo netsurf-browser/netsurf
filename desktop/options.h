@@ -46,6 +46,11 @@ extern bool option_send_referer;
 extern bool option_animate_images;
 extern int option_expire_url;
 extern int option_font_default;		/* a css_font_family */
+extern char *option_font_sans;
+extern char *option_font_serif;
+extern char *option_font_mono;
+extern char *option_font_cursive;
+extern char *option_font_fantasy;
 extern char *option_ca_bundle;
 extern char *option_cookie_file;
 extern char *option_cookie_jar;

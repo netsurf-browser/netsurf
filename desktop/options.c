@@ -52,6 +52,16 @@ char *option_http_proxy_auth_pass = 0;
 int option_font_size = 100;
 /** Minimum font size. */
 int option_font_min_size = 70;
+/** Default sans serif font */
+char *option_font_sans;
+/** Default serif font */
+char *option_font_serif;
+/** Default monospace font */
+char *option_font_mono;
+/** Default cursive font */
+char *option_font_cursive;
+/** Default fantasy font */
+char *option_font_fantasy;
 /** Accept-Language header. */
 char *option_accept_language = 0;
 /** Preferred maximum size of memory cache / bytes. */
@@ -107,6 +117,11 @@ struct {
 	{ "http_proxy_auth_pass", OPTION_STRING, &option_http_proxy_auth_pass },
 	{ "font_size",       OPTION_INTEGER, &option_font_size },
 	{ "font_min_size",   OPTION_INTEGER, &option_font_min_size },
+	{ "font_sans",       OPTION_STRING,  &option_font_sans },
+	{ "font_serif",      OPTION_STRING,  &option_font_serif },
+	{ "font_mono",       OPTION_STRING,  &option_font_mono },
+	{ "font_cursive",    OPTION_STRING,  &option_font_cursive },
+	{ "font_fantasy",    OPTION_STRING,  &option_font_fantasy },
 	{ "accept_language", OPTION_STRING,  &option_accept_language },
 	{ "memory_cache_size", OPTION_INTEGER, &option_memory_cache_size },
 	{ "disc_cache_age", OPTION_INTEGER, &option_disc_cache_age },
