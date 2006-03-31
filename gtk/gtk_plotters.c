@@ -2,11 +2,17 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *                http://www.opensource.org/licenses/gpl-license
+ * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  */
 
 /** \file
- * Target independent plotting (GDK / GTK+  implementation).
+ * Target independent plotting (GDK / GTK+ and Cairo implementation).
+ * Can use either GDK drawing primitives (which are mostly passed straight
+ * to X to process, and thus accelerated) or Cairo drawing primitives (much
+ * higher quality, not accelerated).  Cairo's fast enough, so it defaults
+ * to using it if it is available.  It does this by checking for the
+ * CAIRO_VERSION define that the cairo headers set.
  */
 
 #include <math.h>
@@ -361,10 +367,10 @@ void nsgtk_set_solid()
 void nsgtk_set_dotted()
 {
 #ifdef CAIRO_VERSION
-	double dashes = 2;
+	double dashes = 1;
 	cairo_set_dash(current_cr, &dashes, 1, 0);
 #else
-	gint8 dashes[] = { 2, 2 };
+	gint8 dashes[] = { 1, 1 };
 
 	gdk_gc_set_dashes(current_gc, 0, dashes, 2);
 	gdk_gc_set_line_attributes(current_gc, 1, GDK_LINE_ON_OFF_DASH,
