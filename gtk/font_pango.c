@@ -318,7 +318,6 @@ PangoFontDescription *nsfont_style_to_description(
 	
 	switch (style->font_variant) {
 	case CSS_FONT_VARIANT_SMALL_CAPS:
-		LOG(("Small caps!"));
 		pango_font_description_set_variant(desc, PANGO_VARIANT_SMALL_CAPS);
 		break;
 	case CSS_FONT_VARIANT_NORMAL:
