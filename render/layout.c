@@ -1379,7 +1379,9 @@ bool layout_line(struct box *first, int width, int *y,
 				"right %p, inline_count %u",
 				split_box, space, w, left, right,
 				inline_count));
-
+                
+                LOG(("Text was: '%s'", split_box->text));
+                
 		if ((space == 0 || x1 - x0 <= x + space_before + w) &&
 				!left && !right && inline_count == 1) {
 			/* first word doesn't fit, but no floats and first
