@@ -115,6 +115,7 @@ static bool box_frameset(BOX_SPECIAL_PARAMS);
 static bool box_select_add_option(struct form_control *control, xmlNode *n);
 static bool box_object(BOX_SPECIAL_PARAMS);
 static bool box_embed(BOX_SPECIAL_PARAMS);
+static bool box_pre(BOX_SPECIAL_PARAMS);
 /*static bool box_applet(BOX_SPECIAL_PARAMS);*/
 static bool box_iframe(BOX_SPECIAL_PARAMS);
 static bool box_get_attribute(xmlNode *n, const char *attribute,
@@ -141,6 +142,7 @@ static const struct element_entry element_table[] = {
 	{"img", box_image},
 	{"input", box_input},
 	{"object", box_object},
+	{"pre", box_pre},
 	{"select", box_select},
 	{"textarea", box_textarea}
 };
@@ -293,7 +295,13 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	assert(inline_container);
 
 	gui_multitask();
-
+	
+	/* In case the parent is a pre block, we clear the
+	 * strip_leading_newline flag since it is not used if we
+	 * follow the pre with a tag
+	 */
+	parent->strip_leading_newline = 0;
+	
 	style = box_get_style(content, parent_style, n);
 	if (!style)
 		return false;
@@ -627,13 +635,16 @@ bool box_construct_text(xmlNode *n, struct content *content,
 		current = text;
 		
 		/* swallow a single leading new line */
-		switch (*current) {
-		case '\n':
-			current++; break;
-		case '\r':
-			current++;
-			if (*current == '\n') current++;
-			break;
+		if (parent->strip_leading_newline) {
+			switch (*current) {
+			case '\n':
+				current++; break;
+			case '\r':
+				current++;
+				if (*current == '\n') current++;
+				break;
+			}
+			parent->strip_leading_newline = 0;
 		}
 		
 		do {
@@ -1150,6 +1161,15 @@ bool box_br(BOX_SPECIAL_PARAMS)
 	return true;
 }
 
+/**
+ * Preformatted text [9.3.4].
+ */
+
+bool box_pre(BOX_SPECIAL_PARAMS)
+{
+	box->strip_leading_newline = 1;
+	return true;
+}
 
 /**
  * Anchor [12.2].

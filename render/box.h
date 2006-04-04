@@ -163,6 +163,10 @@ struct box {
 	/** This box is a continuation of the previous box (eg from line
 	 * breaking). */
 	unsigned int clone : 1;
+	/** This box represents a <pre> tag which has not yet had its white
+	 * space stripped if possible
+	 */
+	unsigned int strip_leading_newline : 1;
 
 	char *href;   /**< Link, or 0. */
 	const char *target;  /**< Link target, or 0. */
