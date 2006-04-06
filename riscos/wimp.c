@@ -326,7 +326,7 @@ void ro_gui_set_icon_decimal(wimp_w w, wimp_i i, int value, int decimal_places) 
 
 
 /**
- * Set the contents of an icon to a number.
+ * Get the contents of an icon as a number.
  *
  * \param  w	  window handle
  * \param  i	  icon handle
