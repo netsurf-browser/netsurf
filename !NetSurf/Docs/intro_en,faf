@@ -12,9 +12,10 @@
 
 <div class="main">
 
-<p><em>NetSurf</em> is an open-source web browser for RISC OS. Its aim is to
-bring the HTML&nbsp;4 and CSS standards to the RISC OS platform. For more
-information about NetSurf see the <a href="docs_en">documentation</a>.</p>
+<p><em>NetSurf</em> is an open-source web browser for RISC OS, <a
+href="licence_en">licensed under the GPL</a>. Its aim is to bring the
+HTML&nbsp;4 and CSS standards to the RISC OS platform. For more information
+about NetSurf see the <a href="docs_en">documentation</a>.</p>
 
 <h2>Current Status</h2>
 <p>NetSurf is currently incomplete and many features aren't yet implemented.
