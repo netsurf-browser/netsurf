@@ -193,10 +193,11 @@ URLSuggest:Recente URLs
 Languages:Taal
 #
 # Network pane
-ProxyAuth:Authentificatie
-ProxyNone:Geen
-ProxyBasic:Basis
-ProxyNTLM:NTLM
+ProxyType:Proxy type
+ProxyNone:No proxy
+ProxyNoAuth:Simple proxy
+ProxyBasic:Basic authentication
+ProxyNTLM:NTLM authentication
 #
 # Fonts pane
 Fonts:Lettertypen

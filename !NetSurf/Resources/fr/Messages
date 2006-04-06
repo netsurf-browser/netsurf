@@ -192,10 +192,11 @@ URLSuggest:URLs récentes
 Languages:Langue
 #
 # Network pane
-ProxyAuth:Authentification
-ProxyNone:Aucune
-ProxyBasic:Basique
-ProxyNTLM:NTLM
+ProxyType:Proxy type
+ProxyNone:No proxy
+ProxyNoAuth:Simple proxy
+ProxyBasic:Basic authentication
+ProxyNTLM:NTLM authentication
 #
 # Fonts pane
 Fonts:Fontes
