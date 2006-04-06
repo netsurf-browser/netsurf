@@ -42,8 +42,9 @@ OBJECTS_RISCOS += 401login.o artworks.o assert.o awrender.o bitmap.o \
 	schedule.o search.o sprite.o sslcert.o textselection.o theme.o \
 	theme_install.o thumbnail.o treeview.o ucstables.o uri.o \
 	url_complete.o url_protocol.o wimp.o wimp_event.o window.o	# riscos/
-OBJECTS_RISCOS += con_cache.o con_fonts.o con_home.o con_image.o \
-	con_inter.o con_language.o con_memory.o con_theme.o 		# riscos/configure/
+OBJECTS_RISCOS += con_cache.o con_content.o con_fonts.o con_home.o \
+	con_image.o con_inter.o con_language.o con_memory.o \
+	con_secure.o con_theme.o		 		# riscos/configure/
 # OBJECTS_RISCOS += memdebug.o
 
 OBJECTS_RISCOS_SMALL = $(OBJECTS_RISCOS)
@@ -124,7 +125,7 @@ CFLAGS_GTK = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Dgtk \
 
 # Stop GCC under Cygwin throwing a fit
 # If you pass -std=<whatever> it appears to define __STRICT_ANSI__
-# This causes use of functions such as vsnprintf to fail (as Cygwin's header 
+# This causes use of functions such as vsnprintf to fail (as Cygwin's header
 # files surround declarations of such things with #ifndef __STRICT_ANSI__)
 ifeq ($(shell echo $$OS),Windows_NT)
 CFLAGS_GTK += -U__STRICT_ANSI__

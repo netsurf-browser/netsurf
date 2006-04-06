@@ -62,29 +62,35 @@ void ro_gui_configure_initialise(void) {
 	ro_gui_wimp_event_set_help_prefix(dialog_zoom, "HelpConfigure");
 
 	/* add in our option windows */
-	ro_gui_configure_register("con_fonts",
-			ro_gui_options_fonts_initialise,
-			ro_gui_wimp_event_finalise);
-	ro_gui_configure_register("con_memory",
-			ro_gui_options_memory_initialise,
-			ro_gui_wimp_event_finalise);
-	ro_gui_configure_register("con_image",
-			ro_gui_options_image_initialise,
-			ro_gui_options_image_finalise);
-	ro_gui_configure_register("con_theme",
-			ro_gui_options_theme_initialise,
-			ro_gui_options_theme_finalise);
 	ro_gui_configure_register("con_cache",
 			ro_gui_options_cache_initialise,
+			ro_gui_wimp_event_finalise);
+	ro_gui_configure_register("con_content",
+			ro_gui_options_content_initialise,
+			ro_gui_wimp_event_finalise);
+	ro_gui_configure_register("con_fonts",
+			ro_gui_options_fonts_initialise,
 			ro_gui_wimp_event_finalise);
 	ro_gui_configure_register("con_home",
 			ro_gui_options_home_initialise,
 			ro_gui_wimp_event_finalise);
+	ro_gui_configure_register("con_image",
+			ro_gui_options_image_initialise,
+			ro_gui_options_image_finalise);
+	ro_gui_configure_register("con_inter",
+			ro_gui_options_interface_initialise,
+			ro_gui_wimp_event_finalise);
 	ro_gui_configure_register("con_lang",
 			ro_gui_options_language_initialise,
 			ro_gui_wimp_event_finalise);
-	ro_gui_configure_register("con_inter",
-			ro_gui_options_interface_initialise,
+	ro_gui_configure_register("con_memory",
+			ro_gui_options_memory_initialise,
+			ro_gui_wimp_event_finalise);
+	ro_gui_configure_register("con_theme",
+			ro_gui_options_theme_initialise,
+			ro_gui_options_theme_finalise);
+	ro_gui_configure_register("con_secure",
+			ro_gui_options_security_initialise,
 			ro_gui_wimp_event_finalise);
 }
 
