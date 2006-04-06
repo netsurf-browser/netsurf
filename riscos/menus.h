@@ -14,7 +14,7 @@
 
 extern wimp_menu *iconbar_menu, *browser_menu, *hotlist_menu,
 	*global_history_menu, *image_quality_menu,
-	*browser_toolbar_menu, *tree_toolbar_menu, *proxy_auth_menu;
+	*browser_toolbar_menu, *tree_toolbar_menu, *proxy_type_menu;
 extern wimp_menu *languages_menu, *url_suggest_menu;
 
 extern wimp_menu *current_menu;

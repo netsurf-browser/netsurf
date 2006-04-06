@@ -16,6 +16,7 @@
 #include <stdbool.h>
 
 bool ro_gui_options_cache_initialise(wimp_w w);
+bool ro_gui_options_connection_initialise(wimp_w w);
 bool ro_gui_options_content_initialise(wimp_w w);
 bool ro_gui_options_fonts_initialise(wimp_w w);
 bool ro_gui_options_home_initialise(wimp_w w);

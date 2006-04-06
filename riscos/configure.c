@@ -65,6 +65,9 @@ void ro_gui_configure_initialise(void) {
 	ro_gui_configure_register("con_cache",
 			ro_gui_options_cache_initialise,
 			ro_gui_wimp_event_finalise);
+	ro_gui_configure_register("con_connect",
+			ro_gui_options_connection_initialise,
+			ro_gui_wimp_event_finalise);
 	ro_gui_configure_register("con_content",
 			ro_gui_options_content_initialise,
 			ro_gui_wimp_event_finalise);

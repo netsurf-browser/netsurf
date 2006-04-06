@@ -129,7 +129,7 @@ int iconbar_menu_height = 5 * 44;
 /** The available menus */
 wimp_menu *iconbar_menu, *browser_menu, *hotlist_menu, *global_history_menu,
 	*image_quality_menu, *browser_toolbar_menu,
-	*tree_toolbar_menu, *proxy_auth_menu, *languages_menu;
+	*tree_toolbar_menu, *proxy_type_menu, *languages_menu;
 /** URL suggestion menu */
 static wimp_MENU(GLOBAL_HISTORY_RECENT_URLS) url_suggest;
 wimp_menu *url_suggest_menu = (wimp_menu *)&url_suggest;
@@ -334,16 +334,17 @@ void ro_gui_menu_init(void)
 			(struct ns_menu *)&tree_toolbar_definition);
 
 	/* proxy menu */
-	NS_MENU(4) proxy_auth_definition = {
-		"ProxyAuth", {
+	NS_MENU(5) proxy_type_definition = {
+		"ProxyType", {
 			{ "ProxyNone", NO_ACTION, 0 },
+			{ "ProxyNoAuth", NO_ACTION, 0 },
 			{ "ProxyBasic", NO_ACTION, 0 },
 			{ "ProxyNTLM", NO_ACTION, 0 },
 			{NULL, 0, 0}
 		}
 	};
-	proxy_auth_menu = ro_gui_menu_define_menu(
-			(struct ns_menu *)&proxy_auth_definition);
+	proxy_type_menu = ro_gui_menu_define_menu(
+			(struct ns_menu *)&proxy_type_definition);
 
 	/* special case menus */
 	url_suggest_menu->title_data.indirected_text.text =
