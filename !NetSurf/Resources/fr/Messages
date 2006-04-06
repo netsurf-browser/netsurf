@@ -694,15 +694,17 @@ HelpAppInfo:\Tla \w d'information de NetSurf.|MVoir la page "À propos de" pour 
 # These tokens are used for the configuration icon text.
 #
 
-con_fonts:Fonts
-con_memory:Memory
-con_image:Images
-con_theme:Themes
 con_cache:Cache
+con_connect:Connection
+con_content:Content
+con_fonts:Fonts
 con_home:Home page
+con_image:Images
 con_inter:Interface
 con_lang:Language
-con_security:Security
+con_memory:Memory
+con_secure:Security
+con_theme:Themes
 
 
 # Unused tokens
