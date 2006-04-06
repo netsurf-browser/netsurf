@@ -1125,10 +1125,10 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	  	  	/* update clip_* to the child cell */
 	  	  	clip_x0 = ox + (clip_box->x * scale);
 	  	  	clip_y0 = oy + (clip_box->y * scale);
-	  	  	clip_x1 = clip_x0 + clip_box->padding[LEFT] +
-	  	  			clip_box->width + clip_box->padding[RIGHT];
-	  	  	clip_y1 = clip_y0 + clip_box->padding[TOP] +
-	  	  			clip_box->height + clip_box->padding[BOTTOM];
+	  	  	clip_x1 = clip_x0 + (clip_box->padding[LEFT] +
+	  	  			clip_box->width + clip_box->padding[RIGHT]) * scale;
+	  	  	clip_y1 = clip_y0 + (clip_box->padding[TOP] +
+	  	  			clip_box->height + clip_box->padding[BOTTOM]) * scale;
 			if (clip_x0 < px0) clip_x0 = px0;
 			if (clip_y0 < py0) clip_y0 = py0;
 			if (clip_x1 > px1) clip_x1 = px1;
