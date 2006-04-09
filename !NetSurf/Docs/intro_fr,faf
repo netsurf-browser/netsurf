@@ -39,7 +39,7 @@ diffusion</dd>
 <dt><a href="http://lists.sourceforge.net/lists/listinfo/netsurf-develop">Liste de diffusion de Développement</a></dt>
 <dd>Souscrivez à cette liste si vous comptez développer ou tester NetSurf</dd>
 
-<dt><a href="http://cvs.semichrome.net/netsurf/">Interface web CVS</a></dt>
+<dt><a href="http://svn.semichrome.net/trunk/netsurf/">Interface web SVN</a></dt>
 <dd>Naviguez dans le code source à l'aide de l'interface Web</dd>
 </dl>
 

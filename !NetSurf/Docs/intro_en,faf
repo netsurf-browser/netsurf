@@ -50,7 +50,7 @@ tracker</a></dt>
 mailing list</a></dt>
 <dd>Subscribe to the list if you plan to develop or test NetSurf</dd>
 
-<dt><a href="http://cvs.semichrome.net/netsurf/">CVS web interface</a></dt>
+<dt><a href="http://svn.semichrome.net/trunk/netsurf/">SVN web interface</a></dt>
 <dd>Browse the source code using the web interface</dd>
 </dl>
 

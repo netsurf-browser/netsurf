@@ -36,7 +36,7 @@ es, die Standards HTML&nbsp;4 und CSS auf der RISC OS Plattform zur Verfügung zu
 <dt><a href="http://lists.sourceforge.net/lists/listinfo/netsurf-develop">Entwickler Mailing-Liste</a></dt>
 <dd>Bitte hier anmelden, um als Tester oder Entwickler mitzuarbeiten</dd>
 
-<dt><a href="http://cvs.semichrome.net/netsurf/">CVS Web-Interface</a></dt>
+<dt><a href="http://svn.semichrome.net/trunk/netsurf/">SVN Web-Interface</a></dt>
 <dd>Den Sourcecode ansehen</dd>
 </dl>
 
