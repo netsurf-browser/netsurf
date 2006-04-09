@@ -1287,7 +1287,6 @@ bool layout_line(struct box *first, int width, int *y,
 			split_box = b;
 			move_y = true;
 			inline_count++;
-/*			fprintf(stderr, "layout_line:     '%.*s' %li %li\n", b->length, b->text, xp, x); */
 		} else if (b->type == BOX_BR) {
 			b->x = x;
 			b->width = 0;
@@ -1302,7 +1301,6 @@ bool layout_line(struct box *first, int width, int *y,
 			LOG(("float %p", b));
 			d = b->children;
 			d->float_children = 0;
-/*			css_dump_style(b->style); */
 
 			if (!layout_float(d, width, content))
 				return false;
@@ -1316,8 +1314,10 @@ bool layout_line(struct box *first, int width, int *y,
 					d->padding[TOP] + d->height +
 					d->padding[BOTTOM] + d->border[BOTTOM] +
 					d->margin[BOTTOM];
-			if (b->width < (x1 - x0) - x || (left == 0 && right == 0 && x == 0)) {
-				/* fits next to this line, or this line is empty with no floats */
+			if (b->width < (x1 - x0) - x ||
+					(left == 0 && right == 0 && x == 0)) {
+				/* fits next to this line, or this line is empty
+				 * with no floats */
 				if (b->type == BOX_FLOAT_LEFT) {
 					b->x = cx + x0;
 					x0 += b->width;
@@ -1328,12 +1328,10 @@ bool layout_line(struct box *first, int width, int *y,
 					right = b;
 				}
 				b->y = cy;
-/*				fprintf(stderr, "layout_line:     float fits %li %li, edges %li %li\n", */
-/*						b->x, b->y, x0, x1); */
 			} else {
 				/* doesn't fit: place below */
-				place_float_below(b, width, cx, cy + height + 1, cont);
-/*				fprintf(stderr, "layout_line:     float doesn't fit %li %li\n", b->x, b->y); */
+				place_float_below(b, width,
+						cx, cy + height + 1, cont);
 			}
 			if (cont->float_children == b) {
 				LOG(("float %p already placed", b));
@@ -1375,17 +1373,16 @@ bool layout_line(struct box *first, int width, int *y,
 			nsfont_width(split_box->style, split_box->text,
 					space, &w);
 
-		LOG(("splitting: split_box %p, space %zu, w %i, left %p, "
-				"right %p, inline_count %u",
-				split_box, space, w, left, right,
-				inline_count));
-                
-                LOG(("Text was: '%s'", split_box->text));
-                
+		LOG(("splitting: split_box %p \"%.*s\", space %zu, w %i, "
+				"left %p, right %p, inline_count %u",
+				split_box, (int) split_box->length,
+				split_box->text, space, w,
+				left, right, inline_count));
+
 		if ((space == 0 || x1 - x0 <= x + space_before + w) &&
 				!left && !right && inline_count == 1) {
-			/* first word doesn't fit, but no floats and first
-			   on line so force in */
+			/* first word of box doesn't fit, but no floats and
+			 * first box on line so force in */
 			if (space == 0) {
 				/* only one word in this box or not text */
 				b = split_box->next;
@@ -1416,12 +1413,30 @@ bool layout_line(struct box *first, int width, int *y,
 				b = c2;
 			}
 			x += space_before + w;
-/*			fprintf(stderr, "layout_line:     overflow, forcing\n"); */
-		} else if (space == 0 || x1 - x0 <= x + space_before + w) {
-			/* first word doesn't fit, but full width not
-			   available so leave for later */
+			LOG(("forcing"));
+		} else if ((space == 0 || x1 - x0 <= x + space_before + w) &&
+				inline_count == 1) {
+			/* first word of first box doesn't fit, but a float is
+			 * taking some of the width so move below it */
+			assert(left || right);
+			used_height = 0;
+			if (left) {
+				LOG(("cy %i, left->y %i, left->height %i",
+						cy, left->y, left->height));
+				used_height = left->y + left->height - cy + 1;
+				LOG(("used_height %i", used_height));
+			}
+			if (right && used_height <
+					right->y + right->height - cy + 1)
+				used_height = right->y + right->height - cy + 1;
+			assert(0 < used_height);
 			b = split_box;
-/*			fprintf(stderr, "layout_line:     overflow, leaving\n"); */
+			LOG(("moving below float"));
+                } else if (space == 0 || x1 - x0 <= x + space_before + w) {
+                	/* first word of box doesn't fit so leave box for next
+                	 * line */
+			b = split_box;
+			LOG(("leaving for next line"));
 		} else {
 			/* fit as many words as possible */
 			assert(space != 0);
@@ -1431,7 +1446,6 @@ bool layout_line(struct box *first, int width, int *y,
 					x1 - x0 - x - space_before, &space, &w);
 			LOG(("'%.*s' %i %zu %i", (int) split_box->length,
 					split_box->text, x1 - x0, space, w));
-/*			assert(space == split_box->length || split_box->text[space] = ' '); */
 			if (space == 0)
 				space = 1;
 			if (space != split_box->length) {
@@ -1460,7 +1474,7 @@ bool layout_line(struct box *first, int width, int *y,
 				b = c2;
 			}
 			x += space_before + w;
-/*			fprintf(stderr, "layout_line:     overflow, fit\n"); */
+			LOG(("fitting words"));
 		}
 		move_y = true;
 	}
