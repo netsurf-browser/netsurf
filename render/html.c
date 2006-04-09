@@ -115,7 +115,6 @@ bool html_create(struct content *c, const char *params[])
 	return true;
 
 no_memory:
-	/* memory allocated will be freed in html_destroy() */
 	msg_data.error = messages_get("NoMemory");
 	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 	warn_user("NoMemory", 0);
