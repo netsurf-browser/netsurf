@@ -18,7 +18,7 @@
 #include <gtk/gtk.h>
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetch.h"
-#include "netsurf/content/url_store.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/401login.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
@@ -128,23 +128,23 @@ void gui_init(int argc, char** argv)
 	find_resource(buf, "Default.css", "Default.css");
 	default_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
-	
+
 	find_resource(buf, "AdBlock.css", "AdBlock.css");
 	adblock_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
-	
+
 }
 
 
 void gui_init2(int argc, char** argv)
 {
 	const char *addr = "http://netsurf.sourceforge.net/";
-        
+
         if (option_homepage_url != NULL)
                 addr = option_homepage_url;
 
 	if (argc > 1) addr = argv[1];
-	browser_window_create(addr, 0, 0); 
+	browser_window_create(addr, 0, 0);
 }
 
 
@@ -283,7 +283,7 @@ void gui_401login_open(struct browser_window *bw, struct content *c,
 void gui_cert_verify(struct browser_window *bw, struct content *c,
 		const struct ssl_cert_info *certs, unsigned long num) {}
 
-void global_history_add(struct url_content *data) {}
+void global_history_add(const char *url) {}
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 		char **result)

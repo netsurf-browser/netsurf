@@ -31,13 +31,8 @@
 #ifdef WITH_SSL
 #include "openssl/ssl.h"
 #endif
-#ifdef WITH_AUTH
-#include "netsurf/content/authdb.h"
-#endif
-#ifdef WITH_SSL
-#include "netsurf/content/certdb.h"
-#endif
 #include "netsurf/content/fetch.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/render/form.h"
 #define NDEBUG
@@ -158,7 +153,7 @@ static int fetch_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm);
 		ring = 0; \
 	} \
 	element->r_next = element->r_prev = 0
-	
+
 /** Find the element (by hostname) in the given ring, leave it in the
  * provided element variable
  */
@@ -483,7 +478,7 @@ static bool ns_internal_initiate_fetch(struct fetch *fetch, CURL *handle)
 		fetch->curl_handle = 0;
 		return false;
 	}
-	
+
 	/* add to the global curl multi handle */
 	codem = curl_multi_add_handle(fetch_curl_multi, fetch->curl_handle);
 	assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
@@ -649,7 +644,7 @@ CURLcode fetch_set_options(struct fetch *f)
 		SETOPT(CURLOPT_COOKIEJAR, 0);
 	}
 #ifdef WITH_AUTH
-	if ((auth = authdb_get(f->url)) != NULL) {
+	if ((auth = urldb_get_auth_details(f->url)) != NULL) {
 		SETOPT(CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 		SETOPT(CURLOPT_USERPWD, auth);
 	} else {
@@ -677,7 +672,7 @@ CURLcode fetch_set_options(struct fetch *f)
 	}
 
 #ifdef WITH_SSL
-	if (certdb_get(f->url) != NULL) {
+	if (urldb_get_cert_permissions(f->url)) {
 		/* Disable certificate verification */
 		SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
 		SETOPT(CURLOPT_SSL_VERIFYHOST, 0L);

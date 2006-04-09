@@ -23,7 +23,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
-#include "netsurf/content/url_store.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/css/css.h"
 #ifdef WITH_AUTH
 #include "netsurf/desktop/401login.h"
@@ -262,11 +262,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 void browser_window_callback(content_msg msg, struct content *c,
 		intptr_t p1, intptr_t p2, union content_msg_data data)
 {
-	struct url_content *url_content;
 	struct browser_window *bw = (struct browser_window *) p1;
 	char status[40];
 	char url[256];
-	char *title;
 
 	switch (msg) {
 		case CONTENT_MSG_LOADING:
@@ -327,21 +325,14 @@ void browser_window_callback(content_msg msg, struct content *c,
 			browser_window_set_status(bw, c->status_message);
 			if (bw->history_add) {
 				history_add(bw->history, c, bw->frag_id);
-				url_content = url_store_find(c->url);
-				if (url_content) {
-					if (c->title)
-					  	title = strdup(c->title);
-					else
-						title = strdup(c->url);
-				  	if (title) {
-				  	  	free(url_content->title);
-				  	  	url_content->title = title;
-				  	}
-					url_content->visits++;
-					url_content->last_visit = time(NULL);
-					url_content->type = c->type;
-					global_history_add(url_content);
-				}
+				if (!urldb_add_url(c->url))
+					LOG(("urldb_add_url failed"));
+
+				urldb_set_url_title(c->url,
+						c->title ? c->title : c->url);
+				urldb_update_url_visit_data(c->url);
+				urldb_set_url_content_type(c->url, c->type);
+				global_history_add(c->url);
 			}
 			switch (c->type) {
 				case CONTENT_HTML:
@@ -846,11 +837,11 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	 * box with scrollbars */
 
 	box = c->data.html.layout;
-	
+
 	/* Consider the margins of the html page now */
 	box_x = box->margin[LEFT];
 	box_y = box->margin[TOP];
-	
+
 	while ((next_box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
 			NULL) {
 		box = next_box;
@@ -2027,7 +2018,7 @@ struct box *browser_window_pick_text_box(struct browser_window *bw,
 		int box_x = 0, box_y = 0;
 		struct content *content;
 		struct box *next_box;
-		
+
 		/* Consider the margins of the html page now */
 		box_x = box->margin[LEFT];
 		box_y = box->margin[TOP];

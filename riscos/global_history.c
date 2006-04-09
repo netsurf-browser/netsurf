@@ -17,7 +17,7 @@
 #include <time.h>
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
-#include "netsurf/content/url_store.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/tree.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/global_history.h"
@@ -50,20 +50,19 @@ static void ro_gui_global_history_initialise_nodes(void);
 static void ro_gui_global_history_initialise_node(const char *title,
 		time_t base, int days_back);
 static struct node *ro_gui_global_history_find(const char *url);
+static bool global_history_iterate_callback(const char *url);
 
-/*	The history window, toolbar and plot origins
-*/
+/* The history window, toolbar and plot origins */
 static wimp_w global_history_window;
 struct tree *global_history_tree;
 
-void ro_gui_global_history_initialise(void) {
+/**
+ * Initialise global history tree
+ */
+void ro_gui_global_history_initialise(void)
+{
 	char s[MAXIMUM_URL_LENGTH];
 	FILE *fp;
-	struct hostname_data *hostname;
-	struct url_data *url;
-	int url_count = 0;
-	struct url_content **url_block;
-	int i = 0;
 
 	/* create our window */
 	global_history_window = ro_gui_dialog_create("tree");
@@ -76,8 +75,7 @@ void ro_gui_global_history_initialise(void) {
 	ro_gui_wimp_event_register_mouse_click(global_history_window,
 			ro_gui_global_history_click);
 
-	/*	Create an empty tree
-	*/
+	/* Create an empty tree */
 	global_history_tree = calloc(sizeof(struct tree), 1);
 	if (!global_history_tree) {
 		warn_user("NoMemory", 0);
@@ -99,8 +97,7 @@ void ro_gui_global_history_initialise(void) {
 	ro_gui_wimp_event_register_keypress(global_history_window,
 			ro_gui_tree_keypress);
 
-	/*	Create our toolbar
-	*/
+	/* Create our toolbar */
 	global_history_tree->toolbar = ro_gui_theme_create_toolbar(NULL,
 			THEME_HISTORY_TOOLBAR);
 	if (global_history_tree->toolbar)
@@ -121,47 +118,29 @@ void ro_gui_global_history_initialise(void) {
 		fclose(fp);
 	}
 
-	/* count the number of URLs to add */
-	for (hostname = url_store_hostnames; hostname;
-			hostname = hostname->next)
-		for (url = hostname->url; url; url = url->next)
-			url_count++;
-	if (url_count == 0)
-		return;
-
-	/* place pointers to the URL data in a single block of memory so
-	 * they can be quickly sorted */
-	url_block = (struct url_content **)malloc(
-			url_count * sizeof(struct url_content *));
-	if (!url_block) {
-	  	warn_user("NoMemory", 0);
-	  	LOG(("Insufficient memory for malloc()"));
-	  	return;
-	}
-	for (hostname = url_store_hostnames; hostname;
-			hostname = hostname->next)
-		for (url = hostname->url; url; url = url->next)
-			url_block[i++] = &url->data;
-	assert(i == url_count);
-
-	/* sort information by the last_visit information */
-	qsort(url_block, url_count, sizeof(struct url_content *),
-			url_store_compare_last_visit);
-
-	/* add URLs to the global history */
 	global_history_init = true;
-	for (i = 0; i < url_count; i++)
-		global_history_add(url_block[i]);
-
+	urldb_iterate_entries(global_history_iterate_callback);
 	global_history_init = false;
-	free(url_block);
 }
 
+/**
+ * Callback for urldb_iterate_entries
+ *
+ * \param url The URL
+ * \return true to continue iteration, false otherwise
+ */
+bool global_history_iterate_callback(const char *url)
+{
+	global_history_add(url);
+
+	return true;
+}
 
 /**
  * Initialises the base nodes
  */
-static void ro_gui_global_history_initialise_nodes(void) {
+void ro_gui_global_history_initialise_nodes(void)
+{
 	struct tm *full_time;
 	time_t t;
 	int weekday;
@@ -196,8 +175,12 @@ static void ro_gui_global_history_initialise_nodes(void) {
 				t, -weekday - 21);
 }
 
-static void ro_gui_global_history_initialise_node(const char *title,
-		time_t base, int days_back) {
+/**
+ * Create and initialise a node
+ */
+void ro_gui_global_history_initialise_node(const char *title,
+		time_t base, int days_back)
+{
 	struct tm *full_time;
 	char buffer[64];
 	struct node *node;
@@ -225,7 +208,8 @@ static void ro_gui_global_history_initialise_node(const char *title,
 /**
  * Saves the global history's recent URL data.
  */
-void ro_gui_global_history_save(void) {
+void ro_gui_global_history_save(void)
+{
 	FILE *fp;
 	int i;
 
@@ -249,8 +233,10 @@ void ro_gui_global_history_save(void) {
  * Respond to a mouse click
  *
  * \param pointer  the pointer state
+ * \return true to indicate click handled
  */
-bool ro_gui_global_history_click(wimp_pointer *pointer) {
+bool ro_gui_global_history_click(wimp_pointer *pointer)
+{
 	ro_gui_tree_click(pointer, global_history_tree);
 	if (pointer->buttons == wimp_CLICK_MENU)
 		ro_gui_menu_create(global_history_menu, pointer->pos.x,
@@ -268,23 +254,32 @@ bool ro_gui_global_history_click(wimp_pointer *pointer) {
  * \param y  the x co-ordinate to give help for
  * \return the message code index
  */
-int ro_gui_global_history_help(int x, int y) {
+int ro_gui_global_history_help(int x, int y)
+{
 	return -1;
 }
 
 
 /**
  * Adds to the global history
+ *
+ * \param url The URL to add
  */
-void global_history_add(struct url_content *data) {
+void global_history_add(const char *url)
+{
 	int i, j;
+	const struct url_data *data;
 	struct node *parent = NULL;
 	struct node *link;
 	struct node *node;
 	bool before = false;
 	int visit_date;
 
-	assert(data);
+	assert(url);
+
+	data = urldb_get_url_data(url);
+	if (!data)
+		return;
 
 	visit_date = data->last_visit;
 
@@ -316,28 +311,27 @@ void global_history_add(struct url_content *data) {
 	if (!parent)
 		return;
 
-  	/* find any previous occurance */
-  	if (!global_history_init) {
-	  	node = ro_gui_global_history_find(data->url);
-	  	if (node) {
-	  	  	/* \todo: calculate old/new positions and redraw
-	  	  	 * only the relevant portion */
+	/* find any previous occurance */
+	if (!global_history_init) {
+		node = ro_gui_global_history_find(url);
+		if (node) {
+			/* \todo: calculate old/new positions and redraw
+			 * only the relevant portion */
 			tree_redraw_area(global_history_tree,
 					0, 0, 16384, 16384);
-	  	  	tree_update_URL_node(node, data);
-	  	  	tree_delink_node(node);
-	  		tree_link_node(parent, node, false);
+			tree_update_URL_node(node, url, data);
+			tree_delink_node(node);
+			tree_link_node(parent, node, false);
 			tree_handle_node_changed(global_history_tree,
 				node, false, true);
 /*			ro_gui_tree_scroll_visible(hotlist_tree,
 					&node->data);
-*/	  		return;
-	  	}
+*/			return;
+		}
 	}
 
-	/*	Add the node at the bottom
-	*/
-	node = tree_create_URL_node_shared(parent, data);
+	/* Add the node at the bottom */
+	node = tree_create_URL_node_shared(parent, url, data);
 	if ((!global_history_init) && (node)) {
 		tree_redraw_area(global_history_tree,
 				node->box.x - NODE_INSTEP,
@@ -347,8 +341,14 @@ void global_history_add(struct url_content *data) {
 	}
 }
 
-
-struct node *ro_gui_global_history_find(const char *url) {
+/**
+ * Find an entry in the global history
+ *
+ * \param url The URL to find
+ * \return Pointer to node, or NULL if not found
+ */
+struct node *ro_gui_global_history_find(const char *url)
+{
 	int i;
 	struct node *node;
 	struct node_element *element;
@@ -359,7 +359,7 @@ struct node *ro_gui_global_history_find(const char *url) {
 					node; node = node->next) {
 				element = tree_find_element(node,
 					TREE_ELEMENT_URL);
-				if ((element) && (url == element->text))
+				if ((element) && !strcmp(url, element->text))
 					return node;
 			}
 		}
@@ -369,38 +369,35 @@ struct node *ro_gui_global_history_find(const char *url) {
 
 
 /**
- * Adds a URL to the recently used list
+ * Adds an URL to the recently used list
  *
- * \param url  the URL to add
+ * \param url  the URL to add (copied)
  */
-void global_history_add_recent(const char *url) {
-	struct url_content *data;
+void global_history_add_recent(const char *url)
+{
 	int i;
 	int j = -1;
 	char *current;
 
-	/* by using the url_store, we get a central char* of the string that
-	 * isn't going anywhere unless we tell it to */
-	data = url_store_find(url);
-	if (!data)
-		return;
-
 	/* try to find a string already there */
 	for (i = 0; i < global_history_recent_count; i++)
-		if (global_history_recent_url[i] == data->url)
+		if (global_history_recent_url[i] &&
+				!strcmp(global_history_recent_url[i], url))
 			j = i;
 
 	/* already at head of list */
 	if (j == 0)
 		return;
 
-	/* add to head of list */
 	if (j < 0) {
+		/* add to head of list */
+		free(global_history_recent_url[
+				GLOBAL_HISTORY_RECENT_URLS - 1]);
 		memmove(&global_history_recent_url[1],
 				&global_history_recent_url[0],
 				(GLOBAL_HISTORY_RECENT_URLS - 1) *
 						sizeof(char *));
-		global_history_recent_url[0] = data->url;
+		global_history_recent_url[0] = strdup(url);
 		global_history_recent_count++;
 		if (global_history_recent_count > GLOBAL_HISTORY_RECENT_URLS)
 			global_history_recent_count =
@@ -424,7 +421,8 @@ void global_history_add_recent(const char *url) {
  * \param count  set to the current number of entries in the URL array on exit
  * \return the current URL array
  */
-char **global_history_get_recent(int *count) {
+char **global_history_get_recent(int *count)
+{
 	*count = global_history_recent_count;
 	return global_history_recent_url;
 }

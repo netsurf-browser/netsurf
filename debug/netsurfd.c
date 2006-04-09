@@ -13,6 +13,7 @@
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/textinput.h"
@@ -162,7 +163,7 @@ bool plugin_redraw(struct content *c, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, unsigned long background_colour) {return true;}
 void plugin_open(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
+		struct content *page, unsigned int index, struct box *box,
 		struct object_params *params) {}
 void plugin_close(struct content *c) {}
 bool plugin_handleable(const char *mime_type) {return false;}
@@ -180,7 +181,8 @@ void tree_draw_line(int x, int y, int width, int height) {}
 void tree_draw_node_element(struct tree *tree, struct node_element *element) {}
 void tree_draw_node_expansion(struct tree *tree, struct node *node) {}
 void tree_recalculate_node_element(struct node_element *element) {}
-void tree_update_URL_node(struct node *node, struct url_content *data) {}
+void tree_update_URL_node(struct node *node, const char *url,
+		const struct url_data *data) {}
 void tree_resized(struct tree *tree) {}
 void tree_set_node_sprite_folder(struct node *node) {}
 

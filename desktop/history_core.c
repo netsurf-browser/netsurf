@@ -16,7 +16,7 @@
 #include <string.h>
 #include <time.h>
 #include "netsurf/content/content.h"
-#include "netsurf/content/url_store.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/history_core.h"
@@ -115,7 +115,7 @@ void history_add(struct history *history, struct content *content,
 	struct history_entry *entry;
 	char *url;
 	char *title;
-	struct bitmap *bitmap;
+	const struct bitmap *bitmap;
 
 	assert(history);
 	assert(content);
@@ -159,7 +159,7 @@ void history_add(struct history *history, struct content *content,
 
 	/* if we have a thumbnail, don't update until the page has finished
 	 * loading */
-	bitmap = url_store_get_thumbnail(url);
+	bitmap = urldb_get_thumbnail(url);
 	if (!bitmap) {
 		bitmap = bitmap_create(WIDTH, HEIGHT,
 				BITMAP_NEW | BITMAP_CLEAR_MEMORY |

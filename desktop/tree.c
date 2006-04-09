@@ -14,23 +14,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "netsurf/content/url_store.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/tree.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
-static void tree_draw_node(struct tree *tree, struct node *node, int clip_x, int clip_y,
-		int clip_width, int clip_height);
-static struct node_element *tree_create_node_element(struct node *parent, node_element_data data);
+static void tree_draw_node(struct tree *tree, struct node *node, int clip_x,
+		int clip_y, int clip_width, int clip_height);
+static struct node_element *tree_create_node_element(struct node *parent,
+		node_element_data data);
 static int tree_get_node_width(struct node *node);
 static int tree_get_node_height(struct node *node);
-static void tree_handle_selection_area_node(struct tree *tree, struct node *node, int x, int y,
-		int width, int height, bool invert);
+static void tree_handle_selection_area_node(struct tree *tree,
+		struct node *node, int x, int y, int width, int height,
+		bool invert);
 static void tree_selected_to_processing(struct node *node);
 void tree_clear_processing(struct node *node);
-struct node *tree_move_processing_node(struct node *node, struct node *link, bool before,
-		bool first);
+struct node *tree_move_processing_node(struct node *node, struct node *link,
+		bool before, bool first);
 
 static int tree_initialising = 0;
 
@@ -873,55 +875,51 @@ void tree_delete_selected_nodes(struct tree *tree, struct node *node) {
 void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 	struct node *next;
 	struct node *parent;
-	struct node_element *element;
-	struct url_content *data;
+	struct node_element *e, *f;
 
 	assert(node);
 
-	while (node) {
-		if (tree->temp_selection == node)
-			tree->temp_selection = NULL;
+	if (tree->temp_selection == node)
+		tree->temp_selection = NULL;
 
-		next = node->next;
-		if (node->child)
-			tree_delete_node(tree, node->child, true);
-		node->child = NULL;
-		parent = node->parent;
-		tree_delink_node(node);
-		if (!node->retain_in_memory) {
-			for (element = &node->data; element; element = element->next) {
-				if (element->text) {
-				  	/* we don't free non-editable titles or URLs */
-				 	if ((node->editable) ||
-				 			((node->data.data != TREE_ELEMENT_TITLE) &&
-				 				(node->data.data != TREE_ELEMENT_URL)))
-						free(element->text);
-					else if (node->data.data != TREE_ELEMENT_URL) {
+	next = node->next;
+	if (node->child)
+		tree_delete_node(tree, node->child, true);
+	node->child = NULL;
+	parent = node->parent;
+	tree_delink_node(node);
+
+	if (!node->retain_in_memory) {
+		for (e = &node->data; e; e = f) {
+			f = e->next;
+
+			if (e->text) {
+				/* we don't free non-editable titles */
+				if (node->editable)
+					free(e->text);
+				else {
+					if (e->data == TREE_ELEMENT_URL) {
 						/* reset URL characteristics */
-						data = url_store_find(element->text);
-						if (data) {
-							data->last_visit = 0;
-							data->visits = 0;
-						}
+						urldb_reset_url_visit_data(e->text);
 					}
+
+					if (e->data != TREE_ELEMENT_TITLE)
+						free(e->text);
 				}
-				if (element->sprite)
-					free(element->sprite);	/* \todo platform specific bits */
 			}
-			while (node->data.next) {
-				element = node->data.next->next;
-				free(node->data.next);
-				node->data.next = element;
-			}
-			free(node);
-		} else {
-		  	node->deleted = true;
+			if (e->sprite)
+				free(e->sprite);	/* \todo platform specific bits */
+
+			if (e != &node->data)
+				free(e);
 		}
-		if (!siblings)
-			node = NULL;
-		else
-			node = next;
+		free(node);
+	} else {
+		node->deleted = true;
 	}
+	if (siblings)
+		tree_delete_node(tree, next, true);
+
 	tree_recalculate_node_positions(tree->root);
 	tree_redraw_area(tree, 0, 0, 16384, 16384);	/* \todo correct area */
 	tree_recalculate_size(tree);
@@ -986,11 +984,13 @@ struct node *tree_create_leaf_node(struct node *parent, const char *title) {
  *
  *
  * \param parent     the node to link to
+ * \param url        the URL (copied)
  * \param data	     the URL data to use
  * \param title	     the custom title to use
  * \return the node created, or NULL for failure
  */
-struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
+struct node *tree_create_URL_node(struct node *parent,
+		const char *url, const struct url_data *data,
 		const char *title) {
 	struct node *node;
 	struct node_element *element;
@@ -998,10 +998,10 @@ struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
 	assert(data);
 
 	if (!title) {
-	  	if (data->title)
-	  		title = strdup(data->title);
-	  	else
-			title = strdup(data->url);
+		if (data->title)
+			title = strdup(data->title);
+		else
+			title = strdup(url);
 		if (!title)
 			return NULL;
 	}
@@ -1017,9 +1017,9 @@ struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
 	tree_create_node_element(node, TREE_ELEMENT_LAST_VISIT);
 	element = tree_create_node_element(node, TREE_ELEMENT_URL);
 	if (element)
-		element->text = strdup(data->url);
+		element->text = strdup(url);
 
-	tree_update_URL_node(node, NULL);
+	tree_update_URL_node(node, url, NULL);
 	tree_recalculate_node(node, false);
 
 	return node;
@@ -1029,24 +1029,30 @@ struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
 /**
  * Creates a tree entry for a URL, and links it into the tree.
  *
- * All information is used directly from the url_content, and as such cannot be
+ * All information is used directly from the url_data, and as such cannot be
  * edited and should never be freed.
  *
  * \param parent      the node to link to
+ * \param url         the URL (copied)
  * \param data	      the URL data to use
  * \return the node created, or NULL for failure
  */
-struct node *tree_create_URL_node_shared(struct node *parent, struct url_content *data) {
+struct node *tree_create_URL_node_shared(struct node *parent,
+		const char *url, const struct url_data *data) {
 	struct node *node;
 	struct node_element *element;
 	char *title;
 
 	assert(data);
 
+	/* If title isn't set, set it to the URL */
+	if (!data->title)
+		urldb_set_url_title(url, url);
+
 	if (data->title)
 		title = data->title;
 	else
-		title = data->url;
+		return NULL;
 	node = tree_create_leaf_node(parent, title);
 	if (!node)
 		return NULL;
@@ -1061,9 +1067,9 @@ struct node *tree_create_URL_node_shared(struct node *parent, struct url_content
 	tree_create_node_element(node, TREE_ELEMENT_LAST_VISIT);
 	element = tree_create_node_element(node, TREE_ELEMENT_URL);
 	if (element)
-		element->text = data->url;
+		element->text = strdup(url);
 
-	tree_update_URL_node(node, data);
+	tree_update_URL_node(node, url, data);
 	tree_recalculate_node(node, false);
 
 	return node;

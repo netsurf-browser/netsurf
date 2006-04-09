@@ -20,6 +20,7 @@
 #include "oslib/osgbpb.h"
 #include "oslib/territory.h"
 #include "oslib/wimp.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/history_core.h"
 #include "netsurf/render/box.h"
@@ -1368,7 +1369,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 	struct node *node;
 	os_error *error;
 	char url[80];
-	struct url_content *data;
+	const struct url_data *data;
 
 	ro_gui_menu_get_window_details(owner, &g, &bw, &c, &t, &tree);
 
@@ -1408,9 +1409,9 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		case HOTLIST_ADD_URL:
 			if ((!hotlist_tree) || (!c) || (!c->url))
 				return false;
-			data = url_store_find(c->url);
+			data = urldb_get_url_data(c->url);
 			if (data) {
-				node = tree_create_URL_node(hotlist_tree->root, data, NULL);
+				node = tree_create_URL_node(hotlist_tree->root, c->url, data, NULL);
 				if (node) {
 					tree_redraw_area(hotlist_tree,
 							node->box.x - NODE_INSTEP, 0,

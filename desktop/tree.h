@@ -13,7 +13,8 @@
 #define _NETSURF_DESKTOP_TREE_H_
 
 #include <stdbool.h>
-#include "netsurf/content/url_store.h"
+
+struct url_data;
 
 typedef enum {
 	TREE_ELEMENT_URL,
@@ -117,9 +118,11 @@ struct node *tree_create_folder_node(struct node *parent, const char *title);
 struct node *tree_create_leaf_node(struct node *parent, const char *title);
 void tree_set_node_sprite(struct node *node, const char *sprite,
 		const char *expanded);
-struct node *tree_create_URL_node(struct node *parent, struct url_content *data,
+struct node *tree_create_URL_node(struct node *parent,
+		const char *url, const struct url_data *data,
 		const char *title);
-struct node *tree_create_URL_node_shared(struct node *parent, struct url_content *data);
+struct node *tree_create_URL_node_shared(struct node *parent,
+		const char *url, const struct url_data *data);
 void tree_set_node_expanded(struct node *node, bool expanded);
 void tree_set_node_selected(struct tree *tree, struct node *node,
 		bool selected);
@@ -142,7 +145,8 @@ void tree_draw_line(int x, int y, int width, int height);
 void tree_draw_node_element(struct tree *tree, struct node_element *element);
 void tree_draw_node_expansion(struct tree *tree, struct node *node);
 void tree_recalculate_node_element(struct node_element *element);
-void tree_update_URL_node(struct node *node, struct url_content *data);
+void tree_update_URL_node(struct node *node, const char *url,
+		const struct url_data *data);
 void tree_resized(struct tree *tree);
 void tree_set_node_sprite_folder(struct node *node);
 

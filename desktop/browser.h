@@ -16,7 +16,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <time.h>
-#include "netsurf/content/url_store.h"
 
 struct box;
 struct content;
@@ -27,6 +26,8 @@ struct gui_window;
 struct history;
 struct selection;
 struct browser_window;
+struct url_data;
+struct bitmap;
 
 
 typedef void (*browser_caret_callback)(struct browser_window *bw,
@@ -95,7 +96,7 @@ struct browser_window {
 
 	/** Current fetch is download */
 	bool download;
-        
+
 	/** Refresh interval (-1 if undefined) */
 	int refresh_interval;
 };
@@ -154,7 +155,7 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 void hotlist_visited(struct content *content);
 
 /* In platform specific global_history.c. */
-void global_history_add(struct url_content *data);
+void global_history_add(const char *url);
 void global_history_add_recent(const char *url);
 char **global_history_get_recent(int *count);
 

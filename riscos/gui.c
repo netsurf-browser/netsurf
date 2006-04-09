@@ -39,7 +39,7 @@
 #include "rufl.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
-#include "netsurf/content/url_store.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/options.h"
@@ -366,7 +366,7 @@ void gui_init(int argc, char** argv)
 	ro_gui_choose_language();
 
 	bitmap_initialise_memory();
-	url_store_load(option_url_path);
+	urldb_load(option_url_path);
 
 	nsdir_temp = getenv("NetSurf$Dir");
 	if (!nsdir_temp)
@@ -717,7 +717,7 @@ void gui_init2(int argc, char** argv)
 void gui_quit(void)
 {
 	bitmap_quit();
-	url_store_save(option_url_save);
+	urldb_save(option_url_save);
 	ro_gui_window_quit();
 	ro_gui_global_history_save();
 	ro_gui_hotlist_save();
@@ -1467,7 +1467,7 @@ void ro_msg_dataload(wimp_message *message)
 	os_error *error;
 	int x, y;
 	bool before;
-	struct url_content *data;
+	const struct url_data *data;
 
 	g = ro_gui_window_lookup(message->data.data_xfer.w);
 	if (g) {
@@ -1525,14 +1525,17 @@ void ro_msg_dataload(wimp_message *message)
 		browser_window_go(g->bw, url, 0);
 	} else if ((hotlist_tree) && ((wimp_w)hotlist_tree->handle ==
 			message->data.data_xfer.w)) {
-		data = url_store_find(url);
+		data = urldb_get_url_data(url);
+		if (!data)
+			urldb_add_url(url);
+		data = urldb_get_url_data(url);
 		if (data) {
 			ro_gui_tree_get_tree_coordinates(hotlist_tree,
 					message->data.data_xfer.pos.x,
 					message->data.data_xfer.pos.y,
 					&x, &y);
 			link = tree_get_link_details(hotlist_tree, x, y, &before);
-			node = tree_create_URL_node(NULL, data, title);
+			node = tree_create_URL_node(NULL, url, data, title);
 			tree_link_node(link, node, before);
 			tree_handle_node_changed(hotlist_tree, node, false, true);
 			tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP, 0,

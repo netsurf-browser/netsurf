@@ -18,9 +18,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "oslib/wimp.h"
-#include "netsurf/content/certdb.h"
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetch.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/dialog.h"
@@ -169,10 +169,7 @@ bool ro_gui_cert_apply(wimp_w w)
 
 	assert(session);
 
-	if (!certdb_insert(session->url)) {
-		LOG(("certdb_insert failed"));
-		return false;
-	}
+	urldb_set_cert_permissions(session->url, true);
 
 	browser_window_go(session->bw, session->url, 0);
 

@@ -21,6 +21,7 @@
 #include <string.h>
 #include "libxml/HTMLparser.h"
 #include "libxml/HTMLtree.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/tree.h"
@@ -92,7 +93,7 @@ char *option_homepage_url = 0;
 /** Maximum simultaneous active fetchers */
 int option_max_fetchers = 24;
 /** Maximum simultaneous active fetchers per host.
- * (<=option_max_fetchers else it makes no sense 
+ * (<=option_max_fetchers else it makes no sense
  */
 int option_max_fetchers_per_host = 5;
 /** Maximum number of inactive fetchers cached.
@@ -413,7 +414,7 @@ void options_load_tree_entry(xmlNode *li, struct node *directory) {
 	char *title = 0;
 	struct node *entry;
 	xmlNode *n;
-	struct url_content *data;
+	const struct url_data *data;
 
 	for (n = li->children; n; n = n->next) {
 		/* The li must contain an "a" element */
@@ -430,12 +431,17 @@ void options_load_tree_entry(xmlNode *li, struct node *directory) {
 		return;
 	}
 
-	data = url_store_find(url);
+	data = urldb_get_url_data(url);
+	if (!data)
+		/* No entry in database, so add one */
+		urldb_add_url(url);
+
+	data = urldb_get_url_data(url);
 	if (!data)
 		return;
 	if (!data->title)
-		data->title = strdup(title);
-	entry = tree_create_URL_node(directory, data, title);
+		urldb_set_url_title(url, title);
+	entry = tree_create_URL_node(directory, url, data, title);
 	xmlFree(url);
 	xmlFree(title);
 }

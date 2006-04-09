@@ -82,7 +82,8 @@ void tree_recalculate_node_element(struct node_element *element) {
  *
  * \param node  the node to update
  */
-void tree_update_URL_node(struct node *node, struct url_content *data) {
+void tree_update_URL_node(struct node *node, const char *url,
+		const struct url_data *data) {
 }
 
 

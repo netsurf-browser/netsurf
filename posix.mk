@@ -7,13 +7,14 @@ ASM = $(GCCSDK_INSTALL_CROSSBIN)/gcc
 
 PLATFORM_CFLAGS_RISCOS = -I$(GCCSDK_INSTALL_ENV)/include \
 		-I$(GCCSDK_INSTALL_ENV)/include/libxml2 \
-		-I$(GCCSDK_INSTALL_ENV)/include/libmng
+		-I$(GCCSDK_INSTALL_ENV)/include/libmng \
+		#-finstrument-functions
 PLATFORM_CFLAGS_DEBUG = -I/usr/include/libxml2 -I/riscos/src/OSLib \
 		-I/riscos/include/libjpeg -D_POSIX_C_SOURCE
 PLATFORM_AFLAGS_RISCOS = -I$(GCCSDK_INSTALL_ENV)/include
 
 LDFLAGS_RISCOS = -L$(GCCSDK_INSTALL_ENV)/lib -lxml2 -lz -lcurl -lssl -lcrypto \
-		-lcares -lmng -lOSLib32 -ljpeg -lrufl -lpencil
+		-lcares -lmng -lOSLib32 -ljpeg -lrufl -lpencil #-lprof
 LDFLAGS_SMALL = -L$(GCCSDK_INSTALL_ENV)/lib -lxml2 -lz -lucurl \
 		-lcares -lmng -lOSLib32 -ljpeg -lrufl -lpencil
 LDFLAGS_DEBUG = -L/usr/lib -lxml2 -lz -lm -lcurl -lssl -lcrypto -ldl -lmng \

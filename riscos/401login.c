@@ -12,8 +12,8 @@
 #include <string.h>
 #include "oslib/wimp.h"
 #include "netsurf/utils/config.h"
-#include "netsurf/content/authdb.h"
 #include "netsurf/content/content.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/401login.h"
 #include "netsurf/desktop/gui.h"
@@ -187,11 +187,7 @@ bool ro_gui_401login_apply(wimp_w w)
 
 	sprintf(auth, "%s:%s", session->uname, session->pwd);
 
-	if (!authdb_insert(session->url, session->realm, auth)) {
-		LOG(("failed"));
-		free(auth);
-		return false;
-	}
+	urldb_set_auth_details(session->url, session->realm, auth);
 
 	free(auth);
 

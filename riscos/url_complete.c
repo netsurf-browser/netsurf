@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "oslib/wimp.h"
-#include "netsurf/content/url_store.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
@@ -27,7 +27,7 @@
 
 #define MAXIMUM_VISIBLE_LINES 7
 
-static struct url_content **url_complete_matches = NULL;
+static char **url_complete_matches = NULL;
 static int url_complete_matches_allocated = 0;
 static int url_complete_matches_available = 0;
 static char *url_complete_matched_string = NULL;
@@ -36,8 +36,9 @@ static int url_complete_keypress_selection = -1;
 static wimp_w url_complete_parent = 0;
 static bool url_complete_matches_reset = false;
 static char *url_complete_original_url = NULL;
+static bool url_complete_memory_exhausted = false;
 
-static struct url_content *url_complete_redraw[MAXIMUM_VISIBLE_LINES];
+static char *url_complete_redraw[MAXIMUM_VISIBLE_LINES];
 static char url_complete_icon_null[] = "\0";
 static char url_complete_icon_sprite[12];
 static wimp_icon url_complete_icon;
@@ -45,21 +46,26 @@ static wimp_icon url_complete_sprite;
 static int mouse_x;
 static int mouse_y;
 
+static bool url_complete_callback(const char *url);
+
 /**
  * Should be called when the caret is placed into a URL completion icon.
  *
  * \param g    the gui_window to initialise URL completion for
  */
-void ro_gui_url_complete_start(struct gui_window *g) {
-  	char *url;
-  	
+void ro_gui_url_complete_start(struct gui_window *g)
+{
+	char *url;
+
 	if ((!g->toolbar) || (!g->toolbar->display_url) ||
 			(g->window == url_complete_parent))
 		return;
 
 	ro_gui_url_complete_close(NULL, 0);
-	url = ro_gui_get_icon_string(g->toolbar->toolbar_handle, ICON_TOOLBAR_URL);
-	url_complete_matched_string = url_store_match_string(url);
+	url = ro_gui_get_icon_string(g->toolbar->toolbar_handle,
+			ICON_TOOLBAR_URL);
+
+	url_complete_matched_string = strdup(url);
 	if (url_complete_matched_string)
 		url_complete_parent = g->window;
 }
@@ -70,14 +76,13 @@ void ro_gui_url_complete_start(struct gui_window *g) {
  *
  * \param g    the gui_window to update
  * \param key  the key pressed
+ * \return true to indicate keypress handled, false otherwise
  */
-bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
+bool ro_gui_url_complete_keypress(struct gui_window *g, int key)
+{
 	wimp_window_state state;
-	struct url_content **array_extend;
-	struct url_data *reference = NULL;
 	char *match_url;
 	char *url;
-	struct url_content *output;
 	int i, lines;
 	int old_selection;
 	bool ignore_changes = false;
@@ -86,7 +91,8 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 	bool currently_open;
 
 	/* we must have a toolbar/url bar */
-	if ((!g->toolbar) || (!g->toolbar->display_url) || (!option_url_suggestion)) {
+	if ((!g->toolbar) || (!g->toolbar->display_url) ||
+			(!option_url_suggestion)) {
 		ro_gui_url_complete_close(NULL, 0);
 		return false;
 	}
@@ -107,12 +113,13 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 				url_complete_matched_string = NULL;
 		}
 	}
-		
+
 
 	/* get the text to match */
 	url_complete_parent = g->window;
-	url = ro_gui_get_icon_string(g->toolbar->toolbar_handle, ICON_TOOLBAR_URL);
-	match_url = url_store_match_string(url);
+	url = ro_gui_get_icon_string(g->toolbar->toolbar_handle,
+			ICON_TOOLBAR_URL);
+	match_url = strdup(url);
 	if (!match_url) {
 		ro_gui_url_complete_close(NULL, 0);
 		return false;
@@ -121,7 +128,8 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 	/* check if we should ignore text changes */
 	if ((url_complete_keypress_selection >= 0) && (url_complete_matches))
 		ignore_changes = !strcmp(url,
-				url_complete_matches[url_complete_keypress_selection]->url);
+				url_complete_matches[
+					url_complete_keypress_selection]);
 
 	/* if the text to match has changed then update it */
 	if (!ignore_changes && ((!url_complete_matched_string) ||
@@ -133,11 +141,13 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 			lines = url_complete_matches_available;
 		if (url_complete_matches)
 			for (i = 0; i < MAXIMUM_VISIBLE_LINES; i++)
-				url_complete_redraw[i] = url_complete_matches[i];
+				url_complete_redraw[i] =
+						url_complete_matches[i];
 
 		/* our selection gets wiped */
 		error = xwimp_force_redraw(dialog_url_complete,
-				0, -(url_complete_matches_selection + 1) * 44,
+				0,
+				-(url_complete_matches_selection + 1) * 44,
 				65536, -url_complete_matches_selection * 44);
 		if (error) {
 			LOG(("xwimp_force_redraw: 0x%x: %s",
@@ -150,7 +160,14 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 		free(url_complete_matched_string);
 		url_complete_matched_string = match_url;
 		url_complete_original_url = NULL;
-		url_complete_matches_available = 0;
+		if (url_complete_matches) {
+			for (; url_complete_matches_available > 0;
+					url_complete_matches_available--)
+				free(url_complete_matches[
+					url_complete_matches_available - 1]);
+		} else {
+			url_complete_matches_available = 0;
+		}
 		url_complete_matches_selection = -1;
 		url_complete_keypress_selection = -1;
 
@@ -164,25 +181,12 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 			url_complete_matches_allocated = 64;
 		}
 
-		/* get all our matches */
-		while ((output = url_store_match(match_url, &reference))) {
-			url_complete_matches_available++;
-			if (url_complete_matches_available >
-					url_complete_matches_allocated) {
-
-				array_extend = (struct url_content **)realloc(
-						url_complete_matches,
-						(url_complete_matches_allocated + 64) *
-						sizeof(struct url_content *));
-				if (!array_extend) {
-					ro_gui_url_complete_close(NULL, 0);
-					return false;
-				}
-				url_complete_matches = array_extend;
-				url_complete_matches_allocated += 64;
-			}
-			url_complete_matches[url_complete_matches_available - 1] =
-					output;
+		/* find matches */
+		url_complete_memory_exhausted = false;
+		urldb_iterate_partial(match_url, url_complete_callback);
+		if (url_complete_memory_exhausted) {
+			ro_gui_url_complete_close(NULL, 0);
+			return false;
 		}
 
 		/* update the window */
@@ -203,17 +207,19 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 		if (lines > url_complete_matches_available)
 			lines = url_complete_matches_available;
 		for (i = 0; i < lines; i++) {
-			if (url_complete_redraw[i] != url_complete_matches[i]) {
+			if (url_complete_redraw[i] !=
+					url_complete_matches[i]) {
 				error = xwimp_force_redraw(dialog_url_complete,
 					0, -(i + 1) * 44, 65536, -i * 44);
 				if (error) {
 					LOG(("xwimp_force_redraw: 0x%x: %s",
-							error->errnum, error->errmess));
-					warn_user("WimpError", error->errmess);
+							error->errnum,
+							error->errmess));
+					warn_user("WimpError",
+							error->errmess);
 				}
 			}
 		}
-
 	} else {
 		free(match_url);
 	}
@@ -221,7 +227,9 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 	/* handle keypresses */
 	if (!currently_open)
 		return false;
+
 	old_selection = url_complete_matches_selection;
+
 	switch (key) {
 		case wimp_KEY_UP:
 			url_complete_matches_selection--;
@@ -230,10 +238,12 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 			url_complete_matches_selection++;
 			break;
 		case wimp_KEY_PAGE_UP:
-			url_complete_matches_selection -= MAXIMUM_VISIBLE_LINES;
+			url_complete_matches_selection -=
+					MAXIMUM_VISIBLE_LINES;
 			break;
 		case wimp_KEY_PAGE_DOWN:
-			url_complete_matches_selection += MAXIMUM_VISIBLE_LINES;
+			url_complete_matches_selection +=
+					MAXIMUM_VISIBLE_LINES;
 			break;
 		case wimp_KEY_CONTROL | wimp_KEY_UP:
 			url_complete_matches_selection = 0;
@@ -242,8 +252,11 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 			url_complete_matches_selection = 65536;
 			break;
 	}
-	if (url_complete_matches_selection > url_complete_matches_available - 1)
-		url_complete_matches_selection = url_complete_matches_available - 1;
+
+	if (url_complete_matches_selection >
+			url_complete_matches_available - 1)
+		url_complete_matches_selection =
+				url_complete_matches_available - 1;
 	else if (url_complete_matches_selection < -1)
 		url_complete_matches_selection = -1;
 
@@ -251,12 +264,14 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 		return false;
 
 	error = xwimp_force_redraw(dialog_url_complete,
-			0, -(old_selection + 1) * 44, 65536, -old_selection * 44);
+			0, -(old_selection + 1) * 44,
+			65536, -old_selection * 44);
 	if (error) {
 		LOG(("xwimp_force_redraw: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
+
 	error = xwimp_force_redraw(dialog_url_complete,
 			0, -(url_complete_matches_selection + 1) * 44,
 			65536, -url_complete_matches_selection * 44);
@@ -265,6 +280,7 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
+
 	if (old_selection == -1) {
 		free(url_complete_original_url);
 		url_complete_original_url = malloc(strlen(url) + 1);
@@ -272,6 +288,7 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 			return false;
 		strcpy(url_complete_original_url, url);
 	}
+
 	if (url_complete_matches_selection == -1) {
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
@@ -279,7 +296,8 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 	} else {
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
-				url_complete_matches[url_complete_matches_selection]->url);
+				url_complete_matches[
+					url_complete_matches_selection]);
 	}
 	url_complete_keypress_selection = url_complete_matches_selection;
 
@@ -292,11 +310,15 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 		warn_user("WimpError", error->errmess);
 		return true;
 	}
+
 	if (state.yscroll < -(url_complete_matches_selection * 44))
 		state.yscroll = -(url_complete_matches_selection * 44);
 	height = state.visible.y1 - state.visible.y0;
-	if (state.yscroll - height > -((url_complete_matches_selection + 1) * 44))
-		state.yscroll = -((url_complete_matches_selection + 1) * 44) + height;
+	if (state.yscroll - height >
+			-((url_complete_matches_selection + 1) * 44))
+		state.yscroll =
+			-((url_complete_matches_selection + 1) * 44) + height;
+
 	error = xwimp_open_window((wimp_open *)(&state));
 	if (error) {
 		LOG(("xwimp_open_window: 0x%x: %s",
@@ -308,6 +330,43 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
 	return true;
 }
 
+/**
+ * Callback function for urldb_iterate_partial
+ *
+ * \param url URL which matches
+ * \return true to continue iteration, false otherwise
+ */
+bool url_complete_callback(const char *url)
+{
+	char **array_extend;
+	char *temp;
+
+	url_complete_matches_available++;
+
+	if (url_complete_matches_available >
+			url_complete_matches_allocated) {
+
+		array_extend = (char **)realloc(url_complete_matches,
+				(url_complete_matches_allocated + 64) *
+				sizeof(struct url_content *));
+		if (!array_extend) {
+			url_complete_memory_exhausted = true;
+			return false;
+		}
+		url_complete_matches = array_extend;
+		url_complete_matches_allocated += 64;
+	}
+
+	temp = strdup(url);
+	if (!temp) {
+		url_complete_memory_exhausted = true;
+		return false;
+	}
+
+	url_complete_matches[url_complete_matches_available - 1] = temp;
+
+	return true;
+}
 
 /**
  * Move and resize the url completion window to match the toolbar.
@@ -315,7 +374,8 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key) {
  * \param g	the gui_window to update
  * \param open  the wimp_open request (updated on exit)
  */
-void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
+void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open)
+{
 	os_box extent = { 0, 0, 0, 0 };
 	wimp_icon_state url_state;
 	wimp_window_state toolbar_state;
@@ -327,8 +387,9 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
 	/* only react to our window */
 	if (open->w != url_complete_parent)
 		return;
-	/* if there is no toolbar, or there is no URL bar shown, or there are
-	 * no URL matches, close it */
+
+	/* if there is no toolbar, or there is no URL bar shown,
+	 * or there are no URL matches, close it */
 	if ((!g->toolbar) || (!g->toolbar->display_url) ||
 			(!url_complete_matches) ||
 			(url_complete_matches_available == 0)) {
@@ -345,6 +406,7 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
+
 	if (url_complete_matches_reset)
 		state.yscroll = 0;
 
@@ -357,6 +419,7 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
+
 	url_state.w = g->toolbar->toolbar_handle;
 	url_state.i = ICON_TOOLBAR_SURROUND;
 	error = xwimp_get_icon_state(&url_state);
@@ -366,6 +429,7 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
+
 	lines = url_complete_matches_available;
 	extent.y0 = -(lines * 44);
 	extent.x1 = 65536;
@@ -376,6 +440,7 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
 		warn_user("WimpError", error->errmess);
 		return;
 	}
+
 	state.next = open->next;
 	state.flags &= ~wimp_WINDOW_VSCROLL;
 	state.flags &= ~(4095 << 16); /* clear bits 16-27 */
@@ -385,7 +450,8 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
 		state.flags |= wimp_WINDOW_VSCROLL;
 	}
 	state.visible.x0 = open->visible.x0 + 2 + url_state.icon.extent.x0;
-	state.visible.x1 = open->visible.x0 - 2 + url_state.icon.extent.x1 - scroll_v;
+	state.visible.x1 = open->visible.x0 - 2 +
+					url_state.icon.extent.x1 - scroll_v;
 	state.visible.y1 = open->visible.y1 - url_state.icon.extent.y1 + 2;
 	state.visible.y0 = state.visible.y1 - (lines * 44);
 	if (state.visible.x1 + scroll_v > toolbar_state.visible.x1)
@@ -398,7 +464,8 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
 			warn_user("WimpError", error->errmess);
 		}
 	} else {
-		error = xwimp_open_window_nested_with_flags(&state, (wimp_w)-1, 0);
+		error = xwimp_open_window_nested_with_flags(&state,
+				(wimp_w)-1, 0);
 		if (error) {
 			LOG(("xwimp_open_window: 0x%x: %s",
 					error->errnum, error->errmess));
@@ -417,16 +484,24 @@ void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open) {
  * \param i  the icon the user clicked on to prompt the close
  * \return whether the window was closed
  */
-bool ro_gui_url_complete_close(struct gui_window *g, wimp_i i) {
+bool ro_gui_url_complete_close(struct gui_window *g, wimp_i i)
+{
 	os_error *error;
 	bool currently_open;
 
-	if ((g && (i == ICON_TOOLBAR_URL) && (g->window == url_complete_parent)))
+	if ((g && (i == ICON_TOOLBAR_URL) &&
+			(g->window == url_complete_parent)))
 		return false;
 
 	currently_open = ((url_complete_parent) &&
 			(url_complete_matches_available > 0));
 
+	if (url_complete_matches) {
+		for (; url_complete_matches_available > 0;
+				url_complete_matches_available--)
+			free(url_complete_matches[
+					url_complete_matches_available - 1]);
+	}
 	free(url_complete_matches);
 	free(url_complete_matched_string);
 	free(url_complete_original_url);
@@ -445,6 +520,7 @@ bool ro_gui_url_complete_close(struct gui_window *g, wimp_i i) {
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
+
 	return currently_open;
 }
 
@@ -453,13 +529,15 @@ bool ro_gui_url_complete_close(struct gui_window *g, wimp_i i) {
  * Redraws a section of the URL completion window
  *
  * \param redraw  the area to redraw
- * \param tree	  the tree to redraw
  */
-void ro_gui_url_complete_redraw(wimp_draw *redraw) {
+void ro_gui_url_complete_redraw(wimp_draw *redraw)
+{
 	osbool more;
 	os_error *error;
 	int clip_y0, clip_y1, origin_y;
 	int first_line, last_line, line;
+	const struct url_data *data;
+	int type;
 
 	/* initialise our icon */
 	url_complete_icon.flags = wimp_ICON_INDIRECTED | wimp_ICON_VCENTRED |
@@ -468,23 +546,26 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw) {
 			(wimp_COLOUR_WHITE << wimp_ICON_BG_COLOUR_SHIFT);
 	url_complete_icon.extent.x0 = 50;
 	url_complete_icon.extent.x1 = 16384;
-	url_complete_icon.data.indirected_text.validation = url_complete_icon_null;
+	url_complete_icon.data.indirected_text.validation =
+						url_complete_icon_null;
 	url_complete_sprite.flags = wimp_ICON_TEXT | wimp_ICON_SPRITE |
 				wimp_ICON_INDIRECTED | wimp_ICON_FILLED |
 				wimp_ICON_HCENTRED | wimp_ICON_VCENTRED;
 	url_complete_sprite.extent.x0 = 0;
 	url_complete_sprite.extent.x1 = 50;
-	url_complete_sprite.data.indirected_text.text = url_complete_icon_null;
-	url_complete_sprite.data.indirected_text.validation = url_complete_icon_sprite;
+	url_complete_sprite.data.indirected_text.text =
+						url_complete_icon_null;
+	url_complete_sprite.data.indirected_text.validation =
+						url_complete_icon_sprite;
 	url_complete_sprite.data.indirected_text.size = 1;
 
 	/* no matches? no redraw */
 	if (!url_complete_matches) {
-	  	LOG(("Attempt to redraw with no matches made"));
+		LOG(("Attempt to redraw with no matches made"));
 		ro_gui_user_redraw(redraw, false, NULL);
 		return;
 	}
-	
+
 	/* redraw */
 	more = wimp_redraw_window(redraw);
 	while (more) {
@@ -497,32 +578,47 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw) {
 
 		for (line = first_line; line < last_line; line++) {
 			if (line == url_complete_matches_selection)
-				url_complete_icon.flags |= wimp_ICON_SELECTED;
+				url_complete_icon.flags |=
+							wimp_ICON_SELECTED;
 			else
-				url_complete_icon.flags &= ~wimp_ICON_SELECTED;
+				url_complete_icon.flags &=
+							~wimp_ICON_SELECTED;
 			url_complete_icon.extent.y1 = -line * 44;
 			url_complete_icon.extent.y0 = -(line + 1) * 44;
 			url_complete_icon.data.indirected_text.text =
-					url_complete_matches[line]->url;
+					url_complete_matches[line];
 			url_complete_icon.data.indirected_text.size =
-					strlen(url_complete_matches[line]->url);
+					strlen(url_complete_matches[line]);
+
 			error = xwimp_plot_icon(&url_complete_icon);
 			if (error) {
 				LOG(("xwimp_plot_icon: 0x%x: %s",
-						error->errnum, error->errmess));
+						error->errnum,
+						error->errmess));
 				warn_user("WimpError", error->errmess);
 			}
+
+			data = urldb_get_url_data(url_complete_matches[line]);
+			if (data)
+				type = ro_content_filetype_from_type(
+					data->type);
+			else
+				type = 0;
+
 			sprintf(url_complete_icon_sprite, "Ssmall_%.3x",
-					ro_content_filetype_from_type(
-					url_complete_matches[line]->type));
-			if (!ro_gui_wimp_sprite_exists(url_complete_icon_sprite + 1))
-				sprintf(url_complete_icon_sprite, "Ssmall_xxx");
+					type);
+
+			if (!ro_gui_wimp_sprite_exists(
+					url_complete_icon_sprite + 1))
+				sprintf(url_complete_icon_sprite,
+						"Ssmall_xxx");
 			url_complete_sprite.extent.y1 = -line * 44;
 			url_complete_sprite.extent.y0 = -(line + 1) * 44;
 			error = xwimp_plot_icon(&url_complete_sprite);
 			if (error) {
 				LOG(("xwimp_plot_icon: 0x%x: %s",
-						error->errnum, error->errmess));
+						error->errnum,
+						error->errmess));
 				warn_user("WimpError", error->errmess);
 			}
 		}
@@ -536,7 +632,8 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw) {
  *
  * \param pointer  the pointer state
  */
-void ro_gui_url_complete_mouse_at(wimp_pointer *pointer) {
+void ro_gui_url_complete_mouse_at(wimp_pointer *pointer)
+{
 	wimp_mouse_state current;
 
 	current = pointer->buttons;
@@ -552,7 +649,8 @@ void ro_gui_url_complete_mouse_at(wimp_pointer *pointer) {
  * \param pointer  the pointer state
  * \return whether the click was handled
  */
-bool ro_gui_url_complete_click(wimp_pointer *pointer) {
+bool ro_gui_url_complete_click(wimp_pointer *pointer)
+{
 	wimp_window_state state;
 	os_error *error;
 	int selection, old_selection;
@@ -562,6 +660,7 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer) {
 	if ((mouse_x == pointer->pos.x) && (mouse_y == pointer->pos.y) &&
 			(!pointer->buttons))
 		return false;
+
 	mouse_x = pointer->pos.x;
 	mouse_y = pointer->pos.y;
 
@@ -573,13 +672,15 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer) {
 		warn_user("WimpError", error->errmess);
 		return false;
 	}
+
 	selection = (state.visible.y1 - pointer->pos.y - state.yscroll) / 44;
 	if (selection != url_complete_matches_selection) {
 		if (url_complete_matches_selection == -1) {
 			g = ro_gui_window_lookup(url_complete_parent);
 			if (!g)
 				return false;
-			url = ro_gui_get_icon_string(g->toolbar->toolbar_handle,
+			url = ro_gui_get_icon_string(
+					g->toolbar->toolbar_handle,
 					ICON_TOOLBAR_URL);
 			free(url_complete_original_url);
 			url_complete_original_url = malloc(strlen(url) + 1);
@@ -590,7 +691,8 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer) {
 		old_selection = url_complete_matches_selection;
 		url_complete_matches_selection = selection;
 		error = xwimp_force_redraw(dialog_url_complete,
-				0, -(old_selection + 1) * 44, 65536, -old_selection * 44);
+				0, -(old_selection + 1) * 44,
+				65536, -old_selection * 44);
 		if (error) {
 			LOG(("xwimp_force_redraw: 0x%x: %s",
 					error->errnum, error->errmess));
@@ -607,7 +709,7 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer) {
 	}
 	if (!pointer->buttons)
 		return true;
-	
+
 	/* find owning window */
 	g = ro_gui_window_lookup(url_complete_parent);
 	if (!g)
@@ -617,18 +719,22 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer) {
 	if (pointer->buttons == wimp_CLICK_SELECT) {
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
-				url_complete_matches[url_complete_matches_selection]->url);
+				url_complete_matches[
+					url_complete_matches_selection]);
 		browser_window_go(g->bw,
-				url_complete_matches[url_complete_matches_selection]->url,
+				url_complete_matches[
+					url_complete_matches_selection],
 				0);
-		global_history_add_recent(url_complete_matches[url_complete_matches_selection]->url);
+		global_history_add_recent(url_complete_matches[
+					url_complete_matches_selection]);
 		ro_gui_url_complete_close(NULL, 0);
 
 	/* Adjust just sets the text */
 	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
 		ro_gui_set_icon_string(g->toolbar->toolbar_handle,
 				ICON_TOOLBAR_URL,
-				url_complete_matches[url_complete_matches_selection]->url);
+				url_complete_matches[
+					url_complete_matches_selection]);
 		ro_gui_url_complete_keypress(g, 0);
 	}
 	return true;

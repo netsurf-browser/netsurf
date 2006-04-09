@@ -21,7 +21,7 @@
 #include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
 #include "netsurf/content/content.h"
-#include "netsurf/content/url_store.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/render/font.h"
@@ -138,7 +138,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 
 	/* register the thumbnail with the URL */
 	if (url)
-		url_store_add_thumbnail(url, bitmap);
+		urldb_set_thumbnail(url, bitmap);
 	bitmap_modified(bitmap);
 	return true;
 }

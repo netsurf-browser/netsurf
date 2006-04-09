@@ -12,8 +12,6 @@
 #ifndef _NETSURF_RISCOS_GLOBALHISTORY_H_
 #define _NETSURF_RISCOS_GLOBALHISTORY_H_
 
-#include "netsurf/content/url_store.h"
-
 #define GLOBAL_HISTORY_RECENT_URLS 16
 
 void ro_gui_global_history_initialise(void);

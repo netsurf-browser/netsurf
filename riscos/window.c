@@ -30,7 +30,7 @@
 #include "oslib/wimpspriteop.h"
 #include "netsurf/utils/config.h"
 #include "netsurf/content/content.h"
-#include "netsurf/content/url_store.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/plotters.h"
@@ -2013,6 +2013,10 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 				default:
 					break;
 			}
+			return true;
+
+		case wimp_KEY_CONTROL + wimp_KEY_F9:
+			urldb_dump();
 			return true;
 
 		case wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F9:

@@ -17,8 +17,7 @@
 # "riscos", "riscos_small", "ncos", and "riscos_debug" can be compiled under
 # RISC OS, or cross-compiled using GCCSDK.
 
-OBJECTS_COMMON = authdb.o certdb.o content.o fetch.o \
-	fetchcache.o url_store.o				# content/
+OBJECTS_COMMON = content.o fetch.o fetchcache.o urldb.o		# content/
 OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
 OBJECTS_COMMON += box.o box_construct.o box_normalise.o form.o \
 	html.o html_redraw.o imagemap.o layout.o list.o \
@@ -57,9 +56,10 @@ OBJECTS_DEBUG += debug_bitmap.o filetyped.o fontd.o netsurfd.o	# debug/
 OBJECTS_DEBUGRO = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_DEBUGRO += netsurfd.o					# debug/
 OBJECTS_DEBUGRO += version.o					# desktop/
-OBJECTS_DEBUGRO += artworks.o bitmap.o draw.o filetype.o font.o \
-	gif.o gifread.o image.o jpeg.o plotters.o save_complete.o \
-	schedule.o sprite.o					# riscos/
+OBJECTS_DEBUGRO += artworks.o awrender.o bitmap.o draw.o \
+	filename.o filetype.o font.o gif.o gifread.o image.o \
+	jpeg.o palettes.o plotters.o save_complete.o schedule.o \
+	sprite.o						# riscos/
 
 OBJECTS_GTK = $(OBJECTS_COMMON) $(OBJECTS_IMAGE)
 OBJECTS_GTK += filetyped.o					# debug/
@@ -112,7 +112,7 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith -Wcast-qual \
 # CFLAGS have to appear after the inclusion of platform specific files as the
 # PLATFORM_CFLAGS variables are defined in them
 
-CFLAGS_RISCOS = -std=c9x -D_BSD_SOURCE -Driscos -DBOOL_DEFINED -O \
+CFLAGS_RISCOS = -std=c9x -D_BSD_SOURCE -D_POSIX_C_SOURCE -Driscos -DBOOL_DEFINED -O \
 	$(WARNFLAGS) -I.. $(PLATFORM_CFLAGS_RISCOS) -mpoke-function-name \
 #	-include netsurf/utils/memdebug.h
 CFLAGS_RISCOS_SMALL = $(CFLAGS_RISCOS) -Dsmall

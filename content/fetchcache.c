@@ -23,7 +23,6 @@
 #include "netsurf/content/content.h"
 #include "netsurf/content/fetchcache.h"
 #include "netsurf/content/fetch.h"
-#include "netsurf/content/url_store.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/talloc.h"

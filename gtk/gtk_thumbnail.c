@@ -16,7 +16,7 @@
 #include <assert.h>
 #include <gtk/gtk.h>
 #include "netsurf/content/content.h"
-#include "netsurf/content/url_store.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/image/bitmap.h"
@@ -69,7 +69,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 			content->width, content->width);
 
 	gdk_pixbuf_scale(big, pixbuf, 0, 0, width, height, 0, 0,
-			(double)width / (double)content->width, 
+			(double)width / (double)content->width,
 			(double)height / (double)content->width,
 			GDK_INTERP_TILES);
 
@@ -79,7 +79,7 @@ bool thumbnail_create(struct content *content, struct bitmap *bitmap,
 
 	/* register the thumbnail with the URL */
 	if (url)
-	  url_store_add_thumbnail(url, bitmap);
+	  urldb_set_thumbnail(url, bitmap);
 
 	bitmap_modified(bitmap);
 

@@ -20,7 +20,7 @@
 #include "oslib/osbyte.h"
 #include "oslib/osspriteop.h"
 #include "oslib/wimp.h"
-#include "netsurf/content/url_store.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/tree.h"
 #include "netsurf/riscos/bitmap.h"
@@ -204,14 +204,14 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 	int temp;
 	int toolbar_height = 0;
 	struct node_element *url_element;
-	struct bitmap *bitmap = NULL;
+	const struct bitmap *bitmap = NULL;
 	struct node_update *update;
 	char *frame;
 
 	assert(tree);
 	assert(element);
 	assert(element->parent);
-	
+
 	if (tree->toolbar)
 		toolbar_height = ro_gui_theme_toolbar_height(tree->toolbar);
 
@@ -294,11 +294,11 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 		case NODE_ELEMENT_THUMBNAIL:
 			url_element = tree_find_element(element->parent, TREE_ELEMENT_URL);
 			if (url_element)
-				bitmap = url_store_get_thumbnail(url_element->text);
+				bitmap = urldb_get_thumbnail(url_element->text);
 			if (bitmap) {
-			  	frame = bitmap_get_buffer(bitmap);
-			  	if (!frame)
-			  		url_store_add_thumbnail(url_element->text, NULL);
+				frame = bitmap_get_buffer(bitmap);
+				if (!frame)
+					urldb_set_thumbnail(url_element->text, NULL);
 				if ((!frame) || (element->box.width == 0)) {
 				  	update = calloc(sizeof(struct node_update), 1);
 				  	if (!update)
@@ -348,7 +348,7 @@ void tree_draw_node_element(struct tree *tree, struct node_element *element) {
 
 void tree_handle_node_changed_callback(void *p) {
 	struct node_update *update = p;
-	
+
 	tree_handle_node_changed(update->tree, update->node, true, false);
 	free(update);
 }
@@ -420,7 +420,7 @@ void tree_recalculate_node_element(struct node_element *element) {
 	int sprite_width;
 	int sprite_height;
 	osspriteop_flags flags;
-	struct bitmap *bitmap = NULL;
+	const struct bitmap *bitmap = NULL;
 	struct node_element *url_element;
 
 	assert(element);
@@ -467,7 +467,7 @@ void tree_recalculate_node_element(struct node_element *element) {
 		case NODE_ELEMENT_THUMBNAIL:
 			url_element = tree_find_element(element->parent, TREE_ELEMENT_URL);
 			if (url_element)
-				bitmap = url_store_get_thumbnail(url_element->text);
+				bitmap = urldb_get_thumbnail(url_element->text);
 			if (bitmap) {
 /*				if ((bitmap->width == 0) && (bitmap->height == 0))
 			  		frame = bitmap_get_buffer(bitmap);
@@ -523,32 +523,37 @@ void tree_set_node_sprite_folder(struct node *node) {
  * The internal node dimensions are not updated.
  *
  * \param node  the node to update
+ * \param url   the URL
  * \param data  the data the node is linked to, or NULL for unlinked data
  */
-void tree_update_URL_node(struct node *node, struct url_content *data) {
+void tree_update_URL_node(struct node *node,
+		const char *url, const struct url_data *data) {
 	struct node_element *element;
 	char buffer[256];
-	
+
 	assert(node);
-	
+
 	element = tree_find_element(node, TREE_ELEMENT_URL);
 	if (!element)
 		return;
 	if (data) {
-	  	/* node is linked, update */
-	  	assert(!node->editable);
-		if (data->title)
-			node->data.text = data->title;
-		else
-			node->data.text = data->url;
+		/* node is linked, update */
+		assert(!node->editable);
+		if (!data->title)
+			urldb_set_url_title(url, url);
+
+		if (!data->title)
+			return;
+
+		node->data.text = data->title;
 	} else {
-	  	/* node is not link, find data */
-	  	assert(node->editable);
-		data = url_store_find(element->text);
+		/* node is not linked, find data */
+		assert(node->editable);
+		data = urldb_get_url_data(element->text);
 		if (!data)
 			return;
 	}
-	
+
 	if (element) {
 		sprintf(buffer, "small_%.3x", ro_content_filetype_from_type(data->type));
 		if (ro_gui_wimp_sprite_exists(buffer))
@@ -615,7 +620,7 @@ void ro_gui_tree_redraw(wimp_draw *redraw) {
 	struct tree *tree;
 	osbool more;
 	int clip_x0, clip_x1, clip_y0, clip_y1, origin_x, origin_y;
-	
+
 	tree = (struct tree *)ro_gui_wimp_event_get_user_data(redraw->w);
 
 	assert(tree);
@@ -785,7 +790,7 @@ bool ro_gui_tree_click(wimp_pointer *pointer, struct tree *tree) {
 		element = &last->data;
 		if (last->expanded)
 			for (; element->next; element = element->next);
-		ro_gui_tree_scroll_visible(tree, element);		
+		ro_gui_tree_scroll_visible(tree, element);
 		ro_gui_tree_scroll_visible(tree, &node->data);
 		return true;
 	}
@@ -926,7 +931,7 @@ bool ro_gui_tree_toolbar_click(wimp_pointer* pointer) {
 	struct tree *tree =
 		(struct tree *)ro_gui_wimp_event_get_user_data(toolbar->parent_handle);
 	assert(tree);
-	
+
 	ro_gui_tree_stop_edit(tree);
 
 	if (pointer->buttons == wimp_CLICK_MENU) {
@@ -937,7 +942,7 @@ bool ro_gui_tree_toolbar_click(wimp_pointer* pointer) {
 
 	if (tree->toolbar->editor) {
 		ro_gui_theme_toolbar_editor_click(tree->toolbar, pointer);
-		return true; 
+		return true;
 	}
 
 	switch (pointer->i) {
@@ -1156,9 +1161,9 @@ void ro_gui_tree_open(wimp_open *open) {
 	int width;
 	int height;
 	int toolbar_height = 0;
-	
+
 	tree = (struct tree *)ro_gui_wimp_event_get_user_data(open->w);
-	
+
 	if (!tree)
 		return;
 	if (tree->toolbar)
@@ -1264,7 +1269,7 @@ void ro_gui_tree_selection_drag_end(wimp_dragged *drag) {
 	os_error *error;
 	int x0, y0, x1, y1;
 	int toolbar_height = 0;
-	
+
 	if (ro_gui_tree_current_drag_tree->toolbar)
 		toolbar_height = ro_gui_theme_toolbar_height(
 				ro_gui_tree_current_drag_tree->toolbar);

@@ -17,6 +17,7 @@
 #include "oslib/osfile.h"
 #include "oslib/wimp.h"
 #include "netsurf/content/content.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/tree.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/menus.h"
@@ -48,10 +49,24 @@ struct tree *hotlist_tree;
 struct node *dialog_folder_node;
 struct node *dialog_entry_node;
 
+static const struct {
+	const char *url;
+	const char *msg_key;
+} default_entries[] = {
+	{ "http://netsurf.sourceforge.net/", "HotlistHomepage" },
+	{ "http://netsurf.sourceforge.net/builds/", "HotlistTestBuild" },
+	{ "http://netsurf.sourceforge.net/docs", "HotlistDocumentation" },
+	{ "http://sourceforge.net/tracker/?atid=464312&group_id=51719",
+			"HotlistBugTracker" },
+	{ "http://sourceforge.net/tracker/?atid=464315&group_id=51719",
+			"HotlistFeatureRequest" }
+};
+#define ENTRIES_COUNT (sizeof(default_entries) / sizeof(default_entries[0]))
+
 void ro_gui_hotlist_initialise(void) {
 	FILE *fp;
 	struct node *node;
-	struct url_content *data;
+	const struct url_data *data;
 
 	/* create our window */
 	hotlist_window = ro_gui_dialog_create("tree");
@@ -68,6 +83,8 @@ void ro_gui_hotlist_initialise(void) {
 	*/
 	fp = fopen(option_hotlist_path, "r");
 	if (!fp) {
+		int i;
+
 		hotlist_tree = calloc(sizeof(struct tree), 1);
 		if (!hotlist_tree) {
 			warn_user("NoMemory", 0);
@@ -83,32 +100,18 @@ void ro_gui_hotlist_initialise(void) {
 		node = tree_create_folder_node(hotlist_tree->root, "NetSurf");
 		if (!node)
 			node = hotlist_tree->root;
-		data = url_store_find("http://netsurf.sourceforge.net/");
-		if (data) {
-			tree_create_URL_node(node, data,
-				messages_get("HotlistHomepage"));
-		}
-		data = url_store_find("http://netsurf.sourceforge.net/builds/");
-		if (data) {
-			tree_create_URL_node(node, data,
-				messages_get("HotlistTestBuild"));
-		}
-		data = url_store_find("http://netsurf.sourceforge.net/docs");
-		if (data) {
-			tree_create_URL_node(node, data,
-				messages_get("HotlistDocumentation"));
-		}
-		data = url_store_find("http://sourceforge.net/tracker/"
-						"?atid=464312&group_id=51719");
-		if (data) {
-			tree_create_URL_node(node, data,
-				messages_get("HotlistBugTracker"));
-		}
-		data = url_store_find("http://sourceforge.net/tracker/"
-						"?atid=464315&group_id=51719");
-		if (data) {
-			tree_create_URL_node(node, data,
-				messages_get("HotlistFeatureRequest"));
+
+		for (i = 0; i != ENTRIES_COUNT; i++) {
+			data = urldb_get_url_data(default_entries[i].url);
+			if (!data)
+				urldb_add_url(default_entries[i].url);
+
+			data = urldb_get_url_data(default_entries[i].url);
+			if (data) {
+				tree_create_URL_node(node,
+					default_entries[i].url, data,
+					messages_get(default_entries[i].msg_key));
+			}
 		}
 		tree_initialise(hotlist_tree);
 	} else {
@@ -196,7 +199,7 @@ void ro_gui_hotlist_visited(struct content *content, struct tree *tree,
 			element = tree_find_element(node, TREE_ELEMENT_URL);
 			if ((element) && (!strcmp(element->text,
 					content->url))) {
-				tree_update_URL_node(node, NULL);
+				tree_update_URL_node(node, content->url, NULL);
 				tree_handle_node_changed(tree, node, true,
 						false);
 			}
@@ -270,7 +273,7 @@ bool ro_gui_hotlist_dialog_apply(wimp_w w) {
 	char *icon;
 	char *url = NULL;
 	url_func_result res = URL_FUNC_OK;
-	struct url_content *data;
+	const struct url_data *data;
 
 	/* get our data */
 	if (w == dialog_entry) {
@@ -305,16 +308,20 @@ bool ro_gui_hotlist_dialog_apply(wimp_w w) {
 	/* update/insert our data */
 	if (!node) {
 		if (url) {
-			data = url_store_find(url);
+			data = urldb_get_url_data(url);
+			if (!data)
+				urldb_add_url(url);
+
+			data = urldb_get_url_data(url);
 			if (!data) {
 				free(url);
 				free(title);
 				return false;
 			}
 			if (!data->title)
-				data->title = strdup(title);
+				urldb_set_url_title(url, title);
 			node = dialog_entry_node = tree_create_URL_node(
-					hotlist_tree->root, data, title);
+					hotlist_tree->root, url, data, title);
 
 		} else {
 			node = dialog_folder_node = tree_create_folder_node(
