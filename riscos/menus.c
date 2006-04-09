@@ -21,6 +21,7 @@
 #include "oslib/territory.h"
 #include "oslib/wimp.h"
 #include "netsurf/desktop/gui.h"
+#include "netsurf/desktop/history_core.h"
 #include "netsurf/render/box.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/render/form.h"
