@@ -35,6 +35,7 @@ struct gui_window {
 	GtkWidget *url_bar;
 	GtkWidget *drawing_area;
 	GtkWidget *status_bar;
+	GtkWidget *progress_bar;
 	GtkWidget *stop_button;
 	GtkWidget *back_button;
 	GtkWidget *forward_button;
@@ -109,7 +110,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	GtkWidget *url_bar;
 	GtkWidget *scrolled, *history_scrolled;
 	GtkWidget *drawing_area, *history_area;
-	GtkWidget *status_bar;
+	GtkWidget *status_box;
 
 	g = malloc(sizeof *g);
 	if (!g) {
@@ -233,16 +234,24 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_widget_show(history_area);
 	g->history_window->drawing_area = history_area;
 	
-	status_bar = gtk_statusbar_new();
-	gtk_box_pack_start(GTK_BOX(vbox), status_bar, FALSE, TRUE, 0);
-	gtk_widget_show(status_bar);
+	status_box = gtk_hbox_new(FALSE, 2);
+	gtk_box_pack_start(GTK_BOX(vbox), status_box, FALSE, TRUE, 3);
+	gtk_widget_show(status_box);
+
+	g->status_bar = gtk_label_new("");
+	gtk_box_pack_start(GTK_BOX(status_box), g->status_bar, FALSE, TRUE, 0);
+	gtk_widget_show(g->status_bar);
+
+	g->progress_bar = gtk_progress_bar_new();
+	gtk_progress_bar_set_pulse_step(g->progress_bar, 0.20);
+	gtk_widget_set_size_request(g->progress_bar, 64, 0);
+	gtk_box_pack_end(GTK_BOX(status_box), g->progress_bar, FALSE, FALSE, 0);
 
 	gtk_widget_show(window);
 
 	g->window = window;
 	g->url_bar = url_bar;
 	g->drawing_area = drawing_area;
-	g->status_bar = status_bar;
 	g->bw = bw;
 	g->current_pointer = GUI_POINTER_DEFAULT;
 
@@ -629,12 +638,7 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
-	guint context_id;
-
-	gtk_statusbar_pop(GTK_STATUSBAR(g->status_bar), 0);
-	context_id = gtk_statusbar_get_context_id(
-			GTK_STATUSBAR(g->status_bar), text);
-	gtk_statusbar_push(GTK_STATUSBAR(g->status_bar), context_id, text);
+	gtk_label_set_text(g->status_bar, text);
 }
 
 
@@ -720,13 +724,21 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 	gtk_entry_set_text(GTK_ENTRY(g->url_bar), url);
 }
 
+static void nsgtk_throb(void *p)
+{
+	struct gui_window *g = p;
+	gtk_progress_bar_pulse((struct gui_window *)(g)->progress_bar);
+	schedule(10, nsgtk_throb, g);
+}
 
 void gui_window_start_throbber(struct gui_window* g)
 {
 	gtk_widget_set_sensitive(g->stop_button, TRUE);
 	gtk_widget_set_sensitive(g->reload_button, FALSE);
+	gtk_widget_show(g->progress_bar);
 	schedule(100, gtk_perform_deferred_resize, g);
 	gui_window_update_back_forward(g);
+	schedule(10, nsgtk_throb, g);
 }
 
 
@@ -735,6 +747,8 @@ void gui_window_stop_throbber(struct gui_window* g)
 	gtk_widget_set_sensitive(g->stop_button, FALSE);
 	gtk_widget_set_sensitive(g->reload_button, TRUE);
 	gui_window_update_back_forward(g);
+	gtk_widget_hide(g->progress_bar);
+	schedule_remove(nsgtk_throb, g);
 }
 
 
