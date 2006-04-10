@@ -167,7 +167,7 @@ struct search_node {
 static void urldb_save_search_tree(struct search_node *root, FILE *fp);
 static void urldb_count_urls(const struct path_data *root, time_t expiry,
 		unsigned int *count);
-static void urldb_write_urls(const struct path_data *parent,
+static void urldb_write_paths(const struct path_data *parent,
 		const char *host, FILE *fp, char **path, int *path_alloc,
 		int *path_used, time_t expiry);
 
@@ -258,8 +258,6 @@ void urldb_load(const char *filename)
 	int length;
 	FILE *fp;
 
-	/** \todo optimise */
-
 	assert(filename);
 
 	LOG(("Loading URL file"));
@@ -277,7 +275,7 @@ void urldb_load(const char *filename)
 		LOG(("Unsupported URL file version."));
 		return;
 	}
-	if (version > 105) {
+	if (version > 106) {
 		LOG(("Unknown URL file version."));
 		return;
 	}
@@ -292,7 +290,8 @@ void urldb_load(const char *filename)
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
 			urls = atoi(s);
-			for (i = 0; i < (6 * urls); i++)
+			for (i = 0; i < ((version == 105 ? 6 : 8) * urls);
+					i++)
 				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 					break;
 			continue;
@@ -310,13 +309,34 @@ void urldb_load(const char *filename)
 		for (i = 0; i < urls; i++) {
 			struct path_data *p = NULL;
 
-			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
-				break;
-			length = strlen(s) - 1;
-			s[length] = '\0';
+			if (version == 105) {
+				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+					break;
+				length = strlen(s) - 1;
+				s[length] = '\0';
 
-			urldb_add_url(s);
-			p = urldb_find_url(s);
+				urldb_add_url(s);
+				p = urldb_find_url(s);
+			} else {
+				char scheme[64];
+				unsigned int port;
+
+				if (!fgets(scheme, sizeof scheme, fp))
+					break;
+				length = strlen(scheme) - 1;
+				scheme[length] = '\0';
+
+				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+					break;
+				port = atoi(s);
+
+				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+					break;
+				length = strlen(s) - 1;
+				s[length] = '\0';
+
+				p = urldb_add_path(scheme, port, h, s, NULL);
+			}
 
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
@@ -382,7 +402,7 @@ void urldb_save(const char *filename)
 	}
 
 	/* file format version number */
-	fprintf(fp, "105\n");
+	fprintf(fp, "106\n");
 
 	for (i = 0; i != NUM_SEARCH_TREES; i++) {
 		urldb_save_search_tree(search_trees[i], fp);
@@ -434,7 +454,7 @@ void urldb_save_search_tree(struct search_node *parent, FILE *fp)
 	if (path_count > 0) {
 		fprintf(fp, "%s\n%i\n", host, path_count);
 
-		urldb_write_urls(&parent->data->paths, host, fp,
+		urldb_write_paths(&parent->data->paths, host, fp,
 				&path, &path_alloc, &path_used, expiry);
 	}
 
@@ -466,7 +486,7 @@ void urldb_count_urls(const struct path_data *root, time_t expiry,
 }
 
 /**
- * Write URLs associated with a host
+ * Write paths associated with a host
  *
  * \param parent Root of (sub)tree to write
  * \param host Current host name
@@ -476,7 +496,7 @@ void urldb_count_urls(const struct path_data *root, time_t expiry,
  * \param path_used Used size of path
  * \param expiry Expiry time of URLs
  */
-void urldb_write_urls(const struct path_data *parent, const char *host,
+void urldb_write_paths(const struct path_data *parent, const char *host,
 		FILE *fp, char **path, int *path_alloc, int *path_used,
 		time_t expiry)
 {
@@ -491,10 +511,12 @@ void urldb_write_urls(const struct path_data *parent, const char *host,
 			/* expired */
 			return;
 
-		fprintf(fp, "%s://%s", parent->scheme, host);
+		fprintf(fp, "%s\n", parent->scheme);
 
 		if (parent->port)
-			fprintf(fp,":%d", parent->port);
+			fprintf(fp,"%d\n", parent->port);
+		else
+			fprintf(fp, "\n");
 
 		fprintf(fp, "%s\n", *path);
 
@@ -507,6 +529,8 @@ void urldb_write_urls(const struct path_data *parent, const char *host,
 #ifdef riscos
 		if (parent->thumb)
 			fprintf(fp, "%s\n", parent->thumb->filename);
+		else
+			fprintf(fp, "\n");
 #else
 		fprintf(fp, "\n");
 #endif
@@ -543,7 +567,7 @@ void urldb_write_urls(const struct path_data *parent, const char *host,
 
 		*path_used = len;
 
-		urldb_write_urls(p, host, fp, path, path_alloc, path_used,
+		urldb_write_paths(p, host, fp, path, path_alloc, path_used,
 				expiry);
 
 		/* restore path to its state on entry to this function */
