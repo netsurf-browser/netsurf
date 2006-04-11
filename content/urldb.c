@@ -318,7 +318,9 @@ void urldb_load(const char *filename)
 				length = strlen(s) - 1;
 				s[length] = '\0';
 
-				urldb_add_url(s);
+				if (!urldb_add_url(s)) {
+					LOG(("Failed inserting '%s'", s));
+				}
 				p = urldb_find_url(s);
 			} else {
 				char scheme[64], ports[6];
@@ -348,6 +350,11 @@ void urldb_load(const char *filename)
 
 				p = urldb_add_path(scheme, port, h, s, NULL,
 						url);
+				if (!p) {
+					LOG(("Failed inserting '%s'", url));
+					die("Memory exhausted whilst loading "
+							"URL file");
+				}
 			}
 
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
@@ -669,7 +676,6 @@ bool urldb_add_url(const char *url)
 	/* Get path entry */
 	p = urldb_add_path(scheme, port, h, plq, fragment, urlt);
 	if (!p) {
-
 		return false;
 	}
 
