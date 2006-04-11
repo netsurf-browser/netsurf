@@ -27,7 +27,7 @@
 
 #define MAXIMUM_VISIBLE_LINES 7
 
-static char **url_complete_matches = NULL;
+static const char **url_complete_matches = NULL;
 static int url_complete_matches_allocated = 0;
 static int url_complete_matches_available = 0;
 static char *url_complete_matched_string = NULL;
@@ -38,7 +38,7 @@ static bool url_complete_matches_reset = false;
 static char *url_complete_original_url = NULL;
 static bool url_complete_memory_exhausted = false;
 
-static char *url_complete_redraw[MAXIMUM_VISIBLE_LINES];
+static const char *url_complete_redraw[MAXIMUM_VISIBLE_LINES];
 static char url_complete_icon_null[] = "\0";
 static char url_complete_icon_sprite[12];
 static wimp_icon url_complete_icon;
@@ -160,14 +160,7 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key)
 		free(url_complete_matched_string);
 		url_complete_matched_string = match_url;
 		url_complete_original_url = NULL;
-		if (url_complete_matches) {
-			for (; url_complete_matches_available > 0;
-					url_complete_matches_available--)
-				free(url_complete_matches[
-					url_complete_matches_available - 1]);
-		} else {
-			url_complete_matches_available = 0;
-		}
+		url_complete_matches_available = 0;
 		url_complete_matches_selection = -1;
 		url_complete_keypress_selection = -1;
 
@@ -338,17 +331,16 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key)
  */
 bool url_complete_callback(const char *url)
 {
-	char **array_extend;
-	char *temp;
+	const char **array_extend;
 
 	url_complete_matches_available++;
 
 	if (url_complete_matches_available >
 			url_complete_matches_allocated) {
 
-		array_extend = (char **)realloc(url_complete_matches,
+		array_extend = (const char **)realloc(url_complete_matches,
 				(url_complete_matches_allocated + 64) *
-				sizeof(struct url_content *));
+				sizeof(char *));
 		if (!array_extend) {
 			url_complete_memory_exhausted = true;
 			return false;
@@ -357,13 +349,7 @@ bool url_complete_callback(const char *url)
 		url_complete_matches_allocated += 64;
 	}
 
-	temp = strdup(url);
-	if (!temp) {
-		url_complete_memory_exhausted = true;
-		return false;
-	}
-
-	url_complete_matches[url_complete_matches_available - 1] = temp;
+	url_complete_matches[url_complete_matches_available - 1] = url;
 
 	return true;
 }
@@ -496,12 +482,6 @@ bool ro_gui_url_complete_close(struct gui_window *g, wimp_i i)
 	currently_open = ((url_complete_parent) &&
 			(url_complete_matches_available > 0));
 
-	if (url_complete_matches) {
-		for (; url_complete_matches_available > 0;
-				url_complete_matches_available--)
-			free(url_complete_matches[
-					url_complete_matches_available - 1]);
-	}
 	free(url_complete_matches);
 	free(url_complete_matched_string);
 	free(url_complete_original_url);

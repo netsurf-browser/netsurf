@@ -894,7 +894,7 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 			f = e->next;
 
 			if (e->text) {
-				/* we don't free non-editable titles */
+				/* we don't free non-editable titles or URLs */
 				if (node->editable)
 					free(e->text);
 				else {
@@ -903,7 +903,8 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 						urldb_reset_url_visit_data(e->text);
 					}
 
-					if (e->data != TREE_ELEMENT_TITLE)
+					if (e->data != TREE_ELEMENT_TITLE &&
+						e->data != TREE_ELEMENT_URL)
 						free(e->text);
 				}
 			}
@@ -1033,7 +1034,7 @@ struct node *tree_create_URL_node(struct node *parent,
  * edited and should never be freed.
  *
  * \param parent      the node to link to
- * \param url         the URL (copied)
+ * \param url         the URL
  * \param data	      the URL data to use
  * \return the node created, or NULL for failure
  */
@@ -1043,16 +1044,12 @@ struct node *tree_create_URL_node_shared(struct node *parent,
 	struct node_element *element;
 	char *title;
 
-	assert(data);
-
-	/* If title isn't set, set it to the URL */
-	if (!data->title)
-		urldb_set_url_title(url, url);
+	assert(url && data);
 
 	if (data->title)
 		title = data->title;
 	else
-		return NULL;
+		title = url;
 	node = tree_create_leaf_node(parent, title);
 	if (!node)
 		return NULL;
@@ -1067,7 +1064,7 @@ struct node *tree_create_URL_node_shared(struct node *parent,
 	tree_create_node_element(node, TREE_ELEMENT_LAST_VISIT);
 	element = tree_create_node_element(node, TREE_ELEMENT_URL);
 	if (element)
-		element->text = strdup(url);
+		element->text = url;
 
 	tree_update_URL_node(node, url, data);
 	tree_recalculate_node(node, false);

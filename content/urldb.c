@@ -119,6 +119,7 @@ struct url_internal_data {
 };
 
 struct path_data {
+	char *url;		/**< Full URL */
 	char *scheme;		/**< URL scheme for data */
 	unsigned int port;	/**< Port number for data */
 	char *segment;		/**< Path segment for this node */
@@ -126,7 +127,7 @@ struct path_data {
 	char **fragment;	/**< Array of fragments */
 
 	struct bitmap *thumb;	/**< Thumbnail image of resource */
-	struct url_internal_data url;	/**< URL data for resource */
+	struct url_internal_data urld;	/**< URL data for resource */
 	struct auth_data auth;	/**< Authentication data for resource */
 	struct cookie *cookies;	/**< Cookies associated with resource */
 
@@ -173,17 +174,17 @@ static void urldb_write_paths(const struct path_data *parent,
 
 /* Iteration */
 static bool urldb_iterate_partial_host(struct search_node *root,
-		const char *prefix, bool (*callback)(const char *url));
+		const char *prefix, bool (*callback)(const char *url,
+		const struct url_data *data));
 static bool urldb_iterate_partial_path(const struct path_data *parent,
-		const char *host, const char *prefix,
-		char **path, int *path_alloc, int *path_used,
-		bool (*callback)(const char *url));
+		const char *prefix, bool (*callback)(const char *url,
+		const struct url_data *data));
 static bool urldb_iterate_entries_host(struct search_node *parent,
-		bool (*callback)(const char *url));
-static bool urldb_iterate_entries_path(const char *host, char **path,
-		int *path_alloc, int *path_used,
-		const struct path_data *parent,
-		bool (*callback)(const char *url));
+		bool (*callback)(const char *url,
+		const struct url_data *data));
+static bool urldb_iterate_entries_path(const struct path_data *parent,
+		bool (*callback)(const char *url,
+		const struct url_data *data));
 
 /* Insertion */
 static struct host_part *urldb_add_host_node(const char *part,
@@ -194,7 +195,8 @@ static struct path_data *urldb_add_path_node(const char *scheme,
 		struct path_data *parent);
 static struct path_data *urldb_add_path(const char *scheme,
 		unsigned int port, const struct host_part *host,
-		const char *path, const char *fragment);
+		const char *path, const char *fragment,
+		const char *url_no_frag);
 static int urldb_add_path_fragment_cmp(const void *a, const void *b);
 static struct path_data *urldb_add_path_fragment(struct path_data *segment,
 		const char *fragment);
@@ -251,6 +253,7 @@ void urldb_load(const char *filename)
 {
 #define MAXIMUM_URL_LENGTH 4096
 	char s[MAXIMUM_URL_LENGTH];
+	char host[256];
 	struct host_part *h;
 	int urls;
 	int i;
@@ -280,10 +283,10 @@ void urldb_load(const char *filename)
 		return;
 	}
 
-	while (fgets(s, MAXIMUM_URL_LENGTH, fp)) {
+	while (fgets(host, sizeof host, fp)) {
 		/* get the hostname */
-		length = strlen(s) - 1;
-		s[length] = '\0';
+		length = strlen(host) - 1;
+		host[length] = '\0';
 
 		/* skip data that has ended up with a host of '' */
 		if (length == 0) {
@@ -297,7 +300,7 @@ void urldb_load(const char *filename)
 			continue;
 		}
 
-		h = urldb_add_host(s);
+		h = urldb_add_host(host);
 		if (!h)
 			die("Memory exhausted whilst loading URL file");
 
@@ -318,7 +321,8 @@ void urldb_load(const char *filename)
 				urldb_add_url(s);
 				p = urldb_find_url(s);
 			} else {
-				char scheme[64];
+				char scheme[64], ports[6];
+				char url[64 + 3 + 256 + 6 + 4096 + 1];
 				unsigned int port;
 
 				if (!fgets(scheme, sizeof scheme, fp))
@@ -326,32 +330,40 @@ void urldb_load(const char *filename)
 				length = strlen(scheme) - 1;
 				scheme[length] = '\0';
 
-				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
+				if (!fgets(ports, sizeof ports, fp))
 					break;
-				port = atoi(s);
+				length = strlen(ports) - 1;
+				ports[length] = '\0';
+				port = atoi(ports);
 
 				if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 					break;
 				length = strlen(s) - 1;
 				s[length] = '\0';
 
-				p = urldb_add_path(scheme, port, h, s, NULL);
+				sprintf(url, "%s://%s%s%s%s", scheme, host,
+						(port ? ":" : ""),
+						(port ? ports : ""),
+						s);
+
+				p = urldb_add_path(scheme, port, h, s, NULL,
+						url);
 			}
 
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
 			if (p)
-				p->url.visits = (unsigned int)atoi(s);
+				p->urld.visits = (unsigned int)atoi(s);
 
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
 			if (p)
-				p->url.last_visit = (time_t)atoi(s);
+				p->urld.last_visit = (time_t)atoi(s);
 
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
 			if (p)
-				p->url.type = (content_type)atoi(s);
+				p->urld.type = (content_type)atoi(s);
 
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
@@ -371,9 +383,9 @@ void urldb_load(const char *filename)
 			length = strlen(s) - 1;
 			if (p && length > 0) {
 				s[length] = '\0';
-				p->url.title = malloc(length + 1);
-				if (p->url.title)
-					memcpy(p->url.title, s, length + 1);
+				p->urld.title = malloc(length + 1);
+				if (p->urld.title)
+					memcpy(p->urld.title, s, length + 1);
 			}
 		}
 	}
@@ -476,8 +488,8 @@ void urldb_count_urls(const struct path_data *root, time_t expiry,
 	const struct path_data *p;
 
 	if (!root->children) {
-		if ((root->url.last_visit > expiry) &&
-				(root->url.visits > 0))
+		if ((root->urld.last_visit > expiry) &&
+				(root->urld.visits > 0))
 			(*count)++;
 	}
 
@@ -506,8 +518,8 @@ void urldb_write_paths(const struct path_data *parent, const char *host,
 
 	if (!parent->children) {
 		/* leaf node */
-		if (!((parent->url.last_visit > expiry) &&
-				(parent->url.visits > 0)))
+		if (!((parent->urld.last_visit > expiry) &&
+				(parent->urld.visits > 0)))
 			/* expired */
 			return;
 
@@ -522,9 +534,9 @@ void urldb_write_paths(const struct path_data *parent, const char *host,
 
 		/** \todo handle fragments? */
 
-		fprintf(fp, "%i\n%i\n%i\n", parent->url.visits,
-				(int)parent->url.last_visit,
-				(int)parent->url.type);
+		fprintf(fp, "%i\n%i\n%i\n", parent->urld.visits,
+				(int)parent->urld.last_visit,
+				(int)parent->urld.type);
 
 #ifdef riscos
 		if (parent->thumb)
@@ -535,14 +547,14 @@ void urldb_write_paths(const struct path_data *parent, const char *host,
 		fprintf(fp, "\n");
 #endif
 
-		if (parent->url.title) {
-			char *s = parent->url.title;
+		if (parent->urld.title) {
+			char *s = parent->urld.title;
 			for (i = 0; s[i] != '\0'; i++)
 				if (s[i] < 32)
 					s[i] = ' ';
 			for (--i; ((i > 0) && (s[i] == ' ')); i--)
 					s[i] = '\0';
-			fprintf(fp, "%s\n", parent->url.title);
+			fprintf(fp, "%s\n", parent->urld.title);
 		} else
 			fprintf(fp, "\n");
 	}
@@ -586,30 +598,42 @@ bool urldb_add_url(const char *url)
 {
 	struct host_part *h;
 	struct path_data *p;
-	char *fragment = NULL, *host, *plq, *scheme, *colon;
+	char *fragment = NULL, *host, *plq, *scheme, *colon, *urlt;
 	unsigned short port;
 	url_func_result ret;
+
 	assert(url);
 
 	/** \todo consider file: URLs */
 
-	host = strchr(url, '#');
+	urlt = strdup(url);
+	if (!urlt)
+		return false;
+
+	host = strchr(urlt, '#');
 	if (host) {
+		*host = '\0';
 		fragment = strdup(host+1);
-		if (!fragment)
+		if (!fragment) {
+			free(urlt);
 			return false;
+		}
 	}
 
 	/* extract host */
 	ret = url_host(url, &host);
-	if (ret != URL_FUNC_OK)
+	if (ret != URL_FUNC_OK) {
+		free(fragment);
+		free(urlt);
 		return false;
+	}
 
 	/* extract path, leafname, query */
 	ret = url_plq(url, &plq);
 	if (ret != URL_FUNC_OK) {
 		free(host);
 		free(fragment);
+		free(urlt);
 		return false;
 	}
 
@@ -619,6 +643,7 @@ bool urldb_add_url(const char *url)
 		free(plq);
 		free(host);
 		free(fragment);
+		free(urlt);
 		return false;
 	}
 
@@ -637,18 +662,22 @@ bool urldb_add_url(const char *url)
 		free(plq);
 		free(host);
 		free(fragment);
+		free(urlt);
 		return false;
 	}
 
 	/* Get path entry */
-	p = urldb_add_path(scheme, port, h, plq, fragment);
+	p = urldb_add_path(scheme, port, h, plq, fragment, urlt);
 	if (!p) {
-		free(scheme);
-		free(plq);
-		free(host);
-		free(fragment);
+
 		return false;
 	}
+
+	free(scheme);
+	free(plq);
+	free(host);
+	free(fragment);
+	free(urlt);
 
 	return true;
 }
@@ -674,8 +703,8 @@ void urldb_set_url_title(const char *url, const char *title)
 	if (!temp)
 		return;
 
-	free(p->url.title);
-	p->url.title = temp;
+	free(p->urld.title);
+	p->urld.title = temp;
 }
 
 /**
@@ -694,7 +723,7 @@ void urldb_set_url_content_type(const char *url, content_type type)
 	if (!p)
 		return;
 
-	p->url.type = type;
+	p->urld.type = type;
 }
 
 /**
@@ -712,8 +741,8 @@ void urldb_update_url_visit_data(const char *url)
 	if (!p)
 		return;
 
-	p->url.last_visit = time(NULL);
-	p->url.visits++;
+	p->urld.last_visit = time(NULL);
+	p->urld.visits++;
 }
 
 /**
@@ -731,8 +760,8 @@ void urldb_reset_url_visit_data(const char *url)
 	if (!p)
 		return;
 
-	p->url.last_visit = (time_t)0;
-	p->url.visits = 0;
+	p->urld.last_visit = (time_t)0;
+	p->urld.visits = 0;
 }
 
 
@@ -752,7 +781,7 @@ const struct url_data *urldb_get_url_data(const char *url)
 	if (!p)
 		return NULL;
 
-	return (struct url_data *)&p->url;
+	return (struct url_data *)&p->urld;
 }
 
 /**
@@ -937,7 +966,8 @@ const struct bitmap *urldb_get_thumbnail(const char *url)
  * \param callback Callback function
  */
 void urldb_iterate_partial(const char *prefix,
-		bool (*callback)(const char *url))
+		bool (*callback)(const char *url,
+		const struct url_data *data))
 {
 	char host[256];
 	char buf[260]; /* max domain + "www." */
@@ -959,8 +989,7 @@ void urldb_iterate_partial(const char *prefix,
 	if (slash) {
 		/* if there's a slash in the input, then we can
 		 * assume that we're looking for a path */
-		char *path, *domain = host;
-		int path_alloc = 64, path_used = 2;
+		char *domain = host;
 
 		snprintf(host, sizeof host, "%.*s", slash - prefix, prefix);
 
@@ -984,17 +1013,8 @@ void urldb_iterate_partial(const char *prefix,
 				return;
 		}
 
-		path = malloc(path_alloc);
-		if (!path)
-			return;
+		urldb_iterate_partial_path(&h->paths, slash + 1, callback);
 
-		path[0] = '/';
-		path[1] = '\0';
-
-		urldb_iterate_partial_path(&h->paths, domain, slash + 1,
-				&path, &path_alloc, &path_used, callback);
-
-		free(path);
 	} else {
 		int len = strlen(prefix);
 
@@ -1026,13 +1046,10 @@ void urldb_iterate_partial(const char *prefix,
  * \return true to continue, false otherwise
  */
 bool urldb_iterate_partial_host(struct search_node *root, const char *prefix,
-		bool (*callback)(const char *url))
+		bool (*callback)(const char *url,
+		const struct url_data *data))
 {
 	int c;
-	const struct host_part *h;
-	char domain[256], *p, *end;
-	char *path;
-	int path_alloc = 64, path_used = 2;
 
 	assert(root && prefix && callback);
 
@@ -1055,33 +1072,11 @@ bool urldb_iterate_partial_host(struct search_node *root, const char *prefix,
 				callback))
 			return false;
 
-		/* Generate host string */
-		for (h = root->data, p = domain,
-				end = domain + sizeof domain;
-				h && h != &db_root && p < end;
-				h = h->parent) {
-			int written = snprintf(p, end - p, "%s%s", h->part,
-				(h->parent && h->parent->parent) ? "." : "");
-			if (written < 0)
-				return false;
-			p += written;
-		}
-
-		path = malloc(path_alloc);
-		if (!path)
-			return false;
-
-		path[0] = '/';
-		path[1] = '\0';
-
 		/* and extract all paths attached to this host */
-		if (!urldb_iterate_entries_path(domain, &path, &path_alloc,
-				&path_used, &root->data->paths, callback)) {
-			free(path);
+		if (!urldb_iterate_entries_path(&root->data->paths,
+				callback)) {
 			return false;
 		}
-
-		free(path);
 
 		if (!urldb_iterate_partial_host(root->right, prefix,
 				callback))
@@ -1095,22 +1090,16 @@ bool urldb_iterate_partial_host(struct search_node *root, const char *prefix,
  * Partial path iterator (internal)
  *
  * \param parent Root of (sub)tree to traverse
- * \param host Host string
  * \param prefix Prefix to match
- * \param path The built path up to this point
- * \param path_alloc Allocated size of path
- * \param path_used Used size of path
  * \param callback Callback function
  * \return true to continue, false otherwise
  */
 bool urldb_iterate_partial_path(const struct path_data *parent,
-		const char *host, const char *prefix,
-		char **path, int *path_alloc, int *path_used,
-		bool (*callback)(const char *url))
+		const char *prefix, bool (*callback)(const char *url,
+		const struct url_data *data))
 {
 	const struct path_data *p;
 	const char *slash, *end = prefix + strlen(prefix);
-	int pused = *path_used;
 	int c;
 
 	slash = strchr(prefix, '/');
@@ -1130,41 +1119,17 @@ bool urldb_iterate_partial_path(const struct path_data *parent,
 			break;
 
 		/* prefix matches so far */
-		int len = *path_used + strlen(p->segment) + 1;
-		if (*path_alloc < len) {
-			char *temp = realloc(*path,
-					(len > 64) ? len : *path_alloc + 64);
-			if (!temp)
-				return false;
-			*path = temp;
-			*path_alloc = (len > 64) ? len : *path_alloc + 64;
-		}
-
-		strcat(*path, p->segment);
-		if (p->children)
-			strcat(*path, "/");
-		else
-			len -= 1;
-
-		*path_used = len;
-
 		if (slash == end) {
 			/* we've run out of prefix, so all
 			 * paths below this one match */
-			if (!urldb_iterate_entries_path(host, path,
-					path_alloc, path_used, p, callback))
+			if (!urldb_iterate_entries_path(p, callback))
 				return false;
 		} else {
 			/* more prefix to go => recurse */
-			if (!urldb_iterate_partial_path(p, host, slash + 1,
-					path, path_alloc, path_used,
+			if (!urldb_iterate_partial_path(p, slash + 1,
 					callback))
 				return false;
 		}
-
-		/* restore path to that from input for next child */
-		*path_used = pused;
-		(*path)[pused - 1] = '\0';
 	}
 
 	return true;
@@ -1175,7 +1140,8 @@ bool urldb_iterate_partial_path(const struct path_data *parent,
  *
  * \param callback Function to callback for each entry
  */
-void urldb_iterate_entries(bool (*callback)(const char *url))
+void urldb_iterate_entries(bool (*callback)(const char *url,
+		const struct url_data *data))
 {
 	int i;
 
@@ -1196,42 +1162,18 @@ void urldb_iterate_entries(bool (*callback)(const char *url))
  * \return true to continue, false otherwise
  */
 bool urldb_iterate_entries_host(struct search_node *parent,
-		bool (*callback)(const char *url))
+		bool (*callback)(const char *url,
+		const struct url_data *data))
 {
-	char domain[256], *p, *end;
-	const struct host_part *h;
-	char *path;
-	int path_alloc = 64, path_used = 2;
-
 	if (parent == &empty)
 		return true;
 
 	if (!urldb_iterate_entries_host(parent->left, callback))
 		return false;
 
-	for (h = parent->data, p = domain, end = domain + sizeof domain;
-			h && h != &db_root && p < end; h = h->parent) {
-		int written = snprintf(p, end - p, "%s%s", h->part,
-				(h->parent && h->parent->parent) ? "." : "");
-		if (written < 0)
-			return false;
-		p += written;
-	}
-
-	path = malloc(path_alloc);
-	if (!path)
-		return false;
-
-	path[0] = '/';
-	path[1] = '\0';
-
-	if (!urldb_iterate_entries_path(domain, &path, &path_alloc,
-			&path_used, &parent->data->paths, callback)) {
-		free(path);
+	if (!urldb_iterate_entries_path(&parent->data->paths, callback)) {
 		return false;
 	}
-
-	free(path);
 
 	if (!urldb_iterate_entries_host(parent->right, callback))
 		return false;
@@ -1242,92 +1184,31 @@ bool urldb_iterate_entries_host(struct search_node *parent,
 /**
  * Path data iterator (internal)
  *
- * \param host Host component of output URI
- * \param path The built path up to this point
- * \param path_alloc Allocated size of path
- * \param path_used Used size of path
  * \param parent Root of subtree to iterate over
  * \param callback Callback function to call
  * \return true to continue, false otherwise
  */
-bool urldb_iterate_entries_path(const char *host, char **path,
-		int *path_alloc, int *path_used,
-		const struct path_data *parent,
-		bool (*callback)(const char *url))
+bool urldb_iterate_entries_path(const struct path_data *parent,
+		bool (*callback)(const char *url,
+		const struct url_data *data))
 {
 	const struct path_data *p;
-	int pused = *path_used;
 
 	if (!parent->children) {
 		/* leaf node */
-		int schemelen = strlen(parent->scheme);
-		int hostlen = strlen(host);
-		int prefixlen = schemelen + 3 /* :// */ +
-				hostlen + 6 /* :NNNNN */;
-		static char *url;
-		static int url_alloc;
-		int written;
 
-		if (url_alloc < *path_used + prefixlen + 2) {
-			char *temp = realloc(url, *path_used + prefixlen + 2);
-			if (!temp)
-				return false;
-			url = temp;
-			url_alloc = *path_used + prefixlen + 2;
-		}
-
-		written = sprintf(url, "%s://%s", parent->scheme, host);
-		if (written < 0) {
-			return false;
-		}
-
-		if (parent->port) {
-			written = sprintf(url + schemelen + 3 + hostlen,
-					":%d", parent->port);
-			if (written < 0) {
-				return false;
-			}
-			written += schemelen + 3 + hostlen;
-		}
-
-		written = sprintf(url + written, "%s", *path);
-		if (written < 0) {
-			return false;
-		}
+		assert(parent->url);
 
 		/** \todo handle fragments? */
 
-		if (!callback(url))
+		if (!callback(parent->url,
+				(const struct url_data *) &parent->urld))
 			return false;
 	}
 
 	for (p = parent->children; p; p = p->next) {
-		int len = *path_used + strlen(p->segment) + 1;
-		if (*path_alloc < len) {
-			char *temp = realloc(*path,
-				(len > 64) ? len : *path_alloc + 64);
-			if (!temp)
-				return false;
-			*path = temp;
-			*path_alloc = (len > 64) ? len : *path_alloc + 64;
-		}
-
-		strcat(*path, p->segment);
-		if (p->children) {
-			strcat(*path, "/");
-		} else {
-			len -= 1;
-		}
-
-		*path_used = len;
-
-		if (!urldb_iterate_entries_path(host, path, path_alloc,
-				path_used, p, callback))
+		if (!urldb_iterate_entries_path(p, callback))
 			return false;
-
-		/* restore path to its state on entry to this function */
-		*path_used = pused;
-		(*path)[pused - 1] = '\0';
 	}
 
 	return true;
@@ -1540,17 +1421,18 @@ struct path_data *urldb_add_path_node(const char *scheme, unsigned int port,
  * \param host Host tree node to attach to
  * \param path Absolute path to add
  * \param fragment URL fragment, or NULL
+ * \param url_no_frag URL, without fragment
  * \return Pointer to leaf node, or NULL on memory exhaustion
  */
 struct path_data *urldb_add_path(const char *scheme, unsigned int port,
 		const struct host_part *host, const char *path,
-		const char *fragment)
+		const char *fragment, const char *url_no_frag)
 {
 	struct path_data *d, *e;
 	char *buf;
 	char *segment, *slash;
 
-	assert(scheme && host && path);
+	assert(scheme && host && path && url_no_frag);
 
 	d = (struct path_data *) &host->paths;
 
@@ -1601,6 +1483,13 @@ struct path_data *urldb_add_path(const char *scheme, unsigned int port,
 	} while (1);
 
 	free(buf);
+
+	if (d && !d->url) {
+		/* Insert URL */
+		d->url = strdup(url_no_frag);
+		if (!d->url)
+			return NULL;
+	}
 
 	return d;
 }

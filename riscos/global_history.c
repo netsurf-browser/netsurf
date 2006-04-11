@@ -50,7 +50,8 @@ static void ro_gui_global_history_initialise_nodes(void);
 static void ro_gui_global_history_initialise_node(const char *title,
 		time_t base, int days_back);
 static struct node *ro_gui_global_history_find(const char *url);
-static bool global_history_iterate_callback(const char *url);
+static bool global_history_add_internal(const char *url,
+		const struct url_data *data);
 
 /* The history window, toolbar and plot origins */
 static wimp_w global_history_window;
@@ -119,21 +120,8 @@ void ro_gui_global_history_initialise(void)
 	}
 
 	global_history_init = true;
-	urldb_iterate_entries(global_history_iterate_callback);
+	urldb_iterate_entries(global_history_add_internal);
 	global_history_init = false;
-}
-
-/**
- * Callback for urldb_iterate_entries
- *
- * \param url The URL
- * \return true to continue iteration, false otherwise
- */
-bool global_history_iterate_callback(const char *url)
-{
-	global_history_add(url);
-
-	return true;
 }
 
 /**
@@ -267,19 +255,33 @@ int ro_gui_global_history_help(int x, int y)
  */
 void global_history_add(const char *url)
 {
-	int i, j;
 	const struct url_data *data;
+
+	data = urldb_get_url_data(url);
+	if (!data)
+		return;
+
+	global_history_add_internal(url, data);
+}
+
+/**
+ * Internal routine to actually perform global history addition
+ *
+ * \param url The URL to add
+ * \param data URL data associated with URL
+ * \return true (for urldb_iterate_entries)
+ */
+bool global_history_add_internal(const char *url,
+		const struct url_data *data)
+{
+	int i, j;
 	struct node *parent = NULL;
 	struct node *link;
 	struct node *node;
 	bool before = false;
 	int visit_date;
 
-	assert(url);
-
-	data = urldb_get_url_data(url);
-	if (!data)
-		return;
+	assert(url && data);
 
 	visit_date = data->last_visit;
 
@@ -309,7 +311,7 @@ void global_history_add(const char *url)
 
 	/* the entry is too old to care about */
 	if (!parent)
-		return;
+		return true;
 
 	/* find any previous occurance */
 	if (!global_history_init) {
@@ -326,7 +328,7 @@ void global_history_add(const char *url)
 				node, false, true);
 /*			ro_gui_tree_scroll_visible(hotlist_tree,
 					&node->data);
-*/			return;
+*/			return true;
 		}
 	}
 
@@ -339,6 +341,8 @@ void global_history_add(const char *url)
 		tree_handle_node_changed(global_history_tree, node,
 				true, false);
 	}
+
+	return true;
 }
 
 /**
@@ -359,7 +363,7 @@ struct node *ro_gui_global_history_find(const char *url)
 					node; node = node->next) {
 				element = tree_find_element(node,
 					TREE_ELEMENT_URL);
-				if ((element) && !strcmp(url, element->text))
+				if ((element) && (url == element->text))
 					return node;
 			}
 		}

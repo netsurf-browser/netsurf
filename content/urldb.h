@@ -54,10 +54,12 @@ const struct bitmap *urldb_get_thumbnail(const char *url);
 
 /* URL completion */
 void urldb_iterate_partial(const char *prefix,
-		bool (*callback)(const char *url));
+		bool (*callback)(const char *url,
+		const struct url_data *data));
 
 /* Iteration */
-void urldb_iterate_entries(bool (*callback)(const char *url));
+void urldb_iterate_entries(bool (*callback)(const char *url,
+		const struct url_data *data));
 
 /* Debug */
 void urldb_dump(void);
