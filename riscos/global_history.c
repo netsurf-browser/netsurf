@@ -363,7 +363,7 @@ struct node *ro_gui_global_history_find(const char *url)
 					node; node = node->next) {
 				element = tree_find_element(node,
 					TREE_ELEMENT_URL);
-				if ((element) && (url == element->text))
+				if ((element) && !strcmp(url, element->text))
 					return node;
 			}
 		}
