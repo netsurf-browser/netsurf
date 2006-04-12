@@ -300,6 +300,18 @@ void urldb_load(const char *filename)
 			continue;
 		}
 
+		if (version == 105) {
+			/* file:/ -> localhost */
+			if (strcasecmp(host, "file:/") == 0)
+				snprintf(host, sizeof host, "localhost");
+			else {
+				/* strip any port number */
+				char *colon = strrchr(host, ':');
+				if (colon)
+					*colon = '\0';
+			}
+		}
+
 		h = urldb_add_host(host);
 		if (!h)
 			die("Memory exhausted whilst loading URL file");
@@ -318,14 +330,34 @@ void urldb_load(const char *filename)
 				length = strlen(s) - 1;
 				s[length] = '\0';
 
-				if (!urldb_add_url(s)) {
-					LOG(("Failed inserting '%s'", s));
+				if (strncasecmp(s, "file:", 5) == 0) {
+					/* local file, so fudge insertion */
+					char url[7 + 4096];
+
+					snprintf(url, sizeof url,
+							"file://%s", s + 5);
+
+					p = urldb_add_path("file", 0, h,
+							s + 5, NULL, url);
+					if (!p) {
+						LOG(("Failed inserting '%s'",
+								url));
+						die("Memory exhausted "
+							"whilst loading "
+							"URL file");
+					}
+				} else {
+					if (!urldb_add_url(s)) {
+						LOG(("Failed inserting '%s'",
+								s));
+					}
+					p = urldb_find_url(s);
 				}
-				p = urldb_find_url(s);
 			} else {
 				char scheme[64], ports[6];
 				char url[64 + 3 + 256 + 6 + 4096 + 1];
 				unsigned int port;
+				bool is_file = false;
 
 				if (!fgets(scheme, sizeof scheme, fp))
 					break;
@@ -343,7 +375,14 @@ void urldb_load(const char *filename)
 				length = strlen(s) - 1;
 				s[length] = '\0';
 
-				sprintf(url, "%s://%s%s%s%s", scheme, host,
+				if (!strcasecmp(host, "localhost") &&
+						!strcasecmp(scheme, "file"))
+					is_file = true;
+
+				snprintf(url, sizeof url, "%s://%s%s%s%s",
+						scheme,
+						/* file URLs have no host */
+						(is_file ? "" : host),
 						(port ? ":" : ""),
 						(port ? ports : ""),
 						s);
@@ -598,7 +637,7 @@ void urldb_write_paths(const struct path_data *parent, const char *host,
 /**
  * Insert an URL into the database
  *
- * \param url URL to insert
+ * \param url Absolute URL to insert
  * \return true on success, false otherwise
  */
 bool urldb_add_url(const char *url)
@@ -610,8 +649,6 @@ bool urldb_add_url(const char *url)
 	url_func_result ret;
 
 	assert(url);
-
-	/** \todo consider file: URLs */
 
 	urlt = strdup(url);
 	if (!urlt)
@@ -663,7 +700,10 @@ bool urldb_add_url(const char *url)
 	}
 
 	/* Get host entry */
-	h = urldb_add_host(host);
+	if (strcasecmp(scheme, "file") == 0)
+		h = urldb_add_host("localhost");
+	else
+		h = urldb_add_host(host);
 	if (!h) {
 		free(scheme);
 		free(plq);
@@ -1203,6 +1243,10 @@ bool urldb_iterate_entries_path(const struct path_data *parent,
 	if (!parent->children) {
 		/* leaf node */
 
+		/* All leaf nodes in the path tree should have an URL
+		 * attached to them. If this is not the case, it indicates
+		 * that there's a bug in the file loader/URL insertion code.
+		 * Therefore, assert this here. */
 		assert(parent->url);
 
 		/** \todo handle fragments? */
@@ -1553,7 +1597,7 @@ struct path_data *urldb_add_path_fragment(struct path_data *segment,
 /**
  * Find an URL in the database
  *
- * \param url The URL to find
+ * \param url Absolute URL to find
  * \return Pointer to path data, or NULL if not found
  */
 struct path_data *urldb_find_url(const char *url)
@@ -1562,12 +1606,11 @@ struct path_data *urldb_find_url(const char *url)
 	struct path_data *p;
 	struct search_node *tree;
 	char *host, *plq, *scheme, *colon;
+	const char *domain;
 	unsigned short port;
 	url_func_result ret;
 
 	assert(url);
-
-	/** \todo consider file: URLs */
 
 	/* extract host */
 	ret = url_host(url, &host);
@@ -1597,10 +1640,16 @@ struct path_data *urldb_find_url(const char *url)
 		port = atoi(colon + 1);
 	}
 
-	if (*host >= '0' && *host <= '9')
+	/* file urls have no host, so manufacture one */
+	if (strcasecmp(scheme, "file") == 0)
+		domain = "localhost";
+	else
+		domain = host;
+
+	if (*domain >= '0' && *domain <= '9')
 		tree = search_trees[ST_IP];
-	else if (isalpha(*host))
-		tree = search_trees[ST_DN + tolower(*host) - 'a'];
+	else if (isalpha(*domain))
+		tree = search_trees[ST_DN + tolower(*domain) - 'a'];
 	else {
 		free(plq);
 		free(host);
@@ -1608,7 +1657,7 @@ struct path_data *urldb_find_url(const char *url)
 		return NULL;
 	}
 
-	h = urldb_search_find(tree, host);
+	h = urldb_search_find(tree, domain);
 	if (!h) {
 		free(plq);
 		free(host);

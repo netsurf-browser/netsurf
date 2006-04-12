@@ -43,8 +43,8 @@ void *plot = 0;
 #ifdef riscos
 void *ro_gui_current_redraw_gui = 0;
 const char *NETSURF_DIR = "<NetSurf$Dir>";
-char *default_stylesheet_url = "file:/<NetSurf$Dir>/Resources/CSS";
-char *adblock_stylesheet_url = "file:/<NetSurf$Dir>/Resources/AdBlock";
+char *default_stylesheet_url = "file:///<NetSurf$Dir>/Resources/CSS";
+char *adblock_stylesheet_url = "file:///<NetSurf$Dir>/Resources/AdBlock";
 #endif
 
 static void callback(content_msg msg, struct content *c, void *p1,

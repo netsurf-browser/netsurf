@@ -382,8 +382,8 @@ void gui_init(int argc, char** argv)
 	messages_load(path);
 	messages_load("NetSurf:Resources.LangNames");
 
-	default_stylesheet_url = strdup("file:/NetSurf:/Resources/CSS");
-	adblock_stylesheet_url = strdup("file:/NetSurf:/Resources/AdBlock");
+	default_stylesheet_url = strdup("file:///NetSurf:/Resources/CSS");
+	adblock_stylesheet_url = strdup("file:///NetSurf:/Resources/AdBlock");
 	if (!default_stylesheet_url || !adblock_stylesheet_url)
 		die("Failed initialising string constants.");
 
@@ -695,7 +695,7 @@ void gui_init2(int argc, char** argv)
 			LOG(("malloc failed"));
 			die("Insufficient memory for URL");
 		}
-		snprintf(url, 80, "file:/<NetSurf$Dir>/Docs/intro_%s",
+		snprintf(url, 80, "file:///<NetSurf$Dir>/Docs/intro_%s",
 			option_language);
 	}
 
@@ -1199,7 +1199,7 @@ bool ro_gui_icon_bar_click(wimp_pointer *pointer)
 			browser_window_create(option_homepage_url, NULL, 0);
 		} else {
 			snprintf(url, sizeof url,
-					"file:/<NetSurf$Dir>/Docs/intro_%s",
+					"file:///<NetSurf$Dir>/Docs/intro_%s",
 					option_language);
 			browser_window_create(url, NULL, 0);
 		}
@@ -1877,7 +1877,7 @@ void ro_msg_dataopen(wimp_message *message)
 			url = malloc(80);
 			if (url)
 				snprintf(url, 80,
-					"file:/<NetSurf$Dir>/Docs/intro_%s",
+					"file:///<NetSurf$Dir>/Docs/intro_%s",
 					option_language);
 		}
 		if (!url)
@@ -2028,9 +2028,9 @@ char *path_to_url(const char *path)
 		return 0;
 	}
 
-	strcpy(url, "file:");
-	__unixify(buffer, __RISCOSIFY_NO_REVERSE_SUFFIX, url + 5,
-			1 - spare + 5, 0);
+	strcpy(url, "file://");
+	__unixify(buffer, __RISCOSIFY_NO_REVERSE_SUFFIX, url + 7,
+			1 - spare + 3 /* 10 - "file://" */, 0);
 	free(buffer);
 	return url;
 }
@@ -2048,13 +2048,10 @@ char *url_to_path(const char *url)
 	char *temp_name, *r;
 	char *filename;
 
-	if (strncmp(url, "file:/", 5))
+	if (strncmp(url, "file:///", 8))
 		return NULL;
 
-	if (!strncmp(url, "file:///", 8))
-		temp_name = curl_unescape(url + 7, strlen(url) - 7);
-	else
-		temp_name = curl_unescape(url + 5, strlen(url) - 5);
+	temp_name = curl_unescape(url + 7, strlen(url) - 7);
 
 	if (!temp_name) {
 		warn_user("NoMemory", 0);
@@ -2063,7 +2060,7 @@ char *url_to_path(const char *url)
 
 	filename = malloc(strlen(temp_name) + 100);
 	if (!filename) {
-	  	curl_free(temp_name);
+		curl_free(temp_name);
 		warn_user("NoMemory", 0);
 		return NULL;
 	}
@@ -2128,7 +2125,7 @@ void ro_gui_open_help_page(const char *page)
 	int length;
 
 	if ((length = snprintf(url, sizeof url,
-			"file:/<NetSurf$Dir>/Docs/%s_%s",
+			"file:///<NetSurf$Dir>/Docs/%s_%s",
 			page, option_language)) >= 0 && length < (int)sizeof(url))
 		browser_window_create(url, NULL, 0);
 }

@@ -82,8 +82,35 @@ struct content * fetchcache(const char *url,
 	char *etag = 0;
 	time_t date = 0;
 
-	if ((url1 = strdup(url)) == NULL)
-		return NULL;
+	if (strncasecmp(url, "file:///", 8) &&
+			strncasecmp(url, "file:/", 6) == 0) {
+		/* Manipulate file URLs into correct format */
+		if (strncasecmp(url, "file://", 7) == 0) {
+			/* file://host/... */
+			char *slash = 0;
+
+			url1 = malloc(7 + strlen(url));
+			if (!url1)
+				return NULL;
+
+			strcpy(url1, "file://");
+			slash = strchr(url + 7, '/');
+			if (slash)
+				strcat(url1 + 7, slash);
+		} else {
+			/* file:/... */
+			url1 = malloc(7 + strlen(url));
+			if (!url1)
+				return NULL;
+
+			strcpy(url1, "file://");
+			strcat(url1 + 7, url + 5);
+		}
+	} else {
+		/* simply duplicate the URL */
+		if ((url1 = strdup(url)) == NULL)
+			return NULL;
+	}
 
 	/* strip fragment identifier */
 	if ((hash = strchr(url1, '#')) != NULL)

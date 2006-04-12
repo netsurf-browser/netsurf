@@ -1242,9 +1242,6 @@ bool fetch_process_headers(struct fetch *f)
 	if (strncmp(f->url, "file:///", 8) == 0)
 		url_path = curl_unescape(f->url + 7,
 				(int) strlen(f->url) - 7);
-	else if (strncmp(f->url, "file:/", 6) == 0)
-		url_path = curl_unescape(f->url + 5,
-				(int) strlen(f->url) - 5);
 
 	if (url_path && stat(url_path, &s) == 0) {
 		/* file: URL and file exists */
