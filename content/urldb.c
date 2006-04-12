@@ -838,7 +838,7 @@ const struct url_data *urldb_get_url_data(const char *url)
  */
 const char *urldb_get_auth_details(const char *url)
 {
-	struct path_data *p, *q;
+	struct path_data *p, *q = NULL;
 
 	assert(url);
 
@@ -849,6 +849,11 @@ const char *urldb_get_auth_details(const char *url)
 	if (!p)
 		return NULL;
 
+	/* Check for any auth details attached to this node */
+	if (p && p->auth.realm && p->auth.auth)
+		return p->auth.auth;
+
+	/* Now consider ancestors */
 	for (; p; p = p->parent) {
 		/* The parent path entry is stored hung off the
 		 * parent entry with an empty (not NULL) segment string.
@@ -906,14 +911,27 @@ void urldb_set_auth_details(const char *url, const char *realm,
 		const char *auth)
 {
 	struct path_data *p;
-	char *t1, *t2;
+	char *urlt, *t1, *t2;
 
 	assert(url && realm && auth);
 
-	/* add url, in case it's missing */
-	urldb_add_url(url);
+	urlt = strdup(url);
+	if (!urlt)
+		return;
 
-	p = urldb_find_url(url);
+	/* strip leafname from URL */
+	t1 = strrchr(urlt, '/');
+	if (t1) {
+		*(t1 + 1) = '\0';
+	}
+
+	/* add url, in case it's missing */
+	urldb_add_url(urlt);
+
+	p = urldb_find_url(urlt);
+
+	free(urlt);
+
 	if (!p)
 		return;
 
