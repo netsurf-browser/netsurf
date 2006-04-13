@@ -485,6 +485,9 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 		case CONTENT_HTML:
 			break;
 		case CONTENT_CSS:
+			clear_background = true;
+			scale = g->option.scale;
+			break;
 		case CONTENT_TEXTPLAIN:
 #ifdef WITH_JPEG
 		case CONTENT_JPEG:
