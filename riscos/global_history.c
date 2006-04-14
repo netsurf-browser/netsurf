@@ -285,26 +285,10 @@ bool global_history_add_internal(const char *url,
 
 	visit_date = data->last_visit;
 
+	/* find parent node */
 	for (i = 0; i < global_history_base_node_count; i++) {
 		if (global_history_base_node_time[i] <= visit_date) {
 			parent = global_history_base_node[i];
-			if (!parent->deleted)
-				break;
-			link = global_history_tree->root;
-			for (j = 0; j < i; j++) {
-				if (!global_history_base_node[j]->deleted) {
-					link = global_history_base_node[j];
-					before = true;
-					break;
-				}
-			}
-			tree_link_node(link, parent, before);
-			if (!global_history_init) {
-				tree_recalculate_node_positions(
-						global_history_tree->root);
-				tree_redraw_area(global_history_tree,
-						0, 0, 16384, 16384);
-			}
 			break;
 		}
 	}
@@ -312,6 +296,30 @@ bool global_history_add_internal(const char *url,
 	/* the entry is too old to care about */
 	if (!parent)
 		return true;
+
+	if (parent->deleted) {
+		/* parent was deleted, so find place to insert it */
+		link = global_history_tree->root;
+
+		for (j = global_history_base_node_count - 1; j >= 0; j--) {
+			if (!global_history_base_node[j]->deleted &&
+					global_history_base_node_time[j] >
+					global_history_base_node_time[i]) {
+				link = global_history_base_node[j];
+				before = true;
+				break;
+			}
+		}
+
+		tree_link_node(link, parent, before);
+
+		if (!global_history_init) {
+			tree_recalculate_node_positions(
+					global_history_tree->root);
+			tree_redraw_area(global_history_tree,
+					0, 0, 16384, 16384);
+		}
+	}
 
 	/* find any previous occurance */
 	if (!global_history_init) {
