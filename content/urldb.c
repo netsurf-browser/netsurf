@@ -312,13 +312,20 @@ void urldb_load(const char *filename)
 			}
 		}
 
-		h = urldb_add_host(host);
-		if (!h)
-			die("Memory exhausted whilst loading URL file");
-
+		/* read number of URLs */
 		if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 			break;
 		urls = atoi(s);
+
+		/* no URLs => try next host */
+		if (urls == 0) {
+			LOG(("No URLs for '%s'", host));
+			continue;
+		}
+
+		h = urldb_add_host(host);
+		if (!h)
+			die("Memory exhausted whilst loading URL file");
 
 		/* load the non-corrupt data */
 		for (i = 0; i < urls; i++) {
@@ -354,7 +361,7 @@ void urldb_load(const char *filename)
 					p = urldb_find_url(s);
 				}
 			} else {
-				char scheme[64], ports[6];
+				char scheme[64], ports[10];
 				char url[64 + 3 + 256 + 6 + 4096 + 1];
 				unsigned int port;
 				bool is_file = false;
