@@ -332,7 +332,8 @@ void browser_window_callback(content_msg msg, struct content *c,
 						c->title ? c->title : c->url);
 				urldb_update_url_visit_data(c->url);
 				urldb_set_url_content_type(c->url, c->type);
-				global_history_add(c->url);
+				/* This is safe as we've just added the URL */
+				global_history_add(urldb_get_url(c->url));
 			}
 			switch (c->type) {
 				case CONTENT_HTML:

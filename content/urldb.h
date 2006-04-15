@@ -38,6 +38,7 @@ void urldb_set_url_content_type(const char *url, content_type type);
 void urldb_update_url_visit_data(const char *url);
 void urldb_reset_url_visit_data(const char *url);
 const struct url_data *urldb_get_url_data(const char *url);
+const char *urldb_get_url(const char *url);
 
 /* Authentication modification / lookup */
 void urldb_set_auth_details(const char *url, const char *realm,

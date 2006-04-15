@@ -838,6 +838,25 @@ const struct url_data *urldb_get_url_data(const char *url)
 }
 
 /**
+ * Extract an URL from the db
+ *
+ * \param url URL to extract
+ * \return Pointer to database's copy of URL or NULL if not found
+ */
+const char *urldb_get_url(const char *url)
+{
+	struct path_data *p;
+
+	assert(url);
+
+	p = urldb_find_url(url);
+	if (!p)
+		return NULL;
+
+	return p->url;
+}
+
+/**
  * Look up authentication details in database
  *
  * \param url Absolute URL to search for
