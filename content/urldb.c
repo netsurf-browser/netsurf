@@ -1984,7 +1984,8 @@ int urldb_search_match_host(const struct host_part *a,
 	assert(a && b);
 
 	/* traverse up tree to root, comparing parts as we go. */
-	for (; a && b; a = a->parent, b = b->parent)
+	for (; a && a != &db_root && b && b != &db_root;
+			a = a->parent, b = b->parent)
 		if ((ret = strcasecmp(a->part, b->part)) != 0)
 			/* They differ => return the difference here */
 			return ret;
@@ -1993,10 +1994,10 @@ int urldb_search_match_host(const struct host_part *a,
 	 *    a) The path lengths differ
 	 * or b) The hosts are identical
 	 */
-	if (a && !b)
+	if (a && a != &db_root && (!b || b == &db_root))
 		/* len(a) > len(b) */
 		return 1;
-	else if (!a && b)
+	else if ((!a || a == &db_root) && b && b != &db_root)
 		/* len(a) < len(b) */
 		return -1;
 
@@ -2017,7 +2018,7 @@ int urldb_search_match_string(const struct host_part *a,
 	const char *end, *dot;
 	int plen, ret;
 
-	assert(a && b);
+	assert(a && a != &db_root && b);
 
 	if (*b >= '0' && *b <= '9') {
 		/* IP address */
@@ -2026,7 +2027,7 @@ int urldb_search_match_string(const struct host_part *a,
 
 	end = b + strlen(b);
 
-	while (b < end && a) {
+	while (b < end && a && a != &db_root) {
 		dot = strchr(b, '.');
 		if (!dot) {
 			/* last segment */
@@ -2059,7 +2060,7 @@ int urldb_search_match_string(const struct host_part *a,
 	if (a && a != &db_root && b >= end)
 		/* len(a) > len(b) */
 		return 1;
-	else if (!a && b < end)
+	else if ((!a || a == &db_root) && b < end)
 		/* len(a) < len(b) */
 		return -1;
 
@@ -2080,7 +2081,7 @@ int urldb_search_match_prefix(const struct host_part *a,
 	const char *end, *dot;
 	int plen, ret;
 
-	assert(a && b);
+	assert(a && a != &db_root && b);
 
 	if (*b >= '0' && *b <= '9') {
 		/* IP address */
@@ -2089,7 +2090,7 @@ int urldb_search_match_prefix(const struct host_part *a,
 
 	end = b + strlen(b);
 
-	while (b < end && a) {
+	while (b < end && a && a != &db_root) {
 		dot = strchr(b, '.');
 		if (!dot) {
 			/* last segment */
@@ -2125,7 +2126,7 @@ int urldb_search_match_prefix(const struct host_part *a,
 	if (a && a != &db_root && b >= end)
 		/* len(a) > len(b) => prefix matches */
 		return 0;
-	else if (!a && b < end)
+	else if ((!a || a == &db_root) && b < end)
 		/* len(a) < len(b) => prefix does not match */
 		return -1;
 
