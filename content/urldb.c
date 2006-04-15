@@ -1061,11 +1061,16 @@ void urldb_iterate_partial(const char *prefix,
 {
 	char host[256];
 	char buf[260]; /* max domain + "www." */
-	const char *slash;
+	const char *slash, *scheme_sep;
 	struct search_node *tree;
 	const struct host_part *h;
 
 	assert(prefix && callback);
+
+	/* strip scheme */
+	scheme_sep = strstr(prefix, "://");
+	if (scheme_sep)
+		prefix = scheme_sep + 3;
 
 	slash = strchr(prefix, '/');
 
