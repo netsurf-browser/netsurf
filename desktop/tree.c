@@ -918,7 +918,7 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings) {
 	} else {
 		node->deleted = true;
 	}
-	if (siblings)
+	if (siblings && next)
 		tree_delete_node(tree, next, true);
 
 	tree_recalculate_node_positions(tree->root);
