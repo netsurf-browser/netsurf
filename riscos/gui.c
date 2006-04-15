@@ -1526,9 +1526,11 @@ void ro_msg_dataload(wimp_message *message)
 	} else if ((hotlist_tree) && ((wimp_w)hotlist_tree->handle ==
 			message->data.data_xfer.w)) {
 		data = urldb_get_url_data(url);
-		if (!data)
+		if (!data) {
 			urldb_add_url(url);
-		data = urldb_get_url_data(url);
+			urldb_update_url_visit_data(url);
+			data = urldb_get_url_data(url);
+		}
 		if (data) {
 			ro_gui_tree_get_tree_coordinates(hotlist_tree,
 					message->data.data_xfer.pos.x,

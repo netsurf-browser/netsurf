@@ -103,10 +103,13 @@ void ro_gui_hotlist_initialise(void) {
 
 		for (i = 0; i != ENTRIES_COUNT; i++) {
 			data = urldb_get_url_data(default_entries[i].url);
-			if (!data)
+			if (!data) {
 				urldb_add_url(default_entries[i].url);
-
-			data = urldb_get_url_data(default_entries[i].url);
+				urldb_update_url_visit_data(
+						default_entries[i].url);
+				data = urldb_get_url_data(
+						default_entries[i].url);
+			}
 			if (data) {
 				tree_create_URL_node(node,
 					default_entries[i].url, data,
@@ -309,10 +312,11 @@ bool ro_gui_hotlist_dialog_apply(wimp_w w) {
 	if (!node) {
 		if (url) {
 			data = urldb_get_url_data(url);
-			if (!data)
+			if (!data) {
 				urldb_add_url(url);
-
-			data = urldb_get_url_data(url);
+				urldb_update_url_visit_data(url);
+				data = urldb_get_url_data(url);
+			}
 			if (!data) {
 				free(url);
 				free(title);

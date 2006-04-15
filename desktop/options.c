@@ -432,15 +432,20 @@ void options_load_tree_entry(xmlNode *li, struct node *directory) {
 	}
 
 	data = urldb_get_url_data(url);
-	if (!data)
+	if (!data) {
 		/* No entry in database, so add one */
 		urldb_add_url(url);
-
-	data = urldb_get_url_data(url);
+		/* and bump visit data */
+		urldb_update_url_visit_data(url);
+		/* now attempt to get url data */
+		data = urldb_get_url_data(url);
+	}
 	if (!data)
 		return;
+
 	if (!data->title)
 		urldb_set_url_title(url, title);
+
 	entry = tree_create_URL_node(directory, url, data, title);
 	xmlFree(url);
 	xmlFree(title);
