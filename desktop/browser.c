@@ -325,15 +325,17 @@ void browser_window_callback(content_msg msg, struct content *c,
 			browser_window_set_status(bw, c->status_message);
 			if (bw->history_add) {
 				history_add(bw->history, c, bw->frag_id);
-				if (!urldb_add_url(c->url))
-					LOG(("urldb_add_url failed"));
-
-				urldb_set_url_title(c->url,
+				if (urldb_add_url(c->url)) {
+					urldb_set_url_title(c->url,
 						c->title ? c->title : c->url);
-				urldb_update_url_visit_data(c->url);
-				urldb_set_url_content_type(c->url, c->type);
-				/* This is safe as we've just added the URL */
-				global_history_add(urldb_get_url(c->url));
+					urldb_update_url_visit_data(c->url);
+					urldb_set_url_content_type(c->url,
+							c->type);
+					/* This is safe as we've just
+					 * added the URL */
+					global_history_add(
+						urldb_get_url(c->url));
+				}
 			}
 			switch (c->type) {
 				case CONTENT_HTML:
