@@ -194,8 +194,8 @@ static int fetch_cert_verify_callback(X509_STORE_CTX *x509_ctx, void *parm);
 		} while (p != ring); \
 	} else sizevar = 0
 
-static void ns_internal_cache_handle(CURL *handle, char *hostname);
-static void ns_internal_dispatch_jobs(void);
+static void fetch_cache_handle(CURL *handle, char *hostname);
+static void fetch_dispatch_jobs(void);
 
 /**
  * Initialise the fetcher.
@@ -439,7 +439,7 @@ struct fetch * fetch_start(char *url, char *referer,
 
 	/* Dump us in the queue and ask the queue to run. */
 	RING_INSERT(queue_ring, fetch);
-	ns_internal_dispatch_jobs();
+	fetch_dispatch_jobs();
 	return fetch;
 
 failed:
@@ -465,7 +465,7 @@ failed:
  *
  * This will return whether or not the fetch was successfully initiated.
  */
-static bool ns_internal_initiate_fetch(struct fetch *fetch, CURL *handle)
+static bool fetch_initiate_fetch(struct fetch *fetch, CURL *handle)
 {
 	CURLcode code;
 	CURLMcode codem;
@@ -490,7 +490,7 @@ static bool ns_internal_initiate_fetch(struct fetch *fetch, CURL *handle)
 /**
  * Find a CURL handle to use to dispatch a job
  */
-static CURL *ns_internal_get_handle(char *host)
+static CURL *fetch_get_handle(char *host)
 {
 	struct cache_handle *h;
 	CURL *ret;
@@ -509,10 +509,10 @@ static CURL *ns_internal_get_handle(char *host)
 /**
  * Dispatch a single job
  */
-static bool ns_internal_dispatch_job(struct fetch *fetch)
+static bool fetch_dispatch_job(struct fetch *fetch)
 {
 	RING_REMOVE(queue_ring, fetch);
-	if (!ns_internal_initiate_fetch(fetch, ns_internal_get_handle(fetch->host))) {
+	if (!fetch_initiate_fetch(fetch, fetch_get_handle(fetch->host))) {
 		RING_INSERT(queue_ring, fetch); /* Put it back on the end of the queue */
 		return false;
 	} else {
@@ -527,7 +527,7 @@ static bool ns_internal_dispatch_job(struct fetch *fetch)
  * We don't check the overall dispatch size here because we're not called unless
  * there is room in the fetch queue for us.
  */
-static bool ns_internal_choose_and_dispatch(void)
+static bool fetch_choose_and_dispatch(void)
 {
 	struct fetch *queueitem;
 	queueitem = queue_ring;
@@ -539,7 +539,7 @@ static bool ns_internal_choose_and_dispatch(void)
 		RING_COUNTBYHOST(struct fetch, fetch_ring, countbyhost, queueitem->host);
 		if (countbyhost < option_max_fetchers_per_host) {
 			/* We can dispatch this item in theory */
-			return ns_internal_dispatch_job(queueitem);
+			return fetch_dispatch_job(queueitem);
 		}
 		queueitem = queueitem->r_next;
 	} while (queueitem != queue_ring);
@@ -549,7 +549,7 @@ static bool ns_internal_choose_and_dispatch(void)
 /**
  * Dispatch as many jobs as we have room to dispatch.
  */
-static void ns_internal_dispatch_jobs(void)
+static void fetch_dispatch_jobs(void)
 {
 	int all_active, all_queued;
 
@@ -558,7 +558,7 @@ static void ns_internal_dispatch_jobs(void)
 	RING_GETSIZE(struct fetch, fetch_ring, all_active);
 	while( all_queued && all_active < option_max_fetchers ) {
 		LOG(("%d queued, %d fetching", all_queued, all_active));
-		if (ns_internal_choose_and_dispatch()) {
+		if (fetch_choose_and_dispatch()) {
 			all_queued--;
 			all_active++;
 		} else {
@@ -572,7 +572,7 @@ static void ns_internal_dispatch_jobs(void)
  * Cache a CURL handle for the provided host (if wanted)
  *
  */
-static void ns_internal_cache_handle(CURL *handle, char *host)
+static void fetch_cache_handle(CURL *handle, char *host)
 {
 	struct cache_handle *h = 0;
 	int c;
@@ -738,7 +738,7 @@ void fetch_stop(struct fetch *f)
 				f->curl_handle);
 		assert(codem == CURLM_OK);
 		/* Put this curl handle into the cache if wanted. */
-		ns_internal_cache_handle(f->curl_handle, f->host);
+		fetch_cache_handle(f->curl_handle, f->host);
 		f->curl_handle = 0;
 		/* Remove this from the active set of fetches (if it's still there) */
 		RING_REMOVE(fetch_ring, f);
@@ -751,7 +751,7 @@ void fetch_stop(struct fetch *f)
 	if (!fetch_ring && !queue_ring)
 		fetch_active = false;
 	else if (queue_ring)
-		ns_internal_dispatch_jobs();
+		fetch_dispatch_jobs();
 }
 
 
