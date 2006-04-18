@@ -105,7 +105,7 @@ bool nsfont_position_in_string(const struct css_style *style,
 	g_object_unref(context);
 	pango_font_description_free(desc);
 
-	*char_offset = index + 1;
+	*char_offset = index;
 	*actual_x = PANGO_PIXELS(pos.x);
 
 	return true;
