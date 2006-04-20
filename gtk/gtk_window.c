@@ -18,6 +18,7 @@
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/desktop/options.h"
+#include "netsurf/desktop/textinput.h"
 #include "netsurf/gtk/gtk_gui.h"
 #include "netsurf/gtk/gtk_plotters.h"
 #include "netsurf/gtk/gtk_window.h"
@@ -47,6 +48,7 @@ struct gui_window {
 	float scale;
 	struct gtk_history_window *history_window;
 	GtkWidget *history_window_widget;
+	int caretx, carety, careth;
 };
 
 struct gtk_history_window {
@@ -93,8 +95,11 @@ static gboolean gui_window_button_press_event(GtkWidget *widget,
 		GdkEventButton *event, gpointer data);
 static void gui_window_size_allocate_event(GtkWidget *widget,
 		GtkAllocation *allocation, gpointer data);
-
+static gboolean gui_window_key_press_event(GtkWidget *widget,
+			GdkEventKey *event, gpointer data);
 static void gtk_perform_deferred_resize(void *p);
+
+static wchar_t gdkkey_to_nskey(GdkEventKey *key);
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone)
@@ -117,6 +122,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		warn_user("NoMemory", 0);
 		return 0;
 	}
+
+	/* a height of zero means no caret */
+	g->careth = 0;
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_default_size(GTK_WINDOW(window), 600, 600);
@@ -215,11 +223,16 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			GDK_EXPOSURE_MASK |
 			GDK_LEAVE_NOTIFY_MASK |
 			GDK_BUTTON_PRESS_MASK |
-			GDK_POINTER_MOTION_MASK);
+			GDK_POINTER_MOTION_MASK |
+			GDK_KEY_PRESS_MASK |
+			GDK_KEY_RELEASE_MASK);
+	GTK_WIDGET_SET_FLAGS(GTK_WIDGET(drawing_area),
+			GTK_CAN_FOCUS);
 	gtk_widget_modify_bg(drawing_area, GTK_STATE_NORMAL,
 			&((GdkColor) { 0, 0xffff, 0xffff, 0xffff }));
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled),
 			drawing_area);
+	
 	gtk_widget_show(drawing_area);
 	
 	history_area = gtk_drawing_area_new();
@@ -275,6 +288,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			G_CALLBACK(gui_window_button_press_event), g);
 	g_signal_connect(G_OBJECT(scrolled), "size_allocate",
 			G_CALLBACK(gui_window_size_allocate_event), g);
+	g_signal_connect(G_OBJECT(drawing_area), "key_press_event",
+		G_CALLBACK(gui_window_key_press_event), g);
 
 	g_signal_connect(G_OBJECT(zoomin_button), "clicked",
 			G_CALLBACK(gui_window_zoomin_button_event), g);
@@ -426,6 +441,10 @@ gboolean gui_window_expose_event(GtkWidget *widget,
 			event->area.y + event->area.height,
 			g->scale, 0xFFFFFF);
 
+	if (g->careth != 0)
+		plot.line(g->caretx, g->carety,
+			g->caretx, g->carety + g->careth, 1, 0, false, false);
+
 	g_object_unref(current_gc);
 #ifdef CAIRO_VERSION
 	cairo_destroy(current_cr);
@@ -499,6 +518,14 @@ gboolean gui_window_url_key_press_event(GtkWidget *widget,
 	return TRUE;
 }
 
+gboolean gui_window_key_press_event(GtkWidget *widget,
+					GdkEventKey *event,
+					gpointer data)
+{
+	struct gui_window *g = data;
+	wchar_t nskey = gdkkey_to_nskey(event);
+	browser_window_key_press(g->bw, nskey);
+}
 
 gboolean gui_window_configure_event(GtkWidget *widget,
 		GdkEventConfigure *event, gpointer data)
@@ -751,14 +778,34 @@ void gui_window_stop_throbber(struct gui_window* g)
 	schedule_remove(nsgtk_throb, g);
 }
 
+static void gui_window_redraw_caret(struct gui_window *g)
+{
+	if (g->careth == 0)
+		return;
+
+	gui_window_redraw(g, g->caretx, g->carety,
+				g->caretx, g->carety + g->careth);
+}
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 {
+	gui_window_redraw_caret(g);
+
+	g->caretx = x;
+	g->carety = y + 1;
+	g->careth = height;
+
+	gui_window_redraw_caret(g);
+
+	gtk_widget_grab_focus(g->drawing_area);
 }
 
 
 void gui_window_remove_caret(struct gui_window *g)
 {
+	gui_window_redraw_caret(g);
+
+	g->careth = 0;
 }
 
 
@@ -828,3 +875,42 @@ bool gui_window_copy_rectangle(struct gui_window *g, int sx, int sy,
 {
 	return false;
 }
+
+wchar_t gdkkey_to_nskey(GdkEventKey *key)
+{
+	/* this function will need to become much more complex to support
+	 * everything that the RISC OS version does.  But this will do for
+	 * now.  I hope.
+	 */
+
+  	switch (key->keyval)
+	{
+		case GDK_BackSpace:		return KEY_DELETE_LEFT;
+		case GDK_Delete:		return KEY_DELETE_RIGHT;
+		case GDK_Linefeed:		return 13;
+		case GDK_Return:		return 10;
+		case GDK_Left:			return KEY_LEFT;
+		case GDK_Right:			return KEY_RIGHT;
+		case GDK_Up:			return KEY_UP;
+		case GDK_Down:			return KEY_DOWN;
+
+		/* Modifiers - do nothing for now */
+		case GDK_Shift_L:
+		case GDK_Shift_R:
+		case GDK_Control_L:
+		case GDK_Control_R:
+		case GDK_Caps_Lock:
+		case GDK_Shift_Lock:
+		case GDK_Meta_L:
+		case GDK_Meta_R:
+		case GDK_Alt_L:
+		case GDK_Alt_R:
+		case GDK_Super_L:
+		case GDK_Super_R:
+		case GDK_Hyper_L:
+		case GDK_Hyper_R:		return 0;
+
+		default:			return key->keyval;
+	}
+}
+
