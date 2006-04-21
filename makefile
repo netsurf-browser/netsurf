@@ -22,7 +22,7 @@ OBJECTS_COMMON += css.o css_enum.o parser.o ruleset.o scanner.o	# css/
 OBJECTS_COMMON += box.o box_construct.o box_normalise.o form.o \
 	html.o html_redraw.o imagemap.o layout.o list.o \
 	table.o textplain.o					# render/
-OBJECTS_COMMON += messages.o talloc.o url.o utf8.o \
+OBJECTS_COMMON += filename.o messages.o talloc.o url.o utf8.o \
 	utils.o							# utils/
 OBJECTS_COMMON += options.o tree.o				# desktop/
 
@@ -34,7 +34,7 @@ OBJECTS_RISCOS += browser.o history_core.o netsurf.o selection.o \
 	textinput.o version.o					# desktop/
 OBJECTS_RISCOS += 401login.o artworks.o assert.o awrender.o bitmap.o \
 	buffer.o configure.o debugwin.o \
-	dialog.o download.o draw.o filename.o filetype.o font.o \
+	dialog.o download.o draw.o filetype.o font.o \
 	global_history.o gui.o help.o history.o hotlist.o image.o \
 	menus.o message.o mouseactions.o palettes.o plotters.o plugin.o print.o \
 	query.o save.o save_complete.o save_draw.o save_text.o \

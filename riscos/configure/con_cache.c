@@ -5,15 +5,16 @@
  * Copyright 2005 Richard Wilson <info@tinct.net>
  */
 
+#include "oslib/hourglass.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/filename.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/riscos/wimp_event.h"
 #include "netsurf/riscos/configure.h"
 #include "netsurf/riscos/configure/configure.h"
+#include "netsurf/utils/filename.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/utils.h"
 
@@ -63,7 +64,9 @@ bool ro_gui_options_cache_click(wimp_pointer *pointer) {
 					28, 0);
 			return true;
 		case CACHE_MAINTAIN_BUTTON:
-			ro_filename_flush();
+			xhourglass_on();
+			filename_flush();
+			xhourglass_off();
 			return true;
 	}
 	return false;

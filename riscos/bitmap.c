@@ -17,17 +17,18 @@
 #include <stdbool.h>
 #include <string.h>
 #include <swis.h>
+#include <unixlib/local.h>
 #include "oslib/osfile.h"
 #include "oslib/osspriteop.h"
 #include "netsurf/content/content.h"
 #include "netsurf/image/bitmap.h"
 #include "netsurf/riscos/bitmap.h"
-#include "netsurf/riscos/filename.h"
 #include "netsurf/riscos/image.h"
 #include "netsurf/riscos/options.h"
 #include "netsurf/riscos/palettes.h"
 #include "netsurf/riscos/sprite.h"
 #include "netsurf/riscos/tinct.h"
+#include "netsurf/utils/filename.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
 
@@ -82,6 +83,7 @@ struct bitmap_compressed_header {
 	unsigned int input_size;
 };
 
+char bitmap_unixname[256];
 char bitmap_filename[256];
 
 
@@ -209,7 +211,7 @@ struct bitmap *bitmap_create_file(char *file)
 	if (file[0] == '\0')
 		return NULL;
 
-	if (!ro_filename_claim(file))
+	if (!filename_claim(file))
 		return NULL;
 	bitmap = calloc(1, sizeof(struct bitmap));
 	if (!bitmap)
@@ -806,13 +808,20 @@ void bitmap_load_file(struct bitmap *bitmap)
 	int len;
 	fileswitch_object_type obj_type;
 	os_error *error;
+	char *r;
 	struct bitmap_compressed_header *bitmap_compressed;
 	osspriteop_header *bitmap_direct;
 
 	assert(bitmap->filename);
 
-	sprintf(bitmap_filename, "%s.%s", CACHE_FILENAME_PREFIX,
+	sprintf(bitmap_unixname, "%s/%s", TEMP_FILENAME_PREFIX,
 			bitmap->filename);
+	r = __riscosify(bitmap_unixname, 0, __RISCOSIFY_NO_SUFFIX,
+			bitmap_filename, 256, 0);
+	if (r == 0) {
+		LOG(("__riscosify failed"));
+		return;
+	}
 	error = xosfile_read_stamped_no_path(bitmap_filename,
 			&obj_type, 0, 0, &len, 0, 0);
 	if ((error) || (obj_type != fileswitch_IS_FILE))
@@ -879,7 +888,7 @@ void bitmap_load_file(struct bitmap *bitmap)
 void bitmap_save_file(struct bitmap *bitmap)
 {
 	unsigned int area_size;
-	char *filename;
+	char *filename, *r;
 	os_error *error;
 	struct bitmap_compressed_header *header;
 
@@ -897,10 +906,16 @@ void bitmap_save_file(struct bitmap *bitmap)
 	}
 
 	/* dump the data (compressed or otherwise) to disk */
-	filename = ro_filename_request();
+	filename = filename_request();
 	strcpy(bitmap->filename, filename);
-	sprintf(bitmap_filename, "%s.%s", CACHE_FILENAME_PREFIX,
+	sprintf(bitmap_unixname, "%s/%s", TEMP_FILENAME_PREFIX,
 			bitmap->filename);
+	r = __riscosify(bitmap_unixname, 0, __RISCOSIFY_NO_SUFFIX,
+			bitmap_filename, 256, 0);
+	if (r == 0) {
+		LOG(("__riscosify failed"));
+		return;
+	}
 	if (bitmap->compressed) {
 		header = (struct bitmap_compressed_header *)bitmap->compressed;
 		area_size = header->input_size +
@@ -940,7 +955,7 @@ void bitmap_save_file(struct bitmap *bitmap)
 void bitmap_delete_file(struct bitmap *bitmap)
 {
 	assert(bitmap->filename[0]);
-	ro_filename_release(bitmap->filename);
+	filename_release(bitmap->filename);
 	bitmap->filename[0] = 0;
 }
 

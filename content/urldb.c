@@ -425,6 +425,13 @@ void urldb_load(const char *filename)
 				/* ensure filename is 'XX.XX.XX.XX' */
 				if ((s[2] == '.') && (s[5] == '.') &&
 						(s[8] == '.')) {
+					s[2] = '/';
+					s[5] = '/';
+					s[8] = '/';
+					s[11] = '\0';
+					p->thumb = bitmap_create_file(s);
+				} else if ((s[2] == '/') && (s[5] == '/') &&
+						(s[8] == '/')) {
 					s[11] = '\0';
 					p->thumb = bitmap_create_file(s);
 				}

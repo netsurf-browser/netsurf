@@ -50,7 +50,6 @@
 #include "netsurf/riscos/bitmap.h"
 #include "netsurf/riscos/buffer.h"
 #include "netsurf/riscos/dialog.h"
-#include "netsurf/riscos/filename.h"
 #include "netsurf/riscos/global_history.h"
 #include "netsurf/riscos/gui.h"
 #include "netsurf/riscos/help.h"
@@ -78,6 +77,7 @@
 #include "netsurf/riscos/url_complete.h"
 #include "netsurf/riscos/wimp.h"
 #include "netsurf/riscos/wimp_event.h"
+#include "netsurf/utils/filename.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/messages.h"
 #include "netsurf/utils/url.h"
@@ -307,7 +307,7 @@ void gui_init(int argc, char** argv)
 			prev_sigs.sigterm == SIG_ERR)
 		die("Failed registering signal handlers");
 
-	ro_filename_initialise();
+	filename_initialise();
 
 #ifdef WITH_SAVE_COMPLETE
 	save_complete_init();
@@ -1300,9 +1300,9 @@ void ro_gui_keypress(wimp_key *key)
  */
 void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 {
-  	/* attempt automatic routing */
-  	if (ro_message_handle_message(event, message))
-  		return;
+	/* attempt automatic routing */
+	if (ro_message_handle_message(event, message))
+		return;
 
 	switch (message->action) {
 		case message_DATA_LOAD:
@@ -2139,8 +2139,9 @@ void ro_gui_open_help_page(const char *page)
 void ro_gui_view_source(struct content *content)
 {
 	os_error *error;
-  	char *temp_name;
-  	wimp_full_message_data_xfer message;
+	char full_name[256];
+	char *temp_name, *r;
+	wimp_full_message_data_xfer message;
 
 	if (!content || !content->source_data) {
 		warn_user("MiscError", "No document source");
@@ -2159,13 +2160,19 @@ void ro_gui_view_source(struct content *content)
 		   bother releasing it and simply allow it to be re-used next time NetSurf
 		   is started. The memory overhead from doing this is under 1 byte per
 		   filename. */
-		temp_name = ro_filename_request();
+		temp_name = filename_request();
 		if (!temp_name) {
-		  	warn_user("NoMemory", 0);
-		  	return;
+			warn_user("NoMemory", 0);
+			return;
 		}
-		snprintf(message.file_name, 212, "%s.%s",
-				CACHE_FILENAME_PREFIX, temp_name);
+		snprintf(full_name, 256, "%s/%s", TEMP_FILENAME_PREFIX, temp_name);
+		full_name[255] = '\0';	
+		r = __riscosify(full_name, 0, __RISCOSIFY_NO_SUFFIX, message.file_name,
+				212, 0);
+		if (r == 0) {
+			LOG(("__riscosify failed"));
+			return;
+		}
 		message.file_name[211] = '\0';
 		error = xosfile_save_stamped(message.file_name,
 				ro_content_filetype(content),
