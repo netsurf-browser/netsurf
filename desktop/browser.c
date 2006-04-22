@@ -108,7 +108,10 @@ void browser_window_create(const char *url, struct browser_window *clone,
 
 	bw->current_content = NULL;
 	bw->loading_content = NULL;
-	bw->history = history_create();
+	if (!clone)
+		bw->history = history_create();
+	else
+		bw->history = history_clone(clone->history);
 	bw->sel = selection_create(bw);
 	bw->throbbing = false;
 	bw->caret_callback = NULL;
