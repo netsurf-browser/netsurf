@@ -75,7 +75,7 @@ static void gui_window_back_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_forward_button_event(GtkWidget *widget, gpointer data);
 static void gui_window_update_back_forward(struct gui_window *g);
 
-static gboolean gui_history_expose_event(GtkWidget *widget, 
+static gboolean gui_history_expose_event(GtkWidget *widget,
 				     GdkEventExpose *event, gpointer data);
 static gboolean gui_history_motion_notify_event(GtkWidget *widget,
 					    GdkEventMotion *event, gpointer data);
@@ -129,22 +129,22 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_default_size(GTK_WINDOW(window), 600, 600);
 	gtk_window_set_title(GTK_WINDOW(window), "NetSurf");
-	
+
 	g->history_window = malloc(sizeof(struct gtk_history_window));
 	if (!g->history_window) {
 		warn_user("NoMemory", 0);
 		return 0;
 	}
 	g->history_window->g = g;
-	
+
 	history_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_transient_for(GTK_WINDOW(history_window), 
+	gtk_window_set_transient_for(GTK_WINDOW(history_window),
 				     GTK_WINDOW(window));
 	gtk_window_set_default_size(GTK_WINDOW(history_window), 400, 400);
 	gtk_window_set_title(GTK_WINDOW(history_window), "NetSurf History");
-	
+
 	g->history_window_widget = GTK_WIDGET(history_window);
-	
+
 	vbox = gtk_vbox_new(false, 0);
 	gtk_container_add(GTK_CONTAINER(window), vbox);
 	gtk_widget_show(vbox);
@@ -171,7 +171,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_widget_show(GTK_WIDGET(stop_button));
 	g->stop_button = GTK_WIDGET(stop_button);
 	gtk_widget_set_sensitive(g->stop_button, FALSE);
-	
+
 
 	reload_button = gtk_tool_button_new_from_stock(GTK_STOCK_REFRESH);
 	gtk_toolbar_insert(GTK_TOOLBAR(toolbar), reload_button, -1);
@@ -213,7 +213,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	scrolled = gtk_scrolled_window_new(0, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), scrolled, TRUE, TRUE, 0);
 	gtk_widget_show(scrolled);
-	
+
 	history_scrolled = gtk_scrolled_window_new(0, 0);
 	gtk_container_add(GTK_CONTAINER(history_window), history_scrolled);
 	gtk_widget_show(history_scrolled);
@@ -232,9 +232,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			&((GdkColor) { 0, 0xffff, 0xffff, 0xffff }));
 	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled),
 			drawing_area);
-	
+
 	gtk_widget_show(drawing_area);
-	
+
 	history_area = gtk_drawing_area_new();
 	gtk_widget_set_events(history_area,
 			      GDK_EXPOSURE_MASK |
@@ -246,7 +246,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					      history_area);
 	gtk_widget_show(history_area);
 	g->history_window->drawing_area = history_area;
-	
+
 	status_box = gtk_hbox_new(FALSE, 2);
 	gtk_box_pack_start(GTK_BOX(vbox), status_box, FALSE, TRUE, 3);
 	gtk_widget_show(status_box);
@@ -276,7 +276,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 #define NS_SIGNAL_CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
-	NS_SIGNAL_CONNECT(window, "destroy", gui_window_destroy_event, g);	
+	NS_SIGNAL_CONNECT(window, "destroy", gui_window_destroy_event, g);
 
 	g_signal_connect(G_OBJECT(drawing_area), "expose_event",
 			G_CALLBACK(gui_window_expose_event), g);
@@ -303,14 +303,14 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	NS_SIGNAL_CONNECT(g->back_button, "clicked", gui_window_back_button_event, g);
 	NS_SIGNAL_CONNECT(g->forward_button, "clicked", gui_window_forward_button_event, g);
 	NS_SIGNAL_CONNECT(g->reload_button, "clicked", gui_window_reload_button_event, g);
-        
+
 	NS_SIGNAL_CONNECT(history_button, "clicked", gui_window_history_button_event, g);
 	NS_SIGNAL_CONNECT(home_button, "clicked", gui_window_home_button_event, g);
-	
+
 	/* History window events */
-	NS_SIGNAL_CONNECT(history_area, "expose_event", 
+	NS_SIGNAL_CONNECT(history_area, "expose_event",
 			  gui_history_expose_event, g->history_window);
-	NS_SIGNAL_CONNECT(history_area, "motion_notify_event", 
+	NS_SIGNAL_CONNECT(history_area, "motion_notify_event",
 			  gui_history_motion_notify_event, g->history_window);
 	NS_SIGNAL_CONNECT(history_area, "button_press_event",
 			  gui_history_button_press_event, g->history_window);
@@ -410,7 +410,7 @@ void gui_window_home_button_event(GtkWidget *widget, gpointer data)
         if (g->bw->current_content && g->bw->current_content->url)
                 referer = g->bw->current_content->url;
 
-        browser_window_go(g->bw, addr, referer);
+        browser_window_go(g->bw, addr, referer, true);
 }
 
 gboolean gui_window_expose_event(GtkWidget *widget,
@@ -466,9 +466,9 @@ gboolean gui_history_expose_event(GtkWidget *widget,
 #endif
 	plot = nsgtk_plotters;
 	nsgtk_plot_set_scale(1.0);
-	
+
 	history_redraw(hw->g->bw->history);
-	
+
 	g_object_unref(current_gc);
 #ifdef CAIRO_VERSION
 	cairo_destroy(current_cr);
@@ -491,12 +491,12 @@ gboolean gui_history_button_press_event(GtkWidget *widget,
 					gpointer data)
 {
 	struct gtk_history_window *hw = data;
-	
+
 	LOG(("History click %d,%d", event->x, event->y));
-	
-	history_click(hw->g->bw, hw->g->bw->history, 
+
+	history_click(hw->g->bw, hw->g->bw->history,
 		      event->x, event->y, false);
-	
+
 	return TRUE;
 }
 
@@ -513,7 +513,7 @@ gboolean gui_window_url_key_press_event(GtkWidget *widget,
 		referer = g->bw->current_content->url;
 
 	browser_window_go(g->bw, gtk_entry_get_text(GTK_ENTRY(g->url_bar)),
-				referer);
+				referer, true);
 
 	return TRUE;
 }
