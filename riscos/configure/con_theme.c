@@ -144,7 +144,7 @@ bool ro_gui_options_theme_initialise(wimp_w w) {
 		ro_gui_set_icon_selected_state(theme_pane, toolbar->icon_number,
 				(toolbar->descriptor == theme_choice));
 	ro_gui_wimp_event_memorise(theme_pane);
-	ro_gui_wimp_event_set_help_prefix(w, "HelpThemePConfig");
+	ro_gui_wimp_event_set_help_prefix(theme_pane, "HelpThemePConfig");
 
 	ro_gui_wimp_event_register_mouse_click(w, ro_gui_options_theme_click);
 	ro_gui_wimp_event_register_cancel(w, THEME_CANCEL_BUTTON);
