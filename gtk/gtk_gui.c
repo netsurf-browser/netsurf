@@ -89,7 +89,7 @@ static char *find_resource(char *buf, const char *filename, const char *def)
 
 static char *path_to_url(const char *path)
 {
-	char *r = malloc(strlen(path) + 7);
+	char *r = malloc(strlen(path) + 7 + 1);
 
 	strcpy(r, "file://");
 	strcat(r, path);
