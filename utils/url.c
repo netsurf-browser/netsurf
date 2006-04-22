@@ -47,7 +47,7 @@ void url_init(void)
 			"(#([^[:space:]]*))?"
 			"[[:space:]]*$", REG_EXTENDED);
 	regcomp_wrapper(&url_up_re,
-			"/([^/]|[.][^./]|[^./][.]|[^./][^./]|[^/][^/][^/]+)?"
+			"/([^/]?|[.][^./]|[^./][.]|[^./][^./]|[^/][^/][^/]+)"
 			"/[.][.](/|$)",
 			REG_EXTENDED);
 }
@@ -863,15 +863,15 @@ int main(int argc, char *argv[])
 			printf("<== '%s'\n", s);
 			free(s);
 		}*/
-/*		if (1 != i) {
+		if (1 != i) {
 			res = url_join(argv[i], argv[1], &s);
 			if (res == URL_FUNC_OK) {
 				printf("'%s' + '%s' \t= '%s'\n", argv[1],
 						argv[i], s);
 				free(s);
 			}
-		}*/
-		printf("'%s' => ", argv[i]);
+		}
+/*		printf("'%s' => ", argv[i]);
 		res = url_nice(argv[i], &s, true);
 		if (res == URL_FUNC_OK) {
 			printf("'%s', ", s);
@@ -886,7 +886,7 @@ int main(int argc, char *argv[])
 		} else {
 			printf("failed %u, ", res);
 		}
-		printf("\n");
+		printf("\n");*/
 	}
 	return 0;
 }
