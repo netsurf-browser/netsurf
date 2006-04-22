@@ -19,7 +19,6 @@
 #include <sys/stat.h>
 #include "netsurf/utils/filename.h"
 #include "netsurf/utils/log.h"
-#include <unixlib/local.h>
 
 #define FULL_WORD (unsigned int)4294967295
 /* '0' + '0' * 10 */
