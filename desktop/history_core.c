@@ -63,8 +63,8 @@ struct history {
 	int height;
 };
 
-static bool history_clone_entry(struct history *history,
-		struct history_entry **start);
+static struct history_entry *history_clone_entry(struct history *history,
+		struct history_entry *entry);
 static void history_free_entry(struct history_entry *entry);
 static void history_go(struct browser_window *bw, struct history *history,
 		struct history_entry *entry, bool new_window);
@@ -120,7 +120,9 @@ struct history *history_clone(struct history *history)
 		return 0;
 	memcpy(new_history, history, sizeof *history);
 
-	if (!history_clone_entry(new_history, &new_history->start)) {
+	new_history->start = history_clone_entry(new_history,
+			new_history->start);
+	if (!history->start) {
 		warn_user("NoMemory", 0);
 		history_destroy(new_history);
 		return 0;
@@ -136,21 +138,22 @@ struct history *history_clone(struct history *history)
  * \param  history  opaque history structure, as returned by history_create()
  * \param  start    entry to clone
  *
- * \return  true on success, false otherwise.
+ * \return  a cloned history entry, or 0 on error
  */
 
-bool history_clone_entry(struct history *history, struct history_entry **start)
+struct history_entry *history_clone_entry(struct history *history,
+		struct history_entry *entry)
 {
 	struct history_entry *child;
-	struct history_entry *sibling;
-	struct history_entry *entry = *start;
+	struct history_entry *new_child;
+	struct history_entry *prev = NULL;
 	struct history_entry *new_entry;
 
 	/* clone the entry */
 	new_entry = malloc(sizeof *entry);
 	if (!new_entry) {
-	  	*start = 0;
-		return false;
+	  	history_destroy(history);
+		return 0;
 	}
 	memcpy(new_entry, entry, sizeof *entry);
 	new_entry->url = strdup(entry->url);
@@ -163,40 +166,30 @@ bool history_clone_entry(struct history *history, struct history_entry **start)
 		free(entry->url);
 		free(entry->title);
 		free(entry->frag_id);
-		*start = 0;
-		return false;
+	  	history_destroy(history);
+		return 0;
 	}
+	
+	/* update references */
 	if (history->current == entry)
 		history->current = new_entry;
-	*start = new_entry;
 
-	if (entry->back) {
-	  	/* update all entry->next refrences */
-	  	for (sibling = entry->back->forward; sibling->next;
-	  			sibling = sibling->next) {
-	  		if (sibling->next == entry)
-	  			sibling->next = new_entry;
-	  	}
-	  	/* update all entry->forward, entry->forward_pref, and
-	  	 * entry->forward_last references */
-	  	if (entry->back->forward == entry)
-	  		entry->back->forward = new_entry;
-	  	if (entry->back->forward_pref == entry)
-	  		entry->back->forward_pref = new_entry;
-	  	if (entry->back->forward_last == entry)
-	  		entry->back->forward_last = new_entry;
+	/* recurse for all children */
+	for (child = new_entry->forward; child; child = child->next) {
+		new_child = history_clone_entry(history, child);
+		assert(new_child);
+		new_child->back = entry;
+		if (prev)
+			prev->next = new_child;
+		if (new_entry->forward == child)
+			new_entry->forward = new_child;
+		if (new_entry->forward_pref == child)
+			new_entry->forward_pref = new_child;
+		if (new_entry->forward_last == child)
+			new_entry->forward_last = new_child;
+		prev = new_child;
 	}
-
-	for (child = entry->forward; child; child = child->next) {
-	  	child->back = new_entry;
-		if (!history_clone_entry(history, &child)) {
-		  	entry->next = 0;
-		  	entry->forward = 0;
-			return false;
-		}
-	}
-
-	return true;
+	return new_entry;
 }
 
 
