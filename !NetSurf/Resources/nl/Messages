@@ -691,6 +691,151 @@ HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
 HelpAppInfo:\TNetSurf information \w.|MSee the about page for the contributor list and credits.
 
 
+HelpConfigure:Configuration window
+HelpConfigure0:Cache configuration tool
+HelpConfigure1:Connection configuration tool
+HelpConfigure2:Content configuration tool
+HelpConfigure3:Font configuration tool
+HelpConfigure4:Home page configuration tool
+HelpConfigure5:Image configuration tool
+HelpConfigure6:Interface configuration tool
+HelpConfigure7:Language configuration tool
+HelpConfigure8:Memory configuration tool
+HelpConfigure9:Theme configuration tool
+HelpConfigure10:Security configuration tool
+
+HelpCacheConfig:Cache configuration window
+HelpCacheConfig3:Memory
+HelpCacheConfig4:Memory Dec
+HelpCacheConfig5:Memory Inc
+HelpCacheConfig10:Duration
+HelpCacheConfig11:Duration Dec
+HelpCacheConfig12:Duration Inc
+HelpCacheConfig14:Maintain
+HelpCacheConfig15:Default
+HelpCacheConfig16:Cancel
+HelpCacheConfig17:OK
+
+HelpConnectConfig:Connection configuration window
+HelpConnectConfig3:Proxy
+HelpConnectConfig4:Proxy GRight
+HelpConnectConfig6:Host
+HelpConnectConfig7:Port
+HelpConnectConfig10:Username
+HelpConnectConfig12:Password
+HelpConnectConfig16:Fetchers
+HelpConnectConfig17:Fetchers Dec
+HelpConnectConfig18:Fetchers Inc
+HelpConnectConfig20:Fetchers per host
+HelpConnectConfig21:Fetchers per host Dec
+HelpConnectConfig22:Fetchers per host Inc
+HelpConnectConfig24:Cached handles
+HelpConnectConfig25:Cached handles Dec
+HelpConnectConfig26:Cached handles Inc
+HelpConnectConfig27:Default
+HelpConnectConfig28:Cancel
+HelpConnectConfig29:OK
+
+HelpContentConfig:Content configuration window
+HelpContentConfig2:Block ads
+HelpContentConfig3:Block pop-ups
+HelpContentConfig4:No plug-ins
+HelpContentConfig5:Default
+HelpContentConfig6:Cancel
+HelpContentConfig7:OK
+
+HelpFontConfig:Font configuration window
+HelpFontConfig3:Sans-serif
+HelpFontConfig4:Sans-serif GRight
+HelpFontConfig6:Serif
+HelpFontConfig7:Serif GRight
+HelpFontConfig9:Monospace
+HelpFontConfig10:Monospace GRight
+HelpFontConfig12:Cursive
+HelpFontConfig13:Cursive GRight
+HelpFontConfig15:Fantasy
+HelpFontConfig16:Fantasy GRight
+HelpFontConfig18:Default
+HelpFontConfig19:Default GRight
+HelpFontConfig23:Default size
+HelpFontConfig24:Default size Dec
+HelpFontConfig25:Default size Inc
+HelpFontConfig28:Minimum size
+HelpFontConfig29:Minimum size Dec
+HelpFontConfig30:Minimum size Inc
+HelpFontConfig32:Default
+HelpFontConfig33:Cancel
+HelpFontConfig34:OK
+
+HelpHomeConfig:Home page configuration window
+HelpHomeConfig3:URL
+HelpHomeConfig4:URL GRight
+HelpHomeConfig5:Startup
+HelpHomeConfig6:Default
+HelpHomeConfig7:Cancel
+HelpHomeConfig8:OK
+
+HelpImageConfig:Image configuration window
+HelpImageConfig3:Foreground
+HelpImageConfig4:Foreground GRight
+HelpImageConfig6:Background
+HelpImageConfig7:Background GRight
+HelpImageConfig12:Speed
+HelpImageConfig13:Speed Dec
+HelpImageConfig14:Speed Inc
+HelpImageConfig16:Disable animations
+HelpImageConfig17:Default
+HelpImageConfig18:Cancel
+HelpImageConfig19:OK
+
+HelpInterfaceConfig:Interface configuration window
+HelpInterfaceConfig2:Strip extensions
+HelpInterfaceConfig3:Confirm overwrite
+HelpInterfaceConfig6:URL completion
+HelpInterfaceConfig7:History tooltip
+HelpInterfaceConfig8:Default
+HelpInterfaceConfig9:Cancel
+HelpInterfaceConfig10:OK
+
+HelpLanguageConfig:Language configuration window
+HelpLanguageConfig3:Interface
+HelpLanguageConfig4:Interface GRight
+HelpLanguageConfig6:Web pages
+HelpLanguageConfig7:Web pages GRight
+HelpLanguageConfig8:Default
+HelpLanguageConfig9:Cancel
+HelpLanguageConfig10:OK
+
+HelpMemoryConfig:Memory configuration window
+HelpMemoryConfig3:Direct
+HelpMemoryConfig4:Direct Inc
+HelpMemoryConfig5:Direct Dec
+HelpMemoryConfig7:Direct Auto
+HelpMemoryConfig9:Compressed
+HelpMemoryConfig10:Compressed Inc
+HelpMemoryConfig11:Compressed Dec
+HelpMemoryConfig13:Compressed Auto
+HelpMemoryConfig14:Default
+HelpMemoryConfig15:Cancel
+HelpMemoryConfig16:OK
+
+HelpSecurityConfig:Security configuration window
+HelpSecurityConfig2:Send referrer
+HelpSecurityConfig6:History duration
+HelpSecurityConfig7:History duration Inc
+HelpSecurityConfig8:History duration Dec
+HelpSecurityConfig10:Default
+HelpSecurityConfig11:Cancel
+HelpSecurityConfig12:OK
+
+HelpThemeConfig:Theme configuration window
+HelpThemeConfig2:Default
+HelpThemeConfig3:Cancel
+HelpThemeConfig4:OK
+
+HelpThemePConfig:Available themes
+
+
 # Configuration tokens
 # ====================
 #
