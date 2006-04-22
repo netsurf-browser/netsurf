@@ -36,7 +36,7 @@ OBJECTS_RISCOS += 401login.o artworks.o assert.o awrender.o bitmap.o \
 	buffer.o configure.o debugwin.o \
 	dialog.o download.o draw.o filetype.o font.o \
 	global_history.o gui.o help.o history.o hotlist.o image.o \
-	menus.o message.o mouseactions.o palettes.o plotters.o plugin.o print.o \
+	menus.o message.o palettes.o plotters.o plugin.o print.o \
 	query.o save.o save_complete.o save_draw.o save_text.o \
 	schedule.o search.o sprite.o sslcert.o textselection.o theme.o \
 	theme_install.o thumbnail.o treeview.o ucstables.o uri.o \

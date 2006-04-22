@@ -118,9 +118,6 @@ bool ro_gui_download_window_destroy(struct gui_download_window *dw, bool quit);
 bool ro_gui_download_prequit(void);
 bool ro_gui_download_window_keypress(struct gui_download_window *dw, wimp_key *key);
 
-/* in mouseactions.c */
-void ro_gui_mouse_action(struct gui_window *g);
-
 /* in 401login.c */
 #ifdef WITH_AUTH
 void ro_gui_401login_init(void);

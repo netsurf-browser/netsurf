@@ -17,7 +17,6 @@
 #include "netsurf/desktop/options.h"
 #include "netsurf/riscos/tinct.h"
 
-extern bool option_use_mouse_gestures;
 extern bool option_allow_text_selection;
 extern char *option_theme;
 extern char *option_language;
