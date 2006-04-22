@@ -705,7 +705,7 @@ bool ro_gui_dialog_openurl_apply(wimp_w w) {
 	url = ro_gui_get_icon_string(w, ICON_OPENURL_URL);
 	res = url_normalize(url, &url2);
 	if (res == URL_FUNC_OK) {
-		browser_window_create(url2, 0, 0);
+		browser_window_create(url2, 0, 0, true);
 		global_history_add_recent(url2);
 		free(url2);
 		return true;

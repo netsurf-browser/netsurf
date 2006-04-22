@@ -171,7 +171,7 @@ bool ro_gui_cert_apply(wimp_w w)
 
 	urldb_set_cert_permissions(session->url, true);
 
-	browser_window_go(session->bw, session->url, 0);
+	browser_window_go(session->bw, session->url, 0, true);
 
 	return true;
 }

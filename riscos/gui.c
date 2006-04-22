@@ -704,7 +704,7 @@ void gui_init2(int argc, char** argv)
 #endif
 
 	if (open_window)
-			browser_window_create(url, NULL, 0);
+			browser_window_create(url, NULL, 0, true);
 
 	free(url);
 }
@@ -1196,12 +1196,12 @@ bool ro_gui_icon_bar_click(wimp_pointer *pointer)
 
 	} else if (pointer->buttons == wimp_CLICK_SELECT) {
 		if (option_homepage_url && option_homepage_url[0]) {
-			browser_window_create(option_homepage_url, NULL, 0);
+			browser_window_create(option_homepage_url, NULL, 0, true);
 		} else {
 			snprintf(url, sizeof url,
 					"file:///<NetSurf$Dir>/Docs/intro_%s",
 					option_language);
-			browser_window_create(url, NULL, 0);
+			browser_window_create(url, NULL, 0, true);
 		}
 
 	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
@@ -1522,7 +1522,7 @@ void ro_msg_dataload(wimp_message *message)
 		return;
 
 	if (g) {
-		browser_window_go(g->bw, url, 0);
+		browser_window_go(g->bw, url, 0, true);
 	} else if ((hotlist_tree) && ((wimp_w)hotlist_tree->handle ==
 			message->data.data_xfer.w)) {
 		data = urldb_get_url_data(url);
@@ -1546,7 +1546,7 @@ void ro_msg_dataload(wimp_message *message)
 				ro_gui_tree_start_edit(hotlist_tree, &node->data, NULL);
 		}
 	} else {
-		browser_window_create(url, 0, 0);
+		browser_window_create(url, 0, 0, true);
 	}
 
 	/* send DataLoadAck */
@@ -1904,7 +1904,7 @@ void ro_msg_dataopen(wimp_message *message)
 		return;
 
 	/* create a new window with the file */
-	browser_window_create(url, NULL, 0);
+	browser_window_create(url, NULL, 0, true);
 
 	free(url);
 }
@@ -2129,7 +2129,7 @@ void ro_gui_open_help_page(const char *page)
 	if ((length = snprintf(url, sizeof url,
 			"file:///<NetSurf$Dir>/Docs/%s_%s",
 			page, option_language)) >= 0 && length < (int)sizeof(url))
-		browser_window_create(url, NULL, 0);
+		browser_window_create(url, NULL, 0, true);
 }
 
 /**

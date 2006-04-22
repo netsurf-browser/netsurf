@@ -704,7 +704,7 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 		browser_window_go(g->bw,
 				url_complete_matches[
 					url_complete_matches_selection],
-				0);
+				0, true);
 		global_history_add_recent(url_complete_matches[
 					url_complete_matches_selection]);
 		ro_gui_url_complete_close(NULL, 0);

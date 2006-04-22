@@ -122,7 +122,8 @@ struct history *history_clone(struct history *history)
 
 	if (!history_clone_entry(new_history, &new_history->start)) {
 		warn_user("NoMemory", 0);
-		return 0;	  
+		history_destroy(new_history);
+		return 0;
 	}
 
 	return new_history;
@@ -147,16 +148,24 @@ bool history_clone_entry(struct history *history, struct history_entry **start)
 
 	/* clone the entry */
 	new_entry = malloc(sizeof *entry);
-	if (!new_entry)
+	if (!new_entry) {
+	  	*start = 0;
 		return false;
+	}
 	memcpy(new_entry, entry, sizeof *entry);
 	new_entry->url = strdup(entry->url);
-	new_entry->frag_id = strdup(entry->frag_id);
+	if (entry->frag_id)
+		new_entry->frag_id = strdup(entry->frag_id);
 	new_entry->title = strdup(entry->title);
 	if (((entry->url) && (!new_entry->url)) ||
 			((entry->title) && (!new_entry->title)) ||
-			((entry->frag_id) && (!new_entry->frag_id)))
+			((entry->frag_id) && (!new_entry->frag_id))) {
+		free(entry->url);
+		free(entry->title);
+		free(entry->frag_id);
+		*start = 0;
 		return false;
+	}
 	if (history->current == entry)
 		history->current = new_entry;
 	*start = new_entry;
@@ -180,8 +189,11 @@ bool history_clone_entry(struct history *history, struct history_entry **start)
 
 	for (child = entry->forward; child; child = child->next) {
 	  	child->back = new_entry;
-		if (!history_clone_entry(history, &child))
+		if (!history_clone_entry(history, &child)) {
+		  	entry->next = 0;
+		  	entry->forward = 0;
 			return false;
+		}
 	}
 
 	return true;
@@ -384,6 +396,7 @@ void history_go(struct browser_window *bw, struct history *history,
 		struct history_entry *entry, bool new_window)
 {
 	char *url;
+	struct history_entry *current;
 
 	if (entry->frag_id) {
 		url = malloc(strlen(entry->url) + strlen(entry->frag_id) + 5);
@@ -396,11 +409,14 @@ void history_go(struct browser_window *bw, struct history *history,
 	else
 		url = entry->url;
 
-	if (new_window)
-		browser_window_create(url, bw, 0);
-	else {
+	if (new_window) {
+		current = history->current;
 		history->current = entry;
-		browser_window_go_post(bw, url, 0, 0, false, 0, false);
+		browser_window_create(url, bw, 0, false);
+		history->current = current;
+	} else {
+		history->current = entry;
+		browser_window_go(bw, url, 0, false);
 	}
 
 	if (entry->frag_id)

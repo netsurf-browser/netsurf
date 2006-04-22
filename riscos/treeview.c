@@ -1371,7 +1371,7 @@ void ro_gui_tree_move_drag_end(wimp_dragged *drag) {
 	  		/* \todo:send datasave for element */
 			g = ro_gui_window_lookup(pointer.w);
 			if (g)
-				browser_window_go(g->bw, element->text, 0);
+				browser_window_go(g->bw, element->text, 0, true);
 			return;
 	  	} else {
 	  	  	/* \todo:update save.c to handle multiple concurrent saves */
@@ -1431,7 +1431,7 @@ bool ro_gui_tree_launch_node(struct node *node) {
 
 	element = tree_find_element(node, TREE_ELEMENT_URL);
 	if (element) {
-		browser_window_create(element->text, NULL, 0);
+		browser_window_create(element->text, NULL, 0, true);
 		return true;
 	}
 

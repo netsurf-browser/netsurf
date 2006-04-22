@@ -191,7 +191,7 @@ bool ro_gui_401login_apply(wimp_w w)
 
 	free(auth);
 
-	browser_window_go(session->bwin, session->url, 0);
+	browser_window_go(session->bwin, session->url, 0, true);
 	return true;
 }
 

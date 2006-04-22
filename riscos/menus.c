@@ -628,7 +628,7 @@ void ro_gui_menu_selection(wimp_selection *selection) {
 		if (g) {
 		  	url = url_suggest_menu->entries[selection->items[0]].data.indirected_text.text;
 			gui_window_set_url(g, url);
-			browser_window_go(g->bw, url, 0);
+			browser_window_go(g->bw, url, 0, true);
 			global_history_add_recent(url);
 		}
 	} else if ((current_menu == gui_form_select_menu) &&
@@ -1388,7 +1388,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		case HELP_OPEN_ABOUT:
 			browser_window_create(
 					"file:///<NetSurf$Dir>/Docs/about",
-					0, 0);
+					0, 0, true);
 			return true;
 		case HELP_LAUNCH_INTERACTIVE:
 			ro_gui_interactive_help_start();
@@ -1446,7 +1446,7 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		case BROWSER_NEW_WINDOW:
 			if (!c)
 				return false;
-			browser_window_create(c->url, bw, 0);
+			browser_window_create(c->url, bw, 0, false);
 			return true;
 		case BROWSER_VIEW_SOURCE:
 			if (!c)
@@ -1500,12 +1500,12 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			if ((option_homepage_url) &&
 					(option_homepage_url[0])) {
 				browser_window_go(g->bw,
-						option_homepage_url, 0);
+						option_homepage_url, 0, true);
 			} else {
 				snprintf(url, sizeof url,
 						"file:///<NetSurf$Dir>/Docs/intro_%s",
 						option_language);
-				browser_window_go(g->bw, url, 0);
+				browser_window_go(g->bw, url, 0, true);
 			}
 			return true;
 		case BROWSER_NAVIGATE_BACK:

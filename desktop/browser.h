@@ -120,9 +120,9 @@ typedef enum {
 extern struct browser_window *current_redraw_browser;
 
 void browser_window_create(const char *url, struct browser_window *clone,
-		char *referer);
+		char *referer, bool history_add);
 void browser_window_go(struct browser_window *bw, const char *url,
-		char *referer);
+		char *referer, bool history_add);
 void browser_window_go_post(struct browser_window *bw, const char *url,
 		char *post_urlenc,
 		struct form_successful_control *post_multipart,

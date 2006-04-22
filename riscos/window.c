@@ -1076,7 +1076,7 @@ void ro_gui_window_launch_url(struct gui_window *g, const char *url)
 	res = url_normalize(url, &url_norm);
 	if (res == URL_FUNC_OK) {
 		gui_window_set_url(g, url_norm);
-		browser_window_go(g->bw, url_norm, 0);
+		browser_window_go(g->bw, url_norm, 0, true);
 		global_history_add_recent(url_norm);
 		free(url_norm);
 	}

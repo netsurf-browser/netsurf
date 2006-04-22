@@ -52,7 +52,7 @@ void ro_uri_message_received(uri_full_message_process* uri_message)
 
 	xuri_request_uri(0, uri_requested, uri_length, uri_handle, NULL);
 
-	browser_window_create(uri_requested, NULL, 0);
+	browser_window_create(uri_requested, NULL, 0, true);
 
 	free(uri_requested);
 }

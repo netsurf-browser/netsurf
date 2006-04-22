@@ -916,12 +916,12 @@ void plugin_url_access(wimp_message *message)
 				 * end up in an infinite loop of fetching
 				 * the same page
 				 */
-				browser_window_go(c->data.plugin.bw, url, 0);
+				browser_window_go(c->data.plugin.bw, url, 0, true);
 			}
 			else if (!option_block_popups &&
 					strcasecmp(window, "_blank") == 0) {
 				/* don't do this if popups are blocked */
-				browser_window_create(url, NULL, 0);
+				browser_window_create(url, NULL, 0, true);
 			}
 		}
 		else { /* POST request */

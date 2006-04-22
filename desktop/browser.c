@@ -97,9 +97,11 @@ static void browser_window_scroll_box(struct browser_window *bw,
  */
 
 void browser_window_create(const char *url, struct browser_window *clone,
-		char *referer)
+		char *referer, bool history_add)
 {
 	struct browser_window *bw;
+
+	assert(clone || history_add);
 
 	if ((bw = malloc(sizeof *bw)) == NULL) {
 		warn_user("NoMemory", 0);
@@ -126,7 +128,7 @@ void browser_window_create(const char *url, struct browser_window *clone,
 		return;
 	}
 	bw->refresh_interval = -1;
-	browser_window_go(bw, url, referer);
+	browser_window_go(bw, url, referer, history_add);
 }
 
 
@@ -141,9 +143,9 @@ void browser_window_create(const char *url, struct browser_window *clone,
  */
 
 void browser_window_go(struct browser_window *bw, const char *url,
-		char* referer)
+		char* referer, bool history_add)
 {
-	browser_window_go_post(bw, url, 0, 0, true, referer, false);
+	browser_window_go_post(bw, url, 0, 0, history_add, referer, false);
 }
 
 
@@ -475,15 +477,20 @@ void browser_window_callback(content_msg msg, struct content *c,
 void browser_window_refresh(void *p)
 {
 	struct browser_window *bw = p;
+	bool history_add = true;
 
 	assert(bw->current_content->status == CONTENT_STATUS_READY ||
 			bw->current_content->status == CONTENT_STATUS_DONE);
 
 	/* mark this content as invalid so it gets flushed from the cache */
 	bw->current_content->fresh = false;
+	if ((bw->current_content->url) &&
+			(bw->current_content->refresh) &&
+			(!strcmp(bw->current_content->url, bw->current_content->refresh)))
+		history_add = false;
 
 	browser_window_go(bw, bw->current_content->refresh,
-			bw->current_content->url);
+			bw->current_content->url, history_add);
 }
 
 /**
@@ -1073,7 +1080,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				if (!html_replace_object(page, i, url, 0, 0))
 					warn_user("NoMemory", 0);
 			} else {
-				browser_window_go(bw, url, c->url);
+				browser_window_go(bw, url, c->url, true);
                         }
 
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
@@ -1083,7 +1090,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 
 		} else if (mouse & BROWSER_MOUSE_CLICK_2) {
 			/* open link in new window */
-			browser_window_create(url, bw, c->url);
+			browser_window_create(url, bw, c->url, true);
 		}
 
 	} else {
@@ -1905,7 +1912,7 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 			res = url_join(url, base, &url1);
 			if (res != URL_FUNC_OK)
 				break;
-			browser_window_go(bw, url1, bw->current_content->url);
+			browser_window_go(bw, url1, bw->current_content->url, true);
 			break;
 
 		case method_POST_URLENC:
