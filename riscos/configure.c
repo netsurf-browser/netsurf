@@ -59,7 +59,7 @@ void ro_gui_configure_initialise(void) {
 			ro_gui_configure_open_window);
 	ro_gui_wimp_event_register_mouse_click(configure_window,
 			ro_gui_configure_click);
-	ro_gui_wimp_event_set_help_prefix(dialog_zoom, "HelpConfigure");
+	ro_gui_wimp_event_set_help_prefix(configure_window, "HelpConfigure");
 
 	/* add in our option windows */
 	ro_gui_configure_register("con_cache",
