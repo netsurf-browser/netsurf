@@ -372,7 +372,7 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 	if (box_length > 0) {
 		if (box->byte_offset >= start_idx &&
 			box->byte_offset + box_length <= end_idx) {
-	
+
 			/* fully enclosed */
 			*start_offset = 0;
 			*end_offset = box_length;
@@ -383,18 +383,18 @@ bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 			/* partly enclosed */
 			int offset = 0;
 			int len;
-	
+
 			if (box->byte_offset < start_idx)
 				offset = start_idx - box->byte_offset;
-	
+
 			len = box_length - offset;
-	
+
 			if (box->byte_offset + box_length > end_idx)
 				len = end_idx - (box->byte_offset + offset);
-	
+
 			*start_offset = offset;
 			*end_offset = offset + len;
-	
+
 			return true;
 		}
 	}
@@ -869,6 +869,9 @@ bool selection_save_text(struct selection *s, const char *path)
 		free(sv.block);
 		return false;
 	}
+
+	if (!sv.block)
+		return false;
 
 	ret = utf8_to_local_encoding(sv.block, sv.length, &result);
 	free(sv.block);

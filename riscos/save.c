@@ -692,7 +692,8 @@ bool ro_gui_save_content(struct content *c, char *path)
 			break;
 
 		case GUI_SAVE_TEXT_SELECTION:
-			selection_save_text(gui_save_selection, path);
+			if (!selection_save_text(gui_save_selection, path))
+				return false;
 			xosfile_set_type(path, 0xfff);
 			break;
 
