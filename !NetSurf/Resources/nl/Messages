@@ -691,7 +691,7 @@ HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
 HelpAppInfo:\TNetSurf information \w.|MSee the about page for the contributor list and credits.
 
 
-HelpConfigure:Configuration window
+HelpConfigure:\Tconfiguration \w for NetSurf
 HelpConfigure0:Cache configuration tool
 HelpConfigure1:Connection configuration tool
 HelpConfigure2:Content configuration tool
@@ -702,138 +702,139 @@ HelpConfigure6:Interface configuration tool
 HelpConfigure7:Language configuration tool
 HelpConfigure8:Memory configuration tool
 HelpConfigure9:Theme configuration tool
-HelpConfigure10:Security configuration tool
+HelpConfigure10:Security and Privacy configuration tool
 
-HelpCacheConfig:Cache configuration window
-HelpCacheConfig3:Memory
-HelpCacheConfig4:Memory Dec
-HelpCacheConfig5:Memory Inc
-HelpCacheConfig10:Duration
-HelpCacheConfig11:Duration Dec
-HelpCacheConfig12:Duration Inc
-HelpCacheConfig14:Maintain
-HelpCacheConfig15:Default
-HelpCacheConfig16:Cancel
-HelpCacheConfig17:OK
+HelpCacheConfig:\Tcache configuration \w.
+HelpCacheConfig3:\Tamount of memory to be used for caching content.
+HelpCacheConfig4:\Sreduce the amount of memory.
+HelpCacheConfig5:\Sincrease the amount of memory.
+HelpCacheConfig10:\Tlength of time items are kept in the cache.
+HelpCacheConfig11:\Sreduce the cache duration.
+HelpCacheConfig12:\Sincrease the cache duration.
+HelpCacheConfig14:\Sdelete any redundant files from NetSurf's disc cache.
+HelpCacheConfig15:\Sreset the Cache options back to their default values.
+HelpCacheConfig16:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpCacheConfig17:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-HelpConnectConfig:Connection configuration window
-HelpConnectConfig3:Proxy
-HelpConnectConfig4:Proxy GRight
-HelpConnectConfig6:Host
-HelpConnectConfig7:Port
-HelpConnectConfig10:Username
-HelpConnectConfig12:Password
-HelpConnectConfig16:Fetchers
-HelpConnectConfig17:Fetchers Dec
-HelpConnectConfig18:Fetchers Inc
-HelpConnectConfig20:Fetchers per host
-HelpConnectConfig21:Fetchers per host Dec
-HelpConnectConfig22:Fetchers per host Inc
-HelpConnectConfig24:Cached handles
-HelpConnectConfig25:Cached handles Dec
-HelpConnectConfig26:Cached handles Inc
-HelpConnectConfig27:Default
-HelpConnectConfig28:Cancel
-HelpConnectConfig29:OK
+HelpConnectConfig:\Tconnection configuration \w
+HelpConnectConfig3:\Tcurrently selected proxy type.|MUse the menu to select a proxy type.
+HelpConnectConfig4:\Sselect a proxy type.
+HelpConnectConfig6:You can enter the proxy's host name here.
+HelpConnectConfig8:You can enter the proxy's port number here.
+HelpConnectConfig10:You can enter a username for proxies that require authentication here.
+HelpConnectConfig12:You can enter a password for proxies that require authentication here.
+HelpConnectConfig16:\Tmaximum number of simultanious fetches that NetSurf will perform.
+HelpConnectConfig17:\Sreduce the maximum number of simultanious fetches.
+HelpConnectConfig18:\Sincrease the maximum number of simultanious fetches.
+HelpConnectConfig20:\Tmaximum number of simultanious fetches that NetSurf will perform per host.
+HelpConnectConfig21:\Sreduce the maximum number of simultanious fetches per host.
+HelpConnectConfig22:\Sincrease the maximum number of simultanious fetches per host.
+HelpConnectConfig24:\Tmaximum number of persistent connections.
+HelpConnectConfig25:\Sreduce the maximum number of persistent connections.
+HelpConnectConfig26:\Sincrease the maximum number of persistent connections.
+HelpConnectConfig27:\Sreset the Connection options back to their default values.
+HelpConnectConfig28:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpConnectConfig29:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-HelpContentConfig:Content configuration window
-HelpContentConfig2:Block ads
-HelpContentConfig3:Block pop-ups
-HelpContentConfig4:No plug-ins
-HelpContentConfig5:Default
-HelpContentConfig6:Cancel
-HelpContentConfig7:OK
+HelpContentConfig:\Tcontent configuration \w
+HelpContentConfig2:This indicates whether NetSurf will atempt to block advertisements on web pages|MIn rare circumstances, this option may cause valid content to be blocked too.
+HelpContentConfig3:This indicates whether NetSurf will stop web sites from automatically opening new windows on your desktop.
+HelpContentConfig4:This indicates whether NetSurf will allow external plug-ins to handle additional types of content, such as Flash.
+HelpContentConfig5:\Sreset the Content options back to their default values.
+HelpContentConfig6:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpContentConfig7:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-HelpFontConfig:Font configuration window
-HelpFontConfig3:Sans-serif
-HelpFontConfig4:Sans-serif GRight
-HelpFontConfig6:Serif
-HelpFontConfig7:Serif GRight
-HelpFontConfig9:Monospace
-HelpFontConfig10:Monospace GRight
-HelpFontConfig12:Cursive
-HelpFontConfig13:Cursive GRight
-HelpFontConfig15:Fantasy
-HelpFontConfig16:Fantasy GRight
-HelpFontConfig18:Default
-HelpFontConfig19:Default GRight
-HelpFontConfig23:Default size
-HelpFontConfig24:Default size Dec
-HelpFontConfig25:Default size Inc
-HelpFontConfig28:Minimum size
-HelpFontConfig29:Minimum size Dec
-HelpFontConfig30:Minimum size Inc
-HelpFontConfig32:Default
-HelpFontConfig33:Cancel
-HelpFontConfig34:OK
+HelpFontConfig:\font configuration \w
+HelpFontConfig3:\Tcurrently selected sans-serif font.|MNetSurf will use this font wherever a web page specifies a sans-serif typeface.
+HelpFontConfig4:\Sselect a sans-serif font.
+HelpFontConfig6:\Tcurrently selected serif font.|MNetSurf will use this font wherever a web page specifies a serif typeface.
+HelpFontConfig7:\Sselect a sans-serif font.
+HelpFontConfig9:\Tcurrently selected monospace font.|MNetSurf will use this font wherever a web page specifies a monospace typeface.
+HelpFontConfig10:\Sselect a monospace font.
+HelpFontConfig12:\Tcurrently selected cursive font.|MNetSurf will use this font wherever a web page specifies a cursive typeface.
+HelpFontConfig13:\Sselect a cursive font.
+HelpFontConfig15:\Tcurrently selected fantasy font.|MNetSurf will use this font wherever a web page specifies a fantasy typeface.
+HelpFontConfig16:\Sselect a fantasy font.
+HelpFontConfig18:\Tcurrently selected font family.|MNetSurf will use this wherever a web page does not specify a typeface.
+HelpFontConfig19:\Sselect a default font family.
+HelpFontConfig23:You can enter a default font size here.|MNetSurf will use this wherever a web page does not specify a font size of its own.
+HelpFontConfig24:\Sreduce the default font size.
+HelpFontConfig25:\Sincrease the default font size.
+HelpFontConfig28:You can enter a minimum font size here.|MNetSurf will not allow web pages to display smaller text than this.
+HelpFontConfig29:\Sreduce the minimum font size.
+HelpFontConfig30:\Sincrease the minimum font size.
+HelpFontConfig32:\Sreset the Font options back to their default values.
+HelpFontConfig33:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpFontConfig34:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-HelpHomeConfig:Home page configuration window
-HelpHomeConfig3:URL
-HelpHomeConfig4:URL GRight
-HelpHomeConfig5:Startup
-HelpHomeConfig6:Default
-HelpHomeConfig7:Cancel
-HelpHomeConfig8:OK
+HelpHomeConfig:\Thome page configuration \w
+HelpHomeConfig3:You can enter a default home page address here.
+HelpHomeConfig4:\Sselect a recently typed URL.|MThese addresses have recently been typed into a NetSurf browser \w's URL bar.
+HelpHomeConfig5:This indicates whether NetSurf will open a browser \w on start-up.
+HelpHomeConfig6:\Sreset the Home page options back to their default values.
+HelpHomeConfig7:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpHomeConfig8:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-HelpImageConfig:Image configuration window
-HelpImageConfig3:Foreground
-HelpImageConfig4:Foreground GRight
-HelpImageConfig6:Background
-HelpImageConfig7:Background GRight
-HelpImageConfig12:Speed
-HelpImageConfig13:Speed Dec
-HelpImageConfig14:Speed Inc
-HelpImageConfig16:Disable animations
-HelpImageConfig17:Default
-HelpImageConfig18:Cancel
-HelpImageConfig19:OK
+HelpImageConfig:\Timage configuration \w
+HelpImageConfig3:\Tcurrently selected foreground image quality.
+HelpImageConfig4:\Sselect a foreground image quality setting.|MError diffused provides the highest quality.
+HelpImageConfig6:\Tcurrently selected background image quality.
+HelpImageConfig7:\Sselect a background image quality setting.|MError diffused provides the highest quality.
+HelpImageConfig8:\Timage quality preview image.|MThe optimum results are achived with both foreground and background image quality set to error diffused.|MThe user guide provides more information on the implications of these options.
+HelpImageConfig12:You can enter the minimum time between animation frames here.|MA very low setting can cause your computer to slow down when rapid animations are displayed and is not suitable for slow computers.
+HelpImageConfig13:\Sreduce the minimum time between animation frames.
+HelpImageConfig14:\Sincrease the minimum time between animation frames.
+HelpImageConfig16:This indicates whether NetSurf will disable animations on web pages.|MWhen animations are disabled, NetSurf will show the first frame as a static image.
+HelpImageConfig17:\Sreset the Image options back to their default values.
+HelpImageConfig18:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpImageConfig19:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-HelpInterfaceConfig:Interface configuration window
-HelpInterfaceConfig2:Strip extensions
-HelpInterfaceConfig3:Confirm overwrite
-HelpInterfaceConfig6:URL completion
-HelpInterfaceConfig7:History tooltip
-HelpInterfaceConfig8:Default
-HelpInterfaceConfig9:Cancel
-HelpInterfaceConfig10:OK
+HelpInterfaceConfig:\Tinterface configuration \w
+HelpInterfaceConfig2:This indicates whether NetSurf will strip file extensions when saving files to disc.
+HelpInterfaceConfig3:This indicates whether NetSurf will ask for confirmation before overwriting files of the same name.
+HelpInterfaceConfig6:This indicates whether NetSurf's URL suggestion feature is enabled.|MURL suggestion shows options for completing URLs as you type into NetSurf's URL bar.
+HelpInterfaceConfig7:This indicates whether the URL for the item under the pointer in NetSurf's local history \w will be displayed.
+HelpInterfaceConfig8:\Sreset the Interface options back to their default values.
+HelpInterfaceConfig9:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpInterfaceConfig10:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-HelpLanguageConfig:Language configuration window
-HelpLanguageConfig3:Interface
-HelpLanguageConfig4:Interface GRight
-HelpLanguageConfig6:Web pages
-HelpLanguageConfig7:Web pages GRight
-HelpLanguageConfig8:Default
-HelpLanguageConfig9:Cancel
-HelpLanguageConfig10:OK
+HelpLanguageConfig:\Tlanguage configuration \w
+HelpLanguageConfig3:\Tcurrently selected interface language.|MThe interface language is the language used for NetSurf's messages and dialogue boxes.
+HelpLanguageConfig4:\Sselect an interface language.
+HelpLanguageConfig6:\Tcurrently selected web page language.|MIf a web site provides a choice of languages, NetSurf will request the page in your preferred language.
+HelpLanguageConfig7:\Sselect a preferred web page language.
+HelpLanguageConfig8:\Sreset the Language options back to their default values.
+HelpLanguageConfig9:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpLanguageConfig10:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-HelpMemoryConfig:Memory configuration window
-HelpMemoryConfig3:Direct
-HelpMemoryConfig4:Direct Inc
-HelpMemoryConfig5:Direct Dec
-HelpMemoryConfig7:Direct Auto
-HelpMemoryConfig9:Compressed
-HelpMemoryConfig10:Compressed Inc
-HelpMemoryConfig11:Compressed Dec
-HelpMemoryConfig13:Compressed Auto
-HelpMemoryConfig14:Default
-HelpMemoryConfig15:Cancel
-HelpMemoryConfig16:OK
+HelpMemoryConfig:\Tmemory configuration \w
+HelpMemoryConfig3:You can enter the maximum amount of memory NetSurf will use for storing uncompressed images here.
+HelpMemoryConfig4:\Sreduce the amount of memory used for storing uncompressed images.
+HelpMemoryConfig5:\Sincrease the amount of memory used for storing uncompressed images.
+HelpMemoryConfig7:This indicates whether NetSurf will try to make an intelligent guess at the most suitable amount of memory to use for storing uncompressed images.
+HelpMemoryConfig9:You can enter the maximum amount of memory NetSurf will use for storing compressed images here.
+HelpMemoryConfig10:\Sreduce the amount of memory used for storing compressed images.
+HelpMemoryConfig11:\Sincrease the amount of memory used for storing compressed images.
+HelpMemoryConfig13:This indicates whether NetSurf will try to make an intelligent guess at the most suitable amount of memory to use for storing uncompressed images.
+HelpMemoryConfig14:\Sreset the Memory options back to their default values.
+HelpMemoryConfig15:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpMemoryConfig16:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-HelpSecurityConfig:Security configuration window
-HelpSecurityConfig2:Send referrer
-HelpSecurityConfig6:History duration
-HelpSecurityConfig7:History duration Inc
-HelpSecurityConfig8:History duration Dec
-HelpSecurityConfig10:Default
-HelpSecurityConfig11:Cancel
-HelpSecurityConfig12:OK
+HelpSecurityConfig:\Tsecurity configuration \w
+HelpSecurityConfig2:This indicates whether NetSurf will send site referral information to web servers.|MWhen this is enabled NetSurf will tell the web server of a new page the address of the site you came from, after following a link.
+HelpSecurityConfig6:You can enter the length of time that items are stored in global history here.
+HelpSecurityConfig7:\Sreduce the global history duration.
+HelpSecurityConfig8:\Sincrease the global history duration.
+HelpSecurityConfig10:\Sreset the Security options back to their default values.
+HelpSecurityConfig11:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpSecurityConfig12:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-HelpThemeConfig:Theme configuration window
-HelpThemeConfig2:Default
-HelpThemeConfig3:Cancel
-HelpThemeConfig4:OK
+HelpThemeConfig:\Ttheme configuration \w
+HelpThemeConfig2:\Sreset the Theme options back to their default values.
+HelpThemeConfig3:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpThemeConfig4:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
-HelpThemePConfig:Available themes
+HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme is used for NetSurf browser \ws, the hotlist and global history.
 
 
 # Configuration tokens
