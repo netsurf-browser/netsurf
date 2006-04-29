@@ -60,13 +60,16 @@ bool ro_gui_options_connection_initialise(wimp_w w) {
 			proxy_type_menu->entries[proxy_type].
 				data.indirected_text.text);
 	ro_gui_set_icon_string(w, CONNECTION_PROXY_HOST,
-			option_http_proxy_host);
+			option_http_proxy_host ?
+					option_http_proxy_host : "");
 	ro_gui_set_icon_integer(w, CONNECTION_PROXY_PORT,
 			option_http_proxy_port);
 	ro_gui_set_icon_string(w, CONNECTION_PROXY_USERNAME,
-			option_http_proxy_auth_user);
+			option_http_proxy_auth_user ?
+					option_http_proxy_auth_user : "");
 	ro_gui_set_icon_string(w, CONNECTION_PROXY_PASSWORD,
-			option_http_proxy_auth_pass);
+			option_http_proxy_auth_pass ?
+					option_http_proxy_auth_pass : "");
 	ro_gui_set_icon_integer(w, CONNECTION_MAX_FETCH_FIELD,
 			option_max_fetchers);
 	ro_gui_set_icon_integer(w, CONNECTION_HOST_FETCH_FIELD,
