@@ -94,7 +94,7 @@ bool bitmap_get_opaque(struct bitmap *bitmap)
 char *bitmap_get_buffer(struct bitmap *bitmap)
 {
 	assert(bitmap);
-	return gdk_pixbuf_get_pixels((GdkPixbuf *) bitmap);
+	return (char *)gdk_pixbuf_get_pixels((GdkPixbuf *) bitmap);
 }
 
 

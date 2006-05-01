@@ -256,7 +256,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_widget_show(g->status_bar);
 
 	g->progress_bar = gtk_progress_bar_new();
-	gtk_progress_bar_set_pulse_step(g->progress_bar, 0.20);
+	gtk_progress_bar_set_pulse_step(GTK_PROGRESS_BAR(g->progress_bar), 0.20);
 	gtk_widget_set_size_request(g->progress_bar, 64, 0);
 	gtk_box_pack_end(GTK_BOX(status_box), g->progress_bar, FALSE, FALSE, 0);
 
@@ -402,7 +402,7 @@ void gui_window_home_button_event(GtkWidget *widget, gpointer data)
 {
         struct gui_window *g = data;
         char *referer = 0;
-        char *addr = "http://netsurf.sourceforge.net/";
+        const char *addr = "http://netsurf.sourceforge.net/";
 
         if (option_homepage_url != NULL)
                 addr = option_homepage_url;
@@ -479,8 +479,6 @@ gboolean gui_history_expose_event(GtkWidget *widget,
 gboolean gui_history_motion_notify_event(GtkWidget *widget,
 		GdkEventMotion *event, gpointer data)
 {
-	struct gtk_history_window *hw = data;
-
 	/* Not sure what to do here */
 
 	return TRUE;
@@ -491,8 +489,6 @@ gboolean gui_history_button_press_event(GtkWidget *widget,
 					gpointer data)
 {
 	struct gtk_history_window *hw = data;
-
-	LOG(("History click %d,%d", event->x, event->y));
 
 	history_click(hw->g->bw, hw->g->bw->history,
 		      event->x, event->y, false);
@@ -525,6 +521,8 @@ gboolean gui_window_key_press_event(GtkWidget *widget,
 	struct gui_window *g = data;
 	wchar_t nskey = gdkkey_to_nskey(event);
 	browser_window_key_press(g->bw, nskey);
+
+	return TRUE;
 }
 
 gboolean gui_window_configure_event(GtkWidget *widget,
@@ -665,7 +663,7 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
-	gtk_label_set_text(g->status_bar, text);
+	gtk_label_set_text(GTK_LABEL(g->status_bar), text);
 }
 
 
@@ -754,7 +752,8 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 static void nsgtk_throb(void *p)
 {
 	struct gui_window *g = p;
-	gtk_progress_bar_pulse((struct gui_window *)(g)->progress_bar);
+	gtk_progress_bar_pulse(GTK_PROGRESS_BAR(
+	      (struct gui_window *)(g)->progress_bar));
 	schedule(10, nsgtk_throb, g);
 }
 
@@ -867,13 +866,6 @@ bool gui_commit_clipboard(void)
 bool gui_copy_to_clipboard(struct selection *s)
 {
 	return true;
-}
-
-
-bool gui_window_copy_rectangle(struct gui_window *g, int sx, int sy,
-		int dx, int dy, int w, int h)
-{
-	return false;
 }
 
 wchar_t gdkkey_to_nskey(GdkEventKey *key)
