@@ -583,10 +583,10 @@ HelpBrowserMenu3-2-0:Schaltet die Schaltknöpfe am oberen Fensterrand ein/aus.|M
 HelpBrowserMenu3-2-1:Schaltet die Adressleiste am oberen Fensterrand ein/aus.
 HelpBrowserMenu3-2-2:Schaltet die Ladeaktivitätsanzeige am oberen Fensterrand ein/aus.|MDie Länge der Adressleiste wird angepaßt.
 HelpBrowserMenu3-2-3:Schaltet die Statusanzeige am unteren Fensterrand ein/aus.|MDie Länge des horizontalen Schiebebalkens wird angepaßt.
+HelpBrowserMenu3-2-4:\Stoggle toolbar edit mode.
 HelpBrowserMenu3-3:Einstellungen zur Berechnung der Seitendarstellung.
-HelpBrowserMenu3-3-0:Schaltet den weichen Übergang zwischen Text und farbigem Hintergrund ein/aus. (Backgroundblending)
-HelpBrowserMenu3-3-1:Schaltet das Puffern von Objekten ein/aus.|MNachzuzeichnende Objekte, z.B. Bildanimationen oder Textbereiche, werden zwischengespeichert um Flackern zu vermeiden.
-HelpBrowserMenu3-3-2:Schaltet das Puffern der gesamten Seitenberechnung ein/aus.|MDie komplette Seite wird nach Berechnung und Aufbau zwischengespeichert. Das ist vorteilhaft bei großen Hintergrundbildern und vielen sich überschneidenden Seitenelementen.
+HelpBrowserMenu3-3-0:Schaltet das Puffern von Objekten ein/aus.|MNachzuzeichnende Objekte, z.B. Bildanimationen oder Textbereiche, werden zwischengespeichert um Flackern zu vermeiden.
+HelpBrowserMenu3-3-1:Schaltet das Puffern der gesamten Seitenberechnung ein/aus.|MDie komplette Seite wird nach Berechnung und Aufbau zwischengespeichert. Das ist vorteilhaft bei großen Hintergrundbildern und vielen sich überschneidenden Seitenelementen.
 HelpBrowserMenu3-4:Übernimmt die vorgenommenen Anzeigeeinstellungen als globale Standardwerte für die Darstellung aller weiteren Seiten.
 HelpBrowserMenu4:Untermenü Werkzeuge.|MEnthält verschiedene nützliche Zusatz- und Sonderfunktionen.
 HelpBrowserMenu4-0:Verwaltung der Hotlist.
@@ -671,6 +671,7 @@ HelpHotlistMenu0-3-1:Schließt alle Verzeichnisse.
 HelpHotlistMenu0-3-2:Versteckt die Zusatzinformationen der Einträge.
 HelpHotlistMenu0-4:\Rcontrol the display of NetSurf's toolbars.
 HelpHotlistMenu0-4-0:\Stoggle the display of the toolbar buttons.
+HelpHotlistMenu0-4-1:\Stoggle toolbar edit mode.
 HelpHotlistMenu1:Untermenü Auswahl. Bearbeiten der markierten Hotlist Elemente.
 HelpHotlistMenu1-0:Ändern des markierten Elementes in der Hotlist.
 HelpHotlistMenu1-1:Öffnet markierte Einträge in je einem neuen Browserfenster.
@@ -680,11 +681,30 @@ HelpHotlistMenu2:Markiert alle Elemente der Hotlist.
 HelpHotlistMenu3:Deselektiert alle markierten Elemente.
 
 HelpGHistory:Das ist das Fenster der globalen History.
-
 HelpGHistoryToolbar0:Entfernt markierte Bereiche.|MAnklicken mit AUSWAHL löscht die vorher markierten Bereiche aus der History.
 HelpGHistoryToolbar1:Expandiert Einträge.|MAnklicken mit AUSWAHL expandiert alle Adressen.|MAnklicken mit SPEZIAL macht die Expansion aller Adressen rückgängig.|MIn expandierten Adressen werden Zusatzinformationen angezeigt.
 HelpGHistoryToolbar2:Öffnet Verzeichnisse.|MAnklicken mit AUSWAHL öffnet alle Verzeichnisse.|MAnklicken mit SPEZIAL schließt alle geöffneten Verzeichnisse.
 HelpGHistoryToolbar3:Lädt Webseiten.|MAnklicken mit AUSWAHL öffnet die markierten Webseiten in je einem neuen Browserfenster.
+
+HelpGHistoryMenu0:\Rperform an operation on global history.
+HelpGHistoryMenu0-0:\Rexport global history as an HTML file.
+HelpGHistoryMenu0-1:\Rexpand items within global history.
+HelpGHistoryMenu0-1-0:\Sopen all directories and show all entry details.
+HelpGHistoryMenu0-1-1:\Sopen all directories.
+HelpGHistoryMenu0-1-2:\Sshow all entry details.
+HelpGHistoryMenu0-2:\Rcollapse items within global history.
+HelpGHistoryMenu0-2-0:\Sclose all directories and hide all entry details.
+HelpGHistoryMenu0-2-1:\Sclose all directories.
+HelpGHistoryMenu0-2-2:\Shide all entry details.
+HelpGHistoryMenu0-3:\Rcontrol the display of NetSurf's toolbars.
+HelpGHistoryMenu0-3-0:\Stoggle the display of the toolbar buttons.
+HelpGHistoryMenu0-3-1:\Stoggle toolbar edit mode.
+HelpGHistoryMenu1:\Roperate on the current selection.
+HelpGHistoryMenu1-0:\Slaunch the current selection.
+HelpGHistoryMenu1-1:\Sdelete the current selection from global history.
+HelpGHistoryMenu1-2:\Sreset statistics, such as visit count, for selected items.
+HelpGHistoryMenu2:\Sselect all the items in the hotlist.
+HelpGHistoryMenu3:\Sdeselect all selected items.
 
 HelpAppInfo:Das ist das Info-Fenster zu NetSurf.|MGenauere Angaben zu Autoren und Entwicklerteam, zu genutzten Libraries etc. gibt es bei "Über NetSurf" im Untermenü Hilfe eines Browserfensters.
 
@@ -870,4 +890,3 @@ AnimImg:Animationen
 DitherImg:Bilder dithern
 FilterImg:Bilder weichzeichnen
 RenderText:Text/Hintergrund Übergang weich
-

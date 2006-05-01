@@ -1,7 +1,6 @@
 # Nederlandstalige meldingen voor NetSurf
 # =======================================
 # gebaseerd op (Eng: 09/12/2004 en 01/01/2005) en (Ned.) 17/06/2005
-#
 # Description
 # -----------
 #
@@ -394,7 +393,7 @@ NoURLError:Please enter a URL
 URIError:NetSurf was unable to parse this URI file due to a syntax error.
 EmptyError:file is empty.
 PrintErrorRO2:It appears that the printer is busy.
-
+AWNotSeen:Please locate the AWViewer application and try again.
 
 # Queries
 # =======
@@ -405,7 +404,6 @@ PrintErrorRO2:It appears that the printer is busy.
 AbortDownload:Zeker weten dat u deze download af wilt breken?
 QuitDownload:Een of meer downloads zijn nog bezig. Toch afbreken?
 OverwriteFile:A file with that name already exists and would be lost.
-
 
 # Page fetching
 # =============
@@ -585,10 +583,10 @@ HelpBrowserMenu3-2-0:\Stoggle the display of the toolbar buttons.|MURL bar uses 
 HelpBrowserMenu3-2-1:\Stoggle the display of the address (URL) bar.
 HelpBrowserMenu3-2-2:\Stoggle the display of the throbber.|MURL bar uses the remaining space.
 HelpBrowserMenu3-2-3:\Stoggle the display of the status bar.|MHorizontal scroll bar uses the remaining width.
+HelpBrowserMenu3-2-4:\Stoggle toolbar edit mode.
 HelpBrowserMenu3-3:\Scontrol the manner in which the display is rendered.
-HelpBrowserMenu3-3-0:\Stoggle whether text is blended to the background.
-HelpBrowserMenu3-3-1:\Stoggle whether animations are not displayed until all calculations are complete.
-HelpBrowserMenu3-3-2:\Stoggle whether everything is not displayed until all calculations are complete.
+HelpBrowserMenu3-3-0:\Stoggle whether animations are not displayed until all calculations are complete.
+HelpBrowserMenu3-3-1:\Stoggle whether everything is not displayed until all calculations are complete.
 HelpBrowserMenu3-4:\Smake your local display options the default options for NetSurf.
 HelpBrowserMenu4:\Rto access NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and various setup options.
 HelpBrowserMenu4-0:\Rmanage the hotlist.
@@ -673,6 +671,7 @@ HelpHotlistMenu0-3-1:\Sclose all directories.
 HelpHotlistMenu0-3-2:\Shide all entry details.
 HelpHotlistMenu0-4:\Rcontrol the display of NetSurf's toolbars.
 HelpHotlistMenu0-4-0:\Stoggle the display of the toolbar buttons.
+HelpHotlistMenu0-4-1:\Stoggle toolbar edit mode.
 HelpHotlistMenu1:\Roperate on the current selection.
 HelpHotlistMenu1-0:\Redit the current item.
 HelpHotlistMenu1-1:\Slaunch the current selection.
@@ -682,11 +681,30 @@ HelpHotlistMenu2:\Sselect all the items in the hotlist.
 HelpHotlistMenu3:\Sdeselect all selected items.
 
 HelpGHistory:\Tglobal history window.
-
 HelpGHistoryToolbar0:\Tdelete button.|M\Sdelete the current selection.
 HelpGHistoryToolbar1:\Texpand entries button.|M\Sexpand all addresses in the hotlist.|M\Acollapse all addresses in the hotlist.|MExpanded addresses show additional details, such as a visit counter.
 HelpGHistoryToolbar2:\Topen directories button.|M\Sopen all directories in the hotlist.|M\Aclose all directories in the hotlist.
 HelpGHistoryToolbar3:\Tlaunch button.|M\Slaunch the current selection.
+
+HelpGHistoryMenu0:\Rperform an operation on global history.
+HelpGHistoryMenu0-0:\Rexport global history as an HTML file.
+HelpGHistoryMenu0-1:\Rexpand items within global history.
+HelpGHistoryMenu0-1-0:\Sopen all directories and show all entry details.
+HelpGHistoryMenu0-1-1:\Sopen all directories.
+HelpGHistoryMenu0-1-2:\Sshow all entry details.
+HelpGHistoryMenu0-2:\Rcollapse items within global history.
+HelpGHistoryMenu0-2-0:\Sclose all directories and hide all entry details.
+HelpGHistoryMenu0-2-1:\Sclose all directories.
+HelpGHistoryMenu0-2-2:\Shide all entry details.
+HelpGHistoryMenu0-3:\Rcontrol the display of NetSurf's toolbars.
+HelpGHistoryMenu0-3-0:\Stoggle the display of the toolbar buttons.
+HelpGHistoryMenu0-3-1:\Stoggle toolbar edit mode.
+HelpGHistoryMenu1:\Roperate on the current selection.
+HelpGHistoryMenu1-0:\Slaunch the current selection.
+HelpGHistoryMenu1-1:\Sdelete the current selection from global history.
+HelpGHistoryMenu1-2:\Sreset statistics, such as visit count, for selected items.
+HelpGHistoryMenu2:\Sselect all the items in the hotlist.
+HelpGHistoryMenu3:\Sdeselect all selected items.
 
 HelpAppInfo:\TNetSurf information \w.|MSee the about page for the contributor list and credits.
 

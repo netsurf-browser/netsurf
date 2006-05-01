@@ -393,7 +393,7 @@ NoURLError:Entrez une URL SVP
 URIError:NetSurf est incapable de traiter ce fichier URI à cause d'une erreur de syntaxe.
 EmptyError:Le fichier est vide.
 PrintErrorRO2:Il semble que l'imprimante soit occupée.
-
+AWNotSeen:Please locate the AWViewer application and try again.
 
 # Queries
 # =======
@@ -583,10 +583,10 @@ HelpBrowserMenu3-2-0:\Safficher ou pas les boutons de la barre d'outil.|MLa barr
 HelpBrowserMenu3-2-1:\Safficher ou pas la barre d'adresse (URL).
 HelpBrowserMenu3-2-2:\Safficher le pulseur ou pas.|MLa barre d'URL utilise l'espace restant.
 HelpBrowserMenu3-2-3:\Safficher la barre d'état ou pas.|MLa barre de défilement horizontal utilise la largeur restante.
+HelpBrowserMenu3-2-4:\Stoggle toolbar edit mode.
 HelpBrowserMenu3-3:\Scontroler la façon d'afficher.
-HelpBrowserMenu3-3-0:\Safficher le texte panaché avec le fond (text blend) ou pas.
-HelpBrowserMenu3-3-1:\Sdécider si les animations sont affichées quand tous les calculs sont terminés (ou avant).
-HelpBrowserMenu3-3-2:\Sdécider si tout doit être affiché quand tous les calculs sont terminés (ou avant).
+HelpBrowserMenu3-3-0:\Sdécider si les animations sont affichées quand tous les calculs sont terminés (ou avant).
+HelpBrowserMenu3-3-1:\Sdécider si tout doit être affiché quand tous les calculs sont terminés (ou avant).
 HelpBrowserMenu3-4:\Spromouvoir vos options d'affichage locales en options par défaut pour NetSurf.
 HelpBrowserMenu4:\Raccéder aux utilitaires intégrés à NetSurf.|MLes utilitaires sont des outils comme les favoris, l'historique arborescent et diverses options de configuration.
 HelpBrowserMenu4-0:\Rgérer les favoris.
@@ -671,6 +671,7 @@ HelpHotlistMenu0-3-1:\Sfermer tous les répertoires.
 HelpHotlistMenu0-3-2:\Scacher tous les détails sur les entrées.
 HelpHotlistMenu0-4:\Rcontrol the display of NetSurf's toolbars.
 HelpHotlistMenu0-4-0:\Stoggle the display of the toolbar buttons.
+HelpHotlistMenu0-4-1:\Stoggle toolbar edit mode.
 HelpHotlistMenu1:\Ragir sur la sélection en cours.
 HelpHotlistMenu1-0:\Rééditer l'item en cours.
 HelpHotlistMenu1-1:\Slancer la sélection courante.
@@ -680,11 +681,30 @@ HelpHotlistMenu2:\Ssélectionner tous les items de la liste des favoris.
 HelpHotlistMenu3:\Sdésélectionner la sélection courante.
 
 HelpGHistory:\Tla fenêtre d'historique global.
-
 HelpGHistoryToolbar0:\Tle bouton de suppression.|M\Ssupprimer la sélection en cours.
 HelpGHistoryToolbar1:\Tle bouton de déploiement des entrées.|M\Sdéployer toutes les adresses des favoris.|M\Aregrouper toutes les adresses des favoris.|MLes adresses déployées apportent des détails supplémentaires, comme un compteur de visites.
 HelpGHistoryToolbar2:\Tle bouton d'ouverture de répertoires.|M\Souvrir tous les répertoires des favoris.|M\Afermer tous les répertoires des favoris.
 HelpGHistoryToolbar3:\Tle bouton de lancement.|M\Slancer la sélection en cours.
+
+HelpGHistoryMenu0:\Rperform an operation on global history.
+HelpGHistoryMenu0-0:\Rexport global history as an HTML file.
+HelpGHistoryMenu0-1:\Rexpand items within global history.
+HelpGHistoryMenu0-1-0:\Sopen all directories and show all entry details.
+HelpGHistoryMenu0-1-1:\Sopen all directories.
+HelpGHistoryMenu0-1-2:\Sshow all entry details.
+HelpGHistoryMenu0-2:\Rcollapse items within global history.
+HelpGHistoryMenu0-2-0:\Sclose all directories and hide all entry details.
+HelpGHistoryMenu0-2-1:\Sclose all directories.
+HelpGHistoryMenu0-2-2:\Shide all entry details.
+HelpGHistoryMenu0-3:\Rcontrol the display of NetSurf's toolbars.
+HelpGHistoryMenu0-3-0:\Stoggle the display of the toolbar buttons.
+HelpGHistoryMenu0-3-1:\Stoggle toolbar edit mode.
+HelpGHistoryMenu1:\Roperate on the current selection.
+HelpGHistoryMenu1-0:\Slaunch the current selection.
+HelpGHistoryMenu1-1:\Sdelete the current selection from global history.
+HelpGHistoryMenu1-2:\Sreset statistics, such as visit count, for selected items.
+HelpGHistoryMenu2:\Sselect all the items in the hotlist.
+HelpGHistoryMenu3:\Sdeselect all selected items.
 
 HelpAppInfo:\Tla \w d'information de NetSurf.|MVoir la page "À propos de" pour une liste des contributeurs et les remerciements.
 
