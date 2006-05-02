@@ -1985,6 +1985,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_NAVIGATE_RELOAD, false);
 
+		case 18:		/* Ctrl+R (Full reload) */
 		case wimp_KEY_CONTROL + wimp_KEY_F5:	/* Full reload */
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_NAVIGATE_RELOAD_ALL, false);
