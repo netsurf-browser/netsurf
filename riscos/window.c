@@ -2061,7 +2061,13 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			if (!content)
 				break;
 			old_scale = g->option.scale;
-			if (key == 17) {
+			if (ro_gui_shift_pressed() && key == 17)
+				g->option.scale = ((int) (10 * g->option.scale -
+						1)) / 10.0;
+			else if (ro_gui_shift_pressed() && key == 23)
+				g->option.scale = ((int) (10 * g->option.scale +
+						1)) / 10.0;
+			else if (key == 17) {
 				for (int i = SCALE_SNAP_TO_SIZE - 1; i >= 0; i--)
 					if (scale_snap_to[i] < old_scale) {
 						g->option.scale = scale_snap_to[i];
