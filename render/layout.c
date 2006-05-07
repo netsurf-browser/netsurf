@@ -322,6 +322,9 @@ bool layout_block_context(struct box *block, struct content *content)
 					break;
 				if (box->height == AUTO)
 					box->height = y - box->padding[TOP];
+				else
+					cy += box->height -
+							(y - box->padding[TOP]);
 				cy += box->padding[BOTTOM] +
 						box->border[BOTTOM];
 				if (max_pos_margin < box->margin[BOTTOM])
@@ -559,9 +562,11 @@ int layout_solve_width(int available_width, int width,
 	return width;
 }
 
+
 /**
  * Position a box tree relatively
  */
+
 void layout_position_relative(struct box *root)
 {
 	struct box *box;
@@ -604,9 +609,11 @@ void layout_position_relative(struct box *root)
 	}
 }
 
+
 /**
  * Compute a box's relative offset as per CSS 2.1 9.4.3
  */
+
 void layout_compute_relative_offset(struct box *box, int *x, int *y)
 {
 	int left = 0, right = 0, top = 0, bottom = 0;
