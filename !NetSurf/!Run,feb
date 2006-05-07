@@ -1,4 +1,4 @@
-| Run file for NetSurf. ( $Revision: 1.48 $ )
+| Run file for NetSurf. ( $Revision$ )
 |
 | This file ensures that the system resources required by NetSurf are 
 | present. Additionally, it forces setting of system variables related
@@ -26,7 +26,7 @@ RMEnsure WindowManager 3.80 Error NetSurf requires the Nested Window Manager. Th
 If "<System$Path>" = "" Then Set System$Path_Message System resources not found.
 If "<Wimp$ScrapDir>" = "" Then Error Scrap resource not found.
 If "<InetDBase$Path>" = "" Then Error Internet resources can not be found
-If "<Unicode$Path>" = "" Then Error NetSurf requires the !Unicode resource. This can be found, along with the Iconv module, at http://moose.mine.nu/iconv_latest.zip
+If "<Unicode$Path>" = "" Then Error NetSurf requires the !Unicode resource. This can be found, along with the Iconv module, at http://netsurf.sourceforge.net/iconv/
 If "<Inet$MimeMappings>" = "" Then Set Inet$MimeMappings InetDBase:MimeMap
 
 | Define this alias for clarity

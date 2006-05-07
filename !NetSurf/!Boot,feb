@@ -1,4 +1,4 @@
-| Boot file for NetSurf. ( $Revision: 1.11 $ )
+| Boot file for NetSurf. ( $Revision$ )
 |
 | This file sets up various system variables which NetSurf may use.
 | Additionally, it places the NetSurf application sprites into the Wimp
