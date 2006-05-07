@@ -45,9 +45,9 @@ RMEnsure DrawFile 1.30 NetSurfRMLoad System:Modules.DrawFile
 RMEnsure DrawFile 1.30 Error NetSurf requires the DrawFile module. An old verson of this can be downloaded from http://acorn.riscos.com/riscos/releases/drawfile.arc
 
 | Ensure SharedUnixLibrary is installed
-| http://gccsdk.riscos.info/downloads/sharedunixlib/
+| http://www.riscos.info/downloads/gccsdk/sharedunixlib/system.zip
 RMEnsure SharedUnixLibrary 1.02 NetSurfRMLoad System:Modules.SharedULib
-RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.02 or later. This can be downloaded from http://gccsdk.riscos.info/downloads/sharedunixlib/
+RMEnsure SharedUnixLibrary 1.02 Error NetSurf requires SharedUnixLibrary 1.02 or later. This can be downloaded from http://www.riscos.info/downloads/gccsdk/sharedunixlib/system.zip
 
 | Load AcornURI if it isn't already
 | http://sudden.recoil.org/
@@ -67,9 +67,9 @@ RMEnsure Tinct 0.13 NetSurfRMLoad System:Modules.Tinct
 RMEnsure Tinct 0.13 Error NetSurf requires Tinct 0.13 or later. This can be downloaded from http://www.tinct.net/
 
 | Ensure Iconv
-| http://moose.mine.nu:6888/iconv_latest.zip
+| http://netsurf.sourceforge.net/iconv/
 RMEnsure Iconv 0.07 NetSurfRMLoad System:Modules.Iconv
-RMEnsure Iconv 0.07 Error NetSurf requires Iconv 0.07 or later. This can be downloaded from http://moose.mine.nu:6888/iconv_latest.zip
+RMEnsure Iconv 0.07 Error NetSurf requires Iconv 0.07 or later. This can be downloaded from http://netsurf.sourceforge.net/iconv/
 
 | Disable SpecialFX, if present
 Set NetSurf$SpecialFX 1
