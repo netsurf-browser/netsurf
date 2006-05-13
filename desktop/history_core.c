@@ -283,6 +283,13 @@ void history_update(struct history *history, struct content *content)
 	if (!history || !history->current || !history->current->bitmap)
 		return;
 
+	if (history->current->title)
+		free(history->current->title);
+	if (content->title)
+		history->current->title = strdup(content->title);
+	else
+		history->current->title = 0;
+	
 	thumbnail_create(content, history->current->bitmap, 0);
 }
 
