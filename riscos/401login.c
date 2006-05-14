@@ -98,7 +98,7 @@ void ro_gui_401login_open(struct browser_window *bw, const char *host,
 	session->uname[0] = '\0';
 	session->pwd[0] = '\0';
 	session->host = strdup(host);
-	session->realm = strdup(realm);
+	session->realm = strdup(realm ? realm : "Secure Area");
 	session->bwin = bw;
 	if ((!session->host) || (!session->realm)) {
 		free(session->host);
