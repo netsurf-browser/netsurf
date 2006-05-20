@@ -9,6 +9,17 @@ Set NetSurf$ForceVars 1
 <Obey$Dir>.!Boot
 UnSet NetSurf$ForceVars
 
+| Detect if NetSurf is already running and, if so, force the 
+| current instance to open a new window. Then stop this script.
+Set Alias$NetSurfRunning UnSet Alias$NetSurfRunning|mUnSet NetSurf$Running|mObey
+Set NetSurf$Running 0
+WimpSlot -min 64k -max 64k
+/<NetSurf$Dir>.KickNS
+| If not running, then unset system variables and continue
+If "<NetSurf$Running>" = "0" Then Set Alias$NetSurfRunning UnSet Alias$NetSurfRunning|mUnSet NetSurf$Running
+| Invoke our alias to clean up
+NetSurfRunning
+
 | Resource Locations
 | The following are read-only locations
 SetMacro NetSurf$Path        Choices:WWW.NetSurf.,<NetSurf$Dir>.
