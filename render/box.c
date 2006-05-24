@@ -18,6 +18,7 @@
 #include "netsurf/css/css.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
+#include "netsurf/utils/log.h"
 #include "netsurf/utils/talloc.h"
 
 
@@ -303,19 +304,20 @@ struct box *box_at_point(struct box *box, int x, int y,
 	/* consider floats first, since they will often overlap other boxes */
 	for (child = box->float_children; child; child = child->next_float) {
 		if (box_contains_point(child, x - bx, y - by)) {
-			*box_x += child->x - child->scroll_x;
-			*box_y += child->y - child->scroll_y;
+			*box_x = bx + child->x - child->scroll_x;
+			*box_y = by + child->y - child->scroll_y;
 			return child;
 		}
 	}
 
+non_float_children:
 	/* non-float children */
 	for (child = box->children; child; child = child->next) {
 		if (box_is_float(child))
 			continue;
 		if (box_contains_point(child, x - bx, y - by)) {
-			*box_x += child->x - child->scroll_x;
-			*box_y += child->y - child->scroll_y;
+			*box_x = bx + child->x - child->scroll_x;
+			*box_y = by + child->y - child->scroll_y;
 			return child;
 		}
 	}
@@ -323,7 +325,28 @@ struct box *box_at_point(struct box *box, int x, int y,
 siblings:
 	/* siblings and siblings of ancestors */
 	while (box) {
-		if (!box_is_float(box)) {
+		if (box_is_float(box)) {
+			bx -= box->x - box->scroll_x;
+			by -= box->y - box->scroll_y;
+			for (sibling = box->next_float; sibling;
+					sibling = sibling->next_float) {
+				if (box_contains_point(sibling,
+						x - bx, y - by)) {
+					*box_x = bx + sibling->x -
+							sibling->scroll_x;
+					*box_y = by + sibling->y -
+							sibling->scroll_y;
+					return sibling;
+				}
+			}
+			/* ascend to float's parent */
+			do {
+				box = box->parent;
+			} while (!box->float_children);
+			/* process non-float children of float's parent */
+			goto non_float_children;
+
+		} else {
 			bx -= box->x - box->scroll_x;
 			by -= box->y - box->scroll_y;
 			for (sibling = box->next; sibling;
@@ -340,23 +363,6 @@ siblings:
 				}
 			}
 			box = box->parent;
-		} else {
-			bx -= box->x - box->scroll_x;
-			by -= box->y - box->scroll_y;
-			for (sibling = box->next_float; sibling;
-					sibling = sibling->next_float) {
-				if (box_contains_point(sibling,
-						x - bx, y - by)) {
-					*box_x = bx + sibling->x -
-							sibling->scroll_x;
-					*box_y = by + sibling->y -
-							sibling->scroll_y;
-					return sibling;
-				}
-			}
-			do {
-				box = box->parent;
-			} while (!box->float_children);
 		}
 	}
 
@@ -492,9 +498,9 @@ void box_dump(struct box *box, unsigned int depth)
 	default:                   fprintf(stderr, "Unknown box type ");
 	}
 
-	fprintf(stderr, "ofst %d", box->byte_offset);
 	if (box->text)
-		fprintf(stderr, "'%.*s' ", (int) box->length, box->text);
+		fprintf(stderr, "%u '%.*s' ", box->byte_offset,
+				(int) box->length, box->text);
 	if (box->space)
 		fprintf(stderr, "space ");
 	if (box->object)

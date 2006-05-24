@@ -830,6 +830,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	int box_x = 0, box_y = 0;
 	int gadget_box_x = 0, gadget_box_y = 0;
 	int scroll_box_x = 0, scroll_box_y = 0;
+	int text_box_x = 0, text_box_y = 0;
 	struct box *gadget_box = 0;
 	struct box *scroll_box = 0;
 	struct box *text_box = 0;
@@ -907,9 +908,15 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			scroll_box_y = box_y + box->scroll_y;
 		}
 
-		if (box->text && !box->object)
+		if (box->text && !box->object) {
 			text_box = box;
+			text_box_x = box_x;
+			text_box_y = box_y;
+		}
 	}
+
+	/* use of box_x, box_y, or content below this point is probably a
+	 * mistake; they will refer to the last box returned by box_at_point */
 
 	if (scroll_box) {
 		status = browser_window_scrollbar_click(bw, mouse, scroll_box,
@@ -984,7 +991,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				nsfont_position_in_string(text_box->style,
 					text_box->text,
 					text_box->length,
-					x - box_x,
+					x - text_box_x,
 					&idx,
 					&pixel_offset);
 
@@ -1021,7 +1028,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 				nsfont_position_in_string(text_box->style,
 					text_box->text,
 					text_box->length,
-					x - box_x,
+					x - text_box_x,
 					&idx,
 					&pixel_offset);
 
@@ -1109,7 +1116,7 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			nsfont_position_in_string(text_box->style,
 				text_box->text,
 				text_box->length,
-				x - box_x,
+				x - text_box_x,
 				&idx,
 				&pixel_offset);
 
@@ -1667,8 +1674,6 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 	if (c) {
 		union content_msg_data data;
 
-LOG(("REDRAW %d,%d,%d,%d", x, y, width, height));
-
 		data.redraw.x = x;
 		data.redraw.y = y;
 		data.redraw.width = width;
@@ -2040,8 +2045,10 @@ struct box *browser_window_pick_text_box(struct browser_window *bw,
 				NULL) {
 			box = next_box;
 
-			if (box->text && !box->object)
+			if (box->text && !box->object) {
 				text_box = box;
+				break;
+			}
 		}
 
 		if (!text_box) {
