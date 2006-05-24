@@ -598,13 +598,20 @@ const char *ro_gui_default_language(void) {
 void ro_gui_icon_bar_create(void)
 {
 #ifndef ncos
+	os_error *error;
+
 	wimp_icon_create icon = {
 		wimp_ICON_BAR_RIGHT,
 		{ { 0, 0, 68, 68 },
 		wimp_ICON_SPRITE | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED |
 				(wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT),
 		{ "!netsurf" } } };
-	wimp_create_icon(&icon);
+	error = xwimp_create_icon(&icon, 0);
+	if (error) {
+		LOG(("xwimp_create_icon: 0x%x: %s",
+				error->errnum, error->errmess));
+		die(error->errmess);
+	}
 	ro_gui_wimp_event_register_mouse_click(wimp_ICON_BAR,
 			ro_gui_icon_bar_click);
 #endif
