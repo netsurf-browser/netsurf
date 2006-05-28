@@ -2838,7 +2838,7 @@ void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag)
 		return;
 	}
 
-	error = xwimpspriteop_set_pointer_shape(NULL, 0x31, 0, 0, 0, 0);
+	error = xwimpspriteop_set_pointer_shape("ptr_default", 0x31, 0, 0, 0, 0);
 	if (error) {
 		LOG(("xwimpspriteop_set_pointer_shape: 0x%x: %s",
 				error->errnum, error->errmess));
