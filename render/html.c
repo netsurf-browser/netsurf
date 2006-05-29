@@ -362,7 +362,8 @@ bool html_convert(struct content *c, int width, int height)
 		content_set_status(c, messages_get("Done"));
 	} else {
 		c->status = CONTENT_STATUS_READY;
-		content_set_status(c, messages_get("FetchObjs"), c->active);
+		content_set_status(c, messages_get("FetchObjs"), c->active,
+			messages_get((c->active == 1) ? "obj" : "objs"));
 	}
 
 	return true;
@@ -730,7 +731,8 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 	while (c->active != 0) {
 		if (c->active != last_active) {
 			content_set_status(c, messages_get("FetchStyle"),
-					c->active);
+				c->active,
+				messages_get((c->active == 1) ? "styl" : "styls"));
 			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 			last_active = c->active;
 		}
@@ -821,7 +823,9 @@ void html_convert_css_callback(content_msg msg, struct content *css,
 
 		case CONTENT_MSG_STATUS:
 			content_set_status(c, messages_get("FetchStyle2"),
-					c->active, css->status_message);
+				c->active,
+				messages_get((c->active == 1) ? "styl" : "styls"),
+				css->status_message);
 			content_broadcast(c, CONTENT_MSG_STATUS, data);
 			break;
 
@@ -1069,7 +1073,9 @@ void html_object_callback(content_msg msg, struct content *object,
 
 		case CONTENT_MSG_STATUS:
 			content_set_status(c, messages_get("FetchObjs2"),
-					c->active, object->status_message);
+				c->active,
+				messages_get((c->active == 1) ? "obj" : "objs"),
+				object->status_message);
 			/* content_broadcast(c, CONTENT_MSG_STATUS, 0); */
 			break;
 
@@ -1169,7 +1175,8 @@ void html_object_callback(content_msg msg, struct content *object,
 		content_broadcast(c, CONTENT_MSG_DONE, data);
 	}
 	if (c->status == CONTENT_STATUS_READY)
-		content_set_status(c, messages_get("FetchObjs"), c->active);
+		content_set_status(c, messages_get("FetchObjs"), c->active,
+			messages_get((c->active == 1) ? "obj" : "objs"));
 }
 
 

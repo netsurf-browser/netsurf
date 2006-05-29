@@ -424,11 +424,11 @@ Complete:Page complete (%gs)
 Redirecting:Redirecting...
 Processing:Processing document
 Formatting:Formatting document
-FetchObjs:Loading %u objects
-FetchObjs2:Loading %u objects: %s
+FetchObjs:Loading %u %s
+FetchObjs2:Loading %u %s: %s
 Done:Document done
-FetchStyle:Loading %u stylesheets
-FetchStyle2:Loading %u stylesheets: %s
+FetchStyle:Loading %u %s
+FetchStyle2:Loading %u %s: %s
 
 # Fetch warning/error messages - displayed in status bar
 #
@@ -509,6 +509,10 @@ Yes:Ja
 No:Nein
 Replace:Replace file
 DontReplace:Don't replace
+obj:object
+objs:objects
+styl:stylesheet
+styls:stylesheets
 
 # Interactive help
 # ================

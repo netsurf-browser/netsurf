@@ -424,11 +424,11 @@ Complete:pagina verwerkt (%gs)
 Redirecting:doorverwijzen...
 Processing:verwerking van document
 Formatting:document opmaken
-FetchObjs:laden van %u objecten
-FetchObjs2:laden van %u objecten: %s
+FetchObjs:laden van %u %s
+FetchObjs2:laden van %u %s: %s
 Done:klaar
-FetchStyle:laden van %u stylesheets
-FetchStyle2:laden van %u stylesheets: %s
+FetchStyle:laden van %u %s
+FetchStyle2:laden van %u %s: %s
 
 # Fetch warning/error messages - displayed in status bar
 #
@@ -509,6 +509,10 @@ Yes:Ja
 No:Nee
 Replace:Replace file
 DontReplace:Don't replace
+obj:object
+objs:objecten
+styl:stylesheet
+styls:stylesheets
 
 # Interactive help
 # ================
