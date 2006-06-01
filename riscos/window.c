@@ -2052,6 +2052,24 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_NAVIGATE_STOP, false);
 
+		case  8:	/* CTRL+H / Backspace */
+			if (!ro_gui_ctrl_pressed()) {
+				/* Backspace */
+				if (ro_gui_shift_pressed()) {
+					return ro_gui_menu_handle_action(
+						g->window,
+						BROWSER_NAVIGATE_FORWARD,
+						false);
+				}
+				else {
+					return ro_gui_menu_handle_action(
+						g->window,
+						BROWSER_NAVIGATE_BACK,
+						false);
+				}
+			}
+			break;
+
 		case 14:	/* CTRL+N */
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_NEW_WINDOW, false);
