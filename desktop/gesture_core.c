@@ -245,7 +245,7 @@ static struct {
 	{ M_PI_8,   M_3_PI_8, true,  true,  '6' }, /* Down/Left */
 	{ M_3_PI_8, INFINITY, true,  true,  '7' }, /* Down */
 	{ M_3_PI_8, INFINITY, false, true,  '7' }, /* Down */
-	{ M_PI_8,   M_3_PI_8, false, true,  '8' }, /* Up/Right */
+	{ M_PI_8,   M_3_PI_8, false, true,  '8' }, /* Down/Right */
 	{ 0.0,	    M_PI_8,   false, true,  '1' }  /* Right */
 };
 
