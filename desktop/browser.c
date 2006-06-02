@@ -115,7 +115,7 @@ void browser_window_create(const char *url, struct browser_window *clone,
 		bw->history = history_create();
 	else
 		bw->history = history_clone(clone->history);
-	if (!clone)
+	if (!clone || (clone && !clone->gesturer))
 		bw->gesturer = NULL;
 	else
 		bw->gesturer = gesturer_clone(clone->gesturer);
