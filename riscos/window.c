@@ -2053,7 +2053,7 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 					BROWSER_NAVIGATE_STOP, false);
 
 		case  8:	/* CTRL+H / Backspace */
-			if (!ro_gui_ctrl_pressed()) {
+			if (!ro_gui_ctrl_pressed() && !toolbar) {
 				/* Backspace */
 				if (ro_gui_shift_pressed()) {
 					return ro_gui_menu_handle_action(
