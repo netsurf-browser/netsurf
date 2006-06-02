@@ -19,6 +19,7 @@
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/textinput.h"
+#include "netsurf/desktop/gesture_core.h"
 #include "netsurf/gtk/gtk_gui.h"
 #include "netsurf/gtk/gtk_plotters.h"
 #include "netsurf/gtk/gtk_window.h"
@@ -49,6 +50,7 @@ struct gui_window {
 	struct gtk_history_window *history_window;
 	GtkWidget *history_window_widget;
 	int caretx, carety, careth;
+	int last_x, last_y;
 };
 
 struct gtk_history_window {
@@ -100,6 +102,8 @@ static gboolean gui_window_key_press_event(GtkWidget *widget,
 static void gtk_perform_deferred_resize(void *p);
 
 static wchar_t gdkkey_to_nskey(GdkEventKey *key);
+
+static void gtk_pass_mouse_position(void *p);
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone)
@@ -318,8 +322,27 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			  gtk_widget_hide_on_delete, NULL);
 
 #undef NS_SIGNAL_CONNECT
-
+        
+        if( !bw->gesturer ) {
+          /* Prepare a gesturer */
+          GestureRecogniser gr = gesture_recogniser_create();
+          bw->gesturer = gesturer_create(gr);
+          gesture_recogniser_add(gr, "732187", 100);
+          gesture_recogniser_set_distance_threshold(gr, 50);
+          gesture_recogniser_set_count_threshold(gr, 20);
+          schedule(5, gtk_pass_mouse_position, g);
+        }
+        
 	return g;
+}
+
+void gtk_pass_mouse_position(void *p)
+{
+  struct gui_window *g = (struct gui_window*)p;
+  if( g->bw->gesturer )
+    if( gesturer_add_point(g->bw->gesturer, g->last_x, g->last_y) == 100 )
+      exit(0);
+  schedule(5, gtk_pass_mouse_position, p);
 }
 
 void gui_window_zoomin_button_event(GtkWidget *widget, gpointer data)
@@ -578,7 +601,8 @@ gboolean gui_window_motion_notify_event(GtkWidget *widget,
 	struct gui_window *g = data;
 
 	browser_window_mouse_track(g->bw, 0, event->x, event->y);
-
+	g->last_x = event->x;
+        g->last_y = event->y;
 	return TRUE;
 }
 

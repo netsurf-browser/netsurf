@@ -34,6 +34,7 @@
 #include "netsurf/desktop/options.h"
 #include "netsurf/desktop/selection.h"
 #include "netsurf/desktop/textinput.h"
+#include "netsurf/desktop/gesture_core.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/form.h"
 #include "netsurf/render/font.h"
@@ -114,7 +115,11 @@ void browser_window_create(const char *url, struct browser_window *clone,
 		bw->history = history_create();
 	else
 		bw->history = history_clone(clone->history);
-	bw->sel = selection_create(bw);
+	if (!clone)
+		bw->gesturer = NULL;
+	else
+		bw->gesturer = gesturer_clone(clone->gesturer);
+        bw->sel = selection_create(bw);
 	bw->throbbing = false;
 	bw->caret_callback = NULL;
 	bw->paste_callback = NULL;
