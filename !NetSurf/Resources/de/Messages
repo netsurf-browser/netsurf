@@ -189,10 +189,10 @@ URLSuggest:Aktuelle URL's
 # Menus within the choices system
 #
 # Browser pane
-Languages:Language
+Languages:Sprachen
 #
 # Network pane
-ProxyType:Proxy type
+ProxyType:Proxy Typ
 ProxyNone:No proxy
 ProxyNoAuth:Simple proxy
 ProxyBasic:Basic authentication
@@ -200,7 +200,7 @@ ProxyNTLM:NTLM authentication
 #
 # Fonts pane
 Fonts:Schriften
-DefaultFonts:Font Families
+DefaultFonts:Schriftfamilien
 #
 # Images pane
 Display:Ausgabe
@@ -295,7 +295,7 @@ PrintSheetsFilled:Druckseiten
 # This section contains tokens which are used in the find text
 # dialog box.
 #
-NotFound:Nicht gefunden
+NotFound:nichts
 
 
 # Content
@@ -357,7 +357,7 @@ InvalidURL:Die Adresse <em>%s</em> konnte nicht ausgewertet werden.
 
 # HTML error page
 #
-ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Page error</title></head><body><h1>Sorry, NetSurf was unable to display this page</h1><p><strong>%s</strong></p></body></html>
+ErrorPage:<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Page error</title></head><body><h1>Sorry, NetSurf konnte die Seite nicht anzeigen.</h1><p><strong>%s</strong></p></body></html>
 
 # General errors - displayed in a dialog box
 #
@@ -375,7 +375,7 @@ DownloadWarn:This download may not complete:
 MiscError:Unerwarteter Fehler:
 FileError:Datei existiert nicht:
 PrintError:Ein Fehler trat während des Druckens auf:
-AWNotSeen:Please locate the AWViewer application and try again.
+AWNotSeen:Das Programm AWViewer wurde nicht gefunden.
 
 # Specific errors - displayed in a dialog box
 #
@@ -383,7 +383,7 @@ NoMemory:Zu wenig Speicher. Bitte mehr Speicher zur Verfügung stellen und erneu
 FontBadInst:Fehler bei der Font-Initialisierung wegen obsoleter Kopien von ROM Fonts auf dem lokalem Speichermedium. NetSurf wird beendet und ein Programm zur Fehlerbehebung gestartet.
 FontError:Fehler beim öffnen des Fonts "Homerton.Medium" (%s).
 Resolvers:Es sind keine Domain Name Servers (DNS) konfiguriert. Nur lokale Dateien können geladen werden. DNS können in Konfiguration (!Boot doppelklicken) eingestellt werden.
-NoDiscSpace:Not enough space available on disc.
+NoDiscSpace:Nicht genug Speicherplatz auf dem Medium vorhanden.
 Template:Ein Template für ein Fenster fehlt in der Datei Templates. Bitte NetSurf neu installieren.
 HotlistSaveError:Hotlist konnte nicht korrekt gespeichert werden.
 HotlistLoadError:Hotlist konnte nicht korrekt geladen werden.
@@ -403,7 +403,7 @@ PrintErrorRO2:Der Drucker scheint beschäftigt zu sein.
 
 AbortDownload:Soll das Herunterladen der Datei wirklich abgebrochen werden ?
 QuitDownload:Das Herunterladen ein oder mehrerer Dateien wurde noch nicht abgeschlossen. Soll NetSurf trotzdem beendet werden ?
-OverwriteFile:A file with that name already exists and would be lost.
+OverwriteFile:Eine Datei mit diesem Namen existiert bereits und würde überschrieben werden.
 
 # Page fetching
 # =============
@@ -507,8 +507,8 @@ GBytes: GB
 
 Yes:Ja
 No:Nein
-Replace:Replace file
-DontReplace:Don't replace
+Replace:Überschreiben
+DontReplace:Abbrechen
 obj:object
 objs:objects
 styl:stylesheet
@@ -617,7 +617,7 @@ HelpBrowser-1:Das ist ein Browserfenster.|MEinen Link mit AUSWAHL anklicken, um 
 HelpIconbar:Das ist das NetSurf Icon.|MKlicken mit AUSWAHL öffnet ein neues Browserfenster.|MKlicken mit SPEZIAL öffnet die Hotlist.
 HelpHistory:Die History zeigt alle in dieser Sitzung besuchten Seiten.|MKlicken mit AUSWAHL auf eine Symbolgrafik kehrt zurück zur jeweiligen Seite.
 
-HelpPrint:Use this \w to print the page.
+HelpPrint:Über dieses Fenster kann die Seite gedruckt werden.
 
 HelpSaveAs0:Symbol mit AUSWAHL festhalten und in ein Verzeichnisfenster ziehen, um die Datei zu speichern.
 HelpSaveAs1:Das ist der Name unter dem die Datei gespeichert wird.
@@ -635,12 +635,12 @@ HelpScaleView8:Stellt einen Skalierungswert von 200% ein.
 HelpScaleView9:Klicken mit AUSWAHL um die Skalierung nicht durchzuführen.|MDas Dialogfenster wird geschlossen.|MDie Darstellung der Seite wird unverändert beibehalten.
 HelpScaleView10:Klicken mit AUSWAHL um die Seite skaliert darzustellen.|MDie Seite wird in der gewählten Vergrößerung angezeigt.
 
-HelpSearch:Use this \w to search for text within the page.
-HelpSearch0:Enter the search text. # matches any single character, * matches 0 or more characters.
-HelpSearch1:Choose whether the search should regard upper and lower case characters as different.
-HelpSearch2:\Smove to the next match.
-HelpSearch3:\Smove to the previous match.
-HelpSearch4:\Sstop searching and close this \w.
+HelpSearch:Dialogfenster zum Suchen von Text innerhalb der dargestellten Seite.
+HelpSearch0:Suchtext hier eingeben. # steht für exakt ein beliebiges Zeichen. * steht für 0 oder mehrere Zeichen.
+HelpSearch1:Wählt ob nach Groß- und Kleinschreibung unterschieden werden soll.
+HelpSearch2:Klicken mit AUSWAHL findet den nächsten Treffer.
+HelpSearch3:Klicken mit AUSWAHL sucht rückwärts im Text.
+HelpSearch4:Klicken mit AUSWAHL bricht die Suche ab und schließt das Fenster.
 
 HelpHotFolder:Dieses Fenster verwenden, um den Verzeichnis-Namen festzulegen.
 HelpHotEntry:Dieses Fenster verwenden, um die Details des Eintrages festzulegen.
@@ -690,25 +690,25 @@ HelpGHistoryToolbar1:Expandiert Einträge.|MAnklicken mit AUSWAHL expandiert all
 HelpGHistoryToolbar2:Öffnet Verzeichnisse.|MAnklicken mit AUSWAHL öffnet alle Verzeichnisse.|MAnklicken mit SPEZIAL schließt alle geöffneten Verzeichnisse.
 HelpGHistoryToolbar3:Lädt Webseiten.|MAnklicken mit AUSWAHL öffnet die markierten Webseiten in je einem neuen Browserfenster.
 
-HelpGHistoryMenu0:\Rperform an operation on global history.
-HelpGHistoryMenu0-0:\Rexport global history as an HTML file.
-HelpGHistoryMenu0-1:\Rexpand items within global history.
-HelpGHistoryMenu0-1-0:\Sopen all directories and show all entry details.
-HelpGHistoryMenu0-1-1:\Sopen all directories.
-HelpGHistoryMenu0-1-2:\Sshow all entry details.
-HelpGHistoryMenu0-2:\Rcollapse items within global history.
-HelpGHistoryMenu0-2-0:\Sclose all directories and hide all entry details.
-HelpGHistoryMenu0-2-1:\Sclose all directories.
-HelpGHistoryMenu0-2-2:\Shide all entry details.
-HelpGHistoryMenu0-3:\Rcontrol the display of NetSurf's toolbars.
-HelpGHistoryMenu0-3-0:\Stoggle the display of the toolbar buttons.
-HelpGHistoryMenu0-3-1:\Stoggle toolbar edit mode.
-HelpGHistoryMenu1:\Roperate on the current selection.
-HelpGHistoryMenu1-0:\Slaunch the current selection.
-HelpGHistoryMenu1-1:\Sdelete the current selection from global history.
-HelpGHistoryMenu1-2:\Sreset statistics, such as visit count, for selected items.
-HelpGHistoryMenu2:\Sselect all the items in the hotlist.
-HelpGHistoryMenu3:\Sdeselect all selected items.
+HelpGHistoryMenu0:Die globale History bearbeiten.
+HelpGHistoryMenu0-0:Speichert die History (global) als HTML Datei.
+HelpGHistoryMenu0-1:Mehr Information anzeigen
+HelpGHistoryMenu0-1-0:Öffnet alle Verzeichnisse und zeigt die Details der Einträge an.
+HelpGHistoryMenu0-1-1:Öffnet alle Verzeichnisse.
+HelpGHistoryMenu0-1-2:Zeigt die Details der sichtbaren Einträge an.
+HelpGHistoryMenu0-2:Weniger Information anzeigen
+HelpGHistoryMenu0-2-0:Schließt alle Verzeichnisse und versteckt die Details der Einträge.
+HelpGHistoryMenu0-2-1:Schließt alle Verzeichnisse.
+HelpGHistoryMenu0-2-2:Versteckt die Detailanzeige der Einträge.
+HelpGHistoryMenu0-3:Die Iconleiste der globalen History verändern.
+HelpGHistoryMenu0-3-0:Iconleiste an- oder abschalten.
+HelpGHistoryMenu0-3-1:Iconleiste bearbeiten.
+HelpGHistoryMenu1:Die aktuelle Auswahl bearbeiten.
+HelpGHistoryMenu1-0:Lädt Webseiten.|MAnklicken mit AUSWAHL öffnet die markierten Webseiten in je einem neuen Browserfenster.
+HelpGHistoryMenu1-1:Entfernt markierte Bereiche.|MAnklicken mit AUSWAHL löscht die vorher markierten Bereiche aus der History.
+HelpGHistoryMenu1-2:Setzt die Besuchsstatistik der markierten Einträge zurück.
+HelpGHistoryMenu2:Markiert alle Elemente der globalen History.
+HelpGHistoryMenu3:Deselektiert alle markierten Elemente.
 
 HelpAppInfo:Das ist das Info-Fenster zu NetSurf.|MGenauere Angaben zu Autoren und Entwicklerteam, zu genutzten Libraries etc. gibt es bei "Über NetSurf" im Untermenü Hilfe eines Browserfensters.
 
@@ -866,16 +866,16 @@ HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme 
 #
 
 con_cache:Cache
-con_connect:Connection
-con_content:Content
-con_fonts:Fonts
-con_home:Home page
-con_image:Images
-con_inter:Interface
-con_lang:Language
-con_memory:Memory
-con_secure:Security
-con_theme:Themes
+con_connect:Verbindung
+con_content:Inhalte
+con_fonts:Schriftarten
+con_home:Homepage
+con_image:Bilder
+con_inter:N�tzliches
+con_lang:Sprachen
+con_memory:Speicher
+con_secure:Sicherheit
+con_theme:Themen
 
 
 # Unused tokens
