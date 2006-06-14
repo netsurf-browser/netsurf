@@ -125,6 +125,7 @@ struct path_data {
 	char *segment;		/**< Path segment for this node */
 	unsigned int frag_cnt;	/**< Number of entries in ::fragment */
 	char **fragment;	/**< Array of fragments */
+	bool persistent;	/**< This entry should persist */
 
 	struct bitmap *thumb;	/**< Thumbnail image of resource */
 	struct url_internal_data urld;	/**< URL data for resource */
@@ -548,8 +549,8 @@ void urldb_count_urls(const struct path_data *root, time_t expiry,
 	const struct path_data *p;
 
 	if (!root->children) {
-		if ((root->urld.last_visit > expiry) &&
-				(root->urld.visits > 0))
+		if (root->persistent || ((root->urld.last_visit > expiry) &&
+				(root->urld.visits > 0)))
 			(*count)++;
 	}
 
@@ -578,8 +579,9 @@ void urldb_write_paths(const struct path_data *parent, const char *host,
 
 	if (!parent->children) {
 		/* leaf node */
-		if (!((parent->urld.last_visit > expiry) &&
-				(parent->urld.visits > 0)))
+		if (!(parent->persistent ||
+				((parent->urld.last_visit > expiry) &&
+				(parent->urld.visits > 0))))
 			/* expired */
 			return;
 
@@ -646,6 +648,25 @@ void urldb_write_paths(const struct path_data *parent, const char *host,
 		*path_used = pused;
 		(*path)[pused - 1] = '\0';
 	}
+}
+
+/**
+ * Set the cross-session persistence of the entry for an URL
+ *
+ * \param url Absolute URL to persist
+ * \param persist True to persist, false otherwise
+ */
+void urldb_set_url_persistence(const char *url, bool persist)
+{
+	struct path_data *p;
+
+	assert(url);
+
+	p = urldb_find_url(url);
+	if (!p)
+		return;
+
+	p->persistent = persist;
 }
 
 /**

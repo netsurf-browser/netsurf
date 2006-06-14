@@ -1535,7 +1535,7 @@ void ro_msg_dataload(wimp_message *message)
 		data = urldb_get_url_data(url);
 		if (!data) {
 			urldb_add_url(url);
-			urldb_update_url_visit_data(url);
+			urldb_set_url_persistence(url, true);
 			data = urldb_get_url_data(url);
 		}
 		if (data) {
@@ -2173,7 +2173,7 @@ void ro_gui_view_source(struct content *content)
 			return;
 		}
 		snprintf(full_name, 256, "%s/%s", TEMP_FILENAME_PREFIX, temp_name);
-		full_name[255] = '\0';	
+		full_name[255] = '\0';
 		r = __riscosify(full_name, 0, __RISCOSIFY_NO_SUFFIX, message.file_name,
 				212, 0);
 		if (r == 0) {

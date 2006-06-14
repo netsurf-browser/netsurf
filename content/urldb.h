@@ -28,6 +28,7 @@ struct bitmap;
 /* Persistence support */
 void urldb_load(const char *filename);
 void urldb_save(const char *filename);
+void urldb_set_url_persistence(const char *url, bool persist);
 
 /* URL insertion */
 bool urldb_add_url(const char *url);

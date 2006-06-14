@@ -105,8 +105,9 @@ void ro_gui_hotlist_initialise(void) {
 			data = urldb_get_url_data(default_entries[i].url);
 			if (!data) {
 				urldb_add_url(default_entries[i].url);
-				urldb_update_url_visit_data(
-						default_entries[i].url);
+				urldb_set_url_persistence(
+						default_entries[i].url,
+						true);
 				data = urldb_get_url_data(
 						default_entries[i].url);
 			}
@@ -314,7 +315,7 @@ bool ro_gui_hotlist_dialog_apply(wimp_w w) {
 			data = urldb_get_url_data(url);
 			if (!data) {
 				urldb_add_url(url);
-				urldb_update_url_visit_data(url);
+				urldb_set_url_persistence(url, true);
 				data = urldb_get_url_data(url);
 			}
 			if (!data) {

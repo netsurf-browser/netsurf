@@ -435,13 +435,14 @@ void options_load_tree_entry(xmlNode *li, struct node *directory) {
 	if (!data) {
 		/* No entry in database, so add one */
 		urldb_add_url(url);
-		/* and bump visit data */
-		urldb_update_url_visit_data(url);
 		/* now attempt to get url data */
 		data = urldb_get_url_data(url);
 	}
 	if (!data)
 		return;
+
+	/* Make this URL persistent */
+	urldb_set_url_persistence(url, true);
 
 	if (!data->title)
 		urldb_set_url_title(url, title);
