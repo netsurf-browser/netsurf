@@ -2056,13 +2056,13 @@ int urldb_search_match_string(const struct host_part *a,
 		return strcasecmp(a->part, b);
 	}
 
-	end = b + strlen(b);
+	end = b + strlen(b) + 1;
 
 	while (b < end && a && a != &db_root) {
 		dot = strchr(b, '.');
 		if (!dot) {
 			/* last segment */
-			dot = end;
+			dot = end - 1;
 		}
 
 		/* Compare strings (length limited) */
@@ -2119,13 +2119,13 @@ int urldb_search_match_prefix(const struct host_part *a,
 		return strncasecmp(a->part, b, strlen(b));
 	}
 
-	end = b + strlen(b);
+	end = b + strlen(b) + 1;
 
 	while (b < end && a && a != &db_root) {
 		dot = strchr(b, '.');
 		if (!dot) {
 			/* last segment */
-			dot = end;
+			dot = end - 1;
 		}
 
 		/* Compare strings (length limited) */
@@ -2134,7 +2134,7 @@ int urldb_search_match_prefix(const struct host_part *a,
 			return ret;
 
 		/* The strings matched */
-		if (dot < end) {
+		if (dot < end - 1) {
 			/* Consider segment lengths only in the case
 			 * where the prefix contains segments */
 			plen = strlen(a->part);
