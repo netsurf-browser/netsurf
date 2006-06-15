@@ -1136,7 +1136,11 @@ void urldb_iterate_partial(const char *prefix,
 				return;
 		}
 
-		urldb_iterate_partial_path(&h->paths, slash + 1, callback);
+		if (h->paths.children) {
+			/* Have paths, iterate them */
+			urldb_iterate_partial_path(&h->paths, slash + 1,
+					callback);
+		}
 
 	} else {
 		int len = strlen(prefix);
@@ -1195,10 +1199,12 @@ bool urldb_iterate_partial_host(struct search_node *root, const char *prefix,
 				callback))
 			return false;
 
-		/* and extract all paths attached to this host */
-		if (!urldb_iterate_entries_path(&root->data->paths,
-				callback)) {
-			return false;
+		if (root->data->paths.children) {
+			/* and extract all paths attached to this host */
+			if (!urldb_iterate_entries_path(&root->data->paths,
+					callback)) {
+				return false;
+			}
 		}
 
 		if (!urldb_iterate_partial_host(root->right, prefix,
@@ -1294,8 +1300,12 @@ bool urldb_iterate_entries_host(struct search_node *parent,
 	if (!urldb_iterate_entries_host(parent->left, callback))
 		return false;
 
-	if (!urldb_iterate_entries_path(&parent->data->paths, callback)) {
-		return false;
+	if (parent->data->paths.children) {
+		/* We have paths, so iterate them */
+		if (!urldb_iterate_entries_path(&parent->data->paths,
+				callback)) {
+			return false;
+		}
 	}
 
 	if (!urldb_iterate_entries_host(parent->right, callback))
