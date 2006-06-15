@@ -46,7 +46,8 @@ static wimp_icon url_complete_sprite;
 static int mouse_x;
 static int mouse_y;
 
-static bool url_complete_callback(const char *url);
+static bool url_complete_callback(const char *url,
+		const struct url_data *data);
 
 /**
  * Should be called when the caret is placed into a URL completion icon.
@@ -327,11 +328,16 @@ bool ro_gui_url_complete_keypress(struct gui_window *g, int key)
  * Callback function for urldb_iterate_partial
  *
  * \param url URL which matches
+ * \param data Data associated with URL
  * \return true to continue iteration, false otherwise
  */
-bool url_complete_callback(const char *url)
+bool url_complete_callback(const char *url, const struct url_data *data)
 {
 	const char **array_extend;
+
+	/* Ignore unvisited URLs */
+	if (data->visits == 0)
+		return true;
 
 	url_complete_matches_available++;
 
