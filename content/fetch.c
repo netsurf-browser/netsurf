@@ -70,6 +70,7 @@ struct fetch {
 	char *host;		/**< Host part of URL. */
 	char *location;		/**< Response Location header, or 0. */
 	unsigned long content_length;	/**< Response Content-Length, or 0. */
+	char *cookie_string;	/**< Cookie string for this fetch */
 	char *realm;            /**< HTTP Auth Realm */
 	char *post_urlenc;	/**< Url encoded POST string, or 0. */
 	struct curl_httppost *post_multipart;	/**< Multipart post data, or 0. */
@@ -356,6 +357,7 @@ struct fetch * fetch_start(char *url, char *referer,
 	fetch->host = host;
 	fetch->location = 0;
 	fetch->content_length = 0;
+	fetch->cookie_string = 0;
 	fetch->realm = 0;
 	fetch->post_urlenc = 0;
 	fetch->post_multipart = 0;
@@ -635,13 +637,9 @@ CURLcode fetch_set_options(struct fetch *f)
 		SETOPT(CURLOPT_HTTPGET, 1L);
 	}
 	if (f->cookies) {
-		if (option_cookie_file)
-			SETOPT(CURLOPT_COOKIEFILE, option_cookie_file);
-		if (option_cookie_jar)
-			SETOPT(CURLOPT_COOKIEJAR, option_cookie_jar);
-	} else {
-		SETOPT(CURLOPT_COOKIEFILE, 0);
-		SETOPT(CURLOPT_COOKIEJAR, 0);
+		f->cookie_string = urldb_get_cookie(f->url, f->referer);
+		if (f->cookie_string)
+			SETOPT(CURLOPT_COOKIE, f->cookie_string);
 	}
 #ifdef WITH_AUTH
 	if ((auth = urldb_get_auth_details(f->url)) != NULL) {
@@ -771,6 +769,7 @@ void fetch_free(struct fetch *f)
 	free(f->host);
 	free(f->referer);
 	free(f->location);
+	free(f->cookie_string);
 	free(f->realm);
 	if (f->headers)
 		curl_slist_free_all(f->headers);
@@ -1175,6 +1174,10 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 			f->cachedata.last_modified =
 					curl_getdate(&data[i], NULL);
 		}
+	} else if (11 < size && strncasecmp(data, "Set-Cookie:", 11) == 0) {
+		/* extract Set-Cookie header */
+		SKIP_ST(11);
+		urldb_set_cookie(&data[i], f->url);
 	}
 
 	return size;

@@ -77,6 +77,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include <curl/curl.h>
+
 #include "netsurf/image/bitmap.h"
 #include "netsurf/content/urldb.h"
 #include "netsurf/desktop/options.h"
@@ -92,7 +95,11 @@ struct cookie {
 	char *name;		/**< Cookie name */
 	char *value;		/**< Cookie value */
 	char *comment;		/**< Cookie comment */
-	time_t expires;		/**< Expiry timestamp, or 0 for session */
+	bool domain_from_set;	/**< Domain came from Set-Cookie: header */
+	char *domain;		/**< Domain */
+	bool path_from_set;	/**< Path came from Set-Cookie: header */
+	char *path;		/**< Path */
+	time_t expires;		/**< Expiry timestamp, or 1 for session */
 	time_t last_used;	/**< Last used time */
 	bool secure;		/**< Only send for HTTPS requests */
 	enum { COOKIE_NETSCAPE = 0,
@@ -102,6 +109,7 @@ struct cookie {
 	bool no_destroy;	/**< Never destroy this cookie,
 				 * unless it's expired */
 
+	struct cookie *prev;	/**< Previous in list */
 	struct cookie *next;	/**< Next in list */
 };
 
@@ -230,6 +238,17 @@ static int urldb_search_match_string(const struct host_part *a,
 static int urldb_search_match_prefix(const struct host_part *a,
 		const char *b);
 
+/* Cookies */
+static struct cookie *urldb_parse_cookie(const char *url,
+		const char *cookie);
+static bool urldb_insert_cookie(struct cookie *c, const char *scheme,
+		const char *url);
+static void urldb_free_cookie(struct cookie *c);
+static bool urldb_concat_cookie(struct cookie *c, int *used,
+		int *alloc, char **buf);
+static void urldb_save_cookie_hosts(FILE *fp, struct host_part *parent);
+static void urldb_save_cookie_paths(FILE *fp, struct path_data *parent);
+
 /** Root database handle */
 static struct host_part db_root;
 
@@ -244,6 +263,27 @@ static struct search_node *search_trees[NUM_SEARCH_TREES] = {
 	&empty, &empty, &empty, &empty, &empty, &empty, &empty, &empty,
 	&empty, &empty, &empty
 };
+
+#define COOKIE_FILE_VERSION 100
+#define URL_FILE_VERSION 106
+
+regex_t expires_re;
+
+/**
+ * Initialise URL database code
+ *
+ * This should be called before any other urldb functions
+ */
+void urldb_init(void)
+{
+	regcomp_wrapper(&expires_re, "[a-zA-Z]{3},[[:space:]]"	// "Wdy, "
+				"[0-9]{2}[[:space:]-]"		// "DD[ -]"
+				"[a-zA-Z]{3}[[:space:]-]"	// "MMM[ -]"
+				"[0-9]{4}[[:space:]]"		// "YYYY "
+				"[0-9]{2}(:[0-9]{2}){2}"	// "HH:MM:SS"
+				"[[:space:]]GMT",		// " GMT"
+				REG_EXTENDED);
+}
 
 /**
  * Import an URL database from file, replacing any existing database
@@ -279,7 +319,7 @@ void urldb_load(const char *filename)
 		LOG(("Unsupported URL file version."));
 		return;
 	}
-	if (version > 106) {
+	if (version > URL_FILE_VERSION) {
 		LOG(("Unknown URL file version."));
 		return;
 	}
@@ -475,7 +515,7 @@ void urldb_save(const char *filename)
 	}
 
 	/* file format version number */
-	fprintf(fp, "106\n");
+	fprintf(fp, "%d\n", URL_FILE_VERSION);
 
 	for (i = 0; i != NUM_SEARCH_TREES; i++) {
 		urldb_save_search_tree(search_trees[i], fp);
@@ -2241,6 +2281,950 @@ struct search_node *urldb_search_split(struct search_node *root)
 
 	return root;
 }
+
+/**
+ * Retrieve cookies for an URL
+ *
+ * \param url URL being fetched
+ * \param referer Referring resource, or NULL
+ * \return Cookies string for libcurl (on heap), or NULL on error/no cookies
+ *
+ * \todo Handle unvalidated fetches
+ */
+char *urldb_get_cookie(const char *url, const char *referer)
+{
+	const struct path_data *p, *q;
+	const struct host_part *h;
+	struct cookie *c;
+	int count = 0, version = COOKIE_RFC2965;
+	int ret_alloc = 4096, ret_used = 1;
+	char *path;
+	char *ret;
+	char *scheme;
+	time_t now;
+	url_func_result res;
+
+	assert(url);
+
+//	LOG(("%s : %s", url, referer));
+
+//	if (referer)
+//		/* No unvalidated fetches for now */
+//		return NULL;
+
+	urldb_add_url(url);
+
+	p = urldb_find_url(url);
+	if (!p)
+		return NULL;
+
+	scheme = p->scheme;
+
+	ret = malloc(ret_alloc);
+	if (!ret)
+		return NULL;
+
+	ret[0] = '\0';
+
+	res = url_path(url, &path);
+	if (res != URL_FUNC_OK) {
+		free(ret);
+		return NULL;
+	}
+
+	now = time(NULL);
+
+	if (p->prev) {
+		for (q = p->prev; q && q->prev; q = q->prev)
+			; /* do nothing */
+	} else {
+		q = p;
+	}
+
+	for (; q; q = q->next) {
+		if (strcmp(q->segment, p->segment))
+			continue;
+
+		/* Consider all cookies associated with this exact path */
+		for (c = q->cookies; c; c = c->next) {
+			if (c->expires != 1 && c->expires < now)
+				/* cookie has expired => ignore */
+				continue;
+
+			if (c->secure && strcasecmp(q->scheme, "https"))
+				/* secure cookie for insecure host. ignore */
+				continue;
+
+			if (!urldb_concat_cookie(c, &ret_used,
+					&ret_alloc, &ret)) {
+				free(path);
+				free(ret);
+				return NULL;
+			}
+
+			if (c->version < (unsigned int)version)
+				version = c->version;
+
+			c->last_used = now;
+
+			count++;
+		}
+	}
+
+//	LOG(("%s", ret));
+
+	if (strlen(p->segment) == 0)
+		/* We're a directory; skip parent */
+		p = p->parent->parent;
+
+	/* Now consider cookies whose paths prefix-match ours */
+	for (; p; p = p->parent) {
+		/* Find parent directory's path entry(ies) */
+		/* There are potentially multiple due to differing schemes */
+		for (q = p->children; q; q = q->next) {
+			if (strlen(q->segment) > 0)
+				continue;
+
+			for (c = q->cookies; c; c = c->next) {
+//				LOG(("%p: %s=%s", c, c->name, c->value));
+				if (c->expires != 1 && c->expires < now)
+					/* cookie has expired => ignore */
+					continue;
+
+				if (c->secure && strcasecmp(
+						q->scheme, "https"))
+					/* Secure cookie for insecure server
+					 * => ignore */
+					continue;
+
+				if (!urldb_concat_cookie(c, &ret_used,
+						&ret_alloc, &ret)) {
+					free(path);
+					free(ret);
+					return NULL;
+				}
+
+				if (c->version < (unsigned int) version)
+					version = c->version;
+
+				c->last_used = now;
+
+				count++;
+			}
+		}
+
+		if (!p->parent) {
+			/* No parent, so bail here. This can't go in the
+			 * loop exit condition as we want to process the
+			 * top-level node, too */
+			break;
+		}
+	}
+
+//	LOG(("%s", ret));
+
+	/* Finally consider domain cookies for hosts which domain match ours */
+	for (h = (const struct host_part *)p; h && h != &db_root;
+			h = h->parent) {
+		for (c = h->paths.cookies; c; c = c->next) {
+			if (c->expires != 1 && c->expires < now)
+				/* cookie has expired => ignore */
+				continue;
+
+			/* Ensure cookie path is a prefix of the resource */
+			if (strncmp(c->path, path, strlen(c->path)) != 0)
+				/* paths don't match => ignore */
+				continue;
+
+			if (c->secure && strcasecmp(scheme, "https"))
+				/* secure cookie for insecure host. ignore */
+				continue;
+
+			if (!urldb_concat_cookie(c, &ret_used, &ret_alloc,
+					&ret)) {
+				free(path);
+				free(ret);
+				return NULL;
+			}
+
+			if (c->version < (unsigned int)version)
+				version = c->version;
+
+			c->last_used = now;
+
+			count++;
+		}
+	}
+
+//	LOG(("%s", ret));
+
+	if (count == 0) {
+		/* No cookies found */
+		free(path);
+		free(ret);
+		return NULL;
+	}
+
+	/* and build output string */
+	{
+		char *temp;
+		if (version > 0)
+			temp = malloc(12 + ret_used);
+		else
+			temp = malloc(ret_used);
+		if (!temp) {
+			free(path);
+			free(ret);
+			return NULL;
+		}
+
+		if (version > 0)
+			sprintf(temp, "$Version=%d%s", version, ret);
+		else {
+			/* Old-style cookies => no version & skip "; " */
+			sprintf(temp, "%s", ret + 2);
+		}
+
+		free(path);
+		free(ret);
+		ret = temp;
+	}
+
+	return ret;
+}
+
+/**
+ * Parse Set-Cookie header and insert cookie(s) into database
+ *
+ * \param header Header to parse, with Set-Cookie: stripped
+ * \param url URL being fetched
+ * \return true on success, false otherwise
+ */
+bool urldb_set_cookie(const char *header, const char *url)
+{
+	char cookie[8192];
+	const char *cur = header, *comma, *end;
+	char *path, *host, *scheme, *urlt;
+	url_func_result res;
+
+	assert(url && header);
+
+//	LOG(("'%s' : '%s'", url, header));
+
+	/* strip fragment */
+	urlt = strdup(url);
+	scheme = strchr(urlt, '#');
+	if (scheme)
+		*scheme = '\0';
+
+	res = url_scheme(url, &scheme);
+	if (res != URL_FUNC_OK) {
+		free(urlt);
+		return false;
+	}
+
+	res = url_path(url, &path);
+	if (res != URL_FUNC_OK) {
+		free(scheme);
+		free(urlt);
+		return false;
+	}
+
+	res = url_host(url, &host);
+	if (res != URL_FUNC_OK) {
+		free(path);
+		free(scheme);
+		free(urlt);
+		return false;
+	}
+
+	end = cur + strlen(cur) - 2 /* Trailing CRLF */;
+
+	/* Find comma, if any */
+	comma = strchr(cur, ',');
+	if (comma) {
+		/* Check for Expires avpair: Wdy, DD-Mon-YYYY HH:MM:SS GMT */
+		/* Date parts of the form "DD Mon YYYY" have been seen in
+		 * the wild, so we accept them too even though they're not
+		 * strictly correct - it's more important to match something
+		 * that looks like an Expires avpair than be strict here (as
+		 * we're simply looking for the end of the cookie
+		 * declaration) */
+		if (regexec(&expires_re, comma - 3, 0, NULL, 0) == 0) {
+			/* Part of Expires avpair => look for next comma */
+			comma = strchr(comma + 1, ',');
+		}
+	}
+
+	if (!comma) {/* Yes, if; not else - Expires check may modify comma */
+		/* No comma => 1 cookie in this header */
+		comma = end;
+	}
+
+	do {
+		struct cookie *c;
+		char *dot;
+
+		snprintf(cookie, sizeof cookie, "%.*s", comma - cur, cur);
+
+		c = urldb_parse_cookie(url, cookie);
+		if (!c) {
+			/* failed => stop parsing */
+			goto error;
+		}
+
+		/* validate cookie */
+
+		/* Cookie path must be a prefix of URL path */
+		if (strncmp(c->path, path, strlen(c->path)) != 0 ||
+				strlen(c->path) > strlen(path)) {
+			urldb_free_cookie(c);
+			goto error;
+		}
+
+		/* Cookie domain must contain embedded dots */
+		dot = strchr(c->domain + 1, '.');
+		if (!dot || *(dot + 1) == '\0') {
+			/* no embedded dots */
+			urldb_free_cookie(c);
+			goto error;
+		}
+
+		/* Domain match fetch host with cookie domain */
+		if (strcasecmp(host, c->domain) != 0) {
+			int hlen, dlen;
+
+			if (host[0] >= '0' && host[0] <= '9') {
+				/* IP address, so no partial match */
+				urldb_free_cookie(c);
+				goto error;
+			}
+
+			hlen = strlen(host);
+			dlen = strlen(c->domain);
+
+			if (hlen <= dlen) {
+				/* Partial match not possible */
+				urldb_free_cookie(c);
+				goto error;
+			}
+
+			if (strcasecmp(host + (hlen - dlen), c->domain)) {
+				urldb_free_cookie(c);
+				goto error;
+			}
+
+			/* Ensure H contains no dots */
+			for (int i = 0; i < (hlen - dlen); i++)
+				if (host[i] == '.') {
+					urldb_free_cookie(c);
+					goto error;
+				}
+		}
+
+		/* Now insert into database */
+		if (!urldb_insert_cookie(c, scheme, urlt))
+			goto error;
+
+		cur = comma + 1;
+		if (cur < end) {
+			comma = strchr(cur, ',');
+			if (comma) {
+				/* Check if it's an Expires avpair */
+				if (regexec(&expires_re, comma - 3, 0,
+						NULL, 0) == 0) {
+					/* Part of Expires avpair =>
+					 * look for next comma */
+					comma = strchr(comma + 1, ',');
+				}
+			}
+			if (!comma)
+				comma = end;
+		}
+	} while (comma && cur < end);
+
+	free(host);
+	free(path);
+	free(scheme);
+	free(urlt);
+
+	return true;
+
+error:
+	free(host);
+	free(path);
+	free(scheme);
+	free(urlt);
+
+	return false;
+}
+
+/**
+ * Parse a cookie
+ *
+ * \param url URL being fetched
+ * \param cookie Cookie string
+ * \return Pointer to cookie structure (on heap, caller frees) or NULL
+ */
+struct cookie *urldb_parse_cookie(const char *url, const char *cookie)
+{
+	struct cookie *c;
+	char name[1024], value[4096];
+	const char *cur = cookie, *semi, *end;
+	time_t max_age = 0, expires = 0;
+	bool had_max_age = false, had_expires = false;
+	url_func_result res;
+
+	assert(url && cookie);
+
+	c = calloc(1, sizeof(struct cookie));
+	if (!c)
+		return NULL;
+
+	end = cur + strlen(cur);
+
+	/* Find semicolon */
+	semi = strchr(cur, ';');
+	if (!semi)
+		semi = end;
+
+	/* process name-value pairs */
+	do {
+		char *equals = strchr(cur, '=');
+		int vlen;
+
+		name[0] = value[0] = '\0';
+
+		if (equals && equals < semi) {
+			char *n, *v;
+			/* name = value */
+			if (sscanf(cur, "%1023[^=]=%4095[^;]",
+					name, value) != 2)
+				break;
+
+			/* Strip whitespace from start of name */
+			for (n = name; *n; n++) {
+				if (*n != ' ' && *n != '\t')
+					break;
+			}
+
+			/* Strip whitespace from end of name */
+			for (vlen = strlen(name); vlen; vlen--) {
+				if (name[vlen] == ' ' || name[vlen] == '\t')
+					name[vlen] = '\0';
+				else
+					break;
+			}
+
+			/* Strip whitespace from start of value */
+			for (v = value; *v; v++) {
+				if (*v != ' ' && *v != '\t')
+					break;
+			}
+			/* Strip quote from start of value */
+			if (*v == '"')
+				v++;
+
+			/* Strip whitespace from end of value */
+			for (vlen = strlen(value); vlen; vlen--) {
+				if (value[vlen] == ' ' ||
+						value[vlen] == '\t')
+					value[vlen] = '\0';
+				else
+					break;
+			}
+			/* Strip quote from end of value */
+			if (value[vlen] == '"')
+				value[vlen] = '\0';
+
+			if (!c->comment &&
+					strcasecmp(n, "Comment") == 0) {
+				c->comment = strdup(v);
+				if (!c->comment)
+					break;
+			} else if (!c->domain &&
+					strcasecmp(n, "Domain") == 0) {
+				if (v[0] == '.') {
+					/* Domain must start with a dot */
+					c->domain_from_set = true;
+					c->domain = strdup(v);
+					if (!c->domain)
+						break;
+				}
+			} else if (strcasecmp(n, "Max-Age") == 0) {
+				int temp = atoi(v);
+				had_max_age = true;
+				if (temp == 0)
+					/* Special case - 0 means delete */
+					max_age = 0;
+				else
+					max_age = time(NULL) + temp;
+			} else if (!c->path &&
+					strcasecmp(n, "Path") == 0) {
+				c->path_from_set = true;
+				c->path = strdup(v);
+				if (!c->path)
+					break;
+			} else if (strcasecmp(n, "Version") == 0) {
+				c->version = atoi(v);
+			} else if (strcasecmp(n, "Expires") == 0) {
+				had_expires = true;
+				expires = curl_getdate(v, NULL);
+			} else if (!c->name) {
+				c->name = strdup(n);
+				c->value = strdup(v);
+				if (!c->name || !c->value)
+					break;
+			}
+		} else {
+			char *n;
+
+			/* name */
+			if (sscanf(cur, "%1023[^;] ", name) != 1)
+				break;
+
+			/* Strip whitespace from start of name */
+			for (n = name; *n; n++) {
+				if (*n != ' ' && *n != '\t')
+					break;
+			}
+
+			/* Strip whitespace from end of name */
+			for (vlen = strlen(name); vlen; vlen--) {
+				if (name[vlen] == ' ' || name[vlen] == '\t')
+					name[vlen] = '\0';
+				else
+					break;
+			}
+
+			if (strcasecmp(n, "Secure") == 0)
+				c->secure = true;
+		}
+
+		cur = semi + 1;
+		if (cur < end) {
+			semi = strchr(cur, ';');
+			if (!semi)
+				semi = end;
+		}
+	} while(semi && cur < end);
+
+	if (cur < end) {
+		/* parsing failed */
+		urldb_free_cookie(c);
+		return NULL;
+	}
+
+	/* Now fix-up default values */
+	if (!c->domain) {
+		res = url_host(url, &c->domain);
+		if (res != URL_FUNC_OK) {
+			urldb_free_cookie(c);
+			return NULL;
+		}
+	}
+
+	if (!c->path) {
+		res = url_path(url, &c->path);
+		if (res != URL_FUNC_OK) {
+			urldb_free_cookie(c);
+			return NULL;
+		}
+	}
+
+	if (had_max_age && had_expires) {
+		/* Max age takes precedence iff version 1 or later */
+		c->expires =
+			c->version == COOKIE_NETSCAPE ? expires : max_age;
+	} else if (had_max_age) {
+		c->expires = max_age;
+	} else if (had_expires) {
+		c->expires = expires;
+	} else
+		c->expires = 1;
+
+	return c;
+}
+
+/**
+ * Insert a cookie into the database
+ *
+ * \param c The cookie to insert
+ * \param scheme URL scheme associated with cookie path
+ * \param url URL (sans fragment) associated with cookie
+ * \return true on success, false on memory exhaustion (c will be freed)
+ */
+bool urldb_insert_cookie(struct cookie *c, const char *scheme,
+		const char *url)
+{
+	struct cookie *d;
+	const struct host_part *h;
+	struct path_data *p;
+
+	assert(c && scheme && url);
+
+	if (c->domain[0] == '.') {
+		h = urldb_search_find(
+			search_trees[tolower(c->domain[1]) - 'a' + ST_DN],
+			c->domain + 1);
+		if (!h) {
+			h = urldb_add_host(c->domain + 1);
+			if (!h) {
+				urldb_free_cookie(c);
+				return false;
+			}
+		}
+
+		p = &h->paths;
+	} else {
+		if (c->domain[0] >= '0' && c->domain[0] <= '9')
+			h = urldb_search_find(search_trees[ST_IP], c->domain);
+		else
+			h = urldb_search_find(search_trees[
+					tolower(c->domain[0]) - 'a' + ST_DN],
+					c->domain);
+
+		if (!h) {
+			h = urldb_add_host(c->domain);
+			if (!h) {
+				urldb_free_cookie(c);
+				return false;
+			}
+		}
+
+		/* find path */
+		p = urldb_add_path(scheme, 0, h,
+				c->path, NULL, url);
+		if (!p) {
+			urldb_free_cookie(c);
+			return false;
+		}
+	}
+
+	/* add cookie */
+	for (d = p->cookies; d; d = d->next) {
+		if (!strcmp(d->domain, c->domain) &&
+				!strcmp(d->path, c->path) &&
+				!strcmp(d->name, c->name))
+			break;
+	}
+
+	if (d) {
+		if (c->expires == 0) {
+			/* remove cookie */
+			if (d->next)
+				d->next->prev = d->prev;
+			if (d->prev)
+				d->prev->next = d->next;
+			else
+				p->cookies = d->next;
+			urldb_free_cookie(d);
+			urldb_free_cookie(c);
+		} else {
+			/* replace d with c */
+			c->prev = d->prev;
+			c->next = d->next;
+			if (c->next)
+				c->next->prev = c;
+			if (c->prev)
+				c->prev->next = c;
+			else
+				p->cookies = c;
+			urldb_free_cookie(d);
+//			LOG(("%p: %s=%s", c, c->name, c->value));
+		}
+	} else {
+		c->prev = NULL;
+		c->next = p->cookies;
+		if (p->cookies)
+			p->cookies->prev = c;
+		p->cookies = c;
+//		LOG(("%p: %s=%s", c, c->name, c->value));
+	}
+
+	return true;
+}
+
+/**
+ * Free a cookie
+ *
+ * \param c The cookie to free
+ */
+void urldb_free_cookie(struct cookie *c)
+{
+	assert(c);
+
+	free(c->comment);
+	free(c->domain);
+	free(c->path);
+	free(c->name);
+	free(c->value);
+	free(c);
+}
+
+/**
+ * Concatenate a cookie into the provided buffer
+ *
+ * \param c Cookie to concatenate
+ * \param used Pointer to amount of buffer used (updated)
+ * \param alloc Pointer to allocated size of buffer (updated)
+ * \param buf Pointer to Pointer to buffer (updated)
+ * \return true on success, false on memory exhaustion
+ */
+bool urldb_concat_cookie(struct cookie *c, int *used, int *alloc, char **buf)
+{
+	int clen;
+
+	assert(c && used && alloc && buf && *buf);
+
+	clen = 2 + strlen(c->name) + 1 + strlen(c->value) +
+			(c->path_from_set ?
+				8 + strlen(c->path) : 0) +
+			(c->domain_from_set ?
+				10 + strlen(c->domain) : 0);
+
+	if (*used + clen >= *alloc) {
+		char *temp = realloc(*buf, *alloc + 4096);
+		if (!temp) {
+			return false;
+		}
+		*buf = temp;
+		*alloc += 4096;
+	}
+
+	/** \todo Quote value strings iff version > 0 */
+	sprintf(*buf + *used - 1, "; %s=%s%s%s%s%s",
+			c->name, c->value,
+			(c->path_from_set ? "; $Path=" : "" ),
+			(c->path_from_set ? c->path : "" ),
+//			(c->path_from_set ? "\"" : ""),
+			(c->domain_from_set ? "; $Domain=" : ""),
+			(c->domain_from_set ? c->domain : "")
+//			,(c->domain_from_set ? "\"" : "")
+		);
+	*used += clen;
+
+	return true;
+}
+
+/**
+ * Load a cookie file into the database
+ *
+ * \param filename File to load
+ */
+void urldb_load_cookies(const char *filename)
+{
+	FILE *fp;
+	char s[16*1024];
+	int file_version = 0;
+
+	assert(filename);
+
+	fp = fopen(filename, "r");
+	if (!fp)
+		return;
+
+#define FIND_WS {							\
+		for (; *p && !isspace(*p) && !iscntrl(*p); p++)		\
+			; /* do nothing */				\
+		if (p >= end) {						\
+			LOG(("Overran input"));				\
+			continue;					\
+		}							\
+		*p++ = '\0';						\
+}
+
+#define SKIP_WS {							\
+		for (; *p && isspace(*p); p++)				\
+			; /* do nothing */				\
+		if (p >= end) {						\
+			LOG(("Overran input"));				\
+			continue;					\
+		}							\
+}
+
+	while (fgets(s, sizeof s, fp)) {
+		char *p = s, *end = 0,
+			*domain, *path, *name, *value, *scheme, *url,
+			*comment;
+		int version, domain_specified, path_specified,
+			secure, no_destroy;
+		time_t expires, last_used;
+
+		if(s[0] == 0 || s[0] == '#')
+			/* Skip blank lines or comments */
+			continue;
+
+		s[strlen(s) - 1] = '\0'; /* lose terminating newline */
+		end = s + strlen(s);
+
+		/* Look for file version first
+		 * (all input is ignored until this is read)
+		 */
+		if (strncasecmp(s, "Version:", 8) == 0) {
+			FIND_WS; SKIP_WS; file_version = atoi(p);
+
+			if (file_version != COOKIE_FILE_VERSION) {
+				LOG(("Unknown Cookie file version"));
+				break;
+			}
+
+			continue;
+		} else if (file_version == 0) {
+			/* Haven't yet seen version; skip this input */
+			continue;
+		}
+
+		/* One cookie/line */
+
+		/* Parse input */
+		FIND_WS; version = atoi(s);
+		SKIP_WS; domain = p; FIND_WS;
+		SKIP_WS; domain_specified = atoi(p); FIND_WS;
+		SKIP_WS; path = p; FIND_WS;
+		SKIP_WS; path_specified = atoi(p); FIND_WS;
+		SKIP_WS; secure = atoi(p); FIND_WS;
+		SKIP_WS; expires = (time_t)atoi(p); FIND_WS;
+		SKIP_WS; last_used = (time_t)atoi(p); FIND_WS;
+		SKIP_WS; no_destroy = atoi(p); FIND_WS;
+		SKIP_WS; name = p; FIND_WS;
+		SKIP_WS; value = p; FIND_WS;
+		SKIP_WS; scheme = p; FIND_WS;
+		SKIP_WS; url = p; FIND_WS;
+
+		/* Comment may have no content, so don't
+		 * use macros as they'll break */
+		for (; *p && isspace(*p); p++)
+			; /* do nothing */
+		comment = p;
+
+		assert(p <= end);
+
+		/* Now create cookie */
+		struct cookie *c = malloc(sizeof(struct cookie));
+		if (!c)
+			break;
+
+		c->name = strdup(name);
+		c->value = strdup(value);
+		c->comment = strdup(comment);
+		c->domain_from_set = domain_specified;
+		c->domain = strdup(domain);
+		c->path_from_set = path_specified;
+		c->path = strdup(path);
+		c->expires = expires;
+		c->last_used = last_used;
+		c->secure = secure;
+		c->version = version;
+		c->no_destroy = no_destroy;
+
+		if (!(c->name && c->value && c->comment &&
+				c->domain && c->path)) {
+			urldb_free_cookie(c);
+			break;
+		}
+
+		/* And insert it into database */
+		if (!urldb_insert_cookie(c, scheme, url)) {
+			/* Cookie freed for us */
+			break;
+		}
+	}
+
+#undef SKIP_WS
+#undef FIND_WS
+
+	fclose(fp);
+}
+
+/**
+ * Save persistent cookies to file
+ *
+ * \param filename Path to save to
+ */
+void urldb_save_cookies(const char *filename)
+{
+	FILE *fp;
+
+	assert(filename);
+
+	fp = fopen(filename, "w");
+	if (!fp)
+		return;
+
+	fprintf(fp, "# >%s\n", filename);
+	fprintf(fp, "# NetSurf cookies file.\n"
+		    "#\n"
+		    "# Lines starting with a '#' are comments, "
+						"blank lines are ignored.\n"
+		    "#\n"
+		    "# All lines prior to \"Version: %d\" are discarded.\n"
+		    "#\n"
+		    "# Version\tDomain\tDomain from Set-Cookie\tPath\t"
+			"Path from Set-Cookie\tSecure\tExpires\tLast used\t"
+			"No destroy\tName\tValue\tScheme\tURL\tComment\n",
+			COOKIE_FILE_VERSION);
+	fprintf(fp, "Version: %d\n", COOKIE_FILE_VERSION);
+
+
+	urldb_save_cookie_hosts(fp, &db_root);
+
+	fclose(fp);
+}
+
+/**
+ * Save a host subtree's cookies
+ *
+ * \param fp File pointer to write to
+ * \param parent Parent host
+ */
+void urldb_save_cookie_hosts(FILE *fp, struct host_part *parent)
+{
+	assert(fp && parent);
+
+	urldb_save_cookie_paths(fp, &parent->paths);
+
+	for (struct host_part *h = parent->children; h; h = h->next)
+		urldb_save_cookie_hosts(fp, h);
+}
+
+/**
+ * Save a path subtree's cookies
+ *
+ * \param fp File pointer to write to
+ * \param parent Parent path
+ */
+void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
+{
+	time_t now = time(NULL);
+
+	assert(fp && parent);
+
+	if (parent->cookies) {
+		for (struct cookie *c = parent->cookies; c; c = c->next) {
+
+			if (c->expires < now)
+				/* Skip expired cookies */
+				continue;
+
+			fprintf(fp, "%d\t%s\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t"
+					"%s\t%s\t%s\t%s\t%s\n",
+					c->version, c->domain,
+					c->domain_from_set, c->path,
+					c->path_from_set, c->secure,
+					(int)c->expires, (int)c->last_used,
+					c->no_destroy, c->name, c->value,
+					parent->scheme  ? parent->scheme
+							: "unused",
+					parent->url ? parent->url : "unused",
+					c->comment ? c->comment : "");
+		}
+	}
+
+	for (struct path_data *p = parent->children; p; p = p->next)
+		urldb_save_cookie_paths(fp, p);
+}
+
 
 #ifdef TEST
 int main(void)

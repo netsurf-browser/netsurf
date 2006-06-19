@@ -677,6 +677,58 @@ url_func_result url_plq(const char *url, char **result)
 
 
 /**
+ * Extract path segment from an URL
+ *
+ * \param url     an absolute URL
+ * \param result  pointer to pointer to buffer to hold result
+ * \return URL_FUNC_OK on success
+ */
+
+url_func_result url_path(const char *url, char **result)
+{
+	int m, path_len = 0;
+	regmatch_t match[10];
+
+	(*result) = 0;
+
+	m = regexec(&url_re, url, 10, match, 0);
+	if (m) {
+		LOG(("url '%s' failed to match regex", url));
+		return URL_FUNC_FAILED;
+	}
+	if (match[URL_RE_SCHEME].rm_so == -1 ||
+			match[URL_RE_AUTHORITY].rm_so == -1)
+		return URL_FUNC_FAILED;
+
+	if (match[URL_RE_PATH].rm_so != -1)
+		path_len = match[URL_RE_PATH].rm_eo -
+				match[URL_RE_PATH].rm_so;
+
+	(*result) = malloc((path_len ? path_len : 1) + 1);
+	if (!(*result)) {
+		LOG(("malloc failed"));
+		return URL_FUNC_NOMEM;
+	}
+
+	m = 0;
+	if (path_len > 1) {
+		strncpy((*result), url + match[URL_RE_PATH].rm_so,
+				path_len);
+		for (; path_len != 0 && (*result)[m + path_len - 1] != '/';
+				path_len--)
+			/* do nothing */;
+		m += path_len;
+	}
+	else
+		(*result)[m++] = '/';
+
+	(*result)[m] = '\0';
+
+	return URL_FUNC_OK;
+}
+
+
+/**
  * Attempt to find a nice filename for a URL.
  *
  * \param  url     an absolute URL

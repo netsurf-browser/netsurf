@@ -25,6 +25,9 @@ struct url_data {
 
 struct bitmap;
 
+/* Initialisation */
+void urldb_init(void);
+
 /* Persistence support */
 void urldb_load(const char *filename);
 void urldb_save(const char *filename);
@@ -65,5 +68,11 @@ void urldb_iterate_entries(bool (*callback)(const char *url,
 
 /* Debug */
 void urldb_dump(void);
+
+/* Cookies */
+bool urldb_set_cookie(const char *header, const char *url);
+char *urldb_get_cookie(const char *url, const char *referer);
+void urldb_load_cookies(const char *filename);
+void urldb_save_cookies(const char *filename);
 
 #endif

@@ -367,6 +367,7 @@ void gui_init(int argc, char** argv)
 
 	bitmap_initialise_memory();
 	urldb_load(option_url_path);
+	urldb_load_cookies(option_cookie_file);
 
 	nsdir_temp = getenv("NetSurf$Dir");
 	if (!nsdir_temp)
@@ -724,6 +725,7 @@ void gui_init2(int argc, char** argv)
 void gui_quit(void)
 {
 	bitmap_quit();
+	urldb_save_cookies(option_cookie_jar);
 	urldb_save(option_url_save);
 	ro_gui_window_quit();
 	ro_gui_global_history_save();

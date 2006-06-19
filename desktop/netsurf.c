@@ -15,6 +15,7 @@
 #include "netsurf/utils/config.h"
 #include "netsurf/content/fetch.h"
 #include "netsurf/content/fetchcache.h"
+#include "netsurf/content/urldb.h"
 #include "netsurf/desktop/netsurf.h"
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
@@ -77,6 +78,7 @@ void netsurf_init(int argc, char** argv)
 
 	lib_init();
 	url_init();
+	urldb_init();
 	gui_init(argc, argv);
 	setlocale(LC_ALL, "");
 	fetch_init();
