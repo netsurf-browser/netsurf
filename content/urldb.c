@@ -279,7 +279,7 @@ void urldb_init(void)
 	regcomp_wrapper(&expires_re, "[a-zA-Z]{3},[[:space:]]"	// "Wdy, "
 				"[0-9]{2}[[:space:]-]"		// "DD[ -]"
 				"[a-zA-Z]{3}[[:space:]-]"	// "MMM[ -]"
-				"[0-9]{4}[[:space:]]"		// "YYYY "
+				"[0-9]{2,4}[[:space:]]"		// "YY(YY)? "
 				"[0-9]{2}(:[0-9]{2}){2}"	// "HH:MM:SS"
 				"[[:space:]]GMT",		// " GMT"
 				REG_EXTENDED);
@@ -3226,11 +3226,44 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 }
 
 
-#ifdef TEST
+#ifdef TEST_URLDB
+const char *inputs[] = {
+	"day, 16-Jun-2006 01:10:16 GMT",
+	"day, 16 Jun 2006 01:10:16 GMT",
+	"day, 16-Jun-06 01:10:16 GMT",
+	"day, 16 Jun 06 01:10:16 GMT",
+	"Fri, 16-Jun-2006 01:10:16 GMT",
+	"Fri, 16 Jun 2006 01:10:16 GMT",
+	"Fri, 16-Jun-06 01:10:16 GMT",
+	"Fri, 16 Jun 06 01:10:16 GMT"
+};
+#define N_INPUTS (sizeof(inputs) / sizeof(inputs[0]))
+
+int option_expire_url = 0;
+
+void die(const char *error)
+{
+	printf("die: %s\n", error);
+	exit(1);
+}
+
+
+void warn_user(const char *warning, const char *detail)
+{
+	printf("WARNING: %s %s\n", warning, detail);
+}
+
 int main(void)
 {
 	struct host_part *h;
 	struct path_data *p;
+	int i;
+
+	urldb_init();
+
+	for (i = 0; i != N_INPUTS; i++)
+		if (regexec(&expires_re, inputs[i], 0, NULL, 0))
+			LOG(("Failed to match regex %d\n", i));
 
 	h = urldb_add_host("127.0.0.1");
 	if (!h) {
@@ -3246,19 +3279,22 @@ int main(void)
 	}
 
 	/* Get path entry */
-	p = urldb_add_path("http", 80, h, "/path/to/resource.htm?a=b", "zz");
+	p = urldb_add_path("http", 80, h, "/path/to/resource.htm?a=b", "zz",
+			"http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
 	if (!p) {
 		LOG(("failed adding path"));
 		return 1;
 	}
 
-	p = urldb_add_path("http", 80, h, "/path/to/resource.htm?a=b", "aa");
+	p = urldb_add_path("http", 80, h, "/path/to/resource.htm?a=b", "aa",
+			"http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
 	if (!p) {
 		LOG(("failed adding path"));
 		return 1;
 	}
 
-	p = urldb_add_path("http", 80, h, "/path/to/resource.htm?a=b", "yy");
+	p = urldb_add_path("http", 80, h, "/path/to/resource.htm?a=b", "yy",
+			"http://netsurf.strcprstskrzkrk.co.uk/path/to/resource.htm?a=b");
 	if (!p) {
 		LOG(("failed adding path"));
 		return 1;
