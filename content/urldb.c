@@ -1080,13 +1080,13 @@ void urldb_set_cert_permissions(const char *url, bool permit)
  * Set thumbnail for url, replacing any existing thumbnail
  *
  * \param url Absolute URL to consider
- * \param bitmap Opaque pointer to thumbnail data
+ * \param bitmap Opaque pointer to thumbnail data, or NULL to invalidate
  */
 void urldb_set_thumbnail(const char *url, struct bitmap *bitmap)
 {
 	struct path_data *p;
 
-	assert(url && bitmap);
+	assert(url);
 
 	p = urldb_find_url(url);
 	if (!p)
