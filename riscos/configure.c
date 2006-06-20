@@ -6,7 +6,7 @@
  */
 
 /** \file
- * RISC OS option setting (implemenation).
+ * RISC OS option setting (implementation).
  */
 
 #include <assert.h>
@@ -15,9 +15,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "oslib/os.h"
+#include "oslib/osbyte.h"
+#include "oslib/territory.h"
 #include "oslib/wimp.h"
 #include "netsurf/riscos/dialog.h"
 #include "netsurf/riscos/configure.h"
+#include "netsurf/riscos/wimp.h"
 #include "netsurf/riscos/wimp_event.h"
 #include "netsurf/riscos/configure/configure.h"
 #include "netsurf/utils/log.h"
@@ -26,10 +29,13 @@
 
 #define CONFIGURE_ICON_PADDING_H 32
 #define CONFIGURE_ICON_PADDING_V 32
+#define CONFIGURE_DEFAULT_ICON_WIDTH (68 + CONFIGURE_ICON_PADDING_H)
+#define CONFIGURE_DEFAULT_ICON_HEIGHT (128 + CONFIGURE_ICON_PADDING_V)
 
 struct configure_tool {
 	const char *name;
-	const char *translated;
+#define CONFIGURE_TOOL_TRANSLATED_SIZE 64
+	char translated[CONFIGURE_TOOL_TRANSLATED_SIZE];
 	char *validation;
 	bool (*initialise)(wimp_w w);
 	void (*finalise)(wimp_w w);
@@ -40,10 +46,11 @@ struct configure_tool {
 };
 
 static wimp_w configure_window;
+static int configure_current_encoding;
 static int configure_icons = 0;
 static struct configure_tool *configure_tools = NULL;
-static int configure_icon_width = 68 + CONFIGURE_ICON_PADDING_H;
-static int configure_icon_height = 128 + CONFIGURE_ICON_PADDING_V;
+static int configure_icon_width = CONFIGURE_DEFAULT_ICON_WIDTH;
+static int configure_icon_height = CONFIGURE_DEFAULT_ICON_HEIGHT;
 static int configure_icons_per_line = 0;
 static int configure_width;
 static int configure_height;
@@ -51,8 +58,10 @@ static int configure_height;
 static bool ro_gui_configure_click(wimp_pointer *pointer);
 static void ro_gui_configure_open_window(wimp_open *open);
 static void ro_gui_configure_close(wimp_w w);
+static bool ro_gui_configure_translate(void);
 
-void ro_gui_configure_initialise(void) {
+void ro_gui_configure_initialise(void)
+{
 	/* create our window */
 	configure_window = ro_gui_dialog_create("configure");
 	ro_gui_wimp_event_register_open_window(configure_window,
@@ -95,58 +104,66 @@ void ro_gui_configure_initialise(void) {
 	ro_gui_configure_register("con_secure",
 			ro_gui_options_security_initialise,
 			ro_gui_wimp_event_finalise);
+
+	/* translate the icons */
+	if (!ro_gui_configure_translate())
+		die("ro_gui_configure_translate failed");
 }
 
-void ro_gui_configure_show(void) {
-  	int width, height;
+void ro_gui_configure_show(void)
+{
+	int width, height;
 
 	width = configure_icon_width << 2;
 	height = ((configure_icons + 3) >> 2) * configure_icon_height;
 	ro_gui_dialog_open_top(configure_window, NULL, width, height);
 }
 
-bool ro_gui_configure_click(wimp_pointer *pointer) {
-  	struct configure_tool *tool;
+bool ro_gui_configure_click(wimp_pointer *pointer)
+{
+	struct configure_tool *tool;
 
-  	if (pointer->buttons == wimp_CLICK_MENU)
-  		return true;
+	if (pointer->buttons == wimp_CLICK_MENU)
+		return true;
 
-  	for (tool = configure_tools; tool; tool = tool->next) {
-  		if (tool->i == pointer->i) {
-  			if (!tool->open) {
-  			  	tool->open = true;
-  				if (!tool->initialise(tool->w))
-  					return false;
-  				ro_gui_dialog_open_persistent(
-  						configure_window,
-  						tool->w, true);
-  				ro_gui_wimp_event_register_close_window(
-  						tool->w,
-  						ro_gui_configure_close);
+	for (tool = configure_tools; tool; tool = tool->next) {
+		if (tool->i == pointer->i) {
+			if (!tool->open) {
+				tool->open = true;
+				if (!tool->initialise(tool->w))
+					return false;
+				ro_gui_dialog_open_persistent(
+						configure_window,
+						tool->w, true);
+				ro_gui_wimp_event_register_close_window(
+						tool->w,
+						ro_gui_configure_close);
 
-  			} else {
+			} else {
 				ro_gui_dialog_open_top(tool->w, NULL, 0, 0);
 			}
-  			break;
-  		}
-  	}
+			break;
+		}
+	}
 	return true;
 }
 
-void ro_gui_configure_close(wimp_w w) {
-  	struct configure_tool *tool;
+void ro_gui_configure_close(wimp_w w)
+{
+	struct configure_tool *tool;
 
-  	for (tool = configure_tools; tool; tool = tool->next) {
-  		if (tool->w == w) {
-  			tool->open = false;
-  			if (tool->finalise)
-  				tool->finalise(w);
-  			break;
-  		}
-  	}
+	for (tool = configure_tools; tool; tool = tool->next) {
+		if (tool->w == w) {
+			tool->open = false;
+			if (tool->finalise)
+				tool->finalise(w);
+			break;
+		}
+	}
 }
 
-void ro_gui_configure_open_window(wimp_open *open) {
+void ro_gui_configure_open_window(wimp_open *open)
+{
 	os_error *error;
 	int screen_width, screen_height;
 	int height, width;
@@ -155,6 +172,11 @@ void ro_gui_configure_open_window(wimp_open *open) {
 	os_box extent = { 0, 0, 0, 0 };
 	int x, y, l;
 	struct configure_tool *tool;
+
+	if (!ro_gui_configure_translate()) {
+		warn_user("ro_gui_configure_translate failed", 0);
+		return;
+	}
 
 	width = open->visible.x1 - open->visible.x0;
 	height = open->visible.y1 - open->visible.y0;
@@ -235,42 +257,30 @@ void ro_gui_configure_open_window(wimp_open *open) {
 }
 
 void ro_gui_configure_register(const char *window,
-		bool (*initialise)(wimp_w w), void (*finalise)(wimp_w w)) {
+		bool (*initialise)(wimp_w w), void (*finalise)(wimp_w w))
+{
 	wimp_icon_create new_icon;
 	struct configure_tool *tool;
 	struct configure_tool *link;
-	int icon_width;
 	os_error *error;
 
 	/* create our tool */
 	tool = calloc(sizeof(struct configure_tool), 1);
 	if (!tool) {
-	  	LOG(("Insufficient memory for calloc()"));
+		LOG(("Insufficient memory for calloc()"));
 		die("Insufficient memory");
 	}
 	tool->name = window;
-	tool->translated = messages_get(window);
+	tool->translated[0] = '\0';
 	tool->validation = malloc(strlen(window) + 2);
 	if (!tool->validation) {
-	  	LOG(("Insufficient memory for malloc()"));
+		LOG(("Insufficient memory for malloc()"));
 		die("Insufficient memory");
 	}
 	sprintf(tool->validation, "S%s", window);
 	tool->initialise = initialise;
 	tool->finalise = finalise;
 	tool->w = ro_gui_dialog_create(tool->name);
-
-	/* update the width */
-	error = xwimptextop_string_width(tool->translated,
-			strlen(tool->translated), &icon_width);
-	if (error) {
-		LOG(("xwimptextop_string_width: 0x%x: %s",
-				error->errnum, error->errmess));
-		die(error->errmess);
-	}
-	icon_width += CONFIGURE_ICON_PADDING_H;
-	if (icon_width > configure_icon_width)
-		configure_icon_width = icon_width;
 
 	/* create the icon */
 	new_icon.w = configure_window;
@@ -288,13 +298,17 @@ void ro_gui_configure_register(const char *window,
 	new_icon.icon.data.indirected_text_and_sprite.validation =
 			tool->validation;
 	new_icon.icon.data.indirected_text_and_sprite.size =
-			strlen(tool->translated);
+			CONFIGURE_TOOL_TRANSLATED_SIZE;
 	error = xwimp_create_icon(&new_icon, &tool->i);
 	if (error) {
 		LOG(("xwimp_create_icon: 0x%x: %s",
 				error->errnum, error->errmess));
 		die(error->errmess);
 	}
+
+	/* Set the icon's text in current local encoding */
+	ro_gui_set_icon_string(configure_window, tool->i,
+				messages_get(tool->name));
 
 	/* link into our list alphabetically */
 	if ((!configure_tools) ||
@@ -318,4 +332,73 @@ void ro_gui_configure_register(const char *window,
 		}
 	}
 	configure_icons++;
+}
+
+/**
+ * Translate tool icons into the system local encoding.
+ * This will also recalculate the minimum required icon width.
+ *
+ * \return true on success, false on memory exhaustion
+ */
+bool ro_gui_configure_translate(void)
+{
+	int alphabet;
+	struct configure_tool *tool;
+	int icon_width;
+	os_error *error;
+
+	/* read current alphabet */
+	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0,
+			&alphabet);
+	if (error) {
+		LOG(("failed reading alphabet: 0x%x: %s",
+				error->errnum, error->errmess));
+		/* assume Latin1 */
+		alphabet = territory_ALPHABET_LATIN1;
+	}
+
+	if (alphabet == configure_current_encoding)
+		/* text is already in the correct encoding */
+		return true;
+
+	/* reset icon width */
+	configure_icon_width = CONFIGURE_DEFAULT_ICON_WIDTH;
+
+	for (tool = configure_tools; tool; tool = tool->next) {
+		/* re-translate the text */
+		ro_gui_set_icon_string(configure_window, tool->i,
+				messages_get(tool->name));
+
+		/* update the width */
+		error = xwimptextop_string_width(tool->translated,
+				strlen(tool->translated), &icon_width);
+		if (error) {
+			LOG(("xwimptextop_string_width: 0x%x: %s",
+					error->errnum, error->errmess));
+			return false;
+		}
+		icon_width += CONFIGURE_ICON_PADDING_H;
+		if (icon_width > configure_icon_width)
+			configure_icon_width = icon_width;
+
+		error = xwimp_resize_icon(configure_window,
+				tool->i,
+				0,
+				-configure_icon_height,
+				configure_icon_width,
+				0);
+		if (error) {
+			LOG(("xwimp_resize_icon: 0x%x: %s",
+					error->errnum, error->errmess));
+		}
+	}
+
+	/* invalidate our global icons_per_line setting
+	 * so the icons get reflowed */
+	configure_icons_per_line = 0;
+
+	/* finally, set the current encoding */
+	configure_current_encoding = alphabet;
+
+	return true;
 }

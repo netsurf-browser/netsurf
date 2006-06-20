@@ -32,8 +32,8 @@ static void ro_gui_options_language_default(wimp_pointer *pointer);
 static bool ro_gui_options_language_ok(wimp_w w);
 static const char *ro_gui_options_language_name(const char *code);
 
-bool ro_gui_options_language_initialise(wimp_w w) {
-
+bool ro_gui_options_language_initialise(wimp_w w)
+{
 	/* set the current values */
 	ro_gui_set_icon_string(w, LANGUAGE_INTERFACE_FIELD,
 			ro_gui_options_language_name(option_language ?
@@ -58,9 +58,10 @@ bool ro_gui_options_language_initialise(wimp_w w) {
 
 }
 
-void ro_gui_options_language_default(wimp_pointer *pointer) {
+void ro_gui_options_language_default(wimp_pointer *pointer)
+{
 	const char *code;
-	
+
 	code = ro_gui_default_language();
 	ro_gui_set_icon_string(pointer->w, LANGUAGE_INTERFACE_FIELD,
 			ro_gui_options_language_name(code ?
@@ -70,21 +71,22 @@ void ro_gui_options_language_default(wimp_pointer *pointer) {
 					code : "en"));
 }
 
-bool ro_gui_options_language_ok(wimp_w w) {
+bool ro_gui_options_language_ok(wimp_w w)
+{
 	const char *code;
 	char *temp;
-	
+
 	code = ro_gui_menu_find_menu_entry_key(languages_menu,
 			ro_gui_get_icon_string(w, LANGUAGE_INTERFACE_FIELD));
 	if (code) {
-	  	code += 5;	/* skip 'lang_' */
+		code += 5;	/* skip 'lang_' */
 		if ((!option_language) || (strcmp(option_language, code))) {
 			temp = strdup(code);
 			if (temp) {
-			  	free(option_language);
-			  	option_language = temp;
+				free(option_language);
+				option_language = temp;
 			} else {
-			  	LOG(("No memory to duplicate language code"));
+				LOG(("No memory to duplicate language code"));
 				warn_user("NoMemory", 0);
 			}
 		}
@@ -92,21 +94,21 @@ bool ro_gui_options_language_ok(wimp_w w) {
 	code = ro_gui_menu_find_menu_entry_key(languages_menu,
 			ro_gui_get_icon_string(w, LANGUAGE_WEB_PAGES_FIELD));
 	if (code) {
-	  	code += 5;	/* skip 'lang_' */
+		code += 5;	/* skip 'lang_' */
 		if ((!option_accept_language) ||
 				(strcmp(option_accept_language, code))) {
 			temp = strdup(code);
 			if (temp) {
-			  	free(option_accept_language);
-			  	option_accept_language = temp;
+				free(option_accept_language);
+				option_accept_language = temp;
 			} else {
-			  	LOG(("No memory to duplicate language code"));
+				LOG(("No memory to duplicate language code"));
 				warn_user("NoMemory", 0);
 			}
 		}
 	}
 	ro_gui_save_options();
-  	return true;
+	return true;
 }
 
 
@@ -116,9 +118,11 @@ bool ro_gui_options_language_ok(wimp_w w) {
  * \param  code  2-letter ISO language code
  * \return  language name, or code if unknown
  */
-const char *ro_gui_options_language_name(const char *code) {
+const char *ro_gui_options_language_name(const char *code)
+{
 	char key[] = "lang_xx";
 	key[5] = code[0];
 	key[6] = code[1];
+
 	return messages_get(key);
 }

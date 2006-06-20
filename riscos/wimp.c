@@ -284,6 +284,71 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 
 
 /**
+ * Set the contents of an icon to a string.
+ *
+ * \param  w	 window handle
+ * \param  i	 icon handle
+ * \param  text  string (in local encoding) (copied)
+ */
+void ro_gui_set_icon_string_le(wimp_w w, wimp_i i, const char *text) {
+	wimp_caret caret;
+	wimp_icon_state ic;
+	os_error *error;
+	int old_len, len;
+
+	/* get the icon data */
+	ic.w = w;
+	ic.i = i;
+	error = xwimp_get_icon_state(&ic);
+	if (error) {
+		LOG(("xwimp_get_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	/* check that the existing text is not the same as the updated text
+	 * to stop flicker */
+	if (ic.icon.data.indirected_text.size &&
+			!strncmp(ic.icon.data.indirected_text.text,
+			text,
+			(unsigned int)ic.icon.data.indirected_text.size - 1))
+		return;
+
+	/* copy the text across */
+	old_len = strlen(ic.icon.data.indirected_text.text);
+	if (ic.icon.data.indirected_text.size) {
+		strncpy(ic.icon.data.indirected_text.text, text,
+			(unsigned int)ic.icon.data.indirected_text.size - 1);
+		ic.icon.data.indirected_text.text[
+				ic.icon.data.indirected_text.size - 1] = '\0';
+	}
+
+	/* handle the caret being in the icon */
+	error = xwimp_get_caret_position(&caret);
+	if (error) {
+		LOG(("xwimp_get_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	if ((caret.w == w) && (caret.i == i)) {
+		len = strlen(text);
+		if ((caret.index > len) || (caret.index == old_len))
+				caret.index = len;
+		error = xwimp_set_caret_position(w, i, caret.pos.x, caret.pos.y,
+				-1, caret.index);
+		if (error) {
+			LOG(("xwimp_set_caret_position: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+	}
+	ro_gui_redraw_icon(w, i);
+}
+
+
+/**
  * Set the contents of an icon to a number.
  *
  * \param  w	  window handle
@@ -406,7 +471,7 @@ void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state) {
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
 	}
-	if (!state) 
+	if (!state)
 		return;
 
 	/* ensure the caret is not in a shaded icon */

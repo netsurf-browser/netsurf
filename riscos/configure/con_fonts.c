@@ -148,7 +148,7 @@ bool ro_gui_options_fonts_ok(wimp_w w)
 	option_font_default = i + 1;
 
 	ro_gui_save_options();
-  	return true;
+	return true;
 }
 
 bool ro_gui_options_fonts_init_menu(void)
