@@ -2334,55 +2334,51 @@ char *urldb_get_cookie(const char *url, const char *referer)
 
 	now = time(NULL);
 
-	if (p->prev) {
-		for (q = p->prev; q && q->prev; q = q->prev)
-			; /* do nothing */
-	} else {
-		q = p;
-	}
-
-	for (; q; q = q->next) {
-		if (strcmp(q->segment, p->segment))
-			continue;
-
-		/* Consider all cookies associated with this exact path */
-		for (c = q->cookies; c; c = c->next) {
-			if (c->expires != 1 && c->expires < now)
-				/* cookie has expired => ignore */
+	if (*(p->segment) != '\0') {
+		/* Match exact path, unless directory, when prefix matching
+		 * will handle this case for us. */
+		for (q = p->parent->children; q; q = q->next) {
+			if (strcmp(q->segment, p->segment))
 				continue;
 
-			if (c->secure && strcasecmp(q->scheme, "https"))
-				/* secure cookie for insecure host. ignore */
-				continue;
+			/* Consider all cookies associated with
+			 * this exact path */
+			for (c = q->cookies; c; c = c->next) {
+				if (c->expires != 1 && c->expires < now)
+					/* cookie has expired => ignore */
+					continue;
 
-			if (!urldb_concat_cookie(c, &ret_used,
-					&ret_alloc, &ret)) {
-				free(path);
-				free(ret);
-				return NULL;
+				if (c->secure && strcasecmp(
+						q->scheme, "https"))
+					/* secure cookie for insecure host.
+					 * ignore */
+					continue;
+
+				if (!urldb_concat_cookie(c, &ret_used,
+						&ret_alloc, &ret)) {
+					free(path);
+					free(ret);
+					return NULL;
+				}
+
+				if (c->version < (unsigned int)version)
+					version = c->version;
+
+				c->last_used = now;
+
+				count++;
 			}
-
-			if (c->version < (unsigned int)version)
-				version = c->version;
-
-			c->last_used = now;
-
-			count++;
 		}
 	}
 
 //	LOG(("%s", ret));
 
-	if (strlen(p->segment) == 0)
-		/* We're a directory; skip parent */
-		p = p->parent->parent;
-
 	/* Now consider cookies whose paths prefix-match ours */
-	for (; p; p = p->parent) {
-		/* Find parent directory's path entry(ies) */
+	for (p = p->parent; p; p = p->parent) {
+		/* Find directory's path entry(ies) */
 		/* There are potentially multiple due to differing schemes */
 		for (q = p->children; q; q = q->next) {
-			if (strlen(q->segment) > 0)
+			if (*(q->segment) != '\0')
 				continue;
 
 			for (c = q->cookies; c; c = c->next) {
@@ -3024,8 +3020,8 @@ void urldb_load_cookies(const char *filename)
 	if (!fp)
 		return;
 
-#define FIND_WS {							\
-		for (; *p && !isspace(*p) && !iscntrl(*p); p++)		\
+#define FIND_T {							\
+		for (; *p && *p != '\t'; p++)				\
 			; /* do nothing */				\
 		if (p >= end) {						\
 			LOG(("Overran input"));				\
@@ -3034,8 +3030,8 @@ void urldb_load_cookies(const char *filename)
 		*p++ = '\0';						\
 }
 
-#define SKIP_WS {							\
-		for (; *p && isspace(*p); p++)				\
+#define SKIP_T {							\
+		for (; *p && *p == '\t'; p++)				\
 			; /* do nothing */				\
 		if (p >= end) {						\
 			LOG(("Overran input"));				\
@@ -3062,7 +3058,7 @@ void urldb_load_cookies(const char *filename)
 		 * (all input is ignored until this is read)
 		 */
 		if (strncasecmp(s, "Version:", 8) == 0) {
-			FIND_WS; SKIP_WS; file_version = atoi(p);
+			FIND_T; SKIP_T; file_version = atoi(p);
 
 			if (file_version != COOKIE_FILE_VERSION) {
 				LOG(("Unknown Cookie file version"));
@@ -3078,23 +3074,23 @@ void urldb_load_cookies(const char *filename)
 		/* One cookie/line */
 
 		/* Parse input */
-		FIND_WS; version = atoi(s);
-		SKIP_WS; domain = p; FIND_WS;
-		SKIP_WS; domain_specified = atoi(p); FIND_WS;
-		SKIP_WS; path = p; FIND_WS;
-		SKIP_WS; path_specified = atoi(p); FIND_WS;
-		SKIP_WS; secure = atoi(p); FIND_WS;
-		SKIP_WS; expires = (time_t)atoi(p); FIND_WS;
-		SKIP_WS; last_used = (time_t)atoi(p); FIND_WS;
-		SKIP_WS; no_destroy = atoi(p); FIND_WS;
-		SKIP_WS; name = p; FIND_WS;
-		SKIP_WS; value = p; FIND_WS;
-		SKIP_WS; scheme = p; FIND_WS;
-		SKIP_WS; url = p; FIND_WS;
+		FIND_T; version = atoi(s);
+		SKIP_T; domain = p; FIND_T;
+		SKIP_T; domain_specified = atoi(p); FIND_T;
+		SKIP_T; path = p; FIND_T;
+		SKIP_T; path_specified = atoi(p); FIND_T;
+		SKIP_T; secure = atoi(p); FIND_T;
+		SKIP_T; expires = (time_t)atoi(p); FIND_T;
+		SKIP_T; last_used = (time_t)atoi(p); FIND_T;
+		SKIP_T; no_destroy = atoi(p); FIND_T;
+		SKIP_T; name = p; FIND_T;
+		SKIP_T; value = p; FIND_T;
+		SKIP_T; scheme = p; FIND_T;
+		SKIP_T; url = p; FIND_T;
 
 		/* Comment may have no content, so don't
 		 * use macros as they'll break */
-		for (; *p && isspace(*p); p++)
+		for (; *p && *p == '\t'; p++)
 			; /* do nothing */
 		comment = p;
 
@@ -3158,13 +3154,13 @@ void urldb_save_cookies(const char *filename)
 		    "# Lines starting with a '#' are comments, "
 						"blank lines are ignored.\n"
 		    "#\n"
-		    "# All lines prior to \"Version: %d\" are discarded.\n"
+		    "# All lines prior to \"Version:\t%d\" are discarded.\n"
 		    "#\n"
 		    "# Version\tDomain\tDomain from Set-Cookie\tPath\t"
 			"Path from Set-Cookie\tSecure\tExpires\tLast used\t"
 			"No destroy\tName\tValue\tScheme\tURL\tComment\n",
 			COOKIE_FILE_VERSION);
-	fprintf(fp, "Version: %d\n", COOKIE_FILE_VERSION);
+	fprintf(fp, "Version:\t%d\n", COOKIE_FILE_VERSION);
 
 
 	urldb_save_cookie_hosts(fp, &db_root);
