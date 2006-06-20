@@ -252,7 +252,7 @@ void bitmap_overlay_sprite(struct bitmap *bitmap, const osspriteop_header *s)
 	assert(sprite_bpp(s) == 8);
 
 	if ((unsigned)s->mode & 0x80000000U)
-		alpha = true; 
+		alpha = true;
 
 	error = xosspriteop_read_sprite_info(osspriteop_PTR,
 			(osspriteop_area *)0x100,
@@ -376,7 +376,7 @@ bool bitmap_initialise(struct bitmap *bitmap)
 void bitmap_set_opaque(struct bitmap *bitmap, bool opaque)
 {
 	assert(bitmap);
-	
+
 	if (opaque)
 		bitmap->state |= BITMAP_OPAQUE;
 	else
@@ -459,7 +459,7 @@ char *bitmap_get_buffer(struct bitmap *bitmap)
 		bitmap->previous = NULL;
 		bitmap_head = bitmap;
 	}
-	
+
 	/* dynamically create the buffer */
 	if (!(bitmap->state & BITMAP_READY)) {
 		if (!bitmap_initialise(bitmap))
@@ -592,8 +592,8 @@ void bitmap_set_suspendable(struct bitmap *bitmap, void *private_word,
 		void (*invalidate)(struct bitmap *bitmap, void *private_word)) {
 	bitmap->private_word = private_word;
 	bitmap->invalidate = invalidate;
-	bitmap_suspendable++;		  
-}	
+	bitmap_suspendable++;
+}
 
 
 /**
@@ -644,7 +644,7 @@ void bitmap_maintain(void)
 		bitmap_maintenance_priority = false;
 		return;
 	}
-	
+
 	/* the fastest and easiest way to release memory is by suspending
 	 * images. as such, we try to do this first for as many images as
 	 * possible, potentially freeing up large amounts of memory */
@@ -659,7 +659,7 @@ void bitmap_maintain(void)
 				bitmap_direct_used -= 16 + 44 +
 					    bitmap->width * bitmap->height * 4;
 			  	bitmap_suspended++;
-			} 
+			}
 		}
 		return;
 	}
@@ -892,7 +892,7 @@ void bitmap_save_file(struct bitmap *bitmap)
 	os_error *error;
 	struct bitmap_compressed_header *header;
 
-	assert(bitmap->compressed || bitmap->sprite_area);
+	assert(bitmap && (bitmap->compressed || bitmap->sprite_area));
 
 	/* unmodified bitmaps will still have their file available */
 	if ((!(bitmap->state & BITMAP_MODIFIED)) && bitmap->filename[0]) {
@@ -907,6 +907,11 @@ void bitmap_save_file(struct bitmap *bitmap)
 
 	/* dump the data (compressed or otherwise) to disk */
 	filename = filename_request();
+	if (!filename) {
+		LOG(("filename_request failed"));
+		return;
+	}
+
 	strcpy(bitmap->filename, filename);
 	sprintf(bitmap_unixname, "%s/%s", TEMP_FILENAME_PREFIX,
 			bitmap->filename);

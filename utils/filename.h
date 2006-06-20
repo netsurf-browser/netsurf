@@ -16,7 +16,7 @@
 #define TEMP_FILENAME_PREFIX "/tmp/WWW/NetSurf/Cache"
 #endif
 
-char *filename_request(void);
+const char *filename_request(void);
 bool filename_claim(const char *filename);
 void filename_release(const char *filename);
 bool filename_initialise(void);

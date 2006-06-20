@@ -2164,20 +2164,22 @@ void ro_gui_view_source(struct content *content)
 		message.file_name[211] = '\0';
 		free(temp_name);
 	} else {
-		/* We cannot release the requested filename until after it has finished
-		   being used. As we can't easily find out when this is, we simply don't
-		   bother releasing it and simply allow it to be re-used next time NetSurf
-		   is started. The memory overhead from doing this is under 1 byte per
-		   filename. */
-		temp_name = filename_request();
-		if (!temp_name) {
+		/* We cannot release the requested filename until after it
+		 * has finished being used. As we can't easily find out when
+		 * this is, we simply don't bother releasing it and simply
+		 * allow it to be re-used next time NetSurf is started. The
+		 * memory overhead from doing this is under 1 byte per
+		 * filename. */
+		const char *filename = filename_request();
+		if (!filename) {
 			warn_user("NoMemory", 0);
 			return;
 		}
-		snprintf(full_name, 256, "%s/%s", TEMP_FILENAME_PREFIX, temp_name);
+		snprintf(full_name, 256, "%s/%s", TEMP_FILENAME_PREFIX,
+				filename);
 		full_name[255] = '\0';
-		r = __riscosify(full_name, 0, __RISCOSIFY_NO_SUFFIX, message.file_name,
-				212, 0);
+		r = __riscosify(full_name, 0, __RISCOSIFY_NO_SUFFIX,
+				message.file_name, 212, 0);
 		if (r == 0) {
 			LOG(("__riscosify failed"));
 			return;
@@ -2205,7 +2207,8 @@ void ro_gui_view_source(struct content *content)
 	message.pos.y = 0;
 	message.est_size = 0;
 	message.file_type = 0xfff;
-	ro_message_send_message(wimp_USER_MESSAGE_RECORDED, (wimp_message*)&message, 0,
+	ro_message_send_message(wimp_USER_MESSAGE_RECORDED,
+			(wimp_message*)&message, 0,
 			ro_gui_view_source_bounce);
 }
 

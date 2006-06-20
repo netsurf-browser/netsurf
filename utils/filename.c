@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include "netsurf/utils/filename.h"
 #include "netsurf/utils/log.h"
+#include "netsurf/utils/utils.h"
 
 #define FULL_WORD (unsigned int)4294967295
 /* '0' + '0' * 10 */
@@ -44,9 +45,9 @@ static bool filename_delete_recursive(char *folder);
 /**
  * Request a new, unique, filename.
  *
- * \return a pointer to a shared buffer containing the new filename
+ * \return a pointer to a shared buffer containing the new filename or NULL on failure
  */
-char *filename_request(void) {
+const char *filename_request(void) {
 	struct directory *dir;
 	int i = -1;
 
@@ -321,7 +322,8 @@ bool filename_delete_recursive(char *folder) {
  * Creates a new directory.
  *
  * \param  prefix  the prefix to use, or NULL to allocate a new one
- * \return a new directory structure, or NULL on memory exhaustion
+ * \return a new directory structure, or NULL on memory exhaustion or
+ * creation failure
  *
  * Empty directories are never deleted, except by an explicit call to
  * filename_flush().
@@ -384,14 +386,17 @@ static struct directory *filename_create_directory(const char *prefix) {
 				TEMP_FILENAME_PREFIX,
 				new_dir->prefix);
 		new_dir->prefix[8] = '/';
-		if (!mkdir(filename_directory, S_IRWXU))
-			return new_dir;
+		if (!is_dir(filename_directory)) {
+			if (!mkdir(filename_directory, S_IRWXU))
+				return new_dir;
 
-		/* the user has probably deleted the parent directory whilst
-		 * we are running if there is an error, so we don't report
-		 * this yet and try to create the structure normally. */
-		LOG(("Failed to create optimised structure '%s'",
-				filename_directory));
+			/* the user has probably deleted the parent directory
+			 * whilst we are running if there is an error, so we
+			 * don't report this yet and try to create the
+			 * structure normally. */
+			LOG(("Failed to create optimised structure '%s'",
+					filename_directory));
+		}
 	}
 
 	/* create the directory structure */
@@ -405,12 +410,15 @@ static struct directory *filename_create_directory(const char *prefix) {
 			*last_1++ = *last_2++;
 		if (*last_2) {
 			last_1[0] = '\0';
-			if (mkdir(filename_directory, S_IRWXU)) {
-				LOG(("Failed to create directory '%s'",
-						filename_directory));
-				return NULL;
+			if (!is_dir(filename_directory)) {
+				if (mkdir(filename_directory, S_IRWXU)) {
+					LOG(("Failed to create directory '%s'",
+							filename_directory));
+					return NULL;
+				}
 			}
 		}
 	}
+
 	return new_dir;
 }
