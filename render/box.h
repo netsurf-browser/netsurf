@@ -193,6 +193,10 @@ struct box {
 	/** Next sibling float box. */
 	struct box *next_float;
 
+	/** First absolutely positioned child box, or 0. Absolutely positioned
+	 * boxes are linked by next / prev and do not appear under children. */
+	struct box *absolute_children;
+	
 	struct column *col;  /**< Array of table column data for TABLE only. */
 
 	/** Form control data, or 0 if not a form control. */
@@ -259,6 +263,7 @@ struct box * box_create(struct css_style *style,
 		char *href, const char *target, char *title,
 		char *id, void *context);
 void box_add_child(struct box *parent, struct box *child);
+void box_add_absolute_child(struct box *parent, struct box *child);
 void box_insert_sibling(struct box *box, struct box *new_box);
 void box_unlink_and_free(struct box *box);
 void box_free(struct box *box);
