@@ -3078,6 +3078,15 @@ void ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *
 	strncpy(wi->title, g->title, sizeof(wi->title));
 	wi->title[sizeof(wi->title) - 1] = '\0';
 
+	if (wimptextop_string_width(wi->title, 0) > 128) {
+		/* work around bug in Pinboard where it will fail to display
+		 * the icon if the text is very wide */
+		if (strlen(wi->title) > 10)
+			wi->title[10] = '\0';	/* pinboard does this anyway */
+		while (wimptextop_string_width(wi->title, 0) > 182)
+			wi->title[strlen(wi->title) - 1] = '\0';
+	}
+
 	wi->size = sizeof(wimp_full_message_window_info);
 	wi->your_ref = wi->my_ref;
 	error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message*)wi, wi->sender);
