@@ -3078,7 +3078,7 @@ void ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *
 	strncpy(wi->title, g->title, sizeof(wi->title));
 	wi->title[sizeof(wi->title) - 1] = '\0';
 
-	if (wimptextop_string_width(wi->title, 0) > 128) {
+	if (wimptextop_string_width(wi->title, 0) > 182) {
 		/* work around bug in Pinboard where it will fail to display
 		 * the icon if the text is very wide */
 		if (strlen(wi->title) > 10)
