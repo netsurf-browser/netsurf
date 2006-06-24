@@ -2764,8 +2764,27 @@ struct cookie *urldb_parse_cookie(const char *url, const char *cookie)
 			} else if (strcasecmp(n, "Version") == 0) {
 				c->version = atoi(v);
 			} else if (strcasecmp(n, "Expires") == 0) {
+				char *datenoday;
+
+				/* Strip dayname from date (these are hugely
+				 * variable and liable to break the parser.
+				 * They also serve no useful purpose) */
+				for (datenoday = v;
+					*datenoday && !isdigit(*datenoday);
+						datenoday++)
+					; /* do nothing */
+
 				had_expires = true;
-				expires = curl_getdate(v, NULL);
+				expires = curl_getdate(datenoday, NULL);
+				if (expires == -1) {
+					/* assume we have an unrepresentable
+					 * date => force it to the maximum
+					 * possible value of a 32bit time_t
+					 * (this may break in 2038. We'll
+					 * deal with that once we come to
+					 * it) */
+					expires = (time_t)0x7fffffff;
+				}
 			} else if (!c->name) {
 				c->name = strdup(n);
 				c->value = strdup(v);
@@ -3255,6 +3274,8 @@ int main(void)
 	struct path_data *p;
 	int i;
 
+	url_init();
+
 	urldb_init();
 
 	for (i = 0; i != N_INPUTS; i++)
@@ -3295,6 +3316,10 @@ int main(void)
 		LOG(("failed adding path"));
 		return 1;
 	}
+
+	urldb_set_cookie("mmblah=admin; path=/; expires=Thur, 31-Dec-2099 00:00:00 GMT\r\n", "http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2");
+
+	urldb_set_cookie("BlahPW=B%7Eyx.22dJsrwk; path=/; expires=Thur, 31-Dec-2099 00:00:00 GMT\r\n", "http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2");
 
 	urldb_dump();
 
