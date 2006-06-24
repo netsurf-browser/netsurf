@@ -240,7 +240,8 @@ static int urldb_search_match_prefix(const struct host_part *a,
 
 /* Cookies */
 static struct cookie *urldb_parse_cookie(const char *url,
-		const char *cookie);
+		const char **cookie);
+static bool urldb_parse_avpair(struct cookie *c, char *n, char *v);
 static bool urldb_insert_cookie(struct cookie *c, const char *scheme,
 		const char *url);
 static void urldb_free_cookie(struct cookie *c);
@@ -266,24 +267,6 @@ static struct search_node *search_trees[NUM_SEARCH_TREES] = {
 
 #define COOKIE_FILE_VERSION 100
 #define URL_FILE_VERSION 106
-
-regex_t expires_re;
-
-/**
- * Initialise URL database code
- *
- * This should be called before any other urldb functions
- */
-void urldb_init(void)
-{
-	regcomp_wrapper(&expires_re, "[a-zA-Z]{3},[[:space:]]"	// "Wdy, "
-				"[0-9]{2}[[:space:]-]"		// "DD[ -]"
-				"[a-zA-Z]{3}[[:space:]-]"	// "MMM[ -]"
-				"[0-9]{2,4}[[:space:]]"		// "YY(YY)? "
-				"[0-9]{2}(:[0-9]{2}){2}"	// "HH:MM:SS"
-				"[[:space:]]GMT",		// " GMT"
-				REG_EXTENDED);
-}
 
 /**
  * Import an URL database from file, replacing any existing database
@@ -2498,8 +2481,7 @@ char *urldb_get_cookie(const char *url, const char *referer)
  */
 bool urldb_set_cookie(const char *header, const char *url)
 {
-	char cookie[8192];
-	const char *cur = header, *comma, *end;
+	const char *cur = header, *end;
 	char *path, *host, *scheme, *urlt;
 	url_func_result res;
 
@@ -2536,34 +2518,11 @@ bool urldb_set_cookie(const char *header, const char *url)
 
 	end = cur + strlen(cur) - 2 /* Trailing CRLF */;
 
-	/* Find comma, if any */
-	comma = strchr(cur, ',');
-	if (comma) {
-		/* Check for Expires avpair: Wdy, DD-Mon-YYYY HH:MM:SS GMT */
-		/* Date parts of the form "DD Mon YYYY" have been seen in
-		 * the wild, so we accept them too even though they're not
-		 * strictly correct - it's more important to match something
-		 * that looks like an Expires avpair than be strict here (as
-		 * we're simply looking for the end of the cookie
-		 * declaration) */
-		if (regexec(&expires_re, comma - 3, 0, NULL, 0) == 0) {
-			/* Part of Expires avpair => look for next comma */
-			comma = strchr(comma + 1, ',');
-		}
-	}
-
-	if (!comma) {/* Yes, if; not else - Expires check may modify comma */
-		/* No comma => 1 cookie in this header */
-		comma = end;
-	}
-
 	do {
 		struct cookie *c;
 		char *dot;
 
-		snprintf(cookie, sizeof cookie, "%.*s", comma - cur, cur);
-
-		c = urldb_parse_cookie(url, cookie);
+		c = urldb_parse_cookie(url, &cur);
 		if (!c) {
 			/* failed => stop parsing */
 			goto error;
@@ -2571,14 +2530,20 @@ bool urldb_set_cookie(const char *header, const char *url)
 
 		/* validate cookie */
 
-		/* Cookie path must be a prefix of URL path */
+		/* 4.2.2:i Cookie must have NAME and VALUE */
+		if (!c->name || !c->value) {
+			urldb_free_cookie(c);
+			goto error;
+		}
+
+		/* 4.3.2:i Cookie path must be a prefix of URL path */
 		if (strncmp(c->path, path, strlen(c->path)) != 0 ||
 				strlen(c->path) > strlen(path)) {
 			urldb_free_cookie(c);
 			goto error;
 		}
 
-		/* Cookie domain must contain embedded dots */
+		/* 4.3.2:ii Cookie domain must contain embedded dots */
 		dot = strchr(c->domain + 1, '.');
 		if (!dot || *(dot + 1) == '\0') {
 			/* no embedded dots */
@@ -2590,6 +2555,7 @@ bool urldb_set_cookie(const char *header, const char *url)
 		if (strcasecmp(host, c->domain) != 0) {
 			int hlen, dlen;
 
+			/* 4.3.2:iii */
 			if (host[0] >= '0' && host[0] <= '9') {
 				/* IP address, so no partial match */
 				urldb_free_cookie(c);
@@ -2610,7 +2576,7 @@ bool urldb_set_cookie(const char *header, const char *url)
 				goto error;
 			}
 
-			/* Ensure H contains no dots */
+			/* 4.3.2:iv Ensure H contains no dots */
 			for (int i = 0; i < (hlen - dlen); i++)
 				if (host[i] == '.') {
 					urldb_free_cookie(c);
@@ -2621,23 +2587,7 @@ bool urldb_set_cookie(const char *header, const char *url)
 		/* Now insert into database */
 		if (!urldb_insert_cookie(c, scheme, urlt))
 			goto error;
-
-		cur = comma + 1;
-		if (cur < end) {
-			comma = strchr(cur, ',');
-			if (comma) {
-				/* Check if it's an Expires avpair */
-				if (regexec(&expires_re, comma - 3, 0,
-						NULL, 0) == 0) {
-					/* Part of Expires avpair =>
-					 * look for next comma */
-					comma = strchr(comma + 1, ',');
-				}
-			}
-			if (!comma)
-				comma = end;
-		}
-	} while (comma && cur < end);
+	} while (cur < end);
 
 	free(host);
 	free(path);
@@ -2659,173 +2609,130 @@ error:
  * Parse a cookie
  *
  * \param url URL being fetched
- * \param cookie Cookie string
+ * \param cookie Pointer to cookie string (updated on exit)
  * \return Pointer to cookie structure (on heap, caller frees) or NULL
  */
-struct cookie *urldb_parse_cookie(const char *url, const char *cookie)
+struct cookie *urldb_parse_cookie(const char *url, const char **cookie)
 {
 	struct cookie *c;
+	const char *cur;
 	char name[1024], value[4096];
-	const char *cur = cookie, *semi, *end;
-	time_t max_age = 0, expires = 0;
-	bool had_max_age = false, had_expires = false;
+	char *n = name, *v = value;
+	bool had_equals = false;
+	bool quoted = false;
 	url_func_result res;
 
-	assert(url && cookie);
+	assert(url && cookie && *cookie);
 
 	c = calloc(1, sizeof(struct cookie));
 	if (!c)
 		return NULL;
 
-	end = cur + strlen(cur);
+	c->expires = -1;
 
-	/* Find semicolon */
-	semi = strchr(cur, ';');
-	if (!semi)
-		semi = end;
+	name[0] = '\0';
+	value[0] = '\0';
 
-	/* process name-value pairs */
-	do {
-		char *equals = strchr(cur, '=');
-		int vlen;
-
-		name[0] = value[0] = '\0';
-
-		if (equals && equals < semi) {
-			char *n, *v;
-			/* name = value */
-			if (sscanf(cur, "%1023[^=]=%4095[^;]",
-					name, value) != 2)
-				break;
-
-			/* Strip whitespace from start of name */
-			for (n = name; *n; n++) {
-				if (*n != ' ' && *n != '\t')
-					break;
-			}
-
-			/* Strip whitespace from end of name */
-			for (vlen = strlen(name); vlen; vlen--) {
-				if (name[vlen] == ' ' || name[vlen] == '\t')
-					name[vlen] = '\0';
-				else
-					break;
-			}
-
-			/* Strip whitespace from start of value */
-			for (v = value; *v; v++) {
-				if (*v != ' ' && *v != '\t')
-					break;
-			}
-			/* Strip quote from start of value */
-			if (*v == '"')
-				v++;
-
-			/* Strip whitespace from end of value */
-			for (vlen = strlen(value); vlen; vlen--) {
-				if (value[vlen] == ' ' ||
-						value[vlen] == '\t')
-					value[vlen] = '\0';
-				else
-					break;
-			}
-			/* Strip quote from end of value */
-			if (value[vlen] == '"')
-				value[vlen] = '\0';
-
-			if (!c->comment &&
-					strcasecmp(n, "Comment") == 0) {
-				c->comment = strdup(v);
-				if (!c->comment)
-					break;
-			} else if (!c->domain &&
-					strcasecmp(n, "Domain") == 0) {
-				if (v[0] == '.') {
-					/* Domain must start with a dot */
-					c->domain_from_set = true;
-					c->domain = strdup(v);
-					if (!c->domain)
-						break;
-				}
-			} else if (strcasecmp(n, "Max-Age") == 0) {
-				int temp = atoi(v);
-				had_max_age = true;
-				if (temp == 0)
-					/* Special case - 0 means delete */
-					max_age = 0;
-				else
-					max_age = time(NULL) + temp;
-			} else if (!c->path &&
-					strcasecmp(n, "Path") == 0) {
-				c->path_from_set = true;
-				c->path = strdup(v);
-				if (!c->path)
-					break;
-			} else if (strcasecmp(n, "Version") == 0) {
-				c->version = atoi(v);
-			} else if (strcasecmp(n, "Expires") == 0) {
-				char *datenoday;
-
-				/* Strip dayname from date (these are hugely
-				 * variable and liable to break the parser.
-				 * They also serve no useful purpose) */
-				for (datenoday = v;
-					*datenoday && !isdigit(*datenoday);
-						datenoday++)
-					; /* do nothing */
-
-				had_expires = true;
-				expires = curl_getdate(datenoday, NULL);
-				if (expires == -1) {
-					/* assume we have an unrepresentable
-					 * date => force it to the maximum
-					 * possible value of a 32bit time_t
-					 * (this may break in 2038. We'll
-					 * deal with that once we come to
-					 * it) */
-					expires = (time_t)0x7fffffff;
-				}
-			} else if (!c->name) {
-				c->name = strdup(n);
-				c->value = strdup(v);
-				if (!c->name || !c->value)
-					break;
-			}
-		} else {
-			char *n;
-
-			/* name */
-			if (sscanf(cur, "%1023[^;] ", name) != 1)
-				break;
-
-			/* Strip whitespace from start of name */
-			for (n = name; *n; n++) {
-				if (*n != ' ' && *n != '\t')
-					break;
-			}
-
-			/* Strip whitespace from end of name */
-			for (vlen = strlen(name); vlen; vlen--) {
-				if (name[vlen] == ' ' || name[vlen] == '\t')
-					name[vlen] = '\0';
-				else
-					break;
-			}
-
-			if (strcasecmp(n, "Secure") == 0)
-				c->secure = true;
+	for (cur = *cookie; *cur && *cur != '\r' && *cur != '\n'; cur++) {
+		if (had_equals && (*cur == '"' || *cur == '\'')) {
+			/* Only values may be quoted */
+			quoted = !quoted;
+			continue;
 		}
 
-		cur = semi + 1;
-		if (cur < end) {
-			semi = strchr(cur, ';');
+		if (!quoted && !had_equals && *cur == '=') {
+			/* First equals => attr-value separator */
+			had_equals = true;
+			continue;
+		}
+
+		if (!quoted && *cur == ';') {
+			/* Semicolon => end of current avpair */
+
+			/* NUL-terminate tokens */
+			*n = '\0';
+			*v = '\0';
+
+			if (!urldb_parse_avpair(c, name, value)) {
+				/* Memory exhausted */
+				urldb_free_cookie(c);
+				return NULL;
+			}
+
+			/* And reset to start */
+			n = name;
+			v = value;
+			had_equals = false;
+			continue;
+		}
+
+		/* And now handle commas. These are a pain as they may mean
+		 * any of the following:
+		 *
+		 * + End of cookie
+		 * + Day separator in Expires avpair
+		 * + (Invalid) comma in unquoted value
+		 *
+		 * Therefore, in order to handle all 3 cases (2 and 3 are
+		 * identical, the difference being that 2 is in the spec and
+		 * 3 isn't), we need to determine where the comma actually
+		 * lies. We use the following heuristic:
+		 *
+		 *   Given a comma at the current input position, find the
+		 *   immediately following semicolon (or end of input if none
+		 *   found). Then, consider the input characters between
+		 *   these two positions. If any of these characters is an
+		 *  '=', we must assume that the comma signified the end of
+		 *  the current cookie.
+		 *
+		 * This holds as the first avpair of any cookie must be
+		 * NAME=VALUE, so the '=' is guaranteed to appear in the
+		 * case where the comma marks the end of a cookie.
+		 *
+		 * This will fail, however, in the case where '=' appears in
+		 * the value of the current avpair after the comma or the
+		 * subsequent cookie does not start with NAME=VALUE. Neither
+		 * of these is particularly likely and if they do occur, the
+		 * website is more broken than we can be bothered to handle.
+		 */
+		if (!quoted && *cur == ',') {
+			/* Find semi-colon, if any */
+			const char *p;
+			const char *semi = strchr(cur + 1, ';');
 			if (!semi)
-				semi = end;
-		}
-	} while(semi && cur < end);
+				semi = cur + strlen(cur) - 2 /* CRLF */;
 
-	if (cur < end) {
-		/* parsing failed */
+			/* Look for equals sign between comma and semi */
+			for (p = cur + 1; p < semi; p++)
+				if (*p == '=')
+					break;
+
+			if (p == semi) {
+				/* none found => comma internal to value */
+				/* do nothing */
+			} else {
+				/* found one => comma marks end of cookie */
+				cur++;
+				break;
+			}
+		}
+
+		/* Accumulate into buffers, always leaving space for a NUL */
+		if (!had_equals) {
+			if (n < name + 1023)
+				*n++ = *cur;
+		} else {
+			if (v < value + 4095)
+				*v++ = *cur;
+		}
+	}
+
+	/* Parse final avpair */
+	*n = '\0';
+	*v = '\0';
+
+	if (!urldb_parse_avpair(c, name, value)) {
+		/* Memory exhausted */
 		urldb_free_cookie(c);
 		return NULL;
 	}
@@ -2847,18 +2754,115 @@ struct cookie *urldb_parse_cookie(const char *url, const char *cookie)
 		}
 	}
 
-	if (had_max_age && had_expires) {
-		/* Max age takes precedence iff version 1 or later */
-		c->expires =
-			c->version == COOKIE_NETSCAPE ? expires : max_age;
-	} else if (had_max_age) {
-		c->expires = max_age;
-	} else if (had_expires) {
-		c->expires = expires;
-	} else
+	if (c->expires == -1)
 		c->expires = 1;
 
+	/* Write back current position */
+	*cookie = cur;
+
 	return c;
+}
+
+/**
+ * Parse a cookie avpair
+ *
+ * \param c Cookie struct to populate
+ * \param n Name component
+ * \param v Value component
+ * \return true on success, false on memory exhaustion
+ */
+bool urldb_parse_avpair(struct cookie *c, char *n, char *v)
+{
+	int vlen;
+
+	assert(c && n && v);
+
+	/* Strip whitespace from start of name */
+	for (; *n; n++) {
+		if (*n != ' ' && *n != '\t')
+			break;
+	}
+
+	/* Strip whitespace from end of name */
+	for (vlen = strlen(n); vlen; vlen--) {
+		if (n[vlen] == ' ' || n[vlen] == '\t')
+			n[vlen] = '\0';
+		else
+			break;
+	}
+
+	/* Strip whitespace from start of value */
+	for (; *v; v++) {
+		if (*v != ' ' && *v != '\t')
+			break;
+	}
+
+	/* Strip whitespace from end of value */
+	for (vlen = strlen(v); vlen; vlen--) {
+		if (v[vlen] == ' ' || v[vlen] == '\t')
+			v[vlen] = '\0';
+		else
+			break;
+	}
+
+	if (!c->comment && strcasecmp(n, "Comment") == 0) {
+		c->comment = strdup(v);
+		if (!c->comment)
+			return false;
+	} else if (!c->domain && strcasecmp(n, "Domain") == 0) {
+		if (v[0] == '.') {
+			/* Domain must start with a dot */
+			c->domain_from_set = true;
+			c->domain = strdup(v);
+			if (!c->domain)
+				return false;
+		}
+	} else if (strcasecmp(n, "Max-Age") == 0) {
+		int temp = atoi(v);
+		if (temp == 0)
+			/* Special case - 0 means delete */
+			c->expires = 0;
+		else
+			c->expires = time(NULL) + temp;
+	} else if (!c->path && strcasecmp(n, "Path") == 0) {
+		c->path_from_set = true;
+		c->path = strdup(v);
+		if (!c->path)
+			return false;
+	} else if (strcasecmp(n, "Version") == 0) {
+		c->version = atoi(v);
+	} else if (strcasecmp(n, "Expires") == 0) {
+		char *datenoday;
+		time_t expires;
+
+		/* Strip dayname from date (these are hugely
+		 * variable and liable to break the parser.
+		 * They also serve no useful purpose) */
+		for (datenoday = v; *datenoday && !isdigit(*datenoday);
+				datenoday++)
+			; /* do nothing */
+
+		expires = curl_getdate(datenoday, NULL);
+		if (expires == -1) {
+			/* assume we have an unrepresentable
+			 * date => force it to the maximum
+			 * possible value of a 32bit time_t
+			 * (this may break in 2038. We'll
+			 * deal with that once we come to
+			 * it) */
+			expires = (time_t)0x7fffffff;
+		}
+		c->expires = expires;
+	} else if (strcasecmp(n, "Secure") == 0) {
+		c->secure = true;
+	} else if (!c->name) {
+		c->name = strdup(n);
+		c->value = strdup(v);
+		if (!c->name || !c->value)
+			return false;
+	}
+
+	return true;
 }
 
 /**
@@ -3242,18 +3246,6 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 
 
 #ifdef TEST_URLDB
-const char *inputs[] = {
-	"day, 16-Jun-2006 01:10:16 GMT",
-	"day, 16 Jun 2006 01:10:16 GMT",
-	"day, 16-Jun-06 01:10:16 GMT",
-	"day, 16 Jun 06 01:10:16 GMT",
-	"Fri, 16-Jun-2006 01:10:16 GMT",
-	"Fri, 16 Jun 2006 01:10:16 GMT",
-	"Fri, 16-Jun-06 01:10:16 GMT",
-	"Fri, 16 Jun 06 01:10:16 GMT"
-};
-#define N_INPUTS (sizeof(inputs) / sizeof(inputs[0]))
-
 int option_expire_url = 0;
 
 void die(const char *error)
@@ -3275,12 +3267,6 @@ int main(void)
 	int i;
 
 	url_init();
-
-	urldb_init();
-
-	for (i = 0; i != N_INPUTS; i++)
-		if (regexec(&expires_re, inputs[i], 0, NULL, 0))
-			LOG(("Failed to match regex %d\n", i));
 
 	h = urldb_add_host("127.0.0.1");
 	if (!h) {
@@ -3317,9 +3303,15 @@ int main(void)
 		return 1;
 	}
 
-	urldb_set_cookie("mmblah=admin; path=/; expires=Thur, 31-Dec-2099 00:00:00 GMT\r\n", "http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2");
+	urldb_set_cookie("mmblah=foo; path=/; expires=Thur, 31-Dec-2099 00:00:00 GMT\r\n", "http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2");
 
-	urldb_set_cookie("BlahPW=B%7Eyx.22dJsrwk; path=/; expires=Thur, 31-Dec-2099 00:00:00 GMT\r\n", "http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2");
+	urldb_set_cookie("BlahPW=bar; path=/; expires=Thur, 31-Dec-2099 00:00:00 GMT\r\n", "http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2");
+
+	urldb_set_cookie("details=foo|bar|Sun, 03-Jun-2007;expires=Mon, 24-Jul-2006 09:53:45 GMT", "http://ccdb.cropcircleresearch.com/");
+
+	urldb_set_cookie("PREF=ID=a:TM=b:LM=c:S=d; path=/; domain=.google.com", "http://www.google.com/");
+
+	urldb_set_cookie("test=foo, bar, baz; path=/, quux=blah; path=/", "http://www.bbc.co.uk/");
 
 	urldb_dump();
 

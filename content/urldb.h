@@ -25,9 +25,6 @@ struct url_data {
 
 struct bitmap;
 
-/* Initialisation */
-void urldb_init(void);
-
 /* Persistence support */
 void urldb_load(const char *filename);
 void urldb_save(const char *filename);
