@@ -3044,9 +3044,10 @@ void ro_gui_window_iconise(struct gui_window *g, wimp_full_message_window_info *
 	/* choose a suitable sprite name */
 	id = 0;
 	while (iconise_used[id])
-		if (++id >= NOF_ELEMENTS(iconise_used)) {
+		if ((unsigned)++id >= NOF_ELEMENTS(iconise_used)) {
 			id = iconise_next;
-			if (++iconise_next >= NOF_ELEMENTS(iconise_used))
+			if ((unsigned)++iconise_next >=
+					NOF_ELEMENTS(iconise_used))
 				iconise_next = 0;
 			break;
 		}
