@@ -32,6 +32,10 @@ static bool html_redraw_box(struct box *box,
 		int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour current_background_color);
+static bool html_redraw_box_children(struct box *box,
+		int x_parent, int y_parent,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		float scale, colour current_background_color);
 static bool html_redraw_text_box(struct box *box, int x, int y,
 		int x0, int y0, int x1, int y1,
 		float scale, colour current_background_color);
@@ -129,7 +133,6 @@ bool html_redraw_box(struct box *box,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
 		float scale, colour current_background_color)
 {
-	struct box *c;
 	int x, y;
 	int width, height;
 	int padding_left, padding_top, padding_width, padding_height;
@@ -181,13 +184,10 @@ bool html_redraw_box(struct box *box,
 	if (box->style && box->style->visibility == CSS_VISIBILITY_HIDDEN) {
 		if (!plot.group_start("hidden box"))
 			return false;
-		for (c = box->children; c; c = c->next)
-			if (!html_redraw_box(c,
-					x_parent + box->x - box->scroll_x,
-					y_parent + box->y - box->scroll_y,
-					x0, y0, x1, y1,
-					scale, current_background_color))
-				return false;
+		if (!html_redraw_box_children(box, x_parent, y_parent,
+				x0, y0, x1, y1, scale,
+				current_background_color))
+			return false;
 		return plot.group_end();
 	}
 
@@ -317,22 +317,10 @@ bool html_redraw_box(struct box *box,
 			return false;
 
 	} else {
-		for (c = box->children; c != 0; c = c->next)
-			if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-				if (!html_redraw_box(c,
-						x_parent + box->x - box->scroll_x,
-						y_parent + box->y - box->scroll_y,
-						x0, y0, x1, y1, scale,
-						current_background_color))
-					return false;
-
-		for (c = box->float_children; c != 0; c = c->next_float)
-			if (!html_redraw_box(c,
-					x_parent + box->x - box->scroll_x,
-					y_parent + box->y - box->scroll_y,
-					x0, y0, x1, y1, scale,
-					current_background_color))
-				return false;
+		if (!html_redraw_box_children(box, x_parent, y_parent,
+				x0, y0, x1, y1, scale,
+				current_background_color))
+			return false;
 	}
 
 	/* scrollbars */
@@ -350,6 +338,57 @@ bool html_redraw_box(struct box *box,
 			return false;
 
 	return plot.group_end();
+}
+
+
+/**
+ * Draw the various children of a box.
+ *
+ * \param  box	    box to draw
+ * \param  x_parent coordinate of parent box
+ * \param  y_parent coordinate of parent box
+ * \param  clip_x0  clip rectangle
+ * \param  clip_y0  clip rectangle
+ * \param  clip_x1  clip rectangle
+ * \param  clip_y1  clip rectangle
+ * \param  scale    scale for redraw
+ * \param  current_background_color  background colour under this box
+ * \return true if successful, false otherwise
+ */
+
+bool html_redraw_box_children(struct box *box,
+		int x_parent, int y_parent,
+		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		float scale, colour current_background_color)
+{
+	struct box *c;
+
+	for (c = box->children; c; c = c->next)
+		if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
+			if (!html_redraw_box(c,
+					x_parent + box->x - box->scroll_x,
+					y_parent + box->y - box->scroll_y,
+					clip_x0, clip_y0, clip_x1, clip_y1,
+					scale, current_background_color))
+				return false;
+
+	for (c = box->float_children; c; c = c->next_float)
+		if (!html_redraw_box(c,
+				x_parent + box->x - box->scroll_x,
+				y_parent + box->y - box->scroll_y,
+				clip_x0, clip_y0, clip_x1, clip_y1,
+				scale, current_background_color))
+			return false;
+
+	for (c = box->absolute_children; c; c = c->next)
+		if (!html_redraw_box(c,
+				x_parent + box->x - box->scroll_x,
+				y_parent + box->y - box->scroll_y,
+				clip_x0, clip_y0, clip_x1, clip_y1,
+				scale, current_background_color))
+			return false;
+
+	return true;
 }
 
 
