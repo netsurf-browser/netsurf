@@ -211,7 +211,7 @@ void box_free(struct box *box)
 		next = child->next;
 		box_free(child);
 	}
-	
+
 	for (child = box->absolute_children; child; child = next) {
 		next = child->next;
 		box_free(child);
@@ -331,7 +331,16 @@ struct box *box_at_point(struct box *box, int x, int y,
 		}
 	}
 
-	/* consider floats first, since they will often overlap other boxes */
+	/* consider absolute children first */
+	for (child = box->absolute_children; child; child = child->next) {
+		if (box_contains_point(child, x - bx, y - by)) {
+			*box_x = bx + child->x - child->scroll_x;
+			*box_y = by + child->y - child->scroll_y;
+			return child;
+		}
+	}
+
+	/* consider floats second, since they will often overlap other boxes */
 	for (child = box->float_children; child; child = child->next_float) {
 		if (box_contains_point(child, x - bx, y - by)) {
 			*box_x = bx + child->x - child->scroll_x;
