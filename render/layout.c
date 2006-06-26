@@ -2572,7 +2572,7 @@ bool layout_absolute(struct box *box, struct content *content)
 			padding[RIGHT], border[RIGHT], margin[RIGHT], right,
 			containing_block->width));
 
-	box->x = left;
+	box->x = left + margin[LEFT] + border[LEFT];
 	box->width = width;
 	box->height = height;
 
@@ -2685,7 +2685,7 @@ bool layout_absolute(struct box *box, struct content *content)
 			padding[BOTTOM], border[BOTTOM], margin[BOTTOM], bottom,
 			containing_block->height));
 
-	box->y = top;
+	box->y = top + margin[TOP] + border[TOP];
 	box->height = height;
 
 	return true;
