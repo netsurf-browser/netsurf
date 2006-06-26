@@ -2318,7 +2318,41 @@ void layout_position_relative(struct box *root)
 	if (!root)
 		return;
 
+	/* Normal children */
 	for (box = root->children; box; box = box->next) {
+		int x, y;
+
+		if (box->type == BOX_TEXT)
+			continue;
+
+		/* recurse first */
+		layout_position_relative(box);
+
+		/* Ignore things we're not interested in. */
+		if (!box->style || (box->style &&
+				box->style->position != CSS_POSITION_RELATIVE))
+			continue;
+
+		layout_compute_relative_offset(box, &x, &y);
+
+		box->x += x;
+		box->y += y;
+
+		/* Handle INLINEs - their "children" are in fact
+		 * the sibling boxes between the INLINE and
+		 * INLINE_END boxes */
+		if (box->type == BOX_INLINE && box->inline_end) {
+			struct box *b;
+			for (b = box->next; b && b != box->inline_end;
+					b = b->next) {
+				b->x += x;
+				b->y += y;
+			}
+		}
+	}
+
+	/* Absolute children */
+	for (box = root->absolute_children; box; box = box->next) {
 		int x, y;
 
 		if (box->type == BOX_TEXT)
