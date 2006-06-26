@@ -38,9 +38,10 @@ OBJECTS_RISCOS += 401login.o artworks.o assert.o awrender.o bitmap.o \
 	global_history.o gui.o help.o history.o hotlist.o image.o \
 	menus.o message.o palettes.o plotters.o plugin.o print.o \
 	query.o save.o save_complete.o save_draw.o save_text.o \
-	schedule.o search.o sprite.o sslcert.o textselection.o theme.o \
-	theme_install.o thumbnail.o treeview.o ucstables.o uri.o \
-	url_complete.o url_protocol.o wimp.o wimp_event.o window.o	# riscos/
+	schedule.o search.o sprite.o sslcert.o textarea.o \
+	textselection.o theme.o theme_install.o thumbnail.o \
+	treeview.o ucstables.o uri.o url_complete.o url_protocol.o \
+	wimp.o wimp_event.o window.o				# riscos/
 OBJECTS_RISCOS += con_cache.o con_connect.o con_content.o con_fonts.o \
 	con_home.o con_image.o con_inter.o con_language.o con_memory.o \
 	con_secure.o con_theme.o		 		# riscos/configure/

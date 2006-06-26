@@ -24,6 +24,7 @@
 #include "netsurf/desktop/browser.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/riscos/dialog.h"
+#include "netsurf/riscos/textarea.h"
 #include "netsurf/riscos/wimp_event.h"
 #include "netsurf/utils/log.h"
 #include "netsurf/utils/utils.h"
@@ -41,9 +42,10 @@
 static wimp_window *dialog_cert_template;
 
 struct session_cert {
-	char version[16], valid_from[32], valid_to[32], type[8], serial[32],
-		issuer[256], subject[256];
+	char version[16], valid_from[32], valid_to[32], type[8], serial[32];
 	char *url;
+	uintptr_t issuer;
+	uintptr_t subject;
 	struct browser_window *bw;
 };
 
@@ -79,6 +81,7 @@ void ro_gui_cert_open(struct browser_window *bw, const char *url,
 {
 	struct session_cert *session;
 	wimp_w w;
+	os_error *error;
 
 	session = malloc(sizeof(struct session_cert));
 	if (!session) {
@@ -105,10 +108,6 @@ void ro_gui_cert_open(struct browser_window *bw, const char *url,
 			certdata->not_after);
 	snprintf(session->serial, sizeof session->serial, "%ld",
 			certdata->serial);
-	snprintf(session->issuer, sizeof session->issuer, "%s",
-			certdata->issuer);
-	snprintf(session->subject, sizeof session->subject, "%s",
-			certdata->subject);
 
 	dialog_cert_template->icons[ICON_CERT_VERSION].data.indirected_text.text = session->version;
 	dialog_cert_template->icons[ICON_CERT_VERSION].data.indirected_text.size = strlen(session->version) + 1;
@@ -120,12 +119,49 @@ void ro_gui_cert_open(struct browser_window *bw, const char *url,
 	dialog_cert_template->icons[ICON_CERT_VALID_TO].data.indirected_text.size = strlen(session->valid_to) + 1;
 	dialog_cert_template->icons[ICON_CERT_SERIAL].data.indirected_text.text = session->serial;
 	dialog_cert_template->icons[ICON_CERT_SERIAL].data.indirected_text.size = strlen(session->serial) + 1;
-	dialog_cert_template->icons[ICON_CERT_ISSUER].data.indirected_text.text = session->issuer;
-	dialog_cert_template->icons[ICON_CERT_ISSUER].data.indirected_text.size = strlen(session->issuer) + 1;
-	dialog_cert_template->icons[ICON_CERT_SUBJECT].data.indirected_text.text = session->subject;
-	dialog_cert_template->icons[ICON_CERT_SUBJECT].data.indirected_text.size = strlen(session->subject) + 1;
 
-	w = wimp_create_window(dialog_cert_template);
+	error = xwimp_create_window(dialog_cert_template, &w);
+	if (error) {
+		LOG(("xwimp_create_window: 0x%x: %s",
+				error->errnum, error->errmess));
+		free(session);
+		warn_user("MiscError", error->errmess);
+		return;
+	}
+
+	session->issuer = textarea_create(w, ICON_CERT_ISSUER,
+			TEXTAREA_MULTILINE | TEXTAREA_READONLY, NULL, 0);
+	if (!session->issuer) {
+		xwimp_delete_window(w);
+		free(session);
+		warn_user("NoMemory", 0);
+		return;
+	}
+	if (!textarea_set_text(session->issuer, certdata->issuer)) {
+		textarea_destroy(session->issuer);
+		xwimp_delete_window(w);
+		free(session);
+		warn_user("NoMemory", 0);
+		return;
+	}
+
+	session->subject = textarea_create(w, ICON_CERT_SUBJECT,
+			TEXTAREA_MULTILINE | TEXTAREA_READONLY, NULL, 0);
+	if (!session->subject) {
+		textarea_destroy(session->issuer);
+		xwimp_delete_window(w);
+		free(session);
+		warn_user("NoMemory", 0);
+		return;
+	}
+	if (!textarea_set_text(session->subject, certdata->subject)) {
+		textarea_destroy(session->subject);
+		textarea_destroy(session->issuer);
+		xwimp_delete_window(w);
+		free(session);
+		warn_user("NoMemory", 0);
+		return;
+	}
 
 	ro_gui_wimp_event_register_cancel(w, ICON_CERT_REJECT);
 	ro_gui_wimp_event_register_ok(w, ICON_CERT_ACCEPT, ro_gui_cert_apply);
@@ -146,6 +182,9 @@ void ro_gui_cert_close(wimp_w w)
 	session = (struct session_cert *)ro_gui_wimp_event_get_user_data(w);
 
 	assert(session);
+
+	textarea_destroy(session->subject);
+	textarea_destroy(session->issuer);
 
 	free(session->url);
 	free(session);
