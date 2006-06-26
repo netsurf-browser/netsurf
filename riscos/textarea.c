@@ -150,6 +150,9 @@ uintptr_t textarea_create(wimp_w parent, wimp_i icon, unsigned int flags,
 	/** \todo Better line height calculation */
 	ret->line_height = (int)(((ret->font_size * 1.25) / 16) * 2.0) + 1;
 
+	ret->line_count = 0;
+	ret->lines = 0;
+
 	error = xwimp_create_window(&text_area_definition, &ret->window);
 	if (error) {
 		LOG(("xwimp_create_window: 0x%x: %s",
