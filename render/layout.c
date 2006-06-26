@@ -53,6 +53,7 @@ static void layout_float_find_dimensions(int available_width,
 		struct css_style *style, struct box *box);
 static void layout_find_dimensions(int available_width,
 		struct css_style *style,
+		int *width, int *height,
 		int margin[4], int padding[4], int border[4]);
 static int layout_clear(struct box *fl, css_clear clear);
 static void find_sides(struct box *fl, int y0, int y1,
@@ -75,6 +76,12 @@ static void calculate_mbp_width(struct css_style *style, unsigned int side,
 		int *fixed, float *frac);
 static void layout_position_relative(struct box *root);
 static void layout_compute_relative_offset(struct box *box, int *x, int *y);
+static bool layout_absolute_children(struct box *block,
+		struct content *content);
+static bool layout_absolute(struct box *box, struct content *content);
+static void layout_compute_offsets(struct box *box,
+		struct box *containing_block,
+		int *top, int *right, int *bottom, int *left);
 
 
 /**
@@ -289,6 +296,10 @@ bool layout_block_context(struct box *block, struct content *content)
 			cy = y;
 		}
 
+		/* Absolutely positioned children. */
+		if (!layout_absolute_children(box, content))
+			return false;
+
 		/* Advance to next box. */
 		if (box->type == BOX_BLOCK && !box->object && box->children) {
 			y = box->padding[TOP];
@@ -354,6 +365,10 @@ bool layout_block_context(struct box *block, struct content *content)
 	if (block->height == AUTO)
 		block->height = cy - block->padding[TOP];
 
+	/* Absolutely positioned children. */
+	if (!layout_absolute_children(block, content))
+		return false;
+	
 	return true;
 }
 
@@ -418,6 +433,21 @@ void layout_minmax_block(struct box *block)
 		assert(0);
 	}
 
+	/* absolutely positioned children */
+	for (child = block->absolute_children; child; child = child->next) {
+		switch (child->type) {
+			case BOX_BLOCK:
+				layout_minmax_block(child);
+				break;
+			case BOX_TABLE:
+				layout_minmax_table(child);
+				break;
+			default:
+				assert(0);
+		}
+		assert(child->max_width != UNKNOWN_MAX_WIDTH);
+	}
+
 	/* fixed width takes priority */
 	if (block->type != BOX_TABLE_CELL &&
 			block->style->width.width == CSS_WIDTH_LENGTH)
@@ -449,64 +479,40 @@ void layout_minmax_block(struct box *block)
 
 void layout_block_find_dimensions(int available_width, struct box *box)
 {
-	int width;
+	int width, height;
 	int *margin = box->margin;
 	int *padding = box->padding;
 	int *border = box->border;
 	struct css_style *style = box->style;
 
-	/* calculate box width */
-	switch (style->width.width) {
-		case CSS_WIDTH_LENGTH:
-			width = css_len2px(&style->width.value.length, style);
-			break;
-		case CSS_WIDTH_PERCENT:
-			width = available_width *
-					style->width.value.percent / 100;
-			break;
-		case CSS_WIDTH_AUTO:
-		default:
-			width = AUTO;
-			break;
-	}
-
-	/* height */
-	switch (style->height.height) {
-		case CSS_HEIGHT_LENGTH:
-			box->height = css_len2px(&style->height.length, style);
-			break;
-		case CSS_HEIGHT_AUTO:
-		default:
-			box->height = AUTO;
-			break;
-	}
+	layout_find_dimensions(available_width, style,
+			&width, &height, margin, padding, border);
 
 	if (box->object && box->object->type != CONTENT_HTML) {
 		/* block-level replaced element, see 10.3.4 and 10.6.2 */
-		if (width == AUTO && box->height == AUTO) {
+		if (width == AUTO && height == AUTO) {
 			width = box->object->width;
-			box->height = box->object->height;
+			height = box->object->height;
 		} else if (width == AUTO) {
 			if (box->object->height)
 				width = box->object->width *
-						(float) box->height /
+						(float) height /
 						box->object->height;
 			else
 				width = box->object->width;
-		} else if (box->height == AUTO) {
+		} else if (height == AUTO) {
 			if (box->object->width)
-				box->height = box->object->height *
+				height = box->object->height *
 						(float) width /
 						box->object->width;
 			else
-				box->height = box->object->height;
+				height = box->object->height;
 		}
 	}
 
-	layout_find_dimensions(available_width, style, margin, padding, border);
-
 	box->width = layout_solve_width(available_width, width, margin,
 			padding, border);
+	box->height = height;
 
 	if (style->overflow == CSS_OVERFLOW_SCROLL ||
 			style->overflow == CSS_OVERFLOW_AUTO) {
@@ -564,135 +570,6 @@ int layout_solve_width(int available_width, int width,
 
 
 /**
- * Position a box tree relatively
- */
-
-void layout_position_relative(struct box *root)
-{
-	struct box *box;
-
-	/**\todo ensure containing box is large enough after moving boxes */
-
-	if (!root)
-		return;
-
-	for (box = root->children; box; box = box->next) {
-		int x, y;
-
-		if (box->type == BOX_TEXT)
-			continue;
-
-		/* recurse first */
-		layout_position_relative(box);
-
-		/* Ignore things we're not interested in. */
-		if (!box->style || (box->style &&
-				box->style->position != CSS_POSITION_RELATIVE))
-			continue;
-
-		layout_compute_relative_offset(box, &x, &y);
-
-		box->x += x;
-		box->y += y;
-
-		/* Handle INLINEs - their "children" are in fact
-		 * the sibling boxes between the INLINE and
-		 * INLINE_END boxes */
-		if (box->type == BOX_INLINE && box->inline_end) {
-			struct box *b;
-			for (b = box->next; b && b != box->inline_end;
-					b = b->next) {
-				b->x += x;
-				b->y += y;
-			}
-		}
-	}
-}
-
-
-/**
- * Compute a box's relative offset as per CSS 2.1 9.4.3
- */
-
-void layout_compute_relative_offset(struct box *box, int *x, int *y)
-{
-	int left = 0, right = 0, top = 0, bottom = 0;
-
-	assert(box && box->parent && box->style &&
-			box->style->position == CSS_POSITION_RELATIVE);
-
-	/* left */
-	if (box->style->pos[LEFT].pos == CSS_POS_PERCENT)
-		left = ((box->style->pos[LEFT].value.percent *
-				box->parent->width) / 100);
-	else if (box->style->pos[LEFT].pos == CSS_POS_LENGTH)
-		left = css_len2px(&box->style->pos[LEFT].value.length,
-				box->style);
-
-	/* right */
-	if (box->style->pos[RIGHT].pos == CSS_POS_PERCENT)
-		right = ((box->style->pos[RIGHT].value.percent *
-				box->parent->width) / 100);
-	else if (box->style->pos[RIGHT].pos == CSS_POS_LENGTH)
-		right = css_len2px(&box->style->pos[RIGHT].value.length,
-				box->style);
-
-	if (box->style->pos[LEFT].pos == CSS_POS_AUTO)
-		/* left is auto => computed = -right */
-		left = -right;
-	if (box->style->pos[RIGHT].pos == CSS_POS_AUTO)
-		/* right is auto => computed = -left */
-		right = -left;
-
-	if (box->style->pos[LEFT].pos != CSS_POS_AUTO &&
-			box->style->pos[RIGHT].pos != CSS_POS_AUTO) {
-		/* over constrained => examine direction property
-		 * of containing block */
-		if (box->parent->style) {
-			if (box->parent->style->direction ==
-					CSS_DIRECTION_LTR)
-				/* left wins */
-				right = -left;
-			else if (box->parent->style->direction ==
-					CSS_DIRECTION_RTL)
-				/* right wins */
-				left = -right;
-		}
-		else {
-			/* no parent style, so assume LTR */
-			right = -left;
-		}
-	}
-
-	assert(left == -right);
-
-	/* top */
-	if (box->style->pos[TOP].pos == CSS_POS_PERCENT)
-		top = ((box->style->pos[TOP].value.percent *
-				box->parent->height) / 100);
-	else if (box->style->pos[TOP].pos == CSS_POS_LENGTH)
-		top = css_len2px(&box->style->pos[TOP].value.length,
-				box->style);
-
-	/* bottom */
-	if (box->style->pos[BOTTOM].pos == CSS_POS_PERCENT)
-		bottom = ((box->style->pos[BOTTOM].value.percent *
-				box->parent->height) / 100);
-	else if (box->style->pos[BOTTOM].pos == CSS_POS_LENGTH)
-		bottom = css_len2px(&box->style->pos[BOTTOM].value.length,
-				box->style);
-
-	if (box->style->pos[TOP].pos == CSS_POS_AUTO)
-		/* top is auto => computed = -bottom */
-		top = -bottom;
-
-	LOG(("%d,%d,%d,%d", left, right, top, bottom));
-
-	*x = left;
-	*y = top;
-}
-
-/**
  * Compute dimensions of box, margins, paddings, and borders for a floating
  * element.
  */
@@ -700,87 +577,64 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
 void layout_float_find_dimensions(int available_width,
 		struct css_style *style, struct box *box)
 {
+	int width, height;
+	int *margin = box->margin;
+	int *padding = box->padding;
+	int *border = box->border;
 	int scrollbar_width = (style->overflow == CSS_OVERFLOW_SCROLL ||
 			style->overflow == CSS_OVERFLOW_AUTO) ?
 			SCROLLBAR_WIDTH : 0;
 
 	layout_find_dimensions(available_width, style,
-			box->margin, box->padding, box->border);
+			&width, &height, margin, padding, border);
 
-	if (box->margin[LEFT] == AUTO)
-		box->margin[LEFT] = 0;
-	if (box->margin[RIGHT] == AUTO)
-		box->margin[RIGHT] = 0;
+	if (margin[LEFT] == AUTO)
+		margin[LEFT] = 0;
+	if (margin[RIGHT] == AUTO)
+		margin[RIGHT] = 0;
 
-	/* calculate box width */
-	switch (style->width.width) {
-		case CSS_WIDTH_LENGTH:
-			box->width = css_len2px(&style->width.value.length,
-					style);
-			break;
-		case CSS_WIDTH_PERCENT:
-			box->width = available_width *
-					style->width.value.percent / 100;
-			break;
-		case CSS_WIDTH_AUTO:
-		default:
-			box->width = AUTO;
-			break;
-	}
-
-	/* height */
-	switch (style->height.height) {
-		case CSS_HEIGHT_LENGTH:
-			box->height = css_len2px(&style->height.length,
-					style);
-			break;
-		case CSS_HEIGHT_AUTO:
-		default:
-			box->height = AUTO;
-			break;
-	}
-
-	box->padding[RIGHT] += scrollbar_width;
-	box->padding[BOTTOM] += scrollbar_width;
+	padding[RIGHT] += scrollbar_width;
+	padding[BOTTOM] += scrollbar_width;
 
 	if (box->object && box->object->type != CONTENT_HTML) {
 		/* floating replaced element, see 10.3.6 and 10.6.2 */
-		if (box->width == AUTO && box->height == AUTO) {
-			box->width = box->object->width;
-			box->height = box->object->height;
-		} else if (box->width == AUTO)
-			box->width = box->object->width * (float) box->height /
+		if (width == AUTO && height == AUTO) {
+			width = box->object->width;
+			height = box->object->height;
+		} else if (width == AUTO)
+			width = box->object->width * (float) height /
 					box->object->height;
-		else if (box->height == AUTO)
-			box->height = box->object->height * (float) box->width /
+		else if (height == AUTO)
+			height = box->object->height * (float) width /
 					box->object->width;
-	} else if (box->width == AUTO) {
+	} else if (width == AUTO) {
 		/* CSS 2.1 section 10.3.5 */
-		if (box->min_width < available_width)
-			box->width = available_width;
-		else
-			box->width = box->min_width;
-		if (box->max_width < box->width)
-			box->width = box->max_width;
-		box->width -= box->margin[LEFT] + box->border[LEFT] +
+		width = min(max(box->min_width, available_width), box->max_width);
+		width -= box->margin[LEFT] + box->border[LEFT] +
 				box->padding[LEFT] + box->padding[RIGHT] +
 				box->border[RIGHT] + box->margin[RIGHT];
 	} else {
-		box->width -= scrollbar_width;
+		width -= scrollbar_width;
 	}
 
-	if (box->margin[TOP] == AUTO)
-		box->margin[TOP] = 0;
-	if (box->margin[BOTTOM] == AUTO)
-		box->margin[BOTTOM] = 0;
+	box->width = width;
+	box->height = height;
+
+	if (margin[TOP] == AUTO)
+		margin[TOP] = 0;
+	if (margin[BOTTOM] == AUTO)
+		margin[BOTTOM] = 0;
 }
 
 
 /**
- * Calculate size of margins, paddings, and borders.
+ * Calculate width, height, and thickness of margins, paddings, and borders.
  *
  * \param  available_width  width of containing block
- * \param  style	    style giving margins, paddings, and borders
+ * \param  style	    style giving width, height, margins, paddings,
+ *                          and borders
+ * \param  width            updated to width, may be NULL
+ * \param  height           updated to height, may be NULL
  * \param  margin[4]	    filled with margins, may be NULL
  * \param  padding[4]	    filled with paddings
  * \param  border[4]	    filled with border widths
@@ -788,9 +642,41 @@ void layout_float_find_dimensions(int available_width,
 
 void layout_find_dimensions(int available_width,
 		struct css_style *style,
+		int *width, int *height,
 		int margin[4], int padding[4], int border[4])
 {
 	unsigned int i;
+
+	if (width) {
+		switch (style->width.width) {
+			case CSS_WIDTH_LENGTH:
+				*width = css_len2px(&style->width.value.length,
+						style);
+				break;
+			case CSS_WIDTH_PERCENT:
+				*width = available_width *
+					style->width.value.percent / 100;
+				break;
+			case CSS_WIDTH_AUTO:
+			default:
+				*width = AUTO;
+				break;
+		}
+	}
+
+	if (height) {
+		switch (style->height.height) {
+			case CSS_HEIGHT_LENGTH:
+				*height = css_len2px(&style->height.length,
+						style);
+				break;
+			case CSS_HEIGHT_AUTO:
+			default:
+				*height = AUTO;
+				break;
+		}
+	}
+
 	for (i = 0; i != 4; i++) {
 		if (margin) {
 			switch (style->margin[i].margin) {
@@ -1103,7 +989,7 @@ bool layout_line(struct box *first, int width, int *y,
 		if (b->type == BOX_INLINE) {
 			/* calculate borders, margins, and padding */
 			layout_find_dimensions(width, b->style,
-					b->margin, b->padding, b->border);
+					0, 0, b->margin, b->padding, b->border);
 			for (i = 0; i != 4; i++)
 				if (b->margin[i] == AUTO)
 					b->margin[i] = 0;
@@ -1848,7 +1734,7 @@ bool layout_table(struct box *table, int available_width,
 	memcpy(col, table->col, sizeof(col[0]) * columns);
 
 	/* find margins, paddings, and borders for table and cells */
-	layout_find_dimensions(available_width, style, table->margin,
+	layout_find_dimensions(available_width, style, 0, 0, table->margin,
 			table->padding, table->border);
 	for (row_group = table->children; row_group;
 			row_group = row_group->next) {
@@ -1856,7 +1742,7 @@ bool layout_table(struct box *table, int available_width,
 			for (c = row->children; c; c = c->next) {
 				assert(c->style);
 				layout_find_dimensions(available_width,
-						c->style, 0,
+						c->style, 0, 0, 0,
 						c->padding, c->border);
 				if (c->style->overflow ==
 						CSS_OVERFLOW_SCROLL ||
@@ -2420,6 +2306,444 @@ void calculate_mbp_width(struct css_style *style, unsigned int side,
 
 
 /**
+ * Adjust positions of relatively positioned boxes.
+ */
+
+void layout_position_relative(struct box *root)
+{
+	struct box *box;
+
+	/**\todo ensure containing box is large enough after moving boxes */
+
+	if (!root)
+		return;
+
+	for (box = root->children; box; box = box->next) {
+		int x, y;
+
+		if (box->type == BOX_TEXT)
+			continue;
+
+		/* recurse first */
+		layout_position_relative(box);
+
+		/* Ignore things we're not interested in. */
+		if (!box->style || (box->style &&
+				box->style->position != CSS_POSITION_RELATIVE))
+			continue;
+
+		layout_compute_relative_offset(box, &x, &y);
+
+		box->x += x;
+		box->y += y;
+
+		/* Handle INLINEs - their "children" are in fact
+		 * the sibling boxes between the INLINE and
+		 * INLINE_END boxes */
+		if (box->type == BOX_INLINE && box->inline_end) {
+			struct box *b;
+			for (b = box->next; b && b != box->inline_end;
+					b = b->next) {
+				b->x += x;
+				b->y += y;
+			}
+		}
+	}
+}
+
+
+/**
+ * Compute a box's relative offset as per CSS 2.1 9.4.3
+ */
+
+void layout_compute_relative_offset(struct box *box, int *x, int *y)
+{
+	int left, right, top, bottom;
+
+	assert(box && box->parent && box->style &&
+			box->style->position == CSS_POSITION_RELATIVE);
+
+	layout_compute_offsets(box, box->parent, &top, &right, &bottom, &left);
+	
+	if (left == AUTO && right == AUTO)
+		left = right = 0;
+	else if (left == AUTO)
+		/* left is auto => computed = -right */
+		left = -right;
+	else if (right == AUTO)
+		/* right is auto => computed = -left */
+		right = -left;
+	else {
+		/* over constrained => examine direction property
+		 * of containing block */
+		if (box->parent->style) {
+			if (box->parent->style->direction ==
+					CSS_DIRECTION_LTR)
+				/* left wins */
+				right = -left;
+			else if (box->parent->style->direction ==
+					CSS_DIRECTION_RTL)
+				/* right wins */
+				left = -right;
+		}
+		else {
+			/* no parent style, so assume LTR */
+			right = -left;
+		}
+	}
+
+	assert(left == -right);
+
+	if (top == AUTO && bottom == AUTO)
+		top = bottom = 0;
+	else if (top == AUTO)
+		top = -bottom;
+	else if (bottom == AUTO)
+		bottom = -top;
+	else
+		bottom = -top;
+
+	LOG(("left %i, right %i, top %i, bottom %i", left, right, top, bottom));
+
+	*x = left;
+	*y = top;
+}
+
+
+/**
+ * Layout absolutely positioned children of a box.
+ *
+ * \param  block    box to layout children of
+ * \param  content  memory pool for any new boxes
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool layout_absolute_children(struct box *block,
+		struct content *content)
+{
+	struct box *box;
+
+	for (box = block->absolute_children; box; box = box->next)
+		if (!layout_absolute(box, content))
+			return false;
+
+	return true;
+}
+
+
+/**
+ * Layout and position an absolutely positioned box.
+ *
+ * \param  block    box to layout and position
+ * \param  content  memory pool for any new boxes
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool layout_absolute(struct box *box, struct content *content)
+{
+	struct box *containing_block = box->parent;
+	int top, right, bottom, left;
+	int width, height;
+	int *margin = box->margin;
+	int *padding = box->padding;
+	int *border = box->border;
+	int available_width;
+	int space;
+
+	assert(box->type == BOX_BLOCK || box->type == BOX_TABLE);
+
+	layout_compute_offsets(box, containing_block,
+			&top, &right, &bottom, &left);
+	layout_find_dimensions(containing_block->width, box->style,
+			&width, &height, margin, padding, border);
+
+	/* 10.3.7 */
+	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
+			left, margin[LEFT], border[LEFT], padding[LEFT], width,
+			padding[RIGHT], border[RIGHT], margin[RIGHT], right,
+			containing_block->width));
+	if (left == AUTO && width == AUTO && right == AUTO) {
+		if (margin[LEFT] == AUTO)
+			margin[LEFT] = 0;
+		if (margin[RIGHT] == AUTO)
+			margin[RIGHT] = 0;
+		left = 0;
+		available_width = containing_block->width -
+				margin[LEFT] - border[LEFT] - padding[LEFT] -
+				padding[RIGHT] - border[RIGHT] - margin[RIGHT];
+		width = min(max(box->min_width, available_width), box->max_width);
+		right = containing_block->width -
+				left -
+				margin[LEFT] - border[LEFT] - padding[LEFT] -
+				width -
+				padding[RIGHT] - border[RIGHT] - margin[RIGHT];
+	} else if (left != AUTO && width != AUTO && right != AUTO) {
+		if (margin[LEFT] == AUTO && margin[RIGHT] == AUTO) {
+			space = containing_block->width -
+					left -
+					border[LEFT] - padding[LEFT] -
+					width -
+					padding[RIGHT] - border[RIGHT] -
+					right;
+			if (space < 0) {
+				margin[LEFT] = 0;
+				margin[RIGHT] = space;
+			} else {
+				margin[LEFT] = margin[RIGHT] = space / 2;
+			}
+		} else if (margin[LEFT] == AUTO) {
+			margin[LEFT] = containing_block->width -
+					left -
+					border[LEFT] - padding[LEFT] -
+					width -
+					padding[RIGHT] - border[RIGHT] - margin[RIGHT] -
+					right;
+		} else if (margin[RIGHT] == AUTO) {
+			margin[RIGHT] = containing_block->width -
+					left -
+					border[LEFT] - padding[LEFT] -
+					width -
+					padding[RIGHT] - border[RIGHT] - margin[RIGHT] -
+					right;
+		} else {
+			right = containing_block->width -
+					left -
+					margin[LEFT] - border[LEFT] - padding[LEFT] -
+					width -
+					padding[RIGHT] - border[RIGHT] - margin[RIGHT];
+		}
+	} else {
+		if (margin[LEFT] == AUTO)
+			margin[LEFT] = 0;
+		if (margin[RIGHT] == AUTO)
+			margin[RIGHT] = 0;
+		if (left == AUTO && width == AUTO && right != AUTO) {
+			width = min(max(box->min_width, available_width), box->max_width);
+			left = containing_block->width -
+					margin[LEFT] - border[LEFT] - padding[LEFT] -
+					width -
+					padding[RIGHT] - border[RIGHT] - margin[RIGHT] -
+					right;
+		} else if (left == AUTO && width != AUTO && right == AUTO) {
+			left = 0;
+			right = containing_block->width -
+					left -
+					margin[LEFT] - border[LEFT] - padding[LEFT] -
+					width -
+					padding[RIGHT] - border[RIGHT] - margin[RIGHT];
+		} else if (left != AUTO && width == AUTO && right == AUTO) {
+			width = min(max(box->min_width, available_width), box->max_width);
+			right = containing_block->width -
+					left -
+					margin[LEFT] - border[LEFT] - padding[LEFT] -
+					width -
+					padding[RIGHT] - border[RIGHT] - margin[RIGHT];
+		} else if (left == AUTO && width != AUTO && right != AUTO) {
+			left = containing_block->width -
+					margin[LEFT] - border[LEFT] - padding[LEFT] -
+					width -
+					padding[RIGHT] - border[RIGHT] - margin[RIGHT] -
+					right;
+		} else if (left != AUTO && width == AUTO && right != AUTO) {
+			width = containing_block->width -
+					left -
+					margin[LEFT] - border[LEFT] - padding[LEFT] -
+					padding[RIGHT] - border[RIGHT] - margin[RIGHT] -
+					right;
+		} else if (left != AUTO && width != AUTO && right == AUTO) {
+			right = containing_block->width -
+					left -
+					margin[LEFT] - border[LEFT] - padding[LEFT] -
+					width -
+					padding[RIGHT] - border[RIGHT] - margin[RIGHT];
+		}
+	}
+	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
+			left, margin[LEFT], border[LEFT], padding[LEFT], width,
+			padding[RIGHT], border[RIGHT], margin[RIGHT], right,
+			containing_block->width));
+
+	box->x = left;
+	box->width = width;
+	box->height = height;
+	
+	if (box->type == BOX_BLOCK || box->object) {
+		if (!layout_block_context(box, content))
+			return false;
+	} else if (box->type == BOX_TABLE) {
+		/* \todo  layout_table considers margins etc. again */
+		if (!layout_table(box, width, content))
+			return false;
+		layout_solve_width(box->parent->width, box->width,
+				box->margin, box->padding, box->border);
+	}
+
+	/* 10.6.4 */
+	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
+			top, margin[TOP], border[TOP], padding[TOP], height,
+			padding[BOTTOM], border[BOTTOM], margin[BOTTOM], bottom,
+			containing_block->height));
+	if (top == AUTO && height == AUTO && bottom == AUTO) {
+		top = 0;
+		height = box->height;
+		if (margin[TOP] == AUTO)
+			margin[TOP] = 0;
+		if (margin[BOTTOM] == AUTO)
+			margin[BOTTOM] = 0;
+		bottom = containing_block->height -
+				top -
+				margin[TOP] - border[TOP] - padding[TOP] -
+				height -
+				padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM];
+	} else if (top != AUTO && height != AUTO && bottom != AUTO) {
+		if (margin[TOP] == AUTO && margin[BOTTOM] == AUTO) {
+			space = containing_block->height -
+					top -
+					border[TOP] - padding[TOP] -
+					height -
+					padding[BOTTOM] - border[BOTTOM] -
+					bottom;
+			margin[TOP] = margin[BOTTOM] = space / 2;
+		} else if (margin[TOP] == AUTO) {
+			margin[TOP] = containing_block->height -
+					top -
+					border[TOP] - padding[TOP] -
+					height -
+					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM] -
+					bottom;
+		} else if (margin[BOTTOM] == AUTO) {
+			margin[BOTTOM] = containing_block->height -
+					top -
+					margin[TOP] - border[TOP] - padding[TOP] -
+					height -
+					padding[BOTTOM] - border[BOTTOM] -
+					bottom;
+		} else {
+			bottom = containing_block->height -
+					top -
+					margin[TOP] - border[TOP] - padding[TOP] -
+					height -
+					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM];
+		}
+	} else {
+		if (margin[TOP] == AUTO)
+			margin[TOP] = 0;
+		if (margin[BOTTOM] == AUTO)
+			margin[BOTTOM] = 0;
+		if (top == AUTO && height == AUTO && bottom != AUTO) {
+			height = box->height;
+			top = containing_block->height -
+					margin[TOP] - border[TOP] - padding[TOP] -
+					height -
+					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM] -
+					bottom;
+		} else if (top == AUTO && height != AUTO && bottom == AUTO) {
+			top = 0;
+			bottom = containing_block->height -
+					top -
+					margin[TOP] - border[TOP] - padding[TOP] -
+					height -
+					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM];
+		} else if (top != AUTO && height == AUTO && bottom == AUTO) {
+			height = box->height;
+			bottom = containing_block->height -
+					top -
+					margin[TOP] - border[TOP] - padding[TOP] -
+					height -
+					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM];
+		} else if (top == AUTO && height != AUTO && bottom != AUTO) {
+			top = containing_block->height -
+					margin[TOP] - border[TOP] - padding[TOP] -
+					height -
+					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM] -
+					bottom;
+		} else if (top != AUTO && height == AUTO && bottom != AUTO) {
+			height = containing_block->height -
+					top -
+					margin[TOP] - border[TOP] - padding[TOP] -
+					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM] -
+					bottom;
+		} else if (top != AUTO && height != AUTO && bottom == AUTO) {
+			bottom = containing_block->height -
+					top -
+					margin[TOP] - border[TOP] - padding[TOP] -
+					height -
+					padding[BOTTOM] - border[BOTTOM] - margin[BOTTOM];
+		}
+	}
+	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
+			top, margin[TOP], border[TOP], padding[TOP], height,
+			padding[BOTTOM], border[BOTTOM], margin[BOTTOM], bottom,
+			containing_block->height));
+
+	box->y = top;
+	box->height = height;
+
+	return true;
+}
+
+
+/**
+ * Compute box offsets for a relatively or absolutely positioned box with
+ * respect to a box.
+ *
+ * \param  box               box to compute offsets for
+ * \param  containing_block  box to compute percentages with respect to
+ * \param  top               updated to top offset, or AUTO
+ * \param  right             updated to right offset, or AUTO
+ * \param  bottom            updated to bottom offset, or AUTO
+ * \param  left              updated to left offset, or AUTO
+ *
+ * See CSS 2.1 9.3.2. containing_block must have width and height.
+ */
+
+void layout_compute_offsets(struct box *box,
+		struct box *containing_block,
+		int *top, int *right, int *bottom, int *left)
+{
+	/* left */
+	if (box->style->pos[LEFT].pos == CSS_POS_PERCENT)
+		*left = ((box->style->pos[LEFT].value.percent *
+				containing_block->width) / 100);
+	else if (box->style->pos[LEFT].pos == CSS_POS_LENGTH)
+		*left = css_len2px(&box->style->pos[LEFT].value.length,
+				box->style);
+	else
+		*left = AUTO;
+
+	/* right */
+	if (box->style->pos[RIGHT].pos == CSS_POS_PERCENT)
+		*right = ((box->style->pos[RIGHT].value.percent *
+				containing_block->width) / 100);
+	else if (box->style->pos[RIGHT].pos == CSS_POS_LENGTH)
+		*right = css_len2px(&box->style->pos[RIGHT].value.length,
+				box->style);
+	else
+		*right = AUTO;
+
+	/* top */
+	if (box->style->pos[TOP].pos == CSS_POS_PERCENT)
+		*top = ((box->style->pos[TOP].value.percent *
+				containing_block->height) / 100);
+	else if (box->style->pos[TOP].pos == CSS_POS_LENGTH)
+		*top = css_len2px(&box->style->pos[TOP].value.length,
+				box->style);
+	else
+		*top = AUTO;
+
+	/* bottom */
+	if (box->style->pos[BOTTOM].pos == CSS_POS_PERCENT)
+		*bottom = ((box->style->pos[BOTTOM].value.percent *
+				containing_block->height) / 100);
+	else if (box->style->pos[BOTTOM].pos == CSS_POS_LENGTH)
+		*bottom = css_len2px(&box->style->pos[BOTTOM].value.length,
+				box->style);
+	else
+		*bottom = AUTO;
+}
+
+
+/**
  * Recursively calculate the descendant_[xy][01] values for a laid-out box tree.
  *
  * \param  box  tree of boxes to update
@@ -2510,10 +2834,22 @@ void layout_calculate_descendant_bboxes(struct box *box)
 	}
 
 	for (child = box->float_children; child; child = child->next_float) {
-		if (child->type != BOX_FLOAT_LEFT &&
-				child->type != BOX_FLOAT_RIGHT)
-			continue;
+		assert(child->type == BOX_FLOAT_LEFT ||
+				child->type == BOX_FLOAT_RIGHT);
 
+		layout_calculate_descendant_bboxes(child);
+
+		if (child->x + child->descendant_x0 < box->descendant_x0)
+			box->descendant_x0 = child->x + child->descendant_x0;
+		if (box->descendant_x1 < child->x + child->descendant_x1)
+			box->descendant_x1 = child->x + child->descendant_x1;
+		if (child->y + child->descendant_y0 < box->descendant_y0)
+			box->descendant_y0 = child->y + child->descendant_y0;
+		if (box->descendant_y1 < child->y + child->descendant_y1)
+			box->descendant_y1 = child->y + child->descendant_y1;
+	}
+
+	for (child = box->absolute_children; child; child = child->next) {
 		layout_calculate_descendant_bboxes(child);
 
 		if (child->x + child->descendant_x0 < box->descendant_x0)
