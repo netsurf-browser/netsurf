@@ -368,7 +368,7 @@ bool layout_block_context(struct box *block, struct content *content)
 	/* Absolutely positioned children. */
 	if (!layout_absolute_children(block, content))
 		return false;
-	
+
 	return true;
 }
 
@@ -2364,7 +2364,7 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
 			box->style->position == CSS_POSITION_RELATIVE);
 
 	layout_compute_offsets(box, box->parent, &top, &right, &bottom, &left);
-	
+
 	if (left == AUTO && right == AUTO)
 		left = right = 0;
 	else if (left == AUTO)
@@ -2501,9 +2501,9 @@ bool layout_absolute(struct box *box, struct content *content)
 		} else if (margin[RIGHT] == AUTO) {
 			margin[RIGHT] = containing_block->width -
 					left -
-					border[LEFT] - padding[LEFT] -
+					margin[LEFT] - border[LEFT] - padding[LEFT] -
 					width -
-					padding[RIGHT] - border[RIGHT] - margin[RIGHT] -
+					padding[RIGHT] - border[RIGHT] -
 					right;
 		} else {
 			right = containing_block->width -
@@ -2517,7 +2517,14 @@ bool layout_absolute(struct box *box, struct content *content)
 			margin[LEFT] = 0;
 		if (margin[RIGHT] == AUTO)
 			margin[RIGHT] = 0;
+
+		available_width = containing_block->width -
+				margin[LEFT] - border[LEFT] - padding[LEFT] -
+				padding[RIGHT] - border[RIGHT] - margin[RIGHT];
+
 		if (left == AUTO && width == AUTO && right != AUTO) {
+			available_width -= right;
+
 			width = min(max(box->min_width, available_width), box->max_width);
 			left = containing_block->width -
 					margin[LEFT] - border[LEFT] - padding[LEFT] -
@@ -2532,6 +2539,8 @@ bool layout_absolute(struct box *box, struct content *content)
 					width -
 					padding[RIGHT] - border[RIGHT] - margin[RIGHT];
 		} else if (left != AUTO && width == AUTO && right == AUTO) {
+			available_width -= left;
+
 			width = min(max(box->min_width, available_width), box->max_width);
 			right = containing_block->width -
 					left -
@@ -2566,7 +2575,7 @@ bool layout_absolute(struct box *box, struct content *content)
 	box->x = left;
 	box->width = width;
 	box->height = height;
-	
+
 	if (box->type == BOX_BLOCK || box->object) {
 		if (!layout_block_context(box, content))
 			return false;
