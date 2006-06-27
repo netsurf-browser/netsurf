@@ -133,6 +133,8 @@ void gui_init(int argc, char** argv)
 	adblock_stylesheet_url = path_to_url(buf);
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
+
+	urldb_load_cookies(option_cookie_file);
 }
 
 
@@ -210,6 +212,7 @@ void gui_multitask(void)
 
 void gui_quit(void)
 {
+	urldb_save_cookies(option_cookie_jar);
 	free(default_stylesheet_url);
 	free(adblock_stylesheet_url);
 	free(option_cookie_file);
