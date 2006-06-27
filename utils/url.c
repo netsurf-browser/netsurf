@@ -2,6 +2,7 @@
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
  *		  http://www.opensource.org/licenses/gpl-license
+ * Copyright 2006 Richard Wilson <info@tinct.net>
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2005 John M Bell <jmb202@ecs.soton.ac.uk>
  */
@@ -22,6 +23,24 @@
 #include "netsurf/utils/url.h"
 #include "netsurf/utils/utils.h"
 
+struct url_components {
+  	union {
+		char *storage;	/* buffer used for all the following data */
+		int *users;
+	} internal;
+	char *scheme;
+	char *authority;
+	char *path;
+	char *query;
+	char *fragment;
+};
+
+url_func_result url_get_components(const char *url,
+		struct url_components *result);
+void url_destroy_components(struct url_components *result);
+
+char *cached_url = NULL;
+struct url_components cached_components;
 
 regex_t url_re, url_up_re;
 
@@ -225,42 +244,34 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 	regmatch_t rel_match[10];
 	regmatch_t up_match[3];
 
+	url_func_result status;
+	struct url_components components;
+
 	(*result) = 0;
 
-	/* see RFC 2396 section 5.2 */
-	m = regexec(&url_re, base, 10, base_match, 0);
-	if (m) {
-		LOG(("base url '%s' failed to match regex", base));
-		return URL_FUNC_FAILED;
+	assert(base);
+
+	/* break down the base url */
+	status = url_get_components(base, &components);
+	if (status != URL_FUNC_OK) {
+	  	LOG(("base url '%s' failed to get components", base));
+	  	return URL_FUNC_FAILED;
 	}
-	/*for (unsigned int i = 0; i != 10; i++) {
-		if (base_match[i].rm_so == -1)
-			continue;
-		fprintf(stderr, "%i: '%.*s'\n", i,
-				base_match[i].rm_eo - base_match[i].rm_so,
-				base + base_match[i].rm_so);
-	}*/
-	if (base_match[URL_RE_SCHEME].rm_so == -1) {
-		LOG(("base url '%s' is not absolute", base));
-		return URL_FUNC_FAILED;
-	}
-	scheme = base + base_match[URL_RE_SCHEME].rm_so;
-	scheme_len = base_match[URL_RE_SCHEME].rm_eo -
-			base_match[URL_RE_SCHEME].rm_so;
-	if (base_match[URL_RE_AUTHORITY].rm_so != -1) {
-		authority = base + base_match[URL_RE_AUTHORITY].rm_so;
-		authority_len = base_match[URL_RE_AUTHORITY].rm_eo -
-				base_match[URL_RE_AUTHORITY].rm_so;
-	}
-	path = base + base_match[URL_RE_PATH].rm_so;
-	path_len = base_match[URL_RE_PATH].rm_eo -
-			base_match[URL_RE_PATH].rm_so;
+
+	scheme = components.scheme;
+	scheme_len = strlen(scheme);
+	authority = components.authority;
+	if (authority)
+		authority_len = strlen(authority);
+	path = components.path;
+	path_len = strlen(path);
 
 
 	/* 1) */
 	m = regexec(&url_re, rel, 10, rel_match, 0);
 	if (m) {
 		LOG(("relative url '%s' failed to match regex", rel));
+		url_destroy_components(&components);
 		return URL_FUNC_FAILED;
 	}
 
@@ -339,6 +350,7 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 	buf = malloc(path_len + rel_match[URL_RE_PATH].rm_eo + 10);
 	if (!buf) {
 		LOG(("malloc failed"));
+		url_destroy_components(&components);
 		return URL_FUNC_NOMEM;
 	}
 	/* a) */
@@ -393,6 +405,7 @@ step7:	/* 7) */
 	if (!(*result)) {
 		LOG(("malloc failed"));
 		free(buf);
+		url_destroy_components(&components);
 		return URL_FUNC_NOMEM;
 	}
 
@@ -424,6 +437,7 @@ step7:	/* 7) */
 	(*result)[i] = 0;
 
 	free(buf);
+	url_destroy_components(&components);
 
 	return URL_FUNC_OK;
 }
@@ -439,38 +453,41 @@ step7:	/* 7) */
 
 url_func_result url_host(const char *url, char **result)
 {
-	int m;
-	regmatch_t match[10];
+	url_func_result status;
+	struct url_components components;
+	char *host_start, *host_end;
 
-	(*result) = 0;
+	assert(url);
 
-	m = regexec(&url_re, url, 10, match, 0);
-	if (m) {
-		LOG(("url '%s' failed to match regex", url));
-		return URL_FUNC_FAILED;
+	status = url_get_components(url, &components);
+	if (status == URL_FUNC_OK) {
+		if (!components.authority) {
+			url_destroy_components(&components);
+			return URL_FUNC_FAILED;
+		}
+		host_start = strchr(components.authority, '@');
+		host_start = host_start ? host_start + 1 : components.authority;
+		host_end = strchr(host_start, ':');
+		if (!host_end)
+			host_end = components.authority +
+					strlen(components.authority);
+
+		*result = malloc(host_end - host_start + 1);
+		if (!(*result)) {
+			url_destroy_components(&components);
+			return URL_FUNC_FAILED;
+		}
+		memcpy((*result), host_start, host_end - host_start);
+		(*result)[host_end - host_start] = '\0';
 	}
-	if (match[URL_RE_AUTHORITY].rm_so == -1)
-		return URL_FUNC_FAILED;
-
-	(*result) = malloc(match[URL_RE_AUTHORITY].rm_eo -
-			match[URL_RE_AUTHORITY].rm_so + 1);
-	if (!(*result)) {
-		LOG(("malloc failed"));
-		return URL_FUNC_NOMEM;
-	}
-	strncpy((*result), url + match[URL_RE_AUTHORITY].rm_so,
-			match[URL_RE_AUTHORITY].rm_eo -
-			match[URL_RE_AUTHORITY].rm_so);
-	(*result)[match[URL_RE_AUTHORITY].rm_eo -
-			match[URL_RE_AUTHORITY].rm_so] = 0;
-
-	return URL_FUNC_OK;
+	url_destroy_components(&components);
+	return status;
 }
 
 
 /**
  * Return the scheme name from an URL.
- * 
+ *
  * See RFC 3986, 3.1 for reference.
  *
  * \param  url	   an absolute URL
@@ -480,37 +497,19 @@ url_func_result url_host(const char *url, char **result)
 
 url_func_result url_scheme(const char *url, char **result)
 {
-	const char *scheme_end;
-  	
+	url_func_result status;
+	struct url_components components;
+
 	assert(url);
-        
-	/* ensure the first character is alpha */
-	if (!isalpha(*url))
-		return URL_FUNC_FAILED;        
-        
-	/* continue checking until the end marker (':') of the scheme for
-	 * the format ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) */
-	for (scheme_end = url;
-			((*scheme_end != '\0') && (*scheme_end != ':'));
-			scheme_end++) {
-		if (!isalnum(*scheme_end) &&
-				(*scheme_end != '+') &&
-				(*scheme_end != '-') &&
-				(*scheme_end != '.'))
-			return URL_FUNC_FAILED;  
+
+	status = url_get_components(url, &components);
+	if (status == URL_FUNC_OK) {
+		*result = strdup(components.scheme);
+		if (!(*result))
+			status = URL_FUNC_NOMEM;
 	}
-	if (*scheme_end == '\0')
-		return URL_FUNC_FAILED;
-        
-	/* make a copy of the result for the caller */
-	(*result) = malloc(scheme_end - url + 1);
-	if (!(*result)) {
-		LOG(("malloc failed"));
-		return URL_FUNC_NOMEM;
-	}
-	strncpy((*result), url, scheme_end - url);
-	(*result)[scheme_end - url] = '\0';
-	return URL_FUNC_OK;
+	url_destroy_components(&components);
+	return status;
 }
 
 
@@ -524,40 +523,27 @@ url_func_result url_scheme(const char *url, char **result)
 
 url_func_result url_canonical_root(const char *url, char **result)
 {
-	int m, scheme_len, authority_len;
-	regmatch_t match[10];
+	url_func_result status;
+	struct url_components components;
 
-	(*result) = 0;
+	assert(url);
 
-	m = regexec(&url_re, url, 10, match, 0);
-	if (m) {
-		LOG(("url '%s' failed to match regex", url));
-		return URL_FUNC_FAILED;
+	status = url_get_components(url, &components);
+	if (status == URL_FUNC_OK) {
+		if ((!components.scheme) || (!components.authority)) {
+			status = URL_FUNC_FAILED;
+		} else {
+			*result = malloc(strlen(components.scheme) +
+					strlen(components.authority) + 4);
+			if (!(*result))
+				status = URL_FUNC_NOMEM;
+			else
+				sprintf((*result), "%s://%s", components.scheme,
+						components.authority);
+		}
 	}
-	if (match[URL_RE_SCHEME].rm_so == -1 ||
-			match[URL_RE_AUTHORITY].rm_so == -1)
-		return URL_FUNC_FAILED;
-
-	scheme_len = match[URL_RE_SCHEME].rm_eo - match[URL_RE_SCHEME].rm_so;
-	authority_len = match[URL_RE_AUTHORITY].rm_eo -
-			match[URL_RE_AUTHORITY].rm_so;
-
-	(*result) = malloc(scheme_len + 1 + 2 + authority_len + 1);
-	if (!(*result)) {
-		LOG(("malloc failed"));
-		return URL_FUNC_NOMEM;
-	}
-
-	strncpy((*result), url + match[URL_RE_SCHEME].rm_so, scheme_len);
-	m = scheme_len;
-	(*result)[m++] = ':';
-	(*result)[m++] = '/';
-	(*result)[m++] = '/';
-	strncpy((*result) + m, url + match[URL_RE_AUTHORITY].rm_so,
-			authority_len);
-	(*result)[m + authority_len] = '\0';
-
-	return URL_FUNC_OK;
+	url_destroy_components(&components);
+	return status;
 }
 
 
@@ -571,57 +557,42 @@ url_func_result url_canonical_root(const char *url, char **result)
 
 url_func_result url_strip_lqf(const char *url, char **result)
 {
-	int m, scheme_len, authority_len, path_len = 0;
-	regmatch_t match[10];
+	url_func_result status;
+	struct url_components components;
+	int len, path_len;
 
-	(*result) = 0;
+	assert(url);
 
-	m = regexec(&url_re, url, 10, match, 0);
-	if (m) {
-		LOG(("url '%s' failed to match regex", url));
-		return URL_FUNC_FAILED;
+	status = url_get_components(url, &components);
+	if (status == URL_FUNC_OK) {
+		if ((!components.scheme) || (!components.authority) ||
+				(!components.path)) {
+			status = URL_FUNC_FAILED;
+		} else {
+			if (strcmp(components.path, "/")) {
+				path_len = strlen(components.path);
+				if (components.path[path_len - 1] == '/')
+					path_len--;
+				while (components.path[path_len - 1] != '/')
+					path_len--;
+			} else {
+				path_len = 1;
+			}
+			len = strlen(components.scheme) +
+					strlen(components.authority) +
+					path_len + 4;
+			*result = malloc(len);
+			if (!(*result))
+				status = URL_FUNC_NOMEM;
+			else
+				snprintf((*result), len, "%s://%s%s",
+						components.scheme,
+						components.authority,
+						components.path);
+		}
 	}
-	if (match[URL_RE_SCHEME].rm_so == -1 ||
-			match[URL_RE_AUTHORITY].rm_so == -1)
-		return URL_FUNC_FAILED;
-
-	scheme_len = match[URL_RE_SCHEME].rm_eo - match[URL_RE_SCHEME].rm_so;
-	authority_len = match[URL_RE_AUTHORITY].rm_eo -
-			match[URL_RE_AUTHORITY].rm_so;
-	if (match[URL_RE_PATH].rm_so != -1)
-		path_len = match[URL_RE_PATH].rm_eo -
-				match[URL_RE_PATH].rm_so;
-
-	(*result) = malloc(scheme_len + 1 + 2 + authority_len +
-			(path_len ? path_len : 1) + 1);
-	if (!(*result)) {
-		LOG(("malloc failed"));
-		return URL_FUNC_NOMEM;
-	}
-
-	strncpy((*result), url + match[URL_RE_SCHEME].rm_so, scheme_len);
-	m = scheme_len;
-	(*result)[m++] = ':';
-	(*result)[m++] = '/';
-	(*result)[m++] = '/';
-	strncpy((*result) + m, url + match[URL_RE_AUTHORITY].rm_so,
-			authority_len);
-	m += authority_len;
-
-	if (path_len) {
-		strncpy((*result) + m, url + match[URL_RE_AUTHORITY].rm_so,
-				path_len);
-		for (; path_len != 0 && (*result)[m + path_len - 1] != '/';
-				path_len--)
-			/* do nothing */;
-		m += path_len;
-	}
-	else
-		(*result)[m++] = '/';
-
-	(*result)[m] = '\0';
-
-	return URL_FUNC_OK;
+	url_destroy_components(&components);
+	return status;
 }
 
 
@@ -635,52 +606,29 @@ url_func_result url_strip_lqf(const char *url, char **result)
 
 url_func_result url_plq(const char *url, char **result)
 {
-	int m, path_len = 0, query_len = 0;
-	regmatch_t match[10];
+	url_func_result status;
+	struct url_components components;
 
-	(*result) = 0;
+	assert(url);
 
-	m = regexec(&url_re, url, 10, match, 0);
-	if (m) {
-		LOG(("url '%s' failed to match regex", url));
-		return URL_FUNC_FAILED;
+	status = url_get_components(url, &components);
+	if (status == URL_FUNC_OK) {
+		if ((components.query) && (strlen(components.query) > 0)) {
+			*result = malloc(strlen(components.path) +
+					strlen(components.query) + 2);
+			if (!(*result))
+				status = URL_FUNC_NOMEM;
+			else
+				sprintf((*result), "%s?%s", components.path,
+						components.query);
+		} else {
+			*result = strdup(components.path);
+			if (!(*result))
+				status = URL_FUNC_NOMEM;
+		}
 	}
-	if (match[URL_RE_SCHEME].rm_so == -1 ||
-			match[URL_RE_AUTHORITY].rm_so == -1)
-		return URL_FUNC_FAILED;
-
-	if (match[URL_RE_PATH].rm_so != -1)
-		path_len = match[URL_RE_PATH].rm_eo -
-				match[URL_RE_PATH].rm_so;
-	if (match[URL_RE_QUERY].rm_so != -1)
-		query_len = match[URL_RE_QUERY].rm_eo -
-				match[URL_RE_QUERY].rm_so;
-
-	(*result) = malloc((path_len ? path_len : 1) + query_len + 1 + 1);
-	if (!(*result)) {
-		LOG(("malloc failed"));
-		return URL_FUNC_NOMEM;
-	}
-
-	m = 0;
-	if (path_len) {
-		strncpy((*result), url + match[URL_RE_PATH].rm_so,
-				path_len);
-		m += path_len;
-	}
-	else
-		(*result)[m++] = '/';
-
-	if (query_len) {
-		(*result)[m++] = '?';
-		strncpy((*result) + m, url + match[URL_RE_QUERY].rm_so,
-				query_len);
-		m += query_len;
-	}
-
-	(*result)[m] = '\0';
-
-	return URL_FUNC_OK;
+	url_destroy_components(&components);
+	return status;
 }
 
 
@@ -694,45 +642,30 @@ url_func_result url_plq(const char *url, char **result)
 
 url_func_result url_path(const char *url, char **result)
 {
-	int m, path_len = 0;
-	regmatch_t match[10];
+	url_func_result status;
+	struct url_components components;
+	int len;
 
-	(*result) = 0;
+	assert(url);
 
-	m = regexec(&url_re, url, 10, match, 0);
-	if (m) {
-		LOG(("url '%s' failed to match regex", url));
-		return URL_FUNC_FAILED;
+	status = url_get_components(url, &components);
+	if (status == URL_FUNC_OK) {
+		if (!components.path) {
+			status = URL_FUNC_FAILED;
+		} else {
+			len = strlen(components.path);
+			while (components.path[len - 1] != '/')
+				len--;
+			*result = malloc(len + 2);
+			if (!(*result))
+				status = URL_FUNC_NOMEM;
+			else
+				snprintf((*result), len + 1, "%s",
+						components.path);
+		}
 	}
-	if (match[URL_RE_SCHEME].rm_so == -1 ||
-			match[URL_RE_AUTHORITY].rm_so == -1)
-		return URL_FUNC_FAILED;
-
-	if (match[URL_RE_PATH].rm_so != -1)
-		path_len = match[URL_RE_PATH].rm_eo -
-				match[URL_RE_PATH].rm_so;
-
-	(*result) = malloc((path_len ? path_len : 1) + 1);
-	if (!(*result)) {
-		LOG(("malloc failed"));
-		return URL_FUNC_NOMEM;
-	}
-
-	m = 0;
-	if (path_len > 1) {
-		strncpy((*result), url + match[URL_RE_PATH].rm_so,
-				path_len);
-		for (; path_len != 0 && (*result)[m + path_len - 1] != '/';
-				path_len--)
-			/* do nothing */;
-		m += path_len;
-	}
-	else
-		(*result)[m++] = '/';
-
-	(*result)[m] = '\0';
-
-	return URL_FUNC_OK;
+	url_destroy_components(&components);
+	return status;
 }
 
 
@@ -901,6 +834,156 @@ url_func_result url_escape(const char *unescaped, char **result)
 	return URL_FUNC_OK;
 }
 
+
+/**
+ * Split a URL into separate components
+ *
+ * URLs passed to this function are assumed to be valid and no error checking
+ * or recovery is attempted.
+ *
+ * See RFC 3986 for reference.
+ *
+ * \param  url	   an absolute URL
+ * \param  result  pointer to buffer to hold components
+ * \return  URL_FUNC_OK on success
+ */
+
+url_func_result url_get_components(const char *url,
+		struct url_components *result)
+{
+  	char *storage_end;
+	const char *scheme;
+	const char *authority;
+	const char *path;
+	const char *query;
+	const char *fragment;
+
+	assert(url);
+
+	/* used cached components as a preference */
+	if (cached_url && !strcmp(url, cached_url)) {
+		*result = cached_components;
+		result->internal.users[0]++;
+		return URL_FUNC_OK;
+	}
+
+	/* clear the cache */
+	free(cached_url);
+	cached_url = NULL;
+	url_destroy_components(&cached_components);
+	memset(result, 0x00, sizeof(struct url_components));
+
+
+	/* get enough storage space for a URL with termination at each node */
+	result->internal.storage = malloc(strlen(url) + sizeof(int *) + 8);
+	if (!result->internal.storage)
+		return URL_FUNC_NOMEM;
+	result->internal.users[0] = 1;
+	storage_end = (char *)(result->internal.users + 1);
+
+
+	/* extract the scheme */
+	scheme = strchr(url, ':');
+	if (!scheme) {
+		url_destroy_components(result);
+		return URL_FUNC_FAILED;
+	}
+	memcpy(storage_end, url, scheme - url);
+	storage_end[scheme - url] = '\0';
+	result->scheme = storage_end;
+	storage_end += scheme - url + 1;
+	
+
+	/* look for an authority */
+	authority = ++scheme;
+	if ((authority[0] == '/') && (authority[1] == '/')) {
+	  	authority = strchr(scheme + 2, '/');
+	  	if (!authority) {
+			url_destroy_components(result);
+			return URL_FUNC_FAILED;
+		}
+		memcpy(storage_end, scheme + 2, authority - scheme - 2);
+		storage_end[authority - scheme - 2] = '\0';
+		result->authority = storage_end;
+		storage_end += authority - scheme - 1;
+	}
+
+
+	/* extract the path (can be empty) */
+	path = authority;
+	if ((*path != '?') && (*path != '#') && (*path != '\0')) {
+		path = strpbrk(path, "?#");
+		if (!path)
+			path = authority + strlen(authority);
+	}
+
+	/* substitute an empty path for a '/' */
+	if (path == authority) {
+		*storage_end++ = '/';
+		*storage_end++ = '\0';
+	} else {
+		memcpy(storage_end, authority, path - authority);
+		storage_end[path - authority] = '\0';
+		result->path = storage_end;
+		storage_end += path - authority + 1;
+	}
+
+
+	/* look for a query */
+	query = path;
+	if (*query == '?') {
+	  	query = strchr(query, '#');
+	  	if (!query)
+	  		query = path + strlen(path);
+		memcpy(storage_end, path + 1, query - path - 1);
+		storage_end[query - path - 1] = '\0';
+		result->query = storage_end;
+		storage_end += query - path;
+	}
+
+
+	/* look for a fragment */
+	fragment = query;
+	if (*fragment == '#') {
+	  	fragment = query + strlen(query);
+
+		/* make a copy of the result for the caller */
+		memcpy(storage_end, query + 1, fragment - query - 1);
+		storage_end[fragment - query - 1] = '\0';
+		result->fragment = storage_end;
+//		storage_end += fragment - query;
+	}
+
+
+	/* cache our values */
+	cached_url = strdup(url);
+	if (cached_url) {
+		result->internal.users[0]++;
+		cached_components = *result;
+	}
+
+/*	fprintf(stderr, "u:%s\ns:%s\na:%s\np:%s\nq:%s\nf:%s\n",
+			url, result->scheme, result->authority,
+			result->path, result->query, result->fragment);
+*/	return URL_FUNC_OK;
+}
+
+
+/**
+ * Release some url components from memory
+ *
+ * \param  result  pointer to buffer containing components
+ */
+void url_destroy_components(struct url_components *result)
+{
+	assert(result);
+
+	if (result->internal.users) {
+		result->internal.users[0]--;
+		if (result->internal.users[0] == 0)
+			free(result->internal.storage);
+	}
+}
 
 #ifdef TEST
 
