@@ -240,7 +240,6 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 			*fragment = 0;
 	int scheme_len = 0, authority_len = 0, path_len = 0, query_len = 0,
 			fragment_len = 0;
-	regmatch_t base_match[10];
 	regmatch_t rel_match[10];
 	regmatch_t up_match[3];
 
@@ -250,6 +249,8 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 	(*result) = 0;
 
 	assert(base);
+	
+	fprintf(stderr, "base:%s\nrel:%s\n", base, rel);
 
 	/* break down the base url */
 	status = url_get_components(base, &components);
@@ -286,12 +287,11 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 			rel_match[URL_RE_SCHEME].rm_so == -1 &&
 			rel_match[URL_RE_AUTHORITY].rm_so == -1 &&
 			rel_match[URL_RE_QUERY].rm_so == -1) {
-		if (base_match[URL_RE_QUERY].rm_so != -1) {
+		if (components.query) {
 			/* normally the base query is discarded, but this is a
 			 * "reference to the current document", so keep it */
-			query = base + base_match[URL_RE_QUERY].rm_so;
-			query_len = base_match[URL_RE_QUERY].rm_eo -
-					base_match[URL_RE_QUERY].rm_so;
+			query = components.query;
+			query_len = strlen(components.query);
 		}
 		goto step7;
 	}
