@@ -1,7 +1,7 @@
 /*
  * This file is part of NetSurf, http://netsurf.sourceforge.net/
  * Licensed under the GNU General Public License,
- *                http://www.opensource.org/licenses/gpl-license
+ *		  http://www.opensource.org/licenses/gpl-license
  * Copyright 2005 James Bursa <bursa@users.sourceforge.net>
  * Copyright 2005 John M Bell <jmb202@ecs.soton.ac.uk>
  */
@@ -56,7 +56,7 @@ void url_init(void)
 /**
  * Normalize a URL.
  *
- * \param  url     an absolute URL
+ * \param  url	   an absolute URL
  * \param  result  pointer to pointer to buffer to hold cleaned up url
  * \return  URL_FUNC_OK on success
  *
@@ -206,8 +206,8 @@ url_func_result url_normalize(const char *url, char **result)
 /**
  * Resolve a relative URL to absolute form.
  *
- * \param  rel     relative URL
- * \param  base    base URL, must be absolute and cleaned as by url_normalize()
+ * \param  rel	   relative URL
+ * \param  base	   base URL, must be absolute and cleaned as by url_normalize()
  * \param  result  pointer to pointer to buffer to hold absolute url
  * \return  URL_FUNC_OK on success
  */
@@ -432,7 +432,7 @@ step7:	/* 7) */
 /**
  * Return the host name from an URL.
  *
- * \param  url     an absolute URL
+ * \param  url	   an absolute URL
  * \param  result  pointer to pointer to buffer to hold host name
  * \return  URL_FUNC_OK on success
  */
@@ -470,38 +470,46 @@ url_func_result url_host(const char *url, char **result)
 
 /**
  * Return the scheme name from an URL.
+ * 
+ * See RFC 3986, 3.1 for reference.
  *
- * \param  url     an absolute URL
+ * \param  url	   an absolute URL
  * \param  result  pointer to pointer to buffer to hold scheme name
  * \return  URL_FUNC_OK on success
  */
 
 url_func_result url_scheme(const char *url, char **result)
 {
-	int m;
-	regmatch_t match[10];
-
-	(*result) = 0;
-
-	m = regexec(&url_re, url, 10, match, 0);
-	if (m) {
-		LOG(("url '%s' failed to match regex", url));
-		return URL_FUNC_FAILED;
+	const char *scheme_end;
+  	
+	assert(url);
+        
+	/* ensure the first character is alpha */
+	if (!isalpha(*url))
+		return URL_FUNC_FAILED;        
+        
+	/* continue checking until the end marker (':') of the scheme for
+	 * the format ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) */
+	for (scheme_end = url;
+			((*scheme_end != '\0') && (*scheme_end != ':'));
+			scheme_end++) {
+		if (!isalnum(*scheme_end) &&
+				(*scheme_end != '+') &&
+				(*scheme_end != '-') &&
+				(*scheme_end != '.'))
+			return URL_FUNC_FAILED;  
 	}
-	if (match[URL_RE_SCHEME].rm_so == -1)
+	if (*scheme_end == '\0')
 		return URL_FUNC_FAILED;
-
-	(*result) = malloc(match[URL_RE_SCHEME].rm_eo -
-			match[URL_RE_SCHEME].rm_so + 1);
+        
+	/* make a copy of the result for the caller */
+	(*result) = malloc(scheme_end - url + 1);
 	if (!(*result)) {
 		LOG(("malloc failed"));
 		return URL_FUNC_NOMEM;
 	}
-	strncpy((*result), url + match[URL_RE_SCHEME].rm_so,
-			match[URL_RE_SCHEME].rm_eo -
-			match[URL_RE_SCHEME].rm_so);
-	(*result)[match[URL_RE_SCHEME].rm_eo - match[URL_RE_SCHEME].rm_so] = 0;
-
+	strncpy((*result), url, scheme_end - url);
+	(*result)[scheme_end - url] = '\0';
 	return URL_FUNC_OK;
 }
 
@@ -509,7 +517,7 @@ url_func_result url_scheme(const char *url, char **result)
 /**
  * Return the canonical root of an URL
  *
- * \param url     an absolute URL
+ * \param url	  an absolute URL
  * \param result  pointer to pointer to buffer to hold canonical rool URL
  * \return  URL_FUNC_OK on success
  */
@@ -556,7 +564,7 @@ url_func_result url_canonical_root(const char *url, char **result)
 /**
  * Strip leafname, query and fragment segments from an URL
  *
- * \param url     an absolute URL
+ * \param url	  an absolute URL
  * \param result  pointer to pointer to buffer to hold result
  * \return URL_FUNC_OK on success
  */
@@ -620,7 +628,7 @@ url_func_result url_strip_lqf(const char *url, char **result)
 /**
  * Extract path, leafname and query segments from an URL
  *
- * \param url     an absolute URL
+ * \param url	  an absolute URL
  * \param result  pointer to pointer to buffer to hold result
  * \return URL_FUNC_OK on success
  */
@@ -679,7 +687,7 @@ url_func_result url_plq(const char *url, char **result)
 /**
  * Extract path segment from an URL
  *
- * \param url     an absolute URL
+ * \param url	  an absolute URL
  * \param result  pointer to pointer to buffer to hold result
  * \return URL_FUNC_OK on success
  */
@@ -731,7 +739,7 @@ url_func_result url_path(const char *url, char **result)
 /**
  * Attempt to find a nice filename for a URL.
  *
- * \param  url     an absolute URL
+ * \param  url	   an absolute URL
  * \param  result  pointer to pointer to buffer to hold filename
  * \param  remove_extensions  remove any extensions from the filename
  * \return  URL_FUNC_OK on success
