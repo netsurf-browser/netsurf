@@ -848,17 +848,18 @@ void parse_background(struct css_style * const s,
 				/* background-image */
 				if (!css_background_image_parse(v, &bi2,
 						&bi_uri))
-					return;
+					goto error;
 				bi = bi2;
 				v = v->next;
 				break;
 
 			case CSS_NODE_DIMENSION:
+			case CSS_NODE_NUMBER:
 			case CSS_NODE_PERCENTAGE:
 				/* background-position */
 				if (!css_background_position_parse(&v,
 						&horz2, &vert2))
-					return;
+					goto error;
 				horz = horz2;
 				vert = vert2;
 				break;
@@ -913,7 +914,7 @@ void parse_background(struct css_style * const s,
 				/* fall through */
 			default:
 				/* parsing failed */
-				return;
+				goto error;
 		}
 	}
 
@@ -926,6 +927,11 @@ void parse_background(struct css_style * const s,
 	s->background_attachment = ba;
 	s->background_position.horz = horz;
 	s->background_position.vert = vert;
+
+	return;
+
+error:
+	free(bi_uri);
 }
 
 
