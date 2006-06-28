@@ -123,6 +123,7 @@ struct history *history_clone(struct history *history)
 	new_history->start = history_clone_entry(new_history,
 			new_history->start);
 	if (!history->start) {
+	  	LOG(("Insufficient memory to clone history"));
 		warn_user("NoMemory", 0);
 		history_destroy(new_history);
 		return 0;
@@ -151,10 +152,8 @@ struct history_entry *history_clone_entry(struct history *history,
 
 	/* clone the entry */
 	new_entry = malloc(sizeof *entry);
-	if (!new_entry) {
-	  	history_destroy(history);
+	if (!new_entry)
 		return 0;
-	}
 	memcpy(new_entry, entry, sizeof *entry);
 	new_entry->url = strdup(entry->url);
 	if (entry->frag_id)
@@ -163,10 +162,10 @@ struct history_entry *history_clone_entry(struct history *history,
 	if (((entry->url) && (!new_entry->url)) ||
 			((entry->title) && (!new_entry->title)) ||
 			((entry->frag_id) && (!new_entry->frag_id))) {
-		free(entry->url);
-		free(entry->title);
-		free(entry->frag_id);
-	  	history_destroy(history);
+		free(new_entry->url);
+		free(new_entry->title);
+		free(new_entry->frag_id);
+		free(new_entry);
 		return 0;
 	}
 	
@@ -177,8 +176,8 @@ struct history_entry *history_clone_entry(struct history *history,
 	/* recurse for all children */
 	for (child = new_entry->forward; child; child = child->next) {
 		new_child = history_clone_entry(history, child);
-		assert(new_child);
-		new_child->back = entry;
+		if (new_child)
+			new_child->back = entry;
 		if (prev)
 			prev->next = new_child;
 		if (new_entry->forward == child)
@@ -187,6 +186,8 @@ struct history_entry *history_clone_entry(struct history *history,
 			new_entry->forward_pref = new_child;
 		if (new_entry->forward_last == child)
 			new_entry->forward_last = new_child;
+		if (!new_child)
+			return 0;
 		prev = new_child;
 	}
 	return new_entry;
