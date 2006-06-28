@@ -24,7 +24,7 @@
 #include "netsurf/utils/utils.h"
 
 struct url_components {
-  	union {
+	union {
 		char *storage;	/* buffer used for all the following data */
 		int *users;
 	} internal;
@@ -36,8 +36,9 @@ struct url_components {
 };
 
 url_func_result url_get_components(const char *url,
-		struct url_components *result);
-void url_destroy_components(struct url_components *result);
+		struct url_components *result, bool cache);
+char *url_reform_components(struct url_components *components);
+void url_destroy_components(struct url_components *components);
 
 char *cached_url = NULL;
 struct url_components cached_components;
@@ -233,213 +234,186 @@ url_func_result url_normalize(const char *url, char **result)
 
 url_func_result url_join(const char *rel, const char *base, char **result)
 {
-	int m;
-	int i, j;
-	char *buf = 0;
-	const char *scheme = 0, *authority = 0, *path = 0, *query = 0,
-			*fragment = 0;
-	int scheme_len = 0, authority_len = 0, path_len = 0, query_len = 0,
-			fragment_len = 0;
-	regmatch_t rel_match[10];
-	regmatch_t up_match[3];
 
-	url_func_result status;
-	struct url_components components;
+	url_func_result status = URL_FUNC_NOMEM;
+	struct url_components base_components = {{0},0,0,0,0,0};
+	struct url_components rel_components = {{0},0,0,0,0,0};
+	struct url_components merged_components = {{0},0,0,0,0,0};
+	char *merge_path = NULL, *split_point;
+	char *input, *output = NULL, *start;
+	int len, buf_len;
 
 	(*result) = 0;
 
 	assert(base);
-	
-	fprintf(stderr, "base:%s\nrel:%s\n", base, rel);
+	assert(rel);
 
-	/* break down the base url */
-	status = url_get_components(base, &components);
+	/* break down the relative URL */
+	status = url_get_components(rel, &rel_components, false);
 	if (status != URL_FUNC_OK) {
-	  	LOG(("base url '%s' failed to get components", base));
-	  	return URL_FUNC_FAILED;
-	}
-
-	scheme = components.scheme;
-	scheme_len = strlen(scheme);
-	authority = components.authority;
-	if (authority)
-		authority_len = strlen(authority);
-	path = components.path;
-	path_len = strlen(path);
-
-
-	/* 1) */
-	m = regexec(&url_re, rel, 10, rel_match, 0);
-	if (m) {
-		LOG(("relative url '%s' failed to match regex", rel));
-		url_destroy_components(&components);
+		LOG(("relative url '%s' failed to get components", rel));
 		return URL_FUNC_FAILED;
 	}
+  	
+	/* [1] relative URL is absolute, use it entirely */
+	merged_components = rel_components;
+	if (rel_components.scheme)
+		goto url_join_reform_url;
 
-	/* 2) */
-	/* base + "#s" = (current document)#s (see Appendix C.1) */
-	if (rel_match[URL_RE_FRAGMENT].rm_so != -1) {
-		fragment = rel + rel_match[URL_RE_FRAGMENT].rm_so;
-		fragment_len = rel_match[URL_RE_FRAGMENT].rm_eo -
-				rel_match[URL_RE_FRAGMENT].rm_so;
+	/* break down the base URL */
+	status = url_get_components(base, &base_components, true);
+	if (status != URL_FUNC_OK) {
+		LOG(("base url '%s' failed to get components", base));
+		return URL_FUNC_FAILED;
 	}
-	if (rel_match[URL_RE_PATH].rm_so == rel_match[URL_RE_PATH].rm_eo &&
-			rel_match[URL_RE_SCHEME].rm_so == -1 &&
-			rel_match[URL_RE_AUTHORITY].rm_so == -1 &&
-			rel_match[URL_RE_QUERY].rm_so == -1) {
-		if (components.query) {
-			/* normally the base query is discarded, but this is a
-			 * "reference to the current document", so keep it */
-			query = components.query;
-			query_len = strlen(components.query);
+	
+	/* [2] relative authority takes presidence */
+	merged_components.scheme = base_components.scheme;
+	if (rel_components.authority)
+		goto url_join_reform_url;
+	
+	/* [3] handle empty paths */
+	merged_components.authority = base_components.authority;
+	if (!rel_components.path) {
+		merged_components.path = base_components.path;
+		if (!rel_components.query)
+			merged_components.query = base_components.query;
+		goto url_join_reform_url;
+	}
+	
+	/* [4] handle valid paths */
+	if (rel_components.path[0] == '/')
+		merged_components.path = rel_components.path;
+	else {
+		/* 5.2.3 */
+		if ((base_components.authority) && (!base_components.path)) {
+			merge_path = malloc(strlen(rel_components.path) + 2);
+			if (!merge_path) {
+				LOG(("malloc failed"));
+				goto url_join_reform_no_mem;
+			}
+			sprintf(merge_path, "/%s", rel_components.path);
+			merged_components.path = merge_path;
+		} else {
+			split_point = strrchr(base_components.path, '/');
+			if (!split_point) {
+				merged_components.path = rel_components.path;
+			} else {
+				len = ++split_point - base_components.path;
+				buf_len = len + 1 + strlen(rel_components.path);
+				merge_path = malloc(buf_len);
+				if (!merge_path) {
+					LOG(("malloc failed"));
+					goto url_join_reform_no_mem;
+				}
+				memcpy(merge_path, base_components.path, len);
+				memcpy(merge_path + len, rel_components.path,
+						strlen(rel_components.path));
+				merge_path[buf_len - 1] = '\0';
+				merged_components.path = merge_path;
+			}
 		}
-		goto step7;
 	}
-	if (rel_match[URL_RE_QUERY].rm_so != -1) {
-		query = rel + rel_match[URL_RE_QUERY].rm_so;
-		query_len = rel_match[URL_RE_QUERY].rm_eo -
-				rel_match[URL_RE_QUERY].rm_so;
-	}
-
-	/* base + "?y" = (base - query)?y
-	 * e.g http://a/b/c/d;p?q + ?y = http://a/b/c/d;p?y */
-	if (rel_match[URL_RE_PATH].rm_so == rel_match[URL_RE_PATH].rm_eo &&
-			rel_match[URL_RE_SCHEME].rm_so == -1 &&
-			rel_match[URL_RE_AUTHORITY].rm_so == -1 &&
-			rel_match[URL_RE_QUERY].rm_so != -1)
-		goto step7;
-
-	/* 3) */
-	if (rel_match[URL_RE_SCHEME].rm_so != -1) {
-		scheme = rel + rel_match[URL_RE_SCHEME].rm_so;
-		scheme_len = rel_match[URL_RE_SCHEME].rm_eo -
-				rel_match[URL_RE_SCHEME].rm_so;
-		authority = 0;
-		authority_len = 0;
-		if (rel_match[URL_RE_AUTHORITY].rm_so != -1) {
-			authority = rel + rel_match[URL_RE_AUTHORITY].rm_so;
-			authority_len = rel_match[URL_RE_AUTHORITY].rm_eo -
-					rel_match[URL_RE_AUTHORITY].rm_so;
+	
+url_join_reform_url:
+	/* 5.2.4 */
+	input = merged_components.path;
+	if ((input) && (strchr(input, '.'))) {
+	  	/* [1] remove all dot references */
+	  	output = start = malloc(strlen(input) + 1);
+	  	if (!output) {
+			LOG(("malloc failed"));
+			goto url_join_reform_no_mem;
 		}
-		path = rel + rel_match[URL_RE_PATH].rm_so;
-		path_len = rel_match[URL_RE_PATH].rm_eo -
-				rel_match[URL_RE_PATH].rm_so;
-		goto step7;
-	}
+		merged_components.path = output;
+		*output = '\0';
 
-	/* 4) */
-	if (rel_match[URL_RE_AUTHORITY].rm_so != -1) {
-		authority = rel + rel_match[URL_RE_AUTHORITY].rm_so;
-		authority_len = rel_match[URL_RE_AUTHORITY].rm_eo -
-				rel_match[URL_RE_AUTHORITY].rm_so;
-		path = rel + rel_match[URL_RE_PATH].rm_so;
-		path_len = rel_match[URL_RE_PATH].rm_eo -
-				rel_match[URL_RE_PATH].rm_so;
-		goto step7;
-	}
+		while (*input != '\0') {
+		  	/* [2A] */
+		  	if (input[0] == '.') {
+		  		if (input[1] == '/') {
+		  			input = input + 2;
+		  			continue;
+		  		} else if ((input[1] == '.') &&
+		  				(input[2] == '/')) {
+		  			input = input + 3;
+		  			continue;
+		  		}
+		  	}
+		  	
+		  	/* [2B] */
+		  	if ((input[0] == '/') && (input[1] == '.')) {
+		  		if (input[2] == '/') {
+		  		  	input = input + 2;
+		  		  	continue;
+		  		} else if (input[2] == '\0') {
+		  		  	input = input + 1;
+		  		  	*input = '/';
+		  		  	continue;
+		  		}
 
-	/* 5) */
-	if (rel[rel_match[URL_RE_PATH].rm_so] == '/') {
-		path = rel + rel_match[URL_RE_PATH].rm_so;
-		path_len = rel_match[URL_RE_PATH].rm_eo -
-				rel_match[URL_RE_PATH].rm_so;
-		goto step7;
-	}
+		  		/* [2C] */
+		  		if ((input[2] == '.') && ((input[3] == '/') ||
+		  				(input[3] == '\0'))) {
+			  		if (input[3] == '/') {
+			  		  	input = input + 3;
+			  		} else {
+		  				input = input + 2;
+		  			  	*input = '/';
+		  			}
+		  			
+		  			if ((output > start) &&
+		  					(output[-1] == '/'))
+		  				*--output = '\0';
+		  			split_point = strrchr(start, '/');
+		  			if (!split_point)
+		  				output = start;
+		  			else
+		  				output = split_point;
+		  			*output = '\0';
+		  			continue;
+		  		}
+		  	}
+		  	
+		  	
+		  	/* [2D] */
+		  	if (input[0] == '.') {
+		  		if (input[1] == '\0') {
+		  			input = input + 1;
+		  			continue;
+		  		} else if ((input[1] == '.') &&
+		  				(input[2] == '\0')) {
+		  			input = input + 2;
+		  			continue;
+		  		}
+		  	}
+		  	
+		  	/* [2E] */
+		  	if (*input == '/')
+		  		*output++ = *input++;
+		  	while ((*input != '/') && (*input != '\0'))
+		  		*output++ = *input++;
+		  	*output = '\0';
+                }
+                /* [3] */
+      		merged_components.path = start;
+		output = start;
+	} 
 
-	/* 6) */
-	buf = malloc(path_len + rel_match[URL_RE_PATH].rm_eo + 10);
-	if (!buf) {
-		LOG(("malloc failed"));
-		url_destroy_components(&components);
-		return URL_FUNC_NOMEM;
-	}
-	/* a) */
-	strncpy(buf, path, path_len);
-	for (; path_len != 0 && buf[path_len - 1] != '/'; path_len--)
-		;
-	/* b) */
-	strncpy(buf + path_len, rel + rel_match[URL_RE_PATH].rm_so,
-			rel_match[URL_RE_PATH].rm_eo -
-			rel_match[URL_RE_PATH].rm_so);
-	path_len += rel_match[URL_RE_PATH].rm_eo - rel_match[URL_RE_PATH].rm_so;
-	/* c) */
-	buf[path_len] = 0;
-	for (i = j = 0; j != path_len; ) {
-		if (j && buf[j - 1] == '/' && buf[j] == '.' &&
-				buf[j + 1] == '/')
-			j += 2;
-		else
-			buf[i++] = buf[j++];
-	}
-	path_len = i;
-	/* d) */
-	if (2 <= path_len && buf[path_len - 2] == '/' &&
-			buf[path_len - 1] == '.')
-		path_len--;
-	/* e) and f) */
-	while (1) {
-		buf[path_len] = 0;
-		m = regexec(&url_up_re, buf, 3, up_match, 0);
-		if (m)
-			break;
-		if (up_match[1].rm_eo + 4 <= path_len) {
-			memmove(buf + up_match[1].rm_so,
-					buf + up_match[1].rm_eo + 4,
-					path_len - up_match[1].rm_eo - 4);
-			path_len -= up_match[1].rm_eo - up_match[1].rm_so + 4;
-		} else
-			path_len -= up_match[1].rm_eo - up_match[1].rm_so + 3;
-	}
-	/* g) (choose to remove) */
-	path = buf;
-	while (3 <= path_len && path[1] == '.' && path[2] == '.') {
-		path += 3;
-		path_len -= 3;
-	}
+	/* 5.3 */
+	*result = url_reform_components(&merged_components);
+	if (!(*result))
+		goto url_join_reform_no_mem;
 
-	buf[path - buf + path_len] = 0;
+	/* return success */
+	status = URL_FUNC_OK;
 
-step7:	/* 7) */
-	(*result) = malloc(scheme_len + 1 + 2 + authority_len + path_len + 1 +
-			1 + query_len + 1 + fragment_len + 1);
-	if (!(*result)) {
-		LOG(("malloc failed"));
-		free(buf);
-		url_destroy_components(&components);
-		return URL_FUNC_NOMEM;
-	}
-
-	strncpy((*result), scheme, scheme_len);
-	(*result)[scheme_len] = ':';
-	i = scheme_len + 1;
-	if (authority) {
-		(*result)[i++] = '/';
-		(*result)[i++] = '/';
-		strncpy((*result) + i, authority, authority_len);
-		i += authority_len;
-	}
-	if (path_len) {
-		strncpy((*result) + i, path, path_len);
-		i += path_len;
-	} else {
-		(*result)[i++] = '/';
-	}
-	if (query) {
-		(*result)[i++] = '?';
-		strncpy((*result) + i, query, query_len);
-		i += query_len;
-	}
-	if (fragment) {
-		(*result)[i++] = '#';
-		strncpy((*result) + i, fragment, fragment_len);
-		i += fragment_len;
-	}
-	(*result)[i] = 0;
-
-	free(buf);
-	url_destroy_components(&components);
-
-	return URL_FUNC_OK;
+url_join_reform_no_mem:
+	free(output);
+	free(merge_path);
+	url_destroy_components(&base_components);
+	url_destroy_components(&rel_components);
+	return status;
 }
 
 
@@ -459,7 +433,7 @@ url_func_result url_host(const char *url, char **result)
 
 	assert(url);
 
-	status = url_get_components(url, &components);
+	status = url_get_components(url, &components, true);
 	if (status == URL_FUNC_OK) {
 		if (!components.authority) {
 			url_destroy_components(&components);
@@ -502,8 +476,10 @@ url_func_result url_scheme(const char *url, char **result)
 
 	assert(url);
 
-	status = url_get_components(url, &components);
+	status = url_get_components(url, &components, true);
 	if (status == URL_FUNC_OK) {
+	  	if (!components.scheme)
+	  		return URL_FUNC_FAILED;
 		*result = strdup(components.scheme);
 		if (!(*result))
 			status = URL_FUNC_NOMEM;
@@ -528,7 +504,7 @@ url_func_result url_canonical_root(const char *url, char **result)
 
 	assert(url);
 
-	status = url_get_components(url, &components);
+	status = url_get_components(url, &components, true);
 	if (status == URL_FUNC_OK) {
 		if ((!components.scheme) || (!components.authority)) {
 			status = URL_FUNC_FAILED;
@@ -563,7 +539,7 @@ url_func_result url_strip_lqf(const char *url, char **result)
 
 	assert(url);
 
-	status = url_get_components(url, &components);
+	status = url_get_components(url, &components, true);
 	if (status == URL_FUNC_OK) {
 		if ((!components.scheme) || (!components.authority) ||
 				(!components.path)) {
@@ -611,7 +587,7 @@ url_func_result url_plq(const char *url, char **result)
 
 	assert(url);
 
-	status = url_get_components(url, &components);
+	status = url_get_components(url, &components, true);
 	if (status == URL_FUNC_OK) {
 		if ((components.query) && (strlen(components.query) > 0)) {
 			*result = malloc(strlen(components.path) +
@@ -648,7 +624,7 @@ url_func_result url_path(const char *url, char **result)
 
 	assert(url);
 
-	status = url_get_components(url, &components);
+	status = url_get_components(url, &components, true);
 	if (status == URL_FUNC_OK) {
 		if (!components.path) {
 			status = URL_FUNC_FAILED;
@@ -843,15 +819,16 @@ url_func_result url_escape(const char *unescaped, char **result)
  *
  * See RFC 3986 for reference.
  *
- * \param  url	   an absolute URL
- * \param  result  pointer to buffer to hold components
+ * \param  url	     a valid absolute or relative URL
+ * \param  result    pointer to buffer to hold components
+ * \param  cache     cache this result for subsequent calls
  * \return  URL_FUNC_OK on success
  */
 
 url_func_result url_get_components(const char *url,
-		struct url_components *result)
+		struct url_components *result, bool cache)
 {
-  	char *storage_end;
+	char *storage_end;
 	const char *scheme;
 	const char *authority;
 	const char *path;
@@ -861,16 +838,18 @@ url_func_result url_get_components(const char *url,
 	assert(url);
 
 	/* used cached components as a preference */
-	if (cached_url && !strcmp(url, cached_url)) {
-		*result = cached_components;
-		result->internal.users[0]++;
-		return URL_FUNC_OK;
-	}
+	if (!cache) {
+		if (cached_url && !strcmp(url, cached_url)) {
+			*result = cached_components;
+			result->internal.users[0]++;
+			return URL_FUNC_OK;
+		}
 
-	/* clear the cache */
-	free(cached_url);
-	cached_url = NULL;
-	url_destroy_components(&cached_components);
+		/* clear the cache */
+		free(cached_url);
+		cached_url = NULL;
+		url_destroy_components(&cached_components);
+	}
 	memset(result, 0x00, sizeof(struct url_components));
 
 
@@ -882,26 +861,33 @@ url_func_result url_get_components(const char *url,
 	storage_end = (char *)(result->internal.users + 1);
 
 
-	/* extract the scheme */
-	scheme = strchr(url, ':');
-	if (!scheme) {
-		url_destroy_components(result);
-		return URL_FUNC_FAILED;
+	/* look for a valid scheme */
+	scheme = url;
+	if (isalpha(*scheme)) {
+		for (scheme = url + 1;
+				((*scheme != ':') && (*scheme != '\0'));
+				*scheme++)
+			if (!isalnum(*scheme) && (*scheme != '+') &&
+					(*scheme != '-') && (*scheme != '.'))
+				break;
+		if (*scheme == ':') {
+			memcpy(storage_end, url, scheme - url);
+			storage_end[scheme - url] = '\0';
+			result->scheme = storage_end;
+			storage_end += scheme - url + 1;
+			scheme++;
+		} else {
+			scheme = url;
+		}
 	}
-	memcpy(storage_end, url, scheme - url);
-	storage_end[scheme - url] = '\0';
-	result->scheme = storage_end;
-	storage_end += scheme - url + 1;
 	
 
 	/* look for an authority */
-	authority = ++scheme;
+	authority = scheme;
 	if ((authority[0] == '/') && (authority[1] == '/')) {
-	  	authority = strchr(scheme + 2, '/');
-	  	if (!authority) {
-			url_destroy_components(result);
-			return URL_FUNC_FAILED;
-		}
+		authority = strpbrk(scheme + 2, "/?#");
+		if (!authority)
+			authority = scheme + strlen(scheme);
 		memcpy(storage_end, scheme + 2, authority - scheme - 2);
 		storage_end[authority - scheme - 2] = '\0';
 		result->authority = storage_end;
@@ -909,19 +895,12 @@ url_func_result url_get_components(const char *url,
 	}
 
 
-	/* extract the path (can be empty) */
+	/* look for a path */
 	path = authority;
 	if ((*path != '?') && (*path != '#') && (*path != '\0')) {
 		path = strpbrk(path, "?#");
 		if (!path)
 			path = authority + strlen(authority);
-	}
-
-	/* substitute an empty path for a '/' */
-	if (path == authority) {
-		*storage_end++ = '/';
-		*storage_end++ = '\0';
-	} else {
 		memcpy(storage_end, authority, path - authority);
 		storage_end[path - authority] = '\0';
 		result->path = storage_end;
@@ -932,9 +911,9 @@ url_func_result url_get_components(const char *url,
 	/* look for a query */
 	query = path;
 	if (*query == '?') {
-	  	query = strchr(query, '#');
-	  	if (!query)
-	  		query = path + strlen(path);
+		query = strchr(query, '#');
+		if (!query)
+			query = path + strlen(path);
 		memcpy(storage_end, path + 1, query - path - 1);
 		storage_end[query - path - 1] = '\0';
 		result->query = storage_end;
@@ -945,7 +924,7 @@ url_func_result url_get_components(const char *url,
 	/* look for a fragment */
 	fragment = query;
 	if (*fragment == '#') {
-	  	fragment = query + strlen(query);
+		fragment = query + strlen(query);
 
 		/* make a copy of the result for the caller */
 		memcpy(storage_end, query + 1, fragment - query - 1);
@@ -956,16 +935,73 @@ url_func_result url_get_components(const char *url,
 
 
 	/* cache our values */
-	cached_url = strdup(url);
-	if (cached_url) {
-		result->internal.users[0]++;
-		cached_components = *result;
+	if (cache) {
+		cached_url = strdup(url);
+		if (cached_url) {
+			result->internal.users[0]++;
+			cached_components = *result;
+		}
 	}
 
-/*	fprintf(stderr, "u:%s\ns:%s\na:%s\np:%s\nq:%s\nf:%s\n",
-			url, result->scheme, result->authority,
-			result->path, result->query, result->fragment);
-*/	return URL_FUNC_OK;
+	return URL_FUNC_OK;
+}
+
+
+/**
+ * Reform a URL from separate components
+ *
+ * See RFC 3986 for reference.
+ *
+ * \param  components  the components to reform into a URL
+ * \return  a new URL allocated on the stack, or NULL on failure
+ */
+
+char *url_reform_components(struct url_components *components)
+{
+	int scheme_len = 0, authority_len = 0, path_len = 0, query_len = 0,
+			fragment_len = 0;
+	char *result, *url; 
+ 
+	/* 5.3 */
+	if (components->scheme)
+		scheme_len = strlen(components->scheme) + 1;
+	if (components->authority)
+		authority_len = strlen(components->authority) + 2;
+	if (components->path)
+		path_len = strlen(components->path);
+	if (components->query)
+		query_len = strlen(components->query) + 1;
+	if (components->fragment)
+		fragment_len = strlen(components->fragment) + 1;
+	
+	/* claim memory */
+	url = result = malloc(scheme_len + authority_len + path_len +
+			query_len + fragment_len + 1);
+	if (!url) {
+		LOG(("malloc failed"));
+		return NULL;
+	}
+
+	/* rebuild URL */
+	if (components->scheme) {
+	  	sprintf(url, "%s:", components->scheme);
+		url += scheme_len;
+	}
+	if (components->authority) {
+	  	sprintf(url, "//%s", components->authority);
+		url += authority_len;		
+	}
+	if (components->path) {
+	  	sprintf(url, "%s", components->path);
+		url += path_len;		
+	}
+	if (components->query) {
+	  	sprintf(url, "?%s", components->query);
+		url += query_len;		
+	}
+	if (components->fragment)
+	  	sprintf(url, "#%s", components->fragment);
+	return result;
 }
 
 
@@ -974,16 +1010,19 @@ url_func_result url_get_components(const char *url,
  *
  * \param  result  pointer to buffer containing components
  */
-void url_destroy_components(struct url_components *result)
+void url_destroy_components(struct url_components *components)
 {
-	assert(result);
-
-	if (result->internal.users) {
-		result->internal.users[0]--;
-		if (result->internal.users[0] == 0)
-			free(result->internal.storage);
+	assert(components);
+	
+	if (components->internal.storage) {
+		components->internal.users[0]--;
+		if (components->internal.users[0] == 0) {
+			free(components->internal.storage);
+			components->internal.storage = NULL;
+		}
 	}
 }
+
 
 #ifdef TEST
 
