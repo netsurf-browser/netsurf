@@ -219,6 +219,7 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 	int old_len, len;
 	char *local_text;
 	utf8_convert_ret err;
+	unsigned int button_type;
 
 	/* get the icon data */
 	ic.w = w;
@@ -239,6 +240,7 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 		LOG(("utf8_to_enc failed"));
 		return;
 	}
+	len = strlen(local_text);
 
 	/* check that the existing text is not the same as the updated text
 	 * to stop flicker */
@@ -258,23 +260,27 @@ void ro_gui_set_icon_string(wimp_w w, wimp_i i, const char *text) {
 	}
 
 	/* handle the caret being in the icon */
-	error = xwimp_get_caret_position(&caret);
-	if (error) {
-		LOG(("xwimp_get_caret_position: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-	if ((caret.w == w) && (caret.i == i)) {
-		len = strlen(local_text);
-		if ((caret.index > len) || (caret.index == old_len))
-				caret.index = len;
-		error = xwimp_set_caret_position(w, i, caret.pos.x, caret.pos.y,
-				-1, caret.index);
+	button_type = (ic.icon.flags & wimp_ICON_BUTTON_TYPE)
+			>> wimp_ICON_BUTTON_TYPE_SHIFT;
+	if ((button_type == wimp_BUTTON_WRITABLE) ||
+			(button_type == wimp_BUTTON_WRITE_CLICK_DRAG)) {
+		error = xwimp_get_caret_position(&caret);
 		if (error) {
-			LOG(("xwimp_set_caret_position: 0x%x: %s",
+			LOG(("xwimp_get_caret_position: 0x%x: %s",
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
+			return;
+		}
+		if ((caret.w == w) && (caret.i == i)) {
+			if ((caret.index > len) || (caret.index == old_len))
+					caret.index = len;
+			error = xwimp_set_caret_position(w, i, caret.pos.x,
+				caret.pos.y, -1, caret.index);
+			if (error) {
+				LOG(("xwimp_set_caret_position: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
 		}
 	}
 	ro_gui_redraw_icon(w, i);
@@ -295,6 +301,7 @@ void ro_gui_set_icon_string_le(wimp_w w, wimp_i i, const char *text) {
 	wimp_icon_state ic;
 	os_error *error;
 	int old_len, len;
+	unsigned int button_type;
 
 	/* get the icon data */
 	ic.w = w;
@@ -325,23 +332,28 @@ void ro_gui_set_icon_string_le(wimp_w w, wimp_i i, const char *text) {
 	}
 
 	/* handle the caret being in the icon */
-	error = xwimp_get_caret_position(&caret);
-	if (error) {
-		LOG(("xwimp_get_caret_position: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return;
-	}
-	if ((caret.w == w) && (caret.i == i)) {
-		len = strlen(text);
-		if ((caret.index > len) || (caret.index == old_len))
-				caret.index = len;
-		error = xwimp_set_caret_position(w, i, caret.pos.x, caret.pos.y,
-				-1, caret.index);
+	button_type = (ic.icon.flags & wimp_ICON_BUTTON_TYPE)
+			>> wimp_ICON_BUTTON_TYPE_SHIFT;
+	if ((button_type == wimp_BUTTON_WRITABLE) ||
+			(button_type == wimp_BUTTON_WRITE_CLICK_DRAG)) {
+		error = xwimp_get_caret_position(&caret);
 		if (error) {
-			LOG(("xwimp_set_caret_position: 0x%x: %s",
+			LOG(("xwimp_get_caret_position: 0x%x: %s",
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
+			return;
+		}
+		if ((caret.w == w) && (caret.i == i)) {
+			len = strlen(text);
+			if ((caret.index > len) || (caret.index == old_len))
+					caret.index = len;
+			error = xwimp_set_caret_position(w, i, caret.pos.x,
+				caret.pos.y, -1, caret.index);
+			if (error) {
+				LOG(("xwimp_set_caret_position: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
 		}
 	}
 	ro_gui_redraw_icon(w, i);
