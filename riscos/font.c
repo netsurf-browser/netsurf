@@ -91,8 +91,13 @@ const char *nsfont_fallback_font(void)
 {
 	const char *fallback = "Homerton";
 
-	if (!nsfont_exists(fallback))
+	if (!nsfont_exists(fallback)) {
+		LOG(("Homerton not found, dumping RUfl family list"));
+		for (unsigned int i = 0; i < rufl_family_list_entries; i++) {
+			LOG(("'%s'", rufl_family_list[i]));
+		}
 		fallback = rufl_family_list[0];
+	}
 
 	return fallback;
 }
