@@ -271,7 +271,7 @@ void warn_user(const char *warning, const char *detail)
 
 void die(const char * const error)
 {
-	fprintf(stderr, error);
+	fprintf(stderr, "%s", error);
 	exit(EXIT_FAILURE);
 }
 
