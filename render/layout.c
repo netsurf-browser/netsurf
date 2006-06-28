@@ -1207,7 +1207,7 @@ bool layout_line(struct box *first, int width, int *y,
 					d->padding[TOP] + d->height +
 					d->padding[BOTTOM] + d->border[BOTTOM] +
 					d->margin[BOTTOM];
-			if (b->width < (x1 - x0) - x ||
+			if (b->width <= (x1 - x0) - x ||
 					(left == 0 && right == 0 && x == 0)) {
 				/* fits next to this line, or this line is empty
 				 * with no floats */
