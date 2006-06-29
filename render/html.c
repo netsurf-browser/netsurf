@@ -596,6 +596,10 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 			if (strstr(rel, "stylesheet") == 0) {
 				xmlFree(rel);
 				continue;
+			} else if (strstr(rel, "alternate")) {
+				/* Ignore alternate stylesheets */
+				xmlFree(rel);
+				continue;
 			}
 			xmlFree(rel);
 
