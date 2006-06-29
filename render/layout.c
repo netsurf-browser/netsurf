@@ -158,6 +158,7 @@ bool layout_block_context(struct box *block, struct content *content)
 	int max_pos_margin = 0;
 	int max_neg_margin = 0;
 	int y;
+	int old_height;
 	struct box *margin_box;
 
 	assert(block->type == BOX_BLOCK ||
@@ -296,9 +297,18 @@ bool layout_block_context(struct box *block, struct content *content)
 			cy = y;
 		}
 
+		/* Before positioning absolute children, ensure box has a
+		 * valid height. */
+		old_height = box->height;
+		if (box->height == AUTO)
+			box->height = 0;
+
 		/* Absolutely positioned children. */
 		if (!layout_absolute_children(box, content))
 			return false;
+
+		/* And restore height for normal layout */
+		box->height = old_height;
 
 		/* Advance to next box. */
 		if (box->type == BOX_BLOCK && !box->object && box->children) {
@@ -2783,6 +2793,10 @@ void layout_compute_offsets(struct box *box,
 		struct box *containing_block,
 		int *top, int *right, int *bottom, int *left)
 {
+	assert(containing_block->width != UNKNOWN_WIDTH &&
+			containing_block->width != AUTO &&
+			containing_block->height != AUTO);
+
 	/* left */
 	if (box->style->pos[LEFT].pos == CSS_POS_PERCENT)
 		*left = ((box->style->pos[LEFT].value.percent *
