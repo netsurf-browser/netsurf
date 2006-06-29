@@ -756,6 +756,9 @@ bool html_redraw_border_plot(int i, int *p, colour c,
 	unsigned int light = i;
 	colour c_lit;
 
+	if (c == TRANSPARENT)
+		return true;
+
 	switch (style) {
 	case CSS_BORDER_STYLE_DOTTED:
 		dotted = true;
@@ -947,9 +950,9 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 	if (!(plot.fill(x, y, x + width, y + height, WIDGET_BASEC) &&
 		plot.line(x, y, x + width, y, 1, dark, false, false) &&
 		plot.line(x, y, x, y + height, 1, dark, false, false) &&
-		plot.line(x + width, y, x + width, y + height, 1, lite, 
+		plot.line(x + width, y, x + width, y + height, 1, lite,
 		  false, false) &&
-		plot.line(x, y + height, x + width, y + height, 1, lite, 
+		plot.line(x, y + height, x + width, y + height, 1, lite,
 		  false, false)))
 		return false;
 
@@ -962,12 +965,12 @@ bool html_redraw_checkbox(int x, int y, int width, int height,
 				return false;
 		} else {
 			/* render a tick, as it'll fit comfortably */
-			if (!(plot.line(x + width - z,	
+			if (!(plot.line(x + width - z,
 				y + z,
 				x + (z * 3),
 				y + height - z,
 				2, WIDGET_BLOBC, false, false) &&
-				
+
 				plot.line(x + (z * 3),
 				y + height - z,
 				x + z + z,
@@ -995,7 +998,7 @@ bool html_redraw_radio(int x, int y, int width, int height,
 {
 	int dark = html_redraw_darker(html_redraw_darker(WIDGET_BASEC));
 	int lite = html_redraw_lighter(html_redraw_lighter(WIDGET_BASEC));
-	                            
+
   	/* plot background of radio button */
   	if (!plot.disc(x + width * 0.5, y + height * 0.5,
 			width * 0.5 - 1, WIDGET_BASEC, true))
@@ -1005,7 +1008,7 @@ bool html_redraw_radio(int x, int y, int width, int height,
 	if (!plot.arc(x + width * 0.5, y + height * 0.5,
 			width * 0.5 - 1, 45, 225, dark))
 		return false;
-                
+
 	/* plot light arc */
 	if (!plot.arc(x + width * 0.5, y + height * 0.5,
 			width * 0.5 - 1, 225, 45, lite))
