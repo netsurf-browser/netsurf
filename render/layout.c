@@ -2613,6 +2613,16 @@ bool layout_absolute(struct box *box, struct content *content)
 			containing_block->width));
 
 	box->x = left + margin[LEFT] + border[LEFT];
+	if (containing_block->type == BOX_BLOCK ||
+			containing_block->type == BOX_INLINE_BLOCK ||
+			containing_block->type == BOX_TABLE_CELL) {
+		/* Block-level ancestor => compensate for ancestor's
+		 * l,r padding */
+		box->x += containing_block->padding[RIGHT] -
+				containing_block->padding[LEFT];
+	} else {
+		/** \todo inline ancestors */
+	}
 	box->width = width;
 	box->height = height;
 
@@ -2726,6 +2736,16 @@ bool layout_absolute(struct box *box, struct content *content)
 			containing_block->height));
 
 	box->y = top + margin[TOP] + border[TOP];
+	if (containing_block->type == BOX_BLOCK ||
+			containing_block->type == BOX_INLINE_BLOCK ||
+			containing_block->type == BOX_TABLE_CELL) {
+		/* Block-level ancestor => compensate for ancestor's
+		 * t,b padding */
+		box->y += containing_block->padding[BOTTOM] -
+				containing_block->padding[TOP];
+	} else {
+		/** \todo Inline ancestors */
+	}
 	box->height = height;
 
 	return true;
