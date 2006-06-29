@@ -315,24 +315,32 @@ struct fetch * fetch_start(char *url, char *referer,
 		return 0;
 
 	res = url_host(url, &host);
-	/* we only fail memory exhaustion */
-	if (res == URL_FUNC_NOMEM)
-		goto failed;
-	if (!host)
-		host = strdup("");
-	if (!host)
-		goto failed;
-
-	res = url_scheme(url, &ref1);
-	/* we only fail memory exhaustion */
-	if (res == URL_FUNC_NOMEM)
-		goto failed;
-
-	if (referer) {
-		res = url_scheme(referer, &ref2);
+	if (res != URL_FUNC_OK) {
 		/* we only fail memory exhaustion */
 		if (res == URL_FUNC_NOMEM)
 			goto failed;
+
+		host = strdup("");
+		if (!host)
+			goto failed;
+	}
+
+	res = url_scheme(url, &ref1);
+	if (res != URL_FUNC_OK) {
+		/* we only fail memory exhaustion */
+		if (res == URL_FUNC_NOMEM)
+			goto failed;
+		ref1 = NULL;
+	}
+
+	if (referer) {
+		res = url_scheme(referer, &ref2);
+		if (res != URL_FUNC_OK) {
+			/* we only fail memory exhaustion */
+			if (res == URL_FUNC_NOMEM)
+				goto failed;
+			ref2 = NULL;
+		}
 	}
 
 	LOG(("fetch %p, url '%s'", fetch, url));
