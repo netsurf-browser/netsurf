@@ -1050,7 +1050,8 @@ void html_object_callback(content_msg msg, struct content *object,
 						c->status ==
 						CONTENT_STATUS_DONE)
 					content_reformat(c,
-							c->available_width, 0);
+							c->available_width,
+							c->height);
 			}
 			break;
 
@@ -1169,7 +1170,7 @@ void html_object_callback(content_msg msg, struct content *object,
 			msg == CONTENT_MSG_REDIRECT ||
 			msg == CONTENT_MSG_AUTH)) {
 		/* all objects have arrived */
-		content_reformat(c, c->available_width, 0);
+		content_reformat(c, c->available_width, c->height);
 		c->status = CONTENT_STATUS_DONE;
 		content_set_status(c, messages_get("Done"));
 		content_broadcast(c, CONTENT_MSG_DONE, data);
@@ -1376,11 +1377,11 @@ void html_reformat(struct content *c, int width, int height)
 	struct box *doc;
 	layout_document(c, width, height);
 	doc = c->data.html.layout;
-	
-	c->width = doc->descendant_x1 + 
+
+	c->width = doc->descendant_x1 +
 		doc->margin[LEFT] + doc->margin[RIGHT];
-	
-	c->height = doc->descendant_y1 + 
+
+	c->height = doc->descendant_y1 +
 		doc->margin[TOP] + doc->margin[BOTTOM];
 }
 
