@@ -590,10 +590,10 @@ bool html_find_stylesheets(struct content *c, xmlNode *head)
 			continue;
 
 		if (strcmp(node->name, "link") == 0) {
-			/* rel='stylesheet' */
+			/* rel=<space separated list, including 'stylesheet'> */
 			if ((rel = (char *) xmlGetProp(node, (const xmlChar *) "rel")) == NULL)
 				continue;
-			if (strcasecmp(rel, "stylesheet") != 0) {
+			if (strstr(rel, "stylesheet") == 0) {
 				xmlFree(rel);
 				continue;
 			}
