@@ -2481,7 +2481,7 @@ bool layout_absolute(struct box *box, struct content *content)
 	int *margin = box->margin;
 	int *padding = box->padding;
 	int *border = box->border;
-	int available_width;
+	int available_width = containing_block->width;
 	int space;
 
 	assert(box->type == BOX_BLOCK || box->type == BOX_TABLE);
@@ -2502,13 +2502,11 @@ bool layout_absolute(struct box *box, struct content *content)
 		if (margin[RIGHT] == AUTO)
 			margin[RIGHT] = 0;
 		left = 0;
-		available_width = containing_block->width -
-				margin[LEFT] - border[LEFT] - padding[LEFT] -
-				padding[RIGHT] - border[RIGHT] - margin[RIGHT];
+
 		width = min(max(box->min_width, available_width), box->max_width);
-			width -= box->margin[LEFT] + box->border[LEFT] +
-				box->padding[LEFT] + box->padding[RIGHT] +
-				box->border[RIGHT] + box->margin[RIGHT];
+		width -= box->margin[LEFT] + box->border[LEFT] +
+			box->padding[LEFT] + box->padding[RIGHT] +
+			box->border[RIGHT] + box->margin[RIGHT];
 
 		right = containing_block->width -
 				left -
@@ -2555,10 +2553,6 @@ bool layout_absolute(struct box *box, struct content *content)
 			margin[LEFT] = 0;
 		if (margin[RIGHT] == AUTO)
 			margin[RIGHT] = 0;
-
-		available_width = containing_block->width -
-				margin[LEFT] - border[LEFT] - padding[LEFT] -
-				padding[RIGHT] - border[RIGHT] - margin[RIGHT];
 
 		if (left == AUTO && width == AUTO && right != AUTO) {
 			available_width -= right;
