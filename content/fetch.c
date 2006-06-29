@@ -1174,7 +1174,8 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 			f->cachedata.last_modified =
 					curl_getdate(&data[i], NULL);
 		}
-	} else if (11 < size && strncasecmp(data, "Set-Cookie:", 11) == 0) {
+	} else if (f->cookies && 11 < size &&
+			strncasecmp(data, "Set-Cookie:", 11) == 0) {
 		/* extract Set-Cookie header */
 		SKIP_ST(11);
 		urldb_set_cookie(&data[i], f->url);
