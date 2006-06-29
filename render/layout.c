@@ -2506,6 +2506,10 @@ bool layout_absolute(struct box *box, struct content *content)
 				margin[LEFT] - border[LEFT] - padding[LEFT] -
 				padding[RIGHT] - border[RIGHT] - margin[RIGHT];
 		width = min(max(box->min_width, available_width), box->max_width);
+			width -= box->margin[LEFT] + box->border[LEFT] +
+				box->padding[LEFT] + box->padding[RIGHT] +
+				box->border[RIGHT] + box->margin[RIGHT];
+
 		right = containing_block->width -
 				left -
 				margin[LEFT] - border[LEFT] - padding[LEFT] -
@@ -2560,6 +2564,10 @@ bool layout_absolute(struct box *box, struct content *content)
 			available_width -= right;
 
 			width = min(max(box->min_width, available_width), box->max_width);
+			width -= box->margin[LEFT] + box->border[LEFT] +
+				box->padding[LEFT] + box->padding[RIGHT] +
+				box->border[RIGHT] + box->margin[RIGHT];
+
 			left = containing_block->width -
 					margin[LEFT] - border[LEFT] - padding[LEFT] -
 					width -
@@ -2576,6 +2584,10 @@ bool layout_absolute(struct box *box, struct content *content)
 			available_width -= left;
 
 			width = min(max(box->min_width, available_width), box->max_width);
+			width -= box->margin[LEFT] + box->border[LEFT] +
+				box->padding[LEFT] + box->padding[RIGHT] +
+				box->border[RIGHT] + box->margin[RIGHT];
+
 			right = containing_block->width -
 					left -
 					margin[LEFT] - border[LEFT] - padding[LEFT] -
