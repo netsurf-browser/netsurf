@@ -2486,9 +2486,24 @@ bool layout_absolute(struct box *box, struct content *content)
 
 	assert(box->type == BOX_BLOCK || box->type == BOX_TABLE);
 
+	if (containing_block->type == BOX_BLOCK ||
+			containing_block->type == BOX_INLINE_BLOCK ||
+			containing_block->type == BOX_TABLE_CELL) {
+		/* Block level container => temporarily increase containing
+		 * block dimensions to include padding (we restore this
+		 * again at the end) */
+		containing_block->width += containing_block->padding[LEFT] +
+				containing_block->padding[RIGHT];
+		containing_block->height += containing_block->padding[TOP] +
+				containing_block->padding[BOTTOM];
+	} else {
+		/** \todo inline containers */
+	}
+
 	layout_compute_offsets(box, containing_block,
 			&top, &right, &bottom, &left);
-	layout_find_dimensions(containing_block->width, box->style,
+
+	layout_find_dimensions(available_width, box->style,
 			&width, &height, margin, padding, border);
 
 	/* 10.3.7 */
@@ -2616,10 +2631,9 @@ bool layout_absolute(struct box *box, struct content *content)
 	if (containing_block->type == BOX_BLOCK ||
 			containing_block->type == BOX_INLINE_BLOCK ||
 			containing_block->type == BOX_TABLE_CELL) {
-		/* Block-level ancestor => compensate for ancestor's
-		 * l,r padding */
-		box->x += containing_block->padding[RIGHT] -
-				containing_block->padding[LEFT];
+		/* Block-level ancestor => reset container's width */
+		containing_block->width -= containing_block->padding[LEFT] +
+				containing_block->padding[RIGHT];
 	} else {
 		/** \todo inline ancestors */
 	}
@@ -2739,10 +2753,9 @@ bool layout_absolute(struct box *box, struct content *content)
 	if (containing_block->type == BOX_BLOCK ||
 			containing_block->type == BOX_INLINE_BLOCK ||
 			containing_block->type == BOX_TABLE_CELL) {
-		/* Block-level ancestor => compensate for ancestor's
-		 * t,b padding */
-		box->y += containing_block->padding[BOTTOM] -
-				containing_block->padding[TOP];
+		/* Block-level ancestor => reset container's height */
+		containing_block->height -= containing_block->padding[TOP] +
+				containing_block->padding[BOTTOM];
 	} else {
 		/** \todo Inline ancestors */
 	}
