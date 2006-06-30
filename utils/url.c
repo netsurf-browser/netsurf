@@ -248,7 +248,7 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 	assert(base);
 	assert(rel);
 
-	/* break down the relative URL */
+	/* break down the relative URL (not cached, corruptable) */
 	status = url_get_components(rel, &rel_components, false);
 	if (status != URL_FUNC_OK) {
 		LOG(("relative url '%s' failed to get components", rel));
@@ -260,7 +260,7 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 	if (rel_components.scheme)
 		goto url_join_reform_url;
 
-	/* break down the base URL */
+	/* break down the base URL (possibly cached, not corruptable) */
 	status = url_get_components(base, &base_components, true);
 	if (status != URL_FUNC_OK) {
 		LOG(("base url '%s' failed to get components", base));
@@ -275,7 +275,15 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 	/* [3] handle empty paths */
 	merged_components.authority = base_components.authority;
 	if (!rel_components.path) {
-		merged_components.path = base_components.path;
+	  	/* we cannot refer directly to base_components.path as it
+	  	 * may be in the cache and could get altered during dot
+	  	 * removal in url_join_reform_url */
+	  	merge_path = strdup(base_components.path);
+	  	if (!merge_path) {
+	  	  	LOG(("malloc failed"));
+	  	  	goto url_join_no_mem;
+	  	}
+		merged_components.path = merge_path;
 		if (!rel_components.query)
 			merged_components.query = base_components.query;
 		goto url_join_reform_url;
@@ -290,7 +298,7 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 			merge_path = malloc(strlen(rel_components.path) + 2);
 			if (!merge_path) {
 				LOG(("malloc failed"));
-				goto url_join_reform_no_mem;
+				goto url_join_no_mem;
 			}
 			sprintf(merge_path, "/%s", rel_components.path);
 			merged_components.path = merge_path;
@@ -304,7 +312,7 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 				merge_path = malloc(buf_len);
 				if (!merge_path) {
 					LOG(("malloc failed"));
-					goto url_join_reform_no_mem;
+					goto url_join_no_mem;
 				}
 				memcpy(merge_path, base_components.path, len);
 				memcpy(merge_path + len, rel_components.path,
@@ -323,7 +331,7 @@ url_join_reform_url:
 	  	output = start = malloc(strlen(input) + 1);
 	  	if (!output) {
 			LOG(("malloc failed"));
-			goto url_join_reform_no_mem;
+			goto url_join_no_mem;
 		}
 		merged_components.path = output;
 		*output = '\0';
@@ -403,12 +411,12 @@ url_join_reform_url:
 	/* 5.3 */
 	*result = url_reform_components(&merged_components);
 	if (!(*result))
-		goto url_join_reform_no_mem;
+		goto url_join_no_mem;
 
 	/* return success */
 	status = URL_FUNC_OK;
 
-url_join_reform_no_mem:
+url_join_no_mem:
 	free(output);
 	free(merge_path);
 	url_destroy_components(&base_components);
