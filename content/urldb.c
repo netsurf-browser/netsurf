@@ -2554,6 +2554,7 @@ bool urldb_set_cookie(const char *header, const char *url)
 		/* Domain match fetch host with cookie domain */
 		if (strcasecmp(host, c->domain) != 0) {
 			int hlen, dlen;
+			char *domain = c->domain;
 
 			/* 4.3.2:iii */
 			if (host[0] >= '0' && host[0] <= '9') {
@@ -2565,13 +2566,20 @@ bool urldb_set_cookie(const char *header, const char *url)
 			hlen = strlen(host);
 			dlen = strlen(c->domain);
 
-			if (hlen <= dlen) {
+			if (hlen <= dlen && hlen != dlen - 1) {
 				/* Partial match not possible */
 				urldb_free_cookie(c);
 				goto error;
 			}
 
-			if (strcasecmp(host + (hlen - dlen), c->domain)) {
+			if (hlen == dlen - 1) {
+				/* Relax matching to allow
+				 * host a.com to match .a.com */
+				domain++;
+				dlen--;
+			}
+
+			if (strcasecmp(host + (hlen - dlen), domain)) {
 				urldb_free_cookie(c);
 				goto error;
 			}
@@ -3312,6 +3320,8 @@ int main(void)
 	urldb_set_cookie("PREF=ID=a:TM=b:LM=c:S=d; path=/; domain=.google.com", "http://www.google.com/");
 
 	urldb_set_cookie("test=foo, bar, baz; path=/, quux=blah; path=/", "http://www.bbc.co.uk/");
+
+	urldb_set_cookie("a=b; path=/; domain=.a.com", "http://a.com/");
 
 	urldb_dump();
 
