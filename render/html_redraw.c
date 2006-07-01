@@ -17,8 +17,10 @@
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/gui.h"
 #include "netsurf/desktop/plotters.h"
+#include "netsurf/desktop/knockout.h"
 #include "netsurf/desktop/selection.h"
 #include "netsurf/desktop/textinput.h"
+#include "netsurf/desktop/options.h"
 #include "netsurf/render/box.h"
 #include "netsurf/render/font.h"
 #include "netsurf/render/form.h"
@@ -70,7 +72,6 @@ static bool html_redraw_scrollbars(struct box *box, float scale,
 
 bool html_redraw_debug = false;
 
-
 /**
  * Draw a CONTENT_HTML using the current set of plotters (plot).
  *
@@ -96,18 +97,29 @@ bool html_redraw(struct content *c, int x, int y,
 		float scale, unsigned long background_colour)
 {
 	struct box *box;
+	bool result;
 
 	box = c->data.html.layout;
 	assert(box);
 
+	if (option_knockout_rendering)
+	  	knockout_plot_start(&plot);
+
 	/* clear to background colour */
+	plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
 	if (c->data.html.background_colour != TRANSPARENT)
 		background_colour = c->data.html.background_colour;
 	plot.clg(background_colour);
 
-	return html_redraw_box(box, x, y,
+	result = html_redraw_box(box, x, y,
 			clip_x0, clip_y0, clip_x1, clip_y1,
 			scale, background_colour);
+
+	if (option_knockout_rendering)
+		knockout_plot_end();
+
+	return result;
+
 }
 
 

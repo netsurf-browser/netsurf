@@ -24,7 +24,7 @@ OBJECTS_COMMON += box.o box_construct.o box_normalise.o form.o \
 	table.o textplain.o					# render/
 OBJECTS_COMMON += filename.o messages.o talloc.o url.o utf8.o \
 	utils.o							# utils/
-OBJECTS_COMMON += options.o tree.o				# desktop/
+OBJECTS_COMMON += knockout.o options.o tree.o			# desktop/
 
 OBJECTS_IMAGE = bmp.o bmpread.o gif.o gifread.o ico.o jpeg.o \
 	mng.o							# image/
