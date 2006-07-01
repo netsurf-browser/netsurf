@@ -720,9 +720,20 @@ bool knockout_plot_bitmap_tile(int x, int y, int width, int height,
 		bool repeat_x, bool repeat_y)
 {
 	/* tiled bitmaps both knock out and get knocked out */
-	if (bitmap_get_opaque(bitmap))
-		knockout_calculate(clip_x0_cur, clip_y0_cur, clip_x1_cur, clip_y1_cur,
-				knockout_list);
+	if (bitmap_get_opaque(bitmap)) {
+	  	if ((repeat_x && repeat_y) ||
+	  			/* horizontally repeating, full height */
+				(repeat_x && (y <= clip_y0_cur) &&
+					(y + height >= clip_y1_cur)) ||
+				/* vertically repeating, full width */
+				(repeat_y && (x <= clip_x0_cur) &&
+					(x + width >= clip_x1_cur)) ||
+				/* no repeat, full width & height */
+				((y <= clip_y0_cur) && (y + height >= clip_y1_cur) &&
+					(x <= clip_x0_cur) && (x + width >= clip_x1_cur)))
+			knockout_calculate(clip_x0_cur, clip_y0_cur,
+					clip_x1_cur, clip_y1_cur, knockout_list);
+	}
 	knockout_boxes[knockout_box_cur].bbox.x0 = clip_x0_cur;
 	knockout_boxes[knockout_box_cur].bbox.y0 = clip_y0_cur;
 	knockout_boxes[knockout_box_cur].bbox.x1 = clip_x1_cur;
