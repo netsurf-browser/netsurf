@@ -254,7 +254,7 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 		LOG(("relative url '%s' failed to get components", rel));
 		return URL_FUNC_FAILED;
 	}
-  	
+
 	/* [1] relative URL is absolute, use it entirely */
 	merged_components = rel_components;
 	if (rel_components.scheme)
@@ -266,12 +266,12 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 		LOG(("base url '%s' failed to get components", base));
 		return URL_FUNC_FAILED;
 	}
-	
+
 	/* [2] relative authority takes presidence */
 	merged_components.scheme = base_components.scheme;
 	if (rel_components.authority)
 		goto url_join_reform_url;
-	
+
 	/* [3] handle empty paths */
 	merged_components.authority = base_components.authority;
 	if (!rel_components.path) {
@@ -288,7 +288,7 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 			merged_components.query = base_components.query;
 		goto url_join_reform_url;
 	}
-	
+
 	/* [4] handle valid paths */
 	if (rel_components.path[0] == '/')
 		merged_components.path = rel_components.path;
@@ -322,7 +322,7 @@ url_func_result url_join(const char *rel, const char *base, char **result)
 			}
 		}
 	}
-	
+
 url_join_reform_url:
 	/* 5.2.4 */
 	input = merged_components.path;
@@ -348,7 +348,7 @@ url_join_reform_url:
 		  			continue;
 		  		}
 		  	}
-		  	
+
 		  	/* [2B] */
 		  	if ((input[0] == '/') && (input[1] == '.')) {
 		  		if (input[2] == '/') {
@@ -369,7 +369,7 @@ url_join_reform_url:
 		  				input = input + 2;
 		  			  	*input = '/';
 		  			}
-		  			
+
 		  			if ((output > start) &&
 		  					(output[-1] == '/'))
 		  				*--output = '\0';
@@ -382,8 +382,8 @@ url_join_reform_url:
 		  			continue;
 		  		}
 		  	}
-		  	
-		  	
+
+
 		  	/* [2D] */
 		  	if (input[0] == '.') {
 		  		if (input[1] == '\0') {
@@ -395,7 +395,7 @@ url_join_reform_url:
 		  			continue;
 		  		}
 		  	}
-		  	
+
 		  	/* [2E] */
 		  	if (*input == '/')
 		  		*output++ = *input++;
@@ -406,7 +406,7 @@ url_join_reform_url:
                 /* [3] */
       		merged_components.path = start;
 		output = start;
-	} 
+	}
 
 	/* 5.3 */
 	*result = url_reform_components(&merged_components);
@@ -486,11 +486,13 @@ url_func_result url_scheme(const char *url, char **result)
 
 	status = url_get_components(url, &components, true);
 	if (status == URL_FUNC_OK) {
-	  	if (!components.scheme)
-	  		return URL_FUNC_FAILED;
-		*result = strdup(components.scheme);
-		if (!(*result))
-			status = URL_FUNC_NOMEM;
+		if (!components.scheme) {
+			status = URL_FUNC_FAILED;
+		} else {
+			*result = strdup(components.scheme);
+			if (!(*result))
+				status = URL_FUNC_NOMEM;
+		}
 	}
 	url_destroy_components(&components);
 	return status;
@@ -597,7 +599,10 @@ url_func_result url_plq(const char *url, char **result)
 
 	status = url_get_components(url, &components, true);
 	if (status == URL_FUNC_OK) {
-		if ((components.query) && (strlen(components.query) > 0)) {
+		if (!components.path) {
+			status = URL_FUNC_FAILED;
+		} else if ((components.query) &&
+				(strlen(components.query) > 0)) {
 			*result = malloc(strlen(components.path) +
 					strlen(components.query) + 2);
 			if (!(*result))
@@ -888,7 +893,7 @@ url_func_result url_get_components(const char *url,
 			scheme = url;
 		}
 	}
-	
+
 
 	/* look for an authority */
 	authority = scheme;
@@ -968,8 +973,8 @@ char *url_reform_components(struct url_components *components)
 {
 	int scheme_len = 0, authority_len = 0, path_len = 0, query_len = 0,
 			fragment_len = 0;
-	char *result, *url; 
- 
+	char *result, *url;
+
 	/* 5.3 */
 	if (components->scheme)
 		scheme_len = strlen(components->scheme) + 1;
@@ -981,7 +986,7 @@ char *url_reform_components(struct url_components *components)
 		query_len = strlen(components->query) + 1;
 	if (components->fragment)
 		fragment_len = strlen(components->fragment) + 1;
-	
+
 	/* claim memory */
 	url = result = malloc(scheme_len + authority_len + path_len +
 			query_len + fragment_len + 1);
@@ -997,15 +1002,15 @@ char *url_reform_components(struct url_components *components)
 	}
 	if (components->authority) {
 	  	sprintf(url, "//%s", components->authority);
-		url += authority_len;		
+		url += authority_len;
 	}
 	if (components->path) {
 	  	sprintf(url, "%s", components->path);
-		url += path_len;		
+		url += path_len;
 	}
 	if (components->query) {
 	  	sprintf(url, "?%s", components->query);
-		url += query_len;		
+		url += query_len;
 	}
 	if (components->fragment)
 	  	sprintf(url, "#%s", components->fragment);
@@ -1021,7 +1026,7 @@ char *url_reform_components(struct url_components *components)
 void url_destroy_components(struct url_components *components)
 {
 	assert(components);
-	
+
 	if (components->internal.storage) {
 		components->internal.users[0]--;
 		if (components->internal.users[0] == 0) {
