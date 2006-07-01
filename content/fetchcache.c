@@ -86,17 +86,13 @@ struct content * fetchcache(const char *url,
 			strncasecmp(url, "file:/", 6) == 0) {
 		/* Manipulate file URLs into correct format */
 		if (strncasecmp(url, "file://", 7) == 0) {
-			/* file://host/... */
-			char *slash = 0;
-
+			/* file://path */
 			url1 = malloc(7 + strlen(url));
 			if (!url1)
 				return NULL;
 
 			strcpy(url1, "file://");
-			slash = strchr(url + 7, '/');
-			if (slash)
-				strcat(url1 + 7, slash);
+			strcat(url1 + 7, url + 6);
 		} else {
 			/* file:/... */
 			url1 = malloc(7 + strlen(url));
