@@ -16,10 +16,11 @@
 #include "netsurf/image/bitmap.h"
 #include "netsurf/utils/log.h"
 
+#define NDEBUG
 
-#define KNOCKOUT_BOXES 512	/* 28 bytes each */
-#define KNOCKOUT_ENTRIES 4096	/* 40 bytes each */
-#define KNOCKOUT_POLYGONS 512	/* 4 bytes each */
+#define KNOCKOUT_BOXES 768	/* 28 bytes each */
+#define KNOCKOUT_ENTRIES 3072	/* 40 bytes each */
+#define KNOCKOUT_POLYGONS 3072	/* 4 bytes each */
 
 struct knockout_box;
 struct knockout_entry;
@@ -239,6 +240,12 @@ bool knockout_plot_end(void)
 	bool success = true;
 	struct knockout_box *box;
 
+	/* debugging information */
+	LOG(("Entries are %i/%i, %i/%i, %i/%i",
+			knockout_entry_cur, KNOCKOUT_ENTRIES,
+			knockout_box_cur, KNOCKOUT_BOXES,
+			knockout_polygon_cur, KNOCKOUT_POLYGONS));
+
 	/* release our plotter */
 	plot = real_plot;
 
@@ -387,6 +394,8 @@ bool knockout_plot_end(void)
  * \param  x1	the right edge of the removal box
  * \param  y1	the top edge of the removal box
  * \param  box  the current box set to consider
+ * \param  c	the colour the box is going to be, or -1 for a bitmap
+ * \return  whether the area 
 */
 void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *box)
 {
@@ -396,29 +405,28 @@ void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *box
 	for (parent = box; parent; parent = parent->next) {
 		if (parent->deleted)
 			continue;
+		/* get the parent dimensions */
+	  	nx0 = parent->bbox.x0;
+	  	ny0 = parent->bbox.y0;
+	  	nx1 = parent->bbox.x1;
+	  	ny1 = parent->bbox.y1;
+
 		/* reject non-overlapping boxes */
-		if ((parent->bbox.x0 >= x1) ||
-				(parent->bbox.x1 <= x0) ||
-				(parent->bbox.y0 >= y1) ||
-				(parent->bbox.y1 <= y0))
+		if ((nx0 >= x1) || (nx1 <= x0) || (ny0 >= y1) || (ny1 <= y0))
 			continue;
+
+		/* check for a total knockout */
+		if ((x0 <= nx0) && (x1 >= nx1) && (y0 <= ny0) && (y1 >= ny1)) {
+			parent->deleted = true;
+			continue;
+		}
+
 		/* has the box been replaced by children? */
 		if (parent->child) {
 			knockout_calculate(x0, y0, x1, y1, parent->child);
 		} else {
-		  	nx0 = parent->bbox.x0;
-		  	ny0 = parent->bbox.y0;
-		  	nx1 = parent->bbox.x1;
-		  	ny1 = parent->bbox.y1;
-
-			/* check for a total knockout */
-			if ((x0 <= nx0) && (x1 >= nx1) && (y0 <= ny0) && (y1 >= ny1)) {
-				parent->deleted = true;
-				continue;
-			}
-
 			/* we need a maximum of 4 child boxes */
-			if (knockout_box_cur + 4 >= KNOCKOUT_ENTRIES) {
+			if (knockout_box_cur + 4 >= KNOCKOUT_BOXES) {
 				knockout_plot_start(&real_plot);
 				return;
 			}
