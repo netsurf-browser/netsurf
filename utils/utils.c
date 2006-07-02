@@ -214,3 +214,24 @@ const char *rfc1123_date(time_t t)
 
 	return ret;
 }
+
+/**
+ * Case insensitive strstr implementation
+ *
+ * \param haystack String to search in
+ * \param needle String to look for
+ * \return Pointer to start of found substring, or NULL if not found
+ */
+char *strcasestr(const char *haystack, const char *needle)
+{
+	size_t needle_len = strlen(needle);
+	const char * last_start = haystack + (strlen(haystack) - needle_len);
+
+	while (haystack <= last_start) {
+		if (strncasecmp(haystack, needle, needle_len) == 0)
+			return (char *)haystack;
+		haystack++;
+	}
+
+	return NULL;
+}
