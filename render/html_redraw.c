@@ -102,8 +102,7 @@ bool html_redraw(struct content *c, int x, int y,
 	box = c->data.html.layout;
 	assert(box);
 
-	if (option_knockout_rendering)
-	  	knockout_plot_start(&plot);
+  	knockout_plot_start(&plot);
 
 	/* clear to background colour */
 	plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
@@ -115,8 +114,7 @@ bool html_redraw(struct content *c, int x, int y,
 			clip_x0, clip_y0, clip_x1, clip_y1,
 			scale, background_colour);
 
-	if (option_knockout_rendering)
-		knockout_plot_end();
+	knockout_plot_end();
 
 	return result;
 
