@@ -158,7 +158,6 @@ bool layout_block_context(struct box *block, struct content *content)
 	int max_pos_margin = 0;
 	int max_neg_margin = 0;
 	int y;
-	int old_height;
 	struct box *margin_box;
 
 	assert(block->type == BOX_BLOCK ||
@@ -297,21 +296,9 @@ bool layout_block_context(struct box *block, struct content *content)
 			cy = y;
 		}
 
-		/* Before positioning absolute children, ensure box has a
-		 * valid height. */
-		old_height = box->height;
-		if (box->height == AUTO)
-			box->height = 0;
-
-		/* Absolutely positioned children. */
-		if (!layout_absolute_children(box, content))
-			return false;
-
-		/* And restore height for normal layout */
-		box->height = old_height;
-
 		/* Advance to next box. */
 		if (box->type == BOX_BLOCK && !box->object && box->children) {
+			/* Down into children. */
 			y = box->padding[TOP];
 			box = box->children;
 			box->y = y;
@@ -320,12 +307,14 @@ bool layout_block_context(struct box *block, struct content *content)
 				max_pos_margin = max_neg_margin = 0;
 				margin_box = box;
 			}
-
 			continue;
 		} else if (box->type == BOX_BLOCK || box->object)
 			cy += box->padding[TOP];
 		if (box->type == BOX_BLOCK && box->height == AUTO)
 			box->height = 0;
+		/* Absolutely positioned children. */
+		if (!layout_absolute_children(box, content))
+			return false;
 		cy += box->height + box->padding[BOTTOM] + box->border[BOTTOM];
 		max_pos_margin = max_neg_margin = 0;
 		if (max_pos_margin < box->margin[BOTTOM])
@@ -333,6 +322,8 @@ bool layout_block_context(struct box *block, struct content *content)
 		else if (max_neg_margin < -box->margin[BOTTOM])
 			max_neg_margin = -box->margin[BOTTOM];
 		if (!box->next) {
+			/* No more siblings: up to first ancestor with a
+			   sibling. */
 			do {
 				cx -= box->x;
 				y = box->y + box->padding[TOP] + box->height +
@@ -346,6 +337,9 @@ bool layout_block_context(struct box *block, struct content *content)
 				else
 					cy += box->height -
 							(y - box->padding[TOP]);
+				/* Absolutely positioned children. */
+				if (!layout_absolute_children(box, content))
+					return false;
 				cy += box->padding[BOTTOM] +
 						box->border[BOTTOM];
 				if (max_pos_margin < box->margin[BOTTOM])
@@ -359,6 +353,7 @@ bool layout_block_context(struct box *block, struct content *content)
 		cx -= box->x;
 		y = box->y + box->padding[TOP] + box->height +
 				box->padding[BOTTOM] + box->border[BOTTOM];
+		/* To next sibling. */
 		box = box->next;
 		box->y = y;
 		margin_box = box;
