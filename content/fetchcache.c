@@ -419,9 +419,13 @@ void fetchcache_callback(fetch_msg msg, void *p, const void *data,
 			 * destroyed in content_clean() */
 			c->status = CONTENT_STATUS_ERROR;
 			if (result == URL_FUNC_OK) {
+				bool same;
+
+				result = url_compare(c->url, url, &same);
+
 				/* check that we're not attempting to
 				 * redirect to the same URL */
-				if (strcasecmp(c->url, url) == 0) {
+				if (result != URL_FUNC_OK || same) {
 					msg_data.error =
 						messages_get("BadRedirect");
 					content_broadcast(c,

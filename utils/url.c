@@ -823,6 +823,72 @@ url_func_result url_escape(const char *unescaped, char **result)
 	return URL_FUNC_OK;
 }
 
+/**
+ * Compare two absolute, normalized URLs
+ *
+ * \param url1 URL 1
+ * \param url2 URL 2
+ * \param result Pointer to location to store result (true if URLs match)
+ * \return URL_FUNC_OK on success
+ */
+url_func_result url_compare(const char *url1, const char *url2, bool *result)
+{
+	url_func_result status;
+	struct url_components c1, c2;
+	bool res = true;
+
+	assert(url1 && url2 && result);
+
+	/* Decompose URLs */
+	status = url_get_components(url1, &c1, false);
+	if (status != URL_FUNC_OK) {
+		url_destroy_components(&c1);
+		return status;
+	}
+
+	status = url_get_components(url2, &c2, false);
+	if (status != URL_FUNC_OK) {
+		url_destroy_components(&c2);
+		url_destroy_components(&c1);
+		return status;
+	}
+
+	if (((c1.scheme && c2.scheme) || (!c1.scheme && !c2.scheme )) &&
+			((c1.authority && c2.authority) ||
+					(!c1.authority && !c2.authority)) &&
+			((c1.path && c2.path) || (!c1.path && !c2.path)) &&
+			((c1.query && c2.query) ||
+					(!c1.query && !c2.query)) &&
+			((c1.fragment && c2.fragment) ||
+					(!c1.fragment && !c2.fragment))) {
+
+		if (c1.scheme)
+			res &= strcasecmp(c1.scheme, c2.scheme) == 0;
+
+		/** \todo consider each part of the authority separately */
+		if (c1.authority)
+			res &= strcasecmp(c1.authority, c2.authority) == 0;
+
+		if (c1.path)
+			res &= strcmp(c1.path, c2.path) == 0;
+
+		if (c1.query)
+			res &= strcmp(c1.query, c2.query) == 0;
+
+		if (c1.fragment)
+			res &= strcmp(c1.fragment, c2.fragment) == 0;
+	} else {
+		/* Can't match */
+		res = false;
+	}
+
+	*result = res;
+
+	url_destroy_components(&c2);
+	url_destroy_components(&c1);
+
+	return URL_FUNC_OK;
+}
 
 /**
  * Split a URL into separate components

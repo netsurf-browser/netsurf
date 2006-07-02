@@ -31,6 +31,8 @@ url_func_result url_canonical_root(const char *url, char **result);
 url_func_result url_strip_lqf(const char *url, char **result);
 url_func_result url_plq(const char *url, char **result);
 url_func_result url_path(const char *url, char **result);
+url_func_result url_compare(const char *url1, const char *url2,
+		bool *result);
 
 char *path_to_url(const char *path);
 char *url_to_path(const char *url);
