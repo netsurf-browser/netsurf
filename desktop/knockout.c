@@ -18,8 +18,8 @@
 
 #define NDEBUG
 
-#define KNOCKOUT_BOXES 768	/* 28 bytes each */
 #define KNOCKOUT_ENTRIES 3072	/* 40 bytes each */
+#define KNOCKOUT_BOXES 768	/* 28 bytes each */
 #define KNOCKOUT_POLYGONS 3072	/* 4 bytes each */
 
 struct knockout_box;
@@ -94,7 +94,7 @@ struct knockout_box {
 		int x1;
 		int y1;
 	} bbox;
-	bool deleted;			/* box has been totally knocked out */
+	bool deleted;			/* box has been deleted, ignore */
 	struct knockout_box *child;
 	struct knockout_box *next;
 };
@@ -344,10 +344,6 @@ bool knockout_plot_end(void)
 				if (box) {
 					success &= knockout_plot_bitmap_tile_recursive(box,
 							&knockout_entries[i]);
-					success &= plot.clip(knockout_entries[i].box->bbox.x0,
-							knockout_entries[i].box->bbox.y0,
-							knockout_entries[i].box->bbox.x1,
-							knockout_entries[i].box->bbox.y1);
 				} else if (!knockout_entries[i].box->deleted) {
 					success &= plot.bitmap_tile(
 							knockout_entries[i].data.
@@ -393,18 +389,43 @@ bool knockout_plot_end(void)
  * \param  y0	the bottom edge of the removal box
  * \param  x1	the right edge of the removal box
  * \param  y1	the top edge of the removal box
- * \param  box  the current box set to consider
- * \param  c	the colour the box is going to be, or -1 for a bitmap
- * \return  whether the area 
+ * \param  box  the parent box set to consider, or NULL for top level
 */
-void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *box)
+void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *owner)
 {
+	struct knockout_box *box;
 	struct knockout_box *parent;
+	struct knockout_box *prev = NULL;
 	int nx0, ny0, nx1, ny1;
+	
+	if (owner == NULL)
+		box = knockout_list;
+	else
+		box = owner->child;
 
 	for (parent = box; parent; parent = parent->next) {
-		if (parent->deleted)
+	  	/* permanently delink deleted nodes */
+		if (parent->deleted) {
+		  	if (prev) {
+		  	  	/* not the first valid element: just skip future */
+		  		prev->next = parent->next;
+		  	} else {
+		  	  	if (owner) {
+		  	  		/* first valid element: update child reference */
+		  	  		owner->child = parent->next;
+		  	  		/* have we deleted all children node? */
+		  	  		if (!owner->child)
+		  	  			owner->deleted = true;
+		  	  	} else {
+		  	  	  	/* we are the head of the list */
+		  	  	  	knockout_list = parent->next;
+		  	  	}
+		  	}
 			continue;
+		} else {
+		  	prev = parent;
+		}
+
 		/* get the parent dimensions */
 	  	nx0 = parent->bbox.x0;
 	  	ny0 = parent->bbox.y0;
@@ -423,7 +444,7 @@ void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *box
 
 		/* has the box been replaced by children? */
 		if (parent->child) {
-			knockout_calculate(x0, y0, x1, y1, parent->child);
+			knockout_calculate(x0, y0, x1, y1, parent);
 		} else {
 			/* we need a maximum of 4 child boxes */
 			if (knockout_box_cur + 4 >= KNOCKOUT_BOXES) {
@@ -609,8 +630,19 @@ bool knockout_plot_polygon(int *p, unsigned int n, colour fill)
 
 bool knockout_plot_fill(int x0, int y0, int x1, int y1, colour c)
 {
+	int kx0, ky0, kx1, ky1;
+
+	/* get our bounds */
+ 	kx0 = (x0 > clip_x0_cur) ? x0 : clip_x0_cur;
+ 	ky0 = (y0 > clip_y0_cur) ? y0 : clip_y0_cur;
+  	kx1 = (x1 < clip_x1_cur) ? x1 : clip_x1_cur;
+  	ky1 = (y1 < clip_y1_cur) ? y1 : clip_y1_cur;
+ 	if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur) ||
+ 			(ky0 > clip_y1_cur) || (ky1 < clip_y0_cur))
+ 		return true;
+
 	/* fills both knock out and get knocked out */
-	knockout_calculate(x0, y0, x1, y1, knockout_list);
+	knockout_calculate(kx0, ky0, kx1, ky1, NULL);
 	knockout_boxes[knockout_box_cur].bbox.x0 = x0;
 	knockout_boxes[knockout_box_cur].bbox.y0 = y0;
 	knockout_boxes[knockout_box_cur].bbox.x1 = x1;
@@ -706,10 +738,20 @@ bool knockout_plot_arc(int x, int y, int radius, int angle1, int angle2, colour 
 bool knockout_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg)
 {
+	int kx0, ky0, kx1, ky1;
+
 	/* opaque bitmaps knockout, but don't get knocked out */
-	if (bitmap_get_opaque(bitmap))
-		knockout_calculate(x, y, x + width, y + height, knockout_list);
-	knockout_entries[knockout_entry_cur].data.bitmap.x = x;
+	if (bitmap_get_opaque(bitmap)) {
+		/* get our bounds */
+  		kx0 = (x > clip_x0_cur) ? x : clip_x0_cur;
+  		ky0 = (y > clip_y0_cur) ? y : clip_y0_cur;
+  		kx1 = (x + width < clip_x1_cur) ? x + width : clip_x1_cur;
+  		ky1 = (y + height< clip_y1_cur) ? y + height: clip_y1_cur;
+ 		if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur) ||
+ 				(ky0 > clip_y1_cur) || (ky1 < clip_y0_cur))
+ 			return true;
+		knockout_calculate(kx0, ky0, kx1, ky1, NULL);
+	}
 	knockout_entries[knockout_entry_cur].data.bitmap.x = x;
 	knockout_entries[knockout_entry_cur].data.bitmap.y = y;
 	knockout_entries[knockout_entry_cur].data.bitmap.width = width;
@@ -727,25 +769,37 @@ bool knockout_plot_bitmap_tile(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bool repeat_x, bool repeat_y)
 {
+	int kx0, ky0, kx1, ky1;
+	
+	/* get our bounds */
+  	kx0 = clip_x0_cur;
+  	ky0 = clip_y0_cur;
+  	kx1 = clip_x1_cur;
+  	ky1 = clip_y1_cur;
+  	if (!repeat_x) {
+  		if (x > kx0)
+  			kx0 = x;
+  		if (x + width < kx1)
+  			kx1 = x + width;
+ 		if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur))
+  			return true;
+  	}
+  	if (!repeat_y) {
+  		if (y > ky0)
+  			ky0 = y;
+  		if (y + height < ky1)
+  			ky1 = y + height;
+  		if ((ky0 > clip_y1_cur) || (ky1 < clip_y0_cur))
+  			return true;
+  	}
+
 	/* tiled bitmaps both knock out and get knocked out */
-	if (bitmap_get_opaque(bitmap)) {
-	  	if ((repeat_x && repeat_y) ||
-	  			/* horizontally repeating, full height */
-				(repeat_x && (y <= clip_y0_cur) &&
-					(y + height >= clip_y1_cur)) ||
-				/* vertically repeating, full width */
-				(repeat_y && (x <= clip_x0_cur) &&
-					(x + width >= clip_x1_cur)) ||
-				/* no repeat, full width & height */
-				((y <= clip_y0_cur) && (y + height >= clip_y1_cur) &&
-					(x <= clip_x0_cur) && (x + width >= clip_x1_cur)))
-			knockout_calculate(clip_x0_cur, clip_y0_cur,
-					clip_x1_cur, clip_y1_cur, knockout_list);
-	}
-	knockout_boxes[knockout_box_cur].bbox.x0 = clip_x0_cur;
-	knockout_boxes[knockout_box_cur].bbox.y0 = clip_y0_cur;
-	knockout_boxes[knockout_box_cur].bbox.x1 = clip_x1_cur;
-	knockout_boxes[knockout_box_cur].bbox.y1 = clip_y1_cur;
+	if (bitmap_get_opaque(bitmap))
+		knockout_calculate(kx0, ky0, kx1, ky1, NULL);
+	knockout_boxes[knockout_box_cur].bbox.x0 = kx0;
+	knockout_boxes[knockout_box_cur].bbox.y0 = ky0;
+	knockout_boxes[knockout_box_cur].bbox.x1 = kx1;
+	knockout_boxes[knockout_box_cur].bbox.y1 = ky1;
 	knockout_boxes[knockout_box_cur].deleted = false;
 	knockout_boxes[knockout_box_cur].child = NULL;
 	knockout_boxes[knockout_box_cur].next = knockout_list;
@@ -763,7 +817,7 @@ bool knockout_plot_bitmap_tile(int x, int y, int width, int height,
 	if ((++knockout_entry_cur >= KNOCKOUT_ENTRIES) ||
 			(++knockout_box_cur >= KNOCKOUT_BOXES))
 		knockout_plot_start(&real_plot);
-	return true;
+	return knockout_plot_clip(clip_x0_cur, clip_y0_cur, clip_x1_cur, clip_y1_cur);
 }
 
 bool knockout_plot_group_start(const char *name)
