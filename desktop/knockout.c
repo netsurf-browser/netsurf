@@ -22,9 +22,12 @@
 #define KNOCKOUT_BOXES 768	/* 28 bytes each */
 #define KNOCKOUT_POLYGONS 3072	/* 4 bytes each */
 
+
 struct knockout_box;
 struct knockout_entry;
 
+
+static bool knockout_plot_flush(void);
 static void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *box);
 static bool knockout_plot_fill_recursive(struct knockout_box *box, colour c);
 static bool knockout_plot_bitmap_tile_recursive(struct knockout_box *box,
@@ -208,6 +211,7 @@ int clip_x0_cur;
 int clip_y0_cur;
 int clip_x1_cur;
 int clip_y1_cur;
+int nested_depth = 0;
 
 
 /**
@@ -218,6 +222,13 @@ int clip_y1_cur;
  */
 bool knockout_plot_start(struct plotter_table *plotter)
 {
+  	/* check if we're recursing */
+  	if (nested_depth++ > 0) {
+  	  	/* we should already have the knockout renderer as default */
+  		assert(!memcmp(plotter, &knockout_plotters, sizeof(struct plotter_table)));
+  		return true;
+  	}
+  	
 	/* end any previous sessions */
 	if (knockout_entry_cur > 0)
 		knockout_plot_end();
@@ -235,6 +246,22 @@ bool knockout_plot_start(struct plotter_table *plotter)
  * \return  true on success, false otherwise
  */
 bool knockout_plot_end(void)
+{
+	/* only output when we've finished any nesting */
+	if (--nested_depth == 0)
+		return knockout_plot_flush();
+	
+	assert(nested_depth > 0);
+	return true;
+}
+
+
+/**
+ * Flush the current knockout session to empty the buffers
+ *
+ * \return  true on success, false otherwise
+ */
+bool knockout_plot_flush(void)
 {
 	int i;
 	bool success = true;
@@ -448,7 +475,7 @@ void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *own
 		} else {
 			/* we need a maximum of 4 child boxes */
 			if (knockout_box_cur + 4 >= KNOCKOUT_BOXES) {
-				knockout_plot_start(&real_plot);
+				knockout_plot_flush();
 				return;
 			}
 
@@ -574,7 +601,7 @@ bool knockout_plot_rectangle(int x0, int y0, int width, int height,
 	knockout_entries[knockout_entry_cur].data.rectangle.dashed = dashed;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_RECTANGLE;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	return true;
 }
 
@@ -592,7 +619,7 @@ bool knockout_plot_line(int x0, int y0, int x1, int y1, int width,
 	knockout_entries[knockout_entry_cur].data.line.dashed = dashed;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_LINE;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	return true;
 }
 
@@ -606,13 +633,13 @@ bool knockout_plot_polygon(int *p, unsigned int n, colour fill)
 	if (n * 2 >= KNOCKOUT_POLYGONS) {
 		knockout_plot_end();
 		success = plot.polygon(p, n, fill);
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 		return success;
 	}
 	
 	/* ensure we have enough room right now */
 	if (knockout_polygon_cur + n * 2 >= KNOCKOUT_POLYGONS)
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	
 	/* copy our data */
 	dest = &(knockout_polygons[knockout_polygon_cur]);
@@ -623,7 +650,7 @@ bool knockout_plot_polygon(int *p, unsigned int n, colour fill)
 	knockout_entries[knockout_entry_cur].data.polygon.fill = fill;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_POLYGON;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	return true;
 }
 
@@ -660,7 +687,7 @@ bool knockout_plot_fill(int x0, int y0, int x1, int y1, colour c)
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_FILL;
 	if ((++knockout_entry_cur >= KNOCKOUT_ENTRIES) ||
 			(++knockout_box_cur >= KNOCKOUT_BOXES))
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	return true;
 }
 
@@ -686,7 +713,7 @@ bool knockout_plot_clip(int clip_x0, int clip_y0,
 	knockout_entries[knockout_entry_cur].data.clip.y1 = clip_y1;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_CLIP;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	return true;
 }
 
@@ -703,7 +730,7 @@ bool knockout_plot_text(int x, int y, struct css_style *style,
 	knockout_entries[knockout_entry_cur].data.text.c = c;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_TEXT;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	return true;
 }
 
@@ -717,7 +744,7 @@ bool knockout_plot_disc(int x, int y, int radius, colour colour, bool filled)
 	knockout_entries[knockout_entry_cur].data.disc.filled = filled;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_DISC;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	return true;
 }
 
@@ -731,7 +758,7 @@ bool knockout_plot_arc(int x, int y, int radius, int angle1, int angle2, colour 
 	knockout_entries[knockout_entry_cur].data.arc.c = c;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_ARC;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	return true;
 }
 
@@ -760,7 +787,7 @@ bool knockout_plot_bitmap(int x, int y, int width, int height,
 	knockout_entries[knockout_entry_cur].data.bitmap.bg = bg;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_BITMAP;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	return true;
 }
 
@@ -816,7 +843,7 @@ bool knockout_plot_bitmap_tile(int x, int y, int width, int height,
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_BITMAP_TILE;
 	if ((++knockout_entry_cur >= KNOCKOUT_ENTRIES) ||
 			(++knockout_box_cur >= KNOCKOUT_BOXES))
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	return knockout_plot_clip(clip_x0_cur, clip_y0_cur, clip_x1_cur, clip_y1_cur);
 }
 
@@ -825,7 +852,7 @@ bool knockout_plot_group_start(const char *name)
 	knockout_entries[knockout_entry_cur].data.group_start.name = name;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_GROUP_START;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	return true;
 }
 
@@ -833,6 +860,6 @@ bool knockout_plot_group_end(void)
 {
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_GROUP_END;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
-		knockout_plot_start(&real_plot);
+		knockout_plot_flush();
 	return true;
 }
