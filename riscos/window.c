@@ -2031,11 +2031,6 @@ bool ro_gui_window_keypress(struct gui_window *g, int key, bool toolbar)
 			return ro_gui_menu_handle_action(g->window,
 					BROWSER_SCALE_VIEW, false);
 
-		case wimp_KEY_CONTROL + wimp_KEY_F11:	/* Toggle knockout rendering */
-			option_knockout_rendering = !option_knockout_rendering;
-			gui_window_redraw_window(g);
-			return true;
-
 		case wimp_KEY_SHIFT + wimp_KEY_F11:	/* Toggle display of box outlines. */
 			html_redraw_debug = !html_redraw_debug;
 			gui_window_redraw_window(g);

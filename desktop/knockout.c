@@ -16,7 +16,7 @@
 #include "netsurf/image/bitmap.h"
 #include "netsurf/utils/log.h"
 
-#define NDEBUG
+//#define NDEBUG
 
 #define KNOCKOUT_ENTRIES 3072	/* 40 bytes each */
 #define KNOCKOUT_BOXES 768	/* 28 bytes each */
@@ -405,6 +405,10 @@ bool knockout_plot_flush(void)
 	knockout_box_cur = 0;
 	knockout_polygon_cur = 0;
 	knockout_list = NULL;
+	
+	/* re-instate knockout plotters if we are still active */
+	if (nested_depth > 0)
+		plot = knockout_plotters;
 	return success;
 }
 
@@ -440,7 +444,7 @@ void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *own
 		  	  	if (owner) {
 		  	  		/* first valid element: update child reference */
 		  	  		owner->child = parent->next;
-		  	  		/* have we deleted all children node? */
+		  	  		/* have we deleted all child nodes? */
 		  	  		if (!owner->child)
 		  	  			owner->deleted = true;
 		  	  	} else {

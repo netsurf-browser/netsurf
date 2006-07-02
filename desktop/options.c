@@ -102,7 +102,6 @@ int option_max_fetchers_per_host = 5;
  */
 int option_max_cached_fetch_handles = 6;
 /** Whether to use knockout rendering */
-bool option_knockout_rendering = false;
 
 EXTRA_OPTION_DEFINE
 
@@ -144,7 +143,6 @@ struct {
 		             OPTION_INTEGER, &option_max_fetchers_per_host },
 	{ "max_cached_fetch_handles",
 		             OPTION_INTEGER, &option_max_cached_fetch_handles },
-	{ "knockout_rendering", OPTION_BOOL, &option_knockout_rendering },
 	EXTRA_OPTION_TABLE
 };
 

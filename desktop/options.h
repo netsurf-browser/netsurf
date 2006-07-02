@@ -55,7 +55,6 @@ extern char *option_ca_bundle;
 extern char *option_cookie_file;
 extern char *option_cookie_jar;
 extern char *option_homepage_url;
-extern bool option_knockout_rendering;
 
 /* Fetcher configuration. */
 extern int option_max_fetchers;
