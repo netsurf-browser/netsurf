@@ -52,22 +52,6 @@ static bool knockout_plot_group_start(const char *name);
 static bool knockout_plot_group_end(void);
 
 
-struct knockout_entry knockout_entries[KNOCKOUT_ENTRIES];
-struct knockout_box knockout_boxes[KNOCKOUT_BOXES];
-int knockout_polygons[KNOCKOUT_POLYGONS];
-int knockout_entry_cur = 0;
-int knockout_box_cur = 0;
-int knockout_polygon_cur = 0;
-struct knockout_box *knockout_list = NULL;
-
-struct plotter_table real_plot;
-
-int clip_x0_cur;
-int clip_y0_cur;
-int clip_x1_cur;
-int clip_y1_cur;
-
-
 const struct plotter_table knockout_plotters = {
 	knockout_plot_clg,
 	knockout_plot_rectangle,
@@ -207,6 +191,22 @@ struct knockout_entry {
 		} group_start;
 	} data;
 };
+
+
+struct knockout_entry knockout_entries[KNOCKOUT_ENTRIES];
+struct knockout_box knockout_boxes[KNOCKOUT_BOXES];
+int knockout_polygons[KNOCKOUT_POLYGONS];
+int knockout_entry_cur = 0;
+int knockout_box_cur = 0;
+int knockout_polygon_cur = 0;
+struct knockout_box *knockout_list = NULL;
+
+struct plotter_table real_plot;
+
+int clip_x0_cur;
+int clip_y0_cur;
+int clip_x1_cur;
+int clip_y1_cur;
 
 
 /**
