@@ -162,14 +162,19 @@ bool ro_gui_theme_install_apply(wimp_w w)
 	char *theme_file;
 	struct theme_descriptor *theme_install;
 	os_error *error;
+	char *fix;
 
 	assert(theme_install_content);
 
-	if (url_nice(theme_install_descriptor.name, &theme_file, true) !=
-			URL_FUNC_OK) {
-		warn_user("ThemeInstallErr", 0);
-		return false;
+	/* convert spaces to hard spaces */
+	theme_file = strdup(theme_install_descriptor.name);
+	if (!theme_file) {
+	  	LOG(("malloc failed"));
+	  	warn_user("NoMemory", 0);
 	}
+	for (fix = theme_file; *fix != '\0'; *fix++)
+		if (*fix == ' ')
+			*fix = 160;	/* hard space */
 
 	/* simply overwrite previous theme versions */
 	snprintf(theme_save, sizeof theme_save, "%s.%s",
