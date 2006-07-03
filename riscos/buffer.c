@@ -227,6 +227,13 @@ void ro_gui_buffer_open(wimp_draw *redraw) {
 	*/
 	ro_plot_origin_x -= clipping.x0;
 	ro_plot_origin_y -= clipping.y0;
+	
+	/*	Update the ECF origin
+	*/
+	if ((error = xos_set_ecf_origin(-ro_plot_origin_x,
+			-ro_plot_origin_y)) != NULL) {
+	  	LOG(("Invalid ECF origin"));
+	}
 }
 
 
@@ -261,6 +268,10 @@ void ro_gui_buffer_close(void) {
 			buffer, (osspriteop_id)(buffer + 1),
 			clipping.x0, clipping.y0, (os_action)0);
 	ro_gui_buffer_free();
+
+	/*	Update the ECF origin
+	*/
+	os_set_ecf_origin(0, 0);
 }
 
 
