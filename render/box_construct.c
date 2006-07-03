@@ -306,13 +306,13 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	assert(inline_container);
 
 	gui_multitask();
-	
+
 	/* In case the parent is a pre block, we clear the
 	 * strip_leading_newline flag since it is not used if we
 	 * follow the pre with a tag
 	 */
 	parent->strip_leading_newline = 0;
-	
+
 	style = box_get_style(content, parent_style, n);
 	if (!style)
 		return false;
@@ -663,7 +663,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 			box_text_transform(text, strlen(text),
 					parent_style->text_transform);
 		current = text;
-		
+
 		/* swallow a single leading new line */
 		if (parent->strip_leading_newline) {
 			switch (*current) {
@@ -676,7 +676,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 			}
 			parent->strip_leading_newline = 0;
 		}
-		
+
 		do {
 			size_t len = strcspn(current, "\r\n");
 			char old = current[len];
@@ -1781,9 +1781,10 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 
 bool box_form(BOX_SPECIAL_PARAMS)
 {
-	char *xmlaction, *action, *method, *enctype, *charset;
+	char *xmlaction, *action, *faction, *method, *enctype, *charset;
 	form_method fmethod;
 	struct form *form;
+	url_func_result result;
 
 	if (!(xmlaction = (char *)
 			xmlGetProp(n, (const xmlChar *) "action"))) {
@@ -1799,6 +1800,15 @@ bool box_form(BOX_SPECIAL_PARAMS)
 
 	if (!action)
 		return false;
+
+	result = url_join(action, content->data.html.base_url, &faction);
+	if (result != URL_FUNC_OK) {
+		free(action);
+		return false;
+	}
+
+	/* No longer needed */
+	free(action);
 
 	fmethod = method_GET;
 	if ((method = (char *) xmlGetProp(n, (const xmlChar *) "method"))) {
@@ -1818,10 +1828,10 @@ bool box_form(BOX_SPECIAL_PARAMS)
 	/* acceptable encoding(s) for form data */
 	charset = (char *) xmlGetProp(n, (const xmlChar *) "accept-charset");
 
-	form = form_new(action, fmethod, charset,
+	form = form_new(faction, fmethod, charset,
 				content->data.html.encoding);
 	if (!form) {
-		free(action);
+		free(faction);
 		xmlFree(charset);
 		return false;
 	}

@@ -29,7 +29,7 @@ typedef enum {
 
 /** HTML form. */
 struct form {
-	char *action;				/**< URL to submit to. */
+	char *action;				/**< Absolute URL to submit to. */
 	form_method method;			/**< Method and enctype. */
 	char *accept_charsets;			/**< Charset to submit form in */
 	char *document_charset;			/**< Charset of document containing form */

@@ -846,7 +846,6 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 	struct content *url_content = c;
 	struct form_control *gadget = 0;
 	struct content *object = NULL;
-	url_func_result res;
 	struct box *next_box;
 
 	bw->drag_type = DRAGGING_NONE;
@@ -956,11 +955,8 @@ void browser_window_mouse_action_html(struct browser_window *bw,
 			/* drop through */
 		case GADGET_SUBMIT:
 			if (gadget->form) {
-				res = url_join(gadget->form->action, base_url,
-						&url);
 				snprintf(status_buffer, sizeof status_buffer,
 						messages_get("FormSubmit"),
-						(res == URL_FUNC_OK) ? url :
 						gadget->form->action);
 				status = status_buffer;
 				pointer = GUI_POINTER_POINT;
@@ -1886,9 +1882,8 @@ gui_pointer_shape get_pointer_shape(css_cursor cursor)
 void browser_form_submit(struct browser_window *bw, struct form *form,
 		struct form_control *submit_button)
 {
-	char *data = 0, *url = 0, *url1 = 0, *base;
+	char *data = 0, *url = 0;
 	struct form_successful_control *success;
-	url_func_result res;
 
 	assert(form);
 	assert(bw->current_content->type == CONTENT_HTML);
@@ -1897,7 +1892,6 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 		warn_user("NoMemory", 0);
 		return;
 	}
-	base = bw->current_content->data.html.base_url;
 
 	switch (form->method) {
 		case method_GET:
@@ -1913,16 +1907,14 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 				warn_user("NoMemory", 0);
 				return;
 			}
-			if(form->action[strlen(form->action)-1] == '?') {
+			if (form->action[strlen(form->action)-1] == '?') {
 				sprintf(url, "%s%s", form->action, data);
 			}
 			else {
 				sprintf(url, "%s?%s", form->action, data);
 			}
-			res = url_join(url, base, &url1);
-			if (res != URL_FUNC_OK)
-				break;
-			browser_window_go(bw, url1, bw->current_content->url, true);
+			browser_window_go(bw, url, bw->current_content->url,
+					true);
 			break;
 
 		case method_POST_URLENC:
@@ -1932,19 +1924,15 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 				warn_user("NoMemory", 0);
 				return;
 			}
-			res = url_join(form->action, base, &url);
-			if (res != URL_FUNC_OK)
-				break;
-			browser_window_go_post(bw, url, data, 0, true,
-					bw->current_content->url, false);
+			browser_window_go_post(bw, form->action, data, 0,
+					true, bw->current_content->url,
+					false);
 			break;
 
 		case method_POST_MULTIPART:
-			res = url_join(form->action, base, &url);
-			if (res != URL_FUNC_OK)
-				break;
-			browser_window_go_post(bw, url, 0, success, true,
-					bw->current_content->url, false);
+			browser_window_go_post(bw, form->action, 0, success,
+					true, bw->current_content->url,
+					false);
 			break;
 
 		default:
@@ -1954,7 +1942,6 @@ void browser_form_submit(struct browser_window *bw, struct form *form,
 	form_free_successful(success);
 	free(data);
 	free(url);
-	free(url1);
 }
 
 
