@@ -159,8 +159,6 @@ mng_bool nsmng_readdata(mng_handle mng, mng_ptr buffer, mng_uint32 size, mng_uin
 	*bytesread = ((c->source_size - c->data.mng.read_size) < size) ?
 			(c->source_size - c->data.mng.read_size) : size;
 
-	LOG(("Read %d, processing %p", *bytesread, mng));
-
 	if ((*bytesread) > 0) {
 		memcpy(buffer, c->source_data + c->data.mng.read_size, *bytesread);
 		c->data.mng.read_size += *bytesread;
@@ -187,8 +185,6 @@ mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width, mng_uint32 height
 	*/
 	c = (struct content *)mng_get_userdata(mng);
 	assert(c != NULL);
-
-	LOG(("processing header (%p) %d, %d", c, width, height));
 
 	c->bitmap = bitmap_create(width, height, BITMAP_NEW);
 	if (!c->bitmap) {
@@ -255,8 +251,6 @@ bool nsmng_convert(struct content *c, int width, int height) {
 	union content_msg_data msg_data;
 
 	assert(c != NULL);
-
-	LOG(("Converting %p '%s'", c, c->url));
 
 	/* by this point, the png should have been parsed
 	 * and the bitmap created, so ensure that's the case
