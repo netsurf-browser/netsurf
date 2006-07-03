@@ -2370,8 +2370,7 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 		gui_window_redraw(bw->window, x, y,
 				x + file_box->width,
 				y + file_box->height);
-	}
-	else if (message->data.data_xfer.file_type == osfile_TYPE_TEXT) {
+	} else {
 
 		const char *filename = message->data.data_xfer.file_name;
 
@@ -2380,8 +2379,6 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 		if (!ro_gui_window_import_text(g, filename, false))
 			return true;  /* it was for us, it just didn't work! */
 	}
-	else
-		return false;	/* only text files allowed in textareas/input fields */
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
