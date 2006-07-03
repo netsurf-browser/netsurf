@@ -816,9 +816,10 @@ HelpInterfaceConfig2:This indicates whether NetSurf will strip file extensions w
 HelpInterfaceConfig3:This indicates whether NetSurf will ask for confirmation before overwriting files of the same name.
 HelpInterfaceConfig6:This indicates whether NetSurf's URL suggestion feature is enabled.|MURL suggestion shows options for completing URLs as you type into NetSurf's URL bar.
 HelpInterfaceConfig7:This indicates whether the URL for the item under the pointer in NetSurf's local history \w will be displayed.
-HelpInterfaceConfig8:\Sreset the Interface options back to their default values.
-HelpInterfaceConfig9:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
-HelpInterfaceConfig10:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpInterfaceConfig10:This indicates whether NetSurf will use a thumbnail when iconising windows to the Pinboard.
+HelpInterfaceConfig11:\Sreset the Interface options back to their default values.
+HelpInterfaceConfig12:\Sclose this \w without saving changes.|M\Areturn the cache options to the last saved configuration.
+HelpInterfaceConfig13:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
 
 HelpLanguageConfig:\Tlanguage configuration \w
 HelpLanguageConfig3:\Tcurrently selected interface language.|MThe interface language is the language used for NetSurf's messages and dialogue boxes.

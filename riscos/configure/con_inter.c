@@ -18,9 +18,10 @@
 #define INTERFACE_CONFIRM_OVWR_OPTION 3
 #define INTERFACE_URL_COMPLETE_OPTION 6
 #define INTERFACE_HISTORY_TOOLTIP_OPTION 7
-#define INTERFACE_DEFAULT_BUTTON 8
-#define INTERFACE_CANCEL_BUTTON 9
-#define INTERFACE_OK_BUTTON 10
+#define INTERFACE_THUMBNAIL_ICONISE_OPTION 10
+#define INTERFACE_DEFAULT_BUTTON 11
+#define INTERFACE_CANCEL_BUTTON 12
+#define INTERFACE_OK_BUTTON 13
 
 
 static void ro_gui_options_interface_default(wimp_pointer *pointer);
@@ -37,6 +38,8 @@ bool ro_gui_options_interface_initialise(wimp_w w) {
 			option_url_suggestion);
 	ro_gui_set_icon_selected_state(w, INTERFACE_HISTORY_TOOLTIP_OPTION,
 			option_history_tooltip);
+	ro_gui_set_icon_selected_state(w, INTERFACE_THUMBNAIL_ICONISE_OPTION,
+			option_thumbnail_iconise);
 
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_button(w, INTERFACE_DEFAULT_BUTTON,
@@ -60,6 +63,8 @@ void ro_gui_options_interface_default(wimp_pointer *pointer) {
 			INTERFACE_URL_COMPLETE_OPTION, true);
 	ro_gui_set_icon_selected_state(pointer->w,
 			INTERFACE_HISTORY_TOOLTIP_OPTION, true);
+	ro_gui_set_icon_selected_state(pointer->w,
+			INTERFACE_THUMBNAIL_ICONISE_OPTION, true);
 }
 
 bool ro_gui_options_interface_ok(wimp_w w) {
@@ -72,6 +77,8 @@ bool ro_gui_options_interface_ok(wimp_w w) {
 			INTERFACE_URL_COMPLETE_OPTION);
 	option_history_tooltip = ro_gui_get_icon_selected_state(w,
 			INTERFACE_HISTORY_TOOLTIP_OPTION);
+	option_thumbnail_iconise = ro_gui_get_icon_selected_state(w,
+			INTERFACE_THUMBNAIL_ICONISE_OPTION);
 
 	ro_gui_save_options();
 	return true;

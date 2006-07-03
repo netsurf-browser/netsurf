@@ -59,6 +59,7 @@ extern char *option_recent_path;
 extern char *option_recent_save;
 extern char *option_theme_path;
 extern char *option_theme_save;
+extern bool option_thumbnail_iconise;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -103,7 +104,8 @@ char *option_hotlist_save = 0; \
 char *option_recent_path = 0; \
 char *option_recent_save = 0; \
 char *option_theme_path = 0; \
-char *option_theme_save = 0;
+char *option_theme_save = 0; \
+bool option_thumbnail_iconise = true;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -148,6 +150,7 @@ char *option_theme_save = 0;
 { "recent_path",            OPTION_STRING,  &option_recent_path }, \
 { "recent_save",            OPTION_STRING,  &option_recent_save }, \
 { "theme_path",             OPTION_STRING,  &option_theme_path }, \
-{ "theme_save",             OPTION_STRING,  &option_theme_save }
+{ "theme_save",             OPTION_STRING,  &option_theme_save }, \
+{ "thumbnail_iconise",      OPTION_BOOL,    &option_thumbnail_iconise }
 
 #endif

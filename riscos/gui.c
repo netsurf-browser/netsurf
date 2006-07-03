@@ -1988,6 +1988,10 @@ void ro_msg_window_info(wimp_message *message)
 	wimp_full_message_window_info *wi;
 	struct gui_window *g;
 
+	/* allow the user to turn off thumbnail icons */
+	if (!option_thumbnail_iconise)
+		return;
+		
 	wi = (wimp_full_message_window_info*)message;
 	g = ro_gui_window_lookup(wi->w);
 
