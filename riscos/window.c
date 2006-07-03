@@ -33,6 +33,7 @@
 #include "netsurf/content/urldb.h"
 #include "netsurf/css/css.h"
 #include "netsurf/desktop/browser.h"
+#include "netsurf/desktop/knockout.h"
 #include "netsurf/desktop/plotters.h"
 #include "netsurf/desktop/textinput.h"
 #include "netsurf/desktop/gui.h"
@@ -457,15 +458,11 @@ void gui_window_redraw_window(struct gui_window *g)
 void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 {
 	osbool more;
-	bool clear_background = false;
-	bool clear_partial = false;
-	float scale = 1;
+	bool knockout = true;
+	float scale = g->option.scale;
 	struct content *c = g->bw->current_content;
 	int clip_x0, clip_y0, clip_x1, clip_y1, clear_x1, clear_y1;
-	int content_y1, content_x1;
 	os_error *error;
-	osspriteop_area *area;
-	osspriteop_header *header;
 
 	/*	Handle no content quickly
 	*/
@@ -475,54 +472,18 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 	}
 
 	plot = ro_plotters;
-	ro_plot_set_scale(g->option.scale);
+	ro_plot_set_scale(scale);
 	ro_gui_current_redraw_gui = g;
 	current_redraw_browser = g->bw;
 
-	/*	We should clear the background, except for HTML.
-	*/
-	switch (c->type) {
-		case CONTENT_HTML:
-			break;
-		case CONTENT_CSS:
-			clear_background = true;
-			scale = g->option.scale;
-			break;
-		case CONTENT_TEXTPLAIN:
-#ifdef WITH_JPEG
-		case CONTENT_JPEG:
-#endif
-			clear_partial = true;
-			clear_background = true;
-			scale = g->option.scale;
-			break;
-
-
-#ifdef WITH_SPRITE
-		case CONTENT_SPRITE:
-			area = (osspriteop_area *)c->data.sprite.data;
-			header = (osspriteop_header *)((char*)area + area->first);
-			clear_partial = (header->image) == (header->mask);
-#endif
-#ifdef WITH_GIF
-		case CONTENT_GIF:
-#endif
-#ifdef WITH_BMP
-		case CONTENT_BMP:
-		case CONTENT_ICO:
-#endif
-#ifdef WITH_MNG
-		case CONTENT_JNG:
-		case CONTENT_MNG:
-		case CONTENT_PNG:
-#endif
-			if (c->bitmap)
-				clear_partial = bitmap_get_opaque(c->bitmap);
-		default:
-			clear_background = true;
-			scale = g->option.scale;
-			break;
-	}
+	/* rendering textplain has no advantages using knockout rendering other than to
+	 * slow things down. */
+	if (c->type == CONTENT_TEXTPLAIN)
+		knockout = false;
+		
+	/* HTML rendering handles scale itself */
+	if (c->type == CONTENT_HTML)
+		scale = 1;
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
@@ -544,39 +505,10 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
 
-		if (clear_background) {
-			error = xcolourtrans_set_gcol(os_COLOUR_WHITE,
-					colourtrans_SET_BG,
-					os_ACTION_OVERWRITE, 0, 0);
-			if (error) {
-				LOG(("xcolourtrans_set_gcol: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("MiscError", error->errmess);
-			}
-			if (clear_partial) {
-			  	content_x1 = ro_plot_origin_x + c->width * 2 * scale;
-			  	content_y1 = ro_plot_origin_y - c->height * 2 * scale;
-			  	clear_x1 += ro_plot_origin_x;
-			  	clear_y1 += ro_plot_origin_y;
-			  	if (content_y1 > clear_y1) {
-					xos_plot(os_MOVE_TO,
-							ro_plot_origin_x,
-							content_y1);
-					xos_plot(os_PLOT_BG_TO | os_PLOT_RECTANGLE,
-							clear_x1,
-							clear_y1);
-				}
-			  	if (content_x1 < redraw->clip.x1) {
-					xos_plot(os_MOVE_TO,
-							content_x1,
-							ro_plot_origin_y);
-					xos_plot(os_PLOT_BG_TO | os_PLOT_RECTANGLE,
-							clear_x1,
-							content_y1);
-				}
-			} else {
-				os_clg();
-			}
+		if (knockout) {
+			knockout_plot_start(&plot);
+		  	plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
+		  	plot.clg(0x00ffffff);
 		}
 
 		content_redraw(c, 0, 0,
@@ -584,7 +516,8 @@ void ro_gui_window_redraw(struct gui_window *g, wimp_draw *redraw)
 				clip_x0, clip_y0, clip_x1, clip_y1,
 				g->option.scale,
 				0xFFFFFF);
-
+		if (knockout)
+			knockout_plot_end();
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_close();
 
